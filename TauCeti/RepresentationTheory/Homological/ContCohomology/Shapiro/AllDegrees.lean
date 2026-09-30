@@ -62,6 +62,11 @@ right needs a closed subgroup.
   resp. bijective, in every degree.
 * `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_discreteCoind_iff`: `Hⁿ(U, A)`
   vanishes exactly when `Hⁿ(G, Coind_U^G A)` does.
+* `TauCeti.ContinuousCohomology.coeffMap_unit_comp_shapiroMap`,
+  `TauCeti.ContinuousCohomology.res_comp_shapiroIso_inv`: for a discrete `G`-module `M`,
+  restriction to `U` is the coefficient map of the unit `M → Coind_U^G M` of coinduction followed
+  by the Shapiro map, so restriction followed by the inverse of Shapiro's isomorphism is the
+  coefficient map of the unit.
 
 ## References
 
@@ -110,6 +115,57 @@ instance subsingleton_continuousCohomology_discreteCoind_discreteCoind_bot (n : 
     (DiscreteCoind.transIsoBot U A isClosed_closure.isCompact) (n + 1)
 
 end Acyclic
+
+/-! ### Restriction through the unit of coinduction -/
+
+section Unit
+
+variable (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+omit [CompactSpace G] in
+/-- **Restriction factors through the unit of coinduction and the Shapiro map**: the coefficient
+map `Hⁿ(G, M) ⟶ Hⁿ(G, Coind_U^G M)` of the unit `m ↦ (g ↦ g • m)`, followed by the Shapiro map
+`Hⁿ(G, Coind_U^G M) ⟶ Hⁿ(U, M)`, is restriction to `U`. Evaluation at `1` retracts the unit, and
+the Shapiro map is restriction followed by evaluation at `1`. This holds for every subgroup `U` of
+every topological group `G`. -/
+@[reassoc]
+theorem coeffMap_unit_comp_shapiroMap (n : ℕ) :
+    coeffMap (ofDiscreteModuleMap (DiscreteCoind.unit G U M).toAddMonoidHom.toIntLinearMap
+        fun g m => _root_.map_smul (DiscreteCoind.unit G U M) g m) n ≫ shapiroMap U M n =
+      res U (ofDiscreteModule ℤ G M) n := by
+  -- The restriction of the unit followed by the counit is the identity of `M` over `U`.
+  have hcomp : (TopRep.resFunctor (U.subtype : U →* G)).map
+      (ofDiscreteModuleMap (DiscreteCoind.unit G U M).toAddMonoidHom.toIntLinearMap
+        fun g m => _root_.map_smul (DiscreteCoind.unit G U M) g m) ≫
+      ofDiscreteModuleMap (DiscreteCoind.eval G U M).toIntLinearMap
+        (fun u f => DiscreteCoind.eval_smul u f) = 𝟙 (ofDiscreteModule ℤ U M) := by
+    refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : M) => ?_)
+    -- Not `rfl`: `DiscreteCoind.eval` and `DiscreteCoind.unit` are not exposed, so the evaluation
+    -- lemmas are needed, with their morphisms spelled out because the source of the second factor
+    -- is `TopRep.res U.subtype (ofDiscreteModule ℤ G _)` on one side and
+    -- `ofDiscreteModule ℤ U _` on the other.
+    exact (TopRep.comp_apply ((TopRep.resFunctor (U.subtype : U →* G)).map
+        (ofDiscreteModuleMap (DiscreteCoind.unit G U M).toAddMonoidHom.toIntLinearMap
+          fun g m => _root_.map_smul (DiscreteCoind.unit G U M) g m))
+        (ofDiscreteModuleMap (DiscreteCoind.eval G U M).toIntLinearMap
+          fun u f => DiscreteCoind.eval_smul u f) m).trans
+      ((ofDiscreteModuleMap_hom_apply (G := U) (DiscreteCoind.eval G U M).toIntLinearMap
+        (fun u f => DiscreteCoind.eval_smul u f) _).trans
+        ((congrArg (DiscreteCoind.eval G U M) (ofDiscreteModuleMap_hom_apply
+          (DiscreteCoind.unit G U M).toAddMonoidHom.toIntLinearMap
+          (fun g m => _root_.map_smul (DiscreteCoind.unit G U M) g m) m)).trans
+          (DiscreteCoind.eval_unit m)))
+  rw [shapiroMap_eq_res_comp_coeffMap]
+  -- Restriction is natural in the coefficients, and the two coefficient maps then compose to the
+  -- coefficient map of `hcomp`, which is the identity. The composites are reassociated by hand,
+  -- since their middle objects agree only up to `res_ofDiscreteModule`.
+  refine (coeffMap_comp_res_assoc U _ n _).trans ?_
+  exact ((congrArg (res U _ n ≫ ·) ((coeffMap_comp _ _ n).symm.trans
+    (congrArg (coeffMap · n) hcomp))).trans
+      ((congrArg (res U _ n ≫ ·) (coeffMap_id _ n)).trans (Category.comp_id _)))
+
+end Unit
 
 /-! ### Shapiro's lemma -/
 
@@ -179,6 +235,18 @@ theorem subsingleton_continuousCohomology_discreteCoind_iff (n : ℕ) :
     Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G (DiscreteCoind G U A))) ↔
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ U A)) :=
   (Equiv.ofBijective _ (bijective_shapiroMap U hU A n)).subsingleton_congr
+
+/-- Restriction of a discrete `G`-module `M` to a closed subgroup `U` of a profinite group,
+followed by the inverse of Shapiro's isomorphism, is the coefficient map of the unit
+`M → Coind_U^G M` of coinduction. -/
+theorem res_comp_shapiroIso_inv (M : Type u) [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] (n : ℕ) :
+    res U (ofDiscreteModule ℤ G M) n ≫ (shapiroIso U hU M n).inv =
+      coeffMap (ofDiscreteModuleMap (DiscreteCoind.unit G U M).toAddMonoidHom.toIntLinearMap
+        fun g m => _root_.map_smul (DiscreteCoind.unit G U M) g m) n := by
+  refine (Iso.comp_inv_eq _).2 ?_
+  rw [shapiroIso_hom]
+  exact (coeffMap_unit_comp_shapiroMap U M n).symm
 
 end Shapiro
 

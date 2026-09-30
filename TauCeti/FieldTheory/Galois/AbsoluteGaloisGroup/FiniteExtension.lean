@@ -63,7 +63,7 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 
 * `TauCeti.galoisSubgroup_index`: the index of `galoisSubgroup K L σ` in `G_K` is `[L : K]`, so
   the subgroup fixing `σ(L)` has finite index
-  (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`).
+  (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`, `TauCeti.finiteIndex_galoisSubgroup`).
 * `TauCeti.galoisSubgroupEquiv_apply_separableClosureRingEquiv`: the isomorphism intertwines the
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
@@ -126,6 +126,11 @@ cohomology indexed by a subgroup of `G_K`. -/
 instance finiteIndex_fixingSubgroup_fieldRange :
     (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).FiniteIndex :=
   ⟨by rw [← galoisSubgroup_toSubgroup, galoisSubgroup_index]; exact Module.finrank_pos.ne'⟩
+
+/-- **`galoisSubgroup K L σ` has finite index**, namely `[L : K]`: the instance
+`finiteIndex_fixingSubgroup_fieldRange` read through `galoisSubgroup_toSubgroup`. -/
+instance finiteIndex_galoisSubgroup : (galoisSubgroup K L σ).toSubgroup.FiniteIndex :=
+  inferInstanceAs (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).FiniteIndex
 
 /-- **The subgroup of `G_K` fixing `σ(L)` is open**, `galoisSubgroup K L σ` read as a plain
 subgroup. -/

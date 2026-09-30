@@ -5,26 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.IndexNotDvd
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 
 /-!
-# The `p`-cohomological dimension of a profinite group is at most that of a Sylow subgroup
+# The `p`-cohomological dimension of a profinite group is that of a Sylow subgroup
 
 Let `G` be a profinite group, `p` a prime and `P` a Sylow pro-`p` subgroup of `G`. Then
-`cd_p G ≤ cd_p P`. Every open subgroup of `G` containing `P` has index prime to `p`
-(`TauCeti.IsProPSylow.not_dvd_index_of_le`), so restriction from `G` to `P` is injective on the
-cohomology of every discrete `p`-primary torsion `G`-module in every positive degree, and a
-vanishing statement for `P` transfers to `G`. This is one half of the equality `cd_p G = cd_p P`
-(Serre, *Galois Cohomology*, I §3.3, Cor. 1 to Prop. 14; NSW (3.3.6)). The other half,
-`cd_p P ≤ cd_p G`, is the monotonicity of `cd_p` in a closed subgroup, that is Shapiro's lemma for
-the closed subgroup `P`, and is not proved here.
+`cd_p G = cd_p P` (Serre, *Galois Cohomology*, I §3.3, Cor. 1 to Prop. 14; NSW (3.3.6)). The two
+halves are proved by different arguments.
+
+* `cd_p G ≤ cd_p P`: every open subgroup of `G` containing `P` has index prime to `p`
+  (`TauCeti.IsProPSylow.not_dvd_index_of_le`), so restriction from `G` to `P` is injective on the
+  cohomology of every discrete `p`-primary torsion `G`-module in every positive degree, and a
+  vanishing statement for `P` transfers to `G`.
+* `cd_p P ≤ cd_p G`: `P` is closed, and the `p`-cohomological dimension is monotone in a closed
+  subgroup by Shapiro's lemma (`TauCeti.cohomologicalDimensionAt_le_of_isClosed`).
+
+In particular all Sylow pro-`p` subgroups of `G` have the same `p`-cohomological dimension, and the
+computation of `cd_p` for an arbitrary profinite group reduces to that of a pro-`p` group.
 
 ## Main results
 
 * `TauCeti.CohomologicalDimensionLE.of_isProPSylow`: the vanishing predicate `cd_p P ≤ n` for a
   Sylow pro-`p` subgroup `P` implies `cd_p G ≤ n`.
-* `TauCeti.IsProPSylow.cohomologicalDimensionAt_le`: **`cd_p G ≤ cd_p P`** for a Sylow pro-`p`
+* `TauCeti.IsProPSylow.cohomologicalDimensionAt_le`: `cd_p G ≤ cd_p P` for a Sylow pro-`p`
+  subgroup `P` of a profinite group `G`.
+* `TauCeti.IsProPSylow.cohomologicalDimensionLE_iff`: the vanishing predicates `cd_p G ≤ n` and
+  `cd_p P ≤ n` are equivalent for a Sylow pro-`p` subgroup `P`.
+* `TauCeti.IsProPSylow.cohomologicalDimensionAt_eq`: **`cd_p G = cd_p P`** for a Sylow pro-`p`
   subgroup `P` of a profinite group `G`.
 
 ## References
@@ -56,5 +66,19 @@ theorem IsProPSylow.cohomologicalDimensionAt_le (hP : IsProPSylow p P) :
     cohomologicalDimensionAt.{v} p G ≤ cohomologicalDimensionAt.{v} p P :=
   cohomologicalDimensionAt_le_of_isClosed_of_forall_not_dvd_index Fact.out hP.isClosed
     hP.not_dvd_index_of_le
+
+/-- **`cd_p G = cd_p P` for a Sylow pro-`p` subgroup `P`**, as the vanishing predicate: for a Sylow
+pro-`p` subgroup `P` of a profinite group `G`, `CohomologicalDimensionLE p G n` holds if and only if
+`CohomologicalDimensionLE p P n` does. -/
+theorem IsProPSylow.cohomologicalDimensionLE_iff (hP : IsProPSylow p P) {n : ℕ} :
+    CohomologicalDimensionLE.{u} p G n ↔ CohomologicalDimensionLE.{u} p P n :=
+  ⟨fun h ↦ h.of_isClosed hP.isClosed, fun h ↦ h.of_isProPSylow hP⟩
+
+/-- **`cd_p G = cd_p P` for a Sylow pro-`p` subgroup `P` of a profinite group `G`** (Serre,
+*Galois Cohomology*, I §3.3, Cor. 1 to Prop. 14; NSW (3.3.6)): the `p`-cohomological dimension of a
+profinite group is that of any of its Sylow pro-`p` subgroups. -/
+theorem IsProPSylow.cohomologicalDimensionAt_eq (hP : IsProPSylow p P) :
+    cohomologicalDimensionAt.{u} p G = cohomologicalDimensionAt.{u} p P :=
+  le_antisymm hP.cohomologicalDimensionAt_le (cohomologicalDimensionAt_le_of_isClosed hP.isClosed)
 
 end TauCeti

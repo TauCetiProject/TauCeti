@@ -12,7 +12,8 @@ public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 For an invariant `y` of a representation `N`, this file constructs the morphism of
 representations `M ⟶ M ⊗ N` that sends `m` to `m ⊗ₜ y`. It also records its additivity,
-linearity, and naturality in both representations.
+linearity, naturality in both representations, and compatibility with the associator and
+braiding.
 -/
 
 public noncomputable section
@@ -105,6 +106,36 @@ theorem tensorInvariant_comp_whiskerLeft {N' : Rep k G} (g : N ⟶ N') (y : N.ρ
     tensorInvariant M y ≫ M ◁ g = tensorInvariant M y' := by
   ext m
   simp [hy]
+
+/-- Tensoring `M ⊗ N` with an invariant and then reassociating is tensoring the second factor
+`N` with that invariant. -/
+@[reassoc]
+theorem tensorInvariant_comp_associator (N : Rep k G) {P : Rep k G}
+    (z : P.ρ.invariants) :
+    tensorInvariant (M ⊗ N) z ≫ (α_ M N P).hom = M ◁ tensorInvariant N z := by
+  ext m
+  induction m using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul m n =>
+    simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+      LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply,
+      Rep.hom_hom_associator, Rep.hom_whiskerLeft]
+    rw [tensorInvariant_hom_apply, Representation.IntertwiningMap.lTensor_apply,
+      tensorInvariant_hom_apply]
+    exact Representation.TensorProduct.assoc_apply M.ρ N.ρ P.ρ m n z
+
+/-- Tensoring `M` with an invariant of `N`, tensoring the result on the right by `P`, and
+reassociating puts that invariant between the two original factors. -/
+@[reassoc]
+theorem tensorInvariant_whiskerRight_comp_associator (P : Rep k G)
+    (y : N.ρ.invariants) :
+    (tensorInvariant M y ▷ P) ≫ (α_ M N P).hom =
+      M ◁ (tensorInvariant P y ≫ (β_ P N).hom) := by
+  ext v
+  induction v using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul m p =>
+    simp [Rep.hom_comp, Rep.hom_hom_associator, Rep.hom_braiding]
 
 end Rep
 

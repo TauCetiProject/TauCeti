@@ -30,15 +30,9 @@ carrier, and they are proved here to be a `ℤ`-basis of it.  Consequently the G
 checkerboard lattice in that basis is exactly `CartanMatrix.D n`, which is what makes the name
 "type `Dₙ` root lattice" a theorem rather than a convention.
 
-Spanning is where the work is.  Every integer vector `w` of even coordinate sum `2m` decomposes as
-
-```text
-w = ∑ᵢ wᵢ (eᵢ - e_{n-1}) + m (2 e_{n-1}),
-```
-
-whose summands are all in the span of the simple roots: each `eᵢ - e_{n-1}` with `i ≠ n - 1` is a
-classical root of type `Dₙ`, hence a `ℤ`-combination of the simple roots by the expansion already
-available for every root, and `2 e_{n-1} = α_{n-1} - α_{n-2}`.
+Spanning comes from the classical expansion: the integral span of the simple roots is exactly the
+lattice of integer vectors of even coordinate sum
+(`TauCeti.DynkinType.mem_span_range_typeDSimpleRoot_iff`).
 
 Two numerical consequences close the loop with the discriminant computation of the base file.  The
 basis-free signed determinant of the checkerboard lattice is the determinant of the Cartan matrix,
@@ -117,13 +111,9 @@ private theorem ratOfIntVec_injective : Function.Injective (ratOfIntVec n) := by
 /-- Every simple root lies in the checkerboard carrier: its coordinates are integers and their
 sum is `0` or `2`. -/
 theorem checkerboardSimpleRoot_mem_checkerboardCarrier (hn : 4 ≤ n) (i : Fin n) :
-    checkerboardSimpleRoot n hn i ∈ checkerboardCarrier n := by
-  refine mem_checkerboardCarrier_of (DynkinType.typeDSimpleRoot n hn i)
-    (checkerboardSimpleRoot_apply hn i) ?_
-  rw [DynkinType.sum_typeDSimpleRoot hn i]
-  split_ifs
-  · exact ⟨0, by ring⟩
-  · exact ⟨1, by ring⟩
+    checkerboardSimpleRoot n hn i ∈ checkerboardCarrier n :=
+  mem_checkerboardCarrier_of (DynkinType.typeDSimpleRoot n hn i)
+    (checkerboardSimpleRoot_apply hn i) (DynkinType.even_sum_typeDSimpleRoot hn i)
 
 /-! ## The Gram matrix -/
 
@@ -142,81 +132,7 @@ theorem checkerboardLattice_form_checkerboardSimpleRoot_checkerboardSimpleRoot
   push_cast [dotProduct]
   simp only [checkerboardSimpleRoot_apply]
 
-/-! ## Spanning the checkerboard carrier
-
-The three steps of the decomposition `w = ∑ᵢ wᵢ (eᵢ - e_{n-1}) + m (2 e_{n-1})` of an integer
-vector of even coordinate sum `2m`, carried out at the integral level and transported afterwards.
-The `NeZero n` instance, which `4 ≤ n` supplies at every use site, is what lets these statements
-name the last coordinate index as `checkerboardLastIndex n`. -/
-
-section IntegralSpan
-
-variable [NeZero n]
-
-/-- The doubled last standard vector is the difference of the fork simple root and the last chain
-simple root, so it lies in the `ℤ`-span of the simple roots. -/
-private theorem two_smul_single_last_mem_span (hn : 4 ≤ n) :
-    (2 : ℤ) • Pi.single (checkerboardLastIndex n) (1 : ℤ) ∈
-      Submodule.span ℤ (Set.range (DynkinType.typeDSimpleRoot n hn)) := by
-  have hfork : ¬((checkerboardLastIndex n : Fin n) : ℕ) + 1 < n := by
-    rw [checkerboardLastIndex_val]
-    omega
-  have hchain : ((⟨n - 2, by omega⟩ : Fin n) : ℕ) + 1 < n := by
-    -- `omega` does not normalize the coercion of this proof-carrying `Fin` constructor.
-    change n - 2 + 1 < n
-    omega
-  have hkey : (2 : ℤ) • Pi.single (checkerboardLastIndex n) (1 : ℤ) =
-      DynkinType.typeDSimpleRoot n hn (checkerboardLastIndex n) -
-        DynkinType.typeDSimpleRoot n hn ⟨n - 2, by omega⟩ := by
-    funext k
-    have hk := k.isLt
-    rw [DynkinType.typeDSimpleRoot_of_not_add_one_lt hn hfork,
-      DynkinType.typeDSimpleRoot_of_add_one_lt hn hchain]
-    simp only [Pi.smul_apply, Pi.sub_apply, Pi.add_apply, Pi.single_apply, smul_eq_mul,
-      Fin.ext_iff, checkerboardLastIndex_val]
-    split_ifs <;> omega
-  rw [hkey]
-  exact Submodule.sub_mem _ (Submodule.subset_span ⟨_, rfl⟩) (Submodule.subset_span ⟨_, rfl⟩)
-
-/-- Each difference `eᵢ - e_{n-1}` lies in the `ℤ`-span of the simple roots: it vanishes for
-`i = n - 1`, and otherwise it is a classical root of type `Dₙ`, which the classical theory expands
-in the simple roots. -/
-private theorem single_sub_single_last_mem_span (hn : 4 ≤ n) (i : Fin n) :
-    Pi.single i (1 : ℤ) - Pi.single (checkerboardLastIndex n) (1 : ℤ) ∈
-      Submodule.span ℤ (Set.range (DynkinType.typeDSimpleRoot n hn)) := by
-  rcases eq_or_ne i (checkerboardLastIndex n) with rfl | hne
-  · simp
-  · set v : Fin n → ℤ := Pi.single i (1 : ℤ) - Pi.single (checkerboardLastIndex n) (1 : ℤ)
-      with hv
-    have hdot : v ⬝ᵥ v = 2 := by
-      rw [hv, sub_dotProduct, single_dotProduct, single_dotProduct]
-      simp [hne, Ne.symm hne]
-    have hexp : ∑ k, DynkinType.typeDSimpleRootCoordinates n hn ⟨v, hdot⟩ k •
-        DynkinType.typeDSimpleRoot n hn k = v :=
-      DynkinType.sum_smul_typeDSimpleRootCoordinates hn ⟨v, hdot⟩
-    rw [← hexp]
-    exact Submodule.sum_mem _ fun k _ ↦
-      Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
-
-/-- Every integer vector of even coordinate sum is a `ℤ`-combination of the Bourbaki simple
-roots. -/
-private theorem mem_span_typeDSimpleRoot (hn : 4 ≤ n) (w : Fin n → ℤ) (m : ℤ)
-    (hw : ∑ j, w j = 2 * m) :
-    w ∈ Submodule.span ℤ (Set.range (DynkinType.typeDSimpleRoot n hn)) := by
-  have hbasis : ∑ i, w i • Pi.single i (1 : ℤ) = w := by
-    simp_rw [← Pi.single_smul', smul_eq_mul, mul_one]
-    exact Finset.univ_sum_single w
-  have hdecomp : w = (∑ i, w i • (Pi.single i (1 : ℤ) - Pi.single (checkerboardLastIndex n) 1)) +
-      m • ((2 : ℤ) • Pi.single (checkerboardLastIndex n) (1 : ℤ)) := by
-    simp_rw [smul_sub]
-    rw [Finset.sum_sub_distrib, hbasis, ← Finset.sum_smul, hw, smul_smul, mul_comm m 2]
-    abel
-  rw [hdecomp]
-  refine Submodule.add_mem _ (Submodule.sum_mem _ fun i _ ↦
-    Submodule.smul_mem _ _ (single_sub_single_last_mem_span hn i))
-    (Submodule.smul_mem _ _ (two_smul_single_last_mem_span hn))
-
-end IntegralSpan
+/-! ## Spanning the checkerboard carrier -/
 
 /-- The image of the integral span of the simple roots is their rational span. -/
 private theorem map_span_typeDSimpleRoot (hn : 4 ≤ n) :
@@ -230,7 +146,6 @@ private theorem map_span_typeDSimpleRoot (hn : 4 ≤ n) :
 /-- **The Bourbaki simple roots of type `Dₙ` span the checkerboard carrier over `ℤ`.** -/
 theorem span_range_checkerboardSimpleRoot (hn : 4 ≤ n) :
     Submodule.span ℤ (Set.range (checkerboardSimpleRoot n hn)) = checkerboardCarrier n := by
-  have : NeZero n := ⟨by omega⟩
   refine le_antisymm (Submodule.span_le.mpr ?_) fun x hx ↦ ?_
   · rintro _ ⟨i, rfl⟩
     exact checkerboardSimpleRoot_mem_checkerboardCarrier hn i
@@ -243,8 +158,11 @@ theorem span_range_checkerboardSimpleRoot (hn : 4 ≤ n) :
         rw [← hm]
         exact (Finset.sum_congr rfl fun j _ ↦ hw j).symm
       exact_mod_cast hcast
+    have heven : Even (∑ j, w j) := by
+      rw [hsum]
+      exact even_two_mul m
     have hmem := Submodule.mem_map_of_mem (f := ratOfIntVec n)
-      (mem_span_typeDSimpleRoot hn w m hsum)
+      ((DynkinType.mem_span_range_typeDSimpleRoot_iff hn).2 heven)
     rw [map_span_typeDSimpleRoot hn] at hmem
     rwa [hxw]
 

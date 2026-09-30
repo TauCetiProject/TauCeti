@@ -16,16 +16,12 @@ The growing finite windows of one infinite graph sampled from a graphon converge
 to that graphon in cut distance. The generating graphon may have any probability carrier.
 For a graphon on the unit interval, this is convergence in the metric quotient `GraphonSpaceI`.
 
-On the unit interval this is the simultaneous strong law for homomorphism densities, since
-convergence in `GraphonSpaceI` is convergence of all homomorphism densities
-(`tendsto_graphonSpace_iff_forall_homDensity`). A unit-interval representative transfers the result
-to arbitrary carriers.
+This is the simultaneous strong law for homomorphism densities, since convergence in cut distance
+is convergence of all homomorphism densities (`tendsto_cutDist_iff_forall_homDensity_tendsto`).
 
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits* (2012), §10.1 and Theorem 11.5.
-* S. Janson, *Graphons, cut norm and distance, couplings and rearrangements* (2013),
-  Theorem 7.1 (representation on the unit interval).
 -/
 
 public section
@@ -44,26 +40,11 @@ No standard-Borel or atomlessness assumption is needed on the generating probabi
 theorem infiniteSampleLaw_ae_tendsto_cutDist (W : Graphon Ω μ) :
     ∀ᵐ G ∂infiniteSampleLaw W,
       Tendsto (fun n => cutDist (finiteGraphGraphon (G.restrictFin n)) W) atTop (𝓝 0) := by
-  obtain ⟨V, hWV⟩ := exists_graphon_unitInterval_cutDist_eq_zero W
-  have hden := forall_homDensity_eq_of_cutDist_eq_zero W V hWV
   filter_upwards [tendsto_homDensity_finiteGraphGraphon_infiniteSampleLaw_ae_forall W]
     with G hG
-  let u : ℕ → GraphonSpaceI := fun n =>
-    SeparationQuotient.mk (finiteGraphGraphon (G.restrictFin (n + 1)))
-  have hu : Tendsto u atTop (𝓝 (SeparationQuotient.mk V)) :=
-    (tendsto_graphonSpace_iff_forall_homDensity u _).2 fun k F _ => by
-      simpa only [u, homDensityOnSpace_mk, ← hden k F] using hG k F
-  have hdist : Tendsto
-      (fun n => cutDist (finiteGraphGraphon (G.restrictFin (n + 1))) V) atTop (𝓝 0) := by
-    simpa only [u, dist_graphonSpace_mk_mk] using tendsto_iff_dist_tendsto_zero.1 hu
   rw [← tendsto_add_atTop_iff_nat 1]
-  refine squeeze_zero (fun n => cutDist_nonneg _ _) (fun n => ?_) hdist
-  calc
-    cutDist (finiteGraphGraphon (G.restrictFin (n + 1))) W ≤
-        cutDist (finiteGraphGraphon (G.restrictFin (n + 1))) V + cutDist V W :=
-      cutDist_triangle _ _ _
-    _ = cutDist (finiteGraphGraphon (G.restrictFin (n + 1))) V := by
-      rw [cutDist_comm V W, hWV, add_zero]
+  exact (tendsto_cutDist_iff_forall_homDensity_tendsto
+    (fun n => finiteGraphGraphon (G.restrictFin (n + 1))) W).2 fun k F _ => hG k F
 
 /-- On the unit interval, the growing nonempty sampled windows converge almost surely in
 graphon space to the class of the generating graphon. -/
