@@ -39,7 +39,7 @@ theorem). Those two facts are not proved here: only the inclusion of `N` in the 
 * `TauCeti.CommHopfAlgCat.coinvariantsι`: the coordinate map of the projection `G → G ⧸ N`.
 * `TauCeti.CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_le`: `N` lies in the kernel of the
   projection.
-* `TauCeti.CommHopfAlgCat.coinvariantsLift` and
+* `TauCeti.CommHopfAlgCat.liftCoinvariants` and
   `TauCeti.CommHopfAlgCat.exists_comp_coinvariantsι_iff`: the universal property of the
   projection.
 
@@ -93,11 +93,8 @@ theorem forall_hom_mem_coinvariants_iff (f : K ⟶ H) :
         have hb := AlgHom.congr_fun h b
         simp only [AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply] at hb
         exact hb
-      -- `TensorProduct.map_map` is stated for linear maps. Unfold the algebra tensor map
-      -- to that definition so the quotient map and `f` can be composed via `heq`.
-      change TensorProduct.map (LinearMap.id : H →ₗ[R] H)
-          (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
-            (TensorProduct.map (f.hom : K →ₗ[R] H) (f.hom : K →ₗ[R] H) t) = _
+      rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+        TensorProduct.AlgebraTensorModule.map_eq, AlgHom.toLinearMap_id]
       rw [TensorProduct.map_map, LinearMap.map_lTensor]
       simp only [LinearMap.id_comp, heq]
     rw [mem_coinvariants_iff, ← CoalgHomClass.map_comp_comul_apply f.hom x, key,
@@ -146,20 +143,27 @@ theorem kernelHopfIdeal_coinvariantsι_le (hI : I.IsNormal) :
 /-- A homomorphism out of `G` whose kernel contains `N` factors through `G → G ⧸ N`: in
 coordinates, a morphism `f : K ⟶ H` whose kernel Hopf ideal is contained in `I` factors through
 the coinvariants. -/
-noncomputable def coinvariantsLift (hI : I.IsNormal) (f : K ⟶ H)
+noncomputable def liftCoinvariants (hI : I.IsNormal) (f : K ⟶ H)
     (hf : kernelHopfIdeal f ≤ I) : K ⟶ coinvariants hI :=
   liftHopfSubalgebra hI.isHopfSubalgebra_coinvariants f
     ((HopfIdeal.forall_hom_mem_coinvariants_iff f).mpr hf)
 
+/-- The factorization through the coinvariants preserves the values of the original morphism. -/
+@[simp]
+theorem coe_liftCoinvariants_apply (hI : I.IsNormal) (f : K ⟶ H)
+    (hf : kernelHopfIdeal f ≤ I) (x : K) :
+    ((liftCoinvariants hI f hf).hom x : H) = f.hom x :=
+  coe_liftHopfSubalgebra_apply _ f _ x
+
 /-- The factorization through `G → G ⧸ N` recovers the original morphism. -/
 @[reassoc (attr := simp)]
-theorem coinvariantsLift_comp_coinvariantsι (hI : I.IsNormal) (f : K ⟶ H)
-    (hf : kernelHopfIdeal f ≤ I) : coinvariantsLift hI f hf ≫ coinvariantsι hI = f :=
+theorem liftCoinvariants_comp_coinvariantsι (hI : I.IsNormal) (f : K ⟶ H)
+    (hf : kernelHopfIdeal f ≤ I) : liftCoinvariants hI f hf ≫ coinvariantsι hI = f :=
   liftHopfSubalgebra_comp_hopfSubalgebraι _ f _
 
 /-- The factorization through `G → G ⧸ N` is unique. -/
-theorem coinvariantsLift_unique (hI : I.IsNormal) (f : K ⟶ H) (hf : kernelHopfIdeal f ≤ I)
-    (g : K ⟶ coinvariants hI) (hg : g ≫ coinvariantsι hI = f) : g = coinvariantsLift hI f hf :=
+theorem liftCoinvariants_unique (hI : I.IsNormal) (f : K ⟶ H) (hf : kernelHopfIdeal f ≤ I)
+    (g : K ⟶ coinvariants hI) (hg : g ≫ coinvariantsι hI = f) : g = liftCoinvariants hI f hf :=
   liftHopfSubalgebra_unique _ f _ g hg
 
 /-- **Universal property of `G ⧸ N`.** A homomorphism out of `G` factors through the projection

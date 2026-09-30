@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
-public import Mathlib.RingTheory.Flat.Basic
-import Mathlib.RingTheory.Coalgebra.CoassocSimps
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Structure
 import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
@@ -70,21 +69,15 @@ structure IsHopfSubalgebra (A : Subalgebra R H) : Prop where
 
 namespace IsHopfSubalgebra
 
-variable {A : Subalgebra R H} [Module.Flat R H] [Module.Flat R A]
-
-private theorem map_val_injective :
-    Function.Injective (Algebra.TensorProduct.map A.val A.val) :=
-  Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
-    Subtype.val_injective Subtype.val_injective
-
-private theorem map_val_map_val_injective :
-    Function.Injective (TensorProduct.map A.val.toLinearMap
-      (TensorProduct.map A.val.toLinearMap A.val.toLinearMap)) :=
-  Algebra.TensorProduct.map_injective_of_flat_flat A.val
-    (Algebra.TensorProduct.map A.val A.val) Subtype.val_injective map_val_injective
-
-variable (hA : IsHopfSubalgebra A)
+variable {A : Subalgebra R H} (hA : IsHopfSubalgebra A)
 include hA
+
+/-- The underlying subcoalgebra of a Hopf subalgebra. -/
+abbrev toSubcoalgebra : Subcoalgebra R H where
+  carrier := toSubmodule A
+  comul_mem' := hA.comul_mem
+
+variable [Module.Flat R H] [Module.Flat R A]
 
 omit [Module.Flat R H] [Module.Flat R A] in
 private theorem comulAlgHom_comp_val_mem_range (x : A) :
@@ -92,102 +85,46 @@ private theorem comulAlgHom_comp_val_mem_range (x : A) :
   have h := hA.comul_mem x.2
   rw [toSubmodule_subtype] at h
   obtain ⟨y, hy⟩ := h
-  -- `Algebra.TensorProduct.map` is defined as the linear `TensorProduct.map` of its arguments.
-  exact ⟨y, hy⟩
+  refine ⟨y, ?_⟩
+  have hy' : Algebra.TensorProduct.map A.val A.val y = Coalgebra.comul (R := R) (x : H) := by
+    rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+      TensorProduct.AlgebraTensorModule.map_eq]
+    exact hy
+  exact hy'
 
 /-- The comultiplication of a Hopf subalgebra, valued in its own tensor square: the unique
 preimage of the comultiplication of `H` under the injective map `A ⊗[R] A → H ⊗[R] H`. -/
 noncomputable def comulAlgHom : A →ₐ[R] A ⊗[R] A :=
-  (AlgEquiv.ofInjective _ map_val_injective).symm.toAlgHom.comp
+  (AlgEquiv.ofInjective _ (Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
+    Subtype.val_injective Subtype.val_injective)).symm.toAlgHom.comp
     (((Bialgebra.comulAlgHom R H).comp A.val).codRestrict _ hA.comulAlgHom_comp_val_mem_range)
 
 /-- The comultiplication of a Hopf subalgebra is the restriction of that of `H`. -/
 @[simp]
 theorem map_val_comulAlgHom (x : A) :
     Algebra.TensorProduct.map A.val A.val (hA.comulAlgHom x) = Coalgebra.comul (R := R) (x : H) :=
-  (AlgEquiv.ofInjective_apply _ map_val_injective _).symm.trans
+  (AlgEquiv.ofInjective_apply _ (Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
+    Subtype.val_injective Subtype.val_injective) _).symm.trans
     (congrArg Subtype.val (AlgEquiv.apply_symm_apply _ _))
 
 private theorem map_val_comulAlgHom' (x : A) :
     TensorProduct.map A.val.toLinearMap A.val.toLinearMap (hA.comulAlgHom x) =
-      Coalgebra.comul (R := R) (x : H) :=
-  -- `Algebra.TensorProduct.map` is defined as the linear `TensorProduct.map` of its arguments.
-  hA.map_val_comulAlgHom x
-
-private theorem coassoc_comulAlgHom :
-    TensorProduct.assoc R A A A ∘ₗ hA.comulAlgHom.toLinearMap.rTensor A ∘ₗ
-        hA.comulAlgHom.toLinearMap =
-      hA.comulAlgHom.toLinearMap.lTensor A ∘ₗ hA.comulAlgHom.toLinearMap := by
-  let ι := A.val.toLinearMap
-  have hcomul : TensorProduct.map ι ι ∘ₗ hA.comulAlgHom.toLinearMap =
-      (Coalgebra.comul (R := R) (A := H)) ∘ₗ ι :=
-    LinearMap.ext hA.map_val_comulAlgHom'
-  have hleft (t : A ⊗[R] A) :
-      TensorProduct.map ι (TensorProduct.map ι ι)
-          (TensorProduct.assoc R A A A (hA.comulAlgHom.toLinearMap.rTensor A t)) =
-        TensorProduct.assoc R H H H
-          ((Coalgebra.comul (R := R) (A := H)).rTensor H (TensorProduct.map ι ι t)) := by
-    rw [TensorProduct.map_map_assoc, LinearMap.map_rTensor, hcomul]
-    simp only [LinearMap.rTensor, TensorProduct.map_map, LinearMap.id_comp]
-  have hright (t : A ⊗[R] A) :
-      TensorProduct.map ι (TensorProduct.map ι ι) (hA.comulAlgHom.toLinearMap.lTensor A t) =
-        (Coalgebra.comul (R := R) (A := H)).lTensor H (TensorProduct.map ι ι t) := by
-    rw [LinearMap.map_lTensor, hcomul]
-    simp only [LinearMap.lTensor, TensorProduct.map_map, LinearMap.id_comp]
-  ext x
-  apply map_val_map_val_injective
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply]
-  rw [hleft, hright, map_val_comulAlgHom', Coalgebra.coassoc_apply]
-
-private theorem rTensor_counit_comulAlgHom :
-    (Coalgebra.counit (R := R) (A := H) ∘ₗ A.val.toLinearMap).rTensor A ∘ₗ
-        hA.comulAlgHom.toLinearMap = TensorProduct.mk R R A 1 := by
-  have h (t : A ⊗[R] A) :
-      (TensorProduct.lid R A
-          ((Coalgebra.counit (R := R) (A := H) ∘ₗ A.val.toLinearMap).rTensor A t) : H) =
-        TensorProduct.lid R H ((Coalgebra.counit (R := R) (A := H)).rTensor H
-          (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
-    let ι := A.val.toLinearMap
-    let ε := Coalgebra.counit (R := R) (A := H)
-    -- `CoassocSimps.lid_comp_map` is stated for linear maps. Expose the subtype
-    -- coercion as `ι` and the counit as `ε` to match its two sides.
-    change ι (TensorProduct.lid R A (((ε ∘ₗ ι).rTensor A) t)) =
-      TensorProduct.lid R H (ε.rTensor H (TensorProduct.map ι ι t))
-    simpa only [LinearMap.rTensor, TensorProduct.map_map, LinearMap.id_comp,
-      LinearMap.comp_apply, LinearEquiv.coe_coe] using
-      (LinearMap.congr_fun (CoassocSimps.lid_comp_map (ε ∘ₗ ι) ι) t).symm
-  ext x
-  apply (TensorProduct.lid R A).injective
-  apply Subtype.val_injective
-  simp [h, map_val_comulAlgHom']
-
-private theorem lTensor_counit_comulAlgHom :
-    (Coalgebra.counit (R := R) (A := H) ∘ₗ A.val.toLinearMap).lTensor A ∘ₗ
-        hA.comulAlgHom.toLinearMap = (TensorProduct.mk R A R).flip 1 := by
-  have h (t : A ⊗[R] A) :
-      (TensorProduct.rid R A
-          ((Coalgebra.counit (R := R) (A := H) ∘ₗ A.val.toLinearMap).lTensor A t) : H) =
-        TensorProduct.rid R H ((Coalgebra.counit (R := R) (A := H)).lTensor H
-          (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
-    let ι := A.val.toLinearMap
-    let ε := Coalgebra.counit (R := R) (A := H)
-    -- `CoassocSimps.rid_comp_map` likewise uses linear maps; identify the subtype
-    -- coercion with `ι` before applying that lemma to the right counit law.
-    change ι (TensorProduct.rid R A (((ε ∘ₗ ι).lTensor A) t)) =
-      TensorProduct.rid R H (ε.lTensor H (TensorProduct.map ι ι t))
-    simpa only [LinearMap.lTensor, TensorProduct.map_map, LinearMap.id_comp,
-      LinearMap.comp_apply, LinearEquiv.coe_coe] using
-      (LinearMap.congr_fun (CoassocSimps.rid_comp_map ι (ε ∘ₗ ι)) t).symm
-  ext x
-  apply (TensorProduct.rid R A).injective
-  apply Subtype.val_injective
-  simp [h, map_val_comulAlgHom']
+      Coalgebra.comul (R := R) (x : H) := by
+  have h := hA.map_val_comulAlgHom x
+  rwa [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+    TensorProduct.AlgebraTensorModule.map_eq] at h
 
 /-- The restriction of the antipode of `H` to a Hopf subalgebra. -/
-private def antipode : A →ₗ[R] A where
-  toFun x := ⟨HopfAlgebra.antipode R (x : H), hA.antipode_mem x.2⟩
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
+def antipode : A →ₗ[R] A :=
+  (HopfAlgebra.antipode R).restrict (p := toSubmodule A) (q := toSubmodule A)
+    fun _ hx ↦ hA.antipode_mem hx
+
+omit [Module.Flat R H] [Module.Flat R A] in
+/-- The restricted antipode has the same values as the ambient antipode. -/
+@[simp]
+theorem coe_antipode (x : A) : (antipode hA x : H) = HopfAlgebra.antipode R (x : H) :=
+  LinearMap.coe_restrict_apply (p := toSubmodule A) (q := toSubmodule A)
+    (fun _ hx ↦ hA.antipode_mem hx) x
 
 private theorem mul_antipode_rTensor_comulAlgHom (x : A) :
     LinearMap.mul' R A ((antipode hA).rTensor A (hA.comulAlgHom x)) =
@@ -197,7 +134,7 @@ private theorem mul_antipode_rTensor_comulAlgHom (x : A) :
         LinearMap.mul' R H ((HopfAlgebra.antipode R).rTensor H
           (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
     induction t using TensorProduct.inductionOn with
-    | tmul a b => simp [antipode]
+    | tmul a b => simp [coe_antipode]
     | add s t hs ht => simp only [map_add, Subalgebra.coe_add, hs, ht]
   apply Subtype.val_injective
   simp [h, map_val_comulAlgHom']
@@ -210,28 +147,126 @@ private theorem mul_antipode_lTensor_comulAlgHom (x : A) :
         LinearMap.mul' R H ((HopfAlgebra.antipode R).lTensor H
           (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
     induction t using TensorProduct.inductionOn with
-    | tmul a b => simp [antipode]
+    | tmul a b => simp [coe_antipode]
     | add s t hs ht => simp only [map_add, Subalgebra.coe_add, hs, ht]
   apply Subtype.val_injective
   simp [h, map_val_comulAlgHom']
 
+private theorem toSubcoalgebra_comulLinearMap (x : A) :
+    letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+    hA.toSubcoalgebra.comulLinearMap x = hA.comulAlgHom x := by
+  have : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+  apply TensorProduct.map_injective_of_flat_flat A.val.toLinearMap A.val.toLinearMap
+    Subtype.val_injective Subtype.val_injective
+  exact (hA.toSubcoalgebra.map_subtype_comulLinearMap x).trans
+    (hA.map_val_comulAlgHom' x).symm
+
+private theorem coalgebra_comul_apply (x : A) :
+    letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+    letI : Coalgebra R A := hA.toSubcoalgebra.coalgebra
+    Coalgebra.comul (R := R) x = hA.comulAlgHom x := by
+  have : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+  exact (hA.toSubcoalgebra.comul_apply x).trans (hA.toSubcoalgebra_comulLinearMap x)
+
+private theorem coalgebra_counit_apply (x : A) :
+    letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+    letI : Coalgebra R A := hA.toSubcoalgebra.coalgebra
+    Coalgebra.counit (R := R) x = Coalgebra.counit (R := R) (x : H) := by
+  have : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+  exact hA.toSubcoalgebra.counit_apply x
+
 /-- The Hopf algebra structure on a flat Hopf subalgebra of a flat Hopf algebra: comultiplication,
 counit and antipode are restricted from `H`. This is not an instance because it depends on the
 proof `hA`. -/
-@[instance_reducible]
-noncomputable def hopfAlgebra : HopfAlgebra R A where
-  comul := hA.comulAlgHom.toLinearMap
-  counit := Coalgebra.counit (R := R) (A := H) ∘ₗ A.val.toLinearMap
-  coassoc := hA.coassoc_comulAlgHom
-  rTensor_counit_comp_comul := hA.rTensor_counit_comulAlgHom
-  lTensor_counit_comp_comul := hA.lTensor_counit_comulAlgHom
-  counit_one := by simp
-  mul_compr₂_counit := by ext; simp
-  comul_one := map_one hA.comulAlgHom
-  mul_compr₂_comul := by ext x y; exact map_mul hA.comulAlgHom x y
-  antipode := antipode hA
-  mul_antipode_rTensor_comul := LinearMap.ext hA.mul_antipode_rTensor_comulAlgHom
-  mul_antipode_lTensor_comul := LinearMap.ext hA.mul_antipode_lTensor_comulAlgHom
+-- Expose the inherited algebra structure so instance synthesis can identify its module structure
+-- with the existing subalgebra module; characteristic lemmas below expose the Hopf operations.
+@[expose, instance_reducible]
+noncomputable def hopfAlgebra : HopfAlgebra R A :=
+  letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+  letI : Coalgebra R A := hA.toSubcoalgebra.coalgebra
+  { Bialgebra.mk' R A
+      (by simp [hA.coalgebra_counit_apply])
+      (by intro a b; simp [hA.coalgebra_counit_apply])
+      (by simpa only [hA.coalgebra_comul_apply] using
+        map_one hA.comulAlgHom)
+      (by intro a b; simpa only [hA.coalgebra_comul_apply] using map_mul hA.comulAlgHom a b) with
+    antipode := antipode hA
+    mul_antipode_rTensor_comul := by
+      apply LinearMap.ext
+      intro x
+      simpa only [LinearMap.comp_apply, hA.coalgebra_comul_apply, hA.coalgebra_counit_apply,
+        Algebra.linearMap_apply] using hA.mul_antipode_rTensor_comulAlgHom x
+    mul_antipode_lTensor_comul := by
+      apply LinearMap.ext
+      intro x
+      simpa only [LinearMap.comp_apply, hA.coalgebra_comul_apply, hA.coalgebra_counit_apply,
+        Algebra.linearMap_apply] using hA.mul_antipode_lTensor_comulAlgHom x }
+
+/-- The comultiplication of the restricted Hopf structure is the restricted algebra map. -/
+@[simp]
+theorem comul_apply (x : A) :
+    letI : HopfAlgebra R A := hA.hopfAlgebra
+    Coalgebra.comul (R := R) x = hA.comulAlgHom x :=
+  hA.coalgebra_comul_apply x
+
+/-- The counit of the restricted Hopf structure is the counit of the ambient algebra. -/
+@[simp]
+theorem counit_apply (x : A) :
+    letI : HopfAlgebra R A := hA.hopfAlgebra
+    Coalgebra.counit (R := R) x = Coalgebra.counit (R := R) (x : H) :=
+  hA.coalgebra_counit_apply x
+
+/-- The antipode of the restricted Hopf structure is the antipode of the ambient algebra. -/
+@[simp]
+theorem coe_antipode_apply (x : A) :
+    letI : HopfAlgebra R A := hA.hopfAlgebra
+    ((HopfAlgebra.antipode R x : A) : H) = HopfAlgebra.antipode R (x : H) :=
+  (rfl)
+
+/-- The inclusion of a Hopf subalgebra, as a bialgebra homomorphism. -/
+noncomputable def valBialgHom :
+    letI : HopfAlgebra R A := hA.hopfAlgebra
+    A →ₐc[R] H :=
+  letI : HopfAlgebra R A := hA.hopfAlgebra
+  BialgHom.ofAlgHom A.val (by ext; simp [hA.counit_apply])
+    (by ext; simp [hA.comul_apply])
+
+/-- The inclusion bialgebra homomorphism is the underlying subalgebra inclusion. -/
+@[simp]
+theorem valBialgHom_apply (x : A) :
+    letI : HopfAlgebra R A := hA.hopfAlgebra
+    hA.valBialgHom x = (x : H) :=
+  (rfl)
+
+/-- Corestrict a bialgebra homomorphism whose image lies in a Hopf subalgebra. -/
+noncomputable def codRestrict {K : Type*} [Semiring K] [Bialgebra R K]
+    (f : K →ₐc[R] H) (hf : ∀ x, f x ∈ A) :
+    letI : HopfAlgebra R A := hA.hopfAlgebra
+    K →ₐc[R] A :=
+  letI : HopfAlgebra R A := hA.hopfAlgebra
+  BialgHom.ofAlgHom ((f : K →ₐ[R] H).codRestrict A hf)
+    (by
+      ext x
+      exact (hA.counit_apply _).trans
+        ((congrArg (Coalgebra.counit (R := R))
+          (AlgHom.coe_codRestrict (f : K →ₐ[R] H) A hf x)).trans
+          (CoalgHomClass.counit_comp_apply f x)))
+    (by
+      ext x
+      apply Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
+        Subtype.val_injective Subtype.val_injective
+      simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, hA.comul_apply]
+      refine Eq.trans ?_ (hA.map_val_comulAlgHom _).symm
+      rw [← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp]
+      exact CoalgHomClass.map_comp_comul_apply f x)
+
+/-- Corestriction preserves the values of the original bialgebra homomorphism. -/
+@[simp]
+theorem coe_codRestrict_apply {K : Type*} [Semiring K] [Bialgebra R K]
+    (f : K →ₐc[R] H) (hf : ∀ x, f x ∈ A) (x : K) :
+    letI : HopfAlgebra R A := hA.hopfAlgebra
+    (hA.codRestrict f hf x : H) = f x :=
+  (rfl)
 
 end IsHopfSubalgebra
 
@@ -248,15 +283,12 @@ variable [Module.Flat R H] [Module.Flat R A]
 algebra. -/
 noncomputable abbrev ofHopfSubalgebra (hA : IsHopfSubalgebra A) :
     _root_.CommHopfAlgCat.{v} R :=
-  letI := hA.hopfAlgebra
+  letI : HopfAlgebra R A := hA.hopfAlgebra
   _root_.CommHopfAlgCat.of R A
 
 /-- The inclusion of a Hopf subalgebra as a morphism of commutative Hopf algebras. -/
 noncomputable def hopfSubalgebraι (hA : IsHopfSubalgebra A) : ofHopfSubalgebra hA ⟶ H :=
-  letI := hA.hopfAlgebra
-  -- The counit of `hA.hopfAlgebra` is by definition the counit of `H` restricted to `A`.
-  _root_.CommHopfAlgCat.ofHom (BialgHom.ofAlgHom A.val (by ext; rfl)
-    (AlgHom.ext hA.map_val_comulAlgHom))
+  _root_.CommHopfAlgCat.ofHom hA.valBialgHom
 
 /-- The inclusion morphism of a Hopf subalgebra is the inclusion of the underlying subalgebra. -/
 @[simp]
@@ -276,16 +308,7 @@ instance (hA : IsHopfSubalgebra A) : Mono (hopfSubalgebraι hA) :=
 to that Hopf subalgebra. -/
 noncomputable def liftHopfSubalgebra (hA : IsHopfSubalgebra A) (f : K ⟶ H)
     (hf : ∀ x, f.hom x ∈ A) : K ⟶ ofHopfSubalgebra hA :=
-  letI := hA.hopfAlgebra
-  -- The counit of `hA.hopfAlgebra` is by definition the counit of `H` restricted to `A`.
-  _root_.CommHopfAlgCat.ofHom (BialgHom.ofAlgHom ((f.hom : K →ₐ[R] H).codRestrict A hf)
-    (by ext x; exact (CoalgHomClass.counit_comp_apply f.hom x :))
-    (by
-      ext x
-      apply IsHopfSubalgebra.map_val_injective
-      refine Eq.trans ?_ (hA.map_val_comulAlgHom _).symm
-      rw [AlgHom.comp_apply, ← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp]
-      exact (CoalgHomClass.map_comp_comul_apply f.hom x :)))
+  _root_.CommHopfAlgCat.ofHom (hA.codRestrict f.hom hf)
 
 /-- The corestricted morphism has the same values as the original one. -/
 @[simp]
