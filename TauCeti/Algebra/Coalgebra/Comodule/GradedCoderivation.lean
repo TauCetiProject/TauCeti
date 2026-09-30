@@ -11,10 +11,11 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 /-!
 # Graded coderivations over a right comodule
 
-A degree-`q` operator `D` on a right comodule over a coalgebra with operator `b`
-is a coderivation over `b` when its coaction satisfies the signed co-Leibniz rule. On a
-homogeneous left tensor factor `x`, the term applying `b` to the right factor has the
-Koszul coefficient `(-1) ^ (q * |x|)`, where `q` is the degree of `b`.
+An operator `D` on a right comodule over a coalgebra with operator `b` is a coderivation
+over `b` when its coaction satisfies the signed co-Leibniz rule. On a homogeneous left
+tensor factor `x`, the term applying `b` to the right factor has the Koszul coefficient
+`(-1) ^ (q * |x|)`, where `q` is the twist parameter (the degree of `b` in graded
+applications). Homogeneity of `D`, with its own degree, is imposed separately.
 
 The condition is formulated for any right comodule, so it applies to the cofree bar
 comodule `sM ⊗ Tᶜ(sA)` without constructing a second comodule API.  An odd homogeneous
@@ -40,9 +41,10 @@ variable {R : Type uR} {C : Type uC} {M : Type uM}
   [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
   [AddCommMonoid M] [Module R M] [Comodule R C M]
 
-/-- The signed co-Leibniz law for a degree-`q` endomorphism `D` of a right comodule over
-an operator `b` on the coalgebra.  Homogeneity and square-zero conditions are separate:
-this predicate records exactly the compatibility with the coaction. -/
+/-- The signed co-Leibniz law for an endomorphism `D` of a right comodule over an operator
+`b` on the coalgebra, with twist parameter `q`. Homogeneity (including the degree of `D`)
+and square-zero conditions are separate: this predicate records exactly the compatibility
+with the coaction. -/
 def IsGradedCoderivationOver (G : InternalGrading R M) (q : ℤ)
     (b : C →ₗ[R] C) (D : M →ₗ[R] M) : Prop :=
   coact (R := R) (C := C) (M := M) ∘ₗ D =
