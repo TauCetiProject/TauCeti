@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Incompressible
 public import TauCeti.Geometry.Manifold.Irreducible
-public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 
 /-!
 # Compact surfaces and Haken embeddings
@@ -21,33 +20,26 @@ fundamental group, excluding spherical and projective-plane witnesses.  The clos
 `IsClosedHakenSurfaceEmbedding` uses boundaryless Euclidean-space models and omits the
 boundary-preservation conjunct.
 
-The product-slice witness is the basic example: a continuous retraction onto the first factor
-makes the inclusion of a surface as a slice incompressible.  This is the standard elementary
-example used when introducing Haken manifolds; the definitions follow Hatcher, *Notes on Basic
-3-Manifold Topology*, Sections 1.1--1.2, and Jaco, *Lectures on Three-Manifold Topology*,
-Chapter II.
+The imported incompressible-surface API includes the basic product-slice witness: a continuous
+retraction onto the first factor makes the inclusion of a surface as a slice incompressible. The
+imported irreducibility API supplies `IsSphereBoundsBall`. These are the standard ingredients used
+when introducing Haken manifolds; the definitions here follow Hatcher, *Notes on Basic 3-Manifold
+Topology*, Sections 1.1--1.2, and Jaco, *Lectures on Three-Manifold Topology*, Chapter II.
 
 ## Main definitions
 
-* `TauCeti.IsClosedIncompressibleSurfaceEmbedding`: a closed connected surface embedded
-  incompressibly in a closed connected 3-manifold.
 * `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible witness with either nonempty
   boundary or infinite fundamental group for Haken-ness, allowing boundary.
 * `TauCeti.IsClosedHakenSurfaceEmbedding`: the closed, bicollared specialization.
-* `TauCeti.IsSphereBoundsBall`: every closed locally flat embedded 2-sphere bounds an embedded
-  3-ball.
 * `TauCeti.IsPossiblyNonorientableHakenThreeManifold` and
   `TauCeti.IsPossiblyNonorientableClosedHakenThreeManifold`: the corresponding irreducible
-  existential Haken predicates for ambient 3-manifolds.  They deliberately leave orientability
-  as a separate hypothesis, since no orientability predicate is available yet.
+  existential Haken predicates for ambient 3-manifolds. They record no orientability hypothesis,
+  allowing results that require orientability to impose it separately.
 
 ## Main results
 
-* `TauCeti.isClosedIncompressibleSurfaceEmbedding_iff` exposes the three defining conditions.
-* `TauCeti.isClosedIncompressibleSurfaceEmbedding_of_leftInverse` and
-  `TauCeti.isClosedIncompressibleSurfaceEmbedding_prodMk` provide reusable incompressible-surface
-  witnesses.
 * `TauCeti.isHakenSurfaceEmbedding_iff` exposes the additional Haken-witness conditions.
+* `TauCeti.isClosedHakenSurfaceEmbedding_iff` characterizes the closed specialization.
 * `TauCeti.IsPossiblyNonorientableHakenThreeManifold.exists_isOpen_sdiff_range_eq_union` and its
   closed analogue expose the two-sided complement supplied by the existential surface witness.
 -/
@@ -231,10 +223,11 @@ theorem isPossiblyNonorientableClosedHakenThreeManifold_iff (M : Type u)
           ∃ f : C(S, M), IsClosedHakenSurfaceEmbedding f :=
   Iff.rfl
 
+namespace IsPossiblyNonorientableClosedHakenThreeManifold
+
 /-- A closed Haken surface embedding supplies its ambient possibly nonorientable closed-Haken
 predicate when the sphere-bounds-a-ball condition holds. -/
-theorem
-    isPossiblyNonorientableClosedHakenThreeManifold_of
+theorem of_isSphereBoundsBall_of_isClosedHakenSurfaceEmbedding
     {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
@@ -244,8 +237,6 @@ theorem
       IsPossiblyNonorientableClosedHakenThreeManifold M := by
   exact (isPossiblyNonorientableClosedHakenThreeManifold_iff M).mpr
     ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
-
-namespace IsPossiblyNonorientableClosedHakenThreeManifold
 
 /-- A possibly nonorientable closed Haken 3-manifold contains a surface with a two-sided open
 neighbourhood: the
