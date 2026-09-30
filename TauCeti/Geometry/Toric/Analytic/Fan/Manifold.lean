@@ -285,7 +285,7 @@ private theorem exists_contMDiffAt_transition (σ τ : Φ.cones) (x : (Φ.analyt
     (h : (Φ.analyticGlueData hΦ).ι σ x = (Φ.analyticGlueData hΦ).ι τ y) (n : ℕ∞ω) :
     ∃ T : (Φ.analyticGlueData hΦ).U σ → (Φ.analyticGlueData hΦ).U τ,
       ContMDiffAt 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n T x ∧
-        T x = y ∧ (Φ.analyticGlueData hΦ).ι τ ∘ T =ᶠ[𝓝 x] (Φ.analyticGlueData hΦ).ι σ := by
+        (Φ.analyticGlueData hΦ).ι τ ∘ T =ᶠ[𝓝 x] (Φ.analyticGlueData hΦ).ι σ := by
   rw [← analyticAffineChartι_def, ← analyticAffineChartι_def] at h
   obtain ⟨z, rfl, rfl⟩ := (Φ.analyticAffineChartι_eq_analyticAffineChartι_iff hΦ x y).1 h
   let l : σ ⊓ τ ⟶ σ := homOfLE inf_le_left
@@ -298,18 +298,12 @@ private theorem exists_contMDiffAt_transition (σ τ : Φ.cones) (x : (Φ.analyt
     rw [analyticOverlapLeft_def]
     -- `pieceMap` is the map of the chart diagram.
     rfl
-  have hz' : Φ.analyticOverlapRight hΦ σ τ z = Φ.pieceMap hΦ r z := by
-    rw [analyticOverlapRight_def]
-    -- `pieceMap` is the map of the chart diagram.
-    rfl
   have hrange : range (Φ.pieceMap hΦ l) ∈ 𝓝 (Φ.pieceMap hΦ l z) :=
     hl.isOpen_range.mem_nhds (mem_range_self z)
-  refine ⟨Φ.pieceMap hΦ r ∘ e.symm, ?_, ?_, ?_⟩
+  refine ⟨Φ.pieceMap hΦ r ∘ e.symm, ?_, ?_⟩
   · rw [hz]
     exact (Φ.contMDiff_pieceMap hΦ r n).contMDiffAt.comp _
       ((Φ.contMDiffOn_pieceMap_symm hΦ l n).contMDiffAt hrange)
-  · rw [hz, hz']
-    exact congrArg (Φ.pieceMap hΦ r) (hleft z)
   · rw [hz]
     filter_upwards [hrange] with w hw
     obtain ⟨v, rfl⟩ := hw

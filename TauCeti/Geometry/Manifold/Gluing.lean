@@ -18,9 +18,13 @@ atlas.
 
 The atlas is a `C^n` manifold as soon as the pieces are `C^n` manifolds and are glued along `C^n`
 maps. The gluing condition is phrased without inverses: whenever `φ j x = φ k y`, some map
-`T : U j → U k` that is `C^n` at `x` sends `x` to `y` and satisfies `φ k ∘ T = φ j` near `x`.
-For a space glued along transition maps, `T` is the transition itself. Each embedding `φ j` is then
-a `C^n` diffeomorphism onto its open image.
+`T : U j → U k` that is `C^n` at `x` satisfies `φ k ∘ T = φ j` near `x` (so `T` sends `x` to `y`,
+as `φ k` is injective). For a space glued along transition maps, `T` is the transition itself. Each
+embedding `φ j` is then a `C^n` diffeomorphism onto its open image.
+
+The gluing condition has the local-deck-transformation shape of
+`IsLocalHomeomorph.isManifold_chartedSpaceOfRightInverse` in
+`TauCeti/Geometry/Manifold/Instances/Quotient.lean`, and the proofs here follow that file.
 
 ## Main declarations
 
@@ -32,8 +36,9 @@ a `C^n` diffeomorphism onto its open image.
 
 ## Implementation notes
 
-The pieces are assumed nonempty, so that each embedding is an open partial homeomorphism defined
-on its whole piece; an empty piece covers nothing and can be discarded.
+Pieces may be empty. The chart at a point is taken from a piece containing it, which is nonempty,
+so that its embedding is an open partial homeomorphism defined on the whole piece. Only the
+statements that invert the embedding of a given piece assume that piece is nonempty.
 
 ## References
 
@@ -50,8 +55,8 @@ namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
-  {J : Type*} {U : J → Type*} [∀ j, TopologicalSpace (U j)] [∀ j, Nonempty (U j)]
-  [∀ j, ChartedSpace H (U j)] {M : Type*} [TopologicalSpace M] {φ : ∀ j, U j → M}
+  {J : Type*} {U : J → Type*} [∀ j, TopologicalSpace (U j)] [∀ j, ChartedSpace H (U j)]
+  {M : Type*} [TopologicalSpace M] {φ : ∀ j, U j → M}
   (hφ : ∀ j, IsOpenEmbedding (φ j)) (hcover : ∀ x, ∃ j y, φ j y = x)
 
 /-- The charted-space structure on a space covered by open embeddings of charted spaces: the chart
@@ -59,11 +64,16 @@ at a point is the inverse of the embedding of a piece containing it, followed by
 piece. -/
 @[instance_reducible]
 noncomputable def chartedSpaceOfIsOpenEmbedding : ChartedSpace H M where
-  atlas := range fun x ↦ ((hφ (hcover x).choose).toOpenPartialHomeomorph _).symm.trans
-    (chartAt H (hcover x).choose_spec.choose)
-  chartAt x := ((hφ (hcover x).choose).toOpenPartialHomeomorph _).symm.trans
-    (chartAt H (hcover x).choose_spec.choose)
+  atlas := range fun x ↦
+    haveI : Nonempty (U (hcover x).choose) := ⟨(hcover x).choose_spec.choose⟩
+    ((hφ (hcover x).choose).toOpenPartialHomeomorph _).symm.trans
+      (chartAt H (hcover x).choose_spec.choose)
+  chartAt x :=
+    haveI : Nonempty (U (hcover x).choose) := ⟨(hcover x).choose_spec.choose⟩
+    ((hφ (hcover x).choose).toOpenPartialHomeomorph _).symm.trans
+      (chartAt H (hcover x).choose_spec.choose)
   mem_chart_source x := by
+    have : Nonempty (U (hcover x).choose) := ⟨(hcover x).choose_spec.choose⟩
     have hx := (hcover x).choose_spec.choose_spec
     simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
       IsOpenEmbedding.toOpenPartialHomeomorph_target, mem_inter_iff, mem_preimage]
@@ -79,19 +89,21 @@ include hcover in
 followed by a chart of that piece. -/
 theorem exists_chartAt_chartedSpaceOfIsOpenEmbedding_eq (x : M) :
     ∃ (j : J) (y : U j), φ j y = x ∧
+      haveI : Nonempty (U j) := ⟨y⟩
       @chartAt H _ M _ (chartedSpaceOfIsOpenEmbedding hφ hcover) x =
         ((hφ j).toOpenPartialHomeomorph _).symm.trans (chartAt H y) :=
   ⟨_, _, (hcover x).choose_spec.choose_spec, rfl⟩
 
 variable (hdeck : ∀ (j k : J) (x : U j) (y : U k), φ j x = φ k y →
-  ∃ T : U j → U k, ContMDiffAt I I n T x ∧ T x = y ∧ φ k ∘ T =ᶠ[𝓝 x] φ j)
+  ∃ T : U j → U k, ContMDiffAt I I n T x ∧ φ k ∘ T =ᶠ[𝓝 x] φ j)
 
 include hdeck in
 /-- If the pieces are glued along `C^n` maps, then the inverse of the embedding of one piece,
 composed with the embedding of another, is `C^n` wherever it is defined. -/
-private theorem contMDiffAt_symm_comp {j k : J} {x : U j} (hx : φ j x ∈ range (φ k)) :
+private theorem contMDiffAt_symm_comp {j k : J} [Nonempty (U k)] {x : U j}
+    (hx : φ j x ∈ range (φ k)) :
     ContMDiffAt I I n (((hφ k).toOpenPartialHomeomorph _).symm ∘ φ j) x := by
-  obtain ⟨T, hT, -, hTφ⟩ := hdeck j k x _ ((hφ k).toOpenPartialHomeomorph_right_inv _ hx).symm
+  obtain ⟨T, hT, hTφ⟩ := hdeck j k x _ ((hφ k).toOpenPartialHomeomorph_right_inv _ hx).symm
   refine hT.congr_of_eventuallyEq ?_
   filter_upwards [hTφ] with z hz
   rw [Function.comp_apply, ← hz, Function.comp_apply,
@@ -107,6 +119,8 @@ theorem isManifold_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] :
   rintro _ _ ⟨p, rfl⟩ ⟨q, rfl⟩ u hu
   set a := (hcover p).choose
   set b := (hcover q).choose
+  have : Nonempty (U a) := ⟨(hcover p).choose_spec.choose⟩
+  have : Nonempty (U b) := ⟨(hcover q).choose_spec.choose⟩
   set ψa := (hφ a).toOpenPartialHomeomorph _
   set ψb := (hφ b).toOpenPartialHomeomorph _
   set ca := chartAt H (hcover p).choose_spec.choose
@@ -126,7 +140,8 @@ theorem isManifold_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] :
 
 include hdeck in
 /-- The inverse of the embedding of a piece is `C^n` on its image. -/
-theorem contMDiffOn_symm_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j : J) :
+theorem contMDiffOn_symm_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j : J)
+    [Nonempty (U j)] :
     letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
     ContMDiffOn I I n ((hφ j).toOpenPartialHomeomorph _).symm (range (φ j)) := by
   let := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
@@ -135,6 +150,7 @@ theorem contMDiffOn_symm_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U
   refine ContMDiffAt.contMDiffWithinAt ?_
   obtain ⟨a, y, hy, hc⟩ :=
     exists_chartAt_chartedSpaceOfIsOpenEmbedding_eq (H := H) hφ hcover (φ j z)
+  have : Nonempty (U a) := ⟨y⟩
   set ψa := (hφ a).toOpenPartialHomeomorph _
   have hright : ∀ w ∈ range (φ a), φ a (ψa.symm w) = w := fun w hw ↦
     (hφ a).toOpenPartialHomeomorph_right_inv _ hw
@@ -170,8 +186,10 @@ theorem contMDiff_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j
   let := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
   have := isManifold_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck
   intro z
+  have : Nonempty (U j) := ⟨z⟩
   obtain ⟨a, y, hy, hc⟩ :=
     exists_chartAt_chartedSpaceOfIsOpenEmbedding_eq (H := H) hφ hcover (φ j z)
+  have : Nonempty (U a) := ⟨y⟩
   set ψa := (hφ a).toOpenPartialHomeomorph _
   have hright : ∀ w ∈ range (φ a), φ a (ψa.symm w) = w := fun w hw ↦
     (hφ a).toOpenPartialHomeomorph_right_inv _ hw
@@ -201,7 +219,8 @@ theorem contMDiff_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j
 
 include hdeck in
 /-- The embedding of a piece, as a `C^n` diffeomorphism from the piece onto its open image. -/
-noncomputable def partialDiffeomorphOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j : J) :
+noncomputable def partialDiffeomorphOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j : J)
+    [Nonempty (U j)] :
     letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
     PartialDiffeomorph I I (U j) M n :=
   letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
@@ -214,19 +233,22 @@ noncomputable def partialDiffeomorphOfIsOpenEmbedding [∀ j, IsManifold I n (U 
 
 /-- The diffeomorphism of a piece onto its image is defined on the whole piece. -/
 @[simp]
-theorem partialDiffeomorphOfIsOpenEmbedding_source [∀ j, IsManifold I n (U j)] (j : J) :
+theorem partialDiffeomorphOfIsOpenEmbedding_source [∀ j, IsManifold I n (U j)] (j : J)
+    [Nonempty (U j)] :
     (partialDiffeomorphOfIsOpenEmbedding hφ hcover hdeck j).source = univ :=
   (rfl)
 
 /-- The diffeomorphism of a piece onto its image has the image of the embedding as its target. -/
 @[simp]
-theorem partialDiffeomorphOfIsOpenEmbedding_target [∀ j, IsManifold I n (U j)] (j : J) :
+theorem partialDiffeomorphOfIsOpenEmbedding_target [∀ j, IsManifold I n (U j)] (j : J)
+    [Nonempty (U j)] :
     (partialDiffeomorphOfIsOpenEmbedding hφ hcover hdeck j).target = range (φ j) :=
   (hφ j).toOpenPartialHomeomorph_target _
 
 /-- The diffeomorphism of a piece onto its image is the embedding of the piece. -/
 @[simp]
-theorem coe_partialDiffeomorphOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j : J) :
+theorem coe_partialDiffeomorphOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j : J)
+    [Nonempty (U j)] :
     ⇑(partialDiffeomorphOfIsOpenEmbedding hφ hcover hdeck j) = φ j :=
   (rfl)
 
