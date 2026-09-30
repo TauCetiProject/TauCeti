@@ -96,10 +96,18 @@ lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
   obj A := GrpCat.of (quotientPointsSubgroup H I A)
   map {A B} χ := GrpCat.ofHom (mapQuotientPointsSubgroup H I χ)
   map_id A := by
-    ext g h
+    apply GrpCat.ext
+    intro ⟨g, hg⟩
+    apply Subtype.ext
+    change HopfAlgebra.mapPoints (𝟙 A) g = g
+    rw [HopfAlgebra.mapPoints_id]
     rfl
   map_comp {A B C} χ ψ := by
-    ext g h
+    apply GrpCat.ext
+    intro ⟨g, hg⟩
+    apply Subtype.ext
+    change HopfAlgebra.mapPoints (χ ≫ ψ) g = HopfAlgebra.mapPoints ψ (HopfAlgebra.mapPoints χ g)
+    rw [HopfAlgebra.mapPoints_comp]
     rfl
 
 /-- The object part of the subgroup functor is the cut-out point subgroup. -/
@@ -163,8 +171,9 @@ lemma mapQuotientPointsSubgroup_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
     (χ : A ⟶ B) (g : quotientPointsSubgroup H I A) (h : H) :
     ((mapQuotientPointsSubgroup H I χ g :
       HopfAlgebra.points (R := R) (H := H) B).ofConv) h =
-      χ.hom (g.val.ofConv h) :=
-  rfl
+      χ.hom (g.val.ofConv h) := by
+  change (HopfAlgebra.mapPoints χ g.1).ofConv h = _
+  rw [HopfAlgebra.mapPoints_apply, WithConv.ofConv_toConv, AlgHom.comp_apply]
 
 /-- The restricted subgroup maps preserve identity morphisms of value algebras. -/
 @[simp]

@@ -235,9 +235,8 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
         ((pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := A)).symm p) =
       (pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := B)).symm
         (AlgHom.mapValue (H := H₁) φ p.1, AlgHom.mapValue (H := H₂) φ p.2) := by
-  rw [pointsMulEquiv_symm_apply, AlgHom.mapValue_apply, pointsMulEquiv_symm_apply]
-  congr 1
-  exact Algebra.TensorProduct.comp_productMap φ p.1.ofConv p.2.ofConv
+  simp only [pointsMulEquiv_symm_apply, AlgHom.mapValue_apply]
+  rw [Algebra.TensorProduct.comp_productMap]
 
 /-- On pure tensors, naturality of the inverse product-points map says that post-composition
 by `φ` evaluates as applying `φ` to the product of the two factor values. -/
