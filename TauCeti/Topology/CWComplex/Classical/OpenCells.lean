@@ -72,8 +72,10 @@ lemma map_map_symm {i : cell C n} {x : X} (hx : x ∈ openCell (C := C) n i) :
 
 /-- **The characteristic map of a cell is a homeomorphism onto the open cell.**  By definition it
 is a partial homeomorphism with source the open unit ball and target the open cell, so it suffices
-to read off `PartialHomeomorph.toHomeomorphSourceTarget`. -/
-@[expose]
+to read off `PartialHomeomorph.toHomeomorphSourceTarget`.
+
+Use `TauCeti.openCellHomeomorph_apply` and `TauCeti.openCellHomeomorph_symm_apply` rather than
+this construction. -/
 def openCellHomeomorph (i : cell C n) : ball (0 : Fin n → ℝ) 1 ≃ₜ (openCell (C := C) n i) :=
   (Homeomorph.setCongr (source_eq n i).symm).trans <|
     (PartialHomeomorph.mk (map n i)
@@ -84,13 +86,13 @@ def openCellHomeomorph (i : cell C n) : ball (0 : Fin n → ℝ) 1 ≃ₜ (openC
 /-- The homeomorphism onto an open cell is the characteristic map. -/
 @[simp]
 lemma openCellHomeomorph_apply (i : cell C n) (y : ball (0 : Fin n → ℝ) 1) :
-    (openCellHomeomorph n i y : X) = map n i y := rfl
+    (openCellHomeomorph n i y : X) = map n i y := (rfl)
 
 /-- The inverse of the homeomorphism onto an open cell is the inverse of the characteristic
 map. -/
 @[simp]
 lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i)) :
-    ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := rfl
+    ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := (rfl)
 
 variable [T2Space X]
 
@@ -187,7 +189,6 @@ the union, continuous because each characteristic map is, and open because its r
 summand is an embedding onto an open cell, which is open in the union by
 `TauCeti.isOpen_preimage_val_openCell`.  Use `TauCeti.iUnionOpenCellHomeomorph_apply` and
 `TauCeti.iUnionOpenCellHomeomorph_symm_apply` rather than this construction. -/
-@[expose]
 noncomputable def iUnionOpenCellHomeomorph :
     (Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1)) ≃ₜ
       (⋃ k : cell C n, openCell (C := C) n k : Set X) :=
@@ -231,7 +232,7 @@ noncomputable def iUnionOpenCellHomeomorph :
 /-- The homeomorphism onto the union of the open `n`-cells is the assembled characteristic map. -/
 @[simp]
 lemma iUnionOpenCellHomeomorph_apply (p : Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1)) :
-    (iUnionOpenCellHomeomorph n p : X) = map n p.1 p.2 := rfl
+    (iUnionOpenCellHomeomorph n p : X) = map n p.1 p.2 := (rfl)
 
 /-- **The inverse of the homeomorphism onto the union of the open `n`-cells.**  A point lying in
 the open cell `i` comes from the summand indexed by `i`, with coordinate its image under the
