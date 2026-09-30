@@ -23,7 +23,8 @@ The stabilizer of the coset `sH` is the conjugate subgroup `sHs⁻¹`
 covers the trivial coset, transported along `MulAction.stabilizer_smul_eq_stabilizer_map_conj`.
 Read on elements, it says that `g` fixes `sH` exactly when `s⁻¹ g s` lies in `H`
 (`TauCeti.smul_quotientGroup_mk_eq_self_iff`), which is the form a fixed-coset count is checked
-in.
+in.  Collecting those elements exhibits `{x | x⁻¹ g x ∈ H}` as the preimage of the fixed cosets
+under `G → G ⧸ H`, and hence counts it as `|H|` times the number of fixed cosets.
 
 The cosets of `⊥` in a group `G` are the elements of `G`, and Mathlib's
 `QuotientGroup.quotientBot` is that identification.  The identification is equivariant for left
@@ -37,6 +38,9 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
+* `TauCeti.preimage_mk_fixedBy`: the cosets fixed by `g` pull back to `{x | x⁻¹ g x ∈ H}`.
+* `TauCeti.card_conj_mem_eq_card_mul_card_fixedBy`: there are `|H|` times as many elements
+  conjugating `g` into `H` as there are cosets of `H` fixed by `g`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
@@ -94,6 +98,26 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
   rw [← mem_stabilizer_iff, stabilizer_quotientGroup_mk,
     Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def, MulAut.conj_apply]
   simp
+
+/-- **The cosets fixed by `g` pull back to the elements conjugating `g` into `H`.**  This is
+`TauCeti.smul_quotientGroup_mk_eq_self_iff` read as an equality of subsets of `G`.
+
+Not a `simp` lemma: it moves between a preimage and a set comprehension, neither of which is
+simpler than the other. -/
+theorem preimage_mk_fixedBy (H : Subgroup G) (g : G) :
+    QuotientGroup.mk ⁻¹' (fixedBy (G ⧸ H) g) = {x : G | x⁻¹ * g * x ∈ H} := by
+  ext x
+  rw [Set.mem_preimage, mem_fixedBy, Set.mem_ofPred_eq]
+  exact smul_quotientGroup_mk_eq_self_iff H g x
+
+/-- **Counting the elements conjugating `g` into `H`.**  Each coset fixed by `g` contributes its
+`Nat.card H` elements, so the elements `x` with `x⁻¹gx ∈ H` number `|H|` times the number of cosets
+fixed by `g`.  This is the division-free form in which an induced permutation character is
+evaluated. -/
+theorem card_conj_mem_eq_card_mul_card_fixedBy (H : Subgroup G) (g : G) :
+    Nat.card {x : G | x⁻¹ * g * x ∈ H} = Nat.card H * Nat.card (fixedBy (G ⧸ H) g) := by
+  rw [← preimage_mk_fixedBy H g,
+    Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet H _), Nat.card_prod]
 
 /-- Left translation on the cosets of the trivial subgroup is left translation in the group.
 
