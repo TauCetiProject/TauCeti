@@ -251,6 +251,20 @@ theorem stabilizeX_X (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
       G.X.splitPoint newColumn newRow splitColumn :=
   (rfl)
 
+/-- In the stabilization splitting the `X`-marking of column `s`, the row `(G.X s).castSucc`
+carries its `O`-marking only in the new column `s.castSucc`. -/
+theorem stabilizeX_O_eq_castSucc_iff (s : Fin n) (c : Fin (n + 1)) :
+    (G.O.insertPoint s.castSucc (G.X s).castSucc) c = (G.X s).castSucc ↔
+      c = s.castSucc := by
+  simp
+
+/-- In the stabilization splitting the `X`-marking of column `s`, the row `(G.X s).castSucc`
+carries its `X`-marking only in the column `s.succ`. -/
+theorem stabilizeX_X_eq_castSucc_iff (s : Fin n) (c : Fin (n + 1)) :
+    (G.X.splitPoint s.castSucc (G.X s).castSucc s) c = (G.X s).castSucc ↔
+      c = s.succ := by
+  simp
+
 /-- In the stabilization splitting the `X`-marking of column `s`, the `X`-marking of each column
 collapses under `Fin.predAbove` onto the `X`-marking of `G` in the collapsed column: both
 `X`-markings of the new block collapse onto the split marking. -/

@@ -39,9 +39,6 @@ is a single row or a single column of squares
 
 ## Main results
 
-* `TauCeti.GridDiagram.stabilizeX_O_eq_castSucc_iff` and
-  `TauCeti.GridDiagram.stabilizeX_X_eq_castSucc_iff`: the markings of the stabilization in the row
-  of `O_new`.
 * `TauCeti.GridDiagram.stabilizeXLevel_sub_stabilizeXLevel`: across a rectangle avoiding the
   `O`-markings the level drops by the number of covered outer squares.
 * `TauCeti.GridDiagram.stabilizeXLevel_lt_or_disjoint`: across such a rectangle the level strictly
@@ -64,22 +61,6 @@ namespace TauCeti
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
-
-/-- The row `(G.X s).castSucc` of the stabilization carries its `O`-marking only in the new
-column `s.castSucc`. This is the instance of the simp lemma
-`GridState.insertPoint_apply_eq_iff` used by name downstream. -/
-theorem stabilizeX_O_eq_castSucc_iff (c : Fin (n + 1)) :
-    (G.O.insertPoint s.castSucc (G.X s).castSucc) c = (G.X s).castSucc ↔
-      c = s.castSucc := by
-  simp
-
-/-- The row `(G.X s).castSucc` of the stabilization carries its `X`-marking only in the column
-`s.succ`. This is the instance of the simp lemma `GridState.splitPoint_apply_eq_iff` used by
-name downstream. -/
-theorem stabilizeX_X_eq_castSucc_iff (c : Fin (n + 1)) :
-    (G.X.splitPoint s.castSucc (G.X s).castSucc s) c = (G.X s).castSucc ↔
-      c = s.succ := by
-  simp
 
 /-- The outer squares of the stabilization splitting the `X`-marking of column `s`: the squares
 off the row and off the column of its new `O`-marking `(s.castSucc, (G.X s).castSucc)`. -/
