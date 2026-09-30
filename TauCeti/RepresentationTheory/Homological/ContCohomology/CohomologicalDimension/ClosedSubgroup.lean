@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.SingleDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Torsion
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Basic
 
 /-!
 # Cohomological dimension at most one passes to closed subgroups

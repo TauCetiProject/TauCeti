@@ -84,7 +84,8 @@ connected triple: it is connected because the total space is path connected. -/
 noncomputable def connectedTriple
     (c : ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n) :
     ConnectedTriple n :=
-  letI := c.pathConnected
+  haveI := c.cover.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
+  haveI : PathConnectedSpace (c.cover : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
   ⟨c.cover.isCoveringMap_proj.monodromyTriple c.ν,
     c.cover.isCoveringMap_proj.isConnected_monodromyTriple c.ν⟩
 

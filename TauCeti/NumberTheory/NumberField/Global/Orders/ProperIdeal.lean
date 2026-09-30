@@ -149,6 +149,16 @@ theorem isProperFractionalIdeal_of_isUnit
   simpa only [one_mul] using
     (O.isProperFractionalIdeal_mul_isUnit 1 I hI).mpr O.isProperFractionalIdeal_one
 
+/-- The group of invertible fractional ideals of an order. Its elements are proper fractional
+ideals, by `NumberFieldOrder.isProperFractionalIdeal_of_isUnit`. -/
+abbrev invertibleProperFractionalIdeals (O : NumberFieldOrder K) :=
+  (FractionalIdeal (nonZeroDivisors O.toSubalgebra) K)ˣ
+
+/-- Every invertible fractional ideal of an order is proper. -/
+theorem invertible_isProper (I : O.invertibleProperFractionalIdeals) :
+    O.IsProperFractionalIdeal I :=
+  O.isProperFractionalIdeal_of_isUnit I.isUnit
+
 /-- A fractional ideal with a multiplicative inverse is proper. -/
 theorem isProperFractionalIdeal_of_mul_eq_one
     {I J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} (hIJ : I * J = 1) :

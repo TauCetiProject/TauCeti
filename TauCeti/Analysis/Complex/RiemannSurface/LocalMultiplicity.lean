@@ -48,7 +48,8 @@ the degree is part of this file.
   `TauCeti.RiemannSurface.localMultiplicity_pos_iff`: it vanishes exactly at points near which
   `f` is constant; in particular a constant map has local multiplicity `0`
   (`TauCeti.RiemannSurface.localMultiplicity_const`).
-* `TauCeti.RiemannSurface.localMultiplicity_comp`: it multiplies under composition.
+* `TauCeti.RiemannSurface.localMultiplicity_comp_of_eventually_mdifferentiableAt`: it multiplies
+  under composition.
 * `TauCeti.RiemannSurface.localMultiplicity_eq_one_iff`: it is `1` exactly when `f` is
   injective near `x`.
 * `TauCeti.RiemannSurface.localMultiplicity_pow_zero`: the power map `z ↦ z ^ m` has local
@@ -224,7 +225,7 @@ theorem natCast_localMultiplicity (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt �
 
 /-- **Multiplicativity of the local multiplicity.** The local multiplicity of a composition of
 maps holomorphic near the relevant points is the product of the local multiplicities. -/
-theorem localMultiplicity_comp {g : Y → Z}
+theorem localMultiplicity_comp_of_eventually_mdifferentiableAt {g : Y → Z}
     (hg : ∀ᶠ y in 𝓝 (f x), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g y)
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
     localMultiplicity (g ∘ f) x = localMultiplicity g (f x) * localMultiplicity f x := by

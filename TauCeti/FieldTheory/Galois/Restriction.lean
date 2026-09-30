@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Normal.Defs
+public import Mathlib.FieldTheory.Galois.Basic
 
 /-!
 # Restricting automorphisms along an embedding of a normal extension
@@ -26,6 +26,12 @@ of restriction of scalars.
   intertwined with `σ` by `f`.
 * `AlgHom.restrictNormalHom_toAlgHom`: for the algebra map of a scalar tower this is
   `AlgEquiv.restrictNormalHom`.
+* `IntermediateField.restrictNormalHom_val`: for the inclusion of an intermediate field this is
+  `AlgEquiv.restrictNormalHom`.
+* `IntermediateField.units_map_val_restrictNormalHom`: the inclusion of units of a normal
+  intermediate field intertwines restriction with the action on units.
+* `AlgHom.restrictNormalHom_surjective` and `AlgHom.ker_restrictNormalHom`: for a normal `K/F`
+  restriction is surjective, and its kernel is the subgroup fixing the image of `f`.
 * `AlgEquiv.restrictNormal_eq_one_iff_algebraMap`: restriction is trivial precisely when the
   automorphism fixes the intermediate field pointwise.
 * `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one` and
@@ -76,6 +82,36 @@ theorem _root_.AlgHom.restrictNormalHom_toAlgHom [Algebra M K] [IsScalarTower F 
     (IsScalarTower.toAlgHom F M K).restrictNormalHom = AlgEquiv.restrictNormalHom M :=
   MonoidHom.ext fun σ ↦ (IsScalarTower.toAlgHom F M K).restrictNormalHom_eq_iff.2
     fun y ↦ (AlgEquiv.restrictNormal_commutes σ M y).symm
+
+/-- For a normal `K/F`, every automorphism of `M/F` is the restriction of one of `K/F`. -/
+theorem _root_.AlgHom.restrictNormalHom_surjective (f : M →ₐ[F] K) [Normal F M] [Normal F K] :
+    Function.Surjective f.restrictNormalHom :=
+  letI := f.toRingHom.toAlgebra
+  haveI : IsScalarTower F M K := IsScalarTower.of_algebraMap_eq fun x ↦ (f.commutes x).symm
+  AlgEquiv.restrictNormalHom_surjective K
+
+/-- The kernel of restriction along `f` is the subgroup fixing the image of `f` pointwise. -/
+theorem _root_.AlgHom.ker_restrictNormalHom (f : M →ₐ[F] K) [Normal F M] :
+    f.restrictNormalHom.ker = f.fieldRange.fixingSubgroup := by
+  ext σ
+  simp [f.restrictNormalHom_eq_iff]
+
+/-- Restriction along the inclusion of an intermediate field is Mathlib's
+`AlgEquiv.restrictNormalHom`. -/
+@[simp]
+theorem _root_.IntermediateField.restrictNormalHom_val (L : IntermediateField F K) [Normal F L] :
+    L.val.restrictNormalHom = AlgEquiv.restrictNormalHom L :=
+  MonoidHom.ext fun σ ↦ L.val.restrictNormalHom_eq_iff.2 fun x ↦
+    (AlgEquiv.restrictNormal_commutes σ L x).symm
+
+/-- Including the units of a normal intermediate field `L` into `Kˣ` intertwines the action of
+`Gal(L/F)` on `Lˣ`, through restriction, with the action of `Gal(K/F)` on `Kˣ`. -/
+theorem _root_.IntermediateField.units_map_val_restrictNormalHom (L : IntermediateField F K)
+    [Normal F L] (σ : Gal(K/F)) (u : Lˣ) :
+    Units.map L.val.toRingHom.toMonoidHom (Units.map (AlgEquiv.restrictNormalHom L σ) u) =
+      σ • Units.map L.val.toRingHom.toMonoidHom u := by
+  rw [AlgEquiv.smul_units_def]
+  exact Units.ext (AlgEquiv.restrictNormal_commutes σ L u)
 
 end RestrictAlong
 

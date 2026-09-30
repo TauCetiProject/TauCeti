@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
 
@@ -28,6 +29,11 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   transform lands in the closed (open) unit disc exactly at points of the closed (open) upper
   half-plane.
 * `TauCeti.injOn_sub_I_div_add_I`: the transform is injective off its pole `-i`.
+* `TauCeti.sub_I_div_add_I_sub_sub_I_div_add_I`: the difference of two values of the transform.
+* `TauCeti.continuousAt_sub_I_div_add_I` and `TauCeti.norm_sub_I_div_norm_add_I_ofReal`:
+  continuity and unit norm at real boundary points.
+* `TauCeti.one_sub_conj_mul_sub_I_div_add_I_ne_zero`: the denominator of a standard disc
+  automorphism does not vanish at a real boundary point in Cayley coordinates.
 * `TauCeti.bijOn_sub_I_div_add_I_upperHalfPlaneSet`: the transform is a bijection from the open
   upper half-plane onto the open unit disc.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
@@ -73,6 +79,31 @@ theorem norm_sub_I_div_add_I_lt_one_iff {z : ℂ} (hz : z + I ≠ 0) :
     norm_add_I_sq]
   constructor <;> intro h <;> linarith
 
+/-- The Cayley transform is continuous at every real point. -/
+theorem continuousAt_sub_I_div_add_I (x : ℝ) :
+    ContinuousAt (fun z : ℂ => (z - I) / (z + I)) (x : ℂ) :=
+  (continuousAt_id.sub continuousAt_const).div (continuousAt_id.add continuousAt_const)
+    (add_I_ne_zero_of_im_nonneg (by simp))
+
+/-- The Cayley transform of a real point lies on the unit circle. -/
+@[simp] theorem norm_sub_I_div_norm_add_I_ofReal (x : ℝ) :
+    ‖(x : ℂ) - I‖ / ‖(x : ℂ) + I‖ = 1 := by
+  rw [← norm_div]
+  have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
+  refine le_antisymm ((norm_sub_I_div_add_I_le_one_iff hx).mpr (by simp)) (not_lt.mp fun h => ?_)
+  simpa using (norm_sub_I_div_add_I_lt_one_iff hx).mp h
+
+/-- The denominator of a standard disc automorphism does not vanish at the Cayley transform of a
+real point. -/
+theorem one_sub_conj_mul_sub_I_div_add_I_ne_zero (c : Complex.UnitDisc) (x : ℝ) :
+    1 - (starRingEnd ℂ) (c : ℂ) * (((x : ℂ) - I) / ((x : ℂ) + I)) ≠ 0 := by
+  intro h
+  have hnorm : ‖(c : ℂ)‖ * ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
+    have := congrArg norm (sub_eq_zero.mp h)
+    simpa [norm_mul] using this.symm
+  rw [norm_div, norm_sub_I_div_norm_add_I_ofReal x, mul_one] at hnorm
+  exact (ne_of_lt c.norm_lt_one) hnorm
+
 /-- The closed-disc criterion in the normal form used by `simp` after `norm_div`. -/
 @[simp] theorem norm_sub_I_div_norm_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :
     ‖z - I‖ / ‖z + I‖ ≤ 1 ↔ 0 ≤ z.im := by
@@ -91,6 +122,12 @@ theorem injOn_sub_I_div_add_I :
   rw [div_eq_div_iff hz hw] at h
   have h2 : (2 * I) * (z - w) = 0 := by linear_combination h
   simpa [sub_eq_zero, I_ne_zero] using h2
+
+/-- The Cayley transform has the difference quotient `2 * i / ((s + i) * (t + i))`. -/
+theorem sub_I_div_add_I_sub_sub_I_div_add_I {s t : ℂ} (hs : s + I ≠ 0) (ht : t + I ≠ 0) :
+    (s - I) / (s + I) - (t - I) / (t + I) = 2 * I * (s - t) / ((s + I) * (t + I)) := by
+  rw [div_sub_div _ _ hs ht]
+  ring
 
 /-- The inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` is a right inverse of the transform
 away from `w = 1`, and its value keeps the denominator `z + i` away from `0`. -/

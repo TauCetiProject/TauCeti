@@ -28,6 +28,8 @@ reduced tensor word.
 
 * `TauCeti.ReducedTensorWords.iSup_filtration_eq_top` and
   `TauCeti.ReducedTensorWords.exists_mem_filtration`: the filtration is exhaustive.
+* `TauCeti.ReducedTensorWords.exists_pow_apply_eq_zero_of_filtration_lowering`: a map lowering
+  tensor length is locally nilpotent, also after composition with a length-preserving map.
 * `TauCeti.ReducedTensorWords.ofLetter_mem_filtration` and
   `TauCeti.ReducedTensorWords.prepend_mem_filtration`: a letter has length one, and prepending a
   letter raises the length bound by one.
@@ -92,6 +94,34 @@ theorem exists_mem_filtration (z : ReducedTensorWords R M) : ∃ n : ℕ, z ∈ 
     rw [iSup_filtration_eq_top]
     trivial
   exact (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
+
+/-- A map strictly lowering the tensor-length filtration is locally nilpotent. -/
+theorem exists_pow_apply_eq_zero_of_filtration_lowering
+    (f : Module.End R (ReducedTensorWords R M))
+    (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n)
+    (z : ReducedTensorWords R M) : ∃ n, (f ^ n) z = 0 := by
+  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
+  refine ⟨n, ?_⟩
+  induction n generalizing z with
+  | zero =>
+      rw [filtration_zero] at hn
+      have : z = 0 := hn
+      simp [this]
+  | succ n ih =>
+      have hfz : f z ∈ filtration R M n := hf n ⟨z, hn, rfl⟩
+      simpa only [pow_succ, Module.End.mul_apply] using ih (f z) hfz
+
+/-- Composing a strictly length-lowering map with a length-preserving map remains locally
+nilpotent. -/
+theorem exists_pow_comp_apply_eq_zero_of_filtration_lowering
+    (f h : Module.End R (ReducedTensorWords R M))
+    (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n)
+    (hh : ∀ n, Submodule.map h (filtration R M n) ≤ filtration R M n)
+    (z : ReducedTensorWords R M) : ∃ n, ((f ∘ₗ h) ^ n) z = 0 := by
+  apply exists_pow_apply_eq_zero_of_filtration_lowering R M (f ∘ₗ h)
+  intro n
+  rintro _ ⟨x, hx, rfl⟩
+  exact hf n ⟨h x, hh (n + 1) ⟨x, hx, rfl⟩, rfl⟩
 
 /-- A block of length at most `n` lies in the `n`-th step of the filtration. -/
 theorem subword_mem_filtration {l : ℕ} (x : Fin l → M) (a : ℕ) {b n : ℕ} (hb : b ≤ n) :

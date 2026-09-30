@@ -21,13 +21,16 @@ Feeding the relator through the normal forms of
 forms modulo `λ_2(F)`: when every cup square on `H¹(G, 𝔽_p)` vanishes, a change of basis of `F`
 brings `r` to `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` modulo `λ_2(F)` with `q ∈ {0, p}`, and `n` is even;
 when some cup square does not vanish, which forces `p = 2`, it brings `r` to
-`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` for odd `n` and to
+`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` for any `f ≥ 2`, equivalently to
+`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` (for `f ≥ 2` the factor `x₂^{2^f}` is a fourth power, so the two
+words have the same class in `gr_1(F)`), for odd `n` and to
 `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` for even `n`.
 
 ## Main results
 
 * `TauCeti.IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo`,
   `TauCeti.IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd`,
+  `TauCeti.IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop`,
   `TauCeti.IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoEven`:
   **Labute's normal forms modulo `λ_2(F)` for the relator of a Demushkin group**, according to
   whether the cup form on `H¹(G, 𝔽_p)` is alternating or not.
@@ -112,6 +115,26 @@ theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWor
     (fun h ↦ hnalt.elim fun a ha ↦
       ha ((freeProP.isAlt_degreeOneForm_iff_forall_cupFp_self_eq_zero hr e).1 h a))
     hn hf
+
+/-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the nonalternating case of odd
+rank, at level `f = ∞`.** Let `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group at
+`p = 2` on which some cup square `a ⌣ a` does not vanish, with `n` odd. Then a continuous
+automorphism of `F` carries the class of `r` in `gr_1(F)` to the class of
+`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop
+    (hn : Odd n) :
+    ∃ e' : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
+      gradedMap 2 (e' : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom
+          (e' : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1
+          (gradedMk 2 (freeProP 2 (Fin n)) 1
+            ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two).symm.le hr⟩) =
+        gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOddTop n (freeProPGen 2 n),
+          demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩ :=
+  freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop _
+    (hG.nondegenerate_degreeOneForm hr e)
+    (fun h ↦ hnalt.elim fun a ha ↦
+      ha ((freeProP.isAlt_degreeOneForm_iff_forall_cupFp_self_eq_zero hr e).1 h a))
+    hn
 
 /-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the nonalternating case of even
 rank.** Let `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group at `p = 2` on which some

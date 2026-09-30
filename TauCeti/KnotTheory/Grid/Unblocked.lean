@@ -38,9 +38,8 @@ carries the markings of the squares it covers, `GridRectangle.coveredSquares`, n
 grid points in its open interior. That is the region the Maslov and Alexander grading changes are
 computed against in `Grading/MarkingCount.lean`, and it is the region used throughout this file.
 It is also the region the marking-avoidance predicate `GridRectangle.AvoidsMarkings` of the grid
-differential tests, under its other name `GridRectangle.squares`;
-`GridRectangle.squares_eq_coveredSquares` identifies the two, which is what makes the fully blocked
-count a specialization of a matrix coefficient here.
+differential tests, which is what makes the fully blocked count a specialization of a matrix
+coefficient here.
 
 *Which grading the variables carry.* Giving `V_c` bidegree `(-2, -1)` makes the differential
 homogeneous of bidegree `(-1, 0)`: `maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one` and
@@ -79,8 +78,10 @@ assignment, a later stage of the roadmap.
 * `TauCeti.GridDiagram.maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one`,
   `TauCeti.GridDiagram.alexander_sub_card_OColumns_eq_alexander`: the differential is homogeneous
   of bidegree `(-1, 0)` once `V_c` is given bidegree `(-2, -1)`.
-* `TauCeti.GridDiagram.constantCoeff_unblockedCoefficient`: the constant term of a matrix
-  coefficient counts the contributing rectangles that carry no `O`-marking either.
+* `TauCeti.GridDiagram.constantCoeff_sum_OMonomial` and
+  `TauCeti.GridDiagram.constantCoeff_unblockedCoefficient`: the constant term of a sum of
+  rectangle weights, in particular of a matrix coefficient, counts the rectangles that carry no
+  `O`-marking.
 * `TauCeti.GridDiagram.fullyBlockedRectangles_eq_filter`,
   `TauCeti.GridDiagram.fullyBlockedRectangleCount_eq_constantCoeff`: those rectangles are the
   fully blocked ones, so the fully blocked matrix coefficient is the constant term of `∂⁻`.
@@ -370,6 +371,32 @@ theorem unblockedCoefficient_def (x y : GridState n) :
 theorem unblockedCoefficient_self (x : GridState n) : G.unblockedCoefficient R x x = 0 := by
   rw [unblockedCoefficient, unblockedRectangles_self, Finset.sum_empty]
 
+/-- The constant term of a sum of rectangle weights counts the rectangles carrying no
+`O`-marking: the weight of such a rectangle is `1`, and every other weight has a variable
+factor. -/
+theorem constantCoeff_sum_OMonomial {x y : GridState n} (s : Finset (GridRectangleBetween x y)) :
+    constantCoeff (∑ r ∈ s, G.OMonomial R r.toGridRectangle) =
+      ((s.filter fun r => G.OColumns r.toGridRectangle = ∅).card : R) := by
+  rw [map_sum, ← Finset.sum_filter_add_sum_filter_not s fun r =>
+    G.OColumns r.toGridRectangle = ∅]
+  have h₁ : ∀ r ∈ s.filter fun r => G.OColumns r.toGridRectangle = ∅,
+      constantCoeff (G.OMonomial R r.toGridRectangle) = 1 := fun r hr => by
+    rw [G.OMonomial_eq_monomial R, (Finset.mem_filter.mp hr).2, Finset.sum_empty,
+      MvPolynomial.constantCoeff_monomial]
+    simp
+  have h₂ : ∀ r ∈ s.filter fun r => ¬G.OColumns r.toGridRectangle = ∅,
+      constantCoeff (G.OMonomial R r.toGridRectangle) = 0 := fun r hr => by
+    obtain ⟨c, hc⟩ := Finset.nonempty_iff_ne_empty.mpr (Finset.mem_filter.mp hr).2
+    rw [G.OMonomial_eq_monomial R, MvPolynomial.constantCoeff_monomial]
+    have hsum : (∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1) ≠
+        (0 : Fin n →₀ ℕ) := by
+      intro h
+      have hc0 := congrArg (fun d : Fin n →₀ ℕ => d c) h
+      simp [Finsupp.finsetSum_apply, Finsupp.single_apply, hc] at hc0
+    simp [hsum]
+  rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_const, Finset.sum_const_zero,
+    nsmul_eq_mul, mul_one, add_zero]
+
 /-- The constant term of a matrix coefficient of the unblocked differential counts those
 contributing rectangles that carry no `O`-marking either.
 
@@ -380,21 +407,7 @@ theorem constantCoeff_unblockedCoefficient (x y : GridState n) :
     constantCoeff (G.unblockedCoefficient R x y) =
       (((G.unblockedRectangles x y).filter fun r =>
         G.OColumns r.toGridRectangle = ∅).card : R) := by
-  rw [unblockedCoefficient, map_sum,
-    ← Finset.sum_filter_add_sum_filter_not (G.unblockedRectangles x y) fun r =>
-      G.OColumns r.toGridRectangle = ∅]
-  have h₁ : ∀ r ∈ (G.unblockedRectangles x y).filter
-      fun r => G.OColumns r.toGridRectangle = ∅,
-      constantCoeff (G.OMonomial R r.toGridRectangle) = 1 := fun r hr => by
-    rw [OMonomial, (Finset.mem_filter.mp hr).2, Finset.prod_empty, map_one]
-  have h₂ : ∀ r ∈ (G.unblockedRectangles x y).filter
-      fun r => ¬G.OColumns r.toGridRectangle = ∅,
-      constantCoeff (G.OMonomial R r.toGridRectangle) = 0 := fun r hr => by
-    obtain ⟨c, hc⟩ := Finset.nonempty_iff_ne_empty.mpr (Finset.mem_filter.mp hr).2
-    rw [OMonomial, map_prod]
-    exact Finset.prod_eq_zero hc (by simp)
-  rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_const, Finset.sum_const_zero,
-    nsmul_eq_mul, mul_one, add_zero]
+  rw [unblockedCoefficient, constantCoeff_sum_OMonomial]
 
 /-- The rectangles the unblocked differential counts with trivial weight are exactly the fully
 blocked ones: both sets consist of the empty rectangles covering no `X`-marking, and covering no
@@ -405,12 +418,12 @@ theorem fullyBlockedRectangles_eq_filter (x y : GridState n) :
   classical
   ext r
   simp only [Finset.mem_filter, mem_fullyBlockedRectangles, mem_unblockedRectangles,
-    GridRectangleBetween.avoidsMarkings_iff, GridRectangle.squares_eq_coveredSquares,
-    G.OColumns_eq_empty_iff]
+    GridRectangleBetween.avoidsMarkings_iff, G.OColumns_eq_empty_iff]
   tauto
 
 /-- The constant term of a matrix coefficient of the unblocked differential is the number of
 fully blocked rectangles it counts. -/
+@[simp]
 theorem constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles (x y : GridState n) :
     constantCoeff (G.unblockedCoefficient R x y) =
       ((G.fullyBlockedRectangles x y).card : R) := by

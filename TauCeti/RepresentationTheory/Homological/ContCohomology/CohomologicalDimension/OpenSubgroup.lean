@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomologi
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Torsion
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!

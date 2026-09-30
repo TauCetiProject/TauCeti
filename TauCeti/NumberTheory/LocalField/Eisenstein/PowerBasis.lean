@@ -14,9 +14,10 @@ import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 /-!
 # Valuations in an Eisenstein power basis of a local field
 
-The powers of an integral generator satisfying an Eisenstein polynomial occupy distinct
-congruence classes of the additive valuation.  Consequently, the valuation of a linear
-combination in the resulting power basis is the minimum of its term valuations.
+An integral generator satisfying an Eisenstein polynomial is a uniformizer, and its power basis
+has length `e(L/K)`.  By `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`, the valuation of
+a linear combination in the resulting power basis is therefore the minimum of its term
+valuations.
 
 ## Main result
 
@@ -139,57 +140,9 @@ theorem addVal_sum_eisenstein_powerBasis [Algebra K L] [ValuativeExtension K L]
     (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) (c : Fin f.natDegree → 𝒪[K]) :
     IsDiscreteValuationRing.addVal 𝒪[L]
         (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ξ ^ (i : ℕ)) =
-      ⨅ i, ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
-  classical
-  have hξirr := irreducible_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
-  have he_degree :=
-    ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hterm (i : Fin f.natDegree) :
-      IsDiscreteValuationRing.addVal 𝒪[L]
-          (algebraMap 𝒪[K] 𝒪[L] (c i) * ξ ^ (i : ℕ)) =
-        ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
-    rw [IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
-      addVal_algebraMap, IsDiscreteValuationRing.addVal_uniformizer hξirr, nsmul_one]
-  have hdistinct : ∀ i j : Fin f.natDegree, i ≠ j →
-      algebraMap 𝒪[K] 𝒪[L] (c i) * ξ ^ (i : ℕ) ≠ 0 →
-      algebraMap 𝒪[K] 𝒪[L] (c j) * ξ ^ (j : ℕ) ≠ 0 →
-      IsDiscreteValuationRing.addVal 𝒪[L]
-          (algebraMap 𝒪[K] 𝒪[L] (c i) * ξ ^ (i : ℕ)) ≠
-        IsDiscreteValuationRing.addVal 𝒪[L]
-          (algebraMap 𝒪[K] 𝒪[L] (c j) * ξ ^ (j : ℕ)) := by
-    intro i j hij hi0 hj0 hval
-    have hci : c i ≠ 0 := by
-      intro h
-      apply hi0
-      simp [h]
-    have hcj : c j ≠ 0 := by
-      intro h
-      apply hj0
-      simp [h]
-    obtain ⟨ni, ui, hci'⟩ :=
-      IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hci hπ
-    obtain ⟨nj, uj, hcj'⟩ :=
-      IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hcj hπ
-    have hvi : IsDiscreteValuationRing.addVal 𝒪[K] (c i) = ni := by
-      rw [hci', IsDiscreteValuationRing.addVal_def' ui hπ ni]
-    have hvj : IsDiscreteValuationRing.addVal 𝒪[K] (c j) = nj := by
-      rw [hcj', IsDiscreteValuationRing.addVal_def' uj hπ nj]
-    rw [hterm, hterm, hvi, hvj] at hval
-    have hnat : ramificationIndex K L * ni + (i : ℕ) =
-        ramificationIndex K L * nj + (j : ℕ) := by
-      have hval' : ((ramificationIndex K L * ni + (i : ℕ) : ℕ) : ℕ∞) =
-          ramificationIndex K L * nj + (j : ℕ) := by
-        simpa [nsmul_eq_mul] using hval
-      exact_mod_cast hval'
-    rw [he_degree] at hnat
-    have hmod := congrArg (fun n : ℕ ↦ n % f.natDegree) hnat
-    have hijval : (i : ℕ) = (j : ℕ) := by
-      simpa [Nat.add_mod, Nat.mod_eq_of_lt i.isLt, Nat.mod_eq_of_lt j.isLt] using hmod
-    exact hij (Fin.ext hijval)
-  rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
-  congr 1
-  funext i
-  exact hterm i
+      ⨅ i, ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) :=
+  addVal_sum_algebraMap_mul_pow_of_irreducible
+    (irreducible_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen)
+    (ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen).ge c
 
 end TauCeti

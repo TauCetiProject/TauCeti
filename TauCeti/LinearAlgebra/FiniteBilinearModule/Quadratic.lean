@@ -117,17 +117,6 @@ theorem toFiniteBilinearModule_toBilin :
 /-- A finite quadratic module is nondegenerate when its polar pairing is nondegenerate. -/
 abbrev IsNondegenerate : Prop := A.toFiniteBilinearModule.IsNondegenerate
 
-/-- A nondegenerate finite quadratic module is identified with the character dual by its polar
-pairing. -/
-noncomputable def adjointEquiv (hA : A.IsNondegenerate) :
-    A ≃+ CharacterModule A :=
-  A.toFiniteBilinearModule.adjointEquiv hA
-
-@[simp]
-theorem adjointEquiv_apply (hA : A.IsNondegenerate) (x : A) :
-    A.adjointEquiv hA x = A.toFiniteBilinearModule.pairing x :=
-  A.toFiniteBilinearModule.adjointEquiv_apply hA x
-
 variable {A} in
 /-- The quadratic radical of a nondegenerate finite quadratic module is trivial: an element of the
 radical pairs to zero with everything under the polar pairing. -/
@@ -245,6 +234,11 @@ def toHom (f : Isometry A B) : Hom A B :=
 
 @[simp]
 theorem toHom_apply (f : Isometry A B) (x : A) : f.toHom x = f x := (rfl)
+
+/-- The additive homomorphism underlying `f.toHom` is that of the additive equivalence of `f`. -/
+@[simp]
+theorem toHom_toAddMonoidHom (f : Isometry A B) :
+    ((f.toHom : Hom A B) : A →+ B) = (f.toAddEquiv : A →+ B) := (rfl)
 
 /-- Forgetting the identity quadratic isometry gives the identity quadratic morphism. -/
 @[simp]
@@ -454,11 +448,18 @@ theorem isIsotropicElem_zero : A.IsIsotropicElem 0 := by
 theorem isIsotropicElem_neg (x : A) : A.IsIsotropicElem (-x) ↔ A.IsIsotropicElem x := by
   simp [IsIsotropicElem]
 
-/-- A quadratic isometry preserves isotropic elements. -/
+/-- A morphism of finite quadratic modules preserves and reflects isotropic elements. -/
+@[simp]
+theorem Hom.isIsotropicElem_iff {B : FiniteQuadraticModule} (f : Hom A B) (x : A) :
+    B.IsIsotropicElem (f x) ↔ A.IsIsotropicElem x := by
+  simp [IsIsotropicElem]
+
+/-- A quadratic isometry preserves and reflects isotropic elements. -/
 @[simp]
 theorem Isometry.isIsotropicElem_iff {B : FiniteQuadraticModule} (f : Isometry A B) (x : A) :
     B.IsIsotropicElem (f x) ↔ A.IsIsotropicElem x := by
-  simp [IsIsotropicElem]
+  rw [← f.toHom_apply]
+  exact f.toHom.isIsotropicElem_iff A x
 
 /-- Form negation preserves quadratic isotropy. -/
 @[simp]
@@ -480,11 +481,11 @@ theorem isIsotropic_def {H : AddSubgroup A} :
     A.IsIsotropic H ↔ ∀ x ∈ H, A.quadratic x = 0 :=
   Iff.rfl
 
-/-- A quadratic isometry transports quadratic isotropy of a subgroup. -/
+/-- The image of a subgroup under a morphism of finite quadratic modules is quadratically
+isotropic exactly when the subgroup is. -/
 @[simp]
-theorem Isometry.isIsotropic_map_iff {B : FiniteQuadraticModule} (f : Isometry A B)
-    (H : AddSubgroup A) :
-    B.IsIsotropic (H.map f.toAddEquiv) ↔ A.IsIsotropic H := by
+theorem Hom.isIsotropic_map_iff {B : FiniteQuadraticModule} (f : Hom A B) (H : AddSubgroup A) :
+    B.IsIsotropic (H.map (f : A →+ B)) ↔ A.IsIsotropic H := by
   simp only [IsIsotropic]
   constructor
   · intro hH x hx
@@ -493,6 +494,15 @@ theorem Isometry.isIsotropic_map_iff {B : FiniteQuadraticModule} (f : Isometry A
   · intro hH y hy
     obtain ⟨x, hx, rfl⟩ := hy
     exact (f.map_app x).trans (hH x hx)
+
+/-- A quadratic isometry transports quadratic isotropy of a subgroup, stated for the image under
+its additive equivalence. -/
+@[simp]
+theorem Isometry.isIsotropic_map_iff {B : FiniteQuadraticModule} (f : Isometry A B)
+    (H : AddSubgroup A) :
+    B.IsIsotropic (H.map f.toAddEquiv) ↔ A.IsIsotropic H := by
+  rw [← f.toHom_toAddMonoidHom]
+  exact f.toHom.isIsotropic_map_iff A H
 
 /-- An element of a quadratically isotropic subgroup is isotropic. -/
 theorem isIsotropicElem_of_mem_isIsotropic {H : AddSubgroup A} (hH : A.IsIsotropic H)

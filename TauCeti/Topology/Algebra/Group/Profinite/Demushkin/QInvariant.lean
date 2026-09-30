@@ -9,8 +9,10 @@ public import TauCeti.GroupTheory.Torsion
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Presentation.Abelianization
 import Mathlib.Topology.Algebra.Module.Equiv.Prod
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion
 
 /-!
@@ -50,6 +52,21 @@ together with the rank, that classify Demushkin groups with `q ≠ 2`.
 * `TauCeti.demushkinQ_eq_zero_iff`: `q(G) = 0` exactly when `G^{ab}` is torsion-free.
 * `TauCeti.IsDemushkin.exists_demushkinQ_eq_pow`: a nonzero `q(G)` is a positive power of `p`.
 * `TauCeti.demushkinQ_congr`: the `q`-invariant is invariant under topological isomorphism.
+* `TauCeti.isMulTorsionFree_topologicalAbelianization_of_mulEquiv`,
+  `TauCeti.demushkinQ_eq_zero_of_mulEquiv`, `TauCeti.demushkinQ_eq_pow_valuation_of_mulEquiv`:
+  the torsion of `G^{ab}` read off a model `G^{ab} ≅ ℤ_p^ι × ℤ_p ⧸ (q)` with `p ∣ q`: `G^{ab}` is
+  torsion-free and `q(G) = 0` when `q = 0`, and `q(G) = p^{v_p(q)}` otherwise.
+* `TauCeti.demushkinQ_presentedProP_eq_zero_iff`,
+  `TauCeti.demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator`,
+  `TauCeti.demushkinQ_presentedProP_eq_pow_valuation`: for a Demushkin group given by a
+  one-relator presentation `⟨X ∣ r⟩` with `exponentSum r = q • w`, `w x₀ = 1` and `p ∣ q`, the
+  `q`-invariant is `0` exactly when `q = 0`, that is when `r` lies in the closed commutator
+  subgroup, and is `p^{v_p(q)}` otherwise.
+* `TauCeti.demushkinQ_presentedProP_eq_iff_exists_not_dvd`,
+  `TauCeti.demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero`: for a relator
+  `r ∈ Φ(F)` presenting a Demushkin group, `q = p` exactly when some exponent sum of `r` is not
+  divisible by `p ^ 2`, that is, when the class of `r` in `gr_1(F)` has a nonzero `p`-power
+  coordinate.
 
 ## References
 
@@ -111,7 +128,68 @@ theorem demushkinQ_congr {H : Type v} [Group H] [TopologicalSpace H] [IsTopologi
   · rw [demushkinQ_of_not_isMulTorsionFree hG h,
       demushkinQ_of_not_isMulTorsionFree hH (hfree.not.mp h), hcard]
 
+/-! ### The `q`-invariant read off a model of the abelianization -/
+
+section Model
+
+variable {ι : Type*} {q : ℤ_[p]}
+  (e : TopologicalAbelianization G ≃* Multiplicative ((ι → ℤ_[p]) × (ℤ_[p] ⧸ Ideal.span {q})))
+
+include e in
+/-- **The model with `q = 0` is torsion-free.** If `G^{ab} ≅ ℤ_p^ι × ℤ_p ⧸ (q)` with `q = 0`, then
+`G^{ab}` is torsion-free. -/
+theorem isMulTorsionFree_topologicalAbelianization_of_mulEquiv (hq : q = 0) :
+    IsMulTorsionFree (TopologicalAbelianization G) := by
+  subst hq
+  have : IsAddTorsionFree (ℤ_[p] ⧸ Ideal.span {(0 : ℤ_[p])}) := by
+    rw [Ideal.span_singleton_zero]
+    exact (RingEquiv.quotientBot ℤ_[p]).injective.isAddTorsionFree
+      (RingEquiv.quotientBot ℤ_[p]).toAddMonoidHom
+  exact Function.Injective.isMulTorsionFree e.toMonoidHom e.injective
+
+include e in
+/-- **The `q`-invariant vanishes on the torsion-free model.** If `G^{ab} ≅ ℤ_p^ι × ℤ_p ⧸ (q)` with
+`q = 0`, then `q(G) = 0`. -/
+theorem demushkinQ_eq_zero_of_mulEquiv (hq : q = 0) : demushkinQ hG = 0 :=
+  demushkinQ_of_isMulTorsionFree hG (isMulTorsionFree_topologicalAbelianization_of_mulEquiv e hq)
+
+include e in
+/-- **The `q`-invariant is `p^{v_p(q)}` on the model with torsion.** If
+`G^{ab} ≅ ℤ_p^ι × ℤ_p ⧸ (q)` with `q ≠ 0` divisible by `p`, then the torsion subgroup of `G^{ab}`
+is the cyclic group `ℤ_p ⧸ (q)` of order `p^{v_p(q)}`, and that order is `q(G)`. -/
+theorem demushkinQ_eq_pow_valuation_of_mulEquiv (hpq : (p : ℤ_[p]) ∣ q) (hq : q ≠ 0) :
+    demushkinQ hG = p ^ q.valuation := by
+  have := PadicInt.finite_quotient_span hq
+  have hcard : Nat.card (torsion (TopologicalAbelianization G)) = p ^ q.valuation := by
+    rw [natCard_torsion_of_mulEquiv isAddTorsion_of_finite e, PadicInt.natCard_quotient_span hq]
+  have hne : ¬ IsMulTorsionFree (TopologicalAbelianization G) := by
+    rw [CommGroup.isMulTorsionFree_iff_torsion_eq_bot]
+    intro hbot
+    rw [hbot, Subgroup.card_bot] at hcard
+    exact (Fact.out : p.Prime).ne_one (Nat.dvd_one.1 (hcard ▸ dvd_pow_self p
+      (Nat.one_le_iff_ne_zero.1 (PadicInt.one_le_valuation_of_dvd hq hpq))))
+  rw [demushkinQ_of_not_isMulTorsionFree hG hne, hcard]
+
+end Model
+
 variable [CompactSpace G] [TotallyDisconnectedSpace G]
+
+include hG in
+/-- **The torsion subgroup of the abelianization of a Demushkin group is finite**: the
+abelianization is a topologically finitely generated abelian pro-`p` group. -/
+theorem IsDemushkin.finite_torsion_topologicalAbelianization :
+    Finite (torsion (TopologicalAbelianization G)) :=
+  hG.isProP.topologicalAbelianization_self.finite_torsion
+    (hG.isTopologicallyFinitelyGenerated.quotient _)
+
+/-- **The `q`-invariant vanishes exactly when the abelianization is torsion-free.** -/
+@[simp]
+theorem demushkinQ_eq_zero_iff :
+    demushkinQ hG = 0 ↔ IsMulTorsionFree (TopologicalAbelianization G) := by
+  refine ⟨fun h ↦ by_contra fun hne ↦ ?_, demushkinQ_of_isMulTorsionFree hG⟩
+  rw [demushkinQ_of_not_isMulTorsionFree hG hne] at h
+  have := hG.finite_torsion_topologicalAbelianization
+  exact Nat.card_pos.ne' h
 
 namespace IsDemushkin
 
@@ -157,47 +235,21 @@ private theorem torsion_spec :
   by_cases hq : q = 0
   · -- `q = 0`: the abelianization is torsion-free and the `q`-invariant is `0`.
     subst hq
-    have hfree : IsMulTorsionFree (TopologicalAbelianization G) := by
-      have : IsAddTorsionFree (ℤ_[p] ⧸ Ideal.span {(0 : ℤ_[p])}) := by
-        rw [Ideal.span_singleton_zero]
-        exact (RingEquiv.quotientBot ℤ_[p]).injective.isAddTorsionFree
-          (RingEquiv.quotientBot ℤ_[p]).toAddMonoidHom
-      exact Function.Injective.isMulTorsionFree e.toMulEquiv.toMonoidHom e.toMulEquiv.injective
+    have hfree := isMulTorsionFree_topologicalAbelianization_of_mulEquiv e.toMulEquiv rfl
     have h0 := demushkinQ_of_isMulTorsionFree hG hfree
-    rw [CommGroup.isMulTorsionFree_iff_torsion_eq_bot] at hfree
-    have hcyc : IsCyclic (torsion (TopologicalAbelianization G)) := by rw [hfree]; infer_instance
-    refine ⟨hcyc, h0 ▸ dvd_zero p, ?_⟩
+    have hbot := CommGroup.isMulTorsionFree_iff_torsion_eq_bot.1 hfree
+    refine ⟨by rw [hbot]; infer_instance, h0 ▸ dvd_zero p, ?_⟩
     rw [h0, Nat.cast_zero]
     exact ⟨e⟩
   · -- `q ≠ 0`: the torsion subgroup is `ℤ_p ⧸ (q)`, of order `p ^ v_p(q)` with `v_p(q) ≥ 1`.
     have := PadicInt.finite_quotient_span hq
     have := PadicInt.isAddCyclic_quotient_span hq
-    have hcard : Nat.card (torsion (TopologicalAbelianization G)) = p ^ q.valuation := by
-      rw [natCard_torsion_of_mulEquiv isAddTorsion_of_finite e.toMulEquiv,
-        PadicInt.natCard_quotient_span hq]
-    obtain ⟨c, rfl⟩ := hpq
-    have hc : c ≠ 0 := right_ne_zero_of_mul hq
-    have hval := PadicInt.valuation_p_pow_mul 1 c hc
-    rw [pow_one] at hval
-    have hne : ¬ IsMulTorsionFree (TopologicalAbelianization G) := by
-      rw [CommGroup.isMulTorsionFree_iff_torsion_eq_bot]
-      intro hbot
-      rw [hbot, Subgroup.card_bot] at hcard
-      rcases Nat.pow_eq_one.mp hcard.symm with h | h
-      · exact (Fact.out : p.Prime).one_lt.ne' h
-      · omega
-    have hQ := demushkinQ_of_not_isMulTorsionFree hG hne
+    have hQ := demushkinQ_eq_pow_valuation_of_mulEquiv hG e.toMulEquiv hpq hq
     refine ⟨isCyclic_torsion_of_mulEquiv isAddTorsion_of_finite e.toMulEquiv, ?_, ?_⟩
-    · rw [hQ, hcard, hval, pow_add, pow_one]
-      exact dvd_mul_right p _
-    · rw [hQ, hcard, Nat.cast_pow, ← PadicInt.span_singleton_eq_span_pow_valuation hq]
+    · rw [hQ]
+      exact dvd_pow_self p (Nat.one_le_iff_ne_zero.1 (PadicInt.one_le_valuation_of_dvd hq hpq))
+    · rw [hQ, Nat.cast_pow, ← PadicInt.span_singleton_eq_span_pow_valuation hq]
       exact ⟨e⟩
-
-/-- **The torsion subgroup of the abelianization of a Demushkin group is finite**: the
-abelianization is a topologically finitely generated abelian pro-`p` group. -/
-theorem finite_torsion_topologicalAbelianization : Finite (torsion (TopologicalAbelianization G)) :=
-  hG.isProP.topologicalAbelianization_self.finite_torsion
-    (hG.isTopologicallyFinitelyGenerated.quotient _)
 
 /-- **The torsion subgroup of the abelianization of a Demushkin group is cyclic.** -/
 theorem isCyclic_torsion_topologicalAbelianization :
@@ -240,13 +292,110 @@ theorem exists_demushkinQ_eq_pow (hq : demushkinQ hG ≠ 0) :
 
 end IsDemushkin
 
-/-- **The `q`-invariant vanishes exactly when the abelianization is torsion-free.** -/
-@[simp]
-theorem demushkinQ_eq_zero_iff :
-    demushkinQ hG = 0 ↔ IsMulTorsionFree (TopologicalAbelianization G) := by
-  refine ⟨fun h ↦ by_contra fun hne ↦ ?_, demushkinQ_of_isMulTorsionFree hG⟩
-  rw [demushkinQ_of_not_isMulTorsionFree hG hne] at h
-  have := hG.finite_torsion_topologicalAbelianization
-  exact Nat.card_pos.ne' h
+/-! ### One-relator presentations
+
+For a Demushkin group given by a one-relator presentation `⟨X ∣ r⟩`, the `q`-invariant is read off
+the exponent vector `exponentSum r = q • w`, `w x₀ = 1`, of the relator, through the one-relator
+abelianization structure theorem `TauCeti.presentedProP.oneRelatorAbelianizationEquiv`: it is `0`
+when `q = 0`, that is when `r` lies in the closed commutator subgroup, and `p^{v_p(q)}` otherwise.
+The hypothesis `p ∣ q` is not decoration: the presentation need not be minimal, and a relator with
+a unit coordinate, such as `x₃ (x₁, x₂)` presenting `ℤ_p × ℤ_p`, has `q(G) = 0` while `ℤ_p ⧸ (q)`
+is trivial. -/
+
+section OneRelator
+
+variable {X : Type u} [Finite X] {r : freeProP p X} {x₀ : X} {w : X → ℤ_[p]} {q : ℤ_[p]}
+  (hw : w x₀ = 1) (hr : (freeProP.exponentSum p X r).toAdd = q • w)
+
+include hw hr in
+/-- **The `q`-invariant of a one-relator Demushkin group vanishes exactly when the exponent
+coordinate `q` of its relator does**, for `p ∣ q`. -/
+theorem demushkinQ_presentedProP_eq_zero_iff (hG : IsDemushkin p (presentedProP p X {r}))
+    (hpq : (p : ℤ_[p]) ∣ q) : demushkinQ hG = 0 ↔ q = 0 := by
+  refine ⟨fun h ↦ by_contra fun hq ↦ ?_, demushkinQ_eq_zero_of_mulEquiv hG
+    (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv⟩
+  rw [demushkinQ_eq_pow_valuation_of_mulEquiv hG
+    (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv hpq hq] at h
+  exact pow_ne_zero _ (Fact.out : p.Prime).ne_zero h
+
+include hw hr in
+/-- **The `q`-invariant of a one-relator Demushkin group vanishes exactly when the relator lies in
+the closed commutator subgroup** of the free pro-`p` group, for `p ∣ q`. -/
+theorem demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator
+    (hG : IsDemushkin p (presentedProP p X {r})) (hpq : (p : ℤ_[p]) ∣ q) :
+    demushkinQ hG = 0 ↔ r ∈ (commutator (freeProP p X)).topologicalClosure := by
+  rw [demushkinQ_presentedProP_eq_zero_iff hw hr hG hpq,
+    presentedProP.oneRelator_q_eq_zero_iff_mem_topologicalClosure_commutator r x₀ w hw q hr]
+
+include hw hr in
+/-- **The `q`-invariant of a one-relator Demushkin group is `p^{v_p(q)}`** for the exponent
+coordinate `q ≠ 0` of its relator, `p ∣ q`: the torsion subgroup of `G^{ab}` is `ℤ_p ⧸ (q)`. -/
+theorem demushkinQ_presentedProP_eq_pow_valuation (hG : IsDemushkin p (presentedProP p X {r}))
+    (hpq : (p : ℤ_[p]) ∣ q) (hq : q ≠ 0) : demushkinQ hG = p ^ q.valuation :=
+  demushkinQ_eq_pow_valuation_of_mulEquiv hG
+    (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv hpq hq
+
+/-- **The `q`-invariant of a one-relator Demushkin group is `p` exactly when some exponent sum of
+the relator is not divisible by `p ^ 2`**, for a relator all of whose exponent sums are divisible
+by `p`, as they are for a relator in `Φ(F)`. Writing the exponent vector as `q • w` with a
+coordinate `w x₀ = 1`, the `q`-invariant is `p^{v_p(q)}`, and it is `p` exactly when
+`v_p(q) = 1`. -/
+theorem demushkinQ_presentedProP_eq_iff_exists_not_dvd (hG : IsDemushkin p (presentedProP p X {r}))
+    (hpr : ∀ x, (p : ℤ_[p]) ∣ (freeProP.exponentSum p X r).toAdd x) :
+    demushkinQ hG = p ↔ ∃ x, ¬ (p : ℤ_[p]) ^ 2 ∣ (freeProP.exponentSum p X r).toAdd x := by
+  have hp : p.Prime := Fact.out
+  have : Nonempty X := (Nat.card_pos_iff.1 hG.card_pos_presentedProP).1
+  obtain ⟨x₀, q, w, hw, hv⟩ :=
+    PadicInt.exists_apply_eq_one_and_eq_smul (freeProP.exponentSum p X r).toAdd
+  have hqx₀ : (freeProP.exponentSum p X r).toAdd x₀ = q := by
+    rw [hv, Pi.smul_apply, hw, smul_eq_mul, mul_one]
+  have hq : (p : ℤ_[p]) ∣ q := hqx₀ ▸ hpr x₀
+  -- Some exponent sum escapes `p ^ 2` exactly when `q` does.
+  have hiff : (∃ x, ¬ (p : ℤ_[p]) ^ 2 ∣ (freeProP.exponentSum p X r).toAdd x) ↔
+      ¬ (p : ℤ_[p]) ^ 2 ∣ q := by
+    refine ⟨fun ⟨x, hx⟩ h ↦ hx ?_, fun h ↦ ⟨x₀, hqx₀ ▸ h⟩⟩
+    rw [hv, Pi.smul_apply, smul_eq_mul]
+    exact h.mul_right _
+  rw [hiff]
+  by_cases hq0 : q = 0
+  · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hG hq).2 hq0, hq0]
+    exact ⟨fun h ↦ absurd h.symm hp.ne_zero, fun h ↦ absurd (dvd_zero _) h⟩
+  rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hG hq hq0, ← Ideal.mem_span_singleton,
+    PadicInt.mem_span_pow_iff_le_valuation q hq0, not_le]
+  have h1 : 1 ≤ q.valuation := by
+    rw [← PadicInt.mem_span_pow_iff_le_valuation q hq0, Ideal.mem_span_singleton, pow_one]
+    exact hq
+  constructor
+  · intro h
+    have := Nat.pow_right_injective hp.two_le (h.trans (pow_one p).symm)
+    omega
+  · intro h
+    -- `p ∣ q` and `¬ p ^ 2 ∣ q` pin the valuation of `q` to `1`.
+    have hval : q.valuation = 1 := by omega
+    rw [hval, pow_one]
+
+section DegreeOne
+
+-- Preferring the ring path keeps a single additive structure on `ZMod p`, so that the coordinate
+-- statement below is stated over the module structure of `ZMod p` on itself.
+attribute [local instance 2000] Ring.toAddCommGroup
+
+variable [LinearOrder X]
+
+/-- **The `q`-invariant is `p` exactly when the relator has a `p`-power part.** For a relator
+`r ∈ Φ(F)` presenting a Demushkin group, the `q`-invariant of the group is `p` exactly when the
+class of `r` in `gr_1(F)` has a nonzero `p`-power coordinate, that is, when some exponent sum of
+`r` is not divisible by `p ^ 2`. -/
+theorem demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero
+    (hr : r ∈ proPFrattini p (freeProP p X)) (hG : IsDemushkin p (presentedProP p X {r})) :
+    demushkinQ hG = p ↔ ∃ i, (freeProP.degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩) (Sum.inl i) ≠ 0 := by
+  rw [demushkinQ_presentedProP_eq_iff_exists_not_dvd hG
+    (freeProP.dvd_exponentSum_of_mem_proPFrattini p X hr)]
+  simp only [ne_eq, freeProP.degreeOneBasis_repr_gradedMk_inl_eq_zero_iff]
+
+end DegreeOne
+
+end OneRelator
 
 end TauCeti

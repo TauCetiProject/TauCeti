@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import Mathlib.Algebra.CharZero.Infinite
+public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 
 /-!
@@ -18,6 +19,11 @@ the Dedekind zeta function.  There is one necessary exception: Mathlib's coeffic
 integral ideals and therefore has value `1` at index zero, contributed by the zero ideal, whereas
 an `ArithmeticFunction` has value zero there.  Since `LSeries` ignores its zero coefficient, the
 two coefficient systems define the same series.
+
+Since `1 * 1 = 1` pointwise, the same identification shows that regrouping has no
+pointwise-product formula as soon as some norm is attained by two ideals
+(`TauCeti.not_forall_normCoeff_mul_eq_pmul`): the coefficient of the product is the ideal count,
+not its square. `ℚ(i)`, with its two ideals of norm `5`, is such a field.
 
 For the rational field the ring of integers is isomorphic to `ℤ`.  Mapping an ideal through this
 isomorphism and using `Int.ideal_span_absNorm_eq_self` shows that there is exactly one ideal of
@@ -103,6 +109,23 @@ theorem dedekindZeta_eq_LSeries_normCoeff_one (s : ℂ) :
   apply LSeries_congr
   intro n hn
   rw [normCoeff_one_apply, ite_eq_right hn]
+
+/-- **Regrouping does not turn pointwise products into pointwise products.** If two or more
+integral ideals share the absolute norm `n`, then no formula
+`normCoeff (f * g) = (normCoeff f).pmul (normCoeff g)` holds: already for `f = g = 1` the
+`n`-th coefficient of `1 * 1 = 1` is the ideal count `dedekindZetaCoeff K n`, not its square. -/
+theorem not_forall_normCoeff_mul_eq_pmul {n : ℕ} (hn : 1 < dedekindZetaCoeff K n) :
+    ¬ ∀ f g : IdealArithmeticFunction K,
+      normCoeff K (f * g) = (normCoeff K f).pmul (normCoeff K g) := by
+  intro h
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  have h1 := congrArg (· n) (h 1 1)
+  simp only [mul_one, ArithmeticFunction.pmul_apply, normCoeff_one_apply, hn0, ite_false] at h1
+  have h2 : dedekindZetaCoeff K n = dedekindZetaCoeff K n * dedekindZetaCoeff K n := by
+    exact_mod_cast h1
+  nlinarith
 
 private theorem rat_normFiber_subsingleton (n : ℕ) :
     Subsingleton {I : Ideal (𝓞 ℚ) // Ideal.absNorm I = n} := by
