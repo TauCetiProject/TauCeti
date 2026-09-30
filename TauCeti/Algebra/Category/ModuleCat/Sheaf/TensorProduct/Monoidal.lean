@@ -81,6 +81,14 @@ def sheafificationUnitIso :
         _root_.SheafOfModules.unit (ringCatSheaf R) :=
   sheafificationIso (ringCatSheaf R) (_root_.SheafOfModules.unit _)
 
+/-- The forward map of `sheafificationUnitIso` is the counit of the sheafification adjunction at
+the sheaf of modules `R`. -/
+theorem sheafificationUnitIso_hom :
+    (sheafificationUnitIso R).hom =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).counit.app
+        (_root_.SheafOfModules.unit (ringCatSheaf R)) :=
+  sheafificationIso_hom _ _
+
 /-- The monoidal category structure on sheaves of `R`-modules: the tensor product is the
 sheafification of the sectionwise tensor product, and the unit is `R`. It is the localized
 monoidal structure along sheafification. -/
@@ -145,6 +153,24 @@ def _root_.SheafOfModules.tensorUnderlyingIso (M N : SheafOfModules.{u} (ringCat
       (M.val ⊗ N.val) :=
   ((sheafificationIso _ M).symm ⊗ᵢ (sheafificationIso _ N).symm) ≪≫
     Functor.Monoidal.μIso _ M.val N.val
+
+/-- The forward map of `tensorUnderlyingIso`: the inverses of `sheafificationIso` on both
+factors, followed by the tensor map of sheafification. -/
+theorem _root_.SheafOfModules.tensorUnderlyingIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (M.tensorUnderlyingIso N).hom =
+      ((sheafificationIso _ M).inv ⊗ₘ (sheafificationIso _ N).inv) ≫
+        Functor.LaxMonoidal.μ (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj))
+          M.val N.val := by
+  simp [SheafOfModules.tensorUnderlyingIso]
+
+/-- The inverse map of `tensorUnderlyingIso`: the inverse tensor map of sheafification, followed
+by `sheafificationIso` on both factors. -/
+theorem _root_.SheafOfModules.tensorUnderlyingIso_inv (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (M.tensorUnderlyingIso N).inv =
+      Functor.OplaxMonoidal.δ (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj))
+          M.val N.val ≫
+        ((sheafificationIso _ M).hom ⊗ₘ (sheafificationIso _ N).hom) := by
+  simp [SheafOfModules.tensorUnderlyingIso]
 
 /-- `tensorUnderlyingIso` is natural: under it, the tensor product of two morphisms of sheaves of
 modules is the sheafification of the sectionwise tensor product of their underlying morphisms. -/
