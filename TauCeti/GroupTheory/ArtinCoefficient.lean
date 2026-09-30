@@ -14,13 +14,13 @@ import Mathlib.Data.SetLike.Fintype
 
 Attach to every subgroup `C` of a finite group `G` the integer
 
-`artinCoeff C = ∑_{D cyclic, C ≤ D} μ [D : C]`,
+`C.artinCoeff = ∑_{D cyclic, C ≤ D} μ [D : C]`,
 
 the Möbius function of arithmetic summed over the relative indices of the cyclic subgroups above
 `C`. It vanishes unless `C` is cyclic, because a subgroup of a cyclic group is cyclic. These are
 the coefficients of **Artin's identity**: for every `g : G`,
 
-`∑_C artinCoeff C * |C| * |(G ⧸ C)^g| = |G|`.
+`∑_C C.artinCoeff * |C| * |(G ⧸ C)^g| = |G|`.
 
 Two inputs carry the proof. The first is combinatorial: for a cyclic subgroup `D` and a subgroup
 `E ≤ D` the map `C ↦ [D : C]` is a bijection from the subgroups between `E` and `D` onto the
@@ -41,11 +41,11 @@ Artin's induction theorem,
 `TauCeti.ClassFunction.natCard_nsmul_one_mem_indVirtualCharacters_isCyclic`
 (`TauCeti.RepresentationTheory.Induction.Artin.Basic`), is the in-repository consumer: it reads
 `TauCeti.sum_artinCoeff_of_mem` over the cyclic subgroups, the noncyclic ones contributing nothing
-by `TauCeti.artinCoeff_eq_zero_of_not_isCyclic`, and maps the coefficients into its field.
+by `Subgroup.artinCoeff_eq_zero_of_not_isCyclic`, and maps the coefficients into its field.
 
 ## Main declarations
 
-* `TauCeti.artinCoeff`: the Artin coefficient of a subgroup, with `TauCeti.artinCoeff_def`.
+* `Subgroup.artinCoeff`: the Artin coefficient of a subgroup, with `Subgroup.artinCoeff_def`.
 * `Subgroup.sum_moebius_index`: the Möbius sum of the index over the subgroups of a finite cyclic
   group above a fixed one.
 * `TauCeti.sum_moebius_relIndex`: the Möbius sum over an interval below a cyclic subgroup.
@@ -161,22 +161,22 @@ theorem sum_moebius_relIndex {G : Type*} [Group G] {E D : Subgroup G} [Finite D]
 
 /-- **The Artin coefficient** of a subgroup `C`, the sum of `μ [D : C]` over the cyclic subgroups
 `D` containing `C`. It vanishes unless `C` is cyclic. -/
-noncomputable def artinCoeff {G : Type*} [Group G] (C : Subgroup G) : ℤ :=
+noncomputable def _root_.Subgroup.artinCoeff {G : Type*} [Group G] (C : Subgroup G) : ℤ :=
   ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D)
 
 variable {G : Type*} [Group G]
 
-/-- `TauCeti.artinCoeff` unfolded: the Möbius function of the relative index, summed over the
+/-- `Subgroup.artinCoeff` unfolded: the Möbius function of the relative index, summed over the
 cyclic subgroups above `C`. -/
-theorem artinCoeff_def (C : Subgroup G) :
-    artinCoeff C = ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D) := (rfl)
+theorem _root_.Subgroup.artinCoeff_def (C : Subgroup G) :
+    C.artinCoeff = ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D) := (rfl)
 
 open scoped Classical in
 /-- A subgroup of a cyclic group is cyclic, so a noncyclic subgroup lies below no cyclic subgroup
 and its Artin coefficient vanishes. -/
 @[simp]
-theorem artinCoeff_eq_zero_of_not_isCyclic {C : Subgroup G} (hC : ¬ IsCyclic C) :
-    artinCoeff C = 0 :=
+theorem _root_.Subgroup.artinCoeff_eq_zero_of_not_isCyclic {C : Subgroup G} (hC : ¬ IsCyclic C) :
+    C.artinCoeff = 0 :=
   finsum_eq_zero_of_forall_eq_zero fun D ↦ by
     rw [finsum_eq_if, ite_eq_right]
     rintro ⟨_, hle⟩
@@ -188,16 +188,16 @@ open scoped Classical in
 /-- **The Artin coefficients of the subgroups containing an element add up to one.** This is the
 combinatorial half of Artin's identity for fixed points. -/
 theorem sum_artinCoeff_of_mem (y : G) :
-    ∑ᶠ (C : Subgroup G) (_ : y ∈ C), artinCoeff C = 1 := by
+    ∑ᶠ (C : Subgroup G) (_ : y ∈ C), C.artinCoeff = 1 := by
   -- Exchanging the two sums groups the pairs `C ≤ D` by their cyclic upper member `D`; the inner
   -- sum is `sum_moebius_relIndex` for the interval between `⟨y⟩` and `D`, leaving the term
   -- `D = ⟨y⟩` alone.
   classical
   let _ := Fintype.ofFinite (Subgroup G)
-  have houter : ∑ᶠ (C : Subgroup G) (_ : y ∈ C), artinCoeff C =
-      ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), artinCoeff C :=
+  have houter : ∑ᶠ (C : Subgroup G) (_ : y ∈ C), C.artinCoeff =
+      ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff :=
     finsum_cond_eq_sum_of_cond_iff _ (by simp)
-  have hinner : ∀ C : Subgroup G, artinCoeff C =
+  have hinner : ∀ C : Subgroup G, C.artinCoeff =
       ∑ D ∈ Finset.univ.filter (fun D : Subgroup G => IsCyclic D ∧ C ≤ D), μ (C.relIndex D) :=
     fun C ↦ finsum_cond_eq_sum_of_cond_iff _ (by simp)
   rw [houter]
@@ -243,11 +243,11 @@ theorem _root_.Subgroup.natCard_mul_natCard_fixedBy (C : Subgroup G) (g : G) :
 
 open scoped Classical in
 /-- **Artin's identity for fixed points**: weighting the permutation character of `G ⧸ C` by
-`artinCoeff C * |C|` and summing over all subgroups gives `|G|`, at every `g : G`. -/
+`C.artinCoeff * |C|` and summing over all subgroups gives `|G|`, at every `g : G`. -/
 theorem sum_artinCoeff_mul_card_fixedBy (g : G) :
-    ∑ᶠ C : Subgroup G, artinCoeff C * Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g) =
+    ∑ᶠ C : Subgroup G, C.artinCoeff * Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g) =
       (Nat.card G : ℤ) := by
-  -- Each summand counts, with the weight `artinCoeff C`, the elements `x` of `G` whose conjugate
+  -- Each summand counts, with the weight `C.artinCoeff`, the elements `x` of `G` whose conjugate
   -- `x⁻¹ g x` lies in `C`; exchanging the two sums replaces the inner sum by
   -- `sum_artinCoeff_of_mem` at `x⁻¹ g x`, which is `1`.
   classical
@@ -262,15 +262,15 @@ theorem sum_artinCoeff_mul_card_fixedBy (g : G) :
     simp [Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [finsum_eq_sum_of_fintype]
   have hrw : ∀ C : Subgroup G,
-      artinCoeff C * Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g) =
-        ∑ x : G, if x⁻¹ * g * x ∈ C then artinCoeff C else 0 := by
+      C.artinCoeff * Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g) =
+        ∑ x : G, if x⁻¹ * g * x ∈ C then C.artinCoeff else 0 := by
     intro C
     rw [mul_assoc, hcount C, Finset.mul_sum]
     exact Finset.sum_congr rfl fun x _ => by split <;> simp
   simp_rw [hrw]
   rw [Finset.sum_comm]
   have hone : ∀ x : G, ∑ C : Subgroup G,
-      (if x⁻¹ * g * x ∈ C then artinCoeff C else 0) = 1 := by
+      (if x⁻¹ * g * x ∈ C then C.artinCoeff else 0) = 1 := by
     intro x
     rw [← finsum_eq_sum_of_fintype]
     rw [← sum_artinCoeff_of_mem (x⁻¹ * g * x)]

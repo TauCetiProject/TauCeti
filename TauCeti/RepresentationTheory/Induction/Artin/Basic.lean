@@ -31,7 +31,7 @@ characters, over an algebraically closed field in which the selected subgroup or
 invertible.  Combining that comparison with the sharp canonical theorem gives the conventional
 characteristic-zero induced-character-span endpoint.
 
-The sharp identity rests on the Artin coefficients `TauCeti.artinCoeff` and their upper sums
+The sharp identity rests on the Artin coefficients `Subgroup.artinCoeff` and their upper sums
 `TauCeti.sum_artinCoeff_of_mem` (`TauCeti.GroupTheory.ArtinCoefficient`), and the projection
 formula propagates it from the trivial character to every virtual character.
 
@@ -94,32 +94,32 @@ cyclic subgroups -- the noncyclic ones have vanishing coefficient -- and in `k`.
 private theorem sum_artinCoeff_cyclicSubgroups_containing_eq_one {k : Type u}
     [AddCommGroupWithOne k] (y : G) :
     (∑ C : CyclicSubgroup G,
-      if _h : y ∈ (C : Subgroup G) then (artinCoeff (C : Subgroup G) : k) else (0 : k)) = 1 := by
+      if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) = 1 := by
   classical
   let _ := Fintype.ofFinite (Subgroup G)
-  have hZ : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), artinCoeff C = 1 := by
+  have hZ : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff = 1 := by
     rw [← finsum_cond_eq_sum_of_cond_iff (p := fun C : Subgroup G => y ∈ C)
       (t := Finset.univ.filter (fun C : Subgroup G => y ∈ C)) _ (by simp)]
     exact sum_artinCoeff_of_mem y
   have hsub : (∑ C : CyclicSubgroup G,
-      if y ∈ (C : Subgroup G) then artinCoeff (C : Subgroup G) else (0 : ℤ)) =
+      if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ)) =
       ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => IsCyclic C),
-        (if y ∈ C then artinCoeff C else 0) := by
+        (if y ∈ C then C.artinCoeff else 0) := by
     rw [Finset.sum_subtype (p := fun C : Subgroup G => IsCyclic C)
       (s := Finset.univ.filter (fun C : Subgroup G => IsCyclic C)) (by simp)]
   have hcyclic : (∑ C : CyclicSubgroup G,
-      if y ∈ (C : Subgroup G) then artinCoeff (C : Subgroup G) else (0 : ℤ)) = 1 := by
+      if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ)) = 1 := by
     rw [hsub, Finset.sum_subset
         (Finset.filter_subset (fun C : Subgroup G => IsCyclic C) Finset.univ)
         (fun C _ hC ↦ by
           simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hC
-          rw [artinCoeff_eq_zero_of_not_isCyclic hC, ite_self]),
+          rw [_root_.Subgroup.artinCoeff_eq_zero_of_not_isCyclic hC, ite_self]),
       ← Finset.sum_filter, hZ]
   calc
     (∑ C : CyclicSubgroup G,
-        if _h : y ∈ (C : Subgroup G) then (artinCoeff (C : Subgroup G) : k) else (0 : k)) =
+        if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) =
         ((∑ C : CyclicSubgroup G,
-          if y ∈ (C : Subgroup G) then artinCoeff (C : Subgroup G) else (0 : ℤ) : ℤ) : k) := by
+          if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ) : ℤ) : k) := by
       push_cast
       exact Finset.sum_congr rfl fun C _ ↦ by split <;> simp
     _ = 1 := by rw [hcyclic]; simp
@@ -135,7 +135,7 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   classical
   let _ := Fintype.ofFinite G
   let α : CyclicSubgroup G → (G → k) := fun C ↦
-    artinCoeff (C : Subgroup G) • (Nat.card (C : Subgroup G) •
+    (C : Subgroup G).artinCoeff • (Nat.card (C : Subgroup G) •
       indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)))
   have hα (C : CyclicSubgroup G) : α C ∈ indVirtualCharacters k G (fun C ↦ IsCyclic C) := by
     exact AddSubgroup.zsmul_mem _ (AddSubgroup.nsmul_mem _
