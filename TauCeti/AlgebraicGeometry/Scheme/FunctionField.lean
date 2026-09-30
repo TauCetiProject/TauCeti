@@ -64,7 +64,7 @@ private lemma exists_finiteType_isFractionRing_functionField :
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
   have : Nonempty U := ⟨⟨x, hxU⟩⟩
-  have : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
+  have : Nonempty {x : X // x ∈ (U : Set X)} := ⟨⟨x, hxU⟩⟩
   -- The base ring maps to `Γ(X, U)` through `Γ(Spec k, ⊤)`.
   let φ : k →+* Γ(X, U) :=
     ((X ↘ Spec (.of k)).appLE ⊤ U le_top).hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom
@@ -91,12 +91,10 @@ private lemma exists_finiteType_isFractionRing_functionField :
     functionField_isFractionRing_of_isAffineOpen X U hU, ?_⟩
   -- The nonempty open `U` of the irreducible space `X` has the dimension of `X`, and `U` is
   -- homeomorphic to `Spec Γ(X, U)`.
-  have hdim := topologicalKrullDim_inter_eq_of_locallyOfFiniteType (X ↘ Spec (.of k))
-    (IrreducibleSpace.isIrreducible_univ X) isClosed_univ U.isOpen ⟨x, trivial, hxU⟩
-  rw [Set.univ_inter] at hdim
-  rw [(Homeomorph.Set.univ X).symm.isHomeomorph.topologicalKrullDim_eq, ← hdim]
-  exact (IsAffineOpen.isoSpec hU).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq.trans
-    (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _)
+  exact (topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
+    (X ↘ Spec (.of k)) U.isOpen.isOpenEmbedding_subtypeVal).symm.trans
+    ((IsAffineOpen.isoSpec hU).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq.trans
+      (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _))
 
 /-- The function field of an integral scheme locally of finite type over a field `k` is
 essentially of finite type over `k`: it is a localization of a finitely generated `k`-algebra. -/

@@ -48,6 +48,9 @@ maximal ideal of the finitely generated irreducible algebra `A` has height `dim 
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType`: on a scheme
   locally of finite type over a field, a nonempty open part of an irreducible closed subset has
   the dimension of that subset.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType`:
+  a nonempty open subspace of an irreducible scheme locally of finite type over a field has the
+  dimension of the scheme.
 * `TauCeti.AlgebraicGeometry.isPureDimensional_pullback_Spec_map_iff_of_field`: pure-dimensionality
   of a scheme locally of finite type over a field is invariant under extension of the base field.
 * `TauCeti.AlgebraicGeometry.ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed`: on an
@@ -153,6 +156,21 @@ theorem topologicalKrullDim_inter_eq_of_locallyOfFiniteType {K : Type u} [Field 
         (((he i).isEmbedding.comp IsEmbedding.subtypeVal).codRestrict (Z ∩ U)
           fun y ↦ y.2).isInducing.topologicalKrullDim_le
 
+/-- A nonempty open subspace of an irreducible scheme locally of finite type over a field has
+the Krull dimension of the scheme. -/
+theorem topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
+    {K : Type u} [Field K] {X : Scheme.{u}} (f : X ⟶ Spec (.of K))
+    [LocallyOfFiniteType f] [IrreducibleSpace X] {Y : Type*} [TopologicalSpace Y]
+    [Nonempty Y] {g : Y → X} (hg : IsOpenEmbedding g) :
+    topologicalKrullDim Y = topologicalKrullDim X := by
+  obtain ⟨y⟩ : Nonempty Y := inferInstance
+  have hdim := topologicalKrullDim_inter_eq_of_locallyOfFiniteType f
+    (IrreducibleSpace.isIrreducible_univ X) isClosed_univ hg.isOpen_range
+    ⟨g y, Set.mem_univ _, y, rfl⟩
+  rw [Set.univ_inter] at hdim
+  rw [(Homeomorph.Set.univ X).symm.isHomeomorph.topologicalKrullDim_eq, ← hdim]
+  exact hg.toHomeomorph.isHomeomorph.topologicalKrullDim_eq
+
 /-- The spectrum of a finitely generated algebra over a field `K` is pure-dimensional of dimension
 `d` exactly when its base change to a field extension `L / K` is. -/
 private theorem isPureDimensional_pullback_Spec_iff_of_field {K L : Type u} [Field K] [Field L]
@@ -214,12 +232,7 @@ theorem ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed {K : Type u} [Fiel
   have : y.asIdeal.IsMaximal := (PrimeSpectrum.isClosed_singleton_iff_isMaximal y).mp hy
   rw [ringKrullDim_stalk_eq_coheight, coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
     height_eq_ringKrullDim_of_isMaximal K, ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
-  have hdim := topologicalKrullDim_inter_eq_of_locallyOfFiniteType f
-    (IrreducibleSpace.isIrreducible_univ X) isClosed_univ g.isOpenEmbedding.isOpen_range
-    ⟨g y, Set.mem_univ _, y, rfl⟩
-  rw [Set.univ_inter] at hdim
-  rw [(Homeomorph.Set.univ X).symm.isHomeomorph.topologicalKrullDim_eq, ← hdim]
-  exact g.isOpenEmbedding.toHomeomorph.isHomeomorph.topologicalKrullDim_eq
+  exact topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType f g.isOpenEmbedding
 
 end AlgebraicGeometry
 

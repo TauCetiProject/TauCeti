@@ -73,7 +73,9 @@ theorem height_map_quotientMk_nilradical (p : Ideal R) [p.IsPrime] :
     (by simpa [Ideal.mk_ker] using hIp)
   have he : e ⟨q, inferInstance⟩ = (⟨p, inferInstance⟩ : PrimeSpectrum R) := by
     apply PrimeSpectrum.ext
-    -- The quotient-spectrum equivalence contracts the image ideal back to `p`.
+    -- The composite `e` is definitionally contraction by `Quotient.mk I` on underlying ideals.
+    -- Mathlib provides no apply lemma for this composite of the quotient-spectrum equivalence,
+    -- `Set.orderIsoOfEq`, and `OrderIso.Set.univ`.
     change (p.map (Ideal.Quotient.mk I)).comap (Ideal.Quotient.mk I) = p
     rw [Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
       ← RingHom.ker_eq_comap_bot, Ideal.mk_ker]
