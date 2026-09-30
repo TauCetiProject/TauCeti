@@ -184,6 +184,7 @@ theorem face_facePerm (D : PDCode n) (h : Fin (4 * n)) : D.face (D.facePerm h) =
   D.face_eq_face_iff.mpr (sameCycle_apply_left.mpr (SameCycle.refl _ _))
 
 /-- The number of faces is the cardinality of the type of faces. -/
+@[simp]
 theorem card_face (D : PDCode n) : Nat.card D.Face = D.faceCount :=
   (orbitCount_def _).symm
 
@@ -209,6 +210,16 @@ theorem faceCount_mirror (D : PDCode n) : D.mirror.faceCount = D.faceCount := by
 theorem faceCount_relabel (D : PDCode n) (half : Perm (Fin (4 * n))) (cross : Perm (Fin n)) :
     (D.relabel half cross).faceCount = D.faceCount := by
   simp [faceCount]
+
+/-- Relabelling preserves face incidence: two relabelled half-edges lie on the same face of the
+relabelled code exactly when the original half-edges lie on the same face of the code. -/
+@[simp]
+theorem face_relabel_eq_face_relabel_iff (D : PDCode n) (half : Perm (Fin (4 * n)))
+    (cross : Perm (Fin n)) {h h' : Fin (4 * n)} :
+    (D.relabel half cross).face (half h) = (D.relabel half cross).face (half h') ↔
+      D.face h = D.face h' := by
+  rw [face_eq_face_iff, face_eq_face_iff, facePerm_relabel, permCongr_eq_mul, sameCycle_conj,
+    Perm.inv_def, symm_apply_apply, symm_apply_apply]
 
 /-! ### The permutation triple -/
 
@@ -299,6 +310,7 @@ theorem isPlanar_iff_faceCount_eq_of_isConnected {D : PDCode n}
   rw [isPlanar_iff_faceCount_eq, hc]
 
 /-- A PD-code without crossings is planar. -/
+@[simp]
 theorem isPlanar_of_zero (D : PDCode 0) : D.IsPlanar := by
   have : IsEmpty (Fin (4 * 0)) := ⟨fun x ↦ by have := x.isLt; omega⟩
   rw [isPlanar_iff_faceCount_eq, faceCount_def, orbitCount_def, Nat.card_of_isEmpty,
@@ -331,6 +343,7 @@ theorem isConnected_toPermutationTriple_of_one_crossing (D : PDCode 1) :
   exact ⟨⟨D.crossingRotation ^ k, zpow_mem (D.toPermutationTriple.σ0_mem_monodromyGroup) k⟩, hk⟩
 
 /-- The kink has three faces: the two sides of its loop and the region outside the strand. -/
+@[simp]
 theorem faceCount_kink : kink.faceCount = 3 := by
   have hface : kink.facePerm = (crossingSlotEquiv 1).permCongr
       (prodCongrRight fun _ ↦ 1 * swap (1 : Fin 4) 3) := by
@@ -351,6 +364,7 @@ theorem faceCount_kink : kink.faceCount = 3 := by
   omega
 
 /-- **The kink is planar.** -/
+@[simp]
 theorem isPlanar_kink : kink.IsPlanar := by
   rw [isPlanar_iff_faceCount_eq_of_isConnected
     (isConnected_toPermutationTriple_of_one_crossing kink),
