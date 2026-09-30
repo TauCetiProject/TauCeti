@@ -145,8 +145,9 @@ private theorem centerSubmodule_smul_coe (s : S) (x : centerSubmodule S) :
 /-- The action on the center is multiplication by the included scalar. -/
 private theorem center_smul_coe (s : S) (x : center R A) :
     ((s • x : center R A) : A) = ((s : center R A) : A) * (x : A) := by
-  change (((s : center R A) * x : center R A) : A) = _
-  exact (center R A).coe_mul (s : center R A) x
+  have hmap : algebraMap S (center R A) s = (s : center R A) := rfl
+  have hsmul : s • x = algebraMap S (center R A) s * x := Algebra.smul_def s x
+  rw [hsmul, hmap, (center R A).coe_mul]
 
 /-- The submodule of central elements has the canonical center's `S`-module structure. -/
 private def centerSubmoduleEquiv : (centerSubmodule S) ≃ₗ[S] center R A where
