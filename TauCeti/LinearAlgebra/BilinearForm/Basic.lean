@@ -37,8 +37,8 @@ namespace TauCeti
 
 open LinearMap (BilinForm)
 
-/-- Polarization of a symmetric bilinear form over a commutative ring. -/
-theorem bilinForm_apply_add_self {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+/-- Polarization of a symmetric bilinear form over a commutative semiring. -/
+theorem bilinForm_apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     {B : BilinForm R M} (hB : B.IsSymm) (x y : M) :
     B (x + y) (x + y) = B x x + B y y + 2 * B x y := by
   simp only [map_add, LinearMap.add_apply, hB.eq y x]
