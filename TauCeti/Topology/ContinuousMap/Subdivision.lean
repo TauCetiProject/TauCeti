@@ -23,7 +23,7 @@ Henning Basold, and Peter Bruin). The general form follows Mathlib's
 
 public section
 
-open Set
+open Set Topology
 open scoped unitInterval
 
 namespace ContinuousMap
@@ -48,5 +48,25 @@ theorem exists_grid_subdivision {X : Type*} [TopologicalSpace X] {ι : Sort*}
   refine ⟨m, t, ht0, hmono, htail, fun j k => ?_⟩
   obtain ⟨i, hsubset⟩ := hcell j k
   exact ⟨i, fun x hx => hsubset hx⟩
+
+/-- A neighbourhood cover of a continuous square admits a finite monotone grid whose closed
+cells each map into a cover member. -/
+theorem exists_grid_subdivision_nhds {X : Type*} [TopologicalSpace X] {ι : Sort*}
+    (K : C(↥unitInterval × ↥unitInterval, X)) (U : ι → Set X)
+    (hU : ∀ z, ∃ i, U i ∈ 𝓝 (K z)) :
+    ∃ (n : ℕ) (t : Fin (n + 1) → unitInterval),
+      t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t ∧
+        ∀ j k : Fin n, ∃ i, MapsTo K
+          (Icc (t j.castSucc) (t j.succ) ×ˢ Icc (t k.castSucc) (t k.succ)) (U i) := by
+  obtain ⟨n, t, ht0, htmono, ht1, htcover⟩ :=
+    exists_grid_subdivision K (fun i ↦ interior (U i))
+      (fun _ ↦ isOpen_interior) (fun z ↦ by
+        obtain ⟨i, hi⟩ := hU z
+        exact ⟨i, mem_interior_iff_mem_nhds.mpr hi⟩)
+  refine ⟨n, fun k ↦ t k, by simpa using ht0, by simpa using ht1 n le_rfl,
+    fun a b hab ↦ htmono (by simpa using hab), ?_⟩
+  intro j k
+  obtain ⟨i, hi⟩ := htcover j k
+  exact ⟨i, fun z hz ↦ interior_subset (hi hz)⟩
 
 end ContinuousMap
