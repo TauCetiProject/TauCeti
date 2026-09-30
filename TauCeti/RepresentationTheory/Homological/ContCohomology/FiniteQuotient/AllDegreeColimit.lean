@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Topology.FilteredColimits
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Canonical
-import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCoefficients
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.Algebra.GroupAction.Discrete
 
@@ -60,6 +59,13 @@ action; total disconnectedness of `G` is not needed.
 * `TauCeti.ContCohomology.exists_continuousFiniteQuotientTransition_eq_zero`: a finite-level class
   inflating to zero dies at some deeper finite level.
 * `TauCeti.ContCohomology.continuousFiniteQuotientColimit`: the comparison cocone is colimiting.
+
+## Implementation notes
+
+The finite-level equalization by taking a difference and the final jointly-surjective colimit
+argument generalize the degree-two proof in `FiniteQuotient/Colimit.lean`. The cochain descent
+argument adapts the all-degree descent on coinduced resolutions in
+`ContCohomology/ClosedSubgroup.lean` to quotient maps and fixed-point coefficients.
 
 ## References
 
