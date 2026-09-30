@@ -38,6 +38,8 @@ The constructions follow `ClassFieldTheory/Cohomology/IndCoind/Finite.lean` and
 * `Rep.coindBot`, `Rep.coindBotFunctor`: coinduction from the trivial subgroup.
 * `Rep.coindBotMap`, `Rep.indBotMap`: maps induced by morphisms of representations.
 * `Rep.coindBotUnit`: the monomorphism `A ⟶ coindBot k G A.V`.
+* `Rep.toCoindBot`: the morphism `B ⟶ coindBot k G X`, `b ↦ (g ↦ r (g • b))`, attached to a
+  `k`-linear map `r : B → X`.
 * `Rep.indBot`, `Rep.indBotFunctor`: induction from the trivial subgroup.
 * `Rep.indBotCounit`: the epimorphism `indBot k G A.V ⟶ A`.
 * `Rep.fromIndBot`: the morphism `indBot k G X ⟶ B`, `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x`, attached to a
@@ -252,6 +254,34 @@ theorem leftInverse_coindBotUnit (A : Rep k G) :
       (coindBotUnit A).hom := fun a ↦ by
   rw [LinearMap.comp_apply, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
     coindBotUnit_hom_apply_coe, map_one, Module.End.one_apply]
+
+/-- The morphism `n ↦ (g ↦ r (g • n))` from a representation to the representation coinduced from
+the trivial subgroup, attached to a `k`-linear map `r`. -/
+def toCoindBot (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
+    (r : A.V →ₗ[k] X) : A ⟶ coindBot k G X :=
+  coindBotUnit A ≫ (coindBotFunctor k G).map (ModuleCat.ofHom r)
+
+/-- The morphism attached to `r` sends `a` to the function `g ↦ r (g • a)`. -/
+theorem toCoindBot_hom_apply_coe (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
+    (r : A.V →ₗ[k] X) (a : A) (g : G) :
+    (dsimp% only (((toCoindBot A r).hom a).1 g)) = r (A.ρ g a) := by
+  -- The underlying map of a composite of representations is the composite of the underlying maps;
+  -- `Rep.hom_comp` does not fire here because the middle object is `coindBot k G A.V` on one side
+  -- and `(coindBotFunctor k G).obj _` on the other.
+  change (((coindBotFunctor k G).map (ModuleCat.ofHom r)).hom ((coindBotUnit A).hom a)).1 g = _
+  rw [coindBotFunctor_map_hom_apply_coe, ModuleCat.hom_ofHom, coindBotUnit_hom_apply_coe]
+
+/-- If `r` is a retraction of `f : A ⟶ B`, then `f` followed by `n ↦ (g ↦ r (g • n))` is the
+embedding of `A` into its coinduced representation. -/
+theorem comp_toCoindBot_of_leftInverse {A B : Rep k G} (f : A ⟶ B) {r : B.V →ₗ[k] A.V}
+    (hr : Function.LeftInverse r f.hom) : f ≫ toCoindBot B r = coindBotUnit A := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  ext a : 1
+  refine Subtype.ext (funext fun g ↦ ?_)
+  -- Evaluate both sides as functions `G → A`.
+  change ((toCoindBot B r).hom (f.hom a)).1 g = ((coindBotUnit A).hom a).1 g
+  rw [toCoindBot_hom_apply_coe, coindBotUnit_hom_apply_coe, ← Rep.hom_comm_apply, hr]
 
 end Coinduction
 

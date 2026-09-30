@@ -73,9 +73,12 @@ private theorem map_associator_δ (M N : Rep k G) {S : ShortComplex (Rep k G)}
     (h₂ : ((S.map (tensorLeft N)).map (tensorLeft M)).ShortExact) (n : ℤ)
     (w : tateCohomology ((M ⊗ N) ⊗ S.X₃) n) :
     (tateCohomologyFunctor (n + 1)).map (α_ M N S.X₁).hom (_root_.TateCohomology.δ h₁ n w) =
-      _root_.TateCohomology.δ h₂ n ((tateCohomologyFunctor n).map (α_ M N S.X₃).hom w) :=
-  ConcreteCategory.congr_hom
-    (_root_.TateCohomology.δ_naturality h₁ h₂ (S.mapNatTrans (tensorLeftTensor M N).hom) n) w
+      _root_.TateCohomology.δ h₂ n ((tateCohomologyFunctor n).map (α_ M N S.X₃).hom w) := by
+  rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply]
+  -- Naturality of `δ` for the morphism of sequences given on each term by the associator.
+  simpa only [ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃, tensorLeftTensor_hom_app]
+    using congrArg (fun φ ↦ φ w)
+      (_root_.TateCohomology.δ_naturality h₁ h₂ (S.mapNatTrans (tensorLeftTensor M N).hom) n)
 
 /-- The upward step in the proof of `cup_assoc`: associativity for a last class of degree `s ≥ 0`
 in the upward shift of `P` gives associativity for a last class of degree `s + 1` in `P`. -/

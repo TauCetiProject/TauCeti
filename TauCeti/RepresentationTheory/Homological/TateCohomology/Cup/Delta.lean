@@ -49,33 +49,6 @@ namespace TauCeti.TateCohomology
 
 variable {k G : Type u} [CommRing k] [Group G]
 
-/-- The morphism `n ↦ (g ↦ r (g • n))` from a representation to the representation coinduced from
-the trivial subgroup, attached to a `k`-linear map `r`. -/
-private def toCoindBot (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
-    (r : A.V →ₗ[k] X) : A ⟶ coindBot k G X :=
-  coindBotUnit A ≫ (coindBotFunctor k G).map (ModuleCat.ofHom r)
-
-private theorem toCoindBot_hom_apply_coe (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
-    (r : A.V →ₗ[k] X) (a : A) (g : G) :
-    (dsimp% only (((toCoindBot A r).hom a).1 g)) = r (A.ρ g a) := by
-  -- The underlying map of a composite of representations is the composite of the underlying maps;
-  -- `Rep.hom_comp` does not fire here because the middle object is `coindBot k G A.V` on one side
-  -- and `(coindBotFunctor k G).obj _` on the other.
-  change (((coindBotFunctor k G).map (ModuleCat.ofHom r)).hom ((coindBotUnit A).hom a)).1 g = _
-  rw [coindBotFunctor_map_hom_apply_coe, ModuleCat.hom_ofHom, coindBotUnit_hom_apply_coe]
-
-/-- If `r` is a retraction of `f : A ⟶ B`, then `f` followed by `n ↦ (g ↦ r (g • n))` is the
-embedding of `A` into its coinduced representation. -/
-private theorem comp_toCoindBot_of_leftInverse {A B : Rep k G} (f : A ⟶ B) {r : B.V →ₗ[k] A.V}
-    (hr : Function.LeftInverse r f.hom) : f ≫ toCoindBot B r = coindBotUnit A := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  ext a : 1
-  refine Subtype.ext (funext fun g ↦ ?_)
-  -- Evaluate both sides as functions `G → A`.
-  change ((toCoindBot B r).hom (f.hom a)).1 g = ((coindBotUnit A).hom a).1 g
-  rw [toCoindBot_hom_apply_coe, coindBotUnit_hom_apply_coe, ← Rep.hom_comm_apply, hr]
-
 /-- The morphism from a short exact sequence whose first map has a `k`-linear retraction `r` to the
 upward dimension-shifting sequence of its first term: the identity on the first term, and
 `n ↦ (g ↦ r (g • n))` on the middle term. -/
