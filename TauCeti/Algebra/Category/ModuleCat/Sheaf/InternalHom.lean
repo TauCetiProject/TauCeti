@@ -67,11 +67,22 @@ variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
 /-- The sections over `U` of the internal Hom of the underlying presheaves of two sheaves of
 modules are the morphisms of their restrictions to the slice over `U`. -/
 private def ihomValObjEquiv (U : C) :
-    ((ihom M.val).obj N.val).obj (op U) ≃ (M.over U ⟶ N.over U) where
-  toFun s := ⟨PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val s⟩
-  invFun ψ := (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val).symm ψ.val
-  left_inv s := Equiv.symm_apply_apply _ s
-  right_inv ψ := congrArg Hom.mk (Equiv.apply_symm_apply _ ψ.val)
+    ((ihom M.val).obj N.val).obj (op U) ≃ (M.over U ⟶ N.over U) :=
+  (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val).trans
+    ((fullyFaithfulForget _).homEquiv (X := M.over U) (Y := N.over U)).symm
+
+/-- The morphism of restrictions attached by `ihomValObjEquiv` to a section of the presheaf
+internal Hom is the one given by `TauCeti.PresheafOfModules.ihomObjEquiv`. -/
+private theorem ihomValObjEquiv_val (U : C) (s : ((ihom M.val).obj N.val).obj (op U)) :
+    (ihomValObjEquiv M N U s).val = PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val s :=
+  (fullyFaithfulForget _).map_preimage (X := M.over U) (Y := N.over U) _
+
+/-- Componentwise form of `ihomValObjEquiv_val`. -/
+private theorem ihomValObjEquiv_val_app (U : C) (s : ((ihom M.val).obj N.val).obj (op U))
+    {W : C} (h : W ⟶ U) (m : M.val.obj (op W)) :
+    ((ihomValObjEquiv M N U s).val.app (op (Over.mk h))) m =
+      (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val s).app' (op (Over.mk h)) m :=
+  congrArg (fun φ ↦ (φ.app (op (Over.mk h))) m) (ihomValObjEquiv_val M N U s)
 
 /-- Restricting a section of the presheaf internal Hom agrees, under `ihomValObjEquiv`, with
 restricting the corresponding local linear morphism. -/
@@ -83,10 +94,11 @@ private theorem ihomValObjEquiv_map {U V : C} (g : V ⟶ U)
   ext ⟨W⟩ m
   -- An object of the slice over `V` is `Over.mk h` for its structure morphism `h`.
   obtain ⟨W, ⟨⟨⟩⟩, h⟩ := W
+  refine (ihomValObjEquiv_val_app M N V _ h m).trans ?_
   refine (PresheafOfModules.ihomObjEquiv_map_app (R := R.obj) U M.val N.val s g h m).trans ?_
   refine Eq.symm ((linearHomObjEquiv_map_app M N g h _ m).trans ?_)
   rw [Equiv.apply_symm_apply]
-  rfl
+  exact ihomValObjEquiv_val_app M N U s (h ≫ g) m
 
 /-- The underlying presheaf of sets of the presheaf internal Hom of two sheaves of modules is the
 sheaf of local linear morphisms between them. -/
@@ -137,10 +149,15 @@ theorem _root_.SheafOfModules.ihomObjEquiv_apply (U : C) (s : ((ihom M).obj N).v
     M.ihomObjEquiv N U s =
       ⟨PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val
         (((ihomCompForgetIso M).hom.app N).app (op U) s)⟩ :=
-  (rfl)
+  (Equiv.trans_apply _ _ _).trans (Hom.ext ((ihomValObjEquiv_val M N U _).trans
+    (congrArg (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val)
+      (Iso.toLinearEquiv_apply _ s))))
 
 /-- Restricting a section of `𝓗om(M, N)` along `g : V ⟶ U` restricts the corresponding morphism
-of restrictions to the slice over `V`. -/
+of restrictions to the slice over `V`.
+
+This is not a simp lemma: `SheafOfModules.ihom_obj` rewrites the internal Hom in its left-hand
+side. -/
 theorem _root_.SheafOfModules.ihomObjEquiv_map_app {U : C} (s : ((ihom M).obj N).val.obj (op U))
     {V : C} (g : V ⟶ U) {W : C} (h : W ⟶ V) (m : M.val.obj (op W)) :
     ((M.ihomObjEquiv N V (((ihom M).obj N).val.map g.op s)).val.app (op (Over.mk h))) m =
