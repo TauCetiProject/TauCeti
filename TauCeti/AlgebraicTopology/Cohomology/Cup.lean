@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
 /-!
 # The cup product in singular cohomology
 
-Let `C` be a `k`-linear abelian monoidal category with coproducts.  For a space `X`, the
+Let `C` be a `k`-linear preadditive monoidal category with coproducts.  For a space `X`, the
 Alexander–Whitney diagonal `TopCat.alexanderWhitneyDiagonal u X` is the chain map
 `C(X; T) ⟶ C(X; R) ⊗ C(X; S)` obtained from a coefficient morphism `u : T ⟶ R ⊗ S`, the map
 induced by the diagonal `X ⟶ X × X`, and the Alexander–Whitney map
@@ -25,8 +25,8 @@ cochain `φ` of degree `p` with values in `M` and a cochain `ψ` of degree `q` w
 give the cochain of degree `n = p + q` with values in `P` whose value on a singular simplex `σ` is
 `μ (φ (σ|[0, …, p]) ⊗ ψ (σ|[p, …, n]))`, precomposed with `u`
 (`TopCat.ιChainComplex_cupCochain_alexanderWhitneyDiagonal`).  It satisfies the Leibniz rule
-`TauCeti.ChainComplex.d_comp_cupCochain`, and so descends to the `k`-bilinear cup product
-`TopCat.singularCup` on singular cohomology, which is natural in `X`.
+`TauCeti.ChainComplex.d_comp_cupCochain`, and so, when `C` is moreover abelian, descends to the
+`k`-bilinear cup product `TopCat.singularCup` on singular cohomology, which is natural in `X`.
 
 For the cohomology of `X` with coefficients in modules over a commutative ring `k`, take
 `C := ModuleCat k`, `R = S = T = 𝟙_ (ModuleCat k)` (the module `k`) and `u = (λ_ _).inv`; then
@@ -118,11 +118,11 @@ lemma alexanderWhitneyDiagonal_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) :
 
 end AlexanderWhitneyDiagonal
 
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
-  [MonoidalPreadditive C] {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
-  {R S T : C} (u : T ⟶ R ⊗ S)
+section Cochain
 
-variable {M N P : C} (μ : M ⊗ N ⟶ P)
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
+  [MonoidalPreadditive C] {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
+  {R S T : C} (u : T ⟶ R ⊗ S) {M N P : C} (μ : M ⊗ N ⟶ P)
 
 /-- **The cup product of singular cochains on a simplex**: for cochains `φ` of degree `p` and `ψ`
 of degree `q`, the value of `φ ⌣ ψ` on a singular `(p + q)`-simplex `σ` is `φ` of the front
@@ -160,6 +160,14 @@ lemma ιChainComplex_cupCochain_alexanderWhitneyDiagonal (X : TopCat.{w}) (p q n
       (fun h ↦ hi (Fin.ext h)), comp_zero]
   · simp
 
+end Cochain
+
+section Cohomology
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
+  [MonoidalPreadditive C] {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
+  {R S T : C} (u : T ⟶ R ⊗ S) {M N P : C} (μ : M ⊗ N ⟶ P)
+
 variable (k) in
 /-- **The cup product on singular cohomology**,
 `Hᵖ(X; R, M) × H^q(X; S, N) ⟶ Hⁿ(X; T, P)` for `p + q = n`: the cup product of cohomology classes
@@ -190,5 +198,7 @@ lemma singularCup_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (p q n : ℕ) (h :
       TopCat.singularCohomologyMap f n (singularCup k u μ Y p q n h α β) :=
   TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _ (alexanderWhitneyDiagonal_naturality u f)
     p q n h α β
+
+end Cohomology
 
 end TopCat
