@@ -12,10 +12,11 @@ import Mathlib.FieldTheory.SplittingField.Construction
 # Tschirnhaus transforms of a polynomial
 
 For `f T : R[X]` with `f` monic, the Tschirnhaus transform `Polynomial.tschirnhausPolynomial f T`
-is the polynomial whose roots are the values `T(α)` at the roots `α` of `f`, listed with
-multiplicity. It is defined as the two-variable resultant `Res_Y(f(Y), X - T(Y))`, so it is a
-function of the coefficients of `f` and `T` alone: no splitting field is chosen, and the
-construction makes sense over any commutative ring.
+is the polynomial that replaces each root `α` of `f` by the value `T(α)`: in a domain in which `f`
+splits, its roots are exactly those values, listed with multiplicity. It is defined as the
+two-variable resultant `Res_Y(f(Y), X - T(Y))`, so it is a function of the coefficients of `f` and
+`T` alone: no splitting field is chosen, and the construction makes sense over any commutative
+ring.
 
 The defining resultant is taken in `(R[X])[Y]`, where `f.map C` is `f(Y)` and `C X - T.map C` is
 `X - T(Y)`. Over a domain in which `f` splits, expanding the resultant along the roots of `f`
@@ -60,13 +61,11 @@ noncomputable section
 
 namespace Polynomial
 
-universe u
-
-variable {R : Type u} {S : Type*} [CommRing R] [CommRing S] {f T : R[X]}
+variable {R S : Type*} [CommRing R] [CommRing S] {f T : R[X]}
 
 /-- The **Tschirnhaus transform** of `f` along `T`: the resultant `Res_Y(f(Y), X - T(Y))`, taken
-in `(R[X])[Y]`. For monic `f` over a domain it is monic of the same degree as `f`, with roots the
-values of `T` at the roots of `f`. -/
+in `(R[X])[Y]`. For monic `f` over a domain it is monic of the same degree as `f`, and in a domain
+in which `f` splits its roots are the values of `T` at the roots of `f`. -/
 def tschirnhausPolynomial (f T : R[X]) : R[X] :=
   (f.map (C : R →+* R[X])).resultant (C X - T.map C)
 
@@ -134,36 +133,43 @@ theorem Monic.roots_tschirnhausPolynomial [IsDomain R] (hf : f.Monic) (hsp : f.S
   rw [hf.tschirnhausPolynomial_eq_prod hsp, map_X_sub_C_eval T f.roots,
     roots_multiset_prod_X_sub_C]
 
-/-- A polynomial over a domain splits in some field that the domain embeds into: take a splitting
-field over the fraction field. This is the reduction that carries the product formula to an
-arbitrary domain, and it is used only for that. -/
-private theorem exists_injective_ringHom_splits [IsDomain R] (f : R[X]) :
-    ∃ (L : Type u) (_ : Field L) (φ : R →+* L), Function.Injective φ ∧ (f.map φ).Splits := by
+/-- The monicity and the degree of a Tschirnhaus transform over an arbitrary domain, proved
+together because they share one base change: along the embedding of `R` into a splitting field of
+`f` over the fraction field, the transform becomes the product formula above. The two halves are
+stated separately below. -/
+private theorem monic_and_natDegree_tschirnhausPolynomial [IsDomain R] (hf : f.Monic) (T : R[X]) :
+    (f.tschirnhausPolynomial T).Monic ∧
+      (f.tschirnhausPolynomial T).natDegree = f.natDegree := by
   set K := FractionRing R
   set L := (f.map (algebraMap R K)).SplittingField
-  refine ⟨L, inferInstance, (algebraMap K L).comp (algebraMap R K), ?_, ?_⟩
-  · exact (algebraMap K L).injective.comp (FaithfulSMul.algebraMap_injective R K)
-  · rw [← map_map]
+  set φ := (algebraMap K L).comp (algebraMap R K) with hφ
+  have hinj : Function.Injective φ :=
+    (algebraMap K L).injective.comp (FaithfulSMul.algebraMap_injective R K)
+  have hsp : (f.map φ).Splits := by
+    rw [hφ, ← map_map]
     exact IsSplittingField.splits _ _
+  have hprod : (f.tschirnhausPolynomial T).map φ =
+      (((f.map φ).roots.map (T.map φ).eval).map fun a ↦ X - C a).prod := by
+    rw [hf.map_tschirnhausPolynomial T φ, (hf.map φ).tschirnhausPolynomial_eq_prod hsp,
+      map_X_sub_C_eval (T.map φ) (f.map φ).roots]
+  refine ⟨?_, ?_⟩
+  · rw [hinj.monic_map_iff, hprod]
+    exact monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C _
+  · have h : ((f.tschirnhausPolynomial T).map φ).natDegree = f.natDegree := by
+      rw [hprod, natDegree_multiset_prod_X_sub_C_eq_card, Multiset.card_map,
+        ← hsp.natDegree_eq_card_roots, hf.natDegree_map]
+    rwa [natDegree_map_eq_of_injective hinj] at h
 
 /-- **A Tschirnhaus transform preserves the degree.** -/
 @[simp]
 theorem Monic.natDegree_tschirnhausPolynomial [IsDomain R] (hf : f.Monic) (T : R[X]) :
-    (f.tschirnhausPolynomial T).natDegree = f.natDegree := by
-  obtain ⟨L, _, φ, hinj, hsp⟩ := exists_injective_ringHom_splits f
-  have h : ((f.tschirnhausPolynomial T).map φ).natDegree = f.natDegree := by
-    rw [hf.map_tschirnhausPolynomial T φ, (hf.map φ).tschirnhausPolynomial_eq_prod hsp,
-      map_X_sub_C_eval (T.map φ) (f.map φ).roots, natDegree_multiset_prod_X_sub_C_eq_card,
-      Multiset.card_map, ← hsp.natDegree_eq_card_roots, hf.natDegree_map]
-  rwa [natDegree_map_eq_of_injective hinj] at h
+    (f.tschirnhausPolynomial T).natDegree = f.natDegree :=
+  (monic_and_natDegree_tschirnhausPolynomial hf T).2
 
 /-- **A Tschirnhaus transform of a monic polynomial is monic.** -/
 theorem Monic.tschirnhausPolynomial [IsDomain R] (hf : f.Monic) (T : R[X]) :
-    (f.tschirnhausPolynomial T).Monic := by
-  obtain ⟨L, _, φ, hinj, hsp⟩ := exists_injective_ringHom_splits f
-  rw [hinj.monic_map_iff, hf.map_tschirnhausPolynomial T φ,
-    (hf.map φ).tschirnhausPolynomial_eq_prod hsp]
-  exact monic_multiset_prod_of_monic (f.map φ).roots _ fun a _ ↦ monic_X_sub_C _
+    (f.tschirnhausPolynomial T).Monic :=
+  (monic_and_natDegree_tschirnhausPolynomial hf T).1
 
 /-- The transform along `X` is the identity: `X` fixes every root. -/
 @[simp]
