@@ -6,32 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Topology.Algebra.Group.Matrix
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
+import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 
 /-!
 # Rotations about `I` in `SL(2, ℝ)`
 
-The one-parameter family `rotation θ = !![cos θ, sin θ; -sin θ, cos θ]` in `SL(2, ℝ)`, the
-rotations about `I`: each fixes `I` (`rotation_smul_I`), and `rotation (π/2)` acts as
-`z ↦ -1/z` (`rotation_pi_div_two_smul`). Rotating a point from `θ = 0` to `θ = π/2` therefore
-reverses the sign of its real part, so by the intermediate value theorem some rotation moves any
-point onto the imaginary axis (`exists_rotation_smul_re_eq_zero`). This is the ingredient that
-turns transitivity of `PSL(2, ℝ)` on `ℍ` into two-point transitivity on geodesic lines
-(`Geodesic.lean`).
+The one-parameter family `Matrix.SpecialLinearGroup.rotation θ = !![cos θ, sin θ; -sin θ, cos θ]`
+in `SL(2, ℝ)` consists of the rotations about `I`: each fixes `I` (`rotation_smul_I`), and
+`rotation (π/2)` is, in `PSL(2, ℝ)`, the involution `pslS` acting as `z ↦ -1/z`
+(`coe_rotation_pi_div_two`). Rotating a point from `θ = 0` to `θ = π/2` therefore reverses the
+sign of its real part, so by the intermediate value theorem some rotation moves any point onto the
+imaginary axis (`exists_rotation_smul_re_eq_zero`). This is the ingredient that turns transitivity
+of `PSL(2, ℝ)` on `ℍ` into two-point transitivity on geodesic lines (`Geodesic.lean`).
 
 The stabiliser of `I` is not identified with the rotation group here, and no rotation angle is
 computed explicitly.
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.rotation θ` — the matrix `!![cos θ, sin θ; -sin θ, cos θ]` in
-  `SL(2, ℝ)`; `coe_rotation` exposes it, and `rotation_zero`, `rotation_add`, `rotation_neg` make
-  the family a one-parameter subgroup.
-* `TauCeti.UpperHalfPlane.coe_rotation_smul` — its Möbius action, as a complex number.
+* `Matrix.SpecialLinearGroup.continuous_rotation` — `θ ↦ rotation θ` is continuous.
 * `TauCeti.UpperHalfPlane.rotation_smul_I` — every rotation fixes `I`.
-* `TauCeti.UpperHalfPlane.rotation_pi_div_two_smul` — `rotation (π/2)` acts as `z ↦ -1/z`.
+* `TauCeti.UpperHalfPlane.coe_rotation_pi_div_two` — the class of `rotation (π/2)` in
+  `PSL(2, ℝ)` is `pslS`.
 * `TauCeti.UpperHalfPlane.exists_rotation_smul_re_eq_zero` — some rotation about `I` moves any
   point onto the imaginary axis.
 -/
@@ -43,46 +45,22 @@ noncomputable section
 open UpperHalfPlane
 open scoped MatrixGroups
 
+namespace Matrix.SpecialLinearGroup
+
+/-- The rotations `θ ↦ rotation θ` form a continuous family in `SL(2, ℝ)`. -/
+@[fun_prop]
+theorem continuous_rotation : Continuous rotation :=
+  Continuous.subtype_mk (continuous_matrix fun i j => by
+    fin_cases i <;> fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, coe_rotation, Matrix.of_apply,
+        Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] <;>
+      fun_prop) _
+
+end Matrix.SpecialLinearGroup
+
 namespace TauCeti.UpperHalfPlane
 
-/-- The rotation `!![cos θ, sin θ; -sin θ, cos θ]`, an element of `SL(2, ℝ)`. -/
-def rotation (θ : ℝ) : SL(2, ℝ) :=
-  ⟨!![Real.cos θ, Real.sin θ; -Real.sin θ, Real.cos θ], by
-    rw [Matrix.det_fin_two_of]
-    linear_combination Real.cos_sq_add_sin_sq θ⟩
-
-/-- The matrix of `rotation θ`. -/
-@[simp]
-theorem coe_rotation (θ : ℝ) :
-    (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) =
-      !![Real.cos θ, Real.sin θ; -Real.sin θ, Real.cos θ] :=
-  Matrix.SpecialLinearGroup.coe_mk _ _
-
-/-- The rotation by `0` is the identity. -/
-@[simp]
-theorem rotation_zero : rotation 0 = 1 :=
-  Matrix.SpecialLinearGroup.ext _ _ fun i j => by
-    fin_cases i <;> fin_cases j <;> simp
-
-/-- The rotations form a one-parameter subgroup: `rotation (θ + φ) = rotation θ * rotation φ`. -/
-@[simp]
-theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation φ :=
-  Matrix.SpecialLinearGroup.ext _ _ fun i j => by
-    fin_cases i <;> fin_cases j <;>
-      simp [Real.cos_add, Real.sin_add, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-
-/-- The inverse of `rotation θ` is `rotation (-θ)`. -/
-@[simp]
-theorem rotation_neg (θ : ℝ) : rotation (-θ) = (rotation θ)⁻¹ := by
-  rw [eq_inv_iff_mul_eq_one, ← rotation_add, neg_add_cancel, rotation_zero]
-
-/-- The Möbius action of `rotation θ`, as a complex number:
-`(cos θ · z + sin θ) / (-sin θ · z + cos θ)`. -/
-theorem coe_rotation_smul (θ : ℝ) (z : ℍ) :
-    ((rotation θ • z : ℍ) : ℂ) =
-      ((Real.cos θ : ℂ) * z + Real.sin θ) / (-(Real.sin θ : ℂ) * z + Real.cos θ) := by
-  rw [UpperHalfPlane.coe_specialLinearGroup_apply]
-  simp
+open Matrix.SpecialLinearGroup (rotation rotation_zero)
 
 /-- The rotations fix `I`. -/
 @[simp]
@@ -90,40 +68,38 @@ theorem rotation_smul_I (θ : ℝ) : rotation θ • UpperHalfPlane.I = UpperHal
   rw [MulAction.compHom_smul_def, gl_smul_I_eq_I_iff_of_pos (by simp)]
   simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
 
-/-- The rotation by `π/2` acts as `z ↦ -1/z`. -/
-theorem rotation_pi_div_two_smul (z : ℍ) :
-    ((rotation (Real.pi / 2) • z : ℍ) : ℂ) = (-(z : ℂ))⁻¹ := by
-  simp [coe_rotation_smul]
+/-- The class of `rotation (π/2) = !![0, 1; -1, 0]` in `PSL(2, ℝ)` is `pslS`, the image of
+`ModularGroup.S = !![0, -1; 1, 0]`: the two matrices differ by a sign. -/
+theorem coe_rotation_pi_div_two : (↑(rotation (Real.pi / 2)) : PSL(2, ℝ)) = pslS := by
+  have h : rotation (Real.pi / 2) =
+      -(Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) _root_.ModularGroup.S) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [Matrix.SpecialLinearGroup.map_apply_coe, _root_.ModularGroup.coe_S]
+  rw [h, Matrix.ProjectiveSpecialLinearGroup.mk_neg, pslS_def, psl2zToPSL2R_mk,
+    sl2zToPSL2R_apply]
 
 /-- Some rotation about `I` moves any point onto the imaginary axis. -/
 theorem exists_rotation_smul_re_eq_zero (w : ℍ) :
     ∃ θ ∈ Set.Icc (0 : ℝ) (Real.pi / 2), (rotation θ • w).re = 0 := by
-  have hcont : Continuous fun θ => (rotation θ • w).re := by
-    have : (fun θ => (rotation θ • w).re) = fun θ => (((Real.cos θ : ℂ) * w + Real.sin θ) /
-        (-(Real.sin θ : ℂ) * w + Real.cos θ)).re := by
-      funext θ
-      rw [← coe_re, coe_rotation_smul]
-    rw [this]
-    refine Complex.continuous_re.comp (Continuous.div (by fun_prop) (by fun_prop) ?_)
-    intro θ
-    simpa [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix] using
-      denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ (rotation θ)) w
+  have hcont : Continuous fun θ => (rotation θ • w).re :=
+    UpperHalfPlane.continuous_re.comp
+      (Matrix.SpecialLinearGroup.continuous_rotation.smul continuous_const)
   have h0 : (rotation 0 • w).re = w.re := by
     rw [rotation_zero, one_smul]
-  have hpi : (rotation (Real.pi / 2) • w).re = -(w.re / Complex.normSq w) := by
-    rw [← coe_re, rotation_pi_div_two_smul]
-    simp [Complex.inv_re, coe_re]
+  have hpi : (rotation (Real.pi / 2) • w).re = -w.re / Complex.normSq w := by
+    rw [← pslMk_smul, coe_rotation_pi_div_two, re_pslS_smul]
   have hpos : 0 < Complex.normSq w := Complex.normSq_pos.2 (ne_zero w)
   have hab : (0 : ℝ) ≤ Real.pi / 2 := by positivity
   rcases le_or_gt 0 w.re with hre | hre
   · have hpi' : (rotation (Real.pi / 2) • w).re ≤ 0 := by
       rw [hpi]
-      exact neg_nonpos.2 (div_nonneg hre hpos.le)
+      exact div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 hre) hpos.le
     obtain ⟨θ, hθ, hθ0⟩ := intermediate_value_Icc' hab hcont.continuousOn ⟨hpi', h0 ▸ hre⟩
     exact ⟨θ, hθ, hθ0⟩
   · have hpi' : 0 ≤ (rotation (Real.pi / 2) • w).re := by
       rw [hpi]
-      exact neg_nonneg.2 (div_nonpos_of_nonpos_of_nonneg hre.le hpos.le)
+      exact div_nonneg (neg_nonneg.2 hre.le) hpos.le
     obtain ⟨θ, hθ, hθ0⟩ := intermediate_value_Icc hab hcont.continuousOn ⟨h0 ▸ hre.le, hpi'⟩
     exact ⟨θ, hθ, hθ0⟩
 

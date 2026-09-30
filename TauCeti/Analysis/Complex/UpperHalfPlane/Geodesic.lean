@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
+import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
 
 /-!
 # Geodesic lines in the upper half-plane, transported from the imaginary axis
@@ -32,8 +32,8 @@ The second part is two-point transitivity: any two points `z`, `w` lie on a comm
 with `z` at parameter `0` and `w` at parameter `dist z w`
 (`exists_geodesicLine_zero_eq_and_dist_eq`). Transitivity of the action puts `z` at `I`; a
 rotation about `I` (`Rotation.lean`) then moves `w` onto the imaginary axis, which is the geodesic
-line of the identity (`range_geodesicLine_one`), and if `w` lands below `I` the rotation by
-`π/2` reverses the axis (`geodesicLine_rotation_pi_div_two`).
+line of the identity (`range_geodesicLine_one`), and if `w` lands below `I` the involution `pslS`
+reverses the axis (`geodesicLine_mul_pslS`).
 
 ## Main declarations
 
@@ -54,10 +54,9 @@ line of the identity (`range_geodesicLine_one`), and if `w` lands below `I` the 
   — every geodesic line, as a set, is a `g`-translate of the imaginary axis `{z | z.re = 0}`.
 * `TauCeti.UpperHalfPlane.mem_range_geodesicLine_iff` — membership test for a geodesic line,
   without unfolding the smul-image.
-* `TauCeti.UpperHalfPlane.range_geodesicLine_mul_pslS` — a geodesic line's image is unaffected by
-  multiplying its representative by `pslS`.
-* `TauCeti.UpperHalfPlane.geodesicLine_rotation_pi_div_two` — the rotation by `π/2` reverses
-  the parametrisation of the imaginary axis.
+* `TauCeti.UpperHalfPlane.geodesicLine_mul_pslS` — multiplying the representative by `pslS`
+  reverses the parametrisation of a geodesic line; `range_geodesicLine_mul_pslS` is the same fact
+  at the level of the line as a set, which is unchanged.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_dist_eq` — two-point transitivity:
   a geodesic line with `z` at parameter `0` and `w` at parameter `dist z w`, for any `z`, `w`;
   `exists_mem_range_geodesicLine_and_mem_range` is the same at the level of the line as a set.
@@ -147,26 +146,25 @@ theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
   rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
+/-- Multiplying the representative by `pslS` reverses the parametrisation of a geodesic line:
+`z ↦ -1/z` runs the upward imaginary axis downward. -/
+theorem geodesicLine_mul_pslS (g : PSL(2, ℝ)) (t : ℝ) :
+    geodesicLine (g * pslS) t = geodesicLine g (-t) := by
+  have h : geodesicLine pslS t = geodesicLine 1 (-t) := by
+    ext
+    rw [geodesicLine_def, geodesicLine_one_apply, pslS_smul, modular_S_smul, coe_mk, coe_mk]
+    refine inv_eq_of_mul_eq_one_right ?_
+    rw [Complex.ext_iff]
+    simp [Real.exp_neg, Real.exp_ne_zero]
+  rw [← smul_geodesicLine, h, smul_geodesicLine, mul_one]
+
 /-- The geodesic lines of `g` and `g * pslS` have the same image: `z ↦ -1/z` fixes the
-imaginary axis setwise. (The two half-planes it bounds are swapped instead, see
-`rightHalfPlane_mul_pslS`.) -/
+imaginary axis setwise, reversing its direction. (The two half-planes it bounds are swapped
+instead.) -/
 theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
     Set.range (geodesicLine (g * pslS)) = Set.range (geodesicLine g) := by
-  ext z
-  rw [mem_range_geodesicLine_iff, mem_range_geodesicLine_iff, re_mul_pslS_inv_smul,
-    div_eq_zero_iff]
-  simp [(UpperHalfPlane.normSq_pos (g⁻¹ • z)).ne']
-
-/-- The rotation by `π/2` reverses the parametrised imaginary axis. -/
-@[simp]
-theorem geodesicLine_rotation_pi_div_two (t : ℝ) :
-    geodesicLine (↑(rotation (Real.pi / 2)) : PSL(2, ℝ)) t = geodesicLine 1 (-t) := by
-  ext
-  rw [geodesicLine_def, geodesicLine_one_apply, UpperHalfPlane.pslMk_smul, rotation_pi_div_two_smul,
-    UpperHalfPlane.coe_mk, UpperHalfPlane.coe_mk]
-  refine inv_eq_of_mul_eq_one_right ?_
-  rw [Complex.ext_iff]
-  simp [Real.exp_neg, Real.exp_ne_zero]
+  have h : geodesicLine (g * pslS) = geodesicLine g ∘ Neg.neg := funext (geodesicLine_mul_pslS g)
+  rw [h, neg_surjective.range_comp]
 
 /-- Any two points `z`, `w` lie on a common geodesic line, `z` at parameter `0` and `w` at a
 nonnegative parameter; the parameter is identified as `dist z w` in
@@ -176,7 +174,7 @@ private theorem exists_nonneg_geodesicLine_zero_eq_and_apply_eq (z w : ℍ) :
   obtain ⟨h, hz⟩ := MulAction.exists_smul_eq PSL(2, ℝ) z UpperHalfPlane.I
   obtain ⟨θ, -, hθ⟩ := exists_rotation_smul_re_eq_zero (h • w)
   -- `k` moves `z` to `I` and `w` onto the imaginary axis, at some parameter `t`
-  set k : PSL(2, ℝ) := (↑(rotation θ) : PSL(2, ℝ)) * h with hk
+  set k : PSL(2, ℝ) := (↑(Matrix.SpecialLinearGroup.rotation θ) : PSL(2, ℝ)) * h with hk
   have hkz : k • z = UpperHalfPlane.I := by
     rw [hk, mul_smul, hz, UpperHalfPlane.pslMk_smul, rotation_smul_I]
   have hkw : (k • w).re = 0 := by
@@ -189,11 +187,10 @@ private theorem exists_nonneg_geodesicLine_zero_eq_and_apply_eq (z w : ℍ) :
   · refine ⟨k⁻¹, t, ht0, ?_, ?_⟩
     · rw [geodesicLine_zero, ← hkz, inv_smul_smul]
     · rw [← mul_one k⁻¹, ← smul_geodesicLine, ht, inv_smul_smul]
-  -- if `w` landed below `I`, reverse the axis by the rotation by `π/2` first
-  · refine ⟨k⁻¹ * ↑(rotation (Real.pi / 2)), -t, by linarith, ?_, ?_⟩
-    · rw [geodesicLine_zero, mul_smul, UpperHalfPlane.pslMk_smul, rotation_smul_I, ← hkz,
-        inv_smul_smul]
-    · rw [← smul_geodesicLine, geodesicLine_rotation_pi_div_two, neg_neg, ht, inv_smul_smul]
+  -- if `w` landed below `I`, reverse the axis by `pslS` first
+  · refine ⟨k⁻¹ * pslS, -t, by linarith, ?_, ?_⟩
+    · rw [geodesicLine_mul_pslS, neg_zero, geodesicLine_zero, ← hkz, inv_smul_smul]
+    · rw [geodesicLine_mul_pslS, neg_neg, ← mul_one k⁻¹, ← smul_geodesicLine, ht, inv_smul_smul]
 
 /-- **Two-point transitivity on parametrised geodesic lines.** Any two points `z`, `w` lie on a
 common geodesic line, with `z` at parameter `0` and `w` at parameter `dist z w`. -/

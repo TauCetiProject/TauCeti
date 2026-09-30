@@ -35,8 +35,11 @@ triangle group in `PSL(2, ℝ)`.
   `2 cos (π / k)`, with `2 ≤ k`, has `k`-th power `-1`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq`: if
   `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has `k`-th power `1`.
-* `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix, with its trace
-  `trace_conjRotation`, the trace `trace_conjRotation_mul_conjRotation` of a product, and the trace
+* `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
+  `rotation_zero`, `rotation_add` and `rotation_neg` make the family a one-parameter subgroup.
+* `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix (`conjRotation_zero`
+  identifies the unconjugated case with `rotation`), with its trace `trace_conjRotation`, the trace
+  `trace_conjRotation_mul_conjRotation` of a product, and the trace
   `trace_commutatorElement_conjRotation` of a commutator.
 
 ## References
@@ -124,8 +127,37 @@ end ProjectiveSpecialLinearGroup
 
 namespace SpecialLinearGroup
 
+/-- The rotation `!![cos θ, sin θ; -sin θ, cos θ]`, an element of `SL(2, ℝ)`. -/
+def rotation (θ : ℝ) : SL(2, ℝ) :=
+  ⟨!![cos θ, sin θ; -sin θ, cos θ], by
+    rw [det_fin_two_of]
+    linear_combination cos_sq_add_sin_sq θ⟩
+
+/-- The entries of `rotation θ`. -/
+@[simp]
+theorem coe_rotation (θ : ℝ) :
+    (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) = !![cos θ, sin θ; -sin θ, cos θ] := (rfl)
+
+/-- The rotation by `0` is the identity. -/
+@[simp]
+theorem rotation_zero : rotation 0 = 1 :=
+  SpecialLinearGroup.ext _ _ fun i j => by
+    fin_cases i <;> fin_cases j <;> simp
+
+/-- The rotations form a one-parameter subgroup: `rotation (θ + φ) = rotation θ * rotation φ`. -/
+@[simp]
+theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation φ :=
+  SpecialLinearGroup.ext _ _ fun i j => by
+    fin_cases i <;> fin_cases j <;>
+      simp [cos_add, sin_add, mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- The inverse of `rotation θ` is `rotation (-θ)`. -/
+@[simp]
+theorem rotation_neg (θ : ℝ) : rotation (-θ) = (rotation θ)⁻¹ := by
+  rw [eq_inv_iff_mul_eq_one, ← rotation_add, neg_add_cancel, rotation_zero]
+
 /-- The matrix `!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ]` of `SL(2, ℝ)`: the rotation
-`!![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/
+`rotation θ = !![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/
 def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
   ⟨!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ], by
     rw [det_fin_two_of, exp_neg]
@@ -137,6 +169,13 @@ def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
 theorem coe_conjRotation (θ t : ℝ) :
     (conjRotation θ t : Matrix (Fin 2) (Fin 2) ℝ) =
       !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := (rfl)
+
+-- Not `@[simp]`: `conjRotation θ 0` is the form the triangle-group generators use, and the
+-- `@[simp]` trace lemmas below are stated in it.
+/-- The unconjugated case of `conjRotation` is `rotation`. -/
+theorem conjRotation_zero (θ : ℝ) : conjRotation θ 0 = rotation θ :=
+  SpecialLinearGroup.ext _ _ fun i j => by
+    fin_cases i <;> fin_cases j <;> simp
 
 /-- The conjugated rotation `conjRotation θ t` has the trace `2 cos θ` of the rotation. -/
 theorem trace_conjRotation (θ t : ℝ) :
