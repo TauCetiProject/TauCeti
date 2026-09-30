@@ -86,7 +86,9 @@ coefficients below degree `M` vanish has `v (P.eval x) * S ≤ A * S ^ M`. When 
 does. These bounds evaluate a truncated composite of two power series, such as the logarithm
 series after the exponential series, at a point of a nonarchimedean field. -/
 
-variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀]
+section Monoid
+
+variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀]
   {v : Valuation R Γ₀} {x : R} {A S : Γ₀}
 
 /-- Weights add under multiplication of polynomials. -/
@@ -118,6 +120,23 @@ theorem map_coeff_pow_mul_pow_le {Q : R[X]} (hQ : ∀ k, v (Q.coeff k * x ^ k) *
     rw [pow_succ]
     exact map_coeff_mul_mul_pow_le ih (by simpa using hQ) k
 
+/-- A polynomial of weight `1` whose coefficients vanish below degree `M` has
+`v (G.eval x) * S ≤ A * S ^ M`, provided `S ≤ 1`. -/
+theorem map_eval_mul_le {G : R[X]} {M : ℕ} (hS : S ≤ 1) (hG₀ : ∀ k < M, G.coeff k = 0)
+    (hG : ∀ k, v (G.coeff k * x ^ k) * S ≤ A * S ^ k) : v (G.eval x) * S ≤ A * S ^ M := by
+  rw [eval_eq_sum, Polynomial.sum_def]
+  refine v.map_sum_mul_le fun k _ ↦ ?_
+  rcases lt_or_ge k M with hk | hk
+  · simp [hG₀ k hk]
+  · exact (hG k).trans (mul_le_mul_right (pow_le_pow_right_of_le_one' hS hk) A)
+
+end Monoid
+
+section Group
+
+variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommGroupWithZero Γ₀]
+  {v : Valuation R Γ₀} {x : R} {A S : Γ₀}
+
 /-- Composition with a polynomial `F` whose coefficients satisfy
 `v (F.coeff n) * A ^ n * S ≤ A * S ^ n` preserves weight `1`. -/
 theorem map_coeff_comp_mul_pow_le {F Q : R[X]}
@@ -143,15 +162,7 @@ theorem map_coeff_comp_mul_pow_le {F Q : R[X]}
     _ ≤ A * S ^ n * (A ^ n * S ^ k) := mul_le_mul' (hF n) hQn
     _ = A * S ^ k * (A ^ n * S ^ n) := by ac_rfl
 
-/-- A polynomial of weight `1` whose coefficients vanish below degree `M` has
-`v (G.eval x) * S ≤ A * S ^ M`, provided `S ≤ 1`. -/
-theorem map_eval_mul_le {G : R[X]} {M : ℕ} (hS : S ≤ 1) (hG₀ : ∀ k < M, G.coeff k = 0)
-    (hG : ∀ k, v (G.coeff k * x ^ k) * S ≤ A * S ^ k) : v (G.eval x) * S ≤ A * S ^ M := by
-  rw [eval_eq_sum, Polynomial.sum_def]
-  refine v.map_sum_mul_le fun k _ ↦ ?_
-  rcases lt_or_ge k M with hk | hk
-  · simp [hG₀ k hk]
-  · exact (hG k).trans (mul_le_mul_right (pow_le_pow_right_of_le_one' hS hk) A)
+end Group
 
 end Valuation
 

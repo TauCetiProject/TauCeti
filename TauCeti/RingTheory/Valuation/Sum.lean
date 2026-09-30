@@ -25,15 +25,18 @@ public section
 
 namespace Valuation
 
-variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation R Γ₀)
+variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀)
 
 /-- The ultrametric bound on a finite sum, with every term weighted by a common factor `c`. -/
 theorem map_sum_mul_le {ι : Type*} {s : Finset ι} {f : ι → R} {c B : Γ₀}
     (h : ∀ i ∈ s, v (f i) * c ≤ B) : v (∑ i ∈ s, f i) * c ≤ B := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  · rw [← le_div_iff₀ (zero_lt_iff.mpr hc)]
-    exact v.map_sum_le fun i hi ↦ (le_div_iff₀ (zero_lt_iff.mpr hc)).mpr (h i hi)
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih =>
+    rw [Finset.sum_cons]
+    refine (mul_le_mul_left (v.map_add _ _) c).trans ?_
+    rw [max_mul]
+    exact max_le (h i (by simp)) (ih fun j hj ↦ h j (by simp [hj]))
 
 end Valuation
 
