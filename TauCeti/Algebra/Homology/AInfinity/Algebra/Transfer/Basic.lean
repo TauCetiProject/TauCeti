@@ -338,7 +338,7 @@ theorem linearPart_transferInclusion :
 
 /-- The letter component of the transferred bar differential: the letterwise differential of
 `Tᶜ(sH)` contributes `d_H` on single letters, and the perturbation contributes `p X i`. -/
-private theorem letter_transferBarDifferential (w : ReducedTensorWords R H) :
+theorem letter_transferBarDifferential (w : ReducedTensorWords R H) :
     letter R H (𝒜.transferBarDifferential c hh hincl hproj w) =
       dH (letter R H w) + c.proj (letter R A
         ((𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential
