@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.Data.SetLike.Fintype
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # The Artin coefficients of a finite group, and Artin's identity for fixed points
@@ -28,9 +29,10 @@ divisors of `[D : E]`, so `∑_{E ≤ C ≤ D} μ [D : C]` is `∑_{d ∣ [D : E
 `E = D` and `0` otherwise. When `E ≰ D` no subgroup lies between `E` and `D` at all, so that sum is
 empty, hence again `0`. Summing over the cyclic `D` leaves the single term `D = ⟨y⟩`, so the Artin
 coefficients of the subgroups containing a fixed element add up to `1`
-(`TauCeti.sum_artinCoeff_of_mem`). The second is a count: the preimage in `G` of the `g`-fixed
-points of `G ⧸ C` is the set of `x` with `x⁻¹ g x ∈ C`, and it is a union of cosets of `C`, so it
-has `|C| * |(G ⧸ C)^g|` elements (`Subgroup.natCard_mul_natCard_fixedBy`). Exchanging the two
+(`TauCeti.sum_artinCoeff_of_mem`). The second is a count, taken from
+`TauCeti.GroupTheory.QuotientGroup.Basic`: the preimage in `G` of the `g`-fixed points of `G ⧸ C`
+is the set of `x` with `x⁻¹ g x ∈ C`, and it is a union of cosets of `C`, so it has
+`|C| * |(G ⧸ C)^g|` elements (`Subgroup.natCard_mul_natCard_fixedBy`). Exchanging the two
 summations then replaces the inner sum by `1` for each of the `|G|` elements `x`.
 
 The identity is stated over `ℤ` rather than in a coefficient field, so that it can be transferred
@@ -52,7 +54,6 @@ by `Subgroup.artinCoeff_eq_zero_of_not_isCyclic`, and maps the coefficients into
 * `TauCeti.sum_moebius_relIndex`: the Möbius sum over an interval below a cyclic subgroup.
 * `TauCeti.sum_artinCoeff_of_mem`: the Artin coefficients of the subgroups containing an element
   add up to one.
-* `Subgroup.natCard_mul_natCard_fixedBy`: the coset count behind Artin's identity.
 * `TauCeti.sum_artinCoeff_mul_card_fixedBy`: **Artin's identity for fixed points**.
 
 ## References
@@ -229,25 +230,6 @@ theorem sum_artinCoeff_of_mem (y : G) :
     tauto
 
 /-! ### Artin's identity for fixed points -/
-
-omit [Finite G] in
-/-- The elements `x` of `G` with `x⁻¹ g x ∈ C` are the preimage of the `g`-fixed points of `G ⧸ C`,
-a union of `|(G ⧸ C)^g|` cosets of `C`. -/
-theorem _root_.Subgroup.natCard_mul_natCard_fixedBy (C : Subgroup G) (g : G) :
-    Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g) =
-      Nat.card {x : G // x⁻¹ * g * x ∈ C} := by
-  have hmem : ∀ x : G,
-      x ∈ QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ C) g) ↔ x⁻¹ * g * x ∈ C := by
-    intro x
-    simp only [Set.mem_preimage, MulAction.mem_fixedBy, MulAction.Quotient.smul_mk, smul_eq_mul,
-      QuotientGroup.eq]
-    exact ⟨fun h => by simpa [mul_assoc] using C.inv_mem h,
-      fun h => by simpa [mul_assoc] using C.inv_mem h⟩
-  calc Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g)
-      = Nat.card (C × MulAction.fixedBy (G ⧸ C) g) := (Nat.card_prod _ _).symm
-    _ = Nat.card (QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ C) g) : Set G) :=
-        (Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet C _)).symm
-    _ = Nat.card {x : G // x⁻¹ * g * x ∈ C} := Nat.card_congr (Equiv.subtypeEquivRight hmem)
 
 open scoped Classical in
 /-- **Artin's identity for fixed points**: weighting the permutation character of `G ⧸ C` by
