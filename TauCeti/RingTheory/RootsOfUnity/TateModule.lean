@@ -49,6 +49,8 @@ group of `K` maps to it through the tame character.
   components.
 * `TauCeti.PrimeToPTateModule.continuous_iff`: a map into the Tate module is continuous exactly
   when each of its components is locally constant.
+* `TauCeti.PrimeToPTateModule.surjective_of_forall_surjective_proj`: a continuous map from a
+  compact space is surjective when each of its components is.
 * `TauCeti.PrimeToPTateModule.proj_map`, `TauCeti.PrimeToPTateModule.coe_proj_smul`: `map` and
   the action are computed componentwise.
 * The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`,
@@ -243,6 +245,27 @@ instance {R : Type*} [CommRing R] [IsDomain R] : CompactSpace (PrimeToPTateModul
     continuous_of_discreteTopology
   have hn : Continuous fun ζ : rootsOfUnity n R ↦ (ζ : Rˣ) := continuous_of_discreteTopology
   exact isClosed_eq (hm.comp (continuous_apply m)) (hn.comp (continuous_apply n))
+
+/-- **Surjectivity from the finite levels.** A continuous map from a compact space into the
+prime-to-`p` Tate module is surjective as soon as each of its components is surjective: the fibres
+over the components of a point form a directed family of nonempty closed sets, whose intersection
+is the fibre over the point. -/
+theorem surjective_of_forall_surjective_proj {X : Type*} [TopologicalSpace X] [CompactSpace X]
+    {f : X → PrimeToPTateModule p E} (hf : Continuous f)
+    (h : ∀ m, Function.Surjective fun x ↦ proj m (f x)) : Function.Surjective f := by
+  intro y
+  set t : {m : ℕ // m ≠ 0 ∧ m.Coprime p} → Set X := fun m ↦ {x | proj m (f x) = proj m y}
+  -- The level-`n` component determines the level-`m` component for `m ∣ n`.
+  have hsub {m n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}} (hmn : (m : ℕ) ∣ n) : t n ⊆ t m :=
+    fun x (hx : proj n (f x) = proj n y) ↦ Subtype.ext <| by
+      rw [← proj_pow_div (f x) hmn, ← proj_pow_div y hmn, hx]
+  have : Nonempty {m : ℕ // m ≠ 0 ∧ m.Coprime p} := ⟨⟨1, one_ne_zero, Nat.coprime_one_left p⟩⟩
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
+    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.2.1 n.2.1, Nat.Coprime.mul_left m.2.2 n.2.2⟩,
+      hsub (dvd_mul_right _ _), hsub (dvd_mul_left _ _)⟩)
+    (fun m ↦ h m (proj m y)) (fun m ↦ ((continuous_iff.1 hf m).isClosed_fiber _).isCompact)
+    fun m ↦ (continuous_iff.1 hf m).isClosed_fiber _
+  exact ⟨x, ext fun m ↦ Set.mem_iInter.1 hx m⟩
 
 /-! ### Functoriality and the action of automorphisms -/
 
