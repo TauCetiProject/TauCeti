@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
+public import TauCeti.Algebra.Lie.E6.Minuscule.BaseChange
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Generation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Rigidity
 
 /-!
-# Generation of the E₆ minuscule weight torus by root subgroups
+# Generation of the E₆ minuscule carrier by root subgroups
 
 The type-`E₆` minuscule carrier is defined from twelve numbered simple root subgroups together
 with its rank-six weight torus. Over every commutative ring, this file proves that the represented
@@ -22,9 +24,11 @@ witness for the corresponding root character. The generic coroot-generation theo
 puts every coordinate cocharacter, and hence every point of the weight torus, in the elementary
 group.
 
-The result concerns subgroups of the automorphism group of the base-changed admissible lattice.
-It does not identify the elementary subgroup with all points of the toral-closure group scheme;
-that is a separate scheme-theoretic comparison.
+Testing this containment on the universal weight-torus point proves that the root-generated and
+toral-closure defining ideals over `ℤ` agree. Thus the weight torus is redundant not only in
+each group of points but in the integral group scheme itself. The equality persists in the
+transported presentation after arbitrary base change; it does not identify that presentation with
+the subgroup generated anew over a non-flat base.
 
 ## Main results
 
@@ -33,11 +37,22 @@ that is a separate scheme-theoretic comparison.
 * `TauCeti.E6Minuscule.elementarySubgroup_le_iff`: its least-subgroup elimination principle.
 * `TauCeti.E6Minuscule.weightTorusPoints_range_le_elementarySubgroup`: the range of the named
   weight-torus map lies in the elementary subgroup over every commutative ring.
+* `TauCeti.E6Minuscule.definingIdeal_eq_kostantGeneratedDefiningIdeal`: the integral
+  toral-closure carrier is already the root-generated carrier.
+* `TauCeti.E6Minuscule.groupScheme_eq_kostantGeneratedGroupScheme` and
+  `TauCeti.E6Minuscule.isIso_kostantGeneratedToToral`: the corresponding group schemes agree and
+  their canonical comparison is an isomorphism.
+* `TauCeti.E6Minuscule.groupScheme_hom_ext_of_rootSubgroup`: homomorphisms out of the carrier are
+  determined by the twelve numbered root subgroups alone.
+* `TauCeti.E6Minuscule.baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal`:
+  the corresponding equality in every transported presentation.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
 * R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.1.
+* The scheme-theoretic comparison follows the parallel type-`E₇` argument in
+  `TauCeti.Algebra.Lie.E7.Minuscule.Generation`.
 -/
 
 public section
@@ -50,6 +65,7 @@ namespace TauCeti.E6Minuscule
 
 open TauCeti.E6
 
+open AlgebraicGeometry CategoryTheory
 open TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -138,5 +154,109 @@ theorem weightTorusPoints_range_le_elementarySubgroup (A : Type v) [CommRing A] 
     rw [coe_weightTorusPoints, ← basisMatrix_kostantTorusPoints]
     exact hg_eq.symm
   rwa [hpoint]
+
+/-! ## Scheme-theoretic generation -/
+
+private theorem universalWeightTorus_mem_elementarySubgroup :
+    let T := (DiagonalizableGroup.coordinateRing ℤ
+      (SplitTorus.characterGroup (Fin 6))).obj
+    let A := CommAlgCat.of ℤ T
+    let q : HopfAlgebra.points
+        (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin 6))) A :=
+      WithConv.toConv (AlgHom.id ℤ T)
+    kostantTorusPoints (Λ).toAddSubgroup 𝓑 weightTable.weight A
+        (SplitTorus.pointsMulEquiv q) ∈
+      kostantElementarySubgroup rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+        weightTable.rep_kostantForm_mem_lattice
+        weightTable.isNilpotent_rep_serreRootGenerator A := by
+  dsimp only
+  apply kostantTorusSubgroup_le_kostantElementarySubgroup
+    rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+    weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator
+    𝓑 weightTable.weight weightTable.isCartanWeightVector_coordinateLatticeBasis
+    rootGeneratorWeight
+    (by intro k j; rw [weightTable_cartanMatrix]; exact lie_serreH_rootGenerator k j)
+    Sum.inl Sum.inr
+    (fun i ↦ weightTable.isSl2Triple_rep_serreRootGenerator i
+      (by
+        obtain ⟨a, ha⟩ := exists_e6MinusculeWeight_apply_eq_neg_one i
+        exact ⟨a, by simp only [weightTable_weight, ha]; omega⟩))
+    rootGeneratorWeight_inr_eq_neg_inl cartanBezout rootGeneratorWeight_sum_mul_cartanBezout _
+  rw [kostantTorusSubgroup_eq_range]
+  exact ⟨_, rfl⟩
+
+/-- **The full-weight type-`E₆` minuscule toral closure is generated scheme-theoretically by
+its twelve numbered root subgroups.** Equivalently, adjoining the represented weight torus does
+not change the integral defining Hopf ideal. -/
+theorem definingIdeal_eq_kostantGeneratedDefiningIdeal :
+    definingIdeal =
+      kostantGeneratedDefiningIdeal rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+        weightTable.rep_kostantForm_mem_lattice
+        weightTable.isNilpotent_rep_serreRootGenerator 𝓑 := by
+  rw [definingIdeal_def]
+  exact
+    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+      rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+      weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator
+      𝓑 weightTable.weight universalWeightTorus_mem_elementarySubgroup
+
+/-- The type-`E₆` minuscule toral-closure group scheme is the group scheme generated by the
+twelve numbered root subgroups. -/
+theorem groupScheme_eq_kostantGeneratedGroupScheme :
+    groupScheme =
+      kostantGeneratedGroupScheme rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+        weightTable.rep_kostantForm_mem_lattice
+        weightTable.isNilpotent_rep_serreRootGenerator 𝓑 := by
+  exact
+    kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
+      rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+      weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator
+      𝓑 weightTable.weight universalWeightTorus_mem_elementarySubgroup
+
+/-- The canonical inclusion of the root-generated type-`E₆` minuscule carrier into its toral
+closure is an isomorphism. -/
+instance isIso_kostantGeneratedToToral :
+    CategoryTheory.IsIso (kostantGeneratedToToral rootGen cartanGen weightTable.rep
+      (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice
+      weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight) :=
+  isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary rootGen cartanGen
+    weightTable.rep (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice
+    weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight
+    universalWeightTorus_mem_elementarySubgroup
+
+/-- Two homomorphisms out of the type-`E₆` minuscule carrier agree when they agree on its
+twelve numbered root subgroups. The weight-torus hypothesis of `groupScheme_hom_ext` is redundant
+because the carrier is root-generated. -/
+@[ext]
+theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (f g : groupScheme ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g) : f = g := by
+  apply (cancel_epi (kostantGeneratedToToral rootGen cartanGen weightTable.rep
+    (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice
+    weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight)).1
+  apply kostantGeneratedGroupScheme_hom_ext
+  intro k
+  rw [← CategoryTheory.Category.assoc, ← CategoryTheory.Category.assoc,
+    kostantRootSubgroupToGenerated_comp_kostantGeneratedToToral, ← rootSubgroup_def, hroot]
+
+/-- After base change to any commutative ring, the transported type-`E₆` minuscule carrier
+ideal is the transport of the root-generated integral ideal. This does not identify it with the
+common kernel of the root-subgroup maps formed anew over that ring. -/
+theorem baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal
+    (A : Type v) [CommRing A] :
+    baseChangeDefiningIdeal A =
+      kostantGeneratedGeneralLinearBaseChangeIdeal rootGen cartanGen weightTable.rep
+        (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice
+        weightTable.isNilpotent_rep_serreRootGenerator 𝓑 A := by
+  rw [← kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_mem_elementary
+    rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+    weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator
+    𝓑 weightTable.weight universalWeightTorus_mem_elementarySubgroup A]
+  apply HopfIdeal.ext
+  intro x
+  rw [mem_baseChangeDefiningIdeal_iff, mem_kostantToralBaseChangePresentationIdeal_iff,
+    kostantToralBaseChangeIdeal_def, definingIdeal_def]
 
 end TauCeti.E6Minuscule
