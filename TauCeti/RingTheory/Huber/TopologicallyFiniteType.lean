@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
 import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.Topology.Algebra.GroupCompletion
 
@@ -84,6 +85,8 @@ it.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_quotientMk_algebraMap`: every quotient of
   `A⟨X₁, …, Xₖ⟩` is strictly topologically of finite type over `A` — the shape of every Laurent
   and rational presentation.
+* `TauCeti.Huber.isStrictlyTopologicallyFiniteType_id`: the identity of a complete Hausdorff
+  nonarchimedean ring is strictly topologically of finite type, presented with no variables.
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian`: over a strongly
   noetherian Huber ring, an algebra strictly topologically of finite type is again strongly
   noetherian.
@@ -220,6 +223,31 @@ theorem isStrictlyTopologicallyFiniteType_quotientMk_algebraMap (k : ℕ)
   (isStrictlyTopologicallyFiniteType_algebraMap k).quotientMk I
 
 end OpenQuotient
+
+/-! ### The identity of a complete ring -/
+
+section Identity
+
+variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [NonarchimedeanRing R]
+  [CompleteSpace R] [T0Space R]
+
+/-- **The identity of a complete Hausdorff nonarchimedean ring is strictly topologically of finite
+type**, presented in no variables. Compare the `k = 0` case of
+`TauCeti.Huber.isStrictlyTopologicallyFiniteType_algebraMap`, which presents the completion map
+`R → R⟨⟩` of an arbitrary `R` rather than the identity. -/
+theorem isStrictlyTopologicallyFiniteType_id : IsStrictlyTopologicallyFiniteType (RingHom.id R) :=
+  -- The presenting map `π : R⟨⟩ → R` is the continuous extension of the identity of `R`.
+  let π := weightedEvalHomCompletion (φ := .id R) isWeightFamily_one_weight continuousAt_id
+    ((isWeightBounded_one_weight_iff_forall_isPowerBounded _ ![]).mpr isEmptyElim)
+  -- The structure map `R → R⟨⟩` is a section of `π`.
+  have hπ : Function.LeftInverse π (algebraMap R _) := fun a ↦ by simp [π]
+  -- A continuous map with a continuous section is a quotient map, and a quotient map of
+  -- topological groups is open.
+  ⟨0, π, AddMonoidHom.isOpenQuotientMap_of_isQuotientMap <| .of_inverse
+    (continuous_algebraMap_restrictedMvPowerSeriesCompletion 0 R)
+    (continuous_weightedEvalHomCompletion ..) hπ, RingHom.ext hπ⟩
+
+end Identity
 
 /-! ### Strong noetherianness
 

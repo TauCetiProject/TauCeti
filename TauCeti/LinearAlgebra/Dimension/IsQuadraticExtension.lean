@@ -36,7 +36,7 @@ the algebra together with `1`. Over a field, the results cover split and non-red
 algebras such as `K × K` and `K[X]/(X²)`.
 
 These are used by the extension quadratic twist in
-`TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean` and by the quadratic field-norm
+`TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist/Basic.lean` and by the quadratic field-norm
 computation in `TauCeti/NumberTheory/NumberField/Quadratic/Norm.lean`. The shared basis also
 supplies explicit coordinates for quadratic-extension trace transfer.
 

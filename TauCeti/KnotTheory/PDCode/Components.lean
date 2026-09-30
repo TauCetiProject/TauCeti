@@ -86,8 +86,8 @@ theorem componentPerm_def (D : PDCode n) : D.componentPerm = D.crossingTurn * D.
   have he : half (D.halfEdge (crossingSlotEquiv n (i, slot))) =
       (D.relabel half cross).halfEdge (crossingSlotEquiv n (cross i, slot)) := by
     rw [← D.crossing_apply, ← (D.relabel half cross).crossing_apply]
-    simpa only [Equiv.symm_apply_apply] using (D.relabel_crossing half cross (cross i) slot).symm
-  rw [he, crossingTurn_crossing, relabel_crossing]
+    simpa only [Equiv.symm_apply_apply] using (D.crossing_relabel half cross (cross i) slot).symm
+  rw [he, crossingTurn_crossing, crossing_relabel]
   simp
 
 /-- Relabelling conjugates component traversal by the half-edge relabelling. -/

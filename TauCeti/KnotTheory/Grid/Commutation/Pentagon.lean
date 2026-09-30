@@ -236,11 +236,10 @@ def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
     GridPentagonBetween a s u v :=
   ofRightEq r
     (by
-      have hright := congrArg GridRectangle.right h
+      obtain ⟨-, hright, -, -⟩ := GridRectangle.ext_iff.mp h
       simpa only [GridRectangleBetween.toGridRectangle_right] using hright.trans P.right_eq)
     (by
-      have hbottom := congrArg GridRectangle.bottom h
-      have htop := congrArg GridRectangle.top h
+      obtain ⟨-, -, hbottom, htop⟩ := GridRectangle.ext_iff.mp h
       simp only [GridRectangleBetween.toGridRectangle_bottom,
         GridRectangleBetween.toGridRectangle_top] at hbottom htop
       rw [hbottom, htop]
@@ -305,9 +304,7 @@ theorem mem_coveredSquares (P : GridPentagonBetween a s x y) (p : Fin n × Fin n
 theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
     (P : GridPentagonBetween a s x y) (Q : GridPentagonBetween a s u v)
     (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
-  have hleft := congrArg GridRectangle.left h
-  have hbottom := congrArg GridRectangle.bottom h
-  have htop := congrArg GridRectangle.top h
+  obtain ⟨hleft, -, hbottom, htop⟩ := GridRectangle.ext_iff.mp h
   simp only [GridRectangleBetween.toGridRectangle_left,
     GridRectangleBetween.toGridRectangle_bottom,
     GridRectangleBetween.toGridRectangle_top] at hleft hbottom htop

@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Bounded
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 /-!
@@ -527,6 +528,13 @@ theorem IsPowerBounded.map_of_isOpenMap {F : Type*} [FunLike F M N] [MonoidWithZ
     {f : F} (hf : ContinuousAt f 0) (hf₀ : IsOpenMap f) {a : M} (ha : IsPowerBounded a) :
     IsPowerBounded (f a) :=
   ha.map hf fun _ hV ↦ map_zero f ▸ hf₀.image_mem_nhds hV
+
+/-- The quotient map `R → R ⧸ J` preserves power-boundedness. Only continuity of translations is
+assumed on `R`, so this applies to every commutative topological ring. -/
+theorem IsPowerBounded.quotientMk {R : Type*} [CommRing R] [TopologicalSpace R]
+    [SeparatelyContinuousAdd R] {a : R} (ha : IsPowerBounded a) (J : Ideal R) :
+    IsPowerBounded (Ideal.Quotient.mk J a) :=
+  ha.map_of_isOpenMap continuous_quot_mk.continuousAt QuotientAddGroup.isOpenMap_coe
 
 variable {A B : Type*} [Semiring A] [Semiring B] [TopologicalSpace A] [TopologicalSpace B]
 

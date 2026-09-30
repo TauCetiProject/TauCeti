@@ -37,6 +37,9 @@ change of variables, again over any commutative ring in which the relevant param
   `nodePolynomial` is the one quantity here that does **not** simply scale by a power of
   `t² - 4n`; it acquires `+ D² n a₁² c₄`. Splitting of the node polynomial is not determined by
   this coefficient alone, so this is a record of how it transforms, not a reduction statement.
+* `WeierstrassCurve.nodePolynomial_quadraticTwistOf_neg_a₁`: twisting by the trace `-a₁` and norm
+  `n` of a root of the node quadratic `T² + a₁ T + n` makes the node polynomial split, with roots
+  `a₁² - 2n` and `2n`.
 * `WeierstrassCurve.Δ_quadraticTwistOf`, `WeierstrassCurve.c₄_quadraticTwistOf`,
   `WeierstrassCurve.c₆_quadraticTwistOf`: the invariants of the twist.
 * `WeierstrassCurve.isElliptic_quadraticTwistOf_iff` and its field specialisation
@@ -90,8 +93,8 @@ These are the `quadraticTwistOf` seeds of `TauCetiRoadmap/EllipticCurves/README.
 (twists), pinned in that roadmap's `Suggested.lean`, together with the extension twist they make
 well posed, the classification of the `L`-forms that the cocycle delivers, and the point
 isomorphism `quadraticTwistPointEquiv` that `quadraticTwistVariableChange` induces; the
-split-multiplicative-reduction theorem is a later milestone of the same layer and builds on this
-file.
+twist formulas here, in particular `nodePolynomial_quadraticTwistOf_neg_a₁`, are applied to
+curves with multiplicative reduction in `QuadraticTwist/SplitMultiplicative.lean`.
 
 ## The point isomorphism
 
@@ -256,6 +259,22 @@ theorem nodePolynomial_coeff_zero_quadraticTwistOf :
   simp only [nodePolynomial_coeff_zero, b₆_quadraticTwistOf, b₂_quadraticTwistOf,
     b₄_quadraticTwistOf, c₄_quadraticTwistOf, a₂_quadraticTwistOf]
   ring
+
+/-- **Twisting by the node quadratic splits the node polynomial.** Let `n` be such that `c₄ n` is
+the constant coefficient of the node polynomial, so that the node polynomial is
+`c₄ · (T² + a₁ T + n)` (`nodePolynomial_eq_C_mul`). Twisting by the trace `-a₁` and norm `n` of a
+root of `T² + a₁ T + n` gives a curve whose node polynomial is
+`D² c₄ · (T - (a₁² - 2n)) · (T - 2n)`, with `D = a₁² - 4n`: its roots lie in the base ring. This
+holds over any commutative ring, with no hypothesis on `c₄` or `D`. -/
+theorem nodePolynomial_quadraticTwistOf_neg_a₁ (hn : E.c₄ * n = E.nodePolynomial.coeff 0) :
+    (E.quadraticTwistOf (-E.a₁) n).nodePolynomial =
+      .C ((E.a₁ ^ 2 - 4 * n) ^ 2 * E.c₄) * (.X - .C (E.a₁ ^ 2 - 2 * n)) * (.X - .C (2 * n)) := by
+  rw [nodePolynomial_coeff_zero] at hn
+  rw [nodePolynomial_def, a₁_quadraticTwistOf, a₂_quadraticTwistOf, b₂_quadraticTwistOf,
+    b₄_quadraticTwistOf, b₆_quadraticTwistOf, c₄_quadraticTwistOf]
+  have hC := congrArg Polynomial.C hn
+  simp only [map_mul, map_sub, map_add, map_neg, map_pow, map_ofNat] at hC ⊢
+  linear_combination (-(Polynomial.C E.a₁ ^ 2 - 4 * Polynomial.C n) ^ 3) * hC
 
 /-- The quadratic twist commutes with a ring homomorphism `f` (in particular with base change):
 `(E.quadraticTwistOf t n).map f = (E.map f).quadraticTwistOf (f t) (f n)`. -/

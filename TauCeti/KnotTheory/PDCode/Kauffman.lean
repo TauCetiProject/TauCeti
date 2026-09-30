@@ -183,8 +183,8 @@ of local smoothings along the crossing relabelling. -/
   have he : half (D.halfEdge (crossingSlotEquiv n (i, slot))) =
       (D.relabel half cross).halfEdge (crossingSlotEquiv n (cross i, slot)) := by
     rw [← D.crossing_apply, ← (D.relabel half cross).crossing_apply]
-    simpa only [Equiv.symm_apply_apply] using (D.relabel_crossing half cross (cross i) slot).symm
-  rw [he, smoothingTurn_crossing, relabel_crossing]
+    simpa only [Equiv.symm_apply_apply] using (D.crossing_relabel half cross (cross i) slot).symm
+  rw [he, smoothingTurn_crossing, crossing_relabel]
   simp
 
 /-- The over-pair indicator of the local smoothing that a state selects at a crossing: the code's

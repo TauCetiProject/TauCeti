@@ -273,7 +273,7 @@ theorem presentationLimitRationalIso_inv_comp_π (hAplus : ∀ ⦃a⦄, a ∈ Ap
 
 /-- A comparison morphism followed by the transport along an equality of presentations is again
 a comparison morphism. -/
-private theorem homOfRationalSubsetSubset_comp_eqToHom
+theorem homOfRationalSubsetSubset_comp_eqToHom
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p q q' : Presentation P} (e : q = q')
     (h : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den)
     (h' : rationalSubset Aplus q'.num q'.den ⊆ rationalSubset Aplus p.num p.den)

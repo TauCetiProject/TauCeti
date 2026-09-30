@@ -145,11 +145,11 @@ private theorem pentagon_sides_of_recutLeftEqLeft
         (D.recutOfIsEmpty hone hrectangle hpentagon).first.bottom ∧
       (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon.top =
         (D.recutOfIsEmpty hone hrectangle hpentagon).first.top := by
-  have h := D.pentagon_toGridRectangle_recutLeftEqLeft hcommon hone hrectangle hpentagon
-  refine ⟨?_, ?_, ?_⟩
-  · simpa only [GridRectangleBetween.toGridRectangle_left] using congrArg GridRectangle.left h
-  · simpa only [GridRectangleBetween.toGridRectangle_bottom] using congrArg GridRectangle.bottom h
-  · simpa only [GridRectangleBetween.toGridRectangle_top] using congrArg GridRectangle.top h
+  obtain ⟨hleft, -, hbottom, htop⟩ := GridRectangle.ext_iff.mp
+    (D.pentagon_toGridRectangle_recutLeftEqLeft hcommon hone hrectangle hpentagon)
+  simp only [GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top] at hleft hbottom htop
+  exact ⟨hleft, hbottom, htop⟩
 
 /-- The initial side and the bottom row of the promoted pentagon: the terminal side and terminal
 row of the original rectangle in the first recut branch, and its initial side and initial row in

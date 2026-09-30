@@ -557,6 +557,19 @@ theorem topologicalClosure_closure_eq_top_of_range_freeProPGen_subset {s : Set (
   rintro _ ⟨i, rfl⟩
   exact hs ⟨i, freeProPGen_val p i⟩
 
+/-- Two marked generators `x_j`, `x_k` together with the remaining generators `x_i`, `i ≠ j, k`,
+generate the free pro-`p` group topologically. -/
+theorem topologicalClosure_closure_insert_insert_image_freeProPGen_eq_top (j k : ℕ) :
+    (Subgroup.closure (insert (freeProPGen p n j) (insert (freeProPGen p n k)
+      (freeProPGen p n '' {i | i ≠ j ∧ i ≠ k})))).topologicalClosure = ⊤ := by
+  refine topologicalClosure_closure_eq_top_of_range_freeProPGen_subset p ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases hij : i = j
+  · exact Or.inl (by rw [hij])
+  by_cases hik : i = k
+  · exact Or.inr (Or.inl (by rw [hik]))
+  exact Or.inr (Or.inr ⟨i, ⟨hij, hik⟩, rfl⟩)
+
 /-- The value of a homomorphism on the `ℕ`-indexed generators. -/
 theorem map_freeProPGen {K F : Type*} [Group K] [FunLike F (freeProP p (Fin n)) K]
     [MonoidHomClass F (freeProP p (Fin n)) K] (φ : F) (i : ℕ) :

@@ -60,6 +60,9 @@ coefficient maps `TauCeti.ofDiscreteModuleMap`, the form in which a consumer mee
 * `TauCeti.ContCohomology.DiscreteShortExact.longExact_exact₁`,
   `longExact_exact₂` and `longExact_exact₃`: exactness at `Hⁿ⁺¹(G, A)`, `Hⁿ(G, B)` and
   `Hⁿ(G, C)`.
+* `TauCeti.ContCohomology.DiscreteShortExact.coeffMap_proj_injective` and
+  `coeffMap_incl_injective`: `Hⁿ(G, B) → Hⁿ(G, C)` is injective when `Hⁿ(G, A)` vanishes, and
+  `Hⁿ⁺¹(G, A) → Hⁿ⁺¹(G, B)` is injective when `Hⁿ(G, C)` vanishes.
 * `TauCeti.ContCohomology.DiscreteShortExact.delta_map`: the maps induced by compatible pairs
   commute with `δ`.
 * `TauCeti.ContCohomology.DiscreteShortExact.delta_naturality`: a morphism of short exact
@@ -224,6 +227,27 @@ theorem delta_comp_coeffMap_incl (n : ℕ) :
     S.delta n ≫ coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1) =
       0 :=
   ConcreteCategory.hom_ext _ _ fun x ↦ (S.longExact_exact₁ n).apply_apply_eq_zero x
+
+omit [CompactSpace G] in
+/-- If `Hⁿ(G, A)` vanishes, the coefficient map `Hⁿ(G, B) → Hⁿ(G, C)` is injective, by exactness
+at `Hⁿ(G, B)`. -/
+theorem coeffMap_proj_injective [LocallyCompactSpace G] {n : ℕ}
+    [Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A))] :
+    Function.Injective
+      (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n) :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ by
+    obtain ⟨a, rfl⟩ := (S.longExact_exact₂ n x).1 hx
+    rw [Subsingleton.elim a 0, _root_.map_zero]
+
+/-- If `Hⁿ(G, C)` vanishes, the coefficient map `Hⁿ⁺¹(G, A) → Hⁿ⁺¹(G, B)` is injective, by
+exactness at `Hⁿ⁺¹(G, A)`. -/
+theorem coeffMap_incl_injective {n : ℕ}
+    [Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G C))] :
+    Function.Injective
+      (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)) :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ by
+    obtain ⟨c, rfl⟩ := (S.longExact_exact₁ n x).1 hx
+    rw [Subsingleton.elim c 0, _root_.map_zero]
 
 section Map
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Deviation
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Pow
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 import Mathlib.Algebra.Module.Projective
@@ -90,6 +91,11 @@ relators `x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯`, where `ξ₁` occurs in a br
 
 * `TauCeti.freeProP.inv_mul_basisModification_mem_pLowerCentralSeries`: `θ_w` is congruent to the
   identity modulo `λ_m(F)`.
+* `TauCeti.freeProP.toAdd_exponentSum_basisModification`: the exponent vector of `θ_w g` is
+  `Σ_i (exponentSum g)_i • (e_i + exponentSum w_i)`.
+* `TauCeti.freeProP.exponentSum_basisModification`: `θ_w` preserves the exponent vector of `g`
+  when `w_i` lies in the closed commutator subgroup at every generator carrying a nonzero exponent
+  of `g`.
 * `TauCeti.freeProP.gradedDeviation_basisModification`,
   `TauCeti.freeProP.gradedMk_inv_mul_basisModification`: the class of `r⁻¹ * θ_w r` in
   `gr_{m+1}(F)` is `δ(ω)`; in particular it depends only on the classes `ω_i`.
@@ -181,6 +187,50 @@ theorem gradedDeviation_basisModification_gradedMkZero_of
   rw [gradedDeviation_gradedMkZero]
   congr 1
   exact Subtype.ext (by simp)
+
+section ExponentSum
+
+variable [Fact p.Prime]
+
+/-- **The exponent vector of a basis modification.** For `u = exponentSum g`, the exponent vector
+of `θ_w g` is `Σ_i u_i • (e_i + exponentSum w_i)`: the generator `x_i` contributes `e_i` and its
+correction `w_i` contributes `exponentSum w_i`, each `u_i` times. -/
+@[simp]
+theorem toAdd_exponentSum_basisModification [Fintype X] [DecidableEq X]
+    (w : X → pLowerCentralSeries p (freeProP p X) m) (g : freeProP p X) :
+    (exponentSum p X (basisModification w g)).toAdd =
+      ∑ x, (exponentSum p X g).toAdd x • (Pi.single x 1 + (exponentSum p X (w x)).toAdd) := by
+  have h := apply_eq_prod_padicPow_exponentSum p X (isProP_multiplicative_pi_padicInt p X)
+    ((exponentSum p X).comp (basisModification w)) g
+  rw [ContinuousMonoidHom.coe_comp, Function.comp_apply] at h
+  rw [h, toAdd_prod]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [Function.comp_apply, basisModification_of, map_mul, exponentSum_of,
+    ← ofAdd_toAdd (exponentSum p X (w x)), ← ofAdd_add, IsProP.padicPow_ofAdd_pi, toAdd_ofAdd,
+    toAdd_ofAdd]
+
+/-- **A basis modification lying in the closed commutator subgroup at every generator carrying
+a nonzero exponent preserves the exponent vector**: if `w_i ∈ closure [F, F]` for every `i` with
+`(exponentSum g)_i ≠ 0`, then `exponentSum (θ_w g) = exponentSum g`. -/
+@[simp]
+theorem exponentSum_basisModification [Finite X] (w : X → pLowerCentralSeries p (freeProP p X) m)
+    {g : freeProP p X} (hw : ∀ i, (exponentSum p X g).toAdd i ≠ 0 →
+      (w i : freeProP p X) ∈ (commutator (freeProP p X)).topologicalClosure) :
+    exponentSum p X (basisModification w g) = exponentSum p X g := by
+  cases nonempty_fintype X
+  classical
+  refine Multiplicative.toAdd.injective ?_
+  -- Every correction term `exponentSum w_i` of `toAdd_exponentSum_basisModification` vanishes
+  -- where it is weighted by a nonzero exponent.
+  rw [toAdd_exponentSum_basisModification]
+  conv_rhs => rw [← Finset.univ_sum_single (exponentSum p X g).toAdd]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  by_cases hx : (exponentSum p X g).toAdd x = 0
+  · rw [hx, zero_smul, Pi.single_zero]
+  · rw [(exponentSum_eq_one_iff p X _).mpr (hw x hx), toAdd_one, add_zero, ← Pi.single_smul,
+      smul_eq_mul, mul_one]
+
+end ExponentSum
 
 /-! ### The maps `δ` -/
 
@@ -460,6 +510,24 @@ theorem basisModificationDelta_smul [Fintype X] (hm : 1 ≤ m) (ρ : gradedPiece
     rw [h, ← gradedPowAddMonoidHom_apply hm, ← AddMonoidHom.coe_toZModLinearMap p,
       map_smul, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]
   · simp only [← gradedBracketLinear_apply, map_sum, map_smul, LinearMap.smul_apply]
+
+/-- **`δ` on a family supported at one generator**: for `v ∈ gr_m(F)`,
+`δ_ρ(single i v) = c_i • π v + [v, ∂_i ρ]`, where `c_i` is the coefficient of `π ξ_i` in `ρ`. -/
+@[simp]
+theorem basisModificationDelta_single [DecidableEq X] (hm : 1 ≤ m)
+    (ρ : gradedPiece p (freeProP p X) 1) (i : X) (v : gradedPiece p (freeProP p X) m) :
+    basisModificationDelta p X hm ρ (Pi.single i v) =
+      (degreeOneBasis p X).repr ρ (Sum.inl i) • gradedPow p (freeProP p X) m v +
+        gradedBracket p (freeProP p X) m 0 v (degreeOneDeriv p X i ρ) := by
+  cases nonempty_fintype X
+  -- `single i v` is the proportional family with indicator coefficients `single i 1`.
+  have h : (Pi.single i v : X → gradedPiece p (freeProP p X) m) =
+      fun j ↦ Pi.single (M := fun _ ↦ ZMod p) i 1 j • v := by
+    funext j
+    simp only [Pi.single_apply, ite_smul, one_smul, zero_smul]
+  rw [h, basisModificationDelta_smul]
+  simp only [Pi.single_apply, ite_mul, one_mul, zero_mul, ite_smul, one_smul, zero_smul,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
 
 /-- **Naturality of `δ` under `π`**: for `m ≥ 1`, `π (δ_ρ(v)) = δ_ρ(π v)`, where `δ_ρ` on the left
 is the map in degree `m` and on the right the map in degree `m + 1`. -/

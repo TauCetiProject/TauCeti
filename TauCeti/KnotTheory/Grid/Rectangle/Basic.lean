@@ -79,6 +79,7 @@ namespace TauCeti
 The interior is the product of the clockwise open interval from `left` to `right` with the
 clockwise open interval from `bottom` to `top`. Degenerate side choices are allowed at this
 level; their interiors are empty in the degenerate direction. -/
+@[ext]
 structure GridRectangle (n : ℕ) where
   /-- The initial vertical side of the rectangle. -/
   left : Fin n
@@ -872,13 +873,12 @@ theorem transpose_top (R : GridRectangleBetween x y) : R.transpose.top = R.right
   simp only [GridRectangleBetween.top, transpose_right, GridState.transpose_apply,
     Equiv.symm_apply_apply]
 
-/-- The toroidal rectangle of the reflected oriented rectangle, written out by its four sides. -/
+/-- The associated toroidal rectangle of the reflected oriented rectangle is the reflection of the
+associated toroidal rectangle. -/
 @[simp]
 theorem transpose_toGridRectangle (R : GridRectangleBetween x y) :
-    R.transpose.toGridRectangle =
-      { left := R.bottom, right := R.top, bottom := R.left, top := R.right } := by
-  unfold GridRectangleBetween.toGridRectangle
-  rw [transpose_bottom, transpose_top, transpose_left, transpose_right]
+    R.transpose.toGridRectangle = R.toGridRectangle.transpose := by
+  ext <;> simp
 
 end GridRectangleBetween
 
@@ -1003,14 +1003,6 @@ theorem transpose_inj {R S : GridRectangleBetween x y} :
     R.transpose = S.transpose ↔ R = S :=
   (transposeEquiv x y).apply_eq_iff_eq
 
-/-- The interior of the reflected rectangle is the diagonal reflection of the interior of the
-original rectangle. This is the oriented-rectangle corollary of
-`GridRectangle.interior_transpose`. -/
-theorem interior_transpose (R : GridRectangleBetween x y) :
-    R.transpose.toGridRectangle.interior = R.toGridRectangle.interior.image Prod.swap := by
-  rw [transpose_toGridRectangle]
-  exact R.toGridRectangle.interior_transpose
-
 /-- The diagonal reflection preserves emptiness of a rectangle between grid states. -/
 @[simp]
 theorem isEmpty_transpose (R : GridRectangleBetween x y) :
@@ -1018,15 +1010,6 @@ theorem isEmpty_transpose (R : GridRectangleBetween x y) :
   rw [isEmpty_iff_toGridRectangle_isEmptyFor, isEmpty_iff_toGridRectangle_isEmptyFor,
     transpose_toGridRectangle]
   exact R.toGridRectangle.isEmptyFor_transpose x
-
-/-- The squares covered by the reflected rectangle are the diagonal reflections of the squares
-covered by the original rectangle. This is the oriented-rectangle corollary of
-`GridRectangle.coveredSquares_transpose`. -/
-theorem coveredSquares_transpose (R : GridRectangleBetween x y) :
-    R.transpose.toGridRectangle.coveredSquares =
-      R.toGridRectangle.coveredSquares.image Prod.swap := by
-  rw [transpose_toGridRectangle]
-  exact R.toGridRectangle.coveredSquares_transpose
 
 /-- The diagonal reflection preserves marking avoidance of a rectangle between grid states. -/
 @[simp]

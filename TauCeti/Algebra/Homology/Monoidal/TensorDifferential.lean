@@ -11,17 +11,23 @@ public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 
 /-!
-# The differential of a tensor product of cochain complexes of modules
+# The differential of a tensor product of complexes
 
-Mathlib's `HomologicalComplex.monoidalCategory`, instantiated at `ComplexShape.up ℤ`, totalizes
-the degreewise tensor product of cochain complexes, with the tensor signs `ε₁ = 1` and
-`ε₂ (p, q) = (-1)^p`.  This file records the resulting differential on a homogeneous summand,
-`d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y` for `x` of degree `p`, as a single rewrite rule.
+Mathlib's `HomologicalComplex.monoidalCategory` totalizes the degreewise tensor product of
+complexes, with the tensor signs `ε₁ = 1` and `ε₂ (p, q) = (-1)^p`.  This file records the
+resulting differential on a homogeneous summand, `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y` for `x` of
+degree `p`: as a single rewrite rule for cochain complexes of modules indexed by `ℤ`, and as its two
+parts `HomologicalComplex.mapBifunctor.D₁` and `HomologicalComplex.mapBifunctor.D₂` for chain
+complexes indexed by `ℕ` in any monoidal preadditive category, where a part vanishes on a summand
+whose factor of degree zero it would differentiate.
 
 ## Main results
 
 * `HomologicalComplex.ι_tensorObj_d`: the differential of `X ⊗ Y` restricted to the summand
-  `X.X p ⊗ Y.X q`.
+  `X.X p ⊗ Y.X q`, for cochain complexes of modules.
+* `ChainComplex.ιTensorObj_D₁_succ`, `ChainComplex.ιTensorObj_D₁_zero`,
+  `ChainComplex.ιTensorObj_D₂_succ` and `ChainComplex.ιTensorObj_D₂_zero`: the two parts of the
+  differential of `K₁ ⊗ K₂` on a homogeneous summand, for chain complexes indexed by `ℕ`.
 
 ## Implementation notes
 
@@ -67,3 +73,56 @@ lemma ι_tensorObj_d (X Y : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ)
   simp only [ComplexShape.ε₁_def, one_smul, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ]
 
 end HomologicalComplex
+
+namespace ChainComplex
+
+open HomologicalComplex
+
+variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
+  (K₁ K₂ : ChainComplex C ℕ) [K₁.HasTensor K₂]
+
+/-- The first part of the differential of a tensor product of chain complexes, on a summand whose
+first factor has positive degree, is the differential of the first factor. -/
+@[reassoc]
+lemma ιTensorObj_D₁_succ (r s n : ℕ) (h : r + 1 + s = n + 1) :
+    ιTensorObj K₁ K₂ (r + 1) s (n + 1) h ≫
+        mapBifunctor.D₁ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n =
+      (K₁.d (r + 1) r ▷ K₂.X s) ≫ ιTensorObj K₁ K₂ r s n (by omega) := by
+  have hr : (ComplexShape.down ℕ).Rel (r + 1) r := by simp
+  rw [mapBifunctor.ι_D₁, mapBifunctor.d₁_eq _ _ _ _
+    hr _ _ (by simp; omega)]
+  simp
+
+/-- The first part of the differential of a tensor product of chain complexes vanishes on a
+summand whose first factor has degree zero. -/
+@[reassoc]
+lemma ιTensorObj_D₁_zero (n : ℕ) :
+    ιTensorObj K₁ K₂ 0 (n + 1) (n + 1) (by omega) ≫
+        mapBifunctor.D₁ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n = 0 := by
+  rw [mapBifunctor.ι_D₁, mapBifunctor.d₁_eq_zero]
+  simp
+
+/-- The second part of the differential of a tensor product of chain complexes, on a summand whose
+second factor has positive degree, is the differential of the second factor with the Koszul sign
+`(-1)^r` of the degree `r` of the first factor. -/
+@[reassoc]
+lemma ιTensorObj_D₂_succ (r s n : ℕ) (h : r + (s + 1) = n + 1) :
+    ιTensorObj K₁ K₂ r (s + 1) (n + 1) h ≫
+        mapBifunctor.D₂ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n =
+      ((-1 : ℤ) ^ r) •
+        (K₁.X r ◁ K₂.d (s + 1) s) ≫ ιTensorObj K₁ K₂ r s n (by omega) := by
+  have hs : (ComplexShape.down ℕ).Rel (s + 1) s := by simp
+  rw [mapBifunctor.ι_D₂, mapBifunctor.d₂_eq _ _ _ _ _
+    hs _ (by simp; omega)]
+  simp [Units.smul_def]
+
+/-- The second part of the differential of a tensor product of chain complexes vanishes on a
+summand whose second factor has degree zero. -/
+@[reassoc]
+lemma ιTensorObj_D₂_zero (n : ℕ) :
+    ιTensorObj K₁ K₂ (n + 1) 0 (n + 1) (by omega) ≫
+        mapBifunctor.D₂ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n = 0 := by
+  rw [mapBifunctor.ι_D₂, mapBifunctor.d₂_eq_zero]
+  simp
+
+end ChainComplex
