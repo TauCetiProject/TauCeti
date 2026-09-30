@@ -354,31 +354,30 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
       ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
       (subpath_apply_mem hγ ha hc)
-  have hab' : (p.subpath a' b').cast hpa hpb = qab := by
+  have cast_subpath_eq_codRestrict (r s : I)
+      (hrU : γ (Icc.convexComb lo hi r) ∈ U i) (hsU : γ (Icc.convexComb lo hi s) ∈ U i)
+      (hr : (⟨γ (Icc.convexComb lo hi r), hrU⟩ : U i) = p r)
+      (hs : (⟨γ (Icc.convexComb lo hi s), hsU⟩ : U i) = p s)
+      (hrs : ∀ t, γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t ∈ U i) :
+      (p.subpath r s).cast hr hs =
+        (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict hrs := by
     apply Path.ext
     funext t
     apply Subtype.ext
-    simp only [qab, Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
-    exact congrArg γ (convexComb_convexComb lo hi a' b' t).symm
-  have hbc' : (p.subpath b' c').cast hpb hpc = qbc := by
-    apply Path.ext
-    funext t
-    apply Subtype.ext
-    simp only [qbc, Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
-    exact congrArg γ (convexComb_convexComb lo hi b' c' t).symm
-  have hac' : (p.subpath a' c').cast hpa hpc = qac := by
-    apply Path.ext
-    funext t
-    apply Subtype.ext
-    simp only [qac, Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
-    exact congrArg γ (convexComb_convexComb lo hi a' c' t).symm
+    simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
+    exact congrArg γ (convexComb_convexComb lo hi r s t).symm
+  have hab' : (p.subpath a' b').cast hpa hpb = qab :=
+    cast_subpath_eq_codRestrict a' b' haU hbU hpa hpb (subpath_apply_mem hγ ha hb)
+  have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
+    cast_subpath_eq_codRestrict b' c' hbU hcU hpb hpc (subpath_apply_mem hγ hb hc)
+  have hac' : (p.subpath a' c').cast hpa hpc = qac :=
+    cast_subpath_eq_codRestrict a' c' haU hcU hpa hpc (subpath_apply_mem hγ ha hc)
   have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
       (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
     rw [← hab', ← hbc', ← hac']
     exact Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
   have hmap := congrArg (F i).map hquot
-  change (F i).map (Path.Homotopic.Quotient.mk qab ≫
-    Path.Homotopic.Quotient.mk qbc) = _ at hmap
+  rw [← comp_eq] at hmap
   rw [Functor.map_comp] at hmap
   dsimp only [qab, qbc, qac] at hmap
   simp only [locVal]
