@@ -30,8 +30,6 @@ larger: over `𝔽₃` the diagonal torus of `SL₂` is the centre `{±1}`, whos
 
 ## Main declarations
 
-* `TauCeti.exists_toGL_mul_eq`: every invertible matrix is a determinant-one matrix times a
-  diagonal matrix.
 * `TauCeti.slTitsSystem`: the standard Tits system of `SLₙ₊₁(k)`.
 * `TauCeti.mem_slTitsSystem_subgroupB_iff`: its `B` consists of the upper-triangular matrices.
 * `TauCeti.slTitsSystem_subgroupN_eq_normalizer`: its `N` is the normalizer of the diagonal torus
@@ -59,21 +57,6 @@ noncomputable section
 
 variable (k : Type u) [Field k]
 
-/-- Every invertible matrix is a determinant-one matrix times a diagonal matrix: namely
-`g = (g · diag(det g, 1, …, 1)⁻¹) · diag(det g, 1, …, 1)`. -/
-theorem exists_toGL_mul_eq {n : ℕ} (g : GL (Fin (n + 1)) k) :
-    ∃ x : SpecialLinearGroup (Fin (n + 1)) k, ∃ t ∈ diagonalTorus k (n + 1),
-      SpecialLinearGroup.toGL x * t = g := by
-  set t : GL (Fin (n + 1)) k := diagGL (Pi.mulSingle 0 (GeneralLinearGroup.det g)) with ht
-  have hdet : GeneralLinearGroup.det (g * t⁻¹) = 1 := by
-    rw [map_mul, map_inv, ht, det_diagGL, Fintype.prod_pi_mulSingle', mul_inv_cancel]
-  let x : SpecialLinearGroup (Fin (n + 1)) k :=
-    ⟨(g * t⁻¹ : GL (Fin (n + 1)) k), by
-      rw [← GeneralLinearGroup.val_det_apply, hdet, Units.val_one]⟩
-  refine ⟨x, t, mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, ht.symm⟩, ?_⟩
-  have hx : SpecialLinearGroup.toGL x = g * t⁻¹ := Units.ext rfl
-  rw [hx, inv_mul_cancel_right]
-
 variable [Nontrivial kˣ] (n : ℕ)
 
 /-- Every invertible matrix is a determinant-one matrix times an element of `B ∩ N` for the
@@ -82,12 +65,13 @@ private theorem exists_toGL_mul_mem_inf (g : GL (Fin (n + 1)) k) :
     ∃ x : SpecialLinearGroup (Fin (n + 1)) k,
       ∃ t ∈ (glTitsSystem k n).subgroupB ⊓ (glTitsSystem k n).subgroupN,
         SpecialLinearGroup.toGL x * t = g := by
-  obtain ⟨x, t, ht, hxt⟩ := exists_toGL_mul_eq k g
-  refine ⟨x, t, Subgroup.mem_inf.mpr ⟨?_, ?_⟩, hxt⟩
+  obtain ⟨x, u, hxu⟩ := exists_toGL_mul_eq g
+  refine ⟨x, diagGL u, Subgroup.mem_inf.mpr ⟨?_, ?_⟩, hxu⟩
   · rw [glTitsSystem_subgroupB]
-    exact UpperTriangularGroup.diagonalTorus_le ht
+    exact UpperTriangularGroup.diagonalTorus_le
+      (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨u, rfl⟩)
   · rw [glTitsSystem_subgroupN]
-    exact Subgroup.le_normalizer ht
+    exact Subgroup.le_normalizer (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨u, rfl⟩)
 
 /-- The standard Tits system of `SLₙ₊₁(k)`: `B` is the upper-triangular subgroup, `N` is the
 subgroup of monomial matrices, and the simple reflections are the classes corresponding to the
@@ -114,6 +98,7 @@ theorem mem_slTitsSystem_subgroupB_iff {g : SpecialLinearGroup (Fin (n + 1)) k} 
 
 /-- The `N` subgroup of the standard `SLₙ₊₁` Tits system is the preimage of the normalizer of the
 diagonal torus of `GLₙ₊₁`, that is, the subgroup of determinant-one monomial matrices. -/
+@[simp]
 theorem slTitsSystem_subgroupN :
     (slTitsSystem k n).subgroupN =
       (Subgroup.normalizer (diagonalTorus k (n + 1) : Set (GL (Fin (n + 1)) k))).comap
@@ -141,6 +126,7 @@ def slTitsSystemWeylGroupMulEquivPerm :
 
 /-- The Weyl-group identification of `SLₙ₊₁` factors through that of `GLₙ₊₁`: the class of a
 determinant-one monomial matrix goes to the permutation of its class in the `GLₙ₊₁` Weyl group. -/
+@[simp]
 theorem slTitsSystemWeylGroupMulEquivPerm_mk (g : (slTitsSystem k n).subgroupN) :
     slTitsSystemWeylGroupMulEquivPerm k n (QuotientGroup.mk g) =
       glTitsSystemWeylGroupMulEquivPerm k n
@@ -167,6 +153,7 @@ private theorem glTitsSystem_simple_eq_preimage :
 
 /-- The simple reflections of the standard `SLₙ₊₁` Tits system correspond to the adjacent
 transpositions `(i i+1)`. -/
+@[simp]
 theorem slTitsSystem_simple :
     (slTitsSystem k n).simple =
       slTitsSystemWeylGroupMulEquivPerm k n ⁻¹'

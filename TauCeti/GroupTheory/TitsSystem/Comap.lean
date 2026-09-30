@@ -105,12 +105,6 @@ private instance :
   rw [comap_subgroupOf_eq]
   exact Subgroup.Normal.comap inferInstance _
 
-/-- `MonoidHom.subgroupComap_apply_coe` restated for a subgroup-typed argument, so that it
-can be used for rewriting. -/
-private theorem coe_subgroupComap (n : T.subgroupN.comap f) :
-    ((f.subgroupComap T.subgroupN n : T.subgroupN) : G) = f n :=
-  f.subgroupComap_apply_coe T.subgroupN n
-
 /-- The homomorphism of Weyl groups induced by `f`. -/
 private def comapWeylGroupHom :
     T.subgroupN.comap f ⧸ (T.subgroupB.comap f).subgroupOf (T.subgroupN.comap f) →*
@@ -139,7 +133,9 @@ private theorem comapWeylGroupHom_surjective
     obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf n.2
     refine ⟨QuotientGroup.mk ⟨x, hx⟩, ?_⟩
     rw [comapWeylGroupHom_mk, QuotientGroup.eq, mem_intersection]
-    rw [Subgroup.coe_mul, Subgroup.coe_inv, coe_subgroupComap, ← hxt, inv_mul_cancel_left]
+    rw [Subgroup.coe_mul, Subgroup.coe_inv,
+      f.subgroupComap_apply_coe T.subgroupN (⟨x, hx⟩ : T.subgroupN.comap f), ← hxt,
+      inv_mul_cancel_left]
     exact ht.1
 
 private theorem closure_preimage_comapWeylGroupHom
@@ -194,7 +190,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
     have hw : f w ∈ T.subgroupN := w.2
     -- `r₀ = f r * t` for some `t ∈ B ∩ N`.
     rw [comapWeylGroupHom_mk, eq_comm, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
-      Subgroup.coe_inv, coe_subgroupComap] at hr₀
+      Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r] at hr₀
     set t : G := (f r)⁻¹ * r₀ with ht_def
     have ht : t ∈ T.subgroupB ⊓ T.subgroupN :=
       Subgroup.mem_inf.mpr ⟨hr₀, mul_mem (inv_mem hr) r₀.2⟩
@@ -207,7 +203,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
         T.subgroupB T.subgroupB = DoubleCoset.doubleCoset (f (r * w)) T.subgroupB T.subgroupB := by
       refine DoubleCoset.doubleCoset_eq_of_mem (DoubleCoset.mem_doubleCoset.mpr
         ⟨1, one_mem _, (f w)⁻¹ * t * (f w)⁻¹⁻¹, T.conj_mem_subgroupB (inv_mem hw) ht, ?_⟩)
-      simp only [Subgroup.coe_mul, coe_subgroupComap, hr₀t, map_mul]
+      simp only [Subgroup.coe_mul, f.subgroupComap_apply_coe T.subgroupN w, hr₀t, map_mul]
       group
     intro z hz
     obtain ⟨z₁, hz₁, z₂, hz₂, rfl⟩ := Set.mem_mul.mp hz
@@ -220,13 +216,14 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
       (Set.mul_mem_mul (hcell_r ▸ hz₁) hz₂)
     rw [hcell_rw] at hmem
     rw [Subgroup.coe_mul, ← T.preimage_doubleCoset hf hrw, ← T.preimage_doubleCoset hf hw]
-    simpa only [Set.mem_union, Set.mem_preimage, map_mul, coe_subgroupComap] using hmem
+    simpa only [Set.mem_union, Set.mem_preimage, map_mul,
+      f.subgroupComap_apply_coe T.subgroupN w] using hmem
   exists_conj_not_mem s hs := by
     obtain ⟨r₀, hr₀, b, hb⟩ := T.exists_conj_not_mem _ hs
     obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
     have hr : f r ∈ T.subgroupN := r.2
     rw [comapWeylGroupHom_mk, eq_comm, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
-      Subgroup.coe_inv, coe_subgroupComap] at hr₀
+      Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r] at hr₀
     set t : G := (f r)⁻¹ * r₀ with ht_def
     have ht : t ∈ T.subgroupB ⊓ T.subgroupN :=
       Subgroup.mem_inf.mpr ⟨hr₀, mul_mem (inv_mem hr) r₀.2⟩
@@ -282,6 +279,7 @@ theorem comapWeylGroupMulEquiv_mk (n : (T.comap f hf).subgroupN) :
 
 /-- The simple reflections of the pulled-back Tits system are the preimages of the simple
 reflections of the original one under the identification of Weyl groups. -/
+@[simp]
 theorem comap_simple :
     (T.comap f hf).simple = T.comapWeylGroupMulEquiv f hf ⁻¹' T.simple :=
   (rfl)
