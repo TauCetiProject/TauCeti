@@ -16,6 +16,9 @@ on a reflexive module, evaluation identifies the representation with its double 
 in the representation. In particular this applies to finite free integral representations.
 -/
 
+/- The constructions below use Mathlib's `Representation.dual`, `LinearMap.dualMap`,
+and `Module.evalEquiv` for the contragredient action, transpose, and double-dual evaluation. -/
+
 public section
 
 open CategoryTheory
