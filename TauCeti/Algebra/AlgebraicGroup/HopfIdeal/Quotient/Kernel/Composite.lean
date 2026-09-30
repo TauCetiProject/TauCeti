@@ -63,6 +63,28 @@ theorem mkQuotient_comp_kernelCompositeMap (f : H ⟶ K) (g : K ⟶ L) :
       g ≫ mkQuotient L (kernelHopfIdeal (f ≫ g)) := by
   exact mkQuotient_comp_liftQuotient _ _ _
 
+/-- Restriction along the identity is the identity after identifying its target quotient. -/
+@[simp]
+theorem kernelCompositeMap_id (f : H ⟶ K) :
+    kernelCompositeMap f (𝟙 K) =
+      eqToHom (congrArg (quotient K)
+        (congrArg kernelHopfIdeal (Category.comp_id f)).symm) := by
+  apply mkQuotient_hom_ext
+  rw [mkQuotient_comp_kernelCompositeMap, Category.id_comp]
+  exact (mkQuotient_comp_eqToHom (congrArg kernelHopfIdeal (Category.comp_id f))).symm
+
+/-- Successive restrictions agree with restriction along the composite, after identifying
+the target quotients by associativity. -/
+@[simp]
+theorem kernelCompositeMap_comp {M : _root_.CommHopfAlgCat.{v} R}
+    (f : H ⟶ K) (g : K ⟶ L) (h : L ⟶ M) :
+    kernelCompositeMap f g ≫ kernelCompositeMap (f ≫ g) h =
+      kernelCompositeMap f (g ≫ h) ≫ eqToHom (congrArg (quotient M)
+        (congrArg kernelHopfIdeal (Category.assoc f g h)).symm) := by
+  apply mkQuotient_hom_ext
+  simp only [← Category.assoc, mkQuotient_comp_kernelCompositeMap]
+  simp only [Category.assoc, mkQuotient_comp_kernelCompositeMap, mkQuotient_comp_eqToHom]
+
 /-- The kernel of the restriction on composite kernels is the original kernel, viewed as a
 closed subgroup of the composite kernel. -/
 @[simp]
