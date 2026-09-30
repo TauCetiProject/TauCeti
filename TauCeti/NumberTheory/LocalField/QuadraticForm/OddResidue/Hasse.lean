@@ -62,7 +62,8 @@ private theorem oddHasseProd_eq_of_binaryStep {n : ℕ} {w w' : Fin n → Kˣ}
     ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (w i) (w j) =
       ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (w' i) (w' j) := by
   have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
-  exact h.prod_prod_Ioi_eq (fun a b c => hilbertSymbol_mul_left h2 c a b)
+  exact h.prod_prod_Ioi_eq
+    (fun a b c => hilbertSymbol_mul_left (two_ne_zero_of_isUnit_two h2) c a b)
     (fun _ _ _ _ hab => hilbertSymbol_eq_of_equivalent_binary hab)
 
 /-- The pairwise-product Hasse sign of a regular-form class over a local field in which
@@ -93,7 +94,7 @@ theorem oddResidueOmearaHasseSymbol_eq (h2 : IsUnit (2 : 𝒪[K]))
   let f : Kˣ →* ℤˣ :=
     { toFun := fun a => hilbertSymbol a (-1)
       map_one' := hilbertSymbol_one_left _
-      map_mul' := fun a b => hilbertSymbol_mul_left h2 _ a b }
+      map_mul' := fun a b => hilbertSymbol_mul_left (two_ne_zero_of_isUnit_two h2) _ a b }
   have hdiag : (∏ i, hilbertSymbol (p.2 i) (p.2 i)) =
       hilbertSymbol (∏ i, p.2 i) (-1) := by
     simp_rw [hilbertSymbol_self]
@@ -163,9 +164,9 @@ theorem oddResidueHasse_add_mk (h2 : IsUnit (2 : 𝒪[K]))
   let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [mk_add_mk, RegularFormPresentation.append_def, oddResidueHasse_mk,
     oddResidueHasse_mk, oddResidueHasse_mk]
-  exact prod_prod_Ioi_append_of_mul hilbertSymbol hilbertSymbol_one_left
-    hilbertSymbol_one_right (fun a b c => hilbertSymbol_mul_left h2 c a b)
-    (hilbertSymbol_mul_right h2) p.2 q.2
+  exact prod_prod_Ioi_append_of_mul hilbertSymbol hilbertSymbol_one_left hilbertSymbol_one_right
+    (fun a b c => hilbertSymbol_mul_left (two_ne_zero_of_isUnit_two h2) c a b)
+    (hilbertSymbol_mul_right (two_ne_zero_of_isUnit_two h2)) p.2 q.2
 
 /-- The Hasse sign of an orthogonal sum of regular-form classes. -/
 theorem oddResidueHasse_add (h2 : IsUnit (2 : 𝒪[K])) (x y : RegularFormClass K) :
@@ -191,7 +192,7 @@ theorem oddResidueHasse_mk_scale (h2 : IsUnit (2 : 𝒪[K]))
   let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [oddResidueHasse_mk, oddResidueHasse_mk]
   exact prod_prod_Ioi_scale (s := -1) hilbertSymbol
-    (hilbertSymbol_mul_right h2) hilbertSymbol_comm a
+    (hilbertSymbol_mul_right (two_ne_zero_of_isUnit_two h2)) hilbertSymbol_comm a
     (hilbertSymbol_self a) p.2
 
 /-- Scaling a diagonal form by a rank-one class. -/

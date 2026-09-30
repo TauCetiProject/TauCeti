@@ -49,6 +49,8 @@ with it. This is the bonding operation of a levelwise comparison along the lower
   of a surjection is surjective.
 * `TauCeti.pLowerCentralSeries_one_eq_proPFrattini`: for a prime `p`, `λ_1` is the pro-`p`
   Frattini subgroup of a profinite group.
+* `TauCeti.IsProP.surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one`: a continuous
+  endomorphism of a pro-`p` group congruent to the identity modulo `λ_1` is surjective.
 * `TauCeti.IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries`: for a prime `p`, in a
   topologically finitely generated profinite group every `λ_k` is open, so
   `TauCeti.IsTopologicallyFinitelyGenerated.finite_quotient_pLowerCentralSeries`,
@@ -159,6 +161,14 @@ Frattini subgroup. -/
 theorem pLowerCentralSeries_one_eq_proPFrattini (hp : p.Prime) :
     pLowerCentralSeries p G 1 = proPFrattini p G := by
   rw [pLowerCentralSeries_one, proPFrattini_eq_topologicalClosure hp]
+
+/-- **Burnside's criterion modulo `λ_1`.** A continuous endomorphism of a pro-`p` group congruent
+to the identity modulo `λ_1 = Φ` is surjective. -/
+theorem IsProP.surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one [Fact p.Prime]
+    (hG : IsProP p G) {φ : G →* G} (hφ : Continuous φ)
+    (h : ∀ g, g⁻¹ * φ g ∈ pLowerCentralSeries p G 1) : Function.Surjective φ := by
+  rw [pLowerCentralSeries_one_eq_proPFrattini Fact.out] at h
+  exact hG.surjective_of_forall_inv_mul_mem_proPFrattini hφ h
 
 /-- **Openness of the lower `p`-series.** For a prime `p`, in a topologically finitely generated
 profinite group every term of the lower `p`-series is open. -/

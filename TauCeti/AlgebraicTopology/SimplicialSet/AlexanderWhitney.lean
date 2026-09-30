@@ -10,6 +10,7 @@ public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import TauCeti.Algebra.Homology.Monoidal.Summand
+public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
 public import TauCeti.AlgebraicTopology.SimplexCategory.Subinterval
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
@@ -60,43 +61,6 @@ attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
   [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
-
-section Tensor
-
-variable (K₁ K₂ : ChainComplex C ℕ)
-
-private lemma ιTensorObj_D₁_succ (r s n : ℕ) (h : r + 1 + s = n + 1) :
-    ιTensorObj K₁ K₂ (r + 1) s (n + 1) h ≫
-        mapBifunctor.D₁ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n =
-      (K₁.d (r + 1) r ▷ K₂.X s) ≫ ιTensorObj K₁ K₂ r s n (by omega) := by
-  have hr : (ComplexShape.down ℕ).Rel (r + 1) r := by simp
-  rw [mapBifunctor.ι_D₁, mapBifunctor.d₁_eq _ _ _ _
-    hr _ _ (by simp; omega)]
-  simp
-
-private lemma ιTensorObj_D₁_zero (n : ℕ) :
-    ιTensorObj K₁ K₂ 0 (n + 1) (n + 1) (by omega) ≫
-        mapBifunctor.D₁ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n = 0 := by
-  rw [mapBifunctor.ι_D₁, mapBifunctor.d₁_eq_zero]
-  simp
-
-private lemma ιTensorObj_D₂_succ (r s n : ℕ) (h : r + (s + 1) = n + 1) :
-    ιTensorObj K₁ K₂ r (s + 1) (n + 1) h ≫
-        mapBifunctor.D₂ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n =
-      ((-1 : ℤ) ^ r) •
-        (K₁.X r ◁ K₂.d (s + 1) s) ≫ ιTensorObj K₁ K₂ r s n (by omega) := by
-  have hs : (ComplexShape.down ℕ).Rel (s + 1) s := by simp
-  rw [mapBifunctor.ι_D₂, mapBifunctor.d₂_eq _ _ _ _ _
-    hs _ (by simp; omega)]
-  simp [Units.smul_def]
-
-private lemma ιTensorObj_D₂_zero (n : ℕ) :
-    ιTensorObj K₁ K₂ (n + 1) 0 (n + 1) (by omega) ≫
-        mapBifunctor.D₂ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n = 0 := by
-  rw [mapBifunctor.ι_D₂, mapBifunctor.d₂_eq_zero]
-  simp
-
-end Tensor
 
 section Faces
 
@@ -179,7 +143,8 @@ private lemma alexanderWhitneyTerm_D {n : ℕ} (x : (K ⊗ L) _⦋n + 1⦌) (r s
         alexanderWhitneyTerm K L R S ((K ⊗ L).δ k x) r s := by
   rw [alexanderWhitneyTerm_of_eq _ _ _ _ _ _ _ (by omega),
     alexanderWhitneyTerm_of_eq _ _ _ _ _ _ _ (by omega)]
-  simp only [Category.assoc, ιTensorObj_D₁_succ, ιTensorObj_D₂_succ, Preadditive.comp_zsmul,
+  simp only [Category.assoc, ChainComplex.ιTensorObj_D₁_succ,
+    ChainComplex.ιTensorObj_D₂_succ, Preadditive.comp_zsmul,
     tensorHom_comp_whiskerRight_assoc, tensorHom_comp_whiskerLeft_assoc, SSet.ιChainComplex_d,
     sum_tensor, tensor_sum, zsmul_tensorHom, tensorHom_zsmul, Preadditive.sum_comp,
     Preadditive.zsmul_comp]
@@ -244,7 +209,7 @@ def alexanderWhitney :
     rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ',
       alexanderWhitneyTerm_of_eq _ _ _ _ _ 0 (n + 1) (by omega),
       alexanderWhitneyTerm_of_eq _ _ _ _ _ (n + 1) 0 (by omega), Category.assoc, Category.assoc,
-      ιTensorObj_D₁_zero, ιTensorObj_D₂_zero, comp_zero, comp_zero,
+      ChainComplex.ιTensorObj_D₁_zero, ChainComplex.ιTensorObj_D₂_zero, comp_zero, comp_zero,
       zero_add, zero_add, ← Finset.sum_add_distrib]
     simp only [Finset.smul_sum]
     rw [Finset.sum_comm]

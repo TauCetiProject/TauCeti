@@ -234,15 +234,7 @@ private lemma typeDGraphLatticeEquiv_coordinates (hn : 4 ≤ n) (x : TypeDRoot n
     rw [← hreindex]
     simp_rw [← typeDLastSign_typeDSimpleRoot hn]
     rw [← hdistrib, sum_smul_typeDSimpleRootCoordinates]
-  have hzero : ∑ i : Fin n,
-      (c i - typeDSimpleRootCoordinates n hn (typeDClassicalGraphEquiv n x) i) •
-        typeDSimpleRoot n hn i = 0 := by
-    simp only [sub_smul, Finset.sum_sub_distrib, hsum,
-      sum_smul_typeDSimpleRootCoordinates, sub_self]
-  have hcoeff := Fintype.linearIndependent_iff.mp (linearIndependent_typeDSimpleRoot hn)
-    (fun i => c i - typeDSimpleRootCoordinates n hn (typeDClassicalGraphEquiv n x) i) hzero
-  funext i
-  exact sub_eq_zero.mp (hcoeff i)
+  exact (typeDSimpleRootCoordinates_eq_of_sum_smul_eq hn hsum).symm
 
 private lemma typeDGraphLatticeEquiv_coroot (hn : 4 ≤ n)
     (i : Fin (2 * n * (n - 1))) :

@@ -408,6 +408,13 @@ theorem relabel_relabel (D : PDCode n)
     simp
     rfl
 
+/-- Reflection commutes with relabelling. -/
+@[simp]
+theorem mirror_relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).mirror = D.mirror.relabel half cross := by
+  ext <;> simp
+
 end PDCode
 
 namespace OrientedPDCode
@@ -592,6 +599,25 @@ theorem relabel_relabel (D : OrientedPDCode n)
   simp only [writhe_def, relabel_crossingSign]
   exact Equiv.sum_comp cross.symm D.crossingSign
 
+/-- Reflection and orientation reversal commute. -/
+@[simp]
+theorem mirror_reverse (D : OrientedPDCode n) : D.reverse.mirror = D.mirror.reverse := by
+  ext <;> simp
+
+/-- Reflection commutes with relabelling. -/
+@[simp]
+theorem mirror_relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).mirror = D.mirror.relabel half cross := by
+  ext <;> simp
+
+/-- Orientation reversal commutes with relabelling. -/
+@[simp]
+theorem reverse_relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).reverse = D.reverse.relabel half cross := by
+  ext <;> simp
+
 end OrientedPDCode
 
 namespace FramedOrientedPDCode
@@ -705,6 +731,24 @@ def reverse (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   · simp
   · simp [Multiset.map_map]
 
+/-- Reflection and orientation reversal commute. -/
+@[simp]
+theorem mirror_reverse (D : FramedOrientedPDCode n) : D.reverse.mirror = D.mirror.reverse := by
+  ext <;> simp
+
+/-- Reflection commutes with relabelling. -/
+@[simp]
+theorem mirror_relabel (D : FramedOrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).mirror = D.mirror.relabel half cross := by
+  ext <;> simp
+
+/-- Orientation reversal commutes with relabelling. -/
+@[simp]
+theorem reverse_relabel (D : FramedOrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    (D.relabel half cross).reverse = D.reverse.relabel half cross := by
+  ext <;> simp
 end FramedOrientedPDCode
 
 /-- A zero-crossing oriented PD-code consisting of crossing-free circles with the specified

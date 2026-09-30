@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.RingTheory.RamificationInertia.Basic
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
@@ -44,6 +45,8 @@ filtration.
 
 * `TauCeti.normalizedValuation_algebraMap` and `TauCeti.toAdd_normalizedValuation_algebraMap`:
   the characteristic property `v_L(x) = e · v_K(x)` on `Kˣ`, multiplicatively and additively.
+* `TauCeti.natCastValuation_eq_ramificationIndex_mul`: the same identity for the valuation of a
+  natural-number cast.
 * `TauCeti.normalizedValuationWithZero_algebraMap`: the same identity on all of `K`.
 * `TauCeti.addVal_algebraMap`: the corresponding scaling formula on the integer rings.
 * `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`: the first `e(L/K)` powers of a
@@ -276,6 +279,20 @@ theorem toAdd_normalizedValuation_algebraMap (x : Kˣ) :
     (normalizedValuation L (Units.map (algebraMap K L : K →* L) x)).toAdd =
       ramificationIndex K L * (normalizedValuation K x).toAdd := by
   rw [normalizedValuation_algebraMap, toAdd_pow, nsmul_eq_mul]
+
+/-- The characteristic property of the ramification index on natural numbers: the normalized
+valuation of a natural number in `L` is `e(L/K)` times its normalized valuation in `K`. -/
+theorem natCastValuation_eq_ramificationIndex_mul (n : ℕ) (hn : (n : K) ≠ 0) :
+    natCastValuation L n (by simpa using (map_ne_zero (algebraMap K L)).mpr hn) =
+      ramificationIndex K L * natCastValuation K n hn := by
+  have hL : (n : L) ≠ 0 := by simpa using (map_ne_zero (algebraMap K L)).mpr hn
+  have hmap :
+      Units.map (algebraMap K L : K →* L) (Units.mk0 (n : K) hn) = Units.mk0 (n : L) hL := by
+    ext
+    simp
+  have h := toAdd_normalizedValuation_algebraMap (L := L) (Units.mk0 (n : K) hn)
+  rw [hmap, toAdd_normalizedValuation_natCast L n hL, toAdd_normalizedValuation_natCast K n hn] at h
+  exact_mod_cast h
 
 /-- The characteristic property of the ramification index for the zero-preserving normalized
 valuations, on all of `K`. -/
