@@ -14,25 +14,21 @@ public import TauCeti.LowDimTopology.Heegaard.Domain
 
 Weak admissibility of a pointed Heegaard diagram (`TauCeti.HeegaardRegionSystem.WeaklyAdmissible`:
 every nonzero periodic domain has both positive and negative coefficients) is the hypothesis
-under which the differential of `HF̂` is a finite sum. This file proves the two consequences
-that make it so, in terms of the region incidence data of `TauCeti.HeegaardRegionSystem`.
+under which the differential of `HF̂` is a finite sum. This file proves two domain-level
+consequences of it, in terms of the region incidence data of `TauCeti.HeegaardRegionSystem`.
 
 * **Area forms.** A diagram is weakly admissible exactly when the regions can be given strictly
-  positive areas for which every periodic domain has signed area zero. The domains connecting
-  `x` to `y` with prescribed basepoint multiplicities differ by periodic domains, so for such an
-  area form all of them have the same area. Since the energy of a holomorphic disk is the area
-  of its domain, this is the energy bound that replaces monotonicity in Heegaard Floer theory.
+  positive areas for which every periodic domain has signed area zero. For such an area form,
+  all domains connecting `x` to `y` with prescribed basepoint multiplicities have the same area.
 * **Finiteness.** In a weakly admissible diagram with finitely many regions, only finitely many
   nonnegative domains connect `x` to `y` with prescribed basepoint multiplicities. Conversely,
   the diagram is weakly admissible exactly when it has only finitely many nonnegative periodic
-  domains. Since the domain of a holomorphic disk is nonnegative, this is what bounds the
-  homotopy classes that can contribute to the `HF̂` differential.
+  domains.
 
-The area form comes from Stiemke's lemma for the lattice of periodic domains
-(`TauCeti.exists_pos_forall_sum_mul_intCast_eq_zero_iff`). The finiteness is Dickson's lemma: the
-nonnegative domains in one coset of the periodic domains form an antichain of the
-well-quasi-ordered `Region → ℕ`, since the difference of two comparable ones would be a nonzero
-nonnegative periodic domain.
+These are statements about domains only. Once the energy of a holomorphic disk is identified with
+the area of its domain, and its domain is known to be nonnegative (both analytic inputs not
+formalized here), they give the energy bound replacing monotonicity and the finiteness of the
+homotopy classes that can contribute to the `HF̂` differential.
 
 ## Main results
 
@@ -40,10 +36,10 @@ nonnegative periodic domain.
   admissibility is the existence of a strictly positive area form vanishing on periodic domains.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.sum_mul_eq`: for such an area form, the area of
   a domain connecting `x` to `y` depends only on its basepoint multiplicities.
-* `TauCeti.HeegaardRegionSystem.WeaklyAdmissible.finite_setOf_isDomainBetween`: finitely many
-  nonnegative domains connect `x` to `y` with prescribed basepoint multiplicities.
-* `TauCeti.HeegaardRegionSystem.weaklyAdmissible_iff_finite`: weak admissibility is the finiteness
-  of the set of nonnegative periodic domains.
+* `TauCeti.HeegaardRegionSystem.WeaklyAdmissible.finite_setOf_isDomainBetween_basepoint_eq_nonneg`:
+  finitely many nonnegative domains connect `x` to `y` with prescribed basepoint multiplicities.
+* `TauCeti.HeegaardRegionSystem.weaklyAdmissible_iff_finite_setOf_mem_periodicDomains_nonneg`:
+  weak admissibility is the finiteness of the set of nonnegative periodic domains.
 
 ## References
 
@@ -84,7 +80,7 @@ theorem IsDomainBetween.sum_mul_eq [Fintype Region] {A : Region → ℝ}
 
 /-- In a weakly admissible diagram with finitely many regions, only finitely many nonnegative
 domains connect `x` to `y` with prescribed basepoint multiplicities `k`. -/
-theorem WeaklyAdmissible.finite_setOf_isDomainBetween [Finite Region]
+theorem WeaklyAdmissible.finite_setOf_isDomainBetween_basepoint_eq_nonneg [Finite Region]
     (hH : H.WeaklyAdmissible) (x y : H.Generator) (k : Basepoint → ℤ) :
     {D : Region → ℤ |
       H.IsDomainBetween x y D ∧ (∀ z, D (H.basepoint z) = k z) ∧ 0 ≤ D}.Finite := by
@@ -102,11 +98,12 @@ theorem WeaklyAdmissible.finite_setOf_isDomainBetween [Finite Region]
 
 variable (H) in
 /-- A diagram is weakly admissible exactly when it has only finitely many nonnegative periodic
-domains: a nonzero one `P` would give the infinitely many `m • P`. -/
-theorem weaklyAdmissible_iff_finite :
+domains. -/
+theorem weaklyAdmissible_iff_finite_setOf_mem_periodicDomains_nonneg :
     H.WeaklyAdmissible ↔ {P | P ∈ H.periodicDomains ∧ 0 ≤ P}.Finite := by
   refine ⟨fun hH => (Set.finite_singleton 0).subset fun P hP =>
     weaklyAdmissible_iff.mp hH P hP.1 hP.2, fun hfin => weaklyAdmissible_iff.mpr ?_⟩
+  -- A nonzero nonnegative periodic domain `P` would give the infinitely many `m • P`.
   intro P hP hP₀
   by_contra hne
   have hinj : Function.Injective fun m : ℕ => m • P := fun a b h =>

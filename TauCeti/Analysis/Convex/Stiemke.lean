@@ -14,18 +14,12 @@ public import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 Stiemke's lemma is the theorem of the alternative for a linear subspace and the nonnegative
 orthant: a subspace `V` of `ι → ℝ` meets the closed nonnegative orthant only in `0` exactly when
-some strictly positive vector `w` is orthogonal to `V`. We prove it by separating `V` from the
-convex hull of the standard basis vectors, and then transfer it to a subgroup `P` of the lattice
-`ι → ℤ`: if the only nonnegative element of `P` is `0`, then `P` is orthogonal to a strictly
-positive real vector.
-
-The lattice form needs the rationality step that the real span of `P` then meets the orthant
-only in `0` as well, which is not formal: a real point of the span need not be a real multiple of
-a lattice point. It is proved by induction on the support. A nonzero nonnegative real point `v` of
-the span yields, by an integer linear relation among the restrictions of a linearly independent
-family from `P` to the complement of the support of `v`, a nonzero lattice point `q ∈ P`
-supported inside the support of `v`; subtracting the largest multiple of `q` that keeps `v`
-nonnegative shrinks the support.
+some strictly positive vector `w` is orthogonal to `V`. We also prove the corresponding statement
+for a subgroup `P` of the lattice `ι → ℤ`: `P` contains no nonzero nonnegative element exactly
+when `P` is orthogonal to a strictly positive real vector. This relies on a rationality statement
+that is not formal: if the only nonnegative element of `P` is `0`, then the same holds for the
+real span of `P`, even though a real point of that span need not be a real multiple of a lattice
+point.
 
 The lattice form is what is used for Heegaard diagrams: it turns weak admissibility, a condition
 on the integral periodic domains, into the existence of an area form for which every periodic
