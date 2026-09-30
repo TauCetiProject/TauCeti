@@ -29,9 +29,9 @@ Kampen.
 
 ## Main declarations
 
-* `TauCeti.FundamentalGroup.vanKampenLift`: the canonical homomorphism from the free product.
-* `TauCeti.FundamentalGroup.vanKampenLift_bijective`: the canonical homomorphism is bijective.
-* `TauCeti.FundamentalGroup.vanKampenEquiv`: the resulting multiplicative equivalence.
+* `TauCeti.vanKampenLift`: the canonical homomorphism from the free product.
+* `TauCeti.vanKampenLift_bijective`: the canonical homomorphism is bijective.
+* `TauCeti.vanKampenEquiv`: the resulting multiplicative equivalence.
 
 ## References
 
@@ -323,8 +323,6 @@ private theorem vanKampenInverse_map_right (hCover : interior A ∪ interior B =
   -- `simp` does not match against `Monoid.Coprod.inr g : SingleObj.star _ ⟶ SingleObj.star _`.
   exact Category.id_comp _
 
-namespace FundamentalGroup
-
 /-- The canonical homomorphism from the free product of the fundamental groups of two
 subspaces to the fundamental group of the ambient space. -/
 noncomputable def vanKampenLift (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B) :
@@ -373,7 +371,8 @@ theorem vanKampenLift_bijective (hCover : interior A ∪ interior B = univ)
         MonoidHom.ext fun _ ↦ vanKampenLift_apply_inl A B x hxA hxB,
       show (vanKampenLift A B x hxA hxB).comp Monoid.Coprod.inr = _ from
         MonoidHom.ext fun _ ↦ vanKampenLift_apply_inr A B x hxA hxB]
-    exact range_map_subtypeVal_sup_eq_top hCover hA hB hAB.isPathConnected hxA hxB
+    exact TauCeti.FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB
+      hAB.isPathConnected hxA hxB
 
 /-- The equivalence in the based Seifert--van Kampen theorem for two path-connected sets with
 simply connected intersection. Its underlying homomorphism is `vanKampenLift`. -/
@@ -395,7 +394,5 @@ theorem vanKampenEquiv_toMonoidHom (hCover : interior A ∪ interior B = univ)
         _root_.FundamentalGroup X x) =
       vanKampenLift A B x hxA hxB :=
   (rfl)
-
-end FundamentalGroup
 
 end TauCeti
