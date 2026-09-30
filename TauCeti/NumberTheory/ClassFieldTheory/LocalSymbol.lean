@@ -179,10 +179,14 @@ theorem kummerCupPairing_bil_apply {x : (muNRep n F).V} {i : ℤ}
     (kummerCupPairing ζ hζ).bil x y = i • y := by
   have hζs := (hζ.map_of_injective (algebraMap F (SeparableClosure F)).injective).isUnit_unit
     (NeZero.ne n)
+  have hu : (((kummerCoeffEquivMuNRep n F).symm x).toMul : (SeparableClosure F)ˣ) =
+      ((hζ.map_of_injective (algebraMap F (SeparableClosure F)).injective).isUnit
+        (NeZero.ne n)).unit ^ i :=
+    Units.ext (by simp [hx])
   have hi : hζs.zmodEquivRootsOfUnity.symm ((kummerCoeffEquivMuNRep n F).symm x) = i := by
-    rw [AddEquiv.symm_apply_eq]
-    refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
-    simp [hx]
+    rw [← hζs.zmodEquivRootsOfUnity_symm_apply_zpow i
+      (hu ▸ ((kummerCoeffEquivMuNRep n F).symm x).toMul.prop)]
+    exact congrArg _ (Additive.toMul.injective (Subtype.ext hu))
   simp only [kummerCupPairing, LinearMap.mk₂_apply]
   rw [hi, Int.cast_smul_eq_zsmul]
 
