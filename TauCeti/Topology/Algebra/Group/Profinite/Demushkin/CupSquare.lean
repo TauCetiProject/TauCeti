@@ -28,8 +28,8 @@ This is the invariant-theoretic content of the trichotomy in Labute's classifica
 form of a Demushkin group is alternating exactly when `q ≠ 2`, at every prime, since for odd `p`
 every cup square vanishes by graded commutativity. It decides which of Labute's normal forms the
 relator of `G` can be brought to: the alternating form `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` when
-`q ≠ 2`, and the dyadic forms with a square `x₁²` when `q = 2`. In particular a Demushkin group at
-`p = 2` with `q ≠ 2` has even rank, and one of odd rank has `q = 2`.
+`q ≠ 2`, and the dyadic forms with a square `x₁²` when `q = 2`. In particular a Demushkin group
+with `q ≠ 2` has even rank, at every prime, and one of odd rank has `q = 2`.
 
 ## Main results
 
@@ -40,8 +40,8 @@ relator of `G` can be brought to: the alternating form `x₁^q (x₁, x₂) ⋯ 
 * `TauCeti.IsDemushkin.exists_cupFp_self_ne_zero_iff_demushkinQ_eq_two`: some cup square is
   nonzero exactly when `q(G) = 2`.
 * `TauCeti.IsDemushkin.even_demushkinRank_of_demushkinQ_ne_two`,
-  `TauCeti.IsDemushkin.demushkinQ_eq_two_of_odd_demushkinRank`: at `p = 2`, `q(G) ≠ 2` forces the
-  rank to be even, and an odd rank forces `q(G) = 2`.
+  `TauCeti.IsDemushkin.demushkinQ_eq_two_of_odd_demushkinRank`: at every prime, `q(G) ≠ 2` forces
+  the rank to be even, and an odd rank forces `q(G) = 2`.
 
 ## References
 
@@ -60,9 +60,13 @@ universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
+variable [CompactSpace G] [TotallyDisconnectedSpace G]
+
 /-! ### Demushkin groups at `p = 2` -/
 
-variable [CompactSpace G] [TotallyDisconnectedSpace G] (hG : IsDemushkin 2 G)
+section Two
+
+variable (hG : IsDemushkin 2 G)
 include hG
 
 namespace IsDemushkin
@@ -106,14 +110,30 @@ theorem exists_cupFp_self_ne_zero_iff_demushkinQ_eq_two :
     (∃ a : cohomFp 2 G 1, cupFp 2 G a a ≠ 0) ↔ demushkinQ hG = 2 := by
   simpa [not_forall] using hG.forall_cupFp_self_eq_zero_iff_demushkinQ_ne_two.not
 
-/-- At `p = 2`, a Demushkin group with `q(G) ≠ 2` has even rank: its cup form is a nondegenerate
-alternating form on `H¹(G, 𝔽₂)`. -/
-theorem even_demushkinRank_of_demushkinQ_ne_two (hq : demushkinQ hG ≠ 2) :
-    Even (demushkinRank hG) :=
-  hG.even_demushkinRank_of_forall_cupFp_self_eq_zero
-    (hG.forall_cupFp_self_eq_zero_iff_demushkinQ_ne_two.2 hq)
+end IsDemushkin
 
-/-- At `p = 2`, a Demushkin group of odd rank has `q(G) = 2`. -/
+end Two
+
+/-! ### Every prime -/
+
+namespace IsDemushkin
+
+variable {p : ℕ} [Fact p.Prime] (hG : IsDemushkin p G)
+include hG
+
+/-- **A Demushkin group with `q(G) ≠ 2` has even rank**, at every prime `p`: its cup form is then a
+nondegenerate alternating form on `H¹(G, 𝔽_p)`. At an odd prime every Demushkin group has even
+rank (`TauCeti.IsDemushkin.even_demushkinRank_of_ne_two`); at `p = 2` the cup squares vanish
+exactly when `q(G) ≠ 2`. -/
+theorem even_demushkinRank_of_demushkinQ_ne_two (hq : demushkinQ hG ≠ 2) :
+    Even (demushkinRank hG) := by
+  rcases eq_or_ne p 2 with rfl | hp
+  · exact hG.even_demushkinRank_of_forall_cupFp_self_eq_zero
+      (hG.forall_cupFp_self_eq_zero_iff_demushkinQ_ne_two.2 hq)
+  · exact hG.even_demushkinRank_of_ne_two hp
+
+/-- A Demushkin group of odd rank has `q(G) = 2`, at every prime `p`; at an odd prime there is no
+Demushkin group of odd rank. -/
 theorem demushkinQ_eq_two_of_odd_demushkinRank (hn : Odd (demushkinRank hG)) :
     demushkinQ hG = 2 :=
   by_contra fun hq ↦ (Nat.not_even_iff_odd.2 hn) (hG.even_demushkinRank_of_demushkinQ_ne_two hq)

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.NeTwo
 
 /-!
@@ -33,6 +34,9 @@ normal form.
   are carried to each other by a continuous automorphism of `F`.
 * `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_demushkinQ_eq`: two Demushkin groups with
   the same `q`-invariant `q ≠ 2` and the same rank are topologically isomorphic.
+* `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq`: the same, with
+  the `q`-invariant replaced by the image of the canonical character, the invariant of Labute's
+  classification.
 
 ## References
 
@@ -91,5 +95,21 @@ theorem IsDemushkin.nonempty_continuousMulEquiv_of_demushkinQ_eq {H : Type v} [G
     fun h ↦ hq2 (hq.trans h)
   rw [hn, hq] at e
   exact ⟨e.trans e'.symm⟩
+
+/-- **Uniqueness of Demushkin groups with `q ≠ 2`, by the classification invariants** (Labute,
+Theorems 2 and 3). Two Demushkin groups of the same rank whose canonical characters have the same
+image are topologically isomorphic, when `q ≠ 2` for one of them. The image of the canonical
+character determines the `q`-invariant (`TauCeti.demushkinQ_eq_of_range_demushkinCharacter_eq`),
+and `q ≠ 2` is itself a condition on the image
+(`TauCeti.demushkinQ_ne_two_iff_range_demushkinCharacter_le`), so this is the uniqueness half of
+the classification in the invariants `(n, Im χ)` of the existence theorem. -/
+theorem IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq {H : Type v}
+    [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+    [TotallyDisconnectedSpace H] (hG : IsDemushkin p G) (hH : IsDemushkin p H)
+    (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hH).toMonoidHom.range)
+    (hq2 : demushkinQ hG ≠ 2) (hn : demushkinRank hG = demushkinRank hH) :
+    Nonempty (G ≃ₜ* H) :=
+  hG.nonempty_continuousMulEquiv_of_demushkinQ_eq hH
+    (demushkinQ_eq_of_range_demushkinCharacter_eq hG hH h) hq2 hn
 
 end TauCeti

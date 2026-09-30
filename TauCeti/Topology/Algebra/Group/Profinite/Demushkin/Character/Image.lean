@@ -27,6 +27,11 @@ every nontrivial closed subgroup of `1 + pℤ_p` for odd `p`, and of `1 + 4ℤ_2
 group. For
 `q = 2` the equivalence only says that `χ` is not congruent to `1` modulo `4`: the image is then a
 closed subgroup of `ℤ_2ˣ` not contained in `1 + 4ℤ_2`, and `q` does not determine which one.
+Conversely the image determines `q`, for every value of `q`, because the powers of `p` dividing `q`
+are read off the principal unit groups containing it
+(`TauCeti.demushkinQ_eq_of_range_demushkinCharacter_eq`); in particular `q ≠ 2` is the condition
+that, at `p = 2`, the image lies in `1 + 4ℤ_2`
+(`TauCeti.demushkinQ_ne_two_iff_range_demushkinCharacter_le`).
 
 The equivalence is a statement about any one-relator pro-`p` group `⟨X ∣ r⟩` with finite `X`
 and `r ∈ Φ(F)` whose
@@ -55,6 +60,10 @@ of `r` in turn compute `q`, through the abelianization `G^{ab} ≅ ℤ_p^{n-1} �
   `q(G) = 0`.
 * `TauCeti.range_demushkinCharacter_eq_unitsPrincipal`: **for `q(G) = p^s ≠ 2` the image of the
   canonical character is `1 + p^sℤ_p = 1 + q(G)ℤ_p`** (Labute, corollary to Theorem 4).
+* `TauCeti.demushkinQ_ne_two_iff_range_demushkinCharacter_le`: `q(G) ≠ 2` exactly when, at
+  `p = 2`, the canonical character lands in `1 + 4ℤ_2`.
+* `TauCeti.demushkinQ_eq_of_range_demushkinCharacter_eq`: **the image of the canonical character
+  determines the `q`-invariant**, for every value of `q`.
 
 ## References
 
@@ -69,7 +78,7 @@ namespace TauCeti
 
 open freeProP
 
-universe u v
+universe u v w
 
 -- Preferring the ring path keeps a single additive structure on `ZMod p`, so that the degree-one
 -- form is stated against the module structure of `ZMod p` on itself, as in its nondegeneracy.
@@ -159,6 +168,58 @@ theorem range_demushkinCharacter_eq_unitsPrincipal {s : ℕ} (hs : demushkinQ hG
       (hf.le.trans (unitsPrincipal_antitone p hlt))
     rw [hs, Nat.pow_dvd_pow_iff_le_right hp.one_lt] at hle
     omega
+
+/-- **`q(G) ≠ 2` is read off the image of the canonical character**: it holds exactly when, at
+`p = 2`, the canonical character lands in `1 + 4ℤ_2`. At an odd prime `q(G)` is `0` or a power of
+`p`, never `2`; at `p = 2` it is `0` or a power of `2`, and it differs from `2` exactly when `4`
+divides it. -/
+theorem demushkinQ_ne_two_iff_range_demushkinCharacter_le :
+    demushkinQ hG ≠ 2 ↔
+      (p = 2 → (demushkinCharacter hG).toMonoidHom.range ≤ unitsPrincipal p 2) := by
+  have hp : p.Prime := Fact.out
+  rw [ContinuousMonoidHom.coe_toMonoidHom]
+  refine ⟨fun hq hp2 ↦ ?_, fun h hq ↦ ?_⟩
+  · subst hp2
+    refine (range_demushkinCharacter_le_unitsPrincipal_iff hG 2).2 ?_
+    rcases eq_or_ne (demushkinQ hG) 0 with h0 | h0
+    · exact h0 ▸ dvd_zero _
+    obtain ⟨k, hk, hqk⟩ := hG.exists_demushkinQ_eq_pow h0
+    have hk₂ : 2 ≤ k := by
+      by_contra! hlt
+      exact hq (by rw [hqk, show k = 1 by omega, pow_one])
+    rw [hqk]
+    exact pow_dvd_pow 2 hk₂
+  · -- `q(G) = 2` forces `p = 2`, since `p ∣ q(G)`, and then `4 ∣ 2`.
+    have hp2 : p = 2 := (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).1
+      (hq ▸ hG.prime_dvd_demushkinQ)
+    have h4 := (range_demushkinCharacter_le_unitsPrincipal_iff hG 2).1 (h hp2)
+    rw [hq, hp2] at h4
+    exact absurd h4 (by decide)
+
+/-- **The image of the canonical character determines the `q`-invariant.** Two Demushkin groups
+whose canonical characters have the same image have the same `q`-invariant: the powers of `p`
+dividing `q(G)` are read off the principal unit groups `1 + p^kℤ_p` containing the image
+(`TauCeti.range_demushkinCharacter_le_unitsPrincipal_iff`), and `q(G)` is `0` or a power of `p`.
+This holds for every value of `q`, including `q = 2`, where the image is not determined by `q`. -/
+theorem demushkinQ_eq_of_range_demushkinCharacter_eq {H : Type w} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] [CompactSpace H] [TotallyDisconnectedSpace H] (hH : IsDemushkin p H)
+    (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hH).toMonoidHom.range) :
+    demushkinQ hG = demushkinQ hH := by
+  rw [ContinuousMonoidHom.coe_toMonoidHom, ContinuousMonoidHom.coe_toMonoidHom] at h
+  have hdvd (k : ℕ) : p ^ k ∣ demushkinQ hG ↔ p ^ k ∣ demushkinQ hH := by
+    rw [← range_demushkinCharacter_le_unitsPrincipal_iff hG,
+      ← range_demushkinCharacter_le_unitsPrincipal_iff hH, h]
+  have h0 : demushkinQ hG = 0 ↔ demushkinQ hH = 0 := by
+    rw [← range_demushkinCharacter_eq_bot_iff hG, ← range_demushkinCharacter_eq_bot_iff hH, h]
+  rcases eq_or_ne (demushkinQ hG) 0 with hG0 | hG0
+  · rw [hG0, h0.1 hG0]
+  obtain ⟨s, -, hs⟩ := hG.exists_demushkinQ_eq_pow hG0
+  obtain ⟨t, -, ht⟩ := hH.exists_demushkinQ_eq_pow (mt h0.2 hG0)
+  refine Nat.dvd_antisymm ?_ ?_
+  · rw [hs]
+    exact (hdvd s).1 (dvd_of_eq hs.symm)
+  · rw [ht]
+    exact (hdvd t).2 (dvd_of_eq ht.symm)
 
 end Demushkin
 
