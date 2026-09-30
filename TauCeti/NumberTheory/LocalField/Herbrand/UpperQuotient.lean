@@ -40,7 +40,7 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
 
 ## Main definitions
 
-* `TauCeti.LocalFieldsRamification.Subgroup.upperRamificationGroupQuotient`: the upper ramification
+* `TauCeti.LocalFieldsRamification.upperRamificationGroupQuotient`: the upper ramification
   filtration of `G ⧸ H`.
 
 ## Main results
@@ -49,11 +49,11 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
   `G^v` restricts onto `Gal(L/K)^v`.
 * `TauCeti.LocalFieldsRamification.UpperJump.of_tower`: an upper break of `L/K` is an upper
   break of `M/K`.
-* `TauCeti.LocalFieldsRamification.Subgroup.upperRamificationGroup_fixedField`:
-  the quotient filtration maps to `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
-* `TauCeti.LocalFieldsRamification.Subgroup.upperRamificationGroup_quotient`: the defined quotient
+* `TauCeti.LocalFieldsRamification.upperRamificationGroup_fixedField`: the quotient filtration
+  maps to `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
+* `TauCeti.LocalFieldsRamification.upperRamificationGroup_quotient`: the defined quotient
   filtration equals `G^v H / H`.
-* `TauCeti.LocalFieldsRamification.Subgroup.upperRamificationGroupQuotient_antitone`: the quotient
+* `TauCeti.LocalFieldsRamification.upperRamificationGroupQuotient_antitone`: the quotient
   filtration is decreasing.
 
 ## References
@@ -114,8 +114,6 @@ end Tower
 
 section Quotient
 
-namespace Subgroup
-
 variable {K M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field M] [ValuativeRel M] [TopologicalSpace M]
   [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M] [Module.Finite K M]
@@ -174,8 +172,6 @@ theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
     MonoidHom.ext (IsGalois.normalAutEquivQuotient_apply H)
   rw [upperRamificationGroupQuotient, Subgroup.map_map, hcomp,
     map_restrictNormalHom_upperRamificationGroup K (fixedField H) M]
-
-end Subgroup
 
 end Quotient
 
