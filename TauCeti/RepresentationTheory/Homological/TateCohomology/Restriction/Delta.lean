@@ -254,7 +254,7 @@ attribute [local instance] Subgroup.fintypeOfFinite
 exact sequence `S` of `G`-representations and a subgroup `H`, restriction to `H` intertwines the
 connecting map `H_Tateʳ(G, X₃) ⟶ H_Tateʳ⁺¹(G, X₁)` of `S` with the connecting map of its
 restriction to `H`, for every `r ≥ 0`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem δ_comp_res {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H : Subgroup G) {r : ℤ}
     (hr : 0 ≤ r) :
     _root_.TateCohomology.δ hS r ≫ res S.X₁ H (r + 1) =

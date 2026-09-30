@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.PositiveZero
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Delta
-import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # Restriction of the Tate cup product in nonnegative bidegrees
@@ -77,14 +76,13 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   -- The restricted dimension-shifting sequence is still split by evaluation at `1`, so the cup
   -- product over `H` satisfies the same rule for its connecting map.
   have hresD := (shortExact_res H.subtype).2 hD
-  have := hresD.epi_g
-  exact (cup_δ_of_leftInverse (Rep.res H.subtype M) hresD
-    (shortExact_map_tensorLeft_of_leftInverse hresD.exact _ _ (leftInverse_coindBotUnit N))
-    (leftInverse_coindBotUnit N) hq h _ _).symm
+  exact (cup_δ_of_leftInverse (Rep.res H.subtype M) hresD (leftInverse_coindBotUnit N) hq h _
+    _).symm
 
 /-- **Restriction preserves the Tate cup product in nonnegative bidegrees.** For a subgroup `H` of
 a finite group `G`, a class `x` of degree `p ≥ 0` and a class `y` of degree `q ≥ 0`, the
 restriction of `x ∪ y` to `H` is the cup product of the restrictions of `x` and `y`. -/
+@[simp]
 theorem cup_res_of_nonneg (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hp : 0 ≤ p) (hq : 0 ≤ q)
     (h : p + q = r) (x : tateCohomology M p) (y : tateCohomology N q) :
     res (M ⊗ N) H r (cup M N p q r h x y) =

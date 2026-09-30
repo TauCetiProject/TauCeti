@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # The cup product and the connecting maps of a split sequence
@@ -94,14 +95,16 @@ variable [Fintype G]
 /-- **The cup product rule for a split short exact sequence in the second variable.** For a short
 exact sequence `S` whose first map has a `k`-linear retraction, `x` of degree `p` and `y` of degree
 `q ≥ 0`, `x ∪ δ y = (-1)^p δ (x ∪ y)`, where the second `δ` is the connecting map of the tensor
-product of `S` with `M`. That tensor product is short exact by
-`Rep.shortExact_map_tensorLeft_of_leftInverse`. -/
+product of `S` with `M`, which is short exact by `Rep.shortExact_map_tensorLeft_of_leftInverse`. -/
 theorem cup_δ_of_leftInverse (M : Rep k G) {S : ShortComplex (Rep k G)} (hS : S.ShortExact)
-    (hMS : (S.map (tensorLeft M)).ShortExact) {r : S.X₂.V →ₗ[k] S.X₁.V}
-    (hr : Function.LeftInverse r S.f.hom) {p q n : ℤ} (hq : 0 ≤ q) (h : p + q = n)
-    (x : tateCohomology M p) (y : tateCohomology S.X₃ q) :
+    {r : S.X₂.V →ₗ[k] S.X₁.V} (hr : Function.LeftInverse r S.f.hom) {p q n : ℤ} (hq : 0 ≤ q)
+    (h : p + q = n) (x : tateCohomology M p) (y : tateCohomology S.X₃ q) :
     cup M S.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hS q y) =
-      p.negOnePow • _root_.TateCohomology.δ hMS n (cup M S.X₃ p q n h x y) := by
+      p.negOnePow • _root_.TateCohomology.δ
+        (haveI := hS.epi_g; shortExact_map_tensorLeft_of_leftInverse hS.exact M r hr) n
+        (cup M S.X₃ p q n h x y) := by
+  have := hS.epi_g
+  have hMS := shortExact_map_tensorLeft_of_leftInverse hS.exact M r hr
   have hD : (ShortComplex.mk (coindBotUnit S.X₁) (dimensionShiftUpπ S.X₁)
       (coindBotUnit_comp_dimensionShiftUpπ S.X₁)).ShortExact := by
     simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact S.X₁
