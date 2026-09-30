@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.ExteriorPower
+import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
@@ -26,37 +26,6 @@ namespace CliffordAlgebra
 variable {K : Type u} [Field K]
   {V : Type v} [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V)
-
-private theorem filtration_eq_top_of_finrank_eq_three
-    (hV : Module.finrank K V = 3) :
-    filtration Q 3 = ⊤ := by
-  let _ : FiniteDimensional K V := .of_finrank_eq_succ (by omega)
-  rw [eq_top_iff, ← iSup_filtration_eq_top Q]
-  refine iSup_le fun n => ?_
-  induction n with
-  | zero => exact filtration_mono Q (by omega)
-  | succ n ih =>
-      by_cases hn : n + 1 ≤ 3
-      · exact filtration_mono Q hn
-      · have hvanish (x : ⋀[K]^(n + 1) V) : x = 0 :=
-          exteriorPower.eq_zero_of_finrank_lt (n + 1) (by omega) x
-        let _ : Subsingleton (⋀[K]^(n + 1) V) :=
-          ⟨fun x y => (hvanish x).trans (hvanish y).symm⟩
-        let _ : Subsingleton (TauCeti.Algebra.wordFiltration.GradedPiece (ι Q) (n + 1)) :=
-          (filtrationLeadingTerm_surjective Q n).subsingleton
-        have hstep : filtration Q (n + 1) ≤ filtration Q n := by
-          -- Once the leading exterior power vanishes, its graded quotient is subsingleton;
-          -- the stable filtration API then identifies every degree-`n + 1` class with zero.
-          intro x hx
-          have hxzero :
-              (TauCeti.Algebra.wordFiltration.previousRestricted (ι Q) (n + 1)).mkQ
-                  ⟨x, hx⟩ = 0 :=
-            Subsingleton.elim _ _
-          rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero,
-            TauCeti.Algebra.wordFiltration.mem_previousRestricted_iff,
-            TauCeti.Algebra.wordFiltrationPrevious_succ] at hxzero
-          exact hxzero
-        exact hstep.trans ih
 
 private def scalarAddReverseSubmodule : Submodule K (CliffordAlgebra Q) :=
   (LinearMap.range (Algebra.linearMap K (CliffordAlgebra Q))).comap
@@ -84,20 +53,8 @@ theorem exists_add_reverseEven_eq_smul_one_of_finrank_eq_three
     · exact Submodule.mem_sup_right (Submodule.mem_sup_left hp)
     · exact Submodule.mem_sup_left (Submodule.mem_sup_right hp)
     · exact Submodule.mem_sup_right (Submodule.mem_sup_right hp)
-  have hA0even : A ^ 0 ≤ evenOdd Q 0 := by
-    simpa [A] using one_le_evenOdd_zero Q
-  have hA2even : A ^ 2 ≤ evenOdd Q 0 := by
-    rw [evenOdd]
-    exact le_iSup (fun j : {n : ℕ // (n : ZMod 2) = 0} => A ^ (j : ℕ))
-      ⟨2, by decide⟩
-  have hEeven : E ≤ evenOdd Q 0 := sup_le hA0even hA2even
-  have hA1odd : A ^ 1 ≤ evenOdd Q 1 := by
-    simpa [A] using range_ι_le_evenOdd_one Q
-  have hA3odd : A ^ 3 ≤ evenOdd Q 1 := by
-    rw [evenOdd]
-    exact le_iSup (fun j : {n : ℕ // (n : ZMod 2) = 1} => A ^ (j : ℕ))
-      ⟨3, by decide⟩
-  have hOodd : O ≤ evenOdd Q 1 := sup_le hA1odd hA3odd
+  have hEeven : E ≤ evenOdd Q 0 := sup_le (ι_range_pow_le_evenOdd 0) (ι_range_pow_le_evenOdd 2)
+  have hOodd : O ≤ evenOdd Q 1 := sup_le (ι_range_pow_le_evenOdd 1) (ι_range_pow_le_evenOdd 3)
   -- Reversal fixes degree zero and turns a degree-two generator pair into its polarization.
   have hA0P : A ^ 0 ≤ scalarAddReverseSubmodule Q := by
     intro y hy
@@ -112,7 +69,8 @@ theorem exists_add_reverseEven_eq_smul_one_of_finrank_eq_three
     exact ⟨QuadraticMap.polar Q a b, by simpa using (ι_mul_ι_add_swap (Q := Q) a b).symm⟩
   have hEP : E ≤ scalarAddReverseSubmodule Q := sup_le hA0P hA2P
   have hxfiltration : (x : CliffordAlgebra Q) ∈ filtration Q 3 := by
-    rw [filtration_eq_top_of_finrank_eq_three Q hV]
+    let _ : FiniteDimensional K V := .of_finrank_eq_succ (n := 2) hV
+    rw [filtration_eq_top_of_finrank_le Q hV.le]
     trivial
   obtain ⟨e, he, o, ho, heo⟩ := Submodule.mem_sup.mp (hsplit hxfiltration)
   have hxeven : (x : CliffordAlgebra Q) ∈ evenOdd Q 0 := by

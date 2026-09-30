@@ -24,6 +24,11 @@ half-plane.
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
 
+The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures commutes with taking
+preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
+closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
+`PSL(2, ℝ)`-action, this identifies the boundary of a half-plane bounded by a geodesic line.
+
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
@@ -33,6 +38,8 @@ period exactly when the original function is invariant under the corresponding t
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
+* `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
+  `closure_setOfPred_re_lt`.
 
 ## References
 
@@ -164,6 +171,35 @@ lemma periodic_comp_ofComplex_iff {α : Type*} {f : ℍ → α} {c : ℝ} :
         show (⟨w + ↑c, hw'⟩ : ℍ) = c +ᵥ (⟨w, hw⟩ : ℍ) from _root_.UpperHalfPlane.ext
           (by simp [add_comm])]
       exact h _
+
+/-- `UpperHalfPlane.re`'s closures and preimages commute, the `ℍ` analogue of
+`Complex.closure_preimage_re`. -/
+theorem closure_preimage_re (s : Set ℝ) :
+    closure (UpperHalfPlane.re ⁻¹' s) = UpperHalfPlane.re ⁻¹' closure s :=
+  (UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage
+    UpperHalfPlane.continuous_re s).symm
+
+/-- The closure of an open right half-plane of `ℍ`, the analogue for `ℍ` of
+`Complex.closure_setOfPred_lt_re` for `ℂ`. -/
+@[simp]
+theorem closure_setOfPred_lt_re (a : ℝ) : closure {z : ℍ | a < z.re} = {z : ℍ | a ≤ z.re} := by
+  -- `{z | a < z.re}` unfolds to the preimage of `Set.Ioi a` under `re`, both being the same
+  -- predicate `fun z => a < z.re` spelled two ways.
+  rw [show {z : ℍ | a < z.re} = UpperHalfPlane.re ⁻¹' Set.Ioi a from rfl,
+    closure_preimage_re, closure_Ioi]
+  -- `re ⁻¹' Set.Ici a` unfolds to `{z | a ≤ z.re}` for the same reason, in the other direction.
+  rfl
+
+/-- The closure of an open left half-plane of `ℍ`, the analogue for `ℍ` of
+`Complex.closure_setOfPred_re_lt` for `ℂ`. -/
+@[simp]
+theorem closure_setOfPred_re_lt (a : ℝ) : closure {z : ℍ | z.re < a} = {z : ℍ | z.re ≤ a} := by
+  -- `{z | z.re < a}` unfolds to the preimage of `Set.Iio a` under `re`, both being the same
+  -- predicate `fun z => z.re < a` spelled two ways.
+  rw [show {z : ℍ | z.re < a} = UpperHalfPlane.re ⁻¹' Set.Iio a from rfl,
+    closure_preimage_re, closure_Iio]
+  -- `re ⁻¹' Set.Iic a` unfolds to `{z | z.re ≤ a}` for the same reason, in the other direction.
+  rfl
 
 end TauCeti.UpperHalfPlane
 

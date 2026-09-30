@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 
 import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
+import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
 # The volume element of a Clifford algebra
 
 The **volume element** (or pseudoscalar) of a quadratic space is the ordered Clifford product
-`ι Q v₁ * ⋯ * ι Q vₙ` of an orthogonal basis. This file proves the two facts that make it useful:
-how it commutes past a vector, and what its square is.
+`ι Q v₁ * ⋯ * ι Q vₙ` of an orthogonal basis. This file proves the facts that make it useful:
+how it commutes past a vector, how reversal acts on it, what its square is, and, over a field,
+that it moves each of its anisotropic factors out of the vectors once there are at least three of
+them and evenly many.
 
 The ordered product is spelled `(l.map (ι Q)).prod` for a list `l` of vectors, the spelling Mathlib
 already uses for it (`CliffordAlgebra.involute_prod_map_ι`, `CliffordAlgebra.reverse_prod_map_ι`)
@@ -77,10 +81,15 @@ the values `Q vᵢ` is a unit.
   generator in the span instead.
 * `CliffordAlgebra.prod_map_ι_sq_scalar`: the square of the volume element of a pairwise
   orthogonal list is the scalar `(-1) ^ (n.choose 2) * ∏ᵢ Q vᵢ`.
+* `CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho`: reversal multiplies the volume
+  element of a pairwise orthogonal list by the same sign `(-1) ^ (n.choose 2)`.
 * `CliffordAlgebra.ι_mul_ι_mul_self_of_isOrtho`: the two-factor case, the square of the product
   of two orthogonal generators being the scalar `-(Q a * Q b)`.
 * `CliffordAlgebra.isUnit_prod_map_ι`: an ordered product of generators — orthogonal or not — is
   a unit as soon as the product of the values `Q vᵢ` is.
+* `CliffordAlgebra.prod_map_ι_mul_ι_notMem_range_ι`: over a field, the volume element of an
+  orthogonal anisotropic list of even length at least three moves each member of the list out of
+  the vectors.
 
 ## References
 
@@ -271,6 +280,24 @@ theorem prod_map_ι_sq_scalar {l : List M} (hl : l.Pairwise Q.IsOrtho) :
           rw [hchoose, List.map_cons, List.prod_cons, pow_add]
           ring
 
+/-- **Reversal multiplies the volume element of a pairwise orthogonal list by
+`(-1) ^ (n.choose 2)`**, the same sign as in its square `CliffordAlgebra.prod_map_ι_sq_scalar`. In
+particular the volume element is reverse-symmetric for `n ≡ 0, 1 (mod 4)` and reverse-antisymmetric
+for `n ≡ 2, 3 (mod 4)`. -/
+@[simp]
+theorem reverse_prod_map_ι_of_pairwise_isOrtho {l : List M} (hl : l.Pairwise Q.IsOrtho) :
+    reverse (l.map (ι Q)).prod = ((-1 : R) ^ l.length.choose 2) • (l.map (ι Q)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.pairwise_cons] at hl
+    obtain ⟨ha, hl'⟩ := hl
+    have hsym : ∀ x ∈ l, Q.IsOrtho x a := fun x hx => (ha x hx).symm
+    have hchoose : (a :: l).length.choose 2 = l.length + l.length.choose 2 := by
+      rw [List.length_cons, Nat.choose_succ_succ, Nat.choose_one_right]
+    rw [List.map_cons, List.prod_cons, reverse.map_mul, reverse_ι, ih hl', smul_mul_assoc,
+      prod_map_ι_mul_ι_of_forall_isOrtho hsym, smul_smul, hchoose, pow_add, mul_comm]
+
 /-- **The square of the product of two orthogonal generators is the scalar `-(Q a * Q b)`.** This
 is `CliffordAlgebra.prod_map_ι_sq_scalar` at the two-element list `[a, b]`, whose sign
 `(-1) ^ Nat.choose 2 2` is the displayed minus. In particular the square vanishes as soon as one
@@ -292,5 +319,65 @@ theorem isUnit_prod_map_ι {l : List M} (h : IsUnit ((l.map Q).prod)) :
   obtain ⟨m, hm, rfl⟩ := List.mem_map.mp hx
   have hQm : IsUnit (Q m) := List.prod_isUnit_iff.mp h _ (List.mem_map_of_mem hm)
   exact isUnit_ι_of_isUnit Q hQm
+
+section Field
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V}
+
+/-! ### The volume element moves its factors out of the vectors -/
+
+/-- Two members of a pairwise orthogonal list of length at least three, orthogonal to a given
+member and to each other. -/
+private theorem exists_isOrtho_pair_of_mem {l : List V} (hl : l.Pairwise Q.IsOrtho)
+    (h3 : 3 ≤ l.length) {v : V} (hv : v ∈ l) :
+    ∃ u₁ ∈ l, ∃ u₂ ∈ l, Q.IsOrtho v u₁ ∧ Q.IsOrtho v u₂ ∧ Q.IsOrtho u₁ u₂ := by
+  obtain ⟨s, t, rfl⟩ := List.append_of_mem hv
+  rw [List.pairwise_append, List.pairwise_cons] at hl
+  obtain ⟨hs, ⟨hvt, ht⟩, hst⟩ := hl
+  have hortho : ∀ u ∈ s ++ t, Q.IsOrtho v u := by
+    intro u hu
+    rcases List.mem_append.mp hu with hu | hu
+    · exact (hst u hu v List.mem_cons_self).symm
+    · exact hvt u hu
+  have hpair : (s ++ t).Pairwise Q.IsOrtho :=
+    List.pairwise_append.mpr ⟨hs, ht, fun a ha b hb => hst a ha b (List.mem_cons_of_mem v hb)⟩
+  have hmem : ∀ u ∈ s ++ t, u ∈ s ++ v :: t := by
+    intro u hu
+    rcases List.mem_append.mp hu with hu | hu
+    · exact List.mem_append_left _ hu
+    · exact List.mem_append_right _ (List.mem_cons_of_mem v hu)
+  have h0 : 0 < (s ++ t).length := by
+    simp only [List.length_append, List.length_cons] at h3 ⊢
+    omega
+  have h1 : 1 < (s ++ t).length := by
+    simp only [List.length_append, List.length_cons] at h3 ⊢
+    omega
+  exact ⟨(s ++ t)[0], hmem _ (List.getElem_mem h0), (s ++ t)[1], hmem _ (List.getElem_mem h1),
+    hortho _ (List.getElem_mem h0), hortho _ (List.getElem_mem h1),
+    List.pairwise_iff_getElem.mp hpair 0 1 h0 h1 zero_lt_one⟩
+
+variable [Invertible (2 : K)]
+
+/-- **The volume element of an orthogonal anisotropic list of even length at least three moves each
+member of the list out of the vectors.** Length two is genuinely excluded: there the volume element
+sends each member to a multiple of the other. -/
+theorem prod_map_ι_mul_ι_notMem_range_ι {l : List V} (hl : l.Pairwise Q.IsOrtho)
+    (hlen : Even l.length) (h3 : 3 ≤ l.length) (haniso : ∀ v ∈ l, Q v ≠ 0) {v : V}
+    (hv : v ∈ l) : (l.map (ι Q)).prod * ι Q v ∉ LinearMap.range (ι Q) := by
+  -- The volume element is a nonzero unit anticommuting with every member of the list
+  -- (`prod_map_ι_mul_ι_of_even_length`), and `v` has two orthogonal anisotropic companions in the
+  -- list, so `mul_ι_notMem_range_ι_of_mul_ι_eq_neg` applies.
+  obtain ⟨u₁, hu₁, u₂, hu₂, hvu₁, hvu₂, hu₁u₂⟩ := exists_isOrtho_pair_of_mem hl h3 hv
+  have hunit : IsUnit ((l.map Q).prod) :=
+    List.prod_isUnit fun x hx => by
+      obtain ⟨m, hm, rfl⟩ := List.mem_map.mp hx
+      exact isUnit_iff_ne_zero.mpr (haniso m hm)
+  exact mul_ι_notMem_range_ι_of_mul_ι_eq_neg (isUnit_prod_map_ι hunit).ne_zero (haniso v hv)
+    (haniso u₁ hu₁) (haniso u₂ hu₂) hvu₁ hvu₂ hu₁u₂
+    (prod_map_ι_mul_ι_of_even_length hl hlen (Submodule.subset_span hu₁))
+    (prod_map_ι_mul_ι_of_even_length hl hlen (Submodule.subset_span hu₂))
+
+end Field
 
 end CliffordAlgebra

@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Contraction
 public import TauCeti.Geometry.Hodge.Dual
 public import TauCeti.Geometry.Hodge.Morphism
-public import TauCeti.Geometry.Hodge.TensorProduct
+public import TauCeti.Geometry.Hodge.TensorProduct.Basic
 
 /-!
 # Internal homs of pure Hodge structures

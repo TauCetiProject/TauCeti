@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.FinThree
+public import TauCeti.GroupTheory.Perm.FinThree.Basic
 public import TauCeti.RepresentationTheory.FrobeniusGroup.Basic
 
 /-!
@@ -25,8 +25,8 @@ to `A₃` anywhere in the construction, and it comes out equal to `A₃`
 
 The group theory this consumes -- the complementarity, the fixed-point freeness, and the
 trivial-intersection property `TauCeti.isTISubgroup_stabilizer_perm_fin_three` they yield -- is
-settled over the six permutations in `TauCeti/GroupTheory/Perm/FinThree.lean`, as the rest of the
-description of the two subgroups of `S₃` is.  All this file adds is the passage through the
+settled over the six permutations in `TauCeti/GroupTheory/Perm/FinThree/Basic.lean`, as the rest
+of the description of the two subgroups of `S₃` is.  All this file adds is the passage through the
 character theory.
 
 ## Main statements

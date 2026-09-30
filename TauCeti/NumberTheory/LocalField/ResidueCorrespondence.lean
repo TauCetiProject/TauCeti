@@ -19,12 +19,15 @@ extension. Its inverse carries the finite-field Frobenius to the Frobenius autom
 
 The residue action is surjective, and its kernel is the inertia group. Unramifiedness makes this
 kernel trivial, giving the residue correspondence. This also shows that Frobenius generates the
-Galois group and has order equal to the inertia degree.
+Galois group and has order equal to the inertia degree. Without assuming unramifiedness, the
+quotient by inertia is cyclic because it embeds into the residue-field Galois group.
 
 ## Main definitions
 
 * `TauCeti.residueFieldAutEquiv`: the residue correspondence for an unramified Galois extension.
 * `TauCeti.frobeniusAlgEquiv`: the lift of finite-field Frobenius to the extension.
+* `TauCeti.LocalFieldsRamification.isCyclic_quotient_lowerRamificationGroup_zero`: the quotient
+  of the Galois group by inertia is cyclic.
 
 ## References
 
@@ -88,6 +91,26 @@ theorem ker_residueField_toAlgAut :
       rw [← MonoidHom.mem_ker, Ideal.Quotient.ker_stabilizerHom]
       exact hmem
     exact haction.trans hgeneric
+
+namespace LocalFieldsRamification
+
+variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+
+/-- The quotient `G / G_0` of the Galois group by inertia is cyclic: the action on the residue
+field identifies it with a subgroup of the Galois group of the finite residue field extension,
+which is cyclic. -/
+theorem isCyclic_quotient_lowerRamificationGroup_zero :
+    IsCyclic ((L ≃ₐ[K] L) ⧸ lowerRamificationGroup K L 0) := by
+  let f := MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]
+  have hf : f.ker = lowerRamificationGroup K L 0 := by
+    rw [ker_residueField_toAlgAut, lowerRamificationGroup_zero]
+  let e :=
+    (QuotientGroup.quotientMulEquivOfEq hf.symm).trans (QuotientGroup.quotientKerEquivRange f)
+  exact isCyclic_of_surjective e.symm.toMonoidHom e.symm.surjective
+
+end LocalFieldsRamification
 
 /-- The inertia group of an unramified finite Galois extension of local fields is trivial. -/
 theorem IsUnramified.inertia_eq_bot [IsUnramified K L] :

@@ -27,11 +27,14 @@ characteristic two, where the norm groups require different arithmetic arguments
 The descent construction and orthogonal-sum and scaling formulas adapt the formalization
 of `TauCeti.RegularFormClass.hasseInvariant` in
 `TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse` to the local Hilbert sign.
+O'Meara's `i ≤ j` Hasse symbol differs from this `i < j` sign by the Hilbert symbol of
+the unsigned discriminant with `-1`.
 
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Chapter V, §3.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter IV, §2.1.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, §63:20.
 -/
 
 public section
@@ -76,6 +79,27 @@ theorem oddResidueHasse_mk (h2 : IsUnit (2 : 𝒪[K])) (p : RegularFormPresentat
     oddResidueHasse h2 (Quotient.mk (regularFormSetoid K) p) =
       ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (p.2 i) (p.2 j) := by
   simp only [oddResidueHasse, liftDiagonal_mk]
+
+/-- O'Meara's `i ≤ j` Hasse symbol of local Hilbert signs is the Lam–Serre Hasse sign times
+the symbol of the unsigned discriminant with `-1`. -/
+theorem oddResidueOmearaHasseSymbol_eq (h2 : IsUnit (2 : 𝒪[K]))
+    (p : RegularFormPresentation K) :
+    (∏ i, ∏ j ∈ Ici i, hilbertSymbol (p.2 i) (p.2 j)) =
+      oddResidueHasse h2 (Quotient.mk (regularFormSetoid K) p) *
+        hilbertSymbolOnSquareClasses
+          (letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
+           discr (Quotient.mk (regularFormSetoid K) p)) (squareClass (-1 : Kˣ)) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
+  let f : Kˣ →* ℤˣ :=
+    { toFun := fun a => hilbertSymbol a (-1)
+      map_one' := hilbertSymbol_one_left _
+      map_mul' := fun a b => hilbertSymbol_mul_left h2 _ a b }
+  have hdiag : (∏ i, hilbertSymbol (p.2 i) (p.2 i)) =
+      hilbertSymbol (∏ i, p.2 i) (-1) := by
+    simp_rw [hilbertSymbol_self]
+    exact (map_prod f p.2 Finset.univ).symm
+  rw [prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag, oddResidueHasse_mk, discr_mk,
+    hilbertSymbolOnSquareClasses_squareClass, hdiag, mul_comm]
 
 /-- The Hasse sign of a regular form is computed from any diagonalization of that form. -/
 theorem oddResidueHasse_formClass (h2 : IsUnit (2 : 𝒪[K]))

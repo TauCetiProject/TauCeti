@@ -135,4 +135,17 @@ theorem eq_endpoint_of_mem_segment_of_polyline_edge_of_im_mul_sub_pos {n : ℕ}
         (disjoint_segment_of_im_mul_sub_pos c u v
           (V i.castSucc) (V i.succ) hline hhstart hhend)) hzline hzedge).elim
 
+/-- A segment with one endpoint at or above a horizontal line and the other
+strictly above it can meet the closed lower half-plane only at the first endpoint. -/
+theorem eq_left_of_mem_segment_of_im_le_of_lt {u v z : ℂ} {h : ℝ}
+    (hu : h ≤ u.im) (hv : h < v.im)
+    (hz : z ∈ segment ℝ u v) (hzh : z.im ≤ h) : z = u := by
+  obtain ⟨s, t, hs, ht, hst, rfl⟩ := hz
+  simp only [Complex.add_im, Complex.smul_im, smul_eq_mul] at hzh
+  have hbase : s * h + t * h = h := by rw [← add_mul, hst, one_mul]
+  have ht0 : t = 0 := le_antisymm (not_lt.mp fun htpos ↦ by
+    linarith [mul_le_mul_of_nonneg_left hu hs, mul_lt_mul_of_pos_left hv htpos]) ht
+  have hs1 : s = 1 := by linarith
+  simp [ht0, hs1]
+
 end TauCeti

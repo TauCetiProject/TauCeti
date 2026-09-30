@@ -176,6 +176,17 @@ theorem subword_one {n : ℕ} (z : Fin n → M) {a : ℕ} (ha : a < n) :
       TensorPower.cast_refl, LinearEquiv.refl_apply, TauCeti.TensorPower.oneEquiv_tprod]
     exact congrArg z (Fin.ext (Nat.add_zero a))
 
+/-- A block whose length is not one has no letter component. -/
+theorem letter_subword_of_ne_one {n : ℕ} (z : Fin n → M) (a : ℕ) {b : ℕ} (hb : b ≠ 1) :
+    letter R M (subword R z a b) = 0 := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb0
+  · rw [subword_length_zero, map_zero]
+  by_cases hab : a + b ≤ n
+  · rw [letter_apply, subword_eq_of_tprod R z hb0 hab,
+      component_of_of_ne R M (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega),
+      map_zero]
+  · rw [subword_eq_zero_of_lt_add R z (by omega), map_zero]
+
 section Prepend
 
 variable {R M}

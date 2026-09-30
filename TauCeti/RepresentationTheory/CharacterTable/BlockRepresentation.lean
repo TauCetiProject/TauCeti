@@ -18,7 +18,7 @@ the projection onto the `i`-th factor and with `Matrix.toLinAlgEquiv'` presents 
 `Fin (d i) → k` as a `k[G]`-module, hence as a representation of `G`.
 
 Two facts make the resulting family the family of irreducibles. Each `blockRepresentation e i` is
-irreducible by `TauCeti.Representation.isIrreducible_of_asAlgebraHom_surjective`, its algebra map
+irreducible by `Representation.isIrreducible_of_asAlgebraHom_surjective`, its algebra map
 onto `End k (Fin (d i) → k)` being surjective. And the blocks are pairwise inequivalent, because
 the idempotent `e.symm (Pi.single i 1)` acts as the identity on the `i`-th block and as zero on
 every other one.

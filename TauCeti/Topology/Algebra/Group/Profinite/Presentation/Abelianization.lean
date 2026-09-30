@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
 public import TauCeti.RingTheory.Valuation.FinsetDvd
 public import TauCeti.Topology.Algebra.Module.PiSpanSingleton
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
+import TauCeti.Topology.Algebra.Group.Profinite.Free.ElementaryAutomorphism
 public import TauCeti.Topology.Algebra.Group.Profinite.Presentation.Basic
 public import TauCeti.Topology.Separation.TypeTags
 
@@ -73,6 +74,10 @@ order of the torsion subgroup of `G^{ab}`, and it is `0` when `q = 0`.
 * `TauCeti.presentedProP.exists_nonempty_oneRelatorAbelianizationEquiv`: for nonempty `X`, some
   coordinate `x₀` of the exponent vector divides all the others, and the isomorphism exists with
   `q` that coordinate.
+* `TauCeti.presentedProP.exists_continuousMulEquiv_singleton_padicPow_mul`: a one-relator pro-`p`
+  group `⟨X ∣ r⟩` is presented on the same generators by a relator `x₀ ^ q · c` with `c` in the
+  closed commutator subgroup, for any prescribed generator `x₀` and `q` a coordinate of the
+  exponent vector of `r` dividing all the others.
 
 ## References
 
@@ -424,6 +429,31 @@ theorem exists_nonempty_oneRelatorAbelianizationEquiv [Finite X] [Nonempty X]
   obtain ⟨x₀, hx₀⟩ := PreValuationRing.exists_forall_dvd (freeProP.exponentSum p X r).toAdd
   obtain ⟨w, hw, hv⟩ := exists_eq_smul_of_forall_dvd hx₀
   exact ⟨x₀, hx₀, ⟨oneRelatorAbelianizationEquiv r x₀ w hw _ hv⟩⟩
+
+/-- **A one-relator pro-`p` group is presented by a relator `x₀ ^ q · c` with `c` a commutator
+element.** For `G = ⟨X ∣ r⟩` on a finite type and a generator `x₀`, some coordinate `q = v x₁` of
+the exponent vector `v` of `r` divides all the others, and there is `c` in the closed commutator
+subgroup of the free pro-`p` group with `G ≃ₜ* ⟨X ∣ x₀ ^ q · c⟩`. The exponent vector of
+`x₀ ^ q · c` is `q e_{x₀}`, so the abelianization structure theorem `oneRelatorAbelianizationEquiv`
+applies to the new presentation with `w = e_{x₀}`. -/
+theorem exists_continuousMulEquiv_singleton_padicPow_mul [Finite X] (r : freeProP p X) (x₀ : X) :
+    ∃ (x₁ : X) (c : freeProP p X),
+      (∀ x, (freeProP.exponentSum p X r).toAdd x₁ ∣ (freeProP.exponentSum p X r).toAdd x) ∧
+        c ∈ (commutator (freeProP p X)).topologicalClosure ∧
+          Nonempty (presentedProP p X {r} ≃ₜ* presentedProP p X
+            {(isProP_freeProP p X).padicPow (freeProP.of x₀)
+              ((freeProP.exponentSum p X r).toAdd x₁) * c}) := by
+  classical
+  obtain ⟨x₁, e, hx₁, he⟩ := freeProP.exists_continuousMulEquiv_toAdd_exponentSum_eq_single r x₀
+  refine ⟨x₁, ((isProP_freeProP p X).padicPow (freeProP.of x₀)
+    ((freeProP.exponentSum p X r).toAdd x₁))⁻¹ * e r,
+    hx₁, (freeProP.toAdd_exponentSum_eq_single_iff p X _ _ _).mp he, ?_⟩
+  rw [mul_inv_cancel_left]
+  exact ⟨congr e
+    (fun s hs ↦ by rw [Set.mem_singleton_iff.mp hs]; exact mk_relator _ (Set.mem_singleton _))
+    (fun s hs ↦ by
+      rw [Set.mem_singleton_iff.mp hs, ContinuousMulEquiv.symm_apply_apply]
+      exact mk_relator _ (Set.mem_singleton _))⟩
 
 end presentedProP
 

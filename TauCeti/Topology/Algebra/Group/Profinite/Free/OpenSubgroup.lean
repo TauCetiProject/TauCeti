@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.CohomologicalDimension
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Serre
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.Basic
