@@ -22,7 +22,8 @@ internal Hom of two sheaves is already a sheaf. Its sections over `U` are the mo
 `M|_U ⟶ N|_U` of restrictions to the slice over `U`
 (`TauCeti.PresheafOfModules.ihomObjEquiv`), and since `N` is a sheaf, compatible local morphisms
 of restrictions glue uniquely: under this identification the presheaf internal Hom has the sheaf
-of local linear morphisms `SheafOfModules.linearHom M N` as its underlying presheaf of sets.
+of local linear morphisms `PresheafOfModules.linearHom M N` as its underlying presheaf of sets.
+This needs no sheaf condition on the source `M`.
 
 Consequently the sections of the sheaf internal Hom are computed exactly as for sheaves of
 morphisms: a section of `𝓗om(M, N)` over `U` is a morphism of sheaves of modules
@@ -81,71 +82,40 @@ private theorem ihomValObjEquiv_val (U : C) (s : ((ihom M.val).obj N.val).obj (o
     (ihomValObjEquiv M N U s).val = PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val s :=
   (fullyFaithfulForget _).map_preimage (X := M.over U) (Y := N.over U) _
 
-/-- Componentwise form of `ihomValObjEquiv_val`. -/
-private theorem ihomValObjEquiv_val_app (U : C) (s : ((ihom M.val).obj N.val).obj (op U))
-    {W : C} (h : W ⟶ U) (m : M.val.obj (op W)) :
-    ((ihomValObjEquiv M N U s).val.app (op (Over.mk h))) m =
-      (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val s).app' (op (Over.mk h)) m :=
-  congrArg (fun φ ↦ (φ.app (op (Over.mk h))) m) (ihomValObjEquiv_val M N U s)
-
-/-- Restricting a section of the presheaf internal Hom agrees, under `ihomValObjEquiv`, with
-restricting the corresponding local linear morphism. -/
-private theorem ihomValObjEquiv_map {U V : C} (g : V ⟶ U)
-    (s : ((ihom M.val).obj N.val).obj (op U)) :
-    ihomValObjEquiv M N V (((ihom M.val).obj N.val).map g.op s) =
-      linearHomObjEquiv M N V ((linearHom M N).obj.map g.op
-        ((linearHomObjEquiv M N U).symm (ihomValObjEquiv M N U s))) := by
-  ext ⟨W⟩ m
-  -- An object of the slice over `V` is `Over.mk h` for its structure morphism `h`.
-  obtain ⟨W, ⟨⟨⟩⟩, h⟩ := W
-  refine (ihomValObjEquiv_val_app M N V _ h m).trans ?_
-  refine (PresheafOfModules.ihomObjEquiv_map_app (R := R.obj) U M.val N.val s g h m).trans ?_
-  refine Eq.symm ((linearHomObjEquiv_map_app M N g h _ m).trans ?_)
-  rw [Equiv.apply_symm_apply]
-  exact ihomValObjEquiv_val_app M N U s (h ≫ g) m
-
-/-- The underlying presheaf of sets of the presheaf internal Hom of two sheaves of modules is the
-sheaf of local linear morphisms between them. -/
-private def ihomValPresheafIsoLinearHom :
-    ((ihom M.val).obj N.val).presheaf ⋙ CategoryTheory.forget AddCommGrpCat.{u} ≅
-      (linearHom M N).obj :=
+/-- The underlying presheaf of sets of the presheaf internal Hom from a presheaf of modules into a
+sheaf of modules is the sheaf of local linear morphisms between them. -/
+private def ihomPresheafIsoLinearHom (M : PresheafOfModules.{u} (ringCatSheaf R).obj)
+    (N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    ((ihom M).obj N.val).presheaf ⋙ CategoryTheory.forget AddCommGrpCat.{u} ≅
+      (M.linearHom N).obj :=
   NatIso.ofComponents
-    (fun U ↦ ((ihomValObjEquiv M N U.unop).trans (linearHomObjEquiv M N U.unop).symm).toIso)
-    (fun {_ V} g ↦ by
+    (fun U ↦ ((PresheafOfModules.ihomObjEquiv (R := R.obj) U.unop M N.val).trans
+      (M.linearHomObjEquiv N U.unop).symm).toIso)
+    (fun {U V} g ↦ by
       ext s
-      apply (linearHomObjEquiv M N V.unop).injective
-      exact (Equiv.apply_symm_apply _ _).trans (ihomValObjEquiv_map M N g.unop s))
+      apply (M.linearHomObjEquiv N V.unop).injective
+      refine (Equiv.apply_symm_apply _ _).trans ?_
+      ext ⟨W⟩ m
+      -- An object of the slice over `V` is `Over.mk h` for its structure morphism `h`.
+      obtain ⟨W, ⟨⟨⟩⟩, h⟩ := W
+      refine (PresheafOfModules.ihomObjEquiv_map_app (R := R.obj) U.unop M N.val s g.unop h
+        m).trans ?_
+      refine Eq.symm ((M.linearHomObjEquiv_map_app N g.unop h _ m).trans ?_)
+      exact congrArg (fun φ ↦ (φ.app (op (Over.mk (h ≫ g.unop)))) m)
+        (Equiv.apply_symm_apply (M.linearHomObjEquiv N U.unop)
+          (PresheafOfModules.ihomObjEquiv (R := R.obj) U.unop M N.val s)))
 
-/-- The internal Hom of the underlying presheaves of two sheaves of modules is a sheaf: its
-underlying presheaf of sets is the sheaf of local linear morphisms. -/
-private theorem isSheaf_ihom_val_of_sheaf_source :
-    Presheaf.IsSheaf J ((ihom M.val).obj N.val).presheaf :=
-  (Presheaf.isSheaf_iff_isSheaf_forget J _ (CategoryTheory.forget AddCommGrpCat.{u})).2
-    ((Presheaf.isSheaf_of_iso_iff (ihomValPresheafIsoLinearHom M N)).2 (linearHom M N).property)
-
-variable [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-
-/-- The presheaf internal Hom into a sheaf of modules is a sheaf. No sheaf condition is needed
-on the source presheaf. -/
+/-- The presheaf internal Hom from a presheaf of modules into a sheaf of modules is a sheaf: its
+underlying presheaf of sets is the sheaf of local linear morphisms. No sheaf condition is needed
+on the source. -/
 theorem _root_.SheafOfModules.isSheaf_ihom_val
     (M : PresheafOfModules.{u} (ringCatSheaf R).obj)
     (N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    Presheaf.IsSheaf J ((ihom M).obj N.val).presheaf := by
-  let L := PresheafOfModules.sheafification (R := ringCatSheaf R)
-    (J := J) (𝟙 (ringCatSheaf R).obj)
-  let adj := PresheafOfModules.sheafificationAdjunction (R := ringCatSheaf R)
-    (J := J) (𝟙 (ringCatSheaf R).obj)
-  have hpre : IsIso ((pre (adj.unit.app M)).app N.val) := by
-    have h := ((Monoidal.Reflective.isIso_tfae adj).out 4 2).mp (by
-      intro d d'
-      infer_instance)
-    exact h ⟨N.val, N.isSheaf⟩ M
-  let e : ((ihom (L.obj M).val).obj N.val).presheaf ≅
-      ((ihom M).obj N.val).presheaf :=
-    (PresheafOfModules.toPresheaf _).mapIso
-      (@asIso _ _ _ _ ((pre (adj.unit.app M)).app N.val) hpre)
-  exact (Presheaf.isSheaf_of_iso_iff e).1
-    (isSheaf_ihom_val_of_sheaf_source (L.obj M) N)
+    Presheaf.IsSheaf J ((ihom M).obj N.val).presheaf :=
+  (Presheaf.isSheaf_iff_isSheaf_forget J _ (CategoryTheory.forget AddCommGrpCat.{u})).2
+    ((Presheaf.isSheaf_of_iso_iff (ihomPresheafIsoLinearHom M N)).2 (M.linearHom N).property)
+
+variable [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
 
 private def restrictScalarsIdApp (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
     (PresheafOfModules.restrictScalars (𝟙 (ringCatSheaf R).obj)).obj P ≅ P where
@@ -313,11 +283,10 @@ theorem _root_.SheafOfModules.ihomObjEquiv_symm_apply (U : C) (φ : M.over U ⟶
   exact (congrArg (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val) (hinv _)).trans
     (Equiv.apply_symm_apply _ _)
 
+-- This is not a simp lemma: `SheafOfModules.ihom_obj` rewrites the internal Hom in its left-hand
+-- side.
 /-- Restricting a section of `𝓗om(M, N)` along `g : V ⟶ U` restricts the corresponding morphism
-of restrictions to the slice over `V`.
-
-This is not a simp lemma: `SheafOfModules.ihom_obj` rewrites the internal Hom in its left-hand
-side. -/
+of restrictions to the slice over `V`. -/
 theorem _root_.SheafOfModules.ihomObjEquiv_map_app {U : C} (s : ((ihom M).obj N).val.obj (op U))
     {V : C} (g : V ⟶ U) {W : C} (h : W ⟶ V) (m : M.val.obj (op W)) :
     ((M.ihomObjEquiv N V (((ihom M).obj N).val.map g.op s)).val.app (op (Over.mk h))) m =
