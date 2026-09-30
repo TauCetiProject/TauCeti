@@ -62,12 +62,12 @@ variable {G : Type*} [Group G]
 variable (U : Subgroup G) (t t' : G ⧸ U → G)
 
 /-- Representatives supplied by Mathlib's bundled left transversal. -/
-@[expose] noncomputable def leftTransversalRep (s : U.LeftTransversal) : G ⧸ U → G :=
+noncomputable def leftTransversalRep (s : U.LeftTransversal) : G ⧸ U → G :=
   fun x => (s.2.leftQuotientEquiv x : G)
 
 /-- The representative of a coset from a bundled left transversal. -/
 theorem leftTransversalRep_apply (s : U.LeftTransversal) (x : G ⧸ U) :
-    leftTransversalRep U s x = (s.2.leftQuotientEquiv x : G) := rfl
+    leftTransversalRep U s x = (s.2.leftQuotientEquiv x : G) := (rfl)
 
 /-- The chosen representative belongs to the left transversal. -/
 theorem leftTransversalRep_mem (s : U.LeftTransversal) (x : G ⧸ U) :
@@ -78,6 +78,13 @@ theorem leftTransversalRep_mem (s : U.LeftTransversal) (x : G ⧸ U) :
 @[simp] theorem leftTransversalRep_mk (s : U.LeftTransversal) (x : G ⧸ U) :
     (QuotientGroup.mk (leftTransversalRep U s x) : G ⧸ U) = x :=
   s.2.quotientGroupMk_leftQuotientEquiv x
+
+/-- Packaging a section as a left transversal recovers the original representative map. -/
+@[simp] theorem leftTransversalRep_range
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u) :
+    leftTransversalRep U ⟨Set.range t, Subgroup.isComplement_range_left ht⟩ = t := by
+  funext x
+  rw [leftTransversalRep_apply, Subgroup.IsComplement.leftQuotientEquiv_apply ht]
 
 /-- The **transversal word** `ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of a subgroup `U ≤ G`, a map
 `t : G ⧸ U → G`, a coset `u` and a group element `γ`. It lies in `U` as soon as `t` is a
