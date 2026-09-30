@@ -44,6 +44,7 @@ field in `TauCeti.NumberTheory.HilbertSymbol.NormSubgroup`, as
   radicand.
 * `TauCeti.hilbertSymbol_mul_right` and `TauCeti.hilbertSymbol_mul_left`: the Hilbert symbol is
   bilinear in both arguments.
+* `TauCeti.hilbertSymbol_self_mul`: `(a, ab)_K = (a, -b)_K`.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one`: for every nonsquare `a` there is a `b` with
   `(a, b)_K = -1`.
 
@@ -96,6 +97,12 @@ theorem hilbertSymbol_mul_left (h2 : (2 : K) ≠ 0) (a b c : Kˣ) :
   have : Invertible (2 : K) := invertibleOfNonzero h2
   -- the first-argument law is the second-argument law read through the symmetry of the symbol
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
+
+/-- If `2 ≠ 0` in `K`, then `(a, ab)_K = (a, -b)_K`: the two second arguments differ by the norm
+`-a` from `K(√a)`. -/
+theorem hilbertSymbol_self_mul (h2 : (2 : K) ≠ 0) (a b : Kˣ) :
+    hilbertSymbol a (a * b) = hilbertSymbol a (-b) := by
+  rw [← neg_mul_neg, hilbertSymbol_mul_right h2, hilbertSymbol_neg_self, one_mul]
 
 /-- The Hilbert symbol is multiplicative on integer powers of its second argument. -/
 @[simp]

@@ -45,6 +45,8 @@ Hasse symbol differs from this `i < j` sign by the Hilbert symbol of the discrim
   Hasse invariant.
 * `TauCeti.RegularFormClass.localHasse_formClass`: the same value on the class of any regular
   form isometric to `⟨a₁, …, aₙ⟩`.
+* `TauCeti.RegularFormClass.localHasse_eq_one_of_rank_eq_two_of_discr_eq_neg_one`: a class of
+  rank two and discriminant `[-1]` has trivial local Hasse invariant.
 * `TauCeti.RegularFormClass.localHasse_add`: `s(q ⊥ r) = s(q) · s(r) · (d(q), d(r))_K`.
 * `TauCeti.RegularFormClass.localHasse_mk_rankOne_mul`: the formula for scaling by a unit.
 
@@ -168,6 +170,18 @@ theorem localHasse_mk_binary (a b : Kˣ) :
     localHasse (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = hilbertSymbol a b := by
   rw [localHasse_mk]
   simp [Fin.prod_univ_succ]
+
+/-- The hyperbolic class has trivial local Hasse invariant `(1, -1)_K = 1`. -/
+@[simp]
+theorem localHasse_hyperbolicClass : localHasse (hyperbolicClass K) = 1 := by
+  rw [hyperbolicClass_def, localHasse_mk_binary, hilbertSymbol_one_left]
+
+/-- A class of rank two and discriminant `[-1]` has trivial local Hasse invariant: it is the
+hyperbolic class. -/
+theorem localHasse_eq_one_of_rank_eq_two_of_discr_eq_neg_one {x : RegularFormClass K}
+    (hrank : x.rank = 2) (hdiscr : discr x = squareClass (-1 : Kˣ)) : localHasse x = 1 := by
+  rw [eq_hyperbolicClass_of_rank_eq_two_of_discr_eq_neg_one hrank hdiscr,
+    localHasse_hyperbolicClass]
 
 /-- The orthogonal-sum formula on diagonal presentations: the local Hasse invariant of
 `⟨a₁, …, aₘ⟩ ⊥ ⟨b₁, …, bₙ⟩` is `s⟨a⟩ · s⟨b⟩ · (∏ aᵢ, ∏ bⱼ)_K`. -/
