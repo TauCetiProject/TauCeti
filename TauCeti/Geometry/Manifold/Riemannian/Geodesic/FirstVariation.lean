@@ -69,11 +69,11 @@ variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
 /-! ### Geodesics are critical -/
 
 /-- **Geodesics are critical points of the energy.** A geodesic on the open interval between `a`
-and `b` is a critical point of the energy between `a` and `b` among variations with fixed
-endpoints. -/
-theorem IsGeodesicCurveOn.isEnergyCritical (h : IsGeodesicCurveOn I γ (uIoo a b)) :
-    IsEnergyCritical I γ a b := by
-  refine isEnergyCritical_iff_integral_inner_eq_zero.mpr fun F hF0 _ _ _ ↦ ?_
+and `b` which is `C²` at every point of `[a, b]` is a critical point of the energy between `a` and
+`b` among variations with fixed endpoints. -/
+theorem IsGeodesicCurveOn.isEnergyCritical (h : IsGeodesicCurveOn I γ (uIoo a b))
+    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) : IsEnergyCritical I γ a b := by
+  refine (isEnergyCritical_iff_integral_inner_eq_zero hγ).mpr fun F hF0 _ _ _ ↦ ?_
   subst hF0
   refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
     intervalIntegral.integral_zero
@@ -203,13 +203,13 @@ private theorem inner_variationField_chartVariation
       zero_mul]
 
 /-- **The chart variations of a critical point.** Let `γ` be a critical point of the energy
-between `a` and `b` which is `C²` near every point of `[a, b]`, and let `φ` be a `C²` profile
+between `a` and `b`, and let `φ` be a `C²` profile
 supported in an open set `J ⊆ uIoo a b` on which `γ` stays in the chart at `x₀`.  Write `g t` for
 the pairing of the tangent vector with trivialization coordinates `e` at `γ t` against the
 covariant acceleration of `γ`.  Then `∫_a^b φ g = 0`, and `φ g` is continuous at every point of
 `[a, b]`. -/
 private theorem IsEnergyCritical.integral_mul_inner_eq_zero (h : IsEnergyCritical I γ a b)
-    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) (hJo : IsOpen J) (hJab : J ⊆ uIoo a b)
+    (hJo : IsOpen J) (hJab : J ⊆ uIoo a b)
     (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
     (e : E) :
     (∫ t in a..b, φ t * inner ℝ ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
@@ -219,21 +219,22 @@ private theorem IsEnergyCritical.integral_mul_inner_eq_zero (h : IsEnergyCritica
         (alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t)) t := by
   have hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun z : ℝ × ℝ ↦ chartVariation I γ x₀ J φ e z.1 z.2) (0, t) :=
-    fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (hγ t ht)
+    fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (h.contMDiffAt t ht)
   have hpt := inner_variationField_chartVariation (e := e) hJ
     ((subset_tsupport φ).trans hφJ)
   have hend : ∀ c ∉ uIoo a b, ∀ᶠ s in 𝓝 (0 : ℝ), chartVariation I γ x₀ J φ e s c = γ c :=
     fun c hc ↦ Eventually.of_forall (chartVariation_of_notMem fun hcJ ↦ hc (hJab hcJ))
   refine ⟨?_, fun t ht ↦ ?_⟩
-  · simpa only [hpt] using isEnergyCritical_iff_integral_inner_eq_zero.mp h _
+  · simpa only [hpt] using (isEnergyCritical_iff_integral_inner_eq_zero h.contMDiffAt).mp h _
       (chartVariation_zero hJ) hF (hend a left_notMem_uIoo) (hend b right_notMem_uIoo)
   · simpa only [hpt] using continuousAt_inner_variationField_alongCurve (hF t ht)
 
-/-- **Critical points of the energy are geodesics.** On a boundaryless manifold, a curve which is
-`C²` near every point of `[a, b]` and is a critical point of the energy between `a` and `b` among
-variations with fixed endpoints is a geodesic on the open interval between `a` and `b`. -/
-theorem IsEnergyCritical.isGeodesicCurveOn (h : IsEnergyCritical I γ a b)
-    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) : IsGeodesicCurveOn I γ (uIoo a b) := by
+/-- **Critical points of the energy are geodesics.** On a boundaryless manifold, a critical point
+of the energy between `a` and `b` among variations with fixed endpoints is a geodesic on the open
+interval between `a` and `b`. -/
+theorem IsEnergyCritical.isGeodesicCurveOn (h : IsEnergyCritical I γ a b) :
+    IsGeodesicCurveOn I γ (uIoo a b) := by
+  have hγ := h.contMDiffAt
   refine (isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mpr
     ⟨fun t ht ↦ (hγ t (uIoo_subset_uIcc_self ht)).contMDiffWithinAt, fun t₀ ht₀ ↦ ?_⟩
   by_contra hA
@@ -255,7 +256,7 @@ theorem IsEnergyCritical.isGeodesicCurveOn (h : IsEnergyCritical I γ a b)
   have hJ : ∀ t ∈ ball t₀ δ, γ t ∈ (extChartAt I (γ t₀)).source := fun t ht ↦ (hδJ ht).2
   have hbump : ∀ φ : ContDiffBump t₀, φ.rOut < δ →
       (∫ t in a..b, φ t * g t) = 0 ∧ ∀ t ∈ uIcc a b, ContinuousAt (fun t ↦ φ t * g t) t :=
-    fun φ hφ ↦ h.integral_mul_inner_eq_zero hγ isOpen_ball hJab hJ φ.contDiff
+    fun φ hφ ↦ h.integral_mul_inner_eq_zero isOpen_ball hJab hJ φ.contDiff
       (φ.tsupport_eq ▸ closedBall_subset_ball hφ) e
   -- `g` is continuous at `t₀`, since it agrees there with `φ g` for a bump `φ` equal to `1`
   -- near `t₀`
@@ -296,7 +297,7 @@ and `b`. -/
 theorem isEnergyCritical_iff_isGeodesicCurveOn
     (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
     IsEnergyCritical I γ a b ↔ IsGeodesicCurveOn I γ (uIoo a b) :=
-  ⟨fun h ↦ h.isGeodesicCurveOn hγ, IsGeodesicCurveOn.isEnergyCritical⟩
+  ⟨IsEnergyCritical.isGeodesicCurveOn, fun h ↦ h.isEnergyCritical hγ⟩
 
 end Converse
 

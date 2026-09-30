@@ -28,7 +28,7 @@ curves near `s = 0` share the endpoints of `γ`, the boundary terms vanish.
 
 The formula holds for a family which is `C²` at the points of `{0} × [a, b]`, for the tangent
 bundle of a `C²` manifold carrying a `C¹` Riemannian metric; its integrand is then continuous on
-`[a, b]`.  It is the tool for studying the critical points of the energy, the curves for which
+`[a, b]`.  It is the tool for studying the critical points of the energy, the `C²` curves for which
 this derivative vanishes for every variation with fixed endpoints.  Those critical points are
 exactly the geodesics (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
 
@@ -41,7 +41,8 @@ exactly the geodesics (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVaria
 * `TauCeti.Manifold.continuousAt_inner_variationField_alongCurve`: the integrand
   `⟪V(t), D_t γ'(t)⟫` of the first variation formula is continuous where the family is `C²`.
 * `TauCeti.Manifold.IsEnergyCritical`: critical points of the energy among variations with fixed
-  endpoints, characterized through the first variation formula by
+  endpoints, which are `C²` curves by definition; for a `C²` curve, criticality is characterized
+  through the first variation formula by
   `TauCeti.Manifold.isEnergyCritical_iff_integral_inner_eq_zero`.
 
 ## References
@@ -304,44 +305,44 @@ end FirstVariation
 section Critical
 
 variable (I) in
-/-- A curve `γ` is a **critical point of the energy** between the parameters `a` and `b` when
-every variation of `γ` with fixed endpoints leaves the energy stationary to first order: for every
-two-parameter family `F` with `F 0 = γ` which is `C²` at every point of `{0} × [a, b]` and whose
-curves near `s = 0` share the endpoints of `γ`, the energy of `F s` between `a` and `b` has
-derivative `0` at `s = 0`.  The criticality of geodesics and its converse are in
+/-- A curve `γ` is a **critical point of the energy** between the parameters `a` and `b` when it
+is `C²` at every point of `[a, b]` and every variation of `γ` with fixed endpoints leaves the
+energy stationary to first order: for every two-parameter family `F` with `F 0 = γ` which is `C²`
+at every point of `{0} × [a, b]` and whose curves near `s = 0` share the endpoints of `γ`, the
+energy of `F s` between `a` and `b` has derivative `0` at `s = 0`.  The regularity of `γ` is part
+of the definition: a curve which is not `C²` on `[a, b]` admits no such variation, and is not
+critical.  The criticality of geodesics and its converse are in
 `TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`. -/
-def IsEnergyCritical (γ : ℝ → M) (a b : ℝ) : Prop :=
-  ∀ F : ℝ → ℝ → M, F 0 = γ →
+structure IsEnergyCritical (γ : ℝ → M) (a b : ℝ) : Prop where
+  /-- A critical point of the energy is `C²` at every point of `[a, b]`. -/
+  contMDiffAt : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t
+  /-- The energy of a fixed-endpoint variation of a critical point has derivative `0` at
+  `s = 0`. -/
+  hasDerivAt : ∀ {F : ℝ → ℝ → M}, F 0 = γ →
     (∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) →
     (∀ᶠ s in 𝓝 0, F s a = γ a) → (∀ᶠ s in 𝓝 0, F s b = γ b) →
     HasDerivAt (fun s ↦ energy I (F s) a b) 0 0
 
-variable {F : ℝ → ℝ → M} {γ : ℝ → M} {a b : ℝ}
+variable {γ : ℝ → M} {a b : ℝ}
 
-omit [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- The energy of a fixed-endpoint variation of a critical point has derivative `0` at `s = 0`. -/
-theorem IsEnergyCritical.hasDerivAt (h : IsEnergyCritical I γ a b) (hF0 : F 0 = γ)
-    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
-    (ha : ∀ᶠ s in 𝓝 0, F s a = γ a) (hb : ∀ᶠ s in 𝓝 0, F s b = γ b) :
-    HasDerivAt (fun s ↦ energy I (F s) a b) 0 0 :=
-  h F hF0 hF ha hb
-
-/-- **Criticality through the first variation formula.** A curve is a critical point of the
-energy between `a` and `b` exactly when `∫_a^b ⟪V(t), D_t γ'(t)⟫ dt = 0` for the variation field
-`V` of every variation `F` of `γ = F 0` with fixed endpoints which is `C²` at every point of
-`{0} × [a, b]`. -/
-theorem isEnergyCritical_iff_integral_inner_eq_zero :
+/-- **Criticality through the first variation formula.** A curve `γ` which is `C²` at every point
+of `[a, b]` is a critical point of the energy between `a` and `b` exactly when
+`∫_a^b ⟪V(t), D_t γ'(t)⟫ dt = 0` for the variation field `V` of every variation `F` of `γ = F 0`
+with fixed endpoints which is `C²` at every point of `{0} × [a, b]`. -/
+theorem isEnergyCritical_iff_integral_inner_eq_zero
+    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
     IsEnergyCritical I γ a b ↔ ∀ F : ℝ → ℝ → M, F 0 = γ →
       (∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) →
       (∀ᶠ s in 𝓝 0, F s a = γ a) → (∀ᶠ s in 𝓝 0, F s b = γ b) →
       ∫ t in a..b, inner ℝ (variationField I F t)
         (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t) = 0 := by
-  refine forall_congr' fun F ↦ imp_congr_right fun hF0 ↦ forall₃_congr fun hF ha hb ↦ ?_
-  subst hF0
-  have hvar := hasDerivAt_energy_of_fixed_endpoints hF ha hb
-  exact ⟨fun h ↦ neg_eq_zero.mp (hvar.unique h), fun h ↦ by rwa [h, neg_zero] at hvar⟩
+  refine ⟨fun h F hF0 hF ha hb ↦ ?_, fun h ↦ ⟨hγ, fun {F} hF0 hF ha hb ↦ ?_⟩⟩
+  · subst hF0
+    exact neg_eq_zero.mp ((hasDerivAt_energy_of_fixed_endpoints hF ha hb).unique
+      (h.hasDerivAt rfl hF ha hb))
+  · subst hF0
+    have hvar := hasDerivAt_energy_of_fixed_endpoints hF ha hb
+    rwa [h _ rfl hF ha hb, neg_zero] at hvar
 
 end Critical
 
