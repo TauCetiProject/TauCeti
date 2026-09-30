@@ -119,10 +119,8 @@ theorem singleObjEquivalence_functor (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) 
 
 /-- A group homomorphism `f` out of the vertex group at `x₀` extends to a functor from the whole
 groupoid to `SingleObj G`, once a morphism `τ y : x₀ ⟶ y` has been chosen for every object `y`: a
-morphism `g : y ⟶ z` is sent to the image under `f` of the loop `τ y ≫ g ≫ inv (τ z)` at `x₀`.
-
-It is `@[expose]`d so that the object equation holds by `rfl` downstream. -/
-@[expose] noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Group G]
+morphism `g : y ⟶ z` is sent to the image under `f` of the loop `τ y ≫ g ≫ inv (τ z)` at `x₀`. -/
+noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Group G]
     (f : End x₀ →* G) : C ⥤ SingleObj G where
   obj _ := SingleObj.star G
   map {y z} g := f (τ y ≫ g ≫ inv (τ z))
