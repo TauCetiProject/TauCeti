@@ -29,6 +29,8 @@ restriction `TauCeti.trivialF2ResMap`, and transports the identity `cor ∘ res 
   recovers the trivial `𝔽₂` object of `U`.
 * `TauCeti.trivialF2ResMap_comp_trivialF2CorMap`, `TauCeti.trivialF2CorMap_trivialF2ResMap`:
   restriction followed by corestriction is multiplication by the index `[G : U]`.
+* `TauCeti.trivialF2CorMap_explicitH1AddEquivContinuousCohomology`: in degree one, corestriction
+  is the explicit transversal formula on cocycles.
 
 ## References
 
@@ -117,5 +119,22 @@ theorem trivialF2CorMap_trivialF2ResMap (n : ℕ)
   have h := ConcreteCategory.congr_hom (trivialF2ResMap_comp_trivialF2CorMap G U hU n) x
   simp only [ConcreteCategory.comp_apply] at h
   exact h
+
+open ContCohomology in
+/-- **Degree-one corestriction with trivial `𝔽₂` coefficients is the explicit transversal
+formula.** A class of `H¹(U, 𝔽₂)` presented by an explicit cocycle valued in the carrier of
+`trivialF2 G` is sent to the class of its explicit corestriction
+`TauCeti.ContCohomology.explicitCor1`, both read in continuous cohomology through the
+identifications of the coefficient objects with the trivial `𝔽₂` objects. -/
+theorem trivialF2CorMap_explicitH1AddEquivContinuousCohomology (x : H1 U (trivialF2 G).V) :
+    trivialF2CorMap G U hU 1
+        ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_subgroup_trivialF2 G U))).hom
+          (explicitH1AddEquivContinuousCohomology U (trivialF2 G).V x)) =
+      (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V
+          (explicitCor1 G (trivialF2 G).V U hU x)) := by
+  rw [trivialF2CorMap_def, ← ConcreteCategory.comp_apply, ← Category.assoc, eqToHom_trans,
+    eqToHom_refl, Category.id_comp, ConcreteCategory.comp_apply,
+    ContinuousCohomology.explicitH1AddEquivContinuousCohomology_corestriction]
 
 end TauCeti

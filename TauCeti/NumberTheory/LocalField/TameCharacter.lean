@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Kummer.Character
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.WildInertia
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 /-!
@@ -37,9 +38,13 @@ power in `K`. So all uniformizers `π` give the same character, the **tame chara
 
 `inertiaTameCharacter K : I_K →ₜ* ℤ̂^{(p')}(1)`, `σ ↦ (σ(π^{1/m})/π^{1/m})_m`,
 
-independent of the uniformizer and of the chosen roots. Classically it is surjective with kernel
-the wild inertia group `P_K`, so that it identifies the tame inertia group `I_K/P_K` with
-`ℤ̂^{(p')}(1)`; this file constructs the character, and does not prove those two facts.
+independent of the uniformizer and of the chosen roots. It is surjective, because `X ^ m − π` stays
+irreducible over `K^{ur}`, so that `I_K = Gal(K^{alg}/K^{ur})` moves `π^{1/m}` to each of its
+conjugates `ζ π^{1/m}`, and `I_K` is compact. Its kernel is the wild inertia group `P_K`, the
+automorphisms fixing all the `π^{1/m}` over `K^{ur}`. So it identifies the tame inertia group
+`I_K/P_K` with `ℤ̂^{(p')}(1)`, as topological groups. It is equivariant for conjugation by
+`G_K`, which acts on `ℤ̂^{(p')}(1)` through its action on the roots of unity: this is the twist
+`(1)`.
 
 ## Main definitions
 
@@ -48,6 +53,8 @@ the wild inertia group `P_K`, so that it identifies the tame inertia group `I_K/
 * `TauCeti.tameKummerCharacter K a`: the compatible family of these characters, a continuous
   homomorphism `I_K →ₜ* PrimeToPTateModule p K^{alg}`.
 * `TauCeti.inertiaTameCharacter K`: the tame Kummer character of a uniformizer.
+* `TauCeti.quotientWildInertiaSubgroupEquiv K`: the isomorphism of topological groups
+  `I_K/P_K ≃ₜ* ℤ̂^{(p')}(1)` induced by the tame character.
 
 ## Main results
 
@@ -64,6 +71,12 @@ the wild inertia group `P_K`, so that it identifies the tame inertia group `I_K/
 * `TauCeti.inertiaTameCharacter_eq_tameKummerCharacter`,
   `TauCeti.coe_proj_inertiaTameCharacter_apply`: the tame character is the tame Kummer character
   of any uniformizer `π`, with level-`m` component `σ(α)/α` for any root `α` of `X ^ m − π`.
+* `TauCeti.inertiaKummerCharacter_surjective`, `TauCeti.inertiaTameCharacter_surjective`: the
+  Kummer character of a uniformizer is surjective at each level, and the tame character is
+  surjective.
+* `TauCeti.inertiaTameCharacter_eq_one_iff`, `TauCeti.ker_inertiaTameCharacter`: the kernel of the
+  tame character is the wild inertia subgroup.
+* `TauCeti.inertiaTameCharacter_conj`: the tame character is `G_K`-equivariant.
 
 ## References
 
@@ -75,7 +88,7 @@ public section
 
 noncomputable section
 
-open ValuativeRel
+open ValuativeRel Polynomial
 
 namespace TauCeti
 
@@ -404,5 +417,146 @@ theorem coe_proj_inertiaTameCharacter_apply {σ : Gal(AlgebraicClosure K/K)}
       AlgebraicClosure K) = σ α / α := by
   rw [inertiaTameCharacter_eq_tameKummerCharacter hπ, proj_tameKummerCharacter_apply,
     coe_inertiaKummerCharacter_apply hσ hα]
+
+/-! ### Surjectivity -/
+
+/-- **The Kummer character of a uniformizer is surjective at each level.** For a uniformizer `π`
+and `m` prime to `p`, every `m`-th root of unity `ζ` is `σ(α)/α` for some `σ ∈ I_K`, where `α` is
+a root of `X ^ m − π`: as `X ^ m − π` is irreducible over `K^{ur}`
+(`TauCeti.X_pow_sub_C_irreducible_maximalUnramifiedExtension`), `Gal(K^{alg}/K^{ur}) = I_K`
+carries `α` to its conjugate `ζ α`. -/
+theorem inertiaKummerCharacter_surjective {π : Kˣ} (hπ : IsUniformizer K π) (m : ℕ)
+    (hm : m.Coprime (ringChar 𝓀[K])) :
+    Function.Surjective (inertiaKummerCharacter K m hm π) := by
+  set E := maximalUnramifiedExtension K (AlgebraicClosure K)
+  have hm0 := ne_zero_of_coprime_ringChar hm
+  intro ζ
+  set z : AlgebraicClosure K := ((ζ : (AlgebraicClosure K)ˣ) : AlgebraicClosure K)
+  have hz : z ^ m = 1 := by
+    simpa [z] using congrArg Units.val ((mem_rootsOfUnity m _).1 ζ.2)
+  -- `α` and `z α` are roots of `X ^ m − π`, which is their common minimal polynomial over `E`.
+  have hα := root_pow hm π
+  have hzα : (z * root K m hm π) ^ m = algebraMap K (AlgebraicClosure K) π := by
+    rw [mul_pow, hz, one_mul, hα]
+  have hirr := X_pow_sub_C_irreducible_maximalUnramifiedExtension (Ω := AlgebraicClosure K) hπ hm0
+  have hmin {β : AlgebraicClosure K} (hβ : β ^ m = algebraMap K (AlgebraicClosure K) π) :
+      minpoly E β = X ^ m - C (algebraMap K E π) :=
+    (minpoly.eq_of_irreducible_of_monic hirr (by simp [hβ]) (monic_X_pow_sub_C _ hm0)).symm
+  obtain ⟨τ, hτ⟩ := (Normal.minpoly_eq_iff_mem_orbit (F := E) (AlgebraicClosure K)).1
+    ((hmin hzα).trans (hmin hα).symm)
+  replace hτ : τ (root K m hm π) = z * root K m hm π := hτ
+  -- An automorphism of `K^{alg}` over `E = K^{ur}` is an element of inertia.
+  let σ : Gal(AlgebraicClosure K/K) := τ.restrictScalars K
+  have hσ : σ ∈ inertiaSubgroup K := mem_inertiaSubgroup_iff.2 fun x hx ↦ τ.commutes ⟨x, hx⟩
+  refine ⟨⟨σ, hσ⟩, Subtype.ext (Units.ext ?_)⟩
+  rw [coe_inertiaKummerCharacter_apply hσ hα]
+  simp only [σ, AlgEquiv.restrictScalars_apply]
+  rw [hτ, mul_div_cancel_right₀ _ (ne_zero_of_pow_eq_algebraMap hm hα)]
+
+variable (K) in
+/-- **The tame character is surjective**: `I_K → ℤ̂^{(p')}(1)` is onto, since it is onto at each
+finite level (`TauCeti.inertiaKummerCharacter_surjective`) and `I_K` is compact. -/
+theorem inertiaTameCharacter_surjective : Function.Surjective (inertiaTameCharacter K) := by
+  have : CompactSpace (inertiaSubgroup K) :=
+    isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  refine PrimeToPTateModule.surjective_of_forall_surjective_proj
+    (inertiaTameCharacter K).continuous fun m ↦ ?_
+  rw [inertiaTameCharacter_eq_tameKummerCharacter hπ]
+  simpa only [proj_tameKummerCharacter_apply] using inertiaKummerCharacter_surjective hπ m m.2.2
+
+/-! ### The kernel is wild inertia -/
+
+/-- **The kernel of the tame character is wild inertia**: `σ ∈ I_K` has trivial tame character
+exactly when it lies in `P_K`, that is, when it fixes every `m`-th root of a uniformizer for
+`p ∤ m` (`TauCeti.mem_wildInertiaSubgroup_iff_of_isUniformizer`). -/
+@[simp]
+theorem inertiaTameCharacter_eq_one_iff {σ : Gal(AlgebraicClosure K/K)}
+    (hσ : σ ∈ inertiaSubgroup K) :
+    inertiaTameCharacter K ⟨σ, hσ⟩ = 1 ↔ σ ∈ wildInertiaSubgroup K := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  have hp := CharP.prime_ringChar 𝓀[K]
+  refine Iff.trans ?_ ((mem_wildInertiaSubgroup_iff_of_isUniformizer hπ (σ := σ)).trans
+    (and_iff_right hσ)).symm
+  constructor
+  · intro h m hm α hα
+    have hm0 : m ≠ 0 := by rintro rfl; exact hm (dvd_zero _)
+    have hcop : m.Coprime (ringChar 𝓀[K]) := Nat.coprime_comm.1 (hp.coprime_iff_not_dvd.2 hm)
+    have h' := coe_proj_inertiaTameCharacter_apply hσ hπ ⟨m, hm0, hcop⟩ hα
+    rwa [h, map_one, OneMemClass.coe_one, Units.val_one, eq_comm,
+      div_eq_one_iff_eq (ne_zero_of_pow_eq_algebraMap hcop hα)] at h'
+  · intro h
+    refine PrimeToPTateModule.ext fun m ↦ Subtype.ext (Units.ext ?_)
+    have hα := root_pow m.2.2 π
+    have hm : ¬ ringChar 𝓀[K] ∣ m := hp.coprime_iff_not_dvd.1 (Nat.coprime_comm.1 m.2.2)
+    rw [coe_proj_inertiaTameCharacter_apply hσ hπ m hα, h m hm _ hα,
+      div_self (ne_zero_of_pow_eq_algebraMap m.2.2 hα)]
+    simp
+
+variable (K) in
+/-- The kernel of the tame character is the wild inertia subgroup `P_K`, viewed inside `I_K`. -/
+theorem ker_inertiaTameCharacter :
+    (inertiaTameCharacter K).toMonoidHom.ker =
+      (wildInertiaSubgroup K).subgroupOf (inertiaSubgroup K) := by
+  ext ⟨σ, hσ⟩
+  -- `Field.absoluteGaloisGroup K` is a type synonym for `Gal(AlgebraicClosure K/K)`; view `σ` in
+  -- the latter to match `TauCeti.inertiaTameCharacter_eq_one_iff`.
+  revert σ
+  intro (σ : Gal(AlgebraicClosure K/K)) hσ
+  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf]
+  exact inertiaTameCharacter_eq_one_iff hσ
+
+/-! ### Tame inertia -/
+
+variable (K) in
+/-- **Tame inertia is the prime-to-`p` Tate module**: the tame character induces an isomorphism
+of topological groups `I_K / P_K ≃ₜ* ℤ̂^{(p')}(1)` from the tame inertia group, the quotient of
+the inertia subgroup by the wild inertia subgroup. -/
+def quotientWildInertiaSubgroupEquiv :
+    inertiaSubgroup K ⧸ (wildInertiaSubgroup K).subgroupOf (inertiaSubgroup K) ≃ₜ*
+      PrimeToPTateModule (ringChar 𝓀[K]) (AlgebraicClosure K) :=
+  haveI : CompactSpace (inertiaSubgroup K) :=
+    isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
+  let e := (QuotientGroup.quotientMulEquivOfEq (ker_inertiaTameCharacter K).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ (inertiaTameCharacter_surjective K))
+  -- A continuous bijection from the compact quotient to the Hausdorff Tate module is a
+  -- homeomorphism.
+  have he : Continuous e :=
+    (QuotientGroup.isQuotientMap_mk _).continuous_iff.2 (inertiaTameCharacter K).continuous
+  ContinuousMulEquiv.mk e he (he.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv))
+
+/-- The isomorphism `I_K / P_K ≃ₜ* ℤ̂^{(p')}(1)` sends the class of `σ` to its tame character. -/
+@[simp]
+theorem quotientWildInertiaSubgroupEquiv_mk (σ : inertiaSubgroup K) :
+    quotientWildInertiaSubgroupEquiv K σ = inertiaTameCharacter K σ :=
+  (rfl)
+
+/-- The inverse isomorphism `ℤ̂^{(p')}(1) ≃ₜ* I_K / P_K` sends the tame character of `σ` to the
+class of `σ`. -/
+@[simp]
+theorem quotientWildInertiaSubgroupEquiv_symm_inertiaTameCharacter (σ : inertiaSubgroup K) :
+    (quotientWildInertiaSubgroupEquiv K).symm (inertiaTameCharacter K σ) = σ := by
+  rw [ContinuousMulEquiv.symm_apply_eq, quotientWildInertiaSubgroupEquiv_mk]
+
+/-! ### Equivariance -/
+
+/-- **The tame character is `G_K`-equivariant**: conjugating an element of inertia by `g ∈ G_K`
+applies `g` to its tame character, for the action of `G_K` on `ℤ̂^{(p')}(1)` through the roots of
+unity of `K^{alg}`. This is the twist `(1)` in `I_K / P_K ≅ ℤ̂^{(p')}(1)`. -/
+theorem inertiaTameCharacter_conj (g : Gal(AlgebraicClosure K/K)) {σ : Gal(AlgebraicClosure K/K)}
+    (hσ : σ ∈ inertiaSubgroup K) :
+    inertiaTameCharacter K ⟨g * σ * g⁻¹, (inertiaSubgroup_normal K).conj_mem σ hσ g⟩ =
+      g • inertiaTameCharacter K ⟨σ, hσ⟩ := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  refine PrimeToPTateModule.ext fun m ↦ Subtype.ext (Units.ext ?_)
+  -- With `α` a root of `X ^ m − π`, so is `g⁻¹ α`, and `g σ g⁻¹ (α) / α = g (σ β / β)` for
+  -- `β = g⁻¹ α`.
+  have hα := root_pow m.2.2 π
+  have hβ : (g⁻¹ (root K m m.2.2 π)) ^ (m : ℕ) = algebraMap K (AlgebraicClosure K) π := by
+    rw [← map_pow, hα, AlgEquiv.commutes]
+  refine (coe_proj_inertiaTameCharacter_apply _ hπ m hα).trans ?_
+  rw [PrimeToPTateModule.coe_proj_smul, coe_proj_inertiaTameCharacter_apply hσ hπ m hβ,
+    AlgEquiv.smul_def, map_div₀]
+  simp [AlgEquiv.mul_apply]
 
 end TauCeti
