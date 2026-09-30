@@ -31,8 +31,6 @@ The assignment `u ↦ φ` is not canonical: it depends on the choice of conjugat
 
 ## Main results
 
-* `TauCeti.Peripheral.isPeripheralAut_of_apply_eq_conj`: an automorphism carrying each `x i` and
-  the cusp to explicit conjugates of their `u`-th powers is peripheral of exponent `u`.
 * `TauCeti.Peripheral.exists_peripheralAut`: **the peripheral-power theorem**, the existence of
   a continuous automorphism with prescribed normalized conjugators, for every unit exponent.
 * `TauCeti.Peripheral.exists_isPeripheralAut`: for every unit `u`, the basis of a free pro-`p`
@@ -54,17 +52,6 @@ namespace Peripheral
 
 variable {p r : ℕ} [Fact p.Prime] {F : Type*} [Group F] [TopologicalSpace F]
   [IsTopologicalGroup F] [CompactSpace F] [TotallyDisconnectedSpace F]
-
-/-- An automorphism carrying each `x i` to `(c i)⁻¹ * x i ^ u * c i` and the cusp `z` to
-`d⁻¹ * z ^ u * d` is peripheral of exponent `u` for `x`. -/
-theorem isPeripheralAut_of_apply_eq_conj (hF : IsProP p F) {x : Fin r → F} {u : ℤ_[p]ˣ}
-    {φ : ContinuousAut F} {c : Fin r → F} {d : F}
-    (hc : ∀ i, φ (x i) = (c i)⁻¹ * hF.padicPow (x i) u * c i)
-    (hd : φ (cusp x) = d⁻¹ * hF.padicPow (cusp x) u * d) :
-    IsPeripheralAut hF x u φ := by
-  rw [isPeripheralAut_iff]
-  exact ⟨fun i ↦ isConj_iff.mpr ⟨(c i)⁻¹, by rw [inv_inv, hc]⟩,
-    isConj_iff.mpr ⟨d⁻¹, by rw [inv_inv, hd]⟩⟩
 
 /-- **The peripheral-power theorem.** For every unit `u ∈ ℤ_pˣ` there are a continuous
 automorphism `φ` of `F`, conjugators `c` on the basis `x = basis e`, with `c 0 = 1` in positive
