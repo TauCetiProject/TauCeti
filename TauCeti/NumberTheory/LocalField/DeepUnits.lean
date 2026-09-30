@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.ExpLog
-import Mathlib.RingTheory.PowerSeries.Exp
 
 /-!
 # The logarithm identifies deep units with a deep additive group
@@ -28,12 +27,11 @@ coefficientwise it is the formal identity `PowerSeries.exp_mul_exp_eq_exp_add`. 
 exponential comes from its being an isometry of `𝓂[K] ^ i` into `K`, inherited from the isometry
 property of the logarithm (`TauCeti.valuation_log_sub_log`).
 
-This isomorphism turns multiplicative questions about deep units into linear algebra over
-`𝒪[K]`: raising to the `n`-th power on `U(K,i)` becomes multiplication by `n` on `𝓂[K] ^ i`.
+This isomorphism turns multiplication of deep units into addition on `𝓂[K] ^ i`: raising to the
+`n`-th power on `U(K,i)` corresponds to taking the `n`-fold sum on `𝓂[K] ^ i`.
 
 ## Main results
 
-* `TauCeti.exp_add_of_mem_maximalIdeal_pow`: `exp (x + y) = exp x * exp y` on `𝓂[K] ^ i`.
 * `TauCeti.valuation_exp_sub_exp`: the exponential is an isometry on `𝓂[K] ^ i`.
 * `TauCeti.continuous_exp_maximalIdeal_pow`: the exponential is continuous on `𝓂[K] ^ i`.
 * `TauCeti.log_mul_of_mem_unitFiltration`: `log (u * w) = log u + log w` on `U(K,i)`.
@@ -54,31 +52,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 variable {p : ℕ} [Fact p.Prime] [FinitePadicExtension K p] {i : ℕ}
-
-/-- **The functional equation of the exponential on deep elements.** On `𝓂[K] ^ i` with
-`(p - 1) * i > e`, `exp (x + y) = exp x * exp y`. -/
-theorem exp_add_of_mem_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p - 1) * i)
-    (x y : (𝓂[K] ^ i : Ideal 𝒪[K])) :
-    exp ((x : K) + y) = exp (x : K) * exp (y : K) := by
-  have := FinitePadicExtension.charZero K p
-  let _ : NonarchimedeanRing K := by
-    rw [(valuation K).toTopologicalSpace_eq]
-    exact ValuativeRel.nonarchimedeanRing K
-  let _ := IsTopologicalAddGroup.rightUniformSpace K
-  let _ := isUniformAddGroup_of_addCommGroup (G := K)
-  have hx := hasSum_exp_of_mem_maximalIdeal_pow x hi
-  have hy := hasSum_exp_of_mem_maximalIdeal_pow y hi
-  have hxy := hasSum_exp_of_mem_maximalIdeal_pow (x + y) hi
-  push_cast at hxy
-  -- The Cauchy product of the two exponential series is the exponential series of `x + y`,
-  -- coefficientwise by the formal identity `e^{xX} * e^{yX} = e^{(x + y)X}`.
-  rw [← hx.tsum_eq, ← hy.tsum_eq, hx.summable.tsum_mul_tsum_eq_tsum_sum_antidiagonal hy.summable
-    (hx.mul_of_nonarchimedean hy).summable, ← hxy.tsum_eq]
-  refine tsum_congr fun n => ?_
-  have h := congrArg (PowerSeries.coeff n) (PowerSeries.exp_mul_exp_eq_exp_add (x : K) y)
-  simp only [PowerSeries.coeff_mul, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
-    one_div, map_inv₀, map_natCast] at h
-  simpa only [div_eq_mul_inv, mul_mul_mul_comm, eq_comm] using h
 
 /-- **The exponential is an isometry on deep elements.** On `𝓂[K] ^ i` with `(p - 1) * i > e`,
 `v(exp x - exp y) = v(x - y)`. -/
@@ -163,7 +136,7 @@ noncomputable def deepUnitExpLogEquiv (hi : absoluteRamificationIndex K p < (p -
       (coe_deepUnitExp hi x.toAdd).symm
 
 @[simp]
-theorem coe_toAdd_deepUnitExpLogEquiv (hi : absoluteRamificationIndex K p < (p - 1) * i)
+theorem coe_deepUnitExpLogEquiv_apply (hi : absoluteRamificationIndex K p < (p - 1) * i)
     (u : unitFiltration K i) :
     (((deepUnitExpLogEquiv K hi u).toAdd : 𝒪[K]) : K) = log ((u : Kˣ) : K) :=
   coe_deepUnitLog hi u
