@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Module.Determinant
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # The determinant-one subgroup of an orthogonal group
@@ -19,9 +20,11 @@ orthogonal group. The topology is the one induced from linear automorphisms.
 
 public section
 
+namespace TauCeti
+
 namespace QuadraticMap
 
-open TauCeti TauCeti.QuadraticMap
+open TauCeti _root_.QuadraticMap
 
 open scoped Topology
 
@@ -29,17 +32,27 @@ variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
   [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] (Q : QuadraticForm K V)
 
-/-- The scalar determinant is continuous on the orthogonal group. -/
-@[fun_prop]
-theorem continuous_orthogonalDet_val :
-    Continuous (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) := by
+/-- The determinant is continuous on the orthogonal group. -/
+@[continuity, fun_prop]
+theorem continuous_orthogonalDet : Continuous (orthogonalDet Q) := by
   have hsub : Continuous (fun g : orthogonalGroup Q => (g : V ≃ₗ[K] V)) :=
     continuous_subtype_val
   have hmap : Continuous (fun g : orthogonalGroup Q =>
       ((g : V ≃ₗ[K] V) : Module.End K V)) :=
     continuous_linearEquiv_toLinearMap.comp hsub
   have h := LinearMap.continuous_det_moduleTopology.comp hmap
-  simpa only [Function.comp_def, orthogonalDet_apply, LinearEquiv.coe_det] using h
+  have hval : Continuous (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) := by
+    simpa only [Function.comp_def, orthogonalDet_apply, LinearEquiv.coe_det] using h
+  apply Units.continuous_iff.mpr
+  refine ⟨hval, ?_⟩
+  simpa only [Function.comp_def, map_inv, Units.val_inv_eq_inv_val] using
+    hval.comp (continuous_inv : Continuous fun g : orthogonalGroup Q => g⁻¹)
+
+/-- The scalar determinant is continuous on the orthogonal group. -/
+@[continuity, fun_prop]
+theorem continuous_orthogonalDet_val :
+    Continuous (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) :=
+  Units.continuous_val.comp (continuous_orthogonalDet Q)
 
 variable [T2Space K]
 
@@ -63,31 +76,17 @@ variable [NeZero (2 : K)]
 /-- The determinant-one subgroup is open in the orthogonal group. -/
 theorem isOpen_specialOrthogonalWithin (hQ : Q.Nondegenerate) :
     IsOpen (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne 2)
-  have hset : (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) =
-      {g | (orthogonalDet Q g : K) ≠ -1} := by
-    ext g
-    have hg : (orthogonalDet Q g : K) ^ 2 = 1 := by
-      have hpolar : Q.polarBilin.SeparatingLeft :=
-        (nondegenerate_polar_iff.mpr hQ).1
-      simpa using congrArg Units.val (orthogonalDet_sq hpolar g)
-    have htwo := (sq_eq_one_iff).mp hg
-    simp only [orthogonalDet_apply] at htwo
-    simp only [Set.mem_ofPred_eq, orthogonalDet_apply]
-    constructor
-    · intro h
-      have hval : (LinearEquiv.det (g : V ≃ₗ[K] V) : K) = 1 := by
-        simpa using congrArg Units.val (mem_specialOrthogonalWithin_iff.mp h)
-      rw [hval]
-      intro hneg
-      apply (NeZero.ne (2 : K))
-      calc
-        (2 : K) = 1 - (-1) := by ring
-        _ = 0 := sub_eq_zero.mpr hneg
-    · intro h
-      exact mem_specialOrthogonalWithin_iff.mpr
-        (Units.val_injective (htwo.resolve_right h))
-  rw [hset]
-  exact (isClosed_singleton.preimage (continuous_orthogonalDet_val Q)).isOpen_compl
+  classical
+  rcases subsingleton_or_nontrivial V with h | h
+  · let _ := h
+    rw [specialOrthogonalWithin_eq_top]
+    exact isOpen_univ
+  · let _ := h
+    let _ : (specialOrthogonalWithin Q).FiniteIndex :=
+      Subgroup.finiteIndex_iff.mpr (by rw [index_specialOrthogonalWithin hQ]; decide)
+    exact (specialOrthogonalWithin Q).isOpen_of_isClosed_of_finiteIndex
+      (isClosed_specialOrthogonalWithin Q)
 
 end QuadraticMap
+
+end TauCeti

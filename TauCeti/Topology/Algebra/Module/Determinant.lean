@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import Mathlib.Topology.Instances.Matrix
-public import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Continuity of the determinant in the module topology
@@ -19,17 +18,19 @@ coordinates continuous, so the determinant is continuous without choosing a norm
 
 public section
 
+namespace TauCeti
+
 namespace LinearMap
 
-variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {K V : Type*} [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
+  [AddCommGroup V] [Module K V] [Module.Free K V] [Module.Finite K V]
 
 /-- The determinant is continuous on the endomorphism algebra with its module topology. -/
-@[fun_prop]
+@[continuity, fun_prop]
 theorem continuous_det_moduleTopology :
     Continuous (fun f : Module.End K V => LinearMap.det f) := by
   classical
-  let b := Module.finBasis K V
+  let b := Module.Free.chooseBasis K V
   have hm : Continuous (fun f : Module.End K V => LinearMap.toMatrix b b f) :=
     IsModuleTopology.continuous_of_linearMap (LinearMap.toMatrixAlgEquiv b).toLinearMap
   convert Continuous.matrix_det hm using 1
@@ -37,3 +38,5 @@ theorem continuous_det_moduleTopology :
   exact (LinearMap.det_toMatrix b f).symm
 
 end LinearMap
+
+end TauCeti
