@@ -94,42 +94,6 @@ private def toDimensionShiftUpSES {S : ShortComplex (Rep k G)} (hS : S.ShortExac
       exact (comp_toCoindBot_of_leftInverse S.f hr).symm
     comm₂₃ := (hS.exact.g_desc _ _).symm }
 
-/-- The morphism `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x` to a representation from the representation induced from
-the trivial subgroup, attached to a `k`-linear map `s`. -/
-private def fromIndBot (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
-    (s : X →ₗ[k] B.V) : indBot k G X ⟶ B :=
-  eqToHom (indBotFunctor_obj (ModuleCat.of k X)).symm ≫
-    (indBotFunctor k G).map (ModuleCat.ofHom s) ≫
-      eqToHom (indBotFunctor_obj (ModuleCat.of k B.V)) ≫ indBotCounit B
-
--- The two `eqToHom`s are identities and `indBotFunctor` sends the generator `⟦g ⊗ₜ x⟧` to
--- `⟦g ⊗ₜ s x⟧` (`indBotFunctor_map_hom_mk`), both by definition, so this is `indBotCounit_hom_mk`.
-private theorem fromIndBot_hom_mk (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
-    (s : X →ₗ[k] B.V) (g : G) (x : X) :
-    (fromIndBot B s).hom (Representation.IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) X) g x) =
-      B.ρ g⁻¹ (s x) :=
-  indBotCounit_hom_mk B g (s x)
-
-/-- If `s` is a section of `f : B ⟶ A`, then `⟦g ⊗ₜ a⟧ ↦ g⁻¹ • s a` followed by `f` is the
-projection of the representation induced from the trivial subgroup onto `A`. -/
-private theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
-    {s : A.V →ₗ[k] B.V} (hs : Function.RightInverse s f.hom) :
-    fromIndBot B s ≫ f = indBotCounit A := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
-    (Representation.trivial k (⊥ : Subgroup G) A.V)
-  intro g
-  apply LinearMap.ext
-  intro a
-  -- Evaluate both sides on the generators of the induced representation.
-  change f.hom ((fromIndBot B s).hom (Representation.IndV.mk (⊥ : Subgroup G).subtype
-      (Representation.trivial k (⊥ : Subgroup G) A.V) g a)) =
-    (indBotCounit A).hom (Representation.IndV.mk (⊥ : Subgroup G).subtype
-      (Representation.trivial k (⊥ : Subgroup G) A.V) g a)
-  rw [fromIndBot_hom_mk, indBotCounit_hom_mk, Rep.hom_comm_apply, hs a]
-
 /-- The morphism to a short exact sequence whose last map has a `k`-linear section `s` from the
 downward dimension-shifting sequence of its last term: the identity on the last term, and
 `⟦g ⊗ₜ a⟧ ↦ g⁻¹ • s a` on the middle term. -/

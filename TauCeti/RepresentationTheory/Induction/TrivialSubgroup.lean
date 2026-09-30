@@ -40,6 +40,8 @@ The constructions follow `ClassFieldTheory/Cohomology/IndCoind/Finite.lean` and
 * `Rep.coindBotUnit`: the monomorphism `A ⟶ coindBot k G A.V`.
 * `Rep.indBot`, `Rep.indBotFunctor`: induction from the trivial subgroup.
 * `Rep.indBotCounit`: the epimorphism `indBot k G A.V ⟶ A`.
+* `Rep.fromIndBot`: the morphism `indBot k G X ⟶ B`, `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x`, attached to a
+  `k`-linear map `s : X → B`.
 * `Rep.coindBotEquivPi`, `Rep.indBotEquivFinsupp`: the underlying modules as functions `G → X`
   and finitely supported functions `G →₀ X`.
 * `Rep.indBotIsoCoindBot`: for a finite group, `indBot k G X ≅ coindBot k G X`.
@@ -360,6 +362,43 @@ theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
         (Representation.trivial k (⊥ : Subgroup G) A.V) g a))
   rw [indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
   exact (Rep.hom_comm_apply f g⁻¹ a).symm
+
+/-- The morphism `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x` to a representation from the representation induced from
+the trivial subgroup, attached to a `k`-linear map `s`. -/
+def fromIndBot (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
+    (s : X →ₗ[k] B.V) : indBot k G X ⟶ B :=
+  eqToHom (indBotFunctor_obj (ModuleCat.of k X)).symm ≫
+    (indBotFunctor k G).map (ModuleCat.ofHom s) ≫
+      eqToHom (indBotFunctor_obj (ModuleCat.of k B.V)) ≫ indBotCounit B
+
+/-- The morphism attached to `s` on generators: `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x`. -/
+-- The two `eqToHom`s are identities and `indBotFunctor` sends the generator `⟦g ⊗ₜ x⟧` to
+-- `⟦g ⊗ₜ s x⟧` (`indBotFunctor_map_hom_mk`), both by definition, so this is `indBotCounit_hom_mk`.
+theorem fromIndBot_hom_mk (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
+    (s : X →ₗ[k] B.V) (g : G) (x : X) :
+    (fromIndBot B s).hom (IndV.mk (⊥ : Subgroup G).subtype
+        (Representation.trivial k (⊥ : Subgroup G) X) g x) =
+      B.ρ g⁻¹ (s x) :=
+  indBotCounit_hom_mk B g (s x)
+
+/-- If `s` is a section of `f : B ⟶ A`, then `⟦g ⊗ₜ a⟧ ↦ g⁻¹ • s a` followed by `f` is the
+projection of the representation induced from the trivial subgroup onto `A`. -/
+theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
+    {s : A.V →ₗ[k] B.V} (hs : Function.RightInverse s f.hom) :
+    fromIndBot B s ≫ f = indBotCounit A := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
+    (Representation.trivial k (⊥ : Subgroup G) A.V)
+  intro g
+  apply LinearMap.ext
+  intro a
+  -- Evaluate both sides on the generators of the induced representation.
+  change f.hom ((fromIndBot B s).hom (IndV.mk (⊥ : Subgroup G).subtype
+      (Representation.trivial k (⊥ : Subgroup G) A.V) g a)) =
+    (indBotCounit A).hom (IndV.mk (⊥ : Subgroup G).subtype
+      (Representation.trivial k (⊥ : Subgroup G) A.V) g a)
+  rw [fromIndBot_hom_mk, indBotCounit_hom_mk, Rep.hom_comm_apply, hs a]
 
 /-- Induction on the underlying module, viewed as an endofunctor of representations. -/
 @[expose] def indBotRepFunctor : Rep k G ⥤ Rep k G :=

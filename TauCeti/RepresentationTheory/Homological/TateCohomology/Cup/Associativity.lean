@@ -14,12 +14,12 @@ For a finite group `G`, the tensor associator identifies the two ways to cup thr
 `x`, `y`, `z` of arbitrary integer degrees `p`, `q`, `s`:
 `α ((x ∪ y) ∪ z) = x ∪ (y ∪ z)` (`TauCeti.TateCohomology.cup_assoc`).
 
-When `z` has degree zero both sides are computed by the degree-zero product `cupH0`
-(`TauCeti.TateCohomology.cup_assoc_zero_right`). The general case follows by induction on `s`,
-upwards through the dimension shift `0 → P → Coind_⊥^G P → dimensionShiftUp P → 0` and downwards
-through `0 → dimensionShiftDown P → Ind_⊥^G P → P → 0`. On the left the cup product with `z`
-satisfies `(x ∪ y) ∪ δ z = (-1)^(p + q) δ ((x ∪ y) ∪ z)` by its definition, and the associator
-commutes with the connecting maps. On the right, `y ∪ δ z = (-1)^q δ (y ∪ z)` by definition, and
+When `z` has degree zero both sides are computed by the degree-zero product `cupH0`. The general
+case follows by induction on `s`, upwards through the dimension shift
+`0 → P → Coind_⊥^G P → dimensionShiftUp P → 0` and downwards through
+`0 → dimensionShiftDown P → Ind_⊥^G P → P → 0`. On the left the cup product with `z` satisfies
+`(x ∪ y) ∪ δ z = (-1)^(p + q) δ ((x ∪ y) ∪ z)` by its definition, and the associator commutes with
+the connecting maps. On the right, `y ∪ δ z = (-1)^q δ (y ∪ z)` by definition, and
 `x ∪ δ w = (-1)^p δ (x ∪ w)` for the connecting map `δ` of the tensor product of the shifting
 sequence with `N`, which is split `k`-linearly, by `TauCeti.TateCohomology.cup_δ_of_leftInverse`
 in all degrees. The two signs agree.
@@ -50,7 +50,7 @@ namespace TauCeti.TateCohomology
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 /-- Associativity of the Tate cup product when the last class has degree zero. -/
-theorem cup_assoc_zero_right (M N P : Rep k G) {p q r : ℤ} (h : p + q = r)
+private theorem cup_assoc_zero_right (M N P : Rep k G) {p q r : ℤ} (h : p + q = r)
     (x : tateCohomology M p) (y : tateCohomology N q)
     (z : tateCohomology P 0) :
     (tateCohomologyFunctor r).map (α_ M N P).hom
@@ -64,39 +64,7 @@ theorem cup_assoc_zero_right (M N P : Rep k G) {p q r : ℤ} (h : p + q = r)
       ← ModuleCat.comp_apply, ← Functor.map_comp,
       Rep.tensorInvariant_comp_associator]
 
-/-- Associativity of the Tate cup product when the last class has degree zero, in the simp normal
-form where the degree-zero cups are written with `cupH0`. -/
-@[simp]
-theorem cupH0_cup_assoc (M N P : Rep k G) {p q r : ℤ} (h : p + q = r)
-    (x : tateCohomology M p) (y : tateCohomology N q)
-    (z : tateCohomology P 0) :
-    (tateCohomologyFunctor r).map (α_ M N P).hom
-      (cupH0 (M ⊗ N) P r (cup M N p q r h x y) z) =
-      cup M (N ⊗ P) p q r h x (cupH0 N P q y z) := by
-  simpa only [cup_zero_right] using cup_assoc_zero_right M N P h x y z
-
-/-- Cup product with two degree-zero Tate classes is associative, after applying the tensor
-associator to the coefficient representation. -/
-@[simp]
-theorem cupH0_assoc_zero (M N P : Rep k G) (p : ℤ)
-    (x : tateCohomology M p) (y : tateCohomology N 0)
-    (z : tateCohomology P 0) :
-    (tateCohomologyFunctor p).map (α_ M N P).hom
-      (cupH0 (M ⊗ N) P p (cupH0 M N p x y) z) =
-      cupH0 M (N ⊗ P) p x (cupH0 N P 0 y z) := by
-  simpa only [cup_zero_right] using cupH0_cup_assoc M N P (q := 0) (add_zero p) x y z
-
 /-! ### Associativity in all tridegrees -/
-
-/-- The associator, as a morphism from the tensor product of a short complex with `M ⊗ N` to its
-tensor product with `N` and then with `M`. -/
-private def associatorShortComplex (M N : Rep k G) (S : ShortComplex (Rep k G)) :
-    S.map (tensorLeft (M ⊗ N)) ⟶ (S.map (tensorLeft N)).map (tensorLeft M) where
-  τ₁ := (α_ M N S.X₁).hom
-  τ₂ := (α_ M N S.X₂).hom
-  τ₃ := (α_ M N S.X₃).hom
-  comm₁₂ := (associator_naturality_right M N S.f).symm
-  comm₂₃ := (associator_naturality_right M N S.g).symm
 
 /-- The associator commutes with the connecting maps of the tensor products of a short exact
 sequence with `M ⊗ N` and with `N` and then `M`. -/
@@ -107,7 +75,7 @@ private theorem map_associator_δ (M N : Rep k G) {S : ShortComplex (Rep k G)}
     (tateCohomologyFunctor (n + 1)).map (α_ M N S.X₁).hom (_root_.TateCohomology.δ h₁ n w) =
       _root_.TateCohomology.δ h₂ n ((tateCohomologyFunctor n).map (α_ M N S.X₃).hom w) :=
   ConcreteCategory.congr_hom
-    (_root_.TateCohomology.δ_naturality h₁ h₂ (associatorShortComplex M N S) n) w
+    (_root_.TateCohomology.δ_naturality h₁ h₂ (S.mapNatTrans (tensorLeftTensor M N).hom) n) w
 
 /-- The upward step in the proof of `cup_assoc`: associativity for a last class of degree `s ≥ 0`
 in the upward shift of `P` gives associativity for a last class of degree `s + 1` in `P`. -/
@@ -263,5 +231,27 @@ theorem cup_cupH0_assoc (M N P : Rep k G) {p q r : ℤ} (h : p + q = r)
       (cup (M ⊗ N) P p q r h (cupH0 M N p x y) z) =
       cup M (N ⊗ P) p q r h x (cup0H N P q y z) := by
   simpa only [cup_zero_right, cup_zero_left] using cup_assoc M N P (add_zero p) (zero_add q) h x y z
+
+/-- Associativity of the Tate cup product when the last class has degree zero, in the simp normal
+form where the degree-zero cups are written with `cupH0`. -/
+@[simp]
+theorem cupH0_cup_assoc (M N P : Rep k G) {p q r : ℤ} (h : p + q = r)
+    (x : tateCohomology M p) (y : tateCohomology N q)
+    (z : tateCohomology P 0) :
+    (tateCohomologyFunctor r).map (α_ M N P).hom
+      (cupH0 (M ⊗ N) P r (cup M N p q r h x y) z) =
+      cup M (N ⊗ P) p q r h x (cupH0 N P q y z) := by
+  simpa only [cup_zero_right] using cup_assoc M N P h (add_zero q) (add_zero r) x y z
+
+/-- Cup product with two degree-zero Tate classes is associative, after applying the tensor
+associator to the coefficient representation. -/
+@[simp]
+theorem cupH0_assoc_zero (M N P : Rep k G) (p : ℤ)
+    (x : tateCohomology M p) (y : tateCohomology N 0)
+    (z : tateCohomology P 0) :
+    (tateCohomologyFunctor p).map (α_ M N P).hom
+      (cupH0 (M ⊗ N) P p (cupH0 M N p x y) z) =
+      cupH0 M (N ⊗ P) p x (cupH0 N P 0 y z) := by
+  simpa only [cup_zero_right] using cupH0_cup_assoc M N P (q := 0) (add_zero p) x y z
 
 end TauCeti.TateCohomology
