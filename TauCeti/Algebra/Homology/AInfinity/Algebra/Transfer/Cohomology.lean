@@ -186,6 +186,11 @@ private theorem coe_cycleProjection (x : A) :
       x - 𝒜.boundaryPreimage (𝒜.toBoundaries x) :=
   rfl
 
+private theorem cycleProjection_of_mem_cycles {x : A} (hx : x ∈ 𝒜.cycles) :
+    𝒜.cycleProjection x = ⟨x, hx⟩ := by
+  apply Subtype.ext
+  rw [coe_cycleProjection, 𝒜.toBoundaries_eq_zero_of_mem_cycles hx, map_zero, sub_zero]
+
 private theorem isHomogeneous_cycleProjection :
     LinearMap.IsHomogeneous 𝒜.cycleProjection 𝒜.grading.piece
       𝒜.cyclesGrading.piece 0 := by
@@ -376,6 +381,14 @@ theorem cohomologyClass_cohomologyContraction_incl (x : 𝒜.Cohomology) :
       apply 𝒜.classMap_apply
     _ = x := 𝒜.cohomologyClass_cycleRepresentative x
 
+/-- The projection of the cohomology contraction sends a cycle to its cohomology class. -/
+@[simp]
+theorem cohomologyContraction_proj_of_mem_cycles {x : A} (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyContraction.proj x = 𝒜.cohomologyClass hx := by
+  -- Expose the contraction field as the private projection to use its construction.
+  change 𝒜.classMap (𝒜.cycleProjection x) = _
+  rw [cycleProjection_of_mem_cycles _ hx, classMap_apply]
+
 /-- The inclusion of the cohomology contraction has degree zero. -/
 theorem isHomogeneous_cohomologyContraction_incl :
     LinearMap.IsHomogeneous 𝒜.cohomologyContraction.incl 𝒜.cohomologyGrading.piece
@@ -460,12 +473,7 @@ theorem minimalModel_m_two (x y : 𝒜.Cohomology) :
       𝒜.cycles := by
     simpa only [mul_apply] using 𝒜.m_two_mem_cycles
       (𝒜.cycleRepresentative x).2 (𝒜.cycleRepresentative y).2
-  have hq : 𝒜.cycleProjection
-      (𝒜.mul (𝒜.cycleRepresentative x) (𝒜.cycleRepresentative y)) =
-      ⟨𝒜.mul (𝒜.cycleRepresentative x) (𝒜.cycleRepresentative y), hz⟩ := by
-    apply Subtype.ext
-    rw [coe_cycleProjection, 𝒜.toBoundaries_eq_zero_of_mem_cycles hz, map_zero, sub_zero]
-  rw [hq]
+  rw [cycleProjection_of_mem_cycles _ hz]
   calc
     𝒜.cohomologyClass hz = 𝒜.cohomologyMul
         (𝒜.cohomologyClass (𝒜.cycleRepresentative x).2)
