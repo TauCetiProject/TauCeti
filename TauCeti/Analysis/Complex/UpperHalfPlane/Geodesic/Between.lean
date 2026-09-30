@@ -105,9 +105,11 @@ theorem geodesicBetween_swap {z w : ℍ} (hzw : z ≠ w) :
       geodesicLine_geodesicBetween_zero]
 
 /-- The geodesic lines from `z` to `w` and from `w` to `z` have the same image. -/
-theorem range_geodesicLine_geodesicBetween_swap {z w : ℍ} (hzw : z ≠ w) :
+theorem range_geodesicLine_geodesicBetween_swap (z w : ℍ) :
     Set.range (geodesicLine (geodesicBetween w z)) =
       Set.range (geodesicLine (geodesicBetween z w)) := by
+  rcases eq_or_ne z w with rfl | hzw
+  · rfl
   rw [geodesicBetween_swap hzw, range_geodesicLine_mul_pslS, range_geodesicLine_mul_dilation]
 
 /-- Two distinct points of a geodesic line determine it: the geodesic line through them has the
