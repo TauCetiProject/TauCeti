@@ -46,8 +46,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   descriptions of surjectivity and injectivity of the map induced on homology.
 * `LinearMap.ker_le_range_mappingCone_iff`: a chain map induces a bijection on homology exactly when
   its mapping cone is exact.
-* `LinearMap.ker_le_range_sumMappingCone_iff`: the mapping cone on `(ι ⊕ κ) →₀ S` is exact exactly
-  when the mapping cone on `(ι →₀ S) × (κ →₀ S)` is.
+* `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
+  in its range exactly when the same holds for the mapping cone on `(ι →₀ S) × (κ →₀ S)`.
 * `HomologicalComplex.quasiIso_iff_bijective_homologyMap`: a morphism of complexes of modules of
   shape `ComplexShape.refl Unit`, that is, of modules with a square-zero endomorphism, is a
   quasi-isomorphism exactly when it induces a bijection on `ker d ⧸ im d`.
@@ -393,18 +393,17 @@ theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)} {e 
   rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp,
     mappingCone_comp_self f hd he hf, map_zero]
 
-/-- The mapping cone on `(ι ⊕ κ) →₀ S` is exact exactly when the mapping cone on
-`(ι →₀ S) × (κ →₀ S)` is. -/
+/-- The kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies in its range exactly when the kernel of
+the mapping cone on `(ι →₀ S) × (κ →₀ S)` lies in its range. -/
 theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
     {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
     ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
       ker (mappingCone d e f) ≤ range (mappingCone d e f) := by
-  change ker ((sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
-    (sumFinsuppLEquivProdFinsupp S).toLinearMap) ≤
-    range ((sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
-      (sumFinsuppLEquivProdFinsupp S).toLinearMap) ↔
-      ker (mappingCone d e f) ≤ range (mappingCone d e f)
-  rw [LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
+  -- Rewrite the transported cone as a composition through its application rule.
+  have hcomp : sumMappingCone d e f = (sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ
+      mappingCone d e f ∘ₗ (sumFinsuppLEquivProdFinsupp S).toLinearMap :=
+    LinearMap.ext fun x ↦ by simp
+  rw [hcomp, LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
     Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
   exact Submodule.comap_le_comap_iff_of_surjective (LinearEquiv.surjective _)
 
