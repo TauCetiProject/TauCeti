@@ -39,11 +39,8 @@ of `g_{T₁ + T₂}` and the Kummer character of the pullback `[N]^* h` is trivi
 nondegenerate in `T`: if `e_N(·, T)` is trivial then `g_T` is fixed by the `N`-torsion
 translations, hence a pullback `[N]^* h`, and `div h = (T) - (O)` forces `T = O`.
 
-It is alternating: with `N • R₀ = T`, the divisors of the translates `τ_{i R₀} g_T` for `i < N`
-telescope to zero, because moving points by `-R₀` carries the fibre of `[N]` over `T` onto the
-fibre over `O`. Their product is therefore a constant, fixed by `τ_{R₀}`, which shifts each
-factor to the next, so `τ_T g_T = τ_{N R₀} g_T = g_T` and `e_N(T, T) = 1`. Alternation and
-nondegeneracy in `T` together give nondegeneracy in `S`.
+It is alternating: `e_N(T, T) = 1`. Together with bilinearity, this gives skew-symmetry and,
+using nondegeneracy in `T`, nondegeneracy in `S`.
 
 This is the construction of Silverman III.8.1, with the proofs of its parts (a)–(c). It is a
 divisor construction, and its inputs are the divisor calculus of the function field and the fibre
@@ -318,6 +315,7 @@ private theorem sum_translation_smul_principal_eq_zero {T R₀ : W.toAffine.Poin
     rw [smul_sub, WeilDivisor.smul_ofPoint, WeilDivisor.smul_ofPoint,
       translation_smul_pointEquivDegreeOnePlace, translation_smul_pointEquivDegreeOnePlace,
       succ_nsmul,
+      -- Put the translated point in the form used by the next term of the telescoping sum.
       show R₀ + S - (i • R₀ + R₀) = S - i • R₀ by abel]
   have hNR₀ : N • R₀ = T := by rw [← natCast_zsmul, hR₀]
   have haN : a N = a 0 := by

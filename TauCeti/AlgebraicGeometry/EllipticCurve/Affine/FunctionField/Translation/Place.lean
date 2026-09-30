@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Basic
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 
 /-!
 # Translations move the places of points
@@ -20,17 +19,8 @@ an automorphism. It moves the place of a point `Q` to the place of `Q - P`: the 
 (`TauCeti.Divisor.principal_smul`) this computes the divisor of a translated function from the
 divisor of the function, which is what the divisor calculus of the Weil pairing needs.
 
-The proof reads the place of a point off the reduction of the generic point
-(`WeierstrassCurve.Affine.reductionOfDegreeEqOne_genericPoint`). An `F`-automorphism `σ`
-carries the kernel of reduction at `w` onto the kernel of reduction at `σ • w`, so reducing
-`σ A` at `σ • w` is reducing `A` at `w`; and `τ_P^*` carries the generic point to its translate
-by `P`.
-
 ## Main results
 
-* `WeierstrassCurve.Affine.map_mem_polePoints_smul_iff` and
-  `WeierstrassCurve.Affine.reductionOfDegreeEqOne_smul_map`: an automorphism of `K / F` carries
-  reduction at a place `w` to reduction at `σ • w`.
 * `WeierstrassCurve.Affine.translation_smul_pointEquivDegreeOnePlace`: `τ_P^*` carries the
   place of `Q` to the place of `Q - P`.
 
@@ -44,36 +34,6 @@ public section
 open TauCeti
 
 namespace WeierstrassCurve.Affine
-
-section Automorphism
-
-variable {F K : Type*} [Field F] [Field K] [Algebra F K] [DecidableEq K] (W : Affine F)
-  [W.IsElliptic]
-
-/-- **An automorphism carries the kernel of reduction at `w` onto that at `σ • w`**: the
-`x`-coordinate of `σ A` has a pole at `σ • w` exactly when that of `A` has one at `w`. -/
--- not `@[simp]`: `mem_polePoints_iff` is, and it unfolds the membership on the left-hand side
--- first, so this lemma would never fire. Apply it, or `rw` with it.
-theorem map_mem_polePoints_smul_iff (σ : K ≃ₐ[F] K) (w : Place F K)
-    (A : (W⁄K).toAffine.Point) :
-    Point.map (σ : K →ₐ[F] K) A ∈ polePoints W (σ • w) ↔ A ∈ polePoints W w := by
-  rw [mem_polePoints_iff, mem_polePoints_iff, map_eq_zero_iff _ (Point.map_injective _),
-    Point.xCoord_map, AlgEquiv.coe_toAlgHom, Place.valuation_smul_apply]
-
-variable [DecidableEq F]
-
-/-- **Reduction commutes with automorphisms**: reducing `σ A` at `σ • w` is reducing `A` at `w`,
-for a place `w` of degree one and an automorphism `σ` of `K / F`. -/
-@[simp]
-theorem reductionOfDegreeEqOne_smul_map (σ : K ≃ₐ[F] K) {w : Place F K} (hw : w.degree = 1)
-    (A : (W⁄K).toAffine.Point) :
-    reductionOfDegreeEqOne W ((Place.degree_smul σ w).trans hw) (Point.map (σ : K →ₐ[F] K) A) =
-      reductionOfDegreeEqOne W hw A := by
-  rw [reductionOfDegreeEqOne_eq_iff, ← Point.map_baseChange (σ : K →ₐ[F] K), ← map_sub,
-    map_mem_polePoints_smul_iff]
-  exact sub_reductionOfDegreeEqOne_mem_polePoints W hw A
-
-end Automorphism
 
 variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
 
