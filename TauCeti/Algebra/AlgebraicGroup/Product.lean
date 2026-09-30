@@ -252,7 +252,6 @@ theorem mapValue_pointsMulEquiv_symm_apply_tmul (φ : A →ₐ[R] B)
 
 /-- On pure tensors, assembling after post-composing both factor points multiplies the two
 post-composed factor values. -/
-@[simp]
 theorem pointsMulEquiv_symm_mapValue_apply_tmul (φ : A →ₐ[R] B)
     (p : WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A)) (x : H₁) (y : H₂) :
     ((pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := B)).symm
