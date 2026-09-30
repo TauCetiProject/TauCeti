@@ -87,6 +87,12 @@ what lets every result of the first kind be applied to coefficients of the secon
   `TopRep.cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom` and
   `TauCeti.ContCohomology.cocyclesMap_comp_cocyclesRestrictScalarsIntIso_hom` are the
   corresponding statements for the cochains and the cocycles.
+* `TauCeti.ContCohomology.map_comp_restrictScalarsIntIso_hom_of_hom`: the isomorphism is also
+  natural with respect to the simultaneous change of group and coefficients
+  `ContinuousCohomology.map phi f` along a continuous homomorphism `phi : H →ₜ* G`, with the
+  scalar-restricted coefficient map `TopRep.resRestrictScalarsIntMap phi f`. This is what
+  transfers statements about change-of-group maps, such as Shapiro's lemma, from discrete
+  `ℤ`-modules to coefficients over an arbitrary ring.
 * `TauCeti.ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj`: for a discrete `X`, the
   underlying additive representation is `TauCeti.ofDiscreteModule ℤ G X.V`.
 
@@ -513,6 +519,8 @@ private theorem cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom_of
   simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
     CategoryTheory.comp_apply]
   rw [coe_homogeneousCochainsRestrictScalarsIntIso_hom_f]
+  -- A homogeneous cochain is a subtype of `resolutionX _ (i + 1)`, and `cochainsMap` acts on its
+  -- underlying element as `resolutionMap`; this unfolds the complex-map wrappers to that action.
   change (resolutionXRestrictScalarsIntIso Y (i + 1)).hom.hom
       ((resolutionMap phi (resRestrictScalarsIntMap (phi : H →* G) f) (i + 1)).hom x.1) =
     (resolutionMap phi f (i + 1)).hom

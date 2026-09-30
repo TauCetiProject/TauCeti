@@ -48,11 +48,24 @@ Closedness of `U` enters through the base cases, which use the explicit Shapiro 
 closed subgroup, and through the coinduction of a short exact sequence, whose surjectivity on the
 right needs a closed subgroup.
 
+The last section transfers the result to a smooth discrete `A : TopRep R U` over an arbitrary ring
+`R`. The generic Shapiro map `TauCeti.ContinuousCohomology.shapiroMapTopRep` is restriction to `U`
+together with the coinduction counit `TauCeti.coindCounit`. Forgetting the scalars
+(`TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntIso`) turns it into the canonical
+Shapiro map of the underlying discrete `U`-module, by naturality of scalar restriction under
+simultaneous change of group and coefficients
+(`TauCeti.ContCohomology.map_comp_restrictScalarsIntIso_hom_of_hom`). Since the canonical map is
+bijective, so is the generic one, and a bijective map between discrete topological modules is an
+isomorphism.
+
 ## Main definitions
 
 * `TauCeti.ContinuousCohomology.shapiroIso`: **Shapiro's lemma in every degree**,
   `Hⁿ(G, Coind_U^G A) ≅ Hⁿ(U, A)` for a closed subgroup `U` of a profinite group `G`, with forward
   map the canonical Shapiro map (`shapiroIso_hom`).
+* `TauCeti.ContinuousCohomology.shapiroMapTopRep`,
+  `TauCeti.ContinuousCohomology.shapiroIsoTopRep`: the Shapiro map and Shapiro's isomorphism for a
+  smooth discrete representation over an arbitrary ring.
 
 ## Main results
 
@@ -68,6 +81,8 @@ right needs a closed subgroup.
   restriction to `U` is the coefficient map of the unit `M → Coind_U^G M` of coinduction followed
   by the Shapiro map, so restriction followed by the inverse of Shapiro's isomorphism is the
   coefficient map of the unit.
+* `TauCeti.ContinuousCohomology.isIso_shapiroMapTopRep`: the generic Shapiro map is an isomorphism
+  in every degree, for a closed subgroup of a profinite group and an arbitrary coefficient ring.
 
 ## References
 
@@ -253,21 +268,6 @@ end Shapiro
 
 end TauCeti.ContinuousCohomology
 
-open CategoryTheory TauCeti
-open TauCeti.ContCohomology _root_.ContinuousCohomology
-
-namespace TauCeti
-
-universe u v w
-
-/-- Restriction of a bundled smooth discrete representation to a subgroup. -/
-noncomputable abbrev smoothDiscreteResTopRep {R : Type u} [Ring R] [TopologicalSpace R]
-    {G : Type v} [Group G] [TopologicalSpace G] (U : Subgroup G)
-    (A : SmoothDiscreteTopRep.{u, v, w} R G) : SmoothDiscreteTopRep.{u, v, w} R U :=
-  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
-
-end TauCeti
-
 namespace TauCeti.ContinuousCohomology
 
 open CategoryTheory TauCeti.ContCohomology
@@ -289,11 +289,20 @@ local instance instContinuousSMulTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U)
 local instance instDiscreteTopologyTopRepAmbient (A : SmoothDiscreteTopRep.{v, u, u} R G) :
     DiscreteTopology A.obj.V := A.property.discreteTopology
 
-/-- The canonical Shapiro map for a smooth discrete topological representation over any ring. -/
-@[expose] noncomputable def shapiroMapTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+/-- The canonical Shapiro map for a smooth discrete topological representation over any ring:
+restriction from `G` to `U` together with the coinduction counit (evaluation at `1`). -/
+noncomputable def shapiroMapTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
     continuousCohomology n (coindTopRep R G U A).obj ⟶ continuousCohomology n A.obj :=
   _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U)
     (TopRep.ofHom (coindCounit R G U A)) n
+
+-- Not `@[simp]`: `shapiroMapTopRep` is the intended normal form, and this lemma unfolds it.
+/-- The defining equation of `shapiroMapTopRep`: the compatible-pair map of the inclusion
+`U → G` and the coinduction counit. -/
+theorem shapiroMapTopRep_def (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    shapiroMapTopRep U A n =
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U)
+        (TopRep.ofHom (coindCounit R G U A)) n := (rfl)
 
 omit [CompactSpace G] in
 /-- Naturality of continuous cohomology under simultaneous change of group and coefficients. -/
@@ -313,6 +322,45 @@ private theorem map_naturality
     rfl
   · exact heq_of_eq h.symm
 
+/-- The coefficient square behind the comparison of the two Shapiro maps: transporting a
+coinduced function from the discrete `ℤ`-module model to the scalar-restricted representation
+and then evaluating at `1` agrees with evaluating first and transporting afterwards. Both
+transports are the identity on carriers (`cast_ofDiscreteModule_eq_restrictScalarsInt_obj`), and
+both counits are evaluation at `1`. -/
+private theorem shapiro_coeff_square (A : SmoothDiscreteTopRep.{v, u, u} R U) :
+    (TopRep.resFunctor (U.subtype : U →* G)).map
+        (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj (coindTopRep R G U A).obj)) ≫
+        TopRep.resRestrictScalarsIntMap (U.subtype : U →* G)
+          (TopRep.ofHom (coindCounit R G U A)) =
+      ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+          (DiscreteCoind.eval G U A.obj.V).toIntLinearMap
+          (fun u f => eval_subgroupSubtype_smul G U A.obj.V u f) ≫
+        eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj A.obj) := by
+  let fNew := TopRep.resRestrictScalarsIntMap (U.subtype : U →* G)
+    (TopRep.ofHom (coindCounit R G U A))
+  let fOld := ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+    (DiscreteCoind.eval G U A.obj.V).toIntLinearMap
+    (fun u f => eval_subgroupSubtype_smul G U A.obj.V u f)
+  ext f
+  -- `(resFunctor _).map a` and a composite of `TopRep` morphisms act by their underlying
+  -- functions; this is the only definitional unfolding in the proof.
+  change fNew ((eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj (coindTopRep R G U A).obj)).hom
+      f) = (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj A.obj)).hom (fOld.hom f)
+  rw [TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply,
+    cast_ofDiscreteModule_eq_restrictScalarsInt_obj,
+    cast_ofDiscreteModule_eq_restrictScalarsInt_obj]
+  -- Both sides evaluate the coinduced function `f` at `1`.
+  let fR : DiscreteCoind G U A.obj.V := f
+  have hleft : fNew f = fR 1 :=
+    (TopRep.resRestrictScalarsIntMap_hom_apply (U.subtype : U →* G)
+      (TopRep.ofHom (coindCounit R G U A)) fR).trans (coindCounit_apply R G U A fR)
+  have hright : fOld.hom f = fR 1 :=
+    (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+      (DiscreteCoind.eval G U A.obj.V).toIntLinearMap
+        (fun u f => eval_subgroupSubtype_smul G U A.obj.V u f) fR).trans (by
+      rw [AddMonoidHom.coe_toIntLinearMap, DiscreteCoind.eval_apply])
+  exact hleft.trans hright.symm
+
 private theorem shapiroMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom
     (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
     shapiroMap U A.obj.V n ≫
@@ -320,67 +368,22 @@ private theorem shapiroMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom
         (ContCohomology.ofDiscreteModuleRestrictScalarsIntIso
           (coindTopRep R G U A).obj n).hom ≫
         TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n) := by
-  let hA := ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj A.obj
-  let hX := ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj
-    (coindTopRep R G U A).obj
-  let fOld := ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
-      (DiscreteCoind.eval G U A.obj.V).toIntLinearMap
-        (eval_subgroupSubtype_smul G U A.obj.V)
-  let fNew := TopRep.resRestrictScalarsIntMap (U.subtype : U →* G)
-    (TopRep.ofHom (coindCounit R G U A))
-  have hcoeff :
-      (TopRep.resFunctor (U.subtype : U →* G)).map (eqToHom hX) ≫ fNew =
-        fOld ≫ eqToHom hA := by
-    ext f
-    change fNew ((eqToHom hX).hom f) = (eqToHom hA).hom (fOld.hom f)
-    dsimp only [hX, hA]
-    rw [TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply,
-      ContCohomology.cast_ofDiscreteModule_eq_restrictScalarsInt_obj,
-      ContCohomology.cast_ofDiscreteModule_eq_restrictScalarsInt_obj]
-    have hleft : fNew f = (show DiscreteCoind G U A.obj.V from f) 1 := by
-      let fR : DiscreteCoind G U A.obj.V := f
-      have hmap : fNew f = (TopRep.ofHom (coindCounit R G U A)).hom fR := by
-        exact TopRep.resRestrictScalarsIntMap_hom_apply (U.subtype : U →* G)
-          (TopRep.ofHom (coindCounit R G U A)) fR
-      have heval : (TopRep.ofHom (coindCounit R G U A)).hom fR = fR 1 :=
-        coindCounit_apply R G U A fR
-      exact hmap.trans heval
-    have hright : fOld.hom f = (show DiscreteCoind G U A.obj.V from f) 1 := by
-      let fR : DiscreteCoind G U A.obj.V := f
-      have hpair := ofDiscreteModulePair_hom_apply
-        (ContinuousMonoidHom.subgroupSubtype U : U →* G)
-        (DiscreteCoind.eval G U A.obj.V).toIntLinearMap
-          (eval_subgroupSubtype_smul G U A.obj.V) fR
-      exact hpair.trans (by
-        rw [AddMonoidHom.coe_toIntLinearMap, DiscreteCoind.eval_apply])
-    exact hleft.trans hright.symm
-  have hsquare := map_naturality
-    (ContinuousMonoidHom.subgroupSubtype U) fOld fNew (eqToHom hX) (eqToHom hA) hcoeff n
+  -- Move the coefficient transports past the change-of-group maps (`shapiro_coeff_square`), then
+  -- move scalar restriction past the generic Shapiro map
+  -- (`map_comp_restrictScalarsIntIso_hom_of_hom`).
+  have hsquare := map_naturality (ContinuousMonoidHom.subgroupSubtype U) _ _ _ _
+    (shapiro_coeff_square U A) n
   have hscalar := ContCohomology.map_comp_restrictScalarsIntIso_hom_of_hom
     (ContinuousMonoidHom.subgroupSubtype U) (TopRep.ofHom (coindCounit R G U A)) n
-  have hscalar' :
-      _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U) fNew n ≫
-          (ContCohomology.restrictScalarsIntIso A.obj n).hom =
-        (ContCohomology.restrictScalarsIntIso (coindTopRep R G U A).obj n).hom ≫
-          TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n) := by
-    exact hscalar
   rw [ContCohomology.ofDiscreteModuleRestrictScalarsIntIso_hom,
-    ContCohomology.ofDiscreteModuleRestrictScalarsIntIso_hom]
-  change shapiroMap U A.obj.V n ≫
-      (eqToHom (congrArg (continuousCohomology n) hA) ≫
-        (ContCohomology.restrictScalarsIntIso A.obj n).hom) =
-    (eqToHom (congrArg (continuousCohomology n) hX) ≫
-        (ContCohomology.restrictScalarsIntIso (coindTopRep R G U A).obj n).hom) ≫
-      TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n)
-  rw [← coeffMap_eqToHom hA n, ← coeffMap_eqToHom hX n]
-  rw [shapiroMap_def]
-  change _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U) fOld n ≫
-      (coeffMap (eqToHom hA) n ≫ (ContCohomology.restrictScalarsIntIso A.obj n).hom) =
-    (coeffMap (eqToHom hX) n ≫
-        (ContCohomology.restrictScalarsIntIso (coindTopRep R G U A).obj n).hom) ≫
-      TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n)
-  rw [← Category.assoc, hsquare, Category.assoc, hscalar', ← Category.assoc]
-  rfl
+    ContCohomology.ofDiscreteModuleRestrictScalarsIntIso_hom,
+    ← coeffMap_eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj A.obj) n,
+    ← coeffMap_eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj (coindTopRep R G U A).obj) n,
+    shapiroMap_def]
+  -- The two squares agree with the goal only up to the coercion of `subgroupSubtype U` to a
+  -- monoid hom, so they are chained by `trans` rather than by rewriting.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) hsquare).trans <|
+    (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) hscalar).trans (Category.assoc _ _ _).symm
 
 /-- The generic Shapiro map is an isomorphism for a closed subgroup of a profinite group. -/
 theorem isIso_shapiroMapTopRep [TotallyDisconnectedSpace G]

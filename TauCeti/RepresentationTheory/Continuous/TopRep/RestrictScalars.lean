@@ -157,6 +157,8 @@ noncomputable def resRestrictScalarsIntMap (phi : H →* G) {X : TopRep.{u} k G}
     { toContinuousLinearMap := f.hom.toContinuousLinearMap.restrictScalars ℤ
       isIntertwining' h := by
         ext x
+        -- Scalar restriction and `res phi` leave the operators unchanged: `ρ h` acts on the
+        -- restricted objects as `X.ρ (phi h)` and `Y.ρ h`.
         change f.hom (X.ρ (phi h) x) = Y.ρ h (f.hom x)
         exact DFunLike.congr_fun (f.hom.isIntertwining' h) x }
 
@@ -168,7 +170,6 @@ theorem resRestrictScalarsIntMap_hom_apply (phi : H →* G) {X : TopRep.{u} k G}
     {Y : TopRep.{u} k H} (f : res phi X ⟶ Y)
     (x : (res phi (restrictScalarsInt.obj X)).V) :
     (resRestrictScalarsIntMap phi f).hom x = f.hom x := by
-  change f.hom x = f.hom x
   rfl
 
 end Restriction
