@@ -27,8 +27,12 @@ This is a code-level presentation: `PDCode` neither imposes planarity nor provid
 realization, so these must be supplied separately. Keeping the code finite and explicit avoids
 choosing a privileged geometric embedding.
 
-The PD-code encoding follows M. Mastin, *Links and Planar Diagram Codes*, Definitions 2--3,
-which develops the Bar-Natan/KnotTheory PD convention. The diagram and crossing-sign conventions
+The PD-code encoding adapts M. Mastin, *Links and Planar Diagram Codes*, Definitions 2--3,
+which develops the Bar-Natan/KnotTheory PD convention. Mastin lists, at each crossing, the labels of
+the four incident arcs counterclockwise from the incoming under-edge. Here `halfEdge` labels
+half-edges rather than arcs, the four slots of a crossing are read counterclockwise from any
+starting slot, the over-strand is recorded by the separate bit `overPair`, and crossing-free
+components are counted separately. The diagram and crossing-sign conventions
 follow W. B. R. Lickorish, *An Introduction to Knot Theory*, GTM 175, Chapter 1. The framing
 convention follows R. Gompf and A. Stipsicz, *4-Manifolds and Kirby Calculus*, GSM 20, Section 4.5,
 especially Proposition 4.5.8.
@@ -95,6 +99,21 @@ theorem crossingSlotEquiv_succ_last {n : ℕ} (slot : Fin 4) :
     finCongr_apply, Fin.val_cast, finSumFinEquiv_apply_right, Fin.val_natAdd]
   omega
 
+/-- A half-edge position of the first `n` crossings keeps its value when a crossing is added. -/
+@[simp]
+theorem halfEdgeSuccEquiv_apply_inl_val {n : ℕ} (x : Fin (4 * n)) :
+    (halfEdgeSuccEquiv n (.inl x)).val = x.val := by
+  simp only [halfEdgeSuccEquiv, Equiv.trans_apply, finCongr_apply, Fin.val_cast,
+    finSumFinEquiv_apply_left, Fin.val_castAdd]
+
+/-- The slots of the added crossing follow the `4 * n` positions of the first `n` crossings. -/
+@[simp]
+theorem halfEdgeSuccEquiv_apply_inr_val {n : ℕ} (slot : Fin 4) :
+    (halfEdgeSuccEquiv n (.inr slot)).val = slot.val + 4 * n := by
+  simp only [halfEdgeSuccEquiv, Equiv.trans_apply, finCongr_apply, Fin.val_cast,
+    finSumFinEquiv_apply_right, Fin.val_natAdd]
+  omega
+
 /-- The slot opposite a given slot in the cyclic order at a crossing. -/
 def oppositeCrossingSlot : Equiv.Perm (Fin 4) :=
   finCycle 2
@@ -131,11 +150,11 @@ namespace TauCeti
 
 /-- A finite unoriented PD-code with `n` crossings.
 
-The `4 * n` half-edges are grouped into four slots for each crossing by `halfEdge`. The perfect
-matching `edgePair` joins the two visits of each arc. Slots `0` and `2` form one local strand,
-while slots `1` and `3` form the other. `crossinglessComponentCount` counts circle components
-with no crossing visits. `overPair i = false` selects the `0`-`2` strand as over, while `true`
-selects the `1`-`3` strand. -/
+The `4 * n` half-edges are grouped into four slots for each crossing by `halfEdge`, listed
+counterclockwise around the crossing. The perfect matching `edgePair` joins the two visits of each
+arc. Slots `0` and `2` form one local strand, while slots `1` and `3` form the other.
+`crossinglessComponentCount` counts circle components with no crossing visits.
+`overPair i = false` selects the `0`-`2` strand as over, while `true` selects the `1`-`3` strand. -/
 @[ext]
 structure PDCode (n : ℕ) where
   /-- The half-edge labels occupying the four slots of each crossing. -/
@@ -194,7 +213,7 @@ namespace PDCode
 
 variable {n : ℕ}
 
-/-- The four half-edge labels at a crossing, in cyclic order. -/
+/-- The four half-edge labels at a crossing, in counterclockwise cyclic order. -/
 def crossing (D : PDCode n) (i : Fin n) (slot : Fin 4) : Fin (4 * n) :=
   D.halfEdge (crossingSlotEquiv n (i, slot))
 
@@ -273,6 +292,11 @@ theorem mirror_mirror (D : PDCode n) : D.mirror.mirror = D := by
   · funext i
     simp [mirror]
 
+/-- Reflection fixes every PD-code without crossings. -/
+@[simp]
+theorem mirror_eq_self_of_zero_crossings (D : PDCode 0) : D.mirror = D :=
+  PDCode.ext rfl rfl rfl (funext fun i => i.elim0)
+
 /-- The permutation of half-edge positions induced by a permutation of crossing blocks. -/
 def crossingBlockPerm (cross : Equiv.Perm (Fin n)) : Equiv.Perm (Fin (4 * n)) :=
   (crossingSlotEquiv n).permCongr (cross.prodCongr (.refl _))
@@ -296,8 +320,7 @@ theorem crossingBlockPerm_symm_apply_crossingSlotEquiv (cross : Equiv.Perm (Fin 
 
 /-- The identity crossing permutation induces the identity half-edge permutation. -/
 @[simp]
-theorem crossingBlockPerm_refl :
-    crossingBlockPerm (Equiv.refl (Fin n)) = Equiv.refl _ :=
+theorem crossingBlockPerm_one : crossingBlockPerm (1 : Equiv.Perm (Fin n)) = 1 :=
   (crossingSlotEquiv n).permCongr_refl
 
 /-- Crossing-block permutations preserve permutation multiplication. -/
@@ -307,6 +330,13 @@ theorem crossingBlockPerm_mul (cross₁ cross₂ : Equiv.Perm (Fin n)) :
   unfold crossingBlockPerm
   rw [← Equiv.permCongr_mul]
   congr 1
+
+/-- Crossing-block permutations preserve inverses. -/
+@[simp]
+theorem crossingBlockPerm_inv (cross : Equiv.Perm (Fin n)) :
+    (crossingBlockPerm cross)⁻¹ = crossingBlockPerm cross⁻¹ :=
+  inv_eq_of_mul_eq_one_right <| by
+    rw [← crossingBlockPerm_mul, mul_inv_cancel, crossingBlockPerm_one]
 
 /-- Relabel half-edge visits and crossings by permutations. -/
 def relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
@@ -349,16 +379,15 @@ theorem relabel_isOver (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
 
 /-- Relabelling by identity permutations does nothing. -/
 @[simp]
-theorem relabel_refl (D : PDCode n) :
-    D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
+theorem relabel_one_one (D : PDCode n) : D.relabel 1 1 = D := by
   apply PDCode.ext
-  · ext x
-    rw [← (crossingSlotEquiv n).apply_symm_apply x]
-    simp
+  · rw [relabel_halfEdge, crossingBlockPerm_one]
+    ext x
+    simp [Equiv.Perm.one_def]
   · exact PerfectMatching.congr_refl D.edgePair
   · simp
   · funext i
-    simp
+    simp [Equiv.Perm.one_def]
 
 /-- Consecutive relabellings compose their half-edge and crossing permutations. -/
 @[simp]
@@ -529,12 +558,11 @@ theorem relabel_crossingSign (D : OrientedPDCode n)
 
 /-- Relabelling by identity permutations does nothing. -/
 @[simp]
-theorem relabel_refl (D : OrientedPDCode n) :
-    D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
+theorem relabel_one_one (D : OrientedPDCode n) : D.relabel 1 1 = D := by
   apply OrientedPDCode.ext
-  · exact PDCode.relabel_refl D.toPDCode
+  · exact PDCode.relabel_one_one D.toPDCode
   · funext h
-    simp
+    simp [Equiv.Perm.one_def]
   · simp
 
 /-- Consecutive relabellings compose their half-edge and crossing permutations. -/
@@ -627,12 +655,11 @@ def relabel (D : FramedOrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
     (D.relabel half cross).crossinglessFramings = D.crossinglessFramings := by simp [relabel]
 /-- Relabelling by identity permutations does nothing to a framed oriented code. -/
-@[simp] theorem relabel_refl (D : FramedOrientedPDCode n) :
-    D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
+@[simp] theorem relabel_one_one (D : FramedOrientedPDCode n) : D.relabel 1 1 = D := by
   apply FramedOrientedPDCode.ext
   · simp
   · funext h
-    simp
+    simp [Equiv.Perm.one_def]
   · simp
 /-- Consecutive framed relabellings compose their half-edge and crossing permutations. -/
 @[simp]
@@ -750,17 +777,8 @@ theorem orientedPDCodeUnknot_true_ne_false :
 /-- Reflection fixes every zero-crossing oriented PD-code. -/
 @[simp]
 theorem OrientedPDCode.mirror_eq_self_of_zero_crossings (D : OrientedPDCode 0) :
-    D.mirror = D := by
-  rw [orientedPDCode_eq_unlink D]
-  apply OrientedPDCode.ext
-  · apply PDCode.ext
-    · simp
-    · simp
-    · simp
-    · funext i
-      exact Fin.elim0 i
-  · simp
-  · simp
+    D.mirror = D :=
+  OrientedPDCode.ext (by simp) (by simp) (by simp)
 
 /-- A one-crossing positive PD-code whose two exterior arcs join adjacent crossing visits.
 

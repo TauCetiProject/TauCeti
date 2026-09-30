@@ -23,7 +23,9 @@ odd `p` the correction vanishes, so `π` commutes with the bracket in every degr
 is the iterated bracket `[[x, y], x]`, resp. `[[x, y], y]`. These are the counterparts for the
 bracket of the degree-zero additivity defect `π (x + y) = π x + π y + (p choose 2) • [y, x]`
 (`TauCeti.gradedPow_add_zero`), and together with the results away from degree zero they describe
-`π` on the whole graded Lie algebra.
+`π` on the whole graded Lie algebra. The file also records that a degree-zero class brackets
+trivially with its iterated `p`-powers, `[π^j x, x] = 0`
+(`TauCeti.gradedBracket_gradedPowIter_self`).
 
 ## Main results
 
@@ -40,6 +42,8 @@ bracket of the degree-zero additivity defect `π (x + y) = π x + π y + (p choo
 * `TauCeti.gradedPow_gradedBracket_left_zero`, `TauCeti.gradedPow_gradedBracket_left_zero_of_odd`,
   `TauCeti.gradedPow_gradedBracket_zero_zero`: the identities for a bracket `[x, y]` with `y` of
   degree zero, where `π [x, y]` and `[π x, y]` have the same degree and no transport is needed.
+* `TauCeti.gradedBracket_gradedPowIter_self`: `[π^j x, x] = 0` for `x` of degree zero, the class
+  of `⁅g ^ (p ^ j), g⁆ = 1`.
 
 ## References
 
@@ -218,5 +222,18 @@ theorem gradedPow_gradedBracket_zero_zero (x y : gradedPiece p G 0) :
   rw [gradedCast_rfl] at hswap
   rw [← neg_eq_iff_eq_neg] at hswap
   rw [h, ← hswap, smul_neg, neg_add_cancel_right]
+
+/-! ### Brackets with iterated `p`-powers -/
+
+/-- **A degree-zero class brackets trivially with its iterated `p`-powers**: `[π^j x, x] = 0`, since
+it is the class of the commutator `⁅g ^ (p ^ j), g⁆ = 1`. -/
+@[simp]
+theorem gradedBracket_gradedPowIter_self (j : ℕ) (x : gradedPiece p G 0) :
+    gradedBracket p G j 0 (gradedPowIter p G j x) x = 0 := by
+  obtain ⟨g, rfl⟩ := gradedMkZero_surjective x
+  rw [gradedPowIter_gradedMkZero, ← gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero p g⟩,
+    gradedBracket_gradedMk, gradedMk_eq_zero_iff]
+  simp only [commutatorElement_eq_one_iff_commute.mpr (Commute.pow_self g _)]
+  exact one_mem _
 
 end TauCeti

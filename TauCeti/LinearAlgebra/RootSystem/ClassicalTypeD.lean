@@ -34,9 +34,10 @@ constructed directly on the set of squared-length-two vectors and proved involut
 * `TauCeti.DynkinType.typeDSimpleRoot` gives the Bourbaki-numbered simple roots, computed by
   `TauCeti.DynkinType.typeDSimpleRoot_of_add_one_lt` on the chain and by
   `TauCeti.DynkinType.typeDSimpleRoot_of_not_add_one_lt` at the fork.
-* `TauCeti.DynkinType.sum_smul_typeDSimpleRootCoordinates` expands every root in that basis, and
-  `TauCeti.DynkinType.typeDSimpleRootCoordinates_nonneg_or_nonpos` says the expansion has
-  coefficients of one sign.
+* `TauCeti.DynkinType.sum_smul_typeDSimpleRootCoordinates` expands every root in that basis,
+  `TauCeti.DynkinType.typeDSimpleRootCoordinates_eq_of_sum_smul_eq` says the expansion is unique,
+  and `TauCeti.DynkinType.typeDSimpleRootCoordinates_nonneg_or_nonpos` says it has coefficients of
+  one sign.
 * `TauCeti.DynkinType.sum_typeDSimpleRoot` gives their coordinate sums and
   `TauCeti.DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot` their Gram matrix, the Cartan
   matrix `CartanMatrix.D n`.
@@ -50,8 +51,6 @@ constructed directly on the set of squared-length-two vectors and proved involut
 
 The coordinates and numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
 Plate IV, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section 12.1.
-This supplies the classical-root prerequisite for the `Dₙ` branch of “a named datum per valid
-type” in Layer 6 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
 -/
 
 public section
@@ -520,8 +519,8 @@ pairing it against an explicit integral family, twice the fundamental coweights.
 unavoidable — the last two fundamental coweights of type `Dₙ` are not integral vectors — and
 doubling is harmless, since `ℤ` is torsion free. That one family does two jobs: it is a dual family
 for the simple roots up to the factor two, which gives their linear independence, and it exhibits
-the coefficient map as the restriction of a linear map, which gives the action of a reflection on
-the coordinates. -/
+twice the coefficient map as the restriction of a linear map, which gives the action of a
+reflection on the coordinates. -/
 
 /-- Twice the `k`-th fundamental coweight of type `Dₙ`, in classical orthogonal coordinates. The
 last two fundamental coweights of type `Dₙ` are half-integral, so the doubling is what keeps this
@@ -605,6 +604,14 @@ theorem sum_smul_typeDSimpleRootCoordinates (hn : 4 ≤ n) (x : TypeDRoot n) :
   refine sub_eq_zero.mp (hsep _ fun k => ?_)
   rw [dotProduct_sub, typeDDoubleCoweight_dotProduct_sum_smul, two_mul_typeDSimpleRootCoordinates,
     sub_self]
+
+/-- The coefficients of a root in the Bourbaki simple-root basis are unique: any integral expansion
+of the root in the simple roots has the coefficients `typeDSimpleRootCoordinates`. -/
+theorem typeDSimpleRootCoordinates_eq_of_sum_smul_eq (hn : 4 ≤ n) {x : TypeDRoot n}
+    {c : Fin n → ℤ} (h : ∑ i, c i • typeDSimpleRoot n hn i = x.1) :
+    typeDSimpleRootCoordinates n hn x = c :=
+  funext <| Fintype.linearIndependent_iffₛ.mp (linearIndependent_typeDSimpleRoot hn) _ _
+    ((sum_smul_typeDSimpleRootCoordinates hn x).trans h.symm)
 
 /-- The coordinates of the `i`-th simple root are the `i`-th standard basis vector. -/
 @[simp] theorem typeDSimpleRootCoordinates_typeDRootEquiv_apply_typeDSimpleIndex

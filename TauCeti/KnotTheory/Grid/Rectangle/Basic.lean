@@ -79,6 +79,7 @@ namespace TauCeti
 The interior is the product of the clockwise open interval from `left` to `right` with the
 clockwise open interval from `bottom` to `top`. Degenerate side choices are allowed at this
 level; their interiors are empty in the degenerate direction. -/
+@[ext]
 structure GridRectangle (n : ℕ) where
   /-- The initial vertical side of the rectangle. -/
   left : Fin n

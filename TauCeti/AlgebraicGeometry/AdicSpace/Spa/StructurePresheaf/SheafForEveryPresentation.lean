@@ -24,10 +24,13 @@ for any single pair of definition, compatible or not
 
 On rational opens, `presentationLimitRationalIso` identifies the presheaf's values with the
 completed rational localizations, and `presentationLimitRationalIso_inv_comp_map_comp_hom`
-identifies its restrictions with the canonical comparison maps. These rational-open comparisons
-do not themselves identify the presentation-indexed presheaf with Wedhorn's `𝒪_X` on all opens
-or establish independence of the compatible pair of definition. The predicate concerns only the
-presentation-indexed presheaves; it makes no claim about a canonical pair-level structure presheaf.
+identifies its restrictions with the canonical comparison maps. On all opens, when `A⁺` consists
+of power-bounded elements,
+`TauCeti.ValuationSpectrum.presentationLimitPresheafIsoRationalSubsetLimitPresheaf` identifies the
+presentation-indexed presheaf of `P` with Wedhorn's presheaf `V ↦ lim_{U ⊆ V} A⟨U⟩` of limits over
+rational subsets, whose coordinate rings are those of presentations over the same `P`, and
+`isSheaf_presentationLimitPresheaf_iff_isSheaf_rationalSubsetLimitPresheaf` transfers sheafhood
+along it.
 
 ## Main results
 
@@ -62,9 +65,11 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [IsHuberRing A]
 
 /-- The plus ring `Aplus` is a ring of integral elements, and its presentation-indexed limit
-presheaf is a sheaf for every compatible pair of definition. This condition concerns the
-presentation-indexed presheaves, without identifying them with a canonical pair-level structure
-presheaf. -/
+presheaf is a sheaf for every compatible pair of definition. When `A⁺` consists of power-bounded
+elements, that presheaf is isomorphic to the presheaf of limits over rational subsets built from
+the same pair of definition
+(`TauCeti.ValuationSpectrum.presentationLimitPresheafIsoRationalSubsetLimitPresheaf`), so this is
+equivalently the sheaf condition on Wedhorn's presheaf. -/
 structure IsSheafyForEveryPresentation (Aplus : Subring A) : Prop where
   /-- `Aplus` is a ring of integral elements of `A`. -/
   isRingOfIntegralElements : IsRingOfIntegralElements Aplus
