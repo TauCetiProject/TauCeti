@@ -102,6 +102,7 @@ theorem exists_diagonalization_diagonalHasse_finite_support
 
 /-- **Almost-all triviality of the finite Hasse sign.** The Hasse sign of a regular quadratic
 form over a number field is one at all but finitely many finite places. -/
+@[fun_prop]
 theorem _root_.QuadraticForm.hasFiniteMulSupport_finiteHasse
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
