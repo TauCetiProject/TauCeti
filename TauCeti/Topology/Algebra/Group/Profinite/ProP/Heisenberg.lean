@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Heisenberg
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
+public import TauCeti.Topology.Separation.TypeTags
 
 /-!
 # The Heisenberg group over a pro-`p` ring is pro-`p`
@@ -70,15 +71,17 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
     continuous_ofAdd.comp (continuous_x.prodMk continuous_y)
   have hg : Continuous g :=
     continuous_iff.mpr ⟨continuous_const, continuous_const, continuous_toAdd⟩
+  have hker : f.ker = zAxis := by
+    ext a
+    simp [f, mem_zAxis_iff]
   have hgf : ∀ c, g c ∈ f.ker := fun c ↦ by simp [f, g]
   have hsurj : Function.Surjective (g.codRestrict f.ker hgf) := by
     rintro ⟨a, ha⟩
-    have hxy : a.x = 0 ∧ a.y = 0 := by simpa [f] using ha
+    have hxy : a.x = 0 ∧ a.y = 0 :=
+      mem_zAxis_iff.mp (by simpa only [hker] using ha)
     exact ⟨ofAdd a.z, Subtype.ext <| by ext <;> simp [g, hxy]⟩
   have hRR : IsProP p (Multiplicative (R × R)) :=
     (hR.prod hR).of_equiv (ContinuousMulEquiv.prodMultiplicative R R).symm
-  -- Mathlib has no `T2Space` instance for `Multiplicative`; its topology is that of `R × R`.
-  have : T2Space (Multiplicative (R × R)) := inferInstanceAs (T2Space (R × R))
   exact hRR.of_ker_isProP hf (fun c ↦ ⟨⟨c.toAdd.1, c.toAdd.2, 0⟩, by simp [f]⟩)
     (hR.of_surjective _ (hg.subtype_mk hgf) hsurj)
 
