@@ -41,7 +41,7 @@ infinitely many, the reduction by which the non-Dynkin half of Gabriel's theorem
   extension by zero as the arrow itself.
 * `TauCeti.QuiverEmbedding.extendByZeroMap_apply_of_not_exists`: an arrow of `Q` that is not in
   the image acts by zero.
-* `TauCeti.QuiverEmbedding.extendByZeroRep_vertexSpaceEquiv`: the vertex space over an image
+* `TauCeti.QuiverEmbedding.extendByZeroRepVertexSpaceEquiv`: the vertex space over an image
   vertex is linearly equivalent to the original space.
 * `TauCeti.QuiverEmbedding.isZero_extendByZeroRep_obj_of_not_mem_range`: the vertex space outside
   the image is zero.
@@ -166,7 +166,7 @@ theorem extendByZeroRep_obj (v : Q) :
 
 /-- Over an image vertex, the vertex space of the extension by zero is linearly equivalent to the
 original vertex space by evaluation at the unique point of the fiber. -/
-noncomputable def extendByZeroRep_vertexSpaceEquiv (u : Q') :
+noncomputable def extendByZeroRepVertexSpaceEquiv (u : Q') :
     (φ.extendByZeroRep M).obj (φ.obj u : Paths Q) ≃ₗ[k] QuiverRep.vertexSpace k Q' M u := by
   letI : Unique (φ.Fiber (φ.obj u)) :=
     { default := ⟨u, rfl⟩, uniq := fun _ ↦ Subsingleton.elim _ _ }
