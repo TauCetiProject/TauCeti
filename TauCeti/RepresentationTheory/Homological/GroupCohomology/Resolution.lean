@@ -25,7 +25,7 @@ cyclic group.
 
 ## Main results
 
-* `TauCeti.groupCohomologyIso_inv_eq_homologyMap`: the inverse of `groupCohomologyIso A n P` is
+* `TauCeti.Rep.groupCohomologyIso_inv_eq_homologyMap`: the inverse of `groupCohomologyIso A n P` is
   the map on cohomology induced by a comparison map from the bar resolution to `P`.
 
 ## References
@@ -38,7 +38,7 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti
+namespace TauCeti.Rep
 
 universe u
 
@@ -77,4 +77,4 @@ theorem groupCohomologyIso_inv_eq_homologyMap (P : ProjectiveResolution (Rep.tri
     (congrArg (· ≫ _) ((Iso.inv_comp_eq _).2 hext.symm))).trans
       (HomologicalComplex.homologyMap_comp _ _ n).symm
 
-end TauCeti
+end TauCeti.Rep

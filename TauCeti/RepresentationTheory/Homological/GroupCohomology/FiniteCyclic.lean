@@ -366,7 +366,7 @@ private theorem barToPeriodicCochains_f_two_apply (a : A) (v : Fin 2 → G) :
 theorem groupCohomologyπEven_two :
     groupCohomologyπEven A g hg 2 even_two = ModuleCat.ofHom (carryCocycle A g hg) ≫ H2π A := by
   rw [groupCohomologyπEven, groupCohomologyIsoEven]
-  simp only [Iso.trans_inv, TauCeti.groupCohomologyIso_inv_eq_homologyMap A _ _
+  simp only [Iso.trans_inv, TauCeti.Rep.groupCohomologyIso_inv_eq_homologyMap A _ _
     (barToPeriodic_f_zero_comp_π k g hg)]
   rw [HomologicalComplex.alternatingConstHomologyIsoEven, ShortComplex.homologyMapIso_inv,
     HomologicalComplex.homologyMapIso_inv]

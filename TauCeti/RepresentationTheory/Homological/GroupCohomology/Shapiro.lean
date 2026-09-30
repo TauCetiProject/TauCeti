@@ -103,7 +103,7 @@ theorem coindIso_hom (n : ℕ) :
   -- of `S`. The unfolding is taken from `Iso.trans_hom`, not restated and proved by `rfl`:
   -- restated, its `Ext` objects carry fresh instance terms and the kernel unfolds `Ext` to match.
   have e : (coindIso A n).hom = _ := Iso.trans_hom _ _
-  rw [e, Iso.symm_hom, groupCohomologyIso_inv_eq_homologyMap A
+  rw [e, Iso.symm_hom, TauCeti.Rep.groupCohomologyIso_inv_eq_homologyMap A
     ((resFunctor.{u} (k := k) S.subtype).mapProjectiveResolution (barResolution k G))
     (TauCeti.Rep.barComplex.resChainMap S.subtype)
     (TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S.subtype) n]
