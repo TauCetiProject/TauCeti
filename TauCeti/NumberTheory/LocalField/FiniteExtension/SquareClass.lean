@@ -26,7 +26,9 @@ group of a field depends only on the field.
 
 ## Main results
 
-* `TauCeti.card_squareClass_eq_pow_finrank`: the count above.
+* `TauCeti.card_squareClass_eq_four_mul_pow_finrank`: the count above.
+* `TauCeti.natCard_squareClassGroup_eq_four_mul_pow_finrank`: the same count for the additive
+  `TauCeti.SquareClassGroup`.
 
 ## References
 
@@ -46,8 +48,8 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- **The number of square classes of a finite extension.** If `M` is a finite extension of a
 nonarchimedean local field `K` in which `2 ≠ 0`, then `Mˣ ⧸ (Mˣ)²` has
 `4 · (#𝓀[K] ^ v_K(2)) ^ [M : K]` elements. -/
-theorem card_squareClass_eq_pow_finrank (h2 : (2 : K) ≠ 0) (M : Type*) [Field M] [Algebra K M]
-    [Module.Finite K M] :
+theorem card_squareClass_eq_four_mul_pow_finrank (h2 : (2 : K) ≠ 0) (M : Type*) [Field M]
+    [Algebra K M] [Module.Finite K M] :
     Nat.card (MultiplicativeSquareClassGroup M) =
       4 * (Nat.card 𝓀[K] ^ natCastValuation K 2 h2) ^ Module.finrank K M := by
   let _ := finiteExtensionValuativeRel K M
@@ -56,8 +58,16 @@ theorem card_squareClass_eq_pow_finrank (h2 : (2 : K) ≠ 0) (M : Type*) [Field 
   have := finiteExtension_isNonarchimedeanLocalField K M
   have h2M : (2 : M) ≠ 0 := by
     simpa only [map_ofNat] using (map_ne_zero (algebraMap K M)).mpr h2
-  rw [card_squareClass h2M, natCastValuation_eq_ramificationIndex_mul 2 h2 h2M,
+  rw [card_squareClass h2M, natCastValuation_eq_ramificationIndex_mul 2 h2,
     natCard_residueField K M, ← ramificationIndex_mul_inertiaDegree K M]
   ring
+
+/-- **The number of square classes of a finite extension**, read on the additive
+`TauCeti.SquareClassGroup`: `4 · (#𝓀[K] ^ v_K(2)) ^ [M : K]`. -/
+theorem natCard_squareClassGroup_eq_four_mul_pow_finrank (h2 : (2 : K) ≠ 0) (M : Type*) [Field M]
+    [Algebra K M] [Module.Finite K M] :
+    Nat.card (SquareClassGroup M) =
+      4 * (Nat.card 𝓀[K] ^ natCastValuation K 2 h2) ^ Module.finrank K M := by
+  rw [← natCard_multiplicativeSquareClassGroup, card_squareClass_eq_four_mul_pow_finrank h2 M]
 
 end TauCeti

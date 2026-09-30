@@ -24,7 +24,7 @@ the quadratic defect of `a`. For `L = K(√a)`,
 `TauCeti.two_mul_index_quadraticNormSubgroup_mul_card_squareClass` gives
 `2 · (Kˣ : N) · #(Lˣ/(Lˣ)²) = #(Kˣ/(Kˣ)²)²` over any field with `2 ≠ 0`. Over a local field
 `#(Kˣ/(Kˣ)²) = 4 q^{v_K(2)}`, with `q = #𝓀[K]`, and since `[L : K] = 2`,
-`TauCeti.card_squareClass_eq_pow_finrank` gives `#(Lˣ/(Lˣ)²) = 4 q^{2 v_K(2)}`. Hence
+`TauCeti.card_squareClass_eq_four_mul_pow_finrank` gives `#(Lˣ/(Lˣ)²) = 4 q^{2 v_K(2)}`. Hence
 `(Kˣ : N) = 2`.
 
 The sign indicator of an index-two subgroup is a character, so the local Hilbert symbol is
@@ -69,7 +69,7 @@ theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : (2 : K) ≠ 0) 
     (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 := by
   have : Fact (¬IsSquare (a : K)) := ⟨isSquare_units_val_iff.not.mpr ha⟩
   have h := two_mul_index_quadraticNormSubgroup_mul_card_squareClass a h2
-  rw [card_squareClass_eq_pow_finrank h2, QuadraticAlgebra.finrank_eq_two,
+  rw [card_squareClass_eq_four_mul_pow_finrank h2, QuadraticAlgebra.finrank_eq_two,
     card_squareClass h2] at h
   -- `h` reads `2 · (Kˣ : N) · 4 Q² = (4 Q)²` with `Q = q ^ v_K(2) > 0`.
   have hq : 0 < Nat.card 𝓀[K] := Nat.card_pos

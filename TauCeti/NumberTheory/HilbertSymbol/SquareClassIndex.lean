@@ -129,8 +129,10 @@ private theorem natCard_ker_multiplicativeSquareClassMap (h2 : (2 : K) ≠ 0) :
           ((QuotientGroup.eq_one_iff _).mp hy) with hc | hc
       · rw [(QuotientGroup.eq_one_iff (N := Subgroup.square Kˣ) c).mpr hc]
         exact one_mem _
-      · rw [show (c : MultiplicativeSquareClassGroup K) = x from
-          ((QuotientGroup.eq (s := Subgroup.square Kˣ)).mpr hc).symm]
+      · -- `c⁻¹ * a` is a square, so `c` and `a` have the same square class `x`.
+        have hcx : (c : MultiplicativeSquareClassGroup K) = x :=
+          ((QuotientGroup.eq (s := Subgroup.square Kˣ)).mpr hc).symm
+        rw [hcx]
         exact Subgroup.mem_zpowers x
     · rw [Subgroup.zpowers_le, MonoidHom.mem_ker, RingHom.multiplicativeSquareClassMap_mk]
       -- `a` is the square of the square-root generator `√a = ⟨0, 1⟩` of `K(√a)`.
