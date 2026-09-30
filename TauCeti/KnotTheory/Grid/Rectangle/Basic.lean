@@ -176,6 +176,16 @@ theorem mem_interior (p : Fin n × Fin n) :
     p ∈ R.interior ↔ p.1 ∈ R.columnInterior ∧ p.2 ∈ R.rowInterior := by
   simp [interior]
 
+/-- A point on the initial side column is not in the interior. -/
+theorem notMem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left) :
+    p ∉ R.interior :=
+  fun h ↦ R.left_notMem_columnInterior (hp ▸ ((R.mem_interior p).1 h).1)
+
+/-- A point on the terminal side column is not in the interior. -/
+theorem notMem_interior_of_fst_eq_right {p : Fin n × Fin n} (hp : p.1 = R.right) :
+    p ∉ R.interior :=
+  fun h ↦ R.right_notMem_columnInterior (hp ▸ ((R.mem_interior p).1 h).1)
+
 /-- A coordinate pair lies in the rectangle interior exactly when its column and row lie in
 the corresponding open cyclic intervals. -/
 theorem mk_mem_interior (c r : Fin n) :
@@ -288,6 +298,13 @@ theorem isEmptyFor_iff_forall_notMem_cIoo (x : GridState n) :
   · intro h p hp hc
     exact hp ▸ h p.1 hc
 
+/-- A rectangle whose terminal side is the cyclic successor of its initial side is empty for every
+grid state: no column lies strictly between two cyclically consecutive ones. -/
+theorem isEmptyFor_of_right_eq_finRotate (x : GridState n) (h : R.right = finRotate n R.left) :
+    R.IsEmptyFor x := by
+  rw [isEmptyFor_iff_forall_notMem_cIoo, h, Grid.cIoo_finRotate_eq_empty]
+  exact fun c hc => absurd hc (Finset.notMem_empty c)
+
 /-- In a grid of size at most two, every toroidal rectangle is empty for every grid state. -/
 theorem isEmptyFor_of_le_two (hn : n ≤ 2) (R : GridRectangle n) (x : GridState n) :
     R.IsEmptyFor x := by
@@ -299,7 +316,7 @@ points of the first state on those columns are known to lie outside the rectangl
 point of the first state is a point of the second. -/
 theorem isEmptyFor_of_eq_away {u v : GridState n} (a b : Fin n)
     (ha : (a, u a) ∉ R.interior) (hb : (b, u b) ∉ R.interior)
-    (haway : ∀ p : Fin n × Fin n, p.1 ≠ a → p.1 ≠ b → (p ∈ u.pointSet ↔ p ∈ v.pointSet))
+    (haway : ∀ p : Fin n × Fin n, p.1 ≠ a → p.1 ≠ b → p ∈ u.pointSet → p ∈ v.pointSet)
     (hv : R.IsEmptyFor v) : R.IsEmptyFor u := by
   rw [R.isEmptyFor_iff]
   intro p hp hmem
@@ -310,7 +327,7 @@ theorem isEmptyFor_of_eq_away {u v : GridState n} (a b : Fin n)
   by_cases hpb : p.1 = b
   · apply hb
     simpa [hpb, ← hpu] using hmem
-  exact (R.isEmptyFor_iff v).mp hv p ((haway p hpa hpb).mp hp) hmem
+  exact (R.isEmptyFor_iff v).mp hv p (haway p hpa hpb hp) hmem
 
 /-- A rectangle avoids the markings of a grid diagram when none of the squares it covers
 carries an `O` or `X` marking. -/
@@ -349,6 +366,7 @@ theorem avoidsMarkings_iff_forall (G : GridDiagram n) :
 
 /-- Marking avoidance is unchanged by swapping the `O` and `X` markings, since it only refers to
 the union of the two marking sets. -/
+@[simp]
 theorem avoidsMarkings_swapMarkings (G : GridDiagram n) :
     R.AvoidsMarkings G.swapMarkings ↔ R.AvoidsMarkings G := by
   rw [avoidsMarkings_iff, avoidsMarkings_iff, GridDiagram.swapMarkings_OSet,
@@ -402,6 +420,22 @@ covered by the original rectangle. -/
 theorem coveredSquares_transpose : R.transpose.coveredSquares = R.coveredSquares.image Prod.swap :=
   (Finset.image_swap_product _ _).symm
 
+/-- The diagonal reflection preserves emptiness: the reflected rectangle is empty for the reflected
+state exactly when the rectangle is empty for the state. -/
+@[simp]
+theorem isEmptyFor_transpose (x : GridState n) :
+    R.transpose.IsEmptyFor x.transpose ↔ R.IsEmptyFor x := by
+  rw [IsEmptyFor, IsEmptyFor, R.interior_transpose, x.transpose_pointSet,
+    Finset.disjoint_image Prod.swap_injective]
+
+/-- The diagonal reflection preserves marking avoidance: the reflected rectangle avoids the
+markings of the reflected diagram exactly when the rectangle avoids those of the diagram. -/
+@[simp]
+theorem avoidsMarkings_transpose (G : GridDiagram n) :
+    R.transpose.AvoidsMarkings G.transpose ↔ R.AvoidsMarkings G := by
+  rw [AvoidsMarkings, AvoidsMarkings, R.coveredSquares_transpose, G.transpose_OSet,
+    G.transpose_XSet, ← Finset.image_union, Finset.disjoint_image Prod.swap_injective]
+
 end GridRectangle
 
 /-- An oriented toroidal rectangle from one grid state to another.
@@ -448,6 +482,12 @@ theorem card_sideColumns (R : GridRectangleBetween x y) : R.sideColumns.card = 2
 theorem sidePair_injective :
     Function.Injective fun R : GridRectangleBetween x y => (R.left, R.right) :=
   fun _ _ h ↦ GridRectangleBetween.ext (Prod.ext_iff.1 h).1 (Prod.ext_iff.1 h).2
+
+/-- A rectangle between two fixed grid states is determined by its initial side column alone: the
+exchange condition `y R.left = x R.right` fixes the terminal one. -/
+theorem left_injective : Function.Injective fun R : GridRectangleBetween x y => R.left :=
+  fun R S h ↦ GridRectangleBetween.ext h
+    (x.toPerm.injective (R.map_left.symm.trans ((congrArg y h).trans S.map_left)))
 
 /-- An oriented rectangle between two grid states has decidable equality: it is determined by its
 ordered pair of side columns, which has decidable equality. -/
@@ -765,25 +805,8 @@ theorem isEmpty_iff_forall_notMem_cIoo :
 
 /-- A rectangle between states whose terminal side is the cyclic successor of its initial side
 is empty: no column lies strictly between two cyclically consecutive ones. -/
-theorem isEmpty_of_right_eq_finRotate (h : R.right = finRotate n R.left) : R.IsEmpty := by
-  rw [isEmpty_iff_forall_notMem_cIoo, h, Grid.cIoo_finRotate_eq_empty]
-  exact fun c hc => absurd hc (Finset.notMem_empty c)
-
-/-- A point on the initial side column is not in the interior of the associated rectangle. -/
-theorem notMem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left) :
-    p ∉ R.toGridRectangle.interior := by
-  intro hpR
-  have hpcol := (R.toGridRectangle.mem_interior p).mp hpR |>.1
-  rw [hp] at hpcol
-  exact R.toGridRectangle.left_notMem_columnInterior hpcol
-
-/-- A point on the terminal side column is not in the interior of the associated rectangle. -/
-theorem notMem_interior_of_fst_eq_right {p : Fin n × Fin n} (hp : p.1 = R.right) :
-    p ∉ R.toGridRectangle.interior := by
-  intro hpR
-  have hpcol := (R.toGridRectangle.mem_interior p).mp hpR |>.1
-  rw [hp] at hpcol
-  exact R.toGridRectangle.right_notMem_columnInterior hpcol
+theorem isEmpty_of_right_eq_finRotate (h : R.right = finRotate n R.left) : R.IsEmpty :=
+  R.toGridRectangle.isEmptyFor_of_right_eq_finRotate x h
 
 /-- A rectangle between states is empty exactly when no target-state point lies in its
 interior. -/
@@ -793,17 +816,17 @@ theorem isEmpty_iff_target :
   constructor
   · intro h p hp
     by_cases hleft : p.1 = R.left
-    · exact R.notMem_interior_of_fst_eq_left hleft
+    · exact R.toGridRectangle.notMem_interior_of_fst_eq_left hleft
     by_cases hright : p.1 = R.right
-    · exact R.notMem_interior_of_fst_eq_right hright
+    · exact R.toGridRectangle.notMem_interior_of_fst_eq_right hright
     exact h p ((R.mem_target_pointSet_iff_of_ne hleft hright).mp hp)
   · intro h p hp hpR
     have hleft : p.1 ≠ R.left := by
       intro hcol
-      exact R.notMem_interior_of_fst_eq_left hcol hpR
+      exact R.toGridRectangle.notMem_interior_of_fst_eq_left hcol hpR
     have hright : p.1 ≠ R.right := by
       intro hcol
-      exact R.notMem_interior_of_fst_eq_right hcol hpR
+      exact R.toGridRectangle.notMem_interior_of_fst_eq_right hcol hpR
     exact h p ((R.mem_target_pointSet_iff_of_ne hleft hright).mpr hp) hpR
 
 /-- The target state has no point in the interior of an empty rectangle between states. -/
@@ -1021,11 +1044,12 @@ theorem interior_transpose (R : GridRectangleBetween x y) :
   exact R.toGridRectangle.interior_transpose
 
 /-- The diagonal reflection preserves emptiness of a rectangle between grid states. -/
+@[simp]
 theorem isEmpty_transpose (R : GridRectangleBetween x y) :
     R.transpose.IsEmpty ↔ R.IsEmpty := by
-  unfold GridRectangleBetween.IsEmpty GridRectangle.IsEmptyFor
-  rw [interior_transpose, GridState.transpose_pointSet,
-    Finset.disjoint_image Prod.swap_injective]
+  rw [isEmpty_iff_toGridRectangle_isEmptyFor, isEmpty_iff_toGridRectangle_isEmptyFor,
+    transpose_toGridRectangle]
+  exact R.toGridRectangle.isEmptyFor_transpose x
 
 /-- The squares covered by the reflected rectangle are the diagonal reflections of the squares
 covered by the original rectangle. This is the oriented-rectangle corollary of
@@ -1037,14 +1061,16 @@ theorem coveredSquares_transpose (R : GridRectangleBetween x y) :
   exact R.toGridRectangle.coveredSquares_transpose
 
 /-- The diagonal reflection preserves marking avoidance of a rectangle between grid states. -/
+@[simp]
 theorem avoidsMarkings_transpose (G : GridDiagram n) (R : GridRectangleBetween x y) :
     R.transpose.AvoidsMarkings G.transpose ↔ R.AvoidsMarkings G := by
-  unfold GridRectangleBetween.AvoidsMarkings GridRectangle.AvoidsMarkings
-  rw [coveredSquares_transpose, G.transpose_OSet, G.transpose_XSet, ← Finset.image_union,
-    Finset.disjoint_image Prod.swap_injective]
+  unfold GridRectangleBetween.AvoidsMarkings
+  rw [transpose_toGridRectangle]
+  exact R.toGridRectangle.avoidsMarkings_transpose G
 
 /-- Swapping the `O` and `X` markings preserves marking avoidance of a rectangle between grid
 states. -/
+@[simp]
 theorem avoidsMarkings_swapMarkings (G : GridDiagram n) (R : GridRectangleBetween x y) :
     R.AvoidsMarkings G.swapMarkings ↔ R.AvoidsMarkings G :=
   R.toGridRectangle.avoidsMarkings_swapMarkings G

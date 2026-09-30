@@ -88,18 +88,9 @@ theorem right_apply_ne : y R.right ≠ x R.right :=
 two side columns are exactly the two columns where `x` and `y` differ, which are `R.left` and
 `R.right`, so its ordered side pair is one of the two orderings of that pair. -/
 theorem eq_or_eq_swapSides (S : GridRectangleBetween x y) : S = R ∨ S = R.swapSides := by
-  have hSl := (R.apply_ne_iff S.left).mp S.left_apply_ne
-  have hSr := (R.apply_ne_iff S.right).mp S.right_apply_ne
-  rcases hSl with hSl | hSl
-  · refine Or.inl (GridRectangleBetween.ext hSl ?_)
-    rcases hSr with hSr | hSr
-    · exact absurd (hSl.trans hSr.symm) S.left_ne_right
-    · exact hSr
-  · refine Or.inr (GridRectangleBetween.ext ?_ ?_)
-    · rw [swapSides_left]; exact hSl
-    · rcases hSr with hSr | hSr
-      · rw [swapSides_right]; exact hSr
-      · exact absurd (hSl.trans hSr.symm) S.left_ne_right
+  rcases (R.apply_ne_iff S.left).mp S.left_apply_ne with hSl | hSl
+  · exact Or.inl (GridRectangleBetween.left_injective hSl)
+  · exact Or.inr (GridRectangleBetween.left_injective (by simpa only [swapSides_left] using hSl))
 
 /-- The oriented rectangles between two states are contained in the pair `{R, R.swapSides}`. -/
 theorem all_subset_pair : all x y ⊆ {R, R.swapSides} := by

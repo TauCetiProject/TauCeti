@@ -31,6 +31,8 @@ explicit.
 
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent`: `A°° ⊆ A⁺` for
   every ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
+  ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.Pair.powerBounded`: `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
@@ -100,6 +102,28 @@ theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [Nonarchimedean
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus :=
   have := h.isIntegrallyClosedIn
   mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn h.isOpen ha
+
+omit [IsTopologicalRing A] in
+/-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
+integral elements. -/
+theorem IsRingOfIntegralElements.map {B : Type*} [CommRing B] [TopologicalSpace B]
+    [NonarchimedeanRing A] [NonarchimedeanRing B] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) : IsRingOfIntegralElements (Aplus.map (e : A →+* B)) where
+  isOpen := by
+    rw [Subring.map_equiv_eq_comap_symm, Subring.coe_comap]
+    exact h.isOpen.preimage he'
+  isIntegrallyClosedIn := by
+    refine Subring.isIntegrallyClosedIn_iff.mpr fun x hx ↦ ?_
+    -- `e.symm x` is integral over `A⁺`, through the restriction of `e.symm` to the plus rings
+    have hx' : IsIntegral Aplus (e.symm x) := hx.map_of_comp_eq
+      ((e.symm : B →+* A).restrict _ Aplus fun _ hy ↦ Subring.mem_map_equiv.mp hy)
+      (e.symm : B →+* A) (RingHom.ext fun _ ↦ rfl)
+    exact ⟨e.symm x, Subring.isIntegrallyClosedIn_iff.mp h.isIntegrallyClosedIn hx',
+      e.apply_symm_apply x⟩
+  le_powerBoundedSubring := by
+    rw [← map_powerBoundedSubring e he he']
+    exact (Subring.gc_map_comap _).monotone_l h.le_powerBoundedSubring
 
 variable (A) in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the

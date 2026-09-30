@@ -290,8 +290,8 @@ theorem injective_presentationLimitMap_inf_laurentCoverOpen
       (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
     (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
     (locOpensComap_inf_laurentCoverOpen P Aplus T s _ hden f) (fun _ ↦ le_top)
-    (injective_presentationLimitMap_laurentCoverOpen _ (fun _ hb ↦ mem_powerBoundedSubring.mp
-      (completedPlusSubring_le_powerBoundedSubring P Aplus hAplus T s _ hden hb)) _)
+    (injective_presentationLimitMap_laurentCoverOpen _
+      (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _)
 
 /-- **Wedhorn's Lemma 8.33 on a rational subset, gluing.** Let `A` be a strongly noetherian Tate
 ring, `A⁺` a subring of power-bounded elements, `R(T/s)` a rational subset of `Spa(A, A⁺)` and
@@ -334,8 +334,7 @@ theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen
       (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
     (locOpensComap_spaBasicOpen_self P Aplus T s _ hden) hU hO (fun _ ↦ le_top) inf_le_left
     inf_le_right (exists_presentationLimitMap_eq_of_laurentCoverOpen _
-      (fun _ hb ↦ mem_powerBoundedSubring.mp
-        (completedPlusSubring_le_powerBoundedSubring P Aplus hAplus T s _ hden hb)) _) x hx
+      (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _) x hx
 
 /-- **Wedhorn's Lemma 8.33 on a rational subset, degree-one surjectivity.** Let `A` be a strongly
 noetherian Tate ring, `A⁺` a subring of power-bounded elements, `R(T/s)` a rational subset of
@@ -377,8 +376,7 @@ theorem surjective_presentationLimitMap_sub_inf_laurentCoverOpen
     (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
       (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left) hU hO inf_le_left
     inf_le_right (surjective_presentationLimitMap_sub_laurentCoverOpen _
-      (fun _ hb ↦ mem_powerBoundedSubring.mp
-        (completedPlusSubring_le_powerBoundedSubring P Aplus hAplus T s _ hden hb)) _)
+      (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _)
 
 end Rational
 

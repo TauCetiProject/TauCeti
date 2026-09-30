@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.LocalizationTopology.CompleteSeparated.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 public import TauCeti.RingTheory.Huber.Uniform
 
@@ -20,8 +21,11 @@ is covered by the numerator set `insert s T`, which has the same ring `A₀[T/s]
 `TauCeti.Huber.PairOfDefinition.locSubring_insert_eq_of_divBy_mem` (as `s/s = 1`).
 
 The definition quantifies over pairs of definition because the current construction of
-`A⟨T/s⟩` uses one to present its topology.  It does not involve a ring of integral elements:
-stable uniformity is a property of the underlying Tate ring, not of the choice of plus ring.
+`A⟨T/s⟩` uses one to present its topology.  The ring `A⟨T/s⟩` does not depend on that choice
+(`TauCeti.Huber.PairOfDefinition.completionLocObj_congr_pairOfDefinition`), so the rational
+localizations over a single pair of definition already decide stable uniformity.  The definition
+does not involve a ring of integral elements: stable uniformity is a property of the underlying
+Tate ring, not of the choice of plus ring.
 
 The definition needs no completeness or separation hypothesis on `A`, since each `A⟨T/s⟩` is
 itself a separated completion.  When `A` is complete and Hausdorff, the trivial rational
@@ -37,6 +41,8 @@ the Buzzard–Verberkmoes sheafiness criterion.
 ## Main results
 
 * `TauCeti.Huber.isStablyUniform_iff`: the defining property, exposed as an equivalence.
+* `TauCeti.Huber.isStablyUniform_iff_forall_isUniform_completionLocObj`: it suffices to check the
+  rational localizations over one pair of definition.
 * `TauCeti.Huber.IsStablyUniform.isUniform`: a stably uniform complete Hausdorff Tate ring is
   uniform.
 
@@ -82,6 +88,25 @@ theorem isStablyUniform_iff : IsStablyUniform A ↔
       IsUniform (UniformSpace.Completion (Localization.Away s)) :=
   ⟨fun h ↦ h.isUniform_rationalLocalization,
     fun h ↦ ⟨fun P T s hT ↦ h P T s hT⟩⟩
+
+variable {A} in
+/-- **One pair of definition suffices**: for any fixed pair of definition `P`, a Tate ring is
+stably uniform exactly when its admissible completed rational localizations `A⟨T/s⟩` over `P`
+are uniform. Unlike `isStablyUniform_iff`, which ranges over all pairs of definition, the
+localizations here are the bundled objects `P.completionLocObj` of
+`CompleteSeparatedTopCommRingCat`, so uniformity can be moved along isomorphisms of these objects
+with `CategoryTheory.Iso.isUniform_iff`. -/
+theorem isStablyUniform_iff_forall_isUniform_completionLocObj (P : PairOfDefinition A) :
+    IsStablyUniform A ↔ ∀ (T : Finset A) (s : A) (hT : IsOpen (Ideal.span (T : Set A) : Set A)),
+      IsUniform (P.completionLocObj T s (Localization.Away s)
+        (P.hasDenominatorPower_of_isOpen_span T s _ hT)) := by
+  rw [isStablyUniform_iff]
+  refine ⟨fun h T s hT ↦ P.completionLocObj_obj T s (Localization.Away s) _ ▸ h P T s hT,
+    fun h P' T s hT ↦ ?_⟩
+  -- the same rational localization, presented over `P`
+  have hP := h T s hT
+  rwa [P.completionLocObj_congr_pairOfDefinition P' _ _ _ _
+    (P'.hasDenominatorPower_of_isOpen_span T s _ hT), P'.completionLocObj_obj] at hP
 
 /-- A stably uniform complete Hausdorff Tate ring is uniform.  This is stable uniformity applied to
 the trivial rational localization `A⟨{1}/1⟩`, transported back along its canonical topological
