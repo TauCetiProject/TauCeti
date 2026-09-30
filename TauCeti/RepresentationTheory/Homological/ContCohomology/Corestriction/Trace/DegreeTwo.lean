@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 # Corestriction through the coinduced trace in degree two
 
 For an open subgroup `U` of a profinite group `G`, the trace `Coind_U^G M → M` induces the same
-map on second cohomology as the inverse of Shapiro's isomorphism followed by corestriction. Thus
+map on second cohomology as Shapiro's isomorphism followed by corestriction. Thus
 degree-two corestriction `TauCeti.ContCohomology.explicitCor2` can be computed by inverse Shapiro
 followed by the coefficient map of the trace, exactly as in degrees zero and one.
 

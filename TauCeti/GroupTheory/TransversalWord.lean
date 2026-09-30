@@ -167,7 +167,11 @@ it sends `(t x)⁻¹ * γ` to the transversal word `ℓᵗ_x(γ)`
 noncomputable def factorizationTransversal (x : G ⧸ U) : G :=
   x.out * (w x.out⁻¹ : G)
 
+theorem factorizationTransversal_def (x : G ⧸ U) :
+    factorizationTransversal w x = x.out * (w x.out⁻¹ : G) := (rfl)
+
 /-- The adapted transversal picks a representative of every coset. -/
+@[simp]
 theorem factorizationTransversal_mk (x : G ⧸ U) :
     (QuotientGroup.mk (factorizationTransversal w x) : G ⧸ U) = x := by
   rw [factorizationTransversal, QuotientGroup.mk_mul_of_mem _ (w _).2, QuotientGroup.out_eq']
