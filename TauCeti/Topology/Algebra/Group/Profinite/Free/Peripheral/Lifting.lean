@@ -100,19 +100,6 @@ theorem level_antitone (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) :
   intro m n hmn cd hcd
   exact closedLowerCentralSeries_antitone hmn hcd
 
-private theorem gradedMkZero_conj_padicPow (hF : IsProP p F) (y c : F) (u : ℤ_[p]) :
-    letI := hF.gradedPieceModule 0 0
-    gradedMkZero 0 F (c⁻¹ * hF.padicPow y u * c) =
-      u • gradedMkZero 0 F y := by
-  let _ := hF.gradedPieceModule 0 0
-  calc
-    gradedMkZero 0 F (c⁻¹ * hF.padicPow y u * c) =
-        gradedMkZero 0 F (hF.padicPow y u) := by
-      simp
-    _ = u • gradedMkZero 0 F y := by
-      simpa only [gradedMk_zero] using
-        hF.gradedMk_padicPow ⟨y, mem_pLowerCentralSeries_zero 0 y⟩ u
-
 /-- Every choice of conjugators is in the first peripheral level.  In the topological
 abelianization, conjugation disappears, `p`-adic powers become scalar multiplication, and the
 classes of the family and its cusp sum to zero. -/
@@ -141,7 +128,7 @@ theorem level_one_eq_univ (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) :
     exact gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero 0 g⟩
   rw [defect, gradedMkZero_mul, hprod, List.map_ofFn,
     Function.comp_def]
-  simp_rw [gradedMkZero_conj_padicPow hF]
+  simp only [gradedMkZero_mul, gradedMkZero_inv, hF.gradedMkZero_padicPow, neg_add_cancel_comm]
   have hsum : (List.ofFn fun i ↦ u • gradedMkZero 0 F (x i)).sum =
       u • (List.ofFn fun i ↦ gradedMkZero 0 F (x i)).sum := by
     rw [List.ofFn_eq_map, List.ofFn_eq_map]
@@ -223,7 +210,8 @@ private theorem gradedMk_commutator_inv_conj_padicPow_inv
         (⟨(c⁻¹ * hF.padicPow y u * c)⁻¹,
           mem_pLowerCentralSeries_zero 0 (c⁻¹ * hF.padicPow y u * c)⁻¹⟩ :
             pLowerCentralSeries 0 F 0) q⁻¹,
-        gradedMk_zero, gradedMkZero_inv, gradedMkZero_conj_padicPow hF, gradedMk_inv]
+        gradedMk_zero, gradedMkZero_inv, gradedMkZero_mul, gradedMkZero_mul, gradedMkZero_inv,
+        hF.gradedMkZero_padicPow, neg_add_cancel_comm, gradedMk_inv]
       simp only [map_neg, AddMonoidHom.neg_apply, neg_neg, hF.gradedBracket_smul_left]
 
 /-- A pair of conjugators whose defect lies in `γ_n`, for positive `n`, can be corrected so that

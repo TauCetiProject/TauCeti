@@ -23,8 +23,8 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
 
 ## Main results
 
-* `TauCeti.IsProP.gradedMk_padicPow`: a `p`-adic power becomes scalar multiplication on a graded
-  piece.
+* `TauCeti.IsProP.gradedMk_padicPow`, `TauCeti.IsProP.gradedMkZero_padicPow`: a `p`-adic power
+  becomes scalar multiplication on a graded piece.
 * `TauCeti.IsProP.mk_commutatorElement_padicPow_left`,
   `TauCeti.IsProP.mk_commutatorElement_padicPow_right`: modulo `λ_{j+k+2}`, a `p`-adic power in
   either input of a commutator is the same power of the commutator.
@@ -91,6 +91,14 @@ theorem IsProP.gradedMk_padicPow (hG : IsProP p G) {q n : ℕ}
     u • Additive.ofMul (QuotientGroup.mk x : R ⧸ N)
   rw [← hpow]
   exact hR.ofMul_mk_padicPow_quotient N x u
+
+/-- In a pro-`p` group, the degree-zero class of a `p`-adic power is the corresponding
+`ℤ_p`-scalar multiple. -/
+@[simp]
+theorem IsProP.gradedMkZero_padicPow (hG : IsProP p G) (q : ℕ) (x : G) (u : ℤ_[p]) :
+    letI := hG.gradedPieceModule q 0
+    gradedMkZero q G (hG.padicPow x u) = u • gradedMkZero q G x := by
+  simpa only [gradedMk_zero] using hG.gradedMk_padicPow ⟨x, mem_pLowerCentralSeries_zero q x⟩ u
 
 /-- Modulo `λ_{j+k+2}`, taking a `p`-adic power in the left input of a commutator is the same
 as taking that power of the commutator. -/
