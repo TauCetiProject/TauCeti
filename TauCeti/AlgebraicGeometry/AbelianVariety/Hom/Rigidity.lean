@@ -82,12 +82,6 @@ noncomputable def equivPointed (A B : AbelianVariety K) :
   left_inv _ := toOverHom_injective (toOverHom_mk' _ _ _)
   right_inv _ := Subtype.ext (toOverHom_mk' _ _ _)
 
-/-- The pointed morphism underlying a homomorphism is its morphism over `Spec K`. -/
-@[simp]
-lemma coe_equivPointed_apply {A B : AbelianVariety K} (f : A ⟶ B) :
-    (equivPointed A B f : A.toOver ⟶ B.toOver) = toOverHom f :=
-  (rfl)
-
 /-- The homomorphism attached to a pointed morphism has that morphism as its morphism over
 `Spec K`. -/
 @[simp]
@@ -97,6 +91,12 @@ lemma toOverHom_equivPointed_symm_apply {A B : AbelianVariety K}
   toOverHom_mk' _ _ _
 
 end Hom
+
+/-- The pointed morphism underlying a homomorphism is its morphism over `Spec K`. -/
+@[simp]
+lemma coe_equivPointed_apply {A B : AbelianVariety K} (f : A ⟶ B) :
+    (Hom.equivPointed A B f : A.toOver ⟶ B.toOver) = Hom.toOverHom f :=
+  by simp [Hom.equivPointed]
 
 end AbelianVariety
 
