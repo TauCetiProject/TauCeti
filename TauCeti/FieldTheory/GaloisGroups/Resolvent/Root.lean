@@ -96,6 +96,11 @@ variable {F : Type u} [Field F] {E : Type v} [Field E] [Algebra F E] {f : F[X]} 
 /-- The roots of `f` in `E`, enumerated by `Fin n` through a numbering `e` of the root set. -/
 private def rootEnum (e : f.rootSet E ≃ Fin n) (i : Fin n) : E := (e.symm i : f.rootSet E)
 
+omit [Fact ((f.map (algebraMap F E)).Splits)] in
+private theorem rootEnum_def (e : f.rootSet E ≃ Fin n) :
+    rootEnum e = fun i => ((e.symm i : f.rootSet E) : E) :=
+  (rfl)
+
 -- An automorphism of `E` over `F` moves the numbered roots by the permutation of `Fin n` that
 -- its restriction to the Galois group of `f` induces.
 private theorem rootEnum_comp_permCongrHom (e : f.rootSet E ≃ Fin n) (ϕ : E ≃ₐ[F] E) :
@@ -371,6 +376,14 @@ private noncomputable def cosetValueEquiv (hf : f.Monic) (hsep : f.Separable)
         (aeval_eq_zero_of_mem_rootSet x.2)
       exact ⟨c, Subtype.ext hc⟩⟩
 
+-- The value of the root represented by a coset is its coset value.
+omit [Fact ((f.map (algebraMap F E)).Splits)] in
+private theorem coe_cosetValueEquiv (hf : f.Monic) (hsep : f.Separable)
+    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
+    (hres : (spec.specialize F f).Separable) (c : Equiv.Perm (Fin n) ⧸ spec.H) :
+    (cosetValueEquiv spec hf hsep hdeg e hres c : E) = cosetValue spec e c :=
+  (rfl)
+
 -- This bijection preserves the orbit relation, by the minimal-polynomial descriptions.
 private theorem cosetValueEquiv_orbitRel [Normal F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
@@ -428,8 +441,8 @@ theorem orbitQuotientEquivFactors_apply_mk [Normal F E] (hf : f.Monic) (hsep : f
           (MvPolynomial.rename ⇑τ spec.Φ)) := by
   have : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) :=
     ⟨splits_specialize spec hf hsep hdeg e⟩
-  rw [orbitQuotientEquivFactors_mk, TauCeti.orbitQuotientEquivFactors_apply_mk]
-  rfl
+  rw [orbitQuotientEquivFactors_mk, TauCeti.orbitQuotientEquivFactors_apply_mk,
+    coe_cosetValueEquiv, cosetValue_mk, rootEnum_def]
 
 /-- A factor corresponds to the orbit of the coset of `τ` exactly when it is the minimal
 polynomial of the value at the roots of `f` of the invariant renamed along `τ`. -/
