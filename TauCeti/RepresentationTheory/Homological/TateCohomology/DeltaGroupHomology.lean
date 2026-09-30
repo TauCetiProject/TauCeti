@@ -22,14 +22,10 @@ and computes the connecting map `\hat{H}^{-1}(G, X₃) ⟶ \hat{H}^0(G, X₁)`, 
 junction of the Tate complex, on representatives.
 
 The comparison `TauCeti.TateCohomology.toGroupHomology : \hat{H}^{-(n+1)}(G, M) ⟶ Hₙ(G, M)` is
-induced by the identity in negative degrees, from the Tate complex to the complex of inhomogeneous
-chains reindexed by `n ↦ -(n+1)` and extended by zero to the nonnegative degrees. It is
-`negSuccIso` for `n > 0` and the inclusion of `\hat{H}^{-1}(G, M)` into `H₀(G, M)` for `n = 0`; in
-particular it is injective in every degree. It commutes with the connecting maps because the
-connecting maps of an extended sequence are those of the original one
-(`CategoryTheory.ShortComplex.ShortExact.extend_δ_comp_extendHomologyIso_hom`). This is how Tate
-restriction, which is the transfer of group homology in negative degrees, is shown to commute with
-the connecting maps there.
+`negSuccIso` for `n > 0` and the inclusion of `\hat{H}^{-1}(G, M)` into `H₀(G, M)` for `n = 0`.
+It is injective, natural in `M`, and commutes with the connecting maps. These properties allow Tate
+restriction, which is the transfer of group homology in negative degrees, to be compared with the
+connecting maps there.
 
 ## Main definitions
 
@@ -37,6 +33,8 @@ the connecting maps there.
 
 ## Main results
 
+* `TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_toGroupHomology`: the comparison is natural
+  in the coefficient representation.
 * `TauCeti.TateCohomology.δ_comp_toGroupHomology`: the comparison commutes with the connecting maps.
 * `TauCeti.TateCohomology.toGroupHomology_eq_negSuccIso_hom`,
   `TauCeti.TateCohomology.HNegOneπ_comp_toGroupHomology`: the comparison is `negSuccIso` for
@@ -159,6 +157,7 @@ private theorem homologyMap_toExtendChainsApp_comp_extendHomologyIso_hom (M : Re
     (restrictionXIso_inv_comp_restrictionLEIso_hom_f M n).symm)
 
 /-- For `n > 0` the comparison with group homology is `negSuccIso`. -/
+@[simp]
 theorem toGroupHomology_eq_negSuccIso_hom (M : Rep R G) (n : ℕ) [NeZero n] :
     toGroupHomology M n = (negSuccIso M n).hom :=
   (homologyMap_toExtendChainsApp_comp_extendHomologyIso_hom M n).trans (negSuccIso_hom M n).symm
@@ -192,7 +191,7 @@ private theorem H0CyclesIso_inv_comp_iCycles (M : Rep R G) :
 
 /-- In degree `-1` the comparison with group homology sends the class of a norm-zero element to its
 class in `H₀(G, M)`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem HNegOneπ_comp_toGroupHomology (M : Rep R G) :
     HNegOneπ M ≫ toGroupHomology M 0 =
       ModuleCat.ofHom (LinearMap.ker M.ρ.norm).subtype ≫ groupHomology.H0π M := by
@@ -215,6 +214,37 @@ theorem HNegOneπ_comp_toGroupHomology (M : Rep R G) :
     exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans (HNegOneCyclesIso_inv_comp_iCycles M)
   rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ]
   exact (Category.assoc _ _ _).trans key
+
+/-- The comparison with group homology is natural in the coefficient representation. -/
+@[reassoc]
+theorem tateCohomologyFunctor_map_comp_toGroupHomology {M N : Rep R G} (f : M ⟶ N) (n : ℕ) :
+    (tateCohomologyFunctor (Int.negSucc n)).map f ≫ toGroupHomology N n =
+      toGroupHomology M n ≫ groupHomology.map (MonoidHom.id G) f n := by
+  have hf : M.ρ.IsIntertwiningMap
+      (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) f.hom.toLinearMap :=
+    ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  cases n with
+  | zero =>
+      change (tateCohomologyFunctor (-1)).map f ≫ toGroupHomology N 0 =
+        toGroupHomology M 0 ≫ groupHomology.map (MonoidHom.id G) f 0
+      have h : map hf (-1) = (tateCohomologyFunctor (-1)).map f := map_refl hf (-1)
+      rw [← cancel_epi (HNegOneπ M)]
+      rw [← h, HNegOneπ_comp_map_assoc, HNegOneπ_comp_toGroupHomology,
+        HNegOneπ_comp_toGroupHomology_assoc, groupHomology.H0π_comp_map]
+      have hmap : ModuleCat.ofHom (mapKerNorm hf) ≫
+          ModuleCat.ofHom (LinearMap.ker N.ρ.norm).subtype =
+          ModuleCat.ofHom (LinearMap.ker M.ρ.norm).subtype ≫ f.toModuleCatHom :=
+        ModuleCat.hom_ext <| LinearMap.ext <| mapKerNorm_apply_coe hf
+      exact congrArg (· ≫ groupHomology.H0π N) hmap
+  | succ n =>
+      have h : map hf (Int.negSucc (n + 1)) =
+          (tateCohomologyFunctor (Int.negSucc (n + 1))).map f :=
+        map_refl hf (Int.negSucc (n + 1))
+      rw [toGroupHomology_eq_negSuccIso_hom, toGroupHomology_eq_negSuccIso_hom,
+        ← h, map_comp_negSuccIso_hom]
+      exact congrArg ((negSuccIso M (n + 1)).hom ≫ ·) <|
+        groupHomology.map_congr (by ext; rfl)
+          (Representation.IsIntertwiningMap.toRes_hom_toLinearMap hf) (n + 1)
 
 /-- The comparison with group homology is injective. -/
 instance (M : Rep R G) (n : ℕ) : Mono (toGroupHomology M n) := by

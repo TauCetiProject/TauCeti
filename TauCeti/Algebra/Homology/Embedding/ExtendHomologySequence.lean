@@ -23,9 +23,6 @@ maps of the two homology sequences correspond under these identifications
 This is what allows a connecting map computed on a complex reindexed along an embedding, such as
 the Tate complex, whose negative part is the complex of inhomogeneous chains reindexed by
 `n ↦ -(n + 1)`, to be compared with the connecting map of the original complex.
-
-The proof builds a morphism between the snake-lemma inputs defining the two connecting maps, from
-the identifications of homology, cycles and opcycles of an extended complex.
 -/
 
 public section

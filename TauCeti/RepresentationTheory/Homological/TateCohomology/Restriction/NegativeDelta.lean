@@ -25,16 +25,6 @@ for `r < 0` (`TauCeti.TateCohomology.δ_comp_res_of_neg`). This is what lets a s
 restriction be moved across negative degrees by dimension shifting, as in the proof that
 restriction is compatible with the Tate cup product.
 
-For `r ≤ -2` both degrees are negative, and the square is read in group homology through the
-comparison `TauCeti.TateCohomology.toGroupHomology`, which is injective and commutes with the
-connecting maps: Tate restriction becomes the transfer (`res_comp_toGroupHomology`), in degree `-1`
-through the description of the transfer on `H₀` as the relative transfer, and the transfer commutes
-with the connecting maps of group homology (`TauCeti.groupHomology.δ_comp_transfer`). For `r = -1`
-the connecting map crosses the junction of the Tate complex; the square is checked on
-representatives (`TauCeti.TateCohomology.δ_HNegOneπ`): if `z ∈ X₃` has norm zero and `y ∈ X₂` lifts
-`z`, then the relative transfer of `y` lifts the relative transfer of `z`, and its norm over `H` is
-the norm of `y` over `G`.
-
 ## Main results
 
 * `TauCeti.TateCohomology.res_comp_toGroupHomology`: in negative degrees, Tate restriction is the
