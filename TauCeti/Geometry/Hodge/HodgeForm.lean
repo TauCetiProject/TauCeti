@@ -41,6 +41,9 @@ itself are those pinned in `TauCeti.Hodge.IsPolarization`.
 
 ## Main declarations
 
+* `TauCeti.Hodge.HodgeStructureOn.apply_weilOperator_conj_self_of_mem_piece`: for any complex
+  form with the weight symmetry of a polarization, `B (C (conj x)) x = i^(p-q) B x (conj x)` on
+  `H^{p,q}`; this is the value of the Hodge form on a Hodge component.
 * `TauCeti.Hodge.Polarization.hodgeForm`: the Hodge form of a polarization.
 * `TauCeti.Hodge.Polarization.hodgeForm_eq_conj`: it is the conjugate of the alternate-convention
   whole-space form `Q (C u) (conj v)`.
@@ -99,6 +102,18 @@ private theorem I_zpow_conj_piece (p k : ℤ) :
   rw [negOne_zpow_eq_I_zpow, ← zpow_add₀ Complex.I_ne_zero,
     hexp, zpow_add₀ Complex.I_ne_zero, Complex.I_zpow_eq_zpow_mod (4 * (k - p)),
     Int.mul_emod_right, zpow_zero, mul_one]
+
+/-- For a complex bilinear form `B` with the weight symmetry `B y x = (-1)^n B x y` of a
+polarization, pairing the Weil operator of the conjugate of a vector `x` of the Hodge component
+`H^{p,q}` with `x` gives the expression `i^(p-q) B x (conj x)` of the second Hodge–Riemann
+relation. -/
+theorem HodgeStructureOn.apply_weilOperator_conj_self_of_mem_piece {W : Type*} [AddCommGroup W]
+    [Module ℂ W] {ω : Conjugation W} {n : ℤ} (hs : HodgeStructureOn W ω n)
+    (B : LinearMap.BilinForm ℂ W) (hB : ∀ x y, B y x = (n.negOnePow : ℤ) * B x y) {p : ℤ}
+    {x : W} (hx : x ∈ hs.piece p) :
+    B (hs.weilOperator (ω.toEquiv x)) x = Complex.I ^ (2 * p - n) * B x (ω.toEquiv x) := by
+  rw [hs.weilOperator_apply_of_mem (hs.conj_mem_piece hx), map_smul, LinearMap.smul_apply,
+    smul_eq_mul, hB x (ω.toEquiv x), negOnePow_cast, ← mul_assoc, I_zpow_conj_piece]
 
 namespace Polarization
 
@@ -166,11 +181,8 @@ the second Hodge–Riemann relation. -/
 theorem hodgeForm_self_of_mem_piece (P : Polarization hℂ hs) {p : ℤ} {x : Vℂ}
     (hx : x ∈ hs.piece p) :
     P.hodgeForm x x = Complex.I ^ (2 * p - n) * P.Q x (latticeConj hℂ x) := by
-  have hconj_mem : latticeConj hℂ x ∈ hs.piece (n - p) := by
-    simpa using hs.conj_mem_piece hx
-  rw [hodgeForm_apply, hs.weilOperator_apply_of_mem hconj_mem]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
-  rw [P.Q_symm_weight x (latticeConj hℂ x), negOnePow_cast, ← mul_assoc, I_zpow_conj_piece]
+  rw [hodgeForm_apply, ← latticeConjugation_toEquiv_apply]
+  exact hs.apply_weilOperator_conj_self_of_mem_piece P.Q P.Q_symm_weight hx
 
 /-- The Hodge form is positive on every nonzero vector of a Hodge component. -/
 theorem hodgeForm_pos_of_mem_piece (P : Polarization hℂ hs) {p : ℤ} {x : Vℂ}

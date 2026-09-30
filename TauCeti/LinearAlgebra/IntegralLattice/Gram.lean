@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 import Mathlib.LinearAlgebra.Determinant
 
 /-!
@@ -36,6 +36,8 @@ discriminant group.
 * `TauCeti.IntegralLattice.gramDet_eq_gramDet`: Gram determinants agree in any two bases.
 * `TauCeti.IntegralLattice.gramDet_ne_zero_iff`: a Gram determinant is nonzero exactly when the
   ambient form is nondegenerate.
+* `TauCeti.IntegralLattice.nondegenerate_integralForm_iff`: the integral form on the carrier is
+  nondegenerate exactly when the ambient form is.
 * `TauCeti.IntegralLattice.gramMatrix_ofGramMatrix`: the Gram matrix of `ofGramMatrix` in its
   canonical basis is `G`.
 * `TauCeti.IntegralLattice.determinant_ofGramMatrix`: the signed determinant of `ofGramMatrix` is
@@ -228,6 +230,13 @@ theorem determinant_ne_zero_iff (L : IntegralLattice V) :
     L.determinant ≠ 0 ↔ L.form.Nondegenerate := by
   classical
   rw [determinant, gramDet_ne_zero_iff]
+
+/-- The integral form on the carrier is nondegenerate exactly when the ambient rational form is. -/
+theorem nondegenerate_integralForm_iff (L : IntegralLattice V) :
+    L.integralForm.Nondegenerate ↔ L.form.Nondegenerate := by
+  classical
+  rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (Module.Free.chooseBasis ℤ L),
+    ← gramMatrix_eq_toMatrix, ← gramDet_def, gramDet_ne_zero_iff]
 
 open Classical in
 /-- An integral lattice constructed from a nonsingular Gram matrix is nondegenerate. -/

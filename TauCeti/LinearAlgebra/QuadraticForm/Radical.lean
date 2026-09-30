@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 /-!
@@ -23,6 +24,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.nondegenerate_neg`: negating a quadratic map does not change its nondegeneracy.
+* `QuadraticMap.radical_smul`, `QuadraticMap.nondegenerate_smul_iff`: scaling a quadratic map by a
+  unit does not change its radical or its nondegeneracy.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
@@ -37,6 +40,10 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   nonzero.
 * `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
   for a nondegenerate quadratic form.
+* `QuadraticMap.Isometry.injective_of_radical_eq_bot`: an isometry out of a quadratic map with
+  trivial radical is injective.
+* `QuadraticMap.liftOfSurjective`: descent of a quadratic map along a surjective linear map whose
+  kernel lies in the radical.
 * `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a semifield has a vector of
   unit norm.
 * `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
@@ -96,6 +103,27 @@ theorem nondegenerate_neg (Q : QuadraticMap R M P) :
   · rintro ⟨h, hrank⟩
     refine ⟨by simpa only [radical_neg] using h, hker ▸ hrank⟩
 
+/-- Scaling a quadratic map by a unit does not change its radical. -/
+@[simp]
+theorem radical_smul {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) :
+    (a • Q).radical = Q.radical := by
+  ext x
+  simp only [mem_radical_iff', smul_apply, ha.smul_eq_zero, ha.smul_left_cancel]
+
+/-- Scaling a quadratic map by a unit does not change its nondegeneracy. -/
+@[simp]
+theorem nondegenerate_smul_iff {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) :
+    (a • Q).Nondegenerate ↔ Q.Nondegenerate := by
+  have hker : (a • Q).polarBilin.ker = Q.polarBilin.ker := by
+    ext x
+    simp only [LinearMap.mem_ker, LinearMap.ext_iff, polarBilin_apply_apply, LinearMap.zero_apply,
+      FunLike.coe_smul, polar_smul, ha.smul_eq_zero]
+  constructor
+  · rintro ⟨h, hrank⟩
+    exact ⟨radical_smul ha Q ▸ h, hker ▸ hrank⟩
+  · rintro ⟨h, hrank⟩
+    exact ⟨(radical_smul ha Q).symm ▸ h, hker.symm ▸ hrank⟩
+
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
 
 /-- The radical of an orthogonal product is the product of the two radicals when two is
@@ -121,6 +149,16 @@ theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
   nontriviality R
   simp only [rank_subsingleton', zero_le]
 
+/-- **An isometry out of a quadratic map with trivial radical is injective.** Its kernel lies in the
+radical: an element `x` killed by `f` has `Q₁ x = Q₂ 0 = 0` and `Q₁ (x + n) = Q₂ (f n) = Q₁ n`. -/
+theorem Isometry.injective_of_radical_eq_bot {Q₁ : QuadraticMap R M P} {Q₂ : QuadraticMap R M' P}
+    (f : Q₁.Isometry Q₂) (h : Q₁.radical = ⊥) : Function.Injective f := by
+  refine (injective_iff_map_eq_zero f).2 fun x hx => ?_
+  have hmem : x ∈ Q₁.radical := mem_radical_iff'.2
+    ⟨by rw [← f.map_app, hx, map_zero], fun n => by rw [← f.map_app, ← f.map_app, map_add, hx,
+      zero_add]⟩
+  simpa [h] using hmem
+
 /-- A nonzero quadratic form over a semifield has a vector of unit norm. -/
 theorem exists_isUnit_of_ne_zero {K V : Type*} [Semifield K] [AddCommMonoid V] [Module K V]
     {Q : QuadraticForm K V} (hQ : Q ≠ 0) : ∃ v, IsUnit (Q v) := by
@@ -133,6 +171,29 @@ theorem isUnit_apply_smul {S N : Type*} [CommSemiring S] [AddCommMonoid N] [Modu
     (hc : IsUnit c) (hv : IsUnit (Q v)) : IsUnit (Q (c • v)) := by
   rw [QuadraticMap.map_smul]
   simpa [smul_eq_mul, mul_assoc] using (hc.mul (hc.mul hv))
+
+section LiftOfSurjective
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Descend a quadratic map along a surjective linear map whose kernel lies in its radical.
+
+Mathlib's `QuadraticMap.lift` descends along the quotient by a submodule of the radical.  A
+quotient is usually presented instead by a surjection onto a concrete group — reduction modulo `m`
+onto `ZMod m`, say — and this is that formulation. -/
+noncomputable def liftOfSurjective (Q : QuadraticMap R M P) (f : M →ₗ[R] N)
+    (hf : Function.Surjective f) (h : LinearMap.ker f ≤ Q.radical) : QuadraticMap R N P :=
+  (Q.lift (LinearMap.ker f) h).comp (f.quotKerEquivOfSurjective hf).symm.toLinearMap
+
+/-- The descended quadratic map takes the original value on every representative. -/
+@[simp]
+theorem liftOfSurjective_apply (Q : QuadraticMap R M P) (f : M →ₗ[R] N)
+    (hf : Function.Surjective f) (h : LinearMap.ker f ≤ Q.radical) (x : M) :
+    liftOfSurjective Q f hf h (f x) = Q x := by
+  rw [liftOfSurjective, QuadraticMap.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.quotKerEquivOfSurjective_symm_apply, QuadraticMap.lift_mk]
+
+end LiftOfSurjective
 
 end QuadraticMap
 

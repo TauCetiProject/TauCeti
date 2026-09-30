@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
+public import Mathlib.RepresentationTheory.Invariants
 
 /-!
 # Intertwining maps along a homomorphism of monoids
@@ -100,6 +101,18 @@ instance isTrivial_comp (σ : Representation R H W) [σ.IsTrivial] (f : G →* H
   ⟨fun g ↦ IsTrivial.out (f g)⟩
 
 end Monoid
+
+section SubgroupInvariants
+
+variable {R G V : Type*} [Group G] [CommRing R] [AddCommGroup V] [Module R V]
+  {ρ : Representation R G V} {H : Subgroup G}
+
+/-- A `G`-invariant element is `H`-invariant. -/
+theorem invariants_le_invariants_comp_subtype :
+    ρ.invariants ≤ Representation.invariants (ρ.comp H.subtype) :=
+  fun _ hx h => hx (h : G)
+
+end SubgroupInvariants
 
 section Norm
 

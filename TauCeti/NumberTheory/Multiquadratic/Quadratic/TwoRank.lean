@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Narrow
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.ElementaryTwoQuotient
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.NarrowClassGroup
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
-import Mathlib.NumberTheory.NumberField.ClassNumber
+import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
 import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.ElementaryTwoQuotient
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Independence
@@ -161,15 +161,11 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_one
   by_cases hgauss : d = -1
   · subst d
     have hfin : Module.finrank ℚ K = 2 := NumberField.finrank_rat_eq_two hmin hgen
-    have hcomplex : InfinitePlace.nrComplexPlaces K = 1 :=
-      InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two hfin
     have hdisc : NumberField.discr K = -4 := by
       simpa using NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf (by norm_num)
-    have hpid : IsPrincipalIdealRing (𝓞 K) := by
-      apply RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt
-      rw [hdisc, hcomplex, hfin]
-      norm_num [abs_of_nonneg]
-      nlinarith [Real.pi_gt_three]
+    have hpid : IsPrincipalIdealRing (𝓞 K) :=
+      TauCeti.NumberField.isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine hfin
+        (by rw [hdisc]; norm_num)
     have hrank : TauCeti.ClassGroup.twoRank (𝓞 K) = 0 := by
       have hclass : NumberField.classNumber K = 1 :=
         NumberField.classNumber_eq_one_iff.mpr hpid

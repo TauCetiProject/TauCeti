@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-public import TauCeti.GroupTheory.Perm.FinThree
+public import TauCeti.GroupTheory.Perm.FinThree.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Determined
 public import TauCeti.RepresentationTheory.Induction.LinearCharacter
 public import TauCeti.RepresentationTheory.Induction.Mackey.LinearCharacter
@@ -54,8 +54,8 @@ primitive cube root of unity.
 transposition of the two points other than `a` -- and `A₃` as Mathlib's
 `alternatingGroup (Fin 3)`. Those identifications, the two orders, the non-normality of the
 stabilizer and the centralizer of `A₃` are group theory and live in
-`TauCeti.GroupTheory.Perm.FinThree`; all this file adds is the passage to representations, which
-is what makes it a *worked* example rather than a further piece of theory.
+`TauCeti.GroupTheory.Perm.FinThree.Basic`; all this file adds is the passage to representations,
+which is what makes it a *worked* example rather than a further piece of theory.
 
 ## Main statements
 

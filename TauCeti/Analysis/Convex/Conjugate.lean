@@ -82,7 +82,8 @@ exchanged. Up to the sign change `c (x, y) = -B x y` and the negation of both po
 transforms agree, but the sup-based normal form is the one used throughout convex analysis and
 by the differentiability theory of convex functions, so it is developed on its own terms here.
 The bridge between the two is a statement about the quadratic transport cost `‖x - y‖ ^ 2 / 2`,
-whose `c`-concave potentials are exactly `‖x‖ ^ 2 / 2 - u x` for `u` a conjugate.
+whose `c`-concave potentials are exactly `‖x‖ ^ 2 / 2 - u x` for `u` a conjugate
+(`TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic`).
 
 Convexity of a conjugate is stated as convexity of the real epigraph
 `{p : F × ℝ | f⋆ p.1 ≤ p.2}` rather than through `ConvexOn`, whose scalar action would have to

@@ -18,18 +18,26 @@ Tate cohomology of the smaller layer along that identification, both with format
 (`LayerRestriction.trivialTateRangeIso`). These comparisons are shared by Tate restriction and
 Tate corestriction between finite layers.
 
+For a subgroup `H` of the Galois group of a finite normal layer `L`, the layer `L.subgroupLayer H`
+of `H` has Galois group `H` and the coefficient module of `L`; its Tate cohomology is Tate
+cohomology of `H` with coefficients in the restricted module (`NormalLayer.subgroupLayerTateIso`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso`: Tate cohomology of the smaller layer
   as Tate cohomology of the image subgroup.
 * `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateRangeIso`: the same comparison with
   trivial integral coefficients.
+* `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayerTateIso`: Tate cohomology of the layer of a
+  subgroup, as Tate cohomology of that subgroup.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso_hom` and
   `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateRangeIso_hom`: each range comparison is
   the Tate map of its compatible pair, in every degree.
+* `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayerTateIso_hom`: the subgroup-layer comparison
+  is the Tate map of its compatible pair `isIntertwiningMap_repIso_subgroupLayer`.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso_inv_H0π`: in degree zero, the inverse
   comparison sends the class of an invariant element to the class of the same element.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso_inv_HNegOneπ`: in degree minus one, the
@@ -217,3 +225,47 @@ theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom
   simp [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, trivialRangeRepHom]
 
 end TauCeti.ClassFieldTheory.LayerRestriction
+
+namespace TauCeti.ClassFieldTheory.NormalLayer
+
+variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G] (L : NormalLayer G) (F : Formation G) (H : Subgroup L.Gal)
+
+/-- The identification of the coefficient module of the layer of `H` with the coefficient module
+of `L` intertwines the action of the Galois group of the layer of `H` with the action of `H` on
+the restricted module. This is the compatible pair along which `subgroupLayerTateIso` transports
+Tate cohomology. -/
+theorem isIntertwiningMap_repIso_subgroupLayer :
+    ((L.subgroupLayer H).rep F).ρ.IsIntertwiningMap
+      ((Rep.res H.subtype (L.rep F)).ρ.comp
+        (L.subgroupGalEquiv H : (L.subgroupLayer H).Gal →* H))
+      (Representation.equivOfIso ((L.subgroupRestriction H).repIso F)).toLinearEquiv := by
+  -- The action of `H` on the restricted module, read through `subgroupGalEquiv`, is the action
+  -- along `galHom`, since `galHom` is the inclusion of `H` after `subgroupGalEquiv`.
+  have hσ : (Rep.res H.subtype (L.rep F)).ρ.comp
+        (L.subgroupGalEquiv H : (L.subgroupLayer H).Gal →* H) =
+      (Rep.res (L.subgroupRestriction H).galHom (L.rep F)).ρ := by
+    rw [galHom_subgroupRestriction]
+    exact MonoidHom.comp_assoc _ _ _
+  rw [hσ]
+  exact ⟨fun g x ↦ Rep.hom_comm_apply ((L.subgroupRestriction H).repIso F).hom g x⟩
+
+variable [Fintype H]
+
+/-- **Tate cohomology of the layer of `H` is Tate cohomology of `H`** with coefficients in the
+restriction of the coefficient module of `L`. -/
+def subgroupLayerTateIso (r : ℤ) :
+    (L.subgroupLayer H).TateH F r ≅ tateCohomology (Rep.res H.subtype (L.rep F)) r :=
+  TauCeti.TateCohomology.mapIso (e := L.subgroupGalEquiv H)
+    (e' := (Representation.equivOfIso ((L.subgroupRestriction H).repIso F)).toLinearEquiv)
+    (L.isIntertwiningMap_repIso_subgroupLayer F H) r
+
+/-- The comparison `subgroupLayerTateIso` is the Tate map attached to the compatible pair
+`isIntertwiningMap_repIso_subgroupLayer`. -/
+@[simp]
+theorem subgroupLayerTateIso_hom (r : ℤ) :
+    (L.subgroupLayerTateIso F H r).hom =
+      TauCeti.TateCohomology.map (L.isIntertwiningMap_repIso_subgroupLayer F H) r := by
+  rw [subgroupLayerTateIso, TauCeti.TateCohomology.mapIso_hom]
+
+end TauCeti.ClassFieldTheory.NormalLayer

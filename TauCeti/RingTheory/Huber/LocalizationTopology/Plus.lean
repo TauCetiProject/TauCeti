@@ -47,7 +47,8 @@ Wedhorn's Lemma 7.47(4) that this file needs.
   a ring of integral elements of `A⟨T/s⟩`. Its three conditions are also available one at a time,
   each under the hypothesis it uses: `isOpen_completedPlusSubring` and
   `isIntegrallyClosedIn_completedPlusSubring` under the ideal-of-definition hypothesis alone, and
-  `completedPlusSubring_le_powerBoundedSubring` under power-boundedness alone.
+  `completedPlusSubring_le_powerBoundedSubring` under power-boundedness alone, the last also
+  elementwise as `isPowerBounded_of_mem_completedPlusSubring`.
 * `TauCeti.Huber.PairOfDefinition.coeRingHom_mem_completedPlusSubring`: the completion map
   carries `C` into `A_U⁺`, making it a morphism of pairs `(A(T/s), C) → (A⟨T/s⟩, A_U⁺)`.
 * `TauCeti.Huber.PairOfDefinition.toCompletionLoc_mem_completedPlusSubring` and
@@ -502,6 +503,24 @@ theorem completedPlusSubring_le_powerBoundedSubring (P : PairOfDefinition A) (Ap
   have _ := isHuberRing_locUniformSpace P T s S hden
   exact topologicalClosure_map_coeRingHom_le_powerBoundedSubring
     (integralClosure_adjoin_plus_le_powerBoundedSubring P Aplus hAplus T s S hden)
+
+/-- **Every element of `A_U⁺` is power-bounded in `A⟨T/s⟩`** as soon as every element of `A⁺` is
+power-bounded in `A`. This is `completedPlusSubring_le_powerBoundedSubring` read elementwise,
+which is the shape `∀ ⦃a⦄, a ∈ A⁺ → IsPowerBounded a` of the power-boundedness hypothesis on a
+plus ring. -/
+theorem isPowerBounded_of_mem_completedPlusSubring (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A) (S : Type*) [CommRing S]
+    [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ ⦃b⦄, b ∈ completedPlusSubring P Aplus T s S hden → IsPowerBounded b := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  exact fun _ hb ↦ mem_powerBoundedSubring.mp
+    (completedPlusSubring_le_powerBoundedSubring P Aplus hAplus T s S hden hb)
 
 /-- **`A_U⁺` is open in `A⟨T/s⟩`** as soon as `A⁺` contains the image of the ideal of definition.
 This is the openness condition of `isRingOfIntegralElements_completedPlusSubring`, available here

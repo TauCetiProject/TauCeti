@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.NumberTheory.LocalField.Teichmuller
+public import Mathlib.RingTheory.Frobenius
 
 /-!
 # Frobenius in unramified local fields
@@ -26,6 +27,10 @@ roots of unity to that same power.
   on a residue element and its `q`-th power agree.
 * `TauCeti.frobeniusAlgEquiv_rootsOfUnity`: on prime-to-residue-characteristic roots of
   unity, arithmetic Frobenius acts by the `q`-th power map.
+* `TauCeti.frobeniusAlgEquiv_apply_of_pow_eq_one`: the same holds for every root of unity whose
+  order is invertible in `𝒪[L]`, not only for the `(q_L − 1)`-st roots of unity.
+* `TauCeti.frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self`: it raises every root of
+  `X^{q^g} − X` to the `q`-th power.
 
 ## References
 
@@ -78,6 +83,53 @@ theorem frobeniusAlgEquiv_rootsOfUnity [IsUnramified K L]
     map_pow]
   exact (map_pow (algebraMap 𝒪[L] L) (teichmullerLift L (a : 𝓀[L]))
     (Nat.card 𝓀[K])).symm
+
+/-- **Arithmetic Frobenius on roots of unity of order prime to the residue characteristic.** In a
+finite unramified Galois extension `L / K`, if `x ^ n = 1` for an `n` invertible in `𝒪[L]`, then
+`Frob x = x ^ q`, where `q` is the cardinality of the residue field of `K`. -/
+theorem frobeniusAlgEquiv_apply_of_pow_eq_one [IsUnramified K L] {n : ℕ}
+    (hn : IsUnit (n : 𝒪[L])) {x : L} (hx : x ^ n = 1) :
+    frobeniusAlgEquiv (K := K) (L := L) x = x ^ Nat.card 𝓀[K] := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  -- A root of unity has valuation `1`, so it is integral.
+  have hxv : x ∈ 𝒪[L] := (Valuation.mem_integer_iff _ _).2
+    ((pow_le_one_iff_of_nonneg zero_le hn0).1 (by rw [← map_pow, hx, map_one]))
+  -- `𝓂[L]` lies over `𝓂[K]`, the kernel of reduction `𝒪[K] → 𝓀[K]`, so the quotient is `𝓀[K]`.
+  have hq : Nat.card (𝒪[K] ⧸ 𝓂[L].under 𝒪[K]) = Nat.card 𝓀[K] := by
+    rw [← Ideal.over_def 𝓂[L] 𝓂[K], ← IsLocalRing.ker_residue]
+    exact Nat.card_congr
+      (RingHom.quotientKerEquivOfSurjective IsLocalRing.residue_surjective).toEquiv
+  -- Frobenius is an arithmetic Frobenius of `𝒪[L] / 𝒪[K]` at the maximal ideal, so Mathlib's
+  -- `AlgHom.IsArithFrobAt.apply_of_pow_eq_one` applies.
+  have hσ : IsArithFrobAt 𝒪[K] (frobeniusAlgEquiv (K := K) (L := L)) 𝓂[L] := fun y ↦ by
+    rw [hq]
+    refine (Valuation.mem_maximalIdeal_iff (v := valuation L)).2 ?_
+    rw [MulSemiringAction.toAlgHom_apply, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow,
+      AlgEquiv.coe_smul_integerRing]
+    exact valuation_frobeniusAlgEquiv_sub_pow (K := K) (L := L) y
+  have h := hσ.apply_of_pow_eq_one (ζ := ⟨x, hxv⟩)
+    (Subtype.ext (by rw [SubmonoidClass.coe_pow, hx, OneMemClass.coe_one]))
+    ((IsLocalRing.mem_maximalIdeal _).not.2 (not_not.2 hn))
+  rw [hq, MulSemiringAction.toAlgHom_apply] at h
+  have h' := congrArg Subtype.val h
+  rwa [AlgEquiv.coe_smul_integerRing, SubmonoidClass.coe_pow] at h'
+
+/-- **Arithmetic Frobenius on the roots of `X^{q^g} − X`.** In a finite unramified Galois extension
+`L / K`, if `x ^ (q ^ g) = x` for some `g ≠ 0`, then `Frob x = x ^ q`, where `q` is the cardinality
+of the residue field of `K`. -/
+theorem frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self [IsUnramified K L] {g : ℕ} (hg : g ≠ 0)
+    {x : L} (hx : x ^ Nat.card 𝓀[K] ^ g = x) :
+    frobeniusAlgEquiv (K := K) (L := L) x = x ^ Nat.card 𝓀[K] := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · rw [map_zero, zero_pow Nat.card_pos.ne']
+  -- A nonzero root of `X^{q^g} − X` is a `(q^g − 1)`-st root of unity, and `q^g − 1` is prime
+  -- to the residue characteristic.
+  refine frobeniusAlgEquiv_apply_of_pow_eq_one (n := Nat.card 𝓀[K] ^ g - 1) ?_ ?_
+  · simpa using (isUnit_natCast_natCard_pow_sub_one K hg).map (algebraMap 𝒪[K] 𝒪[L])
+  · refine mul_right_cancel₀ hx0 ?_
+    rw [one_mul, ← pow_succ, Nat.sub_add_cancel (Nat.one_le_pow _ _ Nat.card_pos), hx]
 
 end Teichmuller
 

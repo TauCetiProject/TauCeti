@@ -111,7 +111,7 @@ instance instContinuousMul [ContinuousMul D] [DiscreteTopology ι] :
         continuous_left_eval.comp (continuous_snd.prodMk hi)
       convert ((continuous_left i).comp continuous_fst).mul hb using 1
       ext p
-      exact (mul_left p.1 p.2 i).symm
+      exact (PermutationWreathProduct.mul_left p.1 p.2 i).symm
     · intro i
       have hi : Continuous (fun p : WreathProduct D ι × WreathProduct D ι =>
           p.2.right i) := (continuous_right i).comp continuous_snd
@@ -131,7 +131,7 @@ instance instContinuousInv [ContinuousInv D] [DiscreteTopology ι] :
       have hi : Continuous (fun w : WreathProduct D ι => w.right i) := continuous_right i
       have hb : Continuous (fun w : WreathProduct D ι => (w.left (w.right i))⁻¹) :=
         (continuous_left_eval.comp (continuous_id.prodMk hi)).inv
-      simpa only [WreathProduct.inv_left] using hb
+      simpa only [PermutationWreathProduct.inv_left, Equiv.Perm.smul_def] using hb
     · intro i
       simpa only [SemidirectProduct.inv_right] using (continuous_right_inv i)⟩
 

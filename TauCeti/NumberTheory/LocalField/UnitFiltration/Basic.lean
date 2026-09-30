@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
+public import Mathlib.Topology.Algebra.Group.Units
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -44,8 +45,8 @@ action on a finite extension, and its behaviour under a field embedding.
   congruence form of membership, `x ≡ 1 mod 𝓂[K] ^ i` inside `𝒪[K]`.
 * `TauCeti.mem_unitFiltration_one_iff_residue_eq_one`: a unit of `𝒪[K]` lies in `U(K,1)`
   exactly when it reduces to `1`.
-* `TauCeti.mem_unitFiltration_iff_valuation_le` and
-  `TauCeti.mem_unitFiltration_succ_valuation`: the valuation form of membership, an
+* `TauCeti.mem_unitFiltration_iff_valuation_le`, `TauCeti.mem_unitFiltration_succ_valuation`
+  and `TauCeti.mem_unitFiltration_iff_valuation_sub_one_le`: the valuation form of membership, an
   inequality on `x - 1` measured against a uniformizer. At positive depth the inequality alone
   already forces `x` to be a unit of `𝒪[K]`.
 * `TauCeti.unitFiltration_zero` and `TauCeti.unitFiltration_one`: the two shallow steps are
@@ -56,7 +57,7 @@ action on a finite extension, and its behaviour under a field embedding.
 * `TauCeti.iInf_unitFiltration`: the filtration separates points, `⨅ i, U(K,i) = ⊥`.
 * `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration` and
   `TauCeti.hasBasis_nhds_one_unitFiltration`: every `U(K,i)` is an open compact subgroup of
-  `Kˣ`, and the family is a neighbourhood basis of `1`.
+  `Kˣ`, and the family is a neighbourhood basis of `1`; in particular `Kˣ` is Hausdorff.
 
 ## Implementation notes
 
@@ -173,6 +174,14 @@ theorem mem_unitFiltration_succ_valuation (i : ℕ) (x : Kˣ) (π : 𝒪[K]) (h�
     rw [add_comm]
     exact (valuation K).map_one_add_of_lt (hx1.trans_lt hπ1)
   simpa using h
+
+/-- Membership in a positive-depth step of the unit filtration, as an inequality on `x - 1`
+measured against a power of the valuation of a uniformizer `π`. -/
+theorem mem_unitFiltration_iff_valuation_sub_one_le {i : ℕ} (hi : i ≠ 0) {π : 𝒪[K]}
+    (hπ : Irreducible π) {x : Kˣ} :
+    x ∈ unitFiltration K i ↔ valuation K ((x : K) - 1) ≤ valuation K (π : K) ^ i := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi
+  rw [mem_unitFiltration_succ_valuation j x π hπ, map_pow]
 
 /-- The depth-one step of the unit filtration is Mathlib's principal unit group of the valuation
 subring of `K`. -/
@@ -391,6 +400,11 @@ theorem unitFiltration_mem_nhds_one (i : ℕ) :
 /-- Each step of the unit filtration is an open subgroup of `Kˣ`. -/
 theorem isOpen_unitFiltration (i : ℕ) : IsOpen (unitFiltration K i : Set Kˣ) :=
   (unitFiltration K i).isOpen_of_mem_nhds (unitFiltration_mem_nhds_one i)
+
+/-- The multiplicative group `Kˣ` is Hausdorff: its identity `{1} = ⋂ i, U(K,i)` is closed. -/
+instance : T2Space Kˣ := IsTopologicalGroup.t2Space_iff_one_closed.mpr <| by
+  rw [← Subgroup.coe_bot, ← iInf_unitFiltration, Subgroup.coe_iInf]
+  exact isClosed_iInter fun i ↦ (unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i)
 
 /-- The image in `K` of the depth-zero step of the unit filtration. -/
 private theorem image_unitFiltration_zero :

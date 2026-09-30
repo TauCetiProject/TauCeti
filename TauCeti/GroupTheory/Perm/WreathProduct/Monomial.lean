@@ -56,7 +56,8 @@ noncomputable def monomialHom (s : U.LeftTransversal) :
       apply Subtype.ext
       have hperm : ((MulAction.toPermHom G (G ⧸ U) g)⁻¹ x) = g⁻¹ • x := by
         rw [← map_inv, MulAction.toPermHom_apply, MulAction.toPerm_apply]
-      simpa only [WreathProduct.mul_left, Subgroup.coe_mul, hperm] using
+      simpa only [PermutationWreathProduct.mul_left, Equiv.Perm.smul_def, Subgroup.coe_mul,
+        hperm] using
         (lWord_mul_lWord U (leftTransversalRep U s) x g h).symm
     · exact map_mul (MulAction.toPermHom G (G ⧸ U)) g h
 
