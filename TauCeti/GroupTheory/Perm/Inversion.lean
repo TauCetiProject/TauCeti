@@ -75,10 +75,7 @@ private lemma card_inversion_finAddFlip_trans_finCongr (m n : ℕ) :
     (finSumFinEquiv : Fin m ⊕ Fin n ≃ Fin (m + n))
     (finSumFinEquiv : Fin m ⊕ Fin n ≃ Fin (m + n))
   let f : Fin m × Fin n ↪ (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) :=
-    ⟨fun p ↦ (Sum.inl p.1, Sum.inr p.2), by
-      rintro ⟨a, b⟩ ⟨a', b'⟩ h
-      simp only [Prod.mk.injEq, Sum.inl.injEq, Sum.inr.injEq] at h
-      exact Prod.ext h.1 h.2⟩
+    ⟨Prod.map Sum.inl Sum.inr, Sum.inl_injective.prodMap Sum.inr_injective⟩
   calc
     _ = ((Finset.univ.filter fun p : (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) =>
         (e p).1 < (e p).2 ∧
@@ -96,12 +93,9 @@ private lemma card_inversion_finAddFlip_trans_finCongr (m n : ℕ) :
                 (finAddFlip.trans (finCongr (add_comm n m))) (e p).1) =
             Finset.univ.map f := by
         ext ⟨a, b⟩
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map]
-        change
-          (finSumFinEquiv a < finSumFinEquiv b ∧
-            (finAddFlip.trans (finCongr (add_comm n m))) (finSumFinEquiv b) <
-              (finAddFlip.trans (finCongr (add_comm n m))) (finSumFinEquiv a)) ↔
-            ∃ x : Fin m × Fin n, (Sum.inl x.1, Sum.inr x.2) = (a, b)
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map, e, f,
+          Equiv.prodCongr_apply, Function.Embedding.coeFn_mk, Prod.map_apply, Prod.exists,
+          Prod.mk.injEq]
         rcases a with a | a <;> rcases b with b | b <;>
           simp [finAddFlip, Fin.ext_iff, ← Fin.val_fin_lt, Fin.val_castAdd, Fin.val_natAdd,
             Fin.val_addNat] <;> omega
