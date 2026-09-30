@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
+public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
 public import TauCeti.Topology.Algebra.Group.Heisenberg
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
@@ -57,6 +58,7 @@ variable {p : ℕ} {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing 
 /-- The Heisenberg group over a compact Hausdorff topological ring whose additive group is
 pro-`p` is pro-`p`. -/
 theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R) := by
+  classical
   -- The quotient map `(x, y, z) ↦ (x, y)` onto `R × R`, whose kernel is the `z`-axis.
   let f : HeisenbergGroup R →* Multiplicative (R × R) :=
     { toFun a := ofAdd (a.x, a.y)
@@ -74,29 +76,39 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
   have hker : f.ker = zAxis := by
     ext a
     simp [f, mem_zAxis_iff]
+  have hgf : ∀ c, g c ∈ f.ker := by
+    intro c
+    simp [f, g]
+  let gker := g.codRestrict f.ker hgf
+  have hgker : Function.Bijective gker := by
+    constructor
+    · intro a b hab
+      have hz := congrArg (fun c : f.ker ↦ c.val.z) hab
+      simpa [gker, g] using hz
+    · rintro ⟨a, ha⟩
+      have hxy := mem_zAxis_iff.mp (hker ▸ ha)
+      refine ⟨ofAdd a.z, ?_⟩
+      apply Subtype.ext
+      ext <;> simp [gker, g, hxy]
+  let e : Multiplicative R ≃* f.ker := MulEquiv.ofBijective gker hgker
+  have hsurj : Function.Surjective f := by
+    intro c
+    exact ⟨⟨c.toAdd.1, c.toAdd.2, 0⟩, by simp [f]⟩
   let S : GroupExtension (Multiplicative R) (HeisenbergGroup R)
       (Multiplicative (R × R)) :=
-    { inl := g
-      rightHom := f
-      inl_injective := by
-        intro a b hab
-        have hz := congrArg (fun c : HeisenbergGroup R ↦ c.z) hab
-        simpa [g] using hz
-      range_inl_eq_ker_rightHom := by
-        rw [hker]
-        ext a
-        constructor
-        · rintro ⟨c, rfl⟩
-          simp [g, mem_zAxis_iff]
-        · intro ha
-          have hxy := mem_zAxis_iff.mp ha
-          exact ⟨ofAdd a.z, by ext <;> simp [g, hxy]⟩
-      rightHom_surjective := by
-        intro c
-        exact ⟨⟨c.toAdd.1, c.toAdd.2, 0⟩, by simp [f]⟩ }
+    GroupExtension.ofMulEquivKer hsurj e
+  have hSinl : S.inl = g := by
+    rw [show S = GroupExtension.ofMulEquivKer hsurj e from rfl,
+      GroupExtension.ofMulEquivKer_inl]
+    apply MonoidHom.ext
+    intro c
+    change (e c).val = g c
+    rfl
+  have hSrh : S.rightHom = f :=
+    GroupExtension.ofMulEquivKer_rightHom _ _
   have hRR : IsProP p (Multiplicative (R × R)) :=
     (hR.prod hR).of_equiv (ContinuousMulEquiv.prodMultiplicative R R).symm
-  exact S.isProP hg hf hR hRR
+  exact S.isProP (hSinl ▸ hg) (hSrh ▸ hf) hR hRR
 
 /-- The Heisenberg group over the `p`-adic integers is pro-`p`. -/
 theorem isProP_padicInt (p : ℕ) [Fact p.Prime] : IsProP p (HeisenbergGroup ℤ_[p]) :=
