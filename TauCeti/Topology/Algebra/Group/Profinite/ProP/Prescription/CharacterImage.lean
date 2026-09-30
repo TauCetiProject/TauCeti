@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.CrossedHomLinearization
-public import TauCeti.Topology.Algebra.Group.Profinite.Free.PadicUnits
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 
