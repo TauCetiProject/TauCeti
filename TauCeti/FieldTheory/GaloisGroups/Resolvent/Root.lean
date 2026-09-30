@@ -122,7 +122,8 @@ private theorem apply_eval₂_rootEnum (e : f.rootSet E ≃ Fin n) (ϕ : E ≃�
 -- An element of the transported Galois image comes from an automorphism of `E` over `F`.
 private theorem exists_eq_of_mem_image [Normal F E] (e : f.rootSet E ≃ Fin n)
     {π : Equiv.Perm (Fin n)}
-    (hπ : π ∈ (Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom) :
+    (hπ : π ∈ (Gal.galActionHom f E).range.map
+      (e.permCongrHom : _ →* Equiv.Perm (Fin n))) :
     ∃ ϕ : E ≃ₐ[F] E,
       π = e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ)) := by
   simp only [Subgroup.mem_map, MonoidHom.mem_range] at hπ
@@ -165,7 +166,8 @@ Nothing is assumed about the resolvent here; the converse
 `TauCeti.ResolventSpec.exists_le_map_conj_of_isRoot_specialize` does assume its separability. -/
 theorem exists_isRoot_specialize_of_le [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
-    (hle : (Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom ≤ spec.H) :
+    (hle : (Gal.galActionHom f E).range.map
+      (e.permCongrHom : _ →* Equiv.Perm (Fin n)) ≤ spec.H) :
     ∃ a : F, (spec.specialize F f).IsRoot a := by
   have hfix : ∀ ϕ : E ≃ₐ[F] E,
       ϕ (MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) spec.Φ)
@@ -190,7 +192,8 @@ The conjugated subgroup is the subgroup of the specification of the renamed inva
 renaming the invariant does not change the resolvent. -/
 theorem exists_isRoot_specialize_of_le_map_conj [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (τ : Equiv.Perm (Fin n))
-    (hle : (Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom
+    (hle : (Gal.galActionHom f E).range.map
+      (e.permCongrHom : _ →* Equiv.Perm (Fin n))
       ≤ spec.H.map (MulAut.conj τ).toMonoidHom) :
     ∃ a : F, (spec.specialize F f).IsRoot a := by
   have h := (spec.rename τ).exists_isRoot_specialize_of_le hf hsep hdeg e (by rwa [rename_H])
@@ -283,7 +286,8 @@ theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic) (hse
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hres : (spec.specialize F f).Separable) {a : F} (ha : (spec.specialize F f).IsRoot a) :
     ∃ τ : Equiv.Perm (Fin n),
-      (Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom
+      (Gal.galActionHom f E).range.map
+        (e.permCongrHom : _ →* Equiv.Perm (Fin n))
         ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have hae : aeval (algebraMap F E a) (spec.specialize F f) = 0 := by
     rw [aeval_def, eval₂_eq_eval_map, eval_map, eval₂_at_apply, ha, map_zero]
@@ -312,7 +316,8 @@ theorem exists_isRoot_specialize_iff_exists_le_map_conj [IsGalois F E] (hf : f.M
     (hres : (spec.specialize F f).Separable) :
     (∃ a : F, (spec.specialize F f).IsRoot a) ↔
       ∃ τ : Equiv.Perm (Fin n),
-        (Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom
+        (Gal.galActionHom f E).range.map
+          (e.permCongrHom : _ →* Equiv.Perm (Fin n))
           ≤ spec.H.map (MulAut.conj τ).toMonoidHom :=
   ⟨fun ⟨_, ha⟩ => spec.exists_le_map_conj_of_isRoot_specialize hf hsep hdeg e hres ha,
     fun ⟨τ, hτ⟩ => spec.exists_isRoot_specialize_of_le_map_conj hf hsep hdeg e τ hτ⟩
@@ -326,7 +331,7 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
     {c d : Equiv.Perm (Fin n) ⧸ spec.H} :
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
-        e.permCongrHom.toMonoidHom) d := by
+        (e.permCongrHom : _ →* Equiv.Perm (Fin n))) d := by
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
@@ -373,7 +378,8 @@ private theorem cosetValueEquiv_orbitRel [Normal F E] (hf : f.Monic) (hsep : f.S
     [Fact (((spec.specialize F f).map (algebraMap F E)).Splits)]
     (c d : Equiv.Perm (Fin n) ⧸ spec.H) :
     MulAction.orbitRel
-      ((Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom) _ c d ↔
+      ((Gal.galActionHom f E).range.map
+        (e.permCongrHom : _ →* Equiv.Perm (Fin n))) _ c d ↔
       MulAction.orbitRel (spec.specialize F f).Gal _
         (cosetValueEquiv spec hf hsep hdeg e hres c)
         (cosetValueEquiv spec hf hsep hdeg e hres d) := by
@@ -392,7 +398,7 @@ The degree of each factor is the size of the matching orbit,
 noncomputable def orbitQuotientEquivFactors [Normal F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable) :
     MulAction.orbitRel.Quotient ((Gal.galActionHom f E).range.map
-      e.permCongrHom.toMonoidHom)
+      (e.permCongrHom : _ →* Equiv.Perm (Fin n)))
         (Equiv.Perm (Fin n) ⧸ spec.H) ≃ (spec.specialize F f).Factors := by
   haveI : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) :=
     ⟨splits_specialize spec hf hsep hdeg e⟩
@@ -445,7 +451,7 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable)
     (ω : MulAction.orbitRel.Quotient
       ((Gal.galActionHom f E).range.map
-        e.permCongrHom.toMonoidHom)
+        (e.permCongrHom : _ →* Equiv.Perm (Fin n)))
       (Equiv.Perm (Fin n) ⧸ spec.H)) :
     Nat.card (MulAction.orbitRel.Quotient.orbit ω)
       = ((spec.orbitQuotientEquivFactors hf hsep hdeg e hres ω : (spec.specialize F f).Factors) :
@@ -455,7 +461,8 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
   let v := cosetValueEquiv spec hf hsep hdeg e hres
   induction ω using Quotient.inductionOn with | h c => ?_
   have himage : v '' MulAction.orbit
-      ((Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom) c =
+      ((Gal.galActionHom f E).range.map
+        (e.permCongrHom : _ →* Equiv.Perm (Fin n))) c =
       MulAction.orbit (spec.specialize F f).Gal (v c) := by
     ext x
     constructor
@@ -481,7 +488,7 @@ theorem map_natDegree_normalizedFactors_specialize [Normal F E] (hf : f.Monic)
     (UniqueFactorizationMonoid.normalizedFactors (spec.specialize F f)).map natDegree
       = Finset.univ.val.map fun ω : MulAction.orbitRel.Quotient
           ((Gal.galActionHom f E).range.map
-            e.permCongrHom.toMonoidHom)
+            (e.permCongrHom : _ →* Equiv.Perm (Fin n)))
           (Equiv.Perm (Fin n) ⧸ spec.H) => Nat.card (MulAction.orbitRel.Quotient.orbit ω) := by
   have hg0 : spec.specialize F f ≠ 0 := (spec.monic_specialize F f).ne_zero
   have := Factors.finite hg0
