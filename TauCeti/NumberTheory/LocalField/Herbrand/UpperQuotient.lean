@@ -52,8 +52,6 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_fixedField`: the quotient filtration
   maps to `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_quotient`: `(G/H)^v = G^v H / H`.
-* `TauCeti.LocalFieldsRamification.mem_upperRamificationGroupQuotient_iff`: membership via a
-  representative in `G^v`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroupQuotient_antitone`: the quotient
   filtration is decreasing.
 
@@ -132,14 +130,6 @@ theorem upperRamificationGroup_quotient (v : RamificationIndexDomain) :
     upperRamificationGroupQuotient H v =
       (upperRamificationGroup K M v ⊔ H).map (QuotientGroup.mk' H) := by
   simp [upperRamificationGroupQuotient, Subgroup.map_sup]
-
-/-- A quotient class lies in the upper ramification group exactly when it has a representative
-in the upper ramification group of `M/K`. -/
-theorem mem_upperRamificationGroupQuotient_iff {v : RamificationIndexDomain}
-    {σ : (M ≃ₐ[K] M) ⧸ H} :
-    σ ∈ upperRamificationGroupQuotient H v ↔
-      ∃ τ ∈ upperRamificationGroup K M v, QuotientGroup.mk' H τ = σ := by
-  exact Subgroup.mem_map
 
 /-- The upper ramification filtration on a quotient is decreasing. -/
 theorem upperRamificationGroupQuotient_antitone :
