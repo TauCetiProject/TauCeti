@@ -45,19 +45,18 @@ lemma squareCell_apply (H : C(unitInterval × unitInterval, X))
     squareCell H a b c d z = H ((Path.id.subpath a b) z.1, (Path.id.subpath c d) z.2) :=
   by simp [squareCell, Prod.map_apply']
 
+/-- Every point of a subpath of the identity path lies between its endpoints. -/
+lemma subpath_id_mem_uIcc (s t u : unitInterval) : Path.id.subpath s t u ∈ uIcc s t := by
+  have hr := Set.mem_range_self u (f := Path.id.subpath s t)
+  rw [Path.range_subpath] at hr
+  simpa using hr
+
 /-- A cell whose image lies in `V`, regarded as a map with codomain `V`. -/
 def squareCellIn (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (V : Set X) (hV : MapsTo H (uIcc a b ×ˢ uIcc c d) V) :
-    C(unitInterval × unitInterval, V) := by
-  have subpath_mem (s t u : unitInterval) : Path.id.subpath s t u ∈ uIcc s t := by
-    have hr := Set.mem_range_self u (f := Path.id.subpath s t)
-    rw [Path.range_subpath] at hr
-    simpa using hr
-  exact
-  ⟨fun z ↦ ⟨squareCell H a b c d z, hV (by
-    constructor
-    · exact subpath_mem a b z.1
-    · exact subpath_mem c d z.2)⟩,
+    C(unitInterval × unitInterval, V) :=
+  ⟨fun z ↦ ⟨squareCell H a b c d z,
+      hV ⟨subpath_id_mem_uIcc a b z.1, subpath_id_mem_uIcc c d z.2⟩⟩,
     (squareCell H a b c d).continuous.subtype_mk _⟩
 
 @[simp]
@@ -189,7 +188,7 @@ theorem exists_grid_subdivision_squareCell_eq {ι : Sort u} {U : ι → Set X}
                 (Path.Homotopic.Quotient.mk
                   (squareCellTop H _ _ _ _ (U i) hV)) := by
   obtain ⟨n, t, ht0, ht1, htmono, htcover⟩ :=
-    ContinuousMap.exists_grid_subdivision_nhds H U hU
+    ContinuousMap.exists_grid_subdivision H U hU
   refine ⟨n, t, ht0, ht1, htmono, ?_⟩
   intro j k
   obtain ⟨i, hV⟩ := htcover j k

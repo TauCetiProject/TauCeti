@@ -8,9 +8,9 @@ module
 public import Mathlib.Topology.UnitInterval
 
 /-!
-# Subdividing a continuous-map square under an open cover
+# Subdividing a continuous-map square under a neighbourhood cover
 
-A continuous square whose image is covered by open sets admits a finite grid subdivision such
+A continuous square with a neighbourhood cover admits a finite grid subdivision such
 that every closed grid cell maps into one member of the cover. This is useful, in particular, for
 turning a homotopy between paths into relations among paths lying in members of an open cover.
 
@@ -28,45 +28,27 @@ open scoped unitInterval
 
 namespace ContinuousMap
 
-/-- A continuous map from the unit square can be subdivided into a finite grid whose cells each
-map into one member of any given open cover of its image. The times are monotone, start at `0`,
-and are eventually constant at `1`; `m` is a bound after which they are constant. -/
-theorem exists_grid_subdivision {X : Type*} [TopologicalSpace X] {ι : Sort*}
-    (K : C(↥unitInterval × ↥unitInterval, X)) (U : ι → Set X)
-    (hopen : ∀ i, IsOpen (U i)) (hcover : ∀ x, ∃ i, K x ∈ U i) :
-    ∃ (m : ℕ) (t : ℕ → unitInterval), t 0 = 0 ∧ Monotone t ∧
-      (∀ n, m ≤ n → t n = 1) ∧
-      ∀ j k, ∃ i, MapsTo K (Icc (t j) (t (j + 1)) ×ˢ Icc (t k) (t (k + 1))) (U i) := by
-  let V : ι → Set (unitInterval × unitInterval) := fun i => K ⁻¹' U i
-  have hVopen : ∀ i, IsOpen (V i) := fun i => (hopen i).preimage K.continuous
-  have hVcover : Set.univ ⊆ ⋃ i, V i := by
-    intro x _
-    rcases hcover x with ⟨i, hi⟩
-    exact mem_iUnion.2 ⟨i, hi⟩
-  obtain ⟨t, ht0, hmono, ⟨m, htail⟩, hcell⟩ :=
-    exists_monotone_Icc_subset_open_cover_unitInterval_prod_self hVopen hVcover
-  refine ⟨m, t, ht0, hmono, htail, fun j k => ?_⟩
-  obtain ⟨i, hsubset⟩ := hcell j k
-  exact ⟨i, fun x hx => hsubset hx⟩
-
 /-- A neighbourhood cover of a continuous square admits a finite monotone grid whose closed
 cells each map into a cover member. -/
-theorem exists_grid_subdivision_nhds {X : Type*} [TopologicalSpace X] {ι : Sort*}
+theorem exists_grid_subdivision {X : Type*} [TopologicalSpace X] {ι : Sort*}
     (K : C(↥unitInterval × ↥unitInterval, X)) (U : ι → Set X)
     (hU : ∀ z, ∃ i, U i ∈ 𝓝 (K z)) :
     ∃ (n : ℕ) (t : Fin (n + 1) → unitInterval),
       t 0 = 0 ∧ t (Fin.last n) = 1 ∧ Monotone t ∧
         ∀ j k : Fin n, ∃ i, MapsTo K
           (Icc (t j.castSucc) (t j.succ) ×ˢ Icc (t k.castSucc) (t k.succ)) (U i) := by
-  obtain ⟨n, t, ht0, htmono, ht1, htcover⟩ :=
-    exists_grid_subdivision K (fun i ↦ interior (U i))
-      (fun _ ↦ isOpen_interior) (fun z ↦ by
-        obtain ⟨i, hi⟩ := hU z
-        exact ⟨i, mem_interior_iff_mem_nhds.mpr hi⟩)
-  refine ⟨n, fun k ↦ t k, by simpa using ht0, by simpa using ht1 n le_rfl,
-    fun a b hab ↦ htmono (by simpa using hab), ?_⟩
+  let V : ι → Set (unitInterval × unitInterval) := fun i => K ⁻¹' interior (U i)
+  have hVopen : ∀ i, IsOpen (V i) := fun i => isOpen_interior.preimage K.continuous
+  have hVcover : Set.univ ⊆ ⋃ i, V i := by
+    intro x _
+    rcases hU x with ⟨i, hi⟩
+    exact mem_iUnion.2 ⟨i, mem_interior_iff_mem_nhds.mpr hi⟩
+  obtain ⟨t, ht0, hmono, ⟨m, htail⟩, hcell⟩ :=
+    exists_monotone_Icc_subset_open_cover_unitInterval_prod_self hVopen hVcover
+  refine ⟨m, fun k ↦ t k, by simpa using ht0, by simpa using htail m le_rfl,
+    fun a b hab ↦ hmono (by simpa using hab), ?_⟩
   intro j k
-  obtain ⟨i, hi⟩ := htcover j k
+  obtain ⟨i, hi⟩ := hcell j k
   exact ⟨i, fun z hz ↦ interior_subset (hi hz)⟩
 
 end ContinuousMap
