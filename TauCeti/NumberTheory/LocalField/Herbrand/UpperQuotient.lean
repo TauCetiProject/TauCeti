@@ -52,6 +52,10 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_fixedField`: the quotient filtration
   maps to `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_quotient`: `(G/H)^v = G^v H / H`.
+* `TauCeti.LocalFieldsRamification.mem_upperRamificationGroupQuotient_iff`: membership via a
+  representative in `G^v`.
+* `TauCeti.LocalFieldsRamification.upperRamificationGroupQuotient_antitone`: the quotient
+  filtration is decreasing.
 
 ## References
 
@@ -124,15 +128,34 @@ def upperRamificationGroupQuotient (v : RamificationIndexDomain) :
 
 /-- **The upper numbering is compatible with quotients.** For a normal subgroup `H` of
 `G = Gal(M/K)`, `(G/H)^v = G^v H / H`. -/
-@[simp]
 theorem upperRamificationGroup_quotient (v : RamificationIndexDomain) :
-    upperRamificationGroupQuotient H v = (upperRamificationGroup K M v).map (QuotientGroup.mk' H) :=
-  by rfl
+    upperRamificationGroupQuotient H v =
+      (upperRamificationGroup K M v ⊔ H).map (QuotientGroup.mk' H) := by
+  simp [upperRamificationGroupQuotient, Subgroup.map_sup]
+
+/-- A quotient class lies in the upper ramification group exactly when it has a representative
+in the upper ramification group of `M/K`. -/
+theorem mem_upperRamificationGroupQuotient_iff {v : RamificationIndexDomain}
+    {σ : (M ≃ₐ[K] M) ⧸ H} :
+    σ ∈ upperRamificationGroupQuotient H v ↔
+      ∃ τ ∈ upperRamificationGroup K M v, QuotientGroup.mk' H τ = σ := by
+  exact Subgroup.mem_map
+
+/-- The upper ramification filtration on a quotient is decreasing. -/
+theorem upperRamificationGroupQuotient_antitone :
+    Antitone (upperRamificationGroupQuotient H) :=
+  fun _ _ hvw ↦ Subgroup.map_mono (upperRamificationGroup_antitone K M hvw)
+
+/-- Each upper ramification group in the quotient is normal. -/
+instance instNormalUpperRamificationGroupQuotient (v : RamificationIndexDomain) :
+    (upperRamificationGroupQuotient H v).Normal :=
+  Subgroup.Normal.map inferInstance (QuotientGroup.mk' H) (QuotientGroup.mk'_surjective H)
 
 /-- **The upper numbering of a quotient, field-theoretically.** For a normal subgroup `H` of
 `G = Gal(M/K)` and any local-field structure on the fixed field `M^H` compatible with `K`, the
 restriction isomorphism `G ⧸ H ≃* Gal(M^H/K)` maps the quotient upper ramification group at `v`
 onto the upper ramification group of `M^H/K`. -/
+@[simp]
 theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
     [TopologicalSpace (fixedField H)] [IsNonarchimedeanLocalField (fixedField H)]
     [ValuativeExtension K (fixedField H)] (v : RamificationIndexDomain) :
@@ -143,7 +166,7 @@ theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
   have hcomp : (IsGalois.normalAutEquivQuotient H).toMonoidHom.comp (QuotientGroup.mk' H) =
       AlgEquiv.restrictNormalHom (fixedField H) :=
     MonoidHom.ext (IsGalois.normalAutEquivQuotient_apply H)
-  rw [upperRamificationGroup_quotient, Subgroup.map_map, hcomp,
+  rw [upperRamificationGroupQuotient, Subgroup.map_map, hcomp,
     map_restrictNormalHom_upperRamificationGroup K (fixedField H) M]
 
 end Quotient
