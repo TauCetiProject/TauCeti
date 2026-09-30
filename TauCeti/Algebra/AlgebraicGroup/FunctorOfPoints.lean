@@ -102,12 +102,6 @@ noncomputable instance instInv : Inv (WithConv (H →ₐ[R] A)) where
 lemma _root_.WithConv.convInv_def (f : WithConv (H →ₐ[R] A)) :
     f⁻¹ = toConv (antipodeComp f.ofConv) := rfl
 
-/-- The underlying algebra homomorphism of the convolution inverse `f⁻¹` is
-`antipodeComp f.ofConv`. -/
-@[simp]
-lemma _root_.WithConv.ofConv_inv (f : WithConv (H →ₐ[R] A)) :
-    (f⁻¹).ofConv = antipodeComp f.ofConv := rfl
-
 /-- Pointwise, the convolution inverse of `f` sends `h` to `f (S h)`, where `S` is the
 antipode. -/
 lemma convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
@@ -165,18 +159,6 @@ groups is automatically a group homomorphism, so no separate construction is nee
 @[simp]
 lemma mapValue_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
     mapValue φ f = toConv (φ.comp f.ofConv) := by
-  delta mapValue
-  rfl
-
-/-- The underlying algebra homomorphism of `mapValue φ f` is `φ.comp f.ofConv`. -/
-lemma _root_.AlgHom.ofConv_mapValue (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
-    (mapValue φ f).ofConv = φ.comp f.ofConv := by
-  delta mapValue
-  rfl
-
-/-- Pointwise evaluation of `mapValue φ f` at `h : H`. -/
-lemma _root_.AlgHom.mapValue_apply_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) (h : H) :
-    (mapValue φ f) h = φ (f h) := by
   delta mapValue
   rfl
 

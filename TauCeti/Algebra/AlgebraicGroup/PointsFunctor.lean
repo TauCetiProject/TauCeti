@@ -187,7 +187,7 @@ lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : WithConv (H →ₐ[R] A)) (h : H) :
     (((pointsFunctor (H := H)).map φ f : WithConv (H →ₐ[R] B)).ofConv) h =
       φ.hom (f.ofConv h) :=
-  AlgHom.mapValue_apply_apply φ.hom f h
+  rfl
 
 /-- A family of subgroups of the functor of points, equipped with compatible maps between
 value algebras, as a group-valued functor. -/
