@@ -11,15 +11,15 @@ import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 /-!
 # The peripheral product identity
 
-Let `F` be a free pro-`p` group of rank `r` with basis `x_0, …, x_{r-1}` and cusp
-`z = (x_0 ⋯ x_{r-1})⁻¹`. For every unit `u ∈ ℤ_pˣ` there are conjugators `c_0, …, c_{r-1}` and `d`
-in `F`, with `c_0 = 1`, such that
+Let `F` be a free pro-`p` group of rank `r` with basis `x : Fin r → F` and cusp
+`z = (∏ i, x i)⁻¹`. For every unit `u ∈ ℤ_pˣ` there are conjugators `c : Fin r → F` and `d`
+in `F`, with `c 0 = 1` when `0 < r`, such that
 
-`(c_0⁻¹ x_0 ^ u c_0) ⋯ (c_{r-1}⁻¹ x_{r-1} ^ u c_{r-1}) · (d⁻¹ z ^ u d) = 1`,
+`(∏ i, (c i)⁻¹ * x i ^ u * c i) * (d⁻¹ * z ^ u * d) = 1`,
 
 where `^ u` is the `p`-adic power; that is, the peripheral defect of `(c, d)` is trivial. The
-identity is what makes the continuous endomorphism `x_i ↦ c_i⁻¹ x_i ^ u c_i` carry the cusp `z`
-to the conjugate `d⁻¹ z ^ u d` of its `u`-th power.
+identity is what makes the continuous endomorphism sending `x i` to `(c i)⁻¹ * x i ^ u * c i`
+carry the cusp `z` to the conjugate `d⁻¹ * z ^ u * d` of its `u`-th power.
 
 ## Main results
 
