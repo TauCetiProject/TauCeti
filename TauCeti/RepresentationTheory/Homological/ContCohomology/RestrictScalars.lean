@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
+public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Continuous.TopRep.RestrictScalars
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
@@ -101,6 +102,8 @@ public section
 open CategoryTheory ContRepresentation
 
 namespace TopRep
+
+open _root_.ContinuousCohomology
 
 variable {k : Type*} [Ring k] [TopologicalSpace k] {G : Type*} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G]
@@ -472,6 +475,94 @@ theorem coeffMap_comp_restrictScalarsIntIso_hom :
 
 end TauCeti.ContCohomology
 
+namespace TopRep
+
+open _root_.ContinuousCohomology
+
+universe u v
+
+variable {R : Type v} [Ring R] [TopologicalSpace R]
+  {G H : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {X : TopRep.{u} R G} {Y : TopRep.{u} R H}
+  (phi : H →ₜ* G) (f : TopRep.res (phi : H →* G) X ⟶ Y)
+
+private theorem resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply_of_hom (i : ℕ)
+    (x : (resolutionX (restrictScalarsInt.obj X) i).V) :
+    (resolutionXRestrictScalarsIntIso Y i).hom.hom
+        ((resolutionMap phi (resRestrictScalarsIntMap (phi : H →* G) f) i).hom x) =
+      (resolutionMap phi f i).hom
+        ((resolutionXRestrictScalarsIntIso X i).hom.hom x) := by
+  induction i with
+  | zero => exact resRestrictScalarsIntMap_hom_apply (phi : H →* G) f x
+  | succ i ih =>
+    refine ContinuousMap.ext fun h => ?_
+    simp only [resolutionXRestrictScalarsIntIso_succ, Iso.trans_hom,
+      CategoryTheory.comp_apply, Functor.mapIso_hom, hom_ofHom]
+    rw [coind₁RestrictScalarsIntIso_hom_apply, coind₁RestrictScalarsIntIso_hom_apply]
+    exact ih (x (phi h))
+
+private theorem cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom_of_hom :
+    cochainsMap phi (resRestrictScalarsIntMap (phi : H →* G) f) ≫
+        (homogeneousCochainsRestrictScalarsIntIso Y).hom =
+      (homogeneousCochainsRestrictScalarsIntIso X).hom ≫
+        (TopModuleCat.restrictScalarsInt.mapHomologicalComplex _).map
+          (cochainsMap phi f) := by
+  ext i x
+  apply Subtype.ext
+  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
+    CategoryTheory.comp_apply]
+  rw [coe_homogeneousCochainsRestrictScalarsIntIso_hom_f]
+  change (resolutionXRestrictScalarsIntIso Y (i + 1)).hom.hom
+      ((resolutionMap phi (resRestrictScalarsIntMap (phi : H →* G) f) (i + 1)).hom x.1) =
+    (resolutionMap phi f (i + 1)).hom
+      ((homogeneousCochainsRestrictScalarsIntIso X).hom.f i x).1
+  exact (resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply_of_hom
+    phi f (i + 1) x.1).trans (congrArg
+      (fun z : (resolutionX X (i + 1)).V ↦ (resolutionMap phi f (i + 1)).hom z)
+      (coe_homogeneousCochainsRestrictScalarsIntIso_hom_f X i x).symm)
+
+end TopRep
+
+namespace TauCeti.ContCohomology
+
+universe u v
+
+variable {R : Type v} [Ring R] [TopologicalSpace R]
+  {G H : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {X : TopRep.{u} R G} {Y : TopRep.{u} R H}
+  (phi : H →ₜ* G) (f : TopRep.res (phi : H →* G) X ⟶ Y) (n : ℕ)
+
+/-- Scalar restriction commutes with the simultaneous group-and-coefficient map on continuous
+cohomology. -/
+theorem map_comp_restrictScalarsIntIso_hom_of_hom :
+    _root_.ContinuousCohomology.map phi
+        (TopRep.resRestrictScalarsIntMap (phi : H →* G) f) n ≫
+        (restrictScalarsIntIso Y n).hom =
+      (restrictScalarsIntIso X n).hom ≫
+        TopModuleCat.restrictScalarsInt.map
+          (_root_.ContinuousCohomology.map phi f n) := by
+  have h : HomologicalComplex.homologyMap
+        (_root_.ContinuousCohomology.cochainsMap phi
+          (TopRep.resRestrictScalarsIntMap (phi : H →* G) f)) n ≫
+        HomologicalComplex.homologyMap (TopRep.homogeneousCochainsRestrictScalarsIntIso Y).hom n =
+      HomologicalComplex.homologyMap (TopRep.homogeneousCochainsRestrictScalarsIntIso X).hom n ≫
+        HomologicalComplex.homologyMap
+          ((TopModuleCat.restrictScalarsInt.mapHomologicalComplex _).map
+            (_root_.ContinuousCohomology.cochainsMap phi f)) n := by
+    rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+      TopRep.cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom_of_hom]
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) h).trans <|
+    (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (ShortComplex.mapHomologyIso_hom_naturality
+        ((HomologicalComplex.shortComplexFunctor _ _ n).map
+          (_root_.ContinuousCohomology.cochainsMap phi f))
+          TopModuleCat.restrictScalarsInt)).trans
+        (Category.assoc _ _ _).symm
+
+end TauCeti.ContCohomology
+
 /-! ### Discrete coefficients -/
 
 namespace TauCeti.ContCohomology
@@ -503,6 +594,15 @@ theorem ofDiscreteModule_eq_restrictScalarsInt_obj (X : TopRep k G) [DiscreteTop
   -- Both sides are `TopRep.of` of their operators, so they agree as soon as the operators do.
   congrArg (TopRep.of (X := X.V)) (ofDiscreteModule_ρ_eq_restrictScalarsInt_obj_ρ X)
 
+/-- The carrier cast identifying discrete coefficients with their underlying additive
+representation is the identity. -/
+theorem cast_ofDiscreteModule_eq_restrictScalarsInt_obj
+    (X : TopRep k G) [DiscreteTopology X.V]
+    (x : (ofDiscreteModule ℤ G X.V).V) :
+    cast (congrArg TopRep.V (ofDiscreteModule_eq_restrictScalarsInt_obj X)) x =
+      (show X.V from x) := by
+  exact cast_eq _ _
+
 end TauCeti.ContCohomology
 
 namespace TauCeti.ContCohomology
@@ -522,6 +622,15 @@ noncomputable def ofDiscreteModuleRestrictScalarsIntIso :
       TopModuleCat.restrictScalarsInt.obj (continuousCohomology n X) :=
   eqToIso (congrArg (continuousCohomology n) (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≪≫
     restrictScalarsIntIso X n
+
+/-- The morphism of `ofDiscreteModuleRestrictScalarsIntIso` is the coefficient transport followed
+by the scalar-restriction isomorphism. -/
+theorem ofDiscreteModuleRestrictScalarsIntIso_hom :
+    (ofDiscreteModuleRestrictScalarsIntIso X n).hom =
+      eqToHom (congrArg (continuousCohomology n)
+        (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≫
+        (restrictScalarsIntIso X n).hom := by
+  rw [ofDiscreteModuleRestrictScalarsIntIso, Iso.trans_hom, eqToIso.hom]
 
 /-- The continuous cohomology of the carrier of a discrete `X` as a discrete `ℤ`-module is the
 continuous cohomology of `X`, as an additive equivalence between the carriers. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Canonical
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Transitivity
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionShifting.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.RestrictScalars
 
 /-!
 # Shapiro's lemma in every degree
@@ -249,5 +250,205 @@ theorem res_comp_shapiroIso_inv (M : Type u) [AddCommGroup M] [TopologicalSpace 
   exact (coeffMap_unit_comp_shapiroMap U M n).symm
 
 end Shapiro
+
+end TauCeti.ContinuousCohomology
+
+open CategoryTheory TauCeti
+open TauCeti.ContCohomology _root_.ContinuousCohomology
+
+namespace TauCeti
+
+universe u v w
+
+/-- Restriction of a bundled smooth discrete representation to a subgroup. -/
+noncomputable abbrev smoothDiscreteResTopRep {R : Type u} [Ring R] [TopologicalSpace R]
+    {G : Type v} [Group G] [TopologicalSpace G] (U : Subgroup G)
+    (A : SmoothDiscreteTopRep.{u, v, w} R G) : SmoothDiscreteTopRep.{u, v, w} R U :=
+  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
+
+end TauCeti
+
+namespace TauCeti.ContinuousCohomology
+
+open CategoryTheory TauCeti.ContCohomology
+
+universe u v
+
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+variable {R : Type v} [Ring R] [TopologicalSpace R]
+  {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (U : Subgroup G)
+
+local instance instDiscreteTopologyTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) :
+    DiscreteTopology A.obj.V := A.property.discreteTopology
+
+local instance instContinuousSMulTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) :
+    ContinuousSMul U A.obj.V := A.property.continuousSMul
+
+local instance instDiscreteTopologyTopRepAmbient (A : SmoothDiscreteTopRep.{v, u, u} R G) :
+    DiscreteTopology A.obj.V := A.property.discreteTopology
+
+/-- The canonical Shapiro map for a smooth discrete topological representation over any ring. -/
+@[expose] noncomputable def shapiroMapTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    continuousCohomology n (coindTopRep R G U A).obj ⟶ continuousCohomology n A.obj :=
+  _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U)
+    (TopRep.ofHom (coindCounit R G U A)) n
+
+omit [CompactSpace G] in
+/-- Naturality of continuous cohomology under simultaneous change of group and coefficients. -/
+private theorem map_naturality
+    {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X X' : TopRep.{u} R G} {Y Y' : TopRep.{u} R H}
+    (phi : H →ₜ* G) (f : TopRep.res (phi : H →* G) X ⟶ Y)
+    (f' : TopRep.res (phi : H →* G) X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
+    (h : (TopRep.resFunctor (phi : H →* G)).map a ≫ f' = f ≫ b) (n : ℕ) :
+    _root_.ContinuousCohomology.map phi f n ≫ coeffMap b n =
+      coeffMap a n ≫ _root_.ContinuousCohomology.map phi f' n := by
+  rw [coeffMap_def, coeffMap_def,
+    ← _root_.ContinuousCohomology.map_comp phi (ContinuousMonoidHom.id H) f b n,
+    ← _root_.ContinuousCohomology.map_comp (ContinuousMonoidHom.id G) phi a f' n]
+  apply map_congr
+  · ext x
+    rfl
+  · exact heq_of_eq h.symm
+
+private theorem shapiroMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom
+    (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    shapiroMap U A.obj.V n ≫
+        (ContCohomology.ofDiscreteModuleRestrictScalarsIntIso A.obj n).hom =
+        (ContCohomology.ofDiscreteModuleRestrictScalarsIntIso
+          (coindTopRep R G U A).obj n).hom ≫
+        TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n) := by
+  let hA := ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj A.obj
+  let hX := ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj
+    (coindTopRep R G U A).obj
+  let fOld := ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+      (DiscreteCoind.eval G U A.obj.V).toIntLinearMap
+        (eval_subgroupSubtype_smul G U A.obj.V)
+  let fNew := TopRep.resRestrictScalarsIntMap (U.subtype : U →* G)
+    (TopRep.ofHom (coindCounit R G U A))
+  have hcoeff :
+      (TopRep.resFunctor (U.subtype : U →* G)).map (eqToHom hX) ≫ fNew =
+        fOld ≫ eqToHom hA := by
+    ext f
+    change fNew ((eqToHom hX).hom f) = (eqToHom hA).hom (fOld.hom f)
+    dsimp only [hX, hA]
+    rw [TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply,
+      ContCohomology.cast_ofDiscreteModule_eq_restrictScalarsInt_obj,
+      ContCohomology.cast_ofDiscreteModule_eq_restrictScalarsInt_obj]
+    have hleft : fNew f = (show DiscreteCoind G U A.obj.V from f) 1 := by
+      let fR : DiscreteCoind G U A.obj.V := f
+      have hmap : fNew f = (TopRep.ofHom (coindCounit R G U A)).hom fR := by
+        exact TopRep.resRestrictScalarsIntMap_hom_apply (U.subtype : U →* G)
+          (TopRep.ofHom (coindCounit R G U A)) fR
+      have heval : (TopRep.ofHom (coindCounit R G U A)).hom fR = fR 1 :=
+        coindCounit_apply R G U A fR
+      exact hmap.trans heval
+    have hright : fOld.hom f = (show DiscreteCoind G U A.obj.V from f) 1 := by
+      let fR : DiscreteCoind G U A.obj.V := f
+      have hpair := ofDiscreteModulePair_hom_apply
+        (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+        (DiscreteCoind.eval G U A.obj.V).toIntLinearMap
+          (eval_subgroupSubtype_smul G U A.obj.V) fR
+      exact hpair.trans (by
+        rw [AddMonoidHom.coe_toIntLinearMap, DiscreteCoind.eval_apply])
+    exact hleft.trans hright.symm
+  have hsquare := map_naturality
+    (ContinuousMonoidHom.subgroupSubtype U) fOld fNew (eqToHom hX) (eqToHom hA) hcoeff n
+  have hscalar := ContCohomology.map_comp_restrictScalarsIntIso_hom_of_hom
+    (ContinuousMonoidHom.subgroupSubtype U) (TopRep.ofHom (coindCounit R G U A)) n
+  have hscalar' :
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U) fNew n ≫
+          (ContCohomology.restrictScalarsIntIso A.obj n).hom =
+        (ContCohomology.restrictScalarsIntIso (coindTopRep R G U A).obj n).hom ≫
+          TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n) := by
+    exact hscalar
+  rw [ContCohomology.ofDiscreteModuleRestrictScalarsIntIso_hom,
+    ContCohomology.ofDiscreteModuleRestrictScalarsIntIso_hom]
+  change shapiroMap U A.obj.V n ≫
+      (eqToHom (congrArg (continuousCohomology n) hA) ≫
+        (ContCohomology.restrictScalarsIntIso A.obj n).hom) =
+    (eqToHom (congrArg (continuousCohomology n) hX) ≫
+        (ContCohomology.restrictScalarsIntIso (coindTopRep R G U A).obj n).hom) ≫
+      TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n)
+  rw [← coeffMap_eqToHom hA n, ← coeffMap_eqToHom hX n]
+  rw [shapiroMap_def]
+  change _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U) fOld n ≫
+      (coeffMap (eqToHom hA) n ≫ (ContCohomology.restrictScalarsIntIso A.obj n).hom) =
+    (coeffMap (eqToHom hX) n ≫
+        (ContCohomology.restrictScalarsIntIso (coindTopRep R G U A).obj n).hom) ≫
+      TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n)
+  rw [← Category.assoc, hsquare, Category.assoc, hscalar', ← Category.assoc]
+  rfl
+
+/-- The generic Shapiro map is an isomorphism for a closed subgroup of a profinite group. -/
+theorem isIso_shapiroMapTopRep [TotallyDisconnectedSpace G]
+    (hU : IsClosed (U : Set G)) (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    IsIso (shapiroMapTopRep U A n) := by
+  let : CompactSpace U := isCompact_iff_compactSpace.mp hU.isCompact
+  let eX := ContCohomology.ofDiscreteModuleRestrictScalarsIntIso
+    (coindTopRep R G U A).obj n
+  let eA := ContCohomology.ofDiscreteModuleRestrictScalarsIntIso A.obj n
+  have hcomm := shapiroMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom U A n
+  have : IsIso (shapiroMap U A.obj.V n) := isIso_shapiroMap U hU A.obj.V n
+  have : IsIso eX.hom := by
+    dsimp [eX]
+    infer_instance
+  have : IsIso eA.hom := by
+    dsimp [eA]
+    infer_instance
+  have hcomp : IsIso
+      (eX.hom ≫ TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n)) := by
+    rw [← hcomm]
+    exact IsIso.comp_isIso' (isIso_shapiroMap U hU A.obj.V n)
+      (inferInstance : IsIso
+        (ContCohomology.ofDiscreteModuleRestrictScalarsIntIso A.obj n).hom)
+  have : IsIso (TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n)) :=
+    IsIso.of_isIso_comp_left eX.hom _
+  have hbijRestricted := ConcreteCategory.bijective_of_isIso
+    (TopModuleCat.restrictScalarsInt.map (shapiroMapTopRep U A n))
+  have hbij : Function.Bijective (shapiroMapTopRep U A n) := hbijRestricted
+  let : DiscreteTopology
+      (continuousCohomology n (ofDiscreteModule ℤ U A.obj.V)) := inferInstance
+  let hdisc : DiscreteTopology
+      (TopModuleCat.restrictScalarsInt.obj (continuousCohomology n A.obj)) :=
+    eA.toContinuousLinearEquiv.toHomeomorph.symm.isEmbedding.discreteTopology
+  let : DiscreteTopology (continuousCohomology n A.obj) := hdisc
+  exact TopModuleCat.isIso_of_bijective _ hbij
+
+/-- Shapiro's lemma for smooth discrete topological representations over any ring. -/
+noncomputable def shapiroIsoTopRep [TotallyDisconnectedSpace G]
+    (hU : IsClosed (U : Set G)) (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    continuousCohomology n (coindTopRep R G U A).obj ≅ continuousCohomology n A.obj :=
+  have := isIso_shapiroMapTopRep U hU A n
+  asIso (shapiroMapTopRep U A n)
+
+@[simp]
+theorem shapiroIsoTopRep_hom [TotallyDisconnectedSpace G]
+    (hU : IsClosed (U : Set G)) (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    (shapiroIsoTopRep U hU A n).hom = shapiroMapTopRep U A n := by
+  rw [shapiroIsoTopRep, asIso_hom]
+
+@[simp]
+theorem shapiroMapTopRep_comp_shapiroIsoTopRep_inv [TotallyDisconnectedSpace G]
+    (hU : IsClosed (U : Set G)) (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    shapiroMapTopRep U A n ≫ (shapiroIsoTopRep U hU A n).inv = 𝟙 _ := by
+  rw [← shapiroIsoTopRep_hom U hU A n, Iso.hom_inv_id]
+
+@[simp]
+theorem shapiroIsoTopRep_inv_comp_shapiroMapTopRep [TotallyDisconnectedSpace G]
+    (hU : IsClosed (U : Set G)) (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    (shapiroIsoTopRep U hU A n).inv ≫ shapiroMapTopRep U A n = 𝟙 _ := by
+  rw [← shapiroIsoTopRep_hom U hU A n, Iso.inv_hom_id]
+
+/-- Applying Shapiro after its inverse returns the original cohomology class. -/
+theorem shapiroMapTopRep_shapiroIsoTopRep_inv_apply [TotallyDisconnectedSpace G]
+    (hU : IsClosed (U : Set G)) (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ)
+    (b : continuousCohomology n A.obj) :
+    shapiroMapTopRep U A n ((shapiroIsoTopRep U hU A n).inv b) = b := by
+  have h := ConcreteCategory.congr_hom
+    (shapiroIsoTopRep_inv_comp_shapiroMapTopRep U hU A n) b
+  exact h.trans rfl
 
 end TauCeti.ContinuousCohomology

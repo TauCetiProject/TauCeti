@@ -269,4 +269,37 @@ theorem explicitH1AddEquivContinuousCohomology_corestriction (x : H1 U M) :
     explicitH1AddEquivContinuousCohomology_coeffMap, explicitCor1_eq_explicitCoeff1_trace hU,
     AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ← hy]
 
+/-! ### Corestriction for smooth discrete topological representations -/
+
+section TopRep
+
+universe v
+
+variable {R : Type v} [Ring R] [TopologicalSpace R]
+  {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G] (U : Subgroup G)
+
+/-- Corestriction for a smooth discrete topological representation over an arbitrary ring. -/
+@[expose] noncomputable def corestrictionTopRep (A : SmoothDiscreteTopRep.{v, u, u} R G)
+    (hU : IsOpen (U : Set G)) [U.FiniteIndex] (n : ℕ) :
+    continuousCohomology n (smoothDiscreteResTopRep U A).obj ⟶
+      continuousCohomology n A.obj :=
+  (shapiroIsoTopRep U (U.isClosed_of_isOpen hU)
+    (smoothDiscreteResTopRep U A) n).inv ≫
+    coeffMap (coindTraceHom R G U A) n
+
+/-- Applying corestriction after the generic Shapiro map is the coefficient map of the trace. -/
+theorem corestrictionTopRep_shapiroMapTopRep_apply
+    (A : SmoothDiscreteTopRep.{v, u, u} R G) (hU : IsOpen (U : Set G))
+    [U.FiniteIndex] (n : ℕ)
+    (c : continuousCohomology n
+      (coindTopRep R G U (smoothDiscreteResTopRep U A)).obj) :
+    corestrictionTopRep U A hU n
+        (shapiroMapTopRep U (smoothDiscreteResTopRep U A) n c) =
+      coeffMap (coindTraceHom R G U A) n c := by
+  rw [corestrictionTopRep, ← ConcreteCategory.comp_apply, ← Category.assoc,
+    shapiroMapTopRep_comp_shapiroIsoTopRep_inv, Category.id_comp]
+
+end TopRep
+
 end TauCeti.ContinuousCohomology

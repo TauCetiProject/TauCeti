@@ -141,6 +141,38 @@ instance (X : TopRep k G) [DiscreteTopology X.V] : DiscreteTopology (restrictSca
 
 end Monoid
 
+section Restriction
+
+universe u v
+
+variable {k : Type v} [Ring k] [TopologicalSpace k]
+  {G H : Type u} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
+  [IsTopologicalGroup G] [IsTopologicalGroup H]
+
+/-- The scalar-restricted coefficient map used when the acting group changes. -/
+noncomputable def resRestrictScalarsIntMap (phi : H →* G) {X : TopRep.{u} k G}
+    {Y : TopRep.{u} k H} (f : res phi X ⟶ Y) :
+    res phi (restrictScalarsInt.obj X) ⟶ restrictScalarsInt.obj Y :=
+  ConcreteCategory.ofHom
+    { toContinuousLinearMap := f.hom.toContinuousLinearMap.restrictScalars ℤ
+      isIntertwining' h := by
+        ext x
+        change f.hom (X.ρ (phi h) x) = Y.ρ h (f.hom x)
+        exact DFunLike.congr_fun (f.hom.isIntertwining' h) x }
+
+omit [TopologicalSpace G] [TopologicalSpace H] [IsTopologicalGroup G]
+  [IsTopologicalGroup H] in
+/-- `resRestrictScalarsIntMap` has the same underlying function as the original coefficient map. -/
+@[simp]
+theorem resRestrictScalarsIntMap_hom_apply (phi : H →* G) {X : TopRep.{u} k G}
+    {Y : TopRep.{u} k H} (f : res phi X ⟶ Y)
+    (x : (res phi (restrictScalarsInt.obj X)).V) :
+    (resRestrictScalarsIntMap phi f).hom x = f.hom x := by
+  change f.hom x = f.hom x
+  rfl
+
+end Restriction
+
 /-! ### Compatibility with coinduction and invariants -/
 
 section Coinduction
