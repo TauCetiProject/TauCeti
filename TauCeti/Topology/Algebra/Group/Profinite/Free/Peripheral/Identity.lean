@@ -21,13 +21,6 @@ where `^ u` is the `p`-adic power; that is, the peripheral defect of `(c, d)` is
 identity is what makes the continuous endomorphism `x_i ↦ c_i⁻¹ x_i ^ u c_i` carry the cusp `z`
 to the conjugate `d⁻¹ z ^ u d` of its `u`-th power.
 
-The proof passes to the limit in the approximate solutions supplied by
-`TauCeti.Peripheral.exists_mem_level_succ`. The sets of normalized conjugators, with `c_0 = 1`,
-whose defect lies in `γ_{n+1}(F)` form a decreasing sequence of nonempty closed subsets of the
-compact space `F ^ r × F`, so they have a common point. Its defect lies in every term of the
-closed lower central series, whose intersection is trivial because `F` is pro-`p`. Imposing
-`c_0 = 1` at every level is what keeps the normalization in the limit.
-
 ## Main results
 
 * `TauCeti.Peripheral.exists_defect_eq_one`: for every unit `u`, the basis of a free pro-`p`
