@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
+public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
@@ -19,12 +20,14 @@ import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
 The ring of integers of `ℚ` is `ℤ` (`Rat.ringOfIntegersEquiv`), but the two are different
 types, and the local invariants of a prime `P` of a number field `E` can be taken relative to
-either base ring: the residue degree `P.inertiaDeg ℤ` or `P.inertiaDeg (𝓞 ℚ)`, the ramification
-index `P.ramificationIdx ℤ` or `P.ramificationIdx (𝓞 ℚ)`, and the arithmetic Frobenius condition
+either base ring: the different ideal, the residue degree `P.inertiaDeg ℤ` or
+`P.inertiaDeg (𝓞 ℚ)`, the ramification index `P.ramificationIdx ℤ` or
+`P.ramificationIdx (𝓞 ℚ)`, and the arithmetic Frobenius condition
 `IsArithFrobAt ℤ σ P` or `IsArithFrobAt (𝓞 ℚ) σ P`. Statements about number fields over `ℚ` as
 a base *field* naturally produce the `𝓞 ℚ` versions, while statements about rational primes
 produce the `ℤ` versions. This file proves that they agree.
 
+The different ideals agree because the trace conditions use the same subring of `ℚ`.
 The residue degrees are compared through the absolute norm, `absNorm (P.under R) ^ f = absNorm P`
 for both base rings, since the ideal of `𝓞 ℚ` below `P` is the image of the ideal of `ℤ` below
 `P` under the structure map. The ramification indices are compared as multiplicities of `P` in
@@ -33,6 +36,8 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
 
 ## Main results
 
+* `TauCeti.differentIdeal_ringOfIntegers_rat_eq_int`: the differents over `𝓞 ℚ`
+  and over `ℤ` agree.
 * `Ideal.under_ringOfIntegers_rat_eq_map`: the ideal of `𝓞 ℚ` below `P` is the image of the ideal
   of `ℤ` below `P`.
 * `Ideal.inertiaDeg_ringOfIntegers_rat_eq_int`: the residue degrees over `𝓞 ℚ` and over `ℤ`
@@ -54,6 +59,24 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
 public section
 
 open scoped NumberField
+
+namespace TauCeti
+
+/-- The different of a number field over `𝓞 ℚ` agrees with its different over `ℤ`. -/
+@[simp]
+theorem differentIdeal_ringOfIntegers_rat_eq_int {K : Type*} [Field K] [NumberField K] :
+    differentIdeal (𝓞 ℚ) (𝓞 K) = differentIdeal ℤ (𝓞 K) := by
+  apply IsFractionRing.coeSubmodule_injective (𝓞 K) K
+  rw [coeSubmodule_differentIdeal (𝓞 ℚ) ℚ, coeSubmodule_differentIdeal ℤ ℚ]
+  congr 1
+  ext x
+  simp only [Submodule.mem_traceDual, RingHom.mem_range]
+  apply forall₂_congr
+  intro a ha
+  exact Rat.ringOfIntegersEquiv.toEquiv.exists_congr' fun n ↦
+    Iff.of_eq (congrArg (· = _) (Rat.ringOfIntegersEquiv_symm_apply_coe n))
+
+end TauCeti
 
 namespace Ideal
 

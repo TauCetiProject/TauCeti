@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Ramification
+public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Ramification.Basic
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 import TauCeti.RingTheory.Ideal.Inertia
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Exponent
 
 /-!
 # The dyadic ramification groups of `ℚ(i)`
@@ -74,6 +76,7 @@ private theorem two_mem_pow_iff {n : ℕ} : (2 : 𝓞 K) ∈ 𝔭 ^ n ↔ n ≤ 
 
 /-- **The dyadic ramification filtration of `ℚ(i)`.** An automorphism `σ` lies in the `i`-th
 ramification group of the prime above `2` exactly when `σ = 1` or `i ≤ 1`. -/
+@[simp]
 theorem mem_ramificationGroup_iff {i : ℕ} {σ : K ≃ₐ[ℚ] K} :
     σ ∈ 𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i ↔ σ = 1 ∨ i ≤ 1 := by
   rw [ramificationGroup_def,
@@ -124,13 +127,13 @@ ramification groups of the prime above `2` is the different exponent `v_𝔭(�
 general `multiplicity_differentIdeal_eq_finsum_card_ramificationGroup_sub_one` predicts. -/
 theorem finsum_card_ramificationGroup_sub_one :
     ∑ᶠ i : ℕ, (Nat.card (𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i) - 1) = 2 := by
-  rw [finsum_eq_sum_of_support_subset (s := Finset.range 2) _ fun i hi ↦ ?_]
-  · rw [Finset.sum_range_succ, Finset.sum_range_one,
-      card_ramificationGroup_of_le_one hmin hgen 𝔭 zero_le_one,
-      card_ramificationGroup_of_le_one hmin hgen 𝔭 le_rfl]
-  · by_contra hi2
-    rw [Finset.coe_range, Set.mem_Iio, not_lt] at hi2
-    rw [Function.mem_support, ramificationGroup_eq_bot hmin hgen 𝔭 hi2, Subgroup.card_bot] at hi
-    exact hi rfl
+  have : Algebra.IsQuadraticExtension ℚ K := ⟨finrank_eq_two hmin hgen⟩
+  have htwo : span {(2 : ℤ)} ≠ ⊥ := span_singleton_eq_bot.not.mpr two_ne_zero
+  let w : IsDedekindDomain.HeightOneSpectrum (𝓞 K) :=
+    ⟨𝔭, inferInstance, ne_bot_of_liesOver_of_ne_bot htwo 𝔭⟩
+  have h := w.multiplicity_differentIdeal_eq_finsum_card_ramificationGroup_sub_one (K := ℚ)
+  rw [differentIdeal_ringOfIntegers_rat_eq_int, multiplicity_differentIdeal_eq_two hmin hgen 𝔭]
+    at h
+  exact_mod_cast h.symm
 
 end TauCeti.NumberField.GaussianRationals

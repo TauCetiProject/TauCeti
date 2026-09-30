@@ -70,6 +70,7 @@ theorem coe_T_mul_coe_S_sq_inv : (((T : PSL(2, ℤ)) * S) ^ 2)⁻¹ = (T : PSL(2
   rw [← coe_T_mul_coe_S_inv, inv_inv]
 
 /-- The product form of `S² = 1` in `PSL(2, ℤ)`. -/
+@[simp]
 theorem coe_S_mul_coe_S : (S : PSL(2, ℤ)) * S = 1 := by
   rw [← sq, coe_S_sq]
 
