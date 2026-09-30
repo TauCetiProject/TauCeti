@@ -142,23 +142,26 @@ section CharZero
 
 variable [CharZero K]
 
-/-- For a nonconstant polynomial in characteristic zero, the roots of its derivative gcd,
-together with one copy of each distinct root, recover all roots with multiplicity. -/
-theorem _root_.Polynomial.roots_gcd_derivative_add_dedup {p : K[X]} (hdeg : p.natDegree ≠ 0) :
+/-- In characteristic zero, the roots of a polynomial's derivative gcd, together with one copy
+of each distinct root, recover all roots with multiplicity. -/
+theorem _root_.Polynomial.roots_gcd_derivative_add_dedup (p : K[X]) :
     (EuclideanDomain.gcd p p.derivative).roots + p.roots.dedup = p.roots := by
-  have hp : p ≠ 0 := fun h ↦ hdeg (h ▸ natDegree_zero)
-  have hd : p.derivative ≠ 0 := derivative_ne_zero.mpr hdeg
-  ext x
-  rw [Multiset.count_add, count_roots, rootMultiplicity_gcd p p.derivative hp hd,
-    count_roots]
-  by_cases hx : p.IsRoot x
-  · rw [derivative_rootMultiplicity_of_root hx]
-    have hm : 0 < p.rootMultiplicity x := (rootMultiplicity_pos hp).mpr hx
-    rw [Multiset.count_dedup, ite_eq_left ((mem_roots hp).mpr hx)]
-    omega
-  · have hm : p.rootMultiplicity x = 0 := rootMultiplicity_eq_zero hx
-    have hmem : x ∉ p.roots := fun h => hx ((mem_roots hp).mp h)
-    rw [hm, zero_min, Multiset.count_dedup, ite_eq_right hmem]
+  by_cases hdeg : p.natDegree = 0
+  · rw [eq_C_of_natDegree_eq_zero hdeg, roots_C, Multiset.dedup_zero, add_zero]
+    simp
+  · have hp : p ≠ 0 := fun h ↦ hdeg (h ▸ natDegree_zero)
+    have hd : p.derivative ≠ 0 := derivative_ne_zero.mpr hdeg
+    ext x
+    rw [Multiset.count_add, count_roots, rootMultiplicity_gcd p p.derivative hp hd,
+      count_roots]
+    by_cases hx : p.IsRoot x
+    · rw [derivative_rootMultiplicity_of_root hx]
+      have hm : 0 < p.rootMultiplicity x := (rootMultiplicity_pos hp).mpr hx
+      rw [Multiset.count_dedup, ite_eq_left ((mem_roots hp).mpr hx)]
+      omega
+    · have hm : p.rootMultiplicity x = 0 := rootMultiplicity_eq_zero hx
+      have hmem : x ∉ p.roots := fun h => hx ((mem_roots hp).mp h)
+      rw [hm, zero_min, Multiset.count_dedup, ite_eq_right hmem]
 
 /-- For a split polynomial in characteristic zero, the number of distinct roots of a nonzero
 polynomial is its degree minus the degree of its gcd with its derivative. -/
@@ -171,7 +174,7 @@ theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_t
     simp
   · have hsplitg : (EuclideanDomain.gcd p p.derivative).Splits :=
       hsplit.of_dvd hp (EuclideanDomain.gcd_dvd_left p p.derivative)
-    have hcard := congrArg Multiset.card (roots_gcd_derivative_add_dedup hdeg)
+    have hcard := congrArg Multiset.card (roots_gcd_derivative_add_dedup p)
     rw [Multiset.card_add] at hcard
     rw [hsplit.natDegree_eq_card_roots, hsplitg.natDegree_eq_card_roots,
       Multiset.card_toFinset]
