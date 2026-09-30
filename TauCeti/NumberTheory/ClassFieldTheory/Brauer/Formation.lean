@@ -57,11 +57,11 @@ variable (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
 subgroup of `(Kˢ)ˣ` fixed by `V`. -/
 private theorem map_level_unitsFormation :
     ((unitsFormation K).level V.toOpenSubgroup).toAddSubgroup.map
-        (unitsCoeffEquivUnitsFormation K).symm.toAddMonoidHom =
+        (unitsCoeffEquivUnitsFormation K).symm =
       FixedPoints.addSubgroup V.toSubgroup (UnitsCoeff K) := by
   ext y
-  rw [AddSubgroup.mem_map_equiv, AddEquiv.symm_symm, Submodule.mem_toAddSubgroup,
-    Formation.mem_level, FixedPoints.mem_addSubgroup, Subtype.forall]
+  rw [← AddEquiv.toAddMonoidHom_eq_coe, AddSubgroup.mem_map_equiv, AddEquiv.symm_symm,
+    Submodule.mem_toAddSubgroup, Formation.mem_level, FixedPoints.mem_addSubgroup, Subtype.forall]
   refine forall₂_congr fun v _ => ?_
   rw [← unitsCoeffEquivUnitsFormation_smul, (unitsCoeffEquivUnitsFormation K).injective.eq_iff]
   rfl
@@ -80,7 +80,10 @@ private theorem ofOpenNormalRepEquiv_apply_coe
       UnitsCoeff K) = (unitsCoeffEquivUnitsFormation K).symm
         ((x : (unitsFormation K).level (NormalLayer.ofOpenNormal V).top) :
           (unitsFormation K).toRep.V) :=
-  (rfl)
+  by
+    rw [ofOpenNormalRepEquiv, LinearEquiv.trans_apply, AddEquiv.coe_toIntLinearEquiv,
+      AddEquiv.trans_apply, AddEquiv.addSubgroupCongr_apply,
+      AddEquiv.coe_addSubgroupMap_apply, LinearEquiv.coe_ofEq_apply]
 
 /-- **The second cohomology of the layer `V ◁ G_K` is that of the finite level `V`**: Mathlib's
 `H²(G_K ⧸ V, ((Kˢ)ˣ)^V)` of the layer, carried along `NormalLayer.galOfOpenNormalEquiv`, is the

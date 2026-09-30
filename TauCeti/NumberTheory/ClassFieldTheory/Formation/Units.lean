@@ -106,6 +106,41 @@ theorem mem_level_unitsFormation_iff {U : OpenSubgroup (AbsoluteGaloisGroup K)}
 
 /-! ### Hilbert 90 on the finite normal layers -/
 
+/-- Read a cocycle on a formation layer as a function valued in the corresponding fixed points
+of `(Kˢ)ˣ`. -/
+private def unitsCocycle (L : NormalLayer (AbsoluteGaloisGroup K))
+    (f : L.Gal → (L.rep (unitsFormation K)).V) :
+    L.Gal → FixedPoints.addSubgroup L.relativeTop (UnitsCoeff K) := fun q =>
+  ⟨(unitsCoeffEquivUnitsFormation K).symm (f q : (unitsFormation K).level L.top),
+    (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
+      (Formation.mem_level _).1 (f q).2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
+
+/-- `unitsCocycle` changes only the coefficient dictionary, not the underlying element. -/
+private theorem unitsCocycle_apply_coe (L : NormalLayer (AbsoluteGaloisGroup K))
+    (f : L.Gal → (L.rep (unitsFormation K)).V) (q : L.Gal) :
+    (unitsCocycle L f q : UnitsCoeff K) =
+      (unitsCoeffEquivUnitsFormation K).symm
+        (f q : (unitsFormation K).level L.top) :=
+  (rfl)
+
+/-- Reading a layer cocycle through the coefficient dictionary preserves the cocycle identity. -/
+private theorem isCocycle₁_unitsCocycle (L : NormalLayer (AbsoluteGaloisGroup K))
+    {f : L.Gal → (L.rep (unitsFormation K)).V}
+    (hf : ∀ σ τ, f (σ * τ) = (L.rep (unitsFormation K)).ρ σ (f τ) + f σ) :
+    IsCocycle₁ (unitsCocycle L f) := by
+  intro σ τ
+  induction σ using QuotientGroup.induction_on with
+  | H u =>
+    apply Subtype.ext
+    have hsmul :
+        (((u : L.Gal) • unitsCocycle L f τ :
+            FixedPoints.addSubgroup L.relativeTop (UnitsCoeff K)) : UnitsCoeff K) =
+          (u : AbsoluteGaloisGroup K) • (unitsCocycle L f τ : UnitsCoeff K) :=
+      subtype_mk'_smul L.ground (UnitsCoeff K) L.relativeTop u (unitsCocycle L f τ)
+    rw [unitsCocycle_apply_coe, AddSubgroup.coe_add, hsmul,
+      unitsCocycle_apply_coe, unitsCocycle_apply_coe, hf u τ, Submodule.coe_add, map_add,
+      NormalLayer.rep_ρ_mk_apply_coe, unitsCoeffEquivUnitsFormation_symm_ρ]
+
 /-- Hilbert 90 on a finite layer `U ⧸ N` of a closed subgroup `U` of `G_K`, in the explicit form
 used by inflation. -/
 private theorem isCoboundary₁_of_isCocycle₁_quotient (U : Subgroup (AbsoluteGaloisGroup K))
@@ -135,17 +170,7 @@ theorem subsingleton_h1_unitsFormation (L : NormalLayer (AbsoluteGaloisGroup K))
   have : (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).Normal := L.normal
   obtain ⟨m, hm⟩ := isCoboundary₁_of_isCocycle₁_quotient L.ground.toSubgroup L.ground.isClosed
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (L.top.isOpen.preimage continuous_subtype_val)
-    (f := fun q => ⟨(unitsCoeffEquivUnitsFormation K).symm (f q : (unitsFormation K).level L.top),
-      (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
-        (Formation.mem_level _).1 (f q).2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩) fun σ τ => by
-      induction σ using QuotientGroup.induction_on with
-      | H u =>
-        refine Subtype.ext ?_
-        change (unitsCoeffEquivUnitsFormation K).symm (f (u * τ) : (unitsFormation K).level _) =
-          (u : AbsoluteGaloisGroup K) • (unitsCoeffEquivUnitsFormation K).symm (f τ : _) +
-            (unitsCoeffEquivUnitsFormation K).symm (f u : _)
-        rw [(mem_cocycles₁_iff f).1 f.2 u τ, Submodule.coe_add, map_add,
-          NormalLayer.rep_ρ_mk_apply_coe, unitsCoeffEquivUnitsFormation_symm_ρ]
+    (f := unitsCocycle L f) (isCocycle₁_unitsCocycle L ((mem_cocycles₁_iff f).1 f.2))
   refine ⟨⟨unitsCoeffEquivUnitsFormation K m, (Formation.mem_level _).2 fun v hv =>
     (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩, funext fun σ => ?_⟩
   induction σ using QuotientGroup.induction_on with
