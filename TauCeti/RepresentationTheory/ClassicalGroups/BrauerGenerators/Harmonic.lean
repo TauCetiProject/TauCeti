@@ -179,25 +179,33 @@ theorem isCompl_ker_orthogonalCap_range_orthogonalCup (hn : IsUnit (n : k)) :
 
 /-- The kernel of the Brauer generator `e = cup ∘ cap` is the harmonic tensors, the cup being
 injective. This needs no invertibility of the loop value: even where `(n : k) = 0`, so that `e`
-squares to zero, its kernel is still exactly the harmonic tensors. -/
-theorem ker_orthogonalCupCap [NeZero n] :
+squares to zero, its kernel is still exactly the harmonic tensors. Nor does it need `n ≠ 0`: for
+`n = 0` the cap and the cup are both the zero map, and both kernels are everything. -/
+theorem ker_orthogonalCupCap :
     LinearMap.ker (orthogonalCupCap k n) = LinearMap.ker (orthogonalCap k n) := by
-  ext x
-  rw [LinearMap.mem_ker, LinearMap.mem_ker, orthogonalCupCap_apply,
-    LinearMap.map_eq_zero_iff _ (orthogonalCup_injective k n)]
+  have hcomp : orthogonalCupCap k n = orthogonalCup k n ∘ₗ orthogonalCap k n :=
+    LinearMap.ext (orthogonalCupCap_apply k n)
+  obtain _ | m := n
+  · have hcap : orthogonalCap k 0 = 0 := by
+      refine PiTensorProduct.ext ?_
+      ext v
+      simp [dotProduct]
+    have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
+    rw [hcomp, hcap, hcup, LinearMap.zero_comp, LinearMap.ker_zero, LinearMap.ker_zero]
+  · rw [hcomp, LinearMap.ker_comp_of_ker_eq_bot _
+      (LinearMap.ker_eq_bot_of_injective (orthogonalCup_injective k (m + 1)))]
 
 /-- The image of the Brauer generator `e = cup ∘ cap` is the trace line, the cap being
-surjective. -/
-theorem range_orthogonalCupCap [NeZero n] :
+surjective. For `n = 0` the cup is the zero map and both images are `⊥`. -/
+theorem range_orthogonalCupCap :
     LinearMap.range (orthogonalCupCap k n) = LinearMap.range (orthogonalCup k n) := by
-  ext y
-  rw [LinearMap.mem_range, LinearMap.mem_range]
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨orthogonalCap k n x, (orthogonalCupCap_apply k n x).symm⟩
-  · rintro ⟨c, rfl⟩
-    obtain ⟨x, rfl⟩ := orthogonalCap_surjective k n c
-    exact ⟨x, orthogonalCupCap_apply k n x⟩
+  have hcomp : orthogonalCupCap k n = orthogonalCup k n ∘ₗ orthogonalCap k n :=
+    LinearMap.ext (orthogonalCupCap_apply k n)
+  obtain _ | m := n
+  · have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
+    rw [hcomp, hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
+  · rw [hcomp, LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top_of_surjective _ (orthogonalCap_surjective k (m + 1)))]
 
 /-! ### The two summands as subrepresentations -/
 
