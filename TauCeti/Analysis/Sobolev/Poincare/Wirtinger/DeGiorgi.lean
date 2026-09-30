@@ -18,7 +18,7 @@ levels `k < l`, this file proves **De Giorgi's isoperimetric inequality**
 `(l - k) · |{u ≥ l}| · |{u ≤ k}| ≤ μ(B(0, 1)) · (diam Ω) ^ (n + 1) · ∫_{k < u < l} |∇u|`,
 
 all sets being taken inside `Ω`.  On a ball of radius `R` the constant is
-`μ(B(0, 1)) · (2R) ^ (n + 1)`, the form `C(n) R^{n+1}` of the classical statement.
+`μ(B(0, 1)) · (2R) ^ (n + 1)`; its value depends on the normalization of `μ`.
 
 The inequality quantifies how a Sobolev function passes from low to high values: if both
 `{u ≤ k}` and `{u ≥ l}` occupy a fixed proportion of `Ω`, then `∇u` carries a definite amount of
@@ -27,15 +27,6 @@ Hölder continuity for weak solutions of divergence-form equations with bounded 
 coefficients that turns a lower bound on the measure of `{u ≤ k}` into a decay of the measure of
 `{u ≥ l}` along a sequence of levels.  Only the `L¹` norm of `∇u` on the strip enters, which is
 why the inequality is stated for every exponent `p` and proved at `p = 1`.
-
-## Proof
-
-The double truncation `w = (u - k)⁺ - (u - l)⁺` lies in `W^{1,1}(Ω)`, vanishes on `{u ≤ k}`,
-equals `l - k` on `{u ≥ l}`, and has weak gradient `1_{k < u < l} ∇u`, using that `∇u` vanishes
-almost everywhere on the level set `{u = l}`.  The Poincaré–Wirtinger inequality
-`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` for `w`, with the mean taken over
-`{u ≤ k}` where it is zero, then reads
-`(l - k) |{u ≥ l}| ≤ ‖w‖_{L¹} ≤ μ(B(0, 1)) (diam Ω) ^ (n + 1) / |{u ≤ k}| · ‖∇w‖_{L¹}`.
 
 ## Main declarations
 
@@ -154,7 +145,7 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_convex
       rw [← Measure.restrict_restrict hB]
       refine (ae_restrict_iff' hB).2 ?_
       filter_upwards [hwval] with x hx hxS
-      have hl : W1p.value u x - l ≤ 0 := by linarith [show W1p.value u x ≤ k from hxS]
+      have hl : W1p.value u x - l ≤ 0 := by linarith [hxS]
       rw [hx, max_eq_right (sub_nonpos.2 hxS), max_eq_right hl, sub_zero]
     rw [average_congr hzero, average_zero]
   rcases eq_or_ne (mu S) 0 with hS0 | hS0
