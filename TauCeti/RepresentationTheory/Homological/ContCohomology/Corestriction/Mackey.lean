@@ -196,33 +196,6 @@ theorem smul_continuousMackeyToH_smul [TopologicalSpace G] [ContinuousMul G] (s 
   rw [Subgroup.continuousMackeyToH_apply]
   exact smul_mackeyToH_smul G M U V s y m
 
-/-- If a sum over the double cosets `V \ G / U` of values at representatives does not depend on
-the choice of representatives, then neither does each value: comparing the canonical choice with
-the ones that replace the representative of a single double coset by `s`, resp. `s'`, leaves only
-the terms at `s` and `s'`. -/
-private theorem eq_of_sum_rep_eq {A : Type*} [AddCommGroup A]
-    [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))] (T : G → A)
-    (hT : ∀ r : DoubleCoset.Quotient (V : Set G) (U : Set G) → G,
-      (∀ D, DoubleCoset.mk V U (r D) = D) →
-        ∑ D, T (r D) = ∑ D : DoubleCoset.Quotient (V : Set G) (U : Set G), T D.out)
-    {s s' : G} (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') : T s = T s' := by
-  classical
-  have key (t : G) (ht : DoubleCoset.mk V U t = DoubleCoset.mk V U s) :
-      T t + ∑ D ∈ {DoubleCoset.mk V U s}ᶜ, T (Quotient.out D) =
-        ∑ D : DoubleCoset.Quotient (V : Set G) (U : Set G), T D.out := by
-    have hr (D : DoubleCoset.Quotient (V : Set G) (U : Set G)) :
-        DoubleCoset.mk V U (Function.update
-          (fun D' : DoubleCoset.Quotient (V : Set G) (U : Set G) => D'.out)
-          (DoubleCoset.mk V U s) t D) = D := by
-      rcases eq_or_ne D (DoubleCoset.mk V U s) with rfl | hD
-      · rw [Function.update_self, ht]
-      · rw [Function.update_of_ne hD]
-        exact DoubleCoset.out_eq' D
-    rw [← hT _ hr, Fintype.sum_eq_add_sum_compl (DoubleCoset.mk V U s), Function.update_self]
-    refine congrArg (T t + ·) (Finset.sum_congr rfl fun D hD => ?_)
-    rw [Function.update_of_ne fun hD' => Finset.mem_compl.mp hD (Finset.mem_singleton.mpr hD')]
-  exact add_right_cancel ((key s rfl).trans (key s' h.symm).symm)
-
 variable [U.FiniteIndex]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
@@ -276,7 +249,7 @@ theorem explicitMackeyTerm0_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm0 G M U V s = explicitMackeyTerm0 G M U V s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun m => eq_of_sum_rep_eq G U V
+  refine AddMonoidHom.ext fun m => eq_of_sum_doubleCoset_rep_eq V U
     (fun s => explicitMackeyTerm0 G M U V s m) (fun r hr => ?_) h
   rw [← explicitCor0_mackey G M U V r hr m,
     ← explicitCor0_mackey G M U V Quotient.out DoubleCoset.out_eq' m]
@@ -371,7 +344,7 @@ theorem explicitMackeyTerm1_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm1 G M U V hU s = explicitMackeyTerm1 G M U V hU s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun x => eq_of_sum_rep_eq G U V
+  refine AddMonoidHom.ext fun x => eq_of_sum_doubleCoset_rep_eq V U
     (fun s => explicitMackeyTerm1 G M U V hU s x) (fun r hr => ?_) h
   rw [← explicitCor1_mackey G M U V r hr hU x,
     ← explicitCor1_mackey G M U V Quotient.out DoubleCoset.out_eq' hU x]
@@ -473,7 +446,7 @@ theorem explicitMackeyTerm2_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm2 G M U V hU s = explicitMackeyTerm2 G M U V hU s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun x => eq_of_sum_rep_eq G U V
+  refine AddMonoidHom.ext fun x => eq_of_sum_doubleCoset_rep_eq V U
     (fun s => explicitMackeyTerm2 G M U V hU s x) (fun r hr => ?_) h
   rw [← explicitCor2_mackey G M U V r hr hU x,
     ← explicitCor2_mackey G M U V Quotient.out DoubleCoset.out_eq' hU x]
