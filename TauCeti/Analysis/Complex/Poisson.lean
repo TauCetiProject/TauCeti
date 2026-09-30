@@ -34,11 +34,11 @@ theorem poissonKernel_inv_mul_sub {c a z q : ℂ} (hq : q ≠ 0) :
 
 /-- The Poisson kernel is nonnegative on a circle when its evaluation point lies inside. -/
 theorem poissonKernel_nonneg_on_sphere {c w z : ℂ} {R : ℝ}
-    (hw : w ∈ ball c R) (hz : z ∈ sphere c R) : 0 ≤ poissonKernel c w z := by
+    (hw : w ∈ ball c |R|) (hz : z ∈ sphere c |R|) : 0 ≤ poissonKernel c w z := by
   rw [poissonKernel_eq_re_herglotzRieszKernel]
-  have hR : ‖w - c‖ < R := mem_ball_iff_norm.mp hw
-  have hRp : 0 < R := pos_of_mem_ball hw
-  exact le_trans (by positivity : 0 ≤ (R - ‖w - c‖) / (R + ‖w - c‖))
+  have hR : ‖w - c‖ < |R| := mem_ball_iff_norm.mp hw
+  have hRp : 0 < |R| := pos_of_mem_ball hw
+  exact le_trans (by positivity : 0 ≤ (|R| - ‖w - c‖) / (|R| + ‖w - c‖))
     (by simpa [herglotzRieszKernel_def] using le_re_herglotzRieszKernel hz hw)
 
 end TauCeti

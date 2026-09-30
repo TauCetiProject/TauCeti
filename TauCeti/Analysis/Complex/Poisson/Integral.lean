@@ -86,7 +86,13 @@ theorem harmonicOnNhd_planarPoissonIntegral {g : ℂ → ℝ} {c : ℂ} {R : ℝ
     HarmonicOnNhd (planarPoissonIntegral g c R) (sphere c |R|)ᶜ := by
   let g₀ : ℂ → ℝ := fun z ↦ g (z + c)
   have hg₀ : CircleIntegrable g₀ 0 R := by
-    simpa [CircleIntegrable, g₀, circleMap, add_assoc, add_comm, add_left_comm] using hg
+    have hmap : (fun θ : ℝ ↦ g₀ (circleMap 0 R θ)) =
+        (fun θ : ℝ ↦ g (circleMap c R θ)) := by
+      funext θ
+      simp only [g₀, circleMap, zero_add]
+      congr 1
+      ring
+    simpa only [CircleIntegrable, hmap] using hg
   have hgc : CircleIntegrable (fun ζ ↦ (g₀ ζ : ℂ)) 0 R := by
     simp only [CircleIntegrable, intervalIntegrable_iff] at hg₀ ⊢
     exact Complex.ofRealCLM.integrable_comp hg₀
@@ -118,22 +124,21 @@ theorem harmonicOnNhd_planarPoissonIntegral {g : ℂ → ℝ} {c : ℂ} {R : ℝ
 /-- The Poisson integral preserves constant boundary data at every point inside the disk. In
 particular, the Poisson kernel has circle average one there. -/
 @[simp] theorem planarPoissonIntegral_const {c : ℂ} {R : ℝ} {w : ℂ}
-    (hw : w ∈ ball c R) (a : ℝ) :
+    (hw : w ∈ ball c |R|) (a : ℝ) :
     planarPoissonIntegral (fun _ : ℂ ↦ a) c R w = a := by
-  have hc : HarmonicOnNhd (fun _ : ℂ ↦ a) (closedBall c R) :=
+  have hc : HarmonicOnNhd (fun _ : ℂ ↦ a) (closedBall c |R|) :=
     fun _ _ ↦ harmonicAt_const a
   rw [planarPoissonIntegral_def]
-  exact hc.circleAverage_poissonKernel_smul hw
+  simpa only [circleAverage_abs_radius] using hc.circleAverage_poissonKernel_smul hw
 
 /-- The Poisson integral preserves order between circle-integrable boundary data in the disk. -/
 theorem planarPoissonIntegral_mono {g₁ g₂ : ℂ → ℝ} {c : ℂ} {R : ℝ} {w : ℂ}
     (hg₁ : CircleIntegrable g₁ c R) (hg₂ : CircleIntegrable g₂ c R)
-    (hw : w ∈ ball c R)
+    (hw : w ∈ ball c |R|)
     (hle : ∀ z ∈ sphere c |R|, g₁ z ≤ g₂ z) :
     planarPoissonIntegral g₁ c R w ≤ planarPoissonIntegral g₂ c R w := by
   have hws : w ∉ sphere c |R| := by
-    have hR : 0 < R := pos_of_mem_ball hw
-    simp only [mem_sphere, abs_of_pos hR]
+    simp only [mem_sphere]
     intro h
     exact (ne_of_lt hw) h
   have hK : ContinuousOn (poissonKernel c w) (sphere c |R|) := by
@@ -144,18 +149,18 @@ theorem planarPoissonIntegral_mono {g₁ g₂ : ℂ → ℝ} {c : ℂ} {R : ℝ}
       (poissonKernel c w • g₁) z ≤ (poissonKernel c w • g₂) z := by
     intro z hz
     exact mul_le_mul_of_nonneg_left (hle z hz)
-      (poissonKernel_nonneg_on_sphere hw (by simpa [abs_of_pos (pos_of_mem_ball hw)] using hz))
+      (poissonKernel_nonneg_on_sphere hw hz)
   rw [planarPoissonIntegral_def, planarPoissonIntegral_def]
   exact circleAverage_mono (hg₁.continuousOn_smul hK) (hg₂.continuousOn_smul hK) hpoint
 
 /-- Nonnegative boundary data have a nonnegative Poisson integral in the disk. -/
 theorem planarPoissonIntegral_nonneg {g : ℂ → ℝ} {c : ℂ} {R : ℝ} {w : ℂ}
-    (hw : w ∈ ball c R) (hnonneg : ∀ z ∈ sphere c |R|, 0 ≤ g z) :
+    (hw : w ∈ ball c |R|) (hnonneg : ∀ z ∈ sphere c |R|, 0 ≤ g z) :
     0 ≤ planarPoissonIntegral g c R w := by
   have hpoint : ∀ z ∈ sphere c |R|, (0 : ℝ) ≤ (poissonKernel c w • g) z := by
     intro z hz
     exact mul_nonneg
-      (poissonKernel_nonneg_on_sphere hw (by simpa [abs_of_pos (pos_of_mem_ball hw)] using hz))
+      (poissonKernel_nonneg_on_sphere hw hz)
       (hnonneg z hz)
   simpa [planarPoissonIntegral_def] using circleAverage_nonneg_of_nonneg hpoint
 
