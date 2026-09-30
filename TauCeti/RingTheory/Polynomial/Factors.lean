@@ -14,7 +14,6 @@ import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
-import Mathlib.RingTheory.Radical.Basic
 
 /-!
 # The monic irreducible factors of a polynomial over a field
@@ -164,17 +163,8 @@ irreducible factors. -/
 lemma associated_prod [Fintype f.Factors] (hf : f ≠ 0) (hsq : Squarefree f) :
     Associated (∏ p : f.Factors, (p : K[X])) f := by
   classical
-  -- identify `f.Factors` with the subtype of the `Finset` of normalized factors
-  have hprod : ∏ p : f.Factors, (p : K[X]) =
-      ∏ p : {p : K[X] // p ∈ (normalizedFactors f).toFinset}, (p : K[X]) :=
-    Fintype.prod_equiv (Equiv.subtypeEquivRight fun p ↦ by
-        rw [Multiset.mem_toFinset, Polynomial.mem_normalizedFactors_iff hf]) _ _
-      fun x ↦ by rw [Equiv.subtypeEquivRight_apply]
-  have hcoe : ∏ p : {p : K[X] // p ∈ (normalizedFactors f).toFinset}, (p : K[X]) =
-      ∏ p ∈ (normalizedFactors f).toFinset, p :=
-    Finset.prod_coe_sort _ fun x ↦ x
-  rw [hprod, hcoe, toFinset_normalizedFactors]
-  exact radical_associated hsq.isRadical hf
+  rw [Finset.prod_eq_multiset_prod, ← normalizedFactors_eq_map_univ_val hf hsq]
+  exact prod_normalizedFactors hf
 
 /-- The degrees of the distinct monic irreducible factors of `f ≠ 0` sum to at most the
 degree of `f`. -/

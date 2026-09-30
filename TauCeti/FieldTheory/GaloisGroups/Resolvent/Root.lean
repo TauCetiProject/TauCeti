@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.RingTheory.Polynomial.Factors
 
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.FieldTheory.Minpoly.IsConjRoot
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -255,8 +256,9 @@ private theorem exists_minpoly_cosetValue_eq (hf : f.Monic) (hsep : f.Separable)
     rw [map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e, MvPolynomial.galResolvent_def]
     exact Splits.prod fun _ _ => Splits.X_sub_C _
   have hfact : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) := ⟨hsplits⟩
-  obtain ⟨x, hx⟩ := @exists_mem_rootSet_minpoly_eq F _ (spec.specialize F f) E _ _
-    hfact (spec.monic_specialize F f).ne_zero q
+  let _ := hfact
+  obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq E
+    (spec.monic_specialize F f).ne_zero q
   obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e
     (aeval_eq_zero_of_mem_rootSet x.2)
   exact ⟨c, by rw [hc]; exact hx⟩
@@ -340,7 +342,7 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
     {c d : Equiv.Perm (Fin n) ⧸ spec.H} :
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
-        (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n))) d := by
+        e.permCongrHom.toMonoidHom) d := by
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
@@ -358,27 +360,28 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
 
 -- The roots of the minimal polynomial of a value of the orbit are the values on the orbit of its
 -- coset under the Galois image.
-private theorem image_cosetValue_orbit [Normal F E] (hf : f.Monic) (hsep : f.Separable)
-    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable)
+private theorem image_cosetValue_orbit [Normal F E] (e : f.rootSet E ≃ Fin n)
     (c : Equiv.Perm (Fin n) ⧸ spec.H) :
     cosetValue spec e ''
         MulAction.orbit ((Gal.galActionHom f E).range.map
-          (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n))) c
+          e.permCongrHom.toMonoidHom) c
       = (minpoly F (cosetValue spec e c)).rootSet E := by
   have hint : IsIntegral F (cosetValue spec e c) := Algebra.IsIntegral.isIntegral _
   ext z
-  rw [mem_rootSet]
+  rw [← isConjRoot_iff_mem_minpoly_rootSet hint, isConjRoot_iff_orbitRel,
+    MulAction.orbitRel_apply, MulAction.mem_orbit_symm]
   constructor
   · rintro ⟨d, hd, rfl⟩
-    rw [← minpoly_cosetValue_eq_iff spec hf hsep hdeg e hres] at hd
-    exact ⟨minpoly.ne_zero hint, hd ▸ minpoly.aeval F _⟩
-  · rintro ⟨-, hz⟩
-    have hdvd := minpoly.dvd F _ (aeval_cosetValue spec hf hsep hdeg e c)
-    obtain ⟨d, rfl⟩ := exists_cosetValue_eq spec hf hsep hdeg e
-      (aeval_eq_zero_of_dvd_aeval_eq_zero hdvd hz)
-    refine ⟨d, (minpoly_cosetValue_eq_iff spec hf hsep hdeg e hres).1 ?_, rfl⟩
-    exact (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint) hz
-      (minpoly.monic hint)).symm
+    obtain ⟨⟨π, hπ⟩, rfl⟩ := MulAction.mem_orbit_iff.1 hd
+    obtain ⟨ϕ, rfl⟩ := exists_eq_of_mem_image e hπ
+    exact MulAction.mem_orbit_iff.2 ⟨ϕ, apply_cosetValue spec e ϕ c⟩
+  · intro hz
+    obtain ⟨ϕ, rfl⟩ := MulAction.mem_orbit_iff.1 hz
+    refine ⟨e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ)) • c, ?_, ?_⟩
+    · exact MulAction.mem_orbit_iff.2
+        ⟨⟨_, Subgroup.mem_map_of_mem _ (MonoidHom.mem_range.2
+          ⟨Gal.restrict f E ϕ, rfl⟩)⟩, rfl⟩
+    · exact (apply_cosetValue spec e ϕ c).symm
 
 /-- **The factorization theorem for a separable resolvent.** Let `f` be monic and separable of
 degree `n`, let `E` be a normal splitting extension, number the roots of `f` in `E` by `e`, and
@@ -392,7 +395,7 @@ The degree of each factor is the size of the matching orbit,
 noncomputable def orbitQuotientEquivFactors [Normal F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable) :
     MulAction.orbitRel.Quotient ((Gal.galActionHom f E).range.map
-      (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
+      e.permCongrHom.toMonoidHom)
         (Equiv.Perm (Fin n) ⧸ spec.H) ≃ (spec.specialize F f).Factors :=
   Equiv.ofBijective
     (Quotient.lift
@@ -441,7 +444,7 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable)
     (ω : MulAction.orbitRel.Quotient
       ((Gal.galActionHom f E).range.map
-        (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
+        e.permCongrHom.toMonoidHom)
       (Equiv.Perm (Fin n) ⧸ spec.H)) :
     Nat.card (MulAction.orbitRel.Quotient.orbit ω)
       = ((spec.orbitQuotientEquivFactors hf hsep hdeg e hres ω : (spec.specialize F f).Factors) :
@@ -457,7 +460,7 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
     Normal.splits' _
   rw [MulAction.orbitRel.Quotient.orbit_mk,
     ← Nat.card_image_of_injective (cosetValue_injective spec hf hsep hdeg e hres),
-    image_cosetValue_orbit spec hf hsep hdeg e hres, Nat.card_eq_fintype_card,
+    image_cosetValue_orbit spec e, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hqsep hsplits, orbitQuotientEquivFactors_apply_mk]
   rfl
 
@@ -472,7 +475,7 @@ theorem map_natDegree_normalizedFactors_specialize [Normal F E] (hf : f.Monic)
     (UniqueFactorizationMonoid.normalizedFactors (spec.specialize F f)).map natDegree
       = Finset.univ.val.map fun ω : MulAction.orbitRel.Quotient
           ((Gal.galActionHom f E).range.map
-            (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
+            e.permCongrHom.toMonoidHom)
           (Equiv.Perm (Fin n) ⧸ spec.H) => Nat.card (MulAction.orbitRel.Quotient.orbit ω) := by
   have hg0 : spec.specialize F f ≠ 0 := (spec.monic_specialize F f).ne_zero
   have := Factors.finite hg0
