@@ -27,6 +27,8 @@ solution `a = 1`, it makes the norm surjective on the depth-`i` step of the unit
 
 ## Main results
 
+* `TauCeti.Algebra.eval_charpolyRev_leftMulMatrix`: along the line `t ↦ 1 - t w`, the norm is
+  the reversed characteristic polynomial of multiplication by `w`.
 * `TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem`: a unit that is a norm modulo `I` is the norm
   of an element congruent to the approximate solution modulo `IS`.
 
@@ -41,7 +43,20 @@ open IsLocalRing Polynomial
 
 namespace TauCeti
 
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Free R S] [Module.Finite R S]
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- The norm along the line `t ↦ 1 - t w` is the reversed characteristic polynomial
+`det (1 - X M)` of the matrix `M` of multiplication by `w`, evaluated at `t`. -/
+theorem Algebra.eval_charpolyRev_leftMulMatrix {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R S) (w : S) (t : R) :
+    (Algebra.leftMulMatrix b w).charpolyRev.eval t = Algebra.norm R (1 - t • w) := by
+  rw [Algebra.norm_eq_matrix_det b, map_sub, map_one, map_smul, Matrix.charpolyRev,
+    ← coe_evalRingHom, RingHom.map_det]
+  congr 1
+  ext i j
+  by_cases hij : i = j <;> simp [hij] <;> ring
+
+variable [Module.Free R S] [Module.Finite R S]
 
 /-- **Hensel's lemma for the norm.** Let `S` be a finite free algebra over a ring `R` Henselian at
 an ideal `I`, containing a unit `w` whose trace is a unit. If a unit `v` of `R` is congruent to the
@@ -66,12 +81,6 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem {I : Ideal R} [HenselianRing R I]
   let M := Algebra.leftMulMatrix b w
   have hM : IsUnit M := hw.map (Algebra.leftMulMatrix b)
   have htrM : Algebra.trace R S w = M.trace := Algebra.trace_eq_matrix_trace b w
-  have hPeval (t : R) : M.charpolyRev.eval t = Algebra.norm R (1 - t • w) := by
-    rw [Algebra.norm_eq_matrix_det b, map_sub, map_one, map_smul, Matrix.charpolyRev,
-      ← coe_evalRingHom, RingHom.map_det]
-    congr 1
-    ext i j
-    by_cases hij : i = j <;> simp [hij, M] <;> ring
   -- Since `M` is invertible, `Q = charpoly (M⁻¹)` is the unit `κ = (-1)ⁿ (det M)⁻¹` times `P`,
   -- so `Q` is a monic polynomial with `Q(0) = κ` and `Q'(0) = -κ tr M`.
   obtain ⟨κ, hκ⟩ : IsUnit ((-1) ^ n * Ring.inverse M.det) :=
@@ -115,7 +124,7 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem {I : Ideal R} [HenselianRing R I]
       exact (κ.isUnit.mul (htrM ▸ htr).neg).map (Ideal.Quotient.mk I))
   refine ⟨a * (1 - t • w), ?_, ?_⟩
   · have hroot : κ * Algebra.norm R (1 - t • w) = κ * (v * (ν⁻¹ : Rˣ)) := by
-      rw [← hPeval, ← eval_C_mul (a := (κ : R)), ← hQP]
+      rw [← Algebra.eval_charpolyRev_leftMulMatrix b, ← eval_C_mul (a := (κ : R)), ← hQP]
       simpa [f, sub_eq_zero] using ht
     rw [map_mul, κ.mul_right_inj.1 hroot, ← hν, mul_comm, Units.inv_mul_cancel_right]
   · have ht' : t ∈ I := by simpa using htI

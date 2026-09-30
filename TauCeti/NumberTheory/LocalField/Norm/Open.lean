@@ -15,6 +15,7 @@ import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.NormedField
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.RingTheory.Norm.Henselian
 
 /-!
 # Open norm groups of finite local-field extensions
@@ -53,24 +54,19 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [Algebra K L] [FiniteDimensional K L]
   [Algebra.IsSeparable K L]
 
-/-- The norm group of a finite separable extension contains a neighbourhood of `1`.
-
-This is the local form of openness. The field norm on the line `t ↦ 1 + t x`, for an element
-`x` of trace one, is a polynomial with value and derivative both equal to `1` at `0`; the inverse
-function theorem therefore puts a neighbourhood of `1` in its range. -/
+/-- The norm group of a finite separable extension contains a neighbourhood of `1`; since it is a
+subgroup, this makes it open. -/
 private theorem normGroup_mem_nhds_one : (normGroup K L : Set Kˣ) ∈ nhds (1 : Kˣ) := by
   classical
+  -- For `x` of trace one, the norm on the line `t ↦ 1 + t x` is a polynomial `P` with value and
+  -- derivative both `1` at `0`, so the inverse function theorem puts a neighbourhood of `1` in
+  -- its range.
   obtain ⟨x, hx⟩ := Algebra.trace_surjective K L 1
   let b := Module.Free.chooseBasis K L
   let M := Algebra.leftMulMatrix b (-x)
   let P : K[X] := M.charpolyRev
   have hPeval (t : K) : P.eval t = Algebra.norm K (1 + t • x) := by
-    simp only [P, M]
-    rw [Algebra.norm_eq_matrix_det b, map_add, map_one, map_smul, Matrix.charpolyRev,
-      ← coe_evalRingHom, RingHom.map_det]
-    congr 1
-    ext i j
-    by_cases hij : i = j <;> simp [hij] <;> ring
+    rw [Algebra.eval_charpolyRev_leftMulMatrix, smul_neg, sub_neg_eq_add]
   have hPzero : P.eval 0 = 1 := by simp [P]
   have hPderiv : P.derivative.eval 0 = 1 := by
     simp only [P, ← coeff_zero_eq_eval_zero, coeff_derivative, zero_add,
@@ -91,8 +87,8 @@ private theorem normGroup_mem_nhds_one : (normGroup K L : Set Kˣ) ∈ nhds (1 :
   have hpreimage : Units.val ⁻¹' Set.range (fun t : K ↦ P.eval t) ∈ nhds (1 : Kˣ) :=
     Units.continuous_val.continuousAt hrange
   refine mem_of_superset hpreimage fun y hy ↦ ?_
+  rw [Set.mem_preimage, Set.mem_range] at hy
   obtain ⟨t, ht⟩ := hy
-  change P.eval t = (y : K) at ht
   have hne : 1 + t • x ≠ 0 := by
     intro h
     have hy0 : (y : K) = 0 := by rw [← ht, hPeval, h, Algebra.norm_zero]
@@ -133,29 +129,22 @@ theorem finiteIndex_normGroup : (normGroup K L).FiniteIndex := by
       unitFiltration_one_isFiniteRelIndex_zero
   have hHU : HU.FiniteIndex :=
     (Subgroup.isFiniteRelIndex_iff_finiteIndex (H := unitFiltration K m) (K := U)).mp hrel
-  let H := Hℤ.prod HU
-  have hH : H.FiniteIndex := ⟨by
-    change (Hℤ.prod HU).index ≠ 0
+  have hH : (Hℤ.prod HU).FiniteIndex := ⟨by
     rw [Subgroup.index_prod]
     exact mul_ne_zero hHℤ.index_ne_zero hHU.index_ne_zero⟩
-  let e := unitsEquivIntProd K ϖ hϖ
-  let T := H.map e.symm.toMonoidHom
-  have hT : T.FiniteIndex :=
-    @Subgroup.FiniteIndex.map_of_surjective _ _ _ _ H e.symm.toMonoidHom hH e.symm.surjective
-  apply @Subgroup.finiteIndex_of_le _ _ T (normGroup K L) hT
+  let e : Multiplicative ℤ × U →* Kˣ := (unitsEquivIntProd K ϖ hϖ).symm
+  have hT : ((Hℤ.prod HU).map e).FiniteIndex :=
+    Subgroup.FiniteIndex.map_of_surjective _ (unitsEquivIntProd K ϖ hϖ).symm.surjective
+  apply Subgroup.finiteIndex_of_le (H := (Hℤ.prod HU).map e)
   rintro y ⟨z, hz, rfl⟩
   obtain ⟨hz, hu⟩ := hz
   obtain ⟨k, hk⟩ := hz
-  change (unitsEquivIntProd K ϖ hϖ).symm z ∈ normGroup K L
-  rw [unitsEquivIntProd_symm_apply]
-  rw [← hk]
+  rw [MonoidHom.coe_ofClass, unitsEquivIntProd_symm_apply, ← hk]
   apply mul_mem
   · refine mem_normGroup_iff.2
       ⟨Units.map (algebraMap K L : K →* L) (ϖ ^ k.toAdd), ?_⟩
-    rw [Units.coe_map, Units.val_zpow_eq_zpow_val, Units.val_zpow_eq_zpow_val]
-    change Algebra.norm K ((algebraMap K L) ((ϖ : K) ^ k.toAdd)) =
-      (ϖ : K) ^ ((powMonoidHom n) k).toAdd
-    rw [Algebra.norm_algebraMap, powMonoidHom_apply, toAdd_pow, nsmul_eq_mul,
+    rw [Units.coe_map, Units.val_zpow_eq_zpow_val, Units.val_zpow_eq_zpow_val,
+      MonoidHom.coe_ofClass, Algebra.norm_algebraMap, powMonoidHom_apply, toAdd_pow, nsmul_eq_mul,
       ← zpow_natCast, ← zpow_mul, mul_comm]
   · exact hm hu
 

@@ -47,26 +47,31 @@ the field norm from the finite Galois extension `classField K V`. -/
 def localNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) : Subgroup Kˣ :=
   normGroup K (classField K V)
 
+/-- The local norm subgroup of `V` is the norm group of the class field `classField K V`. -/
+theorem localNormSubgroup_def (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    localNormSubgroup K V = normGroup K (classField K V) :=
+  (rfl)
+
 /-- Membership in a local norm subgroup means being the norm of a nonzero element of the
 corresponding class field. -/
 @[simp]
 theorem mem_localNormSubgroup_iff {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)} {x : Kˣ} :
     x ∈ localNormSubgroup K V ↔
       ∃ y : (classField K V)ˣ, Algebra.norm K (y : classField K V) = x := by
-  rw [localNormSubgroup, mem_normGroup_iff]
+  rw [localNormSubgroup_def, mem_normGroup_iff]
 
 variable [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
 /-- **Local norm subgroups are open.** -/
 theorem isOpen_localNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     IsOpen ((localNormSubgroup K V : Subgroup Kˣ) : Set Kˣ) := by
-  simpa only [localNormSubgroup] using
-    (isOpen_normGroup (K := K) (L := classField K V))
+  rw [localNormSubgroup_def]
+  exact isOpen_normGroup
 
 /-- **Local norm subgroups have finite index.** -/
 theorem finiteIndex_localNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     (localNormSubgroup K V).FiniteIndex := by
-  simpa only [localNormSubgroup] using
-    (finiteIndex_normGroup (K := K) (L := classField K V))
+  rw [localNormSubgroup_def]
+  exact finiteIndex_normGroup
 
 end TauCeti.ClassFieldTheory
