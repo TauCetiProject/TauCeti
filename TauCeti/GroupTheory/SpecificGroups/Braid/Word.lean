@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Braid
+public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 
 /-!
 # Braid words

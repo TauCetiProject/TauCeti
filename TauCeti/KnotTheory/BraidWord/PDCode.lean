@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.BraidWord.Basic
+public import TauCeti.GroupTheory.SpecificGroups.Braid.Word
 public import TauCeti.KnotTheory.PDCode.Basic
 public import Mathlib.GroupTheory.Perm.List
 import Mathlib.Tactic.FinCases
