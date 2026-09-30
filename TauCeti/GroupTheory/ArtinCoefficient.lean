@@ -45,7 +45,8 @@ by `Subgroup.artinCoeff_eq_zero_of_not_isCyclic`, and maps the coefficients into
 
 ## Main declarations
 
-* `Subgroup.artinCoeff`: the Artin coefficient of a subgroup, with `Subgroup.artinCoeff_def`.
+* `Subgroup.artinCoeff`: the Artin coefficient of a subgroup of a finite group, with
+  `Subgroup.artinCoeff_def`.
 * `Subgroup.sum_moebius_index`: the Möbius sum of the index over the subgroups of a finite cyclic
   group above a fixed one.
 * `TauCeti.sum_moebius_relIndex`: the Möbius sum over an interval below a cyclic subgroup.
@@ -159,30 +160,37 @@ theorem sum_moebius_relIndex {G : Type*} [Group G] {E D : Subgroup G} [Finite D]
 
 /-! ### The Artin coefficients -/
 
-/-- **The Artin coefficient** of a subgroup `C`, the sum of `μ [D : C]` over the cyclic subgroups
-`D` containing `C`. It vanishes unless `C` is cyclic. -/
-noncomputable def _root_.Subgroup.artinCoeff {G : Type*} [Group G] (C : Subgroup G) : ℤ :=
-  ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D)
+/-- **The Artin coefficient** of a subgroup `C` of a finite group, the sum of `μ [D : C]` over the
+cyclic subgroups `D` containing `C`. It vanishes unless `C` is cyclic.
 
-variable {G : Type*} [Group G]
+The outer sum runs over all of `Subgroup G`, which is finite, while the inner one restricts to the
+cyclic subgroups above `C`; `Subgroup.artinCoeff_def` rewrites the pair as a single conditional
+`finsum`. -/
+noncomputable def _root_.Subgroup.artinCoeff {G : Type*} [Group G] [Finite G] (C : Subgroup G) :
+    ℤ :=
+  letI := Fintype.ofFinite (Subgroup G)
+  ∑ D : Subgroup G, ∑ᶠ (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D)
+
+variable {G : Type*} [Group G] [Finite G]
 
 /-- `Subgroup.artinCoeff` unfolded: the Möbius function of the relative index, summed over the
 cyclic subgroups above `C`. -/
 theorem _root_.Subgroup.artinCoeff_def (C : Subgroup G) :
-    C.artinCoeff = ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D) := (rfl)
+    C.artinCoeff = ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D) := by
+  let _ := Fintype.ofFinite (Subgroup G)
+  exact (finsum_eq_sum_of_fintype _).symm
 
 open scoped Classical in
 /-- A subgroup of a cyclic group is cyclic, so a noncyclic subgroup lies below no cyclic subgroup
 and its Artin coefficient vanishes. -/
 @[simp]
 theorem _root_.Subgroup.artinCoeff_eq_zero_of_not_isCyclic {C : Subgroup G} (hC : ¬ IsCyclic C) :
-    C.artinCoeff = 0 :=
-  finsum_eq_zero_of_forall_eq_zero fun D ↦ by
-    rw [finsum_eq_if, ite_eq_right]
-    rintro ⟨_, hle⟩
-    exact hC (Subgroup.isCyclic_of_le hle)
-
-variable [Finite G]
+    C.artinCoeff = 0 := by
+  rw [Subgroup.artinCoeff_def]
+  refine finsum_eq_zero_of_forall_eq_zero fun D ↦ ?_
+  rw [finsum_eq_if, ite_eq_right]
+  rintro ⟨_, hle⟩
+  exact hC (Subgroup.isCyclic_of_le hle)
 
 open scoped Classical in
 /-- **The Artin coefficients of the subgroups containing an element add up to one.** This is the
@@ -199,7 +207,7 @@ theorem sum_artinCoeff_of_mem (y : G) :
     finsum_cond_eq_sum_of_cond_iff _ (by simp)
   have hinner : ∀ C : Subgroup G, C.artinCoeff =
       ∑ D ∈ Finset.univ.filter (fun D : Subgroup G => IsCyclic D ∧ C ≤ D), μ (C.relIndex D) :=
-    fun C ↦ finsum_cond_eq_sum_of_cond_iff _ (by simp)
+    fun C ↦ (C.artinCoeff_def).trans (finsum_cond_eq_sum_of_cond_iff _ (by simp))
   rw [houter]
   simp_rw [hinner]
   rw [Finset.sum_comm' (t' := Finset.univ.filter (fun D : Subgroup G => IsCyclic D))
