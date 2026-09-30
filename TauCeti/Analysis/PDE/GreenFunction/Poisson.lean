@@ -180,47 +180,44 @@ theorem ballPoissonKernel_two_repr {a z : ℂ} (hz : ‖z‖ = 1) :
   rw [← map_sub, LinearIsometryEquiv.norm_map, norm_sub_rev]
   field_simp [Real.pi_ne_zero]
 
-/-- Multiplication by the two-dimensional ball Poisson kernel under `circleAverage` is
-`(2π)⁻¹` times multiplication by Mathlib's Poisson kernel. This form applies to arbitrary
-boundary data; no harmonicity or integrability hypothesis is needed for the identity. -/
-theorem circleAverage_ballPoissonKernel_two_mul_eq (f : ℂ → ℝ) {a : ℂ} :
+/-- Scaling by the two-dimensional ball Poisson kernel under `circleAverage` is `(2π)⁻¹` times
+scaling by Mathlib's Poisson kernel. This form applies to arbitrary vector-valued boundary data;
+no harmonicity or integrability hypothesis is needed for the identity. -/
+theorem circleAverage_ballPoissonKernel_two_fun_smul_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : ℂ → E) {a : ℂ} :
     Real.circleAverage (fun z =>
       ballPoissonKernel 2 (Complex.orthonormalBasisOneI.repr a)
-        (Complex.orthonormalBasisOneI.repr z) * f z) 0 1 =
-      (2 * Real.pi)⁻¹ *
-        Real.circleAverage (fun z => poissonKernel 0 a z * f z) 0 1 := by
+        (Complex.orthonormalBasisOneI.repr z) • f z) 0 1 =
+      (2 * Real.pi)⁻¹ •
+        Real.circleAverage (fun z => poissonKernel 0 a z • f z) 0 1 := by
   calc
     Real.circleAverage (fun z =>
         ballPoissonKernel 2 (Complex.orthonormalBasisOneI.repr a)
-          (Complex.orthonormalBasisOneI.repr z) * f z) 0 1 =
-        Real.circleAverage (fun z => (2 * Real.pi)⁻¹ * (poissonKernel 0 a z * f z)) 0 1 := by
+          (Complex.orthonormalBasisOneI.repr z) • f z) 0 1 =
+        Real.circleAverage (fun z => (2 * Real.pi)⁻¹ • (poissonKernel 0 a z • f z)) 0 1 := by
       apply Real.circleAverage_congr_sphere
       intro z hz
       have hznorm : ‖z‖ = 1 := by simpa [Metric.mem_sphere] using hz
       simp only
-      rw [← ballPoissonKernel_two_repr hznorm]
+      rw [smul_smul, ← ballPoissonKernel_two_repr hznorm]
       field_simp [Real.pi_ne_zero]
-    _ = (2 * Real.pi)⁻¹ *
-        Real.circleAverage (fun z => poissonKernel 0 a z * f z) 0 1 := by
-      simpa only [smul_eq_mul] using
-        (Real.circleAverage_fun_smul (a := (2 * Real.pi)⁻¹)
-          (f := fun z => poissonKernel 0 a z * f z) (c := 0) (R := 1))
+    _ = (2 * Real.pi)⁻¹ •
+        Real.circleAverage (fun z => poissonKernel 0 a z • f z) 0 1 :=
+      Real.circleAverage_fun_smul
 
 /-- The two-dimensional ball Poisson kernel represents a harmonic function by integration
 against arc length on the unit circle. Since `circleAverage` is normalized by `2π`, the right
 side carries the reciprocal factor. -/
-theorem circleAverage_ballPoissonKernel_two_mul {f : ℂ → ℝ} {a : ℂ}
+theorem circleAverage_ballPoissonKernel_two_fun_mul {f : ℂ → ℝ} {a : ℂ}
     (hf : HarmonicOnNhd f (Metric.closedBall 0 1)) (ha : ‖a‖ < 1) :
     Real.circleAverage (fun z =>
       ballPoissonKernel 2 (Complex.orthonormalBasisOneI.repr a)
         (Complex.orthonormalBasisOneI.repr z) * f z) 0 1 =
       (2 * Real.pi)⁻¹ * f a := by
-  rw [circleAverage_ballPoissonKernel_two_mul_eq]
   have hw : a ∈ Metric.ball (0 : ℂ) 1 := by simpa [Metric.mem_ball] using ha
-  have hfun : poissonKernel 0 a • f = fun z => poissonKernel 0 a z * f z := by
-    funext z
-    exact Pi.mul_apply (poissonKernel 0 a) f z
-  rw [← hfun, hf.circleAverage_poissonKernel_smul hw]
+  have h := circleAverage_ballPoissonKernel_two_fun_smul_eq f (a := a)
+  rw [← Pi.smul_def' (poissonKernel 0 a) f, hf.circleAverage_poissonKernel_smul hw] at h
+  simpa only [smul_eq_mul] using h
 
 /-- The circle average of the two-dimensional ball Poisson kernel is `(2π)⁻¹`; equivalently,
 its integral against arc length on the unit circle is one. -/
@@ -228,7 +225,7 @@ theorem circleAverage_ballPoissonKernel_two {a : ℂ} (ha : ‖a‖ < 1) :
     Real.circleAverage (fun z => ballPoissonKernel 2
       (Complex.orthonormalBasisOneI.repr a) (Complex.orthonormalBasisOneI.repr z)) 0 1 =
       (2 * Real.pi)⁻¹ := by
-  simpa using circleAverage_ballPoissonKernel_two_mul
+  simpa using circleAverage_ballPoissonKernel_two_fun_mul
     (f := fun _ : ℂ => (1 : ℝ)) (harmonicOnNhd_const 1) ha
 
 end TauCeti
