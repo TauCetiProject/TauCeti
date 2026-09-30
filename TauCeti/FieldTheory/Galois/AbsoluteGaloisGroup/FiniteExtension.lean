@@ -44,7 +44,9 @@ module. Separability of `L/K` is a consequence of the existence of `σ` and is n
 When `L/K` is normal, every automorphism of `Kˢ` preserves `σ(L)`, so restriction
 `σ.restrictNormalHom : G_K →* Gal(L/K)` along `σ` is defined; it is surjective with kernel the
 subgroup fixing `σ(L)`, and `quotientFixingSubgroupFieldRangeEquiv K L σ` is the induced
-isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but not finiteness.
+isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but not finiteness. When
+`L/K` is both finite and normal, the subgroup fixing `σ(L)` is packaged as the open normal subgroup
+`galoisOpenNormalSubgroup K L σ`, the level of `L` among the finite quotients of `G_K`.
 
 ## Main definitions
 
@@ -54,6 +56,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   `G_L ≃ₜ* galoisSubgroup K L σ`.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv K L σ`: for a normal `L/K`, the isomorphism
   `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)` induced by restriction `σ.restrictNormalHom`.
+* `TauCeti.galoisOpenNormalSubgroup K L σ`: for a finite normal `L/K`, the subgroup fixing
+  `σ(L)` as an open normal subgroup of `G_K`.
 
 ## Main results
 
@@ -202,5 +206,28 @@ theorem quotientFixingSubgroupFieldRangeEquiv_mk (g : AbsoluteGaloisGroup K) :
     AlgEquiv.restrictNormalHom_apply, ← AlgHom.equivFieldRange_apply_coe]
 
 end Normal
+
+/-! ### Finite normal extensions: the open normal subgroup -/
+
+section OpenNormal
+
+variable [Normal K L]
+
+/-- **The level of a finite normal extension**: the subgroup `Gal(Kˢ/σ(L))` of automorphisms of
+`Kˢ` fixing `σ(L)`, an open normal subgroup of `Gal(Kˢ/K)` because `L/K` is finite and normal.
+Its underlying subgroup is the fixing subgroup of `σ(L)` by definition, so the quotient by it is
+the domain of `quotientFixingSubgroupFieldRangeEquiv K L σ`. -/
+@[expose] def galoisOpenNormalSubgroup : OpenNormalSubgroup (AbsoluteGaloisGroup K) where
+  toSubgroup := σ.fieldRange.fixingSubgroup
+  isOpen' := isOpen_fixingSubgroup_fieldRange K L σ
+  isNormal' := inferInstance
+
+/-- The subgroup underlying `galoisOpenNormalSubgroup K L σ` is the fixing subgroup of `σ(L)`. -/
+@[simp]
+theorem galoisOpenNormalSubgroup_toSubgroup :
+    (galoisOpenNormalSubgroup K L σ).toSubgroup = σ.fieldRange.fixingSubgroup :=
+  (rfl)
+
+end OpenNormal
 
 end TauCeti
