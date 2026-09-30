@@ -12,8 +12,8 @@ public import TauCeti.Geometry.Toric.Algebraic.Regular
 
 An equivalence of finite fans is a compatible pair of equivalences of their integral lattices and
 ambient real vector spaces which carries the cones of one fan exactly onto the cones of the other.
-It induces an equivalence of the cone index types and a morphism in each direction. Regularity and
-completeness are invariant under fan equivalence.
+It induces an order isomorphism of the cone index types and a morphism in each direction.
+Regularity and completeness are invariant under fan equivalence.
 
 This is the combinatorial notion used to compare toric realizations without choosing coordinates.
 In particular, the cone equivalence identifies the affine charts which are glued in the analytic
@@ -22,7 +22,7 @@ realization.
 ## Main declarations
 
 * `TauCeti.Toric.FanEquiv`: an equivalence of finite fans.
-* `TauCeti.Toric.FanEquiv.coneEquiv`: the induced equivalence of their cone index types.
+* `TauCeti.Toric.FanEquiv.coneEquiv`: the induced order isomorphism of their cone index types.
 * `TauCeti.Toric.FanEquiv.toFanHom`: the underlying morphism of fans.
 * `TauCeti.Toric.FanEquiv.regular_iff`: regularity is invariant under fan equivalence.
 * `TauCeti.Toric.FanEquiv.complete_iff`: completeness is invariant under fan equivalence.
@@ -123,11 +123,7 @@ def trans (e : FanEquiv Φ Ψ) (e' : FanEquiv Ψ Ω) : FanEquiv Φ Ω where
   realEquiv := e.realEquiv.trans e'.realEquiv
   map_lattice n := by simp [e.map_lattice, e'.map_lattice]
   map_mem σ := by
-    rw [show PointedCone.map ((e.realEquiv.trans e'.realEquiv : V ≃ₗ[ℝ] V'') :
-        V →ₗ[ℝ] V'') σ = PointedCone.map (e'.realEquiv : V' →ₗ[ℝ] V'')
-          (PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ) by
-      rw [PointedCone.map_map]
-      rfl]
+    rw [LinearEquiv.coe_trans, ← PointedCone.map_map]
     exact (e'.map_mem _).trans (e.map_mem σ)
 
 /-- The integral part of a composite fan equivalence is the composite integral equivalence. -/
@@ -174,13 +170,13 @@ theorem refl_symm (Φ : Fan i) : (FanEquiv.refl Φ).symm = FanEquiv.refl Φ := b
 
 /-- A fan equivalence followed by its inverse is the identity equivalence. -/
 @[simp]
-theorem trans_symm (e : FanEquiv Φ Ψ) : e.trans e.symm = FanEquiv.refl Φ := by
+theorem self_trans_symm (e : FanEquiv Φ Ψ) : e.trans e.symm = FanEquiv.refl Φ := by
   ext x
   simp
 
 /-- The inverse fan equivalence followed by the original is the identity equivalence. -/
 @[simp]
-theorem symm_trans (e : FanEquiv Φ Ψ) : e.symm.trans e = FanEquiv.refl Ψ := by
+theorem symm_trans_self (e : FanEquiv Φ Ψ) : e.symm.trans e = FanEquiv.refl Ψ := by
   ext x
   simp
 
@@ -193,22 +189,26 @@ private theorem coneMap_coe (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
       PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.1 :=
   (rfl)
 
-/-- A fan equivalence induces an equivalence between the cones of its source and target. -/
-def coneEquiv (e : FanEquiv Φ Ψ) : Φ.cones ≃ Ψ.cones where
-  toFun := e.coneMap
-  invFun := e.symm.coneMap
-  left_inv σ := by
-    apply Subtype.ext
-    simp only [coneMap_coe, symm_realEquiv, PointedCone.map_map]
-    convert PointedCone.map_id σ.1
-    ext x
-    simp
-  right_inv τ := by
-    apply Subtype.ext
-    simp only [coneMap_coe, symm_realEquiv, PointedCone.map_map]
-    convert PointedCone.map_id τ.1
-    ext x
-    simp
+/-- A fan equivalence induces an order isomorphism between the cones of its source and target.
+In particular it preserves inclusions and intersections of cones (`OrderIso.map_inf`). -/
+def coneEquiv (e : FanEquiv Φ Ψ) : Φ.cones ≃o Ψ.cones :=
+  Equiv.toOrderIso
+    { toFun := e.coneMap
+      invFun := e.symm.coneMap
+      left_inv σ := by
+        apply Subtype.ext
+        simp only [coneMap_coe, symm_realEquiv, PointedCone.map_map]
+        convert PointedCone.map_id σ.1
+        ext x
+        simp
+      right_inv τ := by
+        apply Subtype.ext
+        simp only [coneMap_coe, symm_realEquiv, PointedCone.map_map]
+        convert PointedCone.map_id τ.1
+        ext x
+        simp }
+    (fun _ _ ↦ Submodule.map_mono)
+    (fun _ _ ↦ Submodule.map_mono)
 
 /-- The induced cone equivalence transports a cone by the ambient linear equivalence. -/
 @[simp]
@@ -217,15 +217,23 @@ theorem coneEquiv_apply_coe (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
       PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.1 :=
   e.coneMap_coe σ
 
-/-- The inverse induced cone equivalence transports a cone by the inverse ambient equivalence. -/
+/-- The inverse induced cone equivalence is the cone equivalence of the inverse fan
+equivalence. -/
 @[simp]
-theorem coneEquiv_symm_apply_coe (e : FanEquiv Φ Ψ) (τ : Ψ.cones) :
-    (e.coneEquiv.symm τ : PointedCone ℝ V) =
-      PointedCone.map (e.realEquiv.symm : V' →ₗ[ℝ] V) τ.1 :=
-  by
-    have h : e.coneEquiv.symm τ = e.symm.coneMap τ := (rfl)
-    rw [h]
-    simpa only [symm_realEquiv] using e.symm.coneMap_coe τ
+theorem coneEquiv_symm (e : FanEquiv Φ Ψ) : e.coneEquiv.symm = e.symm.coneEquiv := (rfl)
+
+/-- The cone equivalence of the identity fan equivalence is the identity. -/
+@[simp]
+theorem coneEquiv_refl (Φ : Fan i) : (FanEquiv.refl Φ).coneEquiv = OrderIso.refl Φ.cones := by
+  ext σ
+  simp
+
+/-- The cone equivalence of a composite fan equivalence is the composite cone equivalence. -/
+@[simp]
+theorem coneEquiv_trans (e : FanEquiv Φ Ψ) (e' : FanEquiv Ψ Ω) :
+    (e.trans e').coneEquiv = e.coneEquiv.trans e'.coneEquiv := by
+  ext σ
+  simp [PointedCone.map_map]
 
 /-- The morphism of fans underlying a fan equivalence. -/
 def toFanHom (e : FanEquiv Φ Ψ) : FanHom Φ Ψ where
@@ -288,18 +296,8 @@ theorem regular_iff (e : FanEquiv Φ Ψ) : Ψ.IsRegular ↔ Φ.IsRegular := by
 /-- The ambient linear equivalence carries the support of the source fan onto the support of the
 target fan. -/
 theorem image_support (e : FanEquiv Φ Ψ) : e.realEquiv '' Φ.support = Ψ.support := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    obtain ⟨σ, hσ, hyσ⟩ := Φ.mem_support.1 hy
-    exact Ψ.mem_support.2 ⟨PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ,
-      (e.map_mem σ).2 hσ, ⟨y, hyσ, rfl⟩⟩
-  · intro hx
-    refine ⟨e.realEquiv.symm x, ?_, e.realEquiv.apply_symm_apply x⟩
-    obtain ⟨τ, hτ, hxτ⟩ := Ψ.mem_support.1 hx
-    refine Φ.mem_support.2 ⟨PointedCone.map (e.realEquiv.symm : V' →ₗ[ℝ] V) τ,
-      (e.symm.map_mem τ).2 hτ, ?_⟩
-    exact ⟨x, hxτ, rfl⟩
+  refine subset_antisymm e.toFanHom.mapsTo_support.image_subset fun x hx ↦ ?_
+  exact ⟨e.realEquiv.symm x, e.symm.toFanHom.mapsTo_support hx, e.realEquiv.apply_symm_apply x⟩
 
 /-- Completeness of finite fans is invariant under fan equivalence. -/
 theorem complete_iff (e : FanEquiv Φ Ψ) : Ψ.IsComplete ↔ Φ.IsComplete := by
