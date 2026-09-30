@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 A finite holomorphic map `f : X → Y` pulls a divisor on `Y` back to `X` by multiplying the
 coefficient at `f x` by the local multiplicity of `f` at `x`. The resulting function on `X` has
 finite support because `f` has finite fibres. This file packages the construction as the additive
-homomorphism `TauCeti.RiemannSurface.divisor_pullback` on the existing finite formal sums
+homomorphism `TauCeti.RiemannSurface.divisorPullback` on the existing finite formal sums
 `TauCeti.AlgebraicGeometry.WeilDivisor`.
 
 Pullback is contravariantly functorial. On a point divisor it is the sum of the points in the
@@ -25,7 +25,7 @@ multiplicity and are used to construct ramification divisors.
 
 ## Main declarations
 
-* `TauCeti.RiemannSurface.divisor_pullback`: pullback of finite formal divisors by a finite
+* `TauCeti.RiemannSurface.divisorPullback`: pullback of finite formal divisors by a finite
   holomorphic map.
 * `TauCeti.RiemannSurface.coeff_divisor_pullback`: the coefficient of the pullback at a point.
 * `TauCeti.RiemannSurface.divisor_pullback_comp`: pullback reverses composition.
@@ -64,7 +64,7 @@ private theorem finite_support_divisor_pullback (f : FiniteHolomorphicMap X Y)
 
 /-- Pullback of a divisor by a finite holomorphic map. The coefficient at `x` is the coefficient
 at `f x`, multiplied by the local multiplicity of `f` at `x`. -/
-def divisor_pullback (f : FiniteHolomorphicMap X Y) : WeilDivisor Y →+ WeilDivisor X where
+def divisorPullback (f : FiniteHolomorphicMap X Y) : WeilDivisor Y →+ WeilDivisor X where
   toFun D := Finsupp.ofSupportFinite
     (fun x ↦ (localMultiplicity f x : ℤ) * D (f x))
     (finite_support_divisor_pullback f D)
@@ -81,7 +81,7 @@ def divisor_pullback (f : FiniteHolomorphicMap X Y) : WeilDivisor Y →+ WeilDiv
 the local multiplicity. -/
 @[simp]
 theorem coeff_divisor_pullback (f : FiniteHolomorphicMap X Y) (D : WeilDivisor Y) (x : X) :
-    WeilDivisor.coeff (divisor_pullback f D) x =
+    WeilDivisor.coeff (divisorPullback f D) x =
       (localMultiplicity f x : ℤ) * WeilDivisor.coeff D (f x) :=
   (rfl)
 
@@ -89,7 +89,7 @@ theorem coeff_divisor_pullback (f : FiniteHolomorphicMap X Y) (D : WeilDivisor Y
 theorem _root_.TauCeti.AlgebraicGeometry.WeilDivisor.IsEffective.divisor_pullback
     {D : WeilDivisor Y}
     (hD : WeilDivisor.IsEffective D) (f : FiniteHolomorphicMap X Y) :
-    WeilDivisor.IsEffective (divisor_pullback f D) := by
+    WeilDivisor.IsEffective (divisorPullback f D) := by
   rw [WeilDivisor.isEffective_iff] at hD ⊢
   intro x
   rw [coeff_divisor_pullback]
@@ -98,7 +98,7 @@ theorem _root_.TauCeti.AlgebraicGeometry.WeilDivisor.IsEffective.divisor_pullbac
 /-- Pulling back a point divisor gives the fibre, with each point weighted by its local
 multiplicity. -/
 theorem divisor_pullback_ofPoint (f : FiniteHolomorphicMap X Y) (y : Y) :
-    divisor_pullback f (WeilDivisor.ofPoint y) =
+    divisorPullback f (WeilDivisor.ofPoint y) =
       WeilDivisor.ofFinsetWithMultiplicity (f.finite_fiber y).toFinset
         (localMultiplicity f) := by
   classical
@@ -116,7 +116,7 @@ variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpac
 /-- The support of a pulled-back divisor is the preimage of the original support. -/
 @[simp]
 theorem support_divisor_pullback (f : FiniteHolomorphicMap X Y) (D : WeilDivisor Y) :
-    ↑(divisor_pullback f D).support = f ⁻¹' (D.support : Set Y) := by
+    ↑(divisorPullback f D).support = f ⁻¹' (D.support : Set Y) := by
   ext x
   simp only [Finset.mem_coe, WeilDivisor.mem_support_iff, coeff_divisor_pullback,
     mul_ne_zero_iff, Int.natCast_ne_zero, mem_preimage]
@@ -129,7 +129,7 @@ variable [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 /-- Pullback of divisors reverses composition of finite holomorphic maps. -/
 theorem divisor_pullback_comp [TopologicalSpace Z] [ChartedSpace ℂ Z]
     [IsManifold 𝓘(ℂ) 1 Z] (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
-    divisor_pullback (g.comp f) = (divisor_pullback f).comp (divisor_pullback g) := by
+    divisorPullback (g.comp f) = (divisorPullback f).comp (divisorPullback g) := by
   apply AddMonoidHom.ext
   intro D
   apply WeilDivisor.ext
@@ -143,7 +143,7 @@ theorem divisor_pullback_comp [TopologicalSpace Z] [ChartedSpace ℂ Z]
 /-- Pulling back a point divisor has divisor degree equal to the degree of the finite holomorphic
 map. -/
 theorem degree_divisor_pullback_ofPoint (f : FiniteHolomorphicMap X Y) (y : Y) :
-    WeilDivisor.degree (divisor_pullback f (WeilDivisor.ofPoint y)) =
+    WeilDivisor.degree (divisorPullback f (WeilDivisor.ofPoint y)) =
       (degree f : ℤ) := by
   rw [divisor_pullback_ofPoint, WeilDivisor.degree_ofFinsetWithMultiplicity]
   exact_mod_cast (degree_eq_fiber_sum f y).symm
@@ -151,7 +151,7 @@ theorem degree_divisor_pullback_ofPoint (f : FiniteHolomorphicMap X Y) (y : Y) :
 /-- Pullback multiplies the degree of a divisor by the degree of the finite holomorphic map. -/
 theorem degree_divisor_pullback (f : FiniteHolomorphicMap X Y)
     (D : WeilDivisor Y) :
-    WeilDivisor.degree (divisor_pullback f D) =
+    WeilDivisor.degree (divisorPullback f D) =
       (degree f : ℤ) * WeilDivisor.degree D := by
   classical
   induction D using Finsupp.induction with
