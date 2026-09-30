@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.Octonion.Basic
-public import TauCeti.LinearAlgebra.CrossProduct
+public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 
 /-!
