@@ -32,8 +32,8 @@ The second part is two-point transitivity: any two points `z`, `w` lie on a comm
 with `z` at parameter `0` and `w` at parameter `dist z w`
 (`exists_geodesicLine_zero_eq_and_dist_eq`). Transitivity of the action puts `z` at `I`; a
 rotation about `I` (`Rotation.lean`) then moves `w` onto the imaginary axis, which is the geodesic
-line of the identity (`mem_range_geodesicLine_one_iff`), and if `w` lands below `I` the rotation
-by `π/2` reverses the axis (`geodesicLine_rotation_pi_div_two`).
+line of the identity (`range_geodesicLine_one`), and if `w` lands below `I` the rotation by
+`π/2` reverses the axis (`geodesicLine_rotation_pi_div_two`).
 
 ## Main declarations
 
@@ -56,9 +56,8 @@ by `π/2` reverses the axis (`geodesicLine_rotation_pi_div_two`).
   without unfolding the smul-image.
 * `TauCeti.UpperHalfPlane.range_geodesicLine_mul_pslS` — a geodesic line's image is unaffected by
   multiplying its representative by `pslS`.
-* `TauCeti.UpperHalfPlane.mem_range_geodesicLine_one_iff` — the geodesic line of the identity
-  is the imaginary axis (`exists_geodesicLine_one_eq_iff` is its simp-normal form);
-  `geodesicLine_rotation_pi_div_two` reverses its parametrisation.
+* `TauCeti.UpperHalfPlane.geodesicLine_rotation_pi_div_two` — the rotation by `π/2` reverses
+  the parametrisation of the imaginary axis.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_dist_eq` — two-point transitivity:
   a geodesic line with `z` at parameter `0` and `w` at parameter `dist z w`, for any `z`, `w`;
   `exists_mem_range_geodesicLine_and_mem_range` is the same at the level of the line as a set.
@@ -169,24 +168,6 @@ theorem geodesicLine_rotation_pi_div_two (t : ℝ) :
   rw [Complex.ext_iff]
   simp [Real.exp_neg, Real.exp_ne_zero]
 
-/-- The geodesic line of the identity is the imaginary axis. The simp-normal form is
-`exists_geodesicLine_one_eq_iff`, since `simp` unfolds `Set.range` membership. -/
-theorem mem_range_geodesicLine_one_iff {u : ℍ} : u ∈ Set.range (geodesicLine 1) ↔ u.re = 0 := by
-  constructor
-  · rintro ⟨t, rfl⟩
-    simp [geodesicLine_one_apply]
-  · intro hu
-    refine ⟨Real.log u.im, ?_⟩
-    ext
-    rw [geodesicLine_one_apply, UpperHalfPlane.coe_mk, Complex.ext_iff]
-    simp [coe_re, coe_im, hu, Real.exp_log u.im_pos]
-
-/-- `mem_range_geodesicLine_one_iff` in simp-normal form: a point is on the geodesic line of the
-identity exactly when it is on the imaginary axis. -/
-@[simp]
-theorem exists_geodesicLine_one_eq_iff {u : ℍ} : (∃ t, geodesicLine 1 t = u) ↔ u.re = 0 :=
-  mem_range_geodesicLine_one_iff
-
 /-- Any two points `z`, `w` lie on a common geodesic line, `z` at parameter `0` and `w` at a
 nonnegative parameter; the parameter is identified as `dist z w` in
 `exists_geodesicLine_zero_eq_and_dist_eq`. -/
@@ -201,7 +182,9 @@ private theorem exists_nonneg_geodesicLine_zero_eq_and_apply_eq (z w : ℍ) :
   have hkw : (k • w).re = 0 := by
     rw [hk, mul_smul, UpperHalfPlane.pslMk_smul]
     exact hθ
-  obtain ⟨t, ht⟩ := mem_range_geodesicLine_one_iff.2 hkw
+  obtain ⟨t, ht⟩ : k • w ∈ Set.range (geodesicLine 1) := by
+    rw [range_geodesicLine_one]
+    exact hkw
   rcases le_or_gt 0 t with ht0 | ht0
   · refine ⟨k⁻¹, t, ht0, ?_, ?_⟩
     · rw [geodesicLine_zero, ← hkz, inv_smul_smul]
