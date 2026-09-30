@@ -36,15 +36,15 @@ The identity is stated over `ℤ` rather than in a coefficient field, so that it
 to Grothendieck groups of modular representations, where the order of the group need not be
 invertible.
 
+Artin's induction theorem,
 `TauCeti.ClassFunction.natCard_nsmul_one_mem_indVirtualCharacters_isCyclic`
-(`TauCeti.RepresentationTheory.Induction.Artin.Basic`) proves the same combinatorial input in a
-different presentation, with the Möbius function of the incidence algebra of the poset of cyclic
-subgroups in place of the arithmetic one, and only in the image of `ℤ` in a field; those private
-coefficients are what this file makes public and arithmetic.
+(`TauCeti.RepresentationTheory.Induction.Artin.Basic`), is the in-repository consumer: it reads
+`TauCeti.sum_artinCoeff_of_mem` over the cyclic subgroups, the noncyclic ones contributing nothing
+by `TauCeti.artinCoeff_eq_zero_of_not_isCyclic`, and maps the coefficients into its field.
 
 ## Main declarations
 
-* `TauCeti.artinCoeff`: the Artin coefficient of a subgroup.
+* `TauCeti.artinCoeff`: the Artin coefficient of a subgroup, with `TauCeti.artinCoeff_def`.
 * `TauCeti.sum_moebius_relIndex`: the Möbius sum over an interval below a cyclic subgroup.
 * `TauCeti.sum_artinCoeff_of_mem`: the Artin coefficients of the subgroups containing an element
   add up to one.
@@ -109,40 +109,41 @@ open scoped Classical in
 /-- The Möbius function of the relative index in a cyclic subgroup `D`, summed over the subgroups
 between `E` and `D`, is `1` if `E = D` and `0` otherwise. This is `TauCeti.sum_moebius_index` read
 through the correspondence between the subgroups of `G` lying between `E` and `D` and the
-subgroups of `D` above `E ∩ D`. -/
-theorem sum_moebius_relIndex {G : Type*} [Group G] [Finite G] {E D : Subgroup G}
+subgroups of `D` above `E ∩ D`; only `D` need be finite, since every contributing subgroup lies
+below it. -/
+theorem sum_moebius_relIndex {G : Type*} [Group G] {E D : Subgroup G} [Finite D]
     (hD : IsCyclic D) :
     ∑ᶠ (C : Subgroup G) (_ : E ≤ C ∧ C ≤ D), μ (C.relIndex D) = if E = D then 1 else 0 := by
   classical
-  let _ := Fintype.ofFinite (Subgroup G)
   let _ := Fintype.ofFinite (Subgroup D)
   by_cases hED : E ≤ D
-  · have hstep : ∑ᶠ (C : Subgroup G) (_ : E ≤ C ∧ C ≤ D), μ (C.relIndex D) =
-        ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => E ≤ C ∧ C ≤ D), μ (C.relIndex D) :=
-      finsum_cond_eq_sum_of_cond_iff _ (by simp)
+  · -- The subgroups of `G` between `E` and `D` are exactly the images of the subgroups of `D`
+    -- above `E.subgroupOf D`, so they form a finite set as soon as `D` is finite.
+    have hmem : ∀ C : Subgroup G, (E ≤ C ∧ C ≤ D) ↔
+        C ∈ (Finset.univ.filter (fun F : Subgroup D => E.subgroupOf D ≤ F)).image
+          (fun F => F.map D.subtype) := by
+      intro C
+      simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and]
+      refine ⟨fun hC => ⟨C.subgroupOf D, Subgroup.comap_mono hC.1,
+        Subgroup.map_subgroupOf_eq_of_le hC.2⟩, ?_⟩
+      rintro ⟨F, hF, rfl⟩
+      refine ⟨?_, Subgroup.map_subtype_le F⟩
+      calc E = (E.subgroupOf D).map D.subtype := (Subgroup.map_subgroupOf_eq_of_le hED).symm
+        _ ≤ F.map D.subtype := Subgroup.map_mono hF
+    have hrel : ∀ F : Subgroup D, μ ((F.map D.subtype).relIndex D) = μ F.index := fun F =>
+      congrArg (fun H : Subgroup D => μ H.index)
+        (Subgroup.comap_map_eq_self_of_injective D.subtype_injective F)
+    have hstep : ∑ᶠ (C : Subgroup G) (_ : E ≤ C ∧ C ≤ D), μ (C.relIndex D) =
+        ∑ F ∈ Finset.univ.filter (fun F : Subgroup D => E.subgroupOf D ≤ F), μ F.index := by
+      rw [finsum_cond_eq_sum_of_cond_iff
+        (t := (Finset.univ.filter (fun F : Subgroup D => E.subgroupOf D ≤ F)).image
+          (fun F => F.map D.subtype)) _ (by intro C _; exact hmem C),
+        Finset.sum_image fun F₁ _ F₂ _ h => Subgroup.map_injective D.subtype_injective h]
+      exact Finset.sum_congr rfl fun F _ => hrel F
     have hstep' : ∑ᶠ (F : Subgroup D) (_ : E.subgroupOf D ≤ F), μ F.index =
         ∑ F ∈ Finset.univ.filter (fun F : Subgroup D => E.subgroupOf D ≤ F), μ F.index :=
       finsum_cond_eq_sum_of_cond_iff _ (by simp)
-    have hbij : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => E ≤ C ∧ C ≤ D),
-          μ (C.relIndex D) =
-        ∑ F ∈ Finset.univ.filter (fun F : Subgroup D => E.subgroupOf D ≤ F), μ F.index := by
-      refine Finset.sum_nbij' (fun C => C.subgroupOf D) (fun F => F.map D.subtype) ?_ ?_ ?_ ?_ ?_
-      · intro C hC
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hC ⊢
-        exact Subgroup.comap_mono hC.1
-      · intro F hF
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hF ⊢
-        refine ⟨?_, Subgroup.map_subtype_le F⟩
-        calc E = (E.subgroupOf D).map D.subtype := (Subgroup.map_subgroupOf_eq_of_le hED).symm
-          _ ≤ F.map D.subtype := Subgroup.map_mono hF
-      · intro C hC
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hC
-        exact Subgroup.map_subgroupOf_eq_of_le hC.2
-      · intro F _
-        exact Subgroup.comap_map_eq_self_of_injective D.subtype_injective F
-      · intro C _
-        rfl
-    rw [hstep, hbij, ← hstep', sum_moebius_index]
+    rw [hstep, ← hstep', sum_moebius_index]
     congr 1
     simp only [eq_iff_iff, Subgroup.subgroupOf_eq_top]
     exact ⟨fun h => le_antisymm hED h, fun h => h.ge⟩
@@ -159,9 +160,15 @@ noncomputable def artinCoeff {G : Type*} [Group G] (C : Subgroup G) : ℤ :=
 
 variable {G : Type*} [Group G]
 
+/-- `TauCeti.artinCoeff` unfolded: the Möbius function of the relative index, summed over the
+cyclic subgroups above `C`. -/
+theorem artinCoeff_def (C : Subgroup G) :
+    artinCoeff C = ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), μ (C.relIndex D) := (rfl)
+
 open scoped Classical in
 /-- A subgroup of a cyclic group is cyclic, so a noncyclic subgroup lies below no cyclic subgroup
 and its Artin coefficient vanishes. -/
+@[simp]
 theorem artinCoeff_eq_zero_of_not_isCyclic {C : Subgroup G} (hC : ¬ IsCyclic C) :
     artinCoeff C = 0 :=
   finsum_eq_zero_of_forall_eq_zero fun D ↦ by
@@ -172,12 +179,13 @@ theorem artinCoeff_eq_zero_of_not_isCyclic {C : Subgroup G} (hC : ¬ IsCyclic C)
 variable [Finite G]
 
 open scoped Classical in
-/-- **The Artin coefficients of the subgroups containing an element add up to one.** Exchanging the
-two sums groups the pairs `C ≤ D` by their cyclic upper member `D`; the inner sum is
-`TauCeti.sum_moebius_relIndex` for the interval between `⟨y⟩` and `D`, which leaves only the term
-`D = ⟨y⟩`. -/
+/-- **The Artin coefficients of the subgroups containing an element add up to one.** This is the
+combinatorial half of Artin's identity for fixed points. -/
 theorem sum_artinCoeff_of_mem (y : G) :
     ∑ᶠ (C : Subgroup G) (_ : y ∈ C), artinCoeff C = 1 := by
+  -- Exchanging the two sums groups the pairs `C ≤ D` by their cyclic upper member `D`; the inner
+  -- sum is `sum_moebius_relIndex` for the interval between `⟨y⟩` and `D`, leaving the term
+  -- `D = ⟨y⟩` alone.
   classical
   let _ := Fintype.ofFinite (Subgroup G)
   have houter : ∑ᶠ (C : Subgroup G) (_ : y ∈ C), artinCoeff C =
@@ -214,27 +222,28 @@ a union of `|(G ⧸ C)^g|` cosets of `C`. -/
 theorem natCard_subgroup_mul_natCard_fixedBy (C : Subgroup G) (g : G) :
     Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g) =
       Nat.card {x : G // x⁻¹ * g * x ∈ C} := by
-  have hset : {x : G | x⁻¹ * g * x ∈ C} =
-      QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ C) g) := by
-    ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_preimage, MulAction.mem_fixedBy]
-    rw [show g • (QuotientGroup.mk x : G ⧸ C) = QuotientGroup.mk (g * x) from rfl,
+  have hmem : ∀ x : G,
+      x ∈ QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ C) g) ↔ x⁻¹ * g * x ∈ C := by
+    intro x
+    simp only [Set.mem_preimage, MulAction.mem_fixedBy, MulAction.Quotient.smul_mk, smul_eq_mul,
       QuotientGroup.eq]
     exact ⟨fun h => by simpa [mul_assoc] using C.inv_mem h,
       fun h => by simpa [mul_assoc] using C.inv_mem h⟩
-  rw [show {x : G // x⁻¹ * g * x ∈ C} = ({x : G | x⁻¹ * g * x ∈ C} : Set G) from rfl, hset,
-    Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet C _), Nat.card_prod]
+  calc Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g)
+      = Nat.card (C × MulAction.fixedBy (G ⧸ C) g) := (Nat.card_prod _ _).symm
+    _ = Nat.card (QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ C) g) : Set G) :=
+        (Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet C _)).symm
+    _ = Nat.card {x : G // x⁻¹ * g * x ∈ C} := Nat.card_congr (Equiv.subtypeEquivRight hmem)
 
 open scoped Classical in
 /-- **Artin's identity for fixed points**: weighting the permutation character of `G ⧸ C` by
-`artinCoeff C * |C|` and summing over all subgroups gives `|G|`, at every `g : G`.
-
-Each summand counts, with the weight `artinCoeff C`, the elements `x` of `G` whose conjugate
-`x⁻¹ g x` lies in `C`; exchanging the two sums replaces the inner sum by
-`TauCeti.sum_artinCoeff_of_mem` at `x⁻¹ g x`, which is `1`. -/
+`artinCoeff C * |C|` and summing over all subgroups gives `|G|`, at every `g : G`. -/
 theorem sum_artinCoeff_mul_card_fixedBy (g : G) :
     ∑ᶠ C : Subgroup G, artinCoeff C * Nat.card C * Nat.card (MulAction.fixedBy (G ⧸ C) g) =
       (Nat.card G : ℤ) := by
+  -- Each summand counts, with the weight `artinCoeff C`, the elements `x` of `G` whose conjugate
+  -- `x⁻¹ g x` lies in `C`; exchanging the two sums replaces the inner sum by
+  -- `sum_artinCoeff_of_mem` at `x⁻¹ g x`, which is `1`.
   classical
   let _ := Fintype.ofFinite G
   let _ := Fintype.ofFinite (Subgroup G)
