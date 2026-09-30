@@ -62,6 +62,7 @@ acts additively on points. For a separable isogeny `φ` over a separably closed 
   when the outer point map is additive and the source has infinitely many points.
 * `TauCeti.Isogeny.Hom.ofIsogeny_comp_add`: composition with a separable isogeny over a separably
   closed field is additive in the inner morphism.
+* `TauCeti.Isogeny.Hom.ofIsogeny_comp_zsmul`: and, consequently, `ℤ`-linear in it.
 
 ## References
 
@@ -303,6 +304,16 @@ theorem ofIsogeny_comp_add [IsSepClosed F] [W₃.IsElliptic] (φ : Isogeny W₂ 
   classical
   have := WeierstrassCurve.Affine.infinite_point W₁
   exact comp_add_of_pointMap_add (ofIsogeny φ) (pointMap_add φ) f g
+
+omit [DecidableEq F] in
+/-- **Composition with a separable isogeny over a separably closed field is `ℤ`-linear in the
+inner morphism.** -/
+@[simp]
+theorem ofIsogeny_comp_zsmul [IsSepClosed F] [W₃.IsElliptic] (φ : Isogeny W₂ W₃)
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₂.FunctionField] (n : ℤ) (f : Hom W₁ W₂) :
+    (ofIsogeny φ).comp (n • f) = n • (ofIsogeny φ).comp f :=
+  map_zsmul (AddMonoidHom.mk' (fun f : Hom W₁ W₂ ↦ (ofIsogeny φ).comp f)
+    (ofIsogeny_comp_add φ)) n f
 
 end TauCeti.Isogeny.Hom
 
