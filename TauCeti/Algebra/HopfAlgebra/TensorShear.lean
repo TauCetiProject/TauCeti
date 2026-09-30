@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
@@ -44,8 +44,15 @@ private theorem tensorShearHom_comp_inv :
     change tensorShearHom.comp (tensorShearInv.comp includeRight) = includeRight
     rw [tensorShearInv, lift_comp_includeRight']
     apply toConv_injective
-    rw [← AlgHom.mapValue_apply, map_mul, map_inv]
-    simp [tensorShearHom, Bialgebra.comulPoint_eq_include_mul]
+    rw [AlgHom.comp_convMul_distrib]
+    -- Mathlib defines convolution inversion by precomposing with the antipode,
+    -- so associativity of composition identifies the first factor with this inverse.
+    change (toConv ((tensorShearHom (R := R) (H := H)).comp includeLeft))⁻¹ *
+      toConv (tensorShearHom.comp includeRight) = toConv includeRight
+    simpa only [tensorShearHom, lift_comp_includeLeft, lift_comp_includeRight',
+      Bialgebra.comulPoint_eq_include_mul, Bialgebra.TensorProduct.includeLeft_toAlgHom,
+      Bialgebra.TensorProduct.includeRight_toAlgHom] using
+      inv_mul_cancel_left (toConv (includeLeft : H →ₐ[R] H ⊗[R] H)) (toConv includeRight)
 
 private theorem tensorShearInv_comp_hom :
     (tensorShearInv (R := R) (H := H)).comp tensorShearHom = AlgHom.id R _ := by
@@ -56,7 +63,10 @@ private theorem tensorShearInv_comp_hom :
     rw [tensorShearHom, lift_comp_includeRight',
       ← ofConv_toConv (Bialgebra.comulAlgHom R H), Bialgebra.comulPoint_eq_include_mul,
       AlgHom.comp_convMul_distrib]
-    simp [tensorShearInv]
+    simpa only [tensorShearInv, Bialgebra.TensorProduct.includeLeft_toAlgHom,
+      Bialgebra.TensorProduct.includeRight_toAlgHom, lift_comp_includeLeft,
+      lift_comp_includeRight', toConv_ofConv] using congrArg ofConv
+        (mul_inv_cancel_left (toConv (includeLeft : H →ₐ[R] H ⊗[R] H)) (toConv includeRight))
 
 /-- The coordinate automorphism of `(g, h) ↦ (g, gh)` on the tensor square of a
 commutative Hopf algebra. -/
@@ -81,7 +91,10 @@ theorem tensorShearMulRight_symm_tmul (a b : H) :
     includeLeft_apply, AlgHom.convMul_apply]
   congr 1
   induction Coalgebra.comul (R := R) b with
-  | tmul x y => simp
+  | tmul x y =>
+    -- Expand the convolution inverse's antipode action on this pure tensor.
+    change (HopfAlgebra.antipodeAlgHom R H x ⊗ₜ[R] 1) * (1 ⊗ₜ[R] y) = _
+    simp [HopfAlgebra.antipodeAlgHom]
   | add x y hx hy => simp [hx, hy]
 
 end TauCeti.HopfAlgebra

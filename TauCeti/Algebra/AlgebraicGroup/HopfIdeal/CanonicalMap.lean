@@ -76,6 +76,8 @@ theorem canonicalMap_comp_mapOfCompatibleSMul (I : HopfIdeal R H) :
 No normality or flatness hypothesis is required. -/
 theorem canonicalMap_surjective (I : HopfIdeal R H) :
     Function.Surjective I.canonicalMap := by
+  -- The algebra-map version requires a commutative ring base; the linear-map
+  -- version applies to our commutative semiring base.
   have hmap : Function.Surjective
       (Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I.toIdeal)) :=
     TensorProduct.map_surjective (g := (AlgHom.id R H).toLinearMap)
