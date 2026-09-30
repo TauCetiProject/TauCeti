@@ -214,36 +214,37 @@ private def trefoilStateForest (b₀ b₁ b₂ : Bool) :
         ((2, 1), (1, 1)), ((0, 1), (2, 1)), ((2, 0), (1, 0)), ((0, 0), (2, 0))]
 
 private theorem trefoilStateForest_isForest (b₀ b₁ b₂ : Bool) :
-    IsSwapForest (trefoilStateForest b₀ b₁ b₂) := by
+    (trefoilStateForest b₀ b₁ b₂).IsSwapForest := by
   cases b₀ <;> cases b₁ <;> cases b₂ <;>
     simp [trefoilStateForest, Equiv.swap_apply_def]
 
-private theorem trefoilStatePerm_eq_swapProduct (b₀ b₁ b₂ : Bool) :
+private theorem trefoilStatePerm_eq_prod_swap (b₀ b₁ b₂ : Bool) :
     (Equiv.prodCongrRight ![PDCode.slotSmoothing (!b₀), PDCode.slotSmoothing (!b₁),
         PDCode.slotSmoothing (!b₂)]) * rightHandedTrefoilArcPair.val =
-      swapProduct (trefoilStateForest b₀ b₁ b₂) := by
+      ((trefoilStateForest b₀ b₁ b₂).reverse.map (Function.uncurry Equiv.swap)).prod := by
   cases b₀ <;> cases b₁ <;> cases b₂ <;>
     simp only [Bool.not_false, Bool.not_true, PDCode.slotSmoothing_false,
       PDCode.slotSmoothing_true, rightHandedTrefoilArcPair, PerfectMatching.val_mk,
-      trefoilStateForest, swapProduct_nil, swapProduct_cons] <;>
+      trefoilStateForest] <;>
     decide
 
 private theorem trefoilStateForest_orbitCount (b₀ b₁ b₂ : Bool) :
-    orbitCount (swapProduct (trefoilStateForest b₀ b₁ b₂)) +
+    orbitCount ((trefoilStateForest b₀ b₁ b₂).reverse.map (Function.uncurry Equiv.swap)).prod +
       (trefoilStateForest b₀ b₁ b₂).length = 12 := by
-  simpa using orbitCount_swapProduct_add_length (trefoilStateForest_isForest b₀ b₁ b₂)
+  simpa using (trefoilStateForest_isForest b₀ b₁ b₂).orbitCount_add_length
 
 private def trefoilComponentForest : List ((Fin 3 × Fin 4) × (Fin 3 × Fin 4)) :=
   [((1, 2), (2, 3)), ((0, 3), (1, 2)), ((2, 2), (0, 3)), ((1, 3), (2, 2)),
     ((0, 2), (1, 3)), ((2, 0), (1, 1)), ((0, 1), (2, 0)), ((1, 0), (0, 1)),
     ((2, 1), (1, 0)), ((0, 0), (2, 1))]
 
-private theorem trefoilComponentForest_isForest : IsSwapForest trefoilComponentForest := by
+private theorem trefoilComponentForest_isForest : trefoilComponentForest.IsSwapForest := by
   simp [trefoilComponentForest, Equiv.swap_apply_def]
 
-private theorem trefoilComponentSlotPerm_eq_swapProduct :
+private theorem trefoilComponentSlotPerm_eq_prod_swap :
     (Equiv.prodCongr (Equiv.refl (Fin 3)) PDCode.oppositeCrossingSlot) *
-      rightHandedTrefoilArcPair.val = swapProduct trefoilComponentForest := by
+      rightHandedTrefoilArcPair.val =
+      (trefoilComponentForest.reverse.map (Function.uncurry Equiv.swap)).prod := by
   rw [PDCode.oppositeCrossingSlot_eq_swap_mul_swap]
   apply Equiv.ext
   rintro ⟨i, slot⟩
@@ -251,21 +252,22 @@ private theorem trefoilComponentSlotPerm_eq_swapProduct :
     simp [rightHandedTrefoilArcPair,
       PerfectMatching.val_mk, trefoilComponentForest, Equiv.swap_apply_def]
 
-private theorem trefoilComponentPerm_eq_swapProduct :
+private theorem trefoilComponentPerm_eq_prod_swap :
     rightHandedTrefoilPDCode.toPDCode.componentPerm =
-      (PDCode.crossingSlotEquiv 3).permCongr (swapProduct trefoilComponentForest) := by
+      (PDCode.crossingSlotEquiv 3).permCongr
+        (trefoilComponentForest.reverse.map (Function.uncurry Equiv.swap)).prod := by
   rw [PDCode.componentPerm_def, PDCode.crossingTurn_def]
   simp [rightHandedTrefoilPDCode, trefoilEdgePair, PerfectMatching.congr_val,
-    trefoilComponentSlotPerm_eq_swapProduct, ← Equiv.permCongr_mul]
+    trefoilComponentSlotPerm_eq_prod_swap, ← Equiv.permCongr_mul]
 
 /-- The standard trefoil PD-code represents one link component. -/
 @[simp]
 theorem rightHandedTrefoilPDCode_componentCount :
     rightHandedTrefoilPDCode.toPDCode.componentCount = 1 := by
   rw [PDCode.componentCount_eq, PDCode.crossingComponentCount_def,
-    trefoilComponentPerm_eq_swapProduct, Equiv.orbitCount_permCongr,
+    trefoilComponentPerm_eq_prod_swap, Equiv.orbitCount_permCongr,
     rightHandedTrefoilPDCode_crossinglessComponentCount]
-  have hcount := orbitCount_swapProduct_add_length trefoilComponentForest_isForest
+  have hcount := trefoilComponentForest_isForest.orbitCount_add_length
   norm_num [trefoilComponentForest] at hcount ⊢
   omega
 
@@ -285,7 +287,7 @@ private theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) 
     rw [PDCode.stateLoopCount_def, rightHandedTrefoilPDCode_statePerm,
       trefoilSlotSmoothing, Equiv.orbitCount_permCongr,
       rightHandedTrefoilPDCode_crossinglessComponentCount] <;>
-    rw [trefoilStatePerm_eq_swapProduct] <;>
+    rw [trefoilStatePerm_eq_prod_swap] <;>
     norm_num [trefoilStateForest] at hcount ⊢ <;>
     omega
 
