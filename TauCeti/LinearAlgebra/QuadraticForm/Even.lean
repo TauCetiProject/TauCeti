@@ -67,6 +67,7 @@ theorem _root_.LinearMap.BilinForm.halfNormQuadratic_apply
   by simp [LinearMap.BilinForm.halfNormQuadratic]
 
 /-- Twice the half-norm recovers the self-pairing. -/
+@[simp]
 theorem _root_.LinearMap.BilinForm.two_mul_halfNormQuadratic
     (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
     (heven : ∀ x, Even (B x x)) (x : M) :
@@ -89,11 +90,18 @@ theorem _root_.LinearMap.BilinForm.polarBilin_halfNormQuadratic
   simp only [map_add, LinearMap.add_apply] at hxy
   nlinarith [hB.eq x y]
 
+/-- The diagonal of the polar form of an integer quadratic form is twice its value. -/
+@[simp]
+theorem _root_.QuadraticForm.polarBilin_self (Q : _root_.QuadraticForm ℤ M) (x : M) :
+    Q.polarBilin x x = 2 * Q x := by
+  rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self]
+  simp only [two_smul, two_mul]
+
 /-- The polar form of an integer quadratic form has even diagonal. -/
 theorem _root_.QuadraticForm.even_polarBilin_self (Q : _root_.QuadraticForm ℤ M) (x : M) :
     Even (Q.polarBilin x x) := by
-  rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self]
-  exact ⟨Q x, by simp [two_mul]⟩
+  rw [Q.polarBilin_self]
+  exact even_two_mul (Q x)
 
 /-- Taking the half-norm of the polar form recovers the quadratic form. -/
 @[simp]
@@ -118,7 +126,8 @@ theorem _root_.QuadraticForm.eq_of_polarBilin_eq (Q₁ Q₂ : _root_.QuadraticFo
   omega
 
 /-- The polar form of an integer quadratic form is symmetric with even diagonal. -/
-theorem _root_.QuadraticForm.polarBilin_isSymm_and_even (Q : _root_.QuadraticForm ℤ M) :
+theorem _root_.QuadraticForm.isSymm_polarBilin_and_even_polarBilin_self
+    (Q : _root_.QuadraticForm ℤ M) :
     Q.polarBilin.IsSymm ∧ ∀ x, Even (Q.polarBilin x x) := by
   constructor
   · constructor
