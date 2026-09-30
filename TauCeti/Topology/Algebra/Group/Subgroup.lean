@@ -239,9 +239,10 @@ theorem _root_.MonoidHom.map_topologicalClosure [T2Space H] (f : G →* H)
 
 /-- A topological group isomorphism carries the closed normal closure of a set onto the closed
 normal closure of its image. -/
+@[simp]
 theorem _root_.ContinuousMulEquiv.map_topologicalClosure_normalClosure (α : G ≃ₜ* H)
     (s : Set G) :
-    (normalClosure s).topologicalClosure.map α.toMulEquiv.toMonoidHom =
+    (normalClosure s).topologicalClosure.map ((α : G ≃* H) : G →* H) =
       (normalClosure (α '' s)).topologicalClosure := by
   calc
     _ = ((normalClosure s).map α.toMulEquiv.toMonoidHom).topologicalClosure := by

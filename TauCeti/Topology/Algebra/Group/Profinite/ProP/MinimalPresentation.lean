@@ -229,8 +229,8 @@ theorem exists_continuousMulEquiv_topologicalClosure_normalClosure_image_eq [Fin
       rw [← mk_eq_one_iff, ← map_eq_one_iff e e.injective, ← hαx, α.apply_symm_apply,
         mk_eq_one_iff]
       exact hx
-    rw [← α.map_topologicalClosure_normalClosure rels, Subgroup.mem_map_equiv]
-    exact hsymm
+    rw [← α.map_topologicalClosure_normalClosure rels]
+    exact Subgroup.mem_map_equiv.2 hsymm
 
 /-- **Presentations of isomorphic groups, one of them minimal, differ by a change of basis.**
 Pro-`p` groups presented on the same finite type `X`, with the relators `rels'` in the Frattini
@@ -254,8 +254,8 @@ theorem nonempty_continuousMulEquiv_iff [Finite X]
     rw [mk_eq_one_iff]
     have hr' : r ∈ (Subgroup.normalClosure (α '' rels)).topologicalClosure :=
       hα ▸ Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
-    rw [← α.map_topologicalClosure_normalClosure rels, Subgroup.mem_map_equiv] at hr'
-    exact hr'
+    rw [← α.map_topologicalClosure_normalClosure rels] at hr'
+    exact Subgroup.mem_map_equiv.1 hr'
 
 end presentedProP
 
