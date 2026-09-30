@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
-import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
+public import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
 
 /-!
 # Functions on a faithfully flat quotient
@@ -19,15 +19,17 @@ from `Spec H`. In coordinates, `(kernelHopfIdeal f).coinvariants = f.hom.toAlgHo
 This is the coordinate exactness statement for a faithfully flat quotient of affine groups.
 No finite presentation or smoothness hypothesis is needed.
 
-The proof uses the functor-of-points characterization of coinvariants and Mathlib's
-`Algebra.IsEffective.of_faithfullyFlat`. The two universal points with values in `K ⊗[H] K`
-have the same image in `Spec H`, so their ratio belongs to the kernel. Invariance therefore
-gives the descent equalizer equation, which recovers a unique function on `Spec H`.
+More generally, the equality holds whenever the coordinate map satisfies
+`Algebra.IsEffective`. The kernel-invariance characterization identifies invariant functions
+with functions constant on fibers over every value algebra, connecting the functor-of-points
+and coordinate-algebra descriptions of affine-group quotients.
 
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.3.
 * J. S. Milne, *Algebraic Groups* (2017), §5.c.
+* Mathlib's `Algebra.IsEffective.eqLocus_includeLeft_includeRight` and
+  `Algebra.IsEffective.of_faithfullyFlat`.
 -/
 
 public section
@@ -51,25 +53,24 @@ theorem mem_coinvariants_kernelHopfIdeal_iff (f : H ⟶ K) (x : K) :
   rw [HopfIdeal.mem_coinvariants_iff_forall_mul]
   constructor
   · intro hx A g g' hgg'
-    simp only [mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply] at hgg'
     have hn : g⁻¹ * g' ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A := by
       apply (mapPointsFunctor_app_eq_one_iff f A _).mp
-      rw [← AlgHom.mapDomain_apply, map_mul, map_inv, hgg', inv_mul_cancel]
+      rw [← mapPointsFunctor_app_apply]
+      exact ((mapPointsFunctor f).app A).hom.eq_iff.mp hgg'.symm
     simpa using (hx A g (g⁻¹ * g') hn).symm
   · intro hx A g n hn
     apply hx A (g * n) g
-    have hn' := (mapPointsFunctor_app_eq_one_iff f A n).mpr hn
     simp only [mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply]
-    rw [← AlgHom.mapDomain_apply] at hn'
-    rw [map_mul, hn', mul_one]
+    apply (AlgHom.mapDomain (A := A) f.hom).eq_iff.mpr
+    simpa only [inv_mul_cancel_left, MonoidHom.mem_ker, AlgHom.mapDomain_apply] using
+      (mapPointsFunctor_app_eq_one_iff f A n).mpr hn
 
-/-- The functions invariant under the kernel of a faithfully flat affine-group morphism are
-precisely the pullbacks of functions on its target. -/
-theorem coinvariants_kernelHopfIdeal_eq_range (f : H ⟶ K)
-    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) :
+/-- If the coordinate map is effective, the functions invariant under its kernel are precisely
+the pullbacks of functions on its target. -/
+theorem coinvariants_kernelHopfIdeal_eq_range_of_isEffective (f : H ⟶ K)
+    (hf : letI := f.hom.toAlgHom.toAlgebra; Algebra.IsEffective H K) :
     (kernelHopfIdeal f).coinvariants = f.hom.toAlgHom.range := by
   let : Algebra H K := f.hom.toAlgHom.toAlgebra
-  let : Module.FaithfullyFlat H K := hf
   ext x
   constructor
   · intro hx
@@ -86,14 +87,31 @@ theorem coinvariants_kernelHopfIdeal_eq_range (f : H ⟶ K)
         (Algebra.TensorProduct.includeLeftRingHom_comp_algebraMap
           (R := H) (A := K) (B := K)) a
     have heq := (mem_coinvariants_kernelHopfIdeal_iff f x).mp hx A g g' hgg'
+    dsimp only [g, g', A, ofConv_toConv, AlgHom.restrictScalars_apply] at heq
     have hx' : x ∈ Set.range (algebraMap H K) := by
-      rw [← Algebra.IsEffective.eqLocus_includeLeft_includeRight
-        (Algebra.IsEffective.of_faithfullyFlat H K)]
-      exact heq
-    exact hx'
+      rw [← Algebra.IsEffective.eqLocus_includeLeft_includeRight hf]
+      apply RingHom.mem_eqLocus.mpr
+      simpa only [Algebra.TensorProduct.includeLeft_apply,
+        Algebra.TensorProduct.includeLeftRingHom_apply,
+        AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using heq
+    simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      Set.mem_range, AlgHom.mem_range] using hx'
   · rintro ⟨a, rfl⟩
     apply (mem_coinvariants_kernelHopfIdeal_iff f _).mpr
     intro A g g' hgg'
-    exact congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A ↦ p.ofConv a) hgg'
+    simpa only [mapPointsFunctor_app_apply_apply, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom] using
+      congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A ↦ p.ofConv a) hgg'
+
+/-- The functions invariant under the kernel of a faithfully flat affine-group morphism are
+precisely the pullbacks of functions on its target. -/
+@[simp]
+theorem coinvariants_kernelHopfIdeal_eq_range (f : H ⟶ K)
+    (hf : (f.hom.toAlgHom : H →+* K).FaithfullyFlat) :
+    (kernelHopfIdeal f).coinvariants = f.hom.toAlgHom.range := by
+  let : Algebra H K := f.hom.toAlgHom.toAlgebra
+  let : Module.FaithfullyFlat H K := hf
+  exact coinvariants_kernelHopfIdeal_eq_range_of_isEffective f
+    (Algebra.IsEffective.of_faithfullyFlat H K)
 
 end TauCeti.CommHopfAlgCat
