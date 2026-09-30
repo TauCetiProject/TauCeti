@@ -16,10 +16,9 @@ from presheaves of `S`-modules to presheaves of
 `R`-modules is lax symmetric monoidal. Its unit map is `α` itself, sectionwise, and its tensor map
 sends a pure tensor `m ⊗ n` to the same pure tensor, now regarded over the smaller ring.
 
-This is the presheaf-level change-of-rings input for the monoidal pullback of sheaves of modules.
-After combining it with precomposition, the pushforward right adjoint is lax monoidal; the
-left-adjoint pullback therefore has a canonical oplax tensor comparison. Proving that comparison
-invertible after sheafification is the remaining step toward strong symmetric monoidal pullback.
+Combining it with precomposition, the pushforward of presheaves of modules along a functor and
+a morphism of presheaves of commutative rings is lax symmetric monoidal. Consequently its left
+adjoint, the pullback, carries a canonical oplax tensor comparison.
 
 ## Main declarations
 
@@ -29,8 +28,8 @@ invertible after sheafification is the remaining step toward strong symmetric mo
   `PresheafOfModulesOfCommRing.pushforward` is lax monoidal;
 * `PresheafOfModules.pushforwardLaxBraided`: it is moreover lax symmetric monoidal.
 
-No formalization is vendored. The construction is obtained sectionwise from Mathlib's lax
-monoidal restriction of scalars for `ModuleCat`.
+All structure maps and coherence laws are obtained sectionwise from Mathlib's lax monoidal
+restriction of scalars for `ModuleCat`.
 -/
 
 public section
@@ -50,15 +49,20 @@ variable {C : Type v} {D : Type v'} [Category.{w} C] [Category.{w'} D]
 variable {R S : Cᵒᵖ ⥤ CommRingCat.{u}}
   (α : R ⟶ S)
 
-private lemma component_ε_apply (X : Cᵒᵖ) (r : R.obj X) :
-    Functor.LaxMonoidal.ε (ModuleCat.restrictScalars (α.app X).hom) r = α.app X r :=
-  ModuleCat.restrictScalars_η (α.app X).hom r
-
-private lemma component_μ_tmul (X : Cᵒᵖ) (M N : ModuleCat.{u} (S.obj X))
-    (m : M) (n : N) :
-    Functor.LaxMonoidal.μ (ModuleCat.restrictScalars (α.app X).hom) M N
-        (m ⊗ₜ[R.obj X] n) = m ⊗ₜ[S.obj X] n :=
-  ModuleCat.restrictScalars_μ_tmul (α.app X).hom M N m n
+/-- Restriction of scalars along a map of commutative rings is compatible with the braiding:
+this is the sectionwise content of `restrictScalarsLaxBraided` and `pushforwardLaxBraided`. -/
+private lemma component_braided {A B : Type u} [CommRing A] [CommRing B] (f : A →+* B)
+    (M N : ModuleCat.{u} B) :
+    Functor.LaxMonoidal.μ (ModuleCat.restrictScalars f) M N ≫
+        (ModuleCat.restrictScalars f).map (β_ M N).hom =
+      (β_ _ _).hom ≫ Functor.LaxMonoidal.μ (ModuleCat.restrictScalars f) N M := by
+  apply ModuleCat.MonoidalCategory.tensor_ext
+  intro (m : M) (n : N)
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.restrictScalars.map_apply,
+    ModuleCat.restrictScalars_μ_tmul, ModuleCat.MonoidalCategory.braiding_hom_apply,
+    ModuleCat.MonoidalCategory.braiding_hom_apply (M := (ModuleCat.restrictScalars f).obj M)
+      (N := (ModuleCat.restrictScalars f).obj N) m n,
+    ModuleCat.restrictScalars_μ_tmul]
 
 /-- The unit map for restriction of scalars, given sectionwise by the coefficient morphism. -/
 def restrictScalarsUnit :
@@ -72,13 +76,14 @@ def restrictScalarsUnit :
       apply LinearMap.ext
       intro r
       erw [ModuleCat.comp_apply, ModuleCat.restrictScalars.map_apply,
-        component_ε_apply, ModuleCat.comp_apply, component_ε_apply]
+        ModuleCat.restrictScalars_η, ModuleCat.comp_apply, ModuleCat.restrictScalars_η]
       exact congr($(α.naturality f).hom r))
 
+/-- On sections over `X`, the unit map for restriction of scalars is `α.app X`. -/
 @[simp]
 lemma restrictScalarsUnit_app_apply (X : Cᵒᵖ) (r : R.obj X) :
     (restrictScalarsUnit α).app' X r = α.app X r :=
-  component_ε_apply α X r
+  ModuleCat.restrictScalars_η (α.app X).hom r
 
 /-- The tensor map for restriction of scalars, given sectionwise by the canonical balanced map. -/
 def restrictScalarsTensor (M N : PresheafOfModulesOfCommRing.{u} S) :
@@ -93,17 +98,19 @@ def restrictScalarsTensor (M N : PresheafOfModulesOfCommRing.{u} S) :
       intro m n
       erw [ModuleCat.comp_apply,
         PresheafOfModulesOfCommRing.Monoidal.tensorObj_map_tmul,
-        ModuleCat.restrictScalars.map_apply, component_μ_tmul,
-        ModuleCat.comp_apply, component_μ_tmul,
+        ModuleCat.restrictScalars.map_apply, ModuleCat.restrictScalars_μ_tmul,
+        ModuleCat.comp_apply, ModuleCat.restrictScalars_μ_tmul,
         PresheafOfModulesOfCommRing.Monoidal.tensorObj_map_tmul]
       rfl)
 
+/-- On sections over `X`, the tensor map for restriction of scalars sends the pure tensor
+`m ⊗ₜ n` over `R.obj X` to the same pure tensor over `S.obj X`. -/
 @[simp]
 lemma restrictScalarsTensor_app_tmul (M N : PresheafOfModulesOfCommRing.{u} S)
     (X : Cᵒᵖ) (m : M.obj X) (n : N.obj X) :
     (restrictScalarsTensor α M N).app' X (m ⊗ₜ[R.obj X] n) =
       m ⊗ₜ[S.obj X] n :=
-  component_μ_tmul α X (M.obj X) (N.obj X) m n
+  ModuleCat.restrictScalars_μ_tmul (α.app X).hom (M.obj X) (N.obj X) m n
 
 /-- Restriction of scalars for presheaves of modules is lax monoidal. -/
 instance restrictScalarsLaxMonoidal :
@@ -136,9 +143,7 @@ instance restrictScalarsLaxBraided :
   braided M N := by
     apply _root_.PresheafOfModules.hom_ext
     intro X
-    apply ModuleCat.MonoidalCategory.tensor_ext
-    intro m n
-    rfl
+    exact component_braided (α.app X).hom (M.obj X) (N.obj X)
 
 /-- Pushforward of presheaves of modules is lax monoidal. -/
 instance pushforwardLaxMonoidal (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
@@ -148,6 +153,27 @@ instance pushforwardLaxMonoidal (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
   inferInstanceAs (PresheafOfModulesOfCommRing.pushforward₀ F R ⋙
     PresheafOfModulesOfCommRing.restrictScalars α).LaxMonoidal
 
+/-- On sections over `X`, the unit map for pushforward is `α.app X`. -/
+@[simp]
+lemma pushforward_ε_app_apply (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
+    {S : Cᵒᵖ ⥤ CommRingCat.{u}} (α : S ⟶ F.op ⋙ R) (X : Cᵒᵖ) (r : S.obj X) :
+    (Functor.LaxMonoidal.ε (PresheafOfModulesOfCommRing.pushforward.{u} α)).app' X r =
+      α.app X r :=
+  restrictScalarsUnit_app_apply α X r
+
+/-- On sections over `X`, the tensor map for pushforward sends the pure tensor `m ⊗ₜ n` over
+`S.obj X` to the same pure tensor over `R.obj (op (F.obj X.unop))`. -/
+@[simp]
+lemma pushforward_μ_app_tmul (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
+    {S : Cᵒᵖ ⥤ CommRingCat.{u}} (α : S ⟶ F.op ⋙ R)
+    (M N : PresheafOfModulesOfCommRing.{u} R) (X : Cᵒᵖ)
+    (m : M.obj (Opposite.op (F.obj X.unop))) (n : N.obj (Opposite.op (F.obj X.unop))) :
+    (Functor.LaxMonoidal.μ (PresheafOfModulesOfCommRing.pushforward.{u} α) M N).app' X
+        (m ⊗ₜ[S.obj X] n) =
+      m ⊗ₜ[R.obj (Opposite.op (F.obj X.unop))] n :=
+  restrictScalarsTensor_app_tmul α ((PresheafOfModulesOfCommRing.pushforward₀ F R).obj M)
+    ((PresheafOfModulesOfCommRing.pushforward₀ F R).obj N) X m n
+
 /-- Pushforward of presheaves of modules preserves the symmetric braiding. -/
 instance pushforwardLaxBraided (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
     {S : Cᵒᵖ ⥤ CommRingCat.{u}}
@@ -156,9 +182,7 @@ instance pushforwardLaxBraided (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
   braided M N := by
     apply _root_.PresheafOfModules.hom_ext
     intro X
-    apply ModuleCat.MonoidalCategory.tensor_ext
-    intro m n
-    rfl
+    exact component_braided (α.app X).hom (M.obj _) (N.obj _)
 
 end PresheafOfModules
 
