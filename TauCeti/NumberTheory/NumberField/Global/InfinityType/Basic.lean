@@ -233,7 +233,6 @@ instance : AddCommGroup (ContinuousInfinityType K) :=
 
 /-- A continuous infinity type is equivalently its four families of local parameters, as
 additive groups. -/
-@[expose, simps]
 def equivProd : ContinuousInfinityType K ≃+
     (({w : InfinitePlace K // w.IsReal} → ℂ) ×
       ({w : InfinitePlace K // w.IsReal} → ZMod 2)) ×
@@ -245,6 +244,24 @@ def equivProd : ContinuousInfinityType K ≃+
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
+
+/-- `equivProd` sends a continuous infinity type to its four families of local parameters. -/
+@[simp]
+theorem equivProd_apply (t : ContinuousInfinityType K) :
+    equivProd t = ((t.realExponent, t.realParity),
+      (t.complexExponent, t.complexAngularFrequency)) :=
+  (rfl)
+
+/-- `equivProd.symm` assembles a continuous infinity type from its four families of local
+parameters. -/
+@[simp]
+theorem equivProd_symm_apply
+    (t : (({w : InfinitePlace K // w.IsReal} → ℂ) ×
+      ({w : InfinitePlace K // w.IsReal} → ZMod 2)) ×
+    (({w : InfinitePlace K // w.IsComplex} → ℂ) ×
+      ({w : InfinitePlace K // w.IsComplex} → ℤ))) :
+    equivProd.symm t = ⟨t.1.1, t.1.2, t.2.1, t.2.2⟩ :=
+  (rfl)
 
 end ContinuousInfinityType
 
