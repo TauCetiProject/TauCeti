@@ -153,7 +153,7 @@ back down to the next `O` marking shifts the column down by one. -/
 theorem componentPerm_unknot : (unknot n).componentPerm = (finRotate (n + 2))⁻¹ := by
   refine Equiv.ext fun c ↦ ?_
   rw [componentPerm_apply, unknot_O_apply]
-  have h1 : (unknot n).X (XColumnOfRow (unknot n) c) = c := XColumnOfRow_apply _ c
+  have h1 : (unknot n).X ((unknot n).X.transpose c) = c := (unknot n).X.apply_transpose_apply c
   have h2 : (unknot n).X ((finRotate (n + 2))⁻¹ c) = c := by
     rw [unknot_X_apply]
     simp

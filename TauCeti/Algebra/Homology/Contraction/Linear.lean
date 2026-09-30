@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.End
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # Special contractions of modules with a differential
@@ -40,6 +41,8 @@ homotopy.
 
 * `TauCeti.LinearSpecialContraction.dN_comp_dN`: the square of `dN` is `proj ∘ dM ∘ dM ∘ incl`;
   in particular `dN` squares to zero when `dM` does.
+* `TauCeti.LinearSpecialContraction.isHomogeneous_dN`: `dN` has the degree of `dM` when the
+  inclusion and projection have degree zero.
 
 ## References
 
@@ -177,6 +180,19 @@ include c in
 theorem dN_comp_dN_eq_zero (h : dM ∘ₗ dM = 0) : dN ∘ₗ dN = 0 := by
   rw [c.dN_comp_dN, ← LinearMap.comp_assoc c.incl dM dM, h, LinearMap.zero_comp,
     LinearMap.comp_zero]
+
+/-- The endomorphism of the retract has the degree of `dM` when the inclusion and projection have
+degree zero, since it is the compression `proj ∘ dM ∘ incl`. -/
+theorem isHomogeneous_dN {ι σM σN : Type*} [AddMonoid ι] [SetLike σM M] [SetLike σN N]
+    {𝒜 : ι → σM} {ℬ : ι → σN} {q : ι} (hdM : LinearMap.IsHomogeneous dM 𝒜 𝒜 q)
+    (hincl : LinearMap.IsHomogeneous c.incl ℬ 𝒜 0)
+    (hproj : LinearMap.IsHomogeneous c.proj 𝒜 ℬ 0) :
+    LinearMap.IsHomogeneous dN ℬ ℬ q := by
+  have h : dN = c.proj ∘ₗ dM ∘ₗ c.incl := by
+    rw [← LinearMap.comp_assoc, c.proj_comp_dM, LinearMap.comp_assoc, c.proj_comp_incl,
+      LinearMap.comp_id]
+  rw [h]
+  simpa only [zero_add, add_zero] using hproj.comp (hdM.comp hincl)
 
 /-- Every module with an endomorphism is a special contraction of itself, with zero homotopy.
 This pins the orientation of the contracting equation: it has `1 - incl ∘ proj` on the right. -/

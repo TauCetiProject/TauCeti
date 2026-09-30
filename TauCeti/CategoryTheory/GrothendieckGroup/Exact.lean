@@ -276,17 +276,29 @@ end HomExt
 variable {G : Type*} [AddCommGroup G]
 
 variable (E) in
-/-- An additive invariant for exact `K₀`: a function on objects of `C`, constant on isomorphism
-classes and additive on the conflations of `E`. These are exactly the data that factor through
-`TauCeti.ExactK0 E`; see `TauCeti.ExactK0.liftEquiv`. -/
+/-- An additive invariant for exact `K₀`: a function on objects of `C` additive on the conflations
+of `E`. It is then constant on isomorphism classes (`TauCeti.ExactK0.AdditiveInvariant.map_iso`).
+These are exactly the data that factor through `TauCeti.ExactK0 E`; see
+`TauCeti.ExactK0.liftEquiv`. -/
 @[ext]
 structure AdditiveInvariant (G : Type*) [AddCommGroup G] where
   /-- The value of the invariant on an object. -/
   obj : C → G
-  /-- Isomorphic objects receive equal values. -/
-  map_iso : ∀ ⦃X Y : C⦄, (X ≅ Y) → obj X = obj Y
   /-- The value on the middle term of a conflation is the sum of the outer values. -/
   map_conflation : ∀ ⦃S : ShortComplex C⦄, E.Conflation S → obj S.X₂ = obj S.X₁ + obj S.X₃
+
+omit [EssentiallySmall.{w} C] in
+/-- **An additive invariant takes equal values on isomorphic objects.** Additivity on conflations
+alone forces invariance under isomorphisms of objects, which is the invariance the presentation of
+exact `K₀` requires. -/
+theorem AdditiveInvariant.map_iso (a : AdditiveInvariant E G) ⦃X Y : C⦄ (e : X ≅ Y) :
+    a.obj X = a.obj Y := by
+  have h0 : a.obj (0 : C) = 0 := by
+    simpa using a.map_conflation (E.conflation_id_zero (0 : C))
+  have hY := a.map_conflation (E.conflation_of_splitting
+    (S := ShortComplex.mk e.hom (0 : Y ⟶ (0 : C)) (by simp))
+    (ShortComplex.Splitting.ofIsIsoOfIsZero _ inferInstance (isZero_zero C)))
+  simpa [h0] using hY.symm
 
 private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant E G) :
     PresentedK0.AdditiveInvariant (exactRelations E) G where
@@ -322,7 +334,6 @@ noncomputable def liftEquiv : AdditiveInvariant E G ≃ (ExactK0 E →+ G) where
   toFun := lift
   invFun f :=
     { obj := fun X => f (of X)
-      map_iso := fun _ _ e => by rw [of_congr e]
       map_conflation := fun _ hS => by rw [of_conflation hS, map_add] }
   left_inv a := by ext X; exact lift_of a X
   right_inv f := (lift_unique _ f fun _ => rfl).symm
@@ -337,7 +348,9 @@ lemma liftEquiv_symm_apply_obj (f : ExactK0 E →+ G) (X : C) :
 /-! ### Biadditive invariants -/
 
 /-- An object-level invariant on an indexing category and an exact category which is invariant
-under isomorphisms in both variables and additive on conflations in the second variable. -/
+under isomorphisms in the first variable and additive on conflations in the second variable.
+Additivity already makes it invariant under isomorphisms in the second variable
+(`TauCeti.ExactK0.RightAdditiveInvariant.map_iso₂`). -/
 @[ext]
 structure RightAdditiveInvariant (C : Type u) [Category.{v} C] (E' : ExactStructure D)
     (G : Type*) [AddCommGroup G] where
@@ -345,8 +358,6 @@ structure RightAdditiveInvariant (C : Type u) [Category.{v} C] (E' : ExactStruct
   obj : C → D → G
   /-- Isomorphic objects in the first variable receive equal values. -/
   map_iso₁ : ∀ {X X' : C}, (X ≅ X') → ∀ Y : D, obj X Y = obj X' Y
-  /-- Isomorphic objects in the second variable receive equal values. -/
-  map_iso₂ : ∀ (X : C) {Y Y' : D}, (Y ≅ Y') → obj X Y = obj X Y'
   /-- The invariant is additive on conflations in the second variable. -/
   map_conflation₂ : ∀ (X : C) {S : ShortComplex D}, E'.Conflation S →
     obj X S.X₂ = obj X S.X₁ + obj X S.X₃
@@ -357,8 +368,14 @@ variable (a : RightAdditiveInvariant C E' G)
 
 private noncomputable def additiveInvariant (X : C) : AdditiveInvariant E' G where
   obj := a.obj X
-  map_iso := fun {_ _} i ↦ a.map_iso₂ X i
   map_conflation := fun {_} hS ↦ a.map_conflation₂ X hS
+
+omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
+  [EssentiallySmall.{w'} D] in
+/-- A right-additive invariant takes equal values on isomorphic objects in its second variable,
+since it is additive on conflations there. -/
+theorem map_iso₂ (X : C) {Y Y' : D} (e : Y ≅ Y') : a.obj X Y = a.obj X Y' :=
+  (a.additiveInvariant X).map_iso e
 
 /-- A right-additive invariant with its first argument fixed, descended through the exact
 Grothendieck group in its second variable. -/
@@ -402,7 +419,6 @@ variable (a : BiadditiveInvariant E E' G)
 
 private noncomputable def leftInvariant : AdditiveInvariant E (ExactK0 E' →+ G) where
   obj := a.toRightAdditiveInvariant.rightLift
-  map_iso := fun {_ _} i ↦ a.toRightAdditiveInvariant.rightLift_congr i
   map_conflation := by
     intro S hS
     refine hom_ext fun Y ↦ ?_
@@ -622,7 +638,6 @@ noncomputable def fromSplitEquiv
     SplitK0 C ≃+ ExactK0 E := by
   let a : AdditiveInvariant E (SplitK0 C) :=
     { obj := SplitK0.of
-      map_iso := fun _ _ e ↦ SplitK0.of_congr e
       map_conflation := fun {S} hS ↦ by
         obtain ⟨s⟩ := h hS
         rw [SplitK0.of_congr s.isoBinaryBiproduct, SplitK0.of_biprod] }

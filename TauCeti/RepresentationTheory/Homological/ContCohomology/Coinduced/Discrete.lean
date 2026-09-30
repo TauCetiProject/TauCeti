@@ -31,7 +31,9 @@ and the one Shapiro's lemma is stated against.
   coefficients;
 * `TauCeti.DiscreteCoind.trace` and `TauCeti.DiscreteCoind.traceLinear`: for finite-index `U`, the
   trace `TauCeti.coindTrace` on the discrete carrier, as a `G`-equivariant additive map and as a
-  linear map.
+  linear map;
+* `TauCeti.DiscreteCoind.unit`: for a discrete `G`-module `M`, the unit `M → Coind_U^G M` of
+  coinduction, `m ↦ (g ↦ g • m)`, as a `G`-equivariant additive map.
 
 ## Main results
 
@@ -42,6 +44,8 @@ and the one Shapiro's lemma is stated against.
 * `TauCeti.DiscreteCoind.trace_apply`, `TauCeti.DiscreteCoind.trace_eq_sum_transversal` and
   `TauCeti.DiscreteCoind.trace_map`: the trace formula, along any transversal, and its naturality
   in the coefficients;
+* `TauCeti.DiscreteCoind.eval_unit` and `TauCeti.DiscreteCoind.trace_unit`: evaluation at `1`
+  retracts the unit, and the trace of the unit is multiplication by the index `[G : U]`;
 * `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
   continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
   the additive equivalence `TauCeti.DiscreteCoind.addEquivContinuousMap : Coind_1^G A ≃+ C(G, A)`,
@@ -387,6 +391,52 @@ theorem traceLinear_apply (f : DiscreteCoind G U M) :
 end Scalar
 
 end Trace
+
+section Unit
+
+variable [ContinuousMul G] {M : Type*} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+variable (G U M) in
+/-- **The unit `M → Coind_U^G M` of coinduction**, sending `m` to its orbit map `g ↦ g • m`, which
+is locally constant because the action is continuous and `M` is discrete. It is `G`-equivariant for
+the right-translation action on `Coind_U^G M`, and evaluation at `1` retracts it
+(`TauCeti.DiscreteCoind.eval_unit`); it is the unit of the adjunction between restriction to `U`
+and coinduction, whose counit is `TauCeti.DiscreteCoind.eval`. -/
+def unit : M →+[G] DiscreteCoind G U M where
+  toFun m := mk G U M (fun g => g • m)
+    ((IsLocallyConstant.iff_continuous _).2 (continuous_id.smul continuous_const))
+    fun u g => by rw [mul_smul, Subgroup.smul_def]
+  map_zero' := ext fun g => smul_zero g
+  map_add' m m' := ext fun g => smul_add g m m'
+  map_smul' g m := ext fun x => by rw [coe_smul, mk_apply, mk_apply, mul_smul, MonoidHom.id_apply]
+
+/-- The unit sends `m` to its orbit map: `unit m g = g • m`. -/
+@[simp]
+theorem unit_apply (m : M) (g : G) : unit G U M m g = g • m := (rfl)
+
+/-- Evaluation at `1` retracts the unit. -/
+theorem eval_unit (m : M) : eval G U M (unit G U M m) = m := by
+  rw [eval_apply, unit_apply, one_smul]
+
+/-- The unit is injective, being retracted by evaluation at `1`. -/
+theorem unit_injective : Function.Injective (unit G U M) := fun m m' h => by
+  simpa using congrArg (eval G U M) h
+
+section FiniteIndex
+
+variable [U.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace of the unit is multiplication by the index**: `∑_{gU} g • g⁻¹ • m = [G : U] • m`. -/
+theorem trace_unit (m : M) : trace G U M (unit G U M m) = U.index • m := by
+  simp only [trace_apply, unit_apply, smul_inv_smul, Finset.sum_const, Finset.card_univ,
+    U.index_eq_card, Nat.card_eq_fintype_card]
+
+end FiniteIndex
+
+end Unit
 
 /-- **`Coind_U^G A` is a discrete `G`-module over a compact group**: the right-translation action
 on the discrete carrier is continuous, because a locally constant function on a compact group is
