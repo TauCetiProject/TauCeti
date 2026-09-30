@@ -31,8 +31,8 @@ and the remaining terms of `d h + h d - 1` are of lower order for a filtration.
 * `LinearMap.ker_le_range_of_forall_mem_support_lt`: a square-zero endomorphism `d` of `ι →₀ S`
   is exact if `d h + h d - 1` strictly lowers a well-founded weight on the basis.
 * `LinearMap.ker_le_range_of_matching`: a square-zero endomorphism of `ι →₀ S` is exact if its
-  terms of leading (well-founded) weight form a perfect matching of the generators with
-  coefficients `1`.
+  terms of leading (well-founded) weight form a perfect matching of the generators with unit
+  coefficients.
 
 ## References
 
@@ -103,74 +103,91 @@ endomorphism of `ι →₀ S`, where `ι` is weighted by `w` with a well-founded
 `w j < w i` (for instance any weight when `ι` is finite), and let `p` be an involution of `ι`
 preserving `w` that pairs each generator marked as a *source* with one that is not. Suppose
 that every term of `d` strictly lowers the weight, except the term from each source `i` to its
-partner `p i`, which has coefficient `1`. Then `d` is exact: the homotopy `h`
-sending each non-source `j` to its partner `p j` makes `d h + h d - 1` strictly lower the weight.
+partner `p i`, whose coefficient is a unit `u`. Then `d` is exact: the homotopy `h` sending each
+non-source `p i` to `u⁻¹ • i` makes `d h + h d - 1` strictly lower the weight.
 
 This is algebraic discrete Morse theory in its simplest form, a perfect matching of the generators
 by the leading part of `d`. -/
 theorem ker_le_range_of_matching {ι α : Type*} [LT α] (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
     (hd : d ∘ₗ d = 0) (w : ι → α) (hw : WellFounded (InvImage (· < ·) w)) (p : ι → ι)
     (src : ι → Prop) (hp : Function.Involutive p) (hwp : ∀ i, w (p i) = w i)
-    (hsrc : ∀ i, src i ↔ ¬src (p i)) (hcoef : ∀ i, src i → d (Finsupp.single i 1) (p i) = 1)
+    (hsrc : ∀ i, src i ↔ ¬src (p i))
+    (hcoef : ∀ i, src i → IsUnit (d (Finsupp.single i 1) (p i)))
     (hsupp : ∀ i, ∀ j ∈ (d (Finsupp.single i 1)).support, w j < w i ∨ (src i ∧ j = p i)) :
     ker d ≤ range d := by
   classical
-  let h : (ι →₀ S) →ₗ[S] (ι →₀ S) :=
-    Finsupp.linearCombination S fun i ↦ if src i then 0 else Finsupp.single (p i) 1
-  have hh : ∀ i, h (Finsupp.single i 1) = if src i then 0 else Finsupp.single (p i) 1 := by
-    intro i
-    simp only [h, Finsupp.linearCombination_single, one_smul]
+  -- `h` sends a non-source `j` to its partner `p j`, scaled by the inverse of the coefficient
+  -- `d (single (p j) 1) j` of the matching term of the source `p j`.
+  let h : (ι →₀ S) →ₗ[S] (ι →₀ S) := Finsupp.linearCombination S fun j ↦
+    if src j then 0 else Finsupp.single (p j) (Ring.inverse (d (Finsupp.single (p j) 1) j))
+  have hh : ∀ j c, h (Finsupp.single j c) = if src j then 0 else
+      Finsupp.single (p j) (c * Ring.inverse (d (Finsupp.single (p j) 1) j)) := by
+    intro j c
+    simp only [h, Finsupp.linearCombination_single]
+    split_ifs
+    · exact smul_zero c
+    · rw [Finsupp.smul_single, smul_eq_mul]
   -- `h` preserves the span of the basis vectors of weight below `a`.
   have hlow : ∀ a v, v ∈ supported S S {j | w j < a} → h v ∈ supported S S {j | w j < a} := by
     intro a v hv
     rw [← Finsupp.sum_single v, map_finsuppSum]
     refine Submodule.sum_mem _ fun j hj ↦ ?_
     dsimp only
-    rw [← Finsupp.smul_single_one, map_smul, hh]
-    refine Submodule.smul_mem _ _ ?_
+    rw [hh]
     split_ifs
     · exact Submodule.zero_mem _
-    · refine single_mem_supported S 1 ?_
+    · refine single_mem_supported S _ ?_
       rw [Set.mem_ofPred_eq, hwp]
       exact (mem_supported S v).1 hv hj
   -- The terms of `d` on a source other than the matching term have lower weight.
-  have hsrc_low : ∀ k, src k →
-      d (Finsupp.single k 1) - Finsupp.single (p k) 1 ∈ supported S S {j | w j < w k} := by
+  have hsrc_low : ∀ k, src k → d (Finsupp.single k 1) -
+      Finsupp.single (p k) (d (Finsupp.single k 1) (p k)) ∈ supported S S {j | w j < w k} := by
     intro k hk
-    rw [mem_supported]
-    intro j hj
+    refine (mem_supported S _).2 fun j hj ↦ ?_
     rw [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.sub_apply] at hj
     by_cases hjk : j = p k
     · subst hjk
-      rw [hcoef k hk, Finsupp.single_eq_same, sub_self] at hj
-      exact absurd rfl hj
-    · rw [Finsupp.single_apply, ite_eq_right (Ne.symm hjk), sub_zero] at hj
-      rcases hsupp k j (Finsupp.mem_support_iff.2 hj) with h1 | ⟨-, h2⟩
-      · exact h1
-      · exact absurd h2 hjk
+      simp at hj
+    · rw [Finsupp.single_eq_of_ne hjk, sub_zero] at hj
+      exact (hsupp k j (Finsupp.mem_support_iff.2 hj)).resolve_right fun h' ↦ hjk h'.2
   refine d.ker_le_range_of_forall_mem_support_lt hd (h := h) w hw fun i ↦ ?_
   suffices H : (d * h + h * d - 1 : Module.End S (ι →₀ S)) (Finsupp.single i 1) ∈
       supported S S {j | w j < w i} from fun j hj ↦ (mem_supported S _).1 H hj
   simp only [LinearMap.sub_apply, LinearMap.add_apply, Module.End.mul_apply,
     Module.End.one_apply]
   by_cases hi : src i
-  · -- `h` kills the source `i` and sends its partner `p i` back to `i`.
+  · -- `h` kills the source `i` and sends the matching term of `d i` back to `i`.
     have hpi : ¬src (p i) := (hsrc i).1 hi
+    have hpair : h (Finsupp.single (p i) (d (Finsupp.single i 1) (p i))) = Finsupp.single i 1 := by
+      rw [hh, ite_eq_right hpi, hp i, Ring.mul_inverse_cancel _ (hcoef i hi)]
     have heq : d (h (Finsupp.single i 1)) + h (d (Finsupp.single i 1)) - Finsupp.single i 1 =
-        h (d (Finsupp.single i 1) - Finsupp.single (p i) 1) := by
-      simp [hh, hi, hpi, hp i]
+        h (d (Finsupp.single i 1) - Finsupp.single (p i) (d (Finsupp.single i 1) (p i))) := by
+      rw [map_sub, hpair]
+      simp [hh, hi]
     rw [heq]
     exact hlow _ _ (hsrc_low i hi)
-  · -- `h` sends the non-source `i` to its partner `p i`, a source.
+  · -- `h` sends the non-source `i` to `u⁻¹ • p i`, where `u` is the coefficient of `i` in
+    -- `d (p i)`, and `d (u⁻¹ • p i)` is `i` up to lower terms.
     have hpi : src (p i) := by rw [hsrc (p i), hp i]; exact hi
-    have hr : d (Finsupp.single (p i) 1) - Finsupp.single i 1 ∈ supported S S {j | w j < w i} := by
+    have hu : IsUnit (d (Finsupp.single (p i) 1) i) := by simpa only [hp i] using hcoef (p i) hpi
+    have hr : d (Finsupp.single (p i) 1) - Finsupp.single i (d (Finsupp.single (p i) 1) i) ∈
+        supported S S {j | w j < w i} := by
       simpa only [hp i, hwp] using hsrc_low (p i) hpi
+    have hdh : d (h (Finsupp.single i 1)) =
+        Ring.inverse (d (Finsupp.single (p i) 1) i) • d (Finsupp.single (p i) 1) := by
+      rw [hh, ite_eq_right hi, one_mul, ← map_smul, Finsupp.smul_single_one]
+    have hcancel : Ring.inverse (d (Finsupp.single (p i) 1) i) •
+        Finsupp.single i (d (Finsupp.single (p i) 1) i) = Finsupp.single i 1 := by
+      rw [Finsupp.smul_single, smul_eq_mul, Ring.inverse_mul_cancel _ hu]
     have heq : d (h (Finsupp.single i 1)) + h (d (Finsupp.single i 1)) - Finsupp.single i 1 =
-        (d (Finsupp.single (p i) 1) - Finsupp.single i 1) + h (d (Finsupp.single i 1)) := by
-      simp only [hh, hi, ite_false]
+        Ring.inverse (d (Finsupp.single (p i) 1) i) •
+            (d (Finsupp.single (p i) 1) - Finsupp.single i (d (Finsupp.single (p i) 1) i)) +
+          h (d (Finsupp.single i 1)) := by
+      rw [hdh, smul_sub, hcancel]
       abel
     rw [heq]
-    refine Submodule.add_mem _ hr (hlow _ _ ((mem_supported S _).2 fun j hj ↦ ?_))
+    refine Submodule.add_mem _ (Submodule.smul_mem _ _ hr)
+      (hlow _ _ ((mem_supported S _).2 fun j hj ↦ ?_))
     exact (hsupp i j hj).resolve_right fun h' ↦ hi h'.1
 
 end LinearMap
