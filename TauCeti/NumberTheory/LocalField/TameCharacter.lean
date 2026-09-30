@@ -470,6 +470,7 @@ theorem inertiaTameCharacter_surjective : Function.Surjective (inertiaTameCharac
 /-- **The kernel of the tame character is wild inertia**: `σ ∈ I_K` has trivial tame character
 exactly when it lies in `P_K`, that is, when it fixes every `m`-th root of a uniformizer for
 `p ∤ m` (`TauCeti.mem_wildInertiaSubgroup_iff_of_isUniformizer`). -/
+@[simp]
 theorem inertiaTameCharacter_eq_one_iff {σ : Gal(AlgebraicClosure K/K)}
     (hσ : σ ∈ inertiaSubgroup K) :
     inertiaTameCharacter K ⟨σ, hσ⟩ = 1 ↔ σ ∈ wildInertiaSubgroup K := by
