@@ -12,7 +12,8 @@ public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 For an invariant `y` of a representation `N`, this file constructs the morphism of
 representations `M ⟶ M ⊗ N` that sends `m` to `m ⊗ₜ y`. It also records its additivity,
-linearity, and naturality in both representations.
+linearity, naturality in both representations, and compatibility with the associator and
+braiding.
 -/
 
 public noncomputable section

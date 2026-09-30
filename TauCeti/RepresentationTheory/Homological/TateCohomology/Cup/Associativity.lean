@@ -12,8 +12,8 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Produc
 
 The tensor associator identifies the two ways to cup three Tate classes when either the middle
 or the last class has degree zero. These identities hold in every integer degree for the other
-two classes. They are the two base edges from which associativity in all tridegrees is obtained by
-dimension shifting.
+two classes. They are the two base edges from which associativity in all tridegrees follows by
+dimension shifting; that general result is not proved here.
 
 See Artin and Tate, *Class Field Theory*, Preliminaries §2, and Brown,
 *Cohomology of Groups*, Chapter VI, §5.
