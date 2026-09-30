@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
+import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 
 /-!
 # Inflation of crossed-product cocycles
@@ -24,6 +25,11 @@ The multiplicative-to-additive conversion is `TwoCocycle.toCocycles₂`. Continu
 restriction has finite discrete target. Thus cohomologous finite cocycles determine the same
 continuous class, and passing to a larger finite Galois subextension, along any compatible pair
 agreeing with the inclusions into `Kˢ`, does not change the class.
+
+Conversely, strict finite-quotient descent of continuous `2`-cocycles, followed by the infinite
+Galois correspondence, realizes every continuous cocycle as the inflation of a cocycle on a finite
+Galois subextension. Consequently every continuous cohomology class is the inflated class of a
+bundled `GaloisCocycle`.
 
 The conventions follow Gille--Szamuely, *Central Simple Algebras and Galois Cohomology*, §4.4,
 and Serre, *Local Fields*, Chapter X.
@@ -204,6 +210,13 @@ private def finiteLevelCoeffHom :
       FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K) :=
   (embeddedUnitsEquivInvariants K L L.val).toAddMonoidHom
 
+/-- Inclusion of `Lˣ` in `(Kˢ)ˣ`, as an equivalence with the units fixed by
+`Gal(Kˢ/L)`. -/
+private def finiteLevelCoeffEquiv :
+    Additive Lˣ ≃+
+      FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K) :=
+  embeddedUnitsEquivInvariants K L L.val
+
 /-- `finiteLevelCoeffHom` embeds a unit of `L` into `(Kˢ)ˣ`. -/
 private theorem coe_finiteLevelCoeffHom (b : Additive Lˣ) :
     (finiteLevelCoeffHom L b : UnitsCoeff K) =
@@ -224,6 +237,98 @@ private theorem finiteLevelCoeffHom_smul
       apply Subtype.ext
       rw [coe_quotient_smul_fixedPoints_addSubgroup]
       exact embeddedUnitsEquivInvariants_restrictNormalHom_smul K L L.val g b
+
+/-- The inverse quotient identification, bundled as a continuous homomorphism. -/
+private def galoisQuotientHomInv :
+    (L ≃ₐ[K] L) →ₜ* AbsoluteGaloisGroup K ⧸
+      (galoisOpenNormalSubgroup K L L.val).toSubgroup :=
+  { (quotientFixingSubgroupFieldRangeEquiv K L L.val).symm.toMonoidHom with
+    continuous_toFun := continuous_of_discreteTopology }
+
+/-- The inverse quotient identification cancels the forward identification. -/
+private theorem galoisQuotientHomInv_apply_quotientEquiv
+    (q : AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup) :
+    galoisQuotientHomInv L (quotientFixingSubgroupFieldRangeEquiv K L L.val q) = q :=
+  (quotientFixingSubgroupFieldRangeEquiv K L L.val).symm_apply_apply q
+
+/-- The inverse coefficient identification is equivariant along the inverse quotient
+identification. -/
+private theorem finiteLevelCoeffHom_symm_smul
+    (g : L ≃ₐ[K] L)
+    (b : FixedPoints.addSubgroup
+      (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K)) :
+    (finiteLevelCoeffEquiv L).symm
+        (galoisQuotientHomInv L g • b) =
+      g • (finiteLevelCoeffEquiv L).symm b := by
+  apply (finiteLevelCoeffEquiv L).injective
+  rw [AddEquiv.apply_symm_apply]
+  have hg : galoisQuotientHom L (galoisQuotientHomInv L g) = g := by
+    exact (quotientFixingSubgroupFieldRangeEquiv K L L.val).apply_symm_apply g
+  have hb : finiteLevelCoeffHom L ((finiteLevelCoeffEquiv L).symm b) = b :=
+    (finiteLevelCoeffEquiv L).apply_symm_apply b
+  have h := finiteLevelCoeffHom_smul L (galoisQuotientHomInv L g)
+    ((finiteLevelCoeffEquiv L).symm b)
+  rw [hg, hb] at h
+  exact h.symm
+
+/-- The inverse coefficient identification, followed by inclusion in the separable closure,
+recovers the underlying invariant unit. -/
+private theorem ofMul_unitsMap_finiteLevelCoeffEquiv_symm
+    (b : FixedPoints.addSubgroup
+      (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K)) :
+    Additive.ofMul (Units.map L.val.toRingHom.toMonoidHom
+        ((finiteLevelCoeffEquiv L).symm b).toMul) = (b : UnitsCoeff K) := by
+  apply Additive.toMul.injective
+  have hb : embeddedUnitsEquivInvariants K L L.val ((finiteLevelCoeffEquiv L).symm b) = b :=
+    (finiteLevelCoeffEquiv L).apply_symm_apply b
+  have hb' : embeddedUnitsInvariants K L L.val ((finiteLevelCoeffEquiv L).symm b).toMul = b := by
+    rw [← embeddedUnitsEquivInvariants_apply]
+    exact hb
+  have h := toMul_coe_embeddedUnitsInvariants K L L.val
+    ((finiteLevelCoeffEquiv L).symm b).toMul
+  rw [hb'] at h
+  simpa only [toMul_ofMul] using h.symm
+
+/-- A cocycle at the finite quotient associated to `L` as a crossed-product cocycle of
+`Gal(L/K)`. -/
+private def twoCocycleOfFiniteLevelZ2
+    (z : Z2 (AbsoluteGaloisGroup K ⧸
+      (galoisOpenNormalSubgroup K L L.val).toSubgroup)
+      (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup
+        (UnitsCoeff K))) : TwoCocycle K L :=
+  letI : TopologicalSpace (Additive Lˣ) := ⊥
+  letI : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
+  let z' := cocyclesMap2 _ _ _ _ (galoisQuotientHomInv L)
+    (finiteLevelCoeffEquiv L).symm.toAddMonoidHom
+    continuous_of_discreteTopology (finiteLevelCoeffHom_symm_smul L) z
+  { toFun := fun g h ↦ Additive.toMul ((z' : _ → Additive Lˣ) (g, h))
+    isMulCocycle₂ := fun g h j ↦ by
+      apply Additive.ofMul.injective
+      simpa only [ofMul_mul, ofMul_toMul, Additive.ofMul_smul] using
+        (mem_Z2_iff.1 z'.2).2 g h j }
+
+/-- The crossed-product cocycle obtained from a finite-level cocycle evaluates by pulling the
+automorphisms back through the quotient identification and the coefficient through the invariant
+unit identification. -/
+private theorem twoCocycleOfFiniteLevelZ2_toFun
+    (z : Z2 (AbsoluteGaloisGroup K ⧸
+      (galoisOpenNormalSubgroup K L L.val).toSubgroup)
+      (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup
+        (UnitsCoeff K))) (g h : L ≃ₐ[K] L) :
+    (twoCocycleOfFiniteLevelZ2 L z).toFun g h =
+      Additive.toMul ((finiteLevelCoeffEquiv L).symm
+        ((z : _ → _) (galoisQuotientHomInv L g, galoisQuotientHomInv L h))) :=
+  by
+    let _ : TopologicalSpace (Additive Lˣ) := ⊥
+    let _ : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
+    let z' := cocyclesMap2 _ _ _ _ (galoisQuotientHomInv L)
+      (finiteLevelCoeffEquiv L).symm.toAddMonoidHom
+      continuous_of_discreteTopology (finiteLevelCoeffHom_symm_smul L) z
+    have hmap := cocyclesMap2_apply _ _ _ _ (galoisQuotientHomInv L)
+      (finiteLevelCoeffEquiv L).symm.toAddMonoidHom continuous_of_discreteTopology
+      (finiteLevelCoeffHom_symm_smul L) z g h
+    simpa only [twoCocycleOfFiniteLevelZ2, z', AddEquiv.coe_toAddMonoidHom] using
+      congrArg (fun b : Additive Lˣ => b.toMul) hmap
 
 /-- The cocycle at the finite quotient `G_K/G_L`, with values in the units fixed by `G_L`: the
 pullback, along the compatible pair given by the quotient identification `G_K/G_L ≃ Gal(L/K)` and
@@ -252,6 +357,22 @@ theorem finiteLevelZ2_apply (c : TwoCocycle K L)
   rw [finiteLevelZ2, cocyclesMap2_apply, coe_finiteLevelCoeffHom, galoisQuotientHom_apply,
     galoisQuotientHom_apply]
   simp only [coe_toCocycles₂, toMul_ofMul]
+
+/-- Converting a finite-level cocycle to a crossed-product cocycle and back recovers the
+original finite-level cocycle. -/
+private theorem finiteLevelZ2_twoCocycleOfFiniteLevelZ2
+    (z : Z2 (AbsoluteGaloisGroup K ⧸
+      (galoisOpenNormalSubgroup K L L.val).toSubgroup)
+      (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup
+        (UnitsCoeff K))) :
+    (twoCocycleOfFiniteLevelZ2 L z).finiteLevelZ2 L = z := by
+  apply Subtype.ext
+  funext p
+  obtain ⟨q, r⟩ := p
+  apply Subtype.ext
+  rw [finiteLevelZ2_apply, twoCocycleOfFiniteLevelZ2_toFun]
+  rw [galoisQuotientHomInv_apply_quotientEquiv, galoisQuotientHomInv_apply_quotientEquiv]
+  exact ofMul_unitsMap_finiteLevelCoeffEquiv_symm L ((z : _ → _) (q, r))
 
 /-- The class of a crossed-product cocycle at the finite quotient `G_K/G_L`. -/
 def finiteLevelClass (c : TwoCocycle K L) :
@@ -329,5 +450,65 @@ theorem inflateClass_def (c : GaloisCocycle K) :
   (rfl)
 
 end GaloisCocycle
+
+/-! ### Exhaustion by finite Galois cocycles -/
+
+/-- **Every continuous `2`-cocycle of the absolute Galois group is inflated from a finite Galois
+subextension.** The equality is on cocycle representatives: no coboundary is subtracted.
+
+The finite subextension is the fixed field of the open normal subgroup supplied by strict
+finite-quotient descent. -/
+theorem exists_galoisCocycle_inflateTwoCocycleZ2
+    (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
+    ∃ c : GaloisCocycle K, c.cocycle.inflateZ2 c.extension = z := by
+  obtain ⟨U, y, hy⟩ := exists_openNormalSubgroup_descendZ2 z
+  obtain ⟨L, hfix⟩ : ∃ L : IntermediateField K (SeparableClosure K),
+      L.fixingSubgroup = U.toSubgroup :=
+    ⟨_, InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩⟩
+  let _ : FiniteDimensional K L := by
+    rw [← InfiniteGalois.isOpen_iff_finite, hfix]
+    exact U.isOpen
+  let _ : IsGalois K L := by
+    rw [← InfiniteGalois.normal_iff_isGalois, hfix]
+    infer_instance
+  have hU : galoisOpenNormalSubgroup K L L.val = U := by
+    refine OpenNormalSubgroup.toSubgroup_injective ?_
+    dsimp only
+    rw [galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val, hfix]
+  let DescentData (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :=
+    { y : Z2 (AbsoluteGaloisGroup K ⧸ V.toSubgroup)
+        (FixedPoints.addSubgroup V.toSubgroup (UnitsCoeff K)) //
+      ∀ g h : AbsoluteGaloisGroup K,
+        ((y.1 (g, h) : FixedPoints.addSubgroup V.toSubgroup (UnitsCoeff K)) : UnitsCoeff K) =
+          (z : _ → _) (g, h) }
+  let d : DescentData U := ⟨y, hy⟩
+  let dL : DescentData (galoisOpenNormalSubgroup K L L.val) := hU.symm ▸ d
+  let c : GaloisCocycle K :=
+    { extension := L
+      cocycle := TwoCocycle.twoCocycleOfFiniteLevelZ2 L dL.1 }
+  refine ⟨c, ?_⟩
+  apply Subtype.ext
+  funext p
+  obtain ⟨g, h⟩ := p
+  have hinfl := TwoCocycle.cocyclesMap2_finiteLevelZ2_apply L c.cocycle g h
+  rw [TwoCocycle.finiteLevelZ2_twoCocycleOfFiniteLevelZ2] at hinfl
+  rw [← hinfl, cocyclesMap2_apply]
+  exact dL.2 g h
+
+/-- **Every continuous degree-two class of the absolute Galois group is inflated from a finite
+Galois cocycle.** -/
+theorem exists_galoisCocycle_inflateClass
+    (x : continuousCohomology 2
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :
+    ∃ c : GaloisCocycle K, c.inflateClass = x := by
+  obtain ⟨y, rfl⟩ :=
+    (explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)).surjective x
+  induction y using QuotientAddGroup.induction_on with
+  | _ z =>
+      obtain ⟨c, hc⟩ := exists_galoisCocycle_inflateTwoCocycleZ2 z
+      refine ⟨c, ?_⟩
+      rw [GaloisCocycle.inflateClass_def, TwoCocycle.inflateClass_def, hc]
+      apply congrArg
+      rfl
 
 end TauCeti
