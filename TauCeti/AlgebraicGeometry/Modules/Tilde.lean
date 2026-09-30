@@ -74,14 +74,19 @@ def pushforwardCompModuleSpecΓFunctorIso :
 @[simp]
 lemma pushforwardCompModuleSpecΓFunctorIso_hom_app_apply (N : (Spec S).Modules)
     (x : (moduleSpecΓFunctor (R := R)).obj ((Scheme.Modules.pushforward (Spec.map φ)).obj N)) :
-    (pushforwardCompModuleSpecΓFunctorIso φ).hom.app N x = x :=
+    (_root_.ModuleCat.Hom.hom ((pushforwardCompModuleSpecΓFunctorIso φ).hom.app N) :
+      (moduleSpecΓFunctor (R := R)).obj ((Scheme.Modules.pushforward (Spec.map φ)).obj N) →ₗ[R]
+        (ModuleCat.restrictScalars φ.hom).obj ((moduleSpecΓFunctor (R := S)).obj N)) x = x :=
   (rfl)
 
 /-- The inverse of `pushforwardCompModuleSpecΓFunctorIso` is the identity on global sections. -/
 @[simp]
 lemma pushforwardCompModuleSpecΓFunctorIso_inv_app_apply (N : (Spec S).Modules)
     (x : (ModuleCat.restrictScalars φ.hom).obj ((moduleSpecΓFunctor (R := S)).obj N)) :
-    (pushforwardCompModuleSpecΓFunctorIso φ).inv.app N x = x :=
+    (_root_.ModuleCat.Hom.hom ((pushforwardCompModuleSpecΓFunctorIso φ).inv.app N) :
+      (ModuleCat.restrictScalars φ.hom).obj ((moduleSpecΓFunctor (R := S)).obj N) →ₗ[R]
+        (moduleSpecΓFunctor (R := R)).obj
+          ((Scheme.Modules.pushforward (Spec.map φ)).obj N)) x = x :=
   (rfl)
 
 /-- The pullback along `Spec φ` of the sheaf associated with an `R`-module `M` is the sheaf
