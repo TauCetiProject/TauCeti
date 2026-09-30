@@ -203,19 +203,24 @@ private theorem galoisQuotientHom_mk (g : AbsoluteGaloisGroup K) :
   ((galoisQuotientHom_apply L g).trans (quotientFixingSubgroupFieldRangeEquiv_mk K L L.val g)).trans
     (DFunLike.congr_fun (IntermediateField.restrictNormalHom_val L) g)
 
-/-- Inclusion of `Lˣ` in `(Kˢ)ˣ`, viewed as an additive map into the invariants fixed by
-`Gal(Kˢ/L)`. -/
-private def finiteLevelCoeffHom :
-    Additive Lˣ →+
-      FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K) :=
-  (embeddedUnitsEquivInvariants K L L.val).toAddMonoidHom
-
 /-- Inclusion of `Lˣ` in `(Kˢ)ˣ`, as an equivalence with the units fixed by
 `Gal(Kˢ/L)`. -/
 private def finiteLevelCoeffEquiv :
     Additive Lˣ ≃+
       FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K) :=
   embeddedUnitsEquivInvariants K L L.val
+
+/-- Inclusion of `Lˣ` in `(Kˢ)ˣ`, viewed as an additive map into the invariants fixed by
+`Gal(Kˢ/L)`. -/
+private def finiteLevelCoeffHom :
+    Additive Lˣ →+
+      FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K) :=
+  (finiteLevelCoeffEquiv L).toAddMonoidHom
+
+/-- `finiteLevelCoeffHom` is the underlying map of `finiteLevelCoeffEquiv`. -/
+private theorem finiteLevelCoeffHom_apply (b : Additive Lˣ) :
+    finiteLevelCoeffHom L b = finiteLevelCoeffEquiv L b :=
+  (rfl)
 
 /-- `finiteLevelCoeffHom` embeds a unit of `L` into `(Kˢ)ˣ`. -/
 private theorem coe_finiteLevelCoeffHom (b : Additive Lˣ) :
@@ -245,11 +250,17 @@ private def galoisQuotientHomInv :
   { (quotientFixingSubgroupFieldRangeEquiv K L L.val).symm.toMonoidHom with
     continuous_toFun := continuous_of_discreteTopology }
 
+/-- `galoisQuotientHomInv` is the inverse quotient identification. -/
+private theorem galoisQuotientHomInv_apply (g : L ≃ₐ[K] L) :
+    galoisQuotientHomInv L g = (quotientFixingSubgroupFieldRangeEquiv K L L.val).symm g :=
+  (rfl)
+
 /-- The inverse quotient identification cancels the forward identification. -/
 private theorem galoisQuotientHomInv_apply_quotientEquiv
     (q : AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup) :
-    galoisQuotientHomInv L (quotientFixingSubgroupFieldRangeEquiv K L L.val q) = q :=
-  (quotientFixingSubgroupFieldRangeEquiv K L L.val).symm_apply_apply q
+    galoisQuotientHomInv L (quotientFixingSubgroupFieldRangeEquiv K L L.val q) = q := by
+  rw [galoisQuotientHomInv_apply]
+  exact (quotientFixingSubgroupFieldRangeEquiv K L L.val).symm_apply_apply q
 
 /-- The inverse coefficient identification is equivariant along the inverse quotient
 identification. -/
@@ -260,16 +271,15 @@ private theorem finiteLevelCoeffEquiv_symm_smul
     (finiteLevelCoeffEquiv L).symm
         (galoisQuotientHomInv L g • b) =
       g • (finiteLevelCoeffEquiv L).symm b := by
-  apply (finiteLevelCoeffEquiv L).injective
-  rw [AddEquiv.apply_symm_apply]
-  have hg : galoisQuotientHom L (galoisQuotientHomInv L g) = g := by
-    exact (quotientFixingSubgroupFieldRangeEquiv K L L.val).apply_symm_apply g
-  have hb : finiteLevelCoeffHom L ((finiteLevelCoeffEquiv L).symm b) = b :=
-    (finiteLevelCoeffEquiv L).apply_symm_apply b
-  have h := finiteLevelCoeffHom_smul L (galoisQuotientHomInv L g)
-    ((finiteLevelCoeffEquiv L).symm b)
-  rw [hg, hb] at h
-  exact h.symm
+  let φ : AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup ≃*
+      (L ≃ₐ[K] L) :=
+    quotientFixingSubgroupFieldRangeEquiv K L L.val
+  rw [galoisQuotientHomInv_apply]
+  refine AddEquiv.symm_map_smul_of_map_mulEquiv_smul (finiteLevelCoeffEquiv L) φ
+    (fun q m ↦ ?_) g b
+  have hφ : φ q = galoisQuotientHom L q := (galoisQuotientHom_apply L q).symm
+  rw [hφ, ← finiteLevelCoeffHom_apply, ← finiteLevelCoeffHom_apply]
+  exact finiteLevelCoeffHom_smul L q m
 
 /-- The inverse coefficient identification, followed by inclusion in the separable closure,
 recovers the underlying invariant unit. -/
@@ -278,8 +288,8 @@ private theorem ofMul_unitsMap_finiteLevelCoeffEquiv_symm
       (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K)) :
     Additive.ofMul (Units.map L.val.toRingHom.toMonoidHom
         ((finiteLevelCoeffEquiv L).symm b).toMul) = (b : UnitsCoeff K) :=
-  (coe_finiteLevelCoeffHom L _).symm.trans
-    (congrArg Subtype.val ((finiteLevelCoeffEquiv L).apply_symm_apply b))
+  (coe_finiteLevelCoeffHom L _).symm.trans <| by
+    rw [finiteLevelCoeffHom_apply, AddEquiv.apply_symm_apply]
 
 /-- A cocycle at the finite quotient associated to `L` as a crossed-product cocycle of
 `Gal(L/K)`. -/
