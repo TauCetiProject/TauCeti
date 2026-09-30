@@ -111,7 +111,7 @@ theorem CharacterModule.eval_injective (M : Type*) [AddCommGroup M] :
   exact sub_eq_zero.mp (CharacterModule.eq_zero_of_character_apply h)
 
 /-- The cardinality of the character module equals the cardinality of the group. -/
-@[simp]
+-- With a `Fintype` instance, `simp` normalizes the left side to `Fintype.card`.
 theorem natCard_characterModule (M : Type*) [AddCommGroup M] [Finite M] :
     Nat.card (CharacterModule M) = Nat.card M := by
   cases nonempty_fintype M

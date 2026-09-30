@@ -208,7 +208,7 @@ theorem commutator_perm_fin_three_eq_alternatingGroup :
 
 /-- **The abelianization of `S₃` has order two.** The commutator subgroup is `A₃`, of order `3`
 inside a group of order `6`. -/
-@[simp]
+-- With a `Fintype` instance, `simp` normalizes the left side to `Fintype.card`.
 theorem card_abelianization_perm_fin_three :
     Nat.card (Abelianization (Equiv.Perm (Fin 3))) = 2 := by
   have hcomm : Nat.card (commutator (Equiv.Perm (Fin 3))) = 3 := by

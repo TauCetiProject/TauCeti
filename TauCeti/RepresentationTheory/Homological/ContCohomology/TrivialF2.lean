@@ -131,7 +131,7 @@ theorem eqToHom_ofDiscreteModule_trivialF2_apply (x : (trivialF2 G).V) :
 carriers**: `TauCeti.eqToHom (ofDiscreteModule_trivialF2 G).symm` is the inverse morphism
 `TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read by `TauCeti.eqToIso.inv`, so it too is the
 identity on the carrier of `trivialF2 G`. -/
-@[simp]
+-- `TopRep.eqToHom_hom_apply` normalizes the left side to a cast.
 theorem eqToHom_ofDiscreteModule_trivialF2_symm_apply (x : (trivialF2 G).V) :
     (CategoryTheory.eqToHom (ofDiscreteModule_trivialF2 G).symm) x = x := by
   rw [CategoryTheory.eqToHom]
