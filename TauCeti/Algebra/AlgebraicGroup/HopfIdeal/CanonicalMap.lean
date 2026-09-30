@@ -24,9 +24,6 @@ is an `H`-algebra homomorphism and is surjective. Geometrically, this says that
 for a quotient torsor; injectivity and faithful flatness are separate questions.
 Neither normality of `I` nor flatness over the base is needed here.
 
-The proof factors the map on the absolute tensor square through the tensor shear
-and `id ⊗ π`, both of which are surjective.
-
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.3.
@@ -84,11 +81,10 @@ theorem canonicalMap_surjective (I : HopfIdeal R H) :
     TensorProduct.map_surjective (g := (AlgHom.id R H).toLinearMap)
       (g' := (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap)
       Function.surjective_id Ideal.Quotient.mk_surjective
-  intro z
-  obtain ⟨x, rfl⟩ := hmap z
-  refine ⟨mapOfCompatibleSMul I.coinvariants R R H H
-    ((HopfAlgebra.tensorShear (R := R)).symm x), ?_⟩
-  simpa using AlgHom.congr_fun (canonicalMap_comp_mapOfCompatibleSMul I)
-    ((HopfAlgebra.tensorShear (R := R)).symm x)
+  have hcomp : Function.Surjective ((I.canonicalMap.restrictScalars R).comp
+      (mapOfCompatibleSMul I.coinvariants R R H H)) := by
+    rw [canonicalMap_comp_mapOfCompatibleSMul]
+    exact hmap.comp (HopfAlgebra.tensorShear (R := R)).surjective
+  exact Function.Surjective.of_comp (f := I.canonicalMap) hcomp
 
 end TauCeti.HopfIdeal

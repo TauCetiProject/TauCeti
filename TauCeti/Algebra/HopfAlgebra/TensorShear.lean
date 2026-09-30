@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
 # The tensor shear of a commutative Hopf algebra
@@ -13,8 +14,7 @@ public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 The pullback of `(g, h) ↦ (g, gh)` is an automorphism of `H ⊗[R] H`. It fixes
 the left factor and sends the right factor to comultiplication. Its inverse uses
 the antipode in the left factor. This is the algebraic change of coordinates used
-in the canonical map for a quotient by a closed subgroup. The construction uses
-the convolution group on algebra maps and its functoriality `AlgHom.mapValue`.
+in the canonical map for a quotient by a closed subgroup.
 -/
 
 public section
@@ -28,9 +28,7 @@ variable {R H : Type*} [CommSemiring R] [CommSemiring H] [_root_.HopfAlgebra R H
 
 /-- The forward algebra map underlying the tensor shear. -/
 private noncomputable def tensorShearHom : H ⊗[R] H →ₐ[R] H ⊗[R] H :=
-  lift includeLeft
-    (toConv (includeLeft : H →ₐ[R] H ⊗[R] H) * toConv includeRight).ofConv
-    (fun _ _ ↦ .all _ _)
+  lift includeLeft (Bialgebra.comulAlgHom R H) (fun _ _ ↦ .all _ _)
 
 /-- The inverse algebra map underlying the tensor shear. -/
 private noncomputable def tensorShearInv : H ⊗[R] H →ₐ[R] H ⊗[R] H :=
@@ -47,7 +45,7 @@ private theorem tensorShearHom_comp_inv :
     rw [tensorShearInv, lift_comp_includeRight']
     apply toConv_injective
     rw [← AlgHom.mapValue_apply, map_mul, map_inv]
-    simp [tensorShearHom]
+    simp [tensorShearHom, Bialgebra.comulPoint_eq_include_mul]
 
 private theorem tensorShearInv_comp_hom :
     (tensorShearInv (R := R) (H := H)).comp tensorShearHom = AlgHom.id R _ := by
@@ -56,6 +54,7 @@ private theorem tensorShearInv_comp_hom :
   · -- Tensor extensionality inserts the same redundant scalar restriction here.
     change tensorShearInv.comp (tensorShearHom.comp includeRight) = includeRight
     rw [tensorShearHom, lift_comp_includeRight',
+      ← ofConv_toConv (Bialgebra.comulAlgHom R H), Bialgebra.comulPoint_eq_include_mul,
       AlgHom.comp_convMul_distrib]
     simp [tensorShearInv]
 
@@ -70,7 +69,7 @@ noncomputable def tensorShear : H ⊗[R] H ≃ₐ[R] H ⊗[R] H :=
 theorem tensorShear_tmul (a b : H) :
     tensorShear (R := R) (a ⊗ₜ[R] b) =
       (a ⊗ₜ[R] 1) * Coalgebra.comul (R := R) b := by
-  simp [tensorShear, tensorShearHom, AlgHom.convMul_apply]
+  simp [tensorShear, tensorShearHom]
 
 /-- The inverse tensor shear divides the second coordinate by the first. -/
 @[simp]
