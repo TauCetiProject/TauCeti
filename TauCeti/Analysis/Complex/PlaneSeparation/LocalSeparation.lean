@@ -40,7 +40,7 @@ lies inside the curve, the inside is nonempty, and its frontier is the whole cur
   curve that is straight near one of its points has at most one bounded complementary component.
 * `TauCeti.IsJordanCurve.notMem_connectedComponentIn_of_locally_eq_line` -- points on opposite
   sides of a straight piece lie in different complementary components.
-* `TauCeti.mem_connectedComponentIn_of_locally_eq_line_of_im_pos` -- points on the same local
+* `TauCeti.mem_connectedComponentIn_of_locally_subset_line_of_im_pos` -- points on the same local
   side of a line lie in the same complementary component.
 * `TauCeti.IsJordanCurve.mem_filledHull_iff_notMem_filledHull_of_locally_eq_line` -- exactly one
   of the two sides lies inside the curve.
@@ -231,7 +231,7 @@ private theorem mem_ball_of_norm_mul_sub_lt {p v z : ℂ} {r : ℝ}
 /-- Two points of `ball p r` on the same open side of a line through `p` lie in the same
 component of the complement of a curve contained in that line within `ball p r`: the open
 half-ball between them is convex and misses the curve. -/
-theorem mem_connectedComponentIn_of_locally_eq_line_of_im_pos
+theorem mem_connectedComponentIn_of_locally_subset_line_of_im_pos
     {C : Set ℂ} {p v x y : ℂ} {r : ℝ}
     (hline : ∀ z ∈ ball p r, z ∈ C → (v * (z - p)).im = 0) (hx : x ∈ ball p r)
     (hy : y ∈ ball p r) (hx' : 0 < (v * (x - p)).im) (hy' : 0 < (v * (y - p)).im) :
@@ -366,12 +366,12 @@ theorem IsJordanCurve.notMem_connectedComponentIn_of_locally_eq_line {C : Set �
   -- `a` and `b` are joined off `C` to the model points `p ± I * s / v` on their sides
   obtain ⟨ha₀b, ha₀⟩ := add_I_mul_div_mem_ball hv p hs hsr
   obtain ⟨hb₀b, hb₀⟩ := sub_I_mul_div_mem_ball hv p hs hsr
-  have haa₀ := mem_connectedComponentIn_of_locally_eq_line_of_im_pos
+  have haa₀ := mem_connectedComponentIn_of_locally_subset_line_of_im_pos
     (fun z hz => (hline z hz).mp) ha ha₀b ha' ha₀
   have hline' : ∀ z ∈ ball p r, z ∈ C → (-v * (z - p)).im = 0 := fun z hz hCz => by
     rw [neg_mul, neg_im, neg_eq_zero]
     exact (hline z hz).mp hCz
-  have hbb₀ := mem_connectedComponentIn_of_locally_eq_line_of_im_pos hline' hb hb₀b
+  have hbb₀ := mem_connectedComponentIn_of_locally_subset_line_of_im_pos hline' hb hb₀b
     (by rw [neg_mul, neg_im]; linarith) (by rw [neg_mul, neg_im]; linarith)
   intro hab
   exact (hC.notMem_model_connectedComponentIn_of_locally_eq_line hv hline hs hsr)
