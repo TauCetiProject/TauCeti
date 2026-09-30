@@ -49,7 +49,7 @@ the inverse.
 
 The convolution monoid on algebra homomorphisms builds on Mathlib's convolution monoid of
 Yaël Dillies and Michał Mrugała, and the Hopf convolution algebra developed by
-Michał Mrugała and Yunzhou Xie.
+Yaël Dillies, Michał Mrugała, and Yunzhou Xie.
 -/
 
 public section
