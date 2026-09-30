@@ -16,8 +16,7 @@ Mathlib proves Rademacher's theorem for a function between finite-dimensional re
 that is Lipschitz on a set (`LipschitzOnWith.ae_differentiableWithinAt_of_mem`). This file
 localises it: a function that is only *locally* Lipschitz on a set `s` is differentiable within
 `s` at almost every point of `s`, and differentiable at almost every point of `s` when `s` is
-open. The proof covers `s` by countably many relatively open pieces on each of which the function
-is Lipschitz; second countability of a finite-dimensional space makes the cover countable.
+open.
 
 A convex function on a convex set `s` of a finite-dimensional real normed space is locally
 Lipschitz on the interior of `s` (`ConvexOn.locallyLipschitzOn_interior`), and the frontier of a
@@ -66,7 +65,7 @@ theorem ae_differentiableWithinAt_of_mem (hf : LocallyLipschitzOn s f) :
     obtain ⟨U, hU, hyU, hUt⟩ := mem_nhdsWithin.1 ht
     exact ⟨U, hU, hyU, K, hK.mono ((inter_comm s U).subset.trans hUt)⟩
   choose! U hU hyU K hK using hloc
-  -- Countably many of the pieces `s ∩ U y` cover `s`.
+  -- Second countability gives a countable cover of `s` by the relatively open pieces `s ∩ U y`.
   obtain ⟨c, hcs, hc, hcov⟩ := TopologicalSpace.countable_cover_nhdsWithin
     (f := fun y => s ∩ U y) fun y hy => inter_mem_nhdsWithin s ((hU y hy).mem_nhds (hyU y hy))
   have h := (ae_ball_iff hc).2 fun y hy =>
