@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 import Mathlib.RingTheory.LocalRing.Basic
+import TauCeti.Algebra.Ring.TwoPowMulThreePow
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
@@ -102,10 +103,16 @@ pair `(a₁, a₃)` and its integrality statement, rather than unfolding the def
     ∃ a₁ a₃ : R, ((⟨1, algebraMap R K a₁ ^ 2 / 12, algebraMap R K a₁ / 2,
       algebraMap R K a₃ / 2⟩ : VariableChange K) • ofCInvariants c₄ c₆).IsIntegral R := Iff.rfl
 
-/-- **Kraus's local condition on a pair of invariants.** The first four fields are the integrality
-and nonsingularity that any integral equation with these invariants forces; the last two are the
-auxiliary data, each demanded only at the residue characteristic it concerns. Where `2` and `3`
-are both units the last two fields are vacuous, which is
+/-- **Kraus's local condition on a pair of invariants.** The first four fields ask that `c₄`, `c₆`
+and the discriminant of the canonical equation lie in `R` and that this discriminant is nonzero;
+the last two are the auxiliary data, each demanded only at the residue characteristic it concerns.
+
+The structure is stated over any `R` and `K`. Where `2` and `3` are invertible in `K` the first
+four fields are exactly what an integral equation with these invariants forces: that is how the
+`←` direction of `TauCeti.krausLocalCondition_iff_exists_integralModel` obtains them, and it is
+why that direction needs the hypothesis, since without it a pair of `c`-invariants need not
+determine the discriminant (`WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq` asks for `1728` to be
+regular). Where `2` and `3` are both units in `R` the last two fields are vacuous, which is
 `TauCeti.krausLocalCondition_of_isUnit_six`. -/
 structure KrausLocalCondition : Prop where
   /-- `c₄` lies in `R`. -/
@@ -149,14 +156,6 @@ theorem krausLocalCondition_of_isUnit_six (h6 : IsUnit (6 : R))
   exact ⟨h₄, h₆, Δ_integral_of_isIntegral R _, hΔ, fun h ↦ absurd h2 h, fun h ↦ absurd h3 h⟩
 
 variable [Invertible (2 : K)] [Invertible (3 : K)]
-
-/-- `1728 = 2⁶3³` is regular where `2` and `3` are invertible: the cancellation that
-`WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq` asks for. -/
-private theorem isRegular_1728 : IsRegular (1728 : K) := by
-  have h : (1728 : K) = 2 ^ 6 * 3 ^ 3 := by norm_num
-  rw [h]
-  exact (((isUnit_of_invertible (2 : K)).pow 6).mul
-    ((isUnit_of_invertible (3 : K)).pow 3)).isRegular
 
 /-- A pair realised by an integral equation with `a₂ = 0` has a two-witness: the equation is the
 `(a₁²/12, a₁/2, a₃/2)`-transform of the canonical one. -/
@@ -214,8 +213,8 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
     by_cases h2 : IsUnit (2 : R)
     · by_cases h3 : IsUnit (3 : R)
       · refine ⟨ofCInvariants c₄ c₆, ?_, by simp, by simp, h.Δ_ne_zero⟩
-        have h6 : IsUnit (6 : R) := by
-          rw [show (6 : R) = 2 * 3 by norm_num]; exact h2.mul h3
+        have h6 : IsUnit (6 : R) :=
+          isUnit_of_eq_two_pow_mul_three_pow h2 h3 (m := 1) (n := 1) (by norm_num)
         exact isIntegral_ofCInvariants h6 h.exists_c₄ h.exists_c₆
       · obtain ⟨b₂, hb₂⟩ := (hasKrausThreeWitness_iff _ _ _).mp (h.hasKrausThreeWitness h3)
         exact exists_integralModel_of_isIntegral_smul hb₂ h.Δ_ne_zero
@@ -225,8 +224,10 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
     obtain ⟨V, rfl⟩ := hW.integral
     have hc₄ : ∃ x : R, algebraMap R K x = (V⁄K).c₄ := ⟨V.c₄, by rw [baseChange, map_c₄]⟩
     have hc₆ : ∃ x : R, algebraMap R K x = (V⁄K).c₆ := ⟨V.c₆, by rw [baseChange, map_c₆]⟩
+    -- `1728 = 2⁶3³` is regular, which is the cancellation `Δ_eq_of_c₄_eq_of_c₆_eq` asks for
     have hΔ' : (ofCInvariants (V⁄K).c₄ (V⁄K).c₆).Δ = (V⁄K).Δ :=
-      Δ_eq_of_c₄_eq_of_c₆_eq isRegular_1728 (by simp) (by simp)
+      Δ_eq_of_c₄_eq_of_c₆_eq (isUnit_of_eq_two_pow_mul_three_pow (isUnit_of_invertible 2)
+        (isUnit_of_invertible 3) (m := 6) (n := 3) (by norm_num)).isRegular (by simp) (by simp)
     refine ⟨hc₄, hc₆, ⟨V.Δ, by rw [hΔ', baseChange, map_Δ]⟩, hΔ' ▸ hΔ, ?_, ?_⟩
     · intro h2
       have hsum : IsUnit ((-2 : R) + 3) := by norm_num

@@ -8,6 +8,10 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
+-- Non-public: the nonvanishing of the numerals `12`, `48`, `864` and `1728` is used only in the
+-- proofs below.
+import TauCeti.Algebra.Ring.TwoPowMulThreePow
+
 /-!
 # The short Weierstrass curve `y² = x³ + Ax + B`
 
@@ -221,24 +225,19 @@ does not unfold `baseChange`, so `map_ofCInvariants` never fires on it by itself
 
 variable [Invertible (2 : K)] [Invertible (3 : K)]
 
-/-- A product of powers of `2` and `3` is nonzero in a field where both are invertible: the side
-condition that every denominator below presents to `field_simp`. -/
-private theorem ne_zero_of_eq_two_pow_mul_three_pow {x : K} {m n : ℕ} (hx : x = 2 ^ m * 3 ^ n) :
-    x ≠ 0 :=
-  hx ▸ mul_ne_zero (pow_ne_zero m (Invertible.ne_zero (2 : K)))
-    (pow_ne_zero n (Invertible.ne_zero (3 : K)))
-
 variable (c₄ c₆ : K)
 
 /-- The `c₄` of the canonical equation with prescribed `c`-invariants is the prescribed one. -/
 @[simp] lemma ofCInvariants_c₄ : (ofCInvariants c₄ c₆).c₄ = c₄ := by
-  have h48 : (48 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 4) (n := 1) (by norm_num)
+  have h48 : (48 : K) ≠ 0 :=
+    TauCeti.ne_zero_of_eq_two_pow_mul_three_pow (m := 4) (n := 1) (by norm_num)
   rw [ofCInvariants_eq_shortCurve, c₄_of_isShortNF, shortCurve_a₄]
   field_simp
 
 /-- The `c₆` of the canonical equation with prescribed `c`-invariants is the prescribed one. -/
 @[simp] lemma ofCInvariants_c₆ : (ofCInvariants c₄ c₆).c₆ = c₆ := by
-  have h864 : (864 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 5) (n := 3) (by norm_num)
+  have h864 : (864 : K) ≠ 0 :=
+    TauCeti.ne_zero_of_eq_two_pow_mul_three_pow (m := 5) (n := 3) (by norm_num)
   rw [ofCInvariants_eq_shortCurve, c₆_of_isShortNF, shortCurve_a₆]
   field_simp
 
@@ -255,9 +254,12 @@ is what a statement phrased on the pair `(c₄, c₆)` rather than on a curve in
 @[simp] lemma smul_ofCInvariants (W : WeierstrassCurve K) :
     (⟨1, W.b₂ / 12, W.a₁ / 2, W.a₃ / 2⟩ : VariableChange K) • ofCInvariants W.c₄ W.c₆ = W := by
   have h2 : (2 : K) ≠ 0 := Invertible.ne_zero 2
-  have h12 : (12 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 2) (n := 1) (by norm_num)
-  have h48 : (48 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 4) (n := 1) (by norm_num)
-  have h864 : (864 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 5) (n := 3) (by norm_num)
+  have h12 : (12 : K) ≠ 0 :=
+    TauCeti.ne_zero_of_eq_two_pow_mul_three_pow (m := 2) (n := 1) (by norm_num)
+  have h48 : (48 : K) ≠ 0 :=
+    TauCeti.ne_zero_of_eq_two_pow_mul_three_pow (m := 4) (n := 1) (by norm_num)
+  have h864 : (864 : K) ≠ 0 :=
+    TauCeti.ne_zero_of_eq_two_pow_mul_three_pow (m := 5) (n := 3) (by norm_num)
   ext <;>
     simp only [variableChange_def, ofCInvariants_eq_shortCurve, shortCurve_a₁, shortCurve_a₂,
       shortCurve_a₃, shortCurve_a₄, shortCurve_a₆, c₄, c₆, b₂, b₄, b₆, inv_one, Units.val_one,
@@ -268,7 +270,7 @@ is what a statement phrased on the pair `(c₄, c₆)` rather than on a curve in
 /-- The discriminant attached to a pair of `c`-invariants, `(c₄³ - c₆²)/1728`. -/
 @[simp] lemma ofCInvariants_Δ : (ofCInvariants c₄ c₆).Δ = (c₄ ^ 3 - c₆ ^ 2) / 1728 := by
   have h1728 : (1728 : K) ≠ 0 :=
-    ne_zero_of_eq_two_pow_mul_three_pow (m := 6) (n := 3) (by norm_num)
+    TauCeti.ne_zero_of_eq_two_pow_mul_three_pow (m := 6) (n := 3) (by norm_num)
   rw [eq_div_iff h1728, mul_comm, c_relation, ofCInvariants_c₄, ofCInvariants_c₆]
 
 end CInvariants
