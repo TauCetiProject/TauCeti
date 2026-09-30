@@ -366,13 +366,10 @@ theorem vanKampenLift_bijective (hCover : interior A ∪ interior B = univ)
       exact vanKampenInverse_map_right hCover hA hB hAB hxA hxB g
   constructor
   · exact Function.LeftInverse.injective fun g ↦ DFunLike.congr_fun hleft g
-  · rw [← MonoidHom.range_eq_top, Monoid.Coprod.range_eq]
-    rw [show (vanKampenLift A B x hxA hxB).comp Monoid.Coprod.inl = _ from
-        MonoidHom.ext fun _ ↦ vanKampenLift_apply_inl A B x hxA hxB,
-      show (vanKampenLift A B x hxA hxB).comp Monoid.Coprod.inr = _ from
-        MonoidHom.ext fun _ ↦ vanKampenLift_apply_inr A B x hxA hxB]
-    exact TauCeti.FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB
-      hAB.isPathConnected hxA hxB
+  · rw [← MonoidHom.range_eq_top]
+    exact (Monoid.Coprod.range_lift _ _).trans <|
+      TauCeti.FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB
+        hAB.isPathConnected hxA hxB
 
 /-- The equivalence in the based Seifert--van Kampen theorem for two path-connected sets with
 simply connected intersection. Its underlying homomorphism is `vanKampenLift`. -/
