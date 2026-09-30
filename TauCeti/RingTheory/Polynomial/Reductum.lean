@@ -17,9 +17,9 @@ includes both zero and `p` itself.  After any coefficient specialization, one me
 maps to the specialized polynomial: take the cutoff immediately above its new degree.  This is
 the finite degree-case decomposition needed when polynomial degrees can drop under specialization.
 
-The construction uses `PowerSeries.trunc`, whose coefficient, derivative, and coefficient-map
-theorems provide the corresponding polynomial laws.  Reducta also agree with repeatedly deleting
-leading terms, connecting the fixed cutoffs used for specialization to Mathlib's `eraseLead` API.
+The reductum is `PowerSeries.trunc` applied to `p` viewed as a power series.  Reducta also agree
+with repeatedly deleting leading terms, connecting the fixed cutoffs used for specialization to
+Mathlib's `eraseLead` API.
 
 ## Main results
 
@@ -265,11 +265,14 @@ theorem _root_.Polynomial.eraseLeadOrbit_zero :
   simp [eraseLeadOrbit]
 
 open scoped Classical in
-/-- For a nonzero polynomial, its `eraseLead` orbit is the polynomial together with the orbit of
-the polynomial with its leading term deleted. -/
-theorem _root_.Polynomial.eraseLeadOrbit_eq_insert {p : R[X]} (hp : p ≠ 0) :
+/-- The `eraseLead` orbit of a polynomial is the polynomial together with the orbit of the
+polynomial with its leading term deleted. -/
+theorem _root_.Polynomial.eraseLeadOrbit_eq_insert (p : R[X]) :
     p.eraseLeadOrbit = insert p p.eraseLead.eraseLeadOrbit := by
   classical
+  by_cases hp : p = 0
+  · subst hp
+    simp
   ext q
   simp only [eraseLeadOrbit, Finset.mem_image, Finset.mem_range, Finset.mem_insert]
   constructor
@@ -289,7 +292,8 @@ theorem _root_.Polynomial.eraseLeadOrbit_eq_insert {p : R[X]} (hp : p ≠ 0) :
         omega
       · exact (Function.iterate_succ_apply eraseLead k p).symm
 
-/-- The finite set of degree cutoffs is exactly the finite orbit under deletion of leading terms. -/
+/-- The finite set of reducta at bounded cutoffs is exactly the finite orbit under deletion of
+leading terms. -/
 theorem _root_.Polynomial.reducta_eq_eraseLeadOrbit (p : R[X]) :
     p.reducta = p.eraseLeadOrbit := by
   classical
@@ -301,7 +305,7 @@ theorem _root_.Polynomial.reducta_eq_eraseLeadOrbit (p : R[X]) :
       · have hcard : p.eraseLead.support.card < n := by
           have := card_support_eraseLead_add_one hp
           omega
-        rw [p.reducta_eq_insert_eraseLead_reducta, eraseLeadOrbit_eq_insert hp,
+        rw [p.reducta_eq_insert_eraseLead_reducta, p.eraseLeadOrbit_eq_insert,
           ih _ hcard p.eraseLead rfl]
 
 /-- Every iterate of `eraseLead` on `p` lies in its `eraseLead` orbit, including the iterates past
