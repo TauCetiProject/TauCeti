@@ -82,26 +82,6 @@ private theorem trefoilSlotPair_orientation (p : Fin 3 × Fin 4) :
   fin_cases i <;> fin_cases slot <;>
     simp [rightHandedTrefoilArcPair, PerfectMatching.val_mk, Equiv.swap_apply_def]
 
-private theorem crossingSlotEquiv_val_mod_four (i : Fin 3) (slot : Fin 4) :
-    (PDCode.crossingSlotEquiv 3 (i, slot)).val % 4 = slot.val := by
-  rw [PDCode.crossingSlotEquiv_apply_val]
-  omega
-
-private theorem crossingSlotEquiv_opposite_orientation (i : Fin 3) (slot : Fin 4) :
-    decide (2 ≤ (PDCode.crossingSlotEquiv 3 (i, PDCode.oppositeCrossingSlot slot)).val % 4) =
-      !decide (2 ≤ (PDCode.crossingSlotEquiv 3 (i, slot)).val % 4) := by
-  rw [crossingSlotEquiv_val_mod_four, crossingSlotEquiv_val_mod_four]
-  have hopposite := PDCode.oppositeCrossingSlot_apply slot
-  fin_cases slot <;> norm_num at hopposite ⊢
-
-private theorem oppositeCrossingSlot_eq_swaps :
-    PDCode.oppositeCrossingSlot = Equiv.swap 0 2 * Equiv.swap 1 3 := by
-  apply Equiv.ext
-  intro slot
-  rw [← Fin.val_inj]
-  simp only [Equiv.Perm.mul_apply, PDCode.oppositeCrossingSlot_apply]
-  fin_cases slot <;> decide
-
 /-- The standard three-crossing oriented PD-code of the right-handed trefoil. Crossing slots are
 numbered consecutively, slots zero and two form the over-strand, and slots two and three point out
 of each crossing. The arc matching gives the alternating Gauss word `O0, U1, O2, U0, O1, U2`. -/
@@ -118,10 +98,13 @@ def rightHandedTrefoilPDCode : OrientedPDCode 3 where
       ((PDCode.crossingSlotEquiv 3).apply_symm_apply h).symm
     rw [hp]
     rw [trefoilEdgePair, PerfectMatching.congr_val_apply_apply,
-      crossingSlotEquiv_val_mod_four, crossingSlotEquiv_val_mod_four]
+      PDCode.crossingSlotEquiv_apply_val_mod_four, PDCode.crossingSlotEquiv_apply_val_mod_four]
     exact trefoilSlotPair_orientation p
   orientation_oppositeCrossingSlot := by
-    exact crossingSlotEquiv_opposite_orientation
+    intro i slot
+    rw [one_apply, one_apply, PDCode.crossingSlotEquiv_apply_val_mod_four,
+      PDCode.crossingSlotEquiv_apply_val_mod_four, ← decide_not]
+    exact Bool.decide_congr (PDCode.two_le_oppositeCrossingSlot_val_iff slot)
   crossinglessComponents := 0
   crossinglessComponents_card := rfl
 
@@ -158,7 +141,7 @@ theorem rightHandedTrefoilPDCode_orientation_crossing (i : Fin 3) (slot : Fin 4)
     rightHandedTrefoilPDCode.orientation (PDCode.crossingSlotEquiv 3 (i, slot)) =
       decide (2 ≤ slot.val) := by
   simp only [rightHandedTrefoilPDCode]
-  rw [crossingSlotEquiv_val_mod_four]
+  rw [PDCode.crossingSlotEquiv_apply_val_mod_four]
 
 /-- Every crossing of the right-handed trefoil PD-code is positive. -/
 @[simp]
@@ -260,7 +243,7 @@ private theorem trefoilComponentForest_isForest : IsSwapForest trefoilComponentF
 private theorem trefoilComponentSlotPerm_eq_swapProduct :
     (Equiv.prodCongr (Equiv.refl (Fin 3)) PDCode.oppositeCrossingSlot) *
       rightHandedTrefoilArcPair.val = swapProduct trefoilComponentForest := by
-  rw [oppositeCrossingSlot_eq_swaps]
+  rw [PDCode.oppositeCrossingSlot_eq_swap_mul_swap]
   apply Equiv.ext
   rintro ⟨i, slot⟩
   fin_cases i <;> fin_cases slot <;>

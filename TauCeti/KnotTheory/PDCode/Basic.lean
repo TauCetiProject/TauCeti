@@ -102,6 +102,13 @@ theorem crossingSlotEquiv_succ_last {n : ℕ} (slot : Fin 4) :
     finCongr_apply, Fin.val_cast, finSumFinEquiv_apply_right, Fin.val_natAdd]
   omega
 
+-- Not `@[simp]`: `crossingSlotEquiv_apply_val` already rewrites the left-hand side.
+/-- The slot of a half-edge is recovered from its position modulo four. -/
+theorem crossingSlotEquiv_apply_val_mod_four (n : ℕ) (i : Fin n) (slot : Fin 4) :
+    (crossingSlotEquiv n (i, slot)).val % 4 = slot.val := by
+  rw [crossingSlotEquiv_apply_val]
+  omega
+
 /-- A half-edge position of the first `n` crossings keeps its value when a crossing is added. -/
 @[simp]
 theorem halfEdgeSuccEquiv_apply_inl_val {n : ℕ} (x : Fin (4 * n)) :
@@ -132,6 +139,17 @@ theorem oppositeCrossingSlot_apply (slot : Fin 4) : oppositeCrossingSlot slot = 
 theorem oppositeCrossingSlot_apply_val (slot : Fin 4) :
     (oppositeCrossingSlot slot).val = (slot + 2).val := by
   rw [oppositeCrossingSlot_apply]
+
+/-- The opposite-slot permutation swaps slots `0`, `2` and slots `1`, `3`. -/
+theorem oppositeCrossingSlot_eq_swap_mul_swap :
+    oppositeCrossingSlot = Equiv.swap 0 2 * Equiv.swap 1 3 := by
+  decide
+
+-- Not `@[simp]`: `oppositeCrossingSlot_apply_val` already rewrites the left-hand side.
+/-- Exactly one of a slot and its opposite slot is one of the last two slots `2`, `3`. -/
+theorem two_le_oppositeCrossingSlot_val_iff (slot : Fin 4) :
+    2 ≤ (oppositeCrossingSlot slot).val ↔ ¬2 ≤ slot.val := by
+  fin_cases slot <;> decide
 
 /-- Taking the opposite crossing slot twice returns to the original slot. -/
 @[simp]
