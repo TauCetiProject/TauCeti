@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
-import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Complex.AtInfinity
 
 /-!
 # The pre-Schwarzian derivative: composition, rigidity, and asymptotics

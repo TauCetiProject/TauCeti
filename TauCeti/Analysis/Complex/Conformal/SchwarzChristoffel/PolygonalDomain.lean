@@ -263,7 +263,8 @@ theorem exponent_sum_eq_neg_two_of_polygonal_domain
   have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e UpperHalfPlane.I
     hf hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
       (schwarzChristoffelIntegrand_ne_zero a e UpperHalfPlane.I.im_pos), _, hform⟩
-  exact exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn a e hf hpre
+  exact_mod_cast exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn
+    (fun i => (a i : ℂ)) (fun i => (e i : ℂ)) hf hpre
     (exists_eqOn_neg_inv_of_tendsto_of_side hfc hfi hfU hfv hp hpf hside)
 
 end TauCeti

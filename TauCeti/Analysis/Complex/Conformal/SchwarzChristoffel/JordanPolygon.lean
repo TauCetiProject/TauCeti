@@ -26,7 +26,7 @@ prevertex to its vertex: `A * vertex i + B = v i`, where `vertex i` is the limit
 ## Main results
 
 * `TauCeti.exists_prevertices_of_isJordanCurve_frontier` -- a Carathéodory map of a bounded
-  polygonal Jordan domain with real prevertices mapping to the prescribed vertices.
+  Jordan domain with real prevertices mapping to prescribed frontier points.
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier` --
   a bounded polygonal Jordan domain is the image of the upper half-plane under an affine image of
   a Schwarz--Christoffel primitive, with the prevertices sent to the vertices.
@@ -47,16 +47,27 @@ open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-/-- A Carathéodory map of the upper half-plane onto a bounded polygonal Jordan domain, sending
-infinity to a frontier point `p` which is not a vertex, together with real prevertices `a i` of
-the vertices `v i`: the global data of
-`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain`. -/
+/-- A local corner sector of angle strictly between zero and `2π` places its vertex on the
+frontier of the domain. -/
+private theorem vertex_mem_frontier_of_corner {ι : Type*} (e : ι → ℝ)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {U : Set ℂ} {v : ι → ℂ}
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (i : ι) : v i ∈ frontier U := by
+  obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+  have he₁ := he i
+  refine mem_frontier_of_forall_mem_iff_abs_arg_lt hρ hb ?_ ?_ hU
+  · nlinarith [Real.pi_pos, he₁.1]
+  · nlinarith [Real.pi_pos, he₁.2]
+
+/-- A Carathéodory map of the upper half-plane onto a bounded Jordan domain, sending infinity
+to a frontier point `p` distinct from the specified points `v i`, together with real prevertices
+`a i` mapping to those frontier points. -/
 theorem exists_prevertices_of_isJordanCurve_frontier
-    {ι : Type*} [Finite ι] {e : ι → ℝ} (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
+    {ι : Type*} [Finite ι]
     {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
-    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
-      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
+    (hvU : ∀ i, v i ∈ frontier U) :
     ∃ f : ℂ → ℂ, ∃ a : ι → ℝ, ∃ p : ℂ, Injective a ∧
       DifferentiableOn ℂ f upperHalfPlaneSet ∧ ContinuousOn f {z : ℂ | 0 ≤ z.im} ∧
       InjOn f {z : ℂ | 0 ≤ z.im} ∧ BijOn f upperHalfPlaneSet U ∧ (∀ i, f (a i) = v i) ∧
@@ -68,14 +79,10 @@ theorem exists_prevertices_of_isJordanCurve_frontier
       (not_subsingleton_iff.mp hUJ.not_subsingleton)).sdiff (finite_range v)).nonempty
   obtain ⟨f, hfc, hfd, hfH, hfcl, hfR, hfp⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hUo hUc hUb hUJ hpU
-  -- every vertex lies on the frontier, so it has a real preimage under `f`
-  have hvU (i : ι) : v i ∈ frontier U \ {p} := by
-    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-    have he₁ := he i
-    refine ⟨mem_frontier_of_forall_mem_iff_abs_arg_lt hρ hb ?_ ?_ hU, fun h => hpv ⟨i, h⟩⟩
-    · nlinarith [Real.pi_pos, he₁.1]
-    · nlinarith [Real.pi_pos, he₁.2]
-  choose x hx hfx using fun i => hfR.surjOn (hvU i)
+  -- every specified point lies on the frontier, so it has a real preimage under `f`
+  have hvp (i : ι) : v i ∈ frontier U \ {p} :=
+    ⟨hvU i, fun h => hpv ⟨i, h⟩⟩
+  choose x hx hfx using fun i => hfR.surjOn (hvp i)
   let a : ι → ℝ := fun i => (x i).re
   have hax (i : ι) : ((a i : ℝ) : ℂ) = x i :=
     Complex.ext (by simp [a]) (by simpa [a] using (hx i).symm)
@@ -103,7 +110,8 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
   obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
-    exists_prevertices_of_isJordanCurve_frontier he hUo hUc hUb hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_frontier hUo hUc hUb hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
   have hform := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain a e ha he z₀
     hfd hfc hfi hfH.image_eq hfa hfp hpf hside hcorner
@@ -137,7 +145,8 @@ theorem exponent_sum_eq_neg_two_of_isJordanCurve_frontier
       (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
     ∑ i, e i = -2 := by
   obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
-    exists_prevertices_of_isJordanCurve_frontier he hUo hUc hUb hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_frontier hUo hUc hUb hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   exact exponent_sum_eq_neg_two_of_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq hfa hfp
     hpf hside hcorner
 

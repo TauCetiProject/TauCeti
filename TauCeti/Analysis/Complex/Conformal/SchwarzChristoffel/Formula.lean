@@ -62,20 +62,20 @@ open Bornology Complex Filter Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-/-- **The closing condition on the Schwarz--Christoffel exponents.**  Let `f` be holomorphic on
-the upper half-plane with pre-Schwarzian derivative `f'' / f' = ∑ i, e i / (z - a i)` there, and
+/-- **The closing condition on the Schwarz--Christoffel exponents.** Let `f` be holomorphic on
+the upper half-plane with pre-Schwarzian derivative `f'' / f' = ∑ i, e i / (z - a i)` there, where
+the poles `a i` and coefficients `e i` may be complex, and
 suppose that in the coordinate at infinity it extends across a straight side, as in
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`.  Then
 `∑ i, e i = -2`.
 
-Indeed `z * f'' / f'` tends to `∑ i, e i` at infinity by the displayed formula, and to `-2`
-because infinity is a regular boundary point.  For the turning exponents `e i = α i / π - 1` of a
-polygon with interior angles `α i`, this is the angle sum `∑ i, α i = (n - 2) * π`. -/
+For the turning exponents `e i = α i / π - 1` of a polygon with interior angles `α i`, this is
+the angle sum `∑ i, α i = (n - 2) * π`. -/
 theorem exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn
-    {ι : Type*} [Fintype ι] (a e : ι → ℝ)
+    {ι : Type*} [Fintype ι] (a e : ι → ℂ)
     {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hpre : EqOn (logDeriv (deriv f))
-      (fun z => ∑ i, (e i : ℂ) / (z - (a i : ℂ))) upperHalfPlaneSet)
+      (fun z => ∑ i, e i / (z - a i)) upperHalfPlaneSet)
     (hinfty : ∃ r > 0, ∃ g : ℂ → ℂ, ∃ q b : ℂ, b ≠ 0 ∧
       EqOn g (fun w => (f (-w⁻¹) - q) / b) (Metric.ball 0 r ∩ upperHalfPlaneSet) ∧
       ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) ∧
@@ -86,12 +86,11 @@ theorem exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn
   obtain ⟨r, hr, g, q, b, hb, hgf, hgcont, hgreal, hgupper, hginj⟩ := hinfty
   have hreg := tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
     (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
-  have hsum := tendsto_mul_sum_div_sub_cobounded Finset.univ
-    (fun i => (a i : ℂ)) (fun i => (e i : ℂ))
+  have hsum := tendsto_mul_sum_div_sub_cobounded Finset.univ a e
   have hlim := tendsto_nhds_unique (hsum.mono_left inf_le_left) (hreg.congr' <| by
     rw [eventuallyEq_inf_principal_iff]
     exact Eventually.of_forall fun z hz => by rw [hpre hz])
-  exact_mod_cast hlim
+  exact hlim
 
 /-- **The Schwarz--Christoffel formula.**  Let `f` be holomorphic with nonvanishing derivative on
 the upper half-plane.  Assume that away from the distinct real prevertices `a i` its boundary

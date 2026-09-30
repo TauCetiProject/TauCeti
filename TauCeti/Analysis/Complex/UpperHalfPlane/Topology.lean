@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
+public import TauCeti.Analysis.Complex.AtInfinity
 
 /-!
 # Topology of the upper half-plane
@@ -29,7 +30,6 @@ period exactly when the original function is invariant under the corresponding t
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
-* `TauCeti.tendsto_zero_of_tendsto_mul_cobounded`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
@@ -74,18 +74,6 @@ instance cobounded_inf_principal_upperHalfPlaneSet_neBot :
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
   simp only [Set.mem_preimage, upperHalfPlaneSet, Set.mem_ofPred_eq]
   simpa using ht
-
-/-- If `z * ψ z` has a finite limit at infinity, then `ψ z` tends to zero. -/
-theorem tendsto_zero_of_tendsto_mul_cobounded {l : Filter ℂ} (hl : l ≤ cobounded ℂ)
-    {ψ : ℂ → ℂ} {c : ℂ} (h : Tendsto (fun z => z * ψ z) l (𝓝 c)) :
-    Tendsto ψ l (𝓝 0) := by
-  have ht := h.mul ((tendsto_inv₀_cobounded (α := ℂ)).mono_left hl)
-  simp only [mul_zero] at ht
-  apply ht.congr'
-  filter_upwards [(tendsto_inv₀_cobounded' (α := ℂ)).mono_left hl |>.eventually
-    self_mem_nhdsWithin] with z hz
-  have hz0 : z ≠ 0 := by simpa using hz
-  field_simp
 
 /-- For a function conjugation-symmetric near infinity and continuous at all sufficiently distant
 real points, decay along the upper half-plane implies decay along the whole plane. -/
@@ -165,7 +153,7 @@ theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
     rw [him, le_div_iff₀ (normSq_pos.mpr hw), zero_mul]
 
 /-- The inversion `w ↦ -w⁻¹` preserves the open upper half-plane. -/
-theorem im_neg_inv_pos {w : ℂ} : 0 < (-w⁻¹).im ↔ 0 < w.im := by
+@[simp] theorem im_neg_inv_pos {w : ℂ} : 0 < (-w⁻¹).im ↔ 0 < w.im := by
   rcases eq_or_ne w 0 with rfl | hw
   · simp
   · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
