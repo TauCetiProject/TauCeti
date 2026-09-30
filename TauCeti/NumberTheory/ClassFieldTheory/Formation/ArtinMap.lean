@@ -19,9 +19,11 @@ Let `V ◁ U` be a finite normal layer of a class formation with coefficient mod
 **Nakayama map** `Γ^ab ≃ A^U / N_{U/V}(A^V)`. The **Artin reciprocity isomorphism** is its inverse,
 and the **Artin map** of the layer is the composite `A^U → A^U / N_{U/V}(A^V) ≃ Γ^ab`.
 
-All three are ordinary definitions with bodies, so the Artin map is by definition the inverse of
-cup product with the fundamental class, not an arbitrary isomorphism between two groups of the
-same order; this fixes its direction once for every downstream use. The characterizing property
+All three are ordinary definitions with bodies: Artin reciprocity `artinEquiv` is by definition
+the inverse of cup product with the fundamental class read through the two low-degree
+identifications, not an arbitrary isomorphism between two groups of the same order, and the Artin
+map `artinMap` is its composite with `NormalLayer.normQuotientMk`; this fixes the direction once
+for every downstream use. The characterizing property
 (`ClassFormation.cupFundamentalClass_artinMap`, `ClassFormation.artinMap_eq_iff`) is that the
 Artin symbol `σ = artinMap a` of `a ∈ A^U` is the unique `σ ∈ Γ^ab` whose degree `-2` class cups
 with the fundamental class to the zero-dimensional Tate class of `a`.
