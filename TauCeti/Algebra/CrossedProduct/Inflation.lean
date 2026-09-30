@@ -114,15 +114,6 @@ theorem inflateClass_def (c : TwoCocycle K L) :
         (H2pi _ _ (c.inflateZ2 L)) :=
   (rfl)
 
-omit [FiniteDimensional K L] in
-/-- Including the values of `L` into `Kˢ` intertwines the action of `Gal(L/K)` on `Lˣ`, through
-restriction, with the action of the absolute Galois group on `(Kˢ)ˣ`. -/
-private theorem units_map_val_restrictNormalHom (g : AbsoluteGaloisGroup K) (u : Lˣ) :
-    Units.map L.val.toRingHom.toMonoidHom (Units.map (AlgEquiv.restrictNormalHom L g) u) =
-      g • Units.map L.val.toRingHom.toMonoidHom u := by
-  rw [AlgEquiv.smul_units_def]
-  exact Units.ext (AlgEquiv.restrictNormal_commutes g L u)
-
 /-- The difference of inflated cohomologous cocycles is the inflation of their finite
 coboundary, hence is a continuous coboundary. -/
 private theorem inflateZ2_sub_mem_B2 {z w : TwoCocycle K L} (h : z.Cohomologous w) :
@@ -137,8 +128,8 @@ private theorem inflateZ2_sub_mem_B2 {z w : TwoCocycle K L} (h : z.Cohomologous 
   -- The inflated coboundary of `b` is the image of the finite coboundary `hb` under `Kˢ ⊇ L`.
   simp only [Function.comp_apply, toMul_add, toMul_sub, toMul_ofMul, Additive.toMul_smul,
     Pi.sub_apply, coe_inflateZ2, coe_toCocycles₂, inflate_toFun]
-  rw [← units_map_val_restrictNormalHom, ← AlgEquiv.smul_units_def, map_mul, ← map_div,
-    ← map_mul, hb, map_div]
+  rw [← IntermediateField.units_map_val_restrictNormalHom, ← AlgEquiv.smul_units_def, map_mul,
+    ← map_div, ← map_mul, hb, map_div]
 
 /-- Cohomologous crossed-product cocycles have the same class after inflation to continuous
 cohomology. -/
@@ -188,13 +179,6 @@ section FiniteLevel
 
 variable [FiniteDimensional K L] [Normal K L]
 
-omit [FiniteDimensional K L] in
-/-- Restriction through the canonical inclusion of an intermediate field agrees with the
-canonical restriction map for that intermediate field. -/
-private theorem val_restrictNormalHom (g : AbsoluteGaloisGroup K) :
-    L.val.restrictNormalHom g = AlgEquiv.restrictNormalHom L g :=
-  L.val.restrictNormalHom_eq_iff.2 fun x ↦ (AlgEquiv.restrictNormal_commutes g L x).symm
-
 /-- The quotient identification, bundled as a continuous homomorphism. -/
 private def galoisQuotientHom :
     AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L L.val).toSubgroup →ₜ* (L ≃ₐ[K] L) :=
@@ -211,7 +195,7 @@ private theorem galoisQuotientHom_apply
 private theorem galoisQuotientHom_mk (g : AbsoluteGaloisGroup K) :
     galoisQuotientHom L g = AlgEquiv.restrictNormalHom L g :=
   ((galoisQuotientHom_apply L g).trans (quotientFixingSubgroupFieldRangeEquiv_mk K L L.val g)).trans
-    (val_restrictNormalHom L g)
+    (DFunLike.congr_fun (IntermediateField.restrictNormalHom_val L) g)
 
 /-- Inclusion of `Lˣ` in `(Kˢ)ˣ`, viewed as an additive map into the invariants fixed by
 `Gal(Kˢ/L)`. -/
@@ -236,7 +220,7 @@ private theorem finiteLevelCoeffHom_smul
     finiteLevelCoeffHom L (galoisQuotientHom L q • b) = q • finiteLevelCoeffHom L b := by
   induction q using QuotientGroup.induction_on with
   | _ g =>
-      rw [galoisQuotientHom_mk, ← val_restrictNormalHom]
+      rw [galoisQuotientHom_mk, ← IntermediateField.restrictNormalHom_val]
       apply Subtype.ext
       rw [coe_quotient_smul_fixedPoints_addSubgroup]
       exact embeddedUnitsEquivInvariants_restrictNormalHom_smul K L L.val g b
