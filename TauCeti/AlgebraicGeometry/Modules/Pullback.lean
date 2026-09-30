@@ -45,7 +45,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pullbackOplaxMonoidal`: the lax monoidal structure of
   pushforward and the oplax monoidal structure of pullback, with unit maps computed by
   `AlgebraicGeometry.Scheme.Modules.pushforward_ε` and
-  `AlgebraicGeometry.Scheme.Modules.pullback_η`;
+  `AlgebraicGeometry.Scheme.Modules.pullback_η`, and the tensor map of pullback by
+  `AlgebraicGeometry.Scheme.Modules.pullback_δ`;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
   pullbacks;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
@@ -266,7 +267,8 @@ lemma pushforward_ε :
 
 /-- Pullback of modules along a morphism of schemes is oplax monoidal, as the left adjoint of the
 lax monoidal pushforward: it carries comparison maps `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`, and its unit
-map is `pullbackObjUnitIso f` (`pullback_η`). -/
+map is `pullbackObjUnitIso f` (`pullback_η`). The comparison maps are the mates of the tensor
+map of pushforward (`pullback_δ`). -/
 instance pullbackOplaxMonoidal : (pullback f).OplaxMonoidal :=
   (pullbackPushforwardAdjunction f).leftAdjointOplaxMonoidal
 
@@ -284,6 +286,18 @@ lemma pullback_η : Functor.OplaxMonoidal.η (pullback f) = (pullbackObjUnitIso 
   rw [pullbackOplaxMonoidal, Adjunction.leftAdjointOplaxMonoidal_η, pushforward_ε]
   exact (Equiv.symm_apply_eq _).mpr
     (pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom f).symm
+
+/-- The tensor map `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N` of the pullback of modules is the mate, under the
+pullback--pushforward adjunction, of the composite of the units `M ⟶ f_* f^* M` and
+`N ⟶ f_* f^* N` with the tensor map `f_* f^* M ⊗ f_* f^* N ⟶ f_* (f^* M ⊗ f^* N)` of
+pushforward. -/
+lemma pullback_δ (M N : Y.Modules) :
+    Functor.OplaxMonoidal.δ (pullback f) M N =
+      ((pullbackPushforwardAdjunction f).homEquiv _ _).symm
+        (((pullbackPushforwardAdjunction f).unit.app M ⊗ₘ
+            (pullbackPushforwardAdjunction f).unit.app N) ≫
+          Functor.LaxMonoidal.μ (pushforward f) _ _) :=
+  Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
 
 instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
   rw [pullback_η]

@@ -26,8 +26,8 @@ The construction proceeds in three steps.
 
 * The inclusion `SheafOfModules.forget` of sheaves of modules into presheaves of modules is right
   adjoint to sheafification, which is monoidal; so the inclusion is lax monoidal
-  (`SheafOfModules.forgetLaxMonoidal`), its tensor map being the unit of sheafification
-  `M.val ⊗ N.val ⟶ (M ⊗ N).val`.
+  (`SheafOfModules.forgetLaxMonoidal`, in `Sheaf/TensorProduct/Monoidal.lean`), its tensor map
+  being the unit of sheafification `M.val ⊗ N.val ⟶ (M ⊗ N).val`.
 * The pushforward of sheaves of modules is isomorphic to the composite of the inclusion, the
   pushforward of presheaves of modules, and sheafification
   (`SheafOfModules.presheafPushforwardSheafificationIso`). All three are lax monoidal, the middle
@@ -38,13 +38,12 @@ The construction proceeds in three steps.
 
 ## Main declarations
 
-* `SheafOfModules.forgetLaxMonoidal`, with `SheafOfModules.forget_ε` and
-  `SheafOfModules.forget_μ`;
 * `SheafOfModules.presheafPushforward`: the pushforward of presheaves of modules underlying the
   pushforward of sheaves of modules, with its lax monoidal structure;
 * `SheafOfModules.pushforwardLaxMonoidal`, with `SheafOfModules.pushforward_ε` and
   `SheafOfModules.pushforward_μ`;
-* `SheafOfModules.pullbackOplaxMonoidal`, with `SheafOfModules.pullback_η`.
+* `SheafOfModules.pullbackOplaxMonoidal`, with `SheafOfModules.pullback_η` and
+  `SheafOfModules.pullback_δ`.
 
 ## References
 
@@ -66,58 +65,6 @@ namespace SheafOfModules
 
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
   [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-
-section Forget
-
-variable [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-  (R : Sheaf J CommRingCat.{u})
-
-/-- Sheafification of presheaves of modules is left adjoint to the inclusion
-`SheafOfModules.forget` of sheaves of modules. This is Mathlib's
-`PresheafOfModules.sheafificationAdjunction` along the identity of the sheaf of rings, whose
-right adjoint `forget ⋙ restrictScalars (𝟙 _)` is definitionally `forget`. -/
-def sheafificationForgetAdjunction :
-    PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj) ⊣
-      _root_.SheafOfModules.forget (ringCatSheaf R) :=
-  PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
-
-/-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
-identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
-lemma sheafificationForgetAdjunction_counit_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
-    (sheafificationForgetAdjunction R).counit.app M = (sheafificationIso _ M).hom :=
-  (sheafificationIso_hom _ M).symm
-
-/-- The inclusion of sheaves of modules into presheaves of modules is lax monoidal, as the right
-adjoint of the monoidal functor sheafification. Its tensor map `M.val ⊗ N.val ⟶ (M ⊗ N).val` is
-the unit of sheafification (`SheafOfModules.forget_μ`), and its unit map is the identity
-(`SheafOfModules.forget_ε`). -/
-instance forgetLaxMonoidal : (_root_.SheafOfModules.forget (ringCatSheaf R)).LaxMonoidal :=
-  (sheafificationForgetAdjunction R).rightAdjointLaxMonoidal
-
-/-- The unit map of the inclusion of sheaves of modules into presheaves of modules is the
-identity. -/
-@[simp]
-lemma forget_ε : Functor.LaxMonoidal.ε (_root_.SheafOfModules.forget (ringCatSheaf R)) = 𝟙 _ := by
-  have h : (sheafificationUnitIso R).hom =
-      (sheafificationForgetAdjunction R).counit.app (𝟙_ _) :=
-    sheafificationUnitIso_hom R
-  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε, sheafification_η, h]
-  exact ((sheafificationForgetAdjunction R).homEquiv_unit _ _ _).trans
-    ((sheafificationForgetAdjunction R).right_triangle_components (𝟙_ _))
-
-/-- The tensor map `M.val ⊗ N.val ⟶ (M ⊗ N).val` of the inclusion of sheaves of modules into
-presheaves of modules is the unit of sheafification, followed by the identification
-`tensorUnderlyingIso` of `M ⊗ N` with the sheafification of `M.val ⊗ N.val`. -/
-lemma forget_μ (M N : SheafOfModules.{u} (ringCatSheaf R)) :
-    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N =
-      (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) ≫
-        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).inv := by
-  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_μ, Adjunction.homEquiv_unit,
-    SheafOfModules.tensorUnderlyingIso_inv, ← sheafificationForgetAdjunction_counit_app,
-    ← sheafificationForgetAdjunction_counit_app]
-  rfl
-
-end Forget
 
 variable {D : Type u} [SmallCategory D] {K : GrothendieckTopology D}
   [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
@@ -251,7 +198,8 @@ variable [(_root_.SheafOfModules.pushforward.{u} φ).IsRightAdjoint]
 
 /-- The pullback of sheaves of modules is oplax monoidal, as the left adjoint of the lax monoidal
 pushforward. Its unit map is `SheafOfModules.pullbackObjUnitToUnit φ`
-(`SheafOfModules.pullback_η`). -/
+(`SheafOfModules.pullback_η`), and its tensor map is the mate of the tensor map of the pushforward
+(`SheafOfModules.pullback_δ`). -/
 instance pullbackOplaxMonoidal : (_root_.SheafOfModules.pullback.{u} φ).OplaxMonoidal :=
   (_root_.SheafOfModules.pullbackPushforwardAdjunction φ).leftAdjointOplaxMonoidal
 
@@ -270,6 +218,18 @@ lemma pullback_η : Functor.OplaxMonoidal.η (_root_.SheafOfModules.pullback.{u}
     _root_.SheafOfModules.pullbackObjUnitToUnit φ := by
   rw [pullbackOplaxMonoidal, Adjunction.leftAdjointOplaxMonoidal_η, pushforward_ε]
   exact _root_.SheafOfModules.pullbackPushforwardAdjunction_homEquiv_symm_unitToPushforwardObjUnit φ
+
+/-- The tensor map `φ^* (M ⊗ N) ⟶ φ^* M ⊗ φ^* N` of the pullback of sheaves of modules is the
+mate, under the pullback--pushforward adjunction, of the composite of the units
+`M ⟶ φ_* φ^* M` and `N ⟶ φ_* φ^* N` with the tensor map `φ_* φ^* M ⊗ φ_* φ^* N ⟶
+φ_* (φ^* M ⊗ φ^* N)` of the pushforward. -/
+lemma pullback_δ (M N : SheafOfModules.{u} (ringCatSheaf S)) :
+    Functor.OplaxMonoidal.δ (_root_.SheafOfModules.pullback.{u} φ) M N =
+      ((_root_.SheafOfModules.pullbackPushforwardAdjunction φ).homEquiv _ _).symm
+        (((_root_.SheafOfModules.pullbackPushforwardAdjunction φ).unit.app M ⊗ₘ
+            (_root_.SheafOfModules.pullbackPushforwardAdjunction φ).unit.app N) ≫
+          Functor.LaxMonoidal.μ (_root_.SheafOfModules.pushforward φ) _ _) :=
+  Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
 
 end SheafOfModules
 
