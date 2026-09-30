@@ -10,7 +10,10 @@ public import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree
+import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.NumberTheory.NumberField.DirichletDensityBounds
 
 /-!
@@ -32,6 +35,14 @@ The denominator really tends to infinity. Indeed, lying over supplies a prime of
 every rational prime, so the height-one spectrum is infinite. Its bounded-norm subsets are finite
 and exhaust the spectrum, whence their cardinalities tend to infinity. This fact both makes the
 whole spectrum have density one and ensures that a fixed finite error disappears in the ratio.
+More generally, a set of density zero can be added or removed without changing a natural density.
+
+Comparison with `x / log x` is a theorem rather than the definition. The prime ideal theorem
+`π_K(x) ~ Li(x) ~ x / log x`, obtained from the boundary data
+`TauCeti.LFunctions.primeIdealVonMangoldtBoundary` of the Dedekind zeta function through
+`TauCeti.primeIdealTheorem_of_boundary`, shows that `S` has natural density `δ` exactly when
+`π_S(x) / (x / log x) → δ`, equivalently when `π_S(x) = δ Li(x) + o(x / log x)`. In particular
+the `O(√x)` primes of residue degree greater than one have natural density zero.
 
 ## Main results
 
@@ -40,13 +51,20 @@ whole spectrum have density one and ensures that a fixed finite error disappears
 * `NumberField.Set.HasNaturalDensity.union`,
   `NumberField.Set.hasNaturalDensity_biUnion_finset` and
   `NumberField.Set.HasNaturalDensity.compl`: finite Boolean calculus for natural density.
-* `NumberField.Set.HasNaturalDensity.of_finite_symmDiff`: changing a prime set on finitely many
-  primes preserves its natural density.
 * `NumberField.Set.hasNaturalDensity_of_finite`: every finite set of prime ideals has natural
   density zero.
-* `NumberField.Set.hasNaturalDensity_of_isLittleO_logIntegral`: if all primes satisfy
-  `π(x) = Li(x) + o(x / log x)` and the primes of `S` satisfy `π_S(x) = δ Li(x) + o(x / log x)`,
-  then `S` has natural density `δ`.
+* `NumberField.Set.hasNaturalDensity_iff_of_symmDiff`: two prime sets whose symmetric difference
+  has natural density zero have the same natural densities;
+  `NumberField.Set.hasNaturalDensity_iff_of_finite_symmDiff` is the case of a finite symmetric
+  difference.
+* `NumberField.Set.hasNaturalDensity_iff_tendsto_div_div_log` and
+  `NumberField.Set.hasNaturalDensity_iff_isLittleO_logIntegral`: `S` has natural density `δ` if and
+  only if `π_S(x) / (x / log x) → δ`, if and only if `π_S(x) = δ Li(x) + o(x / log x)`.
+* `NumberField.Set.hasNaturalDensity_zero_iff_isLittleO`: `S` has natural density zero if and only
+  if `π_S(x) = o(x / log x)`.
+* `TauCeti.hasNaturalDensity_higherDegreePrimes`: the primes of residue degree greater than one have
+  natural density zero, and `TauCeti.hasNaturalDensity_inter_compl_higherDegreePrimes_iff` lets a
+  natural density be computed on the primes of residue degree one alone.
 * `NumberField.Set.isUpperDirichletDensityBound_of_eventually_primeCount_le` and
   `NumberField.Set.isLowerDirichletDensityBound_of_eventually_le_primeCount`: an eventual
   one-sided bound on the proportion of primes of `S` below `x` is the same one-sided bound for
@@ -174,32 +192,63 @@ theorem HasNaturalDensity.compl (hS : HasNaturalDensity S δ) :
   rw [hcount]
   ring
 
+/-- Every finite set of prime ideals has natural density zero: its count is eventually constant,
+while the all-prime count tends to infinity. -/
+theorem hasNaturalDensity_of_finite (hS : S.Finite) : HasNaturalDensity S 0 := by
+  rw [hasNaturalDensity_def]
+  refine ((TauCeti.tendsto_primeCount_univ_atTop K).const_div_atTop (S.ncard : ℝ)).congr' ?_
+  filter_upwards [TauCeti.eventually_primeCount_eq_card hS] with x hx
+  rw [hx]
+
+/-- A set of prime ideals with nonzero natural density is infinite. -/
+theorem HasNaturalDensity.infinite (hS : HasNaturalDensity S δ) (hδ : δ ≠ 0) : S.Infinite :=
+  fun hfin => hδ (hS.unique (hasNaturalDensity_of_finite hfin))
+
+/-- Every subset of a set of natural density zero has natural density zero. -/
+theorem HasNaturalDensity.zero_of_subset (hT : HasNaturalDensity T 0) (hST : S ⊆ T) :
+    HasNaturalDensity S 0 := by
+  rw [hasNaturalDensity_def] at hT ⊢
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hT (fun x => ?_) fun x => ?_
+  · exact div_nonneg (TauCeti.primeCount_nonneg S x) (TauCeti.primeCount_nonneg Set.univ x)
+  · exact div_le_div_of_nonneg_right (TauCeti.primeCount_mono_set hST x)
+      (TauCeti.primeCount_nonneg Set.univ x)
+
+/-- **Sets of natural density zero are negligible.** If `T` has natural density `δ` and the
+symmetric difference of `S` and `T` has natural density zero, then `S` has natural density `δ`. -/
+theorem HasNaturalDensity.of_symmDiff (hT : HasNaturalDensity T δ)
+    (h : HasNaturalDensity (symmDiff S T) 0) : HasNaturalDensity S δ := by
+  rw [hasNaturalDensity_def] at hT h ⊢
+  have hlo : Tendsto (fun x : ℝ => (TauCeti.primeCount K T x -
+      TauCeti.primeCount K (symmDiff S T) x) /
+        TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x) atTop (𝓝 δ) := by
+    simpa only [sub_div, sub_zero] using hT.sub h
+  have hhi : Tendsto (fun x : ℝ => (TauCeti.primeCount K T x +
+      TauCeti.primeCount K (symmDiff S T) x) /
+        TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x) atTop (𝓝 δ) := by
+    simpa only [add_div, add_zero] using hT.add h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le hlo hhi (fun x => ?_) fun x => ?_
+  · -- `π_T ≤ π_S + π_{S ∆ T}`, since `T ∆ S = S ∆ T`.
+    have := TauCeti.primeCount_le_add_symmDiff T S x
+    rw [symmDiff_comm] at this
+    exact div_le_div_of_nonneg_right (by linarith) (TauCeti.primeCount_nonneg Set.univ x)
+  · exact div_le_div_of_nonneg_right (TauCeti.primeCount_le_add_symmDiff S T x)
+      (TauCeti.primeCount_nonneg Set.univ x)
+
+/-- Two prime sets whose symmetric difference has natural density zero have natural density `δ`
+simultaneously. -/
+theorem hasNaturalDensity_iff_of_symmDiff (h : HasNaturalDensity (symmDiff S T) 0) :
+    HasNaturalDensity S δ ↔ HasNaturalDensity T δ :=
+  ⟨fun hS => hS.of_symmDiff (symmDiff_comm S T ▸ h), fun hT => hT.of_symmDiff h⟩
+
 /-- Changing a set on finitely many prime ideals preserves its natural density. -/
 theorem HasNaturalDensity.of_finite_symmDiff (hT : HasNaturalDensity T δ)
-    (hST : (symmDiff S T).Finite) : HasNaturalDensity S δ := by
-  rw [hasNaturalDensity_def] at hT ⊢
-  let c : ℝ := ∑ v ∈ hST.toFinset, (S.indicator 1 v - T.indicator 1 v)
-  have hzero : Tendsto (fun x : ℝ =>
-      (TauCeti.primeCount K S x - TauCeti.primeCount K T x) /
-        TauCeti.primeCount K (Set.univ : Set (HeightOneSpectrum (𝓞 K))) x) atTop (𝓝 0) := by
-    refine ((TauCeti.tendsto_primeCount_univ_atTop K).const_div_atTop c).congr' ?_
-    filter_upwards [TauCeti.eventually_primeCount_sub_eq hST] with x hx
-    rw [hx]
-  have hsum := hT.add hzero
-  simp only [add_zero] at hsum
-  refine hsum.congr' (Eventually.of_forall fun x => ?_)
-  ring
+    (hST : (symmDiff S T).Finite) : HasNaturalDensity S δ :=
+  hT.of_symmDiff (hasNaturalDensity_of_finite hST)
 
 /-- Two prime sets with finite symmetric difference have natural density `δ` simultaneously. -/
 theorem hasNaturalDensity_iff_of_finite_symmDiff (hST : (symmDiff S T).Finite) :
-    HasNaturalDensity S δ ↔ HasNaturalDensity T δ := by
-  refine ⟨fun h => h.of_finite_symmDiff ?_, fun h => h.of_finite_symmDiff hST⟩
-  simpa [symmDiff_comm] using hST
-
-/-- Every finite set of prime ideals has natural density zero. -/
-theorem hasNaturalDensity_of_finite (hS : S.Finite) : HasNaturalDensity S 0 := by
-  refine hasNaturalDensity_empty.of_finite_symmDiff ?_
-  simpa [Set.symmDiff_def] using hS
+    HasNaturalDensity S δ ↔ HasNaturalDensity T δ :=
+  hasNaturalDensity_iff_of_symmDiff (hasNaturalDensity_of_finite hST)
 
 /-! ### Natural density implies Dirichlet density -/
 
@@ -346,24 +395,71 @@ theorem hasDirichletDensity_of_hasNaturalDensity (h : HasNaturalDensity S δ) :
     filter_upwards [isLowerDirichletDensityBound_iff.1 hlow (ε / 2) (half_pos hε)] with s hs
     linarith
 
-open Asymptotics in
-/-- **Natural density from prime-counting asymptotics.** If the primes of `K` satisfy
-`π(x) = Li(x) + o(x / log x)` and the primes of `S` satisfy `π_S(x) = δ Li(x) + o(x / log x)`,
-then `S` has natural density `δ`. -/
-theorem hasNaturalDensity_of_isLittleO_logIntegral
-    (hS : (fun x ↦ TauCeti.primeCount K S x - δ * TauCeti.Real.logIntegral x) =o[atTop]
-      fun x : ℝ ↦ x / Real.log x)
-    (hU : (fun x ↦ TauCeti.primeCount K Set.univ x - TauCeti.Real.logIntegral x) =o[atTop]
-      fun x : ℝ ↦ x / Real.log x) : HasNaturalDensity S δ := by
-  have hdiff : (fun x ↦ TauCeti.primeCount K S x - δ * TauCeti.primeCount K Set.univ x)
-      =o[atTop] fun x : ℝ ↦ x / Real.log x :=
-    (hS.sub (hU.const_mul_left δ)).congr_left fun x ↦ by ring
-  have hequiv : TauCeti.primeCount K Set.univ ~[atTop] fun x : ℝ ↦ x / Real.log x :=
-    (hU.add TauCeti.Real.logIntegral_isEquivalent_div_log).congr_left fun x ↦ by simp
-  -- `π_S / π - δ = (π_S - δ π) / π → 0`
-  refine hasNaturalDensity_def.mpr <| (zero_add δ ▸
-    (hdiff.trans_isBigO hequiv.isBigO_symm).tendsto_div_nhds_zero.add_const δ).congr' ?_
-  filter_upwards [(TauCeti.tendsto_primeCount_univ_atTop K).eventually_gt_atTop 0] with x hx
-  grind
+/-! ### Comparison with `x / log x` -/
+
+section PrimeIdealTheorem
+
+open Asymptotics
+
+/-- **Natural density against `x / log x`.** By the prime ideal theorem the all-prime count is
+asymptotic to `x / log x`, so a set `S` of prime ideals has natural density `δ` exactly when
+`π_S(x) / (x / log x) → δ`. -/
+theorem hasNaturalDensity_iff_tendsto_div_div_log :
+    HasNaturalDensity S δ ↔
+      Tendsto (fun x : ℝ => TauCeti.primeCount K S x / (x / Real.log x)) atTop (𝓝 δ) := by
+  -- The prime ideal theorem `π_K(x) ~ Li(x)`, from the boundary data of `ζ_K`.
+  have hπ := (TauCeti.primeIdealTheorem_of_boundary
+    (TauCeti.LFunctions.primeIdealVonMangoldtBoundary K)).2.2
+  exact (IsEquivalent.refl.div
+    (hπ.trans TauCeti.Real.logIntegral_isEquivalent_div_log)).tendsto_nhds_iff
+
+/-- **Natural density from prime counting against the logarithmic integral.** A set `S` of prime
+ideals has natural density `δ` exactly when `π_S(x) = δ Li(x) + o(x / log x)`. -/
+theorem hasNaturalDensity_iff_isLittleO_logIntegral :
+    HasNaturalDensity S δ ↔
+      (fun x => TauCeti.primeCount K S x - δ * TauCeti.Real.logIntegral x) =o[atTop]
+        fun x : ℝ => x / Real.log x := by
+  rw [hasNaturalDensity_iff_tendsto_div_div_log,
+    ← isLittleO_sub_mul_iff_tendsto_div (TauCeti.Real.tendsto_div_log_atTop.eventually_ne_atTop 0)]
+  -- `δ Li(x)` and `δ x / log x` differ by `o(x / log x)`.
+  have hLi := TauCeti.Real.logIntegral_isEquivalent_div_log.isLittleO.const_mul_left δ
+  exact ⟨fun h => (h.sub hLi).congr_left fun x => by simp only [Pi.sub_apply]; ring,
+    fun h => (h.add hLi).congr_left fun x => by simp only [Pi.sub_apply]; ring⟩
+
+/-- **Natural density zero.** A set `S` of prime ideals has natural density zero exactly when
+`π_S(x) = o(x / log x)`. -/
+theorem hasNaturalDensity_zero_iff_isLittleO :
+    HasNaturalDensity S 0 ↔ TauCeti.primeCount K S =o[atTop] fun x : ℝ => x / Real.log x := by
+  simp only [hasNaturalDensity_iff_isLittleO_logIntegral, zero_mul, sub_zero]
+
+end PrimeIdealTheorem
 
 end NumberField.Set
+
+open IsDedekindDomain NumberField NumberField.Set
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **The primes of residue degree greater than one have natural density zero**: there are
+`O(√x)` of them of norm at most `x`, which is `o(x / log x)`. -/
+theorem hasNaturalDensity_higherDegreePrimes : HasNaturalDensity (higherDegreePrimes K) 0 :=
+  hasNaturalDensity_zero_iff_isLittleO.2 primeCount_higherDegreePrimes_isLittleO
+
+/-- **The primes of residue degree one have natural density one.** -/
+theorem hasNaturalDensity_compl_higherDegreePrimes :
+    HasNaturalDensity (higherDegreePrimes K)ᶜ 1 := by
+  simpa using hasNaturalDensity_higherDegreePrimes.compl
+
+/-- **Natural density only sees primes of residue degree one.** A set `S` of primes has natural
+density `δ` if and only if its primes of residue degree one do. -/
+theorem hasNaturalDensity_inter_compl_higherDegreePrimes_iff
+    {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} :
+    HasNaturalDensity (S ∩ (higherDegreePrimes K)ᶜ) δ ↔ HasNaturalDensity S δ := by
+  refine hasNaturalDensity_iff_of_symmDiff <|
+    hasNaturalDensity_higherDegreePrimes.zero_of_subset fun 𝔭 h𝔭 => ?_
+  simp only [Set.mem_symmDiff, Set.mem_inter_iff, Set.mem_compl_iff] at h𝔭
+  tauto
+
+end TauCeti
