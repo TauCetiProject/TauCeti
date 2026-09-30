@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
-import TauCeti.RingTheory.Valuation.Archimedean
+import Mathlib.RingTheory.Valuation.RankOne
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Analysis.SpecificLimits.Normed
 
@@ -99,6 +99,27 @@ private theorem toRestrictedSubring_injective (hr : |r| ≤ 1) :
   rw [coe_toRestrictedSubring, coe_toRestrictedSubring] at h'
   exact Subtype.ext (MvPowerSeries.rename_injective (finOneEquiv : Fin 1 ↪ Unit) h')
 
+private theorem toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : R) :
+    toRestrictedSubring hr
+      (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight a) =
+      (⟨PowerSeries.C a, PowerSeries.isRestricted_C r a⟩ :
+        PowerSeries.IsRestricted.subring (R := R) r) := by
+  apply Subtype.ext
+  simpa only [coe_toRestrictedSubring, coe_weightedC, MvPowerSeries.rename_C] using
+    (show MvPowerSeries.C a = (PowerSeries.C a : PowerSeries R) from rfl)
+
+private theorem toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
+    toRestrictedSubring hr
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) =
+      (⟨(PowerSeries.X : PowerSeries R), by
+          rw [PowerSeries.X_eq]
+          exact PowerSeries.isRestricted_monomial r 1 (1 : R)⟩ :
+        PowerSeries.IsRestricted.subring (R := R) r) := by
+  apply Subtype.ext
+  simpa only [coe_toRestrictedSubring, coe_weightedX, MvPowerSeries.rename_X] using
+    (show MvPowerSeries.X (finOneEquiv (0 : Fin 1)) =
+      (PowerSeries.X : PowerSeries R) from rfl)
+
 variable [NormMulClass R] [NormOneClass R]
 
 /-- **The Gauss valuation of radius `r` on `R⟨T⟩`**, for `0 < r ≤ 1`: the valuation
@@ -146,26 +167,16 @@ theorem closedDiscGaussValuation_le_of_forall_norm_coeff_le (hr₀ : 0 < r) (hr�
 theorem closedDiscGaussValuation_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a : R) :
     closedDiscGaussValuation hr₀ hr₁
       (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight a) = ‖a‖₊ := by
-  refine le_antisymm (NNReal.coe_le_coe.mp ?_) (NNReal.coe_le_coe.mp ?_)
-  · refine closedDiscGaussValuation_le_of_forall_norm_coeff_le hr₀ hr₁ fun ν ↦ ?_
-    rw [coe_weightedC, MvPowerSeries.coeff_C]
-    split_ifs <;> simp
-  · simpa using norm_coeff_mul_pow_le_closedDiscGaussValuation hr₀ hr₁
-      (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight a) 0
+  simp [closedDiscGaussValuation, toRestrictedSubring_weightedC]
 
 /-- The Gauss valuation of radius `r` takes the value `r` on the variable. -/
 @[simp]
 theorem coe_closedDiscGaussValuation_weightedX (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     (closedDiscGaussValuation hr₀ hr₁
       (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) : ℝ) = r := by
-  refine le_antisymm ?_ ?_
-  · rw [coe_closedDiscGaussValuation]
-    refine ciSup_le fun n ↦ ?_
-    rcases eq_or_ne n 1 with rfl | hn
-    · simp
-    · simp [MvPowerSeries.coeff_X, hn, hr₀.le]
-  · simpa using norm_coeff_mul_pow_le_closedDiscGaussValuation hr₀ hr₁
-      (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) 1
+  simp [closedDiscGaussValuation, toRestrictedSubring_weightedX,
+    TauCeti.PowerSeries.gaussValuation_X]
+  rfl
 
 /-- The Gauss valuation vanishes only at zero. -/
 @[simp]
@@ -204,7 +215,9 @@ theorem closedDiscGaussValuation_le_one_of_isPowerBounded (hr₀ : 0 < r) (hr₁
     (hf : IsPowerBounded f) : closedDiscGaussValuation hr₀ hr₁ f ≤ 1 := by
   let v := closedDiscGaussValuation (R := K) hr₀ hr₁
   obtain ⟨c, hc₀, hc₁⟩ := NormedField.exists_norm_lt K one_pos
-  let _ : MulArchimedean v.ValueGroup₀ := TauCeti.mulArchimedean_valueGroup₀ v
+  let _ : MulArchimedean v.ValueGroup₀ :=
+    MulArchimedean.comap MonoidWithZeroHom.ValueGroup₀.embedding.toMonoidHom
+      MonoidWithZeroHom.ValueGroup₀.embedding_strictMono
   have hcNil : IsTopologicallyNilpotent c :=
     tendsto_pow_atTop_nhds_zero_of_norm_lt_one hc₁
   have hnil : IsTopologicallyNilpotent
