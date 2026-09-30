@@ -377,7 +377,9 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_smul_single
       Finsupp.single (ULift.up b) (if s then -n else n) := by
   have hmove : diagonalNormalizerQuotientMulEquivWreathProduct c hc q • (a, false) = (b, s) := by
     apply (signedCoordinateEquiv m).injective
-    rw [signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_smul,
+    simp only [WreathProduct.imprimitive_smul, Equiv.Perm.smul_def]
+    rw [signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_apply c hc q
+        (a, false),
       signedCoordinateEquiv_false, h]
   simp only [WreathProduct.imprimitive_smul, Prod.mk.injEq, Equiv.Perm.smul_def] at hmove
   rw [diagonalNormalizerQuotientMulEquivWeylGroup, MulEquiv.trans_apply,

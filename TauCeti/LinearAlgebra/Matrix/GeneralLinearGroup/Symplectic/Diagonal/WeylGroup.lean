@@ -39,7 +39,7 @@ hyperoctahedral group.
 
 All in the namespace `TauCeti.GLSymplecticFin`:
 
-* `signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_smul`: the equivalence
+* `signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_apply`: the equivalence
   is compatible with the actions on the coordinate lines.
 * `diagonalNormalizerQuotientMulEquivWreathProduct_positiveLongRootWeylElement`: the long-root
   Weyl representative `n_{2eᵢ}` is the sign change of the `i`-th coordinate.
@@ -246,7 +246,7 @@ private theorem range_signedQuotientPerm :
 its inverse, the normalizer quotient `N(T)/T` of the paired diagonal torus `T` in `Sp₂ₘ(k)` is the
 hyperoctahedral group `Sym(Bool) ≀ Sym(m)` of signed permutations. The class of a normalizer
 element acts on `Fin m × Bool` as its coordinate permutation does on the coordinate lines; see
-`signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_smul`. -/
+`signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_apply`. -/
 def diagonalNormalizerQuotientMulEquivWreathProduct :
     Subgroup.normalizerQuotient (diagonalTorus k m) ≃* WreathProduct (Equiv.Perm Bool) (Fin m) :=
   ((MonoidHom.ofInjective (signedQuotientPerm_injective u hu)).trans
@@ -266,14 +266,17 @@ private theorem imprimitiveToPerm_diagonalNormalizerQuotientMulEquivWreathProduc
 /-- The hyperoctahedral element attached to a class moves the labelled coordinate lines as the
 class moves the coordinate lines of `Fin (m + m)`. -/
 @[simp]
-theorem signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_smul
+theorem signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_apply
     (q : Subgroup.normalizerQuotient (diagonalTorus k m)) (x : Fin m × Bool) :
-    signedCoordinateEquiv m (diagonalNormalizerQuotientMulEquivWreathProduct u hu q • x) =
+    signedCoordinateEquiv m
+        ((diagonalNormalizerQuotientMulEquivWreathProduct u hu q).right x.1,
+          (diagonalNormalizerQuotientMulEquivWreathProduct u hu q).left
+            ((diagonalNormalizerQuotientMulEquivWreathProduct u hu q).right x.1) x.2) =
       diagonalNormalizerQuotientPerm u hu q (signedCoordinateEquiv m x) := by
   have h := congrArg (fun π : Equiv.Perm (Fin m × Bool) ↦ π x)
     (imprimitiveToPerm_diagonalNormalizerQuotientMulEquivWreathProduct u hu q)
-  simp only [WreathProduct.imprimitiveToPerm_apply] at h
-  rw [WreathProduct.imprimitive_smul, h]
+  simp only [WreathProduct.imprimitiveToPerm_apply, Equiv.Perm.smul_def] at h
+  rw [h]
   simp [signedQuotientPerm]
 
 /-- The class of the long-root Weyl representative `n_{2eᵢ}` is the sign change of the `i`-th
