@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
+public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
+import TauCeti.NumberTheory.LocalField.InertiaDegree
+import TauCeti.NumberTheory.LocalField.Teichmuller
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -27,7 +30,8 @@ It is a closed normal subgroup, and it sits in the exact sequence
 
 given by restriction `TauCeti.restrictMaximalUnramifiedHom K`, which is surjective with kernel
 `I_K`; the unramified quotient `G_K ⧸ I_K` is identified with `Gal(K^{ur}/K)` as a topological
-group. A finite separable subextension of `K^{alg}/K` is unramified exactly when inertia fixes it.
+group. A finite separable subextension of `K^{alg}/K` is unramified exactly when inertia fixes it,
+and on a finite normal subextension `L` inertia restricts into the inertia group `G_0` of `L/K`.
 
 An **arithmetic Frobenius lift** is an element of `G_K` restricting to the arithmetic Frobenius
 `TauCeti.maximalUnramifiedFrobenius` of `K^{ur}/K`; equivalently, it raises every root of every
@@ -47,6 +51,8 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
 
 * `TauCeti.mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self`: `σ ∈ I_K` exactly when `σ` fixes the
   roots of the polynomials `X^{q^f} − X`.
+* `TauCeti.apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one`: `I_K` fixes the roots of unity of
+  order prime to the residue characteristic.
 * `TauCeti.isClosed_inertiaSubgroup`, `TauCeti.inertiaSubgroup_normal`: `I_K` is closed and normal.
 * `TauCeti.restrictMaximalUnramifiedHom_surjective`, `TauCeti.ker_restrictMaximalUnramifiedHom`:
   restriction `G_K → Gal(K^{ur}/K)` is surjective with kernel `I_K`.
@@ -55,6 +61,8 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   with kernel `I_K`.
 * `TauCeti.inertiaSubgroup_le_fixingSubgroup_iff`: a finite separable subextension is unramified
   exactly when `I_K` fixes it.
+* `TauCeti.restrictNormal_mem_lowerRamificationGroup_zero`: the restriction of an element of `I_K`
+  to a finite normal subextension `L` lies in the inertia group `G_0` of `L/K`.
 * `TauCeti.isArithFrobeniusLift_iff`, `TauCeti.exists_isArithFrobeniusLift`,
   `TauCeti.IsArithFrobeniusLift.setOf_eq_leftCoset`: the arithmetic Frobenius lifts are
   characterised by their action on the roots of the polynomials `X^{q^f} − X`, exist, and form a
@@ -117,6 +125,17 @@ theorem mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self {σ : Field.absoluteGalo
       fixedField (Subgroup.zpowers (σ : Gal(AlgebraicClosure K/K))) :=
     adjoin_le_iff.2 fun y ⟨f, hf, hy⟩ ↦ (mem_fixedField_zpowers_iff _ y).2 (h y f hf hy)
   exact (mem_fixedField_zpowers_iff _ x).1 (hle hx)
+
+variable {K} in
+/-- **Inertia fixes the roots of unity of order prime to `p`.** If `m` is prime to the residue
+characteristic of `K`, every `m`-th root of unity of `K^{alg}` lies in the maximal unramified
+extension by `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq_one`, and is therefore fixed by the
+inertia subgroup. -/
+theorem apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one {σ : Gal(AlgebraicClosure K/K)}
+    (hσ : σ ∈ inertiaSubgroup K) {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K]))
+    {ζ : AlgebraicClosure K} (hζ : ζ ^ m = 1) : σ ζ = ζ :=
+  mem_inertiaSubgroup_iff.1 hσ ζ <| mem_maximalUnramifiedExtension_of_pow_eq_one
+    ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 hm.symm) hζ
 
 /-- **The inertia subgroup is closed** in the Krull topology. -/
 theorem isClosed_inertiaSubgroup :
@@ -240,6 +259,41 @@ theorem inertiaSubgroup_le_fixingSubgroup_iff (E : IntermediateField K (Algebrai
   rw [← hfix]
   exact le_inf (((le_iff_le _ E).2 le_rfl).trans (fixedField_antitone h))
     (le_separableClosure K _ E)
+
+/-! ### Inertia at finite level -/
+
+variable {K} in
+/-- **Inertia restricts into `G_0`.** The restriction of an element of the inertia subgroup `I_K`
+to a finite normal subextension `L` of `K^{alg}/K` lies in the inertia group `G_0` of `L/K`. -/
+theorem restrictNormal_mem_lowerRamificationGroup_zero
+    (L : IntermediateField K (AlgebraicClosure K)) [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [ValuativeExtension K L] [FiniteDimensional K L] [Normal K L]
+    {σ : Gal(AlgebraicClosure K/K)} (hσ : σ ∈ inertiaSubgroup K) :
+    AlgEquiv.restrictNormal σ L ∈ LocalFieldsRamification.lowerRamificationGroup K L 0 := by
+  rw [LocalFieldsRamification.mem_lowerRamificationGroup_iff]
+  intro x
+  set τ := AlgEquiv.restrictNormal σ L with hτ_def
+  -- The Teichmüller representative `ω` of the residue of `x` is a root of `X^{q^f} − X`.
+  set ω := teichmullerLift L (IsLocalRing.residue 𝒪[L] x)
+  have hω : τ • ω = ω := by
+    refine Subtype.ext (Subtype.ext ?_)
+    rw [AlgEquiv.coe_smul_integerRing, hτ_def, AlgEquiv.restrictNormal_apply]
+    refine (mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hσ) _ (inertiaDegree K L)
+      inertiaDegree_pos.ne' ?_
+    rw [← natCard_residueField]
+    exact_mod_cast congrArg (fun y : 𝒪[L] ↦ ((y : L) : AlgebraicClosure K))
+      (teichmullerLift_pow_natCard L _)
+  have hxω : x - ω ∈ 𝓂[L] := by
+    rw [← IsLocalRing.residue_eq_zero_iff, map_sub, residue_teichmullerLift, sub_self]
+  -- The Galois action preserves the maximal ideal.
+  have hτxω : τ • (x - ω) ∈ 𝓂[L] := by
+    have h : ((τ.maximalIdealEquiv ⟨x - ω, hxω⟩ : 𝓂[L]) : 𝒪[L]) = τ • (x - ω) :=
+      Subtype.ext (by rw [AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.coe_smul_integerRing])
+    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).2
+  rw [zero_add, Int.toNat_one, pow_one, show τ • x - x = τ • (x - ω) - (x - ω) by
+    rw [smul_sub, hω]
+    ring]
+  exact sub_mem hτxω hxω
 
 /-! ### Arithmetic Frobenius lifts -/
 

@@ -625,29 +625,25 @@ theorem fromSplit_surjective : Function.Surjective (fromSplit E) :=
 conflation splits. -/
 noncomputable def fromSplitEquiv
     (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) :
-    SplitK0 C ≃+ ExactK0 E := by
+    SplitK0 C ≃+ ExactK0 E :=
   let a : AdditiveInvariant E (SplitK0 C) :=
     { obj := SplitK0.of
       map_conflation := fun {S} hS ↦ by
         obtain ⟨s⟩ := h hS
         rw [SplitK0.of_congr s.isoBinaryBiproduct, SplitK0.of_biprod] }
-  apply AddEquiv.ofBijective (fromSplit E)
-  constructor
-  · intro x y hxy
-    have hleft : (lift a).comp (fromSplit E) = AddMonoidHom.id (SplitK0 C) := by
-      apply SplitK0.hom_ext
-      intro X
-      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply]
-    apply_fun lift a at hxy
-    simpa only [← AddMonoidHom.comp_apply, hleft, AddMonoidHom.id_apply] using hxy
-  · exact fromSplit_surjective
+  (fromSplit E).toAddEquiv (lift a)
+    (SplitK0.hom_ext fun X ↦ by
+      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply])
+    (hom_ext fun X ↦ by
+      rw [AddMonoidHom.comp_apply, lift_of, AddMonoidHom.id_apply]
+      exact fromSplit_of X)
 
 /-- The split-to-exact equivalence acts by the canonical comparison homomorphism. -/
 @[simp]
 lemma fromSplitEquiv_apply
     (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (x : SplitK0 C) :
     fromSplitEquiv h x = fromSplit E x :=
-  AddEquiv.ofBijective_apply _ _ _
+  (rfl)
 
 /-- The inverse split-to-exact equivalence sends an object class to its split class. -/
 @[simp]

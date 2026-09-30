@@ -60,9 +60,6 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
 
 ## References
 
-* [Tau Ceti's Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  Layer 2's triangulated `K₀` target and its accompanying
-  [`Suggested.lean` formal sketch](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/Suggested.lean).
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II,
   Exercise II.9.15, where `K₀` of a triangulated category is presented by the distinguished
   triangles, and Section 6 for the presentation engine consumed here.
@@ -80,8 +77,8 @@ section Relations
 
 variable {C : Type u} [Category.{v} C] [HasShift C ℤ] [EssentiallySmall.{w} C]
 
-/-- The relation `[T.obj₂] - [T.obj₁] - [T.obj₃]` attached to a triangle. It is imposed in
-triangulated `K₀` exactly for the distinguished triangles. -/
+/-- The relation `[T.obj₂] - [T.obj₁] - [T.obj₃]` attached to a triangle. Triangulated `K₀`
+imposes it for every distinguished triangle. -/
 noncomputable def triangleRelation (T : Triangle C) : FreeAbelianGroup (ObjectCode C) :=
   freeOf T.obj₂ - freeOf T.obj₁ - freeOf T.obj₃
 
@@ -171,8 +168,7 @@ theorem of_eq_add_of_distTriang {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {h : Z �
 first two terms. -/
 theorem of_eq_sub_of_distTriang {T : Triangle C} (hT : T ∈ distTriang C) :
     (of T.obj₃ : TriangulatedK0 C) = of T.obj₂ - of T.obj₁ := by
-  rw [of_distTriang hT]
-  abel
+  rw [of_distTriang hT, add_sub_cancel_left]
 
 /-- The class of the zero object vanishes: it is the third term of the contractible triangle. -/
 @[simp]
@@ -271,7 +267,7 @@ theorem AdditiveInvariant.map_iso (a : AdditiveInvariant C G) ⦃X Y : C⦄ (e :
     (Triangle.distinguished_iff_of_isZero₃ _ (isZero_zero C)).2 (by dsimp; infer_instance)
   simpa [h0] using (a.map_distTriang hT).symm
 
-private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant C G) :
+private def AdditiveInvariant.toPresented (a : AdditiveInvariant C G) :
     PresentedK0.AdditiveInvariant (triangulatedRelations C) G where
   obj := a.obj
   map_iso := a.map_iso
@@ -280,10 +276,6 @@ private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant C
     rw [map_triangleRelation_eq_zero_iff, freeLift_freeOf a.map_iso,
       freeLift_freeOf a.map_iso, freeLift_freeOf a.map_iso]
     exact a.map_distTriang hT
-
-@[simp] private lemma AdditiveInvariant.toPresented_obj (a : AdditiveInvariant C G) :
-    a.toPresented.obj = a.obj :=
-  (rfl)
 
 /-- The homomorphism out of triangulated `K₀` induced by a triangle-additive invariant. -/
 noncomputable def lift (a : AdditiveInvariant C G) : TriangulatedK0 C →+ G :=

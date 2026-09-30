@@ -42,6 +42,8 @@ the scalar by which `φ` acts on the class of `x_0` in the abelianization `ℤ_p
 
 * `TauCeti.Peripheral.topologicalClosure_closure_range_basis`: the basis generates `F`
   topologically.
+* `TauCeti.Peripheral.topologicalClosure_closure_range_peripheralTuple_comp_succ`: so does the
+  peripheral tuple of the basis without its first entry.
 * `TauCeti.Peripheral.hom_ext_basis`: continuous homomorphisms out of `F` into a Hausdorff monoid
   that agree on the basis are equal.
 * `TauCeti.Peripheral.prod_mul_cusp`, `TauCeti.Peripheral.prod_ofFn_peripheralTuple`: the
@@ -160,6 +162,44 @@ theorem map_peripheralTuple {M : Type*} [FunLike M G H] [MonoidHomClass M G H] (
   | cast i => simp
 
 end Cusp
+
+section Generation
+
+variable {p r : ℕ} {F : Type*} [Group F] [TopologicalSpace F] [IsTopologicalGroup F]
+
+/-- The peripheral tuple of the basis without its first entry still generates `F` topologically:
+the first entry is recovered from the others through the relation `prod_mul_cusp`. -/
+theorem topologicalClosure_closure_range_peripheralTuple_comp_succ
+    (e : F ≃ₜ* freeProP p (Fin r)) :
+    (Subgroup.closure (Set.range (peripheralTuple (basis e) ∘ Fin.succ))).topologicalClosure =
+      ⊤ := by
+  let H := Subgroup.closure (Set.range (peripheralTuple (basis e) ∘ Fin.succ))
+  apply top_le_iff.mp
+  rw [← topologicalClosure_closure_range_basis e]
+  refine Subgroup.topologicalClosure_mono ((Subgroup.closure_le H).mpr ?_)
+  rintro _ ⟨i, rfl⟩
+  cases r with
+  | zero => exact i.elim0
+  | succ k =>
+    have hcusp : cusp (basis e) ∈ H :=
+      Subgroup.subset_closure ⟨Fin.last k, by simp [Fin.succ_last]⟩
+    have hsucc (j : Fin k) : basis e j.succ ∈ H :=
+      Subgroup.subset_closure
+        ⟨j.castSucc, by rw [Function.comp_apply, Fin.succ_castSucc, peripheralTuple_castSucc]⟩
+    induction i using Fin.cases with
+    | succ j => exact hsucc j
+    | zero =>
+      have htail : (List.ofFn fun j : Fin k ↦ basis e j.succ).prod ∈ H := by
+        apply Subgroup.list_prod_mem
+        intro y hy
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+        exact hsucc j
+      have hrel := prod_mul_cusp (basis e)
+      rw [List.ofFn_succ, List.prod_cons, mul_assoc] at hrel
+      rw [eq_inv_of_mul_eq_one_left hrel]
+      exact H.inv_mem (H.mul_mem htail hcusp)
+
+end Generation
 
 section IsPeripheralAut
 

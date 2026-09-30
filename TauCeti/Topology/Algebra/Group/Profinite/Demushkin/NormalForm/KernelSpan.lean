@@ -36,8 +36,9 @@ must be taken inside its kernel.
 ## Main results
 
 * `TauCeti.freeProP.degreeOneDeriv_gradedMk_demushkinWordNeTwo_odd`,
-  `TauCeti.freeProP.degreeOneDeriv_gradedMk_demushkinWordNeTwo_even`: the partial derivatives of
-  the class of the word at the generators other than `x_0`.
+  `TauCeti.freeProP.degreeOneDeriv_gradedMk_demushkinWordNeTwo_even`,
+  `TauCeti.freeProP.degreeOneDeriv_gradedMk_demushkinWordNeTwo_zero`: the partial derivatives of
+  the class of the word at the generators.
 * `gradedPieceOf_exponentSumKer_demushkinWordNeTwo_eq_map_basisModificationDelta_sup` (in
   `TauCeti.freeProP`): the constrained span statement at this normal form.
 
@@ -114,6 +115,30 @@ theorem degreeOneDeriv_gradedMk_demushkinWordNeTwo_odd {q : ℕ} (hq : p ∣ q) 
       (Or.inr rfl),
     degreeOneDeriv_gradedBracket_gradedMkZero_of_right (Fin.mk_lt_mk.2 (Nat.lt_succ_self _)),
     freeProPGen_of_lt p (show 2 * a < n by omega)]
+
+/-- **The derivative of the class of `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` at the generator `x_0`** (in
+the `0`-based indexing of `Fin n`), for `n ≥ 2`: `∂_0 ρ = (q / p) • (p choose 2) • ξ_0 + ξ_1`, the
+first term from the `p`-power factor `x_0^q` and the second from the bracket `[ξ_0, ξ_1]`. -/
+theorem degreeOneDeriv_gradedMk_demushkinWordNeTwo_zero {q : ℕ} (hq : p ∣ q) (hn1 : 1 < n) :
+    degreeOneDeriv p (Fin n) ⟨0, by omega⟩ (gradedMk p (freeProP p (Fin n)) 1
+        ⟨demushkinWordNeTwo q n (freeProPGen p n),
+          demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩) =
+      (q / p) • p.choose 2 • gradedMkZero p (freeProP p (Fin n)) (of ⟨0, by omega⟩) +
+        gradedMkZero p (freeProP p (Fin n)) (of ⟨1, hn1⟩) := by
+  have hn0 : 0 < n := by omega
+  -- The derivative at `x_0` of the first bracket `[ξ_0, ξ_1]` is `ξ_1`.
+  have key : degreeOneDeriv p (Fin n) ⟨0, hn0⟩ (gradedBracket p (freeProP p (Fin n)) 0 0
+      (gradedMkZero p (freeProP p (Fin n)) (freeProPGen p n (2 * 0)))
+      (gradedMkZero p (freeProP p (Fin n)) (freeProPGen p n (2 * 0 + 1)))) =
+      gradedMkZero p (freeProP p (Fin n)) (of ⟨1, hn1⟩) := by
+    rw [freeProPGen_of_lt p (i := 2 * 0) hn0, freeProPGen_of_lt p (i := 2 * 0 + 1) hn1]
+    exact degreeOneDeriv_gradedBracket_gradedMkZero_of_left (Fin.mk_lt_mk.2 (by omega))
+  rw [gradedMk_demushkinWordNeTwo hq, map_add, map_nsmul, map_sum,
+    freeProPGen_of_lt p hn0, degreeOneDeriv_gradedPow_gradedMkZero_of_self,
+    Finset.sum_eq_single 0 (fun b hb hb0 ↦ degreeOneDeriv_gradedBracket_freeProPGen_of_ne _
+      (by rw [Finset.mem_range] at hb; omega) (by rw [Fin.val_mk]; omega)
+      (by rw [Fin.val_mk]; omega))
+      fun h ↦ (h (Finset.mem_range.2 (by omega))).elim, key]
 
 /-- **Every generator class other than `ξ_1` is a combination of the derivatives at the generators
 other than `x_0`** (in the `0`-based indexing of `Fin n`), for the class of

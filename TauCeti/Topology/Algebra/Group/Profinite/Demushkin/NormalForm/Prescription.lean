@@ -225,6 +225,31 @@ theorem IsCrossedHom.map_demushkinWordTwoEven (a f n : ℕ) (x : ℕ → H) :
     labuteComm_eq_one, Units.val_one]
   ring
 
+/-- **A crossed homomorphism kills the `q = 2`, `n` even word at the tabulated character values.**
+For `n ≥ 4` and a tuple `x` with `χ (x 1) * (1 + a) = -1`, `χ (x 3) * (1 - 2^f) = 1` and
+`χ (x i) = 1` for `i ≠ 1, 3` (the `0`-based indices of the tuple: `χ(x₂) = -(1 + a)⁻¹`,
+`χ(x₄) = (1 - 2^f)⁻¹` and `χ(x_i) = 1` otherwise), the value of a crossed homomorphism `F` on
+`x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` is
+`(2 + a + χ(x₂)⁻¹ - 1) F (x₁) + (2^f + χ(x₄)⁻¹ - 1) F (x₃) = 0`. -/
+theorem IsCrossedHom.map_demushkinWordTwoEven_eq_zero {a f n : ℕ} (hn : 4 ≤ n) {x : ℕ → H}
+    (h₁ : (χ (x 1) : R) * (1 + a) = -1) (h₃ : (χ (x 3) : R) * (1 - 2 ^ f) = 1)
+    (h : ∀ i, i ≠ 1 → i ≠ 3 → χ (x i) = 1) : F (demushkinWordTwoEven a f n x) = 0 := by
+  have h0 := h 0 zero_ne_one (by omega)
+  have h2 := h 2 (by omega) (by omega)
+  -- `χ(x₂) F (x₁, x₂) = (1 - χ(x₂)) F x₁` and `χ(x₄) F (x₃, x₄) = (1 - χ(x₄)) F x₃`.
+  have hc01 := hF.mul_mul_map_labuteComm (x 0) (x 1)
+  rw [h0, Units.val_one, one_mul, sub_self, zero_mul, add_zero] at hc01
+  have hc23 := hF.mul_mul_map_labuteComm (x 2) (x 3)
+  rw [h2, Units.val_one, one_mul, sub_self, zero_mul, add_zero] at hc23
+  rw [hF.map_demushkinWordTwoEven, h0, h2, Units.val_one, Finset.sum_eq_single 0 (fun i _ hi ↦
+      hF.map_labuteComm_eq_zero_of_eq_one (h _ (by omega) (by omega)) (h _ (by omega) (by omega)))
+    fun h0' ↦ absurd (mem_range.2 (by omega)) h0']
+  simp only [Nat.mul_zero, Nat.zero_add, one_pow, one_mul, sum_const, card_range, nsmul_eq_mul,
+    Nat.cast_pow, Nat.cast_ofNat, Nat.cast_add]
+  refine (Units.mul_right_eq_zero (χ (x 3))).1 ((Units.mul_right_eq_zero (χ (x 1))).1 ?_)
+  linear_combination (χ (x 1) : R) * hc23 + (χ (x 3) : R) * hc01 -
+    (χ (x 1) : R) * F (x 2) * h₃ + (χ (x 3) : R) * F (x 0) * h₁
+
 /-- The value of a crossed homomorphism on the rank-two `q = 2` normal-form word
 `x₁^{2+a} (x₁, x₂)`. -/
 theorem IsCrossedHom.map_demushkinWordTwoRankTwo (a : ℕ) (x : ℕ → H) :
@@ -782,32 +807,17 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoEven_of_apply_eq
     (h : ∀ i, i ≠ 1 → i ≠ 3 → χ (presentedProPGen 2 n _ i) = 1) : HasPrescriptionProperty χ := by
   refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
     fun F hFc hF r hr ↦ ?_
-  have h0 := h 0 zero_ne_one (by omega)
-  have h2 := h 2 (by omega) (by omega)
-  -- `χ(x₂) F (x₁, x₂) = (1 - χ(x₂)) F x₁` and `χ(x₄) F (x₃, x₄) = (1 - χ(x₄)) F x₃`.
-  have hc01 := hF.mul_mul_map_labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1)
-  rw [presentedProP.comp_mk_freeProPGen, presentedProP.comp_mk_freeProPGen, h0, Units.val_one,
-    one_mul, sub_self, zero_mul, add_zero] at hc01
-  rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoEven, presentedProP.comp_mk_freeProPGen,
-    presentedProP.comp_mk_freeProPGen, h0, h2, Units.val_one, Finset.sum_eq_single 0 (fun i _ hi ↦
-      hF.map_labuteComm_eq_zero_of_eq_one
-        (by rw [presentedProP.comp_mk_freeProPGen]; exact h _ (by omega) (by omega))
-        (by rw [presentedProP.comp_mk_freeProPGen]; exact h _ (by omega) (by omega))) fun h0' ↦ ?_]
-  · have hc23 := hF.mul_mul_map_labuteComm (freeProPGen 2 n 2) (freeProPGen 2 n 3)
-    rw [presentedProP.comp_mk_freeProPGen, presentedProP.comp_mk_freeProPGen, h2, Units.val_one,
-      one_mul, sub_self, zero_mul, add_zero] at hc23
-    simp only [Nat.mul_zero, Nat.zero_add, one_pow, one_mul, sum_const, card_range, nsmul_eq_mul,
-      Nat.cast_pow, Nat.cast_ofNat, Nat.cast_add]
-    refine (Units.mul_right_eq_zero (χ (presentedProPGen 2 n _ 3))).1
-      ((Units.mul_right_eq_zero (χ (presentedProPGen 2 n _ 1))).1 ?_)
-    linear_combination (χ (presentedProPGen 2 n _ 1) : ℤ_[2]) * hc23 +
-      (χ (presentedProPGen 2 n _ 3) : ℤ_[2]) * hc01 -
-      (χ (presentedProPGen 2 n _ 1) : ℤ_[2]) * F (freeProPGen 2 n 2) * h₃ +
-      (χ (presentedProPGen 2 n _ 3) : ℤ_[2]) * F (freeProPGen 2 n 0) * h₁
-  · -- For `n ≤ 3` the generator `x₄` is `1`, and `(x₃, 1) = 1`.
-    rw [mem_range, not_lt, Nat.le_zero] at h0'
-    rw [freeProPGen_eq_one_of_le 2 (by omega : n ≤ 2 * 0 + 3)]
-    simp [labuteComm_def, hF.map_one]
+  rw [Set.mem_singleton_iff.mp hr]
+  rcases le_or_gt 4 n with hn | hn
+  · exact hF.map_demushkinWordTwoEven_eq_zero hn
+      (by rw [presentedProP.comp_mk_freeProPGen]; exact h₁)
+      (by rw [presentedProP.comp_mk_freeProPGen]; exact h₃)
+      fun i hi₁ hi₃ ↦ by rw [presentedProP.comp_mk_freeProPGen]; exact h i hi₁ hi₃
+  · -- For `n ≤ 3` the generator `x₄` is `1`, and the clause `χ(x₄)(1 - 2^f) = 1` is contradictory.
+    exfalso
+    rw [presentedProPGen_eq_one_of_le 2 n _ (by omega), map_one, Units.val_one, one_mul,
+      sub_eq_self] at h₃
+    exact pow_ne_zero f two_ne_zero h₃
 
 /-- **The prescription property forces the tabulated values, `q = 2` and `n` even** (Labute,
 Theorem 4, the forced computation on a derivation). For `2 ∣ a`, `f ≥ 1` and `n ≥ 4` even, a

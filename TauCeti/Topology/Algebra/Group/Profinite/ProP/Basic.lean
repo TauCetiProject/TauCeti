@@ -46,6 +46,8 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `IsProP.exists_openNormalSubgroup_le_pow_dvd_relIndex`: in an infinite pro-`p` group every open
   normal subgroup contains open normal subgroups of arbitrarily large `p`-power relative index.
 * `isProP_congr`: the predicate is invariant under topological group isomorphism.
+* `Subgroup.isProP_subgroupOf_iff`: for `H ≤ K`, the predicate for `H` does not depend on whether
+  `H` is viewed inside `G` or inside `K`.
 
 ## References
 
@@ -212,5 +214,15 @@ end IsProP
 theorem isProP_congr {G : Type u} {H : Type v} [Group G] [TopologicalSpace G]
     [Group H] [TopologicalSpace H] (e : G ≃ₜ* H) : IsProP p G ↔ IsProP p H :=
   ⟨fun hG ↦ hG.of_equiv e, fun hH ↦ hH.of_equiv e.symm⟩
+
+/-- For subgroups `H ≤ K` of a topological group, `H` is pro-`p` exactly when it is pro-`p` as a
+subgroup of `K`: `Subgroup.subgroupOfEquivOfLe` is a homeomorphism for the subspace
+topologies. -/
+theorem _root_.Subgroup.isProP_subgroupOf_iff {G : Type u} [Group G] [TopologicalSpace G]
+    {H K : Subgroup G} (hHK : H ≤ K) : IsProP p (H.subgroupOf K) ↔ IsProP p H :=
+  isProP_congr
+    { toMulEquiv := Subgroup.subgroupOfEquivOfLe hHK
+      continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
 
 end TauCeti
