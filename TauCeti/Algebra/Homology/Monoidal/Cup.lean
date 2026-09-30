@@ -221,28 +221,32 @@ lemma tensorHom_f_comp_tensorCochain {A' B' : ChainComplex C ℕ} (f : A' ⟶ A)
 
 variable {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
 
-private lemma tensorCochain_add_left {p q : ℕ} (φ φ' : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
+/-- The tensor product of cochains is additive in the first cochain. -/
+lemma tensorCochain_add_left {p q : ℕ} (φ φ' : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
     tensorCochain μ (φ + φ') ψ n = tensorCochain μ φ ψ n + tensorCochain μ φ' ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
   rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.add_tensor, Preadditive.add_comp]
 
-private lemma tensorCochain_add_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ ψ' : B.X q ⟶ N) (n : ℕ) :
+/-- The tensor product of cochains is additive in the second cochain. -/
+lemma tensorCochain_add_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ ψ' : B.X q ⟶ N) (n : ℕ) :
     tensorCochain μ φ (ψ + ψ') n = tensorCochain μ φ ψ n + tensorCochain μ φ ψ' n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
   rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.tensor_add, Preadditive.add_comp]
 
-private lemma tensorCochain_smul_left {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
+/-- The tensor product of cochains is `k`-linear in the first cochain. -/
+lemma tensorCochain_smul_left {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     (n : ℕ) : tensorCochain μ (r • φ) ψ n = r • tensorCochain μ φ ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
   rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Linear.comp_smul, ιTensorObj_tensorCochain_extend, extendCochain_smul,
     smul_tensorHom, Linear.smul_comp]
 
-private lemma tensorCochain_smul_right {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
+/-- The tensor product of cochains is `k`-linear in the second cochain. -/
+lemma tensorCochain_smul_right {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     (n : ℕ) : tensorCochain μ φ (r • ψ) n = r • tensorCochain μ φ ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
   rw [ιMapBifunctor_eq_ιTensorObj]
