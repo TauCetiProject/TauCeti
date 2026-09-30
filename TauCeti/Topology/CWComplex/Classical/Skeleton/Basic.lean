@@ -12,6 +12,8 @@ public import Mathlib.Topology.Category.TopCat.Basic
 # Skeletal objects of relative CW complexes
 
 The stages of a relative CW complex's skeletal filtration, bundled as topological spaces.
+Characteristic-map lemmas describe how open cells sit outside the lower skeleton, how their
+coordinates are unique, and how cells account for points in consecutive skeleta.
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
