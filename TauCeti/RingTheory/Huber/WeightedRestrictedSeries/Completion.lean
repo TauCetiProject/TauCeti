@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Completion
-public import Mathlib.Topology.Algebra.UniformRing
+public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
 # The completed restricted power-series algebra `A⟨X₁,…,Xₖ⟩`
@@ -333,8 +333,7 @@ theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv :
   let _ := IsTopologicalAddGroup.rightUniformSpace A
   let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
-  exact UniformSpace.Completion.continuous_map.congr fun x ↦
-    (UniformSpace.Completion.mapRingEquiv_apply _ _ _ x).symm
+  exact UniformSpace.Completion.continuous_mapRingEquiv _ _ _
 
 /-- Its inverse is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv_symm :
@@ -344,8 +343,7 @@ theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv_symm :
   let _ := IsTopologicalAddGroup.rightUniformSpace A
   let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
-  exact UniformSpace.Completion.continuous_map.congr fun x ↦
-    (UniformSpace.Completion.mapRingEquiv_symm_apply _ _ _ x).symm
+  exact UniformSpace.Completion.continuous_mapRingEquiv_symm _ _ _
 
 end ZeroVariables
 

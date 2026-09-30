@@ -27,9 +27,12 @@ group is a continuous image of the free pro-`p` group on any finite type with at
 
 * `TauCeti.freeProP`: the free pro-`p` group on a type.
 * `TauCeti.freeProP.of`: its canonical generators.
+* `TauCeti.freeProPGen`: the generators of `freeProP p (Fin n)` indexed by `ℕ`, with value `1` out
+  of range.
 * `TauCeti.freeProP.fromFreeGroup`: the canonical homomorphism from the discrete free group.
 * `TauCeti.freeProP.lift`: extension from the generators.
 * `TauCeti.freeProP.map`: functoriality in the generating type.
+* `TauCeti.freeProP.congr`: the topological isomorphism induced by a bijection of generating types.
 * `TauCeti.freeProC.equivFreeProP`: comparison with the finite-`p` specialization of `freeProC`.
 
 ## Main results
@@ -364,6 +367,53 @@ theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
   obtain ⟨x, rfl⟩ := (freeProC.equivFreeProP p X).symm.surjective cx
   exact ⟨x, rfl⟩
 
+/-- **The isomorphism of free pro-`p` groups induced by a bijection of the generating types.** It
+sends the generator at `x` to the generator at `σ x`; its inverse is induced by `σ⁻¹`. -/
+noncomputable def congr (σ : X ≃ Y) : freeProP p X ≃ₜ* freeProP p Y where
+  toFun := map σ
+  invFun := map σ.symm
+  left_inv y := by
+    have h : (map (p := p) σ.symm).comp (map σ) = ContinuousMonoidHom.id _ := by
+      rw [← map_comp, Equiv.symm_comp_self, map_id]
+    simpa using DFunLike.congr_fun h y
+  right_inv y := by
+    have h : (map (p := p) σ).comp (map σ.symm) = ContinuousMonoidHom.id _ := by
+      rw [← map_comp, Equiv.self_comp_symm, map_id]
+    simpa using DFunLike.congr_fun h y
+  map_mul' := map_mul _
+  continuous_toFun := (map σ).continuous
+  continuous_invFun := (map σ.symm).continuous
+
+/-- The isomorphism induced by a bijection of generating types is the induced homomorphism
+`TauCeti.freeProP.map`. -/
+theorem coe_congr (σ : X ≃ Y) : ⇑(congr (p := p) σ) = ⇑(map (p := p) σ) := (rfl)
+
+/-- The inverse of the isomorphism induced by a bijection is induced by the inverse bijection. -/
+@[simp]
+theorem congr_symm (σ : X ≃ Y) : (congr (p := p) σ).symm = congr σ.symm :=
+  ContinuousMulEquiv.ext fun _ ↦ rfl
+
+/-- The isomorphism induced by the identity bijection is the identity. -/
+@[simp]
+theorem congr_refl : congr (p := p) (Equiv.refl X) = ContinuousMulEquiv.refl (freeProP p X) :=
+  ContinuousMulEquiv.ext fun y ↦ by
+    rw [coe_congr, Equiv.coe_refl, map_id]
+    rfl
+
+/-- The isomorphisms induced by bijections of generating types compose functorially. -/
+@[simp]
+theorem congr_trans (σ : X ≃ Y) (τ : Y ≃ Z) :
+    congr (p := p) (σ.trans τ) = (congr σ).trans (congr τ) :=
+  ContinuousMulEquiv.ext fun y ↦ by
+    rw [ContinuousMulEquiv.trans_apply, coe_congr, coe_congr, coe_congr, Equiv.coe_trans, map_comp]
+    rfl
+
+/-- The isomorphism induced by a bijection of generating types sends the generator at `x` to the
+generator at `σ x`. -/
+@[simp]
+theorem congr_of (σ : X ≃ Y) (x : X) : congr (p := p) σ (of x) = of (σ x) := by
+  rw [coe_congr, map_of]
+
 end Map
 
 end freeProP
@@ -461,5 +511,83 @@ theorem IsProP.exists_surjective_freeProP (hG : IsProP p G) (h : IsTopologically
   rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hgen, Subgroup.coe_top]
 
 end Rank
+
+/-! ## The generators of a free pro-`p` group on `Fin n`, indexed by `ℕ` -/
+
+section NatIndexed
+
+variable (p : ℕ) {n : ℕ}
+
+variable (n) in
+/-- The generators of the free pro-`p` group on `Fin n`, indexed by `ℕ`, with value `1` out of
+range. A word in the generators written on such a tuple, such as a relator of a presentation on
+`Fin n`, carries no index-bound side conditions. -/
+noncomputable def freeProPGen (i : ℕ) : freeProP p (Fin n) :=
+  if h : i < n then freeProP.of ⟨i, h⟩ else 1
+
+/-- In range, `freeProPGen p n i` is the `i`-th free generator. -/
+@[simp]
+theorem freeProPGen_of_lt {i : ℕ} (h : i < n) : freeProPGen p n i = freeProP.of ⟨i, h⟩ := by
+  simp [freeProPGen, h]
+
+/-- Out of range, `freeProPGen p n i` is `1`. -/
+@[simp]
+theorem freeProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : freeProPGen p n i = 1 := by
+  simp [freeProPGen, not_lt.mpr h]
+
+/-- On the values of `Fin n`, `freeProPGen p n` is the canonical generator. -/
+theorem freeProPGen_val (i : Fin n) : freeProPGen p n i = freeProP.of i :=
+  freeProPGen_of_lt p i.isLt
+
+variable (n) in
+/-- The `ℕ`-indexed generators take finitely many values: the canonical generators and `1`. -/
+theorem finite_range_freeProPGen : (Set.range (freeProPGen p n)).Finite := by
+  refine ((Set.finite_range (freeProP.of : Fin n → freeProP p (Fin n))).insert 1).subset ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases h : i < n
+  · exact Or.inr ⟨⟨i, h⟩, (freeProPGen_of_lt p h).symm⟩
+  · exact Or.inl (freeProPGen_eq_one_of_le p (not_lt.mp h))
+
+/-- A set containing every `ℕ`-indexed generator generates the free pro-`p` group topologically. -/
+theorem topologicalClosure_closure_eq_top_of_range_freeProPGen_subset {s : Set (freeProP p (Fin n))}
+    (hs : Set.range (freeProPGen p n) ⊆ s) : (Subgroup.closure s).topologicalClosure = ⊤ := by
+  refine top_le_iff.1 ?_
+  rw [← freeProP.topologicalClosure_closure_range_of_eq_top p (Fin n)]
+  refine Subgroup.topologicalClosure_mono (Subgroup.closure_mono ?_)
+  rintro _ ⟨i, rfl⟩
+  exact hs ⟨i, freeProPGen_val p i⟩
+
+/-- Two marked generators `x_j`, `x_k` together with the remaining generators `x_i`, `i ≠ j, k`,
+generate the free pro-`p` group topologically. -/
+theorem topologicalClosure_closure_insert_insert_image_freeProPGen_eq_top (j k : ℕ) :
+    (Subgroup.closure (insert (freeProPGen p n j) (insert (freeProPGen p n k)
+      (freeProPGen p n '' {i | i ≠ j ∧ i ≠ k})))).topologicalClosure = ⊤ := by
+  refine topologicalClosure_closure_eq_top_of_range_freeProPGen_subset p ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases hij : i = j
+  · exact Or.inl (by rw [hij])
+  by_cases hik : i = k
+  · exact Or.inr (Or.inl (by rw [hik]))
+  exact Or.inr (Or.inr ⟨i, ⟨hij, hik⟩, rfl⟩)
+
+/-- The value of a homomorphism on the `ℕ`-indexed generators. -/
+theorem map_freeProPGen {K F : Type*} [Group K] [FunLike F (freeProP p (Fin n)) K]
+    [MonoidHomClass F (freeProP p (Fin n)) K] (φ : F) (i : ℕ) :
+    φ (freeProPGen p n i) = if h : i < n then φ (freeProP.of ⟨i, h⟩) else 1 := by
+  split_ifs with h
+  · rw [freeProPGen_of_lt p h]
+  · rw [freeProPGen_eq_one_of_le p (not_lt.mp h), map_one]
+
+/-- The value of the universal map on the `ℕ`-indexed generators: the prescribed value in range,
+`1` out of range. -/
+theorem freeProP.lift_freeProPGen {P : Type} [Group P] [TopologicalSpace P] [IsTopologicalGroup P]
+    [CompactSpace P] [TotallyDisconnectedSpace P] (hP : IsProP p P) (g : Fin n → P) (i : ℕ) :
+    freeProP.lift hP g (freeProPGen p n i) = if h : i < n then g ⟨i, h⟩ else 1 := by
+  rw [map_freeProPGen]
+  split_ifs
+  · rw [freeProP.lift_of]
+  · rfl
+
+end NatIndexed
 
 end TauCeti

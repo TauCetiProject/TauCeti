@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Analysis.Fredholm.Estimate
+public import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
 # A map with upper semi-Fredholm derivative is proper near the point

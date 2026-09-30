@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.OrderOf
+import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!

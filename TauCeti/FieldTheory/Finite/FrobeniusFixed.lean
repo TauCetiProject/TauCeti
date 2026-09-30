@@ -131,16 +131,16 @@ variable {K L : Type*} [Field K] [Finite K]
 
 section DivisionRing
 
-variable [DivisionRing L] [Algebra K L]
+variable [DivisionRing L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
 /-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
 `L` has `q²` elements, so `a ^ (q²) = a`.
 
 This is deliberately not a simp lemma: in a context with a `Fintype K` instance, `Nat.card K`
 is not in simp normal form. -/
-theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
+theorem pow_natCard_pow_natCard (a : L) :
     (a ^ Nat.card K) ^ Nat.card K = a := by
-  have : Module.Finite K L := Module.finite_of_finrank_eq_succ (n := 1) h2
+  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two K L
   have : Finite L := Module.finite_of_finite K
   let _ := Fintype.ofFinite L
   have hcard : Nat.card L = Nat.card K ^ 2 := by
@@ -150,15 +150,15 @@ theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
 
 /-- **In a quadratic extension the `q`-power map is an involution on units**, the units-level
 form of `TauCeti.FiniteField.pow_natCard_pow_natCard`. -/
-theorem units_pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : Lˣ) :
+theorem units_pow_natCard_pow_natCard (a : Lˣ) :
     (a ^ Nat.card K) ^ Nat.card K = a :=
   Units.ext (by
     rw [Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
-    exact pow_natCard_pow_natCard h2 (a : L))
+    exact pow_natCard_pow_natCard (a : L))
 
 end DivisionRing
 
-variable [Field L] [Algebra K L]
+variable [Field L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
 /-- **In a quadratic extension the `q`-power map on units is an involution**, as an equality of
 monoid homomorphisms `Lˣ →* Lˣ`.  This is
@@ -168,18 +168,18 @@ the form in which it cancels against a character `Lˣ →* M` precomposed with t
 As for its pointwise forms, this is deliberately not a simp lemma: in a context with a `Fintype K`
 instance, `Nat.card K` is not in simp normal form, so the exponent on the left-hand side here never
 survives simp normalization. -/
-theorem units_powMonoidHom_comp_powMonoidHom (h2 : Module.finrank K L = 2) :
+theorem units_powMonoidHom_comp_powMonoidHom :
     (powMonoidHom (Nat.card K) : Lˣ →* Lˣ).comp (powMonoidHom (Nat.card K)) = MonoidHom.id Lˣ :=
-  MonoidHom.ext fun a => units_pow_natCard_pow_natCard h2 a
+  MonoidHom.ext fun a => units_pow_natCard_pow_natCard a
 
 /-- **In a quadratic extension the `q`-th power of an element outside the base field is again
 outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to
 be fixed. -/
-theorem pow_natCard_notMem_range_algebraMap (h2 : Module.finrank K L = 2) {a : L}
+theorem pow_natCard_notMem_range_algebraMap {a : L}
     (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ∉ Set.range (algebraMap K L) := by
   intro hmem
   have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
-  rw [pow_natCard_pow_natCard h2] at h1
+  rw [pow_natCard_pow_natCard] at h1
   exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h1.symm)
 
 end Quadratic

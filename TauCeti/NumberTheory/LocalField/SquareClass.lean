@@ -7,17 +7,22 @@ module
 
 public import TauCeti.Algebra.Group.ElementaryTwoQuotient.KleinFour
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
+public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
-# The square classes of a nonarchimedean local field
+# The number of square classes of a nonarchimedean local field
 
 Let `K` be a nonarchimedean local field with normalized valuation `v_K` and uniformizer `π`.
-Away from residue characteristic two the square-class group `Kˣ ⧸ (Kˣ)²` has four elements, and
-for a nonsquare `u` of even valuation the
-four classes are represented by
+If `K` is a finite extension of `ℚ_[2]`, then
+
+`#(Kˣ/(Kˣ)²) = 4 · #𝓀[K] ^ e(K/ℚ_[2])`.
+
+In particular `ℚ_[2]` has eight square classes. Away from residue characteristic two the
+square-class group has four elements, and for a nonsquare `u` of even valuation the four classes
+are represented by
 
 `1`, `u`, `π`, `u π`.
 
@@ -30,6 +35,15 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 
 ## Main results
 
+* `TauCeti.card_squareClass` and `TauCeti.natCard_squareClassGroup`: if `2` is nonzero, there
+  are `4 · #𝓀[K] ^ v_K(2)` square classes. These read the count `TauCeti.card_squareClasses`
+  on `Kˣ ⧸ (powMonoidHom 2).range` on the literal quotient by squares and on the square-class
+  group.
+* `TauCeti.card_squareClasses_dyadic`: a finite extension of `ℚ_[2]` has
+  `4 · #𝓀[K] ^ e(K/ℚ_[2])` square classes.
+* `TauCeti.card_squareClass_dyadic` and `TauCeti.natCard_squareClassGroup_dyadic`: the same count
+  on the literal quotient by squares and on the square-class group.
+* `TauCeti.card_squareClasses_padic_two`: `ℚ_[2]` has eight square classes.
 * `TauCeti.card_squareClass_of_odd`: away from residue
   characteristic two the literal quotient by squares has four elements.
 * `TauCeti.natCard_squareClassGroup_of_isUnit_two`: away from residue characteristic two the
@@ -63,6 +77,60 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+/-- **The multiplicative square-class group of a nonarchimedean local field.** This is
+`TauCeti.card_squareClasses` read on the literal quotient `Kˣ ⧸ (Kˣ)²`. -/
+@[simp]
+theorem card_squareClass (h2 : (2 : K) ≠ 0) :
+    Nat.card (MultiplicativeSquareClassGroup K) =
+      4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 :=
+  (Nat.card_congr (QuotientGroup.quotientMulEquivOfEq
+    (square_eq_range_powMonoidHom (G := Kˣ))).toEquiv).trans (card_squareClasses h2)
+
+/-- **The square-class group of a nonarchimedean local field.** This is
+`TauCeti.card_squareClasses` read on `TauCeti.SquareClassGroup`. -/
+@[simp]
+theorem natCard_squareClassGroup (h2 : (2 : K) ≠ 0) :
+    Nat.card (SquareClassGroup K) = 4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
+  rw [← natCard_multiplicativeSquareClassGroup]
+  exact card_squareClass h2
+
+/-- **The number of square classes of a dyadic local field.** If `K` is a finite compatible
+extension of `ℚ_[2]`, then `Kˣ ⧸ (Kˣ)²` has
+`4 · #𝓀[K] ^ e(K/ℚ_[2])` elements. -/
+@[simp]
+theorem card_squareClasses_dyadic [FinitePadicExtension K 2] :
+    Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) =
+      4 * Nat.card 𝓀[K] ^ absoluteRamificationIndex K 2 := by
+  have := FinitePadicExtension.charZero K 2
+  rw [card_squareClasses two_ne_zero, ← absoluteRamificationIndex_eq_natCastValuation K 2]
+
+/-- **The multiplicative square-class group of a dyadic local field.** This is
+`TauCeti.card_squareClasses_dyadic` read on the literal quotient `Kˣ ⧸ (Kˣ)²`;
+`TauCeti.natCard_squareClassGroup_dyadic` restates it on the additive
+`TauCeti.SquareClassGroup`. -/
+@[simp]
+theorem card_squareClass_dyadic [FinitePadicExtension K 2] :
+    Nat.card (MultiplicativeSquareClassGroup K) =
+      4 * Nat.card 𝓀[K] ^ absoluteRamificationIndex K 2 := by
+  rw [absoluteRamificationIndex_eq_natCastValuation]
+  exact card_squareClass _
+
+/-- **The square-class group of a dyadic local field.** This is the count
+`#(Kˣ ⧸ (Kˣ)²) = 4 · #𝓀[K] ^ e(K/ℚ_[2])` of `TauCeti.card_squareClasses_dyadic`, read on
+`TauCeti.SquareClassGroup`. -/
+@[simp]
+theorem natCard_squareClassGroup_dyadic [FinitePadicExtension K 2] :
+    Nat.card (SquareClassGroup K) = 4 * Nat.card 𝓀[K] ^ absoluteRamificationIndex K 2 := by
+  rw [absoluteRamificationIndex_eq_natCastValuation]
+  exact natCard_squareClassGroup _
+
+/-- The multiplicative group of `ℚ_[2]` has eight square classes. -/
+theorem card_squareClasses_padic_two :
+    Nat.card (ℚ_[2]ˣ ⧸ (powMonoidHom 2 : ℚ_[2]ˣ →* ℚ_[2]ˣ).range) = 8 := by
+  rw [card_squareClasses_dyadic, Padic.natCard_residueField,
+    absoluteRamificationIndex_padic]
+  norm_num
+
 /-- **The multiplicative square-class group of a nonarchimedean local field away from residue
 characteristic two has four elements.** This is the literal quotient `Kˣ ⧸ (Kˣ)²`;
 `TauCeti.natCard_squareClassGroup_of_isUnit_two` restates it on the additive
@@ -71,7 +139,7 @@ characteristic two has four elements.** This is the literal quotient `Kˣ ⧸ (K
 theorem card_squareClass_of_odd (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (MultiplicativeSquareClassGroup K) = 4 :=
   (Nat.card_congr (QuotientGroup.quotientMulEquivOfEq
-    (square_eq_powMonoidHom_two_range (G := Kˣ))).toEquiv).trans
+    (square_eq_range_powMonoidHom (G := Kˣ))).toEquiv).trans
       (card_squareClasses_of_isUnit h2)
 
 /-- **The square-class group of a nonarchimedean local field away from residue characteristic

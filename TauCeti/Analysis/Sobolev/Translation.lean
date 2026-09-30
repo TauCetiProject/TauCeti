@@ -70,6 +70,8 @@ estimate give the fixed-bounded-support and translation inputs for Fréchet--Kol
   zero extensions of a gradient-bounded family have uniformly small translation increments.
 * `TauCeti.W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le`:
   zero extensions of a norm-bounded family have uniformly small translation increments.
+* `TauCeti.Sobolev1JetLp.value_translateLp`, `TauCeti.Sobolev1JetLp.gradient_translateLp`:
+  translating a whole-space jet translates its value and gradient components.
 * `TauCeti.Sobolev1JetLp.translateLp_mem_w1pSubmodule`: translation preserves `W^{1,p}(ℝⁿ)`,
   since on the whole space the weak-derivative identities are translation invariant.
 
@@ -248,6 +250,26 @@ section TranslateJet
 local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
   rw [Opens.coe_top, Measure.restrict_univ]
   infer_instance
+
+omit [FiniteDimensional ℝ E] in
+/-- The value component of a translated whole-space jet is the translate of its value
+component. -/
+theorem Sobolev1JetLp.value_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) :
+    Sobolev1JetLp.value ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J) =
+      (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.value J) := by
+  rw [← Sobolev1JetLp.valueL_apply, ← Sobolev1JetLp.valueL_apply,
+    Sobolev1JetLp.valueL_eq_compLpL]
+  exact Measure.compLpL_translateLp _ h J
+
+omit [FiniteDimensional ℝ E] in
+/-- The gradient component of a translated whole-space jet is the translate of its gradient
+component. -/
+theorem Sobolev1JetLp.gradient_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) :
+    Sobolev1JetLp.gradient ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J) =
+      (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.gradient J) := by
+  rw [← Sobolev1JetLp.gradientL_apply, ← Sobolev1JetLp.gradientL_apply,
+    Sobolev1JetLp.gradientL_eq_compLpL]
+  exact Measure.compLpL_translateLp _ h J
 
 omit [FiniteDimensional ℝ E] in
 /-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities

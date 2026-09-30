@@ -21,9 +21,12 @@ otherwise be supplied locally when applying the generic comparison.
 
 The comparison is an isomorphism when its source is a finite free sheaf
 (`SheafOfModules.overIhomComparison_free_isIso`): such a sheaf is its own dual, and restriction,
-being strong monoidal, carries this self-duality to the slice. This is the local input for
-comparing internal Homs and duals of finite locally free sheaves on a cover. The comparison is
-not asserted to be an isomorphism for arbitrary sheaves of modules.
+being strong monoidal, carries this self-duality to the slice. The same holds for any sheaf
+isomorphic to a finite free one (`SheafOfModules.overIhomComparison_isIso_of_iso_free`). This is
+the local input for comparing internal Homs and duals of finite locally free sheaves on a cover.
+The comparison is not asserted to be an isomorphism for arbitrary sheaves of modules; wherever it
+is invertible, `SheafOfModules.overIhomIso` and `SheafOfModules.overDualIso` package the
+resulting restriction formulas for internal Hom and for the dual.
 -/
 
 public section
@@ -91,6 +94,57 @@ theorem _root_.SheafOfModules.overIhomComparison_free_isIso (I : Type u) [Finite
   CategoryTheory.Functor.ihomComparison_isIso_of_exactPairing
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
     (_root_.SheafOfModules.free (R := ringCatSheaf R) I) (_root_.SheafOfModules.free I)
+
+/-- Restriction to a slice inverts the internal-Hom comparison out of any sheaf isomorphic to a
+finite free sheaf. -/
+theorem _root_.SheafOfModules.overIhomComparison_isIso_of_iso_free
+    {M : _root_.SheafOfModules.{u} (ringCatSheaf R)} (I : Type u) [Finite I]
+    (e : M ≅ _root_.SheafOfModules.free (R := ringCatSheaf R) I) :
+    IsIso (M.overIhomComparison R X).natTrans :=
+  CategoryTheory.Functor.ihomComparison_isIso_of_iso
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+    (_root_.SheafOfModules.overIhomComparison_free_isIso R X I) e
+
+/-- The restriction formula for internal Hom out of `M`, whenever the internal-Hom comparison for
+restriction is invertible. -/
+def _root_.SheafOfModules.overIhomIso (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    [IsIso (M.overIhomComparison R X).natTrans] :
+    ihom M ⋙ _root_.SheafOfModules.overFunctor (ringCatSheaf R) X ≅
+      _root_.SheafOfModules.overFunctor (ringCatSheaf R) X ⋙ ihom (M.over X) :=
+  asIso (M.overIhomComparison R X).natTrans
+
+/-- The forward map of the internal-Hom restriction isomorphism is the canonical internal-Hom
+comparison. -/
+@[simp]
+theorem _root_.SheafOfModules.overIhomIso_hom_app
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    [IsIso (M.overIhomComparison R X).natTrans] (N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    (M.overIhomIso R X).hom.app N = (M.overIhomComparison R X).natTrans.app N := by
+  simp only [_root_.SheafOfModules.overIhomIso, asIso_hom]
+
+/-- The restriction formula for the internal-Hom dual of `M`, whenever the internal-Hom
+comparison for restriction is invertible. The target is the internal Hom into the tensor unit on
+the slice site. -/
+def _root_.SheafOfModules.overDualIso (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    [IsIso (M.overIhomComparison R X).natTrans] :
+    ((ihom M).obj (_root_.SheafOfModules.unit (ringCatSheaf R))).over X ≅
+      (ihom (M.over X)).obj (_root_.SheafOfModules.unit ((ringCatSheaf R).over X)) :=
+  (M.overIhomIso R X).app (_root_.SheafOfModules.unit (ringCatSheaf R)) ≪≫
+    (ihom (M.over X)).mapIso (_root_.SheafOfModules.overUnitIso (R := R) X)
+
+/-- The forward dual restriction map is the internal-Hom comparison followed by the image of the
+monoidal unit comparison. -/
+@[simp]
+theorem _root_.SheafOfModules.overDualIso_hom (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    [IsIso (M.overIhomComparison R X).natTrans] :
+    (M.overDualIso R X).hom =
+      (M.overIhomComparison R X).natTrans.app (_root_.SheafOfModules.unit (ringCatSheaf R)) ≫
+        (ihom (M.over X)).map (_root_.SheafOfModules.overUnitIso (R := R) X).hom := by
+  simp only [_root_.SheafOfModules.overDualIso, Iso.trans_hom, Iso.app_hom,
+    _root_.SheafOfModules.overIhomIso_hom_app]
+  -- `overUnitIso` is an isomorphism over `ringCatSheaf (R.over X)`, which is only definitionally
+  -- `(ringCatSheaf R).over X`, so `simp` cannot rewrite with `Functor.mapIso_hom` here.
+  exact congrArg _ (Functor.mapIso_hom _ _)
 
 end SheafOfModules
 

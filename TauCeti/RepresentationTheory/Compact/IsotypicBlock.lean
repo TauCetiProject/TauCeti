@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Character.Projection
 public import TauCeti.RepresentationTheory.Compact.PeterWeyl
-public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
+public import TauCeti.RepresentationTheory.Compact.BiregularRepresentation
 
 /-!
 # The isotypic blocks of `L²(G)`
@@ -82,23 +82,24 @@ skeleton enters exactly where density is claimed.
 
 ## What is not proved here
 
-Every statement in this file is a statement about Hilbert spaces, their subspaces, their isometries
-and their bounded operators. The blocks are called *isotypic* because the `π`-block is spanned by
+The decomposition results in this file -- the blocks and their bases, their orthogonality, the
+Hilbert sum, the comparison with `End(V_π)` and the averaging operator -- are statements about
+Hilbert spaces, their subspaces, their isometries and their bounded operators, and no group action
+enters them. The blocks are called *isotypic* because the `π`-block is spanned by
 the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and
 that the decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
-translation, are statements about group actions and are **not** proved here. What is proved about
-the action is that each block is stable under both translations
-(`TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock` and
-`TauCeti.rightRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
+translation, are statements about group actions and are **not** proved here. What *is* proved
+about the action, in the section `Stability under translation` and nowhere else, is that each
+block is stable under the biregular representation
+(`TauCeti.biRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
 model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
 `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
-block with `End(V_π)` is not proved either, and what it needs is a `G × G`-action on each side:
-bi-translation `((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)`, of which only the right factor is in
-the library (`TauCeti.rightRegularLp`), and `(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_π)`, together
-with the proof that the identification intertwines them. No `G × G`-action is defined in the
-library, and `TauCeti.endEquivPeterWeylBlock` is built from the canonical basis of the model, so
-nothing is claimed here about its equivariance. The character averaging operator
+block with `End(V_π)` is not proved either. The library now supplies bi-translation
+`((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)` as `TauCeti.biRegularLp`, but not the action
+`(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_π)` or the proof that the identification intertwines
+them. `TauCeti.endEquivPeterWeylBlock` is built from the canonical basis of the model, so nothing is
+claimed here about its equivariance. The character averaging operator
 `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
 `TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
@@ -137,8 +138,9 @@ available.
 * `TauCeti.toLp_star_character_mem_peterWeylBlock`: the conjugate character of a model lies in its
   own block, spanning the trace direction of it.
 * `TauCeti.rightRegularLp_mem_peterWeylBlock` and
-  `TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock`: **each block is stable under right
-  and left translation**.
+  `TauCeti.leftRegularLp_mem_peterWeylBlock`: **each block is stable under right and left
+  translation**; `TauCeti.biRegularLp_mem_peterWeylBlock` packages both as stability under the
+  biregular `G × G`-action.
 * `TauCeti.isOrtho_peterWeylBlock`, `TauCeti.orthogonalFamily_peterWeylBlock`: **the blocks of
   inequivalent models are orthogonal**, so the blocks of a family of pairwise inequivalent models
   form an orthogonal family of subspaces, and `TauCeti.iSupIndep_peterWeylBlock` that they are
@@ -370,6 +372,24 @@ theorem compMeasurePreserving_mulLeft_mem_peterWeylBlock (model : IrrepModel �
       (Lp.compMeasurePreservingₗ 𝕜 (g * ·) (measurePreserving_mul_left (haarProb G) g)).map_smul c x
     rw [hsmul]
     exact Submodule.smul_mem _ c hx
+
+/-- **Each block is stable under the left regular representation.** This is the bundled-action
+form of `TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock`. -/
+theorem leftRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
+    {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
+    leftRegularLp 𝕜 G g f ∈ peterWeylBlock model := by
+  rw [leftRegularLp_apply]
+  exact compMeasurePreserving_mulLeft_mem_peterWeylBlock model g⁻¹ hf
+
+/-- **Each Peter-Weyl block is invariant under the biregular `G × G`-action.** Its two factors
+act by left and right translation, each of which preserves the span of the model's matrix
+coefficients. -/
+theorem biRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (p : G × G)
+    {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
+    biRegularLp 𝕜 G p f ∈ peterWeylBlock model := by
+  rw [biRegularLp_apply_eq_left_right]
+  exact leftRegularLp_mem_peterWeylBlock model p.1
+    (rightRegularLp_mem_peterWeylBlock model p.2 hf)
 
 /-! ### A block is a copy of the endomorphism algebra of its model
 

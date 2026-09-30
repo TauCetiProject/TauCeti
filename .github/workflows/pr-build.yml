@@ -816,13 +816,54 @@ jobs:
 
       # Text-only trusted lint: inspect the exact candidate sources after Mathlib's source tree is
       # available. The workflow-pinned Python does not elaborate or execute candidate code.
+      - name: Decide the environment-lint scope
+        if: ${{ env.INFRA != '1' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          NUM: ${{ steps.pr.outputs.num }}
+          # The immutable commits being built: the merge group's base, or the PR's base commit
+          # (a three-dot compare diffs from the merge base), and the exact head.
+          BASE: ${{ github.event_name == 'merge_group' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
+          HEAD: ${{ steps.pr.outputs.sha }}
+          HEAD_REPO: ${{ steps.pr.outputs.repo }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lint-scope"
+          bash gate/scripts/lint-scope.sh "$out"
+          echo "LINT_SCOPE_DIR=$out" >> "$GITHUB_ENV"
+
+      # The axiom audit and the dot-notation lint need see only what an ordinary PR changes: the
+      # library on main already passed both in full (every push to main runs them unscoped, as does
+      # every merge-queue build here), and neither result for an unchanged file can change unless
+      # its dependencies or the Mathlib pin do. So they are scoped to the changed modules exactly
+      # when the environment lint is, and additionally only for a PR build (not the merge queue,
+      # which re-checks the whole library before anything lands), only when the Lake pins are
+      # unchanged, and only when every changed `.lean` file is a module the list can name.
+      - name: Decide the audit scope
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          if [ -n "${LINT_ONLY_MODULES:-}" ] && [ "${{ github.event_name }}" != "merge_group" ] \
+             && [ "${BUMP:-0}" != "1" ] && [ ! -s "$LINT_SCOPE_DIR/unmatched.txt" ]; then
+            echo "AXIOMS_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
+            echo "DOT_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
+            echo "audit scope: the $(grep -c . "$LINT_ONLY_MODULES" || true) changed module(s)"
+          else
+            echo "AXIOMS_ONLY_MODULES=" >> "$GITHUB_ENV"
+            echo "DOT_ONLY_MODULES=" >> "$GITHUB_ENV"
+            echo "audit scope: the whole library"
+          fi
+
       - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
         if: ${{ env.INFRA != '1' }}
         run: |
           python3 gate/scripts/lint-dot-notation.py \
             --baseline gate/scripts/lint-dot-notation-baseline.txt \
             --mathlib-root pr/.lake/packages/mathlib/Mathlib \
-            --source-root pr/TauCeti
+            --source-root pr/TauCeti \
+            ${DOT_ONLY_MODULES:+--only-modules "$DOT_ONLY_MODULES" --base-source-root mergebase/TauCeti}
 
       # Enable Lake's built-in artifact cache for the build below ONLY when the public read
       # endpoints are configured (repo variables). Until then this is a no-op: LAKE_*
@@ -930,24 +971,6 @@ jobs:
       # Which modules the environment lint covers: the TauCeti modules this change touches, or the
       # whole library for `full-lint`-labelled and lint-repair PRs (scripts/lint-scope.sh). Computed
       # on the host from GitHub metadata only, and mounted read-only into the sandbox.
-      - name: Decide the environment-lint scope
-        if: ${{ env.INFRA != '1' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name }}
-          NUM: ${{ steps.pr.outputs.num }}
-          # The immutable commits being built: the merge group's base, or the PR's base commit
-          # (a three-dot compare diffs from the merge base), and the exact head.
-          BASE: ${{ github.event_name == 'merge_group' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
-          HEAD: ${{ steps.pr.outputs.sha }}
-          HEAD_REPO: ${{ steps.pr.outputs.repo }}
-        run: |
-          set -euo pipefail
-          out="$RUNNER_TEMP/lint-scope"
-          bash gate/scripts/lint-scope.sh "$out"
-          echo "LINT_SCOPE_DIR=$out" >> "$GITHUB_ENV"
-
       - name: Build exact candidate under bwrap with workflow-pinned audits, offline
         id: build
         if: ${{ env.INFRA != '1' }}
@@ -995,6 +1018,7 @@ jobs:
             --setenv WATCHDOG_TOOLCHAIN "${WATCHDOG_TOOLCHAIN:-}" \
             --setenv LINT_DRIVER_EXE "$LINT_DRIVER_DIR/lint-env-driver" \
             --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
+            --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \
@@ -1206,6 +1230,36 @@ jobs:
             exit 1
           fi
           [ "$state" = "success" ]
+
+      # Statistics for TauCetiCI (https://github.com/TauCetiProject/TauCetiCI): when each phase of
+      # the sandboxed build started, how many modules were built or restored from the cache, the
+      # slowest, and the runner picker's decision. After the statuses so it can never delay them,
+      # and continue-on-error so it can never fail the job. The phase and build files were written
+      # inside the sandbox, so the record marks itself as statistics only.
+      - name: Summarise CI telemetry (statistics only)
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          PICKED: ${{ needs.pick-runner.outputs.github == 'true' && 'github' || 'namespace' }}
+          PICKER_BUSY: ${{ needs.pick-runner.outputs.busy }}
+          PICKER_BUDGET: ${{ needs.pick-runner.outputs.budget }}
+        run: |
+          python3 gate/scripts/ci_telemetry.py --dir pr/.lake/telemetry --out "$RUNNER_TEMP/telemetry.json" \
+            --meta "event=${{ github.event_name }}" --meta "runner=$PICKED" \
+            --meta "picker_busy=$PICKER_BUSY" --meta "picker_budget=$PICKER_BUDGET" \
+            --meta "head_sha=${{ steps.pr.outputs.status_sha }}"
+
+      - name: Upload CI telemetry
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-telemetry
+          path: ${{ runner.temp }}/telemetry.json
+          if-no-files-found: ignore
+          retention-days: 30
 
   # Only an already-audited merge-group commit may publish. The reusable workflow runs on a
   # fresh runner, sparsely checks out that commit's toolchain pin and key-free confirmation

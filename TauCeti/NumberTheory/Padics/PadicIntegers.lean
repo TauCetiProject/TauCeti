@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+import Mathlib.Data.Finset.Max
+import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
 
 /-!
 # Units of the `p`-adic integers
@@ -22,9 +24,17 @@ totally disconnected space `ℤ_p`, and the topology of the units is the subspac
 `ℤ_p` is a complete normed ring. The instances `CompactSpace ℤ_[p]ˣ` and
 `TotallyDisconnectedSpace ℤ_[p]ˣ` are recorded here.
 
+Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
+divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
+multiple `q • w` of a family `w` with a coordinate equal to `1`, namely at an index of maximal norm.
+This is the shape in which the exponent vector of a relator of a free pro-`p` group is read.
+
 ## Main results
 
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
+* `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
+* `PadicInt.exists_apply_eq_one_and_eq_smul`: a finite family in `ℤ_[p]` is `q • w` with
+  `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
@@ -67,5 +77,31 @@ instance compactSpace_units : CompactSpace ℤ_[p]ˣ := by
 instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
   ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
+
+/-- **Divisibility from the norm**: in `ℤ_p`, `y` divides every `x` with `‖x‖ ≤ ‖y‖`, because `x`
+then lies in the ideal `p^{v_p(y)} ℤ_p = y ℤ_p` when `y ≠ 0`, and vanishes when `y = 0`. -/
+theorem dvd_of_norm_le {x y : ℤ_[p]} (h : ‖x‖ ≤ ‖y‖) : y ∣ x := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [norm_zero] at h
+    rw [norm_le_zero_iff.1 h]
+  have hx : x ∈ Ideal.span {(p : ℤ_[p]) ^ y.valuation} :=
+    (norm_le_pow_iff_mem_span_pow x y.valuation).1 (h.trans_eq (norm_eq_zpow_neg_valuation hy))
+  rw [Ideal.mem_span_singleton] at hx
+  have := (Units.mul_left_dvd (u := unitCoeff hy)).2 hx
+  rwa [← unitCoeff_spec hy] at this
+
+/-- **A finite family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
+`v : ι → ℤ_p` with `ι` finite and nonempty there are an index `i₀`, a scalar `q` and a family `w`
+with `w i₀ = 1` and `v = q • w`. One may take `i₀` of maximal norm and `q = v i₀`, which then
+divides every coordinate. -/
+theorem exists_apply_eq_one_and_eq_smul {ι : Type*} [Finite ι] [Nonempty ι] (v : ι → ℤ_[p]) :
+    ∃ (i₀ : ι) (q : ℤ_[p]) (w : ι → ℤ_[p]), w i₀ = 1 ∧ v = q • w := by
+  classical
+  cases nonempty_fintype ι
+  obtain ⟨i₀, -, hi₀⟩ :=
+    Finset.exists_max_image Finset.univ (fun i ↦ ‖v i‖) Finset.univ_nonempty
+  obtain ⟨w, hw, hv⟩ :=
+    TauCeti.exists_eq_smul_of_forall_dvd fun i ↦ dvd_of_norm_le (hi₀ i (Finset.mem_univ i))
+  exact ⟨i₀, v i₀, w, hw, hv⟩
 
 end PadicInt

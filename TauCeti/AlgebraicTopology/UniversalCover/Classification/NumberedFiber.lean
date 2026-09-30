@@ -63,9 +63,10 @@ representations into an isomorphism of `π₁(X, x)`-sets preserving the labels.
 
 * `TauCeti.ConnectedFiberNumberedCover`, `TauCeti.ConnectedPointedCover`,
   `TauCeti.ConnectedCover`: the three carriers.
-* `TauCeti.ConnectedFiberNumberedCoverIso`, `TauCeti.ConnectedPointedCoverIso`,
-  `TauCeti.ConnectedCoverIso`: their isomorphism relations, with setoids
-  `TauCeti.connectedFiberNumberedCoverSetoid`, `TauCeti.connectedPointedCoverSetoid`,
+* `TauCeti.ConnectedFiberNumberedCoverIso`, `TauCeti.ConnectedPointedCoverIso`: the isomorphism
+  relations of numbered and pointed covers, with setoids
+  `TauCeti.connectedFiberNumberedCoverSetoid` and `TauCeti.connectedPointedCoverSetoid`. Bare covers
+  are related by `CategoryTheory.IsIsomorphic` of their underlying covers, with setoid
   `TauCeti.connectedCoverSetoid`.
 * `TauCeti.ConnectedFiberNumberedCoverClass`, `TauCeti.ConnectedPointedCoverClass`,
   `TauCeti.ConnectedCoverClass`: the types of isomorphism classes.
@@ -216,10 +217,6 @@ point to the chosen point. -/
 def ConnectedPointedCoverIso (c c' : ConnectedPointedCover x n) : Prop :=
   ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1
 
-/-- Isomorphism of bare covers: an isomorphism of the underlying covers. -/
-def ConnectedCoverIso (c c' : ConnectedCover x n) : Prop :=
-  IsIsomorphic c.cover c'.cover
-
 /-- A numbered isomorphism consists of a cover isomorphism preserving every fibre label. -/
 @[simp]
 theorem connectedFiberNumberedCoverIso_iff_exists {c c' : ConnectedFiberNumberedCover x n} :
@@ -232,12 +229,6 @@ theorem connectedFiberNumberedCoverIso_iff_exists {c c' : ConnectedFiberNumbered
 theorem connectedPointedCoverIso_iff_exists {c c' : ConnectedPointedCover x n} :
     ConnectedPointedCoverIso c c' ↔
       ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1 :=
-  Iff.rfl
-
-/-- Bare covers are isomorphic exactly when their underlying covers are. -/
-@[simp]
-theorem connectedCoverIso_iff_nonempty {c c' : ConnectedCover x n} :
-    ConnectedCoverIso c c' ↔ Nonempty (c.cover ≅ c'.cover) :=
   Iff.rfl
 
 /-- A numbered isomorphism is an isomorphism of covers whose bijection of fibres intertwines the
@@ -361,7 +352,7 @@ theorem ConnectedPointedCoverClass.mk_eq_mk_iff {c c' : ConnectedPointedCover x 
 
 @[simp]
 theorem ConnectedCoverClass.mk_eq_mk_iff {c c' : ConnectedCover x n} :
-    mk c = mk c' ↔ ConnectedCoverIso c c' :=
+    mk c = mk c' ↔ IsIsomorphic c.cover c'.cover :=
   Quotient.eq
 
 theorem ConnectedFiberNumberedCoverClass.mk_surjective :

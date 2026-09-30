@@ -157,15 +157,18 @@ lemma mkQuotient_surjective (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H
   obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
   exact ⟨h, mkQuotient_apply H I h⟩
 
+/-- A Hopf-algebra quotient morphism is an epimorphism. -/
+instance mkQuotient_epi {H : _root_.CommHopfAlgCat.{v} R} {I : HopfIdeal R H} :
+    Epi (mkQuotient H I) :=
+  ConcreteCategory.epi_of_surjective _ (mkQuotient_surjective H I)
+
 /-- Morphisms out of a Hopf-algebra quotient are determined by their composites with the
 quotient morphism. -/
 @[ext]
 theorem mkQuotient_hom_ext {H X : _root_.CommHopfAlgCat.{v} R}
     {I : HopfIdeal R H} {f g : quotient H I ⟶ X}
-    (h : mkQuotient H I ≫ f = mkQuotient H I ≫ g) : f = g := by
-  let _ : Epi (mkQuotient H I) :=
-    ConcreteCategory.epi_of_surjective _ (mkQuotient_surjective H I)
-  exact (cancel_epi (mkQuotient H I)).mp h
+    (h : mkQuotient H I ≫ f = mkQuotient H I ≫ g) : f = g :=
+  (cancel_epi (mkQuotient H I)).mp h
 
 variable {H K : _root_.CommHopfAlgCat.{v} R}
 

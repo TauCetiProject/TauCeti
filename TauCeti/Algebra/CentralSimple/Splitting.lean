@@ -24,6 +24,7 @@ import Mathlib.Data.Matrix.Composition
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Algebra.CentralSimple.Wedderburn
 import TauCeti.Algebra.Central.Quaternion
+import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # Splitting fields of a central simple algebra
@@ -59,6 +60,8 @@ an arbitrary `K`-algebra, where the degree is not yet meaningful.
   `TauCeti/Algebra/Matrix/BaseChange.lean`).
 * `TauCeti.Algebra.IsSplittingField.matrix`: a splitting field for `A` also splits every full
   matrix algebra over `A`.
+* `TauCeti.Algebra.IsSplittingField.of_isScalarTower`: every further field extension of a
+  splitting field still splits `A`.
 * `TauCeti.Algebra.isSplittingField_self_iff`: `A` is split by its own base field exactly when it
   *is* a matrix algebra over it. This is the statement that "split" means what it should.
 * `TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix` and
@@ -81,10 +84,10 @@ lemmas hold at that generality, and central simplicity is added only where the d
 Nothing here needs `A` to be finite-dimensional either -- that is a consequence for a nonzero
 splitting, not a hypothesis.
 
-A further extension of a splitting field again splits `A`, but the algebra-level base-change
-cancellation `M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A` that this rests on is not available for a
-noncommutative `A` (Mathlib's `Algebra.TensorProduct.cancelBaseChange` asks both tensor factors to
-be commutative), so it is left to the file that builds it.
+Splitting ascends along field towers: if `L` splits `A`, so does every field extension `M` of `L`
+(`TauCeti.Algebra.IsSplittingField.of_isScalarTower`), and the matrix size does not change. So a
+splitting field may always be enlarged, for instance to its normal closure in order to obtain a
+Galois splitting field. This holds for an arbitrary, possibly noncommutative, `K`-algebra `A`.
 
 ## References
 
@@ -160,6 +163,20 @@ theorem IsSplittingField.matrix (h : IsSplittingField K A L) (n : ℕ) :
     (e.mapMatrix (m := Fin n)).trans <|
       (Matrix.compAlgEquiv (Fin n) (Fin m) L L).trans <|
         Matrix.reindexAlgEquiv L L finProdFinEquiv
+
+/-- **Every further field extension of a splitting field is a splitting field.**
+
+If `L` splits `A` and `M` is a field extension of `L` (compatibly with `K`), then `M ⊗[K] A` is
+again a full matrix algebra over `M`, of the same size as `L ⊗[K] A` is over `L`. Use this to
+replace a splitting field by any larger field, such as a normal or separable closure of it. -/
+theorem IsSplittingField.of_isScalarTower (h : IsSplittingField K A L)
+    (M : Type*) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M] :
+    IsSplittingField K A M := by
+  obtain ⟨n, ⟨e⟩⟩ := (isSplittingField_iff K A L).1 h
+  refine (isSplittingField_iff K A M).2 ⟨n, ⟨?_⟩⟩
+  exact (Algebra.TensorProduct.baseChangeTowerAlgEquiv K L A M).symm.trans <|
+    (Algebra.TensorProduct.congr (AlgEquiv.refl (R := M) (A₁ := M)) e).trans <|
+      matrixBaseChangeAlgEquiv L M (Fin n)
 
 /-- **`A` is split by its own base field exactly when it is a matrix algebra over it.** This is the
 sanity check on the definition: over `L = K` the scalar extension does nothing, so "split" is

@@ -207,6 +207,12 @@ separable field extension. -/
 def RegularFormClass.traceTransfer : RegularFormClass L →+ RegularFormClass K :=
   RegularFormClass.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L)
 
+/-- Class-level trace transfer is Scharlau transfer along the algebra trace. -/
+theorem RegularFormClass.traceTransfer_eq_scharlauTransfer (x : RegularFormClass L) :
+    RegularFormClass.traceTransfer K x =
+      RegularFormClass.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L) x := by
+  rfl
+
 /-- Trace transfer of the class of a regular form is the class of its form-level trace transfer. -/
 @[simp]
 theorem RegularFormClass.traceTransfer_formClass {V : Type w} [AddCommGroup V]

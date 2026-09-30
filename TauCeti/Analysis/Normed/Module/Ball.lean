@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.AddTorsor
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 
 /-!
-# Affine normalizations of metric balls and spheres
+# Metric balls and spheres in normed spaces
 
 This file records how the affine map `y ↦ c • y +ᵥ x` pulls metric balls, closed balls, and
 spheres back to their corresponding sets centered at zero.
@@ -21,7 +23,8 @@ scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres 
 `norm_pos_iff` and `norm_ne_zero_iff` respectively.
 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
-of that radius in a seminormed real vector space.
+of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
+centered at zero lie on the same line exactly when they are equal or antipodal.
 -/
 
 public section
@@ -63,7 +66,7 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : ‖c‖ ≠ 0) (r : �
 
 end Preimage
 
-section Range
+section Sphere
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -75,7 +78,25 @@ theorem range_smul_coe_sphere {c : ℝ} (hc : 0 < c) :
   rw [Set.range_comp' (c • ·) Subtype.val, Subtype.range_coe, Set.image_smul,
     smul_sphere' hc.ne', smul_zero, Real.norm_of_nonneg hc.le, mul_one]
 
-end Range
+/-- Two points of a sphere of nonzero radius centered at zero in a real seminormed space
+lie on the same line exactly when they are equal or antipodal. -/
+@[simp]
+theorem coe_mem_span_singleton_iff {r : ℝ} (hr : r ≠ 0) {x p : Metric.sphere (0 : E) r} :
+    (x : E) ∈ ℝ ∙ (p : E) ↔ x = p ∨ x = -p := by
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.1 h
+    have habs : |a| = 1 := by
+      apply (mul_eq_right₀ hr).1
+      simpa [← ha, norm_smul] using norm_eq_of_mem_sphere x
+    rcases (abs_eq zero_le_one).1 habs with rfl | rfl
+    · exact Or.inl (Subtype.ext (by rw [← ha, one_smul]))
+    · exact Or.inr (Subtype.ext (by rw [← ha, coe_neg_sphere, neg_one_smul]))
+  · rintro (rfl | rfl)
+    · exact Submodule.mem_span_singleton_self _
+    · rw [coe_neg_sphere]
+      exact Submodule.neg_mem _ (Submodule.mem_span_singleton_self _)
+
+end Sphere
 
 section Normalization
 

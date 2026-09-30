@@ -25,18 +25,12 @@ holds for rows. `GridRectangle.interior_subset_coveredSquares` records the resul
 without a nondegeneracy hypothesis.
 
 The convention that markings sit at the centres of their squares is the one the Maslov and
-Alexander gradings already use (`JFunction/Center.lean`); this file supplies the matching
-rectangle domain, which `Grading/MarkingCount.lean` then uses to turn the Maslov and Alexander
-grading changes across a rectangle move into marking counts. The marking-avoidance predicate of
-the grid differential, `GridRectangle.AvoidsMarkings`, tests that same square-centred region under
-its other name `GridRectangle.squares`; `GridRectangle.squares_eq_coveredSquares` identifies the
-two.
-
-## Main definitions
-
-* `TauCeti.GridRectangle.coveredColumns`, `TauCeti.GridRectangle.coveredRows`: the columns and
-  rows of squares a toroidal rectangle covers.
-* `TauCeti.GridRectangle.coveredSquares`: the squares a toroidal rectangle covers.
+Alexander gradings already use (`JFunction/Center.lean`). `GridRectangle.coveredColumns`,
+`GridRectangle.coveredRows` and `GridRectangle.coveredSquares` are defined with the rectangles in
+`Rectangle/Basic.lean`, where the marking-avoidance predicate of the grid differential,
+`GridRectangle.AvoidsMarkings`, tests the covered squares; this file develops them for the
+gradings, and `Grading/MarkingCount.lean` uses them to turn the Maslov and Alexander grading
+changes across a rectangle move into marking counts.
 
 ## Main results
 
@@ -46,8 +40,6 @@ two.
   exactly when their covered columns or their covered rows are disjoint.
 * `TauCeti.GridRectangle.card_coveredSquares`: the number of covered squares is the product of the
   two arc lengths.
-* `TauCeti.GridRectangle.squares_eq_coveredSquares`: the covered squares are the region
-  `GridRectangle.squares` that the marking-avoidance predicate tests.
 * `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_subinterval`: X-avoidance
   transfers across a column swap to a rectangle whose covered columns are contained in an
   X-avoiding rectangle's covered columns and whose rows are contained in its rows, provided
@@ -71,36 +63,6 @@ namespace TauCeti
 namespace GridRectangle
 
 variable {n : ℕ} (R : GridRectangle n)
-
-/-- The columns of squares covered by a toroidal grid rectangle: the clockwise half-open arc
-from the initial vertical side to the terminal one. -/
-noncomputable def coveredColumns : Finset (Fin n) :=
-  Grid.cIco R.left R.right
-
-/-- The covered columns are the half-open cyclic interval between the vertical sides. -/
-theorem coveredColumns_def : R.coveredColumns = Grid.cIco R.left R.right :=
-  (rfl)
-
-/-- The rows of squares covered by a toroidal grid rectangle: the clockwise half-open arc from
-the initial horizontal side to the terminal one. -/
-noncomputable def coveredRows : Finset (Fin n) :=
-  Grid.cIco R.bottom R.top
-
-/-- The covered rows are the half-open cyclic interval between the horizontal sides. -/
-theorem coveredRows_def : R.coveredRows = Grid.cIco R.bottom R.top :=
-  (rfl)
-
-/-- Membership in the covered columns is membership in the corresponding half-open circular
-interval. -/
-@[simp]
-theorem mem_coveredColumns (c : Fin n) : c ∈ R.coveredColumns ↔ c ∈ Grid.cIco R.left R.right :=
-  Iff.rfl
-
-/-- Membership in the covered rows is membership in the corresponding half-open circular
-interval. -/
-@[simp]
-theorem mem_coveredRows (r : Fin n) : r ∈ R.coveredRows ↔ r ∈ Grid.cIco R.bottom R.top :=
-  Iff.rfl
 
 /-- Every interior column is a covered column. For distinct vertical sides the covered columns
 also contain the initial column; for coincident sides both sets are empty. -/
@@ -130,23 +92,6 @@ theorem card_coveredRows :
       else n - R.bottom.val + R.top.val := by
   rw [coveredRows, Grid.card_cIco]
 
-/-- The finite set of squares a toroidal grid rectangle covers.
-
-A marking sits at the centre of its square, so it lies inside the rectangle exactly when its
-column and row indices lie in the two half-open arcs. -/
-noncomputable def coveredSquares : Finset (Fin n × Fin n) :=
-  R.coveredColumns ×ˢ R.coveredRows
-
-/-- The covered squares are the product of the covered columns and rows. -/
-theorem coveredSquares_def : R.coveredSquares = R.coveredColumns ×ˢ R.coveredRows :=
-  (rfl)
-
-/-- Membership in the covered squares is membership in both one-dimensional half-open arcs. -/
-@[simp]
-theorem mem_coveredSquares (p : Fin n × Fin n) :
-    p ∈ R.coveredSquares ↔ p.1 ∈ R.coveredColumns ∧ p.2 ∈ R.coveredRows := by
-  simp [coveredSquares]
-
 /-- Swapping two columns preserves a rectangle's covered squares when the rectangle either
 covers both columns or covers neither. -/
 theorem mem_coveredSquares_swap_iff_of_coveredColumns {a b : Fin n}
@@ -174,12 +119,6 @@ theorem disjoint_coveredSquares_iff (R S : GridRectangle n) :
 theorem interior_subset_coveredSquares : R.interior ⊆ R.coveredSquares :=
   Finset.product_subset_product R.columnInterior_subset_coveredColumns
     R.rowInterior_subset_coveredRows
-
-/-- The squares a rectangle covers are the region the marking-avoidance predicate tests: both
-`GridRectangle.squares` and `coveredSquares` are the product of the two half-open arcs. -/
-theorem squares_eq_coveredSquares : R.squares = R.coveredSquares := by
-  ext p
-  simp [mem_coveredSquares]
 
 /-- The number of covered squares is the product of the numbers of covered columns and covered
 rows. -/

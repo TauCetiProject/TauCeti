@@ -36,6 +36,7 @@ express `d • f (a', b')` through the values of `f` at the sides and diagonals 
   short exact sequence when `H¹(G, X₁) = 0`.
 * `TauCeti.groupCohomology.shortExact_map_quotientToInvariantsFunctor`: taking `S`-invariants
   preserves a short exact sequence whose kernel `X₁` has `H¹(S, X₁) = 0`.
+* `Rep.h2Representative`: a chosen two-cocycle representing a class in `H²`.
 * `TauCeti.groupCohomology.smul_map_eq_of_isCocycle₂_of_mul_eq_mul`: the `2`-cocycle identity
   along two adjacent commuting squares.
 -/
@@ -45,6 +46,24 @@ public noncomputable section
 universe u
 
 open CategoryTheory Limits Rep
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- A chosen two-cocycle representing `u ∈ H²(G, A)`. -/
+def h2Representative (A : Rep k G) (u : groupCohomology A 2) :
+    groupCohomology.cocycles₂ A :=
+  Classical.choose ((ModuleCat.epi_iff_surjective (groupCohomology.H2π A)).mp inferInstance u)
+
+/-- The chosen two-cocycle represents the original second-cohomology class. -/
+@[simp]
+theorem H2π_h2Representative (A : Rep k G) (u : groupCohomology A 2) :
+    groupCohomology.H2π A (h2Representative A u) = u :=
+  Classical.choose_spec
+    ((ModuleCat.epi_iff_surjective (groupCohomology.H2π A)).mp inferInstance u)
+
+end Rep
 
 namespace TauCeti.groupCohomology
 

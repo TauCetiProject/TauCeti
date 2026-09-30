@@ -30,7 +30,8 @@ open Complex Filter Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+variable [Fintype ι]
 
 /-- At a point of a prevertex-free boundary interval, the Schwarz--Christoffel primitive has a
 holomorphic continuation which is injective on a neighbourhood of that point. Its value at the

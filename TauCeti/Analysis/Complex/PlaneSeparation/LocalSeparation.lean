@@ -16,6 +16,9 @@ complementary component. In particular, any bounded complementary component is t
 filled hull minus the curve. This identifies the inside of a simple polygon from any one of
 its bounded complementary components, without a convexity assumption.
 
+An interior point of a nondegenerate straight segment has a ball in which the segment
+agrees with its supporting line. This supplies the local line hypothesis for polygonal curves.
+
 The more general local-cover result bounds the number of complementary components by two
 whenever a neighbourhood of a curve point, minus the curve, is covered by two preconnected
 subsets of the complement. Every complementary component approaches that point, so three
@@ -29,7 +32,7 @@ different components would have to meet the same local side.
 
 public section
 
-open Bornology Complex Metric Set
+open Bornology Complex Metric Set Topology
 
 namespace TauCeti
 
@@ -136,5 +139,59 @@ theorem IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_lin
     refine ⟨?_, connectedComponentIn_subset _ _ hz⟩
     rw [mem_filledHull_iff, ← connectedComponentIn_eq hz]
     exact mem_filledHull_iff.mp hx.1
+
+/-- Near an interior point of a nondegenerate complex line segment, the segment agrees with
+its supporting real line. The line is expressed in the coordinate obtained by dividing by
+`b - a`. -/
+theorem exists_ball_openSegment_eq_line {a b w : ℂ}
+    (hab : a ≠ b) (hw : w ∈ openSegment ℝ a b) :
+    ∃ r > 0, ∀ z ∈ ball w r,
+      (z ∈ openSegment ℝ a b ↔ (((b - a)⁻¹ * (z - w))).im = 0) := by
+  obtain ⟨t, ht, hwt⟩ := (openSegment_eq_image' ℝ a b ▸ hw)
+  let u : ℂ → ℝ := fun z => t + ((b - a)⁻¹ * (z - w)).re
+  have hucont : Continuous u := by
+    fun_prop
+  have huw : u w = t := by simp [u]
+  have hnhds : {z | u z ∈ Ioo (0 : ℝ) 1} ∈ 𝓝 w := by
+    exact (isOpen_Ioo.preimage hucont).mem_nhds (by simpa [huw] using ht)
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp hnhds
+  refine ⟨r, hr, fun z hz => ?_⟩
+  have huz : u z ∈ Ioo (0 : ℝ) 1 := hball hz
+  have hba : b - a ≠ 0 := sub_ne_zero.mpr (Ne.symm hab)
+  have hw' : w = a + (t : ℂ) * (b - a) := by
+    simpa only [Complex.real_smul] using hwt.symm
+  constructor
+  · intro hseg
+    obtain ⟨s, hs, hzs⟩ := (openSegment_eq_image' ℝ a b ▸ hseg)
+    have hz' : z = a + (s : ℂ) * (b - a) := by
+      simpa only [Complex.real_smul] using hzs.symm
+    rw [hz', hw']
+    have heq : (b - a)⁻¹ * ((a + (s : ℂ) * (b - a)) -
+        (a + (t : ℂ) * (b - a))) = ((s - t : ℝ) : ℂ) := by
+      push_cast
+      field_simp
+      ring
+    rw [heq]
+    simp
+  · intro hline
+    have heq : (b - a)⁻¹ * (z - w) = (((b - a)⁻¹ * (z - w)).re : ℂ) :=
+      Complex.ext (by simp) (by simpa using hline)
+    have hz' : z = a + (u z : ℂ) * (b - a) := by
+      have hm := congrArg (fun y : ℂ => y * (b - a)) heq
+      have hm' : z - w = (((b - a)⁻¹ * (z - w)).re : ℂ) * (b - a) := by
+        calc
+          z - w = ((b - a)⁻¹ * (z - w)) * (b - a) := by
+            field_simp
+          _ = _ := hm
+      calc
+        z = w + (z - w) := by ring
+        _ = w + (((b - a)⁻¹ * (z - w)).re : ℂ) * (b - a) :=
+          congrArg (fun y : ℂ => w + y) hm'
+        _ = a + (t : ℂ) * (b - a) +
+            (((b - a)⁻¹ * (z - w)).re : ℂ) * (b - a) :=
+          congrArg (fun y : ℂ => y + (((b - a)⁻¹ * (z - w)).re : ℂ) * (b - a)) hw'
+        _ = a + (u z : ℂ) * (b - a) := by simp only [u, ofReal_add, add_mul]; ring
+    rw [openSegment_eq_image']
+    exact ⟨u z, huz, by simpa only [Complex.real_smul] using hz'.symm⟩
 
 end TauCeti

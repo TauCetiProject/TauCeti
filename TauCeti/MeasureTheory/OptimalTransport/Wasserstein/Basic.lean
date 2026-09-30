@@ -64,6 +64,8 @@ what the gluing lemma consumes.
   measure to a single point;
 * `TauCeti.wassersteinEDist_top` — the `p = ∞` characterization by coupling-wise essential
   suprema;
+* `TauCeti.eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt` — on a uniformly separated
+  space, measures at `W_∞` distance below the separation scale agree;
 * `TauCeti.wassersteinEDist_self`, `TauCeti.wassersteinEDist_comm` and
   `TauCeti.wassersteinEDist_triangle` — the three axioms of an extended pseudodistance;
 * `TauCeti.wassersteinEDist_mono_exponent` — monotonicity in `p` when the first marginal is a
@@ -197,6 +199,26 @@ theorem wassersteinEDist_lt_iff :
       ∃ π, IsCoupling π μ ν ∧ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π < a := by
   simp only [wassersteinEDist, iInf_lt_iff, exists_prop]
 
+/-- On a space whose distinct points are at least `r` apart, two measures at
+`W_∞` distance strictly less than `r` agree. A coupling below the strict bound cannot move
+mass between distinct points. This also applies when the distance is infinite. -/
+theorem eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt
+    {Y : Type*} [MeasurableSpace Y] [EDist Y] {μ ν : Measure Y} {r : ℝ≥0∞}
+    (hsep : Pairwise fun x y : Y ↦ r ≤ edist x y)
+    (h : wassersteinEDist ∞ μ ν < r) : μ = ν := by
+  obtain ⟨π, hπ, hπd⟩ := wassersteinEDist_lt_iff.mp h
+  have hbound := ae_le_eLpNormEssSup (f := fun z : Y × Y ↦ edist z.1 z.2) (μ := π)
+  simp only [enorm_eq_self] at hbound
+  have hπess : eLpNormEssSup (fun z : Y × Y ↦ edist z.1 z.2) π < r :=
+    (eLpNormEssSup_le_eLpNorm_top).trans_lt hπd
+  have hae : (fun z : Y × Y ↦ z.1) =ᵐ[π] (fun z ↦ z.2) := hbound.mono fun z hz ↦ by
+    by_contra hne
+    exact (not_lt_of_ge (hsep hne)) (hz.trans_lt hπess)
+  calc
+    μ = π.fst := hπ.fst_eq.symm
+    _ = π.snd := Measure.map_congr hae
+    _ = ν := hπ.snd_eq
+
 /-- The Wasserstein distance is infinite exactly when every coupling has an infinite objective.
 Measures with no coupling at all satisfy the right-hand side vacuously. -/
 @[simp]
@@ -311,11 +333,11 @@ theorem wassersteinEDist_add_smul_dirac_le
       = eLpNorm (E.indicator f) p (σ.map (fun x ↦ (x, x)) + τ.map (fun x ↦ (x, x₀))) := by
         rw [hind]
     _ = eLpNorm f p ((σ.map (fun x ↦ (x, x)) + τ.map (fun x ↦ (x, x₀))).restrict E) :=
-        eLpNorm_indicator_eq_eLpNorm_restrict hE
+        eLpNorm_indicator_eq_eLpNorm_restrict hE.nullMeasurableSet
     _ = eLpNorm f p ((τ.map (fun x ↦ (x, x₀))).restrict E) := by
         rw [Measure.restrict_add, Measure.restrict_eq_zero.2 hAE, zero_add]
     _ = eLpNorm (E.indicator f) p (τ.map (fun x ↦ (x, x₀))) :=
-        (eLpNorm_indicator_eq_eLpNorm_restrict hE).symm
+        (eLpNorm_indicator_eq_eLpNorm_restrict hE.nullMeasurableSet).symm
     _ = eLpNorm f p (τ.map (fun x ↦ (x, x₀))) := by rw [hind]
     _ = eLpNorm (fun x ↦ edist x x₀) p τ :=
         eLpNorm_map_measure hd.aestronglyMeasurable hpair.aemeasurable

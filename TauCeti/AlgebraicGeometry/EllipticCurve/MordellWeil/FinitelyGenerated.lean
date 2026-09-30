@@ -91,7 +91,7 @@ theorem fg_point (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R F]
 /-- **The Mordell–Weil theorem** for an arbitrary Weierstrass curve: `E(K)` is finitely generated,
 given an admissible change of variables `C` bringing `E` into the normal form `y² = f(x)`,
 together with the finiteness hypotheses of `fg_point` for the model `C • E`. The result transfers
-along the isomorphism of point groups `Point.equivVariableChange`.
+along the isomorphism of point groups `Point.addEquivVariableChange`.
 
 Such a `C` exists whenever `2` is invertible in `K`, by completing the square. -/
 theorem fg_point_of_variableChange (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R F]
@@ -102,8 +102,8 @@ theorem fg_point_of_variableChange (R : Type*) [CommRing R] [IsDedekindDomain R]
       Monoid.FG ((C • W).toAffine.ringOfIntegersFactor R p)ˣ] :
     AddGroup.FG W.Point := by
   have := fg_point (W := (C • W).toAffine) R
-  exact AddGroup.fg_of_surjective (f := (Point.equivVariableChange W C).toAddMonoidHom)
-    (Point.equivVariableChange W C).surjective
+  exact AddGroup.fg_of_surjective (f := (Point.addEquivVariableChange W C).toAddMonoidHom)
+    (Point.addEquivVariableChange W C).surjective
 
 end Northcott
 

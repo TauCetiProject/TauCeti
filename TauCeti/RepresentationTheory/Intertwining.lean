@@ -29,6 +29,7 @@ caller has already done.
   subrepresentation containing its image.
 * `Representation.IntertwiningMap.equivOfRange`: an injective intertwining map is an equivalence
   onto a subrepresentation that its image fills.
+
 -/
 
 public section
