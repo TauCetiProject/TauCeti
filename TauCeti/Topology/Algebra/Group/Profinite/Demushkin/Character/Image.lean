@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CharacterImage
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.QInvariant
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
@@ -26,7 +27,8 @@ together: `χ` is congruent to `1` modulo `q` and to nothing finer,
 (`TauCeti.range_demushkinCharacter_le_unitsPrincipal_iff`). In particular `χ` is trivial exactly
 when `q = 0` (`TauCeti.range_demushkinCharacter_eq_bot_iff`), and when `q ≠ 2` the image of `χ` is
 the principal unit group `1 + qℤ_p` (`TauCeti.range_demushkinCharacter_eq_unitsPrincipal`), because
-every closed subgroup of `1 + pℤ_p` for odd `p`, and of `1 + 4ℤ_2`, is a principal unit group. For
+every nontrivial closed subgroup of `1 + pℤ_p` for odd `p`, and of `1 + 4ℤ_2`, is a principal unit
+group. For
 `q = 2` the equivalence only says that `χ` is not congruent to `1` modulo `4`: the image is then a
 closed subgroup of `ℤ_2ˣ` not contained in `1 + 4ℤ_2`, and `q` does not determine which one.
 
@@ -78,123 +80,6 @@ attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime]
 
-section Presented
-
-variable {X : Type u} {r : freeProP p X}
-
-/-- A character of a presented pro-`p` group lands in `1 + p^kℤ_p` exactly when its values on the
-generators do. -/
-private theorem range_le_unitsPrincipal_iff_forall_of (χ : presentedProP p X {r} →ₜ* ℤ_[p]ˣ)
-    (k : ℕ) :
-    χ.toMonoidHom.range ≤ unitsPrincipal p k ↔
-      ∀ x, (p : ℤ_[p]) ^ k ∣ ((χ.comp (presentedProP.mk p {r}) (of x) : ℤ_[p]ˣ) : ℤ_[p]) - 1 := by
-  refine ⟨fun h x ↦ mem_unitsPrincipal_iff.1 (h ⟨_, rfl⟩), ?_⟩
-  rintro h _ ⟨g, rfl⟩
-  obtain ⟨g, rfl⟩ := presentedProP.mk_surjective p {r} g
-  have := freeProP.pow_dvd_sub_of_forall_of (χ := 1) (χ' := χ.comp (presentedProP.mk p {r}))
-    (fun x ↦ by simpa [ContinuousMonoidHom.coe_one] using h x) g
-  exact mem_unitsPrincipal_iff.2 (by simpa [ContinuousMonoidHom.coe_one] using this)
-
-/-- The exponent sum at `x` is a crossed homomorphism for the trivial character. -/
-private theorem isCrossedHom_one_exponentSum (x : X) :
-    IsCrossedHom (1 : freeProP p X →ₜ* ℤ_[p]ˣ) fun g ↦ (exponentSum p X g).toAdd x :=
-  isCrossedHom_iff.2 fun g h ↦ by
-    simp [add_comm]
-
-private theorem continuous_exponentSum_apply (x : X) :
-    Continuous fun g : freeProP p X ↦ (exponentSum p X g).toAdd x :=
-  (continuous_apply x).comp (continuous_toAdd.comp (exponentSum p X).continuous)
-
-/-- **The inductive step.** Let `χ` be a continuous character of `F` for which every continuous
-crossed homomorphism vanishes at `r`, congruent to `1` modulo `p^k` on the generators. If `p^(k+1)`
-divides every exponent sum of `r` and the degree-one form of `r` is nondegenerate, then `χ` is
-congruent to `1` modulo `p^(k+1)` on the generators. -/
-private theorem pow_succ_dvd_sub_one_of_forall_pow_succ_dvd_exponentSum [Finite X]
-    (hr : r ∈ proPFrattini p (freeProP p X))
-    (hnd : (degreeOneForm (gradedMk p (freeProP p X) 1
-      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).Nondegenerate)
-    {χ : freeProP p X →ₜ* ℤ_[p]ˣ}
-    (hkill : ∀ F : freeProP p X → ℤ_[p], Continuous F → IsCrossedHom χ F → F r = 0) {k : ℕ}
-    (hk : ∀ x, (p : ℤ_[p]) ^ k ∣ (χ (of x) : ℤ_[p]) - 1)
-    (he : ∀ x, (p : ℤ_[p]) ^ (k + 1) ∣ (exponentSum p X r).toAdd x) (x : X) :
-    (p : ℤ_[p]) ^ (k + 1) ∣ (χ (of x) : ℤ_[p]) - 1 := by
-  classical
-  have := Fintype.ofFinite X
-  set n : pLowerCentralSeries p (freeProP p X) 1 :=
-    ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩ with hn
-  set B : Matrix X X (ZMod p) :=
-    LinearMap.BilinForm.toMatrix (dualBasis p X) (degreeOneForm (gradedMk p (freeProP p X) 1 n))
-    with hB
-  have hBdet : B.det ≠ 0 :=
-    (LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (dualBasis p X)).1 hnd
-  -- `χ ≡ 1 mod p^k` on the generators, read against the trivial character.
-  have hk₁ : ∀ x, (p : ℤ_[p]) ^ k ∣ (χ (of x) : ℤ_[p]) - (1 : freeProP p X →ₜ* ℤ_[p]ˣ) (of x) :=
-    fun x ↦ by simpa [ContinuousMonoidHom.coe_one] using hk x
-  choose s hs using hk
-  -- The values on the generators of the exponent sum at `j`.
-  set c : X → X → ℤ_[p] := fun j x ↦ (exponentSum p X (of x)).toAdd j
-  -- The first-order expansion at `r`, comparing the exponent sum at `j` with the crossed
-  -- homomorphism for `χ` taking the same values on the generators, which vanishes at `r`.
-  have hsum : ∀ j, (p : ℤ_[p]) ∣ ∑ i, s i * (ZMod.cast (B i j) : ℤ_[p]) := fun j ↦ by
-    have h := IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm (χ := 1) (χ' := χ) hk₁
-      (isCrossedHom_one_exponentSum j) (isCrossedHom_crossedHom χ (c j))
-      (continuous_exponentSum_apply j) (continuous_crossedHom χ (c j))
-      (fun x ↦ (crossedHom_of χ (c j) x).symm) n
-    rw [hkill _ (continuous_crossedHom χ (c j)) (isCrossedHom_crossedHom χ (c j))] at h
-    have h' : (p : ℤ_[p]) ^ k * p ∣ (p : ℤ_[p]) ^ k * ∑ i, s i * (ZMod.cast (B i j) : ℤ_[p]) := by
-      rw [← pow_succ]
-      convert dvd_neg.2 (dvd_add h (he j)) using 1
-      simp [hn, hs, hB, LinearMap.BilinForm.toMatrix_apply, Pi.single_apply, Finset.mul_sum,
-        mul_assoc]
-    exact (mul_dvd_mul_iff_left (pow_ne_zero k (Nat.cast_ne_zero.2
-      (Fact.out : p.Prime).ne_zero))).1 h'
-  -- Modulo `p`, the reduced vector `s` is in the left kernel of the matrix of the form.
-  have hs0 : (fun i ↦ PadicInt.toZMod (s i)) = 0 := by
-    refine eq_zero_of_vecMul_eq_zero hBdet (funext fun j ↦ ?_)
-    have := (PadicInt.toZMod_eq_zero_iff_dvd _).2 (hsum j)
-    simpa [vecMul, dotProduct, ZMod.ringHom_map_cast] using this
-  rw [hs x, pow_succ]
-  exact mul_dvd_mul_left _ ((PadicInt.toZMod_eq_zero_iff_dvd _).1 (congrFun hs0 x))
-
-/-- **The level of the character with the prescription property is the content of the exponent
-vector of the relator.** Let `G = ⟨X ∣ r⟩` be a one-relator pro-`p` group with `r ∈ Φ(F)` whose
-class in `gr_1(F)` has nondegenerate degree-one form, and let `χ : G → ℤ_pˣ` be a continuous
-character with the prescription property. Then `χ` takes values in `1 + p^kℤ_p` exactly when `p^k`
-divides the exponent sum of `r` at every generator. -/
-theorem HasPrescriptionProperty.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum [Finite X]
-    (hr : r ∈ proPFrattini p (freeProP p X))
-    (hnd : (degreeOneForm (gradedMk p (freeProP p X) 1
-      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).Nondegenerate)
-    {χ : presentedProP p X {r} →ₜ* ℤ_[p]ˣ} (hχ : HasPrescriptionProperty χ) (k : ℕ) :
-    χ.toMonoidHom.range ≤ unitsPrincipal p k ↔
-      ∀ x, (p : ℤ_[p]) ^ k ∣ (exponentSum p X r).toAdd x := by
-  classical
-  have := Fintype.ofFinite X
-  -- Every continuous crossed homomorphism for the pulled-back character vanishes at `r`.
-  have hkill : ∀ F : freeProP p X → ℤ_[p], Continuous F →
-      IsCrossedHom (χ.comp (presentedProP.mk p {r})) F → F r = 0 := fun F hFc hF ↦
-    (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
-      (Set.singleton_subset_iff.2 hr) χ).1 hχ F hFc hF r rfl
-  -- The values on the generators of the exponent sum at `j`.
-  set c : X → X → ℤ_[p] := fun j x ↦ (exponentSum p X (of x)).toAdd j
-  rw [range_le_unitsPrincipal_iff_forall_of]
-  refine ⟨fun h j ↦ ?_, fun he ↦ ?_⟩
-  · -- The exponent sum at `j` and the crossed homomorphism for `χ` with the same values on the
-    -- generators are congruent modulo `p^k`, and the latter vanishes at `r`.
-    have := IsCrossedHom.pow_dvd_sub_of_forall_of_eq (χ := 1)
-      (χ' := χ.comp (presentedProP.mk p {r})) (k := k)
-      (fun x ↦ by simpa [ContinuousMonoidHom.coe_one] using h x) (isCrossedHom_one_exponentSum j)
-      (isCrossedHom_crossedHom _ (c j)) (continuous_exponentSum_apply j)
-      (continuous_crossedHom _ (c j)) (fun x ↦ (crossedHom_of _ (c j) x).symm) r
-    rwa [hkill _ (continuous_crossedHom _ (c j)) (isCrossedHom_crossedHom _ (c j)), zero_sub,
-      dvd_neg] at this
-  · induction k with
-    | zero => simp
-    | succ k ih =>
-      exact pow_succ_dvd_sub_one_of_forall_pow_succ_dvd_exponentSum hr hnd hkill
-        (ih fun x ↦ (pow_dvd_pow _ k.le_succ).trans (he x)) he
-
-end Presented
 
 section Demushkin
 
@@ -205,7 +90,7 @@ include hG
 /-- **The canonical character of a Demushkin group is congruent to `1` modulo `q(G)`, and modulo no
 higher power of `p`**: it takes values in `1 + p^kℤ_p` exactly when `p^k` divides the `q`-invariant.
 For `q(G) = 0` this holds for every `k`. -/
-theorem range_demushkinCharacter_le_unitsPrincipal_iff (k : ℕ) :
+@[simp] theorem range_demushkinCharacter_le_unitsPrincipal_iff (k : ℕ) :
     (demushkinCharacter hG).toMonoidHom.range ≤ unitsPrincipal p k ↔ p ^ k ∣ demushkinQ hG := by
   obtain ⟨r, hr, ⟨e⟩⟩ := hG.exists_mem_proPFrattini_continuousMulEquiv_presentedProP
     (ULift.{v} (Fin (demushkinRank hG))) (by simp)
@@ -213,10 +98,9 @@ theorem range_demushkinCharacter_le_unitsPrincipal_iff (k : ℕ) :
   -- Pull the canonical character back to the presented group; its image does not change.
   have hrange : ((demushkinCharacter hG).comp
       (e : presentedProP p (ULift.{v} (Fin (demushkinRank hG))) {r} →ₜ* G)).toMonoidHom.range =
-      (demushkinCharacter hG).toMonoidHom.range := by
-    ext u
-    simp only [MonoidHom.mem_range, ContinuousMonoidHom.coe_toMonoidHom]
-    exact ⟨fun ⟨g, hg⟩ ↦ ⟨e g, hg⟩, fun ⟨g, hg⟩ ↦ ⟨e.symm g, by simpa using hg⟩⟩
+      (demushkinCharacter hG).toMonoidHom.range :=
+    (MonoidHom.range_comp _ _).trans (by
+      rw [MonoidHom.range_eq_top.mpr e.surjective, Subgroup.map_top])
   have hχ := (hasPrescriptionProperty_demushkinCharacter hG).comp_equiv (e := e)
   rw [← hrange, hχ.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum hr
     (hG.nondegenerate_degreeOneForm hr e), demushkinQ_congr hG hP e.symm]
@@ -238,7 +122,7 @@ theorem range_demushkinCharacter_le_unitsPrincipal_iff (k : ℕ) :
 
 /-- **The canonical character of a Demushkin group is trivial exactly when `q(G) = 0`**, that is
 when the abelianization of `G` is torsion-free. -/
-theorem range_demushkinCharacter_eq_bot_iff :
+@[simp] theorem range_demushkinCharacter_eq_bot_iff :
     (demushkinCharacter hG).toMonoidHom.range = ⊥ ↔ demushkinQ hG = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ eq_bot_iff.2 ?_⟩
   · have hdvd := (range_demushkinCharacter_le_unitsPrincipal_iff hG (demushkinQ hG)).1
@@ -259,7 +143,8 @@ theorem range_demushkinCharacter_eq_unitsPrincipal {s : ℕ} (hs : demushkinQ hG
     simpa [h, hs] using hG.prime_dvd_demushkinQ)
   have hs2 : p = 2 → 2 ≤ s := fun hp2 ↦ by
     by_contra! hlt
-    exact h2 (by rw [hs, hp2, show s = 1 by omega, pow_one])
+    have hs1 : s = 1 := by omega
+    exact h2 (by rw [hs, hp2, hs1, pow_one])
   have hne : (demushkinCharacter hG).toMonoidHom.range ≠ ⊥ := fun h ↦
     pow_ne_zero s hp.ne_zero (hs ▸ (range_demushkinCharacter_eq_bot_iff hG).1 h)
   obtain ⟨f, hsf, hf⟩ := exists_eq_unitsPrincipal_of_isClosed hs0 hs2
