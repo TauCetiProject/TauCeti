@@ -532,6 +532,11 @@ square `q`. It extends the pairing against a set of marked squares to integer we
 noncomputable def JWeight (w : Fin n × Fin n → ℤ) (x : GridState n) : ℚ :=
   ∑ q, (w q : ℚ) * GridPoint.JCenter x.pointSet {q}
 
+/-- The weighted pairing as a sum over squares. -/
+theorem JWeight_def (w : Fin n × Fin n → ℤ) (x : GridState n) :
+    x.JWeight w = ∑ q, (w q : ℚ) * GridPoint.JCenter x.pointSet {q} :=
+  (rfl)
+
 end GridState
 
 namespace GridRectangleBetween
@@ -585,7 +590,7 @@ theorem JWeight_sub_JWeight_eq_sum (R : GridRectangleBetween x y) {w : Fin n × 
     intro q
     rw [hpt]
     ring
-  rw [GridState.JWeight, GridState.JWeight, ← Finset.sum_sub_distrib]
+  rw [GridState.JWeight_def, GridState.JWeight_def, ← Finset.sum_sub_distrib]
   simp only [← mul_sub, expand]
   rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
     ← Finset.mul_sum, ← Finset.mul_sum, hcols, hrows, htot, hprod]

@@ -67,21 +67,20 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 
 /-- The row `(G.X s).castSucc` of the stabilization carries its `O`-marking only in the new
 column `s.castSucc`. -/
+@[simp]
 theorem stabilizeX_O_eq_castSucc_iff (c : Fin (n + 1)) :
-    (G.stabilizeX s.castSucc (G.X s).castSucc s).O c = (G.X s).castSucc ↔ c = s.castSucc := by
-  refine ⟨fun h ↦ (G.stabilizeX s.castSucc (G.X s).castSucc s).O.toPerm.injective ?_, ?_⟩
-  · exact h.trans (by simp)
-  · rintro rfl
-    simp
+    (G.O.insertPoint s.castSucc (G.X s).castSucc) c = (G.X s).castSucc ↔
+      c = s.castSucc := by
+  simpa only [stabilizeX_O] using
+    G.stabilizeX_O_eq_newRow_iff s.castSucc (G.X s).castSucc s c
 
 /-- The row `(G.X s).castSucc` of the stabilization carries its `X`-marking only in the column
 `s.succ`. -/
+@[simp]
 theorem stabilizeX_X_eq_castSucc_iff (c : Fin (n + 1)) :
-    (G.stabilizeX s.castSucc (G.X s).castSucc s).X c = (G.X s).castSucc ↔ c = s.succ := by
-  refine ⟨fun h ↦ (G.stabilizeX s.castSucc (G.X s).castSucc s).X.toPerm.injective ?_, ?_⟩
-  · exact h.trans (by simp)
-  · rintro rfl
-    simp
+    (G.X.splitPoint s.castSucc (G.X s).castSucc s) c = (G.X s).castSucc ↔
+      c = s.succ := by
+  simpa [stabilizeX_X] using G.stabilizeX_X_eq_newRow_iff s.castSucc (G.X s).castSucc s c
 
 /-- The outer squares of the stabilization splitting the `X`-marking of column `s`: the squares
 off the row and off the column of its new `O`-marking `(s.castSucc, (G.X s).castSucc)`. -/
@@ -100,10 +99,18 @@ def stabilizeXWeight (q : Fin (n + 1) × Fin (n + 1)) : ℤ :=
     n * (if q ∈ (G.stabilizeX s.castSucc (G.X s).castSucc s).OSet then 1 else 0) +
     n * (if q = (s.castSucc, (G.X s).castSucc) then 1 else 0)
 
+/-- The balanced weight as its three contributions on each square. -/
+theorem stabilizeXWeight_def (q : Fin (n + 1) × Fin (n + 1)) :
+    G.stabilizeXWeight s q =
+      (if q ∈ G.stabilizeXOuterSquares s then 1 else 0) -
+        n * (if q ∈ (G.stabilizeX s.castSucc (G.X s).castSucc s).OSet then 1 else 0) +
+        n * (if q = (s.castSucc, (G.X s).castSucc) then 1 else 0) :=
+  (rfl)
+
 /-- Every column of the balanced weight sums to zero. -/
 theorem sum_stabilizeXWeight_column (c : Fin (n + 1)) :
     ∑ r, G.stabilizeXWeight s (c, r) = 0 := by
-  simp only [stabilizeXWeight, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+  simp only [stabilizeXWeight_def, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
     mem_stabilizeXOuterSquares, mem_OSet, stabilizeX_O, Prod.mk.injEq]
   by_cases hc : c = s.castSucc
   · subst hc
@@ -113,7 +120,7 @@ theorem sum_stabilizeXWeight_column (c : Fin (n + 1)) :
 /-- Every row of the balanced weight sums to zero. -/
 theorem sum_stabilizeXWeight_row (r : Fin (n + 1)) :
     ∑ c, G.stabilizeXWeight s (c, r) = 0 := by
-  simp only [stabilizeXWeight, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+  simp only [stabilizeXWeight_def, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
     mem_stabilizeXOuterSquares, mem_OSet, stabilizeX_O, Prod.mk.injEq, ← Equiv.eq_symm_apply,
     Finset.sum_ite_eq']
   by_cases hr : r = (G.X s).castSucc
@@ -124,6 +131,11 @@ theorem sum_stabilizeXWeight_row (r : Fin (n + 1)) :
 /-- The level of a grid state of the stabilization: its pairing against the balanced weight. -/
 noncomputable def stabilizeXLevel (y : GridState (n + 1)) : ℚ :=
   y.JWeight (G.stabilizeXWeight s)
+
+/-- The stabilization level is the weighted pairing of the state. -/
+theorem stabilizeXLevel_def (y : GridState (n + 1)) :
+    G.stabilizeXLevel s y = y.JWeight (G.stabilizeXWeight s) :=
+  (rfl)
 
 /-- **The level counts outer squares.** Across a rectangle of the stabilization covering no
 `O`-marking, the level of the source minus the level of the target is the number of outer squares
@@ -137,7 +149,7 @@ theorem stabilizeXLevel_sub_stabilizeXLevel {y z : GridState (n + 1)}
   have hmem : (s.castSucc, (G.X s).castSucc) ∈
       (G.stabilizeX s.castSucc (G.X s).castSucc s).OSet := by
     simp
-  rw [stabilizeXLevel, stabilizeXLevel, R.JWeight_sub_JWeight_eq_sum
+  rw [stabilizeXLevel_def, stabilizeXLevel_def, R.JWeight_sub_JWeight_eq_sum
     (G.sum_stabilizeXWeight_column s) (G.sum_stabilizeXWeight_row s),
     ← Finset.filter_mem_eq_inter, Finset.card_filter]
   push_cast
@@ -145,7 +157,7 @@ theorem stabilizeXLevel_sub_stabilizeXLevel {y z : GridState (n + 1)}
   have hqO : q ∉ (G.stabilizeX s.castSucc (G.X s).castSucc s).OSet :=
     Finset.disjoint_left.1 hO hq
   have hne : q ≠ (s.castSucc, (G.X s).castSucc) := fun h ↦ hqO (h ▸ hmem)
-  rw [stabilizeXWeight, ite_eq_right hqO, ite_eq_right hne]
+  rw [stabilizeXWeight_def, ite_eq_right hqO, ite_eq_right hne]
   split_ifs <;> simp
 
 /-- **The level drops across rectangles covering outer squares.** Across a rectangle of the
@@ -168,7 +180,7 @@ theorem stabilizeXLevel_lt_or_disjoint {y z : GridState (n + 1)} (R : GridRectan
 theorem stabilizeXLevel_eq_of_disjoint {y z : GridState (n + 1)} (R : GridRectangleBetween y z)
     (h : Disjoint R.toGridRectangle.coveredSquares (G.stabilizeXOuterSquares s)) :
     G.stabilizeXLevel s y = G.stabilizeXLevel s z := by
-  rw [← sub_eq_zero, stabilizeXLevel, stabilizeXLevel, R.JWeight_sub_JWeight_eq_sum
+  rw [← sub_eq_zero, stabilizeXLevel_def, stabilizeXLevel_def, R.JWeight_sub_JWeight_eq_sum
     (G.sum_stabilizeXWeight_column s) (G.sum_stabilizeXWeight_row s)]
   refine Finset.sum_eq_zero fun q hq ↦ ?_
   have hout : q ∉ G.stabilizeXOuterSquares s := Finset.disjoint_left.1 h hq
@@ -182,8 +194,8 @@ theorem stabilizeXLevel_eq_of_disjoint {y z : GridState (n + 1)} (R : GridRectan
       simp only [true_and, stabilizeX_O, GridState.insertPoint_apply_newColumn]
       exact eq_comm
     · obtain rfl : r = (G.X s).castSucc := hout.resolve_left hc
-      simp only [G.stabilizeX_O_eq_castSucc_iff s c, hc, false_and]
-  rw [stabilizeXWeight, ite_eq_right hout]
+      simp only [stabilizeX_O, G.stabilizeX_O_eq_castSucc_iff s c, hc, false_and]
+  rw [stabilizeXWeight_def, ite_eq_right hout]
   by_cases hq' : q = (s.castSucc, (G.X s).castSucc)
   · rw [ite_eq_left (key.2 hq'), ite_eq_left hq']
     simp

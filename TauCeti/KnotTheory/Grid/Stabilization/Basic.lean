@@ -232,6 +232,26 @@ theorem stabilizeX_X (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
       G.X.splitPoint newColumn newRow splitColumn :=
   (rfl)
 
+/-- The new row of an `X`-stabilization contains its `O`-marking only in the new column. -/
+theorem stabilizeX_O_eq_newRow_iff (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) (c : Fin (n + 1)) :
+    (G.stabilizeX newColumn newRow splitColumn).O c = newRow ↔ c = newColumn := by
+  refine ⟨fun h ↦ (G.stabilizeX newColumn newRow splitColumn).O.toPerm.injective ?_, ?_⟩
+  · exact h.trans (by simp)
+  · rintro rfl
+    simp
+
+/-- The new row of an `X`-stabilization contains its `X`-marking only in the column
+adjacent to the new column at the split marking. -/
+theorem stabilizeX_X_eq_newRow_iff (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) (c : Fin (n + 1)) :
+    (G.stabilizeX newColumn newRow splitColumn).X c = newRow ↔
+      c = newColumn.succAbove splitColumn := by
+  refine ⟨fun h ↦ (G.stabilizeX newColumn newRow splitColumn).X.toPerm.injective ?_, ?_⟩
+  · exact h.trans (by simp)
+  · rintro rfl
+    simp
+
 /-- In the stabilization splitting the `X`-marking of column `s`, the `X`-marking of each column
 collapses under `Fin.predAbove` onto the `X`-marking of `G` in the collapsed column: both
 `X`-markings of the new block collapse onto the split marking. -/
