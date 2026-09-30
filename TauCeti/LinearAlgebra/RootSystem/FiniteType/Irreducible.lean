@@ -31,8 +31,6 @@ every edge of the Dynkin diagram, so the simple roots span the whole space insid
   diagram makes a root system irreducible.
 * `RootPairing.eq_bot_of_forall_root_not_mem`: a submodule invariant under the simple
   reflections and containing no simple root is trivial.
-* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A`: the diagram of type `Aₙ` is the path graph on
-  `n` nodes.
 * `TauCeti.DynkinType.connected_diagramGraph_cartanMatrix`: every valid standard Dynkin diagram is
   connected.
 * `TauCeti.HasCartanType.isIrreducible`: a root system of valid Cartan type is irreducible.
@@ -82,17 +80,6 @@ private theorem adj_fork_D {n : ℕ} (hn : 4 ≤ n) (i : Fin n)
   rw [diagramGraph_adj]
   simp [CartanMatrix.D]
   simp only [Fin.ext_iff]
-  omega
-
-/-- **The diagram of type `Aₙ` is the path graph**: in Bourbaki's numbering, the nodes `i` and `j`
-are joined exactly when they are consecutive. -/
-theorem diagramGraph_cartanMatrix_A (n : ℕ) :
-    (diagramGraph (A n).cartanMatrix : _root_.SimpleGraph (Fin n)) =
-      _root_.SimpleGraph.pathGraph n := by
-  rw [cartanMatrix_A]
-  ext i j
-  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
-  simp [CartanMatrix.A, Fin.ext_iff]
   omega
 
 /-- The diagram of the standard Cartan matrix of a valid Dynkin type is connected. Validity

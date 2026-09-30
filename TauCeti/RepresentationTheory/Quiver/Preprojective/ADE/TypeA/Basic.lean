@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Ring.LadderValley
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
@@ -145,10 +145,11 @@ private theorem signlessPreprojectiveMk_ofPath_eq_ladderValley (φ : Fin n → �
       rw [harr]
       rcases m with _ | m
       · obtain ⟨r, rfl⟩ : ∃ r', r = r' + 1 := ⟨r - 1, by omega⟩
-        rw [show φ ((vertexEquiv G).symm b) = r by omega,
-          d_mul_ladderValley_zero_eq_zero hud₀ hud, zero_mul, smul_zero]
+        have hheight : φ ((vertexEquiv G).symm b) = r := by omega
+        rw [hheight, d_mul_ladderValley_zero_eq_zero hud₀ hud, zero_mul, smul_zero]
         exact .inl rfl
-      · rw [show φ ((vertexEquiv G).symm b) = m + r by omega, d_mul_ladderValley hud]
+      · have hheight : φ ((vertexEquiv G).symm b) = m + r := by omega
+        rw [hheight, d_mul_ladderValley hud]
         refine .inr ⟨m, s + 1, r, ε * (-1) ^ r, by rw [Path.length_cons, ← hlen]; omega, by omega,
           by omega, ?_⟩
         rw [mul_smul, mul_assoc]
@@ -244,11 +245,14 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_le
     simpa using h
   · by_cases hw : w + 1 ≤ n - 1
     · have h := finArrow_relation k hG (n - 1 - (w + 1))
-      rw [show n - 1 - (w + 1) + 1 = n - 1 - w by omega,
-        show n - 1 - (w + 1) - 1 = n - 1 - (w + 1 + 1) by omega, add_comm] at h
+      have hnext : n - 1 - (w + 1) + 1 = n - 1 - w := by omega
+      have hprev : n - 1 - (w + 1) - 1 = n - 1 - (w + 1 + 1) := by omega
+      rw [hnext, hprev, add_comm] at h
       exact h
-    · rw [show n - 1 - (w + 1) = 0 by omega, show n - 1 - w = 0 by omega,
-        show n - 1 - (w + 1 + 1) = 0 by omega,
+    · have hzero : n - 1 - (w + 1) = 0 := by omega
+      have hnext : n - 1 - w = 0 := by omega
+      have hprev : n - 1 - (w + 1 + 1) = 0 := by omega
+      rw [hzero, hnext, hprev,
         finArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0) (by omega)]
       simp
   · intro i j hij

@@ -61,9 +61,9 @@ namespace TauCeti
 
 variable {A : Type*}
 
-section Semiring
+section Monoid
 
-variable [Semiring A] (u d : ℕ → A)
+variable [Monoid A] (u d : ℕ → A)
 
 /-- The **valley word** `u (m + r - 1) ⋯ u m · d m ⋯ d (m + s - 1)`: starting from rung `m + s`, it
 descends `s` rungs to rung `m` and then climbs `r` rungs to rung `m + r`. The first step is the
@@ -92,11 +92,16 @@ theorem d_mul_ladderValley_succ_zero (m s : ℕ) :
     d m * ladderValley u d (m + 1) s 0 = ladderValley u d m (s + 1) 0 := by
   simp [ladderValley, List.range_succ_eq_map, Function.comp_def, add_assoc, add_comm 1]
 
-end Semiring
+end Monoid
 
 section Ring
 
 variable [Ring A] {u d : ℕ → A}
+
+private theorem neg_mul_neg_one_pow (a b : A) (r : ℕ) :
+    -(a * ((-1) ^ r * b)) = (-1) ^ (r + 1) * (a * b) := by
+  rw [← mul_assoc, ((Commute.neg_one_right a).pow_right r).eq]
+  simp [pow_succ, mul_assoc]
 
 /-- **A final descent moves the valley down.** If the turns at every positive rung cancel, then
 descending one rung after the valley word with bottom `m + 1` gives, up to the sign `(-1) ^ r`,
@@ -108,10 +113,15 @@ theorem d_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) 
   | succ r ih =>
     have hturn : d (m + r + 1) * u (m + r + 1) = -(u (m + r) * d (m + r)) :=
       eq_neg_of_add_eq_zero_left (hud (m + r))
-    rw [← u_mul_ladderValley, ← u_mul_ladderValley, ← mul_assoc, ← add_assoc,
-      show m + 1 + r = m + r + 1 by omega, hturn, neg_mul, mul_assoc, ih, ← mul_assoc,
-      ((Commute.neg_one_right (u (m + r))).pow_right r).eq, pow_succ, mul_neg_one, neg_mul,
-      mul_assoc]
+    have hindex : m + 1 + r = m + r + 1 := by omega
+    calc
+      d (m + (r + 1)) * ladderValley u d (m + 1) s (r + 1) =
+          -(u (m + r) * (d (m + r) * ladderValley u d (m + 1) s r)) := by
+            rw [← u_mul_ladderValley, ← mul_assoc, ← add_assoc, hindex, hturn,
+              neg_mul, mul_assoc]
+      _ = -(u (m + r) * ((-1) ^ r * ladderValley u d m (s + 1) r)) := by rw [ih]
+      _ = (-1) ^ (r + 1) * ladderValley u d m (s + 1) (r + 1) := by
+        rw [neg_mul_neg_one_pow, u_mul_ladderValley]
 
 /-- **A valley at the bottom rung cannot be followed by a descent.** If the turns at every rung
 cancel, then descending after a valley word which reaches rung `0` and climbs back up vanishes. -/
