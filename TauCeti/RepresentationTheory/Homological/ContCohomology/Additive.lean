@@ -37,6 +37,8 @@ and cup products, need linearity before passing to cohomology.
   functor instances.
 * `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_subsingleton`: continuous
   cohomology vanishes on subsingleton coefficients, a consequence of additivity.
+* `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_iso`: continuous cohomology
+  vanishes on coefficients isomorphic to ones on which it vanishes.
 -/
 
 public section
@@ -230,6 +232,14 @@ theorem subsingleton_continuousCohomology_of_subsingleton (X : TopRep R G) [Subs
     exact (continuousCohomologyFunctor R G n).map_zero X X
   exact ⟨fun x y ↦ (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom x) h).trans
     (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom y) h).symm⟩
+
+variable {R G} in
+/-- Continuous cohomology vanishes on a coefficient representation isomorphic to one on which it
+vanishes: the coefficient map of the isomorphism is a bijection of the cohomology modules. -/
+theorem subsingleton_continuousCohomology_of_iso {X Y : TopRep R G} (e : X ≅ Y) (n : ℕ)
+    [Subsingleton (continuousCohomology n Y)] : Subsingleton (continuousCohomology n X) :=
+  haveI : IsIso (coeffMap e.hom n) := (continuousCohomologyFunctor R G n).map_isIso e.hom
+  (Equiv.ofBijective _ (ConcreteCategory.bijective_of_isIso (coeffMap e.hom n))).subsingleton
 
 end Additive
 

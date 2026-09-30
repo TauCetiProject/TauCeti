@@ -34,10 +34,18 @@ has a compatible sequence. Surjectivity of the realization maps is essential.
 * `PLowerCentralSeriesComparison.exists_continuousMulEquiv_preserving`: self-comparison
   data preserving marked elements and all finite character quotients give an automorphism
   preserving the marked elements and the character.
+* `TauCeti.IsProP.exists_continuousMulEquiv_apply_eq_of_forall_exists_surjective`: in a
+  topologically finitely generated pro-`p` group, if for every `k` a continuous surjective
+  endomorphism carries `r` to `w` modulo `λ_k` and moves each marked element `a i` by an element
+  of a closed subgroup `C i`, then a continuous automorphism carries `r` to `w` and moves each
+  `a i` by an element of `C i`. The comparison data are the surjective endomorphisms of the
+  finite quotients carrying the class of `r` to the class of `w` and moving the class of each
+  `a i` inside the image of `C i`.
 
-The last result applies to basis changes of a finite-rank free pro-`p` group with a marked
-relator. Constructing the finite nonempty sets of admissible basis changes is a separate
-hypothesis; the theorem does not construct the corrections used in a normal-form argument.
+The last two results apply to basis changes of a finite-rank free pro-`p` group with a marked
+relator. Constructing the finite nonempty sets of admissible basis changes, or the finite
+approximations, is a separate hypothesis; the theorems do not construct the corrections used in a
+normal-form argument.
 -/
 
 public section
@@ -177,5 +185,74 @@ theorem exists_continuousMulEquiv_preserving {ι K : Type*}
     exact hk (s k) g (e g) (hlevel k g).symm
 
 end PLowerCentralSeriesComparison
+
+section Limit
+
+variable {p G} [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **From finite approximations to an automorphism.** Let `G` be a topologically finitely
+generated pro-`p` group, let `a : ι → G` be marked elements and let `C : ι → Subgroup G` be closed
+subgroups. If for every `k` some continuous surjective endomorphism `φ_k` of `G` moves each `a i`
+inside `C i`, that is `(a i)⁻¹ * φ_k (a i) ∈ C i`, and has `φ_k r ≡ w mod λ_k(G)`, then a
+continuous automorphism `e` of `G` carries `r` to `w` and moves each `a i` inside `C i`.
+
+The constraints pass to the limit because membership in a closed subgroup is detected on the
+quotients `G ⧸ λ_k` (`TauCeti.IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries`). -/
+theorem IsProP.exists_continuousMulEquiv_apply_eq_of_forall_exists_surjective {ι : Type*}
+    (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) (hp : p.Prime) (r w : G)
+    (a : ι → G) (C : ι → Subgroup G) (hC : ∀ i, IsClosed (C i : Set G))
+    (h : ∀ k, ∃ φ : G →ₜ* G, Function.Surjective φ ∧ (∀ i, (a i)⁻¹ * φ (a i) ∈ C i) ∧
+      (φ r)⁻¹ * w ∈ pLowerCentralSeries p G k) :
+    ∃ e : G ≃ₜ* G, (∀ i, (a i)⁻¹ * e (a i) ∈ C i) ∧ e r = w := by
+  have : ∀ k, DiscreteTopology (G ⧸ pLowerCentralSeries p G k) :=
+    fun k ↦ QuotientGroup.discreteTopology (hfg.isOpen_pLowerCentralSeries hp k)
+  -- The level-`k` comparison data: surjective endomorphisms of the finite group `G ⧸ λ_k`
+  -- carrying `r` to `w` and moving the class of each `a i` inside the image of `C i`; descent
+  -- along the series bonds the levels.
+  let S (k : ℕ) : Type _ :=
+    {ψ : G ⧸ pLowerCentralSeries p G k →ₜ* G ⧸ pLowerCentralSeries p G k //
+      Function.Surjective ψ ∧
+        (∀ i, (a i : G ⧸ pLowerCentralSeries p G k)⁻¹ * ψ (a i) ∈
+          (C i).map (QuotientGroup.mk' (pLowerCentralSeries p G k))) ∧
+        ψ r = w}
+  have : ∀ k, Finite (S k) := fun k ↦ by
+    have := hfg.finite_quotient_pLowerCentralSeries hp k
+    exact Finite.of_injective (fun s : S k ↦ ⇑s.1)
+      (DFunLike.coe_injective.comp Subtype.val_injective)
+  -- Each level is nonempty: a surjective endomorphism of `G` induces a surjection of `G ⧸ λ_k`.
+  have : ∀ k, Nonempty (S k) := fun k ↦ by
+    obtain ⟨φ, hsurj, hφa, hr⟩ := h k
+    have hle : pLowerCentralSeries p G k ≤ (pLowerCentralSeries p G k).comap φ.toMonoidHom :=
+      Subgroup.map_le_iff_le_comap.mp (φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous k)
+    refine ⟨⟨⟨QuotientGroup.map _ _ φ.toMonoidHom hle, continuous_of_discreteTopology⟩,
+      QuotientGroup.map_surjective_of_surjective _ _ _ (QuotientGroup.mk_surjective.comp hsurj) hle,
+      fun i ↦ ?_, ?_⟩⟩
+    · rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk, ← QuotientGroup.mk_inv,
+        ← QuotientGroup.mk_mul]
+      exact ⟨_, hφa i, rfl⟩
+    · rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk]
+      exact QuotientGroup.eq.mpr hr
+  let D : PLowerCentralSeriesComparison p G G S :=
+    { map := fun _ s ↦ s.1
+      map_surjective := fun _ s ↦ s.2.1
+      bond := fun k s ↦ ⟨s.1.pLowerCentralSeriesDesc, s.1.pLowerCentralSeriesDesc_surjective s.2.1,
+        fun i ↦ by
+          obtain ⟨x, hx, hxs⟩ := Subgroup.mem_map.mp (s.2.2.1 i)
+          refine ⟨x, hx, ?_⟩
+          have := congrArg (QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k)) hxs
+          rw [QuotientGroup.mk'_apply, QuotientGroup.mapOfLE_mk, map_mul, map_inv,
+            QuotientGroup.mapOfLE_mk, ← ContinuousMonoidHom.pLowerCentralSeriesDesc_mk] at this
+          exact this,
+        by rw [ContinuousMonoidHom.pLowerCentralSeriesDesc_mk, s.2.2.2, QuotientGroup.mapOfLE_mk]⟩
+      commutes := fun _ s x ↦ (s.1.pLowerCentralSeriesDesc_mapOfLE x).symm }
+  obtain ⟨s, e, -, he, hr, -⟩ := D.exists_continuousMulEquiv_preserving hG hfg hp
+    (fun _ : Unit ↦ r) (fun _ ↦ w) (1 : G →ₜ* G) 1 (fun _ s _ ↦ s.2.2.2)
+    (fun _ ↦ ⟨0, fun _ _ _ _ ↦ by simp⟩)
+  -- Each constraint holds on every finite quotient, hence in the limit.
+  refine ⟨e, fun i ↦ hG.mem_of_forall_mk_mem_map_pLowerCentralSeries hp (hC i) fun k ↦ ?_, hr ()⟩
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, he k]
+  exact (s k).2.2.1 i
+
+end Limit
 
 end TauCeti

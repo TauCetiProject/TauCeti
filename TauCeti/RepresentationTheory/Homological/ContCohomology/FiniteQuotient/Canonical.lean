@@ -21,9 +21,10 @@ Hⁿ(G ⧸ U, M^U) ⟶ Hⁿ(G ⧸ V, M^V).
 
 This file assembles those maps into a functor on `(OpenNormalSubgroup G)ᵒᵖ` and constructs the
 canonical cocone whose legs are inflation followed by inclusion of fixed points. The assertion that
-this cocone is colimiting requires the profinite hypotheses and the all-degree descent argument; it
-is deliberately separate from the construction here, which needs neither compactness nor total
-disconnectedness.
+this cocone is colimiting, `TauCeti.ContCohomology.continuousFiniteQuotientColimit` in
+`FiniteQuotient.AllDegreeColimit`, needs compactness of `G`, continuity of the action and the
+all-degree descent argument; it is deliberately separate from the construction here, which needs
+neither.
 
 Nothing below assumes that the quotients `G ⧸ U` are finite, and none of them need be: for an open
 normal subgroup `U` the quotient `G ⧸ U` is discrete, so it is finite when `G` is compact, but

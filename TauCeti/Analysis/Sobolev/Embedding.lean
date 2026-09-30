@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # The Sobolev embedding `W^{1,p}_0(Ω) ↪ L^{p⋆}(Ω)`
@@ -52,6 +53,10 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
 
 ## Main declarations
 
+* `TauCeti.one_sub_two_div_toReal_nonneg` and
+  `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
+  Sobolev inequality.
+
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient`: the Gagliardo--Nirenberg--Sobolev
@@ -82,6 +87,75 @@ open scoped Distributions ENNReal Gradient InnerProductSpace NNReal Topology
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-! ### Sobolev estimates on a measurable support -/
+
+/-- For `q ≥ 2`, the Hölder exponent `1 - 2/q` is nonnegative (it is `1` at `q = ∞`). -/
+theorem one_sub_two_div_toReal_nonneg {q : ℝ≥0∞} (hq : 2 ≤ q) :
+    0 ≤ 1 - 2 / q.toReal := by
+  rcases eq_or_ne q (∞ : ℝ≥0∞) with rfl | hqt
+  · simp
+  · have h2q : (2 : ℝ) ≤ q.toReal := by
+      simpa using ENNReal.toReal_mono hqt hq
+    rw [sub_nonneg, div_le_one (by linarith)]
+    exact h2q
+
+omit [FiniteDimensional ℝ E] in
+/-- A Sobolev estimate `‖v‖_q ≤ S ‖∇v‖₂`, combined with Hölder's inequality on a set `A` off
+which `v` vanishes, bounds `∫_Ω v²` by `S² ‖∇v‖₂² μ(Ω ∩ A)^{1 - 2/q}`. -/
+theorem W1p.integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
+    {v : W1p mu Omega 2}
+    (hS : eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {A : Set E} (hA : MeasurableSet A)
+    (hAfin : mu ((Omega : Set E) ∩ A) ≠ (∞ : ℝ≥0∞))
+    (hvA : ∀ᵐ x ∂mu.restrict Omega, x ∉ A → W1p.value v x = 0) :
+    ∫ x in Omega, W1p.value v x ^ 2 ∂mu ≤
+      S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
+        mu.real ((Omega : Set E) ∩ A) ^ (1 - 2 / q.toReal) := by
+  set β : ℝ := 1 / (2 : ℝ≥0∞).toReal - 1 / q.toReal
+  have hβ : 0 ≤ β := by
+    have := one_sub_two_div_toReal_nonneg hq
+    rw [div_eq_mul_inv] at this
+    simp only [β, ENNReal.toReal_ofNat, one_div]
+    linarith
+  have hind : (W1p.value v : E → ℝ) =ᵐ[mu.restrict Omega]
+      A.indicator (W1p.value v) := by
+    filter_upwards [hvA] with x hx
+    by_cases hxA : x ∈ A
+    · simp [hxA]
+    · simp [hxA, hx hxA]
+  -- Hölder's inequality on `A`, then the Sobolev estimate.
+  have hle : eLpNorm (W1p.value v) 2 (mu.restrict Omega) ≤
+      S * ‖W1p.gradient v‖ₑ * mu ((Omega : Set E) ∩ A) ^ β := by
+    calc eLpNorm (W1p.value v) 2 (mu.restrict Omega)
+        = eLpNorm (W1p.value v) 2 ((mu.restrict Omega).restrict A) := by
+          rw [eLpNorm_congr_ae hind, eLpNorm_indicator_eq_eLpNorm_restrict hA.nullMeasurableSet]
+      _ ≤ eLpNorm (W1p.value v) q ((mu.restrict Omega).restrict A) *
+            ((mu.restrict Omega).restrict A) univ ^ β :=
+          eLpNorm_le_eLpNorm_mul_rpow_measure_univ hq (Lp.aestronglyMeasurable _).restrict
+      _ ≤ S * ‖W1p.gradient v‖ₑ * mu ((Omega : Set E) ∩ A) ^ β := by
+          rw [Measure.restrict_apply MeasurableSet.univ, univ_inter,
+            Measure.restrict_apply hA, inter_comm]
+          gcongr
+          exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans hS
+  have hfin : (S : ℝ≥0∞) * ‖W1p.gradient v‖ₑ *
+      mu ((Omega : Set E) ∩ A) ^ β ≠ (∞ : ℝ≥0∞) :=
+    ENNReal.mul_ne_top (by finiteness) (ENNReal.rpow_ne_top_of_nonneg hβ hAfin)
+  have hreal := ENNReal.toReal_mono hfin hle
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_enorm,
+    ENNReal.coe_toReal, ← measureReal_def] at hreal
+  rw [W1p.integral_value_sq_eq_norm_value_sq, Lp.norm_def]
+  calc (eLpNorm (W1p.value v) 2 (mu.restrict Omega)).toReal ^ 2
+      ≤ ((S : ℝ) * ‖W1p.gradient v‖ *
+          mu.real ((Omega : Set E) ∩ A) ^ β) ^ 2 :=
+        pow_le_pow_left₀ ENNReal.toReal_nonneg hreal 2
+    _ = S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
+          mu.real ((Omega : Set E) ∩ A) ^ (1 - 2 / q.toReal) := by
+        rw [mul_pow, mul_pow, ← Real.rpow_mul_natCast measureReal_nonneg]
+        congr 2
+        simp only [β, ENNReal.toReal_ofNat]
+        push_cast
+        ring
 
 /-! ### Transferring an estimate from test functions to `W^{1,p}_0(Ω)` -/
 

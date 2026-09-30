@@ -19,7 +19,8 @@ subspaces of `E` (`TauCeti.TotallyRealLoop`): a family `Λ : [0, 1] → Submodul
 path of complex-linear automorphisms of `E`.
 
 Its **Maslov index** `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex`) is the degree
-(`Circle.degree`) of the loop of Maslov phases `t ↦ ρ(Λ 0, Λ t)`, where
+(`Circle.degree`) of the loop of Maslov phases `t ↦ ρ(Λ 0, Λ t)` of the circle, read as a path
+(`TauCeti.TotallyRealLoop.maslovPhasePath`), where
 `ρ(L₀, A L₀) = det A / conj (det A)` is `TauCeti.IsMaximalTotallyReal.maslovPhase`.
 
 * It does not depend on the reference subspace: for any maximal totally real `L₀` the phases
@@ -79,7 +80,7 @@ theorem continuous_maslovPhase {L₀ : Submodule ℝ E}
   exact continuous_const.mul (continuous_det_div_conj A hAc)
 
 /-- The loop of Maslov phases `t ↦ ρ(Λ 0, Λ t)`, as a loop in the circle based at `1`. -/
-private noncomputable def maslovPhasePath : Path (1 : Circle) 1 where
+noncomputable def maslovPhasePath : Path (1 : Circle) 1 where
   toFun t := ⟨(Λ.isMaximalTotallyReal 0).maslovPhase (Λ.isMaximalTotallyReal t),
     mem_sphere_zero_iff_norm.2 (IsMaximalTotallyReal.norm_maslovPhase _ _)⟩
   continuous_toFun :=
@@ -90,6 +91,12 @@ private noncomputable def maslovPhasePath : Path (1 : Circle) 1 where
     rw [(Λ.isMaximalTotallyReal 0).maslovPhase_congr (Λ.isMaximalTotallyReal 1)
       (Λ.isMaximalTotallyReal 0) Λ.toFun_zero_eq_toFun_one.symm,
       IsMaximalTotallyReal.maslovPhase_self]
+
+/-- The Maslov phase of `Λ t` relative to `Λ 0`, read as a complex number. -/
+@[simp]
+theorem maslovPhasePath_apply (t : I) :
+    (Λ.maslovPhasePath t : ℂ) = (Λ.isMaximalTotallyReal 0).maslovPhase (Λ.isMaximalTotallyReal t) :=
+  (rfl)
 
 /-- The **Maslov index** of a loop of maximal totally real subspaces: the degree of its loop of
 Maslov phases `t ↦ ρ(Λ 0, Λ t)` in the circle. -/

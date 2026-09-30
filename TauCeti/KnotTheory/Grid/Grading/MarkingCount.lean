@@ -46,11 +46,10 @@ constant `1`. Here the wrapping corrections do not cancel between two marking se
 cancel against the corner pairings and the shared squares.
 
 Together the two formulas give bidegree `(-1, 0)` when an empty rectangle's
-`GridRectangle.coveredSquares` are disjoint from the markings. This square-disjointness is
-stronger than the existing, interior-based `GridRectangle.AvoidsMarkings` predicate and does not
-follow from it. Two further consequences are recorded: the Alexander grading changes by an
-integer across any rectangle move, even though the grading itself is a priori only rational, and
-a square-disjoint rectangle preserves it outright.
+`GridRectangle.coveredSquares` are disjoint from the markings, which is the marking-avoidance
+predicate `GridRectangle.AvoidsMarkings` of the grid differential. Two further consequences are
+recorded: the Alexander grading changes by an integer across any rectangle move, even though the
+grading itself is a priori only rational, and a square-disjoint rectangle preserves it outright.
 
 ## Main results
 
@@ -469,8 +468,8 @@ theorem maslovX_sub_maslovX_eq_one_sub_two_mul_card (R : GridRectangleBetween x 
   ring
 
 /-- An empty rectangle move whose squares carry no `O`-marking drops the `O`-Maslov grading by
-exactly one. Disjointness from `coveredSquares` is stronger than the interior-based
-`GridRectangle.AvoidsMarkings` predicate. Together with
+exactly one. A rectangle satisfying `GridRectangle.AvoidsMarkings` meets the hypothesis
+(`GridRectangle.disjoint_coveredSquares_OSet_of_avoidsMarkings`). Together with
 `GridDiagram.alexander_eq_alexander_of_disjoint_coveredSquares`, this gives the Maslov part of
 bidegree `(-1, 0)`. -/
 theorem maslovO_sub_maslovO_eq_one_of_disjoint_coveredSquares (R : GridRectangleBetween x y)
@@ -482,8 +481,8 @@ theorem maslovO_sub_maslovO_eq_one_of_disjoint_coveredSquares (R : GridRectangle
   norm_num
 
 /-- An empty rectangle move whose covered squares carry no `X`-marking drops the `X`-Maslov
-grading by exactly one. This square-disjointness is stronger than the interior-based
-`GridRectangle.AvoidsMarkings` predicate. -/
+grading by exactly one. A rectangle satisfying `GridRectangle.AvoidsMarkings` meets the hypothesis
+(`GridRectangle.disjoint_coveredSquares_XSet_of_avoidsMarkings`). -/
 theorem maslovX_sub_maslovX_eq_one_of_disjoint_coveredSquares (R : GridRectangleBetween x y)
     (hR : R.IsEmpty) (h : Disjoint R.toGridRectangle.coveredSquares G.XSet) :
     G.maslovX x - G.maslovX y = 1 := by
@@ -493,8 +492,7 @@ theorem maslovX_sub_maslovX_eq_one_of_disjoint_coveredSquares (R : GridRectangle
   norm_num
 
 /-- A rectangle move whose covered squares carry no marking preserves the Alexander grading.
-This square-disjointness is stronger than the interior-based `GridRectangle.AvoidsMarkings`
-predicate. -/
+The hypothesis is `GridRectangle.AvoidsMarkings` for the underlying toroidal rectangle. -/
 theorem alexander_eq_alexander_of_disjoint_coveredSquares (R : GridRectangleBetween x y)
     (h : Disjoint R.toGridRectangle.coveredSquares (G.OSet ∪ G.XSet)) :
     G.alexander x = G.alexander y := by

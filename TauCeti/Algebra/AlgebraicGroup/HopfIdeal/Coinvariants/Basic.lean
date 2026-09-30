@@ -95,6 +95,14 @@ noncomputable def coinvariants (I : HopfIdeal R H) : Subalgebra R H :=
       (Bialgebra.comulAlgHom R H))
     Algebra.TensorProduct.includeLeft
 
+/-- Coinvariants are the equalizer of the subgroup coaction and the trivial coaction. -/
+theorem coinvariants_eq_equalizer (I : HopfIdeal R H) :
+    I.coinvariants = AlgHom.equalizer
+      ((Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I.toIdeal)).comp
+        (Bialgebra.comulAlgHom R H))
+      Algebra.TensorProduct.includeLeft :=
+  (rfl)
+
 variable {I : HopfIdeal R H} {h : H}
 
 /-- Membership in the coinvariants: `(id ⊗ π) (Δ h) = h ⊗ 1`. -/

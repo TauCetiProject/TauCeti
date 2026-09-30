@@ -139,12 +139,9 @@ any representation `M`: the embedding into the coinduced module has the `k`-line
 `f ↦ f 1`. -/
 theorem dimensionShiftUpSES_tensorLeft_shortExact (A M : Rep k G) :
     ((dimensionShiftUpSES A).map (tensorLeft M)).ShortExact := by
-  have hr : Function.LeftInverse (LinearMap.proj 1 ∘ₗ (coindBotEquivPi k G A.V).toLinearMap)
-      (coindBotUnit A).hom := fun a ↦ by
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
-      coindBotUnit_hom_apply_coe, map_one, Module.End.one_apply]
   have : Epi (dimensionShiftUpSES A).g := (dimensionShiftUpSES_shortExact A).epi_g
-  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A).exact M _ hr
+  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A).exact M _
+    (leftInverse_coindBotUnit A)
 
 /-! ### The downward dimension shift -/
 

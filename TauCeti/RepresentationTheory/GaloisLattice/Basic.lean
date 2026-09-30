@@ -137,29 +137,15 @@ abbrev GaloisLatticeCat (k : Type u) [Field k] : Type _ :=
 
 namespace GaloisLatticeCat
 
-/-- The stored integral module of a Galois lattice is free. -/
-instance instStoredModuleFree (k : Type u) [Field k] (M : GaloisLatticeCat k) :
-    @Module.Free ℤ M.obj _ _ M.obj.hV2 :=
+/-- The integral module of a Galois lattice is free. -/
+instance instModuleFree (k : Type u) [Field k] (M : GaloisLatticeCat k) :
+    Module.Free ℤ M.obj :=
   M.property.1.1
 
-/-- The stored integral module of a Galois lattice is finite. -/
-instance instStoredModuleFinite (k : Type u) [Field k] (M : GaloisLatticeCat k) :
-    @Module.Finite ℤ M.obj _ _ M.obj.hV2 :=
-  M.property.1.2
-
-/-- The canonical integral module on the additive group underlying a Galois lattice is free. -/
-instance instModuleFree (k : Type u) [Field k] (M : GaloisLatticeCat k) :
-    Module.Free ℤ M.obj := by
-  have hmod : M.obj.hV2 = AddCommGroup.toIntModule M.obj := Subsingleton.elim _ _
-  rw [← hmod]
-  exact M.property.1.1
-
-/-- The canonical integral module on the additive group underlying a Galois lattice is finite. -/
+/-- The integral module of a Galois lattice is finite. -/
 instance instModuleFinite (k : Type u) [Field k] (M : GaloisLatticeCat k) :
-    Module.Finite ℤ M.obj := by
-  have hmod : M.obj.hV2 = AddCommGroup.toIntModule M.obj := Subsingleton.elim _ _
-  rw [← hmod]
-  exact M.property.1.2
+    Module.Finite ℤ M.obj :=
+  M.property.1.2
 
 /-- Every vector of a Galois lattice has an open stabilizer. -/
 theorem isOpen_setOf_ρ_eq (k : Type u) [Field k] (M : GaloisLatticeCat k) (x : M.obj) :

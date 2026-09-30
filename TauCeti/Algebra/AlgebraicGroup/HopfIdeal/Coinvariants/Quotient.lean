@@ -109,7 +109,7 @@ variable [Module.Flat R H] [Module.Flat R (H ⧸ Subalgebra.toSubmodule I.coinva
 /-- **The coinvariants of a normal Hopf ideal form a Hopf subalgebra**, when `H` and
 `H ⧸ H^{co H/I}` are flat, for instance over a field. -/
 theorem IsNormal.isHopfSubalgebra_coinvariants (hI : I.IsNormal) :
-    I.coinvariants.IsHopfSubalgebra where
+    Subalgebra.IsHopfSubalgebra I.coinvariants where
   comul_mem _ hx := by
     have hcarrier : hI.coinvariantsSubcoalgebra.carrier =
         Subalgebra.toSubmodule I.coinvariants :=

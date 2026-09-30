@@ -37,6 +37,8 @@ isomorphism gives `kummerEquiv : Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)` for
 `kummerClass` is the Kummer class of a unit in this carrier. It is the transport of the Kummer map
 `TauCeti.kummerMap`, not a second Kummer cocycle, and is represented by `g ↦ g α / α` for any
 `n`th root `α` of the unit (`kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`).
+The degree-two comparison gives `muNRepH2Equiv : H²(Gal(Fˢ/F), μₙ) ≃+ H²(G_F, muNRep n F)` in the
+same way.
 
 In characteristic zero every `n ≠ 0` is invertible, so the Kummer equivalence
 `kummerEquivOfCharZero` holds for every `n ≠ 0`. This covers every finite extension of `ℚ_p`,
@@ -54,6 +56,7 @@ Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coeffic
 * `TauCeti.ClassFieldTheory.kummerCoeffEquivMuNRep`: the identification of its underlying module
   with `TauCeti.KummerCoeff F n`.
 * `TauCeti.ClassFieldTheory.muNRepH1Equiv`: `H¹(Gal(Fˢ/F), μₙ) ≃+ H¹(G_F, muNRep n F)`.
+* `TauCeti.ClassFieldTheory.muNRepH2Equiv`: `H²(Gal(Fˢ/F), μₙ) ≃+ H²(G_F, muNRep n F)`.
 * `TauCeti.ClassFieldTheory.kummerEquiv`, `TauCeti.ClassFieldTheory.kummerEquivOfCharZero`: the
   Kummer isomorphism `Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)`, for `n` invertible in `F` and for
   `n ≠ 0` in characteristic zero.
@@ -180,6 +183,37 @@ theorem muNRepH1Equiv_apply (x : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
           (fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
             (TopRep.distribMulAction_smul _ g _).symm) x) := by
   rw [muNRepH1Equiv, AddEquiv.trans_apply, explicitMap1Equiv_apply]
+
+/-! ### Transport of `H²` -/
+
+/-- **`H²` of `μₙ` transported to `muNRep n F`.** This is pullback along
+`absoluteGaloisGroupRestrictEquiv`, the coefficient dictionary
+`kummerCoeffEquivMuNRep`, and the comparison between explicit and canonical continuous
+cohomology. -/
+def muNRepH2Equiv :
+    H2 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+
+      continuousCohomology 2 (muNRep n F) :=
+  (explicitMap2Equiv (AbsoluteGaloisGroup F) (KummerCoeff F n)
+      (Field.absoluteGaloisGroup F) (muNRep n F).V
+      (absoluteGaloisGroupRestrictEquiv F) (kummerCoeffEquivMuNRep n F)
+      (continuous_kummerCoeffEquivMuNRep n F) (continuous_kummerCoeffEquivMuNRep_symm n F)
+      fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
+        (TopRep.distribMulAction_smul _ g _).symm).trans <|
+    (muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
+
+/-- `muNRepH2Equiv` is the degree-two explicit transport followed by the comparison with
+Mathlib's canonical continuous cohomology. -/
+theorem muNRepH2Equiv_apply (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
+    muNRepH2Equiv n F x =
+      (muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
+        (explicitMap2 (AbsoluteGaloisGroup F) (KummerCoeff F n)
+          (Field.absoluteGaloisGroup F) (muNRep n F).V
+          (absoluteGaloisGroupRestrictEquiv F)
+          (kummerCoeffEquivMuNRep n F).toAddMonoidHom
+          (continuous_kummerCoeffEquivMuNRep n F)
+          (fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
+            (TopRep.distribMulAction_smul _ g _).symm) x) := by
+  rw [muNRepH2Equiv, AddEquiv.trans_apply, explicitMap2Equiv_apply]
 
 /-! ### The Kummer isomorphism on `muNRep n F` -/
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.SheafCriterion
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
+public import TauCeti.Topology.Sheaves.Adapted
 
 /-!
 # The structure presheaf is the limit of its values on rational opens
@@ -27,6 +28,9 @@ the proof of Wedhorn's Proposition A.4.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.isAdapted_presentationLimitPresheaf` :
+  `presentationLimitPresheaf` is adapted to the rational opens, in the sense of
+  `TopCat.Presheaf.IsAdapted`.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheaf_rational` :
   `presentationLimitPresheaf` is a sheaf once its restriction to the rational opens is a sheaf for
   the restricted topology.
@@ -179,26 +183,45 @@ noncomputable def presentationLimitPresheafIsPointwiseRightKanExtension : (Funct
       presentationLimit_hom_ext_toPresentation fun i ↦ by
         simp [← hm, presentationLimitMap_le_open_comp_πToPresentation])
 
+/-- **The legs of the Kan-extension cone are the restriction maps**: at an open `V`, the leg of
+the cone of `presentationLimitPresheafIsPointwiseRightKanExtension` indexed by a rational open
+`W ⊆ V` (an object `g` of the category of rational opens over `V`) is the restriction map from `V`
+to `W`. -/
+theorem presentationLimitPresheaf_coneAt_π_app (V : Opens ↥(spa Aplus))
+    (g : StructuredArrow (op V) (rationalOpensFunctor Aplus).op) :
+    ((Functor.RightExtension.mk (presentationLimitPresheaf P Aplus)
+      (𝟙 ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus))).coneAt
+        (op V)).π.app g =
+      (presentationLimitPresheaf P Aplus).map (homOfLE (leOfHom g.hom.unop)).op := by
+  simp
+
+/-- **`presentationLimitPresheaf` is adapted to the rational opens**: at every open `V`, it is the
+limit of its values on the rational opens `W ⊆ V`. This is Wedhorn §8.1's description of `𝒪_X(V)`
+in the sense of Wedhorn's Remark and Definition 8.9. -/
+theorem isAdapted_presentationLimitPresheaf :
+    TopCat.Presheaf.IsAdapted (X := TopCat.of ↥(spa Aplus)) (presentationLimitPresheaf P Aplus)
+      (spaRationalOpens Aplus) :=
+  ⟨presentationLimitPresheafIsPointwiseRightKanExtension⟩
+
 /-- **The sheaf condition on the rational opens suffices**: if the restriction of
 `presentationLimitPresheaf` to the rational opens is a sheaf for the restricted topology, then
 `presentationLimitPresheaf` is a sheaf on `Spa(A, A⁺)`. With the rational opens as the basis, this
 is the step in the proof of Wedhorn's Proposition A.4 from a sheaf on the basis to a sheaf on the
-whole space. It is SGA 4 III 2.2 (a right Kan extension of a sheaf along a cocontinuous functor is
-a sheaf; Mathlib's `RanIsSheafOfIsCocontinuous.isLimitMultifork`) for the cocontinuous functor
-`rationalOpensFunctor Aplus`, applied to `presentationLimitPresheafIsPointwiseRightKanExtension`.
-A sieve on a rational open covers for the restricted topology exactly when its image covers in
-`Spa(A, A⁺)` (`Functor.mem_restrictedTopology_iff`), so the hypothesis only involves covers of
-rational opens by rational opens. -/
+whole space: `presentationLimitPresheaf` is adapted to the basis of rational opens, and a presheaf
+adapted to a basis is a sheaf once it is a sheaf on the basis
+(`TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology`). A sieve on a rational
+open covers for the restricted topology exactly when its image covers in `Spa(A, A⁺)`
+(`Functor.mem_restrictedTopology_iff`), so the hypothesis only involves covers of rational opens
+by rational opens. -/
 theorem isSheaf_presentationLimitPresheaf_of_isSheaf_rational (h : Presheaf.IsSheaf
       ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
       ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus)) :
     Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
       (presentationLimitPresheaf P Aplus) :=
-  -- `P` makes `A` a Huber ring, so the rational opens are cover-dense
+  -- `P` makes `A` a Huber ring, so the rational opens form a basis
   have : IsHuberRing A := ⟨⟨P⟩⟩
-  -- a pointwise right Kan extension of a sheaf along a cocontinuous functor is a sheaf; the
-  -- rational opens are cover-dense, so `rationalOpensFunctor Aplus` is cocontinuous
-  (Presheaf.isSheaf_iff_multifork _ _).mpr fun _ S ↦ ⟨RanIsSheafOfIsCocontinuous.isLimitMultifork h
-    presentationLimitPresheafIsPointwiseRightKanExtension S⟩
+  TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology (X := TopCat.of ↥(spa Aplus))
+    _ _ (isBasis_spaRationalOpens Aplus)
+    (isAdapted_presentationLimitPresheaf (P := P) (Aplus := Aplus)) h
 
 end TauCeti.ValuationSpectrum
