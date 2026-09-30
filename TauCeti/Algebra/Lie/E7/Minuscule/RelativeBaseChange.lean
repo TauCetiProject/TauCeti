@@ -25,13 +25,6 @@ extension to an algebraic closure.
 * `TauCeti.E7Minuscule.finiteTypeCoordinateHopfAlgebraBaseChangeIso`: the same comparison
   in the category of finite-type commutative Hopf algebras.
 
-## Implementation notes
-
-`CommHopfAlgCat.baseChangeTowerIso` requires the intermediate ring to live in the universe of
-the Hopf algebra being extended. The integral carrier lives in `Type`, while `R : Type u` is
-arbitrary, so the comparison applies the underlying bialgebra tower equivalence
-`TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv` directly.
-
 ## References
 
 * B. Conrad, *Reductive Group Schemes*, §1.
@@ -56,6 +49,10 @@ with the carrier obtained directly by base change from its integral model to `S`
 noncomputable def coordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := S) (coordinateHopfAlgebra R) ≅
       coordinateHopfAlgebra S :=
+  -- `CommHopfAlgCat.baseChangeTowerIso` requires the intermediate ring to live in the universe
+  -- of the Hopf algebra being extended. The integral carrier lives in `Type`, while
+  -- `R : Type u` is arbitrary, so we apply the underlying bialgebra tower equivalence
+  -- `TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv` directly.
   (CommHopfAlgCat.baseChangeFunctor (K := S)).mapIso (baseChangeCoordinateIso R) ≪≫
     eqToIso (CommHopfAlgCat.baseChangeFunctor_obj (K := S)
       (CommHopfAlgCat.baseChange (K := R)
