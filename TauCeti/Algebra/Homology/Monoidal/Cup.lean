@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Linear
 public import TauCeti.Algebra.Homology.LinearYoneda
+public import TauCeti.Algebra.Homology.ModuleCat
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
@@ -309,11 +310,6 @@ variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : Chain
   {M N P : C} {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
   (μ : M ⊗ N ⟶ P)
 
-omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
-private lemma iCycles_injective (K : CochainComplex (ModuleCat k) ℕ) (n : ℕ) :
-    Function.Injective (K.iCycles n) :=
-  (ModuleCat.mono_iff_injective _).1 inferInstance
-
 variable (k) in
 /-- The cup product of cochains `TauCeti.ChainComplex.cupCochain`, as a bilinear map of the
 cochain modules of the complexes `Hom(-, -)`. -/
@@ -362,11 +358,11 @@ def cupCycles (p q n : ℕ) (h : p + q = n) :
   toFun a := (cupCyclesLeft k D μ p q n h a).hom
   map_add' a a' := by
     ext b
-    apply iCycles_injective
+    apply HomologicalComplex.moduleCat_iCycles_injective
     simp [iCycles_cupCyclesLeft]
   map_smul' r a := by
     ext b
-    apply iCycles_injective
+    apply HomologicalComplex.moduleCat_iCycles_injective
     simp [iCycles_cupCyclesLeft]
 
 /-- On underlying cochains, the cup product of cocycles is the cup product of cochains. -/
@@ -401,7 +397,7 @@ private lemma homologyπ_cupCycles_toCycles_right (p q n : ℕ) (h : p + q = n)
       have hd := d_comp_cupCochainHom (k := k) D μ p i m (by omega)
         ((A.linearYonedaObj k M).iCycles p a) x
       rw [d_comp_linearYonedaObj_iCycles, LinearMap.map_zero₂, zero_add] at hd
-      apply iCycles_injective
+      apply HomologicalComplex.moduleCat_iCycles_injective
       rw [iCycles_cupCycles_cupCochainHom, map_zsmul, linearYonedaObj_iCycles_toCycles_apply,
         linearYonedaObj_iCycles_toCycles_apply, hd, smul_smul, ← mul_pow, neg_one_mul, neg_neg,
         one_pow, one_smul]
@@ -425,17 +421,12 @@ private lemma homologyπ_cupCycles_toCycles_left (p q n : ℕ) (h : p + q = n) (
       have hd := d_comp_cupCochainHom (k := k) D μ i q m (by omega) x
         ((B.linearYonedaObj k N).iCycles q b)
       rw [d_comp_linearYonedaObj_iCycles, map_zero, smul_zero, add_zero] at hd
-      apply iCycles_injective
+      apply HomologicalComplex.moduleCat_iCycles_injective
       rw [iCycles_cupCycles_cupCochainHom, linearYonedaObj_iCycles_toCycles_apply,
         linearYonedaObj_iCycles_toCycles_apply, hd]
     rw [key, linearYonedaObj_homologyπ_toCycles_apply]
   · rw [(A.linearYonedaObj k M).toCycles_eq_zero hip]
     simp
-
-omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
-private lemma homologyπ_surjective (K : CochainComplex (ModuleCat k) ℕ) (n : ℕ) :
-    Function.Surjective (K.homologyπ n) :=
-  (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 variable (k) in
 /-- Cupping on the left with a fixed cocycle, on cohomology. -/
@@ -465,10 +456,10 @@ private def cupCyclesHomology (p q n : ℕ) (h : p + q = n) :
   ModuleCat.ofHom (X := (A.linearYonedaObj k M).cycles p)
     { toFun a := (cupHomologyLeft k D μ p q n h a).hom
       map_add' a a' := LinearMap.ext fun β ↦ by
-        obtain ⟨b, rfl⟩ := homologyπ_surjective _ q β
+        obtain ⟨b, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
         simp only [cupHomologyLeft_homologyπ, map_add, LinearMap.add_apply]
       map_smul' r a := LinearMap.ext fun β ↦ by
-        obtain ⟨b, rfl⟩ := homologyπ_surjective _ q β
+        obtain ⟨b, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
         simp only [cupHomologyLeft_homologyπ, LinearMap.smul_apply, RingHom.id_apply]
         rw [map_smul, LinearMap.smul_apply, map_smul] }
 
@@ -477,7 +468,7 @@ private lemma toCycles_comp_cupCyclesHomology (p q n : ℕ) (h : p + q = n) :
       cupCyclesHomology k D μ p q n h = 0 := by
   ext x : 2
   refine LinearMap.ext fun β ↦ ?_
-  obtain ⟨b, rfl⟩ := homologyπ_surjective _ q β
+  obtain ⟨b, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
   exact (cupHomologyLeft_homologyπ D μ p q n h _ b).trans
     (homologyπ_cupCycles_toCycles_left D μ p q n h _ x b)
 
@@ -519,13 +510,13 @@ lemma cup_naturality {A' B' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗ B') (e 
           ((linearYonedaFunctor k N).map g.op) q β) =
       homologyMap (K := E.linearYonedaObj k P) (L := E'.linearYonedaObj k P)
         ((linearYonedaFunctor k P).map e.op) n (cup k D μ p q n h α β) := by
-  obtain ⟨a, rfl⟩ := homologyπ_surjective _ p α
-  obtain ⟨b, rfl⟩ := homologyπ_surjective _ q β
+  obtain ⟨a, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
+  obtain ⟨b, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
   rw [homologyMap_linearYonedaFunctor_map_homologyπ_apply,
     homologyMap_linearYonedaFunctor_map_homologyπ_apply, cup_homologyπ, cup_homologyπ,
     homologyMap_linearYonedaFunctor_map_homologyπ_apply]
   congr 1
-  apply iCycles_injective
+  apply HomologicalComplex.moduleCat_iCycles_injective
   rw [iCycles_cupCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply,
     iCycles_cyclesMap_linearYonedaFunctor_map_apply,
     iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_cupCycles]
