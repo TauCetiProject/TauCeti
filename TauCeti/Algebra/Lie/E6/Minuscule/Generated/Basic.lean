@@ -40,8 +40,8 @@ identified with a pinned simply connected group scheme of type `E₆`.
   subgroup's defining ideal exactly when every generator coordinate map kills it.
 * `TauCeti.E6Minuscule.baseChangeDefiningIdeal_le_generatedDefiningIdeal`: the base-changed
   integral carrier contains the generated subgroup.
-* `TauCeti.E6Minuscule.existsUnique_generatorCoordinateMap_factor`: each generator factors
-  uniquely through the generated subgroup.
+* `TauCeti.E6Minuscule.generatedCoordinateLift_unique`: the lift is the unique factorization of
+  each generator coordinate map through the generated subgroup.
 
 ## References
 
@@ -181,17 +181,5 @@ theorem generatedCoordinateLift_unique (j : Sum (Fin 6 ⊕ Fin 6) Unit)
 instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A) := by
   rw [generatedCoordinateHopfAlgebra_def]
   infer_instance
-
-/-- Each generator factors uniquely through the generated subgroup's coordinate quotient. -/
-theorem existsUnique_generatorCoordinateMap_factor (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
-    ∃! g : CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 27)
-        (generatedDefiningIdeal A) ⟶ generatorCoordinateAlgebra A j,
-      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27)
-        (generatedDefiningIdeal A) ≫ g = generatorCoordinateMap A j := by
-  rw [generatedDefiningIdeal_def]
-  refine ⟨CommHopfAlgCat.commonKernelLift (generatorCoordinateMap A) j, ?_, ?_⟩
-  · exact CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generatorCoordinateMap A) j
-  · intro g hg
-    exact CommHopfAlgCat.commonKernelLift_unique (generatorCoordinateMap A) j g hg
 
 end TauCeti.E6Minuscule
