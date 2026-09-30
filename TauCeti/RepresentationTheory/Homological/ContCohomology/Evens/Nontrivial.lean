@@ -29,7 +29,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
-local instance : ContinuousSMul G (trivialF2 G).V :=
+local instance continuousSMul_trivialF2_nontrivial : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
 /-- If an index-two subgroup contains a central involution on which a character is nontrivial,
