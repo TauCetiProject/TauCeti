@@ -370,22 +370,17 @@ theorem cuspIntegral_smul (c : ℂ) (F : ℍ → ℂ) (a b : OnePoint ℚ) :
 theorem cuspIntegral_zero (a b : OnePoint ℚ) : cuspIntegral (0 : ℍ → ℂ) a b = 0 := by
   simpa only [zero_smul, zero_mul] using cuspIntegral_smul 0 (0 : ℍ → ℂ) a b
 
-/-- The integral between two cusps is additive in the integrand when both integrands are
-integrable along any positive-determinant geodesic representative of those endpoints. -/
-theorem cuspIntegral_add {F G : ℍ → ℂ} (a b : OnePoint ℚ)
-    (hF : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det →
-      g • ((0 : ℚ) : OnePoint ℚ) = a → g • (∞ : OnePoint ℚ) = b →
-      IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ioi 0))
-    (hG : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det →
-      g • ((0 : ℚ) : OnePoint ℚ) = a → g • (∞ : OnePoint ℚ) = b →
-      IntegrableOn (resToImagAxis (G ∣[(2 : ℤ)] g)) (Ioi 0)) :
-    cuspIntegral (F + G) a b = cuspIntegral F a b + cuspIntegral G a b := by
-  rcases eq_or_ne a b with rfl | hab
-  · simp
-  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
+/-- The integral between the cusps `g • 0` and `g • ∞` is additive in the integrand when both
+integrands are integrable along the geodesic `g`. -/
+theorem cuspIntegral_add {F G : ℍ → ℂ} {g : GL (Fin 2) ℚ}
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det)
+    (hF : IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ioi 0))
+    (hG : IntegrableOn (resToImagAxis (G ∣[(2 : ℤ)] g)) (Ioi 0)) :
+    cuspIntegral (F + G) (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) =
+      cuspIntegral F (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) +
+        cuspIntegral G (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) := by
   rw [cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
-    cuspIntegral_smul_zero_smul_infty _ hg,
-    geodesicIntegral_add g (hF g hg rfl rfl) (hG g hg rfl rfl)]
+    cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_add g hF hG]
 
 /-- **Additivity of integrals between cusps**: `∫_a^b F(z) dz + ∫_b^c F(z) dz = ∫_a^c F(z) dz`
 for a holomorphic `F` whose weight-`2` slashes by rational matrices of positive determinant are
