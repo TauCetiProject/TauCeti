@@ -30,7 +30,9 @@ variable {G M A : Type*} [Group G] [MulAction G A] [Monoid M]
 `mulAutArrow g f a = f (g⁻¹ • a)`. -/
 -- `mulAutArrow_apply_apply` leaves `(g • f) a` for the non-instance `arrowAction`; its
 -- `arrowAction_smul` is stated with a bare `SMul.smul` and does not match, so the remaining
--- step is the defining equation of that action.
+-- step is the defining equation of that action. The `high` priority makes `simp` use this
+-- lemma before Mathlib's `mulAutArrow_apply_apply`, which has the same left-hand side.
+@[simp high]
 theorem mulAutArrow_apply_apply_eq_apply_inv_smul (g : G) (f : A → M) (a : A) :
     mulAutArrow g f a = f (g⁻¹ • a) := by
   rw [mulAutArrow_apply_apply]
