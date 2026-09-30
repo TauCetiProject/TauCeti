@@ -43,6 +43,11 @@ over a non-flat base.
   their canonical comparison is an isomorphism.
 * `TauCeti.E7Minuscule.baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal`:
   the corresponding equality in the transported presentation over every commutative ring.
+
+## References
+
+* R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
+* R. W. Carter, *Simple Groups of Lie Type*, Sections 6.4 and 7.1.
 -/
 
 public section
@@ -191,11 +196,13 @@ theorem baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal
     baseChangeDefiningIdeal A =
       kostantGeneratedGeneralLinearBaseChangeIdeal rootGen cartanGen rep lattice.toAddSubgroup
         rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A := by
+  rw [← kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_mem_elementary
+    rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
+    isNilpotent_rep_serreRootGenerator latticeBasis e7MinusculeWeight
+    universalWeightTorus_mem_elementarySubgroup A]
   apply HopfIdeal.ext
   intro x
-  rw [mem_baseChangeDefiningIdeal_iff,
-    mem_kostantGeneratedGeneralLinearBaseChangeIdeal_iff,
-    kostantGeneratedBaseChangeIdeal_def,
-    definingIdeal_eq_kostantGeneratedDefiningIdeal]
+  rw [mem_baseChangeDefiningIdeal_iff, mem_kostantToralBaseChangePresentationIdeal_iff,
+    kostantToralBaseChangeIdeal_def, definingIdeal_def]
 
 end TauCeti.E7Minuscule
