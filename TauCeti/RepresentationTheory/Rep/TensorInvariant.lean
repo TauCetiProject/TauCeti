@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Tensoring a representation with an invariant
@@ -41,6 +41,25 @@ def tensorInvariant (M : Rep k G) {N : Rep k G} (y : N.ρ.invariants) : M ⟶ M 
 theorem tensorInvariant_hom_apply (M : Rep k G) {N : Rep k G} (y : N.ρ.invariants) (m : M.V) :
     (dsimp% ((tensorInvariant M y).hom m)) = m ⊗ₜ[k] (y : N.V) :=
   (rfl)
+
+/-- Restricting the map `m ↦ m ⊗ y` gives the map defined by the restricted invariant. -/
+@[simp]
+theorem resMap_tensorInvariant (M N : Rep k G) (H : Subgroup G)
+    (y : N.ρ.invariants) :
+    Rep.resMap H.subtype (tensorInvariant M y) =
+      tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
+        ((Submodule.inclusion
+          (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y) := by
+  ext m
+  -- Both restricted representations retain the same underlying module and tensor product.
+  change (tensorInvariant M y).hom m =
+    (tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
+      ((Submodule.inclusion
+        (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y)).hom m
+  exact (tensorInvariant_hom_apply M y m).trans
+    (tensorInvariant_hom_apply (N := Rep.res H.subtype N) (Rep.res H.subtype M)
+      ((Submodule.inclusion
+        (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y) m).symm
 
 variable (M : Rep k G) {N : Rep k G}
 

@@ -63,9 +63,7 @@ theorem isStablyUniform_iff_forall_isUniform_presentationLimit (P : PairOfDefini
   refine ⟨fun h V hV ↦ ?_, fun h T s hT ↦
     (hrat T s hT).mp (h _ (spaBasicOpen_mem_spaRationalOpens hT))⟩
   -- present the rational open `V` as `R(T/s)` with `T` spanning an open ideal
-  obtain ⟨T, s, hT, hVeq⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hV)
-  obtain rfl : V = spaBasicOpen Aplus T s :=
-    Opens.ext <| hVeq.trans <| Set.ext fun _ ↦ mem_spaBasicOpen.symm
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
   exact (hrat T s hT).mpr (h T s hT)
 
 /-- **A rational localization of a stably uniform Tate ring is stably uniform** (Buzzard and
@@ -88,8 +86,8 @@ theorem PairOfDefinition.isStablyUniform_completion_locTopology [IsStablyUniform
   have hAplus ⦃a : A⦄ : a ∈ powerBoundedSubring A → IsPowerBounded a := mem_powerBoundedSubring.mp
   -- it suffices to test each rational open `W` of `Spa(A⟨T/s⟩, A_U⁺)`, where `A_U⁺ ⊆ A⟨T/s⟩°`
   refine (isStablyUniform_iff_forall_isUniform_presentationLimit
-    (completionLocalization P T s S hden) fun _ hb ↦ mem_powerBoundedSubring.mp
-      (completedPlusSubring_le_powerBoundedSubring P _ hAplus T s S hden hb)).mpr fun W hW ↦ ?_
+    (completionLocalization P T s S hden)
+    (isPowerBounded_of_mem_completedPlusSubring P _ hAplus T s S hden)).mpr fun W hW ↦ ?_
   -- `W` is the pullback of a rational `V ⊆ R(T/s)` of `Spa(A, A°)` (Wedhorn, Proposition 8.2 (2))
   obtain ⟨V, hV, hVT, rfl⟩ := exists_mem_spaRationalOpens_locOpensComap_eq P _ T s S hden hT W hW
   -- by Wedhorn's Remark 8.4 the presheaf of `A⟨T/s⟩` on `W` is that of `A` on `V`, which is uniform

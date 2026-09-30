@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.CrossedProduct.Basic
+public import TauCeti.Algebra.CrossedProduct.Cohomologous
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.TensorProduct.Maps
 -- Non-public: Skolem–Noether (`TauCeti.exists_unit_conj_of_algEquiv`) at the central simple algebra
@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 -- uniqueness of conjugators up to scalars, are used only in proofs.
 import TauCeti.Algebra.CentralSimple.SkolemNoether
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 import Mathlib.Algebra.Central.Basic
 import Mathlib.Algebra.Central.Matrix
 import Mathlib.RingTheory.SimpleRing.Matrix
@@ -42,6 +43,13 @@ The construction is carried out for an arbitrary family of conjugators in
 a field: `splittingAut` and its lemmas are stated for a commutative semiring `L`, and
 `TauCeti.TwoCocycle.ofConjugators` for a commutative ring `L`.
 
+Up to coboundaries the cocycle depends on neither choice. Two families of conjugators for the same
+`φ` differ by unit scalars, and their cocycles by the coboundary of those scalars; and two
+splittings into the same `Mₙ(L)` differ, by Skolem–Noether, by an inner automorphism of `Mₙ(L)`,
+which transforms the conjugators of one into conjugators of the other without changing the
+cocycle. Splittings into matrix algebras of different index types reduce to this case by
+reindexing, which does not change the cocycle either.
+
 ## Main definitions
 
 * `TauCeti.splittingAut φ σ`: the `L`-algebra automorphism `φ ∘ (σ ⊗ 1) ∘ φ⁻¹ ∘ σ⁻¹` of `Mₙ(L)`.
@@ -58,6 +66,10 @@ a field: `splittingAut` and its lemmas are stated for a commutative semiring `L`
   `u · g_σ · σ(g_τ) = g_στ`.
 * `TauCeti.cocycleOfSplitting_toFun_eq_iff`: the same characterization of `cocycleOfSplitting φ`
   with respect to the chosen conjugators `splittingConjugator φ σ`.
+* `TauCeti.TwoCocycle.cohomologous_ofConjugators`: two families of conjugators for the same
+  splitting give cohomologous cocycles.
+* `TauCeti.cohomologous_cocycleOfSplitting`: two splittings `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)` and
+  `φ' : L ⊗[K] A ≃ₐ[L] Mₘ(L)` give cohomologous cocycles.
 
 ## Implementation notes
 
@@ -142,6 +154,17 @@ theorem splittingAut_mul (σ τ : L ≃ₐ[K] L) (m : Matrix n n L) :
   rw [hm, splittingAut_map, AlgEquiv.mapMatrix_apply, splittingAut_map, splittingAut_map,
     AlgEquiv.symm_apply_apply, ht]
 
+/-- Reindexing a splitting along `e : m ≃ n` reindexes its automorphisms. -/
+private theorem splittingAut_trans_reindex {m : Type*} [Fintype m] [DecidableEq m]
+    (ψ : L ⊗[K] A ≃ₐ[L] Matrix m m L) (e : m ≃ n) (σ : L ≃ₐ[K] L) (x : Matrix n n L) :
+    splittingAut (ψ.trans (reindexAlgEquiv L L e)) σ x =
+      reindexAlgEquiv L L e (splittingAut ψ σ ((reindexAlgEquiv L L e).symm x)) := by
+  have hx : (reindexAlgEquiv L L e).symm (x.map σ.symm) =
+      ((reindexAlgEquiv L L e).symm x).map σ.symm := by
+    ext
+    simp
+  rw [splittingAut_apply, splittingAut_apply, AlgEquiv.trans_apply, AlgEquiv.symm_trans_apply, hx]
+
 end CommSemiring
 
 section CommRing
@@ -162,6 +185,29 @@ private theorem exists_scalar_mul_eq (g : (L ≃ₐ[K] L) → GL n L)
   simp only [Units.val_mul, ← hm]
   rw [hg, AlgEquiv.mapMatrix_apply, splittingAut_mul, ← hg, ← hg]
   simp only [Matrix.map_mul, _root_.mul_inv_rev, Units.val_mul, ← map_inv, hcoe, mul_assoc]
+
+/-- Changing the splitting by an inner automorphism: if `φ' = h · φ · h⁻¹`, then for conjugators
+`g_σ` of `φ` the matrices `h · g_σ · σ(h)⁻¹` are conjugators of `φ'`. -/
+private theorem conj_mul_mul_inv_eq_splittingAut {φ φ' : L ⊗[K] A ≃ₐ[L] Matrix n n L} (h : GL n L)
+    (hh : ∀ x, φ' x = h * φ x * ((h⁻¹ : GL n L) : Matrix n n L)) (g : (L ≃ₐ[K] L) → GL n L)
+    (hg : ∀ σ m, (g σ : Matrix n n L) * m * ((g σ)⁻¹ : GL n L) = splittingAut φ σ m)
+    (σ : L ≃ₐ[K] L) (m : Matrix n n L) :
+    ((h * g σ * map (σ : L →+* L) h⁻¹ : GL n L) : Matrix n n L) * m *
+        ((h * g σ * map (σ : L →+* L) h⁻¹)⁻¹ : GL n L) = splittingAut φ' σ m := by
+  have hsymm (y : Matrix n n L) : φ'.symm y = φ.symm (((h⁻¹ : GL n L) : Matrix n n L) * y * h) :=
+    φ'.injective <| by
+      rw [AlgEquiv.apply_symm_apply, hh, AlgEquiv.apply_symm_apply]
+      simp [mul_assoc]
+  have hcoe (x : GL n L) : ((map (σ : L →+* L) x : GL n L) : Matrix n n L) =
+      σ.mapMatrix (x : Matrix n n L) := by
+    ext; simp
+  have hX : ((h⁻¹ : GL n L) : Matrix n n L) * m.map σ.symm * h =
+      (((map (σ : L →+* L) h⁻¹ : GL n L) : Matrix n n L) * m *
+        (map (σ : L →+* L) h : GL n L)).map σ.symm := by
+    conv_rhs => rw [← AlgEquiv.mapMatrix_apply, map_mul, map_mul, hcoe, hcoe]
+    simp [AlgEquiv.mapMatrix_apply, Matrix.map_map, Function.comp_def]
+  rw [splittingAut_apply, hh, hsymm, hX, ← splittingAut_apply, ← hg]
+  simp only [Units.val_mul, _root_.mul_inv_rev, map_inv, inv_inv, mul_assoc]
 
 variable [Nonempty n]
 
@@ -219,6 +265,29 @@ theorem TwoCocycle.ofConjugators_toFun_eq_iff (g : (L ≃ₐ[K] L) → GL n L)
   refine ⟨fun h ↦ h ▸ scalar_ofConjugators_mul φ g hg σ τ, fun h ↦ scalar_injective (n := n) ?_⟩
   exact mul_right_cancel ((scalar_ofConjugators_mul φ g hg σ τ).trans h.symm)
 
+/-- **The cocycle does not depend on the choice of conjugators**, up to coboundaries: two families
+`g` and `g'` of conjugators for the same splitting `φ` differ by unit scalars `b(σ)`, with
+`g'_σ = b(σ) · g_σ`, and their cocycles differ by the coboundary of `b⁻¹`. -/
+theorem TwoCocycle.cohomologous_ofConjugators (g g' : (L ≃ₐ[K] L) → GL n L)
+    (hg : ∀ σ m, (g σ : Matrix n n L) * m * ((g σ)⁻¹ : GL n L) = splittingAut φ σ m)
+    (hg' : ∀ σ m, (g' σ : Matrix n n L) * m * ((g' σ)⁻¹ : GL n L) = splittingAut φ σ m) :
+    (ofConjugators φ g hg).Cohomologous (ofConjugators φ g' hg') := by
+  choose b hb using fun σ ↦ exists_scalar_mul_eq_of_forall_conj_eq (g := g' σ) (h := g σ)
+    fun x ↦ Units.ext (by simp only [Units.val_mul]; rw [hg', hg])
+  refine cohomologous_iff.2 ⟨fun σ ↦ (b σ)⁻¹, fun σ τ ↦ ?_⟩
+  have hw : (ofConjugators φ g' hg').toFun σ τ =
+      (ofConjugators φ g hg).toFun σ τ * (Units.map ((σ : L →+* L) : L →* L) (b τ))⁻¹ *
+        b (σ * τ) * (b σ)⁻¹ := by
+    rw [ofConjugators_toFun_eq_iff, ← hb, ← hb, ← hb, ← scalar_ofConjugators_mul φ g hg σ τ,
+      map_mul (GeneralLinearGroup.map _), map_scalar, mul_assoc (scalar n (b σ)),
+      ← mul_assoc (g σ), ← GeneralLinearGroup.scalar_commute]
+    simp only [← mul_assoc, ← map_mul]
+    congr 3
+    simp only [mul_assoc, inv_mul_cancel_left]
+    rw [mul_comm, mul_assoc, mul_comm (b (σ * τ)), ← mul_assoc, inv_mul_cancel_left]
+  rw [hw]
+  simp [Units.val_mul]
+
 end CommRing
 
 section Field
@@ -269,6 +338,73 @@ theorem cocycleOfSplitting_toFun_eq_iff (σ τ : L ≃ₐ[K] L) (u : Lˣ) :
       scalar n u * (splittingConjugator φ σ * map (σ : L →+* L) (splittingConjugator φ τ)) =
         splittingConjugator φ (σ * τ) :=
   TwoCocycle.ofConjugators_toFun_eq_iff φ _ _ σ τ u
+
+/-- Two splittings into the same matrix algebra `Mₙ(L)` give cohomologous cocycles. -/
+private theorem cohomologous_cocycleOfSplitting_of_matrix_eq
+    (φ' : L ⊗[K] A ≃ₐ[L] Matrix n n L) :
+    (cocycleOfSplitting φ).Cohomologous (cocycleOfSplitting φ') := by
+  obtain ⟨h, hh⟩ := exists_unit_conj_of_algEquiv L (φ.symm.trans φ')
+  have hh' (x : L ⊗[K] A) : φ' x = h * φ x * ((h⁻¹ : GL n L) : Matrix n n L) := by
+    simpa using hh (φ x)
+  set g : (L ≃ₐ[K] L) → GL n L := fun σ ↦ h * splittingConjugator φ σ * map (σ : L →+* L) h⁻¹
+  have hg : ∀ σ m, (g σ : Matrix n n L) * m * ((g σ)⁻¹ : GL n L) = splittingAut φ' σ m :=
+    conj_mul_mul_inv_eq_splittingAut h hh' _ fun σ m ↦ by
+      rw [Matrix.coe_units_inv, splittingConjugator_mul_mul_inv]
+  have heq : TwoCocycle.ofConjugators φ' g hg = cocycleOfSplitting φ := by
+    refine TwoCocycle.ext (funext₂ fun σ τ ↦
+      (TwoCocycle.ofConjugators_toFun_eq_iff φ' g hg σ τ _).2 ?_)
+    have hmap (x : GL n L) : map (σ : L →+* L) (map (τ : L →+* L) x) =
+        map ((σ * τ : L ≃ₐ[K] L) : L →+* L) x := by
+      ext; simp [AlgEquiv.mul_apply]
+    simp only [g]
+    rw [← scalar_cocycleOfSplitting_mul φ σ τ]
+    simp only [map_mul, hmap, map_inv]
+    conv_rhs => rw [← mul_assoc h, ← GeneralLinearGroup.scalar_commute]
+    group
+  rw [← heq]
+  exact TwoCocycle.cohomologous_ofConjugators φ' g _ hg _
+
+/-- Reindexing a splitting along `e : m ≃ n` does not change its cocycle up to coboundaries: the
+reindexed conjugators have the same cocycle. -/
+private theorem cohomologous_cocycleOfSplitting_trans_reindex {m : Type*} [Fintype m]
+    [DecidableEq m] [Nonempty m] (ψ : L ⊗[K] A ≃ₐ[L] Matrix m m L) (e : m ≃ n) :
+    (cocycleOfSplitting (ψ.trans (reindexAlgEquiv L L e))).Cohomologous
+      (cocycleOfSplitting ψ) := by
+  set g : (L ≃ₐ[K] L) → GL n L := fun σ ↦ e.reindexGL L (splittingConjugator ψ σ)
+  have hg : ∀ σ x, (g σ : Matrix n n L) * x * ((g σ)⁻¹ : GL n L) =
+      splittingAut (ψ.trans (reindexAlgEquiv L L e)) σ x := by
+    intro σ x
+    rw [splittingAut_trans_reindex, ← splittingConjugator_mul_mul_inv, ← Matrix.coe_units_inv,
+      map_mul, map_mul, AlgEquiv.apply_symm_apply, Matrix.coe_reindexAlgEquiv,
+      Matrix.reindex_apply, Matrix.reindex_apply, ← Equiv.coe_reindexGL,
+      ← Equiv.coe_reindexGL, map_inv]
+  have heq : TwoCocycle.ofConjugators _ g hg = cocycleOfSplitting ψ := by
+    refine TwoCocycle.ext (funext₂ fun σ τ ↦
+      (TwoCocycle.ofConjugators_toFun_eq_iff _ g hg σ τ _).2 ?_)
+    have hscalar (u : Lˣ) : e.reindexGL L (scalar m u) = scalar n u := by
+      ext i j
+      simp [Equiv.coe_reindexGL, coe_scalar, Matrix.diagonal_apply]
+    have hmap (x : GL m L) :
+        map (σ : L →+* L) (e.reindexGL L x) = e.reindexGL L (map (σ : L →+* L) x) := by
+      ext i j
+      simp [Equiv.coe_reindexGL]
+    simp only [g, hmap, ← hscalar, ← map_mul, scalar_cocycleOfSplitting_mul]
+  rw [← heq]
+  exact TwoCocycle.cohomologous_ofConjugators _ _ g _ hg
+
+/-- **The cocycle of a split algebra does not depend on the splitting**, up to coboundaries: two
+`L`-algebra isomorphisms `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)` and `φ' : L ⊗[K] A ≃ₐ[L] Mₘ(L)` give
+cohomologous cocycles. The index types `n` and `m` have the same cardinality, since `Mₙ(L)` and
+`Mₘ(L)` are isomorphic, so `φ'` is reduced to a splitting into `Mₙ(L)` by reindexing. -/
+theorem cohomologous_cocycleOfSplitting {m : Type*} [Fintype m] [DecidableEq m] [Nonempty m]
+    (φ' : L ⊗[K] A ≃ₐ[L] Matrix m m L) :
+    (cocycleOfSplitting φ).Cohomologous (cocycleOfSplitting φ') := by
+  have hcard : Fintype.card m = Fintype.card n := by
+    have h := (φ'.symm.trans φ).toLinearEquiv.finrank_eq
+    simp only [Module.finrank_matrix, Module.finrank_self, mul_one] at h
+    exact Nat.mul_self_inj.1 h
+  exact (cohomologous_cocycleOfSplitting_of_matrix_eq φ _).trans
+    (cohomologous_cocycleOfSplitting_trans_reindex φ' (Fintype.equivOfCardEq hcard))
 
 end Field
 

@@ -50,6 +50,8 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.eq_padicPow_of_continuous`, `TauCeti.IsProP.map_padicPow`: the power is the
   unique continuous extension of the natural powers, and continuous homomorphisms preserve it.
 * `TauCeti.IsProP.padicPow_mem`: a closed subgroup containing `a` contains its `p`-adic powers.
+* `TauCeti.IsProP.eq_zero_of_padicPow_mem`: a closed subgroup containing no `p`-power `a ^ (p ^ k)`
+  contains the `p`-adic power `a ^ l` only for `l = 0`.
 * `TauCeti.IsProP.conj_padicPow`: the power commutes with conjugation.
 * `TauCeti.IsProP.padicPow_padicPow_inv`, `TauCeti.IsProP.padicPow_left_inj`,
   `TauCeti.IsProP.topologicalClosure_closure_padicPow`: a unit exponent `u` is undone by `u⁻¹`,
@@ -260,6 +262,23 @@ theorem padicPow_mem (hA : IsProP p A) {H : Subgroup A} (hH : IsClosed (H : Set 
     simpa using H.pow_mem ha k
   exact hclosed.closure_subset_iff.mpr hnat
     ((PadicInt.denseRange_natCast (p := p)).closure_range ▸ Set.mem_univ l)
+
+/-- **A `p`-adic power lying in a closed subgroup has exponent `0` unless a `p`-power of the base
+does.** If the closed subgroup `H` contains `a ^ l` but no `a ^ (p ^ k)`, then `l = 0`: a nonzero
+`l` is `u pᵛ` with `u` a unit, and then `a ^ (pᵛ) = (a ^ l) ^ (u⁻¹)` lies in `H`. -/
+theorem eq_zero_of_padicPow_mem (hA : IsProP p A) {H : Subgroup A} (hH : IsClosed (H : Set A))
+    {a : A} (ha : ∀ k : ℕ, a ^ p ^ k ∉ H) {l : ℤ_[p]} (hl : hA.padicPow a l ∈ H) : l = 0 := by
+  by_contra hne
+  obtain ⟨u, hu⟩ : ∃ u : ℤ_[p]ˣ, l = u * (p : ℤ_[p]) ^ l.valuation :=
+    ⟨_, PadicInt.unitCoeff_spec hne⟩
+  obtain ⟨v, hv⟩ : ∃ v : ℕ, l.valuation = v := ⟨_, rfl⟩
+  rw [hv] at hu
+  refine ha v ?_
+  -- `pᵛ = l · u⁻¹`, so `a ^ (pᵛ)` is a `p`-adic power of `a ^ l ∈ H`.
+  have hpv : (p : ℤ_[p]) ^ v = l * ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) := by
+    rw [hu, mul_comm (u : ℤ_[p]), mul_assoc, Units.mul_inv, mul_one]
+  rw [← hA.padicPow_natCast, Nat.cast_pow, hpv, hA.padicPow_mul]
+  exact hA.padicPow_mem hH hl _
 
 /-- Continuous homomorphisms between pro-`p` groups preserve the `p`-adic power. -/
 theorem map_padicPow {B : Type v} [Group B] [TopologicalSpace B] [IsTopologicalGroup B]

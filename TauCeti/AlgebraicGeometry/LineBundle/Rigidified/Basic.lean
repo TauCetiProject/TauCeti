@@ -323,10 +323,9 @@ lemma toLineBundleClass_mk (P : RigidifiedLineBundle s) :
 monoid. -/
 lemma toLineBundleClass_trivial :
     toLineBundleClass (mk (RigidifiedLineBundle.trivial s)) = 1 := by
-  rw [toLineBundleClass_mk]
-  rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
-  rw [RigidifiedLineBundle.trivial_lineBundle_obj, InvertibleSheaf.trivial_obj]
-  exact ⟨(TauCeti.SheafOfModules.freePUnitIsoUnit Y.ringCatSheaf).symm⟩
+  rw [toLineBundleClass_mk, LineBundleClass.mk_eq_one_iff,
+    RigidifiedLineBundle.trivial_lineBundle_obj]
+  exact ⟨Iso.refl _⟩
 
 /-- Forgetting the trivialization commutes with pullback. -/
 @[simp]
