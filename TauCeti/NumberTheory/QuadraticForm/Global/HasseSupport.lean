@@ -29,8 +29,6 @@ unramified norm-equation calculation for each pair of coefficients.
 
 public section
 
-open Finset
-
 namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -47,9 +45,7 @@ theorem _root_.QuadraticForm.hasFiniteMulSupport_finiteHasse
   have hp' : Q.Equivalent
       (QuadraticMap.weightedSumSquares K fun i ↦ (p.2 i : K)) := by
     rwa [← presentedForm_eq_weightedSumSquares_coe]
-  rw [show Q.finiteHasse hQ = fun v ↦ ∏ i, ∏ j ∈ Ioi i,
-      hilbertSymbol (v.unitAtFinitePlace (p.2 i)) (v.unitAtFinitePlace (p.2 j)) from
-    funext (Q.finiteHasse_eq_prod_hilbertSymbol hQ hp')]
+  rw [funext (Q.finiteHasse_eq_prod_hilbertSymbol hQ hp')]
   fun_prop
 
 end TauCeti
