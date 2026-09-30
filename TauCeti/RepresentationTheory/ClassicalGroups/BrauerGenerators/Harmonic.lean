@@ -282,15 +282,11 @@ noncomputable def orthogonalTraceProjection (hn : IsUnit (n : k)) :
     Module.End k (⨂[k]^2 (Fin n → k)) :=
   ((hn.unit⁻¹ : kˣ) : k) • orthogonalCupCap k n
 
-theorem orthogonalTraceProjection_eq_smul (hn : IsUnit (n : k)) :
-    orthogonalTraceProjection k n hn = ((hn.unit⁻¹ : kˣ) : k) • orthogonalCupCap k n :=
-  (rfl)
-
 @[simp]
 theorem orthogonalTraceProjection_apply (hn : IsUnit (n : k)) (x : ⨂[k]^2 (Fin n → k)) :
     orthogonalTraceProjection k n hn x =
       ((hn.unit⁻¹ : kˣ) : k) • orthogonalCup k n (orthogonalCap k n x) := by
-  rw [orthogonalTraceProjection_eq_smul, LinearMap.smul_apply, orthogonalCupCap_apply]
+  simp only [orthogonalTraceProjection, LinearMap.smul_apply, orthogonalCupCap_apply]
 
 /-- **The projection kills the harmonic tensors**, they being the kernel of the cap. -/
 theorem orthogonalTraceProjection_apply_of_mem_orthogonalHarmonicTensors (hn : IsUnit (n : k))
