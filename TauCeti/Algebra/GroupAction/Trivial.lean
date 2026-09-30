@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Algebra.Group.Action.End
-public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.GroupWithZero.Action.End
 
 /-!
@@ -28,7 +27,6 @@ is needed, as in the theory of projective representations and for central extens
 
 * `TauCeti.smul_mul_smul_of_smul_eq_self`: for a trivial action on a multiplicative structure,
   multiplication is equivariant, `g • m * g • n = g • (m * n)`.
-* `TauCeti.bot_smul_eq_bot_smul`: actions by two trivial subgroups agree.
 * `TauCeti.trivialMulDistribMulAction`: the trivial action of a monoid on a monoid by monoid
   endomorphisms, with `TauCeti.trivialMulDistribMulAction_smul`: under it every element is fixed.
 -/
@@ -36,17 +34,6 @@ is needed, as in the theory of projective representations and for central extens
 public section
 
 namespace TauCeti
-
-section BottomSubgroup
-
-variable {G : Type*} [Group G] {U : Subgroup G} {A : Type*}
-
-/-- Two actions of trivial subgroups on the same type agree: a trivial group acts trivially. -/
-theorem bot_smul_eq_bot_smul [MulAction (⊥ : Subgroup U) A] [MulAction (⊥ : Subgroup G) A]
-    (v : (⊥ : Subgroup U)) (w : (⊥ : Subgroup G)) (a : A) : w • a = v • a := by
-  rw [Subsingleton.elim v 1, Subsingleton.elim w 1, one_smul, one_smul]
-
-end BottomSubgroup
 
 variable {G : Type*} {R : Type*} [Mul R] [SMul G R]
 
