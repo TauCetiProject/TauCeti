@@ -69,6 +69,9 @@ grading itself is a priori only rational, and a square-disjoint rectangle preser
   empty rectangle move preserves the Alexander grading and drops either Maslov grading by one.
 * `TauCeti.GridDiagram.exists_int_alexander_sub_alexander`: the Alexander gradings of two grid
   states joined by a rectangle differ by an integer.
+* `TauCeti.GridRectangleBetween.JWeight_sub_JWeight_eq_sum`: the pairing `GridState.JWeight`
+  against an integer weight on the squares whose rows and columns sum to zero changes across a
+  rectangle by the total weight of the covered squares.
 
 ## References
 
@@ -516,5 +519,78 @@ theorem exists_int_alexander_sub_alexander (R : GridRectangleBetween x y) :
     ring⟩
 
 end GridDiagram
+
+/-! ### Pairing against a weight on the squares -/
+
+namespace GridState
+
+variable {n : ℕ}
+
+/-- The pairing of a grid state against an integer weight `w` on the squares of the grid: the sum,
+over the squares `q`, of `w q` times the pairing `GridPoint.JCenter` of the state with the single
+square `q`. It extends the pairing against a set of marked squares to integer weights. -/
+noncomputable def JWeight (w : Fin n × Fin n → ℤ) (x : GridState n) : ℚ :=
+  ∑ q, (w q : ℚ) * GridPoint.JCenter x.pointSet {q}
+
+end GridState
+
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y : GridState n}
+
+/-- **The pairing against a balanced weight changes by the covered weight.** If an integer weight
+on the squares sums to zero along every column and every row, its pairing with the source of a
+rectangle minus its pairing with the target is the total weight of the squares the rectangle
+covers. The wrapping corrections of the four-corner evaluation are proportional to the column and
+row sums of the weight, so they vanish. -/
+theorem JWeight_sub_JWeight_eq_sum (R : GridRectangleBetween x y) {w : Fin n × Fin n → ℤ}
+    (hcol : ∀ c, ∑ r, w (c, r) = 0) (hrow : ∀ r, ∑ c, w (c, r) = 0) :
+    x.JWeight w - y.JWeight w = ∑ q ∈ R.toGridRectangle.coveredSquares, (w q : ℚ) := by
+  classical
+  set C := Grid.cIco R.left R.right with hC
+  set D := Grid.cIco R.bottom R.top with hD
+  set a : ℚ := if R.right.val < R.left.val then 1 else 0
+  set b : ℚ := if R.top.val < R.bottom.val then 1 else 0
+  have hcolQ : ∀ c, ∑ r, (w (c, r) : ℚ) = 0 := fun c ↦ by exact_mod_cast hcol c
+  have hrowQ : ∀ r, ∑ c, (w (c, r) : ℚ) = 0 := fun r ↦ by exact_mod_cast hrow r
+  have hpt : ∀ q : Fin n × Fin n,
+      GridPoint.JCenter x.pointSet {q} - GridPoint.JCenter y.pointSet {q} =
+        ((if q.1 ∈ C then (1 : ℚ) else 0) - a) * ((if q.2 ∈ D then (1 : ℚ) else 0) - b) := by
+    intro q
+    rw [R.JCenter_pointSet_sub_eq, GridPoint.JCenter_corner_alternating, Finset.sum_singleton,
+      GridPoint.sub_ite_le_eq_sub_ite_mem_cIco, GridPoint.sub_ite_le_eq_sub_ite_mem_cIco]
+  have hcols : ∑ q : Fin n × Fin n, (w q : ℚ) * (if q.1 ∈ C then (1 : ℚ) else 0) = 0 := by
+    rw [Fintype.sum_prod_type]
+    simp [hcolQ]
+  have hrows : ∑ q : Fin n × Fin n, (w q : ℚ) * (if q.2 ∈ D then (1 : ℚ) else 0) = 0 := by
+    rw [Fintype.sum_prod_type_right]
+    simp [hrowQ]
+  have htot : ∑ q : Fin n × Fin n, (w q : ℚ) = 0 := by
+    rw [Fintype.sum_prod_type]
+    simp [hcolQ]
+  have hprod : ∑ q : Fin n × Fin n,
+      (w q : ℚ) * ((if q.1 ∈ C then (1 : ℚ) else 0) * (if q.2 ∈ D then (1 : ℚ) else 0)) =
+        ∑ q ∈ R.toGridRectangle.coveredSquares, (w q : ℚ) := by
+    simp only [GridRectangle.coveredSquares_def, GridRectangle.coveredColumns_def,
+      GridRectangle.coveredRows_def, toGridRectangle_left, toGridRectangle_right,
+      toGridRectangle_bottom, toGridRectangle_top]
+    rw [← hC, ← hD, ← Finset.univ_inter (C ×ˢ D), ← Finset.sum_ite_mem]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    by_cases h1 : q.1 ∈ C <;> by_cases h2 : q.2 ∈ D <;> simp [h1, h2]
+  have expand : ∀ q : Fin n × Fin n,
+      (w q : ℚ) * (GridPoint.JCenter x.pointSet {q} - GridPoint.JCenter y.pointSet {q}) =
+        (w q : ℚ) * ((if q.1 ∈ C then (1 : ℚ) else 0) * (if q.2 ∈ D then (1 : ℚ) else 0)) -
+          b * ((w q : ℚ) * (if q.1 ∈ C then (1 : ℚ) else 0)) -
+          a * ((w q : ℚ) * (if q.2 ∈ D then (1 : ℚ) else 0)) + a * b * (w q : ℚ) := by
+    intro q
+    rw [hpt]
+    ring
+  rw [GridState.JWeight, GridState.JWeight, ← Finset.sum_sub_distrib]
+  simp only [← mul_sub, expand]
+  rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    ← Finset.mul_sum, ← Finset.mul_sum, hcols, hrows, htot, hprod]
+  ring
+
+end GridRectangleBetween
 
 end TauCeti
