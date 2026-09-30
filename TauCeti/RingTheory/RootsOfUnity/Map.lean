@@ -82,4 +82,14 @@ noncomputable def pPowerRootsOfUnityEquiv (f : K ≃* L) :
     (pPowerRootsOfUnityEquiv p f x : Lˣ) = Units.map f.toMonoidHom x := by
   exact pPowerRootsOfUnityMap_apply p f.toMonoidHom x
 
+/-- The inverse root-group equivalence is induced by the inverse monoid equivalence. -/
+@[simp] theorem pPowerRootsOfUnityEquiv_symm (f : K ≃* L) :
+    (pPowerRootsOfUnityEquiv p f).symm = pPowerRootsOfUnityEquiv p f.symm := by
+  apply MulEquiv.ext
+  intro x
+  apply (pPowerRootsOfUnityEquiv p f).injective
+  apply Subtype.ext
+  apply Units.ext
+  simp
+
 end TauCeti
