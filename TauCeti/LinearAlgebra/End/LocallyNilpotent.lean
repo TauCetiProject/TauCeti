@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Basic
 public import Mathlib.Algebra.Ring.GeomSum
-public import Mathlib.Data.Fintype.Card
 public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
@@ -20,8 +19,8 @@ power of `f`.  Then `1 + f` is invertible.  No global nilpotence bound is needed
 applies to operators which lower a filtration by direct summands without being nilpotent on the
 whole module, such as those of homological perturbation theory on bar constructions.
 
-On a free module `ι →₀ R` over a finite basis, an endomorphism is locally nilpotent as soon as it
-strictly lowers a weight on the basis.
+On a free module `ι →₀ R`, an endomorphism is locally nilpotent as soon as it strictly lowers a
+weight on the basis whose strict order is well-founded, for instance any weight on a finite basis.
 
 ## Main results
 
@@ -29,8 +28,8 @@ strictly lowers a weight on the basis.
   locally nilpotent.
 * `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
-* `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`,
-  for a finite type `ι`, that strictly lowers a weight on the basis is locally nilpotent.
+* `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
+  that strictly lowers a well-founded weight on the basis is locally nilpotent.
 -/
 
 public section
@@ -95,14 +94,17 @@ section Finsupp
 
 open Finsupp
 
-variable {R ι α : Type*} [Semiring R] [Finite ι] [Preorder α]
+variable {R ι α : Type*} [Semiring R] [LT α]
 
-/-- **Strictly lowering a weight on a finite basis is locally nilpotent.** If an endomorphism `f`
-of `ι →₀ R`, for a finite type `ι`, sends each basis vector `single i 1` into the span of the basis
-vectors of strictly smaller weight, then every vector is killed by a power of `f`. -/
-theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt (w : ι → α)
-    (f : Module.End R (ι →₀ R)) (hf : ∀ i, ∀ j ∈ (f (single i 1)).support, w j < w i)
-    (x : ι →₀ R) : ∃ k, (f ^ k) x = 0 := by
+/-- **Strictly lowering a well-founded weight on a basis is locally nilpotent.** Let `w` be a
+weight on `ι` whose strict order `w j < w i` is well-founded, as is automatic when `ι` is finite
+and `α` is a preorder, or when `<` is well-founded on `α`. If an endomorphism `f` of `ι →₀ R`
+sends each basis vector `single i 1` into the span of the basis vectors of strictly smaller
+weight, then every vector is killed by a power of `f`. -/
+theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt
+    (f : Module.End R (ι →₀ R)) (w : ι → α) (hw : WellFounded (InvImage (· < ·) w))
+    (hf : ∀ i, ∀ j ∈ (f (single i 1)).support, w j < w i) (x : ι →₀ R) :
+    ∃ k, (f ^ k) x = 0 := by
   let N : Submodule R (ι →₀ R) :=
     { carrier := {x | ∃ k, (f ^ k) x = 0}
       add_mem' := by
@@ -115,12 +117,11 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt (w : ι →
         rintro c x ⟨a, ha⟩
         exact ⟨a, by rw [map_smul, ha, smul_zero]⟩ }
   have hN : ∀ x, x ∈ N ↔ ∃ k, (f ^ k) x = 0 := fun _ ↦ Iff.rfl
-  let r : ι → ι → Prop := fun j i ↦ w j < w i
-  have : IsTrans ι r := ⟨fun _ _ _ ↦ lt_trans⟩
-  have : Std.Irrefl r := ⟨fun _ ↦ lt_irrefl _⟩
+  -- Well-founded induction on the weight: `f (single i 1)` involves only basis vectors of
+  -- smaller weight, each of which is killed by a power of `f` by induction.
   have hsingle : ∀ i, single i (1 : R) ∈ N := by
     intro i
-    induction i using (Finite.wellFounded_of_trans_of_irrefl r).induction with
+    induction i using hw.induction with
     | _ i ih =>
       have hfi : f (single i 1) ∈ N := by
         rw [← Finsupp.sum_single (f (single i 1))]
@@ -128,7 +129,7 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt (w : ι →
         rw [← Finsupp.smul_single_one]
         exact N.smul_mem _ (ih j (hf i j hj))
       obtain ⟨k, hk⟩ := (hN _).1 hfi
-      exact ⟨k + 1, by rw [pow_succ, Module.End.mul_apply, hk]⟩
+      exact (hN _).2 ⟨k + 1, by rw [pow_succ, Module.End.mul_apply, hk]⟩
   have hx : x ∈ N := by
     induction x using Finsupp.induction_linear with
     | zero => exact N.zero_mem
@@ -136,6 +137,6 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt (w : ι →
     | single i c =>
       rw [← Finsupp.smul_single_one]
       exact N.smul_mem _ (hsingle i)
-  exact hx
+  exact (hN x).1 hx
 
 end Finsupp
