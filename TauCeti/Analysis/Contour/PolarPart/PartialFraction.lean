@@ -82,7 +82,7 @@ namespace TauCeti
 
 /-- Multiplying a finite partial-fraction sum by `z` at infinity recovers the sum of its
 coefficients. The poles may be indexed with repetitions. -/
-theorem tendsto_mul_sum_div_sub_cobounded {ι : Type*} (S : Finset ι) (a c : ι → ℂ) :
+theorem tendsto_mul_sum_div_sub_cobounded {ι : Type*} {S : Finset ι} (a c : ι → ℂ) :
     Tendsto (fun z : ℂ => z * ∑ i ∈ S, c i / (z - a i)) (cobounded ℂ)
       (𝓝 (∑ i ∈ S, c i)) := by
   simp_rw [Finset.mul_sum]
