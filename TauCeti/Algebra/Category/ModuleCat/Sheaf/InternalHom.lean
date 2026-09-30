@@ -38,8 +38,9 @@ rests, for sources `M` that are only locally free.
   presheaf internal Hom, naturally in the source and target;
 * `SheafOfModules.ihomObjEquiv`: the sections of `𝓗om(M, N)` over `U` are the morphisms
   `M.over U ⟶ N.over U`; `SheafOfModules.ihomObjEquiv_apply` reads the morphism attached to a
-  section off the presheaf internal Hom, and the equivalence is compatible with restriction by
-  `SheafOfModules.ihomObjEquiv_map_app`, natural in the target by
+  section off the presheaf internal Hom, `SheafOfModules.ihomObjEquiv_symm_apply` reads the
+  section attached to a morphism off it in the same way, and the equivalence is compatible with
+  restriction by `SheafOfModules.ihomObjEquiv_map_app`, natural in the target by
   `SheafOfModules.ihomObjEquiv_ihom_map_app`, and natural in the source by
   `SheafOfModules.ihomObjEquiv_pre_app_app`.
 
@@ -300,6 +301,24 @@ theorem _root_.SheafOfModules.ihomObjEquiv_apply (U : C) (s : ((ihom M).obj N).v
     (congrArg (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val)
       (Iso.toLinearEquiv_apply
         ((PresheafOfModules.evaluation _ (op U)).mapIso ((ihomCompForgetIso M).app N)) s))))
+
+/-- The section of `𝓗om(M, N)` attached to a morphism of restrictions is the image of the section
+of the presheaf internal Hom attached to it (`TauCeti.PresheafOfModules.ihomObjEquiv`). -/
+theorem _root_.SheafOfModules.ihomObjEquiv_symm_apply (U : C) (φ : M.over U ⟶ N.over U) :
+    (M.ihomObjEquiv N U).symm φ =
+      ((ihomCompForgetIso M).inv.app N).app (op U)
+        ((PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val).symm φ.val) := by
+  apply (M.ihomObjEquiv N U).injective
+  rw [Equiv.apply_symm_apply]
+  refine Eq.symm ((ihomObjEquiv_apply M N U _).trans (Hom.ext ?_))
+  -- The comparison with the presheaf internal Hom is invertible.
+  have hinv (x : ((ihom M.val).obj N.val).obj (op U)) :
+      ((ihomCompForgetIso M).hom.app N).app (op U)
+        (((ihomCompForgetIso M).inv.app N).app (op U) x) = x :=
+    Iso.inv_hom_id_apply
+      ((PresheafOfModules.evaluation _ (op U)).mapIso ((ihomCompForgetIso M).app N)) x
+  exact (congrArg (PresheafOfModules.ihomObjEquiv (R := R.obj) U M.val N.val) (hinv _)).trans
+    (Equiv.apply_symm_apply _ _)
 
 /-- Restricting a section of `𝓗om(M, N)` along `g : V ⟶ U` restricts the corresponding morphism
 of restrictions to the slice over `V`.
