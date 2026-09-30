@@ -87,7 +87,8 @@ theorem continuousAt_sub_I_div_add_I (x : ℝ) :
 
 /-- The Cayley transform of a real point lies on the unit circle. -/
 @[simp] theorem norm_sub_I_div_add_I_ofReal (x : ℝ) :
-    ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
+    ‖(x : ℂ) - I‖ / ‖(x : ℂ) + I‖ = 1 := by
+  rw [← norm_div]
   have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
   refine le_antisymm ((norm_sub_I_div_add_I_le_one_iff hx).mpr (by simp)) (not_lt.mp fun h => ?_)
   simpa using (norm_sub_I_div_add_I_lt_one_iff hx).mp h
@@ -100,7 +101,7 @@ theorem one_sub_conj_mul_sub_I_div_add_I_ne_zero (c : Complex.UnitDisc) (x : ℝ
   have hnorm : ‖(c : ℂ)‖ * ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
     have := congrArg norm (sub_eq_zero.mp h)
     simpa [norm_mul] using this.symm
-  rw [norm_sub_I_div_add_I_ofReal x, mul_one] at hnorm
+  rw [norm_div, norm_sub_I_div_add_I_ofReal x, mul_one] at hnorm
   exact (ne_of_lt c.norm_lt_one) hnorm
 
 /-- The closed-disc criterion in the normal form used by `simp` after `norm_div`. -/
