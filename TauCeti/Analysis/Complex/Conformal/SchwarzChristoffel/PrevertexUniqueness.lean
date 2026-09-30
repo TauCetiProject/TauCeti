@@ -26,6 +26,9 @@ vertex `v i` at the prevertex `a i`.
 
 ## Main results
 
+* `TauCeti.exists_prevertex_cayley_automorphism`
+  -- the boundary correspondence of two representations is one disc automorphism in Cayley
+  coordinates, simultaneously at every prevertex.
 * `TauCeti.crossRatio_eq_of_bijOn_schwarzChristoffelPrimitive` -- two Schwarz--Christoffel
   representations of a Jordan domain with the same vertices have prevertices with the same
   cross-ratios.
@@ -63,6 +66,35 @@ private theorem differentiableOn_const_mul_schwarzChristoffelPrimitive_add (a e 
     DifferentiableOn ℂ (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B)
       upperHalfPlaneSet :=
   ((differentiableOn_schwarzChristoffelPrimitive a e z₀).const_mul A).add_const B
+
+/-- **Prevertex correspondence in Cayley coordinates.** For two Schwarz--Christoffel
+representations of the same bounded Jordan domain with matching vertices, one standard disc
+automorphism carries the Cayley coordinate of every prevertex of the first representation to the
+corresponding coordinate of the second. -/
+theorem exists_prevertex_cayley_automorphism
+    {U : Set ℂ} (hUb : IsBounded U) (hUJ : IsJordanCurve (frontier U))
+    {a e a' e' : ι → ℝ}
+    (he : ∀ i, -1 < ∑ l with a l = a i, e l)
+    (he' : ∀ i, -1 < ∑ l with a' l = a' i, e' l) (z₀ z₀' : UpperHalfPlane)
+    {A B A' B' : ℂ}
+    (hf : BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U)
+    (hf' : BijOn (fun z => A' * schwarzChristoffelPrimitive a' e' z₀' z + B') upperHalfPlaneSet U)
+    (hv : ∀ i, A' * schwarzChristoffelVertex a' e' z₀' i + B' =
+      A * schwarzChristoffelVertex a e z₀ i + B) :
+    ∃ (u : Circle) (c : Complex.UnitDisc), ∀ i : ι,
+      (((a' i : ℝ) : ℂ) - Complex.I) / (((a' i : ℝ) : ℂ) + Complex.I) =
+        (u : ℂ) * (((((a i : ℝ) : ℂ) - Complex.I) /
+          (((a i : ℝ) : ℂ) + Complex.I) - c) /
+          (1 - (starRingEnd ℂ) (c : ℂ) *
+            ((((a i : ℝ) : ℂ) - Complex.I) / (((a i : ℝ) : ℂ) + Complex.I)))) := by
+  obtain ⟨u, c, h⟩ :=
+    exists_sub_I_div_add_I_eq_unitDiscStandardAutomorphismFormula_of_tendsto hUb hUJ
+      (differentiableOn_const_mul_schwarzChristoffelPrimitive_add a e z₀ A B)
+      (differentiableOn_const_mul_schwarzChristoffelPrimitive_add a' e' z₀' A' B') hf hf'
+  refine ⟨u, c, fun i => h (a i) (a' i)
+    (A * schwarzChristoffelVertex a e z₀ i + B)
+    (tendsto_const_mul_schwarzChristoffelPrimitive_add he z₀ A B i) ?_⟩
+  exact hv i ▸ tendsto_const_mul_schwarzChristoffelPrimitive_add he' z₀' A' B' i
 
 /-- **Schwarz--Christoffel prevertices have equal cross-ratios.** Let
 `A * F + B` and `A' * F' + B'` be affine images of normalized Schwarz--Christoffel primitives

@@ -20,8 +20,8 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 Let `f` and `g` be holomorphic bijections of the upper half-plane onto the same bounded domain `U`
 whose frontier is a Jordan curve. Pair a real point `x` with a real point `y` when `f` at `x` and
 `g` at `y` have the same boundary limit. Then `g⁻¹ ∘ f` is an automorphism of the upper
-half-plane, and by Carathéodory's theorem it extends continuously to the real axis. Hence the
-pairing is the boundary action of a real Möbius transformation. In the Cayley coordinate
+half-plane. Its boundary action is naturally defined on the extended real line, where a real
+Möbius transformation may send a finite point to infinity. In the Cayley coordinate
 `z ↦ (z - i) / (z + i)` it is a standard disc automorphism `w ↦ u * (w - c) / (1 - conj c * w)`.
 
 Two consequences are recorded. Paired points have equal cross-ratios
@@ -205,7 +205,7 @@ theorem crossRatio_eq_of_tendsto_of_bijOn_upperHalfPlaneSet {U : Set ℂ} (hUb :
     (sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one c.norm_lt_one
       (mem_sphere_zero_iff_norm.mp ht)).2
   have hS (x : ℝ) : ((x : ℂ) - I) / ((x : ℂ) + I) ∈ sphere (0 : ℂ) 1 :=
-    mem_sphere_zero_iff_norm.mpr (by simpa only [norm_div] using norm_sub_I_div_add_I_ofReal x)
+    mem_sphere_zero_iff_norm.mpr (norm_sub_I_div_add_I_ofReal x)
   have hM := crossRatio_comp_eq_of_sub_eq_div
     (φ := fun w : ℂ => (u : ℂ) * ((w - c) / (1 - (starRingEnd ℂ) (c : ℂ) * w)))
     (d := fun w => 1 - (starRingEnd ℂ) (c : ℂ) * w) (S := sphere 0 1)

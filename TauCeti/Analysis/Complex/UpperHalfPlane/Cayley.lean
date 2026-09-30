@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
-public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
 
@@ -87,8 +87,7 @@ theorem continuousAt_sub_I_div_add_I (x : ℝ) :
 
 /-- The Cayley transform of a real point lies on the unit circle. -/
 @[simp] theorem norm_sub_I_div_add_I_ofReal (x : ℝ) :
-    ‖(x : ℂ) - I‖ / ‖(x : ℂ) + I‖ = 1 := by
-  rw [← norm_div]
+    ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
   have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
   refine le_antisymm ((norm_sub_I_div_add_I_le_one_iff hx).mpr (by simp)) (not_lt.mp fun h => ?_)
   simpa using (norm_sub_I_div_add_I_lt_one_iff hx).mp h
@@ -96,9 +95,13 @@ theorem continuousAt_sub_I_div_add_I (x : ℝ) :
 /-- The denominator of a standard disc automorphism does not vanish at the Cayley transform of a
 real point. -/
 theorem one_sub_conj_mul_sub_I_div_add_I_ne_zero (c : Complex.UnitDisc) (x : ℝ) :
-    1 - (starRingEnd ℂ) (c : ℂ) * (((x : ℂ) - I) / ((x : ℂ) + I)) ≠ 0 :=
-  (sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one c.norm_lt_one
-    (by simpa only [norm_div] using norm_sub_I_div_add_I_ofReal x)).2
+    1 - (starRingEnd ℂ) (c : ℂ) * (((x : ℂ) - I) / ((x : ℂ) + I)) ≠ 0 := by
+  intro h
+  have hnorm : ‖(c : ℂ)‖ * ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
+    have := congrArg norm (sub_eq_zero.mp h)
+    simpa [norm_mul] using this.symm
+  rw [norm_sub_I_div_add_I_ofReal x, mul_one] at hnorm
+  exact (ne_of_lt c.norm_lt_one) hnorm
 
 /-- The closed-disc criterion in the normal form used by `simp` after `norm_div`. -/
 @[simp] theorem norm_sub_I_div_norm_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :
