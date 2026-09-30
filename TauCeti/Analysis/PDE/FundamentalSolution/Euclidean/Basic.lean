@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
-public import TauCeti.Analysis.InnerProductSpace.EuclideanSpace
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.InnerProductSpace.NormPow
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 

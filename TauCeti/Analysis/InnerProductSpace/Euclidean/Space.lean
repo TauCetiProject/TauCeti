@@ -9,6 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Dimension of a Euclidean space with a nonzero vector
+
+This lemma derives positive ambient dimension from a nonzero vector. In particular, a nonzero
+displacement supplies the dimension hypothesis needed for Newtonian-kernel monotonicity and
+Poisson-kernel positivity.
 -/
 
 public section
