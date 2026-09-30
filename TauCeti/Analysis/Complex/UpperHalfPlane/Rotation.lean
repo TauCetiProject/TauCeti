@@ -19,7 +19,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 The one-parameter family `Matrix.SpecialLinearGroup.rotation θ = !![cos θ, sin θ; -sin θ, cos θ]`
 in `SL(2, ℝ)` consists of the rotations about `I`: each fixes `I` (`rotation_smul_I`), and
 `rotation (π/2)` is, in `PSL(2, ℝ)`, the involution `pslS` acting as `z ↦ -1/z`
-(`Matrix.SpecialLinearGroup.coe_rotation_pi_div_two`). Rotating a point from `θ = 0` to
+(`Matrix.SpecialLinearGroup.pslMk_rotation_pi_div_two`). Rotating a point from `θ = 0` to
 `θ = π/2` therefore reverses the sign of its real part, so by the intermediate value theorem some
 rotation moves any point onto the imaginary axis (`exists_rotation_smul_re_eq_zero`). This is the
 ingredient that turns transitivity of `PSL(2, ℝ)` on `ℍ` into two-point transitivity on geodesic
@@ -44,7 +44,7 @@ open scoped MatrixGroups
 
 namespace TauCeti.UpperHalfPlane
 
-open Matrix.SpecialLinearGroup (rotation rotation_zero coe_rotation_pi_div_two)
+open Matrix.SpecialLinearGroup (rotation rotation_zero pslMk_rotation_pi_div_two)
 
 /-- The rotations fix `I`. -/
 @[simp]
@@ -61,7 +61,7 @@ theorem exists_rotation_smul_re_eq_zero (w : ℍ) :
   have h0 : (rotation 0 • w).re = w.re := by
     rw [rotation_zero, one_smul]
   have hpi : (rotation (Real.pi / 2) • w).re = -w.re / Complex.normSq w := by
-    rw [← pslMk_smul, coe_rotation_pi_div_two, re_pslS_smul]
+    rw [← pslMk_smul, pslMk_rotation_pi_div_two, re_pslS_smul]
   have hpos : 0 < Complex.normSq w := Complex.normSq_pos.2 (ne_zero w)
   have hab : (0 : ℝ) ≤ Real.pi / 2 := by positivity
   rcases le_or_gt 0 w.re with hre | hre

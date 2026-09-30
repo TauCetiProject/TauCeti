@@ -38,7 +38,7 @@ triangle group in `PSL(2, ℝ)`.
   `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has `k`-th power `1`.
 * `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
   `rotation_zero`, `rotation_add` and `rotation_inv` make the family a one-parameter subgroup,
-  `continuous_rotation` a continuous one, and `coe_rotation_pi_div_two` identifies the class of
+  `continuous_rotation` a continuous one, and `pslMk_rotation_pi_div_two` identifies the class of
   the quarter turn in `PSL(2, ℝ)` with `TauCeti.pslS`.
 * `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix
   (`conjRotation_zero_right` identifies the unconjugated case with `rotation`), with its trace
@@ -172,7 +172,7 @@ theorem continuous_rotation : Continuous rotation :=
 /-- The class of `rotation (π/2) = !![0, 1; -1, 0]` in `PSL(2, ℝ)` is `pslS`, the image of
 `ModularGroup.S = !![0, -1; 1, 0]`: the two matrices differ by a sign. -/
 @[simp]
-theorem coe_rotation_pi_div_two : (↑(rotation (π / 2)) : PSL(2, ℝ)) = TauCeti.pslS := by
+theorem pslMk_rotation_pi_div_two : (↑(rotation (π / 2)) : PSL(2, ℝ)) = TauCeti.pslS := by
   have h : rotation (π / 2) = -(map (Int.castRingHom ℝ) ModularGroup.S) := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [map_apply_coe, ModularGroup.coe_S]
