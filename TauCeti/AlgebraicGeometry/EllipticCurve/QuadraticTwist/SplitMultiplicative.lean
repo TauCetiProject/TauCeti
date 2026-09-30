@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.AdjoinRoot
+-- Proof-only: the trace and norm of a quadratic irrationality, read off its quadratic equation.
+import TauCeti.FieldTheory.Quadratic
 -- Proof-only: `isMinimal_of_valuation_c₄_eq_one` and the transfer of split multiplicative
 -- reduction along a change of variables between minimal models.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
@@ -219,17 +221,17 @@ theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
     exact .of_algHom K _ IntermediateField.topEquiv.symm.toAlgHom
   refine ⟨AdjoinRoot q, inferInstance, inferInstance, inferInstance, inferInstance, ?_⟩
   -- The twist by `L` is the explicit twist up to a change of variables over `K`.
-  have htr : Algebra.trace K (AdjoinRoot q) (AdjoinRoot.root q) = -E.a₁ := by
-    have := pb.trace_gen_eq_nextCoeff_minpoly
-    rw [AdjoinRoot.powerBasis_gen, hmin, nextCoeff_of_natDegree_pos (by rw [hqdeg]; norm_num),
-      hqdeg] at this
-    simpa [q] using this
-  have hnorm : Algebra.norm K (AdjoinRoot.root q) = n := by
-    have := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly pb
-    rw [AdjoinRoot.powerBasis_gen, hmin, AdjoinRoot.powerBasis_dim, hqdeg] at this
-    simpa [q] using this
+  -- `θ² = -a₁ θ - n`, so `θ` has trace `-a₁` and norm `n`.
+  have hθ2 : AdjoinRoot.root q * AdjoinRoot.root q =
+      algebraMap K (AdjoinRoot q) (-E.a₁) * AdjoinRoot.root q - algebraMap K (AdjoinRoot q) n := by
+    have h := AdjoinRoot.mk_self (f := q)
+    rw [← AdjoinRoot.aeval_eq] at h
+    simp only [q, map_add, map_mul, map_pow, aeval_X, aeval_C] at h
+    rw [map_neg]
+    linear_combination h
   obtain ⟨C₁, hC₁⟩ := E.exists_smul_quadraticTwist_eq hθ
-  rw [htr, hnorm] at hC₁
+  rw [TauCeti.Algebra.trace_eq_of_mul_self_eq hθ hθ2,
+    TauCeti.Algebra.norm_eq_of_mul_self_eq hθ hθ2] at hC₁
   obtain ⟨C₂, hC₂⟩ := (E.quadraticTwist (AdjoinRoot q)).exists_smul_eq_minimal R
   have : (E.quadraticTwistOf (-E.a₁) n).IsElliptic := hC₁ ▸ inferInstance
   exact (hasSplitMultiplicativeReduction_quadraticTwistOf R (E := E)).of_isMinimal_smul R
