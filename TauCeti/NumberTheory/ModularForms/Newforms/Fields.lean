@@ -19,6 +19,10 @@ coefficients, and prime factorization extends the field inclusion to every chara
 This inclusion supplies the base field
 for studying Galois conjugates within a fixed nebentypus space.
 
+Use `TauCeti.CharacterField χ` for the character field, or `CharacterField χ` after
+`open TauCeti`. Its defining equation, generator membership, and containment criterion are
+`CharacterField_def`, `char_mem_CharacterField`, and `CharacterField_le_iff` in the same namespace.
+
 The construction follows the coefficient-field convention of Shimura, *Introduction to the
 Arithmetic Theory of Automorphic Functions*, §3. The recurrence is Diamond–Shurman,
 *A First Course in Modular Forms*, Proposition 5.8.5.
