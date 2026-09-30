@@ -121,12 +121,12 @@ theorem tensorInvariant_comp_associator (N : Rep k G) {P : Rep k G}
       Rep.hom_hom_associator, Rep.hom_whiskerLeft]
     rw [tensorInvariant_hom_apply, Representation.IntertwiningMap.lTensor_apply,
       tensorInvariant_hom_apply]
-    rfl
+    exact Representation.TensorProduct.assoc_apply M.ρ N.ρ P.ρ m n z
 
 /-- Tensoring `M` with an invariant of `N`, tensoring the result on the right by `P`, and
 reassociating puts that invariant between the two original factors. -/
 @[reassoc]
-theorem whiskerRight_tensorInvariant_comp_associator (P : Rep k G)
+theorem tensorInvariant_whiskerRight_comp_associator (P : Rep k G)
     (y : N.ρ.invariants) :
     (tensorInvariant M y ▷ P) ≫ (α_ M N P).hom =
       M ◁ (tensorInvariant P y ≫ (β_ P N).hom) := by
