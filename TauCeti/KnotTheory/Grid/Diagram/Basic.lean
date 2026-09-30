@@ -141,7 +141,7 @@ def pointSet (x : GridState n) : Finset (Fin n × Fin n) :=
   Finset.univ.image fun c => (c, x c)
 
 /-- The point set of the grid state obtained from `σ` is the graph `{(c, σ c)}`. -/
-@[simp] theorem equivPerm_symm_pointSet (σ : Equiv.Perm (Fin n)) :
+theorem equivPerm_symm_pointSet (σ : Equiv.Perm (Fin n)) :
     ((equivPerm n).symm σ : GridState n).pointSet = Finset.univ.image fun c => (c, σ c) := rfl
 
 /-- Membership in the point set of a grid state is the graph condition for its permutation. -/
