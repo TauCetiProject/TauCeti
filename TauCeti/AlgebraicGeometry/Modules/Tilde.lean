@@ -113,6 +113,7 @@ def tildeFunctorCompPullbackIso :
 
 /-- The characteristic property of `tildeFunctorCompPullbackIso` on global sections: it sends the
 pullback of the section `m` of `M~` to the section `1 ⊗ m` of `(S ⊗_R M)~`. -/
+@[simp]
 theorem unit_tildeFunctorCompPullbackIso_hom_app (M : ModuleCat.{u} R) :
     (tilde.adjunction (R := R)).unit.app M ≫
       (moduleSpecΓFunctor (R := R)).map
