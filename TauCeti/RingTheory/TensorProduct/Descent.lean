@@ -11,8 +11,10 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 # Descent for scalar extensions of algebra homomorphisms
 
 A property of ring maps satisfying faithfully flat descent is reflected by faithfully flat
-extension of the common scalar ring. The two tensor-product squares form a pushout
-square for the scalar-extended algebra homomorphism, by `Algebra.IsPushout.comp_iff`.
+extension of the common scalar ring. Use `RingHom.CodescendsAlong.of_tensorProduct_map`
+to deduce such a property of an algebra homomorphism from the corresponding property
+after extending scalars. In particular, it applies to finiteness and faithful flatness
+once their faithfully flat descent properties are supplied.
 
 The rings share a universe because `RingHom.CodescendsAlong` is a descent condition for
 properties of maps between rings in one fixed universe. It does not supply a compatibility

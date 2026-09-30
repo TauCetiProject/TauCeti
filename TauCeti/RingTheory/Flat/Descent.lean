@@ -11,8 +11,9 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 # Descent of faithful flatness
 
 Faithful flatness of an algebra descends along a faithfully flat extension of the base.
-This combines Mathlib's descent of module flatness with surjectivity on prime spectra,
-and supplies the ring-homomorphism descent property used for finite faithfully flat morphisms.
+Thus faithful flatness can be established after extending scalars to a faithfully flat
+algebra. The ring-homomorphism formulation supplies the descent property used to descend
+finite faithfully flat morphisms, such as isogenies of affine group schemes.
 -/
 
 public section

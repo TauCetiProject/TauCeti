@@ -59,11 +59,7 @@ theorem isIsogeny_baseChangeMap_iff (f : H ⟶ K) :
   · intro hf
     have hmap : (baseChangeMap (K := S) f).hom.toAlgHom.toRingHom =
         (Algebra.TensorProduct.map (AlgHom.id R S) f.hom.toAlgHom).toRingHom := by
-      apply RingHom.ext
-      intro z
-      induction z using TensorProduct.inductionOn with
-      | tmul s x => exact baseChangeMap_apply_tmul f s x
-      | add x y hx hy => simp only [map_add, hx, hy]
+      exact congrArg (fun g ↦ g.toAlgHom.toRingHom) (hom_baseChangeMap (K := S) f)
     apply (isIsogeny_iff f).mpr
     exact ⟨RingHom.Finite.codescendsAlong_faithfullyFlat.of_tensorProduct_map
         f.hom.toAlgHom (by rw [← hmap]; exact hf.finite),
