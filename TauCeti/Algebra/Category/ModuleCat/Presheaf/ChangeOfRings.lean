@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.PushforwardZeroMonoidal
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 
 /-!
 # Monoidal change of rings for presheaves of modules
@@ -48,21 +48,6 @@ variable {C : Type v} {D : Type v'} [Category.{w} C] [Category.{w'} D]
 
 variable {R S : Cᵒᵖ ⥤ CommRingCat.{u}}
   (α : R ⟶ S)
-
-/-- Restriction of scalars along a map of commutative rings is compatible with the braiding:
-this is the sectionwise content of `restrictScalarsLaxBraided` and `pushforwardLaxBraided`. -/
-private lemma component_braided {A B : Type u} [CommRing A] [CommRing B] (f : A →+* B)
-    (M N : ModuleCat.{u} B) :
-    Functor.LaxMonoidal.μ (ModuleCat.restrictScalars f) M N ≫
-        (ModuleCat.restrictScalars f).map (β_ M N).hom =
-      (β_ _ _).hom ≫ Functor.LaxMonoidal.μ (ModuleCat.restrictScalars f) N M := by
-  apply ModuleCat.MonoidalCategory.tensor_ext
-  intro (m : M) (n : N)
-  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.restrictScalars.map_apply,
-    ModuleCat.restrictScalars_μ_tmul, ModuleCat.MonoidalCategory.braiding_hom_apply,
-    ModuleCat.MonoidalCategory.braiding_hom_apply (M := (ModuleCat.restrictScalars f).obj M)
-      (N := (ModuleCat.restrictScalars f).obj N) m n,
-    ModuleCat.restrictScalars_μ_tmul]
 
 /-- The unit map for restriction of scalars, given sectionwise by the coefficient morphism. -/
 def restrictScalarsUnit :
@@ -143,7 +128,8 @@ instance restrictScalarsLaxBraided :
   braided M N := by
     apply _root_.PresheafOfModules.hom_ext
     intro X
-    exact component_braided (α.app X).hom (M.obj X) (N.obj X)
+    exact Functor.LaxBraided.braided (F := ModuleCat.restrictScalars (α.app X).hom)
+      (M.obj X) (N.obj X)
 
 /-- Pushforward of presheaves of modules is lax monoidal. -/
 instance pushforwardLaxMonoidal (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
@@ -182,7 +168,8 @@ instance pushforwardLaxBraided (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
   braided M N := by
     apply _root_.PresheafOfModules.hom_ext
     intro X
-    exact component_braided (α.app X).hom (M.obj _) (N.obj _)
+    exact Functor.LaxBraided.braided (F := ModuleCat.restrictScalars (α.app X).hom)
+      (M.obj _) (N.obj _)
 
 end PresheafOfModules
 
