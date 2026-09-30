@@ -38,8 +38,8 @@ of a chosen basepoint.
   equivalence, when `x₀` admits a morphism to every object.
 * `TauCeti.Groupoid.singleObjEquivalence`: **a connected groupoid is equivalent to the
   one-object category of its vertex group.**
-* `TauCeti.Groupoid.functorOfEndHom`: the functor to `SingleObj G` extending a homomorphism
-  `End x₀ →* G`, given a choice of morphisms out of `x₀`.
+* `TauCeti.Groupoid.functorOfEndHom`: the functor to `SingleObj G` induced by a homomorphism
+  `End x₀ →* G` and a choice of morphisms out of `x₀`.
 -/
 
 public section
@@ -117,10 +117,10 @@ theorem singleObjEquivalence_functor (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) 
     (singleObjEquivalence x₀ hconn).functor = singleObjFunctor x₀ :=
   (rfl)
 
-/-- A group homomorphism `f` out of the vertex group at `x₀` extends to a functor from the whole
-groupoid to `SingleObj G`, once a morphism `τ y : x₀ ⟶ y` has been chosen for every object `y`: a
+/-- A monoid homomorphism `f` out of the vertex group at `x₀`, together with a choice of morphisms
+`τ y : x₀ ⟶ y` for every object `y`, induces a functor from the whole groupoid to `SingleObj G`: a
 morphism `g : y ⟶ z` is sent to the image under `f` of the loop `τ y ≫ g ≫ inv (τ z)` at `x₀`. -/
-noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Group G]
+noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G]
     (f : End x₀ →* G) : C ⥤ SingleObj G where
   obj _ := SingleObj.star G
   map {y z} g := f (τ y ≫ g ≫ inv (τ z))
@@ -132,12 +132,12 @@ noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Grou
     simp [End.mul_def, Category.assoc]
 
 @[simp]
-theorem functorOfEndHom_obj (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Group G] (f : End x₀ →* G)
+theorem functorOfEndHom_obj (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] (f : End x₀ →* G)
     (y : C) : (functorOfEndHom x₀ τ f).obj y = SingleObj.star G :=
   (rfl)
 
 @[simp]
-theorem functorOfEndHom_map (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Group G] (f : End x₀ →* G)
+theorem functorOfEndHom_map (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] (f : End x₀ →* G)
     {y z : C} (g : y ⟶ z) : (functorOfEndHom x₀ τ f).map g = f (τ y ≫ g ≫ inv (τ z)) :=
   (rfl)
 
