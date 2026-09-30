@@ -34,7 +34,6 @@ them the reference values for checking any other description of the cut distance
 * `cutDist_const_right`, `cutDist_const_left` — the cut distance to a constant graphon on an
   arbitrary probability carrier is the cut norm of the difference with that constant;
 * `cutDist_const_const` — two constant graphons are at cut distance `|p - q|`;
-* `Graphon.ae_eq_const_of_dirac` — a graphon on a point mass is a.e. constant;
 * `cutDist_dirac_right`, `cutDist_dirac_left`, `cutDist_dirac_dirac` — the corresponding values
   for graphons on point masses.
 
@@ -98,19 +97,6 @@ theorem cutDist_const_const (p q : I) :
   rw [cutDist_const_right]
   exact cutNorm_eq_abs_of_forall_eq μ₁ fun x y => by simp
 
-/-- **A graphon on a point mass is almost everywhere constant**: on `(Ω, δ_b)` it agrees
-`δ_b ⊗ δ_b`-almost everywhere with the constant graphon at its value `W b b`.
-
-No measurable-singleton hypothesis is needed: the set where `W` takes the value `W b b` is
-measurable because `W` is. -/
-theorem Graphon.ae_eq_const_of_dirac {Ω : Type*} [MeasurableSpace Ω] {b : Ω}
-    (W : Graphon Ω (Measure.dirac b)) :
-    ∀ᵐ x ∂(Measure.dirac b).prod (Measure.dirac b),
-      W x.1 x.2 = Graphon.const (Measure.dirac b) ⟨W b b, W.mem_Icc b b⟩ x.1 x.2 := by
-  rw [Measure.dirac_prod_dirac]
-  exact (ae_dirac_iff (measurableSet_eq_fun W.measurable (Graphon.const _ _).measurable)).2
-    (by simp)
-
 /-- **The cut distance to a graphon on a point mass** `(Ω₂, δ_b)` is the cut norm of the difference
 with the constant `W b b`, taken on the carrier of the other graphon. -/
 theorem cutDist_dirac_right {b : Ω₂} (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ (Measure.dirac b)) :
@@ -126,6 +112,7 @@ theorem cutDist_dirac_left {a : Ω₁} (U : Graphon Ω₁ (Measure.dirac a)) (W 
   rw [cutDist_congr_ae_left U.ae_eq_const_of_dirac, cutDist_const_left]
 
 /-- **Two graphons on point masses are at cut distance `|U a a - W b b|`.** -/
+@[simp]
 theorem cutDist_dirac_dirac {a : Ω₁} {b : Ω₂} (U : Graphon Ω₁ (Measure.dirac a))
     (W : Graphon Ω₂ (Measure.dirac b)) : cutDist U W = |U a a - W b b| := by
   rw [cutDist_congr_ae_left U.ae_eq_const_of_dirac, cutDist_congr_ae_right W.ae_eq_const_of_dirac,
