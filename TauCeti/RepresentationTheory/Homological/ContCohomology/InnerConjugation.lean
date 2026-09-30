@@ -283,7 +283,7 @@ pair consisting of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the 
 coefficients, which is NSW's conjugation `g_*`, induces the identity of `Hⁿ(G, X)` in every degree.
 The homomorphism and the coefficient map are taken as hypotheses on their values, so that the
 statement applies to any presentation of the pair with discrete coefficients. -/
-theorem map_eq_id_of_inner [DiscreteTopology X.V] (n : ℕ) :
+theorem map_eq_id_of_inner (n : ℕ) :
     map φ f n = 𝟙 (continuousCohomology n X) := by
   set K := homogeneousCochains X
   ext x
