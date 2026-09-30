@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.ExtremalFamily
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Moebius
 import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
@@ -20,16 +19,18 @@ The Riemann mapping theorem is proved by maximizing `‖deriv f z₀‖` over th
 of a domain into the unit disc that fix a base point. Compactness (`ExtremalFamily.lean`) produces a
 maximizer; this file supplies the other half: a maximizer cannot omit a value of the disc.
 
-The engine is a statement about the disc alone: **a proper simply connected subdomain of the unit
-disc containing the origin admits a holomorphic injection back into the disc that fixes the origin
-and has derivative of norm exceeding `1` there** — no proper subdomain is extremal.
+The engine is a statement about the disc alone: **a proper open subset of the unit disc containing
+the origin and having holomorphic square roots admits a holomorphic injection back into the disc
+that fixes the origin and has derivative of norm exceeding `1` there** — no proper subdomain is
+extremal. Simple connectivity enters only through the square roots
+(`IsSimplyConnected.hasHolomorphicSquareRoots`), and only through them does it enter the
+Riemann mapping theorem at all.
 
 ## The construction
 
 Let `U` be such a subdomain and pick `a ∈ ball 0 1 \ U`; write `μ c` for the Möbius factor
 `z ↦ (z - c) / (1 - conj c * z)` of `Conformal/Moebius.lean`. Since `μ a` does not vanish on `U`,
-which is simply connected, it has a holomorphic square root `h` there
-(`TauCeti.exists_differentiableOn_pow_eq`). Put `b := h 0`, so `b ^ 2 = μ a 0 = -a`, and set
+it has a holomorphic square root `h` there. Put `b := h 0`, so `b ^ 2 = μ a 0 = -a`, and set
 
 * `f := μ b ∘ h`, the improved map;
 * `G := μ (-a) ∘ (· ^ 2) ∘ μ (-b)`, an automorphism followed by squaring followed by an
@@ -53,8 +54,8 @@ the one on an identity, and no `field_simp` over the Möbius denominators is nee
 
 ## Main statements
 
-* `TauCeti.exists_isPointedDiscInjectionOn_one_lt_norm_deriv` — a proper simply connected subdomain
-  of the disc expands.
+* `TauCeti.exists_isPointedDiscInjectionOn_one_lt_norm_deriv` — a proper subdomain of the disc with
+  holomorphic square roots expands.
 * `TauCeti.surjOn_ball_of_isMaxOn` — an extremal pointed disc injection is surjective onto the disc.
 
 ## Coordination with upstream Mathlib
@@ -189,21 +190,23 @@ private theorem one_lt_norm_deriv_of_moebius_sq_moebius_leftInvOn {U : Set ℂ} 
     (by rw [hf0]; exact hGd.differentiableAt (isOpen_ball.mem_nhds (mem_ball_self one_pos)))
     hGf (by rw [hf0]; exact hGderiv)
 
-/-- **A proper simply connected subdomain of the disc containing the origin expands.** If `U` is an
-open simply connected proper subset of the unit disc with `0 ∈ U`, then there is a holomorphic
+/-- **A proper subdomain of the disc with holomorphic square roots expands.** If `U` is an open
+proper subset of the unit disc with `0 ∈ U` on which nowhere-zero holomorphic functions have
+holomorphic square roots — for instance a simply connected one — then there is a holomorphic
 injection of `U` into the disc fixing the origin whose derivative there has norm exceeding `1`.
 
 This is the engine of the Riemann mapping theorem: no proper subdomain can be extremal. -/
 theorem exists_isPointedDiscInjectionOn_one_lt_norm_deriv {U : Set ℂ} (hUo : IsOpen U)
-    (hUc : IsSimplyConnected U) (hU₀ : (0 : ℂ) ∈ U) (hUd : U ⊆ ball 0 1) (hUne : U ≠ ball 0 1) :
+    (hUs : HasHolomorphicSquareRoots U) (hU₀ : (0 : ℂ) ∈ U) (hUd : U ⊆ ball 0 1)
+    (hUne : U ≠ ball 0 1) :
     ∃ f : ℂ → ℂ, IsPointedDiscInjectionOn f U 0 ∧ 1 < ‖deriv f 0‖ := by
   classical
   -- A value of the disc omitted by `U`, and a holomorphic square root of the Möbius factor there.
   obtain ⟨a, haU, haU'⟩ := Set.exists_of_ssubset (hUd.ssubset_of_ne hUne)
   have ha1 : ‖a‖ < 1 := mem_ball_zero_iff.mp haU
-  obtain ⟨h, hhd, hhsq⟩ := exists_differentiableOn_pow_eq hUc hUo
+  obtain ⟨h, hhd, hhsq⟩ := hUs.exists_differentiableOn_sq_eq
     ((differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha1).mono hUd)
-    (zero_notMem_image_moebius ha1 hUd haU') (n := 2) two_ne_zero
+    (zero_notMem_image_moebius ha1 hUd haU')
   have hhmem : ∀ z ∈ U, h z ∈ ball (0 : ℂ) 1 := fun z hz =>
     mem_ball_of_sq_eq_moebius ha1 (hUd hz) (hhsq hz : h z ^ 2 = _)
   set b : ℂ := h 0 with hb_def
@@ -234,15 +237,15 @@ theorem exists_isPointedDiscInjectionOn_one_lt_norm_deriv {U : Set ℂ} (hUo : I
     one_lt_norm_deriv_of_moebius_sq_moebius_leftInvOn (hUo.mem_nhds hU₀) hb1 hb2
       (hfd.differentiableAt (hUo.mem_nhds hU₀)) hf0 (hG_def ▸ hGf)⟩
 
-/-- **An extremal pointed disc injection is surjective onto the disc.** If `g` maximizes
-`‖deriv · z₀‖` over the holomorphic injections of `Ω` into the disc fixing `z₀`, then `g` omits no
-value of the disc.
+/-- **An extremal pointed disc injection is surjective onto the disc.** If `Ω` is open with
+holomorphic square roots — for instance simply connected — and `g` maximizes `‖deriv · z₀‖` over
+the holomorphic injections of `Ω` into the disc fixing `z₀`, then `g` omits no value of the disc.
 
-Otherwise `U := g '' Ω` would be an open simply connected proper subdomain of the disc containing
-`0`, and composing `g` with the map that
-`TauCeti.exists_isPointedDiscInjectionOn_one_lt_norm_deriv` produces on `U` would beat `g`. -/
-theorem surjOn_ball_of_isMaxOn {Ω : Set ℂ} (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ Ω) {g : ℂ → ℂ} (hg : IsPointedDiscInjectionOn g Ω z₀)
+Otherwise `U := g '' Ω` would be an open proper subdomain of the disc containing `0` and, as an
+injective holomorphic image of `Ω`, having holomorphic square roots; composing `g` with the map
+that `TauCeti.exists_isPointedDiscInjectionOn_one_lt_norm_deriv` produces on `U` would beat `g`. -/
+theorem surjOn_ball_of_isMaxOn {Ω : Set ℂ} (hΩo : IsOpen Ω) (hΩs : HasHolomorphicSquareRoots Ω)
+    {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) {g : ℂ → ℂ} (hg : IsPointedDiscInjectionOn g Ω z₀)
     (hmax : ∀ f : ℂ → ℂ, IsPointedDiscInjectionOn f Ω z₀ → ‖deriv f z₀‖ ≤ ‖deriv g z₀‖) :
     SurjOn g Ω (ball 0 1) := by
   by_cases hUeq : g '' Ω = ball (0 : ℂ) 1
@@ -250,10 +253,10 @@ theorem surjOn_ball_of_isMaxOn {Ω : Set ℂ} (hΩo : IsOpen Ω) (hΩc : IsSimpl
   exfalso
   have hUo : IsOpen (g '' Ω) :=
     isOpen_image_of_differentiableOn_of_injOn hΩo hg.differentiableOn hg.injOn
-  have hUc : IsSimplyConnected (g '' Ω) :=
-    isSimplyConnected_image_of_differentiableOn_of_injOn hΩo hΩc hg.differentiableOn hg.injOn
+  have hUs : HasHolomorphicSquareRoots (g '' Ω) :=
+    hΩs.image hΩo hg.differentiableOn hg.injOn
   have hU₀ : (0 : ℂ) ∈ g '' Ω := ⟨z₀, hz₀, hg.map_base⟩
-  obtain ⟨f, hf, hfd1⟩ := exists_isPointedDiscInjectionOn_one_lt_norm_deriv hUo hUc hU₀
+  obtain ⟨f, hf, hfd1⟩ := exists_isPointedDiscInjectionOn_one_lt_norm_deriv hUo hUs hU₀
     hg.mapsTo.image_subset hUeq
   -- `f ∘ g` competes on `Ω`, and its derivative at the base point is strictly larger.
   have hmt : MapsTo g Ω (g '' Ω) := fun z hz => mem_image_of_mem g hz

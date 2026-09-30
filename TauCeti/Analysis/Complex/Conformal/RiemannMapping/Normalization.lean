@@ -172,7 +172,8 @@ theorem exists_isNormalizedRiemannMapOn (hΩo : IsOpen Ω) (hΩc : IsSimplyConne
     ∃ f : ℂ → ℂ, IsNormalizedRiemannMapOn f Ω z₀ := by
   obtain ⟨g, hg, hmax⟩ := exists_isMaxOn_norm_deriv_of_isSimplyConnected hΩc hΩo hΩ hz₀
   have hbij : BijOn g Ω (ball (0 : ℂ) 1) :=
-    ⟨hg.mapsTo, hg.injOn, surjOn_ball_of_isMaxOn hΩo hΩc hz₀ hg hmax⟩
+    ⟨hg.mapsTo, hg.injOn,
+      surjOn_ball_of_isMaxOn hΩo (hΩc.hasHolomorphicSquareRoots hΩo) hz₀ hg hmax⟩
   have hc : deriv g z₀ ≠ 0 := hg.deriv_ne_zero hΩo hz₀
   have hcpos : 0 < ‖deriv g z₀‖ := norm_pos_iff.mpr hc
   -- The rotation that turns `deriv g z₀` into its own modulus.

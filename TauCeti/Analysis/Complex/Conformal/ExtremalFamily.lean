@@ -108,15 +108,15 @@ theorem deriv_ne_zero (hf : IsPointedDiscInjectionOn f Ω z₀) (hΩo : IsOpen �
 
 end IsPointedDiscInjectionOn
 
-/-- **The competing family is nonempty.** Every base point of a nonempty, simply connected, open,
-proper subset of `ℂ` admits a pointed disc injection.
+/-- **The competing family is nonempty.** Every base point of an open, proper subset of `ℂ` with
+holomorphic square roots — for instance a simply connected one — admits a pointed disc injection.
 
 This repackages `TauCeti.exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero`. -/
-theorem exists_isPointedDiscInjectionOn (hΩc : IsSimplyConnected Ω) (hΩo : IsOpen Ω)
+theorem exists_isPointedDiscInjectionOn (hΩs : HasHolomorphicSquareRoots Ω) (hΩo : IsOpen Ω)
     (hΩne : Ω ≠ univ) (hz₀ : z₀ ∈ Ω) :
     ∃ f : ℂ → ℂ, IsPointedDiscInjectionOn f Ω z₀ := by
   obtain ⟨f, hfd, hfi, hfm, hf₀⟩ :=
-    exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero hΩc hΩo hΩne hz₀
+    exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero hΩs hΩo hΩne hz₀
   exact ⟨f, hfd, hfm, hfi, hf₀⟩
 
 /-- Cauchy's estimate bounds the derivatives at the base point uniformly over the family: on a
@@ -244,6 +244,6 @@ theorem exists_isMaxOn_norm_deriv_of_isSimplyConnected (hΩc : IsSimplyConnected
     ∃ g : ℂ → ℂ, IsPointedDiscInjectionOn g Ω z₀ ∧
       ∀ f : ℂ → ℂ, IsPointedDiscInjectionOn f Ω z₀ → ‖deriv f z₀‖ ≤ ‖deriv g z₀‖ :=
   exists_isMaxOn_norm_deriv hΩo hΩc.isPathConnected.isConnected.isPreconnected hz₀
-    (exists_isPointedDiscInjectionOn hΩc hΩo hΩne hz₀)
+    (exists_isPointedDiscInjectionOn (hΩc.hasHolomorphicSquareRoots hΩo) hΩo hΩne hz₀)
 
 end TauCeti
