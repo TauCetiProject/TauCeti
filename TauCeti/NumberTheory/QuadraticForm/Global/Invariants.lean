@@ -80,14 +80,14 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace
 
 namespace TauCeti.NumberField.QuadraticForm
 
-variable (K : Type*) [Field K]
+variable (K : Type*) [Field K] [numberFieldK : NumberField K]
 
 /-- **A system of local invariants of a quadratic form over a number field `K`**: a rank `n`, a
 global plain discriminant `d ∈ Kˣ/(Kˣ)²`, a Hasse sign `s_v ∈ {±1}` at every finite place `v`,
 and a positive index `p_w` at every real place `w`. No condition relates the data; the systems
 arising from regular forms of positive rank are those satisfying `IsAdmissible`. -/
 @[ext]
-structure GlobalFormInvariants where
+structure GlobalFormInvariants [NumberField K] where
   /-- The rank `n`. -/
   rank : ℕ
   /-- The global plain discriminant `d ∈ Kˣ/(Kˣ)²`. -/
@@ -102,8 +102,6 @@ namespace GlobalFormInvariants
 variable {K} (I : GlobalFormInvariants K)
 
 section FinitePlace
-
-variable [NumberField K]
 
 /-- The discriminant of a system at a finite place `v`: the image of the global discriminant in
 `K_vˣ/(K_vˣ)²`. -/
@@ -145,8 +143,6 @@ def realHasse (w : {w : InfinitePlace K // w.IsReal}) : ℤˣ :=
 theorem realHasse_def (w : {w : InfinitePlace K // w.IsReal}) :
     I.realHasse w = (-1) ^ (I.realNegativeIndex w).choose 2 :=
   (rfl)
-
-variable [NumberField K]
 
 open scoped Classical in
 /-- **The Hasse product** of a system: the product of its Hasse signs over all finite places and
@@ -230,10 +226,9 @@ theorem hasseProduct_eq_neg_one_pow_card
     (hs : I.finiteHasse = (T : Set (HeightOneSpectrum (𝓞 K))).mulIndicator fun _ ↦ -1)
     (hr : ∀ w, I.realHasse w = 1) :
     I.hasseProduct = (-1) ^ T.card := by
-  rw [hasseProduct_def, hs, ← finprod_mem_def, finprod_mem_coe_finset, Finset.prod_const,
-    Finset.prod_eq_one fun w _ ↦ hr w, mul_one]
+  rw [hasseProduct_def, hs, ← finprod_mem_def, finprod_mem_coe_finset]
+  simp [hr]
 
-omit [NumberField K] in
 /-- A system with Hasse sign `-1` exactly at the finite places of `T` has all finite Hasse signs
 trivial exactly when `T` is empty. -/
 theorem forall_finiteHasse_eq_one_iff_eq_empty
