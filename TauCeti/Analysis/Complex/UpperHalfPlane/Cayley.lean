@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
-public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
@@ -286,6 +285,7 @@ theorem coe_boundaryCayley (x : ℝ) :
   by rw [boundaryCayley]
 
 /-- The boundary Cayley map never takes the omitted value `1`. -/
+@[simp]
 theorem boundaryCayley_ne_one (x : ℝ) : boundaryCayley x ≠ 1 := by
   intro h
   have h' := congrArg ((↑) : Circle → ℂ) h

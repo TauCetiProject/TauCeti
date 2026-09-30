@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.CauchyIntegral
@@ -73,10 +72,6 @@ open _root_.Complex Filter Metric Set Topology
 open UpperHalfPlane (upperHalfPlaneSet isOpen_upperHalfPlaneSet)
 
 variable {ι : Type*} [Fintype ι]
-
-private theorem hasDerivAt_one_sub_div (w : Circle) (ζ : ℂ) :
-    HasDerivAt (fun ξ : ℂ => 1 - ξ / w) (-(w : ℂ)⁻¹) ζ := by
-  simpa [div_eq_mul_inv] using ((hasDerivAt_id ζ).div_const (w : ℂ)).const_sub 1
 
 /-- The **disc Schwarz--Christoffel integrand** with prevertices `w i` on the unit circle and
 turning exponents `e i`, namely `∏ i, (1 - ζ / w i) ^ e i` with principal powers.  For a polygon

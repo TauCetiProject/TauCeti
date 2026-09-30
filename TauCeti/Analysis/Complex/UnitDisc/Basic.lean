@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Basic API for the complex unit disc
@@ -27,6 +30,11 @@ public section
 namespace TauCeti
 
 open Complex Metric
+
+/-- The derivative of the affine factor `1 - ξ / w` for a point `w` on the unit circle. -/
+theorem hasDerivAt_one_sub_div (w : Circle) (ζ : ℂ) :
+    HasDerivAt (fun ξ : ℂ => 1 - ξ / w) (-(w : ℂ)⁻¹) ζ := by
+  simpa [div_eq_mul_inv] using ((hasDerivAt_id ζ).div_const (w : ℂ)).const_sub 1
 
 /-- A point of the open unit disc differs from every point of norm one. -/
 theorem ne_of_mem_ball_of_norm_eq_one {ζ w : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1)

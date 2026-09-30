@@ -24,8 +24,8 @@ linear coefficient. -/
 theorem ne_zero_of_injOn_const_mul_add {f : ℂ → ℂ} {A B : ℂ}
     (h : InjOn (fun z => A * f z + B) upperHalfPlaneSet) : A ≠ 0 := by
   intro hA
-  have hne := h (show Complex.I ∈ upperHalfPlaneSet by simp [upperHalfPlaneSet])
-    (show 2 * Complex.I ∈ upperHalfPlaneSet by simp [upperHalfPlaneSet]) (by simp [hA])
+  have hne : Complex.I = 2 * Complex.I := h (by simp [upperHalfPlaneSet])
+    (by simp [upperHalfPlaneSet]) (by simp [hA])
   norm_num at hne
 
 end TauCeti
