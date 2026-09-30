@@ -147,10 +147,6 @@ theorem toTameQuotient_eq_one_iff {σ : Field.absoluteGaloisGroup K} :
 theorem toTameQuotient_surjective : Function.Surjective (toTameQuotient K) :=
   QuotientGroup.mk'_surjective _
 
-/-- The kernel of the quotient map onto the tame quotient is wild inertia. -/
-theorem ker_toTameQuotient : (toTameQuotient K).toMonoidHom.ker = wildInertiaSubgroup K :=
-  QuotientGroup.ker_mk' _
-
 /-! ### A topological generator of tame inertia -/
 
 /-- **Tame inertia is procyclic**: some element `τ` of the inertia subgroup has a tame character
