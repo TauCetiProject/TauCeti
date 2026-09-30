@@ -301,6 +301,7 @@ private theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) 
 
 /-- The Kauffman bracket of the standard right-handed trefoil is
 `-A⁵ - A⁻³ + A⁻⁷`. -/
+@[simp]
 theorem kauffmanBracket_rightHandedTrefoilPDCode {R : Type*} [CommRing R] (a : Rˣ) :
     rightHandedTrefoilPDCode.toPDCode.kauffmanBracket a =
       -(a : R) ^ 5 - ((a⁻¹ : Rˣ) : R) ^ 3 + ((a⁻¹ : Rˣ) : R) ^ 7 := by
@@ -325,6 +326,7 @@ theorem kauffmanBracket_rightHandedTrefoilPDCode {R : Type*} [CommRing R] (a : R
 
 /-- The writhe-normalized Kauffman bracket of the right-handed trefoil is
 `A⁻⁴ + A⁻¹² - A⁻¹⁶`. With `t = A⁻⁴`, this is `t + t³ - t⁴`. -/
+@[simp]
 theorem normalizedKauffmanBracket_rightHandedTrefoilPDCode {R : Type*} [CommRing R]
     (a : Rˣ) :
     rightHandedTrefoilPDCode.normalizedKauffmanBracket a =
