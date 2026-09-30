@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Sieve
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Sieve
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Restrict
 public import TauCeti.CategoryTheory.Sites.IsSheafForTrans
 
 /-!
