@@ -133,6 +133,7 @@ theorem _root_.QuadraticMap.Equivalent.finiteHasse_eq {Q : _root_.QuadraticForm 
   finiteHasse_eq_of_equivalent_atFinitePlace hQ hR (h.atFinitePlace v)
 
 /-- The finite Hasse sign of a form of rank at most one is trivial. -/
+@[simp]
 theorem finiteHasse_eq_one_of_finrank_le_one (Q : _root_.QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) (v : HeightOneSpectrum (𝓞 K)) :
     Q.finiteHasse hQ v = 1 := by
@@ -159,14 +160,15 @@ theorem finiteHasse_prod (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
 `a ∈ Kˣ` and a form `Q` of rank `n`, where `d_v(Q)` is the image in `K_vˣ/(K_vˣ)²` of the global
 discriminant. -/
 theorem finiteHasse_smul (a : Kˣ) (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
-    (haQ : ((a : K) • Q).Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
-    ((a : K) • Q).finiteHasse haQ v = Q.finiteHasse hQ v *
+    (v : HeightOneSpectrum (𝓞 K)) :
+    ((a : K) • Q).finiteHasse ((QuadraticMap.nondegenerate_smul_iff a.isUnit Q).mpr hQ) v =
+      Q.finiteHasse hQ v *
       hilbertSymbol (v.unitAtFinitePlace a) (-1) ^ (Module.finrank K V).choose 2 *
       hilbertSymbolOnSquareClasses (squareClass (v.unitAtFinitePlace a))
         ((algebraMap K (v.adicCompletion K)).squareClassMap
           (RegularFormClass.discr (formClass Q hQ))) ^ (Module.finrank K V - 1) := by
   rw [finiteHasse_eq_localHasse_baseChange, finiteHasse_eq_localHasse_baseChange,
-    formClass_smul a Q hQ haQ, RegularFormClass.baseChange_mul, RegularFormClass.baseChange_mk,
+    formClass_smul a Q hQ, RegularFormClass.baseChange_mul, RegularFormClass.baseChange_mk,
     baseChange_presentation, RegularFormClass.localHasse_mk_rankOne_mul,
     RegularFormClass.rank_baseChange, rank_formClass, RegularFormClass.discr_baseChange]
 
@@ -182,7 +184,7 @@ theorem finiteHasse_neg (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
           (RegularFormClass.discr (formClass Q hQ))) ^ (Module.finrank K V - 1) := by
   have hneg : -Q = ((-1 : Kˣ) : K) • Q := by ext x; simp
   have hu : v.unitAtFinitePlace (-1 : Kˣ) = -1 := Units.ext (by simp)
-  have h := finiteHasse_smul (-1) Q hQ (hneg ▸ (QuadraticMap.nondegenerate_neg Q).mpr hQ) v
+  have h := finiteHasse_smul (-1) Q hQ v
   rw [hu] at h
   rw [← h]
   congr 1

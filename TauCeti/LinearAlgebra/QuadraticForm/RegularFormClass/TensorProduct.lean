@@ -418,9 +418,8 @@ theorem formClass_tmul (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
 
 /-- The class of the scalar multiple `a • Q` of a regular form by a unit `a` is the product of
 the class of `Q` with the rank-one class `⟨a⟩`. -/
-theorem formClass_smul (a : Kˣ) (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
-    (haQ : ((a : K) • Q).Nondegenerate) :
-    formClass ((a : K) • Q) haQ =
+theorem formClass_smul (a : Kˣ) (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    formClass ((a : K) • Q) ((QuadraticMap.nondegenerate_smul_iff a.isUnit Q).mpr hQ) =
       Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * formClass Q hQ := by
   obtain ⟨p, ⟨e⟩⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p ⟨e⟩, RegularFormClass.mk_mul_mk, RegularFormPresentation.rankOne_tmul]
