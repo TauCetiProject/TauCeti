@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.PolygonalDomain
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
-import Mathlib.Topology.Separation.Connected
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 
@@ -25,8 +24,6 @@ prevertex to its vertex: `A * vertex i + B = v i`, where `vertex i` is the limit
 
 ## Main results
 
-* `TauCeti.exists_prevertices_of_isJordanCurve_frontier` -- a Carathéodory map of a bounded
-  Jordan domain with real prevertices mapping to prescribed frontier points.
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier` --
   a bounded polygonal Jordan domain is the image of the upper half-plane under an affine image of
   a Schwarz--Christoffel primitive, with the prevertices sent to the vertices.
@@ -59,36 +56,6 @@ private theorem vertex_mem_frontier_of_corner {ι : Type*} (e : ι → ℝ)
   refine mem_frontier_of_forall_mem_iff_abs_arg_lt hρ hb ?_ ?_ hU
   · nlinarith [Real.pi_pos, he₁.1]
   · nlinarith [Real.pi_pos, he₁.2]
-
-/-- A Carathéodory map of the upper half-plane onto a bounded Jordan domain, sending infinity
-to a frontier point `p` distinct from the specified points `v i`, together with real prevertices
-`a i` mapping to those frontier points. -/
-theorem exists_prevertices_of_isJordanCurve_frontier
-    {ι : Type*} [Finite ι]
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
-    (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
-    (hvU : ∀ i, v i ∈ frontier U) :
-    ∃ f : ℂ → ℂ, ∃ a : ι → ℝ, ∃ p : ℂ, Injective a ∧
-      DifferentiableOn ℂ f upperHalfPlaneSet ∧ ContinuousOn f {z : ℂ | 0 ≤ z.im} ∧
-      InjOn f {z : ℂ | 0 ≤ z.im} ∧ BijOn f upperHalfPlaneSet U ∧ (∀ i, f (a i) = v i) ∧
-      Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p) ∧
-      p ∉ f '' {z : ℂ | 0 ≤ z.im} := by
-  -- a boundary point `p` which is not a vertex: the frontier is infinite, the vertices finite
-  obtain ⟨p, hpU, hpv⟩ : (frontier U \ range v).Nonempty :=
-    ((hUJ.isConnected.isPreconnected.infinite_of_nontrivial
-      (not_subsingleton_iff.mp hUJ.not_subsingleton)).sdiff (finite_range v)).nonempty
-  obtain ⟨f, hfc, hfd, hfH, hfcl, hfR, hfp⟩ :=
-    exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hUo hUc hUb hUJ hpU
-  -- every specified point lies on the frontier, so it has a real preimage under `f`
-  have hvp (i : ι) : v i ∈ frontier U \ {p} :=
-    ⟨hvU i, fun h => hpv ⟨i, h⟩⟩
-  choose x hx hfx using fun i => hfR.surjOn (hvp i)
-  let a : ι → ℝ := fun i => (x i).re
-  have hax (i : ι) : ((a i : ℝ) : ℂ) = x i :=
-    Complex.ext (by simp [a]) (by simpa [a] using (hx i).symm)
-  have hfa (i : ι) : f (a i) = v i := by rw [hax, hfx]
-  exact ⟨f, a, p, fun i j h => hv (by rw [← hfa i, ← hfa j, h]), hfd, hfc, hfcl.injOn, hfH, hfa,
-    hfp, fun ⟨z, hz, hzp⟩ => (hfcl.mapsTo hz).2 hzp⟩
 
 /-- **The Schwarz--Christoffel theorem for a bounded polygonal Jordan domain.**  Let `U` be a
 bounded, simply connected open set whose frontier is a Jordan curve.  Suppose that `U` coincides

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
 public import TauCeti.Analysis.Complex.Conformal.UpperHalfPlane
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The Riemann map of a Jordan domain on the closed upper half-plane
@@ -21,6 +22,8 @@ upper-half-plane transport to that map.
 * TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier: the Riemann map
   of a Jordan domain, normalized to send infinity to a prescribed boundary point, as a continuous
   injection of the closed upper half-plane.
+* `TauCeti.exists_prevertices_of_isJordanCurve_frontier`: a Carathéodory map of a bounded Jordan
+  domain with real prevertices mapping to prescribed frontier points.
 
 ## References
 
@@ -31,7 +34,7 @@ upper-half-plane transport to that map.
 
 public section
 
-open Bornology Complex Filter Metric Set Topology
+open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
 
@@ -55,5 +58,35 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier {�
   exact exists_continuousOn_bijOn_upperHalfPlaneSet_of_injOn_closedBall hgc hgd
     (injOn_closedBall_of_isJordanCurve_frontier one_pos hgd hgΩ.injOn (himg ▸ hΩb) (himg ▸ hΩJ)
       hgc fun _ _ => rfl) himg hp
+
+/-- A Carathéodory map of the upper half-plane onto a bounded Jordan domain, sending infinity
+to a frontier point `p` distinct from the specified points `v i`, together with real prevertices
+`a i` mapping to those frontier points. -/
+theorem exists_prevertices_of_isJordanCurve_frontier
+    {ι : Type*} [Finite ι]
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
+    (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
+    (hvU : ∀ i, v i ∈ frontier U) :
+    ∃ f : ℂ → ℂ, ∃ a : ι → ℝ, ∃ p : ℂ, Injective a ∧
+      DifferentiableOn ℂ f upperHalfPlaneSet ∧ ContinuousOn f {z : ℂ | 0 ≤ z.im} ∧
+      InjOn f {z : ℂ | 0 ≤ z.im} ∧ BijOn f upperHalfPlaneSet U ∧ (∀ i, f (a i) = v i) ∧
+      Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p) ∧
+      p ∉ f '' {z : ℂ | 0 ≤ z.im} := by
+  -- a boundary point `p` which is not a vertex: the frontier is infinite, the vertices finite
+  obtain ⟨p, hpU, hpv⟩ : (frontier U \ range v).Nonempty :=
+    ((hUJ.isConnected.isPreconnected.infinite_of_nontrivial
+      (not_subsingleton_iff.mp hUJ.not_subsingleton)).sdiff (finite_range v)).nonempty
+  obtain ⟨f, hfc, hfd, hfH, hfcl, hfR, hfp⟩ :=
+    exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hUo hUc hUb hUJ hpU
+  -- every specified point lies on the frontier, so it has a real preimage under `f`
+  have hvp (i : ι) : v i ∈ frontier U \ {p} :=
+    ⟨hvU i, fun h => hpv ⟨i, h⟩⟩
+  choose x hx hfx using fun i => hfR.surjOn (hvp i)
+  let a : ι → ℝ := fun i => (x i).re
+  have hax (i : ι) : ((a i : ℝ) : ℂ) = x i :=
+    Complex.ext (by simp [a]) (by simpa [a] using (hx i).symm)
+  have hfa (i : ι) : f (a i) = v i := by rw [hax, hfx]
+  exact ⟨f, a, p, fun i j h => hv (by rw [← hfa i, ← hfa j, h]), hfd, hfc, hfcl.injOn, hfH, hfa,
+    hfp, fun ⟨z, hz, hzp⟩ => (hfcl.mapsTo hz).2 hzp⟩
 
 end TauCeti
