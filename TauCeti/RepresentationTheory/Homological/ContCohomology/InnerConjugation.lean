@@ -296,7 +296,9 @@ variable [LocallyCompactSpace G]
 pair consisting of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the action of `g` on the
 coefficients, which is NSW's conjugation `g_*`, induces the identity of `Hⁿ(G, X)` in every degree.
 The homomorphism and the coefficient map are taken as hypotheses on their values, so that the
-statement applies to any presentation of the pair with smooth discrete coefficients. -/
+statement applies to any presentation of the pair with smooth discrete coefficients. The
+`IsSmoothDiscrete` hypothesis keeps this public result within the roadmap's discrete-coefficient
+scope; the homotopy proof itself does not use it. -/
 theorem map_eq_id_of_inner (_hX : IsSmoothDiscrete k X) (n : ℕ) :
     map φ f n = 𝟙 (continuousCohomology n X) := by
   set K := homogeneousCochains X
