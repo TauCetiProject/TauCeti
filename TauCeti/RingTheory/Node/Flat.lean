@@ -165,9 +165,10 @@ instance [Nontrivial R] : Nontrivial (NodeAlgebra R a) :=
 
 variable {a} in
 /-- If `a` is a nonzerodivisor of `R`, then both coordinates are nonzerodivisors of the node
-algebra of `xy = a`: if `xz = 0`, then `az = y · xz = 0`. -/
+algebra of `xy = a`. -/
 theorem coord_mem_nonZeroDivisors (ha : a ∈ nonZeroDivisors R) (i : Fin 2) :
     coord a i ∈ nonZeroDivisors (NodeAlgebra R a) := by
+  -- If `xz = 0`, then `az = y · xz = 0`, and `a` is a nonzerodivisor of the flat algebra.
   have key : ∀ z, coord a i * z = 0 → z = 0 := fun z hz ↦
     (Module.Flat.algebraMap_mem_nonZeroDivisors ha).1 z
       (by rw [← coord_mul_coord_one_sub, mul_right_comm, hz, zero_mul])

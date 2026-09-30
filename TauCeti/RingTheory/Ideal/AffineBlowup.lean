@@ -153,10 +153,10 @@ theorem map_algebraMap_affineBlowup (ha : a ∈ I) :
   · rw [span_singleton_le_iff_mem]
     exact mem_map_of_mem _ ha
 
-/-- **`a` is a nonzerodivisor in `A[I/a]`**, since it becomes a unit in the ambient
-localization `S`. -/
+/-- **`a` is a nonzerodivisor in `A[I/a]`**. -/
 theorem algebraMap_mem_nonZeroDivisors_affineBlowup :
     algebraMap A (I.affineBlowup a S) a ∈ nonZeroDivisors (I.affineBlowup a S) := by
+  -- `a` becomes a unit in the ambient localization `S`.
   have hu := IsLocalization.Away.algebraMap_isUnit (S := S) a
   refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · exact Subtype.ext (hu.mul_right_eq_zero.mp (by simpa using congr_arg Subtype.val hz))
@@ -217,12 +217,10 @@ variable (I a S) in
 /-- **The universal property of `A[I/a]`.** If `A → B` is a ring map with `I B ⊆ a B` and `a` a
 nonzerodivisor in `B`, this is the `A`-algebra map `A[I/a] → B`. It sends `i/a` to the element
 `b ∈ B` with `a b = i` (`Ideal.algebraMap_mul_algHom_divBy`), and it is the only `A`-algebra map
-`A[I/a] → B` (`Ideal.affineBlowup_algHom_ext`).
-
-It is constructed by embedding `B` into its localization `B_a`, through which `S → B_a` factors
-on `A[I/a]`. -/
+`A[I/a] → B` (`Ideal.affineBlowup_algHom_ext`). -/
 noncomputable def affineBlowupLift (hI : I.map (algebraMap A B) ≤ span {algebraMap A B a})
     (ha : algebraMap A B a ∈ nonZeroDivisors B) : I.affineBlowup a S →ₐ[A] B :=
+  -- Embed `B` into its localization `B_a`, through which `S → B_a` factors on `A[I/a]`.
   (AlgEquiv.ofInjective _ (IsLocalization.injective (Localization.Away (algebraMap A B a))
     (Submonoid.powers_le.mpr ha))).symm.toAlgHom.comp
     (((toAway (a := a) (S := S) B).comp (I.affineBlowup a S).val).codRestrict _
