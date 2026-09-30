@@ -36,7 +36,7 @@ prevertices `boundaryCayley (a i)` that maps the unit disc bijectively onto `U`.
 prevertex, its limit from within the disc is the prescribed vertex. -/
 theorem exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_isJordanCurve_frontier
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
-    (z₀ : UpperHalfPlane) {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U)
     (hUb : IsBounded U) (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ}
     (hv : Function.Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
@@ -51,12 +51,12 @@ theorem exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_isJordanCu
         (𝓝[ball 0 1] (boundaryCayley (a i) : ℂ)) (𝓝 (v i)) := by
   obtain ⟨a, ha, A, hA, B, hmap, hvertex⟩ :=
     exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier
-      e he z₀ hUo hUc hUb hUJ hv hside hcorner
+      e he UpperHalfPlane.I hUo hUc hUb hUJ hv hside hcorner
   have hsum := exponent_sum_eq_neg_two_of_isJordanCurve_frontier
     e he hUo hUc hUb hUJ hv hside hcorner
   obtain ⟨A', hA', B', hdisc, hboundary⟩ :=
     exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_bijOn
-      a e z₀ hsum hmap
+      a e UpperHalfPlane.I hsum hmap
   refine ⟨a, ha, A', hA', B', hdisc, fun i => ?_⟩
   apply hboundary (a i) (v i)
   have hfilter : (Finset.univ.filter (fun j => a j = a i)) = {i} := by
@@ -65,6 +65,6 @@ theorem exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_isJordanCu
   have hfinite : -1 < ∑ j with a j = a i, e j := by
     simpa only [hfilter, Finset.sum_singleton] using (he i).1
   simpa only [hvertex i] using
-    ((tendsto_schwarzChristoffelPrimitive a e z₀ i hfinite).const_mul A).add_const B
+    ((tendsto_schwarzChristoffelPrimitive a e UpperHalfPlane.I i hfinite).const_mul A).add_const B
 
 end TauCeti
