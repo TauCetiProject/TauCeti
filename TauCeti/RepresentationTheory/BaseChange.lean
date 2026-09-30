@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.RepresentationTheory.PermutationModule
 -- Non-public: the flat base change of a kernel (`LinearMap.tensorKerEquiv`), the scalar extension
 -- of a space of linear maps (`IsBaseChange.linearMapLeftRight`) and of a finite product
 -- (`TensorProduct.piRight`) are used only inside the proof of
@@ -43,9 +44,10 @@ over any extension.
 same permutation: both sides are free on the basis `X`, and the identification matches the basis
 vectors, which the two actions permute in the same way. The permutation module also occurs in the
 unbundled form `X →₀ R` with the `DistribMulAction` that pushes the support forward
-(`Finsupp.comapDistribMulAction`), and that form is the same representation read on coefficients.
-Over `R = ℤ` this says that the reduction of a permutation lattice `ℤ[X]` modulo a prime is `k[X]`
-and its rationalization is `ℚ[X]`.
+(`Finsupp.comapDistribMulAction`); that form is the same representation read on coefficients
+(`TauCeti.ofDistribMulActionComapEquiv`, in `TauCeti.RepresentationTheory.PermutationModule`), so
+its scalar extension is a permutation representation too. Over `R = ℤ` this says that the reduction
+of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalization is `ℚ[X]`.
 
 ## Main declarations
 
@@ -58,8 +60,6 @@ and its rationalization is `ℚ[X]`.
   intertwiner space.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
-* `TauCeti.ofDistribMulActionComapEquiv`: the unbundled permutation module `X →₀ R` is the
-  permutation representation `R[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 -/
 
@@ -387,8 +387,11 @@ def _root_.Representation.Equiv.baseChange (φ : ρ.Equiv σ) (A : Type*) [CommS
 /-- A base-changed equivalence acts on the second factor of a pure tensor. -/
 @[simp]
 theorem _root_.Representation.Equiv.baseChange_tmul (φ : ρ.Equiv σ) (A : Type*) [CommSemiring A]
-    [Algebra R A] (a : A) (v : V) : φ.baseChange A (a ⊗ₜ[R] v) = a ⊗ₜ[R] φ v :=
-  (rfl)
+    [Algebra R A] (a : A) (v : V) : φ.baseChange A (a ⊗ₜ[R] v) = a ⊗ₜ[R] φ v := by
+  simp only [_root_.Representation.Equiv.baseChange, _root_.Representation.Equiv.mk_apply,
+    AlgebraTensorModule.congr_tmul, LinearEquiv.refl_apply,
+    _root_.Representation.Equiv.toLinearEquiv_apply,
+    _root_.Representation.Equiv.coe_toIntertwiningMap]
 
 end Transport
 
@@ -419,9 +422,11 @@ private theorem monoidAlgebraBaseChangeEquiv_tmul_single (a : A) (x : X) (r : R)
 variable (R A X)
 
 /-- **The base change of a permutation representation is the permutation representation over the
-larger ring**: extending the scalars of `R[X]` along `R → A` gives `A[X]`, equivariantly for a
-monoid acting on `X`. Both sides are free on the basis `X` and the identification matches those
-basis vectors, which the two actions permute in the same way. -/
+target ring**: extending the scalars of `R[X]` along the structure map `R → A` of a commutative
+`R`-algebra `A` gives `A[X]`, equivariantly for a monoid acting on `X`. Nothing is asked of that
+structure map — `A` need not contain `R` — beyond its being an `R`-algebra. Both sides are free on
+the basis `X` and the identification matches those basis vectors, which the two actions permute in
+the same way. -/
 noncomputable def baseChangeOfMulActionEquiv :
     (_root_.Representation.baseChange A (_root_.Representation.ofMulAction R G X)).Equiv
       (_root_.Representation.ofMulAction A G X) :=
@@ -435,11 +440,12 @@ variable {R A X}
 @[simp]
 theorem baseChangeOfMulActionEquiv_tmul_single (a : A) (x : X) (r : R) :
     baseChangeOfMulActionEquiv R A G X (a ⊗ₜ[R] MonoidAlgebra.single x r)
-      = MonoidAlgebra.single x (r • a) :=
-  monoidAlgebraBaseChangeEquiv_tmul_single a x r
+      = MonoidAlgebra.single x (r • a) := by
+  simp only [baseChangeOfMulActionEquiv, _root_.Representation.Equiv.mk_apply,
+    monoidAlgebraBaseChangeEquiv_tmul_single]
 
-/-- `TauCeti.baseChangeOfMulActionEquiv` carries the basis of `A[X]` back to the basis of
-`A ⊗[R] R[X]`. -/
+/-- `TauCeti.baseChangeOfMulActionEquiv` carries the element of `A[X]` supported at `x` with
+coefficient `a` back to the pure tensor `a ⊗ₜ single x 1`; at `a = 1` this matches the two bases. -/
 @[simp]
 theorem baseChangeOfMulActionEquiv_symm_single (a : A) (x : X) :
     (baseChangeOfMulActionEquiv R A G X).symm (MonoidAlgebra.single x a)
@@ -454,43 +460,10 @@ end PermutationModule
 section Comap
 
 attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction Finsupp.comapDistribMulAction
+  comapSMulCommClass
 
-variable {R : Type*} [CommSemiring R] {A : Type*} [CommSemiring A] [Algebra R A]
-  {G : Type*} [Monoid G] {X : Type*} [MulAction G X]
-
-/-- **Pushing the support forward commutes with the coefficientwise scalars.** This is what makes
-the permutation module `X →₀ R`, with the action of `Finsupp.comapDistribMulAction`, a
-representation of `G` over `R`; it is stated as an instance so that
-`Representation.ofDistribMulAction` can be formed wherever that action is a local instance. -/
-theorem comapSMulCommClass : SMulCommClass G R (X →₀ R) where
-  smul_comm g r f := by
-    simp only [Finsupp.comapSMul_def]
-    exact Finsupp.mapDomain_smul (f := (g • ·)) r f
-
-attribute [local instance] comapSMulCommClass
-
-variable (R G X)
-
-/-- **The permutation module on a `G`-set is the permutation representation.** The `G`-module
-`X →₀ R`, whose action pushes the support forward (`Finsupp.comapDistribMulAction`), is
-`Representation.ofMulAction R G X` read through the coefficients: this is the bridge between the
-unbundled `DistribMulAction` form of a permutation module and the bundled representation. -/
-noncomputable def ofDistribMulActionComapEquiv :
-    (_root_.Representation.ofDistribMulAction R G (X →₀ R)).Equiv
-      (_root_.Representation.ofMulAction R G X) :=
-  _root_.Representation.Equiv.mk (MonoidAlgebra.coeffLinearEquiv R).symm fun g => by
-    ext x r
-    simp [Finsupp.comapSMul_def]
-
-variable {R X}
-
-/-- `TauCeti.ofDistribMulActionComapEquiv` is the identification of coefficients. -/
-@[simp]
-theorem ofDistribMulActionComapEquiv_single (x : X) (r : R) :
-    ofDistribMulActionComapEquiv R G X (Finsupp.single x r) = MonoidAlgebra.single x r :=
-  (rfl)
-
-variable (R A X)
+variable (R : Type*) [CommSemiring R] (A : Type*) [CommSemiring A] [Algebra R A]
+  (G : Type*) [Monoid G] (X : Type*) [MulAction G X]
 
 /-- **The base change of a permutation module is a permutation representation.** At `R = ℤ` this
 says that extending the scalars of the permutation lattice `ℤ[X] = X →₀ ℤ` along `ℤ → A` gives the
@@ -510,9 +483,20 @@ variable {R A X}
 theorem baseChangeComapEquiv_tmul_single (a : A) (x : X) (r : R) :
     baseChangeComapEquiv R A G X (a ⊗ₜ[R] Finsupp.single x r)
       = MonoidAlgebra.single x (r • a) := by
-  have h : baseChangeComapEquiv R A G X (a ⊗ₜ[R] Finsupp.single x r)
-      = baseChangeOfMulActionEquiv R A G X (a ⊗ₜ[R] MonoidAlgebra.single x r) := (rfl)
-  rw [h, baseChangeOfMulActionEquiv_tmul_single]
+  simp only [baseChangeComapEquiv, _root_.Representation.Equiv.trans_apply,
+    _root_.Representation.Equiv.baseChange_tmul, ofDistribMulActionComapEquiv_single,
+    baseChangeOfMulActionEquiv_tmul_single]
+
+/-- `TauCeti.baseChangeComapEquiv` carries the element of `A[X]` supported at `x` with coefficient
+`a` back to the pure tensor `a ⊗ₜ single x 1`. -/
+@[simp]
+theorem baseChangeComapEquiv_symm_single (a : A) (x : X) :
+    (baseChangeComapEquiv R A G X).symm (MonoidAlgebra.single x a)
+      = a ⊗ₜ[R] Finsupp.single x 1 := by
+  have h : baseChangeComapEquiv R A G X (a ⊗ₜ[R] Finsupp.single x 1)
+      = MonoidAlgebra.single x a := by
+    rw [baseChangeComapEquiv_tmul_single, one_smul]
+  rw [← h, _root_.Representation.Equiv.symm_apply_apply]
 
 end Comap
 
