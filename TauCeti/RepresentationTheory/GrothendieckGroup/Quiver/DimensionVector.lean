@@ -50,11 +50,6 @@ variable [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
 private noncomputable def pathAlgebraDimensionVectorInvariant :
     ExactK0.AdditiveInvariant (finiteModulesExactStructure (pathAlgebra k Q)) (Q → ℤ) where
   obj M := fun i ↦ (dimVector ((quiverRepFunctor k Q).obj M.obj) i : ℤ)
-  map_iso {_ _} e := by
-    funext i
-    exact congrArg (fun n : ℕ ↦ (n : ℤ))
-      (congrFun (dimVector_eq_of_iso ((quiverRepFunctor k Q).mapIso
-        ((ModuleCat.isFG (pathAlgebra k Q)).ι.mapIso e))) i)
   map_conflation {S} hS := by
     have h₁ : FiniteDimensional k S.X₁.obj :=
       Module.Finite.trans (pathAlgebra k Q) S.X₁.obj
@@ -161,10 +156,6 @@ private noncomputable def quiverRepDimensionVectorInvariant :
     ExactK0.AdditiveInvariant
       (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q) (Q → ℤ) where
   obj M := fun i ↦ (dimVector M.1 i : ℤ)
-  map_iso {_ _} e := by
-    funext i
-    exact congrArg (fun n : ℕ ↦ (n : ℤ))
-      (congrFun (dimVector_eq_of_iso ((ObjectProperty.ι (IsFinDim k Q)).mapIso e)) i)
   map_conflation {S} hS := by
     have hs :=
       (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure_conflation_iff k Q S).mp hS

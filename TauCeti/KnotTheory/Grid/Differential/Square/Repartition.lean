@@ -79,13 +79,15 @@ theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpos
   disjoint_coveredSquares_left := by
     have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
     have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
-    simp only [GridRectangleBetween.coveredSquares_transpose] at hfirst hsecond
+    simp only [GridRectangleBetween.transpose_toGridRectangle,
+      GridRectangle.coveredSquares_transpose] at hfirst hsecond
     rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
     exact h.disjoint_coveredSquares_left
   disjoint_coveredSquares_right := by
     have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_first
     have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
-    simp only [GridRectangleBetween.coveredSquares_transpose] at hfirst hsecond
+    simp only [GridRectangleBetween.transpose_toGridRectangle,
+      GridRectangle.coveredSquares_transpose] at hfirst hsecond
     rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
     exact h.disjoint_coveredSquares_right
   coveredSquares_union_eq := by
@@ -93,7 +95,8 @@ theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpos
     have hEsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
     have hDfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
     have hDsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
-    simp only [GridRectangleBetween.coveredSquares_transpose] at hEfirst hEsecond hDfirst hDsecond
+    simp only [GridRectangleBetween.transpose_toGridRectangle,
+      GridRectangle.coveredSquares_transpose] at hEfirst hEsecond hDfirst hDsecond
     rw [hEfirst, hEsecond, hDfirst, hDsecond, ← Finset.image_union, ← Finset.image_union,
       h.coveredSquares_union_eq]
   }

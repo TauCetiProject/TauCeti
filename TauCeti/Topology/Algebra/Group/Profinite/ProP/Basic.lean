@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.PGroup
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
+import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
 # Pro-p groups
@@ -42,6 +43,8 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
   has a `p`-group as its range.
 * `IsProP.isPGroup_map_mk'`: the image of a pro-`p` subgroup in the quotient by an open normal
   subgroup is a `p`-group.
+* `IsProP.exists_openNormalSubgroup_le_pow_dvd_relIndex`: in an infinite pro-`p` group every open
+  normal subgroup contains open normal subgroups of arbitrarily large `p`-power relative index.
 * `isProP_congr`: the predicate is invariant under topological group isomorphism.
 
 ## References
@@ -166,6 +169,42 @@ theorem isPGroup_map_mk' [IsTopologicalGroup G] {P : Subgroup G} (hP : IsProP p 
     (U : OpenNormalSubgroup G) : IsPGroup p (P.map (QuotientGroup.mk' U.toSubgroup)) := by
   rw [← MonoidHom.domRestrict_range]
   exact hP.isPGroup_range _ (QuotientGroup.continuous_mk.comp continuous_subtype_val)
+
+/-- **Open normal subgroups of large `p`-power relative index.** In an infinite pro-`p` group every
+open normal subgroup `U` contains, for every `n`, an open normal subgroup `V` with
+`p ^ n ∣ [U : V]`. Taking `p ^ n` to be the exponent of a finite `p`-primary `G`-module `M` on
+which `U` acts trivially produces a `V ≤ U` whose relative index `[U : V]` kills `M`; this is the
+choice of subgroup behind the co-effaceability of `H⁰` on such modules. -/
+theorem exists_openNormalSubgroup_le_pow_dvd_relIndex [Fact p.Prime] [IsTopologicalGroup G]
+    [CompactSpace G] [TotallyDisconnectedSpace G] [Infinite G] (hG : IsProP p G)
+    (U : OpenNormalSubgroup G) (n : ℕ) :
+    ∃ V : OpenNormalSubgroup G, V.toSubgroup ≤ U.toSubgroup ∧
+      p ^ n ∣ V.toSubgroup.relIndex U.toSubgroup := by
+  -- The finite quotients of `G` are `p`-groups of unbounded order, so some open normal `N` has
+  -- index exceeding `[G : U] · p ^ n`; then `V = N ⊓ U` has `p`-power relative index
+  -- `[U : V] > p ^ n` in `U`.
+  obtain ⟨N, hN⟩ :=
+    exists_openNormalSubgroup_lt_card_quotient (G := G) (U.toSubgroup.index * p ^ n)
+  rw [← Subgroup.index_eq_card] at hN
+  refine ⟨N ⊓ U, inf_le_right, ?_⟩
+  have hVU : (N ⊓ U).toSubgroup ≤ U.toSubgroup := inf_le_right
+  have : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  have : (N ⊓ U).toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  -- `[G : N ⊓ U]` is a power of `p`, hence so is the relative index `[U : N ⊓ U]`.
+  obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 (isProP_iff.1 hG (N ⊓ U))
+  rw [← Subgroup.index_eq_card] at hk
+  have hmul := Subgroup.relIndex_mul_index hVU
+  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow Fact.out).1 (Dvd.intro _ (hmul.trans hk))
+  -- `[G : U] · p ^ n < [G : N] ≤ [G : N ⊓ U] = [U : N ⊓ U] · [G : U]`, so `p ^ n < [U : N ⊓ U]`.
+  have hle : N.toSubgroup.index ≤ (N ⊓ U).toSubgroup.index :=
+    Nat.le_of_dvd (Nat.pos_of_ne_zero Subgroup.FiniteIndex.index_ne_zero)
+      (Subgroup.index_dvd_of_le inf_le_left)
+  have hlt : p ^ n < (N ⊓ U).toSubgroup.relIndex U.toSubgroup := by
+    refine Nat.lt_of_mul_lt_mul_left (a := U.toSubgroup.index) ?_
+    rw [mul_comm _ ((N ⊓ U).toSubgroup.relIndex U.toSubgroup), hmul]
+    exact hN.trans_le hle
+  rw [hj] at hlt ⊢
+  exact Nat.pow_dvd_pow p ((Nat.pow_lt_pow_iff_right (Fact.out : p.Prime).one_lt).1 hlt).le
 
 end IsProP
 

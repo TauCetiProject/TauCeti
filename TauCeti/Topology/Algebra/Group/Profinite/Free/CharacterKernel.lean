@@ -82,13 +82,7 @@ theorem ker_eq_topologicalClosure_normalClosure_insert_image_freeProPGen {j k : 
       (freeProPGen p n k * ((isProP_freeProP p (Fin n)).padicPow (freeProPGen p n j) l)⁻¹)
       (freeProPGen p n '' {i | i ≠ j ∧ i ≠ k}))).topologicalClosure :=
   (isProP_freeProP p (Fin n)).ker_eq_topologicalClosure_normalClosure_insert_mul_padicPow_inv χ hker
-    (topologicalClosure_closure_eq_top_of_range_freeProPGen_subset p (by
-      rintro _ ⟨i, rfl⟩
-      by_cases hij : i = j
-      · exact Or.inl (by rw [hij])
-      by_cases hik : i = k
-      · exact Or.inr (Or.inl (by rw [hik]))
-      exact Or.inr (Or.inr ⟨i, ⟨hij, hik⟩, rfl⟩)))
+    (topologicalClosure_closure_insert_insert_image_freeProPGen_eq_top p j k)
     (fun s hs ↦ by obtain ⟨i, hi, rfl⟩ := hs; exact hχ i hi.1 hi.2) hj hk
 
 end TauCeti.freeProP

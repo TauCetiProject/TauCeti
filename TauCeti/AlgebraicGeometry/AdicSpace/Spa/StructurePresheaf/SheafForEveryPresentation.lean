@@ -24,10 +24,13 @@ for any single pair of definition, compatible or not
 
 On rational opens, `presentationLimitRationalIso` identifies the presheaf's values with the
 completed rational localizations, and `presentationLimitRationalIso_inv_comp_map_comp_hom`
-identifies its restrictions with the canonical comparison maps. These rational-open comparisons
-do not themselves identify the presentation-indexed presheaf with Wedhorn's `𝒪_X` on all opens
-or establish independence of the compatible pair of definition. The predicate concerns only the
-presentation-indexed presheaves; it makes no claim about a canonical pair-level structure presheaf.
+identifies its restrictions with the canonical comparison maps. On all opens, when `A⁺` consists
+of power-bounded elements,
+`TauCeti.ValuationSpectrum.presentationLimitPresheafIsoRationalSubsetLimitPresheaf` identifies the
+presentation-indexed presheaf of `P` with Wedhorn's presheaf `V ↦ lim_{U ⊆ V} A⟨U⟩` of limits over
+rational subsets, whose coordinate rings are those of presentations over the same `P`, and
+`isSheaf_presentationLimitPresheaf_iff_isSheaf_rationalSubsetLimitPresheaf` transfers sheafhood
+along it.
 
 ## Main results
 
@@ -37,6 +40,8 @@ presentation-indexed presheaves; it makes no claim about a canonical pair-level 
 * `TauCeti.Huber.isSheafyForEveryPresentation_iff_of_ringEquiv` and
   `TauCeti.Huber.IsSheafyForEveryPresentation.map` : the condition is invariant under
   isomorphisms of topological rings carrying one plus ring onto the other.
+* `TauCeti.Huber.forall_isSheafyForEveryPresentation_iff_of_ringEquiv` : the same condition for
+  every ring of integral elements at once is invariant under isomorphisms of topological rings.
 * `TauCeti.Huber.isSheafyForEveryPresentation_completionPlus_iff` : for a ring of integral elements
   `A⁺`, the condition holds for `A⁺` exactly when it holds for the closure `Â⁺` of its image in the
   completion `Â`.
@@ -62,9 +67,11 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [IsHuberRing A]
 
 /-- The plus ring `Aplus` is a ring of integral elements, and its presentation-indexed limit
-presheaf is a sheaf for every compatible pair of definition. This condition concerns the
-presentation-indexed presheaves, without identifying them with a canonical pair-level structure
-presheaf. -/
+presheaf is a sheaf for every compatible pair of definition. When `A⁺` consists of power-bounded
+elements, that presheaf is isomorphic to the presheaf of limits over rational subsets built from
+the same pair of definition
+(`TauCeti.ValuationSpectrum.presentationLimitPresheafIsoRationalSubsetLimitPresheaf`), so this is
+equivalently the sheaf condition on Wedhorn's presheaf. -/
 structure IsSheafyForEveryPresentation (Aplus : Subring A) : Prop where
   /-- `Aplus` is a ring of integral elements of `A`. -/
   isRingOfIntegralElements : IsRingOfIntegralElements Aplus
@@ -123,6 +130,19 @@ theorem isSheafyForEveryPresentation_iff_of_ringEquiv (e : A ≃+* B) (he : Cont
   subst hplus
   refine ⟨fun h ↦ h.map e he he', fun h ↦ ?_⟩
   simpa only [Subring.map_map, RingEquiv.symm_comp, Subring.map_id] using h.map e.symm he' he
+
+/-- **The sheaf condition for every plus ring is invariant under isomorphism**: along an
+isomorphism of topological rings `e : A ≃+* B`, every ring of integral elements of `A` satisfies
+`IsSheafyForEveryPresentation` exactly when every ring of integral elements of `B` does. -/
+theorem forall_isSheafyForEveryPresentation_iff_of_ringEquiv (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) :
+    (∀ Aplus : Subring A, IsRingOfIntegralElements Aplus → IsSheafyForEveryPresentation Aplus) ↔
+      ∀ Bplus : Subring B, IsRingOfIntegralElements Bplus → IsSheafyForEveryPresentation Bplus :=
+  -- `e` carries the rings of integral elements of `A` and of `B` onto each other
+  ⟨fun h _ hB ↦ (isSheafyForEveryPresentation_iff_of_ringEquiv e.symm he' he rfl).mpr
+      (h _ (hB.map _ he' he)),
+    fun h _ hA ↦ (isSheafyForEveryPresentation_iff_of_ringEquiv e he he' rfl).mpr
+      (h _ (hA.map _ he he'))⟩
 
 end RingEquiv
 

@@ -53,10 +53,7 @@ private def kinkOrientation (o : Bool) (slot : Fin 4) : Bool :=
 
 private theorem kinkOrientation_oppositeCrossingSlot (o : Bool) (slot : Fin 4) :
     kinkOrientation o (PDCode.oppositeCrossingSlot slot) = !kinkOrientation o slot := by
-  have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
-    apply Fin.ext
-    exact PDCode.oppositeCrossingSlot_apply slot
-  rw [hopposite]
+  rw [PDCode.oppositeCrossingSlot_apply]
   fin_cases slot <;> simp [kinkOrientation]
 
 /-- Insert an oriented kink into the arc ending at `h`.  The Boolean `b` selects which opposite

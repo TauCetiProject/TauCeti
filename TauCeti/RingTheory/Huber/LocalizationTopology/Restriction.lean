@@ -54,6 +54,10 @@ because `locTopology` is deliberately not an instance; this is the same preamble
   `…restrictionRingHom_comp_toCompletionLoc` : the two properties that determine it.
 * `TauCeti.Huber.PairOfDefinition.eq_restrictionRingHom` : anything with those two properties is
   it.
+* `TauCeti.Huber.PairOfDefinition.restrictionRingHom_coe` and
+  `…restrictionRingHom_mem_completionIdealImage` : on the image of `Aₛ` it is the map of
+  localisations, and it carries the closure of each basic neighbourhood `locIdealImage` into the
+  corresponding closure.
 * `TauCeti.Huber.PairOfDefinition.restrictionRingHomOfSubset_heq` : changing the source and target
   presentations without changing their candidate rings of definition leaves the restriction map
   unchanged.
@@ -301,6 +305,67 @@ theorem eq_restrictionRingHom :
   have _ := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
   exact fun g hgc hge ↦ (existsUnique_continuous_ringHom_of_refines P T s S hden T'' s'' S''
     hden'' r hs'' hT).choose_spec.2 g ⟨hgc, hge⟩
+
+/-- **On the image of `Aₛ`, the restriction map is the map of localisations.** The restriction map
+of a refinement sends the image of `x ∈ Aₛ` in `A⟨T/s⟩` to the image in `A⟨T''/s''⟩` of the
+element of `A_{s''}` that `IsLocalization.Away.lift` assigns to `x`. That comparison map
+`Aₛ → A_{s''}` sends `a/s` to `(a * r)/s''` (`TauCeti.Localization.awayLift_divBy`).
+
+On the image of `A` this is `restrictionRingHom_comp_toCompletionLoc`, evaluated at a point. -/
+@[simp]
+theorem restrictionRingHom_coe (x : S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT (x : UniformSpace.Completion S) =
+      ((IsLocalization.Away.lift s (IsLocalization.Away.isUnit_of_dvd s'' ⟨r, hs''⟩) x : S'') :
+        UniformSpace.Completion S'') := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P T'' s'' S'' hden''
+  have _ := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+  have _ := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+  have h : (restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT).comp
+      UniformSpace.Completion.coeRingHom = UniformSpace.Completion.coeRingHom.comp
+        (IsLocalization.Away.lift s (IsLocalization.Away.isUnit_of_dvd s'' ⟨r, hs''⟩)) := by
+    refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
+    -- both sides send `a` to its image in `A⟨T''/s''⟩`: restriction respects the structure maps
+    simpa only [RingHom.coe_comp, UniformSpace.Completion.coe_coeRingHom, Function.comp_apply,
+      IsLocalization.Away.lift_eq, toCompletionLoc_apply] using RingHom.congr_fun
+      (restrictionRingHom_comp_toCompletionLoc P T s S hden T'' s'' S'' hden'' r hs'' hT) a
+  exact RingHom.congr_fun h x
+
+/-- **The restriction map carries each basic neighbourhood of zero into the corresponding one.**
+For a refinement, `restrictionRingHom` maps `completionIdealImage n` of `A⟨T/s⟩`, the closure of
+the image of `locIdealImage P T s S n` (by `localizationUniform_idealImage`), into
+`completionIdealImage n` of `A⟨T''/s''⟩`, at the same index `n`. This is the completed form of
+`awayLift_mem_locIdealImage`. -/
+theorem restrictionRingHom_mem_completionIdealImage (n : ℕ) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    ∀ x ∈ (localizationUniform P T s S hden).completionIdealImage n,
+      restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT x ∈
+        (localizationUniform P T'' s'' S'' hden'').completionIdealImage n := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P T'' s'' S'' hden''
+  have _ := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+  have _ := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+  simp only [← SetLike.mem_coe, coe_completionIdealImage, localizationUniform_idealImage]
+  refine Set.MapsTo.closure ?_
+    (continuous_restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT)
+  rintro _ ⟨y, hy, rfl⟩
+  exact ⟨_, awayLift_mem_locIdealImage P T s S T'' s'' S'' r hs'' hT n hy,
+    (restrictionRingHom_coe P T s S hden T'' s'' S'' hden'' r hs'' hT y).symm⟩
 
 /-- **The identity law.** A presentation refines itself with cofactor `1`, and the restriction map
 that gives is the identity — the unit axiom for this family of maps. -/

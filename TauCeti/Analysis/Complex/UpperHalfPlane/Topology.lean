@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import TauCeti.Analysis.Complex.AtInfinity
 
 /-!
 # Topology of the upper half-plane
@@ -32,8 +34,11 @@ closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transpo
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
+* `TauCeti.mem_closedBall_and_eq_of_tendsto` — transport a boundary limit through a map
+  continuous on the closed unit disc.
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
+* `TauCeti.tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
@@ -50,7 +55,7 @@ closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transpo
 
 public section
 
-open Bornology Complex Filter Set Topology UpperHalfPlane
+open Bornology Complex Filter Metric Set Topology UpperHalfPlane
 
 namespace Real
 
@@ -63,6 +68,25 @@ theorem nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
 end Real
 
 namespace TauCeti
+
+/-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
+is continuous at `x` and maps the upper half-plane into the disc, on whose closure `G` is
+continuous. -/
+theorem mem_closedBall_and_eq_of_tendsto {G h f : ℂ → ℂ} {x : ℝ} {w : ℂ}
+    (hGc : ContinuousOn G (closedBall 0 1)) (hh : ContinuousAt h (x : ℂ))
+    (hmaps : ∀ z ∈ upperHalfPlaneSet, h z ∈ ball (0 : ℂ) 1)
+    (hf : ∀ z ∈ upperHalfPlaneSet, f z = G (h z))
+    (hfw : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w)) :
+    h x ∈ closedBall (0 : ℂ) 1 ∧ G (h x) = w := by
+  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
+  have hev : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), h z ∈ closedBall (0 : ℂ) 1 :=
+    eventually_nhdsWithin_of_forall fun z hz => ball_subset_closedBall (hmaps z hz)
+  have ht : Tendsto h (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (h x)) :=
+    hh.tendsto.mono_left nhdsWithin_le_nhds
+  have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto ht hev
+  refine ⟨hmem, tendsto_nhds_unique ?_ hfw⟩
+  exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨ht, hev⟩)).congr'
+    (eventually_nhdsWithin_of_forall fun z hz => (hf z hz).symm)
 
 /-- The upper half-plane is unbounded, so the filter along which it approaches infinity is
 nontrivial and limits taken along it are unique. -/
@@ -116,6 +140,19 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
   · have h := hupper ((starRingEnd ℂ) z) (by simpa using hz) (by simpa using hi.le)
     simpa only [hzconj, norm_conj] using h
 
+/-- A conjugation-symmetric continuation agreeing with `ψ` above the real axis tends to zero
+at infinity if `z * ψ z` has a finite limit there within the upper half-plane. -/
+theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
+    {φ ψ : ℂ → ℂ} {c : ℂ}
+    (h : Tendsto (fun z : ℂ => z * ψ z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 c))
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφ : EqOn φ ψ upperHalfPlaneSet) : Tendsto φ (cobounded ℂ) (𝓝 0) := by
+  apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
+  apply (tendsto_zero_of_tendsto_mul_cobounded inf_le_left h).congr'
+  rw [eventuallyEq_inf_principal_iff]
+  exact Eventually.of_forall fun z hz => (hφ hz).symm
+
 /-- A boundary point of the closed upper half-plane whose image avoids the open half-plane image
 maps to the frontier when the map is continuous there. -/
 theorem mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
@@ -143,6 +180,13 @@ theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
   · simp
   · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
     rw [him, le_div_iff₀ (normSq_pos.mpr hw), zero_mul]
+
+/-- The inversion `w ↦ -w⁻¹` preserves the open upper half-plane. -/
+theorem im_neg_inv_pos {w : ℂ} : 0 < (-w⁻¹).im ↔ 0 < w.im := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
+    rw [him, lt_div_iff₀ (normSq_pos.mpr hw), zero_mul]
 
 end TauCeti
 

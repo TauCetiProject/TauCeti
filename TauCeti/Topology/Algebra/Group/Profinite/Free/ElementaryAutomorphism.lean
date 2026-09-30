@@ -23,6 +23,9 @@ normalise the exponent vector of an arbitrary element of `F`:
   generator at `x₀` to `x₀ · x ^ a` and fixes the other generators; its inverse is the transvection
   with exponent `-a`, and it adds `a` times the coordinate at `x₀` to the coordinate at `x` of the
   exponent vector.
+* `TauCeti.freeProP.dilation x₀ u`, for a unit `u` of `ℤ_p`, raises the generator at `x₀` to its
+  `p`-adic power `u` and fixes the other generators; its inverse is the dilation by `u⁻¹`, and it
+  multiplies the coordinate at `x₀` of the exponent vector by `u`.
 
 The normalisation is the elimination step of Labute's classification of Demushkin groups: if the
 exponent vector of `r ∈ F` is `q • w` with `w x₀ = 1`, then some automorphism `e` of `F` has
@@ -42,14 +45,19 @@ abelianization structure theorem reads off.
 ## Main definitions
 
 * `TauCeti.freeProP.transvection`: the automorphism `x₀ ↦ x₀ · x ^ a` of `freeProP p X`.
+* `TauCeti.freeProP.dilation`: the automorphism `x₀ ↦ x₀ ^ u` of `freeProP p X`, for a unit `u`.
 
 ## Main results
 
 * `TauCeti.freeProP.transvection_symm`, `TauCeti.freeProP.transvection_zero`,
   `TauCeti.freeProP.transvection_add`: the transvections at fixed `x₀, x` form a one-parameter
   group of automorphisms.
-* `TauCeti.freeProP.toAdd_exponentSum_congr`, `TauCeti.freeProP.toAdd_exponentSum_transvection`:
-  the exponent vectors of the images under the two elementary automorphisms.
+* `TauCeti.freeProP.dilation_symm`, `TauCeti.freeProP.dilation_one`,
+  `TauCeti.freeProP.dilation_mul`: the dilations at a fixed generator form a group of
+  automorphisms indexed by `ℤ_pˣ`.
+* `TauCeti.freeProP.toAdd_exponentSum_congr`, `TauCeti.freeProP.toAdd_exponentSum_transvection`,
+  `TauCeti.freeProP.toAdd_exponentSum_dilation`: the exponent vectors of the images under the
+  three elementary automorphisms.
 * `TauCeti.freeProP.exists_continuousMulEquiv_toAdd_exponentSum_eq_single_of_eq_smul`: if the
   exponent vector of `r` is `q • w` with `w x₀ = 1`, an automorphism of `freeProP p X` carries `r`
   to an element with exponent vector `q e_{x₀}`.
@@ -245,6 +253,136 @@ theorem toAdd_exponentSum_transvection [DecidableEq X] (y : freeProP p X) :
   simpa [hΨ] using congrArg Multiplicative.toAdd this
 
 end Transvection
+
+/-! ### Dilations -/
+
+section Dilation
+
+open scoped Classical in
+/-- The lifts of the families `x₀ ↦ x₀ ^ a` compose by multiplying the exponents: the composition
+law behind `TauCeti.freeProP.dilation`. -/
+private theorem lift_update_padicPow_comp (x₀ : X) (a b : ℤ_[p]) :
+    (lift (isProP_freeProP p X)
+        (Function.update of x₀ ((isProP_freeProP p X).padicPow (of x₀) b))).comp
+      (lift (isProP_freeProP p X)
+        (Function.update of x₀ ((isProP_freeProP p X).padicPow (of x₀) a))) =
+      lift (isProP_freeProP p X)
+        (Function.update of x₀ ((isProP_freeProP p X).padicPow (of x₀) (a * b))) :=
+  hom_ext fun x' ↦ by
+    simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_of]
+    by_cases hx' : x' = x₀
+    · subst hx'
+      have h := (isProP_freeProP p X).map_padicPow (isProP_freeProP p X)
+        (lift (isProP_freeProP p X)
+          (Function.update of x' ((isProP_freeProP p X).padicPow (of x') b)) :
+            freeProP p X →* freeProP p X)
+        (lift _ _).continuous (of x') a
+      rw [MonoidHom.coe_ofClass] at h
+      rw [Function.update_self, Function.update_self, h, lift_of, Function.update_self,
+        ← (isProP_freeProP p X).padicPow_mul, mul_comm]
+    · rw [Function.update_of_ne hx', Function.update_of_ne hx', lift_of, Function.update_of_ne hx']
+
+open scoped Classical in
+/-- The lift of the family `x₀ ↦ x₀ ^ 1` is the identity. -/
+private theorem lift_update_padicPow_one (x₀ : X) :
+    lift (isProP_freeProP p X)
+        (Function.update of x₀ ((isProP_freeProP p X).padicPow (of x₀) 1)) =
+      ContinuousMonoidHom.id (freeProP p X) :=
+  hom_ext fun x' ↦ by
+    rw [lift_of, (isProP_freeProP p X).padicPow_one, Function.update_eq_self]
+    rfl
+
+open scoped Classical in
+/-- **The dilation `x₀ ↦ x₀ ^ u`** of the free pro-`p` group on `X`, for a generator `x₀` and a
+unit `u` of `ℤ_p`: the continuous automorphism raising the generator at `x₀` to its `p`-adic power
+`u` and fixing every other generator. Its inverse is the dilation by `u⁻¹`
+(`TauCeti.freeProP.dilation_symm`). On the exponent vectors in `ℤ_p^X` it is the diagonal matrix
+multiplying the coordinate at `x₀` by `u` (`TauCeti.freeProP.toAdd_exponentSum_dilation`). -/
+noncomputable def dilation (x₀ : X) (u : ℤ_[p]ˣ) : freeProP p X ≃ₜ* freeProP p X where
+  toFun := lift (isProP_freeProP p X)
+    (Function.update of x₀ ((isProP_freeProP p X).padicPow (of x₀) u))
+  invFun := lift (isProP_freeProP p X)
+    (Function.update of x₀ ((isProP_freeProP p X).padicPow (of x₀) ↑u⁻¹))
+  left_inv y := by
+    have h := lift_update_padicPow_comp x₀ (u : ℤ_[p]) ↑u⁻¹
+    rw [Units.mul_inv, lift_update_padicPow_one] at h
+    simpa using DFunLike.congr_fun h y
+  right_inv y := by
+    have h := lift_update_padicPow_comp x₀ (↑u⁻¹ : ℤ_[p]) u
+    rw [Units.inv_mul, lift_update_padicPow_one] at h
+    simpa using DFunLike.congr_fun h y
+  map_mul' := map_mul _
+  continuous_toFun := (lift _ _).continuous
+  continuous_invFun := (lift _ _).continuous
+
+variable (x₀ : X) (u : ℤ_[p]ˣ)
+
+/-- The dilation `x₀ ↦ x₀ ^ u` is the lift of the family sending `x₀` to `x₀ ^ u` and every other
+generator to itself. -/
+private theorem coe_dilation [DecidableEq X] :
+    ⇑(dilation x₀ u) = ⇑(lift (isProP_freeProP p X)
+      (Function.update of x₀ ((isProP_freeProP p X).padicPow (of x₀) u))) := by
+  -- `dilation` is built with the classical instance; identify the two `DecidableEq X`.
+  obtain rfl := Subsingleton.elim ‹DecidableEq X› (Classical.decEq X)
+  rfl
+
+/-- The dilation `x₀ ↦ x₀ ^ u` sends the generator at `x₀` to `x₀ ^ u`. -/
+@[simp]
+theorem dilation_of_self :
+    dilation x₀ u (of x₀) = (isProP_freeProP p X).padicPow (of x₀) u := by
+  classical
+  rw [coe_dilation, lift_of, Function.update_self]
+
+/-- The dilation `x₀ ↦ x₀ ^ u` fixes the generators other than `x₀`. -/
+@[simp]
+theorem dilation_of_of_ne {x' : X} (hx' : x' ≠ x₀) : dilation x₀ u (of x') = of x' := by
+  classical
+  rw [coe_dilation, lift_of, Function.update_of_ne hx']
+
+/-- The inverse of the dilation `x₀ ↦ x₀ ^ u` is the dilation `x₀ ↦ x₀ ^ u⁻¹`. -/
+@[simp]
+theorem dilation_symm : (dilation x₀ u).symm = dilation x₀ u⁻¹ :=
+  ContinuousMulEquiv.ext fun _ ↦ rfl
+
+/-- The dilation by the unit `1` is the identity. -/
+@[simp]
+theorem dilation_one : dilation x₀ 1 = ContinuousMulEquiv.refl (freeProP p X) :=
+  ContinuousMulEquiv.ext fun y ↦ DFunLike.congr_fun (lift_update_padicPow_one x₀) y
+
+/-- **Dilations at a fixed generator compose by multiplying the units.** -/
+theorem dilation_mul (v : ℤ_[p]ˣ) :
+    dilation x₀ (u * v) = (dilation x₀ u).trans (dilation x₀ v) :=
+  ContinuousMulEquiv.ext fun y ↦ by
+    have h := DFunLike.congr_fun (lift_update_padicPow_comp x₀ (u : ℤ_[p]) v) y
+    rw [← Units.val_mul] at h
+    exact h.symm
+
+/-- **The exponent vector under a dilation.** The dilation `x₀ ↦ x₀ ^ u` multiplies the coordinate
+at `x₀` of the exponent vector by `u` and leaves the other coordinates unchanged. -/
+@[simp]
+theorem toAdd_exponentSum_dilation [Finite X] [DecidableEq X] (y : freeProP p X) :
+    (exponentSum p X (dilation x₀ u y)).toAdd =
+      Function.update (exponentSum p X y).toAdd x₀ (u * (exponentSum p X y).toAdd x₀) := by
+  cases nonempty_fintype X
+  have hc : ∀ x, (exponentSum p X ((dilation x₀ u : freeProP p X →ₜ* freeProP p X) (of x))).toAdd =
+      Pi.single x (if x = x₀ then (u : ℤ_[p]) else 1) := by
+    intro x
+    rw [ContinuousMonoidHom.coe_coe]
+    by_cases hx : x = x₀
+    · subst hx
+      rw [dilation_of_self, exponentSum_padicPow_of, toAdd_ofAdd, ite_eq_left rfl]
+    · rw [dilation_of_of_ne x₀ u hx, exponentSum_of, toAdd_ofAdd, ite_eq_right hx]
+  rw [← ContinuousMonoidHom.coe_coe (dilation x₀ u),
+    toAdd_exponentSum_apply_eq_sum_smul p X (dilation x₀ u : freeProP p X →ₜ* freeProP p X)]
+  funext k
+  simp only [hc, Finset.sum_apply, Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_zero,
+    Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  by_cases hk : k = x₀
+  · subst hk
+    rw [Function.update_self, ite_eq_left rfl, mul_comm]
+  · rw [Function.update_of_ne hk, ite_eq_right hk, mul_one]
+
+end Dilation
 
 /-! ### Normalising the exponent vector -/
 

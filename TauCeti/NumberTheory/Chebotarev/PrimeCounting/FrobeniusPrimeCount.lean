@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Chebotarev
-public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.NaturalDensity
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NaturalDensity
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Transfer
 
@@ -96,10 +96,9 @@ theorem tendsto_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) :
 class `C` have density `#C / #Gal(L/K)`. -/
 theorem hasNaturalDensity_frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) :
     NumberField.Set.HasNaturalDensity (frobeniusPrimeSet K L C)
-      ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) := by
-  apply NumberField.Set.hasNaturalDensity_of_isLittleO_logIntegral
-  · simpa only [natCast_frobeniusPrimeCount] using
+      ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) :=
+  NumberField.Set.hasNaturalDensity_iff_isLittleO_logIntegral.2 <| by
+    simpa only [natCast_frobeniusPrimeCount] using
       frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C
-  · exact primeCount_univ_sub_logIntegral_isLittleO K
 
 end NumberField.Chebotarev
