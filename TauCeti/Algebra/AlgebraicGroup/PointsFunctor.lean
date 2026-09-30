@@ -181,19 +181,14 @@ lemma pointsFunctor_map_eqToHom {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
       mapPoints (H := H) φ ≫ eqToHom (pointsFunctor_obj (H := H) B).symm :=
   rfl
 
-/-- On elements, the morphism part of `pointsFunctor` acts as `mapPoints`. -/
-lemma pointsFunctor_map_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
-    (f : points (H := H) A) :
-    (pointsFunctor (H := H)).map φ f = mapPoints (H := H) φ f :=
-  rfl
-
 /-- The pointwise value of the image of an `A`-point under `pointsFunctor.map φ`. -/
 @[simp]
 lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : WithConv (H →ₐ[R] A)) (h : H) :
     (((pointsFunctor (H := H)).map φ f : WithConv (H →ₐ[R] B)).ofConv) h =
       φ.hom (f.ofConv h) := by
-  rw [pointsFunctor_map_apply, mapPoints_apply, WithConv.ofConv_toConv, AlgHom.comp_apply]
+  erw [pointsFunctor_map, mapPoints_apply]
+  rw [WithConv.ofConv_toConv, AlgHom.comp_apply]
 
 /-- A family of subgroups of the functor of points, equipped with compatible maps between
 value algebras, as a group-valued functor. -/

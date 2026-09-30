@@ -89,6 +89,51 @@ lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (quotientPointsSubgroup H I B)
     fun g => mapPoints_mem_quotientPointsSubgroup H I χ g.property)
 
+/-- The restricted map on cut-out subgroups is induced by the ambient functor-of-points map. -/
+@[simp]
+lemma mapQuotientPointsSubgroup_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
+    (χ : A ⟶ B) (g : quotientPointsSubgroup H I A) :
+    mapQuotientPointsSubgroup H I χ g =
+      ⟨HopfAlgebra.mapPoints (H := H) χ g,
+        mapPoints_mem_quotientPointsSubgroup H I χ g.property⟩ :=
+  rfl
+
+/-- Coercing the restricted subgroup map gives the ambient functor-of-points map. -/
+@[simp]
+lemma coe_mapQuotientPointsSubgroup_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
+    (χ : A ⟶ B) (g : quotientPointsSubgroup H I A) :
+    (mapQuotientPointsSubgroup H I χ g :
+      HopfAlgebra.points (R := R) (H := H) B) =
+      HopfAlgebra.mapPoints (H := H) χ g :=
+  rfl
+
+/-- The restricted subgroup maps preserve identity morphisms of value algebras. -/
+@[simp]
+lemma mapQuotientPointsSubgroup_id (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
+    mapQuotientPointsSubgroup H I (𝟙 A) =
+      MonoidHom.id (quotientPointsSubgroup H I A) := by
+  refine MonoidHom.ext fun g => ?_
+  apply Subtype.ext
+  rw [MonoidHom.id_apply, coe_mapQuotientPointsSubgroup_apply, HopfAlgebra.mapPoints_id]
+  rfl
+
+/-- The restricted subgroup maps preserve composition of value-algebra morphisms. -/
+@[simp]
+lemma mapQuotientPointsSubgroup_comp (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A B C : CommAlgCat.{w} R} (χ : A ⟶ B) (ψ : B ⟶ C) :
+    mapQuotientPointsSubgroup H I (χ ≫ ψ) =
+      (mapQuotientPointsSubgroup H I ψ).comp
+        (mapQuotientPointsSubgroup H I χ) := by
+  refine MonoidHom.ext fun g => ?_
+  apply Subtype.ext
+  rw [MonoidHom.comp_apply, coe_mapQuotientPointsSubgroup_apply,
+    HopfAlgebra.mapPoints_comp, coe_mapQuotientPointsSubgroup_apply,
+    coe_mapQuotientPointsSubgroup_apply]
+  rfl
+
 /-- The value-algebra functor of the point subgroups cut out by a Hopf ideal. -/
 @[expose] noncomputable def quotientPointsSubgroupFunctor
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
@@ -96,30 +141,11 @@ lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
   obj A := GrpCat.of (quotientPointsSubgroup H I A)
   map {A B} χ := GrpCat.ofHom (mapQuotientPointsSubgroup H I χ)
   map_id A := by
-    apply GrpCat.ext
-    intro ⟨g, hg⟩
-    apply Subtype.ext
-    -- Functor-level evaluation lemmas are not yet available during the definition of
-    -- `quotientPointsSubgroupFunctor`. Defensively unfold the `GrpCat.ofHom`, `codRestrict`, and
-    -- `Subtype` wrappers definitionally to reach `mapPoints`:
-    -- `(GrpCat.ofHom (mapQuotientPointsSubgroup H I (𝟙 A)) ⟨g, hg⟩).val` evaluates definitionally
-    -- to `HopfAlgebra.mapPoints (𝟙 A) g`, and `(𝟙 _ ⟨g, hg⟩).val` evaluates to `g`.
-    change HopfAlgebra.mapPoints (𝟙 A) g = g
-    rw [HopfAlgebra.mapPoints_id]
-    rfl
+    rw [mapQuotientPointsSubgroup_id]
+    exact GrpCat.ofHom_id
   map_comp {A B C} χ ψ := by
-    apply GrpCat.ext
-    intro ⟨g, hg⟩
-    apply Subtype.ext
-    -- Functor-level evaluation lemmas are not yet available during the definition of
-    -- `quotientPointsSubgroupFunctor`. Defensively unfold the `GrpCat.ofHom`, `codRestrict`, and
-    -- `Subtype` wrappers definitionally to reach `mapPoints`:
-    -- `(GrpCat.ofHom (mapQuotientPointsSubgroup H I (χ ≫ ψ)) ⟨g, hg⟩).val` evaluates definitionally
-    -- to `HopfAlgebra.mapPoints (χ ≫ ψ) g`, and composition evaluates to
-    -- `HopfAlgebra.mapPoints ψ (HopfAlgebra.mapPoints χ g)`.
-    change HopfAlgebra.mapPoints (χ ≫ ψ) g = HopfAlgebra.mapPoints ψ (HopfAlgebra.mapPoints χ g)
-    rw [HopfAlgebra.mapPoints_comp]
-    rfl
+    rw [mapQuotientPointsSubgroup_comp]
+    exact (GrpCat.ofHom_comp _ _).symm
 
 /-- The object part of the subgroup functor is the cut-out point subgroup. -/
 @[simp]
@@ -155,26 +181,6 @@ lemma quotientPointsSubgroupIncl_app (H : _root_.CommHopfAlgCat.{v} R)
       GrpCat.ofHom (quotientPointsSubgroup H I A).subtype :=
   rfl
 
-/-- The restricted map on cut-out subgroups is induced by the ambient functor-of-points map. -/
-@[simp]
-lemma mapQuotientPointsSubgroup_apply (H : _root_.CommHopfAlgCat.{v} R)
-    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
-    (χ : A ⟶ B) (g : quotientPointsSubgroup H I A) :
-    mapQuotientPointsSubgroup H I χ g =
-      ⟨HopfAlgebra.mapPoints (H := H) χ g,
-        mapPoints_mem_quotientPointsSubgroup H I χ g.property⟩ :=
-  rfl
-
-/-- Coercing the restricted subgroup map gives the ambient functor-of-points map. -/
-@[simp]
-lemma coe_mapQuotientPointsSubgroup_apply (H : _root_.CommHopfAlgCat.{v} R)
-    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
-    (χ : A ⟶ B) (g : quotientPointsSubgroup H I A) :
-    (mapQuotientPointsSubgroup H I χ g :
-      HopfAlgebra.points (R := R) (H := H) B) =
-      HopfAlgebra.mapPoints (H := H) χ g :=
-  rfl
-
 /-- Pointwise form of the restricted subgroup map. -/
 @[simp]
 lemma mapQuotientPointsSubgroup_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
@@ -185,22 +191,6 @@ lemma mapQuotientPointsSubgroup_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
       χ.hom (g.val.ofConv h) := by
   rw [coe_mapQuotientPointsSubgroup_apply, HopfAlgebra.mapPoints_apply, WithConv.ofConv_toConv,
     AlgHom.comp_apply]
-
-/-- The restricted subgroup maps preserve identity morphisms of value algebras. -/
-@[simp]
-lemma mapQuotientPointsSubgroup_id (H : _root_.CommHopfAlgCat.{v} R)
-    (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
-    mapQuotientPointsSubgroup H I (𝟙 A) =
-      MonoidHom.id (quotientPointsSubgroup H I A) := by
-  exact congrArg GrpCat.Hom.hom ((quotientPointsSubgroupFunctor (R := R) H I).map_id A)
-
-/-- The restricted subgroup maps preserve composition of value-algebra morphisms. -/
-lemma mapQuotientPointsSubgroup_comp (H : _root_.CommHopfAlgCat.{v} R)
-    (I : HopfIdeal R H) {A B C : CommAlgCat.{w} R} (χ : A ⟶ B) (ψ : B ⟶ C) :
-    mapQuotientPointsSubgroup H I (χ ≫ ψ) =
-      (mapQuotientPointsSubgroup H I ψ).comp
-        (mapQuotientPointsSubgroup H I χ) := by
-  exact congrArg GrpCat.Hom.hom ((quotientPointsSubgroupFunctor (R := R) H I).map_comp χ ψ)
 
 /-- The inverse to the injective quotient-points homomorphism, with codomain restricted to its
 cut-out subgroup. -/
