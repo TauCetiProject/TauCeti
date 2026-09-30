@@ -25,11 +25,10 @@ public section
 
 namespace TauCeti
 
-/-- If `t ≤ γ ^ i`, `e < d * i` and `d * q < m`, then
+/-- If `t ≤ γ ^ i`, `e ≤ d * i` and `d * q < m`, then
 `t ^ (m * d) * γ ^ (d * i - e) ≤ t ^ d * (γ ^ (d * i - e)) ^ m * γ ^ (d * (e * q))`. -/
 theorem pow_mul_pow_le_of_le {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀]
-    {γ t : Γ₀} (hγ : γ ≤ 1) {d e i m q : ℕ} (ht : t ≤ γ ^ i) (hi : e < d * i) (hm : 1 ≤ m)
-    (hq : d * q < m) :
+    {γ t : Γ₀} (hγ : γ ≤ 1) {d e i m q : ℕ} (ht : t ≤ γ ^ i) (hi : e ≤ d * i) (hq : d * q < m) :
     t ^ (m * d) * γ ^ (d * i - e) ≤ t ^ d * (γ ^ (d * i - e)) ^ m * γ ^ (d * (e * q)) := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
   obtain ⟨s, hs⟩ : ∃ s, d * i = s + e := ⟨d * i - e, by omega⟩

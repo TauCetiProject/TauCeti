@@ -104,8 +104,8 @@ private theorem powValuation_coeff_exp_sub_one_mul_pow_le [CharZero K] {π : �
           (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ m *
           valuation K (π : K) ^
             ((p - 1) * (absoluteRamificationIndex K p * padicValNat p m.factorial)) :=
-        pow_mul_pow_le_of_le (Valuation.integer.v_irreducible_lt_one hπ).le hx hi
-          (Nat.one_le_iff_ne_zero.mpr hm) (sub_one_mul_padicValNat_factorial_lt_of_ne_zero p hm)
+        pow_mul_pow_le_of_le (Valuation.integer.v_irreducible_lt_one hπ).le hx hi.le
+          (sub_one_mul_padicValNat_factorial_lt_of_ne_zero p hm)
     _ = valuation K x ^ (p - 1) *
           (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ m *
           valuation K (m.factorial : K) ^ (p - 1) := by
@@ -151,8 +151,7 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
     _ ≤ valuation K x ^ (p - 1) *
           (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ n *
           valuation K (π : K) ^ ((p - 1) * (absoluteRamificationIndex K p * padicValNat p n)) :=
-        pow_mul_pow_le_of_le (Valuation.integer.v_irreducible_lt_one hπ).le hx hi
-          (Nat.one_le_iff_ne_zero.mpr hn) hq
+        pow_mul_pow_le_of_le (Valuation.integer.v_irreducible_lt_one hπ).le hx hi.le hq
     _ = valuation K x ^ (p - 1) *
           (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ n *
           valuation K (n : K) ^ (p - 1) := by
