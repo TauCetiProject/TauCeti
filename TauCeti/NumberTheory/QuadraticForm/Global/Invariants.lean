@@ -226,8 +226,8 @@ theorem hasseProduct_eq_neg_one_pow_card
     (hs : I.finiteHasse = (T : Set (HeightOneSpectrum (𝓞 K))).mulIndicator fun _ ↦ -1)
     (hr : ∀ w, I.realHasse w = 1) :
     I.hasseProduct = (-1) ^ T.card := by
-  rw [hasseProduct_def, hs, ← finprod_mem_def, finprod_mem_coe_finset]
-  simp [hr]
+  rw [hasseProduct_eq_prod_of_mulSupport_subset I (hs ▸ Set.mulSupport_mulIndicator_subset)]
+  simp [hs, hr, Finset.prod_mulIndicator_subset _ subset_rfl]
 
 /-- A system with Hasse sign `-1` exactly at the finite places of `T` has all finite Hasse signs
 trivial exactly when `T` is empty. -/
