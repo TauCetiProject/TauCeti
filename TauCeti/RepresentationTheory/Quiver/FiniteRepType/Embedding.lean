@@ -20,8 +20,8 @@ embeds the isomorphism classes of the one into those of the other.
 
 Read contrapositively, a quiver containing a subquiver of infinite representation type has
 infinite representation type itself. This is the reduction by which the non-Dynkin half of
-Gabriel's theorem is proved: a connected quiver whose underlying graph is not a Dynkin diagram
-contains a subquiver whose graph is an extended Dynkin diagram, and each of those has infinitely
+Gabriel's theorem is proved: a finite connected quiver whose underlying graph is not a Dynkin
+diagram contains a subquiver whose graph is an extended Dynkin diagram, and each has infinitely
 many indecomposables. The two smallest extended Dynkin diagrams are the loop `Ã₀` and the double
 edge `Ã₁`. The loop quiver has infinitely many nilpotent Jordan block representations
 (`TauCeti.not_isFiniteRepType_oneLoop`), and the Kronecker quiver `• ⇉ •` has infinitely many

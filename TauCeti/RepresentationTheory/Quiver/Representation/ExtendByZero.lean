@@ -41,6 +41,10 @@ infinitely many, the reduction by which the non-Dynkin half of Gabriel's theorem
   extension by zero as the arrow itself.
 * `TauCeti.QuiverEmbedding.extendByZeroMap_apply_of_not_exists`: an arrow of `Q` that is not in
   the image acts by zero.
+* `TauCeti.QuiverEmbedding.extendByZeroRep_vertexSpaceEquiv`: the vertex space over an image
+  vertex is linearly equivalent to the original space.
+* `TauCeti.QuiverEmbedding.isZero_extendByZeroRep_obj_of_not_mem_range`: the vertex space outside
+  the image is zero.
 * `TauCeti.QuiverEmbedding.fullyFaithfulExtendByZeroFunctor`: extension by zero is fully faithful.
 * `TauCeti.QuiverEmbedding.nonempty_extendByZeroRep_iso_iff`,
   `TauCeti.QuiverEmbedding.isFinDim_extendByZeroRep` and
@@ -159,6 +163,23 @@ theorem extendByZeroRep_obj (v : Q) :
     (φ.extendByZeroRep M).obj (v : Paths Q) =
       ModuleCat.of k (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) :=
   rfl
+
+/-- Over an image vertex, the vertex space of the extension by zero is linearly equivalent to the
+original vertex space by evaluation at the unique point of the fiber. -/
+noncomputable def extendByZeroRep_vertexSpaceEquiv (u : Q') :
+    (φ.extendByZeroRep M).obj (φ.obj u : Paths Q) ≃ₗ[k] QuiverRep.vertexSpace k Q' M u := by
+  letI : Unique (φ.Fiber (φ.obj u)) :=
+    { default := ⟨u, rfl⟩, uniq := fun _ ↦ Subsingleton.elim _ _ }
+  exact LinearEquiv.piUnique k (fun u' : φ.Fiber (φ.obj u) ↦
+    QuiverRep.vertexSpace k Q' M u'.1)
+
+/-- Outside the vertex image of an embedding, extension by zero has a zero vertex space. -/
+theorem isZero_extendByZeroRep_obj_of_not_mem_range (v : Q)
+    (hv : v ∉ Set.range φ.obj) :
+    Limits.IsZero ((φ.extendByZeroRep M).obj (v : Paths Q)) := by
+  rw [extendByZeroRep_obj]
+  let : IsEmpty (φ.Fiber v) := ⟨fun u ↦ hv ⟨u.1, u.2⟩⟩
+  exact ModuleCat.isZero_of_subsingleton _
 
 /-- An arrow of `Q` acts on the extension by zero by `TauCeti.QuiverEmbedding.extendByZeroMap`. -/
 @[simp]
