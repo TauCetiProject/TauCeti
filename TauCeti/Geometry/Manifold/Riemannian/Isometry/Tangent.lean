@@ -78,6 +78,19 @@ theorem mfderivToLinearIsometryEquiv_apply (Φ : RiemannianIsometry I J M N) (x 
     Φ.mfderivToLinearIsometryEquiv x v = mfderiv I J Φ x v :=
   congrFun (coe_mfderivToLinearIsometryEquiv Φ x) v
 
+/-- The differential of a Riemannian isometry at a point is injective. -/
+theorem mfderiv_injective (Φ : RiemannianIsometry I J M N) (x : M) :
+    Function.Injective (mfderiv I J Φ x) := by
+  simpa only [coe_mfderivToLinearIsometryEquiv] using
+    (Φ.mfderivToLinearIsometryEquiv x).injective
+
+/-- The differential of a Riemannian isometry at a point is surjective onto the tangent space at
+the image point. -/
+theorem mfderiv_surjective (Φ : RiemannianIsometry I J M N) (x : M) :
+    Function.Surjective (mfderiv I J Φ x) := by
+  simpa only [coe_mfderivToLinearIsometryEquiv] using
+    (Φ.mfderivToLinearIsometryEquiv x).surjective
+
 /-- The inverse of the differential equivalence is the differential of the inverse Riemannian
 isometry at `Φ x`. -/
 @[simp]

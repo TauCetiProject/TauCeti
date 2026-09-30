@@ -76,7 +76,7 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   -- The restricted dimension-shifting sequence is still split by evaluation at `1`, so the cup
   -- product over `H` satisfies the same rule for its connecting map.
   have hresD := (shortExact_res H.subtype).2 hD
-  exact (cup_δ_of_leftInverse (Rep.res H.subtype M) hresD (leftInverse_coindBotUnit N) hq h _
+  exact (cup_δ_of_leftInverse (Rep.res H.subtype M) hresD (leftInverse_coindBotUnit N) h _
     _).symm
 
 /-- **Restriction preserves the Tate cup product in nonnegative bidegrees.** For a subgroup `H` of
