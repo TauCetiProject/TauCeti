@@ -160,10 +160,10 @@ theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
     [TopologicalSpace (fixedField H)] [IsNonarchimedeanLocalField (fixedField H)]
     [ValuativeExtension K (fixedField H)] (v : RamificationIndexDomain) :
     (upperRamificationGroupQuotient H v).map
-        (IsGalois.normalAutEquivQuotient H).toMonoidHom =
+        (IsGalois.normalAutEquivQuotient H) =
       upperRamificationGroup K (fixedField H) v := by
   -- Under `G ⧸ H ≃* Gal(M^H/K)`, the class of `σ` is the restriction of `σ` to `M^H`.
-  have hcomp : (IsGalois.normalAutEquivQuotient H).toMonoidHom.comp (QuotientGroup.mk' H) =
+  have hcomp : (IsGalois.normalAutEquivQuotient H : _ →* _).comp (QuotientGroup.mk' H) =
       AlgEquiv.restrictNormalHom (fixedField H) :=
     MonoidHom.ext (IsGalois.normalAutEquivQuotient_apply H)
   rw [upperRamificationGroupQuotient, Subgroup.map_map, hcomp,
