@@ -53,6 +53,7 @@ namespace TauCeti
 variable (R : Type*) [CommRing R]
 
 /-- Passing to the quotient by the nilradical preserves Krull dimension. -/
+@[simp]
 theorem ringKrullDim_quotient_nilradical :
     ringKrullDim (R ⧸ nilradical R) = ringKrullDim R := by
   rw [ringKrullDim_quotient, PrimeSpectrum.zeroLocus_nilradical, ringKrullDim]
@@ -61,6 +62,7 @@ theorem ringKrullDim_quotient_nilradical :
 variable {R : Type*} [CommRing R]
 
 /-- Passing to the quotient by the nilradical preserves the height of a prime ideal. -/
+@[simp]
 theorem height_map_quotientMk_nilradical (p : Ideal R) [p.IsPrime] :
     (p.map (Ideal.Quotient.mk (nilradical R))).height = p.height := by
   let I : Ideal R := nilradical R

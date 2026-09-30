@@ -188,6 +188,7 @@ theorem ringKrullDim_localization_away {A : Type*} [CommRing A] [IsDomain A] [Al
 
 /-- Every maximal ideal of the polynomial ring `k[Xᵢ | i ∈ ι]` over a field `k` in finitely many
 variables has height the number of variables. -/
+@[simp]
 theorem _root_.MvPolynomial.height_eq_natCard_of_isMaximal {ι : Type*} [Finite ι]
     (M : Ideal (MvPolynomial ι k)) [M.IsMaximal] : M.height = Nat.card ι := by
   revert M
