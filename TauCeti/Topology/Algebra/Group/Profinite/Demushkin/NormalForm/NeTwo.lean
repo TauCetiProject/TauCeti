@@ -42,6 +42,10 @@ with the same rank and the same `q`-invariant `q ≠ 2` are topologically isomor
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne`: a
   relator in `Φ(F)` presenting a Demushkin group with `q(G) ≠ p` is carried to
   `x₁^{q(G)} (x₁, x₂) ⋯ (x_{n-1}, x_n)`.
+* `TauCeti.freeProP.exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq`: a relator
+  `(x₁, x₂) ⋯ (x_{n-1}, x_n) T` with `T ∈ λ_2(F)` and `n` even presents a Demushkin group with
+  `q(G) ≠ p`, and is carried to `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` with `q = 0` or `q = p^k`,
+  `k ≥ 2`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two`:
   **Labute's Theorem 3 for `q ≠ 2`**, the same for every `q(G) ≠ 2`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_demushkinQ_ne_two`
@@ -225,6 +229,51 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne
     exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_toAdd_exponentSum_eq ⟨e₁₂ r, hmem⟩
       hnd hq2 hv'
   exact ⟨e₁₂.trans e₃, he₃⟩
+
+/-- **A relator with the class of `(x₁, x₂) ⋯ (x_{m-1}, x_m)` is normalised by the case `q ≠ p`.**
+Let `m` be even and positive and let `T ∈ λ_2(F)` in the free pro-`p` group `F` on `m` generators.
+Then `(x₁, x₂) ⋯ (x_{m-1}, x_m) T` presents a Demushkin group with `q`-invariant `q ≠ p`, and a
+continuous automorphism of `F` carries it to `x₁^q (x₁, x₂) ⋯ (x_{m-1}, x_m)`, where `q = 0` or
+`q = p^k` with `k ≥ 2`. -/
+theorem exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq (hn : Even n) (hn0 : n ≠ 0)
+    {T : freeProP p (Fin n)} (hT : T ∈ pLowerCentralSeries p (freeProP p (Fin n)) 2) :
+    ∃ (e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n)) (q : ℕ),
+      (q = 0 ∨ ∃ k, 2 ≤ k ∧ q = p ^ k) ∧
+        e (demushkinWordNeTwo 0 n (freeProPGen p n) * T) =
+          demushkinWordNeTwo q n (freeProPGen p n) := by
+  have hw := demushkinWordNeTwo_mem_pLowerCentralSeries_one (dvd_zero p) n (freeProPGen p n)
+  have hr₁ : demushkinWordNeTwo 0 n (freeProPGen p n) * T ∈
+      pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
+    mul_mem hw (pLowerCentralSeries_succ_le 1 hT)
+  have hr : demushkinWordNeTwo 0 n (freeProPGen p n) * T ∈ proPFrattini p (freeProP p (Fin n)) :=
+    (pLowerCentralSeries_one_eq_proPFrattini Fact.out).le hr₁
+  -- `T` lies in `λ_2(F)`, so the relator has the class of `(x₁, x₂) ⋯ (x_{m-1}, x_m)`.
+  have hcls : gradedMk p (freeProP p (Fin n)) 1 ⟨_, hr₁⟩ =
+      gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo 0 n (freeProPGen p n), hw⟩ := by
+    rw [gradedMk_eq_gradedMk_iff]
+    refine QuotientGroup.eq.mpr ?_
+    rw [mul_inv_rev, inv_mul_cancel_right]
+    exact inv_mem hT
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn0⟩⟩
+  -- That class has nondegenerate degree-one form, so the relator presents a Demushkin group.
+  have hG : IsDemushkin p
+      (presentedProP p (Fin n) {demushkinWordNeTwo 0 n (freeProPGen p n) * T}) :=
+    isDemushkin_of_nondegenerate_degreeOneForm hr (ContinuousMulEquiv.refl _)
+      (by rw [hcls]; exact nondegenerate_degreeOneForm_demushkinWordNeTwo hn (dvd_zero p))
+  -- The class has no `p`-power part, so the `q`-invariant is not `p`.
+  have hq : demushkinQ hG ≠ p := by
+    rw [Ne, demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hr hG,
+      not_exists]
+    intro i hi
+    apply hi
+    rw [hcls, degreeOneBasis_repr_gradedMk_inl_eq_zero_iff, toAdd_exponentSum_demushkinWordNeTwo,
+      Nat.cast_zero, zero_smul, Pi.zero_apply]
+    exact dvd_zero _
+  obtain ⟨e, he⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hr hG hq
+  refine ⟨e, demushkinQ hG, ?_, he⟩
+  by_cases h0 : demushkinQ hG = 0
+  · exact Or.inl h0
+  exact Or.inr (hG.exists_two_le_demushkinQ_eq_pow_of_ne h0 hq)
 
 /-- **Labute's normal form for `q ≠ 2`** (Labute, Theorem 3, the case `q ≠ 2`). Let `r ∈ Φ(F)` be
 a relator of the free pro-`p` group on `n` generators presenting a Demushkin group

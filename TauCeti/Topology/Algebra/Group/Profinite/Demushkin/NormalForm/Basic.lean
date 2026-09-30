@@ -242,6 +242,26 @@ theorem demushkinWordTwoOdd_eq_demushkinWordTwoOddTop (f n : ℕ) {x : ℕ → H
 theorem demushkinWordTwoOddTop_one (x : ℕ → H) : demushkinWordTwoOddTop 1 x = x 0 ^ 2 := by
   simp [demushkinWordTwoOddTop_def]
 
+/-- The odd word `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on `2m + 1` letters is `x₁²` times
+the `q ≠ 2` word `x₂^{2^f} (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on the `2m` letters `x₂, …, x_{2m+1}`,
+read on the tuple shifted by one. -/
+theorem demushkinWordTwoOdd_eq_sq_mul_demushkinWordNeTwo (f m : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOdd f (2 * m + 1) x =
+      x 0 ^ 2 * demushkinWordNeTwo (2 ^ f) (2 * m) fun i ↦ x (i + 1) := by
+  have h1 : (2 * m + 1) / 2 = m := by omega
+  have h2 : 2 * m / 2 = m := by omega
+  rw [demushkinWordTwoOdd_def, demushkinWordNeTwo_def, h1, h2, mul_assoc]
+
+/-- The odd word at level `f = ∞`, `x₁² (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on `2m + 1` letters, is
+`x₁²` times the `q ≠ 2` word at `q = 0`, `(x₂, x₃) ⋯ (x_{2m}, x_{2m+1})`, on the `2m` letters
+`x₂, …, x_{2m+1}`, read on the tuple shifted by one. -/
+theorem demushkinWordTwoOddTop_eq_sq_mul_demushkinWordNeTwo (m : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOddTop (2 * m + 1) x =
+      x 0 ^ 2 * demushkinWordNeTwo 0 (2 * m) fun i ↦ x (i + 1) := by
+  have h1 : (2 * m + 1) / 2 = m := by omega
+  have h2 : 2 * m / 2 = m := by omega
+  rw [demushkinWordTwoOddTop_def, demushkinWordNeTwo_def, h1, h2, pow_zero, one_mul]
+
 /-- The `q = 2`, `n` even normal-form word `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`,
 on an arbitrary tuple `x : ℕ → H`, with `x 0` playing the role of `x₁`. The exponent `2 + a` is
 a natural number standing for Labute's `2 + α`, `α ∈ 4ℤ₂`: on an arbitrary group only natural

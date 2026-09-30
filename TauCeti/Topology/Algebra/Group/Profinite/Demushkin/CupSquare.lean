@@ -89,11 +89,7 @@ theorem forall_exists_zmodFourReduction_eq_iff_demushkinQ_ne_two :
     rcases eq_or_ne (demushkinQ hG) 0 with h0 | h0
     · rw [h0, Nat.cast_zero]
       exact dvd_zero _
-    · obtain ⟨k, hk, hqk⟩ := hG.exists_demushkinQ_eq_pow h0
-      have hk2 : 2 ≤ k := by
-        by_contra hlt
-        have hk1 : k = 1 := by omega
-        exact hq (by rw [hqk, hk1, pow_one])
+    · obtain ⟨k, hk2, hqk⟩ := hG.exists_two_le_demushkinQ_eq_pow_of_ne h0 hq
       rw [hqk, Nat.cast_pow, Nat.cast_ofNat]
       exact pow_dvd_pow _ hk2
 
