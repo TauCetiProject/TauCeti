@@ -32,6 +32,9 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
   the same statements for classes in the graded pieces.
 * `TauCeti.IsProP.gradedBracket_smul_left`, `TauCeti.IsProP.gradedBracket_smul_right`: the graded
   bracket is `ℤ_p`-linear in each variable.
+* `TauCeti.IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv`: the commutator of the inverse
+  of a conjugated `p`-adic power `c⁻¹ y ^ u c` with `x⁻¹` has class `u` times the graded bracket
+  of the classes of `y` and `x`.
 
 ## References
 
@@ -226,5 +229,25 @@ theorem IsProP.gradedBracket_smul_right (hG : IsProP p G) {q j k : ℕ} (u : ℤ
   rw [← hG.gradedMk_padicPow y u, hG.gradedBracket_padicPow_right x y u,
     gradedBracket_gradedMk]
   exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.2 y.2⟩ u
+
+/-- The class of the commutator of the inverse of a conjugated `p`-adic power `c⁻¹ y ^ u c` with
+the inverse of `x ∈ λ_m` is `u` times the graded bracket of the classes of `y` and `x`. -/
+theorem IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv (hG : IsProP p G) {q m : ℕ}
+    (y c : G) (x : pLowerCentralSeries q G m) (u : ℤ_[p]) :
+    letI := hG.gradedPieceModule q (0 + m + 1)
+    gradedMk q G (0 + m + 1)
+        ⟨⁅(c⁻¹ * hG.padicPow y u * c)⁻¹, ((x⁻¹ : pLowerCentralSeries q G m) : G)⁆,
+          commutator_mem_pLowerCentralSeries
+            (mem_pLowerCentralSeries_zero q (c⁻¹ * hG.padicPow y u * c)⁻¹) x⁻¹.2⟩ =
+      u • gradedBracket q G 0 m (gradedMkZero q G y) (gradedMk q G m x) := by
+  let _ : Module ℤ_[p] (gradedPiece q G 0) := hG.gradedPieceModule q 0
+  let _ : Module ℤ_[p] (gradedPiece q G m) := hG.gradedPieceModule q m
+  let _ : Module ℤ_[p] (gradedPiece q G (0 + m + 1)) := hG.gradedPieceModule q (0 + m + 1)
+  rw [← gradedBracket_gradedMk
+      (⟨(c⁻¹ * hG.padicPow y u * c)⁻¹, mem_pLowerCentralSeries_zero q _⟩ :
+        pLowerCentralSeries q G 0) x⁻¹,
+    gradedMk_zero, gradedMkZero_inv, gradedMkZero_mul, gradedMkZero_mul, gradedMkZero_inv,
+    hG.gradedMkZero_padicPow, neg_add_cancel_comm, gradedMk_inv]
+  simp only [map_neg, AddMonoidHom.neg_apply, neg_neg, hG.gradedBracket_smul_left]
 
 end TauCeti

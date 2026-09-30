@@ -154,18 +154,4 @@ theorem exists_sum_gradedBracket_eq_of_range {ι : Type*} [Fintype ι]
   obtain ⟨y, hy⟩ := hsurj.symm ▸ AddSubgroup.mem_top z
   exact ⟨y, hy⟩
 
-/-- If the source graded piece is compact, every class in the next graded piece is one sum of
-brackets with a finite topological generating set. -/
-theorem exists_sum_gradedBracket_eq (n : ℕ) [CompactSpace (gradedPiece 0 G n)]
-    (S : Finset G) (hS : (Subgroup.closure (S : Set G)).topologicalClosure = ⊤)
-    (z : gradedPiece 0 G (0 + n + 1)) :
-    ∃ y : S → gradedPiece 0 G n,
-      (∑ s : S, gradedBracket 0 G 0 n (gradedMkZero 0 G s) (y s)) = z := by
-  apply exists_sum_gradedBracket_eq_of_range n ((↑) : S → G) _ z
-  have hrange : Set.range ((↑) : S → G) = (S : Set G) := by
-    ext g
-    simp
-  rw [hrange]
-  exact hS
-
 end TauCeti

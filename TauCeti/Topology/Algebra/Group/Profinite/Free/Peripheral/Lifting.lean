@@ -108,111 +108,9 @@ theorem level_one_eq_univ (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) :
     level hF x u 1 = Set.univ := by
   ext cd
   simp only [Set.mem_univ, iff_true, mem_level_iff]
-  rw [closedLowerCentralSeries_def]
-  rw [← gradedMkZero_eq_zero_iff]
+  rw [closedLowerCentralSeries_def, ← gradedMkZero_eq_zero_iff]
   let _ := hF.gradedPieceModule 0 0
-  have hprod (l : List F) :
-      gradedMkZero 0 F l.prod = (l.map (gradedMkZero 0 F)).sum := by
-    let l' : List (pLowerCentralSeries 0 F 0) :=
-      l.map fun g ↦ ⟨g, mem_pLowerCentralSeries_zero 0 g⟩
-    have hlprod : (l'.prod : F) = l.prod := by
-      change (pLowerCentralSeries 0 F 0).subtype l'.prod = l.prod
-      rw [map_list_prod]
-      simp only [l', List.map_map, Function.comp_def, Subgroup.subtype_apply]
-      simp
-    rw [← hlprod, ← gradedMk_zero, gradedMk_list_prod]
-    simp only [l', List.map_map]
-    apply congrArg List.sum
-    apply List.map_congr_left
-    intro g _
-    exact gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero 0 g⟩
-  rw [defect, gradedMkZero_mul, hprod, List.map_ofFn,
-    Function.comp_def]
-  simp only [gradedMkZero_mul, gradedMkZero_inv, hF.gradedMkZero_padicPow, neg_add_cancel_comm]
-  have hsum : (List.ofFn fun i ↦ u • gradedMkZero 0 F (x i)).sum =
-      u • (List.ofFn fun i ↦ gradedMkZero 0 F (x i)).sum := by
-    rw [List.ofFn_eq_map, List.ofFn_eq_map]
-    -- Expose the composite map so `List.map_map` identifies the pointwise scalar action.
-    change (List.map ((fun z ↦ u • z) ∘
-      (fun i ↦ gradedMkZero 0 F (x i))) (List.finRange r)).sum = _
-    rw [← List.map_map, ← List.smul_sum]
-  rw [hsum, ← smul_add, cusp_def,
-    gradedMkZero_inv, hprod, List.map_ofFn, Function.comp_def]
-  simp
-
-omit [Fact (Nat.Prime p)] [CompactSpace F] [TotallyDisconnectedSpace F] in
-private theorem topologicalClosure_closure_range_tailPeripheral_basis
-    {k : ℕ} (e : F ≃ₜ* freeProP p (Fin (k + 1))) :
-    (Subgroup.closure (Set.range fun i : Fin (k + 1) ↦
-      peripheralTuple (basis e) i.succ)).topologicalClosure = ⊤ := by
-  let H := Subgroup.closure (Set.range fun i : Fin (k + 1) ↦
-    peripheralTuple (basis e) i.succ)
-  have hcusp : cusp (basis e) ∈ H := by
-    apply Subgroup.subset_closure
-    refine ⟨Fin.last k, ?_⟩
-    -- Put the successor of the last index into the form expected by the `Fin.snoc` API.
-    change peripheralTuple (basis e) (Fin.last k).succ = cusp (basis e)
-    rw [Fin.succ_last, peripheralTuple_last]
-  have hsucc (i : Fin k) : basis e i.succ ∈ H := by
-    apply Subgroup.subset_closure
-    refine ⟨i.castSucc, ?_⟩
-    -- Put the successor-cast index into the form expected by the `Fin.snoc` API.
-    change peripheralTuple (basis e) i.castSucc.succ = basis e i.succ
-    rw [Fin.succ_castSucc, peripheralTuple_castSucc]
-  have hzero : basis e 0 ∈ H := by
-    have htail : (List.ofFn fun i : Fin k ↦ basis e i.succ).prod ∈ H := by
-      apply Subgroup.list_prod_mem
-      intro y hy
-      rw [List.mem_ofFn] at hy
-      obtain ⟨i, rfl⟩ := hy
-      exact hsucc i
-    have hrel := prod_mul_cusp (basis e)
-    rw [List.ofFn_succ, List.prod_cons] at hrel
-    have heq : basis e 0 =
-        ((List.ofFn fun i : Fin k ↦ basis e i.succ).prod * cusp (basis e))⁻¹ := by
-      apply eq_inv_of_mul_eq_one_left
-      simpa only [mul_assoc] using hrel
-    rw [heq]
-    exact H.inv_mem (H.mul_mem htail hcusp)
-  have hbasis : Subgroup.closure (Set.range (basis e)) ≤ H := by
-    rw [Subgroup.closure_le]
-    rintro _ ⟨i, rfl⟩
-    induction i using Fin.cases with
-    | zero => exact hzero
-    | succ i => exact hsucc i
-  apply top_le_iff.mp
-  rw [← topologicalClosure_closure_range_basis e]
-  exact Subgroup.topologicalClosure_mono hbasis
-
-private theorem gradedMk_commutator_inv_conj_padicPow_inv
-    (hF : IsProP p F) (m : ℕ) (y c : F) (q : pLowerCentralSeries 0 F m) (u : ℤ_[p]ˣ) :
-    letI := hF.gradedPieceModule 0 0
-    letI := hF.gradedPieceModule 0 m
-    letI := hF.gradedPieceModule 0 (0 + m + 1)
-    gradedMk 0 F (0 + m + 1)
-        ⟨⁅(c⁻¹ * hF.padicPow y u * c)⁻¹, (q : F)⁻¹⁆,
-          by simpa only [coe_inv] using
-            commutator_mem_pLowerCentralSeries
-              (mem_pLowerCentralSeries_zero 0 (c⁻¹ * hF.padicPow y u * c)⁻¹) q⁻¹.2⟩ =
-      ((u : ℤ_[p]) • gradedBracket 0 F 0 m
-        (gradedMkZero 0 F y) (gradedMk 0 F m q) : gradedPiece 0 F (0 + m + 1)) := by
-  let _ := hF.gradedPieceModule 0 0
-  let _ := hF.gradedPieceModule 0 m
-  let _ := hF.gradedPieceModule 0 (0 + m + 1)
-  calc
-    _ = gradedMk 0 F (0 + m + 1)
-        ⟨⁅(c⁻¹ * hF.padicPow y u * c)⁻¹, (q⁻¹ : pLowerCentralSeries 0 F m)⁆,
-          commutator_mem_pLowerCentralSeries
-            (mem_pLowerCentralSeries_zero 0 (c⁻¹ * hF.padicPow y u * c)⁻¹) q⁻¹.2⟩ := by
-      congr 2
-    _ = _ := by
-      rw [← gradedBracket_gradedMk
-        (⟨(c⁻¹ * hF.padicPow y u * c)⁻¹,
-          mem_pLowerCentralSeries_zero 0 (c⁻¹ * hF.padicPow y u * c)⁻¹⟩ :
-            pLowerCentralSeries 0 F 0) q⁻¹,
-        gradedMk_zero, gradedMkZero_inv, gradedMkZero_mul, gradedMkZero_mul, gradedMkZero_inv,
-        hF.gradedMkZero_padicPow, neg_add_cancel_comm, gradedMk_inv]
-      simp only [map_neg, AddMonoidHom.neg_apply, neg_neg, hF.gradedBracket_smul_left]
+  simp [defect_def, cusp_def, List.sum_ofFn, ← Finset.smul_sum]
 
 /-- A pair of conjugators whose defect lies in `γ_n`, for positive `n`, can be corrected so that
 its defect lies in `γ_{n+1}`. The corrections lie in `γ_{n-1}`, and the correction at the first
@@ -257,8 +155,8 @@ theorem exists_mem_level_succ (hF : IsProP p F)
       let z : gradedPiece 0 F (0 + m + 1) :=
         gradedMk 0 F (0 + m + 1) ⟨defect hF (basis e) u c d, by simpa using hdef⟩
       obtain ⟨y, hy⟩ := exists_sum_gradedBracket_eq_of_range m
-        (fun i : Fin (k + 1) ↦ peripheralTuple (basis e) i.succ)
-        (topologicalClosure_closure_range_tailPeripheral_basis e)
+        (peripheralTuple (basis e) ∘ Fin.succ)
+        (topologicalClosure_closure_range_peripheralTuple_comp_succ e)
         (-((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • z)
       choose q hq using fun i ↦ gradedMk_surjective m (y i)
       let c' : Fin (k + 1) → F := Fin.cases 1 (fun i ↦ q i.castSucc)
@@ -290,15 +188,15 @@ theorem exists_mem_level_succ (hF : IsProP p F)
           gradedMk 0 F (0 + m + 1) (b' i.succ) =
             (u : ℤ_[p]) • gradedBracket 0 F 0 m
               (gradedMkZero 0 F (basis e i.succ)) (gradedMk 0 F m (q i.castSucc)) := by
-        simpa only [b', b, w, c', Fin.cases_succ] using
-          gradedMk_commutator_inv_conj_padicPow_inv hF m (basis e i.succ) (c i.succ)
-            (q i.castSucc) u
+        simpa only [b', b, w, c', Fin.cases_succ, Subgroup.coe_inv] using
+          hF.gradedMk_commutatorElement_inv_conj_padicPow_inv (basis e i.succ) (c i.succ)
+            (q i.castSucc) (u : ℤ_[p])
       have hbzclass : gradedMk 0 F (0 + m + 1) bz' =
           (u : ℤ_[p]) • gradedBracket 0 F 0 m
             (gradedMkZero 0 F (cusp (basis e))) (gradedMk 0 F m (q (Fin.last k))) := by
-        simpa only [bz', bz, wz, d'] using
-          gradedMk_commutator_inv_conj_padicPow_inv hF m (cusp (basis e)) d
-            (q (Fin.last k)) u
+        simpa only [bz', bz, wz, d', Subgroup.coe_inv] using
+          hF.gradedMk_commutatorElement_inv_conj_padicPow_inv (cusp (basis e)) d
+            (q (Fin.last k)) (u : ℤ_[p])
       have hcorr :
           (∑ i, gradedMk 0 F (0 + m + 1) (b' i)) +
               gradedMk 0 F (0 + m + 1) bz' =
@@ -317,7 +215,7 @@ theorem exists_mem_level_succ (hF : IsProP p F)
               (gradedMkZero 0 F (peripheralTuple (basis e) i.succ))
               (gradedMk 0 F m (q i))) =
             -((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • z := by
-        simpa only [hq] using hy
+        simpa only [hq, Function.comp_apply] using hy
       let B : pLowerCentralSeries 0 F (0 + m + 1) := (List.ofFn b').prod * bz'
       have hB : gradedMk 0 F (0 + m + 1) B = -z := by
         -- Unfold the local correction product to expose `gradedMk_mul` and `gradedMk_list_prod`.
