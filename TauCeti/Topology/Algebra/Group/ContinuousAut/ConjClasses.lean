@@ -32,7 +32,7 @@ section Monoid
 
 variable [Monoid G]
 
-/-- A continuous automorphism acts on conjugacy classes by its underlying group
+/-- A continuous automorphism acts on conjugacy classes by its underlying monoid
 automorphism. -/
 instance : MulAction (ContinuousAut G) (ConjClasses G) :=
   MulAction.compHom (ConjClasses G) (toMulAut : ContinuousAut G →* MulAut G)
