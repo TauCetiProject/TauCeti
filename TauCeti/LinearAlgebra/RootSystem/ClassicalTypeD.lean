@@ -50,8 +50,6 @@ constructed directly on the set of squared-length-two vectors and proved involut
 
 The coordinates and numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
 Plate IV, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section 12.1.
-This supplies the classical-root prerequisite for the `Dₙ` branch of “a named datum per valid
-type” in Layer 6 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
 -/
 
 public section
@@ -520,8 +518,8 @@ pairing it against an explicit integral family, twice the fundamental coweights.
 unavoidable — the last two fundamental coweights of type `Dₙ` are not integral vectors — and
 doubling is harmless, since `ℤ` is torsion free. That one family does two jobs: it is a dual family
 for the simple roots up to the factor two, which gives their linear independence, and it exhibits
-the coefficient map as the restriction of a linear map, which gives the action of a reflection on
-the coordinates. -/
+twice the coefficient map as the restriction of a linear map, which gives the action of a
+reflection on the coordinates. -/
 
 /-- Twice the `k`-th fundamental coweight of type `Dₙ`, in classical orthogonal coordinates. The
 last two fundamental coweights of type `Dₙ` are half-integral, so the doubling is what keeps this
