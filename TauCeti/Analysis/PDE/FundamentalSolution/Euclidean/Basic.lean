@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
+public import TauCeti.Analysis.InnerProductSpace.EuclideanSpace
 public import TauCeti.Analysis.InnerProductSpace.NormPow
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
@@ -115,12 +116,6 @@ theorem newtonianKernel_pos (n : ℕ) (hn : 3 ≤ n)
   exact mul_pos (inv_pos.mpr (mul_pos (mul_pos hnpos hnsub)
       (volume_real_unitBall_pos n)))
     (Real.rpow_pos_of_pos (norm_pos_iff.mpr hx) _)
-
-/-- A nonzero vector in `EuclideanSpace ℝ (Fin n)` forces the dimension to be positive. -/
-theorem pos_of_ne_zero_euclideanSpace {n : ℕ} {x : EuclideanSpace ℝ (Fin n)}
-    (hx : x ≠ 0) : 0 < n := by
-  have := nontrivial_of_ne x 0 hx
-  simpa using Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ (Fin n))
 
 /-- The radial expression for the Newtonian kernel strictly decreases as the squared radius
 increases, in every nondegenerate positive dimension. -/
