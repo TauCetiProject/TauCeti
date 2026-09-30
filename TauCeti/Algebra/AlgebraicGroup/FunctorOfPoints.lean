@@ -104,6 +104,7 @@ lemma _root_.WithConv.convInv_def (f : WithConv (H →ₐ[R] A)) :
 
 /-- Pointwise, the convolution inverse of `f` sends `h` to `f (S h)`, where `S` is the
 antipode. -/
+@[simp]
 lemma convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
     f⁻¹ h = f.ofConv (antipode R h) := by
   change (antipodeComp f.ofConv) h = _
