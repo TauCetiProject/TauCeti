@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Ramification
 public import TauCeti.RingTheory.Ideal.RamificationGroup
-import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Basic
 import TauCeti.RingTheory.Ideal.Inertia
 
 /-!
@@ -20,7 +19,7 @@ elements acting trivially on `𝓞 K ⧸ 𝔭 ^ (i + 1)`. This file computes the
 `G_0 = G_1 = Gal(K/ℚ) ≅ ℤ/2`, and `G_i = 1` for `i ≥ 2`.
 
 Every automorphism sends `θ` to a square root of `−1`, so to `θ` or `−θ`
-(`NumberField.smul_gen_eq_or_eq_neg`), and `𝓞 K = ℤ[θ]`, so
+(`TauCeti.NumberField.smul_gen_eq_or_eq_neg`), and `𝓞 K = ℤ[θ]`, so
 by Serre's criterion (`TauCeti.Ideal.mem_inertia_iff_of_adjoin_singleton_eq_top`) an
 automorphism `σ` lies in `G_i` exactly when `σ θ − θ ∈ 𝔭 ^ (i + 1)`. For the conjugation
 `σ θ − θ = −2θ` generates `(2) = 𝔭²`, which lies in `𝔭²` but not in `𝔭³`.
@@ -39,7 +38,7 @@ trivial.
   `ramificationGroup_eq_bot`: `G_i = Gal(K/ℚ)` for `i ≤ 1`, and `G_i = 1` for `i ≥ 2`.
 * `TauCeti.NumberField.GaussianRationals.card_ramificationGroup_of_le_one`: `#G_0 = #G_1 = 2`.
 * `TauCeti.NumberField.GaussianRationals.finsum_card_ramificationGroup_sub_one`: the sum
-  `Σ_{i ≥ 0} (#G_i − 1)` of Hilbert's formula is the different exponent `v_𝔭(𝔡) = 2`.
+  `Σ_{i ≥ 0} (#G_i − 1)` of Hilbert's formula equals `2`, the known different exponent.
 
 ## References
 
@@ -75,7 +74,7 @@ private theorem two_mem_pow_iff {n : ℕ} : (2 : 𝓞 K) ∈ 𝔭 ^ n ↔ n ≤ 
 
 /-- **The dyadic ramification filtration of `ℚ(i)`.** An automorphism `σ` lies in the `i`-th
 ramification group of the prime above `2` exactly when `σ = 1` or `i ≤ 1`. -/
-theorem mem_ramificationGroup_iff {i : ℕ} {σ : K ≃ₐ[ℚ] K} :
+@[simp] theorem mem_ramificationGroup_iff {i : ℕ} {σ : K ≃ₐ[ℚ] K} :
     σ ∈ 𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i ↔ σ = 1 ∨ i ≤ 1 := by
   rw [ramificationGroup_def,
     TauCeti.Ideal.mem_inertia_iff_of_adjoin_singleton_eq_top (R := ℤ) (adjoin_eq_top hmin hgen)]
@@ -93,7 +92,8 @@ theorem mem_ramificationGroup_iff {i : ℕ} {σ : K ≃ₐ[ℚ] K} :
       rintro rfl
       have h2 : (2 : 𝓞 K) * θ = 0 := by linear_combination h - one_smul (K ≃ₐ[ℚ] K) θ
       exact (isUnit hmin).ne_zero ((mul_eq_zero.1 h2).resolve_left two_ne_zero)
-    rw [h, show -θ - θ = (-θ) * 2 by ring, unit_mul_mem_iff_mem _ (isUnit hmin).neg,
+    have hsub : -θ - θ = (-θ) * 2 := by ring
+    rw [h, hsub, unit_mul_mem_iff_mem _ (isUnit hmin).neg,
       two_mem_pow_iff hmin hgen 𝔭]
     simp only [hσ, false_or]
     omega
@@ -123,10 +123,8 @@ theorem card_ramificationGroup_of_le_one {i : ℕ} (hi : i ≤ 1) :
 ramification groups of the prime above `2` is the different exponent `v_𝔭(𝔡) = 2`, as the
 general `multiplicity_differentIdeal_eq_finsum_card_ramificationGroup_sub_one` predicts. -/
 theorem finsum_card_ramificationGroup_sub_one :
-    ∑ᶠ i : ℕ, (Nat.card (𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i) - 1) =
-      multiplicity 𝔭 (differentIdeal ℤ (𝓞 K)) := by
-  rw [multiplicity_differentIdeal_eq_two hmin hgen 𝔭,
-    finsum_eq_sum_of_support_subset (s := Finset.range 2) _ fun i hi ↦ ?_]
+    ∑ᶠ i : ℕ, (Nat.card (𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i) - 1) = 2 := by
+  rw [finsum_eq_sum_of_support_subset (s := Finset.range 2) _ fun i hi ↦ ?_]
   · rw [Finset.sum_range_succ, Finset.sum_range_one,
       card_ramificationGroup_of_le_one hmin hgen 𝔭 zero_le_one,
       card_ramificationGroup_of_le_one hmin hgen 𝔭 le_rfl]
