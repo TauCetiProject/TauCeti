@@ -345,7 +345,7 @@ theorem mem_ramificationGroup_one_of_valuation_pow_sub_one_lt_one (hϖ : Irreduc
   set c : 𝒪[L] := ⟨σ • (ϖ : L) / (ϖ : L), hcv⟩
   have hc : σ • ϖ = ϖ * c := Subtype.ext (by
     rw [coe_smul_integer, MulMemClass.coe_mul, mul_div_cancel₀ _ hϖ0])
-  -- In the residue field, `c̄ ^ p ^ k = 1` forces `c̄ = 1`.
+  -- In the residue field, the residue `x` of `c` satisfies `x ^ p ^ k = 1`, forcing `x = 1`.
   have hcp : c ^ p ^ k - 1 ∈ 𝓂[L] := by
     rw [mem_maximalIdeal, mem_nonunits_iff, Valuation.Integer.not_isUnit_iff_valuation_lt_one]
     simpa [c] using h
