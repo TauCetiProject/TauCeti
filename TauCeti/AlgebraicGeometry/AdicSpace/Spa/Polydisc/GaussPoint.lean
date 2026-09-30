@@ -106,6 +106,7 @@ private theorem toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : R) :
         PowerSeries.IsRestricted.subring (R := R) r) := by
   apply Subtype.ext
   simpa only [coe_toRestrictedSubring, coe_weightedC, MvPowerSeries.rename_C] using
+    -- `PowerSeries R` is `MvPowerSeries Unit R`; the constant series are definitionally equal.
     (show MvPowerSeries.C a = (PowerSeries.C a : PowerSeries R) from rfl)
 
 private theorem toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
@@ -117,6 +118,7 @@ private theorem toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
         PowerSeries.IsRestricted.subring (R := R) r) := by
   apply Subtype.ext
   simpa only [coe_toRestrictedSubring, coe_weightedX, MvPowerSeries.rename_X] using
+    -- Renaming sends the sole `Fin 1` variable to `Unit`; both series use that same variable.
     (show MvPowerSeries.X (finOneEquiv (0 : Fin 1)) =
       (PowerSeries.X : PowerSeries R) from rfl)
 

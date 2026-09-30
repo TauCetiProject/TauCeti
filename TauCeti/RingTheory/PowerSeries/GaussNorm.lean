@@ -510,6 +510,7 @@ noncomputable def gaussValuation (hc : 0 < c) :
     PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg⟩
   map_zero' := NNReal.eq <| PowerSeries.gaussNorm_zero norm c norm_zero
   map_one' := NNReal.eq <| by
+    -- The subring's one coerces to `PowerSeries.one`; `NNReal.eq` exposes the real Gauss norm.
     change (1 : PowerSeries R).gaussNorm norm c = 1
     rw [← map_one (PowerSeries.C : R →+* PowerSeries R)]
     exact (PowerSeries.gaussNorm_C
