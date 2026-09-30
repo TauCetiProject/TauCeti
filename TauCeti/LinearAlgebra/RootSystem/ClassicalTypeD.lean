@@ -94,15 +94,15 @@ private lemma typeDPairVector_dotProduct_self (p : TypeDPair n) :
     typeDPairVector p ⬝ᵥ typeDPairVector p = 2 := by
   have hp : p.val.1 ≠ p.val.2 := p.property
   by_cases h : p.val.1 < p.val.2
-  · simp [typeDPairVector, h, dotProduct_sub, dotProduct_single, hp]
+  · simp [typeDPairVector, h, hp]
   · have h' : p.val.2 ≠ p.val.1 := Ne.symm hp
-    simp [typeDPairVector, h, dotProduct_add, dotProduct_single, hp, h']
+    simp [typeDPairVector, h, hp, h']
 
 private lemma typeDRawVector_dotProduct_self (r : TypeDRawIndex n) :
     typeDRawVector r ⬝ᵥ typeDRawVector r = 2 := by
   by_cases h : r.1 = 0
   · simpa [typeDRawVector, h] using typeDPairVector_dotProduct_self r.2
-  · simpa [typeDRawVector, h, neg_dotProduct, dotProduct_neg] using
+  · simpa [typeDRawVector, h] using
       typeDPairVector_dotProduct_self r.2
 
 /-- The integral vectors of squared length two. For `n ≥ 2`, these are exactly the classical
@@ -119,16 +119,16 @@ private lemma support_typeDPairVector (p : TypeDPair n) :
   by_cases hlt : p.val.1 < p.val.2
   · simp only [typeDPairVector, ite_eq_left hlt]
     by_cases hi : i = p.val.1 <;> by_cases hj : i = p.val.2 <;>
-      simp_all [Function.mem_support]
+      simp_all
   · simp only [typeDPairVector, ite_eq_right hlt]
     by_cases hi : i = p.val.1 <;> by_cases hj : i = p.val.2 <;>
-      simp_all [Function.mem_support]
+      simp_all
 
 private lemma support_typeDRawVector (r : TypeDRawIndex n) :
     Function.support (typeDRawVector r) = {r.2.val.1, r.2.val.2} := by
   by_cases h : r.1 = 0
   · simpa [typeDRawVector, h] using support_typeDPairVector r.2
-  · simpa [typeDRawVector, h, Function.support_neg] using support_typeDPairVector r.2
+  · simpa [typeDRawVector, h] using support_typeDPairVector r.2
 
 private lemma typeDRawVector_injective : Injective (typeDRawVector (n := n)) := by
   rintro ⟨s, p⟩ ⟨t, q⟩ h
@@ -145,7 +145,6 @@ private lemma typeDRawVector_injective : Injective (typeDRawVector (n := n)) := 
         simp [typeDRawVector, typeDPairVector, hlt, hp] at hv <;> simp_all
     · rfl
   · have hp : p.val.1 ≠ p.val.2 := p.property
-    have hq : q.val.1 ≠ q.val.2 := q.property
     have qeq : q = (⟨(p.val.2, p.val.1), Ne.symm hp⟩ : TypeDPair n) := by
       apply Subtype.ext
       exact Prod.ext hswap.2.symm hswap.1.symm
@@ -174,7 +173,6 @@ private lemma typeDRoot_sq_le_two (x : TypeDRoot n) (i : Fin n) : x.1 i ^ 2 ≤ 
 
 private lemma typeDRoot_support_card (x : TypeDRoot n) :
     (Finset.univ.filter fun i : Fin n => x.1 i ≠ 0).card = 2 := by
-  classical
   have hsquare : ∀ i : Fin n, x.1 i ^ 2 = if x.1 i = 0 then 0 else 1 := by
     intro i
     split_ifs with hi
@@ -213,7 +211,6 @@ private lemma exists_typeDRawRoot_eq_of_lt (x : TypeDRoot n) {a b : Fin n} (hab 
       simp [typeDRawRoot, typeDRawVector, typeDPairVector, hba, hx, Pi.single_neg]; abel⟩
 
 private lemma typeDRawRoot_surjective : Surjective (typeDRawRoot (n := n)) := by
-  classical
   intro x
   obtain ⟨a, b, hab, hsupp⟩ := Finset.card_eq_two.mp (typeDRoot_support_card x)
   have hamem : a ∈ Finset.univ.filter fun i : Fin n => x.1 i ≠ 0 := by
@@ -290,10 +287,12 @@ private lemma typeD_le_two_mul_mul (hn : 4 ≤ n) : n ≤ 2 * n * (n - 1) := by
 def typeDSimpleIndex (n : ℕ) (hn : 4 ≤ n) (i : Fin n) : Fin (2 * n * (n - 1)) :=
   Fin.castLE (typeD_le_two_mul_mul hn) i
 
+/-- The root index of the `i`-th simple root has value `i`. -/
 @[simp] lemma typeDSimpleIndex_val (hn : 4 ≤ n) (i : Fin n) :
     (typeDSimpleIndex n hn i : ℕ) = i := by
   simp [typeDSimpleIndex]
 
+/-- Distinct simple roots occupy distinct root indices. -/
 lemma typeDSimpleIndex_injective (hn : 4 ≤ n) : Injective (typeDSimpleIndex n hn) :=
   Fin.castLE_injective (typeD_le_two_mul_mul hn)
 
@@ -359,7 +358,7 @@ private lemma typeDRootEquiv_simple (hn : 4 ≤ n) (i : Fin n) :
   apply (typeDRawFinEquiv n (by omega)).injective
   rw [Equiv.apply_symm_apply, typeDRawFinEquiv_simple]
 
-/-! ## The pinned lattices -/
+/-! ## The Bourbaki simple roots -/
 
 /-- The Bourbaki-numbered simple roots of type `Dₙ` in classical orthogonal coordinates. -/
 def typeDSimpleRoot (n : ℕ) (hn : 4 ≤ n) (i : Fin n) : Fin n → ℤ :=
@@ -484,6 +483,8 @@ theorem det_typeDSimpleRoot_eq_two (hn : 4 ≤ n) : (Matrix.of (typeDSimpleRoot 
     simp [typeDSimpleRawIndex, typeDRawRoot, typeDRawVector, typeDPairVector,
       typeDSimpleRoot, hi, hlt]
 
+/-! ## Coordinates in the simple-root basis -/
+
 /-- The coordinate sum of a squared-length-two integral vector is even: it differs from
 `x ⬝ᵥ x = 2` by a sum of products of consecutive integers. -/
 theorem even_sum_typeDRoot (x : TypeDRoot n) : Even (∑ i : Fin n, x.1 i) := by
@@ -530,8 +531,6 @@ private def typeDDoubleCoweight (n : ℕ) (k : Fin n) : Fin n → ℤ := fun j =
 /-- The doubled fundamental coweights are dual to the simple roots, up to the factor two. -/
 private lemma typeDDoubleCoweight_dotProduct_typeDSimpleRoot (hn : 4 ≤ n) (k i : Fin n) :
     typeDDoubleCoweight n k ⬝ᵥ typeDSimpleRoot n hn i = if (k : ℕ) = (i : ℕ) then 2 else 0 := by
-  have hk := k.isLt
-  have hi' := i.isLt
   by_cases hi : (i : ℕ) + 1 < n
   · rw [typeDSimpleRoot_of_add_one_lt hn hi, dotProduct_sub, dotProduct_single, dotProduct_single]
     simp only [typeDDoubleCoweight, mul_one]
@@ -658,7 +657,7 @@ private lemma typeDAmbientReflection_apply (u : TypeDRoot n) (v : Fin n → ℤ)
 private lemma typeDAmbientReflection_dotProduct_self (u : TypeDRoot n) {v : Fin n → ℤ}
     (hv : v ⬝ᵥ v = 2) : typeDAmbientReflection u v ⬝ᵥ typeDAmbientReflection u v = 2 := by
   have h := reflect_vecMul_dotProduct_self Matrix.isSymm_one (u := u.1) (by simpa using u.2) v
-  simpa [typeDAmbientReflection_apply, Matrix.one_vecMul, hv] using h
+  simpa [typeDAmbientReflection_apply, hv] using h
 
 /-- Reflection of a type `Dₙ` root `v` in the root `u`. -/
 def typeDRootReflection (u v : TypeDRoot n) : TypeDRoot n :=
