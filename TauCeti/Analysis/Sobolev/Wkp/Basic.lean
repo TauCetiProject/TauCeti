@@ -268,6 +268,29 @@ theorem lowerOrderL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     lowerOrderL k u = lowerOrder k u :=
   (rfl)
 
+/-- The continuous projection to the first-order part of a positive-order Sobolev function. -/
+def firstOrderL : (k : ℕ) → Wkp mu Omega p (k + 1) →L[ℝ] W1p mu Omega p
+  | 0 => ContinuousLinearMap.id ℝ _
+  | k + 1 => (firstOrderL k).comp (lowerOrderL (k + 1))
+
+/-- Forget the derivatives above first order in a higher-order Sobolev function. -/
+def firstOrder (k : ℕ) (u : Wkp mu Omega p (k + 1)) : W1p mu Omega p :=
+  firstOrderL k u
+
+/-- Evaluating the continuous first-order projection equals `firstOrder`. -/
+theorem firstOrderL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    firstOrderL k u = firstOrder k u :=
+  (rfl)
+
+/-- The first-order part of a first-order Sobolev function is itself. -/
+@[simp] theorem firstOrder_zero (u : Wkp mu Omega p 1) : firstOrder 0 u = u := by
+  simp only [firstOrder, firstOrderL, ContinuousLinearMap.id_apply]
+
+/-- Forgetting one derivative before taking the first-order part has no effect. -/
+@[simp] theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
+    firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) := by
+  simp only [firstOrder, firstOrderL, lowerOrder, ContinuousLinearMap.comp_apply]
+
 /-- The continuous projection to the highest weak derivative of a positive-order Sobolev
 function.  For `W^{k+1,p}` its target is `Lᵖ(Ω; IteratedGradient E k)`. -/
 def iteratedGradientL (k : ℕ) : Wkp mu Omega p (k + 1) →L[ℝ]
@@ -296,6 +319,18 @@ def value (k : ℕ) (u : Wkp mu Omega p k) : Lp ℝ p (mu.restrict Omega) :=
 @[simp]
 theorem valueL_apply (k : ℕ) (u : Wkp mu Omega p k) : valueL k u = value k u :=
   (rfl)
+
+/-- The value component preserves addition. -/
+@[simp]
+theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
+    value k (u + v) = value k u + value k v := by
+  simpa only [← valueL_apply] using (valueL k).map_add u v
+
+/-- The value component preserves scalar multiplication. -/
+@[simp]
+theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
+    value k (c • u) = c • value k u := by
+  simpa only [← valueL_apply] using (valueL k).map_smul c u
 
 @[simp]
 theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
@@ -326,6 +361,18 @@ theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
     -- `W1p.gradient` is sealed, so this boundary identification uses its application theorem.
     simpa only [iteratedGradient, iteratedGradientL, sobolevStage, firstSobolevStage] using
       W1p.gradientL_apply u
+
+/-- Forgetting higher derivatives preserves the `Lᵖ` value. -/
+@[simp] theorem value_firstOrder (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    W1p.value (firstOrder k u) = value (k + 1) u := by
+  induction k with
+  | zero => exact (value_one u).symm
+  | succ k ih =>
+      calc
+        W1p.value (firstOrder (k + 1) u) =
+            value (k + 1) (lowerOrder (k + 1) u) := by
+              rw [firstOrder_succ, ih]
+        _ = value (k + 1 + 1) u := (value_succ (k + 1) u).symm
 
 /-- The highest derivative projection is the one stored in the corresponding recursive stage. -/
 theorem iteratedGradient_eq_sobolevStage_iteratedGradientL
@@ -437,6 +484,15 @@ theorem norm_iteratedGradient_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
       simpa only [iteratedGradient_succ] using WeakDerivStep.norm_weakFDeriv_le
         (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
+/-- At order at least two, the squared graph norm is the sum of the squared norms of
+the lower-order component and highest weak derivative. -/
+theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two (k : ℕ)
+    (u : Wkp mu Omega p (k + 2)) :
+    ‖u‖ ^ 2 = ‖lowerOrder (k + 1) u‖ ^ 2 + ‖iteratedGradient (k + 1) u‖ ^ 2 := by
+  simpa only [lowerOrder_succ, iteratedGradient_succ] using
+    WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
+
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative. -/
 theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
@@ -447,9 +503,7 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
       simpa only [lowerOrder_zero, iteratedGradient_zero] using
         W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u
   | succ k =>
-      simpa only [lowerOrder_succ, iteratedGradient_succ] using
-        WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
-          (sobolevStage (mu := mu) (Omega := Omega) (p := (2 : ENNReal)) k).iteratedGradientL u
+      exact norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
 
 end Wkp
 

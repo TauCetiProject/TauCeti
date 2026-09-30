@@ -46,6 +46,8 @@ localization arguments need.
   components, `ψ u` and `ψ ∇u + u ∇ψ`.
 * `TauCeti.W1p.norm_contDiffSMul_le`: the bound `‖ψ u‖ ≤ 2 M ‖u‖`.
 * `TauCeti.W1p.contDiffSMulL`: the same map, bundled as a continuous linear operator.
+* `TauCeti.W1p.norm_gradient_contDiffSMul_sq_le`: at exponent two, the weighted bound
+  `‖∇(ψ u)‖₂² ≤ 2 ∫ ψ² ‖∇u‖² + 2 ∫ ‖∇ψ‖² u²`.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule`: it preserves `W^{1,p}_0(Ω)`, the closure of
   `C_c^∞(Ω)`.
 
@@ -262,6 +264,48 @@ theorem W1p.contDiffSMulL_apply (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
     W1p.contDiffSMulL psi hpsi hM hpsiM hgradM u
       = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u :=
   (rfl)
+
+/-! ### The `L²` Leibniz estimate -/
+
+/-- **The `L²` Leibniz estimate.** At exponent two, the gradient `ψ ∇u + u ∇ψ` of `ψ u` satisfies
+
+`‖∇(ψ u)‖₂² ≤ 2 ∫_Ω ψ² ‖∇u‖² + 2 ∫_Ω ‖∇ψ‖² u²`.
+
+Unlike `TauCeti.W1p.norm_contDiffSMul_le`, the two terms keep their weights `ψ²` and `‖∇ψ‖²`,
+which is the form in which energy estimates such as Caccioppoli's inequality are applied to a
+localized function. -/
+theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
+    (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
+    (u : W1p mu Omega 2) :
+    ‖W1p.gradient (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)‖ ^ 2 ≤
+      2 * ∫ x in Omega, psi x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu +
+        2 * ∫ x in Omega, ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2 ∂mu := by
+  have hmem := ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet
+  have hI1 : Integrable (fun x => psi x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
+    (W1p.integrable_norm_gradient_sq u).bdd_mul (hpsi.continuous.pow 2).aestronglyMeasurable
+      (c := M ^ 2) (hmem.mono fun x hx => by
+        rw [Real.norm_eq_abs, abs_pow]
+        exact pow_le_pow_left₀ (abs_nonneg _) (hpsiM x hx) 2)
+  have hI2 : Integrable (fun x => ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
+    (W1p.integrable_value_sq u).bdd_mul
+      ((ContDiff.continuous_gradient hpsi).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
+      (hmem.mono fun x hx => by
+        rw [Real.norm_eq_abs, abs_pow, abs_norm]
+        exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x hx) 2)
+  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, ← integral_const_mul,
+    ← integral_const_mul, ← integral_add (hI1.const_mul 2) (hI2.const_mul 2)]
+  refine integral_mono_ae (W1p.integrable_norm_gradient_sq _)
+    ((hI1.const_mul 2).add (hI2.const_mul 2)) ?_
+  filter_upwards [W1p.gradient_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx
+  have htri := norm_add_le (psi x • W1p.gradient u x) (W1p.value u x • ∇ psi x)
+  rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs] at htri
+  rw [hx]
+  have h1 : |psi x| ^ 2 = psi x ^ 2 := sq_abs _
+  have h2 : |W1p.value u x| ^ 2 = W1p.value u x ^ 2 := sq_abs _
+  nlinarith [norm_nonneg (psi x • W1p.gradient u x + W1p.value u x • ∇ psi x),
+    abs_nonneg (psi x), abs_nonneg (W1p.value u x), norm_nonneg (W1p.gradient u x),
+    norm_nonneg (∇ psi x),
+    sq_nonneg (|psi x| * ‖W1p.gradient u x‖ - |W1p.value u x| * ‖∇ psi x‖)]
 
 /-! ### The zero-boundary subspace is preserved -/
 

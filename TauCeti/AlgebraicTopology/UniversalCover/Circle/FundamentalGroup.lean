@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
 public import TauCeti.Topology.Circle.AddCircle
+public import TauCeti.Topology.Circle.Degree
 
 /-!
 # Fundamental groups of additive and complex circles
@@ -55,6 +56,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
   going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
+  `Circle.degree`, computed from angle lifts.
 
 ## References
 
@@ -304,6 +307,68 @@ theorem fundamentalGroupMulEquiv_def (x : Circle) :
           (AddCircle.fundamentalGroupMulEquivZero (2 * Real.pi) Real.two_pi_pos.ne')) :=
   (rfl)
 
+/-- **The angle lift computes the monodromy.** Transport a loop `γ` at `1 : Circle` to
+`AddCircle (2 * π)` along `AddCircle.homeomorphCircle`. Its monodromy carries the lift `0` of the
+basepoint to the endpoint of any continuous angle lift `θ` of `γ` starting at `0`. -/
+private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle) 1) {a : ℝ}
+    (θ : Path (0 : ℝ) a) (hθ : ∀ t, exp (θ t) = γ t) :
+    ((AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy
+      ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+        (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
+          (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne'))
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) ⟨0, by simp⟩ : ℝ) = a := by
+  -- The additive-circle point of an angle `r` corresponds to `exp r` on the complex circle.
+  have hcoe (r : ℝ) : ((r : ℝ) : AddCircle (2 * Real.pi)) =
+      (AddCircle.homeomorphCircle Real.two_pi_pos.ne').symm (exp r) := by
+    rw [Homeomorph.eq_symm_apply, AddCircle.homeomorphCircle_apply, AddCircle.toCircle_apply_mk]
+    congr 1
+    field_simp
+  have ha : a ∈ ((↑) : ℝ → AddCircle (2 * Real.pi)) ⁻¹' {0} := by
+    rw [Set.mem_preimage, Set.mem_singleton_iff, hcoe, ← θ.target, hθ, γ.target,
+      AddCircle.homeomorphCircle_symm_one]
+  refine congrArg Subtype.val ((AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy_eq_of_map_eq
+    (ey := ⟨a, ha⟩) (Path.Homotopic.Quotient.mk θ) ?_)
+  rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
+    ← Path.Homotopic.Quotient.mk_map]
+  -- Casting a path class casts its representative, and `Path.cast` does not change the
+  -- underlying function. Both are unfolded definitionally rather than by `mk_cast` and
+  -- `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are fibre
+  -- memberships, which `rw` and `simp` cannot see as the endpoint equations `cast` expects.
+  refine congrArg Path.Homotopic.Quotient.mk (Path.ext (funext fun t => ?_))
+  have ht : ((θ t : ℝ) : AddCircle (2 * Real.pi)) =
+      (AddCircle.homeomorphCircle Real.two_pi_pos.ne').symm (γ t) := by
+    rw [hcoe, hθ]
+  exact ht
+
+/-- **The degree at the basepoint `1`.** The additive-circle computation, transported to `Circle`
+along `AddCircle.homeomorphCircle`, sends the class of a loop at `1` to its degree. -/
+private theorem homeomorphMulEquivOfEq_trans_fundamentalGroupMulEquivZero_fromPath
+    (γ : Path (1 : Circle) 1) :
+    ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+          (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
+          (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne')).trans
+      (AddCircle.fundamentalGroupMulEquivZero (2 * Real.pi) Real.two_pi_pos.ne'))
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
+      Multiplicative.ofAdd (degree γ) := by
+  rw [MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
+  obtain ⟨θ, hθ, hθ0⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap 0 (by simp)
+  have hθγ (t : unitInterval) : exp (θ t) = γ t := congr_fun hθ t
+  rw [monodromy_homeomorphMulEquivOfEq_fromPath γ ⟨θ, hθ0, rfl⟩ hθγ]
+  simpa [hθ0, zsmul_eq_mul] using sub_eq_degree_mul γ θ.continuous hθγ
+
+/-- **The isomorphism `π₁(S¹) ≃* ℤ` is the degree.** The class of a loop is sent to its degree
+`Circle.degree`, the number of full turns of any continuous angle lift. -/
+theorem fundamentalGroupMulEquiv_fromPath {x : Circle} (γ : Path x x) :
+    fundamentalGroupMulEquiv x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
+      Multiplicative.ofAdd (degree γ) := by
+  -- Changing the basepoint to `1` along a path `p` replaces `γ` by `p⁻¹ ⬝ γ ⬝ p`, of the same
+  -- degree.
+  rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
+    FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  exact (homeomorphMulEquivOfEq_trans_fundamentalGroupMulEquivZero_fromPath _).trans
+    (congrArg Multiplicative.ofAdd (degree_symm_trans_trans γ _))
+
 /-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
 def expLoop : Path (1 : Circle) 1 where
   toFun t := Circle.exp (2 * Real.pi * t)
@@ -322,48 +387,9 @@ theorem fundamentalGroupMulEquiv_expLoop :
     fundamentalGroupMulEquiv 1
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
       Multiplicative.ofAdd 1 := by
-  have map_conj (e : FundamentalGroup Circle 1 ≃* Multiplicative ℤ)
-      (a x : FundamentalGroup Circle 1) : e (a * x * a⁻¹) = e x := by
-    simp only [map_mul, map_inv]
-    rw [mul_comm (e a) (e x)]
-    simp
-  -- The basepoint change at `1` is along a loop, hence an inner automorphism, which the
-  -- commutative target does not see.
-  rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
-    FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj, MulAut.conj_apply,
-    map_conj, MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
-  -- On `AddCircle (2π)` the loop lifts to `t ↦ 2πt` in `ℝ`, which ends at `1 • 2π`.
-  have hlift : (AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy
-      ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
-        (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
-          (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne'))
-        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop))) ⟨0, by simp⟩ =
-      ⟨2 * Real.pi, by simp⟩ := by
-    refine (AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy_eq_of_map_eq
-      (Path.Homotopic.Quotient.mk
-        { toFun := fun t => 2 * Real.pi * (t : ℝ)
-          continuous_toFun := by fun_prop
-          source' := by simp
-          target' := by simp }) ?_
-    rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
-      ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_map,
-      ← Path.Homotopic.Quotient.mk_cast]
-    congr 1
-    ext t
-    have ht : ((2 * Real.pi * t : ℝ) : AddCircle (2 * Real.pi)) =
-        (AddCircle.homeomorphCircle Real.two_pi_pos.ne').symm
-          (Circle.exp (2 * Real.pi * t)) := by
-      rw [Homeomorph.eq_symm_apply, AddCircle.homeomorphCircle_apply,
-        AddCircle.toCircle_apply_mk]
-      congr 1
-      field_simp
-    -- `Path.cast` does not change the underlying function. It is unfolded by `exact` rather than
-    -- by `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are
-    -- fibre memberships, which `simp` cannot see as the endpoint equations `Path.cast` expects.
-    exact ht
-  rw [hlift]
-  simp
+  rw [fundamentalGroupMulEquiv_fromPath,
+    degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
+      (n := 1) (by simp)]
 
 end Circle
 

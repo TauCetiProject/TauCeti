@@ -163,11 +163,11 @@ private theorem eLpNorm_sub_le_of_approx_of_dist_bdd_on {K : Set α}
     rw [hdecomp]
     refine (eLpNorm_add_le hp).trans ?_
     refine add_le_add ?_ ((eLpNorm_add_le hp).trans (add_le_add ?_ ?_))
-    · refine (eLpNorm_indicator_le _ hK).trans ?_
+    · refine (eLpNorm_indicator_le _ hK.nullMeasurableSet).trans ?_
       rw [← neg_sub A f, eLpNorm_neg]
     · exact eLpNorm_indicator_sub_le_of_dist_bdd mu hp' hK.nullMeasurableSet hη
         ((hA.sub hA').indicator hK) hmid
-    · exact eLpNorm_indicator_le _ hK
+    · exact eLpNorm_indicator_le _ hK.nullMeasurableSet
   calc
     eLpNorm (f - f') p mu
         ≤ eLpNorm (K.indicator (f - f')) p mu + eLpNorm (Kᶜ.indicator (f - f')) p mu := by
@@ -207,7 +207,7 @@ private theorem eLpNorm_indicator_compl_le_of_approx_of_bound
       abel
     rw [hsplit']
     refine (eLpNorm_add_le hp).trans (add_le_add ?_ ?_)
-    · refine (eLpNorm_indicator_le _ (hK.compl.inter hs)).trans ?_
+    · refine (eLpNorm_indicator_le _ (hK.compl.inter hs).nullMeasurableSet).trans ?_
       rw [← neg_sub A f, eLpNorm_neg]
       exact happrox
     · have hA' : eLpNorm ((Kᶜ ∩ s).indicator A) p mu ≤

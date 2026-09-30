@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
@@ -63,12 +64,18 @@ are strictly larger than `Kˣ`.
 * `TauCeti.baseUnitsEquivInvariants`: the isomorphism `Kˣ ≅ H⁰(G_K, (Kˢ)ˣ)`.
 * `TauCeti.embeddedUnitsInvariants`: for a `K`-embedding `σ : L →ₐ[K] Kˢ`, a unit `b` of `L` as
   the invariant `σ b` of `(Kˢ)ˣ` under the subgroup of `G_K` fixing `σ(L)`.
+* `TauCeti.embeddedUnitsEquivInvariants`: the isomorphism `Lˣ ≅ H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ)`.
+  For normal `L/K` it intertwines the action of `σ.restrictNormalHom g` with that of `g`
+  (`TauCeti.embeddedUnitsEquivInvariants_restrictNormalHom_smul`, with the `simp` form
+  `TauCeti.coe_embeddedUnitsInvariants_map_restrictNormalHom`).
 
 ## Main results
 
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
+* `TauCeti.mem_H0_fixingSubgroup_unitsCoeff_iff`: a unit of `Kˢ` fixed by the subgroup fixing
+  `σ(L)` comes from `Lˣ`.
 
 ## References
 
@@ -310,6 +317,84 @@ theorem embeddedUnitsInvariants_mul (a b : Lˣ) :
     embeddedUnitsInvariants K L σ (a * b) =
       embeddedUnitsInvariants K L σ a + embeddedUnitsInvariants K L σ b :=
   Subtype.ext <| Additive.toMul.injective <| map_mul (Units.map σ.toRingHom.toMonoidHom) a b
+
+variable {K L σ} in
+/-- **A unit of `Kˢ` fixed by `Gal(Kˢ/σ(L))` comes from `Lˣ`.** This is the fixed-field theorem
+`InfiniteGalois.fixedField_fixingSubgroup` for the intermediate field `σ(L)`, read on units. -/
+theorem mem_H0_fixingSubgroup_unitsCoeff_iff {u : UnitsCoeff K} :
+    u ∈ H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) ↔
+      ∃ b : Lˣ, Units.map σ.toRingHom.toMonoidHom b = u.toMul := by
+  refine ⟨fun hu => ?_, ?_⟩
+  · have hfix : ((u.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) ∈
+        IntermediateField.fixedField σ.fieldRange.fixingSubgroup :=
+      (IntermediateField.mem_fixedField_iff _ _).2 fun g hg => by
+        have h := (FixedPoints.mem_addSubgroup _ _ _).1 hu ⟨g, hg⟩
+        rw [Subgroup.smul_def (α := UnitsCoeff K)] at h
+        have h' := congrArg (fun v : UnitsCoeff K =>
+          ((v.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)) h
+        simp only [Additive.toMul_smul] at h'
+        simpa [AlgEquiv.smul_units_def] using h'
+    rw [InfiniteGalois.fixedField_fixingSubgroup] at hfix
+    obtain ⟨b, hb⟩ := hfix
+    have hb0 : b ≠ 0 := by
+      rintro rfl
+      exact u.toMul.ne_zero (by simpa using hb.symm)
+    exact ⟨Units.mk0 b hb0, Units.ext hb⟩
+  · rintro ⟨b, hb⟩
+    have hu : u = embeddedUnitsInvariants K L σ b :=
+      Additive.toMul.injective (hb.symm.trans (toMul_coe_embeddedUnitsInvariants K L σ b).symm)
+    rw [hu]
+    exact (embeddedUnitsInvariants K L σ b).2
+
+/-- **The invariants of `(Kˢ)ˣ` under `Gal(Kˢ/σ(L))` are the units of `L`**, that is
+`H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ) ≅ Lˣ`: the additive equivalence whose forward map is
+`embeddedUnitsInvariants`. For `σ(L) = K` this is `TauCeti.baseUnitsEquivInvariants`. -/
+def embeddedUnitsEquivInvariants :
+    Additive Lˣ ≃+ H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) :=
+  AddEquiv.ofBijective
+    ({ toFun := fun b => embeddedUnitsInvariants K L σ b.toMul
+       map_zero' := embeddedUnitsInvariants_one K L σ
+       map_add' := fun a b => embeddedUnitsInvariants_mul K L σ a.toMul b.toMul } :
+      Additive Lˣ →+ H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K))
+    ⟨fun a b h => Additive.toMul.injective <| Units.map_injective σ.toRingHom.injective <| by
+        simpa using congrArg (fun v : H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) =>
+          ((v : UnitsCoeff K).toMul : (SeparableClosure K)ˣ)) h,
+      fun u => by
+        obtain ⟨b, hb⟩ := mem_H0_fixingSubgroup_unitsCoeff_iff.1 u.2
+        exact ⟨Additive.ofMul b, Subtype.ext (Additive.toMul.injective
+          ((toMul_coe_embeddedUnitsInvariants K L σ b).trans hb))⟩⟩
+
+/-- `embeddedUnitsEquivInvariants` sends a unit of `L` to its invariant `embeddedUnitsInvariants`.
+-/
+@[simp]
+theorem embeddedUnitsEquivInvariants_apply (b : Additive Lˣ) :
+    embeddedUnitsEquivInvariants K L σ b = embeddedUnitsInvariants K L σ b.toMul :=
+  (rfl)
+
+/-- **`embeddedUnitsInvariants` is Galois-equivariant**, in `simp`-normal form: for normal `L/K`,
+embedding by `σ` turns the restriction `σ.restrictNormalHom g` acting on `Lˣ` into the action of
+`g` on `(Kˢ)ˣ`. -/
+@[simp]
+theorem coe_embeddedUnitsInvariants_map_restrictNormalHom [Normal K L]
+    (g : AbsoluteGaloisGroup K) (b : Lˣ) :
+    (embeddedUnitsInvariants K L σ (Units.map (σ.restrictNormalHom g : L →* L) b) :
+        UnitsCoeff K) =
+      g • (embeddedUnitsInvariants K L σ b : UnitsCoeff K) := by
+  refine Additive.toMul.injective (Units.ext ?_)
+  rw [Additive.toMul_smul, toMul_coe_embeddedUnitsInvariants, toMul_coe_embeddedUnitsInvariants,
+    AlgEquiv.smul_units_def]
+  simp only [Units.coe_map]
+  exact σ.restrictNormalHom_commutes g b
+
+/-- **`embeddedUnitsEquivInvariants` is Galois-equivariant**: for normal `L/K`, embedding by `σ`
+turns the action of the restriction `σ.restrictNormalHom g` on `Lˣ` into the action of `g` on
+`(Kˢ)ˣ`. -/
+theorem embeddedUnitsEquivInvariants_restrictNormalHom_smul [Normal K L]
+    (g : AbsoluteGaloisGroup K) (b : Additive Lˣ) :
+    (embeddedUnitsEquivInvariants K L σ (Additive.ofMul (σ.restrictNormalHom g • b.toMul)) :
+        UnitsCoeff K) =
+      g • (embeddedUnitsEquivInvariants K L σ b : UnitsCoeff K) := by
+  simp
 
 end Embedded
 

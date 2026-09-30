@@ -14,7 +14,9 @@ public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 For `m` with `2 ≤ m`, `equivDihedral` identifies the spherical triangle group with
 signature `(2, 2, m)` with `DihedralGroup m`.  The reflection generators `x` and `y`
 correspond to `DihedralGroup.sr 1` and `DihedralGroup.sr 0`, respectively, and their product
-corresponds to the rotation `DihedralGroup.r 1`.
+corresponds to the rotation `DihedralGroup.r 1`. Such a group is finite, of order `2m`
+(`TauCeti.TriangleGroup.finite_two_two`), the dihedral row of the spherical triangle-group
+classification.
 -/
 
 public section
@@ -187,6 +189,14 @@ theorem natCard_two_two (m : ℕ) (hm : 2 ≤ m) :
     Nat.card (TriangleGroup 2 2 m) = Nat.card (DihedralGroup m) :=
       Nat.card_congr (equivDihedral m hm).toEquiv
     _ = 2 * m := DihedralGroup.nat_card
+
+/-- The dihedral spherical row: a signature `(2, 2, m)` with `2 ≤ m` gives a finite triangle
+group, the dihedral group of order `2m`. -/
+theorem finite_two_two (m : ℕ) (hm : 2 ≤ m) : Finite (TriangleGroup 2 2 m) := by
+  have hcard : 0 < Nat.card (TriangleGroup 2 2 m) := by
+    rw [natCard_two_two m hm]
+    omega
+  exact Nat.card_pos_iff.mp hcard |>.2
 
 end TriangleGroup
 

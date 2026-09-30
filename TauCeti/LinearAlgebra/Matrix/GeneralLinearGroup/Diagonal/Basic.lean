@@ -390,6 +390,21 @@ theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [Decidable
     MonoidHom.coe_ofClass]
   split_ifs <;> simp
 
+/-- Rescaling one column makes an invertible matrix have determinant one. For an empty index
+type, every invertible matrix already has determinant one. -/
+theorem exists_det_mul_diagGL_eq_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (P : GL ι k) :
+    ∃ u : ι → kˣ, Matrix.GeneralLinearGroup.det (P * diagGL u) = 1 := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · let _ := hι
+    have hP : Matrix.GeneralLinearGroup.det P = 1 := by
+      apply Units.ext
+      simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_isEmpty]
+    refine ⟨1, ?_⟩
+    simp [hP]
+  refine ⟨Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹, ?_⟩
+  rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' i, mul_inv_cancel]
+
 /-- If `P` intertwines `M` with a diagonal matrix, there is an intertwining matrix of determinant
 one, obtained in the nonempty case by rescaling one of the columns of `P`. -/
 theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q ι : Type*} [CommRing Q]
@@ -400,15 +415,8 @@ theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q ι : Type*} [CommRing Q]
     ∃ P' : GL ι k, Matrix.GeneralLinearGroup.det P' = 1 ∧
       M * Matrix.GeneralLinearGroup.map f P' =
         Matrix.GeneralLinearGroup.map f P' * diagGL t := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-  · let _ := hι
-    refine ⟨P, ?_, h⟩
-    apply Units.ext
-    rw [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_isEmpty]
-    rfl
-  let u : ι → kˣ := Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹
-  refine ⟨P * diagGL u, ?_, ?_⟩
-  · rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' i, mul_inv_cancel]
+  obtain ⟨u, hu⟩ := exists_det_mul_diagGL_eq_one P
+  refine ⟨P * diagGL u, hu, ?_⟩
   · have hcomm : Commute (diagGL t) (Matrix.GeneralLinearGroup.map f (diagGL u)) := by
       rw [map_diagGL]
       exact (Commute.all _ _).map diagGL

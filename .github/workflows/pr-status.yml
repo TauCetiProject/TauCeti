@@ -1,0 +1,153 @@
+name: PR status
+
+# Keeps every PR's status label and its Zulip post current, reconciling in batches.
+#
+# This used to be three per-event workflows (pr-labels.yml's per-event jobs, zulip-pr.yml and
+# zulip-pr-status.yml): one GitHub-hosted job for every label, comment, push and build event on every
+# PR, over a thousand an hour, each spending most of its short life on setup. Those jobs competed with
+# PR builds for the organisation's twenty GitHub-hosted slots.
+#
+# Now the events only wake this workflow. Its concurrency group is global, and GitHub admits one run
+# at a time and keeps only the newest waiting run, cancelling the others before they take a runner.
+# Each run reconciles every PR touched since the previous successful run started
+# (scripts/pr_status/batch.py), so an event whose own run was collapsed away is still covered by the
+# run that replaced it. The price is latency: an update waits out a one-minute debounce (see the
+# job's `environment`) and then the run ahead of it, typically one to three minutes in all. A run that fails (a rate limit, a configuration error) is not counted, so the
+# next one repeats its window; a single PR that fails is retried by the next run.
+# pr-labels.yml keeps the hourly reconcile-all sweep of labels and the manual re-sync.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, closed, edited, converted_to_draft, ready_for_review, labeled, unlabeled]
+  workflow_run:
+    workflows: ["pr-build", "Review"]
+    types: [requested, completed]
+  issue_comment:
+    types: [created, edited, deleted]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  reconcile:
+    # The same events the per-event jobs reacted to; anything else never takes a runner.
+    if: >
+      github.repository == 'TauCetiProject/TauCeti' && (
+        (github.event_name == 'pull_request_target'
+          && (github.event.action != 'edited' || github.event.changes.base != null))
+        || (github.event_name == 'workflow_run'
+            && ((github.event.workflow_run.name == 'pr-build'
+                 && github.event.workflow_run.event == 'pull_request_target')
+                || (github.event.workflow_run.name == 'Review' && github.event.action == 'completed')))
+        || (github.event_name == 'issue_comment'
+            && github.event.issue.pull_request != null
+            && (contains(github.event.comment.body, 'tauceti-scoreboard')
+                || contains(github.event.comment.body, 'tauceti-review-in-progress')
+                || contains(github.event.changes.body.from, 'tauceti-scoreboard')
+                || contains(github.event.changes.body.from, 'tauceti-review-in-progress')))
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # On the job, not the workflow: a workflow-level group admits runs before the `if` above is
+    # evaluated, so an irrelevant event could displace the one pending run that mattered and then
+    # skip. Here only runs that pass the filter enter the group. (Nothing else may share it: GitHub
+    # replaces a pending member with the newest, so a different kind of job would cancel a batch.)
+    concurrency:
+      group: pr-status
+      cancel-in-progress: false
+    # A one-minute debounce that holds no runner. The pr-status-debounce environment's only
+    # protection rule is a one-minute wait timer; a job waiting on it holds the concurrency group
+    # but no runner, while newer events collapse into the one pending run behind it. Without it,
+    # events arriving continuously kept one runner busy back to back; with it, a batch runs at most
+    # about every two minutes (the wait plus the batch) and covers everything that arrived meanwhile.
+    # `deployment: false` keeps the wait timer without recording a deployment for every batch.
+    # Keep secrets out of this environment: they would become available to the job.
+    environment:
+      name: pr-status-debounce
+      deployment: false
+    steps:
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-issues: write
+          permission-pull-requests: write
+          permission-contents: read
+          # No `actions` permission: the App does not hold it, and the run listings batch.py reads
+          # are public for this public repository.
+      # The trusted base checkout: the scripts that run are the ones on the target branch, never the
+      # version proposed by the PR.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/pr_status
+          persist-credentials: false
+      - name: Checkout the pinned merge policy (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
+      # Everything since the previous successful run started, less two minutes for clock skew and
+      # for events that landed while it was listing. A run that fails (any label or Zulip failure, a
+      # rate limit) is not successful, so the next run covers its window again. Only before the very
+      # first successful run is there no watermark; then the last two hours. A lookup that fails fails
+      # the run rather than guessing. Never more than 48 hours back.
+      - name: Find where the previous run started
+        id: since
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          prev=$(gh api "repos/${{ github.repository }}/actions/workflows/pr-status.yml/runs?status=success&per_page=1" \
+                   --jq '.workflow_runs[0] | "\(.run_started_at // "") \(.id // "")"')
+          last=${prev% *}
+          id=${prev#* }
+          # The PRs the previous successful run could not reconcile, to retry now. Best-effort: a
+          # missing artifact means nothing to retry.
+          if [ -n "$id" ]; then
+            gh run download "$id" -R "${{ github.repository }}" -n pr-status-retry -D "$RUNNER_TEMP/retry-in" \
+              2>/dev/null || true
+          fi
+          python3 - "$last" >> "$GITHUB_OUTPUT" <<'EOF'
+          import datetime as dt, sys
+          now = dt.datetime.now(dt.timezone.utc)
+          if sys.argv[1]:
+              t = dt.datetime.fromisoformat(sys.argv[1].replace("Z", "+00:00")) - dt.timedelta(minutes=2)
+          else:
+              t = now - dt.timedelta(hours=2)
+          t = max(t, now - dt.timedelta(hours=48))
+          print("since=" + t.strftime("%Y-%m-%dT%H:%M:%SZ"))
+          EOF
+
+      - name: Reconcile labels and Zulip posts
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
+          ZULIP_SITE: https://leanprover.zulipchat.com
+          SINCE: ${{ steps.since.outputs.since }}
+          # The event's own PR, when its payload names one, goes first.
+          PR: ${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}
+        # From the repository root: readiness finds the pinned policy at .tauceti-review/runner.
+        run: |
+          args=(--since "$SINCE" --retry-in "$RUNNER_TEMP/retry-in/retry.json" --retry-out "$RUNNER_TEMP/retry/retry.json")
+          mkdir -p "$RUNNER_TEMP/retry"
+          case "$PR" in ''|*[!0-9]*) ;; *) args+=(--pr "$PR") ;; esac
+          python3 scripts/pr_status/batch.py "${args[@]}"
+
+      - name: Hand the PRs to retry to the next run
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-status-retry
+          path: ${{ runner.temp }}/retry/retry.json
+          if-no-files-found: ignore
+          retention-days: 3

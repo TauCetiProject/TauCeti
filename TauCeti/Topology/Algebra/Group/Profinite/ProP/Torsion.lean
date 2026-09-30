@@ -102,7 +102,7 @@ theorem finite_torsion (hA : IsProP p A) (hfg : IsTopologicallyFinitelyGenerated
     Finite (torsion A) := by
   obtain ⟨r, m, e, -, ⟨f⟩⟩ := hA.exists_continuousMulEquiv_pi_padicInt_prod_pi_zmod hfg
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  exact Finite.of_equiv _ (torsionMulEquiv isAddTorsion_of_finite f.toMulEquiv).symm.toEquiv
+  exact finite_torsion_of_mulEquiv f.toMulEquiv
 
 /-- The torsion subgroup of a topologically finitely generated abelian pro-`p` group is closed. -/
 theorem isClosed_torsion (hA : IsProP p A) (hfg : IsTopologicallyFinitelyGenerated A) :

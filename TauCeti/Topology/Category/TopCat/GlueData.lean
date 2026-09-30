@@ -25,7 +25,9 @@ open CategoryTheory Set Topology
 
 namespace TopCat.GlueData
 
-variable (D : TopCat.GlueData)
+universe u
+
+variable (D : TopCat.GlueData.{u})
 
 /-- The relation between the `i`-th and `j`-th charts: two points are related when the gluing
 identifies their images. -/

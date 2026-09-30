@@ -272,7 +272,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
       exact tendsto_const_nhds.congr fun n ↦ (hgzero n x fun hmem ↦ hx (hVsub n hmem)).symm
   have hlim : eLpNorm (fun x ↦ W1p.value u x - b) p (mu.restrict Omega) ≤
       atTop.liminf fun n ↦ eLpNorm (g n) p mu := by
-    rw [← eLpNorm_indicator_eq_eLpNorm_restrict Omega.isOpen.measurableSet]
+    rw [← eLpNorm_indicator_eq_eLpNorm_restrict Omega.isOpen.measurableSet.nullMeasurableSet]
     exact Lp.eLpNorm_lim_le_liminf_eLpNorm hgmeas
       ((Omega : Set E).indicator fun x ↦ W1p.value u x - b)
       ((hsm.sub stronglyMeasurable_const).indicator
@@ -280,7 +280,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
   have hbound : ∀ᶠ n in atTop, eLpNorm (g n) p mu ≤
       ENNReal.ofReal (K / mu.real (S ∩ V n)) * ‖W1p.gradient u‖ₑ := by
     filter_upwards [hmeasR.eventually (lt_mem_nhds hSRpos)] with n hn
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict (hVopen n).measurableSet]
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict (hVopen n).measurableSet.nullMeasurableSet]
     refine hpiece n fun h0 ↦ ?_
     rw [measureReal_def, h0] at hn
     simp at hn

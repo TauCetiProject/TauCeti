@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.TransferInstance
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.GroupWithZero.Action.Hom
+public import TauCeti.Algebra.Module.ZMod.Extend
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 
 /-!
@@ -21,7 +23,9 @@ which is the action for which evaluation `(φ, m) ↦ φ m` is equivariant, in t
 `homAction g φ (g • m) = g • φ m`. This file constructs that action and proves that it is again a
 continuous action on a discrete module when `M` is finite discrete and `N` is discrete: the set of
 group elements fixing a given `φ` is open, and over a compact `G` it contains an open normal
-subgroup.
+subgroup. The internal hom is contravariantly functorial in its source, by precomposition with an
+equivariant homomorphism, and `Hom(-, N)` is exact on the modules killed by a prime `p`, for every
+`N`: this is the algebra behind the dual of a short exact sequence of finite `𝔽_p[G]`-modules.
 
 ## Main definitions
 
@@ -34,6 +38,10 @@ subgroup.
 * `TauCeti.InternalHom.evalPairing`: the evaluation pairing, the additive homomorphism
   `InternalHom G M N →+ (M →+ N)` whose value at `φ` and `m` is the evaluation `φ m`; its
   equivariance is `TauCeti.InternalHom.evalPairing_equivariant`.
+* `TauCeti.InternalHom.precomp`: precomposition with an equivariant homomorphism `f : M →+[G] M'`,
+  the equivariant homomorphism `InternalHom G M' N →+[G] InternalHom G M N`, with
+  `TauCeti.InternalHom.evalPairing_precomp` as its defining equation and the functor laws
+  `precomp_id` and `precomp_comp`.
 
 ## Main results
 
@@ -49,6 +57,12 @@ subgroup.
   what makes it again a discrete `G`-module for finite discrete `M` and discrete `N`.
 * `TauCeti.exists_openNormalSubgroup_homAction_eq_self`: over a compact topological group that
   set contains an open normal subgroup.
+* `TauCeti.InternalHom.precomp_injective`, `TauCeti.InternalHom.exact_precomp` and
+  `TauCeti.InternalHom.precomp_surjective`: `Hom(-, N)` takes a surjection to an injection, an
+  exact pair with surjective second map to an exact pair, and, when the target of the injection is
+  killed by a prime `p`, an injection to a surjection. The internal hom of finite modules is
+  finite, and it is killed by any natural number killing the codomain
+  (`TauCeti.InternalHom.nsmul_eq_zero`).
 
 ## Implementation notes
 
@@ -287,6 +301,12 @@ instance : TopologicalSpace (InternalHom G M N) := ⊥
 
 instance : DiscreteTopology (InternalHom G M N) := ⟨rfl⟩
 
+/-- The internal hom of two finite modules is finite: an additive homomorphism is determined by its
+underlying function. -/
+instance [Finite M] [Finite N] : Finite (InternalHom G M N) :=
+  Finite.of_injective (fun φ : InternalHom G M N => (φ.toAddMonoidHom : M → N))
+    fun _ _ h => InternalHom.ext (DFunLike.coe_injective h)
+
 section Additive
 
 variable (G) {N : Type*} [AddCommMonoid N]
@@ -327,6 +347,11 @@ theorem toAddMonoidHom_nsmul (n : ℕ) (φ : InternalHom G M N) :
 
 @[simp]
 theorem of_nsmul (n : ℕ) (φ : M →+ N) : of G (n • φ) = n • of G φ := rfl
+
+/-- A natural number killing the codomain kills the internal hom. -/
+theorem nsmul_eq_zero {n : ℕ} (hN : ∀ x : N, n • x = 0) (φ : InternalHom G M N) : n • φ = 0 := by
+  ext m
+  simp [hN]
 
 end Additive
 
@@ -436,6 +461,105 @@ theorem evalPairing_equivariant (g : G) (φ : InternalHom G M N) (m : M) :
 end Distrib
 
 end Action
+
+end InternalHom
+
+namespace InternalHom
+
+/-! ### Contravariant functoriality in the source -/
+
+section Precomp
+
+variable (G : Type*) [Group G] {M M' : Type*} [AddMonoid M] [AddMonoid M'] [DistribMulAction G M]
+  [DistribMulAction G M'] {N : Type*} [AddCommMonoid N] [DistribMulAction G N]
+
+/-- Precomposition with an equivariant homomorphism `f : M →+[G] M'`, as an equivariant homomorphism
+`InternalHom G M' N →+[G] InternalHom G M N`: the internal hom is contravariantly functorial in its
+source. Its values are characterized by `evalPairing_precomp`. -/
+def precomp (f : M →+[G] M') : InternalHom G M' N →+[G] InternalHom G M N where
+  toFun φ := of G (φ.toAddMonoidHom.comp (f : M →+ M'))
+  map_smul' g φ := by
+    ext m
+    simp [homAction_apply, map_smul]
+  map_zero' := rfl
+  map_add' _ _ := rfl
+
+variable {G}
+
+@[simp]
+theorem toAddMonoidHom_precomp (f : M →+[G] M') (φ : InternalHom G M' N) :
+    (precomp G f φ).toAddMonoidHom = φ.toAddMonoidHom.comp (f : M →+ M') := (rfl)
+
+/-- Precomposition is compatible with evaluation: `(φ ∘ f) m = φ (f m)`. Not a `simp` lemma, since
+`evalPairing_apply` already rewrites its left-hand side to `toAddMonoidHom_precomp`. -/
+theorem evalPairing_precomp (f : M →+[G] M') (φ : InternalHom G M' N) (m : M) :
+    evalPairing G (precomp G f φ) m = evalPairing G φ (f m) := (rfl)
+
+@[simp]
+theorem precomp_id : precomp G (DistribMulActionHom.id G : M →+[G] M) (N := N) =
+    DistribMulActionHom.id G :=
+  DistribMulActionHom.ext fun _ => InternalHom.ext (AddMonoidHom.ext fun _ => rfl)
+
+theorem precomp_comp {M'' : Type*} [AddMonoid M''] [DistribMulAction G M''] (g : M' →+[G] M'')
+    (f : M →+[G] M') : precomp G (g.comp f) (N := N) = (precomp G f).comp (precomp G g) :=
+  DistribMulActionHom.ext fun _ => InternalHom.ext (AddMonoidHom.ext fun _ => rfl)
+
+/-- Precomposition with a surjection is injective: `Hom(-, N)` takes surjections to injections. -/
+theorem precomp_injective {f : M →+[G] M'} (hf : Function.Surjective f) :
+    Function.Injective (precomp G f (N := N)) := by
+  intro φ ψ h
+  ext m'
+  obtain ⟨m, rfl⟩ := hf m'
+  exact congrArg (fun χ : InternalHom G M N => evalPairing G χ m) h
+
+end Precomp
+
+section Exact
+
+variable {G : Type*} [Group G] {M M' M'' : Type*} [AddMonoid M] [AddCommGroup M']
+  [AddCommGroup M''] [DistribMulAction G M] [DistribMulAction G M'] [DistribMulAction G M'']
+  {N : Type*} [AddCommGroup N] [DistribMulAction G N]
+
+/-- Precomposition along an exact pair `f : M →+[G] M'`, `g : M' →+[G] M''` with `g` surjective is
+exact: a homomorphism on `M'` killing the image of `f` factors through `g`. -/
+theorem exact_precomp (f : M →+[G] M') (g : M' →+[G] M'') (hg : Function.Surjective g)
+    (hfg : Function.Exact f g) :
+    Function.Exact (precomp G g (N := N)) (precomp G f) := by
+  intro ψ
+  constructor
+  · intro hψ
+    have hker : (g : M' →+ M'').ker ≤ ψ.toAddMonoidHom.ker := by
+      intro x hx
+      rw [AddMonoidHom.mem_ker] at hx ⊢
+      obtain ⟨m, rfl⟩ := (hfg x).mp hx
+      exact congrArg (fun χ : InternalHom G M N => evalPairing G χ m) hψ
+    refine ⟨of G ((g : M' →+ M'').liftOfSurjective hg ⟨ψ.toAddMonoidHom, hker⟩), ?_⟩
+    ext x
+    exact (g : M' →+ M'').liftOfRightInverse_comp_apply (Function.surjInv hg)
+      (Function.rightInverse_surjInv hg) ⟨ψ.toAddMonoidHom, hker⟩ x
+  · rintro ⟨χ, rfl⟩
+    ext m
+    simp [hfg.apply_apply_eq_zero]
+
+end Exact
+
+section Surjective
+
+variable {G : Type*} [Group G] {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
+  [DistribMulAction G M] [DistribMulAction G M'] {N : Type*} [AddCommMonoid N]
+  [DistribMulAction G N]
+
+/-- Precomposition with an injection into a module killed by a prime `p` is surjective, for any
+`N`: `Hom(-, N)` is exact on the modules killed by `p`. This is
+`AddMonoidHom.exists_comp_eq_of_injective` on the internal hom. -/
+theorem precomp_surjective {p : ℕ} [Fact p.Prime] (hM' : ∀ x : M', p • x = 0)
+    {f : M →+[G] M'} (hf : Function.Injective f) :
+    Function.Surjective (precomp G f (N := N)) := fun φ => by
+  obtain ⟨ψ, hψ⟩ :=
+    AddMonoidHom.exists_comp_eq_of_injective hM' (f := (f : M →+ M')) hf φ.toAddMonoidHom
+  exact ⟨of G ψ, InternalHom.ext hψ⟩
+
+end Surjective
 
 end InternalHom
 

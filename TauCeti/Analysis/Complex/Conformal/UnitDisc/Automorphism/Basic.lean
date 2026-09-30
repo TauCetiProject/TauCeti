@@ -112,6 +112,39 @@ lemma differentiableOn_unitDiscStandardAutomorphismFormula (u : Circle) (a : Com
       (Metric.ball (0 : ℂ) 1) :=
   differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one (u : ℂ) a.norm_lt_one
 
+/-- A standard disc-automorphism formula `w ↦ u * (w - c) / (1 - conj c * w)` that fixes three
+distinct points at which its denominator does not vanish is the identity: `c = 0` and `u = 1`. -/
+lemma eq_zero_and_eq_one_of_unitDiscStandardAutomorphismFormula_eq_self {u c w₁ w₂ w₃ : ℂ}
+    (h₁₂ : w₁ ≠ w₂) (h₁₃ : w₁ ≠ w₃) (h₂₃ : w₂ ≠ w₃) (hd₁ : 1 - (starRingEnd ℂ) c * w₁ ≠ 0)
+    (hd₂ : 1 - (starRingEnd ℂ) c * w₂ ≠ 0) (hd₃ : 1 - (starRingEnd ℂ) c * w₃ ≠ 0)
+    (h₁ : u * ((w₁ - c) / (1 - (starRingEnd ℂ) c * w₁)) = w₁)
+    (h₂ : u * ((w₂ - c) / (1 - (starRingEnd ℂ) c * w₂)) = w₂)
+    (h₃ : u * ((w₃ - c) / (1 - (starRingEnd ℂ) c * w₃)) = w₃) :
+    c = 0 ∧ u = 1 := by
+  -- each fixed point is a root of the quadratic `conj c * w ^ 2 + (u - 1) * w - u * c`
+  have e (w : ℂ) (hd : 1 - (starRingEnd ℂ) c * w ≠ 0)
+      (h : u * ((w - c) / (1 - (starRingEnd ℂ) c * w)) = w) :
+      (starRingEnd ℂ) c * w ^ 2 + (u - 1) * w - u * c = 0 := by
+    rw [mul_div_assoc', div_eq_iff hd] at h
+    linear_combination h
+  have e₁ := e w₁ hd₁ h₁
+  have e₂ := e w₂ hd₂ h₂
+  have e₃ := e w₃ hd₃ h₃
+  have h₁₂ : (starRingEnd ℂ) c * (w₁ + w₂) + (u - 1) = 0 := by
+    have h : ((starRingEnd ℂ) c * (w₁ + w₂) + (u - 1)) * (w₁ - w₂) = 0 := by
+      linear_combination e₁ - e₂
+    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr h₁₂)
+  have h₁₃ : (starRingEnd ℂ) c * (w₁ + w₃) + (u - 1) = 0 := by
+    have h : ((starRingEnd ℂ) c * (w₁ + w₃) + (u - 1)) * (w₁ - w₃) = 0 := by
+      linear_combination e₁ - e₃
+    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr h₁₃)
+  have hc : (starRingEnd ℂ) c = 0 := by
+    have h : (starRingEnd ℂ) c * (w₂ - w₃) = 0 := by
+      linear_combination h₁₂ - h₁₃
+    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr h₂₃)
+  have hu : u - 1 = 0 := by simpa [hc] using h₁₂
+  exact ⟨(map_eq_zero _).mp hc, sub_eq_zero.mp hu⟩
+
 /-- The inverse of a standard automorphism as a composition of the inverse rotation and
 the inverse Moebius factor. -/
 @[simp]

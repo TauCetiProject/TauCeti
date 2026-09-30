@@ -25,11 +25,13 @@ used for initial velocities and velocity lifts of curves.
   the differential of the inverse isometry.
 * `TauCeti.RiemannianIsometry.toDiffeomorph_tangent_apply`: the tangent-bundle lift has this
   fibrewise linear-isometry equivalence as its fibre map.
+* `TauCeti.RiemannianIsometry.inner_mpullback`: pulling back vector fields along a Riemannian
+  isometry preserves their pointwise inner products.
 -/
 
 public section
 
-open Bundle Manifold
+open Bundle Manifold VectorField
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -76,6 +78,19 @@ theorem mfderivToLinearIsometryEquiv_apply (Φ : RiemannianIsometry I J M N) (x 
     Φ.mfderivToLinearIsometryEquiv x v = mfderiv I J Φ x v :=
   congrFun (coe_mfderivToLinearIsometryEquiv Φ x) v
 
+/-- The differential of a Riemannian isometry at a point is injective. -/
+theorem mfderiv_injective (Φ : RiemannianIsometry I J M N) (x : M) :
+    Function.Injective (mfderiv I J Φ x) := by
+  simpa only [coe_mfderivToLinearIsometryEquiv] using
+    (Φ.mfderivToLinearIsometryEquiv x).injective
+
+/-- The differential of a Riemannian isometry at a point is surjective onto the tangent space at
+the image point. -/
+theorem mfderiv_surjective (Φ : RiemannianIsometry I J M N) (x : M) :
+    Function.Surjective (mfderiv I J Φ x) := by
+  simpa only [coe_mfderivToLinearIsometryEquiv] using
+    (Φ.mfderivToLinearIsometryEquiv x).surjective
+
 /-- The inverse of the differential equivalence is the differential of the inverse Riemannian
 isometry at `Φ x`. -/
 @[simp]
@@ -98,6 +113,17 @@ theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
       TotalSpace.mk' F (Φ z.1) (Φ.mfderivToLinearIsometryEquiv z.1 z.2) := by
   rw [Diffeomorph.coe_tangent, mfderivToLinearIsometryEquiv_apply]
   rfl
+
+/-- Pulling back vector fields along a Riemannian isometry preserves their pointwise inner
+products. -/
+@[simp]
+theorem inner_mpullback (Φ : RiemannianIsometry I J M N) (Y Z : Π y : N, TangentSpace J y)
+    (x : M) :
+    inner ℝ (mpullback I J Φ Y x) (mpullback I J Φ Z x) = inner ℝ (Y (Φ x)) (Z (Φ x)) := by
+  rw [← Φ.inner_mfderiv x]
+  -- `⇑Φ.toDiffeomorph` is `⇑Φ` by definition (`coe_toDiffeomorph` is `rfl`).
+  exact congrArg₂ (inner ℝ) (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Y x)
+    (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Z x)
 
 end TauCeti.RiemannianIsometry
 
