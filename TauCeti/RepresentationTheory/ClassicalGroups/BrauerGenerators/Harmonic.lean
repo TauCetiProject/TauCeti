@@ -33,8 +33,9 @@ splitting.
 The splitting needs `n` invertible in `k` and not merely nonzero as a natural number: where
 `(n : k) = 0` the cap kills the cup, so the Brauer generator `e = cup ∘ cap` squares to zero
 instead of being a multiple of an idempotent, and the trace line lies **inside** the harmonic
-tensors rather than complementing them. Only the codimension count survives there, because the
-cap is surjective for a purely combinatorial reason: it sends `e₀ ⊗ e₀` to `1`.
+tensors rather than complementing them. Both dimension counts survive there, because the cap is
+surjective and the cup injective for purely combinatorial reasons: the cap sends `e₀ ⊗ e₀` to
+`1`, and the `e₀ ⊗ e₀` coordinate of `cup c` is `c`.
 
 ## Main definitions
 
@@ -46,7 +47,8 @@ cap is surjective for a purely combinatorial reason: it sends `e₀ ⊗ e₀` to
 
 ## Main results
 
-* `TauCeti.orthogonalCap_surjective`: the cap is surjective for `n ≠ 0`.
+* `TauCeti.orthogonalCap_surjective` and `TauCeti.orthogonalCup_injective`: the cap is
+  surjective and the cup injective for `n ≠ 0`, at any loop value.
 * `TauCeti.isCompl_ker_orthogonalCap_range_orthogonalCup` and
   `TauCeti.isCompl_orthogonalHarmonicTensors_orthogonalCupLine`: **the harmonic tensors and the
   trace line are complementary** when the loop value `n` is invertible in `k`, at the level of
@@ -99,6 +101,17 @@ theorem orthogonalCap_surjective [NeZero n] : Function.Surjective (orthogonalCap
   rw [map_smul, orthogonalCap_tprod]
   simp
 
+/-- **The cup is injective** once there is a coordinate to expand into. No invertibility of the
+loop value is needed either: the cap is not what detects `cup c`, the single coordinate `e₀ ⊗ e₀`
+of it already is, and that coordinate is `c`. -/
+theorem orthogonalCup_injective [NeZero n] : Function.Injective (orthogonalCup k n) := by
+  -- Read off the `e₀ ⊗ e₀` coordinate, the product of the two `0`th coordinates.
+  refine Function.LeftInverse.injective
+    (g := PiTensorProduct.lift ((MultilinearMap.mkPiAlgebra k (Fin 2) k).compLinearMap
+      fun _ : Fin 2 => LinearMap.proj (0 : Fin n))) fun c => ?_
+  rw [orthogonalCup_apply, map_smul, map_sum]
+  simp [Pi.single_apply, eq_comm, Finset.sum_ite_eq']
+
 /-- The image of the cup is the **trace line**, the span of the invariant form `∑ⱼ eⱼ ⊗ eⱼ`. -/
 theorem range_orthogonalCup :
     LinearMap.range (orthogonalCup k n) = Submodule.span k {orthogonalCup k n 1} := by
@@ -136,13 +149,6 @@ theorem mem_ker_orthogonalCap_of_permTensorAction_swap_eq_neg (h2 : IsUnit (2 : 
 
 /-! ### The trace splitting -/
 
-/-- The cup is injective when the loop value `n` is invertible: the cap detects it, sending
-`cup c` to `n * c`. -/
-theorem orthogonalCup_injective (hn : IsUnit (n : k)) :
-    Function.Injective (orthogonalCup k n) := by
-  refine (injective_iff_map_eq_zero _).2 fun c hc => hn.mul_right_eq_zero.mp ?_
-  rw [← orthogonalCap_comp_orthogonalCup_apply k n c, hc, map_zero]
-
 /-- **The harmonic tensors and the trace line are complementary** when the loop value `n` is
 invertible in `k`. The splitting map is `n⁻¹ • (cup ∘ cap)`, the normalized Brauer generator. -/
 theorem isCompl_ker_orthogonalCap_range_orthogonalCup (hn : IsUnit (n : k)) :
@@ -162,13 +168,14 @@ theorem isCompl_ker_orthogonalCap_range_orthogonalCup (hn : IsUnit (n : k)) :
 /-! ### The Brauer generator as a projection -/
 
 /-- The kernel of the Brauer generator `e = cup ∘ cap` is the harmonic tensors, the cup being
-injective at an invertible loop value. -/
-theorem ker_orthogonalCupCap (hn : IsUnit (n : k)) :
+injective. This needs no invertibility of the loop value: even where `(n : k) = 0`, so that `e`
+squares to zero, its kernel is still exactly the harmonic tensors. -/
+theorem ker_orthogonalCupCap [NeZero n] :
     LinearMap.ker (orthogonalCupCap k n) = LinearMap.ker (orthogonalCap k n) := by
   ext x
   rw [LinearMap.mem_ker, LinearMap.mem_ker, orthogonalCupCap_apply,
     ← map_zero (orthogonalCup k n)]
-  exact ⟨fun h => orthogonalCup_injective k n hn h, fun h => by rw [h, map_zero]⟩
+  exact ⟨fun h => orthogonalCup_injective k n h, fun h => by rw [h, map_zero]⟩
 
 /-- The image of the Brauer generator `e = cup ∘ cap` is the trace line, the cap being
 surjective. -/
@@ -265,10 +272,10 @@ theorem finrank_ker_orthogonalCap [NeZero n] :
     Module.finrank_self, finrank_tensorSquare] at h
   omega
 
-/-- **The trace line is a line**, the cup being injective at an invertible loop value. -/
-theorem finrank_range_orthogonalCup (hn : IsUnit (n : k)) :
+/-- **The trace line is a line**, the cup being injective. -/
+theorem finrank_range_orthogonalCup [NeZero n] :
     Module.finrank k (LinearMap.range (orthogonalCup k n)) = 1 := by
-  rw [LinearMap.finrank_range_of_inj (orthogonalCup_injective k n hn), Module.finrank_self]
+  rw [LinearMap.finrank_range_of_inj (orthogonalCup_injective k n), Module.finrank_self]
 
 end Field
 
@@ -280,6 +287,6 @@ example : Module.finrank ℚ (LinearMap.ker (orthogonalCap ℚ 3)) = 8 := by
   omega
 
 example : Module.finrank ℚ (LinearMap.range (orthogonalCup ℚ 3)) = 1 :=
-  finrank_range_orthogonalCup ℚ 3 (by norm_num)
+  finrank_range_orthogonalCup ℚ 3
 
 end TauCeti
