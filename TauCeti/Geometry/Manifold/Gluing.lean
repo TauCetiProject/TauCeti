@@ -24,7 +24,7 @@ embedding `φ j` is then a `C^n` diffeomorphism onto its open image.
 
 The gluing condition has the local-deck-transformation shape of
 `IsLocalHomeomorph.isManifold_chartedSpaceOfRightInverse` in
-`TauCeti/Geometry/Manifold/Instances/Quotient.lean`, and the proofs here follow that file.
+`TauCeti/Geometry/Manifold/Instances/Quotient.lean`.
 
 ## Main declarations
 
@@ -44,6 +44,8 @@ statements that invert the embedding of a given piece assume that piece is nonem
 
 * John M. Lee, *Introduction to Smooth Manifolds*, second edition, Graduate Texts in
   Mathematics 218, Springer, 2013, Chapter 1 (the smooth manifold chart lemma).
+* `IsLocalHomeomorph.isManifold_chartedSpaceOfRightInverse` in
+  `TauCeti/Geometry/Manifold/Instances/Quotient.lean`, whose construction is adapted here.
 -/
 
 public section
