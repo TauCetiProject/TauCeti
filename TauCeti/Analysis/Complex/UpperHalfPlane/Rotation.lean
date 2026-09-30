@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
@@ -30,7 +29,6 @@ computed explicitly.
 
 ## Main declarations
 
-* `Matrix.SpecialLinearGroup.continuous_rotation` — `θ ↦ rotation θ` is continuous.
 * `TauCeti.UpperHalfPlane.rotation_smul_I` — every rotation fixes `I`.
 * `TauCeti.UpperHalfPlane.coe_rotation_pi_div_two` — the class of `rotation (π/2)` in
   `PSL(2, ℝ)` is `pslS`.
@@ -44,19 +42,6 @@ noncomputable section
 
 open UpperHalfPlane
 open scoped MatrixGroups
-
-namespace Matrix.SpecialLinearGroup
-
-/-- The rotations `θ ↦ rotation θ` form a continuous family in `SL(2, ℝ)`. -/
-@[fun_prop]
-theorem continuous_rotation : Continuous rotation :=
-  Continuous.subtype_mk (continuous_matrix fun i j => by
-    fin_cases i <;> fin_cases j <;>
-      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, coe_rotation, Matrix.of_apply,
-        Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] <;>
-      fun_prop) _
-
-end Matrix.SpecialLinearGroup
 
 namespace TauCeti.UpperHalfPlane
 

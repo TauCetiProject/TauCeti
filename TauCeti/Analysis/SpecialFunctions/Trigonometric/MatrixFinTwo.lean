@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
@@ -36,7 +37,8 @@ triangle group in `PSL(2, ℝ)`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq`: if
   `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has `k`-th power `1`.
 * `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
-  `rotation_zero`, `rotation_add` and `rotation_neg` make the family a one-parameter subgroup.
+  `rotation_zero`, `rotation_add` and `rotation_neg` make the family a one-parameter subgroup,
+  and `continuous_rotation` a continuous one.
 * `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix
   (`conjRotation_zero_right` identifies the unconjugated case with `rotation`), with its trace
   `trace_conjRotation`, the trace `trace_conjRotation_mul_conjRotation` of a product, and the
@@ -155,6 +157,15 @@ theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation
 @[simp]
 theorem rotation_neg (θ : ℝ) : rotation (-θ) = (rotation θ)⁻¹ := by
   rw [eq_inv_iff_mul_eq_one, ← rotation_add, neg_add_cancel, rotation_zero]
+
+/-- The rotations `θ ↦ rotation θ` form a continuous family in `SL(2, ℝ)`. -/
+@[fun_prop]
+theorem continuous_rotation : Continuous rotation :=
+  Continuous.subtype_mk (continuous_matrix fun i j => by
+    fin_cases i <;> fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, of_apply, cons_val', cons_val_zero,
+        cons_val_one, cons_val_fin_one] <;>
+      fun_prop) _
 
 /-- The matrix `!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ]` of `SL(2, ℝ)`: the rotation
 `rotation θ = !![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/
