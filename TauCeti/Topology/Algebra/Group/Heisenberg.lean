@@ -36,8 +36,8 @@ generators of a free pro-`p` group.
   continuous.
 * `TauCeti.HeisenbergGroup.continuous_iff`: a map into the Heisenberg group is continuous exactly
   when its three coordinates are.
-* The instances `IsTopologicalGroup`, `CompactSpace`, `T2Space` and `TotallyDisconnectedSpace` on
-  `HeisenbergGroup R`, inherited from `R`.
+* The instances `IsTopologicalGroup`, `CompactSpace`, `T2Space`, `DiscreteTopology` and
+  `TotallyDisconnectedSpace` on `HeisenbergGroup R`, inherited from `R`.
 -/
 
 public section
@@ -57,26 +57,20 @@ instance instTopologicalSpace : TopologicalSpace (HeisenbergGroup R) :=
 def homeomorphProd : HeisenbergGroup R ≃ₜ R × R × R :=
   equivProd.toHomeomorphOfIsInducing ⟨rfl⟩
 
-@[simp]
-theorem coe_homeomorphProd : ⇑(homeomorphProd : HeisenbergGroup R ≃ₜ R × R × R) = equivProd :=
-  (rfl)
-
-@[simp]
-theorem coe_homeomorphProd_symm :
-    ⇑(homeomorphProd : HeisenbergGroup R ≃ₜ R × R × R).symm = equivProd.symm :=
-  (rfl)
-
 @[continuity, fun_prop]
 theorem continuous_x : Continuous (x : HeisenbergGroup R → R) :=
-  (continuous_fst.comp homeomorphProd.continuous).congr fun _ ↦ by simp
+  (continuous_fst.comp homeomorphProd.continuous).congr fun _ ↦ by
+    simp [homeomorphProd]
 
 @[continuity, fun_prop]
 theorem continuous_y : Continuous (y : HeisenbergGroup R → R) :=
-  (continuous_fst.comp (continuous_snd.comp homeomorphProd.continuous)).congr fun _ ↦ by simp
+  (continuous_fst.comp (continuous_snd.comp homeomorphProd.continuous)).congr fun _ ↦ by
+    simp [homeomorphProd]
 
 @[continuity, fun_prop]
 theorem continuous_z : Continuous (z : HeisenbergGroup R → R) :=
-  (continuous_snd.comp (continuous_snd.comp homeomorphProd.continuous)).congr fun _ ↦ by simp
+  (continuous_snd.comp (continuous_snd.comp homeomorphProd.continuous)).congr fun _ ↦ by
+    simp [homeomorphProd]
 
 /-- A map into the Heisenberg group is continuous exactly when its three coordinates are. -/
 theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → HeisenbergGroup R} :
@@ -86,13 +80,16 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → HeisenbergGro
   refine ⟨fun hf ↦ ⟨continuous_x.comp hf, continuous_y.comp hf, continuous_z.comp hf⟩, ?_⟩
   rintro ⟨hx, hy, hz⟩
   exact homeomorphProd.isInducing.continuous_iff.mpr
-    ((hx.prodMk (hy.prodMk hz)).congr fun _ ↦ by simp)
+    ((hx.prodMk (hy.prodMk hz)).congr fun _ ↦ by simp [homeomorphProd])
 
 instance [CompactSpace R] : CompactSpace (HeisenbergGroup R) :=
   homeomorphProd.symm.compactSpace
 
 instance [T2Space R] : T2Space (HeisenbergGroup R) :=
   homeomorphProd.symm.t2Space
+
+instance [DiscreteTopology R] : DiscreteTopology (HeisenbergGroup R) :=
+  homeomorphProd.symm.discreteTopology
 
 instance [TotallyDisconnectedSpace R] : TotallyDisconnectedSpace (HeisenbergGroup R) :=
   homeomorphProd.symm.totallyDisconnectedSpace

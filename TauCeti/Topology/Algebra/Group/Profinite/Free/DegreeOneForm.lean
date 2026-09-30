@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 import Mathlib.Data.Nat.Choose.Dvd
+import TauCeti.Topology.Algebra.Group.Heisenberg
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
 
 /-!
@@ -119,10 +120,6 @@ section Heisenberg
 /-- The Heisenberg group over `𝔽_p` in the universe of the generating type. -/
 private abbrev HeisenbergLift (p : ℕ) : Type u := ULift.{u} (HeisenbergGroup (ZMod p))
 
-private instance : TopologicalSpace (HeisenbergLift.{u} p) := ⊥
-
-private instance : DiscreteTopology (HeisenbergLift.{u} p) := ⟨rfl⟩
-
 private theorem isProP_heisenbergLift : IsProP p (HeisenbergLift.{u} p) :=
   ((HeisenbergGroup.isPGroup_zmod p).of_equiv MulEquiv.ulift.symm).isProP
 
@@ -163,8 +160,6 @@ private theorem heisenbergHom_y (g : freeProP p X) :
 /-- On the lifted Heisenberg group, `λ_1` lies on the `z`-axis. -/
 private theorem down_x_eq_zero_of_mem_pLowerCentralSeries_one {a : HeisenbergLift.{u} p}
     (ha : a ∈ pLowerCentralSeries p (HeisenbergLift.{u} p) 1) : a.down.x = 0 ∧ a.down.y = 0 := by
-  let : TopologicalSpace (HeisenbergGroup (ZMod p)) := ⊥
-  have : DiscreteTopology (HeisenbergGroup (ZMod p)) := ⟨rfl⟩
   let e : HeisenbergLift.{u} p ≃* HeisenbergGroup (ZMod p) := MulEquiv.ulift
   have h : e a ∈ (⊤ : Subgroup (HeisenbergGroup (ZMod p))).pLowerCentralSeries p 1 := by
     rw [← pLowerCentralSeries_eq_of_discreteTopology,

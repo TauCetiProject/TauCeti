@@ -74,16 +74,29 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
   have hker : f.ker = zAxis := by
     ext a
     simp [f, mem_zAxis_iff]
-  have hgf : ∀ c, g c ∈ f.ker := fun c ↦ by simp [f, g]
-  have hsurj : Function.Surjective (g.codRestrict f.ker hgf) := by
-    rintro ⟨a, ha⟩
-    have hxy : a.x = 0 ∧ a.y = 0 :=
-      mem_zAxis_iff.mp (by simpa only [hker] using ha)
-    exact ⟨ofAdd a.z, Subtype.ext <| by ext <;> simp [g, hxy]⟩
+  let S : GroupExtension (Multiplicative R) (HeisenbergGroup R)
+      (Multiplicative (R × R)) :=
+    { inl := g
+      rightHom := f
+      inl_injective := by
+        intro a b hab
+        have hz := congrArg (fun c : HeisenbergGroup R ↦ c.z) hab
+        simpa [g] using hz
+      range_inl_eq_ker_rightHom := by
+        rw [hker]
+        ext a
+        constructor
+        · rintro ⟨c, rfl⟩
+          simp [g, mem_zAxis_iff]
+        · intro ha
+          have hxy := mem_zAxis_iff.mp ha
+          exact ⟨ofAdd a.z, by ext <;> simp [g, hxy]⟩
+      rightHom_surjective := by
+        intro c
+        exact ⟨⟨c.toAdd.1, c.toAdd.2, 0⟩, by simp [f]⟩ }
   have hRR : IsProP p (Multiplicative (R × R)) :=
     (hR.prod hR).of_equiv (ContinuousMulEquiv.prodMultiplicative R R).symm
-  exact hRR.of_ker_isProP hf (fun c ↦ ⟨⟨c.toAdd.1, c.toAdd.2, 0⟩, by simp [f]⟩)
-    (hR.of_surjective _ (hg.subtype_mk hgf) hsurj)
+  exact S.isProP hg hf hR hRR
 
 /-- The Heisenberg group over the `p`-adic integers is pro-`p`. -/
 theorem isProP_padicInt (p : ℕ) [Fact p.Prime] : IsProP p (HeisenbergGroup ℤ_[p]) :=

@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
+import TauCeti.Topology.Algebra.Group.Heisenberg
 import Mathlib.FieldTheory.Finiteness
 
 /-!
@@ -98,8 +99,6 @@ variable {p : ℕ} {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology
 /-- A discrete group isomorphic to the Heisenberg group over `ZMod p` has `p`-class at most two. -/
 theorem _root_.MulEquiv.pLowerCentralSeries_two_eq_bot_heisenbergGroup
     (e : H ≃* HeisenbergGroup (ZMod p)) : pLowerCentralSeries p H 2 = ⊥ := by
-  let : TopologicalSpace (HeisenbergGroup (ZMod p)) := ⊥
-  have : DiscreteTopology (HeisenbergGroup (ZMod p)) := ⟨rfl⟩
   rw [← Subgroup.map_eq_bot_iff_of_injective (f := e.toMonoidHom) _ e.injective,
     e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
     HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot]
@@ -268,8 +267,6 @@ theorem linearIndependent_degreeOneFamily_of :
         exact one_mem _
   · -- The coefficient of `[x'_i, x'_j]`: send `x_i, x_j` to the standard generators of the
     -- Heisenberg group over `𝔽_p` and the others to `1`.
-    let : TopologicalSpace (ULift.{u} (HeisenbergGroup (ZMod p))) := ⊥
-    have : DiscreteTopology (ULift.{u} (HeisenbergGroup (ZMod p))) := ⟨rfl⟩
     let e : ULift.{u} (HeisenbergGroup (ZMod p)) ≃* HeisenbergGroup (ZMod p) := MulEquiv.ulift
     have hP : IsProP p (ULift.{u} (HeisenbergGroup (ZMod p))) :=
       ((HeisenbergGroup.isPGroup_zmod p).of_equiv e.symm).isProP
