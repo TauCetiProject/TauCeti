@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
-public import Mathlib.RingTheory.Localization.Module
+public import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
 # Extension of scalars
@@ -52,71 +52,91 @@ end SMul
 
 section Localization
 
-variable {R : Type u} [CommRing R] (T : Submonoid R) (M : _root_.ModuleCat.{u} R)
+variable {R : Type u} [CommRing R] (M : _root_.ModuleCat.{u} R) (T : Submonoid R)
 
 /-- Extension of scalars to the localization `T⁻¹R` is localization: `T⁻¹R ⊗_R M` is isomorphic
 to the localized module `T⁻¹M`, by `s ⊗ m ↦ s • m / 1`.
 
-This is the `ModuleCat` form of `IsLocalizedModule.isBaseChange`; that linear equivalence cannot be
-used directly because `ModuleCat.extendScalars` tensors over the `R`-module structure on `T⁻¹R`
-obtained from `Module.compHom`, not over the one of the `R`-algebra `T⁻¹R`. -/
+This transports `LocalizedModule.equivTensorProduct` across the `Module.compHom` structure
+used by `ModuleCat.extendScalars`. -/
 noncomputable def extendScalarsLocalizationIso :
     (_root_.ModuleCat.extendScalars (algebraMap R (Localization T))).obj M ≅
       _root_.ModuleCat.of (Localization T) (LocalizedModule T M) := by
   let φ := algebraMap R (Localization T)
-  let E := (_root_.ModuleCat.extendScalars φ).obj M
-  let Q := (_root_.ModuleCat.restrictScalars φ).obj E
-  have : IsScalarTower R (Localization T) Q := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  have h (x : T) : IsUnit (algebraMap R (Module.End R Q) x) := by
-    rw [Module.End.isUnit_iff]
-    exact (IsLocalization.map_units (Localization T) x).smul_bijective (β := E)
-  -- The inverse sends `m / s` to `s⁻¹ • (1 ⊗ m)`: it is the lift of `m ↦ 1 ⊗ m` along the
-  -- localization map, which is `T⁻¹R`-linear because `T⁻¹R ⊗_R M` is a `T⁻¹R`-module.
-  let g : LocalizedModule T M →ₗ[Localization T] Q :=
-    LinearMap.extendScalarsOfIsLocalization T (Localization T)
-      (LocalizedModule.lift T ((_root_.ModuleCat.extendRestrictScalarsAdj φ).unit.app M).hom h)
-  let u : M →ₛₗ[φ] LocalizedModule T M :=
-    { toFun := LocalizedModule.mkLinearMap T M
-      map_add' := map_add _
-      map_smul' := fun r m ↦ by simp [φ, algebraMap_smul] }
-  let f : E ⟶ _root_.ModuleCat.of _ (LocalizedModule T M) :=
-    ((_root_.ModuleCat.extendRestrictScalarsAdj φ).homEquiv _ _).symm
-      (_root_.ModuleCat.semilinearMapAddEquiv φ M (_root_.ModuleCat.of _ (LocalizedModule T M)) u)
-  have hf (m : M) : f ((1 : Localization T) ⊗ₜ[R,φ] m) = LocalizedModule.mk m 1 :=
-    ConcreteCategory.congr_hom
-      ((_root_.ModuleCat.extendRestrictScalarsAdj φ).homEquiv _ _ |>.apply_symm_apply _) m
-  have hg (m : M) : g (LocalizedModule.mk m 1) = (1 : Localization T) ⊗ₜ[R,φ] m := by
-    simp only [g, LinearMap.extendScalarsOfIsLocalization_apply', LocalizedModule.lift_mk_one]
-    exact _root_.ModuleCat.extendRestrictScalarsAdj_unit_app_apply φ M m
+  let A := Localization T
+  let E := (_root_.ModuleCat.restrictScalars φ).obj (_root_.ModuleCat.of A A)
+  have : IsScalarTower R A E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let c : E ≃ₗ[A] A := LinearEquiv.refl A A
+  let b := TensorProduct.AlgebraTensorModule.congr c (LinearEquiv.refl R M)
+  let e := b.trans (LocalizedModule.equivTensorProduct T M).symm
   exact
-    { hom := f
-      inv := _root_.ModuleCat.ofHom (Y := E) g
+    { hom := _root_.ModuleCat.ofHom e.toLinearMap
+      inv := _root_.ModuleCat.ofHom e.symm.toLinearMap
       hom_inv_id := by
-        ext m
-        exact (congrArg g (hf m)).trans (hg m)
+        apply _root_.ModuleCat.hom_ext
+        apply LinearMap.ext
+        intro x
+        exact e.symm_apply_apply x
       inv_hom_id := by
-        ext : 1
-        apply LinearMap.restrictScalars_injective R
-        apply IsLocalizedModule.ext T (LocalizedModule.mkLinearMap T M)
-          (IsLocalizedModule.map_units (LocalizedModule.mkLinearMap T M))
-        ext m
-        exact (congrArg f (hg m)).trans (hf m) }
+        apply _root_.ModuleCat.hom_ext
+        apply LinearMap.ext
+        intro x
+        exact e.apply_symm_apply x }
 
 /-- `extendScalarsLocalizationIso` sends `1 ⊗ m` to `m / 1`. -/
 @[simp]
 theorem extendScalarsLocalizationIso_hom_one_tmul (m : M) :
-    (extendScalarsLocalizationIso T M).hom
+    (extendScalarsLocalizationIso M T).hom
       ((1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m) = LocalizedModule.mk m 1 :=
-  ConcreteCategory.congr_hom
-    ((_root_.ModuleCat.extendRestrictScalarsAdj _).homEquiv _ _ |>.apply_symm_apply _) m
+  by
+    change (LocalizedModule.equivTensorProduct T M).symm
+      ((TensorProduct.AlgebraTensorModule.congr
+        (LinearEquiv.refl (Localization T) (Localization T))
+        (LinearEquiv.refl R M)) (1 ⊗ₜ[R] m)) = _
+    simp
 
 /-- The inverse of `extendScalarsLocalizationIso` sends `m / 1` to `1 ⊗ m`. -/
 @[simp]
-theorem extendScalarsLocalizationIso_inv_mk (m : M) :
-    (extendScalarsLocalizationIso T M).inv (LocalizedModule.mk m 1) =
+theorem extendScalarsLocalizationIso_inv_mk_one (m : M) :
+    (extendScalarsLocalizationIso M T).inv (LocalizedModule.mk m 1) =
       (1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m :=
-  (congrArg (extendScalarsLocalizationIso T M).inv
-    (extendScalarsLocalizationIso_hom_one_tmul T M m)).symm.trans (Iso.hom_inv_id_apply _ _)
+  by
+    let φ := algebraMap R (Localization T)
+    let E := (_root_.ModuleCat.restrictScalars φ).obj
+      (_root_.ModuleCat.of (Localization T) (Localization T))
+    have : IsScalarTower R (Localization T) E :=
+      IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+    let c : E ≃ₗ[Localization T] Localization T := LinearEquiv.refl _ _
+    change ((LocalizedModule.equivTensorProduct T M).trans
+      (TensorProduct.AlgebraTensorModule.congr c (LinearEquiv.refl R M)).symm)
+      (LocalizedModule.mk m 1) = _
+    simp only [LinearEquiv.trans_apply, LocalizedModule.equivTensorProduct_apply_mk]
+    rw [TensorProduct.AlgebraTensorModule.congr_symm_tmul]
+    have hc : c.symm (Localization.mk 1 1) = (1 : Localization T) := by
+      change Localization.mk 1 1 = 1
+      exact Localization.mk_one
+    rw [hc]
+    rfl
+
+/-- `extendScalarsLocalizationIso` sends a pure tensor to the scalar multiple of `m / 1`. -/
+@[simp]
+theorem extendScalarsLocalizationIso_hom_tmul (s : Localization T) (m : M) :
+    (extendScalarsLocalizationIso M T).hom
+      (s ⊗ₜ[R,algebraMap R (Localization T)] m) =
+      s • LocalizedModule.mk m 1 := by
+  rfl
+
+/-- The inverse of `extendScalarsLocalizationIso` sends `m / t` to `t⁻¹ ⊗ m`. -/
+@[simp]
+theorem extendScalarsLocalizationIso_inv_mk (m : M) (t : T) :
+    (extendScalarsLocalizationIso M T).inv (LocalizedModule.mk m t) =
+      Localization.mk 1 t ⊗ₜ[R,algebraMap R (Localization T)] m := by
+  have h : Localization.mk 1 t • LocalizedModule.mk m 1 = LocalizedModule.mk m t := by
+    simpa using LocalizedModule.mk_smul_mk 1 m t 1
+  rw [← h, map_smul, extendScalarsLocalizationIso_inv_mk_one]
+  exact (_root_.ModuleCat.ExtendScalars.smul_tmul
+    (algebraMap R (Localization T)) (M := M) (Localization.mk 1 t) 1 m).trans
+      (by rw [mul_one])
 
 end Localization
 

@@ -70,6 +70,17 @@ def pushforwardCompModuleSpecΓFunctorIso :
   Functor.isoWhiskerRight (pushforwardCompModulesSpecToSheafIso φ)
     (TopCat.Sheaf.forget _ _ ⋙ (evaluation _ _).obj (.op ⊤))
 
+private lemma pushforwardCompModulesSpecToSheafIso_hom_app_top_apply
+    (N : (Spec S).Modules)
+    (x : (modulesSpecToSheaf.obj ((Scheme.Modules.pushforward (Spec.map φ)).obj N)).obj.obj
+      (.op ⊤)) :
+    ((pushforwardCompModulesSpecToSheafIso φ).hom.app N).1.app (.op ⊤) x = x := rfl
+
+private lemma pushforwardCompModulesSpecToSheafIso_inv_app_top_apply
+    (N : (Spec S).Modules)
+    (x : ((modulesSpecToSheaf.obj N).obj.obj (.op ⊤))) :
+    ((pushforwardCompModulesSpecToSheafIso φ).inv.app N).1.app (.op ⊤) x = x := rfl
+
 /-- `pushforwardCompModuleSpecΓFunctorIso` is the identity on global sections. -/
 @[simp]
 lemma pushforwardCompModuleSpecΓFunctorIso_hom_app_apply (N : (Spec S).Modules)
@@ -77,7 +88,7 @@ lemma pushforwardCompModuleSpecΓFunctorIso_hom_app_apply (N : (Spec S).Modules)
     (_root_.ModuleCat.Hom.hom ((pushforwardCompModuleSpecΓFunctorIso φ).hom.app N) :
       (moduleSpecΓFunctor (R := R)).obj ((Scheme.Modules.pushforward (Spec.map φ)).obj N) →ₗ[R]
         (ModuleCat.restrictScalars φ.hom).obj ((moduleSpecΓFunctor (R := S)).obj N)) x = x :=
-  (rfl)
+  pushforwardCompModulesSpecToSheafIso_hom_app_top_apply φ N x
 
 /-- The inverse of `pushforwardCompModuleSpecΓFunctorIso` is the identity on global sections. -/
 @[simp]
@@ -87,7 +98,7 @@ lemma pushforwardCompModuleSpecΓFunctorIso_inv_app_apply (N : (Spec S).Modules)
       (ModuleCat.restrictScalars φ.hom).obj ((moduleSpecΓFunctor (R := S)).obj N) →ₗ[R]
         (moduleSpecΓFunctor (R := R)).obj
           ((Scheme.Modules.pushforward (Spec.map φ)).obj N)) x = x :=
-  (rfl)
+  pushforwardCompModulesSpecToSheafIso_inv_app_top_apply φ N x
 
 /-- The pullback along `Spec φ` of the sheaf associated with an `R`-module `M` is the sheaf
 associated with the base change `S ⊗_R M`, naturally in `M`. -/
@@ -130,6 +141,8 @@ variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
 with `R_r ⊗_R M ≅ M_r`. -/
 private def overBasicOpenIsoFree (r : R) {ι : Type u}
     (b : Module.Basis ι (Localization.Away r) (LocalizedModule.Away r M)) :
+    -- `Spec R` is definitionally `PrimeSpectrum R`, but the `Opens` type carries the
+    -- scheme category instance needed by `over`.
     (tilde M).over (show (Spec R).Opens from PrimeSpectrum.basicOpen r) ≅
       SheafOfModules.free ι :=
   let U : (Spec R).Opens := PrimeSpectrum.basicOpen r
@@ -154,7 +167,7 @@ private def overBasicOpenIsoFree (r : R) {ι : Type u}
     (Scheme.Modules.pullbackCongr (basicOpenIsoSpecAway_hom_SpecMap r).symm).app N ≪≫
     ((Scheme.Modules.pullbackComp e.hom (Spec.map φ)).app N).symm ≪≫
     P.mapIso ((tildeFunctorCompPullbackIso φ).app M ≪≫
-      (tilde.functor _).mapIso (ModuleCat.extendScalarsLocalizationIso _ M ≪≫
+      (tilde.functor _).mapIso (ModuleCat.extendScalarsLocalizationIso M _ ≪≫
         b.repr.toModuleIso) ≪≫ tildeFinsupp ι) ≪≫
     (SheafOfModules.mapFreeIso P ι (Scheme.Modules.pullbackObjUnitIso e.hom).symm).symm) ≪≫
   (SheafOfModules.mapFreeIso F ι (E.unitIso.app _)).symm
