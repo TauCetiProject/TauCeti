@@ -137,8 +137,9 @@ to `G^v H`. -/
 @[simp]
 theorem mem_upperRamificationGroupQuotient_mk_iff (v : RamificationIndexDomain)
     (σ : M ≃ₐ[K] M) :
-    QuotientGroup.mk' H σ ∈ upperRamificationGroupQuotient H v ↔
+    (σ : (M ≃ₐ[K] M) ⧸ H) ∈ upperRamificationGroupQuotient H v ↔
       σ ∈ upperRamificationGroup K M v ⊔ H := by
+  change QuotientGroup.mk' H σ ∈ upperRamificationGroupQuotient H v ↔ _
   rw [← Subgroup.mem_comap, upperRamificationGroupQuotient,
     QuotientGroup.comap_map_mk', sup_comm]
 
