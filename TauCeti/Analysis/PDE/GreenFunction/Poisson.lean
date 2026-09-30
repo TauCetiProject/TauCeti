@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Disk
-public import TauCeti.Analysis.Complex.Poisson
+public import TauCeti.Analysis.Complex.Poisson.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
 
 /-!
