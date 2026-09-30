@@ -37,6 +37,8 @@ infinitely many, the reduction by which the non-Dynkin half of Gabriel's theorem
 
 ## Main results
 
+* `TauCeti.QuiverEmbedding.extendByZeroRepFiberEquiv_map_apply`: arrow action on the actual
+  extended vertex spaces, expressed through the fiber equivalences.
 * `TauCeti.QuiverEmbedding.extendByZeroMap_map_apply`: the image of an arrow of `Q'` acts on the
   extension by zero as the arrow itself.
 * `TauCeti.QuiverEmbedding.extendByZeroMap_apply_of_not_exists`: an arrow of `Q` that is not in
@@ -146,8 +148,6 @@ on which the image of an arrow `a` of `Q'` acts as `a` and every other arrow of 
 
 The space over a vertex `v` is the product of the spaces of `M` over the fiber of `φ` at `v`,
 which has at most one point; this names it without choosing a preimage of `v`. -/
--- The object and arrow API below elaborates using the value of this functor at a vertex.
-@[expose]
 noncomputable def extendByZeroRep (M : QuiverRep.{u, v', w', t} k Q') :
     QuiverRep.{u, v, w, max v' t} k Q :=
   Paths.lift
@@ -162,30 +162,40 @@ fiber there. -/
 theorem extendByZeroRep_obj (v : Q) :
     (φ.extendByZeroRep M).obj (v : Paths Q) =
       ModuleCat.of k (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) :=
-  rfl
+  (rfl)
 
-/-- Over an image vertex, the vertex space of the extension by zero is linearly equivalent to the
-original vertex space by evaluation at the unique point of the fiber. -/
+/-- The actual vertex space of the extension by zero is linearly equivalent to the product
+of the original vertex spaces over the fiber. -/
+noncomputable def extendByZeroRepFiberEquiv (v : Q) :
+    QuiverRep.vertexSpace k Q (φ.extendByZeroRep M) v ≃ₗ[k]
+      (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) :=
+  (eqToIso (φ.extendByZeroRep_obj M v)).toLinearEquiv
+
+/-- Over an image vertex, the actual vertex space of the extension by zero is linearly equivalent
+to the original vertex space by evaluation at the unique point of the fiber. -/
 noncomputable def extendByZeroRepVertexSpaceEquiv (u : Q') :
-    (∀ u' : φ.Fiber (φ.obj u), QuiverRep.vertexSpace k Q' M u'.1) ≃ₗ[k]
+    QuiverRep.vertexSpace k Q (φ.extendByZeroRep M) (φ.obj u) ≃ₗ[k]
       QuiverRep.vertexSpace k Q' M u := by
   letI : Unique (φ.Fiber (φ.obj u)) :=
     { default := ⟨u, rfl⟩, uniq := fun _ ↦ Subsingleton.elim _ _ }
-  exact LinearEquiv.piUnique k (fun u' : φ.Fiber (φ.obj u) ↦
-    QuiverRep.vertexSpace k Q' M u'.1)
+  exact (φ.extendByZeroRepFiberEquiv M (φ.obj u)).trans
+    (LinearEquiv.piUnique k (fun u' : φ.Fiber (φ.obj u) ↦
+      QuiverRep.vertexSpace k Q' M u'.1))
 
 /-- The vertex-space equivalence over an image vertex evaluates at the unique fiber point. -/
 @[simp]
 theorem extendByZeroRepVertexSpaceEquiv_apply (u : Q')
-    (x : ∀ u' : φ.Fiber (φ.obj u), QuiverRep.vertexSpace k Q' M u'.1) :
-    φ.extendByZeroRepVertexSpaceEquiv M u x = x ⟨u, rfl⟩ :=
+    (x : QuiverRep.vertexSpace k Q (φ.extendByZeroRep M) (φ.obj u)) :
+    φ.extendByZeroRepVertexSpaceEquiv M u x =
+      φ.extendByZeroRepFiberEquiv M (φ.obj u) x ⟨u, rfl⟩ :=
   (rfl)
 
 /-- The inverse vertex-space equivalence returns the original element at the unique fiber point. -/
 @[simp]
 theorem extendByZeroRepVertexSpaceEquiv_symm_apply (u : Q')
     (x : QuiverRep.vertexSpace k Q' M u) :
-    (φ.extendByZeroRepVertexSpaceEquiv M u).symm x ⟨u, rfl⟩ = x :=
+    φ.extendByZeroRepFiberEquiv M (φ.obj u)
+      ((φ.extendByZeroRepVertexSpaceEquiv M u).symm x) ⟨u, rfl⟩ = x :=
   (rfl)
 
 /-- Outside the vertex image of an embedding, extension by zero has a zero vertex space. -/
@@ -196,11 +206,27 @@ theorem isZero_extendByZeroRep_obj_of_not_mem_range (v : Q)
   let : IsEmpty (φ.Fiber v) := ⟨fun u ↦ hv ⟨u.1, u.2⟩⟩
   exact ModuleCat.isZero_of_subsingleton _
 
-/-- An arrow of `Q` acts on the extension by zero by `TauCeti.QuiverEmbedding.extendByZeroMap`. -/
+/-- An arrow of `Q` acts on the extension by zero by `TauCeti.QuiverEmbedding.extendByZeroMap`,
+transported from the fiber products to the actual vertex spaces. -/
 @[simp]
 theorem extendByZeroRep_map_toPath {v w : Q} (α : v ⟶ w) :
-    (φ.extendByZeroRep M).map α.toPath = ModuleCat.ofHom (φ.extendByZeroMap M α) :=
-  Paths.lift_toPath _ α
+    (φ.extendByZeroRep M).map α.toPath =
+      eqToHom (φ.extendByZeroRep_obj M v) ≫ ModuleCat.ofHom (φ.extendByZeroMap M α) ≫
+        eqToHom (φ.extendByZeroRep_obj M w).symm := by
+  simp only [extendByZeroRep, Paths.lift_toPath]
+  rfl
+
+/-- Through the fiber equivalences, the action on actual vertex spaces is the extension-by-zero
+arrow map. Together with the evaluation lemmas, this describes image arrows and arrows with
+no lift. -/
+@[simp]
+theorem extendByZeroRepFiberEquiv_map_apply {v w : Q} (α : v ⟶ w)
+    (x : QuiverRep.vertexSpace k Q (φ.extendByZeroRep M) v) :
+    φ.extendByZeroRepFiberEquiv M w
+      (QuiverRep.mapₗ k Q (φ.extendByZeroRep M) α.toPath x) =
+      φ.extendByZeroMap M α (φ.extendByZeroRepFiberEquiv M v x) := by
+  rw [QuiverRep.mapₗ_apply, extendByZeroRep_map_toPath]
+  rfl
 
 variable {M} {N : QuiverRep.{u, v', w', t} k Q'}
 
@@ -244,8 +270,6 @@ variable (k) in
 /-- **Extension by zero along an embedding of quivers**, as a functor from the representations of
 `Q'` to those of `Q`; on a morphism it acts by that morphism over the image and by zero
 elsewhere. -/
--- The componentwise map API below elaborates using the objects of this functor.
-@[expose]
 noncomputable def extendByZeroFunctor :
     QuiverRep.{u, v', w', t} k Q' ⥤ QuiverRep.{u, v, w, max v' t} k Q where
   obj M := φ.extendByZeroRep M
@@ -262,15 +286,30 @@ noncomputable def extendByZeroFunctor :
 /-- The extension by zero functor sends a representation to its extension by zero. -/
 @[simp]
 theorem extendByZeroFunctor_obj : (φ.extendByZeroFunctor k).obj M = φ.extendByZeroRep M :=
+  (rfl)
+
+/-- The component of an extended morphism is its action on the fiber products, transported
+to the actual vertex spaces of the functor objects. -/
+@[simp]
+theorem extendByZeroFunctor_map_app (f : M ⟶ N) (v : Q) :
+    ((φ.extendByZeroFunctor k).map f).app (v : Paths Q) =
+      eqToHom ((Functor.congr_obj (φ.extendByZeroFunctor_obj (M := M)) v).trans
+        (φ.extendByZeroRep_obj M v)) ≫ ModuleCat.ofHom (φ.extendByZeroApp f v) ≫
+      eqToHom ((Functor.congr_obj (φ.extendByZeroFunctor_obj (M := N)) v).trans
+        (φ.extendByZeroRep_obj N v)).symm := by
   rfl
 
--- Not `@[simp]`: `TauCeti.QuiverEmbedding.extendByZeroFunctor_obj` and
--- `TauCeti.QuiverEmbedding.extendByZeroRep_obj` rewrite the objects in the implicit arguments of
--- its left-hand side, so it would not be in simp-normal form (`simpNF`).
-/-- The extension by zero of a morphism `f` acts over the point `u` of a fiber as `f` at `u`. -/
-theorem extendByZeroFunctor_map_app_apply (f : M ⟶ N) (v : Q)
-    (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) (u : φ.Fiber v) :
-    ((φ.extendByZeroFunctor k).map f).app (v : Paths Q) x u = f.app u.1 (x u) :=
+-- Not `@[simp]`: equivalence evaluation and `extendByZeroFunctor_map_app` already rewrite
+-- the left-hand side to its component normal form. Use this equation with `rw`.
+/-- Through the vertex-space equivalences, an extended morphism acts as the original component
+over each image vertex. -/
+theorem extendByZeroFunctor_map_app_apply (f : M ⟶ N) (u : Q')
+    (x : QuiverRep.vertexSpace k Q ((φ.extendByZeroFunctor k).obj M) (φ.obj u)) :
+    φ.extendByZeroRepVertexSpaceEquiv N u
+      ((eqToHom (φ.extendByZeroFunctor_obj (M := N))).app (φ.obj u)
+        (((φ.extendByZeroFunctor k).map f).app (φ.obj u) x)) =
+      f.app u (φ.extendByZeroRepVertexSpaceEquiv M u
+        ((eqToHom (φ.extendByZeroFunctor_obj (M := M))).app (φ.obj u) x)) :=
   (rfl)
 
 /-- Extension by zero is additive: it acts on morphisms componentwise. -/
