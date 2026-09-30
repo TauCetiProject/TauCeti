@@ -194,7 +194,6 @@ variable [DistribMulAction (X → Multiplicative (ZMod p)) (ZMod p)]
 
 /-- **`r((ℤ/p)^X) = #X (#X + 1) / 2`.** For the finite elementary abelian group `(ℤ/p)^X`,
 `H²((ℤ/p)^X, 𝔽_p)` has `p ^ (#X (#X + 1) / 2)` elements. -/
-@[simp]
 theorem natCard_H2_pi_multiplicative_zmod :
     Nat.card (H2 (X → Multiplicative (ZMod p)) (ZMod p)) =
       p ^ (Nat.card X * (Nat.card X + 1) / 2) := by
