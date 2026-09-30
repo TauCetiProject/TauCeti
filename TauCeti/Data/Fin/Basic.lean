@@ -34,6 +34,7 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
+* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
@@ -133,6 +134,16 @@ theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
   apply Fin.rev_injective
   simp only [Fin.rev_rev]
   simpa only [finRotate_apply, finRotate_symm_apply] using (rev_finRotate_rev i).symm
+
+/-- The value of a power of the cyclic permutation `finRotate n`: it adds `k` modulo `n`. -/
+theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
+    ((finRotate n ^ k) c : ℕ) = (c + k) % n := by
+  induction k with
+  | zero => simp [Nat.mod_eq_of_lt c.isLt]
+  | succ k ih =>
+    have : NeZero n := ⟨Nat.pos_iff_ne_zero.mp c.pos⟩
+    rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
+      ← Nat.add_mod, ← add_assoc]
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/

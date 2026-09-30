@@ -188,4 +188,69 @@ theorem unaryBarDifferential_filtration (𝒜 : AInfinityAlgebra R A) (n : ℕ) 
       rw [map_add, map_add]
       exact add_mem hx hy
 
+/-- On single letters the Taylor map is the differential. -/
+theorem taylor_comp_ofLetter (𝒜 : AInfinityAlgebra R A) :
+    𝒜.taylor ∘ₗ ReducedTensorWords.ofLetter R A = 𝒜.differential := by
+  ext a
+  rw [LinearMap.comp_apply, taylor_ofLetter, differential_apply]
+
+/-- The unary bar differential is the letterwise extension of the differential, with the Koszul
+signs of the suspended grading. -/
+theorem unaryBarDifferential_eq_gradedCoderiv (𝒜 : AInfinityAlgebra R A) :
+    𝒜.unaryBarDifferential = ReducedTensorWords.gradedCoderiv (𝒜.grading.shift 1)
+      (𝒜.differential ∘ₗ ReducedTensorWords.letter R A) 1 := by
+  rw [unaryBarDifferential, taylor_comp_ofLetter]
+
+/-- The unary Taylor map `m₁ ∘ letter` has degree one for the suspended grading. -/
+private theorem isHomogeneous_differential_comp_letter (𝒜 : AInfinityAlgebra R A) :
+    LinearMap.IsHomogeneous (𝒜.differential ∘ₗ ReducedTensorWords.letter R A)
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1)) (𝒜.grading.shift 1).piece 1 := by
+  have hd : LinearMap.IsHomogeneous 𝒜.differential (𝒜.grading.shift 1).piece
+      (𝒜.grading.shift 1).piece 1 := by
+    rw [LinearMap.isHomogeneous_def]
+    intro p x hx
+    rw [InternalGrading.shift_piece] at hx ⊢
+    rw [add_right_comm]
+    exact 𝒜.differential_mem_piece hx
+  simpa only [zero_add] using
+    hd.comp (ReducedTensorWords.isHomogeneous_letter (𝒜.grading.shift 1))
+
+/-- The higher Taylor map has degree one for the suspended grading. -/
+theorem isHomogeneous_higherTaylor (𝒜 : AInfinityAlgebra R A) :
+    LinearMap.IsHomogeneous 𝒜.higherTaylor
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1)) (𝒜.grading.shift 1).piece 1 := by
+  rw [higherTaylor, taylor_comp_ofLetter]
+  exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).sub
+    𝒜.isHomogeneous_differential_comp_letter
+
+/-- The higher bar differential has degree one for the suspended grading. -/
+theorem isHomogeneous_higherBarDifferential (𝒜 : AInfinityAlgebra R A) :
+    LinearMap.IsHomogeneous 𝒜.higherBarDifferential
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1))
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1)) 1 :=
+  ReducedTensorWords.isHomogeneous_gradedCoderiv _ _ 1 1 𝒜.isHomogeneous_higherTaylor
+
+/-- The unary bar differential has degree one for the suspended grading. -/
+theorem isHomogeneous_unaryBarDifferential (𝒜 : AInfinityAlgebra R A) :
+    LinearMap.IsHomogeneous 𝒜.unaryBarDifferential
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1))
+      (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1)) 1 := by
+  rw [unaryBarDifferential_eq_gradedCoderiv]
+  exact ReducedTensorWords.isHomogeneous_gradedCoderiv _ _ 1 1
+    𝒜.isHomogeneous_differential_comp_letter
+
+/-- The unary bar differential squares to zero, since the differential does. -/
+@[simp]
+theorem unaryBarDifferential_comp_self (𝒜 : AInfinityAlgebra R A) :
+    𝒜.unaryBarDifferential ∘ₗ 𝒜.unaryBarDifferential = 0 := by
+  have hcod := 𝒜.isGradedCoderivation_unaryBarDifferential
+    |>.isCoderivation_comp_self_of_isHomogeneous_one 𝒜.isHomogeneous_unaryBarDifferential
+  refine hcod.eq_of_letter_comp_eq
+    ((ReducedTensorWords.mem_coderivations R A).1 (ReducedTensorWords.coderivations R A).zero_mem)
+    ?_
+  rw [← LinearMap.comp_assoc, letter_comp_unaryBarDifferential, taylor_comp_ofLetter,
+    LinearMap.comp_assoc, letter_comp_unaryBarDifferential, taylor_comp_ofLetter,
+    ← LinearMap.comp_assoc, differential_comp_self_eq_zero, LinearMap.zero_comp,
+    LinearMap.comp_zero]
+
 end TauCeti.AInfinityAlgebra

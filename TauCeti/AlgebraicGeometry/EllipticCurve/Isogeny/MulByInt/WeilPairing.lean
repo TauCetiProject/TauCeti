@@ -15,6 +15,9 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.TorsionDivis
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Genus
 -- Proof-only: the functions fixed by the `N`-torsion translations are the pullbacks along `[N]`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Galois
+-- Proof-only: `τ_P^*` moves the place of `Q` to that of `Q - P`, and `div (τ_P^* g) = τ_P • div g`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Place
+import TauCeti.FieldTheory.FunctionField.Divisor.Automorphism
 
 /-!
 # The Weil pairing
@@ -36,10 +39,13 @@ of `g_{T₁ + T₂}` and the Kummer character of the pullback `[N]^* h` is trivi
 nondegenerate in `T`: if `e_N(·, T)` is trivial then `g_T` is fixed by the `N`-torsion
 translations, hence a pullback `[N]^* h`, and `div h = (T) - (O)` forces `T = O`.
 
-This is the construction of Silverman III.8.1. It is a divisor construction, and its inputs are
-the divisor calculus of the function field and the fibre of `[N]`; it does not use Weil
-reciprocity, which the alternative construction through evaluation of functions on divisors
-requires.
+It is alternating: `e_N(T, T) = 1`. Together with bilinearity, this gives skew-symmetry and,
+using nondegeneracy in `T`, nondegeneracy in `S`.
+
+This is the construction of Silverman III.8.1, with the proofs of its parts (a)–(c). It is a
+divisor construction, and its inputs are the divisor calculus of the function field and the fibre
+of `[N]`; it does not use Weil reciprocity, which the alternative construction through evaluation
+of functions on divisors requires.
 
 ## Main definitions
 
@@ -53,6 +59,10 @@ requires.
   a function with divisor `[N]^* (T) - [N]^* (O)`.
 * `TauCeti.Isogeny.eq_zero_of_forall_weilPairing_eq_zero`: the pairing is nondegenerate in its
   second variable.
+* `TauCeti.Isogeny.weilPairing_self` and `TauCeti.Isogeny.neg_weilPairing`: the pairing is
+  alternating, hence skew-symmetric.
+* `TauCeti.Isogeny.weilPairing_nondegenerate`: the pairing is nondegenerate in
+  its first variable.
 
 ## References
 
@@ -95,6 +105,19 @@ theorem zpow_mem_fieldRange_mulByIntIsogeny {n : ℤ} (hn : psiFunctionField W n
     (isIntegrallyClosedIn_functionField W.toAffine) hdiv
   rw [← Units.val_zpow_eq_zpow_val, hc]
   exact mul_mem (IntermediateField.algebraMap_mem _ _) ⟨f, rfl⟩
+
+-- The divisor of `∏_{i < m} τ_{i R₀}^* g` is the sum of the divisors of the translates.
+private theorem principal_prod_translation (R₀ : W.toAffine.Point) (g : W.toAffine.FunctionFieldˣ)
+    (m : ℕ) :
+    Divisor.principal W.toAffine.isFunctionField (∏ i ∈ Finset.range m,
+        Units.map (translation W.toAffine (Point.equivBaseChangeSelf W.toAffine (i • R₀)) :
+          W.toAffine.FunctionField →* W.toAffine.FunctionField) g) =
+      ∑ i ∈ Finset.range m, translation W.toAffine (Point.equivBaseChangeSelf W.toAffine (i • R₀)) •
+        Divisor.principal W.toAffine.isFunctionField g := by
+  induction m with
+  | zero => simp
+  | succ m ih => rw [Finset.prod_range_succ, Finset.sum_range_succ, Divisor.principal_mul, ih,
+      Divisor.principal_smul]
 
 section Pairing
 
@@ -267,6 +290,106 @@ theorem eq_zero_of_forall_weilPairing_eq_zero
   rw [hdiv]
   exact congrArg (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).1 -
     WeilDivisor.ofPoint ·) (coe_pointEquivDegreeOnePlace_zero _).symm
+
+omit [NeZero N] in
+include hN in
+-- With `N • R₀ = T` and `div g = [N]^* (T) - [N]^* (O)`, the divisors of the translates
+-- `τ_{i R₀}^* g`, for `i < N`, sum to zero: the divisor of `τ_{i R₀}^* g` is `a i - a (i + 1)`
+-- with `a i = ∑_{N • S = O} (R₀ + S - i R₀)`, and `a N = a 0` because `S ↦ S - T` permutes the
+-- `N`-torsion.
+private theorem sum_translation_smul_principal_eq_zero {T R₀ : W.toAffine.Point}
+    (hT : (N : ℤ) • T = 0) (hR₀ : (N : ℤ) • R₀ = T) {g : W.toAffine.FunctionFieldˣ}
+    {hψ : psiFunctionField W N ≠ 0}
+    (hg : Divisor.principal W.toAffine.isFunctionField g = weilPairingDivisor W hψ T) :
+    ∑ i ∈ Finset.range N, translation W.toAffine (Point.equivBaseChangeSelf W.toAffine (i • R₀)) •
+      Divisor.principal W.toAffine.isFunctionField g = 0 := by
+  have hchar := intCast_natCast_ne_zero N hN
+  set s₀ := (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) 0).toFinset with hs₀
+  let a : ℕ → Divisor F W.toAffine.FunctionField := fun i ↦
+    ∑ S ∈ s₀, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S - i • R₀)).1
+  have ha : ∀ i, translation W.toAffine (Point.equivBaseChangeSelf W.toAffine (i • R₀)) •
+      Divisor.principal W.toAffine.isFunctionField g = a i - a (i + 1) := by
+    intro i
+    rw [hg, weilPairingDivisor_eq_sum W hchar hR₀, Finset.smul_sum, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun S _ ↦ ?_
+    rw [smul_sub, WeilDivisor.smul_ofPoint, WeilDivisor.smul_ofPoint,
+      translation_smul_pointEquivDegreeOnePlace, translation_smul_pointEquivDegreeOnePlace,
+      succ_nsmul,
+      -- Put the translated point in the form used by the next term of the telescoping sum.
+      show R₀ + S - (i • R₀ + R₀) = S - i • R₀ by abel]
+  have hNR₀ : N • R₀ = T := by rw [← natCast_zsmul, hR₀]
+  have haN : a N = a 0 := by
+    simp only [a, zero_smul, sub_zero, hNR₀]
+    refine Finset.sum_nbij' (· - T) (· + T) (fun S hS ↦ ?_) (fun S hS ↦ ?_)
+      (fun S _ ↦ sub_add_cancel S T) (fun S _ ↦ add_sub_cancel_right S T)
+      (fun S _ ↦ by rw [add_sub_assoc])
+    · rw [hs₀, Set.Finite.mem_toFinset, Set.mem_ofPred_eq] at hS ⊢
+      rw [smul_sub, hS, hT, sub_zero]
+    · rw [hs₀, Set.Finite.mem_toFinset, Set.mem_ofPred_eq] at hS ⊢
+      rw [smul_add, hS, hT, add_zero]
+  rw [Finset.sum_congr rfl fun i _ ↦ ha i, Finset.sum_range_sub', haN, sub_self]
+
+omit [NeZero N] in
+include hN in
+-- Translation by an `N`-torsion point `T` fixes a function `g` with divisor
+-- `[N]^* (T) - [N]^* (O)`. With `N • R₀ = T`, the product `∏_{i < N} τ_{i R₀}^* g` has divisor
+-- zero, so it is a constant, and `τ_{R₀}^*` fixes it; since `τ_{R₀}^*` moves each factor
+-- `τ_{i R₀}^* g` to the next, this gives `τ_{N R₀}^* g = g`.
+private theorem translation_apply_eq_self_of_principal_eq_weilPairingDivisor {T : W.toAffine.Point}
+    (hT : (N : ℤ) • T = 0) {g : W.toAffine.FunctionFieldˣ} {hψ : psiFunctionField W N ≠ 0}
+    (hg : Divisor.principal W.toAffine.isFunctionField g = weilPairingDivisor W hψ T) :
+    translation W.toAffine (Point.equivBaseChangeSelf W.toAffine T) g = g := by
+  obtain ⟨R₀, hR₀⟩ :=
+    W.toAffine.exists_point_zsmul_eq_of_zsmul_eq_zero (intCast_natCast_ne_zero N hN) hT
+  -- `h i = τ_{i R₀}^* g`
+  let h : ℕ → W.toAffine.FunctionField := fun i ↦
+    translation W.toAffine (Point.equivBaseChangeSelf W.toAffine (i • R₀)) g
+  -- the product of the `h i` over `i < N` is a constant
+  obtain ⟨c, hc⟩ := (Divisor.principal_eq_zero_iff W.toAffine.isFunctionField
+    (isIntegrallyClosedIn_functionField W.toAffine) _).mp
+      ((principal_prod_translation W R₀ g N).trans
+        (sum_translation_smul_principal_eq_zero W N hN hT hR₀ hg))
+  rw [Units.coe_prod] at hc
+  -- so it is fixed by `τ_{R₀}^*`, which moves `h i` to `h (i + 1)`
+  have hshift : ∏ i ∈ Finset.range N, h (i + 1) = ∏ i ∈ Finset.range N, h i := by
+    have hfix := (translation W.toAffine (Point.equivBaseChangeSelf W.toAffine R₀)).commutes c
+    rw [hc, map_prod] at hfix
+    refine Eq.trans (Finset.prod_congr rfl fun i _ ↦ ?_) hfix
+    simp only [h, succ_nsmul, map_add, translation_add, AlgEquiv.trans_apply, Units.coe_map,
+      MonoidHom.coe_ofClass]
+  have hne : ∏ i ∈ Finset.range N, h i ≠ 0 :=
+    Finset.prod_ne_zero_iff.mpr fun i _ ↦ by simp [h]
+  have htel := Finset.prod_range_succ h N
+  rw [Finset.prod_range_succ', hshift, mul_right_inj' hne] at htel
+  have hNR₀ : Point.equivBaseChangeSelf W.toAffine (N • R₀) =
+      Point.equivBaseChangeSelf W.toAffine T := by
+    rw [← natCast_zsmul, hR₀]
+  simpa only [h, hNR₀, zero_smul, map_zero, translation_zero, AlgEquiv.one_apply] using
+    htel.symm
+
+/-- **The Weil pairing is alternating**: `e_N(T, T) = 1` (Silverman III.8.1(b)). -/
+@[simp]
+theorem weilPairing_self (T : Submodule.torsionBy ℤ W.toAffine.Point (N : ℤ)) :
+    weilPairing W N hN T T = 0 := by
+  obtain ⟨g, hg⟩ := exists_principal_eq_weilPairingDivisor_torsion W N hN T
+  exact (weilPairing_eq_zero_iff W N hN hg).mpr
+    (translation_apply_eq_self_of_principal_eq_weilPairingDivisor W N hN
+      ((Submodule.mem_torsionBy_iff _ _).mp T.2) hg)
+
+/-- **The Weil pairing is skew-symmetric**: `e_N(S, T)⁻¹ = e_N(T, S)`. -/
+theorem neg_weilPairing (S T : Submodule.torsionBy ℤ W.toAffine.Point (N : ℤ)) :
+    -weilPairing W N hN S T = weilPairing W N hN T S := by
+  have h := weilPairing_self W N hN (S + T)
+  simp only [map_add, AddMonoidHom.add_apply, weilPairing_self, zero_add, add_zero] at h
+  exact (eq_neg_of_add_eq_zero_left h).symm
+
+/-- **The Weil pairing is nondegenerate in its first variable**: if `e_N(S, T) = 1` for every
+`T`, then `S = O`. -/
+theorem weilPairing_nondegenerate
+    {S : Submodule.torsionBy ℤ W.toAffine.Point (N : ℤ)} (hS : ∀ T, weilPairing W N hN S T = 0) :
+    S = 0 :=
+  eq_zero_of_forall_weilPairing_eq_zero W N hN fun T ↦ by
+    rw [← neg_weilPairing, hS, neg_zero]
 
 end Pairing
 

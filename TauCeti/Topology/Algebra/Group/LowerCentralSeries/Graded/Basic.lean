@@ -993,6 +993,19 @@ theorem gradedMap_gradedPowIter {H : Type v} [Group H] [TopologicalSpace H] [IsT
   | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
   | succ j ih => rw [gradedPowIter_succ, gradedPowIter_succ, gradedMap_gradedPow, ih]
 
+/-- **`π` carries the span of iterated `p`-powers to the next degree**: above degree zero, `π`
+maps the span of the classes `π^j x_a` of a family `x : ι → gr_0(G)` into the span of the classes
+`π^{j+1} x_a`. -/
+theorem gradedPow_mem_span_range_gradedPowIter_succ {ι : Type*} (x : ι → gradedPiece p G 0)
+    {j : ℕ} (hj : 1 ≤ j) {t : gradedPiece p G j}
+    (ht : t ∈ Submodule.span (ZMod p) (Set.range fun a ↦ gradedPowIter p G j (x a))) :
+    gradedPow p G j t ∈
+      Submodule.span (ZMod p) (Set.range fun a ↦ gradedPowIter p G (j + 1) (x a)) := by
+  have h := Submodule.mem_map_of_mem (f := (gradedPowAddMonoidHom p G hj).toZModLinearMap p) ht
+  rw [Submodule.map_span, ← Set.range_comp] at h
+  simpa only [Function.comp_def, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply,
+    gradedPowIter_succ] using h
+
 variable [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H] in
 /-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹`, the iterated `p`-power class `π^n` of the
 generator is nonzero in `gr_n`. -/

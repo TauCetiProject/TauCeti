@@ -11,6 +11,7 @@ public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom
 
 /-!
 # Short exact sequences of discrete modules, and the low-degree connecting maps
@@ -52,6 +53,11 @@ sequence and has to name the same two coefficient maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.restrict`: the same sequence over a subgroup.
 * `TauCeti.ContCohomology.DiscreteShortExact.ofAddSubgroup`: the sequence `0 → N → B → B ⧸ N → 0`
   of a `G`-stable additive subgroup `N` of a discrete `G`-module `B`.
+* `TauCeti.ContCohomology.DiscreteShortExact.dual`: the dual sequence
+  `0 → Hom(C, N) → Hom(B, N) → Hom(A, N) → 0` of internal homs with the conjugation action, for a
+  sequence killed by a prime `p`; its maps are precomposition with the projection and the inclusion,
+  which `evalPairing_dual_incl` and `evalPairing_dual_proj` record as compatibilities of the
+  evaluation pairings.
 * `TauCeti.ContCohomology.DiscreteShortExact.inclDistribMulActionHom` and
   `TauCeti.ContCohomology.DiscreteShortExact.projDistribMulActionHom`: the inclusion and projection
   bundled as equivariant additive homomorphisms, suitable as inputs to `explicitCoeff0`.
@@ -130,7 +136,7 @@ public section
 
 namespace TauCeti.ContCohomology
 
-universe u vA vB vC w
+universe u vA vB vC vN w
 
 /-! ### Cochain lifting and descent
 
@@ -349,6 +355,70 @@ theorem restrict_incl (T : Subgroup G) : (S.restrict T).incl = S.incl := (rfl)
 theorem restrict_proj (T : Subgroup G) : (S.restrict T).proj = S.proj := (rfl)
 
 end Restrict
+
+section Dual
+
+variable {G : Type u} [Group G]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C)
+  (N : Type vN) [AddCommGroup N] [DistribMulAction G N] {p : ℕ} [Fact p.Prime]
+
+/-- **The dual short exact sequence.** For a short exact sequence `0 → A → B → C → 0` of discrete
+`G`-modules killed by a prime `p` and any `G`-module `N`, precomposition with the two maps gives the
+short exact sequence
+
+```text
+0 → InternalHom G C N → InternalHom G B N → InternalHom G A N → 0
+```
+
+of internal homs with their conjugation actions. Exactness is `Hom(-, N)` being exact on the
+modules killed by `p`, which are `𝔽_p`-vector spaces; only `B` need be killed by `p`, since `A`
+embeds in `B` and `C` is a quotient of `B`. Evaluation identifies the two maps:
+`evalPairing_dual_incl` and `evalPairing_dual_proj`. -/
+def dual (hB : ∀ b : B, p • b = 0) :
+    DiscreteShortExact G (InternalHom G C N) (InternalHom G B N) (InternalHom G A N) where
+  incl := (InternalHom.precomp G S.projDistribMulActionHom).toAddMonoidHom
+  proj := (InternalHom.precomp G S.inclDistribMulActionHom).toAddMonoidHom
+  incl_equivariant g φ := map_smul (InternalHom.precomp G S.projDistribMulActionHom) g φ
+  proj_equivariant g φ := map_smul (InternalHom.precomp G S.inclDistribMulActionHom) g φ
+  incl_injective := InternalHom.precomp_injective S.proj_surjective
+  proj_surjective := InternalHom.precomp_surjective hB S.incl_injective
+  exact := InternalHom.exact_precomp S.inclDistribMulActionHom S.projDistribMulActionHom
+    S.proj_surjective S.exact
+
+variable (hB : ∀ b : B, p • b = 0)
+
+@[simp]
+theorem dual_incl : (S.dual N hB).incl =
+    (InternalHom.precomp G S.projDistribMulActionHom (N := N)).toAddMonoidHom :=
+  (rfl)
+
+@[simp]
+theorem dual_proj : (S.dual N hB).proj =
+    (InternalHom.precomp G S.inclDistribMulActionHom (N := N)).toAddMonoidHom :=
+  (rfl)
+
+/-- The inclusion of the dual sequence is precomposition with the projection: the evaluation
+pairings of `InternalHom G C N` with `C` and of `InternalHom G B N` with `B` are compatible along
+the two maps. -/
+theorem evalPairing_dual_incl (φ : InternalHom G C N) (b : B) :
+    InternalHom.evalPairing G ((S.dual N hB).incl φ) b =
+      InternalHom.evalPairing G φ (S.proj b) := by
+  rw [dual_incl]
+  exact InternalHom.evalPairing_precomp S.projDistribMulActionHom φ b
+
+/-- The projection of the dual sequence is precomposition with the inclusion: the evaluation
+pairings of `InternalHom G B N` with `B` and of `InternalHom G A N` with `A` are compatible along
+the two maps. -/
+theorem evalPairing_dual_proj (ψ : InternalHom G B N) (a : A) :
+    InternalHom.evalPairing G ((S.dual N hB).proj ψ) a =
+      InternalHom.evalPairing G ψ (S.incl a) := by
+  rw [dual_proj]
+  exact InternalHom.evalPairing_precomp S.inclDistribMulActionHom ψ a
+
+end Dual
 
 section Retract
 

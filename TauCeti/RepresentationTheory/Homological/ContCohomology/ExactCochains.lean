@@ -24,7 +24,7 @@ snake lemma, hence to the long exact sequence of continuous cohomology in all de
 The three exactness statements have different hypotheses, and the statements below carry exactly
 those:
 
-* **Injectivity** (`resolutionMap_id_injective`, `cochainsMap_id_f_injective`): postcomposition
+* **Injectivity** (`resolutionMap_injective`, `cochainsMap_f_injective`): postcomposition
   with an injective map is injective, so this holds for any injective coefficient map.
 * **Exactness in the middle** (`resolutionMap_id_exact`, `cochainsMap_id_f_exact`): a continuous
   function killed by `g` factors pointwise through `f`, and the factorization is continuous when
@@ -101,15 +101,6 @@ theorem resolutionMap_id_succ_apply (f : X ⟶ Y) (n : ℕ)
       (resolutionMap (ContinuousMonoidHom.id G) f n).hom (F x) :=
   (rfl)
 
-/-- The level maps of the coinduced resolution induced by an injective coefficient map are
-injective. -/
-theorem resolutionMap_id_injective {f : X ⟶ Y} (hf : Function.Injective f.hom) :
-    ∀ n, Function.Injective (resolutionMap (ContinuousMonoidHom.id G) f n).hom
-  | 0 => hf
-  | n + 1 => ContinuousMap.postcomp_injective (X := G)
-      ⟨_, (resolutionMap (ContinuousMonoidHom.id G) f n).hom.continuous⟩
-      (resolutionMap_id_injective hf n)
-
 /-- The level maps of the coinduced resolution induced by an inducing coefficient map are
 inducing. -/
 theorem isInducing_resolutionMap_id {f : X ⟶ Y} (hf : IsInducing f.hom) :
@@ -167,16 +158,6 @@ theorem coe_cochainsMap_id_f_hom_apply (f : X ⟶ Y) (n : ℕ)
       (resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom v.1 :=
   (rfl)
 
-/-- The cochain maps induced by an injective coefficient map are injective in every degree. -/
-theorem cochainsMap_id_f_injective {f : X ⟶ Y} (hf : Function.Injective f.hom) (n : ℕ) :
-    Function.Injective ((cochainsMap (ContinuousMonoidHom.id G) f).f n).hom := by
-  intro (v : (TopRep.resolutionX X (n + 1)).ρ.invariants)
-    (w : (TopRep.resolutionX X (n + 1)).ρ.invariants) h
-  apply Subtype.ext
-  apply resolutionMap_id_injective hf (n + 1)
-  exact (coe_cochainsMap_id_f_hom_apply f n v).symm.trans
-    ((congrArg Subtype.val h).trans (coe_cochainsMap_id_f_hom_apply f n w))
-
 /-- **Exactness of homogeneous cochains in the middle.** If `X → Y → Z` is exact and the first map
 is an embedding, the induced sequence of homogeneous `n`-cochains is exact. Injectivity is what
 makes the preimage of an invariant cochain invariant. -/
@@ -191,7 +172,8 @@ theorem cochainsMap_id_f_exact {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsEmbedding f.h
       (coe_cochainsMap_id_f_hom_apply g n v).symm.trans (congrArg Subtype.val hv)
     obtain ⟨u, hu⟩ := (resolutionMap_id_exact hf.isInducing hfg (n + 1) _).1 hv'
     have hinv : u ∈ (TopRep.resolutionX X (n + 1)).ρ.invariants := fun k ↦ by
-      apply resolutionMap_id_injective hf.injective (n + 1)
+      apply resolutionMap_injective (ContinuousMonoidHom.id G) f Function.surjective_id
+        hf.injective (n + 1)
       refine ((resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom.isIntertwining k u).trans ?_
       rw [hu]
       exact v.2 k
@@ -361,8 +343,13 @@ theorem continuousCochainsShortExact_g :
 
 /-- The cochain map induced by the inclusion `A → B` is injective in every degree. -/
 theorem continuousCochainsShortExact_f_injective (n : ℕ) :
-    Function.Injective (S.continuousCochainsShortExact.f.f n).hom :=
-  cochainsMap_id_f_injective S.incl_injective n
+    Function.Injective (S.continuousCochainsShortExact.f.f n).hom := by
+  intro x y h
+  apply Subtype.ext
+  apply resolutionMap_injective (ContinuousMonoidHom.id G)
+    (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant)
+    Function.surjective_id S.incl_injective (n + 1)
+  exact congrArg Subtype.val h
 
 /-- The sequence of homogeneous `n`-cochains `Cⁿ(G, A) → Cⁿ(G, B) → Cⁿ(G, C)` is exact in the
 middle, in every degree. -/

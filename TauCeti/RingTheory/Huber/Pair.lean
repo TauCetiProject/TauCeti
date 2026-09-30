@@ -81,6 +81,13 @@ structure IsRingOfIntegralElements [NonarchimedeanRing A] (Aplus : Subring A) : 
   le_powerBoundedSubring : Aplus ≤ powerBoundedSubring A
 
 omit [IsTopologicalRing A] in
+/-- Every element of a ring of integral elements is power-bounded: the field
+`IsRingOfIntegralElements.le_powerBoundedSubring` read elementwise. -/
+theorem IsRingOfIntegralElements.isPowerBounded_of_mem [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) ⦃a : A⦄ (ha : a ∈ Aplus) : IsPowerBounded a :=
+  mem_powerBoundedSubring.mp (h.le_powerBoundedSubring ha)
+
+omit [IsTopologicalRing A] in
 /-- Wedhorn: an open integrally closed subring contains every topologically nilpotent element.
 
 Neither power-boundedness nor a nonarchimedean topology plays any part, so this is stated for an
@@ -255,11 +262,8 @@ noncomputable def quotient (S : Pair A) (J : Ideal A) : Pair (A ⧸ J) where
     have hR_power : R ≤ powerBoundedSubring (A ⧸ J) := by
       rintro x hx
       obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
-      have ha_power :=
-        mem_powerBoundedSubring.mp (S.isRingOfIntegralElements.le_powerBoundedSubring ha)
       exact mem_powerBoundedSubring.mpr <|
-        ha_power.map_of_isOpenMap continuous_quotient_mk'.continuousAt
-          (QuotientRing.isOpenMap_coe J)
+        (S.isRingOfIntegralElements.isPowerBounded_of_mem ha).quotientMk J
     exact isRingOfIntegralElements_integralClosure hR_open hR_power
 
 /-- The plus ring of the quotient pair is the integral closure of the image plus ring. -/

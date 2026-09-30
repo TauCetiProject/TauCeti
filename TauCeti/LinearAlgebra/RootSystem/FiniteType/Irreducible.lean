@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Connected
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.InvariantSubmodule
-import Mathlib.Combinatorics.SimpleGraph.Hasse
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 /-!
 # Irreducibility from a connected Dynkin diagram

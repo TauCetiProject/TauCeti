@@ -226,14 +226,6 @@ private theorem homOfRationalSubsetSubset_comp_locPresentationIso_hom
 
 /-! ### The isomorphism for a chosen presentation -/
 
--- A transport between presentation limits along an equality of opens is a restriction map.
-private theorem eqToHom_presentationLimit {R : Type v} [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] {Q : PairOfDefinition R} {Rplus : Subring R} {V W : Opens ↥(spa Rplus)}
-    (e : V = W) (e' : presentationLimit (P := Q) Rplus V = presentationLimit (P := Q) Rplus W) :
-    eqToHom e' = presentationLimitMap (P := Q) e.ge := by
-  subst e
-  simp
-
 -- The isomorphism of Remark 8.4 computed through a presentation `p` of `V` that refines `(T, s)`:
 -- `𝒪_X(V) ≅ A⟨p⟩ ≅ A⟨T/s⟩⟨ρ(p)⟩ ≅ 𝒪_U(j⁻¹V)`.
 private noncomputable def presentationLimitLocIsoAux (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
@@ -319,6 +311,23 @@ noncomputable def presentationLimitLocIso (hAplus : ∀ ⦃a⦄, a ∈ Aplus →
         (completedPlusSubring P Aplus T s S hden) (locOpensComap P Aplus T s S hden V) :=
   presentationLimitLocIsoAux P Aplus T s S hden hAplus
     (exists_presentation_refining P Aplus T s hT hV hVW).choose_spec
+
+/-- **Transport of `presentationLimitLocIso` along an equality of rational opens**: the
+isomorphisms at two equal opens `V = V'` agree up to the transports of the two presentation limits
+along that equality. -/
+theorem presentationLimitLocIso_hom_congr (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) {V V' : Opens ↥(spa Aplus)} (e : V = V')
+    (hV : V ∈ spaRationalOpens Aplus) (hV' : V' ∈ spaRationalOpens Aplus)
+    (hVW : V ≤ spaBasicOpen Aplus T s) (hVW' : V' ≤ spaBasicOpen Aplus T s) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom =
+      eqToHom (congrArg _ e) ≫
+        (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' hVW').hom ≫
+        eqToHom (congrArg _ (congrArg (locOpensComap P Aplus T s S hden) e.symm)) := by
+  subst e
+  simp
 
 /-- **Wedhorn's Remark 8.4 is natural in `V`.** For rational opens `V' ⊆ V ⊆ R(T/s)`, the
 isomorphisms `presentationLimitLocIso` at `V` and at `V'` carry the restriction map of `V' ⊆ V`

@@ -73,7 +73,11 @@ marginal integrals of a dual pair meaningful.
   real-valued infimal transform is uniformly continuous when the target-variable sections of the
   cost share a uniform modulus and its infima are finite;
 * `TauCeti.cTransform_add_const` — the transform turns an additive real constant into its
-  negative, which is the normalisation freedom of the dual problem;
+  negative, which is the normalisation freedom of the dual problem, and
+  `TauCeti.cTransform_add_add`, `TauCeti.cSuperdifferential_add_add`,
+  `TauCeti.isCConcave_add_add_iff`, `TauCeti.isCConcaveSymm_add_add_iff` — adding a split cost
+  `a x + b y` shifts the transform and the potentials by the split terms without changing the
+  `c`-superdifferential;
 * `TauCeti.cTransform_coe` and `TauCeti.cTransformSymm_coe` — the extended-real transforms of
   coerced real potentials agree with the corresponding real infima whenever those infima are
   bounded below;
@@ -411,6 +415,35 @@ theorem cTransformSymm_add_const (c : X × Y → ℝ) (ψ : Y → EReal) (a : �
   simpa only [cTransformSymm_eq_cTransform] using
     cTransform_add_const (fun p : Y × X => c (p.2, p.1)) ψ a x
 
+/-! ### Split shifts of the cost -/
+
+/-- Adding a split cost `a x + b y` to the cost shifts the `c`-transform: the source term is
+absorbed into the potential and the target term is added to the result. -/
+@[simp]
+theorem cTransform_add_add (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (φ : X → EReal) (y : Y) :
+    cTransform (fun p => c p + a p.1 + b p.2) φ y =
+      (b y : EReal) + cTransform c (fun x => φ x - (a x : EReal)) y := by
+  have hb : ∀ z : EReal, z - ((-b y : ℝ) : EReal) = (b y : EReal) + z := fun z => by
+    rw [EReal.coe_neg, sub_eq_add_neg, neg_neg, add_comm]
+  have h := EReal.iInf_sub_coe (fun x => (c (x, y) : EReal) - (φ x - (a x : EReal))) (-b y)
+  simp only [hb] at h
+  rw [cTransform_apply, cTransform_apply, ← h]
+  refine iInf_congr fun x => ?_
+  rw [EReal.sub_sub_coe_eq_add_coe_sub, ← add_sub_assoc, ← EReal.coe_add, ← EReal.coe_add,
+    add_comm (b y)]
+
+/-- Adding a split cost `a x + b y` to the cost shifts the symmetric `c`-transform: the target
+term is absorbed into the potential and the source term is added to the result. -/
+@[simp]
+theorem cTransformSymm_add_add (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (ψ : Y → EReal)
+    (x : X) :
+    cTransformSymm (fun p => c p + a p.1 + b p.2) ψ x =
+      (a x : EReal) + cTransformSymm c (fun y => ψ y - (b y : EReal)) x := by
+  have hcost : (fun p : Y × X => c (p.2, p.1) + a p.2 + b p.1) =
+      fun p : Y × X => c (p.2, p.1) + b p.1 + a p.2 := funext fun p => add_right_comm _ _ _
+  simp only [cTransformSymm_eq_cTransform]
+  rw [hcost, cTransform_add_add (fun p : Y × X => c (p.2, p.1)) b a ψ x]
+
 /-! ### `c`-concave potentials -/
 
 /-- A potential on the source is `c`-concave when it is the symmetric `c`-transform of some
@@ -432,6 +465,12 @@ theorem isCConcave_cTransformSymm (c : X × Y → ℝ) (ψ : Y → EReal) :
 /-- Every `c`-transform is `c`-concave. -/
 theorem isCConcaveSymm_cTransform (c : X × Y → ℝ) (φ : X → EReal) :
     IsCConcaveSymm c (cTransform c φ) := ⟨φ, rfl⟩
+
+/-- A potential on the target is `c`-concave exactly when it is `c`-concave, as a potential on
+the source, for the transposed cost. -/
+theorem isCConcaveSymm_iff_isCConcave :
+    IsCConcaveSymm c ψ ↔ IsCConcave (fun p : Y × X => c (p.2, p.1)) ψ :=
+  Iff.rfl
 
 /-- A potential on the source is `c`-concave exactly when it is fixed by the double
 `c`-transform. -/
@@ -607,6 +646,49 @@ theorem cTransformSymm_cTransform_eq_of_mem_cSuperdifferential
     (hz : (x, y) ∈ cSuperdifferential c φ) : cTransformSymm c (cTransform c φ) x = φ x := by
   rw [cSuperdifferential_def] at hz
   exact cTransformSymm_eq_of_mem_contactSet (fun y' => add_cTransform_le c φ x y') hz
+
+/-! ### Split shifts, continued -/
+
+/-- A potential is `c`-concave for the cost shifted by a split cost `a x + b y` exactly when the
+potential with the source term absorbed is `c`-concave for the original cost. -/
+@[simp]
+theorem isCConcave_add_add_iff (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (φ : X → EReal) :
+    IsCConcave (fun p => c p + a p.1 + b p.2) φ ↔
+      IsCConcave c (fun x => φ x - (a x : EReal)) := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    exact ⟨fun y => ψ y - (b y : EReal), funext fun x => by
+      rw [cTransformSymm_add_add, EReal.add_sub_cancel_left]⟩
+  · rintro ⟨ψ, hψ⟩
+    refine ⟨fun y => ψ y + (b y : EReal), funext fun x => ?_⟩
+    have hx : φ x - (a x : EReal) = cTransformSymm c ψ x := congr_fun hψ x
+    rw [cTransformSymm_add_add]
+    simp only [EReal.add_sub_cancel_right]
+    rw [← hx, add_comm, EReal.sub_add_cancel]
+
+/-- A potential on the target is `c`-concave for the cost shifted by a split cost `a x + b y`
+exactly when the potential with the target term absorbed is `c`-concave for the original cost. -/
+@[simp]
+theorem isCConcaveSymm_add_add_iff (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (ψ : Y → EReal) :
+    IsCConcaveSymm (fun p => c p + a p.1 + b p.2) ψ ↔
+      IsCConcaveSymm c (fun y => ψ y - (b y : EReal)) := by
+  have hcost : (fun p : Y × X => c (p.2, p.1) + b p.1 + a p.2) =
+      fun p : Y × X => c (p.2, p.1) + a p.2 + b p.1 := funext fun p => add_right_comm _ _ _
+  have h := isCConcave_add_add_iff (fun p : Y × X => c (p.2, p.1)) b a ψ
+  rw [hcost] at h
+  simpa only [IsCConcaveSymm, IsCConcave, cTransformSymm_eq_cTransform] using h
+
+/-- Adding a split cost `a x + b y` to the cost does not change the `c`-superdifferential, once
+the source term is absorbed into the potential. -/
+@[simp]
+theorem cSuperdifferential_add_add (c : X × Y → ℝ) (a : X → ℝ) (b : Y → ℝ) (φ : X → EReal) :
+    cSuperdifferential (fun p => c p + a p.1 + b p.2) φ =
+      cSuperdifferential c (fun x => φ x - (a x : EReal)) := by
+  ext ⟨x, y⟩
+  rw [mk_mem_cSuperdifferential_iff, mk_mem_cSuperdifferential_iff, cTransform_add_add,
+    add_left_comm, EReal.coe_add, EReal.coe_add, add_comm _ ((b y : ℝ) : EReal),
+    (EReal.addLECancellable_coe _).inj_right, EReal.sub_coe_add_eq_add_sub,
+    EReal.sub_coe_eq_iff_eq_add_coe]
 
 /-! ### Bounded costs -/
 

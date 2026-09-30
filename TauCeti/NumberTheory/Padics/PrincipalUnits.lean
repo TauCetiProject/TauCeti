@@ -455,6 +455,21 @@ theorem exists_topologicalClosure_zpowers_eq_unitsPrincipal {f : ℕ} (hf : 0 < 
   obtain ⟨u, hu, hu'⟩ := exists_mem_unitsPrincipal_and_notMem_succ_of_pos p hf
   exact ⟨u, topologicalClosure_zpowers_eq_unitsPrincipal hf hf₂ hu hu'⟩
 
+/-- A principal unit `u ≠ 1` of level `f ≥ 1`, with `f ≥ 2` when `p = 2`, has infinite order. -/
+theorem not_isOfFinOrder_of_mem_unitsPrincipal {f : ℕ} (hf : 0 < f) (hf₂ : p = 2 → 2 ≤ f)
+    {u : ℤ_[p]ˣ} (hu : u ∈ unitsPrincipal p f) (hu1 : u ≠ 1) : ¬ IsOfFinOrder u := by
+  intro hfin
+  obtain ⟨g, hg, hg'⟩ := exists_mem_unitsPrincipal_and_notMem_succ hu1
+  have hfg : f ≤ g := by
+    by_contra h
+    exact hg' (unitsPrincipal_antitone p (by omega) hu)
+  have hclos := topologicalClosure_zpowers_eq_unitsPrincipal (by omega : 0 < g)
+    (fun h ↦ (hf₂ h).trans hfg) hg hg'
+  have : Finite (Subgroup.zpowers u) := hfin.finite_zpowers
+  rw [(Set.toFinite _).isClosed.subgroup_topologicalClosure_eq] at hclos
+  rw [hclos] at this
+  exact not_finite_iff_infinite.mpr (infinite_unitsPrincipal p g).to_subtype this
+
 /-! ### The subgroup of `p`-th powers -/
 
 /-- `(U^(f))^p = U^(f+1)`: the `p`-th powers of the principal units of level `f` are exactly the
