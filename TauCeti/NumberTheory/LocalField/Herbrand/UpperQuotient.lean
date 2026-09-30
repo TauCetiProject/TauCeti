@@ -7,7 +7,7 @@ module
 
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
-public import TauCeti.NumberTheory.LocalField.Herbrand.Tower
+import TauCeti.NumberTheory.LocalField.Herbrand.Tower
 
 /-!
 # The upper numbering passes to quotients
