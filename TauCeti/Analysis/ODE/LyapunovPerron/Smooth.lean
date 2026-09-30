@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ImplicitContDiff
+public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 public import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
-public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.ODE.LyapunovPerron.Graph
 public import TauCeti.Analysis.ODE.LyapunovPerron.Linear
 
@@ -194,10 +194,22 @@ private theorem exists_contDiffAt_eventuallyEq :
           contDiffAt_snd))
   have hinv : (fderiv ℝ F (ξ₀, y ξ₀) ∘L inr ℝ X _).IsInvertible := by
     rw [hF.hasFDerivAt.fderiv]
-    convert isInvertible_id_sub_of_norm_lt_one
-      (norm_lyapunovPerronIntegralCLM_comp_applyCLM_lt hs hu hα hN hsmall hNs hmem hΦ) using 1
-    ext γ : 1
-    simp [L]
+    have heq : (snd ℝ X _ - homogeneousCLM hs ∘L fst ℝ X _ -
+        (L ∘L BoundedContinuousFunction.applyCLM Φ) ∘L snd ℝ X _) ∘L inr ℝ X _ =
+        ContinuousLinearMap.id ℝ _ - L ∘L BoundedContinuousFunction.applyCLM Φ := by
+      ext γ : 1
+      simp [L]
+    rw [heq]
+    by_cases htriv : Subsingleton (ℝ≥0 →ᵇ X)
+    · let _ := htriv
+      rw [Subsingleton.elim (ContinuousLinearMap.id ℝ _ -
+        L ∘L BoundedContinuousFunction.applyCLM Φ) (0 : (ℝ≥0 →ᵇ X) →L[ℝ] _)]
+      exact ContinuousLinearMap.isInvertible_zero_iff.mpr ⟨inferInstance, inferInstance⟩
+    · let _ : Nontrivial (ℝ≥0 →ᵇ X) := not_subsingleton_iff_nontrivial.mp htriv
+      apply ContinuousLinearMap.isInvertible_of_norm_sub_lt (ContinuousLinearEquiv.refl ℝ _)
+      rw [← NNReal.coe_lt_coe]
+      simpa [sub_sub, ContinuousLinearMap.norm_id] using
+        (norm_lyapunovPerronIntegralCLM_comp_applyCLM_lt hs hu hα hN hsmall hNs hmem hΦ)
   refine ⟨hFC.implicitFunction one_ne_zero hinv, hFC.contDiffAt_implicitFunction _ _, ?_⟩
   -- Near `ξ₀`, the pair `(ξ, y ξ)` is near `(ξ₀, y ξ₀)` and solves the implicit equation.
   have hy : Tendsto (fun ξ ↦ (ξ, y ξ)) (𝓝 ξ₀) (𝓝 (ξ₀, y ξ₀)) :=
