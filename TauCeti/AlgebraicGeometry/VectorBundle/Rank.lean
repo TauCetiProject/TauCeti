@@ -61,7 +61,7 @@ variable {X : Scheme.{u}}
 
 /-- Two finite bases of an `𝒪_X`-module over open neighbourhoods of a common point have the same
 number of elements. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.natCard_generatingSections_eq_of_mem
+theorem natCard_generatingSections_eq_of_mem
     {M : X.Modules} {U V : X.Opens} {x : X} (hU : x ∈ U) (hV : x ∈ V)
     (σ : (M.over U).GeneratingSections) (τ : (M.over V).GeneratingSections)
     [IsIso σ.π] [IsIso τ.π] [Finite σ.I] [Finite τ.I] : Nat.card σ.I = Nat.card τ.I := by
@@ -110,7 +110,7 @@ private theorem rankAt_eq (E : FiniteLocallyFreeSheaf X) {U : X.Opens} {x : X} (
     (σ : (E.obj.over U).GeneratingSections) [IsIso σ.π] [Finite σ.I] :
     E.rankAt x = Nat.card σ.I := by
   obtain ⟨_, _⟩ := (E.exists_generatingSections x).choose_spec.choose_spec.choose_spec
-  exact Scheme.Modules.natCard_generatingSections_eq_of_mem
+  exact natCard_generatingSections_eq_of_mem
     (E.exists_generatingSections x).choose_spec.choose hx _ σ
 
 /-- The rank of a finite locally free sheaf `E` on `X`, as a locally constant function on `X`.
