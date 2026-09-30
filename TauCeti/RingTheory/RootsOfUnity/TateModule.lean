@@ -265,6 +265,20 @@ theorem proj_map (f : E →* F) (x : PrimeToPTateModule p E)
     proj m (map f x) = restrictRootsOfUnity f m (proj m x) :=
   (rfl)
 
+/-- Mapping the identity homomorphism gives the identity on the prime-to-`p` Tate module. -/
+@[simp]
+theorem map_id : map (MonoidHom.id E) = MonoidHom.id (PrimeToPTateModule p E) := by
+  ext x m
+  rfl
+
+/-- Mapping a composite of monoid homomorphisms is the composite of the induced maps on the
+prime-to-`p` Tate modules. -/
+@[simp]
+theorem map_comp {G : Type*} [CommMonoid G] (g : F →* G) (f : E →* F) :
+    map (p := p) (g.comp f) = (map (p := p) g).comp (map (p := p) f) := by
+  ext x m
+  rfl
+
 /-- The homomorphism of Tate modules induced by a monoid homomorphism is continuous. -/
 theorem continuous_map (f : E →* F) : Continuous (map f : PrimeToPTateModule p E → _) :=
   continuous_iff.2 fun m ↦ by

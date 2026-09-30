@@ -241,6 +241,30 @@ theorem inertiaKummerCharacter_mul (a b : Kˣ) :
     coe_inertiaKummerCharacter_apply (σ := σ) hσ (root_pow hm a),
     coe_inertiaKummerCharacter_apply (σ := σ) hσ (root_pow hm b), map_mul, mul_div_mul_comm]
 
+/-- The Kummer character of one is trivial. -/
+@[simp]
+theorem inertiaKummerCharacter_one :
+    inertiaKummerCharacter K m hm (1 : Kˣ) = 1 := by
+  refine (inertiaKummerCharacter_eq_one_iff (a := (1 : Kˣ))
+    (α := (1 : AlgebraicClosure K)) (by simp)).2 ?_
+  simp
+
+/-- The Kummer character of an inverse is the inverse Kummer character. -/
+@[simp]
+theorem inertiaKummerCharacter_inv (a : Kˣ) :
+    inertiaKummerCharacter K m hm a⁻¹ = (inertiaKummerCharacter K m hm a)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  rw [← inertiaKummerCharacter_mul, inv_mul_cancel, inertiaKummerCharacter_one]
+
+/-- The Kummer character of a natural power is the corresponding power of the Kummer
+character. -/
+@[simp]
+theorem inertiaKummerCharacter_pow (a : Kˣ) (n : ℕ) :
+    inertiaKummerCharacter K m hm (a ^ n) = (inertiaKummerCharacter K m hm a) ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
 /-- **Compatibility along the power maps.** For `n ∣ m`, the level-`m` Kummer character raised to
 the power `m / n` is the level-`n` Kummer character, since `α ^ (m / n)` is an `n`-th root of `a`
 whenever `α` is an `m`-th root. -/
@@ -364,6 +388,27 @@ theorem proj_tameKummerCharacter_apply (a : Kˣ)
 @[simp]
 theorem tameKummerCharacter_mul (a b : Kˣ) :
     tameKummerCharacter K (a * b) = tameKummerCharacter K a * tameKummerCharacter K b := by
+  ext σ m : 2
+  simp
+
+/-- The tame Kummer character of one is trivial. -/
+@[simp]
+theorem tameKummerCharacter_one : tameKummerCharacter K (1 : Kˣ) = 1 := by
+  ext σ m : 2
+  simp
+
+/-- The tame Kummer character of an inverse is the inverse tame Kummer character. -/
+@[simp]
+theorem tameKummerCharacter_inv (a : Kˣ) :
+    tameKummerCharacter K a⁻¹ = (tameKummerCharacter K a)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  rw [← tameKummerCharacter_mul, inv_mul_cancel, tameKummerCharacter_one]
+
+/-- The tame Kummer character of a natural power is the corresponding power of the tame Kummer
+character. -/
+@[simp]
+theorem tameKummerCharacter_pow (a : Kˣ) (n : ℕ) :
+    tameKummerCharacter K (a ^ n) = (tameKummerCharacter K a) ^ n := by
   ext σ m : 2
   simp
 
