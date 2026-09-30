@@ -360,33 +360,29 @@ theorem sumMappingCone_apply (d : (ι →₀ S) →ₗ[S] (ι →₀ S)) (e : (�
   (rfl)
 
 /-- The coefficient of the mapping cone between two generators of `ι` is minus that of `d`. -/
-@[simp]
 theorem sumMappingCone_single_inl_apply_inl (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
     (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (i j : ι) (c : S) :
     sumMappingCone d e f (Finsupp.single (.inl i) c) (.inl j) = -d (Finsupp.single i c) j := by
-  simp [sumMappingCone_apply]
+  simp
 
 /-- The coefficient of the mapping cone from a generator of `ι` to a generator of `κ` is that
 of `f`. -/
-@[simp]
 theorem sumMappingCone_single_inl_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
     (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (i : ι) (k : κ) (c : S) :
     sumMappingCone d e f (Finsupp.single (.inl i) c) (.inr k) = f (Finsupp.single i c) k := by
-  simp [sumMappingCone_apply]
+  simp
 
 /-- The mapping cone has no coefficient from a generator of `κ` to a generator of `ι`. -/
-@[simp]
 theorem sumMappingCone_single_inr_apply_inl (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
     (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (k : κ) (i : ι) (c : S) :
     sumMappingCone d e f (Finsupp.single (.inr k) c) (.inl i) = 0 := by
-  simp [sumMappingCone_apply]
+  simp
 
 /-- The coefficient of the mapping cone between two generators of `κ` is that of `e`. -/
-@[simp]
 theorem sumMappingCone_single_inr_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
     (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (k k' : κ) (c : S) :
     sumMappingCone d e f (Finsupp.single (.inr k) c) (.inr k') = e (Finsupp.single k c) k' := by
-  simp [sumMappingCone_apply]
+  simp
 
 /-- The mapping cone on `(ι ⊕ κ) →₀ S` of a chain map between square-zero endomorphisms squares
 to zero. -/
