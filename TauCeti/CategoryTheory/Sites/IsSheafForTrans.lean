@@ -65,10 +65,10 @@ theorem isSheafFor_trans {W : Opens X} {ι : Type*} (Y : ι → Opens X) (hY : �
       refine hS₂ i j (x.pullback _) _ _ (fun V g hg ↦ ?_) (fun V g hg ↦ ?_)
       · rw [← Functor.map_comp_apply, ← op_comp,
           ht i (g ≫ homOfLE inf_le_left) (by simpa using hg)]
-        exact familyOfElements_congr x _ _ _ _
+        exact TauCeti.CategoryTheory.Presieve.FamilyOfElements.congr x _ _ _ _
       · rw [← Functor.map_comp_apply, ← op_comp,
           ht j (g ≫ homOfLE inf_le_right) (by simpa using hg)]
-        exact familyOfElements_congr x _ _ _ _
+        exact TauCeti.CategoryTheory.Presieve.FamilyOfElements.congr x _ _ _ _
     have hZ : Z ≤ Y i ⊓ Y j := le_inf gi.le gj.le
     rw [show gi = homOfLE hZ ≫ homOfLE inf_le_left from Subsingleton.elim _ _,
       show gj = homOfLE hZ ≫ homOfLE inf_le_right from Subsingleton.elim _ _, op_comp, op_comp,
