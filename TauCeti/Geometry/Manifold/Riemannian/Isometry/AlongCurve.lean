@@ -16,9 +16,10 @@ with the tangent map of `Φ`. This is the along-curve form of the naturality of 
 connection. It applies to differentiable tangent fields along arbitrary parameter sets with
 unique derivatives, including closed intervals.
 
-The result is first proved for fields pulled back from an ambient vector field. The general
-statement follows from metric compatibility: test both candidate derivatives against ambient
-fields, apply the product rule along the curve, and use preservation of the inner product.
+Naturality for arbitrary tangent fields along a curve, rather than only for fields pulled back
+from an ambient vector field, is what allows intrinsic equations involving covariant derivatives
+along curves to be transported by an isometry. The main example is the geodesic equation: the
+velocity field of a curve is generally not the restriction of an ambient vector field.
 
 ## Main results
 

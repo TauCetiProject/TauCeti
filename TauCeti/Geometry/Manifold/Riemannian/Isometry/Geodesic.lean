@@ -16,10 +16,10 @@ parameter set with unique derivatives, and the tangent map carries the initial v
 initial velocity of the image geodesic. Applying the result to the inverse isometry gives
 equivalences for interval-aware geodesics, all-time geodesics, and geodesics with initial data.
 
-The proof uses naturality of the along-curve Levi-Civita derivative from
-`TauCeti.Geometry.Manifold.Riemannian.Isometry.AlongCurve` and the chain rule for curve
-velocities. This is the geodesic form of naturality of the Levi-Civita connection; see do Carmo,
-*Riemannian Geometry*, Chapter 2, Theorem 3.6, and Chapter 3, Section 2.
+This is the geodesic form of naturality of the Levi-Civita connection; see do Carmo,
+*Riemannian Geometry*, Chapter 2, Theorem 3.6, and Chapter 3, Section 2. The equivalence for
+geodesics with prescribed initial data is the input for showing that an isometry preserves
+maximal geodesic intervals and intertwines the exponential maps, `Φ ∘ exp_p = exp_{Φ p} ∘ dΦ_p`.
 
 ## Main results
 
