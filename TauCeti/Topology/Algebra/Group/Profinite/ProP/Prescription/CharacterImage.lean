@@ -8,11 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.CrossedHomLinearization
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.PadicUnits
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
-import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
-import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
-import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
 # The image of a prescribed character of a one-relator pro-`p` group
