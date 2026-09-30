@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Homeomorph.TransferInstance
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 
 /-!
@@ -51,26 +52,26 @@ variable {R : Type*} [TopologicalSpace R]
 /-- The topology on the Heisenberg group over a topological space `R`: the product topology of
 `R × R × R`, pulled back along the coordinate equivalence. -/
 instance instTopologicalSpace : TopologicalSpace (HeisenbergGroup R) :=
-  TopologicalSpace.induced equivProd inferInstance
+  equivProd.topologicalSpace
 
 /-- The coordinate equivalence `HeisenbergGroup R ≃ R × R × R` is a homeomorphism. -/
 def homeomorphProd : HeisenbergGroup R ≃ₜ R × R × R :=
-  equivProd.toHomeomorphOfIsInducing ⟨rfl⟩
+  equivProd.homeomorph
 
 @[continuity, fun_prop]
 theorem continuous_x : Continuous (x : HeisenbergGroup R → R) :=
   (continuous_fst.comp homeomorphProd.continuous).congr fun _ ↦ by
-    simp [homeomorphProd]
+    simp [homeomorphProd, Equiv.homeomorph]
 
 @[continuity, fun_prop]
 theorem continuous_y : Continuous (y : HeisenbergGroup R → R) :=
   (continuous_fst.comp (continuous_snd.comp homeomorphProd.continuous)).congr fun _ ↦ by
-    simp [homeomorphProd]
+    simp [homeomorphProd, Equiv.homeomorph]
 
 @[continuity, fun_prop]
 theorem continuous_z : Continuous (z : HeisenbergGroup R → R) :=
   (continuous_snd.comp (continuous_snd.comp homeomorphProd.continuous)).congr fun _ ↦ by
-    simp [homeomorphProd]
+    simp [homeomorphProd, Equiv.homeomorph]
 
 /-- A map into the Heisenberg group is continuous exactly when its three coordinates are. -/
 theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → HeisenbergGroup R} :
@@ -80,7 +81,7 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → HeisenbergGro
   refine ⟨fun hf ↦ ⟨continuous_x.comp hf, continuous_y.comp hf, continuous_z.comp hf⟩, ?_⟩
   rintro ⟨hx, hy, hz⟩
   exact homeomorphProd.isInducing.continuous_iff.mpr
-    ((hx.prodMk (hy.prodMk hz)).congr fun _ ↦ by simp [homeomorphProd])
+    ((hx.prodMk (hy.prodMk hz)).congr fun _ ↦ by simp [homeomorphProd, Equiv.homeomorph])
 
 instance [CompactSpace R] : CompactSpace (HeisenbergGroup R) :=
   homeomorphProd.symm.compactSpace
