@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # A form that is both symmetric and alternating
@@ -27,6 +28,7 @@ field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
+* `TauCeti.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
 -/
 
 public section
@@ -36,6 +38,17 @@ namespace TauCeti
 open LinearMap (BilinForm)
 
 namespace BilinForm
+
+namespace IsSymm
+
+/-- Polarization of a symmetric bilinear form over a commutative ring. -/
+theorem apply_add_self {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    {B : BilinForm R M} (hB : B.IsSymm) (x y : M) :
+    B (x + y) (x + y) = B x x + B y y + 2 * B x y := by
+  simp only [map_add, LinearMap.add_apply, hB.eq y x]
+  ring
+
+end IsSymm
 
 /-- **Away from characteristic two a symmetric alternating form is zero**: symmetry and alternation
 force `2 * B x y = 0`, and a regular `2` cancels. -/

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Plumbing graphs and their intersection forms
@@ -189,11 +190,9 @@ theorem intersectionForm_isSymm : P.intersectionForm.IsSymm :=
 twice because the form is symmetric. -/
 theorem intersectionForm_self_add (x y : V → ℤ) :
     P.intersectionForm (x + y) (x + y) =
-      P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y :=
-  by
-    simp only [map_add, LinearMap.add_apply]
-    rw [P.intersectionForm_isSymm.eq y x]
-    ring
+      P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y := by
+  rw [BilinForm.IsSymm.apply_add_self P.intersectionForm_isSymm]
+  ring
 
 /-- The self-pairing of a rescaled lattice point scales by the square of the multiplier: the
 intersection form is quadratic along every ray through the origin. -/
