@@ -23,6 +23,10 @@ and reindexes its homogeneous pieces.
 
 * `TauCeti.InternalGrading.shift`: the shift of an internal grading.
 
+## Main results
+
+* `TauCeti.LinearMap.isHomogeneous_shift_piece_iff`: shifting both gradings preserves degrees.
+
 ## References
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.6.
@@ -82,5 +86,20 @@ theorem shift_shift (G : InternalGrading R M) (c d : ℤ) :
   simp [add_assoc]
 
 end InternalGrading
+
+/-- Shifting the source and the target internal grading by the same amount leaves the degree of a
+homogeneous linear map unchanged. -/
+theorem LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {G : InternalGrading R M}
+    {H : InternalGrading R N} {f : M →ₗ[R] N} {c q : ℤ} :
+    LinearMap.IsHomogeneous f (G.shift c).piece (H.shift c).piece q ↔
+      LinearMap.IsHomogeneous f G.piece H.piece q := by
+  simp only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece]
+  constructor
+  · intro hf p x hx
+    simpa only [sub_add_cancel, sub_add_eq_add_sub] using hf (p - c) x (by rwa [sub_add_cancel])
+  · intro hf p x hx
+    rw [add_right_comm]
+    exact hf _ x hx
 
 end TauCeti

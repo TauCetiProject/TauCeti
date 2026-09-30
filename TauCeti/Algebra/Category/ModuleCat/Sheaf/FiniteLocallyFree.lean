@@ -43,6 +43,9 @@ the zero sheaf is free on the empty type.
 
 * `TauCeti.SheafOfModules.subsingleton_of_epi_free_of_card_lt`: an epimorphism `free J ⟶ free K`
   with `|J| < |K|` forces the sheaf of rings to vanish;
+* `TauCeti.SheafOfModules.natCard_eq_of_iso_free`: consequently, isomorphic finite free sheaves
+  over a sheaf of rings with a nonzero ring of sections have index types of the same cardinality,
+  which makes the rank of a finite locally free sheaf well defined;
 * `SheafOfModules.GeneratingSections.exists_isIso_π_isFiniteType`: a sheaf of modules that is
   free and of finite type is free on a finite type;
 * `SheafOfModules.IsLocallyFree.exists_isLocallyFreeData_isFiniteType` and
@@ -98,6 +101,16 @@ theorem subsingleton_of_epi_free_of_card_lt {I K : Type u} [Finite I] [Finite K]
   rw [Module.finrank_fintype_fun_eq_card, Module.finrank_fintype_fun_eq_card] at hle
   rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card] at h
   omega
+
+/-- Isomorphic free sheaves of modules on finite types have index types of the same cardinality,
+as soon as the sheaf of rings has one nonzero ring of sections. -/
+theorem natCard_eq_of_iso_free {I K : Type u} [Finite I] [Finite K]
+    (e : free (R := ringCatSheaf R) I ≅ free K) (W : Cᵒᵖ)
+    [Nontrivial ((ringCatSheaf R).obj.obj W)] : Nat.card I = Nat.card K := by
+  by_contra h
+  rcases Nat.lt_or_gt_of_ne h with h | h
+  · exact not_subsingleton _ (subsingleton_of_epi_free_of_card_lt e.hom h W)
+  · exact not_subsingleton _ (subsingleton_of_epi_free_of_card_lt e.inv h W)
 
 /-- If there is an epimorphism from a free sheaf of modules on a finite type to the free sheaf of
 modules on an infinite type, then the sheaf of rings vanishes. -/

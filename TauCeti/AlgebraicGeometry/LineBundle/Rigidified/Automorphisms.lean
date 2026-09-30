@@ -27,8 +27,8 @@ The trivializations of a fixed line bundle `L` along `s` are permuted by the glo
 classes of rigidified line bundles. There it is transitive on the classes with a given underlying
 line bundle, and the stabilizer of every class is the image of `Γ(Y, 𝒪_Y)ˣ → Γ(T, 𝒪_T)ˣ`.
 Consequently, forgetting the rigidification is injective on classes exactly when
-`Γ(Y, 𝒪_Y)ˣ → Γ(T, 𝒪_T)ˣ` is surjective, and its image consists of the classes of the line
-bundles whose pullback along `s` is trivial.
+`Γ(Y, 𝒪_Y)ˣ → Γ(T, 𝒪_T)ˣ` is surjective, as it is when `s` is a section of a morphism `Y ⟶ T`,
+and its image consists of the classes of the line bundles whose pullback along `s` is trivial.
 
 ## Main declarations
 
@@ -47,7 +47,11 @@ bundles whose pullback along `s` is trivial.
   fixed line bundle, with stabilizer the image of `Γ(Y, 𝒪_Y)ˣ`;
 * `RigidifiedLineBundleClass.toLineBundleClass_injective_iff` and
   `RigidifiedLineBundleClass.mem_range_toLineBundleClass_iff`: the fibres and the image of
-  forgetting the rigidification.
+  forgetting the rigidification;
+* `RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id`: forgetting the
+  rigidification is injective when `s` is a section of a morphism `Y ⟶ T`, and
+  `RigidifiedLineBundleClass.range_toLineBundleClass` describes its image as the line-bundle classes
+  whose pullback along `s` is trivial.
 
 ## References
 
@@ -300,6 +304,16 @@ lemma toLineBundleClass_injective_iff :
       exact h v
     exact (MulAction.mem_stabilizer_iff.mp hv).symm
 
+/-- If `s` is a section of a morphism `p : Y ⟶ T`, then forgetting the rigidification is injective
+on classes: every global unit of `T` is the pullback along `s` of its pullback along `p`. -/
+lemma toLineBundleClass_injective_of_comp_eq_id {p : Y ⟶ T} (h : s ≫ p = 𝟙 T) :
+    Function.Injective (toLineBundleClass : RigidifiedLineBundleClass s → LineBundleClass Y) := by
+  refine toLineBundleClass_injective_iff.mpr fun v ↦
+    ⟨Units.map (p.appTop.hom : Γ(T, ⊤) →* Γ(Y, ⊤)) v, Units.ext ?_⟩
+  simp only [Units.coe_map, MonoidHom.coe_ofClass]
+  rw [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, h, Scheme.Hom.id_appTop,
+    CommRingCat.id_apply]
+
 /-- A line-bundle class is the class of a rigidified line bundle exactly when its pullback along
 `s` is trivial. -/
 lemma mem_range_toLineBundleClass_iff (L : InvertibleSheaf Y) :
@@ -313,6 +327,17 @@ lemma mem_range_toLineBundleClass_iff (L : InvertibleSheaf Y) :
     exact ⟨(Scheme.Modules.pullback s).mapIso e.symm ≪≫ P.rigidification⟩
   · rintro ⟨α⟩
     exact ⟨mk ⟨L, α⟩, toLineBundleClass_mk _⟩
+
+/-- The line-bundle classes underlying classes of rigidified line bundles are exactly those whose
+pullback along `s` is trivial. -/
+@[simp]
+lemma range_toLineBundleClass :
+    Set.range (toLineBundleClass : RigidifiedLineBundleClass s → LineBundleClass Y) =
+      {a | LineBundleClass.pullback s a = 1} := by
+  ext a
+  obtain ⟨L, rfl⟩ := LineBundleClass.mk_surjective a
+  rw [mem_range_toLineBundleClass_iff, Set.mem_ofPred_eq, LineBundleClass.pullback_mk,
+    LineBundleClass.mk_eq_one_iff, InvertibleSheaf.pullback_obj_obj]
 
 end RigidifiedLineBundleClass
 

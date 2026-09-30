@@ -65,6 +65,8 @@ standard Borel hypothesis and for an arbitrary parameter space and arbitrary exc
   `TauCeti.Probability.ConditionallyIIDWith.exists_map_comp_eq_map_unitIntervalCoding` — **coding
   given observed coordinates**: once observed coordinates determine the directing measure, the
   remaining coordinates are coded from them by fresh i.i.d. uniform noise.
+* `TauCeti.Probability.Exchangeable.exists_map_comp_eq_map_coding_of_prodMk` — the same coding for a
+  sequence exchangeable over a random element `Z`, with `Z` among the observed data.
 
 ## Implementation
 
@@ -419,6 +421,51 @@ theorem ConditionallyIIDWith.exists_map_comp_eq_map_unitIntervalCoding {μ : Mea
             (fun p => (p.1, fun b => unitIntervalCoding α (G p.1) (p.2 b))) := by
   obtain ⟨G, hG, hνG⟩ := h.exists_measurable_directing_eq_comp he
   exact ⟨G, hG, hνG, h.map_comp_eq_map_unitIntervalCoding_of_ae_eq hg heg measurable_id hG hνG⟩
+
+/-- **Coding a sequence exchangeable over a random element.** Let `Z` be a random element and `Y` a
+sequence such that the pairs `(Z, Y n)` form an exchangeable sequence; equivalently, the law of `Y`
+is invariant under finite permutations jointly with `Z`. Then, along injective `e` and `g` with
+disjoint ranges, the coordinates along `g` are coded from `Z` and the coordinates along `e` by one
+measurable map applied to fresh i.i.d. uniform variables.
+
+Conditioning on `Z` as well as on `Y ∘ e` is what the exchangeability over `Z` buys: the coded
+coordinates are conditionally i.i.d. given `(Z, Y ∘ e)`, not merely given `Y ∘ e`. -/
+theorem Exchangeable.exists_map_comp_eq_map_coding_of_prodMk {γ β : Type*} [MeasurableSpace γ]
+    [StandardBorelSpace γ] [Nonempty γ] [MeasurableSpace β] [StandardBorelSpace β] [Nonempty β]
+    {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω → γ} {Y : ℕ → Ω → β}
+    (hZY : Exchangeable μ fun n ω => (Z ω, Y n ω)) (hZ : AEMeasurable Z μ)
+    (hY : ∀ n, AEMeasurable (Y n) μ) {κ : Type*} {e : ℕ → ℕ} {g : κ → ℕ}
+    (he : Function.Injective e) (hg : Function.Injective g)
+    (heg : Disjoint (Set.range e) (Set.range g)) :
+    ∃ v : γ × (ℕ → β) → I → β, Measurable (Function.uncurry v) ∧
+      μ.map (fun ω => ((Z ω, fun a => Y (e a) ω), fun b => Y (g b) ω)) =
+        ((μ.map fun ω => (Z ω, fun a => Y (e a) ω)).prod
+            (Measure.infinitePi fun _ : κ => (volume : Measure I))).map
+          (fun p => (p.1, fun b => v p.1 (p.2 b))) := by
+  -- By de Finetti, the pairs `(Z, Y n)` are conditionally i.i.d. Their directing measure is a
+  -- measurable function `F` of the pairs along `e`, hence of `(Z, Y ∘ e)`; code the pairs along `g`
+  -- from it, then forget their constant first coordinate `Z`.
+  obtain ⟨ν, hν⟩ := (deFinetti (fun n => hZ.prodMk (hY n)) hZY).exists_directing
+  obtain ⟨F, hF, hνF⟩ := hν.exists_measurable_directing_eq_comp he
+  have hψ : Measurable fun s : γ × (ℕ → β) => fun a => (s.1, s.2 a) :=
+    Measurable.of_eval fun a => measurable_fst.prodMk ((measurable_pi_apply a).comp measurable_snd)
+  have hφ : Measurable fun t : ℕ → γ × β => ((t 0).1, fun a => (t a).2) :=
+    (measurable_pi_apply 0).fst.prodMk (Measurable.of_eval fun a => (measurable_pi_apply a).snd)
+  have hcode := hν.map_comp_eq_map_unitIntervalCoding_of_ae_eq hg heg hφ (hF.comp hψ) hνF
+  have hv : Measurable (Function.uncurry fun (s : γ × (ℕ → β)) (t : I) =>
+      (unitIntervalCoding (γ × β) (F fun a => (s.1, s.2 a)) t).2) :=
+    measurable_snd.comp
+      ((measurable_uncurry_unitIntervalCoding (γ × β)).comp ((hF.comp hψ).prodMap measurable_id))
+  have hsnd : Measurable fun p : (γ × (ℕ → β)) × (κ → γ × β) => (p.1, fun b => (p.2 b).2) :=
+    measurable_fst.prodMk
+      (Measurable.of_eval fun b => ((measurable_pi_apply b).comp measurable_snd).snd)
+  refine ⟨_, hv, ?_⟩
+  have h := congrArg (fun m => m.map fun p : (γ × (ℕ → β)) × (κ → γ × β) =>
+    (p.1, fun b => (p.2 b).2)) hcode
+  beta_reduce at h
+  have : Countable κ := hg.countable
+  rwa [AEMeasurable.map_map_of_aemeasurable hsnd.aemeasurable (by fun_prop),
+    Measure.map_map hsnd (by fun_prop)] at h
 
 end Coding
 

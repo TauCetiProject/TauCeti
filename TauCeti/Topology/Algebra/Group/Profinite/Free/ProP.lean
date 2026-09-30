@@ -32,6 +32,10 @@ group is a continuous image of the free pro-`p` group on any finite type with at
 * `TauCeti.freeProP.fromFreeGroup`: the canonical homomorphism from the discrete free group.
 * `TauCeti.freeProP.lift`: extension from the generators.
 * `TauCeti.freeProP.map`: functoriality in the generating type.
+* `TauCeti.freeProP.congr`: the topological isomorphism induced by a bijection of generating types.
+* `TauCeti.freeProP.finSuccRetract`: the retraction of the free pro-`p` group on `Fin (n + 1)` onto
+  the free pro-`p` group on `Fin n` killing the first generator, a left inverse of
+  `freeProP.map Fin.succ`.
 * `TauCeti.freeProC.equivFreeProP`: comparison with the finite-`p` specialization of `freeProC`.
 
 ## Main results
@@ -366,6 +370,53 @@ theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
   obtain ⟨x, rfl⟩ := (freeProC.equivFreeProP p X).symm.surjective cx
   exact ⟨x, rfl⟩
 
+/-- **The isomorphism of free pro-`p` groups induced by a bijection of the generating types.** It
+sends the generator at `x` to the generator at `σ x`; its inverse is induced by `σ⁻¹`. -/
+noncomputable def congr (σ : X ≃ Y) : freeProP p X ≃ₜ* freeProP p Y where
+  toFun := map σ
+  invFun := map σ.symm
+  left_inv y := by
+    have h : (map (p := p) σ.symm).comp (map σ) = ContinuousMonoidHom.id _ := by
+      rw [← map_comp, Equiv.symm_comp_self, map_id]
+    simpa using DFunLike.congr_fun h y
+  right_inv y := by
+    have h : (map (p := p) σ).comp (map σ.symm) = ContinuousMonoidHom.id _ := by
+      rw [← map_comp, Equiv.self_comp_symm, map_id]
+    simpa using DFunLike.congr_fun h y
+  map_mul' := map_mul _
+  continuous_toFun := (map σ).continuous
+  continuous_invFun := (map σ.symm).continuous
+
+/-- The isomorphism induced by a bijection of generating types is the induced homomorphism
+`TauCeti.freeProP.map`. -/
+theorem coe_congr (σ : X ≃ Y) : ⇑(congr (p := p) σ) = ⇑(map (p := p) σ) := (rfl)
+
+/-- The inverse of the isomorphism induced by a bijection is induced by the inverse bijection. -/
+@[simp]
+theorem congr_symm (σ : X ≃ Y) : (congr (p := p) σ).symm = congr σ.symm :=
+  ContinuousMulEquiv.ext fun _ ↦ rfl
+
+/-- The isomorphism induced by the identity bijection is the identity. -/
+@[simp]
+theorem congr_refl : congr (p := p) (Equiv.refl X) = ContinuousMulEquiv.refl (freeProP p X) :=
+  ContinuousMulEquiv.ext fun y ↦ by
+    rw [coe_congr, Equiv.coe_refl, map_id]
+    rfl
+
+/-- The isomorphisms induced by bijections of generating types compose functorially. -/
+@[simp]
+theorem congr_trans (σ : X ≃ Y) (τ : Y ≃ Z) :
+    congr (p := p) (σ.trans τ) = (congr σ).trans (congr τ) :=
+  ContinuousMulEquiv.ext fun y ↦ by
+    rw [ContinuousMulEquiv.trans_apply, coe_congr, coe_congr, coe_congr, Equiv.coe_trans, map_comp]
+    rfl
+
+/-- The isomorphism induced by a bijection of generating types sends the generator at `x` to the
+generator at `σ x`. -/
+@[simp]
+theorem congr_of (σ : X ≃ Y) (x : X) : congr (p := p) σ (of x) = of (σ x) := by
+  rw [coe_congr, map_of]
+
 end Map
 
 end freeProP
@@ -491,6 +542,37 @@ theorem freeProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : freeProPGen p n i = 1
 theorem freeProPGen_val (i : Fin n) : freeProPGen p n i = freeProP.of i :=
   freeProPGen_of_lt p i.isLt
 
+variable (n) in
+/-- The `ℕ`-indexed generators take finitely many values: the canonical generators and `1`. -/
+theorem finite_range_freeProPGen : (Set.range (freeProPGen p n)).Finite := by
+  refine ((Set.finite_range (freeProP.of : Fin n → freeProP p (Fin n))).insert 1).subset ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases h : i < n
+  · exact Or.inr ⟨⟨i, h⟩, (freeProPGen_of_lt p h).symm⟩
+  · exact Or.inl (freeProPGen_eq_one_of_le p (not_lt.mp h))
+
+/-- A set containing every `ℕ`-indexed generator generates the free pro-`p` group topologically. -/
+theorem topologicalClosure_closure_eq_top_of_range_freeProPGen_subset {s : Set (freeProP p (Fin n))}
+    (hs : Set.range (freeProPGen p n) ⊆ s) : (Subgroup.closure s).topologicalClosure = ⊤ := by
+  refine top_le_iff.1 ?_
+  rw [← freeProP.topologicalClosure_closure_range_of_eq_top p (Fin n)]
+  refine Subgroup.topologicalClosure_mono (Subgroup.closure_mono ?_)
+  rintro _ ⟨i, rfl⟩
+  exact hs ⟨i, freeProPGen_val p i⟩
+
+/-- Two marked generators `x_j`, `x_k` together with the remaining generators `x_i`, `i ≠ j, k`,
+generate the free pro-`p` group topologically. -/
+theorem topologicalClosure_closure_insert_insert_image_freeProPGen_eq_top (j k : ℕ) :
+    (Subgroup.closure (insert (freeProPGen p n j) (insert (freeProPGen p n k)
+      (freeProPGen p n '' {i | i ≠ j ∧ i ≠ k})))).topologicalClosure = ⊤ := by
+  refine topologicalClosure_closure_eq_top_of_range_freeProPGen_subset p ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases hij : i = j
+  · exact Or.inl (by rw [hij])
+  by_cases hik : i = k
+  · exact Or.inr (Or.inl (by rw [hik]))
+  exact Or.inr (Or.inr ⟨i, ⟨hij, hik⟩, rfl⟩)
+
 /-- The value of a homomorphism on the `ℕ`-indexed generators. -/
 theorem map_freeProPGen {K F : Type*} [Group K] [FunLike F (freeProP p (Fin n)) K]
     [MonoidHomClass F (freeProP p (Fin n)) K] (φ : F) (i : ℕ) :
@@ -510,5 +592,71 @@ theorem freeProP.lift_freeProPGen {P : Type} [Group P] [TopologicalSpace P] [IsT
   · rfl
 
 end NatIndexed
+
+/-! ## The first generator of a free pro-`p` group on `Fin (n + 1)` and the others -/
+
+namespace freeProP
+
+section FinSucc
+
+variable {p n : ℕ}
+
+/-- **The retraction onto the last `n` generators.** The continuous homomorphism from the free
+pro-`p` group on `Fin (n + 1)` to the free pro-`p` group on `Fin n` killing the first generator
+and sending the generator at `j.succ` to the generator at `j`. It is a left inverse of
+`freeProP.map Fin.succ` (`TauCeti.freeProP.finSuccRetract_map_succ`). -/
+noncomputable def finSuccRetract : freeProP p (Fin (n + 1)) →ₜ* freeProP p (Fin n) :=
+  lift (isProP_freeProP p (Fin n)) (Fin.cons 1 of)
+
+/-- The retraction onto the last `n` generators kills the first generator. -/
+@[simp]
+theorem finSuccRetract_of_zero : finSuccRetract (p := p) (n := n) (of 0) = 1 := by
+  rw [finSuccRetract, lift_of, Fin.cons_zero]
+
+/-- The retraction onto the last `n` generators sends the generator at `j.succ` to the generator
+at `j`. -/
+@[simp]
+theorem finSuccRetract_of_succ (j : Fin n) : finSuccRetract (p := p) (of j.succ) = of j := by
+  rw [finSuccRetract, lift_of, Fin.cons_succ]
+
+/-- The retraction onto the last `n` generators is a left inverse of `freeProP.map Fin.succ`. -/
+theorem finSuccRetract_comp_map_succ :
+    (finSuccRetract (p := p) (n := n)).comp (map Fin.succ) =
+      ContinuousMonoidHom.id (freeProP p (Fin n)) :=
+  hom_ext fun j ↦ by simp
+
+/-- The retraction onto the last `n` generators is a left inverse of `freeProP.map Fin.succ`. -/
+@[simp]
+theorem finSuccRetract_map_succ (y : freeProP p (Fin n)) :
+    finSuccRetract (map (Fin.succ : Fin n → Fin (n + 1)) y) = y :=
+  DFunLike.congr_fun finSuccRetract_comp_map_succ y
+
+/-- The map induced by `Fin.succ` shifts the `ℕ`-indexed generators by one. -/
+@[simp]
+theorem map_succ_freeProPGen (i : ℕ) :
+    map (p := p) (Fin.succ : Fin n → Fin (n + 1)) (freeProPGen p n i) =
+      freeProPGen p (n + 1) (i + 1) := by
+  rw [map_freeProPGen]
+  split_ifs with h
+  · rw [map_of, freeProPGen_of_lt p (Nat.succ_lt_succ h)]
+    rfl
+  · rw [freeProPGen_eq_one_of_le p (by omega)]
+
+/-- An element of the closed subgroup generated by the last `n` generators `x_{j+1}` is recovered
+from its retraction onto them: `map Fin.succ ∘ finSuccRetract` is the identity on each `x_{j+1}`,
+hence on the closed subgroup they generate. -/
+theorem map_succ_finSuccRetract_of_mem_topologicalClosure_closure {y : freeProP p (Fin (n + 1))}
+    (hy : y ∈ (Subgroup.closure (Set.range fun j : Fin n ↦ of j.succ)).topologicalClosure) :
+    map (Fin.succ : Fin n → Fin (n + 1)) (finSuccRetract y) = y := by
+  have h := MonoidHom.eqOn_topologicalClosure_closure
+    (f := (((map Fin.succ).comp finSuccRetract :
+      freeProP p (Fin (n + 1)) →ₜ* freeProP p (Fin (n + 1))) : freeProP p (Fin (n + 1)) →* _))
+    (g := MonoidHom.id _) ((map Fin.succ).comp finSuccRetract).continuous continuous_id
+    (by rintro _ ⟨j, rfl⟩; simp) hy
+  simpa using h
+
+end FinSucc
+
+end freeProP
 
 end TauCeti

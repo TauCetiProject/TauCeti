@@ -293,12 +293,7 @@ private theorem sumCongr_opposite_mul_claspMatching (T : Perm α) :
         swap (.inl (.inl (e p))) (.inl (.inr 0)) * swap (.inl (.inl (e p))) (.inr 1) *
         swap (.inl (.inl q)) (.inr 2) * swap (.inl (.inl q)) (.inl (.inr 3)) *
         swap (.inl (.inl (e q))) (.inl (.inr 1)) * swap (.inl (.inl (e q))) (.inr 0) := by
-  have hopp : oppositeCrossingSlot = swap (0 : Fin 4) 2 * swap 1 3 := by
-    refine Equiv.ext fun t => ?_
-    rw [← Fin.val_inj, oppositeCrossingSlot_apply]
-    revert t
-    decide
-  rw [hopp]
+  rw [oppositeCrossingSlot_eq_swap_mul_swap]
   have hinv := he.apply_apply
   have hne := he.apply_ne
   have h₁ := apply_ne_self_of_ne he hqe

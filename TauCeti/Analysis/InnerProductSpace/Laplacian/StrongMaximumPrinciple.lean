@@ -11,25 +11,30 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
-# The strong maximum principle for the Laplacian
+# The strong maximum principle
 
-The weak maximum principle of `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple`
-bounds a subharmonic function by its frontier values. This file proves the **strong maximum
-principle** in a finite-dimensional real inner product space: a `C²` function with `0 ≤ Δ u` on a
-preconnected open set that attains its maximum over the set at some point of it is constant there.
-The superharmonic minimum principle, the strong comparison principle, and their harmonic
-specializations follow.
+The weak maximum principles of `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple`
+and `TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple` bound a subsolution
+by its frontier values; with a zeroth-order term `c ≥ 0`, by a nonnegative upper bound of its
+frontier values. This file proves the **strong maximum principle** in a finite-dimensional
+real inner product space, first for the operator `-Δ - b·∇ + c` with locally bounded drift `b` and
+locally bounded zeroth-order coefficient `c ≥ 0`, and then for the Laplacian: a `C²` subsolution
+`c u ≤ Δ u + ⟪b, ∇u⟫` on a preconnected open set that attains a nonnegative maximum over the set at
+some point of it is constant there. For the Laplacian the sign condition disappears, since a
+constant may be subtracted. The minimum principles, the strong comparison principles, and the
+harmonic specializations follow.
 
 The proof is the classical one via **Hopf's boundary-point lemma**
-(`TauCeti.fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere`), and needs neither a
-mean-value property nor analyticity, so it works in every dimension. The local step is
-`TauCeti.eventually_eq_of_laplacian_nonneg_of_isLocalMax`: near a local maximum `x`, if `u` took a
-smaller value at some point `x₂`, then the largest ball about `x₂` on which `u < u x` touches the
-level set `{u = u x}` at a point `x₀` of its sphere. There `u` is strictly below `u x₀` inside the
-ball and weakly below it on the sphere, so Hopf's lemma makes the outward derivative at `x₀`
-strictly positive; but `x₀` is again a local maximum, where the derivative vanishes. Hence `u` is
-locally constant near every point where it attains its maximum, and preconnectedness spreads this
-over the whole set.
+(`TauCeti.fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere`), and needs neither a
+mean-value property nor analyticity, so it works in every dimension and for variable lower-order
+coefficients. The local step is
+`TauCeti.eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax`: near a local maximum `x`, if
+`u` took a smaller value at some point `x₂`, then the largest ball about `x₂` on which `u < u x`
+touches the level set `{u = u x}` at a point `x₀` of its sphere. There `u` is strictly below
+`u x₀` inside the ball and weakly below it on the sphere, so Hopf's lemma makes the outward
+derivative at `x₀` strictly positive; but `x₀` is again a local maximum, where the derivative
+vanishes. Hence `u` is locally constant near every point where it attains its maximum, and
+preconnectedness spreads this over the whole set.
 
 Unlike the planar statements of `TauCeti.Analysis.PDE.Harnack.StrongPrinciple`, which use the
 analyticity of planar harmonic functions, the results here need the set to be open: a subharmonic
@@ -37,14 +42,23 @@ function may be constant near a local maximum and increase further away.
 
 ## Main declarations
 
+* `TauCeti.eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax`: a `C²` subsolution of
+  `-Δ - b·∇ + c` with a nonnegative local maximum is constant near it; its supersolution mirror
+  image is `TauCeti.eventually_eq_of_laplacian_add_fderiv_le_mul_of_isLocalMin`.
+* `TauCeti.eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn`: **the strong maximum
+  principle** for `-Δ - b·∇ + c` on a preconnected open set.
+* `TauCeti.eqOn_const_of_laplacian_add_fderiv_le_mul_of_isMinOn`: the strong minimum principle
+  for supersolutions of `-Δ - b·∇ + c`.
+* `TauCeti.eqOn_of_laplacian_add_fderiv_sub_mul_le_of_le_of_eq`: the strong comparison principle
+  for `-Δ - b·∇ + c`, which needs no sign condition on `c`, `u` or `v`.
 * `TauCeti.eventually_eq_of_laplacian_nonneg_of_isLocalMax`: a function that is `C²` at a local
   maximum point and subharmonic near it is constant near it; its superharmonic mirror image is
   `TauCeti.eventually_eq_of_laplacian_nonpos_of_isLocalMin`.
-* `TauCeti.eqOn_const_of_laplacian_nonneg_of_isMaxOn`: **the strong maximum principle** for
+* `TauCeti.eqOn_const_of_laplacian_nonneg_of_isMaxOn`: the strong maximum principle for
   subharmonic functions on a preconnected open set.
 * `TauCeti.eqOn_const_of_laplacian_nonpos_of_isMinOn`: the strong minimum principle for
   superharmonic functions.
-* `TauCeti.eqOn_of_laplacian_le_of_le_of_eq`: the strong comparison principle.
+* `TauCeti.eqOn_of_laplacian_le_of_le_of_eq`: the strong comparison principle for the Laplacian.
 * `TauCeti.eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn`,
   `TauCeti.eqOn_const_closure_of_laplacian_nonpos_of_isMinOn`,
   `TauCeti.eqOn_closure_of_laplacian_le_of_le_of_eq`: the same three statements for functions
@@ -72,18 +86,22 @@ open Filter Function InnerProductSpace Laplacian Metric Set Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-section Laplacian
+section LowerOrder
 
-variable {U : Set E} {u v : E → ℝ} {a : E}
+variable {U : Set E} {u v c : E → ℝ} {b : E → E} {a : E}
 
-/-- A function that is `C²` and subharmonic in a ball, strictly below its value at a point `x₀` of
-the bounding sphere inside the ball and weakly below it on the sphere, has no local maximum at
-`x₀`: by Hopf's lemma its outward derivative there is positive. -/
-private theorem not_isLocalMax_of_lt_ball_of_le_sphere {y x₀ : E} {R : ℝ} (hR : 0 < R)
+/-- A `C²` subsolution of `-Δ - b·∇ + c` in a ball, with bounded coefficients `‖b‖ ≤ β` and
+`0 ≤ c ≤ γ`, that is nonnegative at a point `x₀` of the bounding sphere, strictly below `u x₀`
+inside the ball and weakly below it on the sphere, has no local maximum at `x₀`: by Hopf's lemma
+its outward derivative there is positive. -/
+private theorem not_isLocalMax_of_lt_ball_of_le_sphere {y x₀ : E} {R β γ : ℝ} (hR : 0 < R)
     (hx₀ : x₀ ∈ sphere y R) (hucont : ContinuousOn u (closedBall y R))
     (huinterior : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x) (hderiv : DifferentiableAt ℝ u x₀)
-    (hlap : ∀ x ∈ ball y R, 0 ≤ Δ u x) (hlt : ∀ x ∈ ball y R, u x < u x₀)
-    (hle : ∀ x ∈ sphere y R, u x ≤ u x₀) : ¬IsLocalMax u x₀ := by
+    (hc : ∀ x ∈ ball y R, 0 ≤ c x) (hcγ : ∀ x ∈ ball y R, c x ≤ γ)
+    (hb : ∀ x ∈ ball y R, ‖b x‖ ≤ β)
+    (hsub : ∀ x ∈ ball y R, c x * u x ≤ Δ u x + fderiv ℝ u x (b x)) (hnonneg : 0 ≤ u x₀)
+    (hlt : ∀ x ∈ ball y R, u x < u x₀) (hle : ∀ x ∈ sphere y R, u x ≤ u x₀) :
+    ¬IsLocalMax u x₀ := by
   intro hmax
   -- Write `x₀ = y + R • e` for the unit outward normal `e`.
   set e := R⁻¹ • (x₀ - y) with he_def
@@ -92,23 +110,30 @@ private theorem not_isLocalMax_of_lt_ball_of_le_sphere {y x₀ : E} {R : ℝ} (h
   have he : ‖e‖ = 1 := by
     rw [he_def, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, ← dist_eq_norm, mem_sphere.mp hx₀,
       inv_mul_cancel₀ hR.ne']
-  have hpos := fderiv_pos_of_laplacian_nonneg_of_lt_ball_of_le_sphere hR he hucont huinterior
-    (hx₀e ▸ hderiv) hlap (hx₀e ▸ hlt) (hx₀e ▸ hle)
+  have hpos := fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere hR he hucont
+    huinterior (hx₀e ▸ hderiv) hc hcγ hb hsub (hx₀e ▸ hnonneg) (hx₀e ▸ hlt) (hx₀e ▸ hle)
   rw [hx₀e, hmax.fderiv_eq_zero] at hpos
   exact lt_irrefl _ hpos
 
-/-- **Local strong maximum principle.** A function that is `C²` at a local maximum point `x` and
-subharmonic (`0 ≤ Δ u`) near `x` is constant on a neighbourhood of `x`. -/
-theorem eventually_eq_of_laplacian_nonneg_of_isLocalMax {x : E} (hcd : ContDiffAt ℝ 2 u x)
-    (hlap : ∀ᶠ y in 𝓝 x, 0 ≤ Δ u y) (hmax : IsLocalMax u x) :
+/-- **Local strong maximum principle for `-Δ - b·∇ + c`.** Let `u` be `C²` at a local maximum
+point `x` with `0 ≤ u x`, and near `x` let `u` be a subsolution `c u ≤ Δ u + ⟪b, ∇u⟫` with
+coefficients bounded as `‖b‖ ≤ β` and `0 ≤ c ≤ γ`. Then `u` is constant on a neighbourhood of
+`x`. -/
+theorem eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax {x : E} {β γ : ℝ}
+    (hcd : ContDiffAt ℝ 2 u x) (hc : ∀ᶠ y in 𝓝 x, 0 ≤ c y) (hcγ : ∀ᶠ y in 𝓝 x, c y ≤ γ)
+    (hb : ∀ᶠ y in 𝓝 x, ‖b y‖ ≤ β)
+    (hsub : ∀ᶠ y in 𝓝 x, c y * u y ≤ Δ u y + fderiv ℝ u y (b y)) (hnonneg : 0 ≤ u x)
+    (hmax : IsLocalMax u x) :
     ∀ᶠ y in 𝓝 x, u y = u x := by
-  -- Work on a ball `ball x (3 * r)` on which `u` is `C²`, subharmonic, and bounded by `u x`.
+  -- Work on a ball `ball x (3 * r)` on which `u` is `C²`, bounded by `u x`, and a subsolution
+  -- with bounded coefficients.
   obtain ⟨r₀, hr₀, hr₀sub⟩ := Metric.eventually_nhds_iff_ball.mp
-    ((hcd.eventually (by simp)).and (hlap.and hmax))
+    ((hcd.eventually (by simp)).and (hmax.and (hc.and (hcγ.and (hb.and hsub)))))
   set r := r₀ / 3 with hr_def
   have hr : 0 < r := by positivity
   have hball : ∀ ⦃y⦄, dist y x < 3 * r →
-      ContDiffAt ℝ 2 u y ∧ 0 ≤ Δ u y ∧ u y ≤ u x := fun y hy =>
+      ContDiffAt ℝ 2 u y ∧ u y ≤ u x ∧ 0 ≤ c y ∧ c y ≤ γ ∧ ‖b y‖ ≤ β ∧
+        c y * u y ≤ Δ u y + fderiv ℝ u y (b y) := fun y hy =>
     hr₀sub y (by rw [mem_ball]; linarith)
   by_contra hne
   -- Some point `x₂` close to `x` has a strictly smaller value.
@@ -132,29 +157,165 @@ theorem eventually_eq_of_laplacian_nonneg_of_isLocalMax {x : E} (hcd : ContDiffA
   obtain ⟨x₀, hx₀Z, hx₀dist⟩ := hZcompact.exists_infDist_eq_dist ⟨x, hxZ⟩ x₂
   have hnear : ∀ ⦃y⦄, dist y x₂ ≤ ρ → dist y x < 2 * r := fun y hy => by
     linarith [dist_triangle y x₂ x]
+  have hin : ∀ y ∈ ball x₂ ρ, dist y x < 3 * r := fun y hy => by
+    rw [mem_ball] at hy
+    linarith [hnear hy.le]
   have hlt : ∀ y ∈ ball x₂ ρ, u y < u x₀ := fun y hy => by
     rw [mem_ball] at hy
     have hyx := hnear hy.le
-    refine hx₀Z.2 ▸ lt_of_le_of_ne (hball (by linarith)).2.2 fun hyu => ?_
+    refine hx₀Z.2 ▸ lt_of_le_of_ne (hball (by linarith)).2.1 fun hyu => ?_
     have hyZ : y ∈ Z := ⟨mem_closedBall.mpr hyx.le, hyu⟩
     have := infDist_le_dist_of_mem (x := x₂) hyZ
     rw [dist_comm] at this
     linarith
   have hle : ∀ y ∈ sphere x₂ ρ, u y ≤ u x₀ := fun y hy => by
     rw [mem_sphere] at hy
-    exact hx₀Z.2 ▸ (hball (by linarith [hnear hy.le])).2.2
+    exact hx₀Z.2 ▸ (hball (by linarith [hnear hy.le])).2.1
   -- `x₀` is again a local maximum, on the sphere touching `Z`: this contradicts Hopf's lemma.
   have hx₀x : dist x₀ x < 3 * r := by
     linarith [hnear (y := x₀) (by rw [dist_comm, ← hx₀dist])]
   refine not_isLocalMax_of_lt_ball_of_le_sphere hρ (by rw [mem_sphere, dist_comm, ← hx₀dist])
     (fun y hy => (hball (by rw [mem_closedBall] at hy; linarith [hnear hy])).1.continuousAt
       |>.continuousWithinAt)
-    (fun y hy => (hball (by rw [mem_ball] at hy; linarith [hnear hy.le])).1)
-    ((hball hx₀x).1.differentiableAt (by simp))
-    (fun y hy => (hball (by rw [mem_ball] at hy; linarith [hnear hy.le])).2.1) hlt hle ?_
+    (fun y hy => (hball (hin y hy)).1) ((hball hx₀x).1.differentiableAt (by simp))
+    (fun y hy => (hball (hin y hy)).2.2.1) (fun y hy => (hball (hin y hy)).2.2.2.1)
+    (fun y hy => (hball (hin y hy)).2.2.2.2.1) (fun y hy => (hball (hin y hy)).2.2.2.2.2)
+    (hx₀Z.2 ▸ hnonneg) hlt hle ?_
   refine Metric.eventually_nhds_iff_ball.mpr ⟨3 * r - dist x₀ x, by linarith, fun y hy => ?_⟩
   rw [mem_ball] at hy
-  exact hx₀Z.2 ▸ (hball (by linarith [dist_triangle y x₀ x])).2.2
+  exact hx₀Z.2 ▸ (hball (by linarith [dist_triangle y x₀ x])).2.1
+
+/-- **Local strong minimum principle for `-Δ - b·∇ + c`.** A `C²` supersolution
+`Δ u + ⟪b, ∇u⟫ ≤ c u` near a local minimum point `x` with `u x ≤ 0`, whose coefficients are bounded
+as `‖b‖ ≤ β` and `0 ≤ c ≤ γ` near `x`, is constant on a neighbourhood of `x`. -/
+theorem eventually_eq_of_laplacian_add_fderiv_le_mul_of_isLocalMin {x : E} {β γ : ℝ}
+    (hcd : ContDiffAt ℝ 2 u x) (hc : ∀ᶠ y in 𝓝 x, 0 ≤ c y) (hcγ : ∀ᶠ y in 𝓝 x, c y ≤ γ)
+    (hb : ∀ᶠ y in 𝓝 x, ‖b y‖ ≤ β)
+    (hsuper : ∀ᶠ y in 𝓝 x, Δ u y + fderiv ℝ u y (b y) ≤ c y * u y) (hnonpos : u x ≤ 0)
+    (hmin : IsLocalMin u x) :
+    ∀ᶠ y in 𝓝 x, u y = u x := by
+  have h := eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax (u := -u) hcd.neg hc hcγ hb
+    (hsuper.mono fun y hy => by
+      rw [congrFun laplacian_neg y, fderiv_neg]
+      simp only [Pi.neg_apply, neg_apply, mul_neg]
+      linarith)
+    (neg_nonneg.mpr hnonpos) hmin.neg
+  exact h.mono fun y hy => by simpa only [Pi.neg_apply, neg_inj] using hy
+
+/-- **Strong maximum principle for `-Δ - b·∇ + c`.** Let `U` be a preconnected open set, and let
+`b` and `c ≥ 0` be locally bounded on `U`. A function that is `C²` on `U`, is a subsolution
+`c u ≤ Δ u + ⟪b, ∇u⟫` there, and attains a nonnegative maximum over `U` at a point `a ∈ U`, is
+constant on `U`.
+
+The sign condition `0 ≤ u a` is needed only because of `c`: for `c = 0` it can be arranged by
+subtracting a constant. -/
+theorem eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hc : ∀ x ∈ U, 0 ≤ c x)
+    (hcbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) c)
+    (hbbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) fun y ↦ ‖b y‖)
+    (hsub : ∀ x ∈ U, c x * u x ≤ Δ u x + fderiv ℝ u x (b x)) (hnonneg : 0 ≤ u a)
+    (hmax : IsMaxOn u U a) :
+    EqOn u (const E (u a)) U := by
+  -- The points near which `u` is identically `u a` form an open set, which is relatively closed
+  -- in `U` by continuity and the local principle, and contains `a`.
+  have hlocal : ∀ x ∈ U, u x = u a → ∀ᶠ y in 𝓝 x, u y = u a := fun x hx hxa => by
+    have hxmax : IsMaxOn u U x := fun y hy => hxa ▸ hmax hy
+    obtain ⟨γ, hγ⟩ := hcbdd x hx
+    obtain ⟨β, hβ⟩ := hbbdd x hx
+    simpa only [hxa] using eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax
+      (b := b) (hcd x hx) (eventually_of_mem (hU.mem_nhds hx) hc) (eventually_map.mp hγ)
+      (eventually_map.mp hβ) (eventually_of_mem (hU.mem_nhds hx) hsub) (hxa ▸ hnonneg)
+      (hxmax.isLocalMax (hU.mem_nhds hx))
+  have hsubset : U ⊆ {x | ∀ᶠ y in 𝓝 x, u y = u a} := by
+    refine hUconn.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds
+      ⟨a, ha, hlocal a ha rfl⟩ ?_
+    rintro x ⟨hxcl, hxU⟩
+    refine hlocal x hxU (by_contra fun hxa => ?_)
+    obtain ⟨y, hy, hyO⟩ := mem_closure_iff_nhds.mp hxcl _
+      ((hcd x hxU).continuousAt.eventually_ne hxa)
+    exact hy hyO.self_of_nhds
+  exact fun x hx => (hsubset hx).self_of_nhds
+
+/-- **Strong minimum principle for `-Δ - b·∇ + c`.** Let `U` be a preconnected open set, and let
+`b` and `c ≥ 0` be locally bounded on `U`. A function that is `C²` on `U`, is a supersolution
+`Δ u + ⟪b, ∇u⟫ ≤ c u` there, and attains a nonpositive minimum over `U` at a point `a ∈ U`, is
+constant on `U`. -/
+theorem eqOn_const_of_laplacian_add_fderiv_le_mul_of_isMinOn (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x) (hc : ∀ x ∈ U, 0 ≤ c x)
+    (hcbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) c)
+    (hbbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) fun y ↦ ‖b y‖)
+    (hsuper : ∀ x ∈ U, Δ u x + fderiv ℝ u x (b x) ≤ c x * u x) (hnonpos : u a ≤ 0)
+    (hmin : IsMinOn u U a) :
+    EqOn u (const E (u a)) U := by
+  have h := eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn (u := -u) hU ha hUconn
+    (fun x hx => (hcd x hx).neg) hc hcbdd hbbdd
+    (fun x hx => by
+      rw [congrFun laplacian_neg x, fderiv_neg]
+      simp only [Pi.neg_apply, neg_apply, mul_neg]
+      linarith [hsuper x hx])
+    (neg_nonneg.mpr hnonpos) hmin.neg
+  intro x hx
+  simpa only [Pi.neg_apply, const_apply, neg_inj] using h hx
+
+/-- **Strong comparison principle for `-Δ - b·∇ + c`.** Let `U` be a preconnected open set, let
+`b` be locally bounded and `c` locally bounded above on `U`, and let `u` and `v` be `C²` on `U`
+with `Δ v + ⟪b, ∇v⟫ - c v ≤ Δ u + ⟪b, ∇u⟫ - c u` there. If `u ≤ v` on `U` and they agree at a
+point of `U`, then they agree on all of `U`. No sign condition on `c`, `u` or `v` is needed: since
+`u - v ≤ 0`, the difference is a subsolution for the coefficient `max c 0`. -/
+theorem eqOn_of_laplacian_add_fderiv_sub_mul_le_of_le_of_eq (hU : IsOpen U) (ha : a ∈ U)
+    (hUconn : IsPreconnected U) (hucd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
+    (hvcd : ∀ x ∈ U, ContDiffAt ℝ 2 v x) (hcbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) c)
+    (hbbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) fun y ↦ ‖b y‖)
+    (hL : ∀ x ∈ U,
+      Δ v x + fderiv ℝ v x (b x) - c x * v x ≤ Δ u x + fderiv ℝ u x (b x) - c x * u x)
+    (hle : ∀ x ∈ U, u x ≤ v x) (heq : u a = v a) :
+    EqOn u v U := by
+  -- Since `u - v ≤ 0`, replacing `c` by `max c 0` keeps `u - v` a subsolution.
+  have h := eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn (u := u - v)
+    (c := fun x ↦ max (c x) 0) hU ha hUconn
+    (fun x hx => (hucd x hx).sub (hvcd x hx)) (fun _ _ => le_max_right _ _)
+    (fun x hx => by
+      obtain ⟨γ, hγ⟩ := hcbdd x hx
+      exact isBoundedUnder_of_eventually_le
+        ((eventually_map.mp hγ).mono fun _ hy => max_le_max_right 0 hy))
+    hbbdd
+    (fun x hx => by
+      rw [(hucd x hx).laplacian_sub (hvcd x hx),
+        fderiv_sub ((hucd x hx).differentiableAt (by simp))
+          ((hvcd x hx).differentiableAt (by simp))]
+      simp only [Pi.sub_apply, sub_apply]
+      have := mul_le_mul_of_nonpos_right (le_max_left (c x) 0) (sub_nonpos.mpr (hle x hx))
+      linarith [hL x hx])
+    (by simp [heq])
+    (fun x hx => by
+      simp only [mem_ofPred_eq, Pi.sub_apply, heq, sub_self, sub_nonpos]
+      exact hle x hx)
+  intro x hx
+  have hx' := h hx
+  simp only [Pi.sub_apply, const_apply, heq, sub_self, sub_eq_zero] at hx'
+  exact hx'
+
+end LowerOrder
+
+section Laplacian
+
+variable {U : Set E} {u v : E → ℝ} {a : E}
+
+/-- **Local strong maximum principle.** A function that is `C²` at a local maximum point `x` and
+subharmonic (`0 ≤ Δ u`) near `x` is constant on a neighbourhood of `x`. -/
+theorem eventually_eq_of_laplacian_nonneg_of_isLocalMax {x : E} (hcd : ContDiffAt ℝ 2 u x)
+    (hlap : ∀ᶠ y in 𝓝 x, 0 ≤ Δ u y) (hmax : IsLocalMax u x) :
+    ∀ᶠ y in 𝓝 x, u y = u x := by
+  -- Apply the lower-order principle, with `b = 0` and `c = 0`, to `u - u x`, which vanishes at `x`.
+  have h := eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax
+    (u := fun y ↦ u y - u x) (c := 0) (b := 0) (β := 0) (γ := 0) (hcd.sub contDiffAt_const)
+    (.of_forall fun _ ↦ le_rfl) (.of_forall fun _ ↦ le_rfl) (.of_forall fun _ ↦ by simp)
+    ((hcd.eventually (by simp)).and hlap |>.mono fun y hy ↦ by
+      have h1 : Δ (fun z ↦ u z - u x) y = Δ u y - Δ (fun _ : E ↦ u x) y :=
+        hy.1.laplacian_sub contDiffAt_const
+      simpa [h1] using hy.2)
+    (by simp) (by simpa [IsLocalMax, IsMaxFilter] using hmax)
+  exact h.mono fun y hy ↦ by simpa [sub_eq_zero] using hy
 
 /-- **Local strong minimum principle.** A function that is `C²` at a local minimum point `x` and
 superharmonic (`Δ u ≤ 0`) near `x` is constant on a neighbourhood of `x`. -/
@@ -175,21 +336,19 @@ theorem eqOn_const_of_laplacian_nonneg_of_isMaxOn (hU : IsOpen U) (ha : a ∈ U)
     (hUconn : IsPreconnected U) (hcd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
     (hlap : ∀ x ∈ U, 0 ≤ Δ u x) (hmax : IsMaxOn u U a) :
     EqOn u (const E (u a)) U := by
-  -- The points near which `u` is identically `u a` form an open set, which is relatively closed
-  -- in `U` by continuity and the local principle, and contains `a`.
-  have hlocal : ∀ x ∈ U, u x = u a → ∀ᶠ y in 𝓝 x, u y = u a := fun x hx hxa => by
-    have hxmax : IsMaxOn u U x := fun y hy => hxa ▸ hmax hy
-    simpa only [hxa] using eventually_eq_of_laplacian_nonneg_of_isLocalMax (hcd x hx)
-      (eventually_of_mem (hU.mem_nhds hx) hlap) (hxmax.isLocalMax (hU.mem_nhds hx))
-  have hsub : U ⊆ {x | ∀ᶠ y in 𝓝 x, u y = u a} := by
-    refine hUconn.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds
-      ⟨a, ha, hlocal a ha rfl⟩ ?_
-    rintro x ⟨hxcl, hxU⟩
-    refine hlocal x hxU (by_contra fun hxa => ?_)
-    obtain ⟨y, hy, hyO⟩ := mem_closure_iff_nhds.mp hxcl _
-      ((hcd x hxU).continuousAt.eventually_ne hxa)
-    exact hy hyO.self_of_nhds
-  exact fun x hx => (hsub hx).self_of_nhds
+  -- Apply the lower-order principle, with `b = 0` and `c = 0`, to `u - u a`, which vanishes at `a`.
+  have h := eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn
+    (u := fun x ↦ u x - u a) (c := 0) (b := 0) hU ha hUconn
+    (fun x hx ↦ (hcd x hx).sub contDiffAt_const) (fun _ _ ↦ le_rfl)
+    (fun _ _ ↦ isBoundedUnder_const)
+    (fun _ _ ↦ by simpa only [Pi.zero_apply, norm_zero] using isBoundedUnder_const)
+    (fun x hx ↦ by
+      have h1 : Δ (fun z ↦ u z - u a) x = Δ u x - Δ (fun _ : E ↦ u a) x :=
+        (hcd x hx).laplacian_sub contDiffAt_const
+      simpa [h1] using hlap x hx)
+    (by simp) (fun x hx ↦ by simpa using hmax hx)
+  intro x hx
+  simpa [sub_eq_zero] using h hx
 
 /-- **Strong minimum principle for superharmonic functions.** A function that is `C²` and
 superharmonic (`Δ u ≤ 0`) on a preconnected open set `U`, and attains its minimum over `U` at a

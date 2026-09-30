@@ -46,11 +46,15 @@ so that the hyperbolic pairs become the pairs `(x_{2a+1}, x_{2a+2})`, brings the
 coordinates into the shape `(x₁, x₂)(x₃, x₄) ⋯`. The `p`-power coordinates are invisible to the
 form for odd `p`; they define a functional `ℓ` on the dual, and if `ℓ ≠ 0` the symplectic basis is
 chosen through a hyperbolic pair `(θ, e₀)` with `θ` representing `ℓ`, so that `ℓ` vanishes on every
-basis vector but `e₀`, and the `p`-power part becomes exactly `π ξ₁`. In the nonalternating case,
-which occurs only at `p = 2`, the form is symmetric and any two nondegenerate symmetric
-nonalternating forms of the same dimension are equivalent, while at `p = 2` the form determines
-the class; it therefore suffices to check that the forms of the two dyadic normal-form words are
-nondegenerate and not alternating, which is a direct computation.
+basis vector but `e₀`, and the `p`-power part becomes exactly `π ξ₁`. When the `p`-power part is
+concentrated on the first generator `x₁`, the same choice with `θ` representing evaluation at `x₁`
+makes `e₀` take the value `1` at `x₁` while every other basis vector vanishes at `x₁`, and the
+automorphism can then be taken to fix `x₁`; for a relator with exponent vector `q e₁` this keeps the
+exponent vector, which is what the successive approximation of the relators with `q ≠ p` needs. In
+the nonalternating case, which occurs only at `p = 2`, the form is symmetric and any two
+nondegenerate symmetric nonalternating forms of the same dimension are equivalent, while at `p = 2`
+the form determines the class; it therefore suffices to check that the forms of the two dyadic
+normal-form words are nondegenerate and not alternating, which is a direct computation.
 
 ## Main results
 
@@ -75,6 +79,10 @@ nondegenerate and not alternating, which is a direct computation.
   continuous automorphism.
 * `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo_zero_of_two`:
   the alternating case at `p = 2`, where the `p`-power part vanishes.
+* `exists_continuousMulEquiv_freeProPGen_zero_eq_gradedMap_eq_gradedMk_demushkinWordNeTwo` and
+  `exists_continuousMulEquiv_freeProPGen_zero_eq_inv_mul_demushkinWordNeTwo_mem` (in
+  `TauCeti.freeProP`): the alternating case with the `p`-power part concentrated on `x₁`, by an
+  automorphism fixing `x₁`; for a class, and for a relator with exponent vector `q e₁`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd`,
   `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop`,
   `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoEven`: the
@@ -207,10 +215,53 @@ private theorem interleave_eq_inr_zero_iff {m : ℕ} (hn : n = 2 * (m + 1)) (k :
   · simp only [false_iff]
     omega
 
-/-- **Realizing an interleaved symplectic basis by an automorphism.** Let `ρ ∈ gr_1(F)` have a
-symplectic basis `b : Fin m ⊕ Fin m` for its degree-one form, with `n = 2m`, and suppose the
-`p`-power part of `ρ` takes the value `c₀` on the vector of `b` at the interleaved position `0`
-and vanishes on the others. Then some continuous automorphism of `F` carries `ρ` to
+/-- The column of `Matrix.J` at `inl 0`: the only nonzero entry is `1` in the row `inr 0`. -/
+private theorem J_apply_inl_zero {m : ℕ} (x : Fin (m + 1) ⊕ Fin (m + 1)) :
+    Matrix.J (Fin (m + 1)) (ZMod p) x (Sum.inl 0) = if x = Sum.inr 0 then 1 else 0 := by
+  rcases x with x | x <;> simp [Matrix.J, Matrix.fromBlocks, Matrix.one_apply]
+
+/-- **The class after an automorphism realizing an interleaved symplectic basis.** Let
+`ρ ∈ gr_1(F)` have a symplectic basis `b : Fin m ⊕ Fin m` for its degree-one form, with `n = 2m`,
+and suppose the `p`-power part of `ρ` takes the value `c₀` on the vector of `b` at the interleaved
+position `0` and vanishes on the others. Then a continuous automorphism `e` of `F` whose transpose
+sends the dual basis of the generators to `b`, interleaved, carries `ρ` to
+`c₀ • π ξ₁ + [ξ₁, ξ₂] + ⋯ + [ξ_{n-1}, ξ_n]`. -/
+private theorem gradedMap_eq_altClass_of_basis (ρ : gradedPiece p (freeProP p (Fin n)) 1)
+    {m : ℕ} (hn : n = 2 * m)
+    (b : Module.Basis (Fin m ⊕ Fin m) (ZMod p) (continuousZModDual p (freeProP p (Fin n))))
+    (hb : ∀ x y, degreeOneForm ρ (b x) (b y) = Matrix.J (Fin m) (ZMod p) x y) (c₀ : ZMod p)
+    (hℓ : ∀ k : Fin n, powerPartFunctional ρ (b (interleave hn k)) =
+      if (k : ℕ) = 0 then c₀ else 0)
+    (e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n))
+    (hed : ∀ k : Fin n, (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuousZModDualMap
+      (dualBasis p (Fin n) k) = b (interleave hn k)) :
+    gradedMap p (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
+      (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ρ = altClass p n c₀ := by
+  rw [(degreeOneBasis p (Fin n)).ext_elem_iff]
+  rintro (k | ⟨⟨i, j⟩, hij⟩)
+  · rw [degreeOneBasis_repr_gradedMap_inl, altClass_repr_inl, ← hℓ k, powerPartFunctional_apply,
+      hed]
+  · rw [← degreeOneForm_dualBasis_of_lt _ hij, altClass_repr_inr, degreeOneForm_gradedMap,
+      LinearMap.compl₁₂_apply, hed, hed, hb, J_interleave hn hij]
+
+/-- The linear automorphism of the dual sending the dual basis of the generators to the
+interleaving of a basis `b : Fin m ⊕ Fin m`. -/
+private noncomputable def interleaveEquiv {m : ℕ} (hn : n = 2 * m)
+    (b : Module.Basis (Fin m ⊕ Fin m) (ZMod p) (continuousZModDual p (freeProP p (Fin n)))) :
+    continuousZModDual p (freeProP p (Fin n)) ≃ₗ[ZMod p]
+      continuousZModDual p (freeProP p (Fin n)) :=
+  (dualBasis p (Fin n)).equiv (b.reindex (Equiv.ofBijective _ (interleave_bijective hn)).symm)
+    (Equiv.refl _)
+
+private theorem interleaveEquiv_dualBasis {m : ℕ} (hn : n = 2 * m)
+    (b : Module.Basis (Fin m ⊕ Fin m) (ZMod p) (continuousZModDual p (freeProP p (Fin n))))
+    (k : Fin n) : interleaveEquiv hn b (dualBasis p (Fin n) k) = b (interleave hn k) := by
+  rw [interleaveEquiv, Module.Basis.equiv_apply, Equiv.refl_apply, Module.Basis.reindex_apply,
+    Equiv.symm_symm]
+  rfl
+
+/-- **Realizing an interleaved symplectic basis by an automorphism.** Under the hypotheses of
+`gradedMap_eq_altClass_of_basis`, some continuous automorphism of `F` carries `ρ` to
 `c₀ • π ξ₁ + [ξ₁, ξ₂] + ⋯ + [ξ_{n-1}, ξ_n]`. -/
 private theorem exists_gradedMap_eq_altClass_of_basis (ρ : gradedPiece p (freeProP p (Fin n)) 1)
     {m : ℕ} (hn : n = 2 * m)
@@ -221,38 +272,68 @@ private theorem exists_gradedMap_eq_altClass_of_basis (ρ : gradedPiece p (freeP
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
       gradedMap p (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
         (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ρ = altClass p n c₀ := by
-  let σ : Fin n ≃ Fin m ⊕ Fin m := Equiv.ofBijective _ (interleave_bijective hn)
-  let η := b.reindex σ.symm
-  have hη (k : Fin n) : η k = b (interleave hn k) := by
-    rw [Module.Basis.reindex_apply, Equiv.symm_symm]
-    rfl
-  obtain ⟨e, he⟩ :=
-    exists_continuousMulEquiv_continuousZModDualMap_eq
-      ((dualBasis p (Fin n)).equiv η (Equiv.refl _))
-  refine ⟨e, ?_⟩
-  have hed (k : Fin n) : (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuousZModDualMap
-      (dualBasis p (Fin n) k) = b (interleave hn k) := by
-    rw [he, Module.Basis.equiv_apply, Equiv.refl_apply, hη]
-  rw [(degreeOneBasis p (Fin n)).ext_elem_iff]
-  rintro (k | ⟨⟨i, j⟩, hij⟩)
-  · rw [degreeOneBasis_repr_gradedMap_inl, altClass_repr_inl, ← hℓ k, powerPartFunctional_apply,
-      hed]
-  · rw [← degreeOneForm_dualBasis_of_lt _ hij, altClass_repr_inr, degreeOneForm_gradedMap,
-      LinearMap.compl₁₂_apply, hed, hed, hb, J_interleave hn hij]
+  obtain ⟨e, he⟩ := exists_continuousMulEquiv_continuousZModDualMap_eq (interleaveEquiv hn b)
+  exact ⟨e, gradedMap_eq_altClass_of_basis ρ hn b hb c₀ hℓ e fun k ↦ by
+    rw [he, interleaveEquiv_dualBasis]⟩
 
+/-- **Realizing an interleaved symplectic basis by an automorphism fixing the first generator.**
+Under the hypotheses of `gradedMap_eq_altClass_of_basis`, if moreover the vectors of `b` take the
+value `δ_{x, inr 0}` at the first generator `x₁`, the automorphism can be chosen to fix `x₁`. -/
+private theorem exists_apply_eq_gradedMap_eq_altClass_of_basis
+    (ρ : gradedPiece p (freeProP p (Fin n)) 1) {m : ℕ} (hn : n = 2 * (m + 1))
+    (b : Module.Basis (Fin (m + 1) ⊕ Fin (m + 1)) (ZMod p)
+      (continuousZModDual p (freeProP p (Fin n))))
+    (hb : ∀ x y, degreeOneForm ρ (b x) (b y) = Matrix.J (Fin (m + 1)) (ZMod p) x y) (c₀ : ZMod p)
+    (hℓ : ∀ k : Fin n, powerPartFunctional ρ (b (interleave hn k)) =
+      if (k : ℕ) = 0 then c₀ else 0)
+    (hb0 : ∀ x, ((b x).toMul (freeProPGen p n 0)).toAdd = if x = Sum.inr 0 then 1 else 0) :
+    ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
+      e (freeProPGen p n 0) = freeProPGen p n 0 ∧
+      gradedMap p (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
+        (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ρ = altClass p n c₀ := by
+  have hn0 : 0 < n := by omega
+  have hx₀ : freeProPGen p n 0 = of ⟨0, hn0⟩ := freeProPGen_of_lt p hn0
+  -- The interleaving of `b` leaves the values at `x₁` unchanged.
+  have hT : ∀ j ∈ ({⟨0, hn0⟩} : Set (Fin n)), ∀ χ : continuousZModDual p (freeProP p (Fin n)),
+      (interleaveEquiv hn b χ).toMul (of j) = χ.toMul (of j) := by
+    rintro j rfl χ
+    have hcoord : (dualBasis p (Fin n)).coord ⟨0, hn0⟩ ∘ₗ (interleaveEquiv hn b).toLinearMap =
+        (dualBasis p (Fin n)).coord ⟨0, hn0⟩ := by
+      refine (dualBasis p (Fin n)).ext fun k ↦ ?_
+      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, interleaveEquiv_dualBasis,
+        Module.Basis.coord_apply, dualBasis_repr, ← hx₀, hb0, Module.Basis.coord_apply,
+        Module.Basis.repr_self, Finsupp.single_apply]
+      simp only [interleave_eq_inr_zero_iff, Fin.ext_iff]
+    have h := LinearMap.congr_fun hcoord χ
+    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.coord_apply, dualBasis_repr,
+      Module.Basis.coord_apply, dualBasis_repr] at h
+    exact Multiplicative.toAdd.injective h
+  obtain ⟨e, he, hfix⟩ :=
+    exists_continuousMulEquiv_continuousZModDualMap_eq_and_apply_of_eq_of_forall_toMul_of_eq
+      (interleaveEquiv hn b) hT
+  refine ⟨e, by rw [hx₀]; exact hfix _ rfl, gradedMap_eq_altClass_of_basis ρ hn b hb c₀ hℓ e
+    fun k ↦ by rw [he, interleaveEquiv_dualBasis]⟩
 
 /-! ### The two alternating normal forms -/
+
+/-- The class of `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)`, for `p ∣ q`, is the target class with
+`c₀ = q / p`. -/
+private theorem gradedMk_demushkinWordNeTwo_eq_altClass {q : ℕ} (hq : p ∣ q) :
+    gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo q n (freeProPGen p n),
+      demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩ =
+        altClass p n ((q / p : ℕ) : ZMod p) := by
+  rw [gradedMk_demushkinWordNeTwo hq, altClass, Nat.cast_smul_eq_nsmul]
 
 private theorem gradedMk_demushkinWordNeTwo_zero_eq_altClass :
     gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo 0 n (freeProPGen p n),
       demushkinWordNeTwo_mem_pLowerCentralSeries_one (dvd_zero p) n _⟩ = altClass p n 0 := by
-  rw [gradedMk_demushkinWordNeTwo (dvd_zero p), altClass, Nat.zero_div, zero_smul, zero_smul]
+  rw [gradedMk_demushkinWordNeTwo_eq_altClass (dvd_zero p), Nat.zero_div, Nat.cast_zero]
 
 private theorem gradedMk_demushkinWordNeTwo_self_eq_altClass :
     gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo p n (freeProPGen p n),
       demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩ = altClass p n 1 := by
-  rw [gradedMk_demushkinWordNeTwo dvd_rfl, altClass, Nat.div_self (Fact.out : p.Prime).pos,
-    one_smul, one_smul]
+  rw [gradedMk_demushkinWordNeTwo_eq_altClass dvd_rfl, Nat.div_self (Fact.out : p.Prime).pos,
+    Nat.cast_one]
 
 /-- **The `p`-power coordinates of the class of the `q ≠ 2` normal-form word**
 `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)`, for `p ∣ q`: the coefficient of `π ξ₁` is `q / p`, and the other
@@ -303,8 +384,8 @@ private theorem exists_gradedMap_eq_altClass_zero (ρ : gradedPiece p (freeProP 
   rw [hℓ, LinearMap.zero_apply, ite_self]
 
 /-- The case of a nonvanishing `p`-power part `ℓ`: represent `ℓ` by a vector `θ` through the
-form, complete `θ` to a hyperbolic pair `(θ, e₀)` and adjoin a symplectic basis of the orthogonal
-complement, which lies in the kernel of `ℓ`. -/
+form and take a symplectic basis headed by `θ`; then `ℓ` vanishes on every basis vector except the
+partner of `θ`, where it is `1`. -/
 private theorem exists_gradedMap_eq_altClass_one (ρ : gradedPiece p (freeProP p (Fin n)) 1)
     (hnd : (degreeOneForm ρ).Nondegenerate) (halt : (degreeOneForm ρ).IsAlt)
     (hℓ : powerPartFunctional ρ ≠ 0) :
@@ -318,42 +399,10 @@ private theorem exists_gradedMap_eq_altClass_one (ρ : gradedPiece p (freeProP p
         neg_neg]⟩
   have hθ0 : θ ≠ 0 := fun h ↦ hℓ (LinearMap.ext fun χ ↦ by
     rw [← hθ, h, map_zero, LinearMap.zero_apply])
-  -- A partner `e₀` with `B e₀ θ = 1`.
-  obtain ⟨e₀, hfe⟩ : ∃ e₀, degreeOneForm ρ e₀ θ = 1 := by
-    obtain ⟨w, hw⟩ : ∃ w, degreeOneForm ρ w θ ≠ 0 := by
-      by_contra! h
-      exact hθ0 (hnd.2 θ h)
-    exact ⟨(degreeOneForm ρ w θ)⁻¹ • w, by
-      rw [map_smul, LinearMap.smul_apply, smul_eq_mul, inv_mul_cancel₀ hw]⟩
-  -- A symplectic basis of the orthogonal complement of the hyperbolic pair.
-  have hZalt : ((degreeOneForm ρ).restrict
-      ((degreeOneForm ρ).orthogonal (span (ZMod p) {θ, e₀}))).IsAlt :=
-    fun z ↦ halt.self_eq_zero z
-  obtain ⟨m, c, hc⟩ :=
-    hZalt.exists_basis_toMatrix_eq_J (halt.restrict_nondegenerate_orthogonal_span_pair hfe hnd)
-  have hc' : ∀ x y, degreeOneForm ρ (c x) (c y) = Matrix.J (Fin m) (ZMod p) x y := fun x y ↦ by
-    rw [← hc, LinearMap.BilinForm.toMatrix_apply, LinearMap.BilinForm.restrict_apply,
-      LinearMap.domRestrict_apply]
-  obtain ⟨b, hb, hbd⟩ :=
-    halt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair hnd hfe c hc'
+  obtain ⟨m, b, hb, hb0⟩ := halt.exists_basis_apply_eq_J_inl_zero_eq hnd hθ0
   have hn := even_of_basis b
   refine ⟨⟨m + 1, by omega⟩, exists_gradedMap_eq_altClass_of_basis ρ hn b hb 1 fun k ↦ ?_⟩
-  -- `ℓ` vanishes on every vector of `b` except `e₀`, where it is `1`.
-  have hZ : ∀ x, powerPartFunctional ρ (c x) = 0 := fun x ↦ by
-    have h1 : degreeOneForm ρ θ (c x) = 0 :=
-      ((LinearMap.BilinForm.mem_orthogonal_span_pair_iff (degreeOneForm ρ)).1 (c x).2).1
-    rw [← hθ, ← halt.neg_eq, h1, neg_zero]
-  have hℓb : ∀ x, powerPartFunctional ρ (b x) = if x = Sum.inr 0 then 1 else 0 := by
-    rintro (x | x) <;> induction x using Fin.cases <;> rw [hbd]
-    · simp only [Sum.elim_inl, Fin.cons_zero, ← hθ, halt.self_eq_zero]
-      simp
-    · simp only [Sum.elim_inl, Fin.cons_succ, hZ]
-      simp
-    · simp only [Sum.elim_inr, Fin.cons_zero, ← hθ, hfe]
-      simp
-    · simp only [Sum.elim_inr, Fin.cons_succ, hZ]
-      simp [Fin.succ_ne_zero]
-  rw [hℓb]
+  rw [← hθ, ← hb0, hb, J_apply_inl_zero]
   simp only [interleave_eq_inr_zero_iff]
 
 /-- **Labute's normal form modulo `λ_2`, the alternating case.** Let `F` be the free pro-`p`
@@ -403,6 +452,114 @@ theorem exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo_zero_
     simp [powerPartFunctional, hc]
   obtain ⟨hn, e, he⟩ := exists_gradedMap_eq_altClass_zero ρ hnd halt hℓ
   exact ⟨hn, e, he.trans gradedMk_demushkinWordNeTwo_zero_eq_altClass.symm⟩
+
+/-- The alternating case with `p`-power part `c₀ • π ξ₁` concentrated on the first generator: `n`
+is even, and a continuous automorphism of `F` fixing `x₁` carries `ρ` to
+`c₀ • π ξ₁ + [ξ₁, ξ₂] + ⋯ + [ξ_{n-1}, ξ_n]`. -/
+private theorem exists_freeProPGen_zero_eq_gradedMap_eq_altClass
+    (ρ : gradedPiece p (freeProP p (Fin n)) 1) (hnd : (degreeOneForm ρ).Nondegenerate)
+    (halt : (degreeOneForm ρ).IsAlt) (c₀ : ZMod p)
+    (hc : ∀ k : Fin n, (degreeOneBasis p (Fin n)).repr ρ (Sum.inl k) =
+      if (k : ℕ) = 0 then c₀ else 0) :
+    Even n ∧ ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
+      e (freeProPGen p n 0) = freeProPGen p n 0 ∧
+      gradedMap p (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
+        (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ρ = altClass p n c₀ := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn0
+  · -- At rank zero there is nothing to fix and every class is the target class.
+    have hx : freeProPGen p 0 0 = 1 := freeProPGen_eq_one_of_le p le_rfl
+    obtain ⟨-, e, he⟩ := exists_gradedMap_eq_altClass_zero ρ hnd halt (by
+      simp [powerPartFunctional])
+    refine ⟨⟨0, rfl⟩, e, by rw [hx, map_one], he.trans ?_⟩
+    simp [altClass, gradedMkZero_one, gradedPow_zero]
+  have hx₀ : freeProPGen p n 0 = of ⟨0, hn0⟩ := freeProPGen_of_lt p hn0
+  -- `θ` represents evaluation at `x₁`: `B χ θ = χ (x₁)` for every `χ`.
+  obtain ⟨θ, hθ⟩ : ∃ θ, ∀ χ, degreeOneForm ρ χ θ = (dualBasis p (Fin n)).coord ⟨0, hn0⟩ χ :=
+    ⟨((degreeOneForm ρ).toDual hnd).symm (-(dualBasis p (Fin n)).coord ⟨0, hn0⟩), fun χ ↦ by
+      rw [← halt.neg_eq, LinearMap.BilinForm.apply_toDual_symm_apply, LinearMap.neg_apply,
+        neg_neg]⟩
+  have hθ0 : θ ≠ 0 := fun h ↦ by
+    have := hθ (dualBasis p (Fin n) ⟨0, hn0⟩)
+    rw [h, map_zero, Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same]
+      at this
+    exact zero_ne_one this
+  obtain ⟨m, b, hb, hb0⟩ := halt.exists_basis_apply_eq_J_inl_zero_eq hnd hθ0
+  have hn := even_of_basis b
+  -- The values of the basis at `x₁` are `δ_{x, inr 0}`.
+  have hbx : ∀ x, ((b x).toMul (freeProPGen p n 0)).toAdd = if x = Sum.inr 0 then 1 else 0 := by
+    intro x
+    rw [hx₀, ← dualBasis_repr, ← Module.Basis.coord_apply, ← hθ, ← hb0, hb, J_apply_inl_zero]
+  -- The `p`-power part of `ρ` is `c₀` times evaluation at `x₁`.
+  have hℓ : ∀ k : Fin n, powerPartFunctional ρ (b (interleave hn k)) =
+      if (k : ℕ) = 0 then c₀ else 0 := by
+    intro k
+    rw [powerPartFunctional_apply, Finset.sum_eq_single ⟨0, hn0⟩ (fun i _ hi ↦ by
+      rw [hc, ite_eq_right (fun h ↦ hi (Fin.ext h)), zero_mul])
+      (fun h ↦ (h (Finset.mem_univ _)).elim), hc, ← hx₀, hbx]
+    simp [interleave_eq_inr_zero_iff]
+  obtain ⟨e, he0, he⟩ := exists_apply_eq_gradedMap_eq_altClass_of_basis ρ hn b hb _ hℓ hbx
+  exact ⟨⟨m + 1, by omega⟩, e, he0, he⟩
+
+/-- **Labute's normal form modulo `λ_2`, the alternating case, fixing the first generator.** Let
+`ρ ∈ gr_1(F)` have nondegenerate alternating degree-one form and `p`-power part `(q / p) • π ξ₁`
+concentrated on the first generator, for some `q` divisible by `p`. Then `n` is even, and a
+continuous automorphism of `F` **fixing `x₁`** carries `ρ` to the class of
+`x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
+theorem exists_continuousMulEquiv_freeProPGen_zero_eq_gradedMap_eq_gradedMk_demushkinWordNeTwo
+    (ρ : gradedPiece p (freeProP p (Fin n)) 1) (hnd : (degreeOneForm ρ).Nondegenerate)
+    (halt : (degreeOneForm ρ).IsAlt) {q : ℕ} (hq : p ∣ q)
+    (hc : ∀ k : Fin n, (degreeOneBasis p (Fin n)).repr ρ (Sum.inl k) =
+      if (k : ℕ) = 0 then ((q / p : ℕ) : ZMod p) else 0) :
+    Even n ∧ ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
+      e (freeProPGen p n 0) = freeProPGen p n 0 ∧
+      gradedMap p (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
+          (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ρ =
+        gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo q n (freeProPGen p n),
+          demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩ := by
+  rw [gradedMk_demushkinWordNeTwo_eq_altClass hq]
+  exact exists_freeProPGen_zero_eq_gradedMap_eq_altClass ρ hnd halt _ hc
+
+/-- **Labute's normal form modulo `λ_2` for a relator with exponent vector `q e₁`, fixing the first
+generator.** Let `r ∈ λ_1(F)` have nondegenerate alternating degree-one form and exponent sums `q`
+at `x₁` and `0` at the other generators, for some `q` divisible by `p`. Then `n` is even, and a
+continuous automorphism of `F` fixing `x₁` carries `r` to `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`
+modulo `λ_2(F)`. The image of `r` has the same exponent sums as `r`, so this is the first step of
+the successive approximation of a relator with `q ≠ p`, whose later steps must keep the exponent
+sums fixed. -/
+theorem exists_continuousMulEquiv_freeProPGen_zero_eq_inv_mul_demushkinWordNeTwo_mem
+    (r : pLowerCentralSeries p (freeProP p (Fin n)) 1)
+    (hnd : (degreeOneForm (gradedMk p (freeProP p (Fin n)) 1 r)).Nondegenerate)
+    (halt : (degreeOneForm (gradedMk p (freeProP p (Fin n)) 1 r)).IsAlt) {q : ℕ} (hq : p ∣ q)
+    (hv : ∀ k : Fin n, (exponentSum p (Fin n) (r : freeProP p (Fin n))).toAdd k =
+      if (k : ℕ) = 0 then (q : ℤ_[p]) else 0) :
+    Even n ∧ ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
+      e (freeProPGen p n 0) = freeProPGen p n 0 ∧
+      (e r)⁻¹ * demushkinWordNeTwo q n (freeProPGen p n) ∈
+        pLowerCentralSeries p (freeProP p (Fin n)) 2 := by
+  -- The `p`-power coordinates of the class of `r` are `q / p` at `x₁` and `0` elsewhere.
+  have hc : ∀ k : Fin n, (degreeOneBasis p (Fin n)).repr (gradedMk p (freeProP p (Fin n)) 1 r)
+      (Sum.inl k) = if (k : ℕ) = 0 then ((q / p : ℕ) : ZMod p) else 0 := by
+    intro k
+    split_ifs with hk
+    · rw [degreeOneBasis_repr_gradedMk_inl r k (c := ((q / p : ℕ) : ℤ_[p])) (by
+        rw [hv k, ite_eq_left hk, ← Nat.cast_mul, Nat.mul_div_cancel' hq]), map_natCast]
+    · rw [degreeOneBasis_repr_gradedMk_inl r k (c := 0) (by rw [hv k, ite_eq_right hk, mul_zero]),
+        map_zero]
+  obtain ⟨hn, e, he0, he⟩ :=
+    exists_continuousMulEquiv_freeProPGen_zero_eq_gradedMap_eq_gradedMk_demushkinWordNeTwo _ hnd
+      halt hq hc
+  refine ⟨hn, e, he0, ?_⟩
+  set f : freeProP p (Fin n) →ₜ* freeProP p (Fin n) :=
+    (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n))
+  have hmem : f r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
+    f.toMonoidHom.map_pLowerCentralSeries_le f.continuous 1 ⟨r, r.2, rfl⟩
+  have hr' : gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩ =
+      gradedMap p f.toMonoidHom f.continuous 1 (gradedMk p (freeProP p (Fin n)) 1 r) := by
+    rw [gradedMap_gradedMk]
+    rfl
+  have h := hr'.trans he
+  rw [gradedMk_eq_gradedMk_iff, QuotientGroup.eq] at h
+  exact h
 
 
 /-! ### The normal form `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` is nondegenerate -/
@@ -528,7 +685,11 @@ private theorem degreeOneForm_demushkinWordTwoOdd_dualBasis {f : ℕ} (hf : 0 < 
     degreeOneForm_gradedBracket_gradedMkZero, toMul_dualBasis_freeProPGen, Nat.choose_self,
     one_smul, mul_ite, mul_one, mul_zero]
 
-private theorem degreeOneBasis_repr_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < f) (k : Fin n) :
+/-- **The `2`-power coordinates of the class of the `q = 2`, `n` odd normal-form word**
+`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`, for `f ≥ 1`: the coefficient of `π ξ₁` is `1`, that of
+`π ξ₂` is `2^{f-1}`, and the other `2`-power coordinates vanish. -/
+@[simp]
+theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < f) (k : Fin n) :
     (degreeOneBasis 2 (Fin n)).repr
       (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
         demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩)
@@ -539,6 +700,19 @@ private theorem degreeOneBasis_repr_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < 
     Finsupp.smul_apply, degreeOneBasis_repr_gradedBracket_inl, Finset.sum_const_zero, add_zero,
     degreeOneBasis_repr_gradedPow_gradedMkZero_inl, toMul_dualBasis_freeProPGen]
 
+/-- **The vanishing `2`-power coordinates of the odd dyadic normal-form word**, for `f ≥ 2`:
+all coordinates except that of `x₁` vanish. -/
+theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl_eq_zero_iff {f : ℕ}
+    (hf : 2 ≤ f) (k : Fin n) :
+    (degreeOneBasis 2 (Fin n)).repr
+        (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
+          demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩)
+        (Sum.inl k) = 0 ↔ (k : ℕ) ≠ 0 := by
+  obtain ⟨g, hg⟩ : ∃ g, f - 1 = g + 1 := ⟨f - 2, by omega⟩
+  rw [degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl (zero_lt_two.trans_le hf), hg,
+    pow_succ, mul_nsmul, two_nsmul, CharTwo.add_self_eq_zero, add_zero]
+  simp
+
 /-- **The degree-one form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` is not alternating**, for
 `n ≥ 1` and `f ≥ 1`: its value on the first coordinate character twice is `1`. -/
 theorem not_isAlt_degreeOneForm_demushkinWordTwoOdd (hn : 0 < n) {f : ℕ} (hf : 0 < f) :
@@ -546,8 +720,20 @@ theorem not_isAlt_degreeOneForm_demushkinWordTwoOdd (hn : 0 < n) {f : ℕ} (hf :
         demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩)).IsAlt := by
   intro h
   have := h (dualBasis 2 (Fin n) ⟨0, hn⟩)
-  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_demushkinWordTwoOdd_inl hf] at this
+  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl hf] at this
   simp at this
+
+/-- **The first coordinate character splits off the degree-one form of
+`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`**, for `n ≥ 1` and `f ≥ 1`: pairing any character `χ` with
+the first coordinate character reads off `χ(x₁)`, because `x₁` occurs in no commutator of the
+word. In particular the first coordinate character is orthogonal to all the others. -/
+theorem degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero (hn : 0 < n) {f : ℕ}
+    (hf : 0 < f) (χ : continuousZModDual 2 (freeProP 2 (Fin n))) :
+    degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
+        demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩) χ
+      (dualBasis 2 (Fin n) ⟨0, hn⟩) = (χ.toMul (freeProPGen 2 n 0)).toAdd := by
+  rw [degreeOneForm_demushkinWordTwoOdd_dualBasis hf]
+  simp
 
 /-- **The degree-one form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` is nondegenerate for `n`
 odd and `f ≥ 1`**: pairing with the `j`-th coordinate character reads off the value of a character
@@ -568,11 +754,8 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoOdd (hn : Odd n) {f : ℕ} (
   simp only [degreeOneForm_demushkinWordTwoOdd_dualBasis hf] at hχ'
   -- The value at `x₁`.
   have hc0 : (χ.toMul (freeProPGen 2 n 0)).toAdd = 0 := by
-    have h := hχ' 0 (by omega)
-    rw [ite_eq_left rfl, ite_eq_right (by omega), smul_zero, add_zero,
-      Finset.sum_eq_zero fun a _ ↦ by
-        rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero] at h
-    exact h
+    rw [← degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero (by omega) hf χ]
+    exact hχ _
   -- The value at `x_{j-1}` for `j ≥ 2` even is the pairing with the `j`-th coordinate character.
   have keyEven (j : ℕ) (hjn : j < n) (hj0 : j ≠ 0) (hj : j % 2 = 0) :
       (χ.toMul (freeProPGen 2 n (j - 1))).toAdd = 0 := by
@@ -639,7 +822,12 @@ private theorem degreeOneForm_demushkinWordTwoEven_dualBasis {a f : ℕ} (ha : 2
     degreeOneForm_gradedBracket_gradedMkZero, toMul_dualBasis_freeProPGen, Nat.choose_self,
     one_smul, mul_ite, mul_one, mul_zero]
 
-private theorem degreeOneBasis_repr_demushkinWordTwoEven_inl {a f : ℕ} (ha : 2 ∣ a) (hf : 0 < f)
+/-- **The `2`-power coordinates of the class of the `q = 2`, `n` even normal-form word**
+`x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, for `a` even and `f ≥ 1`: the coefficient
+of `π ξ₁` is `1 + a/2`, that of `π ξ₃` is `2^{f-1}`, and the other `2`-power coordinates
+vanish. -/
+@[simp]
+theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoEven_inl {a f : ℕ} (ha : 2 ∣ a) (hf : 0 < f)
     (k : Fin n) :
     (degreeOneBasis 2 (Fin n)).repr
       (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoEven a f n (freeProPGen 2 n),
@@ -662,11 +850,27 @@ theorem not_isAlt_degreeOneForm_demushkinWordTwoEven (hn : 0 < n) {a f : ℕ} (h
           (zero_lt_two.trans_le hf) n _⟩)).IsAlt := by
   intro h
   have := h (dualBasis 2 (Fin n) ⟨0, hn⟩)
-  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_demushkinWordTwoEven_inl
+  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_gradedMk_demushkinWordTwoEven_inl
     (dvd_trans (Dvd.intro 2 rfl) ha) (zero_lt_two.trans_le hf)] at this
   obtain ⟨b, rfl⟩ := ha
   have hb : 4 * b / 2 = 2 * b := by omega
   simp [hb, nsmul_eq_mul, CharTwo.two_eq_zero] at this
+
+/-- **The second coordinate character pairs only with the first under the degree-one form of
+`x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`**, for `n ≥ 2`, `a` even and `f ≥ 1`:
+pairing any character `χ` with the second coordinate character reads off `χ(x₁)`, because `x₂`
+occurs only in the commutator `(x₁, x₂)`. In particular the second coordinate character is
+orthogonal to every coordinate character other than the first. -/
+theorem degreeOneForm_gradedMk_demushkinWordTwoEven_dualBasis_one (hn : 1 < n) {a f : ℕ}
+    (ha : 2 ∣ a) (hf : 0 < f) (χ : continuousZModDual 2 (freeProP 2 (Fin n))) :
+    degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoEven a f n (freeProPGen 2 n),
+        demushkinWordTwoEven_mem_pLowerCentralSeries_one ha hf n _⟩) χ
+      (dualBasis 2 (Fin n) ⟨1, hn⟩) = (χ.toMul (freeProPGen 2 n 0)).toAdd := by
+  rw [degreeOneForm_demushkinWordTwoEven_dualBasis ha hf]
+  simp only [one_ne_zero, ite_false, smul_zero, ite_true, sub_zero, zero_add, OfNat.one_ne_ofNat,
+    add_zero]
+  rw [Finset.sum_eq_zero fun i _ ↦ by
+    rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero]
 
 /-- **The degree-one form of `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` is nondegenerate
 for `n` even, `a` even and `f ≥ 1`**: pairing with the second coordinate character reads off the

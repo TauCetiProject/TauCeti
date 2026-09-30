@@ -60,7 +60,7 @@ conjugates enters.  Finite-dimensionality is used only to *produce* an atom, in
   semisimple.
 * `TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`: the same conclusion for a
   **finite-dimensional** irreducible representation, where such an atom is automatic
-  (`TauCeti.Representation.exists_isAtom`).
+  (`Representation.exists_isAtom`).
 
 ## Implementation notes
 
@@ -325,7 +325,7 @@ subgroup of a finite-dimensional irreducible representation is semisimple. -/
 theorem isSemisimpleRepresentation_comp_subtype [ρ.IsIrreducible] [FiniteDimensional k V] :
     _root_.Representation.IsSemisimpleRepresentation (ρ.comp N.subtype) := by
   have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
-  obtain ⟨σ, hσ⟩ := exists_isAtom (ρ.comp N.subtype)
+  obtain ⟨σ, hσ⟩ := _root_.Representation.exists_isAtom (ρ.comp N.subtype)
   exact isSemisimpleRepresentation_comp_subtype_of_isAtom ρ hσ
 
 end Clifford

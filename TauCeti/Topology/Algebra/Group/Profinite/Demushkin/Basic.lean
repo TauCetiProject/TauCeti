@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Empty
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.ULift
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
 
@@ -38,6 +39,8 @@ A free pro-`p` group is not Demushkin, since its `H²(G, 𝔽_p)` vanishes.
 * `TauCeti.IsDemushkin.finrank_cohomFp_one`: `dim_{𝔽_p} H¹(G, 𝔽_p) = demushkinRank`.
 * `TauCeti.IsDemushkin.exists_mem_proPFrattini_continuousMulEquiv_presentedProP`: a Demushkin group
   is a one-relator pro-`p` group with relator in the Frattini subgroup.
+* `TauCeti.IsDemushkin.exists_mem_proPFrattini_continuousMulEquiv_presentedProP_fin`: the same
+  on the generating type `Fin (demushkinRank hG)`, whatever the universe of `G`.
 * `TauCeti.IsDemushkin.demushkinRank_pos`: a Demushkin group has positive rank.
 * `TauCeti.IsDemushkin.card_pos_presentedProP`: a presentation of a Demushkin group has at least
   one generator.
@@ -115,6 +118,14 @@ theorem demushkinRank_def (hG : IsDemushkin p G) :
     demushkinRank hG = topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated :=
   (rfl)
 
+/-- **The rank of a presented Demushkin group is the number of generators** when the relators lie
+in the Frattini subgroup: such a presentation is minimal. -/
+theorem demushkinRank_presentedProP {X : Type v} [Finite X] {rels : Set (freeProP p X)}
+    (hrels : rels ⊆ proPFrattini p (freeProP p X)) (hG : IsDemushkin p (presentedProP p X rels)) :
+    demushkinRank hG = Nat.card X := by
+  rw [demushkinRank_def]
+  exact (presentedProP.topologicalGeneratorRankNat_eq_card_iff rels).mpr hrels
+
 /-- The rank of a Demushkin group is an isomorphism invariant. -/
 theorem demushkinRank_congr {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     [CompactSpace H] [TotallyDisconnectedSpace H] (hG : IsDemushkin p G) (hH : IsDemushkin p H)
@@ -165,6 +176,26 @@ theorem exists_mem_proPFrattini_continuousMulEquiv_presentedProP (X : Type u) [F
         (Set.singleton_subset_iff.2 x.2)
   exact ⟨x, (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 hrels x.2,
     ⟨(presentedProP.congrOfClosureEq hR).symm.trans e⟩⟩
+
+/-- **A Demushkin group is a one-relator pro-`p` group on `Fin n`**, `n = demushkinRank hG`: it is
+presented by a single relator `r ∈ Φ(F)` of the free pro-`p` group on `Fin (demushkinRank hG)`,
+whatever the universe of `G`. -/
+theorem exists_mem_proPFrattini_continuousMulEquiv_presentedProP_fin :
+    ∃ r ∈ proPFrattini p (freeProP p (Fin (demushkinRank hG))),
+      Nonempty (presentedProP p (Fin (demushkinRank hG)) {r} ≃ₜ* G) := by
+  obtain ⟨r, hr, ⟨e⟩⟩ := hG.exists_mem_proPFrattini_continuousMulEquiv_presentedProP
+    (ULift.{u} (Fin (demushkinRank hG))) (by simp)
+  set φ : freeProP p (ULift.{u} (Fin (demushkinRank hG))) ≃ₜ* freeProP p (Fin (demushkinRank hG)) :=
+    freeProP.uliftEquiv p (Fin (demushkinRank hG))
+  refine ⟨φ r, ?_, ⟨(presentedProP.congr φ ?_ ?_).symm.trans e⟩⟩
+  · rw [← φ.map_proPFrattini_eq]
+    exact Subgroup.mem_map_of_mem _ hr
+  · intro s hs
+    rw [Set.mem_singleton_iff.1 hs]
+    exact presentedProP.mk_relator _ (Set.mem_singleton _)
+  · intro s hs
+    rw [Set.mem_singleton_iff.1 hs, φ.symm_apply_apply]
+    exact presentedProP.mk_relator _ (Set.mem_singleton _)
 
 /-- **A Demushkin group has positive rank**: on an empty generating type the presented group is
 trivial, and a trivial group has vanishing `H²(G, 𝔽_p)`, which is not one-dimensional. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
-public import TauCeti.Topology.Algebra.GroupAction.InternalHom
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.Basic
 
 /-!
 # Evaluation cups for finite discrete modules

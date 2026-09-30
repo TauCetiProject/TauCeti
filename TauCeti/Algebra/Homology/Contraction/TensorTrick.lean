@@ -45,6 +45,10 @@ applies to the contraction of bar constructions produced here.
   arbitrary homogeneous tensor word.
 * `TauCeti.LinearSpecialContraction.reducedTensorWordsHomotopy_of_tprod`: the value of `H` on a pure
   tensor word.
+* `TauCeti.LinearSpecialContraction.deconcatenation_comp_reducedTensorWordsHomotopy`: `H` is a
+  coderivation homotopy, `Δ H = (H ⊗ i p + τ ⊗ H) Δ`.
+* `TauCeti.LinearSpecialContraction.map_koszulTwist_comp_reducedTensorWordsHomotopy`: `H`
+  anticommutes with the letterwise Koszul twist.
 
 ## References
 
@@ -277,6 +281,145 @@ theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M) (n : {n : 
     PiTensorProduct.map_tprod]
   refine Finset.sum_congr rfl fun j _ ↦ congrArg _ (congrArg _ (funext fun i ↦ ?_))
   split_ifs <;> rfl
+
+/-- The tensor-trick homotopy lowers the total degree of words by one when the homotopy of the
+contraction has degree `-1` and its inclusion and projection have degree zero. -/
+theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
+    {H : InternalGrading R N} (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
+    (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
+    (hproj : LinearMap.IsHomogeneous c.proj G.piece H.piece 0) :
+    LinearMap.IsHomogeneous (c.reducedTensorWordsHomotopy G) (gradedPiece G) (gradedPiece G)
+      (-1) := by
+  rw [LinearMap.isHomogeneous_def]
+  intro D z hz
+  refine gradedPiece_induction
+    (motive := fun w ↦ c.reducedTensorWordsHomotopy G w ∈ gradedPiece G (D + -1)) hz ?_ ?_ ?_ ?_
+  · intro n hn 𝒟 x hx hD
+    rw [c.reducedTensorWordsHomotopy_of_tprod G ⟨n, hn⟩ x]
+    refine Submodule.sum_mem _ fun j hj ↦ ?_
+    have hjn : j < n := Finset.mem_range.mp hj
+    have hsum : (∑ i : Fin n, (𝒟 i - if i.val = j then 1 else 0)) = D + -1 := by
+      rw [Finset.sum_sub_distrib, hD, Finset.sum_eq_single (⟨j, hjn⟩ : Fin n)
+        (fun i _ hi ↦ ite_eq_right fun h ↦ hi (Fin.ext h)) (by simp)]
+      simp [sub_eq_add_neg]
+    rw [← hsum]
+    refine mem_gradedPiece_of_tprod G hn _ _ fun i ↦ ?_
+    split_ifs with h₁ h₂ h₂
+    · omega
+    · simpa [sub_eq_add_neg] using hh.map_mem (hx i)
+    · simpa using G.koszulTwist_mem_piece (hx i) 1
+    · simpa using hincl.map_mem (hproj.map_mem (hx i))
+  · rw [map_zero]
+    exact zero_mem _
+  · intro u v _ _ hu hv
+    rw [map_add]
+    exact add_mem hu hv
+  · intro a u _ hu
+    rw [map_smul]
+    exact Submodule.smul_mem _ _ hu
+
+/-! ### The tensor-trick homotopy and deconcatenation -/
+
+/-- The letters of the summand of the tensor-trick homotopy acting by `h` at position `J`. -/
+private noncomputable def slotTuple (G : InternalGrading R M) {n : ℕ} (x : Fin n → M) (J : ℕ) :
+    Fin n → M := fun i ↦
+  if i.val < J then G.koszulTwist 1 (x i) else if i.val = J then c.homotopy (x i)
+  else c.incl (c.proj (x i))
+
+/-- The tensor-trick homotopy on a block of a pure tensor word. -/
+private theorem reducedTensorWordsHomotopy_subword (G : InternalGrading R M) {n : ℕ} (x : Fin n → M)
+    (a b : ℕ) :
+    c.reducedTensorWordsHomotopy G (subword R x a b) =
+      ∑ j ∈ Finset.range b, subword R (c.slotTuple G x (a + j)) a b := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · simp
+  by_cases hab : a + b ≤ n
+  · rw [subword_eq_of_tprod R x hb hab, reducedTensorWordsHomotopy_of_tprod]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [subword_eq_of_tprod R _ hb hab]
+    refine of_tprod_congr R M hb rfl fun i ↦ ?_
+    simp only [slotTuple, Fin.cast_eq_self]
+    split_ifs <;> first | omega | rfl
+  · rw [subword_eq_zero_of_lt_add R x (by omega), map_zero]
+    exact (Finset.sum_eq_zero fun j _ ↦ subword_eq_zero_of_lt_add R _ (by omega)).symm
+
+/-- **The tensor-trick homotopy is a coderivation homotopy.**  Cutting `H z` either cuts to the
+right of the letter carrying `h`, where the letters already carry `i p`, or cuts to its left,
+where the letters passed by `h` carry the Koszul twist:
+
+`Δ H = (H ⊗ (i p)) Δ + (τ ⊗ H) Δ`. -/
+theorem deconcatenation_comp_reducedTensorWordsHomotopy (G : InternalGrading R M) :
+    deconcatenation R M ∘ₗ c.reducedTensorWordsHomotopy G =
+      (TensorProduct.map (c.reducedTensorWordsHomotopy G)
+          (ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj)) +
+        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist 1))
+          (c.reducedTensorWordsHomotopy G)) ∘ₗ deconcatenation R M := by
+  refine linearMap_ext R M fun ⟨n, hn⟩ x ↦ ?_
+  have hΔ (y : Fin n → M) : deconcatenation R M (subword R y 0 n) =
+      ∑ k ∈ Finset.range n, subword R y 0 k ⊗ₜ[R] subword R y k (n - k) := by
+    simpa using map_deconcatenation_subword R LinearMap.id LinearMap.id y 0 n
+  simp only [LinearMap.comp_apply, LinearMap.add_apply]
+  rw [of_tprod_eq_subword R hn x, reducedTensorWordsHomotopy_subword, map_sum,
+    map_deconcatenation_subword, map_deconcatenation_subword, ← Finset.sum_add_distrib]
+  simp only [hΔ, zero_add]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [Finset.mem_range] at hk
+  rw [← Finset.sum_range_add_sum_Ico _ hk.le, Finset.sum_Ico_eq_sum_range,
+    reducedTensorWordsHomotopy_subword, reducedTensorWordsHomotopy_subword,
+    TensorProduct.sum_tmul, TensorProduct.tmul_sum, map_subword, map_subword]
+  simp only [zero_add]
+  congr 1
+  · refine Finset.sum_congr rfl fun j hj ↦ ?_
+    rw [Finset.mem_range] at hj
+    congr 1
+    refine subword_congr R _ _ (by omega) (by omega) fun l hl ↦ ?_
+    simp only [slotTuple, LinearMap.comp_apply]
+    split_ifs <;> first | omega | rfl
+  · refine Finset.sum_congr rfl fun j hj ↦ ?_
+    rw [Finset.mem_range] at hj
+    congr 1
+    refine subword_congr R _ _ (by omega) (by omega) fun l hl ↦ ?_
+    simp only [slotTuple]
+    split_ifs <;> first | omega | rfl
+
+/-- The tensor-trick homotopy anticommutes with the letterwise Koszul twist: it moves one odd map
+`h` past the letters it acts on. -/
+theorem map_koszulTwist_comp_reducedTensorWordsHomotopy (G : InternalGrading R M)
+    (H : InternalGrading R N)
+    (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
+    (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
+    (hproj : LinearMap.IsHomogeneous c.proj G.piece H.piece 0) :
+    ReducedTensorWords.map (R := R) (G.koszulTwist 1) ∘ₗ c.reducedTensorWordsHomotopy G =
+      -(c.reducedTensorWordsHomotopy G ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist 1)) := by
+  have hhτ : G.koszulTwist 1 ∘ₗ c.homotopy + c.homotopy ∘ₗ G.koszulTwist 1 = 0 := by
+    rw [hh.koszulTwist_comp 1]
+    simp
+  have hτincl : G.koszulTwist 1 ∘ₗ c.incl = c.incl ∘ₗ H.koszulTwist 1 := by
+    simpa using hincl.koszulTwist_comp 1
+  have hτproj : H.koszulTwist 1 ∘ₗ c.proj = c.proj ∘ₗ G.koszulTwist 1 := by
+    simpa using hproj.koszulTwist_comp 1
+  have hτP : G.koszulTwist 1 ∘ₗ (c.incl ∘ₗ c.proj) = (c.incl ∘ₗ c.proj) ∘ₗ G.koszulTwist 1 := by
+    rw [← LinearMap.comp_assoc, hτincl, LinearMap.comp_assoc, hτproj, LinearMap.comp_assoc]
+  refine eq_neg_of_add_eq_zero_left (linearMap_ext R M (N := ReducedTensorWords R M) fun n x ↦ ?_)
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.zero_apply, map_of,
+    reducedTensorWordsHomotopy_of, ← map_add]
+  convert map_zero (of R M n)
+  simp only [LinearMap.sum_apply, map_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_eq_zero fun j hj ↦ ?_
+  rw [Finset.mem_range] at hj
+  rw [← LinearMap.comp_apply (PiTensorProduct.map _) (PiTensorProduct.map _),
+    ← LinearMap.comp_apply (PiTensorProduct.map _) (PiTensorProduct.map _), ← LinearMap.add_apply]
+  refine (LinearMap.congr_fun ?_ _).trans (LinearMap.zero_apply _)
+  rw [← PiTensorProduct.map_comp, ← PiTensorProduct.map_comp,
+    PiTensorProduct.map_add_map_eq_map_update _ _ ⟨j, hj⟩ fun i hi ↦ ?_]
+  · rw [← PiTensorProduct.mapMultilinear_apply]
+    refine MultilinearMap.map_coord_zero _ ⟨j, hj⟩ ?_
+    simpa using hhτ
+  · have hi' : i.val ≠ j := fun h ↦ hi (Fin.ext h)
+    split_ifs
+    · rfl
+    · exact hτP
 
 /-- The contraction identity for the tensor-trick homotopy against the letterwise differential,
 on words of each length. -/

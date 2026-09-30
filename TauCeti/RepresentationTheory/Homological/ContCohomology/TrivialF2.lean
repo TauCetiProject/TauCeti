@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.RepresentationTheory.Continuous.Restriction
+public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
@@ -41,7 +42,8 @@ trivial coefficient object for that subgroup.
 ## Main results
 
 * `TauCeti.trivialF2_V`: the carrier is `ULift (ZMod 2)`.
-* `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift.
+* `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift, with
+  `TauCeti.trivialF2Equiv_cast` its invariance under casts between the carriers of two groups.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
 * `TauCeti.trivialF2Pairing`: multiplication in `𝔽₂` as a biadditive pairing on the lifted
   carrier, with `TauCeti.trivialF2Pairing_smul_smul` its equivariance.
@@ -51,6 +53,8 @@ trivial coefficient object for that subgroup.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.trivialF2Map_subgroupSubtype`: the general pullback recovers subgroup restriction.
 * `TauCeti.trivialF2Map_id`, `TauCeti.trivialF2Map_comp`: the functoriality laws.
+* `TauCeti.eqToHom_comp_trivialF2Map`: read in discrete models of the coefficients, the pullback
+  is the compatible-pair map of any coefficient map that is the identity of `𝔽₂`.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
 * `TauCeti.trivialF2QuotientEquivFixedPoints_smul`: that identification is equivariant for the
   `G ⧸ N`-actions, with `TauCeti.trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints` its
@@ -98,6 +102,17 @@ theorem trivialF2Equiv_symm_apply (x : ZMod 2) :
   -- As above, the parenthesized proof keeps the hidden definition out of downstream reduction.
   (rfl)
 
+/-- The carriers of the trivial `𝔽₂` objects of two monoids are the same lifted `ZMod 2`, and a
+cast between them does not change the underlying value. This is how an element transported along
+an equality of coefficient objects, such as `CategoryTheory.eqToHom` in `TopRep`, is read back. -/
+theorem trivialF2Equiv_cast {H : Type u} [Monoid H] (h : (trivialF2 G).V = (trivialF2 H).V)
+    (x : (trivialF2 G).V) :
+    trivialF2Equiv H (cast h x) = trivialF2Equiv G x := by
+  obtain ⟨y, rfl⟩ : ∃ y, cast (trivialF2_V G).symm y = x :=
+    ⟨cast (trivialF2_V G) x, cast_cast _ _ x⟩
+  rw [cast_cast, trivialF2Equiv_apply]
+  exact (trivialF2Equiv_apply G y).symm
+
 /-- The lifted carrier of `trivialF2 G` has the discrete topology. -/
 instance : DiscreteTopology (trivialF2 G).V :=
   inferInstanceAs (DiscreteTopology (ULift.{u} (ZMod 2)))
@@ -131,7 +146,7 @@ theorem eqToHom_ofDiscreteModule_trivialF2_apply (x : (trivialF2 G).V) :
 carriers**: `TauCeti.eqToHom (ofDiscreteModule_trivialF2 G).symm` is the inverse morphism
 `TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read by `TauCeti.eqToIso.inv`, so it too is the
 identity on the carrier of `trivialF2 G`. -/
--- `TopRep.eqToHom_hom_apply` normalizes the left side to a cast.
+-- Not `@[simp]`: `TopRep.eqToHom_hom_apply` rewrites the left-hand side to a cast first.
 theorem eqToHom_ofDiscreteModule_trivialF2_symm_apply (x : (trivialF2 G).V) :
     (CategoryTheory.eqToHom (ofDiscreteModule_trivialF2 G).symm) x = x := by
   rw [CategoryTheory.eqToHom]
@@ -330,6 +345,43 @@ theorem trivialF2Iso_inv (e : G ≃ₜ* H) (n : ℕ) :
     (trivialF2Iso e n).inv =
       trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom e) n :=
   (rfl)
+
+variable {M : Type u} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M]
+  {N : Type u} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+  [DistribMulAction H N]
+
+/-- **`trivialF2Map` in a discrete model of the coefficients.** Suppose the discrete `G`-module `M`
+and the discrete `H`-module `N` are models of the trivial `𝔽₂` objects, `hM` and `hN`, and
+`f : M →+ N` is compatible with `φ : H →ₜ* G` and is the identity of `𝔽₂` read in the two models.
+Then pullback `trivialF2Map φ n`, read in the models, is the compatible-pair map of `φ` and `f`.
+This is what lets pullback on trivial `𝔽₂` coefficients be computed on explicit cocycles valued
+in `M`. -/
+theorem eqToHom_comp_trivialF2Map (φ : H →ₜ* G)
+    (hM : ofDiscreteModule ℤ G M = trivialF2 G) (hN : ofDiscreteModule ℤ H N = trivialF2 H)
+    (f : M →+ N) (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (hfM : ∀ m : M,
+      trivialF2Equiv H ((eqToHom hN).hom (f m)) = trivialF2Equiv G ((eqToHom hM).hom m))
+    (n : ℕ) :
+    eqToHom (congrArg (continuousCohomology n) hM) ≫ trivialF2Map φ n =
+      _root_.ContinuousCohomology.map φ (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap hf) n ≫
+        eqToHom (congrArg (continuousCohomology n) hN) := by
+  -- Generalize both trivial objects, so that their identifications with the discrete models can
+  -- be substituted away; the claim is then that the coefficient morphism is the compatible pair.
+  have key : ∀ (T : TopRep ℤ G) (hT : ofDiscreteModule ℤ G M = T) (S : TopRep ℤ H)
+      (hS : ofDiscreteModule ℤ H N = S) (g : TopRep.res (φ : H →* G) T ⟶ S),
+      (∀ m : M, g.hom ((eqToHom hT).hom m) = (eqToHom hS).hom (f m)) →
+      eqToHom (congrArg (continuousCohomology n) hT) ≫ _root_.ContinuousCohomology.map φ g n =
+        _root_.ContinuousCohomology.map φ
+            (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap hf) n ≫
+          eqToHom (congrArg (continuousCohomology n) hS) := by
+    rintro T rfl S rfl g hg
+    rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id,
+      ofDiscreteModulePair_eq_of_hom_apply (φ : H →* G) f.toIntLinearMap hf g (fun m => hg m)]
+  rw [trivialF2Map_def]
+  refine key _ hM _ hN _ fun m => (trivialF2Equiv H).injective ?_
+  rw [hfM, TopRep.eqToHom_hom_apply]
+  exact trivialF2Equiv_cast G _ _
 
 end Hom
 

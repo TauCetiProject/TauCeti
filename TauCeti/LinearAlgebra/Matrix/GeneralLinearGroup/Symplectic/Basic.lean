@@ -7,7 +7,7 @@ module
 
 -- `Matrix.symplecticGroup`, `Matrix.J`, and the `SymplecticGroup` lemmas occur in the
 -- statements below.
-public import Mathlib.LinearAlgebra.SymplecticGroup
+public import TauCeti.LinearAlgebra.SymplecticGroup
 -- This module supplies general-linear-group reindexing and re-exports the `GL` notation and its
 -- matrix coercion.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
@@ -110,6 +110,8 @@ namespace GLSymplectic
 
 variable {l R}
 
+/-- An invertible matrix lies in the symplectic subgroup exactly when its underlying matrix lies in
+Mathlib's `Matrix.symplecticGroup`. -/
 @[simp]
 theorem mem_iff_mem_symplecticGroup {M : GL (l ⊕ l) R} :
     M ∈ GLSymplectic l R ↔ (M : Matrix (l ⊕ l) (l ⊕ l) R) ∈ Matrix.symplecticGroup l R :=
@@ -127,25 +129,6 @@ theorem mem_iff' {M : GL (l ⊕ l) R} :
       (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) = J l R :=
   SymplecticGroup.mem_iff'
 
-/-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
-theorem fromBlocks_upper_mem (B : Matrix l l R) (hB : Bᵀ = B) :
-    Matrix.fromBlocks 1 B 0 1 ∈ Matrix.symplecticGroup l R := by
-  rw [SymplecticGroup.fromBlocks_mem_iff]
-  simp [hB]
-
-/-- A lower unitriangular block matrix is symplectic when its lower-left block is symmetric. -/
-theorem fromBlocks_lower_mem (C : Matrix l l R) (hC : Cᵀ = C) :
-    Matrix.fromBlocks 1 0 C 1 ∈ Matrix.symplecticGroup l R := by
-  rw [SymplecticGroup.fromBlocks_mem_iff]
-  simp [hC]
-
-/-- A block-diagonal matrix is symplectic when its diagonal blocks satisfy the defining inverse
-transpose relation. -/
-theorem fromBlocks_diagonal_mem (A D : Matrix l l R) (hAD : Aᵀ * D = 1) :
-    Matrix.fromBlocks A 0 0 D ∈ Matrix.symplecticGroup l R := by
-  rw [SymplecticGroup.fromBlocks_mem_iff]
-  simp [hAD]
-
 variable (l R)
 
 /-- Mathlib's symplectic group, read into the general linear group: `MonoidHom.toHomUnits` of the
@@ -154,12 +137,14 @@ group's own. -/
 def ofSymplecticGroup : Matrix.symplecticGroup l R →* GL (l ⊕ l) R :=
   (Matrix.symplecticGroup l R).subtype.toHomUnits
 
+/-- A symplectic matrix, read into the general linear group, has itself as underlying matrix. -/
 @[simp]
 theorem coe_ofSymplecticGroup (S : Matrix.symplecticGroup l R) :
     (ofSymplecticGroup l R S : Matrix (l ⊕ l) (l ⊕ l) R) =
       (S : Matrix (l ⊕ l) (l ⊕ l) R) :=
   MonoidHom.coe_toHomUnits _ S
 
+/-- A symplectic matrix, read into the general linear group, lies in the symplectic subgroup. -/
 theorem ofSymplecticGroup_mem (S : Matrix.symplecticGroup l R) :
     ofSymplecticGroup l R S ∈ GLSymplectic l R := by
   simpa only [mem_iff_mem_symplecticGroup, coe_ofSymplecticGroup] using S.2
@@ -179,6 +164,7 @@ def mulEquivSymplecticGroup : GLSymplectic l R ≃* Matrix.symplecticGroup l R w
     simp
   map_mul' M N := rfl
 
+/-- The equivalence with Mathlib's symplectic group keeps the underlying matrix. -/
 @[simp]
 theorem coe_mulEquivSymplecticGroup (M : GLSymplectic l R) :
     ((mulEquivSymplecticGroup l R M : Matrix.symplecticGroup l R) :
@@ -191,6 +177,7 @@ def symJ : GLSymplectic l R :=
   ⟨ofSymplecticGroup l R (SymplecticGroup.symJ l R),
     ofSymplecticGroup_mem l R (SymplecticGroup.symJ l R)⟩
 
+/-- The underlying matrix of `symJ` is the standard alternating form `Matrix.J`. -/
 @[simp]
 theorem coe_symJ : ((symJ l R : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) = J l R := by
   simp [symJ, SymplecticGroup.symJ]
@@ -220,11 +207,13 @@ theorem coe_map (f : R →+* S) (M : GLSymplectic l R) :
       Matrix.GeneralLinearGroup.map f (M : GL (l ⊕ l) R) := by
   simp [map]
 
+/-- The map induced by the identity ring morphism is the identity. -/
 @[simp]
 theorem map_id : map l (RingHom.id R) = MonoidHom.id (GLSymplectic l R) := by
   refine MonoidHom.ext fun M => Subtype.ext (Matrix.GeneralLinearGroup.ext fun i j => ?_)
   simp
 
+/-- The map induced by a composite of ring morphisms is the composite of the induced maps. -/
 @[simp]
 theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
     map l (g.comp f) = (map l g).comp (map l f) := by
@@ -273,9 +262,7 @@ theorem JFin_submatrix :
 /-- The transported alternating form of `Sp₄`, written out. -/
 theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
   have hJ : JFin 2 R =
-      (Matrix.J (Fin 2) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
-    rw [← JFin_submatrix 2 (R := R), Matrix.submatrix_submatrix]
-    simp
+      (Matrix.J (Fin 2) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := rfl
   have e0 : finSumFinEquiv.symm (0 : Fin (2 + 2)) = Sum.inl 0 := by rw [Equiv.symm_apply_eq]; rfl
   have e1 : finSumFinEquiv.symm (1 : Fin (2 + 2)) = Sum.inl 1 := by rw [Equiv.symm_apply_eq]; rfl
   have e2 : finSumFinEquiv.symm (2 : Fin (2 + 2)) = Sum.inr 0 := by rw [Equiv.symm_apply_eq]; rfl
@@ -417,6 +404,8 @@ def mulEquivGLSymplectic : GLSymplecticFin m R ≃* GLSymplectic (Fin m) R where
   map_mul' M N := Subtype.ext
     (map_mul (Equiv.reindexGL finSumFinEquiv.symm R) _ _)
 
+/-- The identification of the two presentations reindexes the underlying invertible matrix along
+`finSumFinEquiv`. -/
 @[simp]
 theorem coe_mulEquivGLSymplectic (M : GLSymplecticFin m R) :
     ((mulEquivGLSymplectic m R M : GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R) =
@@ -489,7 +478,7 @@ private theorem upperLongRoot_mem (i : Fin m) (c : R) :
     cases a <;> cases b <;>
       simp [Matrix.transvection, Matrix.single, Matrix.fromBlocks, Matrix.one_apply]
   rw [hmatrix]
-  exact GLSymplectic.fromBlocks_upper_mem _ (by simp)
+  exact SymplecticGroup.fromBlocks_upper_mem (by simp)
 
 private theorem lowerLongRoot_mem (i : Fin m) (c : R) :
     transvectionUnit (Sum.inr_ne_inl : (Sum.inr i : Fin m ⊕ Fin m) ≠ Sum.inl i) c ∈
@@ -504,7 +493,7 @@ private theorem lowerLongRoot_mem (i : Fin m) (c : R) :
     cases a <;> cases b <;>
       simp [Matrix.transvection, Matrix.single, Matrix.fromBlocks, Matrix.one_apply]
   rw [hmatrix]
-  exact GLSymplectic.fromBlocks_lower_mem _ (by simp)
+  exact SymplecticGroup.fromBlocks_lower_mem (by simp)
 
 /-- The symplectic matrix `x_{2eᵢ}(c) = 1 + c E_{i,m+i}`, in `Fin (m + m)` coordinates. -/
 def positiveLongRootTransvectionUnit (i : Fin m) (c : R) : GLSymplecticFin m R :=
@@ -523,7 +512,7 @@ transvection. -/
 theorem coe_positiveLongRootTransvectionUnit (i : Fin m) (c : R) :
     ((positiveLongRootTransvectionUnit i c : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
       transvectionUnit (finSumFinEquiv_inl_ne_inr i i) c :=
-  by rw [positiveLongRootTransvectionUnit]
+  (rfl)
 
 /-- The symplectic matrix `x_{-2eᵢ}(c) = 1 + c E_{m+i,i}`, in `Fin (m + m)` coordinates. -/
 def negativeLongRootTransvectionUnit (i : Fin m) (c : R) : GLSymplecticFin m R :=
@@ -542,7 +531,7 @@ transvection. -/
 theorem coe_negativeLongRootTransvectionUnit (i : Fin m) (c : R) :
     ((negativeLongRootTransvectionUnit i c : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
       transvectionUnit (finSumFinEquiv_inr_ne_inl i i) c :=
-  by rw [negativeLongRootTransvectionUnit]
+  (rfl)
 
 /-- The positive long-root transvections form a one-parameter subgroup. -/
 def positiveLongRootTransvectionHom (i : Fin m) :
@@ -560,12 +549,16 @@ def negativeLongRootTransvectionHom (i : Fin m) :
   map_mul' c d :=
     Subtype.ext (transvectionUnit_add _ (Multiplicative.toAdd c) (Multiplicative.toAdd d))
 
+/-- The positive long-root one-parameter subgroup sends `c` to the transvection with parameter
+`Multiplicative.toAdd c`. -/
 @[simp]
 theorem positiveLongRootTransvectionHom_apply (i : Fin m) (c : Multiplicative R) :
     positiveLongRootTransvectionHom i c =
       positiveLongRootTransvectionUnit i (Multiplicative.toAdd c) :=
   (rfl)
 
+/-- The negative long-root one-parameter subgroup sends `c` to the transvection with parameter
+`Multiplicative.toAdd c`. -/
 @[simp]
 theorem negativeLongRootTransvectionHom_apply (i : Fin m) (c : Multiplicative R) :
     negativeLongRootTransvectionHom i c =
@@ -685,7 +678,7 @@ private theorem differenceShortRoot_mem {i j : Fin m} (hij : i ≠ j) (c : R) :
     (Sum.inr j) (Sum.inr i) (Sum.inr_injective.ne hij.symm) (-c)
   rw [hfirst, hsecond, GLSymplectic.mem_iff_mem_symplecticGroup]
   rw [coe_differenceShortRootTransvectionUnits hij c]
-  apply GLSymplectic.fromBlocks_diagonal_mem
+  apply SymplecticGroup.fromBlocks_diagonal_mem
   simp only [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_one,
     Matrix.transpose_single, Matrix.mul_add, Matrix.add_mul, Matrix.one_mul, Matrix.mul_one]
   rw [Matrix.single_mul_single_of_ne _ _ _ _ hij]
@@ -716,7 +709,7 @@ private theorem positiveSumShortRoot_mem {i j : Fin m} (c : R) :
     cases a <;> cases b <;>
       simp [Matrix.single, Matrix.fromBlocks, Matrix.one_apply, add_comm]
   rw [hmatrix]
-  exact GLSymplectic.fromBlocks_upper_mem _
+  exact SymplecticGroup.fromBlocks_upper_mem
     (by simp [Matrix.transpose_add, Matrix.transpose_single, add_comm])
 
 private theorem negativeSumShortRoot_mem {i j : Fin m} (c : R) :
@@ -743,7 +736,7 @@ private theorem negativeSumShortRoot_mem {i j : Fin m} (c : R) :
     cases a <;> cases b <;>
       simp [Matrix.single, Matrix.fromBlocks, Matrix.one_apply, add_comm]
   rw [hmatrix]
-  exact GLSymplectic.fromBlocks_lower_mem _
+  exact SymplecticGroup.fromBlocks_lower_mem
     (by simp [Matrix.transpose_add, Matrix.transpose_single, add_comm])
 
 /-- The one-parameter subgroup attached to the short root `eᵢ-eⱼ`. -/
@@ -825,24 +818,21 @@ theorem differenceShortRootHom_apply {i j : Fin m} (hij : i ≠ j)
     (c : Multiplicative R) :
     differenceShortRootHom hij c =
       differenceShortRootUnit hij c.toAdd := by
-  rw [differenceShortRootUnit]
-  rw [ofAdd_toAdd]
+  rw [differenceShortRootUnit, ofAdd_toAdd]
 
 /-- The positive-sum short-root homomorphism evaluates to its paired transvection. -/
 @[simp]
 theorem positiveSumShortRootHom_apply {i j : Fin m} (hij : i ≠ j) (c : Multiplicative R) :
     positiveSumShortRootHom hij c =
       positiveSumShortRootUnit hij c.toAdd := by
-  rw [positiveSumShortRootUnit]
-  rw [ofAdd_toAdd]
+  rw [positiveSumShortRootUnit, ofAdd_toAdd]
 
 /-- The negative-sum short-root homomorphism evaluates to its paired transvection. -/
 @[simp]
 theorem negativeSumShortRootHom_apply {i j : Fin m} (hij : i ≠ j) (c : Multiplicative R) :
     negativeSumShortRootHom hij c =
       negativeSumShortRootUnit hij c.toAdd := by
-  rw [negativeSumShortRootUnit]
-  rw [ofAdd_toAdd]
+  rw [negativeSumShortRootUnit, ofAdd_toAdd]
 
 /-- **For a fixed parameter, the difference short-root element depends only on its index pair.**
 Two proofs that the indices differ, and two spellings of the same indices, give the same element. -/

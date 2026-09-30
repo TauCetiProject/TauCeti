@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Generation
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
 import TauCeti.LinearAlgebra.Matrix.Cartan.TypeB
 
 /-!
-# Generation of the type-B spin weight torus by root subgroups
+# Generation of the type-B spin carrier by root subgroups
 
 The full-weight type-`Bₙ₊₁` spin carrier is defined from its positive and negative numbered
 simple-root subgroups together with its split weight torus. This file proves that, in rank at
@@ -30,9 +31,12 @@ values it produces are only the squares. The torus of the rank-two carrier does 
 elementary subgroup, by Chevalley's identity `h_α(u) = w_α(u) w_α(1)⁻¹`, but that identity is
 not part of the generic theorem used here.
 
-The conclusion concerns subgroups of the automorphism group of the base-changed admissible
-lattice. Identifying these generated points with all points of the toral-closure group scheme is
-a separate scheme-theoretic comparison.
+Applying the pointwise containment to the universal point of the torus, over the coordinate ring
+of the split torus itself, shows that in rank at least three the torus is also redundant
+scheme-theoretically: the toral-closure defining ideal over `ℤ` equals the ideal cut out by the
+numbered root subgroups alone, so the carrier is the root-generated Kostant group scheme. This is
+an equality of integral carriers; it does not say that the subgroup generated anew over a
+non-flat base is the base change of the integral carrier.
 
 ## Main results
 
@@ -41,12 +45,20 @@ a separate scheme-theoretic comparison.
 * `TauCeti.TypeBSpinCarrier.weightTorusSubsystemSubgroup_univ_eq_elementarySubgroup`: in rank at
   least three, adjoining the weight torus to all numbered root subgroups gives exactly the
   elementary subgroup.
+* `TauCeti.TypeBSpinCarrier.definingIdeal_eq_kostantGeneratedDefiningIdeal`: in rank at least
+  three, the integral toral-closure carrier is already cut out by the root subgroups alone.
+* `TauCeti.TypeBSpinCarrier.groupScheme_eq_kostantGeneratedGroupScheme` and
+  `TauCeti.TypeBSpinCarrier.isIso_kostantGeneratedToToral`: in rank at least three, the carrier is
+  the root-generated Kostant group scheme, and the canonical comparison between them is an
+  isomorphism.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 6.4 and 7.1.
 * `TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generation`.
+* `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.SchemeGeneration`, which
+  the scheme-theoretic section of this file follows.
 -/
 
 public section
@@ -115,5 +127,61 @@ theorem weightTorusSubsystemSubgroup_univ_eq_elementarySubgroup (A : CommAlgCat.
     (lie_coroot_rootGenerator n) Sum.inl Sum.inr
     (isSl2Triple_rep_rootGenerator n) (rootWeight_inr_eq_neg_inl n)
     (typeBCartanBezout (n + 1)) (rootWeight_sum_mul_bezout n hn) A
+
+/-! ## Scheme-theoretic generation -/
+
+private theorem universalWeightTorus_mem_elementarySubgroup :
+    let T := (DiagonalizableGroup.coordinateRing ℤ
+      (SplitTorus.characterGroup (Fin (n + 1)))).obj
+    let A := CommAlgCat.of ℤ T
+    let q : HopfAlgebra.points
+        (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ
+          (SplitTorus.characterGroup (Fin (n + 1)))) A :=
+      WithConv.toConv (AlgHom.id ℤ T)
+    kostantTorusPoints (lattice n).toAddSubgroup (latticeBasis n) (basisWeight n) A
+        (SplitTorus.pointsMulEquiv q) ∈
+      kostantElementarySubgroup (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
+        (isNilpotent_rep_rootGenerator n) A := by
+  intro T A q
+  apply weightTorusSubgroup_le_elementarySubgroup n hn A
+  exact (kostantTorusSubgroup_eq_range _ _ _ A).ge ⟨_, rfl⟩
+
+/-- **In rank at least three, the full-weight type-`Bₙ₊₁` spin carrier is generated
+scheme-theoretically by its numbered root subgroups.** Adjoining the represented weight torus does
+not change the integral defining Hopf ideal. -/
+theorem definingIdeal_eq_kostantGeneratedDefiningIdeal :
+    definingIdeal n =
+      kostantGeneratedDefiningIdeal (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n) (latticeBasis n) := by
+  rw [definingIdeal_def]
+  exact
+    kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
+      _ _ _ _ _ _ _ (basisWeight n) (universalWeightTorus_mem_elementarySubgroup n hn)
+
+/-- In rank at least three, the full-weight type-`Bₙ₊₁` spin carrier is the group scheme
+generated by its numbered positive and negative simple root subgroups. -/
+theorem groupScheme_eq_kostantGeneratedGroupScheme :
+    groupScheme n =
+      kostantGeneratedGroupScheme (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n) (latticeBasis n) := by
+  rw [groupScheme_eq_kostantToralGroupScheme]
+  exact
+    kostantToralGroupScheme_eq_kostantGeneratedGroupScheme_of_universal_torus_mem_elementary
+      _ _ _ _ _ _ _ (basisWeight n) (universalWeightTorus_mem_elementarySubgroup n hn)
+
+/-- In rank at least three, the canonical inclusion of the root-generated type-`Bₙ₊₁` spin
+carrier into its toral closure is an isomorphism. -/
+theorem isIso_kostantGeneratedToToral :
+    CategoryTheory.IsIso (kostantGeneratedToToral
+      (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+      (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+      (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+      (latticeBasis n) (basisWeight n)) :=
+  isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary _ _ _ _ _ _ _ (basisWeight n)
+    (universalWeightTorus_mem_elementarySubgroup n hn)
 
 end TauCeti.TypeBSpinCarrier

@@ -378,15 +378,21 @@ variable (I M) in
 def IsGeodesicallyCompleteAt (p : M) : Prop :=
   ∀ v : TangentSpace I p, geodesicInterval I M p v = univ
 
+omit [I.Boundaryless] in
 /-- **Completeness at a point via the exponential map.**  The exponential map at `p` is defined on
 all of `T_p M` exactly when every geodesic leaving `p` is defined for all time. -/
 theorem expDomain_eq_univ_iff {p : M} :
     expDomain I M p = univ ↔ IsGeodesicallyCompleteAt I M p := by
-  refine ⟨fun h v ↦ ?_, fun h ↦ eq_univ_of_forall fun v ↦ ?_⟩
-  · rw [geodesicInterval_eq_preimage_expDomain, h, preimage_univ]
+  refine ⟨fun h v ↦ eq_univ_of_forall fun t ↦ ?_, fun h ↦ eq_univ_of_forall fun v ↦ ?_⟩
+  · have h1 : ∀ w : TangentSpace I p, (1 : ℝ) ∈ geodesicInterval I M p w := fun w ↦
+      mem_expDomain_iff.1 (eq_univ_iff_forall.1 h w)
+    rcases eq_or_ne t 0 with rfl | ht
+    · exact zero_mem_geodesicInterval_of_mem (h1 v)
+    · simpa only [mul_one] using (mem_geodesicInterval_smul_iff ht).1 (h1 (t • v))
   · rw [mem_expDomain_iff, h v]
     exact mem_univ _
 
+omit [I.Boundaryless] in
 /-- Geodesic completeness at a point is equivalent to every initial velocity admitting a
 geodesic at time `1`. -/
 theorem isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval {p : M} :
@@ -395,6 +401,7 @@ theorem isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval {p : M} :
   rw [← expDomain_eq_univ_iff, eq_univ_iff_forall]
   simp only [mem_expDomain_iff]
 
+omit [I.Boundaryless] in
 /-- Failure of geodesic completeness supplies an initial velocity whose geodesic is undefined
 at time `1`. -/
 theorem not_isGeodesicallyCompleteAt_iff_exists_one_notMem_geodesicInterval {p : M} :

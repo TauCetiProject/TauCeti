@@ -21,7 +21,8 @@ a characterization of permutations with a unique fixed point, functions constant
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, the fact that a permutation
-is a single cycle on each of its own orbits, and the factorization of an invariant function
+is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
+types, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`).
@@ -134,6 +135,19 @@ theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
     (e.permCongr σ).SameCycle (e x) (e y) ↔ σ.SameCycle x y := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map fun z ↦ by simp⟩
   simpa using h.map (g := e.symm) fun z ↦ by simp
+
+/-- Transporting a permutation along an equivalence transports its cycles on a set: the analogue of
+`Equiv.Perm.IsCycleOn.conj` for an equivalence between two types. -/
+theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set α}
+    (h : σ.IsCycleOn s) : (e.permCongr σ).IsCycleOn (e '' s) := by
+  refine ⟨⟨?_, (e.permCongr σ).injective.injOn, ?_⟩, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨σ x, h.1.mapsTo hx, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
+    exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
 
 end Equiv.Perm
 

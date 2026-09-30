@@ -48,7 +48,9 @@ directions before taking products.
 * `TauCeti.Grid.cIoo_image_rev`: reversing a clockwise open arc by `Fin.rev` gives the clockwise
   open arc with reversed, exchanged endpoints.
 * `TauCeti.Grid.mem_cIoo_finRotate_finRotate`, `TauCeti.Grid.mem_cIco_finRotate_finRotate`: the
-  cyclic permutation `finRotate n` preserves the open and half-open arcs.
+  cyclic permutation `finRotate n` preserves the open and half-open arcs, as do its powers
+  (`TauCeti.Grid.mem_cIoo_finRotate_pow_finRotate_pow`,
+  `TauCeti.Grid.mem_cIco_finRotate_pow_finRotate_pow`).
 * `TauCeti.Grid.finRotate_ne_self`: on a cycle of length at least two, the cyclic successor has
   no fixed point.
 * `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
@@ -639,6 +641,26 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
   · rw [cIco_of_ne ((finRotate n).injective.ne hab), cIco_of_ne hab,
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
+
+/-- Powers of the cyclic permutation `finRotate n` preserve and reflect membership in open cyclic
+intervals. -/
+theorem mem_cIoo_finRotate_pow_finRotate_pow (k : ℕ) (a b x : Fin n) :
+    (finRotate n ^ k) x ∈ cIoo ((finRotate n ^ k) a) ((finRotate n ^ k) b) ↔ x ∈ cIoo a b := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
+      mem_cIoo_finRotate_finRotate, ih]
+
+/-- Powers of the cyclic permutation `finRotate n` preserve and reflect membership in half-open
+cyclic intervals. -/
+theorem mem_cIco_finRotate_pow_finRotate_pow (k : ℕ) (a b x : Fin n) :
+    (finRotate n ^ k) x ∈ cIco ((finRotate n ^ k) a) ((finRotate n ^ k) b) ↔ x ∈ cIco a b := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
+      mem_cIco_finRotate_finRotate, ih]
 
 /-- Replacing a point by its cyclic successor preserves membership in a half-open cyclic interval
 when the successor is not an endpoint. -/
