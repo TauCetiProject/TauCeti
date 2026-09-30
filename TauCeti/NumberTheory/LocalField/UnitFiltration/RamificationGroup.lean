@@ -502,9 +502,7 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
   intro hpIndex
   have hpCard : p ∣ Nat.card (RamificationGroupGraded G 𝒪[L] 0) := by
-    rw [Subgroup.index_eq_card] at hpIndex
-    change p ∣ Nat.card (RamificationGroupGraded G 𝒪[L] 0) at hpIndex
-    exact hpIndex
+    rwa [RamificationGroupGraded, zero_add, ← Subgroup.index_eq_card]
   have hpResidueCard : p ∣ Nat.card 𝓀[L] := by
     obtain ⟨d, -, hd⟩ := FiniteField.card 𝓀[L] p
     rw [Nat.card_eq_fintype_card, hd]
