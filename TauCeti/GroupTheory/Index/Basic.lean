@@ -36,6 +36,8 @@ centre gives the `Γ.withCenter` readings.
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
+* `Subgroup.compositeTransversal`: representatives for `G/V` obtained by composing
+  representatives for `G/U` and `U/V`.
 * `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
   `K` has finite index relative to `f(H)`.
 * `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
@@ -60,6 +62,56 @@ theorem exists_mul_out_eq {G : Type u} [Group G] (S : Subgroup G) (x : G) :
     ∃ s ∈ S, s * (Quotient.mk (QuotientGroup.rightRel S) x).out = x :=
   ⟨_, QuotientGroup.rightRel_apply.1
     (Quotient.exact (Quotient.out_eq (Quotient.mk (QuotientGroup.rightRel S) x))), by group⟩
+
+/-- **The composite transversal for a subgroup tower.** Given `V ≤ U ≤ G`, representatives
+`t` for `G/U`, and representatives `s` for `U/V`, this chooses the representative
+`t a * s b` of a coset of `V`, where `(a, b)` are its coordinates under
+`Subgroup.quotientEquivProdOfLE'`. -/
+@[expose]
+def compositeTransversal (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
+    (t : G ⧸ U → G)
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) : G :=
+  t ((Subgroup.quotientEquivProdOfLE' hVU t ht q).1) *
+    s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2)
+
+/-- Evaluation of the composite transversal in the coordinates of the subgroup tower. -/
+@[simp]
+theorem compositeTransversal_apply (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
+    (t : G ⧸ U → G)
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) :
+    compositeTransversal G U V hVU t ht s q =
+      t ((Subgroup.quotientEquivProdOfLE' hVU t ht q).1) *
+        s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2) := rfl
+
+/-- The composite transversal for `V ≤ U ≤ G` represents each coset of `V`. -/
+theorem compositeTransversal_spec (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
+    (t : G ⧸ U → G)
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (s : U ⧸ V.subgroupOf U → U)
+    (hs : ∀ v : U ⧸ V.subgroupOf U,
+      (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
+    (q : G ⧸ V) :
+    (QuotientGroup.mk (compositeTransversal G U V hVU t ht s q) : G ⧸ V) = q := by
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
+  let hmap : ∀ a b : U, QuotientGroup.leftRel (V.subgroupOf U) a b →
+      QuotientGroup.leftRel V (t (e q).1 * (a : G)) (t (e q).1 * (b : G)) := by
+    intro a b hab
+    rw [QuotientGroup.leftRel_apply] at hab ⊢
+    -- The inner coset relation is definitionally the ambient relation after subtype coercions.
+    change ((a : G)⁻¹ * (b : G)) ∈ V at hab
+    simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel_left] using hab
+  calc
+    QuotientGroup.mk (compositeTransversal G U V hVU t ht s q) = e.symm (e q) := by
+      -- Unfold the inverse tower equivalence as a quotient map on the inner coset.
+      change QuotientGroup.mk (t (e q).1 * s (e q).2) =
+        Quotient.map' (fun b : U => t (e q).1 * b) hmap (e q).2
+      calc
+        _ = Quotient.map' (fun b : U => t (e q).1 * b) hmap
+            (QuotientGroup.mk (s (e q).2)) := rfl
+        _ = _ := congrArg _ (hs (e q).2)
+    _ = q := e.symm_apply_apply q
 
 end Subgroup
 

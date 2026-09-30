@@ -22,15 +22,15 @@ cor_V^G = cor_U^G ∘ cor_V^U.
 ```
 
 The relative map `corestrictionLe` first transports cohomology from `V` to its copy
-`V.subgroupOf U` inside `U`, then applies corestriction there. The proof identifies iterated
-coinduction with direct coinduction, proves that evaluation (and hence Shapiro's map) respects this
-identification, and decomposes the trace over `G ⧸ V` into the iterated traces over `G ⧸ U` and
-`U ⧸ V` using `Subgroup.quotientEquivProdOfLE'`.
+`V.subgroupOf U` inside `U`, then applies corestriction there. Transitivity gives all-degree
+corestriction coherent transfer maps along subgroup towers: a transfer may be assembled through
+intermediate open subgroups without depending on how the inclusion is factored.
 
 ## Main definitions
 
-* `TauCeti.ContinuousCohomology.corestrictionLe`: all-degree corestriction along an inclusion of
-  subgroups.
+* `TauCeti.ContinuousCohomology.subgroupOfMap`: transport from a subgroup to its canonical copy
+  inside an intermediate subgroup.
+* `TauCeti.ContinuousCohomology.corestrictionLe`: all-degree corestriction along an inclusion.
 
 ## Main results
 
@@ -61,7 +61,17 @@ private theorem id_subgroupOf_smul (x : V.subgroupOf U) (m : M) :
         ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) x • m) =
       x • m := rfl
 
-private noncomputable def subgroupOfMap (n : ℕ) :
+omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+  [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M] in
+private theorem subgroupOf_smul_eq (v : V.subgroupOf U) (w : V) (a : M)
+    (h : ((v : U) : G) = (w : G)) : w • a = v • a := by
+  -- The two subgroup actions are restrictions of the ambient `G`-action; expose their values.
+  change (w : G) • a = ((v : U) : G) • a
+  exact congrArg (· • a) h.symm
+
+/-- Transport continuous cohomology from a subgroup `V` to its canonical copy
+`V.subgroupOf U` inside a larger subgroup `U`. -/
+noncomputable def subgroupOfMap (n : ℕ) :
     continuousCohomology n (ofDiscreteModule ℤ V M) ⟶
       continuousCohomology n (ofDiscreteModule ℤ (V.subgroupOf U) M) :=
   _root_.ContinuousCohomology.map
@@ -83,30 +93,16 @@ noncomputable def corestrictionLe (hU : IsClosed (U : Set G))
   exact subgroupOfMap U V hVU M n ≫
     corestriction (G := U) (V.subgroupOf U) M hV n
 
-private noncomputable def towerTransversal (q : G ⧸ V) : G :=
-  let e := Subgroup.quotientEquivProdOfLE' hVU Quotient.out Quotient.out_eq
-  e q |>.1.out * (e q |>.2.out : U)
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] in
-private theorem towerTransversal_spec (q : G ⧸ V) :
-    (QuotientGroup.mk (towerTransversal U V hVU q) : G ⧸ V) = q := by
-  let e := Subgroup.quotientEquivProdOfLE' hVU Quotient.out Quotient.out_eq
-  let hmap : ∀ a b : U, QuotientGroup.leftRel (V.subgroupOf U) a b →
-      QuotientGroup.leftRel V ((e q).1.out * (a : G)) ((e q).1.out * (b : G)) := by
-    intro a b hab
-    rw [QuotientGroup.leftRel_apply] at hab ⊢
-    change ((a : G)⁻¹ * (b : G)) ∈ V at hab
-    simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel_left] using hab
-  calc
-    QuotientGroup.mk (towerTransversal U V hVU q) = e.symm (e q) := by
-      change QuotientGroup.mk ((e q).1.out * ((e q).2.out : U)) =
-        Quotient.map' (fun b : U => (e q).1.out * b) hmap (e q).2
-      calc
-        _ = Quotient.map' (fun b : U => (e q).1.out * b) hmap
-            (QuotientGroup.mk (e q).2.out) := rfl
-        _ = _ := congrArg _ (Quotient.out_eq' (e q).2)
-    _ = q := e.symm_apply_apply q
+/-- The defining equation for relative corestriction: transport to `V.subgroupOf U`, then apply
+corestriction inside `U`. -/
+theorem corestrictionLe_def (hU : IsClosed (U : Set G))
+    [(V.subgroupOf U).FiniteIndex]
+    (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) (n : ℕ) :
+    letI : CompactSpace U := isCompact_iff_compactSpace.mp hU.isCompact
+    corestrictionLe U V hVU M hU hV n =
+      subgroupOfMap U V hVU M n ≫
+        corestriction (G := U) (V.subgroupOf U) M hV n := by
+  rfl
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] [TopologicalSpace M]
   [DiscreteTopology M] [ContinuousSMul G M] in
@@ -123,10 +119,8 @@ private theorem trace_transEquiv_symm (hU : IsOpen (U : Set G))
     (f : DiscreteCoind G V M) :
     haveI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
     let e := DiscreteCoind.transEquiv (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-      (Subgroup.map_subgroupOf_eq_of_le hVU)
-      (fun v w a h => by
-        change (w : G) • a = ((v : U) : G) • a
-        exact congrArg (· • a) h.symm) (U.isClosed_of_isOpen hU).isCompact.closure
+      (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
+      (U.isClosed_of_isOpen hU).isCompact.closure
     DiscreteCoind.trace G V M f =
       DiscreteCoind.trace G U M
         (DiscreteCoind.map (DiscreteCoind.trace U (V.subgroupOf U) M).toIntLinearMap
@@ -135,24 +129,25 @@ private theorem trace_transEquiv_symm (hU : IsOpen (U : Set G))
   let _ : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let e := Subgroup.quotientEquivProdOfLE' hVU Quotient.out Quotient.out_eq
   let c := DiscreteCoind.transEquiv (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-    (Subgroup.map_subgroupOf_eq_of_le hVU)
-    (fun v w a h => by
-      change (w : G) • a = ((v : U) : G) • a
-      exact congrArg (· • a) h.symm) (U.isClosed_of_isOpen hU).isCompact.closure
+    (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
+    (U.isClosed_of_isOpen hU).isCompact.closure
   dsimp only
   -- Reindex the direct trace by `(G ⧸ U) × (U ⧸ V)` and compare its summands with the
   -- corresponding outer and inner traces.
-  rw [DiscreteCoind.trace_eq_sum_transversal (towerTransversal U V hVU)
-    (towerTransversal_spec U V hVU), DiscreteCoind.trace_apply, ← e.symm.sum_comp,
+  rw [DiscreteCoind.trace_eq_sum_transversal
+    (Subgroup.compositeTransversal G U V hVU Quotient.out Quotient.out_eq Quotient.out)
+    (Subgroup.compositeTransversal_spec G U V hVU Quotient.out Quotient.out_eq
+      Quotient.out Quotient.out_eq), DiscreteCoind.trace_apply, ← e.symm.sum_comp,
     Fintype.sum_prod_type]
   apply Finset.sum_congr rfl
   intro a _
   simp only [DiscreteCoind.map_apply]
+  -- `DiscreteCoind.map` leaves the outer action folded into its function coercion.
   change _ = a.out • DiscreteCoind.trace U (V.subgroupOf U) M (c.symm f a.out⁻¹)
   rw [DiscreteCoind.trace_apply, Finset.smul_sum]
   apply Finset.sum_congr rfl
   intro b _
-  simp only [towerTransversal, e, e.apply_symm_apply, mul_smul,
+  simp only [Subgroup.compositeTransversal_apply, e, e.apply_symm_apply, mul_smul,
     c, DiscreteCoind.transEquiv_symm_apply, Subgroup.smul_def]
   congr 2
   rw [mul_inv_rev]
@@ -161,32 +156,24 @@ private theorem trace_transEquiv_symm (hU : IsOpen (U : Set G))
 omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 private theorem shapiroMap_trans (hU : IsOpen (U : Set G)) (n : ℕ) :
     let c := DiscreteCoind.transIso (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-      (Subgroup.map_subgroupOf_eq_of_le hVU)
-      (fun v w a h => by
-        change (w : G) • a = ((v : U) : G) • a
-        exact congrArg (· • a) h.symm) (U.isClosed_of_isOpen hU).isCompact.closure
+      (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
+      (U.isClosed_of_isOpen hU).isCompact.closure
     coeffMap c.inv n ≫ shapiroMap U (DiscreteCoind U (V.subgroupOf U) M) n ≫
         shapiroMap (V.subgroupOf U) M n =
       shapiroMap V M n ≫ subgroupOfMap U V hVU M n := by
   dsimp only
   let e := DiscreteCoind.transEquiv (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-    (Subgroup.map_subgroupOf_eq_of_le hVU)
-    (fun v w a h => by
-      change (w : G) • a = ((v : U) : G) • a
-      exact congrArg (· • a) h.symm) (U.isClosed_of_isOpen hU).isCompact.closure
+    (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
+    (U.isClosed_of_isOpen hU).isCompact.closure
   have he_smul (g : G) (φ : DiscreteCoind G V M) :
       e.symm.toAddMonoidHom.toIntLinearMap ((ContinuousMonoidHom.id G : G →* G) g • φ) =
         g • e.symm.toAddMonoidHom.toIntLinearMap φ := by
     exact DiscreteCoind.transEquiv_symm_smul (Subgroup.map_subgroupOf_eq_of_le hVU)
-      (fun v w a h => by
-        change (w : G) • a = ((v : U) : G) • a
-        exact congrArg (· • a) h.symm)
+      (subgroupOf_smul_eq U V M)
       (U.isClosed_of_isOpen hU).isCompact.closure g φ
   let c := DiscreteCoind.transIso (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-    (Subgroup.map_subgroupOf_eq_of_le hVU)
-    (fun v w a h => by
-      change (w : G) • a = ((v : U) : G) • a
-      exact congrArg (· • a) h.symm) (U.isClosed_of_isOpen hU).isCompact.closure
+    (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
+    (U.isClosed_of_isOpen hU).isCompact.closure
   let p := ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
     e.symm.toAddMonoidHom.toIntLinearMap he_smul
   have hp : _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) p n =
@@ -196,10 +183,7 @@ private theorem shapiroMap_trans (hU : IsOpen (U : Set G)) (n : ℕ) :
     apply ofDiscreteModulePair_heq_of_hom_apply rfl
     intro φ
     exact (DiscreteCoind.transIso_inv_apply
-      (Subgroup.map_subgroupOf_eq_of_le hVU)
-      (fun v w a h => by
-        change (w : G) • a = ((v : U) : G) • a
-        exact congrArg (· • a) h.symm)
+      (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
       (U.isClosed_of_isOpen hU).isCompact.closure φ).trans rfl
   rw [← hp]
   -- Both routes are maps of compatible pairs whose underlying coefficient map evaluates an
@@ -220,6 +204,7 @@ private theorem shapiroMap_trans (hU : IsOpen (U : Set G)) (n : ℕ) :
   let pT := ofDiscreteModulePair (τ : V.subgroupOf U →* V)
     (LinearMap.id : M →ₗ[ℤ] M) (id_subgroupOf_smul U V hVU M)
   simp only [shapiroMap_def, subgroupOfMap]
+  -- Expose the compatible-pair maps hidden by the Shapiro and coefficient-map wrappers.
   change _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) p n ≫
         _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U) pU n ≫
           _root_.ContinuousCohomology.map
@@ -245,6 +230,7 @@ private theorem shapiroMap_trans (hU : IsOpen (U : Set G)) (n : ℕ) :
         (ContinuousMonoidHom.subgroupSubtype (V.subgroupOf U) : V.subgroupOf U →* U)).map pU ≫
         pVU
   let qR := (TopRep.resFunctor (τ : V.subgroupOf U →* V)).map pV ≫ pT
+  -- Fold the two expanded composites into the local compatible-pair abbreviations.
   change _root_.ContinuousCohomology.map φL qL n =
     _root_.ContinuousCohomology.map φR qR n
   refine map_congr hφ ?_ n
@@ -252,6 +238,7 @@ private theorem shapiroMap_trans (hU : IsOpen (U : Set G)) (n : ℕ) :
   apply heq_of_eq
   refine TopRep.hom_ext (DFunLike.ext _ _ fun f => ?_)
   let f' : DiscreteCoind G V M := f
+  -- Composition in `TopRep` evaluates by composing the underlying homomorphisms.
   change pVU.hom (pU.hom (p.hom f)) = pT.hom (pV.hom f)
   have hp_apply : p.hom f = e.symm f' := by
     exact ofDiscreteModulePair_hom_apply _ _ _ f'
@@ -265,6 +252,7 @@ private theorem shapiroMap_trans (hU : IsOpen (U : Set G)) (n : ℕ) :
   have hpT_apply (x : M) : pT.hom x = x :=
     (ofDiscreteModulePair_hom_apply _ _ _ x).trans (LinearMap.id_apply x)
   rw [hp_apply, hpU_apply, hpVU_apply]
+  -- The remaining coinduction evaluations are hidden behind function-like coercions.
   change (e.symm f' (1 : G)) (1 : U) = pT.hom (pV.hom f')
   rw [hpV_apply, hpT_apply]
   rw [DiscreteCoind.transEquiv_symm_apply]
@@ -275,10 +263,8 @@ private theorem transIso_inv_comp_trace (hU : IsOpen (U : Set G))
     [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
     haveI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
     let c := DiscreteCoind.transIso (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-      (Subgroup.map_subgroupOf_eq_of_le hVU)
-      (fun v w a h => by
-        change (w : G) • a = ((v : U) : G) • a
-        exact congrArg (· • a) h.symm) (U.isClosed_of_isOpen hU).isCompact.closure
+      (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
+      (U.isClosed_of_isOpen hU).isCompact.closure
     c.inv ≫
         ofDiscreteModuleMap
           (DiscreteCoind.map
@@ -294,10 +280,8 @@ private theorem transIso_inv_comp_trace (hU : IsOpen (U : Set G))
   dsimp only
   let _ : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let c := DiscreteCoind.transIso (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-    (Subgroup.map_subgroupOf_eq_of_le hVU)
-    (fun v w a h => by
-      change (w : G) • a = ((v : U) : G) • a
-      exact congrArg (· • a) h.symm) (U.isClosed_of_isOpen hU).isCompact.closure
+    (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
+    (U.isClosed_of_isOpen hU).isCompact.closure
   let tVU := ofDiscreteModuleMap
     (DiscreteCoind.map
       (DiscreteCoind.trace U (V.subgroupOf U) M).toAddMonoidHom.toIntLinearMap
@@ -309,6 +293,7 @@ private theorem transIso_inv_comp_trace (hU : IsOpen (U : Set G))
     (fun g φ => _root_.map_smul (DiscreteCoind.trace G U M) g φ)
   let tV := ofDiscreteModuleMap (DiscreteCoind.trace G V M).toAddMonoidHom.toIntLinearMap
     (fun g φ => _root_.map_smul (DiscreteCoind.trace G V M) g φ)
+  -- Fold the displayed trace morphisms into the local names used in the extensionality proof.
   change c.inv ≫ tVU ≫ tU = tV
   refine TopRep.hom_ext (DFunLike.ext _ _ fun (f : DiscreteCoind G V M) => ?_)
   have h₁ : (c.inv ≫ tVU ≫ tU).hom f = tU.hom (tVU.hom (c.inv.hom f)) :=
@@ -316,10 +301,7 @@ private theorem transIso_inv_comp_trace (hU : IsOpen (U : Set G))
       (congrArg (fun x => tU.hom x) (TopRep.comp_apply c.inv tVU f))
   have h₂ : c.inv.hom f =
       (DiscreteCoind.transEquiv (A := M) (U := U) (V := V.subgroupOf U) (W := V)
-        (Subgroup.map_subgroupOf_eq_of_le hVU)
-        (fun v w a h => by
-          change (w : G) • a = ((v : U) : G) • a
-          exact congrArg (· • a) h.symm)
+        (Subgroup.map_subgroupOf_eq_of_le hVU) (subgroupOf_smul_eq U V M)
         (U.isClosed_of_isOpen hU).isCompact.closure).symm f :=
     DiscreteCoind.transIso_inv_apply _ _ _ f
   have h₃ : tU.hom (tVU.hom (c.inv.hom f)) = DiscreteCoind.trace G V M f :=
