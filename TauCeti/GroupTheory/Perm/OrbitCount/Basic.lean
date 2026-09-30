@@ -374,7 +374,7 @@ first, so they appear on the right. -/
 `Equiv.swap aᵢ pᵢ` moves a point `pᵢ ≠ aᵢ` that the product of the later factors still fixes. Then
 each factor of `TauCeti.swapProduct` splices a fixed point into another orbit, as in
 `TauCeti.orbitCount_mul_swap_add_one`. -/
-@[expose] def IsSwapForest [DecidableEq β] : List (β × β) → Prop
+def IsSwapForest [DecidableEq β] : List (β × β) → Prop
   | [] => True
   | (a, p) :: factors =>
       IsSwapForest factors ∧ swapProduct factors p = p ∧ a ≠ p

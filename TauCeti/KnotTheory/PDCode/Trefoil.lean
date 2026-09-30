@@ -299,28 +299,19 @@ private theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) 
     norm_num [trefoilStateForest] at hcount ⊢ <;>
     omega
 
-private def trefoilStateEquiv : (Fin 3 → Bool) ≃ Bool × (Bool × Bool) where
-  toFun s := (s 0, s 1, s 2)
-  invFun b := ![b.1, b.2.1, b.2.2]
-  left_inv s := by
-    funext i
-    fin_cases i <;> rfl
-  right_inv b := by
-    rcases b with ⟨b₀, b₁, b₂⟩
-    rfl
-
-@[simp]
-private theorem trefoilStateEquiv_symm_apply (b : Bool × (Bool × Bool)) :
-    trefoilStateEquiv.symm b = ![b.1, b.2.1, b.2.2] :=
-  (rfl)
-
 /-- The Kauffman bracket of the standard right-handed trefoil is
 `-A⁵ - A⁻³ + A⁻⁷`. -/
 theorem kauffmanBracket_rightHandedTrefoilPDCode {R : Type*} [CommRing R] (a : Rˣ) :
     rightHandedTrefoilPDCode.toPDCode.kauffmanBracket a =
       -(a : R) ^ 5 - ((a⁻¹ : Rˣ) : R) ^ 3 + ((a⁻¹ : Rˣ) : R) ^ 7 := by
-  rw [PDCode.kauffmanBracket_def, ← trefoilStateEquiv.symm.sum_comp]
-  simp only [Fintype.sum_prod_type, Fintype.sum_bool, trefoilStateEquiv_symm_apply,
+  let stateEquiv := (Fin.consEquiv fun _ : Fin 3 ↦ Bool).symm.trans
+    (Equiv.prodCongr (Equiv.refl Bool) (finTwoArrowEquiv Bool))
+  have stateEquiv_symm_apply (b : Bool × (Bool × Bool)) :
+      stateEquiv.symm b = ![b.1, b.2.1, b.2.2] := by
+    rcases b with ⟨b₀, b₁, b₂⟩
+    rfl
+  rw [PDCode.kauffmanBracket_def, ← stateEquiv.symm.sum_comp]
+  simp only [Fintype.sum_prod_type, Fintype.sum_bool, stateEquiv_symm_apply,
     rightHandedTrefoilPDCode_stateLoopCount, PDCode.stateWeight_def,
     Fin.prod_univ_succ, Fin.prod_univ_zero, Fin.isValue, Bool.cond_false,
     Bool.cond_true, Matrix.cons_val_zero, Matrix.cons_val_succ,
