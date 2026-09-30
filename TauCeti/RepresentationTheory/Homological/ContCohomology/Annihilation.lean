@@ -18,10 +18,10 @@ import TauCeti.GroupTheory.Coset.Basic
 Let `G` be a locally compact group, for instance a profinite group, `U` an open subgroup of finite
 index and `X` a topological representation of `G`. If a class `x ∈ Hⁿ⁺¹(G, X)` restricts to zero
 in `Hⁿ⁺¹(U, X)`, then `[G : U] • x = 0`. Classically this is read off from the identity
-`cor ∘ res = [G : U]` (NSW (1.5.7)). Applied to an open subgroup of index prime to `p`, and to
-a class of `p`-power order such as a class with coefficients in a `p`-primary torsion module, it
-makes restriction injective; this is how the cohomology of a profinite group is compared with that
-of a Sylow subgroup.
+`cor ∘ res = [G : U]` (NSW (1.5.7)). Applied to an open subgroup of index prime to `p`, and to a
+class of `p`-power order, it makes restriction injective. For a profinite group with discrete
+`p`-primary torsion coefficients, every cohomology class has `p`-power order; this is how its
+cohomology is compared with that of a Sylow subgroup.
 
 The proof uses no corestriction. It works directly on Mathlib's coinduced resolution
 `C(G, C(G, …, X))`. The right-coset factorization of an open subgroup provides a continuous map
@@ -105,9 +105,8 @@ private theorem resolutionPullback_d (n : ℕ)
     rw [resolutionPullback_succ_apply, hom_d_succ_apply_apply, map_sub, ih,
       hom_d_succ_apply_apply, resolutionPullback_succ_apply]
 
-/-- Restriction to `U` on the coinduced resolution, at a point: the elementwise form of
-`TauCeti.ContinuousCohomology.resolutionMap_succ_apply` for the restriction pair, stated through
-`TopRep.Hom.hom`, which is how restriction appears in the homogeneous cochains. -/
+/-- The generic resolution-map equation specialized to restriction, with the representation
+identified through `TopRep.res` on the subgroup inclusion. -/
 private theorem resolutionMap_subgroupSubtype_succ_apply (n : ℕ) (F : (resolutionX X (n + 1)).V)
     (u : U) :
     (resolutionMap (ContinuousMonoidHom.subgroupSubtype U)
@@ -115,12 +114,6 @@ private theorem resolutionMap_subgroupSubtype_succ_apply (n : ℕ) (F : (resolut
       (resolutionMap (ContinuousMonoidHom.subgroupSubtype U)
         (𝟙 (TopRep.res (U.subtype : U →* G) X)) n).hom (F u) :=
   resolutionMap_succ_apply _ _ n F u
-
-/-- Restriction to `U` is the identity on the degree-zero term `X` of the resolution. -/
-private theorem resolutionMap_subgroupSubtype_zero_apply (v : X.V) :
-    (resolutionMap (ContinuousMonoidHom.subgroupSubtype U)
-      (𝟙 (TopRep.res (U.subtype : U →* G) X)) 0).hom v = v :=
-  rfl
 
 /-! ### The homotopy -/
 
@@ -181,9 +174,9 @@ private theorem resolutionHomotopy_zero_step (F : (resolutionX X (0 + 1)).V) :
     resolutionHomotopy_succ_apply, hom_d_succ_apply_apply,
     resolutionHomotopy_zero, zero_apply, sub_zero,
     ContinuousMap.sub_apply, ContinuousMap.sub_apply, resolutionPullback_succ_apply,
-    resolutionMap_subgroupSubtype_succ_apply, resolutionPullback_zero_apply,
-    resolutionMap_subgroupSubtype_zero_apply]
+    resolutionMap_subgroupSubtype_succ_apply, resolutionPullback_zero_apply]
   simp [d_zero]
+  rfl
 
 /-- **The homotopy identity** `d ∘ h + h ∘ d = id - w^* ∘ res_U` on the coinduced resolution. -/
 private theorem d_resolutionHomotopy_add (n : ℕ) (F : (resolutionX X (n + 1)).V) :
