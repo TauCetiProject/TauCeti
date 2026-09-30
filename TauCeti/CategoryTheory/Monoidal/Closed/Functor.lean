@@ -380,6 +380,8 @@ theorem ihomComparison_app_eq_ihomComparisonUnitIso_inv (adj : L ⊣ R) (A B : C
     (R.ihomComparison A).natTrans.app B = (ihomComparisonUnitIso adj A).inv.app B := by
   let _ : MonoidalClosed C := monoidalClosed adj
   let _ : R.LaxMonoidal := adj.rightAdjointLaxMonoidal
+  apply uncurry_injective
+  rw [CategoryTheory.Functor.uncurry_ihomComparison]
   let comm₁ : R ⋙ tensorLeft (R.obj A) ⋙ L ≅ tensorLeft A ⋙ 𝟭 C :=
     NatIso.ofComponents (fun X ↦
       (Functor.Monoidal.μIso L (R.obj A) (R.obj X)).symm ≪≫
@@ -389,7 +391,7 @@ theorem ihomComparison_app_eq_ihomComparisonUnitIso_inv (adj : L ⊣ R) (A B : C
         tensorHom_def', ← MonoidalCategory.whiskerLeft_comp_assoc,
         Adjunction.counit_naturality, whisker_exchange,
         tensorHom_def_assoc, MonoidalCategory.whiskerLeft_comp])
-  let comm₂ := ihomComparisonUnitIso adj A
+  set comm₂ := ihomComparisonUnitIso adj A
   have hc := Adjunction.map_restrictFullyFaithful_counit_app
     ((ihom.adjunction (R.obj A)).comp adj)
     (Functor.FullyFaithful.ofFullyFaithful R)
@@ -398,13 +400,10 @@ theorem ihomComparison_app_eq_ihomComparisonUnitIso_inv (adj : L ⊣ R) (A B : C
       (((ihom.adjunction (R.obj A)).comp adj).restrictFullyFaithful
         (Functor.FullyFaithful.ofFullyFaithful R)
         (Functor.FullyFaithful.id _) comm₁ comm₂).counit.app B := rfl
-  apply uncurry_injective
-  rw [CategoryTheory.Functor.uncurry_ihomComparison]
-  change _ = uncurry (comm₂.inv.app B)
   rw [uncurry_eq]
   dsimp only [Functor.id_map, Functor.id_obj] at hc
-  erw [Adjunction.rightAdjointLaxMonoidal_μ]
-  erw [Adjunction.homEquiv_unit]
+  rw [Adjunction.rightAdjointLaxMonoidal_μ]
+  rw [Adjunction.homEquiv_unit]
   rw [hev', hc, R.map_comp, R.map_comp]
   have hcomm₁ : Functor.OplaxMonoidal.δ L (R.obj A) (R.obj ((ihom A).obj B)) ≫
       (adj.counit.app A ⊗ₘ adj.counit.app ((ihom A).obj B)) =
@@ -416,23 +415,9 @@ theorem ihomComparison_app_eq_ihomComparisonUnitIso_inv (adj : L ⊣ R) (A B : C
     exact comm₁.hom_inv_id_app ((ihom A).obj B)
   slice_lhs 2 4 =>
     rw [← R.map_comp, ← R.map_comp, hcancel, R.map_id]
-  erw [Category.id_comp]
-  rw [R.map_comp, Adjunction.comp_counit_app, R.map_comp, Functor.comp_map]
-  change adj.unit.app _ ≫ R.map (L.map (R.obj A ◁ comm₂.inv.app B)) ≫
-      R.map (L.map ((ihom.ev (R.obj A)).app (R.obj B))) ≫ R.map (adj.counit.app B) = _
-  slice_lhs 1 2 =>
-    change adj.unit.app (R.obj A ⊗ R.obj ((ihom A).obj B)) ≫
-      (L ⋙ R).map (R.obj A ◁ comm₂.inv.app B)
-    rw [← adj.unit.naturality]
-  slice_lhs 2 3 =>
-    change adj.unit.app (R.obj A ⊗ (ihom (R.obj A)).obj (R.obj B)) ≫
-      (L ⋙ R).map ((ihom.ev (R.obj A)).app (R.obj B))
-    rw [← adj.unit.naturality]
-  change (R.obj A ◁ comm₂.inv.app B) ≫
-      ((ihom.ev (R.obj A)).app (R.obj B) ≫ adj.unit.app (R.obj B)) ≫
-        R.map (adj.counit.app B) =
-    (R.obj A ◁ comm₂.inv.app B) ≫ (ihom.ev (R.obj A)).app (R.obj B)
-  rw [Category.assoc, adj.right_triangle_components]
-  simp
+  rw [Category.id_comp (R.map _)]
+  rw [R.map_comp, Adjunction.comp_counit_app, R.map_comp, Functor.comp_map, curriedTensor_obj_map,
+    ihom.ihom_adjunction_counit, adj.unit_naturality_assoc, adj.unit_naturality_assoc,
+    adj.right_triangle_components, Category.comp_id]
 
 end CategoryTheory.Monoidal.Reflective

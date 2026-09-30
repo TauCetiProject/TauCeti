@@ -197,17 +197,18 @@ private def ihomForgetRestrictScalarsIdIso (M N : _root_.SheafOfModules.{u}
           ((forget (ringCatSheaf R)).obj N))
 
 private def ihomCompForgetIsoApp (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    ((ihom M).obj N).val ≅ (ihom M.val).obj N.val := by
-  let adj := PresheafOfModules.sheafificationAdjunction (R := ringCatSheaf R)
-    (J := J) (𝟙 (ringCatSheaf R).obj)
-  exact (forgetRestrictScalarsIdIso.app ((ihom M).obj N)).symm ≪≫
-    (Monoidal.Reflective.ihomComparisonUnitIso adj M).symm.app N ≪≫
+    (forget (ringCatSheaf R)).obj ((ihom M).obj N) ≅
+      (ihom ((forget (ringCatSheaf R)).obj M)).obj ((forget (ringCatSheaf R)).obj N) :=
+  (forgetRestrictScalarsIdIso.app ((ihom M).obj N)).symm ≪≫
+    (Monoidal.Reflective.ihomComparisonUnitIso (PresheafOfModules.sheafificationAdjunction
+      (R := ringCatSheaf R) (J := J) (𝟙 (ringCatSheaf R).obj)) M).symm.app N ≪≫
       ihomForgetRestrictScalarsIdIso M N
 
 private theorem ihomCompForgetIsoApp_naturality (M : _root_.SheafOfModules.{u}
     (ringCatSheaf R)) {N N' : _root_.SheafOfModules.{u} (ringCatSheaf R)} (f : N ⟶ N') :
-    (ihomCompForgetIsoApp M N).hom ≫ (ihom M.val).map f.val =
-      ((ihom M).map f).val ≫ (ihomCompForgetIsoApp M N').hom := by
+    (ihomCompForgetIsoApp M N).hom ≫
+        (ihom ((forget (ringCatSheaf R)).obj M)).map ((forget (ringCatSheaf R)).map f) =
+      (forget (ringCatSheaf R)).map ((ihom M).map f) ≫ (ihomCompForgetIsoApp M N').hom := by
   let adj := PresheafOfModules.sheafificationAdjunction (R := ringCatSheaf R)
     (J := J) (𝟙 (ringCatSheaf R).obj)
   let iC := forget (ringCatSheaf R) ⋙
@@ -215,26 +216,16 @@ private theorem ihomCompForgetIsoApp_naturality (M : _root_.SheafOfModules.{u}
   let _ : iC.LaxMonoidal := adj.rightAdjointLaxMonoidal
   let r := forgetRestrictScalarsIdIso (R := R)
   let e := Monoidal.Reflective.ihomComparisonUnitIso adj M
-  change r.inv.app ((ihom M).obj N) ≫ e.inv.app N ≫
-      (ihom (iC.obj M)).map (r.hom.app N) ≫
-        (pre (r.inv.app M)).app ((forget (ringCatSheaf R)).obj N) ≫
-          (ihom ((forget (ringCatSheaf R)).obj M)).map
-            ((forget (ringCatSheaf R)).map f) =
-    (forget (ringCatSheaf R)).map ((ihom M).map f) ≫
-      r.inv.app ((ihom M).obj N') ≫ e.inv.app N' ≫
-        (ihom (iC.obj M)).map (r.hom.app N') ≫
-          (pre (r.inv.app M)).app ((forget (ringCatSheaf R)).obj N')
+  simp only [ihomCompForgetIsoApp, ihomForgetRestrictScalarsIdIso, Iso.trans_hom, Iso.symm_hom,
+    Iso.app_hom, Iso.app_inv, Functor.mapIso_hom, asIso_hom, Category.assoc]
   rw [r.inv.naturality_assoc]
   slice_rhs 2 3 =>
-    change (ihom M ⋙ iC).map f ≫ e.inv.app N'
-    rw [e.inv.naturality]
+    rw [← Functor.comp_map, e.inv.naturality]
   simp only [Category.assoc]
   slice_lhs 4 5 => rw [pre_comm_ihom_map]
   slice_lhs 3 4 => rw [← Functor.map_comp]
   slice_rhs 3 4 =>
-    change (ihom (iC.obj M)).map (iC.map f) ≫
-      (ihom (iC.obj M)).map (r.hom.app N')
-    rw [← Functor.map_comp]
+    rw [Functor.comp_map, Functor.comp_map, Functor.id_map, ← Functor.map_comp]
   rw [r.hom.naturality f]
 
 /-- The underlying presheaf of the internal Hom of sheaves of modules is the internal Hom of the
@@ -245,11 +236,11 @@ def _root_.SheafOfModules.ihomCompForgetIso :
   NatIso.ofComponents (ihomCompForgetIsoApp M)
     (fun f ↦ (ihomCompForgetIsoApp_naturality M f).symm)
 
-/-- The comparison between sheaf and presheaf internal Homs is natural in the source. -/
-theorem _root_.SheafOfModules.ihomCompForgetIso_pre_app
-    {M' : _root_.SheafOfModules.{u} (ringCatSheaf R)} (f : M' ⟶ M) :
-    ((pre f).app N).val ≫ (ihomCompForgetIso M').hom.app N =
-      (ihomCompForgetIso M).hom.app N ≫ (pre f.val).app N.val := by
+private theorem ihomCompForgetIsoApp_pre {M' : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    (f : M' ⟶ M) :
+    (forget (ringCatSheaf R)).map ((pre f).app N) ≫ (ihomCompForgetIsoApp M' N).hom =
+      (ihomCompForgetIsoApp M N).hom ≫
+        (pre ((forget (ringCatSheaf R)).map f)).app ((forget (ringCatSheaf R)).obj N) := by
   let adj := PresheafOfModules.sheafificationAdjunction (R := ringCatSheaf R)
     (J := J) (𝟙 (ringCatSheaf R).obj)
   let iC := forget (ringCatSheaf R) ⋙
@@ -264,18 +255,8 @@ theorem _root_.SheafOfModules.ihomCompForgetIso_pre_app
   rw [hM, hM'] at hnat
   dsimp only [iC] at hnat
   let r := forgetRestrictScalarsIdIso (R := R)
-  let e := Monoidal.Reflective.ihomComparisonUnitIso adj M
-  let e' := Monoidal.Reflective.ihomComparisonUnitIso adj M'
-  dsimp only [ihomCompForgetIso, NatIso.ofComponents]
-  change (forget (ringCatSheaf R)).map ((pre f).app N) ≫
-      r.inv.app ((ihom M').obj N) ≫ e'.inv.app N ≫
-      (ihom (iC.obj M')).map (r.hom.app N) ≫
-        (pre (r.inv.app M')).app ((forget (ringCatSheaf R)).obj N) =
-    r.inv.app ((ihom M).obj N) ≫ e.inv.app N ≫
-      (ihom (iC.obj M)).map (r.hom.app N) ≫
-        (pre (r.inv.app M)).app ((forget (ringCatSheaf R)).obj N) ≫
-          (pre ((forget (ringCatSheaf R)).map f)).app ((forget (ringCatSheaf R)).obj N)
-  dsimp only [e, e', iC]
+  simp only [ihomCompForgetIsoApp, ihomForgetRestrictScalarsIdIso, Iso.trans_hom, Iso.symm_hom,
+    Iso.app_hom, Iso.app_inv, Functor.mapIso_hom, asIso_hom, Category.assoc]
   rw [r.inv.naturality_assoc]
   slice_lhs 2 3 => rw [← hnat]
   simp only [Category.assoc]
@@ -283,6 +264,18 @@ theorem _root_.SheafOfModules.ihomCompForgetIso_pre_app
   simp only [Category.assoc]
   rw [← NatTrans.comp_app, ← pre_map, ← NatTrans.comp_app, ← pre_map,
     r.inv.naturality f]
+
+private theorem ihomCompForgetIso_hom_app :
+    (ihomCompForgetIso M).hom.app N = (ihomCompForgetIsoApp M N).hom :=
+  NatIso.ofComponents_hom_app _ _ N
+
+/-- The comparison between sheaf and presheaf internal Homs is natural in the source. -/
+theorem _root_.SheafOfModules.ihomCompForgetIso_pre_app
+    {M' : _root_.SheafOfModules.{u} (ringCatSheaf R)} (f : M' ⟶ M) :
+    ((pre f).app N).val ≫ (ihomCompForgetIso M').hom.app N =
+      (ihomCompForgetIso M).hom.app N ≫ (pre f.val).app N.val := by
+  rw [ihomCompForgetIso_hom_app, ihomCompForgetIso_hom_app]
+  exact ihomCompForgetIsoApp_pre M N f
 
 /-- The sections over `U` of the internal Hom `𝓗om(M, N)` of sheaves of modules are the morphisms
 `M.over U ⟶ N.over U` of restrictions to the slice over `U`. -/
