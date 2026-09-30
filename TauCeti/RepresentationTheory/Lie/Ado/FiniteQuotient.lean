@@ -20,7 +20,7 @@ elements generate a commutative subalgebra `S` of the centre over which `U(L)` i
 (`TauCeti.UniversalEnvelopingAlgebra.exists_pCentralGenerators_moduleFinite`).  They also have
 augmentation zero, so they belong to `UC`.  Together those two facts make every power of `UC`
 contain the extension to `U(L)` of a power of the ideal of `S` that the generators span, whose
-quotient is finite dimensional, and `Ideal.finite_quotient_pow_of_algebraMap_mem` turns that into
+quotient is finite dimensional, and `TauCeti.finite_quotient_pow_of_algebraMap_mem` turns that into
 the theorem of this file: **`U(L) ⧸ UC ^ n` is finite dimensional over `K`**, for every `n`.  It is
 nonzero for `n ≠ 0`, by
 `TauCeti.HopfIdeal.nontrivial_quotient_centralAugmentationIdeal_pow`, so the quotient is a nonzero
@@ -83,7 +83,7 @@ theorem finiteDimensional_quotient_centralAugmentationIdeal_pow
     exact ⟨((x : Subalgebra.center K Uₖ)).property, hi ▸ haug i⟩
   -- The action of `S` on `U(L)` is a local instance built from `S`, so neither the scalar tower
   -- nor the module-finiteness over it is found by instance synthesis; both are passed by hand.
-  exact @Ideal.finite_quotient_pow_of_algebraMap_mem K S Uₖ _ _ _ _ _ _ htower hmodfin
+  exact @finite_quotient_pow_of_algebraMap_mem K S Uₖ _ _ _ _ _ _ htower hmodfin
     s hsfin htop _ _ hmem n
 
 end UniversalEnvelopingAlgebra
