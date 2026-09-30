@@ -76,7 +76,8 @@ private theorem two_mem_pow_iff {n : ℕ} : (2 : 𝓞 K) ∈ 𝔭 ^ n ↔ n ≤ 
 
 /-- **The dyadic ramification filtration of `ℚ(i)`.** An automorphism `σ` lies in the `i`-th
 ramification group of the prime above `2` exactly when `σ = 1` or `i ≤ 1`. -/
-@[simp]
+-- The general `Ideal.mem_ramificationGroup_iff` rewrites the left-hand side first,
+-- so this specialized criterion is not a `simp` lemma.
 theorem mem_ramificationGroup_iff {i : ℕ} {σ : K ≃ₐ[ℚ] K} :
     σ ∈ 𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i ↔ σ = 1 ∨ i ≤ 1 := by
   rw [ramificationGroup_def,
