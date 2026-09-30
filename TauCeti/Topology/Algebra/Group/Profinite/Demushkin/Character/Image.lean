@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CharacterImage
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.QInvariant
 
