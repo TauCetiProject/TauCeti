@@ -116,6 +116,30 @@ theorem resolutionTranslate_succ_apply (n : ℕ) (F : (resolutionX X (n + 1)).V)
     ((resolutionTranslate X a (n + 1)).hom F) x = (resolutionTranslate X a n).hom (F (x * a)) :=
   (rfl)
 
+/-- Translation by the identity acts as the identity on every term of the resolution. -/
+@[simp]
+theorem resolutionTranslate_one (n : ℕ) : resolutionTranslate X 1 n = 𝟙 _ := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    ext F x
+    change ((resolutionTranslate X 1 (n + 1)).hom F) x = F x
+    rw [resolutionTranslate_succ_apply, mul_one, ih]
+    rfl
+
+/-- Translation by a product is the composite of the two right translations. -/
+theorem resolutionTranslate_mul (b : G) (n : ℕ) :
+    resolutionTranslate X (a * b) n = resolutionTranslate X b n ≫ resolutionTranslate X a n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    ext F x
+    change ((resolutionTranslate X (a * b) (n + 1)).hom F) x =
+      ((resolutionTranslate X a (n + 1)).hom ((resolutionTranslate X b (n + 1)).hom F)) x
+    rw [resolutionTranslate_succ_apply, resolutionTranslate_succ_apply,
+      resolutionTranslate_succ_apply, mul_assoc, ih]
+    rfl
+
 /-- **Right translation is a chain map**: it commutes with the differential of the coinduced
 resolution. -/
 theorem resolutionTranslate_d_apply (n : ℕ) (v : (resolutionX X n).V) :
@@ -193,12 +217,13 @@ theorem d_translateHomotopy_add_translateHomotopy_d (n : ℕ) (F : (resolutionX 
     simp [d_zero, ContIntertwiningMap.id_apply]
   | succ n ih =>
     refine ContinuousMap.ext fun x => ?_
-    have hx := ih (F x)
+    have hcancel := eq_sub_of_add_eq' (ih (F x))
     rw [ContinuousMap.add_apply, hom_d_succ_apply_apply, translateHomotopy_succ_apply,
       translateHomotopy_succ_apply, hom_d_succ_apply_apply, map_sub, ContinuousMap.sub_apply,
-      hom_d_succ_apply_apply, map_sub, map_sub, resolutionTranslate_d_apply,
-      ContinuousMap.sub_apply, resolutionTranslate_succ_apply,
-      map_sub (translateHomotopy X a (n + 1)), eq_sub_of_add_eq' hx]
+      hom_d_succ_apply_apply]
+    simp only [map_sub]
+    rw [resolutionTranslate_d_apply, ContinuousMap.sub_apply, resolutionTranslate_succ_apply,
+      hcancel]
     abel
 
 /-- **The prism operator is `G`-equivariant**, because left and right translations commute. -/
@@ -257,8 +282,9 @@ variable [LocallyCompactSpace G]
 pair consisting of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the action of `g` on the
 coefficients, which is NSW's conjugation `g_*`, induces the identity of `Hⁿ(G, X)` in every degree.
 The homomorphism and the coefficient map are taken as hypotheses on their values, so that the
-statement applies to any presentation of the pair. -/
-theorem map_eq_id_of_inner (n : ℕ) : map φ f n = 𝟙 (continuousCohomology n X) := by
+statement applies to any presentation of the pair with discrete coefficients. -/
+theorem map_eq_id_of_inner [DiscreteTopology X.V] (n : ℕ) :
+    map φ f n = 𝟙 (continuousCohomology n X) := by
   set K := homogeneousCochains X
   ext x
   obtain ⟨z, rfl⟩ := K.homologyπ_surjective n x
