@@ -31,6 +31,8 @@ Witt--Grothendieck ring.
 * `TauCeti.RegularFormPresentation.prod_tmul`: the weight product of a tensor presentation.
 * `TauCeti.RegularFormClass.mk_mul_mk`: multiplication computes by tensoring presentations.
 * `TauCeti.formClass_tmul`: the class of a tensor product is the product of the classes.
+* `TauCeti.formClass_smul`: the class of a scalar multiple by a unit is a product with a
+  rank-one class.
 * `TauCeti.RegularFormClass.rank_mul`: rank is multiplicative.
 
 ## References
@@ -413,5 +415,18 @@ theorem formClass_tmul (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     RegularFormClass.mk_mul_mk,
     formClass_mk _ _ (p.tmul q)
       ((hp.tmul hq).trans (equivalent_presentedForm_tmul p q).symm)]
+
+/-- The class of the scalar multiple `a • Q` of a regular form by a unit `a` is the product of
+the class of `Q` with the rank-one class `⟨a⟩`. -/
+theorem formClass_smul (a : Kˣ) (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (haQ : ((a : K) • Q).Nondegenerate) :
+    formClass ((a : K) • Q) haQ =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * formClass Q hQ := by
+  obtain ⟨p, ⟨e⟩⟩ := exists_presentedForm_equivalent Q hQ
+  rw [formClass_mk Q hQ p ⟨e⟩, RegularFormClass.mk_mul_mk, RegularFormPresentation.rankOne_tmul]
+  refine formClass_mk _ _ _ ⟨{ toLinearEquiv := e.toLinearEquiv, map_app' := fun x => ?_ }⟩
+  rw [smul_apply, ← e.map_app x, presentedForm_apply, presentedForm_apply, smul_eq_mul,
+    Finset.mul_sum]
+  simp [mul_assoc]
 
 end TauCeti
