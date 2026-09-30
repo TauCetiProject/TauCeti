@@ -27,8 +27,8 @@ polynomial. The hypothesis that the field is infinite cannot be dropped: over `�
 *Producing the coefficients.* Conversely, a family of endomorphisms whose matrix entries against
 some basis are polynomial in the parameter *is* such a power sum, with the coefficients read off
 entrywise from the entry polynomials
-(`TauCeti.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval`). Truncating at one more than the
-largest degree occurring keeps a single range serving every entry.
+(`Module.Basis.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval`). Truncating at one more than
+the largest degree occurring keeps a single range serving every entry.
 
 Together they are how a representation of a matrix group whose matrix entries are polynomial
 functions is expanded along a one-parameter subgroup and its terms then identified.
@@ -39,8 +39,8 @@ functions is expanded along a one-parameter subgroup and its terms then identifi
   vanishing power sum are zero.
 * `TauCeti.eq_of_forall_sum_range_pow_smul_eq`: two power sums agreeing at every point have the
   same coefficients.
-* `TauCeti.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval`: a family of endomorphisms with
-  polynomial matrix entries is a finite power sum of fixed endomorphisms.
+* `Module.Basis.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval`: a family of endomorphisms
+  with polynomial matrix entries is a finite power sum of fixed endomorphisms.
 -/
 
 public section
@@ -90,7 +90,13 @@ theorem eq_of_forall_sum_range_pow_smul_eq {d : ℕ} {u v : ℕ → M}
 
 end Coefficients
 
+end TauCeti
+
 /-! ## Producing the coefficients from polynomial matrix entries -/
+
+-- The leading explicit argument is a `Module.Basis`, so this lives in its namespace and is used
+-- through dot notation.
+namespace Module.Basis
 
 /-- **A family of endomorphisms whose matrix entries are polynomial in the parameter is a finite
 power sum of fixed endomorphisms.** The `m`-th coefficient is read off entrywise from the `m`-th
@@ -115,4 +121,4 @@ theorem exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval {K : Type u} [CommRing
   rw [map_smul, Matrix.smul_apply, LinearEquiv.apply_symm_apply, Matrix.of_apply, smul_eq_mul,
     mul_comm]
 
-end TauCeti
+end Module.Basis

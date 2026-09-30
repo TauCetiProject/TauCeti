@@ -14,10 +14,10 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Weyl
 # Highest weight vectors of a rational representation of `GL n`
 
 A rational representation of `GL n ℂ` is the internal direct sum of its weight spaces
-(`TauCeti.IsRationalRep.isInternal_weightSpace`), so it has only finitely many weights. This file
-produces a **highest weight vector** out of them: a nonzero weight vector, of a *dominant* weight,
-annihilated by the raising operators in the sense that every transvection `xᵢⱼ(c)` with `i < j`
-fixes it.
+(`TauCeti.IsRationalRep.isInternal_weightSpace`), so it has only finitely many weights
+(`TauCeti.finite_setOf_weightSpace_ne_bot`). This file produces a **highest weight vector** out of
+them: a nonzero weight vector, of a *dominant* weight, annihilated by the raising operators in the
+sense that every transvection `xᵢⱼ(c)` with `i < j` fixes it.
 
 That is the group-level form of a vector killed by the positive nilradical, and it is the step the
 highest-weight classification of the irreducible rational representations of `GL n` rests on: the
@@ -50,14 +50,15 @@ height while permutations of a weight are again weights
 
 * `TauCeti.weightChar_add_nsmul_single_sub_single`: a multiple of the root `εᵢ - εⱼ` translates a
   weight character by a power of `tᵢ tⱼ⁻¹`.
+* `TauCeti.apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul`: the `m`-th coefficient
+  of such an expansion carries a vector of weight `l` into the weight space of
+  `l + m (εᵢ - εⱼ)`. This step mentions no rationality, so it is stated over an arbitrary infinite
+  field; only the results whose hypothesis is the `ℂ`-pinned `TauCeti.IsRationalRep` are stated
+  over `ℂ`.
 * `TauCeti.IsRationalRep.exists_forall_transvectionUnit_eq_sum_smul`: the action along a root
   subgroup is polynomial in the parameter.
-* `TauCeti.apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul`: the `m`-th coefficient
-  of that expansion carries a vector of weight `l` into the weight space of `l + m (εᵢ - εⱼ)`.
 * `TauCeti.IsRationalRep.apply_transvectionUnit_eq_self`: a weight vector all of whose raised
   weight spaces vanish is fixed by the root subgroup.
-* `TauCeti.IsRationalRep.finite_setOf_weightSpace_ne_bot`: a rational representation has only
-  finitely many weights.
 * `TauCeti.IsRationalRep.exists_highestWeightVector`: **a nonzero rational representation has a
   highest weight vector**, of a dominant weight.
 
@@ -71,7 +72,7 @@ public section
 
 open Matrix
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -106,6 +107,66 @@ theorem weightChar_add_nsmul_single_sub_single {R : Type*} [CommRing R] {i j : F
     Pi.smul_apply, hi, hj]
   simp [zpow_neg, mul_pow, inv_pow]
 
+/-! ## Transvections raise weights -/
+
+section InfiniteField
+
+variable {K : Type v} [Field K] [Infinite K]
+variable {W : Type u} [AddCommGroup W] [Module K W] {ρ : Representation K (GL (Fin n) K) W}
+
+/-- **The coefficients of the root-subgroup expansion raise the weight.** If the action along the
+root subgroup of `εᵢ - εⱼ` expands as `∑ m < d, c ^ m • A m`, then `A m` carries a vector of
+weight `l` into the weight space of `l + m (εᵢ - εⱼ)`.
+
+Nothing in this statement refers to rationality, so the base field is an arbitrary infinite field:
+the argument only needs the coefficients of a polynomial identity to be determined by its
+values. -/
+theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
+    {i j : Fin n} (hij : i ≠ j) {d : ℕ} {A : ℕ → Module.End K W}
+    (hA : ∀ c : K, ρ (transvectionUnit hij c) = ∑ m ∈ Finset.range d, c ^ m • A m)
+    {l : Fin n → ℤ} {w : W} (hw : w ∈ weightSpace ρ l) {m : ℕ} (hm : m < d) :
+    A m w ∈ weightSpace ρ (l + m • (Pi.single i 1 - Pi.single j 1)) := by
+  rw [mem_weightSpace_iff]
+  intro t
+  have hexpand : ∀ e : K, ρ (transvectionUnit hij e) w
+      = ∑ m' ∈ Finset.range d, e ^ m' • A m' w := by
+    intro e
+    rw [hA e, LinearMap.sum_apply]
+    exact Finset.sum_congr rfl fun m' _ ↦ rfl
+  refine eq_of_forall_sum_range_pow_smul_eq (K := K)
+    (u := fun m' ↦ ρ (diagGL t) (A m' w))
+    (v := fun m' ↦ ((weightChar K (l + m' • (Pi.single i 1 - Pi.single j 1)) t : Kˣ) : K) •
+      A m' w) (fun c ↦ ?_) hm
+  -- `diagGL_mul_transvectionUnit_mul_inv` rescales the parameter to `tᵢ * c * tⱼ⁻¹`, with each
+  -- unit coerced separately, whereas the expansion below needs the value `tᵢ tⱼ⁻¹` of the root
+  -- coerced as a single unit and multiplied on the left.
+  have hparam : ((t i * (t j)⁻¹ : Kˣ) : K) * c = (t i : K) * c * (((t j)⁻¹ : Kˣ) : K) := by
+    push_cast
+    ring
+  have hconj : (diagGL t : GL (Fin n) K) * transvectionUnit hij c
+      = transvectionUnit hij (((t i * (t j)⁻¹ : Kˣ) : K) * c) * diagGL t := by
+    rw [hparam, ← diagGL_mul_transvectionUnit_mul_inv hij t c]
+    group
+  have hlhs : ∑ m' ∈ Finset.range d, c ^ m' • ρ (diagGL t) (A m' w)
+      = ((weightChar K l t : Kˣ) : K) •
+        ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : Kˣ) : K) * c) ^ m' • A m' w := by
+    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← Module.End.mul_apply,
+      ← map_mul, ← hconj, map_mul, Module.End.mul_apply, hexpand, map_sum]
+    exact Finset.sum_congr rfl fun m' _ ↦ (map_smul _ _ _).symm
+  have hrhs : ∑ m' ∈ Finset.range d,
+      c ^ m' • (((weightChar K (l + m' • (Pi.single i 1 - Pi.single j 1)) t : Kˣ) : K) • A m' w)
+      = ((weightChar K l t : Kˣ) : K) •
+        ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : Kˣ) : K) * c) ^ m' • A m' w := by
+    rw [Finset.smul_sum]
+    refine Finset.sum_congr rfl fun m' _ ↦ ?_
+    rw [weightChar_add_nsmul_single_sub_single hij l m' t, smul_smul, smul_smul]
+    refine congrArg (· • A m' w) ?_
+    push_cast
+    ring
+  rw [hlhs, hrhs]
+
+end InfiniteField
+
 /-! ## The action along a root subgroup is polynomial -/
 
 variable {W : Type u} [AddCommGroup W] [Module ℂ W] {ρ : Representation ℂ (GL (Fin n) ℂ) W}
@@ -129,7 +190,7 @@ theorem IsRationalRep.exists_forall_transvectionUnit_eq_sum_smul (h : IsRational
     simp only [Matrix.transvection, Matrix.single, Matrix.add_apply, Matrix.of_apply,
       Matrix.one_apply, Polynomial.eval_add, apply_ite (Polynomial.eval c),
       Polynomial.eval_one, Polynomial.eval_zero, Polynomial.eval_X]
-  refine exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval b
+  refine b.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval
     (fun c ↦ ρ (transvectionUnit hij c)) (fun a a' ↦ MvPolynomial.aeval E (P a a'))
     (fun c a a' ↦ ?_)
   have hdet : ((transvectionUnit hij c : GL (Fin n) ℂ) :
@@ -142,51 +203,6 @@ theorem IsRationalRep.exists_forall_transvectionUnit_eq_sum_smul (h : IsRational
       MvPolynomial.comp_aeval_apply (f := E) (Polynomial.aeval (R := ℂ) c) (P a a')
   rw [hP (transvectionUnit hij c) a a', hdet, one_pow, inv_one, one_mul, hcomp]
   exact congrArg (fun g ↦ MvPolynomial.eval g (P a a')) (funext fun q ↦ (hEeval c q).symm)
-
-/-! ## Transvections raise weights -/
-
-/-- **The coefficients of the root-subgroup expansion raise the weight.** If the action along the
-root subgroup of `εᵢ - εⱼ` expands as `∑ m < d, c ^ m • A m`, then `A m` carries a vector of
-weight `l` into the weight space of `l + m (εᵢ - εⱼ)`. -/
-theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
-    {i j : Fin n} (hij : i ≠ j) {d : ℕ} {A : ℕ → Module.End ℂ W}
-    (hA : ∀ c : ℂ, ρ (transvectionUnit hij c) = ∑ m ∈ Finset.range d, c ^ m • A m)
-    {l : Fin n → ℤ} {w : W} (hw : w ∈ weightSpace ρ l) {m : ℕ} (hm : m < d) :
-    A m w ∈ weightSpace ρ (l + m • (Pi.single i 1 - Pi.single j 1)) := by
-  rw [mem_weightSpace_iff]
-  intro t
-  have hexpand : ∀ e : ℂ, ρ (transvectionUnit hij e) w
-      = ∑ m' ∈ Finset.range d, e ^ m' • A m' w := by
-    intro e
-    rw [hA e, LinearMap.sum_apply]
-    exact Finset.sum_congr rfl fun m' _ ↦ rfl
-  refine eq_of_forall_sum_range_pow_smul_eq (K := ℂ)
-    (u := fun m' ↦ ρ (diagGL t) (A m' w))
-    (v := fun m' ↦ ((weightChar ℂ (l + m' • (Pi.single i 1 - Pi.single j 1)) t : ℂˣ) : ℂ) •
-      A m' w) (fun c ↦ ?_) hm
-  have hconj : (diagGL t : GL (Fin n) ℂ) * transvectionUnit hij c
-      = transvectionUnit hij (((t i * (t j)⁻¹ : ℂˣ) : ℂ) * c) * diagGL t := by
-    rw [show (((t i * (t j)⁻¹ : ℂˣ) : ℂ) * c) = (t i : ℂ) * c * (((t j)⁻¹ : ℂˣ) : ℂ) by
-        push_cast; ring,
-      ← diagGL_mul_transvectionUnit_mul_inv hij t c]
-    group
-  have hlhs : ∑ m' ∈ Finset.range d, c ^ m' • ρ (diagGL t) (A m' w)
-      = ((weightChar ℂ l t : ℂˣ) : ℂ) •
-        ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : ℂˣ) : ℂ) * c) ^ m' • A m' w := by
-    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← Module.End.mul_apply,
-      ← map_mul, ← hconj, map_mul, Module.End.mul_apply, hexpand, map_sum]
-    exact Finset.sum_congr rfl fun m' _ ↦ (map_smul _ _ _).symm
-  have hrhs : ∑ m' ∈ Finset.range d,
-      c ^ m' • (((weightChar ℂ (l + m' • (Pi.single i 1 - Pi.single j 1)) t : ℂˣ) : ℂ) • A m' w)
-      = ((weightChar ℂ l t : ℂˣ) : ℂ) •
-        ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : ℂˣ) : ℂ) * c) ^ m' • A m' w := by
-    rw [Finset.smul_sum]
-    refine Finset.sum_congr rfl fun m' _ ↦ ?_
-    rw [weightChar_add_nsmul_single_sub_single hij l m' t, smul_smul, smul_smul]
-    refine congrArg (· • A m' w) ?_
-    push_cast
-    ring
-  rw [hlhs, hrhs]
 
 /-- **A weight vector all of whose raised weight spaces vanish is fixed by the root subgroup.**
 This is the group-level form of a vector annihilated by a raising operator. -/
@@ -221,17 +237,7 @@ theorem IsRationalRep.apply_transvectionUnit_eq_self (h : IsRationalRep ρ) {i j
     rw [hexpand c, Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr hd) hzero, pow_zero,
       one_smul, hA0]
 
-/-! ## Finitely many weights, and the highest one -/
-
-/-- **A rational representation has only finitely many weights.** Its weight spaces are
-independent and its carrier is finite dimensional, so only finitely many of them are nonzero. -/
-theorem IsRationalRep.finite_setOf_weightSpace_ne_bot (h : IsRationalRep ρ) :
-    {l : Fin n → ℤ | weightSpace ρ l ≠ ⊥}.Finite := by
-  have _ : Module.Finite ℂ W := h.finite
-  have hfin : Finite { l : Fin n → ℤ // weightSpace ρ l ≠ ⊥ } :=
-    @Fintype.finite _
-      (iSupIndep_weightSpace (k := ℂ) weightChar_injective ρ).fintypeNeBotOfFiniteDimensional
-  exact Set.finite_coe_iff.mp hfin
+/-! ## The highest weight -/
 
 /-- The height of a weight: the linear functional that strictly increases along every positive
 root `εᵢ - εⱼ` with `i < j`. It is a device for selecting a maximal weight, not part of the weight
@@ -298,7 +304,8 @@ theorem IsRationalRep.exists_highestWeightVector [Nontrivial W] (h : IsRationalR
     ∃ (l : DominantWeight n) (w : W), w ≠ 0 ∧ w ∈ weightSpace ρ (l : Fin n → ℤ) ∧
       ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w := by
   classical
-  have hfin := h.finite_setOf_weightSpace_ne_bot
+  have _ : Module.Finite ℂ W := h.finite
+  have hfin := finite_setOf_weightSpace_ne_bot weightChar_injective ρ
   have hne : {l : Fin n → ℤ | weightSpace ρ l ≠ ⊥}.Nonempty := by
     by_contra hemp
     rw [Set.not_nonempty_iff_eq_empty] at hemp
