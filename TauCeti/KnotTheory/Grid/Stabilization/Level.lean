@@ -66,21 +66,20 @@ namespace GridDiagram
 variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 
 /-- The row `(G.X s).castSucc` of the stabilization carries its `O`-marking only in the new
-column `s.castSucc`. -/
-@[simp]
+column `s.castSucc`. This is the instance of the simp lemma
+`GridState.insertPoint_apply_eq_iff` used by name downstream. -/
 theorem stabilizeX_O_eq_castSucc_iff (c : Fin (n + 1)) :
     (G.O.insertPoint s.castSucc (G.X s).castSucc) c = (G.X s).castSucc ↔
       c = s.castSucc := by
-  simpa only [stabilizeX_O] using
-    G.stabilizeX_O_eq_newRow_iff s.castSucc (G.X s).castSucc s c
+  simp
 
 /-- The row `(G.X s).castSucc` of the stabilization carries its `X`-marking only in the column
-`s.succ`. -/
-@[simp]
+`s.succ`. This is the instance of the simp lemma `GridState.splitPoint_apply_eq_iff` used by
+name downstream. -/
 theorem stabilizeX_X_eq_castSucc_iff (c : Fin (n + 1)) :
     (G.X.splitPoint s.castSucc (G.X s).castSucc s) c = (G.X s).castSucc ↔
       c = s.succ := by
-  simpa [stabilizeX_X] using G.stabilizeX_X_eq_newRow_iff s.castSucc (G.X s).castSucc s c
+  simp
 
 /-- The outer squares of the stabilization splitting the `X`-marking of column `s`: the squares
 off the row and off the column of its new `O`-marking `(s.castSucc, (G.X s).castSucc)`. -/

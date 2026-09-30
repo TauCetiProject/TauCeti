@@ -150,6 +150,25 @@ theorem splitPoint_apply_succAbove (x : GridState n) (newColumn newRow : Fin (n 
         (fun hc ↦ h (Fin.succAbove_right_injective hc))]
     simpa using h
 
+/-- After inserting a point, the new row is occupied only in the new column. -/
+@[simp]
+theorem insertPoint_apply_eq_iff (x : GridState n) (newColumn newRow c : Fin (n + 1)) :
+    x.insertPoint newColumn newRow c = newRow ↔ c = newColumn := by
+  refine ⟨fun h ↦ (x.insertPoint newColumn newRow).toPerm.injective ?_, ?_⟩
+  · exact h.trans (by simp)
+  · rintro rfl
+    simp
+
+/-- After splitting a point, the new row is occupied only in the embedded split column. -/
+@[simp]
+theorem splitPoint_apply_eq_iff (x : GridState n) (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) (c : Fin (n + 1)) :
+    x.splitPoint newColumn newRow splitColumn c = newRow ↔ c = newColumn.succAbove splitColumn := by
+  refine ⟨fun h ↦ (x.splitPoint newColumn newRow splitColumn).toPerm.injective ?_, ?_⟩
+  · exact h.trans (by simp)
+  · rintro rfl
+    simp
+
 end GridState
 
 namespace GridDiagram
@@ -231,26 +250,6 @@ theorem stabilizeX_X (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
     (G.stabilizeX newColumn newRow splitColumn).X =
       G.X.splitPoint newColumn newRow splitColumn :=
   (rfl)
-
-/-- The new row of an `X`-stabilization contains its `O`-marking only in the new column. -/
-theorem stabilizeX_O_eq_newRow_iff (newColumn newRow : Fin (n + 1))
-    (splitColumn : Fin n) (c : Fin (n + 1)) :
-    (G.stabilizeX newColumn newRow splitColumn).O c = newRow ↔ c = newColumn := by
-  refine ⟨fun h ↦ (G.stabilizeX newColumn newRow splitColumn).O.toPerm.injective ?_, ?_⟩
-  · exact h.trans (by simp)
-  · rintro rfl
-    simp
-
-/-- The new row of an `X`-stabilization contains its `X`-marking only in the column
-adjacent to the new column at the split marking. -/
-theorem stabilizeX_X_eq_newRow_iff (newColumn newRow : Fin (n + 1))
-    (splitColumn : Fin n) (c : Fin (n + 1)) :
-    (G.stabilizeX newColumn newRow splitColumn).X c = newRow ↔
-      c = newColumn.succAbove splitColumn := by
-  refine ⟨fun h ↦ (G.stabilizeX newColumn newRow splitColumn).X.toPerm.injective ?_, ?_⟩
-  · exact h.trans (by simp)
-  · rintro rfl
-    simp
 
 /-- In the stabilization splitting the `X`-marking of column `s`, the `X`-marking of each column
 collapses under `Fin.predAbove` onto the `X`-marking of `G` in the collapsed column: both
