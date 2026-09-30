@@ -125,8 +125,8 @@ theorem discrField_map {E' : Type w} [Field E'] [Algebra F E'] (ψ : E ≃ₐ[F]
 /-- **Base change of the discriminant field.** In a tower `E / K / F`, the discriminant field of
 `f` after extending scalars from `F` to `K` is the compositum in `E` of `K` with the original
 discriminant field. Since a field extension preserves polynomial degree, no hypothesis on `f` is
-needed. When the image of `f.discr` remains a nonsquare in `K`, the base-changed field is still
-quadratic over `K` by
+needed. When `E` contains a square root of `f.discr` and the image of `f.discr` remains a
+nonsquare in `K`, the base-changed field is still quadratic over `K` by
 `TauCeti.finrank_discrField_baseChange_eq_two`. -/
 theorem discrField_baseChange {K : Type w} [Field K] [Algebra F K] [Algebra K E]
     [IsScalarTower F K E] :
@@ -186,9 +186,10 @@ theorem finrank_discrField_eq_two {δ : E} (hδ : δ ^ 2 = algebraMap F E f.disc
   rw [hrank]
   omega
 
-/-- If the discriminant remains a nonsquare after extending scalars from `F` to `K`, then the
-compositum of `K` with the original discriminant field is quadratic over `K`. This is the
-quadratic, nonsplit case of `TauCeti.discrField_baseChange`. -/
+/-- If `E` contains a square root of the discriminant and the discriminant remains a nonsquare
+after extending scalars from `F` to `K`, then the compositum of `K` with the original
+discriminant field is quadratic over `K`. This is the quadratic, nonsplit case of
+`TauCeti.discrField_baseChange`. -/
 theorem finrank_discrField_baseChange_eq_two {K : Type w} [Field K] [Algebra F K] [Algebra K E]
     [IsScalarTower F K E] {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
     (hsq : ¬ IsSquare ((algebraMap F K) f.discr)) :
