@@ -31,6 +31,8 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 
 ## Main results
 
+* `TauCeti.natCastValuation_eq_ramificationIndex_mul`: in a compatible extension `L/K`, the
+  valuation of a natural-number cast is multiplied by `e(L/K)`.
 * `TauCeti.FinitePadicExtension.charZero`: a finite extension of `ℚ_[p]` has characteristic zero.
 * `TauCeti.absoluteRamificationIndex_pos`: the absolute ramification index is positive.
 * `TauCeti.absoluteRamificationIndex_eq_natCastValuation`: the absolute ramification index is
@@ -52,6 +54,21 @@ noncomputable section
 open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
+
+/-- In a compatible extension `L/K` of nonarchimedean local fields, the normalized valuation of a
+natural number in `L` is the ramification index `e(L/K)` times its normalized valuation in `K`. -/
+theorem natCastValuation_eq_ramificationIndex_mul {K L : Type*} [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    (n : ℕ) (hK : (n : K) ≠ 0) (hL : (n : L) ≠ 0) :
+    natCastValuation L n hL = ramificationIndex K L * natCastValuation K n hK := by
+  have hmap :
+      Units.map (algebraMap K L : K →* L) (Units.mk0 (n : K) hK) = Units.mk0 (n : L) hL := by
+    ext
+    simp
+  have h := toAdd_normalizedValuation_algebraMap (L := L) (Units.mk0 (n : K) hK)
+  rw [hmap, toAdd_normalizedValuation_natCast L n hL, toAdd_normalizedValuation_natCast K n hK] at h
+  exact_mod_cast h
 
 /-- A nonarchimedean local field equipped as a finite compatible extension of `ℚ_[p]`.
 
@@ -114,22 +131,8 @@ theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
           have := FinitePadicExtension.charZero K p
           exact Nat.cast_ne_zero.mpr hn) =
       absoluteRamificationIndex K p * padicValNat p n := by
-  let hnQ : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have := FinitePadicExtension.charZero K p
-  let hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hmap : Units.map (algebraMap ℚ_[p] K : ℚ_[p] →* K)
-      (Units.mk0 (n : ℚ_[p]) hnQ) = Units.mk0 (n : K) hnK := by
-    ext
-    simp
-  have h := toAdd_normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
-    (Units.mk0 (n : ℚ_[p]) hnQ)
-  rw [hmap, toAdd_normalizedValuation_natCast K n hnK,
-    toAdd_normalizedValuation_natCast ℚ_[p] n hnQ,
-    Padic.natCastValuation_eq_padicValNat] at h
-  have hnval : natCastValuation K n hnK =
-      ramificationIndex ℚ_[p] K * padicValNat p n := by
-    exact_mod_cast h
-  simpa only [absoluteRamificationIndex] using hnval
+  rw [natCastValuation_eq_ramificationIndex_mul (K := ℚ_[p]) n (Nat.cast_ne_zero.mpr hn),
+    Padic.natCastValuation_eq_padicValNat, absoluteRamificationIndex]
 
 /-- The absolute ramification index is the normalized valuation of the residue prime `p` in
 `K`. -/
