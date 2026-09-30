@@ -275,30 +275,20 @@ theorem exists_mem_level_succ (hF : IsProP p F)
         have hsplit :
             (((List.ofFn fun i ↦ w i * b i).prod : F) : F ⧸ N) =
               ((List.ofFn w).prod : F ⧸ N) * ((List.ofFn b).prod : F ⧸ N) := by
-          rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_ofFn,
-            ← QuotientGroup.mk'_apply, map_list_prod, List.map_ofFn,
-            ← QuotientGroup.mk'_apply, map_list_prod, List.map_ofFn]
-          simpa only [List.ofFn_eq_map, Function.comp_def, map_mul,
-            QuotientGroup.mk'_apply] using
-            List.prod_map_mul_of_mem_center (List.finRange (k + 1))
-              (fun i ↦ ((w i : F) : F ⧸ N)) (fun i ↦ ((b i : F) : F ⧸ N))
-              (fun i _ ↦ hcen i)
-        simp only [QuotientGroup.mk_mul]
-        rw [hsplit]
+          simp only [← QuotientGroup.mk'_apply, map_list_prod, List.ofFn_eq_map, List.map_map,
+            Function.comp_def, map_mul]
+          exact List.prod_map_mul_of_mem_center (List.finRange (k + 1))
+            (fun i ↦ QuotientGroup.mk' N (w i)) (fun i ↦ QuotientGroup.mk' N (b i))
+            (fun i _ ↦ hcen i)
         have hbprod : (List.ofFn b).prod ∈ pLowerCentralSeries 0 F (0 + m + 1) := by
           apply Subgroup.list_prod_mem
           intro t ht
           rw [List.mem_ofFn] at ht
           obtain ⟨i, rfl⟩ := ht
           exact hb i
-        have hcomm := commute_mk_of_mem_pLowerCentralSeries hbprod wz
-        rw [mul_assoc ((List.ofFn w).prod : F ⧸ N) ((List.ofFn b).prod : F ⧸ N)
-            ((wz : F ⧸ N) * (bz : F ⧸ N)),
-          ← mul_assoc ((List.ofFn b).prod : F ⧸ N) (wz : F ⧸ N) (bz : F ⧸ N),
-          ← hcomm.eq,
-          mul_assoc (wz : F ⧸ N) ((List.ofFn b).prod : F ⧸ N) (bz : F ⧸ N),
-          ← mul_assoc ((List.ofFn w).prod : F ⧸ N) (wz : F ⧸ N)
-            (((List.ofFn b).prod : F ⧸ N) * (bz : F ⧸ N))]
+        -- The central block `∏ b` commutes past `wz`, which collects the corrected factors.
+        simp only [QuotientGroup.mk_mul, hsplit]
+        exact (commute_mk_of_mem_pLowerCentralSeries hbprod wz).symm.mul_mul_mul_comm _ _
       refine ⟨c', d', ?_, ?_, ?_, ?_⟩
       · intro i
         rw [closedLowerCentralSeries_def]

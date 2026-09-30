@@ -245,9 +245,8 @@ theorem IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv (hG : IsProP p G
   let _ : Module ℤ_[p] (gradedPiece q G (0 + m + 1)) := hG.gradedPieceModule q (0 + m + 1)
   rw [← gradedBracket_gradedMk
       (⟨(c⁻¹ * hG.padicPow y u * c)⁻¹, mem_pLowerCentralSeries_zero q _⟩ :
-        pLowerCentralSeries q G 0) x⁻¹,
-    gradedMk_zero, gradedMkZero_inv, gradedMkZero_mul, gradedMkZero_mul, gradedMkZero_inv,
-    hG.gradedMkZero_padicPow, neg_add_cancel_comm, gradedMk_inv]
-  simp only [map_neg, AddMonoidHom.neg_apply, neg_neg, hG.gradedBracket_smul_left]
+        pLowerCentralSeries q G 0) x⁻¹]
+  simp only [gradedMk_zero, gradedMkZero_inv, gradedMkZero_conj, hG.gradedMkZero_padicPow,
+    gradedMk_inv, map_neg, AddMonoidHom.neg_apply, neg_neg, hG.gradedBracket_smul_left]
 
 end TauCeti

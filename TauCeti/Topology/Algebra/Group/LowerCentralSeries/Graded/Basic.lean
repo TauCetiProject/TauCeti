@@ -425,6 +425,11 @@ theorem gradedMkZero_list_prod (l : List G) :
   | nil => rw [List.prod_nil, List.map_nil, List.sum_nil, gradedMkZero_one]
   | cons a l ih => rw [List.prod_cons, List.map_cons, List.sum_cons, gradedMkZero_mul, ih]
 
+-- Not `@[simp]`: `gradedMkZero_mul` and `gradedMkZero_inv` already rewrite the left-hand side.
+/-- The degree-zero class is invariant under conjugation, since `gr_0(G)` is abelian. -/
+theorem gradedMkZero_conj (c g : G) : gradedMkZero p G (c⁻¹ * g * c) = gradedMkZero p G g := by
+  simp only [gradedMkZero_mul, gradedMkZero_inv, neg_add_cancel_comm]
+
 @[simp]
 theorem gradedPieceZeroEquiv_gradedMkZero (g : G) :
     gradedPieceZeroEquiv p G (gradedMkZero p G g) =
