@@ -35,8 +35,8 @@ the four degrees, with these multiplicities, sum to the order of `GL₂(F)`.
 * `TauCeti.irreducibleCharacters_GL2_degree_one_eq_range` and its three companions identify the
   irreducible characters of each degree with the corresponding constructed family.
 * `TauCeti.ncard_irreducibleCharacters_GL2_degree_one` and its three companions count those sets.
-* `TauCeti.GL2_sum_characterDegrees_sq_eq_natCard` is the degree-squared identity for the four
-  families.
+* `TauCeti.GL2_sum_degreeCount_mul_degree_sq_eq_natCard` adds the four degree counts, each
+  weighted by the square of the degree it counts.
 
 ## References
 
@@ -235,8 +235,9 @@ theorem ncard_irreducibleCharacters_GL2_degree_card_sub_one (hq : 3 ≤ Fintype.
     ncard_image_GL2CuspidalVirtualCharacter F (gl2QuadraticExtension F)
       (primitiveChar_to_Complex_ne_one F)]
 
-/-- The four irreducible degree families satisfy the degree-squared formula for `GL₂(F)`. -/
-theorem GL2_sum_characterDegrees_sq_eq_natCard :
+/-- The four degree counts `q - 1`, `q - 1`, `(q - 1)(q - 2)/2`, and `q(q - 1)/2`, weighted by
+the squares of the degrees `1`, `q`, `q + 1`, and `q - 1` they count, add up to `|GL₂(F)|`. -/
+theorem GL2_sum_degreeCount_mul_degree_sq_eq_natCard :
     (Fintype.card F - 1) * 1 ^ 2 +
           (Fintype.card F - 1) * Fintype.card F ^ 2 +
           ((Fintype.card F - 1) * (Fintype.card F - 2) / 2) *
