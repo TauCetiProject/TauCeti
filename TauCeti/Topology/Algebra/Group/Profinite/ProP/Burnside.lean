@@ -9,6 +9,7 @@ import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Order.Atoms.Finite
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 
@@ -30,6 +31,12 @@ homomorphism whose kernel lies in the Frattini subgroup, is a topological isomor
 has a continuous homomorphic section `s`: the range of `s` is closed and generates `G` together
 with the Frattini subgroup, so `s` is surjective and is a two-sided inverse of `φ`.
 
+The Frattini argument also runs relative to a pro-`p` subgroup of a profinite group which is not
+itself pro-`p`. If `P` is a closed pro-`p` subgroup of `G`, a normal subgroup of `G` contained in
+`Φ(P)` consists of non-generators of `G`. In particular, for a normal pro-`p` subgroup `P`, a set
+generating `G` modulo `⁅P, P⁆` already generates `G`. This is how the wild inertia subgroup of the
+absolute Galois group of a `p`-adic field is removed when counting generators.
+
 ## Main results
 
 * `IsProP.eq_top_of_forall_not_le_openNormalSubgroup_index_eq`: the index-`p` detection
@@ -44,10 +51,17 @@ with the Frattini subgroup, so `s` is surjective and is a two-sided inverse of `
   section is a topological isomorphism, with the section as inverse.
 * `topologicallyGenerates_iff_frattiniQuotient`: a set generates topologically if and only if
   its image generates the Frattini quotient topologically.
+* `IsProP.eq_top_of_sup_eq_top_of_le_map_proPFrattini`: the relative Frattini argument, a
+  normal subgroup of `G` inside the Frattini subgroup of a closed pro-`p` subgroup consists of
+  non-generators of `G`.
+* `IsProP.topologicalClosure_eq_top_of_sup_commutator`: a set generating `G` topologically
+  together with `⁅P, P⁆`, for a normal pro-`p` subgroup `P`, generates `G` topologically.
 
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.8.
+* J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, (3.9.1) and the proof
+  of (7.4.1).
 -/
 
 public section
@@ -152,6 +166,72 @@ theorem surjective_of_forall_inv_mul_mem_proPFrattini (hG : IsProP p G) {φ : G 
       rw [Function.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply, QuotientGroup.eq]
       simpa using inv_mem (h x))
     (QuotientGroup.ker_mk' _).le
+
+/-! ### The relative Frattini argument
+
+A closed pro-`p` subgroup `P` of a profinite group `G` has its own Frattini subgroup `Φ(P)`. When
+a normal subgroup `N` of `G` lies in `Φ(P)`, its elements are non-generators of `G` itself, even
+though `G` need not be pro-`p`: if `H ⊔ N = G`, the modular law gives `P = (H ⊓ P) ⊔ N`, so
+`H ⊓ P` and `Φ(P)` generate `P`, whence `P ≤ H` and `H = G`. The closure of the commutator
+subgroup `⁅P, P⁆` of a closed normal pro-`p` subgroup is such an `N`. -/
+
+/-- **The relative Frattini argument.** Let `P` be a closed pro-`p` subgroup of a profinite group
+`G`, and `N` a normal subgroup of `G` contained in the pro-`p` Frattini subgroup `Φ(P)` of `P`. A
+closed subgroup `H` of `G` with `H ⊔ N = G` is all of `G`. -/
+theorem eq_top_of_sup_eq_top_of_le_map_proPFrattini {P : Subgroup G}
+    (hPc : IsClosed (P : Set G)) (hP : IsProP p P) {N : Subgroup G} [N.Normal]
+    (hN : N ≤ (proPFrattini p P).map P.subtype) {H : Subgroup G} (hH : IsClosed (H : Set G))
+    (hsup : H ⊔ N = ⊤) : H = ⊤ := by
+  have : CompactSpace P := isCompact_iff_compactSpace.mp hPc.isCompact
+  have hNP : N ≤ P := hN.trans (Subgroup.map_subtype_le _)
+  have hHP : H.subgroupOf P = ⊤ := by
+    refine hP.eq_top_of_sup_proPFrattini_eq_top (hH.preimage continuous_subtype_val)
+      (top_unique fun x _ ↦ ?_)
+    have hx : (x : G) ∈ H ⊔ N := hsup ▸ Subgroup.mem_top _
+    obtain ⟨h, hh, n, hn, hhn⟩ := Subgroup.mem_sup_of_normal_right.mp hx
+    obtain ⟨m, hm, rfl⟩ := hN hn
+    -- The `H`-component `h = x * m⁻¹` of `x` lies in `P`, since `x` and `m` do.
+    have hhP : h ∈ P := by
+      simpa [← hhn] using P.mul_mem x.2 (P.inv_mem m.2)
+    have hxm : x = ⟨h, hhP⟩ * m := Subtype.ext hhn.symm
+    exact hxm ▸ Subgroup.mul_mem_sup (Subgroup.mem_subgroupOf.mpr hh) hm
+  have hPH : P ≤ H := Subgroup.subgroupOf_eq_top.mp hHP
+  rwa [sup_eq_left.mpr (hNP.trans hPH)] at hsup
+
+/-- **Relative Frattini reduction along a normal pro-`p` subgroup** (NSW (3.9.1)). Let `P` be a
+normal pro-`p` subgroup of a profinite group `G`. A set which topologically generates `G` together
+with the commutator subgroup `⁅P, P⁆` already topologically generates `G`. -/
+theorem topologicalClosure_eq_top_of_sup_commutator {P : Subgroup G} [P.Normal]
+    (hP : IsProP p P) {s : Set G} (hs : (Subgroup.closure s ⊔ ⁅P, P⁆).topologicalClosure = ⊤) :
+    (Subgroup.closure s).topologicalClosure = ⊤ := by
+  -- Work with the closure `P'` of `P`, a closed normal pro-`p` subgroup, and `N = ⁅P', P'⁆‾`,
+  -- which is normal in `G` and contained in `Φ(P')`.
+  let P' := P.topologicalClosure
+  have : P'.Normal := Subgroup.is_normal_topologicalClosure _
+  have hPc : IsClosed (P' : Set G) := P.isClosed_topologicalClosure
+  let H := (Subgroup.closure s).topologicalClosure
+  let N := (⁅P', P'⁆ : Subgroup G).topologicalClosure
+  have : N.Normal := Subgroup.is_normal_topologicalClosure _
+  have hN : N ≤ (proPFrattini p P').map P'.subtype := by
+    refine Subgroup.topologicalClosure_minimal _ ?_ ?_
+    · rw [← Subgroup.map_subtype_commutator]
+      exact Subgroup.map_mono (commutator_le_proPFrattini hp.out)
+    · rw [Subgroup.coe_map]
+      exact hPc.isClosedEmbedding_subtypeVal.isClosedMap _
+        (isClosed_proPFrattini (p := p) (G := P'))
+  -- `H ⊔ N = N * H` is the product of two compact sets, hence closed.
+  have hHN : IsClosed ((H ⊔ N : Subgroup G) : Set G) := by
+    rw [sup_comm, Subgroup.normal_mul]
+    exact ((Subgroup.isClosed_topologicalClosure _).isCompact.mul
+      (Subgroup.isClosed_topologicalClosure _).isCompact).isClosed
+  refine hP.topologicalClosure.eq_top_of_sup_eq_top_of_le_map_proPFrattini hPc hN
+    (Subgroup.isClosed_topologicalClosure _) (top_unique ?_)
+  rw [← hs]
+  have hPP : ⁅P, P⁆ ≤ N :=
+    (Subgroup.commutator_mono P.le_topologicalClosure P.le_topologicalClosure).trans
+      (Subgroup.le_topologicalClosure _)
+  exact Subgroup.topologicalClosure_minimal _
+    (sup_le_sup (Subgroup.le_topologicalClosure _) hPP) hHN
 
 end IsProP
 
