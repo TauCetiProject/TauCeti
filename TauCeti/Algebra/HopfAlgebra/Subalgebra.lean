@@ -29,9 +29,9 @@ the inclusion exactly when its image lies in `A`.
 
 ## Main declarations
 
-* `TauCeti.Subalgebra.IsHopfSubalgebra`: a subalgebra stable under comultiplication and the
+* `TauCeti.IsHopfSubalgebra`: a subalgebra stable under comultiplication and the
   antipode.
-* `TauCeti.Subalgebra.IsHopfSubalgebra.hopfAlgebra`: the restricted Hopf algebra structure, under
+* `TauCeti.IsHopfSubalgebra.hopfAlgebra`: the restricted Hopf algebra structure, under
   flatness.
 * `TauCeti.CommHopfAlgCat.ofHopfSubalgebra`: a Hopf subalgebra as a bundled commutative Hopf
   algebra.
@@ -52,7 +52,7 @@ open scoped TensorProduct
 
 universe u v
 
-namespace TauCeti.Subalgebra
+namespace TauCeti
 
 open _root_.Subalgebra
 
@@ -83,7 +83,7 @@ private theorem map_val_map_val_injective :
   Algebra.TensorProduct.map_injective_of_flat_flat A.val
     (Algebra.TensorProduct.map A.val A.val) Subtype.val_injective map_val_injective
 
-variable (hA : Subalgebra.IsHopfSubalgebra A)
+variable (hA : IsHopfSubalgebra A)
 include hA
 
 omit [Module.Flat R H] [Module.Flat R A] in
@@ -235,7 +235,7 @@ noncomputable def hopfAlgebra : HopfAlgebra R A where
 
 end IsHopfSubalgebra
 
-end TauCeti.Subalgebra
+end TauCeti
 
 namespace TauCeti.CommHopfAlgCat
 
@@ -246,13 +246,13 @@ variable [Module.Flat R H] [Module.Flat R A]
 
 /-- A flat Hopf subalgebra of a flat commutative Hopf algebra, as a bundled commutative Hopf
 algebra. -/
-noncomputable abbrev ofHopfSubalgebra (hA : Subalgebra.IsHopfSubalgebra A) :
+noncomputable abbrev ofHopfSubalgebra (hA : IsHopfSubalgebra A) :
     _root_.CommHopfAlgCat.{v} R :=
   letI := hA.hopfAlgebra
   _root_.CommHopfAlgCat.of R A
 
 /-- The inclusion of a Hopf subalgebra as a morphism of commutative Hopf algebras. -/
-noncomputable def hopfSubalgebraι (hA : Subalgebra.IsHopfSubalgebra A) : ofHopfSubalgebra hA ⟶ H :=
+noncomputable def hopfSubalgebraι (hA : IsHopfSubalgebra A) : ofHopfSubalgebra hA ⟶ H :=
   letI := hA.hopfAlgebra
   -- The counit of `hA.hopfAlgebra` is by definition the counit of `H` restricted to `A`.
   _root_.CommHopfAlgCat.ofHom (BialgHom.ofAlgHom A.val (by ext; rfl)
@@ -260,21 +260,21 @@ noncomputable def hopfSubalgebraι (hA : Subalgebra.IsHopfSubalgebra A) : ofHopf
 
 /-- The inclusion morphism of a Hopf subalgebra is the inclusion of the underlying subalgebra. -/
 @[simp]
-theorem hopfSubalgebraι_apply (hA : Subalgebra.IsHopfSubalgebra A) (x : A) :
+theorem hopfSubalgebraι_apply (hA : IsHopfSubalgebra A) (x : A) :
     (hopfSubalgebraι hA).hom x = x :=
   (rfl)
 
 /-- The inclusion morphism of a Hopf subalgebra is injective. -/
-theorem hopfSubalgebraι_injective (hA : Subalgebra.IsHopfSubalgebra A) :
+theorem hopfSubalgebraι_injective (hA : IsHopfSubalgebra A) :
     Function.Injective (hopfSubalgebraι hA).hom :=
   Subtype.val_injective
 
-instance (hA : Subalgebra.IsHopfSubalgebra A) : Mono (hopfSubalgebraι hA) :=
+instance (hA : IsHopfSubalgebra A) : Mono (hopfSubalgebraι hA) :=
   ConcreteCategory.mono_of_injective _ (hopfSubalgebraι_injective hA)
 
 /-- A morphism of commutative Hopf algebras whose image lies in a Hopf subalgebra, corestricted
 to that Hopf subalgebra. -/
-noncomputable def liftHopfSubalgebra (hA : Subalgebra.IsHopfSubalgebra A) (f : K ⟶ H)
+noncomputable def liftHopfSubalgebra (hA : IsHopfSubalgebra A) (f : K ⟶ H)
     (hf : ∀ x, f.hom x ∈ A) : K ⟶ ofHopfSubalgebra hA :=
   letI := hA.hopfAlgebra
   -- The counit of `hA.hopfAlgebra` is by definition the counit of `H` restricted to `A`.
@@ -282,34 +282,34 @@ noncomputable def liftHopfSubalgebra (hA : Subalgebra.IsHopfSubalgebra A) (f : K
     (by ext x; exact (CoalgHomClass.counit_comp_apply f.hom x :))
     (by
       ext x
-      apply Subalgebra.IsHopfSubalgebra.map_val_injective
+      apply IsHopfSubalgebra.map_val_injective
       refine Eq.trans ?_ (hA.map_val_comulAlgHom _).symm
       rw [AlgHom.comp_apply, ← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp]
       exact (CoalgHomClass.map_comp_comul_apply f.hom x :)))
 
 /-- The corestricted morphism has the same values as the original one. -/
 @[simp]
-theorem coe_liftHopfSubalgebra_apply (hA : Subalgebra.IsHopfSubalgebra A) (f : K ⟶ H)
+theorem coe_liftHopfSubalgebra_apply (hA : IsHopfSubalgebra A) (f : K ⟶ H)
     (hf : ∀ x, f.hom x ∈ A) (x : K) :
     ((liftHopfSubalgebra hA f hf).hom x : H) = f.hom x :=
   (rfl)
 
 /-- The corestriction followed by the inclusion is the original morphism. -/
 @[reassoc (attr := simp)]
-theorem liftHopfSubalgebra_comp_hopfSubalgebraι (hA : Subalgebra.IsHopfSubalgebra A) (f : K ⟶ H)
+theorem liftHopfSubalgebra_comp_hopfSubalgebraι (hA : IsHopfSubalgebra A) (f : K ⟶ H)
     (hf : ∀ x, f.hom x ∈ A) : liftHopfSubalgebra hA f hf ≫ hopfSubalgebraι hA = f := by
   ext x
   exact coe_liftHopfSubalgebra_apply hA f hf x
 
 /-- A morphism into a Hopf subalgebra is determined by its composite with the inclusion. -/
-theorem liftHopfSubalgebra_unique (hA : Subalgebra.IsHopfSubalgebra A) (f : K ⟶ H)
+theorem liftHopfSubalgebra_unique (hA : IsHopfSubalgebra A) (f : K ⟶ H)
     (hf : ∀ x, f.hom x ∈ A) (g : K ⟶ ofHopfSubalgebra hA) (hg : g ≫ hopfSubalgebraι hA = f) :
     g = liftHopfSubalgebra hA f hf :=
   (cancel_mono (hopfSubalgebraι hA)).mp (by rw [hg, liftHopfSubalgebra_comp_hopfSubalgebraι])
 
 /-- **Universal property of a Hopf subalgebra.** A morphism of commutative Hopf algebras into `H`
 factors through the inclusion of a Hopf subalgebra `A` exactly when its image lies in `A`. -/
-theorem exists_comp_hopfSubalgebraι_iff (hA : Subalgebra.IsHopfSubalgebra A) (f : K ⟶ H) :
+theorem exists_comp_hopfSubalgebraι_iff (hA : IsHopfSubalgebra A) (f : K ⟶ H) :
     (∃ g : K ⟶ ofHopfSubalgebra hA, g ≫ hopfSubalgebraι hA = f) ↔ ∀ x, f.hom x ∈ A := by
   refine ⟨?_, fun hf ↦ ⟨_, liftHopfSubalgebra_comp_hopfSubalgebraι hA f hf⟩⟩
   rintro ⟨g, rfl⟩ x
