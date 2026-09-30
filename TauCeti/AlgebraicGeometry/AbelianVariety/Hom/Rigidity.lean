@@ -25,8 +25,9 @@ is produced first and only then recognised as a homomorphism.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.isMonHom_of_one_hom`: a morphism of group schemes preserving the
-  identity is a homomorphism when the source is proper and geometrically integral;
+* `TauCeti.AlgebraicGeometry.isMonHom_of_one_hom`: a morphism from a monoid scheme to a group
+  scheme preserving the identity is a homomorphism when the source is proper and geometrically
+  integral;
 * `TauCeti.AlgebraicGeometry.AbelianVariety.Hom.equivPointed`: homomorphisms `A ⟶ B` are
   equivalent to the morphisms `A.toOver ⟶ B.toOver` preserving the identity.
 
@@ -52,9 +53,9 @@ universe u
 
 variable {K : Type u} [Field K]
 
-/-- A morphism of group schemes over `K` from a proper geometrically integral source to a
-separated locally finite type target is a homomorphism if it preserves the identity. -/
-theorem isMonHom_of_one_hom {A B : Over (Spec (.of K))} [GrpObj A] [GrpObj B]
+/-- A morphism of monoid schemes over `K` from a proper geometrically integral source to a
+separated locally finite type group scheme is a homomorphism if it preserves the identity. -/
+theorem isMonHom_of_one_hom {A B : Over (Spec (.of K))} [MonObj A] [GrpObj B]
     [IsProper A.hom] [GeometricallyIntegral A.hom]
     [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
     (f : A ⟶ B) (hf : η[A] ≫ f = η[B]) : IsMonHom f := by
