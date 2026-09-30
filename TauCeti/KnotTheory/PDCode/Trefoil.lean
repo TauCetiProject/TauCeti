@@ -84,7 +84,7 @@ private theorem trefoilSlotPair_orientation (p : Fin 3 × Fin 4) :
 
 private theorem crossingSlotEquiv_val_mod_four (i : Fin 3) (slot : Fin 4) :
     (PDCode.crossingSlotEquiv 3 (i, slot)).val % 4 = slot.val := by
-  rw [PDCode.crossingSlotEquiv_apply]
+  rw [PDCode.crossingSlotEquiv_apply_val]
   omega
 
 private theorem crossingSlotEquiv_opposite_orientation (i : Fin 3) (slot : Fin 4) :
@@ -165,7 +165,7 @@ theorem rightHandedTrefoilPDCode_orientation_crossing (i : Fin 3) (slot : Fin 4)
 theorem rightHandedTrefoilPDCode_crossingSign (i : Fin 3) :
     rightHandedTrefoilPDCode.crossingSign i = 1 := by
   apply (OrientedPDCode.crossingSign_eq_one_iff _ _).mpr
-  simp only [OrientedPDCode.crossing_apply, rightHandedTrefoilPDCode_halfEdge,
+  simp only [PDCode.crossing_apply, rightHandedTrefoilPDCode_halfEdge,
     one_apply, rightHandedTrefoilPDCode_overPair]
   rw [rightHandedTrefoilPDCode_orientation_crossing,
     rightHandedTrefoilPDCode_orientation_crossing]
