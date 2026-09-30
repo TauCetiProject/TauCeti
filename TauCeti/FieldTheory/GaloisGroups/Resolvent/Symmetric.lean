@@ -73,7 +73,8 @@ def renameStabilizer (Φ : MvPolynomial σ R) : Subgroup (Equiv.Perm σ) where
   inv_mem' {a} ha := by
     simp only [Set.mem_ofPred_eq] at ha ⊢
     conv_lhs => rw [← ha]
-    exact (renameEquiv R a).symm_apply_apply _
+    simpa only [renameEquiv_symm, renameEquiv_apply, Equiv.Perm.inv_def] using
+      (renameEquiv R a).symm_apply_apply _
 
 @[simp]
 theorem mem_renameStabilizer {Φ : MvPolynomial σ R} {e : Equiv.Perm σ} :
@@ -86,11 +87,10 @@ theorem rename_eq_rename_iff (Φ : MvPolynomial σ R) (a b : Equiv.Perm σ) :
   rw [mem_renameStabilizer]
   constructor
   · intro h
-    have h' := congrArg (rename (⇑a⁻¹)) h
-    -- The cancellation lemma rewrites the bundled equivalence, rather than bare `rename`.
-    change (renameEquiv R a).symm ((renameEquiv R a) Φ) = _ at h'
-    rw [(renameEquiv R a).symm_apply_apply] at h'
-    simpa only [rename_rename, ← Equiv.Perm.coe_mul] using h'.symm
+    have h' := congrArg (renameEquiv R a).symm h
+    rw [← renameEquiv_apply R a, (renameEquiv R a).symm_apply_apply] at h'
+    simpa only [renameEquiv_symm, renameEquiv_apply, ← Equiv.Perm.inv_def,
+      rename_rename, ← Equiv.Perm.coe_mul] using h'.symm
   · intro h
     have h' := congrArg (rename (⇑a)) h
     simpa only [rename_rename, ← Equiv.Perm.coe_mul,
@@ -115,12 +115,12 @@ theorem renameStabilizer_rename (e : Equiv.Perm σ) (Φ : MvPolynomial σ R) :
   constructor
   · intro h
     rw [h]
-    exact (renameEquiv R e).symm_apply_apply Φ
+    simpa only [renameEquiv_symm, renameEquiv_apply, Equiv.Perm.inv_def] using
+      (renameEquiv R e).symm_apply_apply Φ
   · intro h
     have h' := congrArg (renameEquiv R e) h
-    -- Bundle the inverse renaming so `apply_symm_apply` can match it.
-    change (renameEquiv R e) ((renameEquiv R e).symm (rename ⇑τ (rename ⇑e Φ))) = _ at h'
-    rwa [(renameEquiv R e).apply_symm_apply] at h'
+    rwa [Equiv.Perm.inv_def, ← renameEquiv_apply R e.symm, ← renameEquiv_symm,
+      (renameEquiv R e).apply_symm_apply, renameEquiv_apply] at h'
 
 end Stabilizer
 

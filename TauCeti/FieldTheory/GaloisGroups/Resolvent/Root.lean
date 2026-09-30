@@ -61,6 +61,8 @@ Galois image on the cosets, and the degree of a factor is the size of its orbit.
   a conjugate of `H`.
 * `TauCeti.ResolventSpec.exists_isRoot_specialize_iff_exists_le_map_conj`: the two together, the
   criterion that a separable resolvent provides.
+* `TauCeti.ResolventSpec.splits_specialize`: the specialized resolvent splits in the field
+  containing the numbered roots of `f`.
 * `TauCeti.ResolventSpec.orbitQuotientEquivFactors`: **the factorization theorem**, the bijection
   between the orbits of the Galois image on the cosets of `H` and the monic irreducible factors of
   a separable resolvent.
@@ -324,7 +326,7 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
     {c d : Equiv.Perm (Fin n) ⧸ spec.H} :
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
-        (e.permCongrHom : _ →* Equiv.Perm (Fin n))) d := by
+        e.permCongrHom.toMonoidHom) d := by
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
@@ -340,9 +342,10 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
     exact (congrArg (minpoly F) (apply_cosetValue spec e ϕ d)).symm.trans
       (minpoly.algEquiv_eq ϕ _)
 
--- The specialized resolvent splits over the field containing the numbered roots.
 omit [Fact ((f.map (algebraMap F E)).Splits)] in
-private theorem splits_specialize (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+/-- The specialized resolvent splits over the field containing the numbered roots of a monic
+separable polynomial of degree `n`. No separability of the resolvent is required. -/
+theorem splits_specialize (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) :
     ((spec.specialize F f).map (algebraMap F E)).Splits := by
   rw [map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e, MvPolynomial.galResolvent_def]
@@ -370,7 +373,7 @@ private theorem cosetValueEquiv_orbitRel [Normal F E] (hf : f.Monic) (hsep : f.S
     [Fact (((spec.specialize F f).map (algebraMap F E)).Splits)]
     (c d : Equiv.Perm (Fin n) ⧸ spec.H) :
     MulAction.orbitRel
-      ((Gal.galActionHom f E).range.map (e.permCongrHom : _ →* Equiv.Perm (Fin n))) _ c d ↔
+      ((Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom) _ c d ↔
       MulAction.orbitRel (spec.specialize F f).Gal _
         (cosetValueEquiv spec hf hsep hdeg e hres c)
         (cosetValueEquiv spec hf hsep hdeg e hres d) := by
@@ -389,13 +392,23 @@ The degree of each factor is the size of the matching orbit,
 noncomputable def orbitQuotientEquivFactors [Normal F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable) :
     MulAction.orbitRel.Quotient ((Gal.galActionHom f E).range.map
-      (e.permCongrHom : _ →* Equiv.Perm (Fin n)))
+      e.permCongrHom.toMonoidHom)
         (Equiv.Perm (Fin n) ⧸ spec.H) ≃ (spec.specialize F f).Factors := by
   haveI : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) :=
     ⟨splits_specialize spec hf hsep hdeg e⟩
   exact (Quotient.congr (cosetValueEquiv spec hf hsep hdeg e hres)
     (cosetValueEquiv_orbitRel spec hf hsep hdeg e hres)).trans
       (TauCeti.orbitQuotientEquivFactors _ E (spec.monic_specialize F f).ne_zero)
+
+-- On an orbit class, the equivalence is the Layer 0 dictionary applied to its root value.
+private theorem orbitQuotientEquivFactors_mk [Normal F E] (hf : f.Monic) (hsep : f.Separable)
+    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable)
+    [Fact (((spec.specialize F f).map (algebraMap F E)).Splits)]
+    (c : Equiv.Perm (Fin n) ⧸ spec.H) :
+    spec.orbitQuotientEquivFactors hf hsep hdeg e hres (Quotient.mk _ c) =
+      TauCeti.orbitQuotientEquivFactors _ E (spec.monic_specialize F f).ne_zero
+        (Quotient.mk _ (cosetValueEquiv spec hf hsep hdeg e hres c)) := by
+  rw [orbitQuotientEquivFactors, Equiv.trans_apply, Quotient.congr_mk]
 
 /-- The factorization equivalence sends the orbit of the coset of `τ` to the minimal polynomial
 of the value at the roots of `f` of the invariant renamed along `τ`. -/
@@ -409,8 +422,7 @@ theorem orbitQuotientEquivFactors_apply_mk [Normal F E] (hf : f.Monic) (hsep : f
           (MvPolynomial.rename ⇑τ spec.Φ)) := by
   have : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) :=
     ⟨splits_specialize spec hf hsep hdeg e⟩
-  rw [orbitQuotientEquivFactors, Equiv.trans_apply, Quotient.congr_mk,
-    TauCeti.orbitQuotientEquivFactors_apply_mk]
+  rw [orbitQuotientEquivFactors_mk, TauCeti.orbitQuotientEquivFactors_apply_mk]
   rfl
 
 /-- A factor corresponds to the orbit of the coset of `τ` exactly when it is the minimal
@@ -433,7 +445,7 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable)
     (ω : MulAction.orbitRel.Quotient
       ((Gal.galActionHom f E).range.map
-        (e.permCongrHom : _ →* Equiv.Perm (Fin n)))
+        e.permCongrHom.toMonoidHom)
       (Equiv.Perm (Fin n) ⧸ spec.H)) :
     Nat.card (MulAction.orbitRel.Quotient.orbit ω)
       = ((spec.orbitQuotientEquivFactors hf hsep hdeg e hres ω : (spec.specialize F f).Factors) :
@@ -443,7 +455,7 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
   let v := cosetValueEquiv spec hf hsep hdeg e hres
   induction ω using Quotient.inductionOn with | h c => ?_
   have himage : v '' MulAction.orbit
-      ((Gal.galActionHom f E).range.map (e.permCongrHom : _ →* Equiv.Perm (Fin n))) c =
+      ((Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom) c =
       MulAction.orbit (spec.specialize F f).Gal (v c) := by
     ext x
     constructor
@@ -454,8 +466,7 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
       exact ⟨d, (cosetValueEquiv_orbitRel spec hf hsep hdeg e hres d c).mpr hx, rfl⟩
   rw [MulAction.orbitRel.Quotient.orbit_mk,
     ← Nat.card_image_of_injective v.injective, himage]
-  simpa only [orbitQuotientEquivFactors, Equiv.trans_apply, Quotient.congr_mk,
-    MulAction.orbitRel.Quotient.orbit_mk] using
+  simpa only [orbitQuotientEquivFactors_mk, MulAction.orbitRel.Quotient.orbit_mk] using
     TauCeti.natCard_orbit_eq_natDegree_factor E (spec.monic_specialize F f).ne_zero
       (Quotient.mk _ (v c)) (hres.of_dvd (Factors.dvd _))
 
@@ -470,7 +481,7 @@ theorem map_natDegree_normalizedFactors_specialize [Normal F E] (hf : f.Monic)
     (UniqueFactorizationMonoid.normalizedFactors (spec.specialize F f)).map natDegree
       = Finset.univ.val.map fun ω : MulAction.orbitRel.Quotient
           ((Gal.galActionHom f E).range.map
-            (e.permCongrHom : _ →* Equiv.Perm (Fin n)))
+            e.permCongrHom.toMonoidHom)
           (Equiv.Perm (Fin n) ⧸ spec.H) => Nat.card (MulAction.orbitRel.Quotient.orbit ω) := by
   have hg0 : spec.specialize F f ≠ 0 := (spec.monic_specialize F f).ne_zero
   have := Factors.finite hg0
