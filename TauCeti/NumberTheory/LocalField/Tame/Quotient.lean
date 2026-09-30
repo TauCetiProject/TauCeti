@@ -196,8 +196,7 @@ variable (p : ℕ) [CharP 𝓀[K] p]
 variable {K} in
 /-- **Inertia has order prime to `p` on a finite tame layer.** In a finite quotient `G_K / U`
 through which wild inertia dies, the image of every element of inertia has order prime to the
-residue characteristic `p`: the image of `I_K` there is a quotient of `I_K` by an open subgroup
-containing its Sylow pro-`p` subgroup `P_K`, so its order is prime to `p`. -/
+residue characteristic `p`. -/
 theorem not_dvd_orderOf_mk_of_mem_inertiaSubgroup
     (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
     (hU : wildInertiaSubgroup K ≤ U.toSubgroup) {τ : Field.absoluteGaloisGroup K}
@@ -205,6 +204,8 @@ theorem not_dvd_orderOf_mk_of_mem_inertiaSubgroup
     ¬ p ∣ orderOf (τ : Field.absoluteGaloisGroup K ⧸ U.toSubgroup) := by
   have : CompactSpace (inertiaSubgroup K) :=
     isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
+  -- The image of `I_K` in `G_K / U` is a quotient of `I_K` by the open subgroup `V = I_K ∩ U`,
+  -- which contains the Sylow pro-`p` subgroup `P_K`, so `[I_K : V]` is prime to `p`.
   set V := U.comap (inertiaSubgroup K).subtype continuous_subtype_val
   have hV := (isProPSylow_wildInertiaSubgroup K p).not_dvd_index_of_le V.toOpenSubgroup
     fun σ hσ ↦ OpenNormalSubgroup.mem_comap.2 (hU (Subgroup.mem_subgroupOf.1 hσ))
