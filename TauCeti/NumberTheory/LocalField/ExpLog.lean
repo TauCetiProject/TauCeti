@@ -66,15 +66,6 @@ omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [FinitePadicExtension K
 private theorem powValuation_apply (x : K) :
     powValuation K p x = valuation K x ^ (p - 1) := rfl
 
-/-- The valuation of a nonzero natural number `n` is `v(π) ^ (e * v_p(n))`. -/
-private theorem valuation_natCast_eq_pow_mul_padicValNat {π : 𝒪[K]} (hπ : Irreducible π)
-    {n : ℕ} (hn : n ≠ 0) :
-    valuation K (n : K) =
-      valuation K (π : K) ^ (absoluteRamificationIndex K p * padicValNat p n) := by
-  have := FinitePadicExtension.charZero K p
-  rw [valuation_natCast_eq_pow hπ n (Nat.cast_ne_zero.mpr hn),
-    natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n hn]
-
 /-- The weighted bound on the terms of the exponential series at a deep element: measured by
 `powValuation`, the `m`-th term of `exp - 1` at `x` is at most `v(x) ^ (p - 1) * S ^ (m - 1)`. -/
 private theorem powValuation_coeff_exp_sub_one_mul_pow_le [CharZero K] {π : 𝒪[K]}
@@ -109,7 +100,7 @@ private theorem powValuation_coeff_exp_sub_one_mul_pow_le [CharZero K] {π : �
     _ = valuation K x ^ (p - 1) *
           (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ m *
           valuation K (m.factorial : K) ^ (p - 1) := by
-        rw [valuation_natCast_eq_pow_mul_padicValNat (p := p) hπ m.factorial_ne_zero, ← pow_mul,
+        rw [valuation_natCast_eq_pow_mul_padicValNat p hπ m.factorial_ne_zero, ← pow_mul,
           ← pow_mul, mul_comm (absoluteRamificationIndex K p * _) (p - 1)]
 
 /-- The weighted bound on the coefficients of the logarithm series: measured by
@@ -155,7 +146,7 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
     _ = valuation K x ^ (p - 1) *
           (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ n *
           valuation K (n : K) ^ (p - 1) := by
-        rw [valuation_natCast_eq_pow_mul_padicValNat (p := p) hπ hn, ← pow_mul, ← pow_mul,
+        rw [valuation_natCast_eq_pow_mul_padicValNat p hπ hn, ← pow_mul, ← pow_mul,
           mul_comm (absoluteRamificationIndex K p * _) (p - 1)]
 
 end Bounds

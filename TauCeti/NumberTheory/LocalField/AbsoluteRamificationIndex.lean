@@ -37,6 +37,8 @@ The definition is confined to mixed characteristic by requiring an algebra struc
   the normalized valuation of `p` in `K`.
 * `TauCeti.natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat`: the valuation of a
   natural-number cast in a finite extension of `ℚ_[p]`.
+* `TauCeti.valuation_natCast_eq_pow_mul_padicValNat`: the same valuation, as a power of the
+  valuation of a uniformizer.
 * `TauCeti.absoluteRamificationIndex_padic`: the absolute ramification index of `ℚ_[p]` is one.
 * `TauCeti.absoluteRamificationIndex_tower`: the absolute index is multiplicative in a tower.
 
@@ -130,6 +132,17 @@ theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
       ramificationIndex ℚ_[p] K * padicValNat p n := by
     exact_mod_cast h
   simpa only [absoluteRamificationIndex] using hnval
+
+variable {K} in
+/-- In a finite extension `K/ℚ_[p]`, the valuation of a nonzero natural number `n` is
+`v(π) ^ (e * v_p(n))` for any uniformizer `π`, where `e` is the absolute ramification index. -/
+theorem valuation_natCast_eq_pow_mul_padicValNat {π : 𝒪[K]} (hπ : Irreducible π)
+    {n : ℕ} (hn : n ≠ 0) :
+    valuation K (n : K) =
+      valuation K (π : K) ^ (absoluteRamificationIndex K p * padicValNat p n) := by
+  have := FinitePadicExtension.charZero K p
+  rw [valuation_natCast_eq_pow hπ n (Nat.cast_ne_zero.mpr hn),
+    natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n hn]
 
 /-- The absolute ramification index is the normalized valuation of the residue prime `p` in
 `K`. -/
