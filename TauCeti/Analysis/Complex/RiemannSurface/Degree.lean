@@ -61,7 +61,8 @@ finite holomorphic map.
   hypotheses: `TauCeti.RiemannSurface.localMultiplicity_pos`,
   `TauCeti.RiemannSurface.degree_eq_fiber_sum`, `TauCeti.RiemannSurface.degree_pos`,
   `TauCeti.RiemannSurface.localMultiplicity_comp`, `TauCeti.RiemannSurface.degree_comp` and
-  `TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`.
+  `TauCeti.RiemannSurface.biholomorph_of_degree_eq_one`, a degree-one map being a biholomorphism,
+  with the biholomorphism itself constructed as `TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`.
 
 ## References
 
@@ -472,6 +473,13 @@ noncomputable def biholomorphOfDegreeEqOne (f : FiniteHolomorphicMap X Y) (hf : 
 theorem biholomorphOfDegreeEqOne_toFun (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
     ⇑(biholomorphOfDegreeEqOne f hf) = f :=
   (rfl)
+
+/-- **A degree-one map is a biholomorphism**: a finite holomorphic map of degree one between
+compact connected Riemann surfaces is the forward map of a biholomorphism, namely
+`TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`. -/
+theorem biholomorph_of_degree_eq_one (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
+    ∃ e : X ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ Y, ⇑e = f :=
+  ⟨biholomorphOfDegreeEqOne f hf, biholomorphOfDegreeEqOne_toFun f hf⟩
 
 end Compact
 
