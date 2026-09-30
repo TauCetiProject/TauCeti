@@ -44,7 +44,7 @@ noncomputable def diamondOp (d : (ZMod N)ˣ) :
     (Delta0_le_intEntries N (diamondCosetGamma1 N g).out.2)
 
 /-- The diamond operator is the Hecke operator of the double coset of any representative. -/
-private theorem diamondOp_eq_heckeSymbol (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
+theorem diamondOp_eq_heckeSymbol (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
     (hg : (Gamma0Map N).toHomUnits g = d) :
     diamondOp (R := R) (w := w) d =
       heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N g)
@@ -92,6 +92,7 @@ theorem diamondOp_one : diamondOp (R := R) (w := w) (N := N) 1 = 1 := by
   exact heckeSymbol_one (Gamma1 N) _
 
 /-- Diamond operators multiply according to their indices. -/
+@[simp]
 theorem diamondOp_mul (d e : (ZMod N)ˣ) :
     diamondOp (R := R) (w := w) (d * e) =
       diamondOp d * diamondOp e := by
