@@ -378,6 +378,7 @@ theorem fittingIdeal_eq_bot_of_lt_finrank [Free R F] [Module.Finite R F] {k : �
     hsize, Submodule.minorsIdeal_bot]
 
 /-- A free module of rank `n` over a nontrivial ring has `Fitt_k = ⊤` exactly when `n ≤ k`. -/
+@[simp]
 theorem fittingIdeal_eq_top_iff_finrank_le [Nontrivial R] [Free R F] [Module.Finite R F]
     {k : ℕ} : fittingIdeal R F k = ⊤ ↔ finrank R F ≤ k := by
   refine ⟨fun h ↦ not_lt.1 fun hk ↦ ?_,

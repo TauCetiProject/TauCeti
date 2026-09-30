@@ -15,9 +15,10 @@ public import TauCeti.RingTheory.FittingIdeal.Generators
 # Base change of Fitting ideals
 
 For an `R`-algebra `S` and a finite `R`-module `M`, the Fitting ideals of `S ⊗[R] M` are the
-extensions of those of `M`: `Fitt_k(S ⊗[R] M) = Fitt_k(M) S`. A finite free presentation of `M`
-base changes to one of `S ⊗[R] M`, by right exactness of the tensor product, and the minors of
-the base-changed relations generate the extension of the ideal of minors of the relations.
+extensions of those of `M`: `Fitt_k(S ⊗[R] M) = Fitt_k(M) S`. A surjection from a finite free
+module onto `M` base changes to a surjection onto `S ⊗[R] M`. By right exactness of the tensor
+product, its kernel is the base change of the original kernel, and the minors of these relations
+generate the extension of the ideal of minors of the original relations.
 
 Since localization is a base change (`IsLocalizedModule.isBaseChange`), the Fitting ideals of a
 module commute with localization. This is the compatibility needed for the Fitting ideals of a
@@ -110,6 +111,7 @@ variable {R F : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra R S] [AddC
 
 /-- The minors ideals of the base change of a submodule of a free module of finite rank are the
 extensions of its minors ideals. -/
+@[simp]
 theorem minorsIdeal_baseChange [Free R F] [Module.Finite R F] (N : Submodule R F) (p : ℕ) :
     (N.baseChange S).minorsIdeal p = (N.minorsIdeal p).map (algebraMap R S) := by
   rw [baseChange_eq_span, map_coe]
@@ -124,6 +126,7 @@ variable {R M : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra R S] [AddC
 
 variable (M) in
 /-- **Fitting ideals commute with base change**: `Fitt_k(S ⊗[R] M) = Fitt_k(M) S`. -/
+@[simp]
 theorem fittingIdeal_baseChange (k : ℕ) :
     fittingIdeal S (S ⊗[R] M) k = (fittingIdeal R M k).map (algebraMap R S) := by
   nontriviality S
@@ -143,14 +146,16 @@ namespace IsBaseChange
 
 variable {R M M' : Type*} {S : Type*} [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup M]
   [Module R M] [Module.Finite R M] [AddCommGroup M'] [Module R M'] [Module S M']
-  [IsScalarTower R S M'] [Module.Finite S M'] {g : M →ₗ[R] M'}
+  [IsScalarTower R S M'] {g : M →ₗ[R] M'}
 
 open TauCeti in
 /-- **Fitting ideals commute with base change**: if `g : M → M'` exhibits `M'` as the base change
 of `M` to `S`, then `Fitt_k(M') = Fitt_k(M) S`. This applies to localizations of `M` by
 `IsLocalizedModule.isBaseChange`. -/
 theorem fittingIdeal_eq_map (hg : IsBaseChange S g) (k : ℕ) :
-    fittingIdeal S M' k = (fittingIdeal R M k).map (algebraMap R S) := by
+    (letI : Module.Finite S M' := Module.Finite.equiv hg.equiv
+     fittingIdeal S M' k) = (fittingIdeal R M k).map (algebraMap R S) := by
+  let : Module.Finite S M' := Module.Finite.equiv hg.equiv
   rw [← fittingIdeal_congr hg.equiv, fittingIdeal_baseChange]
 
 end IsBaseChange
@@ -162,6 +167,7 @@ variable {R F M : Type*} [CommRing R] [AddCommGroup F] [Module R F] [AddCommGrou
 
 /-- The zero locus of the `k`-th Fitting ideal of a finite module `M` is the set of primes `p` at
 which the fibre `κ(p) ⊗[R] M` has dimension greater than `k`. -/
+@[simp]
 theorem fittingIdeal_le_iff_lt_finrank (p : Ideal R) [p.IsPrime] (k : ℕ) :
     fittingIdeal R M k ≤ p ↔ k < finrank p.ResidueField (p.ResidueField ⊗[R] M) := by
   have hle : fittingIdeal R M k ≤ p ↔
