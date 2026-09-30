@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.AllDegrees
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Trace.DegreeOne
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Trace.DegreeTwo
 
 /-!
 # Corestriction in every degree
@@ -31,9 +32,10 @@ The identity `cor ∘ res = [G : U]` (NSW (1.5.7)) rests on the unit `M → Coin
 followed by the inverse of Shapiro's isomorphism is the coefficient map of the unit
 (`TauCeti.ContinuousCohomology.res_comp_shapiroIso_inv`), and the trace of the unit is
 multiplication by the index (`TauCeti.DiscreteCoind.trace_unit`). Corestriction is natural in the
-coefficient module, and in degrees `0` and `1` it agrees, under the comparison isomorphisms with
-the explicit inhomogeneous model, with the transversal formulas
-`TauCeti.ContCohomology.explicitCor0` and `TauCeti.ContCohomology.explicitCor1`.
+coefficient module, and in degrees `0`, `1` and `2` it agrees, under the comparison isomorphisms
+with the explicit inhomogeneous model, with the transversal formulas
+`TauCeti.ContCohomology.explicitCor0`, `TauCeti.ContCohomology.explicitCor1` and
+`TauCeti.ContCohomology.explicitCor2`.
 
 ## Main definitions
 
@@ -49,8 +51,9 @@ the explicit inhomogeneous model, with the transversal formulas
 * `TauCeti.ContinuousCohomology.corestriction_naturality`: corestriction is natural in the
   coefficient module.
 * `TauCeti.ContinuousCohomology.explicitH0Iso_corestriction`,
-  `TauCeti.ContinuousCohomology.explicitH1AddEquivContinuousCohomology_corestriction`: agreement
-  with the explicit corestrictions in degrees `0` and `1`.
+  `TauCeti.ContinuousCohomology.explicitH1AddEquivContinuousCohomology_corestriction`,
+  `TauCeti.ContinuousCohomology.explicitH2AddEquivContinuousCohomology_corestriction`: agreement
+  with the explicit corestrictions in degrees `0`, `1` and `2`.
 
 ## References
 
@@ -267,6 +270,25 @@ theorem explicitH1AddEquivContinuousCohomology_corestriction (x : H1 U M) :
   -- coefficient map of the trace on `y` is the explicit coefficient map of the trace on `y`.
   rw [hx, ← ConcreteCategory.comp_apply, shapiroMap_comp_corestriction,
     explicitH1AddEquivContinuousCohomology_coeffMap, explicitCor1_eq_explicitCoeff1_trace hU,
+    AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ← hy]
+
+/-- **In degree two, corestriction is the explicit transversal formula** of
+`TauCeti.ContCohomology.explicitCor2`, under the comparisons of `H²` with the canonical carrier.
+The instance `LocallyCompactSpace U` is the one the degree-two comparison for `U` is stated with;
+it always holds here, `U` being closed in the compact group `G`. -/
+theorem explicitH2AddEquivContinuousCohomology_corestriction [LocallyCompactSpace U]
+    (x : H2 U M) :
+    corestriction U M hU 2 (explicitH2AddEquivContinuousCohomology U M x) =
+      explicitH2AddEquivContinuousCohomology G M (explicitCor2 G M U hU x) := by
+  set y := (explicitShapiro2 G U M (U.isClosed_of_isOpen hU)).symm x with hy
+  have hx : explicitH2AddEquivContinuousCohomology U M x =
+      shapiroMap U M 2 (explicitH2AddEquivContinuousCohomology G (DiscreteCoind G U M) y) := by
+    rw [explicitH2AddEquivContinuousCohomology_shapiroMap, hy, ← explicitShapiro2_apply _ _ _
+      (U.isClosed_of_isOpen hU), AddEquiv.apply_symm_apply]
+  -- As in degree one: the class `x` is the Shapiro image of `y`, so corestriction of `x` is the
+  -- coefficient map of the trace on `y`, which is the explicit coefficient map of the trace.
+  rw [hx, ← ConcreteCategory.comp_apply, shapiroMap_comp_corestriction,
+    explicitH2AddEquivContinuousCohomology_coeffMap, explicitCor2_eq_explicitCoeff2_trace hU,
     AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ← hy]
 
 end TauCeti.ContinuousCohomology
