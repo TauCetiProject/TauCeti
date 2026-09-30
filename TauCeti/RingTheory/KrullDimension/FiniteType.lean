@@ -250,7 +250,7 @@ theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [Algebra k 
   have hIm : I ≤ m := nilradical_le_prime m
   have : q.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le
     (f := Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective (by simpa [Ideal.mk_ker] using hIm)
-  rw [← Ideal.height_map_quotientMk_nilradical m,
+  rw [← height_map_quotientMk_nilradical m,
     ← ringKrullDim_quotient_nilradical A]
   exact height_eq_ringKrullDim_of_isMaximal_of_isDomain k q
 

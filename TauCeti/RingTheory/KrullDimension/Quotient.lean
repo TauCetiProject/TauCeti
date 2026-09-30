@@ -23,7 +23,7 @@ the height of each prime ideal.
 * `Ideal.topologicalKrullDim_zeroLocus`: the closed subset `V(I)` of `Spec R` has the Krull
   dimension of `R ⧸ I`.
 * `TauCeti.ringKrullDim_quotient_nilradical`: reduction preserves Krull dimension.
-* `TauCeti.Ideal.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
+* `TauCeti.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
 -/
 
 public section
@@ -58,8 +58,6 @@ theorem ringKrullDim_quotient_nilradical :
   rw [ringKrullDim_quotient, PrimeSpectrum.zeroLocus_nilradical, ringKrullDim]
   exact Order.krullDim_eq_of_orderIso OrderIso.Set.univ
 
-namespace Ideal
-
 variable {R : Type*} [CommRing R]
 
 /-- Passing to the quotient by the nilradical preserves the height of a prime ideal. -/
@@ -87,7 +85,5 @@ theorem height_map_quotientMk_nilradical (p : Ideal R) [p.IsPrime] :
       rw [← he, Order.height_orderIso]
     _ = p.height :=
       (PrimeSpectrum.height_eq_orderHeight (⟨p, inferInstance⟩ : PrimeSpectrum R)).symm
-
-end Ideal
 
 end TauCeti
