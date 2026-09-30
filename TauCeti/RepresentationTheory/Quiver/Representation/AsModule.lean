@@ -64,6 +64,8 @@ that isomorphism becomes `TauCeti.QuiverRep.asModuleShrinkIso`, the essential su
   a representation to with `TauCeti.QuiverRep.asModuleShrink`, and
   `TauCeti.quiverRepEquivalenceFunctorObjIso` identifying it with `TauCeti.QuiverRep.asModule`
   itself in the universe where the direct sum lives.
+  Both directions of the equivalence are additive, so both carry finite biproducts to finite
+  biproducts.
 
 ## Main results
 
@@ -580,6 +582,20 @@ the module-to-representation functor of
 `TauCeti.RepresentationTheory.Quiver.Representation.OfModule`, turned around. -/
 theorem _root_.TauCeti.quiverRepEquivalence_inverse :
     (quiverRepEquivalence.{u, v, w, t} k Q).inverse = quiverRepFunctor k Q := (rfl)
+
+/-- The inverse of `TauCeti.quiverRepEquivalence` is additive, being the additive
+`TauCeti.quiverRepFunctor`. -/
+instance : (quiverRepEquivalence.{u, v, w, t} k Q).inverse.Additive := by
+  rw [quiverRepEquivalence_inverse]
+  infer_instance
+
+/-- **The representation-to-module direction of `TauCeti.quiverRepEquivalence` is additive**, hence
+carries finite biproducts of representations to finite biproducts of modules.  It is the inverse of
+the opposite equivalence, whose functor is the additive `TauCeti.quiverRepFunctor`. -/
+instance : (quiverRepEquivalence.{u, v, w, t} k Q).functor.Additive :=
+  haveI : (quiverRepEquivalence.{u, v, w, t} k Q).symm.functor.Additive :=
+    inferInstanceAs ((quiverRepEquivalence.{u, v, w, t} k Q).inverse.Additive)
+  Equivalence.inverse_additive (quiverRepEquivalence.{u, v, w, t} k Q).symm
 
 /-- **The forward direction of `TauCeti.quiverRepEquivalence` is
 `TauCeti.QuiverRep.asModuleShrink`.** The functor of the equivalence is
