@@ -190,7 +190,8 @@ theorem geodesicAngle_mul_pslS_left (g₁ g₂ : PSL(2, ℝ)) :
   rw [geodesicAngle, geodesicAngle, velocity_mul_pslS, neg_zero,
     InnerProductGeometry.angle_neg_left]
 
-/-- The angle at `I` between the imaginary axis and its rotation by `θ` is `2 |θ|`. -/
+/-- The angle at `I` between the imaginary axis and its rotation by `θ` is `2 |θ|`, for
+`|θ| ≤ π / 2`. -/
 theorem geodesicAngle_one_rotation {θ : ℝ} (hθ : |θ| ≤ π / 2) :
     geodesicAngle 1 (↑(rotation θ)) = 2 * |θ| := by
   rw [geodesicAngle_eq_abs_arg, velocity_one, velocity_rotation_zero, Real.exp_zero,
