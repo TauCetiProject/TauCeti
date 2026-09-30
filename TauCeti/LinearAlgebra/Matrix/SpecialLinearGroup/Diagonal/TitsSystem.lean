@@ -65,7 +65,7 @@ private theorem exists_toGL_mul_mem_inf (g : GL (Fin (n + 1)) k) :
     ∃ x : SpecialLinearGroup (Fin (n + 1)) k,
       ∃ t ∈ (glTitsSystem k n).subgroupB ⊓ (glTitsSystem k n).subgroupN,
         SpecialLinearGroup.toGL x * t = g := by
-  obtain ⟨x, u, hxu⟩ := exists_toGL_mul_eq g
+  obtain ⟨x, u, hxu⟩ := g.exists_toGL_mul_eq
   refine ⟨x, diagGL u, Subgroup.mem_inf.mpr ⟨?_, ?_⟩, hxu⟩
   · rw [glTitsSystem_subgroupB]
     exact UpperTriangularGroup.diagonalTorus_le
@@ -136,20 +136,6 @@ theorem slTitsSystemWeylGroupMulEquivPerm_mk (g : (slTitsSystem k n).subgroupN) 
   -- `slTitsSystem` is by definition the pullback of `glTitsSystem` along `toGL`.
   congrArg (glTitsSystemWeylGroupMulEquivPerm k n)
     ((glTitsSystem k n).comapWeylGroupMulEquiv_mk _ (exists_toGL_mul_mem_inf k n) g)
-
-/-- The simple reflections of the standard `GLₙ₊₁` Tits system are the classes corresponding to
-the adjacent transpositions under the identification of its Weyl group with permutations. -/
-private theorem glTitsSystem_simple_eq_preimage :
-    (glTitsSystem k n).simple = glTitsSystemWeylGroupMulEquivPerm k n ⁻¹'
-      Set.range fun i : Fin n ↦ Equiv.swap i.castSucc i.succ := by
-  ext w
-  simp only [glTitsSystem_simple, Set.mem_range, Set.mem_preimage]
-  constructor
-  · rintro ⟨i, rfl⟩
-    exact ⟨i, (glTitsSystemWeylGroupMulEquivPerm_simpleRep k n i).symm⟩
-  · rintro ⟨i, hi⟩
-    exact ⟨i, (glTitsSystemWeylGroupMulEquivPerm k n).injective
-      (by rw [glTitsSystemWeylGroupMulEquivPerm_simpleRep, hi])⟩
 
 /-- The simple reflections of the standard `SLₙ₊₁` Tits system correspond to the adjacent
 transpositions `(i i+1)`. -/

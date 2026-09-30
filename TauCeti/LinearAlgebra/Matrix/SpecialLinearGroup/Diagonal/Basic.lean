@@ -20,8 +20,8 @@ inverse in two distinct diagonal positions. This generalizes Mathlib's field-val
 
 * `Matrix.SpecialLinearGroup.diag2nUnit`: the two-coordinate diagonal matrix attached to a unit.
 * `Matrix.SpecialLinearGroup.diagonalTorus`: the diagonal torus of `SL_n`.
-* `TauCeti.exists_toGL_mul_eq`: every invertible matrix is a determinant-one matrix times a
-  diagonal matrix.
+* `Matrix.GeneralLinearGroup.exists_toGL_mul_eq`: every invertible matrix is a determinant-one
+  matrix times a diagonal matrix.
 * `Matrix.SpecialLinearGroup.map_diag2nUnit`: naturality under a ring homomorphism.
 * `Matrix.SpecialLinearGroup.diag2nUnit_decompose`: a two-coordinate unit diagonal matrix is a
   product of six transvections.
@@ -137,8 +137,8 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2n_decompose {K : Type u} [Field K]
 
 /-- Every invertible matrix over a commutative ring is a determinant-one matrix times a diagonal
 matrix. -/
-theorem exists_toGL_mul_eq {R : Type u} [CommRing R] {m : Type v} [Fintype m] [DecidableEq m]
-    (g : GL m R) :
+theorem _root_.Matrix.GeneralLinearGroup.exists_toGL_mul_eq {R : Type u} [CommRing R]
+    {m : Type v} [Fintype m] [DecidableEq m] (g : GL m R) :
     ∃ x : Matrix.SpecialLinearGroup m R, ∃ t : m → Rˣ,
       Matrix.SpecialLinearGroup.toGL x * diagGL t = g := by
   obtain ⟨u, hu⟩ := exists_det_mul_diagGL_eq_one g
