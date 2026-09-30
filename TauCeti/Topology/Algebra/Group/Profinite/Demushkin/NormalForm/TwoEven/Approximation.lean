@@ -126,26 +126,22 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_forall_c
     intro i hi
     have hφw : crossedHom χ (Pi.single i 1) (φ w) = 0 := by
       rw [hφeq]
-      have hθ : ∀ k, χ (basisModification ωφ (freeProPGen 2 n k)) =
-          χ (freeProPGen 2 n k) := fun k ↦ by
-        by_cases hk : k < n
-        · rw [freeProPGen_of_lt 2 hk, basisModification_of, map_mul, hωχ, mul_one]
-        · rw [freeProPGen_eq_one_of_le 2 (not_lt.mp hk), map_one]
+      let hF := isCrossedHom_crossedHom χ (Pi.single i 1)
+      have hw : crossedHom χ (Pi.single i 1)
+          (demushkinWordTwoEven 0 f n (freeProPGen 2 n)) = 0 :=
+        hF.map_demushkinWordTwoEven_eq_zero (by omega)
+          (by rw [freeProPGen_of_lt 2 (by omega), h₁]; norm_num)
+          (by rw [freeProPGen_of_lt 2 hn3]; exact h₃)
+          fun k hk₁ hk₃ ↦ by
+            by_cases hk : k < n
+            · rw [freeProPGen_of_lt 2 hk]
+              exact hχ _ (fun e ↦ hk₁ (congrArg Fin.val e))
+                (fun e ↦ hk₃ (congrArg Fin.val e))
+            · rw [freeProPGen_eq_one_of_le 2 (not_lt.mp hk), map_one]
+      have := hF.map_inv_mul_basisModification_demushkinWordTwoEven_eq_zero
+        hn3 h₁ h₃ hχ ωφ hωχ
       rw [TauCeti.map_demushkinWordTwoEven]
-      exact (isCrossedHom_crossedHom χ (Pi.single i 1)).map_demushkinWordTwoEven_eq_zero
-        (by omega)
-        (x := ⇑(basisModification ωφ) ∘ freeProPGen 2 n)
-        (by
-          rw [Function.comp_apply, hθ, freeProPGen_of_lt 2 (by omega), h₁]
-          norm_num)
-        (by rw [Function.comp_apply, hθ, freeProPGen_of_lt 2 hn3]; exact h₃)
-        fun k hk₁ hk₃ ↦ by
-          rw [Function.comp_apply, hθ]
-          by_cases hk : k < n
-          · rw [freeProPGen_of_lt 2 hk]
-            exact hχ _ (fun e ↦ hk₁ (congrArg Fin.val e))
-              (fun e ↦ hk₃ (congrArg Fin.val e))
-          · rw [freeProPGen_eq_one_of_le 2 (not_lt.mp hk), map_one]
+      simpa [hF.map_mul, hF.map_inv, hw] using this
     simp [(isCrossedHom_crossedHom χ (Pi.single i 1)).map_mul,
       (isCrossedHom_crossedHom χ (Pi.single i 1)).map_inv, hφw, hrD i hi]
   · intro m hm z hz
