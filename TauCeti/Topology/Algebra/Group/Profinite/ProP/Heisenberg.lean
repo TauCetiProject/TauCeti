@@ -98,12 +98,11 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
       (Multiplicative (R × R)) :=
     GroupExtension.ofMulEquivKer hsurj e
   have hSinl : S.inl = g := by
-    rw [show S = GroupExtension.ofMulEquivKer hsurj e from rfl,
-      GroupExtension.ofMulEquivKer_inl]
+    simp only [S, GroupExtension.ofMulEquivKer_inl]
     apply MonoidHom.ext
     intro c
-    change (e c).val = g c
-    rfl
+    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Subgroup.subtype_apply,
+      e, MulEquiv.ofBijective_apply, gker, MonoidHom.codRestrict_apply]
   have hSrh : S.rightHom = f :=
     GroupExtension.ofMulEquivKer_rightHom _ _
   have hRR : IsProP p (Multiplicative (R × R)) :=
