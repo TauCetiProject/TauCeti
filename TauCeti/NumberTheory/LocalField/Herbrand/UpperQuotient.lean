@@ -31,11 +31,10 @@ The statement is given in three forms.
 * For a tower `M/L/K` with `L/K` Galois, the image of `G^v` under restriction to `L` is the
   upper ramification group of `L/K` at `v`.
 * For a normal subgroup `H`, the quotient filtration `upperRamificationGroupQuotient H` of
-  `G ⧸ H` is the upper filtration of the fixed field `M^H`, carrying its spectral-norm
-  local-field structure, transported along Mathlib's `IsGalois.normalAutEquivQuotient`. It is the
-  image of `G^v` in `G ⧸ H`.
-* The field-theoretic form of the previous statement holds for every compatible local-field
-  structure on `M^H`, not only the spectral-norm one.
+  `G ⧸ H` is the image of `G^v` in `G ⧸ H`.
+* For every compatible local-field structure on `M^H`, the restriction equivalence
+  `IsGalois.normalAutEquivQuotient` carries this quotient filtration to the upper filtration of
+  `M^H/K`.
 
 As a consequence, every upper break of `L/K` is an upper break of `M/K`.
 
@@ -48,10 +47,10 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
 
 * `TauCeti.LocalFieldsRamification.map_restrictNormalHom_upperRamificationGroup`:
   `G^v` restricts onto `Gal(L/K)^v`.
-* `TauCeti.LocalFieldsRamification.UpperJump.of_tower_bot`: an upper break of `L/K` is an upper
+* `TauCeti.LocalFieldsRamification.UpperJump.of_tower`: an upper break of `L/K` is an upper
   break of `M/K`.
-* `TauCeti.LocalFieldsRamification.upperRamificationGroup_fixedField`: the image of `G^v` in
-  `G ⧸ H` is the preimage of `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
+* `TauCeti.LocalFieldsRamification.upperRamificationGroup_fixedField`: the quotient filtration
+  maps to `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_quotient`: `(G/H)^v = G^v H / H`.
 
 ## References
@@ -97,7 +96,7 @@ theorem map_restrictNormalHom_upperRamificationGroup (v : RamificationIndexDomai
 variable {K L M} in
 /-- In a tower `M/L/K` of Galois extensions, every upper break of `L/K` is an upper break of
 `M/K`. -/
-theorem UpperJump.of_tower_bot {v : RamificationIndexDomain} (h : UpperJump K L v) :
+theorem UpperJump.of_tower {v : RamificationIndexDomain} (h : UpperJump K L v) :
     haveI : Module.Finite K M := Module.Finite.trans L M
     UpperJump K M v := by
   have : Module.Finite K M := Module.Finite.trans L M
@@ -117,48 +116,35 @@ variable {K M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M] [Module.Finite K M]
   [IsGalois K M] (H : Subgroup (M ≃ₐ[K] M)) [H.Normal]
 
-/-- **The upper numbering of a quotient, field-theoretically.** For a normal subgroup `H` of
-`G = Gal(M/K)` and any local-field structure on the fixed field `M^H` compatible with `K`, the
-image of `G^v` in `G ⧸ H` is the preimage of the upper ramification group of `M^H/K` at `v` under
-the restriction isomorphism `G ⧸ H ≃* Gal(M^H/K)`. -/
-theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
-    [TopologicalSpace (fixedField H)] [IsNonarchimedeanLocalField (fixedField H)]
-    [ValuativeExtension K (fixedField H)] (v : RamificationIndexDomain) :
-    (upperRamificationGroup K M v).map (QuotientGroup.mk' H) =
-      (upperRamificationGroup K (fixedField H) v).comap
-        (IsGalois.normalAutEquivQuotient H).toMonoidHom := by
-  -- Under `G ⧸ H ≃* Gal(M^H/K)`, the class of `σ` is the restriction of `σ` to `M^H`.
-  have hcomp : (IsGalois.normalAutEquivQuotient H).toMonoidHom.comp (QuotientGroup.mk' H) =
-      AlgEquiv.restrictNormalHom (fixedField H) :=
-    MonoidHom.ext (IsGalois.normalAutEquivQuotient_apply H)
-  rw [← map_restrictNormalHom_upperRamificationGroup K (fixedField H) M, ← hcomp,
-    ← Subgroup.map_map]
-  exact (Subgroup.comap_map_eq_self_of_injective
-    (IsGalois.normalAutEquivQuotient H).injective _).symm
-
 /-- The **upper ramification filtration of the quotient** `G ⧸ H`, for a normal subgroup `H` of
-`G = Gal(M/K)`: the upper filtration of the fixed field `M^H` over `K`, with `M^H` carrying its
-spectral-norm local-field structure, transported to `G ⧸ H` along the restriction isomorphism
-`G ⧸ H ≃* Gal(M^H/K)`. By `upperRamificationGroup_fixedField` it does not depend on that choice
-of structure. -/
+`G = Gal(M/K)`: the image of `G^v` under the quotient map `G → G ⧸ H`. -/
 def upperRamificationGroupQuotient (v : RamificationIndexDomain) :
     Subgroup ((M ≃ₐ[K] M) ⧸ H) :=
-  letI := finiteIntermediateFieldValuativeRel K M (fixedField H)
-  letI := finiteIntermediateFieldTopology K M (fixedField H)
-  haveI := finiteIntermediateField_isNonarchimedeanLocalField K M (fixedField H)
-  haveI := finiteIntermediateField_valuativeExtension K M (fixedField H)
-  (upperRamificationGroup K (fixedField H) v).comap (IsGalois.normalAutEquivQuotient H).toMonoidHom
+  (upperRamificationGroup K M v).map (QuotientGroup.mk' H)
 
 /-- **The upper numbering is compatible with quotients.** For a normal subgroup `H` of
 `G = Gal(M/K)`, `(G/H)^v = G^v H / H`. -/
 @[simp]
 theorem upperRamificationGroup_quotient (v : RamificationIndexDomain) :
     upperRamificationGroupQuotient H v = (upperRamificationGroup K M v).map (QuotientGroup.mk' H) :=
-  letI := finiteIntermediateFieldValuativeRel K M (fixedField H)
-  letI := finiteIntermediateFieldTopology K M (fixedField H)
-  haveI := finiteIntermediateField_isNonarchimedeanLocalField K M (fixedField H)
-  haveI := finiteIntermediateField_valuativeExtension K M (fixedField H)
-  (upperRamificationGroup_fixedField H v).symm
+  by rfl
+
+/-- **The upper numbering of a quotient, field-theoretically.** For a normal subgroup `H` of
+`G = Gal(M/K)` and any local-field structure on the fixed field `M^H` compatible with `K`, the
+restriction isomorphism `G ⧸ H ≃* Gal(M^H/K)` maps the quotient upper ramification group at `v`
+onto the upper ramification group of `M^H/K`. -/
+theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
+    [TopologicalSpace (fixedField H)] [IsNonarchimedeanLocalField (fixedField H)]
+    [ValuativeExtension K (fixedField H)] (v : RamificationIndexDomain) :
+    (upperRamificationGroupQuotient H v).map
+        (IsGalois.normalAutEquivQuotient H).toMonoidHom =
+      upperRamificationGroup K (fixedField H) v := by
+  -- Under `G ⧸ H ≃* Gal(M^H/K)`, the class of `σ` is the restriction of `σ` to `M^H`.
+  have hcomp : (IsGalois.normalAutEquivQuotient H).toMonoidHom.comp (QuotientGroup.mk' H) =
+      AlgEquiv.restrictNormalHom (fixedField H) :=
+    MonoidHom.ext (IsGalois.normalAutEquivQuotient_apply H)
+  rw [upperRamificationGroup_quotient, Subgroup.map_map, hcomp,
+    map_restrictNormalHom_upperRamificationGroup K (fixedField H) M]
 
 end Quotient
 
