@@ -311,6 +311,40 @@ theorem HNegOneRes_comp_HNegOneCor :
   ext x
   simpa using HNegOneCor_comp_HNegOneRes_apply M H x
 
+/-- **Tate restriction in degree `-1` is natural in the coefficient representation.** -/
+@[reassoc]
+theorem HNegOneRes_natural {N : Rep R G} (f : M ⟶ N) :
+    (tateCohomologyFunctor (-1)).map f ≫ HNegOneRes N H =
+      HNegOneRes M H ≫ (tateCohomologyFunctor (-1)).map ((Rep.resFunctor H.subtype).map f) := by
+  let g := (Rep.resFunctor H.subtype).map f
+  let hφ : M.ρ.IsIntertwiningMap
+      (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) f.hom.toLinearMap :=
+    ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  let hφH : (Rep.res H.subtype M).ρ.IsIntertwiningMap
+      ((Rep.res H.subtype N).ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H))
+      g.hom.toLinearMap := ⟨fun x v ↦ Rep.hom_comm_apply g x v⟩
+  -- Along the identity of the group, the Tate map of a compatible pair is coefficient
+  -- functoriality (`map_refl`), so `HNegOneπ_comp_map` computes both coefficient maps.
+  have hmap : HNegOneπ M ≫ (tateCohomologyFunctor (-1)).map f =
+      ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N :=
+    (map_refl hφ (-1)).symm ▸ HNegOneπ_comp_map hφ
+  have hmapH : HNegOneπ (Rep.res H.subtype M) ≫ (tateCohomologyFunctor (-1)).map g =
+      ModuleCat.ofHom (mapKerNorm hφH) ≫ HNegOneπ (Rep.res H.subtype N) :=
+    (map_refl hφH (-1)).symm ▸ HNegOneπ_comp_map hφH
+  -- The relative transfer commutes with the coefficient map on norm kernels.
+  have htransfer : ModuleCat.ofHom (mapKerNorm hφ) ≫
+        ModuleCat.ofHom (Representation.relTransferKerNorm N.ρ H) =
+      ModuleCat.ofHom (Representation.relTransferKerNorm M.ρ H) ≫
+        ModuleCat.ofHom (mapKerNorm hφH) := by
+    ext x
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
+    rw [Representation.coe_relTransferKerNorm, mapKerNorm_apply_coe,
+      mapKerNorm_apply_coe, Representation.coe_relTransferKerNorm,
+      Representation.relTransfer_apply, Representation.relTransfer_apply, map_sum]
+    exact Finset.sum_congr rfl fun q _ ↦ (Rep.hom_comm_apply f q.out⁻¹ x).symm
+  rw [← cancel_epi (HNegOneπ M), reassoc_of% hmap, HNegOneπ_comp_HNegOneRes,
+    HNegOneπ_comp_HNegOneRes_assoc, reassoc_of% htransfer, hmapH]
+
 end NegOne
 
 section TrivialInt

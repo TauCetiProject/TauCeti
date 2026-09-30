@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Positive
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Trans
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 
 /-!
@@ -16,7 +17,7 @@ corestriction in positive, zero, minus one, and lower negative degrees assemble 
 every integer degree. Their composite is multiplication by the index `[G : H]`. These uniform
 maps are the group-change operations used in the restriction law for the Tate cup product.
 In negative degrees, restriction is natural in the coefficient representation
-(`HNegOneRes_natural`, `negSuccRes_natural`).
+(`res_natural_of_neg`).
 Tower composition for class-field-theory layers is provided by
 `ClassFieldTheory.LayerRestriction.tateRes_trans` and
 `ClassFieldTheory.LayerRestriction.tateCor_trans`.
@@ -65,155 +66,22 @@ theorem res_ofNat_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
 theorem res_neg_one (M : Rep.{u} R G) (H : Subgroup G) :
     res M H (-1) = HNegOneRes M H := by rfl
 
-/-- **Tate restriction in degree `-1` is natural in the coefficient representation.** -/
-@[reassoc]
-theorem HNegOneRes_natural {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) :
-    (tateCohomologyFunctor (-1)).map f ≫ HNegOneRes N H =
-      HNegOneRes M H ≫ (tateCohomologyFunctor (-1)).map
-        ((Rep.resFunctor H.subtype).map f) := by
-  let hφ : M.ρ.IsIntertwiningMap
-      (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) f.hom.toLinearMap :=
-    ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
-  let g := (Rep.resFunctor H.subtype).map f
-  let hφH : (Rep.res H.subtype M).ρ.IsIntertwiningMap
-      ((Rep.res H.subtype N).ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H))
-      g.hom.toLinearMap := ⟨fun x v ↦ Rep.hom_comm_apply g x v⟩
-  have hmap : HNegOneπ M ≫ (tateCohomologyFunctor (-1)).map f =
-      ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N := by
-    have hrefl : map hφ (-1) = (tateCohomologyFunctor (-1)).map f := map_refl hφ (-1)
-    rw [← hrefl]
-    exact HNegOneπ_comp_map hφ
-  have hmapH : HNegOneπ (Rep.res H.subtype M) ≫
-        (tateCohomologyFunctor (-1)).map g =
-      ModuleCat.ofHom (mapKerNorm hφH) ≫ HNegOneπ (Rep.res H.subtype N) := by
-    have hrefl : map hφH (-1) = (tateCohomologyFunctor (-1)).map g := map_refl hφH (-1)
-    rw [← hrefl]
-    exact HNegOneπ_comp_map hφH
-  have htransfer : Representation.relTransferKerNorm N.ρ H ∘ₗ mapKerNorm hφ =
-      mapKerNorm hφH ∘ₗ Representation.relTransferKerNorm M.ρ H := by
-    ext x
-    simp only [LinearMap.comp_apply]
-    rw [Representation.coe_relTransferKerNorm, mapKerNorm_apply_coe,
-      mapKerNorm_apply_coe, Representation.coe_relTransferKerNorm]
-    rw [Representation.relTransfer_apply, Representation.relTransfer_apply, map_sum]
-    apply Finset.sum_congr rfl
-    intro q _
-    exact (Rep.hom_comm_apply f q.out⁻¹ x).symm
-  rw [← cancel_epi (HNegOneπ M)]
-  calc
-    HNegOneπ M ≫ ((tateCohomologyFunctor (-1)).map f ≫ HNegOneRes N H) =
-        (HNegOneπ M ≫ (tateCohomologyFunctor (-1)).map f) ≫ HNegOneRes N H :=
-      (Category.assoc _ _ _).symm
-    _ = (ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N) ≫ HNegOneRes N H := by
-      rw [hmap]
-    _ = ModuleCat.ofHom (mapKerNorm hφ) ≫ (HNegOneπ N ≫ HNegOneRes N H) :=
-      Category.assoc _ _ _
-    _ = ModuleCat.ofHom (mapKerNorm hφ) ≫
-        (ModuleCat.ofHom (Representation.relTransferKerNorm N.ρ H) ≫
-          HNegOneπ (Rep.res H.subtype N)) := by
-      rw [HNegOneπ_comp_HNegOneRes]
-    _ = ModuleCat.ofHom (Representation.relTransferKerNorm N.ρ H ∘ₗ mapKerNorm hφ) ≫
-        HNegOneπ (Rep.res H.subtype N) := by
-      rfl
-    _ = ModuleCat.ofHom (mapKerNorm hφH ∘ₗ Representation.relTransferKerNorm M.ρ H) ≫
-        HNegOneπ (Rep.res H.subtype N) := by
-      rw [htransfer]
-    _ = ModuleCat.ofHom (Representation.relTransferKerNorm M.ρ H) ≫
-        (ModuleCat.ofHom (mapKerNorm hφH) ≫ HNegOneπ (Rep.res H.subtype N)) := by
-      rfl
-    _ = ModuleCat.ofHom (Representation.relTransferKerNorm M.ρ H) ≫
-        (HNegOneπ (Rep.res H.subtype M) ≫
-          (tateCohomologyFunctor (-1)).map g) := by
-      rw [hmapH]
-    _ = (ModuleCat.ofHom (Representation.relTransferKerNorm M.ρ H) ≫
-        HNegOneπ (Rep.res H.subtype M)) ≫ (tateCohomologyFunctor (-1)).map g :=
-      (Category.assoc _ _ _).symm
-    _ = (HNegOneπ M ≫ HNegOneRes M H) ≫
-        (tateCohomologyFunctor (-1)).map g := by
-      rw [HNegOneπ_comp_HNegOneRes]
-    _ = HNegOneπ M ≫
-        (HNegOneRes M H ≫ (tateCohomologyFunctor (-1)).map g) :=
-      Category.assoc _ _ _
-
 /-- Below degree minus one, uniform Tate restriction is homological transfer. -/
 @[simp]
 theorem res_negSucc_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
     res M H (Int.negSucc (n + 1)) = negSuccRes M H (n + 1) := by rfl
 
-/-- **Tate restriction below degree `-1` is natural in the coefficient representation.** -/
+/-- **Tate restriction in negative degrees is natural in the coefficient representation.** -/
 @[reassoc]
-theorem negSuccRes_natural {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G)
-    (n : ℕ) [NeZero n] :
-    (tateCohomologyFunctor (Int.negSucc n)).map f ≫ negSuccRes N H n =
-      negSuccRes M H n ≫ (tateCohomologyFunctor (Int.negSucc n)).map
-        ((Rep.resFunctor H.subtype).map f) := by
-  have hf : (tateCohomologyFunctor (Int.negSucc n)).map f ≫ (negSuccIso N n).hom =
-      (negSuccIso M n).hom ≫ groupHomology.map (MonoidHom.id G) f n := by
-    let hφ : M.ρ.IsIntertwiningMap
-        (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) f.hom.toLinearMap :=
-      ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
-    have h := map_comp_negSuccIso_hom hφ n
-    rw [map_refl hφ (Int.negSucc n)] at h
-    have hto : hφ.toRes = f := by
-      ext v
-      exact Representation.IsIntertwiningMap.toRes_hom_apply hφ v
-    rw [hto] at h
-    exact h
-  have hres : (tateCohomologyFunctor (Int.negSucc n)).map
-        ((Rep.resFunctor H.subtype).map f) ≫ (negSuccIso (Rep.res H.subtype N) n).hom =
-      (negSuccIso (Rep.res H.subtype M) n).hom ≫
-        groupHomology.map (MonoidHom.id H) ((Rep.resFunctor H.subtype).map f) n :=
-    by
-      let g := (Rep.resFunctor H.subtype).map f
-      let hφ : (Rep.res H.subtype M).ρ.IsIntertwiningMap
-          ((Rep.res H.subtype N).ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H))
-          g.hom.toLinearMap := ⟨fun x v ↦ Rep.hom_comm_apply g x v⟩
-      have h := map_comp_negSuccIso_hom hφ n
-      rw [map_refl hφ (Int.negSucc n)] at h
-      have hto : hφ.toRes = g := by
-        ext v
-        exact Representation.IsIntertwiningMap.toRes_hom_apply hφ v
-      rw [hto] at h
-      exact h
-  rw [← cancel_mono (negSuccIso (Rep.res H.subtype N) n).hom]
-  calc
-    ((tateCohomologyFunctor (Int.negSucc n)).map f ≫ negSuccRes N H n) ≫
-        (negSuccIso (Rep.res H.subtype N) n).hom =
-        (tateCohomologyFunctor (Int.negSucc n)).map f ≫
-          (negSuccRes N H n ≫ (negSuccIso (Rep.res H.subtype N) n).hom) :=
-      Category.assoc _ _ _
-    _ = (tateCohomologyFunctor (Int.negSucc n)).map f ≫
-        ((negSuccIso N n).hom ≫ TauCeti.groupHomology.transfer N H n) := by
-      rw [negSuccRes_comp_negSuccIso_hom]
-    _ = ((tateCohomologyFunctor (Int.negSucc n)).map f ≫ (negSuccIso N n).hom) ≫
-        TauCeti.groupHomology.transfer N H n := (Category.assoc _ _ _).symm
-    _ = ((negSuccIso M n).hom ≫ groupHomology.map (MonoidHom.id G) f n) ≫
-        TauCeti.groupHomology.transfer N H n := by
-      rw [hf]
-    _ = (negSuccIso M n).hom ≫
-        (groupHomology.map (MonoidHom.id G) f n ≫
-          TauCeti.groupHomology.transfer N H n) := Category.assoc _ _ _
-    _ = (negSuccIso M n).hom ≫
-        (TauCeti.groupHomology.transfer M H n ≫
-          groupHomology.map (MonoidHom.id H) ((Rep.resFunctor H.subtype).map f) n) := by
-      rw [TauCeti.groupHomology.map_comp_transfer]
-    _ = ((negSuccIso M n).hom ≫ TauCeti.groupHomology.transfer M H n) ≫
-        groupHomology.map (MonoidHom.id H) ((Rep.resFunctor H.subtype).map f) n :=
-      (Category.assoc _ _ _).symm
-    _ = (negSuccRes M H n ≫ (negSuccIso (Rep.res H.subtype M) n).hom) ≫
-        groupHomology.map (MonoidHom.id H) ((Rep.resFunctor H.subtype).map f) n := by
-      rw [negSuccRes_comp_negSuccIso_hom]
-    _ = negSuccRes M H n ≫
-        ((negSuccIso (Rep.res H.subtype M) n).hom ≫
-          groupHomology.map (MonoidHom.id H) ((Rep.resFunctor H.subtype).map f) n) :=
-      Category.assoc _ _ _
-    _ = negSuccRes M H n ≫
-        ((tateCohomologyFunctor (Int.negSucc n)).map ((Rep.resFunctor H.subtype).map f) ≫
-          (negSuccIso (Rep.res H.subtype N) n).hom) := by
-      rw [hres]
-    _ = (negSuccRes M H n ≫
-        (tateCohomologyFunctor (Int.negSucc n)).map ((Rep.resFunctor H.subtype).map f)) ≫
-          (negSuccIso (Rep.res H.subtype N) n).hom := (Category.assoc _ _ _).symm
+theorem res_natural_of_neg {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) {r : ℤ}
+    (hr : r < 0) :
+    (tateCohomologyFunctor r).map f ≫ res N H r =
+      res M H r ≫ (tateCohomologyFunctor r).map ((Rep.resFunctor H.subtype).map f) := by
+  obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat hr.le
+  rcases n with _ | _ | n
+  · simp at hr
+  · exact HNegOneRes_natural M H f
+  · exact negSuccRes_natural M H f (n + 1)
 
 /-- Corestriction of Tate cohomology from a subgroup of a finite group, in every integer
 degree. -/
