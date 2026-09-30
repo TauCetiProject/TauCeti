@@ -121,7 +121,7 @@ end AlexanderWhitneyDiagonal
 section Cochain
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
-  [MonoidalPreadditive C] {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
+  [MonoidalPreadditive C] {k : Type*} [CommSemiring k] [Linear k C] [MonoidalLinear k C]
   {R S T : C} (u : T ⟶ R ⊗ S) {M N P : C} (μ : M ⊗ N ⟶ P)
 
 /-- **The cup product of singular cochains on a simplex**: for cochains `φ` of degree `p` and `ψ`

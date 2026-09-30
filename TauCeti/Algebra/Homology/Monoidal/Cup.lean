@@ -258,8 +258,8 @@ end Tensor
 section Cochain
 
 variable [Preadditive C] [HasFiniteBiproducts C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {A B E : ChainComplex C ℕ} {M N P : C} {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
-  (D : E ⟶ A ⊗ B) (μ : M ⊗ N ⟶ P)
+  {A B E : ChainComplex C ℕ} {M N P : C} {k : Type*} [CommSemiring k] [Linear k C]
+  [MonoidalLinear k C] (D : E ⟶ A ⊗ B) (μ : M ⊗ N ⟶ P)
 
 variable (k) in
 /-- **The cup product of cochains** along the diagonal `D : E ⟶ A ⊗ B`: for `p + q = n`, the
