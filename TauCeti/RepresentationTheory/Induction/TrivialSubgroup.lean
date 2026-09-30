@@ -300,10 +300,17 @@ theorem indBotCounit_hom_mk (A : Rep k G) (g : G) (a : A) :
       A.ρ g⁻¹ a := by
   simp [indBotCounit, resBotIsoTrivial]
 
+/-- The generator map `a ↦ ⟦1 ⊗ₜ a⟧` is a `k`-linear section of the projection from the
+representation induced from the trivial subgroup onto a representation. -/
+theorem rightInverse_indBotCounit (A : Rep k G) :
+    Function.RightInverse
+      (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) A.V) 1)
+      (indBotCounit A).hom := fun a ↦ by
+  rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
+
 /-- The projection from the induced representation is an epimorphism. -/
 instance indBotCounit_epi (A : Rep k G) : Epi (indBotCounit A) :=
-  (epi_iff_surjective _).2 fun a ↦ ⟨IndV.mk _ _ 1 a, by rw [indBotCounit_hom_mk, inv_one, map_one,
-    Module.End.one_apply]⟩
+  (epi_iff_surjective _).2 (rightInverse_indBotCounit A).surjective
 
 /-- The map of induced representations associated to a morphism of representations. -/
 def indBotMap {A B : Rep k G} (f : A ⟶ B) :
