@@ -54,16 +54,22 @@ def rightHandedTrefoilArcPair : PerfectMatching (Fin 3 × Fin 4) :=
       Equiv.swap (1, 2) (2, 1) * Equiv.swap (2, 3) (0, 0))
     (by decide) (by decide)
 
-/-- The six arcs paired by `rightHandedTrefoilArcPair`, with one orientation chosen for each
-unordered pair. -/
+/-- The six arcs paired by `rightHandedTrefoilArcPair`, stated in both directions so that the
+partner of each of the twelve crossing slots is available to `simp`. -/
 @[simp]
 theorem rightHandedTrefoilArcPair_pairs :
     rightHandedTrefoilArcPair.val (0, 2) = (1, 1) ∧
+      rightHandedTrefoilArcPair.val (1, 1) = (0, 2) ∧
       rightHandedTrefoilArcPair.val (1, 3) = (2, 0) ∧
+      rightHandedTrefoilArcPair.val (2, 0) = (1, 3) ∧
       rightHandedTrefoilArcPair.val (2, 2) = (0, 1) ∧
+      rightHandedTrefoilArcPair.val (0, 1) = (2, 2) ∧
       rightHandedTrefoilArcPair.val (0, 3) = (1, 0) ∧
+      rightHandedTrefoilArcPair.val (1, 0) = (0, 3) ∧
       rightHandedTrefoilArcPair.val (1, 2) = (2, 1) ∧
-      rightHandedTrefoilArcPair.val (2, 3) = (0, 0) := by
+      rightHandedTrefoilArcPair.val (2, 1) = (1, 2) ∧
+      rightHandedTrefoilArcPair.val (2, 3) = (0, 0) ∧
+      rightHandedTrefoilArcPair.val (0, 0) = (2, 3) := by
   simp [rightHandedTrefoilArcPair, PerfectMatching.val_mk, Equiv.swap_apply_def]
 
 /-- The slot matching transported to the twelve finite half-edge labels used by `PDCode`. -/
