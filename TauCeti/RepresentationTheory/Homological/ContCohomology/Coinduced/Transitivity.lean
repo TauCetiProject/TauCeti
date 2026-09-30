@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
@@ -183,15 +184,6 @@ theorem transIso_inv_apply (φ : DiscreteCoind G W A) :
 
 /-! ### The trivial subgroup -/
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] in
-variable (U) in
-/-- Two actions of trivial subgroups on the same module agree: a trivial group acts trivially. This
-discharges the agreement hypothesis of `TauCeti.DiscreteCoind.transEquiv` at `V = ⊥` and `W = ⊥`. -/
-theorem bot_smul_eq_bot_smul [DistribMulAction (⊥ : Subgroup U) A]
-    [DistribMulAction (⊥ : Subgroup G) A] (v : (⊥ : Subgroup U)) (w : (⊥ : Subgroup G)) (a : A)
-    (_ : ((v : U) : G) = (w : G)) : w • a = v • a := by
-  rw [Subsingleton.elim v 1, Subsingleton.elim w 1, one_smul, one_smul]
-
 variable (U A) in
 include hU in
 /-- **Transitivity of coinduction for the trivial subgroup**:
@@ -203,7 +195,7 @@ noncomputable def transIsoBot [DistribMulAction (⊥ : Subgroup U) A]
     [DistribMulAction (⊥ : Subgroup G) A] :
     ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U (⊥ : Subgroup U) A)) ≅
       ofDiscreteModule ℤ G (DiscreteCoind G (⊥ : Subgroup G) A) :=
-  transIso (Subgroup.map_bot U.subtype) (bot_smul_eq_bot_smul U) hU
+  transIso (Subgroup.map_bot U.subtype) (TauCeti.bot_smul_eq_bot_smul (U := U)) hU
 
 -- The carrier of `ofDiscreteModule ℤ G M` is `M` by definition, but only the `show` makes the
 -- coinduced function applicable to a group element.
