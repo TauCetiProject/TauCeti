@@ -32,34 +32,6 @@ namespace TransportMatrix
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   {μ : PMF ι} {ν : PMF κ}
 
-omit [Fintype ι] in
-open Classical in
-private theorem sum_single_row (a : ι) (b : κ) (i : ι) :
-    ∑ j, Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, b) (1 : ℝ) (i, j) =
-      (open scoped Classical in if i = a then 1 else 0) := by
-  classical
-  by_cases h : i = a
-  · subst i
-    simp [Pi.single_apply, Prod.mk.injEq]
-  · simp [Prod.mk.injEq, h]
-
-omit [Fintype κ] in
-open Classical in
-private theorem sum_single_col (a : ι) (b : κ) (j : κ) :
-    ∑ i, Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, b) (1 : ℝ) (i, j) =
-      (open scoped Classical in if j = b then 1 else 0) := by
-  classical
-  by_cases h : j = b
-  · subst j
-    simp [Pi.single_apply, Prod.mk.injEq]
-  · simp [Prod.mk.injEq, h]
-
-open Classical in
-private theorem sum_cost_single (c : ι × κ → ℝ) (a : ι) (b : κ) :
-    ∑ q, c q * Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, b) (1 : ℝ) q = c (a, b) := by
-  classical
-  simp [Pi.single_apply]
-
 /-- Transfer the smaller crossing mass to the two uncrossed cells. The resulting plan has the
 same marginals, and the formula specifies every entry of the four-cell update. This also applies
 when the chosen rows or columns coincide; in that case the update cancels. -/
@@ -98,8 +70,8 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
         ∑ j, g (i, j) = ∑ j, f (i, j) + δ *
             ((if i = i₁ then 1 else 0) + (if i = i₂ then 1 else 0) -
               (if i = i₁ then 1 else 0) - (if i = i₂ then 1 else 0)) := by
-                simp only [g, Finset.sum_add_distrib, ← Finset.mul_sum,
-                  Finset.sum_sub_distrib, sum_single_row]
+                simp [g, Finset.sum_add_distrib, ← Finset.mul_sum,
+                  Finset.sum_sub_distrib, Pi.single_apply, Prod.mk.injEq, ite_and]
         _ = ∑ j, f (i, j) := by ring
         _ = (μ i).toReal := A.sum_toRealFun_row i
     · intro j
@@ -107,8 +79,8 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
         ∑ i, g (i, j) = ∑ i, f (i, j) + δ *
             ((if j = j₁ then 1 else 0) + (if j = j₂ then 1 else 0) -
               (if j = j₂ then 1 else 0) - (if j = j₁ then 1 else 0)) := by
-                simp only [g, Finset.sum_add_distrib, ← Finset.mul_sum,
-                  Finset.sum_sub_distrib, sum_single_col]
+                simp [g, Finset.sum_add_distrib, ← Finset.mul_sum,
+                  Finset.sum_sub_distrib, Pi.single_apply, Prod.mk.injEq, ite_and]
         _ = ∑ i, f (i, j) := by ring
         _ = (ν j).toReal := A.sum_toRealFun_col j
   refine ⟨ofRealFun hg, δ, hδ0, rfl, ?_⟩
@@ -156,8 +128,8 @@ theorem exists_uncross_cost_le (A : TransportMatrix μ ν) (c : ι × κ → ℝ
               intro q _
               ring
       _ = _ := by
-        simp only [mul_add, mul_sub, Finset.sum_add_distrib,
-          Finset.sum_sub_distrib, sum_cost_single]
+        simp [mul_add, mul_sub, Finset.sum_add_distrib,
+          Finset.sum_sub_distrib, Pi.single_apply]
   have hcost_le : B.cost c ≤ A.cost c := by
     rw [hcost]
     have hcross : c (i₁, j₁) + c (i₂, j₂) - c (i₁, j₂) - c (i₂, j₁) ≤ 0 := by
