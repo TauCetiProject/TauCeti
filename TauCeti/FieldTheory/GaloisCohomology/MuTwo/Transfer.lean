@@ -26,10 +26,11 @@ dictionary `TauCeti.mu2EquivZMod2`; the one input specific to `μ₂` is that th
 and of `L` agree along the identification of separable closures
 (`TauCeti.mu2EquivZMod2_kummerCoeffMap`), because that identification sends `-1` to `-1`.
 
-Restriction is computed on the explicit mod-two Kummer cocycle `g ↦ [g √a ≠ √a]`, whose pullback
-along `G_L → G_K` is the cocycle of the transported square root. Corestriction is the norm square
-`TauCeti.kummerCor_kummerMap` of the Kummer isomorphism, carried to `𝔽₂` coefficients by the
-naturality of corestriction in the coefficients,
+Restriction is the restriction square `TauCeti.kummerRes_kummerCocycleClass` of the explicit Kummer
+cocycle classes, and corestriction is the norm square `TauCeti.kummerCor_kummerMap` of the Kummer
+isomorphism. Both are carried to `𝔽₂` coefficients by commuting squares of compatible pairs,
+`TauCeti.ContCohomology.explicitMap1_explicitMap1_of_comp_eq`, whose coefficient sides are the
+agreement of the two dictionaries; corestriction also uses its naturality in the coefficients,
 `TauCeti.ContCohomology.explicitCor1_explicitMap1_id`.
 
 ## Main results
@@ -87,6 +88,26 @@ theorem mu2EquivZMod2_kummerCoeffMapSymm (y : KummerCoeff L 2) :
     mu2EquivZMod2 K (kummerCoeffMapSymm K 2 L σ y) = mu2EquivZMod2 L y := by
   rw [← mu2EquivZMod2_kummerCoeffMap K L σ, kummerCoeffMap_kummerCoeffMapSymm]
 
+/-- **The coefficient dictionaries along `L/K`**: reading a value of `μ₂(Kˢ)` in `𝔽₂` and carrying
+it to the trivial `𝔽₂` object of `G_L` is carrying it to `μ₂(Lˢ)` by `TauCeti.kummerCoeffMap` and
+reading it there. -/
+private theorem comp_kummerCoeffEquiv_eq_comp_kummerCoeffMap :
+    ((trivialF2Equiv (AbsoluteGaloisGroup K)).trans
+        (trivialF2Equiv (AbsoluteGaloisGroup L)).symm).toAddMonoidHom.comp
+        (kummerCoeffEquiv K).toAddMonoidHom =
+      (kummerCoeffEquiv L).toAddMonoidHom.comp (kummerCoeffMap K 2 L σ) :=
+  AddMonoidHom.ext fun x => (trivialF2Equiv _).injective (by simp)
+
+/-- The coefficient dictionaries along `L/K` in the other direction: reading a value of `μ₂(Lˢ)`
+in `𝔽₂` and carrying it to the trivial `𝔽₂` object of `G_K` is carrying it to `μ₂(Kˢ)` by
+`TauCeti.kummerCoeffMapSymm` and reading it there. -/
+private theorem comp_kummerCoeffEquiv_eq_comp_kummerCoeffMapSymm :
+    ((trivialF2Equiv (AbsoluteGaloisGroup L)).trans
+        (trivialF2Equiv (AbsoluteGaloisGroup K)).symm).toAddMonoidHom.comp
+        (kummerCoeffEquiv L).toAddMonoidHom =
+      (kummerCoeffEquiv K).toAddMonoidHom.comp (kummerCoeffMapSymm K 2 L σ) :=
+  AddMonoidHom.ext fun y => (trivialF2Equiv _).injective (by simp)
+
 omit [Invertible (2 : L)] in
 /-- The explicit mod-two Kummer class is the generic Kummer cocycle class pushed along the
 coefficient dictionary `μ₂ ≃ 𝔽₂`, written as a compatible-pair pullback along the identity so
@@ -124,15 +145,30 @@ theorem galoisRes_kummerClass (a : Kˣ) :
       (fun m => by simp),
     ConcreteCategory.comp_apply, explicitH1AddEquivContinuousCohomology_map]
   congr 2
-  rw [kummerCocycleModTwoClass_def, kummerCocycleModTwoClass_def, explicitMap1_mk]
-  congr 1
-  refine Subtype.ext (funext fun h => (trivialF2Equiv _).injective ?_)
-  rw [cocyclesMap1_apply, kummerCocycleModTwo_apply, AddEquiv.coe_toAddMonoidHom,
-    AddEquiv.trans_apply, AddEquiv.apply_symm_apply, kummerCocycleModTwo_apply]
-  congr 1
-  refine propext ?_
-  rw [Units.ext_iff, Units.ext_iff]
-  simp [galoisSubgroupEquiv_apply, RingEquiv.eq_symm_apply]
+  -- The generic restriction square, with the restriction to `σ(L)`'s fixing subgroup and the
+  -- transport to `G_L` combined into one compatible pair.
+  have hres : explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K 2) (AbsoluteGaloisGroup L)
+      (KummerCoeff L 2)
+      ((ContinuousMonoidHom.subgroupSubtype σ.fieldRange.fixingSubgroup).comp
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup))
+      (kummerCoeffMap K 2 L σ) continuous_of_discreteTopology
+      (fun g x => kummerCoeffMap_smul K 2 L σ g x) (kummerCocycleClass hα) =
+        kummerCocycleClass hβ := by
+    have h := congrArg Multiplicative.toAdd (kummerRes_kummerCocycleClass K 2 L σ hα)
+    rw [toAdd_kummerRes, toAdd_ofAdd, toAdd_ofAdd, explicitRes1_eq_explicitMap1] at h
+    rw [← h, ← AddMonoidHom.comp_apply, ← explicitMap1_comp]
+    · exact DFunLike.congr_fun (explicitMap1_congr_of_eq _ _ _ _ _ _ _ _ rfl
+        (AddMonoidHom.comp_id _).symm) _
+    · exact fun g x => kummerCoeffMap_smul K 2 L σ g x
+  rw [kummerCocycleModTwoClass_eq_explicitMap1 K hα, kummerCocycleModTwoClass_eq_explicitMap1 L hβ]
+  refine Eq.trans ?_ (congrArg (explicitMap1 _ _ _ _ (ContinuousMonoidHom.id _) _ _ _) hres)
+  exact explicitMap1_explicitMap1_of_comp_eq
+    (hφ := by
+      exact ContinuousMonoidHom.ext fun g => AlgEquiv.ext fun y =>
+        (galoisSubgroupEquiv_apply K L σ g y).trans
+          (absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g y).symm)
+    (hqf := by exact comp_kummerCoeffEquiv_eq_comp_kummerCoeffMap K L σ) ..
 
 omit [Invertible (2 : K)] in
 /-- The norm square of the Kummer isomorphism on explicit cocycle classes: the Kummer class of
@@ -180,13 +216,9 @@ private theorem explicitCor1_kummerCocycleModTwoClass {b : Lˣ} {β : (Separable
   rw [kummerCocycleModTwoClass_eq_explicitMap1 K hγ, kummerCocycleClass_norm K L σ hβ hγ,
     ← explicitCor1_explicitMap1_id _ _ _ _ _ continuous_of_discreteTopology hcK]
   refine congrArg (explicitCor1 _ _ _ _) ?_
-  simp only [kummerCocycleModTwoClass_def, kummerCocycleClass_def, H1pi,
-    QuotientAddGroup.mk'_apply, explicitMap1_mk]
-  refine congrArg _ (Subtype.ext (funext fun u => (trivialF2Equiv _).injective ?_))
-  simp only [cocyclesMap1_apply, kummerCocycleModTwo_apply, AddEquiv.toAddMonoidHom_eq_coe,
-    AddMonoidHom.coe_ofClass, AddEquiv.trans_apply, AddEquiv.apply_symm_apply,
-    kummerCoeffEquiv_apply, mu2EquivZMod2_kummerCoeffMapSymm, mu2EquivZMod2_kummerCocycle,
-    ContinuousMonoidHom.coe_id, id_eq]
+  rw [kummerCocycleModTwoClass_eq_explicitMap1 L hβ]
+  exact explicitMap1_explicitMap1_of_comp_eq (hφ := by exact ContinuousMonoidHom.ext fun _ => rfl)
+    (hqf := by exact comp_kummerCoeffEquiv_eq_comp_kummerCoeffMapSymm K L σ) ..
 
 /-- Corestriction along `L/K` of the Kummer class of `b`, computed at any open subgroup `U` of
 `G_K` presented by an isomorphism `e : G_L ≃ₜ* U` that agrees with the one of `σ`. Quantifying
