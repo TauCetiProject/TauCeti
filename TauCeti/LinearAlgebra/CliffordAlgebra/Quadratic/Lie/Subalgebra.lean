@@ -237,6 +237,7 @@ theorem quadraticLieSubalgebra_le_filtration_two :
 /-- **The quadratic elements generate the even subalgebra.** A product `ι a * ι b` of two
 generators is its Clifford bivector plus a scalar (`CliffordAlgebra.ι_mul_ι_eq_bivector_add`), and
 those products generate the even part. -/
+@[simp]
 theorem adjoin_quadraticLieSubalgebra :
     Algebra.adjoin R (quadraticLieSubalgebra Q : Set (CliffordAlgebra Q)) = even Q := by
   refine le_antisymm (Algebra.adjoin_le fun x hx => quadraticLieSubalgebra_le_even Q hx) ?_
@@ -254,6 +255,7 @@ theorem adjoin_quadraticLieSubalgebra :
 /-- **The quadratic elements generate the even subalgebra from within**: regarded as elements of
 `even Q`, they generate all of it. This is the form in which a representation of the even
 subalgebra is determined by its values on the quadratic elements. -/
+@[simp]
 theorem adjoin_coe_preimage_quadraticLieSubalgebra_eq_top :
     Algebra.adjoin R (((↑) : even Q → CliffordAlgebra Q) ⁻¹' quadraticLieSubalgebra Q) = ⊤ := by
   have := Algebra.adjoin_adjoin_coe_preimage (R := R)

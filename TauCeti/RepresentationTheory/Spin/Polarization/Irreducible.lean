@@ -106,6 +106,7 @@ variable (z : P.line) (hz : Q (z : V) = 1)
 /-- **The type-`B` spin operators generate every endomorphism of the spinor module.** In odd
 dimension the even Clifford subalgebra acts onto `Module.End K S`, and the quadratic elements
 generate it. -/
+@[simp]
 theorem adjoin_range_typeBSpinLieRep_eq_top :
     Algebra.adjoin K (Set.range (P.typeBSpinLieRep b z hz)) = ⊤ := by
   have := Module.Finite.of_basis (P.typeBBasis b z hz)
@@ -133,6 +134,7 @@ end TypeB
 section TypeD
 
 /-- **The type-`D` half-spin operators generate every endomorphism of `S⁺`.** -/
+@[simp]
 theorem adjoin_range_typeDSpinPlusLieRep_eq_top (hline : P.line = ⊥) :
     Algebra.adjoin K (Set.range (P.typeDSpinPlusLieRep b hline)) = ⊤ := by
   have := Module.Finite.of_basis (P.typeDBasis b hline)
@@ -141,6 +143,7 @@ theorem adjoin_range_typeDSpinPlusLieRep_eq_top (hline : P.line = ⊥) :
       rw [coe_typeDSpinPlusLieRep_apply, typeDSpinLieRep_apply, coe_spinPlusAction_apply]
 
 /-- **The type-`D` half-spin operators generate every endomorphism of `S⁻`.** -/
+@[simp]
 theorem adjoin_range_typeDSpinMinusLieRep_eq_top (hline : P.line = ⊥) :
     Algebra.adjoin K (Set.range (P.typeDSpinMinusLieRep b hline)) = ⊤ := by
   have := Module.Finite.of_basis (P.typeDBasis b hline)
