@@ -40,8 +40,6 @@ special case where each radicand is prime.
 * `TauCeti.Multiquadratic.finrank_adjoin_range_of_coprime_squarefree`:
   `[ℚ(√d₁, …, √dₙ) : ℚ] = 2^|ι|` for pairwise coprime squarefree non-unit integer radicands, the
   squarefree-integer corollary of `finrank_adjoin_range`.
-* `TauCeti.Multiquadratic.finrank_adjoin_simple_of_squarefree`: `[ℚ(√d) : ℚ] = 2` for a
-  squarefree integer `d ≠ 1`, the one-radicand case, where the unit radicand `-1` is allowed.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_six_thirtyfive`: `[ℚ(√6, √35) : ℚ] = 4`, a worked
   example with composite radicands, beyond the reach of the distinct-primes corollary.
 -/
@@ -89,31 +87,6 @@ theorem finrank_adjoin_range_of_coprime_squarefree {ι : Type*} [Finite ι] {L :
     Module.finrank ℚ (IntermediateField.adjoin ℚ (Set.range root)) = 2 ^ Nat.card ι :=
   finrank_adjoin_range (d := fun i => (d i : ℚ)) hroot
     (not_isSquare_prod_of_coprime_squarefree_rat d hcop hsf hnu)
-
-/-- **Degree of a quadratic field with a squarefree integer radicand.** If `d` is a squarefree
-integer other than `1` and `x` is a square root of `d` in a field `L` over `ℚ`, then
-`[ℚ(√d) : ℚ] = 2`. This is the one-radicand case of the degree theorem `finrank_adjoin_range`,
-where square-class independence reduces to `d` not being a rational square.
-
-The unit radicand `-1` is allowed, so this covers `[ℚ(i) : ℚ] = 2`. Barring units, as
-`finrank_adjoin_range_of_coprime_squarefree` does, is what a family of several radicands needs to
-keep its subset products off the squares — two coprime radicands both equal to `-1` multiply to
-`1` — while a single radicand need only differ from `1`. -/
-theorem finrank_adjoin_simple_of_squarefree {L : Type*} [Field L] [Algebra ℚ L] {d : ℤ}
-    (hsf : Squarefree d) (hne : d ≠ 1) {x : L} (hx : x ^ 2 = algebraMap ℚ L d) :
-    Module.finrank ℚ (IntermediateField.adjoin ℚ {x}) = 2 := by
-  -- Over a one-element index type the only nonempty subset product of the radicands is `d` itself.
-  have hindep : ∀ S : Finset (Fin 1), S.Nonempty → ¬ IsSquare (∏ _i ∈ S, (d : ℚ)) := by
-    intro S hS
-    have hle : S.card ≤ 1 := by simpa using S.card_le_univ
-    have hcard : S.card = 1 := by have := hS.card_pos; omega
-    rw [Finset.prod_const, hcard, pow_one]
-    exact not_isSquare_intCast_of_squarefree_of_ne_one hsf hne
-  have h := finrank_adjoin_range (K := ℚ) (L := L) (d := fun _ : Fin 1 => (d : ℚ))
-    (root := fun _ : Fin 1 => x) (fun _ => hx) hindep
-  have hset : (Set.range fun _ : Fin 1 => x) = {x} := by simp
-  rw [hset] at h
-  simpa using h
 
 /-- **Worked example: `[ℚ(√6, √35) : ℚ] = 4`.** The radicands `6 = 2·3` and `35 = 5·7` are
 composite, so this lies beyond the distinct-primes corollary `finrank_adjoin_sqrt_primes`; it is
