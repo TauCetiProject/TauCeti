@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Summand
+public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # The Koszul braiding on cochain complexes of modules
@@ -222,29 +223,6 @@ lemma koszulBraidingHom_naturality_right (X : CochainComplex (ModuleCat.{v} R) �
   simp only [curriedTensor_map_app, curriedTensor_obj_map]
   rw [BraidedCategory.braiding_naturality_right_assoc]
 
-/- Mathlib's `MonoidalPreadditive` gives additivity of the whiskerings but no lemma for a negated
-or `ℤˣ`-scaled morphism; the Koszul sign is a `ℤˣ`, so these four bridges are needed to move it
-through a whiskering. -/
-private lemma neg_whiskerRight {A B : ModuleCat.{v} R} (f : A ⟶ B) (W : ModuleCat.{v} R) :
-    (-f) ▷ W = -(f ▷ W) :=
-  eq_neg_of_add_eq_zero_left (by
-    rw [← MonoidalPreadditive.add_whiskerRight, neg_add_cancel,
-      MonoidalPreadditive.zero_whiskerRight])
-
-private lemma whiskerLeft_neg (W : ModuleCat.{v} R) {A B : ModuleCat.{v} R} (f : A ⟶ B) :
-    W ◁ (-f) = -(W ◁ f) :=
-  eq_neg_of_add_eq_zero_left (by
-    rw [← MonoidalPreadditive.whiskerLeft_add, neg_add_cancel,
-      MonoidalPreadditive.whiskerLeft_zero])
-
-private lemma units_smul_whiskerRight (u : ℤˣ) {A B : ModuleCat.{v} R} (f : A ⟶ B)
-    (W : ModuleCat.{v} R) : (u • f) ▷ W = u • (f ▷ W) := by
-  obtain h | h := Int.units_eq_one_or u <;> subst h <;> simp [neg_whiskerRight]
-
-private lemma whiskerLeft_units_smul (W : ModuleCat.{v} R) (u : ℤˣ) {A B : ModuleCat.{v} R}
-    (f : A ⟶ B) : W ◁ (u • f) = u • (W ◁ f) := by
-  obtain h | h := Int.units_eq_one_or u <;> subst h <;> simp [whiskerLeft_neg]
-
 /- Composing a left whiskering into the braiding summand: the braiding of `ModuleCat R` is natural,
 so a map into the second factor passes through it and becomes a right whiskering.  Stating this
 with a general `g` avoids rewriting under the two different spellings (`⊗` and
@@ -358,7 +336,8 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, Category.id_comp]
   simp only [curriedTensor_map_app]
   rw [← MonoidalCategory.comp_whiskerRight_assoc, ι_koszulBraidingHom, koszulBraidingSummand,
-    units_smul_whiskerRight, MonoidalCategory.comp_whiskerRight,
+    Units.smul_def, ← tensorHom_id, zsmul_tensorHom, tensorHom_id, ← Units.smul_def,
+    MonoidalCategory.comp_whiskerRight,
     Linear.units_smul_comp, Category.assoc,
     HomologicalComplex.ι_ι_associator_hom_assoc,
     HomologicalComplex.whiskerLeft_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap]
@@ -366,7 +345,9 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     Category.id_comp]
   simp only [curriedTensor_obj_map]
   rw [← MonoidalCategory.whiskerLeft_comp_assoc, ι_koszulBraidingHom, koszulBraidingSummand,
-    whiskerLeft_units_smul, MonoidalCategory.whiskerLeft_comp,
+    Units.smul_def (p * r).negOnePow, ← id_tensorHom, tensorHom_zsmul, id_tensorHom,
+    ← Units.smul_def,
+    MonoidalCategory.whiskerLeft_comp,
     Linear.units_smul_comp, Category.assoc,
     ← ι₂₃_eq R Y Z X q r p (p + r) j (by omega) (by omega),
     Linear.comp_units_smul, Linear.comp_units_smul, smul_smul, ← Int.negOnePow_add,

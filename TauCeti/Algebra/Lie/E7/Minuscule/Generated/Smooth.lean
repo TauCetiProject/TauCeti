@@ -35,8 +35,7 @@ variable (k : Type u) [Field k]
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=
-    isReduced_of_injective (AdditiveGroup.coordinateAlgEquiv k).toRingHom
-      (AdditiveGroup.coordinateAlgEquiv k).injective
+    AdditiveGroup.isReduced_coordinateHopfAlgebra k
   let : IsReduced (DiagonalizableGroup.coordinateRing k
       (SplitTorus.characterGroup (Fin 7))).obj := inferInstance
   intro j

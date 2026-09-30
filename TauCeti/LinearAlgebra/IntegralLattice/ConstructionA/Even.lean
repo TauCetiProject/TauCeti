@@ -28,9 +28,10 @@ divisible by `2m`. For odd `m` and a nonempty coordinate type the lattice is nev
 it always contains a coordinate vector of norm `m`.
 
 At `m = 2` the quadratic value is a quarter of the Hamming weight, so evenness of the lattice is
-divisibility of all codeword weights by four; for a doubly-even Euclidean self-dual binary code
-the unimodularity criterion and the positive definiteness of the normalized dot product then say
-that the lattice is definite, even, and unimodular. More generally, over `ℤ/2^r` with `r ≥ 1` a
+divisibility of all codeword weights by four. With the unimodularity criterion, a self-orthogonal
+binary code therefore has an even unimodular Construction A lattice exactly when it is a Type II
+code, doubly even and Euclidean self-dual; like every Construction A lattice it is also positive
+definite (`isPosDef_integralLattice`). More generally, over `ℤ/2^r` with `r ≥ 1` a
 self-orthogonal code has an even unimodular Construction A lattice exactly when it is a Type II
 code: self-dual with every Euclidean weight divisible by `2^(r+1)`.
 

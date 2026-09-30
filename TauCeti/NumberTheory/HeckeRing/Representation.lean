@@ -34,7 +34,7 @@ The second statement is what lets the Hecke sum descend to the `Γ₂`-coinvaria
 `q` is the projection onto the `Γ₁`-coinvariants: a double coset then induces a map
 `V_{Γ₂} → V_{Γ₁}`, the Hecke operator on coinvariants. That descent is carried out where the
 coinvariants are, for the modular symbols in
-`TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke`; here `q` is an arbitrary
+`TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Basic`; here `q` is an arbitrary
 `Γ₁`-invariant map so that the two theorems apply to coinvariants formed over any group whose
 image in `G` is `Γ₁`.
 

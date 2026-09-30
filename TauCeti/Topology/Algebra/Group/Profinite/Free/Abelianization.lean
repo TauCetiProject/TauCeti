@@ -48,8 +48,13 @@ of `R`; see `TauCeti.Topology.Algebra.Group.Profinite.Presentation.Abelianizatio
   the isomorphism is induced by `exponentSum`, and its inverse is `u ↦ ∏ x, x_x ^ (u x)`.
 * `TauCeti.freeProP.exponentSum_surjective`, `TauCeti.freeProP.exponentSum_eq_one_iff`: the
   exponent-sum map is surjective, and its kernel is the closed commutator subgroup.
+* `TauCeti.freeProP.toAdd_exponentSum_eq_single_iff`: the exponent vector of `y` is `q e_{x₀}`
+  exactly when `y` is `x₀ ^ q` times an element of the closed commutator subgroup.
 * `TauCeti.freeProP.dvd_exponentSum_of_mem_proPFrattini`: the exponent sums of an element of the
   pro-`p` Frattini subgroup are divisible by `p`.
+* `TauCeti.freeProP.apply_eq_prod_padicPow_exponentSum`: a continuous homomorphism to a
+  commutative pro-`p` group is computed by the exponent sums, `ψ y = ∏ x, ψ (x_x) ^ (u x)` for
+  `u = exponentSum y`.
 
 ## References
 
@@ -82,6 +87,22 @@ noncomputable def exponentSum : freeProP p X →ₜ* Multiplicative (X → ℤ_[
 theorem exponentSum_of [DecidableEq X] (x : X) :
     exponentSum p X (of x) = ofAdd (Pi.single x 1) :=
   (lift_of _ _ x).trans (by congr; exact Subsingleton.elim _ _)
+
+/-- The exponent vector of the power `x_i ^ n` of a generator is `n` at `i` and `0` elsewhere. -/
+theorem toAdd_exponentSum_of_pow_apply [DecidableEq X] (i : X) (n : ℕ) (k : X) :
+    (exponentSum p X (of i ^ n)).toAdd k = if k = i then n else 0 := by
+  rw [map_pow, exponentSum_of, toAdd_pow, toAdd_ofAdd, Pi.smul_apply, Pi.single_apply]
+  split_ifs <;> simp
+
+/-- The exponent vector of the `p`-adic power `x ^ a` of the generator at `x` is `a e_x`. -/
+@[simp]
+theorem exponentSum_padicPow_of [DecidableEq X] (x : X) (a : ℤ_[p]) :
+    exponentSum p X ((isProP_freeProP p X).padicPow (of x) a) = ofAdd (Pi.single x a) := by
+  have h := (isProP_freeProP p X).map_padicPow (isProP_multiplicative_pi_padicInt p X)
+    (exponentSum p X : freeProP p X →* Multiplicative (X → ℤ_[p])) (exponentSum p X).continuous
+    (of x) a
+  rw [MonoidHom.coe_ofClass] at h
+  rw [h, exponentSum_of, IsProP.padicPow_ofAdd_pi, ← Pi.single_smul, smul_eq_mul, mul_one]
 
 /-- The exponent vector of the `i`-th `ℕ`-indexed generator of `freeProP p (Fin n)` is the
 coordinate vector at `i`; out of range it is `0`. -/
@@ -288,6 +309,43 @@ theorem exponentSum_eq_one_iff (y : freeProP p X) :
     exponentSum p X y = 1 ↔ y ∈ (commutator (freeProP p X)).topologicalClosure := by
   rw [← abelianizationEquiv_mk, map_eq_one_iff _ (abelianizationEquiv p X).injective,
     QuotientGroup.eq_one_iff]
+
+/-- **Exponent vector supported at one generator.** For `X` finite, the exponent vector of `y` is
+`q e_{x₀}` exactly when `(x₀ ^ q)⁻¹ · y` lies in the closed commutator subgroup, that is when `y`
+is `x₀ ^ q` times an element of the closed commutator subgroup of the free pro-`p` group. -/
+theorem toAdd_exponentSum_eq_single_iff [DecidableEq X] (y : freeProP p X) (x₀ : X) (q : ℤ_[p]) :
+    (exponentSum p X y).toAdd = Pi.single x₀ q ↔
+      ((isProP_freeProP p X).padicPow (of x₀) q)⁻¹ * y ∈
+        (commutator (freeProP p X)).topologicalClosure := by
+  rw [← exponentSum_eq_one_iff, map_mul, map_inv, exponentSum_padicPow_of, inv_mul_eq_one,
+    eq_comm]
+  exact Multiplicative.toAdd.eq_symm_apply.symm
+
+/-- **A continuous homomorphism from a free pro-`p` group of finite rank to a commutative pro-`p`
+group is computed by the exponent sums**: `ψ y = ∏ x, ψ (x_x) ^ (u x)` for `u = exponentSum y`,
+the powers being the `p`-adic powers of the target. -/
+theorem apply_eq_prod_padicPow_exponentSum [Fintype X] {A : Type*} [CommGroup A]
+    [TopologicalSpace A] [IsTopologicalGroup A] [CompactSpace A] [TotallyDisconnectedSpace A]
+    (hA : IsProP p A) (ψ : freeProP p X →ₜ* A) (y : freeProP p X) :
+    ψ y = ∏ x, hA.padicPow (ψ (of x)) ((exponentSum p X y).toAdd x) := by
+  have hF := (isProP_freeProP p X).topologicalAbelianization_self
+  -- the class of `y` in `F^{ab}` is the product of the `p`-adic powers of the generator classes
+  have h : (y : TopologicalAbelianization (freeProP p X)) =
+      ∏ x, hF.padicPow ((of x : freeProP p X) : TopologicalAbelianization (freeProP p X))
+        ((exponentSum p X y).toAdd x) := by
+    rw [← abelianizationEquiv_symm_ofAdd, ofAdd_toAdd, ← abelianizationEquiv_mk,
+      ContinuousMulEquiv.symm_apply_apply]
+  have h' := congrArg (TopologicalAbelianization.lift ψ) h
+  rw [TopologicalAbelianization.lift_mk, map_prod] at h'
+  rw [h']
+  refine Finset.prod_congr rfl fun x _ ↦ ?_
+  have hmap := hF.map_padicPow hA
+    (TopologicalAbelianization.lift ψ : TopologicalAbelianization (freeProP p X) →* A)
+    (TopologicalAbelianization.lift ψ).continuous
+    ((of x : freeProP p X) : TopologicalAbelianization (freeProP p X))
+    ((exponentSum p X y).toAdd x)
+  rw [MonoidHom.coe_ofClass] at hmap
+  rw [hmap, TopologicalAbelianization.lift_mk]
 
 end freeProP
 

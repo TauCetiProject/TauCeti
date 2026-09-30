@@ -38,6 +38,8 @@ complete Hausdorff targets.
   `locUniformSpace_congr` alone does not give — it identifies only the codomains — and it is what
   a statement about the maps *out of* `A⟨T/s⟩` needs before it can be carried between
   presentations. The maps out of it remain a further question.
+* `locUniformSpace_congr_pairOfDefinition` and `toCompletionLoc_heq_pairOfDefinition`: the same
+  two statements for two pairs of definition of `A` and one presentation `(T, s)`.
 * `isUniformAddGroup_locUniformSpace` and `isTopologicalRing_locUniformSpace`: the two companions
   of `locUniformSpace`. Since `locTopology` is not an instance, a statement about `A⟨T/s⟩` has to
   name its structures; these three declarations are what it names.
@@ -177,6 +179,23 @@ theorem locUniformSpace_congr [IsTopologicalRing A] (P : PairOfDefinition A) (T 
   congr 1
   exact proof_irrel_heq _ _
 
+/-- **`locUniformSpace` does not depend on the pair of definition.** Two pairs of definition for
+which `(T, s)` satisfies the standing hypothesis `HasDenominatorPower` give `Aₛ` the same
+uniformity. When `T` spans an open ideal, `hasDenominatorPower_of_isOpen_span` supplies that
+hypothesis for both pairs. This is the uniform counterpart of `locTopology_congr_pairOfDefinition`.
+
+Compare `locUniformSpace_congr`, which instead fixes the pair of definition and changes the
+presentation `(T, s)` to one with the same ring of definition. -/
+theorem locUniformSpace_congr_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
+    locUniformSpace P T s S hden = locUniformSpace P' T s S hden' :=
+  -- both are uniform additive group structures, so they agree once their topologies do; the
+  -- topologies sit in the instance argument of `𝓝 0`, hence `+instances`
+  (isUniformAddGroup_locUniformSpace P T s S hden).ext
+    (isUniformAddGroup_locUniformSpace P' T s S hden') <| by
+      simp +instances [locTopology_congr_pairOfDefinition P P' T s S hden hden']
+
 /-- `Aₛ` is a Huber ring for the topology `locUniformSpace` induces. The third companion of
 `locUniformSpace`, alongside the two above. A consumer working at the uniformity can reach the
 `locTopology`-stated form by transporting along `locUniformSpace_toTopologicalSpace`; this
@@ -251,6 +270,20 @@ theorem toCompletionLoc_heq [IsTopologicalRing A] (P : PairOfDefinition A) (T T'
     HEq (toCompletionLoc P T' s' S hden') (toCompletionLoc P T s S hden) :=
   (algebraMap A S).completionCoe_comp_heq
     (locUniformSpace_congr P T T' s s' S hden hden' h) _ _ _ _
+
+/-- **A change of pair of definition leaves the structure map alone.**
+`locUniformSpace_congr_pairOfDefinition` identifies the two completions; this identifies the two
+structure maps `A → A⟨T/s⟩` into them, which is what a statement about `A⟨T/s⟩` as an object
+under `A` needs before it can be carried between pairs of definition.
+
+As for `toCompletionLoc_heq`, the conclusion is `HEq` rather than `=` because the type
+`UniformSpace.Completion S` mentions the uniformity on `S`. -/
+theorem toCompletionLoc_heq_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
+    HEq (toCompletionLoc P T s S hden) (toCompletionLoc P' T s S hden') :=
+  (algebraMap A S).completionCoe_comp_heq
+    (locUniformSpace_congr_pairOfDefinition P P' T s S hden hden') _ _ _ _
 
 
 /-- The localisation pair `localization`, transported along `locUniformSpace_toTopologicalSpace`

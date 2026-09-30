@@ -55,9 +55,7 @@ private def isAffinoidModel : ObjectProperty PreAdicSpace.{u} := fun X ↦
   ∃ (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
     (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A)
     (hP : P.ringOfDefinition ≤ S.plus),
-    X = presentationLimitPreAdicSpace P S.plus
-      (fun _ ha ↦ mem_powerBoundedSubring.mp
-        (S.isRingOfIntegralElements.le_powerBoundedSubring ha)) hP
+    X = presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP
 
 /-- An object of `𝒱^pre` is affinoid when it is isomorphic to the presentation-limit pre-adic
 space of a Huber pair. The pair of definition is required to lie in the plus ring, as in the
@@ -76,8 +74,7 @@ theorem isAffinoid_iff (X : PreAdicSpace.{u}) : isAffinoid X ↔
       (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A)
       (hP : P.ringOfDefinition ≤ S.plus),
       Nonempty (X ≅ presentationLimitPreAdicSpace P S.plus
-        (fun _ ha ↦ mem_powerBoundedSubring.mp
-          (S.isRingOfIntegralElements.le_powerBoundedSubring ha)) hP) := by
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
   rw [isAffinoid, ObjectProperty.prop_isoClosure_iff]
   constructor
   · rintro ⟨Y, ⟨A, iA, tA, htA, hA, S, P, hP, hY⟩, ⟨e⟩⟩
@@ -90,8 +87,7 @@ theorem isAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
     [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] (S : Pair A)
     (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
     isAffinoid (presentationLimitPreAdicSpace P S.plus
-      (fun _ ha ↦ mem_powerBoundedSubring.mp
-        (S.isRingOfIntegralElements.le_powerBoundedSubring ha)) hP) := by
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
   rw [isAffinoid_iff]
   exact ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP,
     ⟨Iso.refl _⟩⟩
@@ -101,12 +97,9 @@ theorem spectralSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
     SpectralSpace X := by
   rw [isAffinoid_iff] at hX
   obtain ⟨A, iA, tA, htA, hA, S, P, hP, ⟨e⟩⟩ := hX
-  let hpower : ∀ ⦃a⦄, a ∈ S.plus → IsPowerBounded a := fun _ ha ↦
-    mem_powerBoundedSubring.mp (S.isRingOfIntegralElements.le_powerBoundedSubring ha)
   let h : X ≃ₜ spa S.plus :=
     (TopCat.homeoOfIso (forgetToTop.mapIso e)).trans <|
-      TopCat.homeoOfIso (eqToIso
-        (presentationLimitPreAdicSpace_carrier P S.plus hpower hP))
+      TopCat.homeoOfIso (eqToIso (presentationLimitPreAdicSpace_carrier P S.plus _ hP))
   let _ : CompactSpace X := h.symm.compactSpace
   exact h.isOpenEmbedding.spectralSpace
 
@@ -123,9 +116,7 @@ definition. -/
 noncomputable def ofPresentation {A : Type u} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] (S : Pair A) (P : PairOfDefinition A)
     (hP : P.ringOfDefinition ≤ S.plus) : AffinoidPreAdicSpace.{u} :=
-  ⟨presentationLimitPreAdicSpace P S.plus
-      (fun _ ha ↦ mem_powerBoundedSubring.mp
-        (S.isRingOfIntegralElements.le_powerBoundedSubring ha)) hP,
+  ⟨presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP,
     PreAdicSpace.isAffinoid_presentationLimitPreAdicSpace S P hP⟩
 
 /-- The underlying pre-adic space of the canonical affinoid object is the presentation-limit
@@ -135,8 +126,7 @@ theorem ofPresentation_obj {A : Type u} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] (S : Pair A) (P : PairOfDefinition A)
     (hP : P.ringOfDefinition ≤ S.plus) :
     (ofPresentation S P hP).obj = presentationLimitPreAdicSpace P S.plus
-      (fun _ ha ↦ mem_powerBoundedSubring.mp
-        (S.isRingOfIntegralElements.le_powerBoundedSubring ha)) hP :=
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP :=
   (rfl)
 
 /-- Affinoid pre-adic spaces have spectral underlying topological spaces. -/

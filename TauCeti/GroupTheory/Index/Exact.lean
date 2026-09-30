@@ -25,8 +25,14 @@ exact cohomology sequence takes once one of its terms vanishes, and it is what t
 additivity of an Euler characteristic along a short exact sequence of coefficients into a
 statement about orders.
 
+At a single node of an exact sequence `A₀ → A₁ → A₂` the same count gives a divisibility
+`|A₁| ∣ |A₀| * |A₂|`, with no injectivity or surjectivity hypothesis: `|A₁|` is the product of the
+orders of the two ranges, which divide `|A₀|` and `|A₂|`.
+
 ## Main results
 
+* `MonoidHom.card_dvd_card_mul_card_of_exact`: the order of the middle term of an exact sequence
+  `A₀ → A₁ → A₂` divides the product of the orders of the outer ones.
 * `MonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact`: the nine-term alternating
   identity `|A₀| * |A₂| * |A₄| * |A₆| * |A₈| = |A₁| * |A₃| * |A₅| * |A₇|`, the shape of a long exact
   cohomology sequence cut off by a vanishing `H³`.
@@ -40,6 +46,16 @@ namespace MonoidHom
 
 variable {A₀ A₁ A₂ A₃ A₄ A₅ A₆ A₇ A₈ : Type*} [Group A₀] [Group A₁] [Group A₂] [Group A₃]
   [Group A₄] [Group A₅] [Group A₆] [Group A₇] [Group A₈]
+
+/-- **The order of the middle term of an exact sequence.** For an exact sequence `A₀ → A₁ → A₂` of
+groups, `|A₁|` divides `|A₀| * |A₂|`. In particular `A₁` is finite as soon as `A₀` and `A₂` are. -/
+@[to_additive card_dvd_card_mul_card_of_exact /-- **The order of the middle term of an exact
+sequence.** For an exact sequence `A₀ → A₁ → A₂` of additive groups, `|A₁|` divides
+`|A₀| * |A₂|`. In particular `A₁` is finite as soon as `A₀` and `A₂` are. -/]
+theorem card_dvd_card_mul_card_of_exact (f₀ : A₀ →* A₁) (f₁ : A₁ →* A₂) (h : f₀.range = f₁.ker) :
+    Nat.card A₁ ∣ Nat.card A₀ * Nat.card A₂ := by
+  rw [← Subgroup.card_ker_mul_card_range f₁, ← h]
+  exact mul_dvd_mul (Subgroup.card_range_dvd f₀) (Subgroup.card_subgroup_dvd_card f₁.range)
 
 /-- **The alternating product of orders along a nine-term exact sequence.** For an exact sequence
 `1 → A₀ → A₁ → ⋯ → A₇ → A₈ → 1` of groups,

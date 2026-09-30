@@ -34,10 +34,16 @@ has a compatible sequence. Surjectivity of the realization maps is essential.
 * `PLowerCentralSeriesComparison.exists_continuousMulEquiv_preserving`: self-comparison
   data preserving marked elements and all finite character quotients give an automorphism
   preserving the marked elements and the character.
+* `TauCeti.IsProP.exists_continuousMulEquiv_apply_eq_of_forall_exists_surjective`: in a
+  topologically finitely generated pro-`p` group, if for every `k` a continuous surjective
+  endomorphism carries `r` to `w` modulo `λ_k`, then a continuous automorphism carries `r` to `w`.
+  The comparison data are the surjective endomorphisms of the finite quotients carrying the class
+  of `r` to the class of `w`.
 
-The last result applies to basis changes of a finite-rank free pro-`p` group with a marked
-relator. Constructing the finite nonempty sets of admissible basis changes is a separate
-hypothesis; the theorem does not construct the corrections used in a normal-form argument.
+The last two results apply to basis changes of a finite-rank free pro-`p` group with a marked
+relator. Constructing the finite nonempty sets of admissible basis changes, or the finite
+approximations, is a separate hypothesis; the theorems do not construct the corrections used in a
+normal-form argument.
 -/
 
 public section
@@ -177,5 +183,50 @@ theorem exists_continuousMulEquiv_preserving {ι K : Type*}
     exact hk (s k) g (e g) (hlevel k g).symm
 
 end PLowerCentralSeriesComparison
+
+section Limit
+
+variable {p G} [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **From finite approximations to an automorphism.** Let `G` be a topologically finitely
+generated pro-`p` group. If for every `k` some continuous surjective endomorphism `φ_k` of `G` has
+`φ_k r ≡ w mod λ_k(G)`, then a continuous automorphism of `G` carries `r` to `w`. -/
+theorem IsProP.exists_continuousMulEquiv_apply_eq_of_forall_exists_surjective (hG : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) (hp : p.Prime) (r w : G)
+    (h : ∀ k, ∃ φ : G →ₜ* G, Function.Surjective φ ∧ (φ r)⁻¹ * w ∈ pLowerCentralSeries p G k) :
+    ∃ e : G ≃ₜ* G, e r = w := by
+  have : ∀ k, DiscreteTopology (G ⧸ pLowerCentralSeries p G k) :=
+    fun k ↦ QuotientGroup.discreteTopology (hfg.isOpen_pLowerCentralSeries hp k)
+  -- The level-`k` comparison data: surjective endomorphisms of the finite group `G ⧸ λ_k`
+  -- carrying `r` to `w`; descent along the series bonds the levels.
+  let S (k : ℕ) : Type _ :=
+    {ψ : G ⧸ pLowerCentralSeries p G k →ₜ* G ⧸ pLowerCentralSeries p G k //
+      Function.Surjective ψ ∧ ψ r = w}
+  have : ∀ k, Finite (S k) := fun k ↦ by
+    have := hfg.finite_quotient_pLowerCentralSeries hp k
+    exact Finite.of_injective (fun s : S k ↦ ⇑s.1)
+      (DFunLike.coe_injective.comp Subtype.val_injective)
+  -- Each level is nonempty: a surjective endomorphism of `G` induces a surjection of `G ⧸ λ_k`.
+  have : ∀ k, Nonempty (S k) := fun k ↦ by
+    obtain ⟨φ, hsurj, hr⟩ := h k
+    have hle : pLowerCentralSeries p G k ≤ (pLowerCentralSeries p G k).comap φ.toMonoidHom :=
+      Subgroup.map_le_iff_le_comap.mp (φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous k)
+    refine ⟨⟨⟨QuotientGroup.map _ _ φ.toMonoidHom hle, continuous_of_discreteTopology⟩,
+      QuotientGroup.map_surjective_of_surjective _ _ _ (QuotientGroup.mk_surjective.comp hsurj) hle,
+      ?_⟩⟩
+    rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk]
+    exact QuotientGroup.eq.mpr hr
+  let C : PLowerCentralSeriesComparison p G G S :=
+    { map := fun _ s ↦ s.1
+      map_surjective := fun _ s ↦ s.2.1
+      bond := fun _ s ↦ ⟨s.1.pLowerCentralSeriesDesc, s.1.pLowerCentralSeriesDesc_surjective s.2.1,
+        by rw [ContinuousMonoidHom.pLowerCentralSeriesDesc_mk, s.2.2, QuotientGroup.mapOfLE_mk]⟩
+      commutes := fun _ s x ↦ (s.1.pLowerCentralSeriesDesc_mapOfLE x).symm }
+  obtain ⟨_, e, -, -, he, -⟩ := C.exists_continuousMulEquiv_preserving hG hfg hp
+    (fun _ : Unit ↦ r) (fun _ ↦ w) (1 : G →ₜ* G) 1 (fun _ s _ ↦ s.2.2)
+    (fun _ ↦ ⟨0, fun _ _ _ _ ↦ by simp⟩)
+  exact ⟨e, he ()⟩
+
+end Limit
 
 end TauCeti

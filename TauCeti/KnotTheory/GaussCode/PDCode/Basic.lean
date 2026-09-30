@@ -361,11 +361,11 @@ theorem toOrientedPDCode_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm 
       intro h
       rw [← (PDCode.crossingSlotEquiv n).apply_symm_apply h]
       rcases (PDCode.crossingSlotEquiv n).symm h with ⟨c, slot⟩
-      rw [toOrientedPDCode_crossing, OrientedPDCode.relabel_halfEdge]
+      rw [toOrientedPDCode_crossing, OrientedPDCode.relabel_toPDCode, PDCode.relabel_halfEdge]
       simp only [Equiv.equivCongr_apply_apply, Equiv.refl_apply,
         PDCode.crossingBlockPerm_symm_apply_crossingSlotEquiv, toOrientedPDCode_crossing,
         crossingVisit_relabel, crossingOutgoing_relabel, visitHalfEdgeEquiv]
-    · rw [OrientedPDCode.relabel_edgePair]
+    · rw [OrientedPDCode.relabel_toPDCode, PDCode.relabel_edgePair]
       simp [toOrientedPDCode, visitHalfEdgeEquiv]
     · simp [toOrientedPDCode]
     · funext c
@@ -390,7 +390,7 @@ theorem toOrientedPDCode_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n)
   rcases Int.units_eq_one_or (D.sign c) with hsign | hsign
   · rw [hsign]
     apply (OrientedPDCode.crossingSign_eq_one_iff _ _).2
-    rw [OrientedPDCode.crossing_apply, OrientedPDCode.crossing_apply,
+    rw [PDCode.crossing_apply, PDCode.crossing_apply,
       D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
       D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
       D.toOrientedPDCode_overPair]
@@ -398,7 +398,7 @@ theorem toOrientedPDCode_crossingSign (D : BasedOrientedGaussCode n) (c : Fin n)
     decide
   · rw [hsign]
     apply (OrientedPDCode.crossingSign_eq_neg_one_iff _ _).2
-    rw [OrientedPDCode.crossing_apply, OrientedPDCode.crossing_apply,
+    rw [PDCode.crossing_apply, PDCode.crossing_apply,
       D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
       D.toOrientedPDCode_crossing, D.toOrientedPDCode_orientation_halfEdge,
       D.toOrientedPDCode_overPair]
