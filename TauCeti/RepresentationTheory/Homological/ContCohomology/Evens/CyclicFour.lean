@@ -43,7 +43,7 @@ theorem cyclicFourEvenSubgroup_index : cyclicFourEvenSubgroup.toSubgroup.index =
 
 /-- The doubling map identifies the cyclic group of order two with the even subgroup of the
 cyclic group of order four. -/
-noncomputable def cyclicTwoEquivEven :
+noncomputable def cyclicTwoEquivCyclicFourEvenSubgroup :
     Multiplicative (ZMod 2) ≃* cyclicFourEvenSubgroup.toSubgroup :=
   (TauCeti.zmodFourExtension.inl.ofInjective TauCeti.zmodFourExtension.inl_injective).trans
     (MulEquiv.subgroupCongr TauCeti.zmodFourExtension.range_inl_eq_ker_rightHom)
@@ -51,21 +51,23 @@ noncomputable def cyclicTwoEquivEven :
 /-- The nontrivial character of the even subgroup of the cyclic group of order four. -/
 noncomputable def cyclicFourEvenCharacter :
     cyclicFourEvenSubgroup.toSubgroup →* Multiplicative (ZMod 2) :=
-  cyclicTwoEquivEven.symm.toMonoidHom
+  cyclicTwoEquivCyclicFourEvenSubgroup.symm.toMonoidHom
 
 /-- The character of the even subgroup sends the doubled element back to its original value. -/
-@[simp] theorem cyclicFourEvenCharacter_cyclicTwoEquivEven (x : Multiplicative (ZMod 2)) :
-    cyclicFourEvenCharacter (cyclicTwoEquivEven x) = x := by
+@[simp] theorem cyclicFourEvenCharacter_cyclicTwoEquivCyclicFourEvenSubgroup
+    (x : Multiplicative (ZMod 2)) :
+    cyclicFourEvenCharacter (cyclicTwoEquivCyclicFourEvenSubgroup x) = x := by
   simp [cyclicFourEvenCharacter]
 
 private noncomputable def cyclicFourInvolution : cyclicFourEvenSubgroup.toSubgroup :=
-  cyclicTwoEquivEven (Multiplicative.ofAdd 1)
+  cyclicTwoEquivCyclicFourEvenSubgroup (Multiplicative.ofAdd 1)
 
 private theorem cyclicFourInvolution_mul_self :
     (cyclicFourInvolution : Multiplicative (ZMod 4)) * cyclicFourInvolution = 1 := by
   have h : (Multiplicative.ofAdd (1 : ZMod 2)) * Multiplicative.ofAdd 1 = 1 := by decide
   exact congrArg Subtype.val (by
-    simpa only [map_mul, map_one, cyclicFourInvolution] using congrArg cyclicTwoEquivEven h)
+    simpa only [map_mul, map_one, cyclicFourInvolution] using
+      congrArg cyclicTwoEquivCyclicFourEvenSubgroup h)
 
 private theorem cyclicFourEvenCharacter_involution :
     Multiplicative.toAdd (cyclicFourEvenCharacter cyclicFourInvolution) = 1 := by
@@ -86,22 +88,11 @@ theorem explicitGraphClass_cyclicFour_ne_zero :
 of order four is nonzero. -/
 theorem graphClass_cyclicFour_ne_zero :
     graphClass cyclicFourEvenSubgroup cyclicFourEvenSubgroup_index
-      cyclicFourEvenCharacter continuous_of_discreteTopology ≠ 0 := by
-  rw [graphClass_eq_explicitGraphClass]
-  intro hzero
-  let e := congrArg (continuousCohomology 2)
-    (ofDiscreteModule_trivialF2 (Multiplicative (ZMod 4)))
-  have hinj : Function.Injective (CategoryTheory.eqToHom e).hom :=
-    Function.LeftInverse.injective ((CategoryTheory.eqToIso e).hom_inv_id_apply)
-  have hcomp : explicitH2AddEquivContinuousCohomology (Multiplicative (ZMod 4))
-      (trivialF2 (Multiplicative (ZMod 4))).V
-      (explicitGraphClass cyclicFourEvenSubgroup cyclicFourEvenSubgroup_index
-        cyclicFourEvenCharacter continuous_of_discreteTopology) = 0 := by
-    apply hinj
-    simpa [e] using hzero
-  exact explicitGraphClass_cyclicFour_ne_zero
-    ((explicitH2AddEquivContinuousCohomology (Multiplicative (ZMod 4))
-      (trivialF2 (Multiplicative (ZMod 4))).V).injective (by simpa using hcomp))
-
+      cyclicFourEvenCharacter continuous_of_discreteTopology ≠ 0 :=
+  graphClass_ne_zero_of_involution cyclicFourEvenSubgroup cyclicFourEvenSubgroup_index
+    cyclicFourEvenCharacter continuous_of_discreteTopology cyclicFourInvolution
+    cyclicFourInvolution_mul_self
+    (fun s => by simp [mul_comm s⁻¹ (cyclicFourInvolution : Multiplicative (ZMod 4)), mul_assoc])
+    cyclicFourEvenCharacter_involution
 
 end TauCeti.ContCohomology
