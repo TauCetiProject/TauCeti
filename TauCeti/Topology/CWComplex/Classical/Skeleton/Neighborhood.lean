@@ -157,7 +157,6 @@ def skeletonNeighborhood (n : ℕ) : Set X :=
 
 variable {C}
 
-@[simp]
 lemma mem_skeletonNeighborhood {n : ℕ} {x : X} :
     x ∈ skeletonNeighborhood C n ↔ x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) ∧
       ∀ (j : cell C n) (y : Fin n → ℝ), ‖y‖ < 2⁻¹ → map n j y ≠ x := by
