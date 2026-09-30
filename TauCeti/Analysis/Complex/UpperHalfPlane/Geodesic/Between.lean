@@ -7,18 +7,20 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
-public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 
 /-!
 # The geodesic line through two points of the upper half-plane
 
-`geodesicBetween z w` is the parametrised geodesic line with `z` at parameter `0` and `w` at
-parameter `dist z w`; it is unique (`eq_geodesicBetween_of_geodesicLine_eq`), since an element
-of `PSL(2, ℝ)` fixing two points is the identity, and so it transforms naturally under the
-action (`geodesicBetween_smul`). Reparametrisation is right multiplication by the dilations
-`dilation s : z ↦ exp s * z` (`geodesicLine_mul_dilation`) and by `pslS`
-(`geodesicLine_mul_pslS`); together they give the reversed line `geodesicBetween w z`.
+`geodesicBetween z w` is a parametrised geodesic line with `z` at parameter `0` and `w` at
+parameter `dist z w`. For distinct `z` and `w` it is the unique such line
+(`eq_geodesicBetween_of_geodesicLine_eq`), because an element of `PSL(2, ℝ)` fixing two distinct
+points is the identity, and so it transforms naturally under the action (`geodesicBetween_smul`).
+For `z = w` the two conditions only fix the starting point, and `geodesicBetween z z` is an
+arbitrary chosen line through `z`; every statement about direction therefore assumes `z ≠ w`.
+Reparametrisation is right multiplication by the dilations `dilation s : z ↦ exp s * z`
+(`geodesicLine_mul_dilation`) and by `pslS` (`geodesicLine_mul_pslS`); together they give the
+reversed line `geodesicBetween w z`.
 
 Source: Katok, *Fuchsian groups, geodesic flows on surfaces of constant negative curvature and
 symbolic coding of geodesics*, Clay Math. Proc. 8 (2008), §3 p. 10 (Theorem 3.1 and the
@@ -34,137 +36,11 @@ open scoped MatrixGroups
 
 namespace TauCeti.UpperHalfPlane
 
-open Matrix.SpecialLinearGroup (rotation)
+open Matrix.SpecialLinearGroup (rotation dilation)
 
-/-! ### Dilations -/
-
-/-- The dilation `!![exp (s / 2), 0; 0, exp (-(s / 2))]`, an element of `SL(2, ℝ)` acting on `ℍ`
-as `z ↦ exp s * z`. -/
-def _root_.Matrix.SpecialLinearGroup.dilation (s : ℝ) : SL(2, ℝ) :=
-  ⟨!![Real.exp (s / 2), 0; 0, Real.exp (-(s / 2))], by
-    rw [Matrix.det_fin_two_of]
-    simp [← Real.exp_add]⟩
-
-open Matrix.SpecialLinearGroup (dilation)
-
-/-- The entries of `dilation s`. -/
-@[simp]
-theorem coe_dilation (s : ℝ) :
-    (dilation s : Matrix (Fin 2) (Fin 2) ℝ) = !![Real.exp (s / 2), 0; 0, Real.exp (-(s / 2))] :=
-  (rfl)
-
-/-- `dilation s` acts on `ℍ` as `z ↦ exp s * z`. -/
-theorem coe_dilation_smul (s : ℝ) (z : ℍ) : ((dilation s • z : ℍ) : ℂ) = Real.exp s * z := by
-  rw [UpperHalfPlane.coe_specialLinearGroup_apply]
-  simp only [coe_dilation, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, Algebra.algebraMap_self_apply,
-    Complex.ofReal_zero, zero_mul, add_zero, zero_add]
-  have h2 : (Real.exp s : ℂ) = Real.exp (s / 2) * Real.exp (s / 2) := by
-    rw [← Complex.ofReal_mul, ← Real.exp_add, add_halves]
-  have hne : (Real.exp (-(s / 2)) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne'
-  rw [div_eq_iff hne, h2, Real.exp_neg]
-  push_cast
-  field_simp
-
-/-- The dilation by `0` is the identity. -/
-@[simp]
-theorem dilation_zero : dilation 0 = 1 :=
-  Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ by
-    fin_cases i <;> fin_cases j <;> simp
-
-/-- The dilations form a one-parameter subgroup: `dilation (s + t) = dilation s * dilation t`. -/
-theorem dilation_add (s t : ℝ) : dilation (s + t) = dilation s * dilation t :=
-  Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ by
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, ← Real.exp_add, add_div, add_comm]
-
-/-- The inverse of `dilation s` is `dilation (-s)`. -/
-@[simp]
-theorem dilation_inv (s : ℝ) : (dilation s)⁻¹ = dilation (-s) :=
-  inv_eq_of_mul_eq_one_right (by rw [← dilation_add, add_neg_cancel, dilation_zero])
-
-/-- The imaginary axis is the orbit of `I` under the dilations. -/
-theorem geodesicLine_one_eq_dilation_smul_I (t : ℝ) :
-    geodesicLine 1 t = dilation t • UpperHalfPlane.I := by
-  apply UpperHalfPlane.coe_injective
-  rw [geodesicLine_one_apply, coe_dilation_smul, UpperHalfPlane.coe_mk, UpperHalfPlane.coe_I]
-  simp [Complex.ext_iff, Complex.exp_ofReal_re]
-
-/-- Right multiplication by a dilation shifts the parameter of a geodesic line. -/
-@[simp]
-theorem geodesicLine_mul_dilation (g : PSL(2, ℝ)) (s t : ℝ) :
-    geodesicLine (g * ↑(dilation s)) t = geodesicLine g (s + t) := by
-  rw [← smul_geodesicLine]
-  conv_rhs => rw [← mul_one g, ← smul_geodesicLine]
-  congr 1
-  rw [geodesicLine_def, UpperHalfPlane.pslMk_smul, ← geodesicLine_one_apply,
-    geodesicLine_one_eq_dilation_smul_I, geodesicLine_one_eq_dilation_smul_I, ← mul_smul,
-    ← dilation_add]
-
-/-- Shifting the parameter does not change a geodesic line as a set. -/
-@[simp]
-theorem range_geodesicLine_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
-    Set.range (geodesicLine (g * ↑(dilation s))) = Set.range (geodesicLine g) := by
-  have h : geodesicLine (g * ↑(dilation s)) = geodesicLine g ∘ (s + ·) :=
-    funext (geodesicLine_mul_dilation g s)
-  rw [h, (add_left_surjective s).range_comp]
-
--- Not `@[simp]`: `smulDeriv_coe` rewrites the left-hand side first. Use it via `rw`.
-/-- The derivative of the dilation `z ↦ exp s * z` is `exp s`. -/
-theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z = Real.exp s := by
-  rw [Matrix.SpecialLinearGroup.smulDeriv_coe]
-  simp only [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix,
-    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
-    Algebra.algebraMap_self_apply, coe_dilation, Matrix.of_apply, Matrix.cons_val',
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Complex.ofReal_zero,
-    zero_mul, zero_add]
-  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_nat_mul,
-    ← Real.exp_neg]
-  congr 1
-  push_cast
-  ring
-
-/-! ### The stabiliser of `I` -/
-
-/-- Every element of `PSL(2, ℝ)` fixing `I` is the class of a rotation.
-Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 8), §1 p. 6:
-`K = SO(2)` is the stabiliser of `i` in `SL(2, ℝ)`. -/
-theorem exists_rotation_eq_of_smul_I_eq_I {q : PSL(2, ℝ)}
-    (hq : q • UpperHalfPlane.I = UpperHalfPlane.I) : ∃ θ : ℝ, q = ↑(rotation θ) := by
-  induction q using QuotientGroup.induction_on with | _ g =>
-  rw [UpperHalfPlane.pslMk_smul, MulAction.compHom_smul_def,
-    gl_smul_I_eq_I_iff_of_pos (by simp)] at hq
-  simp only [Matrix.SpecialLinearGroup.mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe,
-    RingHom.mapMatrix_apply, Matrix.map_apply, Algebra.algebraMap_self_apply] at hq
-  obtain ⟨h₀, h₁⟩ := hq
-  -- the representative is `!![a, -c; c, a]` with `a ^ 2 + c ^ 2 = 1`
-  have hdet : g 0 0 ^ 2 + g 1 0 ^ 2 = 1 := by
-    have := g.det_coe
-    rw [Matrix.det_fin_two, h₁, ← h₀] at this
-    linear_combination this
-  set w : ℂ := g 0 0 - g 1 0 * Complex.I with hw
-  have hnorm : ‖w‖ = 1 := by
-    rw [hw, Complex.norm_eq_sqrt_sq_add_sq]
-    simp [hdet]
-  have hw0 : w ≠ 0 := by
-    intro h
-    rw [h, norm_zero] at hnorm
-    exact zero_ne_one hnorm
-  refine ⟨w.arg, ?_⟩
-  congr 1
-  refine Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ ?_
-  have hcos : Real.cos w.arg = g 0 0 := by
-    rw [Complex.cos_arg hw0, hnorm, div_one, hw]
-    simp
-  have hsin : Real.sin w.arg = -g 1 0 := by
-    rw [Complex.sin_arg, hnorm, div_one, hw]
-    simp
-  fin_cases i <;> fin_cases j <;> simp [hcos, hsin, h₀, h₁]
-
-/-! ### The geodesic line through two points -/
-
-/-- The geodesic line from `z` to `w`: `z` sits at parameter `0` and `w` at parameter
-`dist z w`. -/
+/-- A geodesic line from `z` to `w`: `z` sits at parameter `0` and `w` at parameter `dist z w`.
+For `z ≠ w` this determines the line (`eq_geodesicBetween_of_geodesicLine_eq`); for `z = w` it is
+an arbitrary chosen line through `z`. -/
 def geodesicBetween (z w : ℍ) : PSL(2, ℝ) :=
   Classical.choose (exists_geodesicLine_zero_eq_and_dist_eq z w)
 
@@ -190,8 +66,9 @@ theorem mem_range_geodesicLine_geodesicBetween_right (z w : ℍ) :
     w ∈ Set.range (geodesicLine (geodesicBetween z w)) :=
   ⟨dist z w, geodesicLine_geodesicBetween_dist z w⟩
 
-/-- **Uniqueness of the geodesic through two points**: a parametrised geodesic line with `z` at
-parameter `0` and `w` at parameter `dist z w` is `geodesicBetween z w`. -/
+/-- **Uniqueness of the geodesic through two distinct points**: for `z ≠ w`, a parametrised
+geodesic line with `z` at parameter `0` and `w` at parameter `dist z w` is `geodesicBetween z w`.
+(For `z = w` the two conditions coincide and do not determine the line.) -/
 theorem eq_geodesicBetween_of_geodesicLine_eq {g : PSL(2, ℝ)} {z w : ℍ} (hzw : z ≠ w)
     (h0 : geodesicLine g 0 = z) (hd : geodesicLine g (dist z w) = w) :
     g = geodesicBetween z w := by
@@ -208,7 +85,7 @@ theorem eq_geodesicBetween_of_geodesicLine_eq {g : PSL(2, ℝ)} {z w : ℍ} (hzw
     (fun h ↦ (dist_pos.2 hzw).ne' (geodesicLine_injective 1 h))
   rwa [inv_mul_eq_one, eq_comm] at h
 
-/-- The geodesic line through two points transforms naturally under the action. -/
+/-- The geodesic line through two distinct points transforms naturally under the action. -/
 theorem geodesicBetween_smul (h : PSL(2, ℝ)) {z w : ℍ} (hzw : z ≠ w) :
     geodesicBetween (h • z) (h • w) = h * geodesicBetween z w := by
   symm
