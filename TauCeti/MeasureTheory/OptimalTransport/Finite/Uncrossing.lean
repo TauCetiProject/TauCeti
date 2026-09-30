@@ -15,6 +15,9 @@ masses to the two uncrossed cells. The row and column marginals stay fixed. Unde
 four-point inequality the transfer cannot increase transport cost, and it empties at least one
 crossing cell. This is the elementary move used to obtain an optimal monotone coupling on
 ordered finite supports.
+
+The update uses four `Pi.single` terms on the product, giving an entrywise formula that also
+cancels when the chosen rows or columns coincide.
 -/
 
 public section
