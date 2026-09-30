@@ -1,0 +1,166 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.SquareZero
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
+
+/-!
+# Exactness from a contracting homotopy up to lower-order terms
+
+A square-zero endomorphism `d` of a module is exact, `ker d ≤ range d`, as soon as some `h` makes
+`d h + h d` invertible: `d h + h d` commutes with `d`, so its inverse sends cycles to cycles, and
+every cycle `x = (d h + h d) y` with `d y = 0` is the boundary `d (h y)`
+(`LinearMap.ker_le_range_of_isUnit`). Invertibility holds when `d h + h d` differs from the
+identity by a locally nilpotent endomorphism, and on a free module `ι →₀ S` over a finite basis
+that is the case when the difference strictly lowers a weight on the basis
+(`Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`,
+`LinearMap.ker_le_range_of_forall_mem_support_lt`).
+
+This is the algebraic core of the discrete Morse theory (algebraic Gaussian elimination) used to
+compute grid homology: `h` reverses a matching of generators joined by the leading part of `d`,
+and the remaining terms of `d h + h d - 1` are of lower order for a filtration.
+
+## Main results
+
+* `LinearMap.ker_le_range_of_isUnit`: a square-zero endomorphism `d` is exact if `d h + h d` is a
+  unit for some `h`.
+* `LinearMap.ker_le_range_of_forall_mem_support_lt`: a square-zero endomorphism `d` of `ι →₀ S`,
+  for a finite type `ι`, is exact if `d h + h d - 1` strictly lowers a weight on the basis.
+* `LinearMap.ker_le_range_of_matching`: a square-zero endomorphism of `ι →₀ S` is exact if its
+  terms of leading weight form a perfect matching of the generators with coefficients `1`.
+
+## References
+
+The matching criterion is the case of a perfect matching in algebraic discrete Morse theory:
+E. Sköldberg, *Morse theory from an algebraic viewpoint*, Trans. Amer. Math. Soc. 358 (2006),
+and M. Jöllenbeck, V. Welker, *Minimal resolutions via algebraic discrete Morse theory*,
+Mem. Amer. Math. Soc. 197 (2009), no. 923.
+-/
+
+public section
+
+open Finsupp
+
+namespace LinearMap
+
+section Semiring
+
+variable {S M : Type*} [Semiring S] [AddCommMonoid M] [Module S M] {d : M →ₗ[S] M}
+
+/-- **A contracting homotopy up to a unit makes a square-zero endomorphism exact.** If `d ∘ d = 0`
+and `d h + h d` is invertible for some `h`, then every element of the kernel of `d` is in its
+image. -/
+theorem ker_le_range_of_isUnit (hd : d ∘ₗ d = 0) (h : M →ₗ[S] M)
+    (hu : IsUnit (d * h + h * d : Module.End S M)) : ker d ≤ range d := by
+  intro x hx
+  rw [mem_ker] at hx
+  have hd' : d * d = 0 := by rwa [Module.End.mul_eq_comp]
+  have hcomm : Commute d (d * h + h * d) := by
+    simp only [Commute, SemiconjBy, mul_add, add_mul, ← mul_assoc, hd', zero_mul, zero_add]
+    simp only [mul_assoc, hd', mul_zero, add_zero]
+  obtain ⟨u, hu⟩ := hu
+  have hinv : Commute d ↑u⁻¹ := (hu ▸ hcomm).units_inv_right
+  have hy : d ((↑u⁻¹ : Module.End S M) x) = 0 := by
+    rw [← Module.End.mul_apply, hinv.eq, Module.End.mul_apply, hx, map_zero]
+  refine ⟨h ((↑u⁻¹ : Module.End S M) x), ?_⟩
+  have hx' : ((u : Module.End S M) * ↑u⁻¹) x = x := by rw [Units.mul_inv, Module.End.one_apply]
+  rw [hu] at hx'
+  simpa only [Module.End.mul_apply, LinearMap.add_apply, hy, map_zero, add_zero] using hx'
+
+end Semiring
+
+variable {S M : Type*} [Ring S] [AddCommGroup M] [Module S M] {d : M →ₗ[S] M}
+
+/-- A square-zero endomorphism `d` is exact if `d h + h d - 1` is locally nilpotent for some
+`h`. -/
+theorem ker_le_range_of_forall_exists_pow_apply_eq_zero (hd : d ∘ₗ d = 0) (h : M →ₗ[S] M)
+    (hν : ∀ x, ∃ k, ((d * h + h * d - 1 : Module.End S M) ^ k) x = 0) : ker d ≤ range d := by
+  have hu := Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero _ hν
+  rw [add_sub_cancel] at hu
+  exact ker_le_range_of_isUnit hd h hu
+
+/-- **Exactness from a contracting homotopy up to lower-order terms.** A square-zero endomorphism
+`d` of `ι →₀ S`, for a finite type `ι`, is exact if for some `h` the endomorphism
+`d h + h d - 1` sends each basis vector into the span of the basis vectors of strictly smaller
+weight. -/
+theorem ker_le_range_of_forall_mem_support_lt {ι α : Type*} [Finite ι] [Preorder α] (w : ι → α)
+    {d h : (ι →₀ S) →ₗ[S] (ι →₀ S)} (hd : d ∘ₗ d = 0)
+    (hlow : ∀ i, ∀ j ∈ ((d * h + h * d - 1 : Module.End S (ι →₀ S)) (Finsupp.single i 1)).support,
+      w j < w i) :
+    ker d ≤ range d :=
+  ker_le_range_of_forall_exists_pow_apply_eq_zero hd h
+    (Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt w _ hlow)
+
+/-- **Exactness from a weight-preserving matching of generators.** Let `d` be a square-zero
+endomorphism of `ι →₀ S`, for a finite type `ι` weighted by `w`, and let `p` be an involution of
+`ι` preserving `w` that pairs each generator marked as a *source* with one that is not. Suppose
+that every term of `d` strictly lowers the weight, except the term from each source `i` to its
+partner `p i`, which has coefficient `1`. Then `d` is exact: the homotopy `h`
+sending each non-source `j` to its partner `p j` makes `d h + h d - 1` strictly lower the weight.
+
+This is algebraic discrete Morse theory in its simplest form, a perfect matching of the generators
+by the leading part of `d`. -/
+theorem ker_le_range_of_matching {ι α : Type*} [Finite ι] [Preorder α] (w : ι → α)
+    {d : (ι →₀ S) →ₗ[S] (ι →₀ S)} (hd : d ∘ₗ d = 0) (p : ι → ι) (src : ι → Prop)
+    (hp : Function.Involutive p) (hwp : ∀ i, w (p i) = w i) (hsrc : ∀ i, src i ↔ ¬src (p i))
+    (hcoef : ∀ i, src i → d (Finsupp.single i 1) (p i) = 1)
+    (hsupp : ∀ i, ∀ j ∈ (d (Finsupp.single i 1)).support, w j < w i ∨ (src i ∧ j = p i)) :
+    ker d ≤ range d := by
+  classical
+  let h : (ι →₀ S) →ₗ[S] (ι →₀ S) :=
+    Finsupp.linearCombination S fun i ↦ if src i then 0 else Finsupp.single (p i) 1
+  have hh : ∀ i, h (Finsupp.single i 1) = if src i then 0 else Finsupp.single (p i) 1 := by
+    intro i
+    simp only [h, Finsupp.linearCombination_single, one_smul]
+  -- `h` preserves the span of the basis vectors of weight below `a`.
+  have hlow : ∀ a v, v ∈ supported S S {j | w j < a} → h v ∈ supported S S {j | w j < a} := by
+    intro a v hv
+    rw [← Finsupp.sum_single v, map_finsuppSum]
+    refine Submodule.sum_mem _ fun j hj ↦ ?_
+    dsimp only
+    rw [← Finsupp.smul_single_one, map_smul, hh]
+    refine Submodule.smul_mem _ _ ?_
+    split_ifs
+    · exact Submodule.zero_mem _
+    · refine single_mem_supported S 1 ?_
+      rw [Set.mem_ofPred_eq, hwp]
+      exact (mem_supported S v).1 hv hj
+  -- The terms of `d` on a source other than the matching term have lower weight.
+  have hsrc_low : ∀ k, src k →
+      d (Finsupp.single k 1) - Finsupp.single (p k) 1 ∈ supported S S {j | w j < w k} := by
+    intro k hk
+    rw [mem_supported]
+    intro j hj
+    rw [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.sub_apply] at hj
+    by_cases hjk : j = p k
+    · subst hjk
+      rw [hcoef k hk, Finsupp.single_eq_same, sub_self] at hj
+      exact absurd rfl hj
+    · rw [Finsupp.single_apply, ite_eq_right (Ne.symm hjk), sub_zero] at hj
+      rcases hsupp k j (Finsupp.mem_support_iff.2 hj) with h1 | ⟨-, h2⟩
+      · exact h1
+      · exact absurd h2 hjk
+  refine ker_le_range_of_forall_mem_support_lt w (h := h) hd fun i ↦ ?_
+  suffices H : (d * h + h * d - 1 : Module.End S (ι →₀ S)) (Finsupp.single i 1) ∈
+      supported S S {j | w j < w i} from fun j hj ↦ (mem_supported S _).1 H hj
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, Module.End.mul_apply,
+    Module.End.one_apply]
+  by_cases hi : src i
+  · have hpi : ¬src (p i) := (hsrc i).1 hi
+    rw [hh i, ite_eq_left hi, map_zero, zero_add,
+      ← sub_add_cancel (d (Finsupp.single i 1)) (Finsupp.single (p i) 1), map_add, hh (p i),
+      ite_eq_right hpi, hp i, add_sub_cancel_right]
+    exact hlow _ _ (hsrc_low i hi)
+  · have hpi : src (p i) := by rw [hsrc (p i), hp i]; exact hi
+    have hr := hsrc_low (p i) hpi
+    rw [hp i, hwp] at hr
+    rw [hh i, ite_eq_right hi, ← sub_add_cancel (d (Finsupp.single (p i) 1)) (Finsupp.single i 1),
+      add_right_comm, add_sub_cancel_right]
+    refine Submodule.add_mem _ hr (hlow _ _ ((mem_supported S _).2 fun j hj ↦ ?_))
+    exact (hsupp i j hj).resolve_right fun h' ↦ hi h'.1
+
+end LinearMap
