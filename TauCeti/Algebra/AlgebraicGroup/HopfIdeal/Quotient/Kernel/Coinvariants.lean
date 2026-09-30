@@ -39,26 +39,37 @@ open scoped TensorProduct
 
 namespace TauCeti.CommHopfAlgCat
 
-universe u v
+universe u v w
 
 variable {R : Type u} [CommRing R] {H K : _root_.CommHopfAlgCat.{v} R}
 
+/-- A function invariant under the kernel takes the same value on points with the same image,
+over a value algebra in any universe. -/
+theorem ofConv_apply_eq_of_mem_coinvariants_kernelHopfIdeal (f : H ⟶ K) {x : K}
+    (hx : x ∈ (kernelHopfIdeal f).coinvariants) {A : CommAlgCat.{w} R}
+    (g g' : HopfAlgebra.points (R := R) (H := K) A)
+    (hgg' : (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g') :
+    g.ofConv x = g'.ofConv x := by
+  have hn : g⁻¹ * g' ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A := by
+    apply (mapPointsFunctor_app_eq_one_iff f A _).mp
+    rw [← mapPointsFunctor_app_apply]
+    exact ((mapPointsFunctor f).app A).hom.eq_iff.mp hgg'.symm
+  simpa only [mul_inv_cancel_left] using
+    (HopfIdeal.ofConv_mul_apply_of_mem_coinvariants hx g hn).symm
+
 /-- A function is invariant under the kernel exactly when it takes the same value on any two
-points with the same image, over every value algebra. -/
+points with the same image, over every value algebra in the coordinate algebras' universe. -/
 theorem mem_coinvariants_kernelHopfIdeal_iff (f : H ⟶ K) (x : K) :
     x ∈ (kernelHopfIdeal f).coinvariants ↔
       ∀ (A : CommAlgCat.{v} R) (g g' : HopfAlgebra.points (R := R) (H := K) A),
         (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g' →
           g.ofConv x = g'.ofConv x := by
-  rw [HopfIdeal.mem_coinvariants_iff_forall_mul]
   constructor
   · intro hx A g g' hgg'
-    have hn : g⁻¹ * g' ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A := by
-      apply (mapPointsFunctor_app_eq_one_iff f A _).mp
-      rw [← mapPointsFunctor_app_apply]
-      exact ((mapPointsFunctor f).app A).hom.eq_iff.mp hgg'.symm
-    simpa using (hx A g (g⁻¹ * g') hn).symm
-  · intro hx A g n hn
+    exact ofConv_apply_eq_of_mem_coinvariants_kernelHopfIdeal f hx g g' hgg'
+  · intro hx
+    apply HopfIdeal.mem_coinvariants_iff_forall_mul.mpr
+    intro A g n hn
     apply hx A (g * n) g
     simp only [mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply]
     apply (AlgHom.mapDomain (A := A) f.hom).eq_iff.mpr
