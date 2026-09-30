@@ -41,6 +41,8 @@ through.
   `map_comp_map`: `map` is a functor in `f`. The curve
   equalities `W.map (RingHom.id R) = W` and `(W.map f).map g = W.map (g.comp f)` hold
   definitionally, so neither statement carries a transport.
+* `WeierstrassCurve.Affine.CoordinateRing.ringHom_ext`: ring homomorphisms out of the coordinate
+  ring are determined by the constants and the classes of `x` and `y`.
 * `WeierstrassCurve.coordinateRingGaloisAction` and
   `WeierstrassCurve.coordinateRingGaloisAction_mk`: for `W` over `R` and an `R`-algebra `A`,
   the action of `A ≃ₐ[R] A` on the coordinate ring of `W⁄A`, applying an automorphism to the
@@ -105,6 +107,20 @@ open scoped Polynomial.Bivariate
 namespace WeierstrassCurve.Affine.CoordinateRing
 
 variable {R S : Type*} [CommRing R] [CommRing S] (W : WeierstrassCurve.Affine R)
+
+/-- **Ring homomorphisms out of the coordinate ring are determined by the constants and the
+classes of `x` and `y`.** -/
+theorem ringHom_ext {T : Type*} [Semiring T] {f g : W.CoordinateRing →+* T}
+    (hc : ∀ a : R, f (algebraMap R W.CoordinateRing a) = g (algebraMap R W.CoordinateRing a))
+    (hx : f (AdjoinRoot.of W.polynomial X) = g (AdjoinRoot.of W.polynomial X))
+    (hy : f (AdjoinRoot.root W.polynomial) = g (AdjoinRoot.root W.polynomial)) : f = g := by
+  apply AdjoinRoot.ringHom_ext
+  · apply Polynomial.ringHom_ext
+    · intro a
+      simpa only [AdjoinRoot.algebraMap_eq', RingHom.comp_apply, Polynomial.algebraMap_eq] using
+        hc a
+    · exact hx
+  · exact hy
 
 /-- **`CoordinateRing.map` is surjective when the base map is**, the companion of Mathlib's
 `CoordinateRing.map_injective`. -/
@@ -220,13 +236,19 @@ noncomputable def coordinateRingGaloisAction :
     (.of_eq (Affine.baseChange_polynomial (W := W) σ.toAlgHom).symm)
   map_one' := by
     apply RingEquiv.toRingHom_injective
-    apply AdjoinRoot.ringHom_ext
-    · apply Polynomial.ringHom_ext <;> simp [mapEquiv]
+    apply Affine.CoordinateRing.ringHom_ext
+    · intro a
+      rw [AdjoinRoot.algebraMap_eq', RingHom.comp_apply]
+      simp [mapEquiv]
+    · simp [mapEquiv]
     · simp
   map_mul' σ τ := by
     apply RingEquiv.toRingHom_injective
-    apply AdjoinRoot.ringHom_ext
-    · apply Polynomial.ringHom_ext <;> simp [mapEquiv]
+    apply Affine.CoordinateRing.ringHom_ext
+    · intro a
+      rw [AdjoinRoot.algebraMap_eq', RingHom.comp_apply]
+      simp [mapEquiv]
+    · simp [mapEquiv]
     · simp
 
 /-- **The coordinate-ring Galois action on the class of a polynomial**: it applies the
@@ -236,23 +258,25 @@ theorem coordinateRingGaloisAction_mk (σ : A ≃ₐ[R] A) (p : A[X][Y]) :
     coordinateRingGaloisAction W σ (Affine.CoordinateRing.mk _ p) =
       Affine.CoordinateRing.mk _ (p.map (mapRingHom σ)) := by
   rw [coordinateRingGaloisAction, MonoidHom.coe_mk, OneHom.coe_mk, AdjoinRoot.coe_mapRingEquiv,
-    AdjoinRoot.map, AdjoinRoot.lift_mk, ← eval₂_map]
-  exact AdjoinRoot.aeval_eq _
+    AdjoinRoot.map_mk]
+  rfl
 
 /-- On the polynomial subring, the coordinate-ring Galois action maps coefficients and fixes `x`. -/
 @[simp]
 theorem coordinateRingGaloisAction_of (σ : A ≃ₐ[R] A) (p : A[X]) :
     coordinateRingGaloisAction W σ (AdjoinRoot.of (W⁄A).toAffine.polynomial p) =
       AdjoinRoot.of (W⁄A).toAffine.polynomial (p.map σ) := by
-  rw [← AdjoinRoot.mk_C, coordinateRingGaloisAction_mk, Polynomial.map_C, coe_mapRingHom,
-    AdjoinRoot.mk_C]
+  rw [coordinateRingGaloisAction, MonoidHom.coe_mk, OneHom.coe_mk,
+    AdjoinRoot.coe_mapRingEquiv, AdjoinRoot.map_of]
+  rfl
 
 /-- The coordinate-ring Galois action fixes the class of `y`. -/
 @[simp]
 theorem coordinateRingGaloisAction_root (σ : A ≃ₐ[R] A) :
     coordinateRingGaloisAction W σ (AdjoinRoot.root (W⁄A).toAffine.polynomial) =
       AdjoinRoot.root (W⁄A).toAffine.polynomial := by
-  rw [← AdjoinRoot.mk_X, coordinateRingGaloisAction_mk, Polynomial.map_X]
+  rw [coordinateRingGaloisAction, MonoidHom.coe_mk, OneHom.coe_mk,
+    AdjoinRoot.coe_mapRingEquiv, AdjoinRoot.map_root]
 
 /-- The coordinate-ring Galois action applies the automorphism to constants. -/
 @[simp]
