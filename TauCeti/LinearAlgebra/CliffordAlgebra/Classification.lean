@@ -270,21 +270,48 @@ private noncomputable def realCliffordPositiveSevenEquiv :
   matrixModelTensorEquiv (realCliffordSignatureSwitchRecurrenceEquiv 5 0)
     realCliffordZeroFiveEquiv (matrixEquivTensor (Fin 2) ℝ ℂ).symm (by norm_num)
 
+/-- Tensoring every model of the table with a real matrix algebra `M_{2^k}(ℝ)`: if `(p, q)` is
+classified and `C p' q' ≃ C p q ⊗ M_{2^k}(ℝ)` with the same residue and `2k` more generators, then
+`(p', q')` is classified. -/
+private theorem IsRealCliffordClassified.of_tensor_matrix {p q p' q' : ℕ} (k : ℕ)
+    (h : IsRealCliffordClassified p q)
+    (step : C p' q' ≃ₐ[ℝ] C p q ⊗[ℝ] Matrix (Fin (2 ^ k)) (Fin (2 ^ k)) ℝ)
+    (hres : realCliffordResidue p' q' = realCliffordResidue p q)
+    (hdim : p' + q' = p + q + 2 * k) :
+    IsRealCliffordClassified p' q' := by
+  rw [IsRealCliffordClassified, hres]
+  rw [IsRealCliffordClassified] at h
+  generalize hr : realCliffordResidue p q = r at h
+  have hrlt : r < 8 := hr ▸ realCliffordResidue_lt_eight p q
+  have hsize (d : ℕ) (hd : d ≤ p + q) :
+      2 ^ ((p + q - d) / 2) * 2 ^ k = 2 ^ ((p' + q' - d) / 2) := by
+    rw [← pow_add]
+    congr 1
+    omega
+  interval_cases r <;> simp only at h ⊢
+  all_goals obtain ⟨e⟩ := h
+  all_goals simp only [realCliffordResidue] at hr
+  · exact ⟨matrixModelTensorEquiv step e (matrixEquivTensor _ ℝ ℝ).symm (hsize 0 (by omega))⟩
+  · exact ⟨matrixModelTensorEquiv step e (matrixEquivTensor _ ℝ ℂ).symm (hsize 1 (by omega))⟩
+  · exact ⟨matrixModelTensorEquiv step e (matrixEquivTensor _ ℝ ℍ[ℝ]).symm (hsize 2 (by omega))⟩
+  · exact ⟨matrixProdModelTensorEquiv step e (matrixEquivTensor _ ℝ ℍ[ℝ]).symm
+      (hsize 3 (by omega))⟩
+  · exact ⟨matrixModelTensorEquiv step e (matrixEquivTensor _ ℝ ℍ[ℝ]).symm (hsize 2 (by omega))⟩
+  · exact ⟨matrixModelTensorEquiv step e (matrixEquivTensor _ ℝ ℂ).symm (hsize 1 (by omega))⟩
+  · exact ⟨matrixModelTensorEquiv step e (matrixEquivTensor _ ℝ ℝ).symm (hsize 0 (by omega))⟩
+  · exact ⟨matrixProdModelTensorEquiv step e (matrixEquivTensor _ ℝ ℝ).symm (hsize 1 (by omega))⟩
+
 private theorem realClifford_positiveAxis_base (p : ℕ) (hp : p < 8) :
     IsRealCliffordClassified p 0 := by
-  interval_cases p <;>
-    simp only [IsRealCliffordClassified, realCliffordResidue, zero_add, Nat.zero_mod,
-      tsub_zero, Nat.mod_self, Nat.add_zero, Nat.reduceDiv, Nat.pow_zero, Nat.one_mod,
-      Nat.add_one_sub_one, Nat.mod_succ, Nat.reduceMod, Nat.reduceSub, Nat.reducePow] <;>
-    first
-    | exact ⟨realCliffordPositiveZeroEquiv⟩
-    | exact ⟨realCliffordPositiveOneEquiv⟩
-    | exact ⟨realCliffordPositiveTwoEquiv⟩
-    | exact ⟨realCliffordPositiveThreeEquiv⟩
-    | exact ⟨realCliffordPositiveFourEquiv⟩
-    | exact ⟨realCliffordPositiveFiveEquiv⟩
-    | exact ⟨realCliffordPositiveSixEquiv⟩
-    | exact ⟨realCliffordPositiveSevenEquiv⟩
+  interval_cases p
+  · exact ⟨realCliffordPositiveZeroEquiv⟩
+  · exact ⟨realCliffordPositiveOneEquiv⟩
+  · exact ⟨realCliffordPositiveTwoEquiv⟩
+  · exact ⟨realCliffordPositiveThreeEquiv⟩
+  · exact ⟨realCliffordPositiveFourEquiv⟩
+  · exact ⟨realCliffordPositiveFiveEquiv⟩
+  · exact ⟨realCliffordPositiveSixEquiv⟩
+  · exact ⟨realCliffordPositiveSevenEquiv⟩
 
 private theorem realClifford_positiveAxis_classification (p : ℕ) :
     IsRealCliffordClassified p 0 := by
@@ -293,38 +320,8 @@ private theorem realClifford_positiveAxis_classification (p : ℕ) :
       by_cases hp : p < 8
       · exact realClifford_positiveAxis_base p hp
       · obtain ⟨n, rfl⟩ : ∃ n, p = n + 8 := ⟨p - 8, by omega⟩
-        have prev := ih n (by omega)
-        have hmod : n % 8 < 8 := Nat.mod_lt _ (by norm_num)
-        let periodicity := Classical.choice (nonempty_realCliffordEightPeriodicityEquiv n 0)
-        interval_cases hn : n % 8 <;>
-          simp only [IsRealCliffordClassified, realCliffordResidue, zero_add, hn,
-            tsub_zero, Nat.mod_self, Nat.add_zero, Nat.add_mod_right, Nat.add_one_sub_one,
-            Nat.mod_succ, Nat.reduceSub, Nat.reduceMod, Nat.one_mod] at prev ⊢
-        all_goals obtain ⟨e⟩ := prev
-        · exact ⟨matrixModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℝ).symm
-            (pow_half_sub_add_eight n 0 (by omega)).symm⟩
-        · exact ⟨matrixProdModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℝ).symm
-            (pow_half_sub_add_eight n 1 (by omega)).symm⟩
-        · exact ⟨matrixModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℝ).symm
-            (pow_half_sub_add_eight n 0 (by omega)).symm⟩
-        · exact ⟨matrixModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℂ).symm
-            (pow_half_sub_add_eight n 1 (by omega)).symm⟩
-        · exact ⟨matrixModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℍ[ℝ]).symm
-            (pow_half_sub_add_eight n 2 (by omega)).symm⟩
-        · exact ⟨matrixProdModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℍ[ℝ]).symm
-            (pow_half_sub_add_eight n 3 (by omega)).symm⟩
-        · exact ⟨matrixModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℍ[ℝ]).symm
-            (pow_half_sub_add_eight n 2 (by omega)).symm⟩
-        · exact ⟨matrixModelTensorEquiv periodicity e
-            (matrixEquivTensor (Fin 16) ℝ ℂ).symm
-            (pow_half_sub_add_eight n 1 (by omega)).symm⟩
+        obtain ⟨periodicity⟩ := nonempty_realCliffordEightPeriodicityEquiv n 0
+        exact (ih n (by omega)).of_tensor_matrix 4 periodicity (by simp) (by omega)
 
 private theorem realClifford_negativeAxis_classification (q : ℕ) :
     IsRealCliffordClassified 0 q := by
@@ -376,37 +373,9 @@ private theorem realClifford_negativeAxis_classification (q : ℕ) :
 
 private theorem isRealCliffordClassified_add_add_right (p q n : ℕ)
     (h : IsRealCliffordClassified p q) :
-    IsRealCliffordClassified (p + n) (q + n) := by
-  rw [IsRealCliffordClassified, realCliffordResidue_add_add_right]
-  rw [IsRealCliffordClassified] at h
-  generalize hr : realCliffordResidue p q = r at h
-  have hrlt : r < 8 := hr ▸ realCliffordResidue_lt_eight p q
-  interval_cases r <;> simp only at h ⊢
-  all_goals obtain ⟨e⟩ := h
-  · exact ⟨matrixModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℝ).symm
-      (pow_half_sub_add_add_right p q n 0 (by omega))⟩
-  · exact ⟨matrixModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℂ).symm
-      (pow_half_sub_add_add_right p q n 1 (by simp [realCliffordResidue] at hr; omega))⟩
-  · exact ⟨matrixModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℍ[ℝ]).symm
-      (pow_half_sub_add_add_right p q n 2 (by simp [realCliffordResidue] at hr; omega))⟩
-  · exact ⟨matrixProdModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℍ[ℝ]).symm
-      (pow_half_sub_add_add_right p q n 3 (by simp [realCliffordResidue] at hr; omega))⟩
-  · exact ⟨matrixModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℍ[ℝ]).symm
-      (pow_half_sub_add_add_right p q n 2 (by simp [realCliffordResidue] at hr; omega))⟩
-  · exact ⟨matrixModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℂ).symm
-      (pow_half_sub_add_add_right p q n 1 (by simp [realCliffordResidue] at hr; omega))⟩
-  · exact ⟨matrixModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℝ).symm
-      (pow_half_sub_add_add_right p q n 0 (by omega))⟩
-  · exact ⟨matrixProdModelTensorEquiv (realCliffordBottIterEquiv p q n) e
-      (matrixEquivTensor (Fin (2 ^ n)) ℝ ℝ).symm
-      (pow_half_sub_add_add_right p q n 1 (by simp [realCliffordResidue] at hr; omega))⟩
+    IsRealCliffordClassified (p + n) (q + n) :=
+  h.of_tensor_matrix n (realCliffordBottIterEquiv p q n) (realCliffordResidue_add_add_right p q n)
+    (by omega)
 
 /-- The real Clifford algebra of every finite signature is the full matrix algebra, complex
 matrix algebra, quaternionic matrix algebra, or split algebra prescribed by `(q - p) mod 8`. -/
