@@ -51,9 +51,9 @@ theorem analyticAffineChartDiagram_map_smul {τ σ : Φ.cones} (f : τ ⟶ σ)
     (t : ComplexTorus N) (x : (Φ.analyticAffineChartDiagram hΦ).obj τ) :
     (Φ.analyticAffineChartDiagram hΦ).map f (t • x) =
       t • (Φ.analyticAffineChartDiagram hΦ).map f x := by
-  rw [analyticAffineChartDiagram_map_apply, analyticAffineChartDiagram_map_apply]
-  rw [← faceAffinePointMap_def Φ.lattice
-    (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))]
+  -- Use the public map equations because the face-map definitions are not exposed.
+  rw [analyticAffineChartDiagram_map_apply, analyticAffineChartDiagram_map_apply,
+    ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))]
   exact faceAffinePointMap_smul Φ.lattice
     (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) t x
 
