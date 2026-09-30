@@ -61,12 +61,10 @@ theorem signVariationsAt_sturmSeq_eq_add_of_eval_ne_zero {p q : K[X]} {x : K}
   rw [signVariationsAt_sturmSeq_cons hp0, signVariationsAt_sturmSeq_cons hq0, sturmSeq_cons hq0,
     List.map_cons, List.signVariations_cons_cons_of_ne_zero _ hp hq]
 
-variable [IsStrictOrderedRing K]
-
 /-- At a zero of the nonzero second polynomial that is not a zero of the first,
 the first Sturm variation step contributes exactly one sign change. -/
 theorem signVariationsAt_sturmSeq_eq_add_one_of_eval_ne_zero_of_eval_eq_zero
-    {p q : K[X]} {x : K}
+    [AddLeftStrictMono K] {p q : K[X]} {x : K}
     (hp : p.eval x ≠ 0) (hq0 : q ≠ 0) (hq : q.eval x = 0) :
     signVariationsAt (sturmSeq p q) x = signVariationsAt (sturmSeq q (-p % q)) x + 1 := by
   have hp0 : p ≠ 0 := by rintro rfl; simp at hp
@@ -89,7 +87,8 @@ theorem signVariationsAt_sturmSeq_eq_add_one_of_eval_ne_zero_of_eval_eq_zero
 
 /-- Multiplying both inputs by a common polynomial does not alter their
 Sturm variation away from its roots. -/
-@[simp] theorem signVariationsAt_sturmSeq_mul_left {r : K[X]} (p q : K[X]) {x : K}
+@[simp] theorem signVariationsAt_sturmSeq_mul_left [IsStrictOrderedRing K]
+    {r : K[X]} (p q : K[X]) {x : K}
     (hrx : r.eval x ≠ 0) :
     signVariationsAt (sturmSeq (r * p) (r * q)) x = signVariationsAt (sturmSeq p q) x := by
   have hr : r ≠ 0 := by rintro rfl; simp at hrx
@@ -97,12 +96,16 @@ Sturm variation away from its roots. -/
   exact signVariationsAt_map_mul (sturmSeq p q) hrx
 
 /-- Negating both inputs preserves their Sturm variation. -/
-@[simp] theorem signVariationsAt_sturmSeq_neg_neg (p q : K[X]) (x : K) :
+@[simp] theorem signVariationsAt_sturmSeq_neg_neg [AddLeftStrictMono K]
+    (p q : K[X]) (x : K) :
     signVariationsAt (sturmSeq (-p) (-q)) x = signVariationsAt (sturmSeq p q) x := by
-  simpa only [neg_one_mul] using
-    (signVariationsAt_sturmSeq_mul_left (r := -(1 : K[X])) p q (x := x) (by simp))
+  have hseq := sturmSeq_mul_left (r := -(1 : K[X])) (by simp) p q
+  simp only [neg_one_mul] at hseq
+  rw [hseq, signVariationsAt_def, signVariationsAt_def]
+  simpa only [List.map_map, Function.comp_def, eval_mul, eval_neg, eval_one, neg_one_mul] using
+    List.signVariations_map_of_sign_eq_neg Left.sign_neg
+      ((sturmSeq p q).map (fun r => r.eval x))
 
-omit [IsStrictOrderedRing K] in
 /-- A common root of the two input polynomials annihilates every entry of
 their Sturm sequence, so its variation at that point is zero. -/
 @[simp] theorem signVariationsAt_sturmSeq_eq_zero_of_eval_eq_zero_of_eval_eq_zero
