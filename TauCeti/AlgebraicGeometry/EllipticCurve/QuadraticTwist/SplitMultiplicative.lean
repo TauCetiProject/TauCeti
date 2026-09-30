@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
 -- Proof-only: the quadratic extension `K[T] / (T² + a₁ T + n)`, its irreducibility, its power
--- basis, and the separability of its elements.
+-- basis, and its separability, read off the generator.
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.AdjoinRoot
@@ -182,20 +182,21 @@ theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
     obtain ⟨x₀, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hxint
     have hx₀ : x₀ ^ 2 + I.a₁ * x₀ + n₀ = 0 := IsFractionRing.injective R K (by
       rw [map_zero, ← hx']; simp [I, integralModel_a₁_eq, hn₀K])
+    -- So the node quadratic factors over `R` with the roots `x₀` and `-a₁ - x₀`.
+    have hfac : X ^ 2 + C I.a₁ * X + C n₀ = (X - C x₀) * (X - C (-I.a₁ - x₀)) := by
+      have hC := congrArg C hx₀
+      simp only [map_add, map_mul, map_pow, map_zero] at hC
+      simp only [map_sub, map_neg]
+      linear_combination hC
     refine h ((HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff R
       inferInstance).mp ?_)
-    rw [reduction, map_nodePolynomial, nodePolynomial_eq_C_mul I hn₀,
-      show X ^ 2 + C I.a₁ * X + C n₀ = (X - C x₀) * (X - C (-I.a₁ - x₀)) by
-        rw [show n₀ = -(x₀ ^ 2 + I.a₁ * x₀) by linear_combination hx₀]
-        simp only [map_neg, map_add, map_sub, map_mul, map_pow]
-        ring]
+    rw [reduction, map_nodePolynomial, nodePolynomial_eq_C_mul I hn₀, hfac]
     exact (((Splits.X_sub_C _).mul (Splits.X_sub_C _)).C_mul _).map _
   have hirr : Irreducible q :=
     irreducible_of_degree_le_three_of_not_isRoot (by rw [hqdeg]; decide) hroot
   have : Fact (Irreducible q) := ⟨hirr⟩
   let pb := AdjoinRoot.powerBasis hq.ne_zero
-  have hmin : minpoly K (AdjoinRoot.root q) = q := by
-    rw [AdjoinRoot.minpoly_root hq.ne_zero, hq.leadingCoeff, inv_one, map_one, mul_one]
+  have hmin : minpoly K (AdjoinRoot.root q) = q := AdjoinRoot.minpoly_powerBasis_gen_of_monic hq
   have : Algebra.IsQuadraticExtension K (AdjoinRoot q) :=
     { finrank_eq_two' := by rw [pb.finrank, AdjoinRoot.powerBasis_dim, hqdeg] }
   -- The root `θ` generates, and it is separable because `q` has unit discriminant.
@@ -208,14 +209,14 @@ theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
       rw [← hn₀K, ← integralModel_a₁_eq R E, ← map_pow, ← map_ofNat (algebraMap R K),
         ← map_mul, ← map_sub]
       exact (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr hD.ne_zero
-    rw [IsSeparable, hmin, show q = C 1 * X ^ 2 + C E.a₁ * X + C n by rw [map_one, one_mul]]
-    exact separable_quadratic_of_isUnit_discrim (isUnit_iff_ne_zero.mpr (by
-      rw [discrim, mul_one]; exact hD))
-  have : Algebra.IsSeparable K (AdjoinRoot q) := ⟨fun x ↦ by
-    obtain ⟨a, b, rfl⟩ :=
-      Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul K _ hθ x
-    exact Field.isSeparable_add (isSeparable_algebraMap b)
-      (Field.isSeparable_mul (isSeparable_algebraMap a) hsep)⟩
+    have hdisc : IsUnit (discrim 1 E.a₁ n) := isUnit_iff_ne_zero.mpr (by rwa [discrim, mul_one])
+    rw [IsSeparable, hmin]
+    simpa [q] using separable_quadratic_of_isUnit_discrim hdisc
+  -- `K⟮θ⟯ = ⊤`, so the whole extension is separable.
+  have : Algebra.IsSeparable K (AdjoinRoot q) := by
+    have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable K (AdjoinRoot q)).mpr hsep
+    rw [IntermediateField.adjoin_root_eq_top] at this
+    exact .of_algHom K _ IntermediateField.topEquiv.symm.toAlgHom
   refine ⟨AdjoinRoot q, inferInstance, inferInstance, inferInstance, inferInstance, ?_⟩
   -- The twist by `L` is the explicit twist up to a change of variables over `K`.
   have htr : Algebra.trace K (AdjoinRoot q) (AdjoinRoot.root q) = -E.a₁ := by

@@ -93,8 +93,8 @@ These are the `quadraticTwistOf` seeds of `TauCetiRoadmap/EllipticCurves/README.
 (twists), pinned in that roadmap's `Suggested.lean`, together with the extension twist they make
 well posed, the classification of the `L`-forms that the cocycle delivers, and the point
 isomorphism `quadraticTwistPointEquiv` that `quadraticTwistVariableChange` induces; the
-split-multiplicative-reduction theorem of the same layer builds on this file, in
-`QuadraticTwist/SplitMultiplicative.lean`.
+twist formulas here, in particular `nodePolynomial_quadraticTwistOf_neg_a₁`, are applied to
+curves with multiplicative reduction in `QuadraticTwist/SplitMultiplicative.lean`.
 
 ## The point isomorphism
 

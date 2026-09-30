@@ -73,8 +73,9 @@ lemma nodePolynomial_coeff_zero (W : WeierstrassCurve A) :
 
 /-- **The node polynomial as `c₄` times a monic quadratic.** If `c₄ n` is the constant coefficient
 of the node polynomial, the node polynomial is `c₄ · (T² + a₁ T + n)`. When `c₄` is a unit such an
-`n` exists and is unique, and the roots of `T² + a₁ T + n` are the slopes of the two tangent
-directions at the node. -/
+`n` exists and is unique. This is a purely algebraic factorization; when the reduction of a
+minimal model is multiplicative, the roots of the reduced quadratic `T² + a₁ T + n` are the slopes
+of the two tangent directions at the node of the reduced curve. -/
 theorem nodePolynomial_eq_C_mul (W : WeierstrassCurve A) {n : A}
     (hn : W.c₄ * n = W.nodePolynomial.coeff 0) :
     W.nodePolynomial = .C W.c₄ * (.X ^ 2 + .C W.a₁ * .X + .C n) := by
