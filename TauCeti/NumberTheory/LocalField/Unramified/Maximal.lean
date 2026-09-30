@@ -7,7 +7,11 @@ module
 
 public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.NumberTheory.LocalField.Unramified.Existence
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
+import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
 /-!
 # The maximal unramified extension
@@ -43,6 +47,8 @@ Frobenius corresponding to `1`.
   polynomials `X^{q^f} − X` for `f ≠ 0`.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq_one`: `K^{ur}` contains the roots of unity of
   order prime to the residue characteristic.
+* `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq`: for `p ∤ m`, the `m`-th roots of a unit of
+  `𝒪[K]` are unramified.
 * `TauCeti.isGalois_maximalUnramifiedExtension`: `K^{ur}` is Galois over `K`.
 * `IntermediateField.le_maximalUnramifiedExtension_iff`: for `Ω` separably closed, a finite
   intermediate field lies in `K^{ur}` exactly when it is unramified over `K`.
@@ -166,6 +172,43 @@ theorem mem_maximalUnramifiedExtension_of_pow_eq_one {n : ℕ} (hn : ¬ ringChar
     rw [Nat.card_eq_fintype_card, hd]
     exact ((Nat.Prime.coprime_iff_not_dvd hp).2 hn).pow_left _
   rw [pow_eq_pow_mod _ hζ, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hζ, pow_one]
+
+variable {K Ω} in
+/-- **Radicals of units are unramified.** If the residue characteristic of `K` does not divide `m`,
+every `m`-th root in `Ω` of a unit `u` of `𝒪[K]` lies in the maximal unramified extension: `u` is a
+root of unity `ζ` of order `q − 1` times a principal unit `v`, and `v = w ^ m` for some `w ∈ K`, so
+that `x / w` is a root of unity of order `m (q − 1)`, prime to the residue characteristic. -/
+theorem mem_maximalUnramifiedExtension_of_pow_eq {m : ℕ} (hm : ¬ ringChar 𝓀[K] ∣ m) {u : Kˣ}
+    (hu : u ∈ unitFiltration K 0) {x : Ω} (hx : x ^ m = algebraMap K Ω u) :
+    x ∈ maximalUnramifiedExtension K Ω := by
+  set A := algebraMap K Ω
+  have hmu : IsUnit (m : 𝒪[K]) := IsLocalRing.isUnit_natCast_iff_not_dvd.2 hm
+  -- Write `u = ζ v` with `ζ ^ (q - 1) = 1` and `v` a principal unit, and `v = w ^ m`.
+  set ζv := unitFiltrationZeroEquivProd K ⟨u, hu⟩
+  have huζ : u = ζv.1 * ζv.2 := by
+    rw [← coe_unitFiltrationZeroEquivProd_symm_apply, ContinuousMulEquiv.symm_apply_apply]
+  obtain ⟨w, hw⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hmu ζv.2.2
+  have hw0 : A (w : K) ≠ 0 := (_root_.map_ne_zero A).2 w.ne_zero
+  -- Then `z = x / w` satisfies `z ^ m = ζ`, so `z` is a root of unity of order `m (q - 1)`.
+  set z := x * (A w)⁻¹
+  have hzm : z ^ m = A ((ζv.1 : Kˣ) : K) := calc
+    z ^ m = A (u : K) / A ((w ^ m : Kˣ) : K) := by simp [z, mul_pow, hx, div_eq_mul_inv]
+    _ = A ((ζv.1 : Kˣ) : K) * A ((ζv.2 : Kˣ) : K) / A ((ζv.2 : Kˣ) : K) := by
+      rw [← powMonoidHom_apply, hw, huζ, Units.val_mul, map_mul]
+    _ = A ((ζv.1 : Kˣ) : K) := mul_div_cancel_right₀ _ ((_root_.map_ne_zero A).2 (Units.ne_zero _))
+  have hζ : ((ζv.1 : Kˣ) : K) ^ (Nat.card 𝓀[K] - 1) = 1 := by
+    simpa using congrArg Units.val ((mem_rootsOfUnity _ _).1 ζv.1.2)
+  have hq : IsUnit ((m * (Nat.card 𝓀[K] - 1) : ℕ) : 𝒪[K]) := by
+    rw [Nat.cast_mul]
+    exact hmu.mul (by simpa using isUnit_natCast_natCard_pow_sub_one K one_ne_zero)
+  have hz : z ∈ maximalUnramifiedExtension K Ω :=
+    mem_maximalUnramifiedExtension_of_pow_eq_one (IsLocalRing.isUnit_natCast_iff_not_dvd.1 hq) <| by
+      rw [pow_mul, hzm, ← map_pow, hζ, map_one]
+  have hxz : x = z * A w := by
+    simp only [z]
+    field_simp
+  rw [hxz]
+  exact mul_mem hz (IntermediateField.algebraMap_mem _ (w : K))
 
 /-- The maximal unramified extension is Galois over `K`, as a union of Galois extensions. -/
 instance isGalois_maximalUnramifiedExtension : IsGalois K (maximalUnramifiedExtension K Ω) := by

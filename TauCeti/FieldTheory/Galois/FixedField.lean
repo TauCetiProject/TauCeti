@@ -72,8 +72,6 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
-* `IntermediateField.mem_fixingSubgroup_adjoin_iff`: an automorphism fixes `K⟮S⟯` exactly when it
-  fixes `S`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
   `IntermediateField.mem_fixedField_stabilizer`,
   `IntermediateField.fixedField_stabilizer_eq_adjoin_simple`,
@@ -318,13 +316,6 @@ theorem fixingSubgroup_adjoin_simple (x : M) :
   ext σ
   rw [mem_fixingSubgroup_iff, MulAction.mem_stabilizer_iff]
   simpa using forall_mem_adjoin_smul_eq_self_iff K (S := {x}) σ
-
-/-- **The fixing subgroup of an adjunction.** A `K`-automorphism of `M` fixes `K⟮S⟯` pointwise
-exactly when it fixes every element of `S`. -/
-theorem mem_fixingSubgroup_adjoin_iff {S : Set M} {σ : M ≃ₐ[K] M} :
-    σ ∈ (adjoin K S).fixingSubgroup ↔ ∀ x ∈ S, σ x = x := by
-  rw [mem_fixingSubgroup_iff]
-  exact forall_mem_adjoin_smul_eq_self_iff K σ
 
 /-- An element lies in the fixed field of its own stabilizer. -/
 theorem mem_fixedField_stabilizer (x : M) :
