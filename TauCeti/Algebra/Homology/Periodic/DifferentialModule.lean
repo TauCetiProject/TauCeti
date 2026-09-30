@@ -102,12 +102,10 @@ structure Hom (M N : DifferentialModule C) where
 attribute [reassoc (attr := simp)] Hom.comm
 
 /-- The identity morphism of a differential module. -/
-@[expose, simps]
 def Hom.id (M : DifferentialModule C) : Hom M M where
   f := 𝟙 _
 
 /-- The composition of morphisms of differential modules. -/
-@[expose, simps]
 def Hom.comp {M N P : DifferentialModule C} (φ : Hom M N) (ψ : Hom N P) : Hom M P where
   f := φ.f ≫ ψ.f
 
@@ -115,6 +113,9 @@ instance : Category (DifferentialModule C) where
   Hom := Hom
   id := Hom.id
   comp := Hom.comp
+  id_comp := by intros; apply Hom.ext; simp [Hom.id, Hom.comp]
+  comp_id := by intros; apply Hom.ext; simp [Hom.id, Hom.comp]
+  assoc := by intros; apply Hom.ext; simp [Hom.comp, Category.assoc]
 
 variable {M N P : DifferentialModule C}
 
@@ -124,14 +125,23 @@ variable {M N P : DifferentialModule C}
 theorem hom_ext {φ ψ : M ⟶ N} (h : φ.f = ψ.f) : φ = ψ :=
   Hom.ext h
 
-@[simp] theorem id_f (M : DifferentialModule C) : Hom.f (𝟙 M) = 𝟙 M.X := rfl
-@[simp, reassoc] theorem comp_f (φ : M ⟶ N) (ψ : N ⟶ P) : (φ ≫ ψ).f = φ.f ≫ ψ.f := rfl
+@[simp] theorem id_f (M : DifferentialModule C) : Hom.f (𝟙 M) = 𝟙 M.X := by
+  -- Reduce the categorical identity to its constructor before opening the opaque body.
+  change (Hom.id M).f = _
+  simp [Hom.id]
+@[simp, reassoc] theorem comp_f (φ : M ⟶ N) (ψ : N ⟶ P) :
+    (φ ≫ ψ).f = φ.f ≫ ψ.f := by
+  -- Reduce categorical composition to its constructor before opening the opaque body.
+  change (Hom.comp φ ψ).f = _
+  simp [Hom.comp]
 
 /-- A constructor for morphisms of differential modules when the commutativity condition is not
 obvious. -/
-@[expose, simps]
 def homMk (f : M.X ⟶ N.X) (comm : f ≫ N.d = M.d ≫ f) : M ⟶ N :=
   ⟨f, comm⟩
+
+@[simp] theorem homMk_f (f : M.X ⟶ N.X) (comm : f ≫ N.d = M.d ≫ f) :
+    (homMk f comm).f = f := by simp [homMk]
 
 instance : Zero (M ⟶ N) where
   zero := { f := 0 }
@@ -154,10 +164,20 @@ instance (φ : M ⟶ N) [IsIso φ] : IsIso φ.f := (forget C).map_isIso φ
 
 /-- A constructor for isomorphisms of differential modules from an isomorphism of the underlying
 objects commuting with the differentials. -/
-@[expose, simps]
 def isoMk (e : M.X ≅ N.X) (comm : e.hom ≫ N.d = M.d ≫ e.hom) : M ≅ N where
   hom := homMk e.hom comm
   inv := homMk e.inv (by rw [e.inv_comp_eq, reassoc_of% comm, e.hom_inv_id, comp_id])
+
+@[simp] theorem isoMk_hom (e : M.X ≅ N.X)
+    (comm : e.hom ≫ N.d = M.d ≫ e.hom) :
+    (isoMk e comm).hom = homMk e.hom comm := by
+  simp [isoMk]
+
+@[simp] theorem isoMk_inv (e : M.X ≅ N.X)
+    (comm : e.hom ≫ N.d = M.d ≫ e.hom) :
+    (isoMk e comm).inv =
+      homMk e.inv (by rw [e.inv_comp_eq, reassoc_of% comm, e.hom_inv_id, comp_id]) := by
+  simp [isoMk]
 
 /-- A morphism of differential modules is an isomorphism exactly when its underlying morphism
 is. -/
@@ -259,12 +279,12 @@ def ofOnePeriodicComplex :
 variable (C) in
 /-- Differential modules are equivalent to one-periodic complexes, that is to homological
 complexes of shape `ComplexShape.up (ZMod 1)`. -/
-@[expose, simps]
 def onePeriodicComplexEquivalence :
     DifferentialModule C ≌ HomologicalComplex C (ComplexShape.up (ZMod 1)) where
   functor := toOnePeriodicComplex C
   inverse := ofOnePeriodicComplex C
   unitIso := NatIso.ofComponents (fun M ↦ isoMk (Iso.refl M.X) (by simp))
+    (fun φ ↦ by ext; simp [isoMk, homMk])
   counitIso := NatIso.ofComponents
     (fun K ↦ HomologicalComplex.Hom.isoOfComponents
       (fun i ↦ K.XIsoOfEq (Subsingleton.elim _ _))
@@ -276,6 +296,19 @@ def onePeriodicComplexEquivalence :
       ext i
       obtain rfl := Subsingleton.elim i 0
       simp)
+  functor_unitIso_comp := by
+    intro M
+    ext i
+    obtain rfl := Subsingleton.elim i 0
+    simp [isoMk, homMk]
+
+@[simp] theorem onePeriodicComplexEquivalence_functor :
+    (onePeriodicComplexEquivalence C).functor = toOnePeriodicComplex C := by
+  simp [onePeriodicComplexEquivalence]
+
+@[simp] theorem onePeriodicComplexEquivalence_inverse :
+    (onePeriodicComplexEquivalence C).inverse = ofOnePeriodicComplex C := by
+  simp [onePeriodicComplexEquivalence]
 
 end OnePeriodic
 
@@ -337,12 +370,20 @@ def ofDifferentialObject : DifferentialObject S C ⥤ DifferentialModule C where
 
 /-- For a natural isomorphism `e : shiftFunctor C 1 ≅ 𝟭 C`, differential modules are equivalent to
 Mathlib's differential objects `DifferentialObject S C`. -/
-@[expose, simps]
 def differentialObjectEquivalence : DifferentialModule C ≌ DifferentialObject S C where
   functor := toDifferentialObject e
   inverse := ofDifferentialObject e
   unitIso := NatIso.ofComponents (fun M ↦ isoMk (Iso.refl M.X) (by simp))
+    (fun φ ↦ by ext; simp [isoMk, homMk])
   counitIso := NatIso.ofComponents (fun Y ↦ DifferentialObject.mkIso (Iso.refl Y.obj) (by simp))
+
+@[simp] theorem differentialObjectEquivalence_functor :
+    (differentialObjectEquivalence e).functor = toDifferentialObject e := by
+  simp [differentialObjectEquivalence]
+
+@[simp] theorem differentialObjectEquivalence_inverse :
+    (differentialObjectEquivalence e).inverse = ofDifferentialObject e := by
+  simp [differentialObjectEquivalence]
 
 end DifferentialObject
 
