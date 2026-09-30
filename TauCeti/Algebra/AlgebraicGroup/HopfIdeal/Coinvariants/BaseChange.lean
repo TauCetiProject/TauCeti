@@ -17,12 +17,10 @@ right translation by `N` commutes with flat extension of scalars. No normality, 
 or smoothness assumption is needed. This compares the candidate coordinate algebra of `G/N`
 with the corresponding candidate after extending the ground field.
 
-The proof uses Mathlib's `AlgHom.tensorEqualizerEquiv`, together with the quotient base-change
-isomorphism and the formula for comultiplication on a scalar extension.
-
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.3.
+* Mathlib's `AlgHom.tensorEqualizerEquiv`.
 -/
 
 public section
