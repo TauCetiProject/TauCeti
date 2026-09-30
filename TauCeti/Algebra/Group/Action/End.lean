@@ -11,9 +11,9 @@ public import Mathlib.Algebra.Group.Action.End
 # Coordinates of `mulAutArrow`
 
 Mathlib's `mulAutArrow` lets a group `G` acting on `A` act on `A → M` by multiplicative
-automorphisms. Its generated simp lemma `mulAutArrow_apply_apply` rewrites the value to a scalar
-action through the non-instance `arrowAction`, which cannot be unfolded further without that
-local instance. This file records the evaluation formula in plain coordinates.
+automorphisms. This file records that action's evaluation formula in plain coordinates, supporting
+coordinate calculations in semidirect products built from `mulAutArrow`, particularly
+arbitrary-action permutation wreath products.
 
 ## Main results
 
