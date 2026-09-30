@@ -342,7 +342,7 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
     {c d : Equiv.Perm (Fin n) ⧸ spec.H} :
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
-        e.permCongrHom.toMonoidHom) d := by
+        (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n))) d := by
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
@@ -364,7 +364,7 @@ private theorem image_cosetValue_orbit [Normal F E] (e : f.rootSet E ≃ Fin n)
     (c : Equiv.Perm (Fin n) ⧸ spec.H) :
     cosetValue spec e ''
         MulAction.orbit ((Gal.galActionHom f E).range.map
-          e.permCongrHom.toMonoidHom) c
+          (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n))) c
       = (minpoly F (cosetValue spec e c)).rootSet E := by
   have hint : IsIntegral F (cosetValue spec e c) := Algebra.IsIntegral.isIntegral _
   ext z
@@ -395,7 +395,7 @@ The degree of each factor is the size of the matching orbit,
 noncomputable def orbitQuotientEquivFactors [Normal F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable) :
     MulAction.orbitRel.Quotient ((Gal.galActionHom f E).range.map
-      e.permCongrHom.toMonoidHom)
+      (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
         (Equiv.Perm (Fin n) ⧸ spec.H) ≃ (spec.specialize F f).Factors :=
   Equiv.ofBijective
     (Quotient.lift
@@ -444,7 +444,7 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable)
     (ω : MulAction.orbitRel.Quotient
       ((Gal.galActionHom f E).range.map
-        e.permCongrHom.toMonoidHom)
+        (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
       (Equiv.Perm (Fin n) ⧸ spec.H)) :
     Nat.card (MulAction.orbitRel.Quotient.orbit ω)
       = ((spec.orbitQuotientEquivFactors hf hsep hdeg e hres ω : (spec.specialize F f).Factors) :
@@ -475,7 +475,7 @@ theorem map_natDegree_normalizedFactors_specialize [Normal F E] (hf : f.Monic)
     (UniqueFactorizationMonoid.normalizedFactors (spec.specialize F f)).map natDegree
       = Finset.univ.val.map fun ω : MulAction.orbitRel.Quotient
           ((Gal.galActionHom f E).range.map
-            e.permCongrHom.toMonoidHom)
+            (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
           (Equiv.Perm (Fin n) ⧸ spec.H) => Nat.card (MulAction.orbitRel.Quotient.orbit ω) := by
   have hg0 : spec.specialize F f ≠ 0 := (spec.monic_specialize F f).ne_zero
   have := Factors.finite hg0
