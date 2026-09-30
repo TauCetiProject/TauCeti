@@ -104,12 +104,14 @@ theorem nondegenerate_neg (Q : QuadraticMap R M P) :
     refine ⟨by simpa only [radical_neg] using h, hker ▸ hrank⟩
 
 /-- Scaling a quadratic map by a unit does not change its radical. -/
+@[simp]
 theorem radical_smul {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) :
     (a • Q).radical = Q.radical := by
   ext x
   simp only [mem_radical_iff', smul_apply, ha.smul_eq_zero, ha.smul_left_cancel]
 
 /-- Scaling a quadratic map by a unit does not change its nondegeneracy. -/
+@[simp]
 theorem nondegenerate_smul_iff {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) :
     (a • Q).Nondegenerate ↔ Q.Nondegenerate := by
   have hker : (a • Q).polarBilin.ker = Q.polarBilin.ker := by
