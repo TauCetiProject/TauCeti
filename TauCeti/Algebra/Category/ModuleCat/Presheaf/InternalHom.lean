@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Presheaf.PushforwardZeroMonoidal
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.MonoidalClosed
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.TensorFreeYoneda
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
 # Sections of the internal Hom of presheaves of modules
@@ -27,6 +29,15 @@ morphisms of `C` and natural in both arguments. This is the sectionwise descript
 internal Hom which restriction and stalk comparisons of internal Homs of sheaves of modules rest
 on.
 
+As a first application, restriction to a slice commutes with internal Hom. Restriction
+`pushforward₀ (Over.forget X) R` is a monoidal functor, so it has a canonical comparison
+`𝓗om(M, N)|_X ⟶ 𝓗om(M|_X, N|_X)` (`CategoryTheory.Functor.ihomComparison`). Over an object
+`Y` of the slice over `X`, both sides have sections identified with morphisms of restrictions:
+to the slice over `Y.left` of `C` on the left, and to the iterated slice over `Y` on the right.
+Under these identifications the comparison is restriction along Mathlib's iterated-slice
+equivalence `Over.iteratedSliceEquiv Y`, so it is bijective on sections, and the comparison is an
+isomorphism for every `M`, with no finiteness condition.
+
 ## Main declarations
 
 * `TauCeti.PresheafOfModules.ihomObjEquiv`: the sections of `𝓗om(M, N)` over `U` are the
@@ -34,7 +45,12 @@ on.
   (a section acts by evaluation of its restrictions), compatible with restriction along
   morphisms of `C` by `TauCeti.PresheafOfModules.ihomObjEquiv_map_app`, and natural in the target
   and in the source by `TauCeti.PresheafOfModules.ihomObjEquiv_ihom_map_app` and
-  `TauCeti.PresheafOfModules.ihomObjEquiv_pre_app_app`.
+  `TauCeti.PresheafOfModules.ihomObjEquiv_pre_app_app`;
+* `TauCeti.PresheafOfModules.ihomObjEquiv_ihomComparison_natTrans_app_app`: on sections, the
+  internal Hom comparison for restriction to a slice is restriction along the iterated-slice
+  equivalence;
+* `TauCeti.PresheafOfModules.isIso_ihomComparison_pushforward₀_overForget`: restriction to a slice
+  commutes with internal Hom.
 
 ## References
 
@@ -151,6 +167,85 @@ theorem ihomObjEquiv_pre_app_app {M' : PresheafOfModulesOfCommRing.{u} R} (β : 
       (uncurry_pre_app _ _ _))
 
 end Sections
+
+section Restriction
+
+variable {C : Type u} [SmallCategory C] {R : Cᵒᵖ ⥤ CommRingCat.{u}} (X : C)
+variable (M N : PresheafOfModulesOfCommRing.{u} R)
+
+/-- On sections over `Y`, the internal Hom comparison for restriction to the slice over `X` is
+restriction along the iterated-slice equivalence: a section of `𝓗om(M, N)` over `Y.left`,
+viewed as a morphism `M|_{Y.left} ⟶ N|_{Y.left}`, is sent to the section of
+`𝓗om(M|_X, N|_X)` over `Y` given by the same morphism on the iterated slice over `Y`. -/
+theorem ihomObjEquiv_ihomComparison_natTrans_app_app (Y : Over X)
+    (s : ((ihom M).obj N).obj (op Y.left)) :
+    ihomObjEquiv Y ((pushforward₀ (Over.forget X) R).obj M)
+        ((pushforward₀ (Over.forget X) R).obj N)
+        ((((pushforward₀ (Over.forget X) R).ihomComparison M).natTrans.app N).app (op Y) s) =
+      (pushforward₀ (Over.iteratedSliceForward Y) ((Over.forget Y.left).op ⋙ R)).map
+        (ihomObjEquiv Y.left M N s) := by
+  let F := pushforward₀ (Over.forget X) R
+  ext ⟨Z⟩ m
+  -- Both morphisms act on `m` by evaluating a restricted section: on the left the restriction
+  -- along `Z.hom` of the image of `s`, on the right the restriction of `s` along `Z.hom.left`.
+  refine (ihomObjEquiv_apply_app Y (F.obj M) (F.obj N)
+    (((F.ihomComparison M).natTrans.app N).app (op Y) s) Z.hom m).trans
+    (Eq.trans ?_ (ihomObjEquiv_apply_app Y.left M N s Z.hom.left m).symm)
+  -- The comparison commutes with restriction, and evaluation after it is evaluation before it,
+  -- since the tensorator of restriction is the identity on pure tensors.
+  have hnat := PresheafOfModulesOfCommRing.naturality_apply
+    ((F.ihomComparison M).natTrans.app N) Z.hom.op s
+  have hev := congrArg (fun f ↦ f.app' (op Z.left) (TensorProduct.tmul _ m
+    (((ihom M).obj N).map Z.hom.left.op s))) (F.ihomComparison_ev M N)
+  exact (congrArg (fun x ↦ ((ihom.ev (F.obj M)).app (F.obj N)).app' (op Z.left)
+    (TensorProduct.tmul _ m x)) hnat).symm.trans hev
+
+/-- The internal Hom comparison for restriction to a slice is bijective on sections. -/
+private theorem bijective_ihomComparison_natTrans_app_app (Y : Over X) :
+    Function.Bijective
+      ((((pushforward₀ (Over.forget X) R).ihomComparison M).natTrans.app N).app (op Y)) := by
+  let F := pushforward₀ (Over.forget X) R
+  -- Restriction along the two halves of the iterated-slice equivalence. Restricting along `fwd`
+  -- and then back along `bwd` is the identity on morphisms, because
+  -- `(Over.iteratedSliceForward Y).obj ((Over.iteratedSliceBackward Y).obj W)` is `W` up to
+  -- structure eta; `bwd.map` therefore inverts `fwd.map` on the left.
+  let fwd := pushforward₀ (Over.iteratedSliceForward Y) ((Over.forget Y.left).op ⋙ R)
+  let bwd := pushforward₀ (Over.iteratedSliceBackward Y)
+    ((Over.forget Y).op ⋙ (Over.forget X).op ⋙ R)
+  refine ⟨fun s s' h ↦ ?_, fun t ↦ ?_⟩
+  · apply (ihomObjEquiv Y.left M N).injective
+    exact congrArg bwd.map ((ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s).symm.trans
+      ((congrArg (ihomObjEquiv Y (F.obj M) (F.obj N)) h).trans
+        (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s')))
+  · let ψ := ihomObjEquiv Y (F.obj M) (F.obj N) t
+    refine ⟨(ihomObjEquiv Y.left M N).symm (bwd.map ψ),
+      (ihomObjEquiv Y (F.obj M) (F.obj N)).injective
+        ((ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y _).trans
+          ((congrArg fwd.map (Equiv.apply_symm_apply _ _)).trans ?_))⟩
+    ext Z m
+    -- It remains to compare `ψ` at `Z` and at the image of `Z` under the equivalence, which
+    -- differs from `Z` only in its structure morphism. The unit `u` of `Over.iteratedSliceEquiv Y`
+    -- is built from `Iso.refl`, so `u.left.left` is definitionally an identity; restriction along
+    -- it is the identity by `map_id`, whose `restrictScalarsId'` inverse acts trivially on
+    -- elements.
+    let u := (Over.iteratedSliceEquiv Y).unit.app Z.unop
+    have hn := PresheafOfModulesOfCommRing.naturality_apply ψ u.op m
+    have hM : M.map u.left.left.op m = m := (ConcreteCategory.congr_hom (M.map_id _) m).trans rfl
+    have hN (n : N.obj (op Z.unop.left.left)) : N.map u.left.left.op n = n :=
+      (ConcreteCategory.congr_hom (N.map_id _) n).trans rfl
+    exact (hn.trans (hN _)).symm.trans (congrArg (ψ.app' Z) hM)
+
+/-- Restriction to the slice over `X` commutes with internal Hom: the canonical comparison
+`𝓗om(M, N)|_X ⟶ 𝓗om(M|_X, N|_X)` is an isomorphism for every presheaf of modules `M`. -/
+instance isIso_ihomComparison_pushforward₀_overForget :
+    IsIso ((pushforward₀ (Over.forget X) R).ihomComparison M).natTrans := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro N
+  have := mono_of_injective fun Y ↦ (bijective_ihomComparison_natTrans_app_app X M N Y.unop).1
+  have := epi_of_surjective fun Y ↦ (bijective_ihomComparison_natTrans_app_app X M N Y.unop).2
+  exact isIso_of_mono_of_epi _
+
+end Restriction
 
 end PresheafOfModules
 
