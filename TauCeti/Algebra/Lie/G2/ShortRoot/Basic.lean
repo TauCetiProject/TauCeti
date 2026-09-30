@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.ShortRootWeight
 
@@ -47,7 +48,8 @@ constructions on it transfer to that scheme only along such an identification.
   `TauCeti.G2ShortRoot.raisingMatrix_apply` and `TauCeti.G2ShortRoot.loweringMatrix_apply` giving
   their entries from the weights and from the step coefficients
   `TauCeti.G2ShortRoot.raisingCoefficient` and `TauCeti.G2ShortRoot.loweringCoefficient`.
-* `TauCeti.G2ShortRoot.isSerreSystem`: the Chevalley--Serre relations between them over `ℤ`.
+* `TauCeti.G2ShortRoot.isSerreSystem`: the Chevalley--Serre relations between them over `ℤ`,
+  with `TauCeti.G2ShortRoot.isSl2Triple` the `sl₂` triple at each node.
 * `TauCeti.G2ShortRoot.serreRepresentation`: the induced representation of the type-`G₂` Serre
   Lie algebra.
 
@@ -154,6 +156,12 @@ theorem isSerreSystem :
   lie_H_F := by decide +kernel
   ad_pow_lie_E_E := by decide +kernel
   ad_pow_lie_F_F := by decide +kernel
+
+/-- At each simple node, the integral Cartan, raising and lowering matrices form an `sl₂`
+triple. -/
+theorem isSl2Triple (i : Fin 2) :
+    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) := by
+  fin_cases i <;> refine ⟨?_, ?_, ?_, ?_⟩ <;> decide +kernel
 
 /-- The explicit integral seven-dimensional representation of the type-`G₂` Serre Lie algebra. -/
 noncomputable def serreRepresentation :
