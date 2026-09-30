@@ -33,6 +33,9 @@ each real place.
   `NumberField.InfinitePlace.Completion.continuousMulEquivRealOfIsReal`: the continuous
   multiplicative isomorphisms `w.Completion ≃ₜ* ℂ` of a complex place and `w.Completion ≃ₜ* ℝ` of
   a real place.
+* `NumberField.InfinitePlace.Completion.norm_continuousMulEquivComplexOfIsComplex_symm` and
+  `NumberField.InfinitePlace.Completion.norm_continuousMulEquivRealOfIsReal_symm`: the inverses of
+  these isomorphisms preserve absolute values.
 * `NumberField.InfinitePlace.Completion.connectedSpace_units_of_isComplex`: the unit group of a
   complex completion is connected.
 * `NumberField.InfinitePlace.Completion.isPreconnected_setOf_extensionEmbeddingOfIsReal_pos`: the
@@ -84,6 +87,22 @@ the real extension embedding. -/
 @[simp]
 theorem continuousMulEquivRealOfIsReal_apply (hw : w.IsReal) (x : w.Completion) :
     continuousMulEquivRealOfIsReal hw x = extensionEmbeddingOfIsReal hw x := (rfl)
+
+/-- The inverse of the continuous multiplicative isomorphism `w.Completion ≃ₜ* ℂ` of a complex
+place preserves norms. -/
+@[simp]
+theorem norm_continuousMulEquivComplexOfIsComplex_symm (hw : w.IsComplex) (z : ℂ) :
+    ‖(continuousMulEquivComplexOfIsComplex hw).symm z‖ = ‖z‖ :=
+  (isometryEquivComplexOfIsComplex hw).symm.isometry.norm_map_of_map_zero
+    (map_zero (ringEquivComplexOfIsComplex hw).symm) z
+
+/-- The inverse of the continuous multiplicative isomorphism `w.Completion ≃ₜ* ℝ` of a real place
+takes a real number to an element of the same absolute value. -/
+@[simp]
+theorem norm_continuousMulEquivRealOfIsReal_symm (hw : w.IsReal) (x : ℝ) :
+    ‖(continuousMulEquivRealOfIsReal hw).symm x‖ = |x| :=
+  (isometryEquivRealOfIsReal hw).symm.isometry.norm_map_of_map_zero
+    (map_zero (ringEquivRealOfIsReal hw).symm) x
 
 /-- **The unit group of a complex completion is connected**: it is homeomorphic to `ℂˣ` through
 `continuousMulEquivComplexOfIsComplex hw`. -/

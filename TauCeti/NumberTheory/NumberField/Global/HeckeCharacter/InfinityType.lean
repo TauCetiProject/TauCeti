@@ -10,6 +10,9 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Shift
 public import TauCeti.NumberTheory.NumberField.Global.InfinityType.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Connected
 
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Topology.Algebra.ContinuousMonoidHom
+
 /-!
 # The infinity type of a Hecke character
 
@@ -306,35 +309,16 @@ theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u :
 @[simp]
 theorem realComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsReal}) :
     (normPow K s).realComponent w = normCpowCharacter ℝ s := by
-  refine ContinuousMonoidHom.ext fun x ↦ Units.ext ?_
-  obtain ⟨y, rfl⟩ :=
-    (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).surjective x
-  have hy : ‖((Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2) y : ℝˣ) : ℝ)‖ =
-      ‖(y : w.1.Completion)‖ :=
-    (congrArg norm (continuousMulEquivRealOfIsReal_apply w.2 _)).trans <|
-      (isometry_extensionEmbeddingOfIsReal w.2).norm_map_of_map_zero (map_zero _) y
-  rw [realComponent_apply, ContinuousMulEquiv.symm_apply_apply,
-    coe_infiniteComponent_normPow_apply, coe_normCpowCharacter_apply, hy,
-    infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
+  ext x
+  simp [infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
 
 /-- The component of the norm character `‖·‖ ^ s` at a complex place is `z ↦ |z| ^ (2 * s)`,
 since the normalized absolute value of a complex place is the square of the usual one. -/
 @[simp]
 theorem complexComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsComplex}) :
     (normPow K s).complexComponent w = normCpowCharacter ℂ (2 * s) := by
-  refine ContinuousMonoidHom.ext fun z ↦ Units.ext ?_
-  obtain ⟨y, rfl⟩ :=
-    (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).surjective z
-  have hy : ‖((Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2) y : ℂˣ) :
-      ℂ)‖ = ‖(y : w.1.Completion)‖ :=
-    (congrArg norm (continuousMulEquivComplexOfIsComplex_apply w.2 _)).trans <|
-      (isometry_extensionEmbedding w.1).norm_map_of_map_zero (map_zero _) y
-  have harg : Complex.arg (‖(y : w.1.Completion)‖ : ℂ) = 0 :=
-    Complex.arg_ofReal_of_nonneg (norm_nonneg _)
-  rw [complexComponent_apply, ContinuousMulEquiv.symm_apply_apply,
-    coe_infiniteComponent_normPow_apply, coe_normCpowCharacter_apply, hy,
-    infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2, Complex.ofReal_pow,
-    Complex.cpow_ofNat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
+  ext z
+  simp [infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
 
 /-- **The infinity type of the norm character `‖·‖ ^ s`**: modulus exponent `s` and parity `0` at
 every real place, and modulus exponent `2 * s` and angular frequency `0` at every complex place,
