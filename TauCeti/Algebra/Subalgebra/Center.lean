@@ -137,6 +137,17 @@ private def centerSubmodule : Submodule S A where
     intro s a ha
     exact (center R A).mul_mem s.val.property ha
 
+/-- The action on the submodule is multiplication in the ambient algebra. -/
+private theorem centerSubmodule_smul_coe (s : S) (x : centerSubmodule S) :
+    ((s • x : centerSubmodule S) : A) = ((s : center R A) : A) * (x : A) := by
+  rw [Submodule.coe_smul, centralSubalgebraAlgebra_smul_def]
+
+/-- The action on the center is multiplication by the included scalar. -/
+private theorem center_smul_coe (s : S) (x : center R A) :
+    ((s • x : center R A) : A) = ((s : center R A) : A) * (x : A) := by
+  change (((s : center R A) * x : center R A) : A) = _
+  exact (center R A).coe_mul (s : center R A) x
+
 /-- The submodule of central elements has the canonical center's `S`-module structure. -/
 private def centerSubmoduleEquiv : (centerSubmodule S) ≃ₗ[S] center R A where
   toFun x := ⟨x.1, x.2⟩
@@ -144,7 +155,10 @@ private def centerSubmoduleEquiv : (centerSubmodule S) ≃ₗ[S] center R A wher
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  map_smul' s x := by
+    apply Subtype.ext
+    rw [center_smul_coe, centerSubmodule_smul_coe]
+    simp only [RingHom.id_apply]
 
 /-- If an algebra is Noetherian as a module over a central subalgebra, its center is
 finite over that subalgebra. -/
