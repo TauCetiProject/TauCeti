@@ -17,9 +17,9 @@ finite presentation exactly when its scheme-theoretic kernel has the correspondi
 over the base. No finite-type hypothesis on either ambient group is required, and the base
 may be any commutative ring.
 
-The forward implications use the kernel as the fibre over the identity. For the converses,
-`kernelPairTensorEquiv` identifies the self-base-change of the morphism with the projection
-from the source times the kernel, and Mathlib's faithfully flat descent applies.
+These criteria reduce finiteness questions about a faithfully flat homomorphism to its
+kernel over the base. They are useful when the kernel's coordinate algebra is easier to
+describe than the morphism itself.
 
 In particular, finite presentation of the kernel upgrades an fpqc group homomorphism to an
 fppf homomorphism, so the fppf first isomorphism theorem applies. The finite criterion detects
