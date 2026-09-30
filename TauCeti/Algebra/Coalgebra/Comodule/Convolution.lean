@@ -44,7 +44,8 @@ theorem coactComponent_counit :
   rw [coactComponent_apply, h, LinearMap.comp_apply, lTensor_counit_coact]
   simp
 
-/-- The convolution algebra of the dual coalgebra acts by contraction of the coaction. -/
+/-- The convolution algebra on the linear dual of the coalgebra acts by contraction of
+the coaction. -/
 noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.End R M where
   toFun f := coactComponent f.ofConv
   map_zero' := by ext m; simp [coactComponent_apply]
@@ -85,6 +86,7 @@ noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.
     rw [← coactComponent_apply, coactComponent_counit]
     rfl
 
+/-- Evaluating the convolution action contracts the coaction against the underlying functional. -/
 @[simp]
 theorem convolutionAction_apply (f : WithConv (C →ₗ[R] R)) (m : M) :
     convolutionAction (R := R) (C := C) (M := M) f m =
