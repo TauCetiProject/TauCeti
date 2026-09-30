@@ -87,6 +87,12 @@ theorem subtype_comp_torsionByMap (f : M →ₗ[R] N) :
   ext
   rfl
 
+variable (M) in
+/-- The `r`-torsion is the kernel of multiplication by `r`. -/
+theorem exact_subtype_torsionBy :
+    Exact (torsionBy R M r).subtype (DistribSMul.toLinearMap R M r) := fun x ↦
+  ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.2⟩
+
 variable {r}
 
 /-- The restriction of an injective linear map to the `r`-torsion is injective. -/
@@ -115,11 +121,6 @@ section Snake
 
 variable {R : Type*} [CommRing R] (r : R) {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
-
-/-- The `r`-torsion is the kernel of multiplication by `r`. -/
-theorem exact_subtype_torsionBy (M : Type*) [AddCommGroup M] [Module R M] :
-    Exact (torsionBy R M r).subtype (DistribSMul.toLinearMap R M r) :=
-  LinearMap.exact_subtype_ker_map _
 
 /-- `M ⧸ rM` is the cokernel of multiplication by `r`. -/
 theorem exact_toLinearMap_mkQ (M : Type*) [AddCommGroup M] [Module R M] :
@@ -178,9 +179,9 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
     rw [map_smul, hy]
     exact (mem_torsionBy_iff _ _).1 x.2
   have hy' : g' (β y) = torsionByMap r γ x := by
-    rw [coe_torsionByMap_apply, ← hy, ← LinearMap.comp_apply g', ← hβγ, LinearMap.comp_apply]
+    simpa [hy] using (LinearMap.congr_fun hβγ y).symm
   have hz' : f' (α z) = r • β y := by
-    rw [← LinearMap.comp_apply f', ← hαβ, LinearMap.comp_apply, hz, map_smul]
+    simpa [hz] using (LinearMap.congr_fun hαβ z).symm
   rw [LinearMap.comp_apply, LinearMap.comp_apply, torsionByδ_eq hfg' hf' hg' _ hy' hz',
     torsionByδ_eq hfg hf hg x hy hz, QuotSMulTop.map_apply_mk]
 
