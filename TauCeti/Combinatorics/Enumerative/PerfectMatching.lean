@@ -456,13 +456,12 @@ theorem IsPerfectMatching.two_mul_orbitCount [Finite α] {f : Equiv.Perm α}
   have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
   -- Every orbit of `f` is a pair: `f` has no fixed points, and its cycles have length `2`.
   have hpair : ∀ k ∈ f.partition.parts, k = 2 := fun k hk => by
-    rw [Equiv.Perm.parts_partition, hsupp, Finset.card_univ, Nat.sub_self,
-      Multiset.replicate_zero, add_zero, Equiv.Perm.cycleType_of_pow_prime_eq_one hsq] at hk
-    exact Multiset.eq_of_mem_replicate hk
+    rw [Equiv.Perm.parts_partition, Equiv.Perm.cycleType_of_pow_prime_eq_one hsq] at hk
+    exact Multiset.eq_of_mem_replicate (by simpa [hsupp] using hk)
   rw [f.orbitCount_eq_card_parts_partition, Nat.card_eq_fintype_card]
   refine .trans ?_ f.partition.parts_sum
-  rw [Multiset.eq_replicate_of_mem hpair, Multiset.card_replicate, Multiset.sum_replicate,
-    smul_eq_mul, mul_comm]
+  rw [Multiset.eq_replicate_of_mem hpair]
+  simp [mul_comm]
 
 end Parity
 

@@ -147,7 +147,6 @@ def facePerm (D : PDCode n) : Perm (Fin (4 * n)) :=
   D.edgePair.val * D.crossingRotation
 
 /-- The face traversal rotates at the crossing and then crosses the arc. -/
-@[simp]
 theorem facePerm_apply (D : PDCode n) (h : Fin (4 * n)) :
     D.facePerm h = D.edgePair.val (D.crossingRotation h) :=
   (rfl)
@@ -180,6 +179,7 @@ theorem face_surjective (D : PDCode n) : Function.Surjective D.face :=
   Quotient.mk_surjective
 
 /-- The face traversal stays in one face. -/
+@[simp]
 theorem face_facePerm (D : PDCode n) (h : Fin (4 * n)) : D.face (D.facePerm h) = D.face h :=
   D.face_eq_face_iff.mpr (sameCycle_apply_left.mpr (SameCycle.refl _ _))
 
