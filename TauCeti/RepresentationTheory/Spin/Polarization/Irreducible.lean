@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.End.Adjoin
-public import TauCeti.RepresentationTheory.Spin.OddStructure
+import TauCeti.RepresentationTheory.Spin.OddStructure
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 
