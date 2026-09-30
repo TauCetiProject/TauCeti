@@ -9,19 +9,23 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Between
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # The area of a hyperbolic triangle with a vertex at infinity
 
 `idealRegion a b` is the region of `ℍ` above the unit semicircle and between the vertical lines
-`re = a` and `re = b`: a hyperbolic triangle with vertices `a + i √(1 - a²)`, `b + i √(1 - b²)`
-and the point at infinity. Its invariant area is `arccos a - arccos b` (`volume_idealRegion`);
-this is the base case of the Gauss–Bonnet formula, in which the two finite angles are
-`arccos (-a)` and `arccos b`. `idealRegionAbove c r a b` is the same region for the semicircle
-of centre `c` and radius `r`, obtained from `idealRegion` by the affine map `z ↦ r z + c`.
+`re = a` and `re = b`. For `-1 < a ≤ b < 1` it is a hyperbolic triangle with vertices
+`a + i √(1 - a²)`, `b + i √(1 - b²)` and the point at infinity, and its invariant area is
+`arccos a - arccos b` (`volume_idealRegion`); this is the base case of the Gauss–Bonnet formula,
+in which the two finite angles are `arccos (-a)` and `arccos b`. `idealRegionAbove c r a b` is
+the same region for the semicircle of centre `c` and radius `r > 0`, obtained from `idealRegion`
+by the affine map `z ↦ r z + c` (`idealRegionAbove_eq_smul`); its area is the same formula in
+the rescaled endpoints when `c - r < a ≤ b < c + r` (`volume_idealRegionAbove`). The two
+one-variable integrals of the computation are `TauCeti.lintegral_Ioi_inv_sq` and
+`TauCeti.integral_one_div_sqrt_one_sub_sq`.
 
 Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 8 (2008), §5: the area
 `μ(A) = ∫_A dx dy / y²` (5.1) and its invariance (Theorem 5.3), p. 18; the computation
@@ -45,6 +49,7 @@ def idealRegion (a b : ℝ) : Set ℍ :=
 
 -- The body of `idealRegion` is not `@[expose]`d; downstream modules use this membership test.
 /-- Membership in `idealRegion a b`. -/
+@[simp]
 theorem mem_idealRegion_iff (a b : ℝ) (z : ℍ) :
     z ∈ idealRegion a b ↔ a ≤ z.re ∧ z.re ≤ b ∧ 1 ≤ Complex.normSq (z : ℂ) := Iff.rfl
 
@@ -55,36 +60,6 @@ theorem measurableSet_idealRegion (a b : ℝ) : MeasurableSet (idealRegion a b) 
     (Complex.continuous_normSq.comp UpperHalfPlane.continuous_coe).measurable
   exact (measurableSet_le measurable_const hre).inter
     ((measurableSet_le hre measurable_const).inter (measurableSet_le measurable_const hn))
-
-/-- The inner integral of the area computation: `∫_A^∞ dy / y² = 1 / A`. -/
-theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
-    ∫⁻ y in Ioi A, (((1 / ‖y‖₊) ^ 2 : ℝ≥0) : ℝ≥0∞) = ENNReal.ofReal A⁻¹ := by
-  have hint := integrableOn_Ioi_rpow_of_lt (a := -2) (by norm_num) hA
-  have hval : ∫ y in Ioi A, y ^ (-2 : ℝ) = A⁻¹ := by
-    convert integral_Ioi_rpow_of_lt (a := -2) (by norm_num) hA using 1
-    norm_num [Real.rpow_neg_one]
-  rw [← hval, ofReal_integral_eq_lintegral_ofReal hint
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun y hy ↦
-      Real.rpow_nonneg (hA.trans hy).le _)]
-  refine setLIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
-  have hy : 0 < y := hA.trans hy
-  rw [← ENNReal.ofReal_coe_nnreal]
-  congr 1
-  simp [Real.rpow_neg hy.le, Real.nnnorm_of_nonneg hy.le]
-
-/-- The outer integral of the area computation: `∫_a^b dx / √(1 - x²) = arcsin b - arcsin a`. -/
-theorem integral_inv_sqrt_one_sub_sq {a b : ℝ} (ha : -1 < a) (hab : a ≤ b) (hb : b < 1) :
-    ∫ x in a..b, 1 / Real.sqrt (1 - x ^ 2) = Real.arcsin b - Real.arcsin a := by
-  have hIcc : Set.uIcc a b ⊆ Set.Ioo (-1) 1 := by
-    rw [Set.uIcc_of_le hab]
-    exact Set.Icc_subset_Ioo ha hb
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x hx ↦ ?_) ?_
-  · exact Real.hasDerivAt_arcsin (hIcc hx).1.ne' (hIcc hx).2.ne
-  · refine ContinuousOn.intervalIntegrable (ContinuousOn.div continuousOn_const ?_ ?_)
-    · exact (Real.continuous_sqrt.comp (by fun_prop)).continuousOn
-    · intro x hx
-      have hx' := hIcc hx
-      exact (Real.sqrt_pos.2 (by nlinarith [hx'.1, hx'.2])).ne'
 
 /-- **The area of a hyperbolic triangle with a vertex at infinity**, in normal form: the region
 above the unit semicircle between the verticals `re = a` and `re = b` has invariant area
@@ -143,7 +118,7 @@ theorem volume_idealRegion {a b : ℝ} (ha : -1 < a) (hab : a ≤ b) (hb : b < 1
   rw [lintegral_indicator measurableSet_Icc, ← ofReal_integral_eq_lintegral_ofReal
     (hcont.integrableOn_Icc) (ae_restrict_of_forall_mem measurableSet_Icc fun x _ ↦ by positivity),
     integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
-    integral_inv_sqrt_one_sub_sq ha hab hb, Real.arccos_eq_pi_div_two_sub_arcsin,
+    integral_one_div_sqrt_one_sub_sq ha hab hb, Real.arccos_eq_pi_div_two_sub_arcsin,
     Real.arccos_eq_pi_div_two_sub_arcsin]
   ring_nf
 
@@ -154,6 +129,7 @@ def idealRegionAbove (c r a b : ℝ) : Set ℍ :=
 
 -- The body of `idealRegionAbove` is not `@[expose]`d; downstream modules use this membership test.
 /-- Membership in `idealRegionAbove c r a b`. -/
+@[simp]
 theorem mem_idealRegionAbove_iff (c r a b : ℝ) (z : ℍ) :
     z ∈ idealRegionAbove c r a b ↔
       a ≤ z.re ∧ z.re ≤ b ∧ r ^ 2 ≤ Complex.normSq ((z : ℂ) - c) := Iff.rfl
@@ -174,7 +150,8 @@ theorem idealRegionAbove_eq_smul {c r : ℝ} (hr : 0 < r) (a b : ℝ) :
       (upperRightHom c * ↑(dilation (Real.log r))) • idealRegion ((a - c) / r) ((b - c) / r) := by
   ext z
   rw [Set.mem_smul_set_iff_inv_smul_mem, mul_inv_rev, mul_smul, ← QuotientGroup.mk_inv,
-    dilation_inv, ← AddChar.map_neg_eq_inv, upperRightHom_smul, UpperHalfPlane.pslMk_smul]
+    Matrix.SpecialLinearGroup.dilation_inv, ← AddChar.map_neg_eq_inv, upperRightHom_smul,
+    UpperHalfPlane.pslMk_smul]
   -- the inverse map sends `z` to `(z - c) / r`
   have hre : (dilation (-Real.log r) • (-c +ᵥ z) : ℍ).re = (z.re - c) / r := by
     rw [← UpperHalfPlane.coe_re, coe_dilation_smul, Real.exp_neg, Real.exp_log hr,
