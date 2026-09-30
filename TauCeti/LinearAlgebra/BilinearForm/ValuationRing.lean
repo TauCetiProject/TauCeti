@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Dimension.Free
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.LocalRing.Module
@@ -26,12 +25,9 @@ valuation ring `R` in which `2` is a unit, every symmetric bilinear form on a fi
 for an odd prime `p`, where the result says that every integral quadratic form is equivalent over
 `ℤ_p` to a diagonal one; grouping the diagonal entries by valuation gives its Jordan splitting.
 
-The proof picks a vector `x` whose self-pairing `B x x` divides every value of `B`: some Gram
-entry `B u w` in a basis divides all the others because divisibility is total in a valuation ring,
-and then one of `u`, `w`, `u + w` has self-pairing associated to `B u w`, because
-`B (u + w) (u + w) = B u u + B w w + 2 B u w` and `2` is a unit in the local ring `R`. Such an `x`
-splits off an orthogonal summand `R ∙ x ⊕ x^⊥`, the complement `x^⊥` is again finite free since
-`R` is a local Bézout domain, and induction on the rank finishes.
+A self-pairing that divides every value of the form splits off an orthogonal summand. Over a
+valuation ring with `2` a unit, such a self-pairing exists, and the resulting orthogonal
+decomposition gives diagonalization of the form.
 
 The hypothesis on `2` cannot be dropped: the general divisibility and hyperbolic-plane lemmas
 in `TauCeti.LinearAlgebra.BilinearForm.Diagonalization` show that the hyperbolic plane
