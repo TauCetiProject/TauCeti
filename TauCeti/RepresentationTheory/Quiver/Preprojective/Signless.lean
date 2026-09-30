@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Covering
-public import TauCeti.Algebra.Ring.ThreeArmVanishing
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Map
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Gauge
 
