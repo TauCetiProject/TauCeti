@@ -135,6 +135,12 @@ theorem hom_ext {φ ψ : M ⟶ N} (h : φ.f = ψ.f) : φ = ψ :=
   change (Hom.comp φ ψ).f = _
   simp [Hom.comp]
 
+/-- The underlying morphism of an equality transport is the transport of underlying objects. -/
+@[simp] theorem eqToHom_f (h : M = N) :
+    (eqToHom h : M ⟶ N).f = eqToHom (congrArg DifferentialModule.X h) := by
+  subst h
+  simp
+
 instance : Zero (M ⟶ N) where
   zero := { f := 0 }
 
