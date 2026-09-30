@@ -63,7 +63,7 @@ conjugation action.
   `ConjClasses.pow_mul`: the identity and composition laws for that power.
 * `ConjClasses.map_mk`: the computation rule for `ConjClasses.map` on representatives,
   with `ConjClasses.map_pow` the consequence that the power is natural in the monoid.
-* `TauCeti.MulAut.smul_conjClasses_mk`: an automorphism acts on a conjugacy class by
+* `TauCeti.mulAut_smul_conjClasses_mk`: an automorphism acts on a conjugacy class by
   mapping its representative; inner automorphisms fix every class.
 * `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
   classes.
@@ -478,43 +478,35 @@ instance instMulActionMulAutConjClasses : MulAction (MulAut G) (ConjClasses G) w
     simp only [ConjClasses.map_mk]
     exact congrArg ConjClasses.mk (MulAut.mul_apply G φ ψ x)
 
-namespace MulAut
-
 /-- The automorphism action is computed on representatives. -/
 @[simp]
-theorem smul_conjClasses_mk (φ : MulAut G) (x : G) :
+theorem mulAut_smul_conjClasses_mk (φ : MulAut G) (x : G) :
     φ • ConjClasses.mk x = ConjClasses.mk (φ x) :=
   ConjClasses.map_mk _ x
 
 /-- Automorphisms commute with powering conjugacy classes. -/
 @[simp]
-theorem smul_conjClasses_pow (φ : MulAut G) (c : ConjClasses G) (n : ℕ) :
+theorem mulAut_smul_conjClasses_pow (φ : MulAut G) (c : ConjClasses G) (n : ℕ) :
     φ • (c ^ n) = (φ • c) ^ n :=
   ConjClasses.map_pow φ.toMonoidHom c n
-
-end MulAut
 
 end Monoid
 
 variable [Group G]
 
-namespace MulAut
-
 /-- Automorphisms commute with inversion of conjugacy classes. -/
 @[simp]
-theorem smul_conjClasses_inv (φ : MulAut G) (c : ConjClasses G) :
+theorem mulAut_smul_conjClasses_inv (φ : MulAut G) (c : ConjClasses G) :
     φ • c⁻¹ = (φ • c)⁻¹ := by
   obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
-  simp only [ConjClasses.inv_mk, smul_conjClasses_mk, map_inv]
-
-end MulAut
+  simp only [ConjClasses.inv_mk, mulAut_smul_conjClasses_mk, map_inv]
 
 /-- Inner automorphisms fix every conjugacy class. -/
 @[simp]
 theorem mulAut_conj_smul_conjClasses (g : G) (c : ConjClasses G) :
     MulAut.conj g • c = c := by
   obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
-  rw [MulAut.smul_conjClasses_mk]
+  rw [mulAut_smul_conjClasses_mk]
   exact (ConjClasses.mk_eq_mk_iff_isConj.mpr
     (isConj_iff.mpr ⟨g, (MulAut.conj_apply g x).symm⟩)).symm
 
