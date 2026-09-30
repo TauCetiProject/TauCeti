@@ -230,16 +230,22 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
     {d : ℕ} {v : Basis (Fin d) R (B.orthogonal (R ∙ x))}
     (hv : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho v) :
     ∃ b : Basis (Fin (d + 1)) R M, B.iIsOrtho b := by
+  have hc := B.isCompl_span_singleton_orthogonal_of_dvd hx hdvd
   have hli : ∀ c : R, ∀ y ∈ B.orthogonal (R ∙ x), c • x + y = 0 → c = 0 := fun c y hy hcy ↦ by
-    have h := congrArg (B x) hcy
-    rw [map_add, map_smul, (mem_orthogonal_span_singleton_iff B).1 hy, smul_eq_mul, add_zero,
-      map_zero] at h
+    have hcx : c • x ∈ B.orthogonal (R ∙ x) := by
+      rw [eq_neg_of_add_eq_zero_left hcy]
+      exact neg_mem hy
+    have hzero : c • x = 0 :=
+      Submodule.disjoint_def.mp hc.disjoint (c • x) (Submodule.smul_mem _ c
+        (Submodule.mem_span_singleton_self x)) hcx
+    have h := congrArg (B x) hzero
+    rw [map_smul, smul_eq_mul, map_zero] at h
     exact mem_nonZeroDivisors_iff_right.mp hx c h
   have hsp : ∀ z : M, ∃ c : R, z + c • x ∈ B.orthogonal (R ∙ x) := fun z ↦ by
-    obtain ⟨k, hk⟩ := hdvd z
-    refine ⟨-k, (mem_orthogonal_span_singleton_iff B).2 ?_⟩
-    rw [map_add, map_smul, hk, smul_eq_mul]
-    ring
+    obtain ⟨w, hw, y, hy, hwy⟩ := Submodule.mem_sup.mp
+      (hc.sup_eq_top ▸ (Submodule.mem_top : z ∈ (⊤ : Submodule R M)))
+    obtain ⟨k, rfl⟩ := Submodule.mem_span_singleton.mp hw
+    exact ⟨-k, by simpa [← hwy, add_comm, add_left_comm, add_assoc] using hy⟩
   refine ⟨Basis.mkFinCons x v hli hsp, ?_⟩
   rw [iIsOrtho_def, Basis.coe_mkFinCons]
   intro i j

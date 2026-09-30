@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.LocalRing.Module
+public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.RingTheory.Valuation.FinsetDvd
 
@@ -32,12 +33,9 @@ and then one of `u`, `w`, `u + w` has self-pairing associated to `B u w`, becaus
 splits off an orthogonal summand `R ∙ x ⊕ x^⊥`, the complement `x^⊥` is again finite free since
 `R` is a local Bézout domain, and induction on the rank finishes.
 
-The hypothesis on `2` cannot be dropped: if a symmetric form has an orthogonal basis, every value
-of the form is divisible by any common divisor of its diagonal values
-(`LinearMap.BilinForm.iIsOrtho.dvd_apply`). The hyperbolic plane `!![0, 1; 1, 0]` has all
-diagonal values in `2R` and the value `1` off the diagonal, so it has an orthogonal basis only if
-`2` is a unit (`LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic`). Over `ℤ_2` it
-has none.
+The hypothesis on `2` cannot be dropped: the general divisibility and hyperbolic-plane lemmas
+in `TauCeti.LinearAlgebra.BilinearForm.Diagonalization` show that the hyperbolic plane
+`!![0, 1; 1, 0]` has an orthogonal basis only if `2` is a unit. Over `ℤ_2` it has none.
 
 ## Main results
 
@@ -47,11 +45,6 @@ has none.
   unit, some self-pairing `B x x` divides every value of a symmetric form.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_of_isUnit_two`: over a valuation ring with
   `2` a unit, a symmetric bilinear form on a finite free module has an orthogonal basis.
-* `LinearMap.BilinForm.iIsOrtho.dvd_apply`: along an orthogonal basis, a common divisor of the
-  diagonal values divides every value.
-* `LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic`: if the hyperbolic plane has an
-  orthogonal basis then `2` is a unit.
-
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §91C and 92:1.
@@ -66,62 +59,6 @@ open LinearMap (BilinForm)
 open Module
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
-
-/-- A common divisor of the Gram entries of a bilinear form in a basis divides every value of the
-form. -/
-theorem dvd_apply_of_forall_dvd_basis {ι : Type*} (b : Basis ι R M) {d : R}
-    (hd : ∀ i j, d ∣ B (b i) (b j)) (x y : M) : d ∣ B x y := by
-  rw [← B.sum_repr_mul_repr_mul b x y]
-  refine Finset.dvd_sum fun i _ ↦ Finset.dvd_sum fun j _ ↦ ?_
-  simp only [smul_eq_mul]
-  exact dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (hd i j) _) _
-
-/-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
-every value of the form. -/
-theorem iIsOrtho.dvd_apply {ι : Type*} {b : Basis ι R M} (hb : B.iIsOrtho b) {d : R}
-    (hd : ∀ i, d ∣ B (b i) (b i)) (x y : M) : d ∣ B x y := by
-  refine dvd_apply_of_forall_dvd_basis b (fun i j ↦ ?_) x y
-  obtain rfl | hij := eq_or_ne i j
-  · exact hd i
-  · rw [iIsOrtho_def.mp hb i j hij]
-    exact dvd_zero d
-
-/-- If the hyperbolic plane, the form with Gram matrix `!![0, 1; 1, 0]` on `R²`, has an orthogonal
-basis, then `2` is a unit in `R`. So over a ring such as `ℤ_2` the hyperbolic plane is not
-diagonalizable. -/
-theorem isUnit_two_of_iIsOrtho_toBilin'_hyperbolic {ι : Type*} {b : Basis ι R (Fin 2 → R)}
-    (hb : (Matrix.toBilin' !![(0 : R), 1; 1, 0]).iIsOrtho b) : IsUnit (2 : R) := by
-  have hd : ∀ v : Fin 2 → R, (2 : R) ∣ Matrix.toBilin' !![(0 : R), 1; 1, 0] v v := fun v ↦
-    ⟨v 0 * v 1, by simp [Matrix.toBilin'_apply', Matrix.vecHead, Matrix.vecTail]; ring⟩
-  refine isUnit_of_dvd_one ?_
-  simpa [Matrix.toBilin'_apply'] using
-    hb.dvd_apply (fun i ↦ hd (b i)) (Pi.single 0 1) (Pi.single 1 1)
-
-/-- Over a local ring in which `2` is a unit, if a value `B u w` of a symmetric bilinear form
-divides every value of the form, then so does one of the self-pairings `B u u`, `B w w` and
-`B (u + w) (u + w)`. -/
-theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
-    (hB : B.IsSymm) (h2 : IsUnit (2 : R)) {u w : M} (h : ∀ y z, B u w ∣ B y z) :
-    ∃ x, ∀ y z, B x x ∣ B y z := by
-  obtain ⟨s, hs⟩ := h u u
-  obtain ⟨t, ht⟩ := h w w
-  by_cases hsu : IsUnit s
-  · exact ⟨u, fun y z ↦ (hs ▸ (Units.mul_right_dvd (u := hsu.unit)).mpr dvd_rfl).trans (h y z)⟩
-  by_cases htu : IsUnit t
-  · exact ⟨w, fun y z ↦ (ht ▸ (Units.mul_right_dvd (u := htu.unit)).mpr dvd_rfl).trans (h y z)⟩
-  -- Both `s` and `t` lie in the maximal ideal, so `s + t + 2` is a unit.
-  have hunit : IsUnit (s + t + 2) := by
-    by_contra hn
-    refine (mem_nonunits_iff.mp ?_) h2
-    have := IsLocalRing.nonunits_add (IsLocalRing.nonunits_add hn
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff s).not.mpr hsu)))
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff t).not.mpr htu))
-    rwa [show s + t + 2 + -s + -t = 2 by ring] at this
-  have huw : B (u + w) (u + w) = B u w * (s + t + 2) := by
-    simp only [map_add, LinearMap.add_apply, hs, ht, hB.eq w u]
-    ring
-  exact ⟨u + w, fun y z ↦
-    (huw ▸ (Units.mul_right_dvd (u := hunit.unit)).mpr dvd_rfl).trans (h y z)⟩
 
 variable [IsDomain R] [ValuationRing R]
 

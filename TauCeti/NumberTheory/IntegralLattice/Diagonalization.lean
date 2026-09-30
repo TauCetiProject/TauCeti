@@ -32,6 +32,8 @@ dyadic Jordan constituents need not be diagonal.
   localized integral form of a lattice has an orthogonal basis.
 * `TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`: for a
   nondegenerate lattice the diagonal entries are units times powers of `p`.
+* `TauCeti.not_exists_orthogonal_basis_hyperbolic_padicInt_two`: the hyperbolic plane over
+  `ℤ_[2]` has no orthogonal basis.
 
 ## References
 
@@ -78,5 +80,24 @@ theorem exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow (hp : p ≠ 2)
     fun i ↦ _root_.PadicInt.unitCoeff_spec (hne i)⟩
 
 end IntegralLattice
+
+/-- **The dyadic trap.** The hyperbolic plane over `ℤ_[2]` has no orthogonal basis. -/
+theorem not_exists_orthogonal_basis_hyperbolic_padicInt_two :
+    ¬ ∃ b : Basis (Fin 2) ℤ_[2] (Fin 2 → ℤ_[2]),
+      (Matrix.toBilin' ((!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ).map
+        (Int.cast : ℤ → ℤ_[2]))).iIsOrtho b := by
+  rintro ⟨b, hb⟩
+  have hnon : ¬ IsUnit (2 : ℤ_[2]) := by
+    intro h
+    have hnorm := PadicInt.isUnit_iff.mp h
+    have hc : Nat.Coprime 2 2 :=
+      (PadicInt.norm_natCast_eq_one_iff (p := 2) (n := 2)).mp (by simpa using hnorm)
+    exact (by decide : ¬ Nat.Coprime 2 2) hc
+  have hmat : ((!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ).map
+      (Int.cast : ℤ → ℤ_[2])) = (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ_[2]) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> rfl
+  exact hnon (LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic (b := b)
+    (by simpa [hmat] using hb))
 
 end TauCeti
