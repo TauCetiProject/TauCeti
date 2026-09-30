@@ -200,6 +200,12 @@ theorem ihomObjEquiv_ihomComparison_natTrans_app_app (Y : Over X)
   exact (congrArg (fun x ↦ ((ihom.ev (F.obj M)).app (F.obj N)).app' (op Z.left)
     (TensorProduct.tmul _ m x)) hnat).symm.trans hev
 
+private theorem iteratedSliceEquiv_counit_app_left (Y : Over X) (Z : Over Y.left) :
+    ((Over.iteratedSliceEquiv Y).counit.app Z).left = 𝟙 Z.left := rfl
+
+private theorem iteratedSliceEquiv_unit_app_left_left (Y : Over X) (Z : Over Y) :
+    ((Over.iteratedSliceEquiv Y).unit.app Z).left.left = 𝟙 Z.left.left := rfl
+
 /-- The internal Hom comparison for restriction to a slice is bijective on sections. -/
 private theorem bijective_ihomComparison_natTrans_app_app (Y : Over X) :
     Function.Bijective
@@ -213,34 +219,35 @@ private theorem bijective_ihomComparison_natTrans_app_app (Y : Over X) :
       (pushforward₀ (Over.forget Y.left) R).obj N) :
       bwd.map (fwd.map φ) = φ := by
     ext Z m
-    -- The counit is built from identity isomorphisms, so its underlying map acts trivially.
     let c := (Over.iteratedSliceEquiv Y).counit.app Z.unop
     have hn := PresheafOfModulesOfCommRing.naturality_apply φ c.op m
-    have hM : M.map c.left.op m = m :=
-      (ConcreteCategory.congr_hom (M.map_id _) m).trans rfl
-    have hN (n : N.obj (op Z.unop.left)) : N.map c.left.op n = n :=
-      (ConcreteCategory.congr_hom (N.map_id _) n).trans rfl
+    have hM : M.map c.left.op m = m := by
+      rw [iteratedSliceEquiv_counit_app_left X Y Z.unop]
+      exact ConcreteCategory.congr_hom (M.map_id _) m
+    have hN (n : N.obj (op Z.unop.left)) : N.map c.left.op n = n := by
+      rw [iteratedSliceEquiv_counit_app_left X Y Z.unop]
+      exact ConcreteCategory.congr_hom (N.map_id _) n
     exact (hn.trans (hN _)).symm.trans (congrArg (φ.app' Z) hM)
   have right_inv (ψ : (pushforward₀ (Over.forget Y) ((Over.forget X).op ⋙ R)).obj
       (F.obj M) ⟶ (pushforward₀ (Over.forget Y) ((Over.forget X).op ⋙ R)).obj (F.obj N)) :
       fwd.map (bwd.map ψ) = ψ := by
     ext Z m
-    -- The unit is built from identity isomorphisms. Naturality along it gives the equality on
-    -- components, since both source and target map identities to identities.
     let u := (Over.iteratedSliceEquiv Y).unit.app Z.unop
     have hn := PresheafOfModulesOfCommRing.naturality_apply ψ u.op m
-    have hM : M.map u.left.left.op m = m :=
-      (ConcreteCategory.congr_hom (M.map_id _) m).trans rfl
-    have hN (n : N.obj (op Z.unop.left.left)) : N.map u.left.left.op n = n :=
-      (ConcreteCategory.congr_hom (N.map_id _) n).trans rfl
+    have hM : M.map u.left.left.op m = m := by
+      rw [iteratedSliceEquiv_unit_app_left_left X Y Z.unop]
+      exact ConcreteCategory.congr_hom (M.map_id _) m
+    have hN (n : N.obj (op Z.unop.left.left)) : N.map u.left.left.op n = n := by
+      rw [iteratedSliceEquiv_unit_app_left_left X Y Z.unop]
+      exact ConcreteCategory.congr_hom (N.map_id _) n
     exact (hn.trans (hN _)).symm.trans (congrArg (ψ.app' Z) hM)
   refine ⟨fun s s' h ↦ ?_, fun t ↦ ?_⟩
   · apply (ihomObjEquiv Y.left M N).injective
-    have hmaps := (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s).symm.trans
-      ((congrArg (ihomObjEquiv Y (F.obj M) (F.obj N)) h).trans
-        (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s'))
-    change fwd.map (ihomObjEquiv Y.left M N s) =
-      fwd.map (ihomObjEquiv Y.left M N s') at hmaps
+    have hmaps : fwd.map (ihomObjEquiv Y.left M N s) =
+        fwd.map (ihomObjEquiv Y.left M N s') :=
+      (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s).symm.trans
+        ((congrArg (ihomObjEquiv Y (F.obj M) (F.obj N)) h).trans
+          (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s'))
     exact (left_inv _).symm.trans ((congrArg bwd.map hmaps).trans (left_inv _))
   · let ψ := ihomObjEquiv Y (F.obj M) (F.obj N) t
     refine ⟨(ihomObjEquiv Y.left M N).symm (bwd.map ψ),
