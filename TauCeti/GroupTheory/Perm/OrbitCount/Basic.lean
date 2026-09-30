@@ -353,6 +353,23 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
   | [] => 1
   | (a, p) :: factors => swapProduct factors * Equiv.swap a p
 
+/-- The empty product of transpositions is the identity. -/
+@[simp] theorem swapProduct_nil [DecidableEq β] : swapProduct ([] : List (β × β)) = 1 := rfl
+
+/-- The head of the list is the rightmost factor of `TauCeti.swapProduct`. -/
+@[simp] theorem swapProduct_cons [DecidableEq β] (a p : β) (factors : List (β × β)) :
+    swapProduct ((a, p) :: factors) = swapProduct factors * Equiv.swap a p := rfl
+
+/-- The product of a concatenation of transposition lists: the factors of the first list act
+first, so they appear on the right. -/
+@[simp] theorem swapProduct_append [DecidableEq β] (factors₁ factors₂ : List (β × β)) :
+    swapProduct (factors₁ ++ factors₂) = swapProduct factors₂ * swapProduct factors₁ := by
+  induction factors₁ with
+  | nil => simp
+  | cons factor factors₁ ih =>
+      rcases factor with ⟨a, p⟩
+      simp [ih, mul_assoc]
+
 /-- A list of transpositions `[(a₁, p₁), …, (aₙ, pₙ)]` is a *swap forest* if each factor
 `Equiv.swap aᵢ pᵢ` moves a point `pᵢ ≠ aᵢ` that the product of the later factors still fixes. Then
 each factor of `TauCeti.swapProduct` splices a fixed point into another orbit, as in
@@ -362,6 +379,15 @@ each factor of `TauCeti.swapProduct` splices a fixed point into another orbit, a
   | (a, p) :: factors =>
       IsSwapForest factors ∧ swapProduct factors p = p ∧ a ≠ p
 
+/-- The empty list of transpositions is a swap forest. -/
+@[simp] theorem isSwapForest_nil [DecidableEq β] : IsSwapForest ([] : List (β × β)) := trivial
+
+/-- Unfolding `TauCeti.IsSwapForest` at a cons: the tail is a swap forest and the new factor
+moves a point `p ≠ a` fixed by the product of the tail. -/
+@[simp] theorem isSwapForest_cons [DecidableEq β] (a p : β) (factors : List (β × β)) :
+    IsSwapForest ((a, p) :: factors) ↔
+      IsSwapForest factors ∧ swapProduct factors p = p ∧ a ≠ p := Iff.rfl
+
 /-- **A swap forest removes one orbit per factor.** Iterating
 `TauCeti.orbitCount_mul_swap_add_one`, the product of a swap forest of `n` transpositions on a
 finite type has `n` orbits fewer than the identity. -/
@@ -369,12 +395,12 @@ theorem orbitCount_swapProduct_add_length [DecidableEq β] [Finite β] {factors 
     (hforest : IsSwapForest factors) :
     orbitCount (swapProduct factors) + factors.length = Nat.card β := by
   induction factors with
-  | nil => simp [swapProduct, orbitCount_one]
+  | nil => simp [orbitCount_one]
   | cons factor factors ih =>
       rcases factor with ⟨a, p⟩
       have hstep := orbitCount_mul_swap_add_one hforest.2.1 hforest.2.2
       have htail := ih hforest.1
-      simp only [swapProduct, List.length_cons] at hstep ⊢
+      simp only [swapProduct_cons, List.length_cons] at hstep ⊢
       omega
 
 /-- **Merging two orbits removes one orbit.** If every orbit of `σ` is contained in an orbit of

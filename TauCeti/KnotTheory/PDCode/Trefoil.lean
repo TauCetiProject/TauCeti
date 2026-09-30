@@ -227,7 +227,7 @@ private def trefoilStateForest (b₀ b₁ b₂ : Bool) :
 private theorem trefoilStateForest_isForest (b₀ b₁ b₂ : Bool) :
     IsSwapForest (trefoilStateForest b₀ b₁ b₂) := by
   cases b₀ <;> cases b₁ <;> cases b₂ <;>
-    simp [trefoilStateForest, IsSwapForest, swapProduct, Equiv.swap_apply_def]
+    simp [trefoilStateForest, Equiv.swap_apply_def]
 
 private theorem trefoilStatePerm_eq_swapProduct (b₀ b₁ b₂ : Bool) :
     (Equiv.prodCongrRight ![PDCode.slotSmoothing (!b₀), PDCode.slotSmoothing (!b₁),
@@ -249,7 +249,7 @@ private def trefoilComponentForest : List ((Fin 3 × Fin 4) × (Fin 3 × Fin 4))
     ((2, 1), (1, 0)), ((0, 0), (2, 1))]
 
 private theorem trefoilComponentForest_isForest : IsSwapForest trefoilComponentForest := by
-  simp [trefoilComponentForest, IsSwapForest, swapProduct, Equiv.swap_apply_def]
+  simp [trefoilComponentForest, Equiv.swap_apply_def]
 
 private theorem trefoilComponentSlotPerm_eq_swapProduct :
     (Equiv.prodCongr (Equiv.refl (Fin 3)) PDCode.oppositeCrossingSlot) *
@@ -259,7 +259,7 @@ private theorem trefoilComponentSlotPerm_eq_swapProduct :
   rintro ⟨i, slot⟩
   fin_cases i <;> fin_cases slot <;>
     simp [rightHandedTrefoilArcPair,
-      PerfectMatching.val_mk, trefoilComponentForest, swapProduct, Equiv.swap_apply_def]
+      PerfectMatching.val_mk, trefoilComponentForest, Equiv.swap_apply_def]
 
 private theorem trefoilComponentPerm_eq_swapProduct :
     rightHandedTrefoilPDCode.toPDCode.componentPerm =
