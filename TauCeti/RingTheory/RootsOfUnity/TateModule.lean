@@ -269,7 +269,7 @@ theorem proj_map (f : E →* F) (x : PrimeToPTateModule p E)
 @[simp]
 theorem map_id : map (MonoidHom.id E) = MonoidHom.id (PrimeToPTateModule p E) := by
   ext x m
-  rfl
+  simp
 
 /-- Mapping a composite of monoid homomorphisms is the composite of the induced maps on the
 prime-to-`p` Tate modules. -/
@@ -277,7 +277,7 @@ prime-to-`p` Tate modules. -/
 theorem map_comp {G : Type*} [CommMonoid G] (g : F →* G) (f : E →* F) :
     map (p := p) (g.comp f) = (map (p := p) g).comp (map (p := p) f) := by
   ext x m
-  rfl
+  simp
 
 /-- The homomorphism of Tate modules induced by a monoid homomorphism is continuous. -/
 theorem continuous_map (f : E →* F) : Continuous (map f : PrimeToPTateModule p E → _) :=
@@ -297,12 +297,18 @@ the action recorded by the Tate twist `(1)` in `ℤ̂^{(p')}(1)`. -/
 instance : SMul M (PrimeToPTateModule p E) :=
   ⟨fun g ↦ map (MulDistribMulAction.toMonoidHom E g)⟩
 
+/-- The action of `g` on the prime-to-`p` Tate module is the map induced by the action of `g`
+on `E`. -/
+theorem smul_def (g : M) (x : PrimeToPTateModule p E) :
+    g • x = map (MulDistribMulAction.toMonoidHom E g) x :=
+  rfl
+
 /-- The components of `g • x` are obtained by letting `g` act on the components of `x`. -/
 @[simp]
 theorem coe_proj_smul (g : M) (x : PrimeToPTateModule p E)
     (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
-    ((proj m (g • x) : Eˣ) : E) = g • ((proj m x : Eˣ) : E) :=
-  (rfl)
+    ((proj m (g • x) : Eˣ) : E) = g • ((proj m x : Eˣ) : E) := by
+  rw [smul_def, proj_map, restrictRootsOfUnity_coe_apply, MulDistribMulAction.toMonoidHom_apply]
 
 instance : MulDistribMulAction M (PrimeToPTateModule p E) where
   one_smul x := ext fun m ↦ Subtype.ext <| Units.ext <| by simp

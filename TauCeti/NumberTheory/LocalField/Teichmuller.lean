@@ -18,7 +18,8 @@ For a nonarchimedean local field `K`, `TauCeti.teichmuller 𝒪[K]` is the canon
 multiplicative section `𝓀[K]ˣ →* 𝒪[K]ˣ`. This file adds its zero-preserving extension
 `teichmullerLift K : 𝓀[K] →*₀ 𝒪[K]`, obtained from Mathlib's `Perfection.teichmuller₀`, and proves
 that the two constructions agree on units. It also records that, for `q = #𝓀[K]` and `f ≠ 0`,
-`q ^ f - 1` is a unit in `𝒪[K]`.
+`q ^ f - 1` is a unit in `𝒪[K]`, together with the related arithmetic of exponents prime to the
+residue characteristic `p`.
 
 ## Main definitions
 
@@ -28,6 +29,9 @@ that the two constructions agree on units. It also records that, for `q = #𝓀[
 
 * `TauCeti.residue_teichmullerLift`: the lift is a section of reduction.
 * `TauCeti.isUnit_natCast_natCard_pow_sub_one`: for `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`.
+* `TauCeti.ne_zero_of_coprime_ringChar`, `TauCeti.isUnit_natCast_of_coprime_ringChar`: an exponent
+  `m` prime to `p` is nonzero and is a unit in `𝒪[K]`.
+* `TauCeti.natCard_sub_one_coprime_ringChar`: `q - 1` is prime to `p`.
 * `TauCeti.exists_isPrimitiveRoot_natCard_residueField_sub_one`: `K` contains a primitive
   `(q - 1)`-st root of unity.
 * `TauCeti.eq_teichmullerLift_iff`: an element of `𝒪[K]` is `teichmullerLift K a` exactly
@@ -101,6 +105,30 @@ theorem isUnit_natCast_natCard_pow_sub_one {f : ℕ} (hf : f ≠ 0) :
     Nat.cast_sub (Nat.one_le_pow _ _ Nat.card_pos), Nat.cast_pow, Nat.card_eq_fintype_card,
     Nat.cast_card_eq_zero, zero_pow hf, Nat.cast_one, zero_sub, neg_ne_zero]
   exact one_ne_zero
+
+variable {K} in
+/-- An exponent prime to the residue characteristic is nonzero. -/
+theorem ne_zero_of_coprime_ringChar {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) : m ≠ 0 := by
+  rintro rfl
+  exact (CharP.prime_ringChar 𝓀[K]).ne_one (Nat.coprime_zero_left _ |>.1 hm)
+
+variable {K} in
+/-- An exponent prime to the residue characteristic is a unit of the ring of integers. -/
+theorem isUnit_natCast_of_coprime_ringChar {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) :
+    IsUnit (m : 𝒪[K]) := by
+  rw [← residue_ne_zero_iff_isUnit, map_natCast, ne_eq, ringChar.spec]
+  exact (Nat.Prime.coprime_iff_not_dvd (CharP.prime_ringChar 𝓀[K])).1 hm.symm
+
+/-- The cardinality `q` of the residue field is a power of the residue characteristic `p`, so
+`q - 1` is prime to `p`. -/
+theorem natCard_sub_one_coprime_ringChar : (Nat.card 𝓀[K] - 1).Coprime (ringChar 𝓀[K]) := by
+  let _ := Fintype.ofFinite 𝓀[K]
+  obtain ⟨d, -, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
+  have hq : ringChar 𝓀[K] ∣ Nat.card 𝓀[K] := by
+    rw [Nat.card_eq_fintype_card, hd]
+    exact dvd_pow_self _ d.ne_zero
+  exact (Nat.Coprime.of_dvd_left hq <|
+    (Nat.coprime_self_sub_right (Nat.one_le_iff_ne_zero.2 Nat.card_pos.ne')).2 (by simp)).symm
 
 /-- A nonarchimedean local field contains a primitive `(q - 1)`-st root of unity, where `q` is the
 cardinality of its residue field: the Teichmüller lifts of the units of `𝓀[K]` are the `(q - 1)`-st

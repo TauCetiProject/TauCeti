@@ -128,11 +128,8 @@ therefore fixed by the inertia subgroup. -/
 theorem apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one {σ : Gal(AlgebraicClosure K/K)}
     (hσ : σ ∈ inertiaSubgroup K) {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K]))
     {ζ : AlgebraicClosure K} (hζ : ζ ^ m = 1) : σ ζ = ζ := by
-  have hm0 : m ≠ 0 := by
-    rintro rfl
-    exact (CharP.prime_ringChar 𝓀[K]).ne_one (Nat.coprime_zero_left _ |>.1 hm)
   refine mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hσ ζ m.totient
-    (Nat.totient_pos.2 (Nat.pos_of_ne_zero hm0)).ne' ?_
+    (Nat.totient_pos.2 (Nat.pos_of_ne_zero (ne_zero_of_coprime_ringChar hm))).ne' ?_
   -- The order `q` of the residue field is a power of `p`, hence prime to `m`, so
   -- `q ^ φ(m) ≡ 1 [MOD m]` by Euler's theorem.
   let _ := Fintype.ofFinite 𝓀[K]
