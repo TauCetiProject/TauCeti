@@ -59,16 +59,19 @@ filtration.
 * `TauCeti.ramificationIndex_eq_ramificationIdx`: the intrinsic ramification index agrees with
   `Ideal.ramificationIdx` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_tower`: multiplicativity `e(M/K) = e(L/K) · e(M/L)` in a tower.
+* `TauCeti.isTamelyRamified_tower_iff`: a tower is tame exactly when both steps are tame.
 * `TauCeti.isTamelyRamified_iff_natCast_ne_zero`: `L/K` is tamely ramified exactly when `e(L/K)`
   is nonzero in the residue field of `K`.
+* `TauCeti.isTamelyRamified_iff_isUnit_natCast`: `L/K` is tamely ramified exactly when `e(L/K)`
+  is a unit in `𝒪[L]`.
 
 ## Implementation notes
 
 The definition only uses the algebra map and the two normalized valuations, so it does not carry
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
-`ramificationIndex_def` and the reformulations of tame, wild, and total ramification, every public
-theorem about it assumes compatibility, which makes the restricted valuation trivial on the units
-of `𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
+`ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
+about it assumes compatibility, which makes the restricted valuation trivial on the units of
+`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
 
 ## References
 
@@ -82,6 +85,8 @@ noncomputable section
 open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
+
+section Core
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -171,20 +176,32 @@ theorem isTamelyRamified_iff_natCast_ne_zero :
 
 end Tame
 
-section Total
+end Core
 
-variable (K L)
+section Total
 
 /-- A finite extension of nonarchimedean local fields is totally ramified when its ramification
 index equals its degree. -/
-def IsTotallyRamified : Prop := ramificationIndex K L = Module.finrank K L
+def IsTotallyRamified (K L : Type*) [Field K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] : Prop :=
+  ramificationIndex K L = Module.finrank K L
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+variable (K L : Type*) [Field K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
+
 /-- Total ramification unfolds to its defining equality `e(L/K) = [L : K]`. -/
 theorem isTotallyRamified_iff_ramificationIndex_eq_finrank :
     IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := Iff.rfl
 
 end Total
+
+section Rest
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
 
 variable [ValuativeExtension K L]
 
@@ -458,5 +475,27 @@ theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [Topologi
     ext
     simp [← IsScalarTower.algebraMap_apply]
   rw [hx, normalizedValuation_algebraMap, normalizedValuation_algebraMap, pow_mul]
+
+/-- A tower of nonarchimedean local fields is tamely ramified exactly when each of its two
+steps is tamely ramified. The residue characteristics of `K` and `L` agree, and their
+ramification indices multiply. -/
+theorem isTamelyRamified_tower_iff (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M]
+    [IsScalarTower K L M] [ValuativeExtension L M] :
+    IsTamelyRamified K M ↔ IsTamelyRamified K L ∧ IsTamelyRamified L M := by
+  have hp : (ringChar 𝓀[K]).Prime := CharP.prime_ringChar 𝓀[K]
+  simp only [isTamelyRamified_iff, ramificationIndex_tower (K := K) (L := L),
+    ← Algebra.ringChar_eq 𝓀[K] 𝓀[L], hp.dvd_mul, not_or]
+
+variable (K L) in
+/-- An extension is tamely ramified exactly when its ramification index is a unit in the integer
+ring `𝒪[L]`, the form in which tameness enters Hensel-type arguments in `L`. -/
+theorem isTamelyRamified_iff_isUnit_natCast :
+    IsTamelyRamified K L ↔ IsUnit (ramificationIndex K L : 𝒪[L]) := by
+  rw [isTamelyRamified_iff_natCast_ne_zero, ← IsLocalRing.residue_ne_zero_iff_isUnit,
+    map_natCast, ← map_natCast (algebraMap 𝓀[K] 𝓀[L]),
+    map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
+
+end Rest
 
 end TauCeti

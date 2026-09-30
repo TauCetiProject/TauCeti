@@ -30,6 +30,8 @@ dense, `ℤ̂` is commutative. The identification of the maximal pro-`p` quotien
   of `1`.
 * `TauCeti.zHat.lift`: the continuous homomorphism to a profinite group sending `zHat.gen` to a
   given element.
+* `TauCeti.zHat.liftEquiv`: `lift` as an equivalence between a profinite group and the continuous
+  homomorphisms from `ℤ̂` to it, with inverse evaluation at `zHat.gen`.
 
 ## Main results
 
@@ -152,6 +154,26 @@ theorem lift_unique (a : P) (φ : zHat.{u} →ₜ* P) (hφ : φ gen = a) : φ = 
 group there is a unique continuous homomorphism from `ℤ̂` sending the generator to `a`. -/
 theorem existsUnique_lift (a : P) : ∃! φ : zHat.{u} →ₜ* P, φ gen = a :=
   ⟨lift a, lift_gen a, fun φ hφ ↦ lift_unique a φ hφ⟩
+
+variable (P) in
+/-- **The universal property of the profinite integers, bundled.** Continuous homomorphisms from
+`ℤ̂` to a profinite group `P` correspond to elements of `P`, via `TauCeti.zHat.lift` and
+evaluation at the generator. -/
+noncomputable def liftEquiv : P ≃ (zHat.{u} →ₜ* P) where
+  toFun := lift
+  invFun φ := φ gen
+  left_inv := lift_gen
+  right_inv φ := (lift_unique _ φ rfl).symm
+
+/-- The bundled universal property sends `a` to its lift. -/
+@[simp]
+theorem liftEquiv_apply (a : P) : liftEquiv.{u} P a = lift a :=
+  (rfl)
+
+/-- The inverse of the bundled universal property is evaluation at the generator. -/
+@[simp]
+theorem liftEquiv_symm_apply (φ : zHat.{u} →ₜ* P) : (liftEquiv P).symm φ = φ gen :=
+  (rfl)
 
 /-- The lift of a topological generator of a profinite group is surjective. -/
 theorem lift_surjective (a : P) (ha : (Subgroup.zpowers a).topologicalClosure = ⊤) :

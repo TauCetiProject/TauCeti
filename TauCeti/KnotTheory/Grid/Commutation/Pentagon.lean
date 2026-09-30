@@ -145,10 +145,9 @@ theorem turn_mem_cIco (P : GridPentagonBetween a s x y) :
 theorem left_injective :
     Function.Injective fun P : GridPentagonBetween a s x y => P.left := by
   intro P Q h
-  obtain ⟨P, hP, _⟩ := P
-  obtain ⟨Q, hQ, _⟩ := Q
-  obtain rfl : P = Q :=
-    GridRectangleBetween.sidePair_injective (Prod.ext h (hP.trans hQ.symm))
+  obtain ⟨P, _, _⟩ := P
+  obtain ⟨Q, _, _⟩ := Q
+  obtain rfl : P = Q := GridRectangleBetween.left_injective h
   rfl
 
 /-- There is at most one pentagon between two grid states: its initial side is the unique column

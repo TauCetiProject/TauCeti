@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Action.Invariant
-public import Mathlib.GroupTheory.PGroup
+public import Mathlib.GroupTheory.Sylow
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
@@ -76,6 +76,8 @@ particular the wild inertia group `G_1`, is a `p`-group.
 * `TauCeti.isPGroup_ramificationGroupGraded_natCast_succ` and
   `TauCeti.isPGroup_ramificationGroup`: the positive-depth graded pieces, and, for a faithful
   action with finite `G_0`, the positive-depth ramification groups, are `p`-groups.
+* `TauCeti.ramificationGroupOneSylow` and `TauCeti.eq_ramificationGroupOneSylow`: the wild inertia
+  group `G_1`, viewed inside `G_0`, is its unique normal Sylow `p`-subgroup.
 
 ## Implementation notes
 
@@ -487,5 +489,76 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G �
     refine IsPGroup.of_subgroup_of_quotient ?_ (isPGroup_ramificationGroupGraded_natCast_succ G p j)
     push_cast
     exact hsucc.comap_subtype
+
+/-! ### Wild inertia as the Sylow subgroup of inertia -/
+
+variable (G) in
+/-- The index of `G_1` in `G_0` is prime to the residue characteristic `p`. This is the
+order-theoretic consequence of the tame-character embedding `G_0/G_1 → 𝓀[L]ˣ`. -/
+theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
+    ¬p ∣ ((ramificationGroup G 𝒪[L] 1).subgroupOf
+      (ramificationGroup G 𝒪[L] 0)).index := by
+  let _ := Fintype.ofFinite 𝓀[L]
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  intro hpIndex
+  have hpCard : p ∣ Nat.card (RamificationGroupGraded G 𝒪[L] 0) := by
+    rwa [RamificationGroupGraded, zero_add, ← Subgroup.index_eq_card]
+  have hpResidueCard : p ∣ Nat.card 𝓀[L] := by
+    obtain ⟨d, -, hd⟩ := FiniteField.card 𝓀[L] p
+    rw [Nat.card_eq_fintype_card, hd]
+    exact dvd_pow_self p d.ne_zero
+  have hcoprime : Nat.Coprime p (Nat.card 𝓀[L] - 1) :=
+    Nat.Coprime.of_dvd_left hpResidueCard <|
+      (Nat.coprime_self_sub_right
+        (show 1 ≤ Nat.card 𝓀[L] from Nat.card_pos)).2 (by simp)
+  exact (Fact.out : p.Prime).coprime_iff_not_dvd.mp hcoprime <|
+    hpCard.trans
+      (card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one (L := L) G)
+
+variable (G) in
+/-- **Wild inertia is the Sylow `p`-subgroup of inertia.** For the residue characteristic `p`,
+the first ramification group `G_1`, viewed as a subgroup of `G_0`, is a Sylow `p`-subgroup.
+
+The two inputs are the positive-depth `p`-group theorem and the tame-character embedding, which
+shows that the index `#(G_0/G_1)` divides `#𝓀[L] - 1` and is therefore prime to `p`. -/
+noncomputable def ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
+    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
+    Sylow p (ramificationGroup G 𝒪[L] 0) :=
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  ((isPGroup_ramificationGroup G p (i := 1) (by omega)).comap_subtype).toSylow
+    (not_dvd_index_ramificationGroup_one G p)
+
+variable (G) in
+/-- The subgroup underlying `ramificationGroupOneSylow` is `G_1` viewed inside `G_0`. -/
+@[simp]
+theorem ramificationGroupOneSylow_coe (p : ℕ) [CharP 𝓀[L] p]
+    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
+    (ramificationGroupOneSylow (G := G) (L := L) p :
+      Subgroup (ramificationGroup G 𝒪[L] 0)) =
+      (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) :=
+  (rfl)
+
+variable (G) in
+/-- The wild inertia Sylow subgroup is normal in inertia. -/
+theorem ramificationGroupOneSylow_normal (p : ℕ) [CharP 𝓀[L] p]
+    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
+    (ramificationGroupOneSylow (G := G) (L := L) p :
+      Subgroup (ramificationGroup G 𝒪[L] 0)).Normal := by
+  rw [ramificationGroupOneSylow_coe, Subgroup.normal_subgroupOf_iff_le_normalizer
+    (ramificationGroup_antitone (G := G) (𝒪[L]) (by omega : (0 : ℤ) ≤ 1))]
+  rw [Subgroup.normalizer_eq_top_iff.mpr inferInstance]
+  exact le_top
+
+variable (G) in
+/-- The wild inertia Sylow subgroup is the unique Sylow `p`-subgroup of inertia. -/
+theorem eq_ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
+    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)]
+    (Q : Sylow p (ramificationGroup G 𝒪[L] 0)) :
+    Q = ramificationGroupOneSylow (G := G) (L := L) p := by
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  let _ : Unique (Sylow p (ramificationGroup G 𝒪[L] 0)) :=
+    Sylow.unique_of_normal (ramificationGroupOneSylow (G := G) (L := L) p)
+      (ramificationGroupOneSylow_normal (G := G) (L := L) p)
+  exact Subsingleton.elim _ _
 
 end TauCeti

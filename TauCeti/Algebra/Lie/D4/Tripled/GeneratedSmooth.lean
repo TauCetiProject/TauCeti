@@ -36,12 +36,11 @@ universe u
 
 variable (k : Type u) [Field k]
 
--- The proof follows the construction in `TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
+-- The proof follows the construction in `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=
-    isReduced_of_injective (AdditiveGroup.coordinateAlgEquiv k).toRingHom
-      (AdditiveGroup.coordinateAlgEquiv k).injective
+    AdditiveGroup.isReduced_coordinateHopfAlgebra k
   let : IsReduced (DiagonalizableGroup.coordinateRing k
       (SplitTorus.characterGroup (Fin 4))).obj := inferInstance
   intro j

@@ -455,6 +455,13 @@ theorem pow_pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCent
     rw [pow_succ, pow_mul, ← add_assoc]
     exact pow_mem_pLowerCentralSeries ih
 
+variable (p) in
+/-- The `p * c`-th power of every element lies in `λ_1`. -/
+theorem pow_mul_mem_pLowerCentralSeries_one (x : G) (c : ℕ) :
+    x ^ (p * c) ∈ pLowerCentralSeries p G 1 := by
+  rw [pow_mul]
+  exact pow_mem (pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p x)) c
+
 /-- The commutators `⁅λ_k, G⁆` lie in `λ_{k+1}`. -/
 theorem commutator_pLowerCentralSeries_top_le (k : ℕ) :
     ⁅pLowerCentralSeries p G k, (⊤ : Subgroup G)⁆ ≤ pLowerCentralSeries p G (k + 1) := by

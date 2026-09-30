@@ -10,6 +10,8 @@ public import TauCeti.InformationTheory.Coding.Tetracode
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA
 
+import Mathlib.Algebra.BigOperators.Field
+
 /-!
 # Ternary codes in the `A₂` discriminant alphabet
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.CentralSimple
+public import TauCeti.Algebra.CrossedProduct.Cohomologous
 public import TauCeti.Algebra.BrauerGroup.Group
 
 /-!
@@ -18,6 +19,11 @@ central simple algebra and defines its class in the Brauer group.
 
 * `TauCeti.BrauerGroup.crossedProductCSA`: the crossed product bundled as a central simple algebra.
 * `TauCeti.BrauerGroup.crossedProductClass`: its Brauer class.
+
+## Main results
+
+* `TauCeti.BrauerGroup.crossedProductClass_eq_of_cohomologous`: cohomologous cocycles have the
+  same Brauer class.
 
 ## References
 
@@ -52,5 +58,14 @@ noncomputable def crossedProductClass (c : TwoCocycle K L) : BrauerGroup.{u, v} 
 form its relations are stated in, and unfolding it to a bare Brauer class would defeat them. -/
 theorem crossedProductClass_def (c : TwoCocycle K L) :
     crossedProductClass c = mk (CSA.of K (CrossedProduct c)) := (rfl)
+
+/-- **Cohomologous cocycles give Brauer-equivalent algebras.** If
+`w(σ, τ) = z(σ, τ) · σ(b(τ)) · b(στ)⁻¹ · b(σ)` for some `b : Gal(L/K) → Lˣ`, then `z` and `w`
+have the same Brauer class; their crossed products are even isomorphic, by
+`TauCeti.CrossedProduct.nonempty_algEquiv_of_cohomologous`. -/
+theorem crossedProductClass_eq_of_cohomologous {z w : TwoCocycle K L} (h : z.Cohomologous w) :
+    crossedProductClass z = crossedProductClass w :=
+  let ⟨e⟩ := CrossedProduct.nonempty_algEquiv_of_cohomologous h
+  mk_eq_mk_of_algEquiv (A := crossedProductCSA z) (B := crossedProductCSA w) e
 
 end TauCeti.BrauerGroup

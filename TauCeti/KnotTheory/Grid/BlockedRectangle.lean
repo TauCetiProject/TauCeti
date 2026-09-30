@@ -91,12 +91,6 @@ theorem fullyBlockedRectangles_subset_emptyRectangles :
   exact (GridRectangleBetween.mem_emptyRectangles R).mpr
     ((G.mem_fullyBlockedRectangles x y R).mp hR |>.1)
 
-/-- Fully blocked rectangles are a subset of all rectangles between the same states. -/
-theorem fullyBlockedRectangles_subset_all :
-    G.fullyBlockedRectangles x y ⊆ GridRectangleBetween.all x y :=
-  G.fullyBlockedRectangles_subset_emptyRectangles x y |>.trans
-    (GridRectangleBetween.emptyRectangles_subset_all x y)
-
 /-- There are at most two fully blocked rectangles in each matrix coefficient of the fully
 blocked differential. -/
 theorem card_fullyBlockedRectangles_le_two : (G.fullyBlockedRectangles x y).card ≤ 2 :=

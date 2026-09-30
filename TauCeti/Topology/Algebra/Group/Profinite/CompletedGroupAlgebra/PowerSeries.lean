@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Algebra.MonoidAlgebra.Cyclic
+public import TauCeti.NumberTheory.Padics.BinomialSeries
+public import TauCeti.NumberTheory.Padics.PowerSeries
 public import TauCeti.NumberTheory.Padics.MonoidAlgebra
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Evaluation
@@ -80,6 +82,12 @@ it is invariant under these substitutions.
 * `TauCeti.completedGroupAlgebra.aeval_binomialSeries`,
   `TauCeti.completedGroupAlgebra.powerSeriesCoordinate_binomialSeries`: the binomial series
   `(1 + X) ^ u` goes to the `p`-adic power `γ ^ u`.
+* `TauCeti.completedGroupAlgebra.of_sub_algebraMap_dvd_aeval_of_aeval_eq_zero`,
+  `TauCeti.completedGroupAlgebra.of_sub_algebraMap_dvd_algebraMap_add_of_padicPow`: division by
+  `γ - (1 + c)` in `ℤ_p[[Γ]]`, for `p ∣ c`, through the division criterion
+  `PadicInt.X_sub_C_dvd_iff_aeval_eq_zero` over `ℤ_[p]`; in particular `γ - (1 + c)` divides
+  `s + γ ^ l` when `(1 + X) ^ l` takes the value `-s` at `c`, which is the divisibility behind the
+  basis corrections in Labute's classification of Demushkin groups.
 * `TauCeti.completedGroupAlgebra.powerSeriesCoordinate_padicPow_apply`,
   `TauCeti.completedGroupAlgebra.exists_isUnit_powerSeriesCoordinate_eq_subst`: changing the
   topological generator changes the coordinate by the substitution `X ↦ (1 + X) ^ u - 1`.
@@ -180,6 +188,32 @@ theorem aeval_surjective (hΓ : IsProP p Γ) {γ : Γ}
     exact closure_mono hspan ((dense_span_range_of ℤ_[p] Γ).closure_eq ▸ Set.mem_univ x)
   exact hx
 
+/-! ### Division by `X - c` -/
+
+section Division
+
+/-- Evaluation at `γ - 1` sends `X - C c` to `γ - (1 + c)`. -/
+@[simp]
+theorem aeval_X_sub_C (hΓ : IsProP p Γ) (γ : Γ) (c : ℤ_[p]) :
+    PowerSeries.aeval (isTopologicallyNilpotent_of_sub_one hΓ γ)
+      (PowerSeries.X - PowerSeries.C c) =
+      of ℤ_[p] Γ γ - algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] Γ) (1 + c) := by
+  rw [map_sub, PowerSeries.aeval_X, PowerSeries.aeval_C, map_add, map_one, sub_sub]
+
+/-- **Division by `γ - (1 + c)` in `ℤ_p[[Γ]]`**, for `p ∣ c`: a power series that vanishes at `c`
+is divisible by `X - c` (`PadicInt.X_sub_C_dvd_iff_aeval_eq_zero`), so its value at `γ - 1` is
+divisible by the value `γ - (1 + c)` of `X - c`. -/
+theorem of_sub_algebraMap_dvd_aeval_of_aeval_eq_zero (hΓ : IsProP p Γ) (γ : Γ) {c : ℤ_[p]}
+    (hc : (p : ℤ_[p]) ∣ c) {ψ : PowerSeries ℤ_[p]}
+    (hψ : PowerSeries.aeval (TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd.mpr hc) ψ
+      = 0) :
+    of ℤ_[p] Γ γ - algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] Γ) (1 + c) ∣
+      PowerSeries.aeval (isTopologicallyNilpotent_of_sub_one hΓ γ) ψ := by
+  rw [← aeval_X_sub_C hΓ γ c]
+  exact map_dvd _ ((PadicInt.X_sub_C_dvd_iff_aeval_eq_zero hc ψ).mpr hψ)
+
+end Division
+
 /-! ### The binomial series and the `p`-adic powers -/
 
 section Binomial
@@ -194,17 +228,29 @@ theorem aeval_binomialSeries (hΓ : IsProP p Γ) (γ : Γ) (u : ℤ_[p]) :
       (PowerSeries.binomialSeries ℤ_[p] u) = of ℤ_[p] Γ (hΓ.padicPow γ u) := by
   -- Both sides are continuous in `u` and agree on the dense subset `ℕ`, where the binomial
   -- series is `(1 + X) ^ k` and the `p`-adic power is `γ ^ k`.
-  have hbin : Continuous fun u : ℤ_[p] ↦ PowerSeries.binomialSeries ℤ_[p] u := by
-    refine continuous_iff_continuousAt.mpr fun u ↦
-      (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
-    simp only [PowerSeries.binomialSeries_coeff, smul_eq_mul, mul_one]
-    exact (PadicInt.continuous_choose n).continuousAt
   have hpow : Continuous fun u : ℤ_[p] ↦ of ℤ_[p] Γ (hΓ.padicPow γ u) :=
     (continuous_of ℤ_[p] Γ).comp
       (hΓ.continuous_padicPow.comp (continuous_id.prodMk continuous_const))
   exact congrFun (PadicInt.denseRange_natCast.equalizer
-    ((PowerSeries.continuous_aeval _).comp hbin) hpow
+    ((PowerSeries.continuous_aeval _).comp PadicInt.continuous_binomialSeries) hpow
     (funext fun k ↦ by simp [hΓ.padicPow_natCast])) u
+
+/-- **The basis-correction divisibility** (Labute, p. 122). If the binomial series `(1 + X) ^ l`
+takes the value `-s` at a `p`-adic integer `c` divisible by `p`, then `γ - (1 + c)` divides
+`s + γ ^ l` in `ℤ_p[[Γ]]`, for every `γ` and the `p`-adic power `γ ^ l`: the power series
+`s + (1 + X) ^ l` vanishes at `c`, so `X - c` divides it, and evaluation at `γ - 1` sends `X - c`
+to `γ - (1 + c)` and `s + (1 + X) ^ l` to `s + γ ^ l`. -/
+theorem of_sub_algebraMap_dvd_algebraMap_add_of_padicPow (hΓ : IsProP p Γ) (γ : Γ) {c : ℤ_[p]}
+    (hc : (p : ℤ_[p]) ∣ c) {s l : ℤ_[p]}
+    (h : PowerSeries.aeval (TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd.mpr hc)
+      (PowerSeries.binomialSeries ℤ_[p] l) = -s) :
+    of ℤ_[p] Γ γ - algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] Γ) (1 + c) ∣
+      algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] Γ) s + of ℤ_[p] Γ (hΓ.padicPow γ l) := by
+  have := of_sub_algebraMap_dvd_aeval_of_aeval_eq_zero hΓ γ hc
+    (ψ := PowerSeries.C s + PowerSeries.binomialSeries ℤ_[p] l)
+    (by rw [map_add, PowerSeries.aeval_C, h, Algebra.algebraMap_self_apply, add_neg_cancel])
+  rwa [map_add (PowerSeries.aeval _) (PowerSeries.C s), PowerSeries.aeval_C, aeval_binomialSeries]
+    at this
 
 end Binomial
 

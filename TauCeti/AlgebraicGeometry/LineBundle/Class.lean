@@ -28,7 +28,8 @@ those are available, the operations defined here are the operations of the Picar
 * `LineBundleClass.mk_eq_mk_iff` characterizes equality by an isomorphism of the underlying
   sheaves;
 * multiplication is induced by `InvertibleSheaf.tensorProduct`, and `1` is the class of the
-  trivial line bundle;
+  trivial line bundle, so that `LineBundleClass.mk_eq_one_iff` characterizes the classes of
+  line bundles isomorphic to the structure sheaf;
 * tensor product makes `LineBundleClass X` a commutative monoid.
 
 The construction uses Mathlib's `CategoryTheory.Skeleton`, its standard implementation of the
@@ -37,7 +38,7 @@ isomorphism classes of objects of a category.
 
 public section
 
-open AlgebraicGeometry CategoryTheory
+open AlgebraicGeometry CategoryTheory MonoidalCategory
 
 namespace TauCeti
 
@@ -105,6 +106,15 @@ noncomputable instance : One (LineBundleClass X) where
 @[simp]
 lemma mk_trivial : mk (InvertibleSheaf.trivial X) = (1 : LineBundleClass X) :=
   rfl
+
+/-- The class of a line bundle is the tensor unit exactly when the line bundle is isomorphic to
+the structure sheaf. -/
+@[simp]
+lemma mk_eq_one_iff {L : InvertibleSheaf X} :
+    mk L = 1 ↔ Nonempty (L.obj ≅ 𝟙_ X.Modules) := by
+  rw [← mk_trivial, mk_eq_mk_iff]
+  exact ⟨fun ⟨e⟩ ↦ ⟨e ≪≫ InvertibleSheaf.trivialObjIsoUnit X⟩,
+    fun ⟨e⟩ ↦ ⟨e ≪≫ (InvertibleSheaf.trivialObjIsoUnit X).symm⟩⟩
 
 /-- Tensor product makes line-bundle classes a commutative monoid. -/
 noncomputable instance : CommMonoid (LineBundleClass X) := by

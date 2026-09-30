@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Separation.Basic
 
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle.Topology
+
 /-!
 # Crossed homomorphisms twisted by a unit-valued function
 
@@ -41,6 +43,8 @@ character `χ`.
 
 ## Main results
 
+* `TauCeti.IsCrossedHom.ringHom_comp`: composing with a semiring homomorphism `φ` gives a crossed
+  homomorphism for `Units.map φ ∘ χ`.
 * `TauCeti.IsCrossedHom.map_pow`: `F (x ^ k) = (1 + χ x + ⋯ + χ x ^ (k - 1)) * F x`.
 * `TauCeti.IsCrossedHom.map_list_prod_of_forall_eq_one`: on a product of elements on which `χ` is
   trivial, `F` is additive.
@@ -94,6 +98,14 @@ theorem comp {H' : Type*} [Group H'] {F'' : Type*} [FunLike F'' H' H] [MonoidHom
     Function.comp_apply]
 
 end IsCrossedHom
+
+/-- The composite of a crossed homomorphism for a character `χ : H →* Rˣ` with a semiring
+homomorphism `φ : R →+* S` is a crossed homomorphism for the character `Units.map φ ∘ χ`. -/
+theorem IsCrossedHom.ringHom_comp {S : Type*} [Semiring S] {χ : H →* Rˣ} {F : H → R}
+    (hF : IsCrossedHom χ F) (φ : R →+* S) :
+    IsCrossedHom ((Units.map (φ : R →* S)).comp χ) (φ ∘ F) := fun x y ↦ by
+  rw [Function.comp_apply, hF.map_mul x y, map_add, _root_.map_mul, MonoidHom.comp_apply,
+    Units.coe_map, MonoidHom.coe_ofClass, Function.comp_apply, Function.comp_apply]
 
 end Semiring
 
@@ -164,23 +176,13 @@ theorem eq_of_eqOn_of_topologicalClosure_closure_eq_top {F₁ F₂ : H → R} (h
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) (h : Set.EqOn F₁ F₂ s) : F₁ = F₂ := by
   have hsub : IsCrossedHom χ (F₁ - F₂) := fun x y ↦ by
     simp only [Pi.sub_apply, h₁ x y, h₂ x y, mul_sub, add_sub_add_comm]
-  -- The zero locus of the difference is a subgroup: the cocycle identity closes it under
-  -- multiplication and the inverse formula closes it under inversion.
-  let Z : Subgroup H :=
-    { carrier := {g | (F₁ - F₂) g = 0}
-      one_mem' := hsub.map_one
-      mul_mem' := fun {g g'} hg hg' ↦ by
-        simp only [Set.mem_ofPred_eq] at hg hg' ⊢
-        rw [hsub.map_mul, hg, hg', mul_zero, add_zero]
-      inv_mem' := fun {g} hg ↦ by
-        simp only [Set.mem_ofPred_eq] at hg ⊢
-        rw [hsub.map_inv, hg, mul_zero] }
-  have hZ : IsClosed (Z : Set H) := isClosed_singleton.preimage (hc₁.sub hc₂)
-  have hle : (Subgroup.closure s).topologicalClosure ≤ Z :=
-    Subgroup.topologicalClosure_minimal _
-      ((Subgroup.closure_le _).2 fun g hg ↦ sub_eq_zero.2 (h hg)) hZ
-  funext g
-  exact sub_eq_zero.1 (hle (hs ▸ Subgroup.mem_top g))
+  -- `H` acts on `R` through `χ`, and for this action a crossed homomorphism is a `1`-cocycle.
+  let : MulAction H R := MulAction.compHom R ((Units.coeHom R).comp (χ : H →* Rˣ))
+  have hcoc : groupCohomology.IsCocycle₁ (F₁ - F₂) := fun x y ↦ by
+    rw [hsub.map_mul, MulAction.compHom_smul_def, MonoidHom.comp_apply, Units.coeHom_apply,
+      smul_eq_mul, MonoidHom.coe_ofClass]
+  exact sub_eq_zero.1 (groupCohomology.eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top
+    hcoc (hc₁.sub hc₂) hs fun g hg ↦ sub_eq_zero.2 (h hg))
 
 end Topology
 
