@@ -41,6 +41,8 @@ group of `K` maps to it through the tame character.
 
 * `TauCeti.PrimeToPTateModule.proj_pow_div`: the components of a point are compatible.
 * `TauCeti.PrimeToPTateModule.ext`: a point is determined by its components.
+* `TauCeti.PrimeToPTateModule.lift_unique`: `lift` is the unique homomorphism with the prescribed
+  components.
 * `TauCeti.PrimeToPTateModule.continuous_iff`: a map into the Tate module is continuous exactly
   when each of its components is locally constant.
 * The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`, and, for a domain,
@@ -97,7 +99,10 @@ def proj (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : PrimeToPTateModule p E →
 /-- The components of a point of the Tate module are compatible along the power maps. -/
 theorem proj_pow_div (x : PrimeToPTateModule p E) {m n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}}
     (h : (n : ℕ) ∣ m) : (proj m x : Eˣ) ^ ((m : ℕ) / n) = proj n x :=
-  (show ↥(primeToPTateModuleSubgroup p E) from x).2 m n h
+  -- `PrimeToPTateModule p E` is by definition the subgroup of compatible families, so the
+  -- compatibility of `x` is its membership proof there. This is the only place the synonym is
+  -- unfolded for membership; later results go through this lemma and `ext` instead.
+  mem_primeToPTateModuleSubgroup_iff.1 (show ↥(primeToPTateModuleSubgroup p E) from x).2 m n h
 
 /-- A point of the Tate module is determined by its components. -/
 @[ext]
@@ -142,6 +147,12 @@ def lift : G →* PrimeToPTateModule p E :=
 @[simp]
 theorem proj_lift (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) (g : G) : proj m (lift f hf g) = f m g :=
   (rfl)
+
+/-- **Uniqueness of the lift.** A homomorphism into the Tate module whose components are the
+prescribed homomorphisms `f m` is `lift f hf`. -/
+theorem lift_unique (F : G →* PrimeToPTateModule p E) (hF : ∀ m, (proj m).comp F = f m) :
+    F = lift f hf :=
+  MonoidHom.ext fun g ↦ ext fun m ↦ by rw [proj_lift, ← hF m, MonoidHom.comp_apply]
 
 end Lift
 

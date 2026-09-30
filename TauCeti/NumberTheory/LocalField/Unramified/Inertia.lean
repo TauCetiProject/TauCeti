@@ -47,6 +47,8 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
 
 * `TauCeti.mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self`: `σ ∈ I_K` exactly when `σ` fixes the
   roots of the polynomials `X^{q^f} − X`.
+* `TauCeti.apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one`: `I_K` fixes the roots of unity of
+  order prime to the residue characteristic.
 * `TauCeti.isClosed_inertiaSubgroup`, `TauCeti.inertiaSubgroup_normal`: `I_K` is closed and normal.
 * `TauCeti.restrictMaximalUnramifiedHom_surjective`, `TauCeti.ker_restrictMaximalUnramifiedHom`:
   restriction `G_K → Gal(K^{ur}/K)` is surjective with kernel `I_K`.
@@ -117,6 +119,28 @@ theorem mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self {σ : Field.absoluteGalo
       fixedField (Subgroup.zpowers (σ : Gal(AlgebraicClosure K/K))) :=
     adjoin_le_iff.2 fun y ⟨f, hf, hy⟩ ↦ (mem_fixedField_zpowers_iff _ y).2 (h y f hf hy)
   exact (mem_fixedField_zpowers_iff _ x).1 (hle hx)
+
+variable {K} in
+/-- **Inertia fixes the roots of unity of order prime to `p`.** If `m` is prime to the residue
+characteristic of `K`, every `m`-th root of unity of `K^{alg}` lies in the maximal unramified
+extension, since `m` divides `q ^ φ(m) − 1` for the order `q` of the residue field, and is
+therefore fixed by the inertia subgroup. -/
+theorem apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one {σ : Gal(AlgebraicClosure K/K)}
+    (hσ : σ ∈ inertiaSubgroup K) {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K]))
+    {ζ : AlgebraicClosure K} (hζ : ζ ^ m = 1) : σ ζ = ζ := by
+  have hm0 : m ≠ 0 := by
+    rintro rfl
+    exact (CharP.prime_ringChar 𝓀[K]).ne_one (Nat.coprime_zero_left _ |>.1 hm)
+  refine mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hσ ζ m.totient
+    (Nat.totient_pos.2 (Nat.pos_of_ne_zero hm0)).ne' ?_
+  -- The order `q` of the residue field is a power of `p`, hence prime to `m`, so
+  -- `q ^ φ(m) ≡ 1 [MOD m]` by Euler's theorem.
+  let _ := Fintype.ofFinite 𝓀[K]
+  obtain ⟨d, -, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
+  have hq : (Nat.card 𝓀[K]).Coprime m := by
+    rw [Nat.card_eq_fintype_card, hd]
+    exact (hm.symm.pow_left _)
+  rw [pow_eq_pow_mod _ hζ, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hζ, pow_one]
 
 /-- **The inertia subgroup is closed** in the Krull topology. -/
 theorem isClosed_inertiaSubgroup :
