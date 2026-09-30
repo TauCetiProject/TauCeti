@@ -338,6 +338,7 @@ private theorem coe_carryCocycle (x : LinearMap.ker (applyAsHom A g - 𝟙 A).ho
 
 /-- The values of the carry cocycle: on `(gⁱ, gʲ)` with `i, j < n` it is `a` if `i + j ≥ n` and
 `0` otherwise. -/
+@[simp]
 theorem carryCocycle_apply_pow (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap)
     {i j : ℕ} (hi : i < orderOf g) (hj : j < orderOf g) :
     (carryCocycle A g hg x : G × G → A) (g ^ i, g ^ j) = if orderOf g ≤ i + j then x.1 else 0 := by
@@ -403,6 +404,7 @@ theorem groupCohomologyπEven_two :
 /-- **The periodicity class in degree `2` is the class of the carry cocycle**: an element `a`
 fixed by the generator `g` is sent to the class of `(gⁱ, gʲ) ↦ a` if `i + j ≥ n`, and `0`
 otherwise. -/
+@[simp]
 theorem groupCohomologyπEven_two_apply
     (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
     groupCohomologyπEven A g hg 2 even_two x = H2π A (carryCocycle A g hg x) := by
