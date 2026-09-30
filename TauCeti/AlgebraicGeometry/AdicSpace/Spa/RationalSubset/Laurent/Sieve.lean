@@ -80,7 +80,6 @@ theorem laurentSieve_pullback (T : Finset A) {W V : Opens ↥(spa Aplus)} (g : V
 
 /-- On an open where `a` has a fixed sign, adding `a` to the generators does not change the Laurent
 sieve. -/
-@[simp]
 theorem laurentSieve_insert_of_le [DecidableEq A] {T : Finset A} {a : A}
     {V : Opens ↥(spa Aplus)} {b : Bool} (h : V ≤ laurentCoverOpen Aplus a b) :
     laurentSieve Aplus (insert a T) V = laurentSieve Aplus T V := by
