@@ -50,7 +50,15 @@ theorem smul_conjClasses_pow (φ : ContinuousAut G) (c : ConjClasses G) (n : ℕ
 
 end Monoid
 
-variable [Group G] [SeparatelyContinuousMul G]
+variable [Group G]
+
+/-- Continuous automorphisms commute with inversion of conjugacy classes. -/
+@[simp]
+theorem smul_conjClasses_inv (φ : ContinuousAut G) (c : ConjClasses G) :
+    φ • c⁻¹ = (φ • c)⁻¹ := by
+  simp only [MulAction.compHom_smul_def, mulAut_smul_conjClasses_inv]
+
+variable [SeparatelyContinuousMul G]
 
 /-- Inner automorphisms fix every conjugacy class. -/
 @[simp]
@@ -98,6 +106,16 @@ theorem smul_conjClasses_pow (φ : ContinuousOut G) (c : ConjClasses G) (n : ℕ
     -- The quotient representative is definitionally `mk φ`.
     change (mk φ) • (c ^ n) = ((mk φ) • c) ^ n
     rw [mk_smul_conjClasses, mk_smul_conjClasses, ContinuousAut.smul_conjClasses_pow]
+
+/-- Continuous outer automorphisms commute with inversion of conjugacy classes. -/
+@[simp]
+theorem smul_conjClasses_inv (φ : ContinuousOut G) (c : ConjClasses G) :
+    φ • c⁻¹ = (φ • c)⁻¹ := by
+  induction φ using QuotientGroup.induction_on with
+  | H φ =>
+    -- The quotient representative is definitionally `mk φ`.
+    change (mk φ) • c⁻¹ = ((mk φ) • c)⁻¹
+    rw [mk_smul_conjClasses, mk_smul_conjClasses, ContinuousAut.smul_conjClasses_inv]
 
 end ContinuousOut
 

@@ -494,6 +494,13 @@ end Monoid
 
 variable [Group G]
 
+/-- Automorphisms commute with inversion of conjugacy classes. -/
+@[simp]
+theorem mulAut_smul_conjClasses_inv (φ : MulAut G) (c : ConjClasses G) :
+    φ • c⁻¹ = (φ • c)⁻¹ := by
+  obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
+  simp only [ConjClasses.inv_mk, mulAut_smul_conjClasses_mk, map_inv]
+
 /-- Inner automorphisms fix every conjugacy class. -/
 @[simp]
 theorem mulAut_conj_smul_conjClasses (g : G) (c : ConjClasses G) :
