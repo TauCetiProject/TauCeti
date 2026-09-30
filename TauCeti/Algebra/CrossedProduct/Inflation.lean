@@ -114,6 +114,15 @@ theorem inflateClass_def (c : TwoCocycle K L) :
         (H2pi _ _ (c.inflateZ2 L)) :=
   (rfl)
 
+omit [FiniteDimensional K L] in
+/-- Including the values of `L` into `Kˢ` intertwines the action of `Gal(L/K)` on `Lˣ`, through
+restriction, with the action of the absolute Galois group on `(Kˢ)ˣ`. -/
+private theorem units_map_val_restrictNormalHom (g : AbsoluteGaloisGroup K) (u : Lˣ) :
+    Units.map L.val.toRingHom.toMonoidHom (Units.map (AlgEquiv.restrictNormalHom L g) u) =
+      g • Units.map L.val.toRingHom.toMonoidHom u := by
+  rw [AlgEquiv.smul_units_def]
+  exact Units.ext (AlgEquiv.restrictNormal_commutes g L u)
+
 /-- The difference of inflated cohomologous cocycles is the inflation of their finite
 coboundary, hence is a continuous coboundary. -/
 private theorem inflateZ2_sub_mem_B2 {z w : TwoCocycle K L} (h : z.Cohomologous w) :
@@ -124,19 +133,12 @@ private theorem inflateZ2_sub_mem_B2 {z w : TwoCocycle K L} (h : z.Cohomologous 
     Additive.ofMul (Units.map L.val.toRingHom.toMonoidHom (b σ))) ∘
       AlgEquiv.restrictNormalHom L,
     continuous_of_discreteTopology.comp (InfiniteGalois.restrictNormalHom_continuous L),
-    fun g k ↦ ?_⟩
-  have hbgk := congrArg (Units.map L.val.toRingHom.toMonoidHom)
-    (hb (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k))
-  apply Additive.toMul.injective
-  apply Units.ext
-  simp only [map_mul, map_div, Units.ext_iff, Units.val_mul,
-    Units.val_div_eq_div_val, Units.coe_map, AlgEquiv.smul_units_def] at hbgk
+    fun g k ↦ Additive.toMul.injective ?_⟩
+  -- The inflated coboundary of `b` is the image of the finite coboundary `hb` under `Kˢ ⊇ L`.
   simp only [Function.comp_apply, toMul_add, toMul_sub, toMul_ofMul, Additive.toMul_smul,
-    coe_inflateZ2, Pi.sub_apply, coe_toCocycles₂, inflate_toFun, Units.val_mul,
-    Units.val_div_eq_div_val, Units.coe_map, AlgEquiv.smul_units_def, map_mul]
-  rw [← hbgk]
-  congr 2
-  exact (AlgEquiv.restrictNormal_commutes g L _).symm
+    Pi.sub_apply, coe_inflateZ2, coe_toCocycles₂, inflate_toFun]
+  rw [← units_map_val_restrictNormalHom, ← AlgEquiv.smul_units_def, map_mul, ← map_div,
+    ← map_mul, hb, map_div]
 
 /-- Cohomologous crossed-product cocycles have the same class after inflation to continuous
 cohomology. -/
