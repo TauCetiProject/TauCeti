@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.GreenFunction.Disk
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import TauCeti.Analysis.Complex.Poisson
+public import Mathlib.Analysis.InnerProductSpace.Harmonic.HarmonicContOnCl
 import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
 import Mathlib.Analysis.Complex.Harmonic.Poisson
 
@@ -205,11 +206,11 @@ theorem circleAverage_ballPoissonKernel_two_fun_smul_eq {E : Type*} [NormedAddCo
         Real.circleAverage (fun z => poissonKernel 0 a z • f z) 0 1 :=
       Real.circleAverage_fun_smul
 
-/-- The two-dimensional ball Poisson kernel represents a harmonic function by integration
-against arc length on the unit circle. Since `circleAverage` is normalized by `2π`, the right
-side carries the reciprocal factor. -/
+/-- The two-dimensional ball Poisson kernel represents a function harmonic on the open unit disk
+and continuous on its closure by integration against arc length on the unit circle. Since
+`circleAverage` is normalized by `2π`, the right side carries the reciprocal factor. -/
 theorem circleAverage_ballPoissonKernel_two_fun_mul {f : ℂ → ℝ} {a : ℂ}
-    (hf : HarmonicOnNhd f (Metric.closedBall 0 1)) (ha : ‖a‖ < 1) :
+    (hf : HarmonicContOnCl f (Metric.ball 0 1)) (ha : ‖a‖ < 1) :
     Real.circleAverage (fun z =>
       ballPoissonKernel 2 (Complex.orthonormalBasisOneI.repr a)
         (Complex.orthonormalBasisOneI.repr z) * f z) 0 1 =
@@ -226,7 +227,7 @@ theorem circleAverage_ballPoissonKernel_two {a : ℂ} (ha : ‖a‖ < 1) :
       (Complex.orthonormalBasisOneI.repr a) (Complex.orthonormalBasisOneI.repr z)) 0 1 =
       (2 * Real.pi)⁻¹ := by
   simpa using circleAverage_ballPoissonKernel_two_fun_mul
-    (f := fun _ : ℂ => (1 : ℝ)) (harmonicOnNhd_const 1) ha
+    (f := fun _ : ℂ => (1 : ℝ)) harmonicContOnCl_const ha
 
 end TauCeti
 
