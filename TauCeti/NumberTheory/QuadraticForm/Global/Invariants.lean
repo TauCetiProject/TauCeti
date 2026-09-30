@@ -200,7 +200,7 @@ variable {I}
 
 /-- At a real place of an admissible system, the positive and negative indices add up to the
 rank. -/
-theorem realPositiveIndex_add_realNegativeIndex (hI : I.IsAdmissible)
+theorem realPositiveIndex_add_realNegativeIndex_eq_rank (hI : I.IsAdmissible)
     (w : {w : InfinitePlace K // w.IsReal}) :
     I.realPositiveIndex w + I.realNegativeIndex w = I.rank := by
   rw [realNegativeIndex_def]
@@ -233,6 +233,18 @@ theorem hasseProduct_eq_neg_one_pow_card
   rw [hasseProduct_def, hs, ← finprod_mem_def, finprod_mem_coe_finset, Finset.prod_const,
     Finset.prod_eq_one fun w _ ↦ hr w, mul_one]
 
+omit [NumberField K] in
+/-- A system with Hasse sign `-1` exactly at the finite places of `T` has all finite Hasse signs
+trivial exactly when `T` is empty. -/
+theorem forall_finiteHasse_eq_one_iff_eq_empty
+    (hs : I.finiteHasse = (T : Set (HeightOneSpectrum (𝓞 K))).mulIndicator fun _ ↦ -1) :
+    (∀ v, I.finiteHasse v = 1) ↔ T = ∅ := by
+  refine ⟨fun h ↦ Finset.eq_empty_of_forall_notMem fun v hv ↦ ?_, fun hT v ↦ ?_⟩
+  · have hv' := h v
+    rw [hs, Set.mulIndicator_of_mem (Finset.mem_coe.2 hv)] at hv'
+    exact absurd hv' (by decide)
+  · rw [hs, hT, Finset.coe_empty, Set.mulIndicator_empty]
+
 /-- **The positive-definite systems of trivial discriminant.** In rank `n ≥ 3`, the system with
 trivial global discriminant, positive index `n` at every real place and Hasse sign `-1` exactly at
 the finite places of `T` is admissible exactly when `T` has even cardinality. -/
@@ -261,8 +273,8 @@ theorem isAdmissible_rankOne_iff_eq_empty :
     (⟨1, 0, (T : Set _).mulIndicator fun _ ↦ -1, fun _ ↦ 1⟩ : GlobalFormInvariants K) T rfl
     fun w ↦ by simp [realHasse_def, realNegativeIndex_def]
   refine ⟨fun hI ↦ ?_, fun hT ↦ ?_⟩
-  · simpa [Set.mulIndicator_eq_one, Function.mulSupport_const (by decide : (-1 : ℤˣ) ≠ 1)]
-      using funext (hI.finiteHasse_eq_one_of_rank_eq_one rfl)
+  · exact (forall_finiteHasse_eq_one_iff_eq_empty _ T rfl).1
+      (hI.finiteHasse_eq_one_of_rank_eq_one rfl)
   · subst hT
     refine ⟨le_rfl, fun _ ↦ le_rfl, fun w ↦ ?_,
       (∅ : Finset (HeightOneSpectrum (𝓞 K))).finite_toSet.subset
@@ -287,8 +299,8 @@ theorem isAdmissible_rankTwo_iff_eq_empty :
         GlobalFormInvariants K).discrAtFinitePlace v = squareClass (-1) := by
     simp [discrAtFinitePlace_def]
   refine ⟨fun hI ↦ ?_, fun hT ↦ ?_⟩
-  · simpa [Set.mulIndicator_eq_one, Function.mulSupport_const (by decide : (-1 : ℤˣ) ≠ 1)]
-      using funext fun v ↦ hI.finiteHasse_eq_one_of_rank_eq_two rfl v (hdisc v)
+  · exact (forall_finiteHasse_eq_one_iff_eq_empty _ T rfl).1
+      fun v ↦ hI.finiteHasse_eq_one_of_rank_eq_two rfl v (hdisc v)
   · subst hT
     refine ⟨by dsimp only; omega, fun _ ↦ by dsimp only; omega, fun w ↦ ?_,
       (∅ : Finset (HeightOneSpectrum (𝓞 K))).finite_toSet.subset
