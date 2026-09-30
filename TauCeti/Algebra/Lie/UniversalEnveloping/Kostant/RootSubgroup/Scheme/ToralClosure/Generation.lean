@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
 /-!
@@ -32,10 +31,9 @@ non-flat base.
   under the same hypothesis, the root-generated and toral carriers are equal.
 * `kostantGeneratedToToral_eq_eqToHom_of_universal_torus_mem_elementary`: the canonical comparison
   is the transport along that equality, and hence is an isomorphism.
-* `kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq`: equal integral
-  defining ideals give equal transported presentations over every commutative ring;
-  `kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_mem_elementary` is its
-  specialization to the universal-point hypothesis.
+* `kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_mem_elementary`: under
+  the same hypothesis, the transported toral and root-generated presentations agree over every
+  commutative ring.
 
 ## References
 
@@ -199,22 +197,6 @@ theorem isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary
     e h ρ M hM hnil b wt huniv]
   infer_instance
 
-omit [Fintype κ] in
-/-- Equality of the integral toral and root-generated defining ideals makes the transported
-toral and root-generated presentations in `O(GLₙ/A)` equal, for every commutative ring `A`. This
-does not identify them with the common kernel of the root-subgroup maps formed anew over `A`. -/
-theorem kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq [Finite κ]
-    (hideal : kostantToralDefiningIdeal e h ρ M hM hnil b wt =
-      kostantGeneratedDefiningIdeal e h ρ M hM hnil b)
-    (A : Type*) [CommRing A] :
-    kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A =
-      kostantGeneratedGeneralLinearBaseChangeIdeal e h ρ M hM hnil b A := by
-  apply HopfIdeal.ext
-  intro x
-  rw [mem_kostantToralBaseChangePresentationIdeal_iff,
-    mem_kostantGeneratedGeneralLinearBaseChangeIdeal_iff,
-    kostantToralBaseChangeIdeal_def, kostantGeneratedBaseChangeIdeal_def, hideal]
-
 /-- Generation of the universal weight-torus point makes the transported toral and root-generated
 presentations in `O(GLₙ/A)` equal, for every commutative ring `A`. This does not identify them
 with the common kernel of the root-subgroup maps formed anew over `A`. -/
@@ -230,8 +212,8 @@ theorem kostantToralBaseChangePresentationIdeal_eq_generated_of_universal_torus_
     (A : Type*) [CommRing A] :
     kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A =
       kostantGeneratedGeneralLinearBaseChangeIdeal e h ρ M hM hnil b A :=
-  kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq e h ρ M hM hnil b wt
+  kostantToralBaseChangePresentationIdeal_eq_generated_of_definingIdeal_eq e h ρ M hM hnil b wt A
     (kostantToralDefiningIdeal_eq_kostantGeneratedDefiningIdeal_of_universal_torus_mem_elementary
-      e h ρ M hM hnil b wt huniv) A
+      e h ρ M hM hnil b wt huniv)
 
 end TauCeti.UniversalEnvelopingAlgebra
