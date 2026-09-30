@@ -41,6 +41,9 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 
 ## Main results
 
+* `TauCeti.ContinuousCohomology.resolutionMap_injective` and
+  `TauCeti.ContinuousCohomology.cochainsMap_f_injective`: a surjective group map paired with an
+  injective coefficient map induces injective maps on resolutions and homogeneous cochains.
 * `TauCeti.ContinuousCohomology.coeffMap_comp`,
   `TauCeti.ContinuousCohomology.res_comp_res`, `TauCeti.ContinuousCohomology.res_comp_resLE`,
   `TauCeti.ContinuousCohomology.resLE_comp_resLE` and
@@ -67,7 +70,34 @@ namespace ContinuousCohomology
 
 open _root_.ContinuousCohomology
 
-universe u v
+universe u v w
+
+section InjectiveResolutionMap
+
+variable {k : Type u} [Ring k] [TopologicalSpace k]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  (φ : G →ₜ* H) {Y : TopRep.{max v w} k H} {X : TopRep.{max v w} k G}
+  (ι : TopRep.res φ Y ⟶ X)
+
+/-- A surjective group map and an injective coefficient pair induce injective maps on every term
+of the coinduced resolutions. -/
+theorem resolutionMap_injective (hφ : Function.Surjective φ) (hι : Function.Injective ι.hom) :
+    ∀ n : ℕ, Function.Injective (resolutionMap φ ι n).hom
+  | 0 => hι
+  | n + 1 => fun F F' h ↦ by
+    ext q
+    obtain ⟨g, rfl⟩ := hφ q
+    exact resolutionMap_injective hφ hι n (DFunLike.congr_fun h g)
+
+/-- The map on homogeneous cochains induced by a surjective group map and an injective coefficient
+pair is injective in every degree. -/
+theorem cochainsMap_f_injective (hφ : Function.Surjective φ)
+    (hι : Function.Injective ι.hom) (n : ℕ) :
+    Function.Injective ((cochainsMap φ ι).f n) := fun _ _ h ↦
+  Subtype.ext (resolutionMap_injective φ ι hφ hι (n + 1) (congrArg Subtype.val h))
+
+end InjectiveResolutionMap
 
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
