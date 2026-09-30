@@ -9,7 +9,6 @@ public import TauCeti.Algebra.MonoidAlgebra.TwoGeneratorQuotient
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Torsion
 import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.Multiplicity
-import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Sharp exponents for a tame frame
@@ -276,68 +275,7 @@ theorem not_exists_tameFrame_exponents_one_one (L : Type*) [Field L]
       simpa using (hn (-1) hneg).symm
   have haodd : Odd a := exponent_odd ha
   have hbodd : Odd b := exponent_odd hb
-  let G := L ≃ₐ[K] L
-  let J : Ideal (MonoidAlgebra ℤ_[2] G) := Ideal.span
-    {single (1 : G) (1 : ℤ_[2]) - a, single (1 : G) (1 : ℤ_[2]) - b}
-  let f : MonoidAlgebra ℤ_[2] G →+* MonoidAlgebra (ZMod 2) G :=
-    MonoidAlgebra.mapRingHom G PadicInt.toZMod
-  have odd_cast_eq_one {n : ℕ} (hn : Odd n) : (n : ZMod 2) = 1 := by
-    obtain ⟨k, rfl⟩ := hn
-    have htwo : (2 : ZMod 2) = 0 := by
-      change ((2 : ℕ) : ZMod 2) = 0
-      exact ZMod.natCast_self 2
-    calc
-      ((2 * k + 1 : ℕ) : ZMod 2) = (2 : ZMod 2) * (k : ZMod 2) + 1 := by norm_cast
-      _ = 0 * (k : ZMod 2) + 1 := by rw [htwo]
-      _ = 1 := by ring
-  have ha2 : (a : ZMod 2) = 1 := odd_cast_eq_one haodd
-  have hb2 : (b : ZMod 2) = 1 := odd_cast_eq_one hbodd
-  have hJ : J ≤ RingHom.ker f := by
-    dsimp only [J]
-    rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
-    constructor
-    · change f (single (1 : G) (1 : ℤ_[2]) - a) = 0
-      simp only [f, map_sub, MonoidAlgebra.mapRingHom_single, map_one, natCast_def, ha2,
-        map_natCast, sub_self]
-    · change f (single (1 : G) (1 : ℤ_[2]) - b) = 0
-      simp only [f, map_sub, MonoidAlgebra.mapRingHom_single, map_one, natCast_def, hb2,
-        map_natCast, sub_self]
-  have hJtwo : J.IsTwoSided := by
-    dsimp only [J]
-    apply Ideal.isTwoSided_span_of_subset_center
-    rw [Set.insert_subset_iff, Set.singleton_subset_iff]
-    constructor <;> rw [Semigroup.mem_center_iff]
-    · intro y
-      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
-    · intro y
-      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
-  let _ : J.IsTwoSided := hJtwo
-  let φ : (MonoidAlgebra ℤ_[2] G ⧸ J) →+* MonoidAlgebra (ZMod 2) G :=
-    Ideal.Quotient.lift J f fun x hx ↦ RingHom.mem_ker.mp (hJ hx)
-  have hf : Function.Surjective f := by
-    change Function.Surjective
-      (MonoidAlgebra.map (M := G) (PadicInt.toZMod (p := 2)).toAddMonoidHom)
-    exact MonoidAlgebra.map_surjective _
-      (ZMod.ringHom_surjective (PadicInt.toZMod (p := 2)))
-  have hφ : Function.Surjective φ :=
-    Ideal.Quotient.lift_surjective_of_surjective J _ hf
-  have hcard' : Nat.card (MonoidAlgebra ℤ_[2] G ⧸ J) = 2 := by
-    dsimp only [J, G]
-    exact hcard.trans hq
-  let _ : Finite (MonoidAlgebra ℤ_[2] G ⧸ J) :=
-    Nat.finite_of_card_ne_zero (hcard'.trans_ne (by norm_num))
-  let _ : Fintype G := Fintype.ofFinite G
-  have hle : Nat.card (MonoidAlgebra (ZMod 2) G) ≤ 2 := by
-    calc
-      Nat.card (MonoidAlgebra (ZMod 2) G) ≤ Nat.card (MonoidAlgebra ℤ_[2] G ⧸ J) :=
-        Nat.card_le_card_of_surjective φ hφ
-      _ = 2 := hcard'
-  have hfour : 4 ≤ Nat.card (MonoidAlgebra (ZMod 2) G) := by
-    rw [Nat.card_congr (MonoidAlgebra.coeffEquiv (R := ZMod 2) (M := G))]
-    rw [Nat.card_eq_fintype_card, Fintype.card_finsupp, ZMod.card]
-    calc
-      4 = 2 ^ 2 := by norm_num
-      _ ≤ 2 ^ Fintype.card G := Nat.pow_le_pow_right (by norm_num) Fintype.one_lt_card
-  omega
+  exact MonoidAlgebra.natCard_quotient_span_one_sub_natCast_ne_two haodd hbodd
+    (hcard.trans hq)
 
 end TauCeti
