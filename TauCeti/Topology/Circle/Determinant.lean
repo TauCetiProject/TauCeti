@@ -42,8 +42,10 @@ end Complex
 
 variable {E : Type*} [AddCommGroup E] [Module ℂ E] [FiniteDimensional ℂ E]
 
+namespace LinearEquiv
+
 /-- The normalized complex determinant of an automorphism, as a point of the unit circle. -/
-noncomputable def linearEquivDetCircle (B : E ≃ₗ[ℂ] E) : Circle :=
+noncomputable def detCircle (B : E ≃ₗ[ℂ] E) : Circle :=
   ⟨LinearMap.det (B : E →ₗ[ℂ] E) /
     ‖LinearMap.det (B : E →ₗ[ℂ] E)‖, by
     have hdet : LinearMap.det (B : E →ₗ[ℂ] E) ≠ 0 := by
@@ -53,11 +55,13 @@ noncomputable def linearEquivDetCircle (B : E ≃ₗ[ℂ] E) : Circle :=
 
 omit [FiniteDimensional ℂ E] in
 @[simp]
-theorem coe_linearEquivDetCircle (B : E ≃ₗ[ℂ] E) :
-    (linearEquivDetCircle B : ℂ) =
+theorem coe_detCircle (B : E ≃ₗ[ℂ] E) :
+    (detCircle B : ℂ) =
       LinearMap.det (B : E →ₗ[ℂ] E) /
         ‖LinearMap.det (B : E →ₗ[ℂ] E)‖ :=
   (rfl)
+
+end LinearEquiv
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
@@ -65,9 +69,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 complex-linear automorphisms. -/
 noncomputable def normalizedDetPath (B : I → E ≃L[ℂ] E)
     (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) :
-    Path (linearEquivDetCircle (B 0).toLinearEquiv)
-      (linearEquivDetCircle (B 0).toLinearEquiv) where
-  toFun t := linearEquivDetCircle (B t).toLinearEquiv
+    Path (LinearEquiv.detCircle (B 0).toLinearEquiv)
+      (LinearEquiv.detCircle (B 0).toLinearEquiv) where
+  toFun t := LinearEquiv.detCircle (B t).toLinearEquiv
   continuous_toFun := by
     have hd : Continuous fun t => LinearMap.det ((B t).toLinearEquiv : E →ₗ[ℂ] E) :=
       ContinuousLinearMap.continuous_det.comp hB
