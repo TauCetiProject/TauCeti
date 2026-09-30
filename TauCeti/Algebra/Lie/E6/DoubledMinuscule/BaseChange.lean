@@ -99,6 +99,17 @@ noncomputable def baseChangeDefiningIdeal :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
     matrixWeight A
 
+/-- The transported defining ideal is the ideal supplied by the generic Kostant toral-closure base
+change. -/
+theorem baseChangeDefiningIdeal_def :
+    baseChangeDefiningIdeal A =
+      kostantToralBaseChangePresentationIdeal
+        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+        (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
+        matrixWeight A := by
+  rw [baseChangeDefiningIdeal]
+
 /-- Membership in the transported defining ideal is membership of the corresponding element in the
 base change of the named integral defining ideal. -/
 @[simp]
