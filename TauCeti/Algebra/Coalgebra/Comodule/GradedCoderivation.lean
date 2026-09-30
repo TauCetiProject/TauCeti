@@ -64,6 +64,21 @@ theorem IsGradedCoderivationOver.coact_apply (h : IsGradedCoderivationOver G q b
   simpa only [LinearMap.comp_apply, LinearMap.add_apply] using
     LinearMap.congr_fun h x
 
+/-- The signed co-Leibniz law can be checked on individual comodule elements. -/
+theorem isGradedCoderivationOver_iff_coact_apply :
+    IsGradedCoderivationOver G q b D ↔
+      ∀ x : M,
+        coact (R := R) (C := C) (M := M) (D x) =
+          D.rTensor C (coact (R := R) (C := C) (M := M) x) +
+            b.lTensor M ((G.koszulTwist q).rTensor C
+              (coact (R := R) (C := C) (M := M) x)) := by
+  constructor
+  · exact IsGradedCoderivationOver.coact_apply
+  · intro h
+    apply LinearMap.ext
+    intro x
+    simpa only [IsGradedCoderivationOver, LinearMap.comp_apply, LinearMap.add_apply] using h x
+
 /-- If the coalgebra operator squares to zero and `(-1) ^ (q * r) = -1`, the square of a
 degree-`r` comodule coderivation with twist `q` commutes with the coaction. In the bar
 construction this makes
