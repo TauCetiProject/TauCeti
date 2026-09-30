@@ -221,6 +221,7 @@ theorem ofTaylor_taylor (G : InternalGrading R A) (F : ReducedTensorWords R A �
     (hF hsq) : (ofTaylor G F hF hsq).taylor = F := (rfl)
 
 /-- The bar differential of the algebra built from a Taylor map is the coderivation it generates. -/
+@[simp]
 theorem barDifferential_ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
     (hF hsq) :
     (ofTaylor G F hF hsq).barDifferential = ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 :=
@@ -232,6 +233,7 @@ theorem m_eq_desuspension (𝒜 : AInfinityAlgebra R A) :
   𝒜.taylor_isSuspension.eq_desuspension 𝒜.m_zero
 
 /-- Every `A∞` algebra is built from its own Taylor map. -/
+@[simp]
 theorem ofTaylor_self (𝒜 : AInfinityAlgebra R A) :
     ofTaylor 𝒜.grading 𝒜.taylor (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree)
       𝒜.bar_square_zero = 𝒜 :=

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Cohomology
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.TransferPerturbation
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Perturbation
 public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Perturbation
 
 /-!
@@ -217,6 +217,7 @@ theorem isGradedCoderivation_transferBarDifferential :
     𝒜.higherBarDifferential_filtration
 
 /-- The transferred bar differential squares to zero. -/
+@[simp]
 theorem transferBarDifferential_comp_self :
     𝒜.transferBarDifferential c hh hincl hproj ∘ₗ 𝒜.transferBarDifferential c hh hincl hproj =
       0 :=
@@ -278,6 +279,7 @@ theorem transfer_taylor :
   rw [transfer, ofTaylor_taylor]
 
 /-- The bar differential of the transferred structure is the transferred bar differential. -/
+@[simp]
 theorem barDifferential_transfer :
     (𝒜.transfer c hh hincl hproj).barDifferential = 𝒜.transferBarDifferential c hh hincl hproj :=
   by rw [transfer, barDifferential_ofTaylor, gradedCoderiv_letter_comp_transferBarDifferential]
@@ -363,8 +365,9 @@ theorem isMinimal_transfer (hdH : dH = 0) : (𝒜.transfer c hh hincl hproj).IsM
   rw [isMinimal_def, differential_transfer, hdH]
 
 /-- The transferred binary operation is `p m₂ (i ⊗ i)`. -/
+@[simp]
 theorem mul_transfer (a b : H) :
-    (𝒜.transfer c hh hincl hproj).mul a b = c.proj (𝒜.mul (c.incl a) (c.incl b)) := by
+    (𝒜.transfer c hh hincl hproj).m 2 ![a, b] = c.proj (𝒜.mul (c.incl a) (c.incl b)) := by
   set τ := GH.koszulTwist 1
   have hτi : 𝒜.grading.koszulTwist 1 (c.incl (τ a)) = c.incl a := by
     have h := LinearMap.congr_fun (hincl.koszulTwist_comp 1) (τ a)
@@ -382,10 +385,10 @@ theorem mul_transfer (a b : H) :
       filtration R A 2 := by
     rw [← prepend_ofLetter]
     exact prepend_mem_filtration R A _ (ofLetter_mem_filtration R A _)
-  have hab : (𝒜.transfer c hh hincl hproj).mul a b =
+  have hab : (𝒜.transfer c hh hincl hproj).m 2 ![a, b] =
       (𝒜.transfer c hh hincl hproj).taylor
         (of R H (2 : ℕ+) (PiTensorProduct.tprod R ![τ a, b])) := by
-    rw [taylor_of_two, transfer_grading, mul_apply, ← LinearMap.comp_apply τ,
+    rw [← mul_apply, taylor_of_two, transfer_grading, mul_apply, ← LinearMap.comp_apply τ,
       InternalGrading.koszulTwist_comp_self, LinearMap.id_apply]
   have hδ : letter R A (𝒜.higherBarDifferential
       (of R A (2 : ℕ+) (PiTensorProduct.tprod R ![c.incl (τ a), c.incl b]))) =

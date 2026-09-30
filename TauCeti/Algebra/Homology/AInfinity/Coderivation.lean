@@ -195,7 +195,9 @@ theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
 /-- The **desuspension** of a Taylor map `F : Tᶜ(sA) ⟶ sA`: the operations whose suspension it is.
 In positive arity `n` it evaluates `F` on words of length `n` after twisting the `i`-th letter by
 the Koszul twist of parameter `n - 1 - i`, which undoes the suspension sign; in arity zero it is
-zero.  It inverts `suspensionTaylor` (`suspensionTaylor_desuspension`). -/
+zero.  Suspending a desuspended Taylor map recovers that Taylor map
+(`suspensionTaylor_desuspension`); conversely, operations with zero arity-zero term are recovered
+by desuspending any Taylor map that suspends them (`IsSuspension.eq_desuspension`). -/
 noncomputable def desuspension (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
     (n : ℕ) : MultilinearMap R (fun _ : Fin n ↦ A) A :=
   if hn : 0 < n then
