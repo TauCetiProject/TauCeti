@@ -105,6 +105,11 @@ relators `x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯`, where `ξ₁` occurs in a br
 * `TauCeti.freeProP.basisModificationDelta_eq_gradedPow_add_sum`,
   `TauCeti.freeProP.gradedPow_basisModificationDelta`:
   `δ_ρ(ω) = π (Σ_i c_i ω_i) + Σ_i [ω_i, ∂_i ρ]`, and `π (δ_ρ(ω)) = δ_ρ(π ω)`.
+* `TauCeti.freeProP.exists_basisModificationDelta_smul_eq`,
+  `TauCeti.freeProP.basisModificationDelta_smul_eq_gradedBracket_of_eq_zero`: on a family `b • v`
+  proportional to one class, `δ_ρ(b • v) = c • π v + [v, y]` for any prescribed `y` when the
+  derivatives span, and `δ_ρ(b • v) = [v, Σ_i b_i • ∂_i ρ]` when `b` vanishes at the only generator
+  carrying a `p`-power coefficient.
 * `TauCeti.freeProP.degreeZeroBasis_repr_degreeOneDeriv`,
   `TauCeti.freeProP.span_range_degreeOneDeriv_eq_top_iff_nondegenerate_degreeOneForm`: the
   coordinates of `∂_i ρ` are the `i`-th row of the matrix of the degree-one form of `ρ`, so the
@@ -154,6 +159,14 @@ noncomputable def basisModification (w : X → pLowerCentralSeries p (freeProP p
 theorem basisModification_of (w : X → pLowerCentralSeries p (freeProP p X) m) (i : X) :
     basisModification w (of i) = of i * (w i : freeProP p X) :=
   lift_of _ _ i
+
+/-- **Every continuous endomorphism of `F` is a basis modification** at level `0`, by the family
+`x_i⁻¹ * φ(x_i)`. -/
+theorem eq_basisModification (φ : freeProP p X →ₜ* freeProP p X) :
+    φ = basisModification fun i ↦
+      (⟨(of i)⁻¹ * φ (of i), mem_pLowerCentralSeries_zero p _⟩ :
+        pLowerCentralSeries p (freeProP p X) 0) :=
+  hom_ext fun i ↦ by rw [basisModification_of, mul_inv_cancel_left]
 
 /-- **The basis modification is congruent to the identity modulo `λ_m(F)`.** -/
 theorem inv_mul_basisModification_mem_pLowerCentralSeries
@@ -229,6 +242,17 @@ theorem exponentSum_basisModification [Finite X] (w : X → pLowerCentralSeries 
   · rw [hx, zero_smul, Pi.single_zero]
   · rw [(exponentSum_eq_one_iff p X _).mpr (hw x hx), toAdd_one, add_zero, ← Pi.single_smul,
       smul_eq_mul, mul_one]
+
+/-- **A continuous endomorphism moving each generator carrying a nonzero exponent by an element of
+the closed commutator subgroup preserves the exponent vector**: if `x_i⁻¹ * φ(x_i) ∈ closure [F, F]`
+for every `i` with `(exponentSum g)_i ≠ 0`, then `exponentSum (φ g) = exponentSum g`. -/
+theorem exponentSum_apply_eq_of_forall_inv_mul_apply_mem [Finite X]
+    (φ : freeProP p X →ₜ* freeProP p X) {g : freeProP p X}
+    (hφ : ∀ i, (exponentSum p X g).toAdd i ≠ 0 →
+      (of i)⁻¹ * φ (of i) ∈ (commutator (freeProP p X)).topologicalClosure) :
+    exponentSum p X (φ g) = exponentSum p X g := by
+  rw [congrArg (exponentSum p X) (DFunLike.congr_fun (eq_basisModification φ) g)]
+  exact exponentSum_basisModification _ hφ
 
 end ExponentSum
 
@@ -528,6 +552,35 @@ theorem basisModificationDelta_single [DecidableEq X] (hm : 1 ≤ m)
   rw [h, basisModificationDelta_smul]
   simp only [Pi.single_apply, ite_mul, one_mul, zero_mul, ite_smul, one_smul, zero_smul,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
+/-- **`δ_ρ` realizes every bracket up to a multiple of `π v`** when the partial derivatives of `ρ`
+span `gr_0(F)`: for `v ∈ gr_m(F)` and `y ∈ gr_0(F)` there are coefficients `b : X → 𝔽_p` and a
+scalar `c` with `δ_ρ(b • v) = c • π v + [v, y]`, namely `b` with `Σ_i b_i • ∂_i ρ = y` and
+`c = Σ_i b_i c_i`. -/
+theorem exists_basisModificationDelta_smul_eq (hm : 1 ≤ m) {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (v : gradedPiece p (freeProP p X) m) (y : gradedPiece p (freeProP p X) 0) :
+    ∃ (b : X → ZMod p) (c : ZMod p), basisModificationDelta p X hm ρ (fun i ↦ b i • v) =
+      c • gradedPow p (freeProP p X) m v + gradedBracket p (freeProP p X) m 0 v y := by
+  cases nonempty_fintype X
+  obtain ⟨b, hb⟩ := (mem_span_range_iff_exists_fun (ZMod p)).mp (hρ ▸ Submodule.mem_top :
+    y ∈ span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ))
+  exact ⟨b, _, by rw [basisModificationDelta_smul, hb]⟩
+
+/-- **`δ_ρ` on a family proportional to `v` and vanishing at the `p`-power generator**: if `x_{i₀}`
+is the only generator whose coefficient `c_i` of `π ξ_i` in `ρ` may be nonzero and `b i₀ = 0`, then
+`δ_ρ(b • v) = [v, Σ_i b_i • ∂_i ρ]` has no `p`-power term. -/
+theorem basisModificationDelta_smul_eq_gradedBracket_of_eq_zero [Fintype X] (hm : 1 ≤ m)
+    {ρ : gradedPiece p (freeProP p X) 1} {i₀ : X}
+    (hc : ∀ i, i ≠ i₀ → (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) {b : X → ZMod p}
+    (hb : b i₀ = 0) (v : gradedPiece p (freeProP p X) m) :
+    basisModificationDelta p X hm ρ (fun i ↦ b i • v) =
+      gradedBracket p (freeProP p X) m 0 v (∑ i, b i • degreeOneDeriv p X i ρ) := by
+  rw [basisModificationDelta_smul, Finset.sum_eq_zero, zero_smul, zero_add]
+  intro i _
+  by_cases hi : i = i₀
+  · rw [hi, hb, zero_mul]
+  · rw [hc i hi, mul_zero]
 
 /-- **Naturality of `δ` under `π`**: for `m ≥ 1`, `π (δ_ρ(v)) = δ_ρ(π v)`, where `δ_ρ` on the left
 is the map in degree `m` and on the right the map in degree `m + 1`. -/

@@ -36,8 +36,8 @@ coimage and its image and uses that the two agree.
   `K₀` of `TauCeti.ExactStructure.abelian C`.
 * `TauCeti.AbelianK0.toExactK0`: the identification of abelian `K₀` with that exact `K₀`, along
   which the exact-`K₀` API transfers.
-* `TauCeti.AbelianK0.AdditiveInvariant C G`: an isomorphism-invariant function on objects which is
-  additive on short exact sequences, and `TauCeti.AbelianK0.lift` the homomorphism it induces.
+* `TauCeti.AbelianK0.AdditiveInvariant C G`: a function on objects which is additive on short exact
+  sequences, and `TauCeti.AbelianK0.lift` the homomorphism it induces.
 * `TauCeti.AbelianK0.map` and `TauCeti.AbelianK0.mapEquiv`: functoriality for an additive functor
   preserving finite limits and finite colimits, and invariance under an additive equivalence.
 * `TauCeti.AbelianK0.fromSplit`: the canonical comparison out of split `K₀`.
@@ -202,15 +202,14 @@ theorem of_sub_of_eq_of_kernel_sub_of_cokernel (f : X ⟶ Y) :
 end KernelCokernel
 
 variable (C) in
-/-- An additive invariant for abelian `K₀`: a function on objects of `C`, constant on isomorphism
-classes and additive on short exact sequences. These are exactly the data that factor through
-`TauCeti.AbelianK0 C`; see `TauCeti.AbelianK0.liftEquiv`. -/
+/-- An additive invariant for abelian `K₀`: a function on objects of `C`, additive on short exact
+sequences. These are exactly the data that factor through `TauCeti.AbelianK0 C`; see
+`TauCeti.AbelianK0.liftEquiv`. It is then constant on isomorphism classes
+(`TauCeti.AbelianK0.AdditiveInvariant.map_iso`). -/
 @[ext]
 structure AdditiveInvariant (G : Type*) [AddCommGroup G] where
   /-- The value of the invariant on an object. -/
   obj : C → G
-  /-- Isomorphic objects receive equal values. -/
-  map_iso : ∀ ⦃X Y : C⦄, (X ≅ Y) → obj X = obj Y
   /-- The value on the middle term of a short exact sequence is the sum of the outer values. -/
   map_shortExact : ∀ ⦃S : ShortComplex C⦄, S.ShortExact → obj S.X₂ = obj S.X₁ + obj S.X₃
 
@@ -219,13 +218,18 @@ the canonical exact structure. -/
 private def AdditiveInvariant.toExact (a : AdditiveInvariant C G) :
     ExactK0.AdditiveInvariant (ExactStructure.abelian C) G where
   obj := a.obj
-  map_iso := a.map_iso
   map_conflation _ hS := a.map_shortExact ((ExactStructure.abelian_conflation _).mp hS)
 
 omit [EssentiallySmall.{w} C] in
 @[simp] private lemma AdditiveInvariant.toExact_obj (a : AdditiveInvariant C G) :
     a.toExact.obj = a.obj :=
   (rfl)
+
+omit [EssentiallySmall.{w} C] in
+/-- An invariant additive on short exact sequences takes equal values on isomorphic objects. -/
+theorem AdditiveInvariant.map_iso (a : AdditiveInvariant C G) ⦃X Y : C⦄ (e : X ≅ Y) :
+    a.obj X = a.obj Y :=
+  a.toExact.map_iso e
 
 /-- The homomorphism out of abelian `K₀` induced by an invariant additive on short exact
 sequences. -/
@@ -247,7 +251,6 @@ noncomputable def liftEquiv : AdditiveInvariant C G ≃ (AbelianK0 C →+ G) whe
   toFun := lift
   invFun f :=
     { obj := fun X => f (of X)
-      map_iso := fun _ _ e => by rw [of_congr e]
       map_shortExact := fun _ hS => by rw [of_shortExact hS, map_add] }
   left_inv a := by ext X; exact lift_of a X
   right_inv f := (lift_unique _ f fun _ => rfl).symm

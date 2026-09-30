@@ -119,29 +119,31 @@ namespace ConnectedFiberNumberedCoverClass
 noncomputable def triple :
     ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
       ConnectedTriple n :=
-  Quotient.lift ConnectedFiberNumberedCover.connectedTriple fun _ _ h =>
+  ConnectedFiberNumberedCoverClass.lift ConnectedFiberNumberedCover.connectedTriple fun _ _ h =>
     ConnectedFiberNumberedCover.connectedTriple_eq_connectedTriple_iff.2 h
 
 @[simp]
 theorem triple_mk
     (c : ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n) :
     (mk c).triple = c.connectedTriple :=
-  (rfl)
+  lift_mk _ _ c
 
 /-- Relabeling a numbered class relabels its triple. -/
 @[simp]
 theorem triple_smul (τ : Perm (Fin n))
     (C : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     (τ • C).triple = τ • C.triple :=
-  Quotient.inductionOn C fun c => c.connectedTriple_smul τ
+  ind (fun c => by rw [smul_mk, triple_mk, triple_mk]; exact c.connectedTriple_smul τ) C
 
 /-- **A numbered cover of `ℂ ∖ {0, 1}` is determined up to isomorphism by its triple.** -/
 theorem triple_injective :
     Function.Injective
       (triple : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n →
-        ConnectedTriple n) := fun C C' =>
-  Quotient.inductionOn₂ C C' fun _ _ h =>
-    Quotient.sound (ConnectedFiberNumberedCover.connectedTriple_eq_connectedTriple_iff.1 h)
+        ConnectedTriple n) := fun C C' h => by
+  obtain ⟨c, rfl⟩ := mk_surjective C
+  obtain ⟨c', rfl⟩ := mk_surjective C'
+  rw [triple_mk, triple_mk] at h
+  exact mk_eq_mk_iff.2 (ConnectedFiberNumberedCover.connectedTriple_eq_connectedTriple_iff.1 h)
 
 /-- Two numbered classes whose triples are relabelings of each other are relabelings of each
 other. -/
@@ -174,7 +176,7 @@ end ConnectedCoverClass
 theorem ConnectedFiberNumberedCoverClass.isoClass_forgetNumbering
     (C : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     C.forgetNumbering.isoClass = ConnectedIsoClass.mk C.triple := by
-  rw [ConnectedCoverClass.isoClass, ← orbitRelQuotientEquiv_mk, symm_apply_apply]
+  rw [ConnectedCoverClass.isoClass, orbitRelQuotientEquiv_symm_forgetNumbering]
   exact Quotient.map'_mk'' _ _ C
 
 /-- **A connected cover of `ℂ ∖ {0, 1}` is determined up to isomorphism by the isomorphism class of
@@ -191,7 +193,7 @@ theorem ConnectedCoverClass.isoClass_injective :
     ConnectedIsoClass.mk_eq_mk_iff_exists_smul] at h
   obtain ⟨τ, hτ⟩ := h
   exact ConnectedFiberNumberedCoverClass.forgetNumbering_eq_forgetNumbering_iff.2
-    ⟨τ⁻¹, inv_smul_eq_iff.2 (ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ).symm⟩
+    ⟨τ, ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ⟩
 
 /-! ### Pointed covers and marked triples -/
 
@@ -226,7 +228,7 @@ theorem ConnectedFiberNumberedCoverClass.markedClass_markLabel
     (C : ConnectedFiberNumberedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n)
     (i : Fin n) :
     (C.markLabel i).markedClass = MarkedIsoClass.mk C.triple i := by
-  rw [ConnectedPointedCoverClass.markedClass, ← markedOrbitRelQuotientEquiv_mk, symm_apply_apply]
+  rw [ConnectedPointedCoverClass.markedClass, markedOrbitRelQuotientEquiv_symm_markLabel]
   rfl
 
 /-- Forgetting the chosen point of a cover is forgetting the marked label of its marked class. -/
@@ -251,7 +253,6 @@ theorem ConnectedPointedCoverClass.markedClass_injective :
     MarkedIsoClass.mk_eq_mk_iff_exists_smul] at h
   obtain ⟨τ, hτ, hτi⟩ := h
   exact ConnectedFiberNumberedCoverClass.markLabel_eq_markLabel_iff.2
-    ⟨τ⁻¹, inv_smul_eq_iff.2 (ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ).symm,
-      by simp [← hτi]⟩
+    ⟨τ, ConnectedFiberNumberedCoverClass.smul_eq_of_smul_triple_eq hτ, hτi⟩
 
 end TauCeti

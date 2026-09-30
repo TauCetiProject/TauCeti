@@ -111,10 +111,7 @@ private theorem slotEquiv_fst (sign : ℤˣ) (slot : Fin 4) :
 
 private theorem slotEquiv_snd_opposite (sign : ℤˣ) (slot : Fin 4) :
     (slotEquiv sign (PDCode.oppositeCrossingSlot slot)).2 = !(slotEquiv sign slot).2 := by
-  have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
-    apply Fin.ext
-    exact PDCode.oppositeCrossingSlot_apply slot
-  rw [hopposite]
+  rw [PDCode.oppositeCrossingSlot_apply]
   rcases Int.units_eq_one_or sign with rfl | rfl
   · fin_cases slot <;> simp [slotEquiv, positiveSlotEquiv]
   · have hne : (-1 : ℤˣ) ≠ 1 := by decide
@@ -173,10 +170,7 @@ theorem crossingVisit_oppositeCrossingSlot (D : BasedOrientedGaussCode n) (c : F
   apply D.visitDataEquiv.injective
   simp only [visitDataEquiv_apply, visit_crossingVisit, over_crossingVisit]
   congr 1
-  have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
-    apply Fin.ext
-    exact PDCode.oppositeCrossingSlot_apply slot
-  rw [hopposite]
+  rw [PDCode.oppositeCrossingSlot_apply]
   fin_cases slot <;> decide
 
 /-- Opposite slots at a crossing have opposite incoming/outgoing directions. -/

@@ -30,6 +30,8 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
   `U`, since restriction to a right transversal is injective.
 * `TauCeti.DiscreteCoind.natCard_of_isOpen`: `|Coind_U^G A| = |A| ^ [G : U]` for an open
   finite-index `U` acting trivially on `A`.
+* `TauCeti.DiscreteCoind.trace_surjective`: for an open finite-index `U` and a discrete
+  `G`-module `M`, the trace `Coind_U^G M → M` is surjective.
 -/
 
 public section
@@ -131,6 +133,44 @@ theorem natCard_of_isOpen [U.FiniteIndex] :
   rw [Nat.card_congr (quotientPiAddEquiv G U A hU htriv).toEquiv, Nat.card_fun, U.index_eq_card]
 
 end Trivial
+
+section Trace
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+  [U.FiniteIndex] {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace `Coind_U^G M → M` of an open subgroup is surjective.** An element `m` of the
+discrete `G`-module `M` is the trace of the function that is `g ↦ g • m` on `U` and `0` off `U`:
+that function is locally constant because `U` is clopen and `g ↦ g • m` is continuous into the
+discrete module `M`, and in the trace only the coset of `1` contributes. -/
+theorem trace_surjective (hU : IsOpen (U : Set G)) : Function.Surjective (trace G U M) := by
+  classical
+  intro m
+  have hf : IsLocallyConstant fun g : G ↦ g • m :=
+    (IsLocallyConstant.iff_continuous _).2 (continuous_id.smul continuous_const)
+  have hclopen : IsClopen (U : Set G) := ⟨U.isClosed_of_isOpen hU, hU⟩
+  have hlc : IsLocallyConstant ((U : Set G).indicator fun g ↦ g • m) :=
+    (LocallyConstant.indicator ⟨_, hf⟩ hclopen).isLocallyConstant
+  refine ⟨mk G U M ((U : Set G).indicator fun g ↦ g • m) hlc fun u g ↦ ?_, ?_⟩
+  · by_cases hg : g ∈ U
+    · rw [Set.indicator_of_mem (U.mul_mem u.2 hg), Set.indicator_of_mem hg, mul_smul,
+        Subgroup.smul_def]
+    · have hug : (u : G) * g ∉ U := fun h ↦ hg (by simpa using U.mul_mem (U.inv_mem u.2) h)
+      rw [Set.indicator_of_notMem hug, Set.indicator_of_notMem hg, smul_zero]
+  · rw [trace_apply, Finset.sum_eq_single ((1 : G) : G ⧸ U)]
+    · have h1 : ((1 : G) : G ⧸ U).out⁻¹ ∈ U := by
+        simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((1 : G) : G ⧸ U))
+      rw [coe_mk, Set.indicator_of_mem h1, smul_inv_smul]
+    · intro x _ hx
+      have hx' : x.out⁻¹ ∉ U := fun h ↦
+        hx (by rw [← QuotientGroup.out_eq' x]; exact QuotientGroup.eq.2 (by simpa using h))
+      rw [coe_mk, Set.indicator_of_notMem hx', smul_zero]
+    · exact fun h ↦ (h (Finset.mem_univ _)).elim
+
+end Trace
 
 end DiscreteCoind
 

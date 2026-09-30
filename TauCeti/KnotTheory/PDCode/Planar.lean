@@ -354,7 +354,7 @@ theorem faceCount_kink : kink.faceCount = 3 := by
     rw [facePerm_apply, hrot, kink_edgePair_apply]
     clear hrot
     simp only [permCongr_apply, symm_apply_apply, prodCongrRight_apply,
-      EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq, true_and]
+      EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq, true_and, slotSmoothing_true]
     revert slot
     decide
   have h := orbitCount_mul_swap_add_one (τ := (1 : Perm (Fin 4))) (p := 3) (a := 1) rfl

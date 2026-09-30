@@ -51,7 +51,6 @@ Jones polynomial from the bracket.
 
 ## Main definitions
 
-* `TauCeti.PDCode.slotSmoothing`: the two smoothings of the four slots at a crossing.
 * `TauCeti.PDCode.smoothingTurn`: the reconnection of the half-edges smoothing every crossing.
 * `TauCeti.PDCode.smoothingChoice`: the over-pair indicator a state selects at each crossing.
 * `TauCeti.PDCode.statePerm`: the traversal of the smoothed diagram.
@@ -92,35 +91,6 @@ namespace PDCode
 
 variable {n : ℕ}
 
-/-- The two smoothings of the four slots at a crossing, indexed by an over-pair indicator.
-`slotSmoothing false` pairs slot `0` with slot `3` and slot `1` with slot `2`, and
-`slotSmoothing true` pairs slot `0` with slot `1` and slot `2` with slot `3`: in both cases each
-slot of the pair indicated is joined to the slot preceding it in the counterclockwise order.
-Applied to `D.overPair i` it is therefore the `A`-smoothing at crossing `i`, the one turning left
-off the over-strand, and applied to `!D.overPair i` the `B`-smoothing. -/
-def slotSmoothing (b : Bool) : Equiv.Perm (Fin 4) :=
-  if b then Equiv.swap 0 1 * Equiv.swap 2 3 else Equiv.swap 0 3 * Equiv.swap 1 2
-
-/-- The `true` smoothing pairs slots `0`-`1` and `2`-`3`. -/
-@[simp] theorem slotSmoothing_true :
-    slotSmoothing true = Equiv.swap 0 1 * Equiv.swap 2 3 := (rfl)
-
-/-- The `false` smoothing pairs slots `0`-`3` and `1`-`2`. -/
-@[simp] theorem slotSmoothing_false :
-    slotSmoothing false = Equiv.swap 0 3 * Equiv.swap 1 2 := (rfl)
-
-/-- A local smoothing is an involution of the four slots. -/
-@[simp]
-theorem slotSmoothing_apply_apply (b : Bool) (slot : Fin 4) :
-    slotSmoothing b (slotSmoothing b slot) = slot := by
-  revert slot
-  cases b <;> decide
-
-/-- A local smoothing moves every slot: it pairs the four slots off into two arcs. -/
-theorem slotSmoothing_ne (b : Bool) (slot : Fin 4) : slotSmoothing b slot ≠ slot := by
-  revert slot
-  cases b <;> decide
-
 /-- A local smoothing never joins a slot to the opposite slot: the two arcs of a smoothing cut
 across the two local strands instead of following them, which is what distinguishes a smoothing
 from `TauCeti.PDCode.crossingTurn`. -/
@@ -128,13 +98,14 @@ theorem slotSmoothing_ne_oppositeCrossingSlot (b : Bool) (slot : Fin 4) :
     slotSmoothing b slot ≠ oppositeCrossingSlot slot := by
   have key : ∀ (c : Bool) (t : Fin 4), (slotSmoothing c t).val ≠ (t + 2).val := by
     intro c
-    cases c <;> decide
+    cases c <;> simp only [slotSmoothing_false, slotSmoothing_true] <;> decide
   intro h
   exact key b slot (by rw [h, oppositeCrossingSlot_apply])
 
 /-- The two local smoothings at a crossing are distinct. -/
 theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slotSmoothing !b := by
-  cases b <;> decide
+  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
+    decide
 
 /-- Smooth every crossing of a PD-code, using at crossing `i` the local smoothing
 `slotSmoothing (b i)`. This is the smoothing counterpart of `TauCeti.PDCode.crossingTurn`, which
@@ -439,6 +410,7 @@ theorem stateLoopCount_kink_false : kink.stateLoopCount (fun _ ↦ false) = 1 :=
   have hperm : (Equiv.prodCongrRight fun _ : Fin 1 ↦ slotSmoothing false * slotSmoothing true)
       = Equiv.swap ((0 : Fin 1), (1 : Fin 4)) (0, 3) * Equiv.swap ((0 : Fin 1), (0 : Fin 4))
         (0, 2) := by
+    simp only [slotSmoothing_false, slotSmoothing_true]
     decide
   have hcard : Nat.card (Fin 1 × Fin 4) = 4 := by simp
   have h₁ := orbitCount_mul_swap_add_one

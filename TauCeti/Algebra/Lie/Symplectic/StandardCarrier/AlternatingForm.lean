@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
+public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme
 
 /-!
@@ -140,25 +141,10 @@ theorem map_rootIntMatrix (k : Fin (n + 1) ⊕ Fin (n + 1)) :
 
 /-! ### Skew-adjointness and squaring to zero, over ℤ -/
 
-private theorem mul_J_add_J_mul_transpose_eq_zero_of_mem_sp {l : Type*} [DecidableEq l]
-    [Fintype l] {R : Type*} [CommRing R] {G : Matrix (l ⊕ l) (l ⊕ l) R}
-    (hG : G ∈ sp l R) :
-    G * Matrix.J l R + Matrix.J l R * Gᵀ = 0 := by
-  rw [sp, mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule] at hG
-  simp only [Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, Matrix.mul_neg] at hG
-  have hJ : Matrix.J l R * Matrix.J l R = -1 := Matrix.J_squared _ _
-  have h1 : Matrix.J l R * Gᵀ * Matrix.J l R = G := by
-    rw [Matrix.mul_assoc, hG, Matrix.mul_neg, ← Matrix.mul_assoc, hJ, Matrix.neg_mul,
-      Matrix.one_mul, neg_neg]
-  have h2 : G * Matrix.J l R = -(Matrix.J l R * Gᵀ) := by
-    conv_lhs => rw [← h1]
-    rw [Matrix.mul_assoc, hJ, Matrix.mul_neg, Matrix.mul_one]
-  rw [h2, neg_add_cancel]
-
 private theorem rootIntMatrix_mul_JFin_add_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * TauCeti.JFin (n + 1) ℤ +
       TauCeti.JFin (n + 1) ℤ * (rootIntMatrix n k)ᵀ = 0 := by
-  have key := mul_J_add_J_mul_transpose_eq_zero_of_mem_sp (rootGenerator n k).2
+  have key := mul_J_add_J_mul_transpose_eq_zero (rootGenerator n k).2
   have hJ : TauCeti.JFin (n + 1) ℚ =
       (Matrix.J (Fin (n + 1)) ℚ).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
     rw [← TauCeti.JFin_submatrix (n + 1) (R := ℚ), Matrix.submatrix_submatrix]

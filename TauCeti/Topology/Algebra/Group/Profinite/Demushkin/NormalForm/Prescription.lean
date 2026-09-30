@@ -54,7 +54,9 @@ vanishes, so the standard orientation has the prescription property.
   commutator; `TauCeti.IsCrossedHom.map_demushkinWordNeTwo`,
   `TauCeti.IsCrossedHom.map_demushkinWordTwoOdd`, `TauCeti.IsCrossedHom.map_demushkinWordTwoEven`,
   `TauCeti.IsCrossedHom.map_demushkinWordTwoRankTwo`,
-  `TauCeti.IsCrossedHom.map_demushkinWordTwoOddTop`: its value on the five normal-form words.
+  `TauCeti.IsCrossedHom.map_demushkinWordTwoOddTop`: its value on the five normal-form words;
+  `TauCeti.IsCrossedHom.map_demushkinWordNeTwo_eq_zero`: at the tabulated character values the
+  `q ≠ 2` word is killed, on any tuple.
 * `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff`,
   `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_iff`,
   `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoEven_iff`,
@@ -169,6 +171,23 @@ theorem IsCrossedHom.map_demushkinWordNeTwo (q n : ℕ) (x : ℕ → H) :
   rw [demushkinWordNeTwo_def, hF.map_mul, hF.map_pow, _root_.map_pow, Units.val_pow_eq_pow_val,
     hF.map_list_range_prod_labuteComm]
 
+/-- **A crossed homomorphism kills the `q ≠ 2` word at the tabulated character values.** For
+`n ≥ 2` and a tuple `x` with `χ (x 1) * (1 - q) = 1` and `χ (x i) = 1` for `i ≠ 1` (the `0`-based
+indices of the tuple: `χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` for `i ≠ 2`), the value of a crossed
+homomorphism `F` on `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` is `(q + χ(x₂)⁻¹ - 1) F (x₁) = 0`. -/
+theorem IsCrossedHom.map_demushkinWordNeTwo_eq_zero {q n : ℕ} (hn : 2 ≤ n) {x : ℕ → H}
+    (h₁ : (χ (x 1) : R) * (1 - q) = 1) (h : ∀ i, i ≠ 1 → χ (x i) = 1) :
+    F (demushkinWordNeTwo q n x) = 0 := by
+  rw [hF.map_demushkinWordNeTwo, h 0 zero_ne_one, Units.val_one, one_pow, one_mul,
+    Finset.sum_eq_single 0 (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_one
+      (h _ (by omega)) (h _ (by omega))) fun h0 ↦ absurd (mem_range.2 (by omega)) h0]
+  -- The word evaluates to `F (x₁, x₂) + q F x₁`, and `χ(x₂) F (x₁, x₂) = (1 - χ(x₂)) F x₁`.
+  have hc := hF.mul_mul_map_labuteComm (x 0) (x 1)
+  rw [h 0 zero_ne_one, Units.val_one, one_mul, sub_self, zero_mul, add_zero] at hc
+  simp only [Nat.mul_zero, Nat.zero_add, one_pow, sum_const, card_range, nsmul_eq_mul, mul_one]
+  refine (Units.mul_right_eq_zero (χ (x 1))).1 ?_
+  linear_combination hc - F (x 0) * h₁
+
 /-- The value of a crossed homomorphism on the `q = 2`, `n` odd normal-form word
 `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`. -/
 theorem IsCrossedHom.map_demushkinWordTwoOdd (f n : ℕ) (x : ℕ → H) :
@@ -234,23 +253,19 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_of_apply_eq
     (h : ∀ i, i ≠ 1 → χ (presentedProPGen p n _ i) = 1) : HasPrescriptionProperty χ := by
   refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
     fun F hFc hF r hr ↦ ?_
-  have h0 := h 0 zero_ne_one
-  rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordNeTwo, presentedProP.comp_mk_freeProPGen, h0,
-    Units.val_one, one_pow, one_mul, Finset.sum_eq_single 0 (fun i _ hi ↦
-      hF.map_labuteComm_eq_zero_of_eq_one
-        (by rw [presentedProP.comp_mk_freeProPGen]; exact h _ (by omega))
-        (by rw [presentedProP.comp_mk_freeProPGen]; exact h _ (by omega))) fun h0' ↦ ?_]
-  · -- The relator evaluates to `F (x₁, x₂) + q F x₁`, and `χ(x₂) F (x₁, x₂) = (1 - χ(x₂)) F x₁`.
-    have hc := hF.mul_mul_map_labuteComm (freeProPGen p n 0) (freeProPGen p n 1)
-    rw [presentedProP.comp_mk_freeProPGen, presentedProP.comp_mk_freeProPGen, h0, Units.val_one,
-      one_mul, sub_self, zero_mul, add_zero] at hc
-    simp only [Nat.mul_zero, Nat.zero_add, one_pow, sum_const, card_range, nsmul_eq_mul, mul_one]
-    refine (Units.mul_right_eq_zero (χ (presentedProPGen p n _ 1))).1 ?_
-    linear_combination hc - F (freeProPGen p n 0) * h₁
-  · -- For `n ≤ 1` the generator `x₂` is `1`, and `(x₁, 1) = 1`.
-    rw [mem_range, not_lt, Nat.le_zero] at h0'
-    rw [freeProPGen_eq_one_of_le p (by omega : n ≤ 2 * 0 + 1)]
-    simp [labuteComm_def, hF.map_one]
+  rw [Set.mem_singleton_iff.mp hr]
+  rcases le_or_gt 2 n with hn | hn
+  · exact hF.map_demushkinWordNeTwo_eq_zero hn
+      (by rw [presentedProP.comp_mk_freeProPGen]; exact h₁)
+      fun i hi ↦ by rw [presentedProP.comp_mk_freeProPGen]; exact h i hi
+  · -- For `n ≤ 1` the generator `x₂` is `1`, so `1 - q = 1` forces `q = 0` and the word is `1`.
+    have hq : q = 0 := by
+      rw [← presentedProP.comp_mk_freeProPGen, freeProPGen_eq_one_of_le p (by omega : n ≤ 1),
+        map_one, Units.val_one, one_mul, sub_eq_self] at h₁
+      exact_mod_cast h₁
+    subst hq
+    rw [demushkinWordNeTwo_def, pow_zero, one_mul, Nat.div_eq_of_lt hn, List.range_zero,
+      List.map_nil, List.prod_nil, hF.map_one]
 
 /-- **The prescription property forces the tabulated values, `q ≠ 2`** (Labute, Theorem 4, the
 forced computation on a derivation). For `p ∣ q` and `n ≥ 2` even, a continuous character of the

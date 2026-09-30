@@ -77,11 +77,11 @@ private def columnAnnulus (k : Fin n) (hk : k ≠ finRotate n k) :
 `r`. -/
 private def rowAnnulus (r : Fin n) (hr : r ≠ finRotate n r) :
     GridRectangleDecomposition x x where
-  middle := x.swapColumns (x.columnOfRow r) (x.columnOfRow (finRotate n r))
-  first := ofSwapColumns x _ (x.columnOfRow r) (x.columnOfRow (finRotate n r))
-    (x.columnOfRow_injective.ne hr) rfl
-  second := ofSwapColumns _ x (x.columnOfRow (finRotate n r)) (x.columnOfRow r)
-    (x.columnOfRow_injective.ne hr).symm
+  middle := x.swapColumns (x.transpose r) (x.transpose (finRotate n r))
+  first := ofSwapColumns x _ (x.transpose r) (x.transpose (finRotate n r))
+    (x.transpose.toPerm.injective.ne hr) rfl
+  second := ofSwapColumns _ x (x.transpose (finRotate n r)) (x.transpose r)
+    (x.transpose.toPerm.injective.ne hr).symm
     (by rw [GridState.swapColumns_comm, GridState.swapColumns_swapColumns])
 
 private theorem columnAnnulus_coveredSquares (k : Fin n) (hk : k ≠ finRotate n k) :
@@ -101,7 +101,7 @@ private theorem rowAnnulus_coveredSquares (r : Fin n) (hr : r ≠ finRotate n r)
   rw [coveredSquares_union_coveredSquares_of_left_eq_right _ _
     (by simp only [rowAnnulus, ofSwapColumns_left, ofSwapColumns_right]),
     GridRectangle.coveredRows_def, toGridRectangle_bottom, toGridRectangle_top]
-  simp only [rowAnnulus, ofSwapColumns_bottom, ofSwapColumns_top, GridState.apply_columnOfRow]
+  simp only [rowAnnulus, ofSwapColumns_bottom, ofSwapColumns_top, GridState.apply_transpose_apply]
   rw [Grid.cIco_eq_singleton_iff.mpr ⟨rfl, rfl, hr⟩]
 
 private theorem columnAnnulus_isEmpty (k : Fin n) (hk : k ≠ finRotate n k) :
@@ -123,7 +123,7 @@ private theorem columnAnnulus_ne_rowAnnulus (k : Fin n) (hk : k ≠ finRotate n 
   have h₁ := congrArg (fun D : GridRectangleDecomposition x x => D.first.left) h
   have h₂ := congrArg (fun D : GridRectangleDecomposition x x => D.second.left) h
   simp only [columnAnnulus, rowAnnulus, ofSwapColumns_left] at h₁ h₂
-  exact x.columnOfRow_injective.ne hr (h₁.symm.trans h₂)
+  exact x.transpose.toPerm.injective.ne hr (h₁.symm.trans h₂)
 
 end Annuli
 
@@ -153,15 +153,15 @@ private theorem univ_product_inter_XSet_eq_singleton_iff (k : Fin n) (s : Finset
   constructor
   · intro h
     ext r
-    have hr := congrArg (fun t => (G.X.columnOfRow r, r) ∈ t) h
+    have hr := congrArg (fun t => (G.X.transpose r, r) ∈ t) h
     simp only [Finset.mem_inter, Finset.mem_product, Finset.mem_univ, true_and, mem_XSet,
-      GridState.apply_columnOfRow, and_true, Finset.mem_singleton, Prod.mk.injEq] at hr
+      GridState.apply_transpose_apply, and_true, Finset.mem_singleton, Prod.mk.injEq] at hr
     rw [hr, Finset.mem_singleton]
     constructor
     · rintro ⟨-, rfl⟩
       rfl
     · rintro rfl
-      exact ⟨G.X.columnOfRow_apply k, rfl⟩
+      exact ⟨G.X.transpose_apply_apply k, rfl⟩
   · rintro rfl
     ext p
     simp only [Finset.mem_inter, Finset.mem_product, Finset.mem_univ, true_and,
@@ -205,10 +205,10 @@ private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridS
       obtain ⟨hb, ht, -⟩ := hX
       rw [toGridRectangle_bottom, bottom_def] at hb
       rw [toGridRectangle_top, top_def] at ht
-      have hl : D.first.left = x.columnOfRow (G.X k) := by
-        rw [← hb, GridState.columnOfRow_apply]
-      have hr : D.first.right = x.columnOfRow (finRotate n (G.X k)) := by
-        rw [← ht, GridState.columnOfRow_apply]
+      have hl : D.first.left = x.transpose (G.X k) := by
+        rw [← hb, GridState.transpose_apply_apply]
+      have hr : D.first.right = x.transpose (finRotate n (G.X k)) := by
+        rw [← ht, GridState.transpose_apply_apply]
       right
       refine GridRectangleDecomposition.ext ?_ ?_ ?_ ?_ <;>
         simp only [rowAnnulus, ofSwapColumns_left, ofSwapColumns_right]
@@ -230,7 +230,7 @@ private theorem XHomotopyDecompositions_self (hn : 1 < n) (k : Fin n) (x : GridS
 theorem sum_XHomotopyDecompositions_self (R : Type*) [CommSemiring R] (hn : 1 < n) (k : Fin n)
     (x : GridState n) :
     ∑ D ∈ G.XHomotopyDecompositions k x x, G.unblockedDecompositionWeight R D =
-      MvPolynomial.X k + MvPolynomial.X (G.O.columnOfRow (G.X k)) := by
+      MvPolynomial.X k + MvPolynomial.X (G.O.transpose (G.X k)) := by
   rw [G.XHomotopyDecompositions_self hn k x,
     Finset.sum_pair (columnAnnulus_ne_rowAnnulus x _ _ _ _),
     unblockedDecompositionWeight_eq_prod_union, unblockedDecompositionWeight_eq_prod_union,
@@ -241,11 +241,11 @@ theorem sum_XHomotopyDecompositions_self (R : Type*) [CommSemiring R] (hn : 1 < 
   · rw [Finset.prod_eq_single (G.O k) (fun r _ hr => by simp [mem_OSet, Ne.symm hr])
       (fun h => absurd (Finset.mem_univ _) h)]
     simp [mem_OSet]
-  · rw [Finset.prod_eq_single (G.O.columnOfRow (G.X k))
+  · rw [Finset.prod_eq_single (G.O.transpose (G.X k))
       (fun c _ hc => by
         simp only [mem_OSet, ite_eq_right_iff]
         intro h
-        exact absurd (by rw [← h, GridState.columnOfRow_apply]) hc)
+        exact absurd (by rw [← h, GridState.transpose_apply_apply]) hc)
       (fun h => absurd (Finset.mem_univ _) h)]
     simp [mem_OSet]
 

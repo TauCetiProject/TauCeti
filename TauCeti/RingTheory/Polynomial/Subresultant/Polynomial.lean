@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.OfFn
 public import TauCeti.RingTheory.Polynomial.Subresultant.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 

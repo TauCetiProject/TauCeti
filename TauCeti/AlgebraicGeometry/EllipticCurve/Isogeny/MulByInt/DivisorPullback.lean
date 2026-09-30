@@ -37,6 +37,8 @@ from a function with this divisor.
   place of `R` is the coefficient of `D` at the place of `n • R`.
 * `TauCeti.Isogeny.divisorPullback_mulByIntIsogeny_ofPoint`: over a separably closed field,
   `[n]^* (T) = ∑_{n • R = T} (R)`.
+* `TauCeti.Isogeny.weilPairingDivisor_eq_sum`: with `n • R₀ = T`, the divisor
+  `[n]^* (T) - [n]^* (O)` is `∑_{n • S = O} ((R₀ + S) - (S))`.
 * `TauCeti.Isogeny.exists_principal_eq_weilPairingDivisor`: at an `n`-torsion
   point `T`, `[n]^* (T) - [n]^* (O)` is the divisor of a function.
 
@@ -167,18 +169,17 @@ theorem divisorPullback_mulByIntIsogeny_ofPoint {n : ℤ} (hchar : (n : F) ≠ 0
 
 /-! ### The divisor `[n]^* (T) - [n]^* (O)` -/
 
-/-- **`[n]^* (T) - [n]^* (O)` is principal** at an `n`-torsion point `T`, over a separably closed
-field in which `n` is invertible (Silverman III.8.1). A function with this divisor is the
-function `g_T` from which the Weil pairing is built. -/
-theorem exists_principal_eq_weilPairingDivisor {n : ℤ} (hchar : (n : F) ≠ 0)
-    {T : W.toAffine.Point} (hT : n • T = 0) :
-    ∃ z : W.toAffine.FunctionFieldˣ, Divisor.principal W.toAffine.isFunctionField z =
-      weilPairingDivisor W (psiFunctionField_ne_zero W hchar) T := by
+/-- **`[n]^* (T) - [n]^* (O)` is the translate of the fibre over `O` minus that fibre**: for any
+`R₀` with `n • R₀ = T`, it is `∑_{n • S = O} ((R₀ + S) - (S))`, over a separably closed field in
+which `n` is invertible. -/
+theorem weilPairingDivisor_eq_sum {n : ℤ} (hchar : (n : F) ≠ 0) {T R₀ : W.toAffine.Point}
+    (hR₀ : n • R₀ = T) :
+    weilPairingDivisor W (psiFunctionField_ne_zero W hchar) T =
+      ∑ S ∈ (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) 0).toFinset,
+        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S)).1 -
+          WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine S).1) := by
   rw [weilPairingDivisor_def]
   let _ := (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
-  -- with `n • R₀ = T` the divisor is `∑_{n • S = O} ((R₀ + S) - (S))`, whose sum is
-  -- `#E[n] • R₀ = n • (n • R₀) = O`
-  obtain ⟨R₀, hR₀⟩ := W.toAffine.exists_point_zsmul_eq_of_zsmul_eq_zero hchar hT
   rw [← coe_pointEquivDegreeOnePlace_zero, divisorPullback_mulByIntIsogeny_ofPoint W hchar T,
     divisorPullback_mulByIntIsogeny_ofPoint W hchar .zero]
   set s₀ := (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) 0).toFinset with hs₀
@@ -192,6 +193,20 @@ theorem exists_principal_eq_weilPairingDivisor {n : ℤ} (hchar : (n : F) ≠ 0)
     rintro ⟨S, hS, rfl⟩
     rw [smul_add, hR₀, hS, add_zero]
   rw [hfib, Finset.sum_map, ← Finset.sum_sub_distrib]
+  simp only [Function.Embedding.coeFn_mk]
+
+/-- **`[n]^* (T) - [n]^* (O)` is principal** at an `n`-torsion point `T`, over a separably closed
+field in which `n` is invertible (Silverman III.8.1). A function with this divisor is the
+function `g_T` from which the Weil pairing is built. -/
+theorem exists_principal_eq_weilPairingDivisor {n : ℤ} (hchar : (n : F) ≠ 0)
+    {T : W.toAffine.Point} (hT : n • T = 0) :
+    ∃ z : W.toAffine.FunctionFieldˣ, Divisor.principal W.toAffine.isFunctionField z =
+      weilPairingDivisor W (psiFunctionField_ne_zero W hchar) T := by
+  -- with `n • R₀ = T` the divisor is `∑_{n • S = O} ((R₀ + S) - (S))`, whose sum is
+  -- `#E[n] • R₀ = n • (n • R₀) = O`
+  obtain ⟨R₀, hR₀⟩ := W.toAffine.exists_point_zsmul_eq_of_zsmul_eq_zero hchar hT
+  rw [weilPairingDivisor_eq_sum W hchar hR₀]
+  set s₀ := (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) 0).toFinset with hs₀
   let D : (Divisor.degree (k := F) (F := W.toAffine.FunctionField)).ker :=
     ∑ S ∈ s₀, ⟨_, W.toAffine.ofPoint_sub_ofPoint_mem_ker_degree (R₀ + S) S⟩
   have hσ : W.toAffine.divisorSum D = 0 := by

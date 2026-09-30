@@ -32,6 +32,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 ## Main results
 
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
+* `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
 * `PadicInt.exists_apply_eq_one_and_eq_smul`: a finite family in `ℤ_[p]` is `q • w` with
   `w i₀ = 1` at some index `i₀`.
@@ -52,6 +53,11 @@ theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit 
   IsLocalRing.isUnit_of_mem_nonunits_one_sub_self _ <| by
     rw [sub_add_cancel_left, mem_nonunits, norm_neg]
     exact (norm_lt_one_iff_dvd x).mpr hx
+
+/-- `2` is a unit in `ℤ_p` for every odd prime `p`. -/
+theorem isUnit_two (hp : p ≠ 2) : IsUnit (2 : ℤ_[p]) :=
+  isUnit_iff.mpr <| by
+    exact_mod_cast norm_natCast_eq_one_iff.mpr ((Nat.coprime_primes Fact.out Nat.prime_two).mpr hp)
 
 /-- `-1 ≠ 1` in `ℤ_pˣ`: the unit group has an element of order two. -/
 theorem units_neg_one_ne_one : (-1 : ℤ_[p]ˣ) ≠ 1 := fun h ↦ by
