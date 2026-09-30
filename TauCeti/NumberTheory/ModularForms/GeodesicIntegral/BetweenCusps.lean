@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.GeodesicIntegral.Basic
-import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
-import Mathlib.NumberTheory.ModularForms.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
 import TauCeti.NumberTheory.ModularForms.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
+import TauCeti.NumberTheory.ModularForms.Primitive
 
 /-!
 # Integrals along geodesics between cusps, and their additivity
@@ -45,15 +44,12 @@ cusps, the first step of the period pairing between cusp forms and modular symbo
 
 ## Main results
 
-* `TauCeti.hasDerivAt_comp_smul`: if `Φ` is a primitive of `F`, then `z ↦ Φ (g • z)` is a
-  primitive of `F ∣[2] g`.
-* `TauCeti.exists_smul_zero_smul_infty`: any two distinct cusps are `g • 0` and `g • ∞` for a
-  rational matrix `g` of positive determinant.
 * `TauCeti.cuspIntegral_smul_zero_smul_infty`: `∫_{g • 0}^{g • ∞} F(z) dz = g.geodesicIntegral F`.
 * `TauCeti.cuspIntegral_same`, `TauCeti.cuspIntegral_symm`: `∫_a^a = 0` and `∫_b^a = -∫_a^b`.
 * `TauCeti.cuspIntegral_slash`: the substitution `z ↦ γ • z`,
   `∫_a^b (F ∣[2] γ)(z) dz = ∫_{γ • a}^{γ • b} F(z) dz`.
-* `TauCeti.cuspIntegral_smul`, `TauCeti.cuspIntegral_add`: linearity in the integrand.
+* `TauCeti.cuspIntegral_zero`, `TauCeti.cuspIntegral_smul`, `TauCeti.cuspIntegral_add`: linearity
+  in the integrand.
 * `TauCeti.cuspIntegral_add_adjacent`: additivity, `∫_a^b + ∫_b^c = ∫_a^c`.
 
 ## References
@@ -78,22 +74,6 @@ namespace TauCeti
 section Primitive
 
 variable {F : ℍ → ℂ} {Φ : ℂ → ℂ}
-
-/-- **Primitives pull back along Möbius transformations.** If `Φ` is a primitive of `F` on `ℍ`,
-then `z ↦ Φ (g • z)` is a primitive of the weight-`2` slash `F ∣[2] g`, for `g` of positive
-determinant: the weight-`2` automorphy factor `det g · (cz + d)⁻²` is the derivative of
-`z ↦ g • z`. -/
-theorem hasDerivAt_comp_smul (hΦ : ∀ z : ℍ, HasDerivAt Φ (F z) z) {g : GL (Fin 2) ℝ}
-    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (τ : ℍ) :
-    HasDerivAt (fun z ↦ Φ (g • ofComplex z : ℍ)) ((F ∣[(2 : ℤ)] g) τ) τ := by
-  have h := (hΦ (g • τ)).comp_of_eq (τ : ℂ) (hasStrictDerivAt_smul hg τ).hasDerivAt
-    (by rw [ofComplex_apply])
-  refine h.congr_deriv ?_
-  have hden : denom g τ ≠ 0 := denom_ne_zero g τ
-  rw [ModularForm.slash_apply_of_det_pos 2 hg, Matrix.GeneralLinearGroup.val_det_apply,
-    abs_of_pos hg]
-  push_cast
-  field_simp
 
 /-- The derivative of a primitive along the line `s ↦ z₀ + w s`. -/
 private theorem hasDerivAt_line {Ψ : ℂ → ℂ} {G : ℍ → ℂ} (hΨ : ∀ τ : ℍ, HasDerivAt Ψ (G τ) τ)
@@ -317,24 +297,6 @@ end CuspValues
 
 /-! ### Integrals between cusps -/
 
-/-- Any two distinct cusps are the endpoints `g • 0` and `g • ∞` of the geodesic cut out by a
-rational matrix `g` of positive determinant. -/
-theorem exists_smul_zero_smul_infty {a b : OnePoint ℚ} (h : a ≠ b) :
-    ∃ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det ∧
-      g • ((0 : ℚ) : OnePoint ℚ) = a ∧ g • (∞ : OnePoint ℚ) = b := by
-  obtain ⟨γ, hγ⟩ := OnePoint.exists_mem_SL2 ℤ b
-  -- `γ⁻¹ a` is a finite cusp `q`, reached from `0` by the translation by `q`
-  obtain ⟨q, hq⟩ : ∃ q : ℚ, (q : OnePoint ℚ) = (mapGL ℚ γ)⁻¹ • a :=
-    OnePoint.ne_infty_iff_exists.mp fun h₀ ↦ h (by rw [← hγ, ← h₀, smul_inv_smul])
-  refine ⟨mapGL ℚ γ * upperRightHom q, ?_, ?_, ?_⟩
-  · rw [Units.val_mul, Matrix.det_mul, ← Matrix.GeneralLinearGroup.val_det_apply (mapGL ℚ γ),
-      det_mapGL]
-    simp [upperRightHom_apply]
-  · rw [mul_smul, ← smul_inv_smul (mapGL ℚ γ) a, ← hq]
-    simp [upperRightHom_apply, smul_some_eq_ite]
-  · rw [mul_smul, ← hγ]
-    simp [upperRightHom_apply, smul_infty_eq_ite]
-
 open scoped Classical in
 /-- The integral `∫_a^b F(z) dz` of the one-form `F(z) dz` along the hyperbolic geodesic from the
 cusp `a` to the cusp `b` of `ℙ¹(ℚ)`. For `a ≠ b` it is `g.geodesicIntegral F` for any rational
@@ -403,19 +365,27 @@ theorem cuspIntegral_smul (c : ℂ) (F : ℍ → ℂ) (a b : OnePoint ℚ) :
   rw [cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
     geodesicIntegral_smul hg]
 
-/-- The integral between cusps is additive in the integrand, for integrands integrable along
-every geodesic between cusps. -/
-theorem cuspIntegral_add {F G : ℍ → ℂ}
+/-- The integral of the zero integrand between two cusps vanishes. -/
+@[simp]
+theorem cuspIntegral_zero (a b : OnePoint ℚ) : cuspIntegral (0 : ℍ → ℂ) a b = 0 := by
+  simpa only [zero_smul, zero_mul] using cuspIntegral_smul 0 (0 : ℍ → ℂ) a b
+
+/-- The integral between two cusps is additive in the integrand when both integrands are
+integrable along any positive-determinant geodesic representative of those endpoints. -/
+theorem cuspIntegral_add {F G : ℍ → ℂ} (a b : OnePoint ℚ)
     (hF : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det →
+      g • ((0 : ℚ) : OnePoint ℚ) = a → g • (∞ : OnePoint ℚ) = b →
       IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ioi 0))
     (hG : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det →
-      IntegrableOn (resToImagAxis (G ∣[(2 : ℤ)] g)) (Ioi 0)) (a b : OnePoint ℚ) :
+      g • ((0 : ℚ) : OnePoint ℚ) = a → g • (∞ : OnePoint ℚ) = b →
+      IntegrableOn (resToImagAxis (G ∣[(2 : ℤ)] g)) (Ioi 0)) :
     cuspIntegral (F + G) a b = cuspIntegral F a b + cuspIntegral G a b := by
   rcases eq_or_ne a b with rfl | hab
   · simp
   obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
   rw [cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
-    cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_add g (hF g hg) (hG g hg)]
+    cuspIntegral_smul_zero_smul_infty _ hg,
+    geodesicIntegral_add g (hF g hg rfl rfl) (hG g hg rfl rfl)]
 
 /-- **Additivity of integrals between cusps**: `∫_a^b F(z) dz + ∫_b^c F(z) dz = ∫_a^c F(z) dz`
 for a holomorphic `F` whose weight-`2` slashes by rational matrices of positive determinant are
