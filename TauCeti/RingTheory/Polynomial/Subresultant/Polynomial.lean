@@ -12,10 +12,12 @@ import TauCeti.GroupTheory.Perm.Inversion
 /-!
 # Subresultant polynomials
 
-This file defines the fixed-bound subresultant polynomial of two polynomials.  Its coefficient
-of degree `k ≤ j` is the Sylvester minor obtained by replacing the first row of the principal
-subresultant matrix at index `j` by the row of coefficients of degree `k`.  At a strict index,
-its coefficient of degree `j` is the principal subresultant coefficient.
+This file defines the fixed-bound subresultant polynomial of two polynomials.  At a strict index
+`j < min m n`, its coefficient of degree `k ≤ j` is the Sylvester minor obtained by replacing the
+first row of the principal subresultant matrix at index `j` by the row of coefficients of degree
+`k`; in particular, its coefficient of degree `j` is the principal subresultant coefficient.
+Outside the strict range the minors remain scalar data (for instance the terminal empty
+determinant recorded by `psc`), and the subresultant polynomial is zero.
 
 The construction retains explicit degree bounds, so it commutes with coefficient maps even when
 specialization lowers the degrees.  Its degree bound and top coefficient identify the scalar minor
@@ -23,8 +25,9 @@ that controls the subresultant gcd criterion.
 
 ## Main results
 
-* `Polynomial.subresultant_coeff`: the coefficients are the prescribed minors through
-  degree `j`, and vanish above `j`.
+* `Polynomial.subresultant_coeff`: at a strict index `j < min m n`, the coefficients are the
+  prescribed minors through degree `j`, and vanish above `j`; outside that range they all
+  vanish.
 * `Polynomial.degree_subresultant_le`: the subresultant polynomial has degree at most
   `j`.
 * `Polynomial.subresultant_map_map`: fixed-bound subresultant polynomials commute with
@@ -47,8 +50,9 @@ open Polynomial
 
 variable {R S : Type*}
 
-/-- The coefficient matrix defining the coefficient of degree `k` in the subresultant polynomial
-at index `j` and formal degree bounds `m` and `n`.
+/-- The coefficient matrix whose determinant is the coefficient of degree `k` in the subresultant
+polynomial at a strict index `j < min m n` and formal degree bounds `m` and `n`.  The matrix is
+defined for all indices; outside the strict range its determinant is only scalar data.
 
 The first row of `subresultantMatrix p q m n j`, which reads coefficients of degree `j`, is
 replaced by the row reading coefficients of degree `k`.  Applications use `k ≤ j`. -/
@@ -114,8 +118,10 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_comm [Semiring R]
   ext i l
   induction l using Fin.addCases <;> simp [subresultantCoeffMatrix]
 
-/-- The scalar minor used as the coefficient of degree `k` in the subresultant polynomial at
-index `j`. -/
+/-- The scalar minor used as the coefficient of degree `k ≤ j` in the subresultant polynomial at
+a strict index `j < min m n`.  It is defined for all indices; outside the strict range it is
+scalar data only (the subresultant polynomial is then zero), e.g. the empty determinant `1` at
+`m = n = j = 0`. -/
 noncomputable def _root_.Polynomial.subresultantCoeff [CommRing R]
     (p q : R[X]) (m n j k : ℕ) : R :=
   (subresultantCoeffMatrix p q m n j k).det
