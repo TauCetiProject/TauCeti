@@ -109,20 +109,6 @@ private lemma mem_Icc_pt_succ {N k : ℕ} : pt N (k + 1) ∈ Icc (pt N k) (pt N 
 
 end Partition
 
-private lemma convexComb_convexComb (lo hi a b s : I) :
-    Icc.convexComb (Icc.convexComb lo hi a) (Icc.convexComb lo hi b) s =
-      Icc.convexComb lo hi (Icc.convexComb a b s) := by
-  ext
-  simp only [Icc.coe_convexComb]
-  ring
-
-/-- A mesh bound: from some point on, `1 / N` is below a given positive number. -/
-private lemma exists_one_div_lt {δ : ℝ} (hδ : 0 < δ) :
-    ∃ N₀ : ℕ, ∀ N, N₀ ≤ N → N ≠ 0 ∧ (1 / N : ℝ) < δ := by
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
-  refine ⟨n + 1, fun N hN ↦ ⟨by omega, lt_of_le_of_lt ?_ hn⟩⟩
-  exact one_div_le_one_div_of_le (by positivity) (by exact_mod_cast hN)
-
 variable (U) in
 /-- `γ` maps every piece of the uniform partition of the unit interval into `N` pieces into a
 single member of `U`. -/
@@ -135,12 +121,13 @@ private lemma exists_isFine {x y : X} (γ : Path x y) :
   obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
     (c := fun i ↦ γ ⁻¹' U i) fun t _ ↦
       (hU (γ t)).imp fun _ ↦ γ.continuous.continuousAt.preimage_mem_nhds
-  obtain ⟨N₀, hN₀⟩ := exists_one_div_lt hδ
-  refine ⟨N₀, fun N hN ↦ ⟨(hN₀ N hN).1, fun k ↦ ?_⟩⟩
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
+  refine ⟨n + 1, fun N hN ↦ ⟨by omega, fun k ↦ ?_⟩⟩
   obtain ⟨i, hi⟩ := h (pt N k) (mem_univ _)
   refine ⟨i, fun t ht ↦ hi ?_⟩
   rw [mem_ball, Subtype.dist_eq, Real.dist_eq]
-  exact (abs_sub_pt_le ht).trans_lt (hN₀ N hN).2
+  exact (abs_sub_pt_le ht).trans_lt <|
+    (one_div_le_one_div_of_le (by positivity) (by exact_mod_cast hN)).trans_lt hn
 
 private lemma IsFine.subpath_mem {x y : X} {γ : Path x y} {N : ℕ} (h : IsFine U γ N) (k : ℕ) :
     ∃ i, ∀ t, γ.subpath (pt N k) (pt N (k + 1)) t ∈ U i :=
@@ -361,7 +348,12 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
     funext t
     apply Subtype.ext
     simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
-    exact congrArg γ (convexComb_convexComb lo hi r s t).symm
+    have hcomb : Icc.convexComb (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
+        Icc.convexComb lo hi (Icc.convexComb r s t) := by
+      ext
+      simp only [Icc.coe_convexComb]
+      ring
+    exact congrArg γ hcomb.symm
   have hab' : (p.subpath a' b').cast hpa hpb = qab :=
     cast_subpath_eq_codRestrict a' b' haU hbU hpa hpb (Path.subpath_apply_mem hγ ha hb)
   have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
@@ -472,13 +464,14 @@ private lemma exists_isFine_homotopy {x y : X} {p q : Path x y} (H : p.Homotopy 
   obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
     (c := fun i ↦ H ⁻¹' U i) fun ts _ ↦
       (hU (H ts)).imp fun _ ↦ H.continuous.continuousAt.preimage_mem_nhds
-  obtain ⟨N, hN⟩ := exists_one_div_lt hδ
-  refine ⟨N, (hN N le_rfl).1, fun l k ↦ ?_⟩
-  obtain ⟨i, hi⟩ := h (pt N l, pt N k) (mem_univ _)
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
+  have hN : (1 / ((n + 1 : ℕ) : ℝ)) < δ := by exact_mod_cast hn
+  refine ⟨n + 1, n.succ_ne_zero, fun l k ↦ ?_⟩
+  obtain ⟨i, hi⟩ := h (pt (n + 1) l, pt (n + 1) k) (mem_univ _)
   refine ⟨i, fun t ht s hs ↦ hi ?_⟩
   rw [mem_ball, Prod.dist_eq, max_lt_iff, Subtype.dist_eq, Subtype.dist_eq, Real.dist_eq,
     Real.dist_eq]
-  exact ⟨(abs_sub_pt_le ht).trans_lt (hN N le_rfl).2, (abs_sub_pt_le hs).trans_lt (hN N le_rfl).2⟩
+  exact ⟨(abs_sub_pt_le ht).trans_lt hN, (abs_sub_pt_le hs).trans_lt hN⟩
 
 private lemma pt_eq_one {N k : ℕ} (hN : N ≠ 0) (hk : N ≤ k) : pt N k = 1 := by
   rw [pt, Set.Icc.addNSMul, projIcc_of_right_le]
@@ -646,12 +639,6 @@ private lemma convexComb_mem_Icc_pt (N k : ℕ) (u : I) :
     Icc.convexComb (pt N k) (pt N (k + 1)) u ∈ Icc (pt N k) (pt N (k + 1)) :=
   ⟨Icc.le_convexComb (pt_mono N k.le_succ) u, Icc.convexComb_le (pt_mono N k.le_succ) u⟩
 
-private lemma trans_apply_mem {x y z : X} {P : Path x y} {Q : Path y z} {V : Set X}
-    (hP : ∀ t, P t ∈ V) (hQ : ∀ t, Q t ∈ V) (t : I) : P.trans Q t ∈ V := by
-  rw [Path.trans_apply]
-  split_ifs
-  exacts [hP _, hQ _]
-
 include hF in
 /-- The values along the boundary of one cell of a homotopy of paths satisfy the square relation
 of the cell. -/
@@ -671,8 +658,12 @@ private lemma pathVal_cell {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k 
   have m₄ : ∀ t, (H.eval (pt N (l + 1))).subpath (pt N k) (pt N (k + 1)) t ∈ U i := fun t ↦ by
     simpa [Path.subpath] using hi _ mem_Icc_pt_succ _ (convexComb_mem_Icc_pt N k t)
   rw [pathVal_eq hU F hF i _ _ m₁, pathVal_eq hU F hF i _ _ m₂, pathVal_eq hU F hF i _ _ m₃,
-    pathVal_eq hU F hF i _ _ m₄, ← locVal_trans hU F hF i _ _ m₁ m₂ (trans_apply_mem m₁ m₂),
-    ← locVal_trans hU F hF i _ _ m₃ m₄ (trans_apply_mem m₃ m₄)]
+    pathVal_eq hU F hF i _ _ m₄, ← locVal_trans hU F hF i _ _ m₁ m₂ (range_subset_iff.1 <|
+      (Path.trans_range _ _).trans_subset <| union_subset (range_subset_iff.2 m₁)
+        (range_subset_iff.2 m₂)),
+    ← locVal_trans hU F hF i _ _ m₃ m₄ (range_subset_iff.1 <|
+      (Path.trans_range _ _).trans_subset <| union_subset (range_subset_iff.2 m₃)
+        (range_subset_iff.2 m₄))]
   -- Both composites are images of paths from `(0, 0)` to `(1, 1)` in the square `I × I` under the
   -- affine parametrisation of the cell by the square.
   let g : C(I × I, X) := H.toContinuousMap.comp
