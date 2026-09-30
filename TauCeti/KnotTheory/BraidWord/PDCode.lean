@@ -399,6 +399,7 @@ theorem crossingSign_closure (j : Fin w.length) : w.closure.crossingSign j = w[j
   rcases Int.units_eq_one_or w[j.1].2 with h | h <;> simp [h]
 
 /-- The writhe of the closure of a braid word is the exponent sum of the braid it represents. -/
+@[simp]
 theorem writhe_closure :
     w.closure.writhe = Multiplicative.toAdd (ArtinGroup.exponentSum _ w.toBraid) := by
   rw [OrientedPDCode.writhe_def, exponentSum_toBraid, toAdd_ofAdd]
@@ -408,6 +409,7 @@ theorem writhe_closure :
 /-! ### Small closures -/
 
 /-- The closure of the empty word on `n` strands is the `n`-component unlink. -/
+@[simp]
 theorem closure_nil : closure ([] : BraidWord n) =
     OrientedPDCode.unlink (Multiset.replicate n true) := by
   rw [OrientedPDCode.eq_unlink (closure []), crossinglessComponents_closure]
