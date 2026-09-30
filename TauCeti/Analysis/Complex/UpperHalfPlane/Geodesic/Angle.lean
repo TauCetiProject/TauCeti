@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Angle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Between
+public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 
 /-!
 # Velocities of geodesic lines and the angle between two geodesics
@@ -133,8 +134,8 @@ theorem velocity_rotation_zero (θ : ℝ) :
     velocity (↑(rotation θ)) 0 = Complex.I * Complex.exp (2 * θ * Complex.I) := by
   rw [velocity_rotation, Real.exp_zero, Complex.ofReal_one, mul_one]
   have h : (Real.cos θ - Complex.I * Real.sin θ : ℂ) = Complex.exp (-θ * Complex.I) := by
-    rw [Complex.exp_mul_I, Complex.cos_neg, Complex.sin_neg, Complex.ofReal_cos,
-      Complex.ofReal_sin]
+    rw [Complex.exp_mul_I, Complex.cos_neg, Complex.sin_neg]
+    push_cast
     ring
   rw [h, ← Complex.exp_nat_mul, div_eq_mul_inv, ← Complex.exp_neg]
   congr 2
@@ -206,9 +207,8 @@ theorem geodesicAngle_one_rotation {θ : ℝ} (hθ : |θ| ≤ π / 2) :
     rw [harg, abs_neg, abs_mul, abs_two]
   · subst h2
     have h3 : -(2 * (π / 2)) = -π := by ring
-    rw [h3, Complex.ofReal_neg, Complex.cos_neg, Complex.sin_neg, Complex.cos_pi, Complex.sin_pi,
-      neg_zero, zero_mul, add_zero, Complex.arg_neg_one, abs_of_pos Real.pi_pos,
-      abs_of_pos (by positivity)]
+    rw [h3, abs_of_pos (by positivity : (0 : ℝ) < π / 2)]
+    simp [abs_of_pos Real.pi_pos]
     ring
 
 /-- The angle at `I` between the rotations of the imaginary axis by `θ` and by `φ`. -/
