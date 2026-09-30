@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
+import Mathlib.GroupTheory.GroupAction.Transitive
+import TauCeti.Algebra.Polynomial.AlgebraMap
+import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
@@ -35,10 +38,15 @@ exactly the field fixed by the automorphisms that permute the roots of `f` evenl
 inclusions short: an even automorphism fixes `δ`, and an odd one negates it, which is a genuine move
 because `δ ≠ 0` and `2 ≠ 0`.
 
-Downstream, the quartic decision table separates the labels `4T1` and `4T3` by a factorization
-over the discriminant field, and the discriminant test of the previous file is recovered here as
-the statement that the discriminant field is trivial exactly when the Galois image is contained in
-the alternating group.
+The same comparison reads factorizations over the discriminant field on the Galois image: in a
+normal splitting extension, `f` stays irreducible over its discriminant field exactly when the even
+permutations in the Galois image act transitively on the roots
+(`TauCeti.irreducible_map_discrField_iff`). Since all discriminant fields are splitting fields of
+`X ^ 2 - C f.discr`, whether `f` stays irreducible over one does not depend on the extension `E` in
+which it is taken (`TauCeti.irreducible_map_discrField_congr`). This is the datum that separates the
+cyclic quartic group from the dihedral one, whose even parts are respectively intransitive and
+transitive. The discriminant test of the previous file is recovered here as the statement that the
+discriminant field is trivial exactly when the Galois image is contained in the alternating group.
 
 ## Main definitions
 
@@ -57,8 +65,13 @@ the alternating group.
   `F` exactly when the discriminant is a square, and has degree `2` otherwise.
 * `TauCeti.isGalois_discrField`: away from characteristic `2`, and for nonzero discriminant, it is
   a Galois extension of `F`.
+* `TauCeti.irreducible_map_discrField_congr`: irreducibility over the discriminant field does not
+  depend on the extension in which the discriminant field is taken.
 * `TauCeti.fixedField_evenAutSubgroup`: **the comparison theorem**, that the discriminant field is
-  the fixed field of the even part of the Galois group.
+  the fixed field of the even part of the Galois group, and `TauCeti.fixingSubgroup_discrField`:
+  conversely, the even part of the Galois group is the subgroup fixing the discriminant field.
+* `TauCeti.irreducible_map_discrField_iff`: `f` stays irreducible over the discriminant field
+  exactly when the even part of its Galois image is transitive on the roots.
 * `TauCeti.discrField_eq_bot_iff_range_le_alternatingGroup`,
   `TauCeti.finrank_discrField_eq_two_iff`: the discriminant test, read on the discriminant field.
 
@@ -178,6 +191,22 @@ theorem isGalois_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr) (hd
   have := isSplittingField_discrField hδ
   exact IsGalois.of_separable_splitting_field hsep2
 
+/-- **Irreducibility over the discriminant field does not depend on the ambient extension.** If
+`E` and `E'` both contain a square root of the discriminant of `f`, then a polynomial `g` is
+irreducible over the discriminant field of `f` in `E` exactly when it is irreducible over the
+discriminant field of `f` in `E'`: both are splitting fields of `X ^ 2 - C f.discr`, hence
+isomorphic over `F`. -/
+theorem irreducible_map_discrField_congr {E' : Type w} [Field E'] [Algebra F E'] {δ : E}
+    {δ' : E'} (hδ : δ ^ 2 = algebraMap F E f.discr) (hδ' : δ' ^ 2 = algebraMap F E' f.discr)
+    (g : F[X]) :
+    Irreducible (g.map (algebraMap F (discrField f E))) ↔
+      Irreducible (g.map (algebraMap F (discrField f E'))) := by
+  have := isSplittingField_discrField hδ
+  have := isSplittingField_discrField hδ'
+  exact irreducible_map_iff_of_algEquiv
+    ((IsSplittingField.algEquiv _ (X ^ 2 - C f.discr)).trans
+      (IsSplittingField.algEquiv _ (X ^ 2 - C f.discr)).symm) g
+
 /-! ## The comparison with the even part of the Galois group -/
 
 section Galois
@@ -232,6 +261,17 @@ theorem evenAutSubgroup_eq_fixingSubgroup (hchar : ringChar F ≠ 2)
         linear_combination -hfix
       exact (mul_eq_zero.mp hdouble).resolve_left h2
 
+/-- **The comparison theorem, from the other side.** Away from characteristic `2`, the
+automorphisms of a splitting extension that fix the discriminant field of a monic separable
+polynomial are exactly those acting on its roots by an even permutation. Unlike
+`TauCeti.fixedField_evenAutSubgroup`, this needs no normality of the extension. -/
+theorem fixingSubgroup_discrField (hf : f.Monic) (hsep : f.Separable) (hchar : ringChar F ≠ 2) :
+    (discrField f E).fixingSubgroup = evenAutSubgroup f E := by
+  obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
+    ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
+  rw [discrField_eq_adjoin_simple (hf.discrSqrt_sq hsep e),
+    evenAutSubgroup_eq_fixingSubgroup hchar e]
+
 open scoped Classical in
 /-- **The comparison theorem.** In a Galois splitting extension, and away from characteristic `2`,
 the discriminant field of a monic separable polynomial is the field fixed by the automorphisms
@@ -239,11 +279,44 @@ acting on the roots by an even permutation. -/
 theorem fixedField_evenAutSubgroup [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
     (hchar : ringChar F ≠ 2) :
     IntermediateField.fixedField (evenAutSubgroup f E) = discrField f E := by
-  obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
-    ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  rw [discrField_eq_adjoin_simple (hf.discrSqrt_sq hsep e),
-    evenAutSubgroup_eq_fixingSubgroup hchar e,
-    InfiniteGalois.fixedField_fixingSubgroup]
+  rw [← fixingSubgroup_discrField hf hsep hchar, InfiniteGalois.fixedField_fixingSubgroup]
+
+open scoped Classical in
+/-- In a normal splitting extension, the even part of the automorphism group acts transitively on
+the roots exactly when the even permutations in the Galois image do. The root action maps the
+former onto the latter, because every element of `f.Gal` lifts to an automorphism of `E`. -/
+theorem isPretransitive_evenAutSubgroup_iff [Normal F E] :
+    MulAction.IsPretransitive (evenAutSubgroup f E) (f.rootSet E) ↔
+      MulAction.IsPretransitive
+        ((Gal.galActionHom f E).range ⊓ alternatingGroup (f.rootSet E) :
+          Subgroup (Equiv.Perm (f.rootSet E))) (f.rootSet E) := by
+  let φ : evenAutSubgroup f E →
+      ((Gal.galActionHom f E).range ⊓ alternatingGroup (f.rootSet E) :
+        Subgroup (Equiv.Perm (f.rootSet E))) :=
+    fun σ ↦ ⟨Gal.galActionHom f E (Gal.restrict f E σ), ⟨_, rfl⟩, σ.2⟩
+  refine MulAction.isPretransitive_congr (φ := φ)
+    (f := ⟨id, fun σ x ↦ Subtype.ext ?_⟩) ?_ Function.bijective_id
+  · simp [φ, Subgroup.smul_def, Equiv.Perm.smul_def, Gal.galActionHom_restrict, AlgEquiv.smul_def]
+  · rintro ⟨π, ⟨g, rfl⟩, hπ⟩
+    obtain ⟨σ, rfl⟩ := Gal.restrict_surjective f E g
+    exact ⟨⟨σ, hπ⟩, rfl⟩
+
+open scoped Classical in
+/-- **Irreducibility over the discriminant field.** In a normal splitting extension, and away from
+characteristic `2`, a monic separable polynomial of positive degree stays irreducible over its
+discriminant field exactly when the even permutations in its Galois image act transitively on its
+roots.
+
+By `TauCeti.irreducible_map_discrField_congr`, the left-hand side is the same for the discriminant
+field taken in any extension containing a square root of the discriminant. -/
+theorem irreducible_map_discrField_iff [Normal F E] (hf : f.Monic) (hsep : f.Separable)
+    (hchar : ringChar F ≠ 2) (hdeg : 0 < f.natDegree) :
+    Irreducible (f.map (algebraMap F (discrField f E))) ↔
+      MulAction.IsPretransitive
+        ((Gal.galActionHom f E).range ⊓ alternatingGroup (f.rootSet E) :
+          Subgroup (Equiv.Perm (f.rootSet E))) (f.rootSet E) := by
+  rw [irreducible_map_iff_isPretransitive_fixingSubgroup E _ hsep hdeg,
+    fixingSubgroup_discrField hf hsep hchar, isPretransitive_evenAutSubgroup_iff]
 
 open scoped Classical in
 /-- **The discriminant test, read on the discriminant field.** The discriminant field is trivial
