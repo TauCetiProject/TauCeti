@@ -24,9 +24,9 @@ This file proves that the operators of these Lie algebra representations generat
 endomorphism algebra of the module, and deduces that every invariant subspace is `⊥` or everything:
 the spin module and `S⁺` are irreducible, and so is `S⁻` whenever it is nonzero. The quadratic
 elements generate the even Clifford subalgebra as an algebra
-(`CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra`), and the even subalgebra acts onto
-the full endomorphism algebra of `S` in odd dimension (`TauCeti.evenSpinAction_surjective`) and of
-each of `S⁺` and `S⁻` in even dimension (`TauCeti.spinPlusAction_surjective`,
+(`CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra_eq_top`), and the even subalgebra acts
+onto the full endomorphism algebra of `S` in odd dimension (`TauCeti.evenSpinAction_surjective`)
+and of each of `S⁺` and `S⁻` in even dimension (`TauCeti.spinPlusAction_surjective`,
 `TauCeti.spinMinusAction_surjective`). The invariant-subspace dichotomy is then
 `TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top`.
 
@@ -42,12 +42,12 @@ rules this out, for simplicity. `S` and `S⁺` always contain the scalars, so ne
 
 ## Main results
 
-* `TauCeti.SpinPolarizationData.adjoin_range_typeBSpinLieRep`: the type-`B` spin operators
+* `TauCeti.SpinPolarizationData.adjoin_range_typeBSpinLieRep_eq_top`: the type-`B` spin operators
   generate `Module.End K S`.
 * `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeBSpinLieRep_le`: **the type-`B` spin
   module is irreducible.**
-* `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinPlusLieRep` and
-  `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinMinusLieRep`: the type-`D` half-spin
+* `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinPlusLieRep_eq_top` and
+  `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinMinusLieRep_eq_top`: the type-`D` half-spin
   operators generate `Module.End K S⁺` and `Module.End K S⁻`.
 * `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le`: **the even
   type-`D` half-spin module is irreducible.**
@@ -94,8 +94,8 @@ private theorem adjoin_range_eq_top {L M : Type*} [LieRing L] [LieAlgebra K L]
       have hx' : ((e x : quadraticLieSubalgebra Q) : CliffordAlgebra Q) = y :=
         congrArg Subtype.val hx
       exact ⟨x, (hf x).trans (congrArg F (Subtype.ext hx'))⟩
-  rw [hrange, ← AlgHom.map_adjoin, adjoin_coe_preimage_quadraticLieSubalgebra, Algebra.map_top,
-    (AlgHom.range_eq_top F).2 hF]
+  rw [hrange, ← AlgHom.map_adjoin, adjoin_coe_preimage_quadraticLieSubalgebra_eq_top,
+    Algebra.map_top, (AlgHom.range_eq_top F).2 hF]
 
 /-! ### Type `B` -/
 
@@ -106,7 +106,7 @@ variable (z : P.line) (hz : Q (z : V) = 1)
 /-- **The type-`B` spin operators generate every endomorphism of the spinor module.** In odd
 dimension the even Clifford subalgebra acts onto `Module.End K S`, and the quadratic elements
 generate it. -/
-theorem adjoin_range_typeBSpinLieRep :
+theorem adjoin_range_typeBSpinLieRep_eq_top :
     Algebra.adjoin K (Set.range (P.typeBSpinLieRep b z hz)) = ⊤ := by
   have := Module.Finite.of_basis (P.typeBBasis b z hz)
   have : NeZero (2 : K) := ⟨Invertible.ne_zero 2⟩
@@ -122,7 +122,7 @@ theorem adjoin_range_typeBSpinLieRep :
 element of the split odd orthogonal Lie algebra is `⊥` or all of `S`. -/
 theorem eq_bot_or_eq_top_of_map_typeBSpinLieRep_le (N : Submodule K (ExteriorAlgebra K P.W))
     (hN : ∀ x, N.map (P.typeBSpinLieRep b z hz x) ≤ N) : N = ⊥ ∨ N = ⊤ :=
-  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeBSpinLieRep b z hz) <| by
+  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeBSpinLieRep_eq_top b z hz) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
 
@@ -133,7 +133,7 @@ end TypeB
 section TypeD
 
 /-- **The type-`D` half-spin operators generate every endomorphism of `S⁺`.** -/
-theorem adjoin_range_typeDSpinPlusLieRep (hline : P.line = ⊥) :
+theorem adjoin_range_typeDSpinPlusLieRep_eq_top (hline : P.line = ⊥) :
     Algebra.adjoin K (Set.range (P.typeDSpinPlusLieRep b hline)) = ⊤ := by
   have := Module.Finite.of_basis (P.typeDBasis b hline)
   exact adjoin_range_eq_top (P.typeDQuadraticEquiv b hline) (spinPlusAction Q P hline)
@@ -141,7 +141,7 @@ theorem adjoin_range_typeDSpinPlusLieRep (hline : P.line = ⊥) :
       rw [coe_typeDSpinPlusLieRep_apply, typeDSpinLieRep_apply, coe_spinPlusAction_apply]
 
 /-- **The type-`D` half-spin operators generate every endomorphism of `S⁻`.** -/
-theorem adjoin_range_typeDSpinMinusLieRep (hline : P.line = ⊥) :
+theorem adjoin_range_typeDSpinMinusLieRep_eq_top (hline : P.line = ⊥) :
     Algebra.adjoin K (Set.range (P.typeDSpinMinusLieRep b hline)) = ⊤ := by
   have := Module.Finite.of_basis (P.typeDBasis b hline)
   exact adjoin_range_eq_top (P.typeDQuadraticEquiv b hline) (spinMinusAction Q P hline)
@@ -153,7 +153,8 @@ every element of the split even orthogonal Lie algebra is `⊥` or all of `S⁺`
 theorem eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le (hline : P.line = ⊥)
     (N : Submodule K (spinPlus Q P)) (hN : ∀ x, N.map (P.typeDSpinPlusLieRep b hline x) ≤ N) :
     N = ⊥ ∨ N = ⊤ :=
-  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeDSpinPlusLieRep b hline) <| by
+  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top
+    (P.adjoin_range_typeDSpinPlusLieRep_eq_top b hline) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
 
@@ -164,7 +165,8 @@ irreducibility when `P.W ≠ ⊥`. -/
 theorem eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le (hline : P.line = ⊥)
     (N : Submodule K (spinMinus Q P)) (hN : ∀ x, N.map (P.typeDSpinMinusLieRep b hline x) ≤ N) :
     N = ⊥ ∨ N = ⊤ :=
-  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeDSpinMinusLieRep b hline) <| by
+  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top
+    (P.adjoin_range_typeDSpinMinusLieRep_eq_top b hline) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
 

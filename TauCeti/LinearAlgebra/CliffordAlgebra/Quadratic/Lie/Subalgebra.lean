@@ -64,8 +64,8 @@ scope.
 * `CliffordAlgebra.lie_ι_mem_range_ι_of_mem_quadraticLieSubalgebra`: bracketing with a
   quadratic element preserves the generators.
 * `CliffordAlgebra.adjoin_quadraticLieSubalgebra` and
-  `CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra`: the quadratic elements generate
-  the even subalgebra as an algebra.
+  `CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra_eq_top`: the quadratic elements
+  generate the even subalgebra as an algebra.
 
 ## References
 
@@ -254,7 +254,7 @@ theorem adjoin_quadraticLieSubalgebra :
 /-- **The quadratic elements generate the even subalgebra from within**: regarded as elements of
 `even Q`, they generate all of it. This is the form in which a representation of the even
 subalgebra is determined by its values on the quadratic elements. -/
-theorem adjoin_coe_preimage_quadraticLieSubalgebra :
+theorem adjoin_coe_preimage_quadraticLieSubalgebra_eq_top :
     Algebra.adjoin R (((↑) : even Q → CliffordAlgebra Q) ⁻¹' quadraticLieSubalgebra Q) = ⊤ := by
   have := Algebra.adjoin_adjoin_coe_preimage (R := R)
     (s := (quadraticLieSubalgebra Q : Set (CliffordAlgebra Q)))
