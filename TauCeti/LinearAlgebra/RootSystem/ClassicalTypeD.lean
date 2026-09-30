@@ -82,7 +82,7 @@ private abbrev TypeDRawIndex (n : ℕ) := Fin 2 × TypeDPair n
 private def typeDRawVector (r : TypeDRawIndex n) : Fin n → ℤ :=
   if r.1 = 0 then typeDPairVector r.2 else -typeDPairVector r.2
 
-private lemma typeDPairVector_dot_self (p : TypeDPair n) :
+private lemma typeDPairVector_dotProduct_self (p : TypeDPair n) :
     typeDPairVector p ⬝ᵥ typeDPairVector p = 2 := by
   have hp : p.val.1 ≠ p.val.2 := p.property
   by_cases h : p.val.1 < p.val.2
@@ -90,18 +90,19 @@ private lemma typeDPairVector_dot_self (p : TypeDPair n) :
   · have h' : p.val.2 ≠ p.val.1 := Ne.symm hp
     simp [typeDPairVector, h, dotProduct_add, dotProduct_single, hp, h']
 
-private lemma typeDRawVector_dot_self (r : TypeDRawIndex n) :
+private lemma typeDRawVector_dotProduct_self (r : TypeDRawIndex n) :
     typeDRawVector r ⬝ᵥ typeDRawVector r = 2 := by
   by_cases h : r.1 = 0
-  · simpa [typeDRawVector, h] using typeDPairVector_dot_self r.2
-  · simpa [typeDRawVector, h, neg_dotProduct, dotProduct_neg] using typeDPairVector_dot_self r.2
+  · simpa [typeDRawVector, h] using typeDPairVector_dotProduct_self r.2
+  · simpa [typeDRawVector, h, neg_dotProduct, dotProduct_neg] using
+      typeDPairVector_dotProduct_self r.2
 
 /-- The integral vectors of squared length two. For `n ≥ 2`, these are exactly the classical
 roots `±e_a ±e_b` of type `Dₙ`. -/
 abbrev TypeDRoot (n : ℕ) := {x : Fin n → ℤ // x ⬝ᵥ x = 2}
 
 private def typeDRawRoot (r : TypeDRawIndex n) : TypeDRoot n :=
-  ⟨typeDRawVector r, typeDRawVector_dot_self r⟩
+  ⟨typeDRawVector r, typeDRawVector_dotProduct_self r⟩
 
 private lemma support_typeDPairVector (p : TypeDPair n) :
     Function.support (typeDPairVector p) = {p.val.1, p.val.2} := by
@@ -232,7 +233,7 @@ private lemma typeDRawRootEquiv_apply (r : TypeDRawIndex n) :
 
 /-! ### The Bourbaki order -/
 
-private lemma one_le_typeDDifference {n : ℕ} (hn : 1 ≤ n) (p : TypeDPair n) :
+private lemma one_le_val_sub {n : ℕ} (hn : 1 ≤ n) (p : TypeDPair n) :
     1 ≤ ((p.val.2 - p.val.1 : Fin n) : ℕ) := by
   let _ : NeZero n := ⟨by omega⟩
   have h : (p.val.2 - p.val.1 : Fin n) ≠ 0 := fun h =>
@@ -243,7 +244,7 @@ private lemma one_le_typeDDifference {n : ℕ} (hn : 1 ≤ n) (p : TypeDPair n) 
 
 private def typeDDifference (hn : 1 ≤ n) (p : TypeDPair n) : Fin (n - 1) :=
   ⟨((p.val.2 - p.val.1 : Fin n) : ℕ) - 1, by
-    have h₁ := one_le_typeDDifference hn p
+    have h₁ := one_le_val_sub hn p
     have h₂ := (p.val.2 - p.val.1 : Fin n).isLt
     omega⟩
 
@@ -266,7 +267,7 @@ private def typeDPairEquiv (n : ℕ) (hn : 1 ≤ n) : TypeDPair n ≃ Fin (n - 1
       have h0 : q.2 + 0 = q.2 + typeDSucc q.1 := by simpa using h
       exact (add_left_cancel h0).symm⟩), ?_, ?_⟩
   · intro p
-    have h₁ := one_le_typeDDifference hn p
+    have h₁ := one_le_val_sub hn p
     have hx : typeDSucc (typeDDifference hn p) = p.val.2 - p.val.1 :=
       Fin.ext (by simp [typeDSucc, typeDDifference]; omega)
     refine Subtype.ext (Prod.ext rfl ?_)
