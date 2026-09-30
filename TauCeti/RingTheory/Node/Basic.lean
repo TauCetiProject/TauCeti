@@ -117,6 +117,18 @@ lemma lift_coord_one {A : Type*} [CommSemiring A] [Algebra R A] (x y : A)
     (h : x * y = algebraMap R A a) : lift a x y h (coord a 1) = y := by
   simp only [coord, lift_mk, aeval_X, Matrix.cons_val_one, Matrix.cons_val_zero]
 
+/-- The defining equation `xy = a`, written for either coordinate and the other one. -/
+lemma coord_mul_coord_one_sub (i : Fin 2) :
+    coord a i * coord a (1 - i) = algebraMap R (NodeAlgebra R a) a := by
+  fin_cases i
+  · exact coord_zero_mul_coord_one a
+  · exact (mul_comm _ _).trans (coord_zero_mul_coord_one a)
+
+/-- Evaluation sends each coordinate to the corresponding chosen element. -/
+lemma lift_coord {A : Type*} [CommSemiring A] [Algebra R A] (x y : A)
+    (h : x * y = algebraMap R A a) (i : Fin 2) : lift a x y h (coord a i) = ![x, y] i := by
+  rw [← mk_X, lift_mk, aeval_X]
+
 /-- Algebra maps out of the nodal algebra are determined by the two coordinates. -/
 @[ext]
 lemma hom_ext {A : Type*} [Semiring A] [Algebra R A]
@@ -129,6 +141,14 @@ lemma hom_ext {A : Type*} [Semiring A] [Algebra R A]
   fin_cases i
   · exact h₀
   · exact h₁
+
+/-- The two coordinates generate the nodal algebra as an `R`-algebra. -/
+lemma adjoin_range_coord : Algebra.adjoin R (Set.range (coord a)) = ⊤ := by
+  have h : Set.range (coord a) = mk a '' Set.range X := by
+    rw [← Set.range_comp]
+    exact congrArg Set.range (funext fun i ↦ (mk_X a i).symm)
+  rw [h, ← AlgHom.map_adjoin, MvPolynomial.adjoin_range_X, Algebra.map_top, AlgHom.range_eq_top]
+  exact mk_surjective a
 
 private def presentation : Presentation R (NodeAlgebra R a) (Fin 2) Unit :=
   (Presentation.naive (v := fun _ : Unit ↦ X 0 * X 1 - C a)).ofAlgEquiv
