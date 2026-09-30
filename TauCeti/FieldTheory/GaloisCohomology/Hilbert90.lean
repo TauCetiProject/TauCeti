@@ -9,7 +9,6 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
-public import TauCeti.FieldTheory.GaloisCohomology.Norm
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
