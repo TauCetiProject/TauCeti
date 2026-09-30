@@ -31,75 +31,78 @@ open InnerProductSpace MeasureTheory Metric
 
 variable {n : ℕ}
 local notation "E" => EuclideanSpace ℝ (Fin n)
+local notation "U" => {w : EuclideanSpace ℝ (Fin n) // ‖w‖ = 1}
 
 /-- The method-of-images Dirichlet Green kernel for the half-space with unit inward normal
 `v`, evaluated at the pole `x` and variable `y`. The Newtonian normalization gives a genuine
 Green kernel for `n = 1` or `n ≥ 3`; at `n = 2` the Newtonian kernel is degenerate. -/
-def halfSpaceGreenKernel (n : ℕ) (v x y : EuclideanSpace ℝ (Fin n)) : ℝ :=
-  newtonianKernel n (y - x) - newtonianKernel n (y - (ℝ ∙ v)ᗮ.reflection x)
+def halfSpaceGreenKernel (n : ℕ) (v : {w : EuclideanSpace ℝ (Fin n) // ‖w‖ = 1})
+    (x y : EuclideanSpace ℝ (Fin n)) : ℝ :=
+  newtonianKernel n (y - x) -
+    newtonianKernel n (y - (ℝ ∙ (v : EuclideanSpace ℝ (Fin n)))ᗮ.reflection x)
 
 /-- The method-of-images formula for the half-space Green kernel. -/
-theorem halfSpaceGreenKernel_def (v x y : E) :
+theorem halfSpaceGreenKernel_def (v : U) (x y : E) :
     halfSpaceGreenKernel n v x y =
-      newtonianKernel n (y - x) - newtonianKernel n (y - (ℝ ∙ v)ᗮ.reflection x) := by
+      newtonianKernel n (y - x) - newtonianKernel n (y - (ℝ ∙ (v : E))ᗮ.reflection x) := by
   rw [halfSpaceGreenKernel]
 
 /-- The image Green kernel is symmetric in its pole and variable. -/
-theorem halfSpaceGreenKernel_comm (v x y : E) :
+theorem halfSpaceGreenKernel_comm (v : U) (x y : E) :
     halfSpaceGreenKernel n v x y = halfSpaceGreenKernel n v y x := by
   rw [halfSpaceGreenKernel_def, halfSpaceGreenKernel_def,
     newtonianKernel_sub_comm n y x]
-  have hnorm : ‖y - (ℝ ∙ v)ᗮ.reflection x‖ = ‖x - (ℝ ∙ v)ᗮ.reflection y‖ := by
+  have hnorm : ‖y - (ℝ ∙ (v : E))ᗮ.reflection x‖ = ‖x - (ℝ ∙ (v : E))ᗮ.reflection y‖ := by
     rw [norm_sub_reflection_orthogonal_singleton, norm_sub_rev]
   simp only [newtonianKernel_def, hnorm]
 
 /-- The Green kernel vanishes when its variable is on the bounding hyperplane. -/
-@[simp] theorem halfSpaceGreenKernel_eq_zero_of_inner_eq_zero_right {v : E}
-    (x : E) {y : E} (hy : ⟪v, y⟫_ℝ = 0) :
+@[simp] theorem halfSpaceGreenKernel_eq_zero_of_inner_eq_zero_right {v : U}
+    (x : E) {y : E} (hy : ⟪(v : E), y⟫_ℝ = 0) :
     halfSpaceGreenKernel n v x y = 0 := by
   rw [halfSpaceGreenKernel_def]
   have hnorm := norm_sub_reflection_orthogonal_singleton_eq_of_inner_eq_zero x hy
   rw [newtonianKernel_def, newtonianKernel_def, hnorm, sub_self]
 
 /-- The Green kernel also vanishes when its pole lies on the bounding hyperplane. -/
-@[simp] theorem halfSpaceGreenKernel_eq_zero_of_inner_eq_zero_left {v : E}
-    {x : E} (hx : ⟪v, x⟫_ℝ = 0) (y : E) :
+@[simp] theorem halfSpaceGreenKernel_eq_zero_of_inner_eq_zero_left {v : U}
+    {x : E} (hx : ⟪(v : E), x⟫_ℝ = 0) (y : E) :
     halfSpaceGreenKernel n v x y = 0 := by
   rw [halfSpaceGreenKernel_def,
     reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hx, sub_self]
 
 /-- Outside dimension two, the half-space Green kernel is positive at distinct
 interior points. -/
-theorem halfSpaceGreenKernel_pos (hn : n ≠ 2) {v x y : E} (hv : ‖v‖ = 1)
-    (hx : 0 < ⟪v, x⟫_ℝ) (hy : 0 < ⟪v, y⟫_ℝ) (hxy : y ≠ x) :
+theorem halfSpaceGreenKernel_pos (hn : n ≠ 2) {v : U} {x y : E}
+    (hx : 0 < ⟪(v : E), x⟫_ℝ) (hy : 0 < ⟪(v : E), y⟫_ℝ) (hxy : y ≠ x) :
     0 < halfSpaceGreenKernel n v x y := by
-  have hlt := norm_sub_lt_norm_sub_reflection_orthogonal_singleton hv hx hy
+  have hlt := norm_sub_lt_norm_sub_reflection_orthogonal_singleton v.property hx hy
   rw [halfSpaceGreenKernel_def]
   exact sub_pos.mpr (newtonianKernel_lt_newtonianKernel_of_norm_lt n hn
     (sub_ne_zero.mpr hxy) hlt)
 
 /-- The Green kernel is harmonic away from its pole and the reflected pole. -/
-theorem harmonicAt_halfSpaceGreenKernel {v x y : E} (hxy : y ≠ x)
-    (hxy' : y ≠ (ℝ ∙ v)ᗮ.reflection x) :
+theorem harmonicAt_halfSpaceGreenKernel {v : U} {x y : E} (hxy : y ≠ x)
+    (hxy' : y ≠ (ℝ ∙ (v : E))ᗮ.reflection x) :
     HarmonicAt (halfSpaceGreenKernel n v x) y := by
   exact (harmonicAt_newtonianKernel_sub n hxy).sub
     (harmonicAt_newtonianKernel_sub n hxy')
 
 /-- The Green kernel is harmonic throughout the punctured positive half-space. -/
-theorem harmonicOnNhd_halfSpaceGreenKernel {v x : E}
-    (hx : 0 < ⟪v, x⟫_ℝ) :
+theorem harmonicOnNhd_halfSpaceGreenKernel {v : U} {x : E}
+    (hx : 0 < ⟪(v : E), x⟫_ℝ) :
     HarmonicOnNhd (halfSpaceGreenKernel n v x)
-      ({y : E | 0 < ⟪v, y⟫_ℝ} \ {x}) := by
+      ({y : E | 0 < ⟪(v : E), y⟫_ℝ} \ {x}) := by
   intro y hy
   exact harmonicAt_halfSpaceGreenKernel (Set.mem_compl_singleton_iff.mp hy.2)
     (ne_reflection_orthogonal_singleton_of_inner_ne_neg (by
       intro h
-      have hypos : 0 < ⟪v, y⟫_ℝ := hy.1
+      have hypos : 0 < ⟪(v : E), y⟫_ℝ := hy.1
       linarith))
 
 /-- The Green kernel is harmonic in its pole away from the variable point and its reflection. -/
-theorem harmonicAt_halfSpaceGreenKernel_left {v x y : E}
-    (hxy : x ≠ y) (hxy' : x ≠ (ℝ ∙ v)ᗮ.reflection y) :
+theorem harmonicAt_halfSpaceGreenKernel_left {v : U} {x y : E}
+    (hxy : x ≠ y) (hxy' : x ≠ (ℝ ∙ (v : E))ᗮ.reflection y) :
     HarmonicAt (fun z => halfSpaceGreenKernel n v z y) x := by
   have hfun : (fun z => halfSpaceGreenKernel n v z y) = halfSpaceGreenKernel n v y := by
     funext z
@@ -145,17 +148,17 @@ theorem halfSpacePoissonKernel_pos {v : {w : E // ‖w‖ = 1}} {x y : E}
       (Real.rpow_pos_of_pos (norm_pos_iff.mpr (sub_ne_zero.mpr hxy)) _))
 
 /-- The Fréchet derivative of the half-space Green kernel away from its two poles. -/
-theorem hasFDerivAt_halfSpaceGreenKernel (hn : n ≠ 2) {v x y : E}
-    (hxy : y ≠ x) (hyref : y ≠ (ℝ ∙ v)ᗮ.reflection x) :
+theorem hasFDerivAt_halfSpaceGreenKernel (hn : n ≠ 2) {v : U} {x y : E}
+    (hxy : y ≠ x) (hyref : y ≠ (ℝ ∙ (v : E))ᗮ.reflection x) :
     HasFDerivAt (halfSpaceGreenKernel n v x)
       ((-(((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹) *
           ‖y - x‖ ^ (-(n : ℝ))) • innerSL ℝ (y - x) -
         (-(((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹) *
-          ‖y - (ℝ ∙ v)ᗮ.reflection x‖ ^ (-(n : ℝ))) •
-          innerSL ℝ (y - (ℝ ∙ v)ᗮ.reflection x)) y := by
+          ‖y - (ℝ ∙ (v : E))ᗮ.reflection x‖ ^ (-(n : ℝ))) •
+          innerSL ℝ (y - (ℝ ∙ (v : E))ᗮ.reflection x)) y := by
   have hfun : halfSpaceGreenKernel n v x =
       (fun z => newtonianKernel n (z - x)) -
-        (fun z => newtonianKernel n (z - (ℝ ∙ v)ᗮ.reflection x)) := by
+        (fun z => newtonianKernel n (z - (ℝ ∙ (v : E))ᗮ.reflection x)) := by
     funext z
     exact halfSpaceGreenKernel_def v x z
   rw [hfun]
@@ -164,12 +167,12 @@ theorem hasFDerivAt_halfSpaceGreenKernel (hn : n ≠ 2) {v x y : E}
 
 /-- On the boundary, the derivative in the negative normal direction of the Green kernel is
 the negative Poisson kernel. -/
-theorem fderiv_halfSpaceGreenKernel_normal (hn : n ≠ 2) {v x y : E}
-    (hv : ‖v‖ = 1) (hxy : y ≠ x) (hy : ⟪v, y⟫_ℝ = 0) :
-    fderiv ℝ (halfSpaceGreenKernel n v x) y (-v) =
-      -halfSpacePoissonKernel n ⟨v, hv⟩ x y := by
-  have hyref : y ≠ (ℝ ∙ v)ᗮ.reflection x := by
-    by_cases hx : ⟪v, x⟫_ℝ = 0
+theorem fderiv_halfSpaceGreenKernel_normal (hn : n ≠ 2) {v : U} {x y : E}
+    (hxy : y ≠ x) (hy : ⟪(v : E), y⟫_ℝ = 0) :
+    fderiv ℝ (halfSpaceGreenKernel n v x) y (-(v : E)) =
+      -halfSpacePoissonKernel n v x y := by
+  have hyref : y ≠ (ℝ ∙ (v : E))ᗮ.reflection x := by
+    by_cases hx : ⟪(v : E), x⟫_ℝ = 0
     · rw [reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hx]
       exact hxy
     · exact ne_reflection_orthogonal_singleton_of_inner_ne_neg (by
@@ -179,15 +182,15 @@ theorem fderiv_halfSpaceGreenKernel_normal (hn : n ≠ 2) {v x y : E}
   rw [(hasFDerivAt_halfSpaceGreenKernel hn hxy hyref).fderiv, sub_apply]
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
   rw [hnorm, halfSpacePoissonKernel_def]
-  have hinner₁ : ⟪y - x, -v⟫_ℝ = ⟪v, x⟫_ℝ := by
+  have hinner₁ : ⟪y - x, -v⟫_ℝ = ⟪(v : E), x⟫_ℝ := by
     rw [inner_sub_left, inner_neg_right, inner_neg_right]
     linarith [real_inner_comm y v, real_inner_comm x v, hy]
-  have hinner₂ : ⟪y - (ℝ ∙ v)ᗮ.reflection x, -v⟫_ℝ =
-      -⟪v, x⟫_ℝ := by
+  have hinner₂ : ⟪y - (ℝ ∙ (v : E))ᗮ.reflection x, -v⟫_ℝ =
+      -⟪(v : E), x⟫_ℝ := by
     rw [inner_sub_left, inner_neg_right, inner_neg_right]
     linarith [real_inner_comm y v,
-      real_inner_comm ((ℝ ∙ v)ᗮ.reflection x) v, hy,
-      inner_reflection_orthogonal_singleton (v := v) x]
+      real_inner_comm ((ℝ ∙ (v : E))ᗮ.reflection x) v, hy,
+      inner_reflection_orthogonal_singleton (v := (v : E)) x]
   rw [hinner₁, hinner₂]
   ring
 
