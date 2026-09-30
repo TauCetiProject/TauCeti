@@ -65,20 +65,54 @@ theorem sign_eq_neg_one_pow_card_inversion (σ : Equiv.Perm (Fin n)) :
   simp only [Finset.prod_const_one, Finset.prod_const, one_mul]
   rw [hinv]
 
+private lemma card_inversion_finAddFlip_trans_finCongr (m n : ℕ) :
+    (Finset.univ.filter fun p : Fin (m + n) × Fin (m + n) =>
+      p.1 < p.2 ∧
+        (finAddFlip.trans (finCongr (add_comm n m))) p.2 <
+          (finAddFlip.trans (finCongr (add_comm n m))) p.1).card = m * n := by
+  classical
+  let e := Equiv.prodCongr
+    (finSumFinEquiv : Fin m ⊕ Fin n ≃ Fin (m + n))
+    (finSumFinEquiv : Fin m ⊕ Fin n ≃ Fin (m + n))
+  let f : Fin m × Fin n ↪ (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) :=
+    ⟨fun p ↦ (Sum.inl p.1, Sum.inr p.2), by
+      rintro ⟨a, b⟩ ⟨a', b'⟩ h
+      simp only [Prod.mk.injEq, Sum.inl.injEq, Sum.inr.injEq] at h
+      exact Prod.ext h.1 h.2⟩
+  calc
+    _ = ((Finset.univ.filter fun p : (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) =>
+        (e p).1 < (e p).2 ∧
+          (finAddFlip.trans (finCongr (add_comm n m))) (e p).2 <
+            (finAddFlip.trans (finCongr (add_comm n m))) (e p).1).map e.toEmbedding).card := by
+      congr 1
+      ext p
+      simp [e]
+    _ = m * n := by
+      rw [Finset.card_map]
+      have hfilter :
+          (Finset.univ.filter fun p : (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) =>
+            (e p).1 < (e p).2 ∧
+              (finAddFlip.trans (finCongr (add_comm n m))) (e p).2 <
+                (finAddFlip.trans (finCongr (add_comm n m))) (e p).1) =
+            Finset.univ.map f := by
+        ext ⟨a, b⟩
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map]
+        change
+          (finSumFinEquiv a < finSumFinEquiv b ∧
+            (finAddFlip.trans (finCongr (add_comm n m))) (finSumFinEquiv b) <
+              (finAddFlip.trans (finCongr (add_comm n m))) (finSumFinEquiv a)) ↔
+            ∃ x : Fin m × Fin n, (Sum.inl x.1, Sum.inr x.2) = (a, b)
+        rcases a with a | a <;> rcases b with b | b <;>
+          simp [finAddFlip, Fin.ext_iff, ← Fin.val_fin_lt, Fin.val_castAdd, Fin.val_natAdd,
+            Fin.val_addNat] <;> omega
+      rw [hfilter, Finset.card_map, Finset.card_univ, Fintype.card_prod,
+        Fintype.card_fin, Fintype.card_fin]
+
 /-- The block swap of `Fin (m + n)`, exchanging the first `m` indices with the last `n` while
 preserving the order within each block, has sign `(-1) ^ (m * n)`: its inversions are exactly the
 `m * n` pairs taken from different blocks. -/
 theorem sign_finAddFlip_trans_finCongr (m n : ℕ) :
     Equiv.Perm.sign (finAddFlip.trans (finCongr (add_comm n m))) = (-1) ^ (m * n) := by
-  rw [Equiv.Perm.sign_eq_prod_prod_Ioi]
-  simp only [finAddFlip, Equiv.trans_apply, finCongr_apply, Fin.cast_lt_cast]
-  simp_rw [← finSumFinEquiv.prod_comp, ← Finset.prod_map_equiv finSumFinEquiv.symm]
-  simp only [Equiv.symm_apply_apply, ← Fin.val_fin_lt, Equiv.symm_symm, Function.comp_apply,
-    ← Finset.prod_ite_mem_eq (Finset.map _ _), Finset.mem_map_equiv, Finset.mem_Ioi,
-    Fintype.prod_sum_type, finSumFinEquiv_apply_left, Fin.val_castAdd,
-    finSumFinEquiv_apply_right, Fin.val_natAdd, add_lt_add_iff_left,
-    ← ite_not (α := ℤˣ) (p := _ < _) (y := 1), ← ite_and]
-  simp [(Fin.isLt _).trans_le, (Fin.isLt _).le.trans, pow_mul',
-    fun a b : Fin _ => iff_false_intro fun h : a < b ∧ b ≤ a => h.1.not_ge h.2]
+  rw [sign_eq_neg_one_pow_card_inversion, card_inversion_finAddFlip_trans_finCongr]
 
 end TauCeti
