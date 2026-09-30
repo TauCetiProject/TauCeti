@@ -67,7 +67,6 @@ theorem _root_.LinearMap.BilinForm.halfNormQuadratic_apply
   by simp [LinearMap.BilinForm.halfNormQuadratic]
 
 /-- Twice the half-norm recovers the self-pairing. -/
-@[simp]
 theorem _root_.LinearMap.BilinForm.two_mul_halfNormQuadratic
     (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
     (heven : ∀ x, Even (B x x)) (x : M) :
@@ -91,7 +90,6 @@ theorem _root_.LinearMap.BilinForm.polarBilin_halfNormQuadratic
   nlinarith [hB.eq x y]
 
 /-- The diagonal of the polar form of an integer quadratic form is twice its value. -/
-@[simp]
 theorem _root_.QuadraticForm.polarBilin_self (Q : _root_.QuadraticForm ℤ M) (x : M) :
     Q.polarBilin x x = 2 * Q x := by
   rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self]
