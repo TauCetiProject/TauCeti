@@ -32,8 +32,8 @@ new pair, leaving the open `n`-cells relative to their outer halves.
 * `TauCeti.isIso_singularHomologyMap_skeletonPairToNeighborhood`: the inclusion
   `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, TauCeti.skeletonNeighborhood C n)` induces isomorphisms on relative singular
   homology.
-* `TauCeti.skeletonNeighborhoodToPair`, `TauCeti.skeletonPairToNeighborhood_homotopy`, and
-  `TauCeti.skeletonNeighborhoodToPair_homotopy`: the inverse map and the two pair homotopies.
+* `TauCeti.skeletonNeighborhoodToPair`, `TauCeti.skeletonPairToNeighborhoodHomotopy`, and
+  `TauCeti.skeletonNeighborhoodToPairHomotopy`: the inverse map and the two pair homotopies.
 * `TauCeti.cellularChainGroupIsoNeighborhood`: the resulting isomorphism from the cellular chain
   group.
 
@@ -75,7 +75,7 @@ def skeletonNeighborhoodToPair (n : ℕ) : skeletonNeighborhoodPair C n ⟶ skel
     skeletonNeighborhoodEndpoint_mem x hx
 
 /-- The inverse followed by the inclusion is homotopic to the identity on the skeletal pair. -/
-def skeletonPairToNeighborhood_homotopy (n : ℕ) :
+def skeletonPairToNeighborhoodHomotopy (n : ℕ) :
     TopPair.Homotopy (skeletonPairToNeighborhood C n ≫ skeletonNeighborhoodToPair C n)
       (𝟙 (skeletonPair C n)) := by
   rw [skeletonPairToNeighborhood, skeletonNeighborhoodToPair, ← TopPair.ofInclusionMap_comp,
@@ -89,7 +89,7 @@ def skeletonPairToNeighborhood_homotopy (n : ℕ) :
 
 /-- The inclusion followed by the inverse is homotopic to the identity on the neighborhood
 pair. -/
-def skeletonNeighborhoodToPair_homotopy (n : ℕ) :
+def skeletonNeighborhoodToPairHomotopy (n : ℕ) :
     TopPair.Homotopy (skeletonNeighborhoodToPair C n ≫ skeletonPairToNeighborhood C n)
       (𝟙 (skeletonNeighborhoodPair C n)) := by
   rw [skeletonPairToNeighborhood, skeletonNeighborhoodToPair, ← TopPair.ofInclusionMap_comp,
@@ -107,8 +107,8 @@ on relative singular homology** in every degree. -/
 theorem isIso_singularHomologyMap_skeletonPairToNeighborhood (n k : ℕ) :
     IsIso ((skeletonPair C n).singularHomologyMap (skeletonPairToNeighborhood C n) R k) := by
   refine TopPair.isIso_singularHomologyMap _ (skeletonNeighborhoodToPair C n) ?_ ?_ R k
-  · exact skeletonPairToNeighborhood_homotopy C n
-  · exact skeletonNeighborhoodToPair_homotopy C n
+  · exact skeletonPairToNeighborhoodHomotopy C n
+  · exact skeletonNeighborhoodToPairHomotopy C n
 
 end
 
