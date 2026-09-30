@@ -24,8 +24,8 @@ realization.
 * `TauCeti.Toric.FanEquiv`: an equivalence of finite fans.
 * `TauCeti.Toric.FanEquiv.coneEquiv`: the induced order isomorphism of their cone index types.
 * `TauCeti.Toric.FanEquiv.toFanHom`: the underlying morphism of fans.
-* `TauCeti.Toric.FanEquiv.regular_iff`: regularity is invariant under fan equivalence.
-* `TauCeti.Toric.FanEquiv.complete_iff`: completeness is invariant under fan equivalence.
+* `TauCeti.Toric.FanEquiv.isRegular_iff`: regularity is invariant under fan equivalence.
+* `TauCeti.Toric.FanEquiv.isComplete_iff`: completeness is invariant under fan equivalence.
 
 ## References
 
@@ -255,13 +255,13 @@ theorem toFanHom_realMap (e : FanEquiv Φ Ψ) :
 
 /-- The underlying morphism of the identity fan equivalence is the identity morphism. -/
 @[simp]
-theorem refl_toFanHom (Φ : Fan i) : (FanEquiv.refl Φ).toFanHom = FanHom.id Φ := by
+theorem toFanHom_refl (Φ : Fan i) : (FanEquiv.refl Φ).toFanHom = FanHom.id Φ := by
   ext x
   simp
 
 /-- The underlying morphism respects composition of fan equivalences. -/
 @[simp]
-theorem trans_toFanHom (e : FanEquiv Φ Ψ) (e' : FanEquiv Ψ Ω) :
+theorem toFanHom_trans (e : FanEquiv Φ Ψ) (e' : FanEquiv Ψ Ω) :
     (e.trans e').toFanHom = e'.toFanHom.comp e.toFanHom := by
   ext x
   simp
@@ -275,7 +275,7 @@ theorem toFanHom_leastCone (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
   · exact e.toFanHom.map_le_leastCone σ.2
 
 /-- A finite fan is regular exactly when an equivalent fan is regular. -/
-theorem regular_iff (e : FanEquiv Φ Ψ) : Ψ.IsRegular ↔ Φ.IsRegular := by
+theorem isRegular_iff (e : FanEquiv Φ Ψ) : Ψ.IsRegular ↔ Φ.IsRegular := by
   constructor
   · intro hΨ
     rw [Fan.isRegular_iff] at hΨ ⊢
@@ -295,7 +295,7 @@ theorem image_support (e : FanEquiv Φ Ψ) : e.realEquiv '' Φ.support = Ψ.supp
   exact ⟨e.realEquiv.symm x, e.symm.toFanHom.mapsTo_support hx, e.realEquiv.apply_symm_apply x⟩
 
 /-- Completeness of finite fans is invariant under fan equivalence. -/
-theorem complete_iff (e : FanEquiv Φ Ψ) : Ψ.IsComplete ↔ Φ.IsComplete := by
+theorem isComplete_iff (e : FanEquiv Φ Ψ) : Ψ.IsComplete ↔ Φ.IsComplete := by
   rw [Fan.isComplete_iff, Fan.isComplete_iff]
   constructor
   · intro h x
