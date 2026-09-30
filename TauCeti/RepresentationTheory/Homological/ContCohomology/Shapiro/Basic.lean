@@ -462,6 +462,14 @@ noncomputable def explicitShapiroMap2 : H2 G (DiscreteCoind G U A) →+ H2 U A :
   explicitMap2 G (DiscreteCoind G U A) U A (ContinuousMonoidHom.subgroupSubtype U)
     (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
 
+/-- The forward Shapiro map on `H²` is the compatible-pair pullback along the inclusion `U ↪ G` and
+the counit `Coind_U^G A → A`; this is how it is compared with the canonical map. -/
+theorem explicitShapiroMap2_def :
+    explicitShapiroMap2 G U A =
+      explicitMap2 G (DiscreteCoind G U A) U A (ContinuousMonoidHom.subgroupSubtype U)
+        (DiscreteCoind.eval G U A) DiscreteCoind.continuous_eval
+        (eval_subgroupSubtype_smul G U A) := (rfl)
+
 /-- **The characteristic property of the forward Shapiro map on `H²`**: it sends the class of a
 continuous `2`-cocycle to the class of its Shapiro image. Together with
 `TauCeti.ContCohomology.shapiroCocycles2_apply` this determines the map, so consumers never need

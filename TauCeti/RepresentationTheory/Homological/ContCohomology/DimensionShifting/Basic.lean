@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Acyclic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Basic
 
 /-!
 # Acyclicity of `Coind_1^G` and dimension shifting
