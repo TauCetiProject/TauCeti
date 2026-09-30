@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Contraction
 public import TauCeti.Geometry.Hodge.Dual
-public import TauCeti.Geometry.Hodge.TensorProduct
+public import TauCeti.Geometry.Hodge.Morphism
+public import TauCeti.Geometry.Hodge.TensorProduct.Basic
 
 /-!
 # Internal homs of pure Hodge structures
@@ -29,6 +30,12 @@ the dual Hodge structure on `V^*` and the Hodge structure on `W` along Mathlib's
 equivalence `V^* ⊗ W ≃ₗ[ℂ] Hom_ℂ(V, W)`; that comparison is
 `TauCeti.Hodge.HodgeStructureOn.internalHom_piece_eq_comap`.
 
+When `V` and `W` have the same weight, the internal hom has weight `0`, and its real vectors of
+type `(0,0)` — equivalently, its real vectors in `F^0` — are exactly the morphisms of pure Hodge
+structures `V → W`. For integral structures this reads `Hom_HS(V, W) = Hom_ℤ(V, W) ∩ F^0`: an
+integral linear map is a Hodge morphism exactly when its complexification lies in `F^0` of the
+internal hom, the conjugation condition being automatic for complexified integral maps.
+
 ## Main declarations
 
 * `TauCeti.Hodge.HodgeStructureOn.internalHom`: the internal hom Hodge structure, of weight
@@ -47,6 +54,14 @@ equivalence `V^* ⊗ W ≃ₗ[ℂ] Hom_ℂ(V, W)`; that comparison is
   `TauCeti.Hodge.HodgeStructureOn.internalHom_F_eq_comap`: over a finite-dimensional source, the
   internal-hom components and filtration are the pullbacks of those of `V^* ⊗ W` along the
   contraction equivalence.
+* `TauCeti.Hodge.HodgeStructureOn.isMorphism_iff_mem_internalHom_piece` and
+  `TauCeti.Hodge.HodgeStructureOn.isMorphism_iff_mem_internalHom_F`: the morphisms of pure Hodge
+  structures of the same weight are the real vectors of type `(0,0)` of the internal hom, or
+  equivalently its real vectors in `F^0`.
+* `TauCeti.Hodge.HodgeStructure.Hom.ofMemInternalHomF` and
+  `TauCeti.Hodge.HodgeStructure.Hom.exists_toIntLinearMap_eq_iff`: an integral linear map is a
+  morphism of integral pure Hodge structures exactly when its complexification lies in `F^0` of
+  the internal hom.
 
 This is the internal-hom companion to duals and tensor products for pure Hodge structures;
 the convention follows Peters--Steenbrink, *Mixed Hodge Structures*, §2.1.
@@ -423,6 +438,90 @@ theorem internalHom_F_eq_comap (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
 
 end Contraction
 
+/-! ### Morphisms as Hodge classes of the internal hom -/
+
+variable {n : ℤ} {hs₁ : HodgeStructureOn W₁ ω₁ n} {hs₂ : HodgeStructureOn W₂ ω₂ n}
+  {g : W₁ →ₗ[ℂ] W₂}
+
+/-- **Morphisms are the real vectors of `F^0` of the internal hom.** A complex-linear map between
+pure Hodge structures of the same weight is a morphism exactly when it lies in `F^0` of the
+internal hom and is fixed by the internal-hom conjugation. -/
+theorem isMorphism_iff_mem_internalHom_F :
+    IsMorphism hs₁ hs₂ g ↔
+      g ∈ (hs₁.internalHom hs₂).F 0 ∧ (ω₁.internalHom ω₂).toEquiv g = g := by
+  rw [mem_internalHom_F_iff, Conjugation.internalHom_toEquiv_eq_self_iff]
+  refine ⟨fun h ↦ ⟨fun q x hx ↦ ?_, h.commutes_conj⟩, fun h ↦ ⟨h.2, fun p ↦ ?_⟩⟩
+  · rw [zero_add]
+    exact h.map_F_le q ⟨x, hx, rfl⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    simpa only [zero_add] using h.1 p x hx
+
+/-- **Morphisms are the real Hodge classes of type `(0,0)` of the internal hom.** A complex-linear
+map between pure Hodge structures of the same weight is a morphism exactly when it lies in the
+Hodge component `H^{0,0}` of the internal hom, which has weight `0`, and is fixed by the
+internal-hom conjugation. -/
+theorem isMorphism_iff_mem_internalHom_piece :
+    IsMorphism hs₁ hs₂ g ↔
+      g ∈ (hs₁.internalHom hs₂).piece 0 ∧ (ω₁.internalHom ω₂).toEquiv g = g := by
+  rw [isMorphism_iff_mem_internalHom_F]
+  refine and_congr_left fun hg ↦ ?_
+  simp only [mem_piece_iff_of_conj_eq _ _ hg, sub_self, and_self]
+
+/-- A morphism of pure Hodge structures of the same weight lies in the Hodge component `H^{0,0}`
+of the internal hom. -/
+theorem IsMorphism.mem_internalHom_piece (h : IsMorphism hs₁ hs₂ g) :
+    g ∈ (hs₁.internalHom hs₂).piece 0 :=
+  (isMorphism_iff_mem_internalHom_piece.mp h).1
+
 end HodgeStructureOn
+
+namespace HodgeStructure.Hom
+
+variable {V₁ V₂ : Type*} [AddCommGroup V₁] [AddCommGroup V₂]
+variable {ι₁ : V₁ →ₗ[ℤ] W₁} {ι₂ : V₂ →ₗ[ℤ] W₂} {h₁ : IsBaseChange ℂ ι₁} {h₂ : IsBaseChange ℂ ι₂}
+variable {n : ℤ} {source : HodgeStructure h₁ n} {target : HodgeStructure h₂ n}
+
+/-- The complex action of a morphism of integral pure Hodge structures lies in the Hodge
+component `H^{0,0}` of the internal hom. -/
+theorem toLinearMap_mem_internalHom_piece (f : Hom source target) :
+    f.toLinearMap ∈ (source.internalHom target).piece 0 :=
+  f.isMorphism.mem_internalHom_piece
+
+/-- The complex action of a morphism of integral pure Hodge structures lies in `F^0` of the
+internal hom. -/
+theorem toLinearMap_mem_internalHom_F (f : Hom source target) :
+    f.toLinearMap ∈ (source.internalHom target).F 0 :=
+  (source.internalHom target).piece_le_F 0 f.toLinearMap_mem_internalHom_piece
+
+/-- An integral linear map whose complexification lies in `F^0` of the internal hom is a morphism
+of integral pure Hodge structures. -/
+noncomputable def ofMemInternalHomF (φ : V₁ →ₗ[ℤ] V₂)
+    (hφ : integralMapToComplex h₁ ι₂ φ ∈ (source.internalHom target).F 0) :
+    Hom source target where
+  toIntLinearMap := φ
+  map_mem_F p x hx := by
+    simpa only [zero_add] using
+      (HodgeStructureOn.mem_internalHom_F_iff source target _).mp hφ p x hx
+
+/-- The integral map underlying `TauCeti.Hodge.HodgeStructure.Hom.ofMemInternalHomF` is the given
+one. -/
+@[simp]
+theorem ofMemInternalHomF_toIntLinearMap (φ : V₁ →ₗ[ℤ] V₂)
+    (hφ : integralMapToComplex h₁ ι₂ φ ∈ (source.internalHom target).F 0) :
+    (ofMemInternalHomF φ hφ).toIntLinearMap = φ :=
+  (rfl)
+
+/-- **Integral Hodge morphisms are the integral maps in `F^0` of the internal hom.** An integral
+linear map underlies a morphism of integral pure Hodge structures exactly when its
+complexification lies in `F^0` of the internal hom: `Hom_HS(V, W) = Hom_ℤ(V, W) ∩ F^0`. -/
+theorem exists_toIntLinearMap_eq_iff (φ : V₁ →ₗ[ℤ] V₂) :
+    (∃ f : Hom source target, f.toIntLinearMap = φ) ↔
+      integralMapToComplex h₁ ι₂ φ ∈ (source.internalHom target).F 0 := by
+  refine ⟨?_, fun hφ ↦ ⟨ofMemInternalHomF φ hφ, ofMemInternalHomF_toIntLinearMap φ hφ⟩⟩
+  rintro ⟨f, rfl⟩
+  rw [← toLinearMap_def]
+  exact f.toLinearMap_mem_internalHom_F
+
+end HodgeStructure.Hom
 
 end TauCeti.Hodge

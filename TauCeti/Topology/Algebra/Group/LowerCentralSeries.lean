@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.GroupTheory.Commutator
 public import TauCeti.GroupTheory.PLowerCentralSeries
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -81,9 +82,13 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   degree-raising law `⁅λ_j, λ_k⁆ ≤ λ_{j+k+1}`.
 * `MonoidHom.map_pLowerCentralSeries_le`, `MonoidHom.map_pLowerCentralSeries_eq_of_surjective`,
   `ContinuousMulEquiv.map_pLowerCentralSeries_eq`: functoriality of the series.
+* `TauCeti.isTopCharacteristic_pLowerCentralSeries`: every term is topologically characteristic.
 * `TauCeti.pLowerCentralSeries_eq_topologicalClosure`,
   `TauCeti.pLowerCentralSeries_eq_of_discreteTopology`: comparison with the abstract lower
   `p`-central series of the underlying group.
+* `TauCeti.top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot`,
+  `MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow`: the cyclic group `ℤ/pⁿ`, and any
+  discrete group isomorphic to it, has `p`-class at most `n`.
 
 ## References
 
@@ -441,6 +446,22 @@ theorem pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralS
   rw [pLowerCentralSeries_succ]
   exact pow_mem_pLowerCentralStep hx
 
+/-- The `p ^ j`-th power of an element of `λ_k` lies in `λ_{k+j}`. -/
+theorem pow_pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralSeries p G k)
+    (j : ℕ) : x ^ p ^ j ∈ pLowerCentralSeries p G (k + j) := by
+  induction j with
+  | zero => simpa using hx
+  | succ j ih =>
+    rw [pow_succ, pow_mul, ← add_assoc]
+    exact pow_mem_pLowerCentralSeries ih
+
+variable (p) in
+/-- The `p * c`-th power of every element lies in `λ_1`. -/
+theorem pow_mul_mem_pLowerCentralSeries_one (x : G) (c : ℕ) :
+    x ^ (p * c) ∈ pLowerCentralSeries p G 1 := by
+  rw [pow_mul]
+  exact pow_mem (pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p x)) c
+
 /-- The commutators `⁅λ_k, G⁆` lie in `λ_{k+1}`. -/
 theorem commutator_pLowerCentralSeries_top_le (k : ℕ) :
     ⁅pLowerCentralSeries p G k, (⊤ : Subgroup G)⁆ ≤ pLowerCentralSeries p G (k + 1) := by
@@ -466,6 +487,25 @@ theorem pLowerCentralSeries_one :
       (Subgroup.closure (Set.range fun g : G ↦ g ^ p) ⊔ commutator G).topologicalClosure := by
   rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero, pLowerCentralStep_def, coe_top,
     Set.image_univ, commutator_def]
+
+/-- The first term of the closed lower central series is the closure of the commutator subgroup. -/
+theorem pLowerCentralSeries_one_zero :
+    pLowerCentralSeries 0 G 1 = (commutator G).topologicalClosure := by
+  rw [pLowerCentralSeries_one]
+  simp
+
+/-- **`λ_1(G)` lies in the kernel of a homomorphism to an abelian group that kills `p`-th
+powers.** For a homomorphism `φ : G →* K` with closed kernel into a commutative group,
+`λ_1(G) ≤ ker φ` as soon as `φ` kills the `p`-th powers of `G`: the kernel is closed and contains
+`Gᵖ` and `[G, G]`. -/
+theorem _root_.MonoidHom.pLowerCentralSeries_one_le_ker {K : Type*} [CommGroup K] (φ : G →* K)
+    (hφ : IsClosed (φ.ker : Set G)) (hp : ∀ g : G, φ g ^ p = 1) :
+    pLowerCentralSeries p G 1 ≤ φ.ker := by
+  rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero]
+  refine (pLowerCentralStep_le_iff hφ).mpr ⟨fun g _ ↦ ?_, commutator_le.mpr fun g _ g' _ ↦ ?_⟩
+  · rw [MonoidHom.mem_ker, map_pow, hp]
+  · rw [MonoidHom.mem_ker, map_commutatorElement, commutatorElement_eq_one_iff_mul_comm]
+    exact mul_comm _ _
 
 /-- **The degree-raising law.** Commutators of `λ_j` with `λ_k` lie in `λ_{j+k+1}`. -/
 theorem commutator_pLowerCentralSeries_le (j k : ℕ) :
@@ -583,6 +623,13 @@ theorem _root_.ContinuousMulEquiv.map_pLowerCentralSeries_eq (e : G ≃ₜ* H) (
       (mem_map_of_mem _ hx)
   exact ⟨e.symm x, hsymm, e.apply_symm_apply x⟩
 
+variable (p) in
+/-- Every term of the lower `p`-series is topologically characteristic, for every topological
+group and every natural number `p`. -/
+theorem isTopCharacteristic_pLowerCentralSeries (k : ℕ) :
+    IsTopCharacteristic G (pLowerCentralSeries p G k) :=
+  isTopCharacteristic_iff_map_eq.mpr fun φ ↦ φ.map_pLowerCentralSeries_eq k
+
 /-- A group isomorphism between discrete groups matches their lower `p`-series term by term. -/
 theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G]
     [DiscreteTopology H] (e : G ≃* H) (k : ℕ) :
@@ -591,5 +638,33 @@ theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [Discrete
     ⟨e, continuous_of_discreteTopology, continuous_of_discreteTopology⟩ k
 
 end Series
+
+/-! ### The cyclic groups `ℤ/pⁿ` -/
+
+section Cyclic
+
+variable {p : ℕ}
+
+/-- **The cyclic group `ℤ/pⁿ` has `p`-class at most `n`**: its lower `p`-series consists of the
+subgroups of `p ^ k`-th powers, and the `p ^ n`-th powers are trivial. -/
+theorem top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot (n : ℕ) :
+    (⊤ : Subgroup (Multiplicative (ZMod (p ^ n)))).pLowerCentralSeries p n = ⊥ := by
+  rw [Subgroup.top_pLowerCentralSeries_eq_range_powMonoidHom, MonoidHom.range_eq_bot_iff]
+  refine MonoidHom.ext fun x ↦ ?_
+  rw [powMonoidHom_apply, MonoidHom.one_apply, ← ofAdd_toAdd x, ← ofAdd_nsmul, nsmul_eq_mul,
+    ZMod.natCast_self, zero_mul, ofAdd_zero]
+
+variable {H : Type*} [Group H] [TopologicalSpace H] [DiscreteTopology H]
+
+/-- A discrete group isomorphic to `ℤ/pⁿ` has `p`-class at most `n`. -/
+theorem _root_.MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow {n : ℕ}
+    (e : H ≃* Multiplicative (ZMod (p ^ n))) : pLowerCentralSeries p H n = ⊥ := by
+  let : TopologicalSpace (Multiplicative (ZMod (p ^ n))) := ⊥
+  have : DiscreteTopology (Multiplicative (ZMod (p ^ n))) := ⟨rfl⟩
+  rw [← Subgroup.map_eq_bot_iff_of_injective (f := e.toMonoidHom) _ e.injective,
+    e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
+    top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot]
+
+end Cyclic
 
 end TauCeti

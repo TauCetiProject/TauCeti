@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
@@ -23,7 +24,8 @@ for `presentationLimit`.
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.laurentCoverOpen` : the two pieces `R({f, 1}/1)` and `R({1}/f)` of
-  the Laurent cover, indexed by `Bool`.
+  the Laurent cover, indexed by `Bool`. Both are rational opens
+  (`TauCeti.ValuationSpectrum.laurentCoverOpen_mem_spaRationalOpens`).
 
 ## Main results
 
@@ -182,6 +184,15 @@ family. They cover the adic spectrum (`spa_subset_iUnion_laurentCover`). Since t
 directly. -/
 noncomputable abbrev laurentCoverOpen (f : A) (b : Bool) : Opens ↥(spa Aplus) :=
   spaBasicOpen Aplus (cond b {f, 1} {1}) (cond b 1 f)
+
+omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A]
+  [IsStronglyNoetherian A] in
+variable (Aplus) in
+/-- Each piece of the Laurent cover is a rational open: its numerators contain `1`, so they span
+the unit ideal, which is open. -/
+theorem laurentCoverOpen_mem_spaRationalOpens (f : A) (b : Bool) :
+    laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus :=
+  spaBasicOpen_mem_spaRationalOpens <| isOpen_span_of_one_mem <| by cases b <;> simp
 
 /-- **Wedhorn's Lemma 8.33, injectivity, for the presentation-limit presheaf.** Let `A` be a
 complete Hausdorff strongly noetherian Tate ring, `A⁺` a subring of power-bounded elements and

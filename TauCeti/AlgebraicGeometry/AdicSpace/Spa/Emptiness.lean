@@ -69,11 +69,8 @@ theorem one_mem_closure_zero_of_spa_eq_empty (Aplus : Subring A)
     intro v hv
     rw [hspa] at hv
     exact (Set.notMem_empty v hv).elim
-  have hall_powerBounded : ∀ a : A, IsPowerBounded a := fun a ↦
-    mem_powerBoundedSubring.mp (hplus.le_powerBoundedSubring (hall_mem a))
   let toPowerBounded : A →+* powerBoundedSubring A :=
-    (RingHom.id A).codRestrict (powerBoundedSubring A) fun a ↦
-      mem_powerBoundedSubring.mpr (hall_powerBounded a)
+    (RingHom.id A).codRestrict _ fun a ↦ hplus.le_powerBoundedSubring (hall_mem a)
   let nilIdeal : Ideal A := (topologicallyNilpotentIdeal A).comap toPowerBounded
   let P : PairOfDefinition A := Classical.choice IsHuberRing.nonempty_pairOfDefinition
   have hopen : IsOpen (P.extendedIdealOfDefinition : Set A) :=

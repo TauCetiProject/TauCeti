@@ -7,8 +7,8 @@ module
 
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.Monogenic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
-public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.Valuation.AddValuation
@@ -127,8 +127,8 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum [IsGalois L M]
     (σ : M ≃ₐ[K] M) :
     (ramificationIndex L M : ℕ∞) * lowerIndex 𝒪[L] (σ.restrictNormal L) =
       ∑ τ : M ≃ₐ[L] M, lowerIndex 𝒪[M] (σ * τ.restrictScalars K) := by
-  obtain ⟨x, hx⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[M])
-  obtain ⟨y, hy⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[L])
+  obtain ⟨x, hx⟩ := TauCeti.exists_integerRing_adjoin_eq_top K M
+  obtain ⟨y, hy⟩ := TauCeti.exists_integerRing_adjoin_eq_top K L
   have key : IsDiscreteValuationRing.addVal 𝒪[M]
       (σ • algebraMap 𝒪[L] 𝒪[M] y - algebraMap 𝒪[L] 𝒪[M] y) =
       IsDiscreteValuationRing.addVal 𝒪[M]

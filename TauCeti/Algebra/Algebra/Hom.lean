@@ -7,12 +7,14 @@ module
 
 -- Public: `AlgHom`, `RingHom.toAlgebra` and `algebraMap` all occur in the statement below.
 public import Mathlib.Algebra.Algebra.Hom
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # Bridging lemmas between `AlgHom` and `RingHom`
 
 Two small families of identities relating the bundled homomorphism types, each of which several
-files would otherwise restate inline.
+files would otherwise restate inline, together with the maximality of the kernel of an
+augmentation to the ground field.
 
 ## The structure map of the algebra induced by an algebra homomorphism
 
@@ -40,6 +42,8 @@ several do.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
+* `AlgHom.kernelIsMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
+  ideal, for any (not necessarily commutative) `k`-algebra `H`.
 
 ## Implementation notes
 
@@ -121,3 +125,12 @@ theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : ((φ : R →+* S))
   AlgHom.ext fun _ ↦ rfl
 
 end ToIntAlgHom
+
+/-! ### The kernel of an augmentation -/
+
+/-- The kernel of an augmentation to a field is a maximal ideal, even when the algebra is
+not commutative. -/
+instance AlgHom.kernelIsMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
+    (f : H →ₐ[k] k) : (RingHom.ker (f : H →+* k)).IsMaximal :=
+  RingHom.ker_isMaximal_of_surjective (f : H →+* k)
+    (fun r ↦ ⟨algebraMap k H r, f.commutes r⟩)

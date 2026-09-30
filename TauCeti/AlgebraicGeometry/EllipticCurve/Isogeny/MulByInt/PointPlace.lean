@@ -101,15 +101,6 @@ local instance : IsDedekindDomain W.toAffine.CoordinateRing :=
   W.toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
 omit [DecidableEq F] [W.IsElliptic] in
--- A constant `c` of the function field is the class of the constant polynomial `C (C c)`.
-private theorem algebraMap_mk_C_C (c : F) :
-    algebraMap W.toAffine.CoordinateRing W.toAffine.FunctionField
-      (CoordinateRing.mk W.toAffine (C (C c))) = algebraMap F W.toAffine.FunctionField c := by
-  rw [CoordinateRing.mk_C_eq_algebraMap, ← Polynomial.algebraMap_eq,
-    ← IsScalarTower.algebraMap_apply F F[X] W.toAffine.CoordinateRing,
-    ← IsScalarTower.algebraMap_apply F W.toAffine.CoordinateRing W.toAffine.FunctionField]
-
-omit [DecidableEq F] [W.IsElliptic] in
 /-- **Clearing the denominator of a coordinate difference.** A pulled-back coordinate is a quotient
 of coordinate-ring classes; subtracting a constant keeps the denominator and shifts the numerator by
 that constant times it. Both coordinate valuations below are this one identity, read off at the
@@ -201,8 +192,8 @@ theorem isEquiv_comap_pointPlace {x y : F} (h : W.toAffine.Nonsingular x y) {n :
   -- `XClass x'` is `x - x'`, so its pullback is `[n]*x - x'`
   have huz : u z = v (mulByIntX W n - algebraMap F W.toAffine.FunctionField x') := by
     rw [hzdef, hudef, Valuation.comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-    simp only [CoordinateRing.XClass, map_sub, ← genericX_def, algebraMap_mk_C_C,
-      fieldPullback_mulByIntIsogeny_genericX, AlgHom.commutes]
+    simp only [algebraMap_XClass, map_sub, fieldPullback_mulByIntIsogeny_genericX,
+      AlgHom.commutes]
   have hz1 : u z ≠ 1 := by
     rw [huz]; exact (valuation_pointPlace_mulByIntX_sub_lt_one W h hn h' hnP).ne
   have hz0 : u z ≠ 0 := by
@@ -218,8 +209,8 @@ theorem isEquiv_comap_pointPlace {x y : F} (h : W.toAffine.Nonsingular x y) {n :
     have hY : (mulByIntIsogeny W hn).fieldPullback (algebraMap W.toAffine.CoordinateRing
         W.toAffine.FunctionField (CoordinateRing.YClass W.toAffine (C y'))) =
         mulByIntY W n - algebraMap F W.toAffine.FunctionField y' := by
-      simp only [CoordinateRing.YClass, map_sub, ← genericY_def, algebraMap_mk_C_C,
-        fieldPullback_mulByIntIsogeny_genericY, AlgHom.commutes]
+      simp only [algebraMap_YClass, map_sub, fieldPullback_mulByIntIsogeny_genericY,
+        AlgHom.commutes]
     rw [hQmem, Valuation.comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hY]
     exact valuation_pointPlace_mulByIntY_sub_lt_one W h hn h' hnP
   rw [← CoordinateRing.eq_pointPlace_of_mem_asIdeal h'.left hmemX hmemY]

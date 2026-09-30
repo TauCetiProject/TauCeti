@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Turning
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 import TauCeti.Data.Fin.Basic
 
@@ -52,13 +53,14 @@ variable {n : ℕ}
 
 /-- Adjacent bounded sides meet only at their common vertex when the prevertices are
 nondecreasing, both sides have distinct endpoints, the endpoint exponent sums exceed `-1`,
-and the corner exponent sum lies in `(-1, 0)`. -/
+and the corner exponent sum lies in `(-1, 1)` and is nonzero. -/
 theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacent
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
     (i j : Fin n) (hadj : i.val + 1 = j.val)
     (hi : a i.castSucc < a i.succ) (hj : a j.castSucc < a j.succ)
     (hleft : -1 < ∑ l with a l = a i.castSucc, e l)
-    (hcorner : ∑ l with a l = a i.succ, e l ∈ Ioo (-1 : ℝ) 0)
+    (hcorner : ∑ l with a l = a i.succ, e l ∈ Ioo (-1 : ℝ) 1)
+    (hcorner0 : ∑ l with a l = a i.succ, e l ≠ 0)
     (hright : -1 < ∑ l with a l = a j.succ, e l) :
     (schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc ∩
         (schwarzChristoffelPolygon a e z₀).edgeSet ℝ j.castSucc.castSucc ⊆
@@ -67,11 +69,13 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
   have hfree (k : Fin n) :
       ∀ l, e l ≠ 0 → a l ∉ Ioo (a k.castSucc) (a k.succ) :=
     fun l _ ↦ not_mem_Ioo_castSucc_succ a ha k l
+  have hcornerSin : Real.sin (Real.pi * ∑ l with a l = a i.succ, e l) ≠ 0 :=
+    sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero hcorner hcorner0
   have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
     i.castSucc i.succ j.succ hi
     (by rw [hmid]; exact hj)
     (hfree i) (by rw [hmid]; exact hfree j)
-    hleft hcorner hright
+    hleft hcorner.1 hcornerSin hright
   rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
     ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
   have hlin : LinearIndependent ℝ

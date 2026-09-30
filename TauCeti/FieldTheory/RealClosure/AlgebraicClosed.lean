@@ -18,6 +18,8 @@ then proves algebraic closedness of that square-closed field. In particular,
 `isAlgClosed_quadraticAlgebra` proves that `R[i] = QuadraticAlgebra R (-1) 0` is
 algebraically closed. `Polynomial.natDegree_le_two_of_irreducible` bounds irreducible degrees
 by two; the polynomial IVT development uses this bound.
+Open `scoped TauCeti.RealClosure` to enable the field and algebraic-closedness
+instances on this quadratic algebra.
 
 The proof puts finite extensions inside a finite normal closure. The 2-group argument
 then applies to the Galois group over a square-closed intermediate field.
@@ -76,14 +78,13 @@ theorem isAlgClosed_of_forall_isSquare (hsq : ∀ x : C, IsSquare x) : IsAlgClos
     ((Polynomial.degree_eq_iff_natDegree_eq_of_pos one_pos).mpr hdeg)
 
 /-- The complexification `R[i]` of a real closed field is algebraically closed. -/
-theorem isAlgClosed_quadraticAlgebra : IsAlgClosed (QuadraticAlgebra R (-1) 0) :=
+scoped instance isAlgClosed_quadraticAlgebra : IsAlgClosed (QuadraticAlgebra R (-1) 0) :=
   isAlgClosed_of_forall_isSquare (R := R) QuadraticAlgebra.isSquare
 
 open Polynomial in
 /-- Irreducible polynomials over a real closed field have degree at most two. -/
 theorem _root_.Polynomial.natDegree_le_two_of_irreducible (p : R[X]) (hp : Irreducible p) :
     p.natDegree ≤ 2 := by
-  have := isAlgClosed_quadraticAlgebra (R := R)
   obtain ⟨z, hz⟩ := IsAlgClosed.exists_aeval_eq_zero
     (QuadraticAlgebra R (-1) 0) p (degree_pos_of_irreducible hp).ne'
   have heq := minpoly.eq_of_irreducible hp hz

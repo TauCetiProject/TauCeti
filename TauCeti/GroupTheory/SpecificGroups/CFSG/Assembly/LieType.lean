@@ -12,7 +12,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Tits.Basic
 
 /-!
-# The concrete carrier and Steinberg map of every valid Lie-type index
+# The Steinberg map and candidate group of every valid Lie-type index
 
 The thirteen ordinary and graph-twisted families use their existing assembly. The four
 half-Frobenius families use their explicit Suzuki, Ree, or Tits endomorphism. Every branch
@@ -22,11 +22,39 @@ The candidate group is uniformly the derived subgroup of the fixed points modulo
 Comparison with the pinned simply connected groups requires isomorphisms preserving the
 root subgroups and Steinberg maps. No finiteness or simplicity of a candidate is asserted.
 The construction follows the family modules it imports.
+
+## Main definitions
+
+* `TauCeti.ValidLieTypeIndex.steinberg`: the Steinberg endomorphism on the ambient group of each
+  valid Lie-type index.
+* `TauCeti.ValidLieTypeIndex.FixedPoints`: the fixed subgroup of the Steinberg endomorphism.
+* `TauCeti.ValidLieTypeIndex.Group`: the Lie-type candidate group, the derived subgroup
+  of the fixed points modulo its centre.
+
+## Main results
+
+* `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius`: on ordinary
+  and graph-twisted indices, the action on simple root subgroups permutes by the diagram
+  automorphism and raises the parameter to the `q`-th power.
+* `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_usesHalfFrobenius`: on the Suzuki,
+  Ree and Tits indices, the action on simple root subgroups exchanges root lengths and raises
+  the parameter to the odd half-Frobenius exponent.
+* `TauCeti.ValidLieTypeIndex.steinberg_steinberg_of_usesHalfFrobenius`: on half-Frobenius
+  families, the Steinberg endomorphism squares to the `q`-power Frobenius.
+* `TauCeti.ValidLieTypeIndex.Group_eq_of_not_usesHalfFrobenius`: on ordinary and graph-twisted
+  families, the candidate group agrees with `GraphTwistedIndex.Group`.
+
+## References
+
+* R. W. Carter, *Simple Groups of Lie Type*, Wiley, 1972.
+* R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968).
 -/
 
 public section
 
-namespace TauCeti.ValidLieTypeIndex
+namespace TauCeti
+
+namespace ValidLieTypeIndex
 
 noncomputable section
 
@@ -118,4 +146,6 @@ example (d : ValidLieTypeIndex) : _root_.Group d.Group := inferInstance
 
 end
 
-end TauCeti.ValidLieTypeIndex
+end ValidLieTypeIndex
+
+end TauCeti

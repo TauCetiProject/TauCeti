@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import Mathlib.Logic.Equiv.Fin.Rotate
-import TauCeti.GroupTheory.Perm.FinThree
+import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Tactic.FinCases
 
 /-!

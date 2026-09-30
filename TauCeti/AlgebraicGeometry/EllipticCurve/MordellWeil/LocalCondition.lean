@@ -219,8 +219,8 @@ lemma pointMap_some {x y : K} (h : W.Nonsingular x y) : W.pointMap L (Point.some
   -- proof at `W.map (algebraMap K L)`, and although `W⁄L` is a reducible abbreviation for
   -- exactly that, the elaborator does not unfold it at `instances` transparency, so the two
   -- identically-printing types do not unify without being told the target.
-  rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, Point.cast_some,
-    Point.map_some]
+  rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.cast_apply,
+    Point.cast_some W.baseChange_self.symm, Point.map_some]
   rfl
 
 end PointMap

@@ -85,6 +85,25 @@ theorem hilbertSymbol_mul_left (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
   -- the first-argument law is the second-argument law read through the symmetry of the symbol
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
 
+/-- The Hilbert symbol is multiplicative on integer powers of its second argument. -/
+@[simp]
+theorem hilbertSymbol_zpow_right (h2 : IsUnit (2 : 𝒪[K]))
+    (a b : Kˣ) (n : ℤ) :
+    hilbertSymbol a (b ^ n) = hilbertSymbol a b ^ n := by
+  let f : Kˣ →* ℤˣ :=
+    { toFun := hilbertSymbol a
+      map_one' := hilbertSymbol_one_right a
+      map_mul' := hilbertSymbol_mul_right h2 a }
+  exact map_zpow f b n
+
+/-- The Hilbert symbol is multiplicative on integer powers of its first argument. -/
+@[simp]
+theorem hilbertSymbol_zpow_left (h2 : IsUnit (2 : 𝒪[K]))
+    (a b : Kˣ) (n : ℤ) :
+    hilbertSymbol (a ^ n) b = hilbertSymbol a b ^ n := by
+  have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
+  rw [hilbertSymbol_comm, hilbertSymbol_zpow_right h2, hilbertSymbol_comm]
+
 /-- **Nondegeneracy of the local Hilbert symbol.** Away from residue characteristic two, for every
 nonsquare `a` there is a `b ∈ Kˣ` with `(a, b)_K = -1`. It is the field-level consequence of
 the norm index theorem, `TauCeti.exists_hilbertSymbol_eq_neg_one_of_index_eq_two`, and so needs

@@ -35,10 +35,12 @@ produce the same algebra while the vector matrices carry the norm form on their 
 determinant, and its multiplicativity reduces to Mathlib's scalar quadruple product identity
 `Matrix.cross_dot_cross`.
 
-Everything is stated over a commutative ring; no field, characteristic or closedness hypothesis is
-needed for the algebra structure, the conjugation, or the norm. Only the two dimension counts
-`TauCeti.Octonion.finrank_eq_eight` and `TauCeti.Octonion.finrank_imaginary` ask for a base over
-which ranks are well behaved, and each asks for it as `StrongRankCondition` and nothing more.
+The algebra structure, the conjugation, and the norm are stated over a commutative ring; no field,
+characteristic or closedness hypothesis is needed for them. The additive and module structures
+and the coordinate isomorphism need only an additive commutative monoid of coefficients. Only the
+two dimension counts `TauCeti.Octonion.finrank_eq_eight` and `TauCeti.Octonion.finrank_imaginary`
+ask for a base over which ranks are well behaved, and each asks for it as `StrongRankCondition` and
+nothing more.
 
 ## Main definitions
 
@@ -87,27 +89,19 @@ a private coordinate extensionality lemma splitting an equation of octonions int
 coordinates.
 
 No definition here is exposed: consumers work through the projection `simp` lemmas rather than
-through any definition body. The additive and module structures are built directly on the
-componentwise operations, and `TauCeti.Octonion.linearEquivProd` packages a vector matrix as the
-tuple of its four entries, an `R`-linear isomorphism, which is what the dimension count runs
-through.
+through any definition body. The additive and module structures are transported from
+`R × R × (Fin 3 → R) × (Fin 3 → R)` along the injective map to the four entries, and
+`TauCeti.Octonion.linearEquivProd` packages a vector matrix as the tuple of those entries, a
+linear isomorphism over any semiring acting on the coefficients; the dimension count runs through
+it with `R` acting on itself.
 
-The norm is available both as the bare map `Octonion R → R` the roadmap pins and, through
+The norm is available both as the bare map `Octonion R → R` and, through
 `TauCeti.Octonion.normQuadraticForm`, as a `QuadraticForm R (Octonion R)`; the bundled form is what
 gives its polarization Mathlib's bilinearity and symmetry API for free. The derivation algebra
 `Der 𝕆` is
 `TauCeti.derivationLieAlgebra R (Octonion R)`, built in `TauCeti/Algebra/Lie/Derivation/Basic.lean`.
 
 ## References
-
-This implements the split-octonion target of Layer 8 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` ("The split octonions `𝕆` ... built
-here (`Octonion K`) with its conjugation, norm, alternative and Moufang identities, and its
-multiplication as an honest `K`-bilinear operation"), whose `Suggested.lean` pins it as `Octonion`,
-`finrank_octonion`, `octonionConj`, `octonionNorm`, `octonionNorm_mul`, `octonion_left_alternative`,
-`imaginaryOctonion` and `finrank_imaginaryOctonion`; those are the declarations below, named inside
-the `Octonion` namespace. That roadmap's `## Ordering` marks this unit as buildable from scratch at
-any time, independently of every other layer.
 
 The model is M. Zorn, *Alternativkörper und quadratische Systeme*, Abh. Math. Sem. Univ. Hamburg 9
 (1933); see also T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional
@@ -198,43 +192,34 @@ instance [SMul S R] : SMul S (Octonion R) :=
 @[simp] theorem smul_v [SMul S R] (s : S) (x : Octonion R) : (s • x).v = s • x.v := (rfl)
 @[simp] theorem smul_w [SMul S R] (s : S) (x : Octonion R) : (s • x).w = s • x.w := (rfl)
 
-/- The structures below are built directly on the componentwise operations rather than transported
-along an injection into `R × R × (Fin 3 → R) × (Fin 3 → R)`: a transport would have to name that
-injection and its injectivity proof in an instance body, and an instance body may mention only
-public declarations, so the helper would have to be part of the public API. -/
-instance [AddCommGroup R] : AddCommGroup (Octonion R) where
-  add_assoc _ _ _ := by ext <;> simp [add_assoc]
-  zero_add _ := by ext <;> simp
-  add_zero _ := by ext <;> simp
-  neg_add_cancel _ := by ext <;> simp
-  sub_eq_add_neg _ _ := by ext <;> simp [sub_eq_add_neg]
-  add_comm _ _ := by ext <;> simp [add_comm]
-  nsmul n x := n • x
-  nsmul_zero _ := by ext <;> simp
-  nsmul_succ _ _ := by ext <;> simp [succ_nsmul]
-  zsmul n x := n • x
-  zsmul_zero' _ := by ext <;> simp
-  zsmul_succ' _ _ := by ext <;> simp [add_zsmul]
-  zsmul_neg' _ _ := by ext <;> simp [add_zsmul, succ_nsmul]
+instance [AddCommMonoid R] : AddCommMonoid (Octonion R) :=
+  Function.Injective.addCommMonoid (fun x : Octonion R => (x.a, x.b, x.v, x.w))
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) rfl (fun _ _ => rfl) fun _ _ => rfl
 
-instance [Monoid S] [AddCommGroup R] [DistribMulAction S R] : DistribMulAction S (Octonion R) where
-  one_smul _ := by ext <;> simp
-  mul_smul _ _ _ := by ext <;> simp [mul_smul]
-  smul_zero _ := by ext <;> simp
-  smul_add _ _ _ := by ext <;> simp
+instance [AddCommGroup R] : AddCommGroup (Octonion R) :=
+  Function.Injective.addCommGroup (fun x : Octonion R => (x.a, x.b, x.v, x.w))
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) rfl (fun _ _ => rfl) (fun _ => rfl)
+    (fun _ _ => rfl) (fun _ _ => rfl) fun _ _ => rfl
 
-instance [Semiring S] [AddCommGroup R] [Module S R] : Module S (Octonion R) where
-  add_smul _ _ _ := by ext <;> simp [add_smul]
-  zero_smul _ := by ext <;> simp
+instance [Monoid S] [AddCommMonoid R] [DistribMulAction S R] :
+    DistribMulAction S (Octonion R) :=
+  Function.Injective.distribMulAction
+    ⟨⟨fun x : Octonion R => (x.a, x.b, x.v, x.w), rfl⟩, fun _ _ => rfl⟩
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) fun _ _ => rfl
+
+instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (Octonion R) :=
+  Function.Injective.module S
+    ⟨⟨fun x : Octonion R => (x.a, x.b, x.v, x.w), rfl⟩, fun _ _ => rfl⟩
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) fun _ _ => rfl
 
 instance [AddCommGroup R] [One R] : AddCommGroupWithOne (Octonion R) where
   __ := (inferInstance : AddCommGroup (Octonion R))
   one := 1
 
-/-- The components of a vector matrix, as an `R`-linear isomorphism with the tuple of its four
-entries. -/
-def linearEquivProd (R : Type*) [CommRing R] :
-    Octonion R ≃ₗ[R] R × R × (Fin 3 → R) × (Fin 3 → R) where
+/-- The components of a vector matrix, as a linear isomorphism with the tuple of its four entries,
+over any semiring acting on the coefficients. -/
+def linearEquivProd (S R : Type*) [Semiring S] [AddCommMonoid R] [Module S R] :
+    Octonion R ≃ₗ[S] R × R × (Fin 3 → R) × (Fin 3 → R) where
   toFun x := (x.a, x.b, x.v, x.w)
   invFun p := ⟨p.1, p.2.1, p.2.2.1, p.2.2.2⟩
   map_add' _ _ := rfl
@@ -242,22 +227,23 @@ def linearEquivProd (R : Type*) [CommRing R] :
   left_inv _ := rfl
   right_inv _ := rfl
 
-@[simp] theorem linearEquivProd_apply [CommRing R] (x : Octonion R) :
-    linearEquivProd R x = (x.a, x.b, x.v, x.w) := (rfl)
+@[simp] theorem linearEquivProd_apply [Semiring S] [AddCommMonoid R] [Module S R] (x : Octonion R) :
+    linearEquivProd S R x = (x.a, x.b, x.v, x.w) := (rfl)
 
-@[simp] theorem linearEquivProd_symm_apply [CommRing R] (p : R × R × (Fin 3 → R) × (Fin 3 → R)) :
-    (linearEquivProd R).symm p = ⟨p.1, p.2.1, p.2.2.1, p.2.2.2⟩ := (rfl)
+@[simp] theorem linearEquivProd_symm_apply [Semiring S] [AddCommMonoid R] [Module S R]
+    (p : R × R × (Fin 3 → R) × (Fin 3 → R)) :
+    (linearEquivProd S R).symm p = ⟨p.1, p.2.1, p.2.2.1, p.2.2.2⟩ := (rfl)
 
-instance [CommRing R] : Module.Free R (Octonion R) :=
-  Module.Free.of_equiv (linearEquivProd R).symm
+instance [Semiring R] : Module.Free R (Octonion R) :=
+  Module.Free.of_equiv (linearEquivProd R R).symm
 
-instance [CommRing R] : Module.Finite R (Octonion R) :=
-  Module.Finite.equiv (linearEquivProd R).symm
+instance [Semiring R] : Module.Finite R (Octonion R) :=
+  Module.Finite.equiv (linearEquivProd R R).symm
 
 /-- **The split octonions are `8`-dimensional**: two scalar and two vector entries. -/
-theorem finrank_eq_eight (R : Type*) [CommRing R] [StrongRankCondition R] :
+theorem finrank_eq_eight (R : Type*) [Semiring R] [StrongRankCondition R] :
     Module.finrank R (Octonion R) = 8 := by
-  rw [(linearEquivProd R).finrank_eq]
+  rw [(linearEquivProd R R).finrank_eq]
   simp
 
 /-! ### The multiplication -/
