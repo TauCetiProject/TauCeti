@@ -14,9 +14,9 @@ Let `H` be a subgroup of a finite group `G` and `S` a short exact sequence of
 `G`-representations. Restricting `S` to `H` keeps it short exact, and in nonnegative degrees Tate
 restriction commutes with the connecting maps of the two long exact sequences:
 
-`Ĥʳ(G, X₃) ⟶ Ĥʳ⁺¹(G, X₁)`
+`H^r(G, X₃) ⟶ H^(r+1)(G, X₁)`
 `    ↓               ↓`
-`Ĥʳ(H, X₃) ⟶ Ĥʳ⁺¹(H, X₁)`
+`H^r(H, X₃) ⟶ H^(r+1)(H, X₁)`
 
 for `r ≥ 0` (`TauCeti.TateCohomology.δ_comp_res`). This is what lets a statement about restriction
 be moved up in degree by dimension shifting, as in the proof that restriction is compatible with
@@ -30,7 +30,7 @@ of inhomogeneous cochains over `G` extended by zero to negative degrees, and tha
 to the Tate complex over `G` by the identity in nonnegative degrees. Both maps are natural, so the
 connecting maps commute with them. In positive degrees the second map induces an isomorphism on
 cohomology, and the first one induces its composite with Tate restriction. In degree zero the second
-map induces the epimorphism from the invariants onto `Ĥ⁰`, and the first one again induces its
+map induces the epimorphism from the invariants onto `H^0`, and the first one again induces its
 composite with Tate restriction, which is induced by the inclusion `Mᴳ ⊆ Mᴴ`.
 
 ## Main results
@@ -252,8 +252,8 @@ attribute [local instance] Subgroup.fintypeOfFinite
 
 /-- **Tate restriction commutes with the connecting maps in nonnegative degrees.** For a short
 exact sequence `S` of `G`-representations and a subgroup `H`, restriction to `H` intertwines the
-connecting map `Ĥʳ(G, X₃) ⟶ Ĥʳ⁺¹(G, X₁)` of `S` with the connecting map of its restriction to `H`,
-for every `r ≥ 0`. -/
+connecting map `H^r(G, X₃) ⟶ H^(r+1)(G, X₁)` of `S` with the connecting map of its restriction to
+`H`, for every `r ≥ 0`. -/
 @[reassoc]
 theorem δ_comp_res {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H : Subgroup G) {r : ℤ}
     (hr : 0 ≤ r) :
