@@ -393,6 +393,17 @@ theorem _root_.Representation.Equiv.baseChange_tmul (φ : ρ.Equiv σ) (A : Type
     _root_.Representation.Equiv.toLinearEquiv_apply,
     _root_.Representation.Equiv.coe_toIntertwiningMap]
 
+/-- The inverse of a base-changed equivalence acts by the inverse on the second factor of a pure
+tensor. -/
+@[simp]
+theorem _root_.Representation.Equiv.baseChange_symm_tmul (φ : ρ.Equiv σ) (A : Type*)
+    [CommSemiring A] [Algebra R A] (a : A) (w : W) :
+    (φ.baseChange A).symm (a ⊗ₜ[R] w) = a ⊗ₜ[R] φ.symm w := by
+  have h : φ.baseChange A (a ⊗ₜ[R] φ.symm w) = a ⊗ₜ[R] w := by
+    rw [_root_.Representation.Equiv.baseChange_tmul,
+      _root_.Representation.Equiv.apply_symm_apply]
+  rw [← h, _root_.Representation.Equiv.symm_apply_apply]
+
 end Transport
 
 section PermutationModule
