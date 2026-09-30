@@ -85,6 +85,7 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
   have hfnonneg : ∀ q, 0 ≤ f q := A.toRealFun_nonneg
   have hg : g ∈ RealPlans μ ν := by
     refine ⟨?_, ?_, ?_⟩
+    -- Check entries directly so the proof also covers coincident rows or columns.
     · intro ⟨i, j⟩
       have hfi := hfnonneg (i, j)
       by_cases h₁ : i = i₁ <;> by_cases h₂ : i = i₂ <;>
