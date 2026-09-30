@@ -15,8 +15,14 @@ Two root systems carrying bases of the same Cartan type are isomorphic as root p
 isomorphism of root pairings transports the Weyl group. Putting the two together, the Weyl group of
 a root system depends only on the Cartan type of any one of its bases.
 
-Nothing new is proved: `TauCeti.nonempty_equiv_of_hasCartanType` supplies the isomorphism and
-`RootPairing.Equiv.weylGroupEquiv` transports the Weyl group along it.
+So the Weyl group is an invariant of the Dynkin type alone. This is what licenses computing a
+Weyl group once, on whichever pinned coordinate model of a type is most convenient, and reading
+the answer off on an arbitrary root system of that type: the order of the Weyl group, its
+isomorphism type as an abstract group, and any group-theoretic property of it are determined by
+the Cartan matrix of one base.
+
+Only the existence of an isomorphism can be asserted, not a canonical one, because a root system
+of a given type carries no preferred labelling of its base by the nodes of the Dynkin diagram.
 
 ## Main results
 

@@ -50,8 +50,6 @@ isomorphism of Weyl groups is compatible with both.
 * `RootPairing.Equiv.autCongr_id`, `RootPairing.Equiv.autCongr_comp`,
   `RootPairing.Equiv.weylGroupEquiv_id` and `RootPairing.Equiv.weylGroupEquiv_comp`: both
   constructions are functorial.
-* `RootPairing.Equiv.natCard_weylGroup_eq` and `RootPairing.Equiv.finite_weylGroup`: isomorphic
-  root pairings have Weyl groups of equal cardinality, and finiteness transports.
 
 ## References
 
@@ -121,7 +119,10 @@ theorem _root_.RootPairing.Equiv.indexEquiv_autCongr_apply (e : P.Equiv Q) (g : 
     (e.autCongr g).indexEquiv i = e.indexEquiv (g.indexEquiv (e.indexEquiv.symm i)) :=
   (rfl)
 
-/-- Conjugation transports the action on weight vectors along `e.weightEquiv`. -/
+/-- Conjugation transports the action on weight vectors along `e.weightEquiv`.
+
+Not a `simp` lemma: `RootPairing.Equiv.weightEquiv_apply` rewrites `e.weightEquiv x` in the
+left-hand side to `(↑e).weightMap x`, so the statement is not in `simp`-normal form. -/
 theorem _root_.RootPairing.Equiv.autCongr_smul (e : P.Equiv Q) (g : Aut P) (x : M) :
     e.autCongr g • e.weightEquiv x = e.weightEquiv (g • x) := by
   have h : e.autCongr g • e.weightEquiv x = weightEquiv (e.autCongr g) (e.weightEquiv x) := (rfl)
@@ -129,6 +130,7 @@ theorem _root_.RootPairing.Equiv.autCongr_smul (e : P.Equiv Q) (g : Aut P) (x : 
   rw [h, h', RootPairing.Equiv.weightEquiv_autCongr_apply, LinearEquiv.symm_apply_apply]
 
 /-- Conjugation transports the action on root indices along `e.indexEquiv`. -/
+@[simp]
 theorem _root_.RootPairing.Equiv.autCongr_smul_index (e : P.Equiv Q) (g : Aut P) (i : ι) :
     e.autCongr g • e.indexEquiv i = e.indexEquiv (g • i) := by
   have h : e.autCongr g • e.indexEquiv i = (e.autCongr g).indexEquiv (e.indexEquiv i) := (rfl)
@@ -185,7 +187,13 @@ theorem _root_.RootPairing.Equiv.weylGroupEquiv_ofIdx (e : P.Equiv Q) (i : ι) :
   Subtype.ext <| e.autCongr_reflection i
 
 /-- The isomorphism of Weyl groups is equivariant for the permutation actions on root indices:
-the permutation of `Q`'s root indices is the one of `P`'s conjugated by `e.indexEquiv`. -/
+the permutation of `Q`'s root indices is the one of `P`'s conjugated by `e.indexEquiv`.
+
+Not a `simp` lemma: `RootPairing.weylGroupToPerm` is a `MonoidHom.domRestrict`, so
+`MonoidHom.domRestrict_apply`, `RootPairing.Equiv.coe_weylGroupEquiv` and
+`RootPairing.Equiv.indexHom_apply` rewrite the left-hand side to
+`(↑(e.autCongr ↑w)).indexEquiv`; `RootPairing.Equiv.indexEquiv_autCongr_apply` is the `simp`
+lemma that then finishes the job. -/
 theorem _root_.RootPairing.Equiv.weylGroupToPerm_weylGroupEquiv (e : P.Equiv Q)
     (w : weylGroup P) :
     weylGroupToPerm Q (e.weylGroupEquiv w) = e.indexEquiv.permCongr (weylGroupToPerm P w) :=
@@ -195,7 +203,9 @@ theorem _root_.RootPairing.Equiv.weylGroupToPerm_weylGroupEquiv (e : P.Equiv Q)
     rw [h, RootPairing.Equiv.indexEquiv_autCongr_apply]
     rfl
 
-/-- The isomorphism of Weyl groups is equivariant for the actions on weight vectors. -/
+/-- The isomorphism of Weyl groups is equivariant for the actions on weight vectors.
+
+Not a `simp` lemma, for the same reason as `RootPairing.Equiv.autCongr_smul`. -/
 theorem _root_.RootPairing.Equiv.weylGroupEquiv_smul (e : P.Equiv Q) (w : weylGroup P) (x : M) :
     e.weylGroupEquiv w • e.weightEquiv x = e.weightEquiv (w • x) :=
   e.autCongr_smul (w : Aut P) x
@@ -212,6 +222,7 @@ theorem _root_.RootPairing.Equiv.autCongr_id :
     rfl
 
 /-- Conjugation by a composite is the composite of the conjugations. -/
+@[simp]
 theorem _root_.RootPairing.Equiv.autCongr_comp (e : P.Equiv Q) (f : Q.Equiv S) :
     (RootPairing.Equiv.comp f e).autCongr = e.autCongr.trans f.autCongr :=
   MulEquiv.ext fun g ↦ by
@@ -225,21 +236,12 @@ theorem _root_.RootPairing.Equiv.weylGroupEquiv_id :
   MulEquiv.ext fun w ↦ Subtype.ext (by simp)
 
 /-- The Weyl-group isomorphism of a composite is the composite of the Weyl-group isomorphisms. -/
+@[simp]
 theorem _root_.RootPairing.Equiv.weylGroupEquiv_comp (e : P.Equiv Q) (f : Q.Equiv S) :
     (RootPairing.Equiv.comp f e).weylGroupEquiv = e.weylGroupEquiv.trans f.weylGroupEquiv :=
-  MulEquiv.ext fun w ↦ Subtype.ext (by simp [RootPairing.Equiv.autCongr_comp])
+  MulEquiv.ext fun w ↦ Subtype.ext (by simp)
 
 end Functoriality
-
-/-- **Isomorphic root pairings have Weyl groups of the same cardinality.** -/
-theorem _root_.RootPairing.Equiv.natCard_weylGroup_eq (e : P.Equiv Q) :
-    Nat.card (weylGroup P) = Nat.card (weylGroup Q) :=
-  Nat.card_congr e.weylGroupEquiv.toEquiv
-
-/-- Finiteness of the Weyl group transports along an equivalence of root pairings. -/
-theorem _root_.RootPairing.Equiv.finite_weylGroup (e : P.Equiv Q) [Finite (weylGroup P)] :
-    Finite (weylGroup Q) :=
-  Finite.of_equiv _ e.weylGroupEquiv.toEquiv
 
 end
 
