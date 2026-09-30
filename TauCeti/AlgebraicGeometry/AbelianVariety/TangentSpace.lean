@@ -41,13 +41,6 @@ and `TauCeti.Algebra.AlgebraicGroup.Tangent.Basic` describes the tangent space a
 counit-valued derivations. The construction here is the scheme-level Zariski tangent space at a
 point, which applies to an abelian variety, and no comparison between the two is made.
 
-This supplies the tangent-space part of the abelian-variety infrastructure explicitly listed in
-`TauCetiRoadmap/JacobianChallenge/README.md` under "Inventory: what is missing (build here)" and
-Layer E. It does not construct `Pic⁰` or prove the later comparison `T₀ Pic⁰ ≅ H¹(X, 𝒪_X)`.
-No formalization is vendored: the ground-field dimension of `κ(0)` is Mathlib's
-`Module.finrank_of_bijective_algebraMap`, the comparison of dimensions is
-`Module.finrank_mul_finrank`, and the tangent space itself is the scheme-level API in
-`TauCeti.AlgebraicGeometry.TangentSpace.Basic`.
 -/
 
 public section

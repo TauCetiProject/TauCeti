@@ -32,7 +32,6 @@ fields and global functions over a field.
   `X.descResidueField (Scheme.stalkClosedPointTo s)`. The section hypothesis makes that map
   bijective (`descResidueField_bijective_of_section`), which is what lets a `K`-rational point
   transport `K`-structures to the fibre data at the point.
-* `isClosed_range_of_section`: the image of a section of a separated morphism is closed.
 * `isClosed_singleton_of_section`: over `Spec K`, the section gives a closed point of `X`.
 * `appTop_bijective_of_section`: if moreover `X` is integral and universally closed over `Spec K`,
   a `K`-rational point forces the global functions of `X` to be the constants, that is,
@@ -200,17 +199,6 @@ lemma stalkClosedPointTo_surjective_of_section (hs : s ≫ f = 𝟙 (Spec (.of R
 
 end OverLocalRing
 
-/-! ### Closed image of a section -/
-
-/-- The image of a section of a separated morphism is closed. -/
-lemma isClosed_range_of_section [IsSeparated f] (hs : s ≫ f = 𝟙 S) :
-    IsClosed (Set.range s) := by
-  have : IsClosedImmersion (s ≫ f) := by
-    rw [hs]
-    infer_instance
-  have : IsClosedImmersion s := IsClosedImmersion.of_comp s f
-  exact s.isClosedEmbedding.isClosed_range
-
 /-! ### The residue field at a rational point
 
 Over a field `K`, the residue field at a rational point is canonically isomorphic to `K`
@@ -220,14 +208,13 @@ section OverField
 
 variable {K : Type u} [Field K] {X : Scheme.{u}} {f : X ⟶ Spec (.of K)} {s : Spec (.of K) ⟶ X}
 
-/-- The image of a rational-point section of a separated morphism is a closed point. -/
-lemma isClosed_singleton_of_section [IsSeparated f]
+/-- The image of a rational-point section is a closed point. -/
+lemma isClosed_singleton_of_section
     (hs : s ≫ f = 𝟙 (Spec (.of K))) : IsClosed {s (IsLocalRing.closedPoint K)} := by
-  convert isClosed_range_of_section hs
-  ext x
-  refine ⟨fun hx ↦ ⟨_, hx.symm⟩, ?_⟩
-  rintro ⟨y, rfl⟩
-  rw [Set.mem_singleton_iff, Subsingleton.elim y (IsLocalRing.closedPoint K)]
+  have := isClosedImmersion_of_comp_eq_id f s hs
+  rw [← Set.range_eq_singleton fun y ↦ congrArg s
+    (Subsingleton.elim y (IsLocalRing.closedPoint K))]
+  exact s.isClosedEmbedding.isClosed_range
 
 /-- The canonical evaluation map `κ(s 0) ⟶ K` at a `K`-rational point is bijective: it is
 injective as a map of fields, and surjective because the stalk already surjects onto `K`. -/

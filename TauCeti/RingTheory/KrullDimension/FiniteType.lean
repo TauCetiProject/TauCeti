@@ -17,6 +17,7 @@ public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.RingTheory.KrullDimension.Integral
+public import TauCeti.RingTheory.KrullDimension.Quotient
 
 /-!
 # Krull dimension of finitely generated algebras over a field
@@ -37,13 +38,14 @@ For a domain `A`, the same Noether normalization identifies `s` with the transce
 transcendence degree only sees the fraction field, so an algebraic extension of finitely generated
 domains, such as a localization `A[1/f]` with `f ≠ 0`, does not change the Krull dimension.
 
-Every maximal ideal of a finitely generated domain `A` over `k` has height `dim A`. For the
-polynomial ring `k[X₁, …, Xₛ]` this follows by induction on `s`: a maximal ideal of `R[X]`, for `R`
+Every maximal ideal of a finitely generated algebra `A` with irreducible spectrum over `k` has
+height `dim A`. For the polynomial ring `k[X₁, …, Xₛ]` this follows by induction on `s`: a maximal
+ideal of `R[X]`, for `R`
 a Jacobson ring, contracts to a maximal ideal of `R`, and its height is one more than the height of
-that contraction. For general `A`, Noether normalization makes `A` integral over the normal domain
-`k[X₁, …, Xₛ]`, so going down holds, and the height of a maximal ideal of `A` is at least the height
-`s` of its contraction. Geometrically, all closed points of an irreducible variety have local
-dimension the dimension of the variety.
+that contraction. For a domain `A`, Noether normalization makes `A` integral over the normal domain
+`k[X₁, …, Xₛ]`, so going down gives the lower height bound. The general case follows by quotienting
+by the nilradical, which preserves dimension and prime heights. Geometrically, all closed points
+of an irreducible variety have local dimension the dimension of the variety.
 
 Geometrically, a nonempty open part of an irreducible closed subset of `Spec A` has the dimension
 of the whole closed subset; this is what makes pure-dimensionality of schemes locally of finite
@@ -66,8 +68,8 @@ type over a field a local property.
   `A[1/f]` with `f ≠ 0`.
 * `MvPolynomial.height_eq_natCard_of_isMaximal`: every maximal ideal of `k[Xᵢ | i ∈ ι]`, for `ι`
   finite, has height the number of variables.
-* `TauCeti.height_eq_ringKrullDim_of_isMaximal`: every maximal ideal of a finitely generated domain
-  `A` over `k` has height `dim A`.
+* `TauCeti.height_eq_ringKrullDim_of_isMaximal`: every maximal ideal of a finitely generated
+  algebra `A` with irreducible spectrum over `k` has height `dim A`.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
   irreducible closed subset has the dimension of that subset.
 
@@ -76,7 +78,7 @@ type over a field a local property.
 * [Stacks Project, Tag 00OW](https://stacks.math.columbia.edu/tag/00OW) (Noether normalization)
 * [Stacks Project, Tag 00P0](https://stacks.math.columbia.edu/tag/00P0) (dimension and
   transcendence degree)
-* [R. Hartshorne, *Algebraic Geometry*][hartshorne1977], Chapter I, Theorem 1.8A (heights of
+* R. Hartshorne, *Algebraic Geometry* (1977), Chapter I, Theorem 1.8A (heights of
   primes in finitely generated domains over a field)
 -/
 
@@ -244,30 +246,12 @@ theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [Algebra k 
   have : IsDomain (A ⧸ I) := (Ideal.Quotient.isDomain_iff_prime I).mpr hI
   have : Algebra.FiniteType k (A ⧸ I) := .of_surjective (Ideal.Quotient.mkₐ k I)
     Ideal.Quotient.mk_surjective
-  let e : PrimeSpectrum (A ⧸ I) ≃o PrimeSpectrum A :=
-    (I.primeSpectrumQuotientOrderIsoZeroLocus).trans
-      ((Set.orderIsoOfEq _ _ PrimeSpectrum.zeroLocus_nilradical).trans OrderIso.Set.univ)
-  have hdim : ringKrullDim (A ⧸ I) = ringKrullDim A := by
-    rw [ringKrullDim, ringKrullDim, Order.krullDim_eq_of_orderIso e]
   let q : Ideal (A ⧸ I) := m.map (Ideal.Quotient.mk I)
   have hIm : I ≤ m := nilradical_le_prime m
   have : q.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le
     (f := Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective (by simpa [Ideal.mk_ker] using hIm)
-  have he : e ⟨q, inferInstance⟩ = (⟨m, inferInstance⟩ : PrimeSpectrum A) := by
-    apply PrimeSpectrum.ext
-    change (m.map (Ideal.Quotient.mk I)).comap (Ideal.Quotient.mk I) = m
-    rw [Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
-      ← RingHom.ker_eq_comap_bot, Ideal.mk_ker]
-    exact sup_of_le_left hIm
-  have hheight : q.height = m.height := by
-    calc
-      q.height = Order.height (⟨q, inferInstance⟩ : PrimeSpectrum (A ⧸ I)) :=
-        PrimeSpectrum.height_eq_orderHeight (⟨q, inferInstance⟩ : PrimeSpectrum (A ⧸ I))
-      _ = Order.height (⟨m, inferInstance⟩ : PrimeSpectrum A) := by
-        rw [← he, Order.height_orderIso]
-      _ = m.height :=
-        (PrimeSpectrum.height_eq_orderHeight (⟨m, inferInstance⟩ : PrimeSpectrum A)).symm
-  rw [← hheight, ← hdim]
+  rw [← Ideal.height_map_quotientMk_nilradical m,
+    ← ringKrullDim_quotient_nilradical A]
   exact height_eq_ringKrullDim_of_isMaximal_of_isDomain k q
 
 variable (k) in

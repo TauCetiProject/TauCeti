@@ -185,8 +185,8 @@ lemma toOver_hom_zeroPoint (A : AbelianVariety K) :
   rw [zeroPoint_def]
   exact section_apply (zeroSection_comp_toOver_hom A) (IsLocalRing.closedPoint K)
 
-/-- The identity point is a closed point: the zero section is a section of the separated structure
-morphism, hence a closed immersion, and its image is the identity point. -/
+/-- The identity point is closed: the zero section is a closed immersion, and its image is the
+identity point. -/
 lemma isClosed_singleton_zeroPoint (A : AbelianVariety K) : IsClosed {A.zeroPoint} := by
   rw [zeroPoint_def]
   exact isClosed_singleton_of_section (zeroSection_comp_toOver_hom A)
