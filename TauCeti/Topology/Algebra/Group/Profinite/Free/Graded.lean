@@ -163,6 +163,7 @@ theorem dvd_exponentSum_of_mem_pLowerCentralSeries {k : ℕ} {y : freeProP p X}
 
 /-- A `p`-adic power of a free generator lies in the `k`-th lower `p`-series subgroup exactly when
 its exponent is divisible by `p ^ k` in `ℤ_p`. -/
+@[simp]
 theorem padicPow_mem_pLowerCentralSeries_iff (i : X) (a : ℤ_[p]) (k : ℕ) :
     (isProP_freeProP p X).padicPow (of i) a ∈ pLowerCentralSeries p (freeProP p X) k ↔
       (p : ℤ_[p]) ^ k ∣ a := by
