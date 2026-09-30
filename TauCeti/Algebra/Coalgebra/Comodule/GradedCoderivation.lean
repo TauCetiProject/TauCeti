@@ -198,10 +198,8 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_odd {r : ℤ}
     rw [hsq]
     simp
   · intro hc
-    have hf : (Hom.cofreeEquiv (R := R) (C := C) (M := N) (P := N ⊗[R] C)) f = 0 := by
-      simpa only [Hom.cofreeEquiv_apply, f, squareHomOfOdd_toLinearMap] using hc
-    have hz : f = 0 := (Hom.cofreeEquiv (R := R) (C := C) (M := N)
-      (P := N ⊗[R] C)).injective (by simpa using hf)
+    have hz : f = 0 := (Hom.eq_zero_iff_counit f).2 (by
+      simpa only [f, squareHomOfOdd_toLinearMap] using hc)
     have hlin := congrArg (fun g : Hom R C (N ⊗[R] C) (N ⊗[R] C) => g.toLinearMap) hz
     simpa only [f, squareHomOfOdd_toLinearMap, Hom.zero_toLinearMap] using hlin
 

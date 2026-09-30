@@ -316,6 +316,19 @@ theorem cofreeEquiv_symm_apply [Comodule R C P] (g : P →ₗ[R] M) :
     (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).symm g = cofreeLift (C := C) g :=
   rfl
 
+/-- A morphism into a cofree comodule vanishes exactly when its counit component vanishes. -/
+theorem eq_zero_iff_counit [Comodule R C P] (f : Hom R C P (M ⊗[R] C)) :
+    f = 0 ↔
+      (TensorProduct.rid R M).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ f.toLinearMap = 0 := by
+  constructor
+  · intro hf
+    subst f
+    simp
+  · intro hf
+    apply (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).injective
+    simpa only [cofreeEquiv_apply, Hom.zero_toLinearMap, LinearMap.comp_zero] using hf
+
 end Hom
 
 end Comodule
