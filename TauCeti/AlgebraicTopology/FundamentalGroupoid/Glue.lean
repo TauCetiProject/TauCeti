@@ -318,27 +318,73 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
     (hbc : ∃ i, ∀ t, γ.subpath b c t ∈ U i) (hac : ∃ i, ∀ t, γ.subpath a c t ∈ U i) :
     pathVal hU F hF (γ.subpath a b) hab ≫ pathVal hU F hF (γ.subpath b c) hbc =
       pathVal hU F hF (γ.subpath a c) hac := by
-  have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
   rw [pathVal_eq hU F hF i _ _ (subpath_apply_mem hγ ha hb),
     pathVal_eq hU F hF i _ _ (subpath_apply_mem hγ hb hc),
-    pathVal_eq hU F hF i _ _ (subpath_apply_mem hγ ha hc), ← locVal_trans]
-  swap
-  · intro t
-    rw [Path.trans_apply]
-    split_ifs
-    exacts [subpath_apply_mem hγ ha hb _, subpath_apply_mem hγ hb hc _]
+    pathVal_eq hU F hF i _ _ (subpath_apply_mem hγ ha hc)]
   have hlohi : lo ≤ hi := ha.1.trans ha.2
   obtain ⟨a', rfl⟩ : ∃ a', Icc.convexComb lo hi a' = a := ⟨_, (Icc.eq_convexComb ha.1 ha.2).symm⟩
   obtain ⟨b', rfl⟩ : ∃ b', Icc.convexComb lo hi b' = b := ⟨_, (Icc.eq_convexComb hb.1 hb.2).symm⟩
   obtain ⟨c', rfl⟩ : ∃ c', Icc.convexComb lo hi c' = c := ⟨_, (Icc.eq_convexComb hc.1 hc.2).symm⟩
+  have haU : γ (Icc.convexComb lo hi a') ∈ U i := hγ _ ha
+  have hbU : γ (Icc.convexComb lo hi b') ∈ U i := hγ _ hb
+  have hcU : γ (Icc.convexComb lo hi c') ∈ U i := hγ _ hc
   let g : C(I, X) := γ.toContinuousMap.comp ⟨_, Icc.continuous_convexComb lo hi⟩
-  refine locVal_eq_of_simplyConnected hU F hF i g
-    (fun t ↦ hγ _ ⟨Icc.le_convexComb hlohi t, Icc.convexComb_le hlohi t⟩)
-    ((Path.id.subpath a' b').trans (Path.id.subpath b' c')) (Path.id.subpath a' c') _ _
-    (fun t ↦ ?_) (fun t ↦ ?_) _ _
-  · rw [Path.trans_apply, Path.trans_apply]
-    split_ifs <;> simp [g, Path.subpath, convexComb_convexComb]
-  · simp [g, Path.subpath, convexComb_convexComb]
+  let g' : C(I, U i) := ⟨fun t ↦ ⟨g t,
+    hγ _ ⟨Icc.le_convexComb hlohi t, Icc.convexComb_le hlohi t⟩⟩,
+    g.continuous.codRestrict _⟩
+  let p : Path (g' 0) (g' 1) := Path.id.map g'.continuous
+  have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := by
+    apply Subtype.ext
+    rfl
+  have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := by
+    apply Subtype.ext
+    rfl
+  have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := by
+    apply Subtype.ext
+    rfl
+  let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
+      ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
+    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
+      (subpath_apply_mem hγ ha hb)
+  let qbc : Path (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i)
+      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
+    (γ.subpath (Icc.convexComb lo hi b') (Icc.convexComb lo hi c')).codRestrict
+      (subpath_apply_mem hγ hb hc)
+  let qac : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
+      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
+    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
+      (subpath_apply_mem hγ ha hc)
+  have hab' : (p.subpath a' b').cast hpa hpb = qab := by
+    apply Path.ext
+    funext t
+    apply Subtype.ext
+    simp only [qab, Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
+    exact congrArg γ (convexComb_convexComb lo hi a' b' t).symm
+  have hbc' : (p.subpath b' c').cast hpb hpc = qbc := by
+    apply Path.ext
+    funext t
+    apply Subtype.ext
+    simp only [qbc, Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
+    exact congrArg γ (convexComb_convexComb lo hi b' c' t).symm
+  have hac' : (p.subpath a' c').cast hpa hpc = qac := by
+    apply Path.ext
+    funext t
+    apply Subtype.ext
+    simp only [qac, Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
+    exact congrArg γ (convexComb_convexComb lo hi a' c' t).symm
+  have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
+      (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
+    rw [← hab', ← hbc', ← hac']
+    exact Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
+  have hmap := congrArg (F i).map hquot
+  change (F i).map (Path.Homotopic.Quotient.mk qab ≫
+    Path.Homotopic.Quotient.mk qbc) = _ at hmap
+  rw [Functor.map_comp] at hmap
+  dsimp only [qab, qbc, qac] at hmap
+  simp only [locVal]
+  slice_lhs 3 4 => simp
+  simp only [Category.id_comp]
+  slice_lhs 2 3 => rw [hmap]
 
 include hF in
 private lemma pathVal_congr {x y x' y' : X} (P : Path x y) (Q : Path x' y') (hx : x = x')
@@ -471,7 +517,8 @@ private lemma trans_apply_of_ge {x y z : X} (γ : Path x y) (δ : Path y z) {u :
   rw [Path.trans_apply]
   split_ifs with h
   · have hu' : (u : ℝ) = 1 / 2 := le_antisymm h hu
-    rw [show v = 0 from Subtype.ext (by rw [hv, hu']; norm_num), δ.source]
+    have hv_zero : v = 0 := Subtype.ext (by rw [hv, hu']; norm_num)
+    rw [hv_zero, δ.source]
     convert γ.target using 2
     exact Subtype.ext (by norm_num [hu'])
   · exact congrArg δ (Subtype.ext hv.symm)
@@ -491,7 +538,8 @@ private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : �
   refine trans_apply_of_le γ δ ?_ _ ?_
   · rw [coe_pt (by omega : k ≤ N + N), div_le_iff₀ (by push_cast; positivity)]
     push_cast
-    linarith [show (k : ℝ) ≤ N by exact_mod_cast hk]
+    have hk' : (k : ℝ) ≤ N := by exact_mod_cast hk
+    linarith
   · rw [coe_pt hk, coe_pt (by omega : k ≤ N + N)]
     push_cast
     field_simp
@@ -504,7 +552,8 @@ private lemma trans_pt_right {x y z : X} (γ : Path x y) (δ : Path y z) {N : �
     refine trans_apply_of_ge γ δ ?_ _ ?_
     · rw [coe_pt (by omega : N + k ≤ N + N), le_div_iff₀ (by push_cast; positivity)]
       push_cast
-      linarith [show (0 : ℝ) ≤ k by positivity]
+      have hk' : (0 : ℝ) ≤ k := by positivity
+      linarith
     · rw [coe_pt hk, coe_pt (by omega : N + k ≤ N + N)]
       push_cast
       field_simp
@@ -518,7 +567,8 @@ private lemma trans_subpath_left {x y z : X} (γ : Path x y) (δ : Path y z) {N 
   refine trans_apply_of_le γ δ ?_ _ ?_
   · rw [coe_convexComb_pt (by omega : k < N + N), div_le_iff₀ (by push_cast; positivity)]
     push_cast
-    linarith [show (k : ℝ) + 1 ≤ N by exact_mod_cast hk, t.2.2]
+    have hk' : (k : ℝ) + 1 ≤ N := by exact_mod_cast hk
+    linarith [t.2.2]
   · rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : k < N + N)]
     push_cast
     field_simp
@@ -532,7 +582,8 @@ private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N
   refine trans_apply_of_ge γ δ ?_ _ ?_
   · rw [coe_convexComb_pt (by omega : N + k < N + N), le_div_iff₀ (by push_cast; positivity)]
     push_cast
-    linarith [show (0 : ℝ) ≤ k by positivity, t.2.1]
+    have hk' : (0 : ℝ) ≤ k := by positivity
+    linarith [t.2.1]
   · rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : N + k < N + N)]
     push_cast
     field_simp
@@ -716,7 +767,7 @@ def glue : _root_.FundamentalGroupoid X ⥤ D where
     exact lift_trans hU F hF γ δ
 
 /-- The glued functor restricts to `F i` on the fundamental groupoid of `U i`. -/
-theorem map_subtypeVal_comp_glue (i : ι) :
+@[simp] theorem map_subtypeVal_comp_glue (i : ι) :
     map (ContinuousMap.subtypeVal (U i)) ⋙ glue hU F hF = F i := by
   refine CategoryTheory.Functor.ext (fun a ↦ (obj_eq hU F hF i a.as.2).symm) fun a b γ ↦ ?_
   induction γ using Path.Homotopic.Quotient.ind with | mk γ =>
