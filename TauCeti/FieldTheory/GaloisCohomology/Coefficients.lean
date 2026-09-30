@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.Galois.Restriction
@@ -73,6 +74,8 @@ are strictly larger than `Kˣ`.
 
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
+* `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
+  `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
 * `TauCeti.mem_H0_fixingSubgroup_unitsCoeff_iff`: a unit of `Kˢ` fixed by the subgroup fixing
   `σ(L)` comes from `Lˣ`.
@@ -133,6 +136,22 @@ instance kummerCoeff_continuousSMul :
     refine ⟨fun h => ?_, fun h => Additive.toMul.injective (Subtype.ext (by simpa using h))⟩
     simpa using
       congrArg (fun v : KummerCoeff K n => (v.toMul : (SeparableClosure K)ˣ)) h
+
+variable {K n} in
+/-- **`G_K` acts trivially on `μₙ` when `K` contains a primitive `n`th root of unity `ζ`**: every
+`n`th root of unity of `Kˢ` is then a power of `ζ`, which `G_K` fixes. -/
+theorem smul_kummerCoeff_eq_self [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
+    (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n) : g • x = x := by
+  have hζs := (hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).isUnit_unit
+    (NeZero.ne n)
+  obtain ⟨i, -, hi⟩ := hζs.eq_pow_of_mem_rootsOfUnity x.toMul.2
+  have hx : (((x.toMul : rootsOfUnity n (SeparableClosure K)) : (SeparableClosure K)ˣ) :
+      SeparableClosure K) = algebraMap K _ ζ ^ i := by
+    rw [← hi, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
+  refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
+  simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
+    MonoidHom.coe_ofClass]
+  rw [hx, map_pow, AlgEquiv.commutes]
 
 /-! ### The two maps of the Kummer sequence -/
 

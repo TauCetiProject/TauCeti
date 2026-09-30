@@ -18,7 +18,7 @@ the normal form modulo `λ_2(F)` of the relators with `q = 2` of odd rank. The d
 `TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Basic`, whose tails are
 spanned by the `2`-powers of the generators `x₂, …, x_n`, feeds the successive approximation with
 tails
-(`TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_range_sup_basisModificationTail_eq_top`):
+(`TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top`):
 a continuous automorphism of `F` carries `r` exactly to
 
   `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n) * t₂ ⋯ t_n`,
@@ -82,23 +82,25 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_mul_padicPow (
           demushkinWordTwoOdd_mem_pLowerCentralSeries_one two_pos _ _⟩ := by
     rw [h, gradedMk_demushkinWordTwoOdd_eq_gradedMk_demushkinWordTwoOddTop le_rfl]
   -- The tails sit on the generators `x₂, …, x_n`, which are the entries of the tail of the list.
-  have hl : ∀ i, (degreeOneBasis 2 (Fin (2 * m + 1))).repr
-      (gradedMk 2 (freeProP 2 (Fin (2 * m + 1))) 1 r) (Sum.inl i) = 0 →
+  have hl : ∀ i ∈ {i | (degreeOneBasis 2 (Fin (2 * m + 1))).repr
+      (gradedMk 2 (freeProP 2 (Fin (2 * m + 1))) 1 r) (Sum.inl i) = 0},
         i ∈ [] ++ (List.finRange (2 * m + 1)).tail := by
     intro i hi
-    rw [hcls, degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl_eq_zero_iff le_rfl] at hi
+    rw [Set.mem_ofPred_eq, hcls,
+      degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl_eq_zero_iff le_rfl] at hi
     rw [List.nil_append, List.finRange_succ, List.tail_cons, List.mem_map]
     obtain ⟨j, rfl⟩ := (Fin.exists_succ_eq (x := i)).mpr fun h0 ↦ hi (by rw [h0, Fin.val_zero])
     exact ⟨j, List.mem_finRange j, rfl⟩
   have hspan : ∀ k (hk : 1 ≤ k), LinearMap.range (basisModificationDelta 2 (Fin (2 * m + 1)) hk
-      (gradedMk 2 (freeProP 2 (Fin (2 * m + 1))) 1 r)) ⊔ basisModificationTail 2 (Fin (2 * m + 1))
-        (gradedMk 2 (freeProP 2 (Fin (2 * m + 1))) 1 r) (k + 1) = ⊤ := by
+      (gradedMk 2 (freeProP 2 (Fin (2 * m + 1))) 1 r)) ⊔ gradedPowIterSpan 2 (Fin (2 * m + 1))
+        {i | (degreeOneBasis 2 (Fin (2 * m + 1))).repr
+          (gradedMk 2 (freeProP 2 (Fin (2 * m + 1))) 1 r) (Sum.inl i) = 0} (k + 1) = ⊤ := by
     intro k hk
-    rw [hcls]
+    rw [hcls, ← basisModificationTail_def]
     exact range_basisModificationDelta_sup_basisModificationTail_eq_top_demushkinWordTwoOdd
       ⟨m, rfl⟩ le_rfl hk
   obtain ⟨e, t, ht, ht2, he⟩ :=
-    exists_continuousMulEquiv_apply_eq_of_range_sup_basisModificationTail_eq_top r _ h []
+    exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top r _ h _ []
       (List.finRange (2 * m + 1)).tail ((List.nodup_finRange _).sublist (List.tail_sublist _)) hl
       hspan
   choose a hdiv ha using fun i ↦
