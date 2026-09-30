@@ -38,6 +38,9 @@ element of `F · k'` separable over `k'` already lies in `k'`.
   a common overfield is linearly disjoint from `F`.
 * `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: a linearly independent
   family of separable elements stays linearly independent after extending scalars from `k` to `F`.
+* `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn_of_isSeparable`: a linearly
+  independent family in `F` stays linearly independent after extending scalars from `k` to a
+  separable extension `k'`.
 * `TauCeti.IntermediateField.eq_of_le_of_adjoin_le_of_isIntegrallyClosedIn`: a finite separable
   extension of `k` inside `E` is determined by its compositum with `F`.
 * `TauCeti.mem_range_algebraMap_of_mem_adjoin_of_isSeparable_of_isIntegrallyClosedIn`: an element
@@ -185,6 +188,20 @@ theorem linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn
   convert h using 1
   ext i
   rfl
+
+/-- **Linear independence over `k` persists over a separable extension `k'`** (Stichtenoth,
+Proposition 3.6.1(b)): if `k` is relatively algebraically closed in `F` and `k' / k` is separable,
+then a family of elements of `F` linearly independent over `k` stays linearly independent over
+`k'` inside a common overfield `E`.
+
+This is the companion of `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`,
+which extends scalars on the other side of the linearly disjoint pair `F`, `k'`. -/
+theorem linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn_of_isSeparable
+    (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable k k'] {ι : Type*} {v : ι → F}
+    (hv : LinearIndependent k v) : LinearIndependent k' (algebraMap F E ∘ v) :=
+  ((linearDisjoint_fieldRange_of_isIntegrallyClosedIn (E := E) hex).linearIndependent_right'
+    hv).map_of_injective_injective (IsScalarTower.toAlgHom k k' E).equivFieldRange
+    (AddMonoidHom.id E) (by simp) (by simp) fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl
 
 /-! ### Constants of the compositum -/
 

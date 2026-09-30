@@ -338,7 +338,7 @@ theorem isEmpty_commute_first (D : GridRectangleDecomposition x z) (h : D.HasDis
       ((x.mk_mem_pointSet D.second.left (x D.second.left)).mpr rfl)
       ((D.first.mem_toGridRectangle_interior _).mpr ⟨hcols.2, hrows.2⟩)
   · intro p hleft hright
-    exact (D.first.mem_target_pointSet_iff_of_ne hleft hright).symm
+    exact (D.first.mem_target_pointSet_iff_of_ne hleft hright).mpr
   · exact h₂
 
 /-- Reordering two empty rectangles with disjoint side columns leaves the new second rectangle
@@ -389,9 +389,9 @@ theorem isEmpty_commute_second (D : GridRectangleDecomposition x z) (h : D.HasDi
     exact D.second.notMem_interior_of_isEmpty h₂ D.first.left_top_mem_target
       ((D.mem_interior_second_iff h _).mpr ⟨hcols.2, hrows.1⟩)
   · intro p hleft hright
-    exact (D.commute h).first.mem_target_pointSet_iff_of_ne
+    exact ((D.commute h).first.mem_target_pointSet_iff_of_ne
       (by simpa only [commute_first_left] using hleft)
-      (by simpa only [commute_first_right] using hright)
+      (by simpa only [commute_first_right] using hright)).mp
   · exact h₁
 
 end GridRectangleDecomposition

@@ -78,6 +78,9 @@ continuous dual is the transpose of a continuous automorphism of `freeProP p X`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_continuousZModDualMap_eq`: for finite `X`, every
   linear automorphism of the continuous `𝔽_p`-dual of `freeProP p X` is the transpose of a
   continuous automorphism.
+* `exists_continuousMulEquiv_continuousZModDualMap_eq_and_apply_of_eq_of_forall_toMul_of_eq`:
+  the continuous automorphism can be chosen to fix every generator at which the linear
+  automorphism does not change the values of characters.
 
 ## References
 
@@ -161,30 +164,21 @@ theorem characterOfFun_of (f : X → ZMod p) (x : X) :
     characterOfFun p X f (of x) = Multiplicative.ofAdd (f x) := by
   simp [characterOfFun]
 
-/-- Evaluation of a continuous `𝔽_p`-valued character at the generators, as an additive map. -/
-private noncomputable def evalOfAddMonoidHom :
-    continuousZModDual p (freeProP p X) →+ (X → ZMod p) where
-  toFun φ x := Multiplicative.toAdd (Additive.toMul φ (of x))
-  map_zero' := funext fun x ↦ by simp
-  map_add' φ ψ := funext fun x ↦ by simp [toMul_add]
-
 /-- **The continuous `𝔽_p`-dual of a free pro-`p` group is `𝔽_p^X`.** Evaluation at the generators
 identifies the continuous characters of `freeProP p X` with the arbitrary functions `X → 𝔽_p`, as
 `𝔽_p`-vector spaces; the inverse is `TauCeti.freeProP.characterOfFun`. No finiteness of `X` is
 needed. -/
 noncomputable def continuousZModDualEquiv :
     continuousZModDual p (freeProP p X) ≃ₗ[ZMod p] (X → ZMod p) where
-  toFun := evalOfAddMonoidHom p X
-  map_add' := map_add _
-  map_smul' := ZMod.map_smul _
+  __ := LinearMap.pi fun x ↦ continuousZModDual.evalₗ (of x)
   invFun f := Additive.ofMul (characterOfFun p X f)
-  left_inv φ := Additive.toMul.injective <| hom_ext fun x ↦ by simp [evalOfAddMonoidHom]
-  right_inv f := funext fun x ↦ by simp [evalOfAddMonoidHom]
+  left_inv φ := Additive.toMul.injective <| hom_ext fun x ↦ by simp
+  right_inv f := funext fun x ↦ by simp
 
 @[simp]
 theorem continuousZModDualEquiv_apply (φ : continuousZModDual p (freeProP p X)) (x : X) :
-    continuousZModDualEquiv p X φ x = Multiplicative.toAdd (Additive.toMul φ (of x)) :=
-  (rfl)
+    continuousZModDualEquiv p X φ x = Multiplicative.toAdd (Additive.toMul φ (of x)) := by
+  simp [continuousZModDualEquiv]
 
 @[simp]
 theorem continuousZModDualEquiv_symm_apply (f : X → ZMod p) :
@@ -317,6 +311,65 @@ theorem exists_continuousMulEquiv_continuousZModDualMap_eq
   refine Additive.toMul.injective (hom_ext fun j ↦ ?_)
   rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe,
     continuousMulEquivOfTopologicallyGenerates_of, key]
+
+/-- **A linear automorphism of the dual is the transpose of an automorphism fixing prescribed
+generators.** If `S` acts trivially on the values at the generators `x_j`, `j ∈ T`, in the sense
+that `(S χ) (x_j) = χ (x_j)` for every character `χ`, then `S` is the transpose of a continuous
+automorphism `e` with `e (x_j) = x_j` for every `j ∈ T`. -/
+theorem exists_continuousMulEquiv_continuousZModDualMap_eq_and_apply_of_eq_of_forall_toMul_of_eq
+    (S : continuousZModDual p (freeProP p X) ≃ₗ[ZMod p] continuousZModDual p (freeProP p X))
+    {T : Set X} (hT : ∀ j ∈ T, ∀ χ : continuousZModDual p (freeProP p X),
+      (S χ).toMul (of j) = χ.toMul (of j)) :
+    ∃ e : freeProP p X ≃ₜ* freeProP p X,
+      (∀ χ : continuousZModDual p (freeProP p X),
+        (e : freeProP p X →ₜ* freeProP p X).continuousZModDualMap χ = S χ) ∧
+      ∀ j ∈ T, e (of j) = of j := by
+  classical
+  -- Some transpose `e₀` of `S` sends each `x_j`, `j ∈ T`, to an element congruent to `x_j` modulo
+  -- the Frattini subgroup; composing `e₀` with the automorphism `x_j ↦ e₀⁻¹ (x_j)` (`j ∈ T`),
+  -- `x_j ↦ x_j` (`j ∉ T`), which exists by Burnside's basis theorem and has trivial transpose,
+  -- corrects it.
+  obtain ⟨e₀, he₀⟩ := exists_continuousMulEquiv_continuousZModDualMap_eq S
+  let y : X → freeProP p X := fun j ↦ if j ∈ T then e₀.symm (of j) else of j
+  -- Every character takes the same value at `y_j` as at `x_j`.
+  have hy (j : X) (χ : continuousZModDual p (freeProP p X)) : χ.toMul (y j) = χ.toMul (of j) := by
+    simp only [y]
+    split_ifs with hj
+    · have h := he₀ (S.symm χ)
+      rw [LinearEquiv.apply_symm_apply] at h
+      have h' := hT j hj (S.symm χ)
+      rw [LinearEquiv.apply_symm_apply] at h'
+      calc χ.toMul (e₀.symm (of j))
+          = ((e₀ : freeProP p X →ₜ* freeProP p X).continuousZModDualMap (S.symm χ)).toMul
+            (e₀.symm (of j)) := by rw [h]
+        _ = χ.toMul (of j) := by
+          rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe,
+            e₀.apply_symm_apply, h']
+    · rfl
+  -- So `y_j ≡ x_j` modulo the Frattini subgroup, and `y` generates topologically.
+  have hmk : ⇑(QuotientGroup.mk' (proPFrattini p (freeProP p X))) ∘ y =
+      ⇑(QuotientGroup.mk' (proPFrattini p (freeProP p X))) ∘ of := by
+    funext j
+    rw [Function.comp_apply, Function.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+      QuotientGroup.eq, proPFrattini_eq_iInf_ker, Subgroup.mem_iInf]
+    intro φ
+    rw [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass, map_mul,
+      map_inv, ← toMul_ofMul φ, hy j (Additive.ofMul φ), inv_mul_cancel]
+  have hgen : (Subgroup.closure (Set.range y)).topologicalClosure = ⊤ := by
+    rw [topologicallyGenerates_iff_frattiniQuotient (isProP_freeProP p X), ← Set.range_comp, hmk,
+      Set.range_comp, ← topologicallyGenerates_iff_frattiniQuotient (isProP_freeProP p X)]
+    exact topologicalClosure_closure_range_of_eq_top p X
+  refine ⟨(continuousMulEquivOfTopologicallyGenerates y hgen).trans e₀, fun χ ↦ ?_, fun j hj ↦ ?_⟩
+  · refine Additive.toMul.injective (hom_ext fun j ↦ ?_)
+    have h := hy j ((e₀ : freeProP p X →ₜ* freeProP p X).continuousZModDualMap χ)
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
+      ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe] at h
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe,
+      ContinuousMulEquiv.trans_apply, continuousMulEquivOfTopologicallyGenerates_of, ← he₀ χ,
+      ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe]
+    exact h
+  · rw [ContinuousMulEquiv.trans_apply, continuousMulEquivOfTopologicallyGenerates_of]
+    simp only [y, ite_eq_left hj, e₀.apply_symm_apply]
 
 end Automorphism
 

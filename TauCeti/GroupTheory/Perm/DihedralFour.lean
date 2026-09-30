@@ -41,7 +41,7 @@ noncomputable def wreathTwoMulEquivDihedralGroupFour :
     WreathProduct (Multiplicative (ZMod 2)) (Fin 2) ≃* DihedralGroup 4 := by
   let e₁ : WreathProduct (Multiplicative (ZMod 2)) (Fin 2) ≃*
       wreathTwoToPermFour.range :=
-    wreathTwoSylowFourEquiv.trans (MulEquiv.subgroupCongr wreathTwoSylowFour_toSubgroup)
+    MonoidHom.ofInjective wreathTwoToPermFour_injective
   let e₂ : wreathTwoToPermFour.range ≃* referenceSubgroup 4 ⟨2, by simp⟩ :=
     Subgroup.congrOfMapEq (MulAut.conj wreathTwoFourConjugator)
       wreathTwoToPermFour_range_map_conj_eq_referenceSubgroup
@@ -58,15 +58,7 @@ theorem coe_referenceSubgroupFourTwoMulEquivDihedralGroup_symm_apply_wreath
         (MulAut.conj wreathTwoFourConjugator) (wreathTwoToPermFour w) := by
   simp only [wreathTwoMulEquivDihedralGroupFour, MulEquiv.trans_apply,
     MulEquiv.symm_apply_apply]
-  calc
-    _ = (MulAut.conj wreathTwoFourConjugator)
-        ((MulEquiv.subgroupCongr wreathTwoSylowFour_toSubgroup)
-          (wreathTwoSylowFourEquiv w) : Perm (Fin 4)) :=
-      Subgroup.coe_congrOfMapEq_apply _ _ _
-    _ = _ := by
-      -- The remaining subgroup equivalence only changes the subtype of the permutation.
-      change (MulAut.conj wreathTwoFourConjugator)
-        (wreathTwoSylowFourEquiv w : Perm (Fin 4)) = _
-      rw [coe_wreathTwoSylowFourEquiv, MulAut.conj_apply]
+  refine (Subgroup.coe_congrOfMapEq_apply _ _ _).trans ?_
+  rw [MonoidHom.ofInjective_apply]
 
 end TauCeti

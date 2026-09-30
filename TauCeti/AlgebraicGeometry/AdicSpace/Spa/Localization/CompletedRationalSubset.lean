@@ -54,6 +54,9 @@ subject only to the hypothesis `A₀ ≤ A⁺` that the homeomorphism already ca
 * `TauCeti.ValuationSpectrum.bijOn_preimage_spaCompletedLocalizationHomeomorph_spaRationalFamily`:
   Wedhorn Proposition 8.2 (2), second assertion — the bijection between the rational subsets of
   `Spa (A, A⁺)` contained in `R(T/s)` and the rational subsets of `Spa (A⟨T/s⟩, A_U⁺)`.
+* `TauCeti.ValuationSpectrum.exists_mem_spaRationalOpens_locOpensComap_eq`: its surjectivity half
+  for `Opens`, for every subring `A⁺` — each rational open of `Spa (A⟨T/s⟩, A_U⁺)` is
+  `locOpensComap` of a rational open of `Spa (A, A⁺)` contained in `R(T/s)`.
 
 ## References
 
@@ -360,6 +363,35 @@ theorem spaBasicOpen_image_toCompletionLoc_eq_top :
     spaBasicOpen (completedPlusSubring P Aplus T s S hden) (T.image (toCompletionLoc P T s S hden))
       (algebraMap A S s : UniformSpace.Completion S) = ⊤ := by
   simpa using locOpensComap_spaBasicOpen_self P Aplus T s S hden
+
+/-- **Every rational open of `Spa (A⟨T/s⟩, A_U⁺)` is the pullback of a rational open of
+`Spa (A, A⁺)` contained in `R(T/s)`**, when `T` spans an open ideal. This is the surjectivity half
+of Wedhorn's Proposition 8.2 (2)
+(`bijOn_preimage_spaCompletedLocalizationHomeomorph_spaRationalFamily`), stated for `Opens` and
+for the pullback `locOpensComap` along `spaComapLoc`; unlike that statement, it holds for every
+subring `A⁺`, with no hypothesis `P.ringOfDefinition ≤ A⁺`. In contrast to the set-level
+`exists_mem_spaRationalFamily_spaComapLoc_preimage_eq`, the rational open it provides in
+`Spa (A, A⁺)` lies inside `R(T/s)`. -/
+theorem exists_mem_spaRationalOpens_locOpensComap_eq
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ W ∈ spaRationalOpens (completedPlusSubring P Aplus T s S hden), ∃ V ∈ spaRationalOpens Aplus,
+      V ≤ spaBasicOpen Aplus T s ∧ locOpensComap P Aplus T s S hden V = W := by
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ : IsHuberRing A := ⟨⟨P⟩⟩
+  intro W hW
+  obtain ⟨W', hW', hW'W⟩ := exists_mem_spaRationalFamily_spaComapLoc_preimage_eq P Aplus T s S hden
+    W (mem_spaRationalOpens.mp hW)
+  obtain ⟨T', s', hT', rfl⟩ := mem_spaRationalFamily_iff.mp hW'
+  refine ⟨spaBasicOpen Aplus T' s' ⊓ spaBasicOpen Aplus T s,
+    inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT')
+      (spaBasicOpen_mem_spaRationalOpens hT), inf_le_right, ?_⟩
+  -- the pullback of `R(T/s)` is everything, so meeting with it changes nothing
+  rw [locOpensComap_inf, locOpensComap_spaBasicOpen_self, inf_top_eq, Opens.ext_iff, ← hW'W]
+  exact Set.ext fun _ ↦ (mem_locOpensComap ..).trans mem_spaBasicOpen
 
 end locOpensComap
 
