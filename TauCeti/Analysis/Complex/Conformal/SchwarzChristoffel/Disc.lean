@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Analysis.Complex.UnitDisc.Basic
+import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
@@ -151,6 +152,13 @@ interpretation is asserted on the open unit disc. -/
 noncomputable def schwarzChristoffelDiscPrimitive (w : ι → Circle) (e : ι → ℝ) (ζ : ℂ) : ℂ :=
   wedgeIntegral 0 ζ (schwarzChristoffelDiscIntegrand w e)
 
+/-- The normalized disc primitive as a wedge integral from the disc centre. -/
+theorem schwarzChristoffelDiscPrimitive_def (w : ι → Circle) (e : ι → ℝ) (ζ : ℂ) :
+    schwarzChristoffelDiscPrimitive w e ζ =
+      wedgeIntegral 0 ζ (schwarzChristoffelDiscIntegrand w e) := by
+  unfold schwarzChristoffelDiscPrimitive
+  exact Eq.refl _
+
 /-- The normalized disc Schwarz--Christoffel primitive vanishes at the centre of the disc. -/
 @[simp]
 theorem schwarzChristoffelDiscPrimitive_apply_zero (w : ι → Circle) (e : ι → ℝ) :
@@ -166,7 +174,7 @@ theorem hasDerivAt_schwarzChristoffelDiscPrimitive (w : ι → Circle) (e : ι �
     (differentiableOn_schwarzChristoffelDiscIntegrand w e).continuousOn hζ
 
 /-- The derivative of the normalized disc Schwarz--Christoffel primitive on the open unit disc. -/
-theorem deriv_schwarzChristoffelDiscPrimitive (w : ι → Circle) (e : ι → ℝ) {ζ : ℂ}
+@[simp] theorem deriv_schwarzChristoffelDiscPrimitive (w : ι → Circle) (e : ι → ℝ) {ζ : ℂ}
     (hζ : ζ ∈ ball (0 : ℂ) 1) :
     deriv (schwarzChristoffelDiscPrimitive w e) ζ = schwarzChristoffelDiscIntegrand w e ζ :=
   (hasDerivAt_schwarzChristoffelDiscPrimitive w e hζ).deriv
@@ -262,7 +270,11 @@ private theorem exists_affine_transport
   rw [h2, Finset.sum_mul, ← sub_eq_add_neg, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [hw i, hc_def]
-  linear_combination (e i : ℂ) * cayley_simple_fraction (a i) hζ
+  have hζ1 := hne ζ hζ
+  have hζa : ζ ≠ (a i - I) / (a i + I) := by
+    rw [← hw i]
+    exact ne_of_mem_ball_of_norm_eq_one hζ (Circle.norm_coe (w i))
+  linear_combination (e i : ℂ) * cayley_simple_fraction (a i) hζ1 hζa
 
 /-- The normalized disc primitive is the half-plane primitive in inverse Cayley coordinates,
 with its affine constants fixed by the value and derivative at the disc centre. -/

@@ -19,6 +19,7 @@ map is an equivalence — together with the basic properties of the `Circle` act
 disc is nontrivial, a rotation is determined by its value at any one nonzero point, and hence the
 circle acts faithfully. It also records the slit-plane criterion
 `TauCeti.one_sub_div_mem_slitPlane` for a disc point and a circle point.
+It also records that a point of the open disc differs from every point of norm one.
 -/
 
 public section
@@ -26,6 +27,14 @@ public section
 namespace TauCeti
 
 open Complex Metric
+
+/-- A point of the open unit disc differs from every point of norm one. -/
+theorem ne_of_mem_ball_of_norm_eq_one {ζ w : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1)
+    (hw : ‖w‖ = 1) : ζ ≠ w := by
+  intro h
+  have hnorm := congrArg norm h
+  rw [hw] at hnorm
+  exact (mem_ball_zero_iff.mp hζ).ne hnorm
 
 /-- For `w` on the unit circle and `ζ` in the open unit disc, `1 - ζ / w` lies in the slit plane,
 since `ζ / w` has norm less than one. -/

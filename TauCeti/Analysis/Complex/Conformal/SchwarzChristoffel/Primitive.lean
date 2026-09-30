@@ -48,7 +48,6 @@ separate boundary analysis.
   characterize it on the upper half-plane.
 * `TauCeti.norm_schwarzChristoffelPrimitive_sub_le_integral` -- along an affine segment of the
   upper half-plane it moves by at most the integral of any integrable bound on its speed.
-* `TauCeti.ne_zero_of_injOn_const_mul_add` -- an injective affine image has a nonzero multiplier.
 
 ## References
 
@@ -65,15 +64,6 @@ namespace TauCeti
 open Complex MeasureTheory Set UpperHalfPlane
 
 variable {ι : Type*} [Fintype ι]
-
-/-- An affine image of a function that is injective on the upper half-plane has a nonzero
-linear coefficient. -/
-theorem ne_zero_of_injOn_const_mul_add {f : ℂ → ℂ} {A B : ℂ}
-    (h : InjOn (fun z => A * f z + B) upperHalfPlaneSet) : A ≠ 0 := by
-  intro hA
-  have hne := h (show Complex.I ∈ upperHalfPlaneSet by simp [upperHalfPlaneSet])
-    (show 2 * Complex.I ∈ upperHalfPlaneSet by simp [upperHalfPlaneSet]) (by simp [hA])
-  norm_num at hne
 
 /-- The **normalized Schwarz--Christoffel primitive** associated to real prevertices `a` and
 turning exponents `e`.  It is the integral of `schwarzChristoffelIntegrand a e` from the chosen

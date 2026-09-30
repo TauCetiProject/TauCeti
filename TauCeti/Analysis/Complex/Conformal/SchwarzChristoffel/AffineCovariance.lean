@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
-public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
@@ -49,7 +49,6 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.hasDerivAt_I_mul_one_add_div_one_sub`: the derivative of the inverse transform.
 * `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
 * `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
-* `TauCeti.ne_of_mem_ball_of_norm_eq_one`: a disc point differs from a circle point.
 * `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
 * `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
@@ -64,14 +63,6 @@ public section
 open Bornology Complex Filter Metric Set Topology
 
 namespace TauCeti
-
-/-- A point of the open unit disc differs from every point of norm one. -/
-theorem ne_of_mem_ball_of_norm_eq_one {ζ w : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1)
-    (hw : ‖w‖ = 1) : ζ ≠ w := by
-  intro h
-  have hnorm := congrArg norm h
-  rw [hw] at hnorm
-  exact (mem_ball_zero_iff.mp hζ).ne hnorm
 
 /-- The denominator of the Cayley transform does not vanish on the closed upper half-plane. -/
 theorem add_I_ne_zero_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) : z + I ≠ 0 := fun h => by
@@ -310,17 +301,15 @@ theorem boundaryCayley_ne_one (x : ℝ) : boundaryCayley x ≠ 1 := by
 
 /-- Under the inverse Cayley transform `c`, the simple fraction `c' / (c - x)` at a real point `x`
 splits into the simple fraction at its Cayley image and one at `1`. -/
-theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ : ζ ∈ ball (0 : ℂ) 1) :
+theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ1 : ζ ≠ 1)
+    (hζx : ζ ≠ ((x : ℂ) - I) / ((x : ℂ) + I)) :
     1 / (I * (1 + ζ) / (1 - ζ) - x) * (2 * I / (1 - ζ) ^ 2) =
       1 / (ζ - ((x : ℂ) - I) / ((x : ℂ) + I)) + 1 / (1 - ζ) := by
-  have h1 : 1 - ζ ≠ 0 := sub_ne_zero.mpr
-    (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
+  have h1 : 1 - ζ ≠ 0 := sub_ne_zero.mpr hζ1.symm
   have hxI : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
   have hD : I * (1 + ζ) - x * (1 - ζ) ≠ 0 := by
-    have hne := ne_of_mem_ball_of_norm_eq_one hζ (Circle.norm_coe (boundaryCayley x))
-    rw [coe_boundaryCayley] at hne
     intro h
-    apply hne
+    apply hζx
     rw [eq_div_iff hxI]
     linear_combination h
   have hc : I * (1 + ζ) / (1 - ζ) - x = (I * (1 + ζ) - x * (1 - ζ)) / (1 - ζ) := by

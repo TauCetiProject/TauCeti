@@ -133,6 +133,7 @@ theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
 @[fun_prop]
 theorem continuous_boundaryCayley : Continuous boundaryCayley := by
   apply continuous_induced_rng.mpr
+  -- The circle's topology is induced by its coercion to `ℂ`, so expose that coercion here.
   change Continuous (fun x : ℝ => (boundaryCayley x : ℂ))
   simp_rw [coe_boundaryCayley]
   exact Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ by
