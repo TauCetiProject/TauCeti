@@ -198,11 +198,10 @@ private theorem eval₂_rename_quinticF20Invariant (x : Fin 5 → R) (σ : Equiv
   simp only [Fin.isValue, Fin.reduceAdd, Fin.reduceSub]
 
 /-- The roots `0, 1, -1, i, -i` of `X⁵ - X`, in a fixed order. -/
-@[expose]
 noncomputable def rootsXPowFiveSubX : Fin 5 → ℂ := ![0, 1, -1, Complex.I, -Complex.I]
 
 /-- The explicit entries of `rootsXPowFiveSubX`. -/
-theorem rootsXPowFiveSubX_def : rootsXPowFiveSubX = ![0, 1, -1, Complex.I, -Complex.I] := rfl
+theorem rootsXPowFiveSubX_def : rootsXPowFiveSubX = ![0, 1, -1, Complex.I, -Complex.I] := (rfl)
 
 /-- `C i` squares to `-1` in `ℂ[X]`. -/
 private theorem C_I_sq : (C Complex.I : ℂ[X]) ^ 2 = -1 := by
@@ -210,11 +209,7 @@ private theorem C_I_sq : (C Complex.I : ℂ[X]) ^ 2 = -1 := by
 
 /-- The factorization of `X⁵ - X` over `ℂ` using `rootsXPowFiveSubX`. -/
 theorem prod_X_sub_C_rootsXPowFiveSubX :
-    (X ^ 5 - X : ℤ[X]).map (Int.castRingHom ℂ) =
-      ∏ i, (X - C (rootsXPowFiveSubX i)) := by
-  have hshape : (X ^ 5 - X : ℤ[X]).map (Int.castRingHom ℂ) =
-      (X ^ 5 + C (-1) * X + C 0 : ℂ[X]) := by simp [sub_eq_add_neg]
-  rw [hshape]
+    (X ^ 5 - X : ℂ[X]) = ∏ i, (X - C (rootsXPowFiveSubX i)) := by
   simp only [Fin.prod_univ_five, rootsXPowFiveSubX]
   simp
   linear_combination (X ^ 3 - X) * C_I_sq
@@ -223,8 +218,12 @@ open Equiv in
 /-- At `X⁵ - X` the six orbit values are `2`, four times, and `± 4i`. -/
 private theorem specialize_X_pow_five_sub_X :
     quinticF20Spec.specialize ℂ (X ^ 5 + C (-1) * X + C 0) = (X - 2) ^ 4 * (X ^ 2 + 16) := by
+  have hroots : (X ^ 5 + C (-1) * X + C 0 : ℂ[X]) =
+      ∏ i, (X - C (rootsXPowFiveSubX i)) := by
+    convert prod_X_sub_C_rootsXPowFiveSubX using 1
+    simp [sub_eq_add_neg]
   rw [ResolventSpec.specialize_def, map_vietaHom_eq_galResolvent quinticF20Spec.orbitProduct_esymm
-    (by simpa [sub_eq_add_neg] using prod_X_sub_C_rootsXPowFiveSubX),
+    hroots,
     quinticF20Spec_Φ, ← MvPolynomial.map_universalResolvent_eq_galResolvent,
     universalResolvent_quinticF20Invariant, Polynomial.map_prod,
     prod_quinticF20OrbitRepresentatives]

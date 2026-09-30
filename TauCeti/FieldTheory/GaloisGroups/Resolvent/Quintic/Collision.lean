@@ -9,13 +9,14 @@ public import Mathlib.FieldTheory.Separable
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Trinomial
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import Mathlib.Basic.Complex.Basic
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # A collision in the quintic resolvent
 
-The quintic `X⁵ - X` is separable, but Dummit's sextic resolvent has a repeated rational root.
-This file computes the discriminant and sextic factorization. The Galois-image noncontainment
-needed to complete the counterexample to the unrestricted resolvent converse remains to be proved.
+The quintic `X⁵ - X` is separable (with discriminant `-256`), while Dummit's sextic resolvent
+is `(X - 2)⁴ (X² + 16)` and is inseparable with rational root `2`. These computations supply
+the arithmetic part of the collision example for the resolvent converse.
 
 ## Main results
 
@@ -32,35 +33,21 @@ open Polynomial
 
 namespace TauCeti
 
-private theorem monic_X_pow_five_sub_X : (X ^ 5 - X : ℤ[X]).Monic := by monicity!
+/-- The polynomial `X⁵ - X` is monic over `ℤ`. -/
+theorem monic_X_pow_five_sub_X : (X ^ 5 - X : ℤ[X]).Monic := by monicity!
 
 /-- The discriminant of `X⁵ - X` is `-256`. Its nonzero value proves separability over `ℚ`. -/
 theorem discr_X_pow_five_sub_X : (X ^ 5 - X : ℤ[X]).discr = -256 := by
   have h := monic_X_pow_five_sub_X.discr_map (Int.castRingHom ℂ)
+  simp only [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X] at h
   rw [prod_X_sub_C_rootsXPowFiveSubX, discr_prod_X_sub_C] at h
   have hcalc : (∏ i : Fin 5, ∏ j ∈ Finset.Ioi i,
       (rootsXPowFiveSubX i - rootsXPowFiveSubX j) ^ 2) = (-256 : ℂ) := by
-    have h0 : Finset.Ioi (0 : Fin 5) = {1, 2, 3, 4} := by decide
-    have h1 : Finset.Ioi (1 : Fin 5) = {2, 3, 4} := by decide
-    have h2 : Finset.Ioi (2 : Fin 5) = {3, 4} := by decide
-    have h3 : Finset.Ioi (3 : Fin 5) = {4} := by decide
-    have h4 : Finset.Ioi (4 : Fin 5) = ∅ := by decide
-    norm_num [Fin.prod_univ_five, h0, h1, h2, h3, h4, rootsXPowFiveSubX_def,
-      Complex.I_sq, Complex.I_mul_I, ← pow_mul]
-    have hplus : (1 - Complex.I) * (1 + Complex.I) = (2 : ℂ) := by
-      linear_combination -Complex.I_sq
-    have hminus : (-1 - Complex.I) * (-1 + Complex.I) = (2 : ℂ) := by
-      linear_combination -Complex.I_sq
-    have hdouble : (Complex.I + Complex.I) ^ 2 = (-4 : ℂ) := by
-      linear_combination 4 * Complex.I_sq
-    calc
-      4 * ((1 - Complex.I) ^ 2 * (1 + Complex.I) ^ 2) *
-          ((-1 - Complex.I) ^ 2 * (-1 + Complex.I) ^ 2) *
-          (Complex.I + Complex.I) ^ 2 =
-          4 * ((1 - Complex.I) * (1 + Complex.I)) ^ 2 *
-            ((-1 - Complex.I) * (-1 + Complex.I)) ^ 2 *
-            (Complex.I + Complex.I) ^ 2 := by ring
-      _ = -256 := by rw [hplus, hminus, hdouble]; norm_num
+    rw [prod_prod_Ioi_eq_of_two (m := 3), prod_prod_Ioi_eq_of_two (m := 1)]
+    norm_num [Fin.prod_univ_three, Fin.prod_univ_one, Fin.prod_Ioi_zero,
+      Fin.prod_univ_zero, rootsXPowFiveSubX_def]
+    linear_combination (16 * Complex.I ^ 8 - 80 * Complex.I ^ 6 +
+      176 * Complex.I ^ 4 - 240 * Complex.I ^ 2 + 256) * Complex.I_sq
   rw [hcalc] at h
   apply Int.cast_injective (α := ℂ)
   simpa using h.symm
