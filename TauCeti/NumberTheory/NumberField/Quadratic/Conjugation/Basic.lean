@@ -30,6 +30,7 @@ classical genus theory this supports.
 * `NumberField.quadraticConj`: the conjugation `K ≃ₐ[ℚ] K`, sending `θ ↦ -θ`, with
   `quadraticConj_gen` (`quadraticConj θ = -θ`), `quadraticConj_ne_one` and
   `quadraticConj_involutive`.
+* `NumberField.smul_gen_eq_or_eq_neg`: every `ℚ`-automorphism of `K` sends `θ` to `±θ`.
 * `NumberField.ringOfIntegersQuadraticConj`: its restriction to a ring automorphism
   `𝓞 K ≃+* 𝓞 K`, with `coe_ringOfIntegersQuadraticConj`,
   `ringOfIntegersQuadraticConj_gen`, and `ringOfIntegersQuadraticConj_involutive`.
@@ -96,6 +97,16 @@ noncomputable def quadraticConj (hmin : minpoly ℤ θ = X ^ 2 - C d)
   rw [quadraticConj]
   nth_rewrite 1 [← quadraticPowerBasis_gen hgen]
   rw [PowerBasis.equivOfMinpoly_gen, quadraticPowerBasisNeg_gen]
+
+/-- Every `ℚ`-automorphism of `K` sends `θ` to `θ` or to `-θ`, the two square roots of the
+radicand `d`. -/
+theorem smul_gen_eq_or_eq_neg (hmin : minpoly ℤ θ = X ^ 2 - C d) (σ : K ≃ₐ[ℚ] K) :
+    σ • θ = θ ∨ σ • θ = -θ := by
+  have hσ : (σ • θ) ^ 2 = θ ^ 2 := by
+    rw [← smul_pow', gen_sq hmin, smul_algebraMap]
+  rcases mul_eq_zero.1 (show (σ • θ - θ) * (σ • θ + θ) = 0 by linear_combination hσ) with h | h
+  · exact .inl (sub_eq_zero.1 h)
+  · exact .inr (eq_neg_of_add_eq_zero_left h)
 
 /-- **Quadratic conjugation is nontrivial**: it is not the identity, since it sends the nonzero
 generator `θ` to its negative `-θ`. -/
