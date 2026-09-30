@@ -117,6 +117,7 @@ def brInfl : (NormalLayer.ofOpenNormal V).H (unitsFormation K) 2 →+ Br K :=
   (brLevelInfl V).comp (layerBrLevelEquiv V).toAddMonoidHom
 
 /-- `brInfl V` is `brLevelInfl` after the identification `layerBrLevelEquiv`. -/
+@[simp]
 theorem brInfl_apply (x : (NormalLayer.ofOpenNormal V).H (unitsFormation K) 2) :
     brInfl V x = brLevelInfl V (layerBrLevelEquiv V x) :=
   (rfl)
