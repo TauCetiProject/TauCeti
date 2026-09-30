@@ -38,9 +38,10 @@ integrals of cusp forms along geodesics between cusps.
 * `UpperHalfPlane.resToImagAxis_slash_two_of_diagonal`: in weight `2`, the restriction of
   `F ∣[2] d` for a positive diagonal rational matrix `d = diag(a, b)` at `t` is `r` times the
   restriction of `F` at `r t`, where `r = a / b`.
-* `UpperHalfPlane.exists_isBigO_resToImagAxis_rat_slash_exp`: for a cusp form `f` on an
-  arithmetic subgroup and `g ∈ GL(2, ℚ)`, the restriction of `f ∣[k] g` to the imaginary axis is
-  `O(exp (-c t))` for some `c > 0`.
+* `UpperHalfPlane.exists_isBigO_rat_slash_exp`: for a cusp form `f` on an arithmetic subgroup
+  and `g ∈ GL(2, ℚ)`, `f ∣[k] g` is `O(exp (-c Im τ))` at `i∞` for some `c > 0`, and
+  `UpperHalfPlane.exists_isBigO_resToImagAxis_rat_slash_exp`: its restriction to the imaginary axis
+  is `O(exp (-c t))`.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/ResToImagAxis.lean`, Chris Birkbeck,
@@ -183,12 +184,12 @@ theorem resToImagAxis_slash_two_of_diagonal (F : ℍ → ℂ) {d : GL (Fin 2) �
   rw [hsmul, hden, hdetd, abs_of_pos (by exact_mod_cast hd'), mul_assoc, hc, mul_comm]
 
 open Asymptotics Filter in
-/-- **A cusp form slashed by a rational matrix decays exponentially along the imaginary axis**:
-`f ∣[k] g` is a cusp form on the conjugate level `g⁻¹ Γ g`, which is again arithmetic, so it has
-the exponential decay of a cusp form at `i∞`. -/
-theorem exists_isBigO_resToImagAxis_rat_slash_exp {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.IsArithmetic]
+/-- **A cusp form slashed by a rational matrix decays exponentially at `i∞`**: `f ∣[k] g` is a
+cusp form on the conjugate level `g⁻¹ Γ g`, which is again arithmetic, so it has the exponential
+decay of a cusp form at `i∞`, uniformly in the real part. -/
+theorem exists_isBigO_rat_slash_exp {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.IsArithmetic]
     {F : Type*} [FunLike F ℍ ℂ] {k : ℤ} [CuspFormClass F Γ k] (f : F) (g : GL (Fin 2) ℚ) :
-    ∃ c > 0, resToImagAxis (f ∣[k] g) =O[atTop] fun t ↦ Real.exp (-c * t) := by
+    ∃ c > 0, (f ∣[k] g) =O[atImInfty] fun τ ↦ Real.exp (-c * τ.im) := by
   set g' : GL (Fin 2) ℝ := Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g with hg'
   -- the conjugate level is arithmetic; `Rat.castHom ℝ` and `algebraMap ℚ ℝ` agree because ring
   -- homomorphisms out of `ℚ` are unique (`Rat.subsingleton_ringHom`)
@@ -196,10 +197,17 @@ theorem exists_isBigO_resToImagAxis_rat_slash_exp {Γ : Subgroup (GL (Fin 2) ℝ
     simpa [hg', Subsingleton.elim (Rat.castHom ℝ) (algebraMap ℚ ℝ), map_inv]
       using Subgroup.IsArithmetic.conj Γ g⁻¹
   obtain ⟨c, hc, hO⟩ := CuspFormClass.exp_decay_atImInfty' (CuspForm.translate f g')
-  refine ⟨c, hc, ?_⟩
   rw [CuspForm.coe_translate_gl] at hO
-  rw [ModularForm.rat_slash]
-  refine hO.resToImagAxis.congr' EventuallyEq.rfl ?_
+  exact ⟨c, hc, hO⟩
+
+open Asymptotics Filter in
+/-- **A cusp form slashed by a rational matrix decays exponentially along the imaginary axis**,
+the restriction of `exists_isBigO_rat_slash_exp` to the axis. -/
+theorem exists_isBigO_resToImagAxis_rat_slash_exp {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.IsArithmetic]
+    {F : Type*} [FunLike F ℍ ℂ] {k : ℤ} [CuspFormClass F Γ k] (f : F) (g : GL (Fin 2) ℚ) :
+    ∃ c > 0, resToImagAxis (f ∣[k] g) =O[atTop] fun t ↦ Real.exp (-c * t) := by
+  obtain ⟨c, hc, hO⟩ := exists_isBigO_rat_slash_exp f g
+  refine ⟨c, hc, hO.resToImagAxis.congr' EventuallyEq.rfl ?_⟩
   filter_upwards [eventually_gt_atTop 0] with t ht
   simp [ofComplex_apply_of_im_pos, ht]
 
