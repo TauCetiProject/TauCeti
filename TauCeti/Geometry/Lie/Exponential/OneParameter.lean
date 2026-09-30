@@ -29,6 +29,7 @@ abstract Lie-group exponential map.
   one-parameter subgroup with that initial velocity.
 * `TauCeti.expUnitHom_injective`: distinct velocities generate distinct one-parameter subgroups.
 * `TauCeti.expUnitHom_inj`: the resulting equality normal form.
+* `TauCeti.eq_of_forall_exp_smul_eq`: agreeing exponential lines have equal generators.
 * `TauCeti.existsUnique_eq_expUnitHom`: a continuous one-parameter subgroup of `Rˣ` whose
   underlying curve is differentiable at `0` is `expUnitHom x` for a unique `x : R`.
 
@@ -137,6 +138,18 @@ theorem expUnitHom_injective :
 @[simp]
 theorem expUnitHom_inj {x y : R} : expUnitHom x = expUnitHom y ↔ x = y :=
   expUnitHom_injective.eq_iff
+
+/-- **Exponential lines determine their generators.** If `exp (t • x) = exp (t • y)` for every
+real `t` then `x = y`: the two one-parameter subgroups agree, so `expUnitHom_injective` identifies
+their velocities. This replaces differentiating the two lines at `t = 0`. -/
+theorem eq_of_forall_exp_smul_eq {x y : R}
+    (h : ∀ t : ℝ, NormedSpace.exp (t • x) = NormedSpace.exp (t • y)) : x = y := by
+  apply expUnitHom_injective
+  apply ContinuousMonoidHom.ext
+  intro t
+  apply Units.ext
+  rw [← ofAdd_toAdd t]
+  simpa only [expUnitHom_apply, expUnit_coe] using h (Multiplicative.toAdd t)
 
 /-- **The differentiable one-parameter subgroups of `Rˣ` are exactly the exponentials.** A
 continuous one-parameter subgroup whose underlying curve is differentiable at `0` is

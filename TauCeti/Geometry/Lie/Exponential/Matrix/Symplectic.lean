@@ -17,15 +17,10 @@ group: they are exactly the elements of the symplectic Lie algebra
 `LieAlgebra.Symplectic.sp l ℝ`. It is the symplectic companion of the orthogonal characterization
 in `TauCeti/Geometry/Lie/Exponential/Matrix/SpecialOrthogonal.lean`.
 
-Both directions run through the conjugated forms of
-`TauCeti/Algebra/Lie/Symplectic/Basic.lean`. If `A` is skew-adjoint for the canonical
-skew-symmetric matrix `J`, that is `Aᵀ = J * (-A) * J⁻¹`, then `Matrix.exp_transpose` and
-`Matrix.exp_conj` give `(exp A)ᵀ = J * (exp A)⁻¹ * J⁻¹`, which is the symplectic condition. In the
-other direction the hypothesis is available at every time `t`, so the two exponential lines
-`t ↦ exp (t • Aᵀ)` and `t ↦ exp (t • (J * (-A) * J⁻¹))` coincide; distinct generators give
-distinct one-parameter subgroups (`TauCeti.expUnitHom_injective`), so the generators agree and `A`
-is skew-adjoint. No derivative is taken: the injectivity of `TauCeti.expUnitHom` replaces the
-usual differentiation at `t = 0`.
+Both directions run through the conjugated form `Aᵀ = J * (-A) * J⁻¹` of skew-adjointness, since
+that is the shape the exponential transports: it becomes `(exp A)ᵀ = J * (exp A)⁻¹ * J⁻¹`, which is
+the symplectic condition. Conversely the symplectic condition holds along the whole line, so the
+exponential lines of `Aᵀ` and of `J * (-A) * J⁻¹` coincide and their generators agree.
 
 Because a symplectic matrix has determinant one (Mathlib's `SymplecticGroup.det_eq_one`), the
 exponential of an element of `sp` lands in the special linear group as well.
@@ -38,12 +33,6 @@ exponential of an element of `sp` lands in the special linear group as well.
 * `Matrix.forall_exp_smul_mem_symplecticGroup_iff_mem_sp`: a real matrix generates a
   one-parameter subgroup of the symplectic group exactly when it lies in the symplectic Lie
   algebra.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "Consequences": the matrix groups are Lie groups, with their Lie
-  algebras named explicitly.
 -/
 
 public section
@@ -64,17 +53,13 @@ theorem exp_mem_symplecticGroup_of_mem_sp (A : Matrix (l ⊕ l) (l ⊕ l) ℝ)
     (hA : A ∈ LieAlgebra.Symplectic.sp l ℝ) :
     exp A ∈ symplecticGroup l ℝ := by
   rw [SymplecticGroup.mem_iff']
-  have hT : (exp A)ᵀ = J l ℝ * exp (-A) * (J l ℝ)⁻¹ := by
-    rw [← exp_transpose, (LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_conj A).mp hA,
+  have hT : (exp A)ᵀ * J l ℝ = J l ℝ * exp (-A) := by
+    rw [← eq_J_conj_iff_mul_J_eq, ← exp_transpose,
+      (LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg A).mp hA,
       exp_conj _ _ (isUnit_J l ℝ)]
   have hinv : exp (-A) * exp A = 1 := by
     rw [← exp_add_of_commute _ _ ((Commute.refl A).neg_left), neg_add_cancel, NormedSpace.exp_zero]
-  calc (exp A)ᵀ * J l ℝ * exp A
-      = J l ℝ * exp (-A) * ((-J l ℝ) * J l ℝ) * exp A := by
-        rw [hT, J_inv]; noncomm_ring
-    _ = J l ℝ * (exp (-A) * exp A) := by
-        rw [neg_mul, J_squared, neg_neg]; noncomm_ring
-    _ = J l ℝ := by rw [hinv, mul_one]
+  rw [hT, mul_assoc, hinv, mul_one]
 
 /-- The exponential of an element of the symplectic Lie algebra has determinant one. -/
 theorem det_exp_eq_one_of_mem_sp (A : Matrix (l ⊕ l) (l ⊕ l) ℝ)
@@ -89,14 +74,8 @@ theorem forall_exp_smul_mem_symplecticGroup_iff_mem_sp (A : Matrix (l ⊕ l) (l 
     (∀ t : ℝ, exp (t • A) ∈ symplecticGroup l ℝ) ↔ A ∈ LieAlgebra.Symplectic.sp l ℝ := by
   constructor
   · intro h
-    rw [LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_conj]
-    apply TauCeti.expUnitHom_injective (R := Matrix (l ⊕ l) (l ⊕ l) ℝ)
-    apply ContinuousMonoidHom.ext
-    intro t
-    apply Units.ext
-    rw [← ofAdd_toAdd t]
-    simp only [TauCeti.expUnitHom_apply, TauCeti.expUnit_coe]
-    set s : ℝ := Multiplicative.toAdd t with hs
+    rw [LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg]
+    refine TauCeti.eq_of_forall_exp_smul_eq fun s => ?_
     calc exp (s • Aᵀ)
         = (exp (s • A))ᵀ := by rw [← Matrix.transpose_smul, exp_transpose]
       _ = J l ℝ * (exp (s • A))⁻¹ * (J l ℝ)⁻¹ :=
