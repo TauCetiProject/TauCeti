@@ -167,11 +167,26 @@ theorem extendByZeroRep_obj (v : Q) :
 /-- Over an image vertex, the vertex space of the extension by zero is linearly equivalent to the
 original vertex space by evaluation at the unique point of the fiber. -/
 noncomputable def extendByZeroRepVertexSpaceEquiv (u : Q') :
-    (φ.extendByZeroRep M).obj (φ.obj u : Paths Q) ≃ₗ[k] QuiverRep.vertexSpace k Q' M u := by
+    (∀ u' : φ.Fiber (φ.obj u), QuiverRep.vertexSpace k Q' M u'.1) ≃ₗ[k]
+      QuiverRep.vertexSpace k Q' M u := by
   letI : Unique (φ.Fiber (φ.obj u)) :=
     { default := ⟨u, rfl⟩, uniq := fun _ ↦ Subsingleton.elim _ _ }
   exact LinearEquiv.piUnique k (fun u' : φ.Fiber (φ.obj u) ↦
     QuiverRep.vertexSpace k Q' M u'.1)
+
+/-- The vertex-space equivalence over an image vertex evaluates at the unique fiber point. -/
+@[simp]
+theorem extendByZeroRepVertexSpaceEquiv_apply (u : Q')
+    (x : ∀ u' : φ.Fiber (φ.obj u), QuiverRep.vertexSpace k Q' M u'.1) :
+    φ.extendByZeroRepVertexSpaceEquiv M u x = x ⟨u, rfl⟩ :=
+  (rfl)
+
+/-- The inverse vertex-space equivalence returns the original element at the unique fiber point. -/
+@[simp]
+theorem extendByZeroRepVertexSpaceEquiv_symm_apply (u : Q')
+    (x : QuiverRep.vertexSpace k Q' M u) :
+    (φ.extendByZeroRepVertexSpaceEquiv M u).symm x ⟨u, rfl⟩ = x :=
+  (rfl)
 
 /-- Outside the vertex image of an embedding, extension by zero has a zero vertex space. -/
 theorem isZero_extendByZeroRep_obj_of_not_mem_range (v : Q)
