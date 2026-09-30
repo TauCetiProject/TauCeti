@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Topology.FilteredColimits
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Canonical
+import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCoefficients
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.Algebra.GroupAction.Discrete
 
@@ -101,16 +102,11 @@ private theorem legPair_hom_apply (U : OpenNormalSubgroup G)
     (m : FixedPoints.addSubgroup U.toSubgroup M) : (legPair G M U).hom m = (m : M) :=
   ofDiscreteModulePair_hom_apply _ _ _ m
 
-/-- The comparison pair induces injective maps on the coinduced resolutions: the quotient map is
-surjective and the inclusion of fixed points is injective. -/
-private theorem legPair_resolutionMap_injective (U : OpenNormalSubgroup G) :
-    ∀ i : ℕ, Function.Injective
-      (resolutionMap (ContinuousMonoidHom.quotientMk U.toSubgroup) (legPair G M U) i).hom
-  | 0 => fun a b h ↦ Subtype.ext <| (legPair_hom_apply U a).symm.trans (h.trans
-      (legPair_hom_apply U b))
-  | i + 1 => fun F F' h ↦ ContinuousMap.ext fun q ↦ by
-    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-    exact legPair_resolutionMap_injective U i (DFunLike.congr_fun h g)
+omit [IsTopologicalGroup G] in
+/-- The coefficient map in the comparison pair is the inclusion of fixed points. -/
+private theorem legPair_hom_injective (U : OpenNormalSubgroup G) :
+    Function.Injective (legPair G M U).hom := fun a b h ↦
+  Subtype.ext <| (legPair_hom_apply U a).symm.trans (h.trans (legPair_hom_apply U b))
 
 /-- On the coinduced resolutions, the transition from the `U`-level to a deeper `V`-level followed
 by the comparison map of the `V`-level is the comparison map of the `U`-level. -/
@@ -126,9 +122,12 @@ private theorem legPair_resolutionMap_transition {U V : OpenNormalSubgroup G} (h
     -- are stated on the pairs rather than on `resolutionMap _ _ 0`.
     change (legPair G M V).hom ((continuousFiniteQuotientPair G M hVU).hom m) =
       (legPair G M U).hom m
-    exact (legPair_hom_apply V _).trans
-      ((congrArg Subtype.val (continuousFiniteQuotientPair_hom_apply G M hVU m)).trans
-        ((coe_fixedPointsInclusion hVU m).trans (legPair_hom_apply U m).symm))
+    have hfixed := (congrArg Subtype.val
+      (continuousFiniteQuotientPair_hom_apply G M hVU m)).trans
+        (coe_fixedPointsInclusion hVU m)
+    refine Eq.trans (legPair_hom_apply V _) ?_
+    refine Eq.trans hfixed ?_
+    exact (legPair_hom_apply U m).symm
   | i + 1, F => ContinuousMap.ext fun g ↦ by
     rw [resolutionMap_succ_apply, resolutionMap_succ_apply, resolutionMap_succ_apply]
     -- `G → G ⧸ V → G ⧸ U` is `G → G ⧸ U`
@@ -200,21 +199,20 @@ private theorem exists_openNormalSubgroup_cochainsMap_eq (n : ℕ)
   -- equivariant along the surjection `G → G ⧸ V`
   refine ⟨⟨F', fun q ↦ ?_⟩, Subtype.ext hF'⟩
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-  apply legPair_resolutionMap_injective V (n + 1)
-  exact (TopRep.hom_comm_apply (resolutionMap (ContinuousMonoidHom.quotientMk V.toSubgroup)
-    (legPair G M V) (n + 1)) g F').trans ((congrArg _ hF').trans (F.2 g) |>.trans hF'.symm)
+  apply resolutionMap_injective (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V)
+    QuotientGroup.mk_surjective (legPair_hom_injective V) (n + 1)
+  calc
+    _ = _ := TopRep.hom_comm_apply (resolutionMap
+      (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V) (n + 1)) g F'
+    _ = _ := congrArg _ hF'
+    _ = _ := F.2 g
+    _ = _ := hF'.symm
 
 end Cochains
 
 /-! ### The cochain maps of the comparison and the transition -/
 
 section CochainMaps
-
-/-- The cochain map of the comparison pair is injective in every degree. -/
-private theorem legPair_cochainsMap_f_injective (U : OpenNormalSubgroup G) (n : ℕ) :
-    Function.Injective ((cochainsMap (ContinuousMonoidHom.quotientMk U.toSubgroup)
-      (legPair G M U)).f n).hom := fun _ _ h ↦
-  Subtype.ext (legPair_resolutionMap_injective U (n + 1) (congrArg Subtype.val h))
 
 /-- On homogeneous cochains, the transition to a deeper level followed by the comparison of that
 level is the comparison of the original level. -/
@@ -254,12 +252,16 @@ theorem exists_continuousFiniteQuotientComparisonApp_eq {n : ℕ}
   obtain ⟨c, hc⟩ := hU U le_rfl
   -- the descended cochain is a cocycle, since its image is one and the cochain map is injective
   have hd : (KU.d n (n + 1)).hom c = 0 := by
-    apply legPair_cochainsMap_f_injective U (n + 1)
+    apply cochainsMap_f_injective (ContinuousMonoidHom.quotientMk U.toSubgroup) (legPair G M U)
+      QuotientGroup.mk_surjective (legPair_hom_injective U) (n + 1)
     have h := ConcreteCategory.congr_hom
       ((cochainsMap (ContinuousMonoidHom.quotientMk U.toSubgroup) (legPair G M U)).comm n (n + 1)) c
     simp only [ConcreteCategory.comp_apply] at h
-    exact h.symm.trans ((congrArg _ hc).trans
-      ((K.d_iCycles_apply (n + 1) z).trans (map_zero _).symm))
+    calc
+      _ = _ := h.symm
+      _ = _ := congrArg _ hc
+      _ = _ := K.d_iCycles_apply (n + 1) z
+      _ = _ := (map_zero _).symm
   refine ⟨U, KU.homologyπ n (KU.cyclesMkOfEq c (n + 1) (CochainComplex.next ℕ n) hd), ?_⟩
   rw [continuousFiniteQuotientComparisonApp_eq_map, map_π_apply]
   refine congrArg (K.homologyπ n).hom (K.iCycles_injective n ?_)
@@ -295,13 +297,18 @@ theorem exists_continuousFiniteQuotientTransition_eq_zero {n : ℕ} (U : OpenNor
   -- there `w'` is a primitive of the transition of `z`, as both sides have the same image in `G`
   refine (KV.homologyπ_eq_zero_iff n hm).2 ⟨w', KV.iCycles_injective n ?_⟩
   rw [KV.iCycles_toCycles_apply, iCycles_cocyclesMap_apply]
-  apply legPair_cochainsMap_f_injective V n
+  apply cochainsMap_f_injective (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V)
+    QuotientGroup.mk_surjective (legPair_hom_injective V) n
   have h := ConcreteCategory.congr_hom
     ((cochainsMap (ContinuousMonoidHom.quotientMk V.toSubgroup) (legPair G M V)).comm m n) w'
   simp only [ConcreteCategory.comp_apply] at h
-  exact h.symm.trans ((congrArg _ hw').trans ((K.iCycles_toCycles_apply m w).symm.trans
-    ((congrArg _ hw).trans ((iCycles_cocyclesMap_apply _ _ n z).trans
-      (legPair_cochainsMap_f_transition inf_le_left n _).symm))))
+  calc
+    _ = _ := h.symm
+    _ = _ := congrArg _ hw'
+    _ = _ := (K.iCycles_toCycles_apply m w).symm
+    _ = _ := congrArg _ hw
+    _ = _ := iCycles_cocyclesMap_apply _ _ n z
+    _ = _ := (legPair_cochainsMap_f_transition inf_le_left n _).symm
 
 /-- Two finite-level classes with the same image in `Hⁿ(G, M)` agree after transition to a common
 deeper finite level. -/

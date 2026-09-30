@@ -122,27 +122,38 @@ theorem finite_resolutionValues [CompactSpace G] [DiscreteTopology X.V] :
 
 end Values
 
+/-! ### Injectivity for surjective changes of groups -/
+
+section InjectiveResolutionMap
+
+variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  (φ : G →ₜ* H) {Y : TopRep.{max v w} k H} {X : TopRep.{max v w} k G}
+  (ι : TopRep.res φ Y ⟶ X)
+
+/-- A surjective group map and an injective coefficient pair induce injective maps on every term
+of the coinduced resolutions. -/
+theorem resolutionMap_injective (hφ : Function.Surjective φ) (hι : Function.Injective ι.hom) :
+    ∀ n : ℕ, Function.Injective (resolutionMap φ ι n).hom
+  | 0 => hι
+  | n + 1 => fun F F' h ↦ by
+    ext q
+    obtain ⟨g, rfl⟩ := hφ q
+    exact resolutionMap_injective hφ hι n (DFunLike.congr_fun h g)
+
+/-- The map on homogeneous cochains induced by a surjective group map and an injective coefficient
+pair is injective in every degree. -/
+theorem cochainsMap_f_injective (hφ : Function.Surjective φ)
+    (hι : Function.Injective ι.hom) (n : ℕ) :
+    Function.Injective ((cochainsMap φ ι).f n) := fun _ _ h ↦
+  Subtype.ext (resolutionMap_injective φ ι hφ hι (n + 1) (congrArg Subtype.val h))
+
+end InjectiveResolutionMap
+
 /-! ### Lifting along an injective morphism of coefficients -/
 
 section Lift
 
 variable {Y X : TopRep.{max v w} k G} (ι : Y ⟶ X)
-
-/-- The maps induced on the coinduced resolutions by an injective morphism of representations are
-injective in every degree. -/
-theorem resolutionMap_injective (hι : Function.Injective ι.hom) :
-    ∀ n : ℕ, Function.Injective (resolutionMap (ContinuousMonoidHom.id G) ι n).hom
-  | 0 => hι
-  | n + 1 => fun F F' h ↦ by
-    ext g
-    -- in degree `n + 1` the map is `F ↦ (resolutionMap _ ι n) ∘ F`, by definition
-    exact resolutionMap_injective hι n (DFunLike.congr_fun h g)
-
-/-- The cochain maps induced by an injective morphism of representations are injective in every
-degree. -/
-theorem cochainsMap_f_injective (hι : Function.Injective ι.hom) (n : ℕ) :
-    Function.Injective ((cochainsMap (ContinuousMonoidHom.id G) ι).f n) := fun _ _ h ↦
-  Subtype.ext (resolutionMap_injective ι hι (n + 1) (congrArg Subtype.val h))
 
 /-- The maps induced on the coinduced resolutions by an inducing morphism of representations are
 inducing in every degree: each term of the resolution of `Y` carries the topology induced from the
@@ -194,7 +205,7 @@ theorem exists_cochainsMap_f_eq_of_resolutionValues_subset (hι : Function.Injec
   obtain ⟨y, hy⟩ := exists_resolutionMap_eq_of_resolutionValues_subset ι hι (n + 1) c.1 hc
   -- `y` is invariant because its image `c.1` is and the map is injective and equivariant
   have hyinv : y ∈ (resolutionX Y (n + 1)).ρ.invariants := fun g ↦
-    resolutionMap_injective ι hι (n + 1) <|
+    resolutionMap_injective (ContinuousMonoidHom.id G) ι Function.surjective_id hι (n + 1) <|
       (TopRep.hom_comm_apply (resolutionMap (X := Y) (ContinuousMonoidHom.id G) ι (n + 1))
         g y).trans (by rw [hy]; exact c.2 g)
   exact ⟨⟨y, hyinv⟩, Subtype.ext hy⟩
@@ -226,7 +237,8 @@ theorem exists_finite_forall_mem_range_coeffMap (n : ℕ) (x : continuousCohomol
       ((cochainsMap (ContinuousMonoidHom.id G) ι).comm n ((ComplexShape.up ℕ).next n)) c'
     have h₂ := ConcreteCategory.congr_hom (K.sc n).iCycles_g c
     simp only [ConcreteCategory.comp_apply] at h₁ h₂
-    refine cochainsMap_f_injective ι hι ((ComplexShape.up ℕ).next n) ?_
+    refine cochainsMap_f_injective (ContinuousMonoidHom.id G) ι Function.surjective_id hι
+      ((ComplexShape.up ℕ).next n) ?_
     -- `(L.sc n).g` and `(K.sc n).g` are the differentials out of degree `n`, by definition of `sc`
     exact (h₁.symm.trans (by rw [hc']; exact h₂)).trans (map_zero _).symm
   -- the cycle of `L` lifting `c`
