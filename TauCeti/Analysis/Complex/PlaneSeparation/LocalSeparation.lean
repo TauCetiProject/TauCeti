@@ -334,14 +334,18 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     dsimp [d]
     field_simp [hv]
     ring
+  have hzero : (0 : ℝ) ∈ Ioo (-s) s := by simp [hs]
+  have hpre : IsPreconnected (C \ {d * (0 : ℂ) + p}) := by
+    simpa only [mul_zero, zero_add] using
+      (hC.isPathConnected_sdiff_singleton p).isConnected.isPreconnected
+  have hleft' : d * (0 : ℂ) + p ∈
+      closure (C ∩ {q | 0 < ((q - (d * (0 : ℂ) + p)) / d).im}) := by
+    simpa only [mul_zero, zero_add] using hleft
+  have hright' : d * (0 : ℂ) + p ∈
+      closure (C ∩ {q | ((q - (d * (0 : ℂ) + p)) / d).im < 0}) := by
+    simpa only [mul_zero, zero_add] using hright
   have hsep := Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton
-    hC.isClosed hd (show (0 : ℝ) ∈ Ioo (-s) s by simp [hs]) hseg
-    (show IsPreconnected (C \ {d * (0 : ℂ) + p}) by
-      simpa using (hC.isPathConnected_sdiff_singleton p).isConnected.isPreconnected)
-    (show d * (0 : ℂ) + p ∈
-      closure (C ∩ {q | 0 < ((q - (d * (0 : ℂ) + p)) / d).im}) by simpa using hleft)
-    (show d * (0 : ℂ) + p ∈
-      closure (C ∩ {q | ((q - (d * (0 : ℂ) + p)) / d).im < 0}) by simpa using hright)
+    hC.isClosed hd hzero hseg hpre hleft' hright'
   simpa only [mul_zero, zero_add, hstart, hend] using hsep
 
 /-- **A Jordan curve separates the two sides of a straight piece.** If a Jordan curve `C` agrees
