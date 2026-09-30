@@ -99,6 +99,11 @@ lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     apply GrpCat.ext
     intro ⟨g, hg⟩
     apply Subtype.ext
+    -- Functor-level evaluation lemmas are not yet available during the definition of
+    -- `quotientPointsSubgroupFunctor`. Defensively unfold the `GrpCat.ofHom`, `codRestrict`, and
+    -- `Subtype` wrappers definitionally to reach `mapPoints`:
+    -- `(GrpCat.ofHom (mapQuotientPointsSubgroup H I (𝟙 A)) ⟨g, hg⟩).val` evaluates definitionally
+    -- to `HopfAlgebra.mapPoints (𝟙 A) g`, and `(𝟙 _ ⟨g, hg⟩).val` evaluates to `g`.
     change HopfAlgebra.mapPoints (𝟙 A) g = g
     rw [HopfAlgebra.mapPoints_id]
     rfl
@@ -106,6 +111,12 @@ lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     apply GrpCat.ext
     intro ⟨g, hg⟩
     apply Subtype.ext
+    -- Functor-level evaluation lemmas are not yet available during the definition of
+    -- `quotientPointsSubgroupFunctor`. Defensively unfold the `GrpCat.ofHom`, `codRestrict`, and
+    -- `Subtype` wrappers definitionally to reach `mapPoints`:
+    -- `(GrpCat.ofHom (mapQuotientPointsSubgroup H I (χ ≫ ψ)) ⟨g, hg⟩).val` evaluates definitionally
+    -- to `HopfAlgebra.mapPoints (χ ≫ ψ) g`, and composition evaluates to
+    -- `HopfAlgebra.mapPoints ψ (HopfAlgebra.mapPoints χ g)`.
     change HopfAlgebra.mapPoints (χ ≫ ψ) g = HopfAlgebra.mapPoints ψ (HopfAlgebra.mapPoints χ g)
     rw [HopfAlgebra.mapPoints_comp]
     rfl
@@ -172,8 +183,8 @@ lemma mapQuotientPointsSubgroup_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
     ((mapQuotientPointsSubgroup H I χ g :
       HopfAlgebra.points (R := R) (H := H) B).ofConv) h =
       χ.hom (g.val.ofConv h) := by
-  change (HopfAlgebra.mapPoints χ g.1).ofConv h = _
-  rw [HopfAlgebra.mapPoints_apply, WithConv.ofConv_toConv, AlgHom.comp_apply]
+  rw [coe_mapQuotientPointsSubgroup_apply, HopfAlgebra.mapPoints_apply, WithConv.ofConv_toConv,
+    AlgHom.comp_apply]
 
 /-- The restricted subgroup maps preserve identity morphisms of value algebras. -/
 @[simp]

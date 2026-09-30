@@ -107,8 +107,9 @@ antipode. -/
 @[simp]
 lemma convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
     f⁻¹ h = f.ofConv (antipode R h) := by
-  change (antipodeComp f.ofConv) h = _
-  rw [AlgHom.antipodeComp_apply]
+  -- `convInv_def` exposes `toConv (antipodeComp f.ofConv)`; under the coercion from `WithConv`,
+  -- `(toConv g) h` evaluates as `g h`.
+  rw [WithConv.convInv_def, AlgHom.antipodeComp_apply]
 
 /-- For a Hopf algebra `H` over `R` and a commutative `R`-algebra `A`, the convolution
 monoid of `R`-algebra homomorphisms `H →ₐ[R] A` is a group, with inverse `f ↦ f ∘ S`. When
