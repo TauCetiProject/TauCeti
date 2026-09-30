@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyc
 public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The second cohomology of a cyclic Galois extension
@@ -244,8 +245,15 @@ def cyclicNormQuotientEquiv :
 @[simp]
 theorem cyclicNormQuotientEquiv_mk (a : Kˣ) :
     cyclicNormQuotientEquiv hg (Additive.ofMul (a : Kˣ ⧸ normGroup K L)) =
-      cyclicClass hg (Additive.ofMul a) :=
-  (rfl)
+      cyclicClass hg (Additive.ofMul a) := by
+  rw [cyclicNormQuotientEquiv, AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul,
+    MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk]
+  -- `rw` cannot abstract the first isomorphism theorem's surjectivity argument, so it is applied
+  -- under `toAdd`.
+  refine (congrArg Multiplicative.toAdd
+    (TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk _ _ a)).trans ?_
+  rw [AddMonoidHom.coe_toMultiplicativeRight, Function.comp_apply, Function.comp_apply,
+    toAdd_ofAdd]
 
 
 end TauCeti
