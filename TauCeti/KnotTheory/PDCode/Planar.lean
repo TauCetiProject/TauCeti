@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.Components
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.OrbitDecomposition
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
@@ -43,9 +43,10 @@ Planarity is invariant under mirroring and relabelling. The one-crossing kink is
 one-crossing code whose arcs join opposite slots, two circles meeting in a single crossing, is not
 (`TauCeti.PDCode.exists_not_isPlanar`): its graph embeds only in the torus.
 
-The face permutation locates the arcs that border a common region, which is the locality data
-that the second and third Reidemeister moves need beyond the algebraic operation
-`TauCeti.PDCode.insertClasp`.
+The face permutation locates the arcs that border a common region: two half-edges lie on the same
+face exactly when `TauCeti.PDCode.face` agrees on them (`TauCeti.PDCode.face_eq_face_iff`). This
+is the locality data that the second and third Reidemeister moves need beyond the algebraic
+operation `TauCeti.PDCode.insertClasp`.
 
 ## Main definitions
 
@@ -53,6 +54,8 @@ that the second and third Reidemeister moves need beyond the algebraic operation
 * `TauCeti.PDCode.toPermutationTriple`: the permutation triple of the underlying graph.
 * `TauCeti.PDCode.facePerm` and `TauCeti.PDCode.faceCount`: the face traversal and the number of
   faces of the underlying graph.
+* `TauCeti.PDCode.Face` and `TauCeti.PDCode.face`: the faces, as orbits of the face traversal, and
+  the face at a half-edge.
 * `TauCeti.PDCode.IsPlanar`: every connected component of the underlying graph is a sphere.
 
 ## Main results
@@ -156,6 +159,33 @@ noncomputable def faceCount (D : PDCode n) : ℕ :=
 
 /-- The number of faces is the number of orbits of the face traversal. -/
 theorem faceCount_def (D : PDCode n) : D.faceCount = orbitCount D.facePerm := (rfl)
+
+/-- The faces of the underlying graph: the orbits of the face traversal. -/
+abbrev Face (D : PDCode n) : Type :=
+  Quotient (SameCycle.setoid D.facePerm)
+
+/-- The face at a half-edge: the one in the corner at its crossing running counterclockwise from
+it to the next slot. -/
+def face (D : PDCode n) (h : Fin (4 * n)) : D.Face :=
+  Quotient.mk _ h
+
+/-- Two half-edges have the same face exactly when the face traversal carries one to the
+other. -/
+theorem face_eq_face_iff (D : PDCode n) {h h' : Fin (4 * n)} :
+    D.face h = D.face h' ↔ D.facePerm.SameCycle h h' :=
+  Quotient.eq
+
+/-- Every face is the face at some half-edge. -/
+theorem face_surjective (D : PDCode n) : Function.Surjective D.face :=
+  Quotient.mk_surjective
+
+/-- The face traversal stays in one face. -/
+theorem face_facePerm (D : PDCode n) (h : Fin (4 * n)) : D.face (D.facePerm h) = D.face h :=
+  D.face_eq_face_iff.mpr (sameCycle_apply_left.mpr (SameCycle.refl _ _))
+
+/-- The number of faces is the cardinality of the type of faces. -/
+theorem card_face (D : PDCode n) : Nat.card D.Face = D.faceCount :=
+  (orbitCount_def _).symm
 
 /-- Mirroring preserves the face traversal. -/
 @[simp]
@@ -311,7 +341,7 @@ theorem faceCount_kink : kink.faceCount = 3 := by
     rw [facePerm_apply, hrot, kink_edgePair_apply]
     clear hrot
     simp only [permCongr_apply, symm_apply_apply, prodCongrRight_apply,
-      EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq, true_and, slotSmoothing_true]
+      EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq, true_and]
     revert slot
     decide
   have h := orbitCount_mul_swap_add_one (τ := (1 : Perm (Fin 4))) (p := 3) (a := 1) rfl
