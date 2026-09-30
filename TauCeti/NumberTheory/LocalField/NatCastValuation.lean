@@ -39,6 +39,8 @@ characteristic is the absolute ramification index of `K`.
   characteristic equation in the additive and multiplicative valuation conventions.
 * `TauCeti.natCastValuation_eq_zero_iff`: the vanishing criterion, in terms of invertibility in
   `𝒪[K]`.
+* `TauCeti.isUnit_natCast_iff_not_dvd`: `n` is a unit of `𝒪[K]` exactly when the residue
+  characteristic does not divide it.
 * `TauCeti.natCastValuation_eq_zero_iff_not_dvd`: the vanishing criterion read off the residue
   characteristic.
 * `TauCeti.natCastValuation_ne_zero_iff_ringChar_eq`: at a prime, the invariant is nonzero
@@ -136,13 +138,17 @@ theorem natCastValuation_eq_zero_of_isUnit {n : ℕ} (hn : (n : K) ≠ 0)
     (hn' : IsUnit (n : 𝒪[K])) : natCastValuation K n hn = 0 :=
   (natCastValuation_eq_zero_iff K n hn).mpr hn'
 
+/-- A natural number is invertible in the ring of integers exactly when the residue characteristic
+of `K` does not divide it. -/
+theorem isUnit_natCast_iff_not_dvd {n : ℕ} : IsUnit (n : 𝒪[K]) ↔ ¬ ringChar 𝓀[K] ∣ n := by
+  rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast, ne_eq, ← ringChar.spec]
+
 variable (K) in
 /-- The vanishing criterion read off the residue field: the normalized valuation of `n` is zero
 exactly when the residue characteristic of `K` does not divide `n`. -/
 theorem natCastValuation_eq_zero_iff_not_dvd (n : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K n hn = 0 ↔ ¬ ringChar 𝓀[K] ∣ n := by
-  rw [natCastValuation_eq_zero_iff, ← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast,
-    ne_eq, ← ringChar.spec]
+  rw [natCastValuation_eq_zero_iff, isUnit_natCast_iff_not_dvd]
 
 variable (K) in
 /-- For a prime `p`, the normalized valuation of `p` is nonzero exactly when `p` is the residue
