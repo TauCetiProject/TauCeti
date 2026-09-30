@@ -92,6 +92,7 @@ theorem convolutionAction_apply (f : WithConv (C →ₗ[R] R)) (m : M) :
   coactComponent_apply f.ofConv m
 
 /-- Comodule morphisms intertwine the convolution actions. -/
+@[simp↓]
 theorem Hom.map_convolutionAction (f : Hom R C M N) (g : WithConv (C →ₗ[R] R)) (m : M) :
     f (convolutionAction (R := R) (C := C) (M := M) g m) =
       convolutionAction (R := R) (C := C) (M := N) g (f m) := by

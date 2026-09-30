@@ -80,6 +80,7 @@ theorem differential_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) 
   simp [differential]
 
 /-- Every comodule morphism intertwines the differentiated representations. -/
+@[simp↓]
 theorem Hom.map_differential (f : Hom R H M N)
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (m : M) :
     f (differential (R := R) (H := H) (M := M) d m) =
