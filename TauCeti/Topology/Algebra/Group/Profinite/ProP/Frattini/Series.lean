@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
-import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step
 public import TauCeti.Topology.Algebra.Group.FrattiniSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 
@@ -38,14 +37,11 @@ generation the terms need not be open: an infinite product of copies of `ℤ ⧸
 
 ## Main results
 
-* `TauCeti.proPFrattiniStep_eq_map_proPFrattini` and
-  `TauCeti.proPFrattiniSeries_succ_eq_map_proPFrattini`: for a prime `p` and a closed subgroup of
-  a profinite group the step is the pro-`p` Frattini subgroup of that subgroup, so the series is
-  the iterated Frattini subgroup; `TauCeti.proPFrattiniSeries_one` is the case `Φ_1 = Φ(G)`, in
+* `TauCeti.proPFrattiniSeries_succ_eq_map_proPFrattini`: for a prime `p` the step is the
+  pro-`p` Frattini subgroup of the previous term (`TauCeti.proPFrattiniStep_eq_map_proPFrattini`,
+  in `TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step`), so the series is the
+  iterated Frattini subgroup; `TauCeti.proPFrattiniSeries_one` is the case `Φ_1 = Φ(G)`, in
   simp-normal form `TauCeti.proPFrattiniStep_top_eq_proPFrattini`.
-* `TauCeti.IsProP.topologicalClosure_eq_top_of_sup_commutator`: a set generating `G`
-  topologically together with `⁅P, P⁆`, for a normal pro-`p` subgroup `P`, generates `G`
-  topologically.
 * `TauCeti.IsProP.exists_pLowerCentralSeries_le_proPFrattiniSeries`: together with
   `TauCeti.proPFrattiniSeries_le_pLowerCentralSeries` this is the interleaving of the Frattini
   series with the lower `p`-series.
@@ -64,8 +60,6 @@ generation the terms need not be open: an infinite product of copies of `ℤ ⧸
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.8, Proposition 2.8.13.
 * J. D. Dixon, M. P. F. du Sautoy, A. Mann and D. Segal, *Analytic pro-`p` groups*, Section 1.2.
-* J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, (3.9.1) and the proof
-  of (7.4.1).
 -/
 
 public section
@@ -77,64 +71,6 @@ open scoped commutatorElement
 
 variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
-
-/-- **One step of the Frattini series is the pro-`p` Frattini subgroup.** For a prime `p` and a
-closed subgroup `H` of a profinite group, `proPFrattiniStep p H` is the pro-`p` Frattini subgroup
-of `H`, viewed inside the ambient group along the inclusion. -/
-theorem proPFrattiniStep_eq_map_proPFrattini (hp : p.Prime) {H : Subgroup G}
-    (hH : IsClosed (H : Set G)) :
-    proPFrattiniStep p H = (proPFrattini p H).map H.subtype := by
-  have : CompactSpace H := isCompact_iff_compactSpace.mp hH.isCompact
-  -- The `p`-th powers of `H`, computed in `H` and transported, are the `p`-th powers of `H`.
-  have himage : ⇑H.subtype '' (Set.range fun x : H ↦ x ^ p) = (· ^ p) '' (H : Set G) := by
-    rw [← Set.range_comp]
-    refine Set.ext fun x ↦ ⟨?_, ?_⟩
-    · rintro ⟨y, rfl⟩
-      exact ⟨y, y.2, by simp⟩
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨⟨y, hy⟩, by simp⟩
-  rw [proPFrattini_eq_topologicalClosure hp,
-    H.subtype.map_topologicalClosure continuous_subtype_val _
-      (isClosed_topologicalClosure _).isCompact,
-    Subgroup.map_sup, MonoidHom.map_closure, himage, H.map_subtype_commutator,
-    proPFrattiniStep_def]
-
-namespace IsProP
-
-/-- **Relative Frattini reduction along a normal pro-`p` subgroup** (NSW (3.9.1)). Let `P` be a
-normal pro-`p` subgroup of a profinite group `G`. A set which topologically generates `G` together
-with the commutator subgroup `⁅P, P⁆` already topologically generates `G`. -/
-theorem topologicalClosure_eq_top_of_sup_commutator {P : Subgroup G} [P.Normal]
-    [hp : Fact p.Prime] (hP : IsProP p P) {s : Set G}
-    (hs : (Subgroup.closure s ⊔ ⁅P, P⁆).topologicalClosure = ⊤) :
-    (Subgroup.closure s).topologicalClosure = ⊤ := by
-  -- Work with the closure `P'` of `P`, a closed normal pro-`p` subgroup, and `N = ⁅P', P'⁆‾`,
-  -- which is normal in `G` and contained in `Φ(P')`.
-  let P' := P.topologicalClosure
-  have : P'.Normal := Subgroup.is_normal_topologicalClosure _
-  have hPc : IsClosed (P' : Set G) := P.isClosed_topologicalClosure
-  let H := (Subgroup.closure s).topologicalClosure
-  let N := (⁅P', P'⁆ : Subgroup G).topologicalClosure
-  have : N.Normal := Subgroup.is_normal_topologicalClosure _
-  have hN : N ≤ (proPFrattini p P').map P'.subtype := by
-    rw [← proPFrattiniStep_eq_map_proPFrattini hp.out hPc]
-    exact Subgroup.topologicalClosure_minimal _ (commutator_le_proPFrattiniStep P')
-      (isClosed_proPFrattiniStep P')
-  -- `H ⊔ N = N * H` is the product of two compact sets, hence closed.
-  have hHN : IsClosed ((H ⊔ N : Subgroup G) : Set G) := by
-    rw [sup_comm, Subgroup.normal_mul]
-    exact ((Subgroup.isClosed_topologicalClosure _).isCompact.mul
-      (Subgroup.isClosed_topologicalClosure _).isCompact).isClosed
-  refine hP.topologicalClosure.eq_top_of_le_map_proPFrattini_of_sup_eq_top hPc hN
-    (Subgroup.isClosed_topologicalClosure _) (top_unique ?_)
-  rw [← hs]
-  have hPP : ⁅P, P⁆ ≤ N :=
-    (Subgroup.commutator_mono P.le_topologicalClosure P.le_topologicalClosure).trans
-      (Subgroup.le_topologicalClosure _)
-  exact Subgroup.topologicalClosure_minimal _
-    (sup_le_sup (Subgroup.le_topologicalClosure _) hPP) hHN
-
-end IsProP
 
 /-- **The Frattini series is the iterated pro-`p` Frattini subgroup.** For a prime `p` and a
 profinite group, `Φ_{k+1}` is the pro-`p` Frattini subgroup of `Φ_k`, viewed inside the ambient

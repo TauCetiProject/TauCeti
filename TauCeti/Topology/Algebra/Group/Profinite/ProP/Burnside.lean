@@ -9,6 +9,7 @@ import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Order.Atoms.Finite
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
@@ -54,6 +55,8 @@ absolute Galois group of a `p`-adic field is removed when counting generators.
 * `IsProP.eq_top_of_le_map_proPFrattini_of_sup_eq_top`: the relative Frattini argument, a
   normal subgroup of `G` inside the Frattini subgroup of a closed pro-`p` subgroup consists of
   non-generators of `G`.
+* `IsProP.topologicalClosure_eq_top_of_sup_commutator`: a set generating `G` topologically
+  together with `⁅P, P⁆`, for a normal pro-`p` subgroup `P`, generates `G` topologically.
 
 ## References
 
@@ -195,6 +198,39 @@ theorem eq_top_of_le_map_proPFrattini_of_sup_eq_top {P : Subgroup G}
     exact hxm ▸ Subgroup.mul_mem_sup (Subgroup.mem_subgroupOf.mpr hh) hm
   have hPH : P ≤ H := Subgroup.subgroupOf_eq_top.mp hHP
   rwa [sup_eq_left.mpr (hNP.trans hPH)] at hsup
+
+/-- **Relative Frattini reduction along a normal pro-`p` subgroup** (NSW (3.9.1)). Let `P` be a
+normal pro-`p` subgroup of a profinite group `G`. A set which topologically generates `G` together
+with the commutator subgroup `⁅P, P⁆` already topologically generates `G`. -/
+theorem topologicalClosure_eq_top_of_sup_commutator {P : Subgroup G} [P.Normal]
+    (hP : IsProP p P) {s : Set G}
+    (hs : (Subgroup.closure s ⊔ ⁅P, P⁆).topologicalClosure = ⊤) :
+    (Subgroup.closure s).topologicalClosure = ⊤ := by
+  -- Work with the closure `P'` of `P`, a closed normal pro-`p` subgroup, and `N = ⁅P', P'⁆‾`,
+  -- which is normal in `G` and contained in `Φ(P')`.
+  let P' := P.topologicalClosure
+  have : P'.Normal := Subgroup.is_normal_topologicalClosure _
+  have hPc : IsClosed (P' : Set G) := P.isClosed_topologicalClosure
+  let H := (Subgroup.closure s).topologicalClosure
+  let N := (⁅P', P'⁆ : Subgroup G).topologicalClosure
+  have : N.Normal := Subgroup.is_normal_topologicalClosure _
+  have hN : N ≤ (proPFrattini p P').map P'.subtype := by
+    rw [← proPFrattiniStep_eq_map_proPFrattini hp.out hPc]
+    exact Subgroup.topologicalClosure_minimal _ (commutator_le_proPFrattiniStep P')
+      (isClosed_proPFrattiniStep P')
+  -- `H ⊔ N = N * H` is the product of two compact sets, hence closed.
+  have hHN : IsClosed ((H ⊔ N : Subgroup G) : Set G) := by
+    rw [sup_comm, Subgroup.normal_mul]
+    exact ((Subgroup.isClosed_topologicalClosure _).isCompact.mul
+      (Subgroup.isClosed_topologicalClosure _).isCompact).isClosed
+  refine hP.topologicalClosure.eq_top_of_le_map_proPFrattini_of_sup_eq_top hPc hN
+    (Subgroup.isClosed_topologicalClosure _) (top_unique ?_)
+  rw [← hs]
+  have hPP : ⁅P, P⁆ ≤ N :=
+    (Subgroup.commutator_mono P.le_topologicalClosure P.le_topologicalClosure).trans
+      (Subgroup.le_topologicalClosure _)
+  exact Subgroup.topologicalClosure_minimal _
+    (sup_le_sup (Subgroup.le_topologicalClosure _) hPP) hHN
 
 end IsProP
 
