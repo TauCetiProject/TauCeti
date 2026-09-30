@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 public import TauCeti.Algebra.Field.LinearFractional
-public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Uniqueness
