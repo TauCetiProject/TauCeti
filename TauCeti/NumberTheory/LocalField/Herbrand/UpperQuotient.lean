@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
+import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
 public import TauCeti.NumberTheory.LocalField.Herbrand.Tower
 
