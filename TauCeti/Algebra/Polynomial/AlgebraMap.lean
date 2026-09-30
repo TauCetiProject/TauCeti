@@ -22,8 +22,8 @@ namespace TauCeti
 open Polynomial
 
 /-- Extending coefficients to isomorphic algebras preserves irreducibility. -/
-theorem irreducible_map_iff_of_algEquiv {F K K' : Type*} [CommRing F] [CommRing K]
-    [CommRing K'] [Algebra F K] [Algebra F K'] (ψ : K ≃ₐ[F] K') (g : F[X]) :
+theorem irreducible_map_iff_of_algEquiv {F K K' : Type*} [CommSemiring F] [Semiring K]
+    [Semiring K'] [Algebra F K] [Algebra F K'] (ψ : K ≃ₐ[F] K') (g : F[X]) :
     Irreducible (g.map (algebraMap F K)) ↔ Irreducible (g.map (algebraMap F K')) := by
   have hψ : (ψ.toRingEquiv : K →+* K').comp (algebraMap F K) = algebraMap F K' :=
     RingHom.ext ψ.commutes
