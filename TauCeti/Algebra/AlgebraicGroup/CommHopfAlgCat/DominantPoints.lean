@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Translation
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 public import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
@@ -18,8 +18,9 @@ public import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 A dominant homomorphism between finite-type affine group schemes over an algebraically
 closed field is surjective on rational points. No smoothness, reducedness, or flatness
 assumption is needed. In particular, an injective coordinate homomorphism gives a surjection
-on points. The injective-coordinate-map case supplies the point-surjectivity step toward
-faithful flatness. Topological dominance alone does not imply flatness for nonreduced groups.
+on points valued in any algebraically closed extension field. The injective-coordinate-map
+case supplies the point-surjectivity step toward faithful flatness. Topological dominance
+alone does not imply flatness for nonreduced groups.
 
 Chevalley's theorem gives a dense open subset contained in the spectral image. Rational
 points of the source are dense in the target; translating this open subset then expresses
@@ -36,7 +37,7 @@ open CategoryTheory WithConv Topology
 
 namespace TauCeti.CommHopfAlgCat
 
-universe u v
+universe u v w
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
   {H K : _root_.CommHopfAlgCat.{v} k}
@@ -87,14 +88,31 @@ theorem mapPointsFunctor_app_surjective_of_dominant (f : H ⟶ K)
   exact (map_mul φ.hom _ _).trans
     ((congrArg₂ (· * ·) (map_inv φ.hom _) hr').trans (inv_mul_cancel_left _ _))
 
-/-- An injective homomorphism of finite-type commutative Hopf algebras over an
-algebraically closed field is surjective contravariantly on rational points. -/
-theorem mapPointsFunctor_app_surjective_of_injective (f : H ⟶ K)
+omit [IsAlgClosed k] in
+/-- An injective homomorphism of finite-type commutative Hopf algebras over a field is
+surjective contravariantly on points valued in any algebraically closed extension field. -/
+theorem mapPointsFunctor_app_surjective_of_injective
+    (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] (f : H ⟶ K)
     (hf : Function.Injective f.hom) :
-    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of k k)) := by
-  apply mapPointsFunctor_app_surjective_of_dominant f
-  rw [PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical,
-    (RingHom.injective_iff_ker_eq_bot f.hom.toAlgHom.toRingHom).mp hf]
-  exact bot_le
+    Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of k L)) := by
+  have hinj : Function.Injective (baseChangeMap (K := L) f).hom :=
+    TensorProduct.map_injective_of_flat_flat
+      (AlgHom.id k L).toLinearMap f.hom.toLinearMap Function.injective_id hf
+  have hd : DenseRange (PrimeSpectrum.comap
+      (baseChangeMap (K := L) f).hom.toAlgHom.toRingHom) := by
+    rw [PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical,
+      (RingHom.injective_iff_ker_eq_bot
+        (baseChangeMap (K := L) f).hom.toAlgHom.toRingHom).mp hinj]
+    exact bot_le
+  intro p
+  let eH := AlgHom.baseChangePointsMulEquiv (k := k) (K := L) (A := H) (R := L)
+  let eK := AlgHom.baseChangePointsMulEquiv (k := k) (K := L) (A := K) (R := L)
+  obtain ⟨q, hq⟩ := mapPointsFunctor_app_surjective_of_dominant
+    (baseChangeMap (K := L) f) hd (eH p)
+  refine ⟨eK.symm q, eH.injective ?_⟩
+  rw [mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply,
+    AlgHom.baseChangePointsMulEquiv_mapDomain]
+  exact (congrArg (AlgHom.mapDomain (baseChangeMap (K := L) f).hom)
+    (eK.apply_symm_apply q)).trans hq
 
 end TauCeti.CommHopfAlgCat
