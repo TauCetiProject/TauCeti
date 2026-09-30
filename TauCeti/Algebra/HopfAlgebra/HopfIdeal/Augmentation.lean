@@ -188,13 +188,9 @@ theorem centralAugmentationIdeal_ne_top [Nontrivial R] :
 /-- **The quotient by a positive power of the central augmentation ideal is nonzero.** Every
 positive power is contained in the ideal itself, which is proper over a nontrivial base ring. -/
 theorem nontrivial_quotient_centralAugmentationIdeal_pow [Nontrivial R] {n : ℕ} (hn : n ≠ 0) :
-    Nontrivial (H ⧸ centralAugmentationIdeal R H ^ n) := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  have hle : centralAugmentationIdeal R H ^ (m + 1) ≤ centralAugmentationIdeal R H := by
-    rw [Submodule.pow_succ]
-    exact Ideal.mul_le_right
-  exact Ideal.Quotient.nontrivial_iff.mpr
-    (ne_top_of_le_ne_top (centralAugmentationIdeal_ne_top R H) hle)
+    Nontrivial (H ⧸ centralAugmentationIdeal R H ^ n) :=
+  Ideal.Quotient.nontrivial_iff.mpr
+    (ne_top_of_le_ne_top (centralAugmentationIdeal_ne_top R H) (Ideal.pow_le_self hn))
 
 /-- In a left-Noetherian Hopf algebra, the central augmentation ideal has a finite generating
 subset whose members are themselves central and of augmentation zero. -/
