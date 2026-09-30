@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Inflation
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.FieldTheory.Galois.Basic
-import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
+import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 
 /-!
 # The second cohomology of a cyclic Galois extension
@@ -137,28 +137,6 @@ private theorem unitsToFixedUnits_surjective : Function.Surjective (unitsToFixed
 
 end Fixed
 
-/-- The image of `a ∈ Kˣ` in `Lˣ` is a norm for the action of `Gal(L/K)` exactly when `a` is a
-norm from `L`. -/
-private theorem mem_range_norm_iff (a : Kˣ) :
-    (Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) :
-        Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) ∈
-        LinearMap.range (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ).norm.hom.toLinearMap ↔
-      a ∈ normGroup K L := by
-  rw [mem_normGroup_iff]
-  constructor
-  · rintro ⟨y, hy⟩
-    refine ⟨(Rep.toAdditive y).toMul, (algebraMap K L).injective ?_⟩
-    rw [← norm_ofAlgebraAutOnUnits_eq]
-    exact congr(((Additive.toMul (Rep.toAdditive $hy) : Lˣ) : L)).trans (by simp)
-  · rintro ⟨y, hy⟩
-    refine ⟨Rep.toAdditive.symm (Additive.ofMul y), ?_⟩
-    apply Rep.toAdditive.injective
-    apply Additive.toMul.injective
-    apply Units.ext
-    have := norm_ofAlgebraAutOnUnits_eq (K := K) y
-    simp only [hy] at this
-    exact this
-
 /-- **The class in `H²(Gal(L/K), Lˣ)` of an element of `Kˣ`**, for a cyclic Galois extension with
 generator `g`: the image of `a`, which is fixed by `g`, under two-periodicity of the cohomology of
 the cyclic group `Gal(L/K)` at `g`. It is represented by the carry cocycle of `a` at `g`. -/
@@ -181,7 +159,7 @@ theorem cyclicClass_eq_zero_iff {a : Kˣ} :
     cyclicClass hg (Additive.ofMul a) = 0 ↔ a ∈ normGroup K L :=
   haveI := isCyclic_of_forall_mem_zpowers hg
   (groupCohomologyπEven_eq_zero_iff (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) g hg 2 even_two
-    (unitsToFixedUnits g (Additive.ofMul a))).trans (mem_range_norm_iff a)
+    (unitsToFixedUnits g (Additive.ofMul a))).trans (mem_range_rep_norm_iff_mem_normGroup a)
 
 /-! ### Inflation along a tower of cyclic Galois extensions -/
 
