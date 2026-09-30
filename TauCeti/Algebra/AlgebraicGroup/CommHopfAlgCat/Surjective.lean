@@ -54,11 +54,9 @@ theorem comap_surjective_of_injective (f : H ⟶ K) (hf : Function.Injective f.h
   rw [PrimeSpectrum.comap_asIdeal, RingHom.comap_ker]
   have hker := congrArg (fun g : H →ₐ[k] L ↦ RingHom.ker g.toRingHom) hcomp
   refine hker.trans ?_
-  ext x
-  simp only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, a,
-    AlgHom.comp_apply, IsScalarTower.toAlgHom_apply]
-  rw [map_eq_zero_iff _ (algebraMap p.asIdeal.ResidueField L).injective,
-    Ideal.algebraMap_residueField_eq_zero]
+  exact (RingHom.ker_comp_of_injective (algebraMap H p.asIdeal.ResidueField)
+    (algebraMap p.asIdeal.ResidueField L).injective).trans
+      (Ideal.ker_algebraMap_residueField p.asIdeal)
 
 /-- For an injective coordinate morphism between finite-type affine groups over a field,
 faithful flatness is equivalent to flatness. -/
