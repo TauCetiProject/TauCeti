@@ -15,7 +15,7 @@ import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.NormedField
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
-import TauCeti.RingTheory.Norm.Henselian
+import TauCeti.RingTheory.Norm.CharpolyRev
 
 /-!
 # Open norm groups of finite local-field extensions
