@@ -307,6 +307,7 @@ the step that carries bijectivity of the Shapiro map from degree `n ≥ 1` to de
 connecting maps are then bijective; in degree `0` they are only surjective, so the degrees `0` and
 `1` are separate base cases). The connecting map of `U` needs `U` compact, which follows from its
 closedness in the compact group `G`. -/
+@[reassoc]
 theorem delta_shapiroMap (hU : IsClosed (U : Set G)) (n : ℕ) :
     haveI : CompactSpace U := isCompact_iff_compactSpace.mp hU.isCompact
     (coind U hU S).delta n ≫ shapiroMap U A (n + 1) = shapiroMap U C n ≫ S.delta n := by
