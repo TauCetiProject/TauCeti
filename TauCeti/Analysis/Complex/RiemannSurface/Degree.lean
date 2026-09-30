@@ -8,6 +8,7 @@ module
 import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalDegree
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Order.Lattice.Nat
 public import Mathlib.Topology.LocallyConstant.Basic
 
@@ -59,7 +60,8 @@ finite holomorphic map.
   `TauCeti.RiemannSurface.FiniteHolomorphicMap.comp`, and the degree API on them with no side
   hypotheses: `TauCeti.RiemannSurface.localMultiplicity_pos`,
   `TauCeti.RiemannSurface.degree_eq_fiber_sum`, `TauCeti.RiemannSurface.degree_pos`,
-  `TauCeti.RiemannSurface.localMultiplicity_comp` and `TauCeti.RiemannSurface.degree_comp`.
+  `TauCeti.RiemannSurface.localMultiplicity_comp`, `TauCeti.RiemannSurface.degree_comp` and
+  `TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`.
 
 ## References
 
@@ -73,7 +75,7 @@ public noncomputable section
 
 open Filter Function Set Topology
 
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti.RiemannSurface
 
@@ -433,6 +435,47 @@ theorem degree_comp [IsManifold 𝓘(ℂ) 1 Z] [CompactSpace Y] [T2Space Z] [Pre
     degree (g.comp f) = degree g * degree f :=
   degree_comp_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst g.holomorphic
     g.not_eventuallyConst
+
+/-- A finite holomorphic map of degree one between compact connected Riemann surfaces is a
+biholomorphism. -/
+noncomputable def biholomorphOfDegreeEqOne [IsManifold 𝓘(ℂ) ∞ X]
+    [IsManifold 𝓘(ℂ) ∞ Y]
+    (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
+    X ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ Y := by
+  classical
+  have hinj : Injective f := by
+    intro x x' hfx
+    by_contra hxx'
+    let s := (f.finite_fiber (f x)).toFinset
+    have hxm : x ∈ s := by
+      simp only [s, Set.Finite.mem_toFinset, mem_preimage, mem_singleton_iff]
+    have hx'm : x' ∈ s := by
+      simp only [s, Set.Finite.mem_toFinset, mem_preimage, mem_singleton_iff, hfx]
+    have hsum : ∑ z ∈ s, localMultiplicity f z = 1 := by
+      rw [← degree_eq_fiber_sum f (f x), hf]
+    have hsplit := s.add_sum_erase (fun z ↦ localMultiplicity f z) hxm
+    rw [hsum] at hsplit
+    have hxpos := localMultiplicity_pos f x
+    have herase : ∑ z ∈ s.erase x, localMultiplicity f z = 0 := by omega
+    have hx'erase : x' ∈ s.erase x := Finset.mem_erase.mpr ⟨Ne.symm hxx', hx'm⟩
+    have hx'zero : localMultiplicity f x' = 0 :=
+      (Finset.sum_eq_zero_iff.mp herase) x' hx'erase
+    exact (localMultiplicity_pos f x').ne' hx'zero
+  have hhomeo : IsHomeomorph f :=
+    ⟨f.holomorphic.continuous,
+      isOpenMap_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst,
+      hinj, f.surjective⟩
+  exact
+    { toEquiv := (hhomeo.homeomorph f).toEquiv
+      contMDiff_toFun := f.holomorphic.contMDiff
+      contMDiff_invFun := (hhomeo.mdifferentiable_symm f.holomorphic).contMDiff }
+
+@[simp]
+theorem biholomorphOfDegreeEqOne_toFun [IsManifold 𝓘(ℂ) ∞ X]
+    [IsManifold 𝓘(ℂ) ∞ Y]
+    (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
+    ⇑(biholomorphOfDegreeEqOne f hf) = f :=
+  (rfl)
 
 end Compact
 
