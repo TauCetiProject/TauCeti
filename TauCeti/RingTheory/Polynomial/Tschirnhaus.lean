@@ -101,8 +101,9 @@ theorem map_tschirnhausPolynomial {f : R[X]} (hf : f.Monic) (T : R[X]) (φ : R �
     (tschirnhausPolynomial f T).map φ = tschirnhausPolynomial (f.map φ) (T.map φ) := by
   nontriviality S
   rw [tschirnhausPolynomial_eq_resultant hf T le_rfl,
-    tschirnhausPolynomial_eq_resultant (hf.map φ) (T.map φ) natDegree_map_le, hf.natDegree_map,
-    ← coe_mapRingHom, ← resultant_map_map]
+    tschirnhausPolynomial_eq_resultant (hf.map φ) (T.map φ) natDegree_map_le, hf.natDegree_map]
+  simp only [← coe_mapRingHom]
+  rw [← resultant_map_map]
   have hC : (mapRingHom φ).comp C = C.comp φ := RingHom.ext fun a ↦ by simp
   congr 1 <;> simp [Polynomial.map_map, hC]
 
@@ -137,12 +138,9 @@ theorem tschirnhausPolynomial_eq_prod_roots [IsDomain R] {f : R[X]} (hf : f.Moni
     tschirnhausPolynomial f T = ((f.roots.map T.eval).map fun b ↦ X - C b).prod := by
   rw [tschirnhausPolynomial_eq_resultant hf T le_rfl,
     ← natDegree_map_eq_of_injective C_injective f,
-    resultant_eq_prod_eval _ _ _ (natDegree_C_X_sub_map_C_le T) (hs.map C),
-    (hf.map C).leadingCoeff, one_pow, one_mul, hs.roots_map_of_injective C_injective,
-    Multiset.map_map, Multiset.map_map]
-  congr 1
-  refine Multiset.map_congr rfl fun a _ ↦ ?_
-  simp [eval_map]
+    resultant_eq_prod_eval _ _ _ (natDegree_C_X_sub_map_C_le T) (hs.map C)]
+  simp [(hf.map C).leadingCoeff, hs.roots_map_of_injective C_injective, Multiset.map_map,
+    eval_map]
 
 /-- Over a domain in which the monic polynomial `f` splits, the roots of the Tschirnhaus
 transform are the values of `T` at the roots of `f`, counted with multiplicity. -/
@@ -202,8 +200,10 @@ theorem tschirnhausPolynomial_X (f : R[X]) : tschirnhausPolynomial f X = f := by
     -- Reverse the subtraction to use `natDegree_X_sub_C`; negation preserves the degree.
     rw [show (C X - X : R[X][X]) = -(X - C X) by ring, natDegree_neg,
       natDegree_X_sub_C]
-  rw [tschirnhausPolynomial, Polynomial.map_X, hdeg,
-    resultant_C_sub_X_right _ _ _ le_rfl, eval_map, eval₂_C_X]
+  -- Rewrite the mapped right input explicitly, since its default degree bound depends on it.
+  rw [tschirnhausPolynomial, Polynomial.map_X]
+  rw [hdeg, resultant_C_sub_X_right _ _ _ le_rfl]
+  simp [eval_map]
 
 /-- The Tschirnhaus transform by a constant `c` collapses every root to `c`. -/
 @[simp]
@@ -211,9 +211,10 @@ theorem tschirnhausPolynomial_C (f : R[X]) (c : R) :
     tschirnhausPolynomial f (C c) = (X - C c) ^ f.natDegree := by
   -- The second polynomial is constant in the outer variable, so `resultant_C_zero_right`
   -- applies with its outer degree explicitly rewritten to zero.
-  rw [tschirnhausPolynomial, Polynomial.map_C, ← C_sub,
-    show (C (X - C c) : R[X][X]).natDegree = 0 by simp, resultant_C_zero_right,
-    natDegree_map_eq_of_injective C_injective]
+  rw [tschirnhausPolynomial, Polynomial.map_C, ← C_sub]
+  simp only [natDegree_C]
+  rw [resultant_C_zero_right]
+  simp [natDegree_map_eq_of_injective C_injective]
 
 section Algebra
 
