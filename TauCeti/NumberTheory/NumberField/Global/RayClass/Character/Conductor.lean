@@ -82,18 +82,6 @@ theorem _root_.TauCeti.GlobalNumberFields.HeckeCharacter.conductor_ofRayClassCha
     (HeckeCharacter.ofRayClassCharacter 𝔪 η).conductor hη = η.conductor :=
   (rfl)
 
-/-- A ray class character of `𝔪` is induced from a divisor `𝔫` of `𝔪` exactly when its Hecke
-character comes from a ray class character of `𝔫`. -/
-theorem exists_induced_eq_iff_mem_range (h : 𝔫 ∣ 𝔪) (η : RayClassCharacter 𝔪) :
-    (∃ ψ : RayClassCharacter 𝔫, ψ.induced h = η) ↔
-      HeckeCharacter.ofRayClassCharacter 𝔪 η ∈ (HeckeCharacter.ofRayClassCharacter 𝔫).range := by
-  constructor
-  · rintro ⟨ψ, rfl⟩
-    exact ⟨ψ, (HeckeCharacter.ofRayClassCharacter_induced h ψ).symm⟩
-  · rintro ⟨ψ, hψ⟩
-    refine ⟨ψ, HeckeCharacter.ofRayClassCharacter_injective 𝔪 ?_⟩
-    rw [HeckeCharacter.ofRayClassCharacter_induced, hψ]
-
 /-- **The conductor is the least modulus from which a ray class character is induced**: a ray
 class character of `𝔪` is induced from a divisor `𝔫` of `𝔪` exactly when its conductor divides
 `𝔫`. -/

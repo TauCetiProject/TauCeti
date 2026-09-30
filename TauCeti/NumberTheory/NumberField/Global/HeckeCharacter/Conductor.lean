@@ -61,16 +61,6 @@ namespace HeckeCharacter
 
 variable {𝔪 𝔫 : Modulus K}
 
-/-- **The moduli from which a Hecke character comes are closed under greatest common divisors.**
-A Hecke character trivial on the ray subgroups of `𝔪` and of `𝔫` is trivial on the subgroup they
-generate, which is the ray subgroup of `𝔪.gcd 𝔫`. -/
-theorem mem_range_ofRayClassCharacter_gcd {χ : HeckeCharacter K}
-    (h𝔪 : χ ∈ (ofRayClassCharacter 𝔪).range) (h𝔫 : χ ∈ (ofRayClassCharacter 𝔫).range) :
-    χ ∈ (ofRayClassCharacter (𝔪.gcd 𝔫)).range := by
-  rw [mem_range_ofRayClassCharacter_iff] at h𝔪 h𝔫 ⊢
-  rw [raySubgroup_gcd]
-  exact sup_le h𝔪 h𝔫
-
 /-- The moduli from which a finite-order Hecke character comes form a nonempty set. -/
 private theorem nonempty_setOf_mem_range {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) :
     {𝔪 : Modulus K | χ ∈ (ofRayClassCharacter 𝔪).range}.Nonempty := by
