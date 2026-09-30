@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
 public import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.RingTheory.IntegralDomain
@@ -54,6 +55,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
   element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
+* `Matrix.ProjectiveSpecialLinearGroup.exists_rotation_eq_of_smul_I_eq_I`: the stabilizer of `I`
+  in `PSL(2, ℝ)` consists of the classes of the rotations `Matrix.SpecialLinearGroup.rotation θ`.
 
 ## References
 
@@ -144,6 +147,42 @@ theorem eq_one_of_smul_eq_self_of_smul_eq_self {q : PSL(2, ℝ)} {z w : ℍ} (hz
   have h := UpperHalfPlane.discCoordinate_psl_smul_of_smul_eq_self hz w
   rw [hw] at h
   exact (mul_eq_right₀ (UpperHalfPlane.discCoordinate_eq_zero_iff.not.mpr hwz)).mp h.symm
+
+/-- **The stabilizer of `I` is the rotation group**: every element of `PSL(2, ℝ)` fixing `I` is the
+class of a rotation `Matrix.SpecialLinearGroup.rotation θ`.
+Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 8), §1 p. 6:
+`K = SO(2)` is the stabiliser of `i` in `SL(2, ℝ)`. -/
+theorem exists_rotation_eq_of_smul_I_eq_I {q : PSL(2, ℝ)}
+    (hq : q • UpperHalfPlane.I = UpperHalfPlane.I) :
+    ∃ θ : ℝ, q = ↑(Matrix.SpecialLinearGroup.rotation θ) := by
+  induction q using QuotientGroup.induction_on with | _ g =>
+  rw [pslMk_smul, MulAction.compHom_smul_def, gl_smul_I_eq_I_iff_of_pos (by simp)] at hq
+  simp only [Matrix.SpecialLinearGroup.mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe,
+    RingHom.mapMatrix_apply, Matrix.map_apply, Algebra.algebraMap_self_apply] at hq
+  obtain ⟨h₀, h₁⟩ := hq
+  -- the representative is `!![a, -c; c, a]` with `a ^ 2 + c ^ 2 = 1`
+  have hdet : g 0 0 ^ 2 + g 1 0 ^ 2 = 1 := by
+    have := g.det_coe
+    rw [Matrix.det_fin_two, h₁, ← h₀] at this
+    linear_combination this
+  set w : ℂ := g 0 0 - g 1 0 * Complex.I with hw
+  have hnorm : ‖w‖ = 1 := by
+    rw [hw, Complex.norm_eq_sqrt_sq_add_sq]
+    simp [hdet]
+  have hw0 : w ≠ 0 := by
+    intro h
+    rw [h, norm_zero] at hnorm
+    exact zero_ne_one hnorm
+  refine ⟨w.arg, ?_⟩
+  congr 1
+  refine Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ ?_
+  have hcos : Real.cos w.arg = g 0 0 := by
+    rw [Complex.cos_arg hw0, hnorm, div_one, hw]
+    simp
+  have hsin : Real.sin w.arg = -g 1 0 := by
+    rw [Complex.sin_arg, hnorm, div_one, hw]
+    simp
+  fin_cases i <;> fin_cases j <;> simp [hcos, hsin, h₀, h₁]
 
 end Matrix.ProjectiveSpecialLinearGroup
 
