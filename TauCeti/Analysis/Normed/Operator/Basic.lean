@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Basic facts about bounded operators
@@ -16,6 +18,11 @@ values at the limiting argument converge, and the arguments `g i` converge. In p
 supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`.
+
+It also records the Neumann-series criterion in the form of Mathlib's
+`ContinuousLinearMap.IsInvertible`: on a Banach space, `id - T` is invertible when `‖T‖ < 1`.
+This is how the linearization of a contraction's fixed-point equation is shown to be invertible
+when the implicit function theorem is applied to it.
 -/
 
 public section
@@ -46,6 +53,15 @@ theorem _root_.ContinuousLinearMap.tendsto_apply_of_eventually_norm_le {ι : Typ
     rw [← ContinuousLinearMap.map_add, sub_add_cancel]
   simpa using (hmove.add hz).congr fun i => (hsplit i).symm
 
+/-- **The Neumann series criterion.** On a Banach space, the identity minus an operator of norm
+less than `1` is invertible. -/
+theorem _root_.ContinuousLinearMap.isInvertible_id_sub_of_norm_lt_one [CompleteSpace X]
+    {T : X →L[𝕜] X} (hT : ‖T‖ < 1) : (ContinuousLinearMap.id 𝕜 X - T).IsInvertible := by
+  obtain ⟨u, hu⟩ := isUnit_one_sub_of_norm_lt_one hT
+  rw [← ContinuousLinearMap.one_def, ← hu]
+  exact .of_inverse (g := (u⁻¹ : Units _)) (by rw [← ContinuousLinearMap.mul_def, u.mul_inv,
+    ContinuousLinearMap.one_def]) (by rw [← ContinuousLinearMap.mul_def, u.inv_mul,
+    ContinuousLinearMap.one_def])
 
 end TauCeti
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
-public import TauCeti.Analysis.ODE.LyapunovPerron.Graph
+public import TauCeti.Analysis.ODE.LyapunovPerron.Smooth
 import Mathlib.Analysis.ODE.Transform
 
 /-!
@@ -38,13 +38,16 @@ although the radial cutoff need not be differentiable at the boundary sphere, it
 near zero, and the Lyapunov--Perron solutions tend uniformly to zero with their input parameter.
 Together with `ContinuousLinearMap.apply_localStableGraphMap`, this makes the graph tangent to the
 range of `P` at the equilibrium whenever `P` is the commuting projection of an exponential
-dichotomy.
+dichotomy. If `N` is moreover differentiable on the open ball, with a uniformly continuous
+derivative, the graph map is `C¹` on the open ball of input parameters whose solutions the uniform
+bound keeps inside the ball: there the cutoff is again invisible, and
+`TauCeti.Analysis.ODE.LyapunovPerron.Smooth` applies.
 
 Time reversal applies the same construction to `-A`, `-N`, and the complementary projection
 `1 - P`, without duplicating the fixed-point argument. When `P` is idempotent this gives the local
 unstable set as a Lipschitz graph over `range (1 - P)`, and when `P` moreover commutes with `A`
 the graph map takes its values in `range P`. Its derivative also vanishes at the equilibrium when
-the derivative of `N` does.
+the derivative of `N` does, and it is `C¹` near the equilibrium when `N` is.
 
 ## Main declarations
 
@@ -54,6 +57,10 @@ the derivative of `N` does.
 * `ContinuousLinearMap.hasFDerivAt_localStableGraphMap_zero` and
   `ContinuousLinearMap.hasFDerivAt_localUnstableGraphMap_zero`: when the nonlinear remainder has
   derivative zero at the equilibrium, so do the local stable and unstable graph maps.
+* `ContinuousLinearMap.contDiffOn_localStableGraphMap` and
+  `ContinuousLinearMap.contDiffOn_localUnstableGraphMap`: when the nonlinearity is `C¹` on the
+  ball of confinement with uniformly continuous derivative, the local stable and unstable graph
+  maps are `C¹` on the open ball of parameters where they describe the local invariant sets.
 * `ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall`: a forward solution that
   never leaves the ball of radius `r` tends to the equilibrium.
 * `ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: the local
@@ -197,6 +204,41 @@ theorem hasFDerivAt_localStableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
   exact hasFDerivAt_lyapunovPerronGraphMap_zero hs hu (pos_of_two_mul_mul_lt hsmall)
     (hN.comp_radialRetraction hr) hsmall (by simp [hN0])
     (hN'.congr_of_eventuallyEq hcutoff)
+
+/-- **The local stable graph map is `C¹`.** Suppose that the nonlinearity fixes the equilibrium
+and is differentiable on the open ball of radius `r`, with a derivative that is uniformly
+continuous there. Then the local stable graph map is continuously differentiable on the open ball
+of radius `ρ`, for every `ρ` that the uniform bound on Lyapunov--Perron solutions carries into the
+ball of radius `r`. These are the radii for which
+`ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image` describes the
+local stable set as the graph of this map. -/
+theorem contDiffOn_localStableGraphMap (hr0 : 0 < r) (hN0 : N 0 = 0) {N' : X → X →L[ℝ] X}
+    (hNd : ∀ x ∈ ball (0 : X) r, HasFDerivAt N (N' x) x) (hN' : UniformContinuousOn N' (ball 0 r))
+    {ρ : ℝ} (hρ : (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ ≤ r) :
+    ContDiffOn ℝ 1 (localStableGraphMap A P N r hs hu hr hN hsmall) (ball 0 ρ) := by
+  have hα : 0 < α := pos_of_two_mul_mul_lt hsmall
+  have hMlip : LipschitzWith (ε * 2) (N ∘ TauCeti.radialRetraction r) :=
+    hN.comp_radialRetraction hr
+  -- On the open ball the cutoff is invisible, so the cut-off nonlinearity has derivative `N'`.
+  have hMd : ∀ x ∈ ball (0 : X) r, HasFDerivAt (N ∘ TauCeti.radialRetraction r) (N' x) x :=
+    fun x hx ↦ (hNd x hx).congr_of_eventuallyEq <| by
+      simpa only [Function.comp_id] using
+        (TauCeti.radialRetraction_eventuallyEq_id (mem_ball_zero_iff.1 hx)).fun_comp N
+  have hbound : ∀ (ξ : X) (t : ℝ≥0),
+      ‖lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall ξ t‖ ≤
+        (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖ξ‖ :=
+    norm_lyapunovPerronSolution_le_mul_norm hs hu hα hMlip hsmall (by simp [hN0])
+  intro ξ hξ
+  -- The solution with input parameter `ξ` stays a positive distance inside the ball.
+  have hξr : (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖ξ‖ < r := by
+    rcases (lyapunovPerronBound_nonneg hsmall).eq_or_lt with hC | hC
+    · rwa [← hC, zero_mul]
+    · exact (mul_lt_mul_of_pos_left (mem_ball_zero_iff.1 hξ) hC).trans_le hρ
+  rw [localStableGraphMap]
+  refine (contDiffAt_lyapunovPerronGraphMap hs hu hα hMlip hsmall hMd hN' (sub_pos.2 hξr)
+    fun t ↦ ball_subset_ball' ?_).contDiffWithinAt
+  rw [dist_zero_right]
+  linarith [hbound ξ t]
 
 omit [CompleteSpace X] in
 /-- **Cutting off is invisible to a confined solution.** A forward curve that never leaves the
@@ -388,6 +430,17 @@ theorem hasFDerivAt_localUnstableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
     (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hr0
     (by simp [hN0]) (by simpa using hN'.neg)
+
+/-- **The local unstable graph map is `C¹`** on the open ball of radius `ρ`, under the
+hypotheses of `ContinuousLinearMap.contDiffOn_localStableGraphMap`. -/
+theorem contDiffOn_localUnstableGraphMap (hr0 : 0 < r) (hN0 : N 0 = 0) {N' : X → X →L[ℝ] X}
+    (hNd : ∀ x ∈ ball (0 : X) r, HasFDerivAt N (N' x) x) (hN' : UniformContinuousOn N' (ball 0 r))
+    {ρ : ℝ} (hρ : (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ ≤ r) :
+    ContDiffOn ℝ 1 (localUnstableGraphMap A P N r hs hu hr hN hsmall) (ball 0 ρ) := by
+  rw [localUnstableGraphMap]
+  exact contDiffOn_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hr0 (by simp [hN0])
+    (fun x hx ↦ (hNd x hx).neg) (uniformContinuous_neg.comp_uniformContinuousOn hN') hρ
 
 /-- The local unstable graph map has the same Lipschitz bound as the stable graph map. -/
 theorem lipschitzWith_localUnstableGraphMap :
