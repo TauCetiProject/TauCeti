@@ -23,9 +23,9 @@ homomorphism need not be injective: pulling back along a surjection also gives a
 
 The key step is that Bruhat cells pull back to Bruhat cells: for `w : H` with `f w ∈ N`, the
 preimage of `B f(w) B` is the double coset `f⁻¹(B) w f⁻¹(B)`
-(`TauCeti.TitsSystem.preimage_doubleCoset`). This is where the hypothesis `G = f(H) T` enters:
-it lets the factors from `B` be replaced by factors from `f⁻¹(B)`, with the leftover element of
-`T` moved past `f w`, which normalizes `T`.
+(`TauCeti.TitsSystem.preimage_doubleCoset`). This is where the hypothesis `G = f(H) T` enters,
+only through its consequence `B ⊆ f(H) T`: it lets the factors from `B` be replaced by factors
+from `f⁻¹(B)`, with the leftover element of `T` moved past `f w`, which normalizes `T`.
 
 ## Main declarations
 
@@ -55,11 +55,11 @@ private theorem conj_mem_subgroupB {n t : G} (hn : n ∈ T.subgroupN)
 
 variable {f}
 
-/-- **Bruhat cells pull back to Bruhat cells.** If `G = f(H) (B ∩ N)`, then for every `w : H`
+/-- **Bruhat cells pull back to Bruhat cells.** If `B ⊆ f(H) (B ∩ N)`, then for every `w : H`
 with `f w ∈ N`, the preimage of the double coset `B f(w) B` is the double coset
 `f⁻¹(B) w f⁻¹(B)`. -/
 theorem preimage_doubleCoset
-    (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g)
+    (hfB : ∀ b ∈ T.subgroupB, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = b)
     {w : H} (hw : f w ∈ T.subgroupN) :
     f ⁻¹' DoubleCoset.doubleCoset (f w) T.subgroupB T.subgroupB =
       DoubleCoset.doubleCoset w (T.subgroupB.comap f) (T.subgroupB.comap f) := by
@@ -68,7 +68,7 @@ theorem preimage_doubleCoset
     Subgroup.mem_comap]
   constructor
   · rintro ⟨b, hb, b', hb', hz⟩
-    obtain ⟨x, t, ht, rfl⟩ := hf b
+    obtain ⟨x, t, ht, rfl⟩ := hfB b hb
     have hx : f x ∈ T.subgroupB := by
       simpa using mul_mem hb (inv_mem ht.1)
     -- The factor `t ∈ B ∩ N` moves to the right past `f w`, which normalizes `B ∩ N`.
@@ -114,6 +114,17 @@ private def comapWeylGroupHom :
 private theorem comapWeylGroupHom_mk (n : T.subgroupN.comap f) :
     comapWeylGroupHom T (QuotientGroup.mk n) = QuotientGroup.mk (f.subgroupComap T.subgroupN n) :=
   QuotientGroup.map_mk _ _ _ _ _
+
+/-- A representative `r₀ ∈ N` of the image of the class of `r ∈ f⁻¹(N)` is `f r` times an
+element of `B ∩ N`. -/
+private theorem exists_eq_mul_of_mk_eq_comapWeylGroupHom_mk {r₀ : T.subgroupN}
+    {r : T.subgroupN.comap f}
+    (h : (QuotientGroup.mk r₀ : T.WeylGroup) = comapWeylGroupHom T (QuotientGroup.mk r)) :
+    ∃ t ∈ T.subgroupB ⊓ T.subgroupN, (r₀ : G) = f r * t := by
+  rw [comapWeylGroupHom_mk, eq_comm, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
+    Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r] at h
+  exact ⟨(f r)⁻¹ * r₀, Subgroup.mem_inf.mpr ⟨h, mul_mem (inv_mem r.2) r₀.2⟩,
+    (mul_inv_cancel_left _ _).symm⟩
 
 private theorem comapWeylGroupHom_injective :
     Function.Injective (comapWeylGroupHom T (f := f)) := by
@@ -165,7 +176,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
         DoubleCoset.doubleCoset (f x) T.subgroupB T.subgroupB :=
       DoubleCoset.doubleCoset_eq_of_mem (DoubleCoset.mem_doubleCoset.mpr
         ⟨1, one_mem _, t, ht.1, by rw [one_mul, hxt]⟩)
-    rw [hcell, ← Set.mem_preimage, T.preimage_doubleCoset hf hx,
+    rw [hcell, ← Set.mem_preimage, T.preimage_doubleCoset (fun b _ ↦ hf b) hx,
       DoubleCoset.mem_doubleCoset] at hn
     obtain ⟨b, hb, b', hb', rfl⟩ := hn
     exact mul_mem (mul_mem (Subgroup.subset_closure (Or.inl hb))
@@ -188,13 +199,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
     refine ⟨r, rfl, fun w ↦ ?_⟩
     have hr : f r ∈ T.subgroupN := r.2
     have hw : f w ∈ T.subgroupN := w.2
-    -- `r₀ = f r * t` for some `t ∈ B ∩ N`.
-    rw [comapWeylGroupHom_mk, eq_comm, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
-      Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r] at hr₀
-    set t : G := (f r)⁻¹ * r₀ with ht_def
-    have ht : t ∈ T.subgroupB ⊓ T.subgroupN :=
-      Subgroup.mem_inf.mpr ⟨hr₀, mul_mem (inv_mem hr) r₀.2⟩
-    have hr₀t : (r₀ : G) = f r * t := by rw [ht_def, mul_inv_cancel_left]
+    obtain ⟨t, ht, hr₀t⟩ := T.exists_eq_mul_of_mk_eq_comapWeylGroupHom_mk hr₀
     have hcell_r : DoubleCoset.doubleCoset (f r) T.subgroupB T.subgroupB =
         DoubleCoset.doubleCoset (r₀ : G) T.subgroupB T.subgroupB :=
       (DoubleCoset.doubleCoset_eq_of_mem (DoubleCoset.mem_doubleCoset.mpr
@@ -210,24 +215,21 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
     have hrw : f (r * w) ∈ T.subgroupN := by
       rw [map_mul]
       exact mul_mem hr hw
-    rw [← T.preimage_doubleCoset hf hr] at hz₁
-    rw [← T.preimage_doubleCoset hf hw] at hz₂
+    have hfB : ∀ b ∈ T.subgroupB, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = b :=
+      fun b _ ↦ hf b
+    rw [← T.preimage_doubleCoset hfB hr] at hz₁
+    rw [← T.preimage_doubleCoset hfB hw] at hz₂
     have hmem := hmul (f.subgroupComap T.subgroupN w)
       (Set.mul_mem_mul (hcell_r ▸ hz₁) hz₂)
     rw [hcell_rw] at hmem
-    rw [Subgroup.coe_mul, ← T.preimage_doubleCoset hf hrw, ← T.preimage_doubleCoset hf hw]
+    rw [Subgroup.coe_mul, ← T.preimage_doubleCoset hfB hrw, ← T.preimage_doubleCoset hfB hw]
     simpa only [Set.mem_union, Set.mem_preimage, map_mul,
       f.subgroupComap_apply_coe T.subgroupN w] using hmem
   exists_conj_not_mem s hs := by
     obtain ⟨r₀, hr₀, b, hb⟩ := T.exists_conj_not_mem _ hs
     obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
     have hr : f r ∈ T.subgroupN := r.2
-    rw [comapWeylGroupHom_mk, eq_comm, QuotientGroup.eq, mem_intersection, Subgroup.coe_mul,
-      Subgroup.coe_inv, f.subgroupComap_apply_coe T.subgroupN r] at hr₀
-    set t : G := (f r)⁻¹ * r₀ with ht_def
-    have ht : t ∈ T.subgroupB ⊓ T.subgroupN :=
-      Subgroup.mem_inf.mpr ⟨hr₀, mul_mem (inv_mem hr) r₀.2⟩
-    have hr₀t : (r₀ : G) = f r * t := by rw [ht_def, mul_inv_cancel_left]
+    obtain ⟨t, ht, hr₀t⟩ := T.exists_eq_mul_of_mk_eq_comapWeylGroupHom_mk hr₀
     -- Write `t b t⁻¹ = f x * t₁` with `f x ∈ B` and `t₁ ∈ B ∩ N`.
     obtain ⟨x, t₁, ht₁, hxt₁⟩ := hf (t * b * t⁻¹)
     have hx : f x ∈ T.subgroupB := by
