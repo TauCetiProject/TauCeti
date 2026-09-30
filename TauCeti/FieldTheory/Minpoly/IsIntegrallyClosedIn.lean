@@ -283,12 +283,14 @@ theorem finrank_sup_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosed
   have hld : A.LinearDisjoint B :=
     linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hexB A
   have hdegree := finrank_sup_eq_finrank_of_linearDisjoint A B C hCB hld
+  -- Fold the local abbreviations `f` and `B` into the compositum hypothesis.
   change A ⊔ B = ⊤ at h
   have htop : (IntermediateField.extendScalars (sup_le_sup_left hCB A) :
       IntermediateField ↥(A ⊔ C) E) = ⊤ := by
     ext y
     simp only [IntermediateField.mem_extendScalars, h, IntermediateField.mem_top]
   rw [htop, IntermediateField.finrank_top'] at hdegree
+  -- Fold the local abbreviation `C` into the degree comparison goal.
   change Module.finrank ↥(A ⊔ C) E = Module.finrank k⟮x⟯ F
   rw [hdegree]
   have hC : (k⟮x⟯ : IntermediateField k F).map f = C := by
