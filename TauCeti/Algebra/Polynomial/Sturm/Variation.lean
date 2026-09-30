@@ -14,7 +14,7 @@ public import Mathlib.Data.List.SignVariations
 The variation of a signed Euclidean remainder sequence is the number used in
 Sturm's root-counting formula. Mathlib's `Polynomial.sturmSeq` supplies the
 sequence and `List.signVariations` counts its sign changes. At a zero of the
-second polynomial where the first is nonzero, the first and third values are
+nonzero second polynomial where the first is nonzero, the first and third values are
 opposite, so deleting the zero reveals exactly one sign change. This file
 records that local calculation alongside the sequence recurrence and the zero
 cases. The calculation works over any ordered field; it does not require real
@@ -85,7 +85,7 @@ theorem sturmVariation_eq_add_of_eval_ne_zero {p q : K[X]} {x : K}
 
 variable [IsStrictOrderedRing K]
 
-/-- At a zero of the second polynomial that is not a zero of the first,
+/-- At a zero of the nonzero second polynomial that is not a zero of the first,
 the first Sturm variation step contributes exactly one sign change. -/
 @[simp] theorem sturmVariation_eq_add_one_of_eval_ne_zero_of_eval_eq_zero
     {p q : K[X]} {x : K}
