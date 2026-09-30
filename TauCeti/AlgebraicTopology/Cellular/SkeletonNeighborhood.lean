@@ -32,6 +32,8 @@ new pair, leaving the open `n`-cells relative to their outer halves.
 * `TauCeti.isIso_singularHomologyMap_skeletonPairToNeighborhood`: the inclusion
   `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, TauCeti.skeletonNeighborhood C n)` induces isomorphisms on relative singular
   homology.
+* `TauCeti.skeletonNeighborhoodToPair`, `TauCeti.skeletonPairToNeighborhood_homotopy`, and
+  `TauCeti.skeletonNeighborhoodToPair_homotopy`: the inverse map and the two pair homotopies.
 * `TauCeti.cellularChainGroupIsoNeighborhood`: the resulting isomorphism from the cellular chain
   group.
 
@@ -68,9 +70,32 @@ def skeletonPairToNeighborhood (n : ℕ) : skeletonPair C n ⟶ skeletonNeighbor
 /-- The radial deformation retraction, as a map of pairs
 `(Xⁿ, TauCeti.skeletonNeighborhood C n) ⟶ (Xⁿ, Xⁿ⁻¹)`; it is a homotopy inverse of
 `TauCeti.skeletonPairToNeighborhood`. -/
-private def skeletonNeighborhoodToPair (n : ℕ) : skeletonNeighborhoodPair C n ⟶ skeletonPair C n :=
+def skeletonNeighborhoodToPair (n : ℕ) : skeletonNeighborhoodPair C n ⟶ skeletonPair C n :=
   TopPair.ofInclusionMap _ _ (skeletonNeighborhoodEndpoint C n) fun x hx ↦
     skeletonNeighborhoodEndpoint_mem x hx
+
+/-- The inverse followed by the inclusion is homotopic to the identity on the skeletal pair. -/
+def skeletonPairToNeighborhood_homotopy (n : ℕ) :
+    TopPair.Homotopy (skeletonPairToNeighborhood C n ≫ skeletonNeighborhoodToPair C n)
+      (𝟙 (skeletonPair C n)) := by
+  rw [skeletonPairToNeighborhood, skeletonNeighborhoodToPair, ← TopPair.ofInclusionMap_comp,
+    ← TopPair.ofInclusionMap_id]
+  have hF (t : unitInterval) (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
+      (hx : (x : X) ∈ (skeletonLT C n : Set X)) :
+      ((skeletonNeighborhoodHomotopy C n).symm (t, x) : X) ∈ (skeletonLT C n : Set X) := by
+    rw [ContinuousMap.Homotopy.symm_apply, skeletonNeighborhoodHomotopy_apply_of_mem _ x hx]
+    exact hx
+  exact TopPair.ofInclusionHomotopy (skeletonNeighborhoodHomotopy C n).symm hF
+
+/-- The inclusion followed by the inverse is homotopic to the identity on the neighborhood
+pair. -/
+def skeletonNeighborhoodToPair_homotopy (n : ℕ) :
+    TopPair.Homotopy (skeletonNeighborhoodToPair C n ≫ skeletonPairToNeighborhood C n)
+      (𝟙 (skeletonNeighborhoodPair C n)) := by
+  rw [skeletonPairToNeighborhood, skeletonNeighborhoodToPair, ← TopPair.ofInclusionMap_comp,
+    ← TopPair.ofInclusionMap_id]
+  exact TopPair.ofInclusionHomotopy (skeletonNeighborhoodHomotopy C n).symm
+    fun t x hx ↦ skeletonNeighborhoodHomotopy_mem _ x hx
 
 section
 
@@ -82,22 +107,8 @@ on relative singular homology** in every degree. -/
 theorem isIso_singularHomologyMap_skeletonPairToNeighborhood (n k : ℕ) :
     IsIso ((skeletonPair C n).singularHomologyMap (skeletonPairToNeighborhood C n) R k) := by
   refine TopPair.isIso_singularHomologyMap _ (skeletonNeighborhoodToPair C n) ?_ ?_ R k
-  · -- On `(Xⁿ, Xⁿ⁻¹)` the composite is the retraction, which the deformation joins to the
-    -- identity while fixing `Xⁿ⁻¹`.
-    rw [skeletonPairToNeighborhood, skeletonNeighborhoodToPair, ← TopPair.ofInclusionMap_comp,
-      ← TopPair.ofInclusionMap_id]
-    have hF (t : unitInterval) (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
-        (hx : (x : X) ∈ (skeletonLT C n : Set X)) :
-        ((skeletonNeighborhoodHomotopy C n).symm (t, x) : X) ∈ (skeletonLT C n : Set X) := by
-      rw [ContinuousMap.Homotopy.symm_apply, skeletonNeighborhoodHomotopy_apply_of_mem _ x hx]
-      exact hx
-    exact TopPair.ofInclusionHomotopy (skeletonNeighborhoodHomotopy C n).symm hF
-  · -- On `(Xⁿ, TauCeti.skeletonNeighborhood C n)` the composite is again the retraction, and the
-    -- deformation keeps `TauCeti.skeletonNeighborhood C n` inside itself.
-    rw [skeletonPairToNeighborhood, skeletonNeighborhoodToPair, ← TopPair.ofInclusionMap_comp,
-      ← TopPair.ofInclusionMap_id]
-    exact TopPair.ofInclusionHomotopy (skeletonNeighborhoodHomotopy C n).symm
-      fun t x hx ↦ skeletonNeighborhoodHomotopy_mem _ x hx
+  · exact skeletonPairToNeighborhood_homotopy C n
+  · exact skeletonNeighborhoodToPair_homotopy C n
 
 end
 

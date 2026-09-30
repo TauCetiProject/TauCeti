@@ -210,8 +210,8 @@ lemma skeletonLT_subset_skeletonNeighborhood (n : ℕ) :
 
 /-- **The closed cores of the open `n`-cells form a closed set**: for `r < 1`, the union over all
 `n`-cells of the images of the closed ball of radius `r` under the characteristic maps is closed.
-Each core lies in its open cell, so it meets a closed cell only if that cell is its own, and
-there the intersection is compact. -/
+Each core lies in its open cell. A closed cell of dimension `n` meets the union only in its
+own compact core; open cells of other dimensions are disjoint from it. -/
 theorem isClosed_iUnion_map_closedBall (n : ℕ) {r : ℝ} (hr : r < 1) :
     IsClosed (⋃ j : cell C n, map n j '' closedBall 0 r) := by
   have hcore (j : cell C n) : map n j '' closedBall 0 r ⊆ openCell n j :=
@@ -302,6 +302,19 @@ private lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → �
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
 
+/-- An open `n`-cell point belongs to the skeletal neighborhood exactly when it lies outside
+the inner half of its cell. -/
+lemma map_mem_skeletonNeighborhood_iff {n : ℕ} (j : cell C n) {y : Fin n → ℝ}
+    (hy : ‖y‖ < 1) : map n j y ∈ skeletonNeighborhood C n ↔ (2 : ℝ)⁻¹ ≤ ‖y‖ := by
+  constructor
+  · intro h
+    exact not_lt.1 fun hlt ↦ (mem_skeletonNeighborhood.1 h).2 j y hlt rfl
+  · intro h
+    refine mem_skeletonNeighborhood.2 ⟨map_mem_skeletonLT_succ j hy.le, ?_⟩
+    intro i z hz heq
+    obtain ⟨_, rfl⟩ := (map_eq_map_iff (hz.trans (by norm_num)) hy).1 heq
+    exact (not_lt.2 h) hz
+
 private lemma pushVal_mem {n : ℕ} (t : I) {x : X}
     (hx : x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
     pushVal (C := C) n (t, x) ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
@@ -375,6 +388,17 @@ private lemma coe_skeletonNeighborhoodHomotopy_apply {n : ℕ} (t : I)
     (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
     (skeletonNeighborhoodHomotopy C n (t, x) : X) = pushVal (C := C) n (t, (x : X)) :=
   (rfl)
+
+/-- On a closed `n`-cell, the skeletal deformation is the straight-line homotopy to the
+scaled radial retraction, read through the characteristic map. -/
+lemma skeletonNeighborhoodHomotopy_map {n : ℕ} (t : I) (j : cell C n)
+    {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1)
+    (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) (hx : (x : X) = map n j y) :
+    ((skeletonNeighborhoodHomotopy C n (t, x) : X)) =
+      map n j ((1 - (t : ℝ)) • y + (t : ℝ) •
+        ((2 : ℝ) • radialRetraction 2⁻¹ y)) := by
+  rw [coe_skeletonNeighborhoodHomotopy_apply, hx, pushVal_map t j hy]
+  rfl
 
 /-- The deformation fixes `Xⁿ⁻¹ = skeletonLT C n` pointwise. -/
 @[simp]
