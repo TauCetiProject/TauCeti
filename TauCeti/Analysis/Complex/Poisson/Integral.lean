@@ -43,8 +43,11 @@ theorem planarPoissonIntegral_def (g : ℂ → ℝ) (c : ℂ) (R : ℝ) (w : ℂ
 /-- The Poisson integral of zero boundary data is zero. -/
 @[simp] theorem planarPoissonIntegral_zero (c : ℂ) (R : ℝ) (w : ℂ) :
     planarPoissonIntegral (fun _ ↦ 0) c R w = 0 := by
-  change circleAverage (fun z ↦ poissonKernel c w z * (0 : ℝ)) c R = 0
-  simpa using circleAverage_const (0 : ℝ) c R
+  have h : poissonKernel c w • (fun _ : ℂ ↦ (0 : ℝ)) = fun _ ↦ 0 := by
+    ext z
+    simp
+  rw [planarPoissonIntegral_def, h]
+  exact circleAverage_const (0 : ℝ) c R
 
 /-- The Poisson integral is additive in circle-integrable boundary data away from the circle. -/
 theorem planarPoissonIntegral_add {g₁ g₂ : ℂ → ℝ} {c : ℂ} {R : ℝ} {w : ℂ}
@@ -121,15 +124,6 @@ particular, the Poisson kernel has circle average one there. -/
     fun _ _ ↦ harmonicAt_const a
   rw [planarPoissonIntegral_def]
   exact hc.circleAverage_poissonKernel_smul hw
-
-/-- The Poisson kernel is nonnegative on a circle when its evaluation point lies inside. -/
-private theorem poissonKernel_nonneg_on_sphere {c w z : ℂ} {R : ℝ}
-    (hw : w ∈ ball c R) (hz : z ∈ sphere c R) : 0 ≤ poissonKernel c w z := by
-  rw [poissonKernel_eq_re_herglotzRieszKernel]
-  have hR : ‖w - c‖ < R := mem_ball_iff_norm.mp hw
-  have hRp : 0 < R := pos_of_mem_ball hw
-  exact le_trans (by positivity : 0 ≤ (R - ‖w - c‖) / (R + ‖w - c‖))
-    (by simpa [herglotzRieszKernel_def] using le_re_herglotzRieszKernel hz hw)
 
 /-- The Poisson integral preserves order between circle-integrable boundary data in the disk. -/
 theorem planarPoissonIntegral_mono {g₁ g₂ : ℂ → ℝ} {c : ℂ} {R : ℝ} {w : ℂ}
