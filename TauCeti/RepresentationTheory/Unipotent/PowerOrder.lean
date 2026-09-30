@@ -49,8 +49,10 @@ conclusion for a **finite** group over a commutative ring of characteristic `p` 
 finiteness hypothesis on the module, by an orbit count rather than by Kolchin's theorem.  Neither
 statement subsumes the other: here the module must be finite-dimensional over a field and the
 acting monoid may be infinite, there the module is arbitrary and the group must be finite.  The
-irreducibility corollaries below are accordingly the infinite-group counterparts of
-`Representation.IsIrreducible.eq_trivial_of_forall_pow_eq_one`.
+irreducibility results below are accordingly the infinite-group counterparts of
+`Representation.IsIrreducible.eq_trivial_of_forall_pow_eq_one`.  Because that file has already
+taken the `_of_forall_pow_eq_one` names for its finite-group statements, and neither trio subsumes
+the other, the ones here carry the `expChar` of their characteristic hypothesis in their names.
 
 ## Main results
 
@@ -62,13 +64,16 @@ irreducibility corollaries below are accordingly the infinite-group counterparts
   representation of a monoid in which every element acts with `p`-power order, over a field of
   exponential characteristic `p`, fixes a nonzero vector**, with
   `Representation.exists_fixed_submodule_finrank_eq_one_of_forall_pow_eq_one` its fixed-line form.
-* `Representation.exists_common_fixed_vector_of_isPGroup` and
-  `Representation.invariants_ne_bot_of_isPGroup`: the specialization to a `p`-group, which need not
-  be finite.
-* `Representation.IsIrreducible.eq_trivial_of_isPGroup` and
-  `Representation.IsIrreducible.finrank_eq_one_of_isPGroup`: a finite-dimensional irreducible
-  representation of a `p`-group in exponential characteristic `p` is the trivial representation on a
-  line.
+* `Representation.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one`: the submodule form of that
+  fixed vector, for a group.
+* `Representation.IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one` and
+  `Representation.IsIrreducible.finrank_eq_one_of_forall_pow_expChar_pow_eq_one`: **such a
+  representation is irreducible only if it is the trivial representation on a line**.
+* `Representation.exists_common_fixed_vector_of_isPGroup`,
+  `Representation.invariants_ne_bot_of_isPGroup`,
+  `Representation.IsIrreducible.eq_trivial_of_isPGroup` and
+  `Representation.IsIrreducible.finrank_eq_one_of_isPGroup`: the specializations to a `p`-group,
+  which need not be finite.
 
 ## References
 
@@ -145,45 +150,76 @@ theorem exists_fixed_submodule_finrank_eq_one_of_forall_pow_eq_one [FiniteDimens
 
 end Monoid
 
-section PGroup
+section Invariants
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [Group G] [AddCommGroup V] [Module k V]
-  (p : ℕ) [ExpChar k p] [FiniteDimensional k V]
+  (p : ℕ)
 
-/-- **A nonzero finite-dimensional representation of a `p`-group over a field of exponential
-characteristic `p` fixes a nonzero vector.** The group is not assumed finite. -/
-theorem exists_common_fixed_vector_of_isPGroup [Nontrivial V] (hG : IsPGroup p G)
-    (ρ : Representation k G V) : ∃ v : V, v ≠ 0 ∧ ∀ g : G, ρ g v = v := by
-  refine ρ.exists_common_fixed_vector_of_forall_pow_eq_one p fun g => ?_
-  obtain ⟨n, hn⟩ := hG g
-  exact ⟨n, by rw [← map_pow, hn, map_one]⟩
+/-- In a representation of a `p`-group every element acts with `p`-power order, because `ρ` is a
+monoid homomorphism. -/
+private theorem forall_pow_eq_one_of_isPGroup (hG : IsPGroup p G) (ρ : Representation k G V) :
+    ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1 := fun g =>
+  (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
 
-/-- The submodule form of `Representation.exists_common_fixed_vector_of_isPGroup`: the invariants
-of such a representation are nonzero. -/
-theorem invariants_ne_bot_of_isPGroup [Nontrivial V] (hG : IsPGroup p G)
-    (ρ : Representation k G V) : ρ.invariants ≠ ⊥ := by
-  obtain ⟨v, hv0, hv⟩ := ρ.exists_common_fixed_vector_of_isPGroup p hG
+variable [ExpChar k p] [FiniteDimensional k V]
+
+/-- The submodule form of `Representation.exists_common_fixed_vector_of_forall_pow_eq_one`: the
+invariants of such a representation are nonzero.  This is the infinite-group counterpart of
+`Representation.invariants_ne_bot_of_forall_pow_eq_one`, which drops the finite dimensionality of
+the module and asks instead that the group be finite. -/
+theorem invariants_ne_bot_of_forall_pow_expChar_pow_eq_one [Nontrivial V]
+    (ρ : Representation k G V) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ρ.invariants ≠ ⊥ := by
+  obtain ⟨v, hv0, hv⟩ := ρ.exists_common_fixed_vector_of_forall_pow_eq_one p hρ
   refine fun h => hv0 ?_
   have hmem : v ∈ ρ.invariants := hv
   rwa [h, Submodule.mem_bot] at hmem
 
-/-- **A finite-dimensional irreducible representation of a `p`-group over a field of exponential
-characteristic `p` is the trivial representation.** It has a nonzero invariant vector, and a
-nontrivial irreducible representation has none. The `p`-group need not be finite, which is what
-this adds to `Representation.IsIrreducible.eq_trivial_of_forall_pow_eq_one`. -/
-theorem IsIrreducible.eq_trivial_of_isPGroup {ρ : Representation k G V} (h : ρ.IsIrreducible)
-    (hG : IsPGroup p G) : ρ = trivial k G V :=
+/-- **A finite-dimensional irreducible representation in which every element acts with `p`-power
+order, over a field of exponential characteristic `p`, is the trivial representation.** It has a
+nonzero invariant vector, and a nontrivial irreducible representation has none.  The acting group
+need not be finite, which is what this adds to
+`Representation.IsIrreducible.eq_trivial_of_forall_pow_eq_one`. -/
+theorem IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one {ρ : Representation k G V}
+    (h : ρ.IsIrreducible) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ρ = trivial k G V :=
   have := h.nontrivial
-  not_not.1 fun hne => ρ.invariants_ne_bot_of_isPGroup p hG (h.invariants_eq_bot hne)
+  not_not.1 fun hne =>
+    ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one p hρ (h.invariants_eq_bot hne)
 
 /-- **Such an irreducible representation is a line**, an irreducible representation of any other
 dimension having no nonzero invariant vector. -/
-theorem IsIrreducible.finrank_eq_one_of_isPGroup {ρ : Representation k G V} (h : ρ.IsIrreducible)
-    (hG : IsPGroup p G) : Module.finrank k V = 1 :=
+theorem IsIrreducible.finrank_eq_one_of_forall_pow_expChar_pow_eq_one
+    {ρ : Representation k G V} (h : ρ.IsIrreducible)
+    (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : Module.finrank k V = 1 :=
   have := h.nontrivial
   not_not.1 fun hne =>
-    ρ.invariants_ne_bot_of_isPGroup p hG (h.invariants_eq_bot_of_finrank_ne_one hne)
+    ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one p hρ
+      (h.invariants_eq_bot_of_finrank_ne_one hne)
 
-end PGroup
+/-- **A nonzero finite-dimensional representation of a `p`-group over a field of exponential
+characteristic `p` fixes a nonzero vector.** The group is not assumed finite. -/
+theorem exists_common_fixed_vector_of_isPGroup [Nontrivial V] (hG : IsPGroup p G)
+    (ρ : Representation k G V) : ∃ v : V, v ≠ 0 ∧ ∀ g : G, ρ g v = v :=
+  ρ.exists_common_fixed_vector_of_forall_pow_eq_one p (forall_pow_eq_one_of_isPGroup p hG ρ)
+
+/-- The submodule form of `Representation.exists_common_fixed_vector_of_isPGroup`: the invariants
+of such a representation are nonzero. -/
+theorem invariants_ne_bot_of_isPGroup [Nontrivial V] (hG : IsPGroup p G)
+    (ρ : Representation k G V) : ρ.invariants ≠ ⊥ :=
+  ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one p (forall_pow_eq_one_of_isPGroup p hG ρ)
+
+/-- The specialization of
+`Representation.IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one` to a `p`-group: **a
+finite-dimensional irreducible representation of a `p`-group in exponential characteristic `p` is
+the trivial representation.** -/
+theorem IsIrreducible.eq_trivial_of_isPGroup {ρ : Representation k G V} (h : ρ.IsIrreducible)
+    (hG : IsPGroup p G) : ρ = trivial k G V :=
+  h.eq_trivial_of_forall_pow_expChar_pow_eq_one p (forall_pow_eq_one_of_isPGroup p hG ρ)
+
+/-- **Such an irreducible representation of a `p`-group is a line.** -/
+theorem IsIrreducible.finrank_eq_one_of_isPGroup {ρ : Representation k G V} (h : ρ.IsIrreducible)
+    (hG : IsPGroup p G) : Module.finrank k V = 1 :=
+  h.finrank_eq_one_of_forall_pow_expChar_pow_eq_one p (forall_pow_eq_one_of_isPGroup p hG ρ)
+
+end Invariants
 
 end Representation
