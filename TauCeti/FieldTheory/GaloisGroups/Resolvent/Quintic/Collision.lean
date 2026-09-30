@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.Separable
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Trinomial
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
-import Mathlib.Basic.Complex.Basic
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
@@ -24,6 +23,7 @@ the arithmetic part of the collision example for the resolvent converse.
 * `TauCeti.separable_X_pow_five_sub_X`: the quintic is separable over `ℚ`.
 * `TauCeti.resolventSextic_X_pow_five_sub_X`: the sextic is `(X - 2)⁴ (X² + 16)`.
 * `TauCeti.isRoot_resolventSextic_X_pow_five_sub_X`: `2` is an integral root.
+* `TauCeti.discr_resolventSextic_X_pow_five_sub_X`: the sextic has discriminant zero.
 * `TauCeti.not_separable_map_resolventSextic_X_pow_five_sub_X`: the sextic is inseparable over `ℚ`.
 -/
 
@@ -37,10 +37,11 @@ namespace TauCeti
 theorem monic_X_pow_five_sub_X : (X ^ 5 - X : ℤ[X]).Monic := by monicity!
 
 /-- The discriminant of `X⁵ - X` is `-256`. Its nonzero value proves separability over `ℚ`. -/
+@[simp]
 theorem discr_X_pow_five_sub_X : (X ^ 5 - X : ℤ[X]).discr = -256 := by
   have h := monic_X_pow_five_sub_X.discr_map (Int.castRingHom ℂ)
   simp only [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X] at h
-  rw [prod_X_sub_C_rootsXPowFiveSubX, discr_prod_X_sub_C] at h
+  rw [X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX, discr_prod_X_sub_C] at h
   have hcalc : (∏ i : Fin 5, ∏ j ∈ Finset.Ioi i,
       (rootsXPowFiveSubX i - rootsXPowFiveSubX j) ^ 2) = (-256 : ℂ) := by
     rw [prod_prod_Ioi_eq_of_two (m := 3), prod_prod_Ioi_eq_of_two (m := 1)]
@@ -60,6 +61,7 @@ theorem separable_X_pow_five_sub_X : (X ^ 5 - X : ℚ[X]).Separable := by
   simpa using hsep
 
 /-- Dummit's sextic of `X⁵ - X` has a quadruple root at `2` and two nonreal roots. -/
+@[simp]
 theorem resolventSextic_X_pow_five_sub_X :
     resolventSextic (X ^ 5 - X : ℤ[X]) = (X - 2) ^ 4 * (X ^ 2 + 16) := by
   have hf : (X ^ 5 - X : ℤ[X]) = X ^ 5 + C (-1) * X + C 0 := by simp [sub_eq_add_neg]
@@ -73,12 +75,13 @@ theorem isRoot_resolventSextic_X_pow_five_sub_X :
   rw [resolventSextic_X_pow_five_sub_X]
   simp
 
-/-- The specialized sextic of `X⁵ - X` over `ℚ` is inseparable, despite the quintic having
-distinct roots. -/
-theorem not_separable_map_resolventSextic_X_pow_five_sub_X :
-    ¬ (Polynomial.Separable
+/-- The sextic resolvent of `X⁵ - X` has discriminant zero. -/
+theorem discr_resolventSextic_X_pow_five_sub_X :
+    (resolventSextic (X ^ 5 - X : ℤ[X])).discr = 0 := by
+  by_contra h
+  have hsep : (Polynomial.Separable
       ((resolventSextic (X ^ 5 - X : ℤ[X])).map (Int.castRingHom ℚ))) := by
-  intro hsep
+    simpa using ((monic_resolventSextic _).discr_ne_zero_iff_separable_map ℚ).mp h
   have hformula : (resolventSextic (X ^ 5 - X : ℤ[X])).map (Int.castRingHom ℚ) =
       (X - 2) ^ 4 * (X ^ 2 + 16 : ℚ[X]) := by
     rw [resolventSextic_X_pow_five_sub_X]
@@ -86,5 +89,14 @@ theorem not_separable_map_resolventSextic_X_pow_five_sub_X :
   rw [hformula] at hsep
   exact absurd (hsep.of_mul_left.of_pow (not_isUnit_X_sub_C (2 : ℚ)) (by decide)).2
     (by norm_num)
+
+/-- The specialized sextic of `X⁵ - X` over `ℚ` is inseparable, despite the quintic having
+distinct roots. -/
+theorem not_separable_map_resolventSextic_X_pow_five_sub_X :
+    ¬ (Polynomial.Separable
+      ((resolventSextic (X ^ 5 - X : ℤ[X])).map (Int.castRingHom ℚ))) := by
+  intro hsep
+  exact ((monic_resolventSextic _).discr_ne_zero_iff_separable_map ℚ).mpr hsep
+    discr_resolventSextic_X_pow_five_sub_X
 
 end TauCeti

@@ -40,8 +40,8 @@ powers of `a`, and the two real orbit values `190 ± 12√31` at the roots of
 
 ## Main results
 
-* `TauCeti.rootsXPowFiveSubX` and `TauCeti.prod_X_sub_C_rootsXPowFiveSubX`: an explicit root
-  enumeration and factorization of `X⁵ - X` over `ℂ`.
+* `TauCeti.rootsXPowFiveSubX`: an explicit root enumeration of `X⁵ - X` over `ℂ`.
+* `TauCeti.X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX`: its factorization over `ℂ`.
 * `TauCeti.quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C`: Dummit's formula for the
   specialization at `X⁵ + aX + b` over any commutative ring.
 * `TauCeti.resolventSextic_X_pow_five_add_C_mul_X_add_C`: the resolvent sextic of the integral
@@ -201,6 +201,7 @@ private theorem eval₂_rename_quinticF20Invariant (x : Fin 5 → R) (σ : Equiv
 noncomputable def rootsXPowFiveSubX : Fin 5 → ℂ := ![0, 1, -1, Complex.I, -Complex.I]
 
 /-- The explicit entries of `rootsXPowFiveSubX`. -/
+@[simp]
 theorem rootsXPowFiveSubX_def : rootsXPowFiveSubX = ![0, 1, -1, Complex.I, -Complex.I] := (rfl)
 
 /-- `C i` squares to `-1` in `ℂ[X]`. -/
@@ -208,7 +209,7 @@ private theorem C_I_sq : (C Complex.I : ℂ[X]) ^ 2 = -1 := by
   rw [← C_pow, Complex.I_sq, C_neg, C_1]
 
 /-- The factorization of `X⁵ - X` over `ℂ` using `rootsXPowFiveSubX`. -/
-theorem prod_X_sub_C_rootsXPowFiveSubX :
+theorem X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX :
     (X ^ 5 - X : ℂ[X]) = ∏ i, (X - C (rootsXPowFiveSubX i)) := by
   simp only [Fin.prod_univ_five, rootsXPowFiveSubX]
   simp
@@ -220,7 +221,7 @@ private theorem specialize_X_pow_five_sub_X :
     quinticF20Spec.specialize ℂ (X ^ 5 + C (-1) * X + C 0) = (X - 2) ^ 4 * (X ^ 2 + 16) := by
   have hroots : (X ^ 5 + C (-1) * X + C 0 : ℂ[X]) =
       ∏ i, (X - C (rootsXPowFiveSubX i)) := by
-    convert prod_X_sub_C_rootsXPowFiveSubX using 1
+    convert X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX using 1
     simp [sub_eq_add_neg]
   rw [ResolventSpec.specialize_def, map_vietaHom_eq_galResolvent quinticF20Spec.orbitProduct_esymm
     hroots,
