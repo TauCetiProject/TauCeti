@@ -15,6 +15,9 @@ A continuous automorphism sends a conjugacy class to the class of its image. Inn
 automorphisms fix every conjugacy class, so this action factors through the continuous
 outer automorphism group. These actions are the basic interface for transporting
 conjugacy-invariant data along outer actions of extensions.
+
+The actions are algebraic: they require a topology on `G` to specify continuous
+automorphisms, but no topology on `ContinuousAut G` or `ContinuousOut G`.
 -/
 
 public section
