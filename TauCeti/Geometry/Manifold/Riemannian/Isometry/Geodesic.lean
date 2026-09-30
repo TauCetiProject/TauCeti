@@ -88,6 +88,7 @@ private theorem isGeodesicCurveOn_comp (Φ : RiemannianIsometry I J M N)
 
 /-- A smooth Riemannian isometry preserves the geodesic equation on every parameter set with
 unique derivatives. -/
+@[simp]
 theorem isGeodesicCurveOn_comp_iff (Φ : RiemannianIsometry I J M N)
     {γ : ℝ → M} {s : Set ℝ} :
     IsGeodesicCurveOn J (Φ ∘ γ) s ↔ IsGeodesicCurveOn I γ s := by
@@ -102,6 +103,7 @@ theorem isGeodesicCurveOn_comp_iff (Φ : RiemannianIsometry I J M N)
   · exact isGeodesicCurveOn_comp Φ
 
 /-- A smooth Riemannian isometry preserves all-time geodesics. -/
+@[simp]
 theorem isGeodesicCurve_comp_iff (Φ : RiemannianIsometry I J M N) {γ : ℝ → M} :
     IsGeodesicCurve J (Φ ∘ γ) ↔ IsGeodesicCurve I γ := by
   rw [← isGeodesicCurveOn_univ, ← isGeodesicCurveOn_univ]
@@ -109,6 +111,7 @@ theorem isGeodesicCurve_comp_iff (Φ : RiemannianIsometry I J M N) {γ : ℝ →
 
 /-- A smooth Riemannian isometry carries the initial point of a geodesic to its image and the
 initial velocity through its differential. -/
+@[simp]
 theorem isGeodesicCurveOnFrom_comp_iff (Φ : RiemannianIsometry I J M N)
     {γ : ℝ → M} {s : Set ℝ} {p : M} {v : TangentSpace I p} :
     IsGeodesicCurveOnFrom J (Φ ∘ γ) s (Φ p) (mfderiv I J Φ p v) ↔
@@ -137,7 +140,8 @@ theorem isGeodesicCurveOnFrom_comp_iff (Φ : RiemannianIsometry I J M N)
           (TotalSpace.mk' F (Φ p) (mfderiv I J Φ p v)) := by
         simpa only [curveVelocityLiftWithin_apply] using hinitial
       _ = tangentMap J I Φ.symm
-          (tangentMap I J Φ (TotalSpace.mk' E p v)) := rfl
+          (tangentMap I J Φ (TotalSpace.mk' E p v)) :=
+        congrArg _ (Eq.symm (TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)))
       _ = TotalSpace.mk' E p v := by
         rw [coe_symm]
         exact Diffeomorph.tangentMap_symm_apply Φ.toDiffeomorph (by simp)
@@ -155,7 +159,8 @@ theorem isGeodesicCurveOnFrom_comp_iff (Φ : RiemannianIsometry I J M N)
           (h.isGeodesicCurveOn.uniqueDiffOn 0 h.zero_mem).uniqueMDiffWithinAt).symm
       _ = tangentMap I J Φ (TotalSpace.mk' E p v) := by
         simpa only [curveVelocityLiftWithin_apply] using hinitial
-      _ = TotalSpace.mk' F (Φ p) (mfderiv I J Φ p v) := rfl
+      _ = TotalSpace.mk' F (Φ p) (mfderiv I J Φ p v) :=
+        TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)
 
 end TauCeti.RiemannianIsometry
 

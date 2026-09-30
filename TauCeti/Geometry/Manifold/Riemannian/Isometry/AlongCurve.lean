@@ -96,27 +96,20 @@ theorem mfderiv_alongCurve_mpullback (Φ : RiemannianIsometry I J M N)
 
 /-! ### Arbitrary tangent fields along a curve -/
 
-/-- **Naturality of covariant differentiation along a curve under a Riemannian isometry.**
-The differential of an isometry carries the Levi-Civita derivative of a differentiable tangent
-field along `γ` to the derivative of the transported field along `Φ ∘ γ`.
-
-Differentiability of a tangent field along a curve is expressed in the local coordinates used by
-`CovariantDerivative.alongCurveWithin`. This is the weakest hypothesis needed by the product rule
-which characterizes the derivative. -/
-theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
+/-- The differential of a Riemannian isometry carries a tangent field along `γ` that is
+differentiable in local coordinates to a tangent field along `Φ ∘ γ` that is differentiable in
+local coordinates. -/
+private theorem differentiableWithinAt_sectionCoord_mfderiv (Φ : RiemannianIsometry I J M N)
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
-    (hs : UniqueDiffWithinAt ℝ s t)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ V (γ t)) s t) :
-    mfderiv I J Φ (γ t)
-        (alongCurveWithin (leviCivitaConnection I M) γ V s t) =
-      alongCurveWithin (leviCivitaConnection J N) (Φ ∘ γ)
-        (fun r ↦ mfderiv I J Φ (γ r) (V r)) s t := by
-  let W : ∀ r, TangentSpace J ((Φ ∘ γ) r) :=
-    fun r ↦ mfderiv I J Φ (γ r) (V r)
-  have hΦγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J (Φ ∘ γ) s t :=
-    (Φ.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t) :
+    DifferentiableWithinAt ℝ
+      (sectionCoord (F := F) (Φ ∘ γ) (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) s t := by
+  -- Lift `V` to a differentiable curve in the tangent bundle, then push it forward by the
+  -- smooth tangent map of `Φ`.
   let e := trivializationAt E (TangentSpace I) (γ t)
   have hbase : γ t ∈ e.baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
@@ -143,16 +136,36 @@ theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
     have hmap : tangentMap I J Φ ∘ (fun r ↦ TotalSpace.mk' E (γ r) (V r)) =
         fun r ↦ TotalSpace.mk' F (Φ (γ r)) (mfderiv I J Φ (γ r) (V r)) := by
       funext r
-      apply TotalSpace.ext
-      · exact tangentMap_proj
-      · rfl
+      exact TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)
     simpa only [Diffeomorph.coe_tangent, coe_toDiffeomorph, hmap] using htotal'
-  have hΦV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (Φ ∘ γ)
-        (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) s t :=
-    differentiableWithinAt_sectionCoord (Φ ∘ γ)
-      (fun r ↦ mfderiv I J Φ (γ r) (V r)) hΦtotal
-      (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (Φ (γ t)))
+  exact differentiableWithinAt_sectionCoord (Φ ∘ γ)
+    (fun r ↦ mfderiv I J Φ (γ r) (V r)) hΦtotal
+    (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (Φ (γ t)))
+
+/-- **Naturality of covariant differentiation along a curve under a Riemannian isometry.**
+The differential of an isometry carries the Levi-Civita derivative of a differentiable tangent
+field along `γ` to the derivative of the transported field along `Φ ∘ γ`.
+
+Differentiability of a tangent field along a curve is expressed in the local coordinates used by
+`CovariantDerivative.alongCurveWithin`. This is the weakest hypothesis needed by the product rule
+which characterizes the derivative. -/
+theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
+    {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
+    (hs : UniqueDiffWithinAt ℝ s t)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hV : DifferentiableWithinAt ℝ
+      (sectionCoord (F := E) γ V (γ t)) s t) :
+    mfderiv I J Φ (γ t)
+        (alongCurveWithin (leviCivitaConnection I M) γ V s t) =
+      alongCurveWithin (leviCivitaConnection J N) (Φ ∘ γ)
+        (fun r ↦ mfderiv I J Φ (γ r) (V r)) s t := by
+  let W : ∀ r, TangentSpace J ((Φ ∘ γ) r) :=
+    fun r ↦ mfderiv I J Φ (γ r) (V r)
+  have hΦγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J (Φ ∘ γ) s t :=
+    (Φ.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ
+  have hΦV := Φ.differentiableWithinAt_sectionCoord_mfderiv hγ hV
+  -- Test both sides against pullbacks of differentiable fields `Y` on the target: the
+  -- metric-compatible product rules on source and target differentiate the same inner product.
   refine TauCeti.eq_of_forall_inner_section_eq (I := J)
     (V := fun y : N ↦ TangentSpace J y) F fun Y hY ↦ ?_
   let X : ∀ x : M, TangentSpace I x := mpullback I J Φ Y
