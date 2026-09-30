@@ -36,6 +36,10 @@ group of `K` maps to it through the tame character.
 * `TauCeti.PrimeToPTateModule.mk`: the point with prescribed compatible components.
 * `TauCeti.PrimeToPTateModule.lift`: the homomorphism into the Tate module determined by a
   compatible family of homomorphisms into the levels.
+* `TauCeti.PrimeToPTateModule.map`: the homomorphism of Tate modules induced by a monoid
+  homomorphism `E →* F`.
+* The instance `MulDistribMulAction M (PrimeToPTateModule p E)` for a monoid `M` acting on `E` by
+  multiplicative maps, componentwise; for the Galois group of `E` it is the twist `(1)`.
 
 ## Main results
 
@@ -45,8 +49,10 @@ group of `K` maps to it through the tame character.
   components.
 * `TauCeti.PrimeToPTateModule.continuous_iff`: a map into the Tate module is continuous exactly
   when each of its components is locally constant.
-* The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`, and, for a domain,
-  `CompactSpace`.
+* `TauCeti.PrimeToPTateModule.proj_map`, `TauCeti.PrimeToPTateModule.coe_proj_smul`: `map` and
+  the action are computed componentwise.
+* The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`,
+  `ContinuousConstSMul`, and, for a domain, `CompactSpace`.
 -/
 
 public section
@@ -134,7 +140,8 @@ theorem range_proj :
 
 section Lift
 
-variable {G : Type*} [Group G] (f : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, G →* rootsOfUnity m E)
+variable {G : Type*} [MulOneClass G]
+  (f : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, G →* rootsOfUnity m E)
   (hf : ∀ (m n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) (g : G), (n : ℕ) ∣ m →
     (f m g : Eˣ) ^ ((m : ℕ) / n) = f n g)
 
@@ -171,6 +178,11 @@ private theorem isInducing_proj
     [∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, DiscreteTopology (rootsOfUnity m E)] :
     Topology.IsInducing (fun x : PrimeToPTateModule p E ↦ fun m ↦ proj m x) := by
   refine ⟨?_⟩
+  -- The topology on `PrimeToPTateModule p E` is by definition induced from the product of the
+  -- levels with the *bottom* topology, whereas the goal is stated for the arbitrary discrete
+  -- instances `t`. Since `t` is a variable rather than a definition, no unfolding identifies it
+  -- with `⊥`; once `DiscreteTopology.eq_bot` rewrites `t` to `fun _ ↦ ⊥`, both sides are the
+  -- defining topology and agree by `rfl`.
   rw [show t = fun _ ↦ ⊥ from funext fun m ↦ DiscreteTopology.eq_bot]
   rfl
 
@@ -231,6 +243,63 @@ instance {R : Type*} [CommRing R] [IsDomain R] : CompactSpace (PrimeToPTateModul
     continuous_of_discreteTopology
   have hn : Continuous fun ζ : rootsOfUnity n R ↦ (ζ : Rˣ) := continuous_of_discreteTopology
   exact isClosed_eq (hm.comp (continuous_apply m)) (hn.comp (continuous_apply n))
+
+/-! ### Functoriality and the action of automorphisms -/
+
+section Map
+
+variable {F : Type*} [CommMonoid F]
+
+/-- The homomorphism of prime-to-`p` Tate modules induced by a monoid homomorphism `f : E →* F`,
+applying `f` to each component `μ_m(E) → μ_m(F)`. -/
+def map (f : E →* F) : PrimeToPTateModule p E →* PrimeToPTateModule p F :=
+  lift (fun m ↦ (restrictRootsOfUnity f m).comp (proj m)) fun m n x h ↦ by
+    ext
+    simp only [MonoidHom.comp_apply, Units.val_pow_eq_pow_val, restrictRootsOfUnity_coe_apply]
+    rw [← map_pow, ← Units.val_pow_eq_pow_val, proj_pow_div x h]
+
+/-- The components of `map f x` are the images under `f` of the components of `x`. -/
+@[simp]
+theorem proj_map (f : E →* F) (x : PrimeToPTateModule p E)
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
+    proj m (map f x) = restrictRootsOfUnity f m (proj m x) :=
+  (rfl)
+
+/-- The homomorphism of Tate modules induced by a monoid homomorphism is continuous. -/
+theorem continuous_map (f : E →* F) : Continuous (map f : PrimeToPTateModule p E → _) :=
+  continuous_iff.2 fun m ↦ by
+    simpa only [proj_map, Function.comp_def] using
+      (isLocallyConstant_proj m).comp (restrictRootsOfUnity f m)
+
+end Map
+
+section Action
+
+variable {M : Type*} [Monoid M] [MulDistribMulAction M E]
+
+/-- A monoid acting on `E` by multiplicative maps acts on the prime-to-`p` Tate module
+componentwise. For the absolute Galois group of a field acting on a separable closure `E`, this is
+the action recorded by the Tate twist `(1)` in `ℤ̂^{(p')}(1)`. -/
+instance : SMul M (PrimeToPTateModule p E) :=
+  ⟨fun g ↦ map (MulDistribMulAction.toMonoidHom E g)⟩
+
+/-- The components of `g • x` are obtained by letting `g` act on the components of `x`. -/
+@[simp]
+theorem coe_proj_smul (g : M) (x : PrimeToPTateModule p E)
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
+    ((proj m (g • x) : Eˣ) : E) = g • ((proj m x : Eˣ) : E) :=
+  (rfl)
+
+instance : MulDistribMulAction M (PrimeToPTateModule p E) where
+  one_smul x := ext fun m ↦ Subtype.ext <| Units.ext <| by simp
+  mul_smul g h x := ext fun m ↦ Subtype.ext <| Units.ext <| by simp [mul_smul]
+  smul_mul g x y := ext fun m ↦ Subtype.ext <| Units.ext <| by simp [smul_mul']
+  smul_one g := ext fun m ↦ Subtype.ext <| Units.ext <| by simp
+
+instance : ContinuousConstSMul M (PrimeToPTateModule p E) :=
+  ⟨fun g ↦ continuous_map (MulDistribMulAction.toMonoidHom E g)⟩
+
+end Action
 
 end PrimeToPTateModule
 
