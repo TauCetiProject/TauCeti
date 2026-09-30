@@ -211,11 +211,13 @@ theorem IsPeripheralAut.exponent_unique {hF : IsProP p F} {e : F ≃ₜ* freePro
   -- read off exponent sums, which live in the abelian group `ℤ_p ^ r`
   let f : F →ₜ* Multiplicative (Fin r → ℤ_[p]) :=
     (freeProP.exponentSum p (Fin r)).comp (e : F →ₜ* freeProP p (Fin r))
-  have hf : ∀ l : ℤ_[p], f (hF.padicPow (basis e i₀) l) = ofAdd (l • Pi.single i₀ 1) := by
+  have hf : ∀ l : ℤ_[p], f (hF.padicPow (basis e i₀) l) = ofAdd (Pi.single i₀ l) := by
     intro l
-    refine (IsProP.map_padicPow hF (isProP_multiplicative_pi_padicInt p (Fin r)) f.toMonoidHom
-      f.continuous _ l).trans ?_
-    simp [f, freeProP.exponentSum_of]
+    have h := hF.map_padicPow (isProP_freeProP p (Fin r)) (e : F →* freeProP p (Fin r))
+      e.continuous (basis e i₀) l
+    rw [MonoidHom.coe_ofClass, map_basis] at h
+    simp only [f, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_coe, h]
+    exact freeProP.exponentSum_padicPow_of p (Fin r) i₀ l
   have h := congr_fun (ofAdd.injective ((hf u).symm.trans
     ((isConj_iff_eq.mp (f.toMonoidHom.map_isConj hc)).trans (hf v)))) i₀
   simpa [Units.ext_iff] using h
