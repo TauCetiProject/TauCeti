@@ -21,9 +21,9 @@ multiplicity. It is defined on the coefficient side, as the resultant in `X` of 
 ```
 tschirnhausPolynomial f T = Res_X (f(X), Y - T(X)),
 ```
-so it is a polynomial expression in the coefficients of `f` and `T`. For monic `f` it therefore
-commutes with every base change `R →+* S`: the transform of an integral polynomial over `ℚ` is
-the image of its transform over `ℤ`, and the transform modulo `p` is its reduction.
+For monic `f`, it commutes with every base change `R →+* S`: the transform of a monic integral
+polynomial over `ℚ` is the image of its transform over `ℤ`, and the transform modulo `p` is its
+reduction. For arbitrary `f`, degree-dropping specialization need not preserve this resultant.
 
 `T` is *admissible* for `f` over a field `K` when it separates the roots of `f`, that is, when
 `a ↦ T(a)` is injective on the roots of `f` in its splitting field. Admissibility does not depend
@@ -114,6 +114,7 @@ theorem map_tschirnhausPolynomial_of_injective (f T : R[X]) (φ : R →+* S)
     (tschirnhausPolynomial f T).map φ = tschirnhausPolynomial (f.map φ) (T.map φ) := by
   have hφ' : Function.Injective (mapRingHom φ) := map_injective φ hφ
   rw [tschirnhausPolynomial, tschirnhausPolynomial]
+  -- Present polynomial mapping as a ring homomorphism application to use `resultant_map_map`.
   change (mapRingHom φ) ((f.map C).resultant (C X - T.map C)) =
     (f.map φ |>.map C).resultant (C X - (T.map φ).map C)
   rw [← resultant_map_map]
@@ -198,6 +199,7 @@ theorem natDegree_tschirnhausPolynomial {f : R[X]} (hf : f.Monic) (T : R[X]) :
 theorem tschirnhausPolynomial_X (f : R[X]) : tschirnhausPolynomial f X = f := by
   nontriviality R
   have hdeg : (C X - X : R[X][X]).natDegree = 1 := by
+    -- Reverse the subtraction to use `natDegree_X_sub_C`; negation preserves the degree.
     rw [show (C X - X : R[X][X]) = -(X - C X) by ring, natDegree_neg,
       natDegree_X_sub_C]
   rw [tschirnhausPolynomial, Polynomial.map_X, hdeg,
@@ -207,6 +209,8 @@ theorem tschirnhausPolynomial_X (f : R[X]) : tschirnhausPolynomial f X = f := by
 @[simp]
 theorem tschirnhausPolynomial_C (f : R[X]) (c : R) :
     tschirnhausPolynomial f (C c) = (X - C c) ^ f.natDegree := by
+  -- The second polynomial is constant in the outer variable, so `resultant_C_zero_right`
+  -- applies with its outer degree explicitly rewritten to zero.
   rw [tschirnhausPolynomial, Polynomial.map_C, ← C_sub,
     show (C (X - C c) : R[X][X]).natDegree = 0 by simp, resultant_C_zero_right,
     natDegree_map_eq_of_injective C_injective]
@@ -243,7 +247,8 @@ section Field
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- The Tschirnhaus transform of a polynomial that splits over a field is its leading coefficient
-raised to the degree of `X - T`, times the product over the transformed roots. -/
+raised to the degree in `X` of `Y - T(X)`, with `Y` an independent variable, times the product
+over the transformed roots. -/
 theorem tschirnhausPolynomial_eq_C_mul_prod_roots_field {f : K[X]}
     (hs : f.Splits) (T : K[X]) :
     tschirnhausPolynomial f T =
