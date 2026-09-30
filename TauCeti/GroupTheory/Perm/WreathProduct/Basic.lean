@@ -48,6 +48,8 @@ on the base by `b i ↦ b (q⁻¹ i)`. In the imprimitive action it sends `(i, x
 
 ## References
 
+* L. Evens, *A generalization of the transfer map in the cohomology of groups*,
+  Transactions of the American Mathematical Society 108 (1963), §§2–3.
 * J. D. Dixon and B. Mortimer, *Permutation Groups*, §2.6.
 -/
 
@@ -72,22 +74,22 @@ namespace PermutationWreathProduct
 
 variable {D Q X}
 
+private lemma mulAutArrow_apply_coordinate (q : Q) (f : X → D) (x : X) :
+    mulAutArrow q f x = f (q⁻¹ • x) := by
+  rw [mulAutArrow_apply_apply]
+  rfl
+
 /-- Multiplication in a permutation wreath product, written in base coordinates. -/
 @[simp]
 theorem mul_left (a b : PermutationWreathProduct D Q X) (x : X) :
     (a * b).left x = a.left x * b.left (a.right⁻¹ • x) := by
-  rw [SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply]
-  -- The coordinate action on `X → D` is `arrowAction`, which evaluates at `a.right⁻¹ • x`.
-  rfl
+  rw [SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_coordinate]
 
 /-- Inversion in a permutation wreath product, written in base coordinates. -/
 @[simp]
 theorem inv_left (a : PermutationWreathProduct D Q X) (x : X) :
     a⁻¹.left x = (a.left (a.right • x))⁻¹ := by
-  rw [SemidirectProduct.inv_left, mulAutArrow_apply_apply]
-  -- The coordinate action on `X → D` is `arrowAction`, which evaluates at `a.right⁻¹⁻¹ • x`.
-  change (a.left (a.right⁻¹⁻¹ • x))⁻¹ = _
-  rw [inv_inv]
+  rw [SemidirectProduct.inv_left, mulAutArrow_apply_coordinate, Pi.inv_apply, inv_inv]
 
 /-- The natural cardinality of a permutation wreath product with finite index type. -/
 theorem card [Finite X] : Nat.card (PermutationWreathProduct D Q X) =
@@ -118,7 +120,7 @@ variable {D ι}
 theorem card [Finite ι] :
     Nat.card (WreathProduct D ι) =
       Nat.card D ^ Nat.card ι * (Nat.card ι).factorial := by
-  rw [SemidirectProduct.card, Nat.card_fun, Nat.card_perm]
+  rw [PermutationWreathProduct.card, Nat.card_perm]
 
 end WreathProduct
 
@@ -130,7 +132,7 @@ variable {D ι}
 theorem card (Q : Subgroup (Equiv.Perm ι)) [Finite ι] :
     Nat.card (PermSubgroupWreathProduct D ι Q) =
       Nat.card D ^ Nat.card ι * Nat.card Q := by
-  rw [SemidirectProduct.card, Nat.card_fun]
+  exact PermutationWreathProduct.card
 
 end PermSubgroupWreathProduct
 
@@ -326,10 +328,7 @@ instance : MulAction (WreathProduct D ι) (ι × Λ) where
     ext
     · simp [Equiv.Perm.mul_apply]
     · simp only [SemidirectProduct.mul_right, Equiv.Perm.coe_mul, Function.comp_apply,
-        SemidirectProduct.mul_left, Pi.mul_apply]
-      -- Expose the coordinate action as evaluation at the inverse-permuted coordinate.
-      change (w.left (w.right (z.right x.1)) *
-        z.left (w.right⁻¹ (w.right (z.right x.1)))) • x.2 = _
+        PermutationWreathProduct.mul_left]
       simp [mul_smul]
 
 /-- Evaluation formula for the imprimitive wreath-product action on `ι × Λ`. -/
@@ -464,11 +463,9 @@ instance : MulAction (WreathProduct D ι) (ι → Λ) where
       fun i ↦ w.left i • (z.left (w.right⁻¹ i) •
         x (z.right⁻¹ (w.right⁻¹ i)))
     funext i
-    simp only [SemidirectProduct.mul_left, Pi.mul_apply,
+    simp only [PermutationWreathProduct.mul_left,
       SemidirectProduct.mul_right, mul_inv_rev, Equiv.Perm.coe_mul, Equiv.Perm.coe_inv,
       Function.comp_apply]
-    -- Expose the coordinate action and restore group-inverse notation.
-    change (w.left i * z.left (w.right⁻¹ i)) • x (z.right⁻¹ (w.right⁻¹ i)) = _
     simp [mul_smul]
 
 /-- Evaluation formula for the product wreath-product action on `ι → Λ`. -/
