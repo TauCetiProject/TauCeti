@@ -213,11 +213,9 @@ with any representation `M`: the projection from the induced module has the `k`-
 `a ↦ ⟦1 ⊗ₜ a⟧`. -/
 theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
     ((dimensionShiftDownSES A).map (tensorLeft M)).ShortExact := by
-  have hs : Function.RightInverse (Representation.IndV.mk (⊥ : Subgroup G).subtype
-      (Representation.trivial k (⊥ : Subgroup G) A.V) 1) (indBotCounit A).hom := fun a ↦ by
-    rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
   have : Mono (dimensionShiftDownSES A).f := (dimensionShiftDownSES_shortExact A).mono_f
-  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M _ hs
+  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M _
+    (rightInverse_indBotCounit A)
 
 /-! ### Functoriality of the dimension-shifting sequences -/
 

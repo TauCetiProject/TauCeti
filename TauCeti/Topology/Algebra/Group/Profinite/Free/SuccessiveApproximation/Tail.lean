@@ -16,21 +16,25 @@ Let `F = freeProP p X` be the free pro-`p` group on a finite linearly ordered ty
 `p`-series `λ_k = λ_k(F)`, and let `r, w ∈ λ_1(F)` be relators with the same class `ρ ∈ gr_1(F)`.
 When the basis-modification map `δ_ρ` is not onto `gr_{m+1}(F)`, the successive-approximation
 argument of `TauCeti.Topology.Algebra.Group.Profinite.Free.SuccessiveApproximation.Basic` still
-runs as soon as the span statement holds up to the **tail** `T_{m+1}(ρ)` of
-`TauCeti.freeProP.basisModificationTail`, spanned by the iterated `p`-powers `π^{m+1} ξ_i` of the
-generators `x_i` whose coefficient `c_i` in `ρ` vanishes:
+runs as soon as the span statement holds up to the **tail** of a set `S` of generators, the span
+`TauCeti.freeProP.gradedPowIterSpan` of the iterated `p`-powers `π^{m+1} ξ_i` of the generators
+`x_i` with `i ∈ S`:
 
-  `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`   for every `m ≥ 1`.
+  `gr_{m+1}(F) = Im δ_ρ + ⟨π^{m+1} ξ_i : i ∈ S⟩`   for every `m ≥ 1`.
 
+The set `S` is a parameter: for the odd-rank dyadic relators it is the set of generators whose
+coefficient `c_i` in `ρ` vanishes, so that the span is the tail `T_{m+1}(ρ)` of
+`TauCeti.freeProP.basisModificationTail`, while for the even-rank dyadic relators it also contains
+the generator carrying the square.
 At each level the discrepancy between the moved relator and the target is the class of a basis
-modification up to a tail class `Σ_i c_i π^{m+1} ξ_i`, which is the class of the product of the
-powers `x_i^{p^{m+1} c_i}`. The basis modification is applied and the powers are absorbed into
+modification up to a tail class `Σ_{i ∈ S} c_i π^{m+1} ξ_i`, which is the class of the product of
+the powers `x_i^{p^{m+1} c_i}`. The basis modification is applied and the powers are absorbed into
 per-generator **tail elements** `t_i`, which are carried along instead of being killed: the
 approximation at level `m` is a congruence `φ r ≡ t_{i₁} ⋯ t_{i_a} * w * t_{j₁} ⋯ t_{j_b}`
 modulo `λ_{m+2}(F)`, where the two lists of indices fix where the tail of each generator is placed,
 and the tail elements lie in the closed procyclic subgroups `⟨x_i⟩` and in `λ_2(F)`. The tail of
 each generator is placed at a single position, so the lists are required to be disjoint and
-duplicate-free and to cover the generators contributing to the tails.
+duplicate-free and to cover the set `S`.
 
 The limit is taken through the levelwise comparison schema `TauCeti.PLowerCentralSeriesComparison`
 with the finite tail data carried in the comparison data, and the tail elements are recovered from
@@ -47,18 +51,20 @@ argument yields the relator in the intermediate form `x₁² r₀(x) x₂^{α₂
 exponents `α₂, …, α_n` divisible by `4`
 (`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Approximation`), before the
 tail relator `r₀(x) x₂^{α₂} ⋯ x_n^{α_n}` is normalised in its own right. For the even-rank word
-`x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯` a tail is placed in front of the word, which is why the theorem
-takes two lists of tail positions.
+`x₁² (x₁, x₂) (x₃, x₄) ⋯ (x_{n-1}, x_n)` the tails are the `2`-powers of every generator but `x₂`,
+and the tail of `x₁` is placed in front of the word, which is why the theorem takes two lists of
+tail positions; the intermediate form is `x₁^{2+α} (x₁, x₂) r₀(x) x₃^{α₃} ⋯ x_n^{α_n}`
+(`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Approximation`).
 
 ## Main results
 
-* `exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_basisModificationTail_eq_top`, in
+* `exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterSpan_eq_top`, in
   the namespace `TauCeti.freeProP`: the finite approximations, one basis modification and one
   tail correction per level.
-* `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_range_sup_basisModificationTail_eq_top`
+* `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top`
   is **the successive-approximation theorem with tails**: a continuous automorphism of `F` carries
-  `r` to `w` up to tail elements of the closed procyclic subgroups `⟨x_i⟩ ∩ λ_2(F)`, placed at the
-  prescribed positions.
+  `r` to `w` up to tail elements of the closed procyclic subgroups `⟨x_i⟩ ∩ λ_2(F)`, `i ∈ S`,
+  placed at the prescribed positions.
 
 ## References
 
@@ -77,20 +83,18 @@ universe u
 variable {p : ℕ} [Fact p.Prime] {X : Type u} [Finite X] [LinearOrder X]
 
 /-- **Finite successive approximation with tails.** Let `r, w ∈ λ_1(F)` have the same class
-`ρ ∈ gr_1(F)`, let `l₁, l₂` be disjoint duplicate-free lists of generators containing every
-generator whose coefficient in `ρ` vanishes, and suppose `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)` for
+`ρ ∈ gr_1(F)`, let `S` be a set of generators and `l₁, l₂` disjoint duplicate-free lists of
+generators containing `S`, and suppose `gr_{m+1}(F) = Im δ_ρ + ⟨π^{m+1} ξ_i : i ∈ S⟩` for
 `1 ≤ m ≤ k`. Then there are a continuous endomorphism `φ` of `F`, congruent to the identity modulo
 `λ_1(F)`, and tail elements `t_i ∈ ⟨x_i⟩ ∩ λ_2(F)` with
 `φ r ≡ (∏_{i ∈ l₁} t_i) * w * (∏_{i ∈ l₂} t_i) mod λ_{k+2}(F)`. -/
-theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_basisModificationTail_eq_top
+theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterSpan_eq_top
     (r w : pLowerCentralSeries p (freeProP p X) 1)
-    (h : gradedMk p (freeProP p X) 1 r = gradedMk p (freeProP p X) 1 w) (l₁ l₂ : List X)
-    (hnd : (l₁ ++ l₂).Nodup)
-    (hl : ∀ i, (degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1 r) (Sum.inl i) = 0 →
-      i ∈ l₁ ++ l₂) (k : ℕ)
+    (h : gradedMk p (freeProP p X) 1 r = gradedMk p (freeProP p X) 1 w) (S : Set X)
+    (l₁ l₂ : List X) (hnd : (l₁ ++ l₂).Nodup) (hl : ∀ i ∈ S, i ∈ l₁ ++ l₂) (k : ℕ)
     (hspan : ∀ m (hm : 1 ≤ m), m ≤ k →
       LinearMap.range (basisModificationDelta p X hm (gradedMk p (freeProP p X) 1 r)) ⊔
-        basisModificationTail p X (gradedMk p (freeProP p X) 1 r) (m + 1) = ⊤) :
+        gradedPowIterSpan p X S (m + 1) = ⊤) :
     ∃ (φ : freeProP p X →ₜ* freeProP p X) (t : X → freeProP p X),
       (∀ g, g⁻¹ * φ g ∈ pLowerCentralSeries p (freeProP p X) 1) ∧
         (∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure) ∧
@@ -124,15 +128,15 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_basisModificat
     have hz : gradedMk p (freeProP p X) (k + 1 + 1) ⟨(φ r)⁻¹ * T, hr⟩ ∈
         LinearMap.range (basisModificationDelta p X (by omega : 1 ≤ k + 1)
           (gradedMk p (freeProP p X) 1 r)) ⊔
-          basisModificationTail p X (gradedMk p (freeProP p X) 1 r) (k + 1 + 1) := by
+          gradedPowIterSpan p X S (k + 1 + 1) := by
       rw [hspan (k + 1) (by omega) le_rfl]
       exact Submodule.mem_top
     obtain ⟨y, hy, y', hy', hyy'⟩ := Submodule.mem_sup.mp hz
     obtain ⟨v, rfl⟩ := LinearMap.mem_range.mp hy
-    obtain ⟨c, hc⟩ := mem_basisModificationTail_iff.mp hy'
+    have := Fintype.ofFinite S
+    obtain ⟨c, hc⟩ := mem_gradedPowIterSpan_iff.mp hy'
     -- The tail coefficients, negated and extended by zero to all generators.
-    let P : X → Prop := fun i ↦
-      (degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1 r) (Sum.inl i) = 0
+    let P : X → Prop := fun i ↦ i ∈ S
     let c' : X → ZMod p := fun i ↦ if h : P i then -c ⟨i, h⟩ else 0
     let g : X → gradedPiece p (freeProP p X) (k + 1 + 1) := fun i ↦
       gradedPowIter p (freeProP p X) (k + 1 + 1) (gradedMkZero p (freeProP p X) (of i))
@@ -145,7 +149,8 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_basisModificat
         Finset.sum_filter_of_ne fun i _ hi ↦
           by_contra fun hP ↦ hi (by rw [hc'_zero i hP, zero_smul])
       have h2 : ∑ i ∈ Finset.univ.filter P, c' i • g i = ∑ j : {i // P i}, c' j • g j :=
-        Finset.sum_subtype _ (fun i ↦ by simp) _
+        Finset.sum_subtype _
+          (fun i ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and, P]) _
       rw [← h1, h2, ← hc, ← Finset.sum_neg_distrib]
       exact Finset.sum_equiv (Equiv.refl _) (fun j ↦ by simp) fun j _ ↦ by
         rw [Equiv.refl_apply, hc'_of j j.2]
@@ -269,19 +274,17 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_basisModificat
 
 /-- **The successive-approximation theorem with tails.** Let `r, w ∈ λ_1(F)` be relators of the
 free pro-`p` group `F` on a finite linearly ordered type with the same class `ρ ∈ gr_1(F)`, let
-`l₁, l₂` be disjoint duplicate-free lists of generators containing every generator whose
-coefficient in `ρ` vanishes, and suppose `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)` for every `m ≥ 1`.
-Then a continuous automorphism `e` of `F` carries `r` to `(∏_{i ∈ l₁} t_i) * w * (∏_{i ∈ l₂} t_i)`
-for tail elements `t_i` of the closed procyclic subgroups `⟨x_i⟩`, all lying in `λ_2(F)`. -/
-theorem exists_continuousMulEquiv_apply_eq_of_range_sup_basisModificationTail_eq_top
+`S` be a set of generators and `l₁, l₂` disjoint duplicate-free lists of generators containing
+`S`, and suppose `gr_{m+1}(F) = Im δ_ρ + ⟨π^{m+1} ξ_i : i ∈ S⟩` for every `m ≥ 1`. Then a
+continuous automorphism `e` of `F` carries `r` to `(∏_{i ∈ l₁} t_i) * w * (∏_{i ∈ l₂} t_i)` for
+tail elements `t_i` of the closed procyclic subgroups `⟨x_i⟩`, all lying in `λ_2(F)`. -/
+theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
     (r w : pLowerCentralSeries p (freeProP p X) 1)
-    (h : gradedMk p (freeProP p X) 1 r = gradedMk p (freeProP p X) 1 w) (l₁ l₂ : List X)
-    (hnd : (l₁ ++ l₂).Nodup)
-    (hl : ∀ i, (degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1 r) (Sum.inl i) = 0 →
-      i ∈ l₁ ++ l₂)
+    (h : gradedMk p (freeProP p X) 1 r = gradedMk p (freeProP p X) 1 w) (S : Set X)
+    (l₁ l₂ : List X) (hnd : (l₁ ++ l₂).Nodup) (hl : ∀ i ∈ S, i ∈ l₁ ++ l₂)
     (hspan : ∀ m (hm : 1 ≤ m),
       LinearMap.range (basisModificationDelta p X hm (gradedMk p (freeProP p X) 1 r)) ⊔
-        basisModificationTail p X (gradedMk p (freeProP p X) 1 r) (m + 1) = ⊤) :
+        gradedPowIterSpan p X S (m + 1) = ⊤) :
     ∃ (e : freeProP p X ≃ₜ* freeProP p X) (t : X → freeProP p X),
       (∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure) ∧
         (∀ i, t i ∈ pLowerCentralSeries p (freeProP p X) 2) ∧
@@ -310,21 +313,21 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_basisModificationTail_eq
     rfl
   -- The level-`k` comparison data: surjective endomorphisms of `F ⧸ λ_k` together with the classes
   -- of the tail elements, carrying the class of `r` to the class of the tail word.
-  let S (k : ℕ) : Type u :=
+  let D (k : ℕ) : Type u :=
     {s : (freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k →ₜ*
           freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k) ×
         (X → freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k) //
       Function.Surjective s.1 ∧
         (∀ i, s.2 i ∈ (H i).map (QuotientGroup.mk' (pLowerCentralSeries p (freeProP p X) k))) ∧
         s.1 (r : freeProP p X) = (l₁.map s.2).prod * (w : freeProP p X) * (l₂.map s.2).prod}
-  have : ∀ k, Finite (S k) := fun k ↦ by
+  have : ∀ k, Finite (D k) := fun k ↦ by
     have := hfg.finite_quotient_pLowerCentralSeries hp k
-    exact Finite.of_injective (fun s : S k ↦ (⇑s.1.1, s.1.2)) fun s s' hss' ↦ Subtype.ext
+    exact Finite.of_injective (fun s : D k ↦ (⇑s.1.1, s.1.2)) fun s s' hss' ↦ Subtype.ext
       (Prod.ext (DFunLike.coe_injective (Prod.ext_iff.mp hss').1) (Prod.ext_iff.mp hss').2)
   -- Each level is nonempty, by the finite approximations.
-  have : ∀ k, Nonempty (S k) := fun k ↦ by
+  have : ∀ k, Nonempty (D k) := fun k ↦ by
     obtain ⟨φ, t, hφ, ht, ht2, hr⟩ :=
-      exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_basisModificationTail_eq_top r w h
+      exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterSpan_eq_top r w h S
         l₁ l₂ hnd hl k fun m hm _ ↦ hspan m hm
     rw [pLowerCentralSeries_one_eq_proPFrattini hp] at hφ
     have hsurj : Function.Surjective φ :=
@@ -338,7 +341,7 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_basisModificationTail_eq
       fun i ↦ ⟨t i, ⟨ht i, ht2 i⟩, rfl⟩, ?_⟩⟩
     rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk, ← hmkT]
     exact QuotientGroup.eq.mpr (pLowerCentralSeries_antitone (by omega : k ≤ k + 2) hr)
-  let C : PLowerCentralSeriesComparison p (freeProP p X) (freeProP p X) S :=
+  let C : PLowerCentralSeriesComparison p (freeProP p X) (freeProP p X) D :=
     { map := fun _ s ↦ s.1.1
       map_surjective := fun _ s ↦ s.2.1
       bond := fun k s ↦ ⟨(s.1.1.pLowerCentralSeriesDesc,

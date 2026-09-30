@@ -71,9 +71,9 @@ automorphisms fixing all the `π^{1/m}` over `K^{ur}`. So it identifies the tame
 * `TauCeti.inertiaTameCharacter_eq_tameKummerCharacter`,
   `TauCeti.coe_proj_inertiaTameCharacter_apply`: the tame character is the tame Kummer character
   of any uniformizer `π`, with level-`m` component `σ(α)/α` for any root `α` of `X ^ m − π`.
-* `TauCeti.inertiaKummerCharacter_surjective`, `TauCeti.inertiaTameCharacter_surjective`: the
-  Kummer character of a uniformizer is surjective at each level, and the tame character is
-  surjective.
+* `TauCeti.inertiaKummerCharacter_surjective`, `TauCeti.proj_inertiaTameCharacter_surjective`,
+  `TauCeti.inertiaTameCharacter_surjective`: the Kummer character of a uniformizer and the tame
+  character are surjective at each level, and the tame character is surjective.
 * `TauCeti.inertiaTameCharacter_eq_one_iff`, `TauCeti.ker_inertiaTameCharacter`: the kernel of the
   tame character is the wild inertia subgroup.
 * `TauCeti.inertiaTameCharacter_conj`: the tame character is `G_K`-equivariant.
@@ -454,16 +454,22 @@ theorem inertiaKummerCharacter_surjective {π : Kˣ} (hπ : IsUniformizer K π) 
   rw [hτ, mul_div_cancel_right₀ _ (ne_zero_of_pow_eq_algebraMap hm hα)]
 
 variable (K) in
+/-- **The tame character is surjective at each level**: every `m`-th root of unity, for `m` prime
+to `p`, is the level-`m` component of the tame character of some element of inertia. -/
+theorem proj_inertiaTameCharacter_surjective (m : {m : ℕ // m ≠ 0 ∧ m.Coprime (ringChar 𝓀[K])}) :
+    Function.Surjective fun σ ↦ PrimeToPTateModule.proj m (inertiaTameCharacter K σ) := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  rw [inertiaTameCharacter_eq_tameKummerCharacter hπ]
+  simpa only [proj_tameKummerCharacter_apply] using inertiaKummerCharacter_surjective hπ m m.2.2
+
+variable (K) in
 /-- **The tame character is surjective**: `I_K → ℤ̂^{(p')}(1)` is onto, since it is onto at each
-finite level (`TauCeti.inertiaKummerCharacter_surjective`) and `I_K` is compact. -/
+finite level (`TauCeti.proj_inertiaTameCharacter_surjective`) and `I_K` is compact. -/
 theorem inertiaTameCharacter_surjective : Function.Surjective (inertiaTameCharacter K) := by
   have : CompactSpace (inertiaSubgroup K) :=
     isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
-  obtain ⟨π, hπ⟩ := exists_isUniformizer K
-  refine PrimeToPTateModule.surjective_of_forall_surjective_proj
-    (inertiaTameCharacter K).continuous fun m ↦ ?_
-  rw [inertiaTameCharacter_eq_tameKummerCharacter hπ]
-  simpa only [proj_tameKummerCharacter_apply] using inertiaKummerCharacter_surjective hπ m m.2.2
+  exact PrimeToPTateModule.surjective_of_forall_surjective_proj
+    (inertiaTameCharacter K).continuous (proj_inertiaTameCharacter_surjective K)
 
 /-! ### The kernel is wild inertia -/
 

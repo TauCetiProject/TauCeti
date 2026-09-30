@@ -46,8 +46,10 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
 * `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex`,
   `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup`: topological finite generation
   passes to open finite-index subgroups, in particular to open subgroups of compact groups.
-* `MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`: a continuous homomorphism into a
-  Hausdorff monoid is determined by its values on a topological generating set.
+* `MonoidHom.eqOn_topologicalClosure_closure` and
+  `MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`: continuous homomorphisms into a
+  Hausdorff monoid agreeing on a set agree on the closed subgroup it generates, so such a
+  homomorphism is determined by its values on a topological generating set.
 * `MonoidHom.eq_of_eqOn_of_isOpen_ker`: the same uniqueness statement for a homomorphism with
   open kernel, for which the target carries no topology.
 * `TauCeti.IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker`: only finitely many
@@ -158,16 +160,24 @@ theorem _root_.MonoidHom.ker_eq_topologicalClosure_normalClosure_insert_pow_of_o
   rw [← QuotientGroup.eq_one_iff]
   rw [← hz, zpow_mul, zpow_natCast, hpow, one_zpow]
 
+/-- Two continuous homomorphisms into a Hausdorff monoid that agree on a set agree on the closed
+subgroup it generates. -/
+theorem _root_.MonoidHom.eqOn_topologicalClosure_closure {M : Type*} [Monoid M]
+    [TopologicalSpace M] [T2Space M] {s : Set G} {f g : G →* M} (hf : Continuous f)
+    (hg : Continuous g) (hfg : Set.EqOn f g s) :
+    Set.EqOn f g ((Subgroup.closure s).topologicalClosure : Set G) := by
+  rw [Subgroup.topologicalClosure_coe]
+  exact (MonoidHom.eqOn_closure hfg).closure hf hg
+
 /-- A continuous homomorphism out of a topological group is determined by its values on a
 topological generating set, provided the target is a Hausdorff monoid. This is the uniqueness
 half of every construction that defines a map on generators. -/
 theorem _root_.MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top {M : Type*} [Monoid M]
     [TopologicalSpace M] [T2Space M] {s : Set G}
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f g : G →* M} (hf : Continuous f)
-    (hg : Continuous g) (hfg : Set.EqOn f g s) : f = g := by
-  have hdense : Dense (Subgroup.closure s : Set G) := by
-    rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hs, Subgroup.coe_top]
-  exact DFunLike.coe_injective (hf.ext_on hdense hg (MonoidHom.eqOn_closure hfg))
+    (hg : Continuous g) (hfg : Set.EqOn f g s) : f = g :=
+  MonoidHom.ext fun x ↦
+    MonoidHom.eqOn_topologicalClosure_closure hf hg hfg (by rw [hs]; exact Subgroup.mem_top x)
 
 /-- The range of a continuous homomorphism lies in a closed subgroup exactly when a topological
 generating set of the source maps into it. -/
