@@ -23,7 +23,7 @@ translation then propagates flatness to the identity and hence everywhere.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §5, homomorphism theorems.
+* J. S. Milne, *Algebraic Groups* (2017), Propositions 1.65(a) and 1.70.
 * The Stacks Project, Tag 051Z, generic freeness over a reduced ring.
 -/
 
