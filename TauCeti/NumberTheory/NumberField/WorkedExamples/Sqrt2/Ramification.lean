@@ -55,7 +55,7 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 omit [NumberField K] in
 /-- The minimal polynomial `X² − 2` in the radicand form `X² − C 2` of the quadratic-field
 theory. -/
-theorem minpoly_eq_X_sq_sub_C (hmin : minpoly ℤ θ = X ^ 2 - 2) :
+private theorem minpoly_eq_X_sq_sub_C (hmin : minpoly ℤ θ = X ^ 2 - 2) :
     minpoly ℤ θ = X ^ 2 - C 2 := by
   rw [hmin, map_ofNat]
 
