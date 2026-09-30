@@ -27,7 +27,7 @@ holomorphic map.
 
 The same argument shows that a map between complex curves that is holomorphic near a point has an
 analytic representative in any charts of the maximal atlases at the point and its image. It follows
-that a holomorphic map between smooth complex curves is smooth. The complex inverse function
+that a holomorphic map between complex curves is `C^n` for every `n`. The complex inverse function
 theorem also shows that the inverse of a holomorphic homeomorphism of complex curves is
 holomorphic.
 
@@ -39,7 +39,7 @@ holomorphic.
 * `TauCeti.analyticAt_chart_comp_comp_symm`: a map holomorphic near `x` has an analytic
   representative in any charts of the maximal atlases at `x` and `f x`;
   `TauCeti.analyticAt_chartAt_comp_comp_chartAt_symm` is the case of the preferred charts.
-* `MDifferentiable.contMDiff`: a holomorphic map between smooth complex curves is smooth.
+* `MDifferentiable.contMDiff`: a holomorphic map between complex curves is `C^n` for every `n`.
 * `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
   curves is holomorphic.
 -/
@@ -125,32 +125,16 @@ end PreferredCharts
 
 /-! ### Regularity consequences -/
 
-/-- A holomorphic map between smooth complex curves is smooth. -/
-theorem _root_.MDifferentiable.contMDiff [IsManifold 𝓘(ℂ) ∞ X]
-    [IsManifold 𝓘(ℂ) ∞ Y] (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
-    ContMDiff 𝓘(ℂ) 𝓘(ℂ) ∞ f := by
+/-- A holomorphic map between complex curves is `C^n` for every `n`, including `n = ω`. -/
+theorem _root_.MDifferentiable.contMDiff [IsManifold 𝓘(ℂ) 1 X]
+    [IsManifold 𝓘(ℂ) 1 Y] {n : ℕ∞ω} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n f := by
   intro x
-  let c := chartAt ℂ x
-  let c' := chartAt ℂ (f x)
-  have hcx : x ∈ c.source := mem_chart_source ℂ x
-  have hc'fx : f x ∈ c'.source := mem_chart_source ℂ (f x)
-  have hF : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ∞ (fun z ↦ c' (f (c.symm z))) (c x) :=
-    (analyticAt_chartAt_comp_comp_chartAt_symm (.of_forall fun y ↦ hf y)).contDiffAt.contMDiffAt
-  have hinner : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ∞
-      ((fun z ↦ c' (f (c.symm z))) ∘ c) x :=
-    hF.comp x (contMDiffAt_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hcx)
-  have hsymm : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ∞ c'.symm
-      ((fun z ↦ c' (f (c.symm z))) (c x)) := by
-    simpa only [c.left_inv hcx] using
-      contMDiffAt_symm_of_mem_maximalAtlas (chart_mem_maximalAtlas (f x))
-        (c'.map_source hc'fx)
-  have hcomp : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ∞
-      (c'.symm ∘ (fun z ↦ c' (f (c.symm z))) ∘ c) x :=
-    hsymm.comp x hinner
-  refine hcomp.congr_of_eventuallyEq ?_
-  filter_upwards [c.open_source.mem_nhds hcx,
-    hf.continuous.continuousAt.eventually (c'.open_source.mem_nhds hc'fx)] with y hy hy'
-  simp only [Function.comp_apply, c.left_inv hy, c'.left_inv hy']
+  rw [contMDiffAt_iff]
+  refine ⟨hf.continuous.continuousAt, ?_⟩
+  simpa only [mfld_simps, contDiffWithinAt_univ, Function.comp_def] using
+    (analyticAt_chartAt_comp_comp_chartAt_symm (x := x)
+      (.of_forall fun y ↦ hf y)).contDiffAt (n := n)
 
 /-- The inverse of a holomorphic homeomorphism between complex curves is holomorphic. -/
 theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]

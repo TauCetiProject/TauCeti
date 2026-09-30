@@ -438,9 +438,7 @@ theorem degree_comp [IsManifold 𝓘(ℂ) 1 Z] [CompactSpace Y] [T2Space Z] [Pre
 
 /-- A finite holomorphic map of degree one between compact connected Riemann surfaces is a
 biholomorphism. -/
-noncomputable def biholomorphOfDegreeEqOne [IsManifold 𝓘(ℂ) ∞ X]
-    [IsManifold 𝓘(ℂ) ∞ Y]
-    (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
+noncomputable def biholomorphOfDegreeEqOne (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
     X ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ Y := by
   classical
   have hinj : Injective f := by
@@ -471,9 +469,7 @@ noncomputable def biholomorphOfDegreeEqOne [IsManifold 𝓘(ℂ) ∞ X]
       contMDiff_invFun := (hhomeo.mdifferentiable_symm f.holomorphic).contMDiff }
 
 @[simp]
-theorem biholomorphOfDegreeEqOne_toFun [IsManifold 𝓘(ℂ) ∞ X]
-    [IsManifold 𝓘(ℂ) ∞ Y]
-    (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
+theorem biholomorphOfDegreeEqOne_toFun (f : FiniteHolomorphicMap X Y) (hf : degree f = 1) :
     ⇑(biholomorphOfDegreeEqOne f hf) = f :=
   (rfl)
 
