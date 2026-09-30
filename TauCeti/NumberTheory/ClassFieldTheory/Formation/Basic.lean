@@ -541,6 +541,10 @@ theorem normQuotientMk_apply (x : F.level L.ground) :
     (dsimp% only (L.normQuotientMk F x)) = Submodule.Quotient.mk x :=
   (rfl)
 
+/-- Every element of the norm quotient is the class of an element of the ground level. -/
+theorem normQuotientMk_surjective : Function.Surjective (L.normQuotientMk F) :=
+  (L.normSubgroup F).mkQ_surjective
+
 /-- The image under `groundLevelEquiv` of the norm image inside the invariants is the norm
 subgroup. -/
 theorem map_groundLevelEquiv_submoduleOf :
