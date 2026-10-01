@@ -219,12 +219,11 @@ theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :
       (basisWeight n i)
       ((latticeBasis n i : (lattice n).toAddSubgroup) :
         ExteriorAlgebra ℚ (polarization n).W) := by
-  rw [isCartanWeightVector_iff]
-  intro j
-  rw [coe_latticeBasis, _root_.UniversalEnvelopingAlgebra.ι_apply,
-    SpinPolarizationData.typeBSpinRep_ι,
-    SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis]
-  rw [typeBSpinCorootWeight_eq_typeBSpinWeight]
+  have h := (polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
+    (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+    (signSet n i)
+  rw [typeBSpinCorootWeight_eq_typeBSpinWeight] at h
+  rwa [coe_latticeBasis]
 
 /-- The full spin weights span the simply connected type-`B` character lattice. -/
 theorem span_range_basisWeight_eq_top :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
 import TauCeti.RingTheory.DividedPowers.Associative
@@ -51,6 +52,8 @@ Chevalley carrier in Layer 9 of the ReductiveGroups roadmap. That carrier is con
   `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_eq_single_iff`, and
   `TauCeti.SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis`:
   the integral eigenvalues of the numbered simple coroots on the exterior basis.
+* `TauCeti.SpinPolarizationData.isCartanWeightVector_typeBSpinRep_exteriorBasis`: over `ℚ`, the
+  exterior basis is a Cartan weight basis with those eigenvalues.
 * `TauCeti.SpinPolarizationData.typeBSpinRep_kostantForm_apply_mem_integralLattice`: the
   simple-generator type-`B` Kostant form preserves the coordinate spinor lattice.
 
@@ -182,8 +185,10 @@ theorem typeBSpinCorootWeight_castSucc (s : Finset (Fin (n + 1))) (j : Fin n) :
 /-- **The all-coordinate exterior-basis vector carries the last fundamental weight.** Every
 coordinate is occupied, so the terminal short node reads `1` and every adjacent difference
 vanishes: the weight is the last fundamental weight `ωₗ`, the `1` sitting at the terminal short
-node. That the corresponding spinor is a highest-weight vector is proved in
-`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/HighestWeight.lean`. -/
+node. The generator-level highest-weight data for the corresponding spinor, namely annihilation by
+the positive simple generators together with this weight, are proved in
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/LastFundamentalWeight.lean`. -/
+@[simp]
 theorem typeBSpinCorootWeight_univ_eq_single :
     typeBSpinCorootWeight (Finset.univ : Finset (Fin (n + 1))) = Pi.single (Fin.last n) 1 := by
   funext i
@@ -196,6 +201,7 @@ coroot weights from the terminal node downwards, the value `1` at the short node
 coordinate to be occupied and each vanishing adjacent difference propagates occupation one step
 to the left, so the only index set with this weight is the full one. In particular the weight
 `ωₗ` of the type-`B` spin module occurs with multiplicity one in its exterior basis. -/
+@[simp]
 theorem typeBSpinCorootWeight_eq_single_iff {s : Finset (Fin (n + 1))} :
     typeBSpinCorootWeight s = Pi.single (Fin.last n) 1 ↔ s = Finset.univ := by
   refine ⟨fun h ↦ Finset.eq_univ_of_forall fun i ↦ ?_,
@@ -248,13 +254,27 @@ theorem spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis
 
 end Quadratic
 
-/-! ## Stability of the coordinate spinor lattice -/
-
 section Integral
 
 variable {V : Type v} [AddCommGroup V] [Module ℚ V] {Q : QuadraticForm ℚ V}
   (P : SpinPolarizationData Q) {n : ℕ} (b : Module.Basis (Fin (n + 1)) ℚ P.W)
   (z : P.line) (hz : Q (z : V) = 1)
+
+/-! ## Cartan weight vectors -/
+
+/-- **The exterior basis is a Cartan weight basis of the type-`B` spin module**: the numbered
+simple coroots act on the basis vector indexed by `s` through the integral weight
+`TauCeti.SpinPolarizationData.typeBSpinCorootWeight s`. -/
+theorem isCartanWeightVector_typeBSpinRep_exteriorBasis (s : Finset (Fin (n + 1))) :
+    TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
+      (typeBSimpleCorootGenerator (K := ℚ)) (P.typeBSpinRep b z hz)
+      (typeBSpinCorootWeight s) (b.ExteriorAlgebra s) := by
+  refine (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff
+    (typeBSimpleCorootGenerator (K := ℚ)) (P.typeBSpinRep b z hz)).mpr fun i ↦ ?_
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz]
+  exact P.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis b z hz i s
+
+/-! ## Stability of the coordinate spinor lattice -/
 
 private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mem_integralSpinActionSubring
     (i : Fin (n + 1)) :
