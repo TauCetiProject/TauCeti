@@ -58,7 +58,7 @@ through `TauCeti.cohomFpLinearEquivH2`.
   `TauCeti.isTopologicallyFinitelyGenerated_pi_multiplicative_zmod_iff` and
   `TauCeti.topologicalGeneratorRank_nat_pi_multiplicative_zmod`, the example
   `d(∏_{i ∈ ℕ} ℤ/p) = ℵ₀`.
-* `TauCeti.card_H2_pi_multiplicative_zmod`: `H²((ℤ/p)^X, 𝔽_p)` has `p ^ (#X (#X + 1) / 2)`
+* `TauCeti.natCard_H2_pi_multiplicative_zmod`: `H²((ℤ/p)^X, 𝔽_p)` has `p ^ (#X (#X + 1) / 2)`
   elements.
 * `TauCeti.proPFrattini_multiplicative_zmod_eq_bot` and
   `TauCeti.topologicalGeneratorRankNat_multiplicative_zmod`: the cyclic group `ℤ/p` itself has
@@ -208,11 +208,10 @@ variable [DistribMulAction (X → Multiplicative (ZMod p)) (ZMod p)]
 /-- **`r((ℤ/p)^X) = #X (#X + 1) / 2`.** For the finite elementary abelian group `(ℤ/p)^X`,
 `H²((ℤ/p)^X, 𝔽_p)` has `p ^ (#X (#X + 1) / 2)` elements. -/
 @[simp]
-theorem card_H2_pi_multiplicative_zmod :
-    @Fintype.card (H2 (X → Multiplicative (ZMod p)) (ZMod p)) (Fintype.ofFinite _) =
+theorem natCard_H2_pi_multiplicative_zmod :
+    Nat.card (H2 (X → Multiplicative (ZMod p)) (ZMod p)) =
       p ^ (Nat.card X * (Nat.card X + 1) / 2) := by
-  rw [← @Nat.card_eq_fintype_card _ (Fintype.ofFinite _),
-    natCard_H2_of_proPFrattini_eq_bot isTopologicallyFinitelyGenerated_of_fg
+  rw [natCard_H2_of_proPFrattini_eq_bot isTopologicallyFinitelyGenerated_of_fg
     (proPFrattini_pi_multiplicative_zmod_eq_bot p X),
     topologicalGeneratorRankNat_pi_multiplicative_zmod]
 
