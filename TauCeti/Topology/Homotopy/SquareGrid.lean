@@ -39,7 +39,7 @@ lemma subpath_id_mem_uIcc (s t u : unitInterval) : Path.id.subpath s t u ∈ uIc
 
 end TauCeti.HomotopySquare
 
-namespace TauCeti.ContinuousMap
+namespace TauCeti
 
 variable {X : Type v} [TopologicalSpace X]
 
@@ -204,4 +204,4 @@ theorem exists_grid_subdivision_squareCell_eq {ι : Sort u} {U : ι → Set X}
     simpa only [uIcc_of_le hj, uIcc_of_le hk] using hV
   exact ⟨i, hV', squareCellBottom_trans_right_eq_left_trans_top H _ _ _ _ (U i) hV'⟩
 
-end TauCeti.ContinuousMap
+end TauCeti
