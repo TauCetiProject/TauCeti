@@ -36,6 +36,8 @@ import Mathlib.Tactic.NoncommRing
   otherwise.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
+* `Finset.mem_iff_of_ite_eq` recovers membership from the integer indicator: two finsets whose
+  indicators agree at a point contain that point alike.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
   over a pair of finite types, to the values of its summand at the two points where it is
   supported, and at the four cells of a rectangle.
@@ -159,6 +161,12 @@ theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
   refine ⟨(I.sup fun p ↦ max p.1 p.2) + 1, fun p hp ↦ ?_⟩
   have hle := le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
   omega
+
+/-- Membership is recovered from the integer indicator: if two finsets have the same indicator at
+a point, then they contain that point alike. -/
+theorem mem_iff_of_ite_eq [DecidableEq α] {s t : Finset α} {a : α}
+    (h : (if a ∈ s then (1 : ℤ) else 0) = if a ∈ t then 1 else 0) : a ∈ s ↔ a ∈ t := by
+  by_cases hs : a ∈ s <;> by_cases ht : a ∈ t <;> simp_all
 
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead

@@ -9,6 +9,8 @@ public import Mathlib.Data.Fin.SuccPredOrder
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.RepresentationTheory.Spin.Weight
+import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Finset.Basic
 import TauCeti.LinearAlgebra.RootSystem.Chain
 
 /-!
@@ -238,18 +240,6 @@ theorem span_range_typeBSpinWeight_eq_top (n : ℕ) :
 
 /-! ## The simple reflections on sign sets -/
 
-/-- Away from the terminal node, the order successor in `Fin n` increments the value. -/
-private theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
-    ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  obtain ⟨j, rfl⟩ : ∃ j : Fin m, i = j.castSucc := ⟨⟨(i : ℕ), by omega⟩, by ext; simp⟩
-  simp
-
-/-- At the terminal node the order successor in `Fin n` is that node itself. -/
-private theorem orderSucc_eq_self_of_not_lt {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n) :
-    (Order.succ i : Fin n) = i :=
-  IsMax.succ_eq fun b _ => Fin.le_def.2 (by have := b.isLt; have := i.isLt; omega)
-
 /-- The underlying involution of sign sets: exchange the two signs at a nonterminal node, and
 flip the last sign at the terminal node. -/
 private def typeBSpinReflectionSet {n : ℕ} (i : Fin n) (s : Finset (Fin n)) : Finset (Fin n) :=
@@ -362,8 +352,8 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_succ {n : ℕ} {i j
     (hij : (j : ℕ) = (i : ℕ) + 1) (hjlt : (j : ℕ) + 1 < n) (s : Finset (Fin n)) :
     typeBSpinWeight (typeBSpinReflection i s) j = typeBSpinWeight s j + typeBSpinWeight s i := by
   have hilt : (i : ℕ) + 1 < n := by omega
-  have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := val_orderSucc_of_lt hilt
-  have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := val_orderSucc_of_lt hjlt
+  have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := Fin.val_orderSucc_of_lt hilt
+  have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := Fin.val_orderSucc_of_lt hjlt
   have hjsucci : j = (Order.succ i : Fin n) := Fin.ext (by omega)
   have hswapj : Equiv.swap i (Order.succ i) j = i := by
     rw [hjsucci]; exact Equiv.swap_apply_right i (Order.succ i)
@@ -387,7 +377,7 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_succ_of_last {n : �
       typeBSpinWeight s j + 2 * typeBSpinWeight s i := by
   have hjv := j.isLt
   have hilt : (i : ℕ) + 1 < n := by omega
-  have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := val_orderSucc_of_lt hilt
+  have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := Fin.val_orderSucc_of_lt hilt
   have hjsucci : j = (Order.succ i : Fin n) := Fin.ext (by omega)
   have hswapj : Equiv.swap i (Order.succ i) j = i := by
     rw [hjsucci]; exact Equiv.swap_apply_right i (Order.succ i)
@@ -406,11 +396,11 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_pred {n : ℕ} {i j
     typeBSpinWeight (typeBSpinReflection i s) j = typeBSpinWeight s j + typeBSpinWeight s i := by
   have hiv := i.isLt
   have hjlt : (j : ℕ) + 1 < n := by omega
-  have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := val_orderSucc_of_lt hjlt
+  have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := Fin.val_orderSucc_of_lt hjlt
   have hsuccji : (Order.succ j : Fin n) = i := Fin.ext (by omega)
   have hji : j ≠ i := fun hc => by rw [hc] at hij; omega
   by_cases hilt : (i : ℕ) + 1 < n
-  · have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := val_orderSucc_of_lt hilt
+  · have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := Fin.val_orderSucc_of_lt hilt
     have h1 : j ≠ (Order.succ i : Fin n) := fun hc => by rw [hc, hsucci] at hij; omega
     have hswapj : Equiv.swap i (Order.succ i) j = j := Equiv.swap_apply_of_ne_of_ne hji h1
     have hswapsj : Equiv.swap i (Order.succ i) (Order.succ j) = (Order.succ i : Fin n) := by
@@ -440,21 +430,21 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_not_adjacent {n : �
     intro hc
     have hv := congrArg Fin.val hc
     by_cases hjlt : (j : ℕ) + 1 < n
-    · rw [val_orderSucc_of_lt hjlt] at hv
+    · rw [Fin.val_orderSucc_of_lt hjlt] at hv
       exact hpred hv
-    · rw [orderSucc_eq_self_of_not_lt hjlt] at hv
+    · rw [Fin.orderSucc_eq_self_of_not_lt hjlt] at hv
       exact hne hv
   by_cases hilt : (i : ℕ) + 1 < n
-  · have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := val_orderSucc_of_lt hilt
+  · have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := Fin.val_orderSucc_of_lt hilt
     have h1 : j ≠ (Order.succ i : Fin n) := fun hc => hsucc (by rw [hc, hsucci])
     have h2 : (Order.succ j : Fin n) ≠ (Order.succ i : Fin n) := by
       intro hc
       have hv := congrArg Fin.val hc
       rw [hsucci] at hv
       by_cases hjlt : (j : ℕ) + 1 < n
-      · rw [val_orderSucc_of_lt hjlt] at hv
+      · rw [Fin.val_orderSucc_of_lt hjlt] at hv
         exact hne (by omega)
-      · rw [orderSucc_eq_self_of_not_lt hjlt] at hv
+      · rw [Fin.orderSucc_eq_self_of_not_lt hjlt] at hv
         exact hsucc hv
     exact typeBSpinWeight_apply_eq_of_ite_mem_eq
       (by rw [ite_mem_typeBSpinReflection_of_lt hilt, Equiv.swap_apply_of_ne_of_ne hji h1])
@@ -486,11 +476,13 @@ theorem typeBSpinWeight_typeBSpinReflection_apply {n : ℕ} (i : Fin n) (s : Fin
   · by_cases hsucc : (j : ℕ) = (i : ℕ) + 1
     · rw [hsucc, chainBEntry_succ_right]
       by_cases hjlt : (j : ℕ) + 1 < n
-      · rw [typeBSpinWeight_typeBSpinReflection_apply_of_succ hsucc hjlt,
-          ite_eq_right (show (i : ℕ) + 1 ≠ n - 1 by omega)]
+      · have hnotlast : (i : ℕ) + 1 ≠ n - 1 := by omega
+        rw [typeBSpinWeight_typeBSpinReflection_apply_of_succ hsucc hjlt,
+          ite_eq_right hnotlast]
         ring
-      · rw [typeBSpinWeight_typeBSpinReflection_apply_of_succ_of_last hsucc hjlt,
-          ite_eq_left (show (i : ℕ) + 1 = n - 1 by omega)]
+      · have hlast : (i : ℕ) + 1 = n - 1 := by omega
+        rw [typeBSpinWeight_typeBSpinReflection_apply_of_succ_of_last hsucc hjlt,
+          ite_eq_left hlast]
         ring
     · by_cases hpred : (j : ℕ) + 1 = (i : ℕ)
       · rw [typeBSpinWeight_typeBSpinReflection_apply_of_pred hpred, ← hpred,
@@ -510,10 +502,6 @@ theorem typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one {n : ℕ} (s : Fin
   rw [typeBSpinWeight_apply]
   split_ifs <;> omega
 
-private theorem mem_iff_of_ite_eq {n : ℕ} {s t : Finset (Fin n)} {a : Fin n}
-    (h : (if a ∈ s then (1 : ℤ) else 0) = if a ∈ t then 1 else 0) : a ∈ s ↔ a ∈ t := by
-  by_cases hs : a ∈ s <;> by_cases ht : a ∈ t <;> simp_all
-
 private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n)}
     (h : typeBSpinWeight s = typeBSpinWeight t) (k : ℕ) :
     ∀ i : Fin n, (i : ℕ) + k + 1 = n → (i ∈ s ↔ i ∈ t) := by
@@ -524,18 +512,18 @@ private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n
     have hw := congrFun h i
     rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_right hilt,
       ite_eq_right hilt] at hw
-    exact mem_iff_of_ite_eq (by linarith)
+    exact Finset.mem_iff_of_ite_eq (by linarith)
   | succ k ih =>
     intro i hik
     have hilt : (i : ℕ) + 1 < n := by omega
-    have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := val_orderSucc_of_lt hilt
+    have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := Fin.val_orderSucc_of_lt hilt
     have hmem := ih (Order.succ i) (by omega)
     have hsuccind : (if (Order.succ i : Fin n) ∈ s then (1 : ℤ) else 0) =
         if (Order.succ i : Fin n) ∈ t then 1 else 0 := by simp only [hmem]
     have hw := congrFun h i
     rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_left hilt, ite_eq_left hilt] at hw
     rw [hsuccind] at hw
-    exact mem_iff_of_ite_eq (by linarith)
+    exact Finset.mem_iff_of_ite_eq (by linarith)
 
 /-- **Distinct sign sets have distinct type-`Bₙ` spin weights.** The last coordinate of the weight
 recovers the last sign, and the remaining signs follow from the adjacent differences. -/
@@ -589,7 +577,7 @@ private theorem exists_typeBSpinReflections_eq_aux {n : ℕ} (d : ℕ) :
   | succ d ih =>
     intro a s hd ha hmax hrec
     have hlt : (a : ℕ) + 1 < n := by have := a.isLt; omega
-    have hsucca : ((Order.succ a : Fin n) : ℕ) = (a : ℕ) + 1 := val_orderSucc_of_lt hlt
+    have hsucca : ((Order.succ a : Fin n) : ℕ) = (a : ℕ) + 1 := Fin.val_orderSucc_of_lt hlt
     have hane : a ≠ (Order.succ a : Fin n) := fun hc => by rw [← hc] at hsucca; omega
     have hasucclt : a < (Order.succ a : Fin n) := by rw [Fin.lt_def, hsucca]; omega
     have hsuccnotmem : (Order.succ a : Fin n) ∉ s := hmax _ hasucclt
