@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Map
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationModule
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Module
 
 /-!
 # Labute's abelianized character kernel

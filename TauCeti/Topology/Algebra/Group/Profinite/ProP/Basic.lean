@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.PGroup
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
+import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
@@ -36,6 +37,8 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `isProP_multiplicative_zmod_pow`: the discrete cyclic group `ℤ/pⁿ` is pro-`p`.
 * `IsProP.exists_forall_pow_pow_eq_one`: each finite quotient of a pro-`p` group is killed by
   a power of `p`.
+* `IsProP.subsingleton_of_coprime`, `IsProP.subsingleton_of_ne`: a profinite group that is pro-`p`
+  and pro-`q` for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
 * `IsProP.quotient`: a quotient of a pro-`p` group by a normal subgroup is pro-`p`.
 * `IsProP.top`: the top subgroup of a pro-`p` group is pro-`p`.
@@ -122,6 +125,21 @@ in `IsPGroup` can be chosen uniformly in the element. -/
 theorem exists_forall_pow_pow_eq_one [IsTopologicalGroup G] [CompactSpace G] (hG : IsProP p G)
     (U : OpenNormalSubgroup G) : ∃ n : ℕ, ∀ g : G ⧸ U.toSubgroup, g ^ p ^ n = 1 :=
   isPGroup_iff_exists_pow_pow_eq_one.mp (isProP_iff.mp hG U)
+
+/-- A profinite group that is pro-`p` and pro-`q` for coprime `p` and `q` is trivial: its finite
+quotients are simultaneously `p`-groups and `q`-groups. -/
+theorem subsingleton_of_coprime [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G] {q : ℕ} (hG : IsProP p G) (hG' : IsProP q G) (hpq : p.Coprime q) :
+    Subsingleton G :=
+  subsingleton_of_forall_eq 1 fun x ↦ Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun U ↦ by
+    have := (hG U).subsingleton_of_coprime (hG' U) hpq
+    exact (QuotientGroup.eq_one_iff x).mp (Subsingleton.elim _ _)
+
+/-- **A profinite group that is pro-`p` and pro-`q` for two distinct primes is trivial.** -/
+theorem subsingleton_of_ne [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+    {q : ℕ} [Fact p.Prime] [Fact q.Prime] (hG : IsProP p G) (hG' : IsProP q G) (hpq : p ≠ q) :
+    Subsingleton G :=
+  hG.subsingleton_of_coprime hG' ((Nat.coprime_primes Fact.out Fact.out).mpr hpq)
 
 /-- A continuous surjective image of a pro-`p` group is pro-`p`. -/
 theorem of_surjective (hG : IsProP p G) (f : G →* H) (hf : Continuous f)
