@@ -114,14 +114,15 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (O
 `(D : Module.End R (Octonion R))`, which is the simp-normal form of their action there.
 
 The three families are built from an underlying endomorphism and a private membership lemma, so
-that the bundled objects are the only public surface; their four entrywise `simp` lemmas and their
-five brackets are that surface, and no consumer unfolds a definition. Those brackets are checked
-entry by entry like the Leibniz rules of the two vector families, the trace-zero hypothesis
-entering the `𝔰𝔩₃` ones as the substitution `M 2 2 = -(M 0 0 + M 1 1)`. Only the rank bound asks
-for a field, and only because `TauCeti.finrank_sl` and the finite-dimensionality of `Der 𝕆` are
-what turn an injection into an inequality of ranks; that one lemma is the whole of this file's use
-of `TauCeti/Algebra/Lie/GeneralLinear/Finrank.lean`, which is therefore imported privately, while
-`𝔰𝔩₃` itself, which the statements do mention, comes from Mathlib.
+that the bundled objects are the only public surface; their twelve entrywise `simp` lemmas, four
+for each family, and their five brackets are that surface, and no consumer unfolds a definition.
+Those brackets are checked entry by entry like the Leibniz rules of the two vector families, the
+trace-zero hypothesis entering the `𝔰𝔩₃` ones as the substitution `M 2 2 = -(M 0 0 + M 1 1)`. Only
+the rank bound asks for a field, and only because `TauCeti.finrank_sl` and the
+finite-dimensionality of `Der 𝕆` are what turn an injection into an inequality of ranks; that one
+lemma is the whole of this file's use of `TauCeti/Algebra/Lie/GeneralLinear/Finrank.lean`, which is
+therefore imported privately, while `𝔰𝔩₃` itself, which the statements do mention, comes from
+Mathlib.
 
 ## References
 
@@ -593,15 +594,19 @@ private theorem sl_coe_apply_two_two (M : LieAlgebra.SpecialLinear.sl (Fin 3) R)
   rw [Matrix.trace_fin_three] at h
   exact eq_neg_of_add_eq_zero_right h
 
+/-- The trace of `⟨u, t⟩ • 1 - 3 • u tᵀ` vanishes: the rank-one matrix `u tᵀ` has trace `⟨u, t⟩`,
+and `1 : Matrix (Fin 3) (Fin 3) R` has trace `3`. -/
+private theorem trace_smul_one_sub_smul_vecMulVec_eq_zero (u t : Fin 3 → R) :
+    Matrix.trace ((u ⬝ᵥ t) • (1 : Matrix (Fin 3) (Fin 3) R) -
+      (3 : R) • Matrix.vecMulVec u t) = 0 := by
+  simp [Matrix.trace_sub, mul_comm]
+
 /-- **The `𝔰𝔩₃` parameter of the bracket of an upper and a lower vector derivation**: the matrix
 `⟨u, t⟩ • 1 - 3 • u tᵀ`, whose trace vanishes because the rank-one matrix `u tᵀ` has trace
 `⟨u, t⟩`.  See `TauCeti.Octonion.lie_upperDerivation_lowerDerivation`. -/
 def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
-  ⟨(u ⬝ᵥ t) • 1 - (3 : R) • Matrix.vecMulVec u t, LinearMap.mem_ker.mpr <|
-    show Matrix.trace ((u ⬝ᵥ t) • (1 : Matrix (Fin 3) (Fin 3) R) -
-        (3 : R) • Matrix.vecMulVec u t) = 0 by
-      simp
-      ring⟩
+  ⟨(u ⬝ᵥ t) • 1 - (3 : R) • Matrix.vecMulVec u t,
+    LinearMap.mem_ker.mpr (trace_smul_one_sub_smul_vecMulVec_eq_zero u t)⟩
 
 @[simp] theorem coe_slOfVectors (u t : Fin 3 → R) :
     (slOfVectors u t : Matrix (Fin 3) (Fin 3) R) =
