@@ -312,8 +312,7 @@ theorem range_eq_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic_of_not_dvd
     (χ (presentedProPGen 2 n _ 3)) hn₃
   rw [← h] at hr
   rw [hr, topologicalClosure_zpowers_sup_zpowers_eq_of_mem_unitsPrincipal_succ hg hv hv' hu,
-    (topologicalClosure_zpowers_two_eq_iff hg hg hv hv' (neg_mem_unitsPrincipal_two_of_val_eq hw)
-      (neg_notMem_unitsPrincipal_two_succ_of_val_eq hw)).mpr rfl]
+    topologicalClosure_zpowers_eq_of_val_mul_one_add_eq_neg_one hg hαg hαg' h₁ hw]
 
 /-- **The image of the canonical character at `α = 0` and `q = 0` is `{±1}`**, for `n ≥ 2` even,
 `q = 0` being required only when the factor `x₃^q` is present (`2 < n`): the relator is

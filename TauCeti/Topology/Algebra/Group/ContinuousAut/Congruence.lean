@@ -101,6 +101,23 @@ theorem continuous_mapQuotient (N : OpenNormalSubgroup G) (hN : IsTopCharacteris
     Continuous[congruenceTopology, ⊥] (mapQuotient hN) :=
   continuous_iInf_dom (i := ⟨N, hN⟩) continuous_induced_dom
 
+/-- A map into `ContinuousAut G` is continuous exactly when all of its characteristic quotient
+coordinates are continuous into the corresponding discrete automorphism groups. -/
+theorem continuous_iff_forall_continuous_mapQuotient {X : Type*} [TopologicalSpace X]
+    {f : X → ContinuousAut G} :
+    Continuous f ↔
+      ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
+        Continuous[inferInstance, ⊥] (mapQuotient N.2 ∘ f) := by
+  rw [congruenceTopology_eq_iInf, continuous_iInf_rng]
+  simp_rw [continuous_induced_rng]
+
+/-- The kernel of a characteristic quotient coordinate is open in the congruence topology. -/
+theorem isOpen_ker_mapQuotient (N : OpenNormalSubgroup G) (hN : IsTopCharacteristic G N) :
+    IsOpen ((mapQuotient hN).ker : Set (ContinuousAut G)) := by
+  let _ : TopologicalSpace (MulAut (G ⧸ (N : Subgroup G))) := ⊥
+  have := discreteTopology_bot (MulAut (G ⧸ (N : Subgroup G)))
+  exact (MonoidHom.continuous_iff_isOpen_ker _).mp (continuous_mapQuotient N hN)
+
 /-- The automorphisms sharing a characteristic quotient coordinate with `φ` form an open set. -/
 theorem isOpen_setOf_mapQuotient_eq (N : OpenNormalSubgroup G) (hN : IsTopCharacteristic G N)
     (φ : ContinuousAut G) :

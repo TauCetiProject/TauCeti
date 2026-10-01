@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 
 /-!
 # Half-planes bounded by a geodesic line
@@ -63,6 +65,7 @@ public section
 noncomputable section
 
 open UpperHalfPlane
+open Matrix.ProjectiveSpecialLinearGroup (upperRightHom)
 open scoped MatrixGroups Pointwise
 
 namespace TauCeti.UpperHalfPlane
@@ -93,6 +96,18 @@ theorem mem_rightHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
 theorem mem_leftHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ leftHalfPlane g ↔ (g⁻¹ • z : ℍ).re < 0 := by
   rw [leftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
+
+/-- The right half-plane of the translation by `x` is `{x < re}`. -/
+theorem mem_rightHalfPlane_upperRightHom_iff (x : ℝ) (z : ℍ) :
+    z ∈ rightHalfPlane (upperRightHom x) ↔ x < z.re := by
+  rw [mem_rightHalfPlane_iff, ← AddChar.map_neg_eq_inv, upperRightHom_smul, vadd_re,
+    neg_add_eq_sub, sub_pos]
+
+/-- The left half-plane of the translation by `x` is `{re < x}`. -/
+theorem mem_leftHalfPlane_upperRightHom_iff (x : ℝ) (z : ℍ) :
+    z ∈ leftHalfPlane (upperRightHom x) ↔ z.re < x := by
+  rw [mem_leftHalfPlane_iff, ← AddChar.map_neg_eq_inv, upperRightHom_smul, vadd_re,
+    neg_add_eq_sub, sub_neg]
 
 -- Not `@[simp]`, like `range_geodesicLine_one`: it would strip `rightHalfPlane` before the
 -- `smul`/`closure`/`frontier` simp lemmas about it could fire.
