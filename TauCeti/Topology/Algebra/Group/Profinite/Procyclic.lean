@@ -3,8 +3,10 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
-import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
-import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Pow
+module
+
+public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
+public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Pow
 
 /-!
 # Closed procyclic subgroups and prime parts
@@ -24,6 +26,8 @@ idempotents and their product decomposition are `TauCeti.zHat.idem` and
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Sections 4.1 and 4.3.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -83,7 +87,9 @@ theorem range_zpowHat (x : G) :
     exact zpowHat_mem (Subgroup.isClosed_topologicalClosure _) (mem_closedZpowers x) a
   · intro y hy
     obtain ⟨a, ha⟩ := closedZpowersLift_surjective.{u} x ⟨y, hy⟩
-    exact ⟨ofMul a, (coe_closedZpowersLift x a).symm.trans (congrArg Subtype.val ha)⟩
+    refine ⟨ofMul a, ?_⟩
+    simpa only [zpowHat_def, toMul_ofMul] using
+      (coe_closedZpowersLift x a).symm.trans (congrArg Subtype.val ha)
 
 /-- Membership in the closed procyclic subgroup is existence of a profinite exponent. -/
 theorem mem_closedZpowers_iff {x y : G} :
