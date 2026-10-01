@@ -244,7 +244,8 @@ theorem card_roots_toFinset_Iio (p : R[X]) {b : R} (hb : p.eval b ≠ 0) :
   classical
   simpa using sum_sign_sturmSeq_Iio p 1 hb
 
-/-- Classical Sturm counting of all distinct roots of a polynomial. -/
+/-- Classical Sturm counting of all distinct roots of a nonzero polynomial. For `p = 0` both
+sides are zero: `sturmSeq 0 _ = []` and `Polynomial.roots 0 = 0` by convention. -/
 theorem card_roots_toFinset_univ (p : R[X]) :
     (signVariationsAtBot (sturmSeq p p.derivative) : ℤ) -
         signVariationsAtTop (sturmSeq p p.derivative) =
