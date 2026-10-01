@@ -29,6 +29,9 @@ Third, dividing a polynomial by the linear factor of a simple root removes exact
 from the root set. Here `a` only has to be a simple root in `E`: `f a` vanishes and `f' a` does
 not vanish after mapping to `E`, so the map `F → E` need not be injective.
 
+Fourth, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
+with `x + t` a root of `f`, and `f(X + t)` is separable exactly when `f` is.
+
 Finally, the roots of a polynomial gcd form the multiset intersection of the roots of its
 inputs. In characteristic zero this identifies the degree lost to the gcd with the derivative as
 the number of distinct roots.
@@ -41,6 +44,8 @@ the number of distinct roots.
   nonzero is the union of the root sets of the factors.
 * `Polynomial.rootSet_divByMonic_X_sub_C`: if `f a = 0` and `f' a ≠ 0` in `E`, then the roots of
   `f /ₘ (X - C a)` are the roots of `f` other than `a`.
+* `Polynomial.rootSet_comp_X_add_C`: the roots of `f(X + t)` are the roots of `f` moved by `-t`.
+* `Polynomial.separable_comp_X_add_C_iff`: `f(X + t)` is separable exactly when `f` is.
 * `Polynomial.rootMultiplicity_gcd`: a root's multiplicity in a gcd is the minimum of its
   multiplicities in the two inputs.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
@@ -108,6 +113,25 @@ theorem _root_.Polynomial.rootSet_divByMonic_X_sub_C {a : F} (ha : algebraMap F 
   · rintro ⟨hxa | hx, hxa'⟩
     · exact absurd hxa hxa'
     · exact hx
+
+/-- The roots of `f(X + t)` are the points `x` with `x + t` a root of `f`. -/
+theorem _root_.Polynomial.rootSet_comp_X_add_C (f : F[X]) (t : F) :
+    (f.comp (X + C t)).rootSet E = (· + algebraMap F E t) ⁻¹' f.rootSet E := by
+  ext x
+  simp [mem_rootSet', Polynomial.map_comp, comp_X_add_C_ne_zero_iff, aeval_comp]
+
+/-- Translating the variable preserves separability. -/
+theorem _root_.Polynomial.Separable.comp_X_add_C (hf : f.Separable) (t : F) :
+    (f.comp (X + C t)).Separable := by
+  rw [Separable, derivative_comp, derivative_X_add_C, one_mul]
+  exact IsCoprime.map hf (compRingHom (X + C t))
+
+/-- `f(X + t)` is separable exactly when `f` is. -/
+@[simp]
+theorem _root_.Polynomial.separable_comp_X_add_C_iff {t : F} :
+    (f.comp (X + C t)).Separable ↔ f.Separable := by
+  refine ⟨fun h => ?_, fun h => h.comp_X_add_C t⟩
+  simpa [comp_assoc, add_assoc] using h.comp_X_add_C (-t)
 
 section GCD
 
