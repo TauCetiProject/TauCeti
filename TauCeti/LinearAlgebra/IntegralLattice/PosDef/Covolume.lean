@@ -33,8 +33,8 @@ determinant `0` but covolume `1`.
   injective.
 * `TauCeti.IntegralLattice.linearIndependent_comp_basis`: it carries carrier bases to
   `ℝ`-linearly independent families.
-* `TauCeti.IntegralLattice.discreteTopology_range`: the image of a full realization is discrete,
-  hence a `ℤ`-lattice in `E`.
+* `TauCeti.IntegralLattice.discreteTopology_range`: the image of a map carrying the integral form
+  to the inner product is discrete; for a full realization it is a `ℤ`-lattice in `E`.
 * `TauCeti.IntegralLattice.covolume_range_sq_eq_determinant`: `covolume(φ(L))² = det L`.
 * `TauCeti.IntegralLattice.covolume_range_eq_sqrt_discriminant`: `covolume(φ(L)) = √(disc L)`.
 
@@ -74,6 +74,22 @@ theorem det_gram_comp_eq_determinant {ι : Type*} [Fintype ι] [DecidableEq ι] 
     (Matrix.gram ℝ (fun i ↦ φ (e i))).det = L.determinant := by
   rw [gram_comp_eq_map_gramMatrix hφ, ← Int.cast_det, ← gramDet_def, L.determinant_eq_gramDet e]
 
+/-- The image of a map carrying the integral form to the inner product is discrete: its nonzero
+vectors have integral squared norm, hence norm at least `1`. -/
+theorem discreteTopology_range : DiscreteTopology (LinearMap.range φ) := by
+  refine discreteTopology_of_isOpen_singleton_zero <| Metric.isOpen_singleton_iff.mpr
+    ⟨1, one_pos, fun ⟨_, x, rfl⟩ hx ↦ Subtype.ext ?_⟩
+  have hlt : (L.integralForm x x : ℝ) < 1 := by
+    rw [← hφ, real_inner_self_eq_norm_sq]
+    have h1 : ‖φ x‖ < 1 := by simpa using hx
+    nlinarith [norm_nonneg (φ x)]
+  have h0 : (0 : ℝ) ≤ L.integralForm x x := hφ x x ▸ real_inner_self_nonneg
+  have hx0 : L.integralForm x x = 0 := by
+    have : L.integralForm x x < 1 := by exact_mod_cast hlt
+    have : 0 ≤ L.integralForm x x := by exact_mod_cast h0
+    omega
+  rw [ZeroMemClass.coe_zero, ← inner_self_eq_zero (𝕜 := ℝ), hφ, hx0, Int.cast_zero]
+
 variable [L.IsNondegenerate]
 
 /-- A map carrying the form of a nondegenerate lattice to the inner product is injective. -/
@@ -97,32 +113,6 @@ theorem linearIndependent_comp_basis {ι : Type*} [Finite ι] (e : Basis ι ℤ 
 variable (hspan : Submodule.span ℝ (Set.range φ) = ⊤)
 include hspan
 
-/-- The images of the chosen carrier basis under a full realization, as an `ℝ`-basis of `E`. -/
-private noncomputable def realBasis : Basis (Free.ChooseBasisIndex ℤ L) ℝ E :=
-  Basis.mk (linearIndependent_comp_basis hφ (Free.chooseBasis ℤ L)) <| by
-    rw [← hspan, ← LinearMap.coe_range, LinearMap.range_eq_map,
-      ← (Free.chooseBasis ℤ L).span_eq, Submodule.map_span, ← Set.range_comp,
-      Submodule.span_span_of_tower]
-    exact le_rfl
-
-private theorem realBasis_apply (i : Free.ChooseBasisIndex ℤ L) :
-    realBasis hφ hspan i = φ (Free.chooseBasis ℤ L i) :=
-  Basis.mk_apply _ _ i
-
-/-- The image of a full realization is the `ℤ`-span of the real basis it induces. -/
-private theorem range_eq_span_realBasis :
-    LinearMap.range φ = Submodule.span ℤ (Set.range (realBasis hφ hspan)) := by
-  rw [LinearMap.range_eq_map, ← (Free.chooseBasis ℤ L).span_eq, Submodule.map_span,
-    ← Set.range_comp]
-  congr 2
-  ext i
-  exact (realBasis_apply hφ hspan i).symm
-
-/-- The image of a full realization of a nondegenerate lattice is discrete. -/
-theorem discreteTopology_range : DiscreteTopology (LinearMap.range φ) := by
-  rw [range_eq_span_realBasis hφ hspan]
-  infer_instance
-
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **The covolume identity.** The square of the covolume of a nondegenerate integral lattice,
@@ -130,7 +120,7 @@ realized in a real inner product space, is its determinant. -/
 theorem covolume_range_sq_eq_determinant :
     ZLattice.covolume (LinearMap.range φ) ^ 2 = L.determinant := by
   classical
-  have := discreteTopology_range hφ hspan
+  have := discreteTopology_range hφ
   have : IsZLattice ℝ (LinearMap.range φ) := ⟨by rw [LinearMap.coe_range, hspan]⟩
   let e := Free.chooseBasis ℤ L
   rw [ZLattice.covolume_sq_eq_det_gram _ (e.map (LinearEquiv.ofInjective φ
@@ -141,7 +131,7 @@ theorem covolume_range_sq_eq_determinant :
 the square root of its discriminant. -/
 theorem covolume_range_eq_sqrt_discriminant :
     ZLattice.covolume (LinearMap.range φ) = √(L.discriminant : ℝ) := by
-  have := discreteTopology_range hφ hspan
+  have := discreteTopology_range hφ
   have : IsZLattice ℝ (LinearMap.range φ) := ⟨by rw [LinearMap.coe_range, hspan]⟩
   rw [discriminant_def, Nat.cast_natAbs, Int.cast_abs,
     ← covolume_range_sq_eq_determinant hφ hspan, abs_sq,

@@ -17,9 +17,10 @@ product, the square of the covolume of a `ℤ`-lattice is the determinant of the
 of its `ℤ`-bases. This is the metric form of `ZLattice.covolume_eq_det`, which computes the
 covolume in the coordinate space `ι → ℝ` as the absolute determinant of a basis.
 
-The proof measures a fundamental parallelepiped against an orthonormal basis: the parallelepiped
-of an orthonormal basis has volume `1`, so the covolume is the absolute value of the determinant
-`M` of the lattice basis in orthonormal coordinates, and the Gram matrix is `Mᵀ M`.
+The Gram determinant is computed from inner products alone, so this identity expresses the
+covolume, a measure-theoretic invariant of the lattice, through the metric data of any of its
+bases. In particular the covolume does not depend on a choice of coordinates, and two lattices
+with the same Gram matrix in some bases have the same covolume.
 
 ## Main results
 
@@ -45,14 +46,18 @@ theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteT
     rw [← ZLattice.rank ℝ L, finrank_eq_card_basis b]
   let o : OrthonormalBasis ι ℝ E :=
     (stdOrthonormalBasis ℝ E).reindex (Fintype.equivFinOfCardEq hcard.symm).symm
-  -- The matrix of orthonormal coordinates of the basis vectors.
+  -- The fundamental parallelepiped of an orthonormal basis has volume `1`.
+  have hvol : volume.real (ZSpan.fundamentalDomain o.toBasis) = 1 := by
+    rw [measureReal_congr (ZSpan.fundamentalDomain_ae_parallelepiped o.toBasis volume),
+      OrthonormalBasis.coe_toBasis, measureReal_def, o.volume_parallelepiped, ENNReal.toReal_one]
+  -- The Gram matrix is `Mᵀ M`, where `M` is the matrix of the lattice basis in orthonormal
+  -- coordinates.
   have hM : o.toBasis.toMatrix ((↑) ∘ b) = Matrix.of fun i j ↦ o.repr (b j : E) i := by
     ext i j
     simp [Basis.toMatrix_apply]
-  rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis,
-    measureReal_congr (ZSpan.fundamentalDomain_ae_parallelepiped o.toBasis volume),
-    OrthonormalBasis.coe_toBasis, measureReal_def, o.volume_parallelepiped, ENNReal.toReal_one,
-    mul_one, sq_abs, Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul,
-    Matrix.det_conjTranspose, star_trivial, Basis.det_apply, hM, sq]
+  have hgram : (Matrix.gram ℝ fun i ↦ (b i : E)).det = o.toBasis.det ((↑) ∘ b) ^ 2 := by
+    rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
+      star_trivial, Basis.det_apply, hM, sq]
+  rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis, hvol, hgram, mul_one, sq_abs]
 
 end TauCeti
