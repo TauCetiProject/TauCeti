@@ -140,24 +140,24 @@ isomorphism `Gᵃᵇ ≃ Hᵃᵇ` induced by `e` in degree `-2`. -/
 theorem HNegTwoAddEquivAbelianization_map {H : Type} [Group H] [Fintype H] (e : G ≃* H)
     (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
     HNegTwoAddEquivAbelianization
-        (map (TauCeti.isIntertwiningMap_trivial (e : G →* H)) (-2) x) =
+        (map (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) x) =
       e.abelianizationCongr.toAdditive (HNegTwoAddEquivAbelianization x) := by
   -- In degree `-2` the pair acts on first homology as the change-of-group map along `e`.
   have hm : (_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ H ℤ)
-      (map (TauCeti.isIntertwiningMap_trivial (e : G →* H)) (-2) x) =
+      (map (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) x) =
       groupHomology.map (e : G →* H)
         (Representation.IsIntertwiningMap.toRes
-          (TauCeti.isIntertwiningMap_trivial (e : G →* H))) 1
+          (Rep.isIntertwiningMap_trivial ℤ (e : G →* H))) 1
         ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ G ℤ) x) :=
     ConcreteCategory.congr_hom
       (map_comp_isoGroupHomology_hom
-        (TauCeti.isIntertwiningMap_trivial (e : G →* H)) (-2) 1 rfl) x
+        (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) 1 rfl) x
   rw [HNegTwoAddEquivAbelianization_apply, HNegTwoAddEquivAbelianization_apply,
     HNegTwoAddEquivTensorOfIsTrivial_apply, HNegTwoAddEquivTensorOfIsTrivial_apply, hm]
   -- On first homology with trivial coefficients, the change of group along `e` is
   -- `Abelianization.map e` tensored with the identity of `ℤ`.
   have h1 := TauCeti.groupHomology.H1AddEquivOfIsTrivial_map (e : G →* H)
-    (Representation.IsIntertwiningMap.toRes (TauCeti.isIntertwiningMap_trivial (e : G →* H)))
+    (Representation.IsIntertwiningMap.toRes (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)))
     ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ G ℤ) x :
       groupHomology.H1 (Rep.trivial ℤ G ℤ))
   refine (congrArg (TensorProduct.rid ℤ (Additive (Abelianization H))) h1).trans ?_

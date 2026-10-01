@@ -63,14 +63,14 @@ variable (L : NormalLayer G) (F : Formation G) (g : G)
 /-- **Conjugation on Tate cohomology with trivial integral coefficients**: the isomorphism
 `H^r(U/V, ℤ) ≅ H^r(gUg⁻¹/gVg⁻¹, ℤ)` induced by the isomorphism of Galois groups. -/
 def conjugateTrivialTateIso (r : ℤ) : L.TrivialTateH r ≅ (L.conjugate g).TrivialTateH r :=
-  TateCohomology.mapIso (TauCeti.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom) r
+  TateCohomology.mapIso (Rep.isIntertwiningMap_trivial ℤ (L.conjugateGalEquiv g).toMonoidHom) r
 
 /-- Conjugation with trivial integral coefficients is the Tate map of the compatible pair formed by
 the isomorphism of Galois groups and the identity of `ℤ`. -/
 theorem conjugateTrivialTateIso_hom (r : ℤ) :
     (L.conjugateTrivialTateIso g r).hom =
       TateCohomology.map
-        (TauCeti.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom) r :=
+        (Rep.isIntertwiningMap_trivial ℤ (L.conjugateGalEquiv g).toMonoidHom) r :=
   TateCohomology.mapIso_hom _ r
 
 /-- **In degree `-2`, conjugation is conjugation of abelianized Galois groups**: under the
@@ -97,19 +97,9 @@ theorem cupClass_conj (F : Formation G) (L : NormalLayer G) (g : G) (u : L.H F 2
       cupClass F (L.conjugate g) ((L.conjugateCohomologyIso F g 2).hom u) r
         ((L.conjugateTrivialTateIso g r).hom x) := by
   have hφ := L.isIntertwiningMap_conjugateCoefficientEquiv F g
-  have h₀ := TauCeti.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom
-  have hTensor :
-      ((Rep.trivial ℤ L.Gal ℤ) ⊗ L.rep F).ρ.IsIntertwiningMap
-        (((Rep.trivial ℤ (L.conjugate g).Gal ℤ) ⊗ (L.conjugate g).rep F).ρ.comp
-          (L.conjugateGalEquiv g).toMonoidHom)
-        (TensorProduct.map (LinearEquiv.refl ℤ ℤ).toLinearMap
-          (L.conjugateCoefficientEquiv F g).toLinearMap) :=
-    ⟨(((LinearEquiv.refl ℤ ℤ).toLinearMap.intertwiningMap_of_isIntertwiningMap _ _
-        h₀.isIntertwining).tensor
-      ((L.conjugateCoefficientEquiv F g).toLinearMap.intertwiningMap_of_isIntertwiningMap _ _
-        hφ.isIntertwining)).isIntertwining⟩
+  have h₀ := Rep.isIntertwiningMap_trivial (R := ℤ) ℤ (L.conjugateGalEquiv g).toMonoidHom
   -- The conjugation pair commutes with the left unitors `ℤ ⊗ A^V ≅ A^V`.
-  have hl := TateCohomology.tateCohomologyFunctor_map_comp_map hTensor hφ
+  have hl := TateCohomology.tateCohomologyFunctor_map_comp_map (h₀.tensor hφ) hφ
     (λ_ (L.rep F)).hom (λ_ ((L.conjugate g).rep F)).hom
     (TensorProduct.ext' fun n c ↦ by simp) (r + 2)
   rw [cupClass_apply, cupClass_apply, ← L.conjugateTateIso_hom_tateHIsoH_inv F g 2,

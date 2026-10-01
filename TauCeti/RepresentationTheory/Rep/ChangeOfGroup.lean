@@ -43,10 +43,12 @@ does.
   their linear part is an equivalence.
 * `Representation.IsIntertwiningMap.comp_norm`: an intertwining map along an isomorphism of
   finite groups intertwines the two norms.
-* `TauCeti.isIntertwiningMap_res_tensor`: restriction and tensor products are compatible
-  along a homomorphism of monoids.
-* `TauCeti.isIntertwiningMap_trivial`: the identity of `ℤ` intertwines trivial
-  integral representations along any homomorphism of monoids.
+* `Representation.IsIntertwiningMap.tensor`: the tensor product of two intertwining maps along
+  one homomorphism of monoids is intertwining along it.
+* `Rep.isIntertwiningMap_tensor_res`: restriction and tensor products are compatible along a
+  homomorphism of monoids.
+* `Rep.isIntertwiningMap_trivial`: the identity intertwines trivial representations along any
+  homomorphism of monoids.
 * `Rep.isIntertwiningMap_id` and `Rep.isIntertwiningMap_res`: the identity
   map is intertwining along the identity isomorphism of the monoid, and along `f` between a
   restricted representation and the representation it restricts.
@@ -157,6 +159,13 @@ theorem isIntertwiningMap_res (N : Rep.{uV} R H) (f : G →* H) :
       ((LinearEquiv.refl R N.V : N.V →ₗ[R] N.V) : (Rep.res f N).V →ₗ[R] N.V) :=
   ⟨fun g v ↦ by simp⟩
 
+/-- The identity of `V` intertwines the trivial representations on `V` along any homomorphism of
+monoids. -/
+theorem isIntertwiningMap_trivial (V : Type uV) [AddCommGroup V] [Module R V] (f : G →* H) :
+    (Rep.trivial R G V).ρ.IsIntertwiningMap ((Rep.trivial R H V).ρ.comp f)
+      (LinearEquiv.refl R V : V →ₗ[R] V) :=
+  isIntertwiningMap_res (Rep.trivial R H V) f
+
 /-- The identity of `N` is intertwining along `g₁` from `Res(f₁)(Res(f₂)(N))` to `Res(g₂)(N)` when
 `g₂ ∘ g₁ = f₂ ∘ f₁`; its `toRes` is the comparison morphism
 `Res(f₁)(Res(f₂)(N)) ⟶ Res(g₁)(Res(g₂)(N))` of `K`-representations. -/
@@ -218,30 +227,29 @@ theorem Rep.isIntertwiningMap_res_res_toRes_naturality {K : Type uK} {L : Type u
 
 end RepMorphisms
 
-namespace TauCeti
+section Tensor
 
 open CategoryTheory MonoidalCategory
 
-/-- The identity of `ℤ` intertwines the trivial integral representations along any
-homomorphism of monoids. -/
-theorem isIntertwiningMap_trivial {G : Type uG} {H : Type uH} [Monoid G] [Monoid H]
-    (f : G →* H) :
-    (Rep.trivial ℤ G ℤ).ρ.IsIntertwiningMap ((Rep.trivial ℤ H ℤ).ρ.comp f)
-      (LinearEquiv.refl ℤ ℤ) :=
-  ⟨fun _ _ ↦ rfl⟩
+variable {R : Type u} {G : Type uG} {H : Type uH} [CommRing R] [Monoid G] [Monoid H]
+
+/-- The tensor product of two intertwining maps along one homomorphism of monoids `f` is
+intertwining along `f`. This is Mathlib's `Representation.IntertwiningMap.tensor`, stated for
+intertwining maps along a homomorphism. -/
+theorem Representation.IsIntertwiningMap.tensor {f : G →* H} {M₁ M₂ : Rep.{u} R G}
+    {N₁ N₂ : Rep.{u} R H} {φ₁ : M₁.V →ₗ[R] N₁.V} {φ₂ : M₂.V →ₗ[R] N₂.V}
+    (h₁ : M₁.ρ.IsIntertwiningMap (N₁.ρ.comp f) φ₁) (h₂ : M₂.ρ.IsIntertwiningMap (N₂.ρ.comp f) φ₂) :
+    (M₁ ⊗ M₂).ρ.IsIntertwiningMap ((N₁ ⊗ N₂).ρ.comp f) (TensorProduct.map φ₁ φ₂) :=
+  ⟨((φ₁.intertwiningMap_of_isIntertwiningMap _ _ h₁.isIntertwining).tensor
+    (φ₂.intertwiningMap_of_isIntertwiningMap _ _ h₂.isIntertwining)).isIntertwining⟩
 
 /-- Restriction and tensor products are compatible: the tensor product of the identity maps
-from the restricted representations to their originals intertwines the actions along `f`.
-The tensor product is Mathlib's `Representation.IntertwiningMap.tensor`. -/
-theorem isIntertwiningMap_res_tensor {R G H : Type u}
-    [CommRing R] [Monoid G] [Monoid H] (f : G →* H) (N₁ N₂ : Rep R H) :
+from the restricted representations to their originals intertwines the actions along `f`. -/
+theorem Rep.isIntertwiningMap_tensor_res (N₁ N₂ : Rep.{u} R H) (f : G →* H) :
     (Rep.res f N₁ ⊗ Rep.res f N₂).ρ.IsIntertwiningMap ((N₁ ⊗ N₂).ρ.comp f)
       (TensorProduct.map ((LinearEquiv.refl R N₁.V : N₁.V →ₗ[R] N₁.V) :
           (Rep.res f N₁).V →ₗ[R] N₁.V)
         ((LinearEquiv.refl R N₂.V : N₂.V →ₗ[R] N₂.V) : (Rep.res f N₂).V →ₗ[R] N₂.V)) :=
-  ⟨(((LinearEquiv.refl R N₁.V).toLinearMap.intertwiningMap_of_isIntertwiningMap _ _
-      (_root_.Rep.isIntertwiningMap_res N₁ f).isIntertwining).tensor
-    ((LinearEquiv.refl R N₂.V).toLinearMap.intertwiningMap_of_isIntertwiningMap _ _
-      (_root_.Rep.isIntertwiningMap_res N₂ f).isIntertwining)).isIntertwining⟩
+  (isIntertwiningMap_res N₁ f).tensor (isIntertwiningMap_res N₂ f)
 
-end TauCeti
+end Tensor
