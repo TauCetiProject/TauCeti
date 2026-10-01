@@ -371,6 +371,26 @@ private lemma comparison_inv_app_f_one (X : C) :
   simp only [Iso.hom_inv_id_assoc]
   exact (((comparison F α).inv.app X).comm 0 1 rfl).symm
 
+/-- Conjugating the degree-one comparison by isomorphisms of the arguments, using naturality of
+`α` and of the two degree-one shift identifications. -/
+private lemma shiftFunctorOneIso_conj {X' X : C} (u : X' ≅ X) {Y : D} (v : Y ≅ F.obj X) :
+    letI := e.hasShift
+    letI := e'.hasShift
+    F.map ((shiftFunctor C (1 : ℤ)).map u.inv) ≫ F.map (e.shiftFunctorOneIso.hom.app X') ≫
+        α.hom.app X' ≫ e'.functor.map (F.map u.hom) ≫ e'.functor.map v.inv ≫
+          e'.shiftFunctorOneIso.inv.app Y ≫ (shiftFunctor D (1 : ℤ)).map v.hom =
+      F.map (e.shiftFunctorOneIso.hom.app X) ≫ α.hom.app X ≫
+        e'.shiftFunctorOneIso.inv.app (F.obj X) := by
+  let _ := e.hasShift
+  let _ := e'.hasShift
+  have hS := e.shiftFunctorOneIso.hom.naturality u.inv
+  have hα := α.hom.naturality u.inv
+  have hS' := e'.shiftFunctorOneIso.inv.naturality v.inv
+  simp only [Functor.comp_map] at hS hα hS'
+  rw [← F.map_comp_assoc, hS, F.map_comp_assoc, reassoc_of% hα, ← e'.functor.map_comp_assoc,
+    ← F.map_comp, Iso.inv_hom_id, F.map_id, e'.functor.map_id, Category.id_comp,
+    reassoc_of% hS', ← Functor.map_comp, Iso.inv_hom_id, Functor.map_id, Category.comp_id]
+
 end CommShiftOfIntertwining
 
 /-- A functor intertwining two autoequivalences commutes coherently with the integral shifts
@@ -391,6 +411,56 @@ noncomputable def commShiftOfIntertwining (F : C ⥤ D) (e : C ≌ C) (e' : D �
     (eval (e := e')).asEquivalence.commShiftInverse ℤ
   exact Functor.CommShift.ofComp (CommShiftOfIntertwining.comparison F α) ℤ
 
+namespace CommShiftOfIntertwining
+
+/-- The degree-zero component of the transported degree-one comparison, before the naturality
+cancellation of `shiftFunctorOneIso_conj`. -/
+private lemma eval_inv_map_commShiftIso_one_hom_app_f_zero (F : C ⥤ D) (e : C ≌ C)
+    (e' : D ≌ D) (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : C) :
+    letI := e.hasShift
+    letI := e'.hasShift
+    letI := commShiftOfIntertwining F e e' α
+    ((eval (e := e')).inv.map ((F.commShiftIso (1 : ℤ)).hom.app X)).f 0 =
+      (e'.evalCounitIso (F.obj ((shiftFunctor C (1 : ℤ)).obj X))).hom ≫
+        (F.map ((shiftFunctor C (1 : ℤ)).map (e.evalCounitIso X).inv) ≫
+          F.map (e.shiftFunctorOneIso.hom.app (((eval (e := e)).inv.obj X).X 0)) ≫
+            α.hom.app (((eval (e := e)).inv.obj X).X 0) ≫
+              e'.functor.map (F.map (e.evalCounitIso X).hom) ≫
+                e'.functor.map (e'.evalCounitIso (F.obj X)).inv ≫
+                  e'.shiftFunctorOneIso.inv.app (((eval (e := e')).inv.obj (F.obj X)).X 0) ≫
+                    (shiftFunctor D (1 : ℤ)).map (e'.evalCounitIso (F.obj X)).hom) ≫
+          (e'.evalCounitIso ((shiftFunctor D (1 : ℤ)).obj (F.obj X))).inv := by
+  let _ := e.hasShift
+  let _ := e'.hasShift
+  let _ : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+  let _ : (eval (e := e')).asEquivalence.functor.CommShift ℤ := e'.evalCommShift
+  let _ : (eval (e := e)).inv.CommShift ℤ :=
+    (eval (e := e)).asEquivalence.commShiftInverse ℤ
+  let _ : (eval (e := e')).inv.CommShift ℤ :=
+    (eval (e := e')).asEquivalence.commShiftInverse ℤ
+  let _ : F.CommShift ℤ := commShiftOfIntertwining F e e' α
+  -- `OfComp.iso` is the public comparison underlying the installed `CommShift` structure.
+  change ((eval (e := e')).inv.map
+    ((Functor.CommShift.OfComp.iso (comparison F α) (1 : ℤ)).hom.app X)).f 0 = _
+  rw [Functor.CommShift.OfComp.map_iso_hom_app]
+  simp only [Functor.comp_obj, shiftFunctor_eq_reindex, comp_f, reindex_obj_X, Int.reduceAdd,
+    reindex_map_f]
+  rw [Functor.commShiftIso_comp_hom_app]
+  simp only [comp_f, mapFunctor_map_f]
+  rw [show (mapFunctor α).commShiftIso (1 : ℤ) = mapFunctorShiftIso α 1 from rfl]
+  simp only [mapFunctorShiftIso_hom_app_f]
+  erw [Category.comp_id]
+  rw [comparison_hom_app_f_zero]
+  simp only [shiftFunctor_eq_reindex, reindex_obj_X, Int.reduceAdd]
+  rw [comparison_inv_app_f_one, comparison_inv_app_f_zero]
+  simp only [mapFunctor, Functor.comp_obj, Iso.trans_inv, Functor.mapIso_inv, Iso.symm_inv,
+    Iso.app_hom, Category.assoc]
+  rw [e.evalInverseCommShiftIso_one_hom_app_f_zero, e'.evalInverseCommShiftIso_one_inv_app_f_zero]
+  simp only [Functor.map_comp, Category.assoc, Iso.inv_hom_id_map_assoc, Iso.hom_inv_id_assoc,
+    Iso.hom_inv_id_map_assoc]
+
+end CommShiftOfIntertwining
+
 /-- At degree one, the coherent shift comparison recovers the supplied intertwining
 isomorphism. -/
 theorem commShiftOfIntertwining_iso_one (F : C ⥤ D) (e : C ≌ C) (e' : D ≌ D)
@@ -403,48 +473,15 @@ theorem commShiftOfIntertwining_iso_one (F : C ⥤ D) (e : C ≌ C) (e' : D ≌ 
         isoWhiskerLeft F e'.shiftFunctorOneIso.symm := by
   let _ := e.hasShift
   let _ := e'.hasShift
-  let _ : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
-  let _ : (eval (e := e')).asEquivalence.functor.CommShift ℤ := e'.evalCommShift
-  let _ : (eval (e := e)).inv.CommShift ℤ :=
-    (eval (e := e)).asEquivalence.commShiftInverse ℤ
-  let _ : (eval (e := e')).inv.CommShift ℤ :=
-    (eval (e := e')).asEquivalence.commShiftInverse ℤ
   let _ : F.CommShift ℤ := commShiftOfIntertwining F e e' α
   apply Iso.ext
   apply NatTrans.ext
   funext X
-  -- `OfComp.iso` is the public comparison underlying the installed `CommShift` structure.
-  change (Functor.CommShift.OfComp.iso
-    (CommShiftOfIntertwining.comparison F α) (1 : ℤ)).hom.app X = _
   apply (eval (e := e')).inv.map_injective
-  rw [Functor.CommShift.OfComp.map_iso_hom_app]
   apply (eval (e := e')).map_injective
-  simp only [Functor.comp_obj, shiftFunctor_eq_reindex, eval_map, comp_f, reindex_obj_X,
-    Int.reduceAdd, reindex_map_f, Iso.trans_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
-    Iso.symm_hom, NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-    Functor.map_comp]
-  rw [Functor.commShiftIso_comp_hom_app]
-  simp only [comp_f, mapFunctor_map_f]
-  rw [show (mapFunctor α).commShiftIso (1 : ℤ) = mapFunctorShiftIso α 1 from rfl]
-  simp only [mapFunctorShiftIso_hom_app_f]
-  erw [Category.comp_id]
-  rw [CommShiftOfIntertwining.comparison_hom_app_f_zero]
-  simp only [shiftFunctor_eq_reindex, reindex_obj_X, Int.reduceAdd]
-  rw [CommShiftOfIntertwining.comparison_inv_app_f_one,
-    CommShiftOfIntertwining.comparison_inv_app_f_zero]
-  simp only [mapFunctor, Functor.comp_obj, Iso.trans_inv, Functor.mapIso_inv, Iso.symm_inv,
-    Iso.app_hom, Category.assoc]
-  rw [e.evalInverseCommShiftIso_one_hom_app_f_zero, e'.evalInverseCommShiftIso_one_inv_app_f_zero,
-    e'.evalInverse_map_f_zero, e'.evalInverse_map_f_zero, e'.evalInverse_map_f_zero]
-  simp only [Functor.map_comp, Category.assoc, Iso.inv_hom_id_map_assoc, Iso.hom_inv_id_assoc,
-    Iso.inv_hom_id_assoc, Iso.hom_inv_id_map_assoc]
-  have hS := e.shiftFunctorOneIso.hom.naturality (e.evalCounitIso X).inv
-  have hα := α.hom.naturality (e.evalCounitIso X).inv
-  have hS' := e'.shiftFunctorOneIso.inv.naturality (e'.evalCounitIso (F.obj X)).inv
-  simp only [Functor.comp_map] at hS hα hS'
-  rw [← F.map_comp_assoc, hS, F.map_comp_assoc, reassoc_of% hα, reassoc_of% hS']
-  simp only [← Functor.map_comp_assoc, Iso.inv_hom_id_map, Iso.inv_hom_id, Functor.map_id,
-    Category.id_comp]
+  rw [eval_map, eval_map,
+    CommShiftOfIntertwining.eval_inv_map_commShiftIso_one_hom_app_f_zero,
+    CommShiftOfIntertwining.shiftFunctorOneIso_conj, e'.evalInverse_map_f_zero]
   -- The sides differ only in whether the shift instance is the local `let` or its value.
   rfl
 
