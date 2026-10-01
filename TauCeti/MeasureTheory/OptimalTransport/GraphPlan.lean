@@ -59,6 +59,8 @@ with measurable singletons.
 * `TauCeti.eq_graphPlan_iff` — a plan is the graph plan of `T` exactly when it is concentrated
   on the graph of `T`, with `TauCeti.graphPlan_eq_graphPlan_iff` the uniqueness of the map that
   induces a given deterministic plan;
+* `TauCeti.comp_ae_eq_id_of_map_swap_graphPlan_eq` — when the coordinate swap of the graph plan
+  of `T` is the graph plan of `R`, the maps are two-sided inverses almost everywhere;
 * `TauCeti.eq_dirac_of_hasLaw_dirac` — a transport map out of a Dirac measure forces the target
   to be a Dirac measure, so the unique plan out of an atom is deterministic only in that case.
 
@@ -345,6 +347,31 @@ plan exactly when they agree `μ`-almost everywhere. -/
 theorem graphPlan_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
     graphPlan T μ = graphPlan S μ ↔ T =ᵐ[μ] S :=
   ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT hS).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
+
+/-- **Inverse graph plans come from inverse maps.** If exchanging the coordinates of the graph
+plan of `T : X → Y` over `μ` gives the graph plan of `R : Y → X` over `ν`, then `R ∘ T = id`
+`μ`-almost everywhere and `T ∘ R = id` `ν`-almost everywhere. -/
+theorem comp_ae_eq_id_of_map_swap_graphPlan_eq [MeasurableEq X] {R : Y → X} {ν : Measure Y}
+    (hT : AEMeasurable T μ) (hR : AEMeasurable R ν)
+    (h : (graphPlan T μ).map Prod.swap = graphPlan R ν) :
+    R ∘ T =ᵐ[μ] id ∧ T ∘ R =ᵐ[ν] id := by
+  constructor
+  · -- `R` is a left inverse: read the graph of `R` back along the exchange and the graph of `T`.
+    have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.2 = R w.1 := by
+      rw [h]
+      exact ae_snd_eq_graphPlan hR
+    have h₂ := ae_of_ae_map measurable_swap.aemeasurable h₁
+    rw [graphPlan_def] at h₂
+    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hT) h₂] with x hx
+    simpa using hx.symm
+  · -- `R` is a right inverse: push the graph of `T` forward along the exchange, which is a
+    -- measurable equivalence, then read it back along the graph of `R`.
+    have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.1 = T w.2 :=
+      (MeasurableEquiv.map_ae MeasurableEquiv.prodComm (graphPlan T μ)).ge
+        (ae_snd_eq_graphPlan hT)
+    rw [h, graphPlan_def] at h₁
+    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hR) h₁] with y hy
+    simpa using hy.symm
 
 end Determinism
 
