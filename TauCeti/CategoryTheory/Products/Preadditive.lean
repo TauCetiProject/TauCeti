@@ -168,18 +168,23 @@ section Components
 variable [Preadditive C] [Preadditive D] [HasZeroObject C] [HasZeroObject D]
   [HasBinaryBiproducts C] [HasBinaryBiproducts D]
 
+-- Exposed because the generated `@[simps]` field lemmas are `rfl` proofs about this body.
 /-- An object of a product of preadditive categories is the biproduct of its two components,
 each padded by a zero object in the other coordinate. -/
-noncomputable def biprodComponentsIso (X : C × D) : (X.1, (0 : D)) ⊞ ((0 : C), X.2) ≅ X :=
-  letI : PreservesBinaryBiproducts (_root_.CategoryTheory.Prod.fst C D) :=
-    preservesBinaryBiproducts_of_preservesBiproducts _
-  letI : PreservesBinaryBiproducts (_root_.CategoryTheory.Prod.snd C D) :=
-    preservesBinaryBiproducts_of_preservesBiproducts _
-  (prod.etaIso ((X.1, 0) ⊞ (0, X.2))).symm ≪≫
-    Iso.prod ((_root_.CategoryTheory.Prod.fst C D).mapBiprod _ _)
-      ((_root_.CategoryTheory.Prod.snd C D).mapBiprod _ _) ≪≫
-    Iso.prod (isoBiprodZero (isZero_zero C)).symm (isoZeroBiprod (isZero_zero D)).symm ≪≫
-    prod.etaIso X
+@[expose, simps]
+noncomputable def biprodComponentsIso (X : C × D) : (X.1, (0 : D)) ⊞ ((0 : C), X.2) ≅ X where
+  hom := biprod.desc (𝟙 X.1, 0) (0, 𝟙 X.2)
+  inv := biprod.lift (𝟙 X.1, 0) (0, 𝟙 X.2)
+  hom_inv_id := by
+    apply biprod.hom_ext' <;> apply biprod.hom_ext
+    all_goals
+      simp only [Category.assoc, Category.id_comp, biprod.inl_desc_assoc, biprod.inr_desc_assoc,
+        biprod.lift_fst, biprod.lift_snd, biprod.inl_fst, biprod.inl_snd, biprod.inr_fst,
+        biprod.inr_snd]
+      ext <;> simp
+  inv_hom_id := by
+    rw [biprod.lift_desc]
+    ext <;> simp
 
 end Components
 
