@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Component
-public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring
 
 /-!
 # Profinite powers
@@ -113,6 +111,7 @@ theorem one_zpowHat (a : Additive zHat.{u}) : (1 : G) ^ᶻ a = 1 :=
   zHat.lift_one_apply a.toMul
 
 /-- **The additive law.** -/
+@[simp]
 theorem zpowHat_add (x : G) (a b : Additive zHat.{u}) : x ^ᶻ (a + b) = x ^ᶻ a * x ^ᶻ b :=
   map_mul (zHat.lift x) a.toMul b.toMul
 
@@ -127,6 +126,7 @@ theorem zpowHat_sub (x : G) (a b : Additive zHat.{u}) : x ^ᶻ (a - b) = x ^ᶻ 
 
 /-- **The multiplicative law**, for the ring product of the profinite integers: raising to `a`
 and then to `b` is raising to `a * b`. -/
+@[simp]
 theorem zpowHat_mul (x : G) (a b : Additive zHat.{u}) : x ^ᶻ (a * b) = (x ^ᶻ a) ^ᶻ b := by
   simp only [zpowHat_def, zHat.toMul_mul, zHat.map_lift]
 
@@ -162,6 +162,7 @@ theorem inv_zpowHat (x : G) (a : Additive zHat.{u}) : x⁻¹ ^ᶻ a = (x ^ᶻ a)
   simpa only [zpowHat_def, zpow_neg_one] using zHat.lift_zpow_apply x (-1) a.toMul
 
 /-- The profinite power is multiplicative on commuting base elements. -/
+@[simp]
 theorem mul_zpowHat {x y : G} (h : Commute x y) (a : Additive zHat.{u}) :
     (x * y) ^ᶻ a = x ^ᶻ a * y ^ᶻ a :=
   zHat.lift_mul_apply x y h a.toMul
@@ -187,6 +188,11 @@ theorem _root_.Commute.zpowHat_zpowHat {x y : G} (h : Commute x y) (a b : Additi
 theorem _root_.Commute.zpowHat_zpowHat_self (x : G) (a b : Additive zHat.{u}) :
     Commute (x ^ᶻ a) (x ^ᶻ b) :=
   (Commute.refl x).zpowHat_zpowHat a b
+
+/-- Two profinite powers of the same element commute under multiplication. -/
+theorem zpowHat_comm (x : G) (a b : Additive zHat.{u}) :
+    x ^ᶻ a * x ^ᶻ b = x ^ᶻ b * x ^ᶻ a :=
+  (Commute.zpowHat_zpowHat_self x a b).eq
 
 /-- The profinite powers of `x` depend continuously on the exponent. -/
 theorem continuous_zpowHat (x : G) : Continuous fun a : Additive zHat.{u} ↦ x ^ᶻ a :=
