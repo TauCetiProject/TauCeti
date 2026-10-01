@@ -26,9 +26,9 @@ its right and the others strictly on its left
 (`CompactConvexPolygon.last_mem_rightHalfPlane_diagonal`,
 `CompactConvexPolygon.mem_leftHalfPlane_diagonal`); the carrier is the union of the carrier of
 `eraseLast` and the triangle on the last three vertices
-(`CompactConvexPolygon.carrier_eq_union_triangle`), which meet only on the diagonal
-(`CompactConvexPolygon.carrier_eraseLast_inter_triangle_subset`); and the angle sum splits
-accordingly (`CompactConvexPolygon.sum_interiorAngle_eq`).
+(`CompactConvexPolygon.carrier_eq_union_triangle`), which meet only on the line through the
+diagonal (`CompactConvexPolygon.carrier_eraseLast_inter_triangle_subset`); and the angle sum
+splits accordingly (`CompactConvexPolygon.sum_interiorAngle_eq`).
 
 ## Main results
 
@@ -299,7 +299,7 @@ private theorem carrier_eq_union_triangle_of_subset
         · exact hz.1.1
         · exact hz.1.2
 
-/-- The two pieces of the cut meet only on the diagonal. -/
+/-- The two pieces of the cut meet only on the geodesic line through the diagonal. -/
 theorem carrier_eraseLast_inter_triangle_subset :
     (P.eraseLast hn).carrier ∩
         triangle (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))

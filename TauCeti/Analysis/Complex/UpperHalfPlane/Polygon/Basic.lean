@@ -20,9 +20,10 @@ its sides are the geodesic segments between consecutive vertices (`CompactConvex
 via `UpperHalfPlane.geodesicSegment`), and its interior angle at a vertex is the angle between
 the two sides at that vertex (`CompactConvexPolygon.interiorAngle`).
 
-All vertices lie in `ℍ`, so the carrier is compact (`CompactConvexPolygon.isCompact_carrier`)
-and every interior angle is positive. Hyperbolic polygons in general may also have ideal
-vertices on `∂ℍ`, with interior angle `0` (Walkden §7.1); those are not covered here.
+All vertices lie in `ℍ`, so every interior angle is positive (and the carrier is compact,
+`CompactConvexPolygon.isCompact_carrier` in `Polygon/GaussBonnet.lean`). Hyperbolic polygons in
+general may also have ideal vertices on `∂ℍ`, with interior angle `0` (Walkden §7.1); those are
+not covered here.
 
 ## Main results
 
@@ -81,6 +82,12 @@ variable {n : ℕ} [NeZero n] (P : CompactConvexPolygon n)
 edges. -/
 def carrier : Set ℍ :=
   ⋂ i, closure (leftHalfPlane (geodesicBetween (P.vertex i) (P.vertex (i + 1))))
+
+-- The body of `carrier` is not `@[expose]`d, so downstream modules rewrite with this.
+/-- The carrier, unfolded: the intersection of the closed left half-planes of the edges. -/
+theorem carrier_def :
+    P.carrier = ⋂ i, closure (leftHalfPlane (geodesicBetween (P.vertex i) (P.vertex (i + 1)))) := by
+  rfl
 
 /-- The side of a convex polygon from `vertex i` to `vertex (i + 1)`. -/
 def side (i : Fin n) : Set ℍ :=
