@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Hasse
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
+import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 
 /-!
 # Binary quadratic forms over a local field
@@ -97,7 +97,7 @@ private theorem eq_of_rank_eq_two {x y : RegularFormClass K} (hx : x.rank = 2)
 
 /-- **Local classification in rank at most two.** Equal rank, discriminant and local Hasse
 invariant determine a regular-form class in dimensions zero, one and two. -/
-theorem eq_of_discr_eq_of_localHasse_eq_of_rank_le_two {x y : RegularFormClass K}
+theorem eq_of_discr_eq_of_localHasse_eq {x y : RegularFormClass K}
     (hrank : x.rank = y.rank) (h2 : x.rank ≤ 2) (hd : discr x = discr y)
     (hs : localHasse x = localHasse y) : x = y := by
   by_cases hx : x.rank = 0
@@ -113,11 +113,11 @@ theorem eq_of_discr_eq_of_localHasse_eq_of_rank_le_two {x y : RegularFormClass K
 
 /-- **Local classification in rank at most two**, as a characterization of equality of
 isometry classes by the plain discriminant and local Hasse invariant. -/
-theorem eq_iff_discr_eq_and_localHasse_eq_of_rank_le_two {x y : RegularFormClass K}
+theorem eq_iff_discr_eq_and_localHasse_eq {x y : RegularFormClass K}
     (hrank : x.rank = y.rank) (h2 : x.rank ≤ 2) :
     x = y ↔ discr x = discr y ∧ localHasse x = localHasse y :=
   ⟨fun h => h ▸ ⟨rfl, rfl⟩,
-    fun ⟨hd, hs⟩ => eq_of_discr_eq_of_localHasse_eq_of_rank_le_two hrank h2 hd hs⟩
+    fun ⟨hd, hs⟩ => eq_of_discr_eq_of_localHasse_eq hrank h2 hd hs⟩
 
 end RegularFormClass
 
@@ -134,7 +134,7 @@ variable {V W : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- **Local classification in dimension at most two.** Regular forms of the same dimension at
 most two are isometric exactly when their plain discriminants and local Hasse invariants agree. -/
-theorem equivalent_iff_discr_eq_and_localHasse_eq_of_finrank_le_two
+theorem equivalent_iff_discr_eq_and_localHasse_eq
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {R : QuadraticForm K W} (hR : R.Nondegenerate)
     (hdim : Module.finrank K V = Module.finrank K W) (h2 : Module.finrank K V ≤ 2) :
     Q.Equivalent R ↔
@@ -142,7 +142,7 @@ theorem equivalent_iff_discr_eq_and_localHasse_eq_of_finrank_le_two
       RegularFormClass.localHasse (formClass Q hQ) =
         RegularFormClass.localHasse (formClass R hR) := by
   rw [← formClass_eq_iff Q hQ R hR]
-  exact RegularFormClass.eq_iff_discr_eq_and_localHasse_eq_of_rank_le_two
+  exact RegularFormClass.eq_iff_discr_eq_and_localHasse_eq
     (by simpa using hdim) (by simpa using h2)
 
 /-- **The represented units of a regular binary space.** A unit `c` is represented exactly when
