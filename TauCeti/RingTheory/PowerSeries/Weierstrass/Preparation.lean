@@ -29,17 +29,12 @@ restricted series `f` distinguished of degree `s`, with a unit coefficient in de
 f = e * ω,    e a unit of the ring of restricted series,    ω monic of degree s,
 ```
 
-and that the pair `(e, ω)` is unique. Both statements come from Weierstrass division. Dividing `1`
-by a series distinguished of degree `0` with unit constant coefficient leaves a remainder that
-vanishes in every degree, so the quotient is an inverse. Dividing `X ^ s` by `f` leaves a remainder
-`r` of degree less than `s` whose weighted coefficients are bounded by `c ^ s`, so `ω = X ^ s - r`
-is distinguished of degree `s` with leading coefficient `1`, and `ω = q * f`. Dividing `f` in turn
-by `ω` gives `f = e * ω + r'`, hence `f = (e * q) * f + r'`, and uniqueness of division by `f`
-forces `e * q = 1` and `r' = 0`.
+and that the pair `(e, ω)` is unique; the polynomial `ω` is again distinguished of degree `s`.
+Both statements are consequences of Weierstrass division.
 
-The factorization presents the quotient of the ring of restricted series by `f` as the quotient of
-`R[X]` by a monic polynomial of degree `s`, which is the route to noetherianity of the Tate
-algebra.
+Since `e` is a unit, `f` and `ω` generate the same ideal, so the factorization presents the
+quotient of the ring of restricted series by `f` as the quotient of `R[X]` by a monic polynomial of
+degree `s`. This is the route to noetherianity of the Tate algebra.
 
 ## Main results
 
