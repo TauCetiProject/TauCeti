@@ -409,6 +409,7 @@ theorem trivialTateCor_negSucc_succ (T : LayerRestriction small big) (n : ℕ) :
 
 /-- In degree `-2`, trivial-coefficient Tate corestriction is the range comparison followed by
 the map on first homology induced by inclusion. -/
+@[simp]
 theorem trivialTateCor_neg_two (T : LayerRestriction small big) :
     T.trivialTateCor (-2) =
       (T.trivialTateRangeIso (-2)).hom ≫

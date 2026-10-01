@@ -146,7 +146,7 @@ theorem transferHom_of (T : LayerRestriction small big) (x : big.Gal) :
 
 /-- The transfer between the Galois groups of two layers is the transfer to the image subgroup,
 followed by transport back along the equivalence from the smaller Galois group to that image. -/
-theorem transferHom_eq_rangeTransfer (T : LayerRestriction small big) :
+theorem transferHom_eq_map_comp_lift_transfer (T : LayerRestriction small big) :
     T.transferHom =
       (Abelianization.map (MonoidHom.ofInjective T.galHom_injective).symm).toAdditive.comp
         (Abelianization.lift ((Abelianization.of :
@@ -156,11 +156,8 @@ theorem transferHom_eq_rangeTransfer (T : LayerRestriction small big) :
   obtain ⟨x, rfl⟩ := Additive.ofMul.surjective x
   obtain ⟨y, rfl⟩ : ∃ y, Abelianization.of y = x := QuotientGroup.mk_surjective x
   rw [transferHom_of, AddMonoidHom.comp_apply]
-  change Additive.ofMul (MonoidHom.transfer
-      (Abelianization.of.comp (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom) y) =
-    Additive.ofMul (Abelianization.map
-      (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom
-      (MonoidHom.transfer Abelianization.of y))
+  rw [MonoidHom.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply]
+  simp only [toMul_ofMul, Abelianization.lift_apply_of]
   congr 1
   have hmap :
       Abelianization.of.comp (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom =
@@ -170,7 +167,7 @@ theorem transferHom_eq_rangeTransfer (T : LayerRestriction small big) :
     ext
     simp
   rw [hmap, MonoidHom.transfer_comp]
-  rfl
+  rw [MulEquiv.toMonoidHom_eq_coe, MonoidHom.comp_apply]
 
 /-- Transfer on abelianized Galois groups is functorial along a tower of restrictions: for
 `F ⊆ E ⊆ E' ⊆ K`, the transfer `Gal(K/F)^ab → Gal(K/E')^ab` is the transfer

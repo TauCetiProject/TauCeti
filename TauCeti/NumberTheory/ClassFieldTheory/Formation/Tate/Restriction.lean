@@ -469,6 +469,7 @@ theorem trivialTateRes_negSucc_succ (T : LayerRestriction small big) (n : ℕ) :
 
 /-- In degree `-2`, trivial-coefficient Tate restriction is first-homology transfer followed by
 the range comparison. -/
+@[simp]
 theorem trivialTateRes_neg_two (T : LayerRestriction small big) :
     T.trivialTateRes (-2) =
       TauCeti.TateCohomology.HNegTwoRes (Rep.trivial ℤ big.Gal ℤ) T.galHom.range ≫
