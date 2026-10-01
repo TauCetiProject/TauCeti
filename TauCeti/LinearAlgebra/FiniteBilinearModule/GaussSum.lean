@@ -54,8 +54,8 @@ pairing vanishes, while its Gauss sum is `(1 + i)² = 2i ≠ 2`, so it is not me
   `TauCeti.FiniteQuadraticModule.gaussSum_eq_sqrt_natCard_of_isMetabolic`: the value on modules
   with a Lagrangian subgroup.
 * `TauCeti.FiniteQuadraticModule.gaussSum_zmodStandard_two` and
-  `TauCeti.FiniteQuadraticModule.not_isMetabolic_zmodStandard_two_prod`: the discriminant forms of
-  `A₁` and of `A₁ ⊕ A₁`.
+  `TauCeti.FiniteQuadraticModule.isLagrangian_zmultiples_and_not_isMetabolic_zmodStandard_two_prod`:
+  the discriminant forms of `A₁` and of `A₁ ⊕ A₁`.
 
 ## References
 

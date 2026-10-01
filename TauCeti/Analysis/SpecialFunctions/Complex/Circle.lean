@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.CharacterModule
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
-public import Mathlib.Topology.Instances.AddCircle.Defs
 
 /-!
 # The character `e^{2πi·}` of `ℚ/ℤ`
@@ -85,6 +84,7 @@ theorem expCircle_eq_one_iff {x : AddCircle (1 : ℚ)} : expCircle x = 1 ↔ x =
 
 /-- `expCircle` takes values on the unit circle: its value at `-x` is the complex conjugate of its
 value at `x`. -/
+@[simp]
 theorem expCircle_neg (x : AddCircle (1 : ℚ)) : expCircle (-x) = conj (expCircle x) := by
   induction x using QuotientAddGroup.induction_on with | H r =>
   rw [← QuotientAddGroup.mk_neg, expCircle_coe, expCircle_coe, ← exp_conj]
