@@ -80,7 +80,7 @@ theorem subsingleton_of_forall_nsmul_eq_zero_of_coprime (hp : ∀ m : M, p • m
   refine ⟨fun x y ↦ hinj ?_⟩
   simp only [hq]
 
-/-- **The exponent of a nontrivial group is a unique prime.** Two primes both killing a nontrivial
+/-- **A nontrivial group has at most one prime exponent.** Two primes both killing a nontrivial
 group are coprime unless equal, and coprime exponents leave nothing
 (`TauCeti.subsingleton_of_forall_nsmul_eq_zero_of_coprime`). -/
 theorem eq_of_prime_forall_nsmul_eq_zero [Nontrivial M] (hp : p.Prime) (hq : q.Prime)
