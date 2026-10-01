@@ -212,7 +212,8 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
   obtain ⟨c, hc0, hc⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * (c + 1), by positivity, ?_⟩
   intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu hr hrR hball
-  -- A cutoff equal to one on `B(x₀, r)` and supported in `B̄(x₀, (r + R)/2) ⊆ B(x₀, R)`.
+  -- A cutoff equal to one on `ball x₀ r` and supported in
+  -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
   obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hc x₀ hr (by linarith : r < (r + R) / 2)
   have htsR : tsupport ψ ⊆ ball x₀ R :=
     hts.trans (closedBall_subset_ball (by linarith))
