@@ -81,10 +81,12 @@ theorem integral_circleDensityMeasure {E : Type*} [NormedAddCommGroup E] [Normed
   simp only [hexp, ENNReal.toReal_ofReal h₀, smul_smul]
 
 /-- **Orthogonality of the characters of the circle.** The normalized circle average of an
-integer power `(z - c) ^ n` over a circle of nonzero radius centred at `c` is `1` for `n = 0` and
-`0` otherwise. -/
-theorem circleAverage_sub_zpow {c : ℂ} {R : ℝ} (hR : R ≠ 0) (n : ℤ) :
+integer power `(z - c) ^ n` over a circle centred at `c` is `1` for `n = 0` and `0` otherwise. -/
+@[simp] theorem circleAverage_sub_zpow {c : ℂ} {R : ℝ} (n : ℤ) :
     circleAverage (fun z ↦ (z - c) ^ n) c R = if n = 0 then 1 else 0 := by
+  by_cases hR : R = 0
+  · subst R
+    simp only [circleAverage_zero, sub_self, zero_zpow_eq]
   split_ifs with hn
   · simp [hn, circleAverage_const]
   rw [← circleAverage_abs_radius, circleAverage_eq_circleIntegral (abs_ne_zero.mpr hR),

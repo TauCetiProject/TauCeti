@@ -40,8 +40,9 @@ has moments `φ n`.
   function on `ℤ` is the moment sequence of a finite measure on the circle.
 * `TauCeti.isPositiveDefiniteSub_iff_exists_isFiniteMeasure_integral_zpow_eq`: the resulting
   characterization of positive-definite functions on `ℤ`.
-* `TauCeti.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt`: the Fourier–Stieltjes
-  transform of a measure carried from the circle to the dual of `ℤ` is its moment sequence.
+* `MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt`: the
+  Fourier–Stieltjes transform of a measure carried from the circle to the dual of `ℤ` is its moment
+  sequence.
 * `TauCeti.isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq_int`: the same
   characterization in Pontryagin form, Bochner's theorem for the group `ℤ`.
 
@@ -164,7 +165,7 @@ private lemma integral_zpow_fejerMeasure (hφ : IsPositiveDefiniteSub φ) (N : �
   have hav (c : ℂ) (k : ℤ) :
       Real.circleAverage (fun ζ : ℂ ↦ c * ζ ^ k) 0 1 = if k = 0 then c else 0 := by
     have h := Real.circleAverage_fun_smul (a := c) (f := fun ζ : ℂ ↦ ζ ^ k) (c := 0) (R := 1)
-    have h0 := circleAverage_sub_zpow (c := 0) one_ne_zero k
+    have h0 := circleAverage_sub_zpow (c := 0) (R := 1) k
     simp only [smul_eq_mul, sub_zero] at h h0
     rw [h, h0, mul_ite, mul_one, mul_zero]
   rw [integral_circleDensityMeasure (continuous_fejerDensity N).continuousOn
@@ -241,7 +242,9 @@ variable [MeasurableSpace (PontryaginDual (Multiplicative ℤ))]
 
 /-- The Fourier–Stieltjes transform of the image of a finite measure on the circle under
 `TauCeti.circleEquivPontryaginDualInt` is its moment sequence. -/
-theorem pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
+@[simp]
+theorem
+    _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
     (μ : FiniteMeasure Circle) (n : ℤ) :
     (μ.map circleEquivPontryaginDualInt).pontryaginMeasureTransform n =
       ∫ z : Circle, (z : ℂ) ^ n ∂μ.toMeasure := by
@@ -261,7 +264,8 @@ theorem isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq_int (φ :
   obtain ⟨μ, hμ, hrep⟩ := exists_isFiniteMeasure_integral_zpow_eq φ hφ
   refine ⟨FiniteMeasure.map (⟨μ, hμ⟩ : FiniteMeasure Circle) circleEquivPontryaginDualInt,
     funext fun n ↦ ?_⟩
-  exact (pontryaginMeasureTransform_map_circleEquivPontryaginDualInt _ n).trans (hrep n).symm
+  exact (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt _ n).trans
+    (hrep n).symm
 
 end Pontryagin
 
@@ -276,7 +280,8 @@ theorem isPositiveDefiniteSub_iff_exists_isFiniteMeasure_integral_zpow_eq (φ : 
   borelize (PontryaginDual (Multiplicative ℤ))
   let μf : FiniteMeasure Circle := ⟨μ, hμ⟩
   have hφ : φ = (μf.map circleEquivPontryaginDualInt).pontryaginMeasureTransform := funext fun n ↦
-    (hrep n).trans (pontryaginMeasureTransform_map_circleEquivPontryaginDualInt μf n).symm
+    (hrep n).trans
+      (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt μf n).symm
   exact hφ ▸ (μf.map circleEquivPontryaginDualInt).isPositiveDefiniteSub_pontryaginMeasureTransform
 
 end TauCeti
