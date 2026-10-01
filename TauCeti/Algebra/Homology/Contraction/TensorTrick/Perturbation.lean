@@ -21,10 +21,11 @@ algebra collapsing at least two letters, and applies the basic perturbation lemm
 (`TauCeti.LinearSpecialContraction.perturb`).
 
 This file shows that the output of the perturbation lemma is again compatible with
-deconcatenation: the perturbed inclusion `i' = i - H X i` is a morphism of reduced tensor
-coalgebras, and the perturbed differential `D' = D + p X i` of `Tᶜ(N)` is a graded coderivation.
-Consequently `D'` is determined by its letter component, which carries the transferred operations
-on `N`, and `i'` is determined by its Taylor components.
+deconcatenation: the perturbed inclusion `i' = i - H X i` and the perturbed projection
+`p' = p - p X H` are morphisms of reduced tensor coalgebras, and the perturbed differential
+`D' = D + p X i` of `Tᶜ(N)` is a graded coderivation.  Consequently `D'` is determined by its
+letter component, which carries the transferred operations on `N`, and `i'` and `p'` are
+determined by their Taylor components.
 
 The key input is that `H` is a *coderivation homotopy*: with `τ` the letterwise Koszul twist,
 
@@ -36,6 +37,8 @@ The key input is that `H` is a *coderivation homotopy*: with `τ` the letterwise
 
 * `TauCeti.LinearSpecialContraction.isCoalgHom_reducedTensorWords_perturb_incl`: the perturbed
   inclusion is a coalgebra morphism.
+* `TauCeti.LinearSpecialContraction.isCoalgHom_reducedTensorWords_perturb_proj`: the perturbed
+  projection is a coalgebra morphism.
 * `TauCeti.LinearSpecialContraction.isGradedCoderivation_reducedTensorWords_perturbedDifferential`:
   the perturbed differential is a graded coderivation.
 
@@ -258,6 +261,89 @@ theorem isCoalgHom_reducedTensorWords_perturb_incl (hδ : IsGradedCoderivation G
   have e2 := LinearMap.congr_fun h2 (deconcatenation R N z)
   simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
   simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.comp_apply, e1, e2]
+
+include hsq hU in
+/-- **The perturbed projection is a coalgebra morphism.**  Perturbing the tensor-trick
+contraction by a graded coderivation `δ`, the perturbed projection `p' = p - p X H` is again a
+morphism of reduced tensor coalgebras.  Unlike the perturbed inclusion, no filtration hypothesis on
+`δ` is needed beyond the invertibility of `1 + δ H`. -/
+theorem isCoalgHom_reducedTensorWords_perturb_proj (hδ : IsGradedCoderivation G 1 δ) :
+    IsCoalgHom R ((c.reducedTensorWords G H hdM hh hincl hproj).perturb δ hsq hU).proj := by
+  -- Strategy: `Δ p'` and `(p' ⊗ p') Δ` both become `(p ⊗ p) Δ` after precomposition with the
+  -- invertible operator `1 + δ H`, using the fixed point `p' (1 + δ H) = p`.
+  set T := c.reducedTensorWords G H hdM hh hincl hproj
+  set p := ReducedTensorWords.map (R := R) c.proj
+  set h := c.reducedTensorWordsHomotopy G
+  set τ := ReducedTensorWords.map (R := R) (G.koszulTwist 1)
+  set π := ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj)
+  set X := T.perturbationSeries δ
+  set p' := (T.perturb δ hsq hU).proj
+  have hTp : T.proj = p := c.reducedTensorWords_proj G H hdM hh hincl hproj
+  have hTh : T.homotopy = h := c.reducedTensorWords_homotopy G H hdM hh hincl hproj
+  have hfix : p' + p' ∘ₗ δ ∘ₗ h = p := by
+    have e := T.perturb_proj_comp_one_add_mul δ hsq hU
+    rwa [hTp, hTh, Module.End.mul_eq_comp, LinearMap.comp_add, Module.End.one_eq_id,
+      LinearMap.comp_id] at e
+  have hp' : p' = p - p ∘ₗ X ∘ₗ h := by
+    rw [← hTp, ← hTh]
+    exact T.perturb_proj δ hsq hU
+  -- The side conditions of the perturbed projection against `h`, `τ h` and `π = i p`.
+  have hp'h : p' ∘ₗ h = 0 := by
+    have e := T.perturb_proj_comp_homotopy δ hsq hU
+    rwa [hTh] at e
+  have hp'τh : p' ∘ₗ τ ∘ₗ h = 0 := by
+    have h1 := c.map_koszulTwist_comp_reducedTensorWordsHomotopy G H hh hincl hproj
+    rw [h1, LinearMap.comp_neg, ← LinearMap.comp_assoc, hp'h, LinearMap.zero_comp]
+    abel
+  have hp'π : p' ∘ₗ π = p := by
+    have e := T.perturb_proj_comp_incl δ hsq hU
+    rw [c.reducedTensorWords_incl G H hdM hh hincl hproj] at e
+    have hπ : π = ReducedTensorWords.map (R := R) c.incl ∘ₗ p := by
+      simp only [π, p, ReducedTensorWords.map_comp]
+    rw [hπ, ← LinearMap.comp_assoc, e, LinearMap.id_comp]
+  have hp'ττ : p' ∘ₗ τ ∘ₗ τ = p' := by
+    rw [← ReducedTensorWords.map_comp, G.koszulTwist_comp_self, ReducedTensorWords.map_id,
+      LinearMap.comp_id]
+  -- The co-Leibniz rules for `p`, for the homotopy `h`, and for the perturbation `δ`.
+  have hΔp : deconcatenation R N ∘ₗ p = TensorProduct.map p p ∘ₗ deconcatenation R M :=
+    isCoalgHom_iff.mp (isCoalgHom_map c.proj)
+  have hΔh : deconcatenation R M ∘ₗ h =
+      (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ deconcatenation R M :=
+    c.deconcatenation_comp_reducedTensorWordsHomotopy G
+  have hΔδ : deconcatenation R M ∘ₗ δ =
+      (TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ deconcatenation R M := by
+    rw [isGradedCoderivation_iff.mp hδ, LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
+      LinearMap.add_comp]
+  -- `Δ p'` composed with `1 + δ h` is `(p ⊗ p) Δ`.
+  have h1 : deconcatenation R N ∘ₗ p' + deconcatenation R N ∘ₗ p' ∘ₗ δ ∘ₗ h =
+      TensorProduct.map p p ∘ₗ deconcatenation R M := by
+    rw [← hΔp, ← hfix, LinearMap.comp_add]
+  -- So is `(p' ⊗ p') Δ`.
+  have h2 : TensorProduct.map p' p' ∘ₗ deconcatenation R M +
+      TensorProduct.map p' p' ∘ₗ deconcatenation R M ∘ₗ δ ∘ₗ h =
+        TensorProduct.map p p ∘ₗ deconcatenation R M := by
+    have hΔδh : deconcatenation R M ∘ₗ δ ∘ₗ h =
+        ((TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ
+          (TensorProduct.map h π + TensorProduct.map τ h)) ∘ₗ deconcatenation R M := by
+      rw [← LinearMap.comp_assoc, hΔδ, LinearMap.comp_assoc, hΔh, LinearMap.comp_assoc]
+    rw [hΔδh]
+    simp only [LinearMap.add_comp, LinearMap.comp_add, ← LinearMap.comp_assoc,
+      ← TensorProduct.map_comp, LinearMap.id_comp]
+    simp only [LinearMap.comp_assoc, hp'π, hp'h, hp'τh, hp'ττ, TensorProduct.map_zero_left,
+      TensorProduct.map_zero_right, LinearMap.zero_comp, add_zero, zero_add]
+    rw [← hfix]
+    simp only [TensorProduct.map_add_left, TensorProduct.map_add_right, LinearMap.add_comp]
+    abel
+  rw [isCoalgHom_iff]
+  have hsurj := ((Module.End.isUnit_iff _).mp hU).2
+  rw [hTh] at hsurj
+  refine LinearMap.ext fun z ↦ ?_
+  obtain ⟨w, rfl⟩ := hsurj z
+  have e1 := LinearMap.congr_fun h1 w
+  have e2 := LinearMap.congr_fun h2 w
+  simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
+  simp only [LinearMap.add_apply, Module.End.one_apply, Module.End.mul_apply, LinearMap.comp_apply,
+    map_add, e1, e2]
 
 include hsq hU in
 /-- **The perturbed tensor-trick differential is a coderivation.**  Perturbing the tensor-trick
