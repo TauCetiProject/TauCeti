@@ -29,9 +29,6 @@ The equivalence first restricts a base-changed point along `m ↦ 1 ⊗ ι(m)` u
 characteristic lemmas spell out the generator values, the inverse map on scalar multiples of
 generators, and the one-dimensional additive group `𝔾ₐ`.
 
-These specializations align the bialgebra and functor-of-points presentations used by the
-additive-group worked example in the ReductiveGroups roadmap.
-
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv`: the rank-one specialization for `𝔾ₐ`.
