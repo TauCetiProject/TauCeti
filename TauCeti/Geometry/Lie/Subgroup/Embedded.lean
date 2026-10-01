@@ -33,10 +33,11 @@ differential of the inclusion is not proved here.
 
 * `TauCeti.Lie.EmbeddedLieSubgroupData`: a smooth structure exhibiting a subgroup as an embedded
   Lie subgroup, with a named model vector space.
-* `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_subtypeVal` and
-  `TauCeti.Lie.EmbeddedLieSubgroupData.isEmbedding_subtypeVal`: the two conditions defining an
-  embedded submanifold, read off from the data.
-* `TauCeti.Lie.IsEmbeddedLieSubgroup`: a subgroup admits such data.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_subtypeVal`: the immersion half of being
+  an embedded submanifold, read off from the data.  The topological-embedding half is
+  `Topology.IsEmbedding.subtypeVal`, since `K` carries the subspace topology.
+* `TauCeti.Lie.IsEmbeddedLieSubgroup`: a subgroup admits such data, with
+  `TauCeti.Lie.isEmbeddedLieSubgroup_iff` its characterization.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.isEmbeddedLieSubgroup`: data for a model space in the
   universe of `G` exhibits `K` as an embedded Lie subgroup.
 * `TauCeti.Lie.nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed`:
@@ -100,12 +101,6 @@ theorem injective_mfderiv_subtypeVal (d : EmbeddedLieSubgroupData I K E') (k : K
   let _ : ChartedSpace E' K := d.chartedSpace
   exact (d.isDiffImmersionAt_subtypeVal k).mfderiv_injective
 
-/-- The inclusion of an embedded Lie subgroup is a topological embedding, which is the other half
-of being an embedded submanifold.  It holds for free, since `K` carries the subspace topology. -/
-theorem isEmbedding_subtypeVal (_d : EmbeddedLieSubgroupData I K E') :
-    Topology.IsEmbedding (fun x : K ↦ (x : G)) :=
-  Topology.IsEmbedding.subtypeVal
-
 end EmbeddedLieSubgroupData
 
 /-- **`K` is an embedded Lie subgroup**: it carries `TauCeti.Lie.EmbeddedLieSubgroupData` for some
@@ -116,6 +111,16 @@ lives, exactly as Mathlib's `Manifold.IsImmersionAt` pins the universe of its co
 def IsEmbeddedLieSubgroup (K : Subgroup G) : Prop :=
   ∃ (E' : Type w) (_ : NormedAddCommGroup E') (_ : NormedSpace ℝ E'),
     Nonempty (EmbeddedLieSubgroupData I K E')
+
+/-- **Characterization of `TauCeti.Lie.IsEmbeddedLieSubgroup`**: `K` is an embedded Lie subgroup
+exactly when it carries embedded-Lie-subgroup data for some model vector space in the universe of
+`G`.  This is the elimination rule matching the introduction rule
+`TauCeti.Lie.EmbeddedLieSubgroupData.isEmbeddedLieSubgroup`. -/
+theorem isEmbeddedLieSubgroup_iff {K : Subgroup G} :
+    IsEmbeddedLieSubgroup (I := I) K ↔
+      ∃ (E' : Type w) (_ : NormedAddCommGroup E') (_ : NormedSpace ℝ E'),
+        Nonempty (EmbeddedLieSubgroupData I K E') :=
+  Iff.rfl
 
 /-- Embedded-Lie-subgroup data with a model space in the universe of `G` exhibits `K` as an
 embedded Lie subgroup. -/
