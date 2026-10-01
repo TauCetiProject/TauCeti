@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
+public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.Nilpotent.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.RingTheory.Derivation.Nilpotent
@@ -82,13 +83,25 @@ private theorem tensorComponent_mul (d : Derivation R H (CounitAlgebra R H R)) (
       ring
 
 /-- **The left-invariant derivation extending a tangent vector at the identity**:
-`h ↦ ∑ h₍₁₎ d(h₍₂₎)`. It is the action of `d` in the differentiated regular representation. -/
-noncomputable def leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
-    Derivation R H H :=
-  Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
-    simp only [Comodule.differential_apply, Comodule.instSelf_coact,
-      _root_.Bialgebra.comul_mul, tensorComponent_mul, smul_eq_mul]
-    simp [LinearMap.tensorComponent_def]
+`h ↦ ∑ h₍₁₎ d(h₍₂₎)`. This Lie algebra homomorphism is the differentiated regular
+representation with its values regarded as derivations. -/
+noncomputable def leftInvariantDerivation :
+    Derivation R H (CounitAlgebra R H R) →ₗ⁅R⁆ Derivation R H H where
+  toFun d :=
+    Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
+      simp only [Comodule.differential_apply, Comodule.instSelf_coact,
+        _root_.Bialgebra.comul_mul, tensorComponent_mul, smul_eq_mul]
+      simp [LinearMap.tensorComponent_def]
+  map_add' d e := by
+    ext h
+    exact LinearMap.congr_fun (map_add (Comodule.differential (M := H)) d e) h
+  map_smul' r d := by
+    ext h
+    exact LinearMap.congr_fun (map_smul (Comodule.differential (M := H)) r d) h
+  map_lie' {d e} := by
+    let : LieRing (Module.End R H) := LieRing.ofAssociativeRing
+    ext h
+    exact LinearMap.congr_fun (LieHom.map_lie (Comodule.differential (M := H)) d e) h
 
 /-- The left-invariant derivation is the differentiated regular representation. -/
 theorem toLinearMap_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 -- not redundant: supplies the scoped `GL(n, R)⁺` notation, which the projective import
 -- does not re-export under the module system
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import TauCeti.NumberTheory.Modular.Relations
+public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 
 /-!
 # Maps into `PSL(2, ℝ)`
@@ -154,6 +154,22 @@ theorem mk_neg (A : SL(2, S)) : ((-A : SL(2, S)) : PSL(2, S)) = A := by
 
 end Matrix.ProjectiveSpecialLinearGroup
 
+namespace ModularGroup
+
+/-- `ModularGroup.S` is its own inverse in `PSL(2, ℤ)`. -/
+theorem S_inv_PSL2Z :
+    (_root_.ModularGroup.S : PSL(2, ℤ))⁻¹ = (_root_.ModularGroup.S : PSL(2, ℤ)) := by
+  -- `S⁻¹ = -S` in `SL(2, ℤ)`, and negation does not change the class in `PSL(2, ℤ)`
+  rw [← QuotientGroup.mk_inv, _root_.ModularGroup.S_inv, Matrix.ProjectiveSpecialLinearGroup.mk_neg]
+
+/-- `ModularGroup.S` squares to the identity in `PSL(2, ℤ)`. -/
+@[simp]
+theorem S_mul_S_PSL2Z :
+    (_root_.ModularGroup.S : PSL(2, ℤ)) * (_root_.ModularGroup.S : PSL(2, ℤ)) = 1 :=
+  inv_eq_iff_mul_eq_one.mp S_inv_PSL2Z
+
+end ModularGroup
+
 namespace TauCeti
 
 /-- The image of `ModularGroup.S` (the matrix `!![0, -1; 1, 0]`, representing the Möbius map
@@ -168,7 +184,7 @@ theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := 
 /-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
 @[simp]
 theorem pslS_mul_self : pslS * pslS = 1 := by
-  rw [pslS, ← map_mul, TauCeti.ModularGroup.coe_S_mul_coe_S, map_one]
+  rw [pslS, ← map_mul, _root_.ModularGroup.S_mul_S_PSL2Z, map_one]
 
 /-- `pslS` is its own inverse. -/
 @[simp]
