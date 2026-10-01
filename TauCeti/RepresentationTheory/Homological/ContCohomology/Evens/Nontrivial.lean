@@ -81,24 +81,6 @@ theorem explicitGraphClass_ne_zero_of_involution (U : OpenSubgroup G)
   obtain ⟨s, hs, -⟩ := Subgroup.index_eq_two_iff_exists_notMem_and.mp hU
   exact explicitGraphClass_ne_zero_of_involution_of_conj U hU α hα s hs v hv (hcentral s) hαv
 
-private theorem eqToHom_map_zero_topModuleCat {A B : TopModuleCat ℤ} (e : A = B) :
-    (CategoryTheory.eqToHom e).hom (0 : A) = 0 := by
-  cases e
-  rfl
-
-private theorem ne_zero_of_injective_map {A B : Type*} [Zero A] [Zero B]
-    (f : A → B) (hf : Function.Injective f) (hzero : f 0 = 0) {x : A} (hx : x ≠ 0) :
-    f x ≠ 0 := fun h => hx (hf (h.trans hzero.symm))
-
-private theorem addEquiv_eqToHom_ne_zero {A : Type*} [AddCommGroup A]
-    {B C : TopModuleCat ℤ} (e : B = C) (f : A ≃+ B) (x : A) (hx : x ≠ 0) :
-    (CategoryTheory.eqToHom e).hom (f x) ≠ 0 := by
-  have hinj : Function.Injective (CategoryTheory.eqToHom e).hom :=
-    Function.LeftInverse.injective ((CategoryTheory.eqToIso e).hom_inv_id_apply)
-  have hne' := ne_zero_of_injective_map f f.injective f.map_zero hx
-  exact ne_zero_of_injective_map (CategoryTheory.eqToHom e).hom hinj
-    (eqToHom_map_zero_topModuleCat e) hne'
-
 /-- Nonvanishing of the explicit graph class passes to the canonical continuous class. -/
 theorem graphClass_ne_zero_of_explicitGraphClass [LocallyCompactSpace G] (U : OpenSubgroup G)
     (hU : U.toSubgroup.index = 2) (α : U.toSubgroup →* Multiplicative (ZMod 2))
