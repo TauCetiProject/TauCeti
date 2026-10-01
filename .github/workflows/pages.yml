@@ -41,7 +41,6 @@ on:
       - 'scripts/ci_daily_graphs.py'
       - 'scripts/generated_assets.py'
       - 'scripts/roadmap_progress.py'
-      - 'scripts/roadmap_topics.json'
       - 'scripts/roadmap_coverage.json'
       - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'

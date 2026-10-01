@@ -400,6 +400,60 @@ class Tree(unittest.TestCase):
         self.assertEqual(rows[3]["assessment"]["reason"], "no-report")
 
 
+class Topics(unittest.TestCase):
+    """Rows are grouped by the arXiv category each roadmap declares in its own metadata.toml."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = pathlib.Path(self.tmp.name)
+        for base, name, meta in ((rp.AREAS_DIR, "Primes", 'topic = "math.NT"\n'),
+                                 (rp.AREAS_DIR, "Curves", 'topic = "math.AG"\n'),
+                                 (rp.AREAS_DIR, "Bare", None),
+                                 (rp.AREAS_DIR, "Odd", 'topic = "physics.gen-ph"\n'),
+                                 (rp.AREAS_DIR, "Broken", "topic = \n"),
+                                 (rp.COMPLETED_DIR, "Finished", 'topic = "math.CO"\n')):
+            d = root / base / name
+            d.mkdir(parents=True)
+            (d / "README.md").write_text(f"# {name}\n### Layer 0: a\n")
+            if meta is not None:
+                (d / "metadata.toml").write_text(meta)
+        sub = root / rp.AREAS_DIR / "Primes" / "Sub"
+        sub.mkdir()
+        (sub / "README.md").write_text("# Sub\n### Layer 0: a\n")
+        (sub / "Suggested.lean").write_text("")
+        self.rows = rp.read_roadmaps(root, {})
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def topic(self, data, row_id):
+        return next(r["topic"] for r in data["rows"] if r["id"] == row_id)
+
+    def test_each_roadmap_is_grouped_by_its_declared_category(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes"), "Number Theory (math.NT)")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Curves"), "Algebraic Geometry (math.AG)")
+        self.assertEqual(self.topic(data, "Completed/Finished"), "Combinatorics (math.CO)")
+
+    def test_a_sub_roadmap_is_in_its_parent_s_category(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes/Sub"), "Number Theory (math.NT)")
+
+    def test_no_or_unknown_or_malformed_metadata_is_unsorted(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        for name in ("Bare", "Odd", "Broken"):
+            self.assertEqual(self.topic(data, f"TauCetiRoadmap/{name}"), rp.UNSORTED, name)
+
+    def test_the_topic_list_is_the_categories_in_use_by_name(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(data["topics"], ["Algebraic Geometry (math.AG)", "Combinatorics (math.CO)",
+                                          "Number Theory (math.NT)"])
+
+
 class Activity(unittest.TestCase):
     def test_weekly_bins_attribution_and_cutoff(self):
         cutoff = dt.datetime(2026, 9, 17, 12, 0, tzinfo=UTC)  # a Thursday; the week starts Monday 14th
@@ -462,8 +516,8 @@ class Activity(unittest.TestCase):
                {"number": 5, "merged_at": None, "open": True, "labels": ["roadmap/Widgets"]}]
         exported = dt.datetime(2026, 9, 18, 12, 30, tzinfo=UTC)
         cutoff = dt.datetime(2026, 9, 17, 3, 0, tzinfo=UTC)
-        data = rp.build(rows, prs, {"order": ["T"], "map": {"Widgets": "T"}}, exported, cutoff,
-                        "2026-09-17T03:00:00Z", "abc1234", "test")
+        rows[0]["arxiv"] = "math.NT"
+        data = rp.build(rows, prs, exported, cutoff, "2026-09-17T03:00:00Z", "abc1234", "test")
         self.assertEqual(data["exported_at"], "2026-09-18T12:30:00Z")
         self.assertEqual(data["collected_at"], "2026-09-17T03:00:00Z")
         self.assertEqual(data["cutoff"], "2026-09-17T03:00:00Z")
@@ -471,14 +525,15 @@ class Activity(unittest.TestCase):
         self.assertEqual(data["rows"][0]["activity"]["total"], 2)
         self.assertEqual(data["rows"][0]["activity"]["open"], 1)
         self.assertEqual(data["global"]["open"], 1)
-        self.assertEqual(data["rows"][0]["topic"], "T")
+        self.assertEqual(data["rows"][0]["topic"], "Number Theory (math.NT)")
+        self.assertEqual(data["topics"], ["Number Theory (math.NT)"])
         self.assertEqual(data["global"]["first_merge"], "2026-08-30T00:00:00Z")
         self.assertEqual(data["global"]["total"], 3)
         self.assertEqual(data["global"]["unattributed"]["no_label"], 1)
 
     def test_build_with_no_rows_or_prs_is_well_formed_and_unknown_collection_stays_unknown(self):
         now = dt.datetime(2026, 9, 17, tzinfo=UTC)
-        data = rp.build([], [], {}, now, now, None, None, "test")
+        data = rp.build([], [], now, now, None, None, "test")
         self.assertIsNone(data["global"]["first_merge"])
         self.assertIsNone(data["collected_at"])
         self.assertEqual(data["global"]["total"], 0)

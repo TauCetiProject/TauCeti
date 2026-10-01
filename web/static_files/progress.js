@@ -328,7 +328,7 @@
       if (r.completed) sources.push('<a href="' + ROADMAP_REPO + '/blob/main/Completed/README.md">completion decision</a>');
       r.links.forEach(function (l) { sources.push('<a href="' + esc(l.url) + '" rel="noopener">' + esc(l.label) + " \u2197</a>"); });
       left += '<div class="pb-links">' + sources.join("") + '<button type="button" class="pb-copy" data-copy="' + esc(r.id) + '">Copy link to this roadmap</button></div>';
-      var evid = "Topic: " + esc(r.topic) + " (a hand assignment). ";
+      var evid = "arXiv category: " + esc(r.topic) + ". ";
       if (a.reason === "ok") evid += "Layer states come from " + (a.source === "marker" ? "the coverage marker in the report" : "a hand transcription of the report’s prose, bound to that exact report and README") + "; they are the report’s assessment at library commit " + esc(s.to_sha.slice(0, 7)) + ", not a certificate that each layer’s specification is fully met. ";
       else evid += "Layer states are unassessed: " + esc(REASON_TEXT[a.reason] || a.reason) + (typeof a.detail === "string" && a.detail ? " (" + esc(a.detail) + ")" : "") + ". ";
       evid += "Pull-request counts come from labels. ";
@@ -418,7 +418,7 @@
       '<p class="pb-lede">' + when + (age > 2 ? " That cutoff is <b>" + plural(age, "day") + " ago</b>; dates below are relative to it, not to today." : " Dates below are relative to the cutoff.") + "</p>" +
       tiles() +
       '<div class="pb-controls" id="pb-roadmaps" aria-label="Group, sort and filter">' +
-        '<label class="pb-group"><span>Group</span><select data-group><option value="topic">by topic</option><option value="none">no grouping</option></select></label>' +
+        '<label class="pb-group"><span>Group</span><select data-group><option value="topic">by arXiv category</option><option value="none">no grouping</option></select></label>' +
         '<label class="pb-group"><span>Sort</span><select data-sort><option value="activity">recent activity</option><option value="done">layers reported done</option><option value="due">update due</option><option value="name">name</option></select></label>' +
         '<label class="pb-group"><span>Show</span><select data-show><option value="all">all</option><option value="active">active</option><option value="completed">declared complete</option><option value="reported">with a report</option><option value="unreported">without a report</option><option value="unassessed">with unassessed layers</option><option value="due">update due</option></select></label>' +
         '<label class="pb-group"><span class="pb-vh">Find</span><input type="search" class="pb-search" placeholder="Find a roadmap, layer or theorem" value="' + esc(state.q) + '"></label>' +

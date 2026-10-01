@@ -52,7 +52,9 @@ A roadmap under `Completed/` is one the maintainers declared complete against it
 a human decision, recorded separately from any layer assessment; the two are shown side by side
 and neither is inferred from the other.
 
-Topics are a hand assignment (`scripts/roadmap_topics.json`) and are labelled as such, and
+Rows are grouped by the arXiv category each roadmap declares in its own `metadata.toml` in
+TauCetiRoadmap (`topic = "math.NT"`); a sub-roadmap is in its parent's category, and a roadmap that
+declares none (or something that is not an arXiv math category) is shown under "Unsorted".
 `scripts/roadmap_links.json` lists per-roadmap pages elsewhere (a contributor's route map, say)
 that a row should point at.
 
@@ -70,9 +72,43 @@ import pathlib
 import re
 import subprocess
 import sys
+import tomllib
 
 AREAS_DIR = "TauCetiRoadmap"
 COMPLETED_DIR = "Completed"
+UNSORTED = "Unsorted"
+# arXiv's mathematics categories, https://arxiv.org/category_taxonomy. A roadmap's `metadata.toml`
+# names one by its code; the board shows the name with the code beside it.
+ARXIV_MATH = {
+    "math.AC": "Commutative Algebra", "math.AG": "Algebraic Geometry", "math.AP": "Analysis of PDEs",
+    "math.AT": "Algebraic Topology", "math.CA": "Classical Analysis and ODEs",
+    "math.CO": "Combinatorics", "math.CT": "Category Theory", "math.CV": "Complex Variables",
+    "math.DG": "Differential Geometry", "math.DS": "Dynamical Systems",
+    "math.FA": "Functional Analysis", "math.GM": "General Mathematics", "math.GN": "General Topology",
+    "math.GR": "Group Theory", "math.GT": "Geometric Topology", "math.HO": "History and Overview",
+    "math.IT": "Information Theory", "math.KT": "K-Theory and Homology", "math.LO": "Logic",
+    "math.MG": "Metric Geometry", "math.MP": "Mathematical Physics", "math.NA": "Numerical Analysis",
+    "math.NT": "Number Theory", "math.OA": "Operator Algebras", "math.OC": "Optimization and Control",
+    "math.PR": "Probability", "math.QA": "Quantum Algebra", "math.RA": "Rings and Algebras",
+    "math.RT": "Representation Theory", "math.SG": "Symplectic Geometry", "math.SP": "Spectral Theory",
+    "math.ST": "Statistics Theory",
+}
+
+
+def read_arxiv_topic(dirpath: pathlib.Path) -> str | None:
+    """The arXiv category a roadmap declares in its `metadata.toml`, or None when it declares none
+    or one this page does not know. Never raises: a malformed file leaves the roadmap unsorted
+    rather than failing the board."""
+    try:
+        topic = tomllib.loads((dirpath / "metadata.toml").read_text(encoding="utf-8")).get("topic")
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
+        return None
+    return topic if isinstance(topic, str) and topic in ARXIV_MATH else None
+
+
+def topic_label(code: str | None) -> str:
+    """How a category is shown on the board: its name, with the code beside it."""
+    return f"{ARXIV_MATH[code]} ({code})" if code in ARXIV_MATH else UNSORTED
 AREA_PREFIX = "roadmap/"
 EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
 WEEKS = 16
@@ -388,6 +424,8 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
         "completed": base == COMPLETED_DIR,
         "readme": f"{rel}/README.md",
         "readme_sha": sha256(text),
+        # A sub-roadmap declares no category of its own; read_roadmaps gives it its parent's.
+        "arxiv": None if parent else read_arxiv_topic(dirpath),
         "layers": layers,
         "layer_ids": [layer_id(t) for t in layers],
         "layer_lines": [line for _, line in with_lines],
@@ -469,6 +507,7 @@ def read_roadmaps(roadmap_dir: pathlib.Path, transitional: dict, links: dict | N
             for sub in sorted(p for p in d.iterdir() if p.is_dir() and (p / "Suggested.lean").is_file()):
                 child = read_roadmap(sub, base, transitional, parent=d.name, inherit=parent_status, links=links)
                 if child is not None:
+                    child["arxiv"] = row["arxiv"]
                     rows.append(child)
     return rows
 
@@ -621,12 +660,11 @@ def git_head(repo_dir: pathlib.Path) -> str | None:
         return None
 
 
-def build(rows: list[dict], prs: list[dict], topics: dict, exported_at: dt.datetime,
+def build(rows: list[dict], prs: list[dict], exported_at: dt.datetime,
           cutoff: dt.datetime, collected_at: str | None, roadmap_head: str | None, prs_source: str) -> dict:
     labels, glob, per = activity(prs, cutoff, known={r["name"] for r in rows if r["parent"] is None})
-    topic_of = topics.get("map", {})
     for row in rows:
-        row["topic"] = topic_of.get(row["parent"] or row["name"], "Unsorted")
+        row["topic"] = topic_label(row.get("arxiv"))
         a = per.get(row["name"]) if row["parent"] is None else None
         if a and (a["total"] or a["open"]):
             since = None
@@ -647,7 +685,9 @@ def build(rows: list[dict], prs: list[dict], topics: dict, exported_at: dt.datet
         "update_due_prs": UPDATE_DUE_PRS,
         "weeks": labels,
         "global": {**glob, "first_merge": min((p["merged_at"] for p in prs if p["merged_at"] and parse_ts(p["merged_at"]) <= cutoff), default=None)},
-        "topics": topics.get("order", []),
+        # The categories in use, by name, as arXiv lists them; "Unsorted" is never listed (the board
+        # appends it).
+        "topics": sorted({r["topic"] for r in rows} - {UNSORTED}),
         "rows": rows,
     }
 
@@ -661,7 +701,6 @@ def main(argv=None) -> int:
                    help="repository whose merged PRs carry the roadmap labels")
     p.add_argument("--data", type=pathlib.Path,
                    help="pull-request snapshot to read instead of querying gh")
-    p.add_argument("--topics", type=pathlib.Path, default=here / "roadmap_topics.json")
     p.add_argument("--coverage", type=pathlib.Path, default=here / "roadmap_coverage.json",
                    help="hand-transcribed per-layer states, used only when no coverage marker fits")
     p.add_argument("--links", type=pathlib.Path, default=here / "roadmap_links.json",
@@ -673,7 +712,6 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
     now = dt.datetime.now(dt.timezone.utc)
 
-    topics = json.loads(args.topics.read_text(encoding="utf-8"))
     transitional = json.loads(args.coverage.read_text(encoding="utf-8")) if args.coverage.is_file() else {}
     links = json.loads(args.links.read_text(encoding="utf-8")) if args.links.is_file() else {}
     rows = read_roadmaps(args.roadmap_dir, transitional, links)
@@ -685,7 +723,7 @@ def main(argv=None) -> int:
     else:
         prs, collected_at, source = fetch_prs(args.repo), iso_z(now), "gh"
     cutoff = args.cutoff or parse_ts(collected_at) or now
-    data = build(rows, prs, topics, now, cutoff, collected_at, git_head(args.roadmap_dir), source)
+    data = build(rows, prs, now, cutoff, collected_at, git_head(args.roadmap_dir), source)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
                         encoding="utf-8")
