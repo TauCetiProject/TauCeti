@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import Counter
 import shutil
@@ -791,6 +792,18 @@ class CategoryGroupingTest(unittest.TestCase):
 
     def test_no_checkout_means_no_categories(self):
         self.assertEqual(stats.roadmap_categories(self.root / "missing"), {})
+
+    @unittest.skipIf(not hasattr(os, "geteuid") or os.geteuid() == 0,
+                     "needs POSIX permissions, which root bypasses")
+    def test_an_unreadable_checkout_raises_rather_than_reading_as_empty(self):
+        """An empty map would publish every PR as unsorted; failing keeps the committed charts."""
+        active = self.root / "TauCetiRoadmap"
+        active.chmod(0o300)  # searchable, not listable
+        try:
+            with self.assertRaises(OSError):
+                stats.roadmap_categories(self.root)
+        finally:
+            active.chmod(0o755)
 
     def test_prs_count_under_their_roadmap_s_category(self):
         prs = [self.labelled(1, "alice", "Primes"), self.labelled(2, "alice", "Forms"),

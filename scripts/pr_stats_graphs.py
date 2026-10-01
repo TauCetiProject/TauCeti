@@ -840,7 +840,12 @@ def roadmap_categories(roadmap_dir: Path) -> dict[str, str]:
     active one's, so an active roadmap with no file, an unreadable one or a value that is not an
     arXiv mathematics category is left out, and its PRs count as unsorted, like any roadmap without
     a category.
-    Never raises: a missing checkout gives an empty map."""
+
+    A missing checkout gives an empty map, and a roadmap's missing, unreadable or malformed
+    `metadata.toml` leaves only that roadmap out. An error listing the checkout itself (an
+    unreadable `TauCetiRoadmap/`, say) propagates as `OSError` rather than being taken for an empty
+    one, which would publish every PR as unsorted; the Pages step that runs this keeps the committed
+    charts when generation fails."""
     out: dict[str, str] = {}
     decided: set[str] = set()
     for base in ("TauCetiRoadmap", "Completed"):
