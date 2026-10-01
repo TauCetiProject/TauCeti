@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
+public import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Closed
 
@@ -48,12 +49,16 @@ basis sections of `free I` they give `δᵢⱼ`.
   out of `free I`, and the dual sheaf of `free I`;
 * `TauCeti.SheafOfModules.dualFreeι`: the basis sections of the dual sheaf;
 * `TauCeti.SheafOfModules.ιFree_tensorHom_dualFreeι_comp_ev` and its `_of_ne` variant: the
-  dual basis.
+  dual basis;
+* `SheafOfModules.dual` and `SheafOfModules.dualIso`: the internal-Hom dual and its action on
+  isomorphisms;
+* `SheafOfModules.isIso_evaluation_dual_of_iso_freePUnit`: evaluation against the dual is an
+  isomorphism for a sheaf isomorphic to the standard free rank-one sheaf.
 -/
 
 public section
 
-open CategoryTheory Limits MonoidalCategory
+open CategoryTheory Limits MonoidalCategory MonoidalClosed
 
 namespace TauCeti
 
@@ -241,6 +246,63 @@ theorem ιFree_tensorHom_dualFreeι_comp_ev_of_ne {i j : I} (h : i ≠ j) :
   simpa only [dualFreeι, dualFreeIso, tensorUnit_eq, SheafOfModules.ihom_obj] using
     (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree j)).trans
       (ιFree_tensorHom_ιFree_evaluation_of_ne (R := R) h)
+
+/-- The internal-Hom dual of a sheaf of modules. -/
+abbrev _root_.SheafOfModules.dual
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    _root_.SheafOfModules.{u} (ringCatSheaf R) :=
+  (ihom M).obj (unit (ringCatSheaf R))
+
+/-- An isomorphism of sheaves induces an isomorphism of their duals. -/
+def _root_.SheafOfModules.dualIso {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    (e : M ≅ N) : M.dual ≅ N.dual := by
+  have hpre : IsIso (pre e.inv) := MonoidalClosed.pre_isIso e.symm
+  exact asIso ((pre e.inv).app (unit (ringCatSheaf R)))
+
+private lemma ιFree_pUnit_eq_sigma_ι :
+    ιFree (R := ringCatSheaf R) PUnit.unit =
+      Sigma.ι (fun _ : PUnit.{u + 1} ↦ unit (ringCatSheaf R)) PUnit.unit :=
+  rfl
+
+/-- Evaluation of the standard free rank-one sheaf against its dual is an isomorphism. -/
+instance _root_.SheafOfModules.isIso_evaluation_dual_freePUnit :
+    IsIso ((ihom.ev (free (R := ringCatSheaf R) PUnit)).app
+      (unit (ringCatSheaf R))) := by
+  let ι := ιFree (R := ringCatSheaf R) PUnit.unit
+  have : IsIso ι := by
+    dsimp only [ι]
+    rw [ιFree_pUnit_eq_sigma_ι, ← coproductUniqueIso_inv
+      (fun _ : PUnit.{u + 1} ↦ unit (ringCatSheaf R))]
+    exact Iso.isIso_inv _
+  let ιdual := dualFreeι (R := R) PUnit.unit
+  have : IsIso ιdual := by
+    exact IsIso.of_isIso_fac_right (dualFreeι_comp_dualFreeIso_hom (R := R) PUnit.unit)
+  have : IsIso (ι ⊗ₘ ιdual) := inferInstance
+  have hevaluation := ιFree_tensorHom_dualFreeι_comp_ev (R := R) PUnit.unit
+  have : IsIso ((ι ⊗ₘ ιdual) ≫
+      (ihom.ev (free (R := ringCatSheaf R) PUnit)).app (unit (ringCatSheaf R))) :=
+    hevaluation ▸ inferInstance
+  exact IsIso.of_isIso_comp_left (ι ⊗ₘ ιdual)
+    ((ihom.ev (free (R := ringCatSheaf R) PUnit)).app (unit (ringCatSheaf R)))
+
+/-- Evaluation against the dual is an isomorphism for a sheaf isomorphic to the standard free
+rank-one sheaf. -/
+theorem _root_.SheafOfModules.isIso_evaluation_dual_of_iso_freePUnit
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    (e : free (R := ringCatSheaf R) PUnit ≅ M) :
+    IsIso ((ihom.ev M).app (unit (ringCatSheaf R))) := by
+  have h := id_tensor_pre_app_comp_ev e.hom (unit (ringCatSheaf R))
+  have hpre : IsIso (pre e.hom) := MonoidalClosed.pre_isIso e
+  have : IsIso ((pre e.hom).app (unit (ringCatSheaf R))) :=
+    (NatTrans.isIso_iff_isIso_app (pre e.hom)).1 hpre _
+  have : IsIso (free (R := ringCatSheaf R) PUnit ◁
+      (pre e.hom).app (unit (ringCatSheaf R)) ≫
+        (ihom.ev (free (R := ringCatSheaf R) PUnit)).app (unit (ringCatSheaf R))) :=
+    inferInstance
+  have : IsIso (e.hom ▷ M.dual ≫
+      (ihom.ev M).app (unit (ringCatSheaf R))) := h ▸ inferInstance
+  exact IsIso.of_isIso_comp_left (e.hom ▷ M.dual)
+    ((ihom.ev M).app (unit (ringCatSheaf R)))
 
 end SheafOfModules
 

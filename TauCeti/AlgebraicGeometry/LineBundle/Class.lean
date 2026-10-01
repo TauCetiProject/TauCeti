@@ -95,11 +95,14 @@ noncomputable def dual (a : LineBundleClass X) : LineBundleClass X :=
 noncomputable instance : Inv (LineBundleClass X) where
   inv := dual
 
+private lemma inv_eq_dual (a : LineBundleClass X) : a⁻¹ = dual a :=
+  rfl
+
 /-- The inverse of the class of a line bundle is the class of its dual. -/
 @[simp]
 lemma inv_mk (L : InvertibleSheaf X) :
     (mk L)⁻¹ = mk (InvertibleSheaf.dual L) := by
-  change dual (mk L) = mk (InvertibleSheaf.dual L)
+  rw [inv_eq_dual]
   exact lift_mk L
 
 /-- Tensor product of line bundles descends to their isomorphism classes. -/

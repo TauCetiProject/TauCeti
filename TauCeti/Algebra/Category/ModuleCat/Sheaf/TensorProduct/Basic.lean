@@ -37,12 +37,6 @@ The site-level construction remains available on a scheme as
 `SheafOfModules.tensorProduct X.sheaf`; the canonical tensor notation `M ⊗ N` and symmetric
 monoidal structure on `X.Modules` are in
 `TauCeti/AlgebraicGeometry/Modules/TensorProduct.lean`.
-
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible
-sheaves on a scheme; the Picard group `Pic X` under `⊗`": the tensor product is the
-operation from which the Picard group is built. Closure, associativity, duality, and the resulting
-group structure on isomorphism classes are supplied by the downstream invertible-sheaf and
-line-bundle modules.
 -/
 
 public section

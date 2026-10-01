@@ -42,7 +42,6 @@ namespace InvertibleSheaf
 variable {X : Scheme.{u}}
 
 /-- The dual line bundle, defined as the internal Hom into the structure sheaf. -/
-@[expose]
 def dual (L : InvertibleSheaf X) : InvertibleSheaf X := by
   let _ : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
   exact ⟨L.obj.dual, SheafOfModules.IsInvertible.dual L.obj⟩
@@ -51,7 +50,7 @@ def dual (L : InvertibleSheaf X) : InvertibleSheaf X := by
 @[simp]
 lemma dual_obj (L : InvertibleSheaf X) :
     (dual L).obj = L.obj.dual :=
-  rfl
+  (rfl)
 
 /-- The sheaf isomorphism underlying transport through duality. -/
 def dualCongrIso {L K : InvertibleSheaf X} (e : L ≅ K) :
