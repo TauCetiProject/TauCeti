@@ -28,9 +28,17 @@ bundled paths carrying irrelevant partition data.
   strict partition and regularity on each piece.
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.continuousOn`: piecewise `C^n` regularity implies
   continuity on the whole interval.
+* `TauCeti.Manifold.IsPiecewiseContMDiffOn.trans_contMDiffOn` and
+  `TauCeti.Manifold.IsPiecewiseContMDiffOn.mono`: appending a `C^n` piece and restricting to a
+  nondegenerate subinterval preserve piecewise `C^n` regularity.
 
-This is the metric-independent finite-partition regularity API used in Layer 0 of the Hopf--Rinow
-roadmap.
+This is a metric-independent finite-partition regularity API for curves in a manifold: it only
+involves the differentiable structure, so that Riemannian length and distance comparisons can be
+built on top of it by integrating along the pieces. The explicit-partition subinterval induction
+follows the pattern of the Apache-2.0
+[`frenzymath/Poincare-Conjecture`](https://github.com/frenzymath/Poincare-Conjecture)
+formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
+`TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
 
 ## References
 
@@ -148,5 +156,58 @@ theorem IsPiecewiseContMDiffOn.continuousOn (h : IsPiecewiseContMDiffOn I n γ a
   rw [← hτa, ← hτb]
   exact continuousOn_Icc_of_partition τ (fun i ↦ (hτ i).le)
     (fun i ↦ (hγ i).continuousOn)
+
+/-- Appending a `C^n` piece to a piecewise `C^n` path gives a piecewise `C^n` path: the new
+vertex is added at the end of a witnessing partition. -/
+theorem IsPiecewiseContMDiffOn.trans_contMDiffOn (h : IsPiecewiseContMDiffOn I n γ a b) {c : ℝ}
+    (hbc : b < c) (hγ : ContMDiffOn (modelWithCornersSelf ℝ ℝ) I n γ (Icc b c)) :
+    IsPiecewiseContMDiffOn I n γ a c := by
+  obtain ⟨k, τ, hτa, hτb, hτ, hpieces⟩ := h
+  refine ⟨k + 1, Fin.snoc τ c, ?_, ?_, fun i ↦ ?_, fun i ↦ ?_⟩
+  · simpa only [← Fin.castSucc_zero, Fin.snoc_castSucc] using hτa
+  · exact Fin.snoc_last _ _
+  · refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · simpa only [Fin.succ_last, Fin.snoc_castSucc, Fin.snoc_last, hτb] using hbc
+    · simpa only [Fin.succ_castSucc, Fin.snoc_castSucc] using hτ j
+  · refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · simpa only [Fin.succ_last, Fin.snoc_castSucc, Fin.snoc_last, hτb] using hγ
+    · simpa only [Fin.succ_castSucc, Fin.snoc_castSucc] using hpieces j
+
+/-- Restriction to a subinterval, along an explicit partition. This is the induction underlying
+`IsPiecewiseContMDiffOn.mono`. -/
+private theorem isPiecewiseContMDiffOn_of_partition_of_subset :
+    ∀ {k : ℕ} (τ : Fin (k + 2) → ℝ), (∀ i : Fin (k + 1), τ i.castSucc < τ i.succ) →
+      (∀ i : Fin (k + 1),
+        ContMDiffOn (modelWithCornersSelf ℝ ℝ) I n γ (Icc (τ i.castSucc) (τ i.succ))) →
+      ∀ {s t : ℝ}, τ 0 ≤ s → s < t → t ≤ τ (Fin.last (k + 1)) →
+        IsPiecewiseContMDiffOn I n γ s t := by
+  intro k
+  induction k with
+  | zero =>
+      intro τ hτ hγ s t hs hst ht
+      exact .of_contMDiffOn hst
+        ((hγ 0).mono (Icc_subset_Icc (by simpa using hs) (by simpa using ht)))
+  | succ k ih =>
+      intro τ hτ hγ s t hs hst ht
+      have ht' : t ≤ τ (Fin.last (k + 1)).succ := by simpa only [Fin.succ_last] using ht
+      -- the partition with its last vertex removed
+      have hτ' : ∀ i : Fin (k + 1), τ i.castSucc.castSucc < τ i.castSucc.succ := fun i ↦ by
+        simpa only [Fin.succ_castSucc] using hτ i.castSucc
+      have hγ' : ∀ i : Fin (k + 1), ContMDiffOn (modelWithCornersSelf ℝ ℝ) I n γ
+          (Icc (τ i.castSucc.castSucc) (τ i.castSucc.succ)) := fun i ↦ by
+        simpa only [Fin.succ_castSucc] using hγ i.castSucc
+      rcases le_or_gt t (τ (Fin.last (k + 1)).castSucc) with htm | hmt
+      · exact ih (fun i ↦ τ i.castSucc) hτ' hγ' hs hst htm
+      rcases le_or_gt (τ (Fin.last (k + 1)).castSucc) s with hms | hsm
+      · exact .of_contMDiffOn hst ((hγ (Fin.last (k + 1))).mono (Icc_subset_Icc hms ht'))
+      · exact (ih (fun i ↦ τ i.castSucc) hτ' hγ' hs hsm le_rfl).trans_contMDiffOn hmt
+          ((hγ (Fin.last (k + 1))).mono (Icc_subset_Icc le_rfl ht'))
+
+/-- A piecewise `C^n` path is piecewise `C^n` on every nondegenerate subinterval of its parameter
+interval. -/
+theorem IsPiecewiseContMDiffOn.mono (h : IsPiecewiseContMDiffOn I n γ a b) {s t : ℝ}
+    (has : a ≤ s) (hst : s < t) (htb : t ≤ b) : IsPiecewiseContMDiffOn I n γ s t := by
+  obtain ⟨k, τ, hτa, hτb, hτ, hγ⟩ := h
+  exact isPiecewiseContMDiffOn_of_partition_of_subset τ hτ hγ (hτa ▸ has) hst (hτb ▸ htb)
 
 end TauCeti.Manifold

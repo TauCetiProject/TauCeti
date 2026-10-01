@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Flat
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Surjective
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Faithful flatness of finite dominant affine group homomorphisms
@@ -71,11 +72,8 @@ theorem faithfullyFlat_of_finite_of_dominant (f : H ⟶ K)
       PrimeSpectrum.ext (AlgHom.kernelPoint_asIdeal g)
     exact (congrArg (fun p : PrimeSpectrum K ↦
       Module.Flat H (Localization.AtPrime p.asIdeal)) hp).mp hlocal
-  have hinj : Function.Injective f.hom := by
-    apply (RingHom.injective_iff_ker_eq_bot f.hom.toAlgHom.toRingHom).mpr
-    apply bot_unique
-    simpa only [nilradical_eq_zero, Ideal.zero_eq_bot] using
-      (PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical _).mp hdom
+  have hinj : Function.Injective f.hom :=
+    (RingHom.denseRange_comap_iff_injective _).mp hdom
   exact (faithfullyFlat_iff_flat_of_injective f hinj).mpr hflat
 
 end TauCeti.CommHopfAlgCat

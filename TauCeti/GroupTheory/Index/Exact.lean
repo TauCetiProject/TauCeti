@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.GroupTheory.Index
-import Mathlib.Algebra.Group.PUnit
 import Mathlib.Tactic.Ring
 
 /-!
@@ -27,12 +27,16 @@ statement about orders.
 
 At a single node of an exact sequence `A₀ → A₁ → A₂` the same count gives a divisibility
 `|A₁| ∣ |A₀| * |A₂|`, with no injectivity or surjectivity hypothesis: `|A₁|` is the product of the
-orders of the two ranges, which divide `|A₀|` and `|A₂|`.
+orders of the two ranges, which divide `|A₀|` and `|A₂|`. Hence `A₁` is finite as soon as `A₀` and
+`A₂` are; this is recorded for bundled homomorphisms of any type, in the form in which a long exact
+cohomology sequence delivers it.
 
 ## Main results
 
 * `MonoidHom.card_dvd_card_mul_card_of_exact`: the order of the middle term of an exact sequence
   `A₀ → A₁ → A₂` divides the product of the orders of the outer ones.
+* `Function.MulExact.finite`, `Function.Exact.finite`: the middle term of an exact sequence of
+  groups with finite outer terms is finite.
 * `MonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact`: the nine-term alternating
   identity `|A₀| * |A₂| * |A₄| * |A₆| * |A₈| = |A₁| * |A₃| * |A₅| * |A₇|`, the shape of a long exact
   cohomology sequence cut off by a vanishing `H³`.
@@ -92,10 +96,34 @@ theorem card_mul_card_mul_card_of_exact (f₀ : A₀ →* A₁) (f₁ : A₁ →
     (h₂ : f₁.range = f₂.ker) (h₃ : f₂.range = f₃.ker) (h₄ : f₃.range = f₄.ker)
     (h₅ : Function.Surjective f₄) :
     Nat.card A₀ * Nat.card A₂ * Nat.card A₄ = Nat.card A₁ * Nat.card A₃ * Nat.card A₅ := by
-  -- pad the sequence with three trivial groups and read off the nine-term identity
-  have h := card_mul_card_mul_card_mul_card_mul_card_of_exact f₀ f₁ f₂ f₃ f₄ (1 : A₅ →* Unit)
-    (1 : Unit →* Unit) (1 : Unit →* Unit) h₀ h₁ h₂ h₃ h₄ ((range_eq_top.2 h₅).trans ker_one.symm)
-    (Subsingleton.elim _ _) (Subsingleton.elim _ _) (Function.surjective_to_subsingleton _)
-  simpa only [Nat.card_unique, mul_one] using h
+  -- pad the sequence with three copies of the trivial group `⊥ ≤ A₅` and read off the nine-term
+  -- identity
+  have h := card_mul_card_mul_card_mul_card_mul_card_of_exact f₀ f₁ f₂ f₃ f₄
+    (1 : A₅ →* (⊥ : Subgroup A₅)) (1 : (⊥ : Subgroup A₅) →* (⊥ : Subgroup A₅))
+    (1 : (⊥ : Subgroup A₅) →* (⊥ : Subgroup A₅)) h₀ h₁ h₂ h₃ h₄
+    ((range_eq_top.2 h₅).trans ker_one.symm) (Subsingleton.elim _ _) (Subsingleton.elim _ _)
+    (Function.surjective_to_subsingleton _)
+  simpa only [Subgroup.card_bot, mul_one] using h
 
 end MonoidHom
+
+namespace Function.MulExact
+
+variable {A₀ A₁ A₂ : Type*} [Group A₀] [Group A₁] [Group A₂] {F₀ F₁ : Type*} [FunLike F₀ A₀ A₁]
+  [MonoidHomClass F₀ A₀ A₁] [FunLike F₁ A₁ A₂] [MonoidHomClass F₁ A₁ A₂] {f₀ : F₀} {f₁ : F₁}
+
+/-- **The middle term of an exact sequence of groups with finite outer terms is finite.** If
+`A₀ → A₁ → A₂` is an exact sequence of groups and `A₀`, `A₂` are finite, then `A₁` is finite: its
+order divides `|A₀| * |A₂|`, which is nonzero. -/
+@[to_additive /-- **The middle term of an exact sequence of additive groups with finite outer terms
+is finite.** If `A₀ → A₁ → A₂` is an exact sequence of additive groups and `A₀`, `A₂` are finite,
+then `A₁` is finite: its order divides `|A₀| * |A₂|`, which is nonzero. -/]
+theorem finite (h : Function.MulExact f₀ f₁) [Finite A₀] [Finite A₂] : Finite A₁ := by
+  refine Nat.finite_of_card_ne_zero fun h₁ ↦ ?_
+  -- exactness of the bundled homomorphisms: `MonoidHom.coe_ofClass` holds by `rfl`
+  have h' : Function.MulExact (MonoidHom.ofClass f₀) (MonoidHom.ofClass f₁) := h
+  have := MonoidHom.card_dvd_card_mul_card_of_exact _ _ h'.monoidHom_ker_eq.symm
+  rw [h₁, zero_dvd_iff] at this
+  exact Nat.mul_ne_zero Nat.card_pos.ne' Nat.card_pos.ne' this
+
+end Function.MulExact

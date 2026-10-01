@@ -181,6 +181,24 @@ theorem exists_continuous_isCrossedHom_comp_mk_forall_apply_of_eq (hχ : HasPres
     (χ.comp (presentedProP.mk p rels)) c
   exact ⟨F, hFc, hF, hFv, hχ F hFc hF⟩
 
+/-- **The Kronecker crossed homomorphism of a minimal presentation on `Fin n`, continuous form.**
+For `j < n`, a character `χ` with the prescription property admits a continuous crossed
+homomorphism of the free group for `χ ∘ mk` taking the value `1` at the `j`-th `ℕ`-indexed
+generator and `0` at every other one, and vanishing on every relator. -/
+theorem exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite {n : ℕ}
+    {rels : Set (freeProP p (Fin n))} {χ : presentedProP p (Fin n) rels →ₜ* ℤ_[p]ˣ}
+    (hχ : HasPrescriptionProperty χ) (hrels : rels ⊆ proPFrattini p (freeProP p (Fin n))) {j : ℕ}
+    (hj : j < n) :
+    ∃ F : freeProP p (Fin n) → ℤ_[p], Continuous F ∧
+      IsCrossedHom (χ.comp (presentedProP.mk p rels)) F ∧
+      (∀ i, F (freeProPGen p n i) = if i = j then 1 else 0) ∧ ∀ r ∈ rels, F r = 0 := by
+  obtain ⟨F, hFc, hF, hFv, hFr⟩ := hχ.exists_continuous_isCrossedHom_comp_mk_forall_apply_of_eq
+    hrels fun i : Fin n ↦ if (i : ℕ) = j then (1 : ℤ_[p]) else 0
+  refine ⟨F, hFc, hF, fun i ↦ ?_, hFr⟩
+  by_cases hi : i < n
+  · rw [freeProPGen_of_lt p hi, hFv]
+  · rw [freeProPGen_eq_one_of_le p (not_lt.1 hi), hF.map_one, ite_eq_right (by omega)]
+
 /-- **The Kronecker crossed homomorphism of a minimal presentation on `Fin n`.** For `j < n`, a
 character `χ` with the prescription property admits a crossed homomorphism of the free group for
 `χ ∘ mk` taking the value `1` at the `j`-th `ℕ`-indexed generator and `0` at every other one, and
@@ -190,13 +208,10 @@ theorem exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite {n : ℕ}
     (hχ : HasPrescriptionProperty χ) (hrels : rels ⊆ proPFrattini p (freeProP p (Fin n))) {j : ℕ}
     (hj : j < n) :
     ∃ F : freeProP p (Fin n) → ℤ_[p], IsCrossedHom (χ.comp (presentedProP.mk p rels)) F ∧
-      (∀ i, F (freeProPGen p n i) = if i = j then 1 else 0) ∧ ∀ r ∈ rels, F r = 0 := by
-  obtain ⟨F, -, hF, hFv, hFr⟩ := hχ.exists_continuous_isCrossedHom_comp_mk_forall_apply_of_eq
-    hrels fun i : Fin n ↦ if (i : ℕ) = j then (1 : ℤ_[p]) else 0
-  refine ⟨F, hF, fun i ↦ ?_, hFr⟩
-  by_cases hi : i < n
-  · rw [freeProPGen_of_lt p hi, hFv]
-  · rw [freeProPGen_eq_one_of_le p (not_lt.1 hi), hF.map_one, ite_eq_right (by omega)]
+      (∀ i, F (freeProPGen p n i) = if i = j then 1 else 0) ∧ ∀ r ∈ rels, F r = 0 :=
+  let ⟨F, _, hF, hFv, hFr⟩ := hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite
+    hrels hj
+  ⟨F, hF, hFv, hFr⟩
 
 end HasPrescriptionProperty
 

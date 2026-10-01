@@ -31,9 +31,9 @@ treats characters of the form `v ↦ e (L v w)` on a real vector space.
 
 ## Main declarations
 
-* `TauCeti.PontryaginDual.evalBoundedContinuous`: evaluation at a group element, bundled as a
+* `PontryaginDual.evalBoundedContinuous`: evaluation at a group element, bundled as a
   bounded continuous function on the dual.
-* `TauCeti.PontryaginDual.evalPoly`: the star subalgebra of finite linear combinations of
+* `PontryaginDual.evalPoly`: the star subalgebra of finite linear combinations of
   evaluation characters.
 * `MeasureTheory.FiniteMeasure.ext_of_forall_pontryaginMeasureTransform_eq`: finite measures on a
   Polish dual with the same Fourier--Stieltjes transform are equal.
@@ -50,7 +50,7 @@ noncomputable section
 
 open BoundedContinuousFunction MeasureTheory
 
-namespace TauCeti.PontryaginDual
+namespace PontryaginDual
 
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
 
@@ -195,7 +195,7 @@ theorem separatesPoints_evalPoly :
   refine ⟨⟨evalBoundedContinuous g.toAdd, evalBoundedContinuous_mem_evalPoly g.toAdd, rfl⟩, ?_⟩
   simpa using Subtype.coe_ne_coe.mpr hg
 
-end TauCeti.PontryaginDual
+end PontryaginDual
 
 namespace TauCeti
 
@@ -212,12 +212,12 @@ theorem _root_.MeasureTheory.FiniteMeasure.ext_of_forall_pontryaginMeasureTransf
     P = Q := by
   apply FiniteMeasure.toMeasure_injective
   apply ext_of_forall_mem_subalgebra_integral_eq_of_polish
-    _root_.TauCeti.PontryaginDual.separatesPoints_evalPoly
+    _root_.PontryaginDual.separatesPoints_evalPoly
   intro f hf
-  obtain ⟨a, rfl⟩ := (_root_.TauCeti.PontryaginDual.mem_evalPoly f).mp hf
+  obtain ⟨a, rfl⟩ := (_root_.PontryaginDual.mem_evalPoly f).mp hf
   simp only [Finsupp.sum, BoundedContinuousFunction.coe_sum, Finset.sum_apply,
     BoundedContinuousFunction.coe_smul,
-    _root_.TauCeti.PontryaginDual.evalBoundedContinuous_apply,
+    _root_.PontryaginDual.evalBoundedContinuous_apply,
     smul_eq_mul]
   rw [integral_finsetSum, integral_finsetSum]
   · congr with g
