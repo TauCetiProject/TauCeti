@@ -72,6 +72,8 @@ The automorphism action lemmas are in `TauCeti`: use
 `TauCeti.mulAut_smul_conjClasses_mk φ x` to compute on a representative,
 `TauCeti.mulAut_smul_conjClasses_pow φ C n` for powers, and
 `TauCeti.mulAut_smul_conjClasses_inv φ C` for inversion.
+The representative and power formulas apply to monoids; the inversion formula and
+triviality of the inner action require a group.
 
 ## Implementation notes
 
