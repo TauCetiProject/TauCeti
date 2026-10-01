@@ -34,6 +34,8 @@ multiplicity and are used to construct ramification divisors.
 
 ## References
 
+* The coefficientwise construction and its API adapt the function-field conorm formalization in
+  `TauCeti.FieldTheory.FunctionField.Divisor.Conorm` to finite holomorphic maps.
 * Rick Miranda, *Algebraic Curves and Riemann Surfaces*, Graduate Studies in Mathematics 5,
   American Mathematical Society, 1995, Chapter II §4.
 -/
