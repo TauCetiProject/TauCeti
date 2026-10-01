@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.Cup
+public import TauCeti.Algebra.Homology.LinearYoneda
+public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
 
 /-!
 # Cap products of chains and cochains along a diagonal
@@ -37,7 +39,7 @@ evaluates `φ` on the front `p`-face of a singular simplex and keeps its back `q
 * `TauCeti.ChainComplex.capChain_naturality`: naturality along maps of diagonals and actions.
 * `TauCeti.ChainComplex.capCycles`: the cap product of a cycle and a cocycle.
 * `TauCeti.ChainComplex.cap`: the cap product on homology, with
-  `TauCeti.ChainComplex.homologyπ_cap` computing it on classes of cycles and cocycles and
+  `TauCeti.ChainComplex.cap_homologyπ` computing it on classes of cycles and cocycles and
   `TauCeti.ChainComplex.cap_naturality` its naturality.
 
 ## References
@@ -59,7 +61,7 @@ variable {C : Type*} [Category* C]
 section Chain
 
 variable [Preadditive C] [HasFiniteBiproducts C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {A B B' E : ChainComplex C ℕ} {M : C} {k : Type*} [CommSemiring k] [Linear k C]
+  {A B B' E : ChainComplex C ℕ} {M : C} {k : Type*} [Semiring k] [Linear k C]
   [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
   (a : ((tensorLeft M).mapHomologicalComplex _).obj B ⟶ B')
 
@@ -86,15 +88,20 @@ lemma capChain_comp_d (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) :
     capChain k D a p (q + 1) (n + 1) (by omega) φ ≫ B'.d (q + 1) q =
       ((-1 : ℤ) ^ p) • (E.d (n + 1) n ≫ capChain k D a p q n h φ -
         capChain k D a (p + 1) q (n + 1) (by omega) (A.d (p + 1) p ≫ φ)) := by
-  have ha : a.f (q + 1) ≫ B'.d (q + 1) q = (M ◁ B.d (q + 1) q) ≫ a.f q := by
-    simp
-  -- the Leibniz rule for the tensor product of `φ` and `𝟙 B_q`
-  have hL := d_comp_tensorCochain (a.f q) φ (𝟙 (B.X q)) n
-  rw [Category.comp_id] at hL
-  rw [capChain_apply, capChain_apply, capChain_apply, Category.assoc, tensorCochain_comp, ha,
-    tensorCochain_whiskerLeft_comp, Category.id_comp, ← D.comm_assoc, hL, Preadditive.comp_add,
-    add_sub_cancel_left, Preadditive.comp_zsmul, smul_smul, ← mul_pow, neg_one_mul, neg_neg,
-    one_pow, one_smul]
+  -- since `a` is a chain map, `∂(x ⌢ φ)` is the tensor product of `φ` and `∂` on `B`
+  have hd : capChain k D a p (q + 1) (n + 1) (by omega) φ ≫ B'.d (q + 1) q =
+      D.f (n + 1) ≫ tensorCochain (a.f q) φ (B.d (q + 1) q) (n + 1) := by
+    have ha : a.f (q + 1) ≫ B'.d (q + 1) q = (M ◁ B.d (q + 1) q) ≫ a.f q := by simp
+    rw [capChain_apply, Category.assoc, tensorCochain_comp, ha, tensorCochain_whiskerLeft_comp,
+      Category.id_comp]
+  -- the Leibniz rule for the tensor product of `φ` and `𝟙 B_q`, transported along `D`
+  have hL : E.d (n + 1) n ≫ capChain k D a p q n h φ =
+      capChain k D a (p + 1) q (n + 1) (by omega) (A.d (p + 1) p ≫ φ) +
+        ((-1 : ℤ) ^ p) • (D.f (n + 1) ≫ tensorCochain (a.f q) φ (B.d (q + 1) q) (n + 1)) := by
+    rw [capChain_apply, capChain_apply, ← D.comm_assoc, d_comp_tensorCochain, Category.comp_id,
+      Preadditive.comp_add, Preadditive.comp_zsmul]
+  rw [hd, hL, add_sub_cancel_left]
+  simp [smul_smul, ← mul_pow]
 
 /-- **Naturality of the cap product of chains and cochains** along maps of diagonals and actions:
 if chain maps `e : E' ⟶ E`, `f : A' ⟶ A`, `g : B₁ ⟶ B` and `g' : B₁' ⟶ B'` satisfy
@@ -107,12 +114,18 @@ lemma capChain_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} (D' : E' ⟶ A
     (ha : a' ≫ g' = ((tensorLeft M).mapHomologicalComplex _).map g ≫ a) (p q n : ℕ)
     (h : p + q = n) (φ : A.X p ⟶ M) :
     capChain k D' a' p q n h (f.f p ≫ φ) ≫ g'.f q = e.f n ≫ capChain k D a p q n h φ := by
-  have ha' : a'.f q ≫ g'.f q = (M ◁ g.f q) ≫ a.f q := by
-    simpa using congrArg (fun F ↦ F.f q) ha
-  rw [capChain_apply, capChain_apply, Category.assoc, tensorCochain_comp, ha',
-    tensorCochain_whiskerLeft_comp, Category.id_comp, ← Category.comp_id (g.f q),
-    ← tensorHom_f_comp_tensorCochain, ← Category.assoc, ← HomologicalComplex.comp_f, ← hD,
-    HomologicalComplex.comp_f, Category.assoc]
+  -- move `g'` through the action `a'` onto the second factor
+  have hg : tensorCochain (a'.f q) (f.f p ≫ φ) (𝟙 (B₁.X q)) n ≫ g'.f q =
+      tensorCochain (a.f q) (f.f p ≫ φ) (g.f q ≫ 𝟙 (B.X q)) n := by
+    have ha' : a'.f q ≫ g'.f q = (M ◁ g.f q) ≫ a.f q := by
+      simpa using congrArg (fun F ↦ F.f q) ha
+    rw [tensorCochain_comp, ha', tensorCochain_whiskerLeft_comp, Category.id_comp,
+      Category.comp_id]
+  -- then move `f ⊗ g` through the diagonal
+  have hD' : D'.f n ≫ (f ⊗ₘ g).f n = e.f n ≫ D.f n := by
+    simpa using congrArg (fun F ↦ F.f n) hD.symm
+  rw [capChain_apply, capChain_apply, Category.assoc, hg, ← tensorHom_f_comp_tensorCochain,
+    reassoc_of% hD']
 
 end Chain
 
@@ -121,7 +134,7 @@ section Homology
 attribute [local instance] Abelian.hasFiniteBiproducts
 
 variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B B' E : ChainComplex C ℕ}
-  {M : C} {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
+  {M : C} {k : Type*} [Ring k] [Linear k C] [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
   (a : ((tensorLeft M).mapHomologicalComplex _).obj B ⟶ B')
 
 variable (k) in
@@ -207,8 +220,8 @@ private lemma toCycles_capCycles (p q n : ℕ) (h : p + q = n)
       (((-1 : ℤ) ^ p) • capChainHom k D a p (q + 1) (n + 1) (by omega)
         ((A.linearYonedaObj k M).iCycles p φ)) ≫ B'.toCycles (q + 1) q := by
   rw [← cancel_mono (B'.iCycles q), Category.assoc, capCycles_i_capChainHom, toCycles_i_assoc,
-    Category.assoc, toCycles_i, Preadditive.zsmul_comp, capChainHom_comp_d_of_cycles D a p q n h,
-    smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+    Category.assoc, toCycles_i, Preadditive.zsmul_comp, capChainHom_comp_d_of_cycles D a p q n h]
+  simp [smul_smul, ← mul_pow]
 
 /-- The cap product of a cycle and a coboundary is a boundary. -/
 private lemma capCycles_toCycles (i q n : ℕ) (h : i + 1 + q = n)
@@ -222,9 +235,9 @@ private lemma capCycles_toCycles (i q n : ℕ) (h : i + 1 + q = n)
       ((A.linearYonedaObj k M).toCycles i (i + 1) x) = (A.linearYonedaObj k M).d i (i + 1) x :=
     ConcreteCategory.congr_hom ((A.linearYonedaObj k M).toCycles_i i (i + 1)) x
   rw [← cancel_mono (B'.iCycles q), Category.assoc, capCycles_i_capChainHom, toCycles_i, hx,
-    Preadditive.zsmul_comp, Category.assoc, hd, Preadditive.comp_zsmul, Preadditive.comp_sub,
-    iCycles_d_assoc, zero_comp, zero_sub, smul_neg, smul_neg, neg_smul, neg_neg, smul_smul,
-    ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+    Preadditive.zsmul_comp, Category.assoc, hd]
+  -- the term `∂x ⌢ φ` vanishes on cycles, leaving the sign algebra
+  simp [smul_smul, ← mul_pow]
 
 variable (k) in
 /-- Capping with a fixed cocycle, on homology. -/
@@ -277,7 +290,7 @@ private lemma toCycles_comp_capCyclesHomology (p q n : ℕ) (h : p + q = n) :
 variable (k) in
 /-- **The cap product on homology**, `Hᵖ(Hom(A, M)) ⟶ (Hₙ(E) ⟶ H_q(B'))` for `p + q = n`, along
 the diagonal `D : E ⟶ A ⊗ B` and the action `a : M ⊗ B ⟶ B'`: on the classes of a cocycle `φ` and
-a cycle `x`, the class of `x ⌢ φ` (`TauCeti.ChainComplex.homologyπ_cap`). -/
+a cycle `x`, the class of `x ⌢ φ` (`TauCeti.ChainComplex.cap_homologyπ`). -/
 def cap (p q n : ℕ) (h : p + q = n) :
     (A.linearYonedaObj k M).homology p →ₗ[k] (E.homology n ⟶ B'.homology q) :=
   (CokernelCofork.IsColimit.desc' ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl)
@@ -286,7 +299,7 @@ def cap (p q n : ℕ) (h : p + q = n) :
 /-- **The cap product on classes**: capping the class of a cycle with the class of a cocycle `φ`
 is the class of the cap product of the cycle with `φ`. -/
 @[reassoc (attr := simp)]
-lemma homologyπ_cap (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M).cycles p) :
+lemma cap_homologyπ (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M).cycles p) :
     E.homologyπ n ≫ cap k D a p q n h ((A.linearYonedaObj k M).homologyπ p φ) =
       capCycles k D a p q n h φ ≫ B'.homologyπ q := by
   have hfac := ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
@@ -310,8 +323,9 @@ lemma cap_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗
       homologyMap e n ≫ cap k D a p q n h α := by
   obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
   rw [homologyMap_linearYonedaFunctor_map_homologyπ_apply, ← cancel_epi (E'.homologyπ n),
-    homologyπ_cap_assoc, homologyπ_naturality_assoc, homologyπ_cap, homologyπ_naturality,
+    cap_homologyπ_assoc, homologyπ_naturality_assoc, cap_homologyπ, homologyπ_naturality,
     ← Category.assoc, ← Category.assoc]
+  -- both sides are classes of cycles, compared on underlying chains by `capChain_naturality`
   congr 1
   rw [← cancel_mono (B'.iCycles q), Category.assoc, cyclesMap_i, capCycles_i_assoc,
     Category.assoc, capCycles_i, cyclesMap_i_assoc, iCycles_cyclesMap_linearYonedaFunctor_map_apply]
