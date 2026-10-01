@@ -27,9 +27,10 @@ Every closure property proved here follows directly from the definition:
 * inverse images under polynomial maps (`TauCeti.IsSemialgebraic.preimage_eval`), and hence
   under changes of coordinates, in particular coordinate permutations;
 * products, in the form `σ ⊕ τ → R` and in the form `Fin (m + n) → R`;
-* the sections `{x | Fin.cons t x ∈ s}` and `{t | Fin.cons t x ∈ s}` of a subset of
-  `Fin (n + 1) → R`, which are the horizontal and vertical slices of a cylinder over `Fin n → R`
-  with distinguished coordinate `0`.
+* the sections `{x : Fin n → R | Fin.cons t x ∈ s}` and `{y : Fin 1 → R | Fin.cons (y 0) x ∈ s}`
+  of a subset of `Fin (n + 1) → R`, which are the horizontal and vertical slices of a cylinder
+  over `Fin n → R` with distinguished coordinate `0`; the vertical slice is a subset of
+  `Fin 1 → R`, the one-coordinate space of the definition.
 
 ## References
 
