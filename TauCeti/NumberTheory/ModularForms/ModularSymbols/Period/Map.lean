@@ -109,7 +109,6 @@ theorem periodMap_mk (hk : k = w + 2) (f : CuspForm (Γ.map (mapGL ℝ)) k)
   periodFunctional_mk hk f x
 
 /-- On the symbol `{α, β} ⊗ P`, the period map is the period `∫_β^α f(z) P(z, 1) dz`. -/
-@[simp]
 theorem periodMap_symbol (hk : k = w + 2) (f : CuspForm (Γ.map (mapGL ℝ)) k) (α β : OnePoint ℚ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     periodMap R Γ hk f (symbol Γ α β P) = cuspIntegral (periodIntegrand f P) β α := by
