@@ -19,13 +19,10 @@ continuous for the canonical topologies: the subgroup topology on the Lipschitz 
 units of the Clifford algebra, and the subgroup topology on the orthogonal group inside the linear
 automorphism group.
 
-The proof first reads the action pointwise through the Clifford-algebra identity
-
-`ι (x v) = involute x * ι v * x⁻¹`.
-
-Continuity as a family of endomorphisms then follows by taking matrix coefficients in an arbitrary
-basis. Both an automorphism and its inverse are continuous in the parameter, which is exactly the
-forward-and-inverse topology on linear automorphisms.
+Joint continuity holds over a commutative base ring when the quadratic space carries its module
+topology and multiplication in the Clifford algebra is continuous. Over a topological field, the
+representation is continuous when the quadratic space is finite-dimensional and carries its module
+topology.
 
 ## Main results
 
@@ -110,10 +107,12 @@ end Action
 
 section FiniteDimensional
 
-variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [TopologicalSpace V] [IsModuleTopology K V]
   (Q : QuadraticForm K V)
+
+local instance : IsTopologicalRing K := IsTopologicalSemiring.toIsTopologicalRing inferInstance
 
 /-- The underlying endomorphism of the Lipschitz action varies continuously. -/
 @[fun_prop]
