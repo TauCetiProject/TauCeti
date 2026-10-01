@@ -47,7 +47,10 @@ Wedhorn's Lemma 7.47(4) that this file needs.
   a ring of integral elements of `A⟨T/s⟩`. Its three conditions are also available one at a time,
   each under the hypothesis it uses: `isOpen_completedPlusSubring` and
   `isIntegrallyClosedIn_completedPlusSubring` under the ideal-of-definition hypothesis alone, and
-  `completedPlusSubring_le_powerBoundedSubring` under power-boundedness alone.
+  `completedPlusSubring_le_powerBoundedSubring` under power-boundedness alone, the last also
+  elementwise as `isPowerBounded_of_mem_completedPlusSubring`.
+* `TauCeti.Huber.PairOfDefinition.completionLocalization_ringOfDefinition_le_completedPlusSubring`:
+  `A_U⁺` contains the ring of definition of `A⟨T/s⟩` when `A⁺` contains that of `A`.
 * `TauCeti.Huber.PairOfDefinition.coeRingHom_mem_completedPlusSubring`: the completion map
   carries `C` into `A_U⁺`, making it a morphism of pairs `(A(T/s), C) → (A⟨T/s⟩, A_U⁺)`.
 * `TauCeti.Huber.PairOfDefinition.toCompletionLoc_mem_completedPlusSubring` and
@@ -239,6 +242,36 @@ theorem divBy_mem_completedPlusSubring (P : PairOfDefinition A) (Aplus : Subring
   -- `t/s` already lies in `A⁺[T/s] ⊆ C`, and the image of `C` lies in its closure
   rw [mem_completedPlusSubring_iff]
   exact subset_closure ⟨_, algebraMap_mem _ ⟨_, Algebra.subset_adjoin ⟨⟨t, ht⟩, rfl⟩⟩, rfl⟩
+
+/-- **`A_U⁺` contains the ring of definition of `A⟨T/s⟩`** when `A⁺` contains the ring of definition
+`A₀` of `A`. The ring of definition of `A⟨T/s⟩` is the closure of the image of `A₀[T/s]`, and
+`A₀[T/s] ⊆ A⁺[T/s]`. This is the hypothesis under which `(A⟨T/s⟩, A_U⁺)` and its pair of
+definition `completionLocalization P T s S hden` carry the rational localisations and the
+structure presheaf of `Spa(A⟨T/s⟩, A_U⁺)`. -/
+theorem completionLocalization_ringOfDefinition_le_completedPlusSubring (P : PairOfDefinition A)
+    (Aplus : Subring A) (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
+    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (completionLocalization P T s S hden).ringOfDefinition ≤
+      completedPlusSubring P Aplus T s S hden := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have hle : locSubring P T s S ≤ (completedPlusSubring P Aplus T s S hden).comap
+      UniformSpace.Completion.coeRingHom := by
+    refine (locSubring_le_iff P T s S).mpr
+      ⟨fun a ha ↦ ?_, fun t ht ↦ divBy_mem_completedPlusSubring P Aplus T s S hden ht⟩
+    rw [Subring.mem_comap, UniformSpace.Completion.coe_coeRingHom,
+      ← toCompletionLoc_apply P T s S hden]
+    exact toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden (hP ha)
+  intro x hx
+  rw [completionLocalization_ringOfDefinition, ← SetLike.mem_coe, coe_completionRingOfDefinition,
+    localizationUniform_ringOfDefinition] at hx
+  refine closure_minimal ?_ (isClosed_completedPlusSubring P Aplus T s S hden) hx
+  rintro _ ⟨y, hy, rfl⟩
+  exact hle hy
 
 /-- **When every element of `A⁺` is power-bounded, so is every element of `A⁺[T/s]`**, inside `Aₛ`
 and before any completion. This is the pre-completion half of the power-boundedness of `A_U⁺` in
@@ -502,6 +535,24 @@ theorem completedPlusSubring_le_powerBoundedSubring (P : PairOfDefinition A) (Ap
   have _ := isHuberRing_locUniformSpace P T s S hden
   exact topologicalClosure_map_coeRingHom_le_powerBoundedSubring
     (integralClosure_adjoin_plus_le_powerBoundedSubring P Aplus hAplus T s S hden)
+
+/-- **Every element of `A_U⁺` is power-bounded in `A⟨T/s⟩`** as soon as every element of `A⁺` is
+power-bounded in `A`. This is `completedPlusSubring_le_powerBoundedSubring` read elementwise,
+which is the shape `∀ ⦃a⦄, a ∈ A⁺ → IsPowerBounded a` of the power-boundedness hypothesis on a
+plus ring. -/
+theorem isPowerBounded_of_mem_completedPlusSubring (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A) (S : Type*) [CommRing S]
+    [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ ⦃b⦄, b ∈ completedPlusSubring P Aplus T s S hden → IsPowerBounded b := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  exact fun _ hb ↦ mem_powerBoundedSubring.mp
+    (completedPlusSubring_le_powerBoundedSubring P Aplus hAplus T s S hden hb)
 
 /-- **`A_U⁺` is open in `A⟨T/s⟩`** as soon as `A⁺` contains the image of the ideal of definition.
 This is the openness condition of `isRingOfIntegralElements_completedPlusSubring`, available here

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
-public import TauCeti.NumberTheory.LocalField.RootsOfUnity
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity.Basic
+public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 
 /-!
 # Torsion in the p-adic completion of a multiplicative group
@@ -35,6 +36,10 @@ as a `ℤ_p`-module is the torsion of the underlying multiplicative group: being
 * `TauCeti.natCard_torsion_padicCompletionUnits`: the torsion of `A(L)` has order `q(L)`.
 * `TauCeti.mem_torsion_padicCompletionUnits_iff`: the `ℤ_p`-torsion submodule of `A(L)` is the
   additive form of its group torsion.
+* `TauCeti.mem_pPowerTorsion_padicCompletionUnits_iff`,
+  `TauCeti.natCard_pPowerTorsion_padicCompletionUnits`: the `p`-power torsion submodule of `A(L)`,
+  over any ring acting on it (such as `ℤ_p[Gal(L/K)]`), is the additive form of its group torsion,
+  of order `q(L)`.
 
 ## References
 
@@ -188,5 +193,34 @@ theorem mem_torsion_padicCompletionUnits_iff (x : Additive ↑(padicCompletionUn
     rw [Submonoid.smul_def, padicCompletionUnits_natCast_smul]
     apply Additive.toMul.injective
     rw [toMul_nsmul, hxn, toMul_zero]
+
+/-- The `p`-power torsion of `A(L)`, as a submodule over any ring acting on it, is the additive
+form of its group torsion: every element of finite order has `p`-power order. -/
+theorem mem_pPowerTorsion_padicCompletionUnits_iff {A : Type*} [Semiring A]
+    [Module A (Additive ↑(padicCompletionUnits p L))] (x : Additive ↑(padicCompletionUnits p L)) :
+    x ∈ pPowerTorsion p A (Additive ↑(padicCompletionUnits p L)) ↔
+      x.toMul ∈ CommGroup.torsion ↑(padicCompletionUnits p L) := by
+  have hp : p.Prime := Fact.out
+  rw [mem_pPowerTorsion_iff]
+  constructor
+  · rintro ⟨k, hk⟩
+    refine isOfFinOrder_iff_pow_eq_one.mpr ⟨p ^ k, pow_pos hp.pos k, ?_⟩
+    rw [← toMul_nsmul, hk, toMul_zero]
+  · intro hx
+    rw [torsion_padicCompletionUnits] at hx
+    obtain ⟨ζ, hζ, hζx⟩ := hx
+    obtain ⟨k, hk⟩ := (mem_pPowerRootsOfUnity_iff p L ζ).mp hζ
+    refine ⟨k, Additive.toMul.injective ?_⟩
+    rw [toMul_nsmul, ← hζx, ← map_pow, hk, map_one, toMul_zero]
+
+/-- When `L` has only finitely many `p`-power roots of unity, the `p`-power torsion of `A(L)`, as a
+submodule over any ring acting on it, has order `q(L)`. -/
+theorem natCard_pPowerTorsion_padicCompletionUnits (A : Type*) [Semiring A]
+    [Module A (Additive ↑(padicCompletionUnits p L))] (h : Finite (pPowerRootsOfUnity p L)) :
+    Nat.card (pPowerTorsion p A (Additive ↑(padicCompletionUnits p L))) =
+      localRootOfUnityOrder p L h := by
+  rw [← natCard_torsion_padicCompletionUnits p L h]
+  exact Nat.card_congr (Additive.toMul.subtypeEquiv
+    (mem_pPowerTorsion_padicCompletionUnits_iff p L))
 
 end TauCeti

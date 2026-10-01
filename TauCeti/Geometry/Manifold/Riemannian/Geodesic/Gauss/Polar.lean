@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.EDistComparison
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
@@ -19,7 +20,8 @@ the speed of its image under the exponential map.  Integrating this estimate sho
 inside a normal neighbourhood has length at least the absolute change in the norm of its logarithm.
 
 The comparison needs no nonvanishing hypothesis, so it also covers curves passing through the
-centre of the normal neighbourhood.
+centre of the normal neighbourhood.  Corner smoothing extends it from `C¹` curves to piecewise
+`C¹` curves, between any two ordered parameters of such a curve.
 
 ## Main results
 
@@ -27,6 +29,8 @@ centre of the normal neighbourhood.
   differential estimate.
 * `IsNormalDomain.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength`: the polar
   length comparison for a `C¹` curve in a normal neighbourhood.
+* `IsNormalDomain.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength_of_piecewise`:
+  the same comparison for a piecewise `C¹` curve, between any two ordered parameters.
 
 ## References
 
@@ -55,7 +59,7 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
+  [T2Space M]
 
 /-- **The pointwise polar inequality.** The radial component of a tangent vector at `v` is no
 larger than the norm of its image under the differential of the Riemannian exponential map. -/
@@ -256,6 +260,42 @@ theorem IsNormalDomain.ofReal_norm_riemannianLog_le_pathELength
       Manifold.pathELength I γ a b := by
   simpa only [hγa, h.riemannianLog_self, norm_zero, sub_zero, abs_norm] using
     h.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength hab hγ hγU
+
+namespace IsNormalDomain
+
+variable {p : M} {U : Set (TangentSpace I p)} {γ : ℝ → M} {a b : ℝ}
+
+/-- **Polar length comparison for broken curves.** Along a piecewise `C¹` curve contained in the
+image of a normal domain, the absolute change in the norm of its Riemannian logarithm between two
+ordered parameters is at most the length of the curve between them. -/
+theorem ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength_of_piecewise
+    (h : IsNormalDomain I M p U) (hγ : IsPiecewiseContMDiffOn I 1 γ a b)
+    (hγU : MapsTo γ (Icc a b) (riemannianExp I M p '' U)) {s t : ℝ}
+    (has : a ≤ s) (hst : s ≤ t) (htb : t ≤ b) :
+    ENNReal.ofReal
+        |‖riemannianLog I M p U (γ t)‖ - ‖riemannianLog I M p U (γ s)‖| ≤
+      Manifold.pathELength I γ s t := by
+  rcases hst.eq_or_lt with rfl | hst
+  · simp
+  obtain ⟨η, hη, hη0, hη1, hlen, hηU⟩ :=
+    (hγ.mono has hst htb).exists_contMDiff_pathELength_eq_of_mapsTo
+      (hγU.mono_left (Icc_subset_Icc has htb))
+  rw [← hlen, ← hη0, ← hη1]
+  exact h.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength zero_le_one
+    hη.contMDiffOn hηU
+
+/-- Along a piecewise `C¹` curve starting at the centre `p` of a normal neighbourhood, the length
+travelled up to any parameter `t` is at least the norm of `log_p (γ t)`. -/
+theorem ofReal_norm_riemannianLog_le_pathELength_of_piecewise
+    (h : IsNormalDomain I M p U) (hγ : IsPiecewiseContMDiffOn I 1 γ a b)
+    (hγU : MapsTo γ (Icc a b) (riemannianExp I M p '' U)) (hγa : γ a = p) {t : ℝ}
+    (ht : t ∈ Icc a b) :
+    ENNReal.ofReal ‖riemannianLog I M p U (γ t)‖ ≤ Manifold.pathELength I γ a t := by
+  simpa only [hγa, h.riemannianLog_self, norm_zero, sub_zero, abs_norm] using
+    h.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength_of_piecewise hγ hγU
+      le_rfl ht.1 ht.2
+
+end IsNormalDomain
 
 end TauCeti.Manifold
 

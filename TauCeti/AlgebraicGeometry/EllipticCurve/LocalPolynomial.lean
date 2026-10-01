@@ -24,7 +24,8 @@ local polynomial is `1 − a T + q T²` at good reduction and `1 − a T` otherw
 ## Main results
 
 * `WeierstrassCurve.reduction_Δ_eq_zero_iff`,
-  `WeierstrassCurve.HasMultiplicativeReduction.reduction_c₄_ne_zero` and
+  `WeierstrassCurve.HasMultiplicativeReduction.reduction_c₄_ne_zero`,
+  `WeierstrassCurve.HasMultiplicativeReduction.reduction_c₆_ne_zero` and
   `WeierstrassCurve.HasAdditiveReduction.reduction_c₄_eq_zero`: the reduction types read on the
   invariants of the reduced model.
 * `WeierstrassCurve.HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff`: a
@@ -72,6 +73,17 @@ theorem HasMultiplicativeReduction.reduction_c₄_ne_zero (h : W.HasMultiplicati
   rw [reduction, map_c₄, Ne, residue_eq_zero_iff_valuation_lt_one R (K := K),
     integralModel_c₄_eq R W, h.multiplicativeReduction]
   exact lt_irrefl 1
+
+/-- **A multiplicative reduction has `c₆ ≠ 0`.** By `1728 Δ = c₄³ - c₆²` on the reduced model, the
+vanishing of `Δ` and the nonvanishing of `c₄` there force that of `c₆`. -/
+theorem HasMultiplicativeReduction.reduction_c₆_ne_zero (h : W.HasMultiplicativeReduction R) :
+    (W.reduction R).c₆ ≠ 0 := by
+  have hΔ : (W.reduction R).Δ = 0 := (reduction_Δ_eq_zero_iff R).mpr h.not_hasGoodReduction
+  intro hc₆
+  have hrel := (W.reduction R).c_relation
+  rw [hΔ, hc₆] at hrel
+  exact h.reduction_c₄_ne_zero R (pow_eq_zero_iff (n := 3) (by norm_num) |>.mp
+    (by linear_combination -hrel))
 
 /-- **An additive reduction has `c₄ = 0`**: its singular point is a cusp. -/
 theorem HasAdditiveReduction.reduction_c₄_eq_zero (h : W.HasAdditiveReduction R) :

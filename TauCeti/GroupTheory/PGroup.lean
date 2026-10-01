@@ -29,6 +29,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 ## Main results
 
+* `IsPGroup.exists_pow_pow_eq_one_map`: every element in the image of a `p`-group under a monoid
+  homomorphism has `p`-power order.
 * `IsPGroup.prod`: a product of two `p`-groups is a `p`-group.
 * `IsPGroup.pi`: a finite product of `p`-groups is a `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
@@ -52,6 +54,13 @@ public section
 namespace TauCeti
 
 variable {p : ℕ} {G : Type*} [Group G] {H : Type*} [Group H]
+
+/-- **Every element in the image of a `p`-group under a monoid homomorphism has `p`-power order.**
+A homomorphism preserves powers and `1`, so `IsPGroup.exists_pow_pow_eq_one` transports along it;
+this is what supplies the power-order hypothesis of a representation of a `p`-group. -/
+theorem _root_.IsPGroup.exists_pow_pow_eq_one_map {M : Type*} [Monoid M] (hG : IsPGroup p G)
+    (f : G →* M) (g : G) : ∃ n : ℕ, f g ^ p ^ n = 1 :=
+  (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
 
 /-- A product of two `p`-groups is a `p`-group. -/
 theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :

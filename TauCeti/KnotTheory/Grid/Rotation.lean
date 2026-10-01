@@ -106,13 +106,6 @@ theorem rotate_apply (x : GridState n) (c : Fin n) :
     x.rotate c = (x (Fin.rev c)).rev := by
   simp [rotate]
 
-/-- In the rotated state, the occupied grid point in row `r` lies in the reversed column of the
-occupied grid point in row `r.rev` of the original state. -/
-theorem columnOfRow_rotate (x : GridState n) (r : Fin n) :
-    x.rotate.columnOfRow r = (x.columnOfRow r.rev).rev := by
-  apply x.rotate.toPerm.injective
-  simp [GridState.rotate_apply, Fin.rev_rev]
-
 /-- A grid point lies in the rotated state exactly when its coordinate reversal lies in the
 original state. -/
 theorem mem_pointSet_rotate (x : GridState n) (p : Fin n × Fin n) :
@@ -198,20 +191,6 @@ theorem rotate_O : G.rotate.O = G.O.rotate :=
 @[simp]
 theorem rotate_X : G.rotate.X = G.X.rotate :=
   rfl
-
-/-- In the rotated diagram, the `O` marking in row `r` lies in the reversed column of the
-original `O` marking in row `r.rev`. -/
-@[simp]
-theorem OColumnOfRow_rotate (r : Fin n) :
-    OColumnOfRow G.rotate r = (OColumnOfRow G r.rev).rev :=
-  GridState.columnOfRow_rotate G.O r
-
-/-- In the rotated diagram, the `X` marking in row `r` lies in the reversed column of the
-original `X` marking in row `r.rev`. -/
-@[simp]
-theorem XColumnOfRow_rotate (r : Fin n) :
-    XColumnOfRow G.rotate r = (XColumnOfRow G r.rev).rev :=
-  GridState.columnOfRow_rotate G.X r
 
 /-- The `O`-markings of the rotated diagram are the coordinate reversal of the original
 `O`-markings. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Basic
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
@@ -41,6 +42,11 @@ modulo `I_G M`. In degrees at most `-2` the same identity is corestriction after
 homology, `TauCeti.groupHomology.transfer_comp_map_subtype_id`, with corestriction taken from
 `TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction`.
 
+With trivial integral coefficients, the restriction of `Rep.trivial ℤ G ℤ` to `H` is the trivial
+representation of `H`, and the identity of `ℤ` is a compatible pair between the two; the resulting
+comparison `trivialResIso` reads the order of degree-zero and the vanishing of degree-one Tate
+cohomology of `Rep.trivial ℤ H ℤ` on the restricted representation.
+
 ## Main definitions
 
 * `TauCeti.TateCohomology.H0Res`, `TauCeti.TateCohomology.H0Cor`: restriction and corestriction
@@ -49,6 +55,11 @@ homology, `TauCeti.groupHomology.transfer_comp_map_subtype_id`, with corestricti
   corestriction in degree `-1`.
 * `TauCeti.TateCohomology.negSuccRes`: restriction in degree `-(n+1)` for `n > 0`.
 * `TauCeti.TateCohomology.HNegTwoRes`: the degree-`-2` specialization.
+* `TauCeti.TateCohomology.trivialResIso`: Tate cohomology of the trivial integral representation
+  of a subgroup, as Tate cohomology of the restricted trivial representation.
+* `TauCeti.TateCohomology.resTrivialTateHZeroOne`: the class of `1` in degree-zero Tate
+  cohomology of the restricted trivial integral representation; it generates, and is killed by
+  the order of the subgroup.
 
 ## Main results
 
@@ -66,6 +77,10 @@ homology, `TauCeti.groupHomology.transfer_comp_map_subtype_id`, with corestricti
   `TauCeti.TateCohomology.HNegOneRes_comp_HNegOneCor` and
   `TauCeti.TateCohomology.negSuccRes_comp_negSuccCor`: corestriction after restriction is
   multiplication by the index.
+* `TauCeti.TateCohomology.natCard_tateCohomology_zero_res_trivial_int_eq_card`,
+  `TauCeti.TateCohomology.isZero_tateCohomology_one_res_trivial_int`: degree-zero Tate cohomology
+  of the restricted trivial integral representation has the order of the subgroup, and its
+  degree-one Tate cohomology vanishes.
 
 ## References
 
@@ -117,6 +132,10 @@ group homology, this is the homological transfer. -/
 def HNegTwoRes :
     tateCohomology M (-2) ⟶ tateCohomology (Rep.res H.subtype M) (-2) :=
   negSuccRes M H 1
+
+/-- Degree-`-2` restriction is the degree-one instance of negative restriction. -/
+theorem HNegTwoRes_eq_negSuccRes : HNegTwoRes M H = negSuccRes M H 1 :=
+  (rfl)
 
 /-- Restriction in Tate degree `-2` is the transfer in first group homology, transported through
 Mathlib's negative-degree comparison `TateCohomology.isoGroupHomology`. -/
@@ -296,6 +315,115 @@ theorem HNegOneRes_comp_HNegOneCor :
   ext x
   simpa using HNegOneCor_comp_HNegOneRes_apply M H x
 
+/-- **Tate restriction in degree `-1` is natural in the coefficient representation.** -/
+@[reassoc]
+theorem HNegOneRes_natural {N : Rep R G} (f : M ⟶ N) :
+    (tateCohomologyFunctor (-1)).map f ≫ HNegOneRes N H =
+      HNegOneRes M H ≫ (tateCohomologyFunctor (-1)).map ((Rep.resFunctor H.subtype).map f) := by
+  let g := (Rep.resFunctor H.subtype).map f
+  let hφ : M.ρ.IsIntertwiningMap
+      (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) f.hom.toLinearMap :=
+    ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  let hφH : (Rep.res H.subtype M).ρ.IsIntertwiningMap
+      ((Rep.res H.subtype N).ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H))
+      g.hom.toLinearMap := ⟨fun x v ↦ Rep.hom_comm_apply g x v⟩
+  -- Along the identity of the group, the Tate map of a compatible pair is coefficient
+  -- functoriality (`map_refl`), so `HNegOneπ_comp_map` computes both coefficient maps.
+  have hmap : HNegOneπ M ≫ (tateCohomologyFunctor (-1)).map f =
+      ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N :=
+    (map_refl hφ (-1)).symm ▸ HNegOneπ_comp_map hφ
+  have hmapH : HNegOneπ (Rep.res H.subtype M) ≫ (tateCohomologyFunctor (-1)).map g =
+      ModuleCat.ofHom (mapKerNorm hφH) ≫ HNegOneπ (Rep.res H.subtype N) :=
+    (map_refl hφH (-1)).symm ▸ HNegOneπ_comp_map hφH
+  -- The relative transfer commutes with the coefficient map on norm kernels.
+  have htransfer : ModuleCat.ofHom (mapKerNorm hφ) ≫
+        ModuleCat.ofHom (Representation.relTransferKerNorm N.ρ H) =
+      ModuleCat.ofHom (Representation.relTransferKerNorm M.ρ H) ≫
+        ModuleCat.ofHom (mapKerNorm hφH) := by
+    ext x
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
+    rw [Representation.coe_relTransferKerNorm, mapKerNorm_apply_coe,
+      mapKerNorm_apply_coe, Representation.coe_relTransferKerNorm,
+      Representation.relTransfer_apply, Representation.relTransfer_apply, map_sum]
+    exact Finset.sum_congr rfl fun q _ ↦ (Rep.hom_comm_apply f q.out⁻¹ x).symm
+  rw [← cancel_epi (HNegOneπ M), reassoc_of% hmap, HNegOneπ_comp_HNegOneRes,
+    HNegOneπ_comp_HNegOneRes_assoc, reassoc_of% htransfer, hmapH]
+
 end NegOne
+
+section TrivialInt
+
+variable {G : Type} [Group G] [Finite G]
+
+omit [Finite G] in
+/-- The identity of `ℤ` intertwines the trivial representation of a subgroup `S` of `G` with the
+restriction to `S` of the trivial representation of `G`. -/
+theorem isIntertwiningMap_trivial_res (S : Subgroup G) :
+    (Rep.trivial ℤ S ℤ).ρ.IsIntertwiningMap
+      ((Rep.res S.subtype (Rep.trivial ℤ G ℤ)).ρ.comp ((MulEquiv.refl S : S ≃* S) : S →* S))
+      (LinearEquiv.refl ℤ ℤ) :=
+  ⟨fun _ _ ↦ rfl⟩
+
+/-- Tate cohomology of the trivial integral representation of a subgroup `S` of `G`, identified
+with Tate cohomology of the restriction to `S` of the trivial integral representation of `G`. -/
+def trivialResIso (S : Subgroup G) (n : ℤ) :
+    tateCohomology (Rep.trivial ℤ S ℤ) n ≅
+      tateCohomology (Rep.res S.subtype (Rep.trivial ℤ G ℤ)) n :=
+  mapIso (e := MulEquiv.refl S) (e' := LinearEquiv.refl ℤ ℤ) (isIntertwiningMap_trivial_res S) n
+
+/-- The comparison `trivialResIso` is the Tate map attached to the compatible pair
+`isIntertwiningMap_trivial_res`. -/
+@[simp]
+theorem trivialResIso_hom (S : Subgroup G) (n : ℤ) :
+    (trivialResIso S n).hom =
+      map (e := MulEquiv.refl S) (isIntertwiningMap_trivial_res S) n := by
+  rw [trivialResIso, mapIso_hom]
+
+/-- The class of `1 ∈ ℤ` in degree-zero Tate cohomology of the restriction to `S` of the trivial
+integral representation of `G`. -/
+def resTrivialTateHZeroOne (S : Subgroup G) :
+    tateCohomology (Rep.res S.subtype (Rep.trivial ℤ G ℤ)) 0 :=
+  H0π _ ⟨1, fun _ ↦ rfl⟩
+
+/-- The class of `1` is the degree-zero projection of the invariant `1`. -/
+theorem resTrivialTateHZeroOne_def (S : Subgroup G) :
+    resTrivialTateHZeroOne S = H0π _ ⟨1, fun _ ↦ rfl⟩ :=
+  (rfl)
+
+/-- Every degree-zero class of the restricted trivial integral representation is an integer
+multiple of the class of `1`. -/
+theorem exists_zsmul_resTrivialTateHZeroOne_eq (S : Subgroup G)
+    (x : tateCohomology (Rep.res S.subtype (Rep.trivial ℤ G ℤ)) 0) :
+    ∃ n : ℤ, n • resTrivialTateHZeroOne S = x := by
+  induction x using H0_induction_on with
+  | h y =>
+    refine ⟨(y : ℤ), ?_⟩
+    rw [resTrivialTateHZeroOne_def, ← map_zsmul]
+    congr 1
+    exact Subtype.ext (by simp)
+
+/-- The order of the subgroup kills the class of `1`. -/
+theorem natCard_zsmul_resTrivialTateHZeroOne (S : Subgroup G) :
+    (Nat.card S : ℤ) • resTrivialTateHZeroOne S = 0 := by
+  rw [resTrivialTateHZeroOne_def, ← map_zsmul]
+  refine (H0π_eq_zero_iff _).2 ⟨1, ?_⟩
+  simp [Representation.norm, Nat.card_eq_fintype_card]
+
+/-- Degree-zero Tate cohomology of the restricted trivial integral representation has the order
+of the subgroup. -/
+theorem natCard_tateCohomology_zero_res_trivial_int_eq_card (S : Subgroup G) :
+    Nat.card (tateCohomology (Rep.res S.subtype (Rep.trivial ℤ G ℤ)) 0) = Nat.card S :=
+  (Nat.card_congr (trivialResIso S 0).toLinearEquiv.toEquiv).symm.trans
+    (natCard_tateCohomology_zero_trivial_int_eq_card S)
+
+/-- Degree-one Tate cohomology of the restricted trivial integral representation vanishes: it is
+`H¹(S, ℤ) = Hom(S, ℤ) = 0`. -/
+theorem isZero_tateCohomology_one_res_trivial_int (S : Subgroup G) :
+    Limits.IsZero (tateCohomology (Rep.res S.subtype (Rep.trivial ℤ G ℤ)) 1) :=
+  ((TauCeti.groupCohomology.isZero_H1_of_isTrivial (Rep.trivial ℤ S ℤ)).of_iso
+    ((TateCohomology.isoGroupCohomology 1).app (Rep.trivial ℤ S ℤ))).of_iso
+      (trivialResIso S 1).symm
+
+end TrivialInt
 
 end TauCeti.TateCohomology

@@ -394,6 +394,30 @@ theorem explicitCoeff0_eq_explicitMap0 {N : Type*} [AddCommGroup N] [DistribMulA
       explicitMap0 G M (MonoidHom.id G) f.toAddMonoidHom (fun g m => f.map_smul g m) :=
   (rfl)
 
+/-- The identity coefficient map induces the identity on degree-zero cohomology. -/
+@[simp]
+theorem explicitCoeff0_id : explicitCoeff0 G M (DistribMulActionHom.id G) = AddMonoidHom.id _ :=
+  AddMonoidHom.ext fun m => Subtype.ext (coe_explicitCoeff0 G M _ m)
+
+/-- Coefficient maps on degree-zero cohomology respect composition. -/
+theorem explicitCoeff0_comp {N : Type*} [AddCommGroup N] [DistribMulAction G N]
+    {P : Type*} [AddCommGroup P] [DistribMulAction G P] (f : M →+[G] N) (q : N →+[G] P) :
+    explicitCoeff0 G M (q.comp f) = (explicitCoeff0 G N q).comp (explicitCoeff0 G M f) :=
+  AddMonoidHom.ext fun _ => Subtype.ext (rfl)
+
+/-- A bijective equivariant homomorphism of coefficients induces a bijection on degree-zero
+cohomology: an invariant element of `N` comes from a unique element of `M`, which is invariant
+because `f` is injective and equivariant. -/
+theorem explicitCoeff0_bijective {N : Type*} [AddCommGroup N] [DistribMulAction G N]
+    {f : M →+[G] N} (hf : Function.Bijective f) : Function.Bijective (explicitCoeff0 G M f) := by
+  refine ⟨fun x y h => Subtype.ext (hf.1 ?_), fun y => ?_⟩
+  · simpa only [coe_explicitCoeff0] using congrArg Subtype.val h
+  · obtain ⟨m, hm⟩ := hf.2 (y : N)
+    refine ⟨⟨m, (FixedPoints.mem_addSubgroup G M m).2 fun g => hf.1 ?_⟩, Subtype.ext ?_⟩
+    · rw [map_smul f, hm]
+      exact (FixedPoints.mem_addSubgroup G N (y : N)).1 y.2 g
+    · simpa only [coe_explicitCoeff0] using hm
+
 end CompatiblePairDegreeZero
 
 section RestrictionDegreeZero
@@ -685,6 +709,15 @@ omit hcont in
 theorem H1pi_eq_iff {f f' : Z1 G M} :
     (f : H1 G M) = (f' : H1 G M) ↔ (f : G → M) - f' ∈ B1 G M := by
   rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
+
+/-- **`H¹` inherits the exponent of its coefficients.** If `n` kills the coefficient module `M`,
+then it kills every class in `H¹(G, M)`: a continuous `1`-cocycle with values in `M` is killed
+pointwise, hence so is its class. -/
+theorem nsmul_H1_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H1 G M) : n • x = 0 := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    have hc : n • c = 0 := Subtype.ext (funext fun _ ↦ by simp [h])
+    rw [← QuotientAddGroup.mk_nsmul, hc, QuotientAddGroup.mk_zero]
 
 end CohomologyDegree1
 

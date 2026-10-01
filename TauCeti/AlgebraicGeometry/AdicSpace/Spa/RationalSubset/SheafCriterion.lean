@@ -85,8 +85,7 @@ topology `Functor.restrictedTopology` on the rational opens. -/
 instance [IsHuberRing A] : (rationalOpensFunctor Aplus).IsCoverDense
     (Opens.grothendieckTopology ↥(spa Aplus)) :=
   -- the rational opens form a basis of the topology of `Spa(A, A⁺)`
-  TopCat.Opens.coverDense_inducedFunctor (X := TopCat.of ↥(spa Aplus))
-    (Subtype.range_coe ▸ isBasis_spaRationalOpens Aplus)
+  coverDense_inducedFunctor_subtypeVal (isBasis_spaRationalOpens Aplus)
 
 end
 

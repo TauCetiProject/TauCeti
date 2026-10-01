@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.GeomSum
+public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Separation.Basic
 
@@ -43,9 +44,13 @@ character `χ`.
 
 ## Main results
 
+* `TauCeti.IsCrossedHom.ringHom_comp`: composing with a semiring homomorphism `φ` gives a crossed
+  homomorphism for `Units.map φ ∘ χ`.
 * `TauCeti.IsCrossedHom.map_pow`: `F (x ^ k) = (1 + χ x + ⋯ + χ x ^ (k - 1)) * F x`.
 * `TauCeti.IsCrossedHom.map_list_prod_of_forall_eq_one`: on a product of elements on which `χ` is
   trivial, `F` is additive.
+* `TauCeti.IsCrossedHom.map_commutatorElement`: for a commutative `R`,
+  `F ⁅x, y⁆ = (χ x - 1) * F y - (χ y - 1) * F x`.
 * `TauCeti.IsCrossedHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`: two continuous crossed
   homomorphisms agreeing on a topological generating set are equal.
 
@@ -96,6 +101,14 @@ theorem comp {H' : Type*} [Group H'] {F'' : Type*} [FunLike F'' H' H] [MonoidHom
     Function.comp_apply]
 
 end IsCrossedHom
+
+/-- The composite of a crossed homomorphism for a character `χ : H →* Rˣ` with a semiring
+homomorphism `φ : R →+* S` is a crossed homomorphism for the character `Units.map φ ∘ χ`. -/
+theorem IsCrossedHom.ringHom_comp {S : Type*} [Semiring S] {χ : H →* Rˣ} {F : H → R}
+    (hF : IsCrossedHom χ F) (φ : R →+* S) :
+    IsCrossedHom ((Units.map (φ : R →* S)).comp χ) (φ ∘ F) := fun x y ↦ by
+  rw [Function.comp_apply, hF.map_mul x y, map_add, _root_.map_mul, MonoidHom.comp_apply,
+    Units.coe_map, MonoidHom.coe_ofClass, Function.comp_apply, Function.comp_apply]
 
 end Semiring
 
@@ -179,5 +192,26 @@ end Topology
 end IsCrossedHom
 
 end Ring
+
+section CommRing
+
+open scoped commutatorElement
+
+variable [CommRing R] {F' : Type*} [FunLike F' H Rˣ] [MonoidHomClass F' H Rˣ] {χ : F'} {F : H → R}
+
+/-- The value of a crossed homomorphism on the commutator `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹`, read off
+`F (⁅x, y⁆ * (y * x)) = F (x * y)`; the character kills the commutator because `Rˣ` is
+commutative. -/
+theorem IsCrossedHom.map_commutatorElement (hF : IsCrossedHom χ F) (x y : H) :
+    F ⁅x, y⁆ = ((χ x : R) - 1) * F y - ((χ y : R) - 1) * F x := by
+  have h : ⁅x, y⁆ * (y * x) = x * y := by
+    rw [commutatorElement_def]
+    group
+  have h1 := hF.map_mul ⁅x, y⁆ (y * x)
+  rw [h, hF.map_mul x y, hF.map_mul y x, _root_.map_commutatorElement,
+    commutatorElement_eq_one_iff_mul_comm.2 (mul_comm (χ x) (χ y)), Units.val_one, one_mul] at h1
+  linear_combination -h1
+
+end CommRing
 
 end TauCeti

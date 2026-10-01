@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
-public import TauCeti.NumberTheory.LocalField.RootsOfUnity
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity.Basic
 
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 

@@ -5,8 +5,10 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Index
 
 /-!
 # Evaluating the decomposition of a group into cosets and a subgroup
@@ -34,7 +36,9 @@ isomorphism of groups, and under translation:
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`.
 
-All of these have additive versions.
+All of these have additive versions. Finally, `Subgroup.sum_out_smul_eq_relIndex_nsmul` sums an
+orbit map along a tower: for `K ≤ H` and an element `m` of an additive `G`-module fixed by `H`, the
+sum of `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
 -/
 
 public section
@@ -96,6 +100,29 @@ theorem mk_out_mul_out_bijective {G : Type*} [Group G] {H K : Subgroup G} (hKH :
   convert (quotientEquivProdOfLE hKH).symm.bijective with ⟨p, k⟩
   -- The inverse of `quotientEquivProdOfLE` sends `(p, ⟦k.out⟧)` to `⟦p.out * k.out⟧`.
   conv_rhs => rw [quotientEquivProdOfLE_symm_apply, ← QuotientGroup.out_eq' k, Quotient.map'_mk'']
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex in
+/-- **Summing an `H`-invariant orbit map along a tower.** For subgroups `K ≤ H` of finite index in
+`G` and an element `m` of an additive commutative monoid with distributive `G`-action that is fixed
+by `H`, the sum of `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of
+`H`: each coset of `H` is the union of `[H : K]` cosets of `K`, and `q.out • m` depends only on the
+coset of `H` containing `q.out`. -/
+theorem sum_out_smul_eq_relIndex_nsmul {G : Type*} [Group G] {H K : Subgroup G} [K.FiniteIndex]
+    [H.FiniteIndex] (hKH : K ≤ H) {M : Type*} [AddCommMonoid M] [DistribMulAction G M] {m : M}
+    (hm : ∀ h ∈ H, h • m = m) :
+    ∑ q : G ⧸ K, q.out • m = K.relIndex H • ∑ q : G ⧸ H, q.out • m := by
+  classical
+  -- Re-index the sum over `G ⧸ K` by the tower transversal `(p, k) ↦ p.out * k.out`.
+  rw [← (mk_out_mul_out_bijective hKH).sum_comp (fun q : G ⧸ K ↦ q.out • m), Fintype.sum_prod_type]
+  -- Each summand equals `p.out • m`, since `k.out ∈ H` and the representative of the coset of
+  -- `p.out * k.out` differs from it by an element of `K ≤ H`.
+  have key : ∀ (p : G ⧸ H) (k : H ⧸ K.subgroupOf H),
+      ((p.out * (k.out : G) : G) : G ⧸ K).out • m = p.out • m := by
+    intro p k
+    obtain ⟨z, hz⟩ := QuotientGroup.mk_out_eq_mul K (p.out * (k.out : G))
+    rw [hz, mul_smul, mul_smul, hm _ (hKH z.2), hm _ k.out.2]
+  simp only [key, Finset.sum_const, Finset.card_univ, Finset.sum_nsmul, relIndex, index_eq_card,
+    Nat.card_eq_fintype_card]
 
 /-- **An isomorphism carries a transversal to a transversal.** If `e : G ≃* G'` carries `H`
 onto `H'`, then the images under `e` of the chosen representatives of the cosets of `H` represent

@@ -117,17 +117,6 @@ theorem toFiniteBilinearModule_toBilin :
 /-- A finite quadratic module is nondegenerate when its polar pairing is nondegenerate. -/
 abbrev IsNondegenerate : Prop := A.toFiniteBilinearModule.IsNondegenerate
 
-/-- A nondegenerate finite quadratic module is identified with the character dual by its polar
-pairing. -/
-noncomputable def adjointEquiv (hA : A.IsNondegenerate) :
-    A ≃+ CharacterModule A :=
-  A.toFiniteBilinearModule.adjointEquiv hA
-
-@[simp]
-theorem adjointEquiv_apply (hA : A.IsNondegenerate) (x : A) :
-    A.adjointEquiv hA x = A.toFiniteBilinearModule.pairing x :=
-  A.toFiniteBilinearModule.adjointEquiv_apply hA x
-
 variable {A} in
 /-- The quadratic radical of a nondegenerate finite quadratic module is trivial: an element of the
 radical pairs to zero with everything under the polar pairing. -/

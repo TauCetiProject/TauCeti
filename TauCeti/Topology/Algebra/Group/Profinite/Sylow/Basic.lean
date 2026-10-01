@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.Topology.Algebra.Group.Profinite.Index.Basic
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
@@ -31,6 +32,8 @@ a separate compatible inverse-limit argument.
 * `IsProPSylow.map_continuousMulEquiv`, `IsProPSylow.map_conj`: the predicate is preserved by
   isomorphisms of topological groups, in particular by conjugation.
 * `IsProP.isProPSylow_top`: a pro-`p` group is its own Sylow pro-`p` subgroup.
+* `IsProPSylow.not_dvd_index_of_le`: an open subgroup containing a Sylow pro-`p` subgroup of a
+  compact group has index prime to `p`.
 * `isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex`: its
   supernatural-index formulation.
 * `isProPSylow_iff_isPGroup_and_not_dvd_index`: its specialization to a discrete group.
@@ -160,6 +163,27 @@ theorem isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex (q : Nat.
       IsClosed (P : Set G) ∧ IsProP q.val P ∧
         ¬ (q : Supernatural) ∣ P.profiniteIndex := by
   rw [isProPSylow_iff, P.not_dvd_profiniteIndex_iff_forall_not_dvd_index q]
+
+/-- An open subgroup containing a Sylow pro-`p` subgroup of a compact group has index prime to
+`p`. This is the finite-index content of the prime-to-`p` condition in
+`isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex`: every open subgroup `V ≥ P` has
+`[G : V]` prime to `p`. (The converse fails: an open subgroup of index prime to `p` contains some
+Sylow pro-`p` subgroup, but not necessarily the given `P`.) -/
+theorem IsProPSylow.not_dvd_index_of_le (hP : IsProPSylow p P) (V : OpenSubgroup G)
+    (hPV : P ≤ V) : ¬ p ∣ V.toSubgroup.index := by
+  -- the normal core of `V` is an open normal subgroup `N ≤ V`, and `[G : V]` is the index of the
+  -- image of `V` in `G ⧸ N`, which divides the index of the image of `P`
+  let N : OpenNormalSubgroup G :=
+    { toSubgroup := V.toSubgroup.normalCore
+      isOpen' := Subgroup.isOpen_of_isClosed_of_finiteIndex _
+        (Subgroup.normalCore_isClosed _ V.isClosed) }
+  intro hdvd
+  refine hP.not_dvd_index N (hdvd.trans ?_)
+  calc V.toSubgroup.index
+      = (V.toSubgroup.map (QuotientGroup.mk' N.toSubgroup)).index := by
+        rw [Subgroup.index_map_mk'_eq_index_sup, sup_of_le_left (Subgroup.normalCore_le _)]
+    _ ∣ (P.map (QuotientGroup.mk' N.toSubgroup)).index :=
+        Subgroup.index_dvd_of_le (Subgroup.map_mono hPV)
 
 end ProfiniteIndex
 

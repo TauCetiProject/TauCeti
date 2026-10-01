@@ -62,6 +62,9 @@ the input to the ray class number formula.
   `TauCeti.GlobalNumberFields.mulExact_unitsResidueSignHom_residueSignRayClass` and
   `TauCeti.GlobalNumberFields.mulExact_residueSignRayClass_rayClassToClassGroup`: their
   multiplicative exactness forms.
+* `TauCeti.GlobalNumberFields.classMap_eq_one_iff_of_finitePart_eq`: the kernel of a transition
+  map between moduli with the same finite part consists of the classes of sign patterns trivial at
+  the real places of the smaller modulus.
 
 ## References
 
@@ -300,5 +303,60 @@ theorem mulExact_unitsResidueSignHom_residueSignRayClass (𝔪 : Modulus K) :
 theorem mulExact_residueSignRayClass_rayClassToClassGroup (𝔪 : Modulus K) :
     Function.MulExact (residueSignRayClass 𝔪) (rayClassToClassGroup 𝔪) :=
   MonoidHom.mulExact_iff.mpr (range_residueSignRayClass 𝔪).symm
+
+/-- The residue and signs of the unit `-1`: residue `-1` and sign `-1` at every real place of the
+modulus. -/
+theorem unitsResidueSignHom_neg_one (𝔪 : Modulus K) :
+    unitsResidueSignHom 𝔪 (-1) = (-1, fun _ ↦ -1) := by
+  rw [unitsResidueSignHom_apply]
+  refine Prod.ext ?_ (funext fun w ↦ ?_)
+  · rw [residueSignHom_fst]
+    refine Units.ext ?_
+    rw [coe_residueHom, Units.val_neg, Units.val_one,
+      residue_eq _ (a := -1) (b := 1) (by simp) (by simp [coe_unitsToPrimeToSubgroup]), map_neg,
+      map_one]
+  · rw [residueSignHom_snd, modulusSignHom_apply, signHom_apply_eq_neg_one_iff,
+      coe_unitsToPrimeToSubgroup]
+    simp
+
+/-! ### Transition maps that only forget real places -/
+
+/-- **The kernel of a transition map between moduli with the same finite part consists of sign
+classes.**  When `𝔪 ∣ 𝔫` have the same finite part, a ray class of `𝔫` is killed by
+`classMap : Cl_𝔫 → Cl_𝔪` exactly when it is the class `residueSignRayClass 𝔫 (1, s)` of the trivial
+residue together with a pattern of signs `s` that is trivial at the real places of `𝔪`. -/
+theorem classMap_eq_one_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (hfin : 𝔪.finitePart = 𝔫.finitePart) (c : RayClassGroup 𝔫) :
+    classMap h c = 1 ↔ ∃ s : 𝔫.infinitePart → ℤˣ,
+      (∀ w : 𝔫.infinitePart, w.1 ∈ 𝔪.infinitePart → s w = 1) ∧
+        residueSignRayClass 𝔫 (1, s) = c := by
+  constructor
+  · intro hc
+    obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔫 c
+    rw [classMap_rayClassMk, rayClassMk_eq_one_iff, mem_ray_iff] at hc
+    obtain ⟨x, hx, hxI⟩ := hc
+    rw [NumberFieldArithmetic.coe_idealsAwayInclusion] at hxI
+    have hxn : x ∈ primeToSubgroup 𝔫 := by
+      refine mem_primeToSubgroup.mpr fun v hv ↦ hx.valuation_eq_one ?_
+      rwa [hfin]
+    obtain ⟨hres, hpos⟩ := (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin hxn).mp hx
+    refine ⟨modulusSignHom 𝔫 x, fun w hw ↦ ?_, ?_⟩
+    · rw [modulusSignHom_apply, signHom_apply_eq_one_iff]
+      exact hpos w.1 hw
+    · have hI : principalIdealPrimeTo 𝔫 ⟨x, hxn⟩ = I :=
+        Subtype.ext (Units.ext (by rw [coe_principalIdealPrimeTo, hxI]))
+      rw [← hI, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom]
+      exact congrArg _ (Prod.ext (by rw [residueSignHom_fst, hres]) (by rw [residueSignHom_snd]))
+  · rintro ⟨s, hs, rfl⟩
+    obtain ⟨x, hx⟩ := residueSignHom_surjective 𝔫 (1, s)
+    rw [← hx, residueSignRayClass_residueSignHom, principalRayClass_apply, classMap_rayClassMk,
+      rayClassMk_eq_one_iff, mem_ray_iff]
+    refine ⟨x, ?_, by rw [NumberFieldArithmetic.coe_idealsAwayInclusion, coe_principalIdealPrimeTo]⟩
+    refine (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin x.2).mpr
+      ⟨by rw [← residueSignHom_fst, hx], fun w hw ↦ ?_⟩
+    have hw' := congrArg (fun p ↦ p.2 ⟨w, (Modulus.dvd_iff.mp h).2 hw⟩) hx
+    simp only [residueSignHom_snd, modulusSignHom_apply] at hw'
+    rw [← signHom_apply_eq_one_iff, hw']
+    exact hs _ hw
 
 end TauCeti.GlobalNumberFields

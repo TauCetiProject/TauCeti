@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
+public import TauCeti.NumberTheory.LocalField.TamelyRamified
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 
@@ -28,7 +29,10 @@ modulo every power of the maximal ideal, and the action of the decomposition gro
 valuation, so a congruence that holds on `𝓞 L` holds on all of `𝒪[L_w]`.
 
 For `L/K` Galois, `decompositionHom v w` is an isomorphism onto `Aut(L_w/K_v)`, and the global
-and local ramification groups have the same orders.
+and local ramification groups have the same orders. In particular the global wild inertia group
+`G_1` of `w` is trivial exactly when `L_w/K_v` is tamely ramified, that is, when the residue
+characteristic does not divide `e(w/v)`. The reading on the different exponent is in
+`TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Tame`.
 
 ## Main results
 
@@ -41,6 +45,10 @@ and local ramification groups have the same orders.
   Galois, `decompositionHom v w` carries the global ramification groups onto the local ones.
 * `IsDedekindDomain.HeightOneSpectrum.card_ramificationGroup_eq_card_lowerRamificationGroup`: for
   `L/K` Galois, the global and local ramification groups have the same orders.
+* `IsDedekindDomain.HeightOneSpectrum.ramificationGroup_one_eq_bot_iff_isTamelyRamified` and
+  `ramificationGroup_one_eq_bot_iff_natCast_ramificationIdx_ne_zero`: for `L/K` Galois, `G_1` is
+  trivial exactly when `w` is tamely ramified, read on the completion and on the ramification
+  index in the residue field of `v`.
 
 ## References
 
@@ -136,5 +144,26 @@ theorem card_ramificationGroup_eq_card_lowerRamificationGroup (i : ℕ) :
   exact Nat.card_congr ((Subgroup.subgroupOfEquivOfLe
     (w.asIdeal.ramificationGroup_le_stabilizer i)).symm.trans
       (Subgroup.equivMapOfInjective _ _ (decompositionHom_injective v w))).toEquiv
+
+variable (w) in
+/-- **Wild inertia is trivial exactly at tame primes.** For `L/K` Galois, the first ramification
+group `G_1` of `w` is trivial if and only if the completed extension `L_w/K_v` is tamely
+ramified. -/
+theorem ramificationGroup_one_eq_bot_iff_isTamelyRamified :
+    w.asIdeal.ramificationGroup (L ≃ₐ[K] L) 1 = ⊥ ↔
+      TauCeti.IsTamelyRamified (v.adicCompletion K) (w.adicCompletion L) := by
+  rw [← Subgroup.card_eq_one, card_ramificationGroup_eq_card_lowerRamificationGroup v w 1,
+    Subgroup.card_eq_one, Nat.cast_one,
+    TauCeti.LocalFieldsRamification.lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified]
+
+variable (w) in
+/-- For `L/K` Galois, the first ramification group `G_1` of `w` is trivial if and only if the
+ramification index `e(w/v)` is nonzero in the residue field of `v`, that is, not divisible by
+the residue characteristic. -/
+theorem ramificationGroup_one_eq_bot_iff_natCast_ramificationIdx_ne_zero :
+    w.asIdeal.ramificationGroup (L ≃ₐ[K] L) 1 = ⊥ ↔
+      ((w.asIdeal.ramificationIdx (𝓞 K) : ℕ) : 𝓞 K ⧸ v.asIdeal) ≠ 0 :=
+  (ramificationGroup_one_eq_bot_iff_isTamelyRamified v w).trans
+    (isTamelyRamified_adicCompletion_iff v w)
 
 end IsDedekindDomain.HeightOneSpectrum

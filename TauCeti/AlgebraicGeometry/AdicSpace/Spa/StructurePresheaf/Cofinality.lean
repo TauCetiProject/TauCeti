@@ -109,24 +109,13 @@ theorem exists_presentationToRationalSubsetIndex_obj_eq
     (U : RationalSubsetIndex Aplus V) :
     ∃ i : PresentationIndex (P := P) Aplus V,
       (presentationToRationalSubsetIndex Aplus V).obj i = U := by
-  obtain ⟨T, s, hT, hU⟩ :=
-    mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp U.2.1)
-  let p : P.Presentation :=
-    { num := T
-      den := s
-      hasDenominatorPower := P.hasDenominatorPower_of_isOpen_span T s _ hT }
-  have hopen : spaBasicOpen Aplus p.num p.den = (OrderDual.ofDual U).1 := by
-    apply Opens.ext
-    exact (Set.ext fun _ ↦ mem_spaBasicOpen).trans hU.symm
+  obtain ⟨T, s, hT, hU⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp U.2.1
   let i : PresentationIndex (P := P) Aplus V :=
-    { pres := p
+    { pres := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
       isOpen_span := hT
-      le_open := hopen.le.trans U.2.2 }
-  refine ⟨i, ?_⟩
-  apply OrderDual.ofDual.injective
-  apply Subtype.ext
-  rw [presentationToRationalSubsetIndex_obj_open]
-  exact hopen
+      le_open := hU.ge.trans U.2.2 }
+  exact ⟨i, OrderDual.ofDual.injective <|
+    Subtype.ext <| (presentationToRationalSubsetIndex_obj_open Aplus V i).trans hU.symm⟩
 
 /-- The functor from presentations to rational subsets is final: every rational subset is in its
 image, and the presentation index is filtered by common refinement. This is the categorical

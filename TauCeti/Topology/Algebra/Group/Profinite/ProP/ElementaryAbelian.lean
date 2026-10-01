@@ -8,9 +8,10 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank
+public import TauCeti.Topology.Algebra.Monoid
 
 /-!
-# Generator rank and relation rank of a finite elementary abelian `p`-group
+# Generator rank and relation rank of an elementary abelian pro-`p` group
 
 Let `G` be a finite elementary abelian `p`-group, that is, a topologically finitely generated
 profinite group whose pro-`p` Frattini subgroup `Φ(G)` is trivial (such a group is automatically
@@ -18,6 +19,13 @@ pro-`p`); the model is `(ℤ/p)^X = X → Multiplicative (ZMod p)` for a finite 
 topological generator rank `d = d(G)` satisfies `|G| = p ^ d`, and its second cohomology with
 trivial coefficients `𝔽_p` has order `p ^ (d (d + 1) / 2)`: the relation rank of `G` is
 `d (d + 1) / 2`. In the model, `d((ℤ/p)^X) = #X` and `r((ℤ/p)^X) = #X (#X + 1) / 2`.
+
+The last section drops the finiteness of the index type: the product `(ℤ/p)^ι` of copies of `ℤ/p`
+indexed by an arbitrary type `ι` has topological generator rank `#ι`, as a cardinal, so it is
+topologically finitely generated exactly when `ι` is finite, and `∏_{i ∈ ℕ} ℤ/p` has rank `ℵ₀`.
+This is the basic example of an abelian pro-`p` group of infinite rank: the pro-`p` Frattini
+subgroup of `(ℤ/p)^ι` is trivial for every `ι`, so for infinite `ι` the Frattini quotient is the
+whole, infinite, group, and no finite set generates a dense subgroup.
 
 The count is read off a minimal presentation. A minimal presentation `G ≅ F ⧸ R` by the free
 pro-`p` group `F` of rank `d` has `R = Φ(F)`
@@ -44,7 +52,12 @@ through `TauCeti.cohomFpLinearEquivH2`.
   `TauCeti.finite_H2_of_proPFrattini_eq_bot` records its finiteness, and
   `TauCeti.finrank_cohomFp_two_of_proPFrattini_eq_bot` reads the count as
   `dim H²(G, 𝔽_p) = d(G) (d(G) + 1) / 2`.
-* `TauCeti.topologicalGeneratorRankNat_pi_multiplicative_zmod`: `d((ℤ/p)^X) = #X`.
+* `TauCeti.topologicalGeneratorRankNat_pi_multiplicative_zmod`: `d((ℤ/p)^X) = #X` for finite
+  `X`; `TauCeti.topologicalGeneratorRank_pi_multiplicative_zmod`: `d((ℤ/p)^ι) = #ι` as cardinals
+  for an arbitrary index type `ι`, with the consequences
+  `TauCeti.isTopologicallyFinitelyGenerated_pi_multiplicative_zmod_iff` and
+  `TauCeti.topologicalGeneratorRank_nat_pi_multiplicative_zmod`, the example
+  `d(∏_{i ∈ ℕ} ℤ/p) = ℵ₀`.
 * `TauCeti.natCard_H2_pi_multiplicative_zmod`: `H²((ℤ/p)^X, 𝔽_p)` has `p ^ (#X (#X + 1) / 2)`
   elements.
 * `TauCeti.proPFrattini_multiplicative_zmod_eq_bot` and
@@ -242,5 +255,79 @@ theorem finrank_cohomFp_two_multiplicative_zmod :
     (proPFrattini_multiplicative_zmod_eq_bot p), topologicalGeneratorRankNat_multiplicative_zmod]
 
 end ZMod
+
+/-! ### The example `(ℤ/p)^ι` for an arbitrary index type -/
+
+section PiZModCardinal
+
+open scoped Cardinal
+
+variable (p : ℕ) [Fact p.Prime] (ι : Type u)
+
+/-- **The coordinate projections of `(ℤ/p)^ι` are linearly independent characters.** Read in the
+continuous `𝔽_p`-dual of the product, the projections `(ℤ/p)^ι → ℤ/p` onto the coordinates are
+linearly independent over `𝔽_p`. -/
+theorem linearIndependent_ofMul_proj_pi_multiplicative_zmod :
+    LinearIndependent (ZMod p) fun i : ι ↦ (Additive.ofMul (ContinuousMonoidHom.proj i) :
+      continuousZModDual p (ι → Multiplicative (ZMod p))) := by
+  classical
+  refine linearIndependent_iff'.mpr fun s g hg j hj ↦ ?_
+  -- evaluating the vanishing linear combination at the standard basis vector at `j` returns its
+  -- `j`-th coefficient
+  have h := congrArg
+    (continuousZModDual.evalₗ (Pi.mulSingle j (Multiplicative.ofAdd (1 : ZMod p)))) hg
+  simp only [map_sum, map_smul, continuousZModDual.evalₗ_apply, toMul_ofMul,
+    ContinuousMonoidHom.proj_apply, smul_eq_mul, map_zero] at h
+  rw [Finset.sum_eq_single j (fun i _ hij ↦ by simp [Pi.mulSingle_eq_of_ne hij])
+    fun h ↦ (h hj).elim] at h
+  simpa using h
+
+/-- **`d((ℤ/p)^ι) = #ι`.** The topological generator rank of the product `(ℤ/p)^ι` of copies of
+`ℤ/p` indexed by an arbitrary type `ι` is the cardinality of `ι`. For finite `ι` this is the
+natural-number statement `TauCeti.topologicalGeneratorRankNat_pi_multiplicative_zmod`. -/
+@[simp]
+theorem topologicalGeneratorRank_pi_multiplicative_zmod :
+    topologicalGeneratorRank (ι → Multiplicative (ZMod p)) = #ι := by
+  classical
+  -- Upper bound: the standard basis vectors converge to `1` and generate a dense subgroup.
+  -- Lower bound: the coordinate projections are `#ι` linearly independent continuous characters,
+  -- and the dimension of the continuous `𝔽_p`-dual bounds the rank from below.
+  refine le_antisymm ?_ ?_
+  · -- The standard basis vectors `Pi.mulSingle i (ofAdd 1)` form a topological generating set of
+    -- cardinality `#ι` converging to `1`.
+    have hinj : Function.Injective
+        fun i : ι ↦ Pi.mulSingle i (Multiplicative.ofAdd (1 : ZMod p)) := by
+      intro i j h
+      by_contra hij
+      -- evaluating both sides at `i` gives `ofAdd 1 = 1` in `ℤ/p`
+      simpa [Pi.mulSingle_eq_of_ne hij] using congrFun h i
+    have hg : Subgroup.zpowers (Multiplicative.ofAdd (1 : ZMod p)) = ⊤ := by
+      refine (Subgroup.eq_top_iff' _).mpr fun x ↦ ?_
+      obtain ⟨k, hk⟩ := ZMod.intCast_surjective (Multiplicative.toAdd x)
+      exact Subgroup.mem_zpowers_iff.mpr ⟨k, by rw [← ofAdd_zsmul, zsmul_one, hk, ofAdd_toAdd]⟩
+    calc topologicalGeneratorRank (ι → Multiplicative (ZMod p))
+        ≤ #(Set.range fun i : ι ↦ Pi.mulSingle i (Multiplicative.ofAdd (1 : ZMod p))) :=
+          topologicalGeneratorRank_le (tendsto_mulSingle_cofinite _).convergesToOne_range
+            (topologicalClosure_closure_range_mulSingle_eq_top
+              (by rw [hg]; exact top_unique (Subgroup.le_topologicalClosure _)))
+      _ = #ι := Cardinal.mk_range_eq _ hinj
+  · calc #ι ≤ Module.rank (ZMod p) (continuousZModDual p (ι → Multiplicative (ZMod p))) :=
+          (linearIndependent_ofMul_proj_pi_multiplicative_zmod p ι).cardinal_le_rank
+      _ ≤ topologicalGeneratorRank (ι → Multiplicative (ZMod p)) :=
+          rank_continuousZModDual_le_topologicalGeneratorRank
+
+/-- The product `(ℤ/p)^ι` is topologically finitely generated exactly when `ι` is finite. -/
+theorem isTopologicallyFinitelyGenerated_pi_multiplicative_zmod_iff :
+    IsTopologicallyFinitelyGenerated (ι → Multiplicative (ZMod p)) ↔ Finite ι := by
+  rw [← topologicalGeneratorRank_lt_aleph0_iff, topologicalGeneratorRank_pi_multiplicative_zmod,
+    Cardinal.lt_aleph0_iff_finite]
+
+/-- **`d(∏_{i ∈ ℕ} ℤ/p) = ℵ₀`.** The countable product of copies of `ℤ/p` has countably infinite
+topological generator rank. -/
+theorem topologicalGeneratorRank_nat_pi_multiplicative_zmod :
+    topologicalGeneratorRank (ℕ → Multiplicative (ZMod p)) = ℵ₀ := by
+  rw [topologicalGeneratorRank_pi_multiplicative_zmod, Cardinal.mk_nat]
+
+end PiZModCardinal
 
 end TauCeti

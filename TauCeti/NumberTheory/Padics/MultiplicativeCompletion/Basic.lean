@@ -25,7 +25,8 @@ act on the whole inverse limit.
 For a finite extension `L` of `ℚ_p`, this completed multiplicative module is the one used in
 local reciprocity and in the Galois-module theory of local units, where it is finitely generated
 over `ℤ_p`. This file imposes no such hypothesis and proves no finiteness statement: it supplies
-only the carrier, its `ℤ_p`-module structure, and its Galois action.
+only the carrier, its `ℤ_p`-module structure, and its Galois action. Finite generation is proved in
+`TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite`.
 
 ## Main declarations
 
@@ -73,6 +74,14 @@ def padicCompletionUnits :
   ⨅ m : ℕ, MonoidHom.eqLocus
     ((padicCompletionTransition p L m).comp (Pi.evalMonoidHom _ (m + 1)))
     (Pi.evalMonoidHom _ m)
+
+omit [Fact p.Prime] in
+-- Recorded directly: deriving this structure through the product of the power-class groups is
+-- slow enough to defeat instance searches built on top of it, such as the one for the quotient
+-- of `Additive A(L)` by a submodule.
+/-- `A(L)` is a commutative group, with the pointwise group structure of compatible families of
+power classes inherited from the product `∏ₘ Lˣ/(Lˣ)^(p^m)`. -/
+instance : CommGroup ↑(padicCompletionUnits p L) := inferInstance
 
 omit [Fact p.Prime] in
 /-- A compatible family is characterized by the transition equation at every level. -/
@@ -172,6 +181,12 @@ theorem padicCompletionUnits_natCast_smul (n : ℕ)
   rw [padicCompletionUnits_smul_apply, toMul_nsmul]
   exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq n m)
     (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
+
+/-- Adding a `p ^ m`-multiple in `A(L)` does not change the level-`m` coordinate. -/
+theorem padicCompletionUnits_add_pow_smul_apply (m : ℕ)
+    (y z : Additive ↑(padicCompletionUnits p L)) :
+    (y + (p : ℤ_[p]) ^ m • z).toMul.1 m = y.toMul.1 m := by
+  simp
 
 section GaloisAction
 
