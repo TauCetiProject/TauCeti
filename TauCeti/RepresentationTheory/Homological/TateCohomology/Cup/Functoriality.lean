@@ -17,18 +17,6 @@ maps are compatible with the Tate cup product in all integer bidegrees
 (`TauCeti.TateCohomology.map_cup`): for compatible pairs `(e, φ₁)` and `(e, φ₂)`, the pair
 `(e, φ₁ ⊗ φ₂)` carries `x ∪ y` to the cup product of the images of `x` and `y`.
 
-Every compatible pair factors as a morphism of `G`-representations `M ⟶ Res(e)(N)` followed by the
-pair `Res(e)(N) → N` whose linear part is the identity
-(`TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map_res`), and the cup product is already
-natural in morphisms of coefficients. The main step is therefore the pair `Res(e)(N) → N`. It is
-proved like the restriction law `TauCeti.TateCohomology.cup_res_of_nonneg`, by induction on the
-degree of the second factor: in degree zero both cup products are induced by the morphism
-`m ↦ m ⊗ y` for an invariant `y`, and the rule `x ∪ δ y = (-1)^p δ (x ∪ y)` for the `k`-split
-dimension-shifting sequences moves the statement up and down in degree, because these maps commute
-with the connecting maps in every degree (`TauCeti.TateCohomology.δ_comp_map`). Unlike restriction
-to a subgroup, an isomorphism of groups induces a map of Tate complexes, so negative degrees need
-no separate low-degree computation.
-
 The main application is conjugation of a finite normal layer of a class formation, under which
 cup product with the fundamental class, and hence the Artin map, is equivariant.
 
@@ -50,6 +38,20 @@ universe u
 open CategoryTheory MonoidalCategory Rep Representation
 
 namespace TauCeti.TateCohomology
+
+/-
+Every compatible pair factors as a morphism of `G`-representations `M ⟶ Res(e)(N)` followed by the
+pair `Res(e)(N) → N` whose linear part is the identity
+(`TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map_res`), and the cup product is already
+natural in morphisms of coefficients. The main step is therefore the pair `Res(e)(N) → N`. It is
+proved like the restriction law `TauCeti.TateCohomology.cup_res_of_nonneg`, by induction on the
+degree of the second factor: in degree zero both cup products are induced by the morphism
+`m ↦ m ⊗ y` for an invariant `y`, and the rule `x ∪ δ y = (-1)^p δ (x ∪ y)` for the `k`-split
+dimension-shifting sequences moves the statement up and down in degree, because these maps commute
+with the connecting maps in every degree (`TauCeti.TateCohomology.δ_comp_map`). Unlike restriction
+to a subgroup, an isomorphism of groups induces a map of Tate complexes, so negative degrees need
+no separate low-degree computation.
+-/
 
 variable {k G H : Type u} [CommRing k] [Group G] [Group H] [Fintype G] [Fintype H]
 
