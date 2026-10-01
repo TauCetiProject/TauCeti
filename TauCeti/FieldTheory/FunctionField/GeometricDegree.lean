@@ -196,6 +196,8 @@ end ConstantsInBase
 
 end Compositum
 
+/-! ### Generators of the compositum -/
+
 section GeneratedCompositum
 
 variable [Field k] [Field k'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F']
@@ -214,7 +216,7 @@ theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
 
 end GeneratedCompositum
 
-/-! ### Linear disjointness from the constant field -/
+/-! ### The degree of `F' / F` when `[F·k' : F]` is known -/
 
 section DegreeForm
 
@@ -250,6 +252,8 @@ theorem finrank_dvd_finrank_of_finrank_constantCompositum_eq
       mul_comm]⟩
 
 end DegreeForm
+
+/-! ### Linear disjointness from the constant field -/
 
 section LinearDisjoint
 
