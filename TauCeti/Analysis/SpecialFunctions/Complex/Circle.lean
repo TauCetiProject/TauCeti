@@ -101,10 +101,7 @@ group gives its order when the character `χ` is trivial and `0` otherwise. -/
 theorem sum_expCircle {M : Type*} [AddCommGroup M] [Fintype M] (χ : CharacterModule M)
     [Decidable (χ = 0)] :
     ∑ m, expCircle (χ m) = if χ = 0 then (Fintype.card M : ℂ) else 0 := by
-  let ψ : AddChar M ℂ :=
-    { toFun := fun m ↦ expCircle (χ m)
-      map_zero_eq_one' := by rw [map_zero, AddChar.map_zero_eq_one]
-      map_add_eq_mul' := fun a b ↦ by rw [map_add, AddChar.map_add_eq_mul] }
+  let ψ : AddChar M ℂ := expCircle.compAddMonoidHom χ
   have hψ : ψ = 0 ↔ χ = 0 := by
     rw [AddChar.eq_zero_iff, CharacterModule.ext_iff]
     exact forall_congr' fun _ ↦ expCircle_eq_one_iff

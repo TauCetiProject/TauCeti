@@ -161,9 +161,7 @@ theorem IsNondegenerate.norm_gaussSum (hA : A.IsNondegenerate) :
   exact congrArg Real.sqrt (by exact_mod_cast h)
 
 variable {A} in
-/-- **The Gauss sum of a module with a Lagrangian subgroup `H` is `#H`.** Averaging over
-translates by `H`, on which `q` vanishes, turns `G(q)` into `∑_a e(q(a)) ∑_{h ∈ H} e(b(a, h))`, and
-the inner sum is `#H` on `H^⊥ = H` and `0` off it. -/
+/-- **The Gauss sum of a module with a Lagrangian subgroup `H` is `#H`.** -/
 theorem gaussSum_eq_natCard_of_isLagrangian {H : AddSubgroup A} (hH : A.IsLagrangian H) :
     A.gaussSum = Nat.card H := by
   classical
