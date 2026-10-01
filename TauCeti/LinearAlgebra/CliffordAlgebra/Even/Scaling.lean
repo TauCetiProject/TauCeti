@@ -87,7 +87,7 @@ private def normalizeLast (Q : QuadraticForm R M) (a : Rˣ) :
       (EquivEven.Q' ((↑(-a⁻¹) : R) • Q)) where
   toLinearEquiv := LinearEquiv.refl R _
   map_app' x := congrArg (fun P : QuadraticForm R (M × R) => P x)
-    (by simp [TauCeti.QuadraticMap.smul_prod, EquivEven.Q', smul_smul])
+    (by simp [TauCeti.smul_quadraticMap_prod, EquivEven.Q', smul_smul])
 
 private theorem normalizeLast_apply (Q : QuadraticForm R M) (a : Rˣ) (x : M × R) :
     normalizeLast Q a x = x := (rfl)
