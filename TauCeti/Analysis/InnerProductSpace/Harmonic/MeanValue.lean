@@ -291,52 +291,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.average_toSphere_eq {x₀ : E}
   rw [average_eq, hu.integral_toSphere_eq hR, smul_smul, inv_mul_cancel₀ measureReal_univ_ne_zero,
     one_smul]
 
-omit [CompleteSpace F] in
-/-- Integration over a ball about the origin in polar coordinates: the integral of `u` over
-`ball 0 R` is the integral over the radii `s ∈ (0, R)` of the sphere integrals, against the radial
-Jacobian `s ^ (n - 1)`. -/
-private lemma setIntegral_ball_zero_eq_integral_Ioo (hu : ContinuousOn u (closedBall (0 : E) R)) :
-    ∫ x in ball (0 : E) R, u x ∂μ = ∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1) •
-      ∫ θ : sphere (0 : E) 1, u (s • (θ : E)) ∂μ.toSphere := by
-  have hint : Integrable ((ball (0 : E) R).indicator u) μ :=
-    ((hu.integrableOn_compact (isCompact_closedBall _ _)).mono_set
-      ball_subset_closedBall).integrable_indicator measurableSet_ball
-  rw [← integral_indicator measurableSet_ball, integral_eq_integral_Ioi_integral_toSphere _ hint]
-  -- The sphere integrals of the truncation: those of `u` below the radius `R`, zero above.
-  have hinner : ∀ s ∈ Ioi (0 : ℝ), s ^ (Module.finrank ℝ E - 1) •
-      ∫ θ : sphere (0 : E) 1, (ball (0 : E) R).indicator u (s • (θ : E)) ∂μ.toSphere =
-        (Iio R).indicator (fun s ↦ s ^ (Module.finrank ℝ E - 1) •
-          ∫ θ : sphere (0 : E) 1, u (s • (θ : E)) ∂μ.toSphere) s := by
-    intro s hs
-    have hs : 0 < s := hs
-    have hmem : ∀ θ : sphere (0 : E) 1, s • (θ : E) ∈ ball (0 : E) R ↔ s < R := fun θ ↦ by
-      rw [mem_ball_zero_iff, norm_smul, norm_eq_of_mem_sphere θ, mul_one, Real.norm_of_nonneg hs.le]
-    by_cases hsR : s < R
-    · rw [indicator_of_mem (mem_Iio.mpr hsR)]
-      simp_rw [indicator_of_mem ((hmem _).mpr hsR)]
-    · rw [indicator_of_notMem (by simpa using hsR)]
-      simp_rw [indicator_of_notMem ((not_congr (hmem _)).mpr hsR)]
-      simp
-  rw [setIntegral_congr_fun measurableSet_Ioi hinner, setIntegral_indicator measurableSet_Iio,
-    Ioi_inter_Iio]
-
-/-- The radial Jacobian integrates against the total surface measure to the measure of the ball:
-`(∫ s in (0, R), s ^ (n - 1)) * μ.toSphere(S) = μ (ball 0 R)`. -/
-private lemma integral_Ioo_pow_mul_toSphere_real_univ (hR : 0 < R) :
-    (∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1)) * μ.toSphere.real univ =
-      μ.real (ball (0 : E) R) := by
-  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (Module.finrank_pos (R := ℝ) (M := E)).ne'
-  have hball : μ.real (ball (0 : E) R) = R ^ (m + 1) * μ.real (ball (0 : E) 1) := by
-    rw [measureReal_def, Measure.addHaar_ball μ _ hR.le, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by positivity), hm, measureReal_def]
-  have hsph : μ.toSphere.real univ = ((m : ℝ) + 1) * μ.real (ball (0 : E) 1) := by
-    rw [Measure.toSphere_real_apply_univ, hm]
-    push_cast
-    ring
-  rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hR.le, integral_pow,
-    hball, hsph, hm, Nat.add_sub_cancel, zero_pow (Nat.succ_ne_zero m), sub_zero]
-  field_simp
-
 /-- The mean-value property on balls about the origin. -/
 private lemma setIntegral_ball_eq_of_harmonicOnNhd_zero
     (hu : HarmonicOnNhd u (closedBall (0 : E) R)) (hR : 0 < R) :
@@ -346,19 +300,6 @@ private lemma setIntegral_ball_eq_of_harmonicOnNhd_zero
       rw [integral_toSphere_eq_of_harmonicOnNhd_zero
         (hu.mono (closedBall_subset_closedBall hs.2.le)) hs.1.le],
     integral_smul_const, smul_smul, integral_Ioo_pow_mul_toSphere_real_univ hR]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E] [CompleteSpace F] in
-/-- The integral over the ball `ball x₀ R` is the integral over `ball 0 R` of the translate
-`y ↦ u (y + x₀)`. -/
-private lemma setIntegral_ball_eq_setIntegral_ball_zero_add (x₀ : E) :
-    ∫ x in ball x₀ R, u x ∂μ = ∫ y in ball (0 : E) R, u (y + x₀) ∂μ := by
-  rw [← integral_indicator measurableSet_ball, ← integral_indicator measurableSet_ball,
-    ← integral_add_right_eq_self _ x₀]
-  refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
-  beta_reduce
-  classical
-  rw [indicator_apply, indicator_apply]
-  simp only [mem_ball, dist_eq_norm, add_sub_cancel_right, sub_zero]
 
 omit [Nontrivial E] in
 /-- **The mean-value property on balls.** If `u` is harmonic on a neighbourhood of the closed

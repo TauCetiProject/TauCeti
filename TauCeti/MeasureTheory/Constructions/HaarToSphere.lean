@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
@@ -44,6 +45,11 @@ the Laplacian.
 * `ContinuousOn.integral_toSphere_smul`: the sphere integrals `r ↦ ∫ u ∈ S, f (r • u)` depend
   continuously on the radius `r ∈ [0, R]` when `f` is continuous on the closed ball of radius
   `R`.
+* `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
+  `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
+  polar coordinates, and the corresponding formula for the measure of the ball.
+* `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
+  origin.
 -/
 
 public section
@@ -139,6 +145,65 @@ theorem _root_.ContinuousOn.integral_toSphere_smul {f : E → F} {R : ℝ}
       (hmem r hr)).aestronglyMeasurable
   · exact ae_of_all _ fun u ↦ hC _ (hmem r hr u)
   · exact hf.comp (continuous_id.smul continuous_const).continuousOn fun r hr ↦ hmem r hr u
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E] in
+/-- The integral over the ball `ball x₀ R` is the integral over `ball 0 R` of the translate
+`y ↦ f (y + x₀)`. -/
+theorem setIntegral_ball_eq_setIntegral_ball_zero_add (f : E → F) (x₀ : E) (R : ℝ) :
+    ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
+  rw [← integral_indicator measurableSet_ball, ← integral_indicator measurableSet_ball,
+    ← integral_add_right_eq_self _ x₀]
+  refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
+  beta_reduce
+  classical
+  rw [indicator_apply, indicator_apply]
+  simp only [mem_ball, dist_eq_norm, add_sub_cancel_right, sub_zero]
+
+/-- **Integration over a ball in polar coordinates.** For `f` continuous on the closed ball
+`closedBall 0 R`, the integral of `f` over `ball 0 R` is the integral over the radii
+`s ∈ (0, R)` of the sphere integrals, against the radial Jacobian `s ^ (d - 1)`. -/
+theorem setIntegral_ball_zero_eq_integral_Ioo {f : E → F} {R : ℝ}
+    (hf : ContinuousOn f (closedBall (0 : E) R)) :
+    ∫ x in ball (0 : E) R, f x ∂μ = ∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1) •
+      ∫ θ : sphere (0 : E) 1, f (s • (θ : E)) ∂μ.toSphere := by
+  have hint : Integrable ((ball (0 : E) R).indicator f) μ :=
+    ((hf.integrableOn_compact (isCompact_closedBall _ _)).mono_set
+      ball_subset_closedBall).integrable_indicator measurableSet_ball
+  rw [← integral_indicator measurableSet_ball, integral_eq_integral_Ioi_integral_toSphere _ hint]
+  -- The sphere integrals of the truncation: those of `f` below the radius `R`, zero above.
+  have hinner : ∀ s ∈ Ioi (0 : ℝ), s ^ (Module.finrank ℝ E - 1) •
+      ∫ θ : sphere (0 : E) 1, (ball (0 : E) R).indicator f (s • (θ : E)) ∂μ.toSphere =
+        (Iio R).indicator (fun s ↦ s ^ (Module.finrank ℝ E - 1) •
+          ∫ θ : sphere (0 : E) 1, f (s • (θ : E)) ∂μ.toSphere) s := by
+    intro s hs
+    have hs : 0 < s := hs
+    have hmem : ∀ θ : sphere (0 : E) 1, s • (θ : E) ∈ ball (0 : E) R ↔ s < R := fun θ ↦ by
+      rw [mem_ball_zero_iff, norm_smul, norm_eq_of_mem_sphere θ, mul_one, Real.norm_of_nonneg hs.le]
+    by_cases hsR : s < R
+    · rw [indicator_of_mem (mem_Iio.mpr hsR)]
+      simp_rw [indicator_of_mem ((hmem _).mpr hsR)]
+    · rw [indicator_of_notMem (by simpa using hsR)]
+      simp_rw [indicator_of_notMem ((not_congr (hmem _)).mpr hsR)]
+      simp
+  rw [setIntegral_congr_fun measurableSet_Ioi hinner, setIntegral_indicator measurableSet_Iio,
+    Ioi_inter_Iio]
+
+/-- The radial Jacobian integrates against the total surface measure to the measure of the ball:
+`(∫ s in (0, R), s ^ (d - 1)) * μ.toSphere(S) = μ (ball 0 R)`. -/
+theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} (hR : 0 < R) :
+    (∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1)) * μ.toSphere.real univ =
+      μ.real (ball (0 : E) R) := by
+  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (Module.finrank_pos (R := ℝ) (M := E)).ne'
+  have hball : μ.real (ball (0 : E) R) = R ^ (m + 1) * μ.real (ball (0 : E) 1) := by
+    rw [measureReal_def, Measure.addHaar_ball μ _ hR.le, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (by positivity), hm, measureReal_def]
+  have hsph : μ.toSphere.real univ = ((m : ℝ) + 1) * μ.real (ball (0 : E) 1) := by
+    rw [Measure.toSphere_real_apply_univ, hm]
+    push_cast
+    ring
+  rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hR.le, integral_pow,
+    hball, hsph, hm, Nat.add_sub_cancel, zero_pow (Nat.succ_ne_zero m), sub_zero]
+  field_simp
 
 /-- **Radial fundamental theorem of calculus.** For a `C¹` function `f` with compact support on a
 nontrivial finite-dimensional real normed space of dimension `d`,

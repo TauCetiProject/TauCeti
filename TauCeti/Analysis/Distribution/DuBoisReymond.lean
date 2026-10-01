@@ -202,9 +202,9 @@ private lemma exists_nonneg_deriv_eq_sub_bump {β : ℝ → ℝ} {r : ℝ} (hr :
   have hBderiv : ∀ t, HasDerivAt B (β t) t := fun t ↦
     intervalIntegral.integral_hasDerivAt_right (hβ.continuous.intervalIntegrable _ _)
       (hβ.continuous.stronglyMeasurableAtFilter _ _) hβ.continuous.continuousAt
+  have hderivB : deriv B = β := funext fun t ↦ (hBderiv t).deriv
   have hB : ContDiff ℝ ∞ B := contDiff_infty_iff_deriv.mpr
-    ⟨fun t ↦ (hBderiv t).differentiableAt, by
-      rw [show deriv B = β from funext fun t ↦ (hBderiv t).deriv]; exact hβ⟩
+    ⟨fun t ↦ (hBderiv t).differentiableAt, hderivB ▸ hβ⟩
   have hBmono : Monotone B := monotone_of_deriv_nonneg (fun t ↦ (hBderiv t).differentiableAt)
     fun t ↦ (hBderiv t).deriv ▸ hβnn t
   have hBleft : ∀ t, t ≤ -r → B t = 0 := by

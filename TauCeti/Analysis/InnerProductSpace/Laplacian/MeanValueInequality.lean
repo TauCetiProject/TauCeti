@@ -69,13 +69,24 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- **The mean-value inequality for `Δ w ≥ -K`.** If `w` is `C²` on the ball `ball x₀ R`,
 continuous on its closure, and `Δ w ≥ -K` on the ball, then, in dimension `n`,
 `μ (ball x₀ R) * w x₀ ≤ ∫ x in ball x₀ R, w x ∂μ + K R² / (2 (n + 2)) * μ (ball x₀ R)`. -/
-theorem mul_le_setIntegral_ball_add_of_neg_le_laplacian [Nontrivial E] {w : E → ℝ} {x₀ : E}
+theorem mul_le_setIntegral_ball_add_of_neg_le_laplacian {w : E → ℝ} {x₀ : E}
     {R K : ℝ} (hw : ContDiffOn ℝ 2 w (ball x₀ R)) (hwc : ContinuousOn w (closedBall x₀ R))
     (hΔ : ∀ x ∈ ball x₀ R, -K ≤ Δ w x) :
     μ.real (ball x₀ R) * w x₀ ≤ ∫ x in ball x₀ R, w x ∂μ +
       K * R ^ 2 / (2 * (Module.finrank ℝ E + 2)) * μ.real (ball x₀ R) := by
   rcases le_or_gt R 0 with hR | hR
   · simp [ball_eq_empty.mpr hR]
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In the trivial space `w` is constant, so `Δ w = 0` and `0 ≤ K`.
+    have hconst : ∀ x, w x = w x₀ := fun x ↦ congrArg w (Subsingleton.elim x x₀)
+    have hK : 0 ≤ K := by
+      have h := hΔ x₀ (mem_ball_self hR)
+      have hw : w = fun _ ↦ w x₀ := funext hconst
+      rw [hw, laplacian_const, Pi.zero_apply] at h
+      linarith
+    rw [setIntegral_congr_fun measurableSet_ball (g := fun _ ↦ w x₀) fun x _ ↦ hconst x,
+      setIntegral_const, smul_eq_mul, le_add_iff_nonneg_right]
+    exact mul_nonneg (div_nonneg (mul_nonneg hK (sq_nonneg R)) (by positivity)) measureReal_nonneg
   have hn : 0 < (Module.finrank ℝ E : ℝ) := Nat.cast_pos.mpr Module.finrank_pos
   set c : ℝ := K / (2 * Module.finrank ℝ E) with hc_def
   -- The quadratic correction `‖x - x₀‖ ^ 2`, with Laplacian `2 n`.
@@ -152,7 +163,8 @@ private lemma exists_centre {w : E → ℝ} {x₀ : E} {r : ℝ} (hr : 0 < r)
   -- A point within `(r - ρ) / 2` of `z` is within `ρ + (r - ρ) / 2` of `x₀`.
   have h := hmax' (ρ + (r - ρ) / 2) y (by linarith) (by linarith)
     ((dist_triangle y z x₀).trans (by linarith [mem_closedBall.mp hy]))
-  rwa [show r - (ρ + (r - ρ) / 2) = (r - ρ) / 2 by ring] at h
+  have hrad : r - (ρ + (r - ρ) / 2) = (r - ρ) / 2 := by ring
+  rwa [hrad] at h
 
 /-- **The local estimate.** In dimension two, if `0 ≤ w ≤ 4 c` and `Δ w ≥ -A w²` on `ball z δ`,
 with `A ≥ 0`, then `δ² μ (ball 0 1) c ≤ ∫ w + 2 A c² δ² (δ² μ (ball 0 1))`, the integral being
@@ -253,18 +265,16 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
     have hδ : 0 < δ := Real.sqrt_pos.mpr (by positivity)
     have hδε : δ ≤ ε := by
       refine (pow_le_pow_iff_left₀ hδ.le hε.le two_ne_zero).mp ?_
-      rw [hδ2, div_le_iff₀ (by positivity)]
-      linarith [show ε ^ 2 * (4 * A' * w z) = 4 * A' * w z * ε ^ 2 by ring]
+      rw [hδ2, div_le_iff₀ (by positivity), mul_comm (ε ^ 2)]
+      exact hcase.le
     have hAcδ : 4 * A' * w z * δ ^ 2 = 1 := by
       rw [hδ2]; field_simp
     have h := hloc δ hδ hδε
     have hhalf : 2 * A' * w z ^ 2 * δ ^ 2 * (δ ^ 2 * V) = δ ^ 2 * V * w z / 2 := by
-      rw [show 2 * A' * w z ^ 2 * δ ^ 2 * (δ ^ 2 * V) =
-        4 * A' * w z * δ ^ 2 * (δ ^ 2 * V * w z) / 2 by ring, hAcδ, one_mul]
+      linear_combination (δ ^ 2 * V * w z / 2) * hAcδ
     have h2 : δ ^ 2 * V * w z ≤ 2 * I := by linarith
     have h3 : V ≤ 8 * A' * I := by
-      have : δ ^ 2 * V * w z * (4 * A') = V := by
-        rw [show δ ^ 2 * V * w z * (4 * A') = V * (4 * A' * w z * δ ^ 2) by ring, hAcδ, mul_one]
+      have : δ ^ 2 * V * w z * (4 * A') = V := by linear_combination V * hAcδ
       nlinarith
     linarith
 
