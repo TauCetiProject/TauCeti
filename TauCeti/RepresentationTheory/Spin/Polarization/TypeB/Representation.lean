@@ -39,7 +39,9 @@ type-`B` carrier in Layer 9, "The Chevalley--Demazure construction", of
   matrix Lie algebra.
 * `TauCeti.SpinPolarizationData.typeBSpinLieRep_apply`: its value on a matrix.
 * `TauCeti.SpinPolarizationData.typeBSpinRep`: its extension to the universal enveloping algebra.
-* `TauCeti.SpinPolarizationData.typeBSpinRep_ι`: the extension evaluated on a Lie generator.
+* `TauCeti.SpinPolarizationData.typeBSpinRep_ι` and
+  `TauCeti.SpinPolarizationData.typeBSpinRep_ι_eq_typeBSpinLieRep`: the extension evaluated on a
+  Lie generator.
 * `typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty` and
   `typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton`:
   the terminal root actions on the exterior vacuum and final singleton.
@@ -98,6 +100,17 @@ theorem typeBSpinRep_ι (x : LieAlgebra.Orthogonal.typeB ι K) :
           (LieAlgebra.Orthogonal.typeB ι K) (TensorAlgebra.ι K x)) =
       spinAction Q P (P.typeBQuadraticEquiv b z hz x : CliffordAlgebra Q) := by
   rw [typeBSpinRep, _root_.UniversalEnvelopingAlgebra.lift_ι_apply',
+    P.typeBSpinLieRep_apply b z hz]
+
+/-- The enveloping-algebra representation evaluated on the canonical image of a Lie element is
+the Lie representation at that element. This is `TauCeti.SpinPolarizationData.typeBSpinRep_ι`
+written against `UniversalEnvelopingAlgebra.ι` rather than its unfolding through the tensor
+algebra, which is the form every statement about a named generator uses. -/
+@[simp]
+theorem typeBSpinRep_ι_eq_typeBSpinLieRep (x : LieAlgebra.Orthogonal.typeB ι K) :
+    P.typeBSpinRep b z hz (_root_.UniversalEnvelopingAlgebra.ι K x) =
+      P.typeBSpinLieRep b z hz x := by
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
     P.typeBSpinLieRep_apply b z hz]
 
 section TerminalRoot

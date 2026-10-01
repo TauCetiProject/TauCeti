@@ -46,7 +46,9 @@ Chevalley carrier in Layer 9 of the ReductiveGroups roadmap. That carrier is con
   simple-root operators are square-zero.
 * `TauCeti.SpinPolarizationData.typeBSpinCorootWeight`, with its values
   `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_last` and
-  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_castSucc`, and
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_castSucc`,
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_univ_eq_single`,
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_eq_single_iff`, and
   `TauCeti.SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis`:
   the integral eigenvalues of the numbered simple coroots on the exterior basis.
 * `TauCeti.SpinPolarizationData.typeBSpinRep_kostantForm_apply_mem_integralLattice`: the
@@ -176,6 +178,39 @@ theorem typeBSpinCorootWeight_castSucc (s : Finset (Fin (n + 1))) (j : Fin n) :
     typeBSpinCorootWeight s j.castSucc =
       (if j.castSucc ∈ s then 1 else 0) - if j.succ ∈ s then 1 else 0 := by
   rw [typeBSpinCorootWeight, Fin.lastCases_castSucc]
+
+/-- **The all-coordinate exterior-basis vector carries the last fundamental weight.** Every
+coordinate is occupied, so the terminal short node reads `1` and every adjacent difference
+vanishes: the weight is the last fundamental weight `ωₗ`, the `1` sitting at the terminal short
+node. That the corresponding spinor is a highest-weight vector is proved in
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/HighestWeight.lean`. -/
+theorem typeBSpinCorootWeight_univ_eq_single :
+    typeBSpinCorootWeight (Finset.univ : Finset (Fin (n + 1))) = Pi.single (Fin.last n) 1 := by
+  funext i
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · simp
+  · simp [(Fin.castSucc_lt_last j).ne]
+
+/-- **The last fundamental weight occurs at exactly one exterior-basis vector.** Reading the
+coroot weights from the terminal node downwards, the value `1` at the short node forces the last
+coordinate to be occupied and each vanishing adjacent difference propagates occupation one step
+to the left, so the only index set with this weight is the full one. In particular the weight
+`ωₗ` of the type-`B` spin module occurs with multiplicity one in its exterior basis. -/
+theorem typeBSpinCorootWeight_eq_single_iff {s : Finset (Fin (n + 1))} :
+    typeBSpinCorootWeight s = Pi.single (Fin.last n) 1 ↔ s = Finset.univ := by
+  refine ⟨fun h ↦ Finset.eq_univ_of_forall fun i ↦ ?_,
+    fun h ↦ h ▸ typeBSpinCorootWeight_univ_eq_single⟩
+  induction i using Fin.reverseInduction with
+  | last =>
+    have hval := congrFun h (Fin.last n)
+    rw [typeBSpinCorootWeight_last] at hval
+    by_contra hmem
+    simp [hmem] at hval
+  | cast j hj =>
+    have hval := congrFun h j.castSucc
+    rw [typeBSpinCorootWeight_castSucc, Pi.single_eq_of_ne (Fin.castSucc_lt_last j).ne] at hval
+    by_contra hmem
+    simp [hmem, hj] at hval
 
 /-- A difference of two spin weights is the corresponding difference of occupation numbers: the
 halves cancel. -/
