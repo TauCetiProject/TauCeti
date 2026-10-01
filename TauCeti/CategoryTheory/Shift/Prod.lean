@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Shift.CommShift
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 public import Mathlib.CategoryTheory.Products.Basic
+public import TauCeti.CategoryTheory.Products.Preadditive
 
 /-!
 # Shifts on product categories
@@ -16,12 +17,14 @@ If two categories `C` and `D` carry shifts by the same additive monoid `A`, thei
 the componentwise shift `(X, Y)⟦a⟧ = (X⟦a⟧, Y⟦a⟧)`, whose structure isomorphisms are taken
 coordinatewise. This file constructs that shift and the commutation isomorphisms making the
 projections, products of shift-compatible functors, and (when `A` is a group) the two
-zero-section functors compatible with it. It is the shift underlying the pretriangulated
-structure on a product of pretriangulated categories.
+zero-section functors compatible with it. When the factors are preadditive with additive shift
+functors, the componentwise shift functors are additive. It is the shift underlying the
+pretriangulated structure on a product of pretriangulated categories.
 
 ## Main definitions
 
 * `TauCeti.instHasShiftProd`: the componentwise shift on `C × D`.
+* `TauCeti.instAdditiveShiftFunctorProd`: the componentwise shift functors are additive.
 * `CategoryTheory.Functor.CommShift` instances for `CategoryTheory.Prod.fst C D`,
   `CategoryTheory.Prod.snd C D`, `F.prod G`, `CategoryTheory.Prod.sectL C 0` and
   `CategoryTheory.Prod.sectR 0 D`.
@@ -143,6 +146,18 @@ lemma shiftFunctorAdd_prod_inv_app_snd (a b : A) (X : C × D) :
   rfl
 
 end HasShift
+
+section Additive
+
+variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] {D : Type u₂} [Category.{v₂} D]
+  [Preadditive D] {A : Type*} [AddMonoid A] [HasShift C A] [HasShift D A]
+
+/-- The componentwise shift functors on a product of preadditive categories are additive. -/
+instance instAdditiveShiftFunctorProd [∀ a : A, (shiftFunctor C a).Additive]
+    [∀ a : A, (shiftFunctor D a).Additive] (a : A) : (shiftFunctor (C × D) a).Additive :=
+  inferInstanceAs ((shiftFunctor C a).prod (shiftFunctor D a)).Additive
+
+end Additive
 
 section CommShift
 

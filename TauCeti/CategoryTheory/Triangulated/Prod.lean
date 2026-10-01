@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Triangulated.Functor
-public import TauCeti.CategoryTheory.Products.Preadditive
 public import TauCeti.CategoryTheory.Shift.Prod
 
 /-!
@@ -53,10 +52,6 @@ variable (C : Type u₁) [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [
   [∀ n : ℤ, (shiftFunctor C n).Additive]
   (D : Type u₂) [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasShift D ℤ]
   [∀ n : ℤ, (shiftFunctor D n).Additive]
-
-/-- The componentwise shift functors on a product of preadditive categories are additive. -/
-instance instAdditiveShiftFunctorProd (n : ℤ) : (shiftFunctor (C × D) n).Additive :=
-  inferInstanceAs ((shiftFunctor C n).prod (shiftFunctor D n)).Additive
 
 variable [Pretriangulated C] [Pretriangulated D]
 
