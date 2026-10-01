@@ -47,6 +47,12 @@ is semialgebraic. -/
 def IsSemialgebraicMap (f : (σ → R) → (τ → R)) : Prop :=
   IsSemialgebraicOn f univ
 
+/-- Semialgebraicity on the whole domain is semialgebraicity as a map. -/
+@[simp]
+theorem isSemialgebraicOn_univ {f : (σ → R) → (τ → R)} :
+    IsSemialgebraicOn f univ ↔ IsSemialgebraicMap f :=
+  Iff.rfl
+
 /-- Characterization of a function being semialgebraic on a specified domain. -/
 theorem isSemialgebraicOn_def {f : (σ → R) → (τ → R)} {s : Set (σ → R)} :
     IsSemialgebraicOn f s ↔ IsSemialgebraic s ∧
@@ -117,21 +123,14 @@ theorem IsSemialgebraicOn.glue {f g h : (σ → R) → (τ → R)} {s t : Set (�
     (hft : (s ∩ t).EqOn h f) (hgt : (s \ t).EqOn h g) : IsSemialgebraicOn h s := by
   have hhst := hf.congr hft.symm
   have hhst' := hg.congr hgt.symm
-  have hs : IsSemialgebraic s := by
-    convert hf.isSemialgebraic.union hg.isSemialgebraic using 1
+  have hst : s = (s ∩ t) ∪ (s \ t) := by
     ext x
     simp
+  have hs : IsSemialgebraic s := by
+    rw [hst]
+    exact hf.isSemialgebraic.union hg.isSemialgebraic
   refine ⟨hs, ?_⟩
-  have hgraph : Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' s.graphOn h =
-      (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' (s ∩ t).graphOn h) ∪
-        (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' (s \ t).graphOn h) := by
-    ext z
-    have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
-      funext i
-      exact Equiv.sumArrowEquivProdArrow_apply_fst z i
-    simp only [mem_preimage, mem_graphOn, mem_union, mem_inter_iff, mem_sdiff, hfst]
-    by_cases hz : z ∘ Sum.inl ∈ t <;> simp [hz]
-  rw [hgraph]
+  rw [hst, Set.graphOn_union, preimage_union]
   exact hhst.graph.union hhst'.graph
 
 section PolynomialMap
@@ -170,8 +169,9 @@ theorem isSemialgebraicOn_eval [Finite τ] (p : τ → MvPolynomial σ R)
 
 /-- A polynomial map between coordinate spaces is semialgebraic. -/
 theorem isSemialgebraicMap_eval [Finite τ] (p : τ → MvPolynomial σ R) :
-    IsSemialgebraicMap (fun x i => eval x (p i)) :=
-  isSemialgebraicOn_eval p isSemialgebraic_univ
+    IsSemialgebraicMap (fun x i => eval x (p i)) := by
+  rw [← isSemialgebraicOn_univ]
+  exact isSemialgebraicOn_eval p isSemialgebraic_univ
 
 /-- A constant map into a finite-dimensional coordinate space is semialgebraic on every
 semialgebraic domain. -/
