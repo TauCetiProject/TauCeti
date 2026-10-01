@@ -26,6 +26,8 @@ for exact Grothendieck groups.
 
 ## Main results
 
+* `TauCeti.isKernelCokernelPair_prod`: a short complex in a product whose two projections are
+  kernel–cokernel pairs is a kernel–cokernel pair.
 * `TauCeti.ExactStructure.prod_conflation_iff`: a short complex in the product is a conflation
   exactly when both projected short complexes are conflations.
 * `TauCeti.ExactStructure.prod_isInflation_iff` and
@@ -52,6 +54,44 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
 universe v v' u u'
+
+local instance {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+    {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] :
+    (CategoryTheory.Prod.fst C D).PreservesZeroMorphisms where
+  map_zero _ _ := rfl
+
+local instance {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+    {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] :
+    (CategoryTheory.Prod.snd C D).PreservesZeroMorphisms where
+  map_zero _ _ := rfl
+
+/-- In a product of categories with zero morphisms, a short complex whose two projections are
+kernel–cokernel pairs is a kernel–cokernel pair: kernels and cokernels are computed
+componentwise. -/
+theorem isKernelCokernelPair_prod {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+    {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] (S : ShortComplex (C × D))
+    (h₁ : IsKernelCokernelPair (S.map (CategoryTheory.Prod.fst C D)))
+    (h₂ : IsKernelCokernelPair (S.map (CategoryTheory.Prod.snd C D))) :
+    IsKernelCokernelPair S := by
+  have := h₁.mono_f
+  have := h₂.mono_f
+  let : Mono S.f :=
+    ⟨fun {T} a b h => Prod.hom_ext
+      ((cancel_mono (S.map (CategoryTheory.Prod.fst C D)).f).1 (congrArg Prod.fst h))
+      ((cancel_mono (S.map (CategoryTheory.Prod.snd C D)).f).1 (congrArg Prod.snd h))⟩
+  have := h₁.epi_g
+  have := h₂.epi_g
+  let : Epi S.g :=
+    ⟨fun {T} a b h => Prod.hom_ext
+      ((cancel_epi (S.map (CategoryTheory.Prod.fst C D)).g).1 (congrArg Prod.fst h))
+      ((cancel_epi (S.map (CategoryTheory.Prod.snd C D)).g).1 (congrArg Prod.snd h))⟩
+  exact
+    { nonempty_fIsKernel := ⟨KernelFork.IsLimit.ofι' S.f S.zero fun {T} k hk =>
+        ⟨(h₁.lift k.1 (congrArg Prod.fst hk), h₂.lift k.2 (congrArg Prod.snd hk)),
+          Prod.hom_ext (h₁.lift_f _ _) (h₂.lift_f _ _)⟩⟩
+      nonempty_gIsCokernel := ⟨CokernelCofork.IsColimit.ofπ' S.g S.zero fun {T} k hk =>
+        ⟨(h₁.desc k.1 (congrArg Prod.fst hk), h₂.desc k.2 (congrArg Prod.snd hk)),
+          Prod.hom_ext (h₁.g_desc _ _) (h₂.g_desc _ _)⟩⟩ }
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
-public import TauCeti.CategoryTheory.Products.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Kernels
 
@@ -61,9 +60,6 @@ category with homology the notion coincides with Mathlib's
 * `TauCeti.isKernelCokernelPair_iff_shortExact`: in a balanced preadditive category the
   kernel–cokernel pairs among the short complexes with homology are exactly the short exact
   ones. These are the conflations of the canonical exact structure on an abelian category.
-* `TauCeti.isKernelCokernelPair_prod`: in a product of preadditive categories, a short complex
-  whose two projections are kernel–cokernel pairs is a kernel–cokernel pair.
-
 ## Implementation notes
 
 `IsKernelCokernelPair` is a `Prop` whose fields are `Nonempty` universal properties, following
@@ -348,34 +344,6 @@ canonical exact structure of an abelian category with Mathlib's
 theorem isKernelCokernelPair_iff_shortExact [Balanced C] (S : ShortComplex C) [S.HasHomology] :
     IsKernelCokernelPair S ↔ S.ShortExact :=
   ⟨fun h => h.shortExact, fun h => .of_shortExact h⟩
-
-/-- In a product of preadditive categories, a short complex whose two projections are
-kernel–cokernel pairs is a kernel–cokernel pair: kernels and cokernels are computed
-componentwise. -/
-theorem isKernelCokernelPair_prod {D : Type u'} [Category.{v'} D] [Preadditive D]
-    (S : ShortComplex (C × D))
-    (h₁ : IsKernelCokernelPair (S.map (CategoryTheory.Prod.fst C D)))
-    (h₂ : IsKernelCokernelPair (S.map (CategoryTheory.Prod.snd C D))) :
-    IsKernelCokernelPair S := by
-  have := h₁.mono_f
-  have := h₂.mono_f
-  let : Mono S.f :=
-    ⟨fun {T} a b h => Prod.hom_ext
-      ((cancel_mono (S.map (CategoryTheory.Prod.fst C D)).f).1 (congrArg Prod.fst h))
-      ((cancel_mono (S.map (CategoryTheory.Prod.snd C D)).f).1 (congrArg Prod.snd h))⟩
-  have := h₁.epi_g
-  have := h₂.epi_g
-  let : Epi S.g :=
-    ⟨fun {T} a b h => Prod.hom_ext
-      ((cancel_epi (S.map (CategoryTheory.Prod.fst C D)).g).1 (congrArg Prod.fst h))
-      ((cancel_epi (S.map (CategoryTheory.Prod.snd C D)).g).1 (congrArg Prod.snd h))⟩
-  exact
-    { nonempty_fIsKernel := ⟨KernelFork.IsLimit.ofι' S.f S.zero fun {T} k hk =>
-        ⟨(h₁.lift k.1 (congrArg Prod.fst hk), h₂.lift k.2 (congrArg Prod.snd hk)),
-          Prod.hom_ext (h₁.lift_f _ _) (h₂.lift_f _ _)⟩⟩
-      nonempty_gIsCokernel := ⟨CokernelCofork.IsColimit.ofπ' S.g S.zero fun {T} k hk =>
-        ⟨(h₁.desc k.1 (congrArg Prod.fst hk), h₂.desc k.2 (congrArg Prod.snd hk)),
-          Prod.hom_ext (h₁.g_desc _ _) (h₂.g_desc _ _)⟩⟩ }
 
 end Preadditive
 
