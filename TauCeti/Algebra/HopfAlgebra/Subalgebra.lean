@@ -26,6 +26,11 @@ an object of `CommHopfAlgCat` together with the inclusion morphism, and proves t
 property: a morphism of commutative Hopf algebras into `H` factors, necessarily uniquely, through
 the inclusion exactly when its image lies in `A`.
 
+With `open TauCeti`, state the predicate as `IsHopfSubalgebra A`. Given a proof
+`hA : IsHopfSubalgebra A`, use `hA.toSubcoalgebra` for the underlying subcoalgebra and,
+under the flatness hypotheses, `hA.hopfAlgebra` and `hA.valBialgHom` for the restricted
+Hopf structure and its inclusion.
+
 ## Main declarations
 
 * `TauCeti.IsHopfSubalgebra`: a subalgebra stable under comultiplication and the
