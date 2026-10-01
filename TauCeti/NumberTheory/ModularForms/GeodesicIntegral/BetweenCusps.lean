@@ -48,8 +48,10 @@ cusps, the first step of the period pairing between cusp forms and modular symbo
 * `TauCeti.cuspIntegral_same`, `TauCeti.cuspIntegral_symm`: `∫_a^a = 0` and `∫_b^a = -∫_a^b`.
 * `TauCeti.cuspIntegral_slash`: the substitution `z ↦ γ • z`,
   `∫_a^b (F ∣[2] γ)(z) dz = ∫_{γ • a}^{γ • b} F(z) dz`.
-* `TauCeti.cuspIntegral_zero`, `TauCeti.cuspIntegral_smul`, `TauCeti.cuspIntegral_add`: linearity
-  in the integrand.
+* `TauCeti.cuspIntegral_zero`, `TauCeti.cuspIntegral_smul`: the integral of `0` vanishes, and the
+  integral is homogeneous under scalar multiplication of the integrand.
+* `TauCeti.cuspIntegral_add`: additivity in the integrand, for integrands that are integrable along
+  the geodesic.
 * `TauCeti.cuspIntegral_add_adjacent`: additivity, `∫_a^b + ∫_b^c = ∫_a^c`.
 
 ## References
@@ -356,7 +358,9 @@ theorem cuspIntegral_slash (F : ℍ → ℂ) {γ : GL (Fin 2) ℚ}
   rw [← mul_smul, ← mul_smul, cuspIntegral_smul_zero_smul_infty _ hg,
     cuspIntegral_smul_zero_smul_infty _ hγg, geodesicIntegral_mul]
 
-/-- The integral between cusps is `ℂ`-linear in the integrand. -/
+/-- The integral between cusps is homogeneous under scalar multiplication of the integrand:
+`∫_a^b c F(z) dz = c ∫_a^b F(z) dz`. Additivity in the integrand needs integrability, and holds
+under the hypotheses of `TauCeti.cuspIntegral_add`. -/
 theorem cuspIntegral_smul (c : ℂ) (F : ℍ → ℂ) (a b : OnePoint ℚ) :
     cuspIntegral (c • F) a b = c * cuspIntegral F a b := by
   rcases eq_or_ne a b with rfl | hab

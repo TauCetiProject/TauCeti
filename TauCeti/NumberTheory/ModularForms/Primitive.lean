@@ -12,7 +12,11 @@ public import TauCeti.NumberTheory.ModularForms.Basic
 # Primitives and the modular slash action
 
 This file records how primitives on the upper half-plane transform under the modular slash
-action.
+action: pulling a primitive of `F` back along the Möbius transformation `z ↦ g • z` gives a
+primitive of the weight-`2` slash `F ∣[2] g`. This is what lets a single primitive of `F` compute
+the integrals of `F(z) dz` along all geodesics `g • (0, i∞)` at once, by comparing its limits at
+the transformed cusps `g • 0` and `g • ∞`; see
+`TauCeti.NumberTheory.ModularForms.GeodesicIntegral.BetweenCusps`.
 -/
 
 public section
