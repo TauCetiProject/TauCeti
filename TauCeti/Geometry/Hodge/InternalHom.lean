@@ -463,19 +463,6 @@ end Contraction
 
 /-! ### The Weil operator of the internal hom -/
 
-/-- The scalar identity behind `TauCeti.Hodge.HodgeStructureOn.weilOperator_internalHom`: the
-inverse Weil operator of the source on degree `a`, followed by the Weil operator of the target on
-degree `a + r`, is the Weil scalar of degree `r` in weight `n₂ - n₁`. -/
-private theorem neg_one_zpow_mul_I_zpow_mul_I_zpow (n₁ n₂ a r : ℤ) :
-    (-1 : ℂ) ^ n₁ * Complex.I ^ (2 * a - n₁) * Complex.I ^ (2 * (a + r) - n₂) =
-      Complex.I ^ (2 * r - (n₂ - n₁)) := by
-  -- Write `-1 = i^2`; the exponents then add up to `2r - (n₂ - n₁) + 4a`, and `i^(4a) = 1`.
-  rw [show (-1 : ℂ) = Complex.I ^ (2 : ℤ) by simp, ← zpow_mul, ← zpow_add₀ Complex.I_ne_zero,
-    ← zpow_add₀ Complex.I_ne_zero,
-    show 2 * n₁ + (2 * a - n₁) + (2 * (a + r) - n₂) = 2 * r - (n₂ - n₁) + 4 * a by ring,
-    zpow_add₀ Complex.I_ne_zero, zpow_mul]
-  simp
-
 /-- **The Weil operator of the internal hom** is conjugation by the Weil operators: it sends a
 map `f` to `C_W ∘ f ∘ C_V⁻¹`. -/
 @[simp]
@@ -489,7 +476,15 @@ theorem weilOperator_internalHom (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
   simp only [LinearEquiv.coe_coe, LinearEquiv.arrowCongr_apply, weilOperatorEquiv_symm_apply,
     weilOperatorEquiv_apply, hs₁.weilOperator_apply_of_mem hx, map_smul,
     hs₂.weilOperator_apply_of_mem hφx, LinearMap.smul_apply, smul_smul]
-  rw [← neg_one_zpow_mul_I_zpow_mul_I_zpow n₁ n₂ a r]
+  congr 1
+  -- The inverse Weil scalar of degree `a` in weight `n₁` times the Weil scalar of degree `a + r`
+  -- in weight `n₂` is the Weil scalar of degree `r` in weight `n₂ - n₁`. Write `-1 = i^2`; the
+  -- exponents then add up to `2r - (n₂ - n₁) + 4a`, and `i^(4a) = 1`.
+  rw [show (-1 : ℂ) = Complex.I ^ (2 : ℤ) by simp, ← zpow_mul, ← zpow_add₀ Complex.I_ne_zero,
+    ← zpow_add₀ Complex.I_ne_zero,
+    show 2 * n₁ + (2 * a - n₁) + (2 * (a + r) - n₂) = 2 * r - (n₂ - n₁) + 4 * a by ring,
+    zpow_add₀ Complex.I_ne_zero, zpow_mul]
+  simp
 
 /-- The Weil operators intertwine evaluation: `C(f) (C_V x) = C_W (f x)`. -/
 theorem weilOperator_internalHom_apply_weilOperator (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
