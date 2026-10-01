@@ -112,7 +112,7 @@ theorem counit_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)
     Coalgebra.counit (R := R) (leftInvariantDerivation d h) =
       CounitAlgebra.algEquivSelf R H R (d h) := by
   have h' := LinearMap.congr_fun
-    (TauCeti.LinearMap.comp_tensorComponent (Coalgebra.counit (R := R) (A := H))
+    (TauCeti.comp_tensorComponent (Coalgebra.counit (R := R) (A := H))
       ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap))
     (Coalgebra.comul (R := R) (A := H) h)
   rw [LinearMap.comp_apply, ← leftInvariantDerivation_apply] at h'
@@ -129,7 +129,7 @@ theorem comul_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R))
   have hD : (leftInvariantDerivation d).toLinearMap = tensorComponent φ ∘ₗ Coalgebra.comul :=
     LinearMap.ext (leftInvariantDerivation_apply d)
   rw [leftInvariantDerivation_apply, hD, LinearMap.lTensor_comp, LinearMap.comp_apply,
-    ← TauCeti.LinearMap.tensorComponent_assoc_symm,
+    ← TauCeti.tensorComponent_assoc_symm,
     Coalgebra.coassoc_symm_apply, LinearMap.rTensor, tensorComponent_map, LinearMap.comp_id]
 
 /-- A left-invariant derivation with value `d` at the identity is the left-invariant
