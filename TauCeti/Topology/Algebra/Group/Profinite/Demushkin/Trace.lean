@@ -76,8 +76,9 @@ theorem traceEquiv_smul (ω : cohomFp p G 2) (hω : ω ≠ 0) (a : (ZMod p)ˣ) :
   -- simplify through the `LinearEquiv.trans` wrapper here.
   change ((a⁻¹ : (ZMod p)ˣ) : ZMod p) *
     hG.traceEquiv ω hω ((a : ZMod p) • ω) = 1
-  rw [map_smul, smul_eq_mul, ← mul_assoc, ← Units.val_mul, inv_mul_cancel,
-    Units.val_one, one_mul, hG.traceEquiv_apply_self]
+  rw [map_smul, smul_eq_mul, ← mul_assoc]
+  simpa only [← Units.val_mul, inv_mul_cancel, Units.val_one, one_mul] using
+    hG.traceEquiv_apply_self ω hω
 
 end IsDemushkin
 
