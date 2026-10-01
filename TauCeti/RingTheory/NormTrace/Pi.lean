@@ -59,15 +59,10 @@ variable {L : ι → Type*} [∀ i, CommRing (L i)] [∀ i, Algebra K (L i)]
 theorem Algebra.trace_pi (x : ∀ i, L i) :
     Algebra.trace K (∀ i, L i) x = ∑ i, Algebra.trace K (L i) (x i) := by
   rw [Algebra.trace_apply]
-  calc
-    LinearMap.trace K (∀ i, L i) (Algebra.lmul K (∀ i, L i) x) =
-        ∑ i, LinearMap.trace K (L i) (Algebra.lmul K (L i) (x i)) := by
-      apply LinearMap.trace_pi_of_apply_eq_dependent
-        (f := fun i ↦ Algebra.lmul K (L i) (x i))
-      intro y i
-      simp [Algebra.lmul]
-    _ = ∑ i, Algebra.trace K (L i) (x i) := by
-      simp_rw [Algebra.trace_apply]
+  have h : Algebra.lmul K (∀ i, L i) x = LinearMap.piMap fun i ↦ Algebra.lmul K (L i) (x i) := by
+    ext y i
+    simp [Algebra.lmul]
+  simp_rw [h, LinearMap.trace_piMap, Algebra.trace_apply]
 
 end Trace
 

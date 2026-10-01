@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.Matrix.Block
+public import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
@@ -20,8 +20,9 @@ segment and its last coordinate, and the determinant of a coordinatewise endomor
 dependent product, which is used in finite-product norm calculations.
 
 Finally, distinct sums and differences of standard coordinate vectors can be separated at a
-coordinate where their difference is regular. Two of these separations compare families that agree
-after doubling, so they assume `2` is regular; separating two unordered sums needs no such
+coordinate where their difference is regular. In two of these separations the critical case is
+one family being the negative of the other, so that their difference is `2` times a vector of
+`±1`s; those two assume `2` is regular, while separating two unordered sums needs no such
 hypothesis. These elementary facts are useful for identifying root spaces from their coordinate
 weights.
 
@@ -33,12 +34,15 @@ weights.
   coordinates and its last one, with `Fin.snoc` as its inverse.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
+* `LinearMap.toMatrix_piMap`: in a product basis, `LinearMap.piMap f` is block diagonal.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
-* `TauCeti.exists_isRegular_single_sub_single_sub`: distinct ordered differences of standard
-  coordinate vectors differ regularly at some coordinate.
-* `TauCeti.exists_isRegular_single_add_single_sub`: distinct unordered sums of two different
-  standard coordinate vectors differ regularly at some coordinate.
+* `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
+  vectors on two different coordinates and any other ordered difference differ regularly at some
+  coordinate.
+* `TauCeti.exists_isRegular_single_add_single_sub`: a sum of standard coordinate vectors on two
+  different coordinates and a sum with a different unordered index pair differ regularly at some
+  coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum on two different coordinates differ regularly at some coordinate.
 -/
@@ -75,11 +79,14 @@ public def piFinSnoc :
 
 @[simp]
 public theorem piFinSnoc_apply (v : (i : Fin (n + 1)) → M i) :
-    piFinSnoc R M v = (Fin.init v, v (Fin.last n)) := (rfl)
+    piFinSnoc R M v = (Fin.init v, v (Fin.last n)) := by
+  simp [piFinSnoc]
 
 @[simp]
 public theorem piFinSnoc_symm_apply (p : ((i : Fin n) → M i.castSucc) × M (Fin.last n)) :
-    (piFinSnoc R M).symm p = Fin.snoc p.1 p.2 := (rfl)
+    (piFinSnoc R M).symm p = Fin.snoc p.1 p.2 := by
+  ext i
+  simp [piFinSnoc]
 
 end FinSnoc
 
@@ -108,31 +115,33 @@ end LinearEquiv
 
 namespace LinearMap
 
+/-- In the product basis `Pi.basis b`, the coordinatewise endomorphism `LinearMap.piMap f` has the
+block-diagonal matrix whose blocks are the matrices of the `f i` in the bases `b i`. -/
+public theorem toMatrix_piMap {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*}
+    [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)] (b : ∀ i, Module.Basis (κ i) R (M i))
+    (f : ∀ i, M i →ₗ[R] M i) :
+    toMatrix (Pi.basis b) (Pi.basis b) (piMap f) =
+      Matrix.blockDiagonal' fun i ↦ toMatrix (b i) (b i) (f i) := by
+  ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
+  simp only [toMatrix_apply', Pi.basis_apply, Matrix.blockDiagonal'_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · simp [h]
+
 /-- The determinant of the coordinatewise endomorphism `LinearMap.piMap f` of a finite dependent
-product of finite free modules is the product of the determinants of the `f i`. -/
+product of finite free modules is the product of the determinants of the `f i`. This is the
+dependent-family version of Mathlib's `LinearMap.det_pi`. -/
+@[simp]
 public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Type*}
     [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, Module.Free R (M i)]
     [∀ i, Module.Finite R (M i)] (f : ∀ i, M i →ₗ[R] M i) :
     (piMap f).det = ∏ i, (f i).det := by
   classical
   let b (i : ι) := Module.Free.chooseBasis R (M i)
-  let B := Pi.basis b
-  rw [← det_toMatrix B]
-  have hmatrix : toMatrix B B (piMap f) =
-      Matrix.blockDiagonal' fun i ↦ toMatrix (b i) (b i) (f i) := by
-    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
-    simp only [toMatrix_apply', B, Pi.basis_apply, Matrix.blockDiagonal'_apply]
-    split_ifs with h
-    · subst h
-      simp
-    · simp [h]
-  let _ : LinearOrder ι := Equiv.linearOrder (Fintype.equivFin ι)
-  rw [hmatrix, (Matrix.blockTriangular_blockDiagonal' _).det_fintype]
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  rw [← det_toMatrix (b i), ← Matrix.det_reindex_self (Equiv.sigmaSubtype i)]
-  congr 1
-  ext j k
-  simp [Matrix.toSquareBlock_def, Equiv.sigmaSubtype]
+  rw [← det_toMatrix (Pi.basis b), toMatrix_piMap, Matrix.det_blockDiagonal']
+  exact Finset.prod_congr rfl fun i _ ↦ det_toMatrix (b i) (f i)
 
 end LinearMap
 
@@ -140,8 +149,9 @@ namespace TauCeti
 
 variable {K ι : Type*} [Ring K] [DecidableEq ι]
 
-/-- If two ordered differences of standard coordinate vectors have different index pairs, then
-they differ by a regular scalar at some coordinate, provided `2` is regular. -/
+/-- If `i ≠ j` and the index pair `(a, b)` differs from `(i, j)`, then the ordered differences of
+standard coordinate vectors `eₐ - e_b` and `eᵢ - eⱼ` differ by a regular scalar at some
+coordinate, provided `2` is regular. -/
 public theorem exists_isRegular_single_sub_single_sub (h2 : IsRegular (2 : K))
     {i j : ι} (hij : i ≠ j) (a b : ι) (hne : ¬(a = i ∧ b = j)) :
     ∃ k, IsRegular
@@ -158,8 +168,9 @@ public theorem exists_isRegular_single_sub_single_sub (h2 : IsRegular (2 : K))
     simpa [hab, hai, hij, one_add_one_eq_two] using h2
   · simpa [hab, hai, haj] using isRegular_one
 
-/-- If two unordered sums of standard coordinate vectors on different target coordinates have
-different index pairs, then they differ by a regular scalar at some coordinate. -/
+/-- If `i ≠ j` and the unordered index pair `{a, b}` differs from `{i, j}`, then the sums of
+standard coordinate vectors `eₐ + e_b` and `eᵢ + eⱼ` differ by a regular scalar at some
+coordinate. -/
 public theorem exists_isRegular_single_add_single_sub {i j : ι} (hij : i ≠ j) (a b : ι)
     (hne : ¬((a = i ∧ b = j) ∨ (a = j ∧ b = i))) :
     ∃ k, IsRegular
@@ -182,8 +193,8 @@ public theorem exists_isRegular_single_add_single_sub {i j : ι} (hij : i ≠ j)
     exact ⟨b, by simpa [hab, hbi, hbj] using h1⟩
   exact ⟨a, by simpa [hab, hai, haj] using h1⟩
 
-/-- A negative sum of two standard coordinate vectors and a sum on two different coordinates
-differ by a regular scalar at some coordinate, provided `2` is regular. -/
+/-- If `i ≠ j`, then the negative sum of standard coordinate vectors `-(eₐ + e_b)` and the sum
+`eᵢ + eⱼ` differ by a regular scalar at some coordinate, provided `2` is regular. -/
 public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
     (h2 : IsRegular (2 : K)) {i j : ι} (hij : i ≠ j) (a b : ι) :
     ∃ k, IsRegular
