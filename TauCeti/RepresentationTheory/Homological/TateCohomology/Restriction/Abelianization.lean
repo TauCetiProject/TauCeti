@@ -46,20 +46,20 @@ universe u
 open CategoryTheory Rep Finsupp
 open scoped TensorProduct
 
-namespace TauCeti.TensorProduct
+namespace TauCeti
 
 variable {R M N : Type*} [CommSemiring R]
   [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
 @[simp]
-theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
+theorem tensorProduct_rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
     TensorProduct.rid R N (LinearMap.rTensor R f t) = f (TensorProduct.rid R M t) := by
   induction t using TensorProduct.inductionOn with
   | tmul m r => simp
   | add x y hx hy => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
 
-end TauCeti.TensorProduct
+end TauCeti
 
 namespace TauCeti.TateCohomology
 
@@ -125,7 +125,7 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoRes (S : Subgroup G)
         (Abelianization.of : S →* Abelianization S).transfer).toAdditive
         (HNegTwoAddEquivAbelianization x) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes,
-    TauCeti.TensorProduct.rid_rTensor_apply, HNegTwoAddEquivAbelianization_apply,
+    TauCeti.tensorProduct_rid_rTensor_apply, HNegTwoAddEquivAbelianization_apply,
     AddMonoidHom.coe_toIntLinearMap]
 
 /-- Under the integral degree-`-2` identification, corestriction along a homomorphism is the
@@ -142,7 +142,7 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoCor {H : Type} [Group H] [Fintype H
             (Rep.res f (Rep.trivial ℤ G ℤ)) y)) := by
   rw [HNegTwoAddEquivAbelianization_apply,
     HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor,
-    TauCeti.TensorProduct.rid_rTensor_apply, AddMonoidHom.coe_toIntLinearMap]
+    TauCeti.tensorProduct_rid_rTensor_apply, AddMonoidHom.coe_toIntLinearMap]
 
 end TrivialInt
 
