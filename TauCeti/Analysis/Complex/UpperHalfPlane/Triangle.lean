@@ -500,6 +500,49 @@ theorem interiorAngle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
     ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm]
   simp
 
+/-- A point of `ℍ` lies strictly between the two ends of any semicircle through it: its real
+part is within less than the radius of the centre. -/
+private theorem abs_re_sub_lt_sqrt_normSq (P : ℍ) (c : ℝ) :
+    |P.re - c| < Real.sqrt (Complex.normSq ((P : ℂ) - c)) := by
+  rw [Real.lt_sqrt (abs_nonneg _), sq_abs, Complex.normSq_apply]
+  simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, sub_zero,
+    UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
+  nlinarith [P.im_pos]
+
+/-- The angular defect in normal form: the triangle is, up to a null arc, the difference of two
+nested ideal-vertex regions, whose areas are the two `arccos` differences whose difference is
+the defect. -/
+theorem interiorAngle_add_add_le_pi_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ}
+    (hC : 0 < C.re) :
+    interiorAngle UpperHalfPlane.I (geodesicLine 1 d) C +
+        interiorAngle (geodesicLine 1 d) C UpperHalfPlane.I +
+        interiorAngle C UpperHalfPlane.I (geodesicLine 1 d) ≤ π := by
+  have hBre : (geodesicLine 1 d).re = 0 := by rw [geodesicLine_one_apply]; rfl
+  have hIC : UpperHalfPlane.I.re ≠ C.re := by rw [UpperHalfPlane.I_re]; exact hC.ne
+  have hBC : (geodesicLine 1 d).re ≠ C.re := by rw [hBre]; exact hC.ne
+  -- the ends of the two semicircles lie strictly left of `I`, `B` and strictly right of `C`
+  have hI := abs_lt.1
+    (abs_re_sub_lt_sqrt_normSq UpperHalfPlane.I (circleCenter UpperHalfPlane.I C))
+  have hB := abs_lt.1
+    (abs_re_sub_lt_sqrt_normSq (geodesicLine 1 d) (circleCenter (geodesicLine 1 d) C))
+  have hC₁ := abs_lt.1 (abs_re_sub_lt_sqrt_normSq C (circleCenter UpperHalfPlane.I C))
+  have hC₂ := abs_lt.1 (abs_re_sub_lt_sqrt_normSq C (circleCenter (geodesicLine 1 d) C))
+  rw [← normSq_sub_circleCenter hIC, UpperHalfPlane.I_re] at hI
+  rw [← normSq_sub_circleCenter hBC, hBre] at hB
+  -- the smaller region has the smaller area
+  have hle := measure_mono (μ := volume) (idealRegionAbove_subset_of_normal_form hd hC)
+  rw [volume_idealRegionAbove (by linarith [hC₁.1, hC₁.2]) (by linarith [hI.2]) hC.le
+      (by linarith [hC₁.2]),
+    volume_idealRegionAbove (by linarith [hC₂.1, hC₂.2]) (by linarith [hB.2]) hC.le
+      (by linarith [hC₂.2]),
+    ENNReal.ofReal_le_ofReal_iff (sub_nonneg.2 (Real.arccos_le_arccos
+      ((div_le_div_iff_of_pos_right (by linarith [hC₁.1, hC₁.2])).2 (by linarith)))), zero_sub,
+    zero_sub, neg_div, neg_div, Real.arccos_neg, Real.arccos_neg] at hle
+  rw [interiorAngle_I_geodesicLine_one hd hC, interiorAngle_geodesicLine_one_I hd hC,
+    interiorAngle_of_normal_form hd hC, ← normSq_sub_circleCenter hIC,
+    ← normSq_sub_circleCenter hBC]
+  linarith
+
 /-- The Gauss–Bonnet formula for the triangle in normal form. -/
 theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
     volume (triangle UpperHalfPlane.I (geodesicLine 1 d) C) =
