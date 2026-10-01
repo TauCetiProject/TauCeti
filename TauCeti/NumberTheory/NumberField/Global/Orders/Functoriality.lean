@@ -20,8 +20,10 @@ descends both to the wide Picard groups and to the narrow Picard groups, and the
 from narrow to wide Picard groups is natural. Each of these maps respects identities and
 composition.
 
-The ambient field map is essential here: a bare ring homomorphism of orders has nowhere to send
-the denominators of a fractional ideal, and it gives no control of real places.
+An order morphism `NumberFieldOrder.Hom` packages its ambient field map explicitly, and the
+extension of fractional ideals is described through that map. This is no extra choice: the
+localization of the ring homomorphism `f.toOrderHom` on fraction fields is exactly the ambient
+field map (`NumberFieldOrder.Hom.isLocalization_map_toOrderHom`).
 
 ## Main definitions
 
@@ -117,7 +119,7 @@ theorem mapFractionalIdeal_id (O : NumberFieldOrder K) :
     (Hom.id O).mapFractionalIdeal = RingHom.id _ := by
   ext I : 1
   rw [← FractionalIdeal.coeToSubmodule_inj, coe_mapFractionalIdeal]
-  rw [show ⇑(Hom.id O).fieldHom = _root_.id from funext (id_apply O), Set.image_id]
+  simp only [id_apply, Set.image_id']
   exact Submodule.span_eq (I : Submodule O.toSubalgebra K)
 
 /-- Extension of fractional ideals respects composition of order morphisms. -/
