@@ -40,10 +40,9 @@ monoidal structure on `X.Modules` are in
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible
 sheaves on a scheme; the Picard group `Pic X` under `⊗`": the tensor product is the
-operation from which the Picard group will be built. What remains towards that item is
-the closure of invertible sheaves under the tensor product, duals, associativity of the
-tensor product up to coherent isomorphism, and the resulting group structure on
-isomorphism classes.
+operation from which the Picard group is built. Closure, associativity, duality, and the resulting
+group structure on isomorphism classes are supplied by the downstream invertible-sheaf and
+line-bundle modules.
 -/
 
 public section
