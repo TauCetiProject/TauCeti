@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.Unitary
+public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.Topology.Algebra.Star.Unitary
 public import Mathlib.Algebra.Lie.Classical
@@ -53,6 +54,8 @@ unitary group, and is not treated here.
   abstract exponential line of `x` stays unitary exactly when `x` is skew-adjoint.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`:
   **the Lie algebra of the unitary group is the skew-adjoint elements.**
+* `TauCeti.Lie.isEmbeddedLieSubgroup_unitarySubgroup`: the unitary group is an embedded Lie
+  subgroup of the units, so a Lie group in its own right.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg`:
   the matrix form, with the skew-adjointness spelled out as `Aᴴ = -A`.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_so`: over `ℝ` the
@@ -104,6 +107,14 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdj
         (isClosed_unitarySubgroup_units R) x).trans
     ((forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff _ x).symm.trans
       (forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint x))
+
+omit [StarModule ℝ R] in
+/-- **The unitary group is an embedded Lie subgroup of the units.**  Being a closed subgroup of
+the Lie group `Rˣ`, it is a Lie group for its subspace topology.  Specialized to
+`R = Matrix n n 𝕜` this is the unitary matrix group, and over `ℝ` the orthogonal matrix group. -/
+theorem isEmbeddedLieSubgroup_unitarySubgroup :
+    IsEmbeddedLieSubgroup (I := 𝓘(ℝ, R)) (unitarySubgroup Rˣ) :=
+  isEmbeddedLieSubgroup_of_isClosed (isClosed_unitarySubgroup_units R)
 
 end Algebra
 
