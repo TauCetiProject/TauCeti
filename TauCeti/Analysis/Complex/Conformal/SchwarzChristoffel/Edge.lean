@@ -102,6 +102,14 @@ theorem schwarzChristoffelDensity_nonneg (a e : ι → ℝ) (x : ℝ) :
   rw [schwarzChristoffelDensity_def]
   exact Finset.prod_nonneg fun k _ ↦ Real.rpow_nonneg (abs_nonneg (x - a k)) _
 
+/-- Reflecting the prevertices and the boundary parameter preserves the Schwarz--Christoffel
+density. -/
+theorem schwarzChristoffelDensity_neg (a e : ι → ℝ) (x : ℝ) :
+    schwarzChristoffelDensity (fun i ↦ -a i) e x = schwarzChristoffelDensity a e (-x) := by
+  simp only [schwarzChristoffelDensity_def]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [show x - -a i = -(-x - a i) by ring, abs_neg]
+
 /-- The Schwarz--Christoffel boundary density is positive away from every prevertex carrying a
 nonzero exponent. -/
 theorem schwarzChristoffelDensity_pos (a e : ι → ℝ) {x : ℝ}

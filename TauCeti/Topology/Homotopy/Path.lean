@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Subpath
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import Mathlib.Topology.Connected.LocallyPathConnected
+public import TauCeti.Topology.UnitInterval
 -- Private: `Path.Homotopic.map_trans_evalAt` is used only in the proof of
 -- `map_nullhomotopic_of_nullhomotopic` below, so this import is not re-exported.
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
@@ -36,8 +38,19 @@ ambient space whose intermediate paths all stay in `V`. Analytic continuation co
 `Path.exists_monotone_range_subpath_subset` subdivides a path, by the Lebesgue number lemma on the
 unit interval, so that each consecutive subpath lies in a member of a given family of sets. It is
 used for the generation half of the groupoid van Kampen theorem in
-`AlgebraicTopology/FundamentalGroupoid/CoverGeneration.lean` and for the tube construction in
-`AlgebraicTopology/UniversalCover/PathHomotopyDiscreteness.lean`.
+`AlgebraicTopology/FundamentalGroupoid/CoverGeneration.lean`, and, repackaged over a
+`unitInterval.Partition` as `Path.exists_partition_with_property`, for the tube construction in
+`Topology/Homotopy/TubeNeighborhood.lean`. That construction also uses
+`unitInterval.exists_vertex_family`, the path-connected vertex neighbourhoods of such a
+subdivision; `IsPathHomotopyTrivial`, the property of a set that paths in it with common endpoints
+are homotopic in the ambient space; and the pasting lemma
+`Path.Homotopic.trans_of_subpath_trans`, which assembles homotopies over the segments of a
+partition into a homotopy of the whole paths.
+
+`Path.trans_apply_of_le` and `Path.trans_apply_of_ge` express a value of a concatenation as a
+value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
+values of the path on an interval containing its endpoints. They are used by the gluing
+construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
 -/
 
 public section
@@ -77,6 +90,33 @@ theorem map_refl {Y : Type*} [TopologicalSpace Y] {f : X → Y} (hf : Continuous
     (Path.refl a).map hf = Path.refl (f a) :=
   rfl
 
+/-- The value of `γ.trans δ` at a parameter in the first half is a value of `γ`. -/
+theorem trans_apply_of_le {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
+    (hu : (u : ℝ) ≤ 1 / 2) (v : I) (hv : (v : ℝ) = 2 * u) : γ.trans δ u = γ v := by
+  rw [trans_apply]
+  split_ifs
+  exact congrArg γ (Subtype.ext hv.symm)
+
+/-- The value of `γ.trans δ` at a parameter in the second half is a value of `δ`. -/
+theorem trans_apply_of_ge {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
+    (hu : 1 / 2 ≤ (u : ℝ)) (v : I) (hv : (v : ℝ) = 2 * u - 1) : γ.trans δ u = δ v := by
+  rw [trans_apply]
+  split_ifs with h
+  · have hu' : (u : ℝ) = 1 / 2 := le_antisymm h hu
+    have hv_zero : v = 0 := Subtype.ext (by rw [hv, hu']; norm_num)
+    rw [hv_zero, δ.source]
+    convert γ.target using 2
+    exact Subtype.ext (by norm_num [hu'])
+  · exact congrArg δ (Subtype.ext hv.symm)
+
+/-- A subpath of `γ` between two parameters of an interval that `γ` maps into `V` lies in `V`. -/
+theorem subpath_apply_mem {x y : X} {γ : Path x y} {V : Set X} {lo hi : I}
+    (hγ : ∀ t ∈ Icc lo hi, γ t ∈ V) {a b : I} (ha : a ∈ Icc lo hi) (hb : b ∈ Icc lo hi) (t : I) :
+    γ.subpath a b t ∈ V := by
+  obtain ⟨s, hs, hst⟩ : γ.subpath a b t ∈ γ '' uIcc a b :=
+    range_subpath γ a b ▸ mem_range_self t
+  exact hst ▸ hγ s (uIcc_subset_Icc ha hb hs)
+
 /-- If the extended path stays inside `U` throughout `[t₀, t₁]`, then the truncated subpath has
 range in `U`. -/
 theorem truncateOfLE_range_subset {a b : X} (γ : Path a b) {t₀ t₁ : ℝ}
@@ -114,7 +154,7 @@ theorem continuous_initialSegmentFamily_uncurry {a b : X} (γ : Path a b) :
     (γ.truncate_const_continuous_family 0).comp hincl
   simpa [initialSegmentFamily] using! htrunc
 
-@[simp] private theorem initialSegmentFamily_apply {a b : X} (γ : Path a b) (t s : I) :
+@[simp] theorem initialSegmentFamily_apply {a b : X} (γ : Path a b) (t s : I) :
     initialSegmentFamily γ t s = γ.extend (min (s : ℝ) t) := by
   simp [initialSegmentFamily, Path.truncate, max_eq_left s.2.1]
 
@@ -194,7 +234,52 @@ theorem exists_monotone_range_subpath_subset {ι : Type*} {U : ι → Set X} {x 
   have hs' : s ∈ γ ⁻¹' U i := interior_subset (hi (by simpa using hs))
   exact hs'
 
+-- The statement is ported from https://github.com/leanprover-community/mathlib4/pull/44183.
+/-- If every point on a path has an open neighborhood satisfying `P`, then there is a partition
+`0 = t₀ ≤ ⋯ ≤ tₙ = 1` such that each segment `γ [tᵢ, tᵢ₊₁]` lies in an open set satisfying
+`P`. -/
+theorem exists_partition_with_property {x y : X} (γ : Path x y) (P : Set X → Prop)
+    (h : ∀ z ∈ range γ, ∃ U : Set X, IsOpen U ∧ z ∈ U ∧ P U) :
+    ∃ (n : ℕ) (part : unitInterval.Partition n),
+      ∀ i : Fin n, ∃ U : Set X, IsOpen U ∧ P U ∧
+        MapsTo γ (Icc (part.t i.castSucc) (part.t i.succ)) U := by
+  choose U hU_open hU_mem hU_P using h
+  obtain ⟨N, t, ht0, htN, ht_mono, ht_cover⟩ :=
+    γ.exists_monotone_range_subpath_subset (U := fun z : range γ ↦ U z.val z.property)
+      fun s ↦ ⟨⟨γ s, s, rfl⟩, γ.continuous.continuousAt.preimage_mem_nhds
+        ((hU_open _ _).mem_nhds (hU_mem _ _))⟩
+  refine ⟨N, ⟨t, ht_mono, ht0, htN⟩, fun i ↦ ?_⟩
+  obtain ⟨⟨z, hz⟩, h_seg⟩ := ht_cover i
+  rw [range_subpath_of_le _ _ _ (ht_mono i.castSucc_le_succ)] at h_seg
+  exact ⟨U z hz, hU_open z hz, hU_P z hz, fun s hs ↦ h_seg ⟨s, hs, rfl⟩⟩
+
 end Path
+
+-- Ported from https://github.com/leanprover-community/mathlib4/pull/44183.
+/-- Given open sets `U i` into which `f` maps the consecutive segments `[t i, t (i + 1)]` of a
+monotone sequence in the unit interval, the path components of `f (t j)` in the intersections of
+the adjacent `U i` are open, path-connected vertex sets, each contained in its adjacent `U i`. -/
+theorem unitInterval.exists_vertex_family {X : Type*} [TopologicalSpace X]
+    [LocallyPathConnectedSpace X] {n : ℕ} {f : I → X} {t : Fin (n + 1) → I} {U : Fin n → Set X}
+    (h_mono : Monotone t)
+    (hU_open : ∀ i, IsOpen (U i))
+    (hU : ∀ i : Fin n, MapsTo f (Icc (t i.castSucc) (t i.succ)) (U i)) :
+    ∃ V : Fin (n + 1) → Set X, (∀ j, IsOpen (V j)) ∧ (∀ j, IsPathConnected (V j)) ∧
+      (∀ j, f (t j) ∈ V j) ∧ (∀ i : Fin n, V i.castSucc ⊆ U i) ∧ ∀ i : Fin n, V i.succ ⊆ U i := by
+  let W : Fin (n + 1) → Set X := fun j ↦ ⋂ i : Fin n, ⋂ (_ : j = i.castSucc ∨ j = i.succ), U i
+  have hW_open : ∀ j, IsOpen (W j) := fun j ↦
+    isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦ hU_open i
+  have hfW : ∀ j, f (t j) ∈ W j := by
+    intro j
+    simp only [W, mem_iInter]
+    rintro i (rfl | rfl)
+    · exact hU i ⟨le_rfl, h_mono i.castSucc_lt_succ.le⟩
+    · exact hU i ⟨h_mono i.castSucc_lt_succ.le, le_rfl⟩
+  refine ⟨fun j ↦ pathComponentIn (W j) (f (t j)), fun j ↦ (hW_open j).pathComponentIn _,
+    fun j ↦ isPathConnected_pathComponentIn (hfW j), fun j ↦ mem_pathComponentIn_self (hfW j),
+    fun i ↦ pathComponentIn_subset.trans ?_, fun i ↦ pathComponentIn_subset.trans ?_⟩
+  · exact iInter_subset_of_subset i (iInter_subset _ (Or.inl rfl))
+  · exact iInter_subset_of_subset i (iInter_subset _ (Or.inr rfl))
 
 namespace Path
 variable {X : Type*} [TopologicalSpace X] {x y : X}
@@ -336,3 +421,98 @@ theorem eq_of_trans_symm {γ γ' : Homotopic.Quotient x₀ x₁}
 
 end Quotient
 end Path.Homotopic
+
+section IsPathHomotopyTrivial
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- A subset `U` of a topological space `X` is *path-homotopy-trivial* if any two paths
+in `X` whose images lie in `U` and which share endpoints are homotopic in `X`.
+This is the form of "`U` is simply connected" used in the universal-cover
+construction: it is weaker than `IsSimplyConnected U` because the homotopy is not required
+to lie inside `U`. -/
+def IsPathHomotopyTrivial (U : Set X) : Prop :=
+  ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q
+
+/-- The defining characterization of a path-homotopy-trivial set. -/
+theorem isPathHomotopyTrivial_def {U : Set X} :
+    IsPathHomotopyTrivial U ↔
+      ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q :=
+  Iff.rfl
+
+/-- A loop in a path-homotopy-trivial set is nullhomotopic. -/
+theorem IsPathHomotopyTrivial.nullhomotopic {U : Set X} (hU : IsPathHomotopyTrivial U)
+    {x : X} (γ : Path x x) (hγ : range γ ⊆ U) : γ.Homotopic (Path.refl x) :=
+  hU γ _ hγ (by simpa using hγ ⟨0, γ.source⟩)
+
+end IsPathHomotopyTrivial
+
+section Pasting
+variable {X : Type*} [TopologicalSpace X] {n : ℕ}
+
+-- Ported from https://github.com/leanprover-community/mathlib4/pull/44183.
+/-- The class of `p.subpath` over the endpoints of a partition is the class of `p`. Casts keep the
+endpoints fixed when rewriting the partition endpoints. -/
+private theorem Path.Homotopic.Quotient.cast_mk_subpath_t_zero_t_last {x y : X} (p : Path x y)
+    (part : unitInterval.Partition n) (h₁ : x = p (part.t 0)) (h₂ : y = p (part.t (Fin.last n))) :
+    (Path.Homotopic.Quotient.mk (p.subpath (part.t 0) (part.t (Fin.last n)))).cast h₁ h₂ =
+      Path.Homotopic.Quotient.mk p := by
+  revert h₁ h₂
+  rw [part.t_zero, part.t_last]
+  intro h₁ h₂
+  rw [Path.Homotopic.Quotient.subpath_zero_one]
+  simp
+
+/-- The pasting lemma. Let `γ : Path x y` and `γ' : Path x' y'`, and let `α j` be "rung" paths
+from `γ (t j)` to `γ' (t j)` at the vertices of a partition. If on each segment
+`γ|[tᵢ, tᵢ₊₁] · αᵢ₊₁` is homotopic to `αᵢ · γ'|[tᵢ, tᵢ₊₁]`, then `γ · αₙ` is homotopic to
+`α₀ · γ'`. -/
+theorem Path.Homotopic.trans_of_subpath_trans {x y x' y' : X}
+    (γ : Path x y) (γ' : Path x' y') (part : unitInterval.Partition n)
+    (α : (j : Fin (n + 1)) → Path (γ (part.t j)) (γ' (part.t j)))
+    (h_rect : ∀ i : Fin n,
+      ((γ.subpath (part.t i.castSucc) (part.t i.succ)).trans (α i.succ)).Homotopic
+        ((α i.castSucc).trans (γ'.subpath (part.t i.castSucc) (part.t i.succ)))) :
+    (γ.trans ((α (Fin.last n)).cast (by simp) (by simp))).Homotopic
+      (((α 0).cast (by simp) (by simp)).trans γ') := by
+  open Path.Homotopic.Quotient in
+  -- `γ_aux j` follows `γ` up to `t j`, crosses along `α j`, then follows `γ'`.
+  let γ_aux : Fin (n + 1) → Path x y' := fun j ↦
+    (((γ.subpath (part.t 0) (part.t j)).trans (α j)).trans
+      (γ'.subpath (part.t j) (part.t (Fin.last n)))).cast (by simp) (by simp)
+  have h_zero : (γ_aux 0).Homotopic (((α 0).cast (by simp) (by simp)).trans γ') := by
+    apply Path.Homotopic.Quotient.exact
+    dsimp [γ_aux]
+    rw [subpath_self, cast_mk_subpath_t_zero_t_last γ' part]
+    simp
+  have h_last : (γ_aux (Fin.last n)).Homotopic
+      (γ.trans ((α (Fin.last n)).cast (by simp) (by simp))) := by
+    apply Path.Homotopic.Quotient.exact
+    dsimp [γ_aux]
+    rw [subpath_self, cast_mk_subpath_t_zero_t_last γ part]
+    simp
+  have h_rect' : ∀ (i : Fin n) {w : X} (q : Path.Homotopic.Quotient (γ' (part.t i.succ)) w),
+      (Path.Homotopic.Quotient.mk (γ.subpath (part.t i.castSucc) (part.t i.succ))).trans
+          ((Path.Homotopic.Quotient.mk (α i.succ)).trans q) =
+        (Path.Homotopic.Quotient.mk (α i.castSucc)).trans
+          ((Path.Homotopic.Quotient.mk (γ'.subpath (part.t i.castSucc) (part.t i.succ))).trans
+            q) := by
+    intro i w q
+    rw [← Path.Homotopic.Quotient.trans_assoc, ← Path.Homotopic.Quotient.trans_assoc]
+    rw [← mk_trans, ← mk_trans, Path.Homotopic.Quotient.eq.mpr (h_rect i)]
+  have h_step : ∀ i : Fin n, (γ_aux i.succ).Homotopic (γ_aux i.castSucc) := by
+    intro i
+    apply Path.Homotopic.Quotient.exact
+    simp only [γ_aux, mk_trans, mk_cast]
+    rw [← Path.Homotopic.mk_subpath_trans_mk_subpath γ (part.t 0) (part.t i.castSucc),
+      ← Path.Homotopic.mk_subpath_trans_mk_subpath γ' (part.t i.castSucc) (part.t i.succ)]
+    simp only [Path.Homotopic.Quotient.trans_assoc]
+    rw [h_rect']
+  have h_chain : ∀ j : Fin (n + 1), (γ_aux j).Homotopic (γ_aux 0) := by
+    intro j
+    induction j using Fin.induction with
+    | zero => exact .refl _
+    | succ i ih => exact (h_step i).trans ih
+  exact h_last.symm.trans ((h_chain (Fin.last n)).trans h_zero)
+
+end Pasting

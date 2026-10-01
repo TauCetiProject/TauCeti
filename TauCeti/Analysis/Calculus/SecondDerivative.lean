@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The second derivative as a derivative
@@ -27,8 +29,10 @@ The file also records that on an open set the second directional derivative
 the differential of the outer function vanishes: there the first-order term drops out, so the
 second derivative of a composition is the second derivative of the outer function evaluated on the
 images of the differential of the inner one, i.e. the second derivative transforms as a bilinear
-form. No statement here mentions critical points as such, so all of them belong here rather than
-with the Morse theory that uses them.
+form. Finally, the second derivative of a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` on a
+product is the block-diagonal map built from the second derivatives of the summands. No statement
+here mentions critical points as such, so all of them belong here rather than with the Morse theory
+that uses them.
 
 ## Main results
 
@@ -41,6 +45,8 @@ with the Morse theory that uses them.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
   the outer function vanishes, the second derivative of a composition is the pullback of the
   second derivative along the differential of the inner function.
+* `TauCeti.fderiv_fderiv_comp_fst_add_comp_snd`: the second derivative of a separated sum on a
+  product is block diagonal.
 -/
 
 public section
@@ -106,6 +112,38 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
     filter_upwards [h1, h2] with y hy1 hy2 using fderiv_comp (x := y) hy2 hy1
   rw [((hA.clm_comp hφ1).congr_of_eventuallyEq hev).fderiv]
   simp [hc]
+
+/-- The second derivative of a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` at `(a, b)` is block
+diagonal: it sends `(v, w)` to the coproduct of `D²φ a v` and `D²ψ b w`, i.e. to the functional
+`(v', w') ↦ D²φ a v v' + D²ψ b w w'`. -/
+theorem fderiv_fderiv_comp_fst_add_comp_snd {φ : E → G} {ψ : F → G} {a : E} {b : F}
+    (hφ : ContDiffAt 𝕜 2 φ a) (hψ : ContDiffAt 𝕜 2 ψ b) :
+    fderiv 𝕜 (fderiv 𝕜 (φ ∘ Prod.fst + ψ ∘ Prod.snd)) (a, b) =
+      (ContinuousLinearMap.coprodEquivL 𝕜 :
+          ((E →L[𝕜] G) × (F →L[𝕜] G)) ≃L[𝕜] (E × F →L[𝕜] G)) ∘L
+        (fderiv 𝕜 (fderiv 𝕜 φ) a).prodMap (fderiv 𝕜 (fderiv 𝕜 ψ) b) := by
+  -- Near `(a, b)` both summands are differentiable, so the first derivative is the coproduct of
+  -- the derivatives of the summands, which is the image of the pair of derivatives under the
+  -- linear homeomorphism `coprodEquivL`.
+  have hev : fderiv 𝕜 (φ ∘ Prod.fst + ψ ∘ Prod.snd) =ᶠ[𝓝 (a, b)]
+      fun p ↦ ContinuousLinearMap.coprodEquivL 𝕜 (fderiv 𝕜 φ p.1, fderiv 𝕜 ψ p.2) := by
+    have h1 : ∀ᶠ p : E × F in 𝓝 (a, b), DifferentiableAt 𝕜 φ p.1 :=
+      continuousAt_fst.eventually (((hφ.of_le (by norm_num)).eventually (by norm_num)).mono
+        fun _ hy ↦ hy.differentiableAt one_ne_zero)
+    have h2 : ∀ᶠ p : E × F in 𝓝 (a, b), DifferentiableAt 𝕜 ψ p.2 :=
+      continuousAt_snd.eventually (((hψ.of_le (by norm_num)).eventually (by norm_num)).mono
+        fun _ hy ↦ hy.differentiableAt one_ne_zero)
+    filter_upwards [h1, h2] with ⟨u, w⟩ hu hw
+    rw [fderiv_comp_fst_add_comp_snd hu hw]
+    refine ContinuousLinearMap.ext fun q ↦ ?_
+    simp [ContinuousLinearMap.coprodEquivL_apply_apply]
+  have hD : HasFDerivAt (fun p : E × F ↦ (fderiv 𝕜 φ p.1, fderiv 𝕜 ψ p.2))
+      ((fderiv 𝕜 (fderiv 𝕜 φ) a).prodMap (fderiv 𝕜 (fderiv 𝕜 ψ) b)) (a, b) :=
+    ((hφ.hasFDerivAt_fderiv le_rfl).comp (a, b) (hasFDerivAt_fst (𝕜 := 𝕜) (p := (a, b)))).prodMk
+      ((hψ.hasFDerivAt_fderiv le_rfl).comp (a, b) (hasFDerivAt_snd (𝕜 := 𝕜) (p := (a, b))))
+  rw [hev.fderiv_eq]
+  exact ((ContinuousLinearMap.coprodEquivL 𝕜 :
+    ((E →L[𝕜] G) × (F →L[𝕜] G)) ≃L[𝕜] (E × F →L[𝕜] G)).hasFDerivAt.comp (a, b) hD).fderiv
 
 end TauCeti
 

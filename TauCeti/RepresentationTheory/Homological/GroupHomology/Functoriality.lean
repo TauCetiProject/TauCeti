@@ -24,8 +24,8 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
 * `TauCeti.groupHomology.chainsFunctorAdditive`: the chains functor is additive.
 * `TauCeti.groupHomology.map_mkH1OfIsTrivial`: with trivial coefficients, the map on `H₁` induced
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
-* `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, the map
-  `H₁(H, A) ⟶ H₁(G, A)` induced by `f : H →* G` is `Abelianization.map f ⊗ A`.
+* `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
+  and a coefficient map act as `Abelianization.map f ⊗ φ`.
 -/
 
 public noncomputable section
@@ -81,22 +81,22 @@ theorem map_mkH1OfIsTrivial {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.IsTrivi
   rw [coe_mapCycles₁, cycles₁IsoOfIsTrivial_inv_apply, cycles₁IsoOfIsTrivial_inv_apply]
   simp
 
-/-- With trivial coefficients, the map on first homology induced by `f : H →* G` is
-`Abelianization.map f ⊗ A`, read through the identifications `H₁(H, A) ≃ Hᵃᵇ ⊗ A` and
-`H₁(G, A) ≃ Gᵃᵇ ⊗ A`. -/
+/-- With trivial coefficients, the identification of first homology with the abelianization
+tensor the coefficients is natural in both the group and the coefficient module. -/
 @[simp]
-theorem H1AddEquivOfIsTrivial_map (A : Rep R G) [A.IsTrivial] (y : H1 (Rep.res f A)) :
-    H1AddEquivOfIsTrivial A (map f (𝟙 (Rep.res f A)) 1 y) =
-      LinearMap.rTensor A (AddMonoidHom.toIntLinearMap (Abelianization.map f).toAdditive)
-        (H1AddEquivOfIsTrivial (Rep.res f A) y) := by
-  obtain ⟨t, rfl⟩ := (H1AddEquivOfIsTrivial (Rep.res f A)).symm.surjective y
+theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.IsTrivial]
+    (f : H →* G) (φ : A ⟶ Rep.res f B) (y : H1 A) :
+    H1AddEquivOfIsTrivial B (map f φ 1 y) =
+      TensorProduct.map (AddMonoidHom.toIntLinearMap (Abelianization.map f).toAdditive)
+        φ.hom.toLinearMap (H1AddEquivOfIsTrivial A y) := by
+  obtain ⟨t, rfl⟩ := (H1AddEquivOfIsTrivial A).symm.surjective y
   rw [AddEquiv.apply_symm_apply]
   induction t using TensorProduct.inductionOn with
   | tmul x a =>
     obtain ⟨h, rfl⟩ : ∃ h : H, Additive.ofMul (Abelianization.of h) = x :=
       QuotientGroup.mk'_surjective _ x.toMul
     rw [H1AddEquivOfIsTrivial_symm_tmul, ← mkH1OfIsTrivial_apply, map_mkH1OfIsTrivial]
-    simpa using H1AddEquivOfIsTrivial_single A (f h) a
+    simpa using H1AddEquivOfIsTrivial_single B (f h) (φ.hom a)
   | add t t' ht ht' => rw [map_add, map_add, map_add, ht, ht', map_add]
 
 end IsTrivial

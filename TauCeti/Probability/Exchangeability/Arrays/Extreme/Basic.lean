@@ -64,13 +64,13 @@ variable {α : Type*} [MeasurableSpace α]
 /-- The convex set of jointly exchangeable probability laws on array path space. -/
 def jointlyExchangeableProbabilityMeasures (α : Type*) [MeasurableSpace α] :
     Set (Measure (ℕ × ℕ → α)) :=
-  {ν | JointlyExchangeable ν (fun p x => x p) ∧ IsProbabilityMeasure ν}
+  {ν | JointlyExchangeable ν (fun p x ↦ x p) ∧ IsProbabilityMeasure ν}
 
 /-- Membership in the jointly exchangeable probability laws. -/
 @[simp]
 theorem mem_jointlyExchangeableProbabilityMeasures_iff {ν : Measure (ℕ × ℕ → α)} :
     ν ∈ jointlyExchangeableProbabilityMeasures α
-      ↔ JointlyExchangeable ν (fun p x => x p) ∧ IsProbabilityMeasure ν :=
+      ↔ JointlyExchangeable ν (fun p x ↦ x p) ∧ IsProbabilityMeasure ν :=
   Iff.rfl
 
 /-- The jointly exchangeable probability laws are the probability laws invariant under the
@@ -81,7 +81,8 @@ theorem jointlyExchangeableProbabilityMeasures_eq :
   ext ν
   rw [mem_invariantMeasuresOfMeasureUnivEq_iff]
   constructor
-  · rintro ⟨hν, hp⟩; exact ⟨hν.smulInvariantMeasure, hp.measure_univ⟩
+  · rintro ⟨hν, hp⟩
+    exact ⟨hν.smulInvariantMeasure, hp.measure_univ⟩
   · rintro ⟨hν, hp⟩
     have : IsProbabilityMeasure ν := ⟨hp⟩
     exact ⟨jointlyExchangeable_of_smulInvariantMeasure, inferInstance⟩
@@ -89,14 +90,15 @@ theorem jointlyExchangeableProbabilityMeasures_eq :
 /-- The jointly exchangeable probability laws form a convex set. -/
 theorem convex_jointlyExchangeableProbabilityMeasures :
     Convex ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α) := by
-  rw [jointlyExchangeableProbabilityMeasures_eq]; exact convex_invariantMeasuresOfMeasureUnivEq
+  rw [jointlyExchangeableProbabilityMeasures_eq]
+  exact convex_invariantMeasuresOfMeasureUnivEq
 
 /-- **Joint dissociation is extremality**: a jointly exchangeable probability law is an extreme
 point of the jointly exchangeable probability laws if and only if its coordinate array is jointly
 dissociated. -/
 theorem jointlyDissociated_iff_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
-    [IsProbabilityMeasure ρ] (hexch : JointlyExchangeable ρ fun p x => x p) :
-    JointlyDissociated ρ (fun p x => x p)
+    [IsProbabilityMeasure ρ] (hexch : JointlyExchangeable ρ fun p x ↦ x p) :
+    JointlyDissociated ρ (fun p x ↦ x p)
       ↔ ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α) := by
   rw [jointlyDissociated_iff_ergodicSMul hexch, jointlyExchangeableProbabilityMeasures_eq]
   exact ErgodicSMul.iff_mem_extremePoints
@@ -140,17 +142,17 @@ probability law carried by `s` is an extreme point of the jointly exchangeable l
 if and only if its coordinate array is jointly dissociated. -/
 theorem jointlyDissociated_iff_mem_extremePoints_on {s : Set (ℕ × ℕ → α)}
     {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
-    (hexch : JointlyExchangeable ρ fun p x => x p) (hs : ρ sᶜ = 0) :
-    JointlyDissociated ρ (fun p x => x p)
+    (hexch : JointlyExchangeable ρ fun p x ↦ x p) (hs : ρ sᶜ = 0) :
+    JointlyDissociated ρ (fun p x ↦ x p)
       ↔ ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasuresOn α s) := by
   rw [extremePoints_jointlyExchangeableProbabilityMeasuresOn, Set.mem_inter_iff,
     ← jointlyDissociated_iff_mem_extremePoints hexch]
-  exact ⟨fun h => ⟨⟨⟨hexch, inferInstance⟩, hs⟩, h⟩, fun h => h.2⟩
+  exact ⟨fun h ↦ ⟨⟨⟨hexch, inferInstance⟩, hs⟩, h⟩, fun h ↦ h.2⟩
 
 /-- An extreme point of the jointly exchangeable probability laws is jointly exchangeable. -/
 theorem jointlyExchangeable_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
     (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α)) :
-    JointlyExchangeable ρ fun p x => x p :=
+    JointlyExchangeable ρ fun p x ↦ x p :=
   h.1.1
 
 /-- An extreme point of the jointly exchangeable probability laws is a probability law. -/
@@ -163,7 +165,7 @@ theorem isProbabilityMeasure_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → 
 jointly dissociated. -/
 theorem jointlyDissociated_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
     (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α)) :
-    JointlyDissociated ρ fun p x => x p :=
+    JointlyDissociated ρ fun p x ↦ x p :=
   have := isProbabilityMeasure_of_mem_extremePoints h
   (jointlyDissociated_iff_mem_extremePoints (jointlyExchangeable_of_mem_extremePoints h)).2 h
 
@@ -172,7 +174,7 @@ jointly dissociated. -/
 theorem jointlyDissociated_of_mem_extremePoints_on {s : Set (ℕ × ℕ → α)}
     {ρ : Measure (ℕ × ℕ → α)}
     (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasuresOn α s)) :
-    JointlyDissociated ρ fun p x => x p :=
+    JointlyDissociated ρ fun p x ↦ x p :=
   jointlyDissociated_of_mem_extremePoints
     ((extremePoints_jointlyExchangeableProbabilityMeasuresOn s ▸ h).2)
 
@@ -206,11 +208,11 @@ exchangeable, then almost every `κ z` is `ρ` itself. This is the integral form
 theorem JointlyDissociated.ae_eq_of_comp_eq [StandardBorelSpace α] {Z : Type*}
     [MeasurableSpace Z] {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ] {π : Measure Z}
     {κ : Kernel Z (ℕ × ℕ → α)} [IsMarkovKernel κ]
-    (hρ : JointlyDissociated ρ fun p x => x p)
-    (hκ : ∀ᵐ z ∂π, JointlyExchangeable (κ z) fun p x => x p) (hmix : κ ∘ₘ π = ρ) :
+    (hρ : JointlyDissociated ρ fun p x ↦ x p)
+    (hκ : ∀ᵐ z ∂π, JointlyExchangeable (κ z) fun p x ↦ x p) (hmix : κ ∘ₘ π = ρ) :
     ∀ᵐ z ∂π, κ z = ρ := by
   have hinv : ∀ᵐ z ∂π, SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) (κ z) :=
-    hκ.mono fun _ hz => hz.smulInvariantMeasure
+    hκ.mono fun _ hz ↦ hz.smulInvariantMeasure
   have : SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ := hmix ▸ smulInvariantMeasure_comp hinv
   have := ergodicSMul_of_jointlyDissociated hρ
   exact ErgodicSMul.ae_eq_of_comp_eq hinv hmix

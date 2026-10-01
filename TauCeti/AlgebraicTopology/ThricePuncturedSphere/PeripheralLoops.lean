@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
 
 /-!
@@ -41,6 +42,9 @@ monodromy of a three-point cover along these elements is the permutation triple 
   loops.
 * `periph0`, `periph1`, `periphInf`, `periphInf_mul_periph1_mul_periph0`: the peripheral elements
   of the fundamental group and their product relation.
+* `homeomorphMulEquivOfEq_mob01_periph0`, `homeomorphMulEquivOfEq_mob01_periph1`,
+  `homeomorphMulEquivOfEq_mob01_periphInf`: the automorphism of the fundamental group induced by
+  `z ↦ 1 − z` exchanges `periph0` and `periph1` and conjugates `periphInf` by `periph1`.
 
 ## References
 
@@ -179,6 +183,55 @@ theorem periphInf_def : periphInf = (periph1 * periph0)⁻¹ :=
 /-- The product relation of the three peripheral elements. -/
 theorem periphInf_mul_periph1_mul_periph0 : periphInf * periph1 * periph0 = 1 := by
   rw [periphInf_def, mul_assoc, inv_mul_cancel]
+
+/-! ### The involution `z ↦ 1 − z` on the fundamental group
+
+Since `mob01` fixes the basepoint, it induces an automorphism of `π₁(ℂ ∖ {0, 1}, 1/2)` with no
+choice of connecting path. It exchanges the two peripheral loops on the nose, so it exchanges
+`periph0` and `periph1`, and it carries `periphInf` to its conjugate by `periph1`. These are the
+values that make the pullback of a cover along `z ↦ 1 − z` exchange the roles of `0` and `1` in
+its monodromy triple. The three lemmas are not `simp` lemmas: `homeomorphMulEquivOfEq_apply`
+already rewrites their left-hand sides to `FundamentalGroup.mapOfEq`, so they are used by `rw`. -/
+
+/-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periph0` to
+`periph1`. -/
+theorem homeomorphMulEquivOfEq_mob01_periph0 :
+    FundamentalGroup.homeomorphMulEquivOfEq mob01 mob01_basePt periph0 = periph1 := by
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply, periph0_def,
+    periph1_def]
+  have hpath : (γ0.map mob01.continuous).cast mob01_basePt.symm mob01_basePt.symm = γ1 := by
+    ext t
+    -- `simp` cannot rewrite under `Path.cast` in the combined call, so the casts are peeled first;
+    -- the pointwise identity for the loops then closes the goal.
+    simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]
+    simp
+  -- Both sides are the classes of explicit paths, `⟦γ0⟧` being `Path.Homotopic.Quotient.mk γ0`.
+  exact congrArg Path.Homotopic.Quotient.mk hpath
+
+/-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periph1` to
+`periph0`. -/
+theorem homeomorphMulEquivOfEq_mob01_periph1 :
+    FundamentalGroup.homeomorphMulEquivOfEq mob01 mob01_basePt periph1 = periph0 := by
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply, periph0_def,
+    periph1_def]
+  have hpath : (γ1.map mob01.continuous).cast mob01_basePt.symm mob01_basePt.symm = γ0 := by
+    ext t
+    -- `simp` cannot rewrite under `Path.cast` in the combined call, so the casts are peeled first;
+    -- the pointwise identity for the loops then closes the goal.
+    simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]
+    simp
+  -- Both sides are the classes of explicit paths, `⟦γ1⟧` being `Path.Homotopic.Quotient.mk γ1`.
+  exact congrArg Path.Homotopic.Quotient.mk hpath
+
+/-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periphInf` to its
+conjugate `periph1⁻¹ * periphInf * periph1`, the third component of the branch-point operation
+exchanging `0` and `1`. -/
+theorem homeomorphMulEquivOfEq_mob01_periphInf :
+    FundamentalGroup.homeomorphMulEquivOfEq mob01 mob01_basePt periphInf =
+      periph1⁻¹ * periphInf * periph1 := by
+  rw [periphInf_def, map_inv, map_mul, homeomorphMulEquivOfEq_mob01_periph0,
+    homeomorphMulEquivOfEq_mob01_periph1]
+  group
 
 end ThricePuncturedSphere
 

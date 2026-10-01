@@ -31,6 +31,8 @@ Witt--Grothendieck ring.
 * `TauCeti.RegularFormPresentation.prod_tmul`: the weight product of a tensor presentation.
 * `TauCeti.RegularFormClass.mk_mul_mk`: multiplication computes by tensoring presentations.
 * `TauCeti.formClass_tmul`: the class of a tensor product is the product of the classes.
+* `TauCeti.formClass_smul`: the class of a scalar multiple by a unit is a product with a
+  rank-one class.
 * `TauCeti.RegularFormClass.rank_mul`: rank is multiplicative.
 
 ## References
@@ -70,6 +72,24 @@ theorem RegularFormPresentation.tmul_apply (p q : RegularFormPresentation K)
       (Fin.cast (RegularFormPresentation.fst_tmul p q).symm (finProdFinEquiv (i, j))) =
         p.2 i * q.2 j := by
   simp [RegularFormPresentation.tmul]
+
+/-- Tensoring on the left with a rank-one presentation scales every coefficient. -/
+@[simp]
+theorem RegularFormPresentation.rankOne_tmul (a : Kˣ) (p : RegularFormPresentation K) :
+    RegularFormPresentation.tmul (⟨1, fun _ => a⟩ : RegularFormPresentation K) p =
+      ⟨p.1, fun i => a * p.2 i⟩ := by
+  let r : RegularFormPresentation K := ⟨1, fun _ => a⟩
+  have hrank : (r.tmul p).1 = p.1 := by simp [r]
+  refine RegularFormPresentation.ext (q := ⟨p.1, fun i => a * p.2 i⟩) hrank ?_
+  intro i
+  let j := Fin.cast hrank i
+  have happly := RegularFormPresentation.tmul_apply r p (0 : Fin r.1) j
+  have hi : Fin.cast (RegularFormPresentation.fst_tmul r p).symm
+      (finProdFinEquiv (0, j)) = i := by
+    apply Fin.ext
+    simp [r, j, finProdFinEquiv]
+  rw [hi] at happly
+  simpa [r, j] using happly
 
 /-- The weight product of a tensor presentation: each factor's weight product raised to the rank
 of the other factor. -/
@@ -395,5 +415,17 @@ theorem formClass_tmul (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     RegularFormClass.mk_mul_mk,
     formClass_mk _ _ (p.tmul q)
       ((hp.tmul hq).trans (equivalent_presentedForm_tmul p q).symm)]
+
+/-- The class of the scalar multiple `a • Q` of a regular form by a unit `a` is the product of
+the class of `Q` with the rank-one class `⟨a⟩`. -/
+theorem formClass_smul (a : Kˣ) (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    formClass ((a : K) • Q) ((QuadraticMap.nondegenerate_smul_iff a.isUnit Q).mpr hQ) =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * formClass Q hQ := by
+  obtain ⟨p, ⟨e⟩⟩ := exists_presentedForm_equivalent Q hQ
+  rw [formClass_mk Q hQ p ⟨e⟩, RegularFormClass.mk_mul_mk, RegularFormPresentation.rankOne_tmul]
+  refine formClass_mk _ _ _ ⟨{ toLinearEquiv := e.toLinearEquiv, map_app' := fun x => ?_ }⟩
+  rw [smul_apply, ← e.map_app x, presentedForm_apply, presentedForm_apply, smul_eq_mul,
+    Finset.mul_sum]
+  simp [mul_assoc]
 
 end TauCeti

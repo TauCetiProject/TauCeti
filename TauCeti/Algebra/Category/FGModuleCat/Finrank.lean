@@ -51,7 +51,6 @@ variable (k : Type u) [DivisionRing k]
 The definition is sealed; use `finrank_obj` to evaluate it on an object. -/
 noncomputable def finrank : AbelianK0.AdditiveInvariant (FGModuleCat.{v} k) ℤ where
   obj X := Module.finrank k X
-  map_iso {_ _} e := congrArg Int.ofNat (FGModuleCat.isoToLinearEquiv e).finrank_eq
   map_shortExact {S} hS := by
     let F := forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)
     have hS' : (S.map F).ShortExact := hS.map_of_exact F

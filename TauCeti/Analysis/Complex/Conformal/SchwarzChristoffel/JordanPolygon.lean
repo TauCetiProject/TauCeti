@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.PolygonalDomain
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
-import Mathlib.Topology.Separation.Connected
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 
@@ -23,11 +22,13 @@ constants `A ≠ 0` and `B` such that `A * F + B` maps the upper half-plane bije
 where `F` is the normalized Schwarz--Christoffel primitive for `a` and `e`, and sends each
 prevertex to its vertex: `A * vertex i + B = v i`, where `vertex i` is the limit of `F` at `a i`.
 
-## Main result
+## Main results
 
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier` --
   a bounded polygonal Jordan domain is the image of the upper half-plane under an affine image of
   a Schwarz--Christoffel primitive, with the prevertices sent to the vertices.
+* `TauCeti.exponent_sum_eq_neg_two_of_isJordanCurve_frontier` -- the turning exponents of a bounded
+  polygonal Jordan domain sum to `-2`, so its interior angles sum to `(n - 2) * π`.
 
 ## References
 
@@ -42,6 +43,19 @@ public section
 open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
+
+/-- A local corner sector of angle strictly between zero and `2π` places its vertex on the
+frontier of the domain. -/
+private theorem vertex_mem_frontier_of_corner {ι : Type*} (e : ι → ℝ)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {U : Set ℂ} {v : ι → ℂ}
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2))
+    (i : ι) : v i ∈ frontier U := by
+  obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+  have he₁ := he i
+  refine mem_frontier_of_forall_mem_iff_abs_arg_lt hρ hb ?_ ?_ hU
+  · nlinarith [Real.pi_pos, he₁.1]
+  · nlinarith [Real.pi_pos, he₁.2]
 
 /-- **The Schwarz--Christoffel theorem for a bounded polygonal Jordan domain.**  Let `U` be a
 bounded, simply connected open set whose frontier is a Jordan curve.  Suppose that `U` coincides
@@ -62,29 +76,12 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
     ∃ a : ι → ℝ, Injective a ∧ ∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
-  -- a boundary point `p` which is not a vertex: the frontier is infinite, the vertices finite
-  obtain ⟨p, hpU, hpv⟩ : (frontier U \ range v).Nonempty :=
-    ((hUJ.isConnected.isPreconnected.infinite_of_nontrivial
-      (not_subsingleton_iff.mp hUJ.not_subsingleton)).sdiff (finite_range v)).nonempty
-  obtain ⟨f, hfc, hfd, hfH, hfcl, hfR, hfp⟩ :=
-    exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hUo hUc hUb hUJ hpU
-  -- every vertex lies on the frontier, so it has a real preimage under `f`
-  have hvU (i : ι) : v i ∈ frontier U \ {p} := by
-    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-    have he₁ := he i
-    refine ⟨mem_frontier_of_forall_mem_iff_abs_arg_lt hρ hb ?_ ?_ hU, fun h => hpv ⟨i, h⟩⟩
-    · nlinarith [Real.pi_pos, he₁.1]
-    · nlinarith [Real.pi_pos, he₁.2]
-  choose x hx hfx using fun i => hfR.surjOn (hvU i)
-  let a : ι → ℝ := fun i => (x i).re
-  have hax (i : ι) : ((a i : ℝ) : ℂ) = x i :=
-    Complex.ext (by simp [a]) (by simpa [a] using (hx i).symm)
-  have hfa (i : ι) : f (a i) = v i := by rw [hax, hfx]
-  have ha : Injective a := fun i j h => hv (by rw [← hfa i, ← hfa j, h])
+  obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
+    exists_prevertices_of_isJordanCurve_frontier hUo hUc hUb hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
   have hform := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain a e ha he z₀
-    hfd hfc hfcl.injOn hfH.image_eq hfa hfp (fun ⟨z, hz, hzp⟩ => (hfcl.mapsTo hz).2 hzp)
-    hside hcorner
+    hfd hfc hfi hfH.image_eq hfa hfp hpf hside hcorner
   refine ⟨a, ha, _, div_ne_zero ?_ (schwarzChristoffelIntegrand_ne_zero a e z₀.im_pos), _,
     hfH.congr hform, fun i => ?_⟩
   · exact deriv_ne_zero_of_injOn hfd isOpen_upperHalfPlaneSet hfH.injOn z₀.im_pos
@@ -99,6 +96,26 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
   rw [← hfa i]
   exact ((hfc _ (by simp)).tendsto.mono_left (nhdsWithin_mono _ hH0)).congr'
     (eventually_nhdsWithin_of_forall hform)
+
+/-- **The angle sum of a bounded polygonal Jordan domain.**  Under the hypotheses of
+`TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier`, the
+turning exponents sum to `-2`: the interior angles `(e i + 1) * π` at the `n` vertices sum to
+`(n - 2) * π`.  So the Schwarz--Christoffel data of a polygonal Jordan domain always satisfy the
+closing condition `∑ i, e i = -2`. -/
+theorem exponent_sum_eq_neg_two_of_isJordanCurve_frontier
+    {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
+    (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
+    ∑ i, e i = -2 := by
+  obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
+    exists_prevertices_of_isJordanCurve_frontier hUo hUc hUb hUJ hv
+      (vertex_mem_frontier_of_corner e he hcorner)
+  exact exponent_sum_eq_neg_two_of_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq hfa hfp
+    hpf hside hcorner
 
 end TauCeti
 

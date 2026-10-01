@@ -23,8 +23,11 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
+  multiplies the exponents.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
   complex base.
+* `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
 -/
@@ -52,12 +55,26 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
 
+/-- A principal complex power of a natural power of a nonnegative real multiplies the exponents:
+`((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s)`.  The argument of `(r : ℂ)` is `0`, so the principal branch
+is not crossed. -/
+theorem ofReal_pow_cpow {r : ℝ} (hr : 0 ≤ r) (n : ℕ) (s : ℂ) :
+    ((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s) := by
+  have harg : (r : ℂ).arg = 0 := arg_ofReal_of_nonneg hr
+  rw [cpow_nat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
+
 /-- A principal complex power with nonzero base takes a finite sum of exponents to the
 corresponding product. -/
 theorem cpow_sum {ι : Type*} {x : ℂ} (hx : x ≠ 0) (f : ι → ℂ) (s : Finset ι) :
     x ^ (∑ i ∈ s, f i) = ∏ i ∈ s, x ^ f i :=
   map_sum (⟨⟨fun y ↦ x ^ y, Complex.cpow_zero x⟩,
     fun y z ↦ Complex.cpow_add y z hx⟩ : ℂ →+ Additive ℂ) f s
+
+/-- A principal complex power of the positive real `Real.exp t` is `exp (t * s)`: the principal
+logarithm of `Real.exp t` is `t`. -/
+theorem ofReal_exp_cpow (t : ℝ) (s : ℂ) : ((Real.exp t : ℝ) : ℂ) ^ s = exp (t * s) := by
+  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 (Real.exp_pos t).ne'),
+    ← ofReal_log (Real.exp_pos t).le, Real.log_exp]
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate

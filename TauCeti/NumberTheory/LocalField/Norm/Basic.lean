@@ -7,6 +7,7 @@ module
 
 import Mathlib.RingTheory.Localization.NormTrace
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
@@ -14,6 +15,7 @@ public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
 public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.RingTheory.Trace.Basic
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.RingTheory.Norm.Quotient
 
@@ -53,8 +55,15 @@ Herbrand shift instead.
   `TauCeti.toAdd_normalizedValuation_norm`.
 * `TauCeti.normalizedValuationWithZero_norm`: the same formula for arbitrary field elements,
   including zero.
+* `TauCeti.irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
+  integer is irreducible exactly when the residue degree is one.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
+* `TauCeti.coe_norm_integerRing` and `TauCeti.coe_trace_integerRing`: the norm and trace of
+  `𝒪[L]` over `𝒪[K]` restrict the norm and trace of `L/K`.
+* `TauCeti.algebraMap_norm_integerRing_eq_prod_automorphisms` and
+  `TauCeti.algebraMap_trace_integerRing_eq_sum_automorphisms`: in a Galois extension, the norm
+  and trace of an integer are the product and the sum of its conjugates.
 
 ## References
 
@@ -175,6 +184,15 @@ theorem coe_norm_integerRing (y : 𝒪[L]) :
     ((Algebra.norm 𝒪[K] y : 𝒪[K]) : K) = Algebra.norm K (y : L) := by
   have := isLocalization_integerRing K L
   exact (Algebra.norm_localization 𝒪[K] (nonZeroDivisors 𝒪[K]) y).symm
+
+omit [FiniteDimensional K L] in
+/-- The trace of `𝒪[L]` over `𝒪[K]`, a free module of finite rank, is the restriction of the field
+trace of `L/K`. -/
+@[simp]
+theorem coe_trace_integerRing (y : 𝒪[L]) :
+    ((Algebra.trace 𝒪[K] 𝒪[L] y : 𝒪[K]) : K) = Algebra.trace K L (y : L) := by
+  have := isLocalization_integerRing K L
+  exact (Algebra.trace_localization 𝒪[K] (nonZeroDivisors 𝒪[K]) y).symm
 
 omit [FiniteDimensional K L] in
 /-- The norm of an element of `𝒪[L]` lies in `𝒪[K]`. -/
@@ -310,6 +328,31 @@ theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
     nsmul_one]
   exact Nat.cast_eq_one
 
+omit [FiniteDimensional K L] in
+/-- The norm of an irreducible element of `𝒪[L]` is irreducible in `𝒪[K]` exactly when the
+residue degree of `L/K` is one. -/
+theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
+    (hξ : Irreducible ξ) : Irreducible (Algebra.norm 𝒪[K] ξ) ↔ inertiaDegree K L = 1 := by
+  let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
+  have hξL : (ξ : L) ≠ 0 := fun h ↦ hξ.ne_zero (Subtype.ext h)
+  let x : Lˣ := Units.mk0 (ξ : L) hξL
+  have hnorm0 : ((Algebra.norm 𝒪[K] ξ : 𝒪[K]) : K) ≠ 0 := by
+    rw [coe_norm_integerRing]
+    exact Algebra.norm_ne_zero_iff.mpr hξL
+  have heq : Algebra.normUnits K x =
+      Units.mk0 ((Algebra.norm 𝒪[K] ξ : 𝒪[K]) : K) hnorm0 := by
+    apply Units.ext
+    simp [x]
+  have hx : IsUniformizer L x :=
+    (isUniformizer_def _).mpr (by simpa [x] using normalizedValuation_irreducible hξ)
+  rw [← isUniformizer_normUnits_iff hx, heq]
+  refine ⟨fun h ↦ (isUniformizer_def _).mpr (normalizedValuation_irreducible h), fun hnorm ↦ ?_⟩
+  obtain ⟨π, hπ, hπeq⟩ := (isUniformizer_iff_exists_irreducible K _).mp hnorm
+  have hπnorm : π = Algebra.norm 𝒪[K] ξ := by
+    apply Subtype.ext
+    simpa using hπeq
+  rwa [← hπnorm]
+
 variable (L) in
 /-- The normalized valuation of an element of the norm group `N_{L/K}(Lˣ)` is divisible by the
 residue degree `f(L/K)`. -/
@@ -320,5 +363,29 @@ theorem inertiaDegree_dvd_of_mem_normGroup {x : Kˣ}
   have h : Algebra.normUnits K y = x := Units.ext (by simpa using hy)
   subst x
   exact ⟨_, toAdd_normalizedValuation_norm y⟩
+
+section Galois
+
+variable [IsGalois K L]
+
+/-- In a Galois extension, the norm of an integer `z` of `L`, read in `𝒪[L]`, is the product of
+the Galois conjugates of `z`. -/
+theorem algebraMap_norm_integerRing_eq_prod_automorphisms (z : 𝒪[L]) :
+    algebraMap 𝒪[K] 𝒪[L] (Algebra.norm 𝒪[K] z) = ∏ σ : L ≃ₐ[K] L, σ • z := by
+  apply Subtype.ext
+  rw [coe_algebraMap_integerRing, coe_norm_integerRing, Algebra.norm_eq_prod_automorphisms,
+    SubmonoidClass.coe_finsetProd]
+  simp only [AlgEquiv.coe_smul_integerRing]
+
+/-- In a Galois extension, the trace of an integer `z` of `L`, read in `𝒪[L]`, is the sum of the
+Galois conjugates of `z`. -/
+theorem algebraMap_trace_integerRing_eq_sum_automorphisms (z : 𝒪[L]) :
+    algebraMap 𝒪[K] 𝒪[L] (Algebra.trace 𝒪[K] 𝒪[L] z) = ∑ σ : L ≃ₐ[K] L, σ • z := by
+  apply Subtype.ext
+  rw [coe_algebraMap_integerRing, coe_trace_integerRing, _root_.trace_eq_sum_automorphisms,
+    AddSubmonoidClass.coe_finsetSum]
+  simp only [AlgEquiv.coe_smul_integerRing]
+
+end Galois
 
 end TauCeti

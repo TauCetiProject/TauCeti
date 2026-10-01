@@ -27,6 +27,11 @@ the two cokernels (`AuslanderReitenTranspose.linearEquiv`), characterized on rep
 the uniqueness theorem for minimal presentations then gives
 `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`.
 
+The construction is additive in the presenting arrow: `AuslanderReitenTranspose.prodMapEquiv`
+identifies the transpose of a direct sum with the product of the two transposes, while
+`AuslanderReitenTranspose.compFstEquiv` identifies the transpose of an arrow enlarged by a zero
+source summand with the product of its transpose and the dual of that summand.
+
 The transpose is a construction on the *non-projective* modules: for a minimal projective
 presentation `P₁ → P₀ → M` whose left-hand source `P₁` is finitely generated, it vanishes on a
 projective `M` and on no other, which is
@@ -47,6 +52,10 @@ next to the other module structures on the transpose.
   opposite-linear map that kills the functionals factoring through `p₁`.
 * `AuslanderReitenTranspose.linearEquiv`: the equivalence induced by an isomorphism of presentation
   diagrams.
+* `AuslanderReitenTranspose.prodMapEquiv`: the transpose of a direct sum of arrows is the direct
+  sum of their transposes.
+* `AuslanderReitenTranspose.compFstEquiv`: a zero source summand contributes its dual to the
+  transpose.
 
 ## Main results
 
@@ -213,6 +222,97 @@ theorem eq_lift (f : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] N)
   hom_ext p₁ fun φ => by rw [hg, lift_mk]
 
 end Lift
+
+section Additivity
+
+open LinearMap
+
+variable {A₁ A₂ E₁ E₂ : Type*} [AddCommMonoid A₁] [Module A A₁] [AddCommMonoid A₂] [Module A A₂]
+  [AddCommMonoid E₁] [Module A E₁] [AddCommMonoid E₂] [Module A E₂]
+  (u : A₁ →ₗ[A] E₁) (w : A₂ →ₗ[A] E₂)
+
+/-- **The transpose is additive.** The transpose of the direct sum `u ⊕ w` of two arrows is the
+direct sum of their transposes. On representatives it restricts a functional on `A₁ × A₂` to the
+two summands. -/
+def prodMapEquiv :
+    AuslanderReitenTranspose (u.prodMap w) ≃ₗ[Aᵐᵒᵖ]
+      AuslanderReitenTranspose u × AuslanderReitenTranspose w :=
+  LinearEquiv.ofLinearMap
+    (lift (u.prodMap w)
+      ((mk u ∘ₗ (inl A A₁ A₂).lcomp Aᵐᵒᵖ A).prod (mk w ∘ₗ (inr A A₁ A₂).lcomp Aᵐᵒᵖ A))
+      fun φ => by
+        refine Prod.ext ((mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ inl A E₁ E₂, ?_⟩)
+          ((mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ inr A E₁ E₂, ?_⟩) <;> ext <;> simp)
+    ((lift u (mk (u.prodMap w) ∘ₗ (fst A A₁ A₂).lcomp Aᵐᵒᵖ A) fun φ =>
+        (mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ fst A E₁ E₂, by ext <;> simp⟩).coprod
+      (lift w (mk (u.prodMap w) ∘ₗ (snd A A₁ A₂).lcomp Aᵐᵒᵖ A) fun φ =>
+        (mk_eq_zero_iff _ _).mpr ⟨φ ∘ₗ snd A E₁ E₂, by ext <;> simp⟩))
+    (by
+      apply prod_ext <;> ext φ <;> simp [lcomp_apply', comp_assoc])
+    (by
+      ext φ
+      simp only [comp_apply, lift_mk, coprod_apply, prod_apply, Function.prod, lcomp_apply',
+        id_apply]
+      rw [← map_add]
+      congr 1
+      ext <;> simp [← Prod.zero_eq_mk])
+
+/-- The equivalence `prodMapEquiv` restricts a representative to the two summands. -/
+@[simp]
+theorem prodMapEquiv_mk (φ : Module.Dual A (A₁ × A₂)) :
+    prodMapEquiv u w (mk (u.prodMap w) φ) =
+      (mk u (φ ∘ₗ inl A A₁ A₂), mk w (φ ∘ₗ inr A A₁ A₂)) := by
+  simp [prodMapEquiv, lcomp_apply']
+
+/-- The inverse of `prodMapEquiv` combines representatives using the canonical functional on the
+product. -/
+@[simp]
+theorem prodMapEquiv_symm_mk (φ : Module.Dual A A₁) (ψ : Module.Dual A A₂) :
+    (prodMapEquiv u w).symm (mk u φ, mk w ψ) = mk (u.prodMap w) (φ.coprod ψ) := by
+  apply (prodMapEquiv u w).injective
+  simp
+
+variable (C : Type*) [AddCommMonoid C] [Module A C]
+
+/-- **A zero summand contributes its dual.** Enlarging the source of `u : A₁ → E₁` by a summand
+`C` on which the arrow vanishes adds `Hom_A(C, A)` to the transpose. On representatives it
+restricts a functional on `A₁ × C` to the two summands. -/
+def compFstEquiv :
+    AuslanderReitenTranspose (u ∘ₗ fst A A₁ C) ≃ₗ[Aᵐᵒᵖ]
+      AuslanderReitenTranspose u × Module.Dual A C :=
+  LinearEquiv.ofLinearMap
+    (lift (u ∘ₗ fst A A₁ C)
+      ((mk u ∘ₗ (inl A A₁ C).lcomp Aᵐᵒᵖ A).prod ((inr A A₁ C).lcomp Aᵐᵒᵖ A))
+      fun φ => by
+        refine Prod.ext ((mk_eq_zero_iff _ _).mpr ⟨φ, ?_⟩) ?_ <;> ext <;> simp)
+    ((lift u (mk (u ∘ₗ fst A A₁ C) ∘ₗ (fst A A₁ C).lcomp Aᵐᵒᵖ A) fun φ =>
+        (mk_eq_zero_iff _ _).mpr ⟨φ, by ext <;> simp⟩).coprod
+      (mk (u ∘ₗ fst A A₁ C) ∘ₗ (snd A A₁ C).lcomp Aᵐᵒᵖ A))
+    (by
+      apply prod_ext <;> ext φ <;> simp [lcomp_apply', comp_assoc])
+    (by
+      ext φ
+      simp only [comp_apply, lift_mk, coprod_apply, prod_apply, Function.prod, lcomp_apply',
+        id_apply]
+      rw [← map_add]
+      congr 1
+      ext <;> simp [← Prod.zero_eq_mk])
+
+/-- The equivalence `compFstEquiv` restricts a representative to the two summands. -/
+@[simp]
+theorem compFstEquiv_mk (φ : Module.Dual A (A₁ × C)) :
+    compFstEquiv u C (mk (u ∘ₗ fst A A₁ C) φ) = (mk u (φ ∘ₗ inl A A₁ C), φ ∘ₗ inr A A₁ C) := by
+  simp [compFstEquiv, lcomp_apply']
+
+/-- The inverse of `compFstEquiv` combines representatives using the canonical functional on the
+product. -/
+@[simp]
+theorem compFstEquiv_symm_mk (φ : Module.Dual A A₁) (ψ : Module.Dual A C) :
+    (compFstEquiv u C).symm (mk u φ, ψ) = mk (u ∘ₗ fst A A₁ C) (φ.coprod ψ) := by
+  apply (compFstEquiv u C).injective
+  simp
+
+end Additivity
 
 section Split
 

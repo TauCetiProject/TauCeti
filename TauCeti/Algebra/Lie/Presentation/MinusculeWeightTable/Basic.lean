@@ -434,6 +434,34 @@ theorem loweringMatrix_apply (i : B) (a b : ι) :
   simp only [raisingPEquiv, PEquiv.symm]
   simp [loweringTarget, eq_comm]
 
+/-- The column of a raising matrix over any commutative ring is the reflected coordinate
+vector exactly at a raising edge, and otherwise is zero. -/
+@[simp]
+theorem raisingMatrix_map_col {R : Type*} [CommRing R]
+    (i : B) (a : ι) :
+    ((T.raisingMatrix i).map (Int.cast : ℤ → R)).col a =
+      if T.weight a i = -1 then Pi.single (T.reflection i a) 1 else 0 := by
+  ext b
+  by_cases h : T.weight a i = -1
+  · simp only [h, ite_true]
+    rw [Pi.single_apply]
+    simp [Matrix.col_apply, h]
+  · simp [Matrix.col_apply, h]
+
+/-- The column of a lowering matrix over any commutative ring is the reflected coordinate
+vector exactly at a lowering edge, and otherwise is zero. -/
+@[simp]
+theorem loweringMatrix_map_col {R : Type*} [CommRing R]
+    (i : B) (a : ι) :
+    ((T.loweringMatrix i).map (Int.cast : ℤ → R)).col a =
+      if T.weight a i = 1 then Pi.single (T.reflection i a) 1 else 0 := by
+  ext b
+  by_cases h : T.weight a i = 1
+  · simp only [h, ite_true]
+    rw [Pi.single_apply]
+    simp [Matrix.col_apply, h]
+  · simp [Matrix.col_apply, h]
+
 /-- The entry formula for a simple Cartan generator matrix. -/
 @[simp]
 theorem cartanGeneratorMatrix_apply (i : B) (a b : ι) :

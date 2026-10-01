@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Basic
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.DualLattice
 
 /-!
@@ -116,7 +116,7 @@ noncomputable def dualPairing (L : IntegralLattice V) :
 theorem dualPairing_cast (L : IntegralLattice V) (x : L.dualCarrier) (y : L) :
     (L.dualPairing x y : ℚ) = L.form x y := by
   rw [dualPairing, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
-  simpa using L.form.dualSubmoduleParing_spec x y
+  simpa using L.form.dualSubmodulePairing_spec x y
 
 /-- The pairing with the carrier is perfect: every integral functional on `L` is represented by a
 unique vector of `Lᵛ`. -/

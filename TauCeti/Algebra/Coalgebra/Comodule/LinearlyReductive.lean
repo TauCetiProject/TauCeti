@@ -64,6 +64,8 @@ milestone in Layer 6 of the ReductiveGroups roadmap.
 * `TauCeti.Coalgebra.IsLinearlyReductive`: every finite-dimensional comodule is completely
   reducible, with constructor
   `TauCeti.Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible`.
+* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible_sameUniverse`: use linear
+  reductivity for a comodule in the carrier universe named by the hypothesis.
 * `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: testing finite-dimensional
   comodules in the base-field universe suffices for comodules in every universe.
 * `TauCeti.Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv`: complete reducibility
@@ -324,6 +326,16 @@ theorem of_forall_isCompletelyReducible
       Comodule.IsCompletelyReducible k C V) :
     IsLinearlyReductive.{u, v, w} k C :=
   h
+
+/-- Apply linear reductivity to a finite-dimensional comodule in the same carrier universe.
+
+Every finite-dimensional comodule whose carrier lies in the universe quantified by the
+hypothesis is completely reducible. -/
+theorem isCompletelyReducible_sameUniverse
+    (h : IsLinearlyReductive.{u, v, w} k C)
+    (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
+    Comodule.IsCompletelyReducible k C V :=
+  h V
 
 /-- If every finite-dimensional comodule whose carrier is in the base-field universe is
 completely reducible, then every finite-dimensional comodule is completely reducible, regardless

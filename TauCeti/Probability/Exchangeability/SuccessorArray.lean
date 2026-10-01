@@ -60,6 +60,8 @@ open MeasureTheory
 
 open TauCeti.MeasureTheory
 
+open Function (occCount)
+
 namespace TauCeti
 
 namespace Probability

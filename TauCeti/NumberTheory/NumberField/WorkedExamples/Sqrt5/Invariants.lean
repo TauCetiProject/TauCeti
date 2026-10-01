@@ -12,6 +12,8 @@ public import TauCeti.NumberTheory.NumberField.Monogenic
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
+public import Mathlib.NumberTheory.NumberField.ClassNumber
+import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
 import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
 import TauCeti.NumberTheory.RamificationInertia.Inert
@@ -27,6 +29,8 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
   monogenic and `discr K = 5`;
 * the discriminant is positive, so both infinite places are real: the signature is `(2, 0)` and
   the intrinsic label prefix is `2.2.5`;
+* the discriminant is below the quadratic Minkowski threshold, so `𝓞 K` is a principal ideal
+  domain and the class number is `1`;
 * `2` is inert: there is a single prime above `2` since `5 ≡ 5 (mod 8)`, and `2` does not ramify
   since it does not divide the discriminant, so that prime has residue degree `2` and is the
   ideal `2 𝓞 K` itself.
@@ -38,6 +42,8 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 * `TauCeti.NumberField.Sqrt5.isTotallyReal`, `nrComplexPlaces_eq_zero`, `nrRealPlaces_eq_two`:
   the field is totally real, of signature `(2, 0)`; `hasLMFDBIntrinsicLabel`: the intrinsic
   label prefix is `2.2.5`.
+* `TauCeti.NumberField.Sqrt5.isPrincipalIdealRing`, `classNumber_eq_one`: `𝓞 K` is a principal
+  ideal domain.
 * `TauCeti.NumberField.Sqrt5.ncard_primesOver_two_eq_one`,
   `TauCeti.NumberField.Sqrt5.ramificationIdx_eq_one_of_mem_primesOver_two`,
   `TauCeti.NumberField.Sqrt5.inertiaDeg_eq_two_of_mem_primesOver_two`,
@@ -117,6 +123,18 @@ theorem hasLMFDBIntrinsicLabel (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   refine ⟨finrank_eq_two hmin hgen, nrRealPlaces_eq_two hmin hgen, ?_⟩
   rw [discr_eq_five hmin hgen]
   norm_num
+
+/-- **`𝓞 K` is a principal ideal domain**: the discriminant `5` is below the quadratic Minkowski
+threshold `9` of `isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine`. -/
+theorem isPrincipalIdealRing (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : IsPrincipalIdealRing (𝓞 K) :=
+  isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine (finrank_eq_two hmin hgen)
+    (by rw [discr_eq_five hmin hgen]; norm_num)
+
+/-- The class number of `ℚ(√5)` is `1`. -/
+theorem classNumber_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : classNumber K = 1 :=
+  classNumber_eq_one_iff.mpr (isPrincipalIdealRing hmin hgen)
 
 /-- There is a single prime of `𝓞 K` above `2`, since `5 ≡ 5 (mod 8)`. -/
 theorem ncard_primesOver_two_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)

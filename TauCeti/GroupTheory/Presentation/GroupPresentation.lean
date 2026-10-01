@@ -41,12 +41,6 @@ relations, regarded as a set, defines `TauCeti.GroupPresentation.Group` using Ma
 
 * `TauCeti.GroupPresentation.relatorSet_eq_relatorSet_transcribed`: the relations of a presentation
   are the relator set of its transcribed expressions.
-
-## References
-
-This file implements the finite-presentation metadata format in milestone S0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. Its record fields and dependent-arity design are adapted
-from the target signatures in the human-owned roadmap's `CFSGStatement/Suggested.lean`.
 -/
 
 public section

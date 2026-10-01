@@ -59,6 +59,9 @@ public section
 
 noncomputable section
 
+open Function (occCount occCount_eq_card_filter occCount_le_of_comp occCount_lt_of_comp
+  sum_occCount_eq_card)
+
 namespace TauCeti
 
 variable {α : Type*}
@@ -291,7 +294,7 @@ private theorem occCount_pathOfReindexedSuccessors_le (π : α → Equiv.Perm �
     (hmaps : ∀ a k, k < visitCount x a m → π a k < visitCount x a m) (b : α) :
     occCount (fun i : Fin t => pathOfReindexedSuccessors π x (i.val + 1)) b ≤
       occCount (fun i : Fin m => x (i.val + 1)) b :=
-  occCount_le_occCount_of_comp_eq (reindexStepEmbedding π x m t hused hmaps)
+  occCount_le_of_comp (reindexStepEmbedding π x m t hused hmaps)
     (reindexStepEmbedding_target π x m t hused hmaps) b
 
 /-- A reconstruction of length `t` departs from each state at most as often as the original prefix
@@ -303,7 +306,7 @@ private theorem visitCount_pathOfReindexedSuccessors_le (π : α → Equiv.Perm 
     (hmaps : ∀ a k, k < visitCount x a m → π a k < visitCount x a m) (a : α) :
     visitCount (pathOfReindexedSuccessors π x) a t ≤ visitCount x a m := by
   rw [visitCount_def, visitCount_def]
-  exact occCount_le_occCount_of_comp_eq (reindexStepEmbedding π x m t hused hmaps)
+  exact occCount_le_of_comp (reindexStepEmbedding π x m t hused hmaps)
     (reindexStepEmbedding_source π x m t hused hmaps) a
 
 /-- A reconstruction of length `t` that skips the original's step at time `r` arrives at
@@ -316,7 +319,7 @@ private theorem occCount_pathOfReindexedSuccessors_lt (π : α → Equiv.Perm �
     (homit : ∀ i : Fin t, (reindexStepEmbedding π x m t hused hmaps i).val ≠ r) :
     occCount (fun i : Fin t => pathOfReindexedSuccessors π x (i.val + 1)) (x (r + 1)) <
       occCount (fun i : Fin m => x (i.val + 1)) (x (r + 1)) :=
-  occCount_lt_occCount_of_comp_eq (j := ⟨r, hr⟩) (reindexStepEmbedding π x m t hused hmaps)
+  occCount_lt_of_comp (j := ⟨r, hr⟩) (reindexStepEmbedding π x m t hused hmaps)
     (reindexStepEmbedding_target π x m t hused hmaps) rfl fun i => Fin.ne_of_val_ne (homit i)
 
 /-- **A reconstruction that has exhausted its current row ends where the original prefix does.**
@@ -386,10 +389,11 @@ private theorem exists_maximal_visitCount_lt (π : α → Equiv.Perm ℕ) (x : �
       rw [← reindexStepEmbedding_source π x m t hused hmaps j]
       exact hxS _
     have hsumy : ∑ a ∈ S, visitCount (pathOfReindexedSuccessors π x) a t = t := by
-      simpa only [visitCount_def] using
+      simpa only [visitCount_def, Nat.card_fin] using
         sum_occCount_eq_card (fun j : Fin t => pathOfReindexedSuccessors π x j.val) hyS
     have hsumx : ∑ a ∈ S, visitCount x a m = m := by
-      simpa only [visitCount_def] using sum_occCount_eq_card (fun j : Fin m => x j.val) hxS
+      simpa only [visitCount_def, Nat.card_fin] using
+        sum_occCount_eq_card (fun j : Fin m => x j.val) hxS
     have hsumEq : ∑ a ∈ S, visitCount (pathOfReindexedSuccessors π x) a t =
         ∑ a ∈ S, visitCount x a m := Finset.sum_congr rfl hall
     omega

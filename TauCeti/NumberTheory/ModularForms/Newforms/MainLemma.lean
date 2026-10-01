@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Nat.PrimeFactorsProd
+public import TauCeti.Data.Nat.Prime.FactorsProd
 public import TauCeti.NumberTheory.ModularForms.Newforms.AtkinLehner
 public import TauCeti.NumberTheory.ModularForms.Newforms.CoprimeFilter.Dichotomy
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.Coefficient

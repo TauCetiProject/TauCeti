@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Serre
 import TauCeti.LinearAlgebra.Matrix.Step
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.ShortRootWeight.Basic
@@ -46,7 +47,8 @@ coefficient tables.
   Cartan, raising, and lowering matrices.
 * `TauCeti.F4ShortRoot.raisingDividedSquareMatrix` and `loweringDividedSquareMatrix`: the
   divided squares of the raising and lowering matrices.
-* `TauCeti.F4ShortRoot.isSerreSystem`: the Chevalley--Serre relations between them over `ℤ`.
+* `TauCeti.F4ShortRoot.isSerreSystem`: the Chevalley--Serre relations between them over `ℤ`,
+  with `TauCeti.F4ShortRoot.isSl2Triple` the `sl₂` triple at each node.
 * `TauCeti.F4ShortRoot.serreRepresentation`: the induced representation of the type-`F₄` Serre
   Lie algebra.
 
@@ -328,6 +330,21 @@ theorem isSerreSystem :
   lie_H_F := cartanMatrix_lie_F
   ad_pow_lie_E_E := raisingMatrix_lie_E_lie_E
   ad_pow_lie_F_F := loweringMatrix_lie_F_lie_F
+
+/-- At each simple node, the integral Cartan, raising and lowering matrices form an `sl₂`
+triple: the raising and lowering matrices bracket to the nonzero Cartan matrix, which brackets
+with them to `2` and `-2` times themselves. So each node spans a copy of `sl₂` inside the matrix
+Lie algebra of the integral short-root module. -/
+theorem isSl2Triple (i : Fin 4) :
+    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) where
+  h_ne_zero := by fin_cases i <;> decide +kernel
+  lie_e_f := isSerreSystem.lie_E_F_self i
+  lie_h_e_nsmul := by
+    rw [isSerreSystem.lie_H_E i i, Matrix.transpose_apply, CartanMatrix.F₄_diag, two_smul,
+      two_nsmul]
+  lie_h_f_nsmul := by
+    rw [isSerreSystem.lie_H_F i i, Matrix.transpose_apply, CartanMatrix.F₄_diag, two_smul,
+      two_nsmul]
 
 /-- The explicit integral twenty-six-dimensional representation of the type-`F₄` Serre Lie
 algebra. -/

@@ -8,7 +8,7 @@ module
 import Mathlib.FieldTheory.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Integrality
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 
 /-!
 # The translation action of the point group on the function field
@@ -20,11 +20,11 @@ automorphism `τ_P^*` of the function field `F(W)`, and `P ↦ τ_P^*` is a fait
 point group on `F(W)`. This file constructs that action.
 
 The construction runs through the generic point `g` of
-`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/FunctionField/GenericPoint.lean`. Translating a
-function by `P` is evaluating it at `g + P`, so the pullback of `τ_P` on the affine coordinate ring
-is `CoordinateRing.evalAlgHom` at the coordinates of the translate `g + P_{F(W)}`, and the
-composition law is the associativity of the point group: applying `τ_Q^*` to a coordinate of
-`g + P` moves the generic point to `g + Q`, hence the pair to `g + P + Q`.
+`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/FunctionField/GenericPoint/Basic.lean`.
+Translating a function by `P` is evaluating it at `g + P`, so the pullback of `τ_P` on the affine
+coordinate ring is `CoordinateRing.evalAlgHom` at the coordinates of the translate `g + P_{F(W)}`,
+and the composition law is the associativity of the point group: applying `τ_Q^*` to a coordinate
+of `g + P` moves the generic point to `g + Q`, hence the pair to `g + P + Q`.
 
 Two facts make the construction go through, and both come down to the transcendence of the
 coordinate function `x`. First, `g + P` is never the point at infinity, since otherwise `g` would

@@ -13,9 +13,7 @@ public import Mathlib.GroupTheory.Subgroup.Center
 # Maps of subgroups
 
 Mathlib's `MonoidHom.subgroupComap` sends the preimage `K.comap f` of a subgroup `K` to `K`.
-Mathlib records that this map is surjective when `f` is
-(`MonoidHom.subgroupComap_surjective_of_surjective`); this file records the companion fact for
-injectivity. It also records how surjective homomorphisms act on centres and on derived subgroups.
+This file records how surjective homomorphisms act on centres and on derived subgroups.
 
 An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
 and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
@@ -38,8 +36,6 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 
 ## Main results
 
-* `TauCeti.MonoidHom.subgroupComap_injective_of_injective`: `f.subgroupComap K` is injective when
-  `f` is.
 * `QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection whose
   kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
@@ -65,13 +61,6 @@ public section
 namespace TauCeti
 
 variable {G H : Type*} [Group G] [Group H]
-
-/-- The comparison map from the preimage of a subgroup to that subgroup is injective as soon as the
-underlying homomorphism is. Companion to Mathlib's
-`MonoidHom.subgroupComap_surjective_of_surjective`. -/
-theorem MonoidHom.subgroupComap_injective_of_injective {f : H →* G} (hf : Function.Injective f)
-    (K : Subgroup G) : Function.Injective (f.subgroupComap K) :=
-  fun _ _ hxy => Subtype.ext (hf (congrArg Subtype.val hxy))
 
 /-- The centre of a group lies in the kernel of every surjection onto a centreless group.
 
@@ -146,7 +135,7 @@ theorem Subgroup.subtype_comp_congrOfMapEq (e : G ≃* H) {A : Subgroup G} {B : 
     B.subtype.comp (Subgroup.congrOfMapEq e h : A →* B) = (e : G →* H).comp A.subtype :=
   MonoidHom.ext <| Subgroup.coe_congrOfMapEq_apply e h
 
--- Not `@[simp]`: with this in the simp set, `Subgroup.coe_congrOfMapEq_symm_apply` below is
+-- Not `@[simp]`: with this in the simp set, `Subgroup.coe_congrOfMapEq_symm_apply` above is
 -- provable by `simp`, which the `simpNF` linter rejects.
 theorem Subgroup.congrOfMapEq_symm (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
     (h : A.map (e : G →* H) = B) :
@@ -427,12 +416,9 @@ theorem QuotientGroup.congrOfSurjectiveOfKerLe_mk (ψ : G →* H)
     QuotientGroup.congrOfSurjectiveOfKerLe ψ hsurj hker hmap (QuotientGroup.mk a) =
       QuotientGroup.mk (ψ a) := by
   -- This lemma IS the abstraction barrier: `congrOfSurjectiveOfKerLe` is an `Equiv.ofBijective`
-  -- around `Quotient.map' ψ`, whose `toFun` is that map, so on a class `⟦a⟧` it reduces to
-  -- `⟦ψ a⟧` — the content of Mathlib's `Quotient.map'_mk''`, which cannot be cited directly here
-  -- because `Equiv.ofBijective` has no `_apply` lemma in Mathlib to strip the wrapper first
-  -- (checked: only `Equiv.ofBijective_apply_symm_apply` exists). Downstream code rewrites with
-  -- this lemma and never sees either wrapper, which is what keeps the implementation free to move.
-  unfold QuotientGroup.congrOfSurjectiveOfKerLe
+  -- around `Quotient.map' ψ`, so on a class `⟦a⟧` it evaluates to `⟦ψ a⟧`.
+  -- Downstream code rewrites with this lemma and never sees either wrapper, which is what
+  -- keeps the implementation free to move.
   rfl
 
 end TauCeti
