@@ -57,6 +57,8 @@ itself are those pinned in `TauCeti.Hodge.IsPolarization`.
   `TauCeti.Hodge.Polarization.hodgeForm_nondegenerate`: the packaged consequences.
 * `TauCeti.Hodge.tate_hodgeForm_apply`: the Hodge form of the polarized Tate structure `ℤ(m)` is the
   standard Hermitian form of the complex line.
+* `TauCeti.Hodge.IsPolarization.comp`: positive definiteness makes a polarizing form pull back to a
+  polarizing form along an injective morphism of Hodge structures.
 
 This is the Hermitian carrier targeted in Layer L1 of
 `TauCetiRoadmap/HodgeStructures/README.md`, the form through which the polarization is used in
@@ -279,5 +281,67 @@ theorem tate_hodgeForm_apply (m : ℤ) (x y : ℂ) :
   rw [Polarization.hodgeForm_apply, latticeConj_tateLatticeMap, tate_weilOperator,
     tatePolarization_Q]
   simp
+
+/-! ### Pulling back a polarization along an injective morphism -/
+
+section Comp
+
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ} {h'ℂ : IsBaseChange ℂ ι'ℂ} {hs' : HodgeStructure h'ℂ n}
+
+/-- **Polarizations pull back along injective morphisms.** If `Q` polarizes `hs` and `f` is an
+injective morphism into `hs` from a Hodge structure of the same weight, then the form
+`Q (f x) (f y)` polarizes the source. Nondegeneracy of the pulled-back form is a consequence of
+the positivity of the Hodge form of `Q`. -/
+theorem IsPolarization.comp {Q : LinearMap.BilinForm ℤ V} (hQ : IsPolarization hℂ hs Q)
+    (f : HodgeStructure.Hom hs' hs) (hf : Function.Injective f.toIntLinearMap) :
+    IsPolarization h'ℂ hs' (Q.comp f.toIntLinearMap f.toIntLinearMap) := by
+  have hform : integralFormBaseChange h'ℂ (Q.comp f.toIntLinearMap f.toIntLinearMap) =
+      (integralFormBaseChange hℂ Q).comp f.toLinearMap f.toLinearMap := by
+    rw [HodgeStructure.Hom.toLinearMap_def]
+    exact integralFormBaseChange_comp h'ℂ hℂ Q _ _
+  have hsymm : ∀ x y, Q.comp f.toIntLinearMap f.toIntLinearMap y x =
+      (n.negOnePow : ℤ) * Q.comp f.toIntLinearMap f.toIntLinearMap x y := fun x y ↦ by
+    rw [LinearMap.BilinForm.comp_apply, LinearMap.BilinForm.comp_apply]
+    exact hQ.symm_weight _ _
+  refine ⟨hsymm, ?_, fun p x hx y hy ↦ ?_, fun p x hx hx0 ↦ ?_⟩
+  · refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft fun x y hxy ↦ by
+      rw [hsymm, hxy, mul_zero]).mpr fun v hv ↦ ?_
+    -- The image of `v` pairs to zero with the image of `f`, which contains its Weil transform, so
+    -- it has Hodge norm zero.
+    let P : Polarization hℂ hs := ⟨Q, hQ⟩
+    have hzero : ∀ z, P.Q (ιℂ (f.toIntLinearMap v)) (f z) = 0 := by
+      intro z
+      induction z using h'ℂ.inductionOn with
+      | tmul w =>
+        rw [f.apply_ι, P.Q_ι]
+        exact_mod_cast hv w
+      | smul c z hz => rw [map_smul, map_smul, hz, smul_zero]
+      | add z z' hz hz' => rw [map_add, map_add, hz, hz', add_zero]
+    have hu : ιℂ (f.toIntLinearMap v) = 0 := by
+      rw [← P.hodgeForm_self_eq_zero_iff, P.hodgeForm_apply, latticeConj_ι, P.Q_symm_weight,
+        ← f.apply_ι, ← f.commutes_weilOperator, f.apply_ι, hzero, mul_zero]
+    refine hf ((hQ.nondegenerate.1 _ fun w ↦ ?_).trans (map_zero _).symm)
+    have hw := integralFormBaseChange_ι hℂ Q (f.toIntLinearMap v) w
+    rw [hu, map_zero, LinearMap.zero_apply] at hw
+    exact_mod_cast hw.symm
+  · rw [hform, LinearMap.BilinForm.comp_apply]
+    exact hQ.orthogonal p _ (f.map_F_le p (Submodule.mem_map_of_mem hx)) _
+      (f.map_F_le _ (Submodule.mem_map_of_mem hy))
+  · have hfℂ : Function.Injective f.toLinearMap := by
+      rw [HodgeStructure.Hom.toLinearMap_def]
+      exact integralMapToComplex_injective h'ℂ hℂ hf
+    have hfx : f.toLinearMap x ≠ 0 := fun h ↦ hx0 (hfℂ (h.trans (map_zero _).symm))
+    rw [hform, LinearMap.BilinForm.comp_apply]
+    simpa only [f.commutes_conj] using hQ.positive p _ (f.map_mem_piece p hx) hfx
+
+/-- A Hodge structure admitting an injective morphism into a polarizable Hodge structure of the
+same weight is polarizable. -/
+theorem IsPolarizable.of_injective (h : IsPolarizable hℂ hs) (f : HodgeStructure.Hom hs' hs)
+    (hf : Function.Injective f.toIntLinearMap) : IsPolarizable h'ℂ hs' := by
+  obtain ⟨P⟩ := isPolarizable_iff_nonempty.mp h
+  exact (⟨_, P.isPolarization.comp f hf⟩ : Polarization h'ℂ hs').isPolarizable
+
+end Comp
 
 end TauCeti.Hodge
