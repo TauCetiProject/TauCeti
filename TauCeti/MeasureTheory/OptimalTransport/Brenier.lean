@@ -111,31 +111,35 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
 
 /-- **The support of an optimal quadratic plan lies in a subdifferential graph.** On a real inner
 product space, if `π` is an optimal plan of finite cost for `‖x - y‖ ^ 2 / 2` between finite
-measures, there is a convex, lower semicontinuous `u : E → EReal` that never takes the value `⊥`
-such that every `(x, y)` in the support of `π` has `y ∈ ∂u(x)`. -/
+measures, there is a proper (never `⊥`, and finite somewhere) convex, lower semicontinuous
+`u : E → EReal` such that every `(x, y)` in the support of `π` has `y ∈ ∂u(x)`. -/
 theorem IsOptimalCoupling.exists_support_subset_subdifferential [IsFiniteMeasure μ]
     (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
-      (∀ x, u x ≠ ⊥) ∧ π.support ⊆ {p | p.2 ∈ subdifferential (innerₗ E) u p.1} := by
+      (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧
+        π.support ⊆ {p | p.2 ∈ subdifferential (innerₗ E) u p.1} := by
   -- The function is a Legendre–Fenchel conjugate `g⋆`; it is proper because some point of the
-  -- support carries a subgradient, or, for an empty support, because `g` is chosen finite.
-  obtain ⟨g, hsub, hbot⟩ : ∃ g : E → EReal,
+  -- support carries a subgradient, or, for an empty support, because `g = 0` is finite and has
+  -- `g⋆ 0 = 0`.
+  obtain ⟨g, hsub, hbot, htop⟩ : ∃ g : E → EReal,
       π.support ⊆ {p | p.2 ∈ subdifferential (innerₗ E) (fenchelConjugate (innerₗ E) g) p.1} ∧
-        ∀ x, fenchelConjugate (innerₗ E) g x ≠ ⊥ := by
+        (∀ x, fenchelConjugate (innerₗ E) g x ≠ ⊥) ∧ ∃ x, fenchelConjugate (innerₗ E) g x ≠ ⊤ := by
     rcases π.support.eq_empty_or_nonempty with hπ | ⟨z, hz⟩
-    · exact ⟨fun _ => 0, by simp [hπ],
-        fenchelConjugate_ne_bot (innerₗ E) (x := 0) EReal.zero_ne_top⟩
+    · refine ⟨fun _ => 0, by simp [hπ],
+        fenchelConjugate_ne_bot (innerₗ E) (x := 0) EReal.zero_ne_top, 0, ?_⟩
+      exact ((fenchelConjugate_le (innerₗ E) fun x => by simp).trans_lt EReal.zero_lt_top).ne
     · have hcm : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) π.support :=
         (isCyclicallyMonotone_ofReal_iff fun _ => by positivity).1
           (h.isCyclicallyMonotone_support (ENNReal.continuous_ofReal.comp
             (((continuous_fst.sub continuous_snd).norm.pow 2).div_const 2)) hfin)
       obtain ⟨g, hg⟩ := hcm.exists_fenchelConjugate_innerₗ_subset_subdifferential
-      exact ⟨g, hg, apply_ne_bot_of_mem_subdifferential (innerₗ E) (hg hz)⟩
+      exact ⟨g, hg, apply_ne_bot_of_mem_subdifferential (innerₗ E) (hg hz), z.1,
+        ne_top_of_mem_subdifferential (innerₗ E) (hg hz)⟩
   have hcont (x : E) : Continuous (innerₗ E x) :=
     (continuous_const.inner continuous_id).congr fun y => (innerₗ_apply_apply x y).symm
   exact ⟨_, convex_epigraph_fenchelConjugate (innerₗ E) g,
-    lowerSemicontinuous_fenchelConjugate (innerₗ E) hcont g, hbot, hsub⟩
+    lowerSemicontinuous_fenchelConjugate (innerₗ E) hcont g, hbot, htop, hsub⟩
 
 /-- Against a coupling of two measures with finite second moments, the correlation
 `⟪x, y⟫` is integrable. -/
@@ -343,21 +347,21 @@ theorem isKantorovichOptimalTransportMap_gradient [OpensMeasurableSpace E] [Comp
 
 /-- **The Knott–Smith optimality criterion.** On a separable real inner product space, a coupling
 `π` of finite measures `μ` and `ν` with finite second moments is an optimal plan for the cost
-`‖x - y‖ ^ 2 / 2` exactly when there is a convex, lower semicontinuous `u : E → EReal` that never
-takes the value `⊥` such that `y ∈ ∂u(x)` for `π`-almost every `(x, y)`. -/
+`‖x - y‖ ^ 2 / 2` exactly when there is a proper (never `⊥`, and finite somewhere) convex, lower
+semicontinuous `u : E → EReal` such that `y ∈ ∂u(x)` for `π`-almost every `(x, y)`. -/
 theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential [OpensMeasurableSpace E]
     [SecondCountableTopology E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν ↔
       ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
-        (∀ x, u x ≠ ⊥) ∧ ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-  refine ⟨fun h => ?_, fun ⟨_, _, _, _, hu⟩ =>
+        (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧ ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+  refine ⟨fun h => ?_, fun ⟨_, _, _, _, _, hu⟩ =>
     hπ.isOptimalCoupling_of_ae_mem_subdifferential hμ hν hu⟩
   have hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
     rw [← h.lintegral_eq, hπ.lintegral_norm_sub_sq_div_two hμ hν]
     exact ENNReal.ofReal_ne_top
-  obtain ⟨u, hconv, hlsc, hbot, hsub⟩ := h.exists_support_subset_subdifferential hfin
-  refine ⟨u, hconv, hlsc, hbot, ?_⟩
+  obtain ⟨u, hconv, hlsc, hbot, htop, hsub⟩ := h.exists_support_subset_subdifferential hfin
+  refine ⟨u, hconv, hlsc, hbot, htop, ?_⟩
   filter_upwards [π.support_mem_ae] with z hz using hsub hz
 
 end InnerProduct
@@ -382,7 +386,7 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_gradient [IsFiniteMeasure μ] (hμ
       (∀ x, u x ≠ ⊥) ∧
       (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
       π = graphPlan (∇ fun x => (u x).toReal) μ := by
-  obtain ⟨u, hconv, hlsc, hbot, hsub⟩ := h.exists_support_subset_subdifferential hfin
+  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := h.exists_support_subset_subdifferential hfin
   -- The effective domain of `u` contains the first coordinate of every point of the support,
   -- hence `μ`-almost every point, since `π` has first marginal `μ`.
   have hdom : ∀ᵐ x ∂μ, u x ≠ ⊤ := by
