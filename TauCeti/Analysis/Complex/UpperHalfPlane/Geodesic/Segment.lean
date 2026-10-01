@@ -104,6 +104,7 @@ end UpperHalfPlane
 namespace TauCeti.UpperHalfPlane
 
 /-- Segments transform naturally under the action. -/
+@[simp]
 theorem smul_geodesicSegment (h : PSL(2, ℝ)) (z w : ℍ) :
     h • geodesicSegment z w = geodesicSegment (h • z) (h • w) := by
   rcases eq_or_ne z w with rfl | hzw
@@ -128,25 +129,6 @@ private theorem re_geodesicLine_mk (A : SL(2, ℝ)) (t : ℝ) :
       Complex.ofReal_re, Complex.ofReal_im] <;>
     ring
 
-/-- The denominator of `re_geodesicLine_mk` is positive, as `(c, d) ≠ (0, 0)`. -/
-private theorem denom_pos {a b c d : ℝ} (h : a * d - b * c = 1) {s : ℝ} (hs : 0 < s) :
-    0 < c ^ 2 * s + d ^ 2 := by
-  rcases eq_or_ne d 0 with rfl | hd
-  · have hc : c ≠ 0 := by rintro rfl; simp at h
-    positivity
-  · positivity
-
-/-- The difference of the values of `s ↦ (a c s + b d) / (c² s + d²)` at `s₂` and `s₁`, when
-`a d - b c = 1`. -/
-private theorem sub_re_eq {a b c d : ℝ} (h : a * d - b * c = 1) {s₁ s₂ : ℝ} (hs₁ : 0 < s₁)
-    (hs₂ : 0 < s₂) :
-    (a * c * s₂ + b * d) / (c ^ 2 * s₂ + d ^ 2) - (a * c * s₁ + b * d) / (c ^ 2 * s₁ + d ^ 2) =
-      c * d * (s₂ - s₁) / ((c ^ 2 * s₁ + d ^ 2) * (c ^ 2 * s₂ + d ^ 2)) := by
-  have h₁ := (denom_pos h hs₁).ne'
-  have h₂ := (denom_pos h hs₂).ne'
-  field_simp
-  linear_combination (c * d * (s₂ - s₁)) * h
-
 /-- Along a geodesic line the real part is monotone or antitone: the line is a vertical ray or a
 semicircle centred on the real axis, traversed once.
 Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 10), Theorem 3.1 p. 10. -/
@@ -156,14 +138,23 @@ theorem monotone_re_geodesicLine_or_antitone (g : PSL(2, ℝ)) :
   | _ A =>
   have hdet := A.det_coe
   rw [Matrix.det_fin_two] at hdet
+  -- the denominator `c² s + d²` is positive, as `(c, d) ≠ (0, 0)`
+  have hden₀ (s : ℝ) : 0 < A 1 0 ^ 2 * Real.exp s ^ 2 + A 1 1 ^ 2 := by
+    rcases eq_or_ne (A 1 1) 0 with hd | hd
+    · have hc : A 1 0 ≠ 0 := by rintro hc; rw [hc, hd] at hdet; simp at hdet
+      positivity
+    · positivity
   have key (s t : ℝ) : (geodesicLine (↑A : PSL(2, ℝ)) t).re - (geodesicLine (↑A : PSL(2, ℝ)) s).re =
       A 1 0 * A 1 1 * (Real.exp t ^ 2 - Real.exp s ^ 2) /
         ((A 1 0 ^ 2 * Real.exp s ^ 2 + A 1 1 ^ 2) * (A 1 0 ^ 2 * Real.exp t ^ 2 + A 1 1 ^ 2)) := by
-    rw [re_geodesicLine_mk, re_geodesicLine_mk, sub_re_eq hdet (by positivity) (by positivity)]
+    have h₁ := (hden₀ s).ne'
+    have h₂ := (hden₀ t).ne'
+    rw [re_geodesicLine_mk, re_geodesicLine_mk]
+    field_simp
+    linear_combination (A 1 0 * A 1 1 * (Real.exp t ^ 2 - Real.exp s ^ 2)) * hdet
   have hexp {s t : ℝ} (hst : s ≤ t) : 0 ≤ Real.exp t ^ 2 - Real.exp s ^ 2 :=
     sub_nonneg.2 (pow_le_pow_left₀ (Real.exp_pos s).le (Real.exp_le_exp.2 hst) 2)
-  have hden (s t : ℝ) := (mul_pos (denom_pos hdet (pow_pos (Real.exp_pos s) 2))
-    (denom_pos hdet (pow_pos (Real.exp_pos t) 2))).le
+  have hden (s t : ℝ) := (mul_pos (hden₀ s) (hden₀ t)).le
   rcases le_or_gt 0 (A 1 0 * A 1 1) with hcd | hcd
   · refine Or.inl fun s t hst ↦ sub_nonneg.1 ?_
     rw [key s t]
