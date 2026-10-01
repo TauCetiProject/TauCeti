@@ -26,6 +26,8 @@ for Witt-vector rings with their `(p, [ϖ])`-adic topology.
 
 ## Main results
 
+* `TauCeti.Huber.PairOfDefinition.adic_extendedIdealOfDefinition`: the ideal of definition of this
+  pair, extended to `A`, is `I`.
 * `TauCeti.Huber.PairOfDefinition.adic_idealImage`: the neighbourhood subgroup furnished by this
   pair in degree `n` is exactly `I ^ n`.
 * `TauCeti.Huber.isHuberRing_of_isAdic`: a ring with a finitely generated ideal defining its
@@ -70,26 +72,26 @@ theorem adic_ringOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
 
 /-- Membership in the ideal of definition of `adic I hI hfg` is membership in `I`. -/
 @[simp]
-theorem mem_adic_idealOfDefinition_iff (I : Ideal A) (hI : IsAdic I) (hfg : I.FG)
+theorem mem_adic_idealOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG)
     {x : (adic I hI hfg).ringOfDefinition} :
     x ∈ (adic I hI hfg).idealOfDefinition ↔ (x : A) ∈ I :=
   Ideal.mem_comap
 
-/-- Mapping the ideal of definition of `adic I hI hfg` back to `A` recovers `I`. -/
+/-- The ring of definition of `adic I hI hfg` is all of `A`, so its inclusion is surjective. -/
+private theorem surjective_subtype_adic (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
+    Function.Surjective (adic I hI hfg).ringOfDefinition.subtype :=
+  fun x ↦ ⟨⟨x, Subring.mem_top x⟩, rfl⟩
+
+/-- The ideal of definition of `adic I hI hfg`, extended to `A`, is `I`. -/
 @[simp]
-theorem map_adic_idealOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
-    (adic I hI hfg).idealOfDefinition.map
-      (adic I hI hfg).ringOfDefinition.subtype = I := by
-  let P := adic I hI hfg
-  have hsurj : Function.Surjective P.ringOfDefinition.subtype := fun x ↦ by
-    refine ⟨⟨x, ?_⟩, rfl⟩
-    rw [adic_ringOfDefinition]
-    exact Subring.mem_top x
-  have hideal : P.idealOfDefinition = I.comap P.ringOfDefinition.subtype := by
+theorem adic_extendedIdealOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
+    (adic I hI hfg).extendedIdealOfDefinition = I := by
+  have hideal : (adic I hI hfg).idealOfDefinition =
+      I.comap (adic I hI hfg).ringOfDefinition.subtype := by
     ext x
-    exact mem_adic_idealOfDefinition_iff I hI hfg
-  rw [hideal]
-  exact Ideal.map_comap_of_surjective _ hsurj I
+    exact mem_adic_idealOfDefinition I hI hfg
+  rw [extendedIdealOfDefinition_def, hideal]
+  exact Ideal.map_comap_of_surjective _ (surjective_subtype_adic I hI hfg) I
 
 /-- The `n`-th neighbourhood subgroup supplied by the adic pair is `I ^ n` itself. -/
 @[simp]
@@ -97,17 +99,14 @@ theorem adic_idealImage (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) (n : ℕ) :
     (adic I hI hfg).idealImage n = (I ^ n).toAddSubgroup := by
   ext x
   let P := adic I hI hfg
-  have hsurj : Function.Surjective P.ringOfDefinition.subtype := fun y ↦ by
-    refine ⟨⟨y, ?_⟩, rfl⟩
-    rw [adic_ringOfDefinition I hI hfg]
-    exact Subring.mem_top y
+  have hsurj : Function.Surjective P.ringOfDefinition.subtype := surjective_subtype_adic I hI hfg
   rw [P.mem_idealImage]
   calc
     (∃ y ∈ P.idealOfDefinition ^ n, (y : A) = x) ↔
         x ∈ (P.idealOfDefinition ^ n).map P.ringOfDefinition.subtype := by
       simpa using (Ideal.mem_map_iff_of_surjective _ hsurj).symm
     _ ↔ x ∈ I ^ n := by
-      rw [Ideal.map_pow, map_adic_idealOfDefinition]
+      rw [Ideal.map_pow, ← extendedIdealOfDefinition_def, adic_extendedIdealOfDefinition]
     _ ↔ x ∈ (I ^ n).toAddSubgroup := Iff.rfl
 
 end PairOfDefinition
