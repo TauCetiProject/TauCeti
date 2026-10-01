@@ -257,7 +257,7 @@ end Ring
 
 section MappingCone
 
-variable {S M N : Type*} [Semiring S] [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+variable {S M N : Type*} [Semiring S] [AddCommGroup M] [Module S M] [AddCommMonoid N] [Module S N]
   {d : M →ₗ[S] M} {e : N →ₗ[S] N}
 
 variable (d e) in
@@ -278,8 +278,18 @@ theorem mappingCone_comp_self (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e 
     (hf : f ∘ₗ d = e ∘ₗ f) : mappingCone d e f ∘ₗ mappingCone d e f = 0 := by
   refine LinearMap.ext fun x ↦ Prod.ext ?_ ?_
   · simpa using congr($hd x.1)
-  · have hfd : f (d x.1) = e (f x.1) := congr($hf x.1)
-    simpa [hfd] using congr($he x.2)
+  · have hfd : e (f x.1) = f (d x.1) := (congr($hf x.1)).symm
+    have he2 : e (e x.2) = 0 := by simpa using congr($he x.2)
+    calc
+      ((mappingCone d e f ∘ₗ mappingCone d e f) x).2
+        = f (-d x.1) + (e (f x.1) + e (e x.2)) := by
+          simp only [comp_apply, mappingCone_apply, map_add]
+      _ = (f (-d x.1) + f (d x.1)) + e (e x.2) := by
+          rw [hfd, add_assoc]
+      _ = f (-d x.1 + d x.1) + 0 := by
+          rw [← map_add, he2]
+      _ = 0 := by
+          rw [neg_add_cancel, map_zero, add_zero]
 
 end MappingCone
 
