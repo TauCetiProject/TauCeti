@@ -68,9 +68,10 @@ decomposition `TauCeti.isHilbertSum_peterWeylBlock` of
   coefficient is onto its block, and bijective onto it for an algebraically closed `𝕜`.
 * `TauCeti.isUnitary_peterWeylBlockRep` and `TauCeti.continuous_peterWeylBlockRep`: a block is a
   unitary `G × G`-representation, with a continuous operator-valued action.
-* `TauCeti.coe_endEquivPeterWeylBlock_eq_smul_traceCoeffLp`: the comparison of
+* `TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`: at a matrix unit of
+  the canonical basis, the comparison of
   `TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean` is the trace coefficient of the
-  transposed operator, scaled by `√(dim V_π)`.
+  transposed rank-one operator, scaled by `√(dim V_π)`.
 
 ## Implementation notes
 
@@ -78,13 +79,14 @@ Two comparisons of a block with the operators of its model now coexist, and they
 different maps. `TauCeti.endEquivPeterWeylBlock` matches the matrix unit at a position with the
 normalized matrix coefficient at that position, in the canonical basis; the trace coefficient
 reaches the same matrix coefficient from the matrix unit at the *transposed* position
-(`TauCeti.coe_endEquivPeterWeylBlock_eq_smul_traceCoeffLp`). Transposition is not equivariant for
-`ContRepresentation.biLinHom π π` — it conjugates that action into the one built from the
-contragredient of `π` — so the basis-built comparison cannot be reused for the equivariant
-statement, and rescaling it cannot repair this. The trace pairing is also defined without choosing
-a basis, without an inner product on the carrier and without assuming `𝕜` algebraically closed:
-only the comparison with the matrix coefficients needs `[InnerProductSpace 𝕜 V]`, and only the
-passage from "onto the block" to "bijective onto the block" needs the dimension count, hence
+(`TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`). Transposition is
+not equivariant for `ContRepresentation.biLinHom π π` — it conjugates that action into the one
+built from the contragredient of `π` — so the basis-built comparison cannot be reused for the
+equivariant statement, and rescaling it cannot repair this. The trace pairing is also defined
+without choosing a basis, without an inner product on the carrier and without assuming `𝕜`
+algebraically closed: only the comparison with the matrix coefficients needs
+`[InnerProductSpace 𝕜 V]`, and only the passage from "onto the block" to "bijective onto the
+block" needs the dimension count, hence
 `[IsAlgClosed 𝕜]`.
 
 ## References
@@ -318,8 +320,9 @@ theorem continuous_peterWeylBlockRep (model : IrrepModel 𝕜 G) :
     ((_root_.ContRepresentation.continuous_biLinHom model.rep model.rep model.continuous_rep
       model.continuous_rep).clm_comp continuous_const)
 
-/-- **The basis-built comparison of `TauCeti.endEquivPeterWeylBlock` is the trace coefficient of
-the transposed operator**, scaled by `√(dim V_π)`: the matrix unit `Basis.end b (i, j)` sends
+/-- **At a matrix unit of the canonical basis, the basis-built comparison of
+`TauCeti.endEquivPeterWeylBlock` is the trace coefficient of the transposed rank-one operator**,
+scaled by `√(dim V_π)`: the matrix unit `Basis.end b (i, j)` sends
 `b j ↦ b i`, that is, it is the rank-one operator `rankOne 𝕜 (b i) (b j)`, while the trace
 coefficient reaches the same matrix coefficient from `rankOne 𝕜 (b j) (b i)`.
 
@@ -328,8 +331,8 @@ The swap of the two indices is a transposition, and transposition turns the two-
 why `TauCeti.endEquivPeterWeylBlock` cannot carry the equivariance of
 `TauCeti.biLinHomEquivPeterWeylBlock`, and why the basis-free trace pairing is the comparison the
 `G × G`-action sees. -/
-theorem coe_endEquivPeterWeylBlock_eq_smul_traceCoeffLp [IsAlgClosed 𝕜] (model : IrrepModel 𝕜 G)
-    (p : Fin model.dim × Fin model.dim) :
+theorem coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne [IsAlgClosed 𝕜]
+    (model : IrrepModel 𝕜 G) (p : Fin model.dim × Fin model.dim) :
     (endEquivPeterWeylBlock model (Module.Basis.end model.basis.toBasis p) :
         Lp 𝕜 2 (haarProb G)) =
       (Real.sqrt model.dim : 𝕜) • _root_.ContRepresentation.traceCoeffLp model.rep

@@ -100,8 +100,8 @@ canonical basis of the model, so nothing is claimed below about its equivariance
 comparison is the basis-free trace pairing `T ↦ (x ↦ trace (T ∘ π x⁻¹))` of
 `TauCeti/RepresentationTheory/Compact/TraceCoefficient.lean`, which intertwines bi-translation with
 the action `(g, h) · A = π g ∘ A ∘ π h⁻¹` and differs from the comparison below by a transposition
-(`TauCeti.coe_endEquivPeterWeylBlock_eq_smul_traceCoeffLp`). The character averaging operator
-`TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
+(`TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`). The character
+averaging operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
 `TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
