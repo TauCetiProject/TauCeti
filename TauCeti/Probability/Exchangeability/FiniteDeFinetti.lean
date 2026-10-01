@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.ProductKernel
+public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
 public import TauCeti.Probability.Exchangeability.SamplingWithoutReplacement
 public import TauCeti.Probability.Process.EmpiricalMeasure
 
@@ -16,10 +16,13 @@ Let `x : κ → α` be a nonempty finite population. Its empirical distribution 
 of the uniform law on `κ` by `x`. Sampling `ι` entries from that distribution independently is
 therefore the same as choosing a uniform map `ι → κ` and reading the selected entries of `x`.
 
-For a random population with law `ρ`, `sampleWithReplacement ρ` mixes these finite product laws
-over `ρ`. The law `sampleWithoutReplacement ρ` already represents every shorter marginal of a
-finite exchangeable process. The collision coupling between uniform maps and uniform injective
-maps consequently gives, for every measurable event `A`,
+For a random population with law `ρ`, `sampleWithReplacement ρ` draws the population and,
+independently, a uniform map `ι → κ`, and reads the selected entries. It is the same
+`samplePopulation` construction as `sampleWithoutReplacement ρ`, which instead draws a uniform
+injective map; by the previous paragraph it is the mixture over `ρ` of the finite product laws of
+the empirical distributions. The law `sampleWithoutReplacement ρ` already represents every shorter
+marginal of a finite exchangeable process. The collision coupling between uniform maps and
+uniform injective maps consequently gives, for every measurable event `A`,
 
 ```text
 prefixLaw μ X m A ≤ sampleWithReplacement (prefixLaw μ X n) A + choose(m, 2) / n
@@ -34,10 +37,10 @@ eventwise rather than packaged in a new total-variation definition.
 
 * `TauCeti.Probability.empiricalMeasureOfFintype`: the empirical probability measure of a nonempty
   finite population;
-* `TauCeti.Probability.sampleWithReplacement`: the mixture of finite powers of those empirical
-  measures;
+* `TauCeti.Probability.sampleWithReplacement`: sampling a random finite population along uniform
+  index maps;
 * `TauCeti.Probability.sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: its
-  product-mixture characterization;
+  characterization as the mixture of finite powers of the empirical measures;
 * `TauCeti.Probability.ExchangeableAt.finiteDeFinetti`: the paired eventwise finite de Finetti
   bound;
 * `TauCeti.Probability.ExchangeableAt.prefixLaw_le_sampleWithReplacement_add` and
@@ -89,93 +92,44 @@ end EmpiricalPopulation
 
 section Sampling
 
-variable {ι κ : Type*} [Fintype ι] [Fintype κ] [Nonempty κ]
+variable {ι κ : Type*} [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
 /-- Sampling with replacement from a random finite population.
 
-For a population law `ρ`, this is the `ρ`-mixture of the `ι`-fold product of each population's
-empirical probability measure. -/
-def sampleWithReplacement (ρ : Measure (κ → α)) : Measure (ι → α) :=
-  ρ.bind fun x => (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure
+First draw a population `x : κ → α` with law `ρ`; independently draw a uniform index map
+`k : ι → κ`; then return the sample `i ↦ x (k i)`. This is `samplePopulation` along the uniform
+law on all index maps, the same construction as `sampleWithoutReplacement` without the
+injectivity constraint. -/
+def sampleWithReplacement [Finite κ] (ρ : Measure (κ → α)) : Measure (ι → α) :=
+  samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ
+
+/-- Sampling with replacement is `samplePopulation` along uniform index maps. -/
+theorem sampleWithReplacement_def [Finite κ] (ρ : Measure (κ → α)) :
+    sampleWithReplacement (ι := ι) ρ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ :=
+  (rfl)
+
+/-- Sampling with replacement from a random population preserves probability mass. -/
+theorem isProbabilityMeasure_sampleWithReplacement [Finite ι] [Finite κ] [Nonempty κ]
+    (ρ : Measure (κ → α)) [IsProbabilityMeasure ρ] :
+    IsProbabilityMeasure (sampleWithReplacement (ι := ι) ρ) := by
+  let _ : IsProbabilityMeasure (uniformOn (Set.univ : Set (ι → κ))) :=
+    isProbabilityMeasure_uniformOn (Set.toFinite _) Set.univ_nonempty
+  rw [sampleWithReplacement_def]
+  infer_instance
 
 /-- Sampling with replacement is the mixture of the finite product measures of the populations'
 empirical distributions. -/
-@[simp]
-theorem sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype (ρ : Measure (κ → α)) :
+theorem sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype [Fintype ι] [Fintype κ]
+    [Nonempty κ] (ρ : Measure (κ → α)) [SFinite ρ] :
     sampleWithReplacement ρ =
-      ρ.bind fun x => (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure :=
-  (rfl)
+      ρ.bind fun x =>
+        (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure := by
+  simp_rw [sampleWithReplacement_def, samplePopulation_eq_bind,
+    pi_empiricalMeasureOfFintype_eq_map_uniformOn]
 
-/-- The product-measure mixture defining sampling with replacement is a measurable kernel. -/
-private theorem aemeasurable_pi_empiricalMeasureOfFintype (ρ : Measure (κ → α)) :
-    AEMeasurable
-      (fun x => (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure) ρ :=
-  (TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_toMeasure
-      (fun _ : ι => empiricalMeasureOfFintype)
-      (fun _ => measurable_empiricalMeasureOfFintype)).aemeasurable
+section Bounds
 
-/-- Sampling with replacement from a random population preserves probability mass. -/
-theorem isProbabilityMeasure_sampleWithReplacement (ρ : Measure (κ → α))
-    [IsProbabilityMeasure ρ] :
-    IsProbabilityMeasure (sampleWithReplacement (ι := ι) ρ) :=
-  isProbabilityMeasure_bind
-    (aemeasurable_pi_empiricalMeasureOfFintype (ι := ι) (κ := κ) (α := α) ρ)
-    (.of_forall fun _ => inferInstance)
-
-/-- Evaluation of the with-replacement law as an average over the random finite population. -/
-theorem sampleWithReplacement_apply {ρ : Measure (κ → α)} {A : Set (ι → α)}
-    (hA : MeasurableSet A) :
-    sampleWithReplacement ρ A =
-      ∫⁻ x, (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure A ∂ρ :=
-  Measure.bind_apply hA (aemeasurable_pi_empiricalMeasureOfFintype ρ)
-
-section DiscretePopulation
-
-variable [MeasurableSpace κ] [MeasurableSingletonClass κ]
-
-/-- Sampling with replacement is the pushforward obtained by first choosing a uniform map into
-the population and independently drawing the population itself. -/
-theorem sampleWithReplacement_eq_map_prod (ρ : Measure (κ → α)) [SFinite ρ] :
-    sampleWithReplacement ρ =
-      ((uniformOn (Set.univ : Set (ι → κ))).prod ρ).map
-        fun p i => p.2 (p.1 i) := by
-  apply Measure.ext fun A hA => ?_
-  rw [sampleWithReplacement, Measure.bind_apply hA (aemeasurable_pi_empiricalMeasureOfFintype ρ)]
-  rw [Measure.map_apply measurable_reindexPopulation hA]
-  rw [Measure.prod_apply_symm (measurable_reindexPopulation hA)]
-  apply lintegral_congr
-  intro x
-  -- Expose the fixed-population section of the joint preimage so `Measure.map_apply` matches it.
-  change (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure A =
-    uniformOn (Set.univ : Set (ι → κ)) ((fun k i => x (k i)) ⁻¹' A)
-  rw [← Measure.map_apply
-      (μ := uniformOn (Set.univ : Set (ι → κ)))
-      (f := fun k i => x (k i))
-      (Measurable.of_eval fun i =>
-        (measurable_of_countable x).comp (measurable_pi_apply i)) hA,
-    ← pi_empiricalMeasureOfFintype_eq_map_uniformOn]
-
-omit [Nonempty κ] [Fintype ι] [Fintype κ] in
-/-- Evaluation of the without-replacement law by conditioning first on the population. -/
-theorem sampleWithoutReplacement_apply_population [Finite κ]
-    {ρ : Measure (κ → α)} [SFinite ρ]
-    {A : Set (ι → α)} (hA : MeasurableSet A) :
-    sampleWithoutReplacement ρ A =
-      ∫⁻ x, uniformOn {k : ι → κ | Function.Injective k}
-        ((fun k i => x (k i)) ⁻¹' A) ∂ρ := by
-  rw [sampleWithoutReplacement_def, Measure.map_apply measurable_reindexPopulation hA]
-  rw [Measure.prod_apply_symm (measurable_reindexPopulation hA)]
-  rfl
-
-/-- Evaluation of the with-replacement law by conditioning first on the population. -/
-theorem sampleWithReplacement_apply_population {ρ : Measure (κ → α)} [SFinite ρ]
-    {A : Set (ι → α)} (hA : MeasurableSet A) :
-    sampleWithReplacement ρ A =
-      ∫⁻ x, uniformOn (Set.univ : Set (ι → κ))
-        ((fun k i => x (k i)) ⁻¹' A) ∂ρ := by
-  rw [sampleWithReplacement_eq_map_prod, Measure.map_apply measurable_reindexPopulation hA]
-  rw [Measure.prod_apply_symm (measurable_reindexPopulation hA)]
-  rfl
+variable [Fintype ι] [Fintype κ]
 
 /-- **Finite sampling bound, without replacement to with replacement.** For every measurable
 event, sampling without replacement from a random finite population has mass at most its
@@ -184,8 +138,8 @@ theorem sampleWithoutReplacement_le_sampleWithReplacement_add
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ := by
-  rw [sampleWithoutReplacement_apply_population hA,
-    sampleWithReplacement_apply_population hA]
+  rw [sampleWithoutReplacement_def, sampleWithReplacement_def,
+    samplePopulation_apply_population hA, samplePopulation_apply_population hA]
   let c : ℝ≥0∞ := (Fintype.card ι).choose 2 / Fintype.card κ
   let f : (κ → α) → ℝ≥0∞ := fun x =>
     uniformOn (Set.univ : Set (ι → κ)) ((fun k i => x (k i)) ⁻¹' A)
@@ -205,8 +159,8 @@ theorem sampleWithReplacement_le_sampleWithoutReplacement_add
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ := by
-  rw [sampleWithoutReplacement_apply_population hA,
-    sampleWithReplacement_apply_population hA]
+  rw [sampleWithoutReplacement_def, sampleWithReplacement_def,
+    samplePopulation_apply_population hA, samplePopulation_apply_population hA]
   let c : ℝ≥0∞ := (Fintype.card ι).choose 2 / Fintype.card κ
   let f : (κ → α) → ℝ≥0∞ := fun x =>
     uniformOn {k : ι → κ | Function.Injective k} ((fun k i => x (k i)) ⁻¹' A)
@@ -219,7 +173,7 @@ theorem sampleWithReplacement_le_sampleWithoutReplacement_add
     _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
     _ = (∫⁻ x, f x ∂ρ) + c := by simp
 
-end DiscretePopulation
+end Bounds
 
 end Sampling
 
@@ -230,7 +184,7 @@ section FiniteExchangeability
 at most `choose m 2 / n` on every measurable event, in both directions. -/
 theorem ExchangeableAt.finiteDeFinetti
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-    {X : ℕ → Ω → α} {m n : ℕ} [NeZero n] (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
     (hA : MeasurableSet A) :
     prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
@@ -253,7 +207,7 @@ theorem ExchangeableAt.finiteDeFinetti
 distribution of the first `n` coordinates, plus `choose m 2 / n`. -/
 theorem ExchangeableAt.prefixLaw_le_sampleWithReplacement_add
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-    {X : ℕ → Ω → α} {m n : ℕ} [NeZero n] (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
     (hA : MeasurableSet A) :
     prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
@@ -265,7 +219,7 @@ same hypotheses, every measurable event under the empirical-product mixture has 
 mass under the `m`-prefix law plus `choose m 2 / n`. -/
 theorem ExchangeableAt.sampleWithReplacement_le_prefixLaw_add
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-    {X : ℕ → Ω → α} {m n : ℕ} [NeZero n] (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {A : Set (Fin m → α)}
     (hA : MeasurableSet A) :
     sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
