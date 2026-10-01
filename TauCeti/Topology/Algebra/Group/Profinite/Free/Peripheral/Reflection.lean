@@ -45,11 +45,10 @@ they are unique since the basis generates `F` topologically.
 * `TauCeti.Peripheral.reflect_basis`, `TauCeti.Peripheral.eq_reflect_iff`: the values of the
   reflection on the basis, which characterize it.
 * `TauCeti.Peripheral.reflect_partialProd`, `TauCeti.Peripheral.reflect_cusp`: the reflection
-  inverts every initial product of the basis and the cusp.
+  inverts every initial product of the basis and the cusp. Its simp normal form, after
+  `TauCeti.Peripheral.map_cusp`, is `TauCeti.Peripheral.cusp_reflect_comp_basis`.
 * `TauCeti.Peripheral.reflect_mul_reflect`: the reflection is an involution.
 * `TauCeti.Peripheral.isPeripheralAut_reflect`: the reflection is peripheral of exponent `-1`.
-* `TauCeti.Peripheral.exists_apply_basis_eq_inv`: some continuous automorphism inverts every
-  basis element.
 * `TauCeti.Peripheral.isPeripheralAut_of_apply_basis_eq_inv_two`: in rank two such an
   automorphism is peripheral of exponent `-1`, with cusp conjugator `x_0`
   (`TauCeti.Peripheral.apply_cusp_of_apply_basis_eq_inv_two`).
@@ -129,6 +128,13 @@ theorem reflect_cusp (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :
     rw [Fin.partialProd, Fin.val_last, List.take_of_length_le (by simp)]
   rw [cusp_def, map_inv, ← hlast, reflect_partialProd]
 
+/-- The cusp of the reflected basis is the inverse of the cusp. This is the simp normal form of
+`TauCeti.Peripheral.reflect_cusp`, whose left-hand side `TauCeti.Peripheral.map_cusp` rewrites. -/
+@[simp]
+theorem cusp_reflect_comp_basis (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :
+    cusp (reflect hF e ∘ basis e) = (cusp (basis e))⁻¹ := by
+  rw [← map_cusp, reflect_cusp]
+
 /-- **The reflection is an involution.** -/
 @[simp]
 theorem reflect_mul_reflect (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :
@@ -153,12 +159,6 @@ theorem isPeripheralAut_reflect (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin
 end Reflection
 
 section Inversion
-
-/-- Some continuous automorphism of `F` inverts every basis element. -/
-theorem exists_apply_basis_eq_inv (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :
-    ∃ φ : ContinuousAut F, ∀ i, φ (basis e i) = (basis e i)⁻¹ := by
-  obtain ⟨φ, hφ⟩ := hF.exists_continuousAut_apply_eq_conj_padicPow_const e (-1) 1
-  exact ⟨φ, fun i ↦ by simpa [← basis_apply] using hφ i⟩
 
 omit [Fact p.Prime] [IsTopologicalGroup F] [CompactSpace F] [TotallyDisconnectedSpace F] in
 /-- In rank two, an automorphism inverting both basis elements sends the cusp
