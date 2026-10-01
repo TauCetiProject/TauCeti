@@ -222,6 +222,16 @@ theorem hom_ext {f g : freeProP p X →ₜ* Q} (h : ∀ x : X, f (of x) = g (of 
   intro y
   simpa [e] using DFunLike.congr_fun hcomp (e.symm y)
 
+/-- **A continuous homomorphism is unchanged by an endomorphism moving each generator inside its
+kernel.** -/
+theorem _root_.ContinuousMonoidHom.comp_eq_of_forall_inv_mul_apply_mem_ker (χ : freeProP p X →ₜ* Q)
+    (φ : freeProP p X →ₜ* freeProP p X) (hφ : ∀ j, (of j)⁻¹ * φ (of j) ∈ χ.toMonoidHom.ker) :
+    χ.comp φ = χ :=
+  hom_ext fun j ↦ by
+    have h1 : χ ((of j)⁻¹ * φ (of j)) = 1 := MonoidHom.mem_ker.1 (hφ j)
+    rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, ← mul_inv_cancel_left (of j) (φ (of j)),
+      map_mul, h1, mul_one]
+
 end HomExt
 
 section Lift

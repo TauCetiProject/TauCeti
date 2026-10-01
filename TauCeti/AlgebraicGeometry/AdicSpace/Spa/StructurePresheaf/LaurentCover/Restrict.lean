@@ -82,9 +82,9 @@ theorem locOpensComap_laurentCoverOpen (f : A) (b : Bool) :
   cases b <;> simp only [Bool.cond_true, Bool.cond_false, Finset.image_insert,
     Finset.image_singleton, map_one]
 
--- The pullback of the Laurent piece of `f` restricted to `R(T/s)` is the Laurent piece of the
--- image of `f`, since the pullback of `R(T/s)` is everything.
-private theorem locOpensComap_inf_laurentCoverOpen (f : A) (b : Bool) :
+/-- The pullback of the Laurent piece of `f` restricted to `R(T/s)` is the Laurent piece of the
+image of `f`, since the pullback of `R(T/s)` is the whole localized spectrum. -/
+theorem locOpensComap_inf_laurentCoverOpen (f : A) (b : Bool) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -136,10 +136,10 @@ private theorem bijective_presentationLimitLocIso_hom {V : Opens ↥(spa Aplus)}
     Function.RightInverse.surjective
       (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).inv_hom_id_apply⟩
 
--- Restriction from `R(T/s)` to rational opens `U i ⊆ R(T/s)` is injective as soon as restriction
--- from `W'` to the `U' i` is, where `W'` and the `U' i` are the pullbacks of `R(T/s)` and of the
--- `U i`.
-private theorem injective_presentationLimitMap_of_locOpensComap {ι : Type*}
+/-- **Injectivity transported along rational localization.** Restriction from `R(T/s)` to rational
+opens `U i ⊆ R(T/s)` is injective as soon as restriction from the pullback of `R(T/s)` to the
+pullbacks of the `U i` is injective. -/
+theorem injective_presentationLimitMap_of_locOpensComap {ι : Type*}
     {U : ι → Opens ↥(spa Aplus)} (hU : ∀ i, U i ∈ spaRationalOpens Aplus)
     (hUW : ∀ i, U i ≤ spaBasicOpen Aplus T s) :
     letI := locUniformSpace P T s S hden
@@ -165,10 +165,10 @@ private theorem injective_presentationLimitMap_of_locOpensComap {ι : Type*}
     hW (hU i) le_rfl (hUW i)]
   exact congrArg _ (congrFun hxy i)
 
--- Sections over two rational opens `U b ⊆ R(T/s)` that agree on their overlap come from a section
--- over `R(T/s)` as soon as the same holds for the pullbacks `W'`, `U' b` and `O'` of `R(T/s)`, of
--- the `U b` and of their overlap.
-private theorem exists_presentationLimitMap_eq_of_locOpensComap {U : Bool → Opens ↥(spa Aplus)}
+/-- **Gluing transported along rational localization.** Sections over two rational opens
+`U b ⊆ R(T/s)` that agree on their overlap glue over `R(T/s)` as soon as the analogous gluing
+statement holds for the pullbacks of `R(T/s)`, the `U b`, and their overlap. -/
+theorem exists_presentationLimitMap_eq_of_locOpensComap {U : Bool → Opens ↥(spa Aplus)}
     (hU : ∀ b, U b ∈ spaRationalOpens Aplus) (hUW : ∀ b, U b ≤ spaBasicOpen Aplus T s) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -256,6 +256,91 @@ private theorem surjective_presentationLimitMap_sub_of_locOpensComap
 
 end Transport
 
+/-! ### The Laurent cover transported along Wedhorn's Remark 8.4 -/
+
+section LaurentTransport
+
+variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A]
+  (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset A) (s : A)
+  (S : Type v) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+  (hden : HasDenominatorPower P T s S) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+  (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+
+include hAplus hT
+
+/-- **Laurent injectivity transported along rational localization.** If a section over the adic
+spectrum of `A⟨T/s⟩` is determined by its restrictions to the Laurent cover of the image of `f`,
+then a section over `R(T/s)` is determined by its restrictions to the two pieces
+`R(T/s) ⊓ laurentCoverOpen Aplus f b`. -/
+theorem injective_presentationLimitMap_inf_laurentCoverOpen_of_locOpensComap (f : A) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (Function.Injective fun (y : presentationLimit (P := completionLocalization P T s S hden)
+        (completedPlusSubring P Aplus T s S hden) ⊤) (b : Bool) ↦
+      (presentationLimitMap (P := completionLocalization P T s S hden)
+        (le_top : laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+          (toCompletionLoc P T s S hden f) b ≤ ⊤)).hom.1 y) →
+    Function.Injective fun (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))
+        (b : Bool) ↦
+      (presentationLimitMap (P := P)
+        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 x :=
+  have _ : IsHuberRing A := ⟨⟨P⟩⟩
+  injective_presentationLimitMap_of_locOpensComap P Aplus T s S hden hAplus hT
+    (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
+      (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
+    (locOpensComap_spaBasicOpen_self P Aplus T s S hden)
+    (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f) (fun _ ↦ le_top)
+
+/-- **Laurent gluing transported along rational localization.** If compatible sections over the
+Laurent cover of the image of `f` in `A⟨T/s⟩` glue over its adic spectrum, then sections over the
+two pieces `R(T/s) ⊓ laurentCoverOpen Aplus f b` that agree on their overlap come from a section
+over `R(T/s)`. -/
+theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_locOpensComap (f : A) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (∀ y : ∀ b, presentationLimit (P := completionLocalization P T s S hden)
+        (completedPlusSubring P Aplus T s S hden)
+        (laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+          (toCompletionLoc P T s S hden f) b),
+      (presentationLimitMap (P := completionLocalization P T s S hden) (inf_le_left :
+          laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+              (toCompletionLoc P T s S hden f) true ⊓
+            laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+              (toCompletionLoc P T s S hden f) false ≤ _)).hom.1 (y true) =
+        (presentationLimitMap (P := completionLocalization P T s S hden) (inf_le_right :
+          laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+              (toCompletionLoc P T s S hden f) true ⊓
+            laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+              (toCompletionLoc P T s S hden f) false ≤ _)).hom.1 (y false) →
+      ∃ c : presentationLimit (P := completionLocalization P T s S hden)
+          (completedPlusSubring P Aplus T s S hden) ⊤, ∀ b,
+        (presentationLimitMap (P := completionLocalization P T s S hden)
+          (le_top : laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+            (toCompletionLoc P T s S hden f) b ≤ ⊤)).hom.1 c = y b) →
+    ∀ x : ∀ b, presentationLimit (P := P) Aplus
+        (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b),
+      (presentationLimitMap (P := P) (inf_le_left :
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
+            (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x true) =
+        (presentationLimitMap (P := P) (inf_le_right :
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
+            (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x false) →
+      ∃ a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s), ∀ b,
+        (presentationLimitMap (P := P)
+          (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 a =
+            x b := by
+  have _ : IsHuberRing A := ⟨⟨P⟩⟩
+  have hU := locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f
+  exact exists_presentationLimitMap_eq_of_locOpensComap P Aplus T s S hden hAplus hT
+    (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
+      (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
+    (locOpensComap_spaBasicOpen_self P Aplus T s S hden) hU
+    (by rw [locOpensComap_inf, hU, hU]) (fun _ ↦ le_top) inf_le_left inf_le_right
+
+end LaurentTransport
+
 /-! ### Lemma 8.33 on a rational subset -/
 
 section Rational
@@ -285,12 +370,8 @@ theorem injective_presentationLimitMap_inf_laurentCoverOpen
   have _ := isStronglyNoetherian_completion P T s _ hden
     (eq_top_mono (Ideal.span_mono (Set.subset_insert _ _)) (IsTateRing.eq_top_of_isOpen hT))
   -- transport Lemma 8.33 for `A⟨T/s⟩` along Remark 8.4
-  exact injective_presentationLimitMap_of_locOpensComap P Aplus T s _ hden hAplus hT
-    (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
-      (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
-    (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
-    (locOpensComap_inf_laurentCoverOpen P Aplus T s _ hden f) (fun _ ↦ le_top)
-    (injective_presentationLimitMap_laurentCoverOpen _
+  exact injective_presentationLimitMap_inf_laurentCoverOpen_of_locOpensComap P Aplus T s _ hden
+    hAplus hT f (injective_presentationLimitMap_laurentCoverOpen _
       (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _)
 
 /-- **Wedhorn's Lemma 8.33 on a rational subset, gluing.** Let `A` be a strongly noetherian Tate
@@ -322,18 +403,9 @@ theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen
   have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
   have _ := isStronglyNoetherian_completion P T s _ hden
     (eq_top_mono (Ideal.span_mono (Set.subset_insert _ _)) (IsTateRing.eq_top_of_isOpen hT))
-  have hU := locOpensComap_inf_laurentCoverOpen P Aplus T s _ hden f
-  have hO : locOpensComap P Aplus T s _ hden ((spaBasicOpen Aplus T s ⊓
-      laurentCoverOpen Aplus f true) ⊓ (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false)) =
-      laurentCoverOpen _ (toCompletionLoc P T s _ hden f) true ⊓
-        laurentCoverOpen _ (toCompletionLoc P T s _ hden f) false := by
-    rw [locOpensComap_inf, hU, hU]
   -- transport Lemma 8.33 for `A⟨T/s⟩` along Remark 8.4
-  exact exists_presentationLimitMap_eq_of_locOpensComap P Aplus T s _ hden hAplus hT
-    (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
-      (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
-    (locOpensComap_spaBasicOpen_self P Aplus T s _ hden) hU hO (fun _ ↦ le_top) inf_le_left
-    inf_le_right (exists_presentationLimitMap_eq_of_laurentCoverOpen _
+  exact exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_locOpensComap P Aplus T s _ hden
+    hAplus hT f (exists_presentationLimitMap_eq_of_laurentCoverOpen _
       (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _) x hx
 
 /-- **Wedhorn's Lemma 8.33 on a rational subset, degree-one surjectivity.** Let `A` be a strongly
