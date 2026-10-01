@@ -426,13 +426,12 @@ theorem _root_.BialgHom.baseChange_comp_endOfPoint_regular (f : H →ₐc[R] K) 
         TensorProduct.comm R K A
           (LinearMap.lTensor K g.toLinearMap
             (TensorProduct.map f.toLinearMap f.toLinearMap t)) := by
+    have hf : f.toLinearMap = f.toAlgHom.toLinearMap :=
+      (_root_.BialgHom.toAlgHom_toLinearMap f).symm
     induction t using TensorProduct.inductionOn with
     | tmul x y =>
         simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
-          TensorProduct.comm_tmul, LinearMap.baseChange_tmul, TensorProduct.map_tmul]
-        -- The inherited toLinearMap projection and toAlgHom use the same underlying function;
-        -- BialgHom.coe_toLinearMap rewrites the coercion, not this inherited projection.
-        rfl
+          TensorProduct.comm_tmul, LinearMap.baseChange_tmul, TensorProduct.map_tmul, hf]
     | add x y hx hy => simp only [map_add, hx, hy]
   rw [ht]
   exact congrArg (fun t ↦ TensorProduct.comm R K A (LinearMap.lTensor K g.toLinearMap t))

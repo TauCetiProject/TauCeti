@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
-import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.LinearAlgebra.TensorProduct.Kernel
 
 /-!
 # Closed subgroups as stabilizers of subspaces
@@ -65,10 +65,8 @@ theorem baseChange_definingSubspace (I : HopfIdeal k H) (V : Subcomodule k H H)
         (SMulMemClass.subtype V)).baseChange A) := by
   -- Subcomodule has AddSubmonoidClass but no AddSubgroupClass; the flat-kernel lemma needs a group.
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  rw [definingSubspace, Submodule.baseChange]
-  exact (Module.Flat.ker_lTensor_eq (R := k) A A
-    ((Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap.comp
-      (SMulMemClass.subtype V))).symm
+  rw [definingSubspace]
+  exact (LinearMap.ker_baseChange_of_flat A _).symm
 
 /-- Over a free coordinate Hopf algebra, a finitely generated Hopf ideal has generators in
 one finite regular subcomodule. The generator property lets the same subcomodule be used in
