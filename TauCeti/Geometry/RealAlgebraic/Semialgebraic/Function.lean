@@ -34,6 +34,12 @@ open MvPolynomial Set
 
 namespace TauCeti
 
+/-- The first projection of the coordinate-splitting equivalence is restriction to `Sum.inl`. -/
+private theorem sumArrowEquivProdArrow_fst {σ τ R : Type*} (z : σ ⊕ τ → R) :
+    (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
+  funext i
+  exact Equiv.sumArrowEquivProdArrow_apply_fst z i
+
 variable {σ τ R : Type*} [CommRing R] [LinearOrder R]
 
 /-- A function `f : (σ → R) → (τ → R)` is semialgebraic on `s` if `s` is semialgebraic and the
@@ -103,24 +109,27 @@ theorem IsSemialgebraicOn.congr {f g : (σ → R) → (τ → R)} {s : Set (σ �
   exact hf.graph
 
 /-- Every function is semialgebraic on the empty set. -/
+@[simp]
 theorem isSemialgebraicOn_empty (f : (σ → R) → (τ → R)) :
     IsSemialgebraicOn f ∅ := by
   simp [IsSemialgebraicOn]
 
 /-- Semialgebraic functions on two semialgebraic pieces glue to a semialgebraic function. -/
 theorem IsSemialgebraicOn.glue {f g h : (σ → R) → (τ → R)} {s t : Set (σ → R)}
-    (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) (ht : IsSemialgebraic t)
+    (hf : IsSemialgebraicOn f (s ∩ t)) (hg : IsSemialgebraicOn g (s \ t))
     (hft : (s ∩ t).EqOn h f) (hgt : (s \ t).EqOn h g) : IsSemialgebraicOn h s := by
-  have hhst := (hf.mono (hf.isSemialgebraic.inter ht) inter_subset_left).congr hft.symm
-  have hhst' := (hg.mono (hg.isSemialgebraic.sdiff ht) sdiff_subset).congr hgt.symm
-  refine ⟨hf.isSemialgebraic, ?_⟩
+  have hhst := hf.congr hft.symm
+  have hhst' := hg.congr hgt.symm
+  have hs : IsSemialgebraic s := by
+    rw [show s = (s ∩ t) ∪ (s \ t) by ext; simp]
+    exact hf.isSemialgebraic.union hg.isSemialgebraic
+  refine ⟨hs, ?_⟩
   have hgraph : Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' s.graphOn h =
       (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' (s ∩ t).graphOn h) ∪
         (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' (s \ t).graphOn h) := by
     ext z
     simp only [mem_preimage, mem_graphOn, mem_union, mem_inter_iff, mem_sdiff]
-    have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := rfl
-    rw [hfst]
+    rw [sumArrowEquivProdArrow_fst]
     by_cases hz : z ∘ Sum.inl ∈ t <;> simp [hz]
   rw [hgraph]
   exact hhst.graph.union hhst'.graph
@@ -142,15 +151,14 @@ theorem isSemialgebraicOn_eval [Finite τ] (p : τ → MvPolynomial σ R)
     constructor
     · rintro ⟨hz, hp⟩
       refine ⟨hz, fun i => ?_⟩
-      have he : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := rfl
-      simpa [sub_eq_zero, MvPolynomial.eval_rename, he] using (congrFun hp i).symm
+      simpa [sub_eq_zero, MvPolynomial.eval_rename, sumArrowEquivProdArrow_fst] using
+        (congrFun hp i).symm
     · rintro ⟨hz, hp⟩
       refine ⟨hz, funext fun i => ?_⟩
       have hi := hp i
-      have he : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := rfl
       have hi' : z (Sum.inr i) = eval (z ∘ Sum.inl) (p i) := by
         simpa [sub_eq_zero, MvPolynomial.eval_rename] using hi
-      rw [he]
+      rw [sumArrowEquivProdArrow_fst]
       exact hi'.symm
   rw [hgraph]
   exact (hs.preimage_comp Sum.inl).inter <|
@@ -168,11 +176,13 @@ theorem isSemialgebraicOn_const [Finite τ] (c : τ → R) {s : Set (σ → R)}
   simpa using isSemialgebraicOn_eval (fun i : τ => C (c i)) hs
 
 /-- A constant map into a finite-dimensional coordinate space is semialgebraic. -/
+@[simp]
 theorem isSemialgebraicMap_const [Finite τ] (c : τ → R) :
     IsSemialgebraicMap (fun _ : σ → R => c) :=
   isSemialgebraicOn_const c isSemialgebraic_univ
 
 /-- The identity map on a finite-dimensional coordinate space is semialgebraic. -/
+@[simp]
 theorem isSemialgebraicMap_id [Finite σ] :
     IsSemialgebraicMap (id : (σ → R) → (σ → R)) := by
   apply IsSemialgebraicOn.congr <|
