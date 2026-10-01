@@ -52,7 +52,8 @@ non-flat base is the base change of the integral carrier.
   the root-generated Kostant group scheme, and the canonical comparison between them is an
   isomorphism.
 * `TauCeti.TypeBSpinCarrier.groupScheme_hom_ext_of_rootSubgroup`: in rank at least three, a
-  morphism out of the carrier is determined by its restrictions to the numbered root subgroups.
+  morphism out of the carrier is determined by its restrictions to the numbered root subgroups
+  alone.
 
 ## References
 
@@ -71,7 +72,7 @@ universe v
 
 namespace TauCeti.TypeBSpinCarrier
 
-open CategoryTheory TauCeti.UniversalEnvelopingAlgebra
+open TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
@@ -186,17 +187,20 @@ theorem isIso_kostantGeneratedToToral :
   isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary _ _ _ _ _ _ _ (basisWeight n)
     (universalWeightTorus_mem_elementarySubgroup n hn)
 
+open CategoryTheory in
 /-- **In rank at least three, two morphisms out of the type-`Bₙ₊₁` spin carrier agree as soon as
-they agree on its numbered positive and negative simple root subgroups.** This drops the
-weight-torus hypothesis of `TauCeti.TypeBSpinCarrier.groupScheme_hom_ext`, which root generation of
-the carrier makes redundant. -/
+they agree on its numbered root subgroups.** This drops the weight-torus hypothesis of
+`TauCeti.TypeBSpinCarrier.groupScheme_hom_ext`, which root generation of the carrier makes
+redundant. -/
 theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (f g : groupScheme n ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup n k ≫ f = rootSubgroup n k ≫ g) : f = g := by
-  apply (cancel_epi (eqToHom (groupScheme_eq_kostantToralGroupScheme n).symm)).1
-  exact kostantToralGroupScheme_hom_ext_of_universal_torus_mem_elementary _ _ _ _ _ _ _
-    (basisWeight n) (universalWeightTorus_mem_elementarySubgroup n hn) _ _
-    fun k => by simpa only [rootSubgroup_def, Category.assoc] using hroot k
+    (hroot : ∀ k, rootSubgroup n k ≫ f = rootSubgroup n k ≫ g) :
+    f = g := by
+  have := isIso_kostantGeneratedToToral n hn
+  refine (cancel_epi (eqToHom (groupScheme_eq_kostantToralGroupScheme n).symm)).1 ?_
+  refine kostantToralGroupScheme_hom_ext_of_isIso_kostantGeneratedToToral _ _ _ _ _ _ _
+    (basisWeight n) _ _ fun k => ?_
+  rw [← Category.assoc, ← Category.assoc, ← rootSubgroup_def, hroot k]
 
 end TauCeti.TypeBSpinCarrier

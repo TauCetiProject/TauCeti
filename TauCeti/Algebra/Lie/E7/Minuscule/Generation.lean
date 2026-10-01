@@ -43,7 +43,7 @@ over a non-flat base.
 * `TauCeti.E7Minuscule.baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal`:
   the corresponding equality in the transported presentation over every commutative ring.
 * `TauCeti.E7Minuscule.groupScheme_hom_ext_of_rootSubgroup`: a morphism out of the carrier is
-  determined by its restrictions to the fourteen numbered root subgroups.
+  determined by its restrictions to the fourteen numbered root subgroups alone.
 
 ## References
 
@@ -59,7 +59,7 @@ universe v
 
 namespace TauCeti.E7Minuscule
 
-open CategoryTheory TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
+open TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
@@ -206,16 +206,18 @@ theorem baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal
   rw [mem_baseChangeDefiningIdeal_iff, mem_kostantToralBaseChangePresentationIdeal_iff,
     kostantToralBaseChangeIdeal_def, definingIdeal_def]
 
-/-- **Two morphisms out of the type-`E₇` minuscule carrier agree as soon as they agree on its
-fourteen numbered root subgroups.** This drops the weight-torus hypothesis of
-`TauCeti.E7Minuscule.groupScheme_hom_ext`, which root generation of the carrier makes redundant. -/
+open CategoryTheory in
+/-- **Two morphisms out of the full-weight type-`E₇` minuscule carrier agree as soon as they
+agree on its fourteen numbered root subgroups.** This drops the weight-torus hypothesis of
+`TauCeti.E7Minuscule.groupScheme_hom_ext`, which root generation of the carrier makes
+redundant. -/
 theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (f g : groupScheme ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g) : f = g :=
-  kostantToralGroupScheme_hom_ext_of_universal_torus_mem_elementary rootGen cartanGen rep
+    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g) :
+    f = g :=
+  kostantToralGroupScheme_hom_ext_of_isIso_kostantGeneratedToToral rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
-    latticeBasis e7MinusculeWeight universalWeightTorus_mem_elementarySubgroup f g
-    fun k => by simpa only [rootSubgroup_def] using hroot k
+    latticeBasis e7MinusculeWeight f g fun k => by simpa only [rootSubgroup_def] using hroot k
 
 end TauCeti.E7Minuscule

@@ -185,19 +185,6 @@ private theorem specialize_X_pow_five_add_C_mul_X_add_C_eq (a b : R) :
       omega
     simp [hk]
 
-/-- The value of a renaming of Dummit's invariant, written out. -/
-private theorem eval₂_rename_quinticF20Invariant (x : Fin 5 → R) (σ : Equiv.Perm (Fin 5)) :
-    MvPolynomial.eval₂ (Int.castRingHom R) x (MvPolynomial.rename ⇑σ quinticF20Invariant) =
-      x (σ 0) ^ 2 * (x (σ 1) * x (σ 4) + x (σ 2) * x (σ 3)) +
-        x (σ 1) ^ 2 * (x (σ 2) * x (σ 0) + x (σ 3) * x (σ 4)) +
-        x (σ 2) ^ 2 * (x (σ 3) * x (σ 1) + x (σ 4) * x (σ 0)) +
-        x (σ 3) ^ 2 * (x (σ 4) * x (σ 2) + x (σ 0) * x (σ 1)) +
-        x (σ 4) ^ 2 * (x (σ 0) * x (σ 3) + x (σ 1) * x (σ 2)) := by
-  rw [rename_quinticF20Invariant]
-  simp only [MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add, MvPolynomial.eval₂_pow,
-    MvPolynomial.eval₂_X, Fin.sum_univ_five]
-  simp only [Fin.isValue, Fin.reduceAdd, Fin.reduceSub]
-
 /-- The roots `0, 1, -1, i, -i` of `X⁵ - X`, in a fixed order. -/
 noncomputable def rootsXPowFiveSubX : Fin 5 → ℂ := ![0, 1, -1, Complex.I, -Complex.I]
 

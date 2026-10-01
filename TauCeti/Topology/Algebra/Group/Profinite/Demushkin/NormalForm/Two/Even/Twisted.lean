@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Kernel.Approximation
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Character
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CharacterImage
 
 /-!
@@ -44,6 +45,12 @@ killed by every continuous crossed homomorphism for `χ` by the prescription pro
 canonical character, and the successive approximation inside `X` carries the normal-form word to
 it.
 
+The same groups are presented by Labute's words at a finite level: for every finite `f > g` the
+word `x₁^{2 + 2^g} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` presents a Demushkin group of rank
+`n ≥ 4` whose canonical character has image `U^[g]`, so by the uniqueness theorem it presents the
+same group as the level-`∞` word. The level is therefore not an invariant in this branch: it is
+free above `g = v₂(α)`.
+
 ## Main results
 
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq`:
@@ -58,6 +65,11 @@ it.
 * `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_even_demushkinRank_of_range_eq`:
   **uniqueness**: two Demushkin groups at `p = 2` of the same even rank whose canonical characters
   have the same twisted image `U^[f]` are topologically isomorphic.
+* `TauCeti.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_two_pow`,
+  `TauCeti.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_two_pow_of_lt`: **the
+  level is free above `v₂(α)`**: for `n ≥ 4` even, `g ≥ 2` and finite levels `f, f' > g`, the
+  words `x₁^{2 + 2^g} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` and `x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯` present
+  topologically isomorphic groups, and so do the levels `f` and `f'`.
 
 ## References
 
@@ -323,6 +335,47 @@ theorem IsDemushkin.nonempty_continuousMulEquiv_of_even_demushkinRank_of_range_e
     hH.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_range_eq
       (hn ▸ heven) hf hw hB
   rw [hn] at e
+  exact ⟨e.trans e'.symm⟩
+
+/-! ### The level above `v₂(α)`
+
+In the even-rank dyadic word `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` with `α = 2^g`,
+`g ≥ 2`, every finite level `f > g` presents the group of the level-`∞` word
+`x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`: both are Demushkin groups of rank `n` whose
+canonical characters have image `U^[g]`, so the uniqueness theorem identifies them. -/
+
+/-- **The level above `v₂(α)` is free** (corollary to Labute, Theorems 4 and 5). For `n ≥ 4` even,
+`g ≥ 2` and a finite level `f > g`, the pro-`2` group presented on `n` generators by
+`x₁^{2 + 2^g} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` is topologically isomorphic to the one
+presented by `x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`: both are Demushkin groups of rank
+`n` whose canonical characters have image the twisted subgroup `U^[g]`. -/
+theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_two_pow (hn : Even n)
+    (hn₃ : 3 < n) {g f : ℕ} (hg : 2 ≤ g) (hgf : g < f) :
+    Nonempty (presentedProP 2 (Fin n) {demushkinWordTwoEven (2 ^ g) f n (freeProPGen 2 n)} ≃ₜ*
+      presentedProP 2 (Fin n) {demushkinWordNeTwo (2 + 2 ^ g) n (freeProPGen 2 n)}) := by
+  obtain ⟨w, hw⟩ := exists_val_eq_neg_one_add_two_pow (by omega : 1 ≤ g)
+  have ha : 2 ∣ 2 ^ g := dvd_pow_self 2 (by omega)
+  have hH := isDemushkin_presentedProP_demushkinWordTwoEven hn (by omega) ha (by omega : 0 < f)
+  have hrank := demushkinRank_presentedProP_demushkinWordTwoEven ha (by omega) hH
+  obtain ⟨e⟩ := hH.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_range_eq
+    (by rw [hrank]; exact hn) hg hw
+    (range_demushkinCharacter_eq_of_equiv_demushkinWordTwoEven_two_pow hH hg hgf hn hn₃ hw
+      (ContinuousMulEquiv.refl _))
+  rw [hrank] at e
+  exact ⟨e⟩
+
+/-- **Two finite levels above `v₂(α)` present the same group.** For `n ≥ 4` even, `g ≥ 2` and
+finite levels `f, f' > g`, the words `x₁^{2 + 2^g} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` and
+`x₁^{2 + 2^g} (x₁, x₂) x₃^{2^{f'}} (x₃, x₄) ⋯ (x_{n-1}, x_n)` present topologically isomorphic
+pro-`2` groups. -/
+theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_two_pow_of_lt (hn : Even n)
+    (hn₃ : 3 < n) {g f f' : ℕ} (hg : 2 ≤ g) (hgf : g < f) (hgf' : g < f') :
+    Nonempty (presentedProP 2 (Fin n) {demushkinWordTwoEven (2 ^ g) f n (freeProPGen 2 n)} ≃ₜ*
+      presentedProP 2 (Fin n) {demushkinWordTwoEven (2 ^ g) f' n (freeProPGen 2 n)}) := by
+  obtain ⟨e⟩ :=
+    nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_two_pow hn hn₃ hg hgf
+  obtain ⟨e'⟩ :=
+    nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_two_pow hn hn₃ hg hgf'
   exact ⟨e.trans e'.symm⟩
 
 end TauCeti
