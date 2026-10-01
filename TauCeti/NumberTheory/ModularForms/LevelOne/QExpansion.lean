@@ -19,7 +19,7 @@ coefficients the `q`-expansion of the modular invariant `j = E₄³ / Δ` is com
 
 The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 `EisensteinSeries.E_qExpansion_coeff`).  The coefficients of `Δ` are read off the identity
-`1728 Δ = E₄³ - E₆²`, transported to `q`-expansions.
+`1728 Δ = E₄³ - E₆²` in the graded ring, transported to `q`-expansions.
 
 ## Main results
 
@@ -68,20 +68,13 @@ theorem E₆_qExpansion_coeff_three : (qExpansion 1 E₆).coeff 3 = -122976 := b
   norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, bernoulli_six, ArithmeticFunction.sigma_apply,
     Nat.prime_three.divisors]
 
-/-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the power-series form of
-Mathlib's `ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq`. -/
+/-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the image of Mathlib's
+`ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq_graded` under the `q`-expansion algebra
+homomorphism `ModularForm.qExpansionAlgHom`. -/
 theorem qExpansion_discriminant_eq_E₄_cube_sub_E₆_sq :
     qExpansion 1 discriminant = (1728 : ℂ)⁻¹ • (qExpansion 1 E₄ ^ 3 - qExpansion 1 E₆ ^ 2) := by
-  have h : (1728 : ℂ) • ⇑CuspForm.discriminant = ⇑(E₄.pow 3) - ⇑(E₆.pow 2) := by
-    rw [ModularForm.coe_pow, ModularForm.coe_pow]
-    funext z
-    simp [CuspForm.coe_discriminant, discriminant_eq_E₄_cube_sub_E₆_sq, mul_div_cancel₀]
-  have h1728 := ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL (1728 : ℂ)
-    CuspForm.discriminant
-  rw [h, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL,
-    ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL,
-    ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL] at h1728
-  rw [h1728, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul, CuspForm.coe_discriminant]
+  simpa [CuspForm.coe_discriminant] using congr(ModularForm.qExpansionAlgHom 1 one_pos
+    one_mem_strictPeriods_SL $discriminant_eq_E₄_cube_sub_E₆_sq_graded)
 
 /-- The constant coefficient of the discriminant vanishes: `Δ` is a cusp form. -/
 theorem discriminant_qExpansion_coeff_zero : (qExpansion 1 discriminant).coeff 0 = 0 :=
