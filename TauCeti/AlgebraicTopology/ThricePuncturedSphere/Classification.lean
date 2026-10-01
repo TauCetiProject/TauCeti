@@ -190,6 +190,12 @@ theorem tripleEquiv_apply
     tripleEquiv C = C.triple :=
   (rfl)
 
+/-- The numbered cover class realising a connected triple has that triple. -/
+@[simp]
+theorem triple_tripleEquiv_symm (t : ConnectedTriple n) :
+    (tripleEquiv.symm t).triple = t := by
+  rw [← tripleEquiv_apply, Equiv.apply_symm_apply]
+
 /-- Two numbered classes whose triples are relabelings of each other are relabelings of each
 other. -/
 private theorem smul_eq_of_smul_triple_eq {τ : Perm (Fin n)}
@@ -270,6 +276,12 @@ theorem ConnectedCoverClass.isoClassEquiv_apply
     (C : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     isoClassEquiv C = C.isoClass :=
   (rfl)
+
+/-- The cover class realising an isomorphism class of connected triples has that class. -/
+@[simp]
+theorem ConnectedCoverClass.isoClass_isoClassEquiv_symm (c : ConnectedIsoClass n) :
+    (isoClassEquiv.symm c).isoClass = c := by
+  rw [← isoClassEquiv_apply, Equiv.apply_symm_apply]
 
 /-! ### Pointed covers and marked triples -/
 
@@ -362,5 +374,11 @@ theorem ConnectedPointedCoverClass.markedClassEquiv_apply
     (C : ConnectedPointedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     markedClassEquiv C = C.markedClass :=
   (rfl)
+
+/-- The pointed cover class realising a marked class of connected triples has that marked class. -/
+@[simp]
+theorem ConnectedPointedCoverClass.markedClass_markedClassEquiv_symm (c : MarkedIsoClass n) :
+    (markedClassEquiv.symm c).markedClass = c := by
+  rw [← markedClassEquiv_apply, Equiv.apply_symm_apply]
 
 end TauCeti

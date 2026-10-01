@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Transport
+-- The realisation proof uses the defining equation of `Equiv.permutationRepresentation`.
+import all TauCeti.Algebra.GroupAction.PermutationRepresentation
 import TauCeti.Topology.Covering.Clopen
 
 /-!
@@ -782,13 +784,17 @@ theorem ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq
   let _ : MulAction (FundamentalGroup X x) (Fin n) := MulAction.compHom _ ρ.rangeRestrict
   have := MulAction.isPretransitive_compHom (G := Fin n) ρ.rangeRestrict_surjective
   let i : Fin n := ⟨0, Nat.pos_of_ne_zero hn⟩
-  refine ⟨⟨UniversalCover.stabilizerCover (X := X) x i,
+  let c := UniversalCover.stabilizerCover (X := X) x i
+  let _ := c.isCoveringMap_proj.fundamentalGroupMulAction x
+  refine ⟨⟨c,
     UniversalCover.transitiveActionFiberEquiv (X := X) x i⟩, ?_⟩
-  refine MonoidHom.ext fun γ => Equiv.ext fun j => ?_
-  simp only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
-    permCongrHom_coe, Function.comp_apply, permCongr_apply, IsCoveringMap.coe_monodromyPerm]
-  rw [UniversalCover.transitiveActionFiberEquiv_apply_monodromy, apply_symm_apply]
-  simp only [MulAction.compHom_smul_def, Subgroup.smul_def, MonoidHom.coe_rangeRestrict,
-    Perm.smul_def]
+  rw [← c.isCoveringMap_proj.toPermHom_eq_monodromyPerm,
+    ← Equiv.permutationRepresentation.eq_def]
+  refine Equiv.permutationRepresentation_eq_of_map_smul
+    (UniversalCover.transitiveActionFiberEquiv (X := X) x i) (ρ := ρ) fun γ e => ?_
+  have hsmul : γ • e = c.isCoveringMap_proj.monodromy γ e := rfl
+  rw [hsmul]
+  simpa only [MulAction.compHom_smul_def, Subgroup.smul_def, MonoidHom.coe_rangeRestrict,
+    Perm.smul_def] using UniversalCover.transitiveActionFiberEquiv_apply_monodromy x i γ e
 
 end TauCeti
