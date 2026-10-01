@@ -278,6 +278,7 @@ instance instIsManifoldClosedBall : IsManifold (𝓡∂ n) ω (closedBall (0 : E
 /-! ### The boundary is the unit sphere -/
 
 /-- A point of the closed unit ball is a boundary point exactly when it has norm `1`. -/
+@[simp]
 theorem isBoundaryPoint_closedBall_iff {x : closedBall (0 : E) 1} :
     (𝓡∂ n).IsBoundaryPoint x ↔ ‖(x : E)‖ = 1 := by
   obtain ⟨φ, hx, h⟩ := exists_chartAt_closedBall_eq (n := n) x
@@ -289,6 +290,7 @@ theorem isBoundaryPoint_closedBall_iff {x : closedBall (0 : E) 1} :
     pow_eq_one_iff_of_nonneg (norm_nonneg (x : E))]
 
 /-- A point of the closed unit ball is an interior point exactly when it has norm less than `1`. -/
+@[simp]
 theorem isInteriorPoint_closedBall_iff {x : closedBall (0 : E) 1} :
     (𝓡∂ n).IsInteriorPoint x ↔ ‖(x : E)‖ < 1 := by
   obtain ⟨φ, hx, h⟩ := exists_chartAt_closedBall_eq (n := n) x
