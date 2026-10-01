@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.TopologicallyFinitelyGenerated
+public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
 # Topologically characteristic subgroups
@@ -218,6 +219,16 @@ theorem IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_subset
   obtain ⟨V, hVU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hU h1
   obtain ⟨N, hN, hNV⟩ := hG.exists_isTopCharacteristic_le V.toOpenSubgroup
   exact ⟨N, hN, fun g hg ↦ hVU (hNV hg)⟩
+
+/-- In a topologically finitely generated profinite group, the topologically characteristic open
+normal subgroups intersect in the trivial subgroup. -/
+theorem IsTopologicallyFinitelyGenerated.iInf_isTopCharacteristic_eq_bot
+    (hG : IsTopologicallyFinitelyGenerated G) :
+    ⨅ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}, (N.1 : Subgroup G) = ⊥ := by
+  refine eq_bot_iff.mpr fun g hg ↦
+    Subgroup.mem_bot.mpr (Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun U ↦ ?_)
+  obtain ⟨N, hN, hle⟩ := hG.exists_isTopCharacteristic_le U.toOpenSubgroup
+  exact hle (Subgroup.mem_iInf.mp hg ⟨N, hN⟩)
 
 end Cofinal
 
