@@ -62,35 +62,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- The arithmetic that closes De Giorgi's reduction of the supremum: once the proportion `A` of
-`B_R` above the level is at most `C |B_R| / √j` with `j ≥ 16 D⁴ C² ω²`, local boundedness with
-constant `D` and height `e` bounds the excess by `e / 2`. Here `|B_R| = Rⁿ ω`. -/
-private theorem mul_rpow_mul_sqrt_le_half {D C ω R e A j : ℝ} {n : ℕ} (hD : 0 < D) (hC : 0 < C)
-    (hω : 0 < ω) (hR : 0 < R) (he : 0 ≤ e) (hA : 0 ≤ A) (hj : 16 * D ^ 4 * C ^ 2 * ω ^ 2 ≤ j)
-    (hdecay : √j * A ≤ C * (R ^ n * ω)) :
-    D * R ^ (-(n : ℝ) / 2) * √(e ^ 2 * A) ≤ e / 2 := by
-  have hsqrt : 4 * D ^ 2 * C * ω ≤ √j := by
-    rw [← Real.sqrt_sq (by positivity : 0 ≤ 4 * D ^ 2 * C * ω)]
-    exact Real.sqrt_le_sqrt (by nlinarith)
-  -- The level set is small: `4 D² A ≤ Rⁿ`.
-  have hsmall : 4 * D ^ 2 * A ≤ R ^ n := by
-    refine le_of_mul_le_mul_right ?_ (by positivity : 0 < C * ω)
-    calc 4 * D ^ 2 * A * (C * ω) = (4 * D ^ 2 * C * ω) * A := by ring
-      _ ≤ √j * A := mul_le_mul_of_nonneg_right hsqrt hA
-      _ ≤ C * (R ^ n * ω) := hdecay
-      _ = R ^ n * (C * ω) := by ring
-  have hRpow : (R ^ (-(n : ℝ) / 2)) ^ 2 = (R ^ n)⁻¹ := by
-    rw [← Real.rpow_natCast (R ^ (-(n : ℝ) / 2)) 2, ← Real.rpow_mul hR.le,
-      show -(n : ℝ) / 2 * ((2 : ℕ) : ℝ) = -(n : ℝ) by push_cast; ring, Real.rpow_neg hR.le,
-      Real.rpow_natCast]
-  refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).1 ?_
-  rw [mul_pow, mul_pow, Real.sq_sqrt (by positivity), hRpow]
-  have hRn : 0 < R ^ n := pow_pos hR n
-  rw [div_pow, le_div_iff₀ (by norm_num : (0 : ℝ) < 2 ^ 2)]
-  calc D ^ 2 * (R ^ n)⁻¹ * (e ^ 2 * A) * 2 ^ 2 = e ^ 2 * (4 * D ^ 2 * A) * (R ^ n)⁻¹ := by ring
-    _ ≤ e ^ 2 * R ^ n * (R ^ n)⁻¹ := by gcongr
-    _ = e ^ 2 := by field_simp
-
 /-- **Reduction of the supremum of weak subsolutions (De Giorgi).** Let `2*` be the Sobolev
 exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces
 `n ≥ 3`), and fix ellipticity constants `λ, Λ` and a proportion `θ > 0`. There is `δ ∈ (0, 1)`,
@@ -201,8 +172,23 @@ theorem exists_ae_value_le_sub_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ 
             mul_comm]
   have hvol : mu.real (ball x₀ R) = R ^ Fintype.card ι * ω := by
     rw [mu.addHaar_real_ball_of_pos x₀ hR, finrank_euclideanSpace]
-  have hhalf := mul_rpow_mul_sqrt_le_half (e := d / 2 ^ j) hD hC hω hR (by positivity)
-    measureReal_nonneg hj (by rwa [← hvol])
+  -- The choice `j ≥ 16 D⁴ C² ω²` makes the level set small, `2 D √A ≤ √R ^ n`, so local
+  -- boundedness bounds the excess by half of `M - ℓ`.
+  have hsmall : 2 * D * √A ≤ √R ^ Fintype.card ι := by
+    have hsqrt : 4 * D ^ 2 * C * ω ≤ √(j : ℝ) := Real.le_sqrt_of_sq_le (by nlinarith)
+    refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).1 ?_
+    rw [mul_pow, Real.sq_sqrt measureReal_nonneg, ← pow_mul, mul_comm (Fintype.card ι), pow_mul,
+      Real.sq_sqrt hR.le]
+    refine le_of_mul_le_mul_right ?_ (by positivity : 0 < C * ω)
+    nlinarith [mul_le_mul_of_nonneg_right hsqrt (measureReal_nonneg : 0 ≤ A), hvol ▸ hA]
+  have hhalf : D * R ^ (-(Fintype.card ι : ℝ) / 2) * √((d / 2 ^ j) ^ 2 * A) ≤ d / 2 ^ j / 2 := by
+    rw [Real.rpow_div_two_eq_sqrt _ hR.le, Real.rpow_neg (Real.sqrt_nonneg _), Real.rpow_natCast,
+      Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (by positivity), le_div_iff₀ two_pos]
+    have : 0 < √R ^ Fintype.card ι := pow_pos (Real.sqrt_pos.2 hR) _
+    calc D * (√R ^ Fintype.card ι)⁻¹ * (d / 2 ^ j * √A) * 2
+        = d / 2 ^ j * (2 * D * √A) * (√R ^ Fintype.card ι)⁻¹ := by ring
+      _ ≤ d / 2 ^ j * √R ^ Fintype.card ι * (√R ^ Fintype.card ι)⁻¹ := by gcongr
+      _ = d / 2 ^ j := by field_simp
   -- Conclude on `B(x₀, R/2)`.
   filter_upwards [hL, ae_restrict_of_ae_restrict_of_subset hRR hwv,
     ae_restrict_of_ae_restrict_of_subset hRR hvu] with x h1 h2 h3
