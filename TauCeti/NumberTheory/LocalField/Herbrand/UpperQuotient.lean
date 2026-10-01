@@ -40,8 +40,7 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
 
 ## Main definitions
 
-* `TauCeti.LocalFieldsRamification.upperRamificationGroupQuotient`: the upper ramification
-  filtration of `G ⧸ H`.
+* `Subgroup.upperRamificationGroupQuotient`: the upper ramification filtration of `G ⧸ H`.
 
 ## Main results
 
@@ -49,12 +48,13 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
   `G^v` restricts onto `Gal(L/K)^v`.
 * `TauCeti.LocalFieldsRamification.UpperJump.of_tower`: an upper break of `L/K` is an upper
   break of `M/K`.
-* `TauCeti.LocalFieldsRamification.upperRamificationGroup_fixedField`: the quotient filtration
-  maps to `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
-* `TauCeti.LocalFieldsRamification.upperRamificationGroup_quotient`: the defined quotient
-  filtration equals `G^v H / H`.
-* `TauCeti.LocalFieldsRamification.upperRamificationGroupQuotient_antitone`: the quotient
-  filtration is decreasing.
+* `Subgroup.upperRamificationGroup_fixedField`: the quotient filtration maps to `Gal(M^H/K)^v`
+  under `G ⧸ H ≃* Gal(M^H/K)`.
+* `Subgroup.upperRamificationGroup_quotient`: the defined quotient filtration equals `G^v H / H`.
+* `Subgroup.upperRamificationGroupQuotient_antitone`: the quotient filtration is decreasing.
+
+The quotient API takes the normal subgroup `H` as its first explicit argument, so it lives in
+Mathlib's `Subgroup` namespace and is available as `H.upperRamificationGroupQuotient v`.
 
 ## References
 
@@ -112,6 +112,12 @@ theorem UpperJump.of_tower {v : RamificationIndexDomain} (h : UpperJump K L v) :
 
 end Tower
 
+end TauCeti.LocalFieldsRamification
+
+namespace Subgroup
+
+open TauCeti.LocalFieldsRamification
+
 section Quotient
 
 variable {K M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -140,8 +146,7 @@ theorem mem_upperRamificationGroupQuotient_mk_iff (v : RamificationIndexDomain)
     (σ : (M ≃ₐ[K] M) ⧸ H) ∈ upperRamificationGroupQuotient H v ↔
       σ ∈ upperRamificationGroup K M v ⊔ H := by
   rw [← QuotientGroup.mk'_apply H σ]
-  rw [← Subgroup.mem_comap, upperRamificationGroupQuotient,
-    QuotientGroup.comap_map_mk', sup_comm]
+  rw [← mem_comap, upperRamificationGroupQuotient, QuotientGroup.comap_map_mk', sup_comm]
 
 /-- The upper ramification filtration on a quotient is decreasing. -/
 theorem upperRamificationGroupQuotient_antitone :
@@ -175,4 +180,4 @@ theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
 
 end Quotient
 
-end TauCeti.LocalFieldsRamification
+end Subgroup
