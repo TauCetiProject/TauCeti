@@ -32,9 +32,9 @@ Over the field with two elements the only unit is `1`, so the centre is trivial 
 faithful. The projective line then has three points and `GL₂(F)` has order `6`, so the
 representation is also surjective: `GL₂(𝔽₂)` *is* the symmetric group on the three points of the
 projective line (`TauCeti.glFinTwoMulEquivPermOnePoint`), and in particular is isomorphic to `S₃`
-(`TauCeti.nonempty_mulEquiv_permFinThree`). The isomorphism with `Equiv.Perm (Fin 3)` depends on an
-enumeration of the three points, so only its existence is canonical; the isomorphism with the
-permutations of `OnePoint F` is not.
+(`TauCeti.nonempty_mulEquiv_permFinThree`). The isomorphism with the permutations of `OnePoint F`
+is canonical; an isomorphism with `Equiv.Perm (Fin 3)` instead depends on an enumeration of the
+three points, so of that one only the existence is stated.
 
 The fixed points of a single element of `GL₂(F)` on the projective line, which is the other half of
 this picture, are counted in
@@ -142,8 +142,8 @@ theorem glFinTwoMulEquivPermOnePoint_apply (hF : Fintype.card F = 2) (g : GL (Fi
 
 omit [DecidableEq F] in
 /-- **`GL₂(𝔽₂) ≅ S₃`.** The projective line over a field with two elements has three points, so
-the symmetric group on it is `S₃`; the isomorphism depends on an enumeration of those points, and
-only its existence is canonical. The canonical statement is
+the symmetric group on it is `S₃`; an isomorphism depends on an enumeration of those points, so
+only its existence is stated. The canonical isomorphism is
 `TauCeti.glFinTwoMulEquivPermOnePoint`. -/
 theorem nonempty_mulEquiv_permFinThree (hF : Fintype.card F = 2) :
     Nonempty (GL (Fin 2) F ≃* Equiv.Perm (Fin 3)) := by
