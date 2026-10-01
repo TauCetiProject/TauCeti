@@ -10,6 +10,7 @@ public import
   TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Ramification
 public import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 public import TauCeti.FieldTheory.FunctionField.Different.Tame
+public import Mathlib.AlgebraicGeometry.EllipticCurve.ModelsWithJ
 -- Separability of `F(W) / F(x)` for an elliptic curve, needed to state different exponents.
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Separable
 -- Proof-only: `y` generates `F(W)` over `F(x)`, with the Weierstrass polynomial as its minimal
@@ -23,11 +24,12 @@ import TauCeti.FieldTheory.FunctionField.Different.Derivative
 /-!
 # A wild place: `y² + y = x³` over `𝔽₂`
 
-Let `W` be the Weierstrass curve `y² + y = x³` over `𝔽₂`, an elliptic curve, and let
-`F(W) = 𝔽₂(x, y)` be its function field, a quadratic extension of `𝔽₂(x)`. This file computes the
-different of `F(W) / 𝔽₂(x)` and finds it concentrated at the place at infinity, with exponent `4`,
-twice the ramification index `2`: the place at infinity is wildly ramified, and Dedekind's tame
-formula `d = e - 1` fails there (Stichtenoth, Theorem 3.5.1 and Proposition 3.7.8).
+Let `W` be the Weierstrass curve `y² + y = x³` over `𝔽₂`, Mathlib's model `ofJ0` of `j = 0`,
+an elliptic curve, and let `F(W) = 𝔽₂(x, y)` be its function field, a quadratic extension of
+`𝔽₂(x)`. This file computes the different of `F(W) / 𝔽₂(x)` and finds it concentrated at the place
+at infinity, with exponent `4`, twice the ramification index `2`: the place at infinity is wildly
+ramified, and Dedekind's tame formula `d = e - 1` fails there (Stichtenoth, Theorem 3.5.1 and
+Proposition 3.7.8).
 
 The computation runs the Hurwitz genus formula backwards. Away from infinity the derivative
 `2y + 1 = 1` of the defining equation is a unit, so every finite place is unramified with
@@ -61,46 +63,45 @@ namespace TauCeti.ArtinSchreier
 
 open AlgebraicGeometry
 
-/-- **The curve `y² + y = x³` over `𝔽₂`.** -/
-def curve : WeierstrassCurve.Affine (ZMod 2) := ⟨0, 0, 1, 0, 0⟩
+/-- `3 = 1` is a unit in `𝔽₂`, so Mathlib's model `y² + y = x³` of `j = 0` is an elliptic curve. -/
+instance : Fact (IsUnit (3 : ZMod 2)) :=
+  ⟨by rw [show (3 : ZMod 2) = 1 from by decide]; exact isUnit_one⟩
 
-/-- `y² + y = x³` is an elliptic curve: its discriminant is `1`. -/
-instance : curve.IsElliptic := ⟨by
-  rw [Δ_of_char_two]
-  simp [curve]⟩
+local instance : IsDedekindDomain (ofJ0 (ZMod 2)).toAffine.CoordinateRing :=
+  have := Affine.isIntegrallyClosed_coordinateRing (ofJ0 (ZMod 2)).toAffine
+  (ofJ0 (ZMod 2)).toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
-local instance : IsDedekindDomain curve.CoordinateRing :=
-  have := Affine.isIntegrallyClosed_coordinateRing curve
-  curve.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
-instance : CharP curve.FunctionField 2 :=
-  charP_of_injective_algebraMap (algebraMap (ZMod 2) curve.FunctionField).injective 2
+instance : CharP (ofJ0 (ZMod 2)).toAffine.FunctionField 2 :=
+  charP_of_injective_algebraMap
+    (algebraMap (ZMod 2) (ofJ0 (ZMod 2)).toAffine.FunctionField).injective 2
 
 /-- **Away from infinity, `y² + y = x³` is unramified**: at a place `Q` of `𝔽₂(x, y)` other
 than the place at infinity, `x` is regular and the derivative `2y + 1 = 1` of the defining
 equation is a unit, so the different exponent of `Q` over `𝔽₂(x)` is `0`. -/
-theorem differentExponent_eq_zero_of_ne_infinity (Q : Place (ZMod 2) curve.FunctionField)
-    (hQ : Q ≠ Place.infinity curve) :
+theorem differentExponent_eq_zero_of_ne_infinity
+    (Q : Place (ZMod 2) (ofJ0 (ZMod 2)).toAffine.FunctionField)
+    (hQ : Q ≠ Place.infinity (ofJ0 (ZMod 2)).toAffine) :
     Place.differentExponent (ZMod 2) (RatFunc (ZMod 2)) Q = 0 := by
   -- `x` is regular at `Q`
-  have hx : Q.valuation (algebraMap (ZMod 2)[X] curve.FunctionField X) ≤ 1 := by
+  have hx : Q.valuation (algebraMap (ZMod 2)[X] (ofJ0 (ZMod 2)).toAffine.FunctionField X) ≤ 1 := by
     rcases Place.eq_infinity_or_existsUnique_eq_ofPrime Q with h | ⟨𝔭, h𝔭, -⟩
     · exact absurd h hQ
     · exact (Place.exists_eq_ofPrime_iff_valuation_X_le_one Q).mp ⟨𝔭, h𝔭⟩
-  have hψ : minpoly (RatFunc (ZMod 2)) (Affine.genericY curve) =
+  have hψ : minpoly (RatFunc (ZMod 2)) (Affine.genericY (ofJ0 (ZMod 2)).toAffine) =
       X ^ 2 + X - C ((RatFunc.X : RatFunc (ZMod 2)) ^ 3) := by
     rw [Affine.minpoly_genericY]
-    simp [curve, Affine.polynomial]
+    simp [ofJ0, Affine.polynomial]
   -- `c = x ^ 3` is kept opaque so that `simp` computes the coefficients of `X ^ 2 + X - C c`
   set c : RatFunc (ZMod 2) := RatFunc.X ^ 3 with hc
-  have hx' : algebraMap (RatFunc (ZMod 2)) curve.FunctionField c ∈ Q.integers := by
+  have hx' : algebraMap (RatFunc (ZMod 2)) (ofJ0 (ZMod 2)).toAffine.FunctionField c ∈
+      Q.integers := by
     rw [hc, map_pow, ← RatFunc.algebraMap_X, ← IsScalarTower.algebraMap_apply]
     exact pow_mem (Q.mem_integers_iff.mpr hx) 3
-  have h2 : (1 + 1 : curve.FunctionField) = 0 := by
+  have h2 : (1 + 1 : (ofJ0 (ZMod 2)).toAffine.FunctionField) = 0 := by
     rw [one_add_one_eq_two]
-    exact_mod_cast CharP.cast_eq_zero curve.FunctionField 2
+    exact_mod_cast CharP.cast_eq_zero (ofJ0 (ZMod 2)).toAffine.FunctionField 2
   refine Place.differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one (ZMod 2)
-    (RatFunc (ZMod 2)) (Affine.adjoin_genericY_eq_top curve (RatFunc (ZMod 2)))
+    (RatFunc (ZMod 2)) (Affine.adjoin_genericY_eq_top (ofJ0 (ZMod 2)).toAffine (RatFunc (ZMod 2)))
     (minpoly.monic (Algebra.IsIntegral.isIntegral _)) ?_ (minpoly.aeval _ _) ?_
   · intro i
     rw [Place.mem_integers_restrict_iff, hψ]
@@ -115,12 +116,14 @@ theorem differentExponent_eq_zero_of_ne_infinity (Q : Place (ZMod 2) curve.Funct
 /-- The different of `𝔽₂(x, y) / 𝔽₂(x)` is supported at the place at infinity, with multiplicity
 its different exponent there. -/
 theorem different_eq :
-    Divisor.different (ZMod 2) curve.FunctionField (IsFunctionField.ratFunc (ZMod 2)) =
-      (Place.differentExponent (ZMod 2) (RatFunc (ZMod 2)) (Place.infinity curve) : ℤ) •
-        WeilDivisor.ofPoint (Place.infinity curve) := by
+    Divisor.different (ZMod 2) (ofJ0 (ZMod 2)).toAffine.FunctionField
+        (IsFunctionField.ratFunc (ZMod 2)) =
+      (Place.differentExponent (ZMod 2) (RatFunc (ZMod 2))
+          (Place.infinity (ofJ0 (ZMod 2)).toAffine) : ℤ) •
+        WeilDivisor.ofPoint (Place.infinity (ofJ0 (ZMod 2)).toAffine) := by
   ext Q
   rw [Divisor.coeff_different, WeilDivisor.coeff_zsmul]
-  rcases eq_or_ne Q (Place.infinity curve) with rfl | hQ
+  rcases eq_or_ne Q (Place.infinity (ofJ0 (ZMod 2)).toAffine) with rfl | hQ
   · rw [WeilDivisor.coeff_ofPoint_self, mul_one]
   · rw [differentExponent_eq_zero_of_ne_infinity Q hQ, WeilDivisor.coeff_ofPoint_of_ne hQ,
       mul_zero, Nat.cast_zero]
@@ -129,15 +132,18 @@ theorem different_eq :
 genus `1` and degree `2`, gives `deg Diff = 4`, and the different is concentrated at the rational
 place at infinity. -/
 theorem differentExponent_infinity :
-    Place.differentExponent (ZMod 2) (RatFunc (ZMod 2)) (Place.infinity curve) = 4 := by
-  have h := hurwitz_genus_formula_ratFunc (Affine.isIntegrallyClosedIn_functionField curve)
+    Place.differentExponent (ZMod 2) (RatFunc (ZMod 2)) (Place.infinity (ofJ0 (ZMod 2)).toAffine) =
+      4 := by
+  have h := hurwitz_genus_formula_ratFunc
+    (Affine.isIntegrallyClosedIn_functionField (ofJ0 (ZMod 2)).toAffine)
   rw [Affine.genus_functionField, Affine.finrank_functionField, different_eq,
     Divisor.degree_zsmul, Divisor.degree_ofPoint, Place.degree_infinity] at h
   omega
 
 /-- **The place at infinity of `y² + y = x³` is wild**: its different exponent `4` is at least
 its ramification index `2`. -/
-theorem isWild_infinity : Place.IsWild (ZMod 2) (RatFunc (ZMod 2)) (Place.infinity curve) :=
+theorem isWild_infinity :
+    Place.IsWild (ZMod 2) (RatFunc (ZMod 2)) (Place.infinity (ofJ0 (ZMod 2)).toAffine) :=
   (Place.ramificationIdx_le_differentExponent_iff _ _ _).mp (by
     rw [Place.ramificationIdx_infinity, differentExponent_infinity]
     norm_num)
@@ -145,8 +151,9 @@ theorem isWild_infinity : Place.IsWild (ZMod 2) (RatFunc (ZMod 2)) (Place.infini
 /-- **The tame formula fails at infinity**: `e = 2` while `d + 1 = 5`. This is the acceptance test
 that no tameness assumption entered the Hurwitz genus formula. -/
 theorem ramificationIdx_infinity_ne_differentExponent_add_one :
-    Place.ramificationIdx (RatFunc (ZMod 2)) (Place.infinity curve) ≠
-      Place.differentExponent (ZMod 2) (RatFunc (ZMod 2)) (Place.infinity curve) + 1 := by
+    Place.ramificationIdx (RatFunc (ZMod 2)) (Place.infinity (ofJ0 (ZMod 2)).toAffine) ≠
+      Place.differentExponent (ZMod 2) (RatFunc (ZMod 2))
+        (Place.infinity (ofJ0 (ZMod 2)).toAffine) + 1 := by
   rw [Place.ramificationIdx_infinity, differentExponent_infinity]
   norm_num
 
