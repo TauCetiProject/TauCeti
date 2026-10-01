@@ -172,7 +172,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R M : 
 /-- The constant `0`-cochain `TauCeti.SSet.constCochain (toSSet.obj X) e`, as a cocycle. -/
 def constSingularCocycle (X : TopCat.{w}) (e : R ⟶ M) :
     (X.singularCochainComplex R k M).cycles 0 :=
-  TauCeti.moduleCatCyclesMk (X.singularCochainComplex R k M)
+  TauCeti.HomologicalComplex.moduleCatCyclesMk (X.singularCochainComplex R k M)
     (TauCeti.SSet.constCochain (toSSet.obj X) e) 1 (by simp)
     ((TauCeti.ChainComplex.linearYonedaObj_d_apply 0 1 _).trans
       (TauCeti.SSet.d_comp_constCochain (toSSet.obj X) e))
@@ -182,6 +182,6 @@ def constSingularCocycle (X : TopCat.{w}) (e : R ⟶ M) :
 lemma iCycles_constSingularCocycle (X : TopCat.{w}) (e : R ⟶ M) :
     (X.singularCochainComplex R k M).iCycles 0 (constSingularCocycle k X e) =
       TauCeti.SSet.constCochain (toSSet.obj X) e :=
-  TauCeti.iCycles_moduleCatCyclesMk _ _ _ _ _ _
+  TauCeti.HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _
 
 end TauCeti.TopCat
