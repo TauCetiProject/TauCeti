@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.GraphAutomorphism
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.Basic
+public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.ToralGeneration
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 
 /-!
@@ -34,6 +35,9 @@ invariant. The automorphism therefore descends to the quotient.
   `TauCeti.SlStd.graphAutomorphismPoints_graphAutomorphismPoints`: its involutivity, on the carrier
   and on points.
 * `TauCeti.SlStd.rootSubgroup_comp_graphAutomorphism_hom`: its action on root subgroups.
+* `TauCeti.SlStd.eq_graphAutomorphism_hom_of_rootSubgroup` and
+  `TauCeti.SlStd.eq_graphAutomorphism_of_rootSubgroup`: that action determines it, among
+  endomorphisms and among automorphisms of the carrier.
 * `TauCeti.SlStd.weightTorus_comp_graphAutomorphism_hom`: its action on the split torus.
 
 ## References
@@ -644,6 +648,24 @@ theorem rootSubgroup_comp_graphAutomorphism_hom (k : Fin r ⊕ Fin r) :
     (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
     (graphRootPerm r k)).symm
+
+/-- **The reversal of the type-`A_r` diagram has exactly one realization on the carrier.** An
+endomorphism of the carrier carrying each numbered raising and lowering root subgroup to the one at
+the reversed node, with the same additive parameter, is the graph automorphism. The numbered root
+subgroups generate the carrier, so these equations leave nothing free; in particular no condition
+on the represented weight torus is needed. -/
+theorem eq_graphAutomorphism_hom_of_rootSubgroup (φ : groupScheme r ⟶ groupScheme r)
+    (hroot : ∀ k, rootSubgroup r k ≫ φ = rootSubgroup r (graphRootPerm r k)) :
+    φ = (graphAutomorphism r).hom :=
+  groupScheme_hom_ext_of_rootSubgroup r φ _ fun k => by
+    rw [hroot k, rootSubgroup_comp_graphAutomorphism_hom]
+
+/-- **The graph automorphism is the unique automorphism of the carrier reversing the Bourbaki
+numbering of the simple-root subgroups.** -/
+theorem eq_graphAutomorphism_of_rootSubgroup (γ : Aut (groupScheme r))
+    (hroot : ∀ k, rootSubgroup r k ≫ γ.hom = rootSubgroup r (graphRootPerm r k)) :
+    γ = graphAutomorphism r :=
+  Iso.ext (eq_graphAutomorphism_hom_of_rootSubgroup r γ.hom hroot)
 
 /-- The graph automorphism normalizes the split torus and reverses its Bourbaki-numbered
 coordinates. -/
