@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Quotient
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
+import TauCeti.Topology.Algebra.Group.Generation
 
 /-!
 # The congruence topology on continuous automorphisms
@@ -18,9 +19,9 @@ coordinate
 `ContinuousAut G →* MulAut (G ⧸ N)`
 
 has discrete target.  Thus two automorphisms are close when they induce the same automorphism on
-a sufficiently fine characteristic finite quotient.  Finiteness of the quotient is not needed to
-define the topology; it enters later when proving compactness for topologically finitely generated
-profinite groups.
+a sufficiently fine quotient by a topologically characteristic open normal subgroup.  Finiteness
+of the quotient is not needed to define the topology; it enters later when proving compactness for
+topologically finitely generated profinite groups.
 
 The quotient coordinates are homomorphisms, so the initial topology makes `ContinuousAut G` a
 topological group.  The inner-automorphism homomorphism `ContinuousAut.conj` is continuous: on
@@ -75,19 +76,6 @@ theorem continuous_iff_forall_continuous_mapQuotient {X : Type*} [TopologicalSpa
   rw [continuous_iInf_rng]
   simp_rw [continuous_induced_rng]
 
-/-- The kernel of a characteristic quotient coordinate is open in the congruence topology. -/
-theorem isOpen_ker_mapQuotient
-    (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N.toSubgroup}) :
-    IsOpen ((mapQuotient N.property).ker : Set (ContinuousAut G)) := by
-  let _ : TopologicalSpace (MulAut (G ⧸ N.val.toSubgroup)) := ⊥
-  have _ : DiscreteTopology (MulAut (G ⧸ N.val.toSubgroup)) := ⟨rfl⟩
-  have hker : ((mapQuotient N.property).ker : Set (ContinuousAut G)) =
-      mapQuotient N.property ⁻¹' {1} := by
-    ext
-    simp
-  rw [hker]
-  exact (continuous_mapQuotient G N).isOpen_preimage {1} (isOpen_discrete {1})
-
 /-- The congruence topology makes the continuous automorphisms into a topological group. -/
 instance instIsTopologicalGroup : IsTopologicalGroup (ContinuousAut G) := by
   apply isTopologicalGroup_iInf
@@ -95,6 +83,14 @@ instance instIsTopologicalGroup : IsTopologicalGroup (ContinuousAut G) := by
   let _ : TopologicalSpace (MulAut (G ⧸ N.val.toSubgroup)) := ⊥
   have _ : DiscreteTopology (MulAut (G ⧸ N.val.toSubgroup)) := ⟨rfl⟩
   exact isTopologicalGroup_induced (mapQuotient N.property)
+
+/-- The kernel of a characteristic quotient coordinate is open in the congruence topology. -/
+theorem isOpen_ker_mapQuotient
+    (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N.toSubgroup}) :
+    IsOpen ((mapQuotient N.property).ker : Set (ContinuousAut G)) := by
+  let _ : TopologicalSpace (MulAut (G ⧸ N.val.toSubgroup)) := ⊥
+  have _ : DiscreteTopology (MulAut (G ⧸ N.val.toSubgroup)) := ⟨rfl⟩
+  exact (MonoidHom.continuous_iff_isOpen_ker _).mp (continuous_mapQuotient G N)
 
 variable [SeparatelyContinuousMul G]
 
