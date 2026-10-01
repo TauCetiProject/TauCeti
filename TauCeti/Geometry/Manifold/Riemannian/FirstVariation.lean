@@ -29,8 +29,9 @@ curves near `s = 0` share the endpoints of `γ`, the boundary terms vanish.
 The formula holds for a family which is `C²` at the points of `{0} × [a, b]`, for the tangent
 bundle of a `C²` manifold carrying a `C¹` Riemannian metric; its integrand is then continuous on
 `[a, b]`.  It is the tool for studying the critical points of the energy, the `C²` curves for which
-this derivative vanishes for every variation with fixed endpoints.  Those critical points are
-exactly the geodesics (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
+this derivative vanishes for every variation with fixed endpoints.  On a boundaryless manifold,
+for curves with this `C²` regularity, criticality is equivalent to being a geodesic on `uIoo a b`
+(`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
 
 ## Main definitions and results
 
