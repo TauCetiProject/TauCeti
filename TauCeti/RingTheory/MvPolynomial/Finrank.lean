@@ -67,6 +67,14 @@ theorem coe_homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ)
   simp only [homogeneousMonomialBasis, Module.Basis.map_apply]
   exact coe_basisRestrictSupport_apply {d : σ →₀ ℕ | d.degree = n} s
 
+/-- The coordinate of a homogeneous polynomial in the monomial basis is its corresponding
+coefficient. -/
+@[simp]
+theorem homogeneousMonomialBasis_repr_apply {σ R : Type*} [CommSemiring R] (n : ℕ)
+    (p : homogeneousSubmodule σ R n) (s : {s : σ →₀ ℕ // s.degree = n}) :
+    (homogeneousMonomialBasis n).repr p s = p.1.coeff s.1 := by
+  rfl
+
 /-- The dimension of a homogeneous component is the number of exponent vectors of its degree. -/
 theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
     [StrongRankCondition R] (n : ℕ) :
