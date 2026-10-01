@@ -496,10 +496,6 @@ theorem typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one {n : ℕ} (s : Fin
   rw [typeBSpinWeight_apply]
   split_ifs <;> omega
 
-private theorem mem_iff_of_ite_eq [DecidableEq α] {s t : Finset α} {a : α}
-    (h : (if a ∈ s then (1 : ℤ) else 0) = if a ∈ t then 1 else 0) : a ∈ s ↔ a ∈ t := by
-  by_cases hs : a ∈ s <;> by_cases ht : a ∈ t <;> simp_all
-
 private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n)}
     (h : typeBSpinWeight s = typeBSpinWeight t) (k : ℕ) :
     ∀ i : Fin n, (i : ℕ) + k + 1 = n → (i ∈ s ↔ i ∈ t) := by
@@ -510,7 +506,9 @@ private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n
     have hw := congrFun h i
     rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_right hilt,
       ite_eq_right hilt] at hw
-    exact mem_iff_of_ite_eq (by linarith)
+    have hind : (if i ∈ s then (1 : ℤ) else 0) = if i ∈ t then 1 else 0 := by linarith
+    simpa only [Ne.ite_eq_left_iff one_ne_zero] using
+      (congrArg (· = (1 : ℤ)) hind).to_iff
   | succ k ih =>
     intro i hik
     have hilt : (i : ℕ) + 1 < n := by omega
@@ -521,7 +519,9 @@ private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n
     have hw := congrFun h i
     rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_left hilt, ite_eq_left hilt] at hw
     rw [hsuccind] at hw
-    exact mem_iff_of_ite_eq (by linarith)
+    have hind : (if i ∈ s then (1 : ℤ) else 0) = if i ∈ t then 1 else 0 := by linarith
+    simpa only [Ne.ite_eq_left_iff one_ne_zero] using
+      (congrArg (· = (1 : ℤ)) hind).to_iff
 
 /-- **Distinct sign sets have distinct type-`Bₙ` spin weights.** The last coordinate of the weight
 recovers the last sign, and the remaining signs follow from the adjacent differences. -/
