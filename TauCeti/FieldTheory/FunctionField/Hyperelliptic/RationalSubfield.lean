@@ -11,6 +11,10 @@ public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Basic
 import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
 -- Proof-only: the constants are the algebraic elements.
 import TauCeti.FieldTheory.FunctionField.ConstantField
+-- Proof-only: powers of a function lie in the multiples of its pole divisor.
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
+-- Proof-only: the span of the powers of a transcendental element has full dimension.
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # The rational subfield of index two of a hyperelliptic function field
@@ -46,50 +50,7 @@ open scoped IntermediateField
 
 namespace TauCeti
 
-open AlgebraicGeometry
-
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-
-/-- An effective divisor is nonnegative. -/
-theorem zero_le_of_isEffective {D : Divisor k F} (hD : WeilDivisor.IsEffective D) : 0 ≤ D :=
-  WeilDivisor.le_iff.mpr fun P ↦ by
-    rw [WeilDivisor.coeff_zero]
-    exact (WeilDivisor.isEffective_iff D).mp hD P
-
-/-- Multiples of an effective divisor are monotone in the multiplier. -/
-theorem zsmul_le_zsmul_of_isEffective {D : Divisor k F} (hD : WeilDivisor.IsEffective D)
-    {m n : ℤ} (h : m ≤ n) : m • D ≤ n • D :=
-  WeilDivisor.le_iff.mpr fun P ↦ by
-    rw [WeilDivisor.coeff_zsmul, WeilDivisor.coeff_zsmul]
-    exact mul_le_mul_of_nonneg_right h ((WeilDivisor.isEffective_iff D).mp hD P)
-
-/-- A nonzero function lies in the Riemann–Roch space of its pole divisor. -/
-theorem mem_riemannRochSpace_poles (hF : IsFunctionField k F) (z : Fˣ) :
-    (z : F) ∈ riemannRochSpace (Divisor.poles hF z) := by
-  rw [mem_riemannRochSpace_units_iff hF, ← Divisor.zeros_sub_poles, sub_add_cancel]
-  exact zero_le_of_isEffective (Divisor.isEffective_zeros hF z)
-
-/-- The `n`-th power of a nonzero function has poles bounded by `n` times its pole divisor. -/
-theorem pow_mem_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :
-    (z : F) ^ n ∈ riemannRochSpace ((n : ℤ) • Divisor.poles hF z) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
-    exact mul_mem_riemannRochSpace_add ih (mem_riemannRochSpace_poles hF z)
-
-/-- The powers `1, z, …, z^{n-1}` of a nonzero function lie in `L((n - 1) · (z)_∞)`; more
-generally `z ^ i ∈ L(m · (z)_∞)` whenever `i ≤ m`. -/
-theorem pow_mem_riemannRochSpace_zsmul_poles_of_le (hF : IsFunctionField k F) (z : Fˣ) {i : ℕ}
-    {m : ℤ} (h : (i : ℤ) ≤ m) : (z : F) ^ i ∈ riemannRochSpace (m • Divisor.poles hF z) :=
-  riemannRochSpace_mono (zsmul_le_zsmul_of_isEffective (Divisor.isEffective_poles hF z) h)
-    (pow_mem_riemannRochSpace_zsmul_poles hF z i)
-
-/-- The span of the powers `1, z, …, z^{n-1}` of a transcendental `z` has dimension `n`. -/
-theorem finrank_span_range_pow {z : F} (hz : Transcendental k z) (n : ℕ) :
-    Module.finrank k (Submodule.span k (Set.range fun i : Fin n ↦ z ^ (i : ℕ))) = n :=
-  (finrank_span_eq_card (hz.linearIndependent_pow.comp _ Fin.val_injective)).trans
-    (Fintype.card_fin n)
 
 /-- **`(g - 1) · (x)_∞` is a canonical divisor** when `[F : k(x)] = 2`: it has degree `2g - 2`,
 and its Riemann–Roch space contains the `g` independent functions `1, x, …, x^{g-1}`. -/
@@ -112,7 +73,7 @@ theorem divisorClass_sub_one_zsmul_poles_eq_canonicalClass (hF : IsFunctionField
         have := i.isLt
         exact pow_mem_riemannRochSpace_zsmul_poles_of_le hF _ (by omega))
     have h := Submodule.finrank_mono hle
-    rwa [finrank_span_range_pow hx, ← Divisor.dim_def] at h
+    rwa [hx.finrank_span_range_pow, ← Divisor.dim_def] at h
 
 /-- **`L((g - 1) · (x)_∞)` is spanned by `1, x, …, x^{g-1}`** when `[F : k(x)] = 2`: the `g`
 powers are independent, and `ℓ((g - 1) · (x)_∞) = g` since the divisor is canonical. -/
@@ -127,7 +88,7 @@ theorem riemannRochSpace_sub_one_zsmul_poles_eq_span (hF : IsFunctionField k F)
   · rintro _ ⟨i, rfl⟩
     have := i.isLt
     exact pow_mem_riemannRochSpace_zsmul_poles_of_le hF _ (by omega)
-  · rw [finrank_span_range_pow hx, ← Divisor.dim_def,
+  · rw [hx.finrank_span_range_pow, ← Divisor.dim_def,
       (isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex
         (divisorClass_sub_one_zsmul_poles_eq_canonicalClass hF hex hx hdeg)).dim_eq hF hex]
 
@@ -157,7 +118,7 @@ theorem mem_adjoin_of_finrank_adjoin_le_genus (hF : IsFunctionField k F)
   -- `ℓ((z)_∞) ≥ 2`, from the independent functions `1` and `z`
   have hdimB : 2 ≤ Divisor.dim (Divisor.poles hF (Units.mk0 z hz0)) := by
     have := finiteDimensional_riemannRochSpace hF (Divisor.poles hF (Units.mk0 z hz0))
-    rw [Divisor.dim_def, ← finrank_span_range_pow (k := k) halg 2]
+    rw [Divisor.dim_def, ← (Transcendental.finrank_span_range_pow (K := k) halg 2)]
     refine Submodule.finrank_mono (Submodule.span_le.mpr ?_)
     rintro _ ⟨i, rfl⟩
     simpa using pow_mem_riemannRochSpace_zsmul_poles_of_le hF (Units.mk0 z hz0)
@@ -180,7 +141,7 @@ theorem mem_adjoin_of_finrank_adjoin_le_genus (hF : IsFunctionField k F)
     exact mem_adjoin_of_mem_riemannRochSpace_sub_one_zsmul_poles hF hex hx hdeg h
   have hu' : u ∈ k⟮x⟯ := by
     have h := mul_mem_riemannRochSpace_add (one_mem_riemannRochSpace_iff.mpr
-      (zero_le_of_isEffective (Divisor.isEffective_poles hF (Units.mk0 z hz0)))) hu
+      (Divisor.isEffective_poles hF (Units.mk0 z hz0)).zero_le) hu
     rw [one_mul, add_sub_cancel] at h
     exact mem_adjoin_of_mem_riemannRochSpace_sub_one_zsmul_poles hF hex hx hdeg h
   have : z = z * u / u := by field_simp
