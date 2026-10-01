@@ -16,7 +16,9 @@ If `A` is finite over `k` and linearly disjoint from `B` over `k`, adjoining `A`
 relative degree of an intermediate extension `B/C`. This is the field-tower calculation behind
 the degree comparison for algebraic function fields after extending their constants.
 
-The main result is `TauCeti.finrank_sup_eq_finrank_of_linearDisjoint`.
+The main result is `TauCeti.finrank_sup_eq_finrank_of_linearDisjoint`. Apply it as
+`TauCeti.finrank_sup_eq_finrank_of_linearDisjoint A B C hCB h`, where `hCB : C ≤ B` and
+`h : A.LinearDisjoint B`; the finite-dimensionality of `A` is supplied by an instance.
 -/
 
 public section
