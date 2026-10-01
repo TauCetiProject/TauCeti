@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Algebra.Module.Injective
+public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.RingTheory.PrincipalIdealDomain
 public import TauCeti.Data.ZMod.Divisibility
 
@@ -33,6 +34,8 @@ hypothesis `n ≠ 0` is necessary: `ℤ` is not injective over itself, since the
 ## Main results
 
 * `Module.Baer.zmod_self`: `ℤ/nℤ` satisfies Baer's criterion over itself, for `n ≠ 0`.
+* `Module.Baer.of_addEquiv_zmod`: a `ℤ/nℤ`-module isomorphic to `ℤ/nℤ` as an additive group
+  satisfies Baer's criterion, for `n ≠ 0`.
 -/
 
 public section
@@ -56,3 +59,12 @@ theorem Module.Baer.zmod_self (n : ℕ) [NeZero n] : Module.Baer (ZMod n) (ZMod 
   obtain ⟨s, rfl⟩ := Ideal.mem_span_singleton'.1 hr
   have : (⟨s * d, hr⟩ : Ideal.span {d}) = s • ⟨d, hd⟩ := Subtype.ext (by simp)
   rw [this, map_smul, LinearMap.toSpanSingleton_apply, smul_eq_mul, smul_eq_mul, hy, mul_assoc]
+
+/-- **A `ℤ/nℤ`-module additively isomorphic to `ℤ/nℤ` is self-injective**: for `n ≠ 0`, a
+`ZMod n`-module `W` with an additive isomorphism `W ≃+ ZMod n` satisfies Baer's criterion over
+`ZMod n`. Every additive homomorphism of `ZMod n`-modules is linear, so the isomorphism transports
+`Module.Baer.zmod_self`. -/
+theorem Module.Baer.of_addEquiv_zmod {n : ℕ} [NeZero n] {W : Type*} [AddCommGroup W]
+    [Module (ZMod n) W] (e : W ≃+ ZMod n) : Module.Baer (ZMod n) W :=
+  Module.Baer.of_equiv (e.symm.toLinearEquiv fun c x => ZMod.map_smul _ c x)
+    (Module.Baer.zmod_self n)

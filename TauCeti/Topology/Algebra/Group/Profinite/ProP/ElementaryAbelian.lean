@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank
 public import TauCeti.Topology.Algebra.Monoid
 
 /-!
@@ -39,7 +39,7 @@ is its `𝔽_p`-dimension `d + (d choose 2) = d (d + 1) / 2`.
 This is the value against which the normalisation of `H²` is checked: an `H²` counting `d choose 2`
 or `d ^ 2` classes for `(ℤ/p)^d` would be wrong. The counting statements are about the order of the
 explicit continuous cohomology `H2 G (ZMod p)`, with the action of `G` on `𝔽_p` carried as an
-instance as in `TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank`; no triviality
+instance as in `TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank`; no triviality
 hypothesis is needed, since `G` is a `p`-group (`TauCeti.isPGroup_of_proPFrattini_eq_bot`) and a
 `p`-group can only act trivially on `𝔽_p` (`IsPGroup.smul_zmod_eq_self`). The count is then read
 as the `𝔽_p`-dimension of the continuous cohomology `cohomFp p G 2` with trivial coefficients,
@@ -85,7 +85,7 @@ universe u
 -- [AddGroup.IsNilpotent (ZMod p)]`; that structure is not reducibly the ring one, so the
 -- `DistribMulAction` hypotheses below would not match what the cohomology API expects.
 -- Preferring the ring path locally keeps a single additive structure on `ZMod p`, as in
--- `TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank`.
+-- `TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank`.
 attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ}
