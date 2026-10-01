@@ -64,8 +64,7 @@ namespace TauCeti.ArtinSchreier
 open AlgebraicGeometry
 
 /-- `3 = 1` is a unit in `𝔽₂`, so Mathlib's model `y² + y = x³` of `j = 0` is an elliptic curve. -/
-instance : Fact (IsUnit (3 : ZMod 2)) :=
-  ⟨by rw [show (3 : ZMod 2) = 1 from by decide]; exact isUnit_one⟩
+instance : Fact (IsUnit (3 : ZMod 2)) := ⟨IsUnit.of_mul_eq_one 1 (by decide)⟩
 
 local instance : IsDedekindDomain (ofJ0 (ZMod 2)).toAffine.CoordinateRing :=
   have := Affine.isIntegrallyClosed_coordinateRing (ofJ0 (ZMod 2)).toAffine
@@ -131,6 +130,7 @@ theorem different_eq :
 /-- **The different exponent at infinity is `4`**: the Hurwitz genus formula over `𝔽₂(x)`, with
 genus `1` and degree `2`, gives `deg Diff = 4`, and the different is concentrated at the rational
 place at infinity. -/
+@[simp]
 theorem differentExponent_infinity :
     Place.differentExponent (ZMod 2) (RatFunc (ZMod 2)) (Place.infinity (ofJ0 (ZMod 2)).toAffine) =
       4 := by
@@ -148,8 +148,7 @@ theorem isWild_infinity :
     rw [Place.ramificationIdx_infinity, differentExponent_infinity]
     norm_num)
 
-/-- **The tame formula fails at infinity**: `e = 2` while `d + 1 = 5`. This is the acceptance test
-that no tameness assumption entered the Hurwitz genus formula. -/
+/-- **The tame formula fails at infinity**: `e = 2` while `d + 1 = 5`. -/
 theorem ramificationIdx_infinity_ne_differentExponent_add_one :
     Place.ramificationIdx (RatFunc (ZMod 2)) (Place.infinity (ofJ0 (ZMod 2)).toAffine) ≠
       Place.differentExponent (ZMod 2) (RatFunc (ZMod 2))
