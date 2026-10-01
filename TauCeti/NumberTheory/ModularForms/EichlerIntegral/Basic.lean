@@ -35,7 +35,8 @@ file.
 ## Main results
 
 * `TauCeti.eichlerIntegral_zero`, `TauCeti.eichlerIntegral_add`,
-  `TauCeti.eichlerIntegral_smul`: linearity under the appropriate analytic hypotheses.
+  `TauCeti.eichlerIntegral_smul`, `TauCeti.eichlerIntegral_neg`: linearity under the appropriate
+  analytic hypotheses.
 * `TauCeti.hasSum_eichlerIntegral`: the defining series converges to
   `eichlerIntegral h n f` at every point of `ℍ`.
 * `TauCeti.qExpansion_eichlerIntegral_coeff`: the `q`-expansion coefficients of
@@ -117,6 +118,11 @@ theorem eichlerIntegral_smul (hf : AnalyticAt ℂ (cuspFunction h f) 0) (n : ℕ
   simp_rw [mul_left_comm (((h : ℂ) / _) ^ n) a, mul_assoc a]
   rw [tsum_mul_left]
 
+/-- The Eichler integral commutes with negation when the cusp function is analytic at zero. -/
+theorem eichlerIntegral_neg (hf : AnalyticAt ℂ (cuspFunction h f) 0) (n : ℕ) :
+    eichlerIntegral h n (-f) = -eichlerIntegral h n f := by
+  simpa only [neg_one_smul] using eichlerIntegral_smul hf n (-1)
+
 /-- The Eichler integral is additive on holomorphic periodic functions bounded at `i∞`. -/
 theorem eichlerIntegral_add {g : ℍ → ℂ} (hh : 0 < h)
     (hfper : Periodic (f ∘ ofComplex) h) (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f)
@@ -150,11 +156,10 @@ theorem eichlerIntegral_order_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofCompl
 
 /-- The Eichler integral has the same period `h` as the `q`-parameter. -/
 theorem periodic_eichlerIntegral_comp_ofComplex (hh : h ≠ 0) (n : ℕ) :
-    Periodic (eichlerIntegral h n f ∘ ofComplex) h :=
-  periodic_comp_ofComplex fun τ ↦ by
-    simp only [eichlerIntegral, coe_vadd, Periodic.qParam, mul_add, add_div,
-      mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
-      Complex.exp_two_pi_mul_I, one_mul]
+    Periodic (eichlerIntegral h n f ∘ ofComplex) h := by
+  simpa only [comp_def, eichlerIntegral] using
+    (UpperHalfPlane.periodic_qParam_comp_ofComplex hh).comp
+      (fun q : ℂ ↦ ∑' m : ℕ, ((h : ℂ) / m) ^ n * (qExpansion h f).coeff m * q ^ m)
 
 /-- On a half-plane `ε < im w` the terms of the Eichler series are dominated by a summable
 sequence independent of `w`. -/
