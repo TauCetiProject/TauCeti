@@ -139,23 +139,25 @@ theorem conductor_eq_one_iff {η : RayClassCharacter 𝔪} :
   rw [← conductor_dvd_iff (Modulus.one_dvd 𝔪)]
   exact ⟨fun h ↦ h ▸ Modulus.dvd_refl _, Modulus.eq_one_of_dvd_one⟩
 
+/-- The primitive character of the trivial character is trivial. -/
+@[simp]
+theorem primitiveCharacter_one : (1 : RayClassCharacter 𝔪).primitiveCharacter = 1 :=
+  induced_injective (1 : RayClassCharacter 𝔪).conductor_dvd <| by
+    rw [induced_primitiveCharacter, map_one]
+
 /-- **Inverting a ray class character does not change its conductor.** -/
 @[simp]
 theorem conductor_inv (η : RayClassCharacter 𝔪) : η⁻¹.conductor = η.conductor := by
-  have key (ψ : RayClassCharacter 𝔪) : ψ⁻¹.conductor ∣ ψ.conductor := by
-    -- `map_inv` needs its arguments: the inverse of `RayClassCharacter 𝔪` is `MonoidHom.instInv`,
-    -- which the unapplied lemma's `Group.toInv` does not match syntactically.
-    rw [conductor, HeckeCharacter.conductor_dvd_iff,
-      map_inv (HeckeCharacter.ofRayClassCharacter 𝔪) ψ]
-    exact inv_mem (HeckeCharacter.mem_range_ofRayClassCharacter_conductor _)
-  exact Modulus.dvd_antisymm (key η) (inv_inv η ▸ key η⁻¹)
+  -- `map_inv` needs its arguments: the inverse of `RayClassCharacter 𝔪` is `MonoidHom.instInv`,
+  -- which the unapplied lemma's `Group.toInv` does not match syntactically.
+  simp only [conductor, map_inv (HeckeCharacter.ofRayClassCharacter 𝔪) η,
+    HeckeCharacter.conductor_inv]
 
 /-- The conductor of an integer power of a ray class character divides its conductor. -/
 theorem conductor_zpow_dvd (η : RayClassCharacter 𝔪) (n : ℤ) :
     (η ^ n).conductor ∣ η.conductor := by
-  rw [conductor, HeckeCharacter.conductor_dvd_iff,
-    map_zpow (HeckeCharacter.ofRayClassCharacter 𝔪) η n]
-  exact zpow_mem (HeckeCharacter.mem_range_ofRayClassCharacter_conductor _) n
+  simpa only [conductor, map_zpow (HeckeCharacter.ofRayClassCharacter 𝔪) η n] using
+    HeckeCharacter.conductor_zpow_dvd (HeckeCharacter.isFiniteOrder_ofRayClassCharacter η) n
 
 /-- The conductor of a power of a ray class character divides its conductor. -/
 theorem conductor_pow_dvd (η : RayClassCharacter 𝔪) (n : ℕ) :
@@ -166,12 +168,9 @@ theorem conductor_pow_dvd (η : RayClassCharacter 𝔪) (n : ℕ) :
 conductors. -/
 theorem conductor_mul_dvd_lcm_conductor (η ψ : RayClassCharacter 𝔪) :
     (η * ψ).conductor ∣ η.conductor.lcm ψ.conductor := by
-  rw [conductor, HeckeCharacter.conductor_dvd_iff, map_mul]
-  exact mul_mem
-    (HeckeCharacter.range_ofRayClassCharacter_le (Modulus.dvd_lcm_left _ _)
-      (HeckeCharacter.mem_range_ofRayClassCharacter_conductor _))
-    (HeckeCharacter.range_ofRayClassCharacter_le (Modulus.dvd_lcm_right _ _)
-      (HeckeCharacter.mem_range_ofRayClassCharacter_conductor _))
+  simpa only [conductor, map_mul] using HeckeCharacter.conductor_mul_dvd_lcm_conductor
+    (HeckeCharacter.isFiniteOrder_ofRayClassCharacter η)
+    (HeckeCharacter.isFiniteOrder_ofRayClassCharacter ψ)
 
 end RayClassCharacter
 
