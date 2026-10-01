@@ -82,9 +82,9 @@ theorem locOpensComap_laurentCoverOpen (f : A) (b : Bool) :
   cases b <;> simp only [Bool.cond_true, Bool.cond_false, Finset.image_insert,
     Finset.image_singleton, map_one]
 
--- The pullback of the Laurent piece of `f` restricted to `R(T/s)` is the Laurent piece of the
--- image of `f`, since the pullback of `R(T/s)` is everything.
-private theorem locOpensComap_inf_laurentCoverOpen (f : A) (b : Bool) :
+/-- The pullback of the Laurent piece of `f` restricted to `R(T/s)` is the Laurent piece of the
+image of `f`, since the pullback of `R(T/s)` is the whole localized spectrum. -/
+theorem locOpensComap_inf_laurentCoverOpen (f : A) (b : Bool) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -136,10 +136,10 @@ private theorem bijective_presentationLimitLocIso_hom {V : Opens ↥(spa Aplus)}
     Function.RightInverse.surjective
       (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).inv_hom_id_apply⟩
 
--- Restriction from `R(T/s)` to rational opens `U i ⊆ R(T/s)` is injective as soon as restriction
--- from `W'` to the `U' i` is, where `W'` and the `U' i` are the pullbacks of `R(T/s)` and of the
--- `U i`.
-private theorem injective_presentationLimitMap_of_locOpensComap {ι : Type*}
+/-- **Injectivity transported along rational localization.** Restriction from `R(T/s)` to rational
+opens `U i ⊆ R(T/s)` is injective as soon as restriction from the pullback of `R(T/s)` to the
+pullbacks of the `U i` is injective. -/
+theorem injective_presentationLimitMap_of_locOpensComap {ι : Type*}
     {U : ι → Opens ↥(spa Aplus)} (hU : ∀ i, U i ∈ spaRationalOpens Aplus)
     (hUW : ∀ i, U i ≤ spaBasicOpen Aplus T s) :
     letI := locUniformSpace P T s S hden
@@ -165,10 +165,10 @@ private theorem injective_presentationLimitMap_of_locOpensComap {ι : Type*}
     hW (hU i) le_rfl (hUW i)]
   exact congrArg _ (congrFun hxy i)
 
--- Sections over two rational opens `U b ⊆ R(T/s)` that agree on their overlap come from a section
--- over `R(T/s)` as soon as the same holds for the pullbacks `W'`, `U' b` and `O'` of `R(T/s)`, of
--- the `U b` and of their overlap.
-private theorem exists_presentationLimitMap_eq_of_locOpensComap {U : Bool → Opens ↥(spa Aplus)}
+/-- **Gluing transported along rational localization.** Sections over two rational opens
+`U b ⊆ R(T/s)` that agree on their overlap glue over `R(T/s)` as soon as the analogous gluing
+statement holds for the pullbacks of `R(T/s)`, the `U b`, and their overlap. -/
+theorem exists_presentationLimitMap_eq_of_locOpensComap {U : Bool → Opens ↥(spa Aplus)}
     (hU : ∀ b, U b ∈ spaRationalOpens Aplus) (hUW : ∀ b, U b ≤ spaBasicOpen Aplus T s) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden

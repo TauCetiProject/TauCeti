@@ -8,7 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
+public import TauCeti.RingTheory.Huber.Uniform
 
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Uniform
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 
 /-!
@@ -19,7 +21,8 @@ For `f ∈ A` the rational opens `R({f, 1}/1) = {|f| ≤ 1}` and `R({1}/f) = {|f
 of power-bounded elements, the augmented two-piece Čech sequence of the presentation-limit
 presheaf is exact: sections glue uniquely, and every section on the overlap is a difference of
 restrictions. This is Wedhorn's Lemma 8.33 and the Laurent-cover case of Lemma 8.34(i), stated
-for `presentationLimit`.
+for `presentationLimit`. Its degree-zero injectivity and gluing statements also hold when `A` is
+uniform, by Buzzard--Verberkmoes, Corollary 4.
 
 ## Main definitions
 
@@ -35,10 +38,15 @@ for `presentationLimit`.
   the two pieces that agree on their overlap come from a section over `X`.
 * `TauCeti.ValuationSpectrum.surjective_presentationLimitMap_sub_laurentCoverOpen` : the difference
   of restrictions from the two pieces onto their overlap is surjective.
+* `TauCeti.ValuationSpectrum.injective_presentationLimitMap_laurentCoverOpen_of_isUniform` and
+  `TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen_of_isUniform` :
+  the degree-zero statements under uniformity instead of strong noetherianness.
 
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.33 and Lemma 8.34(i).
+* K. Buzzard, A. Verberkmoes, *Stably uniform affinoids are sheafy*, J. reine angew. Math. 740
+  (2018), 25--39, Corollary 4.
 -/
 
 @[expose] public section
@@ -481,5 +489,95 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
         ((presentationLimitMap (P := P) hEq.le).hom.1 z) :=
       congrArg (presentationLimitMap (P := P) hEq.ge).hom.1 hx
     _ = z := hInv
+
+/-! ### Uniform Tate rings -/
+
+section Uniform
+
+variable {B : Type v} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+  [CompleteSpace B] [T0Space B] [IsTateRing B] [IsUniform B]
+  (Q : PairOfDefinition B) {Bplus : Subring B}
+
+/-- **Buzzard--Verberkmoes Laurent injectivity for the presentation-limit presheaf.** A section
+over `Spa(B, B⁺)` is determined by its restrictions to `{|f| ≤ 1}` and `{|f| ≥ 1}` when `B`
+is a complete Hausdorff uniform Tate ring. -/
+theorem injective_presentationLimitMap_laurentCoverOpen_of_isUniform
+    (hBplus : ∀ ⦃a⦄, a ∈ Bplus → IsPowerBounded a) (f : B) :
+    Function.Injective fun (x : presentationLimit (P := Q) Bplus ⊤) (b : Bool) ↦
+      (presentationLimitMap (P := Q) (le_top : laurentCoverOpen Bplus f b ≤ ⊤)).hom.1 x := by
+  have := isIso_toPresentationLimit_top (P := Q) Bplus hBplus
+  let p := laurentPresentation Q f
+  have hp := isOpen_span_laurentPresentation Q f
+  refine .of_comp_right (fun c d hcd ↦ ?_) <|
+    Function.RightInverse.surjective (asIso (toPresentationLimit Bplus ⊤)).inv_hom_id_apply
+  have key (b : Bool) :=
+    ((presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hBplus (p b) (hp b)).1
+      (congrFun hcd b)).trans (rationalIso_map_top_apply hBplus (p b) (hp b) d)
+  exact injective_eqToHom _ <|
+    (isClosedEmbedding_laurentCover_of_isUniform Q f (Localization.Away (1 : B))
+      (Localization.Away f) (p false).hasDenominatorPower).injective <|
+        Prod.ext (key true) (key false)
+
+-- The ring-level exactness theorem gives one element whose images are the two compatible
+-- sections, after applying the rational-section isomorphisms.
+private theorem exists_toCompletionLoc_eq_of_laurentCoverOpen_of_isUniform
+    (hBplus : ∀ ⦃a⦄, a ∈ Bplus → IsPowerBounded a) (f : B)
+    (x : ∀ b, presentationLimit (P := Q) Bplus (laurentCoverOpen Bplus f b))
+    (hx : (presentationLimitMap (P := Q) (inf_le_left : laurentCoverOpen Bplus f true ⊓
+        laurentCoverOpen Bplus f false ≤ _)).hom.1 (x true) =
+      (presentationLimitMap (P := Q) (inf_le_right : laurentCoverOpen Bplus f true ⊓
+        laurentCoverOpen Bplus f false ≤ _)).hom.1 (x false)) :
+    ∃ c : CompleteSeparatedTopCommRingCat.of B, ∀ b, letI p := laurentPresentation Q f b
+      toCompletionLoc Q p.num p.den _ p.hasDenominatorPower
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj B)).1 c) =
+        (eqToHom (completionLocObj_obj Q p.num p.den _ p.hasDenominatorPower)).1
+          ((presentationLimitRationalIso Bplus hBplus p
+            (isOpen_span_laurentPresentation Q f b)).hom.hom.1 (x b)) := by
+  let p := laurentPresentation Q f
+  let q := laurentOverlapPresentation Q f
+  have hp := isOpen_span_laurentPresentation Q f
+  have hq : IsOpen (Ideal.span (q.num : Set B) : Set B) := isOpen_span_of_one_mem <| by simp [q]
+  let _ := locUniformSpace Q q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace Q q.num q.den _ q.hasDenominatorPower
+  have hT₁ : ∀ t ∈ (p true).num, t * f ∈ q.num := by grind
+  have hT₂ : ∀ t ∈ (p false).num, t * 1 ∈ q.num := by grind
+  have hU (b : Bool) : spaBasicOpen Bplus q.num q.den ≤ spaBasicOpen Bplus (p b).num (p b).den :=
+    spaBasicOpen_le_spaBasicOpen_iff.mpr <| rationalSubset_subset_rationalSubset_of_le Bplus <|
+      Presentation.le_def.mpr <| b.rec ⟨1, mul_comm 1 f, hT₂⟩ ⟨f, rfl, hT₁⟩
+  have h := congrArg (fun z ↦
+    (eqToHom (completionLocObj_obj Q q.num q.den _ q.hasDenominatorPower)).1
+      ((presentationLimitRationalIso Bplus hBplus q hq).hom.hom.1
+        ((presentationLimitMap (le_inf (hU true) (hU false))).hom.1 z))) hx
+  simp only [presentationLimitMap_apply_presentationLimitMap_apply,
+    rationalIso_map_apply hBplus (p true) q (hp true) hq f rfl hT₁,
+    rationalIso_map_apply hBplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂] at h
+  obtain ⟨c, hc⟩ := (laurentCover_exact_of_isUniform Q f (Localization.Away (1 : B))
+    (Localization.Away f) (p false).hasDenominatorPower (Localization.Away (1 * f))
+      (_, _)).1 (sub_eq_zero.2 h)
+  refine ⟨(eqToHom (CompleteSeparatedTopCommRingCat.of_obj B).symm).1 c, fun b ↦ ?_⟩
+  rw [eqToHom_symm_apply_eqToHom_apply]
+  exact b.rec (congrArg Prod.snd hc) (congrArg Prod.fst hc)
+
+/-- **Buzzard--Verberkmoes Laurent gluing for the presentation-limit presheaf.** Compatible
+sections on `{|f| ≤ 1}` and `{|f| ≥ 1}` glue to a section over `Spa(B, B⁺)` when `B` is a
+complete Hausdorff uniform Tate ring. The gluing is unique by
+`injective_presentationLimitMap_laurentCoverOpen_of_isUniform`. -/
+theorem exists_presentationLimitMap_eq_of_laurentCoverOpen_of_isUniform
+    (hBplus : ∀ ⦃a⦄, a ∈ Bplus → IsPowerBounded a) (f : B)
+    (x : ∀ b, presentationLimit (P := Q) Bplus (laurentCoverOpen Bplus f b))
+    (hx : (presentationLimitMap (P := Q) (inf_le_left :
+        laurentCoverOpen Bplus f true ⊓ laurentCoverOpen Bplus f false ≤ _)).hom.1 (x true) =
+      (presentationLimitMap (P := Q) (inf_le_right :
+        laurentCoverOpen Bplus f true ⊓ laurentCoverOpen Bplus f false ≤ _)).hom.1 (x false)) :
+    ∃ a : presentationLimit (P := Q) Bplus ⊤, ∀ b,
+      (presentationLimitMap (P := Q) (le_top : laurentCoverOpen Bplus f b ≤ ⊤)).hom.1 a =
+        x b := by
+  obtain ⟨c, hc⟩ :=
+    exists_toCompletionLoc_eq_of_laurentCoverOpen_of_isUniform Q hBplus f x hx
+  exact ⟨(toPresentationLimit Bplus ⊤).hom.1 c, fun b ↦
+    (presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hBplus _
+      (isOpen_span_laurentPresentation Q f b)).2 (hc b)⟩
+
+end Uniform
 
 end TauCeti.ValuationSpectrum
