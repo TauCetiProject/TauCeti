@@ -230,6 +230,13 @@ noncomputable def peripheralBasis :
 theorem peripheralBasis_repr : peripheralBasis.repr = fundamentalGroupMulEquivFreeGroup :=
   (rfl)
 
+/-- The isomorphism `fundamentalGroupMulEquivFreeGroup` sends each element of
+`peripheralBasis` to the corresponding free-group generator. -/
+@[simp]
+theorem fundamentalGroupMulEquivFreeGroup_peripheralBasis (i : Fin 2) :
+    fundamentalGroupMulEquivFreeGroup (peripheralBasis i) = FreeGroup.of i :=
+  peripheralBasis.repr_apply_coe i
+
 /-- The first element of `peripheralBasis` is `periph0`. -/
 @[simp]
 theorem peripheralBasis_zero : peripheralBasis 0 = periph0 :=
