@@ -14,9 +14,11 @@ public import TauCeti.Algebra.Polynomial.Sturm.Sum
 `sum_sign` identifies the variation difference of a signed remainder chain
 with the sum of query signs at the distinct roots in an open interval. Positive
 pseudo-remainder scalings and a nonconstant terminal common factor are allowed,
-and the head polynomial need not be squarefree. `IsTarskiSeed.sign_eq` and
-`IsTarskiSeed.eval_eq_zero` describe the query at the roots of a seed from which a
-common factor of the head and second entry has been removed.
+and the head polynomial need not be squarefree. `IsTarskiSeed.sign_eq_of_mul`,
+`IsTarskiSeed.eval_eq_zero_of_mul`, `IsTarskiSeed.derivative_eval_ne_zero_of_mul` and
+`IsTarskiSeed.sign_mul_eq_of_mul` describe the query at the roots of a seed from which a
+common factor of the head and second entry has been removed; `IsTarskiSeed.sign_eq` and
+`IsTarskiSeed.eval_eq_zero` are the forms without a common factor.
 The concrete `Polynomial.sturmSeq` specialization supplies sign sums and root
 counts, and is the finite-interval basis for the infinite-endpoint formulas.
 
@@ -91,6 +93,7 @@ private theorem exists_identity_X_sub_C {d p f q : R[X]} (h : IsTarskiSeed (d * 
     · rw [derivative_mul, derivative_X_sub_C_pow, Nat.add_sub_cancel]
       ring
   have hd' := hpow (rootMultiplicity r d) (e * p)
+  -- Reassociate so that the opaque `derivative` atom matches `d * p` after `rw [hde]`.
   rw [← mul_assoc] at hd'
   rw [hde] at heq
   apply mul_left_cancel₀ (pow_ne_zero (rootMultiplicity r d) (X_sub_C_ne_zero r))
@@ -99,7 +102,7 @@ private theorem exists_identity_X_sub_C {d p f q : R[X]} (h : IsTarskiSeed (d * 
 /-- If `q` is a Tarski seed for the head `d * p` and query `f` after the common factor `d` is
 removed from it, then at every root `r` of `p` the sign of `p' r * f r` is the sign of `q r`.
 The point `r` may be a multiple root of `d * p`. -/
-theorem sign_eq {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd : d ≠ 0) {r : R}
+theorem sign_eq_of_mul {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd : d ≠ 0) {r : R}
     (hr : p.eval r = 0) :
     SignType.sign (p.derivative.eval r * f.eval r) = SignType.sign (q.eval r) := by
   obtain ⟨a, b, u, e, k, ha, hb, he, -, heq⟩ := exists_identity_X_sub_C h hd r
@@ -120,12 +123,44 @@ theorem sign_eq {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd : d �
 
 /-- A root of the removed common factor `d` that is not a root of the reduced head `p` is a
 zero of the query. -/
-theorem eval_eq_zero {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd : d ≠ 0) {r : R}
-    (hdr : d.eval r = 0) (hp : p.eval r ≠ 0) : f.eval r = 0 := by
+theorem eval_eq_zero_of_mul {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd : d ≠ 0)
+    {r : R} (hdr : d.eval r = 0) (hp : p.eval r ≠ 0) : f.eval r = 0 := by
   obtain ⟨a, b, u, e, k, ha, hb, he, hk, heq⟩ := exists_identity_X_sub_C h hd r
   have hev := congrArg (eval r) heq
   simp only [eval_mul, eval_add, eval_sub, eval_C, eval_X, sub_self, zero_mul, add_zero] at hev
   simpa [ha.ne', hk hdr, he, hp] using hev
+
+/-- At a root `r` of the reduced head `p` at which the reduced second entry `q` does not
+vanish, `r` is a simple root of `p`. This holds even if `r` is a multiple root of `d * p`. -/
+theorem derivative_eval_ne_zero_of_mul {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q))
+    (hd : d ≠ 0) {r : R} (hr : p.eval r = 0) (hq : q.eval r ≠ 0) :
+    p.derivative.eval r ≠ 0 := by
+  intro hz
+  have hs := h.sign_eq_of_mul hd hr
+  rw [hz, zero_mul, sign_zero] at hs
+  exact hq (sign_eq_zero_iff.mp hs.symm)
+
+/-- At a root `r` of the reduced head `p` at which the reduced second entry `q` does not
+vanish, the sign of `p' r * q r` is the sign of the query `f r`. -/
+theorem sign_mul_eq_of_mul {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd : d ≠ 0)
+    {r : R} (hr : p.eval r = 0) (hq : q.eval r ≠ 0) :
+    SignType.sign (p.derivative.eval r * q.eval r) = SignType.sign (f.eval r) := by
+  have hd' : SignType.sign (p.derivative.eval r) ≠ 0 := by
+    simpa using h.derivative_eval_ne_zero_of_mul hd hr hq
+  have numeric : ∀ s t : SignType, s ≠ 0 → s * (s * t) = t := by decide
+  rw [sign_mul, ← h.sign_eq_of_mul hd hr, sign_mul]
+  exact numeric _ _ hd'
+
+/-- At every root `r` of the head `p` of a Tarski seed, the sign of `p' r * f r` is the sign
+of `q r`. The point `r` may be a multiple root of `p`. -/
+theorem sign_eq {p f q : R[X]} (h : IsTarskiSeed p f q) {r : R} (hr : p.eval r = 0) :
+    SignType.sign (p.derivative.eval r * f.eval r) = SignType.sign (q.eval r) :=
+  IsTarskiSeed.sign_eq_of_mul (d := 1) (by simpa using h) one_ne_zero hr
+
+/-- A zero query seed makes the query vanish at every root of the nonzero head. -/
+theorem eval_eq_zero {p f : R[X]} (h : IsTarskiSeed p f 0) (hp : p ≠ 0) {r : R}
+    (hr : p.eval r = 0) : f.eval r = 0 :=
+  IsTarskiSeed.eval_eq_zero_of_mul (p := 1) (q := 0) (by simpa using h) hp hr (by simp)
 
 /-- A valid query seed remains valid as the second entry of Mathlib's sequence,
 including the singleton case. -/
@@ -163,7 +198,7 @@ private theorem IsTarskiSeed.sum_roots_mul {d p0 f q0 : R[X]}
     have hdr : d.eval r = 0 := by
       rw [eval_mul] at hpr
       exact (mul_eq_zero.mp hpr).resolve_right hpr0
-    rw [hseed.eval_eq_zero hd hdr hpr0, sign_zero]
+    rw [hseed.eval_eq_zero_of_mul hd hdr hpr0, sign_zero]
     rfl
 
 /-- A zero query seed makes the query vanish at every root of the nonzero head, so its
@@ -171,10 +206,9 @@ sign sum is zero on any finite set of such roots. -/
 theorem IsTarskiSeed.sum_sign_eq_zero {p f : Polynomial R} (hseed : IsTarskiSeed p f 0)
     (hp : p ≠ 0) (Z : Finset R) (hZ : ∀ r ∈ Z, p.eval r = 0) :
     ∑ r ∈ Z, (SignType.sign (f.eval r) : ℤ) = 0 := by
-  have hseed' : IsTarskiSeed (p * 1) f (p * 0) := by simpa using hseed
   apply Finset.sum_eq_zero
   intro r hr
-  rw [hseed'.eval_eq_zero hp (hZ r hr) (by simp), sign_zero]
+  rw [hseed.eval_eq_zero hp (hZ r hr), sign_zero]
   rfl
 
 variable [IsRealClosed R]
@@ -213,24 +247,13 @@ private theorem sum_sign_cons {p f q : Polynomial R} {cs : List (Polynomial R)}
       subst hp hq
       have ha0 : d.eval a ≠ 0 ∧ p0.eval a ≠ 0 := by simpa [eval_mul] using ha
       have hb0 : d.eval b ≠ 0 ∧ p0.eval b ≠ 0 := by simpa [eval_mul] using hb
-      -- The reduced head has only simple roots, with the reduced query sign there.
-      have hsimple0 (r : R) (hr : p0.eval r = 0) : p0.derivative.eval r ≠ 0 := by
-        intro hz
-        have hs := hseed.sign_eq hd0 hr
-        rw [hz, zero_mul, sign_zero] at hs
-        exact hreg.second_eval_ne_zero hr (sign_eq_zero_iff.mp hs.symm)
-      have hsign (r : R) (hr : p0.eval r = 0) :
-          SignType.sign (p0.derivative.eval r * q0.eval r) = SignType.sign (f.eval r) := by
-        have hd' : SignType.sign (p0.derivative.eval r) ≠ 0 := by simpa using hsimple0 r hr
-        have numeric : ∀ s t : SignType, s ≠ 0 → s * (s * t) = t := by decide
-        rw [sign_mul, ← hseed.sign_eq hd0 hr, sign_mul]
-        exact numeric _ _ hd'
       have hV (x : R) (hx : d.eval x ≠ 0) :
           signVariationsAt (d * p0 :: d * q0 :: cs) x = signVariationsAt (p0 :: q0 :: ds) x := by
         rw [hmap]
         exact signVariationsAt_map_mul _ hx
       rw [hV a ha0.1, hV b hb0.1,
-        hreg.sum_sign (fun r _ _ => hsimple0 r) hab ha0.2 hb0.2]
+        hreg.sum_sign (fun r _ _ hr => hseed.derivative_eval_ne_zero_of_mul hd0 hr
+          (hreg.second_eval_ne_zero hr)) hab ha0.2 hb0.2]
       have hp0 : p0 ≠ 0 := hreg.nonzero p0 (by simp)
       calc
         _ = ∑ r ∈ p0.roots.toFinset.filter (fun r => a < r ∧ r < b),
@@ -238,7 +261,7 @@ private theorem sum_sign_cons {p f q : Polynomial R} {cs : List (Polynomial R)}
           apply Finset.sum_congr rfl
           intro r hr
           have hr0 := (mem_roots hp0).mp (Multiset.mem_toFinset.mp (Finset.mem_filter.mp hr).1)
-          rw [hsign r hr0]
+          rw [hseed.sign_mul_eq_of_mul hd0 hr0 (hreg.second_eval_ne_zero hr0)]
         _ = _ := hseed.sum_roots_mul hd0 hp0 _
 
 /-- **Sturm–Tarski** for any nonempty signed remainder chain, including a singleton.
@@ -274,7 +297,8 @@ theorem sum_sign_sturmSeq (p f : R[X]) {a b : R} (hab : a < b) (ha : p.eval a �
 
 /-- Classical Sturm counting of distinct roots in `(a, b)`, counted without
 multiplicity. Neither endpoint may be a root. -/
-theorem card_roots (p : R[X]) {a b : R} (hab : a < b) (ha : p.eval a ≠ 0) (hb : p.eval b ≠ 0) :
+theorem card_roots_toFinset (p : R[X]) {a b : R} (hab : a < b) (ha : p.eval a ≠ 0)
+    (hb : p.eval b ≠ 0) :
     (signVariationsAt (sturmSeq p p.derivative) a : ℤ) -
         signVariationsAt (sturmSeq p p.derivative) b =
       (p.roots.toFinset.filter (fun r => a < r ∧ r < b)).card := by

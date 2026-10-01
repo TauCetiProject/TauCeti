@@ -229,7 +229,7 @@ theorem sum_sign_sturmSeq_univ (p f : R[X]) :
   exact sum_sign_univ hsigned hseed
 
 /-- Classical Sturm counting of distinct roots in a right-unbounded interval. -/
-theorem card_roots_Ioi (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
+theorem card_roots_toFinset_Ioi (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
     (signVariationsAt (sturmSeq p p.derivative) a : ℤ) -
         signVariationsAtTop (sturmSeq p p.derivative) =
       (p.roots.toFinset.filter (a < ·)).card := by
@@ -237,7 +237,7 @@ theorem card_roots_Ioi (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
   simpa using sum_sign_sturmSeq_Ioi p 1 ha
 
 /-- Classical Sturm counting of distinct roots in a left-unbounded interval. -/
-theorem card_roots_Iio (p : R[X]) {b : R} (hb : p.eval b ≠ 0) :
+theorem card_roots_toFinset_Iio (p : R[X]) {b : R} (hb : p.eval b ≠ 0) :
     (signVariationsAtBot (sturmSeq p p.derivative) : ℤ) -
         signVariationsAt (sturmSeq p p.derivative) b =
       (p.roots.toFinset.filter (· < b)).card := by
@@ -245,7 +245,7 @@ theorem card_roots_Iio (p : R[X]) {b : R} (hb : p.eval b ≠ 0) :
   simpa using sum_sign_sturmSeq_Iio p 1 hb
 
 /-- Classical Sturm counting of all distinct roots of a polynomial. -/
-theorem card_roots_univ (p : R[X]) :
+theorem card_roots_toFinset_univ (p : R[X]) :
     (signVariationsAtBot (sturmSeq p p.derivative) : ℤ) -
         signVariationsAtTop (sturmSeq p p.derivative) =
       p.roots.toFinset.card := by

@@ -14,7 +14,8 @@ import Mathlib.Algebra.Polynomial.AlgebraMap
 /-! # Simple roots of squarefree polynomials
 
 A squarefree polynomial has nonzero derivative at every root in its coefficient ring.
-This is the pointwise simple-root condition at the roots lying in the coefficient ring.
+This supplies the pointwise simple-root premise of `TauCeti.Sturm.IsAlternating.sum_sign`,
+which requires `p.derivative.eval r ≠ 0` at each root `r` in the interval.
 -/
 
 public section
