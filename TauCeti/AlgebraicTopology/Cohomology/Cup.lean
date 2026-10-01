@@ -169,7 +169,7 @@ lemma ιChainComplex_cupCochain_alexanderWhitneyDiagonal (X : TopCat.{w}) (u : T
   · simp only [Category.assoc]
     exact congrArg (u ≫ ·) (key (p + q - p) (by omega) _ _)
   · rintro i - hi
-    rw [Category.assoc, TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne _ _ _ _
+    rw [Category.assoc, TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_left _ _ _ _
       (fun h ↦ hi (Fin.ext h)), comp_zero]
   · simp
 

@@ -57,6 +57,8 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
   above `p` times their residue degree is `[K : ℚ]`.
 * `TauCeti.Multiquadratic.ncard_primesOver_mul_two_eq_finrank`: when some `dᵢ` is a non-residue,
   there are `[K : ℚ] / 2` primes above `p`.
+* `TauCeti.Multiquadratic.eq_two_pow_sub_of_mul_two_pow_eq_finrank`: under square-class
+  independence of `n` radicands, `g · 2ᵏ = [K : ℚ]` forces `g = 2ⁿ⁻ᵏ`.
 * `TauCeti.Multiquadratic.ncard_primesOver_eq_two_pow_sub_one`: under square-class
   independence of `n` radicands, that number is `2ⁿ⁻¹`.
 * `TauCeti.Multiquadratic.inertia_eq_bot_of_forall_mod_four_eq_one` and
@@ -73,6 +75,8 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
   `TauCeti.Multiquadratic.ncard_primesOver_two_eq_two_pow_sub_one`: when some `dᵢ` is `5`
   modulo `8`, there are `[K : ℚ] / 2` primes above `2`, which is `2ⁿ⁻¹` under square-class
   independence.
+* `TauCeti.Multiquadratic.inertiaDeg_dvd_two`: at every rational prime, ramified or not, the
+  residue degree divides `2`.
 
 ## References
 
@@ -97,18 +101,28 @@ theorem isGalois_rat [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) : IsGalois ℚ K :=
   isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) (fun i => by rw [hr i]; simp) htop
 
-/-- Under square-class independence of the radicands, a number `g` with `g * 2 = [K : ℚ]` is
-`2 ^ (n - 1)`, since `[K : ℚ] = 2 ^ n`. -/
-private theorem eq_two_pow_sub_one_of_mul_two_eq_finrank [Finite ι] [Nonempty ι]
+/-- **Reading a prime count off the degree.** Under square-class independence of `n` radicands,
+`[K : ℚ] = 2 ^ n`, so a number `g` with `g * 2 ^ k = [K : ℚ]` is `2 ^ (n - k)`; the equation itself
+forces `k ≤ n`. This is how the decomposition formulas `g · f · e = [K : ℚ]` are solved for the
+number `g` of primes above a rational prime. -/
+theorem eq_two_pow_sub_of_mul_two_pow_eq_finrank [Finite ι]
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
-    {g : ℕ} (h : g * 2 = finrank ℚ K) : g = 2 ^ (Nat.card ι - 1) := by
+    {g k : ℕ} (h : g * 2 ^ k = finrank ℚ K) : g = 2 ^ (Nat.card ι - k) := by
   have hr' (i : ι) : r i ^ 2 = algebraMap ℚ K (d i : ℚ) := by rw [hr i]; simp
   have hdeg := finrank_adjoin_range (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr' hindep
   rw [htop, IntermediateField.finrank_top'] at hdeg
-  rw [hdeg, ← Nat.sub_add_cancel Nat.card_pos, pow_succ] at h
-  exact Nat.eq_of_mul_eq_mul_right two_pos h
+  rw [hdeg] at h
+  -- `g ≠ 0`, so `2 ^ k ≤ 2 ^ n` and `k ≤ n`; then cancel `2 ^ k`.
+  have hg : g ≠ 0 := by rintro rfl; exact (pow_pos two_pos _).ne (by simpa using h)
+  have hk : k ≤ Nat.card ι := by
+    by_contra hlt
+    have h1 : 2 ^ Nat.card ι < 2 ^ k := Nat.pow_lt_pow_right one_lt_two (not_le.mp hlt)
+    have h2 : 2 ^ k ≤ g * 2 ^ k := Nat.le_mul_of_pos_left _ (Nat.pos_of_ne_zero hg)
+    omega
+  rw [← Nat.sub_add_cancel hk, pow_add] at h
+  exact Nat.eq_of_mul_eq_mul_right (pow_pos two_pos k) h
 
 /-! ### The decomposition law at an odd prime -/
 
@@ -250,9 +264,8 @@ theorem ncard_primesOver_eq_two_pow_sub_one [Finite ι]
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (hnr : ∃ i, legendreSym p (d i) = -1) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - 1) := by
-  have : Nonempty ι := let ⟨i, _⟩ := hnr; ⟨i⟩
-  exact eq_two_pow_sub_one_of_mul_two_eq_finrank hr htop hindep
-    (ncard_primesOver_mul_two_eq_finrank hr htop hodd hcop hnr)
+  exact eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep (k := 1)
+    (by rw [pow_one]; exact ncard_primesOver_mul_two_eq_finrank hr htop hodd hcop hnr)
 
 /-! ### The decomposition law at `2`
 
@@ -393,8 +406,24 @@ theorem ncard_primesOver_two_eq_two_pow_sub_one [Finite ι]
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (hd : ∀ i, d i % 4 = 1) (h5 : ∃ i, d i % 8 = 5) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - 1) := by
-  have : Nonempty ι := let ⟨i, _⟩ := h5; ⟨i⟩
-  exact eq_two_pow_sub_one_of_mul_two_eq_finrank hr htop hindep
-    (ncard_primesOver_two_mul_two_eq_finrank hr htop hd h5)
+  exact eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep (k := 1)
+    (by rw [pow_one]; exact ncard_primesOver_two_mul_two_eq_finrank hr htop hd h5)
+
+/-! ### Residue degrees divide two
+
+At any rational prime, ramified or not, the residue degree divides the order of a Frobenius, which
+is an involution. -/
+
+/-- **Residue degrees in a multiquadratic field divide `2`.** Let `K` be generated over `ℚ` by
+square roots of integers. Then every prime of `𝓞 K`, ramified or not and above any rational prime
+`p`, including `p = 2`, has residue degree `1` or `2` over `p`. -/
+theorem inertiaDeg_dvd_two [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] : Q.inertiaDeg ℤ ∣ 2 := by
+  have := isGalois_rat hr htop
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
+  exact (Ideal.inertiaDeg_dvd_orderOf Q hσ).trans (orderOf_dvd_of_pow_eq_one
+    (aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
+      (fun i => by rw [hr i]; simp) htop σ))
 
 end TauCeti.Multiquadratic

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.FieldTheory.SquareClassGroup.Real
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
 
@@ -102,8 +103,6 @@ theorem hilbertSymbol_unitAtRealPlace_eq_neg_one_iff (w : {w : InfinitePlace K /
 omit [NumberField K] in
 /-- The archimedean symbol at a real place is `1` exactly when one of the two global units is
 positive there. -/
--- Use explicitly: the general Hilbert-symbol simp rules first rewrite the left side as a norm
--- condition.
 theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
     hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = 1 ↔
@@ -112,29 +111,12 @@ theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.
 
 omit [NumberField K] in
 /-- A global unit is a square at a real place exactly when it is positive there. -/
--- The general simp rules for real units and `unitAtRealPlace_apply` already prove this equivalence.
 theorem isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     IsSquare (unitAtRealPlace w a) ↔ 0 < embedding_of_isReal w.2 (a : K) := by
-  have key : IsSquare (unitAtRealPlace w a) ↔ 0 < (unitAtRealPlace w a : ℝ) := by
-    constructor
-    · rintro ⟨u, hu⟩
-      have hu0 : (u : ℝ) ≠ 0 := by exact_mod_cast fun h => u.ne_zero h
-      have hpos : 0 < (u : ℝ) * (u : ℝ) := mul_self_pos.2 hu0
-      have hval : (unitAtRealPlace w a : ℝ) = (u : ℝ) * (u : ℝ) :=
-        congrArg (fun z : ℝˣ => (z : ℝ)) hu
-      exact hval ▸ hpos
-    · intro h
-      have hne : Real.sqrt (unitAtRealPlace w a : ℝ) ≠ 0 := Real.sqrt_pos.2 h |>.ne'
-      refine ⟨Units.mk0 _ hne, ?_⟩
-      refine Units.ext ?_
-      simpa only [Units.val_mul, Units.val_mk0] using (Real.mul_self_sqrt h.le).symm
-  rw [key, unitAtRealPlace_apply]
+  rw [Units.isSquare_iff_pos, unitAtRealPlace_apply]
 
 omit [NumberField K] in
-/-- A global unit is a nonsquare at a real place exactly when it is negative there.
-
-The negation is already available to `simp` through the parallel
-`isSquare_unitAtRealPlace_iff`, so this statement carries no `[simp]` tag of its own. -/
+/-- A global unit is a nonsquare at a real place exactly when it is negative there. -/
 theorem not_isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     ¬IsSquare (unitAtRealPlace w a) ↔ embedding_of_isReal w.2 (a : K) < 0 := by
   rw [not_congr (isSquare_unitAtRealPlace_iff w a), not_lt, lt_iff_le_and_ne]

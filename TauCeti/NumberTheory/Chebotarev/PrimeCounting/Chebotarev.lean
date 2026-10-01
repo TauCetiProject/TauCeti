@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
 import TauCeti.NumberTheory.Chebotarev.AuxiliaryPrime
 import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Cyclotomic
@@ -42,8 +43,9 @@ crossing follows the proof of `NumberField.Chebotarev.hasDirichletDensity_abelia
   over the class of `σ`, so their `ψ` functions add up to at most `ψ_σ`: for a fixed `q`, the
   limit in `x` gives `liminf ψ_σ(x) / x ≥ (1 - 2 ^ (-r)) ^ #f.primeFactors / #G`, and only then
   does `r` grow, giving `liminf ψ_σ(x) / x ≥ 1 / #G`.
-* The `ψ` functions of all classes add up to `ψ_K(x) = x + o(x)` up to `O(log x)`, so these
-  lower bounds saturate the total and each of them is the limit.
+* The `ψ` functions of all classes add up to `ψ_K(x) = x + o(x)` (the prime ideal theorem
+  `TauCeti.primeIdealTheorem`) up to `O(log x)`, so these lower bounds saturate the total and
+  each of them is the limit.
 * For a general class `C ∋ σ`, the extension `L / L ^ ⟨σ⟩` is cyclic, and the contraction across
   the cyclic fixed field carries the abelian result down to `C`.
 
@@ -174,9 +176,9 @@ theorem frobeniusPsi_asymptotic_of_mul_comm (hab : ∀ σ τ : L ≃ₐ[K] L, σ
       atTop (𝓝 (∑ _ρ : L ≃ₐ[K] L, 1 / (Nat.card (L ≃ₐ[K] L) : ℝ))) := by
     have h : (fun x ↦ ∑ C : ConjClasses (L ≃ₐ[K] L), frobeniusPsi K L C x - 1 * x)
         =o[atTop] fun x : ℝ ↦ x :=
-      ((primePsi_univ_asymptotic K).sub
+      ((primeIdealTheorem K).1.isLittleO.sub
         ((primePsi_univ_sub_sum_frobeniusPsi_isBigO_log K L).trans_isLittleO
-          Real.isLittleO_log_id_atTop)).congr_left fun x ↦ by ring
+          Real.isLittleO_log_id_atTop)).congr_left fun x ↦ by rw [Pi.sub_apply]; ring
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card,
       mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
     refine ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mp h).congr fun x ↦ ?_

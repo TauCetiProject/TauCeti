@@ -447,11 +447,10 @@ theorem InternalGrading.koszulTwist_comp (G : InternalGrading R M) (q q' : ℤ) 
     rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add, add_mul, add_comm]
   simpa [LinearMap.comp_apply] using this
 
-/-- The Koszul twist of any parameter is an involution. -/
+/-- The Koszul twist of an even parameter is the identity. -/
 @[simp]
-theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ) :
-    koszulTwist G q ∘ₗ koszulTwist G q = LinearMap.id := by
-  rw [koszulTwist_comp, ← two_mul]
+theorem InternalGrading.koszulTwist_two_mul (G : InternalGrading R M) (q : ℤ) :
+    koszulTwist G (2 * q) = LinearMap.id := by
   refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun e => ?_
   ext x
   have hx : (x : M) ∈ G.piece e := Submodule.coe_mem x
@@ -459,6 +458,25 @@ theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ
     rw [koszulTwist_apply_of_mem G hx (2 * q), mul_assoc, Int.negOnePow_two_mul]
     simp
   simpa [LinearMap.comp_apply] using this
+
+/-- The Koszul twist of parameter two is the identity. -/
+@[simp]
+theorem InternalGrading.koszulTwist_two (G : InternalGrading R M) :
+    koszulTwist G 2 = LinearMap.id := by
+  simpa using koszulTwist_two_mul G 1
+
+/-- The Koszul twist of any parameter is an involution. -/
+@[simp]
+theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ) :
+    koszulTwist G q ∘ₗ koszulTwist G q = LinearMap.id := by
+  rw [koszulTwist_comp, ← two_mul, koszulTwist_two_mul]
+
+/-- The Koszul twist of any parameter is an involution, pointwise. -/
+@[simp]
+theorem InternalGrading.koszulTwist_koszulTwist (G : InternalGrading R M) (q : ℤ) (x : M) :
+    koszulTwist G q (koszulTwist G q x) = x := by
+  have h := LinearMap.congr_fun (koszulTwist_comp_self G q) x
+  rwa [LinearMap.comp_apply, LinearMap.id_apply] at h
 
 namespace LinearMap.IsHomogeneous
 

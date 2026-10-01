@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
 # Finitely generated adic rings are Huber rings
@@ -13,6 +14,8 @@ public import TauCeti.RingTheory.Huber.Basic
 Let `A` be a commutative topological ring whose topology is `I`-adic.  If `I` is finitely
 generated, then `(A, I)` is a pair of definition: the ring of definition is all of `A`, and the
 ideal of definition is `I`, transported to the top subring.  Consequently `A` is a Huber ring.
+Such a ring is a Tate ring only in the degenerate case `I = ⊤`: a power of a topologically
+nilpotent element lies in `I`.
 
 This is the bridge from algebraic adic completeness to Huber theory.  In particular, Mathlib's
 `IsAdic.isAdicComplete_iff` can be applied to an adically complete ring equipped with its adic
@@ -34,6 +37,9 @@ for Witt-vector rings with their `(p, [ϖ])`-adic topology.
   topology is Huber.
 * `TauCeti.Huber.isHuberRing_adicTopology`: a commutative ring equipped with the adic topology of
   a finitely generated ideal is Huber.
+* `TauCeti.Huber.IsTateRing.eq_top_of_isAdic` and `TauCeti.Huber.isTateRing_iff_eq_top_of_isAdic`:
+  an adic ring is Tate only in the degenerate case `I = ⊤`, where the topology is indiscrete.
+  So `ℤ_[p]` and `W(𝒪_F)` with its `(p, [ϖ])`-adic topology are Huber rings that are not Tate.
 
 ## References
 
@@ -126,5 +132,25 @@ theorem isHuberRing_adicTopology {A : Type*} [CommRing A] (I : Ideal A) (hfg : I
     IsHuberRing A := by
   let _ := I.adicTopology
   exact isHuberRing_of_isAdic I rfl hfg
+
+/-- **An adic ring is Tate only for the unit ideal.** If the topology of `A` is `I`-adic and `A`
+has a pseudouniformiser `a`, then some power of `a` lies in the open ideal `I`, and that power is a
+unit. -/
+theorem IsTateRing.eq_top_of_isAdic [IsTateRing A] {I : Ideal A} (hI : IsAdic I) : I = ⊤ := by
+  obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  rw [← Ideal.radical_eq_top]
+  exact Ideal.eq_top_of_isUnit_mem _ (hI.isTopologicallyNilpotent_iff_mem_radical.mp
+    ha.isTopologicallyNilpotent) ha.isUnit
+
+/-- **An adic ring is Tate exactly when its ideal is the unit ideal.** For `I = ⊤` the topology
+is indiscrete and `1` is a pseudouniformiser; otherwise
+`TauCeti.Huber.IsTateRing.eq_top_of_isAdic` applies. -/
+theorem isTateRing_iff_eq_top_of_isAdic {I : Ideal A} (hI : IsAdic I) :
+    IsTateRing A ↔ I = ⊤ := by
+  refine ⟨fun _ ↦ IsTateRing.eq_top_of_isAdic hI, fun h ↦ ?_⟩
+  have := isHuberRing_of_isAdic I hI (h ▸ ⟨{1}, by simp⟩)
+  refine ⟨⟨1, isPseudoUniformizer_iff.mpr ⟨isUnit_one, ?_⟩⟩⟩
+  rw [hI.isTopologicallyNilpotent_iff_mem_radical, h, Ideal.radical_top]
+  exact Submodule.mem_top
 
 end TauCeti.Huber
