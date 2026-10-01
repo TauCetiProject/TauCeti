@@ -45,9 +45,8 @@ with the supremum of the positive parts of the values of continuous dual-feasibl
   Theorem 1.3.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Theorem 5.10.
 
-This is the nonnegative lower-semicontinuous regime of Layer 2, item 4 of the optimal-transport
-roadmap. The separate bounded-below cost interface is the starting point for the remaining signed
-formulation.
+The nonnegative case treated here is the base case for costs bounded below by integrable split
+marginal terms: subtracting such a lower bound reduces a signed cost to a nonnegative one.
 -/
 
 public section
@@ -160,24 +159,12 @@ theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     have hcn_nonneg : ∀ z, 0 ≤ cn z := lscApproxAux_nonneg c n
     have hcn_bdd : BddAbove (range cn) :=
       ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
-    obtain ⟨φ, ψ, hφ, hψ, hfeas, hvalue⟩ :=
-      (isGreatest_kantorovichDualValue_integrable (μ := μ) (ν := ν)
-        hcn_cont hcn_nonneg hcn_bdd).1
-    have hcost_ne_top : transportCost (fun z ↦ ENNReal.ofReal (cn z)) μ ν ≠ ∞ := by
-      refine ne_top_of_le_ne_top (b := (n : ℝ≥0∞)) (by simp) ?_
-      calc
-        transportCost (fun z ↦ ENNReal.ofReal (cn z)) μ ν ≤
-            transportCost (fun _ ↦ (n : ℝ≥0∞)) μ ν :=
-          transportCost_mono fun z ↦ by
-            simpa [cn] using ENNReal.ofReal_le_ofReal (lscApproxAux_le_natCast c n z)
-        _ = n := by
-          rw [transportCost_const ⟨_, isCoupling_prod μ ν⟩]
-          simp
-    have hfeas' : DualFeasible c φ ψ :=
-      ((dualFeasible_ofReal_iff hcn_nonneg φ ψ).2 hfeas).mono_cost
-        (fun z ↦ ofReal_lscApproxAux_le c n z)
-    have hle := hb ⟨φ, ψ, hφ, hψ, hfeas', rfl⟩
-    rw [hvalue, ENNReal.ofReal_toReal hcost_ne_top] at hle
+    obtain ⟨π, φ, ψ, h, -⟩ :=
+      exists_isDualCertificate_of_continuous (μ := μ) (ν := ν) hcn_cont hcn_nonneg hcn_bdd
+    have hfeas : DualFeasible c φ ψ :=
+      h.dualFeasible.mono_cost fun z ↦ ofReal_lscApproxAux_le c n z
+    have hle := hb ⟨φ, ψ, h.integrable_left, h.integrable_right, hfeas, rfl⟩
+    rw [← h.transportCost_eq] at hle
     simpa only [cn, coe_lscApprox_apply] using hle
 
 /-- Polish lower-semicontinuous Kantorovich duality, written as equality with the supremum of the
