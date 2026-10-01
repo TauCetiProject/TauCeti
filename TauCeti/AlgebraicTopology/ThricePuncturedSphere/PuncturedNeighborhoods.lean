@@ -191,7 +191,8 @@ private theorem coe_puncturedNeighborhoodOneHomeomorphZero
     (((puncturedNeighborhoodOneHomeomorphZero z : ↥puncturedNeighborhoodZero) :
       ThricePuncturedSphere) : ℂ) = 1 - ((z : ThricePuncturedSphere) : ℂ) := by
   rw [puncturedNeighborhoodOneHomeomorphZero]
-  change (mob01 (z : ThricePuncturedSphere) : ℂ) = _
+  simp only [← Homeomorph.coe_toEquiv, Homeomorph.subtype_toEquiv,
+    Equiv.subtypeEquiv_apply]
   exact coe_mob01 (z : ThricePuncturedSphere)
 
 /-- The coordinate `z ↦ 1 - z` identifies the standard neighborhood of `1` with the complex
@@ -247,7 +248,8 @@ private theorem coe_puncturedNeighborhoodInfHomeomorphZero
     (((puncturedNeighborhoodInfHomeomorphZero z : ↥puncturedNeighborhoodZero) :
       ThricePuncturedSphere) : ℂ) = 1 / ((z : ThricePuncturedSphere) : ℂ) := by
   rw [puncturedNeighborhoodInfHomeomorphZero]
-  change (mob0Inf (z : ThricePuncturedSphere) : ℂ) = _
+  simp only [← Homeomorph.coe_toEquiv, Homeomorph.subtype_toEquiv,
+    Equiv.subtypeEquiv_apply]
   exact coe_mob0Inf (z : ThricePuncturedSphere)
 
 /-- The coordinate `z ↦ 1 / z` identifies the standard neighborhood of `∞` with the complex
