@@ -241,6 +241,7 @@ theorem scaling_mul_generator_zpow_mul_inv (n : ℤ) :
 
 /-- The selected generator of the stabilizer of a cusp has infinite order: for `n ≠ 0`, its `n`-th
 power is conjugate to translation by `n * width ≠ 0`. -/
+@[simp]
 theorem orderOf_generator_eq_zero : orderOf D.generator = 0 := by
   refine orderOf_eq_zero_iff'.mpr fun n hn hpow ↦ ?_
   have h := D.scaling_mul_generator_zpow_mul_inv n
