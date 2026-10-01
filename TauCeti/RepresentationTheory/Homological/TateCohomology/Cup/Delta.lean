@@ -41,6 +41,7 @@ formula.
 * J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic Number Theory*, Chapter IV (Atiyah–Wall),
   §7.
 * K. S. Brown, *Cohomology of Groups*, Chapter VI, §5.
+* J.-P. Serre, *Local Fields*, Chapter XI, §3.
 -/
 
 public noncomputable section
@@ -254,7 +255,8 @@ theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep 
     (indBotMap S.g) (𝟙 S.X₃) (hD.exact.lift_f _ _)
     ((indBotCounit_naturality S.g).trans (Category.comp_id _).symm)
   have hMT := shortExact_map_tensorLeft_of_flat hT M
-  have hMD := shortExact_map_tensorLeft_of_flat hD M
+  have hMD : (D.map (tensorLeft M)).ShortExact := by
+    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_tensorLeft_shortExact S.X₃ M
   -- The connecting maps of `M ⊗ T` and `M ⊗ D` are isomorphisms, so `M ◁ ψ.τ₁` induces an
   -- injection on Tate cohomology.
   have hinj : Function.Injective ((tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁)) := by
