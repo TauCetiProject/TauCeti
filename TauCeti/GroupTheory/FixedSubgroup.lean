@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Equiv.Semiconj
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Group.Subgroup.Ker
 public import Mathlib.Dynamics.FixedPoints.Defs
@@ -41,9 +42,6 @@ are `TauCeti.map_fixedSubgroup_eq` and `TauCeti.fixedSubgroupCongr`.
   read in the ambient group.
 * `TauCeti.map_fixedSubgroup_eq`: an isomorphism intertwining them carries the one *onto* the other.
 * `TauCeti.fixedSubgroupCongr`: the resulting isomorphism of fixed subgroups.
-* `TauCeti.symm_comp_eq_comp_symm_of_comp_eq_comp` and
-  `TauCeti.trans_comp_eq_comp_trans_of_comp_eq_comp`: intertwining relations invert and compose,
-  which is what makes that isomorphism symmetric and transitive.
 
 ## References
 
@@ -110,32 +108,6 @@ theorem map_subtype_fixedSubgroup_of_coe_eq {S : Subgroup G} (F : S →* S) (f :
   simp [Subtype.ext_iff, hF, and_comm]
 
 /-! ### Transport along an isomorphism of the ambient group -/
-
-section Intertwining
-
-variable {M M' M'' : Type*} [MulOneClass M] [MulOneClass M'] [MulOneClass M'']
-  {F : M →* M} {F' : M' →* M'} {F'' : M'' →* M''}
-
-/-- An isomorphism intertwining two endomorphisms has an inverse intertwining them the other way.
-
-The equation is not symmetric in `ψ` and `ψ.symm`, so this is what makes the transport of the fixed
-subgroup two-sided. -/
-theorem symm_comp_eq_comp_symm_of_comp_eq_comp (ψ : M ≃* M')
-    (hψ : (ψ : M →* M').comp F = F'.comp (ψ : M →* M')) :
-    (ψ.symm : M' →* M).comp F' = F.comp (ψ.symm : M' →* M) :=
-  have h : Function.Semiconj ψ F F' := fun x => DFunLike.congr_fun hψ x
-  MonoidHom.ext (h.inverse_left ψ.symm_apply_apply ψ.apply_symm_apply)
-
-/-- Intertwining relations compose. -/
-theorem trans_comp_eq_comp_trans_of_comp_eq_comp {ψ : M ≃* M'} {χ : M' ≃* M''}
-    (hψ : (ψ : M →* M').comp F = F'.comp (ψ : M →* M'))
-    (hχ : (χ : M' →* M'').comp F' = F''.comp (χ : M' →* M'')) :
-    ((ψ.trans χ : M ≃* M'') : M →* M'').comp F = F''.comp ((ψ.trans χ : M ≃* M'') : M →* M'') :=
-  have h₁ : Function.Semiconj ψ F F' := fun x => DFunLike.congr_fun hψ x
-  have h₂ : Function.Semiconj χ F' F'' := fun x => DFunLike.congr_fun hχ x
-  MonoidHom.ext (h₁.trans h₂)
-
-end Intertwining
 
 variable {F : G →* G} {F' : G' →* G'} {G'' : Type*} [Group G''] {F'' : G'' →* G''}
 
