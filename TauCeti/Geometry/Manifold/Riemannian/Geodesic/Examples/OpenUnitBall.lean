@@ -85,7 +85,13 @@ private theorem hasDerivAt_coe {γ : ℝ → realOpenUnitBall} {s : Set ℝ} {t 
   have h := hasMFDerivAt_iff_hasFDerivAt.1 (hval.comp t (hasMFDerivAt_curveVelocity hγ))
   rw [curveVelocityWithin_of_mem_nhds hs, hasDerivAt_iff_hasFDerivAt]
   refine h.congr_fderiv (ContinuousLinearMap.ext_ring ?_)
-  -- Both sides are `1 • w` for the velocity `w`, once the tangent spaces are read as `ℝ`.
+  -- Both sides are `1 • w` for the velocity `w`, once the tangent spaces are read as `ℝ`. The
+  -- goal composes maps out of `TangentSpace 𝓘(ℝ, ℝ) t` with maps out of `ℝ`, so it is type-correct
+  -- only up to the definitional identification `TangentSpace 𝓘(ℝ, ℝ) t = ℝ`: `rw` with
+  -- `ContinuousLinearMap.comp_apply` fails on it (instance mismatch), and `simp` only removes
+  -- `tangentSpaceOpenEquiv`. The `change` states it in a type-correct form. The final `rfl` is
+  -- needed because Mathlib's `NormedSpace.fromTangentSpace` is the identity by definition and has
+  -- no application lemma, so no rewrite lemma can remove it.
   change tangentSpaceOpenEquiv (γ t) ((1 : ℝ) • curveVelocity 𝓘(ℝ, ℝ) γ t) =
     (1 : ℝ) • NormedSpace.fromTangentSpace (γ t : ℝ)
       (tangentSpaceOpenEquiv (γ t) (curveVelocity 𝓘(ℝ, ℝ) γ t))
@@ -230,10 +236,8 @@ theorem tendsto_abs_coe_maximalGeodesic_center {v : TangentSpace 𝓘(ℝ, ℝ) 
   rw [hγ, coe_center, zero_add, abs_mul, hc, mul_one, abs_of_pos ht.1, id]
 
 /-- Every point `q` of the open unit ball is joined to the centre by a geodesic on `[0, 1]` whose
-length is the distance from the centre to `q`. The witness is the maximal geodesic from the centre
-with initial velocity `q`, which `coe_maximalGeodesic` identifies with the radial segment
-`t ↦ t * q`. Since the open unit ball is not proper (`not_properSpace`), minimizing geodesics from
-one point do not by themselves imply properness. -/
+length is the distance from the centre to `q`. Since the open unit ball is not proper
+(`not_properSpace`), minimizing geodesics from one point do not by themselves imply properness. -/
 theorem exists_isGeodesicCurveOn_Icc_pathELength_eq_edist (q : realOpenUnitBall) :
     ∃ γ : ℝ → realOpenUnitBall, IsGeodesicCurveOn 𝓘(ℝ, ℝ) γ (Icc 0 1) ∧ γ 0 = center ∧
       γ 1 = q ∧ pathELength 𝓘(ℝ, ℝ) γ 0 1 = edist center q := by
