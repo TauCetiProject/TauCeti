@@ -325,6 +325,7 @@ def degree : GL2CharacterParam F E → ℕ
     (cuspidal o).degree = Fintype.card F - 1 := (rfl)
 
 /-- The irreducible character with a given parameter takes the value `degree` at the identity. -/
+@[simp]
 theorem classFunction_apply_one (i : GL2CharacterParam F E) :
     (i.classFunction : GL (Fin 2) F → ℂ) 1 = i.degree := by
   rcases i with α | α | ⟨s, hs⟩ | o
@@ -391,7 +392,7 @@ theorem GL2CharacterTable_eq_submatrix_characterTable :
 open Classical in
 /-- **The rows of the table are orthonormal** for the character pairing: the irreducible
 characters with parameters `i` and `j` pair to `1` when `i = j` and to `0` otherwise. -/
-theorem GL2CharacterParam.characterPairing_classFunction [DecidableEq F]
+theorem GL2CharacterParam.characterPairing_classFunction
     (i j : GL2CharacterParam F E) :
     ClassFunction.characterPairing i.classFunction j.classFunction = if i = j then 1 else 0 := by
   set τ := (GL2CharacterParam.equivIrreducibleCharacters F E).trans
@@ -409,7 +410,8 @@ theorem GL2CharacterParam.characterPairing_classFunction [DecidableEq F]
 rows by `Fin (q² - 1)`: its identity column lists positive divisors of `|GL₂(F)|` whose squares sum
 to `|GL₂(F)|`, its rows are orthonormal for the class-size weighted Hermitian pairing, and its
 normalized rows are common eigenrows of the class-multiplication matrices. -/
-theorem isCharacterTableSpec_GL2CharacterTable_submatrix [DecidableEq F]
+theorem isCharacterTableSpec_GL2CharacterTable_submatrix [Fintype (GL (Fin 2) F)]
+    [DecidableEq (GL (Fin 2) F)]
     (e : Fin (Nat.card (ConjClasses (GL (Fin 2) F))) ≃ GL2CharacterParam F E) :
     IsCharacterTableSpec (GL (Fin 2) F) ((GL2CharacterTable F E).submatrix e id) := by
   rw [GL2CharacterTable_eq_submatrix_characterTable, submatrix_submatrix, Function.id_comp]
