@@ -133,7 +133,7 @@ theorem isPiSystem_restrictFinCylinders : IsPiSystem restrictFinCylinders := by
     simp only [Set.mem_preimage, Set.mem_singleton_iff] at hG₀m hG₀n
     refine Set.inter_eq_right.2 fun G hG => ?_
     simp only [Set.mem_preimage, Set.mem_singleton_iff] at hG ⊢
-    rw [← comap_castLE_restrictFin G hmn, hG, ← hG₀n, comap_castLE_restrictFin, hG₀m]
+    rw [← comap_restrictFin_castLE G hmn, hG, ← hG₀n, comap_restrictFin_castLE, hG₀m]
   rintro _ ⟨m, H, rfl⟩ _ ⟨n, H', rfl⟩ hne
   rcases le_total m n with hmn | hnm
   · rw [key hmn H H' hne]

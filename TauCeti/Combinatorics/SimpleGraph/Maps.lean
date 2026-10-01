@@ -32,7 +32,7 @@ is how a graph on an infinite label set is read as a finite sample.
 * `SimpleGraph.map_sup` — pushing forward along any map commutes with joins;
 * `SimpleGraph.restrictFin_adj` — two labels are joined in a window exactly when they are joined
   in the graph;
-* `SimpleGraph.comap_castLE_restrictFin` — a window of a longer window is the shorter window.
+* `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window.
 -/
 
 public section
@@ -109,7 +109,7 @@ theorem comap_val (G : SimpleGraph ℕ) (n : ℕ) :
 /-- A window of a longer window is the shorter window: pulling the length-`n` window back along
 the inclusion of `Fin m` in `Fin n` is the length-`m` window. -/
 @[simp]
-theorem comap_castLE_restrictFin {m n : ℕ} (G : SimpleGraph ℕ) (h : m ≤ n) :
+theorem comap_restrictFin_castLE {m n : ℕ} (G : SimpleGraph ℕ) (h : m ≤ n) :
     SimpleGraph.comap (Fin.castLE h) (G.restrictFin n) = G.restrictFin m := by
   rw [comap_restrictFin]
   simp
