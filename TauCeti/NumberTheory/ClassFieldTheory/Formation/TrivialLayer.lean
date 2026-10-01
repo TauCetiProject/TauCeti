@@ -81,11 +81,10 @@ theorem norm_surjective_of_top_eq_ground (hL : L.top = L.ground) :
 @[simp]
 theorem normSubgroup_eq_top_of_top_eq_ground (hL : L.top = L.ground) :
     L.normSubgroup F = ⊤ := by
-  ext y
+  apply Submodule.eq_top_iff'.2
+  intro y
   rw [L.mem_normSubgroup]
-  change y ∈ LinearMap.range (L.norm F) ↔ y ∈ (⊤ : Submodule ℤ (F.level L.ground))
-  rw [LinearMap.range_eq_top_of_surjective (L.norm F)
-    (L.norm_surjective_of_top_eq_ground F hL)]
+  exact L.norm_surjective_of_top_eq_ground F hL y
 
 /-- The norm quotient of a trivial layer is a subsingleton. -/
 theorem subsingleton_normQuotient_of_top_eq_ground (hL : L.top = L.ground) :
