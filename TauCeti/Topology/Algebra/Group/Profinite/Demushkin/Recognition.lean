@@ -227,8 +227,9 @@ theorem isDemushkin_of_finrank_cohomFp_two_openSubgroup (hG : IsProP p G)
       have h' : χ = 1 := ContinuousMonoidHom.ext fun g ↦ DFunLike.congr_fun h g
       have hx0 : x = 0 := by rw [← hx, h', ofMul_one, map_zero]
       exact (cohomFpAddEquivH1 p G htriv).map_eq_zero_iff.1 hx0
-    have : Fact (Nat.card (Multiplicative (ZMod p))).Prime :=
-      ⟨by rw [show Nat.card (Multiplicative (ZMod p)) = p from Nat.card_zmod p]; exact hp.out⟩
+    have hcardM : Nat.card (Multiplicative (ZMod p)) = p := by
+      rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
+    have : Fact (Nat.card (Multiplicative (ZMod p))).Prime := ⟨by rw [hcardM]; exact hp.out⟩
     have hrange : (χ : G →* Multiplicative (ZMod p)).range = ⊤ :=
       ((χ : G →* Multiplicative (ZMod p)).range.eq_bot_or_eq_top_of_prime_card).resolve_left
         fun h ↦ hχ (MonoidHom.range_eq_bot_iff.1 h)
@@ -236,8 +237,7 @@ theorem isDemushkin_of_finrank_cohomFp_two_openSubgroup (hG : IsProP p G)
     set N := (χ : G →* Multiplicative (ZMod p)).ker
     have hNopen : IsOpen (N : Set G) := (isOpen_discrete {1}).preimage χ.continuous
     have hNindex : N.index = p := by
-      rw [Subgroup.index_ker, hrange, Subgroup.card_top]
-      exact Nat.card_zmod p
+      rw [Subgroup.index_ker, hrange, Subgroup.card_top, hcardM]
     have : CompactSpace N := isCompact_iff_compactSpace.mp (N.isClosed_of_isOpen hNopen).isCompact
     have hN2 := hU ⟨N, hNopen⟩ (MonoidHom.normal_ker _) hNindex
     have : Module.Finite (ZMod p) (cohomFp p N 2) := Module.finite_of_finrank_eq_succ hN2
