@@ -19,19 +19,20 @@ therefore the same as choosing a uniform map `ι → κ` and reading the selecte
 For a random population with law `ρ`, `sampleWithReplacement ρ` draws the population and,
 independently, a uniform map `ι → κ`, and reads the selected entries. It is the same
 `samplePopulation` construction as `sampleWithoutReplacement ρ`, which instead draws a uniform
-injective map; by the previous paragraph it is the mixture over `ρ` of the finite product laws of
-the empirical distributions. The law `sampleWithoutReplacement ρ` already represents every shorter
-marginal of a finite exchangeable process. The collision coupling between uniform maps and
-uniform injective maps consequently gives, for every measurable event `A`,
+injective map; when `κ` is nonempty, by the previous paragraph it is the mixture over `ρ` of the
+finite product laws of the empirical distributions. The law `sampleWithoutReplacement ρ` already
+represents every shorter marginal of a finite exchangeable process. The collision coupling between
+uniform maps and uniform injective maps consequently gives, for every measurable event `A`,
 
 ```text
 prefixLaw μ X m A ≤ sampleWithReplacement (prefixLaw μ X n) A + choose(m, 2) / n
 sampleWithReplacement (prefixLaw μ X n) A ≤ prefixLaw μ X m A + choose(m, 2) / n.
 ```
 
-Thus every `m`-coordinate marginal of an `n`-exchangeable process is quantitatively approximated
-by a mixture of `m`-fold product measures of empirical distributions. The bound is deliberately
-eventwise rather than packaged in a new total-variation definition.
+Thus, for `n > 0`, every `m`-coordinate marginal of an `n`-exchangeable process is quantitatively
+approximated by a mixture of `m`-fold product measures of empirical distributions; for
+`n = m = 0` both sides are the shared sampling construction on the empty index type. The bound is
+deliberately eventwise rather than packaged in a new total-variation definition.
 
 ## Main declarations
 
@@ -100,7 +101,8 @@ First draw a population `x : κ → α` with law `ρ`; independently draw the in
 `i : ι`, independently and uniformly; then return the sample `i ↦ x (k i)`. This is
 `samplePopulation` along the `ι`-fold product of the uniform law on `κ`, which is the uniform law
 on all index maps (`sampleWithReplacement_eq_samplePopulation_uniformOn`): the same construction
-as `sampleWithoutReplacement` without the injectivity constraint.
+as `sampleWithoutReplacement` without the injectivity constraint. If `κ` is empty but `ι` is not,
+no index map exists, and Mathlib's `uniformOn` convention makes this the zero measure.
 
 The sample index is finite because the selection law is a finite product. -/
 def sampleWithReplacement [Fintype ι] [Finite κ] (ρ : Measure (κ → α)) : Measure (ι → α) :=
@@ -188,8 +190,9 @@ end Sampling
 section FiniteExchangeability
 
 /-- **Finite de Finetti theorem.** If the first `n` coordinates of a process are exchangeable and
-`m ≤ n`, then its `m`-prefix law and the empirical-product mixture of its `n`-prefix law differ by
-at most `choose m 2 / n` on every measurable event, in both directions. -/
+`m ≤ n`, then its `m`-prefix law and the with-replacement sample of its `n`-prefix law differ by
+at most `choose m 2 / n` on every measurable event, in both directions. For `n > 0` that sample is
+the empirical-product mixture (`sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`). -/
 theorem ExchangeableAt.finiteDeFinetti
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
@@ -211,8 +214,9 @@ theorem ExchangeableAt.finiteDeFinetti
 
 /-- **Quantitative finite de Finetti bound, exchangeable law to empirical mixture.** If the first
 `n` coordinates of a process are exchangeable and `m ≤ n`, then every measurable event under the
-`m`-prefix law has mass at most its mass under the mixture of `m`-fold products of the empirical
-distribution of the first `n` coordinates, plus `choose m 2 / n`. -/
+`m`-prefix law has mass at most its mass under sampling `m` entries with replacement from the first
+`n` coordinates, plus `choose m 2 / n`. For `n > 0` that sample is the mixture of `m`-fold products
+of the empirical distribution of the first `n` coordinates. -/
 theorem ExchangeableAt.prefixLaw_le_sampleWithReplacement_add
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
@@ -223,8 +227,9 @@ theorem ExchangeableAt.prefixLaw_le_sampleWithReplacement_add
   (h.finiteDeFinetti hmn hX hA).1
 
 /-- **Quantitative finite de Finetti bound, empirical mixture to exchangeable law.** Under the
-same hypotheses, every measurable event under the empirical-product mixture has mass at most its
-mass under the `m`-prefix law plus `choose m 2 / n`. -/
+same hypotheses, every measurable event under the with-replacement sample (for `n > 0`, the
+empirical-product mixture) has mass at most its mass under the `m`-prefix law plus
+`choose m 2 / n`. -/
 theorem ExchangeableAt.sampleWithReplacement_le_prefixLaw_add
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)

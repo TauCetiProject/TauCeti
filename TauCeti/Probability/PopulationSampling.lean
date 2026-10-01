@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
