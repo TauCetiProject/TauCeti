@@ -24,10 +24,10 @@ universe w v u
 
 namespace TauCeti
 
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
 
-/-- The map of the singular-chain functor is the chain map induced by the singular simplicial
-map. -/
+/-- The singular chain complex functor with coefficients in `R` sends a continuous map `f` to the
+simplicial chain map induced by the singular simplicial map `TopCat.toSSet.map f`. -/
 @[simp]
 lemma singularChainComplexFunctor_obj_map {X Y : TopCat.{w}} (f : X ⟶ Y) :
     ((AlgebraicTopology.singularChainComplexFunctor C).obj R).map f =

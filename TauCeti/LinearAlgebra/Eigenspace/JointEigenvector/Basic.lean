@@ -311,8 +311,11 @@ vector into joint eigenvectors, so the joint eigenspaces indexed by `G →* Kˣ`
 
 variable [CommGroup G] [Finite G]
 
-private noncomputable instance : Fintype G :=
-  Fintype.ofFinite _
+-- The averaging sums below need a `Fintype G`, and it has to stay file-local: as a global
+-- instance (even a `private` one, which still ends up in the environment the linters see) it
+-- reads as `[Finite α] → Fintype α` for *every* type `α`, because `G`'s `CommGroup` argument
+-- is not used, and so perturbs instance resolution and `simp` normal forms library-wide.
+attribute [local instance] Fintype.ofFinite
 
 open Finset
 

@@ -110,7 +110,7 @@ variable [StandardBorelSpace α] [Nonempty α]
 theorem measurable_unitIntervalCodingPath :
     Measurable fun p : ProbabilityMeasure α × (ℕ → I) =>
       fun i => unitIntervalCoding α p.1 (p.2 i) :=
-  measurable_pi_uncurry_prod (measurable_uncurry_unitIntervalCoding α)
+  measurable_pi_uncurry_prod fun _ => measurable_uncurry_unitIntervalCoding α
 
 /-- **Coding a mixing law, keeping the parameter.** Retaining the drawn probability measure as a
 coordinate, the same construction produces the canonical conditionally i.i.d. law `iidMixtureLaw`:
@@ -265,14 +265,14 @@ theorem ConditionallyIIDWith.map_directing_comp_eq_map_unitIntervalCoding {μ : 
     measurable_fst.prodMk measurable_unitIntervalCodingPath
   have hcodeι : Measurable fun p : ProbabilityMeasure α × (ι → I) =>
       (p.1, fun a => c p.1 (p.2 a)) :=
-    measurable_fst.prodMk (measurable_pi_uncurry_prod hc)
+    measurable_fst.prodMk (measurable_pi_uncurry_prod fun _ => hc)
   let Θ : ProbabilityMeasure α × ((ι → I) × (κ → I)) →
       (ProbabilityMeasure α × (ι → α)) × (κ → α) :=
     fun p => ((p.1, fun a => c p.1 (p.2.1 a)), fun b => c p.1 (p.2.2 b))
   have hΘ : Measurable Θ :=
-    (measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := ι) hc |>.comp
+    (measurable_fst.prodMk ((measurable_pi_uncurry_prod (ι := ι) fun _ => hc) |>.comp
       (measurable_fst.prodMk (measurable_fst.comp measurable_snd)))).prodMk
-      (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+      ((measurable_pi_uncurry_prod (ι := κ) fun _ => hc) |>.comp
         (measurable_fst.prodMk (measurable_snd.comp measurable_snd)))
   -- The coded law of `(ν, X ∘ e)`.
   have hleft : μ.map (fun ω => (ν ω, fun a => X (e a) ω)) =
@@ -314,7 +314,7 @@ theorem ConditionallyIIDWith.map_directing_comp_eq_map_unitIntervalCoding {μ : 
             infinitePi_map_pair_comp _ hg heg]
   have hΨ : Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
       (q.1, fun b => c q.1.1 (q.2 b)) :=
-    measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+    measurable_fst.prodMk ((measurable_pi_uncurry_prod (ι := κ) fun _ => hc) |>.comp
       ((measurable_fst.comp measurable_fst).prodMk measurable_snd))
   rw [hright, hleft]
   calc (π.prod ((U.map fun u a => u (e a)).prod Uκ)).map Θ
@@ -364,14 +364,14 @@ theorem ConditionallyIIDWith.map_comp_eq_map_unitIntervalCoding_of_ae_eq {μ : M
   have hS : Measurable fun q : ProbabilityMeasure α × (ι → α) => φ q.2 := hφ.comp measurable_snd
   have hΨ : Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
       (φ q.1.2, fun b => c q.1.1 (q.2 b)) :=
-    (hS.comp measurable_fst).prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+    (hS.comp measurable_fst).prodMk ((measurable_pi_uncurry_prod (ι := κ) fun _ => hc) |>.comp
       ((measurable_fst.comp measurable_fst).prodMk measurable_snd))
   have hΦ : Measurable fun p : γ × (κ → I) => (p.1, fun b => c (G p.1) (p.2 b)) :=
-    measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+    measurable_fst.prodMk ((measurable_pi_uncurry_prod (ι := κ) fun _ => hc) |>.comp
       ((hG.comp measurable_fst).prodMk measurable_snd))
   have hΨ₀ : Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
       (q.1, fun b => c q.1.1 (q.2 b)) :=
-    measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+    measurable_fst.prodMk ((measurable_pi_uncurry_prod (ι := κ) fun _ => hc) |>.comp
       ((measurable_fst.comp measurable_fst).prodMk measurable_snd))
   have hSY : Measurable fun ω => φ (Y' ω).2 := hS.comp hY'
   have hprodY : (μ.map Y').prod Uκ = (μ.prod Uκ).map (Prod.map Y' id) := by

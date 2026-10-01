@@ -21,6 +21,11 @@ conjugators: every dyadic unit exponent is realized by a continuous automorphism
 peripheral element to a conjugate of its power by that exponent, and the corresponding three
 conjugated powers multiply to one.
 
+Some sources compose in the opposite order and name `C' := (T * P)⁻¹ = P⁻¹ * C * P` as the third
+peripheral element. The dyadic peripheral-power theorem holds in that convention as well: the
+conjugator of `C'` is `P⁻¹ * cC * (φ P⁻¹)⁻¹`, computed from the conjugator `cC` of `C` by the
+conjugation-transfer lemma `TauCeti.map_conj_eq_conj_of_map_eq_conj`.
+
 ## Main definitions
 
 * `TauCeti.Peripheral.periphP`: the first distinguished generator `basis e 0`.
@@ -34,6 +39,10 @@ conjugated powers multiply to one.
   theorem, with one conjugator for each of `P`, `T`, and `C`, and the `P`-conjugator equal to one.
 * `TauCeti.Peripheral.exists_peripheral_identity_two`: the dyadic peripheral product identity in
   three-element form.
+* `TauCeti.Peripheral.periphT_mul_periphP_inv`: the opposite-convention third element
+  `(T * P)⁻¹` is the conjugate `P⁻¹ * C * P`.
+* `TauCeti.Peripheral.exists_peripheralPowerAutomorphism_two_opposite`: the dyadic
+  peripheral-power theorem with `(T * P)⁻¹` in place of `C`.
 
 ## References
 
@@ -95,6 +104,14 @@ theorem periphP_mul_periphT_mul_periphC (e : F ≃ₜ* freeProP 2 (Fin 2)) :
   rw [periphC_def]
   simp
 
+omit [IsTopologicalGroup F] [CompactSpace F] [TotallyDisconnectedSpace F] in
+/-- The third peripheral element in the opposite convention, `(T * P)⁻¹`, is the conjugate
+`P⁻¹ * C * P` of `C = (P * T)⁻¹`. -/
+theorem periphT_mul_periphP_inv (e : F ≃ₜ* freeProP 2 (Fin 2)) :
+    (periphT e * periphP e)⁻¹ = (periphP e)⁻¹ * periphC e * periphP e := by
+  rw [periphC_def]
+  group
+
 /-- For every dyadic unit `u`, a marked free pro-`2` group of rank two has a continuous
 automorphism carrying `P`, `T`, and `C` to conjugates of their `u`-th powers. The conjugator of
 `P` is normalized to be one. -/
@@ -124,6 +141,22 @@ theorem exists_peripheral_identity_two (hF : IsProP 2 F)
   refine ⟨c 0, c 1, d, ?_, ?_⟩
   · simpa using hc0 (by omega)
   · simpa [defect_def, List.ofFn_succ] using h
+
+/-- The dyadic peripheral-power theorem in the opposite convention: for every dyadic unit `u`, a
+marked free pro-`2` group of rank two has a continuous automorphism carrying `P`, `T`, and
+`(T * P)⁻¹` to conjugates of their `u`-th powers. The conjugator of `P` is normalized to be one. -/
+theorem exists_peripheralPowerAutomorphism_two_opposite (hF : IsProP 2 F)
+    (e : F ≃ₜ* freeProP 2 (Fin 2)) (u : ℤ_[2]ˣ) :
+    ∃ (φ : ContinuousAut F) (cP cT cC' : F), cP = 1 ∧
+      φ (periphP e) = cP⁻¹ * hF.padicPow (periphP e) u * cP ∧
+      φ (periphT e) = cT⁻¹ * hF.padicPow (periphT e) u * cT ∧
+      φ (periphT e * periphP e)⁻¹ =
+        cC'⁻¹ * hF.padicPow (periphT e * periphP e)⁻¹ u * cC' := by
+  obtain ⟨φ, cP, cT, cC, hcP, hP, hT, hC⟩ := exists_peripheralPowerAutomorphism_two hF e u
+  have hC' := map_conj_eq_conj_of_map_eq_conj φ (hF.padicPow · u) (hF.conj_padicPow · · u) hC
+    (periphP e)⁻¹
+  rw [inv_inv, ← periphT_mul_periphP_inv] at hC'
+  exact ⟨φ, cP, cT, _, hcP, hP, hT, hC'⟩
 
 end Peripheral
 

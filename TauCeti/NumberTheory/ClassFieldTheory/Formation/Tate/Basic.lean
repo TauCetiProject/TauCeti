@@ -5,7 +5,9 @@ Authors: Codex, Claude
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!
@@ -205,6 +207,11 @@ theorem trivialRangeRepHom_apply (T : LayerRestriction small big) (x : ℤ) :
     (dsimp% only (T.trivialRangeRepHom x)) = x :=
   (rfl)
 
+/-- The coefficient map in the trivial range comparison is the identity linear map. -/
+theorem trivialRangeRepHom_hom_toLinearMap (T : LayerRestriction small big) :
+    T.trivialRangeRepHom.hom.toLinearMap = LinearMap.id :=
+  (rfl)
+
 /-- Below degree minus one, the trivial-coefficient range comparison agrees with the
 group-homology change-of-group isomorphism. -/
 @[simp, reassoc]
@@ -223,6 +230,75 @@ theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom
   apply groupHomology.map_congr rfl _ (n + 1)
   ext
   simp [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, trivialRangeRepHom]
+
+/-- In degree `-2`, the trivial-coefficient range comparison agrees with change of group on first
+homology. -/
+@[simp, reassoc, elementwise]
+theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two
+    (T : LayerRestriction small big) :
+    (T.trivialTateRangeIso (-2)).hom ≫
+        (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) =
+      (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+          (Rep.trivial ℤ small.Gal ℤ) ≫
+        groupHomology.map (MonoidHom.ofInjective T.galHom_injective)
+          T.trivialRangeRepHom 1 :=
+  T.trivialTateRangeIso_hom_comp_isoGroupHomology_hom 0
+
+/-- Tensoring with the coefficient map for the trivial range comparison is right tensoring by
+the induced map on abelianizations. -/
+theorem tensorProduct_map_trivialRangeRepHom (T : LayerRestriction small big) :
+    TensorProduct.map
+        (AddMonoidHom.toIntLinearMap
+          (Abelianization.map
+            (MonoidHom.ofInjective T.galHom_injective :
+              small.Gal →* T.galHom.range)).toAdditive)
+        T.trivialRangeRepHom.hom.toLinearMap =
+      LinearMap.rTensor ℤ (AddMonoidHom.toIntLinearMap
+        (Abelianization.map
+          (MonoidHom.ofInjective T.galHom_injective :
+            small.Gal →* T.galHom.range)).toAdditive) := by
+  rw [T.trivialRangeRepHom_hom_toLinearMap, LinearMap.rTensor_def]
+
+/-- In degree `-2`, the trivial range comparison becomes the map induced on abelianizations
+under the low-degree identifications. -/
+@[simp]
+theorem tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two
+    (T : LayerRestriction small big) (x : small.TrivialTateH (-2)) :
+    TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
+        (TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+          ((T.trivialTateRangeIso (-2)).hom x)) =
+      (Abelianization.map (MonoidHom.ofInjective T.galHom_injective)).toAdditive
+        (small.tateHMinusTwoEquivAbelianization x) := by
+  rw [TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_apply,
+    T.trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two_apply]
+  let y : groupHomology.H1 (Rep.trivial ℤ small.Gal ℤ) :=
+    (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+      (Rep.trivial ℤ small.Gal ℤ) x
+  -- The homology functor's object and `groupHomology.H1` are definitionally equal aliases, so
+  -- the bundled composition must be realigned before its naturality theorem can rewrite.
+  change TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
+    (groupHomology.H1AddEquivOfIsTrivial _
+      (groupHomology.map _ T.trivialRangeRepHom 1 y)) = _
+  rw [TauCeti.groupHomology.H1AddEquivOfIsTrivial_map,
+    NormalLayer.tateHMinusTwoEquivAbelianization_apply,
+    TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_apply,
+    TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_apply]
+  -- Realign the coercions inserted by the generic homology naturality theorem with the concrete
+  -- integral linear maps used by the tensor comparison lemma.
+  change TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
+      (TensorProduct.map
+        (AddMonoidHom.toIntLinearMap
+          (Abelianization.map (MonoidHom.ofInjective T.galHom_injective :
+            small.Gal →* T.galHom.range)).toAdditive)
+        T.trivialRangeRepHom.hom.toLinearMap
+        (groupHomology.H1AddEquivOfIsTrivial (Rep.trivial ℤ small.Gal ℤ) y)) =
+    (Abelianization.map (MonoidHom.ofInjective T.galHom_injective)).toAdditive
+      (TensorProduct.rid ℤ (Additive (Abelianization small.Gal))
+        (groupHomology.H1AddEquivOfIsTrivial (Rep.trivial ℤ small.Gal ℤ) y))
+  rw [T.tensorProduct_map_trivialRangeRepHom, TauCeti.tensorProduct_rid_rTensor_apply,
+    AddMonoidHom.coe_toIntLinearMap]
 
 end TauCeti.ClassFieldTheory.LayerRestriction
 

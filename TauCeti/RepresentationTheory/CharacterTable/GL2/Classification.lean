@@ -25,8 +25,8 @@ import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 -- Non-public: `Nat.card E = q ^ 2` for the degree-`2` extension `E/F`.
 import Mathlib.FieldTheory.Finiteness
--- Non-public: the character group of the unit group of a finite field `K` has `|K| - 1` elements,
--- and at most `n - 1` characters of a finite cyclic group are fixed by the `n`-th power map.
+-- Non-public: at most `n - 1` characters of a finite cyclic group are fixed by the `n`-th power
+-- map.
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Dual
 
 /-!
@@ -57,7 +57,7 @@ exactly `½ q (q - 1)` members.
 
 The cuspidal bound uses that at most `q - 1` characters of `Eˣ` are fixed by `θ ↦ θ^q`
 (`IsCyclic.natCard_monoidHom_comp_powMonoidHom_eq_le`, as `Eˣ` is cyclic), and that the character
-group of `Eˣ` has order `q² - 1` (`FiniteField.natCard_monoidHom_units`).
+group of `Eˣ` has order `q² - 1` (`CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity`).
 
 The membership of the four families in `TauCeti.irreducibleCharacters` is recorded beside their
 irreducibility: `TauCeti.character_GL2Linear_mem_irreducibleCharacters`,
@@ -186,7 +186,7 @@ variable (F : Type u) [Field F] [Fintype F]
 theorem ncard_range_character_GL2Linear :
     (Set.range fun α : Fˣ →* ℂˣ => (GL2Linear F α).character).ncard = Fintype.card F - 1 := by
   rw [Set.ncard_range_of_injective GL2Linear_character_injective,
-    FiniteField.natCard_monoidHom_units, Nat.card_eq_fintype_card]
+    CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, Nat.card_units, Nat.card_eq_fintype_card]
 
 /-- **There are `q - 1` Steinberg twists of `GL₂(F)`**, one for each `α : Fˣ →* ℂˣ`. -/
 @[simp]
@@ -194,7 +194,7 @@ theorem ncard_range_character_GL2SteinbergTwist :
     (Set.range fun α : Fˣ →* ℂˣ => (GL2SteinbergTwist F α).character).ncard =
       Fintype.card F - 1 := by
   rw [Set.ncard_range_of_injective GL2SteinbergTwist_character_injective,
-    FiniteField.natCard_monoidHom_units, Nat.card_eq_fintype_card]
+    CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, Nat.card_units, Nat.card_eq_fintype_card]
 
 end Parameters
 
@@ -250,7 +250,8 @@ theorem ncard_image_character_GL2PrincipalSeries :
     rw [Finset.card_eq_sum_card_image fP, Finset.sum_congr rfl hfib, Finset.sum_const, smul_eq_mul]
   rw [hs] at hcard
   rw [Finset.offDiag_card, Finset.card_univ, ← Nat.card_eq_fintype_card,
-    FiniteField.natCard_monoidHom_units, Nat.card_eq_fintype_card] at hcard
+    CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, Nat.card_units,
+    Nat.card_eq_fintype_card] at hcard
   -- the arithmetic: `(q - 1) (q - 1) - (q - 1) = (q - 1) (q - 2)`
   obtain ⟨m, hm⟩ : ∃ m, Fintype.card F = m + 2 :=
     ⟨Fintype.card F - 2, by have := Fintype.one_lt_card (α := F); omega⟩
@@ -311,8 +312,8 @@ private theorem le_two_mul_ncard_image_GL2CuspidalVirtualCharacter {ψ : AddChar
   have hsC' : (Finset.univ.filter fun θ : Eˣ →* ℂˣ =>
       θ.comp (powMonoidHom (Fintype.card F)) = θ).card + sC.card = Fintype.card F ^ 2 - 1 := by
     rw [hsC, Finset.card_filter_add_card_filter_not, Finset.card_univ, ← Nat.card_eq_fintype_card,
-      FiniteField.natCard_monoidHom_units, Module.natCard_eq_pow_finrank (K := F),
-      Algebra.IsQuadraticExtension.finrank_eq_two F E,
+      CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, Nat.card_units,
+      Module.natCard_eq_pow_finrank (K := F), Algebra.IsQuadraticExtension.finrank_eq_two F E,
       Nat.card_eq_fintype_card]
   -- at most `q - 1` of them are fixed by `θ ↦ θ^q`
   have hfix : (Finset.univ.filter fun θ : Eˣ →* ℂˣ =>

@@ -26,7 +26,7 @@ theorem for the ideal triangle with vertices `a`, `b`, `c`, all three of which l
 It holds for holomorphic `F` whose weight-`2` slashes `F ∣[2] g` by rational matrices of positive
 determinant are integrable near `i∞` along the imaginary axis and tend to `0` at `i∞` uniformly on
 vertical strips; the period integrand `f(z) P(z, 1)` of a cusp form satisfies both conditions
-(`TauCeti.NumberTheory.ModularForms.ModularSymbols.PeriodIntegral`). The proof uses a primitive `Φ`
+(`TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Integral`). The proof uses a primitive `Φ`
 of `F` on `ℍ` (`TauCeti.Analysis.Complex.UpperHalfPlane.Primitive`), whose composite with `g` is a
 primitive of `F ∣[2] g`. The first condition gives `Φ` a limit at each cusp along each geodesic
 ending there; the second shows that the limit at a cusp does not depend on the geodesic, since
@@ -50,8 +50,8 @@ cusps, the first step of the period pairing between cusp forms and modular symbo
   `∫_a^b (F ∣[2] γ)(z) dz = ∫_{γ • a}^{γ • b} F(z) dz`.
 * `TauCeti.cuspIntegral_zero`, `TauCeti.cuspIntegral_smul`: the integral of `0` vanishes, and the
   integral is homogeneous under scalar multiplication of the integrand.
-* `TauCeti.cuspIntegral_add`: additivity in the integrand, for integrands that are integrable along
-  the geodesic.
+* `TauCeti.cuspIntegral_add`, `TauCeti.cuspIntegral_sum`: additivity in the integrand, for
+  integrands that are integrable along the geodesic.
 * `TauCeti.cuspIntegral_add_adjacent`: additivity, `∫_a^b + ∫_b^c = ∫_a^c`.
 
 ## References
@@ -385,6 +385,20 @@ theorem cuspIntegral_add {F G : ℍ → ℂ} {g : GL (Fin 2) ℚ}
         cuspIntegral G (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) := by
   rw [cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
     cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_add g hF hG]
+
+/-- The integral between the cusps `g • 0` and `g • ∞` commutes with finite sums of integrands
+that are integrable along the geodesic `g`. -/
+theorem cuspIntegral_sum {ι : Type*} (s : Finset ι) {F : ι → ℍ → ℂ} {g : GL (Fin 2) ℚ}
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det)
+    (hF : ∀ i ∈ s, IntegrableOn (resToImagAxis (F i ∣[(2 : ℤ)] g)) (Ioi 0)) :
+    cuspIntegral (∑ i ∈ s, F i) (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) =
+      ∑ i ∈ s, cuspIntegral (F i) (g • ((0 : ℚ) : OnePoint ℚ)) (g • ∞) := by
+  have hres : resToImagAxis ((∑ i ∈ s, F i) ∣[(2 : ℤ)] g) =
+      ∑ i ∈ s, resToImagAxis (F i ∣[(2 : ℤ)] g) := by
+    funext t
+    rcases le_or_gt t 0 with ht | ht <;> simp [resToImagAxis_of_pos, resToImagAxis_of_nonpos, ht]
+  simp only [cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_def, hres, Finset.sum_apply]
+  rw [integral_finsetSum s hF, Finset.mul_sum]
 
 /-- **Additivity of integrals between cusps**: `∫_a^b F(z) dz + ∫_b^c F(z) dz = ∫_a^c F(z) dz`
 for a holomorphic `F` whose weight-`2` slashes by rational matrices of positive determinant are

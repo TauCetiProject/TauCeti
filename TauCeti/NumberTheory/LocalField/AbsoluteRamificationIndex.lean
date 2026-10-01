@@ -40,6 +40,7 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 * `TauCeti.valuation_natCast_eq_pow_mul_padicValNat`: the same valuation, as a power of the
   valuation of a uniformizer.
 * `TauCeti.absoluteRamificationIndex_padic`: the absolute ramification index of `ℚ_[p]` is one.
+* `TauCeti.residuePrime_mem_maximalIdeal`: the residue prime lies in the maximal ideal of `𝒪[K]`.
 * `TauCeti.absoluteRamificationIndex_tower`: the absolute index is multiplicative in a tower.
 
 ## References
@@ -149,6 +150,15 @@ theorem absoluteRamificationIndex_eq_natCastValuation :
 -- statement, so `simpNF` rejects the redundant attribute.
 theorem absoluteRamificationIndex_padic : absoluteRamificationIndex ℚ_[p] p = 1 := by
   rw [absoluteRamificationIndex_eq_natCastValuation, Padic.natCastValuation_self]
+
+/-- The residue prime `p` lies in the maximal ideal of `𝒪[K]`. -/
+theorem residuePrime_mem_maximalIdeal : (p : 𝒪[K]) ∈ 𝓂[K] := by
+  have := FinitePadicExtension.charZero K p
+  have h := absoluteRamificationIndex_pos K p
+  rw [absoluteRamificationIndex_eq_natCastValuation] at h
+  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, ← natCastValuation_eq_zero_iff K p
+    (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)]
+  exact h.ne'
 
 /-- In a tower `L/K/ℚ_[p]`, the absolute ramification index of `L` is the product of the
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/

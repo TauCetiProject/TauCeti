@@ -18,9 +18,8 @@ bialgebra `K ⊗[k] A` over `K` are the same as `k`-algebra maps `A →ₐ[k] R`
 identification is a monoid isomorphism for convolution. When `A` is a Hopf algebra, these are
 the convolution groups of points.
 
-This is the algebraic-group-facing form of the ReductiveGroups roadmap item "Base change.
-`K ⊗[k] A` as a Hopf algebra over `K`"; it builds on Mathlib's tensor-product bialgebra
-instance, Mathlib's tensor-product Hopf algebra antipode formula, and `AlgHom.liftEquiv`.
+This construction builds on Mathlib's tensor-product bialgebra instance, Mathlib's
+tensor-product Hopf algebra antipode formula, and `AlgHom.liftEquiv`.
 
 ## Main definitions
 
@@ -31,7 +30,7 @@ instance, Mathlib's tensor-product Hopf algebra antipode formula, and `AlgHom.li
   `TauCeti.AlgHom.baseChangePointsMulEquiv_symm_inv_apply`: pointwise formulas for
   convolution inverses of base-changed points.
 
-## References
+## See also
 
 The tensor-product bialgebra and Hopf-algebra structures and algebra base-change adjunction
 used here are from Mathlib, respectively `Mathlib.RingTheory.Bialgebra.TensorProduct`,
@@ -131,7 +130,6 @@ inverse of a base-changed point has value `s • f (S a)`.
 
 The `≃*` `AlgHom.baseChangePointsMulEquiv` is automatically a group isomorphism here, since
 `A` is a Hopf algebra; this records the value of an inverse point on pure tensors. -/
-@[simp high]
 lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ (s ⊗ₜ[k] a) =
       s • f.ofConv (antipode k a) := by
@@ -140,7 +138,6 @@ lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s 
 
 /-- Pointwise inverse formula after restricting a base-changed point along `a ↦ 1 ⊗ a`:
 the inverse of `(e.symm f)` has value `f (1 ⊗ S a)` at `a`. -/
-@[simp high]
 lemma baseChangePointsMulEquiv_symm_inv_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
     (((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹).ofConv a =
       f.ofConv (1 ⊗ₜ[k] antipode k a) := by

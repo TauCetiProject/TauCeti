@@ -26,11 +26,6 @@ Baker–Campbell–Hausdorff map near the origin.
 * `NormedSpace.one_le_logOneAddSeries_radius`: the radius of convergence is at least one.
 * `NormedSpace.hasFPowerSeriesOnBall_logOneAdd`: the series represents `logOneAdd` on the
   unit ball.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 3, "Baker–Campbell–Hausdorff".
 -/
 
 public section

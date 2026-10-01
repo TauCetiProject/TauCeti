@@ -113,13 +113,27 @@ theorem isConnected_restrictToOrbit : (t.restrictToOrbit O).IsConnected := by
     rw [Submonoid.mk_smul, Perm.smul_def, orbitActionHom_apply, hg]
 
 /-- Relabeling the sheets does not change the number of monodromy orbits. -/
-@[simp high]
+@[simp]
 theorem card_monodromyOrbit_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     Nat.card (τ • t).MonodromyOrbit = Nat.card t.MonodromyOrbit := by
   rw [MonodromyOrbit, MonodromyOrbit, monodromyGroup_smul]
   exact (Nat.card_congr (MulAction.orbitRelQuotientCongr
     (MulEquiv.subgroupMap (MulAut.conj τ) t.monodromyGroup) τ fun g x ↦ by
       simp [Subgroup.smul_def, Perm.smul_def, MulEquiv.coe_subgroupMap_apply])).symm
+
+/-! ### Sheets in one monodromy orbit -/
+
+/-- A sheet and its image under the first component lie in one monodromy orbit. -/
+@[simp]
+theorem mk_σ0_apply (x : Fin n) :
+    (Quotient.mk _ (t.σ0 x) : t.MonodromyOrbit) = Quotient.mk _ x :=
+  Quotient.sound ⟨⟨t.σ0, t.σ0_mem_monodromyGroup⟩, rfl⟩
+
+/-- A sheet and its image under the second component lie in one monodromy orbit. -/
+@[simp]
+theorem mk_σ1_apply (x : Fin n) :
+    (Quotient.mk _ (t.σ1 x) : t.MonodromyOrbit) = Quotient.mk _ x :=
+  Quotient.sound ⟨⟨t.σ1, t.σ1_mem_monodromyGroup⟩, rfl⟩
 
 /-! ### Reconstruction -/
 

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
 public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.GraphAutomorphism
+import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generation
 
 /-!
 # The graph automorphism of the full-weight type-D spin carrier
@@ -41,7 +42,8 @@ numbered-symmetry construction of a Kostant toral closure descends the operator 
 ```
 
 on every Bourbaki-numbered raising and lowering root subgroup, `σ` the fork exchange, and with
-`γ ^ 2 = 1`.
+`γ ^ 2 = 1`. Those equations characterize `γ`: the numbered root subgroups generate the carrier,
+so no other endomorphism of it renumbers them that way.
 
 The graph operator itself squares to `-1`, so the signed permutation matrix
 `TauCeti.TypeDSpinCarrier.graphAutMatrix` squares to the scalar `-1`: the two signs at a
@@ -85,6 +87,9 @@ the Geck carrier is
 * `TauCeti.TypeDSpinCarrier.weightTorus_comp_graphAut_hom` and
   `TauCeti.TypeDSpinCarrier.graphAutPoints_weightTorusPoints`: the graph automorphism relabels the
   coordinates of the represented spin weight torus by the fork exchange.
+* `TauCeti.TypeDSpinCarrier.eq_graphAut_hom_of_rootSubgroup` and
+  `TauCeti.TypeDSpinCarrier.eq_graphAut_of_rootSubgroup`: that pinning equation determines the
+  graph automorphism, among endomorphisms and among automorphisms of the carrier.
 * `TauCeti.TypeDSpinCarrier.schemePointsMulEquiv_graphAut_comp_carrierι`: on every algebra-valued
   point of the carrier, the automorphism of the carrier is the conjugation that the automorphism on
   points performs, so the two are the same action.
@@ -378,6 +383,27 @@ theorem graphAut_hom_comp_self :
   -- `Aut` multiplication is reverse categorical composition, and its unit is `Iso.refl`, so the
   -- forward legs of the two sides are already the two sides of the goal.
   exact congrArg Iso.hom h
+
+/-- **The fork exchange has exactly one realization on the carrier.** An endomorphism of the
+carrier carrying each numbered raising and lowering root subgroup to the one at the exchanged
+node, with the same additive parameter, is the graph automorphism. The numbered root subgroups
+generate the carrier, so these equations leave nothing free; in particular no condition on the
+represented weight torus is needed. -/
+theorem eq_graphAut_hom_of_rootSubgroup (φ : groupScheme n hn ⟶ groupScheme n hn)
+    (hroot : ∀ k, rootSubgroup n hn k ≫ φ =
+      rootSubgroup n hn (graphRootPerm n (by omega) k)) :
+    φ = (graphAut n hn).hom := by
+  refine (cancel_mono (eqToHom (groupScheme_def n hn))).1 ?_
+  refine groupScheme_hom_ext_of_rootSubgroup n hn _ _ fun k => ?_
+  rw [← Category.assoc, ← Category.assoc, hroot k, rootSubgroup_comp_graphAut_hom]
+
+/-- **The graph automorphism is the unique automorphism of the carrier exchanging the two fork
+root subgroups and fixing the others.** -/
+theorem eq_graphAut_of_rootSubgroup (γ : Aut (groupScheme n hn))
+    (hroot : ∀ k, rootSubgroup n hn k ≫ γ.hom =
+      rootSubgroup n hn (graphRootPerm n (by omega) k)) :
+    γ = graphAut n hn :=
+  Iso.ext (eq_graphAut_hom_of_rootSubgroup n hn γ.hom hroot)
 
 /-- The inverse leg of the graph automorphism is its forward leg, since it is an involution. -/
 @[simp]
