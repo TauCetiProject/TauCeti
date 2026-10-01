@@ -117,11 +117,6 @@ theorem eichlerIntegral_smul (hf : AnalyticAt ℂ (cuspFunction h f) 0) (n : ℕ
   simp_rw [mul_left_comm (((h : ℂ) / _) ^ n) a, mul_assoc a]
   rw [tsum_mul_left]
 
-/-- The Eichler integral commutes with negation when the cusp function is analytic at zero. -/
-theorem eichlerIntegral_neg (hf : AnalyticAt ℂ (cuspFunction h f) 0) (n : ℕ) :
-    eichlerIntegral h n (-f) = -eichlerIntegral h n f := by
-  simpa using eichlerIntegral_smul hf n (-1)
-
 /-- The Eichler integral is additive on holomorphic periodic functions bounded at `i∞`. -/
 theorem eichlerIntegral_add {g : ℍ → ℂ} (hh : 0 < h)
     (hfper : Periodic (f ∘ ofComplex) h) (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f)
