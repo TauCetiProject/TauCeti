@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Basic
-public import TauCeti.NumberTheory.ModularForms.ModularSymbols.PeriodIntegral
+public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Integral
 
 /-!
 # The raw period pairing
