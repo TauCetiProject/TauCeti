@@ -32,8 +32,8 @@ algebras `R[I/a]` are the coordinate rings of the charts of the blowup.
 * `reesAlgebra.algebraMap_pow_mul_awayEquivAffineBlowup_mk`: the fraction `x/(a t)ⁿ`, with `x`
   homogeneous of degree `n`, corresponds to the fraction `b/aⁿ` of `S`, where `b` is the
   coefficient of `x`.
-* `reesAlgebra.awayEquivAffineBlowup_mk_monomialDegreeOne`: the fraction `(i t)/(a t)` corresponds
-  to the generator `i/a` of `R[I/a]`.
+* `reesAlgebra.awayEquivAffineBlowup_apply_mk_monomialDegreeOne`: the fraction `(i t)/(a t)`
+  corresponds to the generator `i/a` of `R[I/a]`.
 * `reesAlgebra.awayEquivAffineBlowup_algebraMap`: the isomorphism is compatible with the
   structure maps from `R`.
 
@@ -157,7 +157,8 @@ theorem algebraMap_pow_mul_awayEquivAffineBlowup_mk (ha : a ∈ I) {n : ℕ} {x 
   algebraMap_pow_mul_awayToLocalization_mk S ha hx
 
 /-- The fraction `(i t)/(a t)` corresponds to the generator `i/a` of `R[I/a]`. -/
-theorem awayEquivAffineBlowup_mk_monomialDegreeOne (ha : a ∈ I) {i : R} (hi : i ∈ I) :
+@[simp]
+theorem awayEquivAffineBlowup_apply_mk_monomialDegreeOne (ha : a ∈ I) {i : R} (hi : i ∈ I) :
     awayEquivAffineBlowup S ha (Away.mk (grade I) (monomialDegreeOne_mem_grade ha) 1
         (monomialDegreeOne hi) (by simpa using monomialDegreeOne_mem_grade hi)) =
       ⟨divBy i a, Ideal.divBy_mem_affineBlowup hi⟩ := by
