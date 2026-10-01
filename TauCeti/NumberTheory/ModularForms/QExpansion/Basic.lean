@@ -22,6 +22,9 @@ function on `ℍ` — every Hecke-style slash sum before it is packaged as a `Mo
 invoke it. The proof is Mathlib's, run through `UpperHalfPlane.hasFPowerSeriesOnBall_cuspFunction`,
 which *is* stated for `{f : ℍ → ℂ}`, with `qExpansionFormalMultilinearSeries` spelled out
 inline for the same reason.
+The same route gives the raw-function form of Mathlib's
+`UpperHalfPlane.qExpansionFormalMultilinearSeries_radius`: the `q`-expansion of a holomorphic
+periodic function bounded at `i∞` converges absolutely inside the unit disc.
 
 Alongside them, the `n`-th coefficient bundled as a `ℂ`-linear functional on *cusp* forms,
 `CuspForm.qExpansionCoeffₗ` — the linear map above, composed with the inclusion of cusp forms
@@ -45,6 +48,8 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
+* `TauCeti.UpperHalfPlane.summable_norm_qExpansion_coeff_mul_pow`: absolute convergence of the
+  `q`-expansion of a raw function inside the unit disc.
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
 * `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
@@ -102,6 +107,24 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
     simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
       using hfanalytic.hasFPowerSeriesAt
   simpa using congr_arg (FormalMultilinearSeries.coeff · m) (h1.eq_formalMultilinearSeries h2)
+
+/-- **Absolute convergence of the `q`-expansion inside the unit disc, for a raw function on
+`ℍ`.** The `q`-expansion of a holomorphic `h`-periodic function bounded at `i∞` satisfies
+`∑ ‖aₘ‖ rᵐ < ∞` for `0 ≤ r < 1`.
+
+This is Mathlib's `UpperHalfPlane.qExpansionFormalMultilinearSeries_radius` with the
+`[FunLike F ℍ ℂ]` bundling removed, for the same reason as `qExpansion_coeff_unique`. -/
+lemma UpperHalfPlane.summable_norm_qExpansion_coeff_mul_pow {f : ℍ → ℂ} (hh : 0 < h)
+    (hfper : Function.Periodic (f ∘ ofComplex) h) (hfhol : MDiff f)
+    (hfbdd : IsBoundedAtImInfty f) {r : ℝ} (hr0 : 0 ≤ r) (hr : r < 1) :
+    Summable fun m : ℕ ↦ ‖(qExpansion h f).coeff m‖ * r ^ m := by
+  have hp := _root_.UpperHalfPlane.hasFPowerSeriesOnBall_cuspFunction hh
+    (_root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh hfper hfhol hfbdd)
+    (_root_.UpperHalfPlane.hasSum_qExpansion hh hfper hfhol hfbdd)
+  lift r to NNReal using hr0
+  simpa [FormalMultilinearSeries.ofScalars_norm] using
+    (FormalMultilinearSeries.ofScalars ℂ fun m ↦ (qExpansion h f).coeff m).summable_norm_mul_pow
+      (lt_of_lt_of_le (by exact_mod_cast hr) hp.r_le)
 
 /-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem UpperHalfPlane.periodic_qParam_comp_ofComplex (hh : h ≠ 0) :
