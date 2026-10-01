@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 
 /-!
@@ -34,6 +35,8 @@ with pair of definition `(A_inf, (p, [ϖ]))`.
   and `ϖ`-adically precomplete, then `𝕎 R` is `(p, [ϖ])`-adically precomplete.
 * `WittVector.isAdicComplete_span_p_teichmuller`: if `R` is perfect of characteristic
   `p` and `ϖ`-adically complete, then `𝕎 R` is `(p, [ϖ])`-adically complete.
+* `TauCeti.WittVector.completeSpace_and_t2Space_adicTopology_span_p_teichmuller`: under the same
+  hypotheses, the `(p, [ϖ])`-adic topology on `𝕎 R` is complete and Hausdorff.
 
 ## References
 
@@ -182,5 +185,27 @@ end PerfectRing
 end CharP
 
 end WittVector
+
+namespace TauCeti.WittVector
+
+variable (p : ℕ) [Fact p.Prime] {R : Type*} [CommRing R] [CharP R p] [PerfectRing R p]
+
+/-- If `R` is perfect of characteristic `p` and `ϖ`-adically complete, the `(p, [ϖ])`-adic
+topology on its Witt vectors is complete and Hausdorff.
+
+The algebraic completeness input is `WittVector.isAdicComplete_span_p_teichmuller`; this theorem
+only identifies it with completeness and separatedness of the corresponding adic topology. -/
+theorem completeSpace_and_t2Space_adicTopology_span_p_teichmuller (ϖ : R)
+    [IsAdicComplete (Ideal.span {ϖ}) R] :
+    letI : WithIdeal (_root_.WittVector p R) :=
+      ⟨Ideal.span {(p : _root_.WittVector p R), _root_.WittVector.teichmuller p ϖ}⟩
+    CompleteSpace (_root_.WittVector p R) ∧ T2Space (_root_.WittVector p R) := by
+  let _ : WithIdeal (_root_.WittVector p R) :=
+    ⟨Ideal.span {(p : _root_.WittVector p R), _root_.WittVector.teichmuller p ϖ}⟩
+  exact (IsAdic.isAdicComplete_iff
+    (I := Ideal.span {(p : _root_.WittVector p R), _root_.WittVector.teichmuller p ϖ}) rfl).mp
+    inferInstance
+
+end TauCeti.WittVector
 
 end

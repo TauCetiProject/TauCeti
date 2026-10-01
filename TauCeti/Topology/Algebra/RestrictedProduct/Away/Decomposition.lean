@@ -77,7 +77,8 @@ noncomputable def awayDecomposition (S : Set ι) (hS : S.Finite) (U : ∀ i, Sub
   haveI : Finite S := hS.to_subtype
   -- The reindexed restricted product over `S ⊕ {i // i ∉ S}`, split into its two summands.
   let c := (restrictedProductReindex U (Equiv.sumCompl (· ∈ S))).trans
-    (restrictedProductSum fun k ↦ U (Equiv.sumCompl (· ∈ S) k))
+    (restrictedProductSum (fun k ↦ U (Equiv.sumCompl (· ∈ S) k)) Sum.inl_injective.comap_cofinite_eq
+      Sum.inr_injective.comap_cofinite_eq)
   -- The collapse of the finite `S`-summand to the plain product.
   let f := restrictedProductOfFinite fun i : S ↦ U (Equiv.sumCompl (· ∈ S) (Sum.inl i))
   -- The composite equivalence, whose maps are spelled out below.
@@ -102,6 +103,7 @@ theorem awayDecomposition_fst (x : RestrictedProductGroup U) (i : S) :
     (awayDecomposition S hS U x).1 i = x i := by
   let _ : DecidablePred (· ∈ S) := Classical.decPred _
   have h := restrictedProductSum_apply_inl (fun k ↦ U (Equiv.sumCompl (· ∈ S) k))
+    Sum.inl_injective.comap_cofinite_eq Sum.inr_injective.comap_cofinite_eq
     (restrictedProductReindex U (Equiv.sumCompl (· ∈ S)) x) i
   rw [restrictedProductReindex_apply] at h
   simp only [awayDecomposition, MulEquiv.coe_mk, Equiv.coe_fn_mk, MulEquiv.trans_apply,
@@ -122,6 +124,7 @@ theorem awayDecomposition_snd (x : RestrictedProductGroup U) (j : {i // i ∉ S}
     (awayDecomposition S hS U x).2 j = x j := by
   let _ : DecidablePred (· ∈ S) := Classical.decPred _
   have h := restrictedProductSum_apply_inr (fun k ↦ U (Equiv.sumCompl (· ∈ S) k))
+    Sum.inl_injective.comap_cofinite_eq Sum.inr_injective.comap_cofinite_eq
     (restrictedProductReindex U (Equiv.sumCompl (· ∈ S)) x) j
   rw [restrictedProductReindex_apply] at h
   simp only [awayDecomposition, MulEquiv.coe_mk, Equiv.coe_fn_mk, MulEquiv.trans_apply]
@@ -172,8 +175,9 @@ theorem continuous_awayDecomposition : Continuous (awayDecomposition S hS U) := 
   have : Finite S := hS.to_subtype
   -- Each of the three steps is a continuous map out of a single restricted product.
   have hc : Continuous ((restrictedProductReindex U (Equiv.sumCompl (· ∈ S))).trans
-      (restrictedProductSum fun k ↦ U (Equiv.sumCompl (· ∈ S) k))) :=
-    (continuous_restrictedProductSum _).comp (continuous_restrictedProductReindex U _)
+      (restrictedProductSum (fun k ↦ U (Equiv.sumCompl (· ∈ S) k))
+        Sum.inl_injective.comap_cofinite_eq Sum.inr_injective.comap_cofinite_eq)) :=
+    (continuous_restrictedProductSum _ _ _).comp (continuous_restrictedProductReindex U _)
   exact ((continuous_restrictedProductOfFinite _).comp (continuous_fst.comp hc)).prodMk
     (continuous_snd.comp hc)
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
-public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.RingTheory.Huber.Adic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
@@ -18,10 +18,6 @@ it is not a Tate ring. It is the roadmap's Layer-0 example after the discrete ca
 to separate `TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the units of `ℤ_[p]` are
 exactly the elements of norm one, whose powers again have norm one, so no unit is topologically
 nilpotent.
-
-## Main definitions
-
-* `TauCeti.Huber.PadicInt.pairOfDefinition`: the pair of definition `(ℤ_[p], (p))`.
 
 ## Main results
 
@@ -38,9 +34,9 @@ nilpotent.
 
 ## Implementation notes
 
-The ring of definition is all of `ℤ_[p]`, so the ideal of definition has to be carried across
-`Subring.topEquiv`; `TauCeti.Huber.IsAdic.comap` in `TauCeti/RingTheory/Huber/Basic.lean` is the
-general transport that does it.
+The pair of definition `(ℤ_[p], (p))` is the general adic pair
+`TauCeti.Huber.PairOfDefinition.adic` of `TauCeti/RingTheory/Huber/Adic.lean`, applied to the
+maximal ideal.
 
 ## Scope
 
@@ -98,41 +94,11 @@ theorem isTopologicallyNilpotent_iff_dvd {c : ℤ_[p]} :
     (maximalIdeal.isMaximal ℤ_[p]).isPrime.radical, _root_.PadicInt.maximalIdeal_eq_span_p,
     Ideal.mem_span_singleton]
 
-/-- The pair of definition `(ℤ_[p], (p))` exhibiting `ℤ_[p]` as a Huber ring. The ring of
-definition is everything, and the ideal of definition is the maximal ideal carried across
-`Subring.topEquiv`. -/
-noncomputable def pairOfDefinition : PairOfDefinition ℤ_[p] where
-  ringOfDefinition := ⊤
-  isOpen_ringOfDefinition := by simp
-  idealOfDefinition :=
-    (maximalIdeal ℤ_[p]).comap (Subring.topEquiv : (⊤ : Subring ℤ_[p]) ≃+* ℤ_[p])
-  fg_idealOfDefinition := by
-    rw [← Ideal.map_symm]
-    exact Ideal.FG.map
-      (by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _)
-      (Subring.topEquiv : (⊤ : Subring ℤ_[p]) ≃+* ℤ_[p]).symm.toRingHom
-  isAdic_idealOfDefinition :=
-    IsAdic.comap _ Topology.IsInducing.subtypeVal isAdic_maximalIdeal
-
-/-- The ring of definition of `pairOfDefinition` is all of `ℤ_[p]`. -/
-@[simp]
-theorem pairOfDefinition_ringOfDefinition :
-    (pairOfDefinition (p := p)).ringOfDefinition = ⊤ := (rfl)
-
-/-- Membership in the ideal of definition of `pairOfDefinition` is membership in `(p)`.
-
-Stated as a membership characterisation rather than an equation because the type of
-`idealOfDefinition` depends on `ringOfDefinition`. -/
-@[simp]
-theorem mem_pairOfDefinition_idealOfDefinition
-    {x : (pairOfDefinition (p := p)).ringOfDefinition} :
-    x ∈ (pairOfDefinition (p := p)).idealOfDefinition ↔ (x : ℤ_[p]) ∈ maximalIdeal ℤ_[p] := by
-  simp only [pairOfDefinition]
-  exact Ideal.mem_comap
-
-/-- **`ℤ_[p]` is a Huber ring**, with `(ℤ_[p], (p))` as a pair of definition. -/
+/-- **`ℤ_[p]` is a Huber ring**, with `(ℤ_[p], (p))` as a pair of definition: the norm topology
+is the adic topology of the principal ideal `(p)`. -/
 instance isHuberRing : IsHuberRing ℤ_[p] :=
-  ⟨⟨pairOfDefinition⟩⟩
+  isHuberRing_of_isAdic _ isAdic_maximalIdeal
+    (by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _)
 
 /-- **`ℤ_[p]` is not a Tate ring**: it admits no pseudouniformiser. Together with
 `TauCeti.Huber.PadicInt.isHuberRing` this separates `IsHuberRing` from `IsTateRing`. -/

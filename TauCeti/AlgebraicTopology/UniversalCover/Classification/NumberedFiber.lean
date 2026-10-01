@@ -124,7 +124,9 @@ structure ConnectedPointedCover (x : X) (n : ℕ) where
   nonempty_equiv_fin : Nonempty (⇑cover.proj ⁻¹' {x} ≃ Fin n)
 
 /-- A connected covering space of `X` whose fibre over `x` has `n` points, with no further
-rigidification. -/
+rigidification. Two such covers are equal exactly when their underlying covers are
+(`TauCeti.ConnectedCover.ext`). -/
+@[ext]
 structure ConnectedCover (x : X) (n : ℕ) where
   /-- The underlying connected covering space. -/
   cover : ConnectedCoveringSpace X
