@@ -53,7 +53,7 @@ class-field correspondences directly in terms of their abelian Galois groups.
   abelian sublayer.
 * `OpenNormalSubgroup.maximalAbelianLayer_eq_self_iff`: the construction fixes exactly the
   abelian layers.
-* `TauCeti.ClassFieldTheory.natCard_abelianization_gal_eq_degree_maximalAbelianLayer`: the
+* `OpenNormalSubgroup.natCard_abelianization_gal_eq_degree_maximalAbelianLayer`: the
   abelianized Galois group of a layer has the order of the Galois group of its maximal abelian
   sublayer.
 
@@ -223,6 +223,17 @@ theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
   rw [← abelianizationGalEquiv_symm_apply hV x]
   exact (abelianizationGalEquiv hV).apply_symm_apply x
 
+end AbelianLayer
+
+end TauCeti.ClassFieldTheory
+
+namespace OpenNormalSubgroup
+
+open TauCeti.ClassFieldTheory
+
+variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
 /-- **The abelianized Galois group of a layer has the order of the Galois group of its maximal
 abelian sublayer**: `(G ⧸ V)^ab` has `[G : V · closure [G, G]]` elements. This is the counting
 input to norm limitation. -/
@@ -249,6 +260,4 @@ theorem natCard_abelianization_gal_eq_degree_maximalAbelianLayer (V : OpenNormal
   -- `Abelianization H` is by definition the quotient `H ⧸ commutator H`.
   exact (Subgroup.index_eq_card _).symm
 
-end AbelianLayer
-
-end TauCeti.ClassFieldTheory
+end OpenNormalSubgroup

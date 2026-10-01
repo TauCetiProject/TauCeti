@@ -31,7 +31,8 @@ abelianized Galois groups (`ClassFormation.natCard_normQuotient_eq_natCard_abeli
 the inclusion is an equality exactly when those orders agree
 (`ClassFormation.map_normSubgroup_eq_iff`). Applied to an open normal subgroup `V` and its
 maximal abelian sublayer `V · closure [G, G]`, whose Galois group `G ⧸ (V · closure [G, G])` has
-the same order as `(G ⧸ V)^ab` (`natCard_abelianization_gal_eq_degree_maximalAbelianLayer`), this
+the same order as `(G ⧸ V)^ab`
+(`OpenNormalSubgroup.natCard_abelianization_gal_eq_degree_maximalAbelianLayer`), this
 is the **norm limitation theorem** (`ClassFormation.normSubgroup_maximalAbelianLayer`): a layer and
 its maximal abelian sublayer have the same norm subgroup. It is a consequence of reciprocity, not of
 an existence theorem, and it is why a norm subgroup can only determine an abelian layer.
@@ -206,7 +207,7 @@ theorem normSubgroup_maximalAbelianLayer (V : OpenNormalSubgroup G) :
         ((LayerRefinement.ofOpenNormal V.le_maximalAbelianLayer).groundEquiv F).toLinearMap =
       (NormalLayer.ofOpenNormal V).normSubgroup F := by
   refine (cf.map_normSubgroup_eq_iff _).2 ?_
-  rw [natCard_abelianization_gal_eq_degree_maximalAbelianLayer V,
+  rw [V.natCard_abelianization_gal_eq_degree_maximalAbelianLayer,
     Nat.card_congr (abelianizationGalEquiv V.isAbelianClassFieldLayer_maximalAbelianLayer).toEquiv,
     NormalLayer.degree_eq_natCard_gal]
 
