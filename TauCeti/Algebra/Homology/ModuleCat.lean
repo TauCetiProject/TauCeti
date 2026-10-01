@@ -19,6 +19,9 @@ These are the elementwise forms of the facts that `K.iCycles n` is a monomorphis
 is a cycle, `TauCeti.moduleCatCyclesMk`.  This constructor directly returns
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
+
+Use `TauCeti.moduleCatCyclesMk K x m hm hx` to construct a cycle and
+`TauCeti.iCycles_moduleCatCyclesMk K n x m hm hx` to recover its underlying element.
 -/
 
 public section
