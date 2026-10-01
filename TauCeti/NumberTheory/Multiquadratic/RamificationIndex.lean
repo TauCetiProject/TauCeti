@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
+import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.RamifiedPrimes
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
@@ -97,21 +98,6 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} {d : ι → ℤ} {r 
 
 /-! ### The action of inertia on the roots -/
 
-/-- If `p` divides the radicands `d i` and `d j`, then `r i * r j / p` is a square root of the
-product `(d i / p) * (d j / p)` of their `p`-free parts. -/
-private theorem mul_div_sq_eq (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) {i j : ι}
-    (hi : (p : ℤ) ∣ d i) (hj : (p : ℤ) ∣ d j) :
-    (r i * r j / p) ^ 2 = algebraMap ℤ K (d i / p * (d j / p)) := by
-  have hp0 : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
-  have hpK : (p : K) ≠ 0 := by exact_mod_cast hp0
-  obtain ⟨a, ha⟩ := hi
-  obtain ⟨b, hb⟩ := hj
-  rw [div_pow, mul_pow, hr i, hr j, ha, hb, Int.mul_ediv_cancel_left _ hp0,
-    Int.mul_ediv_cancel_left _ hp0]
-  field_simp
-  simp
-  ring
-
 /-- **Inertia acts by one sign on the roots of the radicands divisible by `p`.** Let `Q` be a
 prime of `𝓞 K` above an odd prime `p`, and let `r i`, `r j` be square roots of integers `d i`,
 `d j` that are divisible by `p` but not by `p²`. Then every element `τ` of the inertia group of
@@ -122,12 +108,12 @@ theorem apply_mul_apply_eq_mul_of_mem_inertia (hr : ∀ i, r i ^ 2 = algebraMap 
     (hj : (p : ℤ) ∣ d j) (hj2 : ¬ (p : ℤ) ^ 2 ∣ d j) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) :
     τ (r i) * τ (r j) = r i * r j := by
-  have hp0 : (p : K) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
-  have h := apply_eq_self_of_mem_inertia (mul_div_sq_eq hr hi hj) hodd
+  have hp0 : ((p : ℤ) : K) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
+  have h := apply_eq_self_of_mem_inertia (mul_div_intCast_sq_eq (hr i) (hr j) hi hj hp0) hodd
     ((Nat.prime_iff_prime_int.mp Fact.out).not_dvd_mul
       (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
       (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two])) Q hτ
-  rw [map_div₀, map_mul, map_natCast] at h
+  rw [map_div₀, map_mul, map_intCast] at h
   exact (div_left_inj' hp0).mp h
 
 /-- **A Frobenius acts by one sign on two ramified roots exactly when their `p`-free parts have
@@ -142,12 +128,13 @@ theorem isArithFrobAt_apply_mul_apply_eq_mul_iff (hr : ∀ i, r i ^ 2 = algebraM
     (hj : (p : ℤ) ∣ d j) (hj2 : ¬ (p : ℤ) ^ 2 ∣ d j) (Q : Ideal (𝓞 K))
     [Q.LiesOver (span {(p : ℤ)})] {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
     σ (r i) * σ (r j) = r i * r j ↔ legendreSym p (d i / p) = legendreSym p (d j / p) := by
-  have hp0 : (p : K) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
+  have hp0 : ((p : ℤ) : K) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   have h := isArithFrobAt_apply_sqrt_eq_self_iff hodd
     ((Nat.prime_iff_prime_int.mp Fact.out).not_dvd_mul
       (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
-      (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two])) (mul_div_sq_eq hr hi hj) Q hσ
-  rw [map_div₀, map_mul, map_natCast, div_left_inj' hp0, legendreSym.mul] at h
+      (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two]))
+      (mul_div_intCast_sq_eq (hr i) (hr j) hi hj hp0) Q hσ
+  rw [map_div₀, map_mul, map_intCast, div_left_inj' hp0, legendreSym.mul] at h
   rw [h]
   -- Both symbols are `±1`, since the `p`-free parts are prime to `p`.
   have hunit {c : ℤ} (hc : (p : ℤ) ∣ c) (hc2 : ¬ (p : ℤ) ^ 2 ∣ c) :
