@@ -467,7 +467,7 @@ lemma ι_tensorμ (X₁ X₂ Y₁ Y₂ : CochainComplex (ModuleCat.{v} R) ℤ) (
     (a + b) (b + (c + d)) n rfl rfl h (by omega), associator_naturality_right_assoc]
   rw [HomologicalComplex.ι_whiskerLeft_assoc,
     ← whiskerLeft_comp_assoc, ← whiskerLeft_comp_assoc, Category.assoc,
-    ι_ι_associator_inv X₂ Y₁ Y₂ b c d (b + c) (c + d) _ rfl rfl (by omega) rfl,
+    HomologicalComplex.ι_ι_associator_inv X₂ Y₁ Y₂ b c d (b + c) (c + d) _ rfl rfl (by omega) rfl,
     HomologicalComplex.ι_whiskerLeft_assoc, ← whiskerLeft_comp_assoc, Category.assoc,
     Category.assoc, HomologicalComplex.ι_whiskerRight, ← comp_whiskerRight_assoc,
     braiding_eq_koszulBraiding, koszulBraiding_hom, ι_koszulBraidingHom,
@@ -482,8 +482,8 @@ lemma ι_tensorμ (X₁ X₂ Y₁ Y₂ : CochainComplex (ModuleCat.{v} R) ℤ) (
   erw [HomologicalComplex.ι_ι_associator_hom Y₁ X₂ Y₂ c b d
     (b + c) (b + d) (b + (c + d)) (by omega) rfl (by omega) (by omega)]
   simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc]
-  rw [ι_ι_associator_inv X₁ Y₁ (X₂ ⊗ Y₂) a c (b + d) (a + c) (b + (c + d)) n rfl
-    (by omega) (by omega) (by omega), ← associator_inv_naturality_right_assoc]
+  rw [HomologicalComplex.ι_ι_associator_inv X₁ Y₁ (X₂ ⊗ Y₂) a c (b + d) (a + c) (b + (c + d)) n
+    rfl (by omega) (by omega) (by omega), ← associator_inv_naturality_right_assoc]
   rfl
 
 end TensorMu

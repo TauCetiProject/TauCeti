@@ -33,8 +33,9 @@ complexes of any shape in any monoidal preadditive category, and is stated in th
   on a homogeneous summand.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors.
-* `HomologicalComplex.ι_ι_associator_hom` and `TauCeti.ι_ι_associator_inv`: the associator
-  and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate degrees.
+* `HomologicalComplex.ι_ι_associator_hom` and `HomologicalComplex.ι_ι_associator_inv`: the
+  associator and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate
+  degrees.
 
 The analogous formula for the differential of a tensor product is
 `HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/TensorDifferential.lean`.
@@ -172,27 +173,19 @@ lemma ι_ι_associator_hom (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q r
   rw [ha]
   simp only [ι_mapBifunctorAssociatorX_hom, curriedAssociatorNatIso_hom_app_app_app]
 
-end HomologicalComplex
-
-namespace TauCeti
-
-variable {R : Type v} [CommRing R]
-
 /-- The inverse associator of cochain complexes of modules, restricted to a homogeneous
 summand with arbitrary intermediate degrees, is the inverse associator of the three summands. -/
 @[reassoc]
 lemma ι_ι_associator_inv (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ)
     (p q r pq qr j : ℤ) (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j)
     (h' : p + qr = j) :
-    (X.X p ◁ HomologicalComplex.ιTensorObj Y Z q r qr hqr) ≫
-        HomologicalComplex.ιTensorObj X (Y ⊗ Z) p qr j h' ≫ (α_ X Y Z).inv.f j =
-      (α_ (X.X p) (Y.X q) (Z.X r)).inv ≫ (HomologicalComplex.ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
-        HomologicalComplex.ιTensorObj (X ⊗ Y) Z pq r j h := by
+    (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h' ≫ (α_ X Y Z).inv.f j =
+      (α_ (X.X p) (Y.X q) (Z.X r)).inv ≫ (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
+        ιTensorObj (X ⊗ Y) Z pq r j h := by
   rw [← cancel_epi (α_ (X.X p) (Y.X q) (Z.X r)).hom, Iso.hom_inv_id_assoc,
-    ← HomologicalComplex.ι_ι_associator_hom_assoc X Y Z p q r pq qr j hpq hqr h h',
-    ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f]
+    ← ι_ι_associator_hom_assoc X Y Z p q r pq qr j hpq hqr h h', ← comp_f, Iso.hom_inv_id, id_f]
   -- `Category.comp_id` is stated for the identity of the codomain of `ιTensorObj`, which is
   -- spelled `(HomologicalComplex.tensorObj (X ⊗ Y) Z).X j` rather than `((X ⊗ Y) ⊗ Z).X j`.
   erw [Category.comp_id]
 
-end TauCeti
+end HomologicalComplex
