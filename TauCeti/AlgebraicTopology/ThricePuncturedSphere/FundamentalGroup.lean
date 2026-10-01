@@ -240,33 +240,12 @@ theorem fundamentalGroupMulEquivFreeGroup_peripheralBasis (i : Fin 2) :
 /-- The first element of `peripheralBasis` is `periph0`. -/
 @[simp]
 theorem peripheralBasis_zero : peripheralBasis 0 = periph0 :=
-  peripheralBasis.repr.injective <| by
-    rw [FreeGroupBasis.repr_apply_coe, peripheralBasis_repr,
-      fundamentalGroupMulEquivFreeGroup_periph0]
+  fundamentalGroupMulEquivFreeGroup_symm_of_zero
 
 /-- The second element of `peripheralBasis` is `periph1`. -/
 @[simp]
 theorem peripheralBasis_one : peripheralBasis 1 = periph1 :=
-  peripheralBasis.repr.injective <| by
-    rw [FreeGroupBasis.repr_apply_coe, peripheralBasis_repr,
-      fundamentalGroupMulEquivFreeGroup_periph1]
-
-/-- The homomorphism `peripheralBasis.lift f` sends `periph0` to `f 0`. -/
-theorem peripheralBasis_lift_periph0 {G : Type*} [Group G] (f : Fin 2 → G) :
-    peripheralBasis.lift f periph0 = f 0 := by
-  rw [← peripheralBasis_zero, FreeGroupBasis.lift_apply_apply, FreeGroupBasis.repr_apply_coe,
-    FreeGroup.lift_apply_of]
-
-/-- The homomorphism `peripheralBasis.lift f` sends `periph1` to `f 1`. -/
-theorem peripheralBasis_lift_periph1 {G : Type*} [Group G] (f : Fin 2 → G) :
-    peripheralBasis.lift f periph1 = f 1 := by
-  rw [← peripheralBasis_one, FreeGroupBasis.lift_apply_apply, FreeGroupBasis.repr_apply_coe,
-    FreeGroup.lift_apply_of]
-
-/-- The homomorphism `peripheralBasis.lift f` sends `periphInf` to `(f 1 * f 0)⁻¹`. -/
-theorem peripheralBasis_lift_periphInf {G : Type*} [Group G] (f : Fin 2 → G) :
-    peripheralBasis.lift f periphInf = (f 1 * f 0)⁻¹ := by
-  rw [periphInf_def, map_inv, map_mul, peripheralBasis_lift_periph0, peripheralBasis_lift_periph1]
+  fundamentalGroupMulEquivFreeGroup_symm_of_one
 
 /-- `π₁(ℂ ∖ {0, 1}, 1/2)` is a free group. -/
 instance : IsFreeGroup (FundamentalGroup ThricePuncturedSphere basePt) :=
