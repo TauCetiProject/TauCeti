@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWeight
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
 import TauCeti.RingTheory.DividedPowers.Associative
 
 /-!
-# The type-B spinor lattice is stable under the simple-generator Kostant form
+# The coroot weights of the type-B spin module, and stability of its spinor lattice
 
 This file proves that, over `ℚ`, the coordinate spinor lattice of the type-`B` spin
 representation `TauCeti.SpinPolarizationData.typeBSpinRep` of an odd polarization is stable
@@ -33,6 +34,13 @@ the terminal node, and twice the terminal half-weight at the short node. Their b
 coefficients therefore preserve the same lattice. These are precisely the two generator inputs
 consumed by `kostantForm_apply_mem`, so the whole subring they generate preserves the lattice.
 
+Those same eigenvalues are what the file records about weights. Over `ℚ` the exterior basis is a
+Cartan weight basis for the numbered simple coroots, with the integral weight read off which
+coordinates occur; that weight agrees with the simply connected type-`B` spin weight
+`TauCeti.DynkinType.typeBSpinWeight` of the same index set. The all-coordinate vector carries the
+last fundamental weight `ωₗ`, and reading the coroot weights from the terminal node downwards shows
+that it is the only exterior-basis vector that does.
+
 The nilpotence and eigenvalue computations are stated over an arbitrary field in which `2` is
 invertible, which is all the underlying Clifford comparison needs; only the lattice statements
 are specific to `ℚ`, where the coordinate lattice lives.
@@ -46,12 +54,15 @@ Chevalley carrier in Layer 9 of the ReductiveGroups roadmap. That carrier is con
 * `TauCeti.SpinPolarizationData.typeBSpinRep_simpleRootGenerator_sq`: the represented
   simple-root operators are square-zero.
 * `TauCeti.SpinPolarizationData.typeBSpinCorootWeight`, with its values
-  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_last` and
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_last`,
   `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_castSucc`,
-  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_univ_eq_single`,
-  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_eq_single_iff`, and
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_univ_eq_single` and
   `TauCeti.SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis`:
   the integral eigenvalues of the numbered simple coroots on the exterior basis.
+* `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_eq_typeBSpinWeight`: those eigenvalues are
+  the simply connected type-`B` spin weight of the same index set.
+* `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_eq_single_iff`: the last fundamental weight
+  occurs at exactly one exterior-basis vector.
 * `TauCeti.SpinPolarizationData.isCartanWeightVector_typeBSpinRep_exteriorBasis`: over `ℚ`, the
   exterior basis is a Cartan weight basis with those eigenvalues.
 * `TauCeti.SpinPolarizationData.typeBSpinRep_kostantForm_apply_mem_integralLattice`: the
@@ -182,6 +193,16 @@ theorem typeBSpinCorootWeight_castSucc (s : Finset (Fin (n + 1))) (j : Fin n) :
       (if j.castSucc ∈ s then 1 else 0) - if j.succ ∈ s then 1 else 0 := by
   rw [typeBSpinCorootWeight, Fin.lastCases_castSucc]
 
+/-- The representation-theoretic coroot weight is the simply connected type-`B` spin weight. -/
+theorem typeBSpinCorootWeight_eq_typeBSpinWeight (s : Finset (Fin (n + 1))) :
+    typeBSpinCorootWeight s = TauCeti.DynkinType.typeBSpinWeight s := by
+  funext i
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · rw [typeBSpinCorootWeight_last, TauCeti.DynkinType.typeBSpinWeight_apply]
+    by_cases h : Fin.last n ∈ s <;> simp [h]
+  · rw [typeBSpinCorootWeight_castSucc, TauCeti.DynkinType.typeBSpinWeight_apply]
+    simp
+
 /-- **The all-coordinate exterior-basis vector carries the last fundamental weight.** Every
 coordinate is occupied, so the terminal short node reads `1` and every adjacent difference
 vanishes: the weight is the last fundamental weight `ωₗ`, the `1` sitting at the terminal short
@@ -191,10 +212,10 @@ the positive simple generators together with this weight, are proved in
 @[simp]
 theorem typeBSpinCorootWeight_univ_eq_single :
     typeBSpinCorootWeight (Finset.univ : Finset (Fin (n + 1))) = Pi.single (Fin.last n) 1 := by
-  funext i
-  refine Fin.lastCases ?_ (fun j ↦ ?_) i
-  · simp
-  · simp [(Fin.castSucc_lt_last j).ne]
+  rw [typeBSpinCorootWeight_eq_typeBSpinWeight,
+    TauCeti.DynkinType.typeBSpinWeight_univ_eq_single n.succ_pos]
+  -- the terminal index `⟨n + 1 - 1, _⟩` of the spin weight is `Fin.last n`
+  exact congrArg (fun i : Fin (n + 1) ↦ Pi.single i (1 : ℤ)) (Fin.ext (Nat.succ_sub_one n))
 
 /-- **The last fundamental weight occurs at exactly one exterior-basis vector.** Reading the
 coroot weights from the terminal node downwards, the value `1` at the short node forces the last
