@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Basic.Real.Star
+public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.Geometry.Lie.Exponential.Unitary
@@ -21,13 +22,12 @@ subgroups of a concrete special orthogonal carrier with skew-adjoint infinitesim
 
 The orthogonal group is the unitary group of `Matrix n n ℝ`, so the orthogonal statements are the
 Banach star algebra results `exp_mem_unitary_of_mem_skewAdjoint` and
-`TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint` read at that algebra; only the
-determinant condition cutting out the special orthogonal group is proved from scratch here.
+`TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint` read at that algebra, translated by
+`Matrix.mem_so_iff_mem_skewAdjoint`; only the determinant condition cutting out the special
+orthogonal group is proved from scratch here.
 
 ## Main results
 
-* `Matrix.mem_so_iff_mem_skewAdjoint` identifies the real orthogonal Lie algebra with the
-  skew-adjoint matrices.
 * `Matrix.exp_mem_specialOrthogonalGroup_of_mem_so` sends a skew-symmetric matrix to a special
   orthogonal exponential.
 * `Matrix.forall_exp_smul_mem_orthogonalGroup_iff_mem_so` characterizes the matrices whose entire
@@ -50,13 +50,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 attribute [local instance 100] LieRing.ofAssociativeRing
 -- Select the matrix topology underlying the operator norm, and continuity of the star for it.
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-
-/-- Over `ℝ` the orthogonal Lie algebra is the skew-adjoint part of the matrix algebra: the star
-of a real matrix is its conjugate transpose, which is its transpose. -/
-theorem mem_so_iff_mem_skewAdjoint (A : Matrix n n ℝ) :
-    A ∈ LieAlgebra.Orthogonal.so n ℝ ↔ A ∈ skewAdjoint (Matrix n n ℝ) := by
-  rw [LieAlgebra.Orthogonal.mem_so, skewAdjoint.mem_iff, Matrix.star_eq_conjTranspose,
-    Matrix.conjTranspose_eq_transpose_of_trivial]
 
 /-- The matrix exponential of an element of the real orthogonal Lie algebra is orthogonal. -/
 theorem exp_mem_orthogonalGroup_of_mem_so (A : Matrix n n ℝ)

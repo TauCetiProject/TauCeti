@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.Unitary
 public import TauCeti.Geometry.Lie.Subgroup.Units
@@ -96,12 +97,13 @@ unitary units exactly when `star x = -x`. -/
 @[simp↓]
 theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint (x : R) :
     (unitsLieAlgebraLieEquiv (R := R)).symm x ∈
-        lieSubalgebraOfSubgroup (unitarySubgroup Rˣ) ↔ x ∈ skewAdjoint R := by
-  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
-      (isClosed_unitarySubgroup_units R),
-    ← forall_exp_smul_mem_unitary_iff_mem_skewAdjoint]
-  simp only [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap,
-    Units.coeHom_apply, TauCeti.expUnit_coe]
+        lieSubalgebraOfSubgroup (unitarySubgroup Rˣ) ↔ x ∈ skewAdjoint R :=
+  -- Membership in the Lie algebra is the exponential line of `x` staying unitary, which is the
+  -- previous theorem once the line is read in algebra coordinates.
+  (unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
+        (isClosed_unitarySubgroup_units R) x).trans
+    ((forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff _ x).symm.trans
+      (forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint x))
 
 end Algebra
 
@@ -130,9 +132,9 @@ conjugate transpose is the transpose, so skew-Hermitian is skew-symmetric. -/
 theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_so (A : Matrix n n ℝ) :
     (unitsLieAlgebraLieEquiv (R := Matrix n n ℝ)).symm A ∈
         lieSubalgebraOfSubgroup (unitarySubgroup (Matrix n n ℝ)ˣ) ↔
-      A ∈ LieAlgebra.Orthogonal.so n ℝ := by
-  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg,
-    LieAlgebra.Orthogonal.mem_so, Matrix.conjTranspose_eq_transpose_of_trivial]
+      A ∈ LieAlgebra.Orthogonal.so n ℝ :=
+  (unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint A).trans
+    (Matrix.mem_so_iff_mem_skewAdjoint A).symm
 
 end Matrix
 
