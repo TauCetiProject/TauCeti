@@ -878,15 +878,6 @@ theorem even_card_typeDSpinReflection_iff {n : ℕ} (hn : 2 ≤ n) (i : Fin n)
 
 /-! ## The two Weyl orbits -/
 
-/-- A chain-node reflection is a transposition of the sign indices, so it distributes over
-symmetric differences. -/
-private theorem typeDSpinReflection_symmDiff_of_add_one_lt {n : ℕ} {i : Fin n}
-    (hi : (i : ℕ) + 1 < n) (u v : Finset (Fin n)) :
-    typeDSpinReflection i (u ∆ v) =
-      typeDSpinReflection i u ∆ typeDSpinReflection i v := by
-  ext x
-  simp only [mem_typeDSpinReflection_of_add_one_lt hi, Finset.mem_symmDiff]
-
 /-- **The two fork reflections compose to the toggle of the last two signs.** Their composite
 reverses both fork signs and leaves every other sign alone, so the reflections move a sign set
 inside its parity class by an arbitrary even number of sign changes. -/
@@ -904,8 +895,10 @@ theorem typeDSpinReflection_typeDSpinReflection_fork {n : ℕ} {p q : Fin n}
     rw [typeDSpinReflection_of_add_one_lt hplt, hnext]
   have hreflq : typeDSpinReflection q s = typeDSpinReflection p s ∆ {p, q} := by
     rw [typeDSpinReflection_of_not_add_one_lt hqlt, hprev, hmapp s]
-  rw [hreflq, typeDSpinReflection_symmDiff_of_add_one_lt hplt,
-    typeDSpinReflection_apply_apply, hmapp ({p, q} : Finset (Fin n)), Finset.map_swap_pair]
+  rw [hreflq, hmapp, Finset.map_eq_image,
+    Finset.image_symmDiff _ _ (Equiv.swap p q).toEmbedding.injective]
+  simp only [← Finset.map_eq_image]
+  rw [← hmapp, typeDSpinReflection_apply_apply, Finset.map_swap_pair]
 
 /-- Base case of the toggle construction: the two fork indices themselves. -/
 private theorem exists_toggle_last_base {n : ℕ} (p q : Fin n) (hp : (p : ℕ) + 2 = n)
@@ -944,8 +937,11 @@ private theorem exists_toggle_last {n : ℕ} (q : Fin n) (hq : (q : ℕ) + 1 = n
           omega
         refine ⟨c :: (l ++ [c]), fun s => ?_⟩
         simp only [List.foldl_cons, List.foldl_append, List.foldl_nil]
-        rw [hl (typeDSpinReflection c s), typeDSpinReflection_symmDiff_of_add_one_lt hclt,
-          typeDSpinReflection_apply_apply, typeDSpinReflection_of_add_one_lt hclt,
+        rw [hl (typeDSpinReflection c s), typeDSpinReflection_of_add_one_lt hclt,
+          Finset.map_eq_image,
+          Finset.image_symmDiff _ _ (Equiv.swap c ⟨(c : ℕ) + 1, hclt⟩).toEmbedding.injective]
+        simp only [← Finset.map_eq_image]
+        rw [← typeDSpinReflection_of_add_one_lt hclt, typeDSpinReflection_apply_apply,
           Finset.map_swap_pair_right hqc hqc']
 
 /-- **Every pair of distinct indices is toggled by a word of simple reflections.** -/
