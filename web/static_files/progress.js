@@ -217,7 +217,9 @@
       var q = state.q.toLowerCase();
       if (!q) return { hit: true, where: null };
       if ((r.name + " " + r.title).toLowerCase().indexOf(q) >= 0) return { hit: true, where: null };
-      if (r.topic.toLowerCase().indexOf(q) >= 0) return { hit: true, where: "topic " + r.topic };
+      // A category is shown by its name, but its arXiv code (math.NT) still finds it.
+      if (r.topic.toLowerCase().indexOf(q) >= 0 ||
+          (typeof r.arxiv === "string" && r.arxiv.toLowerCase().indexOf(q) >= 0)) return { hit: true, where: "topic " + r.topic };
       for (var i = 0; i < r.layers.length; i++) if (r.layers[i].toLowerCase().indexOf(q) >= 0) return { hit: true, where: "layer “" + r.layers[i] + "”" };
       if (r.status) {
         if (r.status.glance.toLowerCase().indexOf(q) >= 0) return { hit: true, where: "the report’s summary" };

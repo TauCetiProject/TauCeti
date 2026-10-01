@@ -541,6 +541,56 @@ class PagesFailurePath(unittest.TestCase):
         self.assertEqual(self.publish_after_failure(None)["which"], "committed")
 
 
+class BoardSearch(unittest.TestCase):
+    """The board's search box (`matchInfo` in progress.js) finds a roadmap by its category's name,
+    which is what the board shows, and by its arXiv code, which it no longer shows. Runs the
+    function itself under node; skipped where there is no node."""
+
+    JS = pathlib.Path(__file__).resolve().parents[1] / "web" / "static_files" / "progress.js"
+
+    def match_info_source(self):
+        text = self.JS.read_text(encoding="utf-8")
+        start = text.index("function matchInfo(r) {")
+        depth, i = 0, text.index("{", start)
+        while True:
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            if depth == 0:
+                return text[start:i + 1]
+            i += 1
+
+    def search(self, rows_and_queries):
+        import shutil
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("node is not installed")
+        harness = ("var state = {q: ''};\n" + self.match_info_source() + "\n"
+                   "var cases = " + json.dumps(rows_and_queries) + ";\n"
+                   "console.log(JSON.stringify(cases.map(function (c) {"
+                   " state.q = c[1]; return matchInfo(c[0]); })));\n")
+        run = subprocess.run([node, "-e", harness], capture_output=True, text=True, check=True)
+        return json.loads(run.stdout)
+
+    def row(self, topic, arxiv="absent"):
+        r = {"name": "Primes", "title": "Primes in progressions", "topic": topic, "layers": ["Layer 0: x"],
+             "status": None}
+        if arxiv != "absent":
+            r["arxiv"] = arxiv
+        return r
+
+    def test_a_category_is_found_by_its_code_and_by_its_name(self):
+        nt = self.row("Number Theory", "math.NT")
+        got = self.search([[nt, "math.NT"], [nt, "MATH.nt"], [nt, "math.nt"], [nt, "Number Theory"],
+                           [nt, "number"], [nt, "math.AG"]])
+        self.assertEqual([g["hit"] for g in got], [True, True, True, True, True, False])
+        self.assertEqual(got[0]["where"], "topic Number Theory")  # the explanation names, never codes
+
+    def test_an_unsorted_row_without_a_code_is_matched_by_name_only(self):
+        for arxiv in ("absent", None):
+            unsorted = self.row("Unsorted", arxiv)
+            got = self.search([[unsorted, "math.NT"], [unsorted, "unsorted"]])
+            self.assertEqual([g["hit"] for g in got], [False, True], arxiv)
+
+
 class Activity(unittest.TestCase):
     def test_weekly_bins_attribution_and_cutoff(self):
         cutoff = dt.datetime(2026, 9, 17, 12, 0, tzinfo=UTC)  # a Thursday; the week starts Monday 14th

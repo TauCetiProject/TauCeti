@@ -31,6 +31,7 @@ on:
     branches: [main]
     paths:
       - 'web/**'
+      - 'scripts/arxiv_categories.py'
       - 'scripts/chart_style.py'
       - 'scripts/loc_graph.py'
       - 'scripts/loc_roadmap_graph.py'
