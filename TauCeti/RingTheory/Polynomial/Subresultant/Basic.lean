@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
 /-!
@@ -22,6 +23,8 @@ the scalar data used by subresultant gcd criteria and projection operators.
 
 ## Main results
 
+* `Polynomial.subresultantMatrix_mulVec`: the matrix acts on a pair of coefficient vectors as
+  `(A, B) ↦ A * q + B * p`, read on the coefficients of degrees `j, …, m+n-j-1`.
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
 * `Polynomial.psc_map_map`: fixed-bound principal subresultant coefficients commute with coefficient
   maps.
@@ -109,6 +112,34 @@ theorem _root_.Polynomial.subresultantMatrix_comm [Semiring R] (p q : R[X]) (m n
         (finSumFinEquiv.symm.trans <| (Equiv.sumComm _ _).trans finSumFinEquiv) := by
   ext i k
   induction k using Fin.addCases <;> simp [subresultantMatrix]
+
+/-- The principal subresultant matrix acts on a vector as the linear map `(A, B) ↦ A * q + B * p`,
+where `A` and `B` are the polynomials whose coefficients are the first `m - j` and the last `n - j`
+entries of the vector, read on the coefficients of degrees `j, …, m+n-j-1`.  The formal bounds
+must dominate the actual degrees. -/
+theorem _root_.Polynomial.subresultantMatrix_mulVec [CommSemiring R] [DecidableEq R]
+    {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (j : ℕ)
+    (v : Fin ((m - j) + (n - j)) → R) (i : Fin ((m - j) + (n - j))) :
+    (subresultantMatrix p q m n j).mulVec v i =
+      (ofFn (m - j) (fun k => v (Fin.castAdd (n - j) k)) * q +
+        ofFn (n - j) (fun k => v (Fin.natAdd (m - j) k)) * p).coeff (i + j) := by
+  simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_add, subresultantMatrix_castAdd,
+    subresultantMatrix_natAdd, ofFn_eq_sum_monomial, Finset.sum_mul, coeff_add, finsetSum_coeff]
+  congr 1 <;> refine Finset.sum_congr rfl fun k _ => ?_
+  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
+    by_cases h₁ : (k : ℕ) ≤ i + j
+    · by_cases h₂ : (i : ℕ) + j ≤ k + n
+      · simp [h₁, h₂, mul_comm]
+      · have : q.coeff (i + j - k) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
+        simp [h₁, h₂, this]
+    · simp [h₁]
+  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
+    by_cases h₁ : (k : ℕ) ≤ i + j
+    · by_cases h₂ : (i : ℕ) + j ≤ k + m
+      · simp [h₁, h₂, mul_comm]
+      · have : p.coeff (i + j - k) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
+        simp [h₁, h₂, this]
+    · simp [h₁]
 
 /-- The principal subresultant coefficient at index `j` and formal degree bounds `m` and `n`.
 

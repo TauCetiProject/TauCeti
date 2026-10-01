@@ -21,6 +21,7 @@ concrete p-adic norm and valuation APIs.
 
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`.
+* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
@@ -64,20 +65,40 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
   rw [hcoe, Padic.mulValuation_toFun, ite_eq_right x.ne_zero, ← WithZero.exp_neg, neg_neg] at h
   exact WithZero.exp_injective h
 
+/-- The ring of integers of `ℚ_[p]` for its valuative relation is Mathlib's subring of elements
+of norm at most `1`. -/
+theorem integerRing_eq_subring : 𝒪[ℚ_[p]] = PadicInt.subring p := by
+  ext x
+  rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
+  rw [(ValuativeRel.isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation).le_one_iff_le_one]
+  simpa using (not_congr (Padic.norm_lt_norm_iff_mulValuation_lt
+    (x := (1 : ℚ_[p])) (y := x))).symm
+
+/-- The ring of integers of `ℚ_[p]` for its valuative relation is `ℤ_[p]`. -/
+noncomputable def integerRingEquiv : 𝒪[ℚ_[p]] ≃+* ℤ_[p] :=
+  RingEquiv.subringCongr (integerRing_eq_subring p)
+
+/-- The identification of the ring of integers of `ℚ_[p]` with `ℤ_[p]` is the identity on the
+underlying `p`-adic numbers. -/
+@[simp]
+theorem coe_integerRingEquiv_apply (x : 𝒪[ℚ_[p]]) : ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p]) = x :=
+  (rfl)
+
+/-- The inverse identification of `ℤ_[p]` with the ring of integers of `ℚ_[p]` is the identity on
+the underlying `p`-adic numbers. -/
+@[simp]
+theorem coe_integerRingEquiv_symm_apply (x : ℤ_[p]) :
+    (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p]) = x :=
+  (rfl)
+
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.
 theorem natCard_residueField :
     Nat.card 𝓀[ℚ_[p]] = p := by
   rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite 𝓀[ℚ_[p]])]
-  have h : 𝒪[ℚ_[p]] = PadicInt.subring p := by
-    ext x
-    rw [Valuation.mem_integer_iff, PadicInt.mem_subring_iff]
-    rw [(ValuativeRel.isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation).le_one_iff_le_one]
-    simpa using (not_congr (Padic.norm_lt_norm_iff_mulValuation_lt
-      (x := (1 : ℚ_[p])) (y := x))).symm
-  let e : 𝒪[ℚ_[p]] ≃+* ℤ_[p] := RingEquiv.subringCongr h
   rw [@Fintype.card_congr _ _ (Fintype.ofFinite 𝓀[ℚ_[p]]) inferInstance
-    ((IsLocalRing.ResidueField.mapEquiv e).trans PadicInt.residueField).toEquiv, ZMod.card]
+    ((IsLocalRing.ResidueField.mapEquiv (integerRingEquiv p)).trans
+      PadicInt.residueField).toEquiv, ZMod.card]
 
 /-- The normalized absolute value on `ℚ_[p]` agrees with Mathlib's norm. -/
 @[simp]

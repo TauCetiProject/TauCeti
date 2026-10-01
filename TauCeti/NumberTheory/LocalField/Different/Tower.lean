@@ -17,6 +17,7 @@ sum of the different exponent of `M/L` and the different exponent of `L/K`
 multiplied by the ramification index of `M/L`. This is the local form of
 transitivity of different ideals. The formula computes the exponent of a
 composite extension from its exponents over an intermediate local field.
+When `L/K` is unramified its different exponent vanishes, so `d(M/K) = d(M/L)`.
 
 ## References
 
@@ -70,5 +71,15 @@ theorem differentExponent_tower :
   exact multiplicity_differentIdeal_tower 𝒪[K]
     (IsDiscreteValuationRing.maximalIdeal 𝒪[L])
     (IsDiscreteValuationRing.maximalIdeal 𝒪[M])
+
+/-- In a tower `M/L/K` of finite separable extensions of nonarchimedean local fields with `L/K`
+unramified, `d(M/K) = d(M/L)`. -/
+theorem IsUnramified.differentExponent_tower_eq [IsUnramified K L] :
+    letI : ValuativeExtension K M := ValuativeExtension.trans K L M
+    differentExponent K M = differentExponent L M := by
+  let _ : ValuativeExtension K M := ValuativeExtension.trans K L M
+  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+  rw [differentExponent_tower K L M, (differentExponent_eq_zero_iff K L).2 ‹_›, mul_zero,
+    add_zero]
 
 end TauCeti

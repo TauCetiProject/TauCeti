@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDisc
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
 import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
+import TauCeti.Topology.Algebra.GroupAction.Discrete
 
 /-!
 # Coinduction as a functor of smooth discrete representations
@@ -363,22 +364,8 @@ theorem isLocallyConstant_representationCoindV (U : OpenSubgroup G)
     [ContinuousSMul U.toSubgroup A]
     (f : Representation.coindV U.toSubgroup.subtype
       (Representation.ofDistribMulAction R U.toSubgroup A)) :
-    IsLocallyConstant f.1 := by
-  -- Around `g`, the function is determined by the orbit map on `U * g`; shrinking `U` to the
-  -- open stabilizer of `f g` makes it constant there.
-  rw [IsLocallyConstant.iff_exists_open]
-  intro g
-  let V : Set U := MulAction.stabilizer U (f.1 g)
-  have hV : IsOpen V := stabilizer_isOpen U (f.1 g)
-  refine ⟨(Subtype.val '' V) * {g},
-    (U.isOpen.isOpenMap_subtype_val V hV).mul_right, ?_, ?_⟩
-  · refine ⟨(1 : G), ?_, g, Set.mem_singleton g, one_mul g⟩
-    exact ⟨(1 : U.toSubgroup), Subgroup.one_mem _, rfl⟩
-  · intro x hx
-    obtain ⟨_, ⟨u, hu, rfl⟩, z, hz, rfl⟩ := hx
-    have : z = g := Set.mem_singleton_iff.mp hz
-    subst z
-    exact (f.2 u g).trans (MulAction.mem_stabilizer_iff.mp hu)
+    IsLocallyConstant f.1 :=
+  isLocallyConstant_of_apply_mul U.isOpen f.2
 
 end LocallyConstant
 

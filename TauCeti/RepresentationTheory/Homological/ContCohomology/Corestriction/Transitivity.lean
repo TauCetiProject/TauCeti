@@ -44,41 +44,6 @@ variable (G : Type u) [Group G] (M : Type v) [AddCommGroup M] [DistribMulAction 
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-private def compositeTransversal (t : G ⧸ U → G)
-    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
-    (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) : G :=
-  t ((Subgroup.quotientEquivProdOfLE' hVU t ht q).1) *
-    s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2)
-
-private theorem compositeTransversal_spec (t : G ⧸ U → G)
-    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
-    (s : U ⧸ V.subgroupOf U → U)
-    (hs : ∀ v : U ⧸ V.subgroupOf U,
-      (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
-    (q : G ⧸ V) :
-    (QuotientGroup.mk (compositeTransversal G U V (hVU := hVU) t ht s q) : G ⧸ V) = q := by
-  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
-  let hmap : ∀ a b : U, QuotientGroup.leftRel (V.subgroupOf U) a b →
-      QuotientGroup.leftRel V (t (e q).1 * (a : G)) (t (e q).1 * (b : G)) := by
-    intro a b hab
-    rw [QuotientGroup.leftRel_apply] at hab ⊢
-    -- Expose the ambient values of the two subtype elements in the coset relation.
-    change ((a : G)⁻¹ * (b : G)) ∈ V at hab
-    simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel_left] using hab
-  calc
-    QuotientGroup.mk (compositeTransversal G U V (hVU := hVU) t ht s q) =
-        e.symm (e q) := by
-      -- Unfold the inverse of the tower equivalence as a quotient map on the inner coset.
-      change QuotientGroup.mk (t (e q).1 * s (e q).2) =
-        Quotient.map' (fun b : U => t (e q).1 * b) hmap (e q).2
-      calc
-        QuotientGroup.mk (t (e q).1 * s (e q).2) =
-            Quotient.map' (fun b : U => t (e q).1 * b) hmap
-              (QuotientGroup.mk (s (e q).2)) := rfl
-        _ = Quotient.map' (fun b : U => t (e q).1 * b) hmap (e q).2 :=
-          congrArg _ (hs (e q).2)
-    _ = q := e.symm_apply_apply q
-
 private theorem quotientEquivProdOfLE'_inv_smul (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
     (a : G ⧸ U) (b : U ⧸ V.subgroupOf U) (γ : G) :
@@ -102,7 +67,7 @@ private theorem quotientEquivProdOfLE'_inv_smul (t : G ⧸ U → G)
 private theorem lWord_composite (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
     (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) (γ : G) :
-    lWord V (compositeTransversal G U V (hVU := hVU) t ht s) q γ =
+    lWord V (Subgroup.compositeTransversal G U V (hVU := hVU) t ht s) q γ =
       (lWord (V.subgroupOf U) s
         (Subgroup.quotientEquivProdOfLE' hVU t ht q).2
         ⟨lWord U t (Subgroup.quotientEquivProdOfLE' hVU t ht q).1 γ,
@@ -119,7 +84,7 @@ private theorem lWord_composite (t : G ⧸ U → G)
   have hsnd := congrArg Prod.snd hcoords
   simp only at hfst hsnd
   rw [lWord_def, lWord_def]
-  unfold compositeTransversal
+  simp only [Subgroup.compositeTransversal_apply]
   -- Expose the outer and inner representatives in the two transversal words.
   change (t (e q).1 * (s (e q).2 : G))⁻¹ * γ *
       (t (e (γ⁻¹ • q)).1 * (s (e (γ⁻¹ • q)).2 : G)) =
@@ -141,7 +106,7 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 private theorem sum_compositeTransversal (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
     (s : U ⧸ V.subgroupOf U → U) (m : M) :
-    ∑ q : G ⧸ V, compositeTransversal G U V (hVU := hVU) t ht s q • m =
+    ∑ q : G ⧸ V, Subgroup.compositeTransversal G U V (hVU := hVU) t ht s q • m =
       ∑ a : G ⧸ U, t a • ∑ b : U ⧸ V.subgroupOf U, (s b : U) • m := by
   let e := Subgroup.quotientEquivProdOfLE' hVU t ht
   rw [← e.symm.sum_comp, Fintype.sum_prod_type]
@@ -150,7 +115,8 @@ private theorem sum_compositeTransversal (t : G ⧸ U → G)
   rw [Finset.smul_sum]
   apply Finset.sum_congr rfl
   intro b _
-  simp only [compositeTransversal, e, e.apply_symm_apply, mul_smul, Subgroup.smul_def]
+  simp only [Subgroup.compositeTransversal_apply, e, e.apply_symm_apply, mul_smul,
+    Subgroup.smul_def]
 
 private theorem cochainsCor1_composite (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
@@ -158,8 +124,8 @@ private theorem cochainsCor1_composite (t : G ⧸ U → G)
     (hs : ∀ v : U ⧸ V.subgroupOf U,
       (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
     (f : V → M) :
-    cochainsCor1 G M V (compositeTransversal G U V (hVU := hVU) t ht s)
-        (compositeTransversal_spec G U V hVU t ht s hs) f =
+    cochainsCor1 G M V (Subgroup.compositeTransversal G U V (hVU := hVU) t ht s)
+        (Subgroup.compositeTransversal_spec G U V hVU t ht s hs) f =
       cochainsCor1 G M U t ht
         (cochainsCor1 U M (V.subgroupOf U) s hs
           (fun x => f (Subgroup.subgroupOfEquivOfLe hVU x))) := by
@@ -172,12 +138,13 @@ private theorem cochainsCor1_composite (t : G ⧸ U → G)
   rw [Finset.smul_sum]
   apply Finset.sum_congr rfl
   intro b _
-  simp only [compositeTransversal, e, e.apply_symm_apply, mul_smul, Subgroup.smul_def]
+  simp only [Subgroup.compositeTransversal_apply, e, e.apply_symm_apply, mul_smul,
+    Subgroup.smul_def]
   congr 2
   apply congrArg f
   apply Subtype.ext
   -- Both arguments lie in `V`; compare their ambient values using the composite-word identity.
-  change lWord V (compositeTransversal G U V (hVU := hVU) t ht s) (e.symm (a, b)) γ =
+  change lWord V (Subgroup.compositeTransversal G U V (hVU := hVU) t ht s) (e.symm (a, b)) γ =
     (lWord (V.subgroupOf U) s b ⟨lWord U t a γ, lWord_mem U t ht a γ⟩ : U)
   simpa only [e, Equiv.apply_symm_apply] using
     lWord_composite G U V hVU t ht s (e.symm (a, b)) γ
@@ -188,8 +155,8 @@ private theorem cochainsCor2_composite (t : G ⧸ U → G)
     (hs : ∀ v : U ⧸ V.subgroupOf U,
       (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
     (f : V × V → M) :
-    cochainsCor2 G M V (compositeTransversal G U V (hVU := hVU) t ht s)
-        (compositeTransversal_spec G U V hVU t ht s hs) f =
+    cochainsCor2 G M V (Subgroup.compositeTransversal G U V (hVU := hVU) t ht s)
+        (Subgroup.compositeTransversal_spec G U V hVU t ht s hs) f =
       cochainsCor2 G M U t ht
         (cochainsCor2 U M (V.subgroupOf U) s hs
           (fun q => f (Subgroup.subgroupOfEquivOfLe hVU q.1,
@@ -204,13 +171,14 @@ private theorem cochainsCor2_composite (t : G ⧸ U → G)
   rw [Finset.smul_sum]
   apply Finset.sum_congr rfl
   intro b _
-  simp only [compositeTransversal, e, e.apply_symm_apply, mul_smul, Subgroup.smul_def]
+  simp only [Subgroup.compositeTransversal_apply, e, e.apply_symm_apply, mul_smul,
+    Subgroup.smul_def]
   congr 2
   apply congrArg f
   apply Prod.ext
   · apply Subtype.ext
     -- Compare the first `V`-valued word after forgetting its membership proof.
-    change lWord V (compositeTransversal G U V (hVU := hVU) t ht s) (e.symm (a, b)) γ =
+    change lWord V (Subgroup.compositeTransversal G U V (hVU := hVU) t ht s) (e.symm (a, b)) γ =
       (lWord (V.subgroupOf U) s b
         ⟨lWord U t a γ, lWord_mem U t ht a γ⟩ : U)
     simpa only [e, Equiv.apply_symm_apply] using
@@ -220,7 +188,7 @@ private theorem cochainsCor2_composite (t : G ⧸ U → G)
       quotientEquivProdOfLE'_inv_smul G U V hVU t ht a b γ
     apply Subtype.ext
     -- The translated tower coordinates identify the second inner transversal word.
-    change lWord V (compositeTransversal G U V (hVU := hVU) t ht s)
+    change lWord V (Subgroup.compositeTransversal G U V (hVU := hVU) t ht s)
         (γ⁻¹ • e.symm (a, b)) η =
       (lWord (V.subgroupOf U) s (L⁻¹ • b)
         ⟨lWord U t (γ⁻¹ • a) η, lWord_mem U t ht (γ⁻¹ • a) η⟩ : U)
@@ -336,8 +304,8 @@ theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
   have := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
-  let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
-  have hr := compositeTransversal_spec G U V hVU t Quotient.out_eq s Quotient.out_eq
+  let r := Subgroup.compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
+  have hr := Subgroup.compositeTransversal_spec G U V hVU t Quotient.out_eq s Quotient.out_eq
   rw [explicitCor0_eq_transversal G M V r hr]
   ext m
   simp only [AddMonoidHom.comp_apply, explicitCor0Le, coe_explicitCor0Transversal,
@@ -428,8 +396,8 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
   have := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
-  let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
-  have hr := compositeTransversal_spec G U V hVU t Quotient.out_eq s Quotient.out_eq
+  let r := Subgroup.compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
+  have hr := Subgroup.compositeTransversal_spec G U V hVU t Quotient.out_eq s Quotient.out_eq
   rw [explicitCor1_eq_transversal G M V r hr hV]
   ext f
   -- The quotient extensionality tactic leaves a cocycle representative; restore its class coercion.
@@ -461,8 +429,8 @@ theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
   have := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
   let t : G ⧸ U → G := Quotient.out
   let s : U ⧸ V.subgroupOf U → U := Quotient.out
-  let r := compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
-  have hr := compositeTransversal_spec G U V hVU t Quotient.out_eq s Quotient.out_eq
+  let r := Subgroup.compositeTransversal G U V (hVU := hVU) t Quotient.out_eq s
+  have hr := Subgroup.compositeTransversal_spec G U V hVU t Quotient.out_eq s Quotient.out_eq
   rw [explicitCor2_eq_transversal G M V r hr hV]
   ext f
   -- As in degree one, state the remaining equality on the class of the chosen cocycle.

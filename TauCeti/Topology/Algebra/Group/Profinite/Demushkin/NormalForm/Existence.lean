@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Image
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupSquare
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.IsDemushkin
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.Index.PadicUnits
@@ -21,10 +23,9 @@ after Serre) says which pairs `(n, A)`, with `A` a closed pro-`p` subgroup of `�
 2. `n` odd with `n ≥ 3`, so `p = 2`, and `A = {±1} × U^(f)` with `2 ≤ f ≤ ∞`;
 3. `n = 1` and `A = {±1}`.
 
-This file proves the realization half for every pair of the first and third situations, and for
-the pairs of the second situation with finite `f`: each such pair is the pair of invariants of a
-Demushkin group, exhibited as a one-relator pro-`p` group `⟨x₁, …, xₙ ∣ r⟩` on `n` generators,
-presented by one of the normal-form words of
+This file proves the realization half for every pair of the three situations: each such pair is
+the pair of invariants of a Demushkin group, exhibited as a one-relator pro-`p` group
+`⟨x₁, …, xₙ ∣ r⟩` on `n` generators, presented by one of the normal-form words of
 `TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Basic`. The realizing group is
 Demushkin of rank `n` (`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.IsDemushkin`),
 it has exactly one continuous character with the prescription property
@@ -42,15 +43,24 @@ the principal unit groups for odd `p` and Labute's four families
 | `{±1}`, `n` even           | `x₁² (x₁, x₂) ⋯ (x_{n-1}, x_n)`, `q = 2`                |
 | `{±1} × U^(f)`, `n` even   | `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, `n ≥ 4` |
 | `{±1} × U^(f)`, `n` odd    | `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`                |
+| `{±1}`, `n` odd, `n ≥ 3`   | `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`, the level `f = ∞`      |
 | `U^[g]`, `n = 2`           | `x₁^{2 + 2^g} (x₁, x₂)`                                |
 | `U^[g]`, `n ≥ 4`           | `x₁^{2 + 2^g} (x₁, x₂) x₃^{2^{g+1}} (x₃, x₄) ⋯`         |
 | `{±1}`, `n = 1`            | `x₁²`, the group `ℤ/2`                                |
 
 The condition `p ^ n > (A : A^p)` of the even case is exactly what excludes `n = 0` and, at
-`p = 2`, the non-procyclic family `{±1} × U^(f)` in rank two, where `(A : A²) = 4`. The odd case
-is proved for finite `f`; the endpoint `f = ∞`, with `A = {±1}` and relator `x₁² (x₂, x₃) ⋯`, has
-no relator word here. The converse half of the existence theorem, that no other pair occurs, is
-Labute's Theorem 1 through the normal forms of every Demushkin group and is not proved here.
+`p = 2`, the non-procyclic family `{±1} × U^(f)` in rank two, where `(A : A²) = 4`. In the odd
+case the endpoint `f = ∞` is the row `A = {±1} = {±1} × U^(∞)`, realized by the odd word at level
+`f = ∞`, and the rank-one situation is its instance `n = 1`, where that word reads `x₁²`.
+
+The converse half of the existence theorem, that no other pair occurs, is proved here for the
+Demushkin groups with `q ≠ 2`, which are those whose canonical character lands in `1 + 4ℤ_2` when
+`p = 2` (`TauCeti.demushkinQ_ne_two_iff_range_demushkinCharacter_le`). It needs no normal form:
+the rank is even because the cup form is alternating
+(`TauCeti.IsDemushkin.even_demushkinRank_of_demushkinQ_ne_two`), and the image is `1 + qℤ_p` or
+trivial (`TauCeti.range_demushkinCharacter_eq_unitsPrincipal`), with `(A : A^p) ≤ p < p ^ n`. On
+that locus the existence theorem is therefore an equivalence. For `q = 2` the converse is Labute's
+Theorem 1 through the dyadic normal forms and is not proved here.
 
 ## Main results
 
@@ -59,6 +69,7 @@ Labute's Theorem 1 through the normal forms of every Demushkin group and is not 
   `TauCeti.range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordNeTwo`,
   `TauCeti.range_eq_unitsPlusMinus_of_hasPrescriptionProperty_demushkinWordTwoOdd`,
   `TauCeti.range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd_one`,
+  `TauCeti.range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOddTop`,
   `TauCeti.range_eq_unitsPlusMinus_of_hasPrescriptionProperty_demushkinWordTwoEven`,
   `TauCeti.range_eq_of_hasPrescriptionProperty_demushkinWordTwoEven_two_pow`,
   `TauCeti.range_eq_of_hasPrescriptionProperty_demushkinWordTwoRankTwo_two_pow`: the image of the
@@ -76,8 +87,16 @@ Labute's Theorem 1 through the normal forms of every Demushkin group and is not 
   property has image `A`.
 * `TauCeti.exists_isDemushkin_range_eq_unitsPlusMinus_of_odd`: **the existence theorem in odd rank
   `n ≥ 3`**, for `A = {±1} × U^(f)` with `2 ≤ f < ∞`.
+* `TauCeti.exists_isDemushkin_range_eq_zpowers_neg_one_of_odd`: **the existence theorem in odd
+  rank at level `f = ∞`**, for `A = {±1}` and every odd `n`.
 * `TauCeti.exists_isDemushkin_one_range_eq_zpowers_neg_one`: **the existence theorem in rank
-  one**, for `A = {±1}`.
+  one**, for `A = {±1}`, the instance `n = 1` of the previous statement.
+* `TauCeti.IsDemushkin.profiniteIndex_subgroupOf_map_powMonoidHom_range_lt_of_demushkinQ_ne_two`:
+  **the necessity half for `q ≠ 2`**: the image `A` of the canonical character of a Demushkin group
+  of rank `n` with `q ≠ 2` has `(A : A^p) < p ^ n`.
+* `TauCeti.exists_isDemushkin_range_demushkinCharacter_eq_iff`: **the existence theorem for
+  `q ≠ 2` as an equivalence**: for `A ≤ ℤ_pˣ` closed and pro-`p`, contained in `1 + 4ℤ_2` when
+  `p = 2`, the pair `(n, A)` is realized exactly when `n` is even and `(A : A^p) < p ^ n`.
 
 ## References
 
@@ -203,6 +222,21 @@ theorem range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd_
   exact le_topologicalClosure _ (mem_zpowers _)
 
 end TwoOdd
+
+section TwoOddTop
+
+variable {n : ℕ}
+
+/-- **The image of the canonical character of the `q = 2`, `n` odd normal form at level `f = ∞`
+is `{±1}`**, for `n` odd: any character with the prescription property takes `x₁` to `-1` and every
+other generator to `1`. -/
+theorem range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOddTop (hn : Odd n)
+    {χ : presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)} →ₜ* ℤ_[2]ˣ}
+    (hχ : HasPrescriptionProperty χ) : χ.toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ) := by
+  rw [eq_orientationTwoOddTop_of_hasPrescriptionProperty n χ hn hχ]
+  exact range_orientationTwoOddTop n hn.pos
+
+end TwoOddTop
 
 section TwoEven
 
@@ -453,21 +487,103 @@ theorem exists_isDemushkin_range_eq_unitsPlusMinus_of_odd (hn : Odd n) (hn₃ : 
     fun _ hχ ↦ range_eq_unitsPlusMinus_of_hasPrescriptionProperty_demushkinWordTwoOdd hf hn
       (by omega) hχ⟩
 
+/-- **The existence theorem of the classification of Demushkin groups, odd rank at level `f = ∞`**
+(Labute, Theorem 1 and Remark 2; Serre, Theorem 3.2). For `n` odd, there is a Demushkin group of
+rank `n`, presented on `n` generators by the single relator `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`, which
+has exactly one continuous character with the prescription property, and that character has image
+`{±1} = {±1} × U^(∞)`. Here `p = 2`, the only prime with Demushkin groups of odd rank. -/
+theorem exists_isDemushkin_range_eq_zpowers_neg_one_of_odd (hn : Odd n) :
+    ∃ r : freeProP 2 (Fin n), ∃ hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}),
+      demushkinRank hG = n ∧
+      (∃! χ : presentedProP 2 (Fin n) {r} →ₜ* ℤ_[2]ˣ, HasPrescriptionProperty χ) ∧
+      ∀ χ : presentedProP 2 (Fin n) {r} →ₜ* ℤ_[2]ˣ, HasPrescriptionProperty χ →
+        χ.toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ) :=
+  ⟨demushkinWordTwoOddTop n (freeProPGen 2 n), isDemushkin_presentedProP_demushkinWordTwoOddTop hn,
+    demushkinRank_presentedProP_demushkinWordTwoOddTop _,
+    existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop n hn,
+    fun _ hχ ↦ range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOddTop hn hχ⟩
+
 /-- **The existence theorem of the classification of Demushkin groups, rank one** (Labute,
 Remark 2 (iii); NSW (3.9.10)). There is a Demushkin group of rank `1`, presented on one generator by
 the single relator `x₁²`, namely `ℤ/2`, which has exactly one continuous character with the
-prescription property, and that character has image `{±1}`. -/
+prescription property, and that character has image `{±1}`. This is the instance `n = 1` of the
+odd-rank statement at level `f = ∞`, whose relator word reads `x₁²` at rank one. -/
 theorem exists_isDemushkin_one_range_eq_zpowers_neg_one :
     ∃ r : freeProP 2 (Fin 1), ∃ hG : IsDemushkin 2 (presentedProP 2 (Fin 1) {r}),
       demushkinRank hG = 1 ∧
       (∃! χ : presentedProP 2 (Fin 1) {r} →ₜ* ℤ_[2]ˣ, HasPrescriptionProperty χ) ∧
       ∀ χ : presentedProP 2 (Fin 1) {r} →ₜ* ℤ_[2]ˣ, HasPrescriptionProperty χ →
         χ.toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ) :=
-  ⟨demushkinWordTwoOdd 1 1 (freeProPGen 2 1), isDemushkin_presentedProP_demushkinWordTwoOdd odd_one
-    one_pos, demushkinRank_presentedProP_demushkinWordTwoOdd one_pos _,
-    existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one 1,
-    fun _ hχ ↦ range_eq_zpowers_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd_one hχ⟩
+  exists_isDemushkin_range_eq_zpowers_neg_one_of_odd odd_one
 
 end Existence
+
+/-! ### The necessity half for `q ≠ 2` -/
+
+section Necessity
+
+variable {p : ℕ} [hp : Fact p.Prime]
+
+/-- **The necessity half of the existence theorem for `q ≠ 2`** (Labute, Theorem 1). For a
+Demushkin group `G` of rank `n` with `q(G) ≠ 2`, the image `A` of its canonical character has
+`(A : A^p) < p ^ n`. Indeed `A` is trivial, with `(A : A^p) = 1`, or the principal unit group
+`1 + qℤ_p`, with `(A : A^p) = p`, while `n ≥ 2`. Together with the parity of the rank
+(`TauCeti.IsDemushkin.even_demushkinRank_of_demushkinQ_ne_two`), this places `(n, A)` in the first
+situation of the existence theorem. -/
+theorem IsDemushkin.profiniteIndex_subgroupOf_map_powMonoidHom_range_lt_of_demushkinQ_ne_two
+    {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G] (hG : IsDemushkin p G) (hq2 : demushkinQ hG ≠ 2) :
+    profiniteIndex (((demushkinCharacter hG).toMonoidHom.range.map (powMonoidHom p)).subgroupOf
+        (demushkinCharacter hG).toMonoidHom.range) <
+      Supernatural.primePower ⟨p, hp.out⟩ (demushkinRank hG) := by
+  -- The rank is even and positive, so `p ^ n > p ≥ (A : A^p)`.
+  have hn : 1 < demushkinRank hG := by
+    obtain ⟨k, hk⟩ := hG.even_demushkinRank_of_demushkinQ_ne_two hq2
+    have := hG.demushkinRank_pos
+    omega
+  have hlt {m : ℕ∞} (hm : m ≤ 1) : Supernatural.primePower ⟨p, hp.out⟩ m <
+      Supernatural.primePower ⟨p, hp.out⟩ (demushkinRank hG) :=
+    (Supernatural.primePower_lt_primePower_iff _).2 (hm.trans_lt (by exact_mod_cast hn))
+  rcases eq_or_ne (demushkinQ hG) 0 with h0 | h0
+  · have hbot : (demushkinCharacter hG).toMonoidHom.range = ⊥ := by
+      rw [ContinuousMonoidHom.coe_toMonoidHom]
+      exact (range_demushkinCharacter_eq_bot_iff hG).2 h0
+    rw [hbot, profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower (k := 0)
+      (by simp) (by rw [relIndex_bot_right, pow_zero])]
+    exact hlt (by norm_num)
+  · obtain ⟨s, hs, hqs⟩ := hG.exists_demushkinQ_eq_pow h0
+    have hs₂ : p = 2 → 2 ≤ s := fun hp2 ↦ by
+      by_contra! hlt
+      have hs1 : s = 1 := by omega
+      exact hq2 (by rw [hqs, hp2, hs1, pow_one])
+    rw [range_demushkinCharacter_eq_unitsPrincipal hG hqs hq2,
+      profiniteIndex_subgroupOf_map_powMonoidHom_unitsPrincipal hs hs₂]
+    exact hlt le_rfl
+
+/-- **The existence theorem of the classification for `q ≠ 2`, as an equivalence** (Labute,
+Theorem 1 and Remark 2; Demushkin and Serre). Let `A ≤ ℤ_pˣ` be a closed pro-`p` subgroup,
+contained in `1 + 4ℤ_2` when `p = 2`; these are the possible images of the canonical characters of
+the Demushkin groups with `q ≠ 2`
+(`TauCeti.demushkinQ_ne_two_iff_range_demushkinCharacter_le`). Then `(n, A)` is the pair of
+invariants of a Demushkin group, presented on `n` generators by one relator, exactly when `n` is
+even and `(A : A^p) < p ^ n`. Together with
+`TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq`, this classifies
+the Demushkin groups with `q ≠ 2` by their rank and the image of their canonical character. -/
+theorem exists_isDemushkin_range_demushkinCharacter_eq_iff {n : ℕ} {A : Subgroup ℤ_[p]ˣ}
+    (hA : IsClosed (A : Set ℤ_[p]ˣ)) (hAp : IsProP p A) (hA₂ : p = 2 → A ≤ unitsPrincipal p 2) :
+    (∃ r : freeProP p (Fin n), ∃ hG : IsDemushkin p (presentedProP p (Fin n) {r}),
+        demushkinRank hG = n ∧ (demushkinCharacter hG).toMonoidHom.range = A) ↔
+      Even n ∧ profiniteIndex ((A.map (powMonoidHom p)).subgroupOf A) <
+        Supernatural.primePower ⟨p, hp.out⟩ n := by
+  refine ⟨?_, fun ⟨hn, hlt⟩ ↦ ?_⟩
+  · rintro ⟨r, hG, hrank, rfl⟩
+    have hq2 := (demushkinQ_ne_two_iff_range_demushkinCharacter_le hG).2 hA₂
+    have hlt := hG.profiniteIndex_subgroupOf_map_powMonoidHom_range_lt_of_demushkinQ_ne_two hq2
+    rw [hrank] at hlt
+    exact ⟨hrank ▸ hG.even_demushkinRank_of_demushkinQ_ne_two hq2, hlt⟩
+  · obtain ⟨r, hG, hrank, -, hrange⟩ := exists_isDemushkin_range_eq_of_even_of_lt hA hAp hn hlt
+    exact ⟨r, hG, hrank, hrange _ (hasPrescriptionProperty_demushkinCharacter hG)⟩
+
+end Necessity
 
 end TauCeti

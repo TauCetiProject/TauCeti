@@ -27,6 +27,8 @@ and scalar multiplication by a natural number is the iterated sum (`Nat.cast_smu
 ## Main results
 
 * `TauCeti.ContCohomology.instModuleZModH2`: `H²(G, M)` is a `ZMod n`-module whenever `M` is.
+* `TauCeti.ContCohomology.zmod_smul_mk`: on the class of a cocycle, a scalar `c : ZMod n` acts as
+  the `c.val`-fold sum of the cocycle.
 -/
 
 public section
@@ -43,5 +45,12 @@ variable {n : ℕ} {G : Type u} [Monoid G] [TopologicalSpace G] [ContinuousMul G
 `H²(G, ZMod n)` is one, for any continuous action of `G` on `ZMod n`. -/
 instance instModuleZModH2 [Module (ZMod n) M] : Module (ZMod n) (H2 G M) :=
   AddCommGroup.zmodModule (nsmul_H2_eq_zero (ZModModule.char_nsmul_eq_zero n))
+
+/-- Scalar multiplication by `c : ZMod n` on the class of a `2`-cocycle is the class of its
+`c.val`-fold sum: the scalar action of `ZMod n` on `H²(G, M)` is computed on cocycles through the
+natural-number action. -/
+theorem zmod_smul_mk [NeZero n] [Module (ZMod n) M] (c : ZMod n) (z : Z2 G M) :
+    c • (z : H2 G M) = ((c.val • z : Z2 G M) : H2 G M) := by
+  rw [QuotientAddGroup.mk_nsmul, ← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_zmod_val]
 
 end TauCeti.ContCohomology

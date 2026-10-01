@@ -32,7 +32,7 @@ universe u
 /-- A pre-adic space is sheafy when its presheaf of complete separated topological rings
 satisfies the sheaf condition. The condition concerns the topological-ring-valued presheaf,
 not merely its underlying presheaf of sets or rings. -/
-def PreAdicSpace.isSheafy : ObjectProperty PreAdicSpace.{u} :=
+@[expose] def PreAdicSpace.isSheafy : ObjectProperty PreAdicSpace.{u} :=
   fun X ↦ X.toPresheafedSpace.presheaf.IsSheaf
 
 /-- The category of pre-adic spaces with sheaf structure presheaves. It is the full

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
+import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # Coinduction along a subgroup of finite index
@@ -30,6 +31,14 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
   `U`, since restriction to a right transversal is injective.
 * `TauCeti.DiscreteCoind.natCard_of_isOpen`: `|Coind_U^G A| = |A| ^ [G : U]` for an open
   finite-index `U` acting trivially on `A`.
+* `TauCeti.DiscreteCoind.trace_surjective`: for an open finite-index `U` and a discrete
+  `G`-module `M`, the trace `Coind_U^G M → M` is surjective.
+* `TauCeti.DiscreteCoind.trace_eq_relIndex_nsmul_of_forall_smul_eq`,
+  `TauCeti.DiscreteCoind.trace_eq_zero_of_forall_smul_eq`: on the `G`-invariants of `Coind_V^G M`,
+  for `V ≤ U` with `U` acting trivially on `M`, the trace is `[U : V]` times the norm along `G ⧸ U`;
+  in particular it vanishes when `[U : V]` kills `M`. This is the co-effaceability of `H⁰` that
+  Tate's duality argument for the cohomological dimension of a Demushkin group uses (Serre,
+  *Structure de certains pro-p-groupes*, §9.1).
 -/
 
 public section
@@ -131,6 +140,72 @@ theorem natCard_of_isOpen [U.FiniteIndex] :
   rw [Nat.card_congr (quotientPiAddEquiv G U A hU htriv).toEquiv, Nat.card_fun, U.index_eq_card]
 
 end Trivial
+
+section Trace
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+  [U.FiniteIndex] {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace `Coind_U^G M → M` of an open subgroup is surjective.** An element `m` of the
+discrete `G`-module `M` is the trace of the function that is `g ↦ g • m` on `U` and `0` off `U`:
+that function is locally constant because `U` is clopen and `g ↦ g • m` is continuous into the
+discrete module `M`, and in the trace only the coset of `1` contributes. -/
+theorem trace_surjective (hU : IsOpen (U : Set G)) : Function.Surjective (trace G U M) := by
+  classical
+  intro m
+  have hf : IsLocallyConstant fun g : G ↦ g • m :=
+    (IsLocallyConstant.iff_continuous _).2 (continuous_id.smul continuous_const)
+  have hclopen : IsClopen (U : Set G) := ⟨U.isClosed_of_isOpen hU, hU⟩
+  have hlc : IsLocallyConstant ((U : Set G).indicator fun g ↦ g • m) :=
+    (LocallyConstant.indicator ⟨_, hf⟩ hclopen).isLocallyConstant
+  refine ⟨mk G U M ((U : Set G).indicator fun g ↦ g • m) hlc fun u g ↦ ?_, ?_⟩
+  · by_cases hg : g ∈ U
+    · rw [Set.indicator_of_mem (U.mul_mem u.2 hg), Set.indicator_of_mem hg, mul_smul,
+        Subgroup.smul_def]
+    · have hug : (u : G) * g ∉ U := fun h ↦ hg (by simpa using U.mul_mem (U.inv_mem u.2) h)
+      rw [Set.indicator_of_notMem hug, Set.indicator_of_notMem hg, smul_zero]
+  · rw [trace_apply, Finset.sum_eq_single ((1 : G) : G ⧸ U)]
+    · have h1 : ((1 : G) : G ⧸ U).out⁻¹ ∈ U := by
+        simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((1 : G) : G ⧸ U))
+      rw [coe_mk, Set.indicator_of_mem h1, smul_inv_smul]
+    · intro x _ hx
+      have hx' : x.out⁻¹ ∉ U := fun h ↦
+        hx (by rw [← QuotientGroup.out_eq' x]; exact QuotientGroup.eq.2 (by simpa using h))
+      rw [coe_mk, Set.indicator_of_notMem hx', smul_zero]
+    · exact fun h ↦ (h (Finset.mem_univ _)).elim
+
+end Trace
+
+section TraceInvariants
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {V U : Subgroup G}
+  [V.FiniteIndex] [U.FiniteIndex] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace on invariants is a multiple of the norm.** For finite-index subgroups `V ≤ U` with
+`U` acting trivially on `M`, the trace of a `G`-invariant element `f` of `Coind_V^G M` is
+`[U : V]` times the norm `∑_{q ∈ G ⧸ U} q.out • f 1` of its constant value. -/
+theorem trace_eq_relIndex_nsmul_of_forall_smul_eq (hVU : V ≤ U)
+    (htriv : ∀ u ∈ U, ∀ m : M, u • m = m) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+    trace G V M f = V.relIndex U • ∑ q : G ⧸ U, q.out • f 1 := by
+  rw [trace_apply]
+  simp only [apply_eq_apply_one_of_forall_smul_eq hf]
+  exact Subgroup.sum_out_smul_eq_relIndex_nsmul hVU fun u hu ↦ htriv u hu _
+
+/-- **The trace kills the invariants once the relative index kills the module.** For finite-index
+subgroups `V ≤ U` with `U` acting trivially on `M` and `[U : V] • m = 0` for every `m`, the trace
+`Coind_V^G M → M` vanishes on the `G`-invariants: the map `H⁰(G, Coind_V^G M) → H⁰(G, M)` induced
+by `trace` is zero. -/
+theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) (htriv : ∀ u ∈ U, ∀ m : M, u • m = m)
+    (hkill : ∀ m : M, V.relIndex U • m = 0) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+    trace G V M f = 0 := by
+  rw [trace_eq_relIndex_nsmul_of_forall_smul_eq hVU htriv hf, hkill]
+
+end TraceInvariants
 
 end DiscreteCoind
 

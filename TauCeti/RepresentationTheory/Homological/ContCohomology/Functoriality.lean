@@ -41,6 +41,9 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 
 ## Main results
 
+* `TauCeti.ContinuousCohomology.resolutionMap_injective` and
+  `TauCeti.ContinuousCohomology.cochainsMap_f_injective`: a surjective group map paired with an
+  injective coefficient map induces injective maps on resolutions and homogeneous cochains.
 * `TauCeti.ContinuousCohomology.coeffMap_comp`,
   `TauCeti.ContinuousCohomology.res_comp_res`, `TauCeti.ContinuousCohomology.res_comp_resLE`,
   `TauCeti.ContinuousCohomology.resLE_comp_resLE` and
@@ -51,6 +54,8 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
   `TauCeti.ContinuousCohomology.coeffMap_comp_resLE` and
   `TauCeti.ContinuousCohomology.coeffMap_comp_infl`: naturality of restriction and of inflation in
   the coefficients.
+* `TauCeti.ContinuousCohomology.map_comp_coeffMap`: the map of a compatible pair is natural in
+  the coefficients, under simultaneous change of group and coefficients.
 * `TauCeti.ContinuousCohomology.map_congr`: two compatible pairs that agree induce the same map.
 * `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply` and
   `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply`: evaluation of mapped homogeneous
@@ -67,7 +72,34 @@ namespace ContinuousCohomology
 
 open _root_.ContinuousCohomology
 
-universe u v
+universe u v w
+
+section InjectiveResolutionMap
+
+variable {k : Type u} [Ring k] [TopologicalSpace k]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  (φ : G →ₜ* H) {Y : TopRep.{max v w} k H} {X : TopRep.{max v w} k G}
+  (ι : TopRep.res φ Y ⟶ X)
+
+/-- A surjective group map and an injective coefficient pair induce injective maps on every term
+of the coinduced resolutions. -/
+theorem resolutionMap_injective (hφ : Function.Surjective φ) (hι : Function.Injective ι.hom) :
+    ∀ n : ℕ, Function.Injective (resolutionMap φ ι n).hom
+  | 0 => hι
+  | n + 1 => fun F F' h ↦ by
+    ext q
+    obtain ⟨g, rfl⟩ := hφ q
+    exact resolutionMap_injective hφ hι n (DFunLike.congr_fun h g)
+
+/-- The map on homogeneous cochains induced by a surjective group map and an injective coefficient
+pair is injective in every degree. -/
+theorem cochainsMap_f_injective (hφ : Function.Surjective φ)
+    (hι : Function.Injective ι.hom) (n : ℕ) :
+    Function.Injective ((cochainsMap φ ι).f n) := fun _ _ h ↦
+  Subtype.ext (resolutionMap_injective φ ι hφ hι (n + 1) (congrArg Subtype.val h))
+
+end InjectiveResolutionMap
 
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -110,6 +142,22 @@ theorem coeffMap_comp {X Y Z : TopRep R G} (f : X ⟶ Y) (g : Y ⟶ Z) (n : ℕ)
     coeffMap (f ≫ g) n = coeffMap f n ≫ coeffMap g n :=
   _root_.ContinuousCohomology.map_comp (X := X) (ContinuousMonoidHom.id G)
     (ContinuousMonoidHom.id G) f g n
+
+/-- **Naturality of compatible-pair maps in the coefficients**: for compatible pairs `(φ, f)` and
+`(φ, f')` and coefficient morphisms `a`, `b` forming a commutative square
+`res φ a ≫ f' = f ≫ b`, the induced maps satisfy `map φ f ≫ coeffMap b = coeffMap a ≫ map φ f'`. -/
+@[reassoc]
+theorem map_comp_coeffMap {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X X' : TopRep R G} {Y Y' : TopRep R H} (φ : H →ₜ* G) (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    (f' : TopRep.res (φ : H →* G) X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
+    (h : (TopRep.resFunctor (φ : H →* G)).map a ≫ f' = f ≫ b) (n : ℕ) :
+    _root_.ContinuousCohomology.map φ f n ≫ coeffMap b n =
+      coeffMap a n ≫ _root_.ContinuousCohomology.map φ f' n := by
+  rw [coeffMap_def, coeffMap_def,
+    ← _root_.ContinuousCohomology.map_comp φ (ContinuousMonoidHom.id H) f b n,
+    ← _root_.ContinuousCohomology.map_comp (ContinuousMonoidHom.id G) φ a f' n]
+  -- Both composite group homomorphisms are `φ`, and the coefficient square is `h`.
+  exact map_congr (ContinuousMonoidHom.ext fun _ ↦ rfl) (heq_of_eq h.symm) n
 
 end CoeffMap
 

@@ -58,6 +58,8 @@ the polynomial.
   extensions in the second and the first variable.
 * `TauCeti.gradedExtEuler_of_iso`: the q-Euler characteristic depends only on the isomorphism
   classes of the two objects.
+* `TauCeti.isGradedEulerAdmissible_of_projective` and `TauCeti.gradedExtEuler_projective`:
+  **graded projective evaluation**, `χ_q(P, Y) = ∑ j, q⁻ʲ dim_k Hom(P, Y{j})` for projective `P`.
 
 ## References
 
@@ -412,5 +414,47 @@ theorem gradedExtEuler_of_iso (h : IsGradedEulerAdmissible.{w} k e X Y)
   obtain ⟨N, hN⟩ := h.bounded.exists_bound
   rw [gradedExtEuler_eq k e h hN, gradedExtEuler_eq k e h' (hN.of_iso i j)]
   exact truncatedGradedExtEuler_of_iso k h.internallyFinite h'.internallyFinite i j N
+
+/-! ### Projective evaluation -/
+
+section Projective
+
+variable (e)
+
+/-- A projective first entry whose graded Hom spaces `Hom(P, Y{j})` have finite Laurent support is
+graded Euler-admissible: the bigraded `Ext` groups of positive cohomological degree vanish, and in
+degree zero they are those Hom spaces. -/
+theorem isGradedEulerAdmissible_of_projective (P Y : C) [Projective P]
+    (h : HasFiniteLaurentSupport k fun j ↦ P ⟶ (e ^ j).functor.obj Y) :
+    IsGradedEulerAdmissible.{w} k e P Y where
+  internallyFinite := ⟨fun n ↦ by
+    match n with
+    | 0 => exact h.of_equiv fun j ↦ (Ext.linearEquiv₀ (R := k)).symm
+    | m + 1 =>
+      have hsub (j : ℤ) : Subsingleton (GradedExt.{w} e P Y (m + 1) j) :=
+        (isExtBoundedBy_one_of_projective.{w} P ((e ^ j).functor.obj Y)).subsingleton
+          (Nat.le_add_left 1 m)
+      exact HasFiniteLaurentSupport.of_finset (fun _ ↦ inferInstance) ∅ fun j _ ↦ hsub j⟩
+  bounded := ⟨1, ⟨fun _ hn j ↦
+    (isExtBoundedBy_one_of_projective.{w} P ((e ^ j).functor.obj Y)).subsingleton hn⟩⟩
+
+/-- **Graded projective evaluation**: the q-Euler characteristic of a pair with projective first
+entry is the target-shift graded dimension of its graded Hom spaces,
+`χ_q(P, Y) = ∑ j, q⁻ʲ dim_k Hom(P, Y{j})`. The finite Laurent support of these Hom spaces is read
+off from the degree-zero part of the admissibility witness. -/
+theorem gradedExtEuler_projective {P Y : C} [Projective P]
+    (h : IsGradedEulerAdmissible.{w} k e P Y) :
+    gradedExtEuler k e h =
+      targetShiftGradedDimension k (fun j ↦ P ⟶ (e ^ j).functor.obj Y)
+        ((h.internallyFinite.finiteLaurentSupport 0).of_equiv fun _ ↦
+          Ext.linearEquiv₀ (R := k)) := by
+  rw [gradedExtEuler_eq k e h (N := 1) ⟨fun _ hn j ↦
+      (isExtBoundedBy_one_of_projective.{w} P ((e ^ j).functor.obj Y)).subsingleton hn⟩,
+    truncatedGradedExtEuler_succ, truncatedGradedExtEuler_zero, pow_zero, one_smul, zero_add,
+    gradedExtDimension_eq_targetShiftGradedDimension]
+  exact targetShiftGradedDimension_congr _ _ fun j ↦
+    (Ext.linearEquiv₀ (R := k)).finrank_eq
+
+end Projective
 
 end TauCeti

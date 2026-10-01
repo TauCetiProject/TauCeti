@@ -14,7 +14,6 @@ import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
-import Mathlib.RingTheory.Radical.Basic
 
 /-!
 # The monic irreducible factors of a polynomial over a field
@@ -38,6 +37,8 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 ## Main results
 
 * `Polynomial.Factors.finite`: a nonzero polynomial has finitely many factors.
+* `Polynomial.Factors.normalizedFactors_eq_map_univ_val`: for a nonzero squarefree polynomial,
+  its normalized factors are precisely the distinct monic irreducible factors.
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
@@ -91,6 +92,17 @@ lemma finite (hf : f ≠ 0) : Finite f.Factors := by
   exact .of_injective _
     (Subtype.impEmbedding _ (· ∈ normalizedFactors f)
       fun p hp ↦ (Polynomial.mem_normalizedFactors_iff hf).mpr hp).injective
+
+/-- For a nonzero squarefree polynomial, its normalized factors list its distinct monic
+irreducible factors exactly once. -/
+lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
+    (hf : f ≠ 0) (hsq : Squarefree f) :
+    normalizedFactors f = Finset.univ.val.map (Subtype.val : f.Factors → K[X]) := by
+  refine (Multiset.Nodup.ext
+    ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf).1 hsq)
+    (Finset.univ.nodup.map Subtype.val_injective)).2 fun p => ?_
+  rw [Polynomial.mem_normalizedFactors_iff hf, Multiset.mem_map]
+  exact ⟨fun hp => ⟨⟨p, hp⟩, Finset.mem_univ _, rfl⟩, fun ⟨q, _, hq⟩ => hq ▸ q.2⟩
 
 lemma nonempty (hu : ¬ IsUnit f) : Nonempty f.Factors :=
   let ⟨p, hmonic, hirr, hdvd⟩ := f.exists_monic_irreducible_factor hu
@@ -151,17 +163,8 @@ irreducible factors. -/
 lemma associated_prod [Fintype f.Factors] (hf : f ≠ 0) (hsq : Squarefree f) :
     Associated (∏ p : f.Factors, (p : K[X])) f := by
   classical
-  -- identify `f.Factors` with the subtype of the `Finset` of normalized factors
-  have hprod : ∏ p : f.Factors, (p : K[X]) =
-      ∏ p : {p : K[X] // p ∈ (normalizedFactors f).toFinset}, (p : K[X]) :=
-    Fintype.prod_equiv (Equiv.subtypeEquivRight fun p ↦ by
-        rw [Multiset.mem_toFinset, Polynomial.mem_normalizedFactors_iff hf]) _ _
-      fun x ↦ by rw [Equiv.subtypeEquivRight_apply]
-  have hcoe : ∏ p : {p : K[X] // p ∈ (normalizedFactors f).toFinset}, (p : K[X]) =
-      ∏ p ∈ (normalizedFactors f).toFinset, p :=
-    Finset.prod_coe_sort _ fun x ↦ x
-  rw [hprod, hcoe, toFinset_normalizedFactors]
-  exact radical_associated hsq.isRadical hf
+  rw [Finset.prod_eq_multiset_prod, ← normalizedFactors_eq_map_univ_val hf hsq]
+  exact prod_normalizedFactors hf
 
 /-- The degrees of the distinct monic irreducible factors of `f ≠ 0` sum to at most the
 degree of `f`. -/

@@ -17,6 +17,8 @@ Facts about the invariants of an elliptic curve, complementing
 * `WeierstrassCurve.a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero`: where `2 = 0`, a curve
   with `Δ ≠ 0`
   has `a₁ ≠ 0` or `a₃ ≠ 0`;
+* `WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq`: two equations with the same `c`-invariants have the
+  same discriminant, wherever `1728` is a regular element, by `WeierstrassCurve.c_relation`;
 * `WeierstrassCurve.j_eq_1728_iff`: `j = 1728 ↔ c₆ = 0`, the analogue for `j = 1728` of Mathlib's
   `WeierstrassCurve.j_eq_zero_iff` (`j = 0 ↔ c₄ = 0`), together with its unreduced companion
   `WeierstrassCurve.j_eq_1728_iff'` mirroring `WeierstrassCurve.j_eq_zero_iff'`;
@@ -33,7 +35,7 @@ All are stated over a commutative ring, matching the generality of the Mathlib r
 complement. The first two are consumed by the automorphism-group development in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean`, the `Aut (E, O)` milestone of
 `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1; the base-change pair is consumed by the
-twist classification in `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean`, which
+twist classification in `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist/Basic.lean`, which
 needs `Aut(Eᴸ) = {±1}` after base change to a splitting field.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
@@ -61,6 +63,13 @@ lemma a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero (hΔ : E.Δ ≠ 
     E.a₁ ≠ 0 ∨ E.a₃ ≠ 0 := by
   by_contra! h
   exact hΔ (by rw [Δ, b₈, b₆, b₄, b₂, h.1, h.2]; grobner)
+
+/-- **The discriminant is determined by the `c`-invariants**, wherever `1728` can be cancelled:
+`WeierstrassCurve.c_relation` pins `1728 * Δ` down to `c₄³ - c₆²`. -/
+lemma Δ_eq_of_c₄_eq_of_c₆_eq (h1728 : IsRegular (1728 : R)) {W W' : WeierstrassCurve R}
+    (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) : W.Δ = W'.Δ := by
+  have h : (1728 : R) * W.Δ = 1728 * W'.Δ := by rw [c_relation, c_relation, h₄, h₆]
+  exact h1728.left h
 
 /-- `j(E) = 1728` if and only if `c₆(E)² = 0`, by the relation `1728·Δ = c₄³ - c₆²`. This is the
 analogue for `j = 1728` of `WeierstrassCurve.j_eq_zero_iff'` (`j = 0 ↔ c₄³ = 0`). -/

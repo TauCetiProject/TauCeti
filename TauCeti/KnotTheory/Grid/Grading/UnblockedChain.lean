@@ -8,6 +8,7 @@ module
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.Unblocked
@@ -70,6 +71,10 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 * `TauCeti.GridDiagram.maslovOℤ_sub_two_mul_card_OColumns` and
   `TauCeti.GridDiagram.alexanderTwoℤ_sub_two_mul_card_OColumns`: the integer forms of the two
   grading changes across a rectangle counted by `∂⁻`.
+* `TauCeti.GridDiagram.isWeightedHomogeneous_OMonomial` and
+  `TauCeti.GridDiagram.isWeightedHomogeneous_unblockedCoefficient`: with every variable of weight
+  `-2`, the weight of an empty rectangle from `x` to `y`, and so each matrix coefficient of `∂⁻`,
+  is weighted homogeneous of degree `M_O(x) - 1 - M_O(y)`, for any diagram.
 * `TauCeti.OddComponentGridDiagram.monomialBidegree_add_of_mem_unblockedRectangles`: multiplying by
   the weight of a counted rectangle and moving to its target lowers the bidegree by `(1, 0)`.
 * `TauCeti.OddComponentGridDiagram.unblockedDifferential_mem_bigradedChainMinusPiece`: the
@@ -127,6 +132,42 @@ theorem alexanderTwoℤ_sub_two_mul_card_OColumns {r : GridRectangleBetween x y}
     rw [← hy, ← hx]
     linarith
   exact_mod_cast hq
+
+/-! ### Maslov homogeneity of the rectangle weights -/
+
+variable (R : Type*) [CommSemiring R]
+
+/-- **The weight of an empty rectangle is Maslov homogeneous.** Giving every variable the weight
+`-2`, the weight `V^{O(r)}` of an empty rectangle from `x` to `y` is weighted homogeneous of degree
+`M_O(x) - 1 - M_O(y)`: the term `V^{O(r)} · y` lies one below `x` in the `O`-Maslov grading. No
+condition on the `X`-markings is needed. -/
+theorem isWeightedHomogeneous_OMonomial {r : GridRectangleBetween x y} (hr : r.IsEmpty) :
+    IsWeightedHomogeneous (fun _ : Fin n ↦ (-2 : ℤ)) (G.OMonomial R r.toGridRectangle)
+      (G.maslovOℤ x - 1 - G.maslovOℤ y) := by
+  have h := G.maslovOℤ_sub_two_mul_card_OColumns hr
+  rw [OMonomial_eq_monomial]
+  refine isWeightedHomogeneous_monomial _ _ _ ?_
+  simp only [map_sum, Finsupp.weight_single, one_smul, Finset.sum_const, nsmul_eq_mul]
+  omega
+
+/-- A sum of weights of empty rectangles from `x` to `y`, such as a matrix coefficient of the
+unblocked differential or of an `X`-marking homotopy, is weighted homogeneous of degree
+`M_O(x) - 1 - M_O(y)` when every variable has weight `-2`. -/
+theorem isWeightedHomogeneous_sum_OMonomial (s : Finset (GridRectangleBetween x y))
+    (hs : ∀ r ∈ s, r.IsEmpty) :
+    IsWeightedHomogeneous (fun _ : Fin n ↦ (-2 : ℤ)) (∑ r ∈ s, G.OMonomial R r.toGridRectangle)
+      (G.maslovOℤ x - 1 - G.maslovOℤ y) :=
+  IsWeightedHomogeneous.sum _ _ _ fun r hr ↦ G.isWeightedHomogeneous_OMonomial R (hs r hr)
+
+/-- **The unblocked differential drops the `O`-Maslov grading by one**, in the form of its matrix
+coefficients: with every variable of weight `-2`, the coefficient from `x` to `y` is weighted
+homogeneous of degree `M_O(x) - 1 - M_O(y)`. Unlike the bigraded statements below, this needs no
+hypothesis on the number of link components. -/
+theorem isWeightedHomogeneous_unblockedCoefficient (x y : GridState n) :
+    IsWeightedHomogeneous (fun _ : Fin n ↦ (-2 : ℤ)) (G.unblockedCoefficient R x y)
+      (G.maslovOℤ x - 1 - G.maslovOℤ y) := by
+  rw [unblockedCoefficient_def]
+  exact G.isWeightedHomogeneous_sum_OMonomial R _ fun _ hr ↦ G.isEmpty_of_mem_unblockedRectangles hr
 
 end GridDiagram
 

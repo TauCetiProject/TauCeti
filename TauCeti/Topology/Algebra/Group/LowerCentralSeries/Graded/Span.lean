@@ -268,6 +268,24 @@ theorem eq_top_of_forall_gradedPow_mem_of_forall_gradedBracket_mem {k : ℕ}
   · exact hpow x
   · exact hbracket x y
 
+/-- **It suffices to check `π` on a spanning set above degree zero**: if `S` spans `gr_k(G)`
+and the `p`-power of every element of `S` belongs to `W`, then the `p`-power of every element of
+`gr_k(G)` belongs to `W`. -/
+theorem forall_gradedPow_mem_of_span_eq_top {k : ℕ} (hk : 1 ≤ k)
+    {S : Set (gradedPiece p G k)} (hS : span (ZMod p) S = ⊤)
+    {W : Submodule (ZMod p) (gradedPiece p G (k + 1))}
+    (hpow : ∀ x ∈ S, gradedPow p G k x ∈ W) (x : gradedPiece p G k) :
+    gradedPow p G k x ∈ W := by
+  have h : (⊤ : Submodule (ZMod p) (gradedPiece p G k)) ≤
+      W.comap ((gradedPowAddMonoidHom p G hk).toZModLinearMap p) := by
+    rw [← hS, Submodule.span_le]
+    intro y hy
+    rw [SetLike.mem_coe, Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap,
+      gradedPowAddMonoidHom_apply]
+    exact hpow y hy
+  have hx := h (Submodule.mem_top (x := x))
+  rwa [Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply] at hx
+
 /-! ### The degree-one family of an ordered family -/
 
 variable (p) in
