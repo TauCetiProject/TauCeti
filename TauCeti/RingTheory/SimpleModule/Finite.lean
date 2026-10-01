@@ -16,9 +16,9 @@ import Mathlib.GroupTheory.Perm.Cycle.Type
 
 Let `R` be a ring and `M` a **finite** simple `R`-module. In a simple module a natural number `n`
 either kills no nonzero element or kills every element, by
-`TauCeti.forall_nsmul_eq_zero_of_ne_zero`. Taking for `n` a prime `p` dividing `Nat.card M`,
-Cauchy's theorem produces a nonzero element killed by `p`, and that dichotomy forces `p • m = 0` for
-every `m`: the additive group of `M` is **elementary abelian of exponent `p`**
+`TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`. Taking for `n` a prime `p` dividing
+`Nat.card M`, Cauchy's theorem produces a nonzero element killed by `p`, and that dichotomy forces
+`p • m = 0` for every `m`: the additive group of `M` is **elementary abelian of exponent `p`**
 (`TauCeti.exists_prime_forall_nsmul_eq_zero`). That prime is unique, by
 `TauCeti.eq_of_prime_forall_nsmul_eq_zero`.
 
@@ -50,8 +50,8 @@ variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M]
 
 /-- **A finite simple module is an elementary abelian `p`-group.** A simple module is nontrivial,
 so a prime `p` divides its cardinality; Cauchy's theorem produces an element of additive order `p`,
-which is nonzero and killed by `p`, and `TauCeti.forall_nsmul_eq_zero_of_ne_zero` spreads that to
-the whole module. -/
+which is nonzero and killed by `p`, and `TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`
+spreads that to the whole module. -/
 theorem exists_prime_forall_nsmul_eq_zero [Finite M] [IsSimpleModule R M] :
     ∃ p : ℕ, p.Prime ∧ ∀ m : M, p • m = 0 := by
   have hnt : Nontrivial M := IsSimpleModule.nontrivial R M
@@ -65,7 +65,7 @@ theorem exists_prime_forall_nsmul_eq_zero [Finite M] [IsSimpleModule R M] :
   have hkill : p • m₀ = 0 := by
     rw [← hm₀]
     exact addOrderOf_nsmul_eq_zero m₀
-  exact ⟨p, hp, forall_nsmul_eq_zero_of_ne_zero (R := R) hm₀ne hkill⟩
+  exact ⟨p, hp, forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero (R := R) hm₀ne hkill⟩
 
 end SimpleModule
 

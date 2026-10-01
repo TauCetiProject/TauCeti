@@ -27,8 +27,8 @@ useful in centralizer arguments.
 
 ## Main results
 
-* `TauCeti.forall_nsmul_eq_zero_of_ne_zero`: in a simple module, a natural number killing one
-  nonzero element kills every element.
+* `TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`: in a simple module, a natural number
+  killing one nonzero element kills every element.
 * `TauCeti.IsSemisimpleModule.prod`: a product of two semisimple modules is semisimple.
 * `TauCeti.IsSemisimpleModule.exists_end_apply_eq_iff`: in a semisimple module, an endomorphism
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
@@ -46,8 +46,8 @@ section SimpleModule
 Multiplication by `n` is the `R`-linear endomorphism `n • LinearMap.id`, so its kernel is an
 `R`-submodule; a nonzero element of that kernel keeps it from being `⊥`, and in a simple module it
 is then `⊤`. -/
-theorem forall_nsmul_eq_zero_of_ne_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M} (hm₀ : m₀ ≠ 0)
-    (h : n • m₀ = 0) (m : M) : n • m = 0 := by
+theorem forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M}
+    (hm₀ : m₀ ≠ 0) (h : n • m₀ = 0) (m : M) : n • m = 0 := by
   -- Membership in that kernel, read without the `ℕ`-action on linear maps.
   have hmem : ∀ x : M, x ∈ LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ↔ n • x = 0 := fun x ↦ by
     simp only [LinearMap.mem_ker, LinearMap.smul_apply, LinearMap.id_apply]
