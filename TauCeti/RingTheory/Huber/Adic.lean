@@ -42,7 +42,7 @@ public section
 
 namespace TauCeti.Huber
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 namespace PairOfDefinition
 
@@ -58,8 +58,10 @@ noncomputable def adic (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) : PairOfDefini
   fg_idealOfDefinition := by
     rw [← Ideal.map_symm]
     exact hfg.map (Subring.topEquiv : (⊤ : Subring A) ≃+* A).symm.toRingHom
-  isAdic_idealOfDefinition :=
-    IsAdic.comap _ Topology.IsInducing.subtypeVal hI
+  isAdic_idealOfDefinition := by
+    -- An adic topology is a ring topology, so `IsAdic.comap` applies without assuming it.
+    have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
+    exact IsAdic.comap _ Topology.IsInducing.subtypeVal hI
 
 @[simp]
 theorem adic_ringOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
@@ -109,6 +111,8 @@ theorem adic_idealImage (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) (n : ℕ) :
     _ ↔ x ∈ (I ^ n).toAddSubgroup := Iff.rfl
 
 end PairOfDefinition
+
+variable [IsTopologicalRing A]
 
 /-- A commutative topological ring is Huber when its topology is defined by a finitely generated
 ideal. -/
