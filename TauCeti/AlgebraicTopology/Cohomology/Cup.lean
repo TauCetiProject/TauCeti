@@ -210,6 +210,9 @@ lemma _root_.TauCeti.TopCat.cupCochain_alexanderWhitneyDiagonal_assoc (X : TopCa
     ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ φ₂
   let f₃ : R₃ ⟶ M₃ := (toSSet.obj X).ιChainComplex
     ((toSSet.obj X).map (SimplexCategory.subinterval (p + q) r (by omega)).op σ) ≫ φ₃
+  -- Fold the three local face evaluations into `f₁`, `f₂`, and `f₃` to display the coefficient
+  -- equation. This `change` unfolds only these `let` bindings; subinterval bounds agree by
+  -- proof irrelevance.
   change u ≫ ((u₁₂ ≫ (f₁ ⊗ₘ f₂) ≫ μ₁₂) ⊗ₘ f₃) ≫ μ =
     u' ≫ (f₁ ⊗ₘ (u₂₃ ≫ (f₂ ⊗ₘ f₃) ≫ μ₂₃)) ≫ μ'
   calc _ = u ≫ u₁₂ ▷ R₃ ≫ ((f₁ ⊗ₘ f₂) ⊗ₘ f₃) ≫ μ₁₂ ▷ M₃ ≫ μ := by
