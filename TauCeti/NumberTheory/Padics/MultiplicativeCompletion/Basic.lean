@@ -186,14 +186,7 @@ theorem padicCompletionUnits_natCast_smul (n : ℕ)
 theorem padicCompletionUnits_add_pow_smul_apply (m : ℕ)
     (y z : Additive ↑(padicCompletionUnits p L)) :
     (y + (p : ℤ_[p]) ^ m • z).toMul.1 m = y.toMul.1 m := by
-  have h : (y + (p : ℤ_[p]) ^ m • z).toMul.1 m =
-      (y.toMul.1 m : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) * z.toMul.1 m ^ p ^ m := by
-    simp only [← Nat.cast_pow, padicCompletionUnits_natCast_smul, toMul_add, toMul_nsmul,
-      Subgroup.coe_mul, Subgroup.coe_pow, Pi.mul_apply, Pi.pow_apply]
-  rw [h, QuotientGroup.pow_eq_one_quotient_range_powMonoidHom]
-  -- `rw [mul_one]` fails here: the type of the coordinate is the beta-redex
-  -- `(fun m ↦ Lˣ ⧸ _) m`, so `mul_one` needs its argument at the reduced type.
-  exact mul_one (y.toMul.1 m : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range)
+  simp
 
 section GaloisAction
 

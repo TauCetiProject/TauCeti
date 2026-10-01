@@ -125,7 +125,8 @@ private theorem deepExpClass_smul (d : 𝒪[ℚ_[p]]) (x : (𝓂[L] ^ i : Ideal 
   simp only [toMul_add, toMul_nsmul, Subgroup.coe_mul, Subgroup.coe_pow, Pi.mul_apply,
     Pi.pow_apply]
   rw [QuotientGroup.pow_eq_one_quotient_range_powMonoidHom]
-  -- As in `padicCompletionUnits_add_pow_smul_apply`, `mul_one` needs the reduced type.
+  -- `rw [mul_one]` fails here: the type of the coordinate is the beta-redex
+  -- `(fun m ↦ Lˣ ⧸ _) m`, so `mul_one` needs its argument at the reduced type.
   exact mul_one (_ : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range)
 
 end DeepExp
@@ -187,7 +188,7 @@ private noncomputable abbrev integerBasis :
 private noncomputable def deepLatticeVector (i : ℕ) (k : Fin (Module.finrank ℚ_[p] L)) :
     (𝓂[L] ^ i : Ideal 𝒪[L]) :=
   ⟨(p : 𝒪[L]) ^ i * integerBasis p L k,
-    Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (natCast_mem_maximalIdeal L p) i)⟩
+    Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (residuePrime_mem_maximalIdeal L p) i)⟩
 
 private theorem coe_deepLatticeVector (k : Fin (Module.finrank ℚ_[p] L)) :
     ((deepLatticeVector i k : (𝓂[L] ^ i : Ideal 𝒪[L])) : 𝒪[L]) =

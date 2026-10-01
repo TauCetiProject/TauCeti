@@ -40,7 +40,7 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 * `TauCeti.valuation_natCast_eq_pow_mul_padicValNat`: the same valuation, as a power of the
   valuation of a uniformizer.
 * `TauCeti.absoluteRamificationIndex_padic`: the absolute ramification index of `ℚ_[p]` is one.
-* `TauCeti.natCast_mem_maximalIdeal`: the residue prime lies in the maximal ideal of `𝒪[K]`.
+* `TauCeti.residuePrime_mem_maximalIdeal`: the residue prime lies in the maximal ideal of `𝒪[K]`.
 * `TauCeti.absoluteRamificationIndex_tower`: the absolute index is multiplicative in a tower.
 
 ## References
@@ -152,7 +152,7 @@ theorem absoluteRamificationIndex_padic : absoluteRamificationIndex ℚ_[p] p = 
   rw [absoluteRamificationIndex_eq_natCastValuation, Padic.natCastValuation_self]
 
 /-- The residue prime `p` lies in the maximal ideal of `𝒪[K]`. -/
-theorem natCast_mem_maximalIdeal : (p : 𝒪[K]) ∈ 𝓂[K] := by
+theorem residuePrime_mem_maximalIdeal : (p : 𝒪[K]) ∈ 𝓂[K] := by
   have := FinitePadicExtension.charZero K p
   have h := absoluteRamificationIndex_pos K p
   rw [absoluteRamificationIndex_eq_natCastValuation] at h
