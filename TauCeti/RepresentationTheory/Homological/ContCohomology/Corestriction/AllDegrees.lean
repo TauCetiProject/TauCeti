@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.AllDegrees
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Trace.DegreeOne
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Trace.DegreeTwo
 
 /-!
 # Corestriction in every degree
@@ -31,26 +32,38 @@ The identity `cor ∘ res = [G : U]` (NSW (1.5.7)) rests on the unit `M → Coin
 followed by the inverse of Shapiro's isomorphism is the coefficient map of the unit
 (`TauCeti.ContinuousCohomology.res_comp_shapiroIso_inv`), and the trace of the unit is
 multiplication by the index (`TauCeti.DiscreteCoind.trace_unit`). Corestriction is natural in the
-coefficient module, and in degrees `0` and `1` it agrees, under the comparison isomorphisms with
-the explicit inhomogeneous model, with the transversal formulas
-`TauCeti.ContCohomology.explicitCor0` and `TauCeti.ContCohomology.explicitCor1`.
+coefficient module, and in degrees `0`, `1` and `2` it agrees, under the comparison isomorphisms
+with the explicit inhomogeneous model, with the transversal formulas
+`TauCeti.ContCohomology.explicitCor0`, `TauCeti.ContCohomology.explicitCor1` and
+`TauCeti.ContCohomology.explicitCor2`.
+
+The same construction applies to a smooth discrete representation `A : TopRep R G` over an
+arbitrary ring `R`: `TauCeti.ContinuousCohomology.corestrictionTopRep` is the inverse of the
+generic Shapiro isomorphism `TauCeti.ContinuousCohomology.shapiroIsoTopRep` followed by the
+coefficient map of the trace morphism `TauCeti.coindTraceHom`. This is the corestriction used by
+the projection formula for cup products over an arbitrary coefficient ring.
 
 ## Main definitions
 
 * `TauCeti.ContinuousCohomology.corestriction`: **corestriction** `Hⁿ(U, M) ⟶ Hⁿ(G, M)` in every
   degree, for an open finite-index subgroup `U` of a profinite group `G`.
+* `TauCeti.ContinuousCohomology.corestrictionTopRep`: corestriction for smooth discrete
+  representations over an arbitrary ring, for an open subgroup `U` of a profinite group `G`.
 
 ## Main results
 
 * `TauCeti.ContinuousCohomology.shapiroMap_comp_corestriction`: the Shapiro map followed by
-  corestriction is the coefficient map of the trace.
+  corestriction is the coefficient map of the trace;
+  `TauCeti.ContinuousCohomology.shapiroMapTopRep_comp_corestrictionTopRep` is the same statement
+  for smooth discrete representations over an arbitrary ring.
 * `TauCeti.ContinuousCohomology.res_comp_corestriction`,
   `TauCeti.ContinuousCohomology.corestriction_res`: **`cor ∘ res = [G : U] • id`** in every degree.
 * `TauCeti.ContinuousCohomology.corestriction_naturality`: corestriction is natural in the
   coefficient module.
 * `TauCeti.ContinuousCohomology.explicitH0Iso_corestriction`,
-  `TauCeti.ContinuousCohomology.explicitH1AddEquivContinuousCohomology_corestriction`: agreement
-  with the explicit corestrictions in degrees `0` and `1`.
+  `TauCeti.ContinuousCohomology.explicitH1AddEquivContinuousCohomology_corestriction`,
+  `TauCeti.ContinuousCohomology.explicitH2AddEquivContinuousCohomology_corestriction`: agreement
+  with the explicit corestrictions in degrees `0`, `1` and `2`.
 
 ## References
 
@@ -268,5 +281,81 @@ theorem explicitH1AddEquivContinuousCohomology_corestriction (x : H1 U M) :
   rw [hx, ← ConcreteCategory.comp_apply, shapiroMap_comp_corestriction,
     explicitH1AddEquivContinuousCohomology_coeffMap, explicitCor1_eq_explicitCoeff1_trace hU,
     AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ← hy]
+
+/-- **In degree two, corestriction is the explicit transversal formula** of
+`TauCeti.ContCohomology.explicitCor2`, under the comparisons of `H²` with the canonical carrier.
+The degree-two comparison for `U` needs `U` to be locally compact, which holds because `U` is
+closed in the compact group `G`. -/
+theorem explicitH2AddEquivContinuousCohomology_corestriction (x : H2 U M) :
+    haveI : LocallyCompactSpace U := (U.isClosed_of_isOpen hU).locallyCompactSpace
+    corestriction U M hU 2 (explicitH2AddEquivContinuousCohomology U M x) =
+      explicitH2AddEquivContinuousCohomology G M (explicitCor2 G M U hU x) := by
+  have : LocallyCompactSpace U := (U.isClosed_of_isOpen hU).locallyCompactSpace
+  set y := (explicitShapiro2 G U M (U.isClosed_of_isOpen hU)).symm x with hy
+  have hx : explicitH2AddEquivContinuousCohomology U M x =
+      shapiroMap U M 2 (explicitH2AddEquivContinuousCohomology G (DiscreteCoind G U M) y) := by
+    rw [explicitH2AddEquivContinuousCohomology_shapiroMap, hy, ← explicitShapiro2_apply _ _ _
+      (U.isClosed_of_isOpen hU), AddEquiv.apply_symm_apply]
+  -- As in degree one: the class `x` is the Shapiro image of `y`, so corestriction of `x` is the
+  -- coefficient map of the trace on `y`, which is the explicit coefficient map of the trace.
+  rw [hx, ← ConcreteCategory.comp_apply, shapiroMap_comp_corestriction,
+    explicitH2AddEquivContinuousCohomology_coeffMap, explicitCor2_eq_explicitCoeff2_trace hU,
+    AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ← hy]
+
+/-! ### Corestriction for smooth discrete topological representations -/
+
+section TopRep
+
+universe v
+
+variable {R : Type v} [Ring R] [TopologicalSpace R]
+  {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G] (U : Subgroup G)
+
+/-- Corestriction for a smooth discrete topological representation over an arbitrary ring: the
+inverse of the generic Shapiro isomorphism followed by the coefficient map of the trace. An open
+subgroup of the compact group `G` has finite index, so the trace is available. -/
+noncomputable def corestrictionTopRep (A : SmoothDiscreteTopRep.{v, u, u} R G)
+    (hU : IsOpen (U : Set G)) (n : ℕ) :
+    continuousCohomology n (smoothDiscreteResTopRep U A).obj ⟶
+      continuousCohomology n A.obj :=
+  haveI : Finite (G ⧸ U) := U.quotient_finite_of_isOpen hU
+  haveI : U.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  (shapiroIsoTopRep U (U.isClosed_of_isOpen hU)
+    (smoothDiscreteResTopRep U A) n).inv ≫
+    coeffMap (coindTraceHom R G U A) n
+
+-- Not `@[simp]`: `corestrictionTopRep` is the intended normal form, and this lemma unfolds it.
+/-- The defining equation of `corestrictionTopRep`: the inverse of the generic Shapiro
+isomorphism followed by the coefficient map of the trace. -/
+theorem corestrictionTopRep_def (A : SmoothDiscreteTopRep.{v, u, u} R G)
+    (hU : IsOpen (U : Set G)) [U.FiniteIndex] (n : ℕ) :
+    corestrictionTopRep U A hU n =
+      (shapiroIsoTopRep U (U.isClosed_of_isOpen hU) (smoothDiscreteResTopRep U A) n).inv ≫
+        coeffMap (coindTraceHom R G U A) n := (rfl)
+
+/-- **The generic Shapiro map followed by corestriction is the coefficient map of the trace**,
+the characteristic property of `corestrictionTopRep`. -/
+@[reassoc (attr := simp)]
+theorem shapiroMapTopRep_comp_corestrictionTopRep (A : SmoothDiscreteTopRep.{v, u, u} R G)
+    (hU : IsOpen (U : Set G)) [U.FiniteIndex] (n : ℕ) :
+    shapiroMapTopRep U (smoothDiscreteResTopRep U A) n ≫ corestrictionTopRep U A hU n =
+      coeffMap (X := (coindTopRep R G U (smoothDiscreteResTopRep U A)).obj)
+        (coindTraceHom R G U A) n := by
+  rw [corestrictionTopRep_def, ← Category.assoc, shapiroMapTopRep_comp_shapiroIsoTopRep_inv,
+    Category.id_comp]
+
+/-- Applying corestriction after the generic Shapiro map is the coefficient map of the trace. -/
+theorem corestrictionTopRep_shapiroMapTopRep_apply
+    (A : SmoothDiscreteTopRep.{v, u, u} R G) (hU : IsOpen (U : Set G))
+    [U.FiniteIndex] (n : ℕ)
+    (c : continuousCohomology n
+      (coindTopRep R G U (smoothDiscreteResTopRep U A)).obj) :
+    corestrictionTopRep U A hU n
+        (shapiroMapTopRep U (smoothDiscreteResTopRep U A) n c) =
+      coeffMap (coindTraceHom R G U A) n c := by
+  rw [← ConcreteCategory.comp_apply, shapiroMapTopRep_comp_corestrictionTopRep]
+
+end TopRep
 
 end TauCeti.ContinuousCohomology

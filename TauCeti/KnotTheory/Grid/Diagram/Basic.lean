@@ -83,9 +83,8 @@ instance : Fintype (GridState n) :=
 
 /-- Equality of grid states is decidable: a grid state is determined by its underlying
 permutation, whose equality is decidable. This makes finite sets of grid states computable. -/
-instance : DecidableEq (GridState n) := fun x y =>
-  decidable_of_iff (x.toPerm = y.toPerm)
-    ⟨fun h => by cases x; cases y; cases h; rfl, fun h => by rw [h]⟩
+instance : DecidableEq (GridState n) :=
+  (equivPerm n).decidableEq
 
 /-- Apply a grid state to a column to get its occupied row. -/
 instance : CoeFun (GridState n) fun _ => Fin n → Fin n where
@@ -141,7 +140,7 @@ def pointSet (x : GridState n) : Finset (Fin n × Fin n) :=
   Finset.univ.image fun c => (c, x c)
 
 /-- The point set of the grid state obtained from `σ` is the graph `{(c, σ c)}`. -/
-@[simp] theorem equivPerm_symm_pointSet (σ : Equiv.Perm (Fin n)) :
+theorem equivPerm_symm_pointSet (σ : Equiv.Perm (Fin n)) :
     ((equivPerm n).symm σ : GridState n).pointSet = Finset.univ.image fun c => (c, σ c) := rfl
 
 /-- Membership in the point set of a grid state is the graph condition for its permutation. -/
@@ -170,14 +169,14 @@ theorem card_pointSet (x : GridState n) : x.pointSet.card = n := by
   · intro a b hab
     exact Prod.mk.inj hab |>.1
 
-/-- A sum over the occupied squares of a grid state is a sum over the columns. -/
+/-- A sum over the occupied grid points of a grid state is a sum over the columns. -/
 theorem sum_pointSet {M : Type*} [AddCommMonoid M] (x : GridState n)
     (f : Fin n × Fin n → M) : ∑ p ∈ x.pointSet, f p = ∑ c : Fin n, f (c, x c) := by
   rw [pointSet, Finset.sum_image]
   intro c _ c' _ hc
   exact (Prod.ext_iff.mp hc).1
 
-/-- A grid state meets a set of columns in as many occupied squares as there are columns. -/
+/-- A grid state meets a set of columns in as many occupied grid points as there are columns. -/
 theorem sum_ite_mem_columns {R : Type*} [AddCommMonoidWithOne R] (x : GridState n)
     (C : Finset (Fin n)) :
     ∑ p ∈ x.pointSet, (if p.1 ∈ C then (1 : R) else 0) = (C.card : R) := by
@@ -185,7 +184,7 @@ theorem sum_ite_mem_columns {R : Type*} [AddCommMonoidWithOne R] (x : GridState 
   rw [sum_pointSet]
   simp
 
-/-- A grid state meets a set of rows in as many occupied squares as there are rows. -/
+/-- A grid state meets a set of rows in as many occupied grid points as there are rows. -/
 theorem sum_ite_mem_rows {R : Type*} [AddCommMonoidWithOne R] (x : GridState n)
     (D : Finset (Fin n)) :
     ∑ p ∈ x.pointSet, (if p.2 ∈ D then (1 : R) else 0) = (D.card : R) := by
@@ -193,22 +192,8 @@ theorem sum_ite_mem_rows {R : Type*} [AddCommMonoidWithOne R] (x : GridState n)
   rw [sum_pointSet, Equiv.sum_comp x.toPerm fun r => if r ∈ D then (1 : R) else 0]
   simp
 
-/-- A grid state has a unique occupied row in each column. -/
-theorem existsUnique_row_of_column (x : GridState n) (c : Fin n) :
-    ∃! r : Fin n, (c, r) ∈ x.pointSet := by
-  refine ⟨x c, by simp, ?_⟩
-  intro r hr
-  exact ((mk_mem_pointSet x c r).mp hr).symm
-
-/-- A grid state has a unique occupied column in each row. -/
-theorem existsUnique_column_of_row (x : GridState n) (r : Fin n) :
-    ∃! c : Fin n, (c, r) ∈ x.pointSet := by
-  refine ⟨x.toPerm.symm r, by simp, ?_⟩
-  intro c hc
-  exact x.toPerm.injective (by simpa using hc)
-
-/-- A grid state occupies a square in every column, so it meets every nonempty vertical band of
-squares. -/
+/-- A grid state occupies a grid point in every column, so its point set meets `s ×ˢ univ` for every
+nonempty set `s` of columns. -/
 theorem not_disjoint_product_univ_pointSet (M : GridState n) {s : Finset (Fin n)}
     (hs : s.Nonempty) : ¬Disjoint (s ×ˢ (Finset.univ : Finset (Fin n))) M.pointSet := by
   obtain ⟨c, hc⟩ := hs
@@ -216,8 +201,8 @@ theorem not_disjoint_product_univ_pointSet (M : GridState n) {s : Finset (Fin n)
   exact Finset.disjoint_left.mp h (Finset.mk_mem_product hc (Finset.mem_univ (M c)))
     ((M.mk_mem_pointSet c (M c)).mpr rfl)
 
-/-- A grid state occupies a square in every row, so it meets every nonempty horizontal band of
-squares. -/
+/-- A grid state occupies a grid point in every row, so its point set meets `univ ×ˢ t` for every
+nonempty set `t` of rows. -/
 theorem not_disjoint_univ_product_pointSet (M : GridState n) {t : Finset (Fin n)}
     (ht : t.Nonempty) : ¬Disjoint ((Finset.univ : Finset (Fin n)) ×ˢ t) M.pointSet := by
   obtain ⟨r, hr⟩ := ht
@@ -259,30 +244,14 @@ theorem disjoint_pointSet_iff (x y : GridState n) :
 If `ρ` is the row permutation, the point in column `c` moves from row `x c` to row
 `ρ (x c)`. -/
 def relabelRows (ρ : Equiv.Perm (Fin n)) (x : GridState n) : GridState n where
-  toPerm :=
-    { toFun := fun c => ρ (x c)
-      invFun := fun r => x.toPerm.symm (ρ.symm r)
-      left_inv := by
-        intro c
-        simp
-      right_inv := by
-        intro r
-        simp }
+  toPerm := x.toPerm.trans ρ
 
 /-- Relabel the columns of a grid state by a permutation of `Fin n`.
 
 The point in the old column `c` appears in the new column `κ c`, so the row in a new column
 `c` is read from the old column `κ.symm c`. -/
 def relabelColumns (κ : Equiv.Perm (Fin n)) (x : GridState n) : GridState n where
-  toPerm :=
-    { toFun := fun c => x (κ.symm c)
-      invFun := fun r => κ (x.toPerm.symm r)
-      left_inv := by
-        intro c
-        simp
-      right_inv := by
-        intro r
-        simp }
+  toPerm := κ.symm.trans x.toPerm
 
 /-- Row relabeling evaluates by applying the row permutation to the old row. -/
 @[simp]
@@ -378,13 +347,7 @@ grid points in those columns. -/
 theorem swapColumns_eq_swapRows (a b : Fin n) (x : GridState n) :
     x.swapColumns a b = x.swapRows (x a) (x b) := by
   ext c
-  rw [swapColumns_apply, swapRows_apply]
-  rcases eq_or_ne c a with rfl | hca
-  · simp
-  rcases eq_or_ne c b with rfl | hcb
-  · simp
-  rw [Equiv.swap_apply_of_ne_of_ne hca hcb,
-    Equiv.swap_apply_of_ne_of_ne (x.toPerm.injective.ne hca) (x.toPerm.injective.ne hcb)]
+  simp [x.toPerm.injective.swap_apply]
 
 /-- Swapping the same pair of columns twice is the identity on grid states. -/
 @[simp]
@@ -454,10 +417,10 @@ theorem columnSwapNeighbors_eq_offDiag_image (x : GridState n) :
   ext y
   simp [columnSwapNeighbors, Finset.mem_offDiag]
 
-/-- If two nontrivial column swaps of the same grid state agree, then they swap the same
-unordered pair of columns. -/
+/-- If a nontrivial column swap of a grid state agrees with another column swap of it, then the two
+swap the same unordered pair of columns. -/
 theorem sym2_mk_eq_of_swapColumns_eq {x : GridState n} {a b c d : Fin n} (hab : a ≠ b)
-    (hcd : c ≠ d) (h : x.swapColumns a b = x.swapColumns c d) : s(a, b) = s(c, d) := by
+    (h : x.swapColumns a b = x.swapColumns c d) : s(a, b) = s(c, d) := by
   have hswap : Equiv.swap a b = Equiv.swap c d := by
     ext k
     apply congrArg Fin.val
@@ -489,10 +452,9 @@ private theorem injOn_sym2_lift_swapColumns_offDiag (x : GridState n) :
         Set (Sym2 (Fin n)))) := by
   intro z hz w hw hzw
   obtain ⟨⟨a, b⟩, hab, hgz⟩ := Finset.mem_image.mp hz
-  obtain ⟨⟨c, d⟩, hcd, hgw⟩ := Finset.mem_image.mp hw
+  obtain ⟨⟨c, d⟩, -, hgw⟩ := Finset.mem_image.mp hw
   rw [← hgz, ← hgw] at hzw ⊢
   exact sym2_mk_eq_of_swapColumns_eq (x := x) (by simpa [Finset.mem_offDiag] using hab)
-    (by simpa [Finset.mem_offDiag] using hcd)
     (by
       simpa using hzw)
 
@@ -534,17 +496,12 @@ theorem card_columnSwapNeighbors (x : GridState n) :
       Finset.card_image_of_injOn hpairSwap_injOn
     _ = n.choose 2 := by rw [Sym2.card_image_offDiag, Finset.card_univ, Fintype.card_fin]
 
-/-- A grid state has at most `n.choose 2` column-swap neighbours. -/
-theorem card_columnSwapNeighbors_le (x : GridState n) :
-    x.columnSwapNeighbors.card ≤ n.choose 2 := by
-  rw [x.card_columnSwapNeighbors]
-
 /-- A grid state on a grid of size at most `1` has no column-swap neighbours. -/
 theorem columnSwapNeighbors_eq_empty_of_le_one (x : GridState n) (hn : n ≤ 1) :
     x.columnSwapNeighbors = ∅ := by
   have hchoose : n.choose 2 = 0 := Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_le hn)
   apply Finset.card_eq_zero.mp
-  exact Nat.eq_zero_of_le_zero ((x.card_columnSwapNeighbors_le).trans (by rw [hchoose]))
+  rw [x.card_columnSwapNeighbors, hchoose]
 
 /-- A grid state on a grid of size `0` has no column-swap neighbours. -/
 @[simp]
@@ -628,9 +585,11 @@ theorem mem_pointSet_inter_swapColumns_iff (x : GridState n) {a b : Fin n} (h : 
 
 /-- The point set of a grid state is the shared part with a column swap, together with the two
 source-state grid points in the swapped columns. -/
-theorem pointSet_eq_insert_insert_inter_swapColumns (x : GridState n) {a b : Fin n} (h : a ≠ b) :
+theorem pointSet_eq_insert_insert_inter_swapColumns (x : GridState n) (a b : Fin n) :
     x.pointSet =
       insert (a, x a) (insert (b, x b) (x.pointSet ∩ (x.swapColumns a b).pointSet)) := by
+  rcases eq_or_ne a b with rfl | h
+  · simp [swapColumns]
   ext p
   simp only [Finset.mem_insert]
   constructor
@@ -653,9 +612,11 @@ theorem pointSet_eq_insert_insert_inter_swapColumns (x : GridState n) {a b : Fin
 
 /-- The point set after swapping columns `a` and `b` is the shared part with the source state,
 together with the two target-state grid points in the swapped columns. -/
-theorem swapColumns_pointSet_eq_insert_insert_inter (x : GridState n) {a b : Fin n} (h : a ≠ b) :
+theorem swapColumns_pointSet_eq_insert_insert_inter (x : GridState n) (a b : Fin n) :
     (x.swapColumns a b).pointSet =
       insert (a, x b) (insert (b, x a) (x.pointSet ∩ (x.swapColumns a b).pointSet)) := by
+  rcases eq_or_ne a b with rfl | h
+  · simp [swapColumns]
   ext p
   simp only [Finset.mem_insert]
   constructor
@@ -695,7 +656,7 @@ theorem card_pointSet_inter_swapColumns (x : GridState n) {a b : Fin n} (h : a �
     · exact absurd (congrArg Prod.fst hab) h
     · rw [mem_pointSet_inter_swapColumns_iff x h] at ha
       exact ha.2.1 rfl
-  have hcard := congrArg Finset.card (pointSet_eq_insert_insert_inter_swapColumns x h)
+  have hcard := congrArg Finset.card (pointSet_eq_insert_insert_inter_swapColumns x a b)
   rw [card_pointSet, Finset.card_insert_of_notMem hne',
     Finset.card_insert_of_notMem hne] at hcard
   omega
@@ -835,49 +796,10 @@ theorem card_OSet : G.OSet.card = n := by
 theorem card_XSet : G.XSet.card = n := by
   simp [XSet]
 
-/-- A grid diagram has a unique `O` marking in each column. -/
-theorem existsUnique_ORow_of_column (c : Fin n) :
-    ∃! r : Fin n, (c, r) ∈ G.OSet := by
-  rw [OSet]
-  exact G.O.existsUnique_row_of_column c
-
-/-- A grid diagram has a unique `X` marking in each column. -/
-theorem existsUnique_XRow_of_column (c : Fin n) :
-    ∃! r : Fin n, (c, r) ∈ G.XSet := by
-  rw [XSet]
-  exact G.X.existsUnique_row_of_column c
-
-/-- A grid diagram has a unique `O` marking in each row. -/
-theorem existsUnique_OColumn_of_row (r : Fin n) :
-    ∃! c : Fin n, (c, r) ∈ G.OSet := by
-  rw [OSet]
-  exact G.O.existsUnique_column_of_row r
-
-/-- A grid diagram has a unique `X` marking in each row. -/
-theorem existsUnique_XColumn_of_row (r : Fin n) :
-    ∃! c : Fin n, (c, r) ∈ G.XSet := by
-  rw [XSet]
-  exact G.X.existsUnique_column_of_row r
-
 /-- The `O` and `X` marking sets of a grid diagram are disjoint. -/
 theorem disjoint_OSet_XSet : Disjoint G.OSet G.XSet := by
   rw [OSet, XSet, GridState.disjoint_pointSet_iff]
   exact G.disjoint
-
-/-- No square contains both an `O` marking and an `X` marking. -/
-theorem not_mem_OSet_and_mem_XSet (p : Fin n × Fin n) : ¬ (p ∈ G.OSet ∧ p ∈ G.XSet) := by
-  intro hp
-  exact Finset.disjoint_left.mp G.disjoint_OSet_XSet hp.1 hp.2
-
-/-- A square with an `O` marking does not contain an `X` marking. -/
-theorem not_mem_XSet_of_mem_OSet {p : Fin n × Fin n} (hp : p ∈ G.OSet) : p ∉ G.XSet := by
-  intro hpX
-  exact G.not_mem_OSet_and_mem_XSet p ⟨hp, hpX⟩
-
-/-- A square with an `X` marking does not contain an `O` marking. -/
-theorem not_mem_OSet_of_mem_XSet {p : Fin n × Fin n} (hp : p ∈ G.XSet) : p ∉ G.OSet := by
-  intro hpO
-  exact G.not_mem_OSet_and_mem_XSet p ⟨hpO, hp⟩
 
 /-- Relabel the rows of a grid diagram by relabeling both marking states. -/
 def relabelRows (ρ : Equiv.Perm (Fin n)) (G : GridDiagram n) : GridDiagram n where

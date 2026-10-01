@@ -205,6 +205,13 @@ instance instDistribMulAction : DistribMulAction G (DiscreteCoind G U A) :=
 @[simp]
 theorem coe_smul (g : G) (f : DiscreteCoind G U A) (x : G) : (g • f) x = f (x * g) := (rfl)
 
+/-- A `G`-invariant element of `Coind_U^G A` is a constant function: its value at `x` is its value
+at `1`, because `x • f = f` evaluated at `1` reads `f x = f 1`. -/
+theorem apply_eq_apply_one_of_forall_smul_eq {f : DiscreteCoind G U A} (hf : ∀ g : G, g • f = f)
+    (x : G) : f x = f 1 := by
+  have h := congrArg (fun f' : DiscreteCoind G U A ↦ f' 1) (hf x)
+  simpa only [coe_smul, one_mul] using h
+
 /-- The counit is `U`-equivariant for the restriction of the right-translation action. This is the
 compatible-pair hypothesis Shapiro's lemma is an instance of. -/
 theorem eval_smul (u : U) (f : DiscreteCoind G U A) :

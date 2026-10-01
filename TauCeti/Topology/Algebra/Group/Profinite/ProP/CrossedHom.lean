@@ -66,6 +66,8 @@ groups of even rank.
 * `TauCeti.IsCrossedHom.gradedFunctional_gradedMkZero`,
   `TauCeti.IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero`: its values in degree zero
   and on the iterated `p`-powers of degree-zero classes.
+* `TauCeti.IsCrossedHom.gradedFunctional_gradedPowIterBracket`: its value on the iterated
+  `p`-power `π^m [ξ_g, ξ_h]` of a bracket is its value on the bracket itself.
 
 ## References
 
@@ -241,6 +243,34 @@ theorem gradedFunctional_gradedPowIter_gradedMkZero {g : G} (hg : χ g = 1) :
       PadicInt.toZMod (f g) := by
   rw [gradedPowIter_gradedMkZero]
   exact hf.gradedFunctional_gradedMk hχ hfc k _ (by rw [hf.map_pow_of_eq_one hg, Nat.cast_pow])
+
+/-- **The graded functional on an iterated `p`-power of an element killed by the crossed
+homomorphism**: if `f g = 0`, then `Δ_k(f) (π^k ξ) = 0` for the class `ξ` of `g`, since
+`f (g ^ (p ^ k))` is a multiple of `f g`. -/
+theorem gradedFunctional_gradedPowIter_gradedMkZero_of_eq_zero {g : G} (hg : f g = 0) :
+    hf.gradedFunctional hχ hfc k (gradedPowIter p G k (gradedMkZero p G g)) = 0 := by
+  rw [gradedPowIter_gradedMkZero, hf.gradedFunctional_gradedMk hχ hfc k _ (c := 0)
+    (by rw [hf.map_pow, hg, mul_zero, mul_zero]), map_zero]
+
+omit k in
+/-- **The graded functional on an iterated `p`-power of a bracket**:
+`Δ_{m+1}(f) (π^m [ξ_g, ξ_h]) = Δ_1(f) ([ξ_g, ξ_h])`, because
+`f (⁅g, h⁆ ^ (p ^ m)) = p ^ m * f ⁅g, h⁆`, the character being trivial on commutators. -/
+theorem gradedFunctional_gradedPowIterBracket (m : ℕ) (g h : G) :
+    hf.gradedFunctional hχ hfc (m + 1) (gradedPowIterBracket p G m g h) =
+      hf.gradedFunctional hχ hfc 1
+        (gradedBracket p G 0 0 (gradedMkZero p G g) (gradedMkZero p G h)) := by
+  have hχ' : χ ⁅g, h⁆ = 1 := by
+    rw [_root_.map_commutatorElement]
+    exact commutatorElement_eq_one_iff_commute.2 (Commute.all _ _)
+  obtain ⟨c, hc⟩ := hf.pow_dvd_apply_of_mem_pLowerCentralSeries hχ hfc (k := 1)
+    (commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g)
+      (mem_pLowerCentralSeries_zero p h))
+  rw [pow_one] at hc
+  rw [gradedPowIterBracket_def, hf.gradedFunctional_gradedMk hχ hfc (m + 1) _ (c := c)
+      (by rw [Subgroup.coe_mk, hf.map_pow_of_eq_one hχ', Nat.cast_pow, hc, pow_succ]; ring),
+    gradedBracket_gradedMkZero,
+    hf.gradedFunctional_gradedMk hχ hfc 1 _ (c := c) (by rw [Subgroup.coe_mk, hc, pow_one])]
 
 end IsCrossedHom
 

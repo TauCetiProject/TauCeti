@@ -323,9 +323,7 @@ private lemma toBoundedDerivedK0_surjective :
         SplitK0.boundedHomotopyEquiv_of, TriangulatedK0.map_of, fromSplit_of,
         toBoundedDerivedK0_of]
       exact TriangulatedK0.of_congr (boundedQhSingleIso X)
-  rw [← AddMonoidHom.range_eq_top, eq_top_iff, ← TriangulatedK0.closure_range_of,
-    AddSubgroup.closure_le]
-  rintro _ ⟨Y, rfl⟩
+  refine TriangulatedK0.surjective_of_forall_of_mem_range fun Y => ?_
   obtain ⟨K, ⟨e⟩⟩ := exists_iso_boundedQh_obj Y
   refine ⟨fromSplit A ((SplitK0.boundedHomotopyEquiv A).symm (TriangulatedK0.of K)), ?_⟩
   rw [← AddMonoidHom.comp_apply, ← hcomp, AddMonoidHom.comp_apply,

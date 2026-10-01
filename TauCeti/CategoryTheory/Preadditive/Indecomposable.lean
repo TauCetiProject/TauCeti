@@ -53,6 +53,9 @@ decomposition of the whole object.
   `TauCeti.indecomposable_iff_idempotent_eq_zero_or_id`.
 * `TauCeti.isIso_of_isIso_comp`: an invertible composite `f ≫ g` through an object with only
   trivial idempotent endomorphisms has `f` invertible.
+* `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor preserving zero morphisms
+  and bijective on the endomorphisms of an indecomposable object carries it to an indecomposable
+  object; in particular a fully faithful one does.
 
 ## Implementation notes
 
@@ -280,3 +283,34 @@ theorem indecomposable_of_finrank_end_eq_one [HasBinaryBiproducts C] {X : C}
     simpa [smul_smul, ← mul_assoc, inv_mul_cancel₀ hc] using this
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+open Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] {D : Type*} [Category* D] [Preadditive D]
+
+/-- **A functor bijective on the endomorphisms of an indecomposable object carries it to an
+indecomposable object**, when idempotents split in the source. The bijection matches the idempotent
+endomorphisms of `X` with those of `F.obj X`; the former are only `0` and the identity, and
+surjectivity forces `F` to carry the zero endomorphism to zero. A fully
+faithful functor qualifies, by `CategoryTheory.Functor.FullyFaithful.map_bijective`. -/
+theorem indecomposable_obj_of_map_bijective [HasBinaryBiproducts C] [IsIdempotentComplete C]
+    [HasBinaryBiproducts D] (F : C ⥤ D) {X : C}
+    (hX : Indecomposable X) (hF : Function.Bijective (F.map : (X ⟶ X) → (F.obj X ⟶ F.obj X))) :
+    Indecomposable (F.obj X) := by
+  obtain ⟨g, hg⟩ := hF.2 (0 : F.obj X ⟶ F.obj X)
+  have hzero : F.map (0 : X ⟶ X) = 0 := by
+    calc
+      F.map (0 : X ⟶ X) = F.map (g ≫ (0 : X ⟶ X)) := by rw [comp_zero]
+      _ = 0 := by rw [F.map_comp, hg, zero_comp]
+  refine TauCeti.indecomposable_of_idempotent_eq_zero_or_id (fun h0 ↦ hX.1 ?_) fun e he ↦ ?_
+  · rw [IsZero.iff_id_eq_zero] at h0 ⊢
+    exact hF.1 (by rw [F.map_id, h0, hzero])
+  · obtain ⟨η, rfl⟩ := hF.2 e
+    rcases TauCeti.idempotent_eq_zero_or_id_of_indecomposable hX
+        (hF.1 (by rw [F.map_comp, he])) with h | h
+    · exact Or.inl (by rw [h, hzero])
+    · exact Or.inr (by rw [h, F.map_id])
+
+end CategoryTheory.Functor

@@ -33,6 +33,7 @@ group scheme of type `D₄`.
 ## Main declarations
 
 * `TauCeti.D4Tripled.baseChangeDefiningIdeal`: the transported defining ideal in `O(GL₂₄/A)`.
+* `TauCeti.D4Tripled.baseChangeDefiningIdeal_def`: its unfolding to the generic construction.
 * `TauCeti.D4Tripled.coordinateHopfAlgebra` and `TauCeti.D4Tripled.coordinateMap`: the
   specialized coordinate Hopf algebra and its quotient map from `O(GL₂₄/A)`.
 * `TauCeti.D4Tripled.baseChangeCoordinateIso`: its quotient is the scalar extension of the
@@ -135,6 +136,17 @@ noncomputable def baseChangeDefiningIdeal :
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A
+
+/-- The transported defining ideal is the ideal supplied by the generic Kostant toral-closure base
+change. -/
+theorem baseChangeDefiningIdeal_def :
+    baseChangeDefiningIdeal A =
+      kostantToralBaseChangePresentationIdeal
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
+        d4TripledWeight A := by
+  rw [baseChangeDefiningIdeal]
 
 /-- The coordinate Hopf algebra of the tripled type-`D₄` carrier after base change to `A`. -/
 public noncomputable abbrev coordinateHopfAlgebra :=

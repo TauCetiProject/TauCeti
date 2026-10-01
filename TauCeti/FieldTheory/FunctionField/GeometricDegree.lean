@@ -48,6 +48,8 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
   the whole degree as soon as the compositum is trivial, however that is established.
 * `TauCeti.geometricDegree_eq_finrank`: the geometric degree is the whole degree when the
   constants of `F'` already lie in `F`.
+* `TauCeti.geometricDegree_eq_one_of_constantCompositum_eq_top`: the geometric degree is one when
+  `F'` is the compositum `F · k'`.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   separable constant field extension over an exact constant field.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
@@ -188,6 +190,15 @@ theorem geometricDegree_eq_finrank_of_constantCompositum_eq_bot
     (h : constantCompositum F k' F' = ⊥) :
     geometricDegree F k' F' = Module.finrank F F' := by
   rw [geometricDegree_def, h, IntermediateField.finrank_bot']
+
+/-- **The geometric degree of a constant field extension is one**: when `F'` is the compositum
+`F · k'`, nothing is left after the constants have been adjoined.  Combined with the conorm degree
+formula `TauCeti.Divisor.degree_conorm`, this is the ingredient that makes the conorm along a
+constant field extension preserve degrees. -/
+@[simp]
+theorem geometricDegree_eq_one_of_constantCompositum_eq_top
+    (h : constantCompositum F k' F' = ⊤) : geometricDegree F k' F' = 1 := by
+  rw [geometricDegree_def, h, IntermediateField.finrank_top]
 
 /-! ### When the constants of `F'` already lie in `F` -/
 

@@ -47,10 +47,13 @@ definition and characteristic formulas follow the mate-based development in
   coevaluation;
 * `CategoryTheory.Functor.ihomComparison_whiskerLeft`: its naturality in the source of the
   internal Hom;
+* `CategoryTheory.Functor.ihomComparison_comp`: the comparison of a composite of lax monoidal
+  functors;
 * `CategoryTheory.Monoidal.Reflective.ihomComparisonUnitIso`: the comparison with the internal
   Hom transported to a reflective subcategory;
 * `CategoryTheory.Monoidal.Reflective.ihomComparison_app_eq_ihomComparisonUnitIso_inv`:
-  identifies that comparison with the internal-Hom comparison of the reflective right adjoint.
+  identifies that comparison with the internal-Hom comparison of the reflective right adjoint,
+  which is therefore invertible (`CategoryTheory.Monoidal.Reflective.isIso_ihomComparison`).
 -/
 
 public section
@@ -61,7 +64,7 @@ open CategoryTheory CategoryTheory.Functor MonoidalCategory MonoidalClosed
 
 namespace CategoryTheory.Functor
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
@@ -124,6 +127,19 @@ theorem ihomComparison_app_eq_curry (A B : C) [Closed A] [Closed (F.obj A)] :
       curry (Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫
         F.map ((ihom.ev A).app B)) := by
   rw [← uncurry_ihomComparison F A B, curry_uncurry]
+
+/-- The internal Hom comparison of a composite of lax monoidal functors is the image of the
+comparison of the first functor followed by the comparison of the second. -/
+theorem ihomComparison_comp {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E] [MonoidalClosed E]
+    (G : D ⥤ E) [G.LaxMonoidal] (A B : C) [Closed A] [Closed (F.obj A)] :
+    ((F ⋙ G).ihomComparison A).natTrans.app B =
+      G.map ((F.ihomComparison A).natTrans.app B) ≫
+        (G.ihomComparison (F.obj A)).natTrans.app (F.obj B) := by
+  apply uncurry_injective
+  rw [uncurry_ihomComparison, uncurry_eq, MonoidalCategory.whiskerLeft_comp_assoc]
+  dsimp only [Functor.comp_obj]
+  rw [ihomComparison_ev, LaxMonoidal.μ_natural_right_assoc, ← G.map_comp, ihomComparison_ev,
+    LaxMonoidal.comp_μ, Functor.comp_map, Category.assoc, G.map_comp]
 
 /-- The internal Hom comparison is contravariantly natural in the source of the internal Hom. -/
 theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
@@ -419,5 +435,19 @@ theorem ihomComparison_app_eq_ihomComparisonUnitIso_inv (adj : L ⊣ R) (A B : C
   rw [R.map_comp, Adjunction.comp_counit_app, R.map_comp, Functor.comp_map, curriedTensor_obj_map,
     ihom.ihom_adjunction_counit, adj.unit_naturality_assoc, adj.unit_naturality_assoc,
     adj.right_triangle_components, Category.comp_id]
+
+/-- For the closed structure supplied by Day reflection, the internal-Hom comparison of the
+reflective right adjoint is an isomorphism: the internal Hom of the reflective subcategory is
+computed in the ambient category. -/
+theorem isIso_ihomComparison (adj : L ⊣ R) (A : C) :
+    letI : MonoidalClosed C := monoidalClosed adj
+    letI : R.LaxMonoidal := adj.rightAdjointLaxMonoidal
+    IsIso (R.ihomComparison A).natTrans := by
+  let _ : MonoidalClosed C := monoidalClosed adj
+  let _ : R.LaxMonoidal := adj.rightAdjointLaxMonoidal
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro B
+  rw [ihomComparison_app_eq_ihomComparisonUnitIso_inv]
+  infer_instance
 
 end CategoryTheory.Monoidal.Reflective

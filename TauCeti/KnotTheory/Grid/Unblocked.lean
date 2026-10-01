@@ -71,6 +71,13 @@ assignment, a later stage of the roadmap.
   whose degree is the number of `O`-markings the rectangle covers.
 * `TauCeti.GridDiagram.OMonomial_eq_prod_coveredSquares`: the weight of a rectangle as a product
   over the squares it covers.
+* `TauCeti.GridDiagram.unblockedRectangles_X_eq_empty` and
+  `TauCeti.GridDiagram.unblockedDifferential_single_X`: no counted rectangle leaves the
+  `X`-marking state, which is therefore a cycle of `GC⁻`.
+* `TauCeti.GridDiagram.unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow` and
+  `TauCeti.GridDiagram.even_card_unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow`: when the
+  `X`-marking permutation is a power of the cyclic shift, every rectangle into the `X`-marking
+  state is counted, and each grid state has an even number, zero or two, of them.
 * `TauCeti.GridDiagram.unblockedDifferentialOnGenerator_support_subset`: the differential of a
   generator is supported on the column transpositions of that generator.
 * `TauCeti.GridDiagram.unblockedDifferential_sq_single_apply`: the matrix of `∂⁻ ∘ ∂⁻` is a
@@ -353,6 +360,81 @@ diagonal term. -/
 theorem unblockedRectangles_self (x : GridState n) : G.unblockedRectangles x x = ∅ := by
   simp [unblockedRectangles]
 
+/-- Every rectangle leaving the `X`-marking state `G.X`, the grid state whose points are the
+lower-left corners of the `X`-marked squares, covers the `X`-marking at its own lower-left corner,
+so the unblocked differential counts no rectangle from `G.X`. -/
+@[simp]
+theorem unblockedRectangles_X_eq_empty (y : GridState n) : G.unblockedRectangles G.X y = ∅ := by
+  rw [Finset.eq_empty_iff_forall_notMem]
+  intro r hr
+  exact Finset.disjoint_left.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr)
+    r.left_bottom_mem_coveredSquares ((G.mk_mem_XSet _ _).mpr r.bottom_def.symm)
+
+/-! ### Rectangles into the `X`-marking state of a cyclic-shift grid
+
+When the `X`-marking permutation is a power of the cyclic shift `finRotate n`, as it is for the
+standard torus link grids, powers of the shift preserve the cyclic intervals of the grid
+(`Grid.mem_cIco_finRotate_pow_finRotate_pow`), which pins down every rectangle into the
+`X`-marking state `G.X`. Such a rectangle has its two `G.X`-corners at the upper-left and
+lower-right, so its rows form the cyclic interval from `G.X` of its right column to `G.X` of its
+left column, while the `X`-markings of its covered columns occupy the complementary interval.
+Hence it avoids the `X`-markings and contains no point of its source state in its interior, so the
+unblocked differential counts every rectangle into `G.X`, of which each grid state has none or
+two. -/
+
+section CyclicShift
+
+variable {k : ℕ} {y : GridState n}
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, a rectangle into the
+`X`-marking state covers no `X`-marking: the `X`-markings of its covered columns lie in the cyclic
+interval of rows complementary to the one it covers. -/
+theorem disjoint_coveredSquares_XSet_of_X_toPerm_eq_finRotate_pow
+    (hX : G.X.toPerm = finRotate n ^ k) (r : GridRectangleBetween y G.X) :
+    Disjoint r.toGridRectangle.coveredSquares G.XSet := by
+  rw [Finset.disjoint_left]
+  intro p hp hpX
+  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares_target] at hp
+  rw [mem_XSet] at hpX
+  obtain ⟨hc, hs⟩ := hp
+  rw [← hpX, hX, Grid.mem_cIco_finRotate_pow_finRotate_pow] at hs
+  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_swap r.left r.right) hc hs
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, a rectangle into the
+`X`-marking state is empty: the points of its source state in the columns strictly between its
+sides are `X`-corners, which lie in the cyclic interval of rows complementary to the one it
+spans. -/
+theorem isEmpty_of_X_toPerm_eq_finRotate_pow (hX : G.X.toPerm = finRotate n ^ k)
+    (r : GridRectangleBetween y G.X) : r.IsEmpty := by
+  rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo_target]
+  intro c hc hcy
+  rw [hX, Grid.mem_cIoo_finRotate_pow_finRotate_pow] at hcy
+  exact Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap r.left r.right) hc hcy
+
+variable (y)
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, the unblocked differential
+counts every rectangle into the `X`-marking state. -/
+theorem unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow (hX : G.X.toPerm = finRotate n ^ k) :
+    G.unblockedRectangles y G.X = Finset.univ := by
+  ext r
+  simp [G.isEmpty_of_X_toPerm_eq_finRotate_pow hX,
+    G.disjoint_coveredSquares_XSet_of_X_toPerm_eq_finRotate_pow hX]
+
+/-- When the `X`-marking permutation is a power of the cyclic shift, every grid state has an even
+number, zero or two, of rectangles into the `X`-marking state counted by the unblocked
+differential. -/
+theorem even_card_unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow
+    (hX : G.X.toPerm = finRotate n ^ k) : Even (G.unblockedRectangles y G.X).card := by
+  rw [G.unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow y hX, Finset.card_univ]
+  rcases isEmpty_or_nonempty (GridRectangleBetween y G.X) with h | h
+  · rw [Fintype.card_eq_zero]
+    exact Even.zero
+  · rw [GridRectangleBetween.card_eq_two_of_nonempty]
+    exact even_two
+
+end CyclicShift
+
 /-! ### The unblocked complex and its differential -/
 
 /-- The matrix coefficient of the unblocked differential from `x` to `y`: the sum of the weights
@@ -507,6 +589,27 @@ weights of the contributing rectangles. -/
 theorem unblockedDifferential_single_apply (x y : GridState n) :
     G.unblockedDifferential R (Finsupp.single x 1) y = G.unblockedCoefficient R x y := by
   simp
+
+/-- A grid state that no counted rectangle leaves is a cycle of `GC⁻`. -/
+theorem unblockedDifferential_single_eq_zero {z : GridState n}
+    (hz : ∀ y : GridState n, G.unblockedRectangles z y = ∅) :
+    G.unblockedDifferential R (Finsupp.single z 1) = 0 := by
+  ext y
+  rw [unblockedDifferential_single_apply, unblockedCoefficient_def, hz y, Finset.sum_empty,
+    Finsupp.zero_apply]
+
+/-- The `X`-marking state is a cycle of `GC⁻`. -/
+theorem unblockedDifferential_single_X :
+    G.unblockedDifferential R (Finsupp.single G.X 1) = 0 :=
+  G.unblockedDifferential_single_eq_zero R G.unblockedRectangles_X_eq_empty
+
+-- `simp` rewrites `∂⁻` of a single generator to its row, so this is the form of
+-- `unblockedDifferential_single_X` that `simp` can use.
+/-- The row of `∂⁻` at the `X`-marking state vanishes: the `X`-marking state is a cycle of
+`GC⁻`. -/
+@[simp]
+theorem unblockedDifferentialOnGenerator_X : G.unblockedDifferentialOnGenerator R G.X = 0 := by
+  rw [← unblockedDifferential_single, unblockedDifferential_single_X]
 
 /-- The unblocked differential is the finite sum of its generator rows over the support of a
 chain. -/

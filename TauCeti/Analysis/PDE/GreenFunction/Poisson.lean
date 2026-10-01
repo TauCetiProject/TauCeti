@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Disk
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
-public import TauCeti.Analysis.Complex.Poisson
+public import TauCeti.Analysis.Complex.Poisson.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.HarmonicContOnCl
 import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
 import Mathlib.Analysis.Complex.Harmonic.Poisson

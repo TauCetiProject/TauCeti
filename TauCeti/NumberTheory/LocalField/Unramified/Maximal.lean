@@ -8,8 +8,11 @@ module
 public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.NumberTheory.LocalField.Unramified.Existence
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
@@ -60,6 +63,10 @@ Frobenius corresponding to `1`.
 * `TauCeti.fixedField_zpowers_maximalUnramifiedFrobenius`,
   `TauCeti.topologicalClosure_zpowers_maximalUnramifiedFrobenius`: it is a topological generator
   of `Gal(K^{ur}/K)`.
+* `TauCeti.X_pow_sub_C_irreducible_unramifiedExtension`,
+  `TauCeti.X_pow_sub_C_irreducible_maximalUnramifiedExtension`: a uniformizer `π` of `K` has no
+  nontrivial root in `K^{ur}`: for every `m ≠ 0`, `X ^ m − π` is irreducible over each `K_f` when
+  `Ω` is separably closed, and over `K^{ur}` when `Ω` is algebraically closed.
 
 ## References
 
@@ -162,16 +169,15 @@ theorem mem_maximalUnramifiedExtension_of_pow_eq_one {n : ℕ} (hn : ¬ ringChar
   have hn0 : n ≠ 0 := by
     rintro rfl
     exact hn (dvd_zero _)
-  rw [maximalUnramifiedExtension_eq_adjoin]
-  refine subset_adjoin _ _ ⟨n.totient, (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn0)).ne', ?_⟩
-  -- The order `q` of the residue field is a power of `p`, hence prime to `n`, so
-  -- `q ^ φ(n) ≡ 1 [MOD n]` by Euler's theorem.
-  let _ := Fintype.ofFinite 𝓀[K]
-  obtain ⟨d, hp, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
+  -- `q` is a power of `p`, hence prime to `n`.
   have hq : (Nat.card 𝓀[K]).Coprime n := by
+    let _ := Fintype.ofFinite 𝓀[K]
+    obtain ⟨d, hp, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
     rw [Nat.card_eq_fintype_card, hd]
-    exact ((Nat.Prime.coprime_iff_not_dvd hp).2 hn).pow_left _
-  rw [pow_eq_pow_mod _ hζ, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hζ, pow_one]
+    exact (hp.coprime_iff_not_dvd.2 hn).pow_left _
+  rw [maximalUnramifiedExtension_eq_adjoin]
+  exact subset_adjoin _ _ ⟨n.totient, (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn0)).ne',
+    pow_pow_totient_eq_self hq hζ⟩
 
 variable {K Ω} in
 /-- **Radicals of units are unramified.** If the residue characteristic of `K` does not divide `m`,
@@ -431,6 +437,86 @@ theorem topologicalClosure_zpowers_maximalUnramifiedFrobenius :
       fixedField_zpowers_maximalUnramifiedFrobenius.le)
   rw [← h, hbot, fixingSubgroup_bot]
 
+variable {K Ω} in
+/-- **A uniformizer stays a uniformizer in `K_f`**, so it has no nontrivial root there: for a
+uniformizer `π` of `K` and `m ≠ 0`, the polynomial `X ^ m − π` is irreducible over the unramified
+extension `K_f` of each degree `f ≠ 0`. -/
+theorem X_pow_sub_C_irreducible_unramifiedExtension {π : Kˣ} (hπ : IsUniformizer K π) {m : ℕ}
+    (hm : m ≠ 0) {f : ℕ} (hf : f ≠ 0) :
+    Irreducible (X ^ m - C (algebraMap K (unramifiedExtension K Ω f) π)) := by
+  let L := unramifiedExtension K Ω f
+  let _ := finiteIntermediateFieldValuativeRel K Ω L
+  let _ := finiteIntermediateFieldTopology K Ω L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
+  have := finiteIntermediateField_valuativeExtension K Ω L
+  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  obtain ⟨ϖ, hϖ, hϖπ⟩ := (isUniformizer_iff_exists_irreducible K π).1 hπ
+  have h := X_pow_sub_C_irreducible_of_irreducible (K := L)
+    (IsUnramified.irreducible_algebraMap (K := K) (L := L) hϖ) hm
+  have e : algebraMap 𝒪[L] L (algebraMap 𝒪[K] 𝒪[L] ϖ) = algebraMap K L π := by
+    rw [← hϖπ]
+    -- `algebraMap 𝒪[L] L` is the inclusion of the ring of integers.
+    exact coe_algebraMap_integerRing ϖ
+  rwa [e] at h
+
 end IsSepClosed
+
+/-! ### Radicals of a uniformizer over `K^{ur}` -/
+
+section IsAlgClosed
+
+variable [IsAlgClosed Ω]
+
+variable {K Ω} in
+/-- **A uniformizer has no nontrivial root in `K^{ur}`**: for a uniformizer `π` of `K` and
+`m ≠ 0`, the polynomial `X ^ m − π` is irreducible over the maximal unramified extension. Any
+factor has its finitely many coefficients in a single `K_f`, over which `X ^ m − π` is
+irreducible. So `K^{ur}(π^{1/m})` has degree `m` over `K^{ur}`. -/
+theorem X_pow_sub_C_irreducible_maximalUnramifiedExtension {π : Kˣ} (hπ : IsUniformizer K π)
+    {m : ℕ} (hm : m ≠ 0) :
+    Irreducible (X ^ m - C (algebraMap K (maximalUnramifiedExtension K Ω) π)) := by
+  set E := maximalUnramifiedExtension K Ω
+  obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap K Ω π) (Nat.pos_of_ne_zero hm)
+  have hmon : (X ^ m - C (algebraMap K E π)).Monic := monic_X_pow_sub_C _ hm
+  have hroot : aeval α (X ^ m - C (algebraMap K E π)) = 0 := by simp [hα]
+  have hint : IsIntegral E α := ⟨_, hmon, hroot⟩
+  -- It suffices that the minimal polynomial `g` of a root `α` over `K^{ur}` has degree `m`.
+  set g := minpoly E α
+  have hg : g ∣ X ^ m - C (algebraMap K E π) := minpoly.dvd E α hroot
+  -- The finitely many coefficients of `g` lie in a common unramified extension `L = K_N`.
+  have hcoeff (i : ℕ) : ∃ f ≠ 0, ((g.coeff i : E) : Ω) ∈ unramifiedExtension K Ω f :=
+    mem_maximalUnramifiedExtension_iff.1 (g.coeff i).2
+  choose F hF hmemF using hcoeff
+  set N := ∏ i ∈ Finset.range (g.natDegree + 1), F i
+  have hN : N ≠ 0 := Finset.prod_ne_zero_iff.2 fun i _ ↦ hF i
+  set L := unramifiedExtension K Ω N
+  have hLE : L ≤ E := unramifiedExtension_le_maximalUnramifiedExtension K Ω N
+  have hmemL (i : ℕ) : ((g.coeff i : E) : Ω) ∈ L := by
+    rcases le_or_gt i g.natDegree with hi | hi
+    · exact unramifiedExtension_le_of_dvd hN
+        (Finset.dvd_prod_of_mem F (Finset.mem_range.2 (Nat.lt_succ_of_le hi))) (hmemF i)
+    · rw [coeff_eq_zero_of_natDegree_lt hi]
+      exact zero_mem L
+  -- So `g` descends to a monic `q` over `L`, which vanishes at `α`.
+  let ι : L →+* E := (inclusion hLE).toRingHom
+  have hlifts : g ∈ lifts ι := (lifts_iff_coeff_lifts g).2 fun i ↦ ⟨⟨_, hmemL i⟩, Subtype.ext rfl⟩
+  obtain ⟨q, hqg, hqdeg, hqmon⟩ := lifts_and_degree_eq_and_monic hlifts (minpoly.monic hint)
+  have hq : aeval α q = 0 := by
+    have h : aeval α g = 0 := minpoly.aeval E α
+    -- `algebraMap E Ω ∘ ι` is `algebraMap L Ω`: both are the inclusions into `Ω`.
+    rwa [← hqg, aeval_def, eval₂_map] at h
+  -- Over `L` the minimal polynomial of `α` is `X ^ m − π`, which divides `q`.
+  have hirrL := X_pow_sub_C_irreducible_unramifiedExtension (Ω := Ω) hπ hm hN
+  have hrootL : aeval α (X ^ m - C (algebraMap K L π)) = 0 := by simp [hα]
+  have hmin : minpoly L α = X ^ m - C (algebraMap K L π) :=
+    (minpoly.eq_of_irreducible_of_monic hirrL hrootL (monic_X_pow_sub_C _ hm)).symm
+  have hle : m ≤ g.natDegree := by
+    have h := natDegree_le_of_dvd (minpoly.dvd L α hq) hqmon.ne_zero
+    rwa [hmin, natDegree_X_pow_sub_C, natDegree_eq_of_degree_eq hqdeg] at h
+  rw [eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hmon hg
+    (by rwa [natDegree_X_pow_sub_C])]
+  exact minpoly.irreducible hint
+
+end IsAlgClosed
 
 end TauCeti

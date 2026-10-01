@@ -74,6 +74,8 @@ carrier had not yet landed.
   the canonical transversal.
 * `TauCeti.ContCohomology.explicitCor1_comp_res1`: the normalization
   `cor¹ ∘ res¹ = (G : U) • id` on `H¹`.
+* `TauCeti.ContCohomology.explicitCor1_explicitMap1_id`: degree-one corestriction is natural in
+  an equivariant coefficient map.
 * `TauCeti.ContCohomology.cochainsCor2`: the degree-two corestriction cochain for a variable
   transversal, with `cochainsCor2_isCocycle₂` and `cochainsCor2_mem_B2`.
 * `TauCeti.ContCohomology.cochainsCor2_changeTransversal` and
@@ -504,6 +506,26 @@ theorem explicitCor1Transversal_comp_res1 (x : H1 G M) :
 theorem explicitCor1_comp_res1 (x : H1 G M) :
     explicitCor1 G M U hU (explicitRes1 G M U x) = U.index • x :=
   explicitCor1Transversal_comp_res1 G M U Quotient.out Quotient.out_eq hU x
+
+/-- **Degree-one corestriction is natural in the coefficients**: for a continuous `G`-equivariant
+`f : M →+ N`, applying `f` on `H¹(U, -)` and then corestricting agrees with corestricting and then
+applying `f`. On cochains this is `TauCeti.ContCohomology.map_cochainsCor1`. -/
+theorem explicitCor1_explicitMap1_id {N : Type w} [AddCommGroup N] [DistribMulAction G N]
+    [TopologicalSpace N] [IsTopologicalAddGroup N] [ContinuousSMul G N]
+    (f : M →+ N) (hf : Continuous f) (hequiv : ∀ (g : G) (m : M), f (g • m) = g • f m)
+    (x : H1 U M) :
+    explicitCor1 G N U hU
+        (explicitMap1 U M U N (ContinuousMonoidHom.id U) f hf
+          (fun u m => by simpa [Subgroup.smul_def] using hequiv u m) x) =
+      explicitMap1 G M G N (ContinuousMonoidHom.id G) f hf (fun g m => by simpa using hequiv g m)
+        (explicitCor1 G M U hU x) := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitMap1_mk, explicitCor1_mk, explicitCor1_mk, explicitMap1_mk]
+    refine congrArg (fun z : Z1 G N => (z : H1 G N)) (Subtype.ext (funext fun γ => ?_))
+    rw [coe_cocyclesCor1, cocyclesMap1_coe, cocyclesMap1_apply, coe_cocyclesCor1,
+      map_cochainsCor1 G M U _ _ f hequiv]
+    simp
 
 end DegreeOne
 

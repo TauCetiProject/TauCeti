@@ -211,14 +211,14 @@ theorem source_pointSet_eq :
     x.pointSet =
       insert (R.left, R.bottom) (insert (R.right, R.top) (x.pointSet ∩ y.pointSet)) := by
   simpa [target_eq_swapColumns R, bottom, top] using
-    GridState.pointSet_eq_insert_insert_inter_swapColumns x R.left_ne_right
+    GridState.pointSet_eq_insert_insert_inter_swapColumns x R.left R.right
 
 /-- The target state's point set is the shared part together with its own two corners. -/
 theorem target_pointSet_eq :
     y.pointSet =
       insert (R.left, R.top) (insert (R.right, R.bottom) (x.pointSet ∩ y.pointSet)) := by
   simpa [target_eq_swapColumns R, bottom, top] using
-    GridState.swapColumns_pointSet_eq_insert_insert_inter x R.left_ne_right
+    GridState.swapColumns_pointSet_eq_insert_insert_inter x R.left R.right
 
 include R in
 /-- The source and target states share exactly `n - 2` grid points: all of the source's `n` grid

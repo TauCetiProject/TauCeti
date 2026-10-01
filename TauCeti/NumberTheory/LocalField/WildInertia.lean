@@ -7,8 +7,13 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia
 public import TauCeti.NumberTheory.LocalField.Uniformizer
+public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 import TauCeti.Algebra.CharP.LocalRing
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
+import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
+import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Conjugacy
 
 /-!
 # The maximal tamely ramified extension and wild inertia
@@ -34,6 +39,13 @@ The **wild inertia subgroup** `P_K = TauCeti.wildInertiaSubgroup K` of the absol
 `IntermediateField.fixingSubgroupEquiv` identifies with `Gal(K^{alg}/K^{t})`. It is a closed normal
 subgroup of `G_K`, contained in the inertia subgroup `I_K = TauCeti.inertiaSubgroup K`.
 
+At finite level, `P_K` is the inverse limit of the wild inertia groups `G_1` of the finite normal
+subextensions `L` of `K^{alg}/K`: an automorphism lies in `P_K` exactly when each of its
+restrictions lies in the first lower ramification group `G_1` of `L/K`. As each `G_1` is a
+`p`-group, `P_K` is pro-`p`; conversely every pro-`p` subgroup of `I_K` fixes the tame radicals,
+since `I_K` acts on them through roots of unity of order prime to `p`. So `P_K` is the largest
+pro-`p` subgroup of `I_K`: it is the unique Sylow pro-`p` subgroup of `I_K`.
+
 ## Main definitions
 
 * `TauCeti.maximalTameExtension K Ω`: the maximal tamely ramified extension `K^{t}` of `K` in `Ω`.
@@ -48,6 +60,15 @@ subgroup of `G_K`, contained in the inertia subgroup `I_K = TauCeti.inertiaSubgr
 * `TauCeti.isClosed_wildInertiaSubgroup`, `TauCeti.wildInertiaSubgroup_normal`: `P_K` is closed and
   normal in `G_K`.
 * `TauCeti.wildInertiaSubgroup_le_inertiaSubgroup`: `P_K ≤ I_K`.
+* `TauCeti.restrictNormal_mem_lowerRamificationGroup_one`: the restriction of an element of `P_K`
+  to a finite normal subextension `L` lies in `G_1` of `L/K`.
+* `TauCeti.mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem`: `P_K` is the inverse limit of
+  the finite-level groups `G_1`.
+* `TauCeti.isProP_wildInertiaSubgroup`: `P_K` is pro-`p`.
+* `TauCeti.le_wildInertiaSubgroup_of_isProP`: every pro-`p` subgroup of `I_K` lies in `P_K`.
+* `TauCeti.isProPSylow_wildInertiaSubgroup` and
+  `TauCeti.eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow`: `P_K` is the unique Sylow pro-`p`
+  subgroup of `I_K`.
 * `TauCeti.mem_wildInertiaSubgroup_iff_of_isUniformizer`: `σ ∈ P_K` exactly when `σ ∈ I_K` and `σ`
   fixes every `m`-th root of a given uniformizer, for `p ∤ m`.
 
@@ -260,5 +281,281 @@ theorem mem_wildInertiaSubgroup_iff_of_isUniformizer {π : Kˣ} (hπ : IsUniform
   refine (hsup σ).trans (and_congr_right fun _ ↦ ((mem_fixingSubgroup_iff _ σ).trans
     (forall_mem_adjoin_smul_eq_self_iff K (M := Gal(AlgebraicClosure K/K)) σ)).trans ?_)
   exact ⟨fun h m hm x hx ↦ h x ⟨m, hm, hx⟩, fun h x ⟨m, hm, hx⟩ ↦ h m hm x hx⟩
+
+/-! ### Wild inertia at finite level -/
+
+open LocalFieldsRamification
+
+variable {K} in
+/-- **Wild inertia restricts into `G_1`.** The restriction of an element of the wild inertia
+subgroup `P_K` to a finite normal subextension `L` of `K^{alg}/K` lies in the first ramification
+group `G_1` of `L/K`. -/
+theorem restrictNormal_mem_lowerRamificationGroup_one
+    (L : IntermediateField K (AlgebraicClosure K)) [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [ValuativeExtension K L] [FiniteDimensional K L] [Normal K L]
+    {σ : Gal(AlgebraicClosure K/K)} (hσ : σ ∈ wildInertiaSubgroup K) :
+    AlgEquiv.restrictNormal σ L ∈ lowerRamificationGroup K L 1 := by
+  set p := ringChar 𝓀[K]
+  have hp : p.Prime := CharP.char_is_prime 𝓀[K] p
+  have : CharP 𝓀[L] p := charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
+  have hσI := wildInertiaSubgroup_le_inertiaSubgroup K hσ
+  set τ := AlgEquiv.restrictNormal σ L with hτ_def
+  have hτ0 := restrictNormal_mem_lowerRamificationGroup_zero L hσI
+  rw [lowerRamificationGroup_def] at hτ0 ⊢
+  -- Write `v_L(π₀) = v_L(ϖ) ^ (p ^ k * m)` with `p ∤ m`, and let `β` be an `m`-th root of `π₀`,
+  -- fixed by `σ`. In a finite normal extension `M` containing `L` and `β`, the restriction of `σ`
+  -- lies in `G_0`, and `v(β) = v(ϖ) ^ (p ^ k)`, so `(σ ϖ / ϖ) ^ (p ^ k) ≡ 1`; this places the
+  -- restriction to `L` in `G_1`.
+  -- Uniformizers `π₀` of `K` and `ϖ` of `L`, with `π₀ = u ϖ ^ (p ^ k * m)` in `L`, `p ∤ m`.
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  obtain ⟨π₀, hπ₀⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have hπne : algebraMap 𝒪[K] 𝒪[L] π₀ ≠ 0 := by
+    rw [Ne, map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective 𝒪[K] 𝒪[L])]
+    exact hπ₀.ne_zero
+  obtain ⟨E, u, hE⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hπne hϖ
+  have hE0 : E ≠ 0 := by
+    rintro rfl
+    rw [pow_zero, mul_one] at hE
+    exact hπ₀.not_isUnit (IsUnit.of_map (algebraMap 𝒪[K] 𝒪[L]) _ (hE ▸ u.isUnit))
+  obtain ⟨k, m, hm, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hE0 p hp.ne_one
+  have hm0 : m ≠ 0 := right_ne_zero_of_mul hE0
+  -- An `m`-th root `β` of `π₀` in `K^{alg}`, fixed by `σ`.
+  have hπ₀K : (π₀ : K) ≠ 0 := fun h ↦ hπ₀.ne_zero (Subtype.ext h)
+  obtain ⟨β, hβ⟩ := IsAlgClosed.exists_pow_nat_eq
+    (algebraMap K (AlgebraicClosure K) (π₀ : K)) (Nat.pos_of_ne_zero hm0)
+  have hσβ : σ β = β := (mem_wildInertiaSubgroup_iff_pow_eq.1 hσ) m hm (Units.mk0 _ hπ₀K) β hβ
+  -- A finite normal extension `M` of `K` containing `L` and `β`, with its local-field structure.
+  set F : IntermediateField K (AlgebraicClosure K) := L ⊔ K⟮β⟯
+  have : FiniteDimensional K K⟮β⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral β)
+  have : FiniteDimensional K F := IntermediateField.finiteDimensional_sup _ _
+  set M : IntermediateField K (AlgebraicClosure K) := normalClosure K F (AlgebraicClosure K)
+  have : FiniteDimensional K M := normalClosure.is_finiteDimensional K F _
+  have : Normal K M := normalClosure.normal K F _
+  have hLM : L ≤ M := le_sup_left.trans F.le_normalClosure
+  have hβM : β ∈ M := F.le_normalClosure ((le_sup_right : K⟮β⟯ ≤ F) (mem_adjoin_simple_self K β))
+  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) M
+  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) M
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) M
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) M
+  let ι : L →ₐ[K] M := inclusion hLM
+  let _ := ι.toAlgebra
+  have : IsScalarTower K L M := .of_algebraMap_eq fun x ↦ (ι.commutes x).symm
+  have : ValuativeExtension L M := ι.valuativeExtension
+  have hτM := restrictNormal_mem_lowerRamificationGroup_zero M hσI
+  rw [lowerRamificationGroup_def] at hτM
+  -- Valuations of elements of `L` are read in `M` through the map of value groups `f`.
+  set f := ValuativeExtension.mapValueGroupWithZero L M
+  have hf (y : L) : valuation M (algebraMap L M y) = f (valuation L y) :=
+    (ValuativeExtension.mapValueGroupWithZero_valuation y).symm
+  set a : M := algebraMap L M (ϖ : L)
+  set b : M := ⟨β, hβM⟩
+  have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  have hπL : valuation L (algebraMap K L (π₀ : K)) = valuation L (ϖ : L) ^ (p ^ k * m) := by
+    have hu : valuation L ((u : 𝒪[L]) : L) = 1 :=
+      (Valuation.integer.integers (valuation L)).valuation_unit u
+    rw [← coe_algebraMap_integerRing, hE]
+    simp [hu]
+  have hbm : b ^ m = algebraMap L M (algebraMap K L (π₀ : K)) := by
+    rw [← IsScalarTower.algebraMap_apply]
+    exact Subtype.ext hβ
+  -- `v(β) = v(ϖ) ^ (p ^ k)` in `M`, since the value group is torsion-free.
+  have hab : valuation M b = valuation M a ^ p ^ k := by
+    refine (pow_left_inj hm0).mp ?_
+    rw [← map_pow, hbm, hf, hπL, map_pow, ← hf, ← pow_mul]
+  have hσb : AlgEquiv.restrictNormal σ M • b = b :=
+    Subtype.ext (by rw [AlgEquiv.smul_def, AlgEquiv.restrictNormal_apply, hσβ])
+  have hratio : AlgEquiv.restrictNormal σ M • a / a = algebraMap L M (τ • (ϖ : L) / ϖ) := by
+    rw [map_div₀]
+    congr 1
+    exact Subtype.ext (by
+      rw [AlgEquiv.smul_def, AlgEquiv.restrictNormal_apply, AlgEquiv.smul_def, hτ_def]
+      exact (AlgEquiv.restrictNormal_apply L σ ϖ).symm)
+  have hlt := valuation_smul_div_pow_sub_one_lt_one hτM ((_root_.map_ne_zero _).2 hϖ0) hab hσb
+  rw [hratio, ← map_pow, ← map_one (algebraMap L M), ← map_sub, hf, ← map_one f] at hlt
+  exact mem_ramificationGroup_one_of_valuation_pow_sub_one_lt_one hϖ hτ0 p k
+    ((ValuativeExtension.mapValueGroupWithZero_strictMono (A := L) (B := M)).lt_iff_lt.1 hlt)
+
+variable {K} in
+/-- **Wild inertia is the inverse limit of the finite-level `G_1`.** An automorphism `σ` of
+`K^{alg}` lies in the wild inertia subgroup `P_K` exactly when, for every finite normal
+subextension `L` of `K^{alg}/K`, its restriction to `L` lies in the first ramification group
+`G_1` of `L/K`. -/
+theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem {σ : Gal(AlgebraicClosure K/K)} :
+    σ ∈ wildInertiaSubgroup K ↔ ∀ (L : IntermediateField K (AlgebraicClosure K))
+      [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
+      [FiniteDimensional K L] [Normal K L],
+      AlgEquiv.restrictNormal σ L ∈ lowerRamificationGroup K L 1 := by
+  refine ⟨fun hσ L _ _ _ _ _ _ ↦ restrictNormal_mem_lowerRamificationGroup_one L hσ, fun h ↦ ?_⟩
+  refine mem_wildInertiaSubgroup_iff_pow_eq.2 fun m hm a x hx ↦ ?_
+  have hm0 : m ≠ 0 := by
+    rintro rfl
+    exact hm (dvd_zero _)
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    rw [zero_pow hm0] at hx
+    exact (_root_.map_ne_zero _).2 a.ne_zero hx.symm
+  -- A finite normal extension `L` of `K` containing `x`, with its local-field structure.
+  have : FiniteDimensional K K⟮x⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
+  set L : IntermediateField K (AlgebraicClosure K) := normalClosure K K⟮x⟯ (AlgebraicClosure K)
+  have : FiniteDimensional K L := normalClosure.is_finiteDimensional K K⟮x⟯ _
+  have : Normal K L := normalClosure.normal K K⟮x⟯ _
+  have hxL : x ∈ L := K⟮x⟯.le_normalClosure (mem_adjoin_simple_self K x)
+  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L
+  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) L
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L
+  have hchar : ringChar 𝓀[L] = ringChar 𝓀[K] :=
+    have : CharP 𝓀[L] (ringChar 𝓀[K]) :=
+      charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
+    ringChar.eq 𝓀[L] _
+  have hG1 := h L
+  rw [lowerRamificationGroup_def] at hG1
+  set τ := AlgEquiv.restrictNormal σ L with hτ_def
+  -- The ratio `z = τ x / x` is a principal unit of `L` and an `m`-th root of unity, so `z = 1`.
+  set y : L := ⟨x, hxL⟩
+  have hy0 : y ≠ 0 := fun h ↦ hx0 (congrArg Subtype.val h)
+  set z : Lˣ := Units.mk0 (τ • y / y) (div_ne_zero ((smul_ne_zero_iff_ne _).2 hy0) hy0)
+  have hz1 : z ∈ unitFiltration L 1 := smul_div_mem_unitFiltration (y := Units.mk0 y hy0) hG1 rfl
+  have hym : y ^ m = algebraMap K L a := Subtype.ext hx
+  have hzm : z ∈ rootsOfUnity m L := by
+    rw [mem_rootsOfUnity]
+    refine Units.ext ?_
+    rw [Units.val_pow_eq_pow_val, Units.val_mk0, div_pow, ← smul_pow', hym, AlgEquiv.smul_def,
+      AlgEquiv.commutes, div_self ((_root_.map_ne_zero _).2 a.ne_zero), Units.val_one]
+  have hmL : ¬ ringChar 𝓀[L] ∣ m := hchar ▸ hm
+  have hmL0 : (m : L) ≠ 0 :=
+    natCast_ne_zero_of_isUnit (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hmL)
+  have hz : z = 1 := Subgroup.disjoint_def.1 (disjoint_rootsOfUnity_unitFiltration (i := 1) hmL0
+    fun q hq hqL hqm ↦ natCastValuation_lt_sub_one_mul_of_lt_of_dvd hmL0
+      (by rw [(natCastValuation_eq_zero_iff_not_dvd L m hmL0).2 hmL]; exact one_pos) hq hqL hqm)
+    hzm hz1
+  have hτy : τ • y = y := by
+    have := congrArg Units.val hz
+    rwa [Units.val_mk0, Units.val_one, div_eq_one_iff_eq hy0] at this
+  have := congrArg Subtype.val hτy
+  rwa [AlgEquiv.smul_def, hτ_def, AlgEquiv.restrictNormal_apply] at this
+
+/-! ### Wild inertia is the pro-`p` Sylow subgroup of inertia -/
+
+variable (p : ℕ) [CharP 𝓀[K] p]
+
+/-- **Wild inertia is pro-`p`**, for `p` the residue characteristic. -/
+theorem isProP_wildInertiaSubgroup : IsProP p (wildInertiaSubgroup K) := by
+  rw [Subgroup.isProP_iff_isPGroup_map_mk']
+  intro U
+  -- `U` contains the fixing subgroup of a finite normal subextension `E`.
+  obtain ⟨E, hEfin, hEnorm, hEU⟩ := (krullTopology_mem_nhds_one_iff_of_normal K
+    (AlgebraicClosure K) (U : Set (Field.absoluteGaloisGroup K))).1 (U.isOpen.mem_nhds U.one_mem)
+  rintro ⟨_, σ, hσ, rfl⟩
+  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) E
+  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) E
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) E
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) E
+  have : CharP 𝓀[E] p := charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[E]).injective _
+  -- The restriction of `σ` to `E` lies in the `p`-group `G_1` of `E/K`.
+  have hG1 := restrictNormal_mem_lowerRamificationGroup_one E hσ
+  rw [lowerRamificationGroup_def] at hG1
+  obtain ⟨n, hn⟩ := isPGroup_ramificationGroup (L := E) (E ≃ₐ[K] E) p (i := 1) one_pos ⟨_, hG1⟩
+  -- State the kernel computation on `Gal(K^{alg}/K)`, whose group structure is not reducibly that
+  -- of `Field.absoluteGaloisGroup K`.
+  have hker (τ : Gal(AlgebraicClosure K/K)) (hτ : AlgEquiv.restrictNormal τ E ^ p ^ n = 1) :
+      τ ^ p ^ n ∈ E.fixingSubgroup := by
+    rw [← E.restrictNormalHom_ker, MonoidHom.mem_ker, map_pow]
+    exact hτ
+  refine ⟨n, Subtype.ext ?_⟩
+  rw [SubgroupClass.coe_pow, ← map_pow, QuotientGroup.mk'_apply, OneMemClass.coe_one,
+    QuotientGroup.eq_one_iff]
+  exact hEU (hker σ (congrArg Subtype.val hn))
+
+variable {K} in
+/-- An element of inertia lies in wild inertia as soon as some `p`-power of it lies in every open
+normal subgroup of `G_K`. -/
+private theorem mem_wildInertiaSubgroup_of_forall_exists_pow_mem {σ : Gal(AlgebraicClosure K/K)}
+    (hσ : σ ∈ inertiaSubgroup K)
+    (h : ∀ U : OpenNormalSubgroup (Field.absoluteGaloisGroup K), ∃ n : ℕ, σ ^ p ^ n ∈ U) :
+    σ ∈ wildInertiaSubgroup K := by
+  obtain rfl : ringChar 𝓀[K] = p := ringChar.eq 𝓀[K] p
+  have hp : (ringChar 𝓀[K]).Prime := CharP.char_is_prime 𝓀[K] _
+  refine mem_wildInertiaSubgroup_iff_pow_eq.2 fun m hm a x hx ↦ ?_
+  have hm0 : m ≠ 0 := by
+    rintro rfl
+    exact hm (dvd_zero _)
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    rw [zero_pow hm0] at hx
+    exact (_root_.map_ne_zero _).2 a.ne_zero hx.symm
+  -- `σ` moves `x` by an `m`-th root of unity `ζ`, which is unramified and hence fixed by `σ`.
+  set ζ := σ x / x
+  have hζ : ζ ^ m = 1 := by
+    rw [div_pow, ← map_pow, hx, AlgEquiv.commutes, div_self ((_root_.map_ne_zero _).2 a.ne_zero)]
+  have hσζ : σ ζ = ζ :=
+    (mem_inertiaSubgroup_iff.1 hσ) ζ (mem_maximalUnramifiedExtension_of_pow_eq_one hm hζ)
+  have hσx : σ x = ζ * x := by rw [div_mul_cancel₀ _ hx0]
+  have hpow (j : ℕ) : (σ ^ j) x = ζ ^ j * x := by
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      rw [pow_succ', AlgEquiv.mul_apply, ih, map_mul, map_pow, hσζ, hσx]
+      ring
+  -- Some `p`-power of `σ` fixes `x`, so the order of `ζ` divides both `m` and a power of `p`.
+  set S : Set (Field.absoluteGaloisGroup K) :=
+    (MulAction.stabilizer Gal(AlgebraicClosure K/K) x : Set Gal(AlgebraicClosure K/K))
+  obtain ⟨H, hH⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
+    (stabilizer_isOpen_of_isIntegral x : IsOpen S)
+    (one_mem (MulAction.stabilizer Gal(AlgebraicClosure K/K) x))
+  obtain ⟨n, hn⟩ := h H
+  -- `S` is the stabilizer of `x`, read as a subset of `Field.absoluteGaloisGroup K`.
+  have hfix : (σ ^ ringChar 𝓀[K] ^ n) x = x := MulAction.mem_stabilizer_iff.1
+    (show σ ^ ringChar 𝓀[K] ^ n ∈ MulAction.stabilizer Gal(AlgebraicClosure K/K) x from hH hn)
+  rw [hpow, mul_eq_right₀ hx0] at hfix
+  have hcop : Nat.Coprime (ringChar 𝓀[K] ^ n) m :=
+    Nat.Coprime.pow_left n (hp.coprime_iff_not_dvd.2 hm)
+  have hζ1 : ζ = 1 := by
+    have := pow_gcd_eq_one.2 ⟨hfix, hζ⟩
+    rwa [hcop.gcd_eq_one, pow_one] at this
+  rw [hσx, hζ1, one_mul]
+
+variable {K} in
+/-- **Wild inertia is the largest pro-`p` subgroup of inertia**: every pro-`p` subgroup of `G_K`
+contained in the inertia subgroup `I_K` is contained in `P_K`. -/
+theorem le_wildInertiaSubgroup_of_isProP {R : Subgroup (Field.absoluteGaloisGroup K)}
+    (hR : IsProP p R) (hRI : R ≤ inertiaSubgroup K) : R ≤ wildInertiaSubgroup K := by
+  intro σ hσ
+  refine mem_wildInertiaSubgroup_of_forall_exists_pow_mem p (hRI hσ) fun U ↦ ?_
+  obtain ⟨n, hn⟩ := hR.isPGroup_map_mk' U ⟨_, σ, hσ, rfl⟩
+  have hmem : σ ^ p ^ n ∈ U.toSubgroup := by
+    rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
+    exact congrArg Subtype.val hn
+  exact ⟨n, hmem⟩
+
+/-- **Wild inertia is the pro-`p` Sylow subgroup of inertia**: `P_K`, viewed as a subgroup of the
+inertia subgroup `I_K`, is a Sylow pro-`p` subgroup of `I_K`, for `p` the residue
+characteristic. -/
+theorem isProPSylow_wildInertiaSubgroup :
+    IsProPSylow p ((wildInertiaSubgroup K).subgroupOf (inertiaSubgroup K)) := by
+  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[K] p⟩
+  have : CompactSpace (inertiaSubgroup K) :=
+    isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
+  refine isProPSylow_of_maximal ((Subgroup.isProP_subgroupOf_iff
+    (wildInertiaSubgroup_le_inertiaSubgroup K)).2 (isProP_wildInertiaSubgroup K p))
+    fun R hR _ σ hσ ↦ Subgroup.mem_subgroupOf.2
+      (mem_wildInertiaSubgroup_of_forall_exists_pow_mem p σ.2 fun U ↦ ?_)
+  -- A `p`-power of `σ` lies in the trace of `U` on `I_K`, since `R` is pro-`p`.
+  set V := U.comap (inertiaSubgroup K).subtype continuous_subtype_val
+  obtain ⟨n, hn⟩ := hR.isPGroup_map_mk' V ⟨_, σ, hσ, rfl⟩
+  have hmem : σ ^ p ^ n ∈ V.toSubgroup := by
+    rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
+    exact congrArg Subtype.val hn
+  exact ⟨n, OpenNormalSubgroup.mem_comap.1 hmem⟩
+
+/-- **Uniqueness of the Sylow subgroup**: `P_K` is the only Sylow pro-`p` subgroup of the inertia
+subgroup `I_K`, for `p` the residue characteristic, since it is normal. -/
+theorem eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow {Q : Subgroup (inertiaSubgroup K)}
+    (hQ : IsProPSylow p Q) : Q = (wildInertiaSubgroup K).subgroupOf (inertiaSubgroup K) := by
+  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[K] p⟩
+  have : CompactSpace (inertiaSubgroup K) :=
+    isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
+  exact (IsProPSylow.eq_of_normal p _ _ _ (isProPSylow_wildInertiaSubgroup K p) hQ
+    Subgroup.normal_subgroupOf).symm
 
 end TauCeti

@@ -22,7 +22,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Complex
+open Complex Metric
 
 /-- Translating the center of the Poisson kernel to zero and multiplying by a nonzero complex number
 does not change its value. -/
@@ -31,6 +31,15 @@ theorem poissonKernel_inv_mul_sub {c a z q : ℂ} (hq : q ≠ 0) :
   simp only [poissonKernel_def, sub_zero, sub_sub_sub_cancel_right, ← mul_sub, norm_mul,
     norm_inv]
   field_simp
+
+/-- The Poisson kernel is nonnegative on a circle when its evaluation point lies inside. -/
+theorem poissonKernel_nonneg_on_sphere {c w z : ℂ} {R : ℝ}
+    (hw : w ∈ ball c |R|) (hz : z ∈ sphere c |R|) : 0 ≤ poissonKernel c w z := by
+  rw [poissonKernel_eq_re_herglotzRieszKernel]
+  have hR : ‖w - c‖ < |R| := mem_ball_iff_norm.mp hw
+  have hRp : 0 < |R| := pos_of_mem_ball hw
+  exact le_trans (by positivity : 0 ≤ (|R| - ‖w - c‖) / (|R| + ‖w - c‖))
+    (by simpa [herglotzRieszKernel_def] using le_re_herglotzRieszKernel hz hw)
 
 end TauCeti
 

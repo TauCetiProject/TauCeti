@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
 
 import TauCeti.Algebra.Lie.Matrix.IntegralCast
+import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # The admissible lattice in the seven-dimensional representation of type G2
@@ -32,7 +33,10 @@ constructions on it transfer to that scheme only along such an identification.
 
 * `TauCeti.G2ShortRoot.rationalSerreRepresentation`: the rational seven-dimensional
   representation.
-* `TauCeti.G2ShortRoot.rep`: its extension to the universal enveloping algebra.
+* `TauCeti.G2ShortRoot.rep`: its extension to the universal enveloping algebra, acting through
+  the rational matrix of its argument by `TauCeti.G2ShortRoot.rep_ι_eq_toLinAlgEquiv'`.
+* `TauCeti.G2ShortRoot.isSl2Triple_rep_serreRootGenerator`: the represented Cartan, raising and
+  lowering generators at each node form an `sl₂` triple.
 * `TauCeti.G2ShortRoot.rootMatrix` and
   `TauCeti.G2ShortRoot.rootDividedSquareMatrix`: the integral matrix of each numbered simple-root
   generator and of its divided square.
@@ -112,6 +116,14 @@ theorem isSerreSystemRat :
   · intro i j
     rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
     exact h.ad_pow_lie_F_F i j
+
+/-- At each simple node, the three rational matrices form an `sl₂` triple. -/
+theorem isSl2TripleRat (i : Fin 2) :
+    _root_.IsSl2Triple (cartanMatrixRat i) (raisingMatrixRat i) (loweringMatrixRat i) :=
+  (isSl2Triple i).map (matrixIntCastLieHom ℚ) fun hzero ↦
+    (isSl2Triple i).h_ne_zero <| by
+      ext a b
+      simpa using congrFun (congrFun hzero a) b
 
 /-- The rational seven-dimensional representation of the type-`G₂` Serre presentation. -/
 noncomputable def rationalSerreRepresentation :
@@ -220,14 +232,39 @@ theorem rep_serreRootGenerator_apply (k : Fin 2 ⊕ Fin 2) (v : Fin 7 → ℚ) :
       v = (rootMatrix k).map (Int.castRingHom ℚ) *ᵥ v := by
   rw [rep_ι_apply, rationalSerreRepresentation_serreRootGenerator]
 
-/-- **The represented simple-root generator is the linear map of its rational matrix.** Reading
-the operator this way transports identities between the integral matrices, such as the value of
-the square and the vanishing of the cube, to identities between operators. -/
+/-- **A represented Lie-algebra element is the linear map of its rational matrix.** Reading the
+operator this way transports identities between matrices to identities between operators. -/
+theorem rep_ι_eq_toLinAlgEquiv' (x : Matrix.ToLieAlgebra ℚ CartanMatrix.G₂) :
+    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
+      Matrix.toLinAlgEquiv' (rationalSerreRepresentation x) :=
+  LinearMap.ext fun v => by
+    rw [rep_ι_apply, Matrix.toLinAlgEquiv'_apply]
+
+/-- The represented simple-root generator is the linear map of its rational matrix, which
+transports the value of its square and the vanishing of its cube to the operator. -/
 theorem rep_serreRootGenerator_eq_toLinAlgEquiv' (k : Fin 2 ⊕ Fin 2) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreRootGenerator CartanMatrix.G₂ k)) =
-      Matrix.toLinAlgEquiv' ((rootMatrix k).map (Int.castRingHom ℚ)) :=
-  LinearMap.ext fun v => by
-    rw [rep_serreRootGenerator_apply, Matrix.toLinAlgEquiv'_apply]
+      Matrix.toLinAlgEquiv' ((rootMatrix k).map (Int.castRingHom ℚ)) := by
+  rw [rep_ι_eq_toLinAlgEquiv', rationalSerreRepresentation_serreRootGenerator]
+
+/-- The represented Cartan, positive and negative simple generators at a common type-`G₂` node
+form an `sl₂` triple. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : Fin 2) :
+    _root_.IsSl2Triple
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ CartanMatrix.G₂ i)))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator CartanMatrix.G₂ (.inl i))))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator CartanMatrix.G₂ (.inr i)))) := by
+  have hne : Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 7) (cartanMatrixRat i) ≠ 0 := fun hz ↦
+    (isSl2TripleRat i).h_ne_zero
+      ((Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 7)).injective (hz.trans (map_zero _).symm))
+  have h := (isSl2TripleRat i).map
+    (Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 7)).toAlgHom.toLieHom hne
+  simp only [AlgHom.toLieHom_apply, AlgEquiv.toAlgHom_apply] at h
+  rw [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr]
+  simpa only [rep_ι_eq_toLinAlgEquiv', rationalSerreRepresentation_serreH,
+    rationalSerreRepresentation_serreE, rationalSerreRepresentation_serreF] using h
 
 /-- The divided square of a numbered root generator acts by the integral matrix of its divided
 square. -/

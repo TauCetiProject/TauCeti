@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Positive
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Trans
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 
 /-!
@@ -15,6 +16,8 @@ For a subgroup `H` of a finite group `G`, the separate constructions of restrict
 corestriction in positive, zero, minus one, and lower negative degrees assemble into maps in
 every integer degree. Their composite is multiplication by the index `[G : H]`. These uniform
 maps are the group-change operations used in the restriction law for the Tate cup product.
+In negative degrees, restriction is natural in the coefficient representation
+(`res_natural_of_neg`).
 Tower composition for class-field-theory layers is provided by
 `ClassFieldTheory.LayerRestriction.tateRes_trans` and
 `ClassFieldTheory.LayerRestriction.tateCor_trans`.
@@ -67,6 +70,18 @@ theorem res_neg_one (M : Rep.{u} R G) (H : Subgroup G) :
 @[simp]
 theorem res_negSucc_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
     res M H (Int.negSucc (n + 1)) = negSuccRes M H (n + 1) := by rfl
+
+/-- **Tate restriction in negative degrees is natural in the coefficient representation.** -/
+@[reassoc]
+theorem res_natural_of_neg {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) {r : ℤ}
+    (hr : r < 0) :
+    (tateCohomologyFunctor r).map f ≫ res N H r =
+      res M H r ≫ (tateCohomologyFunctor r).map ((Rep.resFunctor H.subtype).map f) := by
+  obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat hr.le
+  rcases n with _ | _ | n
+  · simp at hr
+  · exact HNegOneRes_natural M H f
+  · exact negSuccRes_natural M H f (n + 1)
 
 /-- Corestriction of Tate cohomology from a subgroup of a finite group, in every integer
 degree. -/

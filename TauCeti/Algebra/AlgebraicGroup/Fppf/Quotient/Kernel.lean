@@ -182,8 +182,8 @@ theorem isIso_kernelFppfQuotientHom (f : H ⟶ K)
       ULift.ext (hinjB _ (congrArg ULift.down hxy))
   have hsurj : Presheaf.IsLocallySurjective J β := by
     constructor
-    intro U s
-    obtain ⟨B, φ, z, hφflat, hφfp, hz⟩ := exists_faithfullyFlat_lift f hflat hfp s.down.ofConv
+    intro U ⟨s⟩
+    obtain ⟨B, φ, z, hφflat, hφfp, hz⟩ := exists_faithfullyFlat_lift f hflat hfp s.ofConv
     refine J.superset_covering ?_
       (CommAlgCat.generate_singleton_op_mem_fppfTopology φ hφflat hφfp)
     rw [Sieve.generate_le_iff]
@@ -195,7 +195,7 @@ theorem isIso_kernelFppfQuotientHom (f : H ⟶ K)
       (pointwiseQuotientProjection_comp_kernelPointwiseQuotientNatTrans f)
     refine key.trans ?_
     rw [mapPointsFunctor_app_apply, ofConv_toConv, hz]
-    rfl
+    exact (HopfAlgebra.mapPoints_apply (H := H) φ s).symm
   have hβ : IsIso (F.map β) :=
     (J.W_iff β).1 (J.W_of_isLocallyBijective β)
   have hG : IsIso (F.mapGrp.map (groupFunctorGrpMap (kernelPointwiseQuotientPresheafNatTrans f))) :=
