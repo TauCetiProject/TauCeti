@@ -133,6 +133,10 @@ def HNegTwoRes :
     tateCohomology M (-2) ⟶ tateCohomology (Rep.res H.subtype M) (-2) :=
   negSuccRes M H 1
 
+/-- Degree-`-2` restriction is the degree-one instance of negative restriction. -/
+theorem HNegTwoRes_eq_negSuccRes : HNegTwoRes M H = negSuccRes M H 1 :=
+  (rfl)
+
 /-- Restriction in Tate degree `-2` is the transfer in first group homology, transported through
 Mathlib's negative-degree comparison `TateCohomology.isoGroupHomology`. -/
 theorem HNegTwoRes_def :

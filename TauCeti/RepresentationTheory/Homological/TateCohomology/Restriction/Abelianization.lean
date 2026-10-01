@@ -86,7 +86,12 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor {H : Type u} [Group H] [Fint
   rw [HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoCor_comp_isoGroupHomology_hom_apply]
-  convert TauCeti.groupHomology.H1AddEquivOfIsTrivial_map (f := f) A
+  convert TauCeti.groupHomology.H1AddEquivOfIsTrivial_map f (𝟙 (Rep.res f A))
     ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (res f A) y) using 1
+  generalize groupHomology.H1AddEquivOfIsTrivial (Rep.res f A)
+    ((TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.res f A) y) = t
+  induction t using TensorProduct.inductionOn with
+  | tmul x a => simp [LinearMap.rTensor_tmul]
+  | add x y hx hy => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
 
 end TauCeti.TateCohomology

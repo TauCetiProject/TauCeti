@@ -224,6 +224,44 @@ theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom
   ext
   simp [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, trivialRangeRepHom]
 
+/-- In degree `-2`, the trivial-coefficient range comparison agrees with change of group on first
+homology. -/
+@[simp, reassoc]
+theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two
+    (T : LayerRestriction small big) :
+    (T.trivialTateRangeIso (-2)).hom ≫
+        (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) =
+      (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+          (Rep.trivial ℤ small.Gal ℤ) ≫
+        groupHomology.map (MonoidHom.ofInjective T.galHom_injective)
+          T.trivialRangeRepHom 1 := by
+  rw [trivialTateRangeIso_hom,
+    TauCeti.TateCohomology.map_comp_isoGroupHomology_hom]
+  congr 1
+  apply groupHomology.map_congr rfl _ 1
+  ext
+  simp [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, trivialRangeRepHom]
+
+/-- Elementwise form of
+`trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two`. -/
+theorem isoGroupHomology_hom_trivialTateRangeIso_hom_neg_two_apply
+    (T : LayerRestriction small big) (x : small.TrivialTateH (-2)) :
+    (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+        (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+        ((T.trivialTateRangeIso (-2)).hom x) =
+      groupHomology.map (MonoidHom.ofInjective T.galHom_injective)
+        T.trivialRangeRepHom 1
+        ((TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+          (Rep.trivial ℤ small.Gal ℤ) x) := by
+  have h := congrArg (fun f ↦ f x)
+    T.trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two
+  change _ = groupHomology.map (MonoidHom.ofInjective T.galHom_injective)
+    T.trivialRangeRepHom 1
+      ((TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+        (Rep.trivial ℤ small.Gal ℤ) x) at h
+  exact h
+
 end TauCeti.ClassFieldTheory.LayerRestriction
 
 namespace TauCeti.ClassFieldTheory.NormalLayer

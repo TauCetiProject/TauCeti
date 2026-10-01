@@ -407,4 +407,15 @@ theorem trivialTateCor_negSucc_succ (T : LayerRestriction small big) (n : ℕ) :
           (Rep.trivial ℤ big.Gal ℤ) T.galHom.range.subtype (n + 1) :=
   (rfl)
 
+/-- In degree `-2`, trivial-coefficient Tate corestriction is the range comparison followed by
+the map on first homology induced by inclusion. -/
+theorem trivialTateCor_neg_two (T : LayerRestriction small big) :
+    T.trivialTateCor (-2) =
+      (T.trivialTateRangeIso (-2)).hom ≫
+        TauCeti.TateCohomology.HNegTwoCor
+          (Rep.trivial ℤ big.Gal ℤ) T.galHom.range.subtype :=
+  by
+    rw [TauCeti.TateCohomology.HNegTwoCor_eq_negSuccCor]
+    exact T.trivialTateCor_negSucc_succ 0
+
 end TauCeti.ClassFieldTheory.LayerRestriction
