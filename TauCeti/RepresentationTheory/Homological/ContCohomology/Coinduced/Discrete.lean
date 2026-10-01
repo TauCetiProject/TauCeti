@@ -41,6 +41,8 @@ and the one Shapiro's lemma is stated against.
   discrete carrier is continuous, so `Coind_U^G A` is a discrete `G`-module;
 * `TauCeti.DiscreteCoind.instContinuousSMulScalar`: for compact `G` and discrete coefficients,
   scalar multiplication is continuous;
+* `TauCeti.DiscreteCoind.unit_injective` and `TauCeti.DiscreteCoind.map_unit`: the unit is
+  injective (a section of the counit) and natural in the coefficients;
 * `TauCeti.DiscreteCoind.trace_apply`, `TauCeti.DiscreteCoind.trace_eq_sum_transversal` and
   `TauCeti.DiscreteCoind.trace_map`: the trace formula, along any transversal, and its naturality
   in the coefficients;
@@ -153,6 +155,9 @@ theorem coe_neg (f : DiscreteCoind G U A) : ⇑(-f) = -⇑f := rfl
 
 @[simp]
 theorem coe_sub (f f' : DiscreteCoind G U A) : ⇑(f - f') = ⇑f - ⇑f' := rfl
+
+/-- The `ℕ`-action is pointwise, so that Mathlib's `FunLike.coe_smul` and `smul_apply` apply. -/
+instance : IsSMulApply ℕ (DiscreteCoind G U A) G A where
 
 section Scalar
 
@@ -429,6 +434,24 @@ theorem eval_unit (m : M) : eval G U M (unit G U M m) = m := by
 /-- The unit is injective, being retracted by evaluation at `1`. -/
 theorem unit_injective : Function.Injective (unit G U M) := fun m m' h => by
   simpa using congrArg (eval G U M) h
+
+section Naturality
+
+variable {R : Type*} [Semiring R] [Module R M] [SMulCommClass U R M]
+  {N : Type*} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
+  [ContinuousSMul G N] [Module R N] [SMulCommClass U R N]
+
+/-- **The unit is natural in the coefficient module**: for a `G`-equivariant linear map
+`f : M → N` of discrete `G`-modules, coinducing `f` carries the orbit map of `m` to the orbit map
+of `f m`. The `U`-equivariance `TauCeti.DiscreteCoind.map` asks for is the restriction of the
+`G`-equivariance `hf`. -/
+@[simp]
+theorem map_unit (f : M →ₗ[R] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) (m : M) :
+    map f (fun u m => hf u m) (unit G U M m) = unit G U N (f m) := by
+  ext x
+  rw [map_apply, unit_apply, unit_apply, hf]
+
+end Naturality
 
 section FiniteIndex
 

@@ -77,6 +77,17 @@ theorem integralFormBaseChange_ι (h : IsBaseChange A ι) (Q : LinearMap.BilinFo
     (x y : V) : integralFormBaseChange h Q (ι x) (ι y) = (Q x y : A) := by
   simp [integralFormBaseChange, h.equiv_symm_apply]
 
+/-- Complexifying the linear map from a bilinear form to the dual gives the linear map of the
+complexified form. -/
+theorem integralMapToComplex_bilinForm (hℂ : IsBaseChange ℂ ιℂ)
+    (Q : LinearMap.BilinForm ℤ V) :
+    integralMapToComplex hℂ (dualLatticeMap hℂ) Q = integralFormBaseChange hℂ Q := by
+  apply hℂ.algHom_ext
+  intro x
+  apply hℂ.algHom_ext
+  intro y
+  simp
+
 /-- The extended form is the unique bilinear form restricting to the integral one. -/
 theorem integralFormBaseChange_unique (h : IsBaseChange A ι) (Q : LinearMap.BilinForm ℤ V)
     (B : LinearMap.BilinForm A V_A) (hB : ∀ x y : V, B (ι x) (ι y) = (Q x y : A)) :
