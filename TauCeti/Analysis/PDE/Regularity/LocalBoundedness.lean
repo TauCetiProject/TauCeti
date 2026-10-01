@@ -48,6 +48,8 @@ constant independent of `Ω`, but dependent on the normalization of the additive
   subsolutions, under a Sobolev inequality with exponent `q > 2`.
 * `TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`: the
   scale-invariant bound `u ≤ k + D R^{-n/2} ‖(u - k)⁺‖_{L²(B(x₀, R))}` in dimension `n ≥ 3`.
+* `TauCeti.PDE.exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral`: the two-sided bound
+  `|u| ≤ D R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak solutions in dimension `n ≥ 3`.
 
 ## References
 
@@ -600,6 +602,67 @@ theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {
   have hbound := hmain (k := k) h ha
     (fun v hv => W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp' hv) hu hR hball
   rwa [hα] at hbound
+
+/-- **Local boundedness of weak solutions in dimension `n ≥ 3` (De Giorgi).** Let `2*` be the
+Sobolev exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this
+forces `n ≥ 3`). There is `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization
+of the additive Haar measure `mu`, such that for every measurable, uniformly elliptic `a` on
+`Ω` with constants `λ, Λ`, every weak solution `u ∈ H¹(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is
+`a(u, v) = 0` for every `v ∈ H¹₀(Ω)`, and every ball `B(x₀, R) ⊆ Ω`,
+
+`|u| ≤ D R^{-n/2} ‖u‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`.
+
+This is the two-sided form of
+`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`, obtained
+by applying it at the level `0` to the weak subsolutions `u` and `-u`. -/
+theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral {pstar : ℝ≥0∞}
+    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
+      0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
+        |W1p.value u x| ≤ D * R ^ (-(Fintype.card ι : ℝ) / 2) *
+          √(∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu) := by
+  obtain ⟨D, hD, hbound⟩ :=
+    exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv (mu := mu)
+      (lam := lam) (Lam := Lam) hpstar hexp
+  refine ⟨D, hD, fun {Omega a u x₀ R} h ha hu hR hball => ?_⟩
+  have hDP : 0 ≤ D * R ^ (-(Fintype.card ι : ℝ) / 2) := by positivity
+  -- The square of the positive part of a square-integrable function is dominated by its square.
+  have hsq : ∀ w : W1p mu Omega 2,
+      ∫ x in Metric.ball x₀ R, max (W1p.value w x - 0) 0 ^ 2 ∂mu ≤
+        ∫ x in Metric.ball x₀ R, W1p.value w x ^ 2 ∂mu := fun w => by
+    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity)
+      ((Lp.memLp (W1p.value w)).mono_measure (Measure.restrict_mono hball le_rfl)).integrable_sq
+      (ae_of_all _ fun x => ?_)
+    simp only [sub_zero]
+    calc max (W1p.value w x) 0 ^ 2 ≤ |W1p.value w x| ^ 2 :=
+          pow_le_pow_left₀ (le_max_right _ _) (max_le (le_abs_self _) (abs_nonneg _)) 2
+      _ = W1p.value w x ^ 2 := sq_abs _
+  -- `-u` is a weak solution too, with the same `L²` norm on the ball.
+  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
+    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) = 0 := fun v => by
+    rw [← neg_one_smul ℝ u, energyFormH1_smul_left, hu v, mul_zero]
+  have hint : ∫ x in Metric.ball x₀ R, W1p.value (-u) x ^ 2 ∂mu =
+      ∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu := by
+    refine integral_congr_ae ?_
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hball hneg] with x hx
+    rw [hx, Pi.neg_apply, neg_sq]
+  have hpos := hbound (k := 0) h ha (fun v _ => (hu v).le) hR hball
+  have hneg' := hbound (k := 0) h ha (fun v _ => (hu' v).le) hR hball
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    (Metric.ball_subset_ball (half_le_self hR.le)).trans hball
+  filter_upwards [hpos, hneg', ae_restrict_of_ae_restrict_of_subset hhalf hneg] with x hx hx' hxn
+  rw [hxn, Pi.neg_apply] at hx'
+  have h₁ := mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (hsq u)) hDP
+  have h₂ := mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (hint ▸ hsq (-u))) hDP
+  rw [abs_le]
+  constructor <;> linarith
 
 end PDE
 
