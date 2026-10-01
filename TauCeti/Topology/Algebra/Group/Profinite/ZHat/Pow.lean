@@ -105,6 +105,12 @@ theorem zpowHat_intCast (x : G) (n : ℤ) : x ^ᶻ (n : Additive zHat.{u}) = x ^
 theorem zpowHat_natCast (x : G) (n : ℕ) : x ^ᶻ (n : Additive zHat.{u}) = x ^ n := by
   rw [← Int.cast_natCast, zpowHat_intCast, zpow_natCast]
 
+/-- The profinite power by a numeral is the corresponding natural power. -/
+@[simp]
+theorem zpowHat_ofNat (x : G) (n : ℕ) [n.AtLeastTwo] :
+    x ^ᶻ (ofNat(n) : Additive zHat.{u}) = x ^ OfNat.ofNat n := by
+  simpa using zpowHat_natCast x (OfNat.ofNat n)
+
 /-- Every profinite power of `1` is `1`. -/
 @[simp]
 theorem one_zpowHat (a : Additive zHat.{u}) : (1 : G) ^ᶻ a = 1 :=
@@ -132,7 +138,6 @@ theorem zpowHat_mul (x : G) (a b : Additive zHat.{u}) : x ^ᶻ (a * b) = (x ^ᶻ
 
 /-- On the profinite integers themselves, the profinite power is the ring product:
 `toMul b ^ᶻ a` is `b * a`, read multiplicatively. -/
-@[simp]
 theorem toMul_zpowHat (b a : Additive zHat.{u}) : b.toMul ^ᶻ a = (b * a).toMul := by
   rw [zpowHat_def, zHat.toMul_mul]
 
