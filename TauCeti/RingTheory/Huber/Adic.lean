@@ -26,7 +26,7 @@ for Witt-vector rings with their `(p, [ϖ])`-adic topology.
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.idealImage_adic`: the neighbourhood subgroup furnished by this
+* `TauCeti.Huber.PairOfDefinition.adic_idealImage`: the neighbourhood subgroup furnished by this
   pair in degree `n` is exactly `I ^ n`.
 * `TauCeti.Huber.isHuberRing_of_isAdic`: a ring with a finitely generated ideal defining its
   topology is Huber.
@@ -91,7 +91,7 @@ theorem map_adic_idealOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :
 
 /-- The `n`-th neighbourhood subgroup supplied by the adic pair is `I ^ n` itself. -/
 @[simp]
-theorem idealImage_adic (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) (n : ℕ) :
+theorem adic_idealImage (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) (n : ℕ) :
     (adic I hI hfg).idealImage n = (I ^ n).toAddSubgroup := by
   ext x
   let P := adic I hI hfg
