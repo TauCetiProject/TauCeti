@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
-public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.Factors
 import TauCeti.GroupTheory.Perm.PermCongr
-import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Galois orbits on the roots of a polynomial
@@ -45,8 +42,6 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   set of its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_minpoly`: when the corresponding minimal polynomial is
   separable, an orbit has as many elements as its degree.
-* `TauCeti.natCard_rootSet_complex_eq_natDegree`: an integral polynomial with nonzero
-  discriminant has as many distinct complex roots as its degree.
 * `TauCeti.isPretransitive_iff_irreducible`: for separable `p` of positive degree, transitivity
   of the root action is equivalent to irreducibility of `p`.
 * `TauCeti.isPretransitive_range_galActionHom`: the Galois image of an irreducible polynomial,
@@ -62,7 +57,7 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   `TauCeti.image_val_orbit_eq_rootSet_minpoly_splittingField`,
   `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`: the same three descriptions of an
   orbit for the intrinsic action on the roots in the splitting field.
-* `TauCeti.isPretransitive_of_irreducible`: inside the splitting field, an irreducible
+* `Polynomial.Gal.galActionAux_isPretransitive`: inside the splitting field, an irreducible
   polynomial has a transitive root action.
 * `Polynomial.Gal.smul_eq_apply`: the action on the splitting field is evaluation.
 * `TauCeti.galIsGaloisGroup`: `Polynomial.Gal p` is a Galois group for its splitting field.
@@ -202,45 +197,6 @@ theorem natCard_orbit_eq_natDegree_minpoly (x : p.rootSet E)
     image_val_orbit_eq_rootSet_minpoly, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep hsplits]
 
-/-- An integral polynomial with nonzero discriminant has as many distinct complex roots as its
-degree. -/
-theorem natCard_rootSet_complex_eq_natDegree {f : ℤ[X]} (hd : f.discr ≠ 0) :
-    Nat.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
-  by_cases hf : f = 0
-  · subst f
-    simp
-  have hmap : f.map (Int.castRingHom ℚ) ≠ 0 :=
-    (Polynomial.map_ne_zero_iff Int.cast_injective).mpr hf
-  have hdeg : (f.map (Int.castRingHom ℚ)).natDegree = f.natDegree :=
-    Polynomial.natDegree_map_eq_of_injective Int.cast_injective f
-  have hdisc : (f.map (Int.castRingHom ℚ)).discr ≠ 0 := by
-    rw [Polynomial.discr_map_of_natDegree_eq _ hdeg]
-    exact Int.cast_injective.ne hd
-  have hsep : (f.map (Int.castRingHom ℚ)).Separable := by
-    rcases Nat.eq_zero_or_pos (f.map (Int.castRingHom ℚ)).natDegree with hzero | hpos
-    · rw [Polynomial.eq_C_of_natDegree_eq_zero hzero, Polynomial.separable_C,
-        isUnit_iff_ne_zero]
-      intro hcoeff
-      apply hmap
-      rw [Polynomial.eq_C_of_natDegree_eq_zero hzero, hcoeff, Polynomial.C_0]
-    · rw [Polynomial.separable_def]
-      by_contra hcoprime
-      have hres : (f.map (Int.castRingHom ℚ)).resultant
-          (f.map (Int.castRingHom ℚ)).derivative = 0 :=
-        Polynomial.resultant_eq_zero_iff.mpr ⟨Or.inl hmap, hcoprime⟩
-      have hbound : (f.map (Int.castRingHom ℚ)).resultant
-          (f.map (Int.castRingHom ℚ)).derivative
-          (f.map (Int.castRingHom ℚ)).natDegree
-          ((f.map (Int.castRingHom ℚ)).natDegree - 1) = 0 := by
-        rw [← Nat.add_sub_of_le (Polynomial.natDegree_derivative_le _),
-          Polynomial.resultant_add_right_deg _ _ _ _ _ (le_refl _), hres, mul_zero]
-      rw [Polynomial.resultant_deriv (Polynomial.natDegree_pos_iff_degree_pos.mp hpos)] at hbound
-      exact (mul_ne_zero
-        (mul_ne_zero (pow_ne_zero _ (by norm_num)) (Polynomial.leadingCoeff_ne_zero.mpr hmap))
-        hdisc) hbound
-  rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Gal.splits_ℚ_ℂ.out,
-    hdeg]
-
 /-! ## Transitivity and irreducibility -/
 
 /-- For a separable polynomial of positive degree, the Galois action on the roots in a splitting
@@ -306,11 +262,7 @@ theorem isPretransitive_algEquiv_rootSet_iff_gal [Normal F E] :
 /-- **Irreducibility over an intermediate field.** Let `E` be a normal extension of `F` in which a
 separable polynomial `p` of positive degree splits, and let `K` be an intermediate field. Then `p`
 stays irreducible over `K` exactly when the automorphisms of `E` fixing `K` act transitively on the
-roots of `p` in `E`.
-
-This is `TauCeti.isPretransitive_iff_irreducible` over the base `K`, read through
-`IntermediateField.fixingSubgroupEquiv`, which identifies the automorphisms of `E` over `K` with the
-automorphisms of `E` over `F` that fix `K`. -/
+roots of `p` in `E`. -/
 theorem irreducible_map_iff_isPretransitive_fixingSubgroup [Normal F E]
     (K : IntermediateField F E) (hsep : p.Separable) (hdeg : 0 < p.natDegree) :
     Irreducible (p.map (algebraMap F K)) ↔
@@ -407,8 +359,7 @@ theorem image_val_orbit_eq_rootSet_minpoly_splittingField (x : p.rootSet p.Split
 /-- When the minimal polynomial of a root is separable, its orbit in the splitting field has as
 many elements as the degree of that minimal polynomial.
 
-This is `TauCeti.natCard_orbit_eq_natDegree_minpoly` for the intrinsic action; the minimal
-polynomial splits because the splitting field is normal over `F`. -/
+This is `TauCeti.natCard_orbit_eq_natDegree_minpoly` for the intrinsic action. -/
 theorem natCard_orbit_eq_natDegree_minpoly_splittingField (x : p.rootSet p.SplittingField)
     (hsep : (minpoly F (x : p.SplittingField)).Separable) :
     Nat.card (MulAction.orbit p.Gal x) = (minpoly F (x : p.SplittingField)).natDegree := by
@@ -417,13 +368,12 @@ theorem natCard_orbit_eq_natDegree_minpoly_splittingField (x : p.rootSet p.Split
     card_rootSet_eq_natDegree hsep
       (Normal.splits (SplittingField.instNormal p) (x : p.SplittingField))]
 
-/-- **The root action of an irreducible polynomial is transitive.** Two roots of an irreducible
-polynomial have the same minimal polynomial, and a normal extension moves one to the other.
+/-- **The root action of an irreducible polynomial is transitive.**
 
 This is `Polynomial.Gal.galAction_isPretransitive` for the intrinsic action on the roots in the
 splitting field; see the note above for why that instance is not the one Mathlib's statement
 carries. -/
-theorem isPretransitive_of_irreducible (hp : Irreducible p) :
+theorem _root_.Polynomial.Gal.galActionAux_isPretransitive (hp : Irreducible p) :
     MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) := by
   refine ⟨fun x y => ?_⟩
   have hx := minpoly.eq_of_irreducible hp (aeval_eq_zero_of_mem_rootSet x.2)
@@ -435,18 +385,15 @@ theorem isPretransitive_of_irreducible (hp : Irreducible p) :
 
 /-- Every monic irreducible factor of a nonzero `p` is the minimal polynomial of a root of `p`
 in a splitting extension. -/
-theorem exists_mem_rootSet_minpoly_eq (hp : p ≠ 0) (q : p.Factors) :
+theorem exists_mem_rootSet_minpoly_eq (E : Type v) [CommRing E] [IsDomain E] [Algebra F E]
+    [Fact ((p.map (algebraMap F E)).Splits)] (hp : p ≠ 0) (q : p.Factors) :
     ∃ x : p.rootSet E, minpoly F (x : E) = q := by
   have hsplits : ((q : F[X]).map (algebraMap F E)).Splits :=
     (Fact.out (p := ((p.map (algebraMap F E)).Splits))).of_dvd
       (by simpa using hp) (Polynomial.map_dvd _ q.dvd)
-  have hdeg : ((q : F[X]).map (algebraMap F E)).natDegree ≠ 0 := by
-    rw [natDegree_map]
-    exact q.irreducible.natDegree_pos.ne'
-  obtain ⟨z, hz⟩ := Multiset.exists_mem_of_ne_zero (hsplits.roots_ne_zero hdeg)
-  have hzq : aeval z (q : F[X]) = 0 := by
-    rw [aeval_def, ← eval_map]
-    exact (mem_roots (q.monic.map (algebraMap F E)).ne_zero).mp hz
+  obtain ⟨z, hz⟩ := hsplits.exists_eval_eq_zero
+    (by rw [degree_map]; exact (degree_pos_of_irreducible q.irreducible).ne')
+  have hzq : aeval z (q : F[X]) = 0 := by rwa [aeval_def, ← eval_map]
   refine ⟨⟨z, mem_rootSet.mpr ⟨hp, aeval_eq_zero_of_dvd_aeval_eq_zero q.dvd hzq⟩⟩, ?_⟩
   exact (minpoly.eq_of_irreducible_of_monic q.irreducible hzq q.monic).symm
 

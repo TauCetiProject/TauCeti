@@ -170,6 +170,10 @@ instance : IsAddApply (DiscreteCoind G U A) G A where
 /-- The `ℕ`-action is pointwise, so that Mathlib's `FunLike.coe_smul` and `smul_apply` apply. -/
 instance : IsSMulApply ℕ (DiscreteCoind G U A) G A where
 
+/-- A natural number killing `A` kills `Coind_U^G A`. -/
+theorem nsmul_eq_zero {n : ℕ} (hA : ∀ a : A, n • a = 0) (f : DiscreteCoind G U A) : n • f = 0 :=
+  ext fun g => by rw [IsSMulApply.smul_apply, hA, coe_zero, Pi.zero_apply]
+
 section Scalar
 
 variable {R : Type*} [Semiring R] [Module R A] [SMulCommClass U R A]

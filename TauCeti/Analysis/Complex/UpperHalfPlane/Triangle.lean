@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
@@ -16,12 +17,13 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 A hyperbolic triangle with vertices `A`, `B`, `C` in `ℍ` is the intersection of the three closed
 half-planes bounded by the geodesic through two of the vertices and containing the third
-(`triangle`). Its interior angle at `A` is the angle between the geodesics from `A` to `B` and
-from `A` to `C` (`interiorAngle`). The **Gauss–Bonnet formula** (`volume_triangle`) computes its
-invariant area as the angular defect `π - α - β - γ`.
+(`triangle`). Its interior angle at `A` is `interiorAngle A B C`, the angle between the
+geodesics from `A` to `B` and from `A` to `C` (defined in `Geodesic/InteriorAngle.lean`). The
+**Gauss–Bonnet formula** (`volume_triangle`) computes its invariant area as the angular defect
+`π - α - β - γ`.
 
 The point-keyed API lives in the `UpperHalfPlane` namespace: `UpperHalfPlane.closedSide`,
-`UpperHalfPlane.triangle` and `UpperHalfPlane.interiorAngle`. Membership is read off with
+`UpperHalfPlane.triangle`. Membership is read off with
 `UpperHalfPlane.mem_closedSide_iff` and `UpperHalfPlane.mem_triangle_iff`. A triangle contains its
 vertices (`UpperHalfPlane.left_mem_triangle`), is invariant under cyclic permutation of them
 (`UpperHalfPlane.triangle_rotate`) and, when nondegenerate, under every transposition
@@ -205,28 +207,6 @@ theorem triangle_reverse {A B C : ℍ}
     triangle C B A = triangle A B C := by
   rw [triangle_rotate A C B, triangle_swap_right hC]
 
-/-- The interior angle of the triangle `A B C` at the vertex `A`: the angle between the geodesics
-from `A` to `B` and from `A` to `C`. -/
-def interiorAngle (A B C : ℍ) : ℝ :=
-  geodesicAngle (geodesicBetween A B) (geodesicBetween A C)
-
--- The body of `interiorAngle` is not `@[expose]`d, so downstream modules rewrite with this.
-/-- `interiorAngle` is the angle between the geodesics from `A` to `B` and from `A` to `C`. -/
-theorem interiorAngle_def (A B C : ℍ) :
-    interiorAngle A B C = geodesicAngle (geodesicBetween A B) (geodesicBetween A C) := by rfl
-
-/-- The interior angle at `A` does not depend on the order of the other two vertices. -/
-theorem interiorAngle_comm (A B C : ℍ) : interiorAngle A C B = interiorAngle A B C :=
-  geodesicAngle_comm _ _
-
-/-- Interior angles are nonnegative. -/
-theorem interiorAngle_nonneg (A B C : ℍ) : 0 ≤ interiorAngle A B C :=
-  geodesicAngle_nonneg _ _
-
-/-- Interior angles are at most `π`. -/
-theorem interiorAngle_le_pi (A B C : ℍ) : interiorAngle A B C ≤ π :=
-  geodesicAngle_le_pi _ _
-
 end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
@@ -248,13 +228,6 @@ theorem smul_triangle (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hBC : B �
     h • triangle A B C = triangle (h • A) (h • B) (h • C) := by
   rw [triangle, triangle, Set.smul_set_inter, Set.smul_set_inter, smul_closedSide h hAB,
     smul_closedSide h hBC, smul_closedSide h hCA]
-
-/-- Interior angles are invariant under the action. -/
-theorem interiorAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
-    interiorAngle (h • A) (h • B) (h • C) = interiorAngle A B C := by
-  rw [interiorAngle, interiorAngle, geodesicBetween_smul h hAB, geodesicBetween_smul h hAC,
-    geodesicAngle_mul _ _ _ (by rw [geodesicLine_geodesicBetween_zero,
-      geodesicLine_geodesicBetween_zero])]
 
 /-! ### The Gauss–Bonnet formula -/
 
@@ -420,7 +393,7 @@ theorem interiorAngle_eq_angle_of_velocity_eq {P Q₁ Q₂ : ℍ} {μ₁ μ₂ :
     (hμ₁ : 0 < μ₁) (hμ₂ : 0 < μ₂) (h₁ : velocity (geodesicBetween P Q₁) 0 = μ₁ * v₁)
     (h₂ : velocity (geodesicBetween P Q₂) 0 = μ₂ * v₂) :
     interiorAngle P Q₁ Q₂ = InnerProductGeometry.angle v₁ v₂ := by
-  rw [interiorAngle, geodesicAngle_def, h₁, h₂, ← Complex.real_smul, ← Complex.real_smul,
+  rw [interiorAngle_def, geodesicAngle_def, h₁, h₂, ← Complex.real_smul, ← Complex.real_smul,
     InnerProductGeometry.angle_smul_left_of_pos _ _ hμ₁,
     InnerProductGeometry.angle_smul_right_of_pos _ _ hμ₂]
 
@@ -526,6 +499,41 @@ theorem interiorAngle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
     ← normSq_sub_circleCenter hCB.symm, ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm,
     ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm]
   simp
+
+/-- The angle sum of the triangle in normal form, with vertices `I`, `geodesicLine 1 d` and `C`,
+is at most `π`, for `0 < d` and `0 < C.re`. -/
+theorem interiorAngle_add_add_le_pi_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ}
+    (hC : 0 < C.re) :
+    interiorAngle UpperHalfPlane.I (geodesicLine 1 d) C +
+        interiorAngle (geodesicLine 1 d) C UpperHalfPlane.I +
+        interiorAngle C UpperHalfPlane.I (geodesicLine 1 d) ≤ π := by
+  -- the triangle is, up to a null arc, the difference of two nested ideal-vertex regions, whose
+  -- areas are the two `arccos` differences whose difference is the defect
+  have hBre : (geodesicLine 1 d).re = 0 := by rw [geodesicLine_one_apply]; rfl
+  have hIC : UpperHalfPlane.I.re ≠ C.re := by rw [UpperHalfPlane.I_re]; exact hC.ne
+  have hBC : (geodesicLine 1 d).re ≠ C.re := by rw [hBre]; exact hC.ne
+  -- the ends of the two semicircles lie strictly left of `I`, `B` and strictly right of `C`
+  have hI := abs_lt.1
+    (abs_re_sub_lt_sqrt_normSq UpperHalfPlane.I (circleCenter UpperHalfPlane.I C))
+  have hB := abs_lt.1
+    (abs_re_sub_lt_sqrt_normSq (geodesicLine 1 d) (circleCenter (geodesicLine 1 d) C))
+  have hC₁ := abs_lt.1 (abs_re_sub_lt_sqrt_normSq C (circleCenter UpperHalfPlane.I C))
+  have hC₂ := abs_lt.1 (abs_re_sub_lt_sqrt_normSq C (circleCenter (geodesicLine 1 d) C))
+  rw [← normSq_sub_circleCenter hIC, UpperHalfPlane.I_re] at hI
+  rw [← normSq_sub_circleCenter hBC, hBre] at hB
+  -- the smaller region has the smaller area
+  have hle := measure_mono (μ := volume) (idealRegionAbove_subset_of_normal_form hd hC)
+  rw [volume_idealRegionAbove (by linarith [hC₁.1, hC₁.2]) (by linarith [hI.2]) hC.le
+      (by linarith [hC₁.2]),
+    volume_idealRegionAbove (by linarith [hC₂.1, hC₂.2]) (by linarith [hB.2]) hC.le
+      (by linarith [hC₂.2]),
+    ENNReal.ofReal_le_ofReal_iff (sub_nonneg.2 (Real.arccos_le_arccos
+      ((div_le_div_iff_of_pos_right (by linarith [hC₁.1, hC₁.2])).2 (by linarith)))), zero_sub,
+    zero_sub, neg_div, neg_div, Real.arccos_neg, Real.arccos_neg] at hle
+  rw [interiorAngle_I_geodesicLine_one hd hC, interiorAngle_geodesicLine_one_I hd hC,
+    interiorAngle_of_normal_form hd hC, ← normSq_sub_circleCenter hIC,
+    ← normSq_sub_circleCenter hBC]
+  linarith
 
 /-- The Gauss–Bonnet formula for the triangle in normal form. -/
 theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
@@ -660,5 +668,24 @@ theorem volume_triangle {A B C : ℍ} (hAB : A ≠ B)
       interiorAngle_comm C A B]
     congr 1
     ring
+
+/-- The angular defect of a nondegenerate triangle is nonnegative: the sum of its angles is at
+most `π`.
+Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 10), p. 20. -/
+theorem interiorAngle_add_add_le_pi {A B C : ℍ} (hAB : A ≠ B)
+    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
+    interiorAngle A B C + interiorAngle B C A + interiorAngle C A B ≤ π := by
+  have hAC : A ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_left A B)
+  have hBC : B ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_right A B)
+  obtain ⟨h, d, hd, hCre, hcase⟩ := exists_smul_eq_normal_form hAB hC
+  rw [← interiorAngle_smul h hAB hAC, ← interiorAngle_smul h hBC hAB.symm,
+    ← interiorAngle_smul h hAC.symm hBC.symm]
+  rcases hcase with ⟨hA, hB⟩ | ⟨hB, hA⟩
+  · rw [hA, hB]
+    exact interiorAngle_add_add_le_pi_of_normal_form hd hCre
+  · rw [hB, hA, interiorAngle_comm (geodesicLine 1 d) (h • C) UpperHalfPlane.I,
+      interiorAngle_comm UpperHalfPlane.I (geodesicLine 1 d) (h • C),
+      interiorAngle_comm (h • C) UpperHalfPlane.I (geodesicLine 1 d)]
+    linarith [interiorAngle_add_add_le_pi_of_normal_form hd hCre]
 
 end TauCeti.UpperHalfPlane
