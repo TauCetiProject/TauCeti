@@ -14,7 +14,8 @@ public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 
 For a Weierstrass curve `W` over a field `F`, the place at infinity of the function field `F(W)`
 lies over the place at infinity of the rational function field `F(x)`, with ramification index
-`2`: the valuation at infinity of a rational function of `x` is `exp` of twice its degree.
+`2`: the order at infinity of a rational function of `x` is twice its order at infinity in
+`F(x)`. It is the only place of `F(W)` over that place.
 
 ## Main results
 
@@ -37,6 +38,7 @@ variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 
 /-- **The order at infinity of a rational function of `x`** is twice its order at the place at
 infinity of `F(x)`. -/
+@[simp]
 theorem ord_infinity_algebraMap (r : RatFunc F) :
     (infinity W).ord (algebraMap (RatFunc F) W.FunctionField r) = 2 * (infty F).ord r := by
   rcases eq_or_ne r 0 with rfl | hr
@@ -61,6 +63,7 @@ theorem ramificationIdx_infinity : ramificationIdx (RatFunc F) (infinity W) = 2 
 /-- **The place at infinity is the only place of `F(W)` over the place at infinity of `F(x)`**:
 every other place comes from a height-one prime of the coordinate ring, so `x` is regular there,
 while `x` has a pole at `∞`. -/
+@[simp]
 theorem restrict_eq_infty_iff [IsDedekindDomain W.CoordinateRing] (Q : Place F W.FunctionField) :
     Q.restrict F (RatFunc F) = infty F ↔ Q = infinity W := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ restrict_infinity W⟩

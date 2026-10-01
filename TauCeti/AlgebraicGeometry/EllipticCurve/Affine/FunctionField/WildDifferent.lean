@@ -70,6 +70,8 @@ local instance : IsDedekindDomain (ofJ0 (ZMod 2)).toAffine.CoordinateRing :=
   have := Affine.isIntegrallyClosed_coordinateRing (ofJ0 (ZMod 2)).toAffine
   (ofJ0 (ZMod 2)).toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
+/-- The function field `𝔽₂(x, y)` has characteristic `2`, which is what makes the derivative
+`2y + 1` of the defining equation equal to `1`. -/
 instance : CharP (ofJ0 (ZMod 2)).toAffine.FunctionField 2 :=
   charP_of_injective_algebraMap
     (algebraMap (ZMod 2) (ofJ0 (ZMod 2)).toAffine.FunctionField).injective 2
@@ -77,6 +79,7 @@ instance : CharP (ofJ0 (ZMod 2)).toAffine.FunctionField 2 :=
 /-- **Away from infinity, `y² + y = x³` is unramified**: at a place `Q` of `𝔽₂(x, y)` other
 than the place at infinity, `x` is regular and the derivative `2y + 1 = 1` of the defining
 equation is a unit, so the different exponent of `Q` over `𝔽₂(x)` is `0`. -/
+@[simp]
 theorem differentExponent_eq_zero_of_ne_infinity
     (Q : Place (ZMod 2) (ofJ0 (ZMod 2)).toAffine.FunctionField)
     (hQ : Q ≠ Place.infinity (ofJ0 (ZMod 2)).toAffine) :
