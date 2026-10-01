@@ -69,6 +69,14 @@ def equivProd : HeisenbergGroup R ≃ R × R × R where
   toFun a := (a.x, a.y, a.z)
   invFun a := ⟨a.1, a.2.1, a.2.2⟩
 
+@[simp]
+theorem equivProd_apply (a : HeisenbergGroup R) : equivProd a = (a.x, a.y, a.z) :=
+  (rfl)
+
+@[simp]
+theorem equivProd_symm_apply (a : R × R × R) : equivProd.symm a = ⟨a.1, a.2.1, a.2.2⟩ :=
+  (rfl)
+
 instance [Fintype R] : Fintype (HeisenbergGroup R) := Fintype.ofEquiv _ equivProd.symm
 
 instance [Finite R] : Finite (HeisenbergGroup R) := Finite.of_equiv _ equivProd.symm

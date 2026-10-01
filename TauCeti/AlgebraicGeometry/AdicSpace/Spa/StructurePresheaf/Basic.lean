@@ -17,7 +17,7 @@ import TauCeti.RingTheory.Huber.OpenIdeal
 Wedhorn §8.1 assigns `A⟨T/s⟩` to the rational subset `R(T/s)` and extends the assignment to an
 arbitrary open `V ⊆ Spa(A,A⁺)` by the limit over the rational subsets contained in `V`. This file
 constructs that limit **indexed by presentations rather than by rational subsets**, and makes it a
-presheaf. It is deliberately not named for `𝒪_X`: see *What this is not, yet* below.
+presheaf. It is named for its index rather than for `𝒪_X`: see *Relation to Wedhorn's `𝒪_X`* below.
 
 The index is `PresentationIndex`: a presentation together with a proof that the rational subset it
 presents lies in `V`, ordered by refinement. `RefinementCategory` already makes the assignment
@@ -56,27 +56,24 @@ functor along the forgetful map, and the value is its limit — which exists bec
 canonically isomorphic but not equal rings. Indexing the limit by presentations rather than by
 subsets avoids having to choose one.
 
-## What this is not, yet
+## Relation to Wedhorn's `𝒪_X`
 
-The presheaf built here is **not identified with Wedhorn's `𝒪_X`**, and is named for what it is
-rather than for what it is expected to become. Wedhorn indexes by rational *subsets* `U ⊆ V`, which
-presupposes that `𝒪_X(U)` is well defined; here the index is presentations, so the value depends a
-priori on presentation data. Two ingredients toward closing the gap are available:
+Wedhorn indexes the limit by rational *subsets* `U ⊆ V`; here the index is presentations, so the
+presheaf is built from presentation data, and it is named for that. When `A⁺` consists of
+power-bounded elements the two indexings give isomorphic presheaves:
 
 * refinement maps between two presentations of the *same* rational subset are isomorphisms, so that
   `p ↦ A⟨p.num / p.den⟩` descends to a function of the subset. This is
-  `TauCeti.ValuationSpectrum.isIso_restrictionHom_of_rationalSubset_eq`, when `A⁺` consists of
-  power-bounded elements; and
+  `TauCeti.ValuationSpectrum.isIso_restrictionHom_of_rationalSubset_eq`; and
 * the presentation index is cofinal in the subset index. This is expressed by
   `TauCeti.ValuationSpectrum.presentationToRationalSubsetIndex` in
   `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality`; its `Initial` instance is
   the categorical comparison needed for limits.
 
-`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SubsetLimit` constructs the
-coordinate-ring diagram on rational subsets and its comparison with the presentation diagram, and
-puts these ingredients together into
-`TauCeti.ValuationSpectrum.presentationLimitIsoRationalSubsetLimit`. What that leaves open is the
-restriction maps: the two limits are identified value by value, not as presheaves.
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SubsetLimit` puts these together, on
+each open into `TauCeti.ValuationSpectrum.presentationLimitIsoRationalSubsetLimit` and as presheaves
+into `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoRationalSubsetLimitPresheaf`. Both
+presheaves are built from the same pair of definition `P`.
 
 Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
 restriction along a containment is reindexing, and the two functor laws hold. On a rational open
@@ -529,10 +526,21 @@ theorem presentationLimitMap_comp {U V W : Opens ↥(spa Aplus)} (h₁ : W ≤ V
   erw [presentationLimitMap_comp_π]
   rfl
 
+/-- **A transport between presentation limits along an equality of opens is a restriction
+map**: the `eqToHom` of `presentationLimit V = presentationLimit W` induced by `V = W` is the
+restriction map along `W ≤ V`. -/
+theorem eqToHom_presentationLimit {V W : Opens ↥(spa Aplus)} (e : V = W)
+    (e' : presentationLimit (P := P) Aplus V = presentationLimit (P := P) Aplus W) :
+    eqToHom e' = presentationLimitMap (P := P) e.ge := by
+  subst e
+  simp
+
 /-- **The presheaf `V ↦ presentationLimit V`** on `Spa(A,A⁺)`, valued in
 `CompleteSeparatedTopCommRingCat`. Both functor laws are reindexing identities for the limit:
 restricting along `le_refl` is the identity on the index, and restricting twice is restricting
-once. Wedhorn §8.1's `𝒪_X` is this presheaf only once presentation-independence is available. -/
+once. When `A⁺` consists of power-bounded elements it is isomorphic to Wedhorn §8.1's `𝒪_X`,
+the presheaf of limits over rational subsets built from the same pair of definition `P`
+(`TauCeti.ValuationSpectrum.presentationLimitPresheafIsoRationalSubsetLimitPresheaf`). -/
 -- This definition is sealed, as are the three index functors above. Two consequences worth
 -- naming, because they are what the evaluation lemmas below look like: `_obj` closes with
 -- `(rfl)` rather than `rfl`, the parentheses letting the elaborator postpone a defeq check the

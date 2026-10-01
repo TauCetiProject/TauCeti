@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Star
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Field.Basic
+public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Topology on Clifford algebras
@@ -39,6 +40,8 @@ actions. A basis appears only in the proof that the topology is Hausdorff.
   quadratic isometries.
 * `CliffordAlgebra.instIsTopologicalRingCliffordAlgebra` makes multiplication continuous.
 * `CliffordAlgebra.instT2SpaceCliffordAlgebra` proves the topology is Hausdorff.
+* `CliffordAlgebra.instLocallyCompactSpaceCliffordAlgebra` proves the topology is locally compact
+  for a finite-dimensional space over a locally compact field in which `2` is invertible.
 * `CliffordAlgebra.isClosedEmbedding_algebraMap` identifies the scalar field as a closed
   subspace over a complete normed field.
 * `CliffordAlgebra.continuous_reverse` and `CliffordAlgebra.continuous_involute` prove continuity
@@ -143,6 +146,20 @@ instance instIsTopologicalRingCliffordAlgebra (Q : QuadraticForm R V)
   IsModuleTopology.isTopologicalRing R _
 
 end
+
+section LocallyCompact
+
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
+  [LocallyCompactSpace K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V]
+
+/-- The Clifford algebra of a finite-dimensional space over a locally compact field in which `2`
+is invertible is locally compact for its module topology, being finite-dimensional. -/
+instance instLocallyCompactSpaceCliffordAlgebra (Q : QuadraticForm K V) :
+    LocallyCompactSpace (CliffordAlgebra Q) :=
+  locallyCompactSpace_moduleTopology
+
+end LocallyCompact
 
 section ScalarEmbedding
 

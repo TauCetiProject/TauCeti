@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 
 /-!
 # Principal divisors on Noetherian integral schemes
@@ -51,12 +52,6 @@ variable {X : Scheme.{u}}
 
 noncomputable section
 
-/-- A maximal point of an irreducible space is its generic point. -/
-private lemma eq_genericPoint_of_isMax [IrreducibleSpace X] {y : X} (hy : IsMax y) :
-    y = genericPoint X :=
-  Inseparable.eq <| inseparable_iff_specializes_and.mpr
-    ⟨hy (genericPoint_specializes y), genericPoint_specializes y⟩
-
 /-- A codimension-one point lying in a set that avoids a nonempty open `U` equals that set's
 generic point. -/
 private lemma eq_of_subset_compl_of_isGenericPoint [IrreducibleSpace X] {U : X.Opens} [Nonempty U]
@@ -77,7 +72,7 @@ private lemma eq_of_subset_compl_of_isGenericPoint [IrreducibleSpace X] {U : X.O
     (genericPoint_spec X).mem_open_set_iff U.isOpen |>.mpr <| by
       obtain ⟨u⟩ := (inferInstance : Nonempty U)
       exact ⟨u.1, Set.mem_univ _, u.property⟩
-  exact hTU hyGeneric.mem ((eq_genericPoint_of_isMax hyMax).symm ▸ hηU)
+  exact hTU hyGeneric.mem ((Scheme.eq_genericPoint_of_isMax hyMax).symm ▸ hηU)
 
 /-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
 but finitely many codimension-one points. -/

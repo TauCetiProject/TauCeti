@@ -57,7 +57,7 @@ checked; it holds because `n • P` is a point of the curve whenever `P` is, whi
 `WeierstrassCurve.zsmul_point_eq_smulEval` at the generic point.
 
 That the generic point is itself a point of the curve — the other half of the argument — lives
-in `Affine/FunctionField/GenericPoint.lean` as
+in `Affine/FunctionField/GenericPoint/Basic.lean` as
 `WeierstrassCurve.Affine.equation_genericX_genericY`,
 since it is about `W` and not about `[n]`.
 
@@ -70,7 +70,7 @@ since it is about `W` and not about `[n]`.
   curve, where the non-vanishing is discharged.
 
 The generic point itself (`genericX`, `genericY`) is not defined here; it
-is `WeierstrassCurve.Affine`'s, in `Affine/FunctionField/GenericPoint.lean`.
+is `WeierstrassCurve.Affine`'s, in `Affine/FunctionField/GenericPoint/Basic.lean`.
 
 ## Main results
 

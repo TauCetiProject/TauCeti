@@ -100,6 +100,8 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
   what `weightedMap` is built from; `weightedMap_weightedX` says it fixes the variables, while
   `weightedMap_weightedC` says it acts as `φ` on constants — the constants are moved, not fixed.
   `weightedMap_id` and `weightedMap_comp` are the functor laws.
+* `TauCeti.Huber.IsWeightFamily.image`: a continuous open ring map carries a weight family to a
+  weight family.
 
 ## Scope
 
@@ -1321,6 +1323,21 @@ omit [TopologicalSpace A] [TopologicalSpace B] in
 theorem image_weightPow (φ : A →+* B) (T : Fin k → Set A) (ν : Fin k →₀ ℕ) :
     φ '' weightPow T ν = weightPow (fun i ↦ φ '' T i) ν := by
   simp only [weightPow_def, Set.image_finsetProd, Set.image_pow]
+
+/-- **A weight family pushes forward along a continuous open ring map**: if `φ : A → B` is
+continuous and open, the images `φ '' T i` of a weight family form a weight family on `B`.
+
+For a ring isomorphism continuous in both directions, `IsOpenMap.of_inverse` supplies the
+openness, so weight families transport along isomorphisms of topological rings. -/
+theorem IsWeightFamily.image {φ : A →+* B} (hφ : Continuous φ) (hφo : IsOpenMap φ)
+    {T : Fin k → Set A} (hT : IsWeightFamily T) : IsWeightFamily fun i ↦ φ '' T i := by
+  intro i m U hU
+  refine mem_of_superset
+    (map_zero φ ▸ hφo.image_mem_nhds (hT i m _ (hφ.tendsto' 0 0 (map_zero φ) hU))) ?_
+  -- `φ` carries each generator `t * u` of `Tᵢ^m · φ⁻¹(U)` to a generator of `(φ Tᵢ)^m · U`
+  rw [← AddMonoidHom.coe_ofClass φ, ← AddSubgroup.coe_map, AddMonoidHom.map_closure,
+    AddMonoidHom.coe_ofClass, Set.image_mul, Set.image_pow]
+  exact AddSubgroup.closure_mono <| Set.mul_subset_mul_left <| Set.image_preimage_subset _ _
 
 omit [TopologicalSpace A] [TopologicalSpace B] in
 /-- **`weightMul` is functorial**: a ring map carrying each `T i` into `S i` and `U` into `V`

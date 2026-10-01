@@ -35,7 +35,7 @@ because the coset enumerations that the source uses to justify the presentation 
 them.
 
 The source's commutator convention is `[r,s] = r⁻¹s⁻¹rs`, opposite to Mathlib's
-`commutatorElement`, so each commutator is stored as `Relator.comm (.inv r) (.inv s)` as
+`commutatorElement`, so each commutator is stored as `Relator.commInvInv r s` as
 `TauCeti.Relator` prescribes. The proved `TauCeti.Relator.toWord_toFreeGroup` is the audit boundary
 between these expressions and the signed words that `PresentedGroup` consumes.
 
@@ -155,10 +155,6 @@ private abbrev b : Relator (Fin 2) := .gen 1
 @[inherit_doc Relator.mul]
 local infixl:70 " ⬝ " => Relator.mul
 
-/-- The source's commutator `[r, s] = r⁻¹ s⁻¹ r s`, which is `⁅r⁻¹, s⁻¹⁆` in Mathlib's
-convention. -/
-private abbrev sourceComm (r s : Relator (Fin 2)) : Relator (Fin 2) := .comm (.inv r) (.inv s)
-
 /-- The syllable `a * b`. -/
 private abbrev ab1 : Relator (Fin 2) := a ⬝ b
 
@@ -202,20 +198,20 @@ def mclPresentation : GroupPresentation where
   transcribed :=
     [ .pow a 2,
       .pow b 5,
-      .pow (sourceComm a b) 5,
+      .pow (.commInvInv a b) 5,
       .pow ab1 11,
       .pow ab2 12,
-      .pow (sourceComm a (.pow b 2)) 6,
+      .pow (.commInvInv a (.pow b 2)) 6,
       .pow (ab1 ⬝ abNeg2) 7,
-      .pow (sourceComm a (.pow (.inv b) 2 ⬝ ab1 ⬝ ab1 ⬝ ab2)) 2,
-      sourceComm a (.pow (.inv b) 2 ⬝ ab2 ⬝ abNeg1 ⬝ ab1 ⬝ .pow ab2 2 ⬝ ab1 ⬝ abNeg1),
-      .pow (sourceComm a (b ⬝ .pow ab2 3)) 2,
-      .pow (sourceComm a (.pow b 2 ⬝ ab1 ⬝ .pow ab2 2)) 2,
+      .pow (.commInvInv a (.pow (.inv b) 2 ⬝ ab1 ⬝ ab1 ⬝ ab2)) 2,
+      .commInvInv a (.pow (.inv b) 2 ⬝ ab2 ⬝ abNeg1 ⬝ ab1 ⬝ .pow ab2 2 ⬝ ab1 ⬝ abNeg1),
+      .pow (.commInvInv a (b ⬝ .pow ab2 3)) 2,
+      .pow (.commInvInv a (.pow b 2 ⬝ ab1 ⬝ .pow ab2 2)) 2,
       ab1 ⬝ ab2 ⬝ abNeg2 ⬝ ab1 ⬝ abNeg1 ⬝ ab2 ⬝ .pow (abNeg2 ⬝ ab1) 2 ⬝
         .pow (ab2 ⬝ abNeg2 ⬝ ab2) 2,
-      .pow (sourceComm a (.pow b 2 ⬝ ab2 ⬝ abNeg1 ⬝ ab2)) 2,
-      .pow (sourceComm a (.pow b 2 ⬝ ab1)) 4,
-      .pow (sourceComm a (.pow b 2 ⬝ ab2)) 4 ]
+      .pow (.commInvInv a (.pow b 2 ⬝ ab2 ⬝ abNeg1 ⬝ ab2)) 2,
+      .pow (.commInvInv a (.pow b 2 ⬝ ab1)) 4,
+      .pow (.commInvInv a (.pow b 2 ⬝ ab2)) 4 ]
 
 /-- The generator names recorded for `McL`. The row's body is sealed, so this is what lets a
 consumer see that it is a two-generator presentation. -/
@@ -356,7 +352,7 @@ theorem mclPresentation_transcribed :
         .pow (.comm (.inv (.gen ⟨0, by simp⟩))
               (.inv (.pow (.gen ⟨1, by simp⟩) 2 ⬝
           (.gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 2)))) 4 ] := by
-  simp [mclPresentation]
+  simp [mclPresentation, Relator.commInvInv]
 
 /-- The generator and relator counts recorded for `McL` agree with the transcribed data. -/
 theorem mclPresentation_matchesMetadata : mclPresentation.matchesMetadata := by decide
@@ -384,7 +380,7 @@ theorem mclPresentation_relatorsCyclicallyReduced :
     mclPresentation.relatorsCyclicallyReduced := by
   simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
     mclPresentation, List.map_cons, List.map_nil, Relator.toWord_mul, Relator.toWord_pow,
-    Relator.toWord_inv, Relator.toWord_comm, Relator.toWord_gen]
+    Relator.toWord_inv, Relator.toWord_commInvInv, Relator.toWord_gen]
   decide
 
 end TauCeti.Sporadic

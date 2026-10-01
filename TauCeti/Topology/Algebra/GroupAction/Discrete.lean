@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.GroupAction.OfQuotient
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Continuous actions on discrete spaces
@@ -20,6 +21,12 @@ quotient. For an arbitrary discrete space acted on by a compact topological grou
 set is fixed pointwise by an open normal subgroup. In particular, each orbit map factors through
 a finite quotient. Total disconnectedness of the acting group is not needed: point stabilizers
 are clopen, so Mathlib's compact-group clopen-neighborhood theorem applies directly.
+
+A function `k : G → M` that is equivariant for an open subgroup `U`, in the sense
+`k (u * g) = u • k g`, is locally constant when `U` acts continuously on the discrete space `M`:
+it is constant on the open neighbourhood `Stab(k g) * g` of each `g`
+(`TauCeti.isLocallyConstant_of_apply_mul`). This is the local-constancy condition defining
+coinduced modules.
 
 For actions on discrete additive groups, the fixed-point subgroups over all open normal
 subgroups exhaust the group; the additive group need not be commutative. These results supply
@@ -87,6 +94,31 @@ theorem exists_orbitMap_quotient (m : M) :
   exact congrArg Subtype.val (MulAction.coe_quotient_smul_fixedPoints g mU)
 
 end Elementwise
+
+section SubgroupEquivariant
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
+  {U : Subgroup G} {M : Type v} [TopologicalSpace M] [DiscreteTopology M] [MulAction U M]
+  [ContinuousSMul U M]
+
+/-- A function on `G` that is equivariant for an open subgroup `U` acting continuously on a
+discrete space is locally constant: it is constant on the open neighbourhood `Stab(k g) * g`
+of `g`. -/
+theorem isLocallyConstant_of_apply_mul (hU : IsOpen (U : Set G)) {k : G → M}
+    (hk : ∀ (u : U) (g : G), k (u * g) = u • k g) : IsLocallyConstant k := by
+  rw [IsLocallyConstant.iff_eventually_eq]
+  intro g
+  let S : Set U := MulAction.stabilizer U (k g)
+  have hS : IsOpen S := stabilizer_isOpen U (k g)
+  have hopen : IsOpen ((fun u : U ↦ (u : G) * g) '' S) :=
+    ((isOpenMap_mul_right g).comp hU.isOpenMap_subtype_val) S hS
+  have hg : g ∈ (fun u : U ↦ (u : G) * g) '' S := ⟨1, by simp [S], by simp⟩
+  filter_upwards [hopen.mem_nhds hg] with x hx
+  obtain ⟨u, hu, rfl⟩ := hx
+  rw [hk]
+  exact hu
+
+end SubgroupEquivariant
 
 section Kernel
 

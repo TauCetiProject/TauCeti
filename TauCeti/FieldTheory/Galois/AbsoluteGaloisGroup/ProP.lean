@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
 
 /-!
@@ -26,6 +27,12 @@ variable (p : ℕ) (K : Type*) [Field K]
 /-- The maximal pro-`p` quotient of the absolute Galois group of `K`. -/
 abbrev absoluteGaloisGroupProP : Type _ :=
   maximalProPQuotient p (Field.absoluteGaloisGroup K)
+
+/-- The canonical continuous quotient map from an absolute Galois group to its maximal pro-`p`
+quotient. -/
+noncomputable abbrev absoluteGaloisGroupProPQuotientMap :
+    Field.absoluteGaloisGroup K →ₜ* absoluteGaloisGroupProP p K :=
+  ContinuousMonoidHom.quotientMk (proPKernel p (Field.absoluteGaloisGroup K))
 
 /-- The maximal pro-`p` quotient of an absolute Galois group is pro-`p`. -/
 theorem isProP_absoluteGaloisGroupProP : IsProP p (absoluteGaloisGroupProP p K) :=

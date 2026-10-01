@@ -11,8 +11,12 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 # Global-functions actions on sheaves of modules
 
 This file constructs the canonical action of the ring of global functions on a sheaf of modules
-on a scheme. It also records the restriction of this action to the base ring for a scheme over a
-commutative ring.
+on a scheme, shows that multiplication by a global unit is an isomorphism, and records how the
+action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward multiplication by
+`f^♯ r` is multiplication by `r`, and pulling back multiplication by `r` is multiplication by
+`f^♯ r` (`Scheme.Modules.pushforward_map_globalSectionsSmul` and
+`Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this
+action to the base ring for a scheme over a commutative ring.
 
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`.
@@ -109,6 +113,14 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_mul
       X.presheaf.map U.leTop.op s • x
   rw [map_mul, mul_smul]
 
+/-- Multiplication by a global unit is an isomorphism, with inverse multiplication by the inverse
+unit. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isIso_globalSectionsSmul_units
+    (M : X.Modules) (u : Γ(X, ⊤)ˣ) : IsIso (globalSectionsSmul M u) :=
+  ⟨globalSectionsSmul M ↑u⁻¹,
+    by rw [← globalSectionsSmul_mul, Units.inv_mul, globalSectionsSmul_one],
+    by rw [← globalSectionsSmul_mul, Units.mul_inv, globalSectionsSmul_one]⟩
+
 /-- The action of global functions on a sheaf of modules, bundled as a ring homomorphism into
 the endomorphism ring of the sheaf. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsAction
@@ -137,6 +149,44 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsSmul_naturality
   change f.app U (X.presheaf.map U.leTop.op r • x) =
     X.presheaf.map U.leTop.op r • f.app U x
   exact f.app_smul _ _
+
+section Functoriality
+
+variable {Y : Scheme.{u}} (f : X ⟶ Y)
+
+/-- Pushing forward multiplication by the pullback `f^♯ r` of a global function `r` on `Y` gives
+multiplication by `r` on the pushforward. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.pushforward_map_globalSectionsSmul
+    (N : X.Modules) (r : Γ(Y, ⊤)) :
+    (pushforward f).map (globalSectionsSmul N (f.appTop r)) =
+      globalSectionsSmul ((pushforward f).obj N) r := by
+  refine _root_.AlgebraicGeometry.Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+  rw [pushforward_map_app, globalSectionsSmul_app, globalSectionsSmul_app]
+  -- The sections of the pushforward over `U` are the sections of `N` over `f ⁻¹ᵁ U`, with scalars
+  -- restricted along `f.app U`; no lemma exposes this, so record it explicitly.
+  change N.smul (X.presheaf.map (f ⁻¹ᵁ U).leTop.op (f.appTop r)) =
+    N.smul (f.app U (Y.presheaf.map U.leTop.op r))
+  congr 1
+  exact (ConcreteCategory.comp_apply _ _ r).symm.trans
+    (congrArg (· r) (f.naturality U.leTop.op)).symm
+
+/-- Pulling back multiplication by a global function `r` on `Y` gives multiplication by the
+pullback `f^♯ r` of `r` on the pullback. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.pullback_map_globalSectionsSmul
+    (M : Y.Modules) (r : Γ(Y, ⊤)) :
+    (Scheme.Modules.pullback f).map (globalSectionsSmul M r) =
+      globalSectionsSmul ((Scheme.Modules.pullback f).obj M) (f.appTop r) := by
+  -- Both sides are determined by their adjuncts `M ⟶ f_* f^* M`, which agree by naturality of
+  -- the unit and of the global-functions action.
+  apply ((pullbackPushforwardAdjunction f).homEquiv M
+    ((Scheme.Modules.pullback f).obj M)).injective
+  simp only [Adjunction.homEquiv_apply, pushforward_map_globalSectionsSmul]
+  exact ((pullbackPushforwardAdjunction f).unit.naturality (globalSectionsSmul M r)).symm.trans
+    (globalSectionsSmul_naturality ((pullbackPushforwardAdjunction f).unit.app M) r)
+
+end Functoriality
 
 section Base
 

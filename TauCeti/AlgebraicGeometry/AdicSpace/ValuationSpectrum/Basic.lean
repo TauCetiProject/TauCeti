@@ -338,6 +338,11 @@ lemma valuation_lt_iff (v : Spv A) (x y : A) :
 lemma supp_eq_valuation_supp (v : Spv A) : v.supp = v.valuation.supp :=
   @ValuativeRel.supp_eq_valuation_supp A _ v.toValuativeRel
 
+/-- The support of a pullback is the preimage of the support. -/
+lemma supp_comap {B : Type*} [CommRing B] (φ : A →+* B) (v : Spv B) :
+    (comap φ v).supp = v.supp.comap φ :=
+  Ideal.ext fun a ↦ by simp
+
 /-- The canonical valuation gives back the same point of `Spv`. -/
 @[simp]
 lemma ofValuation_valuation (v : Spv A) : ofValuation v.valuation = v := by

@@ -48,6 +48,8 @@ coordinates of each such pair agree.
   of the array itself;
 * `TauCeti.Probability.JointlyExchangeable.arrayBlock_diag` — joint exchangeability passes to the
   diagonal blocks `arrayBlock X e e`;
+* `TauCeti.Probability.JointlyExchangeable.map_arrayBlock_diag_eq` — such a diagonal block even
+  has the law of the array itself;
 * `TauCeti.Probability.JointlyExchangeable.separatelyExchangeable_arrayBlock` — **the block
   theorem**: a block of a jointly exchangeable array along injections with disjoint ranges is
   separately exchangeable;
@@ -179,6 +181,27 @@ theorem JointlyExchangeable.arrayBlock_diag (h : JointlyExchangeable μ X)
     (measurable_blockReadOff e e)
   simp only [hρe] at key
   simpa only [arrayBlock_apply] using key
+
+/-- **A diagonal block of a jointly exchangeable array along an injection has the law of the
+array.** Reading both axes along one injection `e` is, on every finite window, a single relabelling
+of the indices. -/
+theorem JointlyExchangeable.map_arrayBlock_diag_eq [IsFiniteMeasure μ]
+    (h : JointlyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) (he : Function.Injective e) :
+    (μ.map fun ω p ↦ X (e p.1, e p.2) ω) = μ.map fun ω p ↦ X p ω := by
+  refine (ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq
+    (AEMeasurable.of_eval fun p ↦ hX _)
+    (AEMeasurable.of_eval hX)).mpr fun I ↦ ?_
+  obtain ⟨n, hbound⟩ := I.exists_nat_prod_lt
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (fun i : Fin n ↦ (i : ℕ))
+    (fun i : Fin n ↦ e i) Fin.val_injective (he.comp Fin.val_injective)
+  have hrew : (fun ω ↦ I.restrict fun p ↦ X (σ p.1, σ p.2) ω) =
+      fun ω ↦ I.restrict fun p ↦ X (e p.1, e p.2) ω := by
+    funext ω p
+    obtain ⟨hp₁, hp₂⟩ := hbound p.1 p.2
+    simp only [Finset.restrict]
+    rw [hσ ⟨_, hp₁⟩, hσ ⟨_, hp₂⟩]
+  rw [← hrew]
+  exact h.map_comp hX σ (Finset.measurable_restrict I)
 
 /-- **A block of a jointly exchangeable array along injections with disjoint ranges is separately
 exchangeable.**

@@ -74,8 +74,8 @@ def relabelRowsEquiv (ρ : Equiv.Perm (Fin n)) (x y : GridState n) :
       map_left := ρ.injective (by simpa using S.map_left)
       map_right := ρ.injective (by simpa using S.map_right)
       map_of_ne := fun c hl hr => ρ.injective (by simpa using S.map_of_ne c hl hr) }
-  left_inv _ := eq_of_sides rfl rfl
-  right_inv _ := eq_of_sides rfl rfl
+  left_inv _ := GridRectangleBetween.ext rfl rfl
+  right_inv _ := GridRectangleBetween.ext rfl rfl
 
 variable {x y : GridState n}
 
@@ -178,8 +178,8 @@ def relabelColumnsEquiv (κ : Equiv.Perm (Fin n)) (x y : GridState n) :
       map_of_ne := fun c hl hr => by
         simpa using S.map_of_ne (κ c) (fun h => hl (by simp [← h]))
           (fun h => hr (by simp [← h])) }
-  left_inv _ := eq_of_sides (κ.symm_apply_apply _) (κ.symm_apply_apply _)
-  right_inv _ := eq_of_sides (κ.apply_symm_apply _) (κ.apply_symm_apply _)
+  left_inv _ := GridRectangleBetween.ext (κ.symm_apply_apply _) (κ.symm_apply_apply _)
+  right_inv _ := GridRectangleBetween.ext (κ.apply_symm_apply _) (κ.apply_symm_apply _)
 
 /-- Column relabeling renames the initial side column. -/
 @[simp]

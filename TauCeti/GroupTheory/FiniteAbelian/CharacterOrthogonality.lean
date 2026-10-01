@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: `unitsEquivNeZero` reindexes a punctured field sum by its units.
@@ -15,7 +16,13 @@ import Mathlib.Algebra.GroupWithZero.Units.Fintype
 
 For a finite commutative group `G` and a domain `M` with enough roots of unity, the characters
 of `G` are the monoid homomorphisms `G →* Mˣ`. This file records the *column* orthogonality
-relation — the one summed over the character group — in both its punctured and its normal form.
+relation — the one summed over the character group — in both its punctured and its normal form,
+and shows that the commutativity it assumes is necessary: the column relation fails for every
+finite non-commutative group whenever the number of characters is nonzero in `M`, as it is in
+characteristic zero. The underlying group-theoretic fact, that homomorphisms into a
+commutative monoid separate elements only in a commutative group, is
+`TauCeti.isMulCommutative_of_forall_exists_monoidHom_apply_ne_one` in
+`TauCeti.GroupTheory.Commutator`.
 
 ## Main results
 
@@ -29,6 +36,12 @@ relation — the one summed over the character group — in both its punctured a
   element `σ`, giving `Nat.card G` when `g = σ` and `0` otherwise.
 * `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field
   sums to `-1` over the nonzero elements, even after multiplication by a unit.
+* `TauCeti.sum_monoidHom_apply_eq_card_of_mem_commutator`: at an element of the commutator
+  subgroup the character sum is the number of characters, every summand being `1`.
+* `TauCeti.exists_sum_inv_mul_monoidHom_apply_ne_ite`: **column orthogonality fails for every
+  finite non-commutative group** whenever the number of characters is nonzero in `M`, as in
+  characteristic zero: at the tag `1` and a nontrivial commutator the tagged sum is the number
+  of characters, not `0`.
 
 The file also registers `Fintype (G →* Mˣ)`, which Mathlib leaves at `Finite`; without it a
 consumer's own character sum does not elaborate, and two ad-hoc `Fintype.ofFinite` introductions
@@ -80,6 +93,8 @@ Birkbeck--Brasca).
 -/
 
 public section
+
+open scoped commutatorElement
 
 namespace AddChar
 
@@ -172,3 +187,42 @@ theorem sum_inv_mul_monoidHom_apply_eq_ite [DecidableEq G] (σ g : G) :
   simp only [key, sum_monoidHom_apply_eq_ite, inv_mul_eq_one, eq_comm]
 
 end CommGroup
+
+namespace TauCeti
+
+variable [Group G]
+
+/-- **The character sum at an element of the commutator subgroup counts the characters.** Every
+character `χ : G →* Mˣ` kills the commutator subgroup, so at such an element every summand of the
+column sum is `1`. For a commutative group the commutator subgroup is trivial and this is the
+`g = 1` case of `CommGroup.sum_monoidHom_apply_eq_ite`; for a non-commutative group it is the
+value at which the column relation breaks. -/
+@[simp]
+theorem sum_monoidHom_apply_eq_card_of_mem_commutator {g : G} (hg : g ∈ commutator G) :
+    ∑ χ : G →* Mˣ, (χ g : M) = Nat.card (G →* Mˣ) := by
+  have h (χ : G →* Mˣ) : (χ g : M) = 1 := by
+    rw [MonoidHom.mem_ker.mp (Abelianization.commutator_subset_ker χ hg), Units.val_one]
+  simp [h, Nat.card_eq_fintype_card]
+
+/-- **Column orthogonality fails for every finite non-commutative group.** In a non-commutative
+group some commutator `g = ⁅a, b⁆` differs from `1`, and every character kills it, so the tagged
+sum at `σ = 1` and this `g` is the number of characters rather than the `0` that
+`CommGroup.sum_inv_mul_monoidHom_apply_eq_ite` gives for `g ≠ σ` in a commutative group. Besides
+the standing assumption that `M` is a domain, the only hypothesis on `M` is that this count is
+nonzero in `M`; in characteristic zero it is supplied by `Nat.cast_ne_zero.mpr Nat.card_pos.ne'`,
+and no roots of unity are needed. -/
+theorem exists_sum_inv_mul_monoidHom_apply_ne_ite [DecidableEq G] (hG : ¬ IsMulCommutative G)
+    (hcard : (Nat.card (G →* Mˣ) : M) ≠ 0) :
+    ∃ σ g : G, ∑ χ : G →* Mˣ, (((χ σ)⁻¹ : Mˣ) : M) * ((χ g : Mˣ) : M) ≠
+      if g = σ then (Nat.card G : M) else 0 := by
+  obtain ⟨a, b, hab⟩ : ∃ a b : G, ⁅a, b⁆ ≠ 1 := by
+    contrapose! hG
+    exact IsMulCommutative.of_comm fun a b ↦ commutatorElement_eq_one_iff_mul_comm.mp (hG a b)
+  refine ⟨1, ⁅a, b⁆, ?_⟩
+  rw [ite_eq_right hab]
+  simp only [map_one, inv_one, Units.val_one, one_mul]
+  rw [sum_monoidHom_apply_eq_card_of_mem_commutator
+    (Subgroup.commutator_mem_commutator (Subgroup.mem_top a) (Subgroup.mem_top b))]
+  exact hcard
+
+end TauCeti

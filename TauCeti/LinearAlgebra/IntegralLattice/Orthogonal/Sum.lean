@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.Submodule.Prod
 import Mathlib.LinearAlgebra.Basis.Prod
@@ -19,8 +19,11 @@ The orthogonal sum has product carrier and block-diagonal form. This file constr
 its canonical carrier maps and product bases, and proves several invariant laws: rank is additive,
 Gram matrices are block diagonal, determinant and discriminant are multiplicative, and evenness
 and nondegeneracy are componentwise. Orthogonal sums are functorial under lattice isometries and
-are associative and commutative up to canonical lattice isometry. The radical is the product of
-the component radicals, and the signature is componentwise additive.
+are associative and commutative up to canonical lattice isometry, and the product of the isometry
+groups `O(L) × O(M)` embeds in `O(L ⊕ M)`, acting componentwise. This embedding need not be onto:
+when the ambient space of `L` is nonzero, the factor swap of `L ⊕ L` is a self-isometry of `L ⊕ L`
+outside the range of `O(L) × O(L) → O(L ⊕ L)`. The radical is the product of the component
+radicals, and the signature is componentwise additive.
 
 ## Main definitions
 
@@ -32,6 +35,7 @@ the component radicals, and the signature is componentwise additive.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSum`: the product of two lattice isometries.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumComm`: the canonical commutativity isometry.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumAssoc`: the canonical associativity isometry.
+* `TauCeti.IntegralLattice.Isometry.orthogonalSumHom`: the embedding `O(L) × O(M) →* O(L ⊕ M)`.
 
 ## References
 
@@ -619,6 +623,47 @@ theorem orthogonalSumAssoc_naturality {L : IntegralLattice V} {M : IntegralLatti
   apply Isometry.ext
   intro p
   simp only [Isometry.trans_apply, Isometry.orthogonalSum_apply, orthogonalSumAssoc_apply]
+
+/-- The product of the isometry groups `O(L) × O(M)` acts componentwise on the orthogonal sum:
+the group homomorphism `O(L) × O(M) →* O(L ⊕ M)`. -/
+def orthogonalSumHom (L : IntegralLattice V) (M : IntegralLattice W) :
+    Isometry L L × Isometry M M →* Isometry (L.orthogonalSum M) (L.orthogonalSum M) where
+  toFun p := p.1.orthogonalSum p.2
+  map_one' := by
+    apply Isometry.ext
+    intro p
+    simp only [Prod.fst_one, Prod.snd_one, orthogonalSum_apply, Isometry.one_apply]
+  map_mul' a b := by
+    apply Isometry.ext
+    intro p
+    simp only [Prod.fst_mul, Prod.snd_mul, orthogonalSum_apply, Isometry.mul_apply]
+
+@[simp]
+theorem orthogonalSumHom_apply (L : IntegralLattice V) (M : IntegralLattice W)
+    (p : Isometry L L × Isometry M M) :
+    orthogonalSumHom L M p = p.1.orthogonalSum p.2 := (rfl)
+
+/-- The componentwise action of `O(L) × O(M)` on `L ⊕ M` is faithful: `O(L) × O(M)` is a
+subgroup of `O(L ⊕ M)`. -/
+theorem orthogonalSumHom_injective (L : IntegralLattice V) (M : IntegralLattice W) :
+    Function.Injective (orthogonalSumHom L M) := by
+  intro a b h
+  refine Prod.ext (Isometry.ext fun x ↦ ?_) (Isometry.ext fun y ↦ ?_)
+  · simpa only [orthogonalSumHom_apply, orthogonalSum_apply] using
+      congrArg (fun e : Isometry (L.orthogonalSum M) (L.orthogonalSum M) ↦ (e (x, 0)).1) h
+  · simpa only [orthogonalSumHom_apply, orthogonalSum_apply] using
+      congrArg (fun e : Isometry (L.orthogonalSum M) (L.orthogonalSum M) ↦ (e (0, y)).2) h
+
+/-- The obstruction to `O(L) × O(L) = O(L ⊕ L)`: when the ambient space `V` is nonzero (in
+particular when `L` itself is nonzero), the factor swap is a self-isometry of `L ⊕ L` preserving
+neither summand, so it is not in the image of `O(L) × O(L)`. -/
+theorem orthogonalSumComm_not_mem_range_orthogonalSumHom (L : IntegralLattice V) [Nontrivial V] :
+    orthogonalSumComm L L ∉ (orthogonalSumHom L L).range := by
+  rintro ⟨p, hp⟩
+  obtain ⟨x, hx⟩ := exists_ne (0 : V)
+  have h := congrArg (fun e : Isometry (L.orthogonalSum L) (L.orthogonalSum L) ↦ (e (x, 0)).2) hp
+  simp only [orthogonalSumHom_apply, orthogonalSum_apply, map_zero, orthogonalSumComm_apply] at h
+  exact hx h.symm
 
 end Isometry
 

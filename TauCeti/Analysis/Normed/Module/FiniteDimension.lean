@@ -26,6 +26,8 @@ isomorphic. This allows pointwise choices of complements to be identified with a
   dimension as the space.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
+* `TauCeti.continuous_det_div_conj`: the determinant phase `det A / conj (det A)` of a continuous
+  family of continuous linear automorphisms varies continuously.
 -/
 
 public section
@@ -64,6 +66,28 @@ theorem nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv {V W F : Ty
   have h := e.toLinearEquiv.finrank_eq.trans e'.toLinearEquiv.finrank_eq.symm
   rw [Module.finrank_prod, Module.finrank_prod] at h
   omega
+
+section Star
+
+open scoped ComplexConjugate
+
+variable {𝕜 E X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [StarRing 𝕜]
+  [ContinuousStar 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace X]
+
+/-- The determinant phase `det A / conj (det A)` of a continuous family of continuous linear
+automorphisms varies continuously. Over `ℂ` this is the Maslov phase `ρ(L, A L)` of a maximal
+totally real subspace `L`. -/
+theorem continuous_det_div_conj (A : X → E ≃L[𝕜] E)
+    (hA : Continuous fun x => (A x : E →L[𝕜] E)) :
+    Continuous fun x => LinearMap.det ((A x).toLinearEquiv : E →ₗ[𝕜] E) /
+      conj (LinearMap.det ((A x).toLinearEquiv : E →ₗ[𝕜] E)) := by
+  have hd : Continuous fun x => LinearMap.det ((A x).toLinearEquiv : E →ₗ[𝕜] E) :=
+    ContinuousLinearMap.continuous_det.comp hA
+  refine hd.div (continuous_star.comp hd) fun x => (map_ne_zero _).2 ?_
+  rw [← LinearEquiv.coe_det]
+  exact (LinearEquiv.det (A x).toLinearEquiv).ne_zero
+
+end Star
 
 end TauCeti
 

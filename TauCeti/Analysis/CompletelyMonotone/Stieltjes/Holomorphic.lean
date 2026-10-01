@@ -42,6 +42,8 @@ function on the slit plane that agrees with `f` on `(0, ∞)`.
 * `TauCeti.hasDerivAt_stieltjesExtension` and `TauCeti.analyticOnNhd_stieltjesExtension`: the
   transform is holomorphic on the slit plane, with derivative `-a / z² - ∫ x, (z + x)⁻² ∂μ`.
 * `TauCeti.stieltjesExtension_conj`: the transform commutes with complex conjugation.
+* `TauCeti.stieltjesExtension_eq_zero_iff`: the transform vanishes somewhere on the slit plane
+  only when its data is zero.
 * `TauCeti.im_stieltjesExtension` and `TauCeti.im_mul_im_stieltjesExtension_nonpos`: the
   imaginary part and its sign; `TauCeti.im_mul_stieltjesExtension` and
   `TauCeti.im_mul_im_mul_stieltjesExtension_nonneg` do the same for `z ↦ z F(z)`.
@@ -202,6 +204,64 @@ theorem im_mul_im_mul_stieltjesExtension_nonneg (hμ : Integrable stieltjesWeigh
       (integral_nonneg fun x => div_nonneg x.coe_nonneg (normSq_nonneg _))
   rw [im_mul_stieltjesExtension hμ hz, ← mul_assoc]
   exact mul_nonneg (mul_self_nonneg _) hP
+
+/-- **The complex Stieltjes transform vanishes only for zero data.**  At a point of the slit
+plane, `a / z + b + ∫ x, (z + x)⁻¹ ∂μ` is zero exactly when `a`, `b` and `μ` all are. -/
+theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
+    stieltjesExtension μ a b z = 0 ↔ a = 0 ∧ b = 0 ∧ μ = 0 := by
+  refine ⟨fun h => ?_, fun ⟨ha, hb, hμ0⟩ => by simp [stieltjesExtension, ha, hb, hμ0]⟩
+  -- A measure against which an integrable, everywhere positive function has integral zero is zero.
+  have measure_eq_zero {g : ℝ≥0 → ℝ} (hg : ∀ x, 0 < g x) (hgi : Integrable g μ)
+      (h0 : ∫ x, g x ∂μ = 0) : μ = 0 := by
+    have hsupp : Function.support g = univ := eq_univ_of_forall fun x => (hg x).ne'
+    have := (integral_pos_iff_support_of_nonneg (fun x => (hg x).le) hgi).not.mp h0.not_gt
+    rwa [hsupp, not_lt, nonpos_iff_eq_zero, Measure.measure_univ_eq_zero] at this
+  suffices ha : a = 0 ∧ μ = 0 by
+    obtain ⟨ha, hμ0⟩ := ha
+    simpa [stieltjesExtension, ha, hμ0] using h
+  rcases eq_or_ne z.im 0 with him | him
+  · -- On `(0, ∞)` the transform is a sum of three nonnegative reals.
+    have ht : 0 < z.re := by
+      rcases mem_slitPlane_iff.mp hz with h' | h'
+      · exact h'
+      · exact absurd him h'
+    set t := z.re
+    have hzt : z = (t : ℂ) := ext rfl (by simpa using him)
+    have hreal : stieltjesExtension μ a b z =
+        (((a : ℝ) / t + (b : ℝ) + ∫ x, (t + (x : ℝ))⁻¹ ∂μ : ℝ) : ℂ) := by
+      rw [hzt, stieltjesExtension]
+      push_cast [← integral_complex_ofReal]
+      rfl
+    rw [hreal, ofReal_eq_zero] at h
+    have hpos (x : ℝ≥0) : 0 < (t + (x : ℝ))⁻¹ := inv_pos.mpr (by positivity)
+    have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
+    have hat : 0 ≤ (a : ℝ) / t := by positivity
+    have hb' := b.coe_nonneg
+    refine ⟨?_, measure_eq_zero hpos (integrable_inv_add hμ ht) (by linarith)⟩
+    have : (a : ℝ) / t = 0 := by linarith
+    rw [div_eq_zero_iff, or_iff_left ht.ne'] at this
+    exact_mod_cast this
+  · -- Off the real axis the imaginary part is `-Im z` times a sum of two nonnegative terms.
+    have hz0 : normSq z ≠ 0 := normSq_eq_zero.not.mpr (slitPlane_ne_zero hz)
+    have hne (x : ℝ≥0) : normSq (z + ((x : ℝ) : ℂ)) ≠ 0 := by
+      rw [Ne, normSq_eq_zero]
+      intro h0
+      exact him (by simpa using congrArg Complex.im h0)
+    have hpos (x : ℝ≥0) : 0 < (normSq (z + ((x : ℝ) : ℂ)))⁻¹ :=
+      inv_pos.mpr ((normSq_nonneg _).lt_of_ne' (hne x))
+    have hint : Integrable (fun x : ℝ≥0 => (normSq (z + ((x : ℝ) : ℂ)))⁻¹) μ := by
+      refine ((integrable_inv_add_of_mem_slitPlane hμ hz).im.const_mul (-z.im⁻¹)).congr
+        (ae_of_all _ fun x => ?_)
+      simp only [RCLike.im_to_complex, inv_im, add_im, ofReal_im, add_zero]
+      field_simp
+    have h0 := congrArg Complex.im h
+    rw [im_stieltjesExtension hμ hz, zero_im, mul_eq_zero, neg_eq_zero, or_iff_right him] at h0
+    have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
+    have ha : 0 ≤ (a : ℝ) / normSq z := div_nonneg a.coe_nonneg (normSq_nonneg z)
+    refine ⟨?_, measure_eq_zero hpos hint (by linarith)⟩
+    have : (a : ℝ) / normSq z = 0 := by linarith
+    rw [div_eq_zero_iff, or_iff_left hz0] at this
+    exact_mod_cast this
 
 namespace RepresentsStieltjes
 

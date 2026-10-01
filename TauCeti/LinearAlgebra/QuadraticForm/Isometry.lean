@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
 /-!
 # Isometries of quadratic maps
@@ -18,6 +19,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 ## Main results
 
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
+* `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
+  the polar bilinear form.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
@@ -43,6 +46,17 @@ theorem _root_.QuadraticMap.Isometry.polar_apply {R : Type u} {M₁ : Type v} {M
     {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (x y : M₁) :
     polar Q₂ (f x) (f y) = polar Q₁ x y := by
   simp only [QuadraticMap.polar, ← map_add f, QuadraticMap.Isometry.map_app]
+
+/-- A linear map preserving a quadratic form is an isometry of its polar bilinear form. -/
+theorem _root_.QuadraticForm.isIsometry_polarBilin_of_forall_map_app
+    {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+    {Q : QuadraticForm R M} {f : Module.End R M} (hf : ∀ x, Q (f x) = Q x) :
+    TauCeti.BilinForm.IsIsometry Q.polarBilin f := by
+  apply TauCeti.BilinForm.isIsometry_iff.mpr
+  intro x y
+  have hp : polar Q (f x) (f y) = polar Q x y :=
+    (⟨f, hf⟩ : Q →qᵢ Q).polar_apply x y
+  simpa only [QuadraticMap.polarBilin_apply_apply] using hp
 
 /-- An isometric equivalence preserves the polarization of a quadratic map. -/
 @[simp]

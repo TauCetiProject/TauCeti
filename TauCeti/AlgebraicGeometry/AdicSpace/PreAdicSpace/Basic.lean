@@ -70,6 +70,35 @@ noncomputable abbrev toRingPresheafedSpace (X : PreAdicSpace.{u}) :
 instance (X : PreAdicSpace.{u}) (x : X) :
     IsLocalRing (X.toRingPresheafedSpace.presheaf.stalk x) := X.isLocalRing x
 
+/-- The valuation on the stalk at `x`: the residue-field valuation pulled back along the
+residue map. Its support is the maximal ideal of the stalk, so it is a valuation on the stalk
+in Wedhorn's sense, and it determines `X.valuation x`. -/
+noncomputable def stalkValuation (X : PreAdicSpace.{u}) (x : X) :
+    ValuationSpectrum (X.toRingPresheafedSpace.presheaf.stalk x) :=
+  ValuationSpectrum.comap (IsLocalRing.residue _) (X.valuation x)
+
+/-- The stalk valuation is the residue-field valuation pulled back along the residue map. -/
+theorem stalkValuation_def (X : PreAdicSpace.{u}) (x : X) :
+    X.stalkValuation x = ValuationSpectrum.comap (IsLocalRing.residue _) (X.valuation x) := by
+  rfl
+
+/-- The support of the stalk valuation is the maximal ideal of the stalk. -/
+@[simp]
+theorem supp_stalkValuation (X : PreAdicSpace.{u}) (x : X) :
+    (X.stalkValuation x).supp = IsLocalRing.maximalIdeal _ := by
+  rw [stalkValuation_def, ValuationSpectrum.supp_comap,
+    Ideal.eq_bot_of_prime (X.valuation x).supp, ← RingHom.ker_eq_comap_bot,
+    IsLocalRing.ker_residue]
+
+/-- Two points of the valuation spectrum of the residue field at `x` agreeing after pullback
+to the stalk are equal. -/
+theorem valuation_eq_of_comap_residue_eq (X : PreAdicSpace.{u}) (x : X)
+    {w : ValuationSpectrum (IsLocalRing.ResidueField (X.toRingPresheafedSpace.presheaf.stalk x))}
+    (hw : ValuationSpectrum.comap (IsLocalRing.residue _) w = X.stalkValuation x) :
+    w = X.valuation x :=
+  ValuationSpectrum.comap_injective IsLocalRing.residue_surjective
+    (hw.trans (X.stalkValuation_def x))
+
 end PreAdicSpace
 
 end TauCeti

@@ -52,6 +52,10 @@ additive functor from representations of `G` to representations of `G ⧸ S`.
   nonzero invariant vector.
 * `Representation.IsIrreducible.invariants_eq_bot_of_finrank_ne_one`: the dimension-based
   specialization.
+* `Representation.IsIrreducible.eq_trivial_of_invariants_ne_bot` and
+  `Representation.IsIrreducible.finrank_eq_one_of_invariants_ne_bot`: the two contrapositives, which
+  turn a nonzero invariant vector of an irreducible representation into triviality and into
+  dimension one.
 * `Rep.quotientToInvariantsFunctor` is additive.
 -/
 public section
@@ -130,6 +134,18 @@ theorem invariants_eq_bot_of_finrank_ne_one {ρ : Representation k G V} (h : ρ.
   obtain ⟨c, hc⟩ := hsurj w
   exact ⟨c, by simpa only [f, LinearMap.intertwiningMap_of_isIntertwiningMap,
     LinearMap.toSpanSingleton_apply] using hc⟩
+
+/-- **An irreducible representation with a nonzero invariant vector is the trivial
+representation**, the contrapositive of `Representation.IsIrreducible.invariants_eq_bot`. -/
+theorem eq_trivial_of_invariants_ne_bot {ρ : Representation k G V} (h : ρ.IsIrreducible)
+    (hne : ρ.invariants ≠ ⊥) : ρ = trivial k G V :=
+  not_not.1 (mt h.invariants_eq_bot hne)
+
+/-- **An irreducible representation with a nonzero invariant vector is a line**, the contrapositive
+of `Representation.IsIrreducible.invariants_eq_bot_of_finrank_ne_one`. -/
+theorem finrank_eq_one_of_invariants_ne_bot {ρ : Representation k G V} (h : ρ.IsIrreducible)
+    (hne : ρ.invariants ≠ ⊥) : Module.finrank k V = 1 :=
+  not_not.1 (mt h.invariants_eq_bot_of_finrank_ne_one hne)
 
 end Representation.IsIrreducible
 

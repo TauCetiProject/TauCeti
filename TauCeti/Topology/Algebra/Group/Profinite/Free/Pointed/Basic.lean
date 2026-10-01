@@ -36,6 +36,9 @@ converge to `1`.
 * `TauCeti.freeProCPointed`: the free pro-`C` group on a pointed topological space.
 * `TauCeti.freeProCPointed.of`: the canonical continuous map from the space.
 * `TauCeti.freeProCPointed.lift`: the extension of a base-point-preserving continuous map.
+* `TauCeti.freeProCPointed.map`, `TauCeti.freeProCPointed.congr`: the continuous homomorphism
+  induced by a continuous map of pointed spaces, and the topological isomorphism induced by a
+  homeomorphism of pointed spaces.
 * `TauCeti.freeProCPointed.equivFreeProC`: for a discrete space, the identification with the free
   pro-`C` group on the complement of the base point.
 * `TauCeti.freeProCPointed.fromFreeProC`: the surjection from the free pro-`C` group on `S` onto
@@ -332,6 +335,75 @@ theorem lift_surjective (hP : IsProC C P) {f : X → P} (hf : Continuous f) (hf�
   exact ⟨mk C x₀ y, lift_mk hP f hf hf₀ y⟩
 
 end Lift
+
+/-! ### Functoriality in the pointed space -/
+
+section Map
+
+variable {x₀} {Y : Type u} [TopologicalSpace Y] {y₀ : Y}
+
+/-- The continuous homomorphism `F_C(X, x₀) → F_C(Y, y₀)` induced by a continuous map of pointed
+spaces `f : X → Y` with `f x₀ = y₀`: the lift of `x ↦ of C y₀ (f x)`. -/
+noncomputable def map (f : X → Y) (hf : Continuous f) (hf₀ : f x₀ = y₀) :
+    freeProCPointed C x₀ →ₜ* freeProCPointed C y₀ :=
+  lift (isProC_freeProCPointed C y₀) (fun x ↦ of C y₀ (f x)) ((continuous_of C y₀).comp hf)
+    (by rw [hf₀, of_basePoint])
+
+/-- The map induced by `f` sends the image of a point to the image of its `f`-image. -/
+@[simp]
+theorem map_of (f : X → Y) (hf : Continuous f) (hf₀ : f x₀ = y₀) (x : X) :
+    map C f hf hf₀ (of C x₀ x) = of C y₀ (f x) :=
+  lift_of _ _ _ _ x
+
+/-- The identity of the pointed space induces the identity. -/
+@[simp]
+theorem map_id : map C id continuous_id (rfl : id x₀ = x₀) = ContinuousMonoidHom.id _ :=
+  hom_ext fun x ↦ by simp
+
+/-- The map induced by a composite of pointed maps is the composite of the induced maps. -/
+theorem map_comp {Z : Type u} [TopologicalSpace Z] {z₀ : Z} (g : Y → Z) (hg : Continuous g)
+    (hg₀ : g y₀ = z₀) (f : X → Y) (hf : Continuous f) (hf₀ : f x₀ = y₀) :
+    map C (g ∘ f) (hg.comp hf) (by rw [Function.comp_apply, hf₀, hg₀]) =
+      (map C g hg hg₀).comp (map C f hf hf₀) :=
+  hom_ext fun x ↦ by simp
+
+/-- **A homeomorphism of pointed spaces induces a topological isomorphism of free pro-`C`
+groups** `F_C(X, x₀) ≃ₜ* F_C(Y, y₀)`, sending the image of a point to the image of its
+`e`-image. -/
+noncomputable def congr (e : X ≃ₜ Y) (he : e x₀ = y₀) :
+    freeProCPointed C x₀ ≃ₜ* freeProCPointed C y₀ where
+  toFun := map C e e.continuous he
+  invFun := map C e.symm e.symm.continuous (by rw [← he, e.symm_apply_apply])
+  left_inv z := by
+    have h : (map C e.symm e.symm.continuous (by rw [← he, e.symm_apply_apply])).comp
+        (map C e e.continuous he) = ContinuousMonoidHom.id (freeProCPointed C x₀) :=
+      hom_ext fun x ↦ by simp
+    exact DFunLike.congr_fun h z
+  right_inv z := by
+    have h : (map C e e.continuous he).comp
+        (map C e.symm e.symm.continuous (by rw [← he, e.symm_apply_apply])) =
+        ContinuousMonoidHom.id (freeProCPointed C y₀) :=
+      hom_ext fun y ↦ by simp
+    exact DFunLike.congr_fun h z
+  map_mul' := map_mul _
+  continuous_toFun := map_continuous _
+  continuous_invFun := map_continuous _
+
+/-- The isomorphism induced by a pointed homeomorphism `e` sends the image of a point to the image
+of its `e`-image. -/
+@[simp]
+theorem congr_of (e : X ≃ₜ Y) (he : e x₀ = y₀) (x : X) :
+    congr C e he (of C x₀ x) = of C y₀ (e x) :=
+  map_of C e e.continuous he x
+
+/-- The inverse of the isomorphism induced by a pointed homeomorphism `e` sends the image of a
+point to the image of its `e⁻¹`-image. -/
+@[simp]
+theorem congr_symm_of (e : X ≃ₜ Y) (he : e x₀ = y₀) (y : Y) :
+    (congr C e he).symm (of C y₀ y) = of C x₀ (e.symm y) :=
+  map_of C e.symm e.symm.continuous _ y
+
+end Map
 
 /-! ### Discrete spaces -/
 

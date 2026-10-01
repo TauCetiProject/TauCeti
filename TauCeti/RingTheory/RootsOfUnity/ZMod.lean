@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -18,8 +19,13 @@ Both halves are in Mathlib — `IsPrimitiveRoot.zmodEquivZPowers` and `IsPrimiti
 but not the composite, which is what a consumer phrased in terms of `μ_k` rather than a chosen
 generator needs.
 
+Independently of any primitive root, `μ_k` of any commutative monoid is killed by `k`, so written
+additively it is a `ZMod k`-module.
+
 ## Main results
 
+* `TauCeti.nsmul_additive_rootsOfUnity_eq_zero`: `k` kills `μ_k`, written additively, so that it
+  is a `ZMod k`-module.
 * `IsPrimitiveRoot.zmodEquivRootsOfUnity`: `ℤ/k ≃+ Additive (μ_k)`, given a primitive `k`-th root.
 * `IsPrimitiveRoot.coe_zmodEquivRootsOfUnity_apply_intCast` and
   `IsPrimitiveRoot.coe_zmodEquivRootsOfUnity_apply_natCast`: it sends `i` to `ζ ^ i`.
@@ -39,6 +45,22 @@ which the source has.
 -/
 
 public section
+
+namespace TauCeti
+
+variable {M : Type*} [CommMonoid M] (k : ℕ)
+
+/-- **`μ_k` is killed by `k`**: written additively, `ζ ^ k = 1` reads `k • ζ = 0`. -/
+@[simp]
+theorem nsmul_additive_rootsOfUnity_eq_zero (x : Additive (rootsOfUnity k M)) : k • x = 0 :=
+  Additive.toMul.injective <| Subtype.ext <| by
+    simpa [toMul_nsmul] using (mem_rootsOfUnity k _).1 x.toMul.2
+
+/-- `μ_k`, written additively, is a `ZMod k`-module, being killed by `k`. -/
+instance instModuleZModAdditiveRootsOfUnity : Module (ZMod k) (Additive (rootsOfUnity k M)) :=
+  AddCommGroup.zmodModule (nsmul_additive_rootsOfUnity_eq_zero k)
+
+end TauCeti
 
 namespace IsPrimitiveRoot
 
