@@ -100,6 +100,12 @@ theorem toOrderHom_apply (f : Hom O O') (x : O.toSubalgebra) :
     ((f.toOrderHom x : O'.toSubalgebra) : L) = f (x : K) :=
   by simp [toOrderHom]
 
+/-- The restriction of an order morphism to the orders is injective, since the ambient map is a
+homomorphism of fields. -/
+theorem toOrderHom_injective (f : Hom O O') : Function.Injective f.toOrderHom := fun x y h =>
+  Subtype.ext <| f.fieldHom.injective <| by
+    simpa using congrArg (fun z : O'.toSubalgebra => (z : L)) h
+
 /-- Two order morphisms agreeing on the ambient field are equal. -/
 @[ext]
 theorem ext {f g : Hom O O'} (h : ∀ x : K, f x = g x) : f = g := by
