@@ -8,25 +8,18 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Length
-public import TauCeti.Topology.VectorBundle.Riemannian
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Escape
 
 /-!
 # Metric completeness gives geodesic completeness
 
 A maximal geodesic travels at constant speed, so on its maximal interval it is a Lipschitz curve
 for the Riemannian distance.  If that interval had a finite endpoint, the image of the curve would
-therefore be totally bounded, hence relatively compact once the manifold is metrically complete;
-the velocity lift would then stay in the part of the tangent bundle consisting of the vectors of
-norm at most the speed over that compact set, which is compact.  An integral curve of the geodesic
-spray cannot remain in a compact set as it approaches a finite endpoint of its maximal interval,
-so no such endpoint exists and every geodesic is defined for all time.  The same Lipschitz bound,
+therefore be totally bounded, hence relatively compact once the manifold is metrically complete.
+This contradicts the escape lemma for geodesics, `eventually_notMem_nhdsLT_maximalGeodesic`, so no
+such endpoint exists and every geodesic is defined for all time.  The same Lipschitz bound,
 read between the parameters `0` and `1`, says that the exponential map does not increase the
 distance from the base point: `dist p (exp_p v) ≤ ‖v‖`.
-
-The step about velocities is not implicit in constant speed: that bounds the velocity in the
-fibrewise Riemannian norm, and it is the compactness of the norm-bounded part of a Riemannian
-bundle over a compact set which converts such a bound into relative compactness in the total
-space.
 
 ## Main results
 
@@ -126,15 +119,12 @@ end Metric
 
 /-! ### Completeness -/
 
-variable [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
 variable (I M) in
-/-- Over a bounded subinterval of its maximal interval, the velocity lift of a maximal geodesic in
-a complete Riemannian manifold stays in a compact subset of the tangent bundle. -/
-private theorem exists_isCompact_forall_mem_maximalIntegralCurve [CompleteSpace M] {a b : ℝ}
+/-- Over a bounded subinterval of its maximal interval, the image of a maximal geodesic in a
+complete Riemannian manifold has compact closure. -/
+private theorem isCompact_closure_image_maximalGeodesic [CompleteSpace M] {a b : ℝ}
     (p : M) (v : TangentSpace I p) (hab : Ioo a b ⊆ geodesicInterval I M p v) :
-    ∃ K : Set (TangentBundle I M), IsCompact K ∧
-      ∀ t ∈ Ioo a b, maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t ∈ K := by
+    IsCompact (closure (maximalGeodesic I M p v '' Ioo a b)) := by
   have htb : TotallyBounded (maximalGeodesic I M p v '' Ioo a b) := by
     have huniv : TotallyBounded (univ : Set (Ioo a b)) := by
       simpa using totallyBounded_preimage
@@ -143,33 +133,7 @@ private theorem exists_isCompact_forall_mem_maximalIntegralCurve [CompleteSpace 
     have hlip : LipschitzWith ‖v‖₊ ((Ioo a b).domRestrict (maximalGeodesic I M p v)) :=
       ((lipschitzOnWith_maximalGeodesic (p := p) (v := v)).mono hab).to_restrict
     simpa using huniv.image hlip.uniformContinuous
-  have hbase : IsCompact (closure (maximalGeodesic I M p v '' Ioo a b)) :=
-    isCompact_iff_totallyBounded_isComplete.2 ⟨htb.closure, isClosed_closure.isComplete⟩
-  have hz : IsMIntegralCurveOn
-      (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v)) (geodesicSpray I M)
-      (geodesicInterval I M p v) := by
-    rw [← maximalIntegralCurveInterval_geodesicSpray (I := I) (M := M) p v]
-    exact isMIntegralCurveOn_maximalIntegralCurve contMDiff_one_geodesicSpray
-  refine ⟨{z : TangentBundle I M |
-      z.proj ∈ closure (maximalGeodesic I M p v '' Ioo a b) ∧ ‖z.2‖ ≤ ‖v‖},
-    hbase.norm_le_bundle ‖v‖, fun t ht ↦ ?_⟩
-  have hproj : (fun r ↦ (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) r).proj)
-      = maximalGeodesic I M p v := funext fun r ↦ (maximalGeodesic_def p v r).symm
-  have hlift : maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t =
-      curveVelocityLiftWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) t := by
-    rw [← hproj]
-    exact eq_curveVelocityLiftWithin_of_isMIntegralCurveOn
-      (isOpen_geodesicInterval.uniqueDiffOn t (hab ht)) hz (hab ht)
-  refine ⟨?_, le_of_eq ?_⟩
-  · rw [← maximalGeodesic_def]
-    exact subset_closure (mem_image_of_mem _ ht)
-  calc ‖(maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).2‖
-      = ‖(TotalSpace.mk' E (maximalGeodesic I M p v t)
-            (curveVelocityWithin I (maximalGeodesic I M p v)
-              (geodesicInterval I M p v) t)).2‖ :=
-        congrArg (fun z : TangentBundle I M ↦ ‖z.2‖)
-          (hlift.trans (curveVelocityLiftWithin_apply _ _ _))
-    _ = ‖v‖ := norm_curveVelocityWithin_maximalGeodesic (hab ht)
+  exact isCompact_iff_totallyBounded_isComplete.2 ⟨htb.closure, isClosed_closure.isComplete⟩
 
 /-- **Metric completeness implies geodesic completeness.**  In a Riemannian manifold which is
 complete for its Riemannian distance, every maximal geodesic is defined for all time.  This is the
@@ -180,36 +144,25 @@ theorem isGeodesicallyCompleteAt_of_completeSpace [CompleteSpace M] (p : M) :
   apply eq_univ_of_forall
   intro v
   rw [mem_expDomain_iff]
-  set x₀ : TangentBundle I M := TotalSpace.mk' E p v
-  have hJ : maximalIntegralCurveInterval (geodesicSpray I M) x₀ = geodesicInterval I M p v :=
-    maximalIntegralCurveInterval_geodesicSpray p v
-  have h0 : (0 : ℝ) ∈ maximalIntegralCurveInterval (geodesicSpray I M) x₀ := by
-    rw [hJ]; exact zero_mem_geodesicInterval
-  have hspray := contMDiff_one_geodesicSpray (I := I) (M := M)
-  have hup : ¬ BddAbove (maximalIntegralCurveInterval (geodesicSpray I M) x₀) := by
+  have h0 : (0 : ℝ) ∈ geodesicInterval I M p v := zero_mem_geodesicInterval
+  have hup : ¬ BddAbove (geodesicInterval I M p v) := by
     intro hbdd
     have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
-    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB h0 hlub
-    obtain ⟨K, hK, hmem⟩ :=
-      exists_isCompact_forall_mem_maximalIntegralCurve I M p v
-        (fun u hu ↦ hJ ▸ hsub hu)
-    obtain ⟨t, ht1, ht2⟩ :=
-      ((eventually_notMem_nhdsLT_maximalIntegralCurve hspray h0 hlub hK).and
+    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isLUB hlub
+    obtain ⟨t, ht1, ht2⟩ := ((eventually_notMem_nhdsLT_maximalGeodesic hlub
+      (isCompact_closure_image_maximalGeodesic I M p v hsub)).and
         (Filter.eventually_iff.2 (Ioo_mem_nhdsLT (ha.trans hb0)))).exists
-    exact ht1 (hmem t ht2)
-  have hlow : ¬ BddBelow (maximalIntegralCurveInterval (geodesicSpray I M) x₀) := by
+    exact ht1 (subset_closure (mem_image_of_mem _ ht2))
+  have hlow : ¬ BddBelow (geodesicInterval I M p v) := by
     intro hbdd
     have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
-    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB h0 hglb
-    obtain ⟨K, hK, hmem⟩ :=
-      exists_isCompact_forall_mem_maximalIntegralCurve I M p v
-        (fun u hu ↦ hJ ▸ hsub hu)
-    obtain ⟨t, ht1, ht2⟩ :=
-      ((eventually_notMem_nhdsGT_maximalIntegralCurve hspray h0 hglb hK).and
+    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isGLB hglb
+    obtain ⟨t, ht1, ht2⟩ := ((eventually_notMem_nhdsGT_maximalGeodesic hglb
+      (isCompact_closure_image_maximalGeodesic I M p v hsub)).and
         (Filter.eventually_iff.2 (Ioo_mem_nhdsGT (ha0.trans hb)))).exists
-    exact ht1 (hmem t ht2)
+    exact ht1 (subset_closure (mem_image_of_mem _ ht2))
   have hinterval : geodesicInterval I M p v = univ := by
-    rw [← hJ]
+    rw [← maximalIntegralCurveInterval_geodesicSpray] at h0 hup hlow ⊢
     exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 hup hlow
   rw [hinterval]
   exact mem_univ 1
