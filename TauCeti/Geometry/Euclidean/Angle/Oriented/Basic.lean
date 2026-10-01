@@ -15,7 +15,7 @@ For vectors `x`, `y`, `z` of an oriented real inner product space of dimension t
 `y` and `z` make oriented angles of positive sign (i.e. in `(0, π)`) with `x`, Mathlib's
 `Orientation.oangle_sub_left` gives `oangle y z = oangle x z - oangle x y`, and this identity
 holds for the real representatives in `(-π, π]` as well (`Orientation.oangle_toReal_sub`, from
-`Real.Angle.toReal_sub_of_sign_eq_one`). Consequently the real angles from `x` add
+`Real.Angle.toReal_sub_of_sign_eq`). Consequently the real angles from `x` add
 (`Orientation.oangle_toReal_add_of_sign_eq_one`), and the sign of `oangle y z` is the order of
 the real angles of `y` and `z` measured from `x` (`Orientation.oangle_sign_eq_one_iff_toReal_lt`).
 -/
@@ -36,7 +36,8 @@ theorem oangle_toReal_sub {x y z : V} (h₁ : (o.oangle x y).sign = 1)
     (o.oangle y z).toReal = (o.oangle x z).toReal - (o.oangle x y).toReal := by
   rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_eq_one h₁)
     (o.right_ne_zero_of_oangle_sign_eq_one h₁) (o.right_ne_zero_of_oangle_sign_eq_one h₂)]
-  exact Real.Angle.toReal_sub_of_sign_eq_one h₂ h₁
+  exact Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 (by rw [h₁]; decide)).2
+    (h₂.trans h₁.symm)
 
 /-- For two vectors `y`, `z` making oriented angles of positive sign with `x`, the real angles from
 `x` add: the angle to `z` is the angle to `y` plus the angle from `y` to `z`. -/
