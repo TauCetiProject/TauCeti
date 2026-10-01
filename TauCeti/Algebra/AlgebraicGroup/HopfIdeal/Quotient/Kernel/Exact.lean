@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Basic
+import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Finiteness
 
 /-!
@@ -100,6 +101,7 @@ theorem kerOfSurjective_eq (h : IsShortExact p i) :
   rfl
 
 /-- The composite `N → G → Q` of a short exact sequence is the trivial homomorphism. -/
+@[reassoc (attr := simp)]
 theorem comp_eq_unit_comp_counit (h : IsShortExact p i) :
     p ≫ i = _root_.CommHopfAlgCat.ofHom
       ((Bialgebra.unitBialgHom R N).comp (Bialgebra.counitBialgHom R Q)) :=
@@ -119,6 +121,13 @@ theorem mkQuotient_comp_kernelIso_hom (h : IsShortExact p i) :
     mkQuotient_comp_eqToHom h.kerOfSurjective_eq]
   exact mkQuotient_comp_quotientKerOfSurjectiveIso_hom i h.surjective
 
+/-- The inverse identification of the subgroup with the kernel respects the inclusions into
+`G`. -/
+@[reassoc (attr := simp)]
+theorem comp_kernelIso_inv (h : IsShortExact p i) :
+    i ≫ h.kernelIso.inv = mkQuotient G (kernelHopfIdeal p) :=
+  (Iso.comp_inv_eq _).mpr h.mkQuotient_comp_kernelIso_hom.symm
+
 /-- The functions on `G` invariant under the subgroup `N` of a short exact sequence are exactly
 the functions pulled back from the quotient `Q`. -/
 theorem coinvariants_eq_range (h : IsShortExact p i) :
@@ -130,29 +139,12 @@ theorem coinvariants_eq_range (h : IsShortExact p i) :
 identity of `Q(A)` exactly when it comes from an `A`-point of `N`. -/
 theorem ker_mapPointsFunctor_app_eq_range (h : IsShortExact p i) (A : CommAlgCat.{w} R) :
     ((mapPointsFunctor p).app A).hom.ker = ((mapPointsFunctor i).app A).hom.range := by
-  have hmem {x : G} : x ∈ kernelHopfIdeal p ↔ i.hom x = 0 := by
-    rw [← h.kerOfSurjective_eq, HopfIdeal.mem_kerOfSurjective]
+  rw [← HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor i h.surjective A,
+    h.kerOfSurjective_eq]
   have key (g : HopfAlgebra.points (R := R) (H := G) A) :
-      (mapPointsFunctor p).app A g = 1 ↔
-        ∃ n : HopfAlgebra.points (R := R) (H := N) A, (mapPointsFunctor i).app A n = g := by
-    have hone := mapPointsFunctor_app_eq_one_iff p A g
-    rw [← mapPointsFunctor_app_apply] at hone
-    refine (hone.trans (mem_quotientPointsSubgroup_iff G _ A g)).trans ?_
-    constructor
-    · intro hg
-      let e := Ideal.quotientKerAlgEquivOfSurjective (f := (i.hom : G →ₐ[R] N)) h.surjective
-      let n : HopfAlgebra.points (R := R) (H := N) A :=
-        toConv ((Ideal.Quotient.liftₐ _ g.ofConv fun x hx ↦ hg x (hmem.mpr hx)).comp
-          e.symm.toAlgHom)
-      refine ⟨n, ofConv_injective (AlgHom.ext fun x ↦ ?_)⟩
-      rw [mapPointsFunctor_app_apply_apply]
-      have hx : e.symm (i.hom x) = Ideal.Quotient.mk _ x :=
-        e.symm_apply_eq.mpr (Ideal.quotientKerAlgEquivOfSurjective_mk
-          (f := (i.hom : G →ₐ[R] N)) h.surjective x).symm
-      simp only [n, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, hx, Ideal.Quotient.liftₐ_apply]
-      exact Ideal.Quotient.lift_mk _ _ _
-    · rintro ⟨n, rfl⟩ x hx
-      exact (mapPointsFunctor_app_apply_apply i A n x).trans (by rw [hmem.mp hx, map_zero])
+      (mapPointsFunctor p).app A g = 1 ↔ g ∈ quotientPointsSubgroup G (kernelHopfIdeal p) A := by
+    rw [mapPointsFunctor_app_apply]
+    exact mapPointsFunctor_app_eq_one_iff p A g
   ext g
   exact key g
 
