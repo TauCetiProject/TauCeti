@@ -121,6 +121,7 @@ theorem map_span_exteriorAlgebra_le (f : M →ₗ[R] M)
 
 /-- A linear automorphism stabilizes the top exterior line of a coordinate summand exactly
 when it stabilizes that summand. No field or reducedness assumption on the scalars is needed. -/
+@[simp]
 theorem map_span_exteriorAlgebra_eq_iff (f : M ≃ₗ[R] M) :
     (span R {b.ExteriorAlgebra s}).map (ExteriorAlgebra.map f.toLinearMap).toLinearMap =
         span R {b.ExteriorAlgebra s} ↔
@@ -152,6 +153,7 @@ theorem map_span_exteriorAlgebra_eq_iff (f : M ≃ₗ[R] M) :
 
 /-- Stabilizing a coordinate summand is equivalent to stabilizing its top exterior line in the
 corresponding exterior power. This is the form used for finite-dimensional representations. -/
+@[simp↓]
 theorem map_span_exteriorPower_eq_iff {n : ℕ} (t : Set.powersetCard I n)
     (f : M ≃ₗ[R] M) :
     (span R {b.exteriorPower n t}).map (exteriorPower.map n f.toLinearMap) =
