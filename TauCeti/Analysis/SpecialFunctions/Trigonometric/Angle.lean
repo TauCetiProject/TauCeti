@@ -29,7 +29,7 @@ angles of the same sign, the difference counterpart of Mathlib's `toReal_add_of_
   exactly when they are equal in `Real.Angle`.
 * `Real.Angle.toReal_sub_of_sign_eq`: for angles of the same sign, the subtracted one not `π`,
   `toReal` of the difference is the difference of the `toReal`s.
-* `Real.Angle.sign_sub_eq_one_iff_toReal_lt_of_sign_eq`: for angles of the same nonzero sign, the
+* `Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq`: for angles of the same nonzero sign, the
   difference has positive sign exactly when the representatives increase.
 -/
 
@@ -63,7 +63,7 @@ theorem _root_.Real.Angle.toReal_sub_of_sign_eq {θ ψ : Real.Angle} (hψ : ψ �
 
 /-- For two angles of the same nonzero sign, their difference has positive sign exactly when their
 representatives are in increasing order. -/
-theorem _root_.Real.Angle.sign_sub_eq_one_iff_toReal_lt_of_sign_eq {θ ψ : Real.Angle}
+theorem _root_.Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq {θ ψ : Real.Angle}
     (hs : θ.sign = ψ.sign) (h0 : θ.sign ≠ 0) : (ψ - θ).sign = 1 ↔ θ.toReal < ψ.toReal := by
   rw [← Real.Angle.toReal_mem_Ioo_iff_sign_pos,
     Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 h0).2 hs.symm, Set.mem_Ioo,

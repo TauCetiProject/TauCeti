@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Euclidean.Angle.Oriented.Basic
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 
 /-!
-# Oriented angles between three vectors with positive sign
+# Oriented angles between three vectors of a common nonzero sign
 
 For vectors `x`, `y`, `z` of an oriented real inner product space of dimension two such that
 `y` and `z` lie on the same open side of the line through `x` — their oriented angles from `x`
@@ -17,8 +17,8 @@ have the same nonzero sign — Mathlib's `Orientation.oangle_sub_left` gives
 `oangle y z = oangle x z - oangle x y`, and this identity holds for the real representatives in
 `(-π, π]` as well (`Orientation.oangle_toReal_sub_of_sign_eq`, from
 `Real.Angle.toReal_sub_of_sign_eq`). Consequently the real angles from `x` add
-(`Orientation.oangle_toReal_add_of_sign_eq`), and the sign of `oangle y z` is the order of the
-real angles of `y` and `z` measured from `x`
+(`Orientation.oangle_toReal_add_of_sign_eq`), and `oangle y z` has positive sign exactly when the
+real angle of `y` from `x` is smaller than that of `z`
 (`Orientation.oangle_sign_eq_one_iff_toReal_lt_of_sign_eq`).
 -/
 
@@ -56,6 +56,6 @@ theorem oangle_sign_eq_one_iff_toReal_lt_of_sign_eq {x y z : V}
     (o.oangle y z).sign = 1 ↔ (o.oangle x y).toReal < (o.oangle x z).toReal := by
   rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_ne_zero h0)
     (o.right_ne_zero_of_oangle_sign_ne_zero h0) (o.right_ne_zero_of_oangle_sign_ne_zero (hs ▸ h0))]
-  exact Real.Angle.sign_sub_eq_one_iff_toReal_lt_of_sign_eq hs h0
+  exact Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq hs h0
 
 end Orientation
