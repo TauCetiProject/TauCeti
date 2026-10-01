@@ -16,10 +16,10 @@ import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 The eigenvalue function of a joint eigenvector of a monoid-hom representation
 `ρ : G →* Module.End K V` is a character: it maps `1` to `1`, is multiplicative, and, for
 a group, valued in units, assembling into `unitHomOfJointEigenvector : G →* Kˣ`. This much
-needs no division — a nonzero vector cancels over a commutative domain acting torsion-freely,
-and on a group multiplicativity exhibits the inverse of `χ g` as `χ g⁻¹`. This
-yields the simultaneous-diagonalization toolkit for a commuting family of semisimple
-endomorphisms: the joint eigenspaces are supremum-independent, they span (over an
+needs no division — a nonzero vector cancels over a commutative ring without zero divisors
+acting torsion-freely, and on a group multiplicativity exhibits the inverse of `χ g` as
+`χ g⁻¹`. This yields the simultaneous-diagonalization toolkit for a commuting family of
+semisimple endomorphisms: the joint eigenspaces are supremum-independent, they span (over an
 algebraically closed field, in finite dimension), and every invariant submodule is the
 supremum of its intersections with them.
 
@@ -46,9 +46,9 @@ components of `M_k(Γ₁(N))`.
   independent (with no further hypotheses), exhaust the space when semisimple, and
   decompose every invariant submodule — with the character-indexed forms (`…_unitHom…`)
   for group representations.
-* `finite_nonzeroJointWeights`, `natCard_nonzeroJointWeights_le_finrank`: a finite-dimensional
-  representation has finitely many nonzero joint weights, with their number bounded by its
-  dimension.
+* `finite_nonzeroJointWeights`, `natCard_nonzeroJointWeights_le_finrank`: a representation on a
+  finite module over a domain has finitely many nonzero joint weights, with their number bounded
+  by its rank.
 * `iSup_iInf_eigenspace_unitHom_eq_top_of_commGroup`,
   `iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup`: for a finite commutative `G`
   with `[HasEnoughRootsOfUnity K (Monoid.exponent G)]` and `IsUnit (Nat.card G : K)`, the
@@ -61,19 +61,11 @@ public section
 
 noncomputable section
 
-open Polynomial
+namespace TauCeti
 
 variable {G K V : Type*} [AddCommGroup V]
 
-/-! ### Eigenvalues of a joint eigenvector
-
-Over a commutative domain acting torsion-freely, so that a nonzero vector cancels.
--/
-
-/-! ### The restriction bridge
-
-Needs only the ring and module structure that `Submodule.inf_genEigenspace` uses.
--/
+/-! ### The restriction bridge -/
 
 section BridgeScalars
 
@@ -95,22 +87,19 @@ theorem _root_.Submodule.inf_iInf_eigenspace_of_forall_mapsTo {ι : Type*}
 
 end BridgeScalars
 
-section RingScalars
+/-! ### Eigenvalues of a joint eigenvector
+
+Over a commutative ring with cancellation acting torsion-freely, so that a nonzero vector
+cancels.
+-/
+
+section CancelScalars
 
 variable [CommRing K] [IsCancelMulZero K] [Module K V] [Module.IsTorsionFree K V]
 
-omit [IsCancelMulZero K] in
-/-- The joint eigenspaces of **any** family of endomorphisms, indexed by their eigenvalue
-functions, are supremum-independent — no commutation and no semisimplicity. A single
-endomorphism has independent eigenspaces (`Module.End.eigenspaces_iSupIndep`), and pointwise
-infima of independent families are independent (`iSupIndep.iInf`). -/
-lemma iSupIndep_iInf_eigenspace [IsDomain K] {ι : Type*} (f : ι → Module.End K V) :
-    iSupIndep fun χ : ι → K ↦ ⨅ i, (f i).eigenspace (χ i) :=
-  iSupIndep.iInf (fun i ↦ (f i).eigenspace) fun i ↦ (f i).eigenspaces_iSupIndep
+section MulOne
 
-section Monoid
-
-variable [Monoid G]
+variable [MulOne G]
 
 /-- If `v ≠ 0` is a joint eigenvector of a monoid-hom representation
 `ρ : G →* Module.End K V` with eigenvalues `χ g`, then the eigenvalue at the
@@ -133,42 +122,34 @@ lemma eigenvalue_mul_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G �
   rw [← h, Module.End.mul_apply, Module.End.mem_eigenspace_iff.mp (hv_mem g₂), map_smul,
     Module.End.mem_eigenspace_iff.mp (hv_mem g₁), smul_smul, mul_comm (χ g₂) (χ g₁)]
 
-end Monoid
+end MulOne
 
 section Group
 
 variable [Group G]
 
-/-- The eigenvalues of a nonzero joint eigenvector of a group representation are
-nonzero: `χ g · χ g⁻¹ = χ 1 = 1`. -/
-lemma eigenvalue_ne_zero_of_jointEigenvector [Nontrivial K]
-    (ρ : G →* Module.End K V) (χ : G → K) (v : V)
-    (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) (g : G) :
-    χ g ≠ 0 :=
-  left_ne_zero_of_mul_eq_one (b := χ g⁻¹) (by
-    rw [← eigenvalue_mul_of_jointEigenvector ρ χ v hv hv_mem, mul_inv_cancel,
-      eigenvalue_one_of_jointEigenvector ρ χ v hv hv_mem])
-
 /-- Given a joint eigenvector `v ≠ 0` for a monoid-hom representation
 `ρ : G →* Module.End K V` of a group `G`, the eigenvalue function `χ : G → K`
 factors through a monoid homomorphism `G →* Kˣ`. -/
 def unitHomOfJointEigenvector (ρ : G →* Module.End K V) (χ : G → K) (v : V)
-    (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) : G →* Kˣ where
-  -- multiplicativity supplies the inverse outright: `χ g * χ g⁻¹ = χ 1 = 1`
-  toFun g :=
-    ⟨χ g, χ g⁻¹,
-      by rw [← eigenvalue_mul_of_jointEigenvector ρ χ v hv hv_mem, mul_inv_cancel,
-          eigenvalue_one_of_jointEigenvector ρ χ v hv hv_mem],
-      by rw [← eigenvalue_mul_of_jointEigenvector ρ χ v hv hv_mem, inv_mul_cancel,
-          eigenvalue_one_of_jointEigenvector ρ χ v hv hv_mem]⟩
-  map_one' := Units.ext (eigenvalue_one_of_jointEigenvector ρ χ v hv hv_mem)
-  map_mul' g₁ g₂ :=
-    Units.ext (eigenvalue_mul_of_jointEigenvector ρ χ v hv hv_mem g₁ g₂)
+    (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) : G →* Kˣ :=
+  MonoidHom.toHomUnits
+    { toFun := χ
+      map_one' := eigenvalue_one_of_jointEigenvector ρ χ v hv hv_mem
+      map_mul' := eigenvalue_mul_of_jointEigenvector ρ χ v hv hv_mem }
 
 @[simp]
 lemma unitHomOfJointEigenvector_apply (ρ : G →* Module.End K V) (χ : G → K)
     (v : V) (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) (g : G) :
     ((unitHomOfJointEigenvector ρ χ v hv hv_mem g) : K) = χ g := (rfl)
+
+/-- The eigenvalues of a nonzero joint eigenvector of a group representation are
+nonzero. -/
+lemma eigenvalue_ne_zero_of_jointEigenvector [Nontrivial K]
+    (ρ : G →* Module.End K V) (χ : G → K) (v : V)
+    (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) (g : G) :
+    χ g ≠ 0 := by
+  simpa using (unitHomOfJointEigenvector ρ χ v hv hv_mem g).ne_zero
 
 /-- If the joint eigenspace of an eigenvalue function `χ` of a group representation is
 nonzero, then `χ` is (the underlying function of) a character `G →* Kˣ`. -/
@@ -178,24 +159,77 @@ lemma exists_unitHom_of_iInf_eigenspace_ne_bot {ρ : G →* Module.End K V}
   obtain ⟨v, hv_mem, hv_ne⟩ := (Submodule.ne_bot_iff _).mp hχ
   exact ⟨unitHomOfJointEigenvector ρ χ v hv_ne ((Submodule.mem_iInf _).mp hv_mem), rfl⟩
 
+/-- A family of submodules lying in the joint eigenspaces of a group representation has the
+same supremum over the characters `G →* Kˣ` as over all eigenvalue functions `G → K`. -/
+private lemma iSup_unitHom_eq_iSup {ρ : G →* Module.End K V}
+    (F : (G → K) → Submodule K V) (hF : ∀ χ, F χ ≤ ⨅ g, (ρ g).eigenspace (χ g)) :
+    ⨆ χ₀ : G →* Kˣ, F (fun g ↦ χ₀ g) = ⨆ χ, F χ := by
+  refine le_antisymm (iSup_le fun χ₀ ↦ le_iSup F _) (iSup_le fun χ ↦ ?_)
+  by_cases hχ : F χ = ⊥
+  · simp [hχ]
+  · obtain ⟨χ₀, rfl⟩ := exists_unitHom_of_iInf_eigenspace_ne_bot (ρ := ρ)
+      fun h ↦ hχ (eq_bot_iff.mpr (h ▸ hF χ))
+    exact le_iSup (fun ψ : G →* Kˣ ↦ F fun g ↦ ψ g) χ₀
+
 end Group
 
-end RingScalars
+end CancelScalars
+
+/-! ### Independence of joint eigenspaces
+
+Over a commutative domain acting torsion-freely.
+-/
+
+section DomainScalars
+
+variable [CommRing K] [IsDomain K] [Module K V] [Module.IsTorsionFree K V]
+
+/-- The joint eigenspaces of **any** family of endomorphisms, indexed by their eigenvalue
+functions, are supremum-independent — no commutation and no semisimplicity. -/
+lemma iSupIndep_iInf_eigenspace {ι : Type*} (f : ι → Module.End K V) :
+    iSupIndep fun χ : ι → K ↦ ⨅ i, (f i).eigenspace (χ i) :=
+  iSupIndep.iInf (fun i ↦ (f i).eigenspace) fun i ↦ (f i).eigenspaces_iSupIndep
+
+variable [MulOne G] {ρ : G →* Module.End K V}
+
+/-- **Character-indexed independence** of the joint eigenspaces, for any representation. -/
+lemma iSupIndep_iInf_eigenspace_unitHom :
+    iSupIndep fun χ₀ : G →* Kˣ ↦ ⨅ g, (ρ g).eigenspace (χ₀ g) :=
+  (iSupIndep_iInf_eigenspace (fun g ↦ ρ g)).comp
+    fun _ _ h ↦ MonoidHom.ext fun g ↦ Units.ext (congr_fun h g)
+
+/-- A representation on a finite module has only finitely many characters with nonzero joint
+weight space. -/
+instance finite_nonzeroJointWeights [Module.Finite K V] (ρ : G →* Module.End K V) :
+    Finite {χ : G →* Kˣ // (⨅ g : G, (ρ g).eigenspace (χ g)) ≠ ⊥} :=
+  let _ := iSupIndep_iInf_eigenspace_unitHom (ρ := ρ).fintypeNeBotOfFiniteDimensional
+  inferInstance
+
+/-- The number of characters with nonzero joint weight space in a representation on a finite
+module is bounded by the rank of the module. -/
+theorem natCard_nonzeroJointWeights_le_finrank [Module.Finite K V]
+    (ρ : G →* Module.End K V) :
+    Nat.card {χ : G →* Kˣ // (⨅ g : G, (ρ g).eigenspace (χ g)) ≠ ⊥} ≤
+      Module.finrank K V := by
+  let _ := iSupIndep_iInf_eigenspace_unitHom (ρ := ρ).fintypeNeBotOfFiniteDimensional
+  rw [Nat.card_eq_fintype_card]
+  exact iSupIndep_iInf_eigenspace_unitHom.subtype_ne_bot_le_finrank
+
+end DomainScalars
 
 /-! ### Simultaneous diagonalization
 
-The remaining results need a field: independence goes through the generalized eigenspaces,
-and the spanning statements are the algebraically-closed finite-dimensional ones.
+The spanning statements for semisimple families, over an algebraically closed field.
 -/
 
 section FieldScalars
 
-variable [Field K] [Module K V]
+variable [Field K] [IsAlgClosed K] [Module K V]
 
 /-- Over an algebraically closed field and in finite dimension, the joint eigenspaces of a
 pairwise-commuting family of semisimple endomorphisms exhaust the space. -/
-lemma iSup_iInf_eigenspace_eq_top_of_isSemisimple [IsAlgClosed K]
-    [FiniteDimensional K V] {ι : Type*} (f : ι → Module.End K V)
+lemma iSup_iInf_eigenspace_eq_top_of_isSemisimple [FiniteDimensional K V] {ι : Type*}
+    (f : ι → Module.End K V)
     (hcomm : Pairwise fun i j ↦ Commute (f i) (f j)) (hss : ∀ i, (f i).IsSemisimple) :
     (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) = ⊤ := by
   have heq (i : ι) (μ : K) : (f i).maxGenEigenspace μ = (f i).eigenspace μ :=
@@ -208,108 +242,52 @@ lemma iSup_iInf_eigenspace_eq_top_of_isSemisimple [IsAlgClosed K]
 endomorphisms whose **restrictions** to it are semisimple is the supremum of its
 intersections with the joint eigenspaces: the restricted family diagonalizes, with no
 assumption on the ambient operators. -/
-lemma iSup_inf_iInf_eigenspace_of_invariant [IsAlgClosed K] {ι : Type*}
-    (f : ι → Module.End K V)
+lemma iSup_inf_iInf_eigenspace_of_invariant {ι : Type*} (f : ι → Module.End K V)
     (p : Submodule K V) [FiniteDimensional K p] (hp : ∀ i, ∀ x ∈ p, f i x ∈ p)
     (hcomm : Pairwise fun i j ↦ Commute ((f i).restrict (hp i)) ((f j).restrict (hp j)))
     (hss : ∀ i, Module.End.IsSemisimple ((f i).restrict (hp i))) :
     (⨆ χ : ι → K, p ⊓ ⨅ i, (f i).eigenspace (χ i)) = p := by
   simp_rw [fun χ ↦ Submodule.inf_iInf_eigenspace_of_forall_mapsTo (f := f) p hp χ,
-    ← Submodule.map_iSup]
-  suffices h_restrict_top :
-      (⨆ χ : ι → K, ⨅ i,
-        Module.End.eigenspace ((f i).restrict (hp i)) (χ i)) = ⊤ by
-    rw [h_restrict_top, Submodule.map_top, Submodule.range_subtype]
-  exact iSup_iInf_eigenspace_eq_top_of_isSemisimple (fun i ↦ (f i).restrict (hp i))
-    hcomm hss
-
-section CharHom
+    ← Submodule.map_iSup,
+    iSup_iInf_eigenspace_eq_top_of_isSemisimple (fun i ↦ (f i).restrict (hp i)) hcomm hss,
+    Submodule.map_top, Submodule.range_subtype]
 
 variable [Group G] {ρ : G →* Module.End K V}
 
 /-- **Character-indexed spanning**: for a commuting semisimple representation of a group
 over an algebraically closed field, in finite dimension, the joint eigenspaces indexed by
-characters `G →* Kˣ` exhaust the space — eigenvalue functions that are not
-characters contribute `⊥`. -/
-lemma iSup_iInf_eigenspace_unitHom_eq_top [IsAlgClosed K] [FiniteDimensional K V]
+characters `G →* Kˣ` exhaust the space. -/
+lemma iSup_iInf_eigenspace_unitHom_eq_top [FiniteDimensional K V]
     (hcomm : Pairwise fun g₁ g₂ ↦ Commute (ρ g₁) (ρ g₂))
     (hss : ∀ g, (ρ g).IsSemisimple) :
-    (⨆ χ₀ : G →* Kˣ, ⨅ g, (ρ g).eigenspace (χ₀ g)) = ⊤ := by
-  have h := iSup_iInf_eigenspace_eq_top_of_isSemisimple (fun g ↦ ρ g) hcomm hss
-  refine le_antisymm le_top (h ▸ iSup_le fun χ ↦ ?_)
-  by_cases hχ : (⨅ g, (ρ g).eigenspace (χ g)) = ⊥
-  · simp only [hχ, bot_le]
-  · obtain ⟨χ₀, rfl⟩ := exists_unitHom_of_iInf_eigenspace_ne_bot hχ
-    exact le_iSup (fun ψ : G →* Kˣ ↦ ⨅ g, (ρ g).eigenspace (ψ g)) χ₀
-
-/-- **Character-indexed independence** of the joint eigenspaces, for any representation. -/
-lemma iSupIndep_iInf_eigenspace_unitHom :
-    iSupIndep fun χ₀ : G →* Kˣ ↦ ⨅ g, (ρ g).eigenspace (χ₀ g) :=
-  (iSupIndep_iInf_eigenspace (fun g ↦ ρ g)).comp
-    fun _ _ h ↦ MonoidHom.ext fun g ↦ Units.ext (congr_fun h g)
-
-/-- A finite-dimensional representation has only finitely many characters with nonzero joint
-weight space. Distinct character-indexed joint eigenspaces are independent, so a
-finite-dimensional space can contain only finitely many nonzero ones. -/
-noncomputable instance finite_nonzeroJointWeights [FiniteDimensional K V]
-    (ρ : G →* Module.End K V) :
-    Finite {χ : G →* Kˣ // (⨅ g : G, (ρ g).eigenspace (χ g)) ≠ ⊥} := by
-  exact @Finite.of_fintype _
-    iSupIndep_iInf_eigenspace_unitHom.fintypeNeBotOfFiniteDimensional
-
-/-- The number of characters with nonzero joint weight space in a finite-dimensional
-representation is bounded by the dimension of the representation. -/
-theorem natCard_nonzeroJointWeights_le_finrank [FiniteDimensional K V]
-    (ρ : G →* Module.End K V) :
-    Nat.card {χ : G →* Kˣ // (⨅ g : G, (ρ g).eigenspace (χ g)) ≠ ⊥} ≤
-      Module.finrank K V := by
-  let _ : Fintype {χ : G →* Kˣ // (⨅ g : G, (ρ g).eigenspace (χ g)) ≠ ⊥} :=
-    iSupIndep_iInf_eigenspace_unitHom.fintypeNeBotOfFiniteDimensional
-  rw [Nat.card_eq_fintype_card]
-  exact iSupIndep_iInf_eigenspace_unitHom.subtype_ne_bot_le_finrank
+    (⨆ χ₀ : G →* Kˣ, ⨅ g, (ρ g).eigenspace (χ₀ g)) = ⊤ :=
+  (iSup_unitHom_eq_iSup (fun χ ↦ ⨅ g, (ρ g).eigenspace (χ g)) fun _ ↦ le_rfl).trans
+    (iSup_iInf_eigenspace_eq_top_of_isSemisimple (fun g ↦ ρ g) hcomm hss)
 
 /-- **Character-indexed decomposition of a finite-dimensional invariant submodule**,
 assuming only that the restricted representation is semisimple. -/
-lemma iSup_inf_iInf_eigenspace_unitHom_of_invariant [IsAlgClosed K]
+lemma iSup_inf_iInf_eigenspace_unitHom_of_invariant
     (p : Submodule K V) [FiniteDimensional K p] (hp : ∀ g, ∀ x ∈ p, ρ g x ∈ p)
     (hcomm : Pairwise fun g₁ g₂ ↦
       Commute ((ρ g₁).restrict (hp g₁)) ((ρ g₂).restrict (hp g₂)))
     (hss : ∀ g, Module.End.IsSemisimple ((ρ g).restrict (hp g))) :
-    (⨆ χ₀ : G →* Kˣ, p ⊓ ⨅ g, (ρ g).eigenspace (χ₀ g)) = p := by
-  have h := iSup_inf_iInf_eigenspace_of_invariant (fun g ↦ ρ g) p hp hcomm hss
-  refine le_antisymm (iSup_le fun _ ↦ inf_le_left) ?_
-  conv_lhs => rw [← h]
-  refine iSup_le fun χ ↦ ?_
-  by_cases hχ : p ⊓ (⨅ g, (ρ g).eigenspace (χ g)) = ⊥
-  · simp only [hχ, bot_le]
-  · obtain ⟨χ₀, rfl⟩ := exists_unitHom_of_iInf_eigenspace_ne_bot
-      (fun h_bot ↦ hχ (by rw [h_bot, inf_bot_eq]))
-    exact le_iSup (fun ψ : G →* Kˣ ↦ p ⊓ ⨅ g, (ρ g).eigenspace (ψ g)) χ₀
-
-end CharHom
-
+    (⨆ χ₀ : G →* Kˣ, p ⊓ ⨅ g, (ρ g).eigenspace (χ₀ g)) = p :=
+  (iSup_unitHom_eq_iSup (fun χ ↦ p ⊓ ⨅ g, (ρ g).eigenspace (χ g)) fun _ ↦ inf_le_right).trans
+    (iSup_inf_iInf_eigenspace_of_invariant (fun g ↦ ρ g) p hp hcomm hss)
 
 end FieldScalars
-
-/-! ### Fourier decomposition
-
-Needs only a commutative domain in which `Nat.card G` is invertible.
--/
-
-section DomainScalars
-
-variable [CommRing K] [IsDomain K] [Module K V]
-
-section FourierDecomposition
 
 /-! ### Unconditional decomposition for finite commutative groups
 
 For a finite commutative group `G` acting through `ρ : G →* Module.End K V` on any module
-over a commutative domain with enough roots of unity — with no finite-dimensionality
-assumption — the classical character projectors `|G|⁻¹ • ∑ d, χ(d)⁻¹ • ρ d` decompose every
-vector into joint eigenvectors, so the joint eigenspaces indexed by `G →* Kˣ` span. -/
+over a commutative domain with enough roots of unity in which `Nat.card G` is invertible — with
+no finite-dimensionality assumption — the classical character projectors
+`|G|⁻¹ • ∑ d, χ(d)⁻¹ • ρ d` decompose every vector into joint eigenvectors, so the joint
+eigenspaces indexed by `G →* Kˣ` span. -/
 
-variable [CommGroup G] [Finite G]
+section FourierDecomposition
+
+variable [CommRing K] [IsDomain K] [Module K V] [CommGroup G] [Finite G]
 
 -- The averaging sums below need a `Fintype G`, and it has to stay file-local: as a global
 -- instance (even a `private` one, which still ends up in the environment the linters see) it
@@ -322,67 +300,30 @@ open Finset
 variable {ρ : G →* Module.End K V}
 
 /-- The Fourier projector for `χ₀`, applied to a vector. -/
-private noncomputable def fourierComponent (χ₀ : G →* Kˣ) (v : V) : V :=
+private def fourierComponent (χ₀ : G →* Kˣ) (v : V) : V :=
   Ring.inverse (Nat.card G : K) • ∑ d : G, (((χ₀ d)⁻¹ : Kˣ) : K) • ρ d v
 
 variable (ρ) in
--- the projector lands in the joint eigenspace, by reindexing the averaged sum
 omit [IsDomain K] in
 private lemma fourierComponent_mem (χ₀ : G →* Kˣ) (v : V) (g : G) :
     fourierComponent (ρ := ρ) χ₀ v ∈ (ρ g).eigenspace (χ₀ g) := by
   rw [Module.End.mem_eigenspace_iff, fourierComponent, map_smul,
     smul_comm ((χ₀ g : Kˣ) : K) (Ring.inverse (Nat.card G : K))]
   congr 1
-  rw [map_sum]
-  calc ∑ d : G, ρ g ((((χ₀ d)⁻¹ : Kˣ) : K) • ρ d v)
-      = ∑ d : G, (((χ₀ d)⁻¹ : Kˣ) : K) • ρ (g * d) v := by
-        refine Finset.sum_congr rfl fun d _ ↦ ?_
-        rw [map_smul, map_mul, Module.End.mul_apply]
-    _ = ∑ e : G, (((χ₀ (g⁻¹ * e))⁻¹ : Kˣ) : K) • ρ e v := by
-        exact Fintype.sum_equiv (Equiv.mulLeft g) _ _ fun d ↦ by simp
-    _ = (χ₀ g : K) • ∑ e : G, (((χ₀ e)⁻¹ : Kˣ) : K) • ρ e v := by
-        rw [smul_sum]
-        refine Finset.sum_congr rfl fun e _ ↦ ?_
-        rw [smul_smul]
-        congr 1
-        rw [map_mul, map_inv, mul_inv, inv_inv, Units.val_mul]
+  rw [map_sum, smul_sum]
+  exact Fintype.sum_equiv (Equiv.mulLeft g) _ _ fun d ↦ by
+    simp [smul_smul, mul_comm]
 
 variable [HasEnoughRootsOfUnity K (Monoid.exponent G)]
 
--- every vector is the sum of its projections, by second orthogonality
 private lemma sum_fourierComponent (hunit : IsUnit (Nat.card G : K)) (v : V) :
     ∑ χ₀ : G →* Kˣ, fourierComponent (ρ := ρ) χ₀ v = v := by
-  unfold fourierComponent
-  rw [← smul_sum, Finset.sum_comm]
-  have hcol : ∀ d : G, ∑ χ₀ : G →* Kˣ, (((χ₀ d)⁻¹ : Kˣ) : K) • ρ d v =
-      (∑ χ₀ : G →* Kˣ, ((χ₀ d⁻¹ : Kˣ) : K)) • ρ d v := by
-    intro d
-    rw [Finset.sum_smul]
-    exact Finset.sum_congr rfl fun χ₀ _ ↦ by rw [map_inv]
-  rw [Finset.sum_congr rfl fun d _ ↦ hcol d]
-  have hsplit : ∀ d : G, d ≠ 1 → (∑ χ₀ : G →* Kˣ, ((χ₀ d⁻¹ : Kˣ) : K)) • ρ d v = 0 := by
-    intro d hd
-    rw [CommGroup.sum_monoidHom_apply_eq_zero_of_ne_one (M := K) (by simpa using hd), zero_smul]
-  rw [Finset.sum_eq_single 1 (fun d _ hd ↦ hsplit d hd) (by simp)]
-  have hone : ∀ χ₀ : G →* Kˣ, ((χ₀ (1 : G)⁻¹ : Kˣ) : K) = 1 := by simp
-  rw [Finset.sum_congr rfl fun χ₀ _ ↦ hone χ₀]
-  have hcard : (∑ _χ₀ : G →* Kˣ, (1 : K)) = (Nat.card G : K) := by
-    rw [Finset.sum_const, card_univ, nsmul_eq_mul, mul_one, ← Nat.card_eq_fintype_card,
-      CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity G K]
-  rw [hcard, map_one, Module.End.one_apply, smul_smul,
+  classical
+  simp_rw [fourierComponent, ← smul_sum]
+  rw [sum_comm]
+  simp_rw [← sum_smul, ← map_inv, CommGroup.sum_monoidHom_apply_eq_ite, inv_eq_one, ite_smul,
+    zero_smul, sum_ite_eq', mem_univ, ite_true, map_one, Module.End.one_apply, smul_smul,
     Ring.inverse_mul_cancel _ hunit, one_smul]
-
-/-- **Unconditional character-indexed spanning** for a finite commutative group acting on
-an arbitrary module over a commutative domain with enough roots of unity: the classical
-character projectors decompose every vector, with no finite-dimensionality or
-semisimplicity hypotheses. -/
-theorem iSup_iInf_eigenspace_unitHom_eq_top_of_commGroup
-    (hcard : IsUnit (Nat.card G : K)) :
-    (⨆ χ₀ : G →* Kˣ, ⨅ g, (ρ g).eigenspace (χ₀ g)) = ⊤ := by
-  refine top_unique fun v _ ↦ ?_
-  rw [← sum_fourierComponent (ρ := ρ) hcard v]
-  exact Submodule.sum_mem _ fun χ₀ _ ↦ Submodule.mem_iSup_of_mem χ₀
-    (Submodule.mem_iInf _ |>.mpr fun g ↦ fourierComponent_mem ρ χ₀ v g)
 
 /-- **Unconditional decomposition of an invariant submodule**: the character projectors
 preserve every `ρ`-invariant submodule, so it is the supremum of its intersections with
@@ -399,8 +340,18 @@ theorem iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
   exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun d _ ↦
     Submodule.smul_mem _ _ (hp d v hv))
 
+/-- **Unconditional character-indexed spanning** for a finite commutative group acting on
+an arbitrary module over a commutative domain with enough roots of unity: the classical
+character projectors decompose every vector, with no finite-dimensionality or
+semisimplicity hypotheses. -/
+theorem iSup_iInf_eigenspace_unitHom_eq_top_of_commGroup
+    (hcard : IsUnit (Nat.card G : K)) :
+    (⨆ χ₀ : G →* Kˣ, ⨅ g, (ρ g).eigenspace (χ₀ g)) = ⊤ := by
+  simpa using iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup (ρ := ρ) hcard ⊤
+    fun _ _ _ ↦ Submodule.mem_top
+
 end FourierDecomposition
 
-end DomainScalars
+end TauCeti
 
 end
