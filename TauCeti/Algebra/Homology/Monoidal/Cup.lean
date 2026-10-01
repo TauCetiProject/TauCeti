@@ -115,6 +115,13 @@ private lemma extendCochain_comp {A' : ChainComplex C ℕ} (g : A' ⟶ A) {p : �
     simp [extendCochain_self]
   · simp [extendCochain_of_ne _ h]
 
+private lemma extendCochain_comp_right {M' : C} {p : ℕ} (φ : A.X p ⟶ M) (g : M ⟶ M') (i : ℕ) :
+    extendCochain (φ ≫ g) i = extendCochain φ i ≫ g := by
+  by_cases h : i = p
+  · subst h
+    simp [extendCochain_self]
+  · simp [extendCochain_of_ne _ h]
+
 end Extend
 
 section Tensor
@@ -234,6 +241,24 @@ lemma tensorCochain_add_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ ψ' : B.X q ⟶
   rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.tensor_add, Preadditive.add_comp]
+
+/-- Postcomposing the tensor product of cochains with `g : P ⟶ P'` is the tensor product of the
+same cochains along the pairing `μ ≫ g`. -/
+@[reassoc]
+lemma tensorCochain_comp {P' : C} (g : P ⟶ P') {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
+    (n : ℕ) : tensorCochain μ φ ψ n ≫ g = tensorCochain (μ ≫ g) φ ψ n := by
+  refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
+  rw [ιMapBifunctor_eq_ιTensorObj, ιTensorObj_tensorCochain_extend_assoc,
+    ιTensorObj_tensorCochain_extend]
+
+/-- The tensor product of cochains along the pairing `(M ◁ g) ≫ μ` is the tensor product along
+`μ` with the second cochain postcomposed with `g`. -/
+lemma tensorCochain_whiskerLeft_comp {N' : C} (g : N ⟶ N') (μ' : M ⊗ N' ⟶ P) {p q : ℕ}
+    (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
+    tensorCochain ((M ◁ g) ≫ μ') φ ψ n = tensorCochain μ' φ (ψ ≫ g) n := by
+  refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
+  rw [ιMapBifunctor_eq_ιTensorObj, ιTensorObj_tensorCochain_extend,
+    ιTensorObj_tensorCochain_extend, extendCochain_comp_right, tensorHom_comp_whiskerLeft_assoc]
 
 variable {k : Type*} [Semiring k] [Linear k C] [MonoidalLinear k C]
 
