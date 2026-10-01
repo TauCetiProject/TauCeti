@@ -719,6 +719,87 @@ class RoadmapMatrixTest(unittest.TestCase):
         self.assertEqual(matrix["merges"]["axis"], matrix["reviews"]["axis"])
 
 
+class CategoryGroupingTest(unittest.TestCase):
+    """With a TauCetiRoadmap checkout, the who-works-where grids count each PR under the arXiv
+    category of the roadmap it advances, as declared in that roadmap's metadata.toml."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        for base, name, meta in (("TauCetiRoadmap", "Primes", 'topic = "math.NT"\n'),
+                                 ("TauCetiRoadmap", "Forms", 'topic = "math.NT"\n'),
+                                 ("TauCetiRoadmap", "Curves", 'topic = "math.AG"\n'),
+                                 ("TauCetiRoadmap", "Bare", None),
+                                 ("TauCetiRoadmap", "Odd", 'topic = "<script>"\n'),
+                                 ("TauCetiRoadmap", "Broken", "topic =\n"),
+                                 ("Completed", "Finished", 'topic = "math.CO"\n'),
+                                 ("Completed", "Curves", 'topic = "math.NT"\n')):
+            d = root / base / name
+            d.mkdir(parents=True)
+            if meta is not None:
+                (d / "metadata.toml").write_text(meta)
+        self.root = root
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def labelled(self, number, author, area):
+        return {
+            "number": number, "author": author, "labels": [f"roadmap/{area}"],
+            "created_at": "2026-01-10T00:00:00Z", "merged_at": "2026-01-10T12:00:00Z",
+            "closed_at": None, "state": "MERGED", "is_draft": False, "events": [],
+        }
+
+    def test_categories_come_from_each_roadmap_s_metadata(self):
+        self.assertEqual(stats.roadmap_categories(self.root), {
+            "roadmap/Primes": "math.NT", "roadmap/Forms": "math.NT", "roadmap/Curves": "math.AG",
+            "roadmap/Finished": "math.CO",
+        })  # active Curves wins over the archived one; bad or missing metadata is left out
+
+    def test_no_checkout_means_no_categories(self):
+        self.assertEqual(stats.roadmap_categories(self.root / "missing"), {})
+
+    def test_prs_count_under_their_roadmap_s_category(self):
+        prs = [self.labelled(1, "alice", "Primes"), self.labelled(2, "alice", "Forms"),
+               self.labelled(3, "bob", "Curves"), self.labelled(4, "bob", "Bare")]
+        boards = [{"pr": 2, "user": "carol", "created_at": "2026-01-10T13:00:00Z"}]
+        matrix = stats.roadmap_matrix(prs, boards, date(2026, 1, 31),
+                                      column_of=stats.roadmap_categories(self.root))
+        self.assertEqual(matrix["grouping"], "category")
+        self.assertEqual(matrix["merges"]["counts"]["alice\tmath.NT"], 2)
+        self.assertEqual(matrix["merges"]["counts"]["bob\tmath.AG"], 1)
+        self.assertEqual(matrix["merges"]["counts"][f"bob\t{stats.UNSORTED_CATEGORY}"], 1)
+        self.assertEqual(matrix["reviews"]["counts"]["carol\tmath.NT"], 1)
+        self.assertEqual(matrix["columns"][0], "math.NT")
+        self.assertIn({"contributor": "alice", "category": "math.NT", "count": 2},
+                      matrix["exact"]["merges"])
+
+    def test_the_grid_is_labelled_by_category(self):
+        prs = [self.labelled(1, "alice", "Primes"), self.labelled(2, "bob", "Bare")]
+        matrix = stats.roadmap_matrix(prs, [], date(2026, 1, 31),
+                                      column_of=stats.roadmap_categories(self.root))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "heat.svg"
+            stats.render_roadmap_heatmap(path, "Grid", "merged PRs", matrix, "merges")
+            svg = path.read_text(encoding="utf-8")
+        ET.fromstring(svg)
+        self.assertIn(">math.NT</text>", svg)
+        self.assertIn(">Unsorted</text>", svg)
+        self.assertNotIn(stats.UNSORTED_CATEGORY, svg)
+        self.assertIn("per contributor per arXiv category", svg)
+
+    def test_generate_groups_by_category_given_a_checkout(self):
+        data = {"repo": "TauCetiProject/TauCeti", "fetched_at": "2026-01-31T23:00:00Z",
+                "prs": [self.labelled(1, "alice", "Primes")], "scoreboards": []}
+        with tempfile.TemporaryDirectory() as temporary:
+            out = Path(temporary)
+            metrics = stats.generate(data, out, history_days=30, roadmap_dir=self.root)
+            svg = (out / "merges-by-roadmap-and-contributor.svg").read_text(encoding="utf-8")
+        self.assertEqual(metrics["by_roadmap_and_contributor"]["grouping"], "category")
+        self.assertEqual(metrics["by_roadmap_and_contributor"]["roadmap_categories"]["roadmap/Primes"], "math.NT")
+        self.assertIn("Merged PRs by arXiv category and contributor", svg)
+
+
 class HeatBucketTest(unittest.TestCase):
     def test_the_top_bucket_covers_a_range(self):
         # Spacing the edges across the closed interval would land the last one exactly on the

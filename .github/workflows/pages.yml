@@ -214,6 +214,7 @@ jobs:
           # it fully before writing anything, so naming one path for both is safe.
           python3 scripts/pr_stats_graphs.py \
             --repo "${{ github.repository }}" \
+            --roadmap-dir /tmp/roadmap \
             --out-dir web/static_files \
             --since-data "$RUNNER_TEMP/pr-snapshot.json" \
             --dump-data "$RUNNER_TEMP/pr-snapshot.json" \

@@ -15,7 +15,9 @@ Generated files:
 * ``cumulative-merges-by-contributor.svg``;
 * ``cumulative-reviews-by-contributor.svg``;
 * ``merges-by-roadmap-and-contributor.svg`` and ``reviews-by-roadmap-and-contributor.svg``
-  — who works on which roadmap, over a trailing window;
+  — who works where, over a trailing window: by the arXiv category of the roadmap each PR
+  advances (``--roadmap-dir``, a TauCetiRoadmap checkout, whose roadmaps each declare one in
+  ``metadata.toml``), or by roadmap without one;
 * ``pr-stats.json`` — definitions, exact contributor totals, and plotted series.
 
 Contributor charts deliberately draw only the top N contributors plus one aggregate
@@ -38,6 +40,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from collections import Counter
 from datetime import date, datetime, time as day_time, timedelta, timezone
 from pathlib import Path
@@ -111,6 +114,12 @@ ROADMAP_INK = [TEXT, TEXT, BG, BG, BG]
 # rather than merely mislabelled.
 OTHER_ROADMAP = "other/roadmaps"
 OTHER_CONTRIBUTOR = "other/contributors"
+# The column of a PR whose roadmap declares no arXiv category, in the same sentinel namespace.
+UNSORTED_CATEGORY = "unsorted/category"
+# Columns when grouping by category: enough for every category in use (seventeen in 2026-10), so
+# no category is folded into "Other" merely for being small.
+CATEGORY_LIMIT = 20
+ARXIV_MATH_RE = re.compile(r"math\.[A-Z]{2}")
 # Minimum viewBox width for the grids. They are served at `width: 100%`, so a narrow viewBox is
 # scaled UP; matching the other cards keeps a sparse grid the same size on the page as a full one.
 REFERENCE_HEATMAP_WIDTH = 1500
@@ -820,12 +829,38 @@ def roadmap_of(labels: Iterable[str]) -> str | None:
     return areas[0] if len(areas) == 1 else None
 
 
+def roadmap_categories(roadmap_dir: Path) -> dict[str, str]:
+    """`roadmap/<Area>` -> the arXiv category that roadmap declares in its `metadata.toml`
+    (`topic = "math.NT"`), for the roadmaps under `TauCetiRoadmap/` and then `Completed/` of a
+    TauCetiRoadmap checkout; where a name is in both, the active roadmap's. A roadmap with no file,
+    an unreadable one or a value that is not a `math.XX` code is left out, and its PRs count as
+    unsorted. Never raises: a missing checkout gives an empty map."""
+    out: dict[str, str] = {}
+    for base in ("TauCetiRoadmap", "Completed"):
+        root = roadmap_dir / base
+        if not root.is_dir():
+            continue
+        for d in sorted(p for p in root.iterdir() if p.is_dir()):
+            try:
+                topic = tomllib.loads((d / "metadata.toml").read_text(encoding="utf-8")).get("topic")
+            except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
+                continue
+            if isinstance(topic, str) and ARXIV_MATH_RE.fullmatch(topic):
+                out.setdefault(f"{ROADMAP_PREFIX}{d.name}", topic)
+    return out
+
+
 def roadmap_matrix(
     prs: list[dict], scoreboards: list[dict], last_full_day: date,
     window_days: int = ROADMAP_WINDOW_DAYS, roadmap_limit: int = ROADMAP_LIMIT,
     contributor_limit: int = ROADMAP_CONTRIBUTOR_LIMIT,
+    column_of: dict[str, str] | None = None,
 ) -> dict:
     """Who merged and who reviewed, per roadmap, over the trailing window.
+
+    With `column_of` (a roadmap label -> arXiv category map, `roadmap_categories`) the columns are
+    categories instead: each PR counts under its roadmap's category, and a PR whose roadmap
+    declares none under UNSORTED_CATEGORY.
 
     Both slices are a local join over the snapshot this module already fetches: each PR record
     carries its author and its labels, and each scoreboard carries the PR it was posted on. No
@@ -845,6 +880,9 @@ def roadmap_matrix(
         return bool(stamp) and start <= utc_day(parse_dt(stamp)) <= end
 
     area_of_pr = {pr["number"]: roadmap_of(pr["labels"]) for pr in prs}
+    if column_of is not None:
+        area_of_pr = {number: (column_of.get(area, UNSORTED_CATEGORY) if area else None)
+                      for number, area in area_of_pr.items()}
 
     merges = Counter()
     for pr in prs:
@@ -878,6 +916,7 @@ def roadmap_matrix(
         return folded
 
     return {
+        "grouping": "roadmap" if column_of is None else "category",
         "window_days": window_days,
         "from": start.isoformat(),
         "to": end.isoformat(),
@@ -889,18 +928,19 @@ def roadmap_matrix(
         # the row totals keep the people, but not who did what where. Published as records
         # rather than as a composite key so no consumer has to know how the key was joined.
         "exact": {
-            "merges": _records(merges),
-            "reviews": _records(reviews),
+            "merges": _records(merges, "roadmap" if column_of is None else "category"),
+            "reviews": _records(reviews, "roadmap" if column_of is None else "category"),
         },
         "merges": _slice(fold(merges), columns, bundled, contributor_limit),
         "reviews": _slice(fold(reviews), columns, bundled, contributor_limit),
     }
 
 
-def _records(counts: Counter) -> list[dict]:
-    """One record per (contributor, roadmap) pair, ordered biggest first then by name."""
+def _records(counts: Counter, column: str = "roadmap") -> list[dict]:
+    """One record per (contributor, column) pair, ordered biggest first then by name; `column` names
+    what a column is (`roadmap`, or `category` when grouped by arXiv category)."""
     return [
-        {"contributor": who, "roadmap": area, "count": count}
+        {"contributor": who, column: area, "count": count}
         for (who, area), count in sorted(
             counts.items(), key=lambda item: (-item[1], item[0][0].casefold(), item[0][1]))
     ]
@@ -1231,12 +1271,20 @@ def render_roadmap_heatmap(
         return text[:head] + "…" + text[len(text) - (limit - 1 - head):]
 
     def column_label(area: str) -> str:
-        return (f"Other ({len(matrix['bundled'])})" if area == OTHER_ROADMAP
-                else clip(area[len(ROADMAP_PREFIX):], 20))
+        if area == OTHER_ROADMAP:
+            return f"Other ({len(matrix['bundled'])})"
+        if area == UNSORTED_CATEGORY:
+            return "Unsorted"
+        return clip(area[len(ROADMAP_PREFIX):] if area.startswith(ROADMAP_PREFIX) else area, 20)
 
     def row_label(who: str) -> str:
         return (f"Other ({data['omitted_contributors']:,})"
                 if who == OTHER_CONTRIBUTOR else clip(who, 24))
+
+    by_category = matrix.get("grouping") == "category"
+    per = "arXiv category" if by_category else "roadmap"
+    columns_are = ("arXiv categories (of the roadmaps the PRs advance)" if by_category
+                   else "roadmaps")
 
     left = 230
     cell_w, cell_h, gap = 74, 26, 2
@@ -1267,10 +1315,10 @@ def render_roadmap_heatmap(
         subtitle=[
             # Not `noun.capitalize()`, which lowercases the rest and turns "merged PRs" into
             # "Merged prs".
-            f"Count of {noun} per contributor per roadmap, "
+            f"Count of {noun} per contributor per {per}, "
             f"{matrix['from']}–{matrix['to']} ({matrix['window_days']} days)",
-            f"columns are the {len(matrix['columns'])} roadmaps with the most merges in that "
-            f"window; exact counts for every contributor and roadmap in JSON",
+            f"columns are the {len(matrix['columns'])} {columns_are} with the most merges in "
+            f"that window; exact counts for every contributor and {per} in JSON",
         ],
         css=f'.rowlab{{font-size:{css_px(width, 12.5)};text-anchor:end}}'
             f'.collab{{font-size:{css_px(width, 12)}}}'
@@ -1398,7 +1446,7 @@ def render_cumulative_contributors(
 def generate(
     data: dict, out_dir: Path, contributor_limit: int = 24,
     history_days: int = 90, max_review_cycles: int = 12,
-    as_of: datetime | None = None,
+    as_of: datetime | None = None, roadmap_dir: Path | None = None,
 ) -> dict:
     prs = data.get("prs") or []
     if not prs:
@@ -1444,7 +1492,16 @@ def generate(
         review_events, project_start, last_full_day, contributor_limit, snapshot,
     )
 
-    roadmaps = roadmap_matrix(prs, data.get("scoreboards") or [], last_full_day)
+    # The who-works-where grids: by arXiv category when there is a TauCetiRoadmap checkout to read
+    # the categories from, else by roadmap.
+    categories = roadmap_categories(roadmap_dir) if roadmap_dir is not None else None
+    roadmaps = roadmap_matrix(
+        prs, data.get("scoreboards") or [], last_full_day, column_of=categories,
+        **({"roadmap_limit": CATEGORY_LIMIT} if categories is not None else {}),
+    )
+    if categories is not None:
+        roadmaps["roadmap_categories"] = dict(sorted(categories.items()))
+    grid_by = "arXiv category" if categories is not None else "roadmap"
 
     metrics = {
         "schema_version": 1,
@@ -1492,11 +1549,11 @@ def generate(
         )
         render_roadmap_heatmap(
             staging / "merges-by-roadmap-and-contributor.svg",
-            "Merged PRs by roadmap and contributor", "merged PRs", roadmaps, "merges",
+            f"Merged PRs by {grid_by} and contributor", "merged PRs", roadmaps, "merges",
         )
         render_roadmap_heatmap(
             staging / "reviews-by-roadmap-and-contributor.svg",
-            "Reviews by roadmap and contributor", "reviews", roadmaps, "reviews",
+            f"Reviews by {grid_by} and contributor", "reviews", roadmaps, "reviews",
         )
         atomic_write(
             staging / "pr-stats.json",
@@ -1523,6 +1580,10 @@ def main() -> int:
     parser.add_argument("--contributor-limit", type=int, default=24)
     parser.add_argument("--history-days", type=int, default=90)
     parser.add_argument("--max-review-cycles", type=int, default=12)
+    parser.add_argument("--roadmap-dir", type=Path,
+                        help="a TauCetiRoadmap checkout: group the who-works-where grids by the "
+                             "arXiv category each roadmap declares in its metadata.toml, rather "
+                             "than by roadmap")
     args = parser.parse_args()
     if args.contributor_limit < 1 or args.history_days < 1 or args.max_review_cycles < 1:
         parser.error("numeric limits must be positive")
@@ -1536,7 +1597,7 @@ def main() -> int:
     as_of = parse_dt(args.as_of) if args.as_of else None
     metrics = generate(
         data, args.out_dir, args.contributor_limit, args.history_days,
-        args.max_review_cycles, as_of,
+        args.max_review_cycles, as_of, roadmap_dir=args.roadmap_dir,
     )
     print(
         f"wrote five charts to {args.out_dir}: "
