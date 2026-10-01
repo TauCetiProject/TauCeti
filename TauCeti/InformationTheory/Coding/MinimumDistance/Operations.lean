@@ -140,17 +140,12 @@ theorem finrank_punctureAt_eq (i : ι)
     (hd : 2 ≤ hammingMinDist (C : Set (ι → F))) :
     Module.finrank F (punctureAt C i) = Module.finrank F C := by
   classical
-  rw [punctureAt_def]
-  refine finrank_puncture_eq C _ fun x hx hx0 ↦ ?_
-  by_contra hne
-  have hle := hammingMinDist_le_hammingNorm (E := C.toAddSubgroup) hx hne
+  refine finrank_punctureAt_of_single_notMem C fun h ↦ ?_
+  have hle := hammingMinDist_le_hammingNorm (E := C.toAddSubgroup) h (by simp)
   rw [Submodule.coe_toAddSubgroup] at hle
-  have hzero : ({i}ᶜ : Set ι).domRestrict x = 0 := funext hx0
-  have hone : hammingNorm x ≤ 1 := by
-    rw [hammingNorm_eq_domRestrict_add_domRestrict_compl ({i}ᶜ : Set ι) x, hzero,
-      hammingNorm_zero, zero_add]
-    simpa only [compl_compl, Fintype.card_unique] using
-      hammingNorm_le_card_fintype (x := ({i}ᶜᶜ : Set ι).domRestrict x)
+  have hone : hammingNorm (Pi.single i 1 : ι → F) = 1 := by
+    rw [hammingNorm, Finset.card_eq_one]
+    exact ⟨i, by ext; simp [Pi.single_apply]⟩
   omega
 
 /-- Shortening at one coordinate cannot decrease minimum distance if the result is nonzero. -/
