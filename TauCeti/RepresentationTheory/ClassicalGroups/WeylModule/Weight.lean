@@ -74,9 +74,6 @@ instance search produce the group structure first.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lectures 6 and 15.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "Highest weight and the classification", whose `weightOfShape` is the weight identified
-  here as the highest weight of the Weyl module of a shape.
 -/
 
 public section
@@ -191,7 +188,7 @@ theorem weightSpace_weylRep_eq_bot_of_card_filter_lt (t : YoungTableau μ)
     (h : ((Finset.univ.filter fun x => rowIndex t x < m).card : ℤ) <
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j) :
     weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t) l = ⊥ :=
-  (weightSpace_toRepresentation_eq_bot_iff (weylModule k n t) l).mpr
+  (Subrepresentation.weightSpace_toRepresentation_eq_bot_iff (weylModule k n t) l).mpr
     (weylModule_toSubmodule_inf_weightSpace_eq_bot t h)
 
 /-- **The weights of the Weyl module are dominated by the weight of its shape**: for a shape with
@@ -223,15 +220,15 @@ theorem nonneg_and_sum_eq_of_weightSpace_weylRep_ne_bot (t : YoungTableau μ) {l
     (∀ i, 0 ≤ l i) ∧ ∑ i, l i = μ.card := by
   refine (weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq
     (weightChar_injective_of_algebraRat k n) l).mp fun hbot => hl ?_
-  rw [weightSpace_toRepresentation_eq_bot_iff, hbot, inf_bot_eq]
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, hbot, inf_bot_eq]
 
 /-! ## The highest weight -/
 
-omit [Algebra ℚ k] in
 /-- The monomial basis vector of the row filling has the weight of the shape. -/
-theorem tensorPowerBasis_rowFilling_mem_weightSpace (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
-    tensorPowerBasis k n μ.card (rowFilling t hn) ∈
-      weightSpace (tensorPowerRep k n μ.card) (weightOfShape n μ).1 := by
+theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
+    (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
+    tensorPowerBasis R n μ.card (rowFilling t hn) ∈
+      weightSpace (tensorPowerRep R n μ.card) (weightOfShape n μ).1 := by
   rw [← weightOfMultiset_ofFn_rowFilling t hn, tensorPowerBasis_def]
   exact basis_mem_weightSpace_tensorPowerRep _
 
@@ -245,7 +242,7 @@ theorem weightSpace_weylRep_weightOfShape_ne_bot (t : YoungTableau μ) (hn : μ.
     weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t)
       (weightOfShape n μ).1 ≠ ⊥ := by
   intro hbot
-  have hbot' := (weightSpace_toRepresentation_eq_bot_iff (weylModule k n t)
+  have hbot' := (Subrepresentation.weightSpace_toRepresentation_eq_bot_iff (weylModule k n t)
     (weightOfShape n μ).1).mp hbot
   refine permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
     (k := k) t hn ?_
@@ -277,13 +274,14 @@ theorem sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot {μ : Youn
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
   refine YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (k := k)
     (StandardYoungTableau.rowSuperstandard μ).toTableau hn (fun hbot => hl ?_) m
-  rw [weightSpace_toRepresentation_eq_bot_iff, weylModuleOfShape_toSubmodule]
-  rw [weightSpace_toRepresentation_eq_bot_iff, YoungTableau.weylModule_toSubmodule] at hbot
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, weylModuleOfShape_toSubmodule]
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
+    YoungTableau.weylModule_toSubmodule] at hbot
   exact hbot
 
 /-- **The weight of a shape occurs in the Weyl module of that shape**, so it is the highest weight
-of `TauCeti.weylRepOfShape` — and hence of the `TauCeti.schurFunctor` the classical-groups roadmap
-is written against — in the dominance order. -/
+of `TauCeti.weylRepOfShape` — and hence, over `ℂ`, of `TauCeti.schurFunctor` — in the dominance
+order. -/
 theorem weightSpace_weylRepOfShape_weightOfShape_ne_bot {μ : YoungDiagram}
     (hn : μ.colLen 0 ≤ n) :
     weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ)
@@ -291,8 +289,10 @@ theorem weightSpace_weylRepOfShape_weightOfShape_ne_bot {μ : YoungDiagram}
   intro hbot
   refine YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot (k := k)
     (StandardYoungTableau.rowSuperstandard μ).toTableau hn ?_
-  rw [weightSpace_toRepresentation_eq_bot_iff, YoungTableau.weylModule_toSubmodule]
-  rw [weightSpace_toRepresentation_eq_bot_iff, weylModuleOfShape_toSubmodule] at hbot
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
+    YoungTableau.weylModule_toSubmodule]
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
+    weylModuleOfShape_toSubmodule] at hbot
   exact hbot
 
 end TauCeti

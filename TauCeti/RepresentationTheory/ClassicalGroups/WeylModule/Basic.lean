@@ -304,8 +304,8 @@ theorem weylModule_ne_bot [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0
 coordinate of `c_t • e_r` at `r = TauCeti.YoungTableau.rowFilling t hn` is the order of the row
 group of `t`, which is nonzero in characteristic zero.
 
-This is `TauCeti.YoungTableau.weylModule_ne_bot` with the witness named: `e_r` is the vector whose
-image generates the highest weight line of the Weyl module. -/
+This is `TauCeti.YoungTableau.weylModule_ne_bot` with the witness named: the image of `e_r` is a
+nonzero vector of the relevant weight. -/
 theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
     [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
