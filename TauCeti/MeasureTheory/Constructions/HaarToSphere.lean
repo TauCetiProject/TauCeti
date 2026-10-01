@@ -48,8 +48,6 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
-* `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
-  origin.
 -/
 
 public section
@@ -145,19 +143,6 @@ theorem _root_.ContinuousOn.integral_toSphere_smul {f : E → F} {R : ℝ}
       (hmem r hr)).aestronglyMeasurable
   · exact ae_of_all _ fun u ↦ hC _ (hmem r hr u)
   · exact hf.comp (continuous_id.smul continuous_const).continuousOn fun r hr ↦ hmem r hr u
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E] in
-/-- The integral over the ball `ball x₀ R` is the integral over `ball 0 R` of the translate
-`y ↦ f (y + x₀)`. -/
-theorem setIntegral_ball_eq_setIntegral_ball_zero_add (f : E → F) (x₀ : E) (R : ℝ) :
-    ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
-  rw [← integral_indicator measurableSet_ball, ← integral_indicator measurableSet_ball,
-    ← integral_add_right_eq_self _ x₀]
-  refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
-  beta_reduce
-  classical
-  rw [indicator_apply, indicator_apply]
-  simp only [mem_ball, dist_eq_norm, add_sub_cancel_right, sub_zero]
 
 /-- **Integration over a ball in polar coordinates.** For `f` integrable on the ball
 `ball 0 R`, the integral of `f` over `ball 0 R` is the integral over the radii `s ∈ (0, R)` of

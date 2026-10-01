@@ -22,12 +22,12 @@ The **mean-value inequality** says that if the integral of `w` over the ball is 
 
 `μ (ball x₀ r) * w x₀ ≤ 8 * ∫ x in ball x₀ r, w x ∂μ`.
 
-For Lebesgue measure on `ℂ` this is `w x₀ ≤ 8 / (π r²) ∫ w` under `∫ w < π / (8 A)`. Applied to
-the energy density `w = |du|²` of a `J`-holomorphic curve, which satisfies such a differential
-inequality, it bounds the derivative of a curve with small energy pointwise; this is the analytic
-input to bubbling and Gromov compactness. The nonlinearity `w²` is critical in dimension two: both
-sides of the hypothesis and the conclusion scale in the same way under dilations, which is why the
-smallness condition does not depend on `r`.
+For Lebesgue measure on `ℂ`, with `r > 0` and `A > 0`, this is `w x₀ ≤ 8 / (π r²) ∫ w` under
+`∫ w < π / (8 A)`. Applied to the energy density `w = |du|²` of a `J`-holomorphic curve, which
+satisfies such a differential inequality, it bounds the derivative of a curve with small energy
+pointwise; this is the analytic input to bubbling and Gromov compactness. The nonlinearity `w²` is
+critical in dimension two: both sides of the hypothesis and the conclusion scale in the same way
+under dilations, which is why the smallness condition does not depend on `r`.
 
 The proof has two steps.
 
@@ -167,8 +167,8 @@ private lemma exists_centre {w : E → ℝ} {x₀ : E} {r : ℝ} (hr : 0 < r)
   rwa [hrad] at h
 
 /-- **The local estimate.** In dimension two, if `0 ≤ w ≤ 4 c` and `Δ w ≥ -A w²` on `ball z δ`,
-with `A ≥ 0`, then `δ² μ (ball 0 1) c ≤ ∫ w + 2 A c² δ² (δ² μ (ball 0 1))`, the integral being
-over `ball z δ`. -/
+with `A ≥ 0`, then `δ² μ (ball 0 1) w z ≤ ∫ w + 2 A c² δ² (δ² μ (ball 0 1))`, the integral
+being over `ball z δ`. -/
 private lemma local_estimate (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {z : E} {δ A c : ℝ}
     (hδ : 0 ≤ δ) (hA : 0 ≤ A) (hw : ContDiffOn ℝ 2 w (ball z δ))
     (hwc : ContinuousOn w (closedBall z δ)) (hw0 : ∀ y ∈ ball z δ, 0 ≤ w y)
@@ -188,7 +188,8 @@ private lemma local_estimate (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {z 
 /-- **The mean-value inequality.** Let `E` be two-dimensional, and let `w` be `C²` on the ball
 `ball x₀ r`, continuous on its closure, nonnegative on the ball, with `Δ w ≥ -A w²` there. If
 `8 A ∫ w < μ (ball 0 1)` over the ball, then `μ (ball x₀ r) * w x₀ ≤ 8 ∫ w`. For Lebesgue measure
-on `ℂ`, where `μ (ball 0 1) = π`, this is `w x₀ ≤ 8 / (π r²) ∫ w` under `∫ w < π / (8 A)`. -/
+on `ℂ`, where `μ (ball 0 1) = π`, and for `r > 0` and `A > 0`, this is `w x₀ ≤ 8 / (π r²) ∫ w`
+under `∫ w < π / (8 A)`. -/
 theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
     (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {x₀ : E} {r A : ℝ}
     (hw : ContDiffOn ℝ 2 w (ball x₀ r)) (hwc : ContinuousOn w (closedBall x₀ r))
