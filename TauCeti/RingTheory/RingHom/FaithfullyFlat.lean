@@ -10,20 +10,43 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.RingTheory.Flat.Pi
 
 /-!
-# Faithful flatness of a finite product of ring homomorphisms
+# Faithful flatness of ring homomorphisms
 
+Scalar extension `Algebra.TensorProduct.lTensor` preserves faithful flatness of algebra
+homomorphisms, via the pushout identification used by Mathlib's `RingHom.Flat.lTensor`.
 A finite family of flat ring homomorphisms `f i : R →+* S i` combines into a faithfully flat ring
 homomorphism `RingHom.pi f : R →+* ∀ i, S i` as soon as every maximal ideal of `R` stays proper
 under some `f i`.
 
 ## Main results
 
+* `RingHom.FaithfullyFlat.lTensor`: scalar extension preserves faithful flatness.
 * `RingHom.FaithfullyFlat.pi_of_exists_map_ne_top`: the criterion above.
 -/
 
 public section
 
+open scoped TensorProduct
+
 namespace RingHom.FaithfullyFlat
+
+section lTensor
+
+variable {R S : Type*} (A : Type*) {B D : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [CommRing A] [Algebra R A] [Algebra S A] [IsScalarTower R S A] [CommRing B] [Algebra R B]
+  [CommRing D] [Algebra R D]
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- Tensoring an algebra homomorphism with an algebra preserves faithful flatness. -/
+theorem lTensor {f : B →ₐ[R] D} (hf : f.FaithfullyFlat) :
+    (Algebra.TensorProduct.lTensor (S := S) A f).FaithfullyFlat := by
+  algebraize [f.toRingHom, (Algebra.TensorProduct.lTensor (S := A) A f).toRingHom]
+  let e : A ⊗[R] D ≃ₐ[A ⊗[R] B] (A ⊗[R] B) ⊗[B] D :=
+    { __ := (Algebra.IsPushout.cancelBaseChangeAlg _ _ _ _ _).symm,
+      commutes' x := congr($(Algebra.IsPushout.cancelBaseChange_symm_comp_lTensor R B D A) x) }
+  exact Module.FaithfullyFlat.of_linearEquiv _ _ e.toLinearEquiv
+
+end lTensor
 
 /-- **A finite product of flat ring homomorphisms is faithfully flat as soon as no maximal ideal
 becomes the unit ideal under every factor.** No single `f i` need be faithfully flat: each maximal

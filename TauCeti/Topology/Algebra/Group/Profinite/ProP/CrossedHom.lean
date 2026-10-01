@@ -283,4 +283,36 @@ theorem IsCrossedHom.dvd_apply_of_mem_pLowerCentralSeries_one (hG : IsProP p G)
     (hg : g ∈ pLowerCentralSeries p G 1) : (p : ℤ_[p]) ∣ f g := by
   simpa using hf.pow_dvd_apply_of_mem_pLowerCentralSeries (hG.mem_unitsPrincipal_one χ) hfc hg
 
+/-! ### Crossed homomorphisms on `p`-adic powers -/
+
+namespace IsCrossedHom
+
+variable [CompactSpace G] [TotallyDisconnectedSpace G] {f : G → ℤ_[p]} (hf : IsCrossedHom χ f)
+  (hfc : Continuous f) (hG : IsProP p G)
+include hf hfc
+
+/-- **A continuous crossed homomorphism vanishing at `x` vanishes on the `p`-adic powers of
+`x`.** -/
+theorem map_padicPow_eq_zero_of_eq_zero {x : G} (hx : f x = 0) (l : ℤ_[p]) :
+    f (hG.padicPow x l) = 0 := by
+  have h : (fun l : ℤ_[p] ↦ f (hG.padicPow x l)) = fun _ ↦ 0 :=
+    PadicInt.denseRange_natCast.equalizer
+      (hfc.comp (hG.continuous_padicPow.comp (continuous_id.prodMk continuous_const)))
+      continuous_const (funext fun k ↦ by
+        simp only [Function.comp_apply, hG.padicPow_natCast, hf.map_pow, hx, mul_zero])
+  exact congrFun h l
+
+/-- **On an element where the character is trivial, a continuous crossed homomorphism is
+`ℤ_p`-linear along `p`-adic powers**: `f (x ^ l) = l * f x` for `l ∈ ℤ_p`. -/
+theorem map_padicPow_of_eq_one {x : G} (hx : χ x = 1) (l : ℤ_[p]) :
+    f (hG.padicPow x l) = l * f x := by
+  have h : (fun l : ℤ_[p] ↦ f (hG.padicPow x l)) = fun l ↦ l * f x :=
+    PadicInt.denseRange_natCast.equalizer
+      (hfc.comp (hG.continuous_padicPow.comp (continuous_id.prodMk continuous_const)))
+      (continuous_id.mul continuous_const) (funext fun k ↦ by
+        simp only [Function.comp_apply, hG.padicPow_natCast, hf.map_pow_of_eq_one hx])
+  exact congrFun h l
+
+end IsCrossedHom
+
 end TauCeti

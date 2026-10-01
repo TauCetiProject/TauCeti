@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
+public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.SpecificLimits.FastGeometric
 public import TauCeti.Analysis.Sobolev.Embedding
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
@@ -20,9 +21,9 @@ Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `
 `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` in `Ω`,
 
 meaning `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. This file proves De Giorgi's local
-boundedness theorem: on every ball `B(x₀, R) ⊆ Ω`,
+boundedness theorem: on every ball `B(x₀, R) ⊆ Ω` and above every level `k`,
 
-`u ≤ D R^{-n/2} ‖u⁺‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`,
+`u ≤ k + D R^{-n/2} ‖(u - k)⁺‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`,
 
 with `D` depending on `λ`, `Λ`, the dimension `n ≥ 3` and the normalization of the additive
 Haar measure used for the `L²` norm. No regularity of the coefficients beyond measurability
@@ -43,10 +44,10 @@ constant independent of `Ω`, but dependent on the normalization of the additive
 
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le`: De Giorgi's energy
   recursion between two truncation levels.
-* `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral`: local boundedness of weak
+* `TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral`: local boundedness of weak
   subsolutions, under a Sobolev inequality with exponent `q > 2`.
-* `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`: the
-  scale-invariant bound `u ≤ D R^{-n/2} ‖u⁺‖_{L²(B(x₀, R))}` in dimension `n ≥ 3`.
+* `TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`: the
+  scale-invariant bound `u ≤ k + D R^{-n/2} ‖(u - k)⁺‖_{L²(B(x₀, R))}` in dimension `n ≥ 3`.
 
 ## References
 
@@ -188,8 +189,8 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le
     _ = _ := by ring
 
 /-- One step of De Giorgi's iteration on balls. Along the radii `rⱼ = R/2 + R/2^{j+1}`, shrinking
-from `R` to `R/2`, and the levels `kⱼ = K - K/2^j`, rising from `0` to `K`, the quantities
-`Yⱼ = ∫_{B(x₀, rⱼ)} ((u - kⱼ)⁺)²` satisfy `Yⱼ₊₁ ≤ C bʲ Yⱼ^{1 + α}` with `α = 1 - 2/q`,
+from `R` to `R/2`, and the levels `kⱼ = k₀ + (K - K/2^j)`, rising from `k₀` to `k₀ + K`, the
+quantities `Yⱼ = ∫_{B(x₀, rⱼ)} ((u - kⱼ)⁺)²` satisfy `Yⱼ₊₁ ≤ C bʲ Yⱼ^{1 + α}` with `α = 1 - 2/q`,
 `b = 4 · 4^α` and `C` proportional to `R⁻² (K²)^{-α}`. The cutoff between `B(x₀, rⱼ₊₁)` and
 `B(x₀, rⱼ)` is supplied by `hc`, with gradient at most `c` over the gap. -/
 private theorem setIntegral_ball_max_sub_sq_succ_le
@@ -205,21 +206,22 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
       ∃ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.closedBall x₀ R ∧
           ∀ x, ‖∇ ψ x‖ ≤ c / (R - r))
+    {k₀ : ℝ} (hwLp : MemLp (fun x => max (W1p.value u x - k₀) 0) 2 (mu.restrict Omega))
     {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (hR : 0 < R)
     (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {K : ℝ} (hK : 0 < K)
     {α : ℝ} (hα : α = 1 - 2 / q.toReal) (j : ℕ) :
     ∫ x in Metric.ball x₀ (R / 2 + R / 2 ^ (j + 2)),
-        max (W1p.value u x - (K - K / 2 ^ (j + 1))) 0 ^ 2 ∂mu ≤
+        max (W1p.value u x - (k₀ + (K - K / 2 ^ (j + 1)))) 0 ^ 2 ∂mu ≤
       (2 * (1 + (2 * Lam / lam) ^ 2) * S ^ 2 * (64 * c ^ 2) * 4 ^ α * (R ^ 2)⁻¹ *
           (K ^ 2) ^ (-α)) * (4 * 4 ^ α) ^ j *
         (∫ x in Metric.ball x₀ (R / 2 + R / 2 ^ (j + 1)),
-          max (W1p.value u x - (K - K / 2 ^ j)) 0 ^ 2 ∂mu) ^ (1 + α) := by
+          max (W1p.value u x - (k₀ + (K - K / 2 ^ j))) 0 ^ 2 ∂mu) ^ (1 + α) := by
   have hα0 : 0 ≤ α := hα ▸ one_sub_two_div_toReal_nonneg hq
   set r₀ := R / 2 + R / 2 ^ (j + 1)
   set r₁ := R / 2 + R / 2 ^ (j + 2)
   set ρ := (r₀ + r₁) / 2
-  set k := K - K / 2 ^ j
-  set l := K - K / 2 ^ (j + 1)
+  set k := k₀ + (K - K / 2 ^ j)
+  set l := k₀ + (K - K / 2 ^ (j + 1))
   have hρr₁ : ρ - r₁ = R / 2 ^ (j + 3) := by
     simp only [ρ, r₀, r₁, pow_succ]
     field_simp
@@ -244,7 +246,7 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
       (le_self_pow₀ one_le_two (Nat.succ_ne_zero j))
     simp only [r₀]
     linarith
-  have hk0 : 0 ≤ k := by
+  have hk0 : k₀ ≤ k := by
     have : K / 2 ^ j ≤ K := div_le_self hK.le (one_le_pow₀ one_le_two)
     simp only [k]
     linarith
@@ -258,11 +260,11 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
   have hcpt : HasCompactSupport ψ :=
     (isCompact_closedBall x₀ ρ).of_isClosed_subset (isClosed_tsupport ψ) hψts
   have hstep := h.setIntegral_sq_mul_max_sub_sq_le ha hq hS hu hkl
-    (W1p.memLp_posPartAbove hk0 u) hψ hcpt hts hψG
+    (W1p.memLp_posPartAbove_of_le u hk0 hwLp) hψ hcpt hts hψG
   -- Integrability of the truncations on `Ω`, and nonnegativity.
-  have hint : ∀ m : ℝ, 0 ≤ m →
+  have hint : ∀ m : ℝ, k₀ ≤ m →
       IntegrableOn (fun x => max (W1p.value u x - m) 0 ^ 2) (Omega : Set _) mu :=
-    fun m hm => (W1p.memLp_posPartAbove hm u).integrable_sq
+    fun m hm => (W1p.memLp_posPartAbove_of_le u hm hwLp).integrable_sq
   have hnn : ∀ m : ℝ, ∀ x, 0 ≤ max (W1p.value u x - m) 0 ^ 2 := fun _ _ => by positivity
   set Y := ∫ x in Metric.ball x₀ r₀, max (W1p.value u x - k) 0 ^ 2 ∂mu
   have hY : 0 ≤ Y := integral_nonneg (hnn k)
@@ -320,9 +322,9 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
         rw [hG, hdiv, hpow, ← hYpow]
         ring
 
-/-- **De Giorgi's threshold.** If `∫_{B(x₀, R)} (u⁺)²` lies below the threshold of the fast
-geometric convergence lemma for the recursion of `setIntegral_ball_max_sub_sq_succ_le` at level
-`K > 0`, then `u ≤ K` almost everywhere on `B(x₀, R/2)`. -/
+/-- **De Giorgi's threshold.** If `∫_{B(x₀, R)} ((u - k₀)⁺)²` lies below the threshold of the fast
+geometric convergence lemma for the recursion of `setIntegral_ball_max_sub_sq_succ_le` at height
+`K > 0` above `k₀`, then `u ≤ k₀ + K` almost everywhere on `B(x₀, R/2)`. -/
 private theorem ae_value_le_of_setIntegral_le
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
@@ -332,6 +334,7 @@ private theorem ae_value_le_of_setIntegral_le
     (hu : ∀ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
+    {k₀ : ℝ} (hwLp : MemLp (fun x => max (W1p.value u x - k₀) 0) 2 (mu.restrict Omega))
     {c : ℝ} (hc : ∀ (x₀ : EuclideanSpace ℝ ι) {r R : ℝ}, 0 < r → r < R →
       ∃ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.closedBall x₀ R ∧
@@ -341,31 +344,32 @@ private theorem ae_value_le_of_setIntegral_le
     {α : ℝ} (hα : α = 1 - 2 / q.toReal) (hα0 : 0 < α)
     (hC : 0 < 2 * (1 + (2 * Lam / lam) ^ 2) * S ^ 2 * (64 * c ^ 2) * 4 ^ α * (R ^ 2)⁻¹ *
       (K ^ 2) ^ (-α))
-    (hY0 : ∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu ≤
+    (hY0 : ∫ x in Metric.ball x₀ R, max (W1p.value u x - k₀) 0 ^ 2 ∂mu ≤
       (2 * (1 + (2 * Lam / lam) ^ 2) * S ^ 2 * (64 * c ^ 2) * 4 ^ α * (R ^ 2)⁻¹ *
         (K ^ 2) ^ (-α)) ^ (-α⁻¹) * (4 * 4 ^ α) ^ (-(α ^ 2)⁻¹)) :
-    ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤ K := by
+    ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤ k₀ + K := by
   set Y : ℕ → ℝ := fun j => ∫ x in Metric.ball x₀ (R / 2 + R / 2 ^ (j + 1)),
-    max (W1p.value u x - (K - K / 2 ^ j)) 0 ^ 2 ∂mu
-  have hlev : ∀ j : ℕ, 0 ≤ K - K / 2 ^ j := fun j => by
+    max (W1p.value u x - (k₀ + (K - K / 2 ^ j))) 0 ^ 2 ∂mu
+  have hlev : ∀ j : ℕ, k₀ ≤ k₀ + (K - K / 2 ^ j) := fun j => by
     have : K / 2 ^ j ≤ K := div_le_self hK.le (one_le_pow₀ one_le_two)
     linarith
   have hnn : ∀ m : ℝ, ∀ x, 0 ≤ max (W1p.value u x - m) 0 ^ 2 := fun _ _ => by positivity
-  have hint : ∀ m : ℝ, 0 ≤ m →
+  have hint : ∀ m : ℝ, k₀ ≤ m →
       IntegrableOn (fun x => max (W1p.value u x - m) 0 ^ 2) (Omega : Set _) mu :=
-    fun m hm => (W1p.memLp_posPartAbove hm u).integrable_sq
+    fun m hm => (W1p.memLp_posPartAbove_of_le u hm hwLp).integrable_sq
   have hb : (1 : ℝ) < 4 * 4 ^ α := by
     have := Real.one_le_rpow (x := (4 : ℝ)) (z := α) (by norm_num) hα0.le
     linarith
-  have hY0' : Y 0 = ∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu := by
-    simp only [Y, zero_add, pow_one, pow_zero, div_one, sub_self, sub_zero, add_halves]
+  have hY0' : Y 0 = ∫ x in Metric.ball x₀ R, max (W1p.value u x - k₀) 0 ^ 2 ∂mu := by
+    simp only [Y, zero_add, pow_one, pow_zero, div_one, sub_self, add_zero, add_halves]
   have hlim := tendsto_atTop_zero_of_le_mul_pow_mul_rpow (Y := Y)
     (fun j => integral_nonneg (hnn _)) hC hb hα0 (hY0'.trans_le hY0)
-    (fun j => setIntegral_ball_max_sub_sq_succ_le h ha hq hS hu hc hR hball hK hα j)
-  -- The truncation at level `K` on the half ball is below every term of the sequence.
+    (fun j => setIntegral_ball_max_sub_sq_succ_le h ha hq hS hu hc hwLp hR hball hK hα j)
+  -- The truncation at level `k₀ + K` on the half ball is below every term of the sequence.
   have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (Metric.ball_subset_ball (by linarith)).trans hball
-  have hZ : ∀ j, ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - K) 0 ^ 2 ∂mu ≤ Y j := by
+  have hZ : ∀ j,
+      ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - (k₀ + K)) 0 ^ 2 ∂mu ≤ Y j := by
     intro j
     have hsub : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ (R / 2 + R / 2 ^ (j + 1)) :=
       Metric.ball_subset_ball (le_add_of_nonneg_right (by positivity))
@@ -373,41 +377,31 @@ private theorem ae_value_le_of_setIntegral_le
       have : R / 2 ^ (j + 1) ≤ R / 2 := div_le_div_of_nonneg_left hR.le two_pos
         (le_self_pow₀ one_le_two (Nat.succ_ne_zero j))
       linarith
-    calc ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - K) 0 ^ 2 ∂mu
-        ≤ ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - (K - K / 2 ^ j)) 0 ^ 2 ∂mu :=
-          setIntegral_mono ((hint K hK.le).mono_set hhalf) ((hint _ (hlev j)).mono_set hhalf)
-            fun x => pow_le_pow_left₀ (le_max_right _ _)
+    calc ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - (k₀ + K)) 0 ^ 2 ∂mu
+        ≤ ∫ x in Metric.ball x₀ (R / 2),
+            max (W1p.value u x - (k₀ + (K - K / 2 ^ j))) 0 ^ 2 ∂mu :=
+          setIntegral_mono ((hint _ (by linarith)).mono_set hhalf)
+            ((hint _ (hlev j)).mono_set hhalf) fun x => pow_le_pow_left₀ (le_max_right _ _)
               (max_le_max (by have := div_nonneg hK.le (pow_nonneg zero_le_two j); linarith)
                 le_rfl) 2
       _ ≤ Y j := setIntegral_mono_set ((hint _ (hlev j)).mono_set
             ((Metric.ball_subset_ball hr).trans hball))
           (Eventually.of_forall (hnn _)) hsub.eventuallyLE
-  have hZ0 : ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - K) 0 ^ 2 ∂mu = 0 :=
-    le_antisymm (ge_of_tendsto' hlim hZ) (integral_nonneg (hnn K))
-  rw [setIntegral_eq_zero_iff_of_nonneg_ae (Eventually.of_forall (hnn K))
-    ((hint K hK.le).mono_set hhalf)] at hZ0
+  have hZ0 : ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - (k₀ + K)) 0 ^ 2 ∂mu = 0 :=
+    le_antisymm (ge_of_tendsto' hlim hZ) (integral_nonneg (hnn _))
+  rw [setIntegral_eq_zero_iff_of_nonneg_ae (Eventually.of_forall (hnn _))
+    ((hint _ (by linarith)).mono_set hhalf)] at hZ0
   filter_upwards [hZ0] with x hx
-  have hmax : max (W1p.value u x - K) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
-  linarith [le_max_left (W1p.value u x - K) 0]
+  have hmax : max (W1p.value u x - (k₀ + K)) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
+  linarith [le_max_left (W1p.value u x - (k₀ + K)) 0]
 
-/-- **Local boundedness of weak subsolutions (De Giorgi).** Fix ellipticity constants `λ, Λ`, an
-exponent `q > 2` and a constant `S`. There is `D > 0`, depending only on these (and the
-dimension), such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω`
-with constants `λ, Λ`, suppose that `‖v‖_q ≤ S ‖∇v‖₂` for every `v ∈ W^{1,2}_0(Ω)`, and let
-`u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every
-nonnegative `v ∈ H¹₀(Ω)`. Then for every ball `B(x₀, R) ⊆ Ω`,
-
-`u ≤ D R^{-1/α} (∫_{B(x₀, R)} (u⁺)²)^{1/2}` almost everywhere on `B(x₀, R/2)`,
-
-where `α = 1 - 2/q`. For `n ≥ 3` and the Sobolev exponent `q = 2n/(n - 2)`, `α = 2/n` and the
-bound is the classical `u ≤ D R^{-n/2} ‖u⁺‖_{L²(B(x₀, R))}`; see
-`TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`.
-
-No regularity of the coefficients beyond measurability, and no boundary condition on `u`, is
-assumed. -/
-theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 2 < q) (S : ℝ≥0) :
+/-- Local boundedness above a level `k` with `(u - k)⁺ ∈ L²(Ω)`. The public form
+`exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral` removes the integrability hypothesis by
+restricting `u` to the ball. -/
+private theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_memLp {q : ℝ≥0∞}
+    (hq : 2 < q) (S : ℝ≥0) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {k : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
@@ -416,10 +410,11 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
+      MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega) →
       0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
-        W1p.value u x ≤ D * R ^ (-(1 - 2 / q.toReal)⁻¹) *
-          √(∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu) := by
+        W1p.value u x ≤ k + D * R ^ (-(1 - 2 / q.toReal)⁻¹) *
+          √(∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu) := by
   obtain ⟨c, hc0, hc⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   set α : ℝ := 1 - 2 / q.toReal with hα
   have hα0 : 0 < α := by
@@ -446,28 +441,26 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 
     positivity
   set b : ℝ := 4 * 4 ^ α
   refine ⟨√(E₁ ^ α⁻¹ * b ^ (α ^ 2)⁻¹), Real.sqrt_pos.2 (by positivity), ?_⟩
-  intro Omega a u x₀ R h ha hS hu hR hball
+  intro Omega a u k x₀ R h ha hS hu hwLp hR hball
   have hS' : ∀ v ∈ w1p0Submodule mu Omega 2,
       eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ (S + 1 : ℝ≥0) * ‖W1p.gradient v‖ₑ :=
     fun v hv => (hS v hv).trans (by gcongr; exact le_self_add)
-  set Y₀ := ∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu
+  set Y₀ := ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu
   have hY₀ : 0 ≤ Y₀ := integral_nonneg fun x => by positivity
   rcases hY₀.eq_or_lt with hzero | hpos
-  · -- Zero energy: `u⁺` vanishes almost everywhere on the ball.
-    have hint : IntegrableOn (fun x => max (W1p.value u x) 0 ^ 2) (Metric.ball x₀ R) mu := by
-      have := (W1p.memLp_posPartAbove le_rfl u).integrable_sq
-      simp only [sub_zero] at this
-      exact IntegrableOn.mono_set this hball
+  · -- Zero energy: `(u - k)⁺` vanishes almost everywhere on the ball.
+    have hint : IntegrableOn (fun x => max (W1p.value u x - k) 0 ^ 2) (Metric.ball x₀ R) mu :=
+      IntegrableOn.mono_set hwLp.integrable_sq hball
     have hae := (setIntegral_eq_zero_iff_of_nonneg_ae
       (Eventually.of_forall fun x => by positivity) hint).1 hzero.symm
     refine ae_restrict_of_ae_restrict_of_subset (Metric.ball_subset_ball (half_le_self hR.le)) ?_
     filter_upwards [hae] with x hx
-    rw [← hzero, Real.sqrt_zero, mul_zero]
-    have hmax : max (W1p.value u x) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
-    linarith [le_max_left (W1p.value u x) 0]
+    rw [← hzero, Real.sqrt_zero, mul_zero, add_zero]
+    have hmax : max (W1p.value u x - k) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
+    linarith [le_max_left (W1p.value u x - k) 0]
   · set K := √(E₁ ^ α⁻¹ * b ^ (α ^ 2)⁻¹) * R ^ (-α⁻¹) * √Y₀
     have hK : 0 < K := by positivity
-    refine ae_value_le_of_setIntegral_le h ha hq.le hS' hu hc' hR hball hK hα hα0
+    refine ae_value_le_of_setIntegral_le h ha hq.le hS' hu hwLp hc' hR hball hK hα hα0
       (mul_pos (mul_pos hE₁ (by positivity)) (by positivity)) (le_of_eq ?_)
     -- `K` was chosen to make `Y₀` exactly the threshold. The `change` only folds the recursion
     -- constant back into the abbreviations `E₁` and `b`, which `set` does not do for new goals.
@@ -490,22 +483,84 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 
       Real.rpow_neg hR.le]
     field_simp
 
+/-- **Local boundedness of weak subsolutions (De Giorgi).** Fix ellipticity constants `λ, Λ`, an
+exponent `q > 2` and a constant `S`. There is `D > 0`, depending only on these (and the
+dimension), such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω`
+with constants `λ, Λ`, suppose that `‖v‖_q ≤ S ‖∇v‖₂` for every `v ∈ W^{1,2}_0(Ω)`, and let
+`u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every
+nonnegative `v ∈ H¹₀(Ω)`. Then for every level `k` and every ball `B(x₀, R) ⊆ Ω`,
+
+`u ≤ k + D R^{-1/α} (∫_{B(x₀, R)} ((u - k)⁺)²)^{1/2}` almost everywhere on `B(x₀, R/2)`,
+
+where `α = 1 - 2/q`. For `n ≥ 3` and the Sobolev exponent `q = 2n/(n - 2)`,
+`α = 2/n` and the bound is the classical `u ≤ k + D R^{-n/2} ‖(u - k)⁺‖_{L²(B(x₀, R))}`; see
+`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`.
+
+No regularity of the coefficients beyond measurability, and no boundary condition on `u`, is
+assumed. -/
+theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 2 < q) (S : ℝ≥0) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {k : ℝ}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v ∈ w1p0Submodule mu Omega 2,
+        eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
+      0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
+        W1p.value u x ≤ k + D * R ^ (-(1 - 2 / q.toReal)⁻¹) *
+          √(∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu) := by
+  obtain ⟨D, hD, hmain⟩ := exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_memLp
+    (mu := mu) (lam := lam) (Lam := Lam) hq S
+  refine ⟨D, hD, fun {Omega a u k x₀ R} h ha hS hu hR hball => ?_⟩
+  -- Restrict `u` to the ball `U = B(x₀, R)`, which has finite measure, so that `(u - k)⁺` is
+  -- square integrable on `U`.
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  have hUm : MeasurableSet (U : Set (EuclideanSpace ℝ ι)) := U.isOpen.measurableSet
+  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hw : W1p.value (W1p.restrictL hU u) =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
+    W1p.value_restrictL_ae hU u
+  -- The Sobolev inequality on `W^{1,2}_0(U)` follows from that on `W^{1,2}_0(Ω)` by extending
+  -- by zero.
+  have hSU : ∀ v ∈ w1p0Submodule mu U 2,
+      eLpNorm (W1p.value v) q (mu.restrict U) ≤ S * ‖W1p.gradient v‖ₑ := by
+    intro v hv
+    have hext := hS _ (W1p0.extendByZeroL hU ⟨v, hv⟩).2
+    rwa [W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL, LinearIsometry.enorm_map,
+      eLpNorm_congr_ae (coeFn_extendByZeroLpₗᵢ ℝ hUm hball _),
+      eLpNorm_indicator_eq_eLpNorm_restrict hUm.nullMeasurableSet, Measure.restrict_restrict hUm,
+      inter_eq_left.2 (SetLike.coe_subset_coe.mpr hU)] at hext
+  have hbound := hmain (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl))
+    hSU (energyFormH1_restrictL_nonpos hU hu) (k := k)
+    ((Lp.memLp _).sub (memLp_const k)).pos_part hR subset_rfl
+  have hint : ∫ x in Metric.ball x₀ R, max (W1p.value (W1p.restrictL hU u) x - k) 0 ^ 2 ∂mu =
+      ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu :=
+    integral_congr_ae (by filter_upwards [hw] with x hx; rw [hx])
+  filter_upwards [hbound, ae_restrict_of_ae_restrict_of_subset
+    (Metric.ball_subset_ball (half_le_self hR.le)) hw] with x hx hwx
+  rwa [← hwx, ← hint]
+
 /-- **Local boundedness of weak subsolutions in dimension `n ≥ 3` (De Giorgi).** Let `2*` be the
 Sobolev exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this
 forces `n ≥ 3`). There is `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization
 of the additive Haar measure `mu`, such that for every measurable, uniformly elliptic `a` on
 `Ω` with constants `λ, Λ`, every weak subsolution `u ∈ H¹(Ω)` of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` and every ball `B(x₀, R) ⊆ Ω`,
+`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, every level `k` and every ball `B(x₀, R) ⊆ Ω`,
 
-`u ≤ D R^{-n/2} (∫_{B(x₀, R)} (u⁺)²)^{1/2}` almost everywhere on `B(x₀, R/2)`.
+`u ≤ k + D R^{-n/2} (∫_{B(x₀, R)} ((u - k)⁺)²)^{1/2}` almost everywhere on `B(x₀, R/2)`.
 
-The Sobolev inequality needed by `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral` is
+The Sobolev inequality needed by
+`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral` is
 the Gagliardo–Nirenberg–Sobolev inequality on `W^{1,2}_0(Ω)`, whose constant does not depend on
 `Ω`, but does depend on `mu`; this makes `D` independent of the domain. -/
-theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {pstar : ℝ≥0∞}
+theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {pstar : ℝ≥0∞}
     (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {k : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
@@ -514,8 +569,8 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {psta
           energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
       0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
-        W1p.value u x ≤ D * R ^ (-(Fintype.card ι : ℝ) / 2) *
-          √(∫ x in Metric.ball x₀ R, max (W1p.value u x) 0 ^ 2 ∂mu) := by
+        W1p.value u x ≤ k + D * R ^ (-(Fintype.card ι : ℝ) / 2) *
+          √(∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu) := by
   have hexp' : pstar⁻¹ + (Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ≥0∞)⁻¹ = 2⁻¹ := by
     rwa [finrank_euclideanSpace]
   have hn : Fintype.card ι ≠ 0 := by
@@ -539,10 +594,10 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {psta
     rw [div_eq_mul_inv 2 pstar.toReal, hpinv']
     field_simp
     ring
-  obtain ⟨D, hD, hmain⟩ := exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu)
+  obtain ⟨D, hD, hmain⟩ := exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral (mu := mu)
     (lam := lam) (Lam := Lam) hq (SNormLESNormFDerivOfEqConst ℝ mu (2 : ℝ≥0∞).toReal)
-  refine ⟨D, hD, fun h ha hu hR hball => ?_⟩
-  have hbound := hmain h ha
+  refine ⟨D, hD, fun {Omega a u k x₀ R} h ha hu hR hball => ?_⟩
+  have hbound := hmain (k := k) h ha
     (fun v hv => W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp' hv) hu hR hball
   rwa [hα] at hbound
 

@@ -23,7 +23,7 @@ Reparametrisation is right multiplication by the dilations `dilation s : z ↦ e
 reversed line `geodesicBetween w z`.
 
 Source: Katok, *Fuchsian groups, geodesic flows on surfaces of constant negative curvature and
-symbolic coding of geodesics*, Clay Math. Proc. 8 (2008), §3 p. 10 (Theorem 3.1 and the
+symbolic coding of geodesics*, Clay Math. Proc. 10 (2010), §3 p. 10 (Theorem 3.1 and the
 remark after it: any two points of `ℍ` are joined by a unique geodesic).
 -/
 

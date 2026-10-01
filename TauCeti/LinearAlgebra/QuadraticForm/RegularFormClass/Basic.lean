@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import TauCeti.LinearAlgebra.QuadraticForm.Binary
 
 /-!
 # Isometry classes of regular quadratic forms
@@ -119,6 +120,15 @@ theorem presentedForm_eq_weightedSumSquares_coe {n : ℕ} (w : Fin n → Kˣ) :
   rw [presentedForm_eq_weightedSumSquares]
   ext x
   simp only [weightedSumSquares_apply, Units.smul_def, smul_eq_mul]
+
+/-- A binary presented form `⟨w₀, w₁⟩` is the weighted sum of squares with the two coerced weights
+`w₀`, `w₁`, which is the shape in which the binary value and classification criteria are stated. -/
+theorem presentedForm_two (w : Fin 2 → Kˣ) :
+    presentedForm ⟨2, w⟩ = weightedSumSquares K ![(w 0 : K), (w 1 : K)] := by
+  rw [presentedForm_eq_weightedSumSquares_coe]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
 
 /-- A presented form is regular: all its weights are units, so its radical vanishes. -/
 theorem nondegenerate_presentedForm [Invertible (2 : K)] (p : RegularFormPresentation K) :
@@ -336,6 +346,22 @@ theorem equivalent_presentedForm_append_prod (p q : RegularFormPresentation K) :
       ((presentedForm p).prod (presentedForm q)) :=
   ⟨presentedFormAppendIsometryEquiv p q⟩
 
+/-- A presentation of rank `m + n` is the concatenation of its first `m` and its last `n`
+weights. -/
+theorem RegularFormPresentation.append_castAdd_natAdd {m n : ℕ} (w : Fin (m + n) → Kˣ) :
+    RegularFormPresentation.append ⟨m, fun i => w (Fin.castAdd n i)⟩
+      ⟨n, fun i => w (Fin.natAdd m i)⟩ = ⟨m + n, w⟩ := by
+  rw [RegularFormPresentation.append_def, Fin.append_castAdd_natAdd]
+
+/-- The form presented by `m + n` weights is isometric to the orthogonal sum of the forms
+presented by its first `m` and by its last `n` weights. -/
+theorem equivalent_presentedForm_prod_castAdd_natAdd {m n : ℕ} (w : Fin (m + n) → Kˣ) :
+    (presentedForm ⟨m + n, w⟩).Equivalent
+      ((presentedForm ⟨m, fun i => w (Fin.castAdd n i)⟩).prod
+        (presentedForm ⟨n, fun i => w (Fin.natAdd m i)⟩)) := by
+  rw [← RegularFormPresentation.append_castAdd_natAdd]
+  exact equivalent_presentedForm_append_prod _ _
+
 /-- Peeling the first weight off a presentation of positive rank exhibits the presented form as
 the orthogonal sum of the line `⟨w 0⟩` and the presentation of the remaining weights:
 `⟨w 0⟩ ⊥ ⟨w 1, …, w n⟩ ≅ ⟨w 0, …, w n⟩`. The first factor is carried by `K` itself rather than by
@@ -356,6 +382,39 @@ theorem presentedForm_tail_isRepresentedBy {n : ℕ} (w : Fin (n + 1) → Kˣ) :
       (presentedForm ⟨n + 1, w⟩) :=
   (QuadraticMap.isRepresentedBy_prod_right _ _).trans
     (QuadraticMap.Equivalent.isRepresentedBy ⟨presentedFormConsIsometryEquiv w⟩)
+
+/-- A diagonal form `⟨w₀, w₁, …, wₙ⟩` is isotropic exactly when `⟨w₁, …, wₙ⟩` represents
+`-w₀`. -/
+theorem not_anisotropic_presentedForm_succ_iff [Invertible (2 : K)] {n : ℕ}
+    (w : Fin (n + 1) → Kˣ) :
+    ¬(presentedForm ⟨n + 1, w⟩).Anisotropic ↔
+      -w 0 ∈ unitValueSet (presentedForm ⟨n, fun i ↦ w i.succ⟩) := by
+  rw [mem_unitValueSet_iff_not_anisotropic_prod _ (nondegenerate_presentedForm _),
+    ← QuadraticMap.Equivalent.anisotropic_iff ⟨presentedFormConsIsometryEquiv w⟩,
+    ← QuadraticMap.Equivalent.anisotropic_iff ⟨QuadraticMap.IsometryEquiv.prodComm _ _⟩]
+  simp
+
+/-- A diagonal form `⟨w₀, w₁, w₂, …⟩` of rank `2 + n` with `n ≠ 0` is isotropic exactly when some
+unit value `x` of its binary head `⟨w₀, w₁⟩` has `-x` a value of its tail `⟨w₂, …⟩`. The head is
+stated as a weighted sum of squares, the shape in which the binary value criteria are stated. -/
+theorem not_anisotropic_presentedForm_two_add_iff [Invertible (2 : K)] {n : ℕ} [NeZero n]
+    (w : Fin (2 + n) → Kˣ) :
+    ¬(presentedForm ⟨2 + n, w⟩).Anisotropic ↔
+      ∃ x : Kˣ, x ∈ unitValueSet (weightedSumSquares K ![(w 0 : K), (w 1 : K)]) ∧
+        -x ∈ unitValueSet (presentedForm ⟨n, fun i ↦ w (Fin.natAdd 2 i)⟩) := by
+  have hfirst : presentedForm ⟨2, fun i ↦ w (Fin.castAdd n i)⟩ =
+      weightedSumSquares K ![(w 0 : K), (w 1 : K)] := by
+    have h0 : Fin.castAdd n (0 : Fin 2) = 0 := Fin.ext (by simp)
+    have h1 : Fin.castAdd n (1 : Fin 2) = 1 :=
+      Fin.ext (by simp [Nat.mod_eq_of_lt (by omega : 1 < 2 + n)])
+    rw [presentedForm_two, h0, h1]
+  have hw0 : w 0 ∈ unitValueSet (presentedForm ⟨2, fun i ↦ w (Fin.castAdd n i)⟩) := by
+    rw [hfirst]
+    exact mem_unitValueSet_binary_left _ _
+  rw [(equivalent_presentedForm_prod_castAdd_natAdd w).anisotropic_iff,
+    QuadraticMap.not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem
+      (nondegenerate_presentedForm _).radical_eq_bot (nondegenerate_presentedForm _).radical_eq_bot
+      ⟨w 0, hw0⟩, hfirst]
 
 private theorem presentedFormConsIsometryEquiv_toLinearEquiv {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     (presentedFormConsIsometryEquiv w).toLinearEquiv =

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.ZMod.MulCastHom
+public import TauCeti.GroupTheory.Torsion
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
@@ -59,6 +60,11 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
 * `TauCeti.ZModTwist.reduce_mulPow_eq_mulPow_reduce`: the reductions commute with the
   multiplications, and `TauCeti.ZModTwist.explicitCoeff1_reduce_explicitCoeff1_mulPow` is the
   induced commutation on `H¹`.
+* `TauCeti.ZModTwist.mulPow_reduce`: multiplying by `pʲ` after reducing from level `i + j` to
+  level `i` is multiplication by `pʲ`, and
+  `TauCeti.ZModTwist.explicitCoeff2_mulPow_explicitCoeff2_reduce` is the induced identity on `H²`.
+* `TauCeti.ZModTwist.pow_nsmul_eq_zero`, `TauCeti.ZModTwist.isPPrimaryTorsion`: `pⁱ` kills
+  `I(χ)/pⁱ`, which is therefore `p`-primary torsion.
 
 ## References
 
@@ -144,6 +150,18 @@ def equiv : ZModTwist χ i ≃+ ZMod (p ^ i) where
 @[simp] theorem val_neg (x : ZModTwist χ i) : (-x).val = -x.val := (rfl)
 
 @[simp] theorem val_sub (x y : ZModTwist χ i) : (x - y).val = x.val - y.val := (rfl)
+
+@[simp] theorem val_nsmul (k : ℕ) (x : ZModTwist χ i) : (k • x).val = k • x.val :=
+  map_nsmul (equiv χ i) k x
+
+/-- `pⁱ` kills `I(χ)/pⁱ`. -/
+@[simp]
+theorem pow_nsmul_eq_zero (x : ZModTwist χ i) : p ^ i • x = 0 :=
+  (equiv χ i).injective (by rw [map_nsmul, map_zero, nsmul_eq_mul, ZMod.natCast_self, zero_mul])
+
+/-- `I(χ)/pⁱ` is `p`-primary torsion. -/
+theorem isPPrimaryTorsion : IsPPrimaryTorsion p (ZModTwist χ i) :=
+  isPPrimaryTorsion_iff.2 fun x ↦ ⟨i, pow_nsmul_eq_zero χ i x⟩
 
 instance : TopologicalSpace (ZModTwist χ i) := ⊥
 
@@ -268,6 +286,16 @@ theorem reduce_mulPow (h : i + j = n) (x : ZModTwist χ i) :
     reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h)) (mulPow χ h x) = 0 :=
   ZModTwist.ext (ZMod.castHom_mulCastHom _ _ x.val)
 
+/-- Multiplying by `pʲ` after reducing from level `n` to level `i`, `i + j = n`, is multiplication
+by `pʲ` on `I(χ)/pⁿ`. -/
+@[simp]
+theorem mulPow_reduce (h : i + j = n) (y : ZModTwist χ n) :
+    mulPow χ h (reduce χ (Nat.le.intro h) y) = p ^ j • y := by
+  obtain ⟨a, ha⟩ := ZMod.intCast_surjective y.val
+  refine ZModTwist.ext ?_
+  rw [val_mulPow, val_reduce, val_nsmul, ← ha, map_intCast, ZMod.mulCastHom_intCast, nsmul_eq_mul,
+    mul_comm]
+
 /-- The reductions commute with the multiplications: reducing `pʲ x` from level `n` to level `n'`
 is `pʲ` times the reduction of `x` from level `i` to level `i'`, when `i + j = n` and
 `i' + j = n'`. -/
@@ -366,6 +394,36 @@ theorem explicitCoeff1_reduce_explicitCoeff1_mulPow {i' n' : ℕ} (h : i + j = n
   exact congrArg (fun f : ZModTwist χ i →+[G] ZModTwist χ n' ↦
     explicitCoeff1 G (ZModTwist χ i) f continuous_of_discreteTopology x)
     (reduce_comp_mulPow χ h h' hi hn)
+
+/-! ### The induced maps on `H²` -/
+
+section DegreeTwo
+
+variable [ContinuousMul G]
+
+/-- Two successive reductions on `H²` compose to the reduction between the outer levels. -/
+theorem explicitCoeff2_reduce_explicitCoeff2_reduce {j k : ℕ} (h₁ : j ≤ i) (h₂ : k ≤ j)
+    (x : H2 G (ZModTwist χ i)) :
+    explicitCoeff2 G (ZModTwist χ j) (reduce χ h₂) continuous_of_discreteTopology
+        (explicitCoeff2 G (ZModTwist χ i) (reduce χ h₁) continuous_of_discreteTopology x) =
+      explicitCoeff2 G (ZModTwist χ i) (reduce χ (h₂.trans h₁))
+        continuous_of_discreteTopology x := by
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff2_comp]
+  exact congrArg (fun f : ZModTwist χ i →+[G] ZModTwist χ k ↦
+    explicitCoeff2 G (ZModTwist χ i) f continuous_of_discreteTopology x)
+    (reduce_comp_reduce χ h₁ h₂)
+
+/-- On `H²`, multiplying by `pʲ` after reducing from level `n` to level `i`, `i + j = n`, is
+multiplication by `pʲ`. -/
+theorem explicitCoeff2_mulPow_explicitCoeff2_reduce (h : i + j = n) (x : H2 G (ZModTwist χ n)) :
+    explicitCoeff2 G (ZModTwist χ i) (mulPow χ h) continuous_of_discreteTopology
+        (explicitCoeff2 G (ZModTwist χ n) (reduce χ (Nat.le.intro h))
+          continuous_of_discreteTopology x) =
+      p ^ j • x := by
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff2_comp]
+  exact explicitCoeff2_eq_nsmul G _ _ _ (mulPow_reduce χ h) x
+
+end DegreeTwo
 
 end ZModTwist
 

@@ -37,6 +37,11 @@ than merely an abstract minimal structure.
 
 * `TauCeti.AInfinityAlgebra.isMinimal_minimalModel`: the transferred structure is minimal.
 * `TauCeti.AInfinityAlgebra.minimalModel_m_two`: its binary operation is the cohomology product.
+* `TauCeti.AInfinityAlgebra.minimalModel_m_three`: its ternary operation is the
+  Kontsevich--Soibelman/Merkulov expression `p m₃ (i ⊗ i ⊗ i) + p m₂ (h m₂ (i ⊗ i) ⊗ i)
+  - p m₂ (i ⊗ h m₂ (i ⊗ i))`, with the Koszul sign of the first input on the last term.
+* `TauCeti.AInfinityAlgebra.component_two_minimalModelInclusion`: the quadratic component of the
+  extending morphism is `-h m₂ (i ⊗ i)`.
 * `TauCeti.AInfinityAlgebra.isQuasiIso_minimalModelInclusion`: the extending morphism is a
   quasi-isomorphism.
 * `TauCeti.AInfinityAlgebra.cohomologyMap_minimalModelInclusion_cohomologyEquiv`: the extending
@@ -486,6 +491,24 @@ theorem minimalModel_m_two (x y : 𝒜.Cohomology) :
         𝒜.cohomologyClass_cycleRepresentative, ← classMap_apply,
         𝒜.cohomologyClass_cycleRepresentative]
 
+/-- The ternary operation of the minimal model, in the Kontsevich--Soibelman/Merkulov form: the
+ternary operation of `𝒜` on the chosen cycle representatives, corrected by the two homotopies of
+adjacent products; the second correction carries the Koszul sign of the first input. -/
+@[simp]
+theorem minimalModel_m_three (x y z : 𝒜.Cohomology) :
+    𝒜.minimalModel.m 3 ![x, y, z] =
+      𝒜.cohomologyContraction.proj (𝒜.m 3 ![𝒜.cohomologyContraction.incl x,
+          𝒜.cohomologyContraction.incl y, 𝒜.cohomologyContraction.incl z]) +
+        𝒜.cohomologyContraction.proj (𝒜.m 2 ![𝒜.cohomologyContraction.homotopy
+          (𝒜.m 2 ![𝒜.cohomologyContraction.incl x, 𝒜.cohomologyContraction.incl y]),
+          𝒜.cohomologyContraction.incl z]) -
+        𝒜.cohomologyContraction.proj (𝒜.m 2
+          ![𝒜.cohomologyContraction.incl (𝒜.cohomologyGrading.koszulTwist 1 x),
+            𝒜.cohomologyContraction.homotopy
+              (𝒜.m 2 ![𝒜.cohomologyContraction.incl y, 𝒜.cohomologyContraction.incl z])]) :=
+  𝒜.m_three_transfer 𝒜.cohomologyContraction 𝒜.isHomogeneous_cohomologyContraction_homotopy
+    𝒜.isHomogeneous_cohomologyContraction_incl 𝒜.isHomogeneous_cohomologyContraction_proj x y z
+
 /-- The `A∞` morphism from the minimal model on cohomology to the original algebra, extending
 the chosen cycle representatives. -/
 noncomputable def minimalModelInclusion : AInfinityHom 𝒜.minimalModel 𝒜 :=
@@ -501,6 +524,17 @@ theorem linearPart_minimalModelInclusion :
     𝒜.minimalModelInclusion.linearPart = 𝒜.cohomologyContraction.incl := by
   unfold minimalModelInclusion minimalModel
   rw [linearPart_transferInclusion]
+
+/-- The quadratic component of the minimal-model quasi-isomorphism is `-h m₂ (i ⊗ i)`: minus the
+homotopy of the product of the chosen cycle representatives. -/
+@[simp]
+theorem component_two_minimalModelInclusion (x y : 𝒜.Cohomology) :
+    𝒜.minimalModelInclusion.component 2 ![x, y] =
+      -𝒜.cohomologyContraction.homotopy
+        (𝒜.m 2 ![𝒜.cohomologyContraction.incl x, 𝒜.cohomologyContraction.incl y]) :=
+  𝒜.component_two_transferInclusion 𝒜.cohomologyContraction
+    𝒜.isHomogeneous_cohomologyContraction_homotopy 𝒜.isHomogeneous_cohomologyContraction_incl
+    𝒜.isHomogeneous_cohomologyContraction_proj x y
 
 /-- The morphism from the minimal model to the original algebra induces the identity on
 cohomology, once the minimal model is identified with its own cohomology. -/
