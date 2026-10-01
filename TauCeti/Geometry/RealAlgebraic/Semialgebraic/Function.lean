@@ -118,8 +118,9 @@ theorem IsSemialgebraicOn.glue {f g h : (σ → R) → (τ → R)} {s t : Set (�
   have hhst := hf.congr hft.symm
   have hhst' := hg.congr hgt.symm
   have hs : IsSemialgebraic s := by
-    rw [show s = (s ∩ t) ∪ (s \ t) by ext; simp]
-    exact hf.isSemialgebraic.union hg.isSemialgebraic
+    convert hf.isSemialgebraic.union hg.isSemialgebraic using 1
+    ext x
+    simp
   refine ⟨hs, ?_⟩
   have hgraph : Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' s.graphOn h =
       (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' (s ∩ t).graphOn h) ∪
