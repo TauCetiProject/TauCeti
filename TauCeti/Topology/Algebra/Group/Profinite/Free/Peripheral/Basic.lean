@@ -215,6 +215,13 @@ def IsPeripheralAut (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ) (φ : Co
     Prop :=
   ∀ i : Fin (r + 1), IsConj (hF.padicPow (peripheralTuple x i) u) (φ (peripheralTuple x i))
 
+/-- The peripheral condition on every entry of the peripheral tuple. -/
+theorem isPeripheralAut_def (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ)
+    (φ : ContinuousAut F) :
+    IsPeripheralAut hF x u φ ↔
+      ∀ i, IsConj (hF.padicPow (peripheralTuple x i) u) (φ (peripheralTuple x i)) :=
+  (Iff.rfl)
+
 /-- An automorphism is peripheral of exponent `u` exactly when it carries each `x_i` and the cusp
 to conjugates of their `u`-th powers. -/
 @[simp]
