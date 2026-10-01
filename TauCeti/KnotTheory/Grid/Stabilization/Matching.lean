@@ -41,6 +41,9 @@ prove exactness of the reduced stabilization mapping cone.
 * `TauCeti.GridDiagram.stabilizeXMatching_ne`: the matching has no fixed points.
 * `TauCeti.GridDiagram.stabilizeXMatchingSource_stabilizeXMatching_iff`: exactly one endpoint
   of each pair is a matching source.
+* `TauCeti.GridDiagram.stabilizeXMatchingSource_iff_notMem_cIco`: a generator is a matching
+  source exactly when the stabilization column lies outside the interval covered by the row swap
+  rectangle.
 * `TauCeti.GridDiagram.not_stabilizeXMatchingSource_inr`: no center generator is a matching
   source.
 * `TauCeti.GridDiagram.stabilizeXLevel_stabilizeXMatching`: the stabilization level is constant on
@@ -112,15 +115,6 @@ def StabilizeXMatchingSource
     ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ)
     ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc)
 
-/-- A generator is a matching source exactly when the stabilization column lies in the clockwise
-half-open interval from the column occupied in row `(G.X s).succ` to the column occupied in row
-`(G.X s).castSucc`. -/
-theorem stabilizeXMatchingSource_iff (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
-    G.StabilizeXMatchingSource s i ↔ s.castSucc ∈ Grid.cIco
-      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ)
-      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc) :=
-  Iff.rfl
-
 private theorem stabilizeXMatching_transpose_castSucc
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
     (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)).transpose (G.X s).castSucc =
@@ -155,6 +149,18 @@ theorem stabilizeXMatchingSource_stabilizeXMatching_iff
       rw [Grid.cIco_union_swap hab]
       simp
     exact (Finset.mem_union.1 hmem).resolve_right hb
+
+/-- A generator is a matching source exactly when the stabilization column lies outside the
+clockwise interval from the column used in row `(G.X s).castSucc` to the column used in row
+`(G.X s).succ`, which is the interval covered by the row swap rectangle. -/
+theorem stabilizeXMatchingSource_iff_notMem_cIco
+    (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
+    G.StabilizeXMatchingSource s i ↔ s.castSucc ∉ Grid.cIco
+      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc)
+      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ) := by
+  rw [← not_not (a := G.StabilizeXMatchingSource s i),
+    ← G.stabilizeXMatchingSource_stabilizeXMatching_iff, StabilizeXMatchingSource,
+    G.stabilizeXMatching_transpose_castSucc s, G.stabilizeXMatching_transpose_succ s]
 
 /-- A center generator is never a matching source: its partner is off-center, and the mapping
 cone has no component from the center block to the off-center block. -/

@@ -83,7 +83,7 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 private theorem isEmpty_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
     (G.stabilizeXRowSwapRectangle s y).IsEmpty := by
   have h : Grid.cIoo (G.X s).castSucc (G.X s).succ = ∅ := by
-    rw [← Fin.finRotate_castSucc, Grid.cIoo_finRotate_eq_empty]
+    rw [← Fin.coeSucc_eq_succ, ← finRotate_apply, Grid.cIoo_finRotate_eq_empty]
   rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo, stabilizeXRowSwapRectangle_bottom,
     stabilizeXRowSwapRectangle_top, h]
   simp
@@ -268,29 +268,16 @@ private theorem stabilizeXMatching_eq_inr_iff (i : G.StabilizeXOffCenterState s 
   rw [← (G.stabilizeXConeStateEquiv s).injective.eq_iff,
     stabilizeXConeStateEquiv_apply_stabilizeXMatching, stabilizeXConeStateEquiv_apply_inr, eq_comm]
 
-/-- A generator is a matching source exactly when the stabilization column lies outside the
-clockwise interval from the column used in row `(G.X s).castSucc` to the column used in row
-`(G.X s).succ`, which is the interval covered by the row swap rectangle. -/
-private theorem stabilizeXMatchingSource_iff_notMem_cIco
-    (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
-    G.StabilizeXMatchingSource s i ↔ s.castSucc ∉ Grid.cIco
-      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc)
-      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ) := by
-  rw [← not_not (a := G.StabilizeXMatchingSource s i),
-    ← G.stabilizeXMatchingSource_stabilizeXMatching_iff, stabilizeXMatchingSource_iff,
-    stabilizeXConeStateEquiv_apply_stabilizeXMatching, GridState.swapRows_transpose,
-    GridState.swapColumns_apply, GridState.swapColumns_apply, Equiv.swap_apply_left,
-    Equiv.swap_apply_right]
-
 /-- An off-center state using the row `(G.X s).castSucc` in column `s.succ` is a matching
 source. -/
 private theorem stabilizeXMatchingSource_inl_of_eq {y : G.StabilizeXOffCenterState s}
     (hy : y.1 s.succ = (G.X s).castSucc) : G.StabilizeXMatchingSource s (.inl y) := by
   have ha : y.1.transpose (G.X s).castSucc = s.succ := by
     rw [← hy, GridState.transpose_apply_apply]
-  rw [stabilizeXMatchingSource_iff, stabilizeXConeStateEquiv_apply_inl, ha]
-  exact Grid.castSucc_mem_cIco_succ fun h ↦ Fin.castSucc_lt_succ.ne
-    (y.1.transpose.toPerm.injective (ha.trans h.symm))
+  rw [stabilizeXMatchingSource_iff_notMem_cIco, stabilizeXConeStateEquiv_apply_inl, ha]
+  exact fun h ↦ Finset.disjoint_left.mp (Grid.disjoint_cIco_swap _ _) h
+    (Grid.castSucc_mem_cIco_succ fun he ↦ Fin.castSucc_lt_succ.ne
+      (y.1.transpose.toPerm.injective (ha.trans he.symm)))
 
 /-- An off-center state reaching its row swap along a fully blocked rectangle is a matching
 source. -/
@@ -315,10 +302,10 @@ private theorem stabilizeXRowSwapRectangle_mem_fullyBlockedRectangles_of_source
   rw [stabilizeXMatchingSource_iff_notMem_cIco, stabilizeXConeStateEquiv_apply_inl] at hsrc
   rw [stabilizeXRowSwapRectangle_mem_fullyBlockedRectangles_iff]
   have hne {r : Fin (n + 1)} (hr : y.1 s.succ ≠ r) : y.1.transpose r ≠ finRotate _ s.castSucc := by
-    rw [Fin.finRotate_castSucc]
+    rw [finRotate_apply, Fin.coeSucc_eq_succ]
     exact fun h ↦ hr ((congrArg (fun c ↦ y.1 c) h).symm.trans (y.1.apply_transpose_apply r))
   have hs := Grid.mem_cIco_finRotate_iff_of_ne (hne hy) (hne y.2)
-  rw [Fin.finRotate_castSucc] at hs
+  rw [finRotate_apply, Fin.coeSucc_eq_succ] at hs
   rw [hs]
   exact ⟨hsrc, hsrc⟩
 
@@ -379,8 +366,8 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_fullyBlockedRectangles
     obtain ⟨hbot, htop, -⟩ := Grid.cIco_eq_singleton_iff.mp hrows
     simp only [GridRectangleBetween.toGridRectangle_bottom,
       GridRectangleBetween.toGridRectangle_top,
-      Fin.finRotate_castSucc] at hbot htop
-    obtain rfl := r.target_eq_swapRows_of_bottom_of_top hbot htop
+      finRotate_apply, Fin.coeSucc_eq_succ] at hbot htop
+    obtain rfl := r.target_eq_swapRows.trans (by rw [← r.bottom_def, ← r.top_def, hbot, htop])
     exact Or.inr ⟨G.stabilizeXMatchingSource_inl_of_mem_fullyBlockedRectangles s (y := ⟨y, hy⟩) hr,
       ((G.stabilizeXMatching_eq_inl_iff s _ _).mpr
         (by rw [stabilizeXConeStateEquiv_apply_inl])).symm⟩
@@ -389,7 +376,7 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_fullyBlockedRectangles
     obtain ⟨hleft, hright, -⟩ := Grid.cIco_eq_singleton_iff.mp hcols
     simp only [GridRectangleBetween.toGridRectangle_left,
       GridRectangleBetween.toGridRectangle_right,
-      Fin.finRotate_castSucc] at hleft hright
+      finRotate_apply, Fin.coeSucc_eq_succ] at hleft hright
     refine Or.inl (Or.inr ⟨(G.stabilizeXLevel_eq_of_disjoint s r hdisj).symm, ?_⟩)
     have hzs : z s.succ = y s.castSucc := by
       rw [← hright, ← hleft]
@@ -435,8 +422,8 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_XHomotopyRectangles
   -- The target is the row swap of the source.
   obtain ⟨hbot, htop, -⟩ := Grid.cIco_eq_singleton_iff.mp hrow
   simp only [GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
-    Fin.finRotate_castSucc] at hbot htop
-  have hswap := r.target_eq_swapRows_of_bottom_of_top hbot htop
+    finRotate_apply, Fin.coeSucc_eq_succ] at hbot htop
+  have hswap := r.target_eq_swapRows.trans (by rw [← r.bottom_def, ← r.top_def, hbot, htop])
   have hy := G.apply_succ_eq_castSucc_of_insertPoint_eq_swapRows s hswap
   exact ⟨G.stabilizeXMatchingSource_inl_of_eq s hy,
     ((G.stabilizeXMatching_eq_inr_iff s _ _).mpr
@@ -475,7 +462,7 @@ private theorem stabilizeXConeWeight_lt_of_mem_fullyBlockedRectangles (x x' : Gr
   · obtain ⟨hb, ht, -⟩ := Grid.cIco_eq_singleton_iff.mp h
     simp only [GridRectangleBetween.toGridRectangle_bottom,
       GridRectangleBetween.toGridRectangle_top,
-      Fin.finRotate_castSucc] at hb ht
+      finRotate_apply, Fin.coeSucc_eq_succ] at hb ht
     have hright : r'.right = s.succ := y.toPerm.injective (ht.trans hys.symm)
     refine ⟨hright ▸ Grid.castSucc_mem_cIco_succ (hright ▸ r'.left_ne_right), ?_⟩
     rw [hb, ht]
@@ -483,7 +470,7 @@ private theorem stabilizeXConeWeight_lt_of_mem_fullyBlockedRectangles (x x' : Gr
   · obtain ⟨hl, hrt, -⟩ := Grid.cIco_eq_singleton_iff.mp h
     simp only [GridRectangleBetween.toGridRectangle_left,
       GridRectangleBetween.toGridRectangle_right,
-      Fin.finRotate_castSucc] at hl hrt
+      finRotate_apply, Fin.coeSucc_eq_succ] at hl hrt
     rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hl, hrt, hys]
     exact ⟨Grid.left_mem_cIco Fin.castSucc_lt_succ.ne, Grid.castSucc_mem_cIco_succ fun h ↦
       Fin.castSucc_lt_succ.ne (y.toPerm.injective (h.trans hys.symm))⟩

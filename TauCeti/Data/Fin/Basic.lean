@@ -35,7 +35,6 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
-* `Fin.finRotate_castSucc`: forward rotation sends `i.castSucc` to `i.succ`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
@@ -145,10 +144,6 @@ theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
     have : NeZero n := ⟨Nat.pos_iff_ne_zero.mp c.pos⟩
     rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
       ← Nat.add_mod, ← add_assoc]
-
-/-- Forward rotation of `Fin (n + 1)` sends `i.castSucc` to its successor `i.succ`. -/
-theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ := by
-  rw [finRotate_apply, Fin.coeSucc_eq_succ]
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/

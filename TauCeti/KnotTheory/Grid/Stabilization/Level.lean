@@ -248,7 +248,8 @@ theorem stabilizeXRowSwapRectangle_top (y : GridState (n + 1)) :
 theorem coveredRows_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
     (G.stabilizeXRowSwapRectangle s y).toGridRectangle.coveredRows = {(G.X s).castSucc} :=
   Grid.cIco_eq_singleton_iff.mpr ⟨G.stabilizeXRowSwapRectangle_bottom s y,
-    (G.stabilizeXRowSwapRectangle_top s y).trans (Fin.finRotate_castSucc _).symm, by
+    (G.stabilizeXRowSwapRectangle_top s y).trans
+      (by rw [finRotate_apply, Fin.coeSucc_eq_succ]), by
       rw [GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
         stabilizeXRowSwapRectangle_bottom, stabilizeXRowSwapRectangle_top]
       exact Fin.castSucc_lt_succ.ne⟩

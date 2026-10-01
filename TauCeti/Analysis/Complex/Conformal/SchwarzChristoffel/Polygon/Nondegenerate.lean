@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Turning
-import TauCeti.Data.Fin.Basic
 
 /-!
 # Nondegeneracy of the Schwarz--Christoffel polygon
@@ -136,13 +135,19 @@ theorem schwarzChristoffelPolygon_hasNondegenerateEdges (a e : Fin (n + 1) → �
     refine Fin.lastCases (motive := fun j =>
       schwarzChristoffelPolygon a e z₀ j.castSucc ≠
         schwarzChristoffelPolygon a e z₀ (finRotate (n + 2) j.castSucc)) ?_ ?_ j
-    · rw [Fin.finRotate_castSucc, Fin.succ_last, schwarzChristoffelPolygon_apply_castSucc,
+    · have hrotate : finRotate (n + 2) (Fin.last n).castSucc = Fin.last (n + 1) := by
+        apply Fin.ext
+        simp
+      rw [hrotate, schwarzChristoffelPolygon_apply_castSucc,
         schwarzChristoffelPolygon_apply_last]
       rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n) (hfinite _)]
       exact schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le a e z₀ (hfinite _)
         (fun i _ ↦ ha.monotone i.le_last) hS
     · intro j
-      rw [Fin.finRotate_castSucc, Fin.succ_castSucc, schwarzChristoffelPolygon_apply_castSucc,
+      have hrotate : finRotate (n + 2) j.castSucc.castSucc = j.succ.castSucc := by
+        apply Fin.ext
+        simp
+      rw [hrotate, schwarzChristoffelPolygon_apply_castSucc,
         schwarzChristoffelPolygon_apply_castSucc]
       apply schwarzChristoffelVertex_ne a e z₀ (ha j.castSucc_lt_succ)
       · intro i _ hi

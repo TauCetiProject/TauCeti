@@ -29,8 +29,6 @@ a Maslov or Alexander grading-change computation across a rectangle rests on, an
   source state with the two side columns swapped.
 * `TauCeti.GridRectangleBetween.target_eq_swapRows`: equivalently, the source state with the two
   rows those columns occupy swapped.
-* `TauCeti.GridRectangleBetween.target_eq_swapRows_of_bottom_of_top`: the same, for prescribed
-  bottom and top rows.
 * `TauCeti.GridRectangleBetween.nonempty_iff`: oriented rectangles between `x` and `y` exist
   exactly when `y` is a column transposition of `x`.
 * `TauCeti.GridRectangleBetween.source_eq_swapColumns`: the symmetric statement recovering the
@@ -87,12 +85,6 @@ by its side columns swapped: a grid state is a bijection from columns to rows, s
 two side columns exchanges exactly the two rows they occupy. -/
 theorem target_eq_swapRows : y = x.swapRows (x R.left) (x R.right) :=
   R.target_eq_swapColumns.trans (GridState.swapColumns_eq_swapRows _ _ _)
-
-/-- An oriented rectangle whose horizontal sides lie in the rows `a` and `b` ends at the source
-state with these two rows swapped. -/
-theorem target_eq_swapRows_of_bottom_of_top {a b : Fin n} (hb : R.bottom = a) (ht : R.top = b) :
-    y = x.swapRows a b :=
-  R.target_eq_swapRows.trans (by rw [← R.bottom_def, ← R.top_def, hb, ht])
 
 /-- The oriented rectangle associated to an equality expressing the target as a nontrivial
 column swap of the source. -/
