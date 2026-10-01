@@ -32,6 +32,10 @@ sheaves) is applied to a curve. This file derives it from geometric integrality,
 holds for smooth geometrically connected schemes over `k`
 (`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`).
 
+The proof is built on Andrew Yang's formalization of geometrically integral morphisms in Mathlib
+(`AlgebraicGeometry.GeometricallyIntegral`, in `Mathlib/AlgebraicGeometry/Geometrically/Integral`),
+which supplies the integrality of the base change `X ×_k Spec L`.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.isDomain_functionField_tensorProduct_of_geometricallyIntegral`:
