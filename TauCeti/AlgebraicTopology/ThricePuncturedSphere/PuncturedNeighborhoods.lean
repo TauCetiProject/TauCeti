@@ -139,31 +139,34 @@ theorem disjoint_puncturedNeighborhoodOne_puncturedNeighborhoodInf :
 
 /-! ### Standard local coordinates -/
 
+private theorem puncturedDiscOneHalf_subset_range :
+    puncturedDiscOneHalf ⊆ Set.range ((↑) : ThricePuncturedSphere → ℂ) := by
+  intro z hz
+  rw [mem_puncturedDiscOneHalf] at hz
+  refine ⟨⟨z, norm_pos_iff.mp hz.1, ?_⟩, rfl⟩
+  intro h
+  rw [h, norm_one] at hz
+  norm_num at hz
+
 /-- The affine coordinate identifies the standard neighborhood of `0` with the complex
 punctured disc of radius `1 / 2`. -/
 noncomputable def puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf :
-    ↥puncturedNeighborhoodZero ≃ₜ ↥puncturedDiscOneHalf where
-  toFun z := ⟨(z : ThricePuncturedSphere), norm_pos_iff.mpr z.1.ne_zero, z.2⟩
-  invFun z := by
-    have hne : (z : ℂ) ≠ 1 := by
-      intro h
-      have hz := z.2.2
-      rw [h, norm_one] at hz
-      norm_num at hz
-    exact ⟨⟨z, norm_pos_iff.mp z.2.1, hne⟩, z.2.2⟩
-  left_inv z := by ext; rfl
-  right_inv z := by ext; rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+    ↥puncturedNeighborhoodZero ≃ₜ ↥puncturedDiscOneHalf :=
+  (Homeomorph.setCongr (by
+    ext z
+    simp only [mem_puncturedNeighborhoodZero, Set.mem_preimage, mem_puncturedDiscOneHalf]
+    exact (and_iff_right (norm_pos_iff.mpr z.ne_zero)).symm)).trans
+    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+      puncturedDiscOneHalf_subset_range)
 
 @[simp]
 theorem coe_puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf
     (z : ↥puncturedNeighborhoodZero) :
     (puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf z : ℂ) =
       (z : ThricePuncturedSphere) := by
-  -- Expose the common complex value hidden by the two nested subtype coercions.
-  change ((z.1 : ThricePuncturedSphere) : ℂ) = ((z : ThricePuncturedSphere) : ℂ)
-  rfl
+  unfold puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf
+  exact Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
+    Topology.IsEmbedding.subtypeVal puncturedDiscOneHalf_subset_range _
 
 /-- The inverse affine coordinate on the punctured disc is `w ↦ w`. -/
 @[simp]
@@ -186,8 +189,10 @@ private noncomputable def puncturedNeighborhoodOneHomeomorphZero :
 private theorem coe_puncturedNeighborhoodOneHomeomorphZero
     (z : ↥puncturedNeighborhoodOne) :
     (((puncturedNeighborhoodOneHomeomorphZero z : ↥puncturedNeighborhoodZero) :
-      ThricePuncturedSphere) : ℂ) = 1 - ((z : ThricePuncturedSphere) : ℂ) :=
-  coe_mob01 (z : ThricePuncturedSphere)
+      ThricePuncturedSphere) : ℂ) = 1 - ((z : ThricePuncturedSphere) : ℂ) := by
+  rw [puncturedNeighborhoodOneHomeomorphZero]
+  change (mob01 (z : ThricePuncturedSphere) : ℂ) = _
+  exact coe_mob01 (z : ThricePuncturedSphere)
 
 /-- The coordinate `z ↦ 1 - z` identifies the standard neighborhood of `1` with the complex
 punctured disc of radius `1 / 2`. -/
@@ -240,8 +245,10 @@ private noncomputable def puncturedNeighborhoodInfHomeomorphZero :
 private theorem coe_puncturedNeighborhoodInfHomeomorphZero
     (z : ↥puncturedNeighborhoodInf) :
     (((puncturedNeighborhoodInfHomeomorphZero z : ↥puncturedNeighborhoodZero) :
-      ThricePuncturedSphere) : ℂ) = 1 / ((z : ThricePuncturedSphere) : ℂ) :=
-  coe_mob0Inf (z : ThricePuncturedSphere)
+      ThricePuncturedSphere) : ℂ) = 1 / ((z : ThricePuncturedSphere) : ℂ) := by
+  rw [puncturedNeighborhoodInfHomeomorphZero]
+  change (mob0Inf (z : ThricePuncturedSphere) : ℂ) = _
+  exact coe_mob0Inf (z : ThricePuncturedSphere)
 
 /-- The coordinate `z ↦ 1 / z` identifies the standard neighborhood of `∞` with the complex
 punctured disc of radius `1 / 2`. This is the standard chart at `∞`. -/
