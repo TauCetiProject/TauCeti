@@ -78,6 +78,7 @@ theorem norm_surjective_of_top_eq_ground (hL : L.top = L.ground) :
   exact L.norm_apply_coe_of_top_eq_ground F hL x
 
 /-- The norm subgroup of a trivial layer is the whole ground level. -/
+@[simp]
 theorem normSubgroup_eq_top_of_top_eq_ground (hL : L.top = L.ground) :
     L.normSubgroup F = ⊤ := by
   ext y
@@ -97,14 +98,14 @@ namespace ClassFormation
 variable {F : Formation G}
 
 /-- The Artin map of a layer whose top and ground subgroups agree is the zero homomorphism. -/
+@[simp]
 theorem artinMap_trivialLayer (cf : ClassFormation F) (L : NormalLayer G)
     (hL : L.top = L.ground) : cf.artinMap L = 0 := by
-  have hsource := L.subsingleton_normQuotient_of_top_eq_ground F hL
-  have htarget : Subsingleton (Additive (Abelianization L.Gal)) :=
-    @Function.Surjective.subsingleton _ _ (cf.artinEquiv L) hsource
-      (cf.artinEquiv L).surjective
-  ext a
-  exact @Subsingleton.elim _ htarget _ _
+  apply AddMonoidHom.ext
+  intro a
+  rw [AddMonoidHom.zero_apply, cf.artinMap_eq_zero_iff L,
+    L.normSubgroup_eq_top_of_top_eq_ground F hL]
+  exact Submodule.mem_top
 
 end ClassFormation
 
