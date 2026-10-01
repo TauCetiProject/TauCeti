@@ -63,6 +63,8 @@ conjugation action.
   `ConjClasses.pow_mul`: the identity and composition laws for that power.
 * `ConjClasses.map_mk`: the computation rule for `ConjClasses.map` on representatives,
   with `ConjClasses.map_pow` the consequence that the power is natural in the monoid.
+* `MulEquiv.conjClassesEquiv`: a multiplicative equivalence induces an equivalence of
+  conjugacy classes.
 * `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
   classes.
 
@@ -404,6 +406,44 @@ theorem pow_mul (C : ConjClasses M) (i j : ℕ) : (C ^ i) ^ j = C ^ (i * j) := b
 @[simp]
 theorem map_mk {N : Type*} [Monoid N] (f : M →* N) (a : M) :
     ConjClasses.map f (ConjClasses.mk a) = ConjClasses.mk (f a) := rfl
+
+end ConjClasses
+
+namespace MulEquiv
+
+variable {M N P : Type*} [Monoid M] [Monoid N] [Monoid P]
+
+/-- A multiplicative equivalence induces an equivalence of conjugacy classes. -/
+def conjClassesEquiv (e : M ≃* N) : ConjClasses M ≃ ConjClasses N where
+  toFun := ConjClasses.map e.toMonoidHom
+  invFun := ConjClasses.map e.symm.toMonoidHom
+  left_inv C := by
+    obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+    simp
+  right_inv C := by
+    obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+    simp
+
+/-- The equivalence on conjugacy classes sends the class of a representative to the class of its
+image. -/
+@[simp]
+theorem conjClassesEquiv_mk (e : M ≃* N) (a : M) :
+    e.conjClassesEquiv (ConjClasses.mk a) = ConjClasses.mk (e a) := by
+  exact ConjClasses.map_mk e.toMonoidHom a
+
+/-- Equivalences on conjugacy classes respect composition of multiplicative equivalences. -/
+@[simp]
+theorem conjClassesEquiv_trans (e : M ≃* N) (f : N ≃* P) :
+    (e.trans f).conjClassesEquiv = e.conjClassesEquiv.trans f.conjClassesEquiv := by
+  ext C
+  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+  simp
+
+end MulEquiv
+
+namespace ConjClasses
+
+variable {M : Type*} [Monoid M]
 
 /-- Powering a conjugacy class is natural in the monoid. -/
 @[simp]

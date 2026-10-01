@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
 import Mathlib.Tactic.Group
 
@@ -16,7 +17,8 @@ The pointed classification of connected covers records a subgroup of the fundame
 a chosen basepoint. Changing the basepoint along a path transports that subgroup by the
 standard path-conjugation isomorphism of fundamental groups. This file packages that transport
 and the induced transport of the normalizer quotient `N(H) / H` used for deck groups of covers
-attached to subgroups.
+attached to subgroups. It also descends basepoint change to conjugacy classes, where the result is
+independent of the chosen path.
 
 It also records the element-level behaviour of the transport: path-quotient formulas and its
 compatibility with concatenation of paths.
@@ -40,6 +42,10 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
   path is the composite of the basepoint changes.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
   conjugation by its class.
+* `FundamentalGroup.conjClassesEquivOfPath`: the induced equivalence of conjugacy classes.
+* `FundamentalGroup.conjClassesEquivOfPath_eq`: this equivalence is independent of the path.
+* `FundamentalGroup.conjClassesEquivOfPathConnected_trans`: canonical conjugacy-class transport
+  in a path-connected space is natural under further path transport.
 * `TauCeti.FundamentalGroup.mem_basepointChangeSubgroup` and the representative `[simp]`
   lemmas for membership and quotient calculations under these domain-specific names.
 
@@ -149,6 +155,116 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans
       (Path.Homotopic.Quotient.mk (γ.trans δ))).conj g = β.conj (α.conj g)
   rw [h]
   exact CategoryTheory.Iso.trans_conj α β g
+
+/-- Reversing a basepoint-change path gives the inverse equivalence of fundamental groups. -/
+@[simp]
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ.symm =
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm := by
+  ext g
+  rw [_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply]
+  have hsymm : (Path.Homotopic.Quotient.mk γ).symm.symm =
+      Path.Homotopic.Quotient.mk γ := by
+    rw [← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_symm,
+      Path.symm_symm]
+  rw [Path.Homotopic.Quotient.mk_symm, hsymm]
+
+/-- Changing basepoint along a path induces an equivalence between conjugacy classes in the two
+fundamental groups. -/
+noncomputable def _root_.FundamentalGroup.conjClassesEquivOfPath
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁) :
+    ConjClasses (_root_.FundamentalGroup X x₀) ≃
+      ConjClasses (_root_.FundamentalGroup X x₁) :=
+  (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).conjClassesEquiv
+
+/-- On a representative, transport of conjugacy classes is induced by the usual basepoint-change
+equivalence of fundamental groups. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_mk
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁)
+    (g : _root_.FundamentalGroup X x₀) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath γ (ConjClasses.mk g) =
+      ConjClasses.mk (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) := by
+  exact MulEquiv.conjClassesEquiv_mk
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) g
+
+/-- Transport of conjugacy classes along a concatenated path is transport along each piece in
+turn. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_trans
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X} (γ : Path x₀ x₁) (δ : Path x₁ x₂) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath (γ.trans δ) =
+      (_root_.FundamentalGroup.conjClassesEquivOfPath γ).trans
+        (_root_.FundamentalGroup.conjClassesEquivOfPath δ) := by
+  change
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath (γ.trans δ)).conjClassesEquiv =
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).conjClassesEquiv.trans
+        (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ).conjClassesEquiv
+  rw [_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans,
+    MulEquiv.conjClassesEquiv_trans]
+
+/-- **Conjugacy-class basepoint change is independent of the path.** Two paths with the same
+endpoints can change individual fundamental-group elements by an inner automorphism, but induce
+the same equivalence on conjugacy classes. -/
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_eq
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ δ : Path x₀ x₁) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath γ =
+      _root_.FundamentalGroup.conjClassesEquivOfPath δ := by
+  ext C
+  obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPath_mk,
+    _root_.FundamentalGroup.conjClassesEquivOfPath_mk,
+    ConjClasses.mk_eq_mk_iff_isConj, isConj_iff]
+  let q := _root_.FundamentalGroup.fromPath
+    (Path.Homotopic.Quotient.mk (γ.symm.trans δ))
+  have htransport :
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm.trans
+          (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ) =
+        MulAut.conj q := by
+    rw [← _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm,
+      ← _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans]
+    exact _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj (γ.symm.trans δ)
+  refine ⟨q, ?_⟩
+  calc
+    q * _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g * q⁻¹ =
+        MulAut.conj q (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) := rfl
+    _ = ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm.trans
+          (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ))
+          (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) := by rw [htransport]
+    _ = _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ g := by
+      rw [MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
+
+/-- In a path-connected space, conjugacy classes of fundamental groups at two points are
+canonically equivalent: the result does not depend on the path chosen by the instance. -/
+noncomputable def _root_.FundamentalGroup.conjClassesEquivOfPathConnected
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (x₀ x₁ : X) :
+    ConjClasses (_root_.FundamentalGroup X x₀) ≃
+      ConjClasses (_root_.FundamentalGroup X x₁) :=
+  _root_.FundamentalGroup.conjClassesEquivOfPath (PathConnectedSpace.somePath x₀ x₁)
+
+/-- The canonical equivalence of conjugacy classes in a path-connected space agrees with
+transport along any specified path. -/
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] {x₀ x₁ : X}
+    (γ : Path x₀ x₁) :
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected x₀ x₁ =
+      _root_.FundamentalGroup.conjClassesEquivOfPath γ :=
+  _root_.FundamentalGroup.conjClassesEquivOfPath_eq _ _
+
+/-- Canonical conjugacy-class transport in a path-connected space is compatible with subsequent
+transport along a specified path. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_trans
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (b : X) {x₀ x₁ : X}
+    (γ : Path x₀ x₁) :
+    (_root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₀).trans
+        (_root_.FundamentalGroup.conjClassesEquivOfPath γ) =
+      _root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₁ := by
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPathConnected,
+    ← _root_.FundamentalGroup.conjClassesEquivOfPath_trans]
+  exact _root_.FundamentalGroup.conjClassesEquivOfPath_eq _ _
 
 variable {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
 
