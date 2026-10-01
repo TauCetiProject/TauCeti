@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Euclidean.Angle.Oriented.Basic
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Triangle
 public import TauCeti.Geometry.Euclidean.Angle.Oriented.Basic
 
@@ -18,8 +16,8 @@ to the geodesic towards `C`, the oriented angle (`Orientation.oangle` for the st
 orientation of `ℂ`) between the two velocities at `A`. Its absolute value is the unoriented
 `UpperHalfPlane.interiorAngle A B C` (`UpperHalfPlane.interiorAngle_eq_abs_toReal_orientedAngle`),
 it is invariant under `PSL(2, ℝ)` (`orientedAngle_smul`), and it is additive
-(`UpperHalfPlane.orientedAngle_add`). Its sign is the side of the line through `A` and `B` on
-which `C` lies: `+1` on the left, `-1` on the right, `0` on the line
+(`UpperHalfPlane.orientedAngle_add`). For `A ≠ B` and `A ≠ C`, its sign is the side of the line
+through `A` and `B` on which `C` lies: `+1` on the left, `-1` on the right, `0` on the line
 (`orientedAngle_sign_eq_one_iff` and companions); in particular the angles of a nondegenerate
 triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`).
 Three consequences used for polygons: orientation is cyclically invariant
@@ -28,17 +26,9 @@ left of `B → C`), unoriented angles add when the middle geodesic lies between 
 (`interiorAngle_add`), and the angular order of two points on the left of `A → B` is read off
 the side of the geodesic through the first (`toReal_orientedAngle_lt_iff`).
 
-The sign is computed in the normal form in which the geodesic from `A` to `B` is the upward
-imaginary axis (`UpperHalfPlane.inv_geodesicBetween_smul_left`,
-`UpperHalfPlane.inv_geodesicBetween_smul_right`), where the geodesic towards `C` is a rotation
-of the axis (`geodesicBetween_I_geodesicLine_rotation`) and the oriented angle is twice the
-rotation angle (`orientedAngle_I_geodesicLine_one_rotation`). Results assuming `A ≠ B` extend to
-the degenerate line `geodesicBetween A A` through `UpperHalfPlane.exists_ne_and_geodesicBetween_eq`.
-
 Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010), Corollary 5.2
 p. 18 (Möbius transformations preserve angles and orientation). The sign–side correspondence and
-the cyclic invariance are not stated in the sources; they are proved here by the normal-form
-computations of `Geodesic/Semicircle.lean`.
+the cyclic invariance are not stated in the sources.
 -/
 
 public section

@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Between
-public import TauCeti.Analysis.Complex.UpperHalfPlane.HalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Triangle
 
 /-!
@@ -19,17 +17,17 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Triangle
 segments transform naturally under `PSL(2, ℝ)` (`smul_geodesicSegment`).
 
 Along any geodesic line the real part is monotone or antitone
-(`monotone_re_geodesicLine_or_antitone`), because the line is a vertical ray or a semicircle
-centred on the real axis traversed once; hence the set of parameters at which a geodesic line
-lies in a given half-plane is an interval (`ordConnected_preimage_geodesicLine_rightHalfPlane`
-and companions), and half-planes, their closures, closed sides and triangles are convex: they
-contain the segment between any two of their points (`geodesicSegment_subset_rightHalfPlane`, …,
-`geodesicSegment_subset_triangle`).
+(`monotone_re_geodesicLine_or_antitone`); the set of parameters at which a geodesic line lies in
+a given half-plane or its closure is an interval
+(`ordConnected_preimage_geodesicLine_rightHalfPlane` and companions); and half-planes, their
+closures, closed sides and triangles are convex: they contain the segment between any two of
+their points (`geodesicSegment_subset_rightHalfPlane`, …, `geodesicSegment_subset_triangle`).
+Convexity is what makes the polygons bounded by such half-planes convex.
 
 Source: Walkden, *Hyperbolic geometry* (MATH32051 lecture notes, Manchester 2019), §7.1 (the
-segment `[z, w]`) and Solution 14.1 (half-planes are convex, by moving the bounding geodesic to
-the imaginary axis); Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010),
-Theorem 3.1 p. 10 (geodesics are semicircles and vertical rays).
+segment `[z, w]`) and Solution 14.1 (half-planes are convex); Katok, *Fuchsian groups,
+geodesic flows…*, Clay Math. Proc. 10 (2010), Theorem 3.1 p. 10 (geodesics are semicircles and
+vertical rays).
 -/
 
 public section
@@ -49,7 +47,15 @@ open TauCeti.UpperHalfPlane
 def geodesicSegment (z w : ℍ) : Set ℍ :=
   geodesicLine (geodesicBetween z w) '' Icc 0 (dist z w)
 
+-- The body of `geodesicSegment` is not `@[expose]`d, so downstream modules rewrite with this.
+/-- The geodesic segment from `z` to `w`, unfolded: the image of `[0, dist z w]` under the geodesic
+line from `z` to `w`. -/
+theorem geodesicSegment_def (z w : ℍ) :
+    geodesicSegment z w = geodesicLine (geodesicBetween z w) '' Icc 0 (dist z w) := by
+  rfl
+
 /-- Membership in `geodesicSegment z w`. -/
+@[simp]
 theorem mem_geodesicSegment_iff (z w u : ℍ) :
     u ∈ geodesicSegment z w ↔ ∃ t ∈ Icc 0 (dist z w), geodesicLine (geodesicBetween z w) t = u :=
   Iff.rfl
@@ -206,10 +212,8 @@ private theorem geodesicSegment_subset_of_ordConnected {S : Set ℍ} {z w : ℍ}
     geodesicSegment z w ⊆ S := by
   rintro _ ⟨t, ht, rfl⟩
   refine h.out ?_ ?_ ht
-  · change geodesicLine (geodesicBetween z w) 0 ∈ S
-    rwa [geodesicLine_geodesicBetween_zero]
-  · change geodesicLine (geodesicBetween z w) (dist z w) ∈ S
-    rwa [geodesicLine_geodesicBetween_dist]
+  · simpa only [mem_preimage, geodesicLine_geodesicBetween_zero] using hz
+  · simpa only [mem_preimage, geodesicLine_geodesicBetween_dist] using hw
 
 /-- Open right half-planes are convex.
 Source: Walkden, *Hyperbolic geometry* (MATH32051), Solution 14.1. -/
