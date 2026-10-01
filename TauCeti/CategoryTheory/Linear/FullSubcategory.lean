@@ -18,17 +18,15 @@ morphism is Mathlib's `CategoryTheory.ObjectProperty.zero_hom`.
 
 ## Main results
 
-* `CategoryTheory.ObjectProperty.FullSubcategory.add_hom`,
-  `CategoryTheory.ObjectProperty.FullSubcategory.neg_hom`,
-  `CategoryTheory.ObjectProperty.FullSubcategory.sub_hom`: the underlying morphism of a
-  morphism built from the preadditive structure.
-* `CategoryTheory.ObjectProperty.FullSubcategory.smul_hom`: the underlying morphism of a
-  scalar multiple.
+* `CategoryTheory.ObjectProperty.add_hom`, `CategoryTheory.ObjectProperty.neg_hom`,
+  `CategoryTheory.ObjectProperty.sub_hom`: the underlying morphism of a morphism built from the
+  preadditive structure.
+* `CategoryTheory.ObjectProperty.smul_hom`: the underlying morphism of a scalar multiple.
 -/
 
 public section
 
-namespace CategoryTheory.ObjectProperty.FullSubcategory
+namespace CategoryTheory.ObjectProperty
 
 universe w v u
 
@@ -57,4 +55,4 @@ scalar multiple of the underlying morphism. -/
 @[simp] theorem smul_hom {R : Type w} [Semiring R] [Preadditive C] [Linear R C]
     {X Y : P.FullSubcategory} (r : R) (f : X ⟶ Y) : (r • f).hom = r • f.hom := rfl
 
-end CategoryTheory.ObjectProperty.FullSubcategory
+end CategoryTheory.ObjectProperty
