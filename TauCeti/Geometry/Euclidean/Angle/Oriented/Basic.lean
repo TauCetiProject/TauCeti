@@ -14,7 +14,8 @@ public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 For vectors `x`, `y`, `z` of an oriented real inner product space of dimension two such that
 `y` and `z` make oriented angles of positive sign (i.e. in `(0, π)`) with `x`, Mathlib's
 `Orientation.oangle_sub_left` gives `oangle y z = oangle x z - oangle x y`, and this identity
-holds for the real representatives in `(-π, π]` as well (`Orientation.oangle_toReal_sub`, from
+holds for the real representatives in `(-π, π]` as well
+(`Orientation.oangle_toReal_sub_of_sign_eq_one`, from
 `Real.Angle.toReal_sub_of_sign_eq`). Consequently the real angles from `x` add
 (`Orientation.oangle_toReal_add_of_sign_eq_one`), and the sign of `oangle y z` is the order of
 the real angles of `y` and `z` measured from `x` (`Orientation.oangle_sign_eq_one_iff_toReal_lt`).
@@ -31,7 +32,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (Mod
 
 /-- For two vectors `y`, `z` making oriented angles of positive sign with `x`, the real oriented
 angle from `y` to `z` is the difference of their real angles from `x`. -/
-theorem oangle_toReal_sub {x y z : V} (h₁ : (o.oangle x y).sign = 1)
+theorem oangle_toReal_sub_of_sign_eq_one {x y z : V} (h₁ : (o.oangle x y).sign = 1)
     (h₂ : (o.oangle x z).sign = 1) :
     (o.oangle y z).toReal = (o.oangle x z).toReal - (o.oangle x y).toReal := by
   rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_eq_one h₁)
@@ -44,7 +45,7 @@ theorem oangle_toReal_sub {x y z : V} (h₁ : (o.oangle x y).sign = 1)
 theorem oangle_toReal_add_of_sign_eq_one {x y z : V} (h₁ : (o.oangle x y).sign = 1)
     (h₂ : (o.oangle x z).sign = 1) :
     (o.oangle x z).toReal = (o.oangle x y).toReal + (o.oangle y z).toReal := by
-  rw [o.oangle_toReal_sub h₁ h₂]
+  rw [o.oangle_toReal_sub_of_sign_eq_one h₁ h₂]
   ring
 
 /-- For two vectors `y`, `z` making oriented angles of positive sign with `x`, the oriented angle
@@ -54,6 +55,6 @@ theorem oangle_sign_eq_one_iff_toReal_lt {x y z : V} (h₁ : (o.oangle x y).sign
     (o.oangle y z).sign = 1 ↔ (o.oangle x y).toReal < (o.oangle x z).toReal := by
   rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_eq_one h₁)
     (o.right_ne_zero_of_oangle_sign_eq_one h₁) (o.right_ne_zero_of_oangle_sign_eq_one h₂)]
-  exact Real.Angle.sign_sub_eq_one_iff_toReal_lt h₁ h₂
+  exact Real.Angle.sign_sub_pos_iff_toReal_lt h₁ h₂
 
 end Orientation
