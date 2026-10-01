@@ -149,6 +149,19 @@ theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
       (x : M.V) ⊗ₜ[k] y := by
   simp [_root_.Rep.hom_braiding]
 
+-- As for `Rep.tensorInvariant_hom_apply`, the left-hand side is stated through `dsimp%` in the form
+-- `simp` reaches after unfolding the composite, so that the lemma fires.
+/-- Tensoring a scalar of the trivial representation with an invariant `x`, braiding, and applying
+the right unitor sends `c` to `c • x`. -/
+@[simp]
+theorem tensorInvariant_braiding_rightUnitor_hom_apply (x : M.ρ.invariants) (c : k) :
+    (dsimp% ((_root_.Rep.tensorInvariant (_root_.Rep.trivial k G k) x ≫ (β_ _ M).hom ≫
+      (ρ_ M).hom).hom c)) = c • (x : M.V) := by
+  have h := tensorInvariant_braiding_hom_apply (N := _root_.Rep.trivial k G k) x c
+  simp only [_root_.Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
+    _root_.Rep.hom_braiding, Representation.Equiv.coe_toIntertwiningMap] at h
+  simp [h]
+
 end TauCeti.Rep
 
 namespace Rep
