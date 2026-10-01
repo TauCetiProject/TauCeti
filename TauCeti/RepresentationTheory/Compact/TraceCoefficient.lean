@@ -81,8 +81,10 @@ reaches the same matrix coefficient from the matrix unit at the *transposed* pos
 `ContRepresentation.biLinHom` — it conjugates that action into the one built from the
 contragredient of `π` — so the basis-built comparison cannot be reused for the equivariant
 statement, and rescaling it cannot repair this. The trace pairing is also defined without choosing
-a basis and without assuming `𝕜` algebraically closed; only the passage from "onto the block" to
-"bijective onto the block" needs the dimension count, hence `[IsAlgClosed 𝕜]`.
+a basis, without an inner product on the carrier and without assuming `𝕜` algebraically closed:
+only the comparison with the matrix coefficients needs `[InnerProductSpace 𝕜 V]`, and only the
+passage from "onto the block" to "bijective onto the block" needs the dimension count, hence
+`[IsAlgClosed 𝕜]`.
 
 ## References
 
@@ -106,7 +108,7 @@ section TraceCoeffLp
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 /-- **The `L²` trace coefficient**: the trace coefficient
 `x ↦ trace (T ∘ π x⁻¹)` of `TauCeti/RepresentationTheory/Continuous/TraceCoefficient.lean`, read in
@@ -132,6 +134,17 @@ theorem coeFn_traceCoeffLp (T : V →L[𝕜] V) :
     (traceCoeff π hπ T)] with x hx
   rw [traceCoeffLp_def, hx, traceCoeff_apply]
 
+end TraceCoeffLp
+
+/-! ### Comparison with the matrix coefficients -/
+
+section MatrixCoeffLp
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+
 /-- **The `L²` trace coefficient of a rank-one operator is an `L²` matrix coefficient**, for a
 unitary representation. -/
 theorem traceCoeffLp_rankOne (hunitary : IsUnitary π) (v w : V) :
@@ -146,7 +159,16 @@ theorem traceCoeffLp_eq_sum {ι : Type*} [Fintype ι] (hunitary : IsUnitary π)
   rw [traceCoeffLp_def, traceCoeff_eq_sum π hπ hunitary e T, map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ (matrixCoeffLp_def π hπ (e i) (T (e i))).symm
 
+end MatrixCoeffLp
+
 /-! ### Two-sided equivariance -/
+
+section Bitranslation
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
 /-- **The trace coefficient intertwines two-sided conjugation of operators with bi-translation in
 `L²(G)`**: the biregular action of `(g, h)` on `traceCoeffLp π hπ T` is the trace coefficient of
@@ -171,7 +193,7 @@ theorem rightRegularLp_traceCoeffLp (h : G) (T : V →L[𝕜] V) :
     rightRegularLp 𝕜 G h (traceCoeffLp π hπ T) = traceCoeffLp π hπ (T.comp (π h⁻¹)) := by
   rw [← biRegularLp_apply_one_mk, biRegularLp_traceCoeffLp, biLinHom_apply_one_mk]
 
-end TraceCoeffLp
+end Bitranslation
 
 end ContRepresentation
 
