@@ -105,7 +105,7 @@ theorem component_unitsEquivPiPadicInt_symm (a : ∀ ℓ : Nat.Primes, ℤ_[ℓ]
 
 section UnitsLift
 
-variable {G : Type v} [Group G]
+variable {G : Type v} [Monoid G]
 variable (χ : ∀ n : ℕ+, G →* (ZMod n)ˣ)
 variable (hχ : ∀ (m n : ℕ+) (h : (n : ℕ) ∣ m) (g : G),
   ZMod.unitsMap h (χ m g) = χ n g)
@@ -133,18 +133,24 @@ private noncomputable def unitsLiftMonoid : G →* Additive zHat.{u} :=
       rw [toZMod_unitsLiftValue, map_mul, map_mul, toZMod_unitsLiftValue,
         toZMod_unitsLiftValue, Units.val_mul] }
 
+private theorem isUnit_unitsLiftMonoid (g : G) : IsUnit (unitsLiftMonoid χ hχ g) :=
+  (isUnit_iff_toZMod _).2 fun n ↦ by
+    change IsUnit (toZMod n (unitsLiftValue χ hχ g))
+    rw [toZMod_unitsLiftValue]
+    exact Units.isUnit _
+
 /-- **Assembly of compatible finite-level characters.** A family of characters
 `χ n : G →* (ZMod n)ˣ` compatible with reduction along divisibility assembles into a character
 `G →* (Additive zHat)ˣ`, characterized by `zHat.map_toZMod_unitsLift`. -/
 noncomputable def unitsLift : G →* (Additive zHat.{u})ˣ :=
-  (unitsLiftMonoid χ hχ).toHomUnits
+  IsUnit.liftRight (unitsLiftMonoid χ hχ) (isUnit_unitsLiftMonoid χ hχ)
 
 /-- The underlying profinite integer of the assembled character has the prescribed reduction
 modulo `n`. -/
 @[simp]
 theorem toZMod_coe_unitsLift (n : ℕ+) (g : G) :
     toZMod n (unitsLift.{u, v} χ hχ g : Additive zHat.{u}) = (χ n g : ZMod n) := by
-  rw [unitsLift, MonoidHom.coe_toHomUnits]
+  rw [unitsLift, IsUnit.coe_liftRight]
   exact toZMod_unitsLiftValue χ hχ g n
 
 /-- The reduction modulo `n` of the assembled character is its prescribed level-`n` character. -/
@@ -181,8 +187,9 @@ theorem continuous_unitsLift [TopologicalSpace G]
   · apply continuous_iff_forall_continuous_toZMod.mpr
     intro n
     exact (Units.continuous_coe_inv.comp (hcont n)).congr fun g ↦ by
-      simpa only [Function.comp_apply, map_inv] using
-        (toZMod_coe_unitsLift χ hχ n (g⁻¹)).symm
+      simpa only [Function.comp_apply, Units.coe_map_inv, RingHom.toMonoidHom_eq_coe,
+        MonoidHom.coe_ofClass] using
+        congrArg Units.val (congrArg Inv.inv (map_toZMod_unitsLift χ hχ n g).symm)
 
 end UnitsLift
 
