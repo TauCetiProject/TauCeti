@@ -179,7 +179,7 @@ theorem cup_δ_of_leftInverse (M : Rep k G) {S : ShortComplex (Rep k G)} (hS : S
     (h : p + q = n) (x : tateCohomology M p) (y : tateCohomology S.X₃ q) :
     cup M S.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hS q y) =
       p.negOnePow • _root_.TateCohomology.δ
-        (haveI := hS.epi_g; shortExact_map_tensorLeft_of_leftInverse hS.exact M r hr) n
+        (haveI := hS.epi_g; shortExact_map_tensorLeft_of_leftInverse hS.exact M hr) n
         (cup M S.X₃ p q n h x y) := by
   rcases le_or_gt 0 q with hq | hq
   · exact cup_δ_of_leftInverse_of_nonneg M hS hr _ hq h x y

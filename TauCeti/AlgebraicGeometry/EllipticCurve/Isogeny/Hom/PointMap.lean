@@ -54,10 +54,13 @@ acts additively on points. For a separable isogeny `φ` over a separably closed 
 * `TauCeti.Isogeny.Hom.comp_pointMap`: a composite acts by composition.
 * `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_toPointHom`: for a separable isogeny over a
   separably closed field the action is the class-group point map.
-* `TauCeti.Isogeny.Hom.pointMap_add`: the point map of a separable isogeny is additive.
+* `TauCeti.Isogeny.Hom.pointMap_add` and `TauCeti.Isogeny.Hom.pointMap_zsmul`: the point map of
+  a separable isogeny is additive and commutes with integer multiples.
 * `TauCeti.Isogeny.Hom.finite_setOf_pointMap_eq`: a nonzero morphism has finite fibres.
 * `TauCeti.Isogeny.Hom.eq_of_infinite_setOf_pointMap_eq` and `TauCeti.Isogeny.Hom.ext_pointMap`:
   rigidity.
+* `TauCeti.Isogeny.Hom.ext_pointMap_of_prime_zsmul_eq_zero`: rigidity on prime torsion, over a
+  separably closed field.
 * `TauCeti.Isogeny.Hom.comp_add_of_pointMap_add`: composition is additive in the inner morphism
   when the outer point map is additive and the source has infinitely many points.
 * `TauCeti.Isogeny.Hom.ofIsogeny_comp_add`: composition with a separable isogeny over a separably
@@ -240,6 +243,15 @@ theorem pointMap_add [IsSepClosed F]
   rw [pointMap_ofIsogeny_eq_toPointHom, map_add,
     ← pointMap_ofIsogeny_eq_toPointHom, ← pointMap_ofIsogeny_eq_toPointHom]
 
+/-- **A separable isogeny over a separably closed field commutes with integer multiples of
+points.** -/
+@[simp]
+theorem pointMap_zsmul [IsSepClosed F]
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (n : ℤ) (P : W₁.Point) :
+    (ofIsogeny φ).pointMap (n • P) = n • (ofIsogeny φ).pointMap P := by
+  have := W₂.isIntegrallyClosed_coordinateRing
+  rw [pointMap_ofIsogeny_eq_toPointHom, map_zsmul, ← pointMap_ofIsogeny_eq_toPointHom]
+
 end Isogeny
 
 /-- **A composite acts on points by composition.** -/
@@ -285,6 +297,25 @@ them.** Over a separably closed field this is always the case. -/
 theorem ext_pointMap [Infinite W₁.Point] {f g : Hom W₁ W₂}
     (h : ∀ P, f.pointMap P = g.pointMap P) : f = g :=
   eq_of_infinite_setOf_pointMap_eq (by simpa [h] using Set.infinite_univ)
+
+/-- **Rigidity on torsion: over a separably closed field, two morphisms agreeing on the
+`ℓ`-torsion points for every prime `ℓ` other than the characteristic are equal.** The `ℓ`-torsion
+alone has `ℓ ²` points, so the agreement set is infinite. -/
+theorem ext_pointMap_of_prime_zsmul_eq_zero [IsSepClosed F] {f g : Hom W₁ W₂}
+    (h : ∀ p : ℕ, p.Prime → (p : F) ≠ 0 →
+      ∀ P : W₁.Point, (p : ℤ) • P = 0 → f.pointMap P = g.pointMap P) :
+    f = g := by
+  refine eq_of_infinite_setOf_pointMap_eq fun hfin ↦ ?_
+  obtain ⟨p, hp_le, hp⟩ := Nat.exists_infinite_primes (hfin.toFinset.card + ringChar F + 1)
+  have hchar : (p : F) ≠ 0 := fun h0 ↦ by
+    have := CharP.ringChar_of_prime_eq_zero hp h0
+    omega
+  have hle : Nat.card {P : W₁.Point | (p : ℤ) • P = 0} ≤ hfin.toFinset.card := by
+    rw [Nat.card_coe_set_eq, ← Set.ncard_eq_toFinset_card _ hfin]
+    exact Set.ncard_le_ncard (fun P hP ↦ h p hp hchar P hP) hfin
+  rw [W₁.natCard_setOf_zsmul_eq_zero (by exact_mod_cast hchar), Int.natAbs_natCast] at hle
+  have := Nat.le_self_pow two_ne_zero p
+  omega
 
 /-- **Composition is additive in the inner morphism** when the source has infinitely many points
 and the outer morphism acts additively on points. -/
