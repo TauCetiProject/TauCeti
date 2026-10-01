@@ -23,8 +23,6 @@ tensor product of a line bundle with its dual with the trivial line bundle.
 These constructions supply inverses for the Picard group of a scheme.
 -/
 
--- This implementation follows `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A.
-
 public section
 
 open CategoryTheory AlgebraicGeometry MonoidalCategory MonoidalClosed
