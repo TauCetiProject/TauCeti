@@ -43,7 +43,7 @@ public section
 
 namespace TauCeti
 
-open _root_.Matrix
+open Matrix
 
 universe u
 
