@@ -104,6 +104,7 @@ theorem fundamentalGroup_hom_ext {G : Type*} [Monoid G]
 /-- The three peripheral elements `periph0`, `periph1` and `periphInf` generate
 `π₁(ℂ ∖ {0, 1}, 1/2)`. They do not generate it freely: they satisfy
 `periphInf * periph1 * periph0 = 1`. -/
+@[simp]
 theorem closure_periph0_periph1_periphInf :
     Subgroup.closure {periph0, periph1, periphInf} = ⊤ :=
   eq_top_iff.2 <| closure_periph0_periph1.ge.trans <| Subgroup.closure_mono <|
@@ -189,17 +190,32 @@ theorem fundamentalGroupMulEquivFreeGroup_periphInf :
   rw [periphInf_def, map_inv, map_mul, fundamentalGroupMulEquivFreeGroup_periph0,
     fundamentalGroupMulEquivFreeGroup_periph1]
 
+/-- The inverse of `π₁(ℂ ∖ {0, 1}, 1/2) ≃* FreeGroup (Fin 2)` is the homomorphism out of the free
+group sending `of 0` to `periph0` and `of 1` to `periph1`. -/
+theorem fundamentalGroupMulEquivFreeGroup_symm_toMonoidHom :
+    (fundamentalGroupMulEquivFreeGroup.symm : FreeGroup (Fin 2) →* _) =
+      FreeGroup.lift ![periph0, periph1] :=
+  (rfl)
+
+/-- The inverse of `π₁(ℂ ∖ {0, 1}, 1/2) ≃* FreeGroup (Fin 2)` evaluates a word in `of 0` and
+`of 1` at `periph0` and `periph1`. -/
+theorem fundamentalGroupMulEquivFreeGroup_symm_apply (w : FreeGroup (Fin 2)) :
+    fundamentalGroupMulEquivFreeGroup.symm w = FreeGroup.lift ![periph0, periph1] w :=
+  DFunLike.congr_fun fundamentalGroupMulEquivFreeGroup_symm_toMonoidHom w
+
 /-- The generator `of 0` of `FreeGroup (Fin 2)` corresponds to `periph0`. -/
 @[simp]
 theorem fundamentalGroupMulEquivFreeGroup_symm_of_zero :
     fundamentalGroupMulEquivFreeGroup.symm (FreeGroup.of 0) = periph0 := by
-  rw [MulEquiv.symm_apply_eq, fundamentalGroupMulEquivFreeGroup_periph0]
+  rw [fundamentalGroupMulEquivFreeGroup_symm_apply, FreeGroup.lift_apply_of,
+    Matrix.cons_val_zero]
 
 /-- The generator `of 1` of `FreeGroup (Fin 2)` corresponds to `periph1`. -/
 @[simp]
 theorem fundamentalGroupMulEquivFreeGroup_symm_of_one :
     fundamentalGroupMulEquivFreeGroup.symm (FreeGroup.of 1) = periph1 := by
-  rw [MulEquiv.symm_apply_eq, fundamentalGroupMulEquivFreeGroup_periph1]
+  rw [fundamentalGroupMulEquivFreeGroup_symm_apply, FreeGroup.lift_apply_of,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
 
 /-- The peripheral elements `periph0` and `periph1`, as a free basis of `π₁(ℂ ∖ {0, 1}, 1/2)`.
 Its `FreeGroupBasis.lift` sends a pair of elements of any group to the unique homomorphism taking
@@ -227,6 +243,23 @@ theorem peripheralBasis_one : peripheralBasis 1 = periph1 :=
   peripheralBasis.repr.injective <| by
     rw [FreeGroupBasis.repr_apply_coe, peripheralBasis_repr,
       fundamentalGroupMulEquivFreeGroup_periph1]
+
+/-- The homomorphism `peripheralBasis.lift f` sends `periph0` to `f 0`. -/
+theorem peripheralBasis_lift_periph0 {G : Type*} [Group G] (f : Fin 2 → G) :
+    peripheralBasis.lift f periph0 = f 0 := by
+  rw [← peripheralBasis_zero, FreeGroupBasis.lift_apply_apply, FreeGroupBasis.repr_apply_coe,
+    FreeGroup.lift_apply_of]
+
+/-- The homomorphism `peripheralBasis.lift f` sends `periph1` to `f 1`. -/
+theorem peripheralBasis_lift_periph1 {G : Type*} [Group G] (f : Fin 2 → G) :
+    peripheralBasis.lift f periph1 = f 1 := by
+  rw [← peripheralBasis_one, FreeGroupBasis.lift_apply_apply, FreeGroupBasis.repr_apply_coe,
+    FreeGroup.lift_apply_of]
+
+/-- The homomorphism `peripheralBasis.lift f` sends `periphInf` to `(f 1 * f 0)⁻¹`. -/
+theorem peripheralBasis_lift_periphInf {G : Type*} [Group G] (f : Fin 2 → G) :
+    peripheralBasis.lift f periphInf = (f 1 * f 0)⁻¹ := by
+  rw [periphInf_def, map_inv, map_mul, peripheralBasis_lift_periph0, peripheralBasis_lift_periph1]
 
 /-- `π₁(ℂ ∖ {0, 1}, 1/2)` is a free group. -/
 instance : IsFreeGroup (FundamentalGroup ThricePuncturedSphere basePt) :=
