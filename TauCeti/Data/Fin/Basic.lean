@@ -38,7 +38,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`, `Fin.zero_sub_one_eq_last`,
-  `Fin.castSucc_last_add_one`, `Fin.eq_castSucc_last_or_eq_last`: how `Fin.castSucc` interacts with
+  `Fin.eq_castSucc_last_or_eq_last`: how `Fin.castSucc` interacts with
   the cyclic successor and predecessor.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
   summands split off.
@@ -175,10 +175,6 @@ theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :
 /-- Subtracting one from `0` gives the last index. -/
 theorem zero_sub_one_eq_last {n : ℕ} : (0 : Fin (n + 1)) - 1 = last n :=
   (eq_sub_of_add_eq (last_add_one n)).symm
-
-/-- The penultimate index of `Fin (n + 2)` is followed by the last one. -/
-theorem castSucc_last_add_one {n : ℕ} : castSucc (last n) + 1 = last (n + 1) :=
-  coeSucc_eq_succ
 
 /-- The last index of `Fin (n + 1)` is not `0` when `n ≠ 0`. -/
 theorem last_ne_zero {n : ℕ} (hn : n ≠ 0) : last n ≠ (0 : Fin (n + 1)) :=

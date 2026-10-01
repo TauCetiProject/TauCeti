@@ -33,8 +33,10 @@ vertices on `∂ℍ`, with interior angle `0` (Walkden §7.1); those are not cov
   contains the vertices and the sides.
 * `CompactConvexPolygon.interiorAngle_pos`, `CompactConvexPolygon.interiorAngle_lt_pi`: the interior
   angles lie strictly between `0` and `π`.
-* `CompactConvexPolygon.smul`, `CompactConvexPolygon.carrier_smul`,
-  `CompactConvexPolygon.interiorAngle_smul`: everything transforms naturally under `PSL(2, ℝ)`.
+* The `MulAction` of `PSL(2, ℝ)` on compact convex polygons, with
+  `CompactConvexPolygon.vertex_smul`, `CompactConvexPolygon.carrier_smul`,
+  `CompactConvexPolygon.side_smul`, `CompactConvexPolygon.interiorAngle_smul`: everything
+  transforms naturally under `PSL(2, ℝ)`.
 * `CompactConvexPolygon.carrier_three`, `CompactConvexPolygon.sum_interiorAngle_three`: a polygon
   with three vertices is the triangle on them, with the same angles.
 
@@ -103,6 +105,7 @@ theorem interiorAngle_def (i : Fin n) :
   rfl
 
 /-- Membership in the carrier. -/
+@[simp]
 theorem mem_carrier_iff (z : ℍ) :
     z ∈ P.carrier ↔
       ∀ i, z ∈ closure (leftHalfPlane (geodesicBetween (P.vertex i) (P.vertex (i + 1)))) :=
@@ -190,30 +193,39 @@ theorem interiorAngle_pos (i : Fin n) : 0 < P.interiorAngle i :=
 theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π :=
   TauCeti.UpperHalfPlane.interiorAngle_lt_pi (P.vertex_add_one_notMem_range_geodesicLine i)
 
-/-- The translate of a convex polygon by an element of `PSL(2, ℝ)`. -/
-def smul (h : PSL(2, ℝ)) : CompactConvexPolygon n where
-  vertex := fun i ↦ h • P.vertex i
-  three_le := P.three_le
-  vertex_mem_leftHalfPlane i j hij hij' := by
-    rw [geodesicBetween_smul h (P.vertex_ne_vertex_add_one i), ← smul_leftHalfPlane]
-    exact Set.smul_mem_smul_set (P.vertex_mem_leftHalfPlane i j hij hij')
+/-- `PSL(2, ℝ)` acts on compact convex polygons by moving their vertices. -/
+instance : MulAction PSL(2, ℝ) (CompactConvexPolygon n) where
+  smul h Q :=
+    { vertex := fun i ↦ h • Q.vertex i
+      three_le := Q.three_le
+      vertex_mem_leftHalfPlane := fun i j hij hij' ↦ by
+        rw [geodesicBetween_smul h (Q.vertex_ne_vertex_add_one i), ← smul_leftHalfPlane]
+        exact Set.smul_mem_smul_set (Q.vertex_mem_leftHalfPlane i j hij hij') }
+  one_smul Q := CompactConvexPolygon.ext (funext fun i ↦ one_smul _ (Q.vertex i))
+  mul_smul g h Q := CompactConvexPolygon.ext (funext fun i ↦ mul_smul g h (Q.vertex i))
 
 /-- The vertices of the translate. -/
 @[simp]
-theorem vertex_smul (h : PSL(2, ℝ)) (i : Fin n) : (P.smul h).vertex i = h • P.vertex i := by
+theorem vertex_smul (h : PSL(2, ℝ)) (i : Fin n) : (h • P).vertex i = h • P.vertex i := by
   rfl
 
 /-- The carrier of the translate is the translate of the carrier. -/
-theorem carrier_smul (h : PSL(2, ℝ)) : (P.smul h).carrier = h • P.carrier := by
+@[simp]
+theorem carrier_smul (h : PSL(2, ℝ)) : (h • P).carrier = h • P.carrier := by
   rw [carrier, carrier, Set.smul_set_iInter]
   refine Set.iInter_congr fun i ↦ ?_
   rw [vertex_smul, vertex_smul, geodesicBetween_smul h (P.vertex_ne_vertex_add_one i),
     ← smul_leftHalfPlane, closure_smul]
 
+/-- The sides of the translate are the translates of the sides. -/
+@[simp]
+theorem side_smul (h : PSL(2, ℝ)) (i : Fin n) : (h • P).side i = h • P.side i := by
+  rw [side_def, side_def, vertex_smul, vertex_smul, smul_geodesicSegment]
+
 /-- The interior angles are invariant under `PSL(2, ℝ)`. -/
 @[simp]
 theorem interiorAngle_smul (h : PSL(2, ℝ)) (i : Fin n) :
-    (P.smul h).interiorAngle i = P.interiorAngle i :=
+    (h • P).interiorAngle i = P.interiorAngle i :=
   TauCeti.UpperHalfPlane.interiorAngle_smul h (P.vertex_ne_vertex_sub_one i)
     (P.vertex_ne_vertex_add_one i)
 

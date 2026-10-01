@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Basic
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Data.Fin.Basic
@@ -19,7 +19,7 @@ and interior angles `α₀, …, αₙ₋₁` is `(n - 2) π - (α₀ + ⋯ + α
 
 The file also provides the cut of a polygon along the diagonal from its penultimate vertex to
 `vertex 0`, used to argue by induction on the number of vertices
-(`CompactConvexPolygon.induction_on`): the first `n - 1` vertices form a convex polygon
+(`CompactConvexPolygon.induction`): the first `n - 1` vertices form a convex polygon
 (`CompactConvexPolygon.eraseLast`); seen from `vertex 0` the vertices are in increasing angular
 order (`CompactConvexPolygon.toReal_orientedAngle_lt`); the diagonal has the last vertex strictly on
 its right and the others strictly on its left
@@ -32,14 +32,14 @@ accordingly (`CompactConvexPolygon.sum_interiorAngle_eq`).
 
 ## Main results
 
-* `CompactConvexPolygon.volume_carrier`: **Gauss–Bonnet for convex polygons**, the area is
-  `(n - 2) π` minus the sum of the interior angles.
+* `CompactConvexPolygon.volume_carrier`: **Gauss–Bonnet for compact convex polygons** (all
+  vertices in `ℍ`), the area is `(n - 2) π` minus the sum of the interior angles.
 * `CompactConvexPolygon.sum_interiorAngle_le`: the sum of the interior angles is at most
   `(n - 2) π`.
 * `CompactConvexPolygon.carrier_subset_closure_leftHalfPlane`: the carrier lies in every closed
   half-plane containing the vertices.
 * `CompactConvexPolygon.isCompact_carrier`: the carrier is compact.
-* `CompactConvexPolygon.induction_on`: induction on the number of vertices, cutting off the last
+* `CompactConvexPolygon.induction`: induction on the number of vertices, cutting off the last
   one.
 
 ## Source
@@ -198,9 +198,9 @@ private theorem zero_mem_leftHalfPlane_penultimate_last :
     P.vertex 0 ∈ leftHalfPlane (geodesicBetween (P.vertex (Fin.castSucc (Fin.last n)))
       (P.vertex (Fin.last (n + 1)))) := by
   have hn₀ : n ≠ 0 := by omega
-  rw [← Fin.castSucc_last_add_one]
+  rw [← (Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]
   exact P.vertex_mem_leftHalfPlane _ _ (Fin.castSucc_last_ne_zero hn₀).symm
-    (by rw [Fin.castSucc_last_add_one]; exact (Fin.last_pos' ..).ne)
+    (by rw [(Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]; exact (Fin.last_pos' ..).ne)
 
 include hn in
 /-- The penultimate vertex lies to the left of the edge from the last vertex to `vertex 0`. -/
@@ -234,7 +234,7 @@ private theorem triangle_eq_inter :
         closure (rightHalfPlane (geodesicBetween (P.vertex (Fin.castSucc (Fin.last n)))
           (P.vertex 0))) := by
   have hn₀ : n ≠ 0 := by omega
-  rw [triangle_def, Fin.castSucc_last_add_one, Fin.last_add_one,
+  rw [triangle_def, (Fin.coeSucc_eq_succ.trans (Fin.succ_last _)), Fin.last_add_one,
     ← leftHalfPlane_geodesicBetween_swap (P.vertex_injective.ne (Fin.castSucc_last_ne_zero hn₀)),
     ← closedSide_eq_closure_leftHalfPlane_of_mem (P.zero_mem_leftHalfPlane_penultimate_last hn),
     ← closedSide_eq_closure_leftHalfPlane_of_mem (P.penultimate_mem_leftHalfPlane_last_zero hn),
@@ -342,7 +342,7 @@ theorem interiorAngle_penultimate_eq :
   have hn₁ : n ≠ 1 := by omega
   have hD : P.vertex (Fin.castSucc (Fin.last n) - 1) ∈ leftHalfPlane (geodesicBetween
       (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))) := by
-    rw [← Fin.castSucc_last_add_one]
+    rw [← (Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]
     exact P.vertex_mem_leftHalfPlane _ _ (sub_one_ne_self (by omega) _)
       (add_one_ne_sub_one (by omega) _).symm
   have hCD : P.vertex (Fin.castSucc (Fin.last n) - 1) ∈ leftHalfPlane (geodesicBetween
@@ -351,8 +351,9 @@ theorem interiorAngle_penultimate_eq :
       (by rw [Fin.coe_sub_one, ite_eq_right (Fin.castSucc_last_ne_zero hn₀), Fin.val_castSucc,
             Fin.val_last]
           omega)
-  simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.castSucc_last_add_one,
-    Fin.castSucc_sub_one_of_ne_zero (Fin.last_ne_zero hn₀), Fin.last_add_one, Fin.castSucc_zero]
+  simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.coeSucc_eq_succ,
+    Fin.succ_last, Fin.castSucc_sub_one_of_ne_zero (Fin.last_ne_zero hn₀), Fin.last_add_one,
+    Fin.castSucc_zero]
   rw [interiorAngle_comm (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))
       (P.vertex (Fin.castSucc (Fin.last n) - 1)),
     interiorAngle_comm (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex 0)
@@ -367,7 +368,8 @@ theorem interiorAngle_last_eq :
     P.interiorAngle (Fin.last (n + 1)) =
       UpperHalfPlane.interiorAngle (P.vertex (Fin.last (n + 1)))
         (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex 0) := by
-  rw [CompactConvexPolygon.interiorAngle_def, (eq_sub_of_add_eq Fin.castSucc_last_add_one).symm,
+  rw [CompactConvexPolygon.interiorAngle_def,
+    (eq_sub_of_add_eq (Fin.coeSucc_eq_succ.trans (Fin.succ_last _))).symm,
     Fin.last_add_one]
 
 /-- The interior angles away from the diagonal are unchanged. -/
@@ -401,7 +403,7 @@ theorem sum_interiorAngle_eq :
 /-- The last two vertices are distinct. -/
 private theorem vertex_penultimate_ne_last :
     P.vertex (Fin.castSucc (Fin.last n)) ≠ P.vertex (Fin.last (n + 1)) :=
-  Fin.castSucc_last_add_one ▸ P.vertex_ne_vertex_add_one _
+  (Fin.coeSucc_eq_succ.trans (Fin.succ_last _)) ▸ P.vertex_ne_vertex_add_one _
 
 include hn in
 /-- `vertex 0` is not on the geodesic through the edge from the penultimate vertex to the last
@@ -410,9 +412,9 @@ private theorem zero_notMem_range_geodesicLine_penultimate_last :
     P.vertex 0 ∉ Set.range (geodesicLine (geodesicBetween (P.vertex (Fin.castSucc (Fin.last n)))
       (P.vertex (Fin.last (n + 1))))) := by
   have hn₀ : n ≠ 0 := by omega
-  rw [← Fin.castSucc_last_add_one]
+  rw [← (Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]
   exact P.vertex_notMem_range_geodesicLine (Fin.castSucc_last_ne_zero hn₀).symm
-    (by rw [Fin.castSucc_last_add_one]; exact (Fin.last_pos' ..).ne)
+    (by rw [(Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]; exact (Fin.last_pos' ..).ne)
 
 include hn in
 /-- The triangle on the last three vertices lies in the closed left half-plane of every edge. -/
@@ -434,7 +436,7 @@ is the polygon on its first `n + 1` vertices: the vertex cut off is `Q.vertex (F
 and the last vertex of `Q.eraseLast hn` is the penultimate vertex `Q.vertex (Fin.castSucc (Fin.last
 n))` of `Q`. -/
 @[elab_as_elim]
-theorem induction_on {motive : ∀ {n : ℕ} [NeZero n], CompactConvexPolygon n → Prop}
+theorem induction {motive : ∀ {n : ℕ} [NeZero n], CompactConvexPolygon n → Prop}
     (triangle : ∀ Q : CompactConvexPolygon 3, motive Q)
     (eraseLast : ∀ {n : ℕ} (hn : 2 ≤ n) (Q : CompactConvexPolygon (n + 2)),
       motive (Q.eraseLast hn) → motive Q)
@@ -459,7 +461,7 @@ private theorem vertex_two_notMem_range_geodesicLine (P : CompactConvexPolygon 3
 /-- **The carrier lies in every closed half-plane containing the vertices.** -/
 theorem carrier_subset_closure_leftHalfPlane {g : PSL(2, ℝ)}
     (h : ∀ i, P.vertex i ∈ closure (leftHalfPlane g)) : P.carrier ⊆ closure (leftHalfPlane g) := by
-  induction P using CompactConvexPolygon.induction_on generalizing g with
+  induction P using CompactConvexPolygon.induction generalizing g with
   | triangle Q =>
     rw [Q.carrier_three]
     exact triangle_subset_closure_leftHalfPlane Q.vertex_zero_ne_vertex_one
@@ -486,7 +488,7 @@ theorem carrier_eq_union_triangle (P : CompactConvexPolygon (n + 2)) (hn : 2 ≤
 
 /-- The carrier is compact. -/
 theorem isCompact_carrier : IsCompact P.carrier := by
-  induction P using CompactConvexPolygon.induction_on with
+  induction P using CompactConvexPolygon.induction with
   | triangle Q =>
     rw [Q.carrier_three]
     exact isCompact_triangle Q.vertex_zero_ne_vertex_one Q.vertex_two_notMem_range_geodesicLine
@@ -497,12 +499,12 @@ theorem isCompact_carrier : IsCompact P.carrier := by
 
 /-! ### Gauss–Bonnet -/
 
-/-- The Gauss–Bonnet formula together with the nonnegativity of the angular defect, the form in
-which the induction runs. -/
+/-- The Gauss–Bonnet formula for compact convex polygons (all vertices in `ℍ`) together with the
+nonnegativity of the angular defect, the form in which the induction runs. -/
 theorem volume_carrier_and_le :
     0 ≤ (n - 2) * π - ∑ i, P.interiorAngle i ∧
       volume P.carrier = ENNReal.ofReal ((n - 2) * π - ∑ i, P.interiorAngle i) := by
-  induction P using CompactConvexPolygon.induction_on with
+  induction P using CompactConvexPolygon.induction with
   | triangle Q =>
     have hAB := Q.vertex_zero_ne_vertex_one
     have hC := Q.vertex_two_notMem_range_geodesicLine
@@ -524,15 +526,16 @@ theorem volume_carrier_and_le :
       exact ⟨by linarith, congrArg _ (by ring)⟩
     · linarith
 
-/-- **The Gauss–Bonnet formula for convex hyperbolic polygons**: the area of a convex polygon
-with `n` vertices is `(n - 2) π` minus the sum of its interior angles.
+/-- **The Gauss–Bonnet formula for compact convex hyperbolic polygons**: the area of a convex
+polygon with `n` vertices, all in `ℍ` (no ideal vertices), is `(n - 2) π` minus the sum of its
+interior angles.
 Source: Walkden, *Hyperbolic geometry* (MATH32051), Theorem 7.2.2. -/
 theorem volume_carrier :
     volume P.carrier = ENNReal.ofReal ((n - 2) * π - ∑ i, P.interiorAngle i) :=
   P.volume_carrier_and_le.2
 
-/-- The angular defect of a convex polygon is nonnegative: the sum of its interior angles is at
-most `(n - 2) π`. -/
+/-- The angular defect of a compact convex polygon (all vertices in `ℍ`) is nonnegative: the sum
+of its interior angles is at most `(n - 2) π`. -/
 theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π :=
   sub_nonneg.1 P.volume_carrier_and_le.1
 
