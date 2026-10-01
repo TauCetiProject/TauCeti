@@ -31,6 +31,8 @@ therefore returns the existing ordinary DG-module structure before any cohomolog
 ## Main definitions
 
 * `TauCeti.IsCurvedDGRightModule`: the curved differential graded right-module axioms.
+* `TauCeti.CurvedDGRightModuleCat`: bundled curved differential graded right modules, the objects
+  of the differential graded category of curved modules.
 
 ## Main results
 
@@ -136,5 +138,40 @@ theorem isCurvedDGRightModule_zero_iff :
   · intro hM
     exact hM.toIsDGRightModule_of_curvature_eq_zero rfl
   · exact IsDGRightModule.isCurvedDGRightModule_zero
+
+/-! ### Bundled curved modules -/
+
+/-- A bundled curved differential graded right module over the curved differential graded
+algebra `h`. -/
+structure CurvedDGRightModuleCat (h : IsCurvedDGAlgebra 𝒜 d w) where
+  /-- The underlying module. -/
+  carrier : Type uM
+  [addCommGroup : AddCommGroup carrier]
+  [moduleBase : Module R carrier]
+  [moduleOp : Module Aᵐᵒᵖ carrier]
+  [scalarTower : IsScalarTower R Aᵐᵒᵖ carrier]
+  /-- The internal grading of the module. -/
+  grading : ℤ → Submodule R carrier
+  [decomposition : DirectSum.Decomposition grading]
+  [gradedSMul : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece grading]
+  /-- The module differential. -/
+  differential : carrier →ₗ[R] carrier
+  /-- The differential and action satisfy the curved DG right-module laws. -/
+  isCurvedDGRightModule : IsCurvedDGRightModule h grading differential
+
+namespace CurvedDGRightModuleCat
+
+attribute [instance] addCommGroup moduleBase moduleOp scalarTower decomposition gradedSMul
+
+instance : CoeSort (CurvedDGRightModuleCat.{uR, uA, uM} h) (Type uM) := ⟨carrier⟩
+
+/-- Bundle a curved differential graded right module with its existing structures. -/
+abbrev of (hM : IsCurvedDGRightModule h ℳ dM) : CurvedDGRightModuleCat h where
+  carrier := M
+  grading := ℳ
+  differential := dM
+  isCurvedDGRightModule := hM
+
+end CurvedDGRightModuleCat
 
 end TauCeti

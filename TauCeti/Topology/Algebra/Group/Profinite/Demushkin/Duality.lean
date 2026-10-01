@@ -222,8 +222,7 @@ subgroup `V` vanishes on invariants, and `α₁` is injective on its kernel. -/
 theorem dualityMap0_injective : Function.Injective (dualityMap0 G M (ZMod p)) := by
   obtain ⟨V, _, hV, htr⟩ := hG.isProP.exists_isOpen_trace_eq_zero_of_mem_H0 M
     (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by rw [pow_one, hM]⟩)
-  have hcoind : ∀ f : DiscreteCoind G V M, p • f = 0 := fun f ↦ DiscreteCoind.ext fun g ↦ by
-    rw [IsSMulApply.smul_apply, hM, DiscreteCoind.coe_zero, Pi.zero_apply]
+  have hcoind : ∀ f : DiscreteCoind G V M, p • f = 0 := DiscreteCoind.nsmul_eq_zero hM
   refine (DiscreteCoind.traceShortExact G V M hV).dualityMap0_injective_of_explicitCoeff0_eq_zero
     hcoind ?_ (hG.dualityMap1_bijective htriv (DiscreteCoind.traceKer G V M)
       fun f ↦ Subtype.ext (by simpa using hcoind f)).1
@@ -246,9 +245,10 @@ private theorem natCard_H2_zmod : Nat.card (H2 G (ZMod p)) = p := by
     Module.natCard_eq_pow_finrank (K := ZMod p), hG.finrank_cohomFp_two, pow_one, Nat.card_zmod]
 
 omit [TotallyDisconnectedSpace G] [Infinite G] hM in
-/-- Homomorphisms from a finite group killed by `p` into `H²(G, 𝔽_p)`, which is one-dimensional,
-are as many as the elements of the group. -/
-private theorem natCard_addMonoidHom_H2 (V : Type*) [AddCommGroup V] [Finite V]
+/-- **Homomorphisms into `H²(G, 𝔽_p)` of a Demushkin group are as many as their source**: for a
+finite abelian group `V` killed by `p`, `|Hom(V, H²(G, 𝔽_p))| = |V|`, since `H²(G, 𝔽_p)` is
+one-dimensional over `𝔽_p`. -/
+theorem natCard_addMonoidHom_H2 (V : Type*) [AddCommGroup V] [Finite V]
     (hV : ∀ v : V, p • v = 0) : Nat.card (V →+ H2 G (ZMod p)) = Nat.card V := by
   obtain ⟨a, ha⟩ :=
     (isAddCyclic_of_prime_card (hG.natCard_H2_zmod htriv)).exists_generator

@@ -67,12 +67,14 @@ equivariant homomorphism, and `Hom(-, N)` is exact on the modules killed by a pr
   what makes it again a discrete `G`-module for finite discrete `M` and discrete `N`.
 * `TauCeti.exists_openNormalSubgroup_homAction_eq_self`: over a compact topological group that
   set contains an open normal subgroup.
-* `TauCeti.InternalHom.precomp_injective`, `TauCeti.InternalHom.exact_precomp` and
-  `TauCeti.InternalHom.precomp_surjective`: `Hom(-, N)` takes a surjection to an injection, an
-  exact pair with surjective second map to an exact pair, and, when the target of the injection is
-  killed by a prime `p`, an injection to a surjection. The internal hom of finite modules is
-  finite, and it is killed by any natural number killing the codomain
-  (`TauCeti.InternalHom.nsmul_eq_zero`).
+* `TauCeti.InternalHom.precomp_injective`, `TauCeti.InternalHom.exact_precomp`,
+  `TauCeti.InternalHom.precomp_surjective` and `TauCeti.InternalHom.precomp_surjective_of_baer`:
+  `Hom(-, N)` takes a surjection to an injection, an exact pair with surjective second map to an
+  exact pair, and an injection to a surjection when the target of the injection is killed by a
+  prime `p`, or is killed by `n` with `N` satisfying Baer's criterion over `ℤ/nℤ`; both are cases of
+  `TauCeti.InternalHom.precomp_surjective_of_forall_exists_comp_eq`, precomposition is surjective
+  as soon as every additive homomorphism extends. The internal hom of finite modules is finite, and
+  it is killed by any natural number killing the codomain (`TauCeti.InternalHom.nsmul_eq_zero`).
 
 ## Implementation notes
 
@@ -626,17 +628,43 @@ variable {G : Type*} [Group G] {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
   [DistribMulAction G M] [DistribMulAction G M'] {N : Type*} [AddCommMonoid N]
   [DistribMulAction G N]
 
+/-- Precomposition with `f` is surjective on internal homs as soon as every additive homomorphism
+`M →+ N` is the restriction along `f` of an additive homomorphism `M' →+ N`: the extension, with
+the conjugation action, is a preimage in the internal hom. -/
+theorem precomp_surjective_of_forall_exists_comp_eq {f : M →+[G] M'}
+    (h : ∀ φ : M →+ N, ∃ ψ : M' →+ N, ψ.comp f = φ) :
+    Function.Surjective (precomp G f (N := N)) := fun φ =>
+  let ⟨ψ, hψ⟩ := h φ.toAddMonoidHom
+  ⟨of G ψ, InternalHom.ext hψ⟩
+
 /-- Precomposition with an injection into a module killed by a prime `p` is surjective, for any
 `N`: `Hom(-, N)` is exact on the modules killed by `p`. This is
 `AddMonoidHom.exists_comp_eq_of_injective` on the internal hom. -/
 theorem precomp_surjective {p : ℕ} [Fact p.Prime] (hM' : ∀ x : M', p • x = 0)
     {f : M →+[G] M'} (hf : Function.Injective f) :
-    Function.Surjective (precomp G f (N := N)) := fun φ => by
-  obtain ⟨ψ, hψ⟩ :=
-    AddMonoidHom.exists_comp_eq_of_injective hM' (f := (f : M →+ M')) hf φ.toAddMonoidHom
-  exact ⟨of G ψ, InternalHom.ext hψ⟩
+    Function.Surjective (precomp G f (N := N)) :=
+  precomp_surjective_of_forall_exists_comp_eq fun φ =>
+    AddMonoidHom.exists_comp_eq_of_injective hM' (f := (f : M →+ M')) hf φ
 
 end Surjective
+
+section SurjectiveOfBaer
+
+variable {G : Type*} [Group G] {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
+  [DistribMulAction G M] [DistribMulAction G M'] {N : Type*} [AddCommGroup N]
+  [DistribMulAction G N]
+
+/-- Precomposition with an injection into a module killed by `n` is surjective when the target `N`
+satisfies Baer's criterion over `ℤ/nℤ`: for such `N`, `Hom(-, N)` is exact on the modules killed by
+`n`. This holds for `N = ℤ/nℤ` with any action when `n ≠ 0`, by `Module.Baer.zmod_self`, and is
+`AddMonoidHom.exists_comp_eq_of_injective_of_baer` on the internal hom. -/
+theorem precomp_surjective_of_baer {n : ℕ} [Module (ZMod n) N] (hN : Module.Baer (ZMod n) N)
+    (hM' : ∀ x : M', n • x = 0) {f : M →+[G] M'} (hf : Function.Injective f) :
+    Function.Surjective (precomp G f (N := N)) :=
+  precomp_surjective_of_forall_exists_comp_eq fun φ =>
+    AddMonoidHom.exists_comp_eq_of_injective_of_baer hN hM' (f := (f : M →+ M')) hf φ
+
+end SurjectiveOfBaer
 
 end InternalHom
 

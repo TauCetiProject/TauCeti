@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
@@ -16,12 +17,13 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 A hyperbolic triangle with vertices `A`, `B`, `C` in `ℍ` is the intersection of the three closed
 half-planes bounded by the geodesic through two of the vertices and containing the third
-(`triangle`). Its interior angle at `A` is the angle between the geodesics from `A` to `B` and
-from `A` to `C` (`interiorAngle`). The **Gauss–Bonnet formula** (`volume_triangle`) computes its
-invariant area as the angular defect `π - α - β - γ`.
+(`triangle`). Its interior angle at `A` is `interiorAngle A B C`, the angle between the
+geodesics from `A` to `B` and from `A` to `C` (defined in `Geodesic/InteriorAngle.lean`). The
+**Gauss–Bonnet formula** (`volume_triangle`) computes its invariant area as the angular defect
+`π - α - β - γ`.
 
 The point-keyed API lives in the `UpperHalfPlane` namespace: `UpperHalfPlane.closedSide`,
-`UpperHalfPlane.triangle` and `UpperHalfPlane.interiorAngle`. Membership is read off with
+`UpperHalfPlane.triangle`. Membership is read off with
 `UpperHalfPlane.mem_closedSide_iff` and `UpperHalfPlane.mem_triangle_iff`. A triangle contains its
 vertices (`UpperHalfPlane.left_mem_triangle`), is invariant under cyclic permutation of them
 (`UpperHalfPlane.triangle_rotate`) and, when nondegenerate, under every transposition
@@ -205,28 +207,6 @@ theorem triangle_reverse {A B C : ℍ}
     triangle C B A = triangle A B C := by
   rw [triangle_rotate A C B, triangle_swap_right hC]
 
-/-- The interior angle of the triangle `A B C` at the vertex `A`: the angle between the geodesics
-from `A` to `B` and from `A` to `C`. -/
-def interiorAngle (A B C : ℍ) : ℝ :=
-  geodesicAngle (geodesicBetween A B) (geodesicBetween A C)
-
--- The body of `interiorAngle` is not `@[expose]`d, so downstream modules rewrite with this.
-/-- `interiorAngle` is the angle between the geodesics from `A` to `B` and from `A` to `C`. -/
-theorem interiorAngle_def (A B C : ℍ) :
-    interiorAngle A B C = geodesicAngle (geodesicBetween A B) (geodesicBetween A C) := by rfl
-
-/-- The interior angle at `A` does not depend on the order of the other two vertices. -/
-theorem interiorAngle_comm (A B C : ℍ) : interiorAngle A C B = interiorAngle A B C :=
-  geodesicAngle_comm _ _
-
-/-- Interior angles are nonnegative. -/
-theorem interiorAngle_nonneg (A B C : ℍ) : 0 ≤ interiorAngle A B C :=
-  geodesicAngle_nonneg _ _
-
-/-- Interior angles are at most `π`. -/
-theorem interiorAngle_le_pi (A B C : ℍ) : interiorAngle A B C ≤ π :=
-  geodesicAngle_le_pi _ _
-
 end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
@@ -248,13 +228,6 @@ theorem smul_triangle (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hBC : B �
     h • triangle A B C = triangle (h • A) (h • B) (h • C) := by
   rw [triangle, triangle, Set.smul_set_inter, Set.smul_set_inter, smul_closedSide h hAB,
     smul_closedSide h hBC, smul_closedSide h hCA]
-
-/-- Interior angles are invariant under the action. -/
-theorem interiorAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
-    interiorAngle (h • A) (h • B) (h • C) = interiorAngle A B C := by
-  rw [interiorAngle, interiorAngle, geodesicBetween_smul h hAB, geodesicBetween_smul h hAC,
-    geodesicAngle_mul _ _ _ (by rw [geodesicLine_geodesicBetween_zero,
-      geodesicLine_geodesicBetween_zero])]
 
 /-! ### The Gauss–Bonnet formula -/
 
@@ -420,7 +393,7 @@ theorem interiorAngle_eq_angle_of_velocity_eq {P Q₁ Q₂ : ℍ} {μ₁ μ₂ :
     (hμ₁ : 0 < μ₁) (hμ₂ : 0 < μ₂) (h₁ : velocity (geodesicBetween P Q₁) 0 = μ₁ * v₁)
     (h₂ : velocity (geodesicBetween P Q₂) 0 = μ₂ * v₂) :
     interiorAngle P Q₁ Q₂ = InnerProductGeometry.angle v₁ v₂ := by
-  rw [interiorAngle, geodesicAngle_def, h₁, h₂, ← Complex.real_smul, ← Complex.real_smul,
+  rw [interiorAngle_def, geodesicAngle_def, h₁, h₂, ← Complex.real_smul, ← Complex.real_smul,
     InnerProductGeometry.angle_smul_left_of_pos _ _ hμ₁,
     InnerProductGeometry.angle_smul_right_of_pos _ _ hμ₂]
 

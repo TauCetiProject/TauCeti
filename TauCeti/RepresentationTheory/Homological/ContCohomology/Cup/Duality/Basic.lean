@@ -30,11 +30,12 @@ The three pairings are compatible with the maps of coefficients in two ways (Ser
 §9.1, following Tate). First, they are **natural in the module**: a `G`-map `f : M →+[G] M'` and
 its dual `InternalHom.precomp G f` are adjoint, `⟨φ, f_* b⟩ = ⟨f^* φ, b⟩` in each of the three
 shapes. Second, they are **compatible with the connecting maps** of a short exact sequence
-`0 → A → B → C → 0` of modules killed by a prime and of its dual sequence `0 → C' → B' → A' → 0`:
-in the two shapes of total degree two that involve a connecting map, the connecting map of the dual
-sequence, paired against a class of the original one, is the connecting map of the original
-sequence paired against the dual class, with the Leibniz sign `(-1)^(p+1)` of the degree `p` of the
-dual class. These are the low-degree identities needed to compare the duality maps
+`0 → A → B → C → 0` and of its dual sequence `0 → C' → B' → A' → 0`, whenever the latter exists
+(`DiscreteShortExact.dual`, for instance for modules killed by a prime): in the two shapes of
+total degree two that involve a connecting map, the connecting map of the dual sequence, paired
+against a class of the original one, is the connecting map of the original sequence paired against
+the dual class, with the Leibniz sign `(-1)^(p+1)` of the degree `p` of the dual class. These are
+the low-degree identities needed to compare the duality maps
 `Hⁱ(G, M) → Hom(H²⁻ⁱ(G, M'), H²(G, N))`, `i = 0, 1, 2`, along the segment
 
 ```text
@@ -331,11 +332,12 @@ end NaturalityInModuleFinite
 
 /-! ### Compatibility with the connecting maps of a short exact sequence and of its dual
 
-Let `0 → A → B → C → 0` be a short exact sequence of finite discrete `G`-modules killed by a prime
-`p`, and let `0 → C' → B' → A' → 0` be its dual sequence `DiscreteShortExact.dual`, where
-`X' = InternalHom G X N`. The sub-object `C'` of the dual sequence pairs with the quotient `C` of
-the original one, and the quotient `A'` pairs with the sub-object `A`, so the two sequences are a
-compatibly paired pair in the sense of
+Let `0 → A → B → C → 0` be a short exact sequence of finite discrete `G`-modules and let
+`0 → C' → B' → A' → 0` be its dual sequence `DiscreteShortExact.dual`, where
+`X' = InternalHom G X N`; the dual sequence exists whenever homomorphisms `A →+ N` extend to
+`B`, for instance when `B` is killed by a prime. The sub-object `C'` of the dual sequence pairs
+with the quotient `C` of the original one, and the quotient `A'` pairs with the sub-object `A`, so
+the two sequences are a compatibly paired pair in the sense of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/Cup/ConnectingMap.lean`, and the
 adjointness identities there specialize to the evaluation pairings. -/
 
@@ -358,7 +360,7 @@ variable {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (S : DiscreteShortExact G A B C)
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N]
-  {p : ℕ} [Fact p.Prime] (hB : ∀ b : B, p • b = 0)
+  (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)))
 
 omit [Finite A] in
 /-- **The connecting maps `δ⁰` of the dual sequence and `δ¹` of the original sequence are
@@ -367,11 +369,11 @@ a class `y ∈ H¹(G, C)`, the `(1,1)` pairing of `δ⁰ x ∈ H¹(G, C')` with 
 `(0,2)` pairing of `x` with `δ¹ y ∈ H²(G, A)`. -/
 theorem explicitDualityPairing11_explicitDelta0_dual_eq_neg_explicitDualityPairing02_explicitDelta1
     (x : H0 G (InternalHom G A N)) (y : H1 G C) :
-    explicitDualityPairing11 G C N ((S.dual N hB).explicitDelta0 x) y =
+    explicitDualityPairing11 G C N ((S.dual N hsurj).explicitDelta0 x) y =
       -explicitDualityPairing02 G A N x (S.explicitDelta1 y) :=
-  explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 (S.dual N hB) S
+  explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 (S.dual N hsurj) S
     (InternalHom.evalPairing G) (InternalHom.evalPairing G) (InternalHom.evalPairing G)
-    (S.evalPairing_dual_incl N hB) (fun ψ a => (S.evalPairing_dual_proj N hB ψ a).symm)
+    (S.evalPairing_dual_incl N hsurj) (fun ψ a => (S.evalPairing_dual_proj N hsurj ψ a).symm)
     (InternalHom.evalPairing_equivariant (G := G)) x y
 
 /-- **The connecting maps `δ¹` of the dual sequence and `δ⁰` of the original sequence are adjoint
@@ -380,11 +382,11 @@ invariant `y` of `C`, the `(2,0)` pairing of `δ¹ x ∈ H²(G, C')` with `y` is
 `x` with `δ⁰ y ∈ H¹(G, A)`; the Leibniz sign is `1` because `x` has degree one. -/
 theorem explicitDualityPairing20_explicitDelta1_dual_eq_explicitDualityPairing11_explicitDelta0
     (x : H1 G (InternalHom G A N)) (y : H0 G C) :
-    explicitDualityPairing20 G C N ((S.dual N hB).explicitDelta1 x) y =
+    explicitDualityPairing20 G C N ((S.dual N hsurj).explicitDelta1 x) y =
       explicitDualityPairing11 G A N x (S.explicitDelta0 y) :=
-  explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 (S.dual N hB) S
+  explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 (S.dual N hsurj) S
     (InternalHom.evalPairing G) (InternalHom.evalPairing G) (InternalHom.evalPairing G)
-    (S.evalPairing_dual_incl N hB) (fun ψ a => (S.evalPairing_dual_proj N hB ψ a).symm)
+    (S.evalPairing_dual_incl N hsurj) (fun ψ a => (S.evalPairing_dual_proj N hsurj ψ a).symm)
     (InternalHom.evalPairing_equivariant (G := G)) x y
 
 end ConnectingMaps

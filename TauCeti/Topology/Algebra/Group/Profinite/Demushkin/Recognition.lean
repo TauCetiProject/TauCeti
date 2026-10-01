@@ -40,7 +40,9 @@ module `Coind_U^G 𝔽_p`, by a kernel killed by `p`, so `H²(G, E(χ))` is a qu
 groups have order `p`.
 
 The converse implications, that a Demushkin group satisfies both conditions, rest on the theorem
-that an open subgroup of an infinite Demushkin group is Demushkin, which is not proved here.
+that an open subgroup of an infinite Demushkin group is Demushkin,
+`TauCeti.IsDemushkin.openSubgroup` in
+`TauCeti/Topology/Algebra/Group/Profinite/Demushkin/OpenSubgroup.lean`; they are not proved here.
 
 ## Main results
 
@@ -170,10 +172,8 @@ theorem natCard_H2_sq_le_natCard_H2_ker (χ : G →ₜ* Multiplicative (ZMod p))
         exact ⟨f, (hT f).trans hf⟩
       exact := fun f ↦ ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact a.2⟩ }
   -- `Coind_N^G 𝔽_p`, hence `K`, is killed by `p`
-  have hp0 : ∀ f : DiscreteCoind G N (ZMod p), p • f = 0 := fun f ↦ DiscreteCoind.ext fun g ↦ by
-    rw [← DiscreteCoind.coe_toCoind, map_nsmul, AddSubgroup.coe_nsmul, Pi.smul_apply,
-      DiscreteCoind.coe_toCoind, DiscreteCoind.coe_zero, Pi.zero_apply, nsmul_eq_mul,
-      ZMod.natCast_self, zero_mul]
+  have hp0 : ∀ f : DiscreteCoind G N (ZMod p), p • f = 0 :=
+    DiscreteCoind.nsmul_eq_zero (ZModModule.char_nsmul_eq_zero p)
   have h3K := h3 K fun a ↦ Subtype.ext (by rw [AddSubgroup.coe_nsmul, hp0, AddSubgroup.coe_zero])
   have hπ' := S'.explicitCoeff2_proj_surjective_of_subsingleton
   -- Shapiro's lemma identifies `H²(G, Coind_N^G 𝔽_p)` with `H²(N, 𝔽_p)`
