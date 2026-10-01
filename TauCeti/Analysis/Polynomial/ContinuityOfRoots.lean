@@ -200,11 +200,11 @@ theorem Monic.exists_countP_roots_mem_ball_eq_rootMultiplicity {f : K[X]} (hf : 
     (hf.exists_prod_X_sub_C_norm_sub_lt_iff hg hdeg hsep).1 (h g hg hdeg hcoeff)⟩
 
 /-- **Continuity of roots in a family.** Let `F x` be polynomials of degree `d`, near `x₀`, whose
-coefficients are continuous at `x₀`. Then for `x` near `x₀` the roots of `F x` are matched
-bijectively, with multiplicity, with those of `F x₀`: there are enumerations `a` and `b` of the
-roots of `F x₀` and `F x` with `‖a i - b i‖ < ε` for every `i`. -/
+coefficients of index at most `d` are continuous at `x₀`. Then for `x` near `x₀` the roots of
+`F x` are matched bijectively, with multiplicity, with those of `F x₀`: there are enumerations `a`
+and `b` of the roots of `F x₀` and `F x` with `‖a i - b i‖ < ε` for every `i`. -/
 theorem eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt {B : Type*} [TopologicalSpace B]
-    {F : B → K[X]} {x₀ : B} {d : ℕ} (hF : ∀ i, ContinuousAt (fun x => (F x).coeff i) x₀)
+    {F : B → K[X]} {x₀ : B} {d : ℕ} (hF : ∀ i ≤ d, ContinuousAt (fun x => (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).degree = d) {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ x in 𝓝 x₀, ∃ a b : Fin d → K,
       F x₀ = C (F x₀).leadingCoeff * ∏ i, (X - C (a i)) ∧
@@ -214,7 +214,7 @@ theorem eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt {B : Type*} [Topologica
   -- the normalized lower coefficients depend continuously on `x` at `x₀`
   set v : B → Fin d → K := fun x i => ((F x).coeff d)⁻¹ * (F x).coeff i
   have hv : ContinuousAt v x₀ :=
-    continuousAt_pi.2 fun i => ((hF d).inv₀ hlc).mul (hF i)
+    continuousAt_pi.2 fun i => ((hF d le_rfl).inv₀ hlc).mul (hF i i.is_lt.le)
   obtain ⟨a, ha⟩ := Sym.ofFn_surjective ((Sym.coeffEquiv K d).symm (v x₀))
   have hc : Sym.coeffEquiv K d (Sym.ofFn a) = v x₀ := by rw [ha, Equiv.apply_symm_apply]
   have hev := Sym.eventually_exists_ofFn_eq_coeffEquiv_symm a hε
