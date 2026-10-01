@@ -82,11 +82,11 @@ namespace TauCeti
 universe u u' v v'
 
 variable {k : Type u} {F : Type v} {k' : Type u'} {F' : Type v'}
-variable [Field k] [Field F] [Field k'] [Field F']
+variable [Field F] [Field F']
 
 section Compositum
 
-variable [Algebra k' F'] [Algebra F F'] (F k' F')
+variable [CommSemiring k'] [Algebra k' F'] [Algebra F F'] (F k' F')
 
 /-- The **compositum** `F · k'` of the lower function field `F` with the constant field `k'` of
 the upper function field, formed inside `F'`: the smallest intermediate field of `F' / F`
@@ -118,36 +118,6 @@ theorem constantCompositum_le_iff {K : IntermediateField F F'} :
     constantCompositum F k' F' ≤ K ↔ ∀ c : k', algebraMap k' F' c ∈ K := by
   simp [constantCompositum_def, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
 
-section GeneratedCompositum
-
-variable [Algebra k k'] [Algebra k F] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-/-- If a set generates `k'` over `k`, its image generates the compositum over `F`. -/
-theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
-    (hS : IntermediateField.adjoin k S = ⊤) :
-    constantCompositum F k' F' =
-      IntermediateField.adjoin F ((algebraMap k' F') '' S) := by
-  have hrange : Set.range (algebraMap k' F') =
-      (IntermediateField.adjoin k ((algebraMap k' F') '' S) : IntermediateField k F') := by
-    rw [← IsScalarTower.toAlgHom_fieldRange k k' F', AlgHom.fieldRange_eq_map, ← hS,
-      IntermediateField.adjoin_map]
-    rfl
-  have hle : IntermediateField.adjoin k ((algebraMap k' F') '' S) ≤
-      (IntermediateField.adjoin F ((algebraMap k' F') '' S)).restrictScalars k := by
-    apply IntermediateField.adjoin_le_iff.mpr
-    rintro x ⟨c, hc, rfl⟩
-    exact (IntermediateField.mem_restrictScalars k).2
-      (IntermediateField.subset_adjoin F _ ⟨c, hc, rfl⟩)
-  refine le_antisymm ((constantCompositum_le_iff F k' F').2 fun c ↦ ?_) ?_
-  · exact (IntermediateField.mem_restrictScalars k).1
-      (hle (hrange.le (Set.mem_range_self c)))
-  · apply IntermediateField.adjoin_le_iff.mpr
-    rintro x ⟨c, _, rfl⟩
-    exact algebraMap_mem_constantCompositum F k' F' c
-
-end GeneratedCompositum
-
 /-- The **geometric degree** `n(F'/F)` of a finite extension `F' / k'` of the function field
 `F / k`: the degree of `F'` over the compositum `F · k'`, that is, the degree of the extension
 once the constants of `F'` have been adjoined to `F`.
@@ -177,15 +147,12 @@ theorem finrank_constantCompositum_mul_geometricDegree :
 
 /-- The geometric degree of a finite extension is positive. -/
 theorem geometricDegree_pos [FiniteDimensional F F'] : 0 < geometricDegree F k' F' := by
-  have : FiniteDimensional (constantCompositum F k' F') F' :=
-    FiniteDimensional.right F (constantCompositum F k' F') F'
   rw [geometricDegree_def]
   exact Module.finrank_pos
 
-/-- **The geometric degree is the whole degree as soon as the compositum is trivial.**  This is
-the general form: it asks only that adjoining the constants to `F` adds nothing, however that is
-established.  `geometricDegree_eq_finrank` is the case where the constants lie in `F` to begin
-with, which is one way of meeting the hypothesis but not the only one. -/
+/-- **The geometric degree is the whole degree as soon as the compositum is trivial**, that is,
+when adjoining the constants to `F` adds nothing.  `geometricDegree_eq_finrank` is the special
+case where the constants lie in `F` to begin with. -/
 theorem geometricDegree_eq_finrank_of_constantCompositum_eq_bot
     (h : constantCompositum F k' F' = ⊥) :
     geometricDegree F k' F' = Module.finrank F F' := by
@@ -225,25 +192,39 @@ end ConstantsInBase
 
 end Compositum
 
+section GeneratedCompositum
+
+variable [Field k] [Field k'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F']
+variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] (F k' F')
+
+/-- If a set generates `k'` over `k`, its image generates the compositum over `F`. -/
+theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
+    (hS : IntermediateField.adjoin k S = ⊤) :
+    constantCompositum F k' F' =
+      IntermediateField.adjoin F ((algebraMap k' F') '' S) := by
+  have hrange : Set.range (algebraMap k' F') =
+      (IntermediateField.adjoin k ((algebraMap k' F') '' S) : IntermediateField k F') := by
+    rw [← IsScalarTower.toAlgHom_fieldRange k k' F', AlgHom.fieldRange_eq_map, ← hS,
+      IntermediateField.adjoin_map, IsScalarTower.coe_toAlgHom']
+  rw [constantCompositum_def, hrange, IntermediateField.adjoin_adjoin_right]
+
+end GeneratedCompositum
+
 /-! ### Linear disjointness from the constant field -/
 
-section LinearDisjoint
+section DegreeForm
 
-variable [Algebra k k'] [Algebra k' F'] [Algebra F F'] (F k' F')
+variable [Semiring k] [CommSemiring k'] [Module k k'] [Algebra k' F'] [Algebra F F'] (F k' F')
 
 /-- **The degree of a function field extension in terms of its geometric degree**: if adjoining
 the constants of `F'` to `F` costs exactly `[k' : k]`, then `[F' : F] = n(F'/F) · [k' : k]`.
 
 The hypothesis `h` is the degree form of the linear-disjointness condition on `F` and `k'` over
-`k`; it is that condition in the situation where `k` sits in both `F` and `k'` compatibly with the
-two routes into `F'`, where `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`
-derives it from `IntermediateField.LinearDisjoint`.  That is the situation of
-`TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`, where `h` is proved, and of
-`TauCeti.Divisor.degree_conorm`, where it is consumed.  Establishing `h` is where that
-compatibility does the work, and where the condition can fail — an inseparable `k' / k` can
-destroy it.  Deducing the degree identity from `h` is arithmetic in the tower `F ⊆ F·k' ⊆ F'`
-alone, so no scalar tower relating `k` to `F` is assumed here: assuming one would leave it unused
-in the proof and in the statement.
+`k`.  It is supplied by `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint` from
+`IntermediateField.LinearDisjoint`, and by
+`TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable` for a separable constant field
+extension over an exact constant field; it can fail for an inseparable `k' / k`.  No compatibility
+between `k` and `F` is assumed: the identity holds whenever `h` does.
 
 This is the companion of Stichtenoth's Proposition 3.6.6, which splits `[F' : F]` the same way. -/
 theorem finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq
@@ -263,7 +244,12 @@ theorem finrank_dvd_finrank_of_finrank_constantCompositum_eq
     rw [finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq F k' F' h,
       mul_comm]⟩
 
-variable [Algebra k F] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+end DegreeForm
+
+section LinearDisjoint
+
+variable [Field k] [Field k'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F']
+variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] (F k' F')
 
 /-- **Mathlib's linear disjointness implies the degree hypothesis**: if the constants of `F'` and
 the lower function field `F` are linearly disjoint over `k` in the sense of
@@ -293,12 +279,8 @@ This is the degree consequence of Stichtenoth's Proposition 3.6.1(b); that propo
 statement — the persistence over `k'` of linear independence over `k` — is
 `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`.
 
-This is the statement in which that condition has content, and it is stated over the full
-compatible tower: `k` embeds in `F` and in `k'`, and the two routes `k → F → F'` and `k → k' → F'`
-agree.  Both hypotheses are used: exactness of `k` in `F` keeps the minimal polynomial of a
-constant irreducible over `F` (`TauCeti.minpoly.map_algebraMap_of_isIntegrallyClosedIn`), while
-separability lets the linear-disjointness proof reduce each finite family in `k'` to a finite
-separable subextension. -/
+The statement is over the full compatible tower: `k` embeds in `F` and in `k'`, and the two
+routes `k → F → F'` and `k → k' → F'` agree. -/
 theorem finrank_constantCompositum_eq_finrank_of_isSeparable (hex : IsIntegrallyClosedIn k F)
     [Algebra.IsSeparable k k'] :
     Module.finrank F (constantCompositum F k' F') = Module.finrank k k' :=
