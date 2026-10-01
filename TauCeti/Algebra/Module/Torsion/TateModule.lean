@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Tate modules of abelian groups
@@ -319,6 +320,17 @@ instance : IsTopologicalAddGroup (TateModule p A) :=
   letI (n : ℕ) : TopologicalSpace (TateModuleLevel p A n) := ⊥
   haveI (n : ℕ) : DiscreteTopology (TateModuleLevel p A n) := ⟨rfl⟩
   isInducing_proj.isTopologicalAddGroup (AddMonoidHom.pi proj)
+
+/-- The canonical action of the `p`-adic integers on the Tate module is jointly continuous. -/
+instance [Fact p.Prime] : ContinuousSMul ℤ_[p] (TateModule p A) where
+  continuous_smul := continuous_iff.2 fun n ↦ by
+    have ha : IsLocallyConstant (fun x : ℤ_[p] × TateModule p A ↦
+        PadicInt.toZModPow n x.1) :=
+      (IsLocallyConstant.iff_continuous _).2
+        ((PadicInt.continuous_toZModPow n).comp continuous_fst)
+    have hx : IsLocallyConstant (fun x : ℤ_[p] × TateModule p A ↦ proj n x.2) :=
+      (isLocallyConstant_proj n).comp_continuous continuous_snd
+    simpa only [proj_smul] using ha.comp₂ hx (fun a x ↦ a • x)
 
 private theorem isEmbedding_proj
     [∀ n, TopologicalSpace (TateModuleLevel p A n)]
