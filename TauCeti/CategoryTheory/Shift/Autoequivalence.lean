@@ -177,20 +177,16 @@ lemma reindex_add (a b : ℤ) : reindex (e := e) (a + b) = reindex a ⋙ reindex
     -- Specify the index equality so `φ.f_eq` does not leave its target index unresolved.
     exact φ.f_eq (show n + (a + b) = n + b + a by omega))
 
-/-- The coherent reindexing data defining the shift of integer sequences. -/
-@[expose]
-def reindexShiftMkCore : ShiftMkCore (IntSequence e) ℤ where
-  F := reindex
-  zero := eqToIso reindex_zero
-  add a b := eqToIso (reindex_add a b)
-  assoc_hom_app _ _ _ _ := by simp [eqToHom_map]
-  zero_add_hom_app _ _ := by simp [eqToHom_map]
-  add_zero_hom_app _ _ := by simp
-
 /-- The shift of `e`-sequences by `ℤ`, given by reindexing. It is strict: its structure
 isomorphisms are identities up to `eqToHom`. -/
 instance : HasShift (IntSequence e) ℤ :=
-  hasShiftMk _ _ reindexShiftMkCore
+  hasShiftMk _ _
+    { F := reindex
+      zero := eqToIso reindex_zero
+      add a b := eqToIso (reindex_add a b)
+      assoc_hom_app _ _ _ _ := by simp [eqToHom_map]
+      zero_add_hom_app _ _ := by simp [eqToHom_map]
+      add_zero_hom_app _ _ := by simp }
 
 /-- The shift functor on integer sequences is reindexing. -/
 @[simp]
@@ -202,6 +198,8 @@ lemma shiftFunctor_eq_reindex (k : ℤ) :
 lemma shiftFunctorZero_hom_app_f (X : IntSequence e) (n : ℤ) :
     ((shiftFunctorZero (IntSequence e) ℤ).hom.app X).f n =
       eqToHom (congrArg X.X (show n + 0 = n by omega)) := by
+  -- `HasShift` has no eliminator for the components of its monoidal unit. This reduction exposes
+  -- precisely the `zero` field of the inlined `ShiftMkCore` used by the instance above.
   change ((eqToHom reindex_zero).app X).f n = _
   simp only [eqToHom_app, eqToHom_f, reindex_obj_X, Functor.id_obj]
 
@@ -209,6 +207,7 @@ lemma shiftFunctorZero_hom_app_f (X : IntSequence e) (n : ℤ) :
 lemma shiftFunctorZero_inv_app_f (X : IntSequence e) (n : ℤ) :
     ((shiftFunctorZero (IntSequence e) ℤ).inv.app X).f n =
       eqToHom (congrArg X.X (show n = n + 0 by omega)) := by
+  -- This is the inverse component of the same `ShiftMkCore.zero` field as in the preceding lemma.
   change ((eqToHom reindex_zero.symm).app X).f n = _
   simp only [eqToHom_app, eqToHom_f, reindex_obj_X, Functor.id_obj]
 
@@ -216,6 +215,8 @@ lemma shiftFunctorZero_inv_app_f (X : IntSequence e) (n : ℤ) :
 lemma shiftFunctorAdd_hom_app_f (a b : ℤ) (X : IntSequence e) (n : ℤ) :
     ((shiftFunctorAdd (IntSequence e) a b).hom.app X).f n =
       eqToHom (congrArg X.X (show n + (a + b) = n + b + a by omega)) := by
+  -- `HasShift` similarly exposes no rewrite theorem for arbitrary components of its tensorator;
+  -- reduction reveals the inlined `ShiftMkCore.add` and the public `reindex_add` equality.
   change ((eqToHom (reindex_add a b)).app X).f n = _
   simp only [eqToHom_app, eqToHom_f, reindex_obj_X, Functor.comp_obj]
 
@@ -223,6 +224,7 @@ lemma shiftFunctorAdd_hom_app_f (a b : ℤ) (X : IntSequence e) (n : ℤ) :
 lemma shiftFunctorAdd_inv_app_f (a b : ℤ) (X : IntSequence e) (n : ℤ) :
     ((shiftFunctorAdd (IntSequence e) a b).inv.app X).f n =
       eqToHom (congrArg X.X (show n + b + a = n + (a + b) by omega)) := by
+  -- This is the inverse component of the same `ShiftMkCore.add` field as in the preceding lemma.
   change ((eqToHom (reindex_add a b).symm).app X).f n = _
   simp only [eqToHom_app, eqToHom_f, reindex_obj_X, Functor.comp_obj]
 

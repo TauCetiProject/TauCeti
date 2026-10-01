@@ -52,7 +52,7 @@ noncomputable def stableFunctorCommShift (hF : StableConflationExact E E' F)
     letI := hE'.stableHasShift
     (hF.stableFunctor hE).CommShift ℤ :=
   CategoryTheory.Functor.commShiftOfIntertwining
-    hE.stableSuspension.asEquivalence hE'.stableSuspension.asEquivalence
-    (hF.stableFunctor hE) (hF.stableSuspensionCompStableFunctorIso hE hE')
+    (hF.stableFunctor hE) hE.stableSuspension.asEquivalence
+    hE'.stableSuspension.asEquivalence (hF.stableSuspensionCompStableFunctorIso hE hE')
 
 end TauCeti.StableConflationExact
