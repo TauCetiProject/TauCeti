@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # The combinatorial polygon of Schwarz--Christoffel boundary values
@@ -123,10 +124,7 @@ theorem schwarzChristoffelPolygon_edgeSet_castSucc_castSucc (a e : Fin (n + 1) �
       segment ℝ (schwarzChristoffelVertex a e z₀ i.castSucc)
         (schwarzChristoffelVertex a e z₀ i.succ) := by
   rw [Polygon.edgeSet, affineSegment_eq_segment]
-  have hrotate : finRotate (n + 2) i.castSucc.castSucc = i.succ.castSucc := by
-    apply Fin.ext
-    simp
-  rw [schwarzChristoffelPolygon_apply_castSucc, hrotate,
+  rw [schwarzChristoffelPolygon_apply_castSucc, Fin.finRotate_castSucc, Fin.succ_castSucc,
     schwarzChristoffelPolygon_apply_castSucc]
 
 /-- The edge after the last finite prevertex joins its boundary value to the common value at
@@ -138,10 +136,7 @@ theorem schwarzChristoffelPolygon_edgeSet_last_prevertex (a e : Fin (n + 1) → 
       segment ℝ (schwarzChristoffelVertex a e z₀ (Fin.last n))
         (schwarzChristoffelVertexAtInfinity a e z₀) := by
   rw [Polygon.edgeSet, affineSegment_eq_segment]
-  have hrotate : finRotate (n + 2) (Fin.last n).castSucc = Fin.last (n + 1) := by
-    apply Fin.ext
-    simp
-  rw [schwarzChristoffelPolygon_apply_castSucc, hrotate,
+  rw [schwarzChristoffelPolygon_apply_castSucc, Fin.finRotate_castSucc, Fin.succ_last,
     schwarzChristoffelPolygon_apply_last]
 
 /-- The final edge of the Schwarz--Christoffel polygon joins the common value at infinity back to

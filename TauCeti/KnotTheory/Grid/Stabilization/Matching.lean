@@ -112,6 +112,15 @@ def StabilizeXMatchingSource
     ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ)
     ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc)
 
+/-- A generator is a matching source exactly when the stabilization column lies in the clockwise
+half-open interval from the column occupied in row `(G.X s).succ` to the column occupied in row
+`(G.X s).castSucc`. -/
+theorem stabilizeXMatchingSource_iff (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
+    G.StabilizeXMatchingSource s i ↔ s.castSucc ∈ Grid.cIco
+      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ)
+      ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc) :=
+  Iff.rfl
+
 private theorem stabilizeXMatching_transpose_castSucc
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
     (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)).transpose (G.X s).castSucc =
