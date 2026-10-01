@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
 
@@ -33,6 +34,8 @@ argument.
   constants.
 * `WeierstrassCurve.functionFieldGaloisAction_genericX` and
   `WeierstrassCurve.functionFieldGaloisAction_genericY`: the two coordinate functions are fixed.
+* `WeierstrassCurve.functionFieldGaloisAction_map_algebraMap`: every function defined over the
+  ground field is fixed.
 * `WeierstrassCurve.functionFieldGaloisAction_translation`: on an elliptic curve, the action
   intertwines translation by a point with translation by its Galois conjugate.
 
@@ -106,6 +109,48 @@ theorem functionFieldGaloisAction_genericX (σ : K ≃ₐ[F] K) :
 theorem functionFieldGaloisAction_genericY (σ : K ≃ₐ[F] K) :
     functionFieldGaloisAction W σ (W⁄K).toAffine.genericY = (W⁄K).toAffine.genericY := by
   rw [Affine.genericY_def, functionFieldGaloisAction_algebraMap_mk, Polynomial.map_X]
+
+/-- **The Galois action fixes the function field defined over the ground field.** -/
+@[simp]
+theorem functionFieldGaloisAction_map_algebraMap (σ : K ≃ₐ[F] K)
+    (z : W.toAffine.FunctionField) :
+    functionFieldGaloisAction W σ
+        (Affine.FunctionField.map W.toAffine (algebraMap F K) z) =
+      Affine.FunctionField.map W.toAffine (algebraMap F K) z := by
+  let m : W.toAffine.FunctionField →+* (W⁄K).toAffine.FunctionField :=
+    Affine.FunctionField.map W.toAffine (algebraMap F K)
+  have h : (functionFieldGaloisAction W σ).toRingHom.comp m = m := by
+    apply Affine.FunctionField.ringHom_ext
+    · intro a
+      simp only [RingHom.comp_apply]
+      change functionFieldGaloisAction W σ
+          (Affine.FunctionField.map W.toAffine (algebraMap F K)
+            (algebraMap F W.toAffine.FunctionField a)) =
+        Affine.FunctionField.map W.toAffine (algebraMap F K)
+          (algebraMap F W.toAffine.FunctionField a)
+      rw [Affine.FunctionField.map_algebraMap]
+      change functionFieldGaloisAction W σ
+          (algebraMap K (W⁄K).toAffine.FunctionField (algebraMap F K a)) =
+        algebraMap K (W⁄K).toAffine.FunctionField (algebraMap F K a)
+      rw [functionFieldGaloisAction_algebraMap]
+      exact congrArg (algebraMap K (W⁄K).toAffine.FunctionField) (σ.commutes a)
+    · simp only [RingHom.comp_apply]
+      change functionFieldGaloisAction W σ
+          (Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericX) =
+        Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericX
+      rw [Affine.FunctionField.map_genericX]
+      change functionFieldGaloisAction W σ (W⁄K).toAffine.genericX =
+        (W⁄K).toAffine.genericX
+      exact functionFieldGaloisAction_genericX W σ
+    · simp only [RingHom.comp_apply]
+      change functionFieldGaloisAction W σ
+          (Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericY) =
+        Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericY
+      rw [Affine.FunctionField.map_genericY]
+      change functionFieldGaloisAction W σ (W⁄K).toAffine.genericY =
+        (W⁄K).toAffine.genericY
+      exact functionFieldGaloisAction_genericY W σ
+  exact RingHom.congr_fun h z
 
 variable [DecidableEq K] [W.IsElliptic]
 
