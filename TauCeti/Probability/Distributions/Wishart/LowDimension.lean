@@ -75,9 +75,14 @@ theorem map_symmetricFinOneEquiv_wishartGramMeasure (ν : ℕ) {S : Matrix (Fin 
       (fun y : Fin ν → ℝ ↦ ∑ r, y r ^ 2) ∘ (fun X r ↦ X r 0) := by
     funext X
     simp [coe_wishartGram, Matrix.sum_apply, Matrix.vecMulVec_apply, sq]
-  rw [wishartGramMeasure_eq_map_pi, Measure.map_map symmetricFinOneEquiv.continuous.measurable
-      measurable_wishartGram, hgram, ← Measure.map_map (by fun_prop) (by fun_prop), hpi,
-    Probability.map_sum_sq_pi_gaussianReal, Fintype.card_fin, Real.coe_toNNReal _ hS]
+  -- read the Gram law through the single entry: a sum of squares of first coordinates
+  have htransport : (wishartGramMeasure ν S).map symmetricFinOneEquiv =
+      ((Measure.pi fun _ : Fin ν ↦ multivariateGaussian 0 S).map fun X r ↦ X r 0).map
+        fun y : Fin ν → ℝ ↦ ∑ r, y r ^ 2 := by
+    rw [wishartGramMeasure_eq_map_pi, Measure.map_map symmetricFinOneEquiv.continuous.measurable
+      measurable_wishartGram, hgram, Measure.map_map (by fun_prop) (by fun_prop)]
+  rw [htransport, hpi, Probability.map_sum_sq_pi_gaussianReal]
+  simp [Real.coe_toNNReal _ hS]
 
 /-- **In dimension one the nonsingular Wishart law is a scaled chi-squared law.** Read through
 the single-entry identification `TauCeti.symmetricFinOneEquiv` of `1 × 1` symmetric matrices with
@@ -96,11 +101,17 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
   let e := symmetricFinOneEquiv.toHomeomorph.toMeasurableEquiv
   have he : (e : _ → ℝ) = symmetricFinOneEquiv := by
     rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph]
-  rw [Probability.chiSquaredMeasure_eq_gammaMeasure hn,
-    gammaMeasure_map_const_mul (by positivity) (by norm_num) hS,
-    nonsingularWishartMeasure_of_posDef hposDef (by simpa using hn), ← he,
-    MeasurableEquiv.map_withDensity, he, measurePreserving_symmetricFinOneEquiv.map_eq,
-    ProbabilityTheory.gammaMeasure]
+  -- the scaled chi-squared law is the gamma law of rate `1 / 2 / S 0 0`
+  have hchi : (Probability.chiSquaredMeasure n).map (S 0 0 * ·) =
+      gammaMeasure (n / 2) (1 / 2 / S 0 0) := by
+    rw [Probability.chiSquaredMeasure_eq_gammaMeasure hn,
+      gammaMeasure_map_const_mul (by positivity) (by norm_num) hS]
+  -- the Wishart law, read through the identification, is its density against Lebesgue measure
+  have hwishart : (nonsingularWishartMeasure n S).map symmetricFinOneEquiv =
+      volume.withDensity fun y => nonsingularWishartPDF n S (e.symm y) := by
+    rw [nonsingularWishartMeasure_of_posDef hposDef (by simpa using hn), ← he,
+      MeasurableEquiv.map_withDensity, he, measurePreserving_symmetricFinOneEquiv.map_eq]
+  rw [hwishart, hchi, ProbabilityTheory.gammaMeasure]
   -- Both sides are now densities against Lebesgue measure on `ℝ`: compare them off the origin,
   -- where the Wishart density vanishes but the gamma density need not.
   refine withDensity_congr_ae ?_
@@ -117,10 +128,11 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
       (Matrix.posDef_fin_one_iff _).2 (by rwa [hA])
     have htrace : Matrix.trace (S⁻¹ * (A : Matrix (Fin 1) (Fin 1) ℝ)) = x / S 0 0 := by
       simp [Matrix.trace, Matrix.mul_apply, hA, div_eq_inv_mul]
-    rw [nonsingularWishartPDF_of_posDef n S hApos, ProbabilityTheory.gammaPDF_of_nonneg hx.le,
-      Matrix.det_fin_one, hA, htrace, hdet, multivariateGamma_one,
-      Real.div_rpow (by norm_num) hS.le, Real.div_rpow (by norm_num) (by norm_num), Real.one_rpow]
+    -- both densities are now explicit; normalize the one-dimensional determinant and trace
+    rw [nonsingularWishartPDF_of_posDef n S hApos, ProbabilityTheory.gammaPDF_of_nonneg hx.le]
+    simp only [Matrix.det_fin_one, hA, htrace, hdet, multivariateGamma_one]
     congr 1
+    rw [Real.div_rpow (by norm_num) hS.le, Real.div_rpow (by norm_num) (by norm_num), Real.one_rpow]
     have h2 := (Real.rpow_pos_of_pos (two_pos : (0 : ℝ) < 2) (n / 2)).ne'
     have hσ := (Real.rpow_pos_of_pos hS (n / 2)).ne'
     have hΓ := (Real.Gamma_pos_of_pos (by positivity : 0 < n / 2)).ne'
