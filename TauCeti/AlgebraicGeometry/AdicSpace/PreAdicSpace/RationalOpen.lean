@@ -22,7 +22,9 @@ is the compatibility of the stalk valuations, which makes it an isomorphism of p
 Consequently every rational open of `X` is an open affinoid subspace, and when `A` is a Huber ring
 the open affinoid subspaces of `X` form a basis of its topology. That is the basis hypothesis of
 `TauCeti.PreAdicSpace.isSheafy_of_isAdapted_of_isSheaf_affinoidOpens`, under which the sheaf
-condition can be checked on open affinoid subspaces.
+condition can be checked on open affinoid subspaces. Since the whole space is rational and the
+structure presheaf is adapted to the rational opens, hence to the larger family of open affinoid
+subspaces, `X` is a pre-adic space in Wedhorn's sense.
 
 ## The stalk valuations
 
@@ -47,6 +49,9 @@ rings determined by `j(y)` and by `y` (`comap_presentationLimitLocIso_rationalLo
   affinoid subspaces.
 * `TauCeti.ValuationSpectrum.isBasis_affinoidOpens_presentationLimitPreAdicSpace`: the open
   affinoid subspaces form a basis of the topology.
+* `TauCeti.ValuationSpectrum.isPreAdic_presentationLimitPreAdicSpace`,
+  `TauCeti.PreAdicSpace.isPreAdic_of_isAffinoid`: `Spa(A, A⁺)`, and hence every affinoid pre-adic
+  space, is a pre-adic space, Wedhorn's Remark and Definition 8.10.
 
 ## References
 
@@ -436,4 +441,31 @@ theorem isBasis_affinoidOpens_presentationLimitPreAdicSpace [IsHuberRing A] :
   obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hx
   exact ⟨V, spaRationalOpens_subset_affinoidOpens P Aplus hAplus hP hV, hxV, hVU⟩
 
+/-- **`Spa(A, A⁺)` is a pre-adic space** (Wedhorn, Remark and Definition 8.10): the
+presentation-limit pre-adic space of `A` with a plus ring `A⁺` of power-bounded elements containing
+the ring of definition is locally affinoid, since the whole space is a rational open and so an
+open affinoid subspace, and its structure presheaf is adapted to the open affinoid subspaces,
+since it is adapted to the rational opens, which are among them. -/
+theorem isPreAdic_presentationLimitPreAdicSpace :
+    PreAdicSpace.isPreAdic (presentationLimitPreAdicSpace P Aplus hAplus hP) :=
+  ⟨fun x ↦ ⟨⊤, spaRationalOpens_subset_affinoidOpens P Aplus hAplus hP
+      (top_mem_spaRationalOpens Aplus), Opens.mem_top x⟩,
+    (isAdapted_presentationLimitPresheaf (P := P) (Aplus := Aplus)).mono
+      (spaRationalOpens_subset_affinoidOpens P Aplus hAplus hP)⟩
+
 end TauCeti.ValuationSpectrum
+
+namespace TauCeti.PreAdicSpace
+
+universe u
+
+/-- **Affinoid pre-adic spaces are pre-adic spaces** (Wedhorn, Remark and Definition 8.10): an
+object of `𝒱^pre` isomorphic to some `Spa(A, A⁺)` is locally affinoid with structure presheaf
+adapted to its open affinoid subspaces. -/
+theorem isPreAdic_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) : isPreAdic X := by
+  rw [isAffinoid_iff] at hX
+  obtain ⟨A, _, _, _, _, S, P, hP, ⟨e⟩⟩ := hX
+  exact ObjectProperty.prop_of_iso isPreAdic e.symm
+    (ValuationSpectrum.isPreAdic_presentationLimitPreAdicSpace P S.plus _ hP)
+
+end TauCeti.PreAdicSpace
