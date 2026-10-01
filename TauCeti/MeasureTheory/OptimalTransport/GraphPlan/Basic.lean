@@ -44,7 +44,10 @@ with measurable singletons.
 * `TauCeti.graphPlan T μ` — the graph plan, or Monge plan, of `T`: the pushforward of `μ` along
   `x ↦ (x, T x)`;
 * `TauCeti.Coupling.graph` — the graph plan of a transport map between two probability
-  measures, bundled as an element of `TauCeti.Coupling`.
+  measures, bundled as an element of `TauCeti.Coupling`; `TauCeti.Coupling.coe_graph` identifies
+  its underlying probability measure with the bundled pushforward
+  `MeasureTheory.ProbabilityMeasure.map` along `x ↦ (x, T x)`, which
+  `TauCeti.toMeasure_map_prodMk_self` identifies with the graph plan.
 
 ## Main statements
 
@@ -55,10 +58,13 @@ with measurable singletons.
 * `TauCeti.lintegral_graphPlan` — the change of variables
   `∫⁻ z, c z ∂graphPlan T μ = ∫⁻ x, c (x, T x) ∂μ`, which feeds the Monge-to-Kantorovich
   inequality `TauCeti.transportCost_le_lintegral_of_hasLaw` in
-  `TauCeti/MeasureTheory/OptimalTransport/Cost/Basic.lean`;
+  `TauCeti/MeasureTheory/OptimalTransport/Cost/Basic.lean`, and its Bochner version
+  `TauCeti.integral_graphPlan`;
 * `TauCeti.eq_graphPlan_iff` — a plan is the graph plan of `T` exactly when it is concentrated
   on the graph of `T`, with `TauCeti.graphPlan_eq_graphPlan_iff` the uniqueness of the map that
   induces a given deterministic plan;
+* `TauCeti.comp_ae_eq_id_of_map_swap_graphPlan_eq` — when the coordinate swap of the graph plan
+  of `T` is the graph plan of `R`, the maps are two-sided inverses almost everywhere;
 * `TauCeti.eq_dirac_of_hasLaw_dirac` — a transport map out of a Dirac measure forces the target
   to be a Dirac measure, so the unique plan out of an atom is deterministic only in that case.
 
@@ -283,6 +289,13 @@ theorem lintegral_graphPlan (hT : AEMeasurable T μ) (hc : AEMeasurable c (graph
     ∫⁻ z, c z ∂graphPlan T μ = ∫⁻ x, c (x, T x) ∂μ :=
   lintegral_map' hc (aemeasurable_prodMk_self hT)
 
+/-- **Change of variables along a graph plan**, Bochner version: integrating a vector-valued
+function against the graph plan of `T` is integrating its values at the graph points. -/
+theorem integral_graphPlan {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : X × Y → E}
+    (hT : AEMeasurable T μ) (hf : AEStronglyMeasurable f (graphPlan T μ)) :
+    ∫ z, f z ∂graphPlan T μ = ∫ x, f (x, T x) ∂μ :=
+  integral_map (aemeasurable_prodMk_self hT) hf
+
 end ChangeOfVariables
 
 section Determinism
@@ -346,6 +359,31 @@ theorem graphPlan_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S
     graphPlan T μ = graphPlan S μ ↔ T =ᵐ[μ] S :=
   ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT hS).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
 
+/-- **Inverse graph plans come from inverse maps.** If exchanging the coordinates of the graph
+plan of `T : X → Y` over `μ` gives the graph plan of `R : Y → X` over `ν`, then `R ∘ T = id`
+`μ`-almost everywhere and `T ∘ R = id` `ν`-almost everywhere. -/
+theorem comp_ae_eq_id_of_map_swap_graphPlan_eq [MeasurableEq X] {R : Y → X} {ν : Measure Y}
+    (hT : AEMeasurable T μ) (hR : AEMeasurable R ν)
+    (h : (graphPlan T μ).map Prod.swap = graphPlan R ν) :
+    R ∘ T =ᵐ[μ] id ∧ T ∘ R =ᵐ[ν] id := by
+  constructor
+  · -- `R` is a left inverse: read the graph of `R` back along the exchange and the graph of `T`.
+    have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.2 = R w.1 := by
+      rw [h]
+      exact ae_snd_eq_graphPlan hR
+    have h₂ := ae_of_ae_map measurable_swap.aemeasurable h₁
+    rw [graphPlan_def] at h₂
+    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hT) h₂] with x hx
+    simpa using hx.symm
+  · -- `R` is a right inverse: push the graph of `T` forward along the exchange, which is a
+    -- measurable equivalence, then read it back along the graph of `R`.
+    have h₁ : ∀ᵐ w ∂(graphPlan T μ).map Prod.swap, w.1 = T w.2 :=
+      (MeasurableEquiv.map_ae MeasurableEquiv.prodComm (graphPlan T μ)).ge
+        (ae_snd_eq_graphPlan hT)
+    rw [h, graphPlan_def] at h₁
+    filter_upwards [ae_of_ae_map (aemeasurable_prodMk_self hR) h₁] with y hy
+    simpa using hy.symm
+
 end Determinism
 
 section Dirac
@@ -367,6 +405,12 @@ theorem graphPlan_dirac {x : X} (hT : AEMeasurable T (Measure.dirac x)) :
 
 end Dirac
 
+/-- The bundled pushforward of a probability measure along the graph map `x ↦ (x, T x)` is the
+graph plan of `T`. -/
+theorem toMeasure_map_prodMk_self (T : X → Y) (μ : ProbabilityMeasure X) :
+    ((μ.map fun x ↦ (x, T x) : ProbabilityMeasure (X × Y)) : Measure (X × Y)) = graphPlan T μ := by
+  rw [ProbabilityMeasure.toMeasure_map, graphPlan_def]
+
 namespace Coupling
 
 variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
@@ -375,13 +419,14 @@ variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
 `TauCeti.Coupling`. -/
 def graph (hT : HasLaw T ν.toMeasure μ.toMeasure) : Coupling μ ν :=
   ⟨μ.map (fun x ↦ (x, T x)), by
-    rw [ProbabilityMeasure.toMeasure_map]
+    rw [toMeasure_map_prodMk_self]
     exact isCoupling_graphPlan hT⟩
 
-/-- The underlying measure of a bundled graph plan is the graph plan. -/
+/-- The underlying probability measure of a bundled graph plan is the pushforward of `μ` along
+the graph map `x ↦ (x, T x)`. -/
 @[simp]
 theorem coe_graph (hT : HasLaw T ν.toMeasure μ.toMeasure) :
-    ((graph hT : ProbabilityMeasure (X × Y)) : Measure (X × Y)) = graphPlan T μ.toMeasure :=
+    (graph hT : ProbabilityMeasure (X × Y)) = μ.map fun x ↦ (x, T x) :=
   (rfl)
 
 end Coupling

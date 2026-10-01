@@ -110,6 +110,15 @@ open TauCeti.UpperHalfPlane
 
 /-! ### The centre of the semicircle through two points -/
 
+/-- A point of `ℍ` lies strictly between the two ends of any semicircle through it: its real part
+is within less than the radius `|P - c|` of the centre `c`. -/
+theorem abs_re_sub_lt_sqrt_normSq (P : ℍ) (c : ℝ) :
+    |P.re - c| < Real.sqrt (Complex.normSq ((P : ℂ) - c)) := by
+  rw [Real.lt_sqrt (abs_nonneg _), sq_abs, Complex.normSq_apply]
+  simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, sub_zero,
+    UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
+  nlinarith [P.im_pos]
+
 /-- The centre on the real axis of the semicircle through `P` and `Q`, when `P.re ≠ Q.re`. -/
 def circleCenter (P Q : ℍ) : ℝ :=
   (Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ)) / (2 * (Q.re - P.re))
