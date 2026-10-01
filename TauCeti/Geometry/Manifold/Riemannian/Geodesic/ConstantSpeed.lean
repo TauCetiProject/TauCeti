@@ -40,8 +40,6 @@ directly with `curveVelocity`.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Constant speed".
 * M. P. do Carmo, *Riemannian Geometry*, Chapter 3, §2.
 * The proof follows the organization of
   `DoCarmoLib/Riemannian/Geodesic/HopfRinow/ConstantSpeed.lean` in the Apache-2.0
