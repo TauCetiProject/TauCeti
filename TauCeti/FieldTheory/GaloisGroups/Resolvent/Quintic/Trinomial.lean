@@ -40,6 +40,8 @@ powers of `a`, and the two real orbit values `190 ± 12√31` at the roots of
 
 ## Main results
 
+* `TauCeti.eval₂_rename_quinticF20Invariant`: the value of a renaming of Dummit's invariant at a
+  vector of five roots, written out.
 * `TauCeti.rootsXPowFiveSubX`: an explicit root enumeration of `X⁵ - X` over `ℂ`.
 * `TauCeti.X_pow_five_sub_X_eq_prod_X_sub_C_rootsXPowFiveSubX`: its factorization over `ℂ`.
 * `TauCeti.quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C`: Dummit's formula for the
@@ -186,7 +188,7 @@ private theorem specialize_X_pow_five_add_C_mul_X_add_C_eq (a b : R) :
     simp [hk]
 
 /-- The value of a renaming of Dummit's invariant, written out. -/
-private theorem eval₂_rename_quinticF20Invariant (x : Fin 5 → R) (σ : Equiv.Perm (Fin 5)) :
+theorem eval₂_rename_quinticF20Invariant (x : Fin 5 → R) (σ : Equiv.Perm (Fin 5)) :
     MvPolynomial.eval₂ (Int.castRingHom R) x (MvPolynomial.rename ⇑σ quinticF20Invariant) =
       x (σ 0) ^ 2 * (x (σ 1) * x (σ 4) + x (σ 2) * x (σ 3)) +
         x (σ 1) ^ 2 * (x (σ 2) * x (σ 0) + x (σ 3) * x (σ 4)) +
