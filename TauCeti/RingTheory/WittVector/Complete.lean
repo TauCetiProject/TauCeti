@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 
 /-!
@@ -28,12 +29,16 @@ with pair of definition `(A_inf, (p, [ϖ]))`.
 * `WittVector.mem_span_p_teichmuller_pow_of_pow_dvd_coeff`: conversely, if `R` is
   perfect, a Witt vector whose `i`-th coordinate is divisible by `ϖ ^ ((n - i) * p ^ i)` for
   every `i < n` lies in `(p, [ϖ]) ^ n`.
+* `WittVector.span_p_teichmuller_eq_top_iff`: if `R` has characteristic `p`, the ideal `(p, [ϖ])`
+  is proper exactly when `ϖ` is not a unit.
 * `WittVector.isHausdorff_span_p_teichmuller`: if `R` has characteristic `p` and is
   `ϖ`-adically Hausdorff, then `𝕎 R` is `(p, [ϖ])`-adically Hausdorff.
 * `WittVector.isPrecomplete_span_p_teichmuller`: if `R` is perfect of characteristic `p`
   and `ϖ`-adically precomplete, then `𝕎 R` is `(p, [ϖ])`-adically precomplete.
 * `WittVector.isAdicComplete_span_p_teichmuller`: if `R` is perfect of characteristic
   `p` and `ϖ`-adically complete, then `𝕎 R` is `(p, [ϖ])`-adically complete.
+* `TauCeti.WittVector.completeSpace_and_t2Space_adicTopology_span_p_teichmuller`: under the same
+  hypotheses, the `(p, [ϖ])`-adic topology on `𝕎 R` is complete and Hausdorff.
 
 ## References
 
@@ -100,6 +105,16 @@ instance isHausdorff_span_p_teichmuller (ϖ : R) [IsHausdorff (span {ϖ}) R] :
     refine IsHausdorff.haus ‹_› (x.coeff i) fun n ↦ ?_
     simp only [smul_eq_mul, mul_top, SModEq.zero, span_singleton_pow, mem_span_singleton] at hx ⊢
     exact pow_dvd_coeff_of_mem_span_p_teichmuller_pow (hx (i + 1 + n)) (Nat.lt_succ_self i)
+
+/-- The ideal `(p, [ϖ])` of `𝕎 R` is the unit ideal exactly when `ϖ` is a unit of `R`: the
+constant coefficient `𝕎 R → R` kills `p` and sends `[ϖ]` to `ϖ`, while a unit `ϖ` has a unit
+Teichmüller representative. -/
+theorem span_p_teichmuller_eq_top_iff {ϖ : R} :
+    span {(p : 𝕎 R), teichmuller p ϖ} = ⊤ ↔ IsUnit ϖ := by
+  refine ⟨fun h ↦ ?_, fun h ↦
+    eq_top_of_isUnit_mem _ (subset_span (by simp)) (h.map (teichmuller p))⟩
+  simpa [map_span, Ideal.map_top, Set.image_pair, span_singleton_eq_top] using
+    congrArg (Ideal.map (constantCoeff : 𝕎 R →+* R)) h
 
 section PerfectRing
 
@@ -182,5 +197,27 @@ end PerfectRing
 end CharP
 
 end WittVector
+
+namespace TauCeti.WittVector
+
+variable (p : ℕ) [Fact p.Prime] {R : Type*} [CommRing R] [CharP R p] [PerfectRing R p]
+
+/-- If `R` is perfect of characteristic `p` and `ϖ`-adically complete, the `(p, [ϖ])`-adic
+topology on its Witt vectors is complete and Hausdorff.
+
+The algebraic completeness input is `WittVector.isAdicComplete_span_p_teichmuller`; this theorem
+only identifies it with completeness and separatedness of the corresponding adic topology. -/
+theorem completeSpace_and_t2Space_adicTopology_span_p_teichmuller (ϖ : R)
+    [IsAdicComplete (Ideal.span {ϖ}) R] :
+    letI : WithIdeal (_root_.WittVector p R) :=
+      ⟨Ideal.span {(p : _root_.WittVector p R), _root_.WittVector.teichmuller p ϖ}⟩
+    CompleteSpace (_root_.WittVector p R) ∧ T2Space (_root_.WittVector p R) := by
+  let _ : WithIdeal (_root_.WittVector p R) :=
+    ⟨Ideal.span {(p : _root_.WittVector p R), _root_.WittVector.teichmuller p ϖ}⟩
+  exact (IsAdic.isAdicComplete_iff
+    (I := Ideal.span {(p : _root_.WittVector p R), _root_.WittVector.teichmuller p ϖ}) rfl).mp
+    inferInstance
+
+end TauCeti.WittVector
 
 end

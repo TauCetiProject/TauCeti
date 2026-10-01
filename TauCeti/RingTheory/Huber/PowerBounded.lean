@@ -472,10 +472,11 @@ theorem coe_topologicallyNilpotentIdeal :
   Set.ext fun a ↦ ⟨by rintro ⟨b, hb, rfl⟩; exact hb,
     fun ha ↦ ⟨⟨a, IsPowerBounded.of_isTopologicallyNilpotent ha⟩, ha, rfl⟩⟩
 
-/-- In a discrete ring every element is power-bounded, so `A° = A`. -/
+/-- In a linearly topologized ring, for instance an adic or a discrete ring, every element is
+power-bounded, so `A° = A`. -/
 @[simp]
-theorem powerBoundedSubring_eq_top [DiscreteTopology A] : powerBoundedSubring A = ⊤ :=
-  eq_top_iff.mpr fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_discreteTopology _)
+theorem powerBoundedSubring_eq_top [IsLinearTopology A A] : powerBoundedSubring A = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
 
 /-- Wedhorn Proposition 5.30(4): the power-bounded subring `A°` is integrally closed in `A`. -/
 theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubring A) x) :

@@ -232,7 +232,7 @@ private theorem map_splitNoise_noiseMeasure :
     (measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
   have hcomp : splitNoise = f₄ ∘ f₃ ∘ f₂ ∘ f₁ := rfl
   rw [hcomp, ← Measure.map_map (hs.prodMap hs') (h₃.comp (h₂.comp h₁)),
-    ← Measure.map_map h₃ (h₂.comp h₁), ← Measure.map_map h₂ h₁, noiseMeasure_eq_infinitePi,
+    ← Measure.map_map h₃ (h₂.comp h₁), ← Measure.map_map h₂ h₁, noiseMeasure_def,
     Measure.map_infinitePi_infinitePi_of_inj noiseIndexEquiv.symm.injective,
     Measure.infinitePi_map_curry (fun _ _ => (volume : Measure I)),
     TauCeti.MeasureTheory.Measure.infinitePi_map_none_some, ← hρ,

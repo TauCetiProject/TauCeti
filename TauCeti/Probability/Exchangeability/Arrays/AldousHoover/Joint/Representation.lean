@@ -128,7 +128,7 @@ private theorem map_splitJointNoise_noiseMeasure :
   have hsplit : splitJointNoise = Prod.map f₂ id ∘ f₁ := by
     funext u
     simp [splitJointNoise, f₁, f₂, c, jointVertexNoiseIndex]
-  rw [hsplit, ← Measure.map_map (h₂.prodMap measurable_id) h₁, noiseMeasure_eq_infinitePi,
+  rw [hsplit, ← Measure.map_map (h₂.prodMap measurable_id) h₁, noiseMeasure_def,
     infinitePi_map_pair_comp _ hc hdisj,
     Measure.map_infinitePi_infinitePi_of_inj jointVertexNoiseIndex_injective,
     ← Measure.map_prod_map _ _ h₂ measurable_id, Measure.map_id,

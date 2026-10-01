@@ -121,7 +121,7 @@ private theorem map_splitSeparateNoise_noiseMeasure :
     (Measurable.of_eval fun _ => measurable_pi_apply _)
   have h₂₃ : Measurable (Prod.map id f₃ ∘ f₂) := (measurable_id.prodMap h₃).comp h₂
   have hsplit : splitSeparateNoise = Prod.map (Prod.map id f₃ ∘ f₂) id ∘ f₁ := rfl
-  rw [hsplit, ← Measure.map_map (h₂₃.prodMap measurable_id) h₁, noiseMeasure_eq_infinitePi,
+  rw [hsplit, ← Measure.map_map (h₂₃.prodMap measurable_id) h₁, noiseMeasure_def,
     infinitePi_map_pair_comp _ hcell hdisj,
     Measure.map_infinitePi_infinitePi_of_inj vertexNoiseIndex_injective,
     ← Measure.map_prod_map _ _ h₂₃ measurable_id, Measure.map_id,
