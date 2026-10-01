@@ -23,7 +23,7 @@ the dual of a pure Hodge structure to polarizations on duals and internal Homs.
 
 ## Main declarations
 
-* `TauCeti.Hodge.HodgeStructure.dualTateTwist`: the same-weight target `Vˇ(-n)`.
+* `TauCeti.Hodge.HodgeStructure.dualTateTwist`: the same-weight target `V^*(-n)`.
 * `TauCeti.Hodge.Polarization.toDualHom`: the Hodge morphism from a polarized structure to the
   appropriately twisted dual.
 * `TauCeti.Hodge.Polarization.toDualHom_toLinearMap`: its complex action is the polarizing form.
@@ -75,7 +75,7 @@ theorem dualTateTwist_conjF (hs : HodgeStructure hℂ n) (p : ℤ) :
     hs.dualTateTwist.conjF p = hs.dual.conjF (p - n) := by
   rw [HodgeStructureOn.conjF_def, HodgeStructureOn.conjF_def, dualTateTwist_F]
 
-/-- The `p`-th Hodge component of `Vˇ(-n)` is the `(p-n)`-th component of `Vˇ`. -/
+/-- The `p`-th Hodge component of `V^*(-n)` is the `(p-n)`-th component of `V^*`. -/
 @[simp]
 theorem dualTateTwist_piece (hs : HodgeStructure hℂ n) (p : ℤ) :
     hs.dualTateTwist.piece p = hs.dual.piece (p - n) := by
@@ -84,7 +84,7 @@ theorem dualTateTwist_piece (hs : HodgeStructure hℂ n) (p : ℤ) :
   congr 2
   ring
 
-/-- The Hodge numbers of `Vˇ(-n)` are the translated Hodge numbers of `Vˇ`. -/
+/-- The Hodge numbers of `V^*(-n)` are the translated Hodge numbers of `V^*`. -/
 @[simp]
 theorem dualTateTwist_hodgeNumber (hs : HodgeStructure hℂ n) (p : ℤ) :
     hs.dualTateTwist.hodgeNumber p = hs.dual.hodgeNumber (p - n) := by
