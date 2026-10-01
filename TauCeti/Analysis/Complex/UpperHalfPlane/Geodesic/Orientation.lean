@@ -15,8 +15,8 @@ public import TauCeti.Geometry.Euclidean.Angle.Oriented.Basic
 to the geodesic towards `C`, the oriented angle (`Orientation.oangle` for the standard
 orientation of `ℂ`) between the two velocities at `A`. Its absolute value is the unoriented
 `UpperHalfPlane.interiorAngle A B C` (`UpperHalfPlane.interiorAngle_eq_abs_toReal_orientedAngle`),
-it is invariant under `PSL(2, ℝ)` (`orientedAngle_smul`), and it is additive
-(`UpperHalfPlane.orientedAngle_add`). For `A ≠ B` and `A ≠ C`, its sign is the side of the line
+it is invariant under `PSL(2, ℝ)` when `A ≠ B` and `A ≠ C` (`orientedAngle_smul`), and it is
+additive (`UpperHalfPlane.orientedAngle_add`). For `A ≠ C`, its sign is the side of the line
 through `A` and `B` on which `C` lies: `+1` on the left, `-1` on the right, `0` on the line
 (`orientedAngle_sign_eq_one_iff` and companions); in particular the angles of a nondegenerate
 triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`).
@@ -172,8 +172,11 @@ private theorem sign_orientedAngle_I_geodesicLine_one_rotation {d t : ℝ} (hd :
 
 /-- The sign of the oriented angle is the sign of `-C.re` once the geodesic from `A` to `B` is
 moved onto the upward imaginary axis. -/
-private theorem sign_orientedAngle_eq {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
+private theorem sign_orientedAngle_eq {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = SignType.sign (-((geodesicBetween A B)⁻¹ • C : ℍ).re) := by
+  -- replace `B` by a point `B' ≠ A` of the same line
+  obtain ⟨B, hAB, hB⟩ := exists_ne_and_geodesicBetween_eq A B
+  rw [← hB, orientedAngle_def, ← hB, ← orientedAngle_def]
   have hIC : UpperHalfPlane.I ≠ (geodesicBetween A B)⁻¹ • C := by
     rw [← inv_geodesicBetween_smul_left A B]
     exact (MulAction.injective _).ne hAC
@@ -185,41 +188,41 @@ private theorem sign_orientedAngle_eq {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠
 
 /-- The sign of the oriented angle is `+1` exactly when `C` lies to the left of the geodesic
 from `A` to `B`. -/
-theorem orientedAngle_sign_eq_one_iff {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
+theorem orientedAngle_sign_eq_one_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = 1 ↔ C ∈ leftHalfPlane (geodesicBetween A B) := by
-  rw [sign_orientedAngle_eq hAB hAC, sign_eq_one_iff, mem_leftHalfPlane_iff, neg_pos]
+  rw [sign_orientedAngle_eq hAC, sign_eq_one_iff, mem_leftHalfPlane_iff, neg_pos]
 
 /-- The sign of the oriented angle is `-1` exactly when `C` lies to the right of the geodesic
 from `A` to `B`. -/
-theorem orientedAngle_sign_eq_neg_one_iff {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
+theorem orientedAngle_sign_eq_neg_one_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = -1 ↔ C ∈ rightHalfPlane (geodesicBetween A B) := by
-  rw [sign_orientedAngle_eq hAB hAC, sign_eq_neg_one_iff, mem_rightHalfPlane_iff, neg_lt_zero]
+  rw [sign_orientedAngle_eq hAC, sign_eq_neg_one_iff, mem_rightHalfPlane_iff, neg_lt_zero]
 
 /-- The sign of the oriented angle is `0` exactly when `C` lies on the geodesic through `A`
 and `B`. -/
-theorem orientedAngle_sign_eq_zero_iff {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
+theorem orientedAngle_sign_eq_zero_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = 0 ↔ C ∈ Set.range (geodesicLine (geodesicBetween A B)) := by
-  rw [sign_orientedAngle_eq hAB hAC, sign_eq_zero_iff, mem_range_geodesicLine_iff, neg_eq_zero]
+  rw [sign_orientedAngle_eq hAC, sign_eq_zero_iff, mem_range_geodesicLine_iff, neg_eq_zero]
 
 /-- The oriented angle of a nondegenerate triangle is neither `0` nor `π`. -/
-private theorem orientedAngle_ne_zero_and_ne_pi {A B C : ℍ} (hAB : A ≠ B)
+private theorem orientedAngle_ne_zero_and_ne_pi {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
     orientedAngle A B C ≠ 0 ∧ orientedAngle A B C ≠ π := by
   have hAC : A ≠ C := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left A B) hC
-  rwa [← orientedAngle_sign_eq_zero_iff hAB hAC, Real.Angle.sign_eq_zero_iff, not_or] at hC
+  rwa [← orientedAngle_sign_eq_zero_iff hAC, Real.Angle.sign_eq_zero_iff, not_or] at hC
 
-/-- The angle at `A` of a nondegenerate triangle is strictly between `0` and `π`. -/
-theorem interiorAngle_pos {A B C : ℍ} (hAB : A ≠ B)
+/-- The angle at `A` of a nondegenerate triangle is strictly positive. -/
+theorem interiorAngle_pos {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) : 0 < interiorAngle A B C := by
   rw [interiorAngle_eq_abs_toReal_orientedAngle, abs_pos, Ne, Real.Angle.toReal_eq_zero_iff]
-  exact (orientedAngle_ne_zero_and_ne_pi hAB hC).1
+  exact (orientedAngle_ne_zero_and_ne_pi hC).1
 
 /-- The angle at `A` of a nondegenerate triangle is strictly less than `π`. -/
-theorem interiorAngle_lt_pi {A B C : ℍ} (hAB : A ≠ B)
+theorem interiorAngle_lt_pi {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) : interiorAngle A B C < π := by
   rw [interiorAngle_eq_abs_toReal_orientedAngle, abs_lt]
   exact ⟨Real.Angle.neg_pi_lt_toReal _, (Real.Angle.toReal_le_pi _).lt_of_ne
-    (mt Real.Angle.toReal_eq_pi_iff.1 (orientedAngle_ne_zero_and_ne_pi hAB hC).2)⟩
+    (mt Real.Angle.toReal_eq_pi_iff.1 (orientedAngle_ne_zero_and_ne_pi hC).2)⟩
 
 /-! ### Reversal and cyclic invariance of the sides -/
 
@@ -283,19 +286,13 @@ theorem interiorAngle_add {A B C D : ℍ} (hC : C ∈ leftHalfPlane (geodesicBet
     (hD : D ∈ leftHalfPlane (geodesicBetween A B))
     (hCD : D ∈ leftHalfPlane (geodesicBetween A C)) :
     interiorAngle A B D = interiorAngle A B C + interiorAngle A C D := by
-  -- replace `B` by a point `B' ≠ A` of the same line, so that the sign lemmas apply
-  obtain ⟨B', hAB, hB'⟩ := exists_ne_and_geodesicBetween_eq A B
-  have key (X : ℍ) : interiorAngle A B X = interiorAngle A B' X := by
-    rw [interiorAngle_def, interiorAngle_def, hB']
-  rw [← hB'] at hC hD
-  rw [key, key]
-  have hAC : A ≠ C := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left A B')
+  have hAC : A ≠ C := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left A B)
     (notMem_range_geodesicLine_of_mem_leftHalfPlane hC)
-  have hAD : A ≠ D := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left A B')
+  have hAD : A ≠ D := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left A B)
     (notMem_range_geodesicLine_of_mem_leftHalfPlane hD)
-  have h₁ := (orientedAngle_sign_eq_one_iff hAB hAC).2 hC
-  have h₂ := (orientedAngle_sign_eq_one_iff hAC hAD).2 hCD
-  have h₃ := (orientedAngle_sign_eq_one_iff hAB hAD).2 hD
+  have h₁ := (orientedAngle_sign_eq_one_iff hAC).2 hC
+  have h₂ := (orientedAngle_sign_eq_one_iff hAD).2 hCD
+  have h₃ := (orientedAngle_sign_eq_one_iff hAD).2 hD
   have key' {θ : Real.Angle} (h : θ.sign = 1) : |θ.toReal| = θ.toReal :=
     abs_of_pos (Real.Angle.toReal_mem_Ioo_iff_sign_pos.2 h).1
   simp only [interiorAngle_eq_abs_toReal_orientedAngle, key' h₁, key' h₂, key' h₃]
@@ -304,7 +301,7 @@ theorem interiorAngle_add {A B C D : ℍ} (hC : C ∈ leftHalfPlane (geodesicBet
 
 /-- The angular order of two points to the left of a geodesic is read off the side of the
 geodesic through the first. -/
-theorem toReal_orientedAngle_lt_iff {A B C D : ℍ} (hAB : A ≠ B)
+theorem toReal_orientedAngle_lt_iff {A B C D : ℍ}
     (hC : C ∈ leftHalfPlane (geodesicBetween A B))
     (hD : D ∈ leftHalfPlane (geodesicBetween A B)) :
     (orientedAngle A B C).toReal < (orientedAngle A B D).toReal ↔
@@ -313,9 +310,9 @@ theorem toReal_orientedAngle_lt_iff {A B C D : ℍ} (hAB : A ≠ B)
     (notMem_range_geodesicLine_of_mem_leftHalfPlane hC)
   have hAD : A ≠ D := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left A B)
     (notMem_range_geodesicLine_of_mem_leftHalfPlane hD)
-  rw [← orientedAngle_sign_eq_one_iff hAC hAD]
-  have h₁ := (orientedAngle_sign_eq_one_iff hAB hAC).2 hC
-  have h₂ := (orientedAngle_sign_eq_one_iff hAB hAD).2 hD
+  rw [← orientedAngle_sign_eq_one_iff hAD]
+  have h₁ := (orientedAngle_sign_eq_one_iff hAC).2 hC
+  have h₂ := (orientedAngle_sign_eq_one_iff hAD).2 hD
   exact (Complex.orientation.oangle_sign_eq_one_iff_toReal_lt_of_sign_eq (h₁.trans h₂.symm)
     (ne_of_eq_of_ne h₁ one_ne_zero)).symm
 
