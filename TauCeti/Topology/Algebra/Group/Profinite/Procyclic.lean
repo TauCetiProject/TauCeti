@@ -76,12 +76,9 @@ theorem mem_closedZpowers_iff {x y : G} :
 
 /-- A profinite power generates a subgroup of the original closed procyclic subgroup. -/
 theorem closedZpowers_zpowHat_le (x : G) (a : Additive zHat.{u}) :
-    closedZpowers (x ^ᶻ a) ≤ closedZpowers x := by
-  rw [closedZpowers_def (x ^ᶻ a)]
-  exact Subgroup.topologicalClosure_minimal _
-    (Subgroup.zpowers_le.mpr
-      (zpowHat_mem (isClosed_closedZpowers x) (mem_closedZpowers x) a))
-    (isClosed_closedZpowers x)
+    closedZpowers (x ^ᶻ a) ≤ closedZpowers x :=
+  (closedZpowers_le (isClosed_closedZpowers x)).mpr
+    (zpowHat_mem (isClosed_closedZpowers x) (mem_closedZpowers x) a)
 
 /-- Extracting the `p`-part fixes an element of a pro-`p` group. -/
 @[simp]
@@ -141,9 +138,7 @@ theorem isProP_closedZpowers_zpowHat_idem (p : ℕ) [Fact p.Prime] (x : G) :
       (continuous_induced_rng.mpr ψ.continuous) ψ.toMonoidHom.rangeRestrict_surjective
   have hclosed : IsClosed (ψ.toMonoidHom.range : Set G) :=
     (isCompact_range ψ.continuous).isClosed
-  rw [closedZpowers_def]
-  exact hrange.mono (Subgroup.topologicalClosure_minimal _
-    (Subgroup.zpowers_le.mpr ⟨ofAdd 1, hψ1⟩) hclosed)
+  exact hrange.mono ((closedZpowers_le hclosed).mpr ⟨ofAdd 1, hψ1⟩)
 
 /-- An element is its own `p`-part exactly when its closed procyclic subgroup is pro-`p`. -/
 theorem zpowHat_idem_eq_self_iff (p : ℕ) [Fact p.Prime] (x : G) :
