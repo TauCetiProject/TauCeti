@@ -42,6 +42,7 @@ of `A` and a right action of `B` is a right DG module over the tensor product of
 * `TauCeti.dgTensorHom_induction`: the tensor products of homogeneous morphisms span every
   `R`-module of morphisms of a fixed degree.
 * `TauCeti.dgDifferential_dgTensorHom`: the differential of a tensor product of morphisms.
+* `TauCeti.dgCompMap_tensor`: composition on a homogeneous summand of the tensor product.
 * `TauCeti.dgComp_dgTensorHom`: composition of tensor products of morphisms, with its Koszul
   sign.
 * `TauCeti.dgId_tensor`: identities are tensor products of identities.
@@ -62,12 +63,6 @@ namespace TauCeti
 universe v u₁ u₂
 
 variable (R : Type v) [CommRing R] {C : Type u₁} {D : Type u₂} [DGCategory R C] [DGCategory R D]
-
-/-- The Hom complex of the tensor product of two differential graded categories is the tensor
-product of the Hom complexes of the two factors. -/
-theorem dgHomComplex_tensor (X Y : C × D) :
-    dgHomComplex R X Y = dgHomComplex R X.1 Y.1 ⊗ dgHomComplex R X.2 Y.2 :=
-  (rfl)
 
 /-- The tensor product `f ⊗ g : X ⟶ Y` in the tensor product of two differential graded
 categories, of degree `n = p + q`, of a morphism `f : X.1 ⟶ Y.1` of degree `p` and a morphism
@@ -181,20 +176,21 @@ theorem dgDifferential_dgTensorHom {X Y : C × D} {p q n : ℤ} (f : DGHom R p X
     ModuleCat.MonoidalCategory.whiskerLeft_apply] at key
   exact key
 
-/- Composition in the tensor product on the summand of bidegrees `((p, q), (p', q'))`: interchange
+/-- Composition in the tensor product on the summand of bidegrees `((p, q), (p', q'))`: interchange
 the two middle factors, with the Koszul sign `(-1) ^ (q * p')`, then compose in each factor. -/
-private lemma tensorHom_ι_dgCompMap (X Y Z : C × D) (p q p' q' m : ℤ)
-    (hm : p + q + (p' + q') = m) :
-    (ιTensorObj (dgHomComplex R X.1 Y.1) (dgHomComplex R X.2 Y.2) p q (p + q) rfl ⊗ₘ
-        ιTensorObj (dgHomComplex R Y.1 Z.1) (dgHomComplex R Y.2 Z.2) p' q' (p' + q') rfl) ≫
-      dgCompMap R X Y Z (p + q) (p' + q') m hm =
+lemma dgCompMap_tensor (X Y Z : C × D) (p q p' q' n n' m : ℤ)
+    (h : p + q = n) (h' : p' + q' = n') (hm : n + n' = m) :
+    (ιTensorObj (dgHomComplex R X.1 Y.1) (dgHomComplex R X.2 Y.2) p q n h ⊗ₘ
+        ιTensorObj (dgHomComplex R Y.1 Z.1) (dgHomComplex R Y.2 Z.2) p' q' n' h') ≫
+      dgCompMap R X Y Z n n' m hm =
     (q * p').negOnePow • (tensorμ _ _ _ _ ≫
       (dgCompMap R X.1 Y.1 Z.1 p p' (p + p') rfl ⊗ₘ dgCompMap R X.2 Y.2 Z.2 q q' (q + q') rfl) ≫
         ιTensorObj (dgHomComplex R X.1 Z.1) (dgHomComplex R X.2 Z.2) (p + p') (q + q') m
           (by omega)) := by
+  subst h h'
   rw [dgCompMap_def, eComp_tensor_eq, HomologicalComplex.comp_f]
   -- The Hom complexes of the tensor product are tensor products only up to unfolding
-  -- `TauCeti.tensorEnrichedCategory` (`TauCeti.dgHomComplex_tensor`).
+  -- `TauCeti.tensorEnrichedCategory` (`TauCeti.eHom_tensor_eq`).
   have hι : ιTensorObj (dgHomComplex R X Y) (dgHomComplex R Y Z) (p + q) (p' + q') m hm =
       ιTensorObj (dgHomComplex R X.1 Y.1 ⊗ dgHomComplex R X.2 Y.2)
         (dgHomComplex R Y.1 Z.1 ⊗ dgHomComplex R Y.2 Z.2) (p + q) (p' + q') m hm := rfl
@@ -215,7 +211,8 @@ theorem dgComp_dgTensorHom {X Y Z : C × D} {p q p' q' n n' m : ℤ} (f : DGHom 
         dgTensorHom R (dgComp R f f' rfl) (dgComp R g g' rfl) (by omega) := by
   subst h h'
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    (tensorHom_ι_dgCompMap R X Y Z p q p' q' m hm)) ((f ⊗ₜ g) ⊗ₜ (f' ⊗ₜ g'))
+    (dgCompMap_tensor R X Y Z p q p' q' (p + q) (p' + q') m rfl rfl hm))
+    ((f ⊗ₜ g) ⊗ₜ (f' ⊗ₜ g'))
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_smul,
     LinearMap.smul_apply] at key
   -- The evaluation lemmas of `ModuleCat` are stated for `ConcreteCategory.hom` on the carrier
@@ -228,7 +225,6 @@ theorem dgComp_dgTensorHom {X Y Z : C × D} {p q p' q' n n' m : ℤ} (f : DGHom 
 
 /-- The identity of an object of the tensor product of two differential graded categories is the
 tensor product of the identities of its two components. -/
-@[simp]
 theorem dgId_tensor (X : C × D) :
     dgId R X = dgTensorHom R (dgId R X.1) (dgId R X.2) (add_zero 0) := by
   rw [dgId_def, eId_tensor_eq, HomologicalComplex.comp_f, leftUnitor_inv_f,

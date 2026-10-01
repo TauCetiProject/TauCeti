@@ -310,12 +310,14 @@ private lemma ι₁₂_hexagon_forward_lhs (p q r j : ℤ)
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
     ι₁₂_eq R X Y Z p q r (p + q) j rfl h',
     Category.assoc,
-    HomologicalComplex.ι_ι_associator_hom_assoc,
+    HomologicalComplex.ι_ι_associator_hom_assoc _ _ _ p q r (p + q) (q + r) j rfl rfl h'
+      (by omega),
     ι_koszulBraidingHom_assoc,
     whiskerLeft_comp_koszulBraidingSummand_assoc R X (Y ⊗ Z) _ p (q + r) j
       (HomologicalComplex.ιTensorObj Y Z q r (q + r) rfl)]
   simp only [Linear.units_smul_comp, Category.assoc]
-  rw [HomologicalComplex.ι_ι_associator_hom, Linear.comp_units_smul,
+  rw [HomologicalComplex.ι_ι_associator_hom Y Z X q r p (q + r) (r + p) j rfl rfl (by omega)
+    (by omega), Linear.comp_units_smul,
     ← ι₂₃_eq R Y Z X q r p (r + p) j rfl (by omega)]
 
 private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
@@ -342,7 +344,8 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     Units.smul_def, ← tensorHom_id, zsmul_tensorHom, tensorHom_id, ← Units.smul_def,
     MonoidalCategory.comp_whiskerRight,
     Linear.units_smul_comp, Category.assoc,
-    HomologicalComplex.ι_ι_associator_hom_assoc,
+    HomologicalComplex.ι_ι_associator_hom_assoc Y X Z q p r (q + p) (p + r) j rfl rfl
+      (by omega) (by omega),
     HomologicalComplex.whiskerLeft_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap]
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, NatTrans.id_app,
     Category.id_comp]
@@ -439,62 +442,32 @@ noncomputable instance koszulSymmetricCategory :
 
 section TensorMu
 
-/- The associator on a homogeneous summand, as in `HomologicalComplex.ι_ι_associator_hom` but
-with the two intermediate degrees `pq` and `qr` arbitrary rather than `p + q` and `q + r`.  The
-middle-four interchange produces the summand of degree `b + c` of a complex `Y ⊗ X` from its
-bidegree `(c, b)`, which the specialized form cannot match. -/
-@[reassoc]
-private lemma ι_ι_associator_hom_of_eq (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ)
-    (p q r pq qr j : ℤ) (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j)
-    (h' : p + qr = j) :
-    (HomologicalComplex.ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
-        HomologicalComplex.ιTensorObj (X ⊗ Y) Z pq r j h ≫ (α_ X Y Z).hom.f j =
-      (α_ (X.X p) (Y.X q) (Z.X r)).hom ≫ (X.X p ◁ HomologicalComplex.ιTensorObj Y Z q r qr hqr) ≫
-        HomologicalComplex.ιTensorObj X (Y ⊗ Z) p qr j h' := by
-  subst hpq hqr
-  exact HomologicalComplex.ι_ι_associator_hom X Y Z p q r j h
-
-/- The inverse associator on a homogeneous summand. -/
-@[reassoc]
-private lemma ι_ι_associator_inv_of_eq (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ)
-    (p q r pq qr j : ℤ) (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j)
-    (h' : p + qr = j) :
-    (X.X p ◁ HomologicalComplex.ιTensorObj Y Z q r qr hqr) ≫
-        HomologicalComplex.ιTensorObj X (Y ⊗ Z) p qr j h' ≫ (α_ X Y Z).inv.f j =
-      (α_ (X.X p) (Y.X q) (Z.X r)).inv ≫ (HomologicalComplex.ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
-        HomologicalComplex.ιTensorObj (X ⊗ Y) Z pq r j h := by
-  rw [← cancel_epi (α_ (X.X p) (Y.X q) (Z.X r)).hom, Iso.hom_inv_id_assoc,
-    ← ι_ι_associator_hom_of_eq_assoc R X Y Z p q r pq qr j hpq hqr h h',
-    ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f]
-  -- `Category.comp_id` is stated for the identity of the codomain of `ιTensorObj`, which is
-  -- spelled `(HomologicalComplex.tensorObj (X ⊗ Y) Z).X j` rather than `((X ⊗ Y) ⊗ Z).X j`.
-  erw [Category.comp_id]
-
 /-- **The middle-four interchange on a homogeneous summand.**  On the summand
 `(X₁.X a ⊗ X₂.X b) ⊗ (Y₁.X c ⊗ Y₂.X d)` of `(X₁ ⊗ X₂) ⊗ (Y₁ ⊗ Y₂)`, the interchange
 `MonoidalCategory.tensorμ` of cochain complexes is the interchange of the four modules, landing
 in the summand `(X₁.X a ⊗ Y₁.X c) ⊗ (X₂.X b ⊗ Y₂.X d)`, with the Koszul sign `(-1)^(b * c)` of
 moving the degree-`b` factor past the degree-`c` factor. -/
 @[reassoc]
-lemma ι_tensorμ (X₁ X₂ Y₁ Y₂ : CochainComplex (ModuleCat.{v} R) ℤ) (a b c d n : ℤ)
-    (h : a + b + (c + d) = n) :
-    (HomologicalComplex.ιTensorObj X₁ X₂ a b (a + b) rfl ⊗ₘ
-        HomologicalComplex.ιTensorObj Y₁ Y₂ c d (c + d) rfl) ≫
-        HomologicalComplex.ιTensorObj (X₁ ⊗ X₂) (Y₁ ⊗ Y₂) (a + b) (c + d) n h ≫
+lemma ι_tensorμ (X₁ X₂ Y₁ Y₂ : CochainComplex (ModuleCat.{v} R) ℤ) (a b c d ab cd n : ℤ)
+    (hab : a + b = ab) (hcd : c + d = cd) (h : ab + cd = n) :
+    (HomologicalComplex.ιTensorObj X₁ X₂ a b ab hab ⊗ₘ
+        HomologicalComplex.ιTensorObj Y₁ Y₂ c d cd hcd) ≫
+        HomologicalComplex.ιTensorObj (X₁ ⊗ X₂) (Y₁ ⊗ Y₂) ab cd n h ≫
           (tensorμ X₁ X₂ Y₁ Y₂).f n =
       (b * c).negOnePow • (tensorμ (X₁.X a) (X₂.X b) (Y₁.X c) (Y₂.X d) ≫
         (HomologicalComplex.ιTensorObj X₁ Y₁ a c (a + c) rfl ⊗ₘ
           HomologicalComplex.ιTensorObj X₂ Y₂ b d (b + d) rfl) ≫
           HomologicalComplex.ιTensorObj (X₁ ⊗ Y₁) (X₂ ⊗ Y₂) (a + c) (b + d) n (by omega)) := by
+  subst hab hcd
   -- Follow the summand through the five factors of `tensorμ`.  The codomain of `ιTensorObj` is
   -- spelled `(HomologicalComplex.tensorObj K L).X j` rather than `(K ⊗ L).X j`, so the
   -- associator steps match the whiskered inclusions only up to unfolding the monoidal structure.
   simp only [tensorμ, HomologicalComplex.comp_f, tensorHom_def', Category.assoc]
-  erw [ι_ι_associator_hom_of_eq_assoc R X₁ X₂ (Y₁ ⊗ Y₂) a b (c + d) (a + b) (b + (c + d)) n
-    rfl rfl h (by omega), associator_naturality_right_assoc]
+  erw [HomologicalComplex.ι_ι_associator_hom_assoc X₁ X₂ (Y₁ ⊗ Y₂) a b (c + d)
+    (a + b) (b + (c + d)) n rfl rfl h (by omega), associator_naturality_right_assoc]
   rw [HomologicalComplex.ι_whiskerLeft_assoc,
     ← whiskerLeft_comp_assoc, ← whiskerLeft_comp_assoc, Category.assoc,
-    ι_ι_associator_inv_of_eq R X₂ Y₁ Y₂ b c d (b + c) (c + d) _ rfl rfl (by omega) rfl,
+    ι_ι_associator_inv R X₂ Y₁ Y₂ b c d (b + c) (c + d) _ rfl rfl (by omega) rfl,
     HomologicalComplex.ι_whiskerLeft_assoc, ← whiskerLeft_comp_assoc, Category.assoc,
     Category.assoc, HomologicalComplex.ι_whiskerRight, ← comp_whiskerRight_assoc,
     braiding_eq_koszulBraiding, koszulBraiding_hom, ι_koszulBraidingHom,
@@ -506,10 +479,10 @@ lemma ι_tensorμ (X₁ X₂ Y₁ Y₂ : CochainComplex (ModuleCat.{v} R) ℤ) (
   congr 1
   rw [HomologicalComplex.ι_whiskerLeft_assoc, ← whiskerLeft_comp_assoc, comp_whiskerRight]
   simp only [Category.assoc]
-  erw [ι_ι_associator_hom_of_eq R Y₁ X₂ Y₂ c b d (b + c) (b + d) (b + (c + d)) (by omega) rfl
-    (by omega) (by omega)]
+  erw [HomologicalComplex.ι_ι_associator_hom Y₁ X₂ Y₂ c b d
+    (b + c) (b + d) (b + (c + d)) (by omega) rfl (by omega) (by omega)]
   simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc]
-  rw [ι_ι_associator_inv_of_eq R X₁ Y₁ (X₂ ⊗ Y₂) a c (b + d) (a + c) (b + (c + d)) n rfl
+  rw [ι_ι_associator_inv R X₁ Y₁ (X₂ ⊗ Y₂) a c (b + d) (a + c) (b + (c + d)) n rfl
     (by omega) (by omega) (by omega), ← associator_inv_naturality_right_assoc]
   rfl
 

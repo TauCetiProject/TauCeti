@@ -33,8 +33,8 @@ complexes of any shape in any monoidal preadditive category, and is stated in th
   on a homogeneous summand.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors.
-* `HomologicalComplex.ι_ι_associator_hom`: the associator on the summand
-  `X.X p ⊗ Y.X q ⊗ Z.X r`.
+* `HomologicalComplex.ι_ι_associator_hom` and `TauCeti.ι_ι_associator_inv`: the associator
+  and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate degrees.
 
 The analogous formula for the differential of a tensor product is
 `HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/TensorDifferential.lean`.
@@ -137,30 +137,31 @@ lemma rightUnitor_inv_f (X : CochainComplex (ModuleCat.{v} R) ℤ) (j : ℤ) :
   rfl
 
 /-- The associator of cochain complexes of modules, restricted to the summand indexed by the
-degrees `p`, `q` and `r`, is the associator of the three summands. -/
+degrees `p`, `q` and `r`, is the associator of the three summands. The intermediate
+degrees `pq` and `qr` may be any degrees equal to `p + q` and `q + r`. -/
 @[reassoc]
-lemma ι_ι_associator_hom (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q r j : ℤ)
-    (h : p + q + r = j) :
-    (ιTensorObj X Y p q (p + q) rfl ▷ Z.X r) ≫
-        ιTensorObj (X ⊗ Y) Z (p + q) r j h ≫ (α_ X Y Z).hom.f j =
-      (α_ (X.X p) (Y.X q) (Z.X r)).hom ≫ (X.X p ◁ ιTensorObj Y Z q r (q + r) rfl) ≫
-        ιTensorObj X (Y ⊗ Z) p (q + r) j (by omega) := by
+lemma ι_ι_associator_hom (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q r pq qr j : ℤ)
+    (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j) (h' : p + qr = j) :
+    (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
+        ιTensorObj (X ⊗ Y) Z pq r j h ≫ (α_ X Y Z).hom.f j =
+      (α_ (X.X p) (Y.X q) (Z.X r)).hom ≫ (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫
+        ιTensorObj X (Y ⊗ Z) p qr j h' := by
   -- The totalization index of a triple tensor product is definitionally the sum of the three
   -- degrees; naming the reindexed hypothesis keeps every later term type-correct.
   have hr : ComplexShape.r (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-      (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q, r) = j := h
+      (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q, r) = j :=
+    show p + q + r = j by omega
   have e₁ : mapBifunctor₁₂.ι (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
       X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r j hr =
-      (ιTensorObj X Y p q (p + q) rfl ▷ Z.X r) ≫ ιTensorObj (X ⊗ Y) Z (p + q) r j h := by
+      (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫ ιTensorObj (X ⊗ Y) Z pq r j h := by
     rw [mapBifunctor₁₂.ι_eq (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
-      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r (p + q) j rfl h]
+      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r pq j hpq h]
     rfl
   have e₂ : mapBifunctor₂₃.ι (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
       X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r j hr =
-      (X.X p ◁ ιTensorObj Y Z q r (q + r) rfl) ≫ ιTensorObj X (Y ⊗ Z) p (q + r) j (by omega) := by
+      (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h' := by
     rw [mapBifunctor₂₃.ι_eq (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
-      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r (q + r) j rfl
-      (by dsimp; omega)]
+      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r qr j hqr h']
     rfl
   rw [← Category.assoc, ← e₁, ← e₂]
   -- Mathlib assembles the associator of homological complexes from
@@ -172,3 +173,26 @@ lemma ι_ι_associator_hom (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q r
   simp only [ι_mapBifunctorAssociatorX_hom, curriedAssociatorNatIso_hom_app_app_app]
 
 end HomologicalComplex
+
+namespace TauCeti
+
+variable (R : Type v) [CommRing R]
+
+/-- The inverse associator of cochain complexes of modules, restricted to a homogeneous
+summand with arbitrary intermediate degrees, is the inverse associator of the three summands. -/
+@[reassoc]
+lemma ι_ι_associator_inv (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ)
+    (p q r pq qr j : ℤ) (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j)
+    (h' : p + qr = j) :
+    (X.X p ◁ HomologicalComplex.ιTensorObj Y Z q r qr hqr) ≫
+        HomologicalComplex.ιTensorObj X (Y ⊗ Z) p qr j h' ≫ (α_ X Y Z).inv.f j =
+      (α_ (X.X p) (Y.X q) (Z.X r)).inv ≫ (HomologicalComplex.ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
+        HomologicalComplex.ιTensorObj (X ⊗ Y) Z pq r j h := by
+  rw [← cancel_epi (α_ (X.X p) (Y.X q) (Z.X r)).hom, Iso.hom_inv_id_assoc,
+    ← HomologicalComplex.ι_ι_associator_hom_assoc X Y Z p q r pq qr j hpq hqr h h',
+    ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f]
+  -- `Category.comp_id` is stated for the identity of the codomain of `ιTensorObj`, which is
+  -- spelled `(HomologicalComplex.tensorObj (X ⊗ Y) Z).X j` rather than `((X ⊗ Y) ⊗ Z).X j`.
+  erw [Category.comp_id]
+
+end TauCeti
