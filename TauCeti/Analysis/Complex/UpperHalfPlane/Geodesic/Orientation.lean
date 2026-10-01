@@ -136,7 +136,9 @@ theorem geodesicBetween_I_geodesicLine_rotation {t : ℝ} (ht : 0 < t) (θ : ℝ
   · exact geodesicLine_injective _ (h0.trans h)
   · rw [← h0, dist_geodesicLine, zero_sub, abs_neg, abs_of_pos ht]
 
-/-- The oriented angle at `I` from the imaginary axis to its rotation by `θ` is `2θ`. -/
+/-- The oriented angle at `I` from the geodesic towards the point `geodesicLine 1 d` of the
+imaginary axis to the geodesic towards the point `geodesicLine (rotation θ) t` of its rotation by
+`θ` is `2θ`, for `0 < d` and `0 < t`. -/
 theorem orientedAngle_I_geodesicLine_one_rotation {d t : ℝ} (hd : 0 < d) (ht : 0 < t) (θ : ℝ) :
     orientedAngle UpperHalfPlane.I (geodesicLine 1 d) (geodesicLine (↑(rotation θ)) t) =
       ((2 * θ : ℝ) : Real.Angle) := by
