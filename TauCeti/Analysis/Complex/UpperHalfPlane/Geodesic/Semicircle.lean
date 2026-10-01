@@ -14,15 +14,17 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 # The geodesic through two points as a semicircle
 
 This file makes the classical description of the geodesics of `ℍ` quantitative, for the geodesic
-`geodesicBetween P Q` from `P` to `Q`. The affine map `toPoint P : z ↦ P.im * z + P.re` sends `I`
-to `P`, so `geodesicBetween P Q` is `toPoint P` followed by a rotation of the imaginary axis
+`geodesicBetween P Q` from `P` to `Q`. The affine map
+`UpperHalfPlane.toPoint P : z ↦ P.im * z + P.re` sends `I` to `P`, so `geodesicBetween P Q` is
+`toPoint P` followed by a rotation of the imaginary axis
 (`exists_geodesicBetween_eq_toPoint_mul_rotation`); the half-planes of a rotated axis are given
 by an explicit quadratic form (`mem_rightHalfPlane_rotation_iff`).
 
 When `P.re ≠ Q.re`, the geodesic through `P` and `Q` is the semicircle centred at
-`circleCenter P Q` on the real axis (`mem_range_geodesicLine_geodesicBetween_iff_of_re_ne`), its
-right half-plane is the inside of that disc when `Q` is to the right of `P` and the outside when
-`Q` is to the left (`mem_rightHalfPlane_geodesicBetween_iff_of_re_lt`,
+`UpperHalfPlane.circleCenter P Q` on the real axis, which passes through both points
+(`UpperHalfPlane.normSq_sub_circleCenter`, `mem_range_geodesicLine_geodesicBetween_iff_of_re_ne`);
+its right half-plane is the inside of that disc when `Q` is to the right of `P` and the outside
+when `Q` is to the left (`mem_rightHalfPlane_geodesicBetween_iff_of_re_lt`,
 `mem_rightHalfPlane_geodesicBetween_iff_of_lt_re`), and its velocity at `P` is tangent to the
 semicircle, oriented clockwise exactly when `Q` is to the right of `P`
 (`exists_velocity_geodesicBetween_zero_eq`). When `P.re = Q.re` the geodesic is the vertical line
@@ -100,6 +102,13 @@ theorem re_rotation_smul_mk (θ y : ℝ) (hy : 0 < y) :
     Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
   ring
 
+end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+open TauCeti.UpperHalfPlane
+open Matrix.SpecialLinearGroup (dilation)
+
 /-! ### Moving `I` to a given point -/
 
 /-- The affine map `z ↦ P.im * z + P.re`, an element of `PSL(2, ℝ)` sending `I` to `P`. -/
@@ -124,16 +133,6 @@ theorem coe_toPoint_inv_smul (P z : ℍ) :
   rw [eq_div_iff (by exact_mod_cast P.im_pos.ne')]
   linear_combination -h
 
-/-- The centre on the real axis of the semicircle through `P` and `Q`, when `P.re ≠ Q.re`. -/
-def circleCenter (P Q : ℍ) : ℝ :=
-  (Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ)) / (2 * (Q.re - P.re))
-
--- The body of `circleCenter` is not `@[expose]`d; downstream modules rewrite with this equation.
-/-- The centre of the semicircle through `P` and `Q`, as a formula. -/
-theorem circleCenter_def (P Q : ℍ) :
-    circleCenter P Q = (Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ)) / (2 * (Q.re - P.re)) := by
-  rfl
-
 /-- The derivative of the affine map `toPoint P` is `P.im`. -/
 theorem smulDeriv_toPoint (P z : ℍ) : smulDeriv (toPoint P) z = P.im := by
   rw [toPoint, smulDeriv_mul, smulDeriv_upperRightHom, smulDeriv_dilation, Real.exp_log P.im_pos,
@@ -149,6 +148,41 @@ theorem re_toPoint_inv_smul (P z : ℍ) : ((toPoint P)⁻¹ • z : ℍ).re = (z
 theorem normSq_toPoint_inv_smul (P z : ℍ) :
     Complex.normSq (((toPoint P)⁻¹ • z : ℍ) : ℂ) = Complex.normSq ((z : ℂ) - P.re) / P.im ^ 2 := by
   rw [coe_toPoint_inv_smul, map_div₀, Complex.normSq_ofReal, sq]
+/-! ### The centre of the semicircle through two points -/
+
+/-- The centre on the real axis of the semicircle through `P` and `Q`, when `P.re ≠ Q.re`. -/
+def circleCenter (P Q : ℍ) : ℝ :=
+  (Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ)) / (2 * (Q.re - P.re))
+
+-- The body of `circleCenter` is not `@[expose]`d; downstream modules rewrite with this equation.
+/-- The centre of the semicircle through `P` and `Q`, as a formula. -/
+theorem circleCenter_def (P Q : ℍ) :
+    circleCenter P Q = (Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ)) / (2 * (Q.re - P.re)) := by
+  rfl
+
+/-- The centre of the semicircle through two points does not depend on their order. -/
+theorem circleCenter_comm (P Q : ℍ) : circleCenter Q P = circleCenter P Q := by
+  rw [circleCenter, circleCenter, ← neg_sub (Complex.normSq (Q : ℂ)), ← neg_sub Q.re, mul_neg,
+    neg_div_neg_eq]
+
+/-- Both endpoints lie on the semicircle: they are equidistant from its centre. -/
+theorem normSq_sub_circleCenter {P Q : ℍ} (hPQ : P.re ≠ Q.re) :
+    Complex.normSq ((Q : ℂ) - circleCenter P Q) = Complex.normSq ((P : ℂ) - circleCenter P Q) := by
+  have hQP : Q.re - P.re ≠ 0 := sub_ne_zero.2 (Ne.symm hPQ)
+  have hcc : circleCenter P Q * (2 * (Q.re - P.re)) =
+      Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ) := by
+    rw [circleCenter, div_mul_cancel₀ _ (mul_ne_zero two_ne_zero hQP)]
+  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
+    Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at hcc ⊢
+  linear_combination -hcc
+
+end UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+open Matrix.SpecialLinearGroup (rotation dilation)
+
+/-! ### The geodesic through two points as a semicircle -/
 
 /-- The geodesic from `P` to `Q` is the normalising map of `P` followed by a rotation of the
 imaginary axis. -/
@@ -313,22 +347,6 @@ theorem mem_range_geodesicLine_geodesicBetween_iff_of_re_ne {P Q : ℍ} (hPQ : P
   obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hPQ z
   rw [mem_range_geodesicLine_iff, h, mul_eq_zero, mul_eq_zero, sub_eq_zero, sub_eq_zero]
   simp [hκ.ne', hPQ]
-
-/-- The centre of the semicircle through two points does not depend on their order. -/
-theorem circleCenter_comm (P Q : ℍ) : circleCenter Q P = circleCenter P Q := by
-  rw [circleCenter, circleCenter, ← neg_sub (Complex.normSq (Q : ℂ)), ← neg_sub Q.re, mul_neg,
-    neg_div_neg_eq]
-
-/-- Both endpoints lie on the semicircle: they are equidistant from its centre. -/
-theorem normSq_sub_circleCenter {P Q : ℍ} (hPQ : P.re ≠ Q.re) :
-    Complex.normSq ((Q : ℂ) - circleCenter P Q) = Complex.normSq ((P : ℂ) - circleCenter P Q) := by
-  have hQP : Q.re - P.re ≠ 0 := sub_ne_zero.2 (Ne.symm hPQ)
-  have hcc : circleCenter P Q * (2 * (Q.re - P.re)) =
-      Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ) := by
-    rw [circleCenter, div_mul_cancel₀ _ (mul_ne_zero two_ne_zero hQP)]
-  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-    Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at hcc ⊢
-  linear_combination -hcc
 
 /-- The geodesic from `P` to a point `Q` to its right runs clockwise along the semicircle through
 them, so its right half-plane is the inside of the disc. -/

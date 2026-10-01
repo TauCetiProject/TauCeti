@@ -18,11 +18,14 @@ half-planes bounded by the geodesic through two of the vertices and containing t
 from `A` to `C` (`interiorAngle`). The **Gauss–Bonnet formula** (`volume_triangle`) computes its
 invariant area as the angular defect `π - α - β - γ`.
 
-Membership is read off with `mem_closedSide_iff` and `mem_triangle_iff`. A triangle contains its
-vertices (`left_mem_triangle`), is invariant under cyclic permutation of them
-(`triangle_rotate`) and, when nondegenerate, under every transposition (`triangle_swap_left`,
-`triangle_swap_right`, `triangle_reverse`). An interior angle is the Euclidean angle between any
-positive multiples of the two velocities (`interiorAngle_eq_angle_of_velocity_eq`).
+The point-keyed API lives in the `UpperHalfPlane` namespace: `UpperHalfPlane.closedSide`,
+`UpperHalfPlane.triangle` and `UpperHalfPlane.interiorAngle`. Membership is read off with
+`UpperHalfPlane.mem_closedSide_iff` and `UpperHalfPlane.mem_triangle_iff`. A triangle contains its
+vertices (`UpperHalfPlane.left_mem_triangle`), is invariant under cyclic permutation of them
+(`UpperHalfPlane.triangle_rotate`) and, when nondegenerate, under every transposition
+(`UpperHalfPlane.triangle_swap_left`, `UpperHalfPlane.triangle_swap_right`,
+`UpperHalfPlane.triangle_reverse`). An interior angle is the Euclidean angle between any positive
+multiples of the two velocities (`interiorAngle_eq_angle_of_velocity_eq`).
 
 Following Katok, the formula is first proved for triangles with a vertex at infinity
 (`volume_idealRegion`), and a general triangle is the difference of two such, cut along the
@@ -32,7 +35,8 @@ its right (`exists_smul_eq_normal_form`). In this normal form the triangle is de
 three explicit inequalities (`mem_triangle_normal_form_iff`), it differs from `Δ₁ \ Δ₂` by a null
 arc (`triangle_subset_diff_union_of_normal_form`), and its three interior angles are read off the
 radius vectors of the two semicircles (`interiorAngle_I_geodesicLine_one`,
-`interiorAngle_geodesicLine_one_I`, `interiorAngle_of_normal_form`).
+`interiorAngle_geodesicLine_one_I`, `interiorAngle_of_normal_form`). The comparison of the two
+discs uses the radical-line identity `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`.
 
 Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 8 (2008), §5 p. 19–20:
 the definition of a hyperbolic triangle and Theorem 5.4 (Gauss–Bonnet) with its proof.
@@ -45,9 +49,9 @@ noncomputable section
 open Matrix.ProjectiveSpecialLinearGroup MeasureTheory Set UpperHalfPlane
 open scoped MatrixGroups Pointwise Real
 
-namespace TauCeti.UpperHalfPlane
+namespace UpperHalfPlane
 
-open Matrix.SpecialLinearGroup (rotation dilation)
+open TauCeti.UpperHalfPlane
 
 /-! ### The closed half-plane bounded by the geodesic through two points -/
 
@@ -106,14 +110,6 @@ theorem isClosed_closedSide (z w u : ℍ) : IsClosed (closedSide z w u) := by
 theorem measurableSet_closedSide (z w u : ℍ) : MeasurableSet (closedSide z w u) :=
   (isClosed_closedSide z w u).measurableSet
 
-/-- Closed sides transform naturally under the action. -/
-theorem smul_closedSide (h : PSL(2, ℝ)) {z w : ℍ} (hzw : z ≠ w) (u : ℍ) :
-    h • closedSide z w u = closedSide (h • z) (h • w) (h • u) := by
-  unfold closedSide
-  rw [geodesicBetween_smul h hzw, ← smul_rightHalfPlane, ← smul_leftHalfPlane,
-    Set.smul_mem_smul_set_iff]
-  split_ifs <;> rw [closure_smul]
-
 /-- The closed side does not depend on the direction of the bounding geodesic, as long as the
 reference point is off the line. -/
 theorem closedSide_swap {z w u : ℍ} (hzw : z ≠ w)
@@ -161,12 +157,6 @@ theorem isClosed_triangle (A B C : ℍ) : IsClosed (triangle A B C) :=
 /-- Triangles are measurable. -/
 theorem measurableSet_triangle (A B C : ℍ) : MeasurableSet (triangle A B C) :=
   (isClosed_triangle A B C).measurableSet
-
-/-- Triangles transform naturally under the action. -/
-theorem smul_triangle (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hBC : B ≠ C) (hCA : C ≠ A) :
-    h • triangle A B C = triangle (h • A) (h • B) (h • C) := by
-  rw [triangle, triangle, Set.smul_set_inter, Set.smul_set_inter, smul_closedSide h hAB,
-    smul_closedSide h hBC, smul_closedSide h hCA]
 
 /-- The triangle is invariant under cyclic permutation of its vertices. -/
 theorem triangle_rotate (A B C : ℍ) : triangle B C A = triangle A B C := by
@@ -229,6 +219,42 @@ theorem interiorAngle_nonneg (A B C : ℍ) : 0 ≤ interiorAngle A B C :=
 /-- Interior angles are at most `π`. -/
 theorem interiorAngle_le_pi (A B C : ℍ) : interiorAngle A B C ≤ π :=
   geodesicAngle_le_pi _ _
+
+end UpperHalfPlane
+
+namespace Complex
+
+/-- The "radical line" identity: for real centres `c₁` and `c₂`, the difference of the two power
+functions `|z - c|² - |C - c|²` of `z` is affine in `z.re` and vanishes at `C.re`. -/
+theorem normSq_sub_ofReal_sub_normSq_sub_ofReal {c₁ c₂ : ℝ} (C z : ℂ) :
+    (Complex.normSq (z - c₁) - Complex.normSq (C - c₁)) -
+        (Complex.normSq (z - c₂) - Complex.normSq (C - c₂)) =
+      2 * (c₂ - c₁) * (z.re - C.re) := by
+  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
+    Complex.ofReal_im, sub_zero]
+  ring
+
+end Complex
+
+namespace TauCeti.UpperHalfPlane
+
+open Matrix.SpecialLinearGroup (rotation dilation)
+
+/-! ### Invariance under the action -/
+
+/-- Closed sides transform naturally under the action. -/
+theorem smul_closedSide (h : PSL(2, ℝ)) {z w : ℍ} (hzw : z ≠ w) (u : ℍ) :
+    h • closedSide z w u = closedSide (h • z) (h • w) (h • u) := by
+  unfold closedSide
+  rw [geodesicBetween_smul h hzw, ← smul_rightHalfPlane, ← smul_leftHalfPlane,
+    Set.smul_mem_smul_set_iff]
+  split_ifs <;> rw [closure_smul]
+
+/-- Triangles transform naturally under the action. -/
+theorem smul_triangle (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hBC : B ≠ C) (hCA : C ≠ A) :
+    h • triangle A B C = triangle (h • A) (h • B) (h • C) := by
+  rw [triangle, triangle, Set.smul_set_inter, Set.smul_set_inter, smul_closedSide h hAB,
+    smul_closedSide h hBC, smul_closedSide h hCA]
 
 /-- Interior angles are invariant under the action. -/
 theorem interiorAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
@@ -323,16 +349,6 @@ theorem circleCenter_lt_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 
     div_lt_div_iff_of_pos_right (by positivity)]
   nlinarith
 
-/-- The "radical line" identity: the difference of the two power functions of `z` with respect
-to the semicircles through `C` is affine in `z.re` and vanishes at `C.re`. -/
-theorem normSq_sub_circleCenter_sub_eq {c₁ c₂ : ℝ} (C z : ℂ) :
-    (Complex.normSq (z - c₁) - Complex.normSq (C - c₁)) -
-        (Complex.normSq (z - c₂) - Complex.normSq (C - c₂)) =
-      2 * (c₂ - c₁) * (z.re - C.re) := by
-  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-    Complex.ofReal_im, sub_zero]
-  ring
-
 /-- In normal form, the ideal-vertex region over the semicircle through `i exp d` and `C` is
 contained in the one over the semicircle through `I` and `C`. -/
 theorem idealRegionAbove_subset_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
@@ -345,8 +361,8 @@ theorem idealRegionAbove_subset_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} 
   obtain ⟨h0, hz, h2⟩ := hz'
   refine ⟨h0, hz, ?_⟩
   rw [Real.sq_sqrt (Complex.normSq_nonneg _)] at h2 ⊢
-  have hrad := normSq_sub_circleCenter_sub_eq (c₁ := circleCenter UpperHalfPlane.I C)
-    (c₂ := circleCenter (geodesicLine 1 d) C) C z
+  have hrad := Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal
+    (c₁ := circleCenter UpperHalfPlane.I C) (c₂ := circleCenter (geodesicLine 1 d) C) C z
   rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_re] at hrad
   have hlt := circleCenter_lt_of_normal_form hd hC
   nlinarith [mul_nonneg (sub_nonneg.2 hlt.le) (sub_nonneg.2 hz)]
@@ -381,8 +397,8 @@ theorem triangle_subset_diff_union_of_normal_form {d : ℝ} (hd : 0 < d) {C : �
   obtain ⟨h0, h2, h1⟩ := hz
   have hBre : (geodesicLine 1 d).re = 0 := by rw [geodesicLine_one_apply]; rfl
   have hBC : (geodesicLine 1 d).re < C.re := by rw [hBre]; exact hC
-  have hrad := normSq_sub_circleCenter_sub_eq (c₁ := circleCenter UpperHalfPlane.I C)
-    (c₂ := circleCenter (geodesicLine 1 d) C) C z
+  have hrad := Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal
+    (c₁ := circleCenter UpperHalfPlane.I C) (c₂ := circleCenter (geodesicLine 1 d) C) C z
   rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_re] at hrad
   have hlt := circleCenter_lt_of_normal_form hd hC
   -- the triangle lies over `[0, C.re]`
