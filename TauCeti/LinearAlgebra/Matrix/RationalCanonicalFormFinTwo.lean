@@ -12,9 +12,12 @@ public import TauCeti.LinearAlgebra.Matrix.Commute
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 -- `Matrix.trace` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.Trace
--- Non-public: the entry identities below are polynomial, and are solved by `ring` and
--- `linear_combination` in the proofs only.
-import Mathlib.Tactic.LinearCombination
+-- `linearIndependent_fin2` and `LinearIndependent.pair_symm_iff` read off the invertibility of
+-- the conjugating matrix from its two columns.
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+-- `Matrix.linearIndependent_rows_iff_isUnit` and `Matrix.isUnit_iff_isUnit_det`.
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+-- The entry identities below are polynomial, and are solved by `ring`.
 import Mathlib.Tactic.Ring
 
 /-!
@@ -27,11 +30,6 @@ the rational canonical form in size two, proved here at the level of matrices; t
 classification of `GL₂(F)` it yields is in
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses`.
 
-The second column of the conjugating equation is the Cayley-Hamilton identity
-`M² = (trace M) • M - (det M) • 1` in disguise. In size two that identity is a four-entry
-polynomial identity in the entries, so it is discharged by `ring` here rather than by invoking the
-general theory.
-
 Being scalar is spelled `M ∈ Set.range (Matrix.scalar (Fin 2))`, as in
 `TauCeti.LinearAlgebra.Matrix.Commute`, and unfolded by
 `TauCeti.mem_range_scalar_fin_two_iff`; that file's commutant computation is the companion result,
@@ -43,16 +41,14 @@ describing the centralizer of a non-scalar matrix rather than its normal form.
 
 ## Main results
 
-* `TauCeti.exists_forall_mulVec_ne_smul`: a non-scalar `2 × 2` matrix has a cyclic vector.
+* `TauCeti.exists_forall_mulVec_ne_smul`: a non-scalar `2 × 2` matrix over a semiring has a vector
+  that is not an eigenvector; over a field such a vector is cyclic.
 * `TauCeti.exists_det_ne_zero_mul_eq_mul_companionFinTwo`: **rational canonical form in size two**,
   a non-scalar `2 × 2` matrix over a field is similar to the companion matrix of its characteristic
   polynomial.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The conjugacy classes (a build target)", which asks for the rational-canonical-form
-  classification Mathlib does not have.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 -/
 
@@ -74,8 +70,7 @@ determinant is `d`, so it is the normal form that the classification of `2 × 2`
 on. -/
 def companionFinTwo : Matrix (Fin 2) (Fin 2) R := !![0, -d; 1, t]
 
-/-- The companion matrix, spelled out. The body of `TauCeti.companionFinTwo` is not exposed, so
-this is what lets a downstream file read off an entry of it. -/
+/-- The companion matrix, spelled out entrywise. -/
 theorem companionFinTwo_def : companionFinTwo t d = !![0, -d; 1, t] := (rfl)
 
 @[simp]
@@ -95,55 +90,39 @@ theorem companionFinTwo_notMem_range_scalar [Nontrivial R] :
 
 end CommRing
 
+/-! ### Non-eigenvectors of a non-scalar matrix -/
+
+section Semiring
+
+variable {R : Type*} [Semiring R] {M : Matrix (Fin 2) (Fin 2) R}
+
+/-- **A non-scalar `2 × 2` matrix has a vector that is not an eigenvector.** Over a field such a
+vector `v` is cyclic: `v, M *ᵥ v` is a basis. -/
+theorem exists_forall_mulVec_ne_smul (hM : M ∉ Set.range (Matrix.scalar (Fin 2))) :
+    ∃ v : Fin 2 → R, ∀ c : R, M *ᵥ v ≠ c • v := by
+  by_contra! hcon
+  obtain ⟨a, ha⟩ := hcon ![1, 0]
+  obtain ⟨b, hb⟩ := hcon ![0, 1]
+  obtain ⟨c, hc⟩ := hcon ![1, 1]
+  have ha1 : M 1 0 = 0 := by simpa [mulVec, dotProduct] using congrFun ha 1
+  have hb0 : M 0 1 = 0 := by simpa [mulVec, dotProduct] using congrFun hb 0
+  have hc0 : M 0 0 + M 0 1 = c := by simpa [mulVec, dotProduct] using congrFun hc 0
+  have hc1 : M 1 0 + M 1 1 = c := by simpa [mulVec, dotProduct] using congrFun hc 1
+  rw [hb0, add_zero] at hc0
+  rw [ha1, zero_add] at hc1
+  exact hM (mem_range_scalar_fin_two_iff.2 ⟨hb0, ha1, hc0.trans hc1.symm⟩)
+
+end Semiring
+
 /-! ### Rational canonical form in size two -/
 
 section Field
 
 variable {F : Type*} [Field F] {M : Matrix (Fin 2) (Fin 2) F}
 
-/-- Two vectors of `F²` spanning a degenerate parallelogram are proportional, provided the first is
-nonzero. This is the linear independence of `v` and `M *ᵥ v` below, in the form in which the
-`2 × 2` determinant supplies it. -/
-private theorem exists_eq_smul_of_det_fin_two_eq_zero {v u : Fin 2 → F} (hv : v ≠ 0)
-    (hdet : v 0 * u 1 - u 0 * v 1 = 0) : ∃ c : F, u = c • v := by
-  have hor : v 0 ≠ 0 ∨ v 1 ≠ 0 := by
-    by_contra hcon
-    push Not at hcon
-    exact hv (funext (Fin.forall_fin_two.2 ⟨hcon.1, hcon.2⟩))
-  rcases hor with h0 | h1
-  · refine ⟨u 0 / v 0, funext (Fin.forall_fin_two.2 ⟨?_, ?_⟩)⟩ <;>
-      rw [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, eq_div_iff h0]
-    linear_combination hdet
-  · refine ⟨u 1 / v 1, funext (Fin.forall_fin_two.2 ⟨?_, ?_⟩)⟩ <;>
-      rw [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, eq_div_iff h1]
-    linear_combination -hdet
-
-/-- **A non-scalar `2 × 2` matrix has a cyclic vector**: some vector is not an eigenvector. If
-every vector were an eigenvector then the two standard basis vectors and their sum would force the
-off-diagonal entries to vanish and the two diagonal entries to agree. -/
-theorem exists_forall_mulVec_ne_smul (hM : M ∉ Set.range (Matrix.scalar (Fin 2))) :
-    ∃ v : Fin 2 → F, ∀ c : F, M *ᵥ v ≠ c • v := by
-  by_contra hcon
-  push Not at hcon
-  have key : ∀ v0 v1 c : F, M *ᵥ ![v0, v1] = c • ![v0, v1] →
-      M 0 0 * v0 + M 0 1 * v1 = c * v0 ∧ M 1 0 * v0 + M 1 1 * v1 = c * v1 := by
-    refine fun v0 v1 c hv => ⟨?_, ?_⟩
-    · simpa [Matrix.mulVec, dotProduct, Fin.sum_univ_two] using congrFun hv 0
-    · simpa [Matrix.mulVec, dotProduct, Fin.sum_univ_two] using congrFun hv 1
-  obtain ⟨a, ha⟩ := hcon ![1, 0]
-  obtain ⟨b, hb⟩ := hcon ![0, 1]
-  obtain ⟨c, hc⟩ := hcon ![1, 1]
-  obtain ⟨-, ha1⟩ := key 1 0 a ha
-  obtain ⟨hb0, -⟩ := key 0 1 b hb
-  obtain ⟨hc0, hc1⟩ := key 1 1 c hc
-  exact hM (mem_range_scalar_fin_two_iff.2
-    ⟨by linear_combination hb0, by linear_combination ha1,
-      by linear_combination hc0 - hc1 - hb0 + ha1⟩)
-
 /-- **Rational canonical form in size two.** A non-scalar `2 × 2` matrix `M` over a field is
 similar to the companion matrix of its characteristic polynomial `X² - (trace M) X + det M`: in the
-basis `v, M *ᵥ v` supplied by a cyclic vector `v` it *is* that companion matrix, the second column
-of the identity being Cayley-Hamilton.
+basis `v, M *ᵥ v` given by a cyclic vector `v`, the matrix of `M` is that companion matrix.
 
 The conjugating matrix is produced together with its determinant rather than as an element of
 `GL₂`, so that the statement also covers a matrix that is not itself invertible;
@@ -153,14 +132,11 @@ theorem exists_det_ne_zero_mul_eq_mul_companionFinTwo
     ∃ P : Matrix (Fin 2) (Fin 2) F,
       P.det ≠ 0 ∧ M * P = P * companionFinTwo M.trace M.det := by
   obtain ⟨v, hv⟩ := exists_forall_mulVec_ne_smul hM
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    exact hv 0 (by simp)
-  refine ⟨!![v 0, (M *ᵥ v) 0; v 1, (M *ᵥ v) 1], ?_, ?_⟩
-  · rw [Matrix.det_fin_two_of]
-    intro hdet
-    obtain ⟨c, hc⟩ := exists_eq_smul_of_det_fin_two_eq_zero (u := M *ᵥ v) hv0 hdet
-    exact hv c hc
+  refine ⟨(of ![v, M *ᵥ v])ᵀ, ?_, ?_⟩
+  · rw [det_transpose, ← isUnit_iff_ne_zero, ← isUnit_iff_isUnit_det,
+      ← linearIndependent_rows_iff_isUnit, row_eq_self, Equiv.symm_apply_apply,
+      LinearIndependent.pair_symm_iff, linearIndependent_fin2]
+    exact ⟨fun hv0 => hv 0 (by simp_all), fun c hc => hv c hc.symm⟩
   · ext i j
     fin_cases i <;> fin_cases j <;>
       simp [companionFinTwo, Matrix.mul_apply, Fin.sum_univ_two, Matrix.mulVec,
