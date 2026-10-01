@@ -79,15 +79,6 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 
 /-! ### The row swap rectangle -/
 
-/-- The row swap rectangle is empty: its two rows are cyclically consecutive. -/
-private theorem isEmpty_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
-    (G.stabilizeXRowSwapRectangle s y).IsEmpty := by
-  have h : Grid.cIoo (G.X s).castSucc (G.X s).succ = ∅ := by
-    rw [← Fin.coeSucc_eq_succ, ← finRotate_apply, Grid.cIoo_finRotate_eq_empty]
-  rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo, stabilizeXRowSwapRectangle_bottom,
-    stabilizeXRowSwapRectangle_top, h]
-  simp
-
 /-- A state whose row swap avoids the row `(G.X s).succ` in column `s.succ` does not use the row
 `(G.X s).castSucc` there. -/
 private theorem apply_succ_ne_castSucc_of_swapRows_apply_ne {y : GridState (n + 1)}

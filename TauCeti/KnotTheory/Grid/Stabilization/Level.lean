@@ -49,6 +49,7 @@ is a single row or a single column of squares
   a rectangle covering no outer square covers the single row `ρ` or the single column `κ`.
 * `TauCeti.GridDiagram.coveredRows_stabilizeXRowSwapRectangle`: the row swap rectangle covers
   only the row `ρ`.
+* `TauCeti.GridDiagram.isEmpty_stabilizeXRowSwapRectangle`: the row swap rectangle is empty.
 * `TauCeti.GridDiagram.stabilizeXLevel_swapRows`: the level is unchanged by swapping the row `ρ`
   with the following row.
 
@@ -253,6 +254,16 @@ theorem coveredRows_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
       rw [GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
         stabilizeXRowSwapRectangle_bottom, stabilizeXRowSwapRectangle_top]
       exact Fin.castSucc_lt_succ.ne⟩
+
+/-- The row swap rectangle is empty: its two rows are cyclically consecutive. -/
+@[simp]
+theorem isEmpty_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
+    (G.stabilizeXRowSwapRectangle s y).IsEmpty := by
+  have h : Grid.cIoo (G.X s).castSucc (G.X s).succ = ∅ := by
+    rw [← Fin.coeSucc_eq_succ, ← finRotate_apply, Grid.cIoo_finRotate_eq_empty]
+  rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo, stabilizeXRowSwapRectangle_bottom,
+    stabilizeXRowSwapRectangle_top, h]
+  simp
 
 /-- The stabilization level is unchanged by swapping the two stabilization rows. The swap is
 realized by the row swap rectangle, which covers only the row of the new `O`-marking and hence no

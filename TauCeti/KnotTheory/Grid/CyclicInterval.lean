@@ -895,6 +895,22 @@ and `p` itself comes last. -/
 noncomputable def cyclicPosition (p r : Fin n) : ℕ :=
   (cIco (finRotate n p) r).card
 
+/-- The cyclic successor `p + 1` of `p` (that is, `finRotate n p`) comes first, in position
+`0`. -/
+@[simp]
+theorem cyclicPosition_add_one_self [NeZero n] (p : Fin n) : cyclicPosition p (p + 1) = 0 := by
+  simp [cyclicPosition, cIco_self]
+
+/-- The point `p` itself comes last, in position `n - 1`. -/
+@[simp]
+theorem cyclicPosition_self (p : Fin n) : cyclicPosition p p = n - 1 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n =>
+    have := p.isLt
+    simp only [cyclicPosition, card_cIco, ← Fin.val_inj, coe_finRotate, Fin.val_last]
+    split_ifs <;> omega
+
 /-- Two distinct points whose half-open arc avoids `p` come in strictly increasing order of
 position read from the cyclic successor of `p`. -/
 theorem cyclicPosition_lt_of_notMem_cIco {p a b : Fin n} (hab : a ≠ b) (h : p ∉ cIco a b) :
