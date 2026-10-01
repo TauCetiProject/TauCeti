@@ -61,9 +61,13 @@ private noncomputable def evalInv : reesAlgebra I →+* S :=
 
 private theorem evalInv_of_mem_grade {n : ℕ} {x : reesAlgebra I} (hx : x ∈ grade I n) :
     algebraMap R S a ^ n * evalInv a S x = algebraMap R S ((x : R[X]).coeff n) := by
-  rw [evalInv, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Subalgebra.coe_val,
-    ← mem_grade_iff_monomial_coeff.mp hx, coe_eval₂RingHom, eval₂_monomial, coeff_monomial_same,
-    mul_left_comm, ← mul_pow, IsLocalization.Away.mul_invSelf, one_pow, mul_one]
+  -- Evaluating the monomial `b Xⁿ` at `1/a` gives `b (1/a)ⁿ`.
+  have hev : evalInv a S x =
+      algebraMap R S ((x : R[X]).coeff n) * IsLocalization.Away.invSelf a ^ n := by
+    simpa [evalInv] using
+      congr_arg (eval₂ (algebraMap R S) (IsLocalization.Away.invSelf a))
+        (mem_grade_iff_monomial_coeff.mp hx).symm
+  rw [hev, mul_left_comm, ← mul_pow, IsLocalization.Away.mul_invSelf, one_pow, mul_one]
 
 private theorem evalInv_monomialDegreeOne (ha : a ∈ I) :
     evalInv a S (monomialDegreeOne ha) = 1 := by
@@ -113,9 +117,9 @@ private theorem awayToLocalization_injective (ha : a ∈ I) :
   -- The numerator `x` is killed by `(a t)ᵏ` in the Rees algebra.
   have hxk : monomialDegreeOne ha ^ k * x = 0 := by
     refine Subtype.ext ?_
-    rw [Subalgebra.coe_mul, Subalgebra.coe_pow, coe_monomialDegreeOne, monomial_pow, one_mul,
-      ← mem_grade_iff_monomial_coeff.mp hx', monomial_mul_monomial, hk, map_zero,
-      ZeroMemClass.coe_zero]
+    push_cast [coe_monomialDegreeOne]
+    rw [← mem_grade_iff_monomial_coeff.mp hx', monomial_pow, monomial_mul_monomial, one_mul, hk,
+      map_zero]
   ext1
   rw [Away.val_mk, val_zero, Localization.mk_eq_mk', IsLocalization.mk'_eq_zero_iff]
   exact ⟨⟨_, k, rfl⟩, hxk⟩
@@ -136,15 +140,27 @@ private theorem exists_awayToLocalization_eq (ha : a ∈ I) {w : S}
     ((IsLocalization.Away.algebraMap_isUnit (S := S) a).pow k).mul_left_cancel ?_⟩
   rw [algebraMap_pow_mul_awayToLocalization_mk, hyw, coeff_monomial_same]
 
+private theorem bijective_awayToLocalization_codRestrict (ha : a ∈ I) :
+    Function.Bijective
+      ((awayToLocalization S ha).codRestrict _ (awayToLocalization_mem S ha)) :=
+  ⟨fun _ _ h ↦ awayToLocalization_injective S ha (congr_arg Subtype.val h),
+    fun w ↦ (exists_awayToLocalization_eq S ha w.2).imp fun _ h ↦ Subtype.ext h⟩
+
 /-- **The affine charts of the blowup.** For `a ∈ I`, the homogeneous localization
 `R[It]_(a t)` of the Rees algebra, the coordinate ring of the standard affine open `D₊(a t)` of
 `Proj R[It]`, is isomorphic to the affine blowup algebra `R[I/a]`; the fraction `x/(a t)ⁿ`
 corresponds to `b/aⁿ`, where `x = b tⁿ`. -/
 noncomputable def awayEquivAffineBlowup (ha : a ∈ I) :
     Away (grade I) (monomialDegreeOne ha) ≃+* I.affineBlowup a S :=
-  RingEquiv.ofBijective ((awayToLocalization S ha).codRestrict _ (awayToLocalization_mem S ha))
-    ⟨fun _ _ h ↦ awayToLocalization_injective S ha (congr_arg Subtype.val h),
-      fun w ↦ (exists_awayToLocalization_eq S ha w.2).imp fun _ h ↦ Subtype.ext h⟩
+  RingEquiv.ofBijective _ (bijective_awayToLocalization_codRestrict S ha)
+
+/-- As an element of `S`, the image of `z` under `awayEquivAffineBlowup` is
+`awayToLocalization S ha z`: the isomorphism is `awayToLocalization` with its codomain restricted
+to `R[I/a]`. -/
+private theorem coe_awayEquivAffineBlowup (ha : a ∈ I)
+    (z : Away (grade I) (monomialDegreeOne ha)) :
+    (awayEquivAffineBlowup S ha z : S) = awayToLocalization S ha z := by
+  rw [awayEquivAffineBlowup, RingEquiv.ofBijective_apply, RingHom.codRestrict_apply]
 
 /-- The fraction `x/(a t)ⁿ`, for `x = b tⁿ` homogeneous of degree `n`, corresponds to the element
 `b/aⁿ` of `R[I/a]`. -/
@@ -153,8 +169,8 @@ theorem algebraMap_pow_mul_awayEquivAffineBlowup_mk (ha : a ∈ I) {n : ℕ} {x 
     algebraMap R S a ^ n *
         (awayEquivAffineBlowup S ha
           (Away.mk (grade I) (monomialDegreeOne_mem_grade ha) n x hx) : S) =
-      algebraMap R S ((x : R[X]).coeff n) :=
-  algebraMap_pow_mul_awayToLocalization_mk S ha hx
+      algebraMap R S ((x : R[X]).coeff n) := by
+  rw [coe_awayEquivAffineBlowup, algebraMap_pow_mul_awayToLocalization_mk]
 
 /-- The fraction `(i t)/(a t)` corresponds to the generator `i/a` of `R[I/a]`. -/
 @[simp]
