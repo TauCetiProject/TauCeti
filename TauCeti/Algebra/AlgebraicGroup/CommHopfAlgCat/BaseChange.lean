@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.Flat.Basic
 
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
@@ -29,6 +30,7 @@ the original points evaluated on `K`-algebras.
 * `CommHopfAlgCat.baseChange`: the bundled Hopf `K`-algebra `K ⊗[k] H`.
 * `CommHopfAlgCat.baseChangeMap`: scalar extension of a coordinate morphism.
 * `CommHopfAlgCat.baseChangeMap_surjective`: base change preserves surjectivity.
+* `CommHopfAlgCat.baseChangeMap_injective`: flat base change preserves injectivity.
 * `CommHopfAlgCat.baseChangeFunctor`: functorial base change on commutative Hopf algebras.
 * `CommHopfAlgCat.baseChangePointsMulEquiv`: the inherited point equivalence
   `(K ⊗[k] H →ₐ[K] A) ≃* (H →ₐ[k] A)`.
@@ -94,6 +96,12 @@ theorem baseChangeMap_surjective {H L : _root_.CommHopfAlgCat.{v} k}
   rw [hom_baseChangeMap]
   exact Algebra.TensorProduct.map_surjective (AlgHom.id k K) φ.hom.toAlgHom
     Function.surjective_id hφ
+
+/-- Flat base change preserves injectivity of a morphism of commutative Hopf algebras. -/
+theorem baseChangeMap_injective [Module.Flat k K] {H L : _root_.CommHopfAlgCat.{v} k}
+    (φ : H ⟶ L) (hφ : Function.Injective φ.hom) :
+    Function.Injective (baseChangeMap (K := K) φ).hom :=
+  Module.Flat.lTensor_preserves_injective_linearMap φ.hom.toLinearMap hφ
 
 /-- Base change is functorial on commutative Hopf algebras. -/
 noncomputable abbrev baseChangeFunctor :
