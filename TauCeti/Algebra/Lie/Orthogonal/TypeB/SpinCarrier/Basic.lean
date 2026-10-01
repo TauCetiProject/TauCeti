@@ -45,6 +45,8 @@ subgroups is separate from this carrier construction.
   equation on matrix-valued points.
 * `TauCeti.TypeBSpinCarrier.rep_rootGenerator_inl_castSucc` and its three siblings: each numbered
   simple generator acts on the spin module by creation and contraction of exterior coordinates.
+* `TauCeti.TypeBSpinCarrier.pow_two_rep_rootGenerator_eq_zero`: each numbered simple generator
+  squares to zero on the spin module.
 
 ## References
 
@@ -120,23 +122,29 @@ theorem coe_latticeBasis (i : Fin (dimension n)) :
   rw [latticeBasis, Module.Basis.reindex_apply, signSet]
   exact TauCeti.ExteriorAlgebra.coe_integralLatticeBasis _ _
 
+/-- **Every represented numbered root generator squares to zero.** The simple root strings
+through the spin weights have length at most two, so no numbered generator raises a weight
+twice. -/
+theorem pow_two_rep_rootGenerator_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (TauCeti.typeBSimpleRootGeneratorFamily k)) ^ 2 = 0 :=
+  (polarization n).typeBSpinRep_simpleRootGenerator_sq
+    (polarizationBasis n) (remainderOne n)
+    (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k
+
 /-- Every represented numbered root generator is nilpotent. -/
 theorem isNilpotent_rep_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     IsNilpotent (rep n
       (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily k))) :=
-  ⟨2, (polarization n).typeBSpinRep_simpleRootGenerator_sq
-    (polarizationBasis n) (remainderOne n)
-    (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k⟩
+  ⟨2, pow_two_rep_rootGenerator_eq_zero n k⟩
 
 /-- Every represented numbered root generator has nilpotency class at most two. -/
 theorem nilpotencyClass_rep_rootGenerator_le_two (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     nilpotencyClass (rep n
       (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily k))) ≤ 2 :=
-  Nat.sInf_le ((polarization n).typeBSpinRep_simpleRootGenerator_sq
-    (polarizationBasis n) (remainderOne n)
-    (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k)
+  Nat.sInf_le (pow_two_rep_rootGenerator_eq_zero n k)
 
 /-- The simple-generator type-`B` Kostant form preserves the exterior coordinate lattice. -/
 theorem rep_kostantForm_mem_lattice
@@ -200,31 +208,17 @@ theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) 
     (Fin.last n) x
   rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
 
-/-- The representation-theoretic coroot weight is the simply connected type-`B` spin weight. -/
-theorem typeBSpinCorootWeight_eq_typeBSpinWeight (s : Finset (Fin (n + 1))) :
-    SpinPolarizationData.typeBSpinCorootWeight s =
-      TauCeti.DynkinType.typeBSpinWeight s := by
-  funext i
-  refine Fin.lastCases ?_ (fun j ↦ ?_) i
-  · rw [SpinPolarizationData.typeBSpinCorootWeight_last,
-      TauCeti.DynkinType.typeBSpinWeight_apply]
-    by_cases h : Fin.last n ∈ s <;> simp [h]
-  · rw [SpinPolarizationData.typeBSpinCorootWeight_castSucc,
-      TauCeti.DynkinType.typeBSpinWeight_apply]
-    simp
-
 /-- Every exterior basis vector has its named integral type-`B` spin weight. -/
 theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :
     IsCartanWeightVector (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)
       (basisWeight n i)
       ((latticeBasis n i : (lattice n).toAddSubgroup) :
         ExteriorAlgebra ℚ (polarization n).W) := by
-  rw [isCartanWeightVector_iff]
-  intro j
-  rw [coe_latticeBasis, _root_.UniversalEnvelopingAlgebra.ι_apply,
-    SpinPolarizationData.typeBSpinRep_ι,
-    SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis]
-  rw [typeBSpinCorootWeight_eq_typeBSpinWeight]
+  have h := (polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
+    (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+    (signSet n i)
+  rw [SpinPolarizationData.typeBSpinCorootWeight_eq_typeBSpinWeight] at h
+  rwa [coe_latticeBasis]
 
 /-- The full spin weights span the simply connected type-`B` character lattice. -/
 theorem span_range_basisWeight_eq_top :

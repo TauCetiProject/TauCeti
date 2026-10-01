@@ -55,6 +55,8 @@ representatives and `bᵢ` over a spanning family of the binary forms, span `�
   spanned by the unimodular symbols `[g∞] - [g0]`, `g ∈ SL(2, ℤ)`.
 * `TauCeti.ModularSymbols.symbol_mapGL_smul`: the relation `{γα, γβ} ⊗ P = {α, β} ⊗ (P ∣ γ)` for
   `γ ∈ Γ`.
+* `TauCeti.ModularSymbols.hom_ext_unimodular`: a linear map out of `Div⁰(ℙ¹(ℚ)) ⊗ Sym^w(R²)`
+  is determined by its values on the unimodular symbols `([g∞] - [g0]) ⊗ P`.
 * `TauCeti.ModularSymbols.span_symbol_eq_top`: the symbols `{α, β} ⊗ P` span the module.
 * `TauCeti.ModularSymbols.instModuleFinite`: `𝕄_w(Γ; R)` is a finite `R`-module when `Γ` has
   finite index in `SL(2, ℤ)`; `TauCeti.ModularSymbols.instModuleFiniteInt` is the integral case.
@@ -258,6 +260,13 @@ theorem binaryFormSLRep_binaryFormRep (γ : SL(2, ℤ)) (P : homogeneousSubmodul
   rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← coe_mul, mul_inv_cancel, coe_one,
     op_one, map_one, Module.End.one_apply]
 
+/-- The right action undoes the left action: `(P ∣ γ⁻¹) ∣ γ = P`. Not `@[simp]`: simp first
+rewrites the inner `binaryFormSLRep R w γ P` to the adjugate action. -/
+theorem binaryFormRep_binaryFormSLRep (γ : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) R w) :
+    binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) (binaryFormSLRep R w γ P) = P := by
+  rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← coe_mul, inv_mul_cancel, coe_one,
+    op_one, map_one, Module.End.one_apply]
+
 /-- On `SL(2, ℤ)` the adjugate action `TauCeti.binaryFormAdjugateRep` on binary forms is the
 action `P ↦ P ∣ γ⁻¹` defining the modular symbols: the adjugate of a determinant-one matrix is its
 inverse. -/
@@ -282,6 +291,22 @@ theorem symbolRep_tmul (g : SL(2, ℤ)) (D : degreeZero R)
     (P : homogeneousSubmodule (Fin 2) R w) :
     symbolRep R w g (D ⊗ₜ P) = degreeZeroRep R g D ⊗ₜ binaryFormSLRep R w g P := by
   simp [symbolRep]
+
+/-- Two linear maps out of `Div⁰(ℙ¹(ℚ)) ⊗_R Sym^w(R²)` are equal as soon as they agree on the
+unimodular symbols `([g∞] - [g0]) ⊗ P`, `g ∈ SL(2, ℤ)`, which span by Manin's lemma
+(`TauCeti.ModularSymbols.span_degreeZeroRep_eq_top`). -/
+theorem hom_ext_unimodular {M : Type*} [AddCommMonoid M] [Module R M]
+    {L₁ L₂ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R] M}
+    (h : ∀ (g : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) R w),
+      L₁ (⟨_, single_sub_single_mem_degreeZero (mapGL ℚ g • ∞)
+        (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ))⟩ ⊗ₜ P) =
+      L₂ (⟨_, single_sub_single_mem_degreeZero (mapGL ℚ g • ∞)
+        (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ))⟩ ⊗ₜ P)) :
+    L₁ = L₂ :=
+  TensorProduct.ext <| LinearMap.ext_on_range span_degreeZeroRep_eq_top fun g ↦
+    LinearMap.ext fun P ↦ by
+      simpa only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, degreeZeroRep_apply,
+        degreeZeroGLRep_single_sub_single] using h g P
 
 end ModularSymbols
 
