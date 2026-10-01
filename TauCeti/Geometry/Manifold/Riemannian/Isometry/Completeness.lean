@@ -16,7 +16,7 @@ completeness, both at corresponding base points and globally, as well as the pro
 exponential map has its full tangent space as domain.
 
 These statements are purely geodesic: unlike the Hopf–Rinow theorem, they need neither a metric on
-the manifolds, nor Hausdorffness of the tangent bundles, nor boundarylessness.
+the manifolds, nor their Hausdorffness, nor boundarylessness.
 -/
 
 public section

@@ -81,14 +81,20 @@ theorem exists_val_mul_one_sub_pow_eq_one {f : ℕ} (hf : 0 < f) :
     exact PadicInt.isUnit_one_add_of_dvd (dvd_neg.mpr (dvd_pow_self _ hf.ne'))
   exact ⟨hunit.unit⁻¹, hunit.val_inv_mul⟩
 
+/-- A unit `u` with `u (1 - a) = 1` lies in `U^(k)` exactly when `p ^ k ∣ a`: its inverse is
+`1 - a`. -/
+theorem mem_unitsPrincipal_iff_of_val_mul_one_sub_eq_one {a : ℤ_[p]} {u : ℤ_[p]ˣ}
+    (hu : (u : ℤ_[p]) * (1 - a) = 1) {k : ℕ} : u ∈ unitsPrincipal p k ↔ (p : ℤ_[p]) ^ k ∣ a := by
+  rw [← Subgroup.inv_mem_iff, mem_unitsPrincipal_iff, Units.inv_eq_of_mul_eq_one_right hu,
+    sub_sub_cancel_left, dvd_neg]
+
 /-- A unit `u` with `u (1 - p ^ f) = 1` lies in `U^(k)` exactly when `k ≤ f`: it has exact level
 `f`. -/
 theorem mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one {f : ℕ} {u : ℤ_[p]ˣ}
     (hu : (u : ℤ_[p]) * (1 - (p : ℤ_[p]) ^ f) = 1) {k : ℕ} :
-    u ∈ unitsPrincipal p k ↔ k ≤ f := by
-  rw [← Subgroup.inv_mem_iff, mem_unitsPrincipal_iff, Units.inv_eq_of_mul_eq_one_right hu,
-    sub_sub_cancel_left, dvd_neg,
-    pow_dvd_pow_iff (Nat.cast_ne_zero.mpr hp.out.ne_zero) PadicInt.p_nonunit]
+    u ∈ unitsPrincipal p k ↔ k ≤ f :=
+  (mem_unitsPrincipal_iff_of_val_mul_one_sub_eq_one hu).trans
+    (pow_dvd_pow_iff (Nat.cast_ne_zero.mpr hp.out.ne_zero) PadicInt.p_nonunit)
 
 /-- A unit `u` with `u (1 - p ^ f) = 1` topologically generates `U^(f)`, for `f ≥ 1`, and `f ≥ 2`
 when `p = 2`: the image of the orientation character `χ(x₂) = (1 - q)⁻¹`, `χ(x_i) = 1` otherwise,

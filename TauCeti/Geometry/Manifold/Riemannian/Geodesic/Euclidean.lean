@@ -202,7 +202,6 @@ theorem geodesicInterval_model_space (p v : F) :
 @[simp]
 theorem maximalGeodesic_model_space (p v : F) (t : ℝ) :
     maximalGeodesic 𝓘(ℝ, F) F p v t = p + t • v := by
-  let _ := instT2SpaceTangentBundleModelSpace (I := 𝓘(ℝ, F))
   exact (isGeodesicCurveOnFrom_add_smul p v).eq_maximalGeodesic_of_univ t
 
 /-- The geodesics in a finite-dimensional real inner-product space are exactly the affine
@@ -217,7 +216,6 @@ theorem isGeodesicCurve_iff_exists_eq_add_smul {γ : ℝ → F} :
     have hfrom : IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ univ p v :=
       ((isGeodesicCurveOn_univ (I := 𝓘(ℝ, F))).2 hγ).isGeodesicCurveOnFrom
         (mem_univ 0)
-    let _ := instT2SpaceTangentBundleModelSpace (I := 𝓘(ℝ, F))
     have heq := hfrom.eq_maximalGeodesic_of_univ t
     rw [maximalGeodesic_model_space] at heq
     exact heq.symm
@@ -308,7 +306,6 @@ theorem image_riemannianExp_ball_model_space (p : F) (r : ℝ) :
 star-shaped at the origin is a normal domain. -/
 theorem isNormalDomain_model_space (p : F) {U : Set (TangentSpace 𝓘(ℝ, F) p)} (hU : IsOpen U)
     (h0 : 0 ∈ U) (hstar : StarConvex ℝ 0 U) : IsNormalDomain 𝓘(ℝ, F) F p U := by
-  let _ := instT2SpaceTangentBundleModelSpace (I := 𝓘(ℝ, F))
   refine ⟨hU, h0, hstar, (expDomain_model_space p).symm ▸ subset_univ U, fun v _ w _ h ↦ ?_,
     fun v ↦ ?_⟩
   · simp only [riemannianExp_model_space, add_right_inj] at h
