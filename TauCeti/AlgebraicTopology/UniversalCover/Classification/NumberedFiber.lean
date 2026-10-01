@@ -58,6 +58,12 @@ and full (`TauCeti.CoveringSpace.fiberActionFunctor_faithful`,
 `TauCeti.CoveringSpace.fiberActionFunctor_full`), and the numberings turn equal representations
 into an isomorphism of `π₁(X, x)`-sets preserving the labels.
 
+Conversely, over a locally path-connected, semilocally simply connected base, every
+representation `π₁(X, x) →* Equiv.Perm (Fin n)` with `n ≠ 0` and transitive image is the numbered
+monodromy of some numbered cover: the quotient of the universal cover by the stabiliser of a label
+has its fibre equivariantly identified with `Fin n`
+(`TauCeti.UniversalCover.transitiveActionFiberEquiv`), and that identification is a numbering.
+
 ## Main declarations
 
 * `TauCeti.ConnectedFiberNumberedCover`, `TauCeti.ConnectedPointedCover`,
@@ -82,6 +88,9 @@ into an isomorphism of `π₁(X, x)`-sets preserving the labels.
   `TauCeti.ConnectedCover.ne_zero`: over a preconnected base the degree is positive.
 * `TauCeti.connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq`: two numbered
   covers are isomorphic exactly when their numbered monodromy representations agree.
+* `TauCeti.ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq`: over a
+  semilocally simply connected base, every transitive representation on `Fin n` is the numbered
+  monodromy of some numbered cover.
 
 ## References
 
@@ -755,5 +764,31 @@ theorem connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq
     ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq⟩
 
 end Monodromy
+
+/-! ### Realising a numbered monodromy -/
+
+/-- **Every transitive representation on `Fin n` is the numbered monodromy of a cover.** Over a
+locally path-connected, semilocally simply connected base, a homomorphism
+`ρ : π₁(X, x) →* Equiv.Perm (Fin n)` whose image acts transitively on the nonempty set `Fin n` is
+the monodromy representation, read through the numbering, of some connected cover with numbered
+fibre. -/
+theorem ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    (ρ : FundamentalGroup X x →* Perm (Fin n)) (hn : n ≠ 0)
+    (hρ : MulAction.IsPretransitive ρ.range (Fin n)) :
+    ∃ c : ConnectedFiberNumberedCover x n,
+      c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) = ρ := by
+  -- `π₁(X, x)` acts on `Fin n` through `ρ`, transitively because the image of `ρ` does.
+  let _ : MulAction (FundamentalGroup X x) (Fin n) := MulAction.compHom _ ρ.rangeRestrict
+  have := MulAction.isPretransitive_compHom (G := Fin n) ρ.rangeRestrict_surjective
+  let i : Fin n := ⟨0, Nat.pos_of_ne_zero hn⟩
+  refine ⟨⟨UniversalCover.stabilizerCover (X := X) x i,
+    UniversalCover.transitiveActionFiberEquiv (X := X) x i⟩, ?_⟩
+  refine MonoidHom.ext fun γ => Equiv.ext fun j => ?_
+  simp only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
+    permCongrHom_coe, Function.comp_apply, permCongr_apply, IsCoveringMap.coe_monodromyPerm]
+  rw [UniversalCover.transitiveActionFiberEquiv_apply_monodromy, apply_symm_apply]
+  simp only [MulAction.compHom_smul_def, Subgroup.smul_def, MonoidHom.coe_rangeRestrict,
+    Perm.smul_def]
 
 end TauCeti
