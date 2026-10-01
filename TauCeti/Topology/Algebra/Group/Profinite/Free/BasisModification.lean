@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Pow
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
+import TauCeti.Topology.Algebra.Group.Profinite.Hopfian
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
@@ -90,6 +91,8 @@ and exclude `π^{m+1} ξ₂`.
 ## Main definitions
 
 * `TauCeti.freeProP.basisModification`: the endomorphism `θ_w : F → F`, `x_i ↦ x_i * w_i`.
+* `TauCeti.freeProP.basisModificationEquiv`: for `m ≥ 1` and finite `X`, the same map as a
+  continuous automorphism of `F`.
 * `TauCeti.freeProP.basisModificationDelta`: for `m ≥ 1`, the `𝔽_p`-bilinear map
   `δ : gr_1(F) → gr_m(F)^X → gr_{m+1}(F)`, `(ρ, ω) ↦ δ_ρ(ω)`.
 * `TauCeti.freeProP.basisModificationTail`: the tail `T_j(ρ) ≤ gr_j(F)`, the span
@@ -199,6 +202,65 @@ theorem inv_mul_basisModification_mem_pLowerCentralSeries
       freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) m) = g :=
     DFunLike.congr_fun h g
   exact QuotientGroup.eq.mp hg.symm
+
+/-! ### The basis modification as an automorphism -/
+
+section Equiv
+
+variable [Fact p.Prime] [Finite X]
+
+/-- **The basis modification `x_i ↦ x_i * w_i` by elements of `λ_m(F)`, `m ≥ 1`, as a continuous
+automorphism** of the free pro-`p` group of finite rank `F`: the endomorphism `θ_w` is congruent to
+the identity modulo `λ_1(F) = Φ(F)`, hence surjective by Burnside's criterion, hence bijective by
+the Hopf property. Its underlying map is `θ_w`
+(`TauCeti.freeProP.basisModificationEquiv_apply`). -/
+noncomputable def basisModificationEquiv (hm : 1 ≤ m)
+    (w : X → pLowerCentralSeries p (freeProP p X) m) : freeProP p X ≃ₜ* freeProP p X :=
+  (isTopologicallyFinitelyGenerated_freeProP p X).continuousMulEquivOfSurjective
+    (f := (basisModification w).toMonoidHom) (basisModification w).continuous
+    ((isProP_freeProP p X).surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one
+      (basisModification w).continuous fun g ↦
+        pLowerCentralSeries_antitone hm (inv_mul_basisModification_mem_pLowerCentralSeries w g))
+
+@[simp]
+theorem basisModificationEquiv_apply (hm : 1 ≤ m)
+    (w : X → pLowerCentralSeries p (freeProP p X) m) (g : freeProP p X) :
+    basisModificationEquiv hm w g = basisModification w g :=
+  IsTopologicallyFinitelyGenerated.continuousMulEquivOfSurjective_apply _ _ _ g
+
+/-- The inverse of the basis modification preserves every term of the lower `p`-series. -/
+theorem basisModificationEquiv_symm_mem_pLowerCentralSeries (hm : 1 ≤ m)
+    (w : X → pLowerCentralSeries p (freeProP p X) m) {k : ℕ} {g : freeProP p X}
+    (hg : g ∈ pLowerCentralSeries p (freeProP p X) k) :
+    (basisModificationEquiv hm w).symm g ∈ pLowerCentralSeries p (freeProP p X) k :=
+  MonoidHom.map_pLowerCentralSeries_le
+    ((basisModificationEquiv hm w).symm : freeProP p X →ₜ* freeProP p X).toMonoidHom
+    ((basisModificationEquiv hm w).symm : freeProP p X →ₜ* freeProP p X).continuous k
+    ⟨g, hg, rfl⟩
+
+/-- **The inverse of the basis modification does not move the class of a relator in `gr_1(F)`**:
+`θ_w⁻¹(r) ≡ r mod λ_2(F)` for `r ∈ λ_1(F)`, since `θ_w` is congruent to the identity modulo
+`λ_1(F)` and hence to the identity modulo `λ_2(F)` on `λ_1(F)`. -/
+theorem gradedMk_basisModificationEquiv_symm (hm : 1 ≤ m)
+    (w : X → pLowerCentralSeries p (freeProP p X) m) (r : pLowerCentralSeries p (freeProP p X) 1) :
+    gradedMk p (freeProP p X) 1 ⟨(basisModificationEquiv hm w).symm r,
+        basisModificationEquiv_symm_mem_pLowerCentralSeries hm w r.2⟩ =
+      gradedMk p (freeProP p X) 1 r := by
+  rw [gradedMk_eq_gradedMk_iff]
+  refine QuotientGroup.eq.2 ?_
+  have h : (r : freeProP p X)⁻¹ * basisModification w r ∈
+      pLowerCentralSeries p (freeProP p X) 2 :=
+    pLowerCentralSeries_antitone (by omega) (inv_mul_apply_mem_pLowerCentralSeries
+      (basisModification w).toMonoidHom (basisModification w).continuous
+      (inv_mul_basisModification_mem_pLowerCentralSeries w) r.2)
+  have h' : ((basisModificationEquiv hm w).symm r)⁻¹ * r =
+      (basisModificationEquiv hm w).symm ((r : freeProP p X)⁻¹ * basisModification w r) := by
+    rw [map_mul, map_inv, ← basisModificationEquiv_apply hm w,
+      (basisModificationEquiv hm w).symm_apply_apply]
+  rw [h']
+  exact basisModificationEquiv_symm_mem_pLowerCentralSeries hm w h
+
+end Equiv
 
 /-- **The deviation of the basis modification on a generator class** is the class of the
 modification: `D_0 ξ_i = ω_i` in `gr_m(F)`, where `ξ_i` and `ω_i` are the classes of `x_i` and

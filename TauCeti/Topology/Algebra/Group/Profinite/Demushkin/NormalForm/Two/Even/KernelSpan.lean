@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.KernelSpan
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Kernel.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom

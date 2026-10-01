@@ -856,6 +856,21 @@ theorem not_isAlt_degreeOneForm_demushkinWordTwoEven (hn : 0 < n) {a f : ℕ} (h
   have hb : 4 * b / 2 = 2 * b := by omega
   simp [hb, nsmul_eq_mul, CharTwo.two_eq_zero] at this
 
+/-- **The degree-one form of `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` is not alternating** at `p = 2`,
+for `n ≥ 1` and `q ≡ 2 mod 4`: its value on the first coordinate character twice is `q / 2 ≡ 1`.
+This covers the relators `x₁^{2 + 2^f} (x₁, x₂) ⋯` with `f ≥ 2` and `x₁² (x₁, x₂) ⋯`. -/
+theorem not_isAlt_degreeOneForm_demushkinWordNeTwo (hn : 0 < n) {q : ℕ} (hq : q % 4 = 2) :
+    ¬ (degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1
+      ⟨demushkinWordNeTwo q n (freeProPGen 2 n),
+        demushkinWordNeTwo_mem_pLowerCentralSeries_one
+          (Nat.dvd_of_mod_eq_zero (by omega)) n _⟩)).IsAlt := by
+  intro h
+  have := h (dualBasis 2 (Fin n) ⟨0, hn⟩)
+  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_gradedMk_demushkinWordNeTwo_inl
+    (Nat.dvd_of_mod_eq_zero (by omega))] at this
+  have h2 : q / 2 = 2 * (q / 4) + 1 := by omega
+  simp [h2, CharTwo.two_eq_zero] at this
+
 /-- **The second coordinate character pairs only with the first under the degree-one form of
 `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`**, for `n ≥ 2`, `a` even and `f ≥ 1`:
 pairing any character `χ` with the second coordinate character reads off `χ(x₁)`, because `x₂`
