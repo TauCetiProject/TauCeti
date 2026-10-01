@@ -13,7 +13,7 @@ public import TauCeti.CategoryTheory.Exact.Stable.Functor.Basic
 
 An exact functor between Frobenius exact categories which preserves projective-injective objects
 descends to their stable categories. This file constructs the canonical comparison between that
-stable functor and suspension.
+stable functor and suspension, and proves compatibility with the connecting maps of conflations.
 
 Apply the original functor to a chosen injective presentation `X ⟶ I(X) ⟶ ΣX`. Its image
 is an injective presentation of `F(X)`, because the functor preserves conflations and
@@ -104,6 +104,61 @@ theorem isProjective_I_mapSuspensionPresentation (hF : StableConflationExact E E
     (E.projectiveInjective_iff _).2
       ⟨hE.isProjective_I (hE.suspensionPresentation X),
         (hE.suspensionPresentation X).isInjective⟩).1
+
+/-- The image of a connecting map, followed by the comparison from the mapped suspension
+presentation to the chosen target presentation, is the connecting map of the image conflation
+in the target stable category. -/
+@[reassoc (attr := simp)]
+theorem map_connectingMap_comp_suspensionComparison
+    (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) (hE' : E'.IsFrobenius)
+    {S : ShortComplex C} (hS : E.Conflation S) :
+    E'.projectiveStableFunctor.map (F.map (hE.connectingMap hS)) ≫
+        eqToHom (congrArg E'.projectiveStableFunctor.obj
+          (hF.mapSuspensionPresentation_K hE S.X₁).symm) ≫
+        (hE'.projectiveStableIsoSuspensionObj
+          (hF.mapSuspensionPresentation hE S.X₁)).hom =
+      E'.projectiveStableFunctor.map
+        (hE'.connectingMap (hF.isConflationExact.map_conflation hS)) := by
+  let P := hF.mapSuspensionPresentation hE S.X₁
+  let Q := hE'.suspensionPresentation (F.obj S.X₁)
+  -- The mapped presentation has opaque, dependently typed component maps. Transport the
+  -- image of the connecting map to its cokernel term before applying the comparison.
+  let δ : (S.map F).X₃ ⟶ P.K :=
+    F.map (hE.connectingMap hS) ≫ eqToHom (hF.mapSuspensionPresentation_K hE S.X₁).symm
+  let a : (S.map F).X₂ ⟶ P.I :=
+    F.map (hE.connectingMiddleMap hS) ≫ eqToHom (hF.mapSuspensionPresentation_I hE S.X₁).symm
+  have ha : (S.map F).f ≫ a = P.i := by
+    have hf : F.map S.f ≫ F.map (hE.connectingMiddleMap hS) =
+        F.map (hE.suspensionInflation S.X₁) := by
+      rw [← F.map_comp, hE.f_comp_connectingMiddleMap hS]
+    dsimp [a, P]
+    rw [← Category.assoc]
+    apply eq_of_heq
+    exact (comp_eqToHom_heq _ _).trans <|
+      (heq_of_eq hf).trans (hF.mapSuspensionPresentation_i hE S.X₁).symm
+  have hδ : (S.map F).g ≫ δ = a ≫ P.p := by
+    have hg : F.map S.g ≫ F.map (hE.connectingMap hS) =
+        F.map (hE.connectingMiddleMap hS) ≫ F.map (hE.suspensionDeflation S.X₁) := by
+      rw [← F.map_comp, hE.g_comp_connectingMap hS, F.map_comp]
+    have hp : a ≫ P.p ≍
+        F.map (hE.connectingMiddleMap hS) ≫ F.map (hE.suspensionDeflation S.X₁) :=
+      heq_comp rfl (hF.mapSuspensionPresentation_I hE S.X₁)
+        (hF.mapSuspensionPresentation_K hE S.X₁)
+        (comp_eqToHom_heq _ _) (hF.mapSuspensionPresentation_p hE S.X₁)
+    dsimp [δ]
+    rw [← Category.assoc]
+    exact eq_of_heq ((comp_eqToHom_heq _ _).trans ((heq_of_eq hg).trans hp.symm))
+  have h := hE'.projectiveStableFunctor_map_connectingMap_eq
+    (hF.isConflationExact.map_conflation hS)
+    (a ≫ P.middleMap Q (𝟙 _)) (δ ≫ P.cokernelMap Q (𝟙 _))
+    (by
+      rw [← Category.assoc, ha, P.i_comp_middleMap]
+      simp [Q])
+    (by
+      rw [← Category.assoc, hδ, Category.assoc, P.p_comp_cokernelMap]
+      simp [Q])
+  rw [Functor.map_comp] at h
+  simpa [δ, P, Q, Functor.map_comp, eqToHom_map, Category.assoc] using h.symm
 
 /-- The map induced between mapped suspension presentations agrees in the stable category with
 the image of the map induced between the original suspension presentations. -/
