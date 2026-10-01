@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.GraphAutomorphism
-public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.ToralGeneration
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 
 /-!
 # The pinned graph automorphism of the type-A standard carrier
