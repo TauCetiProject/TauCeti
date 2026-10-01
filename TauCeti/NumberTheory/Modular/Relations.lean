@@ -24,8 +24,8 @@ the lower-triangular matrix `T′ = (1 0; 1 1)`.
 * `TauCeti.ModularGroup.coe_S_sq`, `TauCeti.ModularGroup.coe_S_inv`: `S² = 1` and `S⁻¹ = S`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_pow_three`, `TauCeti.ModularGroup.coe_T_mul_coe_S_inv`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_inv`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
-* `Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S`: `g * S * S = g`, the product
-  form of `S² = 1`; in particular `U * S = T`.
+* `Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S`: `g * S * S = g`, the product form of
+  `S² = 1`; in particular `U * S = T`.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.

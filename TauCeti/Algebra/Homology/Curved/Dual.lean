@@ -93,13 +93,13 @@ on the left-hand factor of the composite; `FGModuleCat.dualMap_negDualMap` is th
 calculation with the minus sign on the right-hand factor. -/
 theorem negDualMap_comp_dualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  calc (-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f
-      = -(FGModuleCat.dualMap R g ≫ FGModuleCat.dualMap R f) := by simp only [neg_comp]
-    _ = -FGModuleCat.dualMap R (f ≫ g) := by
+    ((-FGModuleCat.dualMap g) ≫ FGModuleCat.dualMap f) = -w • 𝟙 (FGModuleCat.dual R M) := by
+  calc (-FGModuleCat.dualMap g) ≫ FGModuleCat.dualMap f
+      = -(FGModuleCat.dualMap g ≫ FGModuleCat.dualMap f) := by simp only [neg_comp]
+    _ = -FGModuleCat.dualMap (f ≫ g) := by
       rw [FGModuleCat.dualMap_comp (f := f) (g := g)]
-    _ = -FGModuleCat.dualMap R (w • 𝟙 M) := by rw [h]
-    _ = -(w • FGModuleCat.dualMap R (𝟙 M)) := by rw [FGModuleCat.dualMap_smul]
+    _ = -FGModuleCat.dualMap (w • 𝟙 M) := by rw [h]
+    _ = -(w • FGModuleCat.dualMap (𝟙 M)) := by rw [FGModuleCat.dualMap_smul]
     _ = -(w • 𝟙 (FGModuleCat.dual R M)) := by rw [FGModuleCat.dualMap_id]
     _ = -w • 𝟙 (FGModuleCat.dual R M) := by rw [neg_smul]
 
@@ -111,7 +111,7 @@ composite. It is `FGModuleCat.negDualMap_comp_dualMap` read the other way round,
 either factor of a composite negates the composite. -/
 theorem dualMap_negDualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    (FGModuleCat.dualMap R g ≫ (-FGModuleCat.dualMap R f)) = -w • 𝟙 (FGModuleCat.dual R M) := by
+    (FGModuleCat.dualMap g ≫ (-FGModuleCat.dualMap f)) = -w • 𝟙 (FGModuleCat.dual R M) := by
   rw [Preadditive.comp_neg, ← Preadditive.neg_comp, negDualMap_comp_dualMap (R := R) w f g h]
 
 /-- The same computation one dual further: the composite of the two negated double transposes of
@@ -121,18 +121,18 @@ has the same curvature as its source. -/
 theorem negDualMap_dualMap_comp_negDualMap_dualMap {M N : FGModuleCat.{u} R}
     [Module.Projective R M] [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M)
     (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-      (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g)))
+    ((-FGModuleCat.dualMap (FGModuleCat.dualMap f)) ≫
+      (-FGModuleCat.dualMap (FGModuleCat.dualMap g)))
       = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-  calc (-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-        (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g))
-      = FGModuleCat.dualMap R (FGModuleCat.dualMap R f) ≫
-          FGModuleCat.dualMap R (FGModuleCat.dualMap R g) := by
+  calc (-FGModuleCat.dualMap (FGModuleCat.dualMap f)) ≫
+        (-FGModuleCat.dualMap (FGModuleCat.dualMap g))
+      = FGModuleCat.dualMap (FGModuleCat.dualMap f) ≫
+          FGModuleCat.dualMap (FGModuleCat.dualMap g) := by
             rw [Preadditive.neg_comp_neg]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (f ≫ g)) := by
+    _ = FGModuleCat.dualMap (FGModuleCat.dualMap (f ≫ g)) := by
       rw [← FGModuleCat.dualMap_comp, ← FGModuleCat.dualMap_comp]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (w • 𝟙 M)) := by rw [h]
-    _ = w • FGModuleCat.dualMap R (FGModuleCat.dualMap R (𝟙 M)) := by
+    _ = FGModuleCat.dualMap (FGModuleCat.dualMap (w • 𝟙 M)) := by rw [h]
+    _ = w • FGModuleCat.dualMap (FGModuleCat.dualMap (𝟙 M)) := by
       simp only [FGModuleCat.dualMap_smul]
     _ = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
       rw [FGModuleCat.dualMap_id, FGModuleCat.dualMap_id]
@@ -153,8 +153,8 @@ abbrev dual (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀
     [Module.Projective S X.X₁] : CurvedDuplex (FGModuleCat.{u} S) (-w) where
   X₀ := FGModuleCat.dual S X.X₀
   X₁ := FGModuleCat.dual S X.X₁
-  d₀ := FGModuleCat.dualMap S X.d₁
-  d₁ := -FGModuleCat.dualMap S X.d₀
+  d₀ := FGModuleCat.dualMap X.d₁
+  d₁ := -FGModuleCat.dualMap X.d₀
   d₀_comp_d₁ := FGModuleCat.dualMap_negDualMap S w X.d₀ X.d₁ X.d₀_comp_d₁
   d₁_comp_d₀ := FGModuleCat.negDualMap_comp_dualMap S w X.d₁ X.d₀ X.d₁_comp_d₀
 
@@ -170,12 +170,12 @@ abbrev dual (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀
 The differentials are crossed because transposition reverses composition, so that the two
 composites of the dual are the transposes of the two composites of the original. -/
 @[simp] theorem dual_d₀ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
-    [Module.Projective S X.X₁] : X.dual.d₀ = FGModuleCat.dualMap S X.d₁ := rfl
+    [Module.Projective S X.X₁] : X.dual.d₀ = FGModuleCat.dualMap X.d₁ := rfl
 
 /-- The odd differential of a dual is the negated transpose of the even differential of the
 original. The single minus sign is what turns a curvature `w` into a curvature `-w`. -/
 @[simp] theorem dual_d₁ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
-    [Module.Projective S X.X₁] : X.dual.d₁ = -FGModuleCat.dualMap S X.d₀ := rfl
+    [Module.Projective S X.X₁] : X.dual.d₁ = -FGModuleCat.dualMap X.d₀ := rfl
 
 /-- The dual of a morphism of curved duplexes is a morphism from the dual of the target to the
 dual of the source, with transposed components. The two commutativity conditions of `f` enter
@@ -183,7 +183,7 @@ with the two differentials exchanged, which is what the crossed transposes need.
 def dualMap {X Y : CurvedDuplex (FGModuleCat.{u} S) w} [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] [Module.Projective S Y.X₀] [Module.Projective S Y.X₁] (f : X ⟶ Y) :
     Y.dual ⟶ X.dual :=
-  homMk (FGModuleCat.dualMap S f.f₀) (FGModuleCat.dualMap S f.f₁)
+  homMk (FGModuleCat.dualMap f.f₀) (FGModuleCat.dualMap f.f₁)
     (by rw [← FGModuleCat.dualMap_comp, ← FGModuleCat.dualMap_comp, f.comm₁])
     (by
       simp only [comp_neg, neg_comp]
@@ -193,13 +193,13 @@ def dualMap {X Y : CurvedDuplex (FGModuleCat.{u} S) w} [Module.Projective S X.X�
 component of the morphism. -/
 @[simp] theorem dualMap_f₀ {X Y : CurvedDuplex (FGModuleCat.{u} S) w} [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] [Module.Projective S Y.X₀] [Module.Projective S Y.X₁] (f : X ⟶ Y) :
-    (dualMap f).f₀ = FGModuleCat.dualMap S f.f₀ := (rfl)
+    (dualMap f).f₀ = FGModuleCat.dualMap f.f₀ := (rfl)
 
 /-- The odd component of the dual of a morphism of curved duplexes is the transpose of the odd
 component of the morphism. -/
 @[simp] theorem dualMap_f₁ {X Y : CurvedDuplex (FGModuleCat.{u} S) w} [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] [Module.Projective S Y.X₀] [Module.Projective S Y.X₁] (f : X ⟶ Y) :
-    (dualMap f).f₁ = FGModuleCat.dualMap S f.f₁ := (rfl)
+    (dualMap f).f₁ = FGModuleCat.dualMap f.f₁ := (rfl)
 
 /-- Dualization is contravariant on morphisms: the dual of the identity of a curved duplex
 is the identity of its dual. -/
@@ -216,8 +216,8 @@ the duals in the opposite order. -/
     [Module.Projective S Z.X₀] [Module.Projective S Z.X₁] (f : X ⟶ Y) (g : Y ⟶ Z) :
     dualMap (f ≫ g) = dualMap g ≫ dualMap f := by
   refine hom_ext ?_ ?_
-  · exact FGModuleCat.dualMap_comp S f.f₀ g.f₀
-  · exact FGModuleCat.dualMap_comp S f.f₁ g.f₁
+  · exact FGModuleCat.dualMap_comp f.f₀ g.f₀
+  · exact FGModuleCat.dualMap_comp f.f₁ g.f₁
 
 /-- Dualization is contravariant on morphisms and additive: the dual of the zero morphism of a
 curved duplex is the zero morphism of its dual. -/
@@ -243,8 +243,8 @@ abbrev doubleDual (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S 
     [Module.Projective S X.X₁] : CurvedDuplex (FGModuleCat.{u} S) w where
   X₀ := FGModuleCat.dual S (FGModuleCat.dual S X.X₀)
   X₁ := FGModuleCat.dual S (FGModuleCat.dual S X.X₁)
-  d₀ := -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.d₀)
-  d₁ := -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.d₁)
+  d₀ := -FGModuleCat.dualMap (FGModuleCat.dualMap X.d₀)
+  d₁ := -FGModuleCat.dualMap (FGModuleCat.dualMap X.d₁)
   d₀_comp_d₁ :=
     FGModuleCat.negDualMap_dualMap_comp_negDualMap_dualMap S w X.d₀ X.d₁ X.d₀_comp_d₁
   d₁_comp_d₀ :=
@@ -265,13 +265,13 @@ differential of the original. Crossing twice no longer swaps the two components,
 minus signs cancel when the differentials are composed, so the curvature is `w` again. -/
 @[simp] theorem doubleDual_d₀ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] :
-    (X.doubleDual).d₀ = -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.d₀) := rfl
+    (X.doubleDual).d₀ = -FGModuleCat.dualMap (FGModuleCat.dualMap X.d₀) := rfl
 
 /-- The odd differential of a double dual is the negated double transpose of the odd
 differential of the original, with the sign on the odd component. -/
 @[simp] theorem doubleDual_d₁ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] :
-    (X.doubleDual).d₁ = -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.d₁) := rfl
+    (X.doubleDual).d₁ = -FGModuleCat.dualMap (FGModuleCat.dualMap X.d₁) := rfl
 
 /-- A double dual is isomorphic to the original curved duplex. The isomorphism is the evaluation
 pairing, with the single minus sign on the even component: that is the placement which makes the
@@ -279,42 +279,42 @@ two commutativity conditions hold against the negated double transposes. -/
 noncomputable def doubleDualIso (X : CurvedDuplex (FGModuleCat.{u} S) w)
     [Module.Projective S X.X₀] [Module.Projective S X.X₁] : X.doubleDual ≅ X :=
   isoMk
-    { hom := -(FGModuleCat.dualEvalIso S X.X₀).hom
-      inv := -(FGModuleCat.dualEvalIso S X.X₀).inv
+    { hom := -(FGModuleCat.dualEvalIso X.X₀).hom
+      inv := -(FGModuleCat.dualEvalIso X.X₀).inv
       hom_inv_id := by
-        simp only [Preadditive.neg_comp_neg, (FGModuleCat.dualEvalIso S X.X₀).hom_inv_id]
+        simp only [Preadditive.neg_comp_neg, (FGModuleCat.dualEvalIso X.X₀).hom_inv_id]
       inv_hom_id := by
-        simp only [Preadditive.neg_comp_neg, (FGModuleCat.dualEvalIso S X.X₀).inv_hom_id] }
-    { hom := (FGModuleCat.dualEvalIso S X.X₁).hom
-      inv := (FGModuleCat.dualEvalIso S X.X₁).inv
+        simp only [Preadditive.neg_comp_neg, (FGModuleCat.dualEvalIso X.X₀).inv_hom_id] }
+    { hom := (FGModuleCat.dualEvalIso X.X₁).hom
+      inv := (FGModuleCat.dualEvalIso X.X₁).inv
       hom_inv_id := by
-        exact (FGModuleCat.dualEvalIso S X.X₁).hom_inv_id
+        exact (FGModuleCat.dualEvalIso X.X₁).hom_inv_id
       inv_hom_id := by
-        exact (FGModuleCat.dualEvalIso S X.X₁).inv_hom_id }
-    (by rw [neg_comp, neg_comp, FGModuleCat.dualMap_dualMap_dualEvalIso])
-    (by rw [Preadditive.neg_comp_neg, FGModuleCat.dualMap_dualMap_dualEvalIso])
+        exact (FGModuleCat.dualEvalIso X.X₁).inv_hom_id }
+    (by rw [neg_comp, neg_comp, FGModuleCat.dualEvalIso_hom_naturality])
+    (by rw [Preadditive.neg_comp_neg, FGModuleCat.dualEvalIso_hom_naturality])
 
 /-- The even component of the double dual isomorphism is the negated evaluation isomorphism. -/
 @[simp] theorem doubleDualIso_f₀ (X : CurvedDuplex (FGModuleCat.{u} S) w)
     [Module.Projective S X.X₀] [Module.Projective S X.X₁] :
-    (X.doubleDualIso).hom.f₀ = -(FGModuleCat.dualEvalIso S X.X₀).hom := (rfl)
+    (X.doubleDualIso).hom.f₀ = -(FGModuleCat.dualEvalIso X.X₀).hom := (rfl)
 
 /-- The odd component of the double dual isomorphism is the evaluation isomorphism. -/
 @[simp] theorem doubleDualIso_f₁ (X : CurvedDuplex (FGModuleCat.{u} S) w)
     [Module.Projective S X.X₀] [Module.Projective S X.X₁] :
-    (X.doubleDualIso).hom.f₁ = (FGModuleCat.dualEvalIso S X.X₁).hom := (rfl)
+    (X.doubleDualIso).hom.f₁ = (FGModuleCat.dualEvalIso X.X₁).hom := (rfl)
 
 /-- The even component of the inverse of the double dual isomorphism is the negated inverse
 evaluation isomorphism. -/
 @[simp] theorem doubleDualIso_inv_f₀ (X : CurvedDuplex (FGModuleCat.{u} S) w)
     [Module.Projective S X.X₀] [Module.Projective S X.X₁] :
-    (X.doubleDualIso).inv.f₀ = -(FGModuleCat.dualEvalIso S X.X₀).inv := (rfl)
+    (X.doubleDualIso).inv.f₀ = -(FGModuleCat.dualEvalIso X.X₀).inv := (rfl)
 
 /-- The odd component of the inverse of the double dual isomorphism is the inverse evaluation
 isomorphism. -/
 @[simp] theorem doubleDualIso_inv_f₁ (X : CurvedDuplex (FGModuleCat.{u} S) w)
     [Module.Projective S X.X₀] [Module.Projective S X.X₁] :
-    (X.doubleDualIso).inv.f₁ = (FGModuleCat.dualEvalIso S X.X₁).inv := (rfl)
+    (X.doubleDualIso).inv.f₁ = (FGModuleCat.dualEvalIso X.X₁).inv := (rfl)
 
 
 end CurvedDuplex

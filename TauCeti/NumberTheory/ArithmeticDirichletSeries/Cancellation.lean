@@ -316,6 +316,16 @@ theorem differentiableOn_continuedLFunctionOfWeight {χ : UnitaryIdealWeight K}
   rw [funext (continuedLFunctionOfWeight_eq_mul_integral χ)]
   exact LSeries.differentiableOn_mul_integral_of_isBigO _ hχ.isBigO_sum_normCoeff
 
+/-- **Holomorphy on the closed half-plane `Re s ≥ 1`.** Under cancellation the continued
+L-function of `χ` is complex differentiable at every point of `Re s ≥ 1`, which lies inside the
+half-plane `Re s > 1 - 1 / [K : ℚ]` of `TauCeti.differentiableOn_continuedLFunctionOfWeight`. -/
+theorem differentiableAt_continuedLFunctionOfWeight {χ : UnitaryIdealWeight K}
+    (hχ : HasCancellation χ) {s : ℂ} (hs : 1 ≤ s.re) :
+    DifferentiableAt ℂ (continuedLFunctionOfWeight χ) s :=
+  (differentiableOn_continuedLFunctionOfWeight hχ).differentiableAt
+    ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds
+      ((cancellationExponent_lt_one (K := K)).trans_le hs))
+
 /-- **Deleting finitely many Euler factors, to the right of `1`.** Where the norm-regrouped series
 converge absolutely, restricting a unitary weight away from a finite set `S` of primes multiplies
 its continued `L`-function by the reciprocals `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))` of the deleted

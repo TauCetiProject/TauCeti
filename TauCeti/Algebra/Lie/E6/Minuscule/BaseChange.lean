@@ -105,6 +105,17 @@ noncomputable def baseChangeDefiningIdeal :
     weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
     weightTable.weight A
 
+/-- The transported defining ideal is the generic transported Kostant toral-closure
+presentation. -/
+theorem baseChangeDefiningIdeal_def :
+    baseChangeDefiningIdeal A =
+      kostantToralBaseChangePresentationIdeal
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+        weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
+        weightTable.weight A := by
+  rw [baseChangeDefiningIdeal]
+
 /-- The coordinate Hopf algebra of the full-weight type-`E₆` minuscule carrier after base
 change to `A`. -/
 public noncomputable abbrev coordinateHopfAlgebra :=

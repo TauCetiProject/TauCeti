@@ -49,6 +49,8 @@ the scalar by which `φ` acts on the class of `x_0` in the abelianization `ℤ_p
 * `TauCeti.Peripheral.prod_mul_cusp`, `TauCeti.Peripheral.prod_ofFn_peripheralTuple`: the
   defining relation `x_0 ⋯ x_{r-1} · cusp x = 1`, and the ordered product of the peripheral tuple
   is `1`.
+* `TauCeti.Peripheral.isPeripheralAut_of_apply_eq_conj`: an automorphism carrying each `x i` and
+  the cusp to explicit conjugates of their `u`-th powers is peripheral of exponent `u`.
 * `TauCeti.Peripheral.isPeripheralAut_conj`: inner automorphisms are peripheral of exponent one.
 * `TauCeti.Peripheral.IsPeripheralAut.exponent_unique`: in positive rank, the exponent of a
   peripheral automorphism with respect to the basis is unique.
@@ -223,6 +225,17 @@ theorem isPeripheralAut_iff (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ)
         IsConj (hF.padicPow (cusp x) u) (φ (cusp x)) := by
   rw [IsPeripheralAut, Fin.forall_fin_succ']
   simp only [peripheralTuple_castSucc, peripheralTuple_last]
+
+/-- An automorphism carrying each `x i` to `(c i)⁻¹ * x i ^ u * c i` and the cusp `z` to
+`d⁻¹ * z ^ u * d` is peripheral of exponent `u` for `x`. -/
+theorem isPeripheralAut_of_apply_eq_conj (hF : IsProP p F) {x : Fin r → F} {u : ℤ_[p]ˣ}
+    {φ : ContinuousAut F} {c : Fin r → F} {d : F}
+    (hc : ∀ i, φ (x i) = (c i)⁻¹ * hF.padicPow (x i) u * c i)
+    (hd : φ (cusp x) = d⁻¹ * hF.padicPow (cusp x) u * d) :
+    IsPeripheralAut hF x u φ := by
+  rw [isPeripheralAut_iff]
+  exact ⟨fun i ↦ isConj_iff.mpr ⟨(c i)⁻¹, by rw [inv_inv, hc]⟩,
+    isConj_iff.mpr ⟨d⁻¹, by rw [inv_inv, hd]⟩⟩
 
 /-- **Inner automorphisms are peripheral of exponent one.** -/
 theorem isPeripheralAut_conj (hF : IsProP p F) (x : Fin r → F) (g : F) :

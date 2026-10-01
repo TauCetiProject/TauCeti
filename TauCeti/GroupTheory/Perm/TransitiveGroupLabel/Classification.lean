@@ -57,6 +57,8 @@ of the rotation group `5T1`.
 * `TauCeti.isCyclic_referenceSubgroup_four_zero`, `TauCeti.not_isCyclic_referenceSubgroup_four_one`:
   the reference subgroup of `4T1` is cyclic and that of `4T2` is not.
 * `TauCeti.index_referenceSubgroup_five_two`: the reference subgroup of `5T3` has index six.
+* `TauCeti.not_isSwap_of_mem_referenceSubgroup_five_two`: the reference subgroup of `5T3`
+  contains no transposition.
 * `TauCeti.referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero`: the reference
   subgroup of `5T3` is the normalizer of that of `5T1`.
 * `TauCeti.referenceSubgroup_three_zero_le_alternatingGroup`,
@@ -610,6 +612,20 @@ theorem index_referenceSubgroup_five_two :
   rw [natCard_referenceSubgroup_five_two, Nat.card_perm, Nat.card_fin] at h
   simp only [Nat.factorial] at h
   omega
+
+/-- The reference subgroup of `5T3` contains no transposition: a subgroup of
+`Equiv.Perm (Fin 5)` whose order is divisible by `5` and which contains a transposition is the
+whole symmetric group, whereas this one has order `20`. -/
+theorem not_isSwap_of_mem_referenceSubgroup_five_two {σ : Perm (Fin 5)}
+    (hσ : σ ∈ referenceSubgroup 5 ⟨2, by simp⟩) : ¬ σ.IsSwap := by
+  classical
+  intro hswap
+  have htop := subgroup_eq_top_of_swap_mem (by simpa using Nat.prime_five)
+    (by rw [Fintype.card_fin, Fintype.card_eq_nat_card, natCard_referenceSubgroup_five_two]
+        norm_num) hσ hswap
+  have h := natCard_referenceSubgroup_five_two
+  rw [htop, Subgroup.card_top, Nat.card_perm, Nat.card_fin] at h
+  simp [Nat.factorial] at h
 
 /-- The reference subgroup of `5T2` consists of even permutations. -/
 theorem referenceSubgroup_five_one_le_alternatingGroup :

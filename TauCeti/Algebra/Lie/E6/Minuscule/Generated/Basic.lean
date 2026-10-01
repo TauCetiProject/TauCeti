@@ -106,17 +106,7 @@ theorem generatedDefiningIdeal_toIdeal_le_ker (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
 theorem baseChangeDefiningIdeal_le_generatedDefiningIdeal :
     baseChangeDefiningIdeal A ≤ generatedDefiningIdeal A := by
   rw [generatedDefiningIdeal_def]
-  have hI : baseChangeDefiningIdeal A =
-      kostantToralBaseChangePresentationIdeal
-        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
-        (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep
-        (TauCeti.coordinateLattice (Fin 27)).toAddSubgroup
-        weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator
-        (TauCeti.coordinateLatticeBasis (Fin 27)) weightTable.weight A := by
-    ext x
-    rw [mem_baseChangeDefiningIdeal_iff,
-      mem_kostantToralBaseChangePresentationIdeal_iff,
-      kostantToralBaseChangeIdeal_def, ← definingIdeal_def]
+  have hI := baseChangeDefiningIdeal_def A
   have h := kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep

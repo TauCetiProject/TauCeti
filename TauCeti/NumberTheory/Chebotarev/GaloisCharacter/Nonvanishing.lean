@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.ThreeFourOne
-import TauCeti.Analysis.Asymptotics.InvSubOne
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
+public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
-import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
-import TauCeti.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
@@ -25,6 +23,12 @@ at the primes ramified in `F` deleted, does not vanish at any `s ≠ 1` with `Re
 Together with the continuation across `Re s = 1`, this is what makes the logarithmic derivatives
 of these series, with the pole of the trivial one subtracted, continuous on `Re s ≥ 1`: the
 boundary behaviour required to apply a Tauberian theorem to the Frobenius von Mangoldt series.
+
+The criterion is the `3-4-1` criterion `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries` for
+the unitary weight `galoisCharacterUnitaryWeight χ`, whose pointwise square is the unitary weight
+of `χ²`. The remaining results handle the square: for `χ² = 1` its series is the trivial one, which
+continues across `Re s = 1` away from `s = 1` by
+`TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub`.
 
 ## Main results
 
@@ -103,26 +107,18 @@ theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight (χ : (F ≃ₐ[K] F) →*
       (LSeries (normCoeff K (χ ^ 2).galoisCharacterWeight.toIdealArithmeticFunction))
       {z | 1 < z.re}) :
     f s ≠ 0 := by
-  -- Write `s = 1 + it`, so that `2s - 1 = 1 + 2it`. The Euler-product bound
-  -- `norm_galoisCharacterLSeries_threeFourOne_ge_one` and the simple pole of the trivial series
-  -- at `s = 1` are the inputs of the analytic criterion `LSeries.ne_zero_of_threeFourOne`.
-  have hs' : s = 1 + I * s.im := by
-    conv_lhs => rw [← re_add_im s, hs, ofReal_one, mul_comm]
-  have hs₂ : 2 * s - 1 = 1 + 2 * I * s.im := by
-    conv_lhs => rw [hs']
-    ring
-  rw [hs'] at hf ⊢
-  rw [hs₂] at hf₂
-  refine LSeries.ne_zero_of_threeFourOne ?_ ?_ hf hf₂
-    (f₀ := LSeries (normCoeff K
-      (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction))
-  · filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-    rw [hfL (by simpa using hσ), hf₂L (by simpa using hσ)]
-    exact norm_galoisCharacterLSeries_threeFourOne_ge_one χ hσ s.im
-  · -- The trivial series has a simple pole at `s = 1`.
-    rw [MonoidHom.galoisCharacterWeight_one]
-    exact isBigO_inv_sub_one_of_tendsto_sub_one_mul <| by
-      simpa using tendsto_sub_one_mul_LSeries_ofBadPrimes (K := K) (ramifiedPrimes K F)
+  -- The series of `χ` and of `χ²` are those of the unitary weight of `χ` and of its pointwise
+  -- square, so this is the `3-4-1` criterion for unitary weights.
+  have h₁ : χ.galoisCharacterUnitaryWeight.toIdealArithmeticFunction =
+      χ.galoisCharacterWeight.toIdealArithmeticFunction := by
+    simp only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+      MonoidHom.val_galoisCharacterUnitaryWeight]
+  have h₂ : (χ.galoisCharacterUnitaryWeight ^ 2).toIdealArithmeticFunction =
+      (χ ^ 2).galoisCharacterWeight.toIdealArithmeticFunction := by
+    simp only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, sq, UnitaryIdealWeight.val_mul,
+      MonoidHom.val_galoisCharacterUnitaryWeight, MonoidHom.galoisCharacterWeight_mul]
+  exact χ.galoisCharacterUnitaryWeight.ne_zero_of_eqOn_LSeries hs hf (by rwa [h₁]) hf₂
+    (by rwa [h₂])
 
 /-- **Nonvanishing on `Re s = 1` for a character of order at most two.** Let `F / K` be a finite
 Galois extension and `χ` a character of `Gal(F/K)` with `χ² = 1`. If `f` agrees on `Re s > 1` with

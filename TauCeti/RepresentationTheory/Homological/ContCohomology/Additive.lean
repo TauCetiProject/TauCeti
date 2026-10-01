@@ -37,6 +37,8 @@ and cup products, need linearity before passing to cohomology.
   functor instances.
 * `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_subsingleton`: continuous
   cohomology vanishes on subsingleton coefficients, a consequence of additivity.
+* `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_ofDiscreteModule_of_subsingleton`:
+  the same for the discrete module attached to a subsingleton carrier.
 * `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_iso`: continuous cohomology
   vanishes on coefficients isomorphic to ones on which it vanishes.
 -/
@@ -49,7 +51,7 @@ namespace TauCeti.ContinuousCohomology
 
 open _root_.ContinuousCohomology _root_.TopRep _root_.ContRepresentation
 
-universe u v
+universe u v w
 
 variable {R : Type u} {G H : Type v} [Ring R] [TopologicalSpace R]
   [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -232,6 +234,17 @@ theorem subsingleton_continuousCohomology_of_subsingleton (X : TopRep R G) [Subs
     exact (continuousCohomologyFunctor R G n).map_zero X X
   exact ⟨fun x y ↦ (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom x) h).trans
     (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom y) h).symm⟩
+
+variable {R G} in
+/-- Continuous cohomology vanishes on a discrete module with subsingleton carrier: the carrier of
+`ofDiscreteModule R G M` is `M` itself, so the representation is a subsingleton and
+`subsingleton_continuousCohomology_of_subsingleton` applies. -/
+theorem subsingleton_continuousCohomology_ofDiscreteModule_of_subsingleton (M : Type (max v w))
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
+    [SMulCommClass G R M] [ContinuousSMul R M] [Subsingleton M] (n : ℕ) :
+    Subsingleton (continuousCohomology n (ofDiscreteModule R G M)) :=
+  have : Subsingleton (ofDiscreteModule R G M) := ‹Subsingleton M›
+  subsingleton_continuousCohomology_of_subsingleton _ n
 
 variable {R G} in
 /-- Continuous cohomology vanishes on a coefficient representation isomorphic to one on which it

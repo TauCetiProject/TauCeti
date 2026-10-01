@@ -38,6 +38,8 @@ identification is a morphism of pre-adic spaces because it factors one through t
 * `TauCeti.PreAdicSpace.restrictTopIso`: the restriction to the whole space is isomorphic to
   `X`.
 * `TauCeti.PreAdicSpace.restrictIso`: the transport of a restriction along an isomorphism.
+* `TauCeti.PreAdicSpace.restrictIsoOfRangeEq`: restrictions along two open embeddings with the same
+  range are isomorphic.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace.restrict`.
 
@@ -283,6 +285,57 @@ theorem restrictIso_inv_ofRestrict :
     e.hom_inv_id, Category.comp_id]
 
 end RestrictIso
+
+section RestrictIsoOfRangeEq
+
+variable (X : PreAdicSpace.{u}) {U V : TopCat.{u}} {f : U ⟶ X.toTopCat} {g : V ⟶ X.toTopCat}
+  (hf : IsOpenEmbedding f) (hg : IsOpenEmbedding g) (e : Set.range f = Set.range g)
+
+-- The two open immersions of presheafed spaces have the same range, so Mathlib identifies their
+-- sources; the identification factors one canonical morphism through the other.
+private noncomputable def restrictIsoOfRangeEqPresheafedSpace :
+    X.toPresheafedSpace.restrict hf ≅ X.toPresheafedSpace.restrict hg :=
+  PresheafedSpace.IsOpenImmersion.isoOfRangeEq (X.toPresheafedSpace.ofRestrict hf)
+    (X.toPresheafedSpace.ofRestrict hg) e
+
+private theorem restrictIsoOfRangeEqPresheafedSpace_hom_ofRestrict :
+    (restrictIsoOfRangeEqPresheafedSpace X hf hg e).hom ≫ X.toPresheafedSpace.ofRestrict hg =
+      X.toPresheafedSpace.ofRestrict hf :=
+  PresheafedSpace.IsOpenImmersion.lift_fac _ _ (le_of_eq e)
+
+-- The identification of presheafed spaces factors `X.ofRestrict hf` through `X.ofRestrict hg`,
+-- whose stalk maps are isomorphisms, so it is a morphism of pre-adic spaces.
+private noncomputable def restrictHomOfRangeEq : X.restrict hf ⟶ X.restrict hg :=
+  Hom.ofFac (X := X.restrict hf) (Y := X.restrict hg) (X.ofRestrict hf) (X.ofRestrict hg)
+    (restrictIsoOfRangeEqPresheafedSpace X hf hg e).hom
+    (restrictIsoOfRangeEqPresheafedSpace_hom_ofRestrict X hf hg e)
+
+private theorem restrictHomOfRangeEq_toHom :
+    (restrictHomOfRangeEq X hf hg e).toHom = (restrictIsoOfRangeEqPresheafedSpace X hf hg e).hom :=
+  Hom.ofFac_toHom _ _ _ _
+
+/-- The restrictions of a pre-adic space `X` along two open embeddings with the same range are
+isomorphic. The isomorphism is the unique morphism compatible with the canonical morphisms to
+`X` (`restrictIsoOfRangeEq_hom_ofRestrict`). -/
+noncomputable def restrictIsoOfRangeEq : X.restrict hf ≅ X.restrict hg :=
+  haveI := isIso_of_isIso_toHom (restrictHomOfRangeEq X hf hg e)
+    (hf := restrictHomOfRangeEq_toHom X hf hg e ▸
+      (restrictIsoOfRangeEqPresheafedSpace X hf hg e).isIso_hom)
+  asIso (restrictHomOfRangeEq X hf hg e)
+
+private theorem restrictIsoOfRangeEq_hom :
+    (X.restrictIsoOfRangeEq hf hg e).hom = restrictHomOfRangeEq X hf hg e := rfl
+
+/-- The isomorphism of restrictions with the same range commutes with the canonical morphisms
+to `X`. -/
+@[reassoc (attr := simp)]
+theorem restrictIsoOfRangeEq_hom_ofRestrict :
+    (X.restrictIsoOfRangeEq hf hg e).hom ≫ X.ofRestrict hg = X.ofRestrict hf := by
+  apply Hom.ext'
+  rw [comp_toHom, restrictIsoOfRangeEq_hom, restrictHomOfRangeEq_toHom]
+  exact restrictIsoOfRangeEqPresheafedSpace_hom_ofRestrict X hf hg e
+
+end RestrictIsoOfRangeEq
 
 end PreAdicSpace
 

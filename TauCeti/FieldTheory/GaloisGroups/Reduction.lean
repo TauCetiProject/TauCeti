@@ -44,6 +44,8 @@ three reductions are prescribed modulo `2`, `3` and `5`.
 
 ## Main results
 
+* `TauCeti.natCard_rootSet_complex_eq_natDegree`: an integral polynomial with nonzero
+  discriminant has as many distinct complex roots as its degree.
 * `TauCeti.exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees`: the factor degrees of
   `f` modulo a prime not dividing `disc f` are the full cycle type of an element of the Galois
   image.
@@ -89,6 +91,20 @@ def IsGoodPrime (f : ℤ[X]) (p : ℕ) : Prop :=
 @[simp]
 theorem isGoodPrime_iff (f : ℤ[X]) (p : ℕ) : IsGoodPrime f p ↔ ¬ (p : ℤ) ∣ f.discr :=
   Iff.rfl
+
+/-- An integral polynomial with nonzero discriminant has as many distinct complex roots as its
+degree. -/
+theorem natCard_rootSet_complex_eq_natDegree (hd : f.discr ≠ 0) :
+    Nat.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
+  obtain rfl | hf := eq_or_ne f 0
+  · simp
+  have hdeg : (f.map (Int.castRingHom ℚ)).natDegree = f.natDegree :=
+    natDegree_map_eq_of_injective Int.cast_injective f
+  have hsep : (f.map (Int.castRingHom ℚ)).Separable := by
+    rw [← discr_ne_zero_iff ((Polynomial.map_ne_zero_iff Int.cast_injective).mpr hf),
+      discr_map_of_natDegree_eq _ hdeg]
+    exact Int.cast_injective.ne hd
+  rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Fact.out, hdeg]
 
 open scoped Classical in
 /-- **Factor degrees are a full cycle type of the Galois image.** Let `f` be a monic integral

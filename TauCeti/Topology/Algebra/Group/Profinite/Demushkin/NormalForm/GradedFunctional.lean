@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.KernelSpan
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Kernel.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
@@ -24,7 +24,7 @@ is trivial on the generators `x_i`, `i ≠ 2`, which topologically generate `X` 
 in the Lean statements are the `0`-based indices of `Fin n`, so `x₂` is `of ⟨1, _⟩` and `X` is
 `TauCeti.freeProP.exponentSumKer p (Fin n) ⟨1, _⟩`.
 
-The constrained span statement of `Demushkin/NormalForm/KernelSpan.lean` (Labute's Lemma 3) writes
+The constrained span statement of `Demushkin/NormalForm/Kernel/Span.lean` (Labute's Lemma 3) writes
 every class of `gr_{m+1}(X)` as `δ_ρ(ω) + Σ_{i ≠ 2} c_i π^{m+1} ξ_i` with `ω ∈ gr_m(X)^n`. This
 file supplies the functionals that read off the coefficients `c_i`, and so cuts the image of the
 basis-modification map `δ_ρ` out of `gr_{m+1}(X)`. They are the graded functionals
@@ -52,6 +52,8 @@ basis correction inside `X`.
 
 ## Main results
 
+* `TauCeti.IsCrossedHom.map_apply_demushkinWordNeTwo_eq_zero`: a crossed homomorphism for `χ`
+  kills `φ(r)` for every endomorphism `φ` preserving the values of `χ` on the generators.
 * `TauCeti.IsCrossedHom.map_inv_mul_basisModification_demushkinWordNeTwo_eq_zero`: a crossed
   homomorphism for `χ` kills `r⁻¹ · θ_w(r)` for every basis modification by elements of `ker χ`.
 * `TauCeti.freeProP.gradedFunctional_basisModificationDelta_demushkinWordNeTwo_eq_zero`: the graded
@@ -74,6 +76,26 @@ open Subgroup Submodule
 
 variable {p : ℕ} [Fact p.Prime] {n q : ℕ} {χ : freeProP p (Fin n) →ₜ* ℤ_[p]ˣ}
 
+/-- **A crossed homomorphism for the orientation kills the image of the normal-form word under an
+endomorphism preserving the character values on the generators**: for `χ` with `χ(x₂) (1 - q) = 1`
+and `χ(x_i) = 1` for `i ≠ 2`, the word on the tuple `(φ x_i)` is killed at the same character
+values. -/
+theorem IsCrossedHom.map_apply_demushkinWordNeTwo_eq_zero (hn1 : 1 < n)
+    (h₁ : (χ (freeProP.of ⟨1, hn1⟩) : ℤ_[p]) * (1 - q) = 1)
+    (h : ∀ j, j ≠ ⟨1, hn1⟩ → χ (freeProP.of j) = 1) {f : freeProP p (Fin n) → ℤ_[p]}
+    (hf : IsCrossedHom χ f) (φ : freeProP p (Fin n) →ₜ* freeProP p (Fin n))
+    (hφ : ∀ i, χ (φ (freeProPGen p n i)) = χ (freeProPGen p n i)) :
+    f (φ (demushkinWordNeTwo q n (freeProPGen p n))) = 0 := by
+  rw [TauCeti.map_demushkinWordNeTwo]
+  refine hf.map_demushkinWordNeTwo_eq_zero hn1 ?_ fun i hi ↦ ?_
+  · rw [Function.comp_apply, hφ, freeProPGen_of_lt p hn1]
+    exact h₁
+  · rw [Function.comp_apply, hφ]
+    by_cases hi' : i < n
+    · rw [freeProPGen_of_lt p hi']
+      exact h _ fun e ↦ hi (congrArg Fin.val e)
+    · rw [freeProPGen_eq_one_of_le p (not_lt.1 hi'), _root_.map_one]
+
 /-- **A crossed homomorphism for the orientation kills the relator moved by a basis modification
 inside the kernel of the character.** For `χ` with `χ(x₂) (1 - q) = 1` and `χ(x_i) = 1` for
 `i ≠ 2`, a crossed homomorphism `f` for `χ`, and a family `w` of elements of `λ_m(F)` on which `χ`
@@ -88,29 +110,16 @@ theorem IsCrossedHom.map_inv_mul_basisModification_demushkinWordNeTwo_eq_zero (h
     (hw : ∀ i, χ (w i) = 1) :
     f ((demushkinWordNeTwo q n (freeProPGen p n))⁻¹ *
       freeProP.basisModification w (demushkinWordNeTwo q n (freeProPGen p n))) = 0 := by
-  -- The values of `χ` on the generator tuple and on the modified tuple.
-  have hgen : ∀ i, i ≠ 1 → χ (freeProPGen p n i) = 1 := fun i hi ↦ by
-    by_cases hi' : i < n
-    · rw [freeProPGen_of_lt p hi']
-      exact h _ fun e ↦ hi (congrArg Fin.val e)
-    · rw [freeProPGen_eq_one_of_le p (not_lt.1 hi'), _root_.map_one]
-  have hgen₁ : (χ (freeProPGen p n 1) : ℤ_[p]) * (1 - q) = 1 := by
-    rw [freeProPGen_of_lt p hn1]
-    exact h₁
+  -- The values of `χ` on the modified tuple are those on the generator tuple.
   have hθ : ∀ i, χ (freeProP.basisModification w (freeProPGen p n i)) = χ (freeProPGen p n i) :=
     fun i ↦ by
       by_cases hi' : i < n
       · rw [freeProPGen_of_lt p hi', freeProP.basisModification_of, _root_.map_mul, hw, mul_one]
       · rw [freeProPGen_eq_one_of_le p (not_lt.1 hi'), _root_.map_one]
-  have hr : f (demushkinWordNeTwo q n (freeProPGen p n)) = 0 :=
-    hf.map_demushkinWordNeTwo_eq_zero hn1 hgen₁ hgen
-  have hθr : f (freeProP.basisModification w (demushkinWordNeTwo q n (freeProPGen p n))) = 0 := by
-    rw [TauCeti.map_demushkinWordNeTwo]
-    exact hf.map_demushkinWordNeTwo_eq_zero hn1
-      (x := ⇑(freeProP.basisModification w) ∘ freeProPGen p n)
-      (by rw [Function.comp_apply, hθ]; exact hgen₁)
-      fun i hi ↦ by rw [Function.comp_apply, hθ]; exact hgen i hi
-  rw [hf.map_mul, hθr, mul_zero, zero_add, hf.map_inv, hr, mul_zero]
+  have hr := hf.map_apply_demushkinWordNeTwo_eq_zero hn1 h₁ h (ContinuousMonoidHom.id _) fun _ ↦ rfl
+  rw [ContinuousMonoidHom.coe_id, id_eq] at hr
+  rw [hf.map_mul, hf.map_apply_demushkinWordNeTwo_eq_zero hn1 h₁ h _ hθ, mul_zero, zero_add,
+    hf.map_inv, hr, mul_zero]
 
 namespace freeProP
 

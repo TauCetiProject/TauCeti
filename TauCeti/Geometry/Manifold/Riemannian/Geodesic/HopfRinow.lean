@@ -72,7 +72,7 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+  [IsRiemannianManifold I M]
 
 /-- **The Hopf–Rinow theorem.**  For a point `p` of a Riemannian manifold `M` whose distance is
 the Riemannian distance, the following are equivalent:

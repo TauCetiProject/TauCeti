@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
@@ -57,8 +58,9 @@ Frobenius corresponding to `1`.
 * `TauCeti.maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self`,
   `TauCeti.eq_maximalUnramifiedFrobenius_iff`: Frobenius is the unique automorphism raising the
   roots of the polynomials `X^{q^f} − X` to the `q`-th power.
-* `TauCeti.coe_maximalUnramifiedFrobenius_apply_of_mem`: it restricts to the arithmetic Frobenius of
-  each `K_f`.
+* `TauCeti.coe_maximalUnramifiedFrobenius_apply_of_mem`,
+  `TauCeti.coe_maximalUnramifiedFrobenius_zpow_apply_of_mem`: it and its integral powers restrict
+  to the arithmetic Frobenius of each `K_f` and its powers.
 * `TauCeti.fixedField_zpowers_maximalUnramifiedFrobenius`,
   `TauCeti.topologicalClosure_zpowers_maximalUnramifiedFrobenius`: it is a topological generator
   of `Gal(K^{ur}/K)`.
@@ -168,16 +170,15 @@ theorem mem_maximalUnramifiedExtension_of_pow_eq_one {n : ℕ} (hn : ¬ ringChar
   have hn0 : n ≠ 0 := by
     rintro rfl
     exact hn (dvd_zero _)
-  rw [maximalUnramifiedExtension_eq_adjoin]
-  refine subset_adjoin _ _ ⟨n.totient, (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn0)).ne', ?_⟩
-  -- The order `q` of the residue field is a power of `p`, hence prime to `n`, so
-  -- `q ^ φ(n) ≡ 1 [MOD n]` by Euler's theorem.
-  let _ := Fintype.ofFinite 𝓀[K]
-  obtain ⟨d, hp, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
+  -- `q` is a power of `p`, hence prime to `n`.
   have hq : (Nat.card 𝓀[K]).Coprime n := by
+    let _ := Fintype.ofFinite 𝓀[K]
+    obtain ⟨d, hp, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
     rw [Nat.card_eq_fintype_card, hd]
-    exact ((Nat.Prime.coprime_iff_not_dvd hp).2 hn).pow_left _
-  rw [pow_eq_pow_mod _ hζ, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hζ, pow_one]
+    exact (hp.coprime_iff_not_dvd.2 hn).pow_left _
+  rw [maximalUnramifiedExtension_eq_adjoin]
+  exact subset_adjoin _ _ ⟨n.totient, (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn0)).ne',
+    pow_pow_totient_eq_self hq hζ⟩
 
 variable {K Ω} in
 /-- **Radicals of units are unramified.** If the residue characteristic of `K` does not divide `m`,
@@ -395,6 +396,39 @@ theorem coe_maximalUnramifiedFrobenius_apply_of_mem {f : ℕ}
   rw [maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self hf hy',
     frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self hf hyL, SubmonoidClass.coe_pow,
     SubmonoidClass.coe_pow, coe_inclusion]
+
+variable {K Ω} in
+/-- **Compatibility of the powers of Frobenius with the finite levels.** On the unramified
+extension `K_f` of any degree `f`, the `n`-th power of the arithmetic Frobenius of `K^{ur}` acts as
+the `n`-th power of the arithmetic Frobenius of `K_f / K`, for every integer `n`. -/
+theorem coe_maximalUnramifiedFrobenius_zpow_apply_of_mem {f : ℕ}
+    [ValuativeRel (unramifiedExtension K Ω f)] [TopologicalSpace (unramifiedExtension K Ω f)]
+    [IsNonarchimedeanLocalField (unramifiedExtension K Ω f)]
+    [ValuativeExtension K (unramifiedExtension K Ω f)] [IsUnramified K (unramifiedExtension K Ω f)]
+    (n : ℤ) {x : Ω} (hx : x ∈ unramifiedExtension K Ω f) :
+    ((maximalUnramifiedFrobenius K Ω ^ n)
+        ⟨x, unramifiedExtension_le_maximalUnramifiedExtension K Ω f hx⟩ : Ω) =
+      (frobeniusAlgEquiv (K := K) (L := unramifiedExtension K Ω f) ^ n) ⟨x, hx⟩ := by
+  set Φ := maximalUnramifiedFrobenius K Ω
+  set φ := frobeniusAlgEquiv (K := K) (L := unramifiedExtension K Ω f)
+  have hle := unramifiedExtension_le_maximalUnramifiedExtension K Ω f
+  -- `Φ` and `φ` are intertwined by the inclusion `K_f ⊆ K^{ur}`, and so are `Φ⁻¹` and `φ⁻¹`.
+  have h₁ (y : unramifiedExtension K Ω f) : Φ (inclusion hle y) = inclusion hle (φ y) :=
+    Subtype.ext (coe_maximalUnramifiedFrobenius_apply_of_mem y.2)
+  have h₂ (y : unramifiedExtension K Ω f) : Φ⁻¹ (inclusion hle y) = inclusion hle (φ⁻¹ y) :=
+    Φ.injective <| by
+      rw [h₁, ← AlgEquiv.mul_apply Φ Φ⁻¹, ← AlgEquiv.mul_apply φ φ⁻¹, mul_inv_cancel,
+        mul_inv_cancel, AlgEquiv.one_apply, AlgEquiv.one_apply]
+  suffices h : ∀ y : unramifiedExtension K Ω f,
+      (Φ ^ n) (inclusion hle y) = inclusion hle ((φ ^ n) y) from congrArg Subtype.val (h ⟨x, hx⟩)
+  induction n using Int.induction_on with
+  | zero => intro y; rw [zpow_zero, zpow_zero, AlgEquiv.one_apply, AlgEquiv.one_apply]
+  | succ n ih =>
+    intro y
+    rw [zpow_add_one, zpow_add_one, AlgEquiv.mul_apply, h₁, ih, AlgEquiv.mul_apply]
+  | pred n ih =>
+    intro y
+    rw [zpow_sub_one, zpow_sub_one, AlgEquiv.mul_apply, h₂, ih, AlgEquiv.mul_apply]
 
 variable {K Ω} in
 /-- **Frobenius generates `Gal(K^{ur}/K)` topologically, algebraic form.** The elements of `K^{ur}`

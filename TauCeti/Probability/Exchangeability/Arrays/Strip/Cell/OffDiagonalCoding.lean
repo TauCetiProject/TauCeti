@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.JointPair
 public import Mathlib.Probability.Independence.Conditional
 import TauCeti.MeasureTheory.Constructions.ProdProjective
+import TauCeti.MeasureTheory.Measure.MapIte
 import TauCeti.MeasureTheory.MeasurableSpace.Restrict
 import TauCeti.Probability.Exchangeability.Arrays.Block.Independence
 import TauCeti.Probability.Independence.Conditional
@@ -42,6 +43,15 @@ every off-diagonal pair at once, each from its own context and its own fresh uni
 jointly with the crossing strips and the diagonal. This is the jointly exchangeable counterpart of
 `SeparatelyExchangeable.exists_common_visibleArray_coding`.
 
+A joint Aldous–Hoover coding `f(U, U_vert i, U_vert j, U_cell {i, j})` sees the two vertices of a
+pair through their noise, but not which of them comes first, while the pair coding above is
+indexed by increasing representatives. The coding is therefore produced in an *oriented* form:
+for any measurable set `O` of square contexts, it may be chosen so that whenever exactly one of a
+context and its reversal lies in `O`, the coding of the reversed context is the reversed coding.
+Off `O` the pair is coded as the reversal of the reversed pair; both codings have the same joint
+law with the crossing strips and the diagonal, so switching between them along an event of the
+strips and the diagonal changes nothing in law (`TauCeti.MeasureTheory.Measure.map_ite_mem_eq`).
+
 ## Main results
 
 * `TauCeti.Probability.JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagonal`
@@ -50,8 +60,9 @@ jointly with the crossing strips and the diagonal. This is the jointly exchangea
 * `TauCeti.Probability.JointlyExchangeable.iCondIndepFun_offDiagonalPairs` — distinct visible
   off-diagonal pairs are conditionally independent given the crossing strips and the diagonal.
 * `TauCeti.Probability.JointlyExchangeable.exists_common_offDiagonalPairs_coding` — one common
-  coding function generates every finite family of visible off-diagonal pairs from their square
-  contexts and independent uniform variables.
+  coding function, oriented along any measurable set of square contexts, generates every finite
+  family of visible off-diagonal pairs from their square contexts and independent uniform
+  variables.
 * `TauCeti.Probability.JointlyExchangeable.exists_common_offDiagonalArray_coding` — the same coding
   function generates all visible off-diagonal pairs at once, from i.i.d. uniform variables indexed
   by the visible unordered pairs.
@@ -133,6 +144,16 @@ theorem offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict :
       simp [offDiagonalPairSquareContextOfStripsAndDiagonal]
   · simp only [Function.comp_apply, offDiagonalPairSquareContext_snd]
     rfl
+
+omit [MeasurableSpace α] in
+/-- Reading the square context of the reversed pair off the crossing strips and the diagonal swaps
+both the two directed contexts and the two diagonal entries. -/
+theorem offDiagonalPairSquareContextOfStripsAndDiagonal_swap
+    (y : (((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
+      Set (ℕ × ℕ))) → α) :
+    offDiagonalPairSquareContextOfStripsAndDiagonal e j i y =
+      Prod.map Prod.swap Prod.swap (offDiagonalPairSquareContextOfStripsAndDiagonal e i j y) :=
+  (rfl)
 
 variable (hij : i ≠ j) (hi : i ∉ Set.range e) (hj : j ∉ Set.range e)
 
@@ -438,6 +459,64 @@ private theorem map_prod_pairCoding_eq
         rw [Measure.map_map hdrop hjointMeas]
         rfl
 
+/-- The coding of a single visible off-diagonal pair may be oriented along any measurable set `O`
+of square contexts: on contexts in `O` the pair is coded from its own square context, and off `O`
+it is coded as the reversal of the coding of the reversed pair. Both codings reproduce the joint
+law of the crossing strips, the diagonal and the pair, and they are switched along an event of the
+strips and the diagonal alone. -/
+private theorem map_prod_orientedPairCoding_eq
+    (hρ : JointlyExchangeable ρ fun p x => x p) {e : ℕ → ℕ} (he : (Set.range e).Infinite)
+    {i j : ℕ} (hij : i ≠ j) (hi : i ∉ Set.range e) (hj : j ∉ Set.range e)
+    {g : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) × (α × α) →
+      I → α × α} (hg : Measurable (Function.uncurry g))
+    (hgij : ∀ z, (volume : Measure I).map (g z) =
+      condDistrib (fun x : ℕ × ℕ → α => (x (i, j), x (j, i)))
+        (offDiagonalPairSquareContext e i j) ρ z)
+    (hgji : ∀ z, (volume : Measure I).map (g z) =
+      condDistrib (fun x : ℕ × ℕ → α => (x (j, i), x (i, j)))
+        (offDiagonalPairSquareContext e j i) ρ z)
+    {O : Set (((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
+      (α × α))} [DecidablePred (· ∈ O)] (hO : MeasurableSet O) :
+    ((ρ.map ((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
+          Set (ℕ × ℕ)).domRestrict).prod (volume : Measure I)).map
+        (fun q => (q.1,
+          if offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1 ∈ O then
+            g (offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1) q.2
+          else (g (Prod.map Prod.swap Prod.swap
+            (offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1)) q.2).swap)) =
+      ρ.map fun x => (((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪
+        {p : ℕ × ℕ | p.1 = p.2} : Set (ℕ × ℕ)).domRestrict x, (x (i, j), x (j, i))) := by
+  set H : Set (ℕ × ℕ) :=
+    (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2}
+  have hcoding (k l : ℕ) : Measurable fun q : (H → α) × I =>
+      (q.1, g (offDiagonalPairSquareContextOfStripsAndDiagonal e k l q.1) q.2) :=
+    measurable_fst.prodMk (hg.comp
+      (((measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e k l).comp
+        measurable_fst).prodMk measurable_snd))
+  have hswap : Measurable (Prod.map (id : (H → α) → H → α) (Prod.swap : α × α → α × α)) :=
+    measurable_id.prodMap measurable_swap
+  -- The coding of the pair from its own square context, and the reversal of the coding of the
+  -- reversed pair from the reversed square context, have the same law.
+  have hfwd := map_prod_pairCoding_eq hρ he hij hi hj hg hgij
+  have hbwd : ((ρ.map H.domRestrict).prod (volume : Measure I)).map
+      (fun q => (q.1, (g (offDiagonalPairSquareContextOfStripsAndDiagonal e j i q.1) q.2).swap)) =
+      ρ.map fun x => (H.domRestrict x, (x (i, j), x (j, i))) := by
+    have h := congrArg (Measure.map (Prod.map id Prod.swap))
+      (map_prod_pairCoding_eq hρ he hij.symm hj hi hg hgji)
+    rwa [Measure.map_map hswap (hcoding j i), Measure.map_map hswap
+      (Set.measurable_restrict H |>.prodMk
+        ((measurable_pi_apply (j, i)).prodMk (measurable_pi_apply (i, j))))] at h
+  have hO' : MeasurableSet {w : (H → α) × (α × α) |
+      offDiagonalPairSquareContextOfStripsAndDiagonal e i j w.1 ∈ O} :=
+    (measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e i j).comp measurable_fst hO
+  rw [← hfwd]
+  refine Eq.trans (congrArg (Measure.map · _) (funext fun q => ?_))
+    (TauCeti.MeasureTheory.Measure.map_ite_mem_eq (hcoding i j).aemeasurable
+      (hswap.comp (hcoding j i)).aemeasurable hO'
+      (Filter.Eventually.of_forall fun _ => Iff.rfl) (hfwd.trans hbwd.symm))
+  by_cases hq : offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1 ∈ O <;>
+    simp [hq, offDiagonalPairSquareContextOfStripsAndDiagonal_swap e i j]
+
 /-- **Every finite family of visible off-diagonal pairs of a jointly exchangeable array is generated
 from their square contexts by one common coding function and independent uniform variables.** Let
 `e` enumerate infinitely many hidden vertices. Index the visible off-diagonal unordered pairs by
@@ -446,15 +525,25 @@ finite family of such pairs, feeding each pair's square context and its own inde
 variable to `g` reproduces the joint law of the crossing strips, the diagonal and that whole family
 of pairs `(x p, x p.swap)`.
 
+The coding can moreover be oriented along any measurable set `O` of square contexts: whenever
+exactly one of a context `c` and its reversal `Prod.map Prod.swap Prod.swap c` lies in `O`, the
+coding of the reversal is the reversed coding of `c`. Reversing a square context is reversing the
+pair (`offDiagonalPairSquareContext_swap`), so on such contexts `g` produces the two orientations
+of one pair from one uniform variable consistently.
+
 The coding function does not depend on the position of the pair, which is what lets it serve as
 the cell noise `U {i, j}` of a jointly exchangeable Aldous–Hoover representation. -/
 theorem JointlyExchangeable.exists_common_offDiagonalPairs_coding
-    (hρ : JointlyExchangeable ρ fun p x => x p) {e : ℕ → ℕ} (he : (Set.range e).Infinite) :
+    (hρ : JointlyExchangeable ρ fun p x => x p) {e : ℕ → ℕ} (he : (Set.range e).Infinite)
+    {O : Set (((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
+      (α × α))} (hO : MeasurableSet O) :
     let H : Set (ℕ × ℕ) :=
       (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2}
     let V₂ : Set (ℕ × ℕ) := {p | p.1 ∉ Set.range e ∧ p.2 ∉ Set.range e ∧ p.1 < p.2}
     ∃ g : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) × (α × α) →
         I → α × α, Measurable (Function.uncurry g) ∧
+      (∀ c u, (c ∈ O ↔ Prod.map Prod.swap Prod.swap c ∉ O) →
+        g (Prod.map Prod.swap Prod.swap c) u = (g c u).swap) ∧
       ∀ F : Finset V₂,
         (ρ.prod (Measure.pi fun _ : F => (volume : Measure I))).map
             (fun q => (H.domRestrict q.1,
@@ -464,10 +553,10 @@ theorem JointlyExchangeable.exists_common_offDiagonalPairs_coding
   rcases Set.eq_empty_or_nonempty V₂ with hV | ⟨⟨i₀, j₀⟩, hi₀, hj₀, hij₀⟩
   · -- If the hidden vertices leave at most one visible vertex, there is no visible off-diagonal
     -- pair: every finite family is then empty and the claim only compares the law of the crossing
-    -- strips and the diagonal with itself, so any measurable constant coding serves.
+    -- strips and the diagonal with itself, so any measurable constant symmetric coding serves.
     have : IsEmpty V₂ := Set.isEmpty_coe_sort.2 hV
     refine ⟨fun _ _ => (Classical.arbitrary α, Classical.arbitrary α), measurable_const,
-      fun F => ?_⟩
+      fun _ _ _ => rfl, fun F => ?_⟩
     have : IsEmpty F := ⟨fun p => isEmptyElim p.1⟩
     have hstrips : Measurable fun x : ℕ × ℕ → α =>
         (H.domRestrict x, fun p : F => (x p.1.1, x p.1.1.swap)) :=
@@ -480,17 +569,35 @@ theorem JointlyExchangeable.exists_common_offDiagonalPairs_coding
       funext fun q => Prod.ext rfl (Subsingleton.elim _ _)
     rw [hfactor, ← Measure.map_map hstrips measurable_fst, Measure.map_fst_prod]
     simp
+  classical
   -- The canonical conditional kernel of a reference pair is realized by a uniform variable; the
-  -- common-kernel theorem makes the same realization work at every visible off-diagonal pair.
-  obtain ⟨g, hg, hgmap⟩ := Kernel.exists_measurable_map_eq_unitInterval
+  -- common-kernel theorem makes the same realization work at every visible off-diagonal pair, in
+  -- either orientation.
+  obtain ⟨g₀, hg₀, hgmap⟩ := Kernel.exists_measurable_map_eq_unitInterval
     (condDistrib (fun x : ℕ × ℕ → α => (x (i₀, j₀), x (j₀, i₀)))
       (offDiagonalPairSquareContext e i₀ j₀) ρ)
-  have hgmap' (p : V₂) (z) : (volume : Measure I).map (g z) =
-      condDistrib (fun x : ℕ × ℕ → α => (x (p.1.1, p.1.2), x (p.1.2, p.1.1)))
-        (offDiagonalPairSquareContext e p.1.1 p.1.2) ρ z := by
-    rw [hρ.condDistrib_offDiagonalPairSquareContext_eq e hij₀.ne p.2.2.2.ne hi₀ hj₀ p.2.1 p.2.2.1]
+  have hgmap' {i j : ℕ} (hij : i ≠ j) (hi : i ∉ Set.range e) (hj : j ∉ Set.range e) (z) :
+      (volume : Measure I).map (g₀ z) =
+        condDistrib (fun x : ℕ × ℕ → α => (x (i, j), x (j, i)))
+          (offDiagonalPairSquareContext e i j) ρ z := by
+    rw [hρ.condDistrib_offDiagonalPairSquareContext_eq e hij₀.ne hij hi₀ hj₀ hi hj]
     exact hgmap z
-  refine ⟨g, hg, fun F => ?_⟩
+  -- Off `O`, a context is coded as the reversal of the coding of the reversed context.
+  let g : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
+      (α × α) → I → α × α :=
+    fun c u => if c ∈ O then g₀ c u else (g₀ (Prod.map Prod.swap Prod.swap c) u).swap
+  have hg : Measurable (Function.uncurry g) :=
+    Measurable.ite (measurable_fst hO) hg₀ (measurable_swap.comp (hg₀.comp
+      (((measurable_swap.prodMap measurable_swap).comp measurable_fst).prodMk measurable_snd)))
+  have hswap : ∀ c u, (c ∈ O ↔ Prod.map Prod.swap Prod.swap c ∉ O) →
+      g (Prod.map Prod.swap Prod.swap c) u = (g c u).swap := by
+    intro c u hc
+    have hcc : Prod.map Prod.swap Prod.swap (Prod.map Prod.swap Prod.swap c) = c := by
+      simp [Prod.map]
+    by_cases h : c ∈ O
+    · simp only [g, ite_eq_left h, ite_eq_right (hc.1 h), hcc]
+    · simp only [g, ite_eq_right h, ite_eq_left (not_not.1 (mt hc.2 h)), Prod.swap_swap]
+  refine ⟨g, hg, hswap, fun F => ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
   -- Distinct visible off-diagonal pairs are conditionally independent given the crossing strips
   -- and the diagonal.
@@ -508,7 +615,8 @@ theorem JointlyExchangeable.exists_common_offDiagonalPairs_coding
     (fun p => hg.comp
       ((measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e p.1.1.1 p.1.1.2).comp
         measurable_fst |>.prodMk measurable_snd))
-    fun p => map_prod_pairCoding_eq hρ he p.1.2.2.2.ne p.1.2.1 p.1.2.2.1 hg (hgmap' p.1)
+    fun p => map_prod_orientedPairCoding_eq hρ he p.1.2.2.2.ne p.1.2.1 p.1.2.2.1 hg₀
+      (hgmap' p.1.2.2.2.ne p.1.2.1 p.1.2.2.1) (hgmap' p.1.2.2.2.ne' p.1.2.2.1 p.1.2.1) hO
   have hcoded : Measurable fun p : (H → α) × (F → I) =>
       (p.1, fun r : F =>
         g (offDiagonalPairSquareContextOfStripsAndDiagonal e r.1.1.1 r.1.1.2 p.1) (p.2 r)) :=
@@ -536,22 +644,32 @@ feeding every visible off-diagonal pair's square context and its own fresh unifo
 the uniform variables being i.i.d. over *all* visible increasing pairs, reproduces the joint law of
 the crossing strips, the diagonal and all the pairs `(x p, x p.swap)` at once.
 
+As in `JointlyExchangeable.exists_common_offDiagonalPairs_coding`, the coding can be oriented along
+any measurable set `O` of square contexts: whenever exactly one of a context `c` and its reversal
+lies in `O`, the coding of the reversal is the reversed coding of `c`.
+
 Together with the crossing strips and the diagonal, these pairs are the whole array, so this is the
-cell layer of a jointly exchangeable Aldous–Hoover representation. -/
+cell layer of a jointly exchangeable Aldous–Hoover representation. The orientation is what lets a
+coding that sees the two vertices of a pair but not their order produce both entries of the pair
+consistently. -/
 theorem JointlyExchangeable.exists_common_offDiagonalArray_coding
-    (hρ : JointlyExchangeable ρ fun p x => x p) {e : ℕ → ℕ} (he : (Set.range e).Infinite) :
+    (hρ : JointlyExchangeable ρ fun p x => x p) {e : ℕ → ℕ} (he : (Set.range e).Infinite)
+    {O : Set (((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
+      (α × α))} (hO : MeasurableSet O) :
     let H : Set (ℕ × ℕ) :=
       (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2}
     let V₂ : Set (ℕ × ℕ) := {p | p.1 ∉ Set.range e ∧ p.2 ∉ Set.range e ∧ p.1 < p.2}
     ∃ g : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) × (α × α) →
         I → α × α, Measurable (Function.uncurry g) ∧
+      (∀ c u, (c ∈ O ↔ Prod.map Prod.swap Prod.swap c ∉ O) →
+        g (Prod.map Prod.swap Prod.swap c) u = (g c u).swap) ∧
       (ρ.prod (Measure.infinitePi fun _ : V₂ => (volume : Measure I))).map
           (fun q => (H.domRestrict q.1,
             fun p : V₂ => g (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p))) =
         ρ.map fun x => (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) := by
   intro H V₂
-  obtain ⟨g, hg, hF⟩ := hρ.exists_common_offDiagonalPairs_coding he
-  refine ⟨g, hg, ?_⟩
+  obtain ⟨g, hg, hswap, hF⟩ := hρ.exists_common_offDiagonalPairs_coding he hO
+  refine ⟨g, hg, hswap, ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
   have hcode : Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
       (H.domRestrict q.1,

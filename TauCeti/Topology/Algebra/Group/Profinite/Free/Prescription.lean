@@ -116,6 +116,18 @@ theorem _root_.TauCeti.IsCrossedHom.eq_crossedHom {F : freeProP p X → ℤ_[p]}
 
 end Finite
 
+/-- The Kronecker crossed homomorphism `D_k`, with `D_k(x_j) = δ_{kj}`, on the `ℕ`-indexed
+generators. -/
+@[simp]
+theorem crossedHom_single_freeProPGen {n : ℕ} (χ : freeProP p (Fin n) →ₜ* ℤ_[p]ˣ) (k : Fin n)
+    (m : ℕ) :
+    crossedHom χ (Pi.single k 1) (freeProPGen p n m) = if m = k then 1 else 0 := by
+  by_cases hm : m < n
+  · rw [freeProPGen_of_lt p hm, crossedHom_of, Pi.single_apply]
+    simp only [Fin.ext_iff]
+  · rw [freeProPGen_eq_one_of_le p (not_lt.1 hm), (isCrossedHom_crossedHom χ _).map_one,
+      ite_eq_right fun h ↦ hm (by rw [h]; exact k.isLt)]
+
 /-- **Crossed homomorphisms with the same values on the generators, for characters congruent
 modulo `p ^ k`, are congruent modulo `p ^ k`**: their truncations modulo `p ^ k` are continuous
 crossed homomorphisms for the same character of `F` agreeing on the generators. -/

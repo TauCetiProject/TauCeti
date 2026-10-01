@@ -36,7 +36,7 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [MetricSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] [T2Space (TangentBundle I M)]
+  [IsManifold I ∞ M]
 
 namespace TauCeti
 
@@ -61,7 +61,6 @@ def IsHyperbolic : Prop := Nonempty (HyperbolicMetric (I := I) (M := M))
 
 namespace HyperbolicMetric
 
-omit [T2Space (TangentBundle I M)] in
 /-- The curvature equation carried by a hyperbolic metric, evaluated at one tangent triple. -/
 @[simp]
 theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
@@ -75,7 +74,6 @@ theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
   exact Bundle.ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
     g.metric (-1) g.curvature x w u v
 
-omit [T2Space (TangentBundle I M)] in
 /-- A hyperbolic metric has constant sectional curvature `-1`. -/
 theorem hasConstantSectionalCurvature (g : HyperbolicMetric (I := I) (M := M)) :
     letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
@@ -92,7 +90,6 @@ theorem hasConstantSectionalCurvature (g : HyperbolicMetric (I := I) (M := M)) :
 
 end HyperbolicMetric
 
-omit [T2Space (TangentBundle I M)] in
 /-- An `IsHyperbolic` witness has scalar curvature
 `n (n - 1) (-1)` in real tangent-space dimension `n`. -/
 theorem IsHyperbolic.exists_scalarCurvature_eq
@@ -112,7 +109,6 @@ theorem IsHyperbolic.exists_scalarCurvature_eq
   intro w u v
   exact g.curvatureTensor_eq x w u v
 
-omit [T2Space (TangentBundle I M)] in
 /-- An `IsHyperbolic` witness has constant sectional curvature `-1`. -/
 theorem IsHyperbolic.exists_hasConstantSectionalCurvature
     (h : IsHyperbolic (I := I) (M := M)) :
