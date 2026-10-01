@@ -44,6 +44,8 @@ an existence theorem, and it is why a norm subgroup can only determine an abelia
 
 ## Main statements
 
+* `TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`: the norm of a layer is the norm
+  `Formation.levelNorm` between its top and ground levels.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm_apply_coe_eq_explicitCor0Le`: the norm of a layer
   is relative degree-zero corestriction from its top subgroup to its ground subgroup.
 * `TauCeti.ClassFieldTheory.LayerRefinement.topNorm_trans`: top-level norms compose along a
@@ -73,11 +75,23 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Compa
 
 attribute [local instance] TopRep.distribMulAction Subgroup.fintypeQuotientOfFiniteIndex
 
-/-! ### The norm of a layer as a corestriction -/
+/-! ### The norm of a layer as a level norm -/
 
 namespace NormalLayer
 
 variable (L : NormalLayer G) (F : Formation G)
+
+/-- The norm `N_{U/V} : A^V → A^U` of a layer is the norm `Formation.levelNorm` between its top
+and ground levels. -/
+theorem toAddMonoidHom_norm : (L.norm F).toAddMonoidHom = F.levelNorm L.top_le_ground := by
+  ext x
+  rw [LinearMap.toAddMonoidHom_coe, norm_apply_coe, Formation.levelNorm_apply_coe,
+    finsum_eq_sum_of_fintype]
+  -- Both sides sum over the cosets `U ⧸ V`, which is the Galois group of the layer; the term of a
+  -- coset is the action of any of its representatives.
+  refine Fintype.sum_equiv (Equiv.refl _) _ _ fun γ ↦ ?_
+  conv_lhs => rw [← QuotientGroup.out_eq' γ]
+  rw [Equiv.refl_apply, NormalLayer.rep_ρ_mk_apply_coe]
 
 -- `dsimp% only` on the left-hand side, as explained in the implementation notes of
 -- `Formation/Basic.lean`.
@@ -88,15 +102,8 @@ theorem norm_apply_coe_eq_explicitCor0Le (x : F.level L.top) :
     (dsimp% only (L.norm F x : F.toRep.V)) =
       (ContCohomology.explicitCor0Le G F.toRep.V L.ground.toSubgroup L.top.toSubgroup
         (OpenSubgroup.toSubgroup_le.2 L.top_le_ground) (F.levelEquivH0 L.top x) : F.toRep.V) := by
-  rw [norm_apply_coe, ContCohomology.coe_explicitCor0Le]
-  -- Both sides sum over the cosets `U ⧸ V`, which is the Galois group of the layer; the term of a
-  -- coset is the action of any of its representatives.
-  refine Fintype.sum_equiv (Equiv.refl _) _ _ fun γ ↦ ?_
-  conv_lhs => rw [← QuotientGroup.out_eq' γ]
-  rw [Equiv.refl_apply, NormalLayer.rep_ρ_mk_apply_coe, Formation.levelEquivH0_apply_coe]
-  -- The action of an element of `U` on the coefficient module is by definition the operator `ρ`
-  -- of the formation at its underlying element of `G`.
-  rfl
+  rw [← F.levelEquivH0_levelNorm L.top_le_ground, ← toAddMonoidHom_norm,
+    Formation.levelEquivH0_apply_coe, LinearMap.toAddMonoidHom_coe]
 
 end NormalLayer
 
@@ -140,18 +147,16 @@ levels being identified by `groundEquiv`. -/
 theorem groundEquiv_norm_topNorm (x : F.level new.top) :
     T.groundEquiv F (old.norm F (T.topNorm F x)) = new.norm F x := by
   -- The two layers share their ground subgroup; destructuring them makes that equality a
-  -- substitution, after which all three norms are relative corestrictions along `V' ≤ V ≤ U`.
+  -- substitution, after which all three norms are level norms along `V' ≤ V ≤ U`.
   obtain ⟨og, ot, oh, on⟩ := old
   obtain ⟨ng, nt, nh, nn⟩ := new
   obtain ⟨hg, ht⟩ := T
   dsimp only at hg
   subst hg
   ext
-  rw [groundEquiv_apply_coe, NormalLayer.norm_apply_coe_eq_explicitCor0Le,
-    NormalLayer.norm_apply_coe_eq_explicitCor0Le, topNorm, Formation.levelEquivH0_levelNorm,
-    ContCohomology.explicitCor0Le_trans G F.toRep.V ot.toSubgroup
-      nt.toSubgroup (OpenSubgroup.toSubgroup_le.2 ht) og.toSubgroup
-      (OpenSubgroup.toSubgroup_le.2 oh), AddMonoidHom.comp_apply]
+  rw [groundEquiv_apply_coe, ← LinearMap.toAddMonoidHom_coe, ← LinearMap.toAddMonoidHom_coe,
+    NormalLayer.toAddMonoidHom_norm, NormalLayer.toAddMonoidHom_norm, topNorm,
+    ← AddMonoidHom.comp_apply, ← Formation.levelNorm_trans]
 
 /-- **Refining a layer shrinks its norm subgroup**: a norm from the larger top level `A^{V'}` is a
 norm from the smaller top level `A^V`, so `N_{L/F}(L) ⊆ N_{K/F}(K)` for `F ⊆ K ⊆ L`. -/
