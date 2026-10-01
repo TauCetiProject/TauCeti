@@ -105,8 +105,10 @@ theorem typeBSpinRep_ι (x : LieAlgebra.Orthogonal.typeB ι K) :
 /-- The enveloping-algebra representation evaluated on the canonical image of a Lie element is
 the Lie representation at that element. This is `TauCeti.SpinPolarizationData.typeBSpinRep_ι`
 written against `UniversalEnvelopingAlgebra.ι` rather than its unfolding through the tensor
-algebra, which is the form every statement about a named generator uses. -/
-@[simp]
+algebra, which is the form every statement about a named generator uses. It is not a `simp` lemma:
+`simp` already reaches the same normal form through `UniversalEnvelopingAlgebra.ι_apply` and
+`TauCeti.SpinPolarizationData.typeBSpinRep_ι`, and its right-hand side is itself rewritten by
+`TauCeti.SpinPolarizationData.typeBSpinLieRep_apply`. -/
 theorem typeBSpinRep_ι_eq_typeBSpinLieRep (x : LieAlgebra.Orthogonal.typeB ι K) :
     P.typeBSpinRep b z hz (_root_.UniversalEnvelopingAlgebra.ι K x) =
       P.typeBSpinLieRep b z hz x := by
