@@ -1,0 +1,205 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Fourier.Pontryagin.Measure
+public import Mathlib.MeasureTheory.Measure.FiniteMeasureExt
+import Mathlib.Algebra.MonoidAlgebra.Basic
+
+/-!
+# Uniqueness of Fourier--Stieltjes measures on a Pontryagin dual
+
+On a Polish Pontryagin dual, a finite measure is determined by the integrals of the evaluation
+characters.  Equivalently, the Fourier--Stieltjes transform of a finite measure on the dual is
+injective.  This is the uniqueness half of Bochner's theorem for locally compact abelian groups at
+the generality currently supported by the measure-extension API.
+
+The proof packages finite linear combinations of evaluation characters as a star subalgebra of
+bounded continuous functions.  Evaluation characters separate points of the dual simply because
+two continuous homomorphisms that agree at every group element are equal.  Mathlib's extension
+theorem for finite measures then promotes equality of the character integrals to equality of the
+measures.
+
+## Main declarations
+
+* `TauCeti.PontryaginDual.evalBoundedContinuous`: evaluation at a group element, bundled as a
+  bounded continuous function on the dual.
+* `TauCeti.PontryaginDual.evalPoly`: the star subalgebra of finite linear combinations of
+  evaluation characters.
+* `MeasureTheory.FiniteMeasure.ext_of_forall_pontryaginMeasureTransform_eq`: finite measures on a
+  Polish dual with the same Fourier--Stieltjes transform are equal.
+
+## References
+
+* W. Rudin, *Fourier Analysis on Groups*, Chapter 1.
+-/
+
+public section
+
+noncomputable section
+
+open BoundedContinuousFunction MeasureTheory
+
+namespace TauCeti
+
+namespace PontryaginDual
+
+variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
+
+/-- Evaluation at `g`, as a bounded continuous complex-valued function on the Pontryagin dual.
+Its values lie on the unit circle, so its norm is bounded by one. -/
+def evalBoundedContinuous (g : G) :
+    _root_.PontryaginDual (Multiplicative G) →ᵇ ℂ :=
+  BoundedContinuousFunction.ofNormedAddCommGroup
+    (fun χ => (χ (Multiplicative.ofAdd g) : ℂ))
+    (continuous_coe_eval_const (Multiplicative.ofAdd g)) 1 fun χ => by simp
+
+/-- Evaluation of `evalBoundedContinuous` at a character. -/
+@[simp]
+theorem evalBoundedContinuous_apply (g : G)
+    (χ : _root_.PontryaginDual (Multiplicative G)) :
+    evalBoundedContinuous g χ = (χ (Multiplicative.ofAdd g) : ℂ) :=
+  (rfl)
+
+/-- Evaluation at zero is the constant function one. -/
+@[simp]
+theorem evalBoundedContinuous_zero :
+    evalBoundedContinuous (0 : G) = 1 := by
+  ext χ
+  simp
+
+/-- Evaluation turns addition in the original group into pointwise multiplication. -/
+@[simp]
+theorem evalBoundedContinuous_add (g h : G) :
+    evalBoundedContinuous (g + h) =
+      evalBoundedContinuous g * evalBoundedContinuous h := by
+  ext χ
+  simp
+
+/-- Evaluation at the negative of a group element is the pointwise star of evaluation there. -/
+@[simp]
+theorem evalBoundedContinuous_neg (g : G) :
+    evalBoundedContinuous (-g) = star (evalBoundedContinuous g) := by
+  ext χ
+  simp only [evalBoundedContinuous_apply, ofAdd_neg, map_inv,
+    BoundedContinuousFunction.star_apply, RCLike.star_def]
+  exact Circle.coe_inv_eq_conj _
+
+/-- Evaluation as a monoid homomorphism from the multiplicative copy of the original group. -/
+def evalMonoidHom : Multiplicative G →*
+    (_root_.PontryaginDual (Multiplicative G) →ᵇ ℂ) where
+  toFun g := evalBoundedContinuous g.toAdd
+  map_one' := evalBoundedContinuous_zero
+  map_mul' g h := by
+    rw [toAdd_mul, evalBoundedContinuous_add]
+
+/-- The algebra homomorphism sending a formal finite linear combination of group elements to the
+corresponding finite linear combination of evaluation characters. -/
+def evalAlgHom : AddMonoidAlgebra ℂ G →ₐ[ℂ]
+    (_root_.PontryaginDual (Multiplicative G) →ᵇ ℂ) :=
+  AddMonoidAlgebra.lift ℂ _ G evalMonoidHom
+
+/-- A character polynomial is its defining finite linear combination of evaluations. -/
+theorem evalAlgHom_eq_sum (a : AddMonoidAlgebra ℂ G) :
+    evalAlgHom a = a.coeff.sum fun g c => c • evalBoundedContinuous g := by
+  rw [evalAlgHom, AddMonoidAlgebra.lift_apply]
+  apply Finsupp.sum_congr
+  intro g _
+  simp [evalMonoidHom]
+
+private theorem star_mem_range_evalAlgHom
+    {f : _root_.PontryaginDual (Multiplicative G) →ᵇ ℂ}
+    (hf : f ∈ evalAlgHom.range) : star f ∈ evalAlgHom.range := by
+  simp only [AlgHom.mem_range] at hf ⊢
+  obtain ⟨a, rfl⟩ := hf
+  let z := a.map (starRingEnd ℂ).toAddMonoidHom
+  let e : G ↪ G := ⟨fun g => -g, neg_injective⟩
+  refine ⟨AddMonoidAlgebra.ofCoeff (z.coeff.embDomain e), ?_⟩
+  ext χ
+  simp [evalAlgHom, evalMonoidHom, AddMonoidAlgebra.lift_apply,
+    Finsupp.sum_embDomain, z, Finsupp.sum_mapRange_index, e]
+
+/-- The star subalgebra of bounded continuous functions generated by evaluation characters. -/
+def evalPoly : StarSubalgebra ℂ
+    (_root_.PontryaginDual (Multiplicative G) →ᵇ ℂ) where
+  toSubalgebra := evalAlgHom.range
+  star_mem' := star_mem_range_evalAlgHom
+
+/-- Membership in `evalPoly` means being a finite linear combination of evaluation
+characters. -/
+theorem mem_evalPoly (f : _root_.PontryaginDual (Multiplicative G) →ᵇ ℂ) :
+    f ∈ evalPoly ↔
+      ∃ a : AddMonoidAlgebra ℂ G,
+        f = a.coeff.sum fun g c => c • evalBoundedContinuous g := by
+  change f ∈ evalAlgHom.range ↔ _
+  constructor
+  · rintro ⟨a, rfl⟩
+    exact ⟨a, evalAlgHom_eq_sum a⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨a, evalAlgHom_eq_sum a⟩
+
+/-- Every evaluation character belongs to `evalPoly`. -/
+theorem evalBoundedContinuous_mem_evalPoly (g : G) :
+    evalBoundedContinuous g ∈ evalPoly := by
+  refine ⟨AddMonoidAlgebra.single g 1, ?_⟩
+  ext χ
+  simp [evalAlgHom, evalMonoidHom, AddMonoidAlgebra.lift_apply]
+
+/-- The evaluation-character algebra separates points of the Pontryagin dual. -/
+theorem evalPoly_separatesPoints :
+    ((evalPoly : StarSubalgebra ℂ
+      (_root_.PontryaginDual (Multiplicative G) →ᵇ ℂ)).map
+        (BoundedContinuousFunction.toContinuousMapStarₐ ℂ)).SeparatesPoints := by
+  intro χ ψ hχψ
+  obtain ⟨g, hg⟩ := DFunLike.ne_iff.mp hχψ
+  use evalBoundedContinuous g.toAdd
+  simp only [StarSubalgebra.coe_toSubalgebra, StarSubalgebra.coe_map, Set.mem_image,
+    SetLike.mem_coe, exists_exists_and_eq_and, ne_eq]
+  refine ⟨⟨evalBoundedContinuous g.toAdd, evalBoundedContinuous_mem_evalPoly g.toAdd, rfl⟩, ?_⟩
+  simpa using Subtype.coe_ne_coe.mpr hg
+
+end PontryaginDual
+
+variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
+  [MeasurableSpace (_root_.PontryaginDual (Multiplicative G))]
+  [PolishSpace (_root_.PontryaginDual (Multiplicative G))]
+  [BorelSpace (_root_.PontryaginDual (Multiplicative G))]
+
+/-- **Uniqueness of Fourier--Stieltjes measures on a Polish Pontryagin dual.** Two finite measures
+on the dual are equal when their transforms agree on every element of the original group. -/
+theorem _root_.MeasureTheory.FiniteMeasure.ext_of_forall_pontryaginMeasureTransform_eq
+    {P Q : FiniteMeasure (_root_.PontryaginDual (Multiplicative G))}
+    (h : ∀ g, P.pontryaginMeasureTransform g = Q.pontryaginMeasureTransform g) :
+    P = Q := by
+  apply FiniteMeasure.toMeasure_injective
+  apply ext_of_forall_mem_subalgebra_integral_eq_of_polish
+    PontryaginDual.evalPoly_separatesPoints
+  intro f hf
+  obtain ⟨a, rfl⟩ := (PontryaginDual.mem_evalPoly f).mp hf
+  simp only [Finsupp.sum, BoundedContinuousFunction.coe_sum, Finset.sum_apply,
+    BoundedContinuousFunction.coe_smul, PontryaginDual.evalBoundedContinuous_apply, smul_eq_mul]
+  rw [integral_finsetSum, integral_finsetSum]
+  · congr with g
+    rw [integral_const_mul, integral_const_mul]
+    rw [← P.pontryaginMeasureTransform_apply,
+      ← Q.pontryaginMeasureTransform_apply]
+    exact congrArg (a.coeff g * ·) (h g)
+  all_goals
+    intro g _
+    exact (PontryaginDual.integrable_coe_eval (Multiplicative.ofAdd g)).const_mul (a.coeff g)
+
+/-- The Fourier--Stieltjes transform is injective on finite measures on a Polish Pontryagin
+dual. -/
+theorem _root_.MeasureTheory.FiniteMeasure.injective_pontryaginMeasureTransform :
+    Function.Injective
+      (fun P : FiniteMeasure (_root_.PontryaginDual (Multiplicative G)) =>
+        P.pontryaginMeasureTransform) := by
+  intro P Q h
+  exact FiniteMeasure.ext_of_forall_pontryaginMeasureTransform_eq (congrFun h)
+
+end TauCeti
+
+end
