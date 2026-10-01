@@ -55,6 +55,8 @@ boundary regularity of `Ω` is used.
   the value vanishes on an open subset.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
   `p ≤ q`.
+* `TauCeti.W1p.const`: on a domain of finite measure, the constant functions, with weak
+  gradient zero.
 
 ## References
 
@@ -707,6 +709,39 @@ theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
       (W1p.value_ofExponentLE_ae (hpq.trans hqr) u).symm
 
 end Exponent
+
+section Const
+
+variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- On a domain of finite measure, the constant function `c` as an element of `W^{1,p}(Ω)`; its
+weak gradient is zero. -/
+def W1p.const (c : ℝ) : W1p mu Omega p :=
+  have hconst : HasWeakFDerivOn mu Omega (fun _ : E => c) 0 :=
+    hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const c
+  W1p.mk (Lp.const p (mu.restrict Omega) c) 0
+    ((hconst.congr_ae (Lp.coeFn_const p (mu.restrict Omega) c).symm).congr_ae_deriv (by
+      filter_upwards [Lp.coeFn_zero E p (mu.restrict Omega)] with x hx
+      rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]))
+
+/-- The value of the constant Sobolev function `c` is the constant `Lᵖ` class `c`. -/
+@[simp]
+theorem W1p.value_const (c : ℝ) :
+    W1p.value (W1p.const c : W1p mu Omega p) = Lp.const p (mu.restrict Omega) c := by
+  rw [W1p.const, W1p.value_mk]
+
+/-- The value of the constant Sobolev function `c` is `c` almost everywhere on `Ω`. -/
+theorem W1p.value_const_ae (c : ℝ) :
+    ⇑(W1p.value (W1p.const c : W1p mu Omega p)) =ᵐ[mu.restrict Omega] fun _ => c := by
+  rw [W1p.value_const]
+  exact Lp.coeFn_const p (mu.restrict Omega) c
+
+/-- The weak gradient of a constant Sobolev function is zero. -/
+@[simp]
+theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 := by
+  rw [W1p.const, W1p.gradient_mk]
+
+end Const
 
 /-- `W^{1,p}(Ω)` is complete in its value-gradient graph norm. -/
 instance : CompleteSpace (W1p mu Omega p) :=
