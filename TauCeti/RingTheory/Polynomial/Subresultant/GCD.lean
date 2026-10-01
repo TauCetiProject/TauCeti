@@ -50,7 +50,7 @@ public section
 
 namespace TauCeti
 
-open _root_.Polynomial
+open Polynomial
 
 section Domain
 

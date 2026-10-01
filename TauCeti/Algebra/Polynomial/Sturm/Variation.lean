@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import TauCeti.Algebra.Polynomial.Sturm.Signs
-import TauCeti.Algebra.Polynomial.FieldDivision
 
 /-!
 # Variations of a Sturm sequence at a point
@@ -71,7 +70,8 @@ theorem signVariationsAt_sturmSeq_eq_add_one_of_eval_ne_zero_of_eval_eq_zero
   rw [signVariationsAt_sturmSeq_cons hp0, signVariationsAt_sturmSeq_cons hq0,
     sturmSeq_cons hq0]
   have hr : (-p % q).eval x = -p.eval x := by
-    simpa only [eval_neg] using TauCeti.Polynomial.eval_mod_of_eval_eq_zero (p := -p) hq
+    rw [mod_def, ← eval_neg]
+    exact eval₂_modByMonic_eq_self_of_root (by simp [hq])
   have hr0 : -p % q ≠ 0 := by
     intro hz
     apply neg_ne_zero.mpr hp

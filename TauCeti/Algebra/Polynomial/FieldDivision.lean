@@ -9,17 +9,13 @@ public import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Polynomial remainders and linear relations over a field
+# Linear relations between polynomials over a field
 
 A relation `A * q + B * p = 0` between polynomials over a field says that `A * q` is divisible by
 `p`; dividing by the gcd of `p` and `q` leaves coprime quotients, so in fact `p / gcd p q` divides
 `A`.  So a nonzero `A` in such a relation has degree at least `deg p - deg (gcd p q)`: this is the
 degree bound behind the nonvanishing of the principal subresultant coefficient at the degree of
 the gcd.
-
-At a root of the divisor, evaluating a field remainder gives the same value as evaluating the
-dividend. This supplies the remainder evaluation used in the local sign-change law for Sturm
-variations.
 -/
 
 public section
@@ -65,16 +61,3 @@ theorem _root_.Polynomial.eq_zero_of_mul_add_mul_eq_zero_of_degree_lt {p q A B :
   exact WithBot.coe_le_coe.mpr (by omega : p.natDegree - g.natDegree ≤ (p / g).natDegree)
 
 end TauCeti
-
-namespace TauCeti.Polynomial
-
-open _root_.Polynomial
-
-variable {K : Type*} [Field K]
-
-/-- At a root of the divisor, the remainder and dividend have the same value. -/
-theorem eval_mod_of_eval_eq_zero {p q : K[X]} {x : K} (hq : q.eval x = 0) :
-    (p % q).eval x = p.eval x := by
-  simp [EuclideanDomain.mod_eq_sub_mul_div, hq]
-
-end TauCeti.Polynomial
