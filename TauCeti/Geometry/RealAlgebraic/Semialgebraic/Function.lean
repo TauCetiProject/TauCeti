@@ -182,15 +182,18 @@ theorem isSemialgebraicOn_const [Finite τ] (c : τ → R) {s : Set (σ → R)}
 /-- A constant map into a finite-dimensional coordinate space is semialgebraic. -/
 @[simp]
 theorem isSemialgebraicMap_const [Finite τ] (c : τ → R) :
-    IsSemialgebraicMap (fun _ : σ → R => c) :=
-  isSemialgebraicOn_const c isSemialgebraic_univ
+    IsSemialgebraicMap (fun _ : σ → R => c) := by
+  rw [← isSemialgebraicOn_univ]
+  exact isSemialgebraicOn_const c isSemialgebraic_univ
 
 /-- The identity map on a finite-dimensional coordinate space is semialgebraic. -/
 @[simp]
 theorem isSemialgebraicMap_id [Finite σ] :
     IsSemialgebraicMap (id : (σ → R) → (σ → R)) := by
+  rw [← isSemialgebraicOn_univ]
   apply IsSemialgebraicOn.congr <|
-    isSemialgebraicMap_eval (R := R) (σ := σ) (τ := σ) (fun i : σ => X i)
+    (isSemialgebraicMap_eval (R := R) (σ := σ) (τ := σ) (fun i : σ => X i)).isSemialgebraicOn
+      isSemialgebraic_univ
   intro x _
   funext i
   simp
