@@ -11,17 +11,17 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 /-!
 # The dyadic cyclic generators `q_θ^{(2)}(2^k)`
 
-For `k ≥ 1` and an integer `θ`, Nikulin's finite quadratic module `q_θ^{(2)}(2^k)` is the cyclic
-group `ℤ/2^k` with
+For `k ≥ 1` and an integer `θ`, this file constructs the cyclic group `ℤ/2^k` with
 
 ```text
 q(x) = θx² / 2^{k+1},   b(x, y) = θxy / 2^k.
 ```
 
-In the half-norm convention it is the discriminant form of the `2`-adic lattice of rank one with
-Gram matrix `(θ·2^k)`, and for odd `θ` it is one of the generators of Nikulin's classification of
-nondegenerate finite quadratic modules, alongside the odd-primary cyclic forms and the two forms
-`u^{(2)}(2^k)`, `v^{(2)}(2^k)` on `(ℤ/2^k)²`.
+For odd `θ`, this is Nikulin's dyadic cyclic generator `q_θ^{(2)}(2^k)`. In the half-norm
+convention it is the discriminant form of the `2`-adic lattice of rank one with Gram matrix
+`(θ·2^k)`, and it is one of the generators of Nikulin's classification of nondegenerate finite
+quadratic modules, alongside the odd-primary cyclic forms and the two forms `u^{(2)}(2^k)`,
+`v^{(2)}(2^k)` on `(ℤ/2^k)²`. For even `θ`, it is the degenerate extension of the same formula.
 
 This file constructs it from the cyclic presentation `TauCeti.FiniteQuadraticModule.cyclic`
 and proves it nondegenerate exactly for odd `θ` (Nikulin, Proposition 1.8.1).
@@ -48,10 +48,11 @@ namespace TauCeti.FiniteQuadraticModule
 
 variable (k : ℕ) [NeZero k] (θ : ℤ)
 
-/-- **Nikulin's dyadic cyclic generator** `q_θ^{(2)}(2^k)`, for `k ≥ 1`: the cyclic group `ℤ/2^k`
-with quadratic form `q(x) = θx² / 2^{k+1}` and pairing `b(x, y) = θxy / 2^k`. It is the
-discriminant form of the rank-one `2`-adic lattice with Gram matrix `(θ·2^k)`, and it is
-nondegenerate exactly when `θ` is odd. -/
+/-- The cyclic group `ℤ/2^k`, for `k ≥ 1`, with quadratic form `q(x) = θx² / 2^{k+1}` and
+pairing `b(x, y) = θxy / 2^k`. For odd `θ`, this is **Nikulin's dyadic cyclic generator**
+`q_θ^{(2)}(2^k)`, the discriminant form of the rank-one `2`-adic lattice with Gram matrix
+`(θ·2^k)`. For even `θ`, it is the degenerate extension of the same formula. It is nondegenerate
+exactly when `θ` is odd. -/
 @[expose] noncomputable def dyadicCyclic : FiniteQuadraticModule :=
   cyclic (2 ^ k) (((θ / 2 ^ (k + 1) : ℚ)) : AddCircle (1 : ℚ))
     (by
