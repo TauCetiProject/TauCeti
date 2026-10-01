@@ -38,8 +38,9 @@ trivial.
   `σ = 1` or `i ≤ 1`.
 * `TauCeti.NumberField.GaussianRationals.ramificationGroup_eq_top` and
   `ramificationGroup_eq_bot`: `G_i = Gal(K/ℚ)` for `i ≤ 1`, and `G_i = 1` for `i ≥ 2`.
-* `TauCeti.NumberField.GaussianRationals.card_ramificationGroup_of_le_one`: `#G_0 = #G_1 = 2`.
-* `TauCeti.NumberField.GaussianRationals.finsum_card_ramificationGroup_sub_one`: the sum
+* `TauCeti.NumberField.GaussianRationals.card_ramificationGroup_eq_two_of_le_one`:
+  `#G_0 = #G_1 = 2`.
+* `TauCeti.NumberField.GaussianRationals.finsum_card_ramificationGroup_sub_one_eq_two`: the sum
   `Σ_{i ≥ 0} (#G_i − 1)` of Hilbert's formula equals `2`, the known different exponent.
 
 ## References
@@ -119,7 +120,7 @@ theorem ramificationGroup_eq_bot {i : ℕ} (hi : 2 ≤ i) :
 
 /-- **`G_0 = G_1 ≅ ℤ/2`**: the ramification groups `G_0` and `G_1` of the prime above `2` in
 `ℚ(i)` have order `2`. -/
-theorem card_ramificationGroup_of_le_one {i : ℕ} (hi : i ≤ 1) :
+theorem card_ramificationGroup_eq_two_of_le_one {i : ℕ} (hi : i ≤ 1) :
     Nat.card (𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i) = 2 := by
   have : Algebra.IsQuadraticExtension ℚ K := ⟨finrank_eq_two hmin hgen⟩
   rw [ramificationGroup_eq_top hmin hgen 𝔭 hi, Subgroup.card_top, IsGalois.card_aut_eq_finrank,
@@ -128,7 +129,7 @@ theorem card_ramificationGroup_of_le_one {i : ℕ} (hi : i ≤ 1) :
 /-- **Hilbert's different formula, checked in `ℚ(i)`**: the sum `Σ_{i ≥ 0} (#G_i − 1)` over the
 ramification groups of the prime above `2` is the different exponent `v_𝔭(𝔡) = 2`, as the
 general `multiplicity_differentIdeal_eq_finsum_card_ramificationGroup_sub_one` predicts. -/
-theorem finsum_card_ramificationGroup_sub_one :
+theorem finsum_card_ramificationGroup_sub_one_eq_two :
     ∑ᶠ i : ℕ, (Nat.card (𝔭.ramificationGroup (K ≃ₐ[ℚ] K) i) - 1) = 2 := by
   have : Algebra.IsQuadraticExtension ℚ K := ⟨finrank_eq_two hmin hgen⟩
   have htwo : span {(2 : ℤ)} ≠ ⊥ := span_singleton_eq_bot.not.mpr two_ne_zero
