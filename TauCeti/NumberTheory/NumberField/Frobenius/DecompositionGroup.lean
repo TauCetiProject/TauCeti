@@ -208,9 +208,7 @@ theorem orderOf_eq_inertiaDeg_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
   have key : orderOf (⟨σ, hσ.mem_stabilizer⟩ : MulAction.stabilizer (L ≃ₐ[K] L) Q) =
       Q.inertiaDeg (𝓞 K) := by
     rw [← orderOf_injective _ (stabilizerHom_injective_of_isUnramifiedAt Q),
-      stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic Q hQ hσ,
-      FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic,
-      Ideal.inertiaDeg_eq_of_isMaximal (Q.under (𝓞 K)) Q]
+      orderOf_stabilizerHom_eq_inertiaDeg_of_isArithFrobAt Q hσ]
   exact (Subgroup.orderOf_coe (⟨σ, hσ.mem_stabilizer⟩ :
     MulAction.stabilizer (L ≃ₐ[K] L) Q)).trans key
 

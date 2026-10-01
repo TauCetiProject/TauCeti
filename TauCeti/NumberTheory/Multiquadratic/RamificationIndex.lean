@@ -79,6 +79,11 @@ symbol. Without ramification this is the criterion
   prime, ramified or not, in terms of Legendre symbols.
 * `TauCeti.Multiquadratic.ncard_primesOver_mul_two_eq_finrank_iff_of_dvd`: an odd ramified prime
   has `[K : ℚ] / 2` primes above it exactly when that Legendre-symbol criterion holds.
+* `TauCeti.Multiquadratic.ncard_primesOver_eq_two_pow_sub_one_of_dvd` and
+  `TauCeti.Multiquadratic.ncard_primesOver_eq_two_pow_sub_two`: under square-class independence
+  of `n` radicands, an odd prime dividing some radicand has `2ⁿ⁻¹` primes above it when that
+  criterion holds, and `2ⁿ⁻²` when it fails, so its decomposition type is `(2, 1, 2ⁿ⁻¹)` or
+  `(2, 2, 2ⁿ⁻²)`.
 
 ## References
 
@@ -439,5 +444,46 @@ theorem ncard_primesOver_mul_two_eq_finrank_iff_of_dvd [Finite ι]
     exact Nat.eq_of_mul_eq_mul_left (hg ▸ hpos) (by linarith)
   · intro h1
     rwa [h1, mul_one] at h
+
+/-- **The number of primes above an odd ramified prime of residue degree one.** Let `K` be
+generated over `ℚ` by square roots of `n` square-class independent squarefree integers `d i` (no
+nonempty subset product is a square), and let `p` be an odd prime dividing some `d i` for which the
+criterion of `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_of_squarefree` holds. Then there are
+exactly `2 ^ (n - 1)` primes of `𝓞 K` above `p`: the decomposition type is `e = 2`, `f = 1`,
+`g = 2 ^ (n - 1)`. -/
+theorem ncard_primesOver_eq_two_pow_sub_one_of_dvd [Finite ι]
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
+    (hsf : ∀ i, Squarefree (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
+    {i : ι} (hi : (p : ℤ) ∣ d i)
+    (hres : (∀ j, ¬ (p : ℤ) ∣ d j → legendreSym p (d j) = 1) ∧
+      ∀ j k, (p : ℤ) ∣ d j → (p : ℤ) ∣ d k → legendreSym p (d j / p) = legendreSym p (d k / p)) :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - 1) :=
+  eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep (k := 1) (by
+    rw [pow_one]
+    exact (ncard_primesOver_mul_two_eq_finrank_iff_of_dvd hr htop hodd hsf hi).mpr hres)
+
+/-- **The number of primes above an odd ramified prime of residue degree two.** Let `K` be
+generated over `ℚ` by square roots of `n` square-class independent squarefree integers `d i` (no
+nonempty subset product is a square), and let `p` be an odd prime dividing some `d i` for which the
+criterion of `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_of_squarefree` fails. Then there are
+exactly `2 ^ (n - 2)` primes of `𝓞 K` above `p`: the decomposition type is `e = 2`, `f = 2`,
+`g = 2 ^ (n - 2)`. -/
+theorem ncard_primesOver_eq_two_pow_sub_two [Finite ι]
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
+    (hsf : ∀ i, Squarefree (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
+    {i : ι} (hi : (p : ℤ) ∣ d i)
+    (hnr : ¬ ((∀ j, ¬ (p : ℤ) ∣ d j → legendreSym p (d j) = 1) ∧
+      ∀ j k, (p : ℤ) ∣ d j → (p : ℤ) ∣ d k →
+        legendreSym p (d j / p) = legendreSym p (d k / p))) :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - 2) := by
+  obtain ⟨Q, _, _⟩ :=
+    Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 K) (span {(p : ℤ)})
+  refine eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep (k := 2) ?_
+  have h := ncard_primesOver_mul_inertiaDeg_mul_two_eq_finrank hr htop hodd Q hsf hi
+  rwa [(inertiaDeg_eq_two_iff_of_squarefree hr htop hodd hsf Q).mpr hnr, mul_assoc, ← pow_two] at h
 
 end TauCeti.Multiquadratic
