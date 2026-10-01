@@ -63,11 +63,7 @@ variable [T1Space K]
 theorem _root_.QuadraticMap.isClosed_specialOrthogonalWithin :
     IsClosed (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) := by
   let det : orthogonalGroup Q →ₜ* Kˣ := ⟨orthogonalDet Q, continuous_orthogonalDet Q⟩
-  have hker : specialOrthogonalWithin Q = (orthogonalDet Q).ker := by
-    ext g
-    simp only [mem_specialOrthogonalWithin_iff, MonoidHom.mem_ker, orthogonalDet_apply]
-  rw [hker]
-  exact det.isClosed_ker
+  simpa only [specialOrthogonalWithin] using det.isClosed_ker
 
 end CommRing
 
@@ -90,10 +86,9 @@ theorem _root_.QuadraticMap.isOpen_specialOrthogonalWithin (hQ : Q.polarBilin.Se
   have : Finite (orthogonalDet Q).range :=
     (Set.Finite.subset (Set.toFinite _) hrange).to_subtype
   have : Module.Finite K (Module.End K V) := Module.Finite.linearMap K K V V
-  have hker : specialOrthogonalWithin Q = (orthogonalDet Q).ker := by
-    ext g
-    simp only [mem_specialOrthogonalWithin_iff, MonoidHom.mem_ker, orthogonalDet_apply]
-  have : (specialOrthogonalWithin Q).FiniteIndex := hker ▸ Subgroup.finiteIndex_ker _
+  have : (specialOrthogonalWithin Q).FiniteIndex := by
+    simpa only [specialOrthogonalWithin] using
+      (Subgroup.finiteIndex_ker (orthogonalDet Q))
   exact (specialOrthogonalWithin Q).isOpen_of_isClosed_of_finiteIndex
     (isClosed_specialOrthogonalWithin Q)
 
