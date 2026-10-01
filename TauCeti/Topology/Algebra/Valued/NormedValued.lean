@@ -1,0 +1,89 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.RingTheory.AdicCompletion.Basic
+public import Mathlib.Topology.Algebra.Valued.NormedValued
+
+/-!
+# Adic completeness of the ring of integers of a complete nonarchimedean field
+
+Let `K` be a complete nonarchimedean normed field and let `O` be its ring of integers, in the
+sense that `O` is a ring of integers (`Valuation.Integers`) for the valuation
+`NormedField.valuation` given by the norm. Divisibility in `O` is governed by the norm: `ϖ ^ n`
+divides `x` exactly when `‖x‖ ≤ ‖ϖ‖ ^ n`. Consequently, if `‖ϖ‖ < 1`, the `ϖ`-adic filtration of
+`O` is cofinal with the balls about zero, and `O` is `ϖ`-adically complete and Hausdorff.
+
+For a complete perfect nonarchimedean field `F` of characteristic `p` with pseudouniformiser `ϖ`,
+this is the completeness input for the ring of integers `𝒪_F` required to make the Witt vectors
+`A_inf = W(𝒪_F)` complete for their `(p, [ϖ])`-adic topology.
+
+## Main results
+
+* `Valuation.Integers.mem_span_singleton_pow_iff_norm_le`: `x ∈ (ϖ) ^ n` exactly when
+  `‖x‖ ≤ ‖ϖ‖ ^ n`.
+* `Valuation.Integers.isAdicComplete_span_singleton`: if `‖ϖ‖ < 1`, then `O` is
+  `ϖ`-adically complete.
+-/
+
+public section
+
+open Filter Topology
+
+namespace Valuation.Integers
+
+variable {K O : Type*} [NormedField K] [IsUltrametricDist K] [CommRing O] [Algebra O K]
+
+/-- In the ring of integers of a nonarchimedean normed field, `x` lies in `(ϖ) ^ n` exactly when
+`‖x‖ ≤ ‖ϖ‖ ^ n`. -/
+theorem mem_span_singleton_pow_iff_norm_le (hv : (NormedField.valuation (K := K)).Integers O)
+    {ϖ x : O} {n : ℕ} :
+    x ∈ Ideal.span {ϖ} ^ n ↔ ‖algebraMap O K x‖ ≤ ‖algebraMap O K ϖ‖ ^ n := by
+  rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton, hv.dvd_iff_le, ← NNReal.coe_le_coe]
+  simp
+
+variable [CompleteSpace K]
+
+/-- **The ring of integers of a complete nonarchimedean field is `ϖ`-adically complete** for
+every `ϖ` of norm less than one. -/
+theorem isAdicComplete_span_singleton (hv : (NormedField.valuation (K := K)).Integers O)
+    {ϖ : O} (hϖ : ‖algebraMap O K ϖ‖ < 1) : IsAdicComplete (Ideal.span {ϖ}) O := by
+  have hlim : Tendsto (fun n : ℕ ↦ ‖algebraMap O K ϖ‖ ^ n) atTop (𝓝 0) :=
+    tendsto_pow_atTop_nhds_zero_of_lt_one (_root_.norm_nonneg _) hϖ
+  have hhaus : IsHausdorff (Ideal.span {ϖ}) O := by
+    refine ⟨fun x hx ↦ hv.hom_inj ?_⟩
+    -- An element of every `(ϖ) ^ n` has norm at most `‖ϖ‖ ^ n` for all `n`, hence norm zero.
+    simp only [smul_eq_mul, Ideal.mul_top, SModEq.zero, hv.mem_span_singleton_pow_iff_norm_le]
+      at hx
+    rw [map_zero, ← norm_le_zero_iff]
+    exact ge_of_tendsto' hlim hx
+  have hprec : IsPrecomplete (Ideal.span {ϖ}) O := by
+    refine ⟨fun f hf ↦ ?_⟩
+    simp only [smul_eq_mul, Ideal.mul_top, SModEq.sub_mem,
+      hv.mem_span_singleton_pow_iff_norm_le] at hf ⊢
+    replace hf {m n : ℕ} (h : m ≤ n) :
+        dist (algebraMap O K (f m)) (algebraMap O K (f n)) ≤ ‖algebraMap O K ϖ‖ ^ m := by
+      simpa [dist_eq_norm] using hf h
+    -- The images of `f n` in `K` form a Cauchy sequence, converging to some `L`.
+    obtain ⟨L, hL⟩ := cauchySeq_tendsto_of_complete <|
+      cauchySeq_of_le_geometric _ 1 hϖ fun n ↦ by simpa using hf n.le_succ
+    -- Each `f m` lies within `‖ϖ‖ ^ m` of the limit, since all later terms do.
+    have hdist (m : ℕ) : dist (algebraMap O K (f m)) L ≤ ‖algebraMap O K ϖ‖ ^ m :=
+      le_of_tendsto (tendsto_const_nhds.dist hL) (eventually_atTop.2 ⟨m, fun _ hn ↦ hf hn⟩)
+    -- In particular `‖L‖ ≤ 1`, so `L` is the image of some `l : O`.
+    have hL1 : NormedField.valuation L ≤ 1 := by
+      rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnnorm]
+      calc ‖L‖ = ‖(L - algebraMap O K (f 0)) + algebraMap O K (f 0)‖ := by rw [sub_add_cancel]
+        _ ≤ max ‖L - algebraMap O K (f 0)‖ ‖algebraMap O K (f 0)‖ :=
+          IsUltrametricDist.norm_add_le_max _ _
+        _ ≤ 1 := max_le (by simpa [dist_eq_norm'] using hdist 0) <| by
+          simpa [← NNReal.coe_le_one] using hv.map_le_one (f 0)
+    obtain ⟨l, rfl⟩ := hv.exists_of_le_one hL1
+    exact ⟨l, fun n ↦ by simpa [dist_eq_norm] using hdist n⟩
+  exact {}
+
+end Valuation.Integers
