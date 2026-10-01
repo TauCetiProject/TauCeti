@@ -101,7 +101,7 @@ private theorem coe_smul_sub_integer (g : G) (x : 𝒪[L]) :
     _ = g • (x : L) - (x : L) := by rw [coe_smul_integer]
 
 /-- Compute a positive-depth residue coordinate from the displacement of a representative. -/
-private theorem ramificationGroupGradedToResidueField_of_smul_sub_eq
+theorem ramificationGroupGradedToResidueField_of_smul_sub_eq
     (n : ℕ) (π : 𝒪[L]) (hπ : Irreducible π)
     (τ : ramificationGroup G 𝒪[L] ((n : ℤ) + 1)) (y : 𝒪[L])
     (hmove : (τ : G) • π - π = y * π ^ (n + 2)) :
@@ -128,7 +128,7 @@ private theorem ramificationGroupGradedToResidueField_of_smul_sub_eq
     n π hπ _ y hdiff
 
 /-- Change the uniformizer used for a positive-depth ramification coordinate. -/
-private theorem ramificationGroupGradedToResidueField_change
+theorem ramificationGroupGradedToResidueField_change
     (n : ℕ) (π π' : 𝒪[L]) (hπ : Irreducible π) (hπ' : Irreducible π')
     (τ : RamificationGroupGraded G 𝒪[L] ((n : ℤ) + 1)) :
     ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ (Additive.ofMul τ) =
