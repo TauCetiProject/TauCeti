@@ -19,7 +19,7 @@ show that intertwining by an isomorphism is symmetric and transitive.
 
 ## Main results
 
-* `TauCeti.symm_comp_eq_comp_symm_of_comp_eq_comp`: an intertwining relation inverts along
+* `MulEquiv.symm_comp_eq_comp_symm_of_comp_eq_comp`: an intertwining relation inverts along
   `ψ.symm`.
 * `TauCeti.trans_comp_eq_comp_trans_of_comp_eq_comp`: intertwining relations compose along
   `ψ.trans χ`.
@@ -27,10 +27,10 @@ show that intertwining by an isomorphism is symmetric and transitive.
 
 public section
 
-namespace TauCeti
+namespace MulEquiv
 
-variable {M M' M'' : Type*} [MulOneClass M] [MulOneClass M'] [MulOneClass M'']
-  {F : M →* M} {F' : M' →* M'} {F'' : M'' →* M''}
+variable {M M' : Type*} [MulOneClass M] [MulOneClass M']
+  {F : M →* M} {F' : M' →* M'}
 
 /-- An isomorphism intertwining two endomorphisms has an inverse intertwining them the other way.
 
@@ -41,6 +41,13 @@ theorem symm_comp_eq_comp_symm_of_comp_eq_comp (ψ : M ≃* M')
     (ψ.symm : M' →* M).comp F' = F.comp (ψ.symm : M' →* M) :=
   have h : Function.Semiconj ψ F F' := fun x => DFunLike.congr_fun hψ x
   MonoidHom.ext (h.inverse_left ψ.symm_apply_apply ψ.apply_symm_apply)
+
+end MulEquiv
+
+namespace TauCeti
+
+variable {M M' M'' : Type*} [MulOneClass M] [MulOneClass M'] [MulOneClass M'']
+  {F : M →* M} {F' : M' →* M'} {F'' : M'' →* M''}
 
 /-- Intertwining relations compose. -/
 theorem trans_comp_eq_comp_trans_of_comp_eq_comp {ψ : M ≃* M'} {χ : M' ≃* M''}

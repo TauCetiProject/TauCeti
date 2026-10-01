@@ -118,7 +118,7 @@ theorem map_fixedSubgroup_eq (ψ : G ≃* G')
     (fixedSubgroup F).map (ψ : G →* G') = fixedSubgroup F' :=
   le_antisymm (map_fixedSubgroup_le _ hψ) fun y hy =>
     ⟨ψ.symm y,
-      map_fixedSubgroup_le (ψ.symm : G' →* G) (symm_comp_eq_comp_symm_of_comp_eq_comp ψ hψ)
+      map_fixedSubgroup_le (ψ.symm : G' →* G) (ψ.symm_comp_eq_comp_symm_of_comp_eq_comp hψ)
         ⟨y, hy, rfl⟩,
       ψ.apply_symm_apply y⟩
 
@@ -159,7 +159,7 @@ theorem fixedSubgroupCongr_trans (ψ : G ≃* G')
 theorem fixedSubgroupCongr_symm (ψ : G ≃* G')
     (hψ : (ψ : G →* G').comp F = F'.comp (ψ : G →* G')) :
     (fixedSubgroupCongr ψ hψ).symm =
-      fixedSubgroupCongr ψ.symm (symm_comp_eq_comp_symm_of_comp_eq_comp ψ hψ) :=
+      fixedSubgroupCongr ψ.symm (ψ.symm_comp_eq_comp_symm_of_comp_eq_comp hψ) :=
   Subgroup.congrOfMapEq_symm _ _
 
 end TauCeti
