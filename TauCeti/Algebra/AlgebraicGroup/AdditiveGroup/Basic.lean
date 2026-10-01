@@ -17,11 +17,6 @@ convolution monoid of `R`-algebra maps `SymmetricAlgebra R M →ₐ[R] A` is the
 of `R`-linear maps `M →ₗ[R] A`, with convolution corresponding to addition. Taking `M = R`
 recovers the one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points are
 `(A, +)`; the `R`-points are this construction specialized to `A = R`.
-
-This is the worked example `𝔾ₐ` from the Tau Ceti reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap, "Worked examples" and Layer 0, "R-points as a
-group"), in the same spirit as the multiplicative group `𝔾ₘ`.
-
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.pointsMulEquiv`: the convolution monoid of points
@@ -32,7 +27,7 @@ group"), in the same spirit as the multiplicative group `𝔾ₘ`.
 * `TauCeti.AdditiveGroup.pointsMulEquiv_mapValue`: the points equivalence is natural in the
   value algebra.
 
-## References
+## See also
 
 The symmetric-algebra Hopf structure is supplied by
 `TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, on top of Mathlib's symmetric-algebra

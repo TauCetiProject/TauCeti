@@ -72,6 +72,12 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
   `I(χ)/pⁱ`, which is therefore `p`-primary torsion;
   `TauCeti.ZModTwist.exists_mulPow_eq_of_nsmul_eq_zero`: the `pⁱ`-torsion of `I(χ)/pⁱ⁺ʲ` is the
   image of `I(χ)/pⁱ` under multiplication by `pʲ`.
+* `TauCeti.ZModTwist.smul_internalHom_eq_self`: the conjugation action on the homomorphisms
+  `I(χ)/pⁱ → I(χ)/pⁿ` between two twists is trivial, so all of them are invariant
+  (`TauCeti.ZModTwist.H0_internalHom_eq_top`), and
+  `TauCeti.ZModTwist.surjective_explicitCoeff0_precomp_mulPow`: every invariant homomorphism
+  `I(χ)/pⁱ → I(χ)/pⁿ` extends along the multiplication by `pʲ` to an invariant endomorphism of
+  `I(χ)/pⁿ`.
 
 ## References
 
@@ -398,6 +404,49 @@ theorem exists_mulPow_eq_of_nsmul_eq_zero (h : i + j = n) {y : ZModTwist χ n}
     mulPow_injective χ h' (by rw [mulPow_reduce, map_zero, hy])
   obtain ⟨x, hx⟩ := ((shortExact χ h).exact y).1 (by rwa [shortExact_proj_apply])
   exact ⟨x, by rwa [shortExact_incl_apply] at hx⟩
+
+/-! ### Homomorphisms between two twists
+
+A group element `g` acts on every level `I(χ)/pⁱ` with `i ≤ n` as the natural number
+`(χ g mod pⁿ).val`, so an additive homomorphism between two twists commutes with the action: the
+conjugation action on `Hom(I(χ)/pⁱ, I(χ)/pⁿ)` is trivial, and every such homomorphism is invariant.
+With Baer's criterion for `I(χ)/pⁿ`, every invariant homomorphism `I(χ)/pⁱ → I(χ)/pⁿ` is then the
+restriction along the multiplication by `pʲ` of an invariant endomorphism of `I(χ)/pⁿ`. -/
+
+/-- At every level `i ≤ n`, `g` acts on `I(χ)/pⁱ` as the natural number `(χ g mod pⁿ).val`. -/
+theorem smul_eq_nsmul_val_charScalar (h : i ≤ n) (g : G) (x : ZModTwist χ i) :
+    g • x = (charScalar χ n g).val • x := by
+  have : NeZero (p ^ n) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
+  ext
+  rw [val_smul, val_nsmul, nsmul_eq_mul, ZMod.natCast_val,
+    ← ZMod.castHom_apply (h := pow_dvd_pow p h), castHom_charScalar χ h g]
+
+/-- **The conjugation action on the homomorphisms between two twists is trivial**: `g` acts on
+`I(χ)/pⁱ` and on `I(χ)/pⁿ` by one and the same natural number, with which every additive
+homomorphism commutes. -/
+@[simp]
+theorem smul_internalHom_eq_self (g : G) (φ : InternalHom G (ZModTwist χ i) (ZModTwist χ n)) :
+    g • φ = φ :=
+  InternalHom.smul_eq_self_iff.2 fun x ↦ by
+    rw [smul_eq_nsmul_val_charScalar χ (le_max_left i n) g, map_nsmul,
+      smul_eq_nsmul_val_charScalar χ (le_max_right i n) g]
+
+/-- Every homomorphism between two twists is invariant. -/
+@[simp]
+theorem H0_internalHom_eq_top : H0 G (InternalHom G (ZModTwist χ i) (ZModTwist χ n)) = ⊤ :=
+  H0_eq_top_of_smul_eq_self (smul_internalHom_eq_self χ)
+
+/-- **Every invariant homomorphism `I(χ)/pⁱ → I(χ)/pⁿ` is the restriction along the multiplication
+by `pʲ` of an invariant endomorphism of `I(χ)/pⁿ`**, for `i + j = n`: an extension exists by Baer's
+criterion for `I(χ)/pⁿ` over `ℤ/pⁿ`, and it is invariant because every endomorphism of a twist
+is. -/
+theorem surjective_explicitCoeff0_precomp_mulPow (h : i + j = n) :
+    Function.Surjective (explicitCoeff0 G (InternalHom G (ZModTwist χ n) (ZModTwist χ n))
+      (InternalHom.precomp G (mulPow χ h) (N := ZModTwist χ n))) := fun φ ↦ by
+  obtain ⟨ψ, hψ⟩ := InternalHom.precomp_surjective_of_baer (moduleBaer χ n) (pow_nsmul_eq_zero χ n)
+    (mulPow_injective χ h) (φ : InternalHom G (ZModTwist χ i) (ZModTwist χ n))
+  exact ⟨⟨ψ, (FixedPoints.mem_addSubgroup G _ ψ).2 fun g ↦ smul_internalHom_eq_self χ g ψ⟩,
+    Subtype.ext ((coe_explicitCoeff0 G _ _ _).trans hψ)⟩
 
 /-! ### The induced maps on `H¹`
 
