@@ -25,12 +25,10 @@ base point is the identity, so the differential of the ambient tangential coordi
 differential of the inclusion.
 
 Since the subgroup carries its subspace topology, the inclusion is also a topological embedding, so
-together these say the inclusion is an embedding of smooth manifolds.  The chart form of being an
-immersion, `Manifold.IsImmersion`, asks in addition for an ambient chart valued in the model space
-of the ambient manifold in which the map reads as `u ↦ (u, 0)`; the slice chart here is valued in a
-splitting of the ambient *tangent* space instead, and converting it would need the ambient model to
-be boundaryless.  The splitting of the differential, `Manifold.IsDiffImmersionAt`, needs no such
-hypothesis.
+together these say the inclusion is an embedding of smooth manifolds.  What is recorded here is the
+differential form of being an immersion, `IsDiffImmersionAt`; the chart form,
+`Manifold.IsImmersion`, which asks for charts of the subgroup and of the ambient group in which the
+inclusion reads as `u ↦ (u, 0)`, is not derived from it.
 
 ## Main result
 
@@ -65,14 +63,13 @@ variable (K : Subgroup G) (e : OpenPartialHomeomorph G (F × F'))
   (he' : ContMDiffOn I 𝓘(ℝ, F × F') n e e.source)
   (he_symm : ContMDiffOn 𝓘(ℝ, F × F') I n e.symm e.target)
 
+include he' he_symm in
 /-- The inclusion of a subgroup carrying its slice-chart manifold structure into the ambient
 smooth group is an immersion in the sense of differentials: its differential at each point has a
 continuous left inverse, and so is injective. -/
 theorem isDiffImmersionAt_subtypeVal_chartedSpaceOfIsSliceChart (hn : 1 ≤ n) (k : K) :
     let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n
     let _ : ChartedSpace F K := chartedSpaceOfIsSliceChart K e he h1
-    let _ : IsManifold 𝓘(ℝ, F) n K :=
-      isManifold_chartedSpaceOfIsSliceChart K e he h1 he' he_symm
     IsDiffImmersionAt 𝓘(ℝ, F) I (fun x : K ↦ (x : G)) k := by
   dsimp only
   let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n

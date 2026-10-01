@@ -16,12 +16,14 @@ public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.RCLike.Basic
 
 /-!
-# The Lie algebra of the unitary group
+# The unitary group as an embedded Lie subgroup, and its Lie algebra
 
 For a finite-dimensional real normed star algebra `R`, the unitary elements of `Rˣ` form a closed
 subgroup `unitarySubgroup Rˣ` of the Lie group `Rˣ`.  This file computes the Lie algebra that
 `TauCeti.Lie.lieSubalgebraOfSubgroup` assigns to it: in the canonical algebra coordinates of
-`TauCeti.Lie.unitsLieAlgebraLieEquiv` it is `skewAdjoint R`, the elements with `star x = -x`.
+`TauCeti.Lie.unitsLieAlgebraLieEquiv` it is `skewAdjoint R`, the elements with `star x = -x`.  The
+same closedness makes the unitary group an embedded Lie subgroup of `Rˣ` by the closed-subgroup
+theorem, so it is a Lie group in its own right; that is recorded here too.
 
 Two inputs meet here: the characterization of the exponential lines that stay unitary,
 `TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint`, and the algebra-coordinate form of the
@@ -54,12 +56,12 @@ unitary group, and is not treated here.
   abstract exponential line of `x` stays unitary exactly when `x` is skew-adjoint.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`:
   **the Lie algebra of the unitary group is the skew-adjoint elements.**
-* `TauCeti.Lie.isEmbeddedLieSubgroup_unitarySubgroup`: the unitary group is an embedded Lie
-  subgroup of the units, so a Lie group in its own right.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg`:
   the matrix form, with the skew-adjointness spelled out as `Aᴴ = -A`.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_so`: over `ℝ` the
   unitary matrix group is the orthogonal group, and its Lie algebra is Mathlib's `so`.
+* `TauCeti.Lie.isEmbeddedLieSubgroup_unitarySubgroup`: the unitary group is an embedded Lie
+  subgroup of the units, so a Lie group in its own right.
 -/
 
 public section

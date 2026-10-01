@@ -33,7 +33,12 @@ differential of the inclusion is not proved here.
 
 * `TauCeti.Lie.EmbeddedLieSubgroupData`: a smooth structure exhibiting a subgroup as an embedded
   Lie subgroup, with a named model vector space.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_subtypeVal` and
+  `TauCeti.Lie.EmbeddedLieSubgroupData.isEmbedding_subtypeVal`: the two conditions defining an
+  embedded submanifold, read off from the data.
 * `TauCeti.Lie.IsEmbeddedLieSubgroup`: a subgroup admits such data.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.isEmbeddedLieSubgroup`: data for a model space in the
+  universe of `G` exhibits `K` as an embedded Lie subgroup.
 * `TauCeti.Lie.nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed`:
   **the closed-subgroup theorem with its model space**, the data for a closed subgroup with model
   space its Lie algebra.
@@ -82,6 +87,27 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type v} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
 
+namespace EmbeddedLieSubgroupData
+
+variable {K : Subgroup G} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+
+/-- The differential of the inclusion of an embedded Lie subgroup is injective at every point,
+which is the usual phrasing of the immersion half of being an embedded submanifold. -/
+theorem injective_mfderiv_subtypeVal (d : EmbeddedLieSubgroupData I K E') (k : K) :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    Function.Injective (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) k) := by
+  dsimp only
+  let _ : ChartedSpace E' K := d.chartedSpace
+  exact (d.isDiffImmersionAt_subtypeVal k).mfderiv_injective
+
+/-- The inclusion of an embedded Lie subgroup is a topological embedding, which is the other half
+of being an embedded submanifold.  It holds for free, since `K` carries the subspace topology. -/
+theorem isEmbedding_subtypeVal (_d : EmbeddedLieSubgroupData I K E') :
+    Topology.IsEmbedding (fun x : K ↦ (x : G)) :=
+  Topology.IsEmbedding.subtypeVal
+
+end EmbeddedLieSubgroupData
+
 /-- **`K` is an embedded Lie subgroup**: it carries `TauCeti.Lie.EmbeddedLieSubgroupData` for some
 model vector space.
 
@@ -90,6 +116,13 @@ lives, exactly as Mathlib's `Manifold.IsImmersionAt` pins the universe of its co
 def IsEmbeddedLieSubgroup (K : Subgroup G) : Prop :=
   ∃ (E' : Type w) (_ : NormedAddCommGroup E') (_ : NormedSpace ℝ E'),
     Nonempty (EmbeddedLieSubgroupData I K E')
+
+/-- Embedded-Lie-subgroup data with a model space in the universe of `G` exhibits `K` as an
+embedded Lie subgroup. -/
+theorem EmbeddedLieSubgroupData.isEmbeddedLieSubgroup {K : Subgroup G} {E' : Type w}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] (d : EmbeddedLieSubgroupData I K E') :
+    IsEmbeddedLieSubgroup (I := I) K :=
+  ⟨E', inferInstance, inferInstance, ⟨d⟩⟩
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
@@ -119,9 +152,7 @@ is smooth with everywhere split differential. -/
 theorem isEmbeddedLieSubgroup_of_isClosed {K : Subgroup G} (hK : IsClosed (K : Set G)) :
     IsEmbeddedLieSubgroup (I := I) K := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-  have : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  exact ⟨(lieSubalgebraOfSubgroup (I := I) K).toSubmodule, inferInstance, inferInstance,
-    nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed hK⟩
+  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
+  exact d.isEmbeddedLieSubgroup
 
 end TauCeti.Lie
