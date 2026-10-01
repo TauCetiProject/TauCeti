@@ -33,7 +33,7 @@ formula.
   `k`-linear retraction, `x ∪ δ y = (-1)^p δ (x ∪ y)` for `x` of degree `p` and `y` of any degree
   `q`.
 * `TauCeti.TateCohomology.cup_δ_of_flat`: if the underlying module of `M` is flat over `k`, then
-  `x ∪ δ y = (-1)^p δ (x ∪ y)` for every short exact sequence, `x ∈ Ĥ^p(G, M)` and `y` of any
+  `x ∪ δ y = (-1)^p δ (x ∪ y)` for every short exact sequence, `x` of degree `p` and `y` of any
   degree `q`.
 
 ## References
@@ -295,9 +295,9 @@ theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep 
   -- `φ.τ₃` is the identity of `N₃`.
   have e₃ : (tateCohomologyFunctor q).map φ.τ₃ = 𝟙 _ := (tateCohomologyFunctor q).map_id S.X₃
   rw [hT', Units.smul_def, map_zsmul, ← e₂, ← Units.smul_def, e₃] at e₁
-  -- `e₁` now applies the identity of `Ĥ^q(G, N₃)` to `y` on both sides, which is `y` by definition;
-  -- it is not rewritten away because the identity is stated on `T.X₃`, which is `N₃` only up to
-  -- unfolding `T`.
+  -- `e₁` now applies the identity of the degree-`q` Tate cohomology of `N₃` to `y` on both sides,
+  -- which is `y` by definition; it is not rewritten away because the identity is stated on `T.X₃`,
+  -- which is `N₃` only up to unfolding `T`.
   exact e₁
 
 end TauCeti.TateCohomology
