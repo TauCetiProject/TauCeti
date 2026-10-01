@@ -46,6 +46,7 @@ theorem poissonKernel_nonneg_on_sphere {c w z : ℂ} {R : ℝ}
     (by simpa [herglotzRieszKernel_def] using le_re_herglotzRieszKernel hz hw)
 
 /-- Off the circle, the Poisson kernel is continuous as a function of the boundary point. -/
+@[fun_prop]
 theorem continuousOn_poissonKernel_sphere {c w : ℂ} {R : ℝ} (hw : w ∉ sphere c |R|) :
     ContinuousOn (poissonKernel c w) (sphere c |R|) := by
   rw [poissonKernel_eq_re_herglotzRieszKernel]

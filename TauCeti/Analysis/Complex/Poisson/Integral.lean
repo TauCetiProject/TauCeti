@@ -129,7 +129,7 @@ particular, the Poisson kernel has circle average one there. -/
   simpa only [circleAverage_abs_radius] using hc.circleAverage_poissonKernel_smul hw
 
 /-- The Poisson kernel has circle average one at every point inside the disk. -/
-theorem circleAverage_poissonKernel {c : ℂ} {R : ℝ} {w : ℂ} (hw : w ∈ ball c |R|) :
+@[simp] theorem circleAverage_poissonKernel {c : ℂ} {R : ℝ} {w : ℂ} (hw : w ∈ ball c |R|) :
     circleAverage (poissonKernel c w) c R = 1 := by
   have hK : poissonKernel c w • (fun _ : ℂ ↦ (1 : ℝ)) = poissonKernel c w := by
     ext y
@@ -142,7 +142,7 @@ theorem planarPoissonIntegral_sub_const {g : ℂ → ℝ} {c : ℂ} {R : ℝ} {w
     (hg : CircleIntegrable g c R) (hw : w ∈ ball c |R|) (a : ℝ) :
     planarPoissonIntegral g c R w - a =
       circleAverage (fun y ↦ poissonKernel c w y * (g y - a)) c R := by
-  have hK := continuousOn_poissonKernel_sphere (c := c) (R := R) (ne_of_lt hw)
+  have hK := continuousOn_poissonKernel_sphere (Set.disjoint_right.mp sphere_disjoint_ball hw)
   have hgK : CircleIntegrable (poissonKernel c w • g) c R := hg.continuousOn_smul hK
   have haK : CircleIntegrable (poissonKernel c w • fun _ : ℂ ↦ a) c R :=
     continuousOn_const.circleIntegrable'.continuousOn_smul hK
@@ -158,11 +158,7 @@ theorem planarPoissonIntegral_mono {g₁ g₂ : ℂ → ℝ} {c : ℂ} {R : ℝ}
     (hw : w ∈ ball c |R|)
     (hle : ∀ z ∈ sphere c |R|, g₁ z ≤ g₂ z) :
     planarPoissonIntegral g₁ c R w ≤ planarPoissonIntegral g₂ c R w := by
-  have hws : w ∉ sphere c |R| := by
-    simp only [mem_sphere]
-    intro h
-    exact (ne_of_lt hw) h
-  have hK := continuousOn_poissonKernel_sphere hws
+  have hK := continuousOn_poissonKernel_sphere (Set.disjoint_right.mp sphere_disjoint_ball hw)
   have hpoint : ∀ z ∈ sphere c |R|,
       (poissonKernel c w • g₁) z ≤ (poissonKernel c w • g₂) z := by
     intro z hz
@@ -235,17 +231,18 @@ theorem tendsto_planarPoissonIntegral {g : ℂ → ℝ} {c z : ℂ} {R : ℝ}
   have hnear : ∀ᶠ w in nhdsWithin z (ball c |R|), dist w z ≤ delta / 2 :=
     eventually_nhdsWithin_of_eventually_nhds (closedBall_mem_nhds z (half_pos hdelta))
   filter_upwards [self_mem_nhdsWithin, hsmall, hnear] with w hw hwsmall hwnear
-  have hK := continuousOn_poissonKernel_sphere (c := c) (R := R) (ne_of_lt hw)
+  have hK := continuousOn_poissonKernel_sphere (Set.disjoint_right.mp sphere_disjoint_ball hw)
   have hdiff_i : CircleIntegrable (fun y ↦ poissonKernel c w y * (g y - g z)) c R :=
     (hK.mul (hg.sub continuousOn_const)).circleIntegrable'
   -- Positivity and mass one turn the pointwise majorant into the required integral estimate.
   rw [Real.dist_eq, planarPoissonIntegral_sub_const hg.circleIntegrable' hw]
   calc
-    ‖circleAverage (fun y ↦ poissonKernel c w y * (g y - g z)) c R‖ ≤
-        circleAverage (fun y ↦ |poissonKernel c w y * (g y - g z)|) c R :=
-      norm_circleAverage_le_circleAverage_norm
+    |circleAverage (fun y ↦ poissonKernel c w y * (g y - g z)) c R| ≤
+        circleAverage (fun y ↦ |poissonKernel c w y * (g y - g z)|) c R := by
+      simp only [← Real.norm_eq_abs]
+      exact norm_circleAverage_le_circleAverage_norm
     _ ≤ circleAverage (fun y ↦ eps / 2 * poissonKernel c w y + B w * C) c R :=
-      circleAverage_mono hdiff_i.abs (by fun_prop) fun y hy ↦
+      circleAverage_mono hdiff_i.fun_abs (by fun_prop) fun y hy ↦
         abs_poissonKernel_mul_sub_le hdelta (half_pos heps).le hw hy hwnear
           (by simpa using hC y hy) (by simpa [Real.dist_eq] using hdelta_g y hy z hz)
     _ = eps / 2 + B w * C := by
