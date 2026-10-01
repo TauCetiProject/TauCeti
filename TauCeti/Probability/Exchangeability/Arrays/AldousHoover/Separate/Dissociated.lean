@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Dissociated
-public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.SeparateRepresentation
+public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Separate.Representation
 
 /-!
 # Dissociated separately exchangeable arrays need no global variable
