@@ -12,7 +12,19 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 # A dimension count for relations among algebra generators
 
 A family of vectors spanning the relations among algebra generators bounds the dimensions of
-quotients by compatible subspaces. The maps used in the proof satisfy `ker d₁ ≤ range d₂`.
+quotients by compatible subspaces. This is the dimension-counting step of the Golod–Shafarevich
+inequality for finite-dimensional algebras, used by
+`TauCeti.card_sq_lt_four_mul_card_of_relations_le_span`.
+
+## Main results
+
+* `TauCeti.card_mul_finrank_quotient_add_le`: a bound on quotient dimensions from generators
+  and vectors spanning their relations.
+
+## References
+
+* P. Roquette, *On class field towers*, in J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic
+  Number Theory*, Chapter IX, §4.
 -/
 
 public section
@@ -24,22 +36,27 @@ open Module Submodule
 variable {A : Type*} [Ring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- The dimension count behind the Golod–Shafarevich inequality. Let `W`, `U`, `T`, and `S` be
-subspaces of `A`, with `T ≤ S`, such that right multiplication by the entries of the vectors `y`
+subspaces of `A` such that right multiplication by the entries of the vectors `y`
 maps `W` into `U`, right multiplication by the generators `x` maps `U` into `T`, every `∑ aᵢ xᵢ`
 lies in `S`, and every element of `T` is a `U`-combination of the `x`. If every relation among the
 `x` is an `A`-combination of the `y`, then the induced linear maps
-`(A ⧸ W)^κ → (A ⧸ U)^ι → A ⧸ T` satisfy
-`ker d₁ ≤ range d₂`, and the image of the right map is killed by `A ⧸ T → A ⧸ S`, so
+`(A ⧸ W)^κ → (A ⧸ U)^ι → A ⧸ T` have
+the kernel of the right-hand map contained in the range of the left-hand map, and the image
+of the right-hand map is killed by `A ⧸ T → A ⧸ S` (where `T ≤ S` follows from the assumptions), so
 `#ι · dim (A ⧸ U) + dim (A ⧸ S) ≤ dim (A ⧸ T) + #κ · dim (A ⧸ W)`. -/
 theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
     [FiniteDimensional k A] (x : ι → A) (y : κ → ι → A)
     (hker : ∀ a : ι → A, ∑ i, a i * x i = 0 → a ∈ span A (Set.range y))
     {W U T S : Submodule k A} (hWU : ∀ w ∈ W, ∀ j i, w * y j i ∈ U)
-    (hUT : ∀ u ∈ U, ∀ i, u * x i ∈ T) (hTS : T ≤ S) (hxS : ∀ a : ι → A, ∑ i, a i * x i ∈ S)
+    (hUT : ∀ u ∈ U, ∀ i, u * x i ∈ T) (hxS : ∀ a : ι → A, ∑ i, a i * x i ∈ S)
     (hT : ∀ t ∈ T, ∃ a : ι → A, (∀ i, a i ∈ U) ∧ ∑ i, a i * x i = t) :
     Fintype.card ι * finrank k (A ⧸ U) + finrank k (A ⧸ S) ≤
       finrank k (A ⧸ T) + Fintype.card κ * finrank k (A ⧸ W) := by
   classical
+  have hTS : T ≤ S := by
+    intro t ht
+    obtain ⟨a, -, rfl⟩ := hT t ht
+    exact hxS a
   -- The maps induced on the quotients by the generators and by the relations.
   let d₁ : (ι → A ⧸ U) →ₗ[k] A ⧸ T := ∑ i,
     U.mapQ T (LinearMap.mulRight k (x i)) (fun u hu ↦ mem_comap.2 (hUT u hu i)) ∘ₗ LinearMap.proj i

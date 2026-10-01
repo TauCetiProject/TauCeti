@@ -12,20 +12,41 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 /-!
 # Relations from cocycles on a free pro-`p` group
 
-A locally constant cocycle sends the kernel of a presentation to the span of its values on normal
-generators. When it takes standard basis values on free generators, the relation module is
-contained in the span of those values. Its values on Frattini elements have zero augmentation in
-every coordinate.
+We construct a locally constant cocycle on a free pro-`p` group with standard basis values on
+the free generators. A locally constant cocycle sends the kernel of a presentation to the span
+of its values on normal generators. When it takes standard basis values on free generators,
+the relation module is contained in the span of those values. Its values on Frattini elements
+have zero augmentation in every coordinate. These results supply the relation and augmentation
+hypotheses of the algebraic Golod–Shafarevich inequality for `A = 𝔽_p[G]`, as used in
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.GolodShafarevich`.
+
+## Main results
+
+* `TauCeti.freeProP.exists_locallyConstant_cocycle_forall_apply_of_eq`: construction with
+  standard basis values on the free generators.
+* `TauCeti.freeProP.mem_span_range_cocycle_of_map_eq_one`: the kernel maps into the span of
+  the cocycle values on normal generators.
+* `TauCeti.freeProP.relationModule_le_span`: containment of the relation module in that span.
+* `TauCeti.freeProP.augmentation_cocycle_eq_zero_of_mem_proPFrattini`: vanishing of every
+  coordinate's augmentation on Frattini elements.
+
+## References
+
+* J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (3.9.7).
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Theorem 7.8.5.
 -/
 
 public section
 
 namespace TauCeti
 
+namespace freeProP
+
 open Subgroup ContCohomology Module _root_.MonoidAlgebra
 
 universe u
 
+-- Prefer the ring's additive structure on `ZMod p` so the `Z1` and augmentation APIs agree.
 attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime] {X : Type u} [Fintype X] {G : Type u} [Group G] [Finite G]
@@ -35,7 +56,7 @@ omit [Fintype X] in
 /-- The cocycle `D : F → 𝔽_p[G]^X` of a continuous homomorphism `π : F → G` from a free pro-`p`
 group to a finite discrete group, for the action of `F` on `𝔽_p[G]^X` by left multiplication
 through `π`: it is locally constant and sends the generators to the standard basis vectors. -/
-theorem exists_locallyConstant_cocycle_of_freeProP [Finite X] [DecidableEq X]
+theorem exists_locallyConstant_cocycle_forall_apply_of_eq [Finite X] [DecidableEq X]
     (π : freeProP p X →ₜ* G) :
     ∃ D : freeProP p X → X → MonoidAlgebra (ZMod p) G, IsLocallyConstant D ∧
       (∀ g h, D (g * h) = single (π g) (1 : ZMod p) • D h + D g) ∧
@@ -87,7 +108,7 @@ the kernel of `π` is the closed normal closure of a finite set `s`, then `D w` 
 `𝔽_p[G]`-combination of the `D ρ`, `ρ ∈ s`, for every `w` with `π w = 1`: the set of such `w` is
 closed and contains the normal closure of `s`, since `D` is additive and conjugation-equivariant
 on the kernel. -/
-theorem mem_span_of_map_eq_one {s : Finset (freeProP p X)}
+theorem mem_span_range_cocycle_of_map_eq_one {s : Finset (freeProP p X)}
     (hs : ∀ w, π w = 1 ↔ w ∈ (normalClosure (s : Set (freeProP p X))).topologicalClosure)
     (hD : IsLocallyConstant D) {w : freeProP p X} (hw : π w = 1) :
     D w ∈ Submodule.span (MonoidAlgebra (ZMod p) G) (Set.range fun ρ : s ↦ D ρ) := by
@@ -149,7 +170,7 @@ theorem relationModule_le_span [DecidableEq X] (hπ : Function.Surjective π)
       rw [← hcoc, mul_inv_cancel_left]
     rw [hv, map_add, Submodule.mkQ_apply, (Submodule.Quotient.mk_eq_zero S').2
       ((Submodule.restrictScalars_mem _ _ _).2
-        (S.smul_mem _ (mem_span_of_map_eq_one hcoc hs hD hρ))), zero_add]
+        (S.smul_mem _ (mem_span_range_cocycle_of_map_eq_one hcoc hs hD hρ))), zero_add]
   -- Extending `δ` linearly to `𝔽_p[G]` inverts the map `a ↦ ∑ aᵢ (π xᵢ - 1)` modulo `S`.
   let Ψ : MonoidAlgebra (ZMod p) G →ₗ[ZMod p] (X → MonoidAlgebra (ZMod p) G) ⧸ S' :=
     (MonoidAlgebra.basis G (ZMod p)).constr (ZMod p) δ
@@ -178,7 +199,7 @@ omit [Fintype X] [Finite G] [DiscreteTopology G] in
 The cocycle, composed with the augmentation
 `𝔽_p[G] → 𝔽_p`, is a continuous homomorphism to an elementary abelian `p`-group, so it vanishes
 on the Frattini subgroup. -/
-theorem augmentation_apply_eq_zero_of_mem_proPFrattini (hD : IsLocallyConstant D)
+theorem augmentation_cocycle_eq_zero_of_mem_proPFrattini (hD : IsLocallyConstant D)
     {ρ : freeProP p X} (hρ : ρ ∈ proPFrattini p (freeProP p X)) (i : X) :
     MonoidAlgebra.augmentation (ZMod p) G (D ρ i) = 0 := by
   set ε := MonoidAlgebra.augmentation (ZMod p) G
@@ -202,5 +223,7 @@ theorem augmentation_apply_eq_zero_of_mem_proPFrattini (hD : IsLocallyConstant D
   exact congrFun (ofAdd_eq_one.1 h) i
 
 end Cocycle
+
+end freeProP
 
 end TauCeti

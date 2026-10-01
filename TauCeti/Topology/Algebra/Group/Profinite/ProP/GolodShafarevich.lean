@@ -24,9 +24,9 @@ generators.
 
 The proof transfers a minimal presentation of `G` to the group algebra `A = 𝔽_p[G]` and applies
 the Golod–Shafarevich inequality for finite-dimensional algebras
-(`TauCeti.card_sq_lt_four_mul_card`). Let `π : F ↠ G` be a minimal presentation by the free
-pro-`p` group `F` on `d = d(G)` generators `xᵢ`, and let `ρ₁, …, ρ_r` generate its relation
-subgroup `R` as a closed normal subgroup, with `r = r(G)`. Write `gᵢ = π xᵢ`.
+(`TauCeti.card_sq_lt_four_mul_card_of_relations_le_span`). Let `π : F ↠ G` be a minimal
+presentation by the free pro-`p` group `F` on `d = d(G)` generators `xᵢ`, and let `ρ₁, …, ρ_r`
+generate its relation subgroup `R` as a closed normal subgroup, with `r = r(G)`. Write `gᵢ = π xᵢ`.
 
 * The `gᵢ` generate `G`, so the elements `gᵢ - 1` generate the augmentation ideal `I` of `A` as a
   left ideal (`TauCeti.MonoidAlgebra.range_linearCombination_eq_ker_augmentation`).
@@ -106,7 +106,7 @@ theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohom
     obtain ⟨⟨ρ, hρR⟩, -, hρ⟩ := Finset.mem_image.1 ρ.2
     rw [← hρ]
     exact (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 hrels hρR
-  obtain ⟨D, hD, hcoc, hDof⟩ := exists_locallyConstant_cocycle_of_freeProP π
+  obtain ⟨D, hD, hcoc, hDof⟩ := freeProP.exists_locallyConstant_cocycle_forall_apply_of_eq π
   -- The `π xᵢ` generate `G`, so the `π xᵢ - 1` generate the augmentation ideal as a left ideal.
   have hgen : Subgroup.closure (Set.range fun i ↦ π (freeProP.of i)) = ⊤ := by
     have h := topologicalClosure_closure_image_eq_top
@@ -122,12 +122,12 @@ theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohom
       not_subsingleton G <| topologicalGeneratorRank_eq_zero_iff.1 <| by
         rw [← topologicalGeneratorRankNat_eq_topologicalGeneratorRank hfg, h0, Nat.cast_zero]
     exact ⟨⟨⟨0, Nat.pos_of_ne_zero hd⟩⟩⟩
-  have key := card_sq_lt_four_mul_card (ZMod p) _
+  have key := card_sq_lt_four_mul_card_of_relations_le_span (ZMod p) _
     (RingHom.ker_ne_top (MonoidAlgebra.augmentation (ZMod p) G)) _ hspan
     (fun ρ : s ↦ D ρ)
     (fun ρ i ↦ RingHom.mem_ker.2
-      (augmentation_apply_eq_zero_of_mem_proPFrattini hcoc hD (hsΦ ρ) i))
-    fun a ha ↦ relationModule_le_span hcoc hπ hs hD hDof
+      (freeProP.augmentation_cocycle_eq_zero_of_mem_proPFrattini hcoc hD (hsΦ ρ) i))
+    fun a ha ↦ freeProP.relationModule_le_span hcoc hπ hs hD hDof
       (MonoidAlgebra.mem_relationModule_iff.2 ha)
   have hcardX : Fintype.card X = topologicalGeneratorRankNat G hfg := by simp [X]
   have hcards : Fintype.card s ≤ finrank (ZMod p) (H2 G (ZMod p)) := by
