@@ -27,7 +27,7 @@ the rescaled endpoints when `c - r < a ≤ b < c + r` (`volume_idealRegionAbove`
 one-variable integrals of the computation are `TauCeti.lintegral_Ioi_inv_sq` and
 `TauCeti.integral_one_div_sqrt_one_sub_sq`.
 
-Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 8 (2008), §5: the area
+Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010), §5: the area
 `μ(A) = ∫_A dx dy / y²` (5.1) and its invariance (Theorem 5.3), p. 18; the computation
 `μ(Δ) = ∫_a^b dx / √(1 - x²) = π - α - β` for a triangle with a vertex at `∞`, p. 19–20.
 -/
