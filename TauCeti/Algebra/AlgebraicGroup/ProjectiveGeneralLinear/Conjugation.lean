@@ -22,7 +22,8 @@ from `TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Basic`, and identif
 * its effect on points: over every commutative `R`-algebra `A`, a point `g` of `GLₙ` goes to the
   inner automorphism of `Mₙ(A)` defined by `g`;
 * its kernel: a point lies in the scheme-theoretic kernel exactly when its matrix is central, and
-  over a field the kernel Hopf ideal is the defining ideal of the center `Z(GLₙ) ≅ 𝔾ₘ`;
+  over a field the kernel Hopf ideal is the defining ideal of the center `Z(GLₙ)` (which is
+  `𝔾ₘ` when `n > 0`, and trivial when `n = 0`);
 * its image on field-valued points: by the Skolem–Noether theorem every automorphism of `Mₙ(K)`
   over a field `K` is inner, so the map on `K`-points is surjective. Together with the kernel
   computation, the `K`-points of `PGLₙ` are Mathlib's `PGL(n, K) = GLₙ(K) / Z(GLₙ(K))`
@@ -49,8 +50,8 @@ at `((p, q), (i, j))` is `gₚᵢ (g⁻¹)ⱼq`. Over the coordinate algebra of 
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), where `PGLₙ` is the quotient of `GLₙ` by its center
-  `𝔾ₘ` and is identified with the automorphism group functor of `Mₙ`.
+* J. S. Milne, *Algebraic Groups* (2017), where, for `n > 0`, `PGLₙ` is the quotient of `GLₙ` by
+  its center `𝔾ₘ` and is identified with the automorphism group functor of `Mₙ`.
 -/
 
 public section
@@ -153,15 +154,6 @@ private theorem coe_pointsMulEquiv {m : ℕ} {A : Type w} [CommRing A] [Algebra 
   rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, toConv_ofConv,
     GeneralLinear.pointsMulEquiv_apply]
 
-/-- Algebra morphisms out of `O(GLₙ)` commute with inverting the generic matrix. -/
-private theorem map_inv_genericMatrix {T : Type w} [CommRing T] [Algebra R T]
-    (φ : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
-    ((GeneralLinear.genericMatrix R n)⁻¹).map φ =
-      ((GeneralLinear.genericMatrix R n).map φ)⁻¹ := by
-  refine (Matrix.inv_eq_left_inv ?_).symm
-  rw [← Matrix.map_mul, Matrix.nonsing_inv_mul _ (GeneralLinear.isUnit_det_genericMatrix R n)]
-  simp
-
 private theorem map_comul_conjugationMatrix_genericMatrix :
     (conjugationMatrix (GeneralLinear.genericMatrix R n) (GeneralLinear.genericMatrix R n)⁻¹).map
         (Bialgebra.comulAlgHom R (GeneralLinear.coordinateHopfAlgebra R n)) =
@@ -171,13 +163,13 @@ private theorem map_comul_conjugationMatrix_genericMatrix :
         (conjugationMatrix (GeneralLinear.genericMatrix R n)
           (GeneralLinear.genericMatrix R n)⁻¹).map
           (Algebra.TensorProduct.includeRight (R := R)) := by
-  simp only [conjugationMatrix_map, map_inv_genericMatrix, GeneralLinear.map_comul_genericMatrix,
-    Matrix.mul_inv_rev, ← conjugationMatrix_mul]
+  simp only [conjugationMatrix_map, GeneralLinear.map_inv_genericMatrix,
+    GeneralLinear.map_comul_genericMatrix, Matrix.mul_inv_rev, ← conjugationMatrix_mul]
 
 private theorem map_counit_conjugationMatrix_genericMatrix :
     (conjugationMatrix (GeneralLinear.genericMatrix R n) (GeneralLinear.genericMatrix R n)⁻¹).map
         (Bialgebra.counitAlgHom R (GeneralLinear.coordinateHopfAlgebra R n)) = 1 := by
-  simp [conjugationMatrix_map, map_inv_genericMatrix]
+  simp [conjugationMatrix_map, GeneralLinear.map_inv_genericMatrix]
 
 /-- The coordinate morphism `O(GL_{n²}) → O(GLₙ)` of the conjugation representation of `GLₙ` on
 `Mₙ`, determined by the multiplicative conjugation matrix of the generic matrix. -/
@@ -231,7 +223,8 @@ theorem pointsMulEquiv_conjugationMap (A : CommAlgCat.{w} R)
     exact congrArg g.ofConv (CommHopfAlgCat.liftQuotient_mk _ _ _ h)
   rw [coe_autToGeneralLinear_innerAut, coe_pointsMulEquiv, coe_pointsMulEquiv, hq,
     AlgHom.coe_comp, ← Matrix.map_map, BialgHom.coe_toAlgHom,
-    map_genericMatrix_conjugationBialgHom, conjugationMatrix_map, map_inv_genericMatrix]
+    map_genericMatrix_conjugationBialgHom, conjugationMatrix_map,
+    GeneralLinear.map_inv_genericMatrix]
 
 end Coordinate
 
