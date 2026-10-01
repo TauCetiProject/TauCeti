@@ -11,12 +11,9 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTrivialit
 /-!
 # Duals of invertible sheaves
 
-The dual of an invertible sheaf of modules is its internal Hom into the tensor unit. It is again
-invertible: on a rank-one trivializing cover, restriction commutes with internal Hom and the dual
-of the standard free rank-one sheaf is standard free rank one.
-
-Evaluation against the dual is an isomorphism for an invertible sheaf. Thus an invertible sheaf
-and its dual are mutually inverse under tensor product.
+The internal-Hom dual of an invertible sheaf is again invertible. Evaluation identifies its tensor
+product with the original sheaf with the tensor unit, so the two sheaves are mutually inverse under
+tensor product. This supplies inverses for the Picard group.
 
 ## Main declarations
 
