@@ -59,7 +59,7 @@ section EMetric
 variable {M : Type*} [EMetricSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+  [IsRiemannianManifold I M]
 
 /-- Near the origin the exponential map lengthens chords by at most a factor close to `1`: for
 every `η > 0`, if `t > 0` is small enough then `exp_p (t • v)` and `exp_p (t • w)` are at distance
@@ -165,7 +165,7 @@ section Metric
 variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+  [IsRiemannianManifold I M]
 
 /-- A broken radial path through the base point whose legs are not opposite is strictly longer
 than the distance between its endpoints; see `edist_riemannianExp_lt_enorm_add_enorm`. -/
