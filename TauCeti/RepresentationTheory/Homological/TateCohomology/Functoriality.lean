@@ -532,68 +532,6 @@ theorem map_comp_negSuccIso_hom {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
       (negSuccIso M n).hom ≫ groupHomology.map (e : G →* H) (IsIntertwiningMap.toRes hφ) n :=
   map_comp_isoGroupHomology_hom hφ _ n (Int.negSucc_eq n)
 
-/-- **Restricting the coefficients along an isomorphism of finite groups does not change Tate
-cohomology**, naturally in the coefficients. -/
-def resIso (e : G ≃* H) (n : ℤ) :
-    Rep.resFunctor (e : G →* H) ⋙ tateCohomologyFunctor (R := R) (G := G) n ≅
-      tateCohomologyFunctor n :=
-  NatIso.ofComponents (fun N ↦ mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n)
-    fun {N N'} ψ ↦ by
-      have hψ : N.ρ.IsIntertwiningMap
-          (N'.ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H)) ψ.hom.toLinearMap :=
-        ⟨fun g v ↦ congr($(ψ.hom.isIntertwining' g) v)⟩
-      have hres : (Rep.res (e : G →* H) N).ρ.IsIntertwiningMap
-          ((Rep.res (e : G →* H) N').ρ.comp
-            ((MulEquiv.refl G : G ≃* G) : G →* G))
-          (ψ.hom.toLinearMap :
-            (Rep.res (e : G →* H) N).V →ₗ[R] (Rep.res (e : G →* H) N').V) :=
-        ⟨fun g v ↦ congr($(ψ.hom.isIntertwining' (e g)) v)⟩
-      have key : map (e := MulEquiv.refl G) hres n ≫
-          map (Rep.isIntertwiningMap_res N' (e : G →* H)) n =
-          map (Rep.isIntertwiningMap_res N (e : G →* H)) n ≫
-            map (e := MulEquiv.refl H) hψ n := by
-        rw [map_comp, map_comp]
-        exact map_congr (by ext x; rfl) (by ext x; rfl) n
-      have hsrc : (Rep.resFunctor (e : G →* H) ⋙ tateCohomologyFunctor (R := R) (G := G) n).map ψ =
-          map (e := MulEquiv.refl G) hres n := (map_refl hres n).symm
-      have htgt : (tateCohomologyFunctor n).map ψ = map (e := MulEquiv.refl H) hψ n :=
-        (map_refl hψ n).symm
-      rw [hsrc, htgt, mapIso_hom, mapIso_hom]
-      exact key
-
-@[simp] theorem resIso_hom_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
-    (resIso e n).hom.app N = (mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n).hom := by
-  rw [resIso]
-  -- `NatIso.ofComponents_hom_app` is not usable as a rewrite here: its motive is ill-typed at
-  -- `implicit` transparency, because `tateCohomologyFunctor` is a semireducible `def`.
-  rfl
-
-@[simp] theorem resIso_inv_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
-    (resIso e n).inv.app N = (mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n).inv := by
-  rw [resIso]
-  -- As above for `NatIso.ofComponents_inv_app`.
-  rfl
-
-/-- Tate cohomology groups matched by a compatible pair whose linear part is an equivalence have
-the same cardinality. -/
-theorem natCard_tateCohomology_eq {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
-    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
-    Nat.card (tateCohomology M n) = Nat.card (tateCohomology N n) :=
-  Nat.card_congr (mapIso he n).toLinearEquiv.toEquiv
-
-/-- In degree zero, the map induced by a morphism of representations of one finite group sends
-the class of an invariant to the class of its image. -/
-@[reassoc (attr := simp), elementwise (attr := simp)]
-theorem H0π_comp_tateCohomologyFunctor_map {M N : Rep R G} (f : M ⟶ N) :
-    H0π M ≫ (tateCohomologyFunctor 0).map f = (Rep.invariantsFunctor R G).map f ≫ H0π N := by
-  have hf : M.ρ.IsIntertwiningMap (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
-      f.hom.toLinearMap := ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
-  -- `map_refl` produces `Rep.ofHom ⟨f.hom.toLinearMap, _⟩`, which is `f` by structure eta.
-  have h : map hf 0 = (tateCohomologyFunctor 0).map f := map_refl hf 0
-  rw [← h, H0π_comp_map]
-  -- `mapInvariants hf` restricts `f` to the invariants, which is how `Rep.invariantsFunctor` acts.
-  rfl
-
 /-! ### Naturality in the coefficients and the connecting maps -/
 
 /-- **The map of Tate complexes of a compatible pair is natural in the coefficients**: if
@@ -628,6 +566,54 @@ theorem tateCohomologyFunctor_map_comp_map {M M' : Rep R G} {N N' : Rep R H} {e 
   exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
     (congrArg (HomologicalComplex.homologyMap · n)
       (complexMap_naturality hφ hφ' f f' hf)).trans (HomologicalComplex.homologyMap_comp _ _ n)
+
+/-- **Restricting the coefficients along an isomorphism of finite groups does not change Tate
+cohomology**, naturally in the coefficients. -/
+def resIso (e : G ≃* H) (n : ℤ) :
+    Rep.resFunctor (e : G →* H) ⋙ tateCohomologyFunctor (R := R) (G := G) n ≅
+      tateCohomologyFunctor n :=
+  NatIso.ofComponents (fun N ↦ mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n)
+    fun {N N'} ψ ↦ by
+      rw [mapIso_hom, mapIso_hom]
+      exact tateCohomologyFunctor_map_comp_map
+        (Rep.isIntertwiningMap_res N (e : G →* H))
+        (Rep.isIntertwiningMap_res N' (e : G →* H))
+        ((Rep.resFunctor (e : G →* H)).map ψ) ψ (by ext; rfl) n
+
+@[simp] theorem resIso_hom_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
+    (resIso e n).hom.app N = (mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n).hom := by
+  rw [resIso]
+  -- `NatIso.ofComponents_hom_app` is not usable as a rewrite here: its motive is ill-typed at
+  -- `implicit` transparency, because `tateCohomologyFunctor` is a semireducible `def`.
+  rfl
+
+@[simp] theorem resIso_inv_app (e : G ≃* H) (n : ℤ) (N : Rep R H) :
+    (resIso e n).inv.app N = (mapIso (Rep.isIntertwiningMap_res N (e : G →* H)) n).inv := by
+  rw [resIso]
+  -- As above for `NatIso.ofComponents_inv_app`.
+  rfl
+
+/-- Tate cohomology groups matched by a compatible pair whose linear part is an equivalence have
+the same cardinality. -/
+theorem natCard_tateCohomology_eq {e : G ≃* H} {e' : M.V ≃ₗ[R] N.V}
+    (he : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) (e' : M.V →ₗ[R] N.V)) (n : ℤ) :
+    Nat.card (tateCohomology M n) = Nat.card (tateCohomology N n) :=
+  Nat.card_congr (mapIso he n).toLinearEquiv.toEquiv
+
+/-- In degree zero, the map induced by a morphism of representations of one finite group sends
+the class of an invariant to the class of its image. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem H0π_comp_tateCohomologyFunctor_map {M N : Rep R G} (f : M ⟶ N) :
+    H0π M ≫ (tateCohomologyFunctor 0).map f = (Rep.invariantsFunctor R G).map f ≫ H0π N := by
+  have hf : M.ρ.IsIntertwiningMap (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+      f.hom.toLinearMap := ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  -- `map_refl` produces `Rep.ofHom ⟨f.hom.toLinearMap, _⟩`, which is `f` by structure eta.
+  have h : map hf 0 = (tateCohomologyFunctor 0).map f := map_refl hf 0
+  rw [← h, H0π_comp_map]
+  -- `mapInvariants hf` restricts `f` to the invariants, which is how `Rep.invariantsFunctor` acts.
+  rfl
+
+/-! ### Connecting maps -/
 
 /-- **Tate cohomology of compatible pairs commutes with the connecting maps.** Compatible pairs
 between the terms of a short exact sequence `S` of `G`-representations and those of a short exact

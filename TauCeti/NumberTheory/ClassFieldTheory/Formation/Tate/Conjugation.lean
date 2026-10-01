@@ -63,15 +63,54 @@ variable (L : NormalLayer G) (F : Formation G) (g : G)
 /-- **Conjugation on Tate cohomology with trivial integral coefficients**: the isomorphism
 `H^r(U/V, ℤ) ≅ H^r(gUg⁻¹/gVg⁻¹, ℤ)` induced by the isomorphism of Galois groups. -/
 def conjugateTrivialTateIso (r : ℤ) : L.TrivialTateH r ≅ (L.conjugate g).TrivialTateH r :=
-  TateCohomology.mapIso (Rep.isIntertwiningMap_trivial ℤ (L.conjugateGalEquiv g).toMonoidHom) r
+  TateCohomology.mapIso (e := L.conjugateGalEquiv g)
+    (Rep.isIntertwiningMap_trivial ℤ (L.conjugateGalEquiv g).toMonoidHom) r
 
 /-- Conjugation with trivial integral coefficients is the Tate map of the compatible pair formed by
 the isomorphism of Galois groups and the identity of `ℤ`. -/
 theorem conjugateTrivialTateIso_hom (r : ℤ) :
     (L.conjugateTrivialTateIso g r).hom =
-      TateCohomology.map
+      TateCohomology.map (e := L.conjugateGalEquiv g)
         (Rep.isIntertwiningMap_trivial ℤ (L.conjugateGalEquiv g).toMonoidHom) r :=
   TateCohomology.mapIso_hom _ r
+
+private theorem map_eq_conjugateTrivialTateIso_hom {L' : NormalLayer G}
+    (hL : L.conjugate g = L') {e : L.Gal ≃* L'.Gal}
+    (he : e = (L.conjugateGalEquiv g).trans
+      (MulEquiv.cast (M := fun K : NormalLayer G => K.Gal) hL)) (r : ℤ) :
+    TateCohomology.map (e := e) (Rep.isIntertwiningMap_trivial ℤ (e : L.Gal →* L'.Gal)) r =
+      (L.conjugateTrivialTateIso g r).hom ≫ eqToHom (by rw [hL]) := by
+  subst hL
+  rw [eqToHom_refl, Category.comp_id, conjugateTrivialTateIso_hom]
+  exact TateCohomology.map_congr (he.trans (by ext x; rfl)) rfl r
+
+/-- Conjugation by `1` is the identity on Tate cohomology with trivial integral coefficients,
+up to transport along `conjugate_one`. -/
+theorem conjugateTrivialTateIso_one (r : ℤ) :
+    L.conjugateTrivialTateIso 1 r = eqToIso (by rw [conjugate_one]) := by
+  refine Iso.ext ?_
+  have key := L.map_eq_conjugateTrivialTateIso_hom 1 L.conjugate_one
+    L.conjugateGalEquiv_one.symm r
+  have hid : TateCohomology.map (e := MulEquiv.refl L.Gal)
+      (Rep.isIntertwiningMap_trivial ℤ (MonoidHom.id L.Gal)) r = 𝟙 _ :=
+    TateCohomology.map_id (M := Rep.trivial ℤ L.Gal ℤ) r
+  rw [hid] at key
+  simpa using (comp_eqToHom_iff _ _ _).1 key.symm
+
+/-- Conjugation by `h` and then by `g` on Tate cohomology with trivial integral coefficients
+is conjugation by `g * h`, up to transport along `conjugate_conjugate`. -/
+theorem conjugateTrivialTateIso_trans_conjugateTrivialTateIso (g h : G) (r : ℤ) :
+    L.conjugateTrivialTateIso h r ≪≫ (L.conjugate h).conjugateTrivialTateIso g r =
+      L.conjugateTrivialTateIso (g * h) r ≪≫ eqToIso (by rw [conjugate_conjugate]) := by
+  refine Iso.ext ?_
+  rw [Iso.trans_hom, Iso.trans_hom, eqToIso.hom, conjugateTrivialTateIso_hom,
+    conjugateTrivialTateIso_hom]
+  refine (TateCohomology.map_comp (e₁ := L.conjugateGalEquiv h)
+    (e₂ := (L.conjugate h).conjugateGalEquiv g)
+    (Rep.isIntertwiningMap_trivial ℤ (L.conjugateGalEquiv h).toMonoidHom)
+    (Rep.isIntertwiningMap_trivial ℤ ((L.conjugate h).conjugateGalEquiv g).toMonoidHom) r).trans ?_
+  exact L.map_eq_conjugateTrivialTateIso_hom (g * h) (L.conjugate_conjugate g h).symm
+    (L.conjugateGalEquiv_trans_conjugateGalEquiv g h) r
 
 /-- **In degree `-2`, conjugation is conjugation of abelianized Galois groups**: under the
 identifications `H^{-2}(U/V, ℤ) ≃ (U/V)^ab`, it is the isomorphism induced by

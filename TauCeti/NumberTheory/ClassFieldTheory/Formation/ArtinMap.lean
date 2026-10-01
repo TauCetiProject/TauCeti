@@ -194,10 +194,13 @@ theorem isGenerator_artinMap_iff (a : F.level L.ground) :
 /-- **The Nakayama map commutes with conjugation**: conjugating the abelianized Galois group by
 `g` and conjugating the norm quotient by `g` are matched by the Nakayama maps of a layer and its
 conjugate. -/
+@[simp]
 theorem nakayamaNegTwo_conj (g : G) (σ : Additive (Abelianization L.Gal)) :
-    cf.nakayamaNegTwo (L.conjugate g) ((L.conjugateGalEquiv g).abelianizationCongr.toAdditive σ) =
+    cf.nakayamaNegTwo (L.conjugate g)
+        (Additive.ofMul ((L.conjugateGalEquiv g).abelianizationCongr (Additive.toMul σ))) =
       L.conjugateNormQuotientEquiv F g (cf.nakayamaNegTwo L σ) := by
   obtain ⟨x, rfl⟩ := L.tateHMinusTwoEquivAbelianization.surjective σ
+  rw [← MulEquiv.toAdditive_apply_apply]
   rw [nakayamaNegTwo_apply, nakayamaNegTwo_apply, AddEquiv.symm_apply_apply,
     ← L.tateHMinusTwoEquivAbelianization_conjugateTrivialTateIso_apply g x,
     AddEquiv.symm_apply_apply, ← tateIso_apply, ← tateIso_apply, ← cf.tateIso_conj L g (-2) x]
@@ -209,6 +212,7 @@ applied to the conjugate of a class modulo norms, is the conjugate of its Artin 
 theorem artinEquiv_conj (g : G) (y : L.NormQuotient F) :
     cf.artinEquiv (L.conjugate g) (L.conjugateNormQuotientEquiv F g y) =
       (L.conjugateGalEquiv g).abelianizationCongr.toAdditive (cf.artinEquiv L y) := by
+  simp only [MulEquiv.toAdditive_apply_apply]
   rw [← nakayamaNegTwo_artinEquiv cf L y, ← nakayamaNegTwo_conj, artinEquiv_nakayamaNegTwo,
     nakayamaNegTwo_artinEquiv]
 

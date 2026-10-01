@@ -142,30 +142,30 @@ theorem HNegTwoAddEquivAbelianization_map {H : Type} [Group H] [Fintype H] (e : 
     HNegTwoAddEquivAbelianization
         (map (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) x) =
       e.abelianizationCongr.toAdditive (HNegTwoAddEquivAbelianization x) := by
-  -- In degree `-2` the pair acts on first homology as the change-of-group map along `e`.
-  have hm : (_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ H ℤ)
-      (map (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) x) =
-      groupHomology.map (e : G →* H)
-        (Representation.IsIntertwiningMap.toRes
-          (Rep.isIntertwiningMap_trivial ℤ (e : G →* H))) 1
-        ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ G ℤ) x) :=
-    ConcreteCategory.congr_hom
-      (map_comp_isoGroupHomology_hom
-        (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) 1 rfl) x
-  rw [HNegTwoAddEquivAbelianization_apply, HNegTwoAddEquivAbelianization_apply,
-    HNegTwoAddEquivTensorOfIsTrivial_apply, HNegTwoAddEquivTensorOfIsTrivial_apply, hm]
-  -- On first homology with trivial coefficients, the change of group along `e` is
-  -- `Abelianization.map e` tensored with the identity of `ℤ`.
-  have h1 := TauCeti.groupHomology.H1AddEquivOfIsTrivial_map (e : G →* H)
-    (Representation.IsIntertwiningMap.toRes (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)))
-    ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ G ℤ) x :
-      groupHomology.H1 (Rep.trivial ℤ G ℤ))
-  refine (congrArg (TensorProduct.rid ℤ (Additive (Abelianization H))) h1).trans ?_
-  simp only [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, LinearEquiv.refl_toLinearMap,
-    LinearMap.restrictScalars_self]
-  rw [← LinearMap.rTensor_def, TauCeti.tensorProduct_rid_rTensor_apply]
-  -- `MulEquiv.abelianizationCongr e` is `Abelianization.map e` on underlying functions.
-  rfl
+  have hφ : Representation.IsIntertwiningMap.toRes
+      (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) =
+        𝟙 (Rep.res (e : G →* H) (Rep.trivial ℤ H ℤ)) := by
+    ext
+    simp only [Representation.IsIntertwiningMap.toRes_hom_toLinearMap]
+    rfl
+  have hm : map (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) =
+      HNegTwoCor (Rep.trivial ℤ H ℤ) (e : G →* H) := by
+    -- The sources agree definitionally, but rewriting cannot unfold the restricted trivial
+    -- representation inside `tateCohomologyFunctor`; compose the comparison squares as terms.
+    exact (cancel_mono (negSuccIso (Rep.trivial ℤ H ℤ) 1).hom).1 <|
+      (map_comp_negSuccIso_hom (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) 1).trans
+        (by
+          rw [hφ]
+          simpa only [HNegTwoCor_eq_negSuccCor, Rep.res, Rep.resFunctor, Rep.trivial,
+            Representation.trivial, MonoidHom.one_comp] using
+            (negSuccCor_comp_negSuccIso_hom (Rep.trivial ℤ H ℤ) (e : G →* H) 1).symm)
+  exact (congrArg (fun f : tateCohomology (Rep.trivial ℤ G ℤ) (-2) ⟶
+    tateCohomology (Rep.trivial ℤ H ℤ) (-2) ↦ HNegTwoAddEquivAbelianization (f x)) hm).trans
+      (by
+        convert HNegTwoAddEquivAbelianization_HNegTwoCor (e : G →* H) x using 1
+        rw [HNegTwoAddEquivAbelianization_apply]
+        simp only [Rep.res, Rep.trivial, Representation.trivial, MonoidHom.one_comp]
+        rfl)
 
 end TrivialInt
 
