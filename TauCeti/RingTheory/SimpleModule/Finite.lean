@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.Group.Exponent
+public import TauCeti.RingTheory.SimpleModule.Basic
 -- Non-public: Cauchy's theorem `exists_prime_orderOf_dvd_card'`, in its additive form, supplies the
 -- element of prime order that pins the exponent, and is used only inside a proof.
 import Mathlib.GroupTheory.Perm.Cycle.Type
@@ -14,12 +14,10 @@ import Mathlib.GroupTheory.Perm.Cycle.Type
 /-!
 # A finite simple module is an elementary abelian `p`-group
 
-Let `R` be a ring and `M` a **finite** simple `R`-module. Multiplication by a natural number `n` is
-`R`-linear, because the canonical `ℕ`-action commutes with the scalars; as an endomorphism it is
-`n • LinearMap.id`, and its kernel is therefore an `R`-submodule. In a simple module that submodule
-is `⊥` or `⊤`, so `n` either kills no nonzero element or kills everything
-(`TauCeti.forall_nsmul_eq_zero_of_ne_zero`). Taking for `n` a prime `p` dividing `Nat.card M`,
-Cauchy's theorem produces a nonzero element killed by `p`, and the dichotomy forces `p • m = 0` for
+Let `R` be a ring and `M` a **finite** simple `R`-module. In a simple module a natural number `n`
+either kills no nonzero element or kills every element, by
+`TauCeti.forall_nsmul_eq_zero_of_ne_zero`. Taking for `n` a prime `p` dividing `Nat.card M`,
+Cauchy's theorem produces a nonzero element killed by `p`, and that dichotomy forces `p • m = 0` for
 every `m`: the additive group of `M` is **elementary abelian of exponent `p`**
 (`TauCeti.exists_prime_forall_nsmul_eq_zero`). That prime is unique, by
 `TauCeti.eq_of_prime_forall_nsmul_eq_zero`.
@@ -32,8 +30,6 @@ the reduction is `M` itself. `TauCeti.exists_prime_torsionBy_modN_dichotomy` pac
 
 ## Main results
 
-* `TauCeti.forall_nsmul_eq_zero_of_ne_zero`: in a simple module, a natural number killing one
-  nonzero element kills every element.
 * `TauCeti.exists_prime_forall_nsmul_eq_zero`: **a finite simple module has prime exponent.**
 * `TauCeti.exists_prime_torsionBy_modN_dichotomy`: **the torsion subgroup and the reduction of a
   finite simple module at every prime**, the two cases together.
@@ -51,30 +47,6 @@ namespace TauCeti
 section SimpleModule
 
 variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M]
-
-/-- Membership in the kernel of multiplication by `n`, read without the `ℕ`-action on linear
-maps. -/
-private theorem mem_ker_nsmul_id_iff {n : ℕ} {m : M} :
-    m ∈ LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ↔ n • m = 0 := by
-  rw [LinearMap.mem_ker, LinearMap.smul_apply, LinearMap.id_apply]
-
-variable {R M}
-
-/-- **In a simple module a natural number that kills one nonzero element kills every element.**
-Multiplication by `n` is the `R`-linear endomorphism `n • LinearMap.id`, so its kernel is an
-`R`-submodule; a nonzero element of that kernel keeps it from being `⊥`, and in a simple module it
-is then `⊤`. -/
-theorem forall_nsmul_eq_zero_of_ne_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M} (hm₀ : m₀ ≠ 0)
-    (h : n • m₀ = 0) (m : M) : n • m = 0 := by
-  have hne : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ≠ ⊥ := by
-    intro hbot
-    have hmem : m₀ ∈ (⊥ : Submodule R M) := hbot ▸ (mem_ker_nsmul_id_iff R M).mpr h
-    exact hm₀ ((Submodule.mem_bot R).mp hmem)
-  have htop : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) = ⊤ :=
-    (eq_bot_or_eq_top _).resolve_left hne
-  exact (mem_ker_nsmul_id_iff R M).mp (htop ▸ Submodule.mem_top)
-
-variable (R M)
 
 /-- **A finite simple module is an elementary abelian `p`-group.** A simple module is nontrivial,
 so a prime `p` divides its cardinality; Cauchy's theorem produces an element of additive order `p`,
@@ -108,8 +80,8 @@ theorem exists_prime_torsionBy_modN_dichotomy (R M : Type*) [Ring R] [AddCommGro
       ∀ ℓ : ℕ, ℓ.Prime → ℓ ≠ p →
         AddSubgroup.torsionBy M (ℓ : ℤ) = ⊥ ∧ Subsingleton (ModN M ℓ) := by
   obtain ⟨p, hp, hkill⟩ := exists_prime_forall_nsmul_eq_zero R M
-  refine ⟨p, hp, torsionBy_eq_top_of_forall_nsmul_eq_zero hkill, ⟨modNEquiv hkill⟩,
-    fun ℓ hℓ hne ↦ ?_⟩
+  refine ⟨p, hp, eq_top_iff.mpr fun m _ ↦ AddSubgroup.torsionBy.nsmul_iff.mpr (hkill m),
+    ⟨modNEquiv hkill⟩, fun ℓ hℓ hne ↦ ?_⟩
   have hcop : Nat.Coprime ℓ p := (Nat.coprime_primes hℓ hp).mpr hne
   exact ⟨torsionBy_eq_bot_of_coprime hkill hcop, subsingleton_modN_of_coprime hkill hcop⟩
 
