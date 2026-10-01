@@ -16,10 +16,11 @@ The closed subgroup they generate is cut out by the largest Hopf ideal killed by
 that is by the common kernel of their coordinate maps.
 
 This file names the ideal that family cuts out and the resulting coordinate Hopf algebra, and
-records what a consumer needs about them: the quotient is of finite type, and it lies inside the
-base change of the integral Geck carrier. Factorizations of a coordinate morphism or of a single
-generator through the quotient are the generic `TauCeti.CommHopfAlgCat.liftQuotient` and
-`TauCeti.CommHopfAlgCat.commonKernelLift`, reached through the simp lemmas below.
+records what a consumer needs about them: a coordinate morphism killing the defining ideal, and
+in particular each single generator, factors uniquely through the quotient coordinate map; the
+quotient is of finite type; and it lies inside the base change of the integral Geck carrier. The
+factorizations are recorded as unique-existence statements about the named quotient coordinate map,
+so no Geck-specific restatement of `TauCeti.CommHopfAlgCat.liftQuotient` is needed.
 
 Equality of the generated subgroup with the base change of the integral carrier is not asserted:
 extra equations can appear after specialization to a non-flat base. Nor is the generated subgroup
@@ -40,6 +41,10 @@ identified with a pinned simply connected group scheme of type `t`.
   subgroup's defining ideal exactly when every generator coordinate map kills it.
 * `TauCeti.DynkinType.geckBaseChangeDefiningIdeal_le_geckGeneratedDefiningIdeal`: the
   base-changed integral Geck carrier contains the generated subgroup.
+* `TauCeti.DynkinType.existsUnique_geckGeneratedCoordinateMap_comp_eq`: the universal property of
+  the generated subgroup, as a unique factorization through its quotient coordinate map.
+* `TauCeti.DynkinType.existsUnique_geckGeneratedCoordinateMap_comp_eq_geckGeneratorCoordinateMap`:
+  each generator coordinate map factors uniquely through the generated subgroup.
 
 ## References
 
@@ -131,6 +136,30 @@ theorem geckGeneratedCoordinateMap_ker :
       (t.geckGeneratedDefiningIdeal ht A).toIdeal :=
   CommHopfAlgCat.mkQuotient_ker
     (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht)) (t.geckGeneratedDefiningIdeal ht A)
+
+/-- **Universal property of the generated subgroup.** A coordinate morphism out of `O(GLₙ)` that
+kills the generated subgroup's defining ideal factors through the quotient coordinate map, and does
+so in exactly one way. -/
+theorem existsUnique_geckGeneratedCoordinateMap_comp_eq {B : CommHopfAlgCat A}
+    (f : GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht) ⟶ B)
+    (hf : (t.geckGeneratedDefiningIdeal ht A).toIdeal ≤
+      RingHom.ker f.hom.toAlgHom.toRingHom) :
+    ∃! g : t.geckGeneratedCoordinateHopfAlgebra ht A ⟶ B,
+      t.geckGeneratedCoordinateMap ht A ≫ g = f :=
+  ⟨CommHopfAlgCat.liftQuotient (t.geckGeneratedDefiningIdeal ht A) f hf,
+    CommHopfAlgCat.mkQuotient_comp_liftQuotient (t.geckGeneratedDefiningIdeal ht A) f hf,
+    fun g hg => CommHopfAlgCat.liftQuotient_unique (t.geckGeneratedDefiningIdeal ht A) f hf g hg⟩
+
+/-- Each generator coordinate map factors through the generated subgroup's quotient coordinate map,
+and does so in exactly one way. -/
+theorem existsUnique_geckGeneratedCoordinateMap_comp_eq_geckGeneratorCoordinateMap
+    (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+    ∃! g : t.geckGeneratedCoordinateHopfAlgebra ht A ⟶ t.geckGeneratorCoordinateAlgebra A j,
+      t.geckGeneratedCoordinateMap ht A ≫ g = t.geckGeneratorCoordinateMap ht A j :=
+  t.existsUnique_geckGeneratedCoordinateMap_comp_eq ht A (t.geckGeneratorCoordinateMap ht A j) <| by
+    rw [geckGeneratedDefiningIdeal_def]
+    exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker
+      (t.geckGeneratorCoordinateMap ht A) j
 
 /-- The coordinate Hopf algebra of the generated subgroup is a finite-type `A`-algebra. -/
 instance : Algebra.FiniteType A (t.geckGeneratedCoordinateHopfAlgebra ht A) := by
