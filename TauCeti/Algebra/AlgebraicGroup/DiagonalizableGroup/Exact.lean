@@ -72,6 +72,7 @@ theorem isShortExact_mapDomainBialgHom (hp : Function.Injective p)
 /-- Over a nonzero commutative ring, the diagonalizable groups `D(N) → D(M) → D(L)` form a short
 exact sequence exactly when `1 → L → M → N → 1` is a short exact sequence of commutative
 groups. -/
+@[simp]
 theorem isShortExact_mapDomainBialgHom_iff [Nontrivial R] :
     CommHopfAlgCat.IsShortExact (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R p))
         (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R q)) ↔

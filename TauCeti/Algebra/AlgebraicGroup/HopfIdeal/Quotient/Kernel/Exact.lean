@@ -106,16 +106,13 @@ theorem comp_eq_unit_comp_counit (h : IsShortExact p i) :
 /-- The subgroup in a short exact sequence is isomorphic to the scheme-theoretic kernel of the
 quotient map, compatibly with the inclusions into `G` (`mkQuotient_comp_kernelIso_hom`). -/
 noncomputable def kernelIso (h : IsShortExact p i) : quotient G (kernelHopfIdeal p) ≅ N :=
-  eqToIso (congrArg (quotient G) h.kerOfSurjective_eq.symm) ≪≫
-    quotientKerOfSurjectiveIso i h.surjective
+  quotientIsoOfKerOfSurjectiveEq i h.surjective h.kerOfSurjective_eq
 
 /-- The identification of the subgroup with the kernel respects the inclusions into `G`. -/
 @[reassoc (attr := simp)]
 theorem mkQuotient_comp_kernelIso_hom (h : IsShortExact p i) :
-    mkQuotient G (kernelHopfIdeal p) ≫ h.kernelIso.hom = i := by
-  rw [kernelIso, Iso.trans_hom, eqToIso.hom, ← Category.assoc,
-    mkQuotient_comp_eqToHom h.kerOfSurjective_eq]
-  exact mkQuotient_comp_quotientKerOfSurjectiveIso_hom i h.surjective
+    mkQuotient G (kernelHopfIdeal p) ≫ h.kernelIso.hom = i :=
+  mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom i h.surjective h.kerOfSurjective_eq
 
 /-- The inverse identification of the subgroup with the kernel respects the inclusions into
 `G`. -/
