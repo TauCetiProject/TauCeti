@@ -20,6 +20,24 @@ import chart_style
 import pr_stats_graphs as stats
 
 
+# Helvetica's ascender and descender as fractions of the size: the box a line of text sits in.
+# Chromium's ink for these headers stays inside it (two subtitle lines' ink spans 0.94 of the size).
+ASCENT, DESCENT = 0.77, 0.23
+
+
+def header_gaps(root):
+    """The clear space between each pair of consecutive header lines (the title, then each subtitle
+    line), as a fraction of the subtitle's rendered size."""
+    width = float(root.attrib["viewBox"].split()[2])
+    scale = width / chart_style.REFERENCE_WIDTH
+    sizes = {"title": chart_style.TITLE_SIZE * scale, "subtitle": chart_style.SUBTITLE_SIZE * scale}
+    lines = [(float(node.attrib["y"]), sizes[node.attrib["class"]])
+             for node in root.iter("{http://www.w3.org/2000/svg}text")
+             if node.attrib.get("class") in sizes]
+    return [((lower - ASCENT * lower_size) - (upper + DESCENT * upper_size)) / sizes["subtitle"]
+            for (upper, upper_size), (lower, lower_size) in zip(lines, lines[1:])]
+
+
 UTC = timezone.utc
 
 
@@ -809,7 +827,10 @@ class CategoryGroupingTest(unittest.TestCase):
         character; Chromium measures these lines in the site's font stack at 0.46 em, and the first
         category wording of this chart (168 characters) overflowed by 87-96 units at every width.
         The column headings are category names up to 27 characters, rotated 45 degrees: the last
-        one must end inside the card too (estimated at HEADING_ASPECT, the chart's own allowance)."""
+        one must end inside the card too (estimated at HEADING_ASPECT, the chart's own allowance).
+        Vertically, each header line clears the one above by at least 0.15 of the subtitle's size. A
+        wide grid scales the type up, and with the old fixed baselines the two subtitle lines touched
+        at 1,939 units (review on TauCetiProject/TauCeti#10413)."""
         def subtitles_fit(matrix):
             for key in ("merges", "reviews"):
                 with tempfile.TemporaryDirectory() as temporary:
@@ -827,6 +848,10 @@ class CategoryGroupingTest(unittest.TestCase):
                     if text.attrib.get("class") == "collab":
                         right = float(text.attrib["x"]) + len(text.text) * heading_em * stats.HEADING_ASPECT / 1.414
                         self.assertLessEqual(right, width, f"heading {text.text!r}")
+                gaps = header_gaps(root)
+                self.assertEqual(len(gaps), 2)
+                for gap in gaps:
+                    self.assertGreaterEqual(gap, 0.15, f"header lines crowd at width {width:g}")
 
         by_length = sorted(stats.ARXIV_MATH, key=lambda code: (-len(stats.ARXIV_MATH[code]), code))
         for n in (1, 2, 17, 20):
@@ -989,7 +1014,9 @@ class HeatmapRenderTest(unittest.TestCase):
         worst = self.headings_clear_the_subtitle(svg)
 
         self.assertIsNotNone(worst)
-        self.assertGreater(worst, stats.HEADING_SUBTITLE_FLOOR, "a heading crosses the subtitle")
+        lowest = max(float(node.attrib["y"]) for node in ET.fromstring(svg).iter(
+            "{http://www.w3.org/2000/svg}text") if node.attrib.get("class") == "subtitle")
+        self.assertGreater(worst, lowest, "a heading crosses the subtitle")
 
     def test_short_headings_do_not_pay_for_the_long_ones(self):
         """The band is sized from the labels, so a grid of short names stays compact."""
@@ -1006,6 +1033,33 @@ class HeatmapRenderTest(unittest.TestCase):
         svg = self.render(self.matrix_for(prs))
         self.assertNotIn(stats.OTHER_CONTRIBUTOR, svg)
         self.assertNotIn(stats.OTHER_ROADMAP, svg)
+
+
+class HeaderSpacingTest(unittest.TestCase):
+    def test_cards_up_to_1500_wide_keep_the_design_positions(self):
+        self.assertEqual(stats.subtitle_baselines(chart_style.REFERENCE_WIDTH, 2), [72, 94])
+        for width in (1250, 1500):
+            self.assertEqual(stats.subtitle_baselines(width, 1), [72])
+
+    def test_the_queue_age_header_clears_its_panels(self):
+        """The one two-line header besides the grids, on a 1,710-unit card: its lines are spread
+        apart, and the panel headings beneath stay where they were, so they must still clear it."""
+        metrics = {"total_open_hours": [5, 30, 200], "awaiting_author_hours": [3, 50],
+                   "in_review_hours": [7], "other_open_prs": 12, "missing_transition_fallbacks": 3}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "queue.svg"
+            stats.render_queue_age(path, metrics, datetime(2026, 1, 31, 12, tzinfo=timezone.utc))
+            root = ET.parse(path).getroot()
+        gaps = header_gaps(root)
+        self.assertEqual(len(gaps), 2)
+        for gap in gaps:
+            self.assertGreaterEqual(gap, 0.15)
+        scale = float(root.attrib["viewBox"].split()[2]) / chart_style.REFERENCE_WIDTH
+        texts = list(root.iter("{http://www.w3.org/2000/svg}text"))
+        lowest = max(float(t.attrib["y"]) for t in texts if t.attrib.get("class") == "subtitle")
+        panel = min(float(t.attrib["y"]) for t in texts if t.attrib.get("class") == "panel")
+        clear = (panel - ASCENT * 15 * scale) - (lowest + DESCENT * chart_style.SUBTITLE_SIZE * scale)
+        self.assertGreaterEqual(clear / (chart_style.SUBTITLE_SIZE * scale), 0.15)
 
 
 class RenderingTest(unittest.TestCase):

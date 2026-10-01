@@ -47,7 +47,7 @@ from typing import Iterable
 
 from arxiv_categories import ARXIV_MATH, read_topic
 from chart_style import (
-    BAR_BG, BG, MUTED, PALETTE, REFERENCE_WIDTH, TEXT, base_css, card_rect, css_px,
+    BAR_BG, BG, MUTED, PALETTE, REFERENCE_WIDTH, SUBTITLE_SIZE, TEXT, base_css, card_rect, css_px,
 )
 # The lifecycle rules live in one module because two readers of the same label
 # timelines have to agree about what they mean, and once did not.
@@ -126,9 +126,13 @@ REFERENCE_HEATMAP_WIDTH = 1500
 # Only used to reserve space, so erring high costs a little whitespace and erring low costs a
 # collision; 0.55 is measured against the longest real roadmap names rather than guessed.
 HEADING_ASPECT = 0.55
-# The lowest subtitle baseline chart_frame emits (y = 72 + 22 for a second line). Rotated
-# column headings have to clear it.
-HEADING_SUBTITLE_FLOOR = 94
+# How far apart chart_frame sets the lines of a card's header, in subtitle sizes. The baselines
+# are design-space positions (title 44, subtitles 72 and 94) but the type scales with the card's
+# width, so on a wide card the lines would close up: at 1,939 units the two subtitle lines touch.
+# Each line therefore sits at least this far below the one above. Measured in Chromium, a subtitle
+# line's ink spans about 0.94 of its size and the title's descent plus a subtitle's ascent about
+# 1.02, so this keeps a gap of at least a quarter of the size. Cards up to 1,500 wide are unchanged.
+HEADER_LEADING = 1.3
 # XML 1.0 forbids most control characters outright, and no amount of entity escaping makes them
 # legal -- a NUL in a label would produce a file no parser will read. GitHub documents label
 # names as general strings and explicitly allows emoji, so this is not a theoretical input.
@@ -1005,12 +1009,20 @@ def chart_frame(
         f'<text x="{left}" y="44" class="title">{html.escape(title)}</text>',
     ]
     lines = [subtitle] if isinstance(subtitle, str) else subtitle
-    for index, line in enumerate(lines):
-        parts.append(
-            f'<text x="{left}" y="{72 + index * 22}" class="subtitle">'
-            f'{html.escape(line)}</text>'
-        )
+    for line, y in zip(lines, subtitle_baselines(width, len(lines))):
+        parts.append(f'<text x="{left}" y="{y:g}" class="subtitle">{html.escape(line)}</text>')
     return parts
+
+
+def subtitle_baselines(width: int, count: int) -> list[float]:
+    """Where chart_frame puts `count` subtitle lines on a card `width` wide: the design positions,
+    72 and then 22 apart, moved down where HEADER_LEADING needs more room for the scaled type."""
+    pitch = HEADER_LEADING * SUBTITLE_SIZE * width / REFERENCE_WIDTH
+    baselines, y = [], 44.0
+    for index in range(count):
+        y += max(28 if index == 0 else 22, pitch)
+        baselines.append(round(y, 1))
+    return baselines
 
 
 def draw_histogram(
@@ -1324,11 +1336,11 @@ def render_roadmap_heatmap(
     # design-space 12 to about 18 user units at this width, so `RepresentationTheory` reaches
     # 143 units. A fixed 232-unit band put it through the subtitle, which is what the first
     # render against real roadmap names showed; the synthetic fixtures all had shorter names.
-    # HEADING_SUBTITLE_FLOOR is the lowest subtitle baseline chart_frame writes.
+    # The headings clear the second subtitle line, wherever chart_frame puts it at this width.
     heading_font = 12 * width / REFERENCE_WIDTH
     longest = max((len(column_label(area)) for area in axis), default=0)
     reach = longest * heading_font * HEADING_ASPECT / 1.414
-    top = max(232, int(HEADING_SUBTITLE_FLOOR + 26 + reach))
+    top = max(232, int(subtitle_baselines(width, 2)[-1] + 26 + reach))
     height = top + len(rows) * cell_h + 72
     maximum = max(counts.values(), default=0)
     edges = heat_buckets(maximum)
