@@ -23,8 +23,9 @@ needs no normality: stability under the automorphisms is assumed instead of deri
 
 ## Main results
 
-* `IntermediateField.coe_restrictAlgEquivHom_apply`: the restriction acts as the
-  automorphism does.
+* `IntermediateField.coe_restrictAlgEquivHom_apply` and
+  `IntermediateField.coe_restrictAlgEquivHom_symm_apply`: the restriction and its inverse act as
+  the automorphism and its inverse do.
 * `IntermediateField.ker_restrictAlgEquivHom`: its kernel is `E.fixingSubgroup`.
 * `IntermediateField.natCard_fixingSubgroup_of_finrank_eq_two`: for a separable quadratic
   `L / E`, the fixing subgroup of `E` has order two.
@@ -55,6 +56,19 @@ theorem coe_restrictAlgEquivHom_apply (σ : L ≃ₐ[K] L) (y : E) :
     (restrictAlgEquivHom E hE σ y : L) = σ y := by
   simp [restrictAlgEquivHom, coe_equivMap_apply,
     equivOfEq_apply]
+
+/-- The inverse of the restriction of `σ` to `E` acts as `σ⁻¹`. -/
+@[simp]
+theorem coe_restrictAlgEquivHom_symm_apply (σ : L ≃ₐ[K] L) (y : E) :
+    ((restrictAlgEquivHom E hE σ).symm y : L) = σ.symm y := by
+  rw [← AlgEquiv.aut_inv, ← map_inv, coe_restrictAlgEquivHom_apply, AlgEquiv.aut_inv]
+
+/-- Restriction commutes with inverses, read in `L`: `σ⁻¹` carries an element of `E` to the
+image of its `σ|_E⁻¹`-preimage. -/
+theorem symm_apply_algebraMap_eq_algebraMap_restrictAlgEquivHom_symm_apply (σ : L ≃ₐ[K] L)
+    (y : E) : σ.symm (algebraMap E L y) = algebraMap E L ((restrictAlgEquivHom E hE σ).symm y) := by
+  rw [IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply,
+    coe_restrictAlgEquivHom_symm_apply]
 
 /-- **The kernel of restriction is the fixing subgroup**: an automorphism restricts to the identity
 of `E` exactly when it fixes `E` pointwise. -/
