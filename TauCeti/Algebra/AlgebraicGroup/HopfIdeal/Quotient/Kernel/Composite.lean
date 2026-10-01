@@ -99,26 +99,19 @@ theorem kernelHopfIdeal_kernelCompositeMap (f : H ⟶ K) (g : K ⟶ L) :
 the original kernel, including its possibly nonreduced scheme structure. -/
 noncomputable def kernelCompositeKernelIso (f : H ⟶ K) (g : K ⟶ L) :
     quotient (quotient L (kernelHopfIdeal (f ≫ g)))
-        (kernelHopfIdeal (kernelCompositeMap f g)) ≅ quotient L (kernelHopfIdeal g) := by
-  let q := quotientMapOfLe L (kernelHopfIdeal_comp_le f g)
-  have he : HopfIdeal.kerOfSurjective q.hom (quotientMapOfLe_surjective L
-        (kernelHopfIdeal_comp_le f g)) = kernelHopfIdeal (kernelCompositeMap f g) := by
-    rw [kernelHopfIdeal_kernelCompositeMap]
-    exact kerOfSurjective_quotientMapOfLe L (kernelHopfIdeal_comp_le f g)
-  exact eqToIso (congrArg (quotient (quotient L (kernelHopfIdeal (f ≫ g)))) he.symm) ≪≫
-    quotientKerOfSurjectiveIso q (quotientMapOfLe_surjective L (kernelHopfIdeal_comp_le f g))
+        (kernelHopfIdeal (kernelCompositeMap f g)) ≅ quotient L (kernelHopfIdeal g) :=
+  quotientIsoOfKerOfSurjectiveEq (quotientMapOfLe L (kernelHopfIdeal_comp_le f g))
+    (quotientMapOfLe_surjective L (kernelHopfIdeal_comp_le f g)) (by
+      rw [kernelHopfIdeal_kernelCompositeMap]
+      exact kerOfSurjective_quotientMapOfLe L (kernelHopfIdeal_comp_le f g))
 
 /-- The kernel identification respects the inclusion into the composite kernel. -/
 @[reassoc (attr := simp)]
 theorem mkQuotient_comp_kernelCompositeKernelIso_hom (f : H ⟶ K) (g : K ⟶ L) :
     mkQuotient (quotient L (kernelHopfIdeal (f ≫ g)))
         (kernelHopfIdeal (kernelCompositeMap f g)) ≫ (kernelCompositeKernelIso f g).hom =
-      quotientMapOfLe L (kernelHopfIdeal_comp_le f g) := by
-  simp only [kernelCompositeKernelIso, Iso.trans_hom, eqToIso.hom, ← Category.assoc]
-  refine (congrArg (fun t ↦ t ≫ _) (mkQuotient_comp_eqToHom (by
-    rw [kernelHopfIdeal_kernelCompositeMap]
-    exact kerOfSurjective_quotientMapOfLe L (kernelHopfIdeal_comp_le f g)))).trans ?_
-  exact mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _
+      quotientMapOfLe L (kernelHopfIdeal_comp_le f g) :=
+  mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom _ _ _
 
 /-- Properties stable under base change pass to the restriction on composite kernels. -/
 private theorem kernelCompositeMap_property

@@ -26,7 +26,7 @@ theorem for the ideal triangle with vertices `a`, `b`, `c`, all three of which l
 It holds for holomorphic `F` whose weight-`2` slashes `F ∣[2] g` by rational matrices of positive
 determinant are integrable near `i∞` along the imaginary axis and tend to `0` at `i∞` uniformly on
 vertical strips; the period integrand `f(z) P(z, 1)` of a cusp form satisfies both conditions
-(`TauCeti.NumberTheory.ModularForms.ModularSymbols.PeriodIntegral`). The proof uses a primitive `Φ`
+(`TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Integral`). The proof uses a primitive `Φ`
 of `F` on `ℍ` (`TauCeti.Analysis.Complex.UpperHalfPlane.Primitive`), whose composite with `g` is a
 primitive of `F ∣[2] g`. The first condition gives `Φ` a limit at each cusp along each geodesic
 ending there; the second shows that the limit at a cusp does not depend on the geodesic, since

@@ -104,7 +104,8 @@ theorem spectralSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
   obtain ⟨A, iA, tA, htA, hA, S, P, hP, ⟨e⟩⟩ := hX
   let h : X ≃ₜ spa S.plus :=
     (TopCat.homeoOfIso (forgetToTop.mapIso e)).trans <|
-      TopCat.homeoOfIso (eqToIso (presentationLimitPreAdicSpace_carrier P S.plus _ hP))
+      TopCat.homeoOfIso (eqToIso (presentationLimitPreAdicSpace_carrier P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP))
   let _ : CompactSpace X := h.symm.compactSpace
   exact h.isOpenEmbedding.spectralSpace
 

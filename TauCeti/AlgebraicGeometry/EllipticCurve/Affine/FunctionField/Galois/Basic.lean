@@ -58,6 +58,12 @@ noncomputable def functionFieldGaloisAction :
   (IsFractionRing.ringEquivOfRingEquivHom (W⁄K).toAffine.CoordinateRing
     (W⁄K).toAffine.FunctionField).comp (coordinateRingGaloisAction W)
 
+/-- The inverse function-field action is the action of the inverse coefficient automorphism. -/
+@[simp]
+theorem functionFieldGaloisAction_symm (σ : K ≃ₐ[F] K) :
+    (functionFieldGaloisAction W σ).symm = functionFieldGaloisAction W σ.symm :=
+  (map_inv (functionFieldGaloisAction W) σ).symm
+
 /-- The function-field action restricts to the coordinate-ring action. -/
 @[simp]
 theorem functionFieldGaloisAction_algebraMap_coordinateRing (σ : K ≃ₐ[F] K)

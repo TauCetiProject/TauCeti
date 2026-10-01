@@ -9,6 +9,8 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Combinatorics.Young.YoungDiagram
 import TauCeti.Combinatorics.Young.Diagram
+import TauCeti.Combinatorics.Young.OfRowLens
+import TauCeti.Data.Fin.StrictAnti
 
 /-!
 # Beta-numbers of a Young diagram
@@ -36,8 +38,13 @@ hook-length API and is developed in `TauCeti/Combinatorics/Young/HookLength/Beta
 * `YoungDiagram.betaNumber_lt_betaNumber`: the beta-numbers strictly decrease across the indices
   `i < j < r` inside the bound.
 * `YoungDiagram.injOn_betaNumber`: the beta-numbers of the indices `i < r` are pairwise distinct.
+* `YoungDiagram.strictAnti_betaNumber`: the beta-numbers relative to `r` are strictly antitone on
+  `Fin r`, and `YoungDiagram.exists_eq_betaNumber_of_strictAnti`: conversely every strictly antitone
+  `Fin r → ℕ` is the sequence of beta-numbers of a diagram with at most `r` rows.
 * `YoungDiagram.eq_of_betaNumber_eq`: a Young diagram with at most `r` rows is determined by its
   beta-numbers of the indices `i < r`.
+* `YoungDiagram.sum_betaNumber`: the beta-numbers of a diagram with at most `r` rows total its
+  number of cells plus the staircase `∑_j (r - 1 - j)`.
 * `YoungDiagram.cast_prod_betaNumber_sub`: casts the product of beta-number differences from
   `ℕ` to `ℤ`.
 
@@ -99,7 +106,50 @@ theorem eq_of_betaNumber_eq {ν : YoungDiagram} (hμ : μ.colLen 0 ≤ r) (hν :
   · rw [rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.not_lt.mp hi)),
       rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))]
 
+/-- The beta-numbers relative to a bound `r` strictly decrease along the indices `Fin r`. -/
+theorem strictAnti_betaNumber (μ : YoungDiagram) (r : ℕ) :
+    StrictAnti fun j : Fin r => μ.betaNumber r j :=
+  fun _ j hij => μ.betaNumber_lt_betaNumber (Fin.lt_def.mp hij) j.isLt
+
+/-- **A strictly decreasing sequence of naturals is a sequence of beta-numbers.**  Every strictly
+antitone `η : Fin r → ℕ` is the sequence of beta-numbers relative to `r` of a Young diagram with at
+most `r` rows, unique by `YoungDiagram.eq_of_betaNumber_eq`.  Strict decrease is exactly what makes
+the differences `η j - (r - 1 - j)` weakly decreasing and nonnegative, hence row lengths. -/
+theorem exists_eq_betaNumber_of_strictAnti {r : ℕ} {η : Fin r → ℕ} (hη : StrictAnti η) :
+    ∃ μ : YoungDiagram, μ.colLen 0 ≤ r ∧ ∀ j : Fin r, μ.betaNumber r j = η j := by
+  have hshift : ∀ j : Fin r, r - 1 - (j : ℕ) ≤ η j := by
+    intro j
+    have hr : 0 < r := Nat.lt_of_le_of_lt (Nat.zero_le _) j.isLt
+    set L : Fin r := ⟨r - 1, by omega⟩ with hLdef
+    have hLval : (L : ℕ) = r - 1 := rfl
+    have hle : j ≤ L := Fin.le_def.mpr (by rw [hLval]; omega)
+    have hgap := TauCeti.add_sub_le_of_strictAnti hη hle
+    rw [hLval] at hgap
+    omega
+  have hanti : Antitone fun j : Fin r => η j - (r - 1 - (j : ℕ)) := by
+    intro i j hij
+    dsimp only
+    have hgap := TauCeti.add_sub_le_of_strictAnti hη hij
+    have hi := hshift i
+    have hj := hshift j
+    have hij' : (i : ℕ) ≤ (j : ℕ) := Fin.le_def.mp hij
+    have hjr : (j : ℕ) < r := j.isLt
+    omega
+  refine ⟨ofRowLensFin _ hanti, colLen_zero_ofRowLensFin_le _ hanti, fun j => ?_⟩
+  rw [betaNumber_def, rowLen_ofRowLensFin]
+  have := hshift j
+  omega
+
+
 open Finset
+
+/-- **The beta-numbers of a diagram total its size plus the staircase.**  For a diagram with at most
+`r` rows the row lengths add up to the number of cells, and the shifts add up separately. -/
+theorem sum_betaNumber (μ : YoungDiagram) {r : ℕ} (hμ : μ.colLen 0 ≤ r) :
+    ∑ j : Fin r, μ.betaNumber r j = μ.card + ∑ j : Fin r, (r - 1 - (j : ℕ)) := by
+  simp only [betaNumber_def]
+  rw [Finset.sum_add_distrib, card_eq_sum_range_rowLen μ hμ,
+    Fin.sum_univ_eq_sum_range (fun i => μ.rowLen i) r]
 
 /-- The Vandermonde-style product of the differences of the beta-numbers is computed by the same
 formula over `ℤ`, the differences being nonnegative. -/
