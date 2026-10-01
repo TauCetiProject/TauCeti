@@ -138,6 +138,7 @@ theorem isPeripheralAut_exponent (φ : peripheralAut hF (basis e)) :
 
 /-- The exponent of a peripheral automorphism is `u` exactly when it is peripheral of
 exponent `u`. -/
+@[simp]
 theorem exponent_eq_iff (φ : peripheralAut hF (basis e)) (u : ℤ_[p]ˣ) :
     exponent hF e hr φ = u ↔ IsPeripheralAut hF (basis e) u φ := by
   constructor
@@ -145,15 +146,6 @@ theorem exponent_eq_iff (φ : peripheralAut hF (basis e)) (u : ℤ_[p]ˣ) :
     rw [← h]
     exact isPeripheralAut_exponent hF e hr φ
   · exact (isPeripheralAut_exponent hF e hr φ).exponent_unique hr
-
-/-- The exponent is `u` exactly when the images of the basis and cusp are conjugate to
-their `u`-th powers. -/
-@[simp]
-theorem exponent_eq_iff_isConj (φ : peripheralAut hF (basis e)) (u : ℤ_[p]ˣ) :
-    exponent hF e hr φ = u ↔
-      (∀ i, IsConj (hF.padicPow (basis e i) u) ((φ : ContinuousAut F) (basis e i))) ∧
-        IsConj (hF.padicPow (cusp (basis e)) u) ((φ : ContinuousAut F) (cusp (basis e))) := by
-  rw [exponent_eq_iff, isPeripheralAut_iff]
 
 /-- Every unit of `ℤ_[p]` is an exponent of a peripheral automorphism. -/
 theorem exponent_surjective : Function.Surjective (exponent hF e hr) := by
