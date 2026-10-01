@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 
 /-!
 # Transport along equalities of degrees in the homogeneous cochain complex
@@ -17,7 +18,15 @@ a transport is read: evaluating a transported element of the resolution at a poi
 the transported value one degree down, and the transport of a homogeneous cochain is, on the
 underlying element of the resolution, the transport one degree up. Both rules are used wherever
 two constructions land in degrees that are equal but not definitionally so, as for the total
-degree `m + n` of a cup product built by recursion on `m`.
+degree `m + n` of a cup product built by recursion on `m`. On continuous cohomology the transport
+is `degreeCast`, the isomorphism `continuousCohomology n X ≅ continuousCohomology k X` along an
+equality `n = k`, and a cocycle that is the transport of another has the transported class
+(`π_eq_degreeCast_π`).
+
+## Main definitions
+
+* `TauCeti.ContinuousCohomology.degreeCast`: transport of continuous cohomology along an equality
+  of degrees.
 -/
 
 public section
@@ -48,5 +57,45 @@ theorem coe_homogeneousCochains_XIsoOfEq_hom_apply {p q : ℕ} (h : p = q)
       ((TopRep.resolution X).XIsoOfEq (congrArg (· + 1) h)).hom.hom (Subtype.val v) := by
   subst h
   simp [ContIntertwiningMap.id_apply]
+
+/-- **Transport of continuous cohomology along an equality of degrees**: the isomorphism
+`continuousCohomology n X ≅ continuousCohomology k X` induced by `n = k`. It plays for continuous
+cohomology the role that `HomologicalComplex.XIsoOfEq` plays for the objects of a complex, and is
+needed wherever two constructions land in degrees that are equal but not definitionally so, as
+`0 + n` and `n`. -/
+noncomputable def degreeCast (X : TopRep.{max v w} R G) {n k : ℕ} (h : n = k) :
+    continuousCohomology n X ≅ continuousCohomology k X :=
+  eqToIso (congrArg (continuousCohomology · X) h)
+
+/-- Transport along `n = n` is the identity. -/
+@[simp]
+theorem degreeCast_rfl (n : ℕ) : degreeCast X (rfl : n = n) = Iso.refl _ := by
+  simp [degreeCast]
+
+/-- The inverse of a transport is the transport along the reversed equality. -/
+@[simp]
+theorem degreeCast_symm {n k : ℕ} (h : n = k) : (degreeCast X h).symm = degreeCast X h.symm := by
+  subst h
+  simp [degreeCast]
+
+/-- Two successive transports are the transport along the composite equality. -/
+@[reassoc (attr := simp)]
+theorem degreeCast_hom_comp_degreeCast_hom {n k l : ℕ} (h : n = k) (h' : k = l) :
+    (degreeCast X h).hom ≫ (degreeCast X h').hom = (degreeCast X (h.trans h')).hom := by
+  simp [degreeCast]
+
+/-- **Transport of a class along an equality of degrees.** If the cocycle `z'` of degree `k` is,
+as a homogeneous cochain, the transport of the cocycle `z` of degree `n` along `n = k`, then the
+class of `z'` is the transport of the class of `z`. -/
+theorem π_eq_degreeCast_π {n k : ℕ} (h : n = k) (z : _root_.ContinuousCohomology.cocycles X n)
+    (z' : _root_.ContinuousCohomology.cocycles X k)
+    (hz : (TopRep.homogeneousCochains X).iCycles k z' =
+      ((TopRep.homogeneousCochains X).XIsoOfEq h).hom
+        ((TopRep.homogeneousCochains X).iCycles n z)) :
+    _root_.ContinuousCohomology.π X k z' =
+      (degreeCast X h).hom (_root_.ContinuousCohomology.π X n z) := by
+  subst h
+  obtain rfl : z' = z := (TopRep.homogeneousCochains X).iCycles_injective n (by simpa using hz)
+  simp
 
 end TauCeti.ContinuousCohomology

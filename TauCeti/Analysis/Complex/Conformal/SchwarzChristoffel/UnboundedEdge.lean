@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
 public import TauCeti.Analysis.Convex.Segment
 public import TauCeti.Algebra.Order.BigOperators.Sum.Filter
 public import TauCeti.Topology.Order.Interval

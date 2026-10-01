@@ -60,6 +60,91 @@ universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
+open Classical in
+/-- The product index for the vertex--dart--volume basis of the public componentwise
+zigzag algebra. `none` denotes a zero product in that algebra. In the nonisolated
+relation quotient, a returned volume index at an isolated vertex still denotes
+the zero junk value. The left factor is traversed second. -/
+noncomputable def zigzagBasisMul : ZigzagBasisIndex G → ZigzagBasisIndex G →
+    Option (ZigzagBasisIndex G)
+  | .inl i, .inl j => if i = j then some (.inl i) else none
+  | .inl i, .inr (.inl d) => if i = d.snd then some (.inr (.inl d)) else none
+  | .inl i, .inr (.inr j) => if i = j then some (.inr (.inr j)) else none
+  | .inr (.inl d), .inl i => if i = d.fst then some (.inr (.inl d)) else none
+  | .inr (.inl d), .inr (.inl e) =>
+      if e = d.symm then some (.inr (.inr d.snd)) else none
+  | .inr (.inl _), .inr (.inr _) => none
+  | .inr (.inr i), .inl j => if i = j then some (.inr (.inr i)) else none
+  | .inr (.inr _), .inr (.inl _) => none
+  | .inr (.inr _), .inr (.inr _) => none
+
+omit [Finite V] in
+open Classical in
+/-- The product index of two vertex vectors. -/
+@[simp]
+theorem zigzagBasisMul_vertex_vertex (i j : V) :
+    zigzagBasisMul G (.inl i) (.inl j) =
+      (if i = j then some (.inl i) else none : Option (ZigzagBasisIndex G)) := by rfl
+
+omit [Finite V] in
+open Classical in
+/-- The product index of a vertex vector and a dart vector. -/
+@[simp]
+theorem zigzagBasisMul_vertex_dart (i : V) (d : G.Dart) :
+    zigzagBasisMul G (.inl i) (.inr (.inl d)) =
+      (if i = d.snd then some (.inr (.inl d)) else none : Option (ZigzagBasisIndex G)) := by rfl
+
+omit [Finite V] in
+open Classical in
+/-- The product index of a vertex vector and a volume vector. -/
+@[simp]
+theorem zigzagBasisMul_vertex_volume (i j : V) :
+    zigzagBasisMul G (.inl i) (.inr (.inr j)) =
+      (if i = j then some (.inr (.inr j)) else none : Option (ZigzagBasisIndex G)) := by rfl
+
+omit [Finite V] in
+open Classical in
+/-- The product index of a dart vector and a vertex vector. -/
+@[simp]
+theorem zigzagBasisMul_dart_vertex (d : G.Dart) (i : V) :
+    zigzagBasisMul G (.inr (.inl d)) (.inl i) =
+      (if i = d.fst then some (.inr (.inl d)) else none : Option (ZigzagBasisIndex G)) := by rfl
+
+omit [Finite V] in
+open Classical in
+/-- The product index of two dart vectors. -/
+@[simp]
+theorem zigzagBasisMul_dart_dart (d e : G.Dart) :
+    zigzagBasisMul G (.inr (.inl d)) (.inr (.inl e)) =
+      (if e = d.symm then some (.inr (.inr d.snd)) else none :
+        Option (ZigzagBasisIndex G)) := by rfl
+
+omit [Finite V] in
+/-- A dart vector followed by a volume vector has zero product index. -/
+@[simp]
+theorem zigzagBasisMul_dart_volume (d : G.Dart) (i : V) :
+    zigzagBasisMul G (.inr (.inl d)) (.inr (.inr i)) = none := by rfl
+
+omit [Finite V] in
+open Classical in
+/-- The product index of a volume vector and a vertex vector. -/
+@[simp]
+theorem zigzagBasisMul_volume_vertex (i j : V) :
+    zigzagBasisMul G (.inr (.inr i)) (.inl j) =
+      (if i = j then some (.inr (.inr i)) else none : Option (ZigzagBasisIndex G)) := by rfl
+
+omit [Finite V] in
+/-- A volume vector followed by a dart vector has zero product index. -/
+@[simp]
+theorem zigzagBasisMul_volume_dart (i : V) (d : G.Dart) :
+    zigzagBasisMul G (.inr (.inr i)) (.inr (.inl d)) = none := by rfl
+
+omit [Finite V] in
+/-- Two volume vectors have zero product index. -/
+@[simp]
+theorem zigzagBasisMul_volume_volume (i j : V) :
+    zigzagBasisMul G (.inr (.inr i)) (.inr (.inr j)) = none := by rfl
+
 /-- The volume class of a vertex with no neighbour is zero: it carries no backtrack. This is the
 form of `TauCeti.zigzagVolume_eq_zero_of_isIsolated` that the case splits below produce. -/
 private theorem zigzagVolume_eq_zero_of_not_exists_adj {i : V} (h : ¬∃ j, G.Adj i j) :

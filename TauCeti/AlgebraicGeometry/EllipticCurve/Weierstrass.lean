@@ -35,7 +35,7 @@ All are stated over a commutative ring, matching the generality of the Mathlib r
 complement. The first two are consumed by the automorphism-group development in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean`, the `Aut (E, O)` milestone of
 `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1; the base-change pair is consumed by the
-twist classification in `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean`, which
+twist classification in `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist/Basic.lean`, which
 needs `Aut(Eᴸ) = {±1}` after base change to a splitting field.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,

@@ -39,8 +39,12 @@ Hecke character coming from a ray class character has finite order.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.mem_range_ofRayClassCharacter_iff`: a Hecke
   character comes from a ray class character of `𝔪` exactly when it is trivial on
   `raySubgroup 𝔪`.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.mem_range_ofRayClassCharacter_gcd`: the moduli from
+  which a Hecke character comes are closed under greatest common divisors.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.ofRayClassCharacter_induced`: the pullback is
   unchanged when a ray class character is induced to a larger modulus.
+* `TauCeti.GlobalNumberFields.RayClassCharacter.exists_induced_eq_iff_mem_range`: induction from a
+  divisor is equivalent to membership of the corresponding Hecke-character pullback range.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.isFiniteOrder_ofRayClassCharacter`: Hecke characters
   coming from ray class characters have finite order.
 
@@ -151,6 +155,16 @@ theorem mem_range_ofRayClassCharacter_iff {χ : HeckeCharacter K} :
     rw [ofRayClassCharacter_apply]
     exact MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ c
 
+/-- **The moduli from which a Hecke character comes are closed under greatest common divisors.**
+A Hecke character trivial on the ray subgroups of `𝔪` and of `𝔫` is trivial on the subgroup they
+generate, which is the ray subgroup of `𝔪.gcd 𝔫`. -/
+theorem mem_range_ofRayClassCharacter_gcd {χ : HeckeCharacter K}
+    (h𝔪 : χ ∈ (ofRayClassCharacter 𝔪).range) (h𝔫 : χ ∈ (ofRayClassCharacter 𝔫).range) :
+    χ ∈ (ofRayClassCharacter (𝔪.gcd 𝔫)).range := by
+  rw [mem_range_ofRayClassCharacter_iff] at h𝔪 h𝔫 ⊢
+  rw [raySubgroup_gcd]
+  exact sup_le h𝔪 h𝔫
+
 /-- **Pullback is compatible with change of modulus**: for `𝔪 ∣ 𝔫`, inducing a ray class
 character of `𝔪` to `𝔫` and then pulling back gives the same Hecke character as pulling back
 directly from `𝔪`. -/
@@ -173,5 +187,23 @@ theorem isFiniteOrder_ofRayClassCharacter (χ : RayClassCharacter 𝔪) :
   (ofRayClassCharacter 𝔪).isOfFinOrder (isOfFinOrder_of_finite χ)
 
 end HeckeCharacter
+
+namespace RayClassCharacter
+
+variable {𝔪 𝔫 : Modulus K}
+
+/-- A ray class character of `𝔪` is induced from a divisor `𝔫` of `𝔪` exactly when its Hecke
+character comes from a ray class character of `𝔫`. -/
+theorem exists_induced_eq_iff_mem_range (h : 𝔫 ∣ 𝔪) (η : RayClassCharacter 𝔪) :
+    (∃ ψ : RayClassCharacter 𝔫, ψ.induced h = η) ↔
+      HeckeCharacter.ofRayClassCharacter 𝔪 η ∈ (HeckeCharacter.ofRayClassCharacter 𝔫).range := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    exact ⟨ψ, (HeckeCharacter.ofRayClassCharacter_induced h ψ).symm⟩
+  · rintro ⟨ψ, hψ⟩
+    refine ⟨ψ, HeckeCharacter.ofRayClassCharacter_injective 𝔪 ?_⟩
+    rw [HeckeCharacter.ofRayClassCharacter_induced, hψ]
+
+end RayClassCharacter
 
 end TauCeti.GlobalNumberFields

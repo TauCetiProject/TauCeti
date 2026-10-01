@@ -136,7 +136,7 @@ theorem char_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) (g : G) :
 subrepresentation. -/
 instance isIrreducible_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) :
     (ofLinearCharacter (k := k) χ).IsIrreducible :=
-  TauCeti.Representation.isIrreducible_of_finrank_eq_one _ (Module.finrank_self k)
+  isIrreducible_of_finrank_eq_one _ (Module.finrank_self k)
 
 end Representation
 

@@ -119,10 +119,8 @@ theorem hasDirichletDensity_primesCongruent (m a : ℕ) [NeZero m]
       {𝔭 : HeightOneSpectrum (𝓞 ℚ) | Ideal.absNorm 𝔭.asIdeal % m = a % m}
       (1 / (Nat.totient m : ℝ)) := by
   refine Set.hasDirichletDensity_of_hasNaturalDensity
-    (Set.hasNaturalDensity_of_isLittleO_logIntegral ?_ ?_)
-  · rw [one_div]
-    exact primeCount_rat_sub_mul_logIntegral_isLittleO m a ha
-  · simpa [Nat.mod_one] using
-      primeCount_rat_sub_mul_logIntegral_isLittleO 1 0 (isUnit_of_subsingleton _)
+    (Set.hasNaturalDensity_iff_isLittleO_logIntegral.2 ?_)
+  rw [one_div]
+  exact primeCount_rat_sub_mul_logIntegral_isLittleO m a ha
 
 end NumberField.Chebotarev

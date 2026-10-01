@@ -1,0 +1,183 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Image
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.NeTwo
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Image
+
+/-!
+# Uniqueness of Demushkin groups with `q ≠ 2` or of odd rank
+
+Labute's classification says that a Demushkin group is determined up to topological isomorphism
+by its rank `n` and the image of its canonical character, which for `q ≠ 2` is `1 + q ℤ_p` for the
+`q`-invariant `q` of the group. This file proves the uniqueness statement in two cases: `q ≠ 2`,
+in intrinsic form, where the hypotheses are the rank and the `q`-invariant of the group and no
+presentation is chosen in the statement; and odd rank, where `p = 2`, `q = 2`, and the invariant is
+the image of the canonical character.
+
+The input for `q ≠ 2` is Labute's exact normal form `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`, in
+its intrinsic form: a Demushkin group with `q`-invariant `q ≠ 2` is presented by that word on
+`demushkinRank hG` generators, by
+`IsDemushkin.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_demushkinQ_ne_two`,
+and a relator in `Φ(F)` presenting a Demushkin group with `q`-invariant `q ≠ 2` is carried to that
+word by a continuous automorphism of `F`
+(`TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two`).
+The input for odd rank is the odd dyadic normal form `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`, at
+the level `f` read off the image `{±1} × U^(f)` of the canonical character, or the level-`∞` word
+`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` when the image is `{±1}`
+(`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Image`). Two groups, or
+two relators, with the same invariants are then compared through their common normal form.
+
+## Main results
+
+* `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq`: Labute's Theorem 2 for
+  `q ≠ 2`, two relators in `Φ(F)` presenting Demushkin groups with the same `q`-invariant `q ≠ 2`
+  are carried to each other by a continuous automorphism of `F`.
+* `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_demushkinQ_eq`: two Demushkin groups with
+  the same `q`-invariant `q ≠ 2` and the same rank are topologically isomorphic.
+* `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq`: the same, with
+  the `q`-invariant replaced by the image of the canonical character, the invariant of Labute's
+  classification.
+* `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_eq_of_odd`:
+  Labute's Theorem 2 for odd rank, two relators in `Φ(F)` of the free pro-`2` group on an odd
+  number of generators presenting Demushkin groups whose canonical characters have the same image
+  are carried to each other by a continuous automorphism of `F`.
+* `IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq_of_odd_demushkinRank`:
+  two Demushkin groups at `p = 2` of the same odd rank whose canonical characters have the same
+  image are topologically isomorphic.
+
+## References
+
+* J. Labute, *Classification of Demushkin groups*, Canad. J. Math. 19 (1967), 106–132, §3,
+  Theorems 2 and 3.
+* J.-P. Serre, *Galois Cohomology*, Chapter I, §4.5.
+-/
+
+public section
+
+namespace TauCeti
+
+universe u v
+
+open freeProP
+
+variable {p : ℕ} [Fact p.Prime]
+
+section Relator
+
+variable {n : ℕ}
+
+/-- **Labute's Theorem 2 for `q ≠ 2`.** Let `r, r' ∈ Φ(F)` be relators of the free pro-`p` group
+on `n` generators whose presented groups are Demushkin groups with the same `q`-invariant `q ≠ 2`.
+Then a continuous automorphism of `F` carries `r` to `r'`; in particular the closed normal
+closures of `r` and `r'` are carried to each other. -/
+theorem freeProP.exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq
+    {r r' : freeProP p (Fin n)} (hr : r ∈ proPFrattini p (freeProP p (Fin n)))
+    (hr' : r' ∈ proPFrattini p (freeProP p (Fin n)))
+    (hG : IsDemushkin p (presentedProP p (Fin n) {r}))
+    (hG' : IsDemushkin p (presentedProP p (Fin n) {r'}))
+    (hq : demushkinQ hG = demushkinQ hG') (hq2 : demushkinQ hG ≠ 2) :
+    ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n), e r = r' := by
+  obtain ⟨e, he⟩ :=
+    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hr hG hq2
+  obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hr'
+    hG' fun h ↦ hq2 (hq.trans h)
+  rw [← hq] at he'
+  exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
+
+/-- **Labute's Theorem 2 for odd rank.** Let `r, r' ∈ Φ(F)` be relators of the free pro-`2` group
+on an odd number `n` of generators whose presented groups are Demushkin groups whose canonical
+characters have the same image. Then a continuous automorphism of `F` carries `r` to `r'`; in
+particular the closed normal closures of `r` and `r'` are carried to each other. -/
+theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_eq_of_odd
+    (hn : Odd n) {r r' : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    (hr' : r' ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
+    (hG' : IsDemushkin 2 (presentedProP 2 (Fin n) {r'}))
+    (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hG').toMonoidHom.range) :
+    ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n), e r = r' := by
+  rcases range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd hn hr hG with
+    hrange | ⟨hn₃, f, hf, hrange⟩
+  · obtain ⟨e, he⟩ :=
+      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn hr hG hrange
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn hr'
+      hG' (h.symm.trans hrange)
+    exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
+  · obtain ⟨e, he⟩ :=
+      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hn₃ hr hG hf hrange
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hn₃
+      hr' hG' hf (h.symm.trans hrange)
+    exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
+
+end Relator
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G]
+
+/-- **Uniqueness of Demushkin groups with `q ≠ 2`** (Labute, Theorems 2 and 3). Two Demushkin
+groups with the same `q`-invariant `q ≠ 2` and the same rank are topologically isomorphic. -/
+theorem IsDemushkin.nonempty_continuousMulEquiv_of_demushkinQ_eq {H : Type v} [Group H]
+    [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H] [TotallyDisconnectedSpace H]
+    (hG : IsDemushkin p G) (hH : IsDemushkin p H) (hq : demushkinQ hG = demushkinQ hH)
+    (hq2 : demushkinQ hG ≠ 2) (hn : demushkinRank hG = demushkinRank hH) :
+    Nonempty (G ≃ₜ* H) := by
+  obtain ⟨e⟩ :=
+    hG.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_demushkinQ_ne_two hq2
+  obtain ⟨e'⟩ := hH.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_demushkinQ_ne_two
+    fun h ↦ hq2 (hq.trans h)
+  rw [hn, hq] at e
+  exact ⟨e.trans e'.symm⟩
+
+/-- **Uniqueness of Demushkin groups with `q ≠ 2`, by the classification invariants** (Labute,
+Theorems 2 and 3). Two Demushkin groups of the same rank whose canonical characters have the same
+image are topologically isomorphic, when `q ≠ 2` for one of them. The image of the canonical
+character determines the `q`-invariant (`TauCeti.demushkinQ_eq_of_range_demushkinCharacter_eq`),
+and `q ≠ 2` is itself a condition on the image
+(`TauCeti.demushkinQ_ne_two_iff_range_demushkinCharacter_le`), so this is the uniqueness half of
+the classification in the invariants `(n, Im χ)` of the existence theorem. -/
+theorem IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq {H : Type v}
+    [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+    [TotallyDisconnectedSpace H] (hG : IsDemushkin p G) (hH : IsDemushkin p H)
+    (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hH).toMonoidHom.range)
+    (hq2 : demushkinQ hG ≠ 2) (hn : demushkinRank hG = demushkinRank hH) :
+    Nonempty (G ≃ₜ* H) :=
+  hG.nonempty_continuousMulEquiv_of_demushkinQ_eq hH
+    (demushkinQ_eq_of_range_demushkinCharacter_eq hG hH h) hq2 hn
+
+namespace IsDemushkin
+
+/-- **Uniqueness of Demushkin groups of odd rank** (Labute, Theorems 2 and 3). Two Demushkin
+groups at `p = 2` of the same odd rank whose canonical characters have the same image are
+topologically isomorphic. Together with
+`TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq`, this is the
+uniqueness half of the classification in the invariants `(n, Im χ)` for every Demushkin group
+except those with `q = 2` of even rank. -/
+theorem nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq_of_odd_demushkinRank
+    {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+    [TotallyDisconnectedSpace H] (hG : IsDemushkin 2 G) (hH : IsDemushkin 2 H)
+    (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hH).toMonoidHom.range)
+    (hodd : Odd (demushkinRank hG)) (hn : demushkinRank hG = demushkinRank hH) :
+    Nonempty (G ≃ₜ* H) := by
+  have hodd' : Odd (demushkinRank hH) := hn ▸ hodd
+  rcases hG.range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd_demushkinRank
+    hodd with hrange | ⟨hn₃, f, hf, hrange⟩
+  · obtain ⟨e⟩ :=
+      hG.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOddTop_of_range_eq hodd hrange
+    obtain ⟨e'⟩ := hH.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOddTop_of_range_eq
+      hodd' (h.symm.trans hrange)
+    rw [hn] at e
+    exact ⟨e.trans e'.symm⟩
+  · obtain ⟨e⟩ := hG.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_range_eq hodd
+      hn₃ hf hrange
+    obtain ⟨e'⟩ := hH.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_range_eq
+      hodd' (hn ▸ hn₃) hf (h.symm.trans hrange)
+    rw [hn] at e
+    exact ⟨e.trans e'.symm⟩
+
+end IsDemushkin
+
+end TauCeti

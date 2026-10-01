@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Data.ZMod.Units
-public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Data.ZMod.QuotientRing
 
 /-!
 # Integer divisibility read off congruences modulo `n`
@@ -41,6 +41,10 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
   and `b` — the Chinese remainder theorem for a single integer.
 * `ZMod.natCast_natAbs_eq_of_mul_nonneg`: congruent integers with nonnegative product have
   congruent absolute values.
+* `ZMod.eq_of_forall_cast_eq_of_prime_pow_dvd`: a residue modulo `n` is determined by its
+  reductions modulo the prime powers dividing `n`.
+* `ZMod.equivPi_apply`: the components of Mathlib's Chinese remainder isomorphism `ZMod.equivPi`
+  are the reductions modulo the prime powers exactly dividing `n`.
 -/
 
 public section
@@ -98,5 +102,27 @@ theorem natCast_natAbs_eq_of_mul_nonneg {m : ℕ} {z w : ℤ} (hzw : 0 ≤ z * w
   · rw [Int.cast_zero, ZMod.intCast_zmod_eq_zero_iff_dvd] at h
     rw [Int.natAbs_zero, Nat.cast_zero, ZMod.natCast_eq_zero_iff]
     exact Int.natCast_dvd.mp h
+
+/-- **A residue is determined by its reductions modulo prime powers.** Two residues modulo `n`
+whose reductions modulo every prime power `p ^ k` dividing `n` agree are equal: the Chinese
+remainder theorem in its uniqueness form, along the prime factorization of `n`. -/
+theorem eq_of_forall_cast_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {x y : ZMod n}
+    (h : ∀ p k : ℕ, p.Prime → k ≠ 0 → p ^ k ∣ n → (cast x : ZMod (p ^ k)) = cast y) : x = y := by
+  -- The difference is the cast of its value, which `n` divides because every prime power
+  -- dividing `n` does.
+  rw [← sub_eq_zero, ← natCast_zmod_val (x - y), natCast_eq_zero_iff]
+  refine (Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp hpk ↦ ?_
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  rw [← natCast_eq_zero_iff, natCast_val, cast_sub hpk, h p k hp hk hpk, sub_self]
+
+/-- The component at `p` of the Chinese remainder isomorphism `ZMod.equivPi` is reduction modulo
+`p ^ n.factorization p`. -/
+@[simp]
+theorem equivPi_apply (n : ℕ) (hn : n ≠ 0) (x : ZMod n) (p : n.primeFactors) :
+    equivPi n hn x p = castHom (Nat.ordProj_dvd n p) (ZMod (p ^ n.factorization p)) x :=
+  RingHom.congr_fun
+    (Subsingleton.elim ((Pi.evalRingHom _ p).comp (equivPi n hn).toRingHom)
+      (castHom (Nat.ordProj_dvd n p) (ZMod (p ^ n.factorization p)))) x
 
 end ZMod

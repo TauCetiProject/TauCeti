@@ -29,6 +29,8 @@ roots of unity to that same power.
   unity, arithmetic Frobenius acts by the `q`-th power map.
 * `TauCeti.frobeniusAlgEquiv_apply_of_pow_eq_one`: the same holds for every root of unity whose
   order is invertible in `𝒪[L]`, not only for the `(q_L − 1)`-st roots of unity.
+* `TauCeti.frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self`: it raises every root of
+  `X^{q^g} − X` to the `q`-th power.
 
 ## References
 
@@ -113,6 +115,21 @@ theorem frobeniusAlgEquiv_apply_of_pow_eq_one [IsUnramified K L] {n : ℕ}
   rw [hq, MulSemiringAction.toAlgHom_apply] at h
   have h' := congrArg Subtype.val h
   rwa [AlgEquiv.coe_smul_integerRing, SubmonoidClass.coe_pow] at h'
+
+/-- **Arithmetic Frobenius on the roots of `X^{q^g} − X`.** In a finite unramified Galois extension
+`L / K`, if `x ^ (q ^ g) = x` for some `g ≠ 0`, then `Frob x = x ^ q`, where `q` is the cardinality
+of the residue field of `K`. -/
+theorem frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self [IsUnramified K L] {g : ℕ} (hg : g ≠ 0)
+    {x : L} (hx : x ^ Nat.card 𝓀[K] ^ g = x) :
+    frobeniusAlgEquiv (K := K) (L := L) x = x ^ Nat.card 𝓀[K] := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · rw [map_zero, zero_pow Nat.card_pos.ne']
+  -- A nonzero root of `X^{q^g} − X` is a `(q^g − 1)`-st root of unity, and `q^g − 1` is prime
+  -- to the residue characteristic.
+  refine frobeniusAlgEquiv_apply_of_pow_eq_one (n := Nat.card 𝓀[K] ^ g - 1) ?_ ?_
+  · simpa using (isUnit_natCast_natCard_pow_sub_one K hg).map (algebraMap 𝒪[K] 𝒪[L])
+  · refine mul_right_cancel₀ hx0 ?_
+    rw [one_mul, ← pow_succ, Nat.sub_add_cancel (Nat.one_le_pow _ _ Nat.card_pos), hx]
 
 end Teichmuller
 

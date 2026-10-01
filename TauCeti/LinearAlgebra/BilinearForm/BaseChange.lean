@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.IsTensorProduct
@@ -39,6 +40,8 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
   domain is, with no hypothesis on the structure map.
 * `TauCeti.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
+* `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
+  base-changes to an isometric equivalence of their base changes.
 -/
 
 public section
@@ -142,5 +145,36 @@ theorem nondegenerate_baseChange_iff [Finite ι] [IsDomain A] [FaithfulSMul R A]
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp h)
 
 end Nondegenerate
+
+section IsometryEquiv
+
+variable {R A M₁ M₂ : Type*}
+variable [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+variable {B₁ : LinearMap.BilinForm R M₁} {B₂ : LinearMap.BilinForm R M₂}
+
+variable (A) in
+/-- Base change of an isometric equivalence of bilinear forms: the base change of the underlying
+linear equivalence is an isometric equivalence of the base-changed forms. -/
+def _root_.LinearMap.BilinForm.IsometryEquiv.baseChange (f : B₁.IsometryEquiv B₂) :
+    (B₁.baseChange A).IsometryEquiv (B₂.baseChange A) where
+  toLinearEquiv := (f : M₁ ≃ₗ[R] M₂).baseChange R A M₁ M₂
+  map_app' x y := by
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
+    induction x using TensorProduct.inductionOn with
+    | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
+    | tmul a m =>
+      induction y using TensorProduct.inductionOn with
+      | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+      | tmul b n => simp
+
+/-- On pure tensors, a base-changed isometric equivalence applies the original equivalence to the
+vector. -/
+@[simp]
+theorem _root_.LinearMap.BilinForm.IsometryEquiv.baseChange_tmul (f : B₁.IsometryEquiv B₂)
+    (a : A) (m : M₁) : f.baseChange A (a ⊗ₜ m) = a ⊗ₜ f m :=
+  LinearEquiv.baseChange_tmul R A M₁ M₂ (e := (f : M₁ ≃ₗ[R] M₂)) a m
+
+end IsometryEquiv
 
 end TauCeti

@@ -10,12 +10,18 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Diagonalization of symmetric bilinear forms in every characteristic
+
+Over a commutative ring, an orthogonal basis reduces divisibility of all pairings to divisibility
+of its diagonal values. The hyperbolic plane can therefore have an orthogonal basis only when
+`2` is a unit. Over a local ring with `2` invertible, a pairing dividing every value can be
+replaced by a self-pairing with the same property.
 
 Over a field in which `2` is invertible, every symmetric bilinear form on a finite-dimensional
 space has an orthogonal basis (`LinearMap.BilinForm.exists_orthogonal_basis`). In characteristic
@@ -40,6 +46,12 @@ bilinear forms, which is the input to the normal forms of one-relator pro-`2` gr
 
 ## Main results
 
+* `LinearMap.BilinForm.dvd_apply_of_forall_dvd_basis`,
+  `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from Gram entries or diagonal values.
+* `LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic`: an orthogonal basis of the
+  hyperbolic plane forces `2` to be a unit.
+* `LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`: over a local ring with
+  `2` a unit, a minimal pairing yields a minimal self-pairing.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_of_isAlt_imp_eq_zero`: a symmetric form
   that is zero or not alternating has an orthogonal basis, in every characteristic.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_iff`: this condition is also necessary.
@@ -63,6 +75,65 @@ namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
 open Module
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+
+/-- A common divisor of the Gram entries of a bilinear form in a basis divides every value of the
+form. -/
+theorem dvd_apply_of_forall_dvd_basis {ι : Type*} (b : Basis ι R M) {d : R}
+    (hd : ∀ i j, d ∣ B (b i) (b j)) (x y : M) : d ∣ B x y := by
+  rw [← B.sum_repr_mul_repr_mul b x y]
+  refine Finset.dvd_sum fun i _ ↦ Finset.dvd_sum fun j _ ↦ ?_
+  simp only [smul_eq_mul]
+  exact dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (hd i j) _) _
+
+/-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
+every value of the form. -/
+theorem iIsOrtho.dvd_apply {ι : Type*} {b : Basis ι R M} (hb : B.iIsOrtho b) {d : R}
+    (hd : ∀ i, d ∣ B (b i) (b i)) (x y : M) : d ∣ B x y := by
+  refine dvd_apply_of_forall_dvd_basis b (fun i j ↦ ?_) x y
+  obtain rfl | hij := eq_or_ne i j
+  · exact hd i
+  · rw [iIsOrtho_def.mp hb i j hij]
+    exact dvd_zero d
+
+/-- If the hyperbolic plane, the form with Gram matrix `!![0, 1; 1, 0]` on `R²`, has an orthogonal
+basis, then `2` is a unit in `R`. So over a ring such as `ℤ_2` the hyperbolic plane is not
+diagonalizable. -/
+theorem isUnit_two_of_iIsOrtho_toBilin'_hyperbolic {ι : Type*} {b : Basis ι R (Fin 2 → R)}
+    (hb : (Matrix.toBilin' !![(0 : R), 1; 1, 0]).iIsOrtho b) : IsUnit (2 : R) := by
+  have hd : ∀ v : Fin 2 → R, (2 : R) ∣ Matrix.toBilin' !![(0 : R), 1; 1, 0] v v := fun v ↦
+    ⟨v 0 * v 1, by simp [Matrix.toBilin'_apply', Matrix.vecHead, Matrix.vecTail]; ring⟩
+  refine isUnit_of_dvd_one ?_
+  simpa [Matrix.toBilin'_apply'] using
+    hb.dvd_apply (fun i ↦ hd (b i)) (Pi.single 0 1) (Pi.single 1 1)
+
+/-- Over a local ring in which `2` is a unit, if a value `B u w` of a symmetric bilinear form
+divides every value of the form, then so does one of the self-pairings `B u u`, `B w w` and
+`B (u + w) (u + w)`. -/
+theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
+    (hB : B.IsSymm) (h2 : IsUnit (2 : R)) {u w : M} (h : ∀ y z, B u w ∣ B y z) :
+    ∃ x, ∀ y z, B x x ∣ B y z := by
+  obtain ⟨s, hs⟩ := h u u
+  obtain ⟨t, ht⟩ := h w w
+  by_cases hsu : IsUnit s
+  · exact ⟨u, fun y z ↦ (hs ▸ (Units.mul_right_dvd (u := hsu.unit)).mpr dvd_rfl).trans (h y z)⟩
+  by_cases htu : IsUnit t
+  · exact ⟨w, fun y z ↦ (ht ▸ (Units.mul_right_dvd (u := htu.unit)).mpr dvd_rfl).trans (h y z)⟩
+  -- Both `s` and `t` lie in the maximal ideal, so `s + t + 2` is a unit.
+  have hunit : IsUnit (s + t + 2) := by
+    by_contra hn
+    refine (mem_nonunits_iff.mp ?_) h2
+    have := IsLocalRing.nonunits_add (IsLocalRing.nonunits_add hn
+      (mem_nonunits_iff.mpr ((IsUnit.neg_iff s).not.mpr hsu)))
+      (mem_nonunits_iff.mpr ((IsUnit.neg_iff t).not.mpr htu))
+    have hsum : s + t + 2 + -s + -t = (2 : R) := by ring
+    rwa [hsum] at this
+  have huw : B (u + w) (u + w) = B u w * (s + t + 2) := by
+    simp only [map_add, LinearMap.add_apply, hs, ht, hB.eq w u]
+    ring
+  exact ⟨u + w, fun y z ↦
+    (huw ▸ (Units.mul_right_dvd (u := hunit.unit)).mpr dvd_rfl).trans (h y z)⟩
 
 section Field
 
@@ -135,7 +206,8 @@ theorem IsSymm.exists_orthogonal_basis_of_isAlt_imp_eq_zero (hB : B.IsSymm)
         finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx)] at hd
       omega
     obtain ⟨v, hv⟩ := ih (hB.restrict _) hW hd'
-    exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hx hv
+    exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+      (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ (Ne.isUnit hx).dvd) hv
 
 /-- **A symmetric bilinear form has an orthogonal basis if and only if it is zero or not
 alternating.** The forward direction is the observation that an orthogonal basis of an alternating

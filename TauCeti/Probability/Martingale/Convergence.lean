@@ -294,7 +294,7 @@ theorem condExp_inter_ae_eq_mul_iInf [IsFiniteMeasure μ]
       eLpNorm (μ⟦A | 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧) 1 μ := fun n =>
     (eLpNorm_congr_ae (hDn n)).le.trans
       ((eLpNorm_condExp_le_eLpNorm _ le_rfl).trans
-        (eLpNorm_indicator_le _ (h𝔽' n _ (hB' n))))
+        (eLpNorm_indicator_le _ (h𝔽' n _ (hB' n)).nullMeasurableSet))
   have hzero : eLpNorm (μ⟦A ∩ B | ⨅ n, 𝔽 n⟧ - μ⟦A | ⨅ n, 𝔽 n⟧ * μ⟦B | ⨅ n, 𝔽 n⟧) 1 μ = 0 :=
     le_antisymm (ge_of_tendsto' (tendsto_eLpNorm_condExp_iInf hanti h𝔽 _) hbound) bot_le
   rw [eLpNorm_eq_zero_iff one_ne_zero] at hzero

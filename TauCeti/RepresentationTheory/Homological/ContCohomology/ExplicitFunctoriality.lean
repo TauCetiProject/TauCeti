@@ -420,6 +420,37 @@ theorem explicitMap1_comp
         (DFunLike.congr_fun
           (cocyclesMap1_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp) c)
 
+/-- **Commuting squares of compatible pairs commute on explicit `H¹`**: if the composites
+`φ ∘ ψ = φ' ∘ ψ'` of the group homomorphisms and `q ∘ f = q' ∘ f'` of the coefficient maps agree,
+then pulling back along `(φ, f)` and then `(ψ, q)` agrees with pulling back along `(φ', f')` and
+then `(ψ', q')`. This combines `explicitMap1_comp` and `explicitMap1_congr_of_eq` without asking
+for the compatibility hypotheses of the composite pairs. -/
+theorem explicitMap1_explicitMap1_of_comp_eq
+    (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (K : Type uK) [Monoid K] [TopologicalSpace K]
+    (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction K P] [ContinuousSMul K P]
+    (ψ : K →ₜ* H) (q : N →+ P) (hq : Continuous q)
+    (hequivq : ∀ (k : K) (n : N), q (ψ k • n) = k • q n)
+    {H' : Type*} [Monoid H'] [TopologicalSpace H']
+    {N' : Type*} [AddCommGroup N'] [TopologicalSpace N'] [IsTopologicalAddGroup N']
+    [DistribMulAction H' N'] [ContinuousSMul H' N']
+    (φ' : H' →ₜ* G) (f' : M →+ N') (hf' : Continuous f')
+    (hequiv' : ∀ (h : H') (m : M), f' (φ' h • m) = h • f' m)
+    (ψ' : K →ₜ* H') (q' : N' →+ P) (hq' : Continuous q')
+    (hequivq' : ∀ (k : K) (n : N'), q' (ψ' k • n) = k • q' n)
+    (hφ : φ.comp ψ = φ'.comp ψ') (hqf : q.comp f = q'.comp f') (x : H1 G M) :
+    explicitMap1 H N K P ψ q hq hequivq (explicitMap1 G M H N φ f hf hequiv x) =
+      explicitMap1 H' N' K P ψ' q' hq' hequivq' (explicitMap1 G M H' N' φ' f' hf' hequiv' x) := by
+  rw [← AddMonoidHom.comp_apply, ← AddMonoidHom.comp_apply,
+    ← explicitMap1_comp G M H N φ f hf hequiv K P ψ q hq hequivq
+      (fun k m => by exact comp_apply_smul (φ : H →* G) (ψ : K →* H) f q hequiv hequivq k m),
+    ← explicitMap1_comp G M H' N' φ' f' hf' hequiv' K P ψ' q' hq' hequivq'
+      (fun k m => by
+        exact comp_apply_smul (φ' : H' →* G) (ψ' : K →* H') f' q' hequiv' hequivq' k m)]
+  exact DFunLike.congr_fun (explicitMap1_congr_of_eq _ _ _ _ _ _ _ _ hφ hqf) x
+
 /-- Pullback along a compatible pair made of a topological group isomorphism and an additive
 equivalence of coefficients is an additive equivalence on explicit first continuous cohomology.
 Both directions of the coefficient equivalence are required to be continuous; for discrete

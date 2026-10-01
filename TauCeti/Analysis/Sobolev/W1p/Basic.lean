@@ -53,6 +53,8 @@ boundary regularity of `Ω` is used.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset.
+* `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
+  `p ≤ q`.
 
 ## References
 
@@ -93,6 +95,18 @@ def Sobolev1JetLp.valueL :
 def Sobolev1JetLp.value (J : Sobolev1JetLp mu Omega p) : Lp ℝ p (mu.restrict Omega) :=
   Sobolev1JetLp.valueL J
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- Applying the bundled value projection gives the value component of a Sobolev jet. -/
+@[simp]
+theorem Sobolev1JetLp.valueL_apply (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.valueL J = Sobolev1JetLp.value J := (rfl)
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- The bundled value projection is postcomposition with the first projection of the fibre. -/
+theorem Sobolev1JetLp.valueL_eq_compLpL :
+    Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p) =
+      (WithLp.fstL 2 ℝ ℝ E).compLpL p (mu.restrict Omega) := (rfl)
+
 /-- The continuous linear projection from an `Lᵖ` Sobolev jet to its gradient component. -/
 def Sobolev1JetLp.gradientL :
     Sobolev1JetLp mu Omega p →L[ℝ] Lp E p (mu.restrict Omega) :=
@@ -101,6 +115,18 @@ def Sobolev1JetLp.gradientL :
 /-- The gradient component of an `Lᵖ` Sobolev jet. -/
 def Sobolev1JetLp.gradient (J : Sobolev1JetLp mu Omega p) : Lp E p (mu.restrict Omega) :=
   Sobolev1JetLp.gradientL J
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- Applying the bundled gradient projection gives the gradient component of a Sobolev jet. -/
+@[simp]
+theorem Sobolev1JetLp.gradientL_apply (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.gradientL J = Sobolev1JetLp.gradient J := (rfl)
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- The bundled gradient projection is postcomposition with the second projection of the fibre. -/
+theorem Sobolev1JetLp.gradientL_eq_compLpL :
+    Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p) =
+      (WithLp.sndL 2 ℝ ℝ E).compLpL p (mu.restrict Omega) := (rfl)
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
 @[simp]
@@ -579,6 +605,108 @@ theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
   rw [L2.inner_def]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [RCLike.inner_apply, mul_comm])
+
+section Exponent
+
+variable {q : ENNReal} [Fact (1 <= q)] [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- On a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for `p ≤ q`: the value and the
+weak gradient of `u ∈ W^{1,q}(Ω)` are also in `Lᵖ(Ω)`, and are still related by the weak
+derivative identity. -/
+def W1p.ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) : W1p mu Omega p :=
+  W1p.mk (((Lp.memLp (W1p.value u)).mono_exponent hpq).toLp _)
+    (((Lp.memLp (W1p.gradient u)).mono_exponent hpq).toLp _)
+    (((W1p.hasWeakFDerivOn u).congr_ae (MemLp.coeFn_toLp _).symm).congr_ae_deriv (by
+      filter_upwards [MemLp.coeFn_toLp ((Lp.memLp (W1p.gradient u)).mono_exponent hpq)]
+        with x hx
+      rw [hx]))
+
+/-- Lowering the exponent does not change the value of a Sobolev function. -/
+theorem W1p.value_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.value (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.value u := by
+  rw [W1p.ofExponentLE, W1p.value_mk]
+  exact MemLp.coeFn_toLp _
+
+/-- Lowering the exponent does not change the weak gradient of a Sobolev function. -/
+theorem W1p.gradient_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.gradient u := by
+  rw [W1p.ofExponentLE, W1p.gradient_mk]
+  exact MemLp.coeFn_toLp _
+
+/-- Lowering the exponent sends zero to zero. -/
+@[simp]
+theorem W1p.ofExponentLE_zero (hpq : p ≤ q) :
+    W1p.ofExponentLE hpq (0 : W1p mu Omega q) = 0 := by
+  apply W1p.ext_value
+  apply Lp.ext
+  filter_upwards [W1p.value_ofExponentLE_ae hpq (0 : W1p mu Omega q),
+    Lp.coeFn_zero ℝ q (mu.restrict Omega), Lp.coeFn_zero ℝ p (mu.restrict Omega)]
+    with x hx hq hp
+  calc
+    W1p.value (W1p.ofExponentLE hpq (0 : W1p mu Omega q)) x =
+        W1p.value (0 : W1p mu Omega q) x := hx
+    _ = 0 := by simpa only [← W1p.valueL_apply, map_zero, Pi.zero_apply] using hq
+    _ = W1p.value (0 : W1p mu Omega p) x := by
+      simpa only [← W1p.valueL_apply, map_zero, Pi.zero_apply] using hp.symm
+
+/-- Lowering the exponent preserves addition. -/
+@[simp]
+theorem W1p.ofExponentLE_add (hpq : p ≤ q) (u v : W1p mu Omega q) :
+    W1p.ofExponentLE hpq (u + v) = W1p.ofExponentLE hpq u + W1p.ofExponentLE hpq v := by
+  apply W1p.ext_value
+  apply Lp.ext
+  filter_upwards [W1p.value_ofExponentLE_ae hpq (u + v),
+    W1p.value_ofExponentLE_ae hpq u, W1p.value_ofExponentLE_ae hpq v,
+    Lp.coeFn_add (W1p.value u) (W1p.value v),
+    Lp.coeFn_add (W1p.value (W1p.ofExponentLE hpq u))
+      (W1p.value (W1p.ofExponentLE hpq v))] with x hx hu hv hq hp
+  calc
+    W1p.value (W1p.ofExponentLE hpq (u + v)) x = W1p.value (u + v) x := hx
+    _ = W1p.value u x + W1p.value v x := by
+      simpa only [← W1p.valueL_apply, map_add, Pi.add_apply] using hq
+    _ = W1p.value (W1p.ofExponentLE hpq u) x +
+        W1p.value (W1p.ofExponentLE hpq v) x := by rw [hu, hv]
+    _ = W1p.value (W1p.ofExponentLE hpq u + W1p.ofExponentLE hpq v) x := by
+      simpa only [← W1p.valueL_apply, map_add, Pi.add_apply] using hp.symm
+
+/-- Lowering the exponent preserves real scalar multiplication. -/
+@[simp]
+theorem W1p.ofExponentLE_smul (hpq : p ≤ q) (c : ℝ) (u : W1p mu Omega q) :
+    W1p.ofExponentLE hpq (c • u) = c • W1p.ofExponentLE hpq u := by
+  apply W1p.ext_value
+  apply Lp.ext
+  filter_upwards [W1p.value_ofExponentLE_ae hpq (c • u),
+    W1p.value_ofExponentLE_ae hpq u, Lp.coeFn_smul c (W1p.value u),
+    Lp.coeFn_smul c (W1p.value (W1p.ofExponentLE hpq u))] with x hx hu hq hp
+  calc
+    W1p.value (W1p.ofExponentLE hpq (c • u)) x = W1p.value (c • u) x := hx
+    _ = c • W1p.value u x := by
+      simpa only [← W1p.valueL_apply, map_smul, Pi.smul_apply] using hq
+    _ = c • W1p.value (W1p.ofExponentLE hpq u) x := by rw [hu]
+    _ = W1p.value (c • W1p.ofExponentLE hpq u) x := by
+      simpa only [← W1p.valueL_apply, map_smul, Pi.smul_apply] using hp.symm
+
+/-- Lowering the exponent from `p` to itself is the identity. -/
+@[simp]
+theorem W1p.ofExponentLE_self (u : W1p mu Omega p) :
+    W1p.ofExponentLE (le_refl p) u = u := by
+  apply W1p.ext_value
+  apply Lp.ext
+  exact W1p.value_ofExponentLE_ae (le_refl p) u
+
+/-- Exponent inclusions compose transitively. -/
+@[simp]
+theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
+    (hpq : p ≤ q) (hqr : q ≤ r) (u : W1p mu Omega r) :
+    W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) =
+      W1p.ofExponentLE (hpq.trans hqr) u := by
+  apply W1p.ext_value
+  apply Lp.ext
+  exact ((W1p.value_ofExponentLE_ae hpq (W1p.ofExponentLE hqr u)).trans
+    (W1p.value_ofExponentLE_ae hqr u)).trans
+      (W1p.value_ofExponentLE_ae (hpq.trans hqr) u).symm
+
+end Exponent
 
 /-- `W^{1,p}(Ω)` is complete in its value-gradient graph norm. -/
 instance : CompleteSpace (W1p mu Omega p) :=
