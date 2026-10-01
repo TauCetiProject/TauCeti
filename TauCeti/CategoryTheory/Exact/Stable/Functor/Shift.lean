@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Stable.Functor.Suspension
 public import TauCeti.CategoryTheory.Exact.Stable.Shift
-public import TauCeti.CategoryTheory.Shift.Intertwining
 
 /-!
 # Stable functors commute with the integral shift

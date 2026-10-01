@@ -321,17 +321,15 @@ def reindexOneCompEvalIso : reindex (e := e) 1 ⋙ eval ≅ eval ⋙ e.functor :
 
 @[simp]
 theorem reindexOneCompEvalIso_hom_app (X : IntSequence e) :
-    (reindexOneCompEvalIso (e := e)).hom.app X = (X.iso 0 1 rfl).inv :=
-  by
-    change ((X.iso 0 1 rfl).symm).hom = _
-    rfl
+    (reindexOneCompEvalIso (e := e)).hom.app X = (X.iso 0 1 rfl).inv := by
+  unfold reindexOneCompEvalIso
+  rfl
 
 @[simp]
 theorem reindexOneCompEvalIso_inv_app (X : IntSequence e) :
-    (reindexOneCompEvalIso (e := e)).inv.app X = (X.iso 0 1 rfl).hom :=
-  by
-    change ((X.iso 0 1 rfl).symm).inv = _
-    rfl
+    (reindexOneCompEvalIso (e := e)).inv.app X = (X.iso 0 1 rfl).hom := by
+  unfold reindexOneCompEvalIso
+  rfl
 
 end IntSequence
 
