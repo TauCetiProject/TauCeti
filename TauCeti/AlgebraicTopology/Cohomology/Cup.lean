@@ -37,7 +37,7 @@ The cup product is associative and unital.  Associativity relates cup products a
 diagonals and four pairings, and holds when the coefficient morphisms are coassociative and the
 pairings associative up to the associators; both sides then evaluate a simplex on its front,
 middle and back faces.  The unit is the class of the constant `0`-cocycle
-`TopCat.constSingularCocycle` whose value is the unit of the pairing.
+`TauCeti.TopCat.constSingularCocycle` whose value is the unit of the pairing.
 
 ## Main definitions and results
 
@@ -47,11 +47,11 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
   cochains on a singular simplex.
 * `TopCat.singularCup`: the cup product on singular cohomology, with `TopCat.singularCup_homologyπ`
   computing it on classes of cocycles and `TopCat.singularCup_naturality` its naturality.
-* `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
+* `TauCeti.TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TauCeti.TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology.
-* `TopCat.cupCochain_constSingularCochain_left`, `TopCat.cupCochain_constSingularCochain_right`,
-  `TopCat.singularCup_constSingularCocycle_left` and
-  `TopCat.singularCup_constSingularCocycle_right`: the unit laws.
+* `TauCeti.TopCat.cupCochain_constCochain_left`, `TauCeti.TopCat.cupCochain_constCochain_right`,
+  `TauCeti.TopCat.singularCup_constSingularCocycle_left` and
+  `TauCeti.TopCat.singularCup_constSingularCocycle_right`: the unit laws.
 
 ## References
 
@@ -183,7 +183,7 @@ are associative up to the associator (`hμ`).  Both sides evaluate a singular si
 `p`-face, its middle `q`-face and its back `r`-face.  In the usual case, where every coefficient
 object is `𝟙_ C` and every coefficient morphism is `(λ_ _).inv`, `hu` holds by monoidal coherence
 and `hμ` is the associativity of a ring object of coefficients. -/
-lemma cupCochain_alexanderWhitneyDiagonal_assoc (X : TopCat.{w})
+lemma _root_.TauCeti.TopCat.cupCochain_alexanderWhitneyDiagonal_assoc (X : TopCat.{w})
     {u₁₂ : T₁₂ ⟶ R₁ ⊗ R₂} {u : T ⟶ T₁₂ ⊗ R₃} {u₂₃ : T₂₃ ⟶ R₂ ⊗ R₃} {u' : T ⟶ R₁ ⊗ T₂₃}
     (hu : u ≫ u₁₂ ▷ R₃ ≫ (α_ R₁ R₂ R₃).hom = u' ≫ R₁ ◁ u₂₃)
     {μ₁₂ : M₁ ⊗ M₂ ⟶ M₁₂} {μ : M₁₂ ⊗ M₃ ⟶ P} {μ₂₃ : M₂ ⊗ M₃ ⟶ M₂₃} {μ' : M₁ ⊗ M₂₃ ⟶ P}
@@ -202,11 +202,16 @@ lemma cupCochain_alexanderWhitneyDiagonal_assoc (X : TopCat.{w})
   ext σ
   -- both sides evaluate `σ` on its faces `[0, …, p]`, `[p, …, p + q]` and `[p + q, …, n]`
   simp only [ιChainComplex_cupCochain_alexanderWhitneyDiagonal, ← Functor.map_comp_apply,
-    ← op_comp, SimplexCategory.subinterval_comp_subinterval _ _ _ _ _ _ rfl, Nat.zero_add,
+    ← op_comp, TauCeti.SimplexCategory.subinterval_comp_subinterval _ _ _ _ _ _ rfl, Nat.zero_add,
     Nat.add_zero]
-  generalize (toSSet.obj X).ιChainComplex _ ≫ φ₁ = f₁
-  generalize (toSSet.obj X).ιChainComplex _ ≫ φ₂ = f₂
-  generalize (toSSet.obj X).ιChainComplex _ ≫ φ₃ = f₃
+  let f₁ : R₁ ⟶ M₁ := (toSSet.obj X).ιChainComplex
+    ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫ φ₁
+  let f₂ : R₂ ⟶ M₂ := (toSSet.obj X).ιChainComplex
+    ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ φ₂
+  let f₃ : R₃ ⟶ M₃ := (toSSet.obj X).ιChainComplex
+    ((toSSet.obj X).map (SimplexCategory.subinterval (p + q) r (by omega)).op σ) ≫ φ₃
+  change u ≫ ((u₁₂ ≫ (f₁ ⊗ₘ f₂) ≫ μ₁₂) ⊗ₘ f₃) ≫ μ =
+    u' ≫ (f₁ ⊗ₘ (u₂₃ ≫ (f₂ ⊗ₘ f₃) ≫ μ₂₃)) ≫ μ'
   calc _ = u ≫ u₁₂ ▷ R₃ ≫ ((f₁ ⊗ₘ f₂) ⊗ₘ f₃) ≫ μ₁₂ ▷ M₃ ≫ μ := by
         simp only [← tensorHom_id, tensorHom_comp_tensorHom_assoc, Category.comp_id,
           Category.id_comp]
@@ -220,31 +225,47 @@ lemma cupCochain_alexanderWhitneyDiagonal_assoc (X : TopCat.{w})
 value `e` is a left unit, provided that `u` followed by `e` is the left unitor followed by some
 `η : 𝟙_ C ⟶ M` which is a left unit for the pairing `μ`.  For coefficients in a ring object `M`
 with unit `η`, take `R = S = 𝟙_ C`, `u = (λ_ _).inv` and `e = η`. -/
-lemma cupCochain_constSingularCochain_left (X : TopCat.{w}) {u : S ⟶ R ⊗ S} {μ : M ⊗ N ⟶ N}
+lemma _root_.TauCeti.TopCat.cupCochain_constCochain_left (X : TopCat.{w})
+    {u : S ⟶ R ⊗ S} {μ : M ⊗ N ⟶ N}
     {e : R ⟶ M} {η : 𝟙_ C ⟶ M} (hu : u ≫ e ▷ S = (λ_ S).inv ≫ η ▷ S)
     (hμ : η ▷ N ≫ μ = (λ_ N).hom) {q : ℕ} (h : 0 + q = q)
     (ψ : ((toSSet.obj X).chainComplex S).X q ⟶ N) :
     TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal u) μ 0 q q h
-      (X.constSingularCochain e) ψ = ψ := by
+      (TauCeti.SSet.constCochain (toSSet.obj X) e) ψ = ψ := by
   ext σ
-  rw [ιChainComplex_cupCochain_alexanderWhitneyDiagonal, ιChainComplex_constSingularCochain,
-    SimplexCategory.subinterval_zero_eq_id, op_id, Functor.map_id_apply, tensorHom_def_assoc,
-    reassoc_of% hu, ← whisker_exchange_assoc, hμ, leftUnitor_naturality, Iso.inv_hom_id_assoc]
+  simp only [ιChainComplex_cupCochain_alexanderWhitneyDiagonal,
+    TauCeti.SSet.ιChainComplex_constCochain, TauCeti.SimplexCategory.subinterval_zero_eq_id,
+    op_id, Functor.map_id_apply]
+  calc u ≫ (e ⊗ₘ ((toSSet.obj X).ιChainComplex σ ≫ ψ)) ≫ μ =
+        (λ_ S).inv ≫ η ▷ S ≫ M ◁ ((toSSet.obj X).ιChainComplex σ ≫ ψ) ≫ μ := by
+          rw [tensorHom_def_assoc, reassoc_of% hu]
+    _ = (λ_ S).inv ≫ 𝟙_ C ◁ ((toSSet.obj X).ιChainComplex σ ≫ ψ) ≫ (λ_ N).hom := by
+          rw [← whisker_exchange_assoc, hμ]
+    _ = (toSSet.obj X).ιChainComplex σ ≫ ψ := by
+          rw [leftUnitor_naturality, Iso.inv_hom_id_assoc]
 
 /-- **The right unit law for the cup product of singular cochains**: the constant `0`-cochain with
 value `e` is a right unit, provided that `u` followed by `e` is the right unitor followed by some
 `η : 𝟙_ C ⟶ N` which is a right unit for the pairing `μ`.  For coefficients in a ring object `N`
 with unit `η`, take `R = S = 𝟙_ C`, `u = (ρ_ _).inv` (which is `(λ_ _).inv`) and `e = η`. -/
-lemma cupCochain_constSingularCochain_right (X : TopCat.{w}) {u : R ⟶ R ⊗ S} {μ : M ⊗ N ⟶ M}
+lemma _root_.TauCeti.TopCat.cupCochain_constCochain_right (X : TopCat.{w})
+    {u : R ⟶ R ⊗ S} {μ : M ⊗ N ⟶ M}
     {e : S ⟶ N} {η : 𝟙_ C ⟶ N} (hu : u ≫ R ◁ e = (ρ_ R).inv ≫ R ◁ η)
     (hμ : M ◁ η ≫ μ = (ρ_ M).hom) {p : ℕ} (h : p + 0 = p)
     (φ : ((toSSet.obj X).chainComplex R).X p ⟶ M) :
     TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal u) μ p 0 p h
-      φ (X.constSingularCochain e) = φ := by
+      φ (TauCeti.SSet.constCochain (toSSet.obj X) e) = φ := by
   ext σ
-  rw [ιChainComplex_cupCochain_alexanderWhitneyDiagonal, ιChainComplex_constSingularCochain,
-    SimplexCategory.subinterval_zero_eq_id, op_id, Functor.map_id_apply, tensorHom_def'_assoc,
-    reassoc_of% hu, whisker_exchange_assoc, hμ, rightUnitor_naturality, Iso.inv_hom_id_assoc]
+  simp only [ιChainComplex_cupCochain_alexanderWhitneyDiagonal,
+    TauCeti.SSet.ιChainComplex_constCochain, TauCeti.SimplexCategory.subinterval_zero_eq_id,
+    op_id, Functor.map_id_apply]
+  calc u ≫ (((toSSet.obj X).ιChainComplex σ ≫ φ) ⊗ₘ e) ≫ μ =
+        (ρ_ R).inv ≫ R ◁ η ≫ ((toSSet.obj X).ιChainComplex σ ≫ φ) ▷ N ≫ μ := by
+          rw [tensorHom_def'_assoc, reassoc_of% hu]
+    _ = (ρ_ R).inv ≫ ((toSSet.obj X).ιChainComplex σ ≫ φ) ▷ 𝟙_ C ≫ (ρ_ M).hom := by
+          rw [whisker_exchange_assoc, hμ]
+    _ = (toSSet.obj X).ιChainComplex σ ≫ φ := by
+          rw [rightUnitor_naturality, Iso.inv_hom_id_assoc]
 
 end Laws
 
@@ -296,8 +317,8 @@ variable {R₁ R₂ R₃ T₁₂ T₂₃ M₁ M₂ M₃ M₁₂ M₂₃ : C}
 /-- **Associativity of the cup product on singular cohomology**: `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`,
 for coefficient morphisms that are coassociative up to the associator (`hu`) and pairings that
 are associative up to the associator (`hμ`), as in
-`TopCat.cupCochain_alexanderWhitneyDiagonal_assoc`. -/
-lemma singularCup_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+`TauCeti.TopCat.cupCochain_alexanderWhitneyDiagonal_assoc`. -/
+lemma _root_.TauCeti.TopCat.singularCup_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
     [MonoidalLinear k C]
     {u₁₂ : T₁₂ ⟶ R₁ ⊗ R₂} {u : T ⟶ T₁₂ ⊗ R₃} {u₂₃ : T₂₃ ⟶ R₂ ⊗ R₃} {u' : T ⟶ R₁ ⊗ T₂₃}
     (hu : u ≫ u₁₂ ▷ R₃ ≫ (α_ R₁ R₂ R₃).hom = u' ≫ R₁ ◁ u₂₃)
@@ -315,39 +336,41 @@ lemma singularCup_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
   simp only [TauCeti.ChainComplex.iCycles_cupCycles]
-  exact cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
+  exact TauCeti.TopCat.cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
 
 /-- **The left unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a left unit, under the hypotheses of
-`TopCat.cupCochain_constSingularCochain_left`. -/
-lemma singularCup_constSingularCocycle_left (X : TopCat.{w}) (k : Type*) [CommRing k]
-    [Linear k C] [MonoidalLinear k C] {u : S ⟶ R ⊗ S} {μ : M ⊗ N ⟶ N} {e : R ⟶ M}
+`TauCeti.TopCat.cupCochain_constCochain_left`. -/
+lemma _root_.TauCeti.TopCat.singularCup_constSingularCocycle_left (X : TopCat.{w}) (k : Type*)
+    [CommRing k] [Linear k C] [MonoidalLinear k C] {u : S ⟶ R ⊗ S} {μ : M ⊗ N ⟶ N} {e : R ⟶ M}
     {η : 𝟙_ C ⟶ M} (hu : u ≫ e ▷ S = (λ_ S).inv ≫ η ▷ S) (hμ : η ▷ N ≫ μ = (λ_ N).hom)
     {q : ℕ} (h : 0 + q = q) (b : X.singularCohomology S k N q) :
     X.singularCup k u μ 0 q q h
-      ((X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e)) b = b := by
+      ((X.singularCochainComplex R k M).homologyπ 0
+        (TauCeti.TopCat.constSingularCocycle k X e)) b = b := by
   obtain ⟨b, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q b
   rw [singularCup_homologyπ]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [TauCeti.ChainComplex.iCycles_cupCycles, iCycles_constSingularCocycle]
-  exact cupCochain_constSingularCochain_left X hu hμ h _
+  rw [TauCeti.ChainComplex.iCycles_cupCycles, TauCeti.TopCat.iCycles_constSingularCocycle]
+  exact TauCeti.TopCat.cupCochain_constCochain_left X hu hμ h _
 
 /-- **The right unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a right unit, under the hypotheses of
-`TopCat.cupCochain_constSingularCochain_right`. -/
-lemma singularCup_constSingularCocycle_right (X : TopCat.{w}) (k : Type*) [CommRing k]
-    [Linear k C] [MonoidalLinear k C] {u : R ⟶ R ⊗ S} {μ : M ⊗ N ⟶ M} {e : S ⟶ N}
+`TauCeti.TopCat.cupCochain_constCochain_right`. -/
+lemma _root_.TauCeti.TopCat.singularCup_constSingularCocycle_right (X : TopCat.{w}) (k : Type*)
+    [CommRing k] [Linear k C] [MonoidalLinear k C] {u : R ⟶ R ⊗ S} {μ : M ⊗ N ⟶ M} {e : S ⟶ N}
     {η : 𝟙_ C ⟶ N} (hu : u ≫ R ◁ e = (ρ_ R).inv ≫ R ◁ η) (hμ : M ◁ η ≫ μ = (ρ_ M).hom)
     {p : ℕ} (h : p + 0 = p) (a : X.singularCohomology R k M p) :
     X.singularCup k u μ p 0 p h a
-      ((X.singularCochainComplex S k N).homologyπ 0 (X.constSingularCocycle k e)) = a := by
+      ((X.singularCochainComplex S k N).homologyπ 0
+        (TauCeti.TopCat.constSingularCocycle k X e)) = a := by
   obtain ⟨a, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p a
   rw [singularCup_homologyπ]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [TauCeti.ChainComplex.iCycles_cupCycles, iCycles_constSingularCocycle]
-  exact cupCochain_constSingularCochain_right X hu hμ h _
+  rw [TauCeti.ChainComplex.iCycles_cupCycles, TauCeti.TopCat.iCycles_constSingularCocycle]
+  exact TauCeti.TopCat.cupCochain_constCochain_right X hu hμ h _
 
 end Laws
 

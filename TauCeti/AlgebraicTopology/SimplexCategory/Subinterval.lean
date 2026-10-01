@@ -97,11 +97,17 @@ lemma subinterval_zero_comp_δ_of_lt {n p : ℕ} (k : Fin (n + 2)) (hk : p < (k 
     val_subinterval_toOrderHom_apply]
   split_ifs <;> omega
 
-/-- A subinterval of a subinterval is a subinterval: the vertices `i, …, i + a` of the
-subinterval `j, …, j + m` are the vertices `j + i, …, j + i + a`. -/
-lemma subinterval_comp_subinterval {n m : ℕ} (i a j l : ℕ) (h : i + a ≤ m) (h' : j + m ≤ n)
-    (hl : j + i = l) :
-    subinterval i a h ≫ subinterval j m h' = subinterval l a (by omega) := by
+end SimplexCategory
+
+namespace TauCeti.SimplexCategory
+
+open _root_.SimplexCategory
+
+/-- A subinterval of a subinterval is a subinterval: the vertices `i, …, i + l` of the
+subinterval `j, …, j + m` are the vertices `j + i, …, j + i + l`. -/
+lemma subinterval_comp_subinterval {n m : ℕ} (i l j j' : ℕ) (h : i + l ≤ m) (h' : j + m ≤ n)
+    (hj' : j + i = j') :
+    subinterval i l h ≫ subinterval j m h' = subinterval j' l (by omega) := by
   ext v : 3
   rw [Fin.ext_iff]
   simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply,
@@ -115,4 +121,4 @@ lemma subinterval_zero_eq_id {n : ℕ} (h : 0 + n ≤ n) : subinterval 0 n h = �
   rw [Fin.ext_iff]
   simp
 
-end SimplexCategory
+end TauCeti.SimplexCategory
