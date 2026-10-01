@@ -22,11 +22,12 @@ new block. This file records that equivalence and the fixed-point-free involutio
 swapping the two rows of the new block.
 
 The source of each matched pair is selected by the orientation of the cyclic column interval
-between the points in those two rows. Opposite nondegenerate half-open intervals partition the
-columns, so exactly one generator in each pair is a source. The existing stabilization level is
-constant on each pair because the swap is realized by a rectangle supported entirely in the row
-of the new `O`-marking. These facts provide the matching data needed to prove exactness of the
-reduced stabilization mapping cone.
+between the points in those two rows: the source is the endpoint whose height-one rectangle to
+its partner avoids the new `O`-marking, so in particular no center generator is a source.
+Opposite nondegenerate half-open intervals partition the columns, so exactly one generator in
+each pair is a source. The existing stabilization level is constant on each pair because the
+swap is realized by a rectangle supported entirely in the row of the new `O`-marking. These facts
+provide the matching data needed to prove exactness of the reduced stabilization mapping cone.
 
 ## Main definitions
 
@@ -41,6 +42,8 @@ reduced stabilization mapping cone.
 * `TauCeti.GridDiagram.stabilizeXMatching_ne`: the matching has no fixed points.
 * `TauCeti.GridDiagram.stabilizeXMatchingSource_matching_iff`: exactly one endpoint of each pair
   is a matching source.
+* `TauCeti.GridDiagram.not_stabilizeXMatchingSource_inr`: no center generator is a matching
+  source.
 * `TauCeti.GridDiagram.stabilizeXLevel_matching`: the stabilization level is constant on matched
   pairs.
 
@@ -147,13 +150,15 @@ theorem stabilizeXMatching_ne (i : G.StabilizeXOffCenterState s ⊕ GridState n)
   exact (ne_of_lt (G.X s).castSucc_lt_succ) this.symm
 
 /-- A generator is the source of its matching edge when the stabilization column lies in the
-clockwise half-open interval from the column occupied in row `(G.X s).castSucc` to the column
-occupied in row `(G.X s).succ`. -/
+clockwise half-open interval from the column occupied in row `(G.X s).succ` to the column
+occupied in row `(G.X s).castSucc`. Equivalently, the height-one rectangle from the generator to
+its partner, which covers the complementary interval in the row of the new `O`-marking, avoids
+that marking. -/
 def StabilizeXMatchingSource
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) : Prop :=
   s.castSucc ∈ Grid.cIco
-    ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc)
     ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ)
+    ((G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc)
 
 private theorem stabilizeXMatching_transpose_castSucc
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
@@ -182,12 +187,29 @@ theorem stabilizeXMatchingSource_matching_iff
     (ne_of_lt (G.X s).castSucc_lt_succ)
       ((G.stabilizeXConeStateEquiv s i).transpose.toPerm.injective h)
   constructor
-  · exact fun hb ha => Finset.disjoint_left.1 (Grid.disjoint_cIco_swap a b) ha hb
-  · intro ha
+  · exact fun ha hb => Finset.disjoint_left.1 (Grid.disjoint_cIco_swap a b) ha hb
+  · intro hb
     have hmem : s.castSucc ∈ Grid.cIco a b ∪ Grid.cIco b a := by
       rw [Grid.cIco_union_swap hab]
       simp
-    exact (Finset.mem_union.1 hmem).resolve_left ha
+    exact (Finset.mem_union.1 hmem).resolve_right hb
+
+/-- A center generator is never a matching source: its partner is off-center, and the mapping
+cone has no component from the center block to the off-center block. -/
+theorem not_stabilizeXMatchingSource_inr (x : GridState n) :
+    ¬G.StabilizeXMatchingSource s (.inr x) := by
+  let y := G.stabilizeXConeStateEquiv s (.inr x)
+  have hb : y.transpose (G.X s).succ = s.succ := by
+    rw [← GridState.transpose_apply_apply y s.succ]
+    simp [y]
+  have ha : y.transpose (G.X s).castSucc ≠ s.succ := fun h =>
+    (ne_of_lt (G.X s).castSucc_lt_succ) (by rw [← hb] at h; exact y.transpose.toPerm.injective h)
+  change s.castSucc ∉ Grid.cIco (y.transpose (G.X s).succ) (y.transpose (G.X s).castSucc)
+  rw [hb]
+  generalize y.transpose (G.X s).castSucc = a at ha
+  have ha' : a.val ≠ s.val + 1 := fun h => ha (Fin.ext (by simpa using h))
+  rw [Grid.mem_cIco]
+  split_ifs with h <;> simp only [Fin.val_succ, Fin.val_castSucc] at h ⊢ <;> omega
 
 private theorem stabilizeXMatchingRectangle_coveredRows
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
