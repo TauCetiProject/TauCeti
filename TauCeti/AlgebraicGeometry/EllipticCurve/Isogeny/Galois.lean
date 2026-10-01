@@ -204,44 +204,36 @@ theorem galoisConj_comp (W₃ : WeierstrassCurve F)
 theorem galoisConj_map_algebraMap
     (φ : Isogeny W₁.toAffine W₂.toAffine) (σ : K ≃ₐ[F] K) :
     (φ.map (algebraMap F K)).galoisConj W₁ W₂ σ = φ.map (algebraMap F K) := by
-  -- Align the projective base-change notation with the affine `map` used by the isogeny API.
-  have hW₁ : (W₁⁄K).toAffine = W₁.toAffine.map (algebraMap F K) := rfl
-  have hW₂ : (W₂⁄K).toAffine = W₂.toAffine.map (algebraMap F K) := rfl
-  cases hW₁
-  cases hW₂
-  have hpull : (φ.map (algebraMap F K)).pullback =
-      φ.pullback.map (algebraMap F K) :=
-    Isogeny.map_pullback φ (algebraMap F K)
   apply Isogeny.ext
+  have hconj :
+      ((φ.map (algebraMap F K)).galoisConj W₁ W₂ σ).pullback =
+        (φ.map (algebraMap F K)).pullback.galoisConj W₁ W₂ σ :=
+    galoisConj_pullback W₁ W₂ (φ.map (algebraMap F K)) σ
+  rw [hconj, map_pullback]
+  have hconj_apply (z : (W₂⁄K).toAffine.CoordinateRing) :
+      (φ.pullback.map (algebraMap F K)).galoisConj W₁ W₂ σ z =
+        W₁.functionFieldGaloisAction σ
+          (φ.pullback.map (algebraMap F K)
+            (W₂.coordinateRingGaloisAction σ.symm z)) :=
+    CoordinatePullback.galoisConj_apply W₁ W₂ (φ.pullback.map (algebraMap F K)) σ z
+  have hmap_x :
+      φ.pullback.map (algebraMap F K)
+          (AdjoinRoot.of (W₂⁄K).toAffine.polynomial Polynomial.X) =
+        Affine.FunctionField.map W₁.toAffine (algebraMap F K)
+          (φ.pullback (AdjoinRoot.of W₂.toAffine.polynomial Polynomial.X)) :=
+    CoordinatePullback.map_of_X φ.pullback (algebraMap F K)
+  have hmap_y :
+      φ.pullback.map (algebraMap F K) (AdjoinRoot.root (W₂⁄K).toAffine.polynomial) =
+        Affine.FunctionField.map W₁.toAffine (algebraMap F K)
+          (φ.pullback (AdjoinRoot.root W₂.toAffine.polynomial)) :=
+    CoordinatePullback.map_root φ.pullback (algebraMap F K)
   apply CoordinateRing.algHom_ext
-  · change W₁.functionFieldGaloisAction σ
-        ((φ.map (algebraMap F K)).pullback
-          (W₂.coordinateRingGaloisAction σ.symm
-            (AdjoinRoot.of (W₂⁄K).toAffine.polynomial Polynomial.X))) =
-      (φ.map (algebraMap F K)).pullback
-        (AdjoinRoot.of (W₂⁄K).toAffine.polynomial Polynomial.X)
-    rw [coordinateRingGaloisAction_of, Polynomial.map_X]
-    rw [hpull]
-    change W₁.functionFieldGaloisAction σ
-        (φ.pullback.map (algebraMap F K)
-          (AdjoinRoot.of (W₂.toAffine.map (algebraMap F K)).polynomial Polynomial.X)) =
-      φ.pullback.map (algebraMap F K)
-        (AdjoinRoot.of (W₂.toAffine.map (algebraMap F K)).polynomial Polynomial.X)
-    rw [CoordinatePullback.map_of_X, W₁.functionFieldGaloisAction_map_algebraMap]
-  · change W₁.functionFieldGaloisAction σ
-        ((φ.map (algebraMap F K)).pullback
-          (W₂.coordinateRingGaloisAction σ.symm
-            (AdjoinRoot.root (W₂⁄K).toAffine.polynomial))) =
-      (φ.map (algebraMap F K)).pullback
-        (AdjoinRoot.root (W₂⁄K).toAffine.polynomial)
-    rw [coordinateRingGaloisAction_root]
-    rw [hpull]
-    change W₁.functionFieldGaloisAction σ
-        (φ.pullback.map (algebraMap F K)
-          (AdjoinRoot.root (W₂.toAffine.map (algebraMap F K)).polynomial)) =
-      φ.pullback.map (algebraMap F K)
-        (AdjoinRoot.root (W₂.toAffine.map (algebraMap F K)).polynomial)
-    rw [CoordinatePullback.map_root, W₁.functionFieldGaloisAction_map_algebraMap]
+  · rw [hconj_apply, coordinateRingGaloisAction_of, Polynomial.map_X, hmap_x,
+      W₁.functionFieldGaloisAction_map_algebraMap]
+    exact hmap_x.symm
+  · rw [hconj_apply, coordinateRingGaloisAction_root, hmap_y,
+      W₁.functionFieldGaloisAction_map_algebraMap]
+    exact hmap_y.symm
 
 /-- **The Galois action on isogenies** between two fixed base-changed curves. -/
 noncomputable def galoisAction :
