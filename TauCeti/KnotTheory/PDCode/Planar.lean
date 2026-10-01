@@ -64,6 +64,8 @@ operation `TauCeti.PDCode.insertClasp`.
 * `TauCeti.PDCode.faceCount_le`: if the underlying graph has `c` connected components, it has at
   most `n + 2 * c` faces, with equality exactly for planar codes
   (`TauCeti.PDCode.isPlanar_iff_faceCount_eq`).
+* `TauCeti.PDCode.mem_orbit_of_face_eq_face`: half-edges on one face lie in one connected
+  component.
 * `TauCeti.PDCode.isPlanar_mirror` and `TauCeti.PDCode.isPlanar_relabel`: invariance.
 * `TauCeti.PDCode.isPlanar_kink` and `TauCeti.PDCode.exists_not_isPlanar`.
 
@@ -145,6 +147,9 @@ theorem orbitCount_edgePair (D : PDCode n) : orbitCount D.edgePair.val = 2 * n :
 there. Its orbits are the faces of the underlying graph. -/
 def facePerm (D : PDCode n) : Perm (Fin (4 * n)) :=
   D.edgePair.val * D.crossingRotation
+
+/-- The defining equation of the face traversal. -/
+theorem facePerm_def (D : PDCode n) : D.facePerm = D.edgePair.val * D.crossingRotation := (rfl)
 
 /-- The face traversal rotates at the crossing and then crosses the arc. -/
 theorem facePerm_apply (D : PDCode n) (h : Fin (4 * n)) :
@@ -255,6 +260,18 @@ theorem toPermutationTriple_relabel (D : PDCode n) (half : Perm (Fin (4 * n)))
     (cross : Perm (Fin n)) :
     (D.relabel half cross).toPermutationTriple = half • D.toPermutationTriple := by
   simp [toPermutationTriple, PerfectMatching.congr_val, permCongr_eq_mul]
+
+/-- Two half-edges on one face lie in one connected component of the underlying graph: the face
+traversal is a product of the crossing rotation and the arc matching. -/
+theorem mem_orbit_of_face_eq_face (D : PDCode n) {h h' : Fin (4 * n)}
+    (hface : D.face h = D.face h') :
+    h' ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup h := by
+  obtain ⟨k, hk⟩ := D.face_eq_face_iff.mp hface
+  have hF : D.facePerm ∈ D.toPermutationTriple.monodromyGroup := by
+    rw [facePerm_def, ← toPermutationTriple_σ0, ← toPermutationTriple_σ1]
+    exact mul_mem (PermutationTriple.σ1_mem_monodromyGroup _)
+      (PermutationTriple.σ0_mem_monodromyGroup _)
+  exact ⟨⟨D.facePerm ^ k, zpow_mem hF k⟩, hk⟩
 
 /-- **Euler's formula for a PD-code.** The underlying graph has `n` vertices and `2 * n` edges,
 so its Euler characteristic is the number of faces less the number of crossings. -/

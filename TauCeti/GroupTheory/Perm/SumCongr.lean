@@ -21,6 +21,9 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   `Equiv.Perm.parts_partition_sumCongr`: the cycle type, the number of moved points and the parts
   of the full, fixed-point-aware partition are additive.
 * `Equiv.Perm.orbitCount_sumCongr`: so is the number of orbits, fixed points included.
+* `Equiv.Perm.sumCongr_zpow`: powers are taken summandwise.
+* `Equiv.Perm.sameCycle_sumCongr_inl`, `Equiv.Perm.sameCycle_sumCongr_inr`: two points of one
+  summand share a cycle exactly when they share a cycle of the permutation of that summand.
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
@@ -72,6 +75,27 @@ theorem _root_.Equiv.Perm.disjoint_sumCongr_one_one_sumCongr (σ : Perm α) (τ 
   rintro (a | b)
   · exact Or.inr rfl
   · exact Or.inl rfl
+
+/-- The powers of a sum permutation are taken separately on the two summands. -/
+theorem _root_.Equiv.Perm.sumCongr_zpow (σ : Perm α) (τ : Perm β) (k : ℤ) :
+    Perm.sumCongr σ τ ^ k = Perm.sumCongr (σ ^ k) (τ ^ k) := by
+  simpa using (map_zpow (Perm.sumCongrHom α β) (σ, τ) k).symm
+
+/-- Two points of the left summand lie in one cycle of `Equiv.Perm.sumCongr σ τ` exactly when they
+lie in one cycle of `σ`. -/
+@[simp]
+theorem _root_.Equiv.Perm.sameCycle_sumCongr_inl {σ : Perm α} {τ : Perm β} {a b : α} :
+    (Perm.sumCongr σ τ).SameCycle (.inl a) (.inl b) ↔ σ.SameCycle a b :=
+  exists_congr fun k => by
+    rw [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl, Sum.inl.injEq]
+
+/-- Two points of the right summand lie in one cycle of `Equiv.Perm.sumCongr σ τ` exactly when
+they lie in one cycle of `τ`. -/
+@[simp]
+theorem _root_.Equiv.Perm.sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {a b : β} :
+    (Perm.sumCongr σ τ).SameCycle (.inr a) (.inr b) ↔ τ.SameCycle a b :=
+  exists_congr fun k => by
+    rw [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inr, Sum.inr.injEq]
 
 /-! ### Additivity of the cycle data -/
 

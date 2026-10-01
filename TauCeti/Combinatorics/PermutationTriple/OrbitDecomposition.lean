@@ -30,6 +30,8 @@ from those same choices.
   connected.
 * `TauCeti.PermutationTriple.card_monodromyOrbit_smul`: relabeling the sheets does not change the
   number of monodromy orbits.
+* `TauCeti.PermutationTriple.apply_eq_of_mem_monodromyGroup`: a function unchanged by the first two
+  components is constant on every monodromy orbit.
 * `TauCeti.PermutationTriple.indexedDisjointSum_restrictToOrbit` reconstructs the original triple
   from all its orbit restrictions.
 
@@ -120,6 +122,33 @@ theorem card_monodromyOrbit_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
   exact (Nat.card_congr (MulAction.orbitRelQuotientCongr
     (MulEquiv.subgroupMap (MulAut.conj τ) t.monodromyGroup) τ fun g x ↦ by
       simp [Subgroup.smul_def, Perm.smul_def, MulEquiv.coe_subgroupMap_apply])).symm
+
+/-! ### Functions constant on monodromy orbits -/
+
+/-- A function on the sheets taking the same value at `x`, `t.σ0 x` and `t.σ1 x` for every sheet
+`x` is constant along the whole monodromy group, so it factors through the monodromy orbits. -/
+theorem apply_eq_of_mem_monodromyGroup {β : Type*} {f : Fin n → β}
+    (h0 : ∀ x, f (t.σ0 x) = f x) (h1 : ∀ x, f (t.σ1 x) = f x) {g : Perm (Fin n)}
+    (hg : g ∈ t.monodromyGroup) (x : Fin n) : f (g x) = f x := by
+  rw [← closure_pair_eq_monodromyGroup] at hg
+  induction hg using Subgroup.closure_induction generalizing x with
+  | mem g hg =>
+    rcases hg with rfl | rfl
+    · exact h0 x
+    · exact h1 x
+  | one => rfl
+  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
+  | inv g _ ih => rw [← ih (g⁻¹ x), Perm.inv_def, apply_symm_apply]
+
+/-- A sheet and its image under the first component lie in one monodromy orbit. -/
+theorem mk_σ0_apply (x : Fin n) :
+    (Quotient.mk _ (t.σ0 x) : t.MonodromyOrbit) = Quotient.mk _ x :=
+  Quotient.sound ⟨⟨t.σ0, t.σ0_mem_monodromyGroup⟩, rfl⟩
+
+/-- A sheet and its image under the second component lie in one monodromy orbit. -/
+theorem mk_σ1_apply (x : Fin n) :
+    (Quotient.mk _ (t.σ1 x) : t.MonodromyOrbit) = Quotient.mk _ x :=
+  Quotient.sound ⟨⟨t.σ1, t.σ1_mem_monodromyGroup⟩, rfl⟩
 
 /-! ### Reconstruction -/
 
