@@ -168,10 +168,8 @@ section Components
 variable [Preadditive C] [Preadditive D] [HasZeroObject C] [HasZeroObject D]
   [HasBinaryBiproducts C] [HasBinaryBiproducts D]
 
--- Exposed because the generated `@[simps]` field lemmas are `rfl` proofs about this body.
 /-- An object of a product of preadditive categories is the biproduct of its two components,
 each padded by a zero object in the other coordinate. -/
-@[expose, simps]
 noncomputable def biprodComponentsIso (X : C × D) : (X.1, (0 : D)) ⊞ ((0 : C), X.2) ≅ X where
   hom := biprod.desc (𝟙 X.1, 0) (0, 𝟙 X.2)
   inv := biprod.lift (𝟙 X.1, 0) (0, 𝟙 X.2)
@@ -185,6 +183,16 @@ noncomputable def biprodComponentsIso (X : C × D) : (X.1, (0 : D)) ⊞ ((0 : C)
   inv_hom_id := by
     rw [biprod.lift_desc]
     ext <;> simp
+
+/-- The forward map of `biprodComponentsIso` is induced by the two coordinate inclusions. -/
+@[simp]
+theorem biprodComponentsIso_hom (X : C × D) :
+    (biprodComponentsIso X).hom = biprod.desc (𝟙 X.1, 0) (0, 𝟙 X.2) := (rfl)
+
+/-- The inverse of `biprodComponentsIso` is induced by the two coordinate projections. -/
+@[simp]
+theorem biprodComponentsIso_inv (X : C × D) :
+    (biprodComponentsIso X).inv = biprod.lift (𝟙 X.1, 0) (0, 𝟙 X.2) := (rfl)
 
 end Components
 
