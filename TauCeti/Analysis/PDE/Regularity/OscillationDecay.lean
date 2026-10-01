@@ -168,28 +168,12 @@ theorem exists_ae_value_le_sub_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ 
     ((Lp.memLp (W1p.value v)).sub (memLp_const k)).pos_part hMv hθv j
   -- Local boundedness for `w = v - ℓ`, again a weak subsolution on `B`.
   set w : W1p mu B 2 := v - W1p.const ℓ
-  have hwv : ⇑(W1p.value w) =ᵐ[mu.restrict (ball x₀ (2 * R))] fun x => W1p.value v x - ℓ := by
-    have hsub : ⇑(W1p.value w) =ᵐ[mu.restrict B]
-        ⇑(W1p.value v) - ⇑(W1p.value (W1p.const ℓ : W1p mu B 2)) := by
-      simpa only [w, ← W1p.valueL_apply, map_sub] using Lp.coeFn_sub _ _
-    filter_upwards [hsub, W1p.value_const_ae (mu := mu) (Omega := B) (p := 2) ℓ] with x h1 h2
-    rw [h1, Pi.sub_apply, h2]
-  have hwg : ⇑(W1p.gradient w) =ᵐ[mu.restrict B] W1p.gradient v := by
-    have hsub : ⇑(W1p.gradient w) =ᵐ[mu.restrict B]
-        ⇑(W1p.gradient v) - ⇑(W1p.gradient (W1p.const ℓ : W1p mu B 2)) := by
-      simpa only [w, ← W1p.gradientL_apply, map_sub] using Lp.coeFn_sub _ _
-    filter_upwards [hsub, Lp.coeFn_zero (EuclideanSpace ℝ ι) 2 (mu.restrict B)] with x h1 h2
-    rw [h1, Pi.sub_apply, W1p.gradient_const, h2, Pi.zero_apply, sub_zero]
+  have hwv : ⇑(W1p.value w) =ᵐ[mu.restrict (ball x₀ (2 * R))] fun x => W1p.value v x - ℓ :=
+    W1p.value_sub_const_ae v ℓ
   have hw : ∀ φ : W1p0 mu B 2,
       (∀ᵐ x ∂mu.restrict B, 0 ≤ W1p.value (φ : W1p mu B 2) x) →
-        energyFormH1 a 0 0 w (φ : W1p mu B 2) ≤ 0 := by
-    intro φ hφ
-    refine le_of_eq_of_le ?_ (hv φ hφ)
-    rw [energyFormH1_def, energyFormH1_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hwg] with x hx
-    simp only [energyIntegrand_apply, jetField_apply, hx, Pi.zero_apply, massForm_apply,
-      zero_mul]
+        energyFormH1 a 0 0 w (φ : W1p mu B 2) ≤ 0 := fun φ hφ =>
+    (energyFormH1_sub_const_left ℓ v _).trans_le (hv φ hφ)
   have hL := hbdd hB haB hw hR hRB
   -- The `L²` mass of `(v - ℓ)⁺` on `B(x₀, R)` is at most `(M - ℓ)² |{v ≥ ℓ} ∩ B(x₀, R)|`.
   have hm : Measurable (W1p.value v : EuclideanSpace ℝ ι → ℝ) :=

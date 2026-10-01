@@ -56,7 +56,8 @@ boundary regularity of `Ω` is used.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
   `p ≤ q`.
 * `TauCeti.W1p.const`: on a domain of finite measure, the constant functions, with weak
-  gradient zero.
+  gradient zero; subtracting one shifts the value (`TauCeti.W1p.value_sub_const_ae`) and keeps
+  the gradient (`TauCeti.W1p.gradient_sub_const`).
 
 ## References
 
@@ -740,6 +741,23 @@ theorem W1p.value_const_ae (c : ℝ) :
 @[simp]
 theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 := by
   rw [W1p.const, W1p.gradient_mk]
+
+/-- Subtracting the constant Sobolev function `c` subtracts `c` from the value almost everywhere
+on `Ω`. -/
+theorem W1p.value_sub_const_ae (u : W1p mu Omega p) (c : ℝ) :
+    ⇑(W1p.value (u - W1p.const c)) =ᵐ[mu.restrict Omega] fun x => W1p.value u x - c := by
+  have hsub : ⇑(W1p.value (u - W1p.const c)) =ᵐ[mu.restrict Omega]
+      ⇑(W1p.value u) - ⇑(W1p.value (W1p.const c : W1p mu Omega p)) := by
+    simpa only [← W1p.valueL_apply, map_sub] using Lp.coeFn_sub _ _
+  filter_upwards [hsub, W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c] with x h1 h2
+  rw [h1, Pi.sub_apply, h2]
+
+/-- Subtracting a constant Sobolev function does not change the weak gradient. -/
+@[simp]
+theorem W1p.gradient_sub_const (u : W1p mu Omega p) (c : ℝ) :
+    W1p.gradient (u - W1p.const c) = W1p.gradient u := by
+  rw [← W1p.gradientL_apply, map_sub, W1p.gradientL_apply, W1p.gradientL_apply,
+    W1p.gradient_const, sub_zero]
 
 end Const
 

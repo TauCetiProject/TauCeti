@@ -418,6 +418,19 @@ theorem energyFormH1_comm_of_isSymm_ae
     energyFormH1 a 0 c u v = energyFormH1 a 0 c v u :=
   energyFormIntegral_zero_drift_comm_of_isSymm_ae ha
 
+/-- **Without a mass term the energy form ignores constant shifts.** On a domain of finite measure,
+where constants lie in `H¹(Ω)`, `a(u - k, v) = a(u, v)` when the zeroth-order coefficient
+vanishes: the left argument then enters the form only through its gradient. In particular `u - k`
+is a weak subsolution whenever `u` is. -/
+theorem energyFormH1_sub_const_left
+    [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))] (k : ℝ)
+    (u v : W1p mu Omega 2) :
+    energyFormH1 a b 0 (u - W1p.const k) v = energyFormH1 a b 0 u v := by
+  rw [energyFormH1_def, energyFormH1_def]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [energyIntegrand_apply, jetField_apply, W1p.gradient_sub_const, Pi.zero_apply,
+    massForm_apply, zero_mul]
+
 /-- The coefficient in
 `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_poincare` is positive under the
 smallness condition `βP < λ` relating the drift bound, the Poincaré constant and the ellipticity;
