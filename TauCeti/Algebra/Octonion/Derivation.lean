@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.Octonion.Basic
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import TauCeti.LinearAlgebra.Matrix.CrossProduct
 
@@ -116,8 +117,10 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (O
 The three families are built from an underlying endomorphism and a private membership lemma, so
 that the bundled objects are the only public surface; their twelve entrywise `simp` lemmas, four
 for each family, and their five brackets are that surface, and no consumer unfolds a definition.
-Those brackets are checked entry by entry like the Leibniz rules of the two vector families, the
-trace-zero hypothesis entering the `𝔰𝔩₃` ones as the substitution `M 2 2 = -(M 0 0 + M 1 1)`. Only
+Those brackets and the Leibniz rules of the two vector families are checked entry by entry, each
+entry reduced by the vector `simp` set of `TauCeti/Algebra/Octonion/Basic.lean` to a polynomial in
+the dot products or a linear combination of the entries and their cross products; the `𝔰𝔩₃`
+brackets instead quote `Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero` directly. Only
 the rank bound asks for a field, and only because `TauCeti.finrank_sl` and the
 finite-dimensionality of `Der 𝕆` are what turn an injection into an inequality of ranks; that one
 lemma is the whole of this file's use of `TauCeti/Algebra/Lie/GeneralLinear/Finrank.lean`, which is
@@ -428,6 +431,19 @@ private theorem slDerivationEnd_mem {M : Matrix (Fin 3) (Fin 3) R} (hM : M.trace
 
 /-! ### The two vector families of derivations -/
 
+section Vector
+
+/- The vector `simp` set, as in `TauCeti/Algebra/Octonion/Basic.lean`: dot and cross products are
+pushed through the linear combinations that make up an entry of a product, dot products are
+normalised by commutativity, and the compound products that survive are reduced by Mathlib's own
+identities -- `Matrix.cross_dot_cross` for a dot product of two cross products,
+`Matrix.cross_cross_eq_smul_sub_smul` and its primed form for an iterated one. What is left is a
+polynomial in the dot products, which `ring` closes, or a linear combination of the entries and
+their cross products, which `module` closes; the triple products that neither identity reaches are
+rotated by `Matrix.triple_product_permutation` and `Matrix.cross_anticomm`. -/
+attribute [local simp] LinearMap.map_add₂ LinearMap.map_sub₂ LinearMap.map_smul₂
+  dotProduct_comm cross_dot_cross cross_cross_eq_smul_sub_smul cross_cross_eq_smul_sub_smul'
+
 /-- The endomorphism underlying `TauCeti.Octonion.upperDerivation`. -/
 private def upperDerivationEnd (u : Fin 3 → R) : Module.End R (Octonion R) where
   toFun x := ⟨-(u ⬝ᵥ x.w), u ⬝ᵥ x.w, (x.a - x.b) • u, u ⨯₃ x.v⟩
@@ -476,31 +492,37 @@ private def lowerDerivationEnd (t : Fin 3 → R) : Module.End R (Octonion R) whe
 @[simp] private theorem lowerDerivationEnd_apply_w (t : Fin 3 → R) (x : Octonion R) :
     (lowerDerivationEnd t x).w = (x.a - x.b) • t := (rfl)
 
-section Coordinates
-
-attribute [local simp] vec3_dotProduct cross_apply Matrix.vecHead Matrix.vecTail
-
 private theorem upperDerivationEnd_mem (u : Fin 3 → R) :
     upperDerivationEnd u ∈ derivationLieAlgebra R (Octonion R) := by
   rw [mem_derivationLieAlgebra]
   intro x y
-  refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
-  · simp; ring
-  · simp; ring
-  · fin_cases i <;> simp <;> ring
-  · fin_cases i <;> simp <;> ring
+  have hdot : x.v ⬝ᵥ (u ⨯₃ y.v) = -(u ⬝ᵥ (x.v ⨯₃ y.v)) := by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot]
+    ring
+  · simp [triple_product_permutation y.v u x.v]
+    ring
+  · simp
+    module
+  · simp
+    linear_combination (norm := module) (y.b - y.a) • cross_anticomm' u x.v
 
 private theorem lowerDerivationEnd_mem (t : Fin 3 → R) :
     lowerDerivationEnd t ∈ derivationLieAlgebra R (Octonion R) := by
   rw [mem_derivationLieAlgebra]
   intro x y
-  refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
-  · simp; ring
-  · simp; ring
-  · fin_cases i <;> simp <;> ring
-  · fin_cases i <;> simp <;> ring
-
-end Coordinates
+  have hdot : x.w ⬝ᵥ (t ⨯₃ y.w) = -(t ⬝ᵥ (x.w ⨯₃ y.w)) := by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine Octonion.ext ?_ ?_ ?_ ?_
+  · simp [triple_product_permutation y.w t x.w]
+    ring
+  · simp [hdot]
+    ring
+  · simp
+    linear_combination (norm := module) (y.a - y.b) • cross_anticomm' t x.w
+  · simp
+    module
 
 /-! ### The three families, bundled -/
 
@@ -585,15 +607,6 @@ def lowerDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion R
 
 /-! ### The brackets of the three families -/
 
-/-- The last diagonal entry of a trace-zero `3 × 3` matrix, in the form in which the coordinate
-proofs of the brackets below eliminate it. -/
-private theorem sl_coe_apply_two_two (M : LieAlgebra.SpecialLinear.sl (Fin 3) R) :
-    (M : Matrix (Fin 3) (Fin 3) R) 2 2 =
-      -((M : Matrix (Fin 3) (Fin 3) R) 0 0 + (M : Matrix (Fin 3) (Fin 3) R) 1 1) := by
-  have h : (M : Matrix (Fin 3) (Fin 3) R).trace = 0 := LinearMap.mem_ker.mp M.2
-  rw [Matrix.trace_fin_three] at h
-  exact eq_neg_of_add_eq_zero_right h
-
 /-- The trace of `⟨u, t⟩ • 1 - 3 • u tᵀ` vanishes: the rank-one matrix `u tᵀ` has trace `⟨u, t⟩`,
 and `1 : Matrix (Fin 3) (Fin 3) R` has trace `3`. -/
 private theorem trace_smul_one_sub_smul_vecMulVec_eq_zero (u t : Fin 3 → R) :
@@ -619,13 +632,15 @@ def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
     (u : Fin 3 → R) :
     ⁅slDerivation M, upperDerivation u⁆ =
       upperDerivation ((M : Matrix (Fin 3) (Fin 3) R) *ᵥ u) := by
-  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ (funext fun i => ?_)
+  have hM : (M : Matrix (Fin 3) (Fin 3) R).trace = 0 := LinearMap.mem_ker.mp M.2
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
   · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
   · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
   · simp [Matrix.mulVec_smul]
-  · fin_cases i <;>
-      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.transpose_apply, Matrix.vecHead,
-        Matrix.vecTail, sl_coe_apply_two_two M] <;> ring
+  · simp only [LieSubalgebra.coe_bracket, LieHom.lie_apply, Module.End.lie_apply, sub_w,
+      slDerivation_apply_w, upperDerivation_apply_w, slDerivation_apply_v]
+    exact (eq_sub_of_add_eq (Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero
+      (M : Matrix (Fin 3) (Fin 3) R) hM u x.v)).symm
 
 /-- **The lower vector derivations carry the dual of the defining representation of `𝔰𝔩₃`**:
 `⁅slDerivation M, lowerDerivation t⁆ = lowerDerivation (-(Mᵀ t))`, the degree `0` piece of the
@@ -634,12 +649,19 @@ def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
     (t : Fin 3 → R) :
     ⁅slDerivation M, lowerDerivation t⁆ =
       lowerDerivation (-((M : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ t)) := by
-  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_) ?_
+  have hM : (M : Matrix (Fin 3) (Fin 3) R)ᵀ.trace = 0 := by
+    rw [Matrix.trace_transpose]
+    exact LinearMap.mem_ker.mp M.2
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
   · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]
   · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]
-  · fin_cases i <;>
-      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.transpose_apply, Matrix.vecHead,
-        Matrix.vecTail, sl_coe_apply_two_two M] <;> ring
+  · have h := Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero
+      (M : Matrix (Fin 3) (Fin 3) R)ᵀ hM x.w t
+    rw [Matrix.transpose_transpose, ← cross_anticomm t x.w, Matrix.mulVec_neg, neg_neg] at h
+    simp only [LieSubalgebra.coe_bracket, LieHom.lie_apply, Module.End.lie_apply, sub_v,
+      slDerivation_apply_v, lowerDerivation_apply_v, slDerivation_apply_w, map_neg, cross_anticomm,
+      NegMemClass.coe_neg, LinearMap.neg_apply, neg_v]
+    exact (eq_sub_of_add_eq' h).symm
   · simp [Matrix.mulVec_smul]
 
 /-- **Two upper vector derivations bracket into the lower family**, by twice the cross product:
@@ -647,40 +669,49 @@ def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
 this is `1 + 1 = 2`. -/
 @[simp] theorem lie_upperDerivation_upperDerivation (u u' : Fin 3 → R) :
     ⁅upperDerivation u, upperDerivation u'⁆ = lowerDerivation ((2 : R) • (u ⨯₃ u')) := by
-  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_)
-    (funext fun i => ?_)
-  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
-  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
-  · fin_cases i <;> simp [cross_apply, vec3_dotProduct] <;> ring
-  · fin_cases i <;> simp [cross_apply] <;> ring
+  have hdot : ∀ v : Fin 3 → R, u' ⬝ᵥ (u ⨯₃ v) = -(u ⬝ᵥ (u' ⨯₃ v)) := fun v => by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot, triple_product_permutation x.v u u']
+    ring
+  · simp [hdot, triple_product_permutation x.v u u']
+    ring
+  · simp
+    module
+  · simp
+    linear_combination (norm := module) (x.b - x.a) • cross_anticomm' u u'
 
 /-- **Two lower vector derivations bracket into the upper family**, by twice the cross product:
 `⁅lowerDerivation t, lowerDerivation t'⁆ = upperDerivation (2 (t ⨯₃ t'))`.  In the `ℤ/3`-grading
 this is `2 + 2 = 1`. -/
 @[simp] theorem lie_lowerDerivation_lowerDerivation (t t' : Fin 3 → R) :
     ⁅lowerDerivation t, lowerDerivation t'⁆ = upperDerivation ((2 : R) • (t ⨯₃ t')) := by
-  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_)
-    (funext fun i => ?_)
-  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
-  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
-  · fin_cases i <;> simp [cross_apply] <;> ring
-  · fin_cases i <;> simp [cross_apply, vec3_dotProduct] <;> ring
+  have hdot : ∀ v : Fin 3 → R, t' ⬝ᵥ (t ⨯₃ v) = -(t ⬝ᵥ (t' ⨯₃ v)) := fun v => by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot, triple_product_permutation x.w t t']
+    ring
+  · simp [hdot, triple_product_permutation x.w t t']
+    ring
+  · simp
+    linear_combination (norm := module) (x.b - x.a) • cross_anticomm' t t'
+  · simp
+    module
 
 /-- **An upper and a lower vector derivation bracket back into `𝔰𝔩₃`**:
 `⁅upperDerivation u, lowerDerivation t⁆ = slDerivation (slOfVectors u t)`.  In the `ℤ/3`-grading
 this is `1 + 2 = 0`, the bracket that makes the fourteen derivations a Lie subalgebra. -/
 @[simp] theorem lie_upperDerivation_lowerDerivation (u t : Fin 3 → R) :
     ⁅upperDerivation u, lowerDerivation t⁆ = slDerivation (slOfVectors u t) := by
-  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_)
-    (funext fun i => ?_)
-  · simp [dotProduct_comm t u]
-  · simp [dotProduct_comm t u]
-  · fin_cases i <;>
-      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.one_apply,
-        Matrix.vecMulVec_apply] <;> ring
-  · fin_cases i <;>
-      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.one_apply,
-        Matrix.vecMulVec_apply] <;> ring
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp
+  · simp
+  · simp [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec]
+    module
+  · simp [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec]
+    module
+
+end Vector
 
 /-! ### Fourteen independent derivations -/
 
