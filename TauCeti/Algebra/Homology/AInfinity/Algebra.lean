@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Coderivation
+public import TauCeti.Algebra.Module.GradedModule.Multilinear
 
 /-!
 # Nonunital A-infinity algebras

@@ -59,10 +59,27 @@ abbrev HomogeneousPathOperation (q : ℤ) :=
 
 /-- Restriction to homogeneous pieces identifies total homogeneous operations with degreewise
 path operations. Its inverse is the unique multilinear extension to total Hom modules. -/
-noncomputable abbrev pathOperationEquiv (q : ℤ) :
+noncomputable def pathOperationEquiv (q : ℤ) :
     HomogeneousPathOperation R X q ≃ₗ[R] PathOperation R X q :=
   InternalGrading.homogeneousMultilinearEquiv
     (fun i : Fin n ↦ grading (R := R) (X i.succ) (X i.castSucc))
     (grading (R := R) (X (Fin.last n)) (X 0)).piece q
+
+/-- Restricting a total path operation evaluates it on the underlying homogeneous inputs. -/
+@[simp]
+theorem coe_pathOperationEquiv_apply (q : ℤ) (f : HomogeneousPathOperation R X q)
+    (d : Fin n → ℤ) (x : ∀ i, grHom R (X i.succ) (X i.castSucc) (d i)) :
+    (pathOperationEquiv R X q f d x : homModule (R := R) (X (Fin.last n)) (X 0)) =
+      f.val (fun i ↦ (x i : homModule (R := R) (X i.succ) (X i.castSucc))) := by
+  exact InternalGrading.coe_homogeneousMultilinearEquiv_apply _ _ q f d x
+
+/-- Extending degreewise path operations recovers their values on homogeneous inputs. -/
+@[simp]
+theorem pathOperationEquiv_symm_apply (q : ℤ) (f : PathOperation R X q)
+    (d : Fin n → ℤ) (x : ∀ i, grHom R (X i.succ) (X i.castSucc) (d i)) :
+    ((pathOperationEquiv R X q).symm f).val
+        (fun i ↦ (x i : homModule (R := R) (X i.succ) (X i.castSucc))) =
+      (f d x : homModule (R := R) (X (Fin.last n)) (X 0)) := by
+  exact InternalGrading.homogeneousMultilinearEquiv_symm_apply _ _ q f d x
 
 end TauCeti.GradedLinearQuiver

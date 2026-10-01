@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
-public import TauCeti.Algebra.Module.GradedModule.Multilinear
+public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 
