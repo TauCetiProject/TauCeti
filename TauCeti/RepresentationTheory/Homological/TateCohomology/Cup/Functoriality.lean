@@ -57,16 +57,6 @@ section Res
 
 variable (e : G ≃* H) (N₁ : Rep k H)
 
-omit [Fintype G] [Fintype H] in
-/-- The pair `Res(e)(N₁) ⊗ Res(e)(N₂) → N₁ ⊗ N₂` whose linear part is the identity. -/
-private theorem isIntertwiningMap_res_tensor (N₂ : Rep k H) :
-    (Rep.res (e : G →* H) N₁ ⊗ Rep.res (e : G →* H) N₂).ρ.IsIntertwiningMap
-      ((N₁ ⊗ N₂).ρ.comp (e : G →* H))
-      (TensorProduct.map ((LinearEquiv.refl k N₁.V : N₁.V →ₗ[k] N₁.V) :
-          (Rep.res (e : G →* H) N₁).V →ₗ[k] N₁.V)
-        ((LinearEquiv.refl k N₂.V : N₂.V →ₗ[k] N₂.V) : (Rep.res (e : G →* H) N₂).V →ₗ[k] N₂.V)) :=
-  (Rep.isIntertwiningMap_res N₁ (e : G →* H)).tensor (Rep.isIntertwiningMap_res N₂ (e : G →* H))
-
 /-- The connecting maps of a short exact sequence of `H`-representations and of its restriction
 along `e` are intertwined by the pairs `Res(e)(N) → N`. -/
 private theorem δ_comp_map_res {S : ShortComplex (Rep k H)} (hS : S.ShortExact) (r : ℤ) :
@@ -82,8 +72,8 @@ private theorem δ_comp_resTensorMap {D : ShortComplex (Rep k H)} (hD : D.ShortE
     _root_.TateCohomology.δ (haveI := ((shortExact_res (e : G →* H)).2 hD).epi_g;
       shortExact_map_tensorLeft_of_leftInverse ((shortExact_res (e : G →* H)).2 hD).exact
         (Rep.res (e : G →* H) N₁) r hr) n ≫
-        map (isIntertwiningMap_res_tensor e N₁ D.X₁) (n + 1) =
-      map (isIntertwiningMap_res_tensor e N₁ D.X₃) n ≫ _root_.TateCohomology.δ
+        map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₁) (n + 1) =
+      map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₃) n ≫ _root_.TateCohomology.δ
         (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ r hr) n := by
   have := hD.epi_g
   have := ((shortExact_res (e : G →* H)).2 hD).epi_g
@@ -93,8 +83,9 @@ private theorem δ_comp_resTensorMap {D : ShortComplex (Rep k H)} (hD : D.ShortE
     (shortExact_map_tensorLeft_of_leftInverse ((shortExact_res (e : G →* H)).2 hD).exact
       (Rep.res (e : G →* H) N₁) r hr)
     (shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ r hr)
-    (isIntertwiningMap_res_tensor e N₁ D.X₁) (isIntertwiningMap_res_tensor e N₁ D.X₂)
-    (isIntertwiningMap_res_tensor e N₁ D.X₃) (TensorProduct.ext' fun _ _ ↦ rfl)
+    (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₁)
+    (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₂)
+    (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₃) (TensorProduct.ext' fun _ _ ↦ rfl)
     (TensorProduct.ext' fun _ _ ↦ rfl) n
 
 /-- In bidegree `(p, 0)`: the cup product with the class of an invariant `y` is induced by the
@@ -102,7 +93,7 @@ morphism `m ↦ m ⊗ y`, and the pairs `Res(e)(N) → N` are natural in such mo
 private theorem cupH0_map_res (N₂ : Rep k H) (p : ℤ)
     (x : tateCohomology (Rep.res (e : G →* H) N₁) p)
     (y : tateCohomology (Rep.res (e : G →* H) N₂) 0) :
-    map (isIntertwiningMap_res_tensor e N₁ N₂) p
+    map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ N₂) p
         (cupH0 (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) N₂) p x y) =
       cupH0 N₁ N₂ p (map (Rep.isIntertwiningMap_res N₁ (e : G →* H)) p x)
         (map (Rep.isIntertwiningMap_res N₂ (e : G →* H)) 0 y) := by
@@ -113,7 +104,7 @@ private theorem cupH0_map_res (N₂ : Rep k H) (p : ℤ)
     -- `m ↦ m ⊗ v` of `H`-representations.
     refine ConcreteCategory.congr_hom (tateCohomologyFunctor_map_comp_map
       (Rep.isIntertwiningMap_res N₁ (e : G →* H))
-      (isIntertwiningMap_res_tensor e N₁ N₂)
+      (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ N₂)
       (Rep.tensorInvariant (Rep.res (e : G →* H) N₁) v)
       (Rep.tensorInvariant N₁ (mapInvariants (Rep.isIntertwiningMap_res N₂ (e : G →* H)) v))
       ?_ p) x
@@ -129,17 +120,18 @@ private theorem map_res_cup_δ {D : ShortComplex (Rep k H)} (hD : D.ShortExact)
     {r : D.X₂.V →ₗ[k] D.X₁.V} (hr : Function.LeftInverse r D.f.hom) {p q n : ℤ} (h : p + q = n)
     (x : tateCohomology (Rep.res (e : G →* H) N₁) p)
     (y : tateCohomology (Rep.res (e : G →* H) D.X₃) q) :
-    map (isIntertwiningMap_res_tensor e N₁ D.X₁) (n + 1)
+    map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₁) (n + 1)
         (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) D.X₁) p (q + 1) (n + 1) (by omega) x
           (_root_.TateCohomology.δ ((shortExact_res (e : G →* H)).2 hD) q y)) =
       p.negOnePow • _root_.TateCohomology.δ
         (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ r hr) n
-        (map (isIntertwiningMap_res_tensor e N₁ D.X₃) n
+        (map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₃) n
           (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) D.X₃) p q n h x y)) := by
   -- `x ∪ δ y = (-1)^p δ (x ∪ y)` for the restricted sequence, which is still split by `r`.
   have hG := cup_δ_of_leftInverse (Rep.res (e : G →* H) N₁) ((shortExact_res (e : G →* H)).2 hD)
     (r := r) hr h x y
-  refine (congrArg (map (isIntertwiningMap_res_tensor e N₁ D.X₁) (n + 1)) hG).trans ?_
+  refine (congrArg
+    (map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ D.X₁) (n + 1)) hG).trans ?_
   rw [Units.smul_def, map_zsmul, Units.smul_def]
   exact congrArg ((p.negOnePow : ℤ) • ·)
     (ConcreteCategory.congr_hom (δ_comp_resTensorMap e N₁ hD hr n) _)
@@ -162,7 +154,7 @@ private theorem cup_map_res_δ {D : ShortComplex (Rep k H)} (hD : D.ShortExact)
 private theorem map_res_cup_zero_right (N₂ : Rep k H) {p r : ℤ} (h : p + 0 = r)
     (x : tateCohomology (Rep.res (e : G →* H) N₁) p)
     (y : tateCohomology (Rep.res (e : G →* H) N₂) 0) :
-    map (isIntertwiningMap_res_tensor e N₁ N₂) r
+    map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ N₂) r
         (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) N₂) p 0 r h x y) =
       cup N₁ N₂ p 0 r h (map (Rep.isIntertwiningMap_res N₁ (e : G →* H)) p x)
         (map (Rep.isIntertwiningMap_res N₂ (e : G →* H)) 0 y) := by
@@ -176,13 +168,13 @@ the restricted upward shift, so the claim in degree `q` for the upward shift giv
 private theorem map_res_cup_add_one (N₂ : Rep k H) {p q r : ℤ} (h : p + q = r)
     (x : tateCohomology (Rep.res (e : G →* H) N₁) p)
     (ih : ∀ y : tateCohomology (Rep.res (e : G →* H) (dimensionShiftUp N₂)) q,
-      map (isIntertwiningMap_res_tensor e N₁ (dimensionShiftUp N₂)) r
+      map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ (dimensionShiftUp N₂)) r
           (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) (dimensionShiftUp N₂)) p q r h
             x y) =
         cup N₁ (dimensionShiftUp N₂) p q r h (map (Rep.isIntertwiningMap_res N₁ (e : G →* H)) p x)
           (map (Rep.isIntertwiningMap_res (dimensionShiftUp N₂) (e : G →* H)) q y))
     (y : tateCohomology (Rep.res (e : G →* H) N₂) (q + 1)) :
-    map (isIntertwiningMap_res_tensor e N₁ N₂) (r + 1)
+    map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ N₂) (r + 1)
         (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) N₂) p (q + 1) (r + 1) (by omega)
           x y) =
       cup N₁ N₂ p (q + 1) (r + 1) (by omega) (map (Rep.isIntertwiningMap_res N₁ (e : G →* H)) p x)
@@ -212,14 +204,14 @@ claim in degree `q + 1` for the downward shift gives it in degree `q`. -/
 private theorem map_res_cup_of_add_one (N₂ : Rep k H) {p q r : ℤ} (h : p + q = r)
     (x : tateCohomology (Rep.res (e : G →* H) N₁) p)
     (ih : ∀ y : tateCohomology (Rep.res (e : G →* H) (dimensionShiftDown N₂)) (q + 1),
-      map (isIntertwiningMap_res_tensor e N₁ (dimensionShiftDown N₂)) (r + 1)
+      map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ (dimensionShiftDown N₂)) (r + 1)
           (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) (dimensionShiftDown N₂)) p (q + 1)
             (r + 1) (by omega) x y) =
         cup N₁ (dimensionShiftDown N₂) p (q + 1) (r + 1) (by omega)
           (map (Rep.isIntertwiningMap_res N₁ (e : G →* H)) p x)
           (map (Rep.isIntertwiningMap_res (dimensionShiftDown N₂) (e : G →* H)) (q + 1) y))
     (y : tateCohomology (Rep.res (e : G →* H) N₂) q) :
-    map (isIntertwiningMap_res_tensor e N₁ N₂) r
+    map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ N₂) r
         (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) N₂) p q r h x y) =
       cup N₁ N₂ p q r h (map (Rep.isIntertwiningMap_res N₁ (e : G →* H)) p x)
         (map (Rep.isIntertwiningMap_res N₂ (e : G →* H)) q y) := by
@@ -247,7 +239,7 @@ private theorem map_res_cup_of_add_one (N₂ : Rep k H) {p q r : ℤ} (h : p + q
 private theorem map_res_cup (N₂ : Rep k H) (p q r : ℤ) (h : p + q = r)
     (x : tateCohomology (Rep.res (e : G →* H) N₁) p)
     (y : tateCohomology (Rep.res (e : G →* H) N₂) q) :
-    map (isIntertwiningMap_res_tensor e N₁ N₂) r
+    map (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ N₂) r
         (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) N₂) p q r h x y) =
       cup N₁ N₂ p q r h (map (Rep.isIntertwiningMap_res N₁ (e : G →* H)) p x)
         (map (Rep.isIntertwiningMap_res N₂ (e : G →* H)) q y) := by
@@ -279,14 +271,20 @@ theorem map_cup {e : G ≃* H} {M₁ M₂ : Rep k G} {N₁ N₂ : Rep k H} {φ�
     {φ₂ : M₂.V →ₗ[k] N₂.V} (h₁ : M₁.ρ.IsIntertwiningMap (N₁.ρ.comp (e : G →* H)) φ₁)
     (h₂ : M₂.ρ.IsIntertwiningMap (N₂.ρ.comp (e : G →* H)) φ₂) (p q r : ℤ) (h : p + q = r)
     (x : tateCohomology M₁ p) (y : tateCohomology M₂ q) :
-    map (M := M₁ ⊗ M₂) (N := N₁ ⊗ N₂) (h₁.tensor h₂) r (cup M₁ M₂ p q r h x y) =
+    map (M := M₁ ⊗ M₂) (N := N₁ ⊗ N₂)
+        ⟨((φ₁.intertwiningMap_of_isIntertwiningMap _ _ h₁.isIntertwining).tensor
+          (φ₂.intertwiningMap_of_isIntertwiningMap _ _ h₂.isIntertwining)).isIntertwining⟩ r
+        (cup M₁ M₂ p q r h x y) =
       cup N₁ N₂ p q r h (map h₁ p x) (map h₂ q y) := by
   -- Factor each pair through the restriction of its target; the factor of the tensor pair is the
   -- tensor product of the factors of the two pairs.
   let f₁ := IsIntertwiningMap.toRes h₁
   let f₂ := IsIntertwiningMap.toRes h₂
-  have hf := tateCohomologyFunctor_map_comp_map (h₁.tensor h₂)
-    (isIntertwiningMap_res_tensor e N₁ N₂) (f₁ ▷ M₂ ≫ Rep.res (e : G →* H) N₁ ◁ f₂) (𝟙 (N₁ ⊗ N₂))
+  have hf := tateCohomologyFunctor_map_comp_map
+    ⟨((φ₁.intertwiningMap_of_isIntertwiningMap _ _ h₁.isIntertwining).tensor
+      (φ₂.intertwiningMap_of_isIntertwiningMap _ _ h₂.isIntertwining)).isIntertwining⟩
+    (Rep.isIntertwiningMap_res_tensor (e : G →* H) N₁ N₂)
+    (f₁ ▷ M₂ ≫ Rep.res (e : G →* H) N₁ ◁ f₂) (𝟙 (N₁ ⊗ N₂))
     (TensorProduct.ext' fun a b ↦ by simp [f₁, f₂]) r
   rw [CategoryTheory.Functor.map_id, Category.comp_id] at hf
   rw [← hf,

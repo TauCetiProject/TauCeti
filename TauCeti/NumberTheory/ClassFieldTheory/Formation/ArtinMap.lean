@@ -199,7 +199,7 @@ theorem nakayamaNegTwo_conj (g : G) (σ : Additive (Abelianization L.Gal)) :
       L.conjugateNormQuotientEquiv F g (cf.nakayamaNegTwo L σ) := by
   obtain ⟨x, rfl⟩ := L.tateHMinusTwoEquivAbelianization.surjective σ
   rw [nakayamaNegTwo_apply, nakayamaNegTwo_apply, AddEquiv.symm_apply_apply,
-    ← L.tateHMinusTwoEquivAbelianization_conjugateTrivialTateIso_hom g x,
+    ← L.tateHMinusTwoEquivAbelianization_conjugateTrivialTateIso_apply g x,
     AddEquiv.symm_apply_apply, ← tateIso_apply, ← tateIso_apply, ← cf.tateIso_conj L g (-2) x]
   exact L.tateHZeroEquivNormQuotient_conjugateTateIso_apply F g _
 
