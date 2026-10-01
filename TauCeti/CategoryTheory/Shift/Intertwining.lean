@@ -62,7 +62,6 @@ def mapFunctor (α : e.functor ⋙ F ≅ F ⋙ e'.functor) : IntSequence e ⥤ I
 
 /-- Evaluation in degree zero after applying `mapFunctor` is applying the original functor after
 evaluation. -/
-@[expose]
 def mapFunctorCompEvalIso (α : e.functor ⋙ F ≅ F ⋙ e'.functor) :
     mapFunctor α ⋙ eval (e := e') ≅ eval (e := e) ⋙ F :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ by simp [mapFunctor, eval])
@@ -70,15 +69,22 @@ def mapFunctorCompEvalIso (α : e.functor ⋙ F ≅ F ⋙ e'.functor) :
 @[simp]
 theorem mapFunctorCompEvalIso_hom_app (α : e.functor ⋙ F ≅ F ⋙ e'.functor)
     (X : IntSequence e) : (mapFunctorCompEvalIso α).hom.app X = 𝟙 _ :=
-  rfl
+  by
+    -- Unfold locally to establish the component API while keeping the construction opaque.
+    change (Iso.refl _).hom = _
+    simp
 
 @[simp]
 theorem mapFunctorCompEvalIso_inv_app (α : e.functor ⋙ F ≅ F ⋙ e'.functor)
     (X : IntSequence e) : (mapFunctorCompEvalIso α).inv.app X = 𝟙 _ :=
-  rfl
+  by
+    -- This is the inverse component of the same locally unfolded identity isomorphism.
+    change (Iso.refl _).inv = _
+    change 𝟙 (F.obj (X.X 0)) = _
+    change 𝟙 (F.obj (X.X 0)) = 𝟙 (F.obj (X.X 0))
+    exact (Category.comp_id _).symm.trans (Category.id_comp _)
 
 /-- Applying an intertwining functor degreewise commutes with the reindexing shift. -/
-@[expose]
 def mapFunctorShiftIso (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (k : ℤ) :
     shiftFunctor (IntSequence e) k ⋙ mapFunctor α ≅
       mapFunctor α ⋙ shiftFunctor (IntSequence e') k :=
@@ -93,13 +99,29 @@ def mapFunctorShiftIso (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (k : ℤ) :
 theorem mapFunctorShiftIso_hom_app_f (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (k : ℤ)
     (X : IntSequence e) (n : ℤ) :
     ((mapFunctorShiftIso α k).hom.app X).f n = 𝟙 (F.obj (X.X (n + k))) :=
-  rfl
+  by
+    -- Unfold locally to establish the component API while keeping the construction opaque.
+    change ((𝟙 ((shiftFunctor (IntSequence e) k ⋙ mapFunctor α).obj X) :
+      ((shiftFunctor (IntSequence e) k ⋙ mapFunctor α).obj X) ⟶
+        ((shiftFunctor (IntSequence e) k ⋙ mapFunctor α).obj X)).f n) = _
+    rw [id_f]
+    change 𝟙 (F.obj (((reindex k).obj X).X n)) = _
+    change 𝟙 (F.obj (X.X (n + k))) = 𝟙 (F.obj (X.X (n + k)))
+    exact (Category.comp_id _).symm.trans (Category.id_comp _)
 
 @[simp]
 theorem mapFunctorShiftIso_inv_app_f (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (k : ℤ)
     (X : IntSequence e) (n : ℤ) :
     ((mapFunctorShiftIso α k).inv.app X).f n = 𝟙 (F.obj (X.X (n + k))) :=
-  rfl
+  by
+    -- This is the inverse component of the same locally unfolded identity isomorphism.
+    change ((𝟙 ((shiftFunctor (IntSequence e) k ⋙ mapFunctor α).obj X) :
+      ((shiftFunctor (IntSequence e) k ⋙ mapFunctor α).obj X) ⟶
+        ((shiftFunctor (IntSequence e) k ⋙ mapFunctor α).obj X)).f n) = _
+    rw [id_f]
+    change 𝟙 (F.obj (((reindex k).obj X).X n)) = _
+    change 𝟙 (F.obj (X.X (n + k))) = 𝟙 (F.obj (X.X (n + k)))
+    exact (Category.comp_id _).symm.trans (Category.id_comp _)
 
 private lemma shiftFunctorZero_inv_app_mapFunctor_f
     (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : IntSequence e) (n : ℤ) :
@@ -187,7 +209,7 @@ variable {e : C ≌ C} {e' : D ≌ D} (F : C ⥤ D)
 
 /-- After postcomposition with evaluation, the comparison used to transport the shift
 compatibility is the evident comparison through the two evaluation counits. -/
-noncomputable def comparisonAfterEval :
+private noncomputable def comparisonAfterEval :
     (F ⋙ (eval (e := e')).inv) ⋙ eval (e := e') ≅
       ((eval (e := e)).inv ⋙ mapFunctor α) ⋙ eval (e := e') :=
   (associator _ _ _ ≪≫ isoWhiskerLeft F (eval (e := e')).asEquivalence.counitIso ≪≫
@@ -199,7 +221,7 @@ noncomputable def comparisonAfterEval :
 
 /-- The comparison between postcomposing `F` with the inverse evaluation equivalence and first
 lifting to integer sequences. -/
-noncomputable def comparison :
+private noncomputable def comparison :
     F ⋙ (eval (e := e')).inv ≅ (eval (e := e)).inv ⋙ mapFunctor α :=
   ((whiskeringRight C (IntSequence e') D).obj (eval (e := e'))).preimageIso
     (comparisonAfterEval F α)
