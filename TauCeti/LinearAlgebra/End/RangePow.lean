@@ -31,10 +31,11 @@ variable [AddCommMonoid M] [Module R M] {f : Module.End R M} {n : ℕ}
 equal it too. -/
 theorem range_pow_add_eq_of_range_pow_succ_eq (h : range (f ^ (n + 1)) = range (f ^ n)) (m : ℕ) :
     range (f ^ (n + m)) = range (f ^ n) := by
+  have hrec : ∀ k, range (f ^ (k + 1)) = (range (f ^ k)).map f := fun k => by
+    rw [pow_succ', Module.End.mul_eq_comp, range_comp]
   induction m with
   | zero => rfl
-  | succ m ih => rw [← add_assoc, pow_succ', Module.End.mul_eq_comp, range_comp, ih,
-      ← range_comp, ← Module.End.mul_eq_comp, ← pow_succ', h]
+  | succ m ih => rw [← add_assoc, hrec, ih, ← hrec, h]
 
 end AddCommMonoid
 
