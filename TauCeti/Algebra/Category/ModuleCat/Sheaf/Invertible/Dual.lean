@@ -75,11 +75,6 @@ abbrev _root_.SheafOfModules.dual
     _root_.SheafOfModules.{u} (ringCatSheaf R) :=
   (ihom M).obj (unit (ringCatSheaf R))
 
-/-- The dual of the standard free rank-one sheaf is the standard free rank-one sheaf. -/
-def _root_.SheafOfModules.dualFreePUnitIso :
-    dual (free (R := ringCatSheaf R) PUnit) ≅ free (R := ringCatSheaf R) PUnit :=
-  dualFreeIso (R := R) PUnit
-
 /-- An isomorphism of sheaves induces an isomorphism of their duals. -/
 def _root_.SheafOfModules.dualIso {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
     (e : M ≅ N) : M.dual ≅ N.dual := by
@@ -96,7 +91,7 @@ instance _root_.SheafOfModules.IsInvertible.dual
       X := t.X
       coversTop := t.coversTop
       iso := fun i ↦
-        (dualFreePUnitIso (R := R.over (t.X i))).symm ≪≫
+        (dualFreeIso (R := R.over (t.X i)) PUnit).symm ≪≫
           dualIso (R := R.over (t.X i)) (t.iso i) ≪≫
           (M.overDualIso R (t.X i)).symm }
 
