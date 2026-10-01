@@ -124,15 +124,6 @@ theorem orientedAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC 
 
 /-! ### The normal form: rotations of the imaginary axis -/
 
-/-- The classes of `rotation θ` and `rotation (θ + π)` agree in `PSL(2, ℝ)`. -/
-theorem pslMk_rotation_add_pi (θ : ℝ) :
-    (↑(rotation (θ + π)) : PSL(2, ℝ)) = ↑(rotation θ) := by
-  have h : rotation (θ + π) = -rotation θ := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.SpecialLinearGroup.coe_rotation, Real.cos_add_pi, Real.sin_add_pi]
-  rw [h, mk_neg]
-
 /-- The geodesic line from `I` to a point at positive parameter on the imaginary axis rotated by
 `θ` is that rotated axis (compare `geodesicBetween_I_geodesicLine_one`). -/
 theorem geodesicBetween_I_geodesicLine_rotation {t : ℝ} (ht : 0 < t) (θ : ℝ) :
