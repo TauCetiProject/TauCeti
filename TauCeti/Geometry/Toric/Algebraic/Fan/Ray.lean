@@ -54,15 +54,6 @@ theorem finrank_span (rho : Phi.Ray) :
     Module.finrank ℝ (Submodule.span ℝ (rho.toCone.1 : Set V)) = 1 :=
   rho.2
 
-/-- A fan ray is not the zero cone. -/
-theorem toCone_ne_bot (rho : Phi.Ray) : rho.toCone.1 ≠ ⊥ := by
-  intro h
-  have hrank := rho.finrank_span
-  -- Expose the zero cone as a singleton so `Submodule.span_zero_singleton` applies.
-  rw [h, show ((⊥ : PointedCone ℝ V) : Set V) = ({0} : Set V) by ext; simp,
-    Submodule.span_zero_singleton, finrank_bot] at hrank
-  omega
-
 /-- A ray of a cone belonging to a fan is a ray of the fan. -/
 def ofToricRay (sigma : Phi.cones) (rho : ToricRay sigma.1) : Phi.Ray :=
   ⟨⟨rho.toPointedCone, Phi.mem_of_isFaceOf sigma.2 rho.1.isFaceOf⟩, rho.2⟩
@@ -87,6 +78,10 @@ theorem toPointedCone_toToricRay (rho : Phi.Ray) (sigma : Phi.cones)
     (h : rho.toCone ≤ sigma) :
     (rho.toToricRay Phi sigma h).toPointedCone = rho.toCone.1 :=
   (rfl)
+
+/-- A fan ray is not the zero cone. -/
+theorem toCone_ne_bot (rho : Phi.Ray) : rho.toCone.1 ≠ ⊥ := by
+  exact (rho.toToricRay Phi rho.toCone le_rfl).toPointedCone_ne_bot
 
 end Ray
 
@@ -122,14 +117,8 @@ theorem rayEquiv_symm_apply (sigma : Phi.cones) (rho : ToricRay sigma.1) :
 /-- Every nonzero cone of a fan contains a ray of the fan. -/
 theorem exists_ray_le_of_ne_bot (sigma : Phi.cones) (hσ : sigma.1 ≠ ⊥) :
     ∃ rho : Phi.Ray, rho.toCone ≤ sigma := by
-  have hnonempty : Nonempty (ToricRay sigma.1) := by
-    by_contra h
-    let _ : IsEmpty (ToricRay sigma.1) := not_nonempty_iff.mp h
-    have hgen := ToricRay.iSup_toPointedCone (Phi.isToricCone sigma.2).fg
-      (Phi.isToricCone sigma.2).salient
-    rw [iSup_of_empty] at hgen
-    exact hσ hgen.symm
-  let rho := Classical.choice hnonempty
+  let rho := Classical.choice (ToricRay.nonempty_of_ne_bot
+    (Phi.isToricCone sigma.2).fg (Phi.isToricCone sigma.2).salient hσ)
   exact ⟨Ray.ofToricRay Phi sigma rho, rho.1.isFaceOf.le⟩
 
 end TauCeti.Toric.Fan
