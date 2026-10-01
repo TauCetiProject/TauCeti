@@ -64,7 +64,8 @@ conjugation action.
 * `ConjClasses.map_mk`: the computation rule for `ConjClasses.map` on representatives,
   with `ConjClasses.map_pow` the consequence that the power is natural in the monoid.
 * `MulEquiv.conjClassesEquiv`: a multiplicative equivalence induces an equivalence of
-  conjugacy classes.
+  conjugacy classes, compatible with representatives, powers, inversion, composition, and
+  multiplicative automorphisms acting on conjugacy classes.
 * `MulAut.smul_conjClasses_mk`: an automorphism acts on a conjugacy class by
   mapping its representative; inner automorphisms fix every class.
 * `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
@@ -433,6 +434,13 @@ def conjClassesEquiv (e : M ≃* N) : ConjClasses M ≃ ConjClasses N where
     obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
     simp
 
+/-- The equivalence induced on conjugacy classes is the map induced by the underlying
+multiplicative homomorphism. -/
+theorem conjClassesEquiv_apply (e : M ≃* N) (C : ConjClasses M) :
+    e.conjClassesEquiv C = ConjClasses.map e.toMonoidHom C := by
+  rw [conjClassesEquiv]
+  rfl
+
 /-- The equivalence on conjugacy classes sends the class of a representative to the class of its
 image. -/
 @[simp]
@@ -455,6 +463,13 @@ theorem conjClassesEquiv_symm (e : M ≃* N) :
     e.symm.conjClassesEquiv = e.conjClassesEquiv.symm := by
   ext C
   rfl
+
+/-- The inverse equivalence on conjugacy classes maps a representative by the inverse
+multiplicative equivalence. -/
+@[simp]
+theorem conjClassesEquiv_symm_mk (e : M ≃* N) (b : N) :
+    e.conjClassesEquiv.symm (ConjClasses.mk b) = ConjClasses.mk (e.symm b) := by
+  rw [← conjClassesEquiv_symm, conjClassesEquiv_mk]
 
 /-- The identity multiplicative equivalence induces the identity on conjugacy classes. -/
 @[simp]
@@ -479,6 +494,31 @@ theorem map_pow {N : Type*} [Monoid N] (f : M →* N) (C : ConjClasses M) (j : �
   -- the map on representatives, after which `mk_pow` handles both powers and `map_pow` finishes
   -- in `N`.
   rw [mk_pow, map_mk, map_mk, mk_pow, _root_.map_pow]
+
+end ConjClasses
+
+namespace MulEquiv
+
+variable {M N : Type*} [Monoid M] [Monoid N]
+
+/-- An equivalence induced on conjugacy classes commutes with powers. -/
+@[simp]
+theorem conjClassesEquiv_pow (e : M ≃* N) (C : ConjClasses M) (j : ℕ) :
+    e.conjClassesEquiv (C ^ j) = e.conjClassesEquiv C ^ j :=
+  ConjClasses.map_pow e.toMonoidHom C j
+
+/-- An equivalence induced on conjugacy classes of groups commutes with inversion. -/
+@[simp]
+theorem conjClassesEquiv_inv {G H : Type*} [Group G] [Group H] (e : G ≃* H)
+    (C : ConjClasses G) : e.conjClassesEquiv C⁻¹ = (e.conjClassesEquiv C)⁻¹ := by
+  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+  simp
+
+end MulEquiv
+
+namespace ConjClasses
+
+variable {M : Type*} [Monoid M]
 
 /-- Elements of different orders lie in different conjugacy classes, even in a monoid. -/
 theorem mk_ne_mk_of_orderOf_ne {a b : M} (h : orderOf a ≠ orderOf b) :
@@ -558,6 +598,13 @@ variable [Monoid G]
 theorem smul_conjClasses_mk (φ : MulAut G) (x : G) :
     φ • ConjClasses.mk x = ConjClasses.mk (φ x) :=
   ConjClasses.map_mk _ x
+
+/-- The equivalence on conjugacy classes induced by an automorphism agrees with the existing
+automorphism action. -/
+theorem conjClassesEquiv_apply (φ : MulAut G) (C : ConjClasses G) :
+    φ.conjClassesEquiv C = φ • C := by
+  obtain ⟨x, rfl⟩ := ConjClasses.exists_rep C
+  rw [MulEquiv.conjClassesEquiv_mk, smul_conjClasses_mk]
 
 /-- Automorphisms commute with powering conjugacy classes. -/
 @[simp]

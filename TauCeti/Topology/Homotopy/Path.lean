@@ -51,6 +51,9 @@ partition into a homotopy of the whole paths.
 value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
 values of the path on an interval containing its endpoints. They are used by the gluing
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
+
+The path-homotopy quotient API also records that reversing twice is the identity and that the
+reverse of the constant class is constant.
 -/
 
 public section
@@ -285,6 +288,17 @@ namespace Path
 variable {X : Type*} [TopologicalSpace X] {x y : X}
 
 namespace Homotopic.Quotient
+
+/-- Reversing a path-homotopy class twice recovers the original class. -/
+@[simp]
+theorem symm_symm {x₀ x₁ : X} (γ : Homotopic.Quotient x₀ x₁) : γ.symm.symm = γ := by
+  induction γ using Quotient.ind with
+  | mk γ => exact congrArg mk (Path.symm_symm γ)
+
+/-- The reverse of the constant path-homotopy class is the constant class. -/
+@[simp]
+theorem symm_refl (x : X) : (refl x).symm = refl x := by
+  rw [← mk_refl, ← mk_symm, Path.refl_symm, mk_refl]
 
 /-- The quotient topology on path-homotopy classes. This instance is load-bearing:
 `Path.Homotopic.Quotient` is a `def` over `Quotient`, and instance search does not unfold it to

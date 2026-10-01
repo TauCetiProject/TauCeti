@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
 import Mathlib.Tactic.Group
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Basepoint change for fundamental groups
@@ -60,6 +61,7 @@ namespace FundamentalGroup
 open CategoryTheory in
 /-- The inverse basepoint-change equivalence is represented by conjugation with the reverse path.
 This path-quotient formula is the interface for computations with the equivalence. -/
+@[simp]
 lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply
     {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
     (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₁) :
@@ -163,13 +165,7 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ.symm =
       (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm := by
   ext g
-  rw [_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
-    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply]
-  have hsymm : (Path.Homotopic.Quotient.mk γ).symm.symm =
-      Path.Homotopic.Quotient.mk γ := by
-    rw [← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_symm,
-      Path.symm_symm]
-  rw [Path.Homotopic.Quotient.mk_symm, hsymm]
+  simp
 
 /-- Basepoint change along the constant path is the identity equivalence. -/
 @[simp]
@@ -178,14 +174,7 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_refl
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath (Path.refl x) =
       MulEquiv.refl (_root_.FundamentalGroup X x) := by
   ext g
-  rw [_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
-  have hrefl : (Path.Homotopic.Quotient.refl x).symm =
-      Path.Homotopic.Quotient.refl x := by
-    rw [← Path.Homotopic.Quotient.mk_refl, ← Path.Homotopic.Quotient.mk_symm,
-      Path.refl_symm, Path.Homotopic.Quotient.mk_refl]
-  rw [Path.Homotopic.Quotient.mk_refl, hrefl,
-    Path.Homotopic.Quotient.trans_refl, Path.Homotopic.Quotient.refl_trans,
-    MulEquiv.refl_apply]
+  simp
 
 /-- Changing basepoint along a path induces an equivalence between conjugacy classes in the two
 fundamental groups. -/
@@ -225,8 +214,7 @@ lemma _root_.FundamentalGroup.conjClassesEquivOfPath_trans_apply
     _root_.FundamentalGroup.conjClassesEquivOfPath (γ.trans δ) C =
       _root_.FundamentalGroup.conjClassesEquivOfPath δ
         (_root_.FundamentalGroup.conjClassesEquivOfPath γ C) := by
-  rw [_root_.FundamentalGroup.conjClassesEquivOfPath_trans]
-  rfl
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPath_trans, Equiv.trans_apply]
 
 /-- Reversing a path gives the inverse equivalence on conjugacy classes. -/
 @[simp]
@@ -237,6 +225,18 @@ lemma _root_.FundamentalGroup.conjClassesEquivOfPath_symm
   simp only [_root_.FundamentalGroup.conjClassesEquivOfPath,
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm,
     MulEquiv.conjClassesEquiv_symm]
+
+/-- Inverse transport of a conjugacy-class representative is induced by inverse basepoint
+change on the representative. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_symm_mk
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁)
+    (g : _root_.FundamentalGroup X x₁) :
+    (_root_.FundamentalGroup.conjClassesEquivOfPath γ).symm (ConjClasses.mk g) =
+      ConjClasses.mk
+        ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) := by
+  exact MulEquiv.conjClassesEquiv_symm_mk
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) g
 
 /-- Transport along the constant path is the identity on conjugacy classes. -/
 @[simp]
@@ -255,11 +255,6 @@ lemma _root_.FundamentalGroup.conjClassesEquivOfPath_eq
     {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ δ : Path x₀ x₁) :
     _root_.FundamentalGroup.conjClassesEquivOfPath γ =
       _root_.FundamentalGroup.conjClassesEquivOfPath δ := by
-  ext C
-  obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
-  rw [_root_.FundamentalGroup.conjClassesEquivOfPath_mk,
-    _root_.FundamentalGroup.conjClassesEquivOfPath_mk,
-    ConjClasses.mk_eq_mk_iff_isConj, isConj_iff]
   let q := _root_.FundamentalGroup.fromPath
     (Path.Homotopic.Quotient.mk (γ.symm.trans δ))
   have htransport :
@@ -269,16 +264,16 @@ lemma _root_.FundamentalGroup.conjClassesEquivOfPath_eq
     rw [← _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm,
       ← _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans]
     exact _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj (γ.symm.trans δ)
-  refine ⟨q, ?_⟩
-  calc
-    q * _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g * q⁻¹ =
-        MulAut.conj q (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) :=
-          (MulAut.conj_apply q _).symm
-    _ = ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm.trans
-          (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ))
-          (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) := by rw [htransport]
-    _ = _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ g := by
-      rw [MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
+  have h : _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ =
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).trans (MulAut.conj q) := by
+    ext g
+    rw [MulEquiv.trans_apply, ← htransport, MulEquiv.trans_apply,
+      MulEquiv.symm_apply_apply]
+  ext C
+  change (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).conjClassesEquiv C =
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ).conjClassesEquiv C
+  rw [h, MulEquiv.conjClassesEquiv_trans, Equiv.trans_apply,
+    MulAut.conjClassesEquiv_apply, TauCeti.mulAut_conj_smul_conjClasses]
 
 /-- In a path-connected space, conjugacy classes of fundamental groups at two points are
 canonically equivalent: the result does not depend on the path chosen by the instance. -/
