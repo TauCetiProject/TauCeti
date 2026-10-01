@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Sl2.SquareZero
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
 
 /-!
@@ -28,6 +29,10 @@ x_α(u) x_{-α}(-u⁻¹) x_α(u) = h_α(u) · n_α,      n_α = x_α(1) x_{-α}(
 holds because both sides are `1 + u E - u⁻¹ F - E F - F E`: the square-zero hypothesis truncates
 each exponential to `1 + t E`, and `E F` and `F E` are then orthogonal idempotents projecting onto
 the two ends of every `α`-string, with `h_α(u)` acting by `u` on one and `u⁻¹` on the other.
+
+The rank-one algebra behind that identity is carried out for an arbitrary square-zero `sl₂` pair
+in `TauCeti/Algebra/Lie/Sl2/SquareZero.lean`; this file only feeds it the base-changed Kostant
+root operators and reads the coordinate cocharacter off the weight basis.
 
 Since `n_α` is itself a product of root subgroup elements, the identity puts `h_α(u)` in the
 elementary group for *every* unit `u`, so the weight torus of a carrier all of whose numbered root
@@ -102,161 +107,6 @@ theorem kostantRootSubgroupParam_val_of_sq_eq_zero (i : ι)
       rw [coe_integralDividedPower_apply, coe_kostantRootOperator_apply,
         Associative.dividedPower_one, Module.End.smul_def]
   | add z₁ z₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-
-/-! ## Halving the `sl₂` relation -/
-
-section RankOne
-
-variable {R : Type*} [Ring R] [Algebra ℚ R] {E F H : R}
-
-/-- **A square-zero raising operator satisfies `E F E = E`.** Both `H E` and `-E H` equal `E F E`
-once `E ^ 2 = 0`, so the `sl₂` relation `H E - E H = 2 E` halves to the displayed identity. -/
-private theorem mul_mul_self_eq_of_sq_eq_zero (hEE : E * E = 0) (hef : E * F - F * E = H)
-    (hhe : H * E - E * H = (2 : ℚ) • E) : E * F * E = E := by
-  have h1 : E * F * E = H * E := by
-    have h := congrArg (fun T => T * E) hef
-    simp only [sub_mul] at h
-    rw [mul_assoc F E E, hEE, mul_zero, sub_zero] at h
-    exact h
-  have h2 : E * H = -(E * F * E) := by
-    have h := congrArg (fun T => E * T) hef
-    simp only [mul_sub] at h
-    rw [← mul_assoc, hEE, zero_mul, zero_sub, ← mul_assoc] at h
-    exact h.symm.trans (by ring_nf)
-  have key : (2 : ℚ) • (E * F * E) = (2 : ℚ) • E := by
-    rw [← hhe, ← h1, h2, two_smul]
-    abel
-  have h2inv := congrArg (fun z : R => ((2 : ℚ)⁻¹) • z) key
-  simpa only [smul_smul, inv_mul_cancel₀ (two_ne_zero (α := ℚ)), one_smul] using h2inv
-
-end RankOne
-
-/-! ## The rank-one identity in an endomorphism ring -/
-
-section NormalForm
-
-variable {B : Type*} [CommRing B] {N : Type*} [AddCommGroup N] [Module B N]
-variable {E F : Module.End B N}
-
-/-- **The rank-one product of three square-zero exponentials.** When the two parameters multiply to
-`-1`, the product `x(α) y(β) x(α)` is `1 + α E + β F - E F - F E`. -/
-private theorem sq_zero_triple_product (hEE : E * E = 0) (hEFE : E * F * E = E) {α β : B}
-    (hαβ : α * β = -1) :
-    (1 + α • E) * (1 + β • F) * (1 + α • E) =
-      1 + α • E + β • F - E * F - F * E := by
-  have hβα : β * α = -1 := by rw [mul_comm]; exact hαβ
-  have step1 : (1 + β • F) * (1 + α • E) = 1 + α • E + β • F - F * E := by
-    rw [add_mul, one_mul, smul_mul_assoc, mul_add, mul_one, mul_smul_comm, smul_add, smul_smul,
-      hβα, neg_one_smul]
-    abel
-  have step2 : E * (1 + α • E + β • F - F * E) = β • (E * F) := by
-    simp only [mul_sub, mul_add, mul_one, mul_smul_comm, ← mul_assoc, hEE, hEFE, smul_zero,
-      add_zero]
-    abel
-  rw [mul_assoc, step1, add_mul, one_mul, smul_mul_assoc, step2, smul_smul, hαβ, neg_one_smul]
-  abel
-
-/-- **The coroot value times the Weyl representative.** Multiplying the normal form at parameters
-`(1, -1)` by the diagonal element `1 + (α - 1) E F + (β - 1) F E` rescales its two root terms. -/
-private theorem torus_mul_weyl (hEE : E * E = 0) (hFF : F * F = 0)
-    (hEFE : E * F * E = E) (hFEF : F * E * F = F) (α β : B) :
-    (1 + (α - 1) • (E * F) + (β - 1) • (F * E)) *
-        (1 + (1 : B) • E + (-1 : B) • F - E * F - F * E) =
-      1 + α • E + (-β) • F - E * F - F * E := by
-  have hQE : F * E * E = 0 := by rw [mul_assoc, hEE, mul_zero]
-  have hPF : E * F * F = 0 := by rw [mul_assoc, hFF, mul_zero]
-  have hPP : E * F * (E * F) = E * F := by rw [← mul_assoc, hEFE]
-  have hQQ : F * E * (F * E) = F * E := by rw [← mul_assoc, hFEF]
-  have hPQ : E * F * (F * E) = 0 := by rw [← mul_assoc, mul_assoc E F F, hFF, mul_zero, zero_mul]
-  have hQP : F * E * (E * F) = 0 := by rw [← mul_assoc, mul_assoc F E E, hEE, mul_zero, zero_mul]
-  have hPW : E * F * (1 + (1 : B) • E + (-1 : B) • F - E * F - F * E) = E := by
-    rw [mul_sub, mul_sub, mul_add, mul_add, mul_one, mul_smul_comm, mul_smul_comm, hEFE, hPF,
-      hPP, hPQ, smul_zero, one_smul]
-    abel
-  have hQW : F * E * (1 + (1 : B) • E + (-1 : B) • F - E * F - F * E) = (-1 : B) • F := by
-    rw [mul_sub, mul_sub, mul_add, mul_add, mul_one, mul_smul_comm, mul_smul_comm, hQE, hFEF,
-      hQP, hQQ, smul_zero]
-    abel
-  rw [add_mul, add_mul, one_mul, smul_mul_assoc, smul_mul_assoc, hPW, hQW, smul_smul]
-  simp only [sub_smul, one_smul, neg_smul, mul_neg, mul_one]
-  abel
-
-end NormalForm
-
-
-
-
-
-/-! ## The two idempotents on a weight vector -/
-
-section WeightProjection
-
-variable {E F H : Module.End ℚ V}
-
-/-- **The two square-zero products split a weight vector.** The products `E F` and `F E` are
-orthogonal idempotents whose difference is `H`, so a nonzero `H`-eigenvector has eigenvalue `1`, `0`
-or `-1`, and in the outer two cases it is fixed by `E F` respectively by `F E` while the other
-product kills it. -/
-private theorem proj_apply_of_isCartanWeight (hEE : E * E = 0) (hFF : F * F = 0)
-    (hEFE : E * F * E = E) (hFEF : F * E * F = F) (hef : E * F - F * E = H) {m : ℤ} {v : V}
-    (hv : H v = (m : ℚ) • v) (hv0 : v ≠ 0) :
-    (m = 1 ∧ (E * F) v = v ∧ (F * E) v = 0) ∨ (m = 0 ∧ (E * F) v = 0 ∧ (F * E) v = 0) ∨
-      (m = -1 ∧ (E * F) v = 0 ∧ (F * E) v = v) := by
-  have hPP : E * F * (E * F) = E * F := by rw [← mul_assoc, hEFE]
-  have hQQ : F * E * (F * E) = F * E := by rw [← mul_assoc, hFEF]
-  have hPQ : E * F * (F * E) = 0 := by rw [← mul_assoc, mul_assoc E F F, hFF, mul_zero, zero_mul]
-  have hQP : F * E * (E * F) = 0 := by rw [← mul_assoc, mul_assoc F E E, hEE, mul_zero, zero_mul]
-  have hRP : (1 - E * F - F * E) * (E * F) = 0 := by
-    rw [sub_mul, sub_mul, one_mul, hPP, hQP]
-    abel
-  have hRQ : (1 - E * F - F * E) * (F * E) = 0 := by
-    rw [sub_mul, sub_mul, one_mul, hPQ, hQQ]
-    abel
-  have hbase : (E * F) v - (F * E) v = (m : ℚ) • v := by
-    rw [← LinearMap.sub_apply, hef, hv]
-  have k1 : ((1 : ℚ) - m) • ((E * F) v) = 0 := by
-    have hap := congrArg (fun w => (E * F) w) hbase
-    simp only [map_sub, map_smul, ← Module.End.mul_apply, hPP, hPQ, LinearMap.zero_apply,
-      sub_zero] at hap
-    rw [sub_smul, one_smul, ← hap, sub_self]
-  have k2 : ((1 : ℚ) + m) • ((F * E) v) = 0 := by
-    have hap := congrArg (fun w => (F * E) w) hbase
-    simp only [map_sub, map_smul, ← Module.End.mul_apply, hQQ, hQP, LinearMap.zero_apply,
-      zero_sub] at hap
-    rw [add_smul, one_smul, ← hap, add_neg_cancel]
-  have k3 : (m : ℚ) • (v - (E * F) v - (F * E) v) = 0 := by
-    have hRv : (1 - E * F - F * E) ((m : ℚ) • v) =
-        (m : ℚ) • (v - (E * F) v - (F * E) v) := by
-      rw [map_smul, LinearMap.sub_apply, LinearMap.sub_apply, Module.End.one_apply]
-    rw [← hRv, ← hbase, map_sub, ← Module.End.mul_apply, ← Module.End.mul_apply, hRP, hRQ,
-      LinearMap.zero_apply, sub_zero]
-  have hPv : m ≠ 1 → (E * F) v = 0 := fun hm => by
-    have hne : ((1 : ℚ) - m) ≠ 0 := fun hz => hm (by exact_mod_cast (sub_eq_zero.1 hz).symm)
-    exact (smul_eq_zero.1 k1).resolve_left hne
-  have hQv : m ≠ -1 → (F * E) v = 0 := fun hm => by
-    have hne : ((1 : ℚ) + m) ≠ 0 := fun hz =>
-      hm (by exact_mod_cast (neg_eq_of_add_eq_zero_right hz).symm)
-    exact (smul_eq_zero.1 k2).resolve_left hne
-  have hsum : m ≠ 0 → v - (E * F) v - (F * E) v = 0 := fun hm =>
-    (smul_eq_zero.1 k3).resolve_left (Int.cast_ne_zero.2 hm)
-  have hm : m = 1 ∨ m = 0 ∨ m = -1 := by
-    by_contra hcon
-    push Not at hcon
-    refine hv0 ?_
-    have hz := hsum hcon.2.1
-    rwa [hPv hcon.1, hQv hcon.2.2, sub_zero, sub_zero] at hz
-  rcases hm with hm | hm | hm
-  · refine Or.inl ⟨hm, ?_, hQv (by omega)⟩
-    have hz := hsum (by omega)
-    rw [hQv (by omega), sub_zero, sub_eq_zero] at hz
-    exact hz.symm
-  · exact Or.inr (Or.inl ⟨hm, hPv (by omega), hQv (by omega)⟩)
-  · refine Or.inr (Or.inr ⟨hm, hPv (by omega), ?_⟩)
-    have hz := hsum (by omega)
-    rw [hPv (by omega), sub_zero, sub_eq_zero] at hz
-    exact hz.symm
-
-end WeightProjection
 
 variable {i j : ι} {c : κ}
 
@@ -336,34 +186,18 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) -
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) =
-      (2 : ℚ) • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) := by
-    have hb := IsSl2Triple.lie_h_e_smul ℚ hT
+      2 • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) := by
+    have hb := hT.lie_h_e_nsmul
     rwa [LieRing.of_associative_ring_bracket] at hb
   have hhf : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) *
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) -
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) =
-      -((2 : ℚ) • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) := by
-    have hb := IsSl2Triple.lie_lie_smul_f ℚ hT
+      -(2 • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) := by
+    have hb := hT.lie_h_f_nsmul
     rwa [LieRing.of_associative_ring_bracket] at hb
-  have hEFE := mul_mul_self_eq_of_sq_eq_zero hEE hef hhe
-  have hFEF : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) := by
-    refine mul_mul_self_eq_of_sq_eq_zero hFF
-      (H := -ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c))) ?_ ?_
-    · rw [← hef]; abel
-    · have hneg : -ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) *
-            ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) -
-          ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
-            -ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) =
-          -(ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)) *
-              ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) -
-            ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
-              ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c))) := by
-        rw [neg_mul, mul_neg]; abel
-      rw [hneg, hhf, neg_neg]
+  have hEFE := Sl2.e_mul_f_mul_e_of_mul_self_eq_zero hEE hef hhe
+  have hFEF := Sl2.f_mul_e_mul_f_of_mul_self_eq_zero hFF hef hhf
   -- the integral root operators and their base changes
   have hXX := kostantRootOperator_mul_eq_zero e h ρ M hM hEE
   have hYY := kostantRootOperator_mul_eq_zero e h ρ M hM hFF
@@ -398,7 +232,7 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
         1 + α • E' + β • F' - E' * F' - F' * E' := by
     intro α β hαβ
     rw [Units.val_mul, Units.val_mul, hparam, hparam']
-    exact sq_zero_triple_product hE'E' hE'F'E' hαβ
+    exact Sl2.triple_product_of_mul_self_eq_zero hE'E' hE'F'E' hαβ
   -- the coordinate cocharacter in the same normal form
   have htorus : (kostantCoordinateCocharacter M b wt A c u).val =
       1 + ((u : A) - 1) • (E' * F') + ((((u⁻¹ : Aˣ) : A)) - 1) • (F' * E') := by
@@ -418,7 +252,7 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     have hFE : F' * E' = (Y * X).baseChange (A : Type w) := by
       rw [hE'def, hF'def, LinearMap.baseChange_mul]
     have hwtx := (isCartanWeightVector_iff h ρ).1 (hwt x) c
-    rcases proj_apply_of_isCartanWeight hEE hFF hEFE hFEF hef hwtx hbx0 with
+    rcases Sl2.mul_apply_of_eq_intCast_smul hEE hFF hEFE hFEF hef hwtx hbx0 with
       ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩
     · have hPM : (X * Y) (b x) = b x := Subtype.ext (by rw [hPcoe, hP])
       have hQM : (Y * X) (b x) = 0 := Subtype.ext (by rw [hQcoe, hQ, ZeroMemClass.coe_zero])
@@ -458,7 +292,7 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     refine (eq_mul_inv_iff_mul_eq.2 ?_)
     refine Units.ext ?_
     rw [Units.val_mul, htorus, htriple 1 (-1) hone, htriple (u : A) _ hunit]
-    exact torus_mul_weyl hE'E' hF'F' hE'F'E' hF'E'F' _ _
+    exact Sl2.torus_mul_triple_product_of_mul_self_eq_zero hE'E' hF'F' hE'F'E' hF'E'F' _ _
   rw [hfactor]
   refine mul_mem (mul_mem (mul_mem ?_ ?_) ?_) (inv_mem (mul_mem (mul_mem ?_ ?_) ?_)) <;>
     exact kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A _ _
