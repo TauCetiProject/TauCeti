@@ -76,6 +76,10 @@ setting the roadmap works in.
   than `n` rows.
 * `TauCeti.YoungTableau.weylModule_eq_bot_iff`: the two directions combined, the vanishing
   criterion, with `TauCeti.weylModuleOfShape_eq_bot_iff` its shape-indexed form.
+* `TauCeti.YoungTableau.permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero`:
+  the symmetrizer kills a monomial basis vector that repeats a basis index on a column, and
+  `...tensorPowerBasis_rowFilling_ne_zero`: it does not kill the one indexed by the row filling.
+  These are the two halves of the vanishing criterion at the level of a single basis vector.
 
 ## References
 
@@ -296,6 +300,23 @@ theorem weylModule_ne_bot [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0
   rw [hbot', Submodule.mem_bot k] at hmem
   exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [hmem, map_zero]; rfl)
 
+/-- **The symmetrizer does not annihilate the monomial basis vector of the row filling**: the
+coordinate of `c_t • e_r` at `r = TauCeti.YoungTableau.rowFilling t hn` is the order of the row
+group of `t`, which is nonzero in characteristic zero.
+
+This is `TauCeti.YoungTableau.weylModule_ne_bot` with the witness named: `e_r` is the vector whose
+image generates the highest weight line of the Weyl module. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
+    [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
+        (tensorPowerBasis k n μ.card (rowFilling t hn)) ≠ 0 := by
+  have hfun : rowFilling t hn
+      = fun ℓ => (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n) :=
+    funext fun ℓ => Fin.ext (val_rowFilling t hn ℓ)
+  intro h
+  rw [hfun] at h
+  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [h, map_zero]; rfl)
+
 /-- When `μ` has more than `n` rows, any index function `p : Fin μ.card → Fin n` repeats a value on
 the first column of `t`: two distinct labels of that column carry the same basis index. -/
 private theorem exists_ne_and_apply_eq_of_lt_colLen (t : YoungTableau μ) (hn : n < μ.colLen 0)
@@ -303,8 +324,8 @@ private theorem exists_ne_and_apply_eq_of_lt_colLen (t : YoungTableau μ) (hn : 
     ∃ a b : Fin μ.card, colIndex t a = 0 ∧ colIndex t b = 0 ∧ a ≠ b ∧ p a = p b := by
   classical
   have hcard : Fintype.card {ℓ : Fin μ.card // colIndex t ℓ = 0} = μ.colLen 0 := by
-    rw [μ.colLen_eq_card, ← Fintype.card_coe]
-    exact Fintype.card_congr (colFiberEquiv t 0)
+    rw [Fintype.card_subtype]
+    exact card_filter_colIndex_eq t 0
   obtain ⟨a, b, hab, hpab⟩ :=
     Fintype.exists_ne_map_eq_of_card_lt (fun ℓ : {ℓ : Fin μ.card // colIndex t ℓ = 0} => p ℓ)
       (by rw [hcard, Fintype.card_fin]; exact hn)
@@ -338,28 +359,38 @@ private theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_
   conv_lhs => rw [← h]
   rw [hneg, map_neg, LinearMap.neg_apply]
 
-/-- **The symmetrizer annihilates the whole tensor power when `μ` has more than `n` rows.** On each
-monomial basis vector two labels of the first column share a basis index, so their transposition
-fixes it while negating `c_t`; the value is its own negative, hence zero since `2` is invertible. -/
-private theorem permTensorActionAlgHom_youngSymmetrizerOver_eq_zero (t : YoungTableau μ)
-    (hn : n < μ.colLen 0) :
-    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) = 0 := by
+/-- **The symmetrizer annihilates a monomial basis vector that repeats a basis index on a
+column.** Transposing the two labels fixes the vector while negating `c_t`, so the value is its own
+negative, hence zero because `2` is invertible in a `ℚ`-algebra. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero
+    (t : YoungTableau μ) {p : Fin μ.card → Fin n} {a b : Fin μ.card}
+    (hcol : colIndex t a = colIndex t b) (hab : a ≠ b) (hpab : p a = p b) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
+        (tensorPowerBasis k n μ.card p) = 0 := by
   have : Invertible (2 : ℚ) := invertibleOfNonzero (by norm_num)
   have : Invertible (2 : k) := by
     have h := Invertible.map (algebraMap ℚ k) (2 : ℚ)
     rwa [map_ofNat] at h
-  refine (tensorPowerBasis k n μ.card).ext fun p => ?_
-  rw [LinearMap.zero_apply]
-  obtain ⟨a, b, ha, hb, hab, hpab⟩ := exists_ne_and_apply_eq_of_lt_colLen t hn p
   have hneg :=
-    permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_neg (k := k) t
-      (ha.trans hb.symm) hab hpab
+    permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_neg (k := k) t hcol hab hpab
   have htwo : (2 : k) • permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
       (tensorPowerBasis k n μ.card p) = 0 := by
     rw [two_smul]
     nth_rewrite 2 [hneg]
     rw [add_neg_cancel]
   simpa [smul_smul] using congrArg (fun w => (⅟(2 : k)) • w) htwo
+
+/-- **The symmetrizer annihilates the whole tensor power when `μ` has more than `n` rows.** On each
+monomial basis vector two labels of the first column share a basis index, so the vanishing
+criterion above applies. -/
+private theorem permTensorActionAlgHom_youngSymmetrizerOver_eq_zero (t : YoungTableau μ)
+    (hn : n < μ.colLen 0) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) = 0 := by
+  refine (tensorPowerBasis k n μ.card).ext fun p => ?_
+  rw [LinearMap.zero_apply]
+  obtain ⟨a, b, ha, hb, hab, hpab⟩ := exists_ne_and_apply_eq_of_lt_colLen t hn p
+  exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero t
+    (ha.trans hb.symm) hab hpab
 
 /-- The Weyl module of a `μ`-tableau vanishes as soon as `μ` has more than `n` rows.
 

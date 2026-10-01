@@ -21,9 +21,12 @@ row, respectively column, of `μ`; counting those labels recovers the row length
 (`YoungTableau.card_filter_rowIndex_lt`).  On top of that it proves the counting lemma
 `YoungTableau.colIndex_lt_rowLen_of_injective`: if the row of a label together with the column of
 its image under a permutation `u` of the labels determine the label, then that pair of indices is
-again a cell of `μ`.  It also defines `YoungTableau.relabel`, the transitive action of
-the permutations of the labels on the tableaux of a fixed shape, which is how two tableaux of the
-same shape are compared.
+again a cell of `μ`.  A second counting lemma,
+`YoungTableau.card_filter_lt_le_card_filter_rowIndex_lt`, bounds a filling of the labels that is
+injective on columns: it takes small values no more often than the row index does, the row filling
+`YoungTableau.rowFilling` being the extreme case.  It also defines `YoungTableau.relabel`, the
+transitive action of the permutations of the labels on the tableaux of a fixed shape, which is how
+two tableaux of the same shape are compared.
 
 Note that `YoungTableau μ` is an abbreviation, so that the whole `Equiv` API applies to a tableau
 directly.  As a consequence dot notation on a tableau resolves in the `Equiv` namespace, and the
@@ -181,6 +184,12 @@ theorem card_filter_rowIndex_eq (t : YoungTableau μ) (i : ℕ) :
   rw [← Fintype.card_subtype, Fintype.card_congr (rowFiberEquiv t i), Fintype.card_coe]
   exact (YoungDiagram.rowLen_eq_card μ).symm
 
+/-- Column `j` of a `μ`-tableau carries `μ.colLen j` labels. -/
+theorem card_filter_colIndex_eq (t : YoungTableau μ) (j : ℕ) :
+    (Finset.univ.filter fun y => colIndex t y = j).card = μ.colLen j := by
+  rw [← Fintype.card_subtype, Fintype.card_congr (colFiberEquiv t j), Fintype.card_coe]
+  exact (YoungDiagram.colLen_eq_card μ).symm
+
 /-- The labels of a tableau lying in one of its first `k` rows are as many as the cells of the
 shape in its first `k` rows. -/
 theorem card_filter_rowIndex_lt (t : YoungTableau μ) (k : ℕ) :
@@ -313,6 +322,148 @@ theorem colIndex_lt_rowLen_of_injective (t : YoungTableau μ) (u : Equiv.Perm (F
     simp
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hx
   exact hx.1
+
+/-! ## Fillings injective on columns
+
+A filling `p : Fin μ.card → ℕ` of the labels of a `μ`-tableau is *injective on columns* when the
+value `p x` together with the column of `x` determines `x`.  The counting lemma
+`TauCeti.YoungTableau.card_filter_lt_le_card_filter_rowIndex_lt` is that such a filling takes
+small values no more often than the row index does: for every `m`, at most as many labels satisfy
+`p x < m` as satisfy `rowIndex t x < m`.  The row index is itself injective on columns
+(`TauCeti.YoungTableau.rowIndex_colIndex_injective`), so the bound is sharp.
+
+The proof sends a label `x` to the label of the cell in the column of `x` whose row is the number
+of labels of that column with a strictly smaller value.  That rank is below the length of the
+column, so the pair really is a cell; it is at most `p x`, because the values on a column are
+distinct; and it determines `p x` within a column, because it increases strictly with the value.
+The resulting self-map of the labels is therefore injective, hence bijective, and it carries the
+labels with `p x < m` into the labels of the first `m` rows.
+-/
+
+section Filling
+
+variable {p : Fin μ.card → ℕ}
+
+/-- The number of labels in the column of `x` whose value under `p` is smaller than that of `x`. -/
+private def colRank (t : YoungTableau μ) (p : Fin μ.card → ℕ) (x : Fin μ.card) : ℕ :=
+  (Finset.univ.filter fun y => colIndex t y = colIndex t x ∧ p y < p x).card
+
+/-- The rank of a label is below the length of its column: the labels it counts all lie in that
+column, and `x` itself is not among them. -/
+private theorem colRank_lt_colLen (t : YoungTableau μ) (p : Fin μ.card → ℕ) (x : Fin μ.card) :
+    colRank t p x < μ.colLen (colIndex t x) := by
+  rw [← card_filter_colIndex_eq t (colIndex t x), colRank]
+  refine Finset.card_lt_card ((Finset.ssubset_iff_of_subset fun y hy => ?_).mpr ⟨x, ?_, ?_⟩)
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hy ⊢
+    exact hy.1
+  · simp
+  · simp
+
+/-- **The rank of a label is at most its value**, when `p` is injective on columns: the labels it
+counts carry distinct values, all smaller than `p x`. -/
+private theorem colRank_le (t : YoungTableau μ)
+    (hp : Function.Injective fun x => (p x, colIndex t x)) (x : Fin μ.card) :
+    colRank t p x ≤ p x := by
+  classical
+  have h := Finset.card_le_card_of_injOn (f := p)
+    (s := Finset.univ.filter fun y => colIndex t y = colIndex t x ∧ p y < p x)
+    (t := Finset.range (p x))
+    (fun y hy => by
+      simp only [Finset.mem_coe, Finset.mem_filter, Finset.mem_univ, true_and] at hy
+      simp only [Finset.mem_coe, Finset.mem_range]
+      exact hy.2)
+    (fun a ha b hb hab => by
+      simp only [Finset.mem_coe, Finset.mem_filter, Finset.mem_univ, true_and] at ha hb
+      exact hp (Prod.ext hab (ha.1.trans hb.1.symm)))
+  rw [colRank]
+  exact h.trans_eq (Finset.card_range _)
+
+/-- **Along one column the rank increases strictly with the value.** -/
+private theorem colRank_lt_colRank (t : YoungTableau μ) {x y : Fin μ.card}
+    (hcol : colIndex t x = colIndex t y) (hxy : p x < p y) :
+    colRank t p x < colRank t p y := by
+  rw [colRank, colRank]
+  refine Finset.card_lt_card ((Finset.ssubset_iff_of_subset fun z hz => ?_).mpr ⟨x, ?_, ?_⟩)
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hz ⊢
+    exact ⟨hz.1.trans hcol, hz.2.trans hxy⟩
+  · simp [hcol, hxy]
+  · simp
+
+/-- The label of the cell in the column of `x` whose row is the rank of `x`. -/
+private def colRankLabel (t : YoungTableau μ) (p : Fin μ.card → ℕ) (x : Fin μ.card) :
+    Fin μ.card :=
+  t ⟨(colRank t p x, colIndex t x), (YoungDiagram.mem_cells _).mpr
+    (YoungDiagram.mem_iff_lt_colLen.mpr (colRank_lt_colLen t p x))⟩
+
+private theorem rowIndex_colRankLabel (t : YoungTableau μ) (p : Fin μ.card → ℕ)
+    (x : Fin μ.card) : rowIndex t (colRankLabel t p x) = colRank t p x := by
+  rw [colRankLabel, rowIndex_apply]
+
+private theorem colIndex_colRankLabel (t : YoungTableau μ) (p : Fin μ.card → ℕ)
+    (x : Fin μ.card) : colIndex t (colRankLabel t p x) = colIndex t x := by
+  rw [colRankLabel, colIndex_apply]
+
+/-- The rank map is injective when `p` is injective on columns: it preserves the column, and along
+one column the rank determines the value. -/
+private theorem colRankLabel_injective (t : YoungTableau μ)
+    (hp : Function.Injective fun x => (p x, colIndex t x)) :
+    Function.Injective (colRankLabel t p) := by
+  intro x y hxy
+  have hcol : colIndex t x = colIndex t y := by
+    rw [← colIndex_colRankLabel t p x, hxy, colIndex_colRankLabel]
+  have hrank : colRank t p x = colRank t p y := by
+    rw [← rowIndex_colRankLabel t p x, hxy, rowIndex_colRankLabel]
+  have hval : p x = p y := by
+    rcases lt_trichotomy (p x) (p y) with h | h | h
+    · exact absurd hrank (colRank_lt_colRank t hcol h).ne
+    · exact h
+    · exact absurd hrank.symm (colRank_lt_colRank t hcol.symm h).ne
+  exact hp (Prod.ext hval hcol)
+
+/-- **A filling injective on columns takes small values no more often than the row index does.**
+For every `m`, at most as many labels of a `μ`-tableau satisfy `p x < m` as lie in one of the
+first `m` rows.
+
+Summed over `m` this is the dominance bound on the content of such a filling: the content is
+dominated by the sequence of row lengths of `μ`, which is the content of the row index itself. -/
+theorem card_filter_lt_le_card_filter_rowIndex_lt (t : YoungTableau μ)
+    (hp : Function.Injective fun x => (p x, colIndex t x)) (m : ℕ) :
+    (Finset.univ.filter fun x => p x < m).card ≤
+      (Finset.univ.filter fun x => rowIndex t x < m).card := by
+  classical
+  have hbij : Function.Bijective (colRankLabel t p) :=
+    Finite.injective_iff_bijective.mp (colRankLabel_injective t hp)
+  calc (Finset.univ.filter fun x => p x < m).card
+      ≤ (Finset.univ.filter fun x => rowIndex t (colRankLabel t p x) < m).card := by
+        refine Finset.card_le_card fun x hx => ?_
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hx ⊢
+        rw [rowIndex_colRankLabel]
+        exact (colRank_le t hp x).trans_lt hx
+    _ = (Finset.univ.filter fun y => rowIndex t y < m).card :=
+        Finset.card_equiv (Equiv.ofBijective _ hbij) fun x => by simp
+
+end Filling
+
+/-! ## The row filling -/
+
+variable {n : ℕ}
+
+/-- **The row filling** of a `μ`-tableau whose shape has at most `n` rows: the row index of a
+label, read as an element of `Fin n`.  It is injective on the columns of `t`
+(`TauCeti.YoungTableau.rowIndex_colIndex_injective`), and the extreme case of the counting lemma
+above: its content is the sequence of row lengths of `μ`. -/
+def rowFilling (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) (x : Fin μ.card) : Fin n :=
+  ⟨rowIndex t x, (rowIndex_lt_colLen_zero t x).trans_le hn⟩
+
+@[simp]
+theorem val_rowFilling (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) (x : Fin μ.card) :
+    (rowFilling t hn x : ℕ) = rowIndex t x :=
+  (rfl)
+
+@[simp]
+theorem rowFilling_eq_iff (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) (x : Fin μ.card)
+    (j : Fin n) : rowFilling t hn x = j ↔ rowIndex t x = (j : ℕ) := by
+  rw [Fin.ext_iff, val_rowFilling]
 
 /-! ## Relabeling -/
 
