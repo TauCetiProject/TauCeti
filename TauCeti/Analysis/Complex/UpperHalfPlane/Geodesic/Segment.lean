@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Triangle
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 
 /-!
 # Geodesic segments and the convexity of half-planes
@@ -19,10 +19,10 @@ segments transform naturally under `PSL(2, ℝ)` (`smul_geodesicSegment`).
 Along any geodesic line the real part is monotone or antitone
 (`monotone_re_geodesicLine_or_antitone`); the set of parameters at which a geodesic line lies in
 a given half-plane or its closure is an interval
-(`ordConnected_preimage_geodesicLine_rightHalfPlane` and companions); and half-planes, their
-closures, closed sides and triangles are convex: they contain the segment between any two of
-their points (`geodesicSegment_subset_rightHalfPlane`, …, `geodesicSegment_subset_triangle`).
-Convexity is what makes the polygons bounded by such half-planes convex.
+(`ordConnected_preimage_geodesicLine_rightHalfPlane` and companions); and half-planes and
+their closures are convex: they contain the segment between any two of their points
+(`geodesicSegment_subset_rightHalfPlane`, …, `geodesicSegment_subset_closure_leftHalfPlane`).
+Convexity is what makes the triangles and polygons bounded by such half-planes convex.
 
 Source: Walkden, *Hyperbolic geometry* (MATH32051 lecture notes, Manchester 2019), §7.1 (the
 segment `[z, w]`) and Solution 14.1 (half-planes are convex); Katok, *Fuchsian groups,
@@ -203,7 +203,7 @@ theorem ordConnected_preimage_geodesicLine_closure_leftHalfPlane (g k : PSL(2, �
   simpa only [preimage, mem_closure_leftHalfPlane_iff, smul_geodesicLine, mem_Iic] using
     ordConnected_preimage_re_geodesicLine (k⁻¹ * g) ordConnected_Iic
 
-/-! ### Half-planes, closed sides and triangles are convex -/
+/-! ### Half-planes are convex -/
 
 /-- A set containing `z` and `w` whose trace on the line from `z` to `w` is an interval of
 parameters contains the segment from `z` to `w`. -/
@@ -243,21 +243,5 @@ theorem geodesicSegment_subset_closure_leftHalfPlane {k : PSL(2, ℝ)} {z w : �
     geodesicSegment z w ⊆ closure (leftHalfPlane k) :=
   geodesicSegment_subset_of_ordConnected
     (ordConnected_preimage_geodesicLine_closure_leftHalfPlane _ k) hz hw
-
-/-- Closed sides are convex. -/
-theorem geodesicSegment_subset_closedSide {u v x z w : ℍ} (hz : z ∈ closedSide u v x)
-    (hw : w ∈ closedSide u v x) : geodesicSegment z w ⊆ closedSide u v x := by
-  rw [closedSide_def] at hz hw ⊢
-  split_ifs at hz hw ⊢
-  · exact geodesicSegment_subset_closure_rightHalfPlane hz hw
-  · exact geodesicSegment_subset_closure_leftHalfPlane hz hw
-
-/-- Triangles are convex. -/
-theorem geodesicSegment_subset_triangle {A B C z w : ℍ} (hz : z ∈ triangle A B C)
-    (hw : w ∈ triangle A B C) : geodesicSegment z w ⊆ triangle A B C := by
-  rw [triangle_def] at hz hw ⊢
-  exact subset_inter (subset_inter (geodesicSegment_subset_closedSide hz.1.1 hw.1.1)
-    (geodesicSegment_subset_closedSide hz.1.2 hw.1.2))
-    (geodesicSegment_subset_closedSide hz.2 hw.2)
 
 end TauCeti.UpperHalfPlane
