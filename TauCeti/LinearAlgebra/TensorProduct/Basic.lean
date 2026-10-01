@@ -19,6 +19,7 @@ arguments about coactions and weight spaces.
 
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
+* `TauCeti.tensorProduct_rid_rTensor_apply`: naturality of the right tensor unitor.
 -/
 
 public section
@@ -63,3 +64,18 @@ theorem tensorComponent_zero :
   simp
 
 end LinearMap
+
+namespace TauCeti
+
+variable {R M N : Type*} [CommSemiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
+@[simp]
+theorem tensorProduct_rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
+    TensorProduct.rid R N (LinearMap.rTensor R f t) = f (TensorProduct.rid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul m r => simp
+  | add x y hx hy => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
+
+end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Cup
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupForm
 

@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Abelianization
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Basic
 
@@ -44,6 +45,7 @@ public noncomputable section
 universe u
 
 open CategoryTheory Rep Finsupp
+open scoped TensorProduct
 
 namespace TauCeti.TateCohomology
 
@@ -86,7 +88,49 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor {H : Type u} [Group H] [Fint
   rw [HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoCor_comp_isoGroupHomology_hom_apply]
-  convert TauCeti.groupHomology.H1AddEquivOfIsTrivial_map (f := f) A
+  convert TauCeti.groupHomology.H1AddEquivOfIsTrivial_map f (𝟙 (Rep.res f A))
     ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (res f A) y) using 1
+  rw [LinearMap.rTensor_def, Rep.hom_id, Representation.IntertwiningMap.toLinearMap_id]
+  congr 1
+
+section TrivialInt
+
+variable {G : Type} [Group G] [Fintype G]
+
+attribute [local instance] Subgroup.fintypeOfFinite
+
+/-- Under the integral degree-`-2` identification, restriction to a subgroup is the
+group-theoretic transfer. -/
+@[simp]
+theorem HNegTwoAddEquivAbelianization_HNegTwoRes (S : Subgroup G)
+    (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
+    TensorProduct.rid ℤ (Additive (Abelianization S))
+        (HNegTwoAddEquivTensorOfIsTrivial
+          (Rep.res S.subtype (Rep.trivial ℤ G ℤ))
+          (HNegTwoRes (Rep.trivial ℤ G ℤ) S x)) =
+      (Abelianization.lift
+        (Abelianization.of : S →* Abelianization S).transfer).toAdditive
+        (HNegTwoAddEquivAbelianization x) := by
+  rw [HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes,
+    TauCeti.tensorProduct_rid_rTensor_apply, HNegTwoAddEquivAbelianization_apply,
+    AddMonoidHom.coe_toIntLinearMap]
+
+/-- Under the integral degree-`-2` identification, corestriction along a homomorphism is the
+map that it induces on abelianizations. -/
+@[simp]
+theorem HNegTwoAddEquivAbelianization_HNegTwoCor {H : Type} [Group H] [Fintype H]
+    (f : H →* G)
+    (y : tateCohomology (Rep.res f (Rep.trivial ℤ G ℤ)) (-2)) :
+    HNegTwoAddEquivAbelianization
+        (HNegTwoCor (Rep.trivial ℤ G ℤ) f y) =
+      (Abelianization.map f).toAdditive
+        (TensorProduct.rid ℤ (Additive (Abelianization H))
+          (HNegTwoAddEquivTensorOfIsTrivial
+            (Rep.res f (Rep.trivial ℤ G ℤ)) y)) := by
+  rw [HNegTwoAddEquivAbelianization_apply,
+    HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor,
+    TauCeti.tensorProduct_rid_rTensor_apply, AddMonoidHom.coe_toIntLinearMap]
+
+end TrivialInt
 
 end TauCeti.TateCohomology

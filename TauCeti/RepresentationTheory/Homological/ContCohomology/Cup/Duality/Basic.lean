@@ -61,6 +61,13 @@ noncomputable def explicitDualityPairing02 :
   explicitCup02 G (InternalHom G M N) M N (InternalHom.evalPairing G)
     continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G))
 
+/-- The `(0,2)` evaluation pairing is the explicit `(0,2)` cup along the evaluation pairing. -/
+theorem explicitDualityPairing02_def :
+    explicitDualityPairing02 G M N =
+      explicitCup02 G (InternalHom G M N) M N (InternalHom.evalPairing G)
+        continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G)) :=
+  (rfl)
+
 /-- On cocycles, the `(0,2)` evaluation cup evaluates the invariant homomorphism pointwise. -/
 @[simp]
 theorem explicitDualityPairing02_mk (a : H0 G (InternalHom G M N)) (b : Z2 G M) :
@@ -89,11 +96,25 @@ noncomputable def explicitDualityPairing11 :
   explicitCup11 G (InternalHom G M N) M N (InternalHom.evalPairing G)
     continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G))
 
+/-- The `(1,1)` evaluation pairing is the explicit `(1,1)` cup along the evaluation pairing. -/
+theorem explicitDualityPairing11_def :
+    explicitDualityPairing11 G M N =
+      explicitCup11 G (InternalHom G M N) M N (InternalHom.evalPairing G)
+        continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G)) :=
+  (rfl)
+
 /-- Evaluation on `H²(G, InternalHom G M N) × H⁰(G, M)`. -/
 noncomputable def explicitDualityPairing20 :
     H2 G (InternalHom G M N) →+ H0 G M →+ H2 G N :=
   explicitCup20 G (InternalHom G M N) M N (InternalHom.evalPairing G)
     continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G))
+
+/-- The `(2,0)` evaluation pairing is the explicit `(2,0)` cup along the evaluation pairing. -/
+theorem explicitDualityPairing20_def :
+    explicitDualityPairing20 G M N =
+      explicitCup20 G (InternalHom G M N) M N (InternalHom.evalPairing G)
+        continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G)) :=
+  (rfl)
 
 /-- On cocycles, the `(1,1)` evaluation cup applies the first cocycle to the translate of the
 second. -/

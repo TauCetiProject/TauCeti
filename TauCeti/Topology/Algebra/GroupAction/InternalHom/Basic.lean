@@ -43,6 +43,9 @@ equivariant homomorphism, and `Hom(-, N)` is exact on the modules killed by a pr
   the equivariant homomorphism `InternalHom G M' N →+[G] InternalHom G M N`, with
   `TauCeti.InternalHom.evalPairing_precomp` as its defining equation and the functor laws
   `precomp_id` and `precomp_comp`.
+* `TauCeti.InternalHom.restrict`: restriction of the acting group to a subgroup `U ≤ G`, the
+  `U`-equivariant bijection `InternalHom G M N →+[U] InternalHom U M N` that leaves the underlying
+  homomorphism unchanged.
 * `TauCeti.InternalHom.zmodEquiv`: for a `ZMod n`-module `A`, evaluation at `1` identifies
   `InternalHom G (ZMod n) A` with `A` additively; `TauCeti.InternalHom.toAddMonoidHom_apply_eq_smul`
   recovers a homomorphism from its value at `1`. For a trivial action of `G` on `ZMod n`,
@@ -532,6 +535,40 @@ theorem precomp_injective {f : M →+[G] M'} (hf : Function.Surjective f) :
   exact congrArg (fun χ : InternalHom G M N => evalPairing G χ m) h
 
 end Precomp
+
+/-! ### Restricting the acting group -/
+
+section Restrict
+
+variable {G : Type*} [Group G] {M : Type*} [AddMonoid M] [DistribMulAction G M]
+  {N : Type*} [AddCommMonoid N] [DistribMulAction G N]
+
+/-- Restricting the acting group to a subgroup `U ≤ G`: the internal hom of `M` and `N` as
+`G`-modules, regarded as a `U`-module through the restricted action, is the internal hom of `M` and
+`N` as `U`-modules. The underlying homomorphism does not move (`toAddMonoidHom_restrict`), the
+evaluation pairing is unchanged (`evalPairing_restrict`) and the map is a bijection
+(`restrict_bijective`). It is recorded as a `U`-equivariant homomorphism because that is the form in
+which the coefficient maps of continuous cohomology consume it. -/
+def restrict (U : Subgroup G) : InternalHom G M N →+[U] InternalHom U M N where
+  toFun φ := of U φ.toAddMonoidHom
+  map_smul' _ _ := InternalHom.ext (AddMonoidHom.ext fun _ => rfl)
+  map_zero' := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+theorem toAddMonoidHom_restrict (U : Subgroup G) (φ : InternalHom G M N) :
+    (restrict U φ).toAddMonoidHom = φ.toAddMonoidHom := (rfl)
+
+/-- Restricting the acting group does not change the evaluation pairing. -/
+theorem evalPairing_restrict (U : Subgroup G) (φ : InternalHom G M N) (m : M) :
+    evalPairing U (restrict U φ) m = evalPairing G φ m := (rfl)
+
+theorem restrict_bijective (U : Subgroup G) :
+    Function.Bijective (restrict U : InternalHom G M N → InternalHom U M N) :=
+  ⟨fun _ _ h => InternalHom.ext (by simpa using congrArg toAddMonoidHom h),
+    fun ψ => ⟨of G ψ.toAddMonoidHom, (rfl)⟩⟩
+
+end Restrict
 
 section Exact
 
