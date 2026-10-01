@@ -10,6 +10,7 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Set.PowersetCard
 public import Mathlib.Data.Fintype.Card
@@ -34,6 +35,9 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
+* `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
+  cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
+  modulo two.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -151,6 +155,29 @@ theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
 end TauCeti
 
 namespace Finset
+
+open scoped symmDiff
+
+/-- **The symmetric difference and the intersection account for both cardinalities.** The
+symmetric difference is the union minus the intersection, and the union and the intersection
+together have the two cardinalities as their total. -/
+theorem card_symmDiff_add_two_mul_card_inter {α : Type*} [DecidableEq α] (s t : Finset α) :
+    (s ∆ t).card + 2 * (s ∩ t).card = s.card + t.card := by
+  have hsub : s ∩ t ⊆ s ∪ t := inter_subset_left.trans subset_union_left
+  have hcard : (s ∆ t).card = (s ∪ t).card - (s ∩ t).card := by
+    rw [symmDiff_eq_sup_sdiff_inf, sup_eq_union, inf_eq_inter, card_sdiff,
+      inter_eq_left.2 hsub]
+  have hunion := card_union_add_card_inter s t
+  have hle : (s ∩ t).card ≤ (s ∪ t).card := card_le_card hsub
+  omega
+
+/-- **A symmetric difference has even cardinality exactly when its two arguments have the same
+cardinality parity.** -/
+theorem even_card_symmDiff_iff {α : Type*} [DecidableEq α] (s t : Finset α) :
+    Even (s ∆ t).card ↔ (Even s.card ↔ Even t.card) := by
+  have h := card_symmDiff_add_two_mul_card_inter s t
+  simp only [Nat.even_iff]
+  omega
 
 /-- The two coordinates of every element of a finite set of natural-number pairs lie below a
 common bound. -/
