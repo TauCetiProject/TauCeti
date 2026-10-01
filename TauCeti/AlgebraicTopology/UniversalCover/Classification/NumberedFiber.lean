@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Transport
+import Mathlib.Algebra.Group.Action.TransferInstance
 -- The realisation proof uses the defining equation of `Equiv.permutationRepresentation`.
 import all TauCeti.Algebra.GroupAction.PermutationRepresentation
 import TauCeti.Topology.Covering.Clopen
@@ -62,9 +63,9 @@ into an isomorphism of `π₁(X, x)`-sets preserving the labels.
 
 Conversely, over a locally path-connected, semilocally simply connected base, every
 representation `π₁(X, x) →* Equiv.Perm (Fin n)` with `n ≠ 0` and transitive image is the numbered
-monodromy of some numbered cover: the quotient of the universal cover by the stabiliser of a label
-has its fibre equivariantly identified with `Fin n`
-(`TauCeti.UniversalCover.transitiveActionFiberEquiv`), and that identification is a numbering.
+monodromy of some numbered cover: the realisation theorem for transitive fundamental-group sets
+(`TauCeti.ConnectedCoveringSpace.exists_fiberAction_iso`) supplies a connected cover whose fibre
+is equivariantly identified with the finite set, and that identification is a numbering.
 
 ## Main declarations
 
@@ -783,18 +784,26 @@ theorem ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq
   -- `π₁(X, x)` acts on `Fin n` through `ρ`, transitively because the image of `ρ` does.
   let _ : MulAction (FundamentalGroup X x) (Fin n) := MulAction.compHom _ ρ.rangeRestrict
   have := MulAction.isPretransitive_compHom (G := Fin n) ρ.rangeRestrict_surjective
-  let i : Fin n := ⟨0, Nat.pos_of_ne_zero hn⟩
-  let c := UniversalCover.stabilizerCover (X := X) x i
+  -- Lift the finite set to the universe of the base before applying the realisation theorem.
+  let _ := (Equiv.ulift : ULift.{u} (Fin n) ≃ Fin n).mulAction (FundamentalGroup X x)
+  let A := Action.ofMulAction (FundamentalGroup X x) (ULift.{u} (Fin n))
+  have hA : isTransitiveAction (FundamentalGroup X x) A := by
+    rw [isTransitiveAction_iff]
+    refine ⟨⟨fun i j => ?_⟩, ⟨ULift.up ⟨0, Nat.pos_of_ne_zero hn⟩⟩⟩
+    obtain ⟨γ, hγ⟩ := MulAction.exists_smul_eq (FundamentalGroup X x) i.down j.down
+    exact ⟨γ, ULift.ext hγ⟩
+  obtain ⟨c, ⟨e⟩⟩ := ConnectedCoveringSpace.exists_fiberAction_iso x A hA
+  let ν : ⇑c.proj ⁻¹' {x} ≃ Fin n :=
+    ((Action.forget _ _).mapIso e).toEquiv.trans Equiv.ulift
   let _ := c.isCoveringMap_proj.fundamentalGroupMulAction x
-  refine ⟨⟨c,
-    UniversalCover.transitiveActionFiberEquiv (X := X) x i⟩, ?_⟩
+  refine ⟨⟨c, ν⟩, ?_⟩
   rw [← c.isCoveringMap_proj.toPermHom_eq_monodromyPerm,
     ← Equiv.permutationRepresentation.eq_def]
-  refine Equiv.permutationRepresentation_eq_of_map_smul
-    (UniversalCover.transitiveActionFiberEquiv (X := X) x i) (ρ := ρ) fun γ e => ?_
-  have hsmul : γ • e = c.isCoveringMap_proj.monodromy γ e := rfl
-  rw [hsmul]
-  simpa only [MulAction.compHom_smul_def, Subgroup.smul_def, MonoidHom.coe_rangeRestrict,
-    Perm.smul_def] using UniversalCover.transitiveActionFiberEquiv_apply_monodromy x i γ e
+  refine Equiv.permutationRepresentation_eq_of_map_smul ν (ρ := ρ) fun γ a => ?_
+  -- Spell out both actions: their carriers are hidden under the functor and `A.V`, so
+  -- rewriting the composition in `e.hom.comm` cannot identify the underlying types.
+  have he : e.hom.hom (c.isCoveringMap_proj.monodromy γ a) = ULift.up (ρ γ (ν a)) :=
+    ConcreteCategory.congr_hom (e.hom.comm γ) a
+  exact congrArg ULift.down he
 
 end TauCeti
