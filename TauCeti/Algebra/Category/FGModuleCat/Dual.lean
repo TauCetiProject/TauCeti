@@ -138,7 +138,7 @@ pairing itself. -/
 
 /-- The double dual isomorphism is natural: it intertwines the double transpose of a morphism
 with the morphism itself. -/
-@[simp, reassoc (attr := simp)]
+@[reassoc (attr := simp)]
 theorem dualEvalIso_hom_naturality {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f : M ⟶ N) :
     dualMap (dualMap f) ≫ (dualEvalIso N).hom = (dualEvalIso M).hom ≫ f := by

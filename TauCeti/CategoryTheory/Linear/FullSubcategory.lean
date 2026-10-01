@@ -11,14 +11,14 @@ public import Mathlib.CategoryTheory.Linear.Basic
 # Additive and linear structure on morphisms of a full subcategory
 
 A full subcategory of a preadditive (resp. `R`-linear) category inherits a preadditive
-(resp. `R`-linear) structure. This file records that the underlying morphism of a zero morphism,
-a sum, a negation, a difference or a scalar multiple of morphisms in the full subcategory is
-the corresponding operation applied to the underlying morphisms in the ambient category.
+(resp. `R`-linear) structure. This file records that the underlying morphism of a sum, a
+negation, a difference or a scalar multiple of morphisms in the full subcategory is the
+corresponding operation applied to the underlying morphisms in the ambient category. The zero
+morphism is Mathlib's `CategoryTheory.ObjectProperty.zero_hom`.
 
 ## Main results
 
-* `CategoryTheory.ObjectProperty.FullSubcategory.zero_hom`,
-  `CategoryTheory.ObjectProperty.FullSubcategory.add_hom`,
+* `CategoryTheory.ObjectProperty.FullSubcategory.add_hom`,
   `CategoryTheory.ObjectProperty.FullSubcategory.neg_hom`,
   `CategoryTheory.ObjectProperty.FullSubcategory.sub_hom`: the underlying morphism of a
   morphism built from the preadditive structure.
@@ -37,9 +37,6 @@ variable {C : Type u} [Category.{v} C] {P : ObjectProperty C}
 section Preadditive
 
 variable [Preadditive C] {X Y : P.FullSubcategory}
-
-/-- The underlying morphism of the zero morphism of a full subcategory is zero. -/
-@[simp] theorem zero_hom : (0 : X ⟶ Y).hom = 0 := rfl
 
 /-- The underlying morphism of a sum in a full subcategory is the sum of the underlying
 morphisms. -/
