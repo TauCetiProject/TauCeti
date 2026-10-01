@@ -302,6 +302,19 @@ private theorem card_fiber_orbitOfCosetTranslate_eq_ncard_orbit {𝒢 ℋ : Subg
   -- unstated defeq, which has already been renamed once upstream (`Set.coe_setOf`)
   rw [← hset, ← Nat.card_coe_set_eq, Set.coe_ofPred]
 
+/-- **The fibre size as an index.** The number of coset classes that translate `p` into the same
+orbit as `q` does is the index of the stabiliser of `q` inside `stabilizer ℋ p`.
+
+`q` ranges over arbitrary classes, and no finiteness is assumed: unlike the multiplicative form
+`card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_coset` below, this determines the fibre size
+even when the stabilisers are infinite. For a chosen representative, see
+`card_fiber_orbitOfCosetTranslate_eq_relIndex`. -/
+theorem card_fiber_orbitOfCosetTranslate_eq_index_stabilizer {𝒢 ℋ : Subgroup G}
+    (hle : 𝒢 ≤ ℋ) (p : α) (q : ℋ ⧸ 𝒢.subgroupOf ℋ) :
+    Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =
+        orbitOfCosetTranslate (𝒢 := 𝒢) p q} = (stabilizer (stabilizer ℋ p) q).index := by
+  rw [card_fiber_orbitOfCosetTranslate_eq_ncard_orbit hle, index_stabilizer]
+
 /-- **Orbit-stabiliser for the fibres of `orbitOfCosetTranslate`.** The number of coset classes
 that translate `p` into the same orbit as `q` does, times the order of the stabiliser of `q`
 inside `stabilizer ℋ p`, is the order of `stabilizer ℋ p`.
@@ -344,9 +357,11 @@ theorem card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_inv_smul {𝒢 ℋ 
     card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_coset hle]
 
 open scoped Pointwise in
-/-- **The fibre size as a relative index.** For `h : ℋ`, the number of coset classes translating
-`p` into the same `𝒢`-orbit as the class of `h` is the relative index of `𝒢` in the stabiliser of
-the translate `h⁻¹ • p` in `ℋ`, that is, `[stabilizer ℋ (h⁻¹ • p) : stabilizer 𝒢 (h⁻¹ • p)]`.
+/-- **The fibre size as a relative index.** The representative specialisation of
+`card_fiber_orbitOfCosetTranslate_eq_index_stabilizer`: for `h : ℋ`, the number of coset classes
+translating `p` into the same `𝒢`-orbit as the class of `h` is the relative index of `𝒢` in the
+stabiliser of the translate `h⁻¹ • p` in `ℋ`, that is,
+`[stabilizer ℋ (h⁻¹ • p) : stabilizer 𝒢 (h⁻¹ • p)]`.
 
 The multiplicative identity `card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_inv_smul`
 degenerates to `0 = 0` when the stabilisers are infinite; this form determines the fibre size in
@@ -357,8 +372,8 @@ theorem card_fiber_orbitOfCosetTranslate_eq_relIndex {𝒢 ℋ : Subgroup G}
         orbitOfCosetTranslate (𝒢 := 𝒢) p ((h : ℋ ⧸ 𝒢.subgroupOf ℋ))} =
       (𝒢.subgroupOf ℋ).relIndex (stabilizer ℋ (h⁻¹ • p)) := by
   -- orbit-stabiliser, then conjugate the stabiliser `h (𝒢 ∩ ℋ) h⁻¹` of the class back by `h⁻¹`
-  calc _ = (stabilizer (stabilizer ℋ p) ((h : ℋ ⧸ 𝒢.subgroupOf ℋ))).index := by
-        rw [card_fiber_orbitOfCosetTranslate_eq_ncard_orbit hle, index_stabilizer]
+  calc _ = (stabilizer (stabilizer ℋ p) ((h : ℋ ⧸ 𝒢.subgroupOf ℋ))).index :=
+        card_fiber_orbitOfCosetTranslate_eq_index_stabilizer hle p _
     _ = (MulAut.conj h • 𝒢.subgroupOf ℋ).relIndex (stabilizer ℋ p) := by
         rw [← stabilizer_quotientGroup_mk, Subgroup.relIndex, stabilizer_subgroupOf]
     _ = _ := by
