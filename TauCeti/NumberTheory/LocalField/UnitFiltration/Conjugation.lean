@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 
 /-!
 # Conjugation on ramification quotients
@@ -22,11 +21,6 @@ Here the positive-depth maps are read in the residue coordinate associated to a 
 The exponent is forced by changing from the uniformizer `π` to `σ⁻¹ π`. This formula is the
 finite-level cyclotomic twist and supplies the constant appearing in ramification-theoretic norm
 computations.
-
-## Main definitions
-
-* `TauCeti.ramificationGroupGradedToResidueField`: the positive-depth ramification quotient
-  embedded additively in the residue field using a uniformizer.
 
 ## Main results
 
@@ -51,101 +45,11 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]]
 
-variable (G L) in
-/-- The positive-depth embedding of `G_{n+1}/G_{n+2}` into the additive residue field, in the
-coordinate determined by a uniformizer `π`. -/
-noncomputable def ramificationGroupGradedToResidueField (n : ℕ) (π : 𝒪[L])
-    (hπ : Irreducible π) :
-    Additive (RamificationGroupGraded G 𝒪[L] ((n : ℤ) + 1)) →+
-      IsLocalRing.ResidueField 𝒪[L] :=
-  by
-    simpa only [Int.natCast_add, Int.cast_ofNat_Int] using
-      (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer n π hπ).toAddMonoidHom.comp
-        (ramificationGroupGradedToUnitFiltrationGraded (G := G) (n + 1) hπ).toAdditive
-
-@[simp]
-theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) (π : 𝒪[L])
-    (hπ : Irreducible π)
-    (τ : ramificationGroup G 𝒪[L] ((n : ℤ) + 1)) :
-    ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
-        (Additive.ofMul (QuotientGroup.mk τ)) =
-      unitFiltrationGradedSuccEquivResidueFieldOfUniformizer n π hπ
-        (Additive.ofMul (QuotientGroup.mk (uniformizerRatio (n + 1) hπ τ))) :=
-  by
-    rw [ramificationGroupGradedToResidueField]
-    simp only [AddMonoidHom.comp_apply]
-    apply congrArg _
-    exact congrArg Additive.ofMul
-      (ramificationGroupGradedToUnitFiltrationGraded_mk (i := n + 1) hπ τ)
-
-/-- The positive-depth ramification quotient embeds in the additive residue field. -/
-theorem ramificationGroupGradedToResidueField_injective (n : ℕ) (π : 𝒪[L])
-    (hπ : Irreducible π) :
-    Function.Injective (ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ) :=
-  (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer n π hπ).injective.comp
-    (ramificationGroupGradedToUnitFiltrationGraded_injective (G := G)
-      (i := n + 1) hπ)
-
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- Coercion from the invariant integer ring to the ambient field respects the group action. -/
 private theorem coe_smul_integer (g : G) (x : 𝒪[L]) :
     ((g • x : 𝒪[L]) : L) = g • (x : L) :=
   map_smul (IsInvariantSubring.subtypeHom G 𝒪[L]) g x
-
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- Coercion from the invariant integer ring respects an action displacement. -/
-private theorem coe_smul_sub_integer (g : G) (x : 𝒪[L]) :
-    ((g • x - x : 𝒪[L]) : L) = g • (x : L) - (x : L) := by
-  calc
-    ((g • x - x : 𝒪[L]) : L) = ((g • x : 𝒪[L]) : L) - (x : L) := rfl
-    _ = g • (x : L) - (x : L) := by rw [coe_smul_integer]
-
-/-- Compute a positive-depth residue coordinate from the displacement of a representative. -/
-theorem ramificationGroupGradedToResidueField_of_smul_sub_eq
-    (n : ℕ) (π : 𝒪[L]) (hπ : Irreducible π)
-    (τ : ramificationGroup G 𝒪[L] ((n : ℤ) + 1)) (y : 𝒪[L])
-    (hmove : (τ : G) • π - π = y * π ^ (n + 2)) :
-    ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
-        (Additive.ofMul (QuotientGroup.mk τ)) = residue 𝒪[L] y := by
-  have hπ0 : (π : L) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
-  have hmoveL := congrArg (fun z : 𝒪[L] ↦ (z : L)) hmove
-  have hmoveL' : (τ : G) • (π : L) - (π : L) =
-      (y : L) * (π : L) ^ (n + 2) := by
-    calc
-      _ = (((τ : G) • π - π : 𝒪[L]) : L) := (coe_smul_sub_integer (τ : G) π).symm
-      _ = ((y * π ^ (n + 2) : 𝒪[L]) : L) := hmoveL
-      _ = _ := by rfl
-  have hdiff :
-      (unitFiltrationDifference n (uniformizerRatio (n + 1) hπ τ) : 𝒪[L]) =
-        y * π ^ (n + 1) := by
-    apply Subtype.ext
-    rw [coe_coe_unitFiltrationDifference, coe_uniformizerRatio, div_sub_one hπ0, hmoveL']
-    field_simp
-    push_cast
-    ring
-  rw [ramificationGroupGradedToResidueField_ofMul_mk]
-  exact unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue
-    n π hπ _ y hdiff
-
-/-- Change the uniformizer used for a positive-depth ramification coordinate. -/
-theorem ramificationGroupGradedToResidueField_change
-    (n : ℕ) (π π' : 𝒪[L]) (hπ : Irreducible π) (hπ' : Irreducible π')
-    (τ : RamificationGroupGraded G 𝒪[L] ((n : ℤ) + 1)) :
-    ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ (Additive.ofMul τ) =
-      residue 𝒪[L] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L]) ^ (n + 1) *
-        ramificationGroupGradedToResidueField (G := G) (L := L) n π' hπ'
-          (Additive.ofMul τ) := by
-  have hchange :=
-    unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_change n π π' hπ hπ'
-      (Additive.ofMul
-        (ramificationGroupGradedToUnitFiltrationGraded (G := G) (n + 1) hπ τ))
-  rw [uniformizerChangeResidueAddEquiv_apply] at hchange
-  have htheta := DFunLike.congr_fun
-    (ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible
-      (G := G) (i := n + 1) hπ hπ') τ
-  rw [ramificationGroupGradedToResidueField, ramificationGroupGradedToResidueField]
-  simp only [AddMonoidHom.comp_apply]
-  simpa [htheta] using hchange
 
 /-- The change from `π` to `g⁻¹ • π` is the inverse tame-character coordinate of `g`. -/
 private theorem residue_uniformizerChangeUnit_inv_smul
