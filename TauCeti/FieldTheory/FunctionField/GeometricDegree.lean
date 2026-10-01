@@ -88,13 +88,15 @@ section Compositum
 
 variable [CommSemiring k'] [Algebra k' F'] [Algebra F F'] (F k' F')
 
-/-- The **compositum** `F · k'` of the lower function field `F` with the constant field `k'` of
-the upper function field, formed inside `F'`: the smallest intermediate field of `F' / F`
-containing the constants. -/
+/-- The **compositum** `F · k'` formed inside `F'`: the smallest intermediate field of `F' / F`
+containing the image of the commutative semiring `k'` under `algebraMap k' F'`.
+
+In the intended application `k'` is the constant field of the upper function field `F' / k'` and
+`F / k` is the lower function field, so `F · k'` is `F` with the constants of `F'` adjoined. -/
 def constantCompositum : IntermediateField F F' :=
   IntermediateField.adjoin F (Set.range (algebraMap k' F'))
 
-/-- Every constant of `F'` lies in the compositum `F · k'`. -/
+/-- The image of every element of `k'` lies in the compositum `F · k'`. -/
 @[simp]
 theorem algebraMap_mem_constantCompositum (c : k') :
     algebraMap k' F' c ∈ constantCompositum F k' F' :=
@@ -105,24 +107,26 @@ Proved by `(rfl)`, not `rfl`: the body of `constantCompositum` is not `@[expose]
 is definitional only inside this module, and downstream consumers need this lemma to connect the
 compositum to `IntermediateField.adjoin`.
 -/
-/-- The defining equation of the compositum `F · k'`: it is `F` with the constants of `F'`
+/-- The defining equation of the compositum `F · k'`: it is `F` with the image of `k'` in `F'`
 adjoined. -/
 theorem constantCompositum_def :
     constantCompositum F k' F' = IntermediateField.adjoin F (Set.range (algebraMap k' F')) :=
   (rfl)
 
 /-- The universal property of the compositum `F · k'`: it is the least intermediate field of
-`F' / F` containing every constant. -/
+`F' / F` containing the image of `k'`. -/
 @[simp]
 theorem constantCompositum_le_iff {K : IntermediateField F F'} :
     constantCompositum F k' F' ≤ K ↔ ∀ c : k', algebraMap k' F' c ∈ K := by
   simp [constantCompositum_def, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
 
-/-- The **geometric degree** `n(F'/F)` of a finite extension `F' / k'` of the function field
-`F / k`: the degree of `F'` over the compositum `F · k'`, that is, the degree of the extension
-once the constants of `F'` have been adjoined to `F`.
+/-- The **geometric degree** `n(F'/F)`: the degree `[F' : F·k']` of `F'` over the compositum
+`F · k'`, that is, what remains of `F' / F` once the image of `k'` has been adjoined to `F`.
 
-Under linear disjointness of `F` and `k'` over `k` it is the quotient `[F' : F] / [k' : k]`; see
+In the intended application `F' / k'` is a finite extension of the function field `F / k` with
+constant field `k'` upstairs, and `n(F'/F)` is the degree of the extension after the constants
+have been absorbed.  Under linear disjointness of `F` and `k'` over `k` it is the quotient
+`[F' : F] / [k' : k]`; see
 `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`.  It is the
 factor `[F' : F·k']` by which the conorm multiplies degrees in Stichtenoth's Corollary 3.6.4. -/
 noncomputable def geometricDegree : ℕ :=
@@ -151,38 +155,38 @@ theorem geometricDegree_pos [FiniteDimensional F F'] : 0 < geometricDegree F k' 
   exact Module.finrank_pos
 
 /-- **The geometric degree is the whole degree as soon as the compositum is trivial**, that is,
-when adjoining the constants to `F` adds nothing.  `geometricDegree_eq_finrank` is the special
-case where the constants lie in `F` to begin with. -/
+when adjoining the image of `k'` to `F` adds nothing.  `geometricDegree_eq_finrank` is the
+special case where `k'` maps to `F'` through `F`. -/
 theorem geometricDegree_eq_finrank_of_constantCompositum_eq_bot
     (h : constantCompositum F k' F' = ⊥) :
     geometricDegree F k' F' = Module.finrank F F' := by
   rw [geometricDegree_def, h, IntermediateField.finrank_bot']
 
-/-- **The geometric degree of a constant field extension is one**: when `F'` is the compositum
-`F · k'`, nothing is left after the constants have been adjoined.  Combined with the conorm degree
-formula `TauCeti.Divisor.degree_conorm`, this is the ingredient that makes the conorm along a
-constant field extension preserve degrees. -/
+/-- **The geometric degree is one when `F'` is the compositum `F · k'`**: nothing is left after
+the image of `k'` has been adjoined.  This is the case of a constant field extension: combined
+with the conorm degree formula `TauCeti.Divisor.degree_conorm`, it is the ingredient that makes
+the conorm along a constant field extension preserve degrees. -/
 @[simp]
 theorem geometricDegree_eq_one_of_constantCompositum_eq_top
     (h : constantCompositum F k' F' = ⊤) : geometricDegree F k' F' = 1 := by
   rw [geometricDegree_def, h, IntermediateField.finrank_top]
 
-/-! ### When the constants of `F'` already lie in `F` -/
+/-! ### When `k'` maps to `F'` through `F` -/
 
 section ConstantsInBase
 
 variable [Algebra k' F] [IsScalarTower k' F F']
 
-/-- **The compositum is `F` itself when the constants of `F'` already lie in `F`**: there is
-nothing to adjoin. -/
+/-- **The compositum is `F` itself when `k'` maps to `F'` through `F`**, as when the constants
+of `F'` already lie in `F`: there is nothing to adjoin. -/
 @[simp]
 theorem constantCompositum_eq_bot : constantCompositum F k' F' = ⊥ :=
   le_antisymm ((constantCompositum_le_iff F k' F').2 fun c ↦ by
     rw [IsScalarTower.algebraMap_apply k' F F']
     exact IntermediateField.algebraMap_mem _ _) bot_le
 
-/-- **The geometric degree is the whole degree** when the constants of `F'` already lie in `F`:
-`n(F'/F) = [F' : F]`. -/
+/-- **The geometric degree is the whole degree** when `k'` maps to `F'` through `F`, as when the
+constants of `F'` already lie in `F`: `n(F'/F) = [F' : F]`. -/
 @[simp]
 theorem geometricDegree_eq_finrank : geometricDegree F k' F' = Module.finrank F F' :=
   geometricDegree_eq_finrank_of_constantCompositum_eq_bot F k' F'
@@ -216,15 +220,16 @@ section DegreeForm
 
 variable [Semiring k] [CommSemiring k'] [Module k k'] [Algebra k' F'] [Algebra F F'] (F k' F')
 
-/-- **The degree of a function field extension in terms of its geometric degree**: if adjoining
-the constants of `F'` to `F` costs exactly `[k' : k]`, then `[F' : F] = n(F'/F) · [k' : k]`.
+/-- **The degree of `F' / F` in terms of the geometric degree**: for any `k`-module structure on
+`k'`, if `[F·k' : F]` equals `Module.finrank k k'`, then
+`[F' : F] = n(F'/F) · Module.finrank k k'`.
 
-The hypothesis `h` is the degree form of the linear-disjointness condition on `F` and `k'` over
-`k`.  It is supplied by `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint` from
-`IntermediateField.LinearDisjoint`, and by
+When `k' / k` is a field extension compatible with `k ⊆ F` inside `F'`, the hypothesis `h` is the
+degree form `[F·k' : F] = [k' : k]` of the linear-disjointness condition on `F` and `k'` over
+`k`.  It is then supplied by `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`
+from `IntermediateField.LinearDisjoint`, and by
 `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable` for a separable constant field
-extension over an exact constant field; it can fail for an inseparable `k' / k`.  No compatibility
-between `k` and `F` is assumed: the identity holds whenever `h` does.
+extension over an exact constant field; it can fail for an inseparable `k' / k`.
 
 This is the companion of Stichtenoth's Proposition 3.6.6, which splits `[F' : F]` the same way. -/
 theorem finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq
@@ -232,11 +237,11 @@ theorem finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq
     Module.finrank F F' = geometricDegree F k' F' * Module.finrank k k' := by
   rw [← finrank_constantCompositum_mul_geometricDegree F k' F', h, mul_comm]
 
-/-- **The degree of the constant field extension divides the degree of the function field
-extension**, under the same hypothesis as
-`TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq` — the degree form
-of the linear-disjointness condition on `F` and `k'` over `k`; the quotient is the geometric
-degree. -/
+/-- **`Module.finrank k k'` divides `[F' : F]`** when it equals `[F·k' : F]`, with the geometric
+degree as quotient.  For a constant field extension `k' / k` compatible with `k ⊆ F`, the
+hypothesis is the degree form of linear disjointness (see
+`TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`), and the
+conclusion says `[k' : k]` divides `[F' : F]`. -/
 theorem finrank_dvd_finrank_of_finrank_constantCompositum_eq
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') :
     Module.finrank k k' ∣ Module.finrank F F' :=
