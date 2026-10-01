@@ -28,7 +28,8 @@ shared by every carrier built on the type-`F₄` Serre presentation.
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VIII.
-* `TauCeti.LinearAlgebra.Matrix.Cartan.TypeG2`, whose type-`G₂` certificate this file mirrors.
+* `TauCeti.LinearAlgebra.Matrix.Cartan.TypeG2`, the companion certificate for the other
+  multiply-laced exceptional diagram, whose formal template this file follows.
 -/
 
 public section

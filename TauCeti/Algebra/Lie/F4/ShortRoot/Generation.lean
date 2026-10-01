@@ -45,14 +45,16 @@ and in particular it does not identify the companion carrier generated over `�
 * `TauCeti.F4ShortRoot.groupScheme_eq_kostantGeneratedGroupScheme` and
   `TauCeti.F4ShortRoot.isIso_kostantGeneratedToToral`: the carrier is the root-generated Kostant
   group scheme, and the canonical comparison between them is an isomorphism.
+* `TauCeti.F4ShortRoot.groupScheme_hom_ext_of_rootSubgroup`: a morphism out of the carrier is
+  determined by its restrictions to the eight numbered root subgroups alone.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 6.4 and 7.1.
-
-This file follows the formal template of `TauCeti.Algebra.Lie.E7.Minuscule.Generation`, with the
-type-`F₄` Cartan rows and short-root weights in place of the type-`E₇` data.
+* `TauCeti.Algebra.Lie.E7.Minuscule.Generation`, the same coroot-generation argument run on the
+  minuscule type-`E₇` carrier, whose formal template this file follows with the type-`F₄` Cartan
+  rows and short-root weights in place of the type-`E₇` data.
 -/
 
 public section
@@ -63,6 +65,7 @@ universe v
 
 namespace TauCeti.F4ShortRoot
 
+open CategoryTheory
 open TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -174,5 +177,19 @@ instance isIso_kostantGeneratedToToral :
   isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
     latticeBasis f4ShortRootWeight universalWeightTorus_mem_elementarySubgroup
+
+/-- **Two morphisms out of the short-root type-`F₄` carrier agree as soon as they agree on its
+eight numbered root subgroups.** This drops the weight-torus hypothesis of
+`TauCeti.F4ShortRoot.groupScheme_hom_ext`, which root generation of the carrier makes
+redundant. -/
+theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (f g : groupScheme ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g) :
+    f = g :=
+  kostantToralGroupScheme_hom_ext_of_universal_torus_mem_elementary rootGen cartanGen rep
+    lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
+    latticeBasis f4ShortRootWeight universalWeightTorus_mem_elementarySubgroup f g
+    fun k => by simpa only [rootSubgroup_def] using hroot k
 
 end TauCeti.F4ShortRoot

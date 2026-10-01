@@ -332,8 +332,9 @@ theorem isSerreSystem :
   ad_pow_lie_F_F := loweringMatrix_lie_F_lie_F
 
 /-- At each simple node, the integral Cartan, raising and lowering matrices form an `sl₂`
-triple. Only the nonvanishing of the Cartan generator is a computation; the three relations are
-the diagonal instances of the Chevalley--Serre relations, the diagonal Cartan number being `2`. -/
+triple: the raising and lowering matrices bracket to the nonzero Cartan matrix, which brackets
+with them to `2` and `-2` times themselves. So each node spans a copy of `sl₂` inside the matrix
+Lie algebra of the integral short-root module. -/
 theorem isSl2Triple (i : Fin 4) :
     _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) where
   h_ne_zero := by fin_cases i <;> decide +kernel
