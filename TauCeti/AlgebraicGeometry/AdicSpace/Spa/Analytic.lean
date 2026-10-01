@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.Continuous.Coarsen
@@ -36,6 +37,8 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   `Spv A` (and hence `Spa(A, A⁺)`) is analytic.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_spa_of_isTateRing` : **Wedhorn Remark 7.40(3)**,
   for a Tate ring `A`, the analytic locus is the entire adic spectrum.
+* `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_not_le_supp_of_isAdic` : in an `I`-adic ring a
+  point is analytic exactly when its support does not contain `I`.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
 * `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
   the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
@@ -99,6 +102,19 @@ theorem spaAnalytic_subset_spa (Aplus : Subring A) :
 /-- Enlarging the plus ring shrinks the analytic locus. -/
 theorem spaAnalytic_antitone : Antitone (spaAnalytic (A := A)) := fun _ _ hle ↦
   Set.inter_subset_inter_left _ (spa_antitone hle)
+
+/-- In a ring whose topology is `I`-adic, a point is analytic exactly when its support does not
+contain `I`. An open prime ideal contains a power of `I`, hence `I` itself, and conversely a prime
+containing `I` contains the open subgroup `I`. -/
+theorem isAnalyticPoint_iff_not_le_supp_of_isAdic {I : Ideal A} (hI : IsAdic I) (v : Spv A) :
+    IsAnalyticPoint v ↔ ¬ I ≤ v.supp := by
+  have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  rw [isAnalyticPoint_def, not_iff_not]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds v.supp.zero_mem)
+    exact Ideal.IsPrime.le_of_pow_le hn
+  · exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := v.supp.toAddSubgroup) h
+      (by simpa using IsAdic.isOpen_pow hI 1)
 
 section TopologicalRing
 
