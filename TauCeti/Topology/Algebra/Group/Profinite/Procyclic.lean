@@ -62,7 +62,7 @@ theorem range_zpowHat (x : G) :
     Set.range (fun a : Additive zHat.{u} ↦ x ^ᶻ a) = (closedZpowers x : Set G) := by
   apply Set.Subset.antisymm
   · rintro y ⟨a, rfl⟩
-    exact zpowHat_mem (Subgroup.isClosed_topologicalClosure _) (mem_closedZpowers x) a
+    exact zpowHat_mem (isClosed_closedZpowers x) (mem_closedZpowers x) a
   · intro y hy
     obtain ⟨a, ha⟩ := closedZpowersLift_surjective.{u} x ⟨y, hy⟩
     refine ⟨ofMul a, ?_⟩
@@ -76,11 +76,12 @@ theorem mem_closedZpowers_iff {x y : G} :
 
 /-- A profinite power generates a subgroup of the original closed procyclic subgroup. -/
 theorem closedZpowers_zpowHat_le (x : G) (a : Additive zHat.{u}) :
-    closedZpowers (x ^ᶻ a) ≤ closedZpowers x :=
-  Subgroup.topologicalClosure_minimal _
+    closedZpowers (x ^ᶻ a) ≤ closedZpowers x := by
+  rw [closedZpowers_def (x ^ᶻ a)]
+  exact Subgroup.topologicalClosure_minimal _
     (Subgroup.zpowers_le.mpr
-      (zpowHat_mem (Subgroup.isClosed_topologicalClosure _) (mem_closedZpowers x) a))
-    (Subgroup.isClosed_topologicalClosure _)
+      (zpowHat_mem (isClosed_closedZpowers x) (mem_closedZpowers x) a))
+    (isClosed_closedZpowers x)
 
 /-- Extracting the `p`-part fixes an element of a pro-`p` group. -/
 @[simp]
@@ -140,6 +141,7 @@ theorem isProP_closedZpowers_zpowHat_idem (p : ℕ) [Fact p.Prime] (x : G) :
       (continuous_induced_rng.mpr ψ.continuous) ψ.toMonoidHom.rangeRestrict_surjective
   have hclosed : IsClosed (ψ.toMonoidHom.range : Set G) :=
     (isCompact_range ψ.continuous).isClosed
+  rw [closedZpowers_def]
   exact hrange.mono (Subgroup.topologicalClosure_minimal _
     (Subgroup.zpowers_le.mpr ⟨ofAdd 1, hψ1⟩) hclosed)
 
