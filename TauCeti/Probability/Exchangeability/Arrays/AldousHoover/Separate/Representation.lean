@@ -107,6 +107,11 @@ private theorem map_splitSeparateNoise_noiseMeasure :
   have hdisj : Disjoint (Set.range vertexNoiseIndex) (Set.range NoiseIndex.cell) := by
     rw [Set.disjoint_left]
     rintro _ ⟨(_ | _ | _), rfl⟩ ⟨_, h⟩ <;> cases h
+  -- The noise law is the product of its independent uniform coordinates.
+  have hnoise : noiseMeasure Axis (ℕ × ℕ) = Measure.infinitePi fun _ => (volume : Measure I) := by
+    simpa [map_eval_noiseMeasure] using
+      (iIndepFun_eval_noiseMeasure Axis (ℕ × ℕ)).map_fun_eq_infinitePi_map
+        fun q => measurable_pi_apply q
   -- Separate the cell noise, then the global variable, then the rows from the columns.
   set f₁ : (NoiseIndex Axis (ℕ × ℕ) → I) → (Option (ℕ ⊕ ℕ) → I) × (ℕ × ℕ → I) :=
     fun u => (fun o => u (vertexNoiseIndex o), fun p => u (.cell p))
@@ -121,7 +126,7 @@ private theorem map_splitSeparateNoise_noiseMeasure :
     (Measurable.of_eval fun _ => measurable_pi_apply _)
   have h₂₃ : Measurable (Prod.map id f₃ ∘ f₂) := (measurable_id.prodMap h₃).comp h₂
   have hsplit : splitSeparateNoise = Prod.map (Prod.map id f₃ ∘ f₂) id ∘ f₁ := rfl
-  rw [hsplit, ← Measure.map_map (h₂₃.prodMap measurable_id) h₁, noiseMeasure_def,
+  rw [hsplit, ← Measure.map_map (h₂₃.prodMap measurable_id) h₁, hnoise,
     infinitePi_map_pair_comp _ hcell hdisj,
     Measure.map_infinitePi_infinitePi_of_inj vertexNoiseIndex_injective,
     ← Measure.map_prod_map _ _ h₂₃ measurable_id, Measure.map_id,

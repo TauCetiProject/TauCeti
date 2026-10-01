@@ -218,6 +218,11 @@ private theorem map_splitNoise_noiseMeasure :
     Measurable.of_eval fun _ => hs.comp (measurable_pi_apply _)
   have hρs : ρ.map s = (volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => volume) :=
     TauCeti.MeasureTheory.Measure.infinitePi_map_none_some _
+  -- The noise law is the product of its independent uniform coordinates.
+  have hnoise : noiseMeasure Axis (ℕ × ℕ) = Measure.infinitePi fun _ => (volume : Measure I) := by
+    simpa [map_eval_noiseMeasure] using
+      (iIndepFun_eval_noiseMeasure Axis (ℕ × ℕ)).map_fun_eq_infinitePi_map
+        fun q => measurable_pi_apply q
   -- Reindex by pairs of optional indices, curry, and split both levels at `none`.
   set f₁ : (NoiseIndex Axis (ℕ × ℕ) → I) → (Option ℕ × Option ℕ → I) :=
     fun u p => u (noiseIndexEquiv.symm p)
@@ -232,7 +237,7 @@ private theorem map_splitNoise_noiseMeasure :
     (measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
   have hcomp : splitNoise = f₄ ∘ f₃ ∘ f₂ ∘ f₁ := rfl
   rw [hcomp, ← Measure.map_map (hs.prodMap hs') (h₃.comp (h₂.comp h₁)),
-    ← Measure.map_map h₃ (h₂.comp h₁), ← Measure.map_map h₂ h₁, noiseMeasure_def,
+    ← Measure.map_map h₃ (h₂.comp h₁), ← Measure.map_map h₂ h₁, hnoise,
     Measure.map_infinitePi_infinitePi_of_inj noiseIndexEquiv.symm.injective,
     Measure.infinitePi_map_curry (fun _ _ => (volume : Measure I)),
     TauCeti.MeasureTheory.Measure.infinitePi_map_none_some, ← hρ,
