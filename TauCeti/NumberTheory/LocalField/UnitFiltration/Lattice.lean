@@ -250,15 +250,6 @@ private theorem coord_eq {j : ℕ} (x : hA.filtration j) {a : 𝒪[L]}
     (hx : ((x : Lˣ) : L) = ((1 + ϖ ^ j • a : 𝒪[L]) : L)) : (hA.coord x : 𝒪[L]) = a :=
   hA.eq_of_one_add_pow_smul_eq j ((hA.coe_coord x).symm.trans hx)
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] hA in
-/-- An element of `A` lies in `ϖ • A`, read inside `A`, exactly when it lies in `ϖ • A`. -/
-private theorem mem_smul_top_iff {a : A} :
-    a ∈ (ϖ • ⊤ : Submodule 𝒪[K] A) ↔ (a : 𝒪[L]) ∈ ϖ • A := by
-  rw [mem_smul_pointwise_iff_exists, mem_smul_pointwise_iff_exists]
-  refine ⟨fun ⟨b, _, hb⟩ ↦ ⟨b, b.2, (by rw [← hb, coe_smul])⟩, fun ⟨b, hb, hab⟩ ↦
-    ⟨⟨b, hb⟩, mem_top, Subtype.ext (by rw [coe_smul, hab])⟩⟩
-
 /-- **The graded pieces of the unit filtration of a lattice.** The homomorphism
 `1 + ϖ ^ j • a ↦ a mod ϖ • A` from the `j`-th step onto the additive group of `A ⧸ ϖ • A`. Its
 kernel is the next step (`TauCeti.IsUnitFiltrationLattice.ker_filtrationToQuotient`), and it
@@ -267,16 +258,16 @@ def filtrationToQuotient (j : ℕ) :
     hA.filtration j →* Multiplicative (A ⧸ (ϖ • ⊤ : Submodule 𝒪[K] A)) where
   toFun x := Multiplicative.ofAdd (Submodule.Quotient.mk (hA.coord x))
   map_one' := by
-    have h : (hA.coord (1 : hA.filtration j) : 𝒪[L]) = 0 := hA.coord_eq 1 (by simp)
-    rw [show hA.coord (1 : hA.filtration j) = 0 from Subtype.ext h, Submodule.Quotient.mk_zero,
-      ofAdd_zero]
+    have h : hA.coord (1 : hA.filtration j) = 0 := Subtype.ext (hA.coord_eq 1 (by simp))
+    rw [h, Submodule.Quotient.mk_zero, ofAdd_zero]
   map_mul' x y := by
     obtain ⟨c, hc, h⟩ := hA.exists_one_add_mul_one_add j (hA.coord x).2 (hA.coord y).2
     have hxy : (hA.coord (x * y) : 𝒪[L]) = hA.coord x + hA.coord y + c := by
       refine hA.coord_eq (x * y) ?_
       rw [Subgroup.coe_mul, Units.val_mul, hA.coe_coord x, hA.coe_coord y, ← Subring.coe_mul, h]
     rw [← ofAdd_add, ← Submodule.Quotient.mk_add]
-    refine congrArg _ ((Submodule.Quotient.eq _).2 (mem_smul_top_iff.2 ?_))
+    refine congrArg _ ((Submodule.Quotient.eq _).2 ?_)
+    rw [← ideal_span_singleton_smul, mem_smul_top_iff, ideal_span_singleton_smul]
     simpa [hxy] using hc
 
 /-- The value of `filtrationToQuotient` at `1 + ϖ ^ j • a` is `a mod ϖ • A`. -/
@@ -284,8 +275,9 @@ theorem filtrationToQuotient_apply {j : ℕ} (x : hA.filtration j) {a : 𝒪[L]}
     (ha : a ∈ A) (hx : ((x : Lˣ) : L) = ((1 + ϖ ^ j • a : 𝒪[L]) : L)) :
     hA.filtrationToQuotient j x =
       Multiplicative.ofAdd (Submodule.Quotient.mk ⟨a, ha⟩) := by
+  have h : hA.coord x = ⟨a, ha⟩ := Subtype.ext (hA.coord_eq x hx)
   simp only [filtrationToQuotient, MonoidHom.coe_mk, OneHom.coe_mk]
-  rw [show hA.coord x = ⟨a, ha⟩ from Subtype.ext (hA.coord_eq x hx)]
+  rw [h]
 
 /-- The kernel of `filtrationToQuotient` on the `j`-th step is the `(j + 1)`-st step: the graded
 piece of the unit filtration of `A` at `j` embeds into `A ⧸ ϖ • A`. -/
@@ -294,10 +286,10 @@ theorem ker_filtrationToQuotient (j : ℕ) :
   ext x
   obtain ⟨a, ha, hx⟩ := x.2
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, hA.filtrationToQuotient_apply x ha hx,
-    ofAdd_eq_one, Submodule.Quotient.mk_eq_zero, mem_smul_top_iff,
-    mem_smul_pointwise_iff_exists]
+    ofAdd_eq_one, Submodule.Quotient.mk_eq_zero, ← ideal_span_singleton_smul, mem_smul_top_iff,
+    ideal_span_singleton_smul, mem_smul_pointwise_iff_exists]
   refine ⟨fun ⟨b, hb, hab⟩ ↦ ⟨b, hb, ?_⟩, fun ⟨b, hb, hxb⟩ ↦ ⟨b, hb, ?_⟩⟩
-  · rw [hx, show a = ϖ • b from hab.symm, pow_succ, mul_smul]
+  · rw [hx, pow_succ, mul_smul, hab]
   · refine hA.eq_of_one_add_pow_smul_eq j ?_
     rw [← hx, hxb, pow_succ, mul_smul]
 
