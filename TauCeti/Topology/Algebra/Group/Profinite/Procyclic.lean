@@ -88,6 +88,7 @@ theorem zpowHat_idem_of_isProP {p : ℕ} [Fact p.Prime] (hG : IsProP p G) (x : G
 
 /-- Extracting the `p`-part fixes any element whose closed procyclic subgroup is pro-`p`,
 even when the ambient group is not pro-`p`. -/
+@[simp]
 theorem zpowHat_idem_of_isProP_closedZpowers {p : ℕ} [Fact p.Prime] {x : G}
     (hx : IsProP p (closedZpowers x)) : x ^ᶻ zHat.idem.{u} p = x := by
   let y : closedZpowers x := ⟨x, mem_closedZpowers x⟩
