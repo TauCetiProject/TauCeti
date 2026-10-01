@@ -52,14 +52,13 @@ variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R] [Sta
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 /-- The adjoint of a unitary exponential is the exponential of the negative.  Unitarity gives
-`star (exp y) * exp y = 1`, and `exp (-y) * exp y = 1` holds for every `y`; since `exp y` is a
+`star (exp y) * exp y = 1`, and `exp (-y) = (exp y)⁻¹ʳ` also cancels `exp y`; since `exp y` is a
 unit, the two left factors agree. -/
 theorem star_exp_eq_exp_neg_of_exp_mem_unitary {y : R} (h : exp y ∈ unitary R) :
-    star (exp y) = exp (-y) := by
-  have hstar : star (exp y) * exp y = 1 := (Unitary.mem_iff.mp h).1
-  have hneg : exp (-y) * exp y = 1 := by
-    rw [← exp_add_of_commute (Commute.neg_left (Commute.refl y)), neg_add_cancel, exp_zero]
-  exact (isUnit_exp y).mul_right_cancel (hstar.trans hneg.symm)
+    star (exp y) = exp (-y) :=
+  (isUnit_exp y).mul_right_cancel <| by
+    rw [Unitary.star_mul_self_of_mem h, ← Ring.inverse_exp,
+      Ring.inverse_mul_cancel _ (isUnit_exp y)]
 
 variable [ContinuousStar R] [StarModule ℝ R]
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Star.Unitary
-public import TauCeti.Algebra.Star.Unitary
 
 /-!
 # The unitary subgroup of the units is closed
@@ -15,7 +14,7 @@ Mathlib's `isClosed_unitary` says that the unitary elements of a topological sta
 a closed subset of `M`.  This file transfers that to the group of units: `unitarySubgroup Mˣ`,
 the unitary elements of `Mˣ` packaged as a subgroup, is closed in `Mˣ`.
 
-The transfer is immediate once `TauCeti.mem_unitary_units_iff` exhibits the subgroup as the
+The transfer is immediate once Mathlib's `Units.unitary_eq` exhibits the subgroup as the
 preimage of `unitary M` under `Units.val`, which is continuous.  No hypothesis beyond the ones
 `isClosed_unitary` already needs is required.
 
@@ -39,8 +38,10 @@ preimage of the closed set `unitary M` under the continuous coercion `Units.val`
 theorem isClosed_unitarySubgroup_units :
     IsClosed ((unitarySubgroup Mˣ : Subgroup Mˣ) : Set Mˣ) := by
   have hpre : ((unitarySubgroup Mˣ : Subgroup Mˣ) : Set Mˣ) =
-      Units.val ⁻¹' (unitary M : Set M) :=
-    Set.ext fun _ => mem_unitary_units_iff
+      Units.val ⁻¹' (unitary M : Set M) := by
+    rw [show ((unitarySubgroup Mˣ : Subgroup Mˣ) : Set Mˣ) = (unitary Mˣ : Set Mˣ) from rfl,
+      Units.unitary_eq]
+    rfl
   rw [hpre]
   exact isClosed_unitary.preimage Units.continuous_val
 

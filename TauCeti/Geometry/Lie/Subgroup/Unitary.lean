@@ -13,7 +13,6 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
-public import Mathlib.Topology.Instances.Matrix
 
 /-!
 # The Lie algebra of the unitary group
@@ -93,7 +92,8 @@ theorem forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint (x : R) :
         unitarySubgroup Rˣ) ↔ x ∈ skewAdjoint R := by
   rw [forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff,
     ← forall_exp_smul_mem_unitary_iff_mem_skewAdjoint]
-  simp only [mem_unitarySubgroup_iff, mem_unitary_units_iff, TauCeti.expUnit_coe]
+  simp only [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap,
+    Units.coeHom_apply, TauCeti.expUnit_coe]
 
 /-- **The Lie algebra of the unitary group is the skew-adjoint elements.**  An element of a
 finite-dimensional real normed star algebra belongs to the Lie algebra of the closed subgroup of
@@ -106,22 +106,18 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdj
   rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
       (isClosed_unitarySubgroup_units R),
     ← forall_exp_smul_mem_unitary_iff_mem_skewAdjoint]
-  simp only [mem_unitarySubgroup_iff, mem_unitary_units_iff, TauCeti.expUnit_coe]
+  simp only [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap,
+    Units.coeHom_apply, TauCeti.expUnit_coe]
 
 end Algebra
 
 section Matrix
 
--- Select the matrix topology underlying the operator norm used for the general linear Lie group.
-attribute [local instance] Matrix.linftyOpTopologicalSpace
+-- Select the matrix topology underlying the operator norm used for the general linear Lie group,
+-- together with continuity of the conjugate transpose for it.
+attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
-
-/-- Conjugate transposition is continuous for the operator-norm topology just selected.  Mathlib
-records this for the entrywise matrix topology, which is the same topology but not the same
-instance, so the transported instance has to be named here for instance search to find it. -/
-local instance continuousStarMatrix : ContinuousStar (Matrix n n 𝕜) where
-  continuous_star := Continuous.matrix_conjTranspose continuous_id
 
 /-- **The Lie algebra of the unitary matrix group is the skew-Hermitian matrices.**  Over `ℂ`
 this is `𝔲 n`; over `ℝ`, where the conjugate transpose is the transpose, it is the orthogonal Lie
