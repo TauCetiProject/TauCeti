@@ -19,8 +19,8 @@ arguments about coactions and weight spaces.
 
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
-* `TauCeti.tensorComponent_assoc_symm`: contraction commutes with reassociation.
-* `TauCeti.comp_tensorComponent`: contraction commutes with a functional on the left.
+* `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
+* `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
 * `TauCeti.tensorProduct_rid_rTensor_apply`: naturality of the right tensor unitor.
 -/
 
@@ -40,6 +40,11 @@ variable [AddCommMonoid N] [Module R N]
 /-- Apply a linear functional to the right factor of a tensor. -/
 noncomputable def tensorComponent (phi : N →ₗ[R] R) : M ⊗[R] N →ₗ[R] M :=
   (TensorProduct.rid R M).toLinearMap ∘ₗ phi.lTensor M
+
+/-- Contraction is the tensor product of the functional with the identity, followed by the
+right tensor unitor. -/
+theorem tensorComponent_def (phi : N →ₗ[R] R) :
+    tensorComponent (M := M) phi = (TensorProduct.rid R M).toLinearMap ∘ₗ phi.lTensor M := (rfl)
 
 /-- A right tensor component sends a pure tensor to the corresponding scalar multiple. -/
 @[simp]
@@ -65,10 +70,6 @@ theorem tensorComponent_zero :
   refine TensorProduct.ext' fun m n => ?_
   simp
 
-end LinearMap
-
-namespace TauCeti
-
 section
 
 variable {R M N P : Type*} [CommSemiring R]
@@ -76,6 +77,7 @@ variable {R M N P : Type*} [CommSemiring R]
   [AddCommMonoid P] [Module R P]
 
 /-- Contraction of the last tensor factor commutes with reassociation. -/
+@[simp]
 theorem tensorComponent_assoc_symm (phi : P →ₗ[R] R) (u : M ⊗[R] (N ⊗[R] P)) :
     LinearMap.tensorComponent phi ((TensorProduct.assoc R M N P).symm u) =
       (LinearMap.tensorComponent phi).lTensor M u := by
@@ -98,6 +100,10 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
     mul_comm]
 
 end
+
+end LinearMap
+
+namespace TauCeti
 
 variable {R M N : Type*} [CommSemiring R]
   [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]

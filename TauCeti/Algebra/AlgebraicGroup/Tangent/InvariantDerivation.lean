@@ -86,12 +86,9 @@ private theorem tensorComponent_mul (d : Derivation R H (CounitAlgebra R H R)) (
 noncomputable def leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
     Derivation R H H :=
   Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
-    have hcounit (c : H) :
-        tensorComponent (Coalgebra.counit (R := R)) (Coalgebra.comul (R := R) c) = c := by
-      have hc := LinearMap.congr_fun (Comodule.coactComponent_counit (R := R) (C := H) (M := H)) c
-      rwa [Comodule.coactComponent_apply, Comodule.instSelf_coact, LinearMap.id_apply] at hc
     simp only [Comodule.differential_apply, Comodule.instSelf_coact,
-      _root_.Bialgebra.comul_mul, tensorComponent_mul, hcounit, smul_eq_mul]
+      _root_.Bialgebra.comul_mul, tensorComponent_mul, smul_eq_mul]
+    simp [LinearMap.tensorComponent_def]
 
 /-- The left-invariant derivation is the differentiated regular representation. -/
 theorem toLinearMap_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
@@ -112,7 +109,7 @@ theorem counit_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)
     Coalgebra.counit (R := R) (leftInvariantDerivation d h) =
       CounitAlgebra.algEquivSelf R H R (d h) := by
   have h' := LinearMap.congr_fun
-    (TauCeti.comp_tensorComponent (Coalgebra.counit (R := R) (A := H))
+    (LinearMap.comp_tensorComponent (Coalgebra.counit (R := R) (A := H))
       ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap))
     (Coalgebra.comul (R := R) (A := H) h)
   rw [LinearMap.comp_apply, ← leftInvariantDerivation_apply] at h'
@@ -122,6 +119,7 @@ theorem counit_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)
 
 /-- **The left-invariant derivation commutes with left translations**:
 `Δ ∘ D = (id ⊗ D) ∘ Δ`. -/
+@[simp]
 theorem comul_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
     Coalgebra.comul (R := R) (leftInvariantDerivation d h) =
       (leftInvariantDerivation d).toLinearMap.lTensor H (Coalgebra.comul (R := R) h) := by
@@ -129,8 +127,8 @@ theorem comul_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R))
   have hD : (leftInvariantDerivation d).toLinearMap = tensorComponent φ ∘ₗ Coalgebra.comul :=
     LinearMap.ext (leftInvariantDerivation_apply d)
   rw [leftInvariantDerivation_apply, hD, LinearMap.lTensor_comp, LinearMap.comp_apply,
-    ← TauCeti.tensorComponent_assoc_symm,
-    Coalgebra.coassoc_symm_apply, LinearMap.rTensor, tensorComponent_map, LinearMap.comp_id]
+    ← LinearMap.tensorComponent_assoc_symm,
+    Coalgebra.coassoc_symm_apply, LinearMap.rTensor_def, tensorComponent_map, LinearMap.comp_id]
 
 /-- A left-invariant derivation with value `d` at the identity is the left-invariant
 extension of `d`. -/
@@ -144,12 +142,9 @@ theorem eq_leftInvariantDerivation (D : Derivation R H H)
       (CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap := LinearMap.ext hε
   ext h
   have hc := congrArg (tensorComponent (Coalgebra.counit (R := R))) (hΔ h)
-  rw [LinearMap.lTensor, tensorComponent_map, hvalue, LinearMap.id_apply,
+  rw [LinearMap.lTensor_def, tensorComponent_map, hvalue, LinearMap.id_apply,
     ← leftInvariantDerivation_apply] at hc
-  have hidentity := LinearMap.congr_fun
-    (Comodule.coactComponent_counit (R := R) (C := H) (M := H)) (D h)
-  rw [Comodule.coactComponent_apply, Comodule.instSelf_coact, LinearMap.id_apply] at hidentity
-  exact hidentity.symm.trans hc
+  simpa [LinearMap.tensorComponent_def] using hc
 
 end TauCeti.Bialgebra
 

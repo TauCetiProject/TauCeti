@@ -163,7 +163,7 @@ theorem smoothCommHopfAlgProperty_of_charZero (k : Type u) [Field k] [CharZero k
 
 /-- **A finite-type commutative Hopf algebra over a field of characteristic zero is reduced**:
 affine group schemes of finite type in characteristic zero have no nilpotent functions. -/
-theorem HopfAlgebra.isReduced_of_charZero {k : Type u} [Field k] [CharZero k] {H : Type v}
+theorem HopfAlgebra.isReduced_of_charZero (k : Type u) [Field k] [CharZero k] (H : Type v)
     [CommRing H] [_root_.HopfAlgebra k H] [Algebra.FiniteType k H] : IsReduced H := by
   have _ : Algebra.Smooth k H :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k

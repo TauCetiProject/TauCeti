@@ -31,8 +31,8 @@ vanish on nilpotent functions.
 
 * `Derivation.apply_mem_of_isNilpotent`: a derivation sends nilpotent elements into every prime
   ideal of residual characteristic zero.
-* `Derivation.isNilpotent_apply`: a derivation of a `ℚ`-algebra sends nilpotent elements to
-  nilpotent elements.
+* `Derivation.isNilpotent_apply_of_isNilpotent`: a derivation of a `ℚ`-algebra sends nilpotent
+  elements to nilpotent elements.
 
 ## References
 
@@ -79,8 +79,8 @@ theorem apply_mem_of_isNilpotent (D : Derivation R A A) {p : Ideal A} [hp : p.Is
 
 /-- **In a `ℚ`-algebra, a derivation sends nilpotent elements to nilpotent elements**: the
 nilradical is a differential ideal. -/
-theorem isNilpotent_apply [Algebra ℚ A] (D : Derivation R A A) {x : A} (hx : IsNilpotent x) :
-    IsNilpotent (D x) := by
+theorem isNilpotent_apply_of_isNilpotent [Algebra ℚ A] (D : Derivation R A A) {x : A}
+    (hx : IsNilpotent x) : IsNilpotent (D x) := by
   rw [← mem_nilradical, nilradical_eq_sInf, Submodule.mem_sInf]
   intro p (hp : Ideal.IsPrime p)
   refine D.apply_mem_of_isNilpotent (fun n hn ↦ ?_) hx
