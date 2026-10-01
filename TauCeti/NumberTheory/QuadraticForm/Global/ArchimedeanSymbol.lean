@@ -102,7 +102,8 @@ theorem hilbertSymbol_unitAtRealPlace_eq_neg_one_iff (w : {w : InfinitePlace K /
 omit [NumberField K] in
 /-- The archimedean symbol at a real place is `1` exactly when one of the two global units is
 positive there. -/
-@[simp]
+-- Use explicitly: the general Hilbert-symbol simp rules first rewrite the left side as a norm
+-- condition.
 theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
     hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = 1 ↔
@@ -111,7 +112,7 @@ theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.
 
 omit [NumberField K] in
 /-- A global unit is a square at a real place exactly when it is positive there. -/
-@[simp]
+-- The general simp rules for real units and `unitAtRealPlace_apply` already prove this equivalence.
 theorem isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     IsSquare (unitAtRealPlace w a) ↔ 0 < embedding_of_isReal w.2 (a : K) := by
   have key : IsSquare (unitAtRealPlace w a) ↔ 0 < (unitAtRealPlace w a : ℝ) := by
