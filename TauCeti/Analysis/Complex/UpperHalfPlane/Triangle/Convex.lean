@@ -20,8 +20,7 @@ triangle is compact (`isCompact_triangle`), its trace on the line through two
 vertices is the side between them (`triangle_inter_range_geodesicLine`), and it lies in every
 closed half-plane containing its three vertices (`triangle_subset_closure_leftHalfPlane`,
 `triangle_subset_closure_rightHalfPlane`): the triangle defined as an intersection of three
-closed sides is the convex hull of its vertices. The angular defect of a nondegenerate triangle is
-nonnegative (`interiorAngle_add_add_le_pi`).
+closed sides is the convex hull of its vertices.
 
 The file also records basic facts about closed sides and triangles that the above needs: a
 closed side is the closed half-plane of its reference point when that point is off the line
@@ -106,18 +105,6 @@ theorem geodesicSegment_subset_triangle {A B C z w : ℍ} (hz : z ∈ triangle A
     (geodesicSegment_subset_closedSide hz.2 hw.2)
 
 /-! ### The trace of a triangle on a side line -/
-
-/-- A line through a point `geodesicLine g t₀` of the line `g` and a point `C` off it meets the
-line `g` only at the parameter `t₀`. -/
-private theorem eq_of_mem_range_geodesicLine {g k : PSL(2, ℝ)} {C : ℍ}
-    (hC : C ∉ Set.range (geodesicLine g)) (hCk : C ∈ Set.range (geodesicLine k)) {t₀ s : ℝ}
-    (h₀ : geodesicLine g t₀ ∈ Set.range (geodesicLine k))
-    (hs : geodesicLine g s ∈ Set.range (geodesicLine k)) : s = t₀ := by
-  by_contra hne
-  have hne' : geodesicLine g s ≠ geodesicLine g t₀ := fun h ↦ hne (geodesicLine_injective g h)
-  rw [← range_geodesicLine_geodesicBetween_of_mem hs h₀ hne',
-    range_geodesicLine_geodesicBetween_of_mem (g := g) ⟨s, rfl⟩ ⟨t₀, rfl⟩ hne'] at hCk
-  exact hC hCk
 
 /-- If the boundary line of a closed side meets the line `g` only at the parameter `t₀`, then
 two points of `g` in that closed side cannot lie on either side of `t₀`: the open half-plane
@@ -233,12 +220,6 @@ theorem isCompact_triangle {A B C : ℍ} (hAB : A ≠ B)
 
 /-! ### The hull property -/
 
-/-- The left half-plane of the translation by `x` is `{re < x}`. -/
-private theorem mem_leftHalfPlane_upperRightHom_iff (x : ℝ) (z : ℍ) :
-    z ∈ leftHalfPlane (upperRightHom x) ↔ z.re < x := by
-  rw [mem_leftHalfPlane_iff, ← AddChar.map_neg_eq_inv, upperRightHom_smul, vadd_re,
-    neg_add_eq_sub, sub_neg]
-
 /-- The hull property for the closed half-plane `{re ≤ 0}`: if the vertices have `re ≤ 0`, so
 does every point of the triangle. The maximiser of `re` on the compact triangle is a frontier
 point, so it lies on a side, whose endpoints have `re ≤ 0`; by convexity of `{re < max}` this is
@@ -310,24 +291,5 @@ theorem triangle_subset_closure_rightHalfPlane {A B C : ℍ} (hAB : A ≠ B)
   exact triangle_subset_closure_leftHalfPlane hAB hC hA hB hC'
 
 /-! ### The angular defect -/
-
-/-- The angular defect of a nondegenerate triangle is nonnegative: the sum of its angles is at
-most `π`.
-Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 10), p. 20. -/
-theorem interiorAngle_add_add_le_pi {A B C : ℍ} (hAB : A ≠ B)
-    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
-    interiorAngle A B C + interiorAngle B C A + interiorAngle C A B ≤ π := by
-  have hAC : A ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_left A B)
-  have hBC : B ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_right A B)
-  obtain ⟨h, d, hd, hCre, hcase⟩ := exists_smul_eq_normal_form hAB hC
-  rw [← interiorAngle_smul h hAB hAC, ← interiorAngle_smul h hBC hAB.symm,
-    ← interiorAngle_smul h hAC.symm hBC.symm]
-  rcases hcase with ⟨hA, hB⟩ | ⟨hB, hA⟩
-  · rw [hA, hB]
-    exact interiorAngle_add_add_le_pi_of_normal_form hd hCre
-  · rw [hB, hA, interiorAngle_comm (geodesicLine 1 d) (h • C) UpperHalfPlane.I,
-      interiorAngle_comm UpperHalfPlane.I (geodesicLine 1 d) (h • C),
-      interiorAngle_comm (h • C) UpperHalfPlane.I (geodesicLine 1 d)]
-    linarith [interiorAngle_add_add_le_pi_of_normal_form hd hCre]
 
 end TauCeti.UpperHalfPlane

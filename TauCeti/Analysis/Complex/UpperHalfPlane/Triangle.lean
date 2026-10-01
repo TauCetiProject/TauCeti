@@ -500,23 +500,15 @@ theorem interiorAngle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
     ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm]
   simp
 
-/-- A point of `ℍ` lies strictly between the two ends of any semicircle through it: its real
-part is within less than the radius of the centre. -/
-private theorem abs_re_sub_lt_sqrt_normSq (P : ℍ) (c : ℝ) :
-    |P.re - c| < Real.sqrt (Complex.normSq ((P : ℂ) - c)) := by
-  rw [Real.lt_sqrt (abs_nonneg _), sq_abs, Complex.normSq_apply]
-  simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, sub_zero,
-    UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
-  nlinarith [P.im_pos]
-
-/-- The angular defect in normal form: the triangle is, up to a null arc, the difference of two
-nested ideal-vertex regions, whose areas are the two `arccos` differences whose difference is
-the defect. -/
+/-- The angle sum of the triangle in normal form, with vertices `I`, `geodesicLine 1 d` and `C`,
+is at most `π`, for `0 < d` and `0 < C.re`. -/
 theorem interiorAngle_add_add_le_pi_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ}
     (hC : 0 < C.re) :
     interiorAngle UpperHalfPlane.I (geodesicLine 1 d) C +
         interiorAngle (geodesicLine 1 d) C UpperHalfPlane.I +
         interiorAngle C UpperHalfPlane.I (geodesicLine 1 d) ≤ π := by
+  -- the triangle is, up to a null arc, the difference of two nested ideal-vertex regions, whose
+  -- areas are the two `arccos` differences whose difference is the defect
   have hBre : (geodesicLine 1 d).re = 0 := by rw [geodesicLine_one_apply]; rfl
   have hIC : UpperHalfPlane.I.re ≠ C.re := by rw [UpperHalfPlane.I_re]; exact hC.ne
   have hBC : (geodesicLine 1 d).re ≠ C.re := by rw [hBre]; exact hC.ne
@@ -676,5 +668,24 @@ theorem volume_triangle {A B C : ℍ} (hAB : A ≠ B)
       interiorAngle_comm C A B]
     congr 1
     ring
+
+/-- The angular defect of a nondegenerate triangle is nonnegative: the sum of its angles is at
+most `π`.
+Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 10), p. 20. -/
+theorem interiorAngle_add_add_le_pi {A B C : ℍ} (hAB : A ≠ B)
+    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
+    interiorAngle A B C + interiorAngle B C A + interiorAngle C A B ≤ π := by
+  have hAC : A ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_left A B)
+  have hBC : B ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_right A B)
+  obtain ⟨h, d, hd, hCre, hcase⟩ := exists_smul_eq_normal_form hAB hC
+  rw [← interiorAngle_smul h hAB hAC, ← interiorAngle_smul h hBC hAB.symm,
+    ← interiorAngle_smul h hAC.symm hBC.symm]
+  rcases hcase with ⟨hA, hB⟩ | ⟨hB, hA⟩
+  · rw [hA, hB]
+    exact interiorAngle_add_add_le_pi_of_normal_form hd hCre
+  · rw [hB, hA, interiorAngle_comm (geodesicLine 1 d) (h • C) UpperHalfPlane.I,
+      interiorAngle_comm UpperHalfPlane.I (geodesicLine 1 d) (h • C),
+      interiorAngle_comm (h • C) UpperHalfPlane.I (geodesicLine 1 d)]
+    linarith [interiorAngle_add_add_le_pi_of_normal_form hd hCre]
 
 end TauCeti.UpperHalfPlane
