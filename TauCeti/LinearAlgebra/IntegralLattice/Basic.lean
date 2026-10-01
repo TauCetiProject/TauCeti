@@ -151,7 +151,7 @@ noncomputable def integralForm (L : IntegralLattice V) : LinearMap.BilinForm ℤ
 theorem integralForm_cast (L : IntegralLattice V) (x y : L) :
     (L.integralForm x y : ℚ) = L.form x y := by
   rw [integralForm, LinearMap.comp_apply, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
-  exact L.form.dualSubmoduleParing_spec (Submodule.inclusion L.le_dual x) y
+  exact L.form.dualSubmodulePairing_spec (Submodule.inclusion L.le_dual x) y
 
 /-- The induced integral form is symmetric. -/
 theorem isSymm_integralForm (L : IntegralLattice V) : L.integralForm.IsSymm := by
