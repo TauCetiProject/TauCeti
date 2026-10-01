@@ -81,31 +81,16 @@ variable {n : ℕ}
 /-! ## The character of a multiple of a root -/
 
 /-- **A multiple of the root `εᵢ - εⱼ` translates a weight character by a power of `tᵢ tⱼ⁻¹`.**
-This is the only property of that root the raising computation below uses. -/
-theorem weightChar_add_nsmul_single_sub_single {R : Type*} [CommRing R] {i j : Fin n}
-    (hij : i ≠ j) (l : Fin n → ℤ) (m : ℕ) (t : Fin n → Rˣ) :
+This is the only property of that root the raising computation below uses. Nothing here is special
+to the index type `Fin n` of `GL n`, nor does it need `i` and `j` to be distinct: it is split-torus
+character arithmetic for an arbitrary index type. -/
+theorem weightChar_add_nsmul_single_sub_single {κ : Type*} [Fintype κ] [DecidableEq κ]
+    {R : Type*} [CommRing R] (i j : κ) (l : κ → ℤ) (m : ℕ) (t : κ → Rˣ) :
     weightChar R (l + m • (Pi.single i 1 - Pi.single j 1)) t
       = weightChar R l t * (t i * (t j)⁻¹) ^ m := by
-  classical
-  have hi : (Pi.single i 1 - Pi.single j 1 : Fin n → ℤ) i = 1 := by
-    rw [Pi.sub_apply, Pi.single_eq_same, Pi.single_eq_of_ne hij, sub_zero]
-  have hj : (Pi.single i 1 - Pi.single j 1 : Fin n → ℤ) j = -1 := by
-    rw [Pi.sub_apply, Pi.single_eq_same, Pi.single_eq_of_ne hij.symm, zero_sub]
-  have hvanish : ∀ a : Fin n, a ∉ ({i, j} : Finset (Fin n)) →
-      t a ^ ((m • (Pi.single i 1 - Pi.single j 1) : Fin n → ℤ) a) = 1 := by
-    intro a ha
-    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at ha
-    rw [Pi.smul_apply, Pi.sub_apply, Pi.single_eq_of_ne ha.1, Pi.single_eq_of_ne ha.2]
-    simp
-  have hprod : ∏ a ∈ ({i, j} : Finset (Fin n)),
-        t a ^ ((m • (Pi.single i 1 - Pi.single j 1) : Fin n → ℤ) a)
-      = ∏ a : Fin n, t a ^ ((m • (Pi.single i 1 - Pi.single j 1) : Fin n → ℤ) a) :=
-    Finset.prod_subset (Finset.subset_univ _) fun a _ ha ↦ hvanish a ha
-  rw [weightChar_add, MonoidHom.mul_apply]
-  refine congrArg (weightChar R l t * ·) ?_
-  rw [weightChar_apply, torusCharacter_def, ← hprod, Finset.prod_pair hij, Pi.smul_apply,
-    Pi.smul_apply, hi, hj]
-  simp [zpow_neg, mul_pow, inv_pow]
+  simp only [weightChar_add, MonoidHom.mul_apply, weightChar_apply]
+  rw [torusCharacter_nsmul, torusCharacter_sub, torusCharacter_single, torusCharacter_single,
+    zpow_one, zpow_one, div_eq_mul_inv]
 
 /-! ## Transvections raise weights -/
 
@@ -159,7 +144,7 @@ theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
         ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : Kˣ) : K) * c) ^ m' • A m' w := by
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun m' _ ↦ ?_
-    rw [weightChar_add_nsmul_single_sub_single hij l m' t, smul_smul, smul_smul]
+    rw [weightChar_add_nsmul_single_sub_single i j l m' t, smul_smul, smul_smul]
     refine congrArg (· • A m' w) ?_
     push_cast
     ring
