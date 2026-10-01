@@ -106,6 +106,21 @@ theorem toOrderHom_injective (f : Hom O O') : Function.Injective f.toOrderHom :=
   Subtype.ext <| f.fieldHom.injective <| by
     simpa using congrArg (fun z : O'.toSubalgebra => (z : L)) h
 
+/-- An order morphism carries nonzero divisors of the source order to nonzero divisors of the
+target order. -/
+theorem nonZeroDivisors_le_comap (f : Hom O O') :
+    nonZeroDivisors O.toSubalgebra ≤
+      (nonZeroDivisors O'.toSubalgebra).comap f.toOrderHom :=
+  nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _ f.toOrderHom_injective
+
+/-- On fraction fields, the localization of `f.toOrderHom` is the ambient field map of `f`. -/
+@[simp]
+theorem isLocalization_map_toOrderHom (f : Hom O O') :
+    IsLocalization.map L f.toOrderHom f.nonZeroDivisors_le_comap = f.fieldHom :=
+  IsFractionRing.ringHom_ext (A := O.toSubalgebra) fun x => by
+    rw [IsLocalization.map_eq]
+    exact f.toOrderHom_apply x
+
 /-- Two order morphisms agreeing on the ambient field are equal. -/
 @[ext]
 theorem ext {f g : Hom O O'} (h : ∀ x : K, f x = g x) : f = g := by
