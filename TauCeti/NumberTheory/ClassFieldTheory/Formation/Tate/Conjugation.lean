@@ -63,14 +63,14 @@ variable (L : NormalLayer G) (F : Formation G) (g : G)
 /-- **Conjugation on Tate cohomology with trivial integral coefficients**: the isomorphism
 `H^r(U/V, ℤ) ≅ H^r(gUg⁻¹/gVg⁻¹, ℤ)` induced by the isomorphism of Galois groups. -/
 def conjugateTrivialTateIso (r : ℤ) : L.TrivialTateH r ≅ (L.conjugate g).TrivialTateH r :=
-  TateCohomology.mapIso (MonoidHom.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom) r
+  TateCohomology.mapIso (TauCeti.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom) r
 
 /-- Conjugation with trivial integral coefficients is the Tate map of the compatible pair formed by
 the isomorphism of Galois groups and the identity of `ℤ`. -/
 theorem conjugateTrivialTateIso_hom (r : ℤ) :
     (L.conjugateTrivialTateIso g r).hom =
       TateCohomology.map
-        (MonoidHom.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom) r :=
+        (TauCeti.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom) r :=
   TateCohomology.mapIso_hom _ r
 
 /-- **In degree `-2`, conjugation is conjugation of abelianized Galois groups**: under the
@@ -97,7 +97,7 @@ theorem cupClass_conj (F : Formation G) (L : NormalLayer G) (g : G) (u : L.H F 2
       cupClass F (L.conjugate g) ((L.conjugateCohomologyIso F g 2).hom u) r
         ((L.conjugateTrivialTateIso g r).hom x) := by
   have hφ := L.isIntertwiningMap_conjugateCoefficientEquiv F g
-  have h₀ := MonoidHom.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom
+  have h₀ := TauCeti.isIntertwiningMap_trivial (L.conjugateGalEquiv g).toMonoidHom
   have hTensor :
       ((Rep.trivial ℤ L.Gal ℤ) ⊗ L.rep F).ρ.IsIntertwiningMap
         (((Rep.trivial ℤ (L.conjugate g).Gal ℤ) ⊗ (L.conjugate g).rep F).ρ.comp

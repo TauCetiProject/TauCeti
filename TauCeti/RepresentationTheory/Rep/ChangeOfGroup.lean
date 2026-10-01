@@ -43,9 +43,9 @@ does.
   their linear part is an equivalence.
 * `Representation.IsIntertwiningMap.comp_norm`: an intertwining map along an isomorphism of
   finite groups intertwines the two norms.
-* `TauCeti.Rep.isIntertwiningMap_res_tensor`: restriction and tensor products are compatible
+* `TauCeti.isIntertwiningMap_res_tensor`: restriction and tensor products are compatible
   along a homomorphism of monoids.
-* `TauCeti.MonoidHom.isIntertwiningMap_trivial`: the identity of `ℤ` intertwines trivial
+* `TauCeti.isIntertwiningMap_trivial`: the identity of `ℤ` intertwines trivial
   integral representations along any homomorphism of monoids.
 * `Rep.isIntertwiningMap_id` and `Rep.isIntertwiningMap_res`: the identity
   map is intertwining along the identity isomorphism of the monoid, and along `f` between a
@@ -224,7 +224,7 @@ open CategoryTheory MonoidalCategory
 
 /-- The identity of `ℤ` intertwines the trivial integral representations along any
 homomorphism of monoids. -/
-theorem MonoidHom.isIntertwiningMap_trivial {G : Type uG} {H : Type uH} [Monoid G] [Monoid H]
+theorem isIntertwiningMap_trivial {G : Type uG} {H : Type uH} [Monoid G] [Monoid H]
     (f : G →* H) :
     (Rep.trivial ℤ G ℤ).ρ.IsIntertwiningMap ((Rep.trivial ℤ H ℤ).ρ.comp f)
       (LinearEquiv.refl ℤ ℤ) :=
@@ -233,7 +233,7 @@ theorem MonoidHom.isIntertwiningMap_trivial {G : Type uG} {H : Type uH} [Monoid 
 /-- Restriction and tensor products are compatible: the tensor product of the identity maps
 from the restricted representations to their originals intertwines the actions along `f`.
 The tensor product is Mathlib's `Representation.IntertwiningMap.tensor`. -/
-theorem Rep.isIntertwiningMap_res_tensor {R G H : Type u}
+theorem isIntertwiningMap_res_tensor {R G H : Type u}
     [CommRing R] [Monoid G] [Monoid H] (f : G →* H) (N₁ N₂ : Rep R H) :
     (Rep.res f N₁ ⊗ Rep.res f N₂).ρ.IsIntertwiningMap ((N₁ ⊗ N₂).ρ.comp f)
       (TensorProduct.map ((LinearEquiv.refl R N₁.V : N₁.V →ₗ[R] N₁.V) :
