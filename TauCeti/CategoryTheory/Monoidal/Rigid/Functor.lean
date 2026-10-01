@@ -194,9 +194,8 @@ theorem map_dualTensorIhom_app_comp_ihomComparison (Y Z : C) [Closed Y] [Closed 
   -- Move the dual comparison past the associator and evaluate it.
   rw [associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc,
     whiskerLeft_ihomComparison_app_unit_comp_map_η_comp_ev]
-  simp only [Functor.comp_obj, Functor.id_obj, curriedTensor_obj_obj, Functor.map_comp,
-    map_associator_inv, map_whiskerRight, map_leftUnitor, Category.assoc, μ_δ_assoc,
-    comp_whiskerRight]
+  -- The rest is coherence; fold the associator of `D` into the image of that of `C`.
+  simp [← LaxMonoidal.associativity_inv_assoc]
 
 /-- If the internal Hom comparisons of a strong monoidal functor `F` at `Y` are invertible at `Z`
 and at the unit, and the dual-tensor comparison of `F.obj Y` is invertible at `F.obj Z`, then the
