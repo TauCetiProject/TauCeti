@@ -190,7 +190,7 @@ theorem face_facePerm (D : PDCode n) (h : Fin (4 * n)) : D.face (D.facePerm h) =
   D.face_eq_face_iff.mpr (sameCycle_apply_left.mpr (SameCycle.refl _ _))
 
 /-- The number of faces is the cardinality of the type of faces. -/
-@[simp↓]
+@[simp]
 theorem card_face (D : PDCode n) : Nat.card D.Face = D.faceCount :=
   (orbitCount_def _).symm
 
