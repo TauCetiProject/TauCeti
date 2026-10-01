@@ -141,11 +141,10 @@ theorem finiteIndex_normGroup : (normGroup K L).FiniteIndex := by
   obtain ⟨k, hk⟩ := hz
   rw [MonoidHom.coe_ofClass, unitsEquivIntProd_symm_apply, ← hk]
   apply mul_mem
-  · refine mem_normGroup_iff.2
-      ⟨Units.map (algebraMap K L : K →* L) (ϖ ^ k.toAdd), ?_⟩
-    rw [Units.coe_map, Units.val_zpow_eq_zpow_val, Units.val_zpow_eq_zpow_val,
-      MonoidHom.coe_ofClass, Algebra.norm_algebraMap, powMonoidHom_apply, toAdd_pow, nsmul_eq_mul,
-      ← zpow_natCast, ← zpow_mul, mul_comm]
+  · -- `ϖ ^ n` is the norm of `ϖ ∈ Lˣ`, so the norm group contains all integer powers of it.
+    have hϖn : ϖ ^ n ∈ normGroup K L :=
+      mem_normGroup_iff.2 ⟨Units.map (algebraMap K L : K →* L) ϖ, by simp [n]⟩
+    simpa [← zpow_natCast, ← zpow_mul, mul_comm] using zpow_mem hϖn k.toAdd
   · exact hm hu
 
 end TauCeti
