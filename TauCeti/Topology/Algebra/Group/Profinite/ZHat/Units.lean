@@ -92,7 +92,6 @@ theorem unitsEquivPiPadicInt_apply (a : (Additive zHat.{u})ˣ) (ℓ : Nat.Primes
   apply Units.ext
   refine (MulEquiv.val_piUnits_apply _ _).trans ?_
   rw [Units.mapContinuousMulEquiv_apply, Units.coe_map, Units.coe_map]
-  change ringEquivPiPadicInt (a : Additive zHat.{u}) ℓ = component ℓ a
   exact ringEquivPiPadicInt_apply (a : Additive zHat.{u}) ℓ
 
 /-- The `ℓ`-adic component of the inverse unit-group decomposition is the prescribed unit. -/
@@ -171,13 +170,19 @@ theorem unitsLift_unique (ψ : G →* (Additive zHat.{u})ˣ)
 
 /-- The assembled character is continuous whenever all of its finite-level characters are
 continuous. -/
-theorem continuous_unitsLift [TopologicalSpace G] [ContinuousInv G]
+theorem continuous_unitsLift [TopologicalSpace G]
     (hcont : ∀ n : ℕ+, Continuous (χ n)) : Continuous (unitsLift.{u, v} χ hχ) := by
-  apply Continuous.of_coeHom_comp
-  apply continuous_iff_forall_continuous_toZMod.mpr
-  intro n
-  exact (Units.continuous_val.comp (hcont n)).congr fun g ↦
-    (toZMod_coe_unitsLift χ hχ n g).symm
+  apply Units.continuous_iff.mpr
+  constructor
+  · apply continuous_iff_forall_continuous_toZMod.mpr
+    intro n
+    exact (Units.continuous_val.comp (hcont n)).congr fun g ↦
+      (toZMod_coe_unitsLift χ hχ n g).symm
+  · apply continuous_iff_forall_continuous_toZMod.mpr
+    intro n
+    exact (Units.continuous_coe_inv.comp (hcont n)).congr fun g ↦ by
+      simpa only [Function.comp_apply, map_inv] using
+        (toZMod_coe_unitsLift χ hχ n (g⁻¹)).symm
 
 end UnitsLift
 
