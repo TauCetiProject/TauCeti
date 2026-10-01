@@ -78,19 +78,21 @@ theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
     (e.toLinearMap.restrictScalars R ∘ₗ iV)
   obtain ⟨h', t, hh'⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective S hiV
     (e.symm.toLinearMap.restrictScalars R ∘ₗ iW)
-  replace hh (v : V) : iW (h v) = (s : R) • e (iV v) := congr($hh v)
-  replace hh' (w : W) : iV (h' w) = (t : R) • e.symm (iW w) := congr($hh' w)
+  replace hh (v : V) : iW (h v) = (s : R) • e (iV v) := by
+    simpa [Submonoid.smul_def] using congr($hh v)
+  replace hh' (w : W) : iV (h' w) = (t : R) • e.symm (iW w) := by
+    simpa [Submonoid.smul_def] using congr($hh' w)
   -- The inclusions `V → A ⊗[R] V` and `W → A ⊗[R] W` are equivariant.
   have hρ (g : G) (v : V) : iV (ρ g v) = Representation.baseChange A ρ g (iV v) := by
     simp [iV]
   have hσ (g : G) (w : W) : iW (σ g w) = Representation.baseChange A σ g (iW w) := by
     simp [iW]
   have he (g : G) (x : A ⊗[R] V) : e (Representation.baseChange A ρ g x) =
-      Representation.baseChange A σ g (e x) :=
-    Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g x
+      Representation.baseChange A σ g (e x) := by
+    simpa using Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g x
   have he' (g : G) (y : A ⊗[R] W) : e.symm (Representation.baseChange A σ g y) =
-      Representation.baseChange A ρ g (e.symm y) :=
-    Representation.IntertwiningMap.isIntertwining _ _ e.symm.toIntertwiningMap g y
+      Representation.baseChange A ρ g (e.symm y) := by
+    simpa using Representation.IntertwiningMap.isIntertwining _ _ e.symm.toIntertwiningMap g y
   have hint (g : G) (v : V) : h (ρ g v) = σ g (h v) := hiW <| by
     rw [hh, hσ, hh, hρ, he]
     simp [LinearMap.map_smul_of_tower]
