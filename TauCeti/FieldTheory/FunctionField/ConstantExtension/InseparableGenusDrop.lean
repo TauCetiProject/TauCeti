@@ -35,7 +35,7 @@ field `k`. The compositum `F · k'` is all of `F'`, because `w = y / (x - s) ^ (
 * `TauCeti.GenusDrop.constantCompositum_eq_top`: `F' = F · k'`.
 * `TauCeti.GenusDrop.genus_lt_genus`: `F' / k'` has genus `0`, so the genus drops.
 * `TauCeti.GenusDrop.finrank_constants` and `TauCeti.GenusDrop.not_isSeparable_constants`:
-  `k' / k` has degree `p` and is not separable.
+  `k' / k` has degree `p` and is not separable (it is purely inseparable).
 
 ## References
 
@@ -93,17 +93,14 @@ theorem pow_ne_radicand (b : constants p) : b ^ p ≠ radicand p := by
 theorem irreducible_X_pow_sub_C_radicand : Irreducible (X ^ p - C (radicand p)) :=
   X_pow_sub_C_irreducible_of_prime hp.out (pow_ne_radicand p)
 
-/-- `k' / k` is not separable: the minimal polynomial `X ^ p - t` of `s` has zero derivative. -/
-theorem not_isSeparable_constants : ¬ Algebra.IsSeparable (constants p) (RatFunc (ZMod p)) := by
-  intro _
-  have hs := Algebra.IsSeparable.isSeparable (constants p) (RatFunc.X : RatFunc (ZMod p))
-  have hmin : minpoly (constants p) (RatFunc.X : RatFunc (ZMod p)) = X ^ p - C (radicand p) :=
-    (minpoly.eq_of_irreducible_of_monic (irreducible_X_pow_sub_C_radicand p)
-      (by simp [IntermediateField.algebraMap_apply]) (monic_X_pow_sub_C _ hp.out.ne_zero)).symm
-  rw [IsSeparable, hmin,
-    separable_iff_derivative_ne_zero (irreducible_X_pow_sub_C_radicand p)] at hs
-  apply hs
-  rw [derivative_sub, derivative_X_pow, derivative_C, sub_zero, CharP.cast_eq_zero, C_0, zero_mul]
+/-- `k' / k` is not separable: it is purely inseparable
+(`TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`) and `s ∉ k`. -/
+theorem not_isSeparable_constants : ¬ Algebra.IsSeparable (constants p) (RatFunc (ZMod p)) :=
+  fun _ ↦ X_notMem_constants p (by
+    obtain ⟨b, hb⟩ := IsPurelyInseparable.surjective_algebraMap_of_isSeparable (constants p)
+      (RatFunc (ZMod p)) RatFunc.X
+    have hb' : (b : RatFunc (ZMod p)) = RatFunc.X := hb
+    exact hb' ▸ b.2)
 
 /-! ### The function fields `F = k(x, y) ⊆ F' = k'(w)` -/
 
@@ -187,21 +184,16 @@ theorem sq_genY' :
   rw [IntermediateField.coe_pow, coe_genY', IntermediateField.coe_algebraMap_apply,
     algebraMap_X_pow_sub_C_radicand, sq_genY]
 
-/-- `2 ≠ 0` in `k` for `p ≠ 2`. -/
-theorem two_ne_zero_of_ne_two (h2 : p ≠ 2) : (2 : constants p) ≠ 0 := fun h ↦
-  h2 ((Nat.prime_dvd_prime_iff_eq hp.out Nat.prime_two).mp
-    ((CharP.cast_eq_zero_iff (constants p) p 2).mp (by exact_mod_cast h)))
-
 /-- `k` is the exact constant field of `F`. -/
 theorem isIntegrallyClosedIn_curveField (h2 : p ≠ 2) :
     IsIntegrallyClosedIn (constants p) (curveField p) :=
-  isIntegrallyClosedIn_of_sq_eq (two_ne_zero_of_ne_two p h2)
+  isIntegrallyClosedIn_of_sq_eq (CharP.cast_ne_zero_of_ne_of_prime (constants p) Nat.prime_two h2)
     (irreducible_X_pow_sub_C_radicand p).squarefree
     (by rw [natDegree_X_pow_sub_C]; exact hp.out.pos) (adjoin_genY'_eq_top p) (sq_genY' p)
 
 /-- **The genus of `y ^ 2 = x ^ p - t` over `k = 𝔽_p(t)` is `(p - 1) / 2`.** -/
 theorem genus_curveField (h2 : p ≠ 2) : genus (constants p) (curveField p) = (p - 1) / 2 := by
-  rw [genus_eq_of_sq_eq (two_ne_zero_of_ne_two p h2)
+  rw [genus_eq_of_sq_eq (CharP.cast_ne_zero_of_ne_of_prime (constants p) Nat.prime_two h2)
     (irreducible_X_pow_sub_C_radicand p).squarefree
     (by rw [natDegree_X_pow_sub_C]; exact hp.out.pos) (adjoin_genY'_eq_top p) (sq_genY' p),
     natDegree_X_pow_sub_C]
