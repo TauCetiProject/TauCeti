@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 
 import TauCeti.NumberTheory.LocalField.SquareClass
 import TauCeti.NumberTheory.LocalField.Squares
@@ -191,14 +192,10 @@ private theorem even_of_defectExponent_eq {a : Kˣ} {d : ℤ} (hd : defectExpone
     (h : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) →
       Even (normalizedValuation K b).toAdd) :
     Even d := by
-  have hsq : ¬IsSquare a := by
-    rw [← defectExponent_eq_top_iff, hd]
-    exact WithTop.coe_ne_top
-  obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
-  rw [hd, WithTop.coe_inj] at hxd
-  have hneg := h (-x) ⟨ξ, 1, by rw [Units.val_neg, hx]; ring⟩
-  rwa [← neg_one_mul, map_mul, (normalizedValuation_eq_one_iff (-1)).mpr (by simp), one_mul,
-    hxd] at hneg
+  obtain ⟨b, hb, hbval⟩ :=
+    exists_mem_quadraticNormSubgroup_toAdd_normalizedValuation_eq_defectExponent hd
+  exact hbval ▸ h b ((hilbertSymbol_eq_one_iff a b).mp
+    ((hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a b).mpr hb))
 
 /-- **The ramification dictionary.** For `a ∈ Kˣ` of finite defect exponent `δ(a) = d`, that is
 for a nonsquare `a`, the extension `K(√a)/K` is unramified in norm-equation form, meaning that

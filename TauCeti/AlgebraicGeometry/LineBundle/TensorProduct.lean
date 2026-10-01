@@ -21,6 +21,7 @@ for the trivial line bundle.
 ## Main declarations
 
 * `InvertibleSheaf.tensorProduct` packages the tensor product of two line bundles;
+* `InvertibleSheaf.trivialObjIsoUnit` identifies the trivial line bundle with the monoidal unit;
 * `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf;
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
   isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
@@ -39,7 +40,7 @@ of line bundles.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry MonoidalCategory
 
 namespace TauCeti
 
@@ -52,6 +53,11 @@ noncomputable section
 namespace InvertibleSheaf
 
 variable {X : Scheme.{u}}
+
+/-- The trivial line bundle is isomorphic to the monoidal unit of `X.Modules`.
+Here `𝟙_ X.Modules` unfolds to `SheafOfModules.unit X.ringCatSheaf`. -/
+def trivialObjIsoUnit (X : Scheme.{u}) : (trivial X).obj ≅ 𝟙_ X.Modules :=
+  (trivial_obj X) ▸ TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf
 
 /-- The tensor product of two line bundles on a scheme. -/
 def tensorProduct (L K : InvertibleSheaf X) : InvertibleSheaf X :=

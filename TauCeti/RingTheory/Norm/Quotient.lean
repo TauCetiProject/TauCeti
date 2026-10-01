@@ -16,8 +16,7 @@ Let `S` be a finite free `R`-algebra and `I` an ideal of `R`. The norm of `S ⧸
 of the class of `x` is the class of the norm of `x`. This is the norm counterpart of Mathlib's
 `Algebra.trace_quotient_mk`. It lets a norm equation over `R` be solved first over the quotient:
 taking `I` to be the maximal ideal of a local ring, it supplies the residual norm input for lifting
-norm equations with Hensel's lemma
-(`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal`).
+norm equations with Hensel's lemma (`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem`).
 
 ## Main results
 

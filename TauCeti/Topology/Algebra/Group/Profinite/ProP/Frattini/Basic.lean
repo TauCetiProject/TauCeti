@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.GroupTheory.ExponentPrime
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
@@ -68,6 +69,8 @@ and total disconnectedness are assumed exactly where they are used.
   exactly when `G` is commutative of exponent dividing `p`.
 * `ContinuousMulEquiv.map_proPFrattini_eq`: the pro-`p` Frattini subgroup is characteristic under
   continuous automorphisms.
+* `TauCeti.isTopCharacteristic_proPFrattini`: the pro-`p` Frattini subgroup is topologically
+  characteristic.
 * `TauCeti.map_proPFrattini_eq_of_surjective`: a continuous surjection of profinite groups carries
   the pro-`p` Frattini subgroup onto the pro-`p` Frattini subgroup.
 
@@ -141,6 +144,12 @@ theorem pow_mem_proPFrattini (g : G) : g ^ p ∈ proPFrattini p G := by
   rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow, ← hcard]
   exact pow_card_eq_one'
 
+/-- Every `q`-th power with `p ∣ q` lies in the pro-`p` Frattini subgroup. -/
+theorem pow_mem_proPFrattini_of_dvd {q : ℕ} (hq : p ∣ q) (g : G) : g ^ q ∈ proPFrattini p G := by
+  obtain ⟨k, rfl⟩ := hq
+  rw [pow_mul]
+  exact Subgroup.pow_mem _ (pow_mem_proPFrattini g) k
+
 /-- Every commutator lies in the pro-`p` Frattini subgroup: a quotient of prime order is
 cyclic, hence commutative. -/
 theorem commutator_le_proPFrattini (hp : p.Prime) : commutator G ≤ proPFrattini p G := by
@@ -211,6 +220,12 @@ theorem _root_.ContinuousMulEquiv.map_proPFrattini_eq (e : G ≃ₜ* H) :
     e.symm.toMulEquiv.toMonoidHom.map_proPFrattini_le e.symm.continuous e.symm.surjective
       (Subgroup.mem_map_of_mem _ hx)
   exact ⟨e.symm x, hsymm, e.apply_symm_apply x⟩
+
+/-- The pro-`p` Frattini subgroup is topologically characteristic for every topological group and
+every natural number `p`. -/
+theorem isTopCharacteristic_proPFrattini (p : ℕ) :
+    IsTopCharacteristic G (proPFrattini p G) :=
+  isTopCharacteristic_iff_map_eq.mpr fun φ ↦ ContinuousMulEquiv.map_proPFrattini_eq φ
 
 /-! ### The verbal description -/
 

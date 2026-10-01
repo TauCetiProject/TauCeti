@@ -5,9 +5,11 @@ Authors: Claude, Codex
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced
 
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+import TauCeti.Topology.Algebra.GroupAction.Discrete
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced
 
 /-!
@@ -30,7 +32,13 @@ and the one Shapiro's lemma is stated against.
   coefficients;
 * `TauCeti.DiscreteCoind.trace` and `TauCeti.DiscreteCoind.traceLinear`: for finite-index `U`, the
   trace `TauCeti.coindTrace` on the discrete carrier, as a `G`-equivariant additive map and as a
-  linear map.
+  linear map;
+* `TauCeti.DiscreteCoind.unit`: for a discrete `G`-module `M`, the unit `M → Coind_U^G M` of
+  coinduction, `m ↦ (g ↦ g • m)`, as a `G`-equivariant additive map;
+* `TauCeti.DiscreteCoind.single`: for an open subgroup `U`, the coinduced function `single hU g a`
+  supported on the right coset `U * g` with value `a` at `g`, additive in `a`; its values are
+  `single_apply_mul` and `single_apply_of_notMem`, and `single_mul` and `smul_single` move its
+  base point along `U` and under the right-translation action of `G`.
 
 ## Main results
 
@@ -38,9 +46,17 @@ and the one Shapiro's lemma is stated against.
   discrete carrier is continuous, so `Coind_U^G A` is a discrete `G`-module;
 * `TauCeti.DiscreteCoind.instContinuousSMulScalar`: for compact `G` and discrete coefficients,
   scalar multiplication is continuous;
+* `TauCeti.DiscreteCoind.unit_injective` and `TauCeti.DiscreteCoind.map_unit`: the unit is
+  injective (a section of the counit) and natural in the coefficients;
 * `TauCeti.DiscreteCoind.trace_apply`, `TauCeti.DiscreteCoind.trace_eq_sum_transversal` and
   `TauCeti.DiscreteCoind.trace_map`: the trace formula, along any transversal, and its naturality
-  in the coefficients.
+  in the coefficients;
+* `TauCeti.DiscreteCoind.eval_unit` and `TauCeti.DiscreteCoind.trace_unit`: evaluation at `1`
+  retracts the unit, and the trace of the unit is multiplication by the index `[G : U]`;
+* `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
+  continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
+  the additive equivalence `TauCeti.DiscreteCoind.addEquivContinuousMap : Coind_1^G A ≃+ C(G, A)`,
+  with `TauCeti.DiscreteCoind.smul_ofContinuousMap` computing the translation action.
 -/
 
 public section
@@ -145,6 +161,19 @@ theorem coe_neg (f : DiscreteCoind G U A) : ⇑(-f) = -⇑f := rfl
 @[simp]
 theorem coe_sub (f f' : DiscreteCoind G U A) : ⇑(f - f') = ⇑f - ⇑f' := rfl
 
+/-- The zero is pointwise, so that Mathlib's `sum_apply` applies. -/
+instance : IsZeroApply (DiscreteCoind G U A) G A where
+
+/-- The addition is pointwise, so that Mathlib's `sum_apply` applies. -/
+instance : IsAddApply (DiscreteCoind G U A) G A where
+
+/-- The `ℕ`-action is pointwise, so that Mathlib's `FunLike.coe_smul` and `smul_apply` apply. -/
+instance : IsSMulApply ℕ (DiscreteCoind G U A) G A where
+
+/-- A natural number killing `A` kills `Coind_U^G A`. -/
+theorem nsmul_eq_zero {n : ℕ} (hA : ∀ a : A, n • a = 0) (f : DiscreteCoind G U A) : n • f = 0 :=
+  ext fun g => by rw [IsSMulApply.smul_apply, hA, coe_zero, Pi.zero_apply]
+
 section Scalar
 
 variable {R : Type*} [Semiring R] [Module R A] [SMulCommClass U R A]
@@ -156,9 +185,17 @@ instance instSMulScalar : SMul R (DiscreteCoind G U A) :=
 theorem coe_smul_scalar (r : R) (f : DiscreteCoind G U A) (g : G) :
     (r • f) g = r • f g := rfl
 
-instance instModuleScalar : Module R (DiscreteCoind G U A) :=
-  Function.Injective.module R (toCoind G U A).toAddMonoidHom
-    (toCoind G U A).injective fun _ _ => rfl
+/-- The scalar module structure on the discrete carrier. Its scalar action is `instSMulScalar`
+itself, so that instances stated for that action, such as `instSMulCommClass`, apply to the module
+structure at instance transparency. -/
+instance instModuleScalar : Module R (DiscreteCoind G U A) where
+  toSMul := instSMulScalar
+  one_smul f := ext fun g => one_smul R (f g)
+  mul_smul r s f := ext fun g => mul_smul r s (f g)
+  smul_zero r := ext fun _ => smul_zero r
+  smul_add r f f' := ext fun g => smul_add r (f g) (f' g)
+  add_smul r s f := ext fun g => add_smul r s (f g)
+  zero_smul f := ext fun g => zero_smul R (f g)
 
 end Scalar
 
@@ -187,6 +224,13 @@ instance instDistribMulAction : DistribMulAction G (DiscreteCoind G U A) :=
 
 @[simp]
 theorem coe_smul (g : G) (f : DiscreteCoind G U A) (x : G) : (g • f) x = f (x * g) := (rfl)
+
+/-- A `G`-invariant element of `Coind_U^G A` is a constant function: its value at `x` is its value
+at `1`, because `x • f = f` evaluated at `1` reads `f x = f 1`. -/
+theorem apply_eq_apply_one_of_forall_smul_eq {f : DiscreteCoind G U A} (hf : ∀ g : G, g • f = f)
+    (x : G) : f x = f 1 := by
+  have h := congrArg (fun f' : DiscreteCoind G U A ↦ f' 1) (hf x)
+  simpa only [coe_smul, one_mul] using h
 
 /-- The counit is `U`-equivariant for the restriction of the right-translation action. This is the
 compatible-pair hypothesis Shapiro's lemma is an instance of. -/
@@ -375,6 +419,165 @@ end Scalar
 
 end Trace
 
+section Unit
+
+variable [ContinuousMul G] {M : Type*} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+variable (G U M) in
+/-- **The unit `M → Coind_U^G M` of coinduction**, sending `m` to its orbit map `g ↦ g • m`, which
+is locally constant because the action is continuous and `M` is discrete. It is `G`-equivariant for
+the right-translation action on `Coind_U^G M`, and evaluation at `1` retracts it
+(`TauCeti.DiscreteCoind.eval_unit`); it is the unit of the adjunction between restriction to `U`
+and coinduction, whose counit is `TauCeti.DiscreteCoind.eval`. -/
+def unit : M →+[G] DiscreteCoind G U M where
+  toFun m := mk G U M (fun g => g • m)
+    ((IsLocallyConstant.iff_continuous _).2 (continuous_id.smul continuous_const))
+    fun u g => by rw [mul_smul, Subgroup.smul_def]
+  map_zero' := ext fun g => smul_zero g
+  map_add' m m' := ext fun g => smul_add g m m'
+  map_smul' g m := ext fun x => by rw [coe_smul, mk_apply, mk_apply, mul_smul, MonoidHom.id_apply]
+
+/-- The unit sends `m` to its orbit map: `unit m g = g • m`. -/
+@[simp]
+theorem unit_apply (m : M) (g : G) : unit G U M m g = g • m := (rfl)
+
+/-- Evaluation at `1` retracts the unit. -/
+theorem eval_unit (m : M) : eval G U M (unit G U M m) = m := by
+  rw [eval_apply, unit_apply, one_smul]
+
+/-- The unit is injective, being retracted by evaluation at `1`. -/
+theorem unit_injective : Function.Injective (unit G U M) := fun m m' h => by
+  simpa using congrArg (eval G U M) h
+
+section Naturality
+
+variable {R : Type*} [Semiring R] [Module R M] [SMulCommClass U R M]
+  {N : Type*} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
+  [ContinuousSMul G N] [Module R N] [SMulCommClass U R N]
+
+/-- **The unit is natural in the coefficient module**: for a `G`-equivariant linear map
+`f : M → N` of discrete `G`-modules, coinducing `f` carries the orbit map of `m` to the orbit map
+of `f m`. The `U`-equivariance `TauCeti.DiscreteCoind.map` asks for is the restriction of the
+`G`-equivariance `hf`. -/
+@[simp]
+theorem map_unit (f : M →ₗ[R] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) (m : M) :
+    map f (fun u m => hf u m) (unit G U M m) = unit G U N (f m) := by
+  ext x
+  rw [map_apply, unit_apply, unit_apply, hf]
+
+end Naturality
+
+section FiniteIndex
+
+variable [U.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace of the unit is multiplication by the index**: `∑_{gU} g • g⁻¹ • m = [G : U] • m`. -/
+theorem trace_unit (m : M) : trace G U M (unit G U M m) = U.index • m := by
+  simp only [trace_apply, unit_apply, smul_inv_smul, Finset.sum_const, Finset.card_univ,
+    U.index_eq_card, Nat.card_eq_fintype_card]
+
+end FiniteIndex
+
+end Unit
+
+section Single
+
+variable [ContinuousMul G] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A]
+  (hU : IsOpen (U : Set G))
+
+omit [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace A] [DiscreteTopology A]
+  [ContinuousSMul U A] in
+/-- The `U`-equivariance of the function underlying `single`: `u • a` on `u * g`, `0` off the right
+coset `U * g`. -/
+private theorem singleFun_mul [DecidablePred (· ∈ U)] (g : G) (a : A) (u : U) (x : G) :
+    (if h : (u : G) * x * g⁻¹ ∈ U then (⟨(u : G) * x * g⁻¹, h⟩ : U) • a else 0) =
+      u • if h : x * g⁻¹ ∈ U then (⟨x * g⁻¹, h⟩ : U) • a else 0 := by
+  by_cases hx : x * g⁻¹ ∈ U
+  · have hux : (u : G) * x * g⁻¹ ∈ U := by rw [mul_assoc]; exact U.mul_mem u.2 hx
+    simp only [hx, hux, dite_true, ← mul_smul]
+    congr 1
+    ext
+    simp [mul_assoc]
+  · have hux : (u : G) * x * g⁻¹ ∉ U := fun h =>
+      hx (by simpa [mul_assoc] using U.mul_mem (U.inv_mem u.2) h)
+    simp only [hx, hux, dite_false, smul_zero]
+
+variable (G U A) in
+open Classical in
+/-- **The coinduced function supported on one right coset.** For an open subgroup `U`, `g : G` and
+`a : A`, `single hU g a` is the element of `Coind_U^G A` that is `u • a` at `u * g` for `u : U`
+and `0` off the right coset `U * g` (`single_apply_mul`, `single_apply_of_notMem`). It is
+additive in `a`, and for a subgroup of finite index every coinduced function is the sum of its
+singles over a right transversal (`TauCeti.DiscreteCoind.sum_single`): these are the functions
+through which `Coind_U^G A` is a direct sum of `[G : U]` copies of `A`. -/
+noncomputable def single (g : G) : A →+ DiscreteCoind G U A where
+  toFun a := mk G U A (fun x => if h : x * g⁻¹ ∈ U then (⟨x * g⁻¹, h⟩ : U) • a else 0)
+    (isLocallyConstant_of_apply_mul hU (singleFun_mul g a)) (singleFun_mul g a)
+  map_zero' := ext fun x => by simp
+  map_add' a b := ext fun x => by
+    simp only [mk_apply, coe_add, Pi.add_apply, smul_add]
+    split_ifs <;> simp
+
+open Classical in
+/-- The defining formula of `single`, used only to derive the two case lemmas below. -/
+private theorem single_apply (g : G) (a : A) (x : G) :
+    single G U A hU g a x = if h : x * g⁻¹ ∈ U then (⟨x * g⁻¹, h⟩ : U) • a else 0 := (rfl)
+
+/-- `single hU g a` takes the value `u • a` at `u * g`. Not a `simp` lemma: `simp` already proves
+it from `TauCeti.DiscreteCoind.apply_mul` and `TauCeti.DiscreteCoind.single_apply_self`. -/
+theorem single_apply_mul (g : G) (a : A) (u : U) : single G U A hU g a ((u : G) * g) = u • a := by
+  have h : (u : G) * g * g⁻¹ ∈ U := by simp
+  simp only [single_apply, h, dite_true]
+  congr 1
+  ext
+  simp
+
+/-- `single hU g a` takes the value `a` at `g`. -/
+@[simp]
+theorem single_apply_self (g : G) (a : A) : single G U A hU g a g = a := by
+  simpa using single_apply_mul hU g a 1
+
+/-- `single hU g a` vanishes off the right coset `U * g`. -/
+@[simp]
+theorem single_apply_of_notMem {g x : G} (a : A) (hx : x * g⁻¹ ∉ U) :
+    single G U A hU g a x = 0 := by
+  simp only [single_apply, hx, dite_false]
+
+/-- Moving the base point of a single along `U` twists its value: `single (u * g) a` is
+`single g (u⁻¹ • a)`. -/
+@[simp]
+theorem single_mul (u : U) (g : G) (a : A) :
+    single G U A hU ((u : G) * g) a = single G U A hU g (u⁻¹ • a) := by
+  ext x
+  by_cases hx : x * g⁻¹ ∈ U
+  · obtain ⟨v, hv⟩ : ∃ v : U, x = (v : G) * g := ⟨⟨x * g⁻¹, hx⟩, by simp⟩
+    subst hv
+    have : (v : G) * g = ((v * u⁻¹ : U) : G) * ((u : G) * g) := by simp [mul_assoc]
+    rw [this, single_apply_mul, ← this, single_apply_mul, mul_smul]
+  · rw [single_apply_of_notMem hU _ hx, single_apply_of_notMem hU a]
+    intro h
+    apply hx
+    have := U.mul_mem h u.2
+    rwa [mul_inv_rev, ← mul_assoc, inv_mul_cancel_right] at this
+
+/-- Right translation moves the support of a single: `g' • single g a = single (g * g'⁻¹) a`. -/
+@[simp]
+theorem smul_single (g' g : G) (a : A) :
+    g' • single G U A hU g a = single G U A hU (g * g'⁻¹) a := by
+  ext x
+  rw [coe_smul]
+  by_cases hx : x * g' * g⁻¹ ∈ U
+  · obtain ⟨v, hv⟩ : ∃ v : U, x * g' = (v : G) * g := ⟨⟨x * g' * g⁻¹, hx⟩, by simp⟩
+    have hx' : x = (v : G) * (g * g'⁻¹) := by rw [← mul_assoc, ← hv, mul_inv_cancel_right]
+    rw [hv, hx', single_apply_mul, single_apply_mul]
+  · rw [single_apply_of_notMem hU a hx, single_apply_of_notMem hU a]
+    simpa [mul_assoc] using hx
+
+end Single
+
 /-- **`Coind_U^G A` is a discrete `G`-module over a compact group**: the right-translation action
 on the discrete carrier is continuous, because a locally constant function on a compact group is
 uniformly locally constant. -/
@@ -387,5 +590,72 @@ instance instContinuousSMul [IsTopologicalGroup G] [CompactSpace G] :
 end DiscreteCoind
 
 end DiscreteCarrier
+
+/-! ### The coinduced module of the trivial subgroup -/
+
+section Bot
+
+variable (G : Type*) [Group G] [TopologicalSpace G]
+  (A : Type*) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction (⊥ : Subgroup G) A]
+
+namespace DiscreteCoind
+
+/-- A continuous map from `G` to a discrete group `A`, as an element of `Coind_1^G A`: it is
+locally constant, and the equivariance condition for the trivial subgroup is empty. -/
+def ofContinuousMap (f : C(G, A)) : DiscreteCoind G ⊥ A :=
+  mk G ⊥ A f ((IsLocallyConstant.iff_continuous _).2 f.continuous) fun u g => by
+    rw [Subsingleton.elim u 1, one_smul, OneMemClass.coe_one, one_mul]
+
+@[simp]
+theorem ofContinuousMap_apply (f : C(G, A)) (g : G) : ofContinuousMap G A f g = f g := (rfl)
+
+/-- An element of `Coind_1^G A`, as a continuous map `G → A`: it is locally constant, and `A` is
+discrete. -/
+def toContinuousMap (f : DiscreteCoind G ⊥ A) : C(G, A) :=
+  ⟨f, (IsLocallyConstant.iff_continuous _).1 f.isLocallyConstant⟩
+
+@[simp]
+theorem coe_toContinuousMap (f : DiscreteCoind G ⊥ A) : ⇑(toContinuousMap G A f) = ⇑f := (rfl)
+
+@[simp]
+theorem toContinuousMap_ofContinuousMap (f : C(G, A)) :
+    toContinuousMap G A (ofContinuousMap G A f) = f :=
+  ContinuousMap.ext fun _ => rfl
+
+@[simp]
+theorem ofContinuousMap_toContinuousMap (f : DiscreteCoind G ⊥ A) :
+    ofContinuousMap G A (toContinuousMap G A f) = f :=
+  ext fun _ => rfl
+
+/-- **`Coind_1^G A` is the group of continuous maps `G → A`**: the locally constant maps into the
+discrete group `A` are the continuous ones, and the equivariance condition for the trivial
+subgroup is empty. -/
+def addEquivContinuousMap : DiscreteCoind G ⊥ A ≃+ C(G, A) where
+  toFun := toContinuousMap G A
+  invFun := ofContinuousMap G A
+  left_inv := ofContinuousMap_toContinuousMap G A
+  right_inv := toContinuousMap_ofContinuousMap G A
+  map_add' _ _ := rfl
+
+@[simp]
+theorem addEquivContinuousMap_apply (f : DiscreteCoind G ⊥ A) :
+    addEquivContinuousMap G A f = toContinuousMap G A f :=
+  (rfl)
+
+@[simp]
+theorem addEquivContinuousMap_symm_apply (f : C(G, A)) :
+    (addEquivContinuousMap G A).symm f = ofContinuousMap G A f :=
+  (rfl)
+
+/-- Right translation on `Coind_1^G A` is precomposition with right multiplication. -/
+@[simp]
+theorem smul_ofContinuousMap [ContinuousMul G] (g : G) (f : C(G, A)) :
+    g • ofContinuousMap G A f = ofContinuousMap G A (f.comp (ContinuousMap.mulRight g)) :=
+  ext fun _ => rfl
+
+end DiscreteCoind
+
+end Bot
 
 end TauCeti

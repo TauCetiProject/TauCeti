@@ -298,6 +298,15 @@ noncomputable def fppfQuotientTorsorAction
     (CartesianMonoidalCategory.snd _ _ ≫
       (quotientSubgroupPointsFppfGrpInclusion H I).hom.hom)
 
+/-- The quotient torsor action multiplies an ambient point by a subgroup point. -/
+theorem fppfQuotientTorsorAction_def
+    (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+    fppfQuotientTorsorAction H I =
+      CartesianMonoidalCategory.fst _ _ *
+        (CartesianMonoidalCategory.snd _ _ ≫
+          (quotientSubgroupPointsFppfGrpInclusion H I).hom.hom) :=
+  (rfl)
+
 private theorem sheafify_pointwiseQuotientTorsorFst
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     (fppfQuotientTorsorProductIso H I).hom ≫

@@ -111,7 +111,7 @@ theorem zero_mem_expDomain (p : M) : (0 : TangentSpace I p) ∈ expDomain I M p 
   simp only [mem_expDomain_iff, geodesicInterval_zero, mem_univ]
 
 /-- The exponential map sends the zero vector to the base point. -/
-@[simp] theorem riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
+@[simp] theorem riemannianExp_zero [T2Space M] (p : M) :
     riemannianExp I M p 0 = p := by
   simp [riemannianExp_def]
 
@@ -140,7 +140,7 @@ theorem geodesicInterval_eq_preimage_expDomain (p : M) (v : TangentSpace I p) :
 /-- **The exponential map along a ray.**  For every `t`, the exponential of `t • v` is the maximal
 geodesic from `p` with initial velocity `v` at time `t`: on the maximal interval this is the
 homogeneity of maximal geodesics, while off it both sides take the junk value `p`. -/
-theorem riemannianExp_smul [T2Space (TangentBundle I M)]
+theorem riemannianExp_smul [T2Space M]
     (p : M) (v : TangentSpace I p) (t : ℝ) :
     riemannianExp I M p (t • v) = maximalGeodesic I M p v t := by
   by_cases ht : t ∈ geodesicInterval I M p v
@@ -177,7 +177,7 @@ private theorem expDomain_eq_preimage_maximalIntegralCurveFlowDomain (p : M) :
     maximalIntegralCurveInterval_geodesicSpray]
 
 /-- The natural domain of the Riemannian exponential map is open. -/
-theorem isOpen_expDomain [T2Space (TangentBundle I M)] (p : M) :
+theorem isOpen_expDomain [T2Space M] (p : M) :
     IsOpen (expDomain I M p) := by
   have hspray : ContMDiff I.tangent I.tangent.tangent 1
       (fun z : TangentBundle I M ↦
@@ -196,7 +196,7 @@ theorem isOpen_expDomain [T2Space (TangentBundle I M)] (p : M) :
   exact hflow.preimage hinput
 
 /-- The Riemannian exponential map is smooth on its natural domain. -/
-theorem contMDiffOn_riemannianExp [T2Space (TangentBundle I M)] (p : M) :
+theorem contMDiffOn_riemannianExp [T2Space M] (p : M) :
     ContMDiffOn 𝓘(ℝ, TangentSpace I p) I ∞
       (riemannianExp I M p) (expDomain I M p) := by
   have hspray : ContMDiff I.tangent I.tangent.tangent ∞
@@ -225,12 +225,12 @@ theorem contMDiffOn_riemannianExp [T2Space (TangentBundle I M)] (p : M) :
     simp only [Function.comp_apply, riemannianExp_def, maximalGeodesic_def]
 
 /-- The Riemannian exponential map is continuous on its natural domain. -/
-theorem continuousOn_riemannianExp [T2Space (TangentBundle I M)] (p : M) :
+theorem continuousOn_riemannianExp [T2Space M] (p : M) :
     ContinuousOn (riemannianExp I M p) (expDomain I M p) :=
   (contMDiffOn_riemannianExp (I := I) (M := M) p).continuousOn
 
 /-- The Riemannian exponential map is smooth at every point of its natural domain. -/
-theorem contMDiffAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
+theorem contMDiffAt_riemannianExp [T2Space M] {p : M}
     {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
     ContMDiffAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p) v :=
   (contMDiffOn_riemannianExp (I := I) (M := M) p v hv).contMDiffAt
@@ -238,7 +238,7 @@ theorem contMDiffAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
 
 /-- The velocity of the exponential image of a path is the differential of the exponential map
 applied to the derivative of the path in the tangent space. -/
-theorem curveVelocity_riemannianExp_comp [T2Space (TangentBundle I M)]
+theorem curveVelocity_riemannianExp_comp [T2Space M]
     {p : M} {w : ℝ → TangentSpace I p} {w' : TangentSpace I p} {t : ℝ}
     (hw : HasDerivAt w w' t) (hwt : w t ∈ expDomain I M p) :
     curveVelocity I (riemannianExp I M p ∘ w) t =
@@ -247,7 +247,7 @@ theorem curveVelocity_riemannianExp_comp [T2Space (TangentBundle I M)]
 
 /-- The velocity of an affine curve through the exponential map is its differential in the
 affine direction. -/
-theorem curveVelocity_riemannianExp_add_smul [T2Space (TangentBundle I M)]
+theorem curveVelocity_riemannianExp_add_smul [T2Space M]
     {p : M} {v w : TangentSpace I p} {u : ℝ} (hu : v + u • w ∈ expDomain I M p) :
     curveVelocity I (fun s : ℝ ↦ riemannianExp I M p (v + s • w)) u =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (v + u • w) w := by
@@ -257,7 +257,7 @@ theorem curveVelocity_riemannianExp_add_smul [T2Space (TangentBundle I M)]
 
 /-- The velocity of a radial curve through the exponential map is its differential in the
 radial direction. -/
-theorem curveVelocity_riemannianExp_smul [T2Space (TangentBundle I M)]
+theorem curveVelocity_riemannianExp_smul [T2Space M]
     {p : M} {v : TangentSpace I p} {t : ℝ} (ht : t • v ∈ expDomain I M p) :
     curveVelocity I (fun s : ℝ ↦ riemannianExp I M p (s • v)) t =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) v := by
@@ -271,7 +271,7 @@ theorem curveVelocity_riemannianExp_smul [T2Space (TangentBundle I M)]
   exact h
 
 /-- The Riemannian exponential map is continuous at every point of its natural domain. -/
-theorem continuousAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
+theorem continuousAt_riemannianExp [T2Space M] {p : M}
     {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
     ContinuousAt (riemannianExp I M p) v :=
   (contMDiffAt_riemannianExp (I := I) (M := M) hv).continuousAt
@@ -280,7 +280,7 @@ theorem continuousAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
 
 /-- **The differential of the exponential map at the origin** sends every tangent vector to
 itself. -/
-@[simp] theorem mfderiv_riemannianExp_apply_zero [T2Space (TangentBundle I M)] (p : M)
+@[simp] theorem mfderiv_riemannianExp_apply_zero [T2Space M] (p : M)
     (v : TangentSpace I p) :
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v = v := by
   have hd : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 :=
@@ -315,14 +315,14 @@ itself. -/
 /-- **The differential of the exponential map at the origin is the identity**, under the
 canonical identification `NormedSpace.fromTangentSpace` of the tangent space to `T_p M` at `0`
 with `T_p M`. -/
-theorem mfderiv_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
+theorem mfderiv_riemannianExp_zero [T2Space M] (p : M) :
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 =
       (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).toContinuousLinearMap := by
   ext v
   exact mfderiv_riemannianExp_apply_zero (I := I) p v
 
 /-- The exponential map has the identity of `T_p M` as its derivative at the origin. -/
-theorem hasMFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
+theorem hasMFDerivAt_riemannianExp_zero [T2Space M] (p : M) :
     HasMFDerivAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0
       (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).toContinuousLinearMap := by
   rw [← mfderiv_riemannianExp_zero]
@@ -331,7 +331,7 @@ theorem hasMFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
 
 /-- In extended coordinates, the exponential map has the canonical identification
 `T_p M →L[ℝ] E` as its strict derivative at the origin. -/
-theorem hasStrictFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
+theorem hasStrictFDerivAt_riemannianExp_zero [T2Space M] (p : M) :
     HasStrictFDerivAt
       (writtenInExtChartAt 𝓘(ℝ, TangentSpace I p) I 0 (riemannianExp I M p))
       (tangentSpaceCastModel I p).toContinuousLinearMap 0 := by
@@ -363,7 +363,7 @@ theorem hasStrictFDerivAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : 
   · simp
 
 /-- **The exponential map is a local diffeomorphism at the origin.** -/
-theorem isLocalDiffeomorphAt_riemannianExp_zero [T2Space (TangentBundle I M)] (p : M) :
+theorem isLocalDiffeomorphAt_riemannianExp_zero [T2Space M] (p : M) :
     IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p) 0 :=
   isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_riemannianExp (I := I) p)
     (isOpen_expDomain (I := I) p) (zero_mem_expDomain (I := I) p)
@@ -378,14 +378,38 @@ variable (I M) in
 def IsGeodesicallyCompleteAt (p : M) : Prop :=
   ∀ v : TangentSpace I p, geodesicInterval I M p v = univ
 
+omit [I.Boundaryless] in
 /-- **Completeness at a point via the exponential map.**  The exponential map at `p` is defined on
 all of `T_p M` exactly when every geodesic leaving `p` is defined for all time. -/
 theorem expDomain_eq_univ_iff {p : M} :
     expDomain I M p = univ ↔ IsGeodesicallyCompleteAt I M p := by
-  refine ⟨fun h v ↦ ?_, fun h ↦ eq_univ_of_forall fun v ↦ ?_⟩
-  · rw [geodesicInterval_eq_preimage_expDomain, h, preimage_univ]
+  refine ⟨fun h v ↦ eq_univ_of_forall fun t ↦ ?_, fun h ↦ eq_univ_of_forall fun v ↦ ?_⟩
+  · have h1 : ∀ w : TangentSpace I p, (1 : ℝ) ∈ geodesicInterval I M p w := fun w ↦
+      mem_expDomain_iff.1 (eq_univ_iff_forall.1 h w)
+    rcases eq_or_ne t 0 with rfl | ht
+    · exact zero_mem_geodesicInterval_of_mem (h1 v)
+    · simpa only [mul_one] using (mem_geodesicInterval_smul_iff ht).1 (h1 (t • v))
   · rw [mem_expDomain_iff, h v]
     exact mem_univ _
+
+omit [I.Boundaryless] in
+/-- Geodesic completeness at a point is equivalent to every initial velocity admitting a
+geodesic at time `1`. -/
+theorem isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval {p : M} :
+    IsGeodesicallyCompleteAt I M p ↔
+      ∀ v : TangentSpace I p, (1 : ℝ) ∈ geodesicInterval I M p v := by
+  rw [← expDomain_eq_univ_iff, eq_univ_iff_forall]
+  simp only [mem_expDomain_iff]
+
+omit [I.Boundaryless] in
+/-- Failure of geodesic completeness supplies an initial velocity whose geodesic is undefined
+at time `1`. -/
+theorem not_isGeodesicallyCompleteAt_iff_exists_one_notMem_geodesicInterval {p : M} :
+    ¬ IsGeodesicallyCompleteAt I M p ↔
+      ∃ v : TangentSpace I p, (1 : ℝ) ∉ geodesicInterval I M p v := by
+  simpa only [not_forall] using
+    (isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval (I := I) (M := M)
+      (p := p)).not
 
 end TauCeti.Manifold
 

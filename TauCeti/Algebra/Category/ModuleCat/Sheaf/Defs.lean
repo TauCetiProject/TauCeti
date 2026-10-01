@@ -11,12 +11,15 @@ public import Mathlib.Algebra.Category.Ring.Limits
 /-!
 # Basic definitions for sheaves of modules
 
-This file collects the coefficient sheaf obtained by forgetting commutativity and the counit
-identifying the sheafification of the underlying presheaf of a sheaf of modules with that sheaf.
+This file collects the coefficient sheaf obtained by forgetting commutativity, the counit
+identifying the sheafification of the underlying presheaf of a sheaf of modules with that sheaf,
+and the vanishing of every sheaf of modules over a sheaf of rings whose sections are trivial.
 
 ## Main declarations
 
 * `SheafOfModules.ringCatSheaf` forgets commutativity in a sheaf of commutative rings;
+* `SheafOfModules.isZero_of_forall_subsingleton`: sheaves of modules over a sheaf of rings all of
+  whose rings of sections are trivial are zero objects;
 * `SheafOfModules.sheafificationIso` identifies a sheaf of modules with the sheafification of its
   underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`).
 
@@ -26,7 +29,7 @@ scheme; the Picard group `Pic X` under `⊗`".
 
 public section
 
-open CategoryTheory Category
+open CategoryTheory Category Limits
 
 namespace TauCeti
 
@@ -37,6 +40,18 @@ noncomputable section
 namespace SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
+
+/-- Every sheaf of modules over a sheaf of rings all of whose rings of sections are trivial is a
+zero object. -/
+theorem isZero_of_forall_subsingleton {S : Sheaf J RingCat.{u}}
+    (hS : ∀ W, Subsingleton (S.obj.obj W)) (N : SheafOfModules.{v} S) : IsZero N := by
+  rw [IsZero.iff_id_eq_zero]
+  apply SheafOfModules.hom_ext
+  ext W x
+  have := hS W
+  have := Module.subsingleton (S.obj.obj W) (N.val.obj W)
+  exact Subsingleton.elim _ _
+
 variable [HasWeakSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
 
 /-- The sheaf of rings underlying a sheaf of commutative rings on a site; the site-level

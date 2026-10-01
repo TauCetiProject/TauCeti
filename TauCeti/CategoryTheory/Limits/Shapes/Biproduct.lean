@@ -5,10 +5,13 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.Data.Fintype.BigOperators
 
@@ -20,20 +23,54 @@ through the maps obtained by changing one summand at a time, and the squares obt
 an identity summand are pushouts or pullbacks. The biproduct of two cokernels is the cokernel of
 the biproduct of the two morphisms (`CategoryTheory.Limits.CokernelCofork.isColimitBiprod`); this
 is the biproduct analogue of Mathlib's `CategoryTheory.Limits.CokernelCofork.isColimitTensor`.
+The short complex of a mapped commutative square agrees with the mapped short complex through
+the canonical biproduct comparison.
 
 In a preadditive category, a zero object and binary biproducts already give all finite biproducts
 (`TauCeti.hasFiniteBiproducts_of_hasBinaryBiproducts`), and a finite biproduct indexed by
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
-inductive step for computing additive invariants of finite biproducts.
+inductive step for computing additive invariants of finite biproducts. An additive functor which
+kills one summand of a binary biproduct inverts the projection onto the other
+(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`).
 -/
 
 public section
+
+namespace CategoryTheory.CommSq
+
+open Limits
+
+universe v w u u'
+
+/-- Mapping the short complex of a commutative square agrees, up to the canonical biproduct
+comparison, with the short complex of the mapped square. -/
+noncomputable def shortComplexMapIso
+    {C₁ : Type u} {D : Type u'} [Category.{v} C₁] [Preadditive C₁]
+    [Category.{w} D] [Preadditive D]
+    {F : C₁ ⥤ D} [F.Additive]
+    {W X Y Z : C₁} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
+    [HasBinaryBiproduct X Y] [HasBinaryBiproduct (F.obj X) (F.obj Y)]
+    (sq : CommSq f g h i) :
+    sq.shortComplex.map F ≅ (F.map_commSq sq).shortComplex := by
+  letI : PreservesBinaryBiproducts F :=
+    preservesBinaryBiproducts_of_preservesBiproducts F
+  exact ShortComplex.isoMk (Iso.refl _) (F.mapBiprod X Y) (Iso.refl _)
+    (by
+      dsimp only [ShortComplex.map, CommSq.shortComplex, Functor.map_commSq]
+      simpa only [Iso.refl_hom, Category.id_comp, Functor.map_neg] using
+        (biprod.map_lift_mapBiprod F X Y f (-g)).symm)
+    (by
+      dsimp only [ShortComplex.map, CommSq.shortComplex, Functor.map_commSq]
+      simpa only [Iso.refl_hom, Category.comp_id] using
+        (biprod.mapBiprod_hom_desc F X Y h i))
+
+end CategoryTheory.CommSq
 
 namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe v u
+universe v w w' u u'
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
 
@@ -113,6 +150,24 @@ theorem biproductOptionIso_hom_snd_π (j : J) :
 end Preadditive
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+open Limits
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [Preadditive C]
+  [Preadditive D] (F : C ⥤ D) [F.Additive]
+
+/-- An additive functor which sends the second summand of a binary biproduct to a zero object
+sends the first projection to an isomorphism, with inverse the image of the first inclusion. -/
+theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
+    (hY : IsZero (F.obj Y)) : IsIso (F.map (biprod.fst : X ⊞ Y ⟶ X)) := by
+  refine ⟨F.map biprod.inl, ?_, ?_⟩
+  · rw [← F.map_comp, eq_sub_of_add_eq biprod.total]
+    simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
+  · rw [← F.map_comp, biprod.inl_fst, F.map_id]
+
+end CategoryTheory.Functor
 
 namespace CategoryTheory.Limits.CokernelCofork
 

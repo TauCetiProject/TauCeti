@@ -11,9 +11,13 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 /-!
 # Eisenstein polynomials over discrete valuation rings
 
-This file records the elementary consequence of the Eisenstein condition that the constant
-coefficient is a uniformizer.  It complements Mathlib's general Eisenstein criterion with the
-specialization to a discrete valuation ring.
+The Eisenstein condition over a discrete valuation ring makes the constant coefficient a
+uniformizer.
+
+## Main results
+
+* `Polynomial.IsEisensteinAt.irreducible_coeff_zero` identifies the constant coefficient as an
+  irreducible element.
 -/
 
 public section

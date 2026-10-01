@@ -93,6 +93,19 @@ namespace IntermediateField
 
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
 
+/-- Membership in the fixed field of a cyclic subgroup is fixedness under its generator. -/
+-- Not a simp lemma: `mem_fixedField_iff` normalizes the left-hand side first (`simpNF`).
+theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
+    x ∈ fixedField (Subgroup.zpowers σ) ↔ σ x = x := by
+  rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
+  exact (MulAction.mem_fixedBy_zpowers_iff_mem_fixedBy (g := σ) (a := x))
+
+/-- The degree of a cyclic fixed field times the order of its generator is the total degree. -/
+theorem finrank_fixedField_zpowers_mul_orderOf [FiniteDimensional K M]
+    (σ : M ≃ₐ[K] M) :
+    Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
+  rw [← Nat.card_zpowers, ← finrank_fixedField_eq_card, Module.finrank_mul_finrank]
+
 /-- The Galois connection between fixing subgroups and fixed intermediate fields. -/
 theorem fixingSubgroup_fixedField_gc :
     GaloisConnection

@@ -39,6 +39,9 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
 * `TauCeti.decompositionSubgroup_valuationSubring_eq_top`: every automorphism preserves the
   valuation subring of `L`, so Mathlib's `ValuationSubring.decompositionSubgroup` is everything.
 * `TauCeti.integerRingFaithfulSMul`: an automorphism is determined by its action on `𝒪[L]`.
+* `AlgEquiv.restrictScalars_smul_integerRing` and `AlgEquiv.smul_algebraMap_integerRing`: the
+  action is compatible with restricting scalars to a subextension and with restricting an
+  automorphism to a normal subextension.
 * `TauCeti.integerRingSMulCommClass`: the action on `𝒪[L]` is by `𝒪[K]`-algebra automorphisms.
 
 ## References
@@ -130,6 +133,19 @@ theorem restrictScalars_smul_integerRing {K' : Type*} [Field K'] [ValuativeRel K
     σ.restrictScalars K • x = σ • x :=
   Subtype.ext (by rw [coe_smul_integerRing, coe_smul_integerRing, restrictScalars_apply])
 
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- For a subextension `K'` of `L/K` normal over `K`, an automorphism of `L/K` acts on the image of
+the ring of integers of `K'` through its restriction to `K'`. -/
+@[simp]
+theorem smul_algebraMap_integerRing {K' : Type*} [Field K'] [ValuativeRel K']
+    [Algebra K K'] [Algebra K' L]
+    [IsScalarTower K K' L] [ValuativeExtension K K'] [ValuativeExtension K' L]
+    [Module.Finite K K'] [Normal K K'] (σ : L ≃ₐ[K] L) (w : 𝒪[K']) :
+    σ • algebraMap 𝒪[K'] 𝒪[L] w = algebraMap 𝒪[K'] 𝒪[L] (σ.restrictNormal K' • w) :=
+  Subtype.ext (by
+    rw [coe_smul_integerRing, coe_algebraMap_integerRing, coe_algebraMap_integerRing,
+      coe_smul_integerRing, restrictNormal_commutes])
+
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
 noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L] where
   toFun x := ⟨MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ x, by
@@ -188,6 +204,12 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
+/-- Automorphisms act on the ring of integers by `𝒪[K]`-algebra automorphisms: the action commutes
+with the scalars from the ring of integers of the base field. -/
+instance integerRingSMulCommClass : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
+  ⟨fun σ x y ↦ by
+    simpa only [AlgEquiv.integerRingEquiv_apply] using map_smul σ.integerRingEquiv x y⟩
+
 /-- The residue-field action of extension automorphisms fixes the base residue field. -/
 noncomputable instance residueFieldSMulCommClass :
     SMulCommClass (L ≃ₐ[K] L) 𝓀[K] 𝓀[L] where
@@ -243,11 +265,5 @@ instance integerRingFaithfulSMul : FaithfulSMul (L ≃ₐ[K] L) 𝒪[L] where
     rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, map_mul, map_mul,
       AlgEquiv.commutes, AlgEquiv.commutes] at hσ
     exact mul_left_cancel₀ ha' hσ
-
-/-- Automorphisms act on the ring of integers by `𝒪[K]`-algebra automorphisms: the action commutes
-with the scalars from the ring of integers of the base field. -/
-instance integerRingSMulCommClass : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
-  ⟨fun σ x y ↦ by
-    simpa only [AlgEquiv.integerRingEquiv_apply] using map_smul σ.integerRingEquiv x y⟩
 
 end TauCeti

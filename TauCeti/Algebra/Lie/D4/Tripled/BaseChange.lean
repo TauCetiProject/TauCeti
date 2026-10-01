@@ -33,6 +33,9 @@ group scheme of type `D₄`.
 ## Main declarations
 
 * `TauCeti.D4Tripled.baseChangeDefiningIdeal`: the transported defining ideal in `O(GL₂₄/A)`.
+* `TauCeti.D4Tripled.baseChangeDefiningIdeal_def`: its unfolding to the generic construction.
+* `TauCeti.D4Tripled.coordinateHopfAlgebra` and `TauCeti.D4Tripled.coordinateMap`: the
+  specialized coordinate Hopf algebra and its quotient map from `O(GL₂₄/A)`.
 * `TauCeti.D4Tripled.baseChangeCoordinateIso`: its quotient is the scalar extension of the
   integral carrier coordinate Hopf algebra.
 * `TauCeti.D4Tripled.baseChangePointsMulEquiv`: the points of that quotient in a commutative
@@ -41,6 +44,8 @@ group scheme of type `D₄`.
   subgroup factored through the specialized carrier.
 * `TauCeti.D4Tripled.weightTorusToBaseChangeCoordinateMap`: the transported weight torus factored
   through the specialized carrier.
+* `TauCeti.D4Tripled.generatorCoordinateMap`: the family of transported numbered root and
+  weight-torus maps into the ambient general linear group.
 
 ## Main results
 
@@ -92,6 +97,36 @@ attribute [local instance high] Algebra.toModule
 
 variable (A : Type v) [CommRing A]
 
+/-- The coordinate Hopf algebras of the numbered root groups and the split weight torus. -/
+noncomputable abbrev generatorCoordinateAlgebra :
+    Sum (Fin 4 ⊕ Fin 4) Unit → CommHopfAlgCat A
+  | .inl _ => AdditiveGroup.coordinateHopfAlgebra A
+  | .inr _ => (DiagonalizableGroup.coordinateRing A
+      (SplitTorus.characterGroup (Fin 4))).obj
+
+/-- The coordinate maps of the numbered root subgroups and split weight torus into `GL₂₄`. -/
+noncomputable def generatorCoordinateMap (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+    GeneralLinear.coordinateHopfAlgebra A 24 ⟶ generatorCoordinateAlgebra A j :=
+  match j with
+  | .inl i => kostantRootSubgroupBaseChangePresentationCoordinateMap
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i
+  | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A d4TripledWeight
+
+/-- The numbered branches of the generator family are the transported root maps. -/
+@[simp] theorem generatorCoordinateMap_inl (i : Fin 4 ⊕ Fin 4) :
+    generatorCoordinateMap A (.inl i) =
+      kostantRootSubgroupBaseChangePresentationCoordinateMap
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i := (rfl)
+
+/-- The final branch of the generator family is the transported weight torus. -/
+@[simp] theorem generatorCoordinateMap_inr :
+    generatorCoordinateMap A (.inr ()) =
+      GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A d4TripledWeight := (rfl)
+
 /-- The Hopf ideal in `O(GL₂₄/A)` obtained by transporting the defining ideal of the integral
 tripled type-`D₄` carrier along `ℤ → A`. -/
 noncomputable def baseChangeDefiningIdeal :
@@ -101,6 +136,62 @@ noncomputable def baseChangeDefiningIdeal :
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A
+
+/-- The transported defining ideal is the ideal supplied by the generic Kostant toral-closure base
+change. -/
+theorem baseChangeDefiningIdeal_def :
+    baseChangeDefiningIdeal A =
+      kostantToralBaseChangePresentationIdeal
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
+        d4TripledWeight A := by
+  rw [baseChangeDefiningIdeal]
+
+/-- The coordinate Hopf algebra of the tripled type-`D₄` carrier after base change to `A`. -/
+public noncomputable abbrev coordinateHopfAlgebra :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 24)
+    (baseChangeDefiningIdeal A)
+
+/-- The quotient coordinate morphism `O(GL₂₄) ⟶ O(carrier)`, representing the closed
+immersion of the specialized tripled type-`D₄` carrier into `GL₂₄`. -/
+public noncomputable def coordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A 24 ⟶ coordinateHopfAlgebra A :=
+  CommHopfAlgCat.mkQuotient _ _
+
+/-- The specialized carrier coordinate morphism is surjective. -/
+theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_surjective
+    (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
+
+/-- The kernel of the specialized carrier coordinate morphism is its transported defining
+ideal. -/
+@[simp]
+theorem coordinateMap_ker :
+    RingHom.ker (coordinateMap A).hom =
+      (baseChangeDefiningIdeal A).toIdeal := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_ker
+    (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
+
+section Points
+
+variable {B : Type w} [CommRing B] [Algebra A B]
+
+/-- Mapping a carrier point along the coordinate morphism gives the corresponding quotient
+point of the ambient general linear group. -/
+@[simp]
+theorem mapPointsFunctor_coordinateMap_app
+    (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
+    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+      CommHopfAlgCat.quotientPointsHom
+        (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
+        (CommAlgCat.of A B) g := by
+  apply WithConv.ext
+  rfl
+
+end Points
 
 /-- Membership in the transported defining ideal is membership of the corresponding element in the
 base change of the named integral defining ideal. -/
@@ -488,26 +579,13 @@ torus lies in the base change of the integral tripled type-`D₄` carrier.
 
 The reverse inclusion is not asserted over an arbitrary base ring. -/
 theorem baseChangeDefiningIdeal_le_commonKernel :
-    let K : Sum (Fin 4 ⊕ Fin 4) Unit → CommHopfAlgCat A
-      | .inl _ => AdditiveGroup.coordinateHopfAlgebra A
-      | .inr _ =>
-          (DiagonalizableGroup.coordinateRing A (SplitTorus.characterGroup (Fin 4))).obj
     baseChangeDefiningIdeal A ≤
-      CommHopfAlgCat.commonKernelHopfIdeal (K := K)
-        (fun j => match j with
-          | .inl k => kostantRootSubgroupBaseChangePresentationCoordinateMap
-              (TauCeti.serreRootGenerator weightTable.cartanMatrix)
-              (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-              rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k
-          | .inr _ =>
-              GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A d4TripledWeight) := by
+      CommHopfAlgCat.commonKernelHopfIdeal (generatorCoordinateMap A) := by
   have h := kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A
-  -- The generic containment indexes its generators by a `match` of its own, and neither that
-  -- matcher nor `commonKernelHopfIdeal` is exposed, so compare the two families branchwise.
   dsimp only at h ⊢
   rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff] at h ⊢
   rintro (k | _)

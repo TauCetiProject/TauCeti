@@ -68,11 +68,12 @@ why this file does not use it: `!![1, 1; 0, 1] ∈ Γ₁(N)` for every `N` while
 * Positivity of the determinant enters exactly once, in **homogeneity**: on the positive branch
   the slash action's conjugation `σ` is trivial and scalars commute past it
   (`ModularForm.rat_smul_slash_of_det_pos`), whereas over a general `GL(2, ℚ)`-element the twist
-  is complex conjugation and linearity would fail. So `rightCosetRep_mem_posDetInt`,
-  `det_rightCosetRep_pos` and `heckeSlashSum_smul` — and only those — mention determinants, and
-  each asks for the weakest form it can. `rightCosetRep_mem_posDetInt` concludes a `posDetInt`
-  membership and so needs integrality. `det_rightCosetRep_pos` concludes a statement about
-  determinants alone, so it asks only `Γ₂ ≤ GLPos (Fin 2) ℚ` and `δ ∈ GLPos (Fin 2) ℚ`.
+  is complex conjugation and linearity would fail. So `det_rightCosetRep_pos` and
+  `heckeSlashSum_smul` — and only those — mention determinants, and each asks for the weakest
+  form it can. (That the representatives lie in `posDetInt 2` when `δ` and `Γ₂` do is the general
+  `DoubleCoset.rightCosetRep_mem` at that submonoid.) `det_rightCosetRep_pos` concludes a
+  statement about determinants alone, so it asks only `Γ₂ ≤ GLPos (Fin 2) ℚ` and
+  `δ ∈ GLPos (Fin 2) ℚ`.
   `heckeSlashSum_smul` asks less still: not a condition on the factors but
   `∀ v, 0 < det (rightCosetRep D v)`, since a product can be positive with neither factor
   positive and a factorwise hypothesis would exclude those cases. `det_rightCosetRep_pos` is how
@@ -128,15 +129,6 @@ namespace HeckeRing.GL2
 
 variable (k : ℤ) {Δ : Submonoid (GL (Fin 2) ℚ)} {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)}
   (D : HeckeCoset Δ Γ₁ Γ₂)
-
-/-- Each representative lies in `posDetInt 2` when `δ` does and `Γ₂` does. Only `Γ₂` and the
-chosen `δ` are constrained: nothing is asked of `Γ₁`, and nothing of `Δ` beyond containing `δ`.
-The hypothesis is used at `τᵥ⁻¹`, which lies in `Γ₂` because `Γ₂` is a group. -/
-lemma rightCosetRep_mem_posDetInt (hΓ₂ : Γ₂.toSubmonoid ≤ posDetInt 2)
-    (hD : (D.out : GL (Fin 2) ℚ) ∈ posDetInt 2)
-    (v : DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) : rightCosetRep D v ∈ posDetInt 2 := by
-  have hv : ((v.out : GL (Fin 2) ℚ))⁻¹ ∈ Γ₂ := inv_mem v.out.2
-  exact rightCosetRep_def D v ▸ mul_mem hD (hΓ₂ hv)
 
 /-- The representatives have positive determinant, in the shape
 `ModularForm.rat_smul_slash_of_det_pos` consumes.

@@ -182,6 +182,14 @@ theorem defectExponent_eq_top_iff {a : Kˣ} : defectExponent a = ⊤ ↔ IsSquar
   unfold defectExponent
   split_ifs with h <;> simp [h]
 
+/-- A unit with finite defect exponent is not a square. -/
+theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}
+    (hd : defectExponent a = d) : ¬IsSquare a := by
+  intro hsq
+  have htop := defectExponent_eq_top_iff.mpr hsq
+  rw [hd] at htop
+  exact WithTop.coe_ne_top htop
+
 /-- Every approximation order `v_K(a - ξ²)` is at most the defect exponent. -/
 theorem le_defectExponent (a : Kˣ) (ξ : K) (x : Kˣ) (hx : (x : K) = a - ξ ^ 2) :
     ((normalizedValuation K x).toAdd : WithTop ℤ) ≤ defectExponent a := by
@@ -368,7 +376,7 @@ theorem quadraticDefect_eq_maximalIdeal_zpow {a : Kˣ} {n : ℤ} (h : defectExpo
     quadraticDefect a =
       ((IsLocalRing.maximalIdeal 𝒪[K] : Ideal 𝒪[K]) : FractionalIdeal (nonZeroDivisors 𝒪[K]) K) ^
         n := by
-  have ha : ¬IsSquare a := fun hsq => by simp [defectExponent_eq_top_iff.mpr hsq] at h
+  have ha : ¬IsSquare a := not_isSquare_of_defectExponent_eq h
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq ha
   have hle := valuation_le_valuation_sub_sq_of_eq ha hxd
   rw [h, WithTop.coe_inj] at hxd

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Unramified
+public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different
 
 /-!

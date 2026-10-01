@@ -35,6 +35,8 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
   subgroups `N ⊔ U` with `U` open normal.
 * `Subgroup.exists_le_of_iInf_le_of_directed`: in a compact group, a directed family of closed
   subgroups whose infimum lies in an open subgroup has a member lying in it.
+* `Subgroup.exists_openSubgroup_le_subset_of_isClosed`: an open set containing a closed subgroup
+  contains an open subgroup containing it.
 * `Subgroup.exists_openNormalSubgroup_comap_le`: open normal subgroups of a subgroup are
   refined by pullbacks of ambient open normal subgroups.
 * `QuotientGroup.connectedComponent_one`, `QuotientGroup.instTotallyDisconnectedSpace`:
@@ -114,6 +116,30 @@ theorem _root_.Subgroup.exists_le_of_iInf_le_of_directed {ι : Type*} [Nonempty 
     (fun i j ↦ (hdir i j).imp fun k hk ↦
       ⟨SetLike.coe_subset_coe.mpr hk.1, SetLike.coe_subset_coe.mpr hk.2⟩)
   exact ⟨i, fun x hx ↦ by_contra fun hxM ↦ hi.notMem_of_mem_left hxM hx⟩
+
+/-- **An open neighbourhood of a closed subgroup contains an open subgroup containing it.** In a
+profinite group, every open set containing a closed subgroup `H` contains an open subgroup
+`V ≥ H`. -/
+theorem _root_.Subgroup.exists_openSubgroup_le_subset_of_isClosed (H : Subgroup G)
+    (hH : IsClosed (H : Set G)) {W : Set G} (hW : IsOpen W) (hHW : (H : Set G) ⊆ W) :
+    ∃ V : OpenSubgroup G, H ≤ V ∧ (V : Set G) ⊆ W := by
+  -- `H` is the intersection of the open subgroups `H ⊔ U`, `U` open normal, so by compactness of
+  -- `Wᶜ` one of them is already contained in `W`.
+  have hopen (U : OpenNormalSubgroup G) : IsOpen ((H ⊔ U.toSubgroup : Subgroup G) : Set G) :=
+    Subgroup.isOpen_mono le_sup_right U.toOpenSubgroup.isOpen
+  -- the intersection of the `H ⊔ U` is `H`, which misses the compact set `Wᶜ`
+  have hinf : Disjoint Wᶜ
+      (⋂ U : OpenNormalSubgroup G, ((H ⊔ U.toSubgroup : Subgroup G) : Set G)) := by
+    rw [← Subgroup.coe_iInf, ← Subgroup.eq_iInf_sup_openNormalSubgroup H hH]
+    exact Set.disjoint_compl_left_iff_subset.mpr hHW
+  have : Nonempty (OpenNormalSubgroup G) :=
+    ⟨⟨⊤, (OpenSubgroup.toSubgroup_top (G := G)).symm ▸ Subgroup.normal_top⟩⟩
+  obtain ⟨U, hU⟩ := hW.isClosed_compl.isCompact.elim_directed_family_closed
+    (fun U : OpenNormalSubgroup G ↦ ((H ⊔ U.toSubgroup : Subgroup G) : Set G))
+    (fun U ↦ Subgroup.isClosed_of_isOpen _ (hopen U)) hinf
+    (fun U V ↦ ⟨U ⊓ V, SetLike.coe_subset_coe.mpr (sup_le_sup_left inf_le_left _),
+      SetLike.coe_subset_coe.mpr (sup_le_sup_left inf_le_right _)⟩)
+  exact ⟨⟨H ⊔ U.toSubgroup, hopen U⟩, le_sup_left, Set.disjoint_compl_left_iff_subset.mp hU⟩
 
 /-- Every open normal subgroup of a subgroup of a profinite group contains the pullback of
 an ambient open normal subgroup. -/

@@ -567,6 +567,18 @@ theorem W1p.memLp_posPartAbove {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
       MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
   exact hlip.comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
 
+omit [FiniteDimensional ℝ E] in
+/-- Raising the level of an `Lᵖ` positive truncation preserves its `Lᵖ` membership. -/
+theorem W1p.memLp_posPartAbove_of_le (u : W1p mu Omega p) {k l : ℝ} (hkl : k ≤ l)
+    (hk : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
+    MemLp (fun x => max (W1p.value u x - l) 0) p (mu.restrict Omega) :=
+  hk.of_le
+    (((continuous_id.sub continuous_const).max continuous_const).comp_aestronglyMeasurable
+      (Lp.aestronglyMeasurable _))
+    (Filter.Eventually.of_forall fun x => by
+      rw [Real.norm_of_nonneg (le_max_right _ _), Real.norm_of_nonneg (le_max_right _ _)]
+      exact max_le_max (sub_le_sub_left hkl _) le_rfl)
+
 /-- **For `1 ≤ p < ∞`, truncation above any real level is weakly differentiable**, with
 weak gradient `1_{u > k} ∇u`. -/
 theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu Omega p) :

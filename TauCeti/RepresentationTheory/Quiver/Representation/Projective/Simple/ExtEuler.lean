@@ -47,7 +47,6 @@ private theorem finiteDimensional_hom_vertexSimpleModuleResolution_X₁ (i : Q)
   let e := vertexSimpleModuleResolutionX₁Iso k i
   have hf : ∀ a : J, FiniteDimensional k (P a ⟶ Y) := fun a ↦
     finiteDimensional_hom_indecProjModule k Q a.1 Y (hY a.1 a.2)
-  have hp := finiteDimensional_hom_biproduct k P Y hf
   exact Module.Finite.equiv (CategoryTheory.Linear.homCongr k e (Iso.refl Y)).symm
 
 /-- A vertex simple is Euler-admissible when the target has finite-dimensional spaces at
@@ -103,7 +102,7 @@ private theorem finrank_hom_vertexSimpleModuleResolution_X₁ (i : Q)
   calc
     _ = Module.finrank k (⨁ P ⟶ Y) :=
       (CategoryTheory.Linear.homCongr k e (Iso.refl Y)).finrank_eq
-    _ = ∑ a : J, Module.finrank k (P a ⟶ Y) := finrank_hom_biproduct k P Y hf
+    _ = ∑ a : J, Module.finrank k (P a ⟶ Y) := finrank_hom_biproduct k P Y
     _ = _ := by
       simp only [P, finrank_hom_indecProjModule]
       apply Finset.sum_congr
@@ -184,5 +183,38 @@ theorem extEuler_vertexSimpleModule_eq_eulerForm (i : Q)
   simp [Finset.sum_const]
 
 end EulerForm
+
+open scoped Classical in
+/-- The Ext-Euler value between vertex simples is the Kronecker delta minus the number of
+arrows from the first vertex to the second. -/
+@[simp]
+theorem extEuler_vertexSimpleModule_vertexSimpleModule (i j : Q)
+    [Finite ((a : Q) × (i ⟶ a))] :
+    extEuler k (isEulerAdmissible_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
+      (finiteDimensional_vertexSimpleModule_obj k Q j i)
+      (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)) =
+      (if i = j then 1 else 0) - (Nat.card (i ⟶ j) : ℤ) := by
+  classical
+  have : Finite (i ⟶ j) := Finite.of_injective
+    (fun f : i ⟶ j ↦ (⟨j, f⟩ : (a : Q) × (i ⟶ a))) (by
+      intro f g h
+      cases h
+      rfl)
+  let _ : Fintype (i ⟶ j) := Fintype.ofFinite _
+  let _ : Fintype ((a : Q) × (i ⟶ a)) := Fintype.ofFinite _
+  rw [extEuler_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
+    (finiteDimensional_vertexSimpleModule_obj k Q j i)
+    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)]
+  simp only [dimVector_eq_of_iso (vertexSimpleModuleIso k Q j), dimVector_simpleRep]
+  simp only [Pi.single_apply]
+  simp only [Nat.cast_ite, Nat.cast_one, CharP.cast_eq_zero, Finset.sum_boole,
+    sub_right_inj, Nat.cast_inj]
+  let e : {x : (a : Q) × (i ⟶ a) // x.1 = j} ≃ (i ⟶ j) := {
+    toFun := fun ⟨⟨a, f⟩, h⟩ ↦ by cases h; exact f
+    invFun := fun f ↦ ⟨⟨j, f⟩, rfl⟩
+    left_inv := by intro ⟨⟨a, f⟩, h⟩; cases h; rfl
+    right_inv := by intro f; rfl
+  }
+  simpa only [Fintype.card_subtype, Nat.card_eq_fintype_card] using Fintype.card_congr e
 
 end TauCeti

@@ -129,7 +129,7 @@ value. The empty code is excluded because its bracket is normalized to one. -/
 /-- Mirroring commutes with adjoining an unoriented circle. -/
 @[simp] theorem mirror_adjoinCircle (D : PDCode n) :
     D.adjoinCircle.mirror = D.mirror.adjoinCircle := by
-  apply ext
+  apply PDCode.ext
   · simp
   · simp
   · simp
@@ -182,7 +182,7 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
 @[simp] theorem mirror_adjoinCircle (D : OrientedPDCode n) (orientation : Bool) :
     (OrientedPDCode.adjoinCircle D orientation).mirror =
       OrientedPDCode.adjoinCircle D.mirror orientation := by
-  apply ext <;> simp
+  apply OrientedPDCode.ext <;> simp
 
 /-- Adjoining a circle to a nonempty oriented diagram multiplies the normalized bracket by the
 same loop value as the unoriented bracket, since the writhe is unchanged. -/
@@ -237,7 +237,7 @@ framing. -/
     (framing : ℤ) :
     (FramedOrientedPDCode.adjoinCircle D orientation framing).mirror =
       FramedOrientedPDCode.adjoinCircle D.mirror orientation (-framing) := by
-  apply ext <;> simp
+  apply FramedOrientedPDCode.ext <;> simp
 
 end FramedOrientedPDCode
 

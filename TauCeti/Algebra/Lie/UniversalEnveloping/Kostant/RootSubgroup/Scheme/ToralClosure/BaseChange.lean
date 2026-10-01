@@ -119,6 +119,16 @@ noncomputable def kostantRootSubgroupToralBaseChangeCoordinateMap (i : I) :
     CommHopfAlgCat.baseChangeMap
       (kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i)
 
+/-- Reading a root-subgroup map back through the toral base-change comparison recovers the scalar
+extension of its integral factorization. -/
+@[simp]
+theorem kostantToralBaseChangeIso_inv_comp_rootSubgroupToralBaseChangeCoordinateMap (i : I) :
+    (kostantToralBaseChangeIso e h ρ M hM hnil b wt A).inv ≫
+        kostantRootSubgroupToralBaseChangeCoordinateMap e h ρ M hM hnil b wt A i =
+      CommHopfAlgCat.baseChangeMap
+        (kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i) := by
+  simp [kostantRootSubgroupToralBaseChangeCoordinateMap]
+
 /-- The specialized quotient map followed by the factored root-subgroup map is the base change of
 the original represented root-subgroup coordinate map. -/
 @[simp]
@@ -145,6 +155,16 @@ noncomputable def kostantWeightTorusToralBaseChangeCoordinateMap :
   (kostantToralBaseChangeIso e h ρ M hM hnil b wt A).hom ≫
     CommHopfAlgCat.baseChangeMap
       (kostantWeightTorusToralCoordinateMap e h ρ M hM hnil b wt)
+
+/-- Reading the weight-torus map back through the toral base-change comparison recovers the scalar
+extension of its integral factorization. -/
+@[simp]
+theorem kostantToralBaseChangeIso_inv_comp_weightTorusToralBaseChangeCoordinateMap :
+    (kostantToralBaseChangeIso e h ρ M hM hnil b wt A).inv ≫
+        kostantWeightTorusToralBaseChangeCoordinateMap e h ρ M hM hnil b wt A =
+      CommHopfAlgCat.baseChangeMap
+        (kostantWeightTorusToralCoordinateMap e h ρ M hM hnil b wt) := by
+  simp [kostantWeightTorusToralBaseChangeCoordinateMap]
 
 /-- The specialized quotient map followed by the factored weight-torus map is the base change of
 the original represented weight-torus coordinate map. -/

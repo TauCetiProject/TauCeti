@@ -246,14 +246,10 @@ theorem mem_even_of_det_pinToOrthogonal_eq_one [Module.Free R M] [Module.Finite 
     (hdet : LinearEquiv.det
       (((pinToOrthogonal Q p : QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M)) = 1) :
     (p : CliffordAlgebra Q) ∈ even Q := by
-  let l : lipschitzGroup Q := pinToLipschitz Q p
-  have hlcoe : ((l : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = (p : CliffordAlgebra Q) := by
-    -- Expose the nested Pin and Lipschitz subgroup coercions in the ambient Clifford algebra.
-    change (((pinToLipschitz Q p : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) = _
-    rw [coe_pinToLipschitz_apply]
-  have hinv := involute_eq_det_smul_of_mem_lipschitz Q l.2
-  rw [hlcoe, lipschitzDet_pinToLipschitz, hdet, Units.val_one, map_one, one_mul] at hinv
-  exact mem_even_of_involute_eq Q hinv
+  rw [← coe_pinToLipschitz_apply Q p]
+  apply mem_even_of_det_lipschitzToOrthogonal_eq_one Q (pinToLipschitz Q p)
+  rw [← pinToOrthogonal_eq_lipschitzToOrthogonal, QuadraticMap.orthogonalDet_apply]
+  exact hdet
 
 /-- The conjugation action of the Spin group, restricted to the determinant-one orthogonal
 automorphisms. -/

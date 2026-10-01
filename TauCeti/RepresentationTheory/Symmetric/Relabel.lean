@@ -255,7 +255,6 @@ theorem character_spechtIdealRep_relabel :
   Representation.char_iso (spechtIdealRelabelRepEquiv σ t)
 
 /-- Relabeling does not change the character of the bundled Young-symmetrizer representation. -/
-@[simp]
 theorem character_spechtIdealFDRep_relabel :
     (spechtIdealFDRep (relabel σ t)).character = (spechtIdealFDRep t).character :=
   -- bundling leaves both the module and the action alone, so the two characters are the same

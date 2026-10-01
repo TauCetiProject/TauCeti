@@ -6,19 +6,25 @@ Authors: Claude
 module
 
 public import Mathlib.Topology.Separation.Connected
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Acyclic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Basic
 
 /-!
-# Acyclicity of `Coind_1^G` and dimension shifting in low degrees
+# Acyclicity of `Coind_1^G` and dimension shifting
 
 For a profinite group `G`, the coinduced module `Coind_1^G A` of the trivial subgroup, which is the
 group of all locally constant maps `G → A` (`TauCeti.mem_coind_bot_iff`), has vanishing
-continuous cohomology in degrees one and two. This is Shapiro's lemma at `U = ⊥`: the trivial
-subgroup of a totally disconnected group is closed, and a trivial group has no cohomology in
-positive degrees.
+explicit continuous cohomology in degrees one and two. This is Shapiro's lemma at `U = ⊥`: the
+trivial subgroup of a totally disconnected group is closed, and a trivial group has no cohomology
+in positive degrees. In every positive degree, and for any compact `G`, the canonical continuous
+cohomology of `Coind_1^G A` vanishes by
+`TauCeti.ContCohomology.subsingleton_continuousCohomology_discreteCoind_bot`.
 
-Every discrete `G`-module `M` embeds into this acyclic module by its orbit maps,
+Every discrete `G`-module `M` embeds into this acyclic module by its orbit maps, the unit of
+coinduction `TauCeti.DiscreteCoind.unit G ⊥ M`,
 
 ```text
 M ↪ Coind_1^G M,   m ↦ (x ↦ x • m),
@@ -38,9 +44,18 @@ sequence of discrete modules whose middle term has vanishing `H¹` and `H²`
 (`TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_bijective_of_subsingleton`, in
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LongExact.lean`).
 
+In every positive degree the same short exact sequence, fed to the long exact sequence of Mathlib's
+canonical continuous cohomology and to the all-degree acyclicity of `Coind_1^G M`, gives
+
+```text
+Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)   (i ≥ 1)
+```
+
+for every compact group `G` (`TauCeti.ContCohomology.dimensionShiftIso`), inverse to the
+connecting map, which is an isomorphism (`TauCeti.ContCohomology.isIso_coindBotShortExact_delta`).
+
 ## Main definitions
 
-* `TauCeti.ContCohomology.coindBotEmbedding`: the orbit-map embedding `M → Coind_1^G M`.
 * `TauCeti.ContCohomology.DimensionShiftQuotient`: the discrete `G`-module `Coind_1^G M ⧸ M`.
 * `TauCeti.ContCohomology.coindBotShortExact`: the short exact sequence
   `0 → M → Coind_1^G M → Coind_1^G M ⧸ M → 0` of discrete `G`-modules.
@@ -48,21 +63,25 @@ sequence of discrete modules whose middle term has vanishing `H¹` and `H²`
   connecting map `δ¹`.
 * `TauCeti.ContCohomology.explicitDimensionShift0`: the cokernel of
   `H⁰(G, Coind_1^G M) → H⁰(G, Coind_1^G M ⧸ M)` is `H¹(G, M)`, through `δ⁰`.
+* `TauCeti.ContCohomology.dimensionShiftIso`: **dimension shifting in every positive degree**,
+  `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for `i ≥ 1` and the canonical continuous cohomology,
+  inverse to the connecting map.
 
 ## Main statements
 
 * `TauCeti.ContCohomology.subsingleton_H1_discreteCoind_bot` and
   `subsingleton_H2_discreteCoind_bot`: **acyclicity of `Coind_1^G A`** in degrees one and two,
   for profinite `G`.
+* `TauCeti.ContCohomology.isIso_coindBotShortExact_delta`: the connecting map
+  `Hⁱ(G, Coind_1^G M ⧸ M) ⟶ Hⁱ⁺¹(G, M)` is an isomorphism for `i ≥ 1`, for compact `G`.
 
 ## Implementation notes
 
 As for `TauCeti.DiscreteCoind`, the quotient is a type synonym carrying the discrete topology; the
 quotient topology inherited from `QuotientAddGroup` is not the one used for coefficients. Its
 `G`-action is induced by the right-translation action on `Coind_1^G M`, which preserves the image
-of `M` because the embedding is equivariant (`TauCeti.ContCohomology.coindBotEmbedding_smul`), and
-it is continuous because the stabilizer of a class contains the open stabilizer of any
-representative.
+of `M` because the embedding is `G`-equivariant, and it is continuous because the stabilizer of a
+class contains the open stabilizer of any representative.
 
 Compactness of `G` makes the right-translation action on `Coind_1^G M` continuous. The underlying
 quotient and its algebraic action do not require compactness, but its `ContinuousSMul` instance
@@ -113,38 +132,22 @@ variable (G : Type u) [Group G] [TopologicalSpace G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
-/-- **The embedding `M ↪ Coind_1^G M`**, sending `m` to its orbit map `x ↦ x • m`, which is
-locally constant because the action is continuous and `M` is discrete. -/
-def coindBotEmbedding : M →+ DiscreteCoind G ⊥ M where
-  toFun m := DiscreteCoind.mk G ⊥ M (fun x => x • m)
-    ((IsLocallyConstant.iff_continuous _).2 (continuous_id.smul continuous_const))
-    (fun u g => by rw [Subsingleton.elim u 1, one_smul, OneMemClass.coe_one, one_mul])
-  map_zero' := DiscreteCoind.ext fun x => smul_zero x
-  map_add' m m' := DiscreteCoind.ext fun x => smul_add x m m'
+section ContinuousMul
 
-/-- The embedding `M → Coind_1^G M` sends `m` to its orbit map `x ↦ x • m`. -/
-@[simp]
-theorem coindBotEmbedding_apply (m : M) (x : G) : coindBotEmbedding G M m x = x • m := (rfl)
+variable [ContinuousMul G]
 
-/-- The embedding is injective: evaluation at `1` recovers `m`. -/
-theorem coindBotEmbedding_injective : Function.Injective (coindBotEmbedding G M) := fun m m' h => by
-  simpa using DFunLike.congr_fun h 1
-
-/-- The embedding is `G`-equivariant for the right-translation action on `Coind_1^G M`. -/
-theorem coindBotEmbedding_smul [ContinuousMul G] (g : G) (m : M) :
-    coindBotEmbedding G M (g • m) = g • coindBotEmbedding G M m :=
-  DiscreteCoind.ext fun x => by simp [mul_smul]
-
-/-- **The dimension-shifting module `Coind_1^G M ⧸ M`**, the cokernel of
-`TauCeti.ContCohomology.coindBotEmbedding`, carrying the discrete topology. -/
+/-- **The dimension-shifting module `Coind_1^G M ⧸ M`**, the cokernel of the unit
+`TauCeti.DiscreteCoind.unit G ⊥ M`, the embedding `M ↪ Coind_1^G M` by orbit maps, carrying the
+discrete topology. -/
 @[expose] def DimensionShiftQuotient : Type _ :=
-  DiscreteCoind G ⊥ M ⧸ (coindBotEmbedding G M).range
+  DiscreteCoind G ⊥ M ⧸ (DiscreteCoind.unit G ⊥ M).toAddMonoidHom.range
 
 namespace DimensionShiftQuotient
 
 /-- `Coind_1^G M ⧸ M` is an additive group, as a quotient of `Coind_1^G M`. -/
 instance : AddCommGroup (DimensionShiftQuotient G M) :=
-  inferInstanceAs (AddCommGroup (DiscreteCoind G ⊥ M ⧸ (coindBotEmbedding G M).range))
+  inferInstanceAs
+    (AddCommGroup (DiscreteCoind G ⊥ M ⧸ (DiscreteCoind.unit G ⊥ M).toAddMonoidHom.range))
 
 /-- `Coind_1^G M ⧸ M` carries the discrete topology. -/
 instance : TopologicalSpace (DimensionShiftQuotient G M) := ⊥
@@ -163,7 +166,7 @@ theorem mk_surjective : Function.Surjective (mk G M) := QuotientAddGroup.mk'_sur
 /-- A coinduced element dies in the quotient exactly when it is an orbit map. -/
 @[simp]
 theorem mk_eq_zero_iff {f : DiscreteCoind G ⊥ M} :
-    mk G M f = 0 ↔ f ∈ (coindBotEmbedding G M).range :=
+    mk G M f = 0 ↔ f ∈ (DiscreteCoind.unit G ⊥ M).toAddMonoidHom.range :=
   QuotientAddGroup.eq_zero_iff f
 
 /-- Induction on `Coind_1^G M ⧸ M`: a property of the classes of all coinduced elements holds for
@@ -173,16 +176,12 @@ theorem induction_on {motive : DimensionShiftQuotient G M → Prop} (q : Dimensi
     (h : ∀ f : DiscreteCoind G ⊥ M, motive (mk G M f)) : motive q :=
   QuotientAddGroup.induction_on q h
 
-section Action
-
-variable [ContinuousMul G]
-
 /-- Right translation on `Coind_1^G M`, descended to the quotient; the image of `M` is preserved
 because the embedding is equivariant. -/
 instance : DistribMulAction G (DimensionShiftQuotient G M) where
   smul g := QuotientAddGroup.map _ _ (DistribSMul.toAddMonoidHom (DiscreteCoind G ⊥ M) g) <| by
     rintro _ ⟨m, rfl⟩
-    exact ⟨g • m, coindBotEmbedding_smul G M g m⟩
+    exact ⟨g • m, _root_.map_smul (DiscreteCoind.unit G ⊥ M) g m⟩
   one_smul q := induction_on q fun f => congrArg (mk G M) (one_smul G f)
   mul_smul g h q := induction_on q fun f => congrArg (mk G M) (mul_smul g h f)
   smul_zero g := map_zero (QuotientAddGroup.map _ _ _ _)
@@ -192,44 +191,43 @@ instance : DistribMulAction G (DimensionShiftQuotient G M) where
 @[simp]
 theorem mk_smul (g : G) (f : DiscreteCoind G ⊥ M) : mk G M (g • f) = g • mk G M f := (rfl)
 
-end Action
-
-/-- The action on the quotient is continuous: the stabilizer of a class contains the stabilizer of
-any representative, which is open. -/
-instance [IsTopologicalGroup G] [CompactSpace G] :
-    ContinuousSMul G (DimensionShiftQuotient G M) := by
-  refine continuousSMul_iff_stabilizer_isOpen.2 fun q => ?_
-  obtain ⟨f, rfl⟩ := mk_surjective q
-  refine Subgroup.isOpen_mono (fun g hg => ?_) (stabilizer_isOpen G f)
-  rw [MulAction.mem_stabilizer_iff] at hg ⊢
-  rw [← mk_smul, hg]
-
 end DimensionShiftQuotient
-
-variable [ContinuousMul G]
 
 /-- **The short exact sequence `0 → M → Coind_1^G M → Coind_1^G M ⧸ M → 0`** of discrete
 `G`-modules on which dimension shifting runs. -/
 def coindBotShortExact :
     DiscreteShortExact G M (DiscreteCoind G ⊥ M) (DimensionShiftQuotient G M) where
-  incl := coindBotEmbedding G M
+  incl := (DiscreteCoind.unit G ⊥ M).toAddMonoidHom
   proj := DimensionShiftQuotient.mk G M
-  incl_equivariant := coindBotEmbedding_smul G M
+  incl_equivariant g m := _root_.map_smul (DiscreteCoind.unit G ⊥ M) g m
   proj_equivariant := DimensionShiftQuotient.mk_smul
-  incl_injective := coindBotEmbedding_injective G M
+  incl_injective := DiscreteCoind.unit_injective
   proj_surjective := DimensionShiftQuotient.mk_surjective
   exact _ := DimensionShiftQuotient.mk_eq_zero_iff
 
-/-- The first map of the dimension-shifting short exact sequence is the embedding `M → Coind_1^G M`.
--/
+/-- The first map of the dimension-shifting short exact sequence is the unit `M → Coind_1^G M`. -/
 @[simp]
-theorem coindBotShortExact_incl : (coindBotShortExact G M).incl = coindBotEmbedding G M := (rfl)
+theorem coindBotShortExact_incl :
+    (coindBotShortExact G M).incl = (DiscreteCoind.unit G ⊥ M).toAddMonoidHom := (rfl)
 
 /-- The second map of the dimension-shifting short exact sequence is the projection `Coind_1^G M →
 Coind_1^G M ⧸ M`. -/
 @[simp]
 theorem coindBotShortExact_proj :
     (coindBotShortExact G M).proj = DimensionShiftQuotient.mk G M := (rfl)
+
+end ContinuousMul
+
+variable {G M} in
+/-- The action on the quotient is continuous: the stabilizer of a class contains the stabilizer of
+any representative, which is open. -/
+instance DimensionShiftQuotient.instContinuousSMul [IsTopologicalGroup G] [CompactSpace G] :
+    ContinuousSMul G (DimensionShiftQuotient G M) := by
+  refine continuousSMul_iff_stabilizer_isOpen.2 fun q => ?_
+  obtain ⟨f, rfl⟩ := DimensionShiftQuotient.mk_surjective q
+  refine Subgroup.isOpen_mono (fun g hg => ?_) (stabilizer_isOpen G f)
+  rw [MulAction.mem_stabilizer_iff] at hg ⊢
+  rw [← DimensionShiftQuotient.mk_smul, hg]
 
 end Embedding
 
@@ -278,5 +276,44 @@ theorem explicitDimensionShift0_mk (x : H0 G (DimensionShiftQuotient G M)) :
     QuotientAddGroup.kerLift_mk]
 
 end DimensionShift
+
+/-! ### Dimension shifting in every degree -/
+
+section DimensionShiftAll
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+open CategoryTheory Limits
+
+/-- **The connecting map of the dimension-shifting sequence is an isomorphism in every positive
+degree**: `δ : Hⁱ(G, Coind_1^G M ⧸ M) ⟶ Hⁱ⁺¹(G, M)` for `i ≥ 1` and a compact group `G`, because
+`Coind_1^G M` is acyclic in degrees `i` and `i + 1`. -/
+theorem isIso_coindBotShortExact_delta (i : ℕ) (hi : 0 < i) :
+    IsIso ((coindBotShortExact G M).delta i) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hi.ne'
+  exact (coindBotShortExact G M).isIso_delta (n + 1)
+
+/-- **Dimension shifting in every positive degree**, `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for
+`i ≥ 1` and a compact group `G`, as an isomorphism of Mathlib's canonical continuous cohomology. Its
+inverse is the connecting map of `TauCeti.ContCohomology.coindBotShortExact`
+(`dimensionShiftIso_inv`), an isomorphism by `isIso_coindBotShortExact_delta`. The analogous
+statement on the explicit low-degree model, for a profinite `G` and in the direction of the
+connecting map, is `TauCeti.ContCohomology.explicitDimensionShift1 :
+H¹(G, Coind_1^G M ⧸ M) ≃+ H²(G, M)`. -/
+noncomputable def dimensionShiftIso (i : ℕ) (hi : 0 < i) :
+    continuousCohomology (i + 1) (ofDiscreteModule ℤ G M) ≅
+      continuousCohomology i (ofDiscreteModule ℤ G (DimensionShiftQuotient G M)) :=
+  (@asIso _ _ _ _ ((coindBotShortExact G M).delta i)
+    (isIso_coindBotShortExact_delta G M i hi)).symm
+
+/-- The inverse of the dimension-shifting isomorphism is the connecting map. -/
+@[simp]
+theorem dimensionShiftIso_inv (i : ℕ) (hi : 0 < i) :
+    (dimensionShiftIso G M i hi).inv = (coindBotShortExact G M).delta i := by
+  rw [dimensionShiftIso, Iso.symm_inv, asIso_hom]
+
+end DimensionShiftAll
 
 end TauCeti.ContCohomology

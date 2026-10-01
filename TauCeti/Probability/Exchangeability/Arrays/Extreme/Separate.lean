@@ -42,14 +42,14 @@ variable {α : Type*} [MeasurableSpace α]
 /-- The separately exchangeable probability laws on array path space. -/
 def separatelyExchangeableProbabilityMeasures (α : Type*) [MeasurableSpace α] :
     Set (Measure (ℕ × ℕ → α)) :=
-  {ρ | SeparatelyExchangeable ρ (fun p x => x p) ∧ IsProbabilityMeasure ρ}
+  {ρ | SeparatelyExchangeable ρ (fun p x ↦ x p) ∧ IsProbabilityMeasure ρ}
 
 /-- Membership in the separately exchangeable probability laws. -/
 @[simp]
 theorem mem_separatelyExchangeableProbabilityMeasures_iff
     {ρ : Measure (ℕ × ℕ → α)} :
     ρ ∈ separatelyExchangeableProbabilityMeasures α ↔
-      SeparatelyExchangeable ρ (fun p x => x p) ∧ IsProbabilityMeasure ρ :=
+      SeparatelyExchangeable ρ (fun p x ↦ x p) ∧ IsProbabilityMeasure ρ :=
   Iff.rfl
 
 /-- Separately exchangeable probability laws are the invariant probability laws of the
@@ -76,8 +76,8 @@ theorem convex_separatelyExchangeableProbabilityMeasures :
 dissociated. -/
 theorem jointlyDissociated_iff_mem_extremePoints_separatelyExchangeable
     {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
-    (hexch : SeparatelyExchangeable ρ fun p x => x p) :
-    JointlyDissociated ρ (fun p x => x p) ↔
+    (hexch : SeparatelyExchangeable ρ fun p x ↦ x p) :
+    JointlyDissociated ρ (fun p x ↦ x p) ↔
       ρ ∈ extremePoints ℝ≥0∞ (separatelyExchangeableProbabilityMeasures α) := by
   rw [jointlyDissociated_iff_ergodicSMul_pair hexch,
     separatelyExchangeableProbabilityMeasures_eq]
@@ -88,7 +88,7 @@ exchangeable laws. The components are the jointly dissociated conditional laws o
 its corner tail. -/
 theorem SeparatelyExchangeable.exists_extreme_kernel
     [StandardBorelSpace α] {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
-    (hρ : SeparatelyExchangeable ρ fun p x => x p) :
+    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) :
     ∃ κ : ProbabilityTheory.Kernel unitInterval (ℕ × ℕ → α), IsMarkovKernel κ ∧
       (∀ᵐ u ∂(volume : Measure unitInterval),
         κ u ∈ extremePoints ℝ≥0∞ (separatelyExchangeableProbabilityMeasures α)) ∧

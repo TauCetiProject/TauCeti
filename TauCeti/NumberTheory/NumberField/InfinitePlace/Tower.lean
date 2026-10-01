@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
-import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # Infinite places in a normal tower

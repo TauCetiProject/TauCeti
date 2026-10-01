@@ -9,5 +9,6 @@ def taucetiSite : Site := site Site.Front /
   "about" Site.About
   "statistics" Site.Stats
   "progress" Site.Progress
+  "ci" Site.CI
 
 def main := blogMain theme taucetiSite

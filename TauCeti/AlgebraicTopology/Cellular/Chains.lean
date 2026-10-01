@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.AlgebraicTopology.Singular.Triple
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # The cellular chain complex of a relative CW complex
@@ -65,9 +66,6 @@ natural-number indexing used by the skeletal filtration below. -/
 lemma skeletonLT_subset_skeletonLT_succ (n : ℕ) :
     (skeletonLT C (n : ℕ∞) : Set X) ⊆ skeletonLT C ((n + 1 : ℕ) : ℕ∞) :=
   skeletonLT_mono (mod_cast n.le_succ)
-
-/-- The `n`-th stage `skeletonLT C n` of the skeletal filtration, as an object of `TopCat`. -/
-abbrev skeletonObj (n : ℕ) : TopCat.{w} := TopCat.of (skeletonLT C (n : ℕ∞) : Set X)
 
 /-- The topological pair of consecutive skeleta of a relative CW complex.  In the indexing used
 here `skeletonPair C n` is the pair `(Xⁿ, Xⁿ⁻¹)`: its ambient space is `skeletonLT C (n + 1)`,

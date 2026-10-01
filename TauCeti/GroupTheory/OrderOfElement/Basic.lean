@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.Data.Nat.Totient
 public import TauCeti.Data.Nat.Factorization.MulDvd
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Orders of elements and cardinalities
@@ -19,12 +21,17 @@ at a time: it fails at `p` exactly when `k` is divisible by `p ^ (v_p n - v_p f 
 In a finite additive group with one, the cardinality casts to `0`, as Mathlib's
 `Nat.cast_card_eq_zero` records, so the cardinality minus one casts to `-1`.
 
+By Euler's theorem, raising an `n`-th root of unity to the power `q ^ φ(n)`, for `q` prime to `n`,
+does nothing.
+
 ## Main results
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 * `TauCeti.natCast_natCard_sub_one_eq_neg_one`: in a finite additive group with one of
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
+* `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
+  `n`.
 -/
 
 public section
@@ -67,5 +74,11 @@ theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Fini
   have := Fintype.ofFinite R
   rw [Nat.cast_sub Finite.one_lt_card.le, Nat.card_eq_fintype_card, Nat.cast_card_eq_zero,
     Nat.cast_one, zero_sub]
+
+/-- **Euler's theorem on an `n`-th root of unity**: if `x ^ n = 1` in a monoid and `q` is prime to
+`n`, then `x ^ q ^ φ(n) = x`, since `q ^ φ(n) ≡ 1 [MOD n]`. -/
+theorem pow_pow_totient_eq_self {M : Type*} [Monoid M] {q n : ℕ} (hq : q.Coprime n) {x : M}
+    (hx : x ^ n = 1) : x ^ q ^ n.totient = x := by
+  rw [pow_eq_pow_mod _ hx, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hx, pow_one]
 
 end TauCeti

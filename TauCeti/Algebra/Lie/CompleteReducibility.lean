@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Projection
 -- Non-public: these lemmas appear only inside proofs, never in the type of an exported declaration.
+import Mathlib.Algebra.Lie.Normalizer
 import TauCeti.Algebra.Lie.Submodule.Atom
 import TauCeti.Algebra.Lie.Submodule.Finrank
 
@@ -33,7 +34,7 @@ From that input alone this file derives, over an arbitrary field:
   (`TauCeti.HasInvariantOutsideIrreducible.exists_invariant_notMem`), by an induction on
   `finrank K M` that peels a nonzero proper `W ≤ N` off, first in the quotient `M ⧸ W` and then in
   the span `W + K v₀`;
-* an `L`-equivariant projection of `M` onto an arbitrary nonzero Lie submodule
+* an `L`-equivariant projection of `M` onto an arbitrary Lie submodule
   (`TauCeti.HasInvariantOutsideIrreducible.exists_equivariant_projection`), by running the previous
   step inside the endomorphism module `M →ₗ[K] M`;
 * **complete reducibility** (`TauCeti.HasInvariantOutsideIrreducible.exists_isCompl`): every Lie
@@ -61,17 +62,9 @@ projection, and its kernel is the complement.
   projection is a direct summand. This needs no finiteness and no field, only a commutative ring.
 * `TauCeti.HasInvariantOutsideIrreducible.exists_invariant_notMem`: the irreducibility hypothesis
   may be dropped.
-* `TauCeti.HasInvariantOutsideIrreducible.exists_equivariant_projection`: every nonzero Lie
+* `TauCeti.HasInvariantOutsideIrreducible.exists_equivariant_projection`: every Lie
   submodule of a finite-dimensional module admits an `L`-equivariant projection.
 * `TauCeti.HasInvariantOutsideIrreducible.exists_isCompl`: **complete reducibility.**
-
-## Roadmap
-
-Layer 5 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` proves Weyl's theorem
-for a semisimple Lie algebra through the Casimir element of `U(L)`, using the formal reduction
-isolated here. The current `TauCeti/Algebra/Lie/Sl2/CompleteReducibility.lean` also instantiates
-this reduction using the concrete Casimir operator of an `sl₂` triple; this differs from the
-independent weight-string / primitive-vector route prescribed for Layer 0 of the roadmap.
 
 ## References
 
@@ -247,33 +240,6 @@ private theorem exists_notMem_forall_lie_mem_of_le {d : ℕ} (ih : InvariantBelo
   rw [← LieSubmodule.Quotient.mk_eq_zero]
   simpa using hwinv x
 
-/-- **The span of a Lie submodule and one extra vector is carried into that submodule**, provided
-every bracket of the extra vector already lies in it. -/
-private theorem lie_mem_of_mem_sup_span_singleton {M : Type v} [AddCommGroup M] [Module K M]
-    [LieRingModule L M] [LieModule K L M] {W : LieSubmodule K L M} {v₀ : M}
-    (hv₀W : ∀ x : L, ⁅x, v₀⁆ ∈ W) (x : L) {m : M}
-    (hm : m ∈ (W : Submodule K M) ⊔ Submodule.span K {v₀}) : ⁅x, m⁆ ∈ W := by
-  obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.1 hm
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hz
-  rw [lie_add, lie_smul]
-  exact W.add_mem (W.lie_mem hy) (W.smul_mem c (hv₀W x))
-
-/-- **A vector of `W + K v₀` lying outside `W` lies outside `N`**, when `W ≤ N` and `v₀ ∉ N`. -/
-private theorem notMem_of_mem_sup_span_singleton {M : Type v} [AddCommGroup M] [Module K M]
-    {N W : Submodule K M} {v₀ p : M} (hWle : W ≤ N) (hv₀N : v₀ ∉ N)
-    (hp : p ∈ W ⊔ Submodule.span K {v₀}) (hpW : p ∉ W) : p ∉ N := by
-  intro hcon
-  obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.1 hp
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hz
-  rcases eq_or_ne c 0 with rfl | hc0
-  · exact hpW (by simpa [← hyz] using hy)
-  · refine hv₀N ?_
-    have hcv : c • v₀ ∈ N := by
-      have hsub : c • v₀ = p - y := by rw [← hyz]; abel
-      rw [hsub]
-      exact N.sub_mem hcon (hWle hy)
-    simpa [hc0] using N.smul_mem c⁻¹ hcv
-
 /-- **A vector outside `N` whose brackets land in `W` upgrades to a genuinely invariant one.** This
 is the second half of the reducible step. The span `W + K v₀` is carried into `W` by `L`, so it is a
 Lie submodule; it has dimension at most `finrank W + 1`, so the induction applies to it with `W`
@@ -283,10 +249,14 @@ private theorem exists_invariant_notMem_of_forall_lie_mem {d : ℕ} (ih : Invari
     {N W : LieSubmodule K L M} [FiniteDimensional K W] {v₀ : M} (hWrank : finrank K W + 1 ≤ d)
     (hWle : W ≤ N) (hv₀N : v₀ ∉ N) (hv₀W : ∀ x : L, ⁅x, v₀⁆ ∈ W) :
     ∃ w : M, w ∉ N ∧ ∀ x : L, ⁅x, w⁆ = 0 := by
+  have hnormalizer : (W : Submodule K M) ⊔ Submodule.span K {v₀} ≤
+      W.normalizer.toSubmodule :=
+    sup_le W.le_normalizer ((Submodule.span_singleton_le_iff_mem _ _).2
+      ((W.mem_normalizer v₀).2 hv₀W))
   let P : LieSubmodule K L M :=
     { __ := (W : Submodule K M) ⊔ Submodule.span K {v₀}
       lie_mem := fun {x m} hm ↦
-        Submodule.mem_sup_left (lie_mem_of_mem_sup_span_singleton hv₀W _ hm) }
+        Submodule.mem_sup_left ((W.mem_normalizer m).1 (hnormalizer hm) x) }
   have hPmem : ∀ m : M, m ∈ P ↔ m ∈ (W : Submodule K M) ⊔ Submodule.span K {v₀} :=
     fun _ ↦ Iff.rfl
   have hv₀P : v₀ ∈ P :=
@@ -308,11 +278,17 @@ private theorem exists_invariant_notMem_of_forall_lie_mem {d : ℕ} (ih : Invari
     rw [Ne, LieSubmodule.comap_incl_eq_top]
     exact fun hc ↦ hv₀N (hWle (hc hv₀P))
   obtain ⟨p, hpmem, hpinv⟩ := ih (W.comap P.incl) hPrank hWcomap
-    (fun x q ↦ lie_mem_of_mem_sup_span_singleton hv₀W x ((hPmem _).1 q.2))
-  refine ⟨(p : M), notMem_of_mem_sup_span_singleton hWle hv₀N ((hPmem _).1 p.2) hpmem,
-    fun x ↦ ?_⟩
-  simpa only [LieSubmodule.coe_bracket, ZeroMemClass.coe_zero] using
-    congrArg Subtype.val (hpinv x)
+    (fun x q ↦ (W.mem_normalizer q).1 (hnormalizer ((hPmem _).1 q.2)) x)
+  refine ⟨(p : M), fun hpN ↦ hpmem ?_, fun x ↦ ?_⟩
+  · -- Modularity gives `(W + K v₀) ∩ N = W`, since `v₀ ∉ N`.
+    have hinf : ((W : Submodule K M) ⊔ Submodule.span K {v₀}) ⊓
+        (N : Submodule K M) = W := by
+      rw [sup_inf_assoc_of_le _ ((LieSubmodule.toSubmodule_le_toSubmodule _ _).2 hWle),
+        (Submodule.disjoint_span_singleton_of_notMem hv₀N).symm.eq_bot, sup_bot_eq]
+    rw [LieSubmodule.mem_comap, LieSubmodule.incl_apply, ← LieSubmodule.mem_toSubmodule, ← hinf]
+    exact ⟨(hPmem _).1 p.2, hpN⟩
+  · simpa only [LieSubmodule.coe_bracket, ZeroMemClass.coe_zero] using
+      congrArg Subtype.val (hpinv x)
 
 /-- **The reducible step.** If the proper submodule `N` admits a Lie submodule `W` that is neither
 `⊥` nor `N`, then `M` has an invariant vector outside `N`.
@@ -398,14 +374,16 @@ theorem HasInvariantOutsideIrreducible.exists_invariant_notMem
     ∃ w : M, w ∉ N ∧ ∀ x : L, ⁅x, w⁆ = 0 :=
   invariantBelow h (finrank K M) N le_rfl hN htriv
 
-/-- **A nonzero Lie submodule admits an `L`-equivariant projection onto it.** There is a linear
+/-- **Every Lie submodule admits an `L`-equivariant projection onto it.** There is a linear
 endomorphism of `M` taking values in `N`, restricting to the identity on `N`, and commuting with the
 action of `L`. -/
 theorem HasInvariantOutsideIrreducible.exists_equivariant_projection
     (h : HasInvariantOutsideIrreducible.{v} K L) [FiniteDimensional K M]
-    {N : LieSubmodule K L M} (hNbot : N ≠ ⊥) :
+    (N : LieSubmodule K L M) :
     ∃ ψ : M →ₗ[K] M, (∀ m, ψ m ∈ N) ∧ (∀ n ∈ N, ψ n = n) ∧
       ∀ (x : L) (m : M), ψ ⁅x, m⁆ = ⁅x, ψ m⁆ := by
+  rcases eq_or_ne N ⊥ with rfl | hNbot
+  · exact ⟨0, by simp⟩
   -- Run the previous step inside `M →ₗ[K] M`: a linear projection onto `N` acts on `N` by the
   -- scalar `1` but does not vanish on `N`, so `homVanishingOn N` is proper inside `homScalarOn N`.
   -- The invariant element returned outside it is equivariant and acts on `N` by a nonzero scalar,
@@ -447,9 +425,7 @@ so the module is a direct sum of irreducibles. -/
 theorem HasInvariantOutsideIrreducible.exists_isCompl
     (h : HasInvariantOutsideIrreducible.{v} K L) [FiniteDimensional K M]
     (N : LieSubmodule K L M) : ∃ N' : LieSubmodule K L M, IsCompl N N' := by
-  rcases eq_or_ne N ⊥ with rfl | hNbot
-  · exact ⟨⊤, isCompl_bot_top⟩
-  obtain ⟨ψ, hψmem, hψid, hψlie⟩ := h.exists_equivariant_projection hNbot
+  obtain ⟨ψ, hψmem, hψid, hψlie⟩ := h.exists_equivariant_projection N
   exact exists_isCompl_of_equivariant_projection hψmem hψid hψlie
 
 end Invariant

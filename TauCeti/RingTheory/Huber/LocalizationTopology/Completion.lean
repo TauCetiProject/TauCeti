@@ -30,18 +30,25 @@ complete Hausdorff targets.
 
 * `locUniformSpace_toTopologicalSpace`: the topology `locUniformSpace` induces is `locTopology`.
   This is what a proof rewrites against, so no body in this file needs exposing.
+* `isOpen_map_algebraMap_locUniformSpace`: the image of an open ideal is open for the packaged
+  uniformity on the localization.
 * `locUniformSpace_congr`: presentations sharing a ring of definition share the uniformity, so
   the two completions `A⟨T/s⟩` are the same object.
 * `toCompletionLoc_heq`: the two structure maps `A → A⟨T/s⟩` into them agree. This is what
   `locUniformSpace_congr` alone does not give — it identifies only the codomains — and it is what
   a statement about the maps *out of* `A⟨T/s⟩` needs before it can be carried between
   presentations. The maps out of it remain a further question.
+* `locUniformSpace_congr_pairOfDefinition` and `toCompletionLoc_heq_pairOfDefinition`: the same
+  two statements for two pairs of definition of `A` and one presentation `(T, s)`.
 * `isUniformAddGroup_locUniformSpace` and `isTopologicalRing_locUniformSpace`: the two companions
   of `locUniformSpace`. Since `locTopology` is not an instance, a statement about `A⟨T/s⟩` has to
   name its structures; these three declarations are what it names.
-* `localizationUniform_ringOfDefinition` and `mem_localizationUniform_idealOfDefinition`, with
-  `completionLocalization_ringOfDefinition` and `mem_completionLocalization_idealOfDefinition`:
-  the completed pair's API, reducing to the concrete `D` and `J`.
+* `localizationUniform_ringOfDefinition`, `mem_localizationUniform_idealOfDefinition` and
+  `localizationUniform_idealImage`, with `completionLocalization_ringOfDefinition` and
+  `mem_completionLocalization_idealOfDefinition`: the completed pair's API, reducing to the
+  concrete `D`, `J` and `locIdealImage`.
+* `toCompletionLoc_sub_mem_completionIdealImage`: an approximation of a point of `A⟨T/s⟩` from `Aₛ`
+  can be corrected by an element of `locIdealImage` to one from `A`.
 * `continuous_toCompletionLoc`: the structure map `A → A⟨T/s⟩` is continuous.
 * `isHuberRing_completion_locTopology`: `A⟨T/s⟩` is a Huber ring — the completed pair above is a
   pair of definition for it.
@@ -125,6 +132,16 @@ theorem locUniformSpace_toTopologicalSpace [IsTopologicalRing A] (P : PairOfDefi
     (hden : HasDenominatorPower P T s S) :
     (locUniformSpace P T s S hden).toTopologicalSpace = locTopology P T s S hden := (rfl)
 
+/-- The image of an open ideal stays open under localization at the packaged uniformity. -/
+theorem isOpen_map_algebraMap_locUniformSpace [IsTopologicalRing A]
+    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S]
+    [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
+    letI := locUniformSpace P T s S hden
+    IsOpen (Ideal.map (algebraMap A S) J : Set S) := by
+  have h := isOpen_map_algebraMap_locTopology P T s S hden hJ
+  rwa [← locUniformSpace_toTopologicalSpace P T s S hden] at h
+
 /-- `Aₛ` is a uniform additive group for `locUniformSpace`. The companion of `locUniformSpace`:
 the two together are what `UniformSpace.Completion S` needs. -/
 theorem isUniformAddGroup_locUniformSpace [IsTopologicalRing A] (P : PairOfDefinition A)
@@ -164,6 +181,23 @@ theorem locUniformSpace_congr [IsTopologicalRing A] (P : PairOfDefinition A) (T 
       (isUniformAddGroup_locUniformSpace P T s S hden)]
   congr 1
   exact proof_irrel_heq _ _
+
+/-- **`locUniformSpace` does not depend on the pair of definition.** Two pairs of definition for
+which `(T, s)` satisfies the standing hypothesis `HasDenominatorPower` give `Aₛ` the same
+uniformity. When `T` spans an open ideal, `hasDenominatorPower_of_isOpen_span` supplies that
+hypothesis for both pairs. This is the uniform counterpart of `locTopology_congr_pairOfDefinition`.
+
+Compare `locUniformSpace_congr`, which instead fixes the pair of definition and changes the
+presentation `(T, s)` to one with the same ring of definition. -/
+theorem locUniformSpace_congr_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
+    locUniformSpace P T s S hden = locUniformSpace P' T s S hden' :=
+  -- both are uniform additive group structures, so they agree once their topologies do; the
+  -- topologies sit in the instance argument of `𝓝 0`, hence `+instances`
+  (isUniformAddGroup_locUniformSpace P T s S hden).ext
+    (isUniformAddGroup_locUniformSpace P' T s S hden') <| by
+      simp +instances [locTopology_congr_pairOfDefinition P P' T s S hden hden']
 
 /-- `Aₛ` is a Huber ring for the topology `locUniformSpace` induces. The third companion of
 `locUniformSpace`, alongside the two above. A consumer working at the uniformity can reach the
@@ -240,6 +274,20 @@ theorem toCompletionLoc_heq [IsTopologicalRing A] (P : PairOfDefinition A) (T T'
   (algebraMap A S).completionCoe_comp_heq
     (locUniformSpace_congr P T T' s s' S hden hden' h) _ _ _ _
 
+/-- **A change of pair of definition leaves the structure map alone.**
+`locUniformSpace_congr_pairOfDefinition` identifies the two completions; this identifies the two
+structure maps `A → A⟨T/s⟩` into them, which is what a statement about `A⟨T/s⟩` as an object
+under `A` needs before it can be carried between pairs of definition.
+
+As for `toCompletionLoc_heq`, the conclusion is `HEq` rather than `=` because the type
+`UniformSpace.Completion S` mentions the uniformity on `S`. -/
+theorem toCompletionLoc_heq_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
+    HEq (toCompletionLoc P T s S hden) (toCompletionLoc P' T s S hden') :=
+  (algebraMap A S).completionCoe_comp_heq
+    (locUniformSpace_congr_pairOfDefinition P P' T s S hden hden') _ _ _ _
+
 
 /-- The localisation pair `localization`, transported along `locUniformSpace_toTopologicalSpace`
 to the topology the packaged uniformity induces.
@@ -279,6 +327,51 @@ theorem mem_localizationUniform_idealOfDefinition [IsTopologicalRing A] (P : Pai
       (⟨x, by rw [← localizationUniform_ringOfDefinition P T s S hden]; exact x.2⟩ :
         locSubring P T s S) ∈ locIdeal P T s S :=
   mem_localization_idealOfDefinition P T s S hden
+
+/-- The images in `Aₛ` of the powers of the ideal of definition of `localizationUniform` are the
+basic neighbourhoods `locIdealImage` of zero. Unlike the ideal of definition, whose type depends on
+the ring of definition, `idealImage n` is an `AddSubgroup S`, so this is an equation rather than a
+membership statement. With `coe_mem_completionIdealImage_iff` or `coe_completionIdealImage` it
+computes the completed pair's neighbourhoods `completionIdealImage n` from `locIdealImage n`. -/
+@[simp]
+theorem localizationUniform_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A)
+    (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (n : ℕ) :
+    letI := locUniformSpace P T s S hden
+    (localizationUniform P T s S hden).idealImage n = locIdealImage P T s S n := by
+  let _ := locUniformSpace P T s S hden
+  -- transport along `D = locSubring P T s S`, under which the ideal of definition is `J`
+  let e := RingEquiv.subringCongr (localizationUniform_ringOfDefinition P T s S hden)
+  have hJ : (localizationUniform P T s S hden).idealOfDefinition = (locIdeal P T s S).comap e :=
+    Ideal.ext fun _ ↦ mem_localizationUniform_idealOfDefinition P T s S hden
+  ext x
+  simp only [mem_idealImage, hJ, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.mem_map_of_equiv,
+    mem_locIdealImage_iff]
+  simp [e]
+
+/-- **Correcting an approximation from `Aₛ` by an element of `A`.** If `y ∈ Aₛ` lies within
+`completionIdealImage m` of `x ∈ A⟨T/s⟩`, and the image of `a ∈ A` differs from `y` by an element of
+the basic neighbourhood `locIdealImage P T s S m`, then the image of `a` in `A⟨T/s⟩` also lies
+within `completionIdealImage m` of `x`. -/
+theorem toCompletionLoc_sub_mem_completionIdealImage [IsTopologicalRing A] (P : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {m : ℕ} :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ {x : UniformSpace.Completion S} {y : S} {a : A},
+      (y : UniformSpace.Completion S) - x ∈
+        (localizationUniform P T s S hden).completionIdealImage m →
+      algebraMap A S a - y ∈ locIdealImage P T s S m →
+      toCompletionLoc P T s S hden a - x ∈
+        (localizationUniform P T s S hden).completionIdealImage m := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro x y a hy ha
+  rw [← localizationUniform_idealImage P T s S hden, ← coe_mem_completionIdealImage_iff] at ha
+  -- `a - x = (a - y) + (y - x)`
+  simpa [UniformSpace.Completion.coe_sub] using add_mem ha hy
 
 /-- **The pair of definition on `A⟨T/s⟩`**, the completion of the pair `localization` carries on
 `Aₛ`. This is the completed counterpart of `localization`, and it is what makes `A⟨T/s⟩` Huber.

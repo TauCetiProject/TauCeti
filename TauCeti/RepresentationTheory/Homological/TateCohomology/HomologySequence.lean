@@ -1,0 +1,83 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
+
+/-!
+# Consequences of the long exact sequence in Tate cohomology
+
+Let `G` be a finite group and `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` a short exact sequence of representations
+of `G`. Mathlib provides the connecting homomorphism `TateCohomology.δ` and the exactness of the
+long exact sequence at the terms `Ĥⁿ(G, X₁)` (`TateCohomology.exact₁`) and `Ĥⁿ(G, X₃)`
+(`TateCohomology.exact₃`). This file adds the exactness at `Ĥⁿ(G, X₂)`
+(`TateCohomology.exact₂`, in the same namespace as its two Mathlib siblings) and records how the
+vanishing of the Tate cohomology of `X₃` controls the map induced by `X₁ ⟶ X₂`: if `Ĥⁿ(G, X₃)`
+vanishes the induced map is surjective in degree `n` and injective in degree `n + 1`, and
+conversely surjectivity in degree `n` together with injectivity in degree `n + 1` forces
+`Ĥⁿ(G, X₃)` to vanish. These are the two halves of the argument that a morphism of
+representations inducing isomorphisms in three consecutive degrees on every subgroup induces
+isomorphisms in every degree.
+
+## Main statements
+
+* `TateCohomology.exact₂`: exactness of `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂) ⟶ Ĥⁿ(G, X₃)`.
+* `TauCeti.TateCohomology.map_f_surjective_of_isZero_X₃`,
+  `TauCeti.TateCohomology.map_f_injective_of_isZero_X₃`: vanishing of the Tate cohomology of `X₃`
+  makes the map induced by `X₁ ⟶ X₂` surjective in that degree and injective in the next.
+* `TauCeti.TateCohomology.isZero_X₃_of_surjective_of_injective`: the converse, from two
+  consecutive degrees.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory Limits
+
+namespace TauCeti.TateCohomology
+
+variable {k G : Type u} [CommRing k] [Group G] [Fintype G] {S : ShortComplex (Rep k G)}
+  (hS : S.ShortExact)
+include hS
+
+/-- Exactness of `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂) ⟶ Ĥⁿ(G, X₃)`, the middle term of the long exact
+sequence in Tate cohomology of a short exact sequence of representations. -/
+theorem _root_.TateCohomology.exact₂ (n : ℤ) :
+    (ShortComplex.mk ((tateCohomologyFunctor n).map S.f) ((tateCohomologyFunctor n).map S.g)
+      (by rw [← Functor.map_comp, S.zero, Functor.map_zero])).Exact :=
+  (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).homology_exact₂ n
+
+/-- If `Ĥⁿ(G, X₃) = 0`, the map `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂)` induced by `X₁ ⟶ X₂` is surjective. -/
+theorem map_f_surjective_of_isZero_X₃ (n : ℤ) (h : IsZero (tateCohomology S.X₃ n)) :
+    Function.Surjective ((tateCohomologyFunctor n).map S.f) := by
+  rw [← ModuleCat.epi_iff_surjective]
+  exact (_root_.TateCohomology.exact₂ hS n).epi_f (h.eq_zero_of_tgt _)
+
+/-- If `Ĥᵐ(G, X₃) = 0`, the map `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂)` induced by `X₁ ⟶ X₂` is injective in
+the next degree `n = m + 1`. -/
+theorem map_f_injective_of_isZero_X₃ (m n : ℤ) (hmn : m + 1 = n)
+    (h : IsZero (tateCohomology S.X₃ m)) :
+    Function.Injective ((tateCohomologyFunctor n).map S.f) := by
+  subst hmn
+  rw [← ModuleCat.mono_iff_injective]
+  exact (_root_.TateCohomology.exact₁ hS m).mono_g (h.eq_zero_of_src _)
+
+/-- If the map induced by `X₁ ⟶ X₂` on Tate cohomology is surjective in degree `m` and injective
+in degree `n = m + 1`, then `Ĥᵐ(G, X₃) = 0`. -/
+theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
+    (hsurj : Function.Surjective ((tateCohomologyFunctor m).map S.f))
+    (hinj : Function.Injective ((tateCohomologyFunctor n).map S.f)) :
+    IsZero (tateCohomology S.X₃ m) := by
+  subst hmn
+  refine (HomologicalComplex.exactAt_iff_isZero_homology _ _).1
+    ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).exactAt_X₃ m
+      ((ModuleCat.epi_iff_surjective _).2 hsurj) fun j hj ↦ ?_)
+  -- `hj : (ComplexShape.up ℤ).Rel m j`, which is `m + 1 = j`.
+  obtain rfl : m + 1 = j := hj
+  exact (ModuleCat.mono_iff_injective _).2 hinj
+
+end TauCeti.TateCohomology

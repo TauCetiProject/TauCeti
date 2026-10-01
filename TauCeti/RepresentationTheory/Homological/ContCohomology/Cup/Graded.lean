@@ -70,11 +70,14 @@ hypothesis beyond `IsTopologicalGroup G` is needed anywhere in the file.
 
 * `TauCeti.TopPairing`: an equivariant jointly continuous bilinear pairing of topological
   representations, with `TauCeti.ofDiscreteModulePairing` for an equivariant biadditive map of
-  discrete modules.
+  discrete modules, `TauCeti.TopPairing.flip` for the opposite pairing `(y, x) ↦ μ x y`, and
+  `TauCeti.TopPairing.res` for the restriction along a monoid homomorphism.
 * `TauCeti.TopPairing.pointwise`: pairing a coefficient with every value of an iterated map.
 * `TauCeti.TopPairing.resolutionCup`: the Alexander–Whitney pairing on the coinduced resolution,
   with explicit total degree.
-* `TauCeti.TopPairing.resolutionCupPairing`: the same as a bilinear map into degree `m + n`.
+* `TauCeti.TopPairing.resolutionCupPairing`: the same as a bilinear map into degree `m + n`,
+  with `TauCeti.TopPairing.resolutionCupPairing_zero_zero_apply` and its five companions
+  evaluating it in the bidegrees `(m, n)` with `m + n ≤ 2`.
 * `TauCeti.TopPairing.cupCochain`: the cup product of homogeneous cochains.
 
 ## Main results
@@ -83,6 +86,9 @@ hypothesis beyond `IsTopologicalGroup G` is needed anywhere in the file.
   the resolution pairing is equivariant and jointly continuous.
 * `TauCeti.TopPairing.resolutionCup_leibniz`, `TauCeti.TopPairing.resolutionCupPairing_leibniz`,
   `TauCeti.TopPairing.cupCochain_leibniz`: the **Leibniz rule**.
+* `TauCeti.TopPairing.resolutionCupPairing_one_one_apply`,
+  `TauCeti.TopPairing.cupCochain_one_one_apply`: in bidegree `(1, 1)` the cup product is
+  `(a ⌣ b) g₀ g₁ g₂ = μ (a g₀ g₁) (b g₁ g₂)`, with no transport.
 
 ## References
 
@@ -119,6 +125,36 @@ structure TopPairing (X Y Z : TopRep.{w} R G) where
   /-- equivariance -/
   equivariant (g : G) (x : X.V) (y : Y.V) : bil (X.ρ g x) (Y.ρ g y) = Z.ρ g (bil x y)
 
+namespace TopPairing
+
+variable {X Y Z : TopRep.{w} R G} (P : TopPairing X Y Z)
+
+/-- **The opposite pairing** `Y × X → Z`, `(y, x) ↦ μ x y`, of a coefficient pairing
+`μ : X × Y → Z`. -/
+def flip : TopPairing Y X Z where
+  bil := P.bil.flip
+  cont := P.cont.comp continuous_swap
+  equivariant g y x := P.equivariant g x y
+
+@[simp]
+theorem flip_bil (y : Y.V) (x : X.V) : P.flip.bil y x = P.bil x y := (rfl)
+
+@[simp]
+theorem flip_flip : P.flip.flip = P := (rfl)
+
+/-- **Transport of a coefficient pairing along equalities of coefficient objects**, read on
+carriers: the pairing cast along `X = X'`, `Y = Y'` and `Z = Z'` is the original one conjugated by
+the transports of the carriers. -/
+theorem bil_transport (Q : TopPairing X Y Z) {X' Y' Z' : TopRep.{w} R G} (hX : X = X')
+    (hY : Y = Y') (hZ : Z = Z') (x : X'.V) (y : Y'.V) :
+    (cast (congr (congrArg₂ TopPairing hX hY) hZ) Q).bil x y =
+      eqToHom hZ (Q.bil (eqToHom hX.symm x) (eqToHom hY.symm y)) := by
+  -- With the equalities substituted, all three transports are `eqToHom rfl`, the identity.
+  subst hX hY hZ
+  rfl
+
+end TopPairing
+
 variable {M N P : Type w} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
   [DistribMulAction G N] [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P]
@@ -154,6 +190,27 @@ namespace TopPairing
 variable {R : Type u} [CommRing R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {X Y Z : TopRep.{max v w} R G} (P : TopPairing X Y Z)
+
+/-! ### The restricted pairing -/
+
+section Res
+
+variable {G : Type v} [Group G] {H : Type*} [Monoid H] {X Y Z : TopRep.{w} R G}
+
+/-- **The restriction of a coefficient pairing** along a monoid homomorphism `φ : H →* G`: the same
+bilinear map, which is `H`-equivariant for the restricted actions. -/
+def res (P : TopPairing X Y Z) (φ : H →* G) :
+    TopPairing (TopRep.res φ X) (TopRep.res φ Y) (TopRep.res φ Z) where
+  bil := P.bil
+  cont := P.cont
+  equivariant h x y := P.equivariant (φ h) x y
+
+/-- The restricted pairing has the same underlying bilinear map. -/
+@[simp]
+theorem res_bil (P : TopPairing X Y Z) (φ : H →* G) : (P.res φ).bil = P.bil :=
+  (rfl)
+
+end Res
 
 /-! ### Pairing a coefficient with every value of an iterated map
 
@@ -494,6 +551,72 @@ theorem resolutionCupPairing_apply_succ (m n : ℕ) (a : (TopRep.resolution'X X 
     ← P.resolutionCup_cast (k := m + n + 1) (hk := by omega) (h := by omega),
     ContinuousCohomology.resolution_XIsoOfEq_hom_apply_apply, resolutionCup_succ_apply]
 
+/-! ### The Alexander–Whitney pairing evaluated in low bidegrees
+
+In each bidegree `(m, n)` with `m + n ≤ 2` the recursion unfolds to the Alexander–Whitney formula
+`(a ⌣ b) (g₀, …, g_{m+n}) = μ (a (g₀, …, g_m)) (b (g_m, …, g_{m+n}))`. The transports along the
+degree equalities `0 + n = n` and `m + n + 1 = m + 1 + n` are between the same numeral, so
+`HomologicalComplex.XIsoOfEq_rfl` turns each into the identity morphism, which
+`TopRep.hom_id` and `ContIntertwiningMap.id_apply` remove. -/
+
+/-- **The Alexander–Whitney pairing of two degree-zero elements of the resolution, evaluated**:
+`(a ⌣ b) g = μ (a g) (b g)`. -/
+@[simp]
+theorem resolutionCupPairing_zero_zero_apply (a : (TopRep.resolution'X X 0).V)
+    (b : (TopRep.resolution'X Y 0).V) (g : G) :
+    (P.resolutionCupPairing 0 0 a b : C(G, Z.V)) g = P.bil (a g) (b g) := by
+  rw [resolutionCupPairing_apply_zero, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
+    TopRep.hom_id, ContIntertwiningMap.id_apply, pointwise_zero_apply]
+
+/-- **The Alexander–Whitney pairing of a degree-zero and a degree-one element of the resolution,
+evaluated**: `(a ⌣ b) g₀ g₁ = μ (a g₀) (b g₀ g₁)`. -/
+@[simp]
+theorem resolutionCupPairing_zero_one_apply (a : (TopRep.resolution'X X 0).V)
+    (b : (TopRep.resolution'X Y 1).V) (g₀ g₁ : G) :
+    (P.resolutionCupPairing 0 1 a b : C(G, C(G, Z.V))) g₀ g₁ = P.bil (a g₀) (b g₀ g₁) := by
+  rw [resolutionCupPairing_apply_zero, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
+    TopRep.hom_id, ContIntertwiningMap.id_apply, pointwise_succ_apply, pointwise_zero_apply]
+
+/-- **The Alexander–Whitney pairing of a degree-zero and a degree-two element of the resolution,
+evaluated**: `(a ⌣ b) g₀ g₁ g₂ = μ (a g₀) (b g₀ g₁ g₂)`. -/
+@[simp]
+theorem resolutionCupPairing_zero_two_apply (a : (TopRep.resolution'X X 0).V)
+    (b : (TopRep.resolution'X Y 2).V) (g₀ g₁ g₂ : G) :
+    (P.resolutionCupPairing 0 2 a b : C(G, C(G, C(G, Z.V)))) g₀ g₁ g₂ =
+      P.bil (a g₀) (b g₀ g₁ g₂) := by
+  rw [resolutionCupPairing_apply_zero, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
+    TopRep.hom_id, ContIntertwiningMap.id_apply, pointwise_succ_apply, pointwise_succ_apply,
+    pointwise_zero_apply]
+
+/-- **The Alexander–Whitney pairing of a degree-one and a degree-zero element of the resolution,
+evaluated**: `(a ⌣ b) g₀ g₁ = μ (a g₀ g₁) (b g₁)`. -/
+@[simp]
+theorem resolutionCupPairing_one_zero_apply (a : (TopRep.resolution'X X 1).V)
+    (b : (TopRep.resolution'X Y 0).V) (g₀ g₁ : G) :
+    (P.resolutionCupPairing 1 0 a b : C(G, C(G, Z.V))) g₀ g₁ = P.bil (a g₀ g₁) (b g₁) := by
+  rw [resolutionCupPairing_apply_succ, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
+    TopRep.hom_id, ContIntertwiningMap.id_apply, resolutionCupPairing_zero_zero_apply]
+
+/-- **The Alexander–Whitney pairing of a degree-two and a degree-zero element of the resolution,
+evaluated**: `(a ⌣ b) g₀ g₁ g₂ = μ (a g₀ g₁ g₂) (b g₂)`. -/
+@[simp]
+theorem resolutionCupPairing_two_zero_apply (a : (TopRep.resolution'X X 2).V)
+    (b : (TopRep.resolution'X Y 0).V) (g₀ g₁ g₂ : G) :
+    (P.resolutionCupPairing 2 0 a b : C(G, C(G, C(G, Z.V)))) g₀ g₁ g₂ =
+      P.bil (a g₀ g₁ g₂) (b g₂) := by
+  rw [resolutionCupPairing_apply_succ, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
+    TopRep.hom_id, ContIntertwiningMap.id_apply, resolutionCupPairing_one_zero_apply]
+
+/-- **The Alexander–Whitney pairing of two degree-one elements of the resolution, evaluated**:
+`(a ⌣ b) g₀ g₁ g₂ = μ (a g₀ g₁) (b g₁ g₂)`. -/
+@[simp]
+theorem resolutionCupPairing_one_one_apply (a : (TopRep.resolution'X X 1).V)
+    (b : (TopRep.resolution'X Y 1).V) (g₀ g₁ g₂ : G) :
+    (P.resolutionCupPairing 1 1 a b : C(G, C(G, C(G, Z.V)))) g₀ g₁ g₂ =
+      P.bil (a g₀ g₁) (b g₁ g₂) := by
+  rw [resolutionCupPairing_apply_succ, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
+    TopRep.hom_id, ContIntertwiningMap.id_apply, resolutionCupPairing_zero_one_apply]
+
 /-- **The resolution pairing is jointly continuous.** -/
 theorem continuous_resolutionCupPairing (m n : ℕ) :
     Continuous fun p : (TopRep.resolution'X X m).V × (TopRep.resolution'X Y n).V ↦
@@ -544,6 +667,17 @@ theorem coe_cupCochain (m n : ℕ) (a : (TopRep.homogeneousCochains X).X m)
     (b : (TopRep.homogeneousCochains Y).X n) :
     Subtype.val (P.cupCochain m n a b) = P.resolutionCupPairing m n a.1 b.1 := by
   rw [cupCochain, LinearMap.mk₂_apply]
+
+/-- The cup product of two homogeneous one-cochains, evaluated:
+`(a ⌣ b) g₀ g₁ g₂ = μ (a g₀ g₁) (b g₁ g₂)`. -/
+-- Not a `simp` lemma, for the same reason as `coe_cupCochain`: the implicit carrier
+-- `(TopRep.resolution' Z).X (1 + 1)` of the left-hand side is not in `simp`-normal form; use it
+-- with `rw` or `simp only`.
+theorem cupCochain_one_one_apply (a : (TopRep.homogeneousCochains X).X 1)
+    (b : (TopRep.homogeneousCochains Y).X 1) (g₀ g₁ g₂ : G) :
+    ((P.cupCochain 1 1 a b).val : C(G, C(G, C(G, Z.V)))) g₀ g₁ g₂ =
+      P.bil (a.val g₀ g₁) (b.val g₁ g₂) := by
+  rw [coe_cupCochain, resolutionCupPairing_one_one_apply]
 
 /-- **The Leibniz rule for the cup product of homogeneous cochains**,
 `d (a ⌣ b) = d a ⌣ b + (-1)^m (a ⌣ d b)`, where the term `d a ⌣ b` lives in degree `m + 1 + n`

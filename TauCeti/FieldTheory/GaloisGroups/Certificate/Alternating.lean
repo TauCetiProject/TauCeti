@@ -60,34 +60,11 @@ namespace Polynomial
 /-- The reduction of `X⁵ + 20X - 16` modulo `3` is irreducible. -/
 theorem irreducible_X_pow_five_add_twenty_mul_X_sub_sixteen_zmod_three :
     Irreducible (X ^ 5 + 20 * X - 16 : (ZMod 3)[X]) := by
-  let f : (ZMod 3)[X] := X ^ 5 + 20 * X - 16
-  have hf : f.Monic := by dsimp [f]; monicity!
-  have hdeg : f.natDegree = 5 := by dsimp [f]; compute_degree!
-  have hne : f ≠ 1 := by intro h; simp [h] at hdeg
-  rw [hf.irreducible_iff_lt_natDegree_lt hne]
-  intro q hq hqdeg hdvd
-  rw [hdeg, Finset.mem_Ioc] at hqdeg
-  obtain hq1 | hq2 : q.natDegree = 1 ∨ q.natDegree = 2 := by omega
-  · rw [hq.eq_X_add_C hq1, ← sub_neg_eq_add, ← C_neg, dvd_iff_isRoot] at hdvd
-    have hroot : ∀ x : ZMod 3, ¬ f.IsRoot x := by
-      intro x
-      simp only [f, IsRoot.def, eval_sub, eval_add, eval_pow, eval_mul, eval_X, eval_ofNat]
-      fin_cases x <;> decide
-    exact hroot _ hdvd
-  · have hqeq : q = X ^ 2 + C (q.coeff 1) * X + C (q.coeff 0) := by
-      have h := eq_quadratic_of_degree_le_two (degree_le_of_natDegree_le hq2.le)
-      have hc : q.coeff 2 = 1 := by simpa [hq2] using hq.coeff_natDegree
-      simpa [hc] using h
-    have hdvd' : X ^ 2 + C (q.coeff 1) * X + C (q.coeff 0) ∣
-        X ^ 5 + C (20 : ZMod 3) * X + C (-16 : ZMod 3) := by
-      rw [hqeq] at hdvd
-      simpa only [f, C_neg, C_ofNat, sub_eq_add_neg] using hdvd
-    rw [X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff] at hdvd'
-    -- None of the nine coefficient pairs in the prime field satisfies both equations.
-    have hno : ∀ a b : ZMod 3,
-        ¬ (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + 20 = 0 ∧
-          a ^ 3 * b - 2 * a * b ^ 2 + -16 = 0) := by decide
-    exact hno _ _ hdvd'
+  have hf : (X ^ 5 + 20 * X - 16 : (ZMod 3)[X]) = X ^ 5 + C 20 * X + C (-16) := by
+    simp only [map_neg, C_ofNat]
+    ring
+  rw [hf]
+  exact irreducible_X_pow_five_add_C_mul_X_add_C (by decide) (by decide)
 
 /-- The alternating quintic has a single irreducible factor of degree five modulo `3`. -/
 @[simp] theorem factorDegrees_X_pow_five_add_twenty_mul_X_sub_sixteen_three :

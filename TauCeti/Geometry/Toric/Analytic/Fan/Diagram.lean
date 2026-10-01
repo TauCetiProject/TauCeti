@@ -139,6 +139,15 @@ theorem analyticAffineChartDiagram_map (hΦ : Φ.IsRegular) {τ σ : Φ.cones} (
         ((isRegular_iff.mp hΦ) σ.1 σ.2) f :=
   (rfl)
 
+/-- A map of the analytic affine chart diagram restricts a complex point along the inclusion of
+dual semigroups. -/
+theorem analyticAffineChartDiagram_map_apply (hΦ : Φ.IsRegular) {τ σ : Φ.cones} (f : τ ⟶ σ)
+    (x : (Φ.analyticAffineChartDiagram hΦ).obj τ) :
+    (Φ.analyticAffineChartDiagram hΦ).map f x =
+      AffineSemigroupComplexPoint.comap
+        (AddSubmonoid.inclusion (dualSemigroup_anti Φ.lattice (leOfHom f))) x :=
+  congrFun (faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))) x
+
 /-- Pointwise composition of maps in the analytic affine chart diagram. -/
 theorem analyticChartMap_comp (hΦ : Φ.IsRegular) {α β γ : Φ.cones}
     (f : α ⟶ β) (g : β ⟶ γ)

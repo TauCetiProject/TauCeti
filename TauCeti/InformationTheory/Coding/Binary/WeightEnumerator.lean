@@ -8,6 +8,8 @@ module
 public import TauCeti.InformationTheory.Coding.Binary.Basic
 public import TauCeti.InformationTheory.Coding.MacWilliams.Basic
 
+import Mathlib.Basic.Complex.Basic
+
 /-!
 # Weight-enumerator symmetries of binary codes
 
@@ -20,6 +22,7 @@ length restriction for Type II codes.
 
 * `IsDoublyEven.aeval_weightEnumerator_mul_second`: the fourth-root symmetry over any
   commutative ring.
+* `IsDoublyEven.aeval_weightEnumerator_mul_I`: its polynomial identity over `ℂ`.
 * `aeval_weightEnumerator_add_sub_of_eq_euclideanDual`: the integral self-dual MacWilliams
   symmetry.
 
@@ -48,6 +51,17 @@ theorem IsDoublyEven.aeval_weightEnumerator_mul_second {R : Type*} [CommRing R]
   intro c hc
   obtain ⟨k, hk⟩ := isDoublyEven_iff.mp hC c (by simpa using hc)
   simp [hk, mul_pow, pow_mul, hζ]
+
+/-- Replacing `Y` by `iY` leaves the homogeneous weight enumerator of a doubly-even code
+unchanged, as a polynomial identity over `ℂ`. -/
+theorem IsDoublyEven.aeval_weightEnumerator_mul_I (hC : IsDoublyEven C) :
+    aeval ![(X 0 : MvPolynomial (Fin 2) ℂ),
+      (MvPolynomial.C Complex.I : MvPolynomial (Fin 2) ℂ) * X 1]
+        (C : Set (ι → ZMod 2)).weightEnumerator =
+      aeval ![(X 0 : MvPolynomial (Fin 2) ℂ), X 1]
+        (C : Set (ι → ZMod 2)).weightEnumerator :=
+  hC.aeval_weightEnumerator_mul_second (ζ := MvPolynomial.C Complex.I)
+    (by simp [← map_pow, Complex.I_pow_four]) (X 0) (X 1)
 
 /-- The integral MacWilliams symmetry of a self-dual binary code. -/
 theorem aeval_weightEnumerator_add_sub_of_eq_euclideanDual (hC : C = C.euclideanDual) :

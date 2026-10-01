@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
-public import TauCeti.KnotTheory.Grid.Diagram.Relabeling
 public import TauCeti.KnotTheory.Grid.Rotation
 
 /-!
@@ -56,7 +55,7 @@ variable {n : ℕ} (G : GridDiagram n)
 /-- The permutation of `O`-marking columns obtained by traversing one horizontal segment from
 `O` to `X`, then the vertical segment back to `O`.
 
-Thus `componentPerm G c = XColumnOfRow G (G.O c)`. Its permutation cycles are the components of
+Thus `componentPerm G c = G.X.transpose (G.O c)`. Its permutation cycles are the components of
 the oriented link represented by `G`. -/
 def componentPerm : Equiv.Perm (Fin n) :=
   G.X.toPerm⁻¹ * G.O.toPerm
@@ -71,17 +70,17 @@ theorem componentPerm_def : G.componentPerm = G.X.toPerm⁻¹ * G.O.toPerm :=
 `X`-marking column. -/
 @[simp]
 theorem componentPerm_apply (c : Fin n) :
-    G.componentPerm c = XColumnOfRow G (G.O c) :=
-  (rfl)
+    G.componentPerm c = G.X.transpose (G.O c) := by
+  rw [componentPerm_def, Equiv.Perm.mul_apply, Equiv.Perm.inv_def, GridState.transpose_apply]
 
 /-- The `O`-marking in the row of the `X`-marking of column `componentPerm c` is the `O`-marking
 of column `c`: the component permutation walks from `O_c` along its row to that `X`-marking. -/
-theorem columnOfRow_X_componentPerm (c : Fin n) :
-    G.O.columnOfRow (G.X (G.componentPerm c)) = c := by
+theorem O_transpose_X_componentPerm (c : Fin n) :
+    G.O.transpose (G.X (G.componentPerm c)) = c := by
   have h : G.X (G.componentPerm c) = G.O c := by
     rw [componentPerm_def, Equiv.Perm.mul_apply, Equiv.Perm.inv_def]
     exact G.X.toPerm.apply_symm_apply _
-  rw [h, GridState.columnOfRow_apply]
+  rw [h, GridState.transpose_apply_apply]
 
 /-- The component permutation has no fixed columns, because an `O` and an `X` cannot occupy the
 same square. -/

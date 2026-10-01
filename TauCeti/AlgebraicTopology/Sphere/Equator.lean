@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.Homotopy.Equiv
+public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
@@ -25,8 +25,6 @@ the Mayer–Vietoris computation of the homology of spheres.
 
 ## Main declarations
 
-* `TauCeti.coe_mem_span_singleton_iff`: a point of the unit sphere lies on the line through a
-  point `p` of the sphere exactly when it is `p` or `-p`.
 * `TauCeti.equatorHomotopyEquiv`: the unit sphere minus `p` and `-p` is homotopy equivalent to
   the unit sphere of `(ℝ ∙ p)ᗮ`, with `TauCeti.coe_equatorHomotopyEquiv_apply` and
   `TauCeti.coe_equatorHomotopyEquiv_symm_apply` computing both maps.
@@ -46,35 +44,19 @@ open scoped unitInterval ContinuousMap
 
 namespace TauCeti
 
-section Normed
+section Seminormed
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A point of the unit sphere lies on the line through a point `p` of the sphere exactly when it
-is `p` or `-p`. -/
-theorem coe_mem_span_singleton_iff {x p : sphere (0 : E) 1} :
-    (x : E) ∈ ℝ ∙ (p : E) ↔ x = p ∨ x = -p := by
-  refine ⟨fun h => ?_, ?_⟩
-  · obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.1 h
-    have habs : |a| = 1 := by
-      simpa [← ha, norm_smul] using mem_sphere_zero_iff_norm.1 x.2
-    rcases (abs_eq zero_le_one).1 habs with rfl | rfl
-    · exact Or.inl (Subtype.ext (by rw [← ha, one_smul]))
-    · exact Or.inr (Subtype.ext (by rw [← ha, coe_neg_sphere, neg_one_smul]))
-  · rintro (rfl | rfl)
-    · exact Submodule.mem_span_singleton_self _
-    · rw [coe_neg_sphere]
-      exact Submodule.neg_mem _ (Submodule.mem_span_singleton_self _)
-
-end Normed
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A point of the unit sphere avoids `p` and `-p` exactly when it is off the line through
 `p`. -/
-private lemma mem_compl_iff_notMem_span {x : sphere (0 : E) 1} :
+private lemma mem_compl_iff_notMem_span (p : sphere (0 : E) 1) {x : sphere (0 : E) 1} :
     x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)) ↔ (x : E) ∉ ℝ ∙ (p : E) := by
-  simp [coe_mem_span_singleton_iff, not_or]
+  simp [not_or]
+
+end Seminormed
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
 /-- Moving a point of the sphere off the line through `p` along the direction of `p` keeps it off
 that line. -/
@@ -86,27 +68,16 @@ private lemma sub_smul_starProjection_notMem {x : sphere (0 : E) 1}
   simpa using Submodule.add_mem _ h
     (Submodule.smul_mem _ t ((ℝ ∙ (p : E)).starProjection_apply_mem x))
 
-/-- Normalizing a vector off the line through `p` keeps it off that line. -/
-private lemma normalize_notMem {v : E} (hv : v ∉ ℝ ∙ (p : E)) : normalize v ∉ ℝ ∙ (p : E) := by
-  have hv0 : ‖v‖⁻¹ ≠ 0 := inv_ne_zero (norm_ne_zero_iff.2 fun h => hv (by
-    rw [h]
-    exact Submodule.zero_mem _))
-  rwa [NormedSpace.normalize, Submodule.smul_mem_iff _ hv0]
-
-/-- The orthogonal projection onto `(ℝ ∙ p)ᗮ` of a point of the sphere, as a vector of `E`. -/
-private lemma coe_orthogonalProjectionOnto_orthogonal (x : E) :
-    (((ℝ ∙ (p : E))ᗮ.orthogonalProjectionOnto x : (ℝ ∙ (p : E))ᗮ) : E) =
-      x - (1 : ℝ) • (ℝ ∙ (p : E)).starProjection x := by
-  rw [one_smul, ← Submodule.starProjection_orthogonal_val, Submodule.starProjection_apply]
-
 /-- The orthogonal projection onto `(ℝ ∙ p)ᗮ` of a point of the sphere other than `±p` is
 nonzero. -/
 private lemma orthogonalProjectionOnto_ne_zero (x : ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1))) :
     (ℝ ∙ (p : E))ᗮ.orthogonalProjectionOnto ((x : sphere (0 : E) 1) : E) ≠ 0 := by
   intro h
-  refine sub_smul_starProjection_notMem p x.2 1 ?_
-  rw [← coe_orthogonalProjectionOnto_orthogonal, h]
-  exact Submodule.zero_mem _
+  apply (mem_compl_iff_notMem_span p).1 x.2
+  rw [← Submodule.starProjection_eq_self_iff]
+  apply Eq.symm
+  simpa [Submodule.orthogonalProjectionOnto_orthogonal, sub_eq_zero] using
+    congrArg (fun v : (ℝ ∙ (p : E))ᗮ => (v : E)) h
 
 /-- Radial projection of the orthogonal projection onto `(ℝ ∙ p)ᗮ`, retracting the sphere minus
 `±p` onto the equator. -/
@@ -125,11 +96,8 @@ private lemma coe_toEquator_apply (x : ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E)
 private lemma coe_notMem_span (y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
     ((y : (ℝ ∙ (p : E))ᗮ) : E) ∉ ℝ ∙ (p : E) := by
   intro h
-  have hy : ‖((y : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 :=
-    (Submodule.norm_coe _).trans (norm_eq_of_mem_sphere y)
-  have h0 := Submodule.inner_right_of_mem_orthogonal h (y : (ℝ ∙ (p : E))ᗮ).2
-  rw [inner_self_eq_zero] at h0
-  simp [h0] at hy
+  exact ne_zero_of_mem_unit_sphere y
+    ((Submodule.mem_left_iff_eq_zero_of_disjoint (ℝ ∙ (p : E)).orthogonal_disjoint).1 h)
 
 /-- The inclusion of the equator into the sphere minus `±p`. -/
 private def ofEquator :
@@ -160,7 +128,9 @@ private def deformation :
   have hmem : ∀ z, normalizeToSphere g hg hg0 z ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)) :=
     fun z => (mem_compl_iff_notMem_span p).2 (by
       rw [coe_normalizeToSphere_apply]
-      exact normalize_notMem p (sub_smul_starProjection_notMem p z.2.2 z.1))
+      intro h
+      apply sub_smul_starProjection_notMem p z.2.2 z.1
+      simpa using (ℝ ∙ (p : E)).smul_mem ‖g z‖ h)
   { toFun z := ⟨_, hmem z⟩
     continuous_toFun := (ContinuousMap.continuous _).subtype_mk hmem
     map_zero_left x := by
@@ -170,8 +140,7 @@ private def deformation :
     map_one_left x := by
       refine Subtype.ext (Subtype.ext ?_)
       simp only [coe_normalizeToSphere_apply, Set.Icc.coe_one, ContinuousMap.comp_apply, g]
-      rw [← coe_orthogonalProjectionOnto_orthogonal]
-      simp [ofEquator, coe_toEquator_apply] }
+      simp [ofEquator, coe_toEquator_apply, Submodule.starProjection_orthogonal_val] }
 
 /-- **The sphere minus two antipodal points is homotopy equivalent to the equator.** For a point
 `p` of the unit sphere of a real inner product space `E`, the unit sphere minus `p` and `-p` is

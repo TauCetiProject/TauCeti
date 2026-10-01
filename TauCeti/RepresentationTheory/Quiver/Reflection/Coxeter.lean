@@ -48,6 +48,14 @@ without first passing through root-system combinatorics.
   along the reversed word.
 * `TauCeti.vertexPreReflectionList_flatten_replicate`: repeating a word raises its reflection
   product to the corresponding power, so a run of Coxeter passes is itself a reflection product.
+* `TauCeti.vertexPreReflectionList_reflectList`: the reflection product along a word does not
+  depend on the orientation of the quiver, so it is unchanged by reflecting the quiver along
+  another word.
+* `TauCeti.nonneg_vertexPreReflectionList_take_append` and
+  `TauCeti.nonneg_vertexPreReflectionList_take_flatten_replicate`: nonnegativity of the
+  intermediate vectors along a word is inherited by a concatenation and by a repetition.
+* `TauCeti.nonneg_vertexPreReflectionList_take_reverse`: reading a word with nonnegative
+  intermediate vectors backwards from its endpoint stays nonnegative.
 * `TauCeti.titsForm_vertexPreReflectionList` and
   `TauCeti.bijOn_vertexPreReflectionList`: along a word in loopless vertices, the composite
   preserves the Tits form, and hence permutes each of its level sets, in particular the roots
@@ -119,6 +127,22 @@ theorem vertexPreReflectionList_reflectAt (q : _root_.Quiver.{v} Q)
     refine LinearMap.ext fun d ↦ funext fun t ↦ ?_
     exact vertexPreReflection_reflect_apply (V := Q) i j d t
 
+omit [Quiver Q] [∀ a b : Q, Fintype (a ⟶ b)] in
+/-- The composite of the simple reflections along a word is unchanged by reflecting the quiver
+structure along another word: the word-level form of
+`TauCeti.vertexPreReflectionList_reflectAt`. -/
+theorem vertexPreReflectionList_reflectList :
+    ∀ (l' : List Q) (q : _root_.Quiver.{v} Q)
+      (hq : ∀ a b : Q, Fintype (@_root_.Quiver.Hom Q q a b)) (l : List Q),
+      @vertexPreReflectionList Q (Quiver.reflectList q l') _
+          (Quiver.fintypeHomReflectList l' q hq) _ l
+        = @vertexPreReflectionList Q q _ hq _ l
+  | [], _, _, _ => rfl
+  | i :: l', q, hq, l =>
+      (vertexPreReflectionList_reflectList l' (Quiver.reflectAt q i)
+          (@Quiver.instFintypeReflectHom Q q hq i) l).trans
+        (vertexPreReflectionList_reflectAt Q q hq i l)
+
 /-- Concatenating two words composes their reflection products, the first word acting first. -/
 theorem vertexPreReflectionList_append (l₁ l₂ : List Q) :
     vertexPreReflectionList Q (l₁ ++ l₂)
@@ -133,6 +157,46 @@ theorem vertexPreReflectionList_flatten_replicate (l : List Q) (N : ℕ) :
   | zero => simp
   | succ N ih =>
     rw [List.replicate_succ, List.flatten_cons, vertexPreReflectionList_append, ih, pow_succ]
+
+/-- Nonnegativity of every intermediate vector along a concatenation follows from nonnegativity
+along each of the two segments. -/
+theorem nonneg_vertexPreReflectionList_take_append {d : Q → ℤ} {l₁ l₂ : List Q}
+    (h₁ : ∀ r ≤ l₁.length, 0 ≤ vertexPreReflectionList Q (l₁.take r) d)
+    (h₂ : ∀ r ≤ l₂.length,
+      0 ≤ vertexPreReflectionList Q (l₂.take r) (vertexPreReflectionList Q l₁ d)) :
+    ∀ r ≤ (l₁ ++ l₂).length, 0 ≤ vertexPreReflectionList Q ((l₁ ++ l₂).take r) d := by
+  intro r hr
+  rw [List.take_append, vertexPreReflectionList_append, Module.End.mul_apply]
+  rcases le_or_gt r l₁.length with h | h
+  · rw [Nat.sub_eq_zero_of_le h, List.take_zero, vertexPreReflectionList_nil,
+      Module.End.one_apply]
+    exact h₁ r h
+  · rw [List.take_of_length_le h.le]
+    refine h₂ (r - l₁.length) ?_
+    rw [List.length_append] at hr
+    omega
+
+/-- Nonnegativity of every intermediate vector along a repeated word follows from nonnegativity
+along each of its passes. -/
+theorem nonneg_vertexPreReflectionList_take_flatten_replicate {d : Q → ℤ} (hd : 0 ≤ d)
+    {l : List Q} :
+    ∀ N : ℕ, (∀ p < N, ∀ r ≤ l.length,
+        0 ≤ vertexPreReflectionList Q (l.take r) ((vertexPreReflectionList Q l ^ p) d)) →
+      ∀ r ≤ ((List.replicate N l).flatten).length,
+        0 ≤ vertexPreReflectionList Q (((List.replicate N l).flatten).take r) d
+  | 0, _ => by
+      intro r hr
+      simp only [List.replicate_zero, List.flatten_nil, List.length_nil, Nat.le_zero] at hr
+      subst hr
+      simpa using hd
+  | N + 1, h => by
+      rw [List.replicate_succ', List.flatten_append, List.flatten_cons, List.flatten_nil,
+        List.append_nil]
+      refine nonneg_vertexPreReflectionList_take_append Q
+        (nonneg_vertexPreReflectionList_take_flatten_replicate hd N
+          fun p hp ↦ h p (by omega)) ?_
+      rw [vertexPreReflectionList_flatten_replicate]
+      exact h N (by omega)
 
 /-- Off the word, the reflection product changes no coordinate: each simple reflection in the
 composite alters only the coordinate at its own vertex. -/
@@ -270,6 +334,35 @@ theorem vertexPreReflectionList_mul_reverse {l : List Q}
     vertexPreReflectionList Q l * vertexPreReflectionList Q l.reverse = 1 := by
   simpa using vertexPreReflectionList_reverse_mul Q
     (l := l.reverse) (fun i hi ↦ hl i (by simpa using hi))
+
+/-- Undoing the reflections of a word in reverse order returns the vector the word started from. -/
+theorem vertexPreReflectionList_reverse_apply_append {l₂ : List Q}
+    (hl₂ : ∀ i ∈ l₂, IsEmpty (i ⟶ i)) (l₁ : List Q) (d : Q → ℤ) :
+    vertexPreReflectionList Q l₂.reverse (vertexPreReflectionList Q (l₁ ++ l₂) d)
+      = vertexPreReflectionList Q l₁ d := by
+  rw [vertexPreReflectionList_append, Module.End.mul_apply, ← Module.End.mul_apply,
+    vertexPreReflectionList_reverse_mul Q hl₂, Module.End.one_apply]
+
+/-- **Reading a nonnegative reflection word backwards stays nonnegative.** If every intermediate
+vector of the word `l` applied to `d` is nonnegative, then every intermediate vector of the
+reversed word applied to the endpoint `sˡ d` is nonnegative, being one of the vectors of the
+forward chain. This is the hypothesis the source-reflection composite of
+`TauCeti.indecomposable_and_dimVector_sourceReflectionFunctorList` asks for. -/
+theorem nonneg_vertexPreReflectionList_take_reverse {l : List Q}
+    (hl : ∀ i ∈ l, IsEmpty (i ⟶ i)) {d : Q → ℤ}
+    (h : ∀ r ≤ l.length, 0 ≤ vertexPreReflectionList Q (l.take r) d) :
+    ∀ s ≤ l.length, 0 ≤ vertexPreReflectionList Q (l.reverse.take s)
+      (vertexPreReflectionList Q l d) := by
+  intro s hs
+  obtain ⟨a, b, rfl, hb⟩ : ∃ a b : List Q, l = a ++ b ∧ b.length = s := by
+    refine ⟨l.take (l.length - s), l.drop (l.length - s), (List.take_append_drop _ _).symm, ?_⟩
+    rw [List.length_drop]
+    omega
+  rw [List.reverse_append, ← hb, List.take_left' (by rw [List.length_reverse]),
+    vertexPreReflectionList_reverse_apply_append Q
+      fun i hi ↦ hl i (List.mem_append_right a hi)]
+  have := h a.length (by rw [List.length_append]; omega)
+  rwa [List.take_left] at this
 
 /-- The reflection product along a word in loopless vertices permutes every level set of the
 Tits form; at the level `1` this says that it permutes the roots of `Q`. -/

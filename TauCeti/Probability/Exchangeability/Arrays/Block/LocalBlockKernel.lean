@@ -149,7 +149,7 @@ theorem SeparatelyExchangeable.exists_local_subblock_coding
     intro q
     rw [Kernel.prodMkRight_apply]
     exact hmap q.1
-  rw [map_prod_volume_eq_compProd_of_map_volume (κ.prodMkRight _)
+  rw [(κ.prodMkRight _).map_prod_eq_compProd_of_map volume
     (fun q : (↥(S ×ˢ T \ C) → α) × (↥(Cᶜ : Set (ℕ × ℕ)) → α) ↦ f q.1)
     hf' hmap']
   exact (hρ.jointLaw_subblock_rest_eq_compProd_local hS hT hC hBsub hCsub).symm

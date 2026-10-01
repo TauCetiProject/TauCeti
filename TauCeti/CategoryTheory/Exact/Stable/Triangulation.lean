@@ -16,8 +16,10 @@ This file gives the standard Happel triangles in the projective stable quotient 
 Frobenius exact category. A conflation is sent to a triangle in the stable category by the
 quotient functor, its connecting map, and the comparison between the chosen suspension object and
 the stable suspension. The cone of an arbitrary morphism is identified with the standard triangle
-of its cone conflation. This construction follows Happel, *Triangulated Categories in the
-Representation Theory of Finite Dimensional Algebras*, Chapter I, Section 2. Morphisms between
+of its cone conflation, and the cone triangle on the inflation of any conflation is identified
+with that conflation's stable triangle. This construction follows Happel, *Triangulated
+Categories in the Representation Theory of Finite Dimensional Algebras*, Chapter I, Section 2.
+Morphisms between
 objects in the stable category are handled by choosing a representative in the exact category.
 
 The isomorphism-closed class of distinguished triangles records the triangles arising from
@@ -152,6 +154,17 @@ noncomputable def stableConeTriangle (f : X ⟶ Y) :
     (q.map (hE.coneConnectingMap f) ≫ eqToHom bridge ≫
       e.symm.hom.app (q.obj X))
 
+/-- The stable cone triangle written using the canonical comparison from the chosen suspension
+object to the shift. -/
+theorem stableConeTriangle_eq_mk (f : X ⟶ Y) :
+    letI := hE.stableHasShift
+    hE.stableConeTriangle f = CategoryTheory.Pretriangulated.Triangle.mk
+      (E.projectiveStableFunctor.map f)
+      (E.projectiveStableFunctor.map (hE.coneInclusion f))
+      (E.projectiveStableFunctor.map (hE.coneConnectingMap f) ≫
+        (hE.stableSuspensionObjIsoShift X).hom) := by
+  simp only [stableConeTriangle, stableSuspensionObjIsoShift_hom, Iso.symm_hom]
+
 /-- The first object of the stable cone triangle. -/
 @[simp]
 theorem stableConeTriangle_obj₁ (f : X ⟶ Y) :
@@ -257,6 +270,67 @@ noncomputable def stableConeTriangleIsoConflation (f : X ⟶ Y) :
     · dsimp [T₁, T₂]
       simp only [Category.assoc]
       rw [hE.projectiveStableFunctor_map_connectingMap_cone]
+      simp
+  simpa only [hT₁, hT₂] using hIso
+
+/-- The cone triangle on the inflation of a conflation is isomorphic to that conflation's
+stable triangle. The third component is the stable isomorphism from the cone to the cokernel. -/
+noncomputable def stableConeTriangleIsoStableConflation (S : ShortComplex C)
+    (hS : E.Conflation S) :
+    letI := hE.stableHasShift
+    hE.stableConeTriangle S.f ≅ hE.stableConflationTriangle S hS := by
+  letI := hE.stableHasShift
+  let coneS := ShortComplex.mk (hE.coneInflation S.f) (hE.coneDeflation S.f)
+    (hE.coneInflation_comp_coneDeflation S.f)
+  let φ : coneS ⟶ S :=
+    { τ₁ := 𝟙 _
+      τ₂ := biprod.desc 0 (𝟙 _)
+      τ₃ := hE.coneComparison S
+      comm₁₂ := by simp [coneS, coneInflation]
+      comm₂₃ := by
+        dsimp [coneS, coneDeflation]
+        apply biprod.hom_ext' <;> simp }
+  -- Naturality of connecting maps identifies the last arrows after the cone comparison.
+  have hconnecting :
+      E.projectiveStableFunctor.map (hE.coneComparison S) ≫
+          E.projectiveStableFunctor.map (hE.connectingMap hS) =
+        E.projectiveStableFunctor.map (hE.coneConnectingMap S.f) := by
+    have h := hE.projectiveStableFunctor_map_connectingMap_naturality
+      (hE.conflation_cone S.f) hS φ
+    dsimp [φ, coneS] at h
+    rw [Functor.map_comp, Functor.map_comp,
+      hE.projectiveStableFunctor_map_connectingMap_cone,
+      E.projectiveStableFunctor_map_cokernelMap_id _
+        (hE.isProjective_I (hE.suspensionPresentation S.X₁))] at h
+    simpa only [Category.comp_id] using h
+  -- Writing both triangles explicitly keeps the three components of the comparison visible.
+  let J := (hE.stableSuspensionObjIsoShift S.X₁).hom
+  let T₁ : CategoryTheory.Pretriangulated.Triangle E.ProjectiveStableCategory :=
+    CategoryTheory.Pretriangulated.Triangle.mk
+      (E.projectiveStableFunctor.map S.f)
+      (E.projectiveStableFunctor.map (hE.coneInclusion S.f))
+      (E.projectiveStableFunctor.map (hE.coneConnectingMap S.f) ≫ J)
+  let T₂ : CategoryTheory.Pretriangulated.Triangle E.ProjectiveStableCategory :=
+    CategoryTheory.Pretriangulated.Triangle.mk
+      (E.projectiveStableFunctor.map S.f)
+      (E.projectiveStableFunctor.map S.g)
+      (E.projectiveStableFunctor.map (hE.connectingMap hS) ≫ J)
+  have hT₁ : T₁ = hE.stableConeTriangle S.f := by
+    simpa only [T₁, J] using (hE.stableConeTriangle_eq_mk S.f).symm
+  have hT₂ : T₂ = hE.stableConflationTriangle S hS := by
+    simpa only [T₂, J, stableSuspensionObjIsoShift_hom, Category.assoc] using
+      (hE.stableConflationTriangle_eq_mk S hS).symm
+  -- The first two components are identities; the third is the stable cone comparison.
+  have hIso : T₁ ≅ T₂ := by
+    let _ := hE.isIso_projectiveStableFunctor_map_coneComparison hS
+    refine CategoryTheory.Pretriangulated.Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _)
+      (asIso (E.projectiveStableFunctor.map (hE.coneComparison S))) ?_ ?_ ?_
+    · simp [T₁, T₂]
+    · dsimp [T₁, T₂]
+      simp only [Category.id_comp, ← Functor.map_comp]
+      rw [hE.coneInclusion_comp_coneComparison]
+    · dsimp [T₁, T₂]
+      rw [reassoc_of% hconnecting]
       simp
   simpa only [hT₁, hT₂] using hIso
 

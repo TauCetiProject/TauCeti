@@ -33,8 +33,9 @@ is proved here.
 
 ## Main results
 
-* `TauCeti.Isogeny.mem_ker_iff_map_tautologicalPoint_eq`: membership is fixing the pullback's
-  tautological point.
+* `TauCeti.Isogeny.mem_ker_iff_comp_pullback_eq` and
+  `TauCeti.Isogeny.mem_ker_iff_map_tautologicalPoint_eq`: membership is fixing the coordinate
+  pullback, equivalently its tautological point.
 * `TauCeti.Isogeny.card_ker_le_degree`: the kernel has at most `deg φ` elements.
 * `TauCeti.Isogeny.ker_le_ker_comp`: postcomposition can only enlarge the kernel.
 * `TauCeti.Isogeny.ker_eq_bot_of_separableDegree_eq_one`: separable degree one forces this kernel
@@ -85,6 +86,24 @@ theorem mem_ker_iff {φ : Isogeny W₁ W₂} {P : (W₁⁄F).toAffine.Point} :
     P ∈ φ.ker ↔ ∀ z ∈ φ.fieldPullback.fieldRange, translation W₁ P z = z := by
   rw [ker_def]; exact mem_translationFixingSubgroup_iff W₁
 
+/-- **Membership in the kernel is fixing the coordinate pullback**: `P ∈ ker φ` exactly when
+`τ_P^* ∘ φ^* = φ^*` on the coordinate ring of `W₂`. The function-field pullback is determined by
+the coordinate pullback, so fixing the latter fixes every pulled-back function. -/
+theorem mem_ker_iff_comp_pullback_eq {φ : Isogeny W₁ W₂} {P : (W₁⁄F).toAffine.Point} :
+    P ∈ φ.ker ↔ (translation W₁ P).toAlgHom.comp φ.pullback = φ.pullback := by
+  rw [mem_ker_iff]
+  constructor
+  · intro h
+    refine CoordinateRing.algHom_ext ?_ ?_ <;>
+      · rw [AlgHom.comp_apply]
+        exact h _ ⟨_, fieldPullback_algebraMap _ _⟩
+  · intro hcoord
+    have hfield : (translation W₁ P).toAlgHom.comp φ.fieldPullback = φ.fieldPullback :=
+      fieldPullback_unique _ _ fun x ↦ by
+        rw [AlgHom.comp_apply, fieldPullback_algebraMap, ← AlgHom.comp_apply, hcoord]
+    rintro _ ⟨z, rfl⟩
+    simpa using DFunLike.congr_fun hfield z
+
 /-- **Membership in the kernel is fixing the tautological point.** A translation fixes every
 pulled-back function exactly when it fixes the coordinate pullback, and a coordinate pullback is
 determined by its tautological point, so the kernel is read off that point alone. -/
@@ -93,23 +112,8 @@ theorem mem_ker_iff_map_tautologicalPoint_eq [W₂.IsElliptic] (φ : Isogeny W�
     P ∈ φ.ker ↔
       Point.map (translation W₁ P).toAlgHom (CoordinatePullback.tautologicalPoint φ.pullback) =
         CoordinatePullback.tautologicalPoint φ.pullback := by
-  rw [mem_ker_iff]
-  constructor
-  · intro h
-    rw [← CoordinatePullback.tautologicalPoint_comp]
-    refine congrArg _ ?_
-    refine CoordinateRing.algHom_ext ?_ ?_ <;>
-      · rw [AlgHom.comp_apply]
-        exact h _ ⟨_, fieldPullback_algebraMap _ _⟩
-  · intro h
-    have hcoord : (translation W₁ P).toAlgHom.comp φ.pullback = φ.pullback :=
-      CoordinatePullback.tautologicalPoint_injective
-        (by rw [CoordinatePullback.tautologicalPoint_comp, h])
-    have hfield : (translation W₁ P).toAlgHom.comp φ.fieldPullback = φ.fieldPullback :=
-      fieldPullback_unique _ _ fun x ↦ by
-        rw [AlgHom.comp_apply, fieldPullback_algebraMap, ← AlgHom.comp_apply, hcoord]
-    rintro _ ⟨z, rfl⟩
-    simpa using DFunLike.congr_fun hfield z
+  rw [mem_ker_iff_comp_pullback_eq, ← CoordinatePullback.tautologicalPoint_comp,
+    CoordinatePullback.tautologicalPoint_injective.eq_iff]
 
 /-- **The kernel is finite**, the pulled-back field being of finite index. -/
 instance finite_ker (φ : Isogeny W₁ W₂) : Finite φ.ker :=

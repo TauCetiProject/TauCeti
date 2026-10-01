@@ -22,6 +22,8 @@ the arrows of `Reflect V i`, by `TauCeti.Quiver.hom_reflectAt_eq_hom_reflect` â€
 
 * `TauCeti.Quiver.reflectAt`: reflection at a vertex, as an operation on quiver structures.
 * `TauCeti.Quiver.reflectList`: reflection at each vertex of a list, in order.
+* `TauCeti.Quiver.fintypeHomReflectList`: arrow-finiteness transported along `reflectList`, the
+  iterated counterpart of `TauCeti.Quiver.instFintypeReflectHom`.
 
 ## Main results
 
@@ -38,10 +40,11 @@ the arrows of `Reflect V i`, by `TauCeti.Quiver.hom_reflectAt_eq_hom_reflect` â€
 
 ## Implementation notes
 
-Both definitions are `@[expose]`d. A module that iterates the reflection of *representations*
+All three definitions are `@[expose]`d. A module that iterates the reflection of *representations*
 needs the reductions `reflectList q (i :: l) = reflectList (reflectAt q i) l` and
 `(a âŸ¶ b) = TauCeti.Quiver.reflectHom i a b` in `reflectAt q i` to hold definitionally, so that a
-recursive construction typechecks against the quiver structure its predecessor produced.
+recursive construction typechecks against the quiver structure its predecessor produced; the same
+goes for the recursion of `fintypeHomReflectList` along the list.
 
 ## References
 
@@ -142,6 +145,19 @@ theorem reflectList_reverse_reflectList (q : _root_.Quiver.{v} V) :
       rw [reflectList_cons, List.reverse_cons, reflectList_append,
         reflectList_reverse_reflectList,
         reflectList_cons, reflectList_nil, reflectAt_reflectAt]
+
+/-- **The arrows of an iteratively reflected quiver are finite in number** whenever those of the
+original one are: reflection only reverses arrows. This is the iterated counterpart of
+`TauCeti.Quiver.instFintypeReflectHom`, recursive along the list because the reflection at each
+vertex is taken with respect to the structure the previous one produced. -/
+@[expose, instance_reducible]
+noncomputable def fintypeHomReflectList :
+    âˆ€ (l : List V) (q : _root_.Quiver.{v} V)
+      (_hq : âˆ€ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) (a b : V),
+      Fintype (@_root_.Quiver.Hom V (reflectList q l) a b)
+  | [], _, hq, a, b => hq a b
+  | i :: l, q, hq, a, b =>
+      fintypeHomReflectList l (reflectAt q i) (@instFintypeReflectHom V q hq i) a b
 
 /-! ### Reflecting along a repetition-free list -/
 

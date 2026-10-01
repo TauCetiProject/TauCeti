@@ -35,6 +35,12 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
   orbits.
+* `TauCeti.isIntegralCurve_centeredNegativeGradientFlow`: an orbit written in displacement
+  coordinates solves the centred negative-gradient equation.
+* `TauCeti.flowOfLipschitz_centeredNegativeGradient_apply`: identifies the flow of the centred
+  field with the translated negative-gradient flow.
+* `TauCeti.eq_centeredNegativeGradientFlow_of_isIntegralCurveOn`: uniqueness in displacement
+  coordinates on a time set containing the interval from zero to the chosen time.
 * `TauCeti.negativeGradientFlow_congr`: it does not depend on the chosen Lipschitz bound.
 * `TauCeti.forall_negativeGradientFlow_eq_self_iff`: its rest points are the zeros of `∇ f`.
 * `TauCeti.negativeGradientFlow_orbit_antitone`: `f` decreases along an orbit on which it is
@@ -48,7 +54,7 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 
 public section
 
-open InnerProductSpace
+open InnerProductSpace Set
 open scoped Gradient NNReal
 
 namespace TauCeti
@@ -77,6 +83,47 @@ theorem eq_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f)) {
     (hγ : IsIntegralCurve γ fun _ y ↦ -∇ f y) (t : ℝ) :
     γ t = negativeGradientFlow f hf t (γ 0) :=
   eq_flowOfLipschitz hf.neg hγ t
+
+/-- Translating the negative-gradient field to displacement coordinates preserves its Lipschitz
+constant. -/
+theorem lipschitzWith_centeredNegativeGradient (hf : LipschitzWith K (∇ f)) (x : E) :
+    LipschitzWith K (fun z ↦ (-∇ f) (x + z)) := by
+  intro z w
+  simpa only [edist_dist, dist_add_left] using hf.neg (x + z) (x + w)
+
+/-- A negative-gradient orbit, written in displacement coordinates about `x`, solves the centred
+negative-gradient equation. -/
+theorem isIntegralCurve_centeredNegativeGradientFlow (hf : LipschitzWith K (∇ f)) (x z : E) :
+    IsIntegralCurve
+      (fun t ↦ negativeGradientFlow f hf t (x + z) - x)
+      (fun _ w ↦ (-∇ f) (x + w)) := by
+  intro t
+  have ht := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve (x + z) t
+  have harg : x + (negativeGradientFlow f hf t (x + z) - x) =
+      negativeGradientFlow f hf t (x + z) := by abel
+  simpa only [harg, Pi.neg_apply] using ht.sub_const x
+
+/-- The flow of the centred negative-gradient field is the negative-gradient flow translated to
+displacement coordinates. -/
+theorem flowOfLipschitz_centeredNegativeGradient_apply (hf : LipschitzWith K (∇ f))
+    (x z : E) (t : ℝ) :
+    flowOfLipschitz (fun w ↦ (-∇ f) (x + w))
+        (lipschitzWith_centeredNegativeGradient hf x) t z =
+      negativeGradientFlow f hf t (x + z) - x := by
+  simpa only [_root_.Flow.map_zero_apply, add_sub_cancel_left] using
+    (eq_flowOfLipschitz (lipschitzWith_centeredNegativeGradient hf x)
+      (isIntegralCurve_centeredNegativeGradientFlow hf x z) t).symm
+
+/-- A centred negative-gradient trajectory on a time set containing the interval between zero and
+`t` is the corresponding translated orbit of the global negative-gradient flow at `t`. -/
+theorem eq_centeredNegativeGradientFlow_of_isIntegralCurveOn
+    (hf : LipschitzWith K (∇ f)) {x z : E} {y : ℝ → E} {s : Set ℝ}
+    (hy : IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) s)
+    (hy0 : y 0 = z) {t : ℝ} (hst : uIcc 0 t ⊆ s) :
+    y t = negativeGradientFlow f hf t (x + z) - x := by
+  have hv := lipschitzWith_centeredNegativeGradient hf x
+  rw [eq_flowOfLipschitz_of_isIntegralCurveOn hv hy hst, hy0,
+    flowOfLipschitz_centeredNegativeGradient_apply]
 
 /-- **Independence of the Lipschitz bound.** Two Lipschitz witnesses for `∇ f`, with possibly
 different constants, produce the same negative gradient flow. -/

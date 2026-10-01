@@ -52,11 +52,6 @@ def realOpenUnitBall : Opens ℝ := ⟨Metric.ball 0 1, isOpen_ball⟩
 theorem coe_realOpenUnitBall : (realOpenUnitBall : Set ℝ) = Metric.ball 0 1 := by
   simp [realOpenUnitBall]
 
-/-- The Riemannian structure on the real open unit ball induced from `ℝ`. -/
-local instance : RiemannianBundle
-    (fun x : realOpenUnitBall ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
-  Manifold.instRiemannianBundleOpen realOpenUnitBall
-
 namespace RealOpenUnitBall
 
 /-- The centre of the real open unit ball. -/
@@ -71,9 +66,11 @@ theorem mem_iff {x : ℝ} : x ∈ realOpenUnitBall ↔ |x| < 1 := by
   simp [realOpenUnitBall]
 
 /-- The ambient metric on the real open unit ball is the Riemannian distance induced by the
-restricted Euclidean metric. -/
+restricted Euclidean metric. This is an instance in the `TauCeti` scope. -/
 theorem isRiemannianManifold : IsRiemannianManifold 𝓘(ℝ, ℝ) realOpenUnitBall :=
   Manifold.isRiemannianManifold_of_convex realOpenUnitBall (convex_ball (0 : ℝ) 1)
+
+scoped[TauCeti] attribute [instance] TauCeti.RealOpenUnitBall.isRiemannianManifold
 
 /-- The radial segment from the centre to `q`, affinely parametrized on `[0, 1]` and clamped
 outside that interval. -/

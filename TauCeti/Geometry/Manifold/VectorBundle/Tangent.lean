@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -52,6 +53,12 @@ identification.
   the tangent space of an open submanifold and the ambient tangent space.
 * `TauCeti.Manifold.mfderiv_subtype_val`: the differential of the inclusion is the canonical
   tangent-space equivalence.
+* `TauCeti.Manifold.tangentMap_subtype_val`: the tangent map of the inclusion under this
+  equivalence.
+* `TauCeti.Manifold.instT2SpaceTangentBundleModelSpace`: a model space has a Hausdorff tangent
+  bundle. It is an instance in the `TauCeti` scope, for model spaces `H` whose Hausdorffness is
+  not already an instance; over a Hausdorff manifold the tangent bundle is Hausdorff by the general
+  instance `TauCeti.FiberBundle.t2Space_totalSpace`.
 * `TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq`: near a point, the
   inverse tangent-bundle trivializations agree through this equivalence.
 -/
@@ -572,6 +579,24 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
     fderivWithin_id
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
+
+/-- The tangent map of an open submanifold's inclusion identifies its tangent vectors with
+ambient tangent vectors through `tangentSpaceOpenEquiv`. -/
+@[simp]
+theorem tangentMap_subtype_val {U : Opens M}
+    (p : TangentBundle I U) :
+    tangentMap I I (Subtype.val : U → M) p =
+      ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
+  simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+
+/-- The tangent bundle of a model space is Hausdorff. -/
+theorem instT2SpaceTangentBundleModelSpace :
+    T2Space (TangentBundle I H) := by
+  let _ : T2Space H := I.isClosedEmbedding.toIsEmbedding.t2Space
+  let _ : T2Space (ModelProd H E) := Prod.t2Space
+  exact (tangentBundleModelSpaceHomeomorph I).symm.t2Space
+
+scoped[TauCeti] attribute [instance] Manifold.instT2SpaceTangentBundleModelSpace
 
 /-- Near a point of an open submanifold, its inverse tangent-bundle trivialization agrees with the
 ambient inverse trivialization under the canonical tangent-space identification. -/

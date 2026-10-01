@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.CategoryTheory.DG.FullSubcategory
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Opposite.Functor
 
 /-!
 # Quasi-equivalences of differential graded categories
@@ -104,6 +104,19 @@ theorem IsQuasiFullyFaithful.comp
   rw [EnrichedFunctor.comp_map]
   exact quasiIso_comp (F.map X Y) (G.map (F.obj X) (F.obj Y))
     (hφ := hF X Y) (hφ' := hG (F.obj X) (F.obj Y))
+
+/-- A DG functor is quasi-fully faithful exactly when its opposite is: the Hom chain maps are
+the same maps with source and target reversed. -/
+@[simp]
+theorem isQuasiFullyFaithful_op_iff
+    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
+    F.op.IsQuasiFullyFaithful ↔ F.IsQuasiFullyFaithful := by
+  -- The Hom chain maps are definitionally the same after reversing the two objects.
+  constructor
+  · intro hF X Y
+    exact hF (Opposite.op Y) (Opposite.op X)
+  · intro hF X Y
+    exact hF Y.unop X.unop
 
 /-- A DG functor is a quasi-equivalence when it is a quasi-isomorphism on all Hom complexes
 and every target object is isomorphic in `H⁰` to an object in its image. -/

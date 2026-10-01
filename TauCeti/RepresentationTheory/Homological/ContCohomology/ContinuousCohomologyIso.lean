@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Invariants
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CocycleComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
@@ -46,6 +47,10 @@ the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a g
 
 ## Main results
 
+* `TauCeti.ContCohomology.explicitH0IsoContinuousCohomology_hom_eq_π`: the comparison sends an
+  invariant element `m` to the class of its homogeneous `0`-cocycle
+  `TauCeti.ContCohomology.cocycle0 m`, which is how the cocycle-level comparisons of the higher
+  degrees read it.
 * `TauCeti.ContCohomology.explicitH0Iso_map`: the comparison is natural in compatible pairs.
 * `TauCeti.ContCohomology.explicitH0Iso_res`, `TauCeti.ContCohomology.explicitH0Iso_coeffMap`: its
   two named instances, carrying the explicit restriction and coefficient maps of degree zero to
@@ -196,6 +201,27 @@ theorem coe_explicitH0IsoContinuousCohomology_inv_apply
     ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)
 
 end Comparison
+
+section Cocycle
+
+/-! Reading the comparison on the homogeneous complex needs the homogeneous `0`-cocycle
+`TauCeti.ContCohomology.cocycle0`, hence the smoothness hypothesis `ContinuousSMul G M` that the
+cocycle comparisons carry. -/
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+/-- The degree-zero comparison sends an invariant element to the class of its homogeneous
+`0`-cocycle. -/
+theorem explicitH0IsoContinuousCohomology_hom_eq_π (m : H0 G M) :
+    (explicitH0IsoContinuousCohomology G M).hom m =
+      _root_.ContinuousCohomology.π (ofDiscreteModule ℤ G M) 0 (cocycle0 G M m) := by
+  rw [explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass]
+  exact TauCeti.ContinuousCohomology.degreeZeroClass_eq_π _ _ _
+    (by rw [iCycles_cocycle0, cochainEquiv0_apply, one_smul])
+
+end Cocycle
 
 section Transport
 

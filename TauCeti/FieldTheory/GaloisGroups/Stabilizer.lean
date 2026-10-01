@@ -27,6 +27,8 @@ separable, and for irreducible `p` this follows from `p.Separable`.
 
 * `TauCeti.stabilizer_eq_fixingSubgroup_adjoin_simple`: the stabilizer of a root is the fixing
   subgroup of the field the root generates.
+* `TauCeti.isGaloisGroup_stabilizer`: when the splitting field is Galois, the stabilizer of a
+  root is a Galois group for the splitting field over the field the root generates.
 * `TauCeti.isPretransitive_rootSet_of_irreducible`: in a normal extension the Galois group acts
   transitively on the roots of an irreducible polynomial.
 * `TauCeti.index_stabilizer_eq_natDegree_minpoly`,
@@ -76,6 +78,21 @@ theorem stabilizer_eq_fixingSubgroup_adjoin_simple (x : p.rootSet p.SplittingFie
     IntermediateField.fixingSubgroup_adjoin_simple]
   exact Iff.rfl
 
+/-- **The stabilizer of a root is the Galois group over the field the root generates.** When the
+splitting field is Galois over `F`, the stabilizer of a root `x` is a Galois group for the
+splitting field over `F⟮x⟯`.
+
+This is the `IsGaloisGroup` form of `TauCeti.stabilizer_eq_fixingSubgroup_adjoin_simple`; through
+`IsGaloisGroup.mulEquivCongr` it identifies the stabilizer with `Gal(p.SplittingField/F⟮x⟯)`. -/
+instance isGaloisGroup_stabilizer [IsGalois F p.SplittingField] (x : p.rootSet p.SplittingField) :
+    IsGaloisGroup (stabilizer p.Gal x) F⟮(x : p.SplittingField)⟯ p.SplittingField :=
+  -- Mathlib's instance `IsGaloisGroup.intermediateField` covers fixing subgroups, but instance
+  -- search does not see the stabilizer as one, hence this instance.
+  IsGaloisGroup.of_fixedPoints_eq p.Gal F p.SplittingField _ _ <| by
+    rw [stabilizer_eq_fixingSubgroup_adjoin_simple]
+    -- `IntermediateField.fixedField H` is by definition `FixedPoints.intermediateField H`.
+    exact IsGalois.fixedField_fixingSubgroup _
+
 /-! ### The index of a point stabilizer -/
 
 /-- **The index of a point stabilizer is the degree of the minimal polynomial of the point.** The
@@ -96,7 +113,7 @@ Separability cannot be dropped: an inseparable irreducible polynomial has fewer 
 degree. -/
 theorem index_stabilizer_eq_natDegree (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) : (stabilizer p.Gal x).index = p.natDegree := by
-  have := isPretransitive_of_irreducible hp
+  have := Gal.galActionAux_isPretransitive hp
   rw [MulAction.index_stabilizer_of_transitive, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep (IsSplittingField.splits p.SplittingField p)]
 

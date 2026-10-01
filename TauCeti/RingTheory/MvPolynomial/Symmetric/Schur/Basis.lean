@@ -57,6 +57,8 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   monomials.
 * `TauCeti.msymmBasis`: **the monomial basis**.
 * `TauCeti.schurPolyBasis`: **the Schur basis**.
+* `TauCeti.partitionEquivSchurIndex`: identifies partitions of `n` with the Schur basis index
+  when the alphabet is `Fin d` and `n ≤ d`.
 
 ## Main results
 
@@ -88,6 +90,30 @@ public section
 namespace TauCeti
 
 open Finset MvPolynomial
+
+/-- For an alphabet with at least `n` letters, every partition of `n` indexes a Schur basis
+vector. -/
+def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
+    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
+  toFun μ := ⟨μ, by
+    have hcard := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx => μ.parts_pos hx)
+    have hparts : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hcard
+    exact hparts.trans (by simpa using h)⟩
+  invFun μ := μ.1
+  left_inv _ := rfl
+  right_inv _ := Subtype.ext rfl
+
+/-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
+@[simp]
+theorem partitionEquivSchurIndex_apply (n d : ℕ) (h : n ≤ d) (μ : n.Partition) :
+    (partitionEquivSchurIndex n d h μ).1 = μ := by
+  simp [partitionEquivSchurIndex]
+
+/-- The inverse reindexing from the Schur basis returns the underlying partition. -/
+@[simp]
+theorem partitionEquivSchurIndex_symm_apply (n d : ℕ) (h : n ≤ d)
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin d)}) :
+    (partitionEquivSchurIndex n d h).symm μ = μ.1 := (rfl)
 
 section CommSemiring
 

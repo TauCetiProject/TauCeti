@@ -55,6 +55,9 @@ no loss of constant. The outer integral is over a probability measure, so the bo
 
 * `TauCeti.DenseGraphLimits.counting_lemma` — the forward counting lemma
   `|t(F, U) - t(F, W)| ≤ e(F) · ‖U - W‖□`;
+* `TauCeti.DenseGraphLimits.counting_lemma_top_fin_two` and
+  `TauCeti.DenseGraphLimits.counting_lemma_top_fin_three` — the one-edge and triangle
+  specializations, with constants `1` and `3`;
 * `TauCeti.DenseGraphLimits.counting_lemma_coupling` — its cross-carrier coupling form, bounding the
   density gap of two graphons on different carriers by the cut norm of the overlaid difference along
   any coupling of the carriers;
@@ -278,6 +281,26 @@ theorem counting_lemma (F : SimpleGraph V) [DecidableRel F.Adj] (U W : Graphon �
     integral_congr_ae (ae_of_all _ fun x => Finset.prod_congr rfl fun e he => by simp [he])
   rw [hrw] at h
   rw [homDensity_def, homDensity_def]
+  exact h
+
+/-- **The counting lemma for one edge.** The edge densities of two graphons differ by at most the
+cut norm of their difference. -/
+theorem counting_lemma_top_fin_two (U W : Graphon Ω μ) :
+    |homDensity (⊤ : SimpleGraph (Fin 2)) U - homDensity (⊤ : SimpleGraph (Fin 2)) W|
+      ≤ cutNorm μ (U.toSymmKernel - W.toSymmKernel) := by
+  have h := counting_lemma (⊤ : SimpleGraph (Fin 2)) U W
+  rw [SimpleGraph.card_edgeFinset_top_eq_card_choose_two, Fintype.card_fin] at h
+  norm_num at h
+  exact h
+
+/-- **The counting lemma for a triangle.** The triangle densities of two graphons differ by at
+most three times the cut norm of their difference, one contribution for each edge. -/
+theorem counting_lemma_top_fin_three (U W : Graphon Ω μ) :
+    |homDensity (⊤ : SimpleGraph (Fin 3)) U - homDensity (⊤ : SimpleGraph (Fin 3)) W|
+      ≤ 3 * cutNorm μ (U.toSymmKernel - W.toSymmKernel) := by
+  have h := counting_lemma (⊤ : SimpleGraph (Fin 3)) U W
+  rw [SimpleGraph.card_edgeFinset_top_eq_card_choose_two, Fintype.card_fin] at h
+  norm_num at h
   exact h
 
 section CrossCarrier

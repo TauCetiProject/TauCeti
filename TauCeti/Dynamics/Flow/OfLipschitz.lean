@@ -26,6 +26,8 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.hasDerivAt_flowOfLipschitz` and `TauCeti.isIntegralCurve_flowOfLipschitz`: its
   orbits solve the differential equation.
 * `TauCeti.eq_flowOfLipschitz`: every global solution is an orbit of the flow.
+* `TauCeti.eq_flowOfLipschitz_of_isIntegralCurveOn`: the corresponding uniqueness statement for a
+  solution on any time set containing the interval between zero and the chosen time.
 * `TauCeti.flowOfLipschitz_congr`: it does not depend on the chosen Lipschitz bound.
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
@@ -37,7 +39,7 @@ the initial condition, and the joint continuity required by `Flow` is
 
 public section
 
-open Filter Topology
+open Filter Set Topology
 open scoped NNReal
 
 namespace TauCeti
@@ -78,6 +80,34 @@ theorem isIntegralCurve_flowOfLipschitz (hv : LipschitzWith K v) (x : E) :
 theorem eq_flowOfLipschitz (hv : LipschitzWith K v) {γ : ℝ → E}
     (hγ : ∀ t, HasDerivAt γ (v (γ t)) t) (t : ℝ) : γ t = flowOfLipschitz v hv t (γ 0) :=
   congrFun (ODE.eq_globalSolution v hv hγ) t
+
+/-- **Uniqueness on a time set.** An integral curve on a set containing the interval between zero
+and `t` agrees at `t` with the globally Lipschitz flow through its value at zero. -/
+theorem eq_flowOfLipschitz_of_isIntegralCurveOn (hv : LipschitzWith K v) {γ : ℝ → E}
+    {s : Set ℝ} (hγ : IsIntegralCurveOn γ (fun _ y ↦ v y) s) {t : ℝ}
+    (hst : uIcc 0 t ⊆ s) :
+    γ t = flowOfLipschitz v hv t (γ 0) := by
+  have hγ' := hγ.mono hst
+  let η : ℝ → E := fun s ↦ flowOfLipschitz v hv s (γ 0)
+  have hη : IsIntegralCurve η (fun _ y ↦ v y) := isIntegralCurve_flowOfLipschitz hv (γ 0)
+  have hinit : γ 0 = η 0 := by simp only [η, _root_.Flow.map_zero_apply]
+  rcases le_total 0 t with ht | ht
+  · rw [uIcc_of_le ht] at hγ'
+    have heq := ODE_solution_unique (a := 0) (b := t) (v := fun _ y ↦ v y)
+      (fun _ ↦ hv) hγ'.continuousOn
+      (fun s hs ↦ (hγ' s ⟨hs.1, hs.2.le⟩).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsGE_of_mem hs))
+      hη.continuous.continuousOn (fun s _ ↦ (hη s).hasDerivWithinAt) hinit
+    exact heq ⟨ht, le_rfl⟩
+  · rw [uIcc_of_ge ht] at hγ'
+    have heq := ODE_solution_unique_of_mem_Icc_left (a := t) (b := 0)
+      (v := fun _ y ↦ v y) (s := fun _ ↦ univ) (K := K)
+      (fun _ _ ↦ hv.lipschitzOnWith) hγ'.continuousOn
+      (fun s hs ↦ (hγ' s ⟨hs.1.le, hs.2⟩).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsLE_of_mem hs))
+      (fun _ _ ↦ mem_univ _) hη.continuous.continuousOn
+      (fun s _ ↦ (hη s).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) hinit
+    exact heq ⟨le_rfl, ht⟩
 
 /-- **The rest points of the flow are the zeros of the vector field.** -/
 theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :

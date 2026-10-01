@@ -26,6 +26,8 @@ element `ξ` and the action is by `R`-algebra maps, faithfulness can be tested a
   representation.
 * `TauCeti.eq_one_of_smul_eq_of_adjoin_singleton_eq_top`: for a faithful action by `R`-algebra
   maps, only the identity fixes a single generator of `S` over `R`.
+* `TauCeti.smul_left_injective_of_adjoin_singleton_eq_top`: under the same hypotheses, distinct
+  group elements move the generator to distinct elements.
 -/
 
 public section
@@ -63,5 +65,21 @@ theorem eq_one_of_smul_eq_of_adjoin_singleton_eq_top [FaithfulSMul G S] {ξ : S}
   have hx : x ∈ Algebra.adjoin R {ξ} := hξ ▸ Algebra.mem_top
   rw [one_smul]
   exact (Algebra.forall_mem_adjoin_smul_eq_self_iff {ξ} σ).2 (Set.forall_mem_singleton.2 h) x hx
+
+end TauCeti
+
+namespace TauCeti
+
+variable {G : Type*} [Group G] {S : Type*} [Semiring S] [MulSemiringAction G S]
+variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
+
+/-- For a faithful action by `R`-algebra maps on `S = R[ξ]`, the orbit map at `ξ` is injective. -/
+theorem smul_left_injective_of_adjoin_singleton_eq_top [FaithfulSMul G S] {ξ : S}
+    (hξ : Algebra.adjoin R {ξ} = ⊤) : Function.Injective fun σ : G ↦ σ • ξ := by
+  intro σ τ h
+  beta_reduce at h
+  apply (inv_mul_eq_one).1
+  apply eq_one_of_smul_eq_of_adjoin_singleton_eq_top hξ
+  rw [mul_smul, ← h, inv_smul_smul]
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.ExponentialDichotomy
-public import TauCeti.Analysis.InnerProductSpace.EuclideanClosedBall
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.ClosedBall
 public import TauCeti.Analysis.ODE.LyapunovPerron.Embedding
 import Mathlib.Analysis.ODE.Transform
 
@@ -143,6 +143,19 @@ theorem mem_localUnstableSet {h : IsNondegenerateCriticalPoint f x} {r rho : ℝ
       (∃ y : ℝ → E, IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) ∧ y 0 = z ∧
         MapsTo y (Iic 0) (closedBall 0 r)) ∧ ‖h.unstableProjection z‖ ≤ rho :=
   Iff.rfl
+
+/-- The local stable set is the forward local invariant set cut out by the stable projection. -/
+theorem localStableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x) (r rho : ℝ) :
+    h.localStableSet r rho = localInvariantSet f x (Ici 0) h.stableProjection r rho := by
+  ext z
+  rw [mem_localStableSet, mem_localInvariantSet]
+
+/-- The local unstable set is the backward local invariant set cut out by the unstable
+projection. -/
+theorem localUnstableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x) (r rho : ℝ) :
+    h.localUnstableSet r rho = localInvariantSet f x (Iic 0) h.unstableProjection r rho := by
+  ext z
+  rw [mem_localUnstableSet, mem_localInvariantSet]
 
 /-- The nonlinear remainder of the centred negative-gradient field fixes the origin. -/
 private theorem negativeGradientRemainder_centered_zero (h : IsNondegenerateCriticalPoint f x) :

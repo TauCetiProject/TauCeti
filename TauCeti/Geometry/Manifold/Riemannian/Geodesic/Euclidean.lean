@@ -8,14 +8,17 @@ module
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Geodesics and the exponential map in inner-product spaces
 
 This file identifies the Riemannian geodesics of a finite-dimensional real inner-product space.
 Its standard Riemannian metric is constant, so the Levi-Civita connection has vanishing
-Christoffel map and affine lines are geodesics. Consequently their maximal intervals are all of
-`ℝ`, and the chosen maximal geodesic with initial point `p` and velocity `v` is `t ↦ p + t • v`.
+Christoffel map, and the geodesic equation says that the acceleration vanishes.  On every interval
+the geodesics are therefore exactly the affine segments.  Consequently the maximal intervals are
+all of `ℝ`, and the chosen maximal geodesic with initial point `p` and velocity `v` is
+`t ↦ p + t • v`.
 
 It follows that the exponential map at `p` is defined on all of `T_p F` and is translation by `p`,
 under the canonical identification `NormedSpace.fromTangentSpace` of `T_p F` with `F`, so its
@@ -32,8 +35,13 @@ exponential map, normal domains, and the logarithm can be checked.
 * `TauCeti.Manifold.christoffelMap_leviCivita_model_space`: the Christoffel map of the standard
   Riemannian metric vanishes.
 * `TauCeti.Manifold.isGeodesicCurve_add_smul`: an affine line is an all-time geodesic.
-* `TauCeti.Manifold.isGeodesicCurve_iff_exists_eq_add_smul`: the geodesics are exactly the
-  affine lines.
+* `TauCeti.Manifold.isGeodesicCurveOn_iff_model_space`: the geodesic equation is the vanishing of
+  the acceleration.
+* `TauCeti.Manifold.isGeodesicCurveOn_iff_exists_eqOn_add_smul` and
+  `TauCeti.Manifold.isGeodesicCurveOnFrom_iff_eqOn_add_smul`: on an interval, the geodesics are
+  exactly the affine segments, and the one with initial data `(p, v)` is `t ↦ p + t • v`.
+* `TauCeti.Manifold.isGeodesicCurve_iff_exists_eq_add_smul`: the all-time geodesics are exactly
+  the affine lines.
 * `TauCeti.Manifold.geodesicInterval_model_space`: every affine initial condition exists for all
   time.
 * `TauCeti.Manifold.maximalGeodesic_model_space`: the chosen maximal geodesic is the affine line.
@@ -201,31 +209,83 @@ theorem geodesicInterval_model_space (p v : F) :
 @[simp]
 theorem maximalGeodesic_model_space (p v : F) (t : ℝ) :
     maximalGeodesic 𝓘(ℝ, F) F p v t = p + t • v := by
-  let _ : T2Space (ModelProd F F) := Prod.t2Space
-  let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
-    (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
   exact (isGeodesicCurveOnFrom_add_smul p v).eq_maximalGeodesic_of_univ t
+
+/-- **The geodesic equation in an inner-product space.**  Since the Christoffel map vanishes, a
+curve is a geodesic on a parameter set with unique derivatives exactly when it is `C²` there and
+its acceleration within that set vanishes. -/
+theorem isGeodesicCurveOn_iff_model_space {γ : ℝ → F} {s : Set ℝ} (hs : UniqueDiffOn ℝ s) :
+    IsGeodesicCurveOn 𝓘(ℝ, F) γ s ↔
+      ContDiffOn ℝ 2 γ s ∧ ∀ r ∈ s, derivWithin (derivWithin γ s) s r = 0 := by
+  rw [isGeodesicCurveOn_iff_chart hs, contMDiffOn_iff_contDiffOn]
+  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp,
+    christoffelMap_leviCivita_model_space, zero_apply, add_zero]
+
+/-- **The geodesics of an inner-product space on an interval are affine segments.**  On a
+preconnected parameter set with unique derivatives, such as a nondegenerate interval, a curve in a
+finite-dimensional real inner-product space is a geodesic exactly when it agrees there with an
+affine line. -/
+theorem isGeodesicCurveOn_iff_exists_eqOn_add_smul {γ : ℝ → F} {s : Set ℝ}
+    (hs : UniqueDiffOn ℝ s) (hs' : IsPreconnected s) :
+    IsGeodesicCurveOn 𝓘(ℝ, F) γ s ↔ ∃ p v : F, EqOn γ (fun t : ℝ ↦ p + t • v) s := by
+  refine ⟨fun hγ ↦ ?_, fun ⟨p, v, hpv⟩ ↦
+    ((isGeodesicCurveOnFrom_add_smul p v).isGeodesicCurveOn.mono hs (subset_univ s)).congr hpv⟩
+  obtain rfl | ⟨t₀, ht₀⟩ := s.eq_empty_or_nonempty
+  · exact ⟨0, 0, eqOn_empty _ _⟩
+  obtain ⟨hC2, hacc⟩ := (isGeodesicCurveOn_iff_model_space hs).1 hγ
+  have hconv : Convex ℝ s := Real.convex_iff_isPreconnected.2 hs'
+  have hdiff : DifferentiableOn ℝ (derivWithin γ s) s :=
+    (hC2.derivWithin hs (m := 1) (by norm_num)).differentiableOn (by norm_num)
+  set v := derivWithin γ s t₀
+  -- The velocity has vanishing derivative on the convex set `s`, so it is constant there.
+  have hvel : EqOn (derivWithin γ s) (fun _ ↦ v) s :=
+    hconv.eqOn_of_fderivWithin_eq hdiff (differentiableOn_const v) hs
+      (fun r hr ↦ by simp [← toSpanSingleton_derivWithin, hacc r hr]) ht₀ rfl
+  have hline (p : F) (r : ℝ) : HasDerivAt (fun t : ℝ ↦ p + t • v) v r := by
+    simpa using ((hasDerivAt_id r).smul_const v).const_add p
+  -- A curve with constant velocity `v` on `s` agrees there with the line through `γ t₀`.
+  refine ⟨γ t₀ - t₀ • v, v, hconv.eqOn_of_fderivWithin_eq (hC2.differentiableOn (by norm_num))
+    (fun r _ ↦ (hline _ r).differentiableAt.differentiableWithinAt) hs (fun r hr ↦ ?_) ht₀
+    (by simp)⟩
+  rw [← toSpanSingleton_derivWithin, ← toSpanSingleton_derivWithin, hvel hr,
+    (hline _ r).hasDerivWithinAt.derivWithin (hs r hr)]
+
+/-- **The geodesic of an inner-product space with given initial data.**  On a preconnected
+parameter set with unique derivatives containing `0`, the geodesic starting at `p` with velocity
+`v` is the affine line `t ↦ p + t • v` there. -/
+theorem isGeodesicCurveOnFrom_iff_eqOn_add_smul {γ : ℝ → F} {s : Set ℝ}
+    (hs : UniqueDiffOn ℝ s) (hs' : IsPreconnected s) (h0 : (0 : ℝ) ∈ s) {p v : F} :
+    IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ s p v ↔ EqOn γ (fun t : ℝ ↦ p + t • v) s := by
+  -- On `s`, a curve agreeing with an affine line has the line's velocity at `0`.
+  have hvel {q w : F} (h : EqOn γ (fun t : ℝ ↦ q + t • w) s) :
+      curveVelocityWithin 𝓘(ℝ, F) γ s 0 = w := by
+    have hline : HasDerivWithinAt γ w s 0 := by
+      refine HasDerivWithinAt.congr_of_mem ?_ h h0
+      simpa using (((hasDerivAt_id (0 : ℝ)).smul_const w).const_add q).hasDerivWithinAt
+    have hchart := derivWithin_extChartAt_comp_curve (I := 𝓘(ℝ, F))
+      hline.differentiableWithinAt.mdifferentiableWithinAt (hs 0 h0)
+    rw [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp,
+      hline.derivWithin (hs 0 h0)] at hchart
+    exact hchart.symm
+  constructor
+  · intro h
+    obtain ⟨q, w, hqw⟩ := (isGeodesicCurveOn_iff_exists_eqOn_add_smul hs hs').1
+      h.isGeodesicCurveOn
+    have hq : q = p := by simpa using (hqw h0).symm.trans h.base_eq
+    have hw : w = v := (hvel hqw).symm.trans (eq_of_heq h.velocity_heq)
+    rwa [← hq, ← hw]
+  · intro h
+    refine ⟨(isGeodesicCurveOn_iff_exists_eqOn_add_smul hs hs').2 ⟨p, v, h⟩, h0, ?_⟩
+    apply TotalSpace.ext
+    · simpa using h h0
+    · exact heq_of_eq (hvel h)
 
 /-- The geodesics in a finite-dimensional real inner-product space are exactly the affine
 lines. -/
 theorem isGeodesicCurve_iff_exists_eq_add_smul {γ : ℝ → F} :
     IsGeodesicCurve 𝓘(ℝ, F) γ ↔ ∃ p v : F, γ = fun t : ℝ ↦ p + t • v := by
-  constructor
-  · intro hγ
-    let p := γ 0
-    let v : F := curveVelocityWithin 𝓘(ℝ, F) γ univ 0
-    refine ⟨p, v, funext fun t ↦ ?_⟩
-    have hfrom : IsGeodesicCurveOnFrom 𝓘(ℝ, F) γ univ p v :=
-      ((isGeodesicCurveOn_univ (I := 𝓘(ℝ, F))).2 hγ).isGeodesicCurveOnFrom
-        (mem_univ 0)
-    let _ : T2Space (ModelProd F F) := Prod.t2Space
-    let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
-      (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
-    have heq := hfrom.eq_maximalGeodesic_of_univ t
-    rw [maximalGeodesic_model_space] at heq
-    exact heq.symm
-  · rintro ⟨p, v, rfl⟩
-    exact isGeodesicCurve_add_smul p v
+  simp only [← isGeodesicCurveOn_univ, isGeodesicCurveOn_iff_exists_eqOn_add_smul
+    uniqueDiffOn_univ isPreconnected_univ, eqOn_univ]
 
 /-! ### The exponential map and the logarithm -/
 
@@ -311,9 +371,6 @@ theorem image_riemannianExp_ball_model_space (p : F) (r : ℝ) :
 star-shaped at the origin is a normal domain. -/
 theorem isNormalDomain_model_space (p : F) {U : Set (TangentSpace 𝓘(ℝ, F) p)} (hU : IsOpen U)
     (h0 : 0 ∈ U) (hstar : StarConvex ℝ 0 U) : IsNormalDomain 𝓘(ℝ, F) F p U := by
-  let _ : T2Space (ModelProd F F) := Prod.t2Space
-  let _ : T2Space (TangentBundle 𝓘(ℝ, F) F) :=
-    (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.t2Space
   refine ⟨hU, h0, hstar, (expDomain_model_space p).symm ▸ subset_univ U, fun v _ w _ h ↦ ?_,
     fun v ↦ ?_⟩
   · simp only [riemannianExp_model_space, add_right_inj] at h

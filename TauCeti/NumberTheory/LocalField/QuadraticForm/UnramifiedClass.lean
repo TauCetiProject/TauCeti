@@ -37,7 +37,7 @@ so the norm equation for `Δ` is the one for the norm form `x² + xy - cy²` of
 is anisotropic over `𝓀[K]` by the choice of `c`. Hence a value of the form at a primitive integral
 vector is a unit, and every value has even valuation. Conversely the residue norm form is the norm
 of the quadratic extension of the finite field `𝓀[K]`, which is surjective, and Hensel's lemma for
-the norm (`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal`, with the unit `ω` of
+the norm (`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem`, with the unit `ω` of
 unit trace `1`) lifts it to every unit of `𝒪[K]`. The argument does not distinguish odd from even
 residue characteristic. In odd residue characteristic `Δ` is a unit with nonsquare residue, and
 over `ℚ₂` the choice `c = -1` gives `Δ = -3`, in the square class of `5`.
@@ -157,7 +157,7 @@ private theorem exists_sq_add_mul_sub_mul_sq_eq (hc : ∀ t : 𝓀[K], t ^ 2 + t
   have htr : IsUnit (Algebra.trace 𝒪[K] (QuadraticAlgebra 𝒪[K] c 1) QuadraticAlgebra.omega) := by
     rw [QuadraticAlgebra.algebraTrace_eq_trace, QuadraticAlgebra.trace_omega]
     exact isUnit_one
-  obtain ⟨y, hy, -⟩ := Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal hw htr
+  obtain ⟨y, hy, -⟩ := Algebra.exists_norm_eq_of_norm_sub_mem hw htr
     (a := (⟨s, t⟩ : QuadraticAlgebra 𝒪[K] c 1)) u.isUnit (by
       rw [QuadraticAlgebra.algebraNorm_eq_norm, ← residue_eq_zero_iff, map_sub, ← hz,
         QuadraticAlgebra.norm_def, QuadraticAlgebra.norm_def]
