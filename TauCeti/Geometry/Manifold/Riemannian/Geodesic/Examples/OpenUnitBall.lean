@@ -37,6 +37,8 @@ from the centre is defined exactly on `(-1, 1)` and reaches the missing boundary
 * `TauCeti.RealOpenUnitBall.geodesicInterval_center_of_norm_eq_one` and
   `TauCeti.RealOpenUnitBall.tendsto_abs_coe_maximalGeodesic_center`: a unit-speed geodesic from
   the centre is defined exactly on `(-1, 1)` and tends to the boundary as `t → 1⁻`.
+* `TauCeti.RealOpenUnitBall.isGeodesicCurveOn_radialSegment`: the radial segment from the centre
+  is a geodesic on `[0, 1]`.
 * `TauCeti.RealOpenUnitBall.exists_isGeodesicCurveOn_Icc_pathELength_eq_edist`: every point is
   joined to the centre by a geodesic on `[0, 1]` realizing the distance, although the space is
   not proper.
@@ -235,12 +237,9 @@ theorem tendsto_abs_coe_maximalGeodesic_center {v : TangentSpace 𝓘(ℝ, ℝ) 
     coe_maximalGeodesic center v htJ
   rw [hγ, coe_center, zero_add, abs_mul, hc, mul_one, abs_of_pos ht.1, id]
 
-/-- Every point `q` of the open unit ball is joined to the centre by a geodesic on `[0, 1]` whose
-length is the distance from the centre to `q`. Since the open unit ball is not proper
-(`not_properSpace`), minimizing geodesics from one point do not by themselves imply properness. -/
-theorem exists_isGeodesicCurveOn_Icc_pathELength_eq_edist (q : realOpenUnitBall) :
-    ∃ γ : ℝ → realOpenUnitBall, IsGeodesicCurveOn 𝓘(ℝ, ℝ) γ (Icc 0 1) ∧ γ 0 = center ∧
-      γ 1 = q ∧ pathELength 𝓘(ℝ, ℝ) γ 0 1 = edist center q := by
+/-- The radial segment from the centre to `q` is a geodesic on `[0, 1]`. -/
+theorem isGeodesicCurveOn_radialSegment (q : realOpenUnitBall) :
+    IsGeodesicCurveOn 𝓘(ℝ, ℝ) (radialSegment q) (Icc 0 1) := by
   set v : TangentSpace 𝓘(ℝ, ℝ) center := (tangentSpaceOpenEquiv center).symm
     ((NormedSpace.fromTangentSpace (center : ℝ)).symm q)
   have hc : NormedSpace.fromTangentSpace (center : ℝ) (tangentSpaceOpenEquiv center v) = q := by
@@ -250,16 +249,18 @@ theorem exists_isGeodesicCurveOn_Icc_pathELength_eq_edist (q : realOpenUnitBall)
     rw [geodesicInterval_eq, mem_ofPred_eq, hc, coe_center, zero_add, abs_mul,
       abs_of_nonneg ht.1]
     exact (mul_le_of_le_one_left (abs_nonneg _) ht.2).trans_lt (mem_iff.1 q.2)
-  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
-  refine ⟨maximalGeodesic 𝓘(ℝ, ℝ) realOpenUnitBall center v,
-    (isGeodesicCurveOnFrom_maximalGeodesic center v).isGeodesicCurveOn.mono
-      (uniqueDiffOn_Icc zero_lt_one) hJ, maximalGeodesic_zero center v, ?_, ?_⟩
-  · apply Subtype.ext
-    rw [coe_maximalGeodesic center v (hJ h1), hc, coe_center, zero_add, one_mul]
-  · rw [pathELength_maximalGeodesic (hJ h0) (hJ h1), sub_zero, ENNReal.ofReal_one, mul_one,
-      enorm_tangentSpace_open, enorm_tangentSpace_vectorSpace, hc]
-    simp [Subtype.edist_eq, edist_eq_enorm_sub]
+  refine ((isGeodesicCurveOnFrom_maximalGeodesic center v).isGeodesicCurveOn.mono
+    (uniqueDiffOn_Icc zero_lt_one) hJ).congr fun t ht ↦ Subtype.ext ?_
+  rw [coe_radialSegment q t ht, coe_maximalGeodesic center v (hJ ht), hc, coe_center, zero_add]
+
+/-- Every point `q` of the open unit ball is joined to the centre by a geodesic on `[0, 1]` whose
+length is the distance from the centre to `q`. Since the open unit ball is not proper
+(`not_properSpace`), minimizing geodesics from one point do not by themselves imply properness. -/
+theorem exists_isGeodesicCurveOn_Icc_pathELength_eq_edist (q : realOpenUnitBall) :
+    ∃ γ : ℝ → realOpenUnitBall, IsGeodesicCurveOn 𝓘(ℝ, ℝ) γ (Icc 0 1) ∧ γ 0 = center ∧
+      γ 1 = q ∧ pathELength 𝓘(ℝ, ℝ) γ 0 1 = edist center q :=
+  ⟨radialSegment q, isGeodesicCurveOn_radialSegment q, radialSegment_zero q, radialSegment_one q,
+    pathELength_radialSegment q⟩
 
 end TauCeti.RealOpenUnitBall
 
