@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 
 /-!
 # Positive functionals on commutative C⋆-algebras are measures on the character space
