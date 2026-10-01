@@ -37,8 +37,9 @@ global variable fixed.
 
 Dropping the global variable — coding through a function that ignores its first argument — gives
 the **ergodic form** of the representation, whose arrays are dissociated as well as exchangeable.
-That is proved in `Arrays.AldousHoover.Dissociated`.  The converse representation direction still
-has to construct the coding function from an exchangeable array.
+That is proved in `Arrays.AldousHoover.Dissociated`.  The converse representation direction, which
+constructs the coding function from an exchangeable array, is proved for separately exchangeable
+arrays in `Arrays.AldousHoover.Separate.Representation`.
 
 ## Main definitions
 
@@ -127,6 +128,12 @@ theorem indexEquiv_cell {κ ι : Type*} (vertexPerm : κ → Equiv.Perm ℕ)
 /-- The canonical law of the independent uniform variables used by an Aldous--Hoover coding. -/
 def noiseMeasure (κ ι : Type*) : Measure (NoiseIndex κ ι → I) :=
   Measure.infinitePi fun _ => (volume : Measure I)
+
+/-- The canonical Aldous--Hoover noise law is the product of uniform laws over all noise
+indices. -/
+theorem noiseMeasure_def (κ ι : Type*) :
+    noiseMeasure κ ι = Measure.infinitePi fun _ => (volume : Measure I) :=
+  (rfl)
 
 /-- The canonical Aldous--Hoover noise law is a probability measure. -/
 instance instIsProbabilityMeasureNoiseMeasure (κ ι : Type*) :

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 
 /-!
 # Norms of integral lattices
@@ -23,6 +24,7 @@ the integral norm on the carrier.
 
 * `TauCeti.IntegralLattice.norm`: the rational quadratic form on ambient vectors.
 * `TauCeti.IntegralLattice.integralNorm`: the induced integer quadratic form on lattice vectors.
+* `TauCeti.IntegralLattice.normParity`: the integral norm modulo two as an additive character.
 * `TauCeti.IntegralLattice.vectorsOfNorm`: the lattice vectors of a specified rational norm.
 
 ## Main results
@@ -38,7 +40,8 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.integralNorm_add`: polarization identity for the integral norm.
 * `TauCeti.IntegralLattice.integralNorm_sub`: subtractive polarization identity for the integral
   norm.
-* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast`: characterization of integer-norm vectors.
+* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast` and
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`: characterization of integer-norm vectors.
 
 ## References
 
@@ -171,6 +174,21 @@ theorem integralNorm_add (L : IntegralLattice V) (x y : L) :
     LinearMap.BilinMap.polar_toQuadraticMap, L.isSymm_integralForm.eq y x]
   ring
 
+/-- The norm modulo two, as an additive character of the carrier. -/
+noncomputable def normParity (L : IntegralLattice V) : L →+ ZMod 2 where
+  toFun x := (L.integralNorm x : ZMod 2)
+  map_zero' := by simp
+  map_add' x y := by
+    rw [L.integralNorm_add]
+    push_cast
+    simp only [show (2 : ZMod 2) = 0 by decide, zero_mul, add_zero]
+
+/-- The norm parity character evaluates to the norm modulo two. -/
+@[simp]
+theorem normParity_apply (L : IntegralLattice V) (x : L) :
+    L.normParity x = (L.integralNorm x : ZMod 2) :=
+  (rfl)
+
 /-- Integral polarization for a difference. -/
 theorem integralNorm_sub (L : IntegralLattice V) (x y : L) :
     L.integralNorm (x - y) =
@@ -194,6 +212,12 @@ theorem mem_vectorsOfNorm_intCast (L : IntegralLattice V) {n : ℤ} {x : L} :
     x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
   rw [mem_vectorsOfNorm, ← L.integralNorm_cast x]
   exact Int.cast_inj
+
+/-- Membership in `vectorsOfNorm (n : ℚ)` for a natural number `n` is equivalent to having integral
+norm equal to `n`. -/
+theorem mem_vectorsOfNorm_natCast (L : IntegralLattice V) {n : ℕ} {x : L} :
+    x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
+  rw [← Int.cast_natCast, L.mem_vectorsOfNorm_intCast]
 
 /-- The zero vector in an integral lattice has norm zero. -/
 theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOfNorm 0 := by

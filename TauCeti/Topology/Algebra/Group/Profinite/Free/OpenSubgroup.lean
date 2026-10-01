@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.OpenSubgroup
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.CohomologicalDimension
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Serre
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.Basic
@@ -58,7 +59,7 @@ variable {p : ℕ} {X : Type u}
 generators and for `p ≠ 0`: `cd_p (freeProP p X) ≤ 1` passes to open subgroups. -/
 theorem cohomologicalDimensionAt_le_one_openSubgroup (hp : p ≠ 0)
     (U : OpenSubgroup (freeProP p X)) : cohomologicalDimensionAt.{u} p U.toSubgroup ≤ 1 :=
-  cohomologicalDimensionAt_le_one_of_openSubgroup hp (cohomologicalDimensionAt_le_one hp) U
+  (cohomologicalDimensionAt_le_of_isClosed U.isClosed).trans (cohomologicalDimensionAt_le_one hp)
 
 /-! ### The rank of an open subgroup -/
 

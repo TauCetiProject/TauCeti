@@ -31,7 +31,9 @@ and the one Shapiro's lemma is stated against.
   coefficients;
 * `TauCeti.DiscreteCoind.trace` and `TauCeti.DiscreteCoind.traceLinear`: for finite-index `U`, the
   trace `TauCeti.coindTrace` on the discrete carrier, as a `G`-equivariant additive map and as a
-  linear map.
+  linear map;
+* `TauCeti.DiscreteCoind.unit`: for a discrete `G`-module `M`, the unit `M → Coind_U^G M` of
+  coinduction, `m ↦ (g ↦ g • m)`, as a `G`-equivariant additive map.
 
 ## Main results
 
@@ -39,9 +41,13 @@ and the one Shapiro's lemma is stated against.
   discrete carrier is continuous, so `Coind_U^G A` is a discrete `G`-module;
 * `TauCeti.DiscreteCoind.instContinuousSMulScalar`: for compact `G` and discrete coefficients,
   scalar multiplication is continuous;
+* `TauCeti.DiscreteCoind.unit_injective` and `TauCeti.DiscreteCoind.map_unit`: the unit is
+  injective (a section of the counit) and natural in the coefficients;
 * `TauCeti.DiscreteCoind.trace_apply`, `TauCeti.DiscreteCoind.trace_eq_sum_transversal` and
   `TauCeti.DiscreteCoind.trace_map`: the trace formula, along any transversal, and its naturality
   in the coefficients;
+* `TauCeti.DiscreteCoind.eval_unit` and `TauCeti.DiscreteCoind.trace_unit`: evaluation at `1`
+  retracts the unit, and the trace of the unit is multiplication by the index `[G : U]`;
 * `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
   continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
   the additive equivalence `TauCeti.DiscreteCoind.addEquivContinuousMap : Coind_1^G A ≃+ C(G, A)`,
@@ -150,6 +156,9 @@ theorem coe_neg (f : DiscreteCoind G U A) : ⇑(-f) = -⇑f := rfl
 @[simp]
 theorem coe_sub (f f' : DiscreteCoind G U A) : ⇑(f - f') = ⇑f - ⇑f' := rfl
 
+/-- The `ℕ`-action is pointwise, so that Mathlib's `FunLike.coe_smul` and `smul_apply` apply. -/
+instance : IsSMulApply ℕ (DiscreteCoind G U A) G A where
+
 section Scalar
 
 variable {R : Type*} [Semiring R] [Module R A] [SMulCommClass U R A]
@@ -200,6 +209,13 @@ instance instDistribMulAction : DistribMulAction G (DiscreteCoind G U A) :=
 
 @[simp]
 theorem coe_smul (g : G) (f : DiscreteCoind G U A) (x : G) : (g • f) x = f (x * g) := (rfl)
+
+/-- A `G`-invariant element of `Coind_U^G A` is a constant function: its value at `x` is its value
+at `1`, because `x • f = f` evaluated at `1` reads `f x = f 1`. -/
+theorem apply_eq_apply_one_of_forall_smul_eq {f : DiscreteCoind G U A} (hf : ∀ g : G, g • f = f)
+    (x : G) : f x = f 1 := by
+  have h := congrArg (fun f' : DiscreteCoind G U A ↦ f' 1) (hf x)
+  simpa only [coe_smul, one_mul] using h
 
 /-- The counit is `U`-equivariant for the restriction of the right-translation action. This is the
 compatible-pair hypothesis Shapiro's lemma is an instance of. -/
@@ -387,6 +403,70 @@ theorem traceLinear_apply (f : DiscreteCoind G U M) :
 end Scalar
 
 end Trace
+
+section Unit
+
+variable [ContinuousMul G] {M : Type*} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+variable (G U M) in
+/-- **The unit `M → Coind_U^G M` of coinduction**, sending `m` to its orbit map `g ↦ g • m`, which
+is locally constant because the action is continuous and `M` is discrete. It is `G`-equivariant for
+the right-translation action on `Coind_U^G M`, and evaluation at `1` retracts it
+(`TauCeti.DiscreteCoind.eval_unit`); it is the unit of the adjunction between restriction to `U`
+and coinduction, whose counit is `TauCeti.DiscreteCoind.eval`. -/
+def unit : M →+[G] DiscreteCoind G U M where
+  toFun m := mk G U M (fun g => g • m)
+    ((IsLocallyConstant.iff_continuous _).2 (continuous_id.smul continuous_const))
+    fun u g => by rw [mul_smul, Subgroup.smul_def]
+  map_zero' := ext fun g => smul_zero g
+  map_add' m m' := ext fun g => smul_add g m m'
+  map_smul' g m := ext fun x => by rw [coe_smul, mk_apply, mk_apply, mul_smul, MonoidHom.id_apply]
+
+/-- The unit sends `m` to its orbit map: `unit m g = g • m`. -/
+@[simp]
+theorem unit_apply (m : M) (g : G) : unit G U M m g = g • m := (rfl)
+
+/-- Evaluation at `1` retracts the unit. -/
+theorem eval_unit (m : M) : eval G U M (unit G U M m) = m := by
+  rw [eval_apply, unit_apply, one_smul]
+
+/-- The unit is injective, being retracted by evaluation at `1`. -/
+theorem unit_injective : Function.Injective (unit G U M) := fun m m' h => by
+  simpa using congrArg (eval G U M) h
+
+section Naturality
+
+variable {R : Type*} [Semiring R] [Module R M] [SMulCommClass U R M]
+  {N : Type*} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
+  [ContinuousSMul G N] [Module R N] [SMulCommClass U R N]
+
+/-- **The unit is natural in the coefficient module**: for a `G`-equivariant linear map
+`f : M → N` of discrete `G`-modules, coinducing `f` carries the orbit map of `m` to the orbit map
+of `f m`. The `U`-equivariance `TauCeti.DiscreteCoind.map` asks for is the restriction of the
+`G`-equivariance `hf`. -/
+@[simp]
+theorem map_unit (f : M →ₗ[R] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) (m : M) :
+    map f (fun u m => hf u m) (unit G U M m) = unit G U N (f m) := by
+  ext x
+  rw [map_apply, unit_apply, unit_apply, hf]
+
+end Naturality
+
+section FiniteIndex
+
+variable [U.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace of the unit is multiplication by the index**: `∑_{gU} g • g⁻¹ • m = [G : U] • m`. -/
+theorem trace_unit (m : M) : trace G U M (unit G U M m) = U.index • m := by
+  simp only [trace_apply, unit_apply, smul_inv_smul, Finset.sum_const, Finset.card_univ,
+    U.index_eq_card, Nat.card_eq_fintype_card]
+
+end FiniteIndex
+
+end Unit
 
 /-- **`Coind_U^G A` is a discrete `G`-module over a compact group**: the right-translation action
 on the discrete carrier is continuous, because a locally constant function on a compact group is

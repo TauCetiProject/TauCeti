@@ -50,7 +50,7 @@ elementary-2 quotient is `2 ^ finrank ℤ ℤ = 2 = gcd 0 2`. -/
 theorem card_elementaryTwoQuotient_of_isCyclic :
     Nat.card (ElementaryTwoQuotient G) = (Nat.card G).gcd 2 := by
   rcases finite_or_infinite G with hfin | hinf
-  · rw [card_elementaryTwoQuotient_eq_index_square, square_eq_powMonoidHom_two_range,
+  · rw [card_elementaryTwoQuotient_eq_index_square, square_eq_range_powMonoidHom,
       IsCyclic.index_powMonoidHom_range]
   · rw [Nat.card_congr (elementaryTwoQuotientCongr (intCyclicMulEquiv (G := G)).symm).toEquiv,
       card_elementaryTwoQuotient_multiplicative, Module.finrank_self, pow_one,

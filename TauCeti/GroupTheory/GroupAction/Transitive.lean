@@ -26,11 +26,15 @@ assumed.
 
 * `TauCeti.quotientStabilizerEquiv`: for a transitive action of `G` on `X` and a point `b : X`,
   the equivalence `G ⧸ stabilizer G b ≃ X` sending the coset of `g` to `g • b`.
+* `MonoidHom.quotientComapStabilizerEquiv`: the same for a transitive permutation representation
+  `ρ : G →* Equiv.Perm X`, whose point stabiliser is the preimage under `ρ` of a stabiliser in
+  `Equiv.Perm X`.
 
 ## Main results
 
 * `TauCeti.quotientStabilizerEquiv_mk`: its value on a coset, and
-  `TauCeti.quotientStabilizerEquiv_smul`: its equivariance.
+  `TauCeti.quotientStabilizerEquiv_smul`: its equivariance; likewise
+  `MonoidHom.quotientComapStabilizerEquiv_mk` and `MonoidHom.quotientComapStabilizerEquiv_smul`.
 * `TauCeti.natCard_dvd_natCard_of_isPretransitive`: the number of points of a nonempty set acted
   on transitively divides the order of the group.
 * `TauCeti.stabilizer_eq_bot_of_natCard_eq`, `TauCeti.eq_one_of_natCard_eq_of_smul_eq_self`: a
@@ -123,3 +127,41 @@ theorem eq_one_of_natCard_eq_of_smul_eq_self [Finite X] (h : Nat.card G = Nat.ca
   Subgroup.mem_bot.mp (stabilizer_eq_bot_of_natCard_eq h x ▸ mem_stabilizer_iff.mpr hgx)
 
 end TauCeti
+
+namespace MonoidHom
+
+open Equiv
+
+variable {G X : Type*} [Group G]
+
+/-- **Orbit-stabiliser for a transitive permutation representation** `ρ : G →* Perm X`: the coset
+space of the point stabiliser `ρ⁻¹ (stabilizer x)` is `X`, the coset of `g` corresponding to
+`ρ g x`. This is `TauCeti.quotientStabilizerEquiv` for the action of `G` on `X` through `ρ`. -/
+noncomputable def quotientComapStabilizerEquiv (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
+    (x : X) : G ⧸ (stabilizer (Perm X) x).comap ρ ≃ X :=
+  letI := MulAction.compHom X ρ
+  haveI : IsPretransitive G X := ⟨fun y z => by
+    obtain ⟨⟨_, g, rfl⟩, hg⟩ := hρ.exists_smul_eq y z
+    exact ⟨g, hg⟩⟩
+  -- Under `MulAction.compHom`, `g • x` is `ρ g • x` by definition, so the two stabilisers agree
+  -- elementwise by `rfl`.
+  (Subgroup.quotientEquivOfEq (by ext; rfl)).trans (TauCeti.quotientStabilizerEquiv G x)
+
+/-- The computation rule for `MonoidHom.quotientComapStabilizerEquiv`: the coset of `g` goes to
+`ρ g x`. -/
+@[simp]
+theorem quotientComapStabilizerEquiv_mk (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
+    (x : X) (g : G) : quotientComapStabilizerEquiv ρ hρ x (QuotientGroup.mk g) = ρ g x := by
+  rw [quotientComapStabilizerEquiv, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+    TauCeti.quotientStabilizerEquiv_mk]
+  rfl
+
+/-- The identification of the coset space with `X` carries left multiplication by `g` to `ρ g`. -/
+@[simp]
+theorem quotientComapStabilizerEquiv_smul (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
+    (x : X) (g : G) (q : G ⧸ (stabilizer (Perm X) x).comap ρ) :
+    quotientComapStabilizerEquiv ρ hρ x (g • q) = ρ g (quotientComapStabilizerEquiv ρ hρ x q) := by
+  induction q using QuotientGroup.induction_on with
+  | H g' => simp [Perm.mul_apply]
+
+end MonoidHom

@@ -71,13 +71,11 @@ lemma map_map_symm {i : cell C n} {x : X} (hx : x ∈ openCell (C := C) n i) :
     map n i ((map n i).symm x) = x :=
   (map n i).right_inv (by rwa [target_map_eq_openCell])
 
-/-- **The characteristic map of a cell is a homeomorphism onto the open cell.**  By definition it
-is a partial homeomorphism with source the open unit ball and target the open cell, so it suffices
-to read off `PartialHomeomorph.toHomeomorphSourceTarget`.
-
-Use `TauCeti.openCellHomeomorph_apply` and `TauCeti.openCellHomeomorph_symm_apply` rather than
-this construction. -/
+/-- **The characteristic map of a cell is a homeomorphism from the open unit ball onto the open
+cell.**  Its forward and inverse maps are described by `TauCeti.openCellHomeomorph_apply` and
+`TauCeti.openCellHomeomorph_symm_apply`. -/
 def openCellHomeomorph (i : cell C n) : ball (0 : Fin n → ℝ) 1 ≃ₜ (openCell (C := C) n i) :=
+  -- Restrict the characteristic partial homeomorphism to its source and target.
   (Homeomorph.setCongr (source_eq n i).symm).trans <|
     (PartialHomeomorph.mk (map n i)
         (source_eq n i ▸ (continuousOn n i).mono ball_subset_closedBall)
@@ -191,20 +189,16 @@ lemma isOpen_preimage_val_openCell (i : cell C n) :
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
     continuous_subtype_val).isOpen_compl
 
-/-- **The open `n`-cells form a topological disjoint union of open balls.**  The characteristic
-maps assemble into a homeomorphism from the disjoint union of one open unit ball for each `n`-cell
-onto the union of the open `n`-cells, which by `TauCeti.skeletonLT_succ_diff_skeletonLT` is the
-difference of the `n`-skeleton and the `(n-1)`-skeleton.
-
-The assembled map is injective because the open cells are pairwise disjoint and each
-characteristic map is injective on the open unit ball, surjective because the open cells cover
-the union, continuous because each characteristic map is, and open because its restriction to a
-summand is an embedding onto an open cell, which is open in the union by
-`TauCeti.isOpen_preimage_val_openCell`.  Use `TauCeti.iUnionOpenCellHomeomorph_apply` and
-`TauCeti.iUnionOpenCellHomeomorph_symm_apply` rather than this construction. -/
+/-- **The open `n`-cells form a topological disjoint union of open balls.**  This is a
+homeomorphism from the disjoint union of one open unit ball for each `n`-cell onto the union of
+the open `n`-cells, which by `TauCeti.skeletonLT_succ_diff_skeletonLT` is the difference of the
+`n`-skeleton and the `(n-1)`-skeleton.  Its forward and inverse maps are described by
+`TauCeti.iUnionOpenCellHomeomorph_apply` and `TauCeti.iUnionOpenCellHomeomorph_symm_apply`. -/
 noncomputable def iUnionOpenCellHomeomorph :
     (Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1)) ≃ₜ
       (⋃ k : cell C n, openCell (C := C) n k : Set X) :=
+  -- The characteristic maps are jointly bijective: individual maps are injective on the open
+  -- ball, distinct open cells are disjoint, and the open cells cover the target.
   (Equiv.ofBijective
     (fun p : Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1) ↦
       (⟨map n p.1 p.2, mem_iUnion.2 ⟨p.1, p.2, p.2.2, rfl⟩⟩ :
@@ -224,8 +218,10 @@ noncomputable def iUnionOpenCellHomeomorph :
       · rintro ⟨x, hx⟩
         obtain ⟨i, y, hy, rfl⟩ := mem_iUnion.1 hx
         exact ⟨⟨i, ⟨y, hy⟩⟩, rfl⟩)).toHomeomorphOfContinuousOpen
+    -- Continuity holds on each summand by continuity of its characteristic map.
     (continuous_sigma fun i ↦ Continuous.subtype_mk
       ((continuousOn n i).mono ball_subset_closedBall).domRestrict _)
+    -- Each summand embeds onto an open cell, so the assembled map is open.
     (isOpenMap_sigma.2 fun i ↦ by
       -- On the summand `i` the map is `openCellHomeomorph n i` followed by the inclusion of the
       -- open cell `i`, whose range is open in the union.

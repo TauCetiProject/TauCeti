@@ -16,7 +16,11 @@ adjunction associated to an exact pairing.
 ## Main declarations
 
 * `TauCeti.exactPairingCongrLeft_evaluation` and
-  `TauCeti.exactPairingCongrLeft_coevaluation`: the pairing transported across an isomorphism;
+  `TauCeti.exactPairingCongrLeft_coevaluation`: transport in the left argument;
+* `TauCeti.exactPairingCongrRight_evaluation` and
+  `TauCeti.exactPairingCongrRight_coevaluation`: transport in the right argument;
+* `TauCeti.exactPairingCongr_evaluation` and
+  `TauCeti.exactPairingCongr_coevaluation`: simultaneous transport in both arguments;
 * `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
   and counit of the adjunction associated to an exact pairing.
 -/
@@ -48,6 +52,39 @@ argument. Not a `simp` lemma, for the reason given on
 theorem exactPairingCongrLeft_coevaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
     @ExactPairing.coevaluation C _ _ X Y (exactPairingCongrLeft i) = η_ X' Y ≫ i.inv ▷ Y :=
   rfl
+
+/-- The evaluation of an exact pairing transported across an isomorphism in its right argument. -/
+@[reassoc]
+theorem exactPairingCongrRight_evaluation {X Y Y' : C} [ExactPairing X Y'] (j : Y ≅ Y') :
+    @ExactPairing.evaluation C _ _ X Y (exactPairingCongrRight j) =
+      j.hom ▷ X ≫ ε_ X Y' :=
+  rfl
+
+/-- The coevaluation of an exact pairing transported across an isomorphism in its right argument. -/
+@[reassoc]
+theorem exactPairingCongrRight_coevaluation {X Y Y' : C} [ExactPairing X Y'] (j : Y ≅ Y') :
+    @ExactPairing.coevaluation C _ _ X Y (exactPairingCongrRight j) =
+      η_ X Y' ≫ X ◁ j.inv :=
+  rfl
+
+/-- The evaluation of an exact pairing transported across isomorphisms in both arguments. -/
+@[reassoc]
+theorem exactPairingCongr_evaluation {X X' Y Y' : C} [ExactPairing X' Y']
+    (i : X ≅ X') (j : Y ≅ Y') :
+    @ExactPairing.evaluation C _ _ X Y (exactPairingCongr i j) =
+      Y ◁ i.hom ≫ j.hom ▷ X' ≫ ε_ X' Y' := by
+  rw [@exactPairingCongrLeft_evaluation C _ _ X X' Y (exactPairingCongrRight j) i,
+    exactPairingCongrRight_evaluation]
+
+/-- The coevaluation of an exact pairing transported across isomorphisms in both arguments. -/
+@[reassoc]
+theorem exactPairingCongr_coevaluation {X X' Y Y' : C} [ExactPairing X' Y']
+    (i : X ≅ X') (j : Y ≅ Y') :
+    @ExactPairing.coevaluation C _ _ X Y (exactPairingCongr i j) =
+      η_ X' Y' ≫ X' ◁ j.inv ≫ i.inv ▷ Y := by
+  rw [@exactPairingCongrLeft_coevaluation C _ _ X X' Y (exactPairingCongrRight j) i,
+    exactPairingCongrRight_coevaluation]
+  simp only [Category.assoc]
 
 variable (D Y : C) [ExactPairing D Y]
 

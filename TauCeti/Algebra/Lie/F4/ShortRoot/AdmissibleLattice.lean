@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Lie.Matrix.IntegralCast
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
 
+import TauCeti.Algebra.Lie.Sl2.Basic
+
 /-!
 # The admissible lattice of the short-root representation of type F4
 
@@ -38,6 +40,8 @@ the general divided-power criterion rather than the square-zero shortcut.
 * `TauCeti.F4ShortRoot.pow_three_rep_serreRootGenerator_eq_zero` and
   `TauCeti.F4ShortRoot.isNilpotent_rep_serreRootGenerator`: every represented simple root
   generator cubes to zero.
+* `TauCeti.F4ShortRoot.isSl2Triple_rep_serreRootGenerator`: the represented Cartan, raising and
+  lowering generators at each node form an `sl₂` triple.
 * `TauCeti.F4ShortRoot.rep_dividedPower_serreRootGenerator_apply_mem_lattice`: every divided
   power of a simple root generator preserves the lattice.
 * `TauCeti.F4ShortRoot.isCartanWeightVector_latticeBasis`: each lattice basis vector is a
@@ -127,6 +131,14 @@ theorem isSerreSystemRat :
   · intro i j
     rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
     exact h.ad_pow_lie_F_F i j
+
+/-- At each simple node, the three rational matrices form an `sl₂` triple. -/
+theorem isSl2TripleRat (i : Fin 4) :
+    _root_.IsSl2Triple (cartanMatrixRat i) (raisingMatrixRat i) (loweringMatrixRat i) :=
+  (isSl2Triple i).map (TauCeti.matrixIntCastLieHom ℚ) fun hzero ↦
+    (isSl2Triple i).h_ne_zero <| by
+      ext a b
+      simpa using congrFun (congrFun hzero a) b
 
 /-- The rational twenty-six-dimensional short-root representation of the type-`F₄` Serre
 presentation. -/
@@ -250,6 +262,25 @@ theorem rationalSerreRepresentation_serreRootGenerator (k : Fin 4 ⊕ Fin 4) :
   cases k with
   | inl i => rw [TauCeti.serreRootGenerator_inl, rationalSerreRepresentation_serreE, rootMatrixRat]
   | inr i => rw [TauCeti.serreRootGenerator_inr, rationalSerreRepresentation_serreF, rootMatrixRat]
+
+/-- The represented Cartan, positive and negative simple generators at a common type-`F₄` node
+form an `sl₂` triple. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : Fin 4) :
+    _root_.IsSl2Triple
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ CartanMatrix.F₄ᵀ i)))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator CartanMatrix.F₄ᵀ (.inl i))))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator CartanMatrix.F₄ᵀ (.inr i)))) := by
+  have hne : Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 26) (cartanMatrixRat i) ≠ 0 := fun hz ↦
+    (isSl2TripleRat i).h_ne_zero
+      ((Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 26)).injective (hz.trans (map_zero _).symm))
+  have h := (isSl2TripleRat i).map
+    (Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 26)).toAlgHom.toLieHom hne
+  simp only [AlgHom.toLieHom_apply, AlgEquiv.toAlgHom_apply] at h
+  rw [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr]
+  simpa only [rep_ι, rationalSerreRepresentation_serreH, rationalSerreRepresentation_serreE,
+    rationalSerreRepresentation_serreF] using h
 
 /-- The square of a rational simple root matrix is twice the cast of its divided square. -/
 theorem rootMatrixRat_mul_self (k : Fin 4 ⊕ Fin 4) :

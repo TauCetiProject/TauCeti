@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Basic
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Coding.Basic
 

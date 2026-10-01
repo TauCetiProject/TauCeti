@@ -29,7 +29,7 @@ a Maslov or Alexander grading-change computation across a rectangle rests on, an
   source state with the two side columns swapped.
 * `TauCeti.GridRectangleBetween.target_eq_swapRows`: equivalently, the source state with the two
   rows those columns occupy swapped.
-* `TauCeti.GridRectangleBetween.nonempty_all_iff`: oriented rectangles between `x` and `y` exist
+* `TauCeti.GridRectangleBetween.nonempty_iff`: oriented rectangles between `x` and `y` exist
   exactly when `y` is a column transposition of `x`.
 * `TauCeti.GridRectangleBetween.source_eq_swapColumns`: the symmetric statement recovering the
   source from the target.
@@ -141,12 +141,13 @@ theorem ofSwapColumns_toGridRectangle (x y : GridState n) (a b : Fin n) (hab : a
 /-- Oriented rectangles between `x` and `y` exist exactly when `y` is a column transposition of
 `x`. A rectangle realizes its side columns as a transposition taking `x` to `y`, and conversely a
 column transposition exhibits an oriented rectangle on those two columns. -/
-theorem nonempty_all_iff : (all x y).Nonempty ↔ ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
+theorem nonempty_iff :
+    Nonempty (GridRectangleBetween x y) ↔ ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
   constructor
-  · rintro ⟨R, -⟩
+  · rintro ⟨R⟩
     exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
   · rintro ⟨a, b, hab, hy⟩
-    exact ⟨ofSwapColumns x y a b hab hy, mem_all _⟩
+    exact ⟨ofSwapColumns x y a b hab hy⟩
 
 /-- The source state of an oriented rectangle is the target state with its two side columns
 swapped: swapping the same pair of columns twice is the identity. -/
@@ -210,14 +211,14 @@ theorem source_pointSet_eq :
     x.pointSet =
       insert (R.left, R.bottom) (insert (R.right, R.top) (x.pointSet ∩ y.pointSet)) := by
   simpa [target_eq_swapColumns R, bottom, top] using
-    GridState.pointSet_eq_insert_insert_inter_swapColumns x R.left_ne_right
+    GridState.pointSet_eq_insert_insert_inter_swapColumns x R.left R.right
 
 /-- The target state's point set is the shared part together with its own two corners. -/
 theorem target_pointSet_eq :
     y.pointSet =
       insert (R.left, R.top) (insert (R.right, R.bottom) (x.pointSet ∩ y.pointSet)) := by
   simpa [target_eq_swapColumns R, bottom, top] using
-    GridState.swapColumns_pointSet_eq_insert_insert_inter x R.left_ne_right
+    GridState.swapColumns_pointSet_eq_insert_insert_inter x R.left R.right
 
 include R in
 /-- The source and target states share exactly `n - 2` grid points: all of the source's `n` grid

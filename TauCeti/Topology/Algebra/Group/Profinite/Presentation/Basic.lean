@@ -58,7 +58,9 @@ of profinite relators is a quotient of the profinite group they present.
 * `TauCeti.presentedProfiniteGroup.map`, `TauCeti.presentedProP.map`: functoriality in the
   generators and the relators.
 * `TauCeti.presentedProfiniteGroup.congr`, `TauCeti.presentedProP.congr`: an isomorphism of the
-  free groups matching the relators induces an isomorphism of the presented groups.
+  free groups matching the relators induces an isomorphism of the presented groups;
+  `TauCeti.presentedProP.congrSingleton` is the one-relator case, for an isomorphism carrying the
+  relator to the relator.
 * `TauCeti.presentedProfiniteGroup.congrOfClosureEq`, `TauCeti.presentedProP.congrOfClosureEq`:
   relators with the same closed normal closure present the same group.
 * `TauCeti.presentedProfiniteGroup.toPresentedProP_surjective`: a presented profinite group maps
@@ -737,6 +739,30 @@ theorem congr_symm_mk (e : freeProP p X ≃ₜ* freeProP p Y) (h : ∀ r ∈ rel
     (congr e h h').symm (mk p rels' y) = mk p rels (e.symm y) :=
   map_mk _ _ y
 
+/-- A topological isomorphism of the free pro-`p` groups carrying the relator `r` to the relator
+`r'` induces a topological isomorphism of the one-relator presented pro-`p` groups
+`⟨X ∣ r⟩ ≃ₜ* ⟨Y ∣ r'⟩`. -/
+noncomputable def congrSingleton (e : freeProP p X ≃ₜ* freeProP p Y) {r : freeProP p X}
+    {r' : freeProP p Y} (h : e r = r') : presentedProP p X {r} ≃ₜ* presentedProP p Y {r'} :=
+  congr e
+    (fun x hx ↦ by
+      rw [Set.mem_singleton_iff] at hx
+      subst hx
+      rw [h]
+      exact mk_relator _ (Set.mem_singleton _))
+    fun x hx ↦ by
+      rw [Set.mem_singleton_iff] at hx
+      subst hx
+      rw [← h, e.symm_apply_apply]
+      exact mk_relator _ (Set.mem_singleton _)
+
+/-- The isomorphism of one-relator presented groups induced by `e` computes on classes as `e`. -/
+@[simp]
+theorem congrSingleton_mk (e : freeProP p X ≃ₜ* freeProP p Y) {r : freeProP p X}
+    {r' : freeProP p Y} (h : e r = r') (x : freeProP p X) :
+    congrSingleton e h (mk p {r} x) = mk p {r'} (e x) :=
+  congr_mk _ _ _ x
+
 end Map
 
 /-- **Two sets of relators with the same closed normal closure present the same pro-`p` group**,
@@ -956,6 +982,13 @@ function-level form of `TauCeti.presentedProP.mk_freeProPGen`, which lets a word
 theorem presentedProP.mk_comp_freeProPGen :
     ⇑(presentedProP.mk p rels) ∘ freeProPGen p n = presentedProPGen p n rels :=
   funext (presentedProP.mk_freeProPGen p n rels)
+
+/-- A continuous homomorphism of the presented group, pulled back to the free group along the
+quotient map, takes on the `ℕ`-indexed free generators its values on `presentedProPGen`. -/
+theorem presentedProP.comp_mk_freeProPGen {K : Type*} [Monoid K] [TopologicalSpace K]
+    (φ : presentedProP p (Fin n) rels →ₜ* K) (i : ℕ) :
+    (φ.comp (presentedProP.mk p rels)) (freeProPGen p n i) = φ (presentedProPGen p n rels i) := by
+  rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, presentedProP.mk_freeProPGen]
 
 end NatIndexed
 

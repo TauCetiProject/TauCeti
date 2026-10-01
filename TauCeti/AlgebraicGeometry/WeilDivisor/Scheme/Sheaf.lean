@@ -29,6 +29,7 @@ submodule.
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sections D U`, the displayed `Γ(X, U)`-submodule of
   `Γ(𝒦_X, U)`, with `mem_sections_iff` its description over a nonempty open subset and
   `rationalFunctionsEquiv_symm_mem_sections` its membership criterion for a rational function;
+  `isEffective_iff_one_mem_sections` detects effectivity using the rational section `1`, while
   `sections_congr` and `sections_add_zsmul_ofPoint_eq` describe its dependence on the divisor's
   coefficients inside `U`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.submodule D`, the same data as a submodule of the
@@ -135,6 +136,24 @@ lemma mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
       Scheme.rationalFunctionsEquiv U s = 0 ∨
         -WeilDivisor.coeff D x ≤ X.ord (Scheme.rationalFunctionsEquiv U s) x :=
   (Iff.rfl)
+
+/-- A Weil divisor is effective exactly when the rational section `1` belongs to its divisor
+sheaf over the whole scheme. -/
+theorem isEffective_iff_one_mem_sections (D : SchemeWeilDivisor X) :
+    WeilDivisor.IsEffective D ↔
+      Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) ⊤
+        (1 : Γ(X, (⊤ : X.Opens))) ∈ sections D ⊤ := by
+  rw [mem_sections]
+  simp only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, one_ne_zero,
+    false_or, Scheme.ord_one]
+  rw [WeilDivisor.isEffective_iff]
+  constructor
+  · intro h x _
+    have hx := h x
+    omega
+  · intro h x
+    have hx := h x trivial
+    omega
 
 /-- The sections of `𝒪_X(D)` over `U` depend only on the coefficients of `D` at the
 codimension-one points of `U`. -/

@@ -13,9 +13,10 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Class
 
 Pulling back an invertible sheaf along an identity morphism leaves it unchanged, and pullback
 along a composite agrees with successive pullback. These comparisons make the pullback operation
-on isomorphism classes of line bundles contravariantly functorial. These identity and
-composition laws are prerequisites for the relative Picard functor on base changes;
-compatibility of pullback with tensor product requires a separate comparison.
+on isomorphism classes of line bundles contravariantly functorial. Pullback also preserves the
+class of the trivial line bundle (`LineBundleClass.pullback_one`), through
+the comparison `Scheme.Modules.pullbackObjUnitIso : f^* 𝒪_Y ≅ 𝒪_X`; compatibility of pullback
+with tensor product requires a separate comparison.
 
 The comparisons are restrictions of Mathlib's `Scheme.Modules.pullbackId` and
 `Scheme.Modules.pullbackComp`.
@@ -120,6 +121,14 @@ lemma pullback_comp (f : X ⟶ Y) (g : Y ⟶ Z) (a : LineBundleClass Z) :
   simp only [pullback_mk]
   exact mk_eq_mk_iff.mpr ⟨(SheafOfModules.isInvertible X).ι.mapIso
     ((InvertibleSheaf.pullbackComp f g).app L)⟩
+
+/-- Pullback preserves the class of the trivial line bundle. -/
+@[simp]
+lemma pullback_one (f : X ⟶ Y) : pullback f 1 = 1 := by
+  rw [← mk_trivial, pullback_mk, mk_eq_one_iff]
+  exact ⟨(Scheme.Modules.pullback f).mapIso
+    (InvertibleSheaf.trivialObjIsoUnit Y) ≪≫
+      Scheme.Modules.pullbackObjUnitIso f⟩
 
 end LineBundleClass
 

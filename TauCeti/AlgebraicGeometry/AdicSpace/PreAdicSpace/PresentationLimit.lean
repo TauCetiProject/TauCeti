@@ -14,7 +14,10 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Stalk.Lo
 The adic spectrum with its presentation-limit presheaf is a pre-adic space when the plus
 subring consists of power-bounded elements and contains a ring of definition.
 This packages the structure presheaf, local stalks, and residue valuations into a
-pre-adic-space object on the adic spectrum for later morphism and sheafiness constructions.
+pre-adic-space object on the adic spectrum for later morphism and sheafiness constructions. Its
+stalk valuation at `x` is `presentationLimitStalkValuation`
+(`presentationLimitPreAdicSpace_stalkValuation`), so the characterisation of that valuation by
+its rational germs applies to it.
 -/
 
 public section
@@ -29,7 +32,12 @@ universe u
 
 /-- The pre-adic space of an adic spectrum with the completed rational-localisation presheaf.
 The valuation at a point is induced on the residue field of its local stalk. -/
-noncomputable def presentationLimitPreAdicSpace {A : Type u} [CommRing A]
+-- The body is exposed, as `PreAdicSpace.restrict` is: a point of the adic spectrum must be a point
+-- of this pre-adic space, and its stalk the stalk of `presentationLimitPresheafInCommRingCat`, for
+-- statements comparing it with restrictions and with `presentationLimitStalkValuation` to
+-- typecheck. The propositional `presentationLimitPreAdicSpace_carrier` cannot be rewritten inside
+-- the type of a point.
+@[expose] noncomputable def presentationLimitPreAdicSpace {A : Type u} [CommRing A]
     [TopologicalSpace A]
     [IsTopologicalRing A] (P : PairOfDefinition A) (Aplus : Subring A)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
@@ -99,6 +107,18 @@ theorem presentationLimitPreAdicSpace_valuation {A : Type u} [CommRing A]
     -- Transport the stalk and its local-ring instance together in the residue-field type.
     cases e
     exact HEq.rfl
+
+/-- The stalk valuation of the presentation-limit pre-adic space at `x` is
+`presentationLimitStalkValuation`, the valuation `v_x` on the stalk glued from the points of the
+rational coordinate rings determined by `x`. -/
+theorem presentationLimitPreAdicSpace_stalkValuation {A : Type u} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hP : P.ringOfDefinition ≤ Aplus) (x : presentationLimitPreAdicSpace P Aplus hAplus hP) :
+    (presentationLimitPreAdicSpace P Aplus hAplus hP).stalkValuation x =
+      presentationLimitStalkValuation hAplus hP x := by
+  rw [PreAdicSpace.stalkValuation_def]
+  exact comap_residue_presentationLimitStalkResidueValuation hAplus hP x
 
 end TauCeti.ValuationSpectrum
 

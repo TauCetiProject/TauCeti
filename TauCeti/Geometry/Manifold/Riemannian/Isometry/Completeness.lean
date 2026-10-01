@@ -5,20 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.HopfRinow
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
 
 /-!
 # Geodesic completeness under Riemannian isometries
 
-A smooth Riemannian isometry preserves the Riemannian distance and hence metric completeness.
-The Hopf–Rinow theorem identifies metric completeness with geodesic completeness at each point.
-Consequently an isometry preserves geodesic completeness, both at corresponding base points and
-globally, as well as the property that the exponential map has its full tangent space as domain.
+A smooth Riemannian isometry preserves maximal geodesic intervals, and its differential at a
+point is a bijection between the tangent spaces. Consequently an isometry preserves geodesic
+completeness, both at corresponding base points and globally, as well as the property that the
+exponential map has its full tangent space as domain.
 
-These statements require the ambient metrics to be the Riemannian metrics. They concern the
-domains of exponential maps; preservation of their values requires naturality of the geodesic
-equation under the isometry.
+These statements are purely geodesic: unlike the Hopf–Rinow theorem, they need neither a metric on
+the manifolds, nor Hausdorffness of the tangent bundles, nor boundarylessness.
 -/
 
 public section
@@ -34,25 +32,30 @@ open TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [MetricSpace M] [ChartedSpace H M]
-  [FiniteDimensional ℝ E] [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [FiniteDimensional ℝ E]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
-  {N : Type*} [MetricSpace N] [ChartedSpace H' N]
-  [FiniteDimensional ℝ F] [J.Boundaryless]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [FiniteDimensional ℝ F]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-  [T2Space (TangentBundle J N)] [IsRiemannianManifold J N]
 
 /-- A smooth Riemannian isometry preserves geodesic completeness at corresponding base points. -/
 theorem isGeodesicallyCompleteAt_iff (Φ : RiemannianIsometry I J M N) (p : M) :
-    IsGeodesicallyCompleteAt I M p ↔ IsGeodesicallyCompleteAt J N (Φ p) :=
-  (Manifold.completeSpace_iff_isGeodesicallyCompleteAt (I := I) p).symm.trans <|
-    ((Φ : M ≃ᵢ N).completeSpace_iff.trans
-      (Manifold.completeSpace_iff_isGeodesicallyCompleteAt (I := J) (Φ p)))
+    IsGeodesicallyCompleteAt I M p ↔ IsGeodesicallyCompleteAt J N (Φ p) := by
+  rw [isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval,
+    isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval]
+  constructor
+  · intro h w
+    obtain ⟨v, rfl⟩ := Φ.mfderiv_surjective p w
+    rw [Φ.geodesicInterval_mfderiv]
+    exact h v
+  · intro h v
+    rw [← Φ.geodesicInterval_mfderiv]
+    exact h _
 
 /-- Geodesic completeness of a Riemannian manifold is invariant under a smooth Riemannian
 isometry. -/

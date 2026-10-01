@@ -62,22 +62,10 @@ variable {F : Type*} [Field F] [Finite F] [DecidableEq F] (W : WeierstrassCurve.
 /-- **The kernel of `1 − π_q` is every rational point.** -/
 @[simp]
 theorem ker_oneSubFrobeniusIsogeny : (oneSubFrobeniusIsogeny W).ker = ⊤ := by
-  refine eq_top_iff.2 fun P _ ↦ mem_ker_iff.2 ?_
-  -- it is enough that translation fixes the coordinate pullback, the function field being its
-  -- fraction field
-  have hcoord : (translation W P).toAlgHom.comp (oneSubFrobeniusIsogeny W).pullback =
-      (oneSubFrobeniusIsogeny W).pullback := by
-    refine CoordinatePullback.tautologicalPoint_injective ?_
-    rw [CoordinatePullback.tautologicalPoint_comp,
-      tautologicalPoint_oneSubFrobeniusIsogeny, map_sub, map_translation_genericPoint,
-      translatedGenericPoint_def, map_translation_tautologicalPoint_frobeniusIsogeny]
-    abel
-  have hfield : (translation W P).toAlgHom.comp (oneSubFrobeniusIsogeny W).fieldPullback =
-      (oneSubFrobeniusIsogeny W).fieldPullback :=
-    fieldPullback_unique _ _ fun x ↦ by
-      rw [AlgHom.comp_apply, fieldPullback_algebraMap, ← AlgHom.comp_apply, hcoord]
-  rintro _ ⟨z, rfl⟩
-  simpa using DFunLike.congr_fun hfield z
+  refine eq_top_iff.2 fun P _ ↦ (mem_ker_iff_map_tautologicalPoint_eq _).2 ?_
+  rw [tautologicalPoint_oneSubFrobeniusIsogeny, map_sub, map_translation_genericPoint,
+    translatedGenericPoint_def, map_translation_tautologicalPoint_frobeniusIsogeny]
+  abel
 
 /-- **The rational points are exactly the kernel of `1 − π_q`**, as a cardinality. -/
 theorem card_ker_oneSubFrobeniusIsogeny :

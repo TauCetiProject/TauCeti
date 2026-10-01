@@ -11,8 +11,8 @@ name: PR status
 # at a time and keeps only the newest waiting run, cancelling the others before they take a runner.
 # Each run reconciles every PR touched since the previous successful run started
 # (scripts/pr_status/batch.py), so an event whose own run was collapsed away is still covered by the
-# run that replaced it. The price is latency: an update can wait for the run ahead of it, typically
-# well under a minute. A run that fails (a rate limit, a configuration error) is not counted, so the
+# run that replaced it. The price is latency: an update waits out a one-minute debounce (see the
+# job's `environment`) and then the run ahead of it, typically one to three minutes in all. A run that fails (a rate limit, a configuration error) is not counted, so the
 # next one repeats its window; a single PR that fails is retried by the next run.
 # pr-labels.yml keeps the hourly reconcile-all sweep of labels and the manual re-sync.
 
@@ -56,6 +56,16 @@ jobs:
     concurrency:
       group: pr-status
       cancel-in-progress: false
+    # A one-minute debounce that holds no runner. The pr-status-debounce environment's only
+    # protection rule is a one-minute wait timer; a job waiting on it holds the concurrency group
+    # but no runner, while newer events collapse into the one pending run behind it. Without it,
+    # events arriving continuously kept one runner busy back to back; with it, a batch runs at most
+    # about every two minutes (the wait plus the batch) and covers everything that arrived meanwhile.
+    # `deployment: false` keeps the wait timer without recording a deployment for every batch.
+    # Keep secrets out of this environment: they would become available to the job.
+    environment:
+      name: pr-status-debounce
+      deployment: false
     steps:
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token

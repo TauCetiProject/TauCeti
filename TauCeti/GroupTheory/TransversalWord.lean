@@ -30,7 +30,9 @@ namely `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
 `TauCeti.transversal_mul_lWord`, the last of which is the rewriting rule
 `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` that turns a `U`-cocycle relation into a `G`-cocycle relation.
 It also records how the word changes when the transversal does (`TauCeti.transversalDiff` and
-`TauCeti.transversalDiff_mul_lWord`), and computes the word for a subgroup of index two at the
+`TauCeti.transversalDiff_mul_lWord`), builds the transversal adapted to a map `w : G → U` that is
+equivariant for left multiplication by `U` (`TauCeti.factorizationTransversal`), on which `w`
+reads off the transversal word, and computes the word for a subgroup of index two at the
 two-element transversal `{1, s}` (`Subgroup.indexTwoTransversal`): on an element `γ` of the
 subgroup it is `γ` at the trivial coset and `s⁻¹ * γ * s` at the other, and on an element outside
 it is `γ * s` and `s⁻¹ * γ` respectively. Continuity of `γ ↦ ℓᵗ_u(γ)` for
@@ -149,6 +151,55 @@ theorem transversalDiff_mul_lWord (u : G ⧸ U) (γ : G) :
       lWord U t u γ * transversalDiff U t t' (γ⁻¹ • u) := by
   rw [transversalDiff_def, transversalDiff_def, lWord_def, lWord_def]
   group
+
+/-! ### The transversal adapted to a right-coset factorization -/
+
+section Factorization
+
+variable {U} (w : G → U) (hwmul : ∀ (u : U) (g : G), w ((u : G) * g) = u * w g)
+
+/-- The transversal of `G ⧸ U` adapted to a map `w : G → U` that is `U`-equivariant for left
+multiplication, such as the `U`-component of a factorization `G = U · R` over the right cosets: the
+representative `r * w r⁻¹` of the coset of `r = x.out`. When `w` is equivariant it sends the
+inverse of every chosen representative to `1` (`TauCeti.apply_inv_factorizationTransversal`), and
+it sends `(t x)⁻¹ * γ` to the transversal word `ℓᵗ_x(γ)`
+(`TauCeti.apply_inv_factorizationTransversal_mul`). -/
+noncomputable def factorizationTransversal (x : G ⧸ U) : G :=
+  x.out * (w x.out⁻¹ : G)
+
+theorem factorizationTransversal_def (x : G ⧸ U) :
+    factorizationTransversal w x = x.out * (w x.out⁻¹ : G) := (rfl)
+
+/-- The adapted transversal picks a representative of every coset. -/
+@[simp]
+theorem factorizationTransversal_mk (x : G ⧸ U) :
+    (QuotientGroup.mk (factorizationTransversal w x) : G ⧸ U) = x := by
+  rw [factorizationTransversal, QuotientGroup.mk_mul_of_mem _ (w _).2, QuotientGroup.out_eq']
+
+include hwmul
+
+/-- An equivariant `w` sends the inverse of every representative of the adapted transversal to
+`1`. -/
+theorem apply_inv_factorizationTransversal (x : G ⧸ U) :
+    w (factorizationTransversal w x)⁻¹ = 1 := by
+  have h := hwmul (w x.out⁻¹)⁻¹ x.out⁻¹
+  rw [inv_mul_cancel] at h
+  rw [factorizationTransversal, mul_inv_rev, ← Subgroup.coe_inv, h]
+
+/-- An equivariant `w` sends `(t x)⁻¹ * γ` to the transversal word `ℓᵗ_x(γ)` of the adapted
+transversal `t`. -/
+theorem apply_inv_factorizationTransversal_mul (x : G ⧸ U) (γ : G) :
+    w ((factorizationTransversal w x)⁻¹ * γ) =
+      ⟨lWord U (factorizationTransversal w) x γ,
+        lWord_mem U _ (factorizationTransversal_mk w) x γ⟩ := by
+  have h : (factorizationTransversal w x)⁻¹ * γ =
+      lWord U (factorizationTransversal w) x γ * (factorizationTransversal w (γ⁻¹ • x))⁻¹ := by
+    rw [lWord_def]
+    group
+  rw [h, hwmul ⟨_, lWord_mem U _ (factorizationTransversal_mk w) x γ⟩,
+    apply_inv_factorizationTransversal w hwmul, mul_one]
+
+end Factorization
 
 end TauCeti
 

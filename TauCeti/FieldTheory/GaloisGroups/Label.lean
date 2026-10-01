@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Degree
-public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
+public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Field
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.GroupTheory.GroupAction.Transitive
@@ -32,8 +32,9 @@ reference subgroup, and it is solvable, respectively acts primitively on the roo
 the reference subgroup is solvable, respectively primitive. The Galois image consists of even
 permutations exactly when the reference subgroup does, and so, away from characteristic `2` and
 for monic `f`, the discriminant of `f` is a square exactly when the reference subgroup lies in the
-alternating group. Since every reference subgroup is transitive, a polynomial with a label is
-irreducible.
+alternating group. In the same way `f` stays irreducible over its discriminant field exactly when
+the even part of the reference subgroup is transitive. Since every reference subgroup is
+transitive, a polynomial with a label is irreducible.
 
 Separability and the degree are part of the predicate, so an inseparable polynomial, or one of
 degree other than `n`, has no label in degree `n`; nor does a polynomial of degree zero or of
@@ -53,6 +54,8 @@ by the degree alone, and in degree two by separability and irreducibility.
   degree where it determines the label of a transitive subgroup.
 * `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff` and
   `TauCeti.HasGaloisLabel.isSquare_discr_iff`: the parity of the Galois image.
+* `TauCeti.HasGaloisLabel.irreducible_map_discrField_iff`: irreducibility over the discriminant
+  field, read on the even part of the reference subgroup.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
   primitivity of the Galois image, respectively of the Galois group, on the roots.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
@@ -287,6 +290,27 @@ theorem HasGaloisLabel.isSquare_discr_iff (h : HasGaloisLabel f j) (hf : f.Monic
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   rw [← h.range_le_alternatingGroup_iff,
     hf.isSquare_discr_iff_range_le_alternatingGroup (E := f.SplittingField) h.separable hchar]
+
+/-- **Irreducibility over the discriminant field reads the even part of the label.** Away from
+characteristic `2`, a monic polynomial with a label stays irreducible over its discriminant field
+exactly when the even permutations in the reference subgroup act transitively. The discriminant
+field may be taken in any extension `E` containing a square root `δ` of the discriminant. -/
+theorem HasGaloisLabel.irreducible_map_discrField_iff (h : HasGaloisLabel f j) (hf : f.Monic)
+    (hchar : ringChar F ≠ 2) {E : Type*} [Field E] [Algebra F E] {δ : E}
+    (hδ : δ ^ 2 = algebraMap F E f.discr) :
+    Irreducible (f.map (algebraMap F (discrField f E))) ↔
+      IsPretransitive
+        (referenceSubgroup n j ⊓ alternatingGroup (Fin n) : Subgroup (Perm (Fin n))) (Fin n) := by
+  classical
+  have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
+  obtain ⟨e₀⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
+  -- Move to the discriminant field inside the splitting field, where the Galois image lives.
+  rw [irreducible_map_discrField_congr hδ (hf.discrSqrt_sq h.separable e₀.symm),
+    TauCeti.irreducible_map_discrField_iff hf h.separable hchar
+      (h.natDegree_eq ▸ pos_of_transitiveGroupIndex j)]
+  obtain ⟨-, -, e, he⟩ := h
+  rw [← he.isPretransitive_inf_alternatingGroup_iff, MulEquiv.toMonoidHom_eq_coe,
+    Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff]
 
 /-- In degree one, a polynomial carries the label `1T1` exactly when it has degree one; such a
 polynomial is automatically separable. -/

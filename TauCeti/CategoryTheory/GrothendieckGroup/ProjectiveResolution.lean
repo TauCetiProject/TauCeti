@@ -355,7 +355,6 @@ private noncomputable def eulerInvariant :
         (E.isExtensionClosed_admitsFiniteResolution hproj))
       (ExactK0 (E.fullSubcategory P hP)) where
   obj X := E.eulerClassOf hP X.property
-  map_iso _ _ e := E.eulerClassOf_congr hproj ((E.admitsFiniteResolution P).ι.mapIso e) _ _
   map_conflation S hS := by
     rw [fullSubcategory_conflation_iff] at hS
     exact E.eulerClassOf_eq_add_of_conflation hproj hS _ _

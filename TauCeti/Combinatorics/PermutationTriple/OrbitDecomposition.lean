@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.DisjointSum
 public import Mathlib.GroupTheory.GroupAction.Quotient
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Decomposing permutation triples into connected components
@@ -27,6 +28,8 @@ from those same choices.
   numbers that orbit by a finite ordinal.
 * `TauCeti.PermutationTriple.isConnected_restrictToOrbit` proves that every such restriction is
   connected.
+* `TauCeti.PermutationTriple.card_monodromyOrbit_smul`: relabeling the sheets does not change the
+  number of monodromy orbits.
 * `TauCeti.PermutationTriple.indexedDisjointSum_restrictToOrbit` reconstructs the original triple
   from all its orbit restrictions.
 
@@ -108,6 +111,15 @@ theorem isConnected_restrictToOrbit : (t.restrictToOrbit O).IsConnected := by
     refine ⟨⟨t.orbitActionHom O g, MonoidHom.mem_range.mpr ⟨g, rfl⟩⟩,
       (Finite.equivFinOfCardEq (Nat.card_coe_set_eq O.orbit)).symm.injective ?_⟩
     rw [Submonoid.mk_smul, Perm.smul_def, orbitActionHom_apply, hg]
+
+/-- Relabeling the sheets does not change the number of monodromy orbits. -/
+@[simp]
+theorem card_monodromyOrbit_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
+    Nat.card (τ • t).MonodromyOrbit = Nat.card t.MonodromyOrbit := by
+  rw [MonodromyOrbit, MonodromyOrbit, monodromyGroup_smul]
+  exact (Nat.card_congr (MulAction.orbitRelQuotientCongr
+    (MulEquiv.subgroupMap (MulAut.conj τ) t.monodromyGroup) τ fun g x ↦ by
+      simp [Subgroup.smul_def, Perm.smul_def, MulEquiv.coe_subgroupMap_apply])).symm
 
 /-! ### Reconstruction -/
 

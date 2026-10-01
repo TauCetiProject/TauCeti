@@ -32,6 +32,7 @@ fields and global functions over a field.
   `X.descResidueField (Scheme.stalkClosedPointTo s)`. The section hypothesis makes that map
   bijective (`descResidueField_bijective_of_section`), which is what lets a `K`-rational point
   transport `K`-structures to the fibre data at the point.
+* `isClosed_singleton_of_section`: over `Spec K`, the section gives a closed point of `X`.
 * `appTop_bijective_of_section`: if moreover `X` is integral and universally closed over `Spec K`,
   a `K`-rational point forces the global functions of `X` to be the constants, that is,
   `f.appTop : Γ(Spec K, ⊤) ⟶ Γ(X, ⊤)` is bijective. Mathlib's `isField_of_universallyClosed`
@@ -206,6 +207,14 @@ through the evaluation map `X.descResidueField (Scheme.stalkClosedPointTo s)`. -
 section OverField
 
 variable {K : Type u} [Field K] {X : Scheme.{u}} {f : X ⟶ Spec (.of K)} {s : Spec (.of K) ⟶ X}
+
+/-- The image of a rational-point section is a closed point. -/
+lemma isClosed_singleton_of_section
+    (hs : s ≫ f = 𝟙 (Spec (.of K))) : IsClosed {s (IsLocalRing.closedPoint K)} := by
+  have := isClosedImmersion_of_comp_eq_id f s hs
+  rw [← Set.range_eq_singleton fun y ↦ congrArg s
+    (Subsingleton.elim y (IsLocalRing.closedPoint K))]
+  exact s.isClosedEmbedding.isClosed_range
 
 /-- The canonical evaluation map `κ(s 0) ⟶ K` at a `K`-rational point is bijective: it is
 injective as a map of fields, and surjective because the stalk already surjects onto `K`. -/

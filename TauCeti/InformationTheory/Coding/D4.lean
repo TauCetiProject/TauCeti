@@ -12,6 +12,7 @@ public import TauCeti.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.LinearCombination
 
 /-!

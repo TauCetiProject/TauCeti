@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -216,12 +217,7 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_affine_prevertice
       ∀ j, -1 < ∑ i with a i = a j, e i →
         A' * schwarzChristoffelVertex (fun i ↦ c * a i + d) e z₀ j + B' =
           A * schwarzChristoffelVertex a e z₀ j + B := by
-  have hA : A ≠ 0 := by
-    intro hA
-    have hI : Complex.I ∈ upperHalfPlaneSet := by simp [upperHalfPlaneSet]
-    have hI_one : Complex.I + 1 ∈ upperHalfPlaneSet := by simp [upperHalfPlaneSet]
-    have heq := hbij.injOn hI hI_one (by simp [hA])
-    norm_num at heq
+  have hA : A ≠ 0 := ne_zero_of_injOn_const_mul_add hbij.injOn
   let C : ℂ := (c : ℂ) ^ (((∑ i, e i) + 1 : ℝ) : ℂ)
   let z₀' : UpperHalfPlane := d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀)
   let A' : ℂ := A * C⁻¹

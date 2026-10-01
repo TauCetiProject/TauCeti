@@ -76,7 +76,7 @@ variable {R : Type u} [CommRing R]
 private theorem leviMatrix_mem (A : GL l R) :
     Matrix.fromBlocks (A : Matrix l l R) 0 0
         ((A⁻¹ : GL l R) : Matrix l l R)ᵀ ∈ Matrix.symplecticGroup l R := by
-  apply fromBlocks_diagonal_mem
+  apply SymplecticGroup.fromBlocks_diagonal_mem
   rw [← Matrix.transpose_mul, ← Units.val_mul]
   simp
 
