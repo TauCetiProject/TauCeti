@@ -134,14 +134,14 @@ theorem toDualHom_toIntLinearMap_injective (P : Polarization hℂ hs) :
 /-- The complex self-duality map induced by a polarization is injective. -/
 theorem toDualHom_toLinearMap_injective (P : Polarization hℂ hs) :
     Function.Injective P.toDualHom.toLinearMap := by
-  rw [show P.toDualHom.toLinearMap = P.Q from P.toDualHom_toLinearMap]
+  rw [toDualHom_toLinearMap]
   exact LinearMap.ker_eq_bot.mp P.Q_nondegenerate.ker_eq_bot
 
 /-- The complex self-duality map induced by a polarization is bijective. -/
 theorem toDualHom_toLinearMap_bijective (P : Polarization hℂ hs) :
     Function.Bijective P.toDualHom.toLinearMap := by
   let _ : Module.Finite ℂ Vℂ := hℂ.finite
-  rw [show P.toDualHom.toLinearMap = P.Q from P.toDualHom_toLinearMap]
+  rw [toDualHom_toLinearMap]
   exact (P.Q.toDual P.Q_nondegenerate).bijective
 
 /-- The integral self-duality map is bijective exactly when the integral polarizing form is a
