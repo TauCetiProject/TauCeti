@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
+public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 
 /-!
@@ -158,6 +159,11 @@ an intermediate field `E` down to `F` does not change the place it produces. -/
 @[simp]
 theorem restrictScalars_smul (E : IntermediateField F F') (τ : F' ≃ₐ[E] F') (Q : Place k F') :
     τ.restrictScalars F • Q = τ • Q := rfl
+
+/-- **The action is transport along the automorphism**: `σ • P` is the place obtained from `P`
+by transport along `σ`, viewed as a `k`-algebra isomorphism of `F'` with itself. -/
+theorem smul_eq_map : σ • P = P.map (σ.restrictScalars k) :=
+  Place.ext (Valuation.ext fun x ↦ by rw [valuation_smul, valuation_map]; rfl)
 
 /-- **The stabilizer of a place is the decomposition group** of its valuation ring
 (Stichtenoth, Definition 3.8.1). -/
