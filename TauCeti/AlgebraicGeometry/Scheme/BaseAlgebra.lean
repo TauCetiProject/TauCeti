@@ -64,6 +64,24 @@ lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_apply [IsIntegral 
       X.germToFunctionField ⊤ (Scheme.Modules.baseRingToGlobalSections k X c) := by
   rfl
 
+/-- The base-ring map to the function field factors through the sections over any nonempty open
+`U`: pull functions on `Spec k` back to `Γ(X, U)` along the structure morphism, then pass to
+rational functions. -/
+lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_eq_comp_appLE [IsIntegral X]
+    (U : X.Opens) [Nonempty U] :
+    Scheme.baseRingToFunctionField k X = (X.germToFunctionField U).hom.comp
+      ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appLE ⊤ U le_top).hom := by
+  have h : (X ↘ Spec (.of k)).appLE ⊤ U le_top ≫ X.germToFunctionField U =
+      (X ↘ Spec (.of k)).appTop ≫ X.germToFunctionField ⊤ := by
+    simp only [Scheme.Hom.appLE, Category.assoc, TopCat.Presheaf.germ_res]
+    -- What remains compares germs on `(X ↘ Spec k) ⁻¹ᵁ ⊤` and on `⊤`, which are the same open
+    -- by definition; rewriting along `Scheme.Hom.preimage_top` would need to transport the
+    -- membership proof inside `germ`.
+    rfl
+  ext c
+  rw [Scheme.baseRingToFunctionField_apply, Scheme.Modules.baseRingToGlobalSections_apply]
+  exact congr($h ((Scheme.ΓSpecIso (.of k)).inv c)).symm
+
 /-- The function field of an integral scheme over `Spec k` is canonically a `k`-algebra. -/
 instance (priority := 900) _root_.AlgebraicGeometry.Scheme.functionFieldBaseAlgebra
     [IsIntegral X] : Algebra k X.functionField :=

@@ -195,7 +195,7 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
 
 /-- The squared speed of a maximal geodesic equals the squared norm of its initial velocity at
 every point of its maximal interval. -/
-theorem inner_curveVelocity_maximalGeodesic_self [T2Space (TangentBundle I M)]
+theorem inner_curveVelocity_maximalGeodesic_self [T2Space M]
     {p : M} {v : TangentSpace I p} {t : ℝ}
     (ht : t ∈ geodesicInterval I M p v) :
     inner ℝ (curveVelocity I (maximalGeodesic I M p v) t)

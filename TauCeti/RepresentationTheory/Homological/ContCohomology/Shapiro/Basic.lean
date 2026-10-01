@@ -158,6 +158,16 @@ theorem explicitShapiro0_apply (f : H0 G (DiscreteCoind G U A)) :
 theorem explicitShapiro0_symm_apply (a : H0 U A) :
     ((explicitShapiro0 G U A).symm a : DiscreteCoind G U A) = constCoind G a := (rfl)
 
+variable (G U A) in
+/-- The degree-zero Shapiro isomorphism is the compatible-pair pullback along the inclusion
+`U ↪ G` and evaluation at `1`, like the forward Shapiro maps in degrees one and two. -/
+theorem explicitShapiro0_eq_explicitMap0 (f : H0 G (DiscreteCoind G U A)) :
+    explicitShapiro0 G U A f =
+      explicitMap0 G (DiscreteCoind G U A) (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+        (DiscreteCoind.eval G U A) (fun u f => DiscreteCoind.eval_smul u f) f :=
+  Subtype.ext ((explicitShapiro0_apply f).trans
+    ((coe_explicitMap0 _ _ _ _ _ f).trans (DiscreteCoind.eval_apply _)).symm)
+
 end DegreeZero
 
 section Lift
