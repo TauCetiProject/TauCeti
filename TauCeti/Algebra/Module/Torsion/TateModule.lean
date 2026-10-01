@@ -83,9 +83,11 @@ def tateModuleSubgroup : AddSubgroup (∀ n, TateModuleLevel p A n) where
   carrier := {x | ∀ n, tateModuleTransition p A n (x (n + 1)) = x n}
   zero_mem' n := by simp [tateModuleTransition]
   add_mem' {x y} hx hy n := by
+    -- Membership in the subgroup unfolds to compatibility of the componentwise sum.
     change tateModuleTransition p A n (x (n + 1) + y (n + 1)) = x n + y n
     rw [map_add, hx n, hy n]
   neg_mem' {x} hx n := by
+    -- Membership in the subgroup unfolds to compatibility of the componentwise negation.
     change tateModuleTransition p A n (-x (n + 1)) = -x n
     rw [map_neg, hx n]
 
@@ -117,6 +119,7 @@ def proj (n : ℕ) : TateModule p A →+ TateModuleLevel p A n :=
 @[simp]
 theorem proj_succ (x : TateModule p A) (n : ℕ) :
     tateModuleTransition p A n (proj (n + 1) x) = proj n x :=
+  -- Unfold `TateModule` to expose the compatible-family subtype carrying `x`.
   mem_tateModuleSubgroup_iff.1 (show tateModuleSubgroup p A from x).2 n
 
 /-- A Tate-module point is determined by all of its finite-level components. -/
@@ -194,6 +197,7 @@ def map (f : A →+ B) : TateModule p A →+ TateModule p B :=
   (AddMonoidHom.pi fun n ↦ (levelMap (p := p) f n).comp (proj (p := p) n)).codRestrict
     (tateModuleSubgroup p B) fun x n ↦ by
       apply Subtype.ext
+      -- Coercing both torsion levels to their ambient groups exposes naturality of `nsmul`.
       change p • f (proj (n + 1) x : A) = f (proj n x : A)
       rw [← map_nsmul]
       exact congrArg f (congrArg Subtype.val (proj_succ x n))
@@ -224,7 +228,7 @@ section PadicModule
 variable [Fact p.Prime]
 
 /-- The canonical module structure on the `p^n`-torsion level over `ZMod (p^n)`. -/
-local instance levelZModModule (n : ℕ) :
+instance levelZModModule (n : ℕ) :
     Module (ZMod (p ^ n)) (TateModuleLevel p A n) :=
   AddSubgroup.torsionBy.zmodModule
 
@@ -234,6 +238,7 @@ private theorem transition_smul (n : ℕ) (a : ℤ_[p])
       PadicInt.toZModPow n a • tateModuleTransition p A n x := by
   rw [← PadicInt.cast_toZModPow n (n + 1) n.le_succ a]
   let c := PadicInt.toZModPow (n + 1) a
+  -- Replace the reduced p-adic scalar by `c` so its integer representative can be used below.
   rw [show PadicInt.toZModPow (n + 1) a = c from rfl]
   rw [← c.intCast_zmod_cast, Int.cast_smul_eq_zsmul, map_zsmul]
   rw [ZMod.cast_intCast (R := ZMod (p ^ n)) (pow_dvd_pow p n.le_succ),
@@ -292,6 +297,7 @@ private theorem isInducing_proj
     [∀ n, DiscreteTopology (TateModuleLevel p A n)] :
     Topology.IsInducing (fun x : TateModule p A ↦ fun n ↦ proj n x) := by
   refine ⟨?_⟩
+  -- Every supplied level topology is discrete, hence equal to the bottom topology used above.
   rw [show t = fun _ ↦ ⊥ from funext fun n ↦ DiscreteTopology.eq_bot]
   rfl
 
@@ -348,6 +354,7 @@ instance [∀ n, Finite (TateModuleLevel p A n)] : CompactSpace (TateModule p A)
 theorem continuous_map {B : Type*} [AddCommGroup B] (f : A →+ B) :
     Continuous (map (p := p) f : TateModule p A → TateModule p B) := by
   refine continuous_iff.2 fun n ↦ ?_
+  -- Unfold the component formula `proj_map` as a composition with the source projection.
   change IsLocallyConstant
     ((levelMap (p := p) f n : TateModuleLevel p A n → TateModuleLevel p B n) ∘ proj n)
   exact (isLocallyConstant_proj (p := p) (A := A) n).comp (levelMap (p := p) f n)

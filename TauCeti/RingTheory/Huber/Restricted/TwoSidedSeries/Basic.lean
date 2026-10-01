@@ -218,7 +218,7 @@ theorem disjoint_twoSidedRestricted_compl (s : Set ℤ) :
         Submodule.pi s fun _ ↦ (⊥ : Submodule A M)) := by
   have h : Disjoint (Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule A M))
       (Submodule.pi s fun _ ↦ (⊥ : Submodule A M)) := by
-    have hs := Submodule.disjoint_pi_compl_bot_of_disjoint (A := A) (M := M)
+    have hs := Submodule.disjoint_pi_compl_bot_of_disjoint (R := A) (M := fun _ : ℤ ↦ M)
       (disjoint_compl_right (a := s))
     rwa [compl_compl] at hs
   exact h.mono inf_le_right inf_le_right

@@ -74,6 +74,8 @@ propositionally equal arities.
   is the unsuspended one scaled by that sign.
 * `TauCeti.AInfinity.suspendedStasheffSum_eq_zero_iff`: the suspended identity free of the
   structural coefficient `(-1) ^ (r + s * t)` holds exactly when the unsuspended identity does.
+* `TauCeti.AInfinity.sum_stasheff_reflect`: the reflection `(p, s, t) ↦ (t, s, p)` of the
+  decompositions indexing a Stasheff sum.
 * `TauCeti.AInfinity.stasheffSum_one`, `TauCeti.AInfinity.stasheffSum_two`,
   `TauCeti.AInfinity.stasheffSum_three` and `TauCeti.AInfinity.stasheffSum_four`: the four
   identities written out using the supplied degree family.
@@ -113,7 +115,7 @@ namespace TauCeti
 
 /-- Evaluating an operation on a tuple whose replaced entry is scaled scales the value: the
 replaced entry sits in a single slot, in which the operation is linear. -/
-private theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
+theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
     {R : Type uR} {A : Type uA} [Semiring R] [AddCommMonoid A] [Module R A]
     [AddCommMonoid N] [Module R N]
     (f : MultilinearMap R (fun _ : Fin u ↦ A) N)
@@ -266,6 +268,28 @@ theorem suspExp_replaceDeg (d : ℕ → ℤ) (p s t : ℕ) :
 end Degrees
 
 /-! ### The Stasheff identities -/
+
+/-- Pass between the decompositions `p + s + t` and `t + s + p` of an arity-`n` Stasheff sum. -/
+theorem sum_stasheff_reflect {M : Type*} [AddCommMonoid M] (n : ℕ)
+    (f : ℕ → ℕ → ℕ → M) :
+    ∑ p ∈ Finset.range (n + 1), ∑ s ∈ Finset.Icc 1 (n - p), f p s (n - p - s) =
+      ∑ p ∈ Finset.range (n + 1), ∑ s ∈ Finset.Icc 1 (n - p), f (n - p - s) s p := by
+  rw [Finset.sum_sigma', Finset.sum_sigma']
+  refine Finset.sum_nbij' (fun a ↦ ⟨n - a.1 - a.2, a.2⟩) (fun a ↦ ⟨n - a.1 - a.2, a.2⟩)
+    ?_ ?_ ?_ ?_ ?_
+  all_goals
+    simp only [Finset.mem_sigma, Finset.mem_range, Finset.mem_Icc]
+  · intro a ha
+    omega
+  · intro a ha
+    omega
+  · intro a ha
+    exact Sigma.ext (by dsimp only; omega) HEq.rfl
+  · intro a ha
+    exact Sigma.ext (by dsimp only; omega) HEq.rfl
+  · intro a ha
+    congr 1
+    omega
 
 section Stasheff
 

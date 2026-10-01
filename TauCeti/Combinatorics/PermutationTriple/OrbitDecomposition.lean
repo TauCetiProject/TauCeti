@@ -121,6 +121,20 @@ theorem card_monodromyOrbit_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     (MulEquiv.subgroupMap (MulAut.conj τ) t.monodromyGroup) τ fun g x ↦ by
       simp [Subgroup.smul_def, Perm.smul_def, MulEquiv.coe_subgroupMap_apply])).symm
 
+/-! ### Sheets in one monodromy orbit -/
+
+/-- A sheet and its image under the first component lie in one monodromy orbit. -/
+@[simp]
+theorem mk_σ0_apply (x : Fin n) :
+    (Quotient.mk _ (t.σ0 x) : t.MonodromyOrbit) = Quotient.mk _ x :=
+  Quotient.sound ⟨⟨t.σ0, t.σ0_mem_monodromyGroup⟩, rfl⟩
+
+/-- A sheet and its image under the second component lie in one monodromy orbit. -/
+@[simp]
+theorem mk_σ1_apply (x : Fin n) :
+    (Quotient.mk _ (t.σ1 x) : t.MonodromyOrbit) = Quotient.mk _ x :=
+  Quotient.sound ⟨⟨t.σ1, t.σ1_mem_monodromyGroup⟩, rfl⟩
+
 /-! ### Reconstruction -/
 
 /-- The numbering of the disjoint union of the numbered monodromy orbits induced by the

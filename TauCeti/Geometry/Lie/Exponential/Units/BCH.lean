@@ -139,7 +139,7 @@ theorem unitsLocalBCH_sliceLeft :
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
   rw [unitsLocalBCH_def, Germ.sliceLeft_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one R)] with X hX
+  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one ℝ R)] with X hX
   rw [map_zero, NormedSpace.exp_zero, mul_one, hX, e.symm_apply_apply]
 
 /-- Restricting `unitsLocalBCH` to the second coordinate axis gives the identity germ. -/
@@ -155,7 +155,7 @@ theorem unitsLocalBCH_sliceRight :
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
   rw [unitsLocalBCH_def, Germ.sliceRight_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one R)] with Y hY
+  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one ℝ R)] with Y hY
   rw [map_zero, NormedSpace.exp_zero, one_mul, hY, e.symm_apply_apply]
 
 /-- The representative defining `unitsLocalBCH` is analytic at the origin. -/

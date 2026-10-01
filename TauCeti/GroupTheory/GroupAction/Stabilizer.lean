@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Pointwise.Finset
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import Mathlib.GroupTheory.Coset.Card
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -42,6 +45,10 @@ in question, then the `G`-order of that point's stabiliser is `Nat.card f.ker` t
 `H`-order. Taking `f` to be a quotient map gives the projective case, where the divisor is the
 subgroup quotiented out.
 
+Finally, a group of prime order acting on its own finite subsets by translation has trivial
+stabilisers away from the two fixed points `∅` and `univ`: a stabiliser is a subgroup, so it is
+trivial or everything, and a subset fixed by every translation is empty or everything.
+
 A point stabiliser of a permutation representation `ρ : G →* Equiv.Perm α` is a subgroup of the
 source, namely the comap of the stabiliser in `Equiv.Perm α`. The last two results say when that
 subgroup is the kernel — so in particular normal — and, for a transitive representation, that
@@ -49,6 +56,8 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
+* `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
+  translation on its nonempty proper finite subsets.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
@@ -341,6 +350,27 @@ theorem card_stabilizer_coset_eq_card_stabilizer_inv_smul (H : Subgroup G) (p : 
     simp [mul_assoc]
   · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
   · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
+
+section PrimeCard
+
+open scoped Pointwise
+
+/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
+prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
+trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
+    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+    MulAction.stabilizer G S = ⊥ := by
+  have := Fact.mk hG
+  refine (Subgroup.eq_bot_or_eq_top_of_prime_card _).resolve_right fun htop ↦ hS ?_
+  obtain ⟨a, ha⟩ := hne
+  refine Finset.eq_univ_of_forall fun b ↦ ?_
+  have hb : b * a⁻¹ ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
+  rw [MulAction.mem_stabilizer_iff] at hb
+  have hmem := Finset.smul_mem_smul_finset (a := b * a⁻¹) ha
+  rwa [hb, smul_eq_mul, inv_mul_cancel_right] at hmem
+
+end PrimeCard
 
 end TauCeti
 

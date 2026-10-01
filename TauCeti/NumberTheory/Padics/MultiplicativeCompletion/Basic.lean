@@ -76,6 +76,14 @@ def padicCompletionUnits :
     (Pi.evalMonoidHom _ m)
 
 omit [Fact p.Prime] in
+-- Recorded directly: deriving this structure through the product of the power-class groups is
+-- slow enough to defeat instance searches built on top of it, such as the one for the quotient
+-- of `Additive A(L)` by a submodule.
+/-- `A(L)` is a commutative group, with the pointwise group structure of compatible families of
+power classes inherited from the product `∏ₘ Lˣ/(Lˣ)^(p^m)`. -/
+instance : CommGroup ↑(padicCompletionUnits p L) := inferInstance
+
+omit [Fact p.Prime] in
 /-- A compatible family is characterized by the transition equation at every level. -/
 @[simp]
 theorem mem_padicCompletionUnits_iff
@@ -173,6 +181,12 @@ theorem padicCompletionUnits_natCast_smul (n : ℕ)
   rw [padicCompletionUnits_smul_apply, toMul_nsmul]
   exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq n m)
     (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
+
+/-- Adding a `p ^ m`-multiple in `A(L)` does not change the level-`m` coordinate. -/
+theorem padicCompletionUnits_add_pow_smul_apply (m : ℕ)
+    (y z : Additive ↑(padicCompletionUnits p L)) :
+    (y + (p : ℤ_[p]) ^ m • z).toMul.1 m = y.toMul.1 m := by
+  simp
 
 section GaloisAction
 

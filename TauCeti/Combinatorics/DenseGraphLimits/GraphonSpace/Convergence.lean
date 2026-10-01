@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Compact
 public import TauCeti.Combinatorics.DenseGraphLimits.Separation.Inverse
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
+import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Coordinates
 
 /-!
 # Convergence of graphons through homomorphism densities
@@ -34,10 +35,11 @@ has a limit graphon exactly when all its finite homomorphism densities converge
 (`exists_graphon_tendsto_cutDist_finiteGraphGraphon_iff_forall_homDensityFin_cauchySeq`).
 
 The compactness argument runs on the canonical carrier `(I, volume)`, where the joint
-homomorphism-density map is a closed embedding of the compact space `GraphonSpaceI` into a
-product of lines. The isometric embedding of every fixed-carrier graphon space into the
-unit-interval one (`toGraphonSpaceI`) and the unit-interval representative of every graphon
-(`Graphon.unitIntervalRepr`) carry the equivalences to arbitrary carriers.
+homomorphism-density map `homDensityCoords` is a closed embedding of the compact space
+`GraphonSpaceI` into a product of lines (`isClosedEmbedding_homDensityCoords`). The isometric
+embedding of every fixed-carrier graphon space into the unit-interval one (`toGraphonSpaceI`) and
+the unit-interval representative of every graphon (`Graphon.unitIntervalRepr`) carry the
+equivalences to arbitrary carriers.
 
 ## References
 
@@ -61,56 +63,6 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-section UnitInterval
-
-/-- The unit-interval case of `tendsto_graphonSpace_iff_forall_homDensity`, where the graphon
-space is compact: the joint homomorphism-density map is a closed embedding of `GraphonSpaceI`. -/
-private theorem tendsto_graphonSpaceI_iff_forall_homDensity
-    (Ws : ℕ → GraphonSpaceI) (W : GraphonSpaceI) :
-    Tendsto Ws atTop (𝓝 W) ↔
-      ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
-        Tendsto (fun k => homDensityOnSpace F (Ws k)) atTop
-          (𝓝 (homDensityOnSpace F W)) := by
-  let Φ : GraphonSpaceI →
-      (p : Σ n : ℕ, Σ F : SimpleGraph (Fin n), DecidableRel F.Adj) → ℝ :=
-    fun x p => by
-      letI := p.2.2
-      exact homDensityOnSpace p.2.1 x
-  have hcont : Continuous Φ := by
-    apply continuous_pi
-    intro p
-    exact (letI := p.2.2; continuous_homDensityOnSpace p.2.1)
-  have hinj : Function.Injective Φ := by
-    intro U V h
-    apply (graphonSpace_ext_iff_homDensity U V).2
-    intro n F inst
-    simpa only [Φ] using congrFun h ⟨n, F, inst⟩
-  have hemb : Topology.IsClosedEmbedding Φ := hcont.isClosedEmbedding hinj
-  rw [hemb.tendsto_nhds_iff, tendsto_pi_nhds]
-  constructor
-  · intro h n F inst
-    simpa only [Φ, Function.comp_def] using h ⟨n, F, inst⟩
-  · intro h ⟨n, F, inst⟩
-    simpa only [Φ, Function.comp_def] using h n F
-
-/-- The unit-interval case of `exists_tendsto_graphonSpace_iff_forall_homDensity_cauchySeq`:
-by compactness a sequence in `GraphonSpaceI` has a convergent subsequence, and once every
-homomorphism density converges the whole sequence converges to the subsequential limit. -/
-private theorem exists_tendsto_graphonSpaceI_of_forall_homDensity_tendsto
-    (Ws : ℕ → GraphonSpaceI)
-    (h : ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
-      ∃ l, Tendsto (fun k => homDensityOnSpace F (Ws k)) atTop (𝓝 l)) :
-    ∃ W, Tendsto Ws atTop (𝓝 W) := by
-  obtain ⟨W, φ, hφ, hlim⟩ := CompactSpace.tendsto_subseq Ws
-  refine ⟨W, (tendsto_graphonSpaceI_iff_forall_homDensity Ws W).2 fun n F _ => ?_⟩
-  obtain ⟨l, hl⟩ := h n F
-  have hsub : Tendsto (fun k => homDensityOnSpace F (Ws (φ k))) atTop
-      (𝓝 (homDensityOnSpace F W)) :=
-    ((continuous_homDensityOnSpace F).tendsto W).comp hlim
-  rwa [tendsto_nhds_unique (hl.comp hφ.tendsto_atTop) hsub] at hl
-
-end UnitInterval
-
 section FixedCarrier
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
@@ -124,8 +76,26 @@ theorem tendsto_graphonSpace_iff_forall_homDensity
       ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
         Tendsto (fun k => homDensityOnSpace F (Ws k)) atTop
           (𝓝 (homDensityOnSpace F W)) := by
-  rw [isometry_toGraphonSpaceI.tendsto_nhds_iff, tendsto_graphonSpaceI_iff_forall_homDensity]
-  simp only [Function.comp_def, homDensityOnSpace_toGraphonSpaceI]
+  rw [isInducing_homDensityCoords.tendsto_nhds_iff, tendsto_pi_nhds]
+  refine ⟨fun h n F _ => ?_, fun h ⟨n, F, _⟩ => ?_⟩
+  · simpa only [Function.comp_def, homDensityCoords_apply] using h ⟨n, F, ‹_›⟩
+  · simpa only [Function.comp_def, homDensityCoords_apply] using h n F
+
+/-- The unit-interval case of `exists_tendsto_graphonSpace_iff_forall_homDensity_cauchySeq`:
+by compactness a sequence in `GraphonSpaceI` has a convergent subsequence, and once every
+homomorphism density converges the whole sequence converges to the subsequential limit. -/
+private theorem exists_tendsto_graphonSpaceI_of_forall_homDensity_tendsto
+    (Ws : ℕ → GraphonSpaceI)
+    (h : ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
+      ∃ l, Tendsto (fun k => homDensityOnSpace F (Ws k)) atTop (𝓝 l)) :
+    ∃ W, Tendsto Ws atTop (𝓝 W) := by
+  obtain ⟨W, φ, hφ, hlim⟩ := CompactSpace.tendsto_subseq Ws
+  refine ⟨W, (tendsto_graphonSpace_iff_forall_homDensity Ws W).2 fun n F _ => ?_⟩
+  obtain ⟨l, hl⟩ := h n F
+  have hsub : Tendsto (fun k => homDensityOnSpace F (Ws (φ k))) atTop
+      (𝓝 (homDensityOnSpace F W)) :=
+    ((continuous_homDensityOnSpace F).tendsto W).comp hlim
+  rwa [tendsto_nhds_unique (hl.comp hφ.tendsto_atTop) hsub] at hl
 
 /-- **Cauchy sequences in graphon space are those with Cauchy homomorphism densities.** A sequence
 in the graphon space over any probability carrier is Cauchy in cut distance if and only if the
@@ -142,7 +112,7 @@ theorem cauchySeq_graphonSpace_iff_forall_homDensity_cauchySeq (Ws : ℕ → Gra
   constructor
   · rintro ⟨X, hX⟩ n F _
     simpa only [Function.comp_def, homDensityOnSpace_toGraphonSpaceI] using
-      ((tendsto_graphonSpaceI_iff_forall_homDensity _ X).1 hX n F).cauchySeq
+      ((tendsto_graphonSpace_iff_forall_homDensity _ X).1 hX n F).cauchySeq
   · intro h
     refine exists_tendsto_graphonSpaceI_of_forall_homDensity_tendsto _ fun n F _ => ?_
     simpa only [Function.comp_def, homDensityOnSpace_toGraphonSpaceI] using
