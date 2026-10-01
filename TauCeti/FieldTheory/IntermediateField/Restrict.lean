@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.FieldTheory.Normal.Basic
 
 /-!
 # Restricting automorphisms to a stable intermediate field
@@ -25,6 +26,8 @@ needs no normality: stability under the automorphisms is assumed instead of deri
 * `IntermediateField.coe_restrictAlgEquivHom_apply`: the restriction acts as the
   automorphism does.
 * `IntermediateField.ker_restrictAlgEquivHom`: its kernel is `E.fixingSubgroup`.
+* `IntermediateField.natCard_fixingSubgroup_of_finrank_eq_two`: for a separable quadratic
+  `L / E`, the fixing subgroup of `E` has order two.
 -/
 
 public section
@@ -65,5 +68,12 @@ theorem ker_restrictAlgEquivHom : (restrictAlgEquivHom E hE).ker = E.fixingSubgr
   · intro h
     ext y
     simpa using h y y.2
+
+/-- **The fixing subgroup of a separable quadratic subextension has order two**: a separable
+quadratic extension is Galois, with Galois group of order `[L : E] = 2`. -/
+theorem natCard_fixingSubgroup_of_finrank_eq_two (hdeg : Module.finrank E L = 2)
+    [Algebra.IsSeparable E L] : Nat.card E.fixingSubgroup = 2 := by
+  have : Algebra.IsQuadraticExtension E L := ⟨hdeg⟩
+  rw [Nat.card_congr (fixingSubgroupEquiv E).toEquiv, IsGalois.card_aut_eq_finrank, hdeg]
 
 end IntermediateField
