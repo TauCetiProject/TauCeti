@@ -161,6 +161,12 @@ theorem conj_zpowHat (g x : G) (a : Additive zHat.{u}) :
   (map_zpowHat (⟨(MulAut.conj g).toMonoidHom, IsTopologicalGroup.continuous_conj g⟩ : G →ₜ* G)
     x a).symm
 
+/-- Profinite powers commute with conjugation by an inverse. -/
+@[simp]
+theorem conj_inv_zpowHat (c x : G) (a : Additive zHat.{u}) :
+    (c⁻¹ * x * c) ^ᶻ a = c⁻¹ * x ^ᶻ a * c := by
+  simpa only [inv_inv] using conj_zpowHat c⁻¹ x a
+
 /-- The profinite power of an inverse is the inverse of the profinite power. -/
 @[simp]
 theorem inv_zpowHat (x : G) (a : Additive zHat.{u}) : x⁻¹ ^ᶻ a = (x ^ᶻ a)⁻¹ := by
@@ -230,6 +236,11 @@ theorem zpowHat_eq_pow_val_toZMod {x : G} {n : ℕ+} (hx : x ^ (n : ℕ) = 1)
     (f := fun c : ZMod n ↦ x ^ c.val)).comp (zHat.continuous_toZMod n)) (fun m ↦ ?_) a).symm
   rw [Function.comp_apply, map_intCast, ← zpow_natCast, ZMod.val_intCast]
   exact (zpow_eq_zpow_emod' m hx).symm
+
+/-- In a finite group, the profinite power depends only on the exponent modulo the group order. -/
+theorem zpowHat_eq_pow_val_toZMod_natCard [Finite G] (x : G) (a : Additive zHat.{u}) :
+    x ^ᶻ a = x ^ (zHat.toZMod ⟨Nat.card G, Nat.card_pos⟩ a).val :=
+  zpowHat_eq_pow_val_toZMod pow_card_eq_one' a
 
 /-- **The `ℓ`-adic comparison.** On a pro-`ℓ` group, the profinite power by `a` is Tau Ceti's
 `ℓ`-adic power by the `ℓ`-adic component of `a`. -/
