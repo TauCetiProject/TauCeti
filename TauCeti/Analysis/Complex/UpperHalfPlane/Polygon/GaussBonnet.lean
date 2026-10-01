@@ -11,31 +11,36 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Data.Fin.Basic
 
 /-!
-# The Gauss–Bonnet formula for convex hyperbolic polygons
+# The Gauss–Bonnet formula for compact convex hyperbolic polygons
 
-The invariant area of a convex hyperbolic polygon with `n` vertices and interior angles
-`α₀, …, αₙ₋₁` is `(n - 2) π - (α₀ + ⋯ + αₙ₋₁)` (`ConvexPolygon.volume_carrier`).
+The invariant area of a compact convex hyperbolic polygon (all vertices in `ℍ`) with `n` vertices
+and interior angles `α₀, …, αₙ₋₁` is `(n - 2) π - (α₀ + ⋯ + αₙ₋₁)`
+(`CompactConvexPolygon.volume_carrier`).
 
 The file also provides the cut of a polygon along the diagonal from its penultimate vertex to
-`vertex 0`, used to argue by induction on the number of vertices (`ConvexPolygon.induction_on`):
-the first `n - 1` vertices form a convex polygon (`ConvexPolygon.eraseLast`); seen from `vertex 0`
-the vertices are in increasing angular order (`ConvexPolygon.toReal_orientedAngle_lt`); the
-diagonal has the last vertex strictly on its right and the others strictly on its left
-(`ConvexPolygon.last_mem_rightHalfPlane_diagonal`, `ConvexPolygon.mem_leftHalfPlane_diagonal`);
-the carrier is the union of the carrier of `eraseLast` and the triangle on the last three
-vertices (`ConvexPolygon.carrier_eq_union_triangle`), which meet only on the diagonal
-(`ConvexPolygon.carrier_eraseLast_inter_triangle_subset`); and the angle sum splits accordingly
-(`ConvexPolygon.sum_interiorAngle_eq`).
+`vertex 0`, used to argue by induction on the number of vertices
+(`CompactConvexPolygon.induction_on`): the first `n - 1` vertices form a convex polygon
+(`CompactConvexPolygon.eraseLast`); seen from `vertex 0` the vertices are in increasing angular
+order (`CompactConvexPolygon.toReal_orientedAngle_lt`); the diagonal has the last vertex strictly on
+its right and the others strictly on its left
+(`CompactConvexPolygon.last_mem_rightHalfPlane_diagonal`,
+`CompactConvexPolygon.mem_leftHalfPlane_diagonal`); the carrier is the union of the carrier of
+`eraseLast` and the triangle on the last three vertices
+(`CompactConvexPolygon.carrier_eq_union_triangle`), which meet only on the diagonal
+(`CompactConvexPolygon.carrier_eraseLast_inter_triangle_subset`); and the angle sum splits
+accordingly (`CompactConvexPolygon.sum_interiorAngle_eq`).
 
 ## Main results
 
-* `ConvexPolygon.volume_carrier`: **Gauss–Bonnet for convex polygons**, the area is
+* `CompactConvexPolygon.volume_carrier`: **Gauss–Bonnet for convex polygons**, the area is
   `(n - 2) π` minus the sum of the interior angles.
-* `ConvexPolygon.sum_interiorAngle_le`: the sum of the interior angles is at most `(n - 2) π`.
-* `ConvexPolygon.carrier_subset_closure_leftHalfPlane`: the carrier lies in every closed
+* `CompactConvexPolygon.sum_interiorAngle_le`: the sum of the interior angles is at most
+  `(n - 2) π`.
+* `CompactConvexPolygon.carrier_subset_closure_leftHalfPlane`: the carrier lies in every closed
   half-plane containing the vertices.
-* `ConvexPolygon.isCompact_carrier`: the carrier is compact.
-* `ConvexPolygon.induction_on`: induction on the number of vertices, cutting off the last one.
+* `CompactConvexPolygon.isCompact_carrier`: the carrier is compact.
+* `CompactConvexPolygon.induction_on`: induction on the number of vertices, cutting off the last
+  one.
 
 ## Source
 
@@ -53,9 +58,9 @@ open scoped MatrixGroups Pointwise Real
 
 namespace TauCeti.UpperHalfPlane
 
-namespace ConvexPolygon
+namespace CompactConvexPolygon
 
-variable {n : ℕ} [NeZero n] (P : ConvexPolygon n)
+variable {n : ℕ} [NeZero n] (P : CompactConvexPolygon n)
 
 /-! ### The angular order of the vertices seen from `vertex 0` -/
 
@@ -115,16 +120,16 @@ theorem toReal_orientedAngle_lt {j k : Fin n} (hj : j ≠ 0) (hjk : j < k) :
 
 /-! ### Cutting off the last vertex
 
-Throughout this section `P : ConvexPolygon (n + 2)` with `2 ≤ n`, so `P` has at least four
+Throughout this section `P : CompactConvexPolygon (n + 2)` with `2 ≤ n`, so `P` has at least four
 vertices: the penultimate one is `P.vertex (Fin.castSucc (Fin.last n))` (index `n`) and the last
 one is `P.vertex (Fin.last (n + 1))` (index `n + 1`). The diagonal from the penultimate vertex to
-`vertex 0` cuts `P` into the polygon `P.eraseLast hn : ConvexPolygon (n + 1)` on the first
+`vertex 0` cuts `P` into the polygon `P.eraseLast hn : CompactConvexPolygon (n + 1)` on the first
 `n + 1` vertices, indexed through `Fin.castSucc`, and the triangle on the penultimate vertex, the
 last vertex and `vertex 0`. -/
 
 section eraseLast
 
-variable (P : ConvexPolygon (n + 2)) (hn : 2 ≤ n)
+variable (P : CompactConvexPolygon (n + 2)) (hn : 2 ≤ n)
 
 omit [NeZero n]
 
@@ -166,7 +171,7 @@ theorem last_mem_rightHalfPlane_diagonal :
 
 /-- The convex polygon on the first `n + 1` vertices of a convex polygon with `n + 2 ≥ 4`
 vertices. -/
-def eraseLast : ConvexPolygon (n + 1) where
+def eraseLast : CompactConvexPolygon (n + 1) where
   vertex := P.vertex ∘ Fin.castSucc
   three_le := by omega
   vertex_mem_leftHalfPlane := by
@@ -318,7 +323,7 @@ theorem interiorAngle_zero_eq :
   have h₁ : Fin.castSucc (1 : Fin (n + 1)) = 1 := by
     rw [← zero_add (1 : Fin (n + 1)), Fin.castSucc_add_one_of_ne_last (Fin.last_ne_zero hn₀).symm,
       Fin.castSucc_zero, zero_add]
-  simp only [ConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.zero_sub_one_eq_last, h₁,
+  simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.zero_sub_one_eq_last, h₁,
     Fin.castSucc_zero, zero_add]
   rw [interiorAngle_comm (P.vertex 0) (P.vertex 1) (P.vertex (Fin.last (n + 1))),
     interiorAngle_comm (P.vertex 0) (P.vertex 1) (P.vertex (Fin.castSucc (Fin.last n)))]
@@ -346,7 +351,7 @@ theorem interiorAngle_penultimate_eq :
       (by rw [Fin.coe_sub_one, ite_eq_right (Fin.castSucc_last_ne_zero hn₀), Fin.val_castSucc,
             Fin.val_last]
           omega)
-  simp only [ConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.castSucc_last_add_one,
+  simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.castSucc_last_add_one,
     Fin.castSucc_sub_one_of_ne_zero (Fin.last_ne_zero hn₀), Fin.last_add_one, Fin.castSucc_zero]
   rw [interiorAngle_comm (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))
       (P.vertex (Fin.castSucc (Fin.last n) - 1)),
@@ -362,13 +367,13 @@ theorem interiorAngle_last_eq :
     P.interiorAngle (Fin.last (n + 1)) =
       UpperHalfPlane.interiorAngle (P.vertex (Fin.last (n + 1)))
         (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex 0) := by
-  rw [ConvexPolygon.interiorAngle_def, (eq_sub_of_add_eq Fin.castSucc_last_add_one).symm,
+  rw [CompactConvexPolygon.interiorAngle_def, (eq_sub_of_add_eq Fin.castSucc_last_add_one).symm,
     Fin.last_add_one]
 
 /-- The interior angles away from the diagonal are unchanged. -/
 theorem interiorAngle_castSucc_eq {i : Fin (n + 1)} (hi₀ : i ≠ 0) (hi : i ≠ Fin.last n) :
     P.interiorAngle (Fin.castSucc i) = (P.eraseLast hn).interiorAngle i := by
-  simp only [ConvexPolygon.interiorAngle_def, vertex_eraseLast,
+  simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast,
     Fin.castSucc_sub_one_of_ne_zero hi₀, Fin.castSucc_add_one_of_ne_last hi]
 
 /-- The sum of the interior angles splits along the diagonal. -/
@@ -423,18 +428,18 @@ end eraseLast
 /-! ### Induction on the number of vertices -/
 
 /-- To prove a property of every convex polygon, prove it for polygons with three vertices and
-show that it passes from `Q.eraseLast hn` to `Q`. In the inductive step `Q : ConvexPolygon (n + 2)`
-with `2 ≤ n` has at least four vertices, and `Q.eraseLast hn : ConvexPolygon (n + 1)` is the
-polygon on its first `n + 1` vertices: the vertex cut off is `Q.vertex (Fin.last (n + 1))`, and the
-last vertex of `Q.eraseLast hn` is the penultimate vertex `Q.vertex (Fin.castSucc (Fin.last n))`
-of `Q`. -/
+show that it passes from `Q.eraseLast hn` to `Q`. In the inductive step `Q : CompactConvexPolygon (n
++ 2)` with `2 ≤ n` has at least four vertices, and `Q.eraseLast hn : CompactConvexPolygon (n + 1)`
+is the polygon on its first `n + 1` vertices: the vertex cut off is `Q.vertex (Fin.last (n + 1))`,
+and the last vertex of `Q.eraseLast hn` is the penultimate vertex `Q.vertex (Fin.castSucc (Fin.last
+n))` of `Q`. -/
 @[elab_as_elim]
-theorem induction_on {motive : ∀ {n : ℕ} [NeZero n], ConvexPolygon n → Prop}
-    (triangle : ∀ Q : ConvexPolygon 3, motive Q)
-    (eraseLast : ∀ {n : ℕ} (hn : 2 ≤ n) (Q : ConvexPolygon (n + 2)),
+theorem induction_on {motive : ∀ {n : ℕ} [NeZero n], CompactConvexPolygon n → Prop}
+    (triangle : ∀ Q : CompactConvexPolygon 3, motive Q)
+    (eraseLast : ∀ {n : ℕ} (hn : 2 ≤ n) (Q : CompactConvexPolygon (n + 2)),
       motive (Q.eraseLast hn) → motive Q)
-    (P : ConvexPolygon n) : motive P := by
-  have key : ∀ m, 3 ≤ m → ∀ [NeZero m] (Q : ConvexPolygon m), motive Q := by
+    (P : CompactConvexPolygon n) : motive P := by
+  have key : ∀ m, 3 ≤ m → ∀ [NeZero m] (Q : CompactConvexPolygon m), motive Q := by
     intro m hm
     induction m, hm using Nat.le_induction with
     | base => exact fun Q ↦ triangle Q
@@ -447,14 +452,14 @@ theorem induction_on {motive : ∀ {n : ℕ} [NeZero n], ConvexPolygon n → Pro
 
 /-- In a polygon with three vertices, the third vertex is off the geodesic through the first
 edge. -/
-private theorem vertex_two_notMem_range_geodesicLine (P : ConvexPolygon 3) :
+private theorem vertex_two_notMem_range_geodesicLine (P : CompactConvexPolygon 3) :
     P.vertex 2 ∉ Set.range (geodesicLine (geodesicBetween (P.vertex 0) (P.vertex 1))) :=
   P.vertex_notMem_range_geodesicLine (by decide) (by decide)
 
 /-- **The carrier lies in every closed half-plane containing the vertices.** -/
 theorem carrier_subset_closure_leftHalfPlane {g : PSL(2, ℝ)}
     (h : ∀ i, P.vertex i ∈ closure (leftHalfPlane g)) : P.carrier ⊆ closure (leftHalfPlane g) := by
-  induction P using ConvexPolygon.induction_on generalizing g with
+  induction P using CompactConvexPolygon.induction_on generalizing g with
   | triangle Q =>
     rw [Q.carrier_three]
     exact triangle_subset_closure_leftHalfPlane Q.vertex_zero_ne_vertex_one
@@ -470,7 +475,7 @@ theorem carrier_subset_closure_leftHalfPlane {g : PSL(2, ℝ)}
 omit [NeZero n] in
 /-- The carrier of a convex polygon is the union of the carrier of `eraseLast` and the triangle
 on the last three vertices. -/
-theorem carrier_eq_union_triangle (P : ConvexPolygon (n + 2)) (hn : 2 ≤ n) :
+theorem carrier_eq_union_triangle (P : CompactConvexPolygon (n + 2)) (hn : 2 ≤ n) :
     P.carrier = (P.eraseLast hn).carrier ∪
       triangle (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))
         (P.vertex 0) :=
@@ -481,7 +486,7 @@ theorem carrier_eq_union_triangle (P : ConvexPolygon (n + 2)) (hn : 2 ≤ n) :
 
 /-- The carrier is compact. -/
 theorem isCompact_carrier : IsCompact P.carrier := by
-  induction P using ConvexPolygon.induction_on with
+  induction P using CompactConvexPolygon.induction_on with
   | triangle Q =>
     rw [Q.carrier_three]
     exact isCompact_triangle Q.vertex_zero_ne_vertex_one Q.vertex_two_notMem_range_geodesicLine
@@ -497,7 +502,7 @@ which the induction runs. -/
 theorem volume_carrier_and_le :
     0 ≤ (n - 2) * π - ∑ i, P.interiorAngle i ∧
       volume P.carrier = ENNReal.ofReal ((n - 2) * π - ∑ i, P.interiorAngle i) := by
-  induction P using ConvexPolygon.induction_on with
+  induction P using CompactConvexPolygon.induction_on with
   | triangle Q =>
     have hAB := Q.vertex_zero_ne_vertex_one
     have hC := Q.vertex_two_notMem_range_geodesicLine
@@ -531,6 +536,6 @@ most `(n - 2) π`. -/
 theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π :=
   sub_nonneg.1 P.volume_carrier_and_le.1
 
-end ConvexPolygon
+end CompactConvexPolygon
 
 end TauCeti.UpperHalfPlane

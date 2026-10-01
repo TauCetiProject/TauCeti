@@ -10,31 +10,36 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Triangle.Convex
 import TauCeti.Data.Fin.Basic
 
 /-!
-# Convex hyperbolic polygons
+# Compact convex hyperbolic polygons
 
-A convex hyperbolic polygon with `n ≥ 3` vertices is given by its vertices `v₀, …, vₙ₋₁ ∈ ℍ`,
-listed counterclockwise: every vertex other than the endpoints of an edge lies strictly to the
-left of the geodesic through that edge (`ConvexPolygon`). Its carrier is the intersection of the
-closed left half-planes of its edges (`ConvexPolygon.carrier`), its sides are the geodesic
-segments between consecutive vertices (`ConvexPolygon.side`, via
-`UpperHalfPlane.geodesicSegment`), and its interior angle at a vertex is the angle between the
-two sides at that vertex (`ConvexPolygon.interiorAngle`).
+A compact convex hyperbolic polygon with `n ≥ 3` vertices is given by its vertices
+`v₀, …, vₙ₋₁ ∈ ℍ`, listed counterclockwise: every vertex other than the endpoints of an edge lies
+strictly to the left of the geodesic through that edge (`CompactConvexPolygon`). Its carrier is
+the intersection of the closed left half-planes of its edges (`CompactConvexPolygon.carrier`),
+its sides are the geodesic segments between consecutive vertices (`CompactConvexPolygon.side`,
+via `UpperHalfPlane.geodesicSegment`), and its interior angle at a vertex is the angle between
+the two sides at that vertex (`CompactConvexPolygon.interiorAngle`).
+
+All vertices lie in `ℍ`, so the carrier is compact (`CompactConvexPolygon.isCompact_carrier`)
+and every interior angle is positive. Hyperbolic polygons in general may also have ideal
+vertices on `∂ℍ`, with interior angle `0` (Walkden §7.1); those are not covered here.
 
 ## Main results
 
-* `ConvexPolygon.vertex_injective`: the vertices are distinct.
-* `ConvexPolygon.isClosed_carrier`, `ConvexPolygon.vertex_mem_carrier`,
-  `ConvexPolygon.side_subset_carrier`, `ConvexPolygon.geodesicSegment_subset_carrier`: the
-  carrier is closed and convex and contains the vertices and the sides.
-* `ConvexPolygon.interiorAngle_pos`, `ConvexPolygon.interiorAngle_lt_pi`: the interior angles
-  lie strictly between `0` and `π`.
-* `ConvexPolygon.smul`, `ConvexPolygon.carrier_smul`, `ConvexPolygon.interiorAngle_smul`:
-  everything transforms naturally under `PSL(2, ℝ)`.
-* `ConvexPolygon.carrier_three`, `ConvexPolygon.sum_interiorAngle_three`: a polygon with three
-  vertices is the triangle on them, with the same angles.
+* `CompactConvexPolygon.vertex_injective`: the vertices are distinct.
+* `CompactConvexPolygon.isClosed_carrier`, `CompactConvexPolygon.vertex_mem_carrier`,
+  `CompactConvexPolygon.side_subset_carrier`,
+  `CompactConvexPolygon.geodesicSegment_subset_carrier`: the carrier is closed and convex and
+  contains the vertices and the sides.
+* `CompactConvexPolygon.interiorAngle_pos`, `CompactConvexPolygon.interiorAngle_lt_pi`: the interior
+  angles lie strictly between `0` and `π`.
+* `CompactConvexPolygon.smul`, `CompactConvexPolygon.carrier_smul`,
+  `CompactConvexPolygon.interiorAngle_smul`: everything transforms naturally under `PSL(2, ℝ)`.
+* `CompactConvexPolygon.carrier_three`, `CompactConvexPolygon.sum_interiorAngle_three`: a polygon
+  with three vertices is the triangle on them, with the same angles.
 
 The counterclockwise orientation is a convention of this file: a clockwise list of vertices is
-not a `ConvexPolygon`.
+not a `CompactConvexPolygon`.
 
 ## Source
 
@@ -52,11 +57,12 @@ open scoped MatrixGroups Pointwise Real
 
 namespace TauCeti.UpperHalfPlane
 
-/-- A convex hyperbolic polygon with `n` vertices `vertex 0, …, vertex (n - 1)`, listed
-counterclockwise: every vertex other than `vertex i` and `vertex (i + 1)` lies strictly to the
-left of the geodesic from `vertex i` to `vertex (i + 1)`. -/
+/-- A compact convex hyperbolic polygon: a convex hyperbolic polygon with `n` vertices
+`vertex 0, …, vertex (n - 1)`, all in `ℍ` (no ideal vertices), listed counterclockwise: every vertex
+other than `vertex i` and `vertex (i + 1)` lies strictly to the left of the geodesic from `vertex i`
+to `vertex (i + 1)`. -/
 @[ext]
-structure ConvexPolygon (n : ℕ) [NeZero n] where
+structure CompactConvexPolygon (n : ℕ) [NeZero n] where
   /-- The vertices, in counterclockwise order; indices are taken cyclically. -/
   vertex : Fin n → ℍ
   /-- A polygon has at least three vertices. -/
@@ -65,9 +71,9 @@ structure ConvexPolygon (n : ℕ) [NeZero n] where
   vertex_mem_leftHalfPlane : ∀ i j : Fin n, j ≠ i → j ≠ i + 1 →
     vertex j ∈ leftHalfPlane (geodesicBetween (vertex i) (vertex (i + 1)))
 
-namespace ConvexPolygon
+namespace CompactConvexPolygon
 
-variable {n : ℕ} [NeZero n] (P : ConvexPolygon n)
+variable {n : ℕ} [NeZero n] (P : CompactConvexPolygon n)
 
 /-- The carrier of a convex polygon: the intersection of the closed left half-planes of its
 edges. -/
@@ -185,7 +191,7 @@ theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π :=
   TauCeti.UpperHalfPlane.interiorAngle_lt_pi (P.vertex_add_one_notMem_range_geodesicLine i)
 
 /-- The translate of a convex polygon by an element of `PSL(2, ℝ)`. -/
-def smul (h : PSL(2, ℝ)) : ConvexPolygon n where
+def smul (h : PSL(2, ℝ)) : CompactConvexPolygon n where
   vertex := fun i ↦ h • P.vertex i
   three_le := P.three_le
   vertex_mem_leftHalfPlane i j hij hij' := by
@@ -214,7 +220,7 @@ theorem interiorAngle_smul (h : PSL(2, ℝ)) (i : Fin n) :
 /-! ### Polygons with three vertices -/
 
 /-- The carrier of a polygon with three vertices is the triangle on them. -/
-theorem carrier_three (P : ConvexPolygon 3) :
+theorem carrier_three (P : CompactConvexPolygon 3) :
     P.carrier = triangle (P.vertex 0) (P.vertex 1) (P.vertex 2) := by
   have h0 : closedSide (P.vertex 0) (P.vertex 1) (P.vertex 2) =
       closure (leftHalfPlane (geodesicBetween (P.vertex 0) (P.vertex 1))) :=
@@ -236,7 +242,7 @@ theorem carrier_three (P : ConvexPolygon 3) :
 
 /-- The interior angles of a polygon with three vertices are the angles of the triangle on them,
 read counterclockwise from each vertex. -/
-theorem interiorAngle_three (P : ConvexPolygon 3) (i : Fin 3) :
+theorem interiorAngle_three (P : CompactConvexPolygon 3) (i : Fin 3) :
     P.interiorAngle i =
       UpperHalfPlane.interiorAngle (P.vertex i) (P.vertex (i + 1)) (P.vertex (i + 2)) := by
   have h : i - 1 = i + 2 := by revert i; decide
@@ -244,13 +250,13 @@ theorem interiorAngle_three (P : ConvexPolygon 3) (i : Fin 3) :
 
 /-- The sum of the interior angles of a polygon with three vertices is the angle sum of the
 triangle on them. -/
-theorem sum_interiorAngle_three (P : ConvexPolygon 3) :
+theorem sum_interiorAngle_three (P : CompactConvexPolygon 3) :
     ∑ i, P.interiorAngle i =
       UpperHalfPlane.interiorAngle (P.vertex 0) (P.vertex 1) (P.vertex 2) +
         UpperHalfPlane.interiorAngle (P.vertex 1) (P.vertex 2) (P.vertex 0) +
         UpperHalfPlane.interiorAngle (P.vertex 2) (P.vertex 0) (P.vertex 1) := by
   simp only [Fin.sum_univ_three, interiorAngle_three, Fin.isValue, Fin.reduceAdd]
 
-end ConvexPolygon
+end CompactConvexPolygon
 
 end TauCeti.UpperHalfPlane
