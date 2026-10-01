@@ -113,12 +113,12 @@ private theorem exists_mul_eq_zero_of_isNilpotent {x : H} (hx : IsNilpotent x) :
 end IsAlgClosed
 
 /-- Over an algebraically closed field of characteristic zero, the coordinate ring of a
-finite-type affine group is reduced. A nonzero nilpotent would have a proper annihilator,
-vanishing at some rational point `g`; translating by `g` contradicts
-`exists_mul_eq_zero_of_isNilpotent`. -/
-private theorem isReduced_of_isAlgClosed (k : Type u) [Field k] [IsAlgClosed k] [CharZero k]
-    (H : Type v) [CommRing H] [_root_.HopfAlgebra k H] [Algebra.FiniteType k H] :
+finite-type affine group is reduced. -/
+private theorem isReduced_of_isAlgClosed_of_charZero (k : Type u) [Field k] [IsAlgClosed k]
+    [CharZero k] (H : Type v) [CommRing H] [_root_.HopfAlgebra k H] [Algebra.FiniteType k H] :
     IsReduced H := by
+  -- A nonzero nilpotent has a proper annihilator vanishing at a rational point `g`.
+  -- Translation by `g` contradicts annihilation by a function nonzero at the identity.
   refine ⟨fun x hx ↦ by_contra fun hx0 ↦ ?_⟩
   let J : Ideal H := (Submodule.span H {x}).annihilator
   have hJ : (1 : H) ∉ J.radical := by
@@ -136,7 +136,7 @@ private theorem isReduced_of_isAlgClosed (k : Type u) [Field k] [IsAlgClosed k] 
     have h := AlgHom.congr_fun (counitAlgHom_comp_rightTranslationAlgHom (WithConv.toConv g))
       (τ.symm t)
     rw [AlgHom.comp_apply, ← rightTranslationAlgEquiv_toAlgHom, AlgEquiv.coe_toAlgHom,
-      AlgEquiv.apply_symm_apply] at h
+      AlgEquiv.apply_symm_apply, WithConv.ofConv_toConv] at h
     exact h.symm
   exact ht (hg ▸ hJg hs)
 
@@ -152,7 +152,7 @@ theorem smoothCommHopfAlgProperty_of_charZero (k : Type u) [Field k] [CharZero k
   intro K _ _
   let L := AlgebraicClosure K
   have _ : CharZero L := charZero_of_injective_algebraMap (algebraMap k L).injective
-  have _ : IsReduced (L ⊗[k] H) := HopfAlgebra.isReduced_of_isAlgClosed L (L ⊗[k] H)
+  have _ : IsReduced (L ⊗[k] H) := HopfAlgebra.isReduced_of_isAlgClosed_of_charZero L (L ⊗[k] H)
   let f : H ⊗[k] K →ₐ[k] L ⊗[k] H :=
     (Algebra.TensorProduct.comm k H L).toAlgHom.comp
       (Algebra.TensorProduct.map (AlgHom.id k H) (IsScalarTower.toAlgHom k K L))

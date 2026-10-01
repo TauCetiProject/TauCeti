@@ -36,11 +36,13 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
 
 ## Main declarations
 
-* `TauCeti.Bialgebra.invariantDerivation`: the left-invariant derivation extending a tangent
+* `TauCeti.Bialgebra.leftInvariantDerivation`: the left-invariant derivation extending a tangent
   vector at the identity.
-* `TauCeti.Bialgebra.counit_invariantDerivation`: its value at the identity is the tangent
+* `TauCeti.Bialgebra.counit_leftInvariantDerivation`: its value at the identity is the tangent
   vector.
-* `TauCeti.Bialgebra.comul_invariantDerivation`: its invariance under left translations.
+* `TauCeti.Bialgebra.comul_leftInvariantDerivation`: its invariance under left translations.
+* `TauCeti.Bialgebra.eq_leftInvariantDerivation`: a left-invariant derivation is determined
+  by its value at the identity.
 * `Derivation.apply_eq_zero_of_isNilpotent`: in characteristic zero, tangent vectors at the
   identity vanish on nilpotent functions.
 * `TauCeti.Bialgebra.nilradical_le_augmentationIdeal_sq`: over a field of characteristic zero,
@@ -60,14 +62,6 @@ namespace TauCeti.Bialgebra
 
 variable {R H : Type*} [CommRing R] [CommRing H] [_root_.Bialgebra R H]
 
-/-- The Leibniz rule of a tangent vector, read through the counit. -/
-private theorem algEquivSelf_apply_mul (d : Derivation R H (CounitAlgebra R H R)) (a b : H) :
-    CounitAlgebra.algEquivSelf R H R (d (a * b)) =
-      Coalgebra.counit (R := R) a * CounitAlgebra.algEquivSelf R H R (d b) +
-        Coalgebra.counit (R := R) b * CounitAlgebra.algEquivSelf R H R (d a) := by
-  simp only [d.leibniz, map_add, CounitAlgebra.algEquivSelf_smul, Algebra.algebraMap_self,
-    RingHom.id_apply]
-
 /-- Contracting the right tensor factor against a tangent vector satisfies the Leibniz rule
 with respect to contraction against the counit. -/
 private theorem tensorComponent_mul (d : Derivation R H (CounitAlgebra R H R)) (X Y : H ⊗[R] H) :
@@ -83,13 +77,13 @@ private theorem tensorComponent_mul (d : Derivation R H (CounitAlgebra R H R)) (
     | add Y Y' hY hY' => simp only [mul_add, map_add, hY, hY']; ring
     | tmul a' b' =>
       simp only [Algebra.TensorProduct.tmul_mul_tmul, tensorComponent_tmul, LinearMap.comp_apply,
-        AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe, algEquivSelf_apply_mul,
-        Algebra.smul_def, map_add, map_mul]
+        AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe, CounitAlgebra.algEquivSelf_apply_mul,
+        Algebra.algebraMap_self, RingHom.id_apply, Algebra.smul_def, map_add, map_mul]
       ring
 
 /-- **The left-invariant derivation extending a tangent vector at the identity**:
 `h ↦ ∑ h₍₁₎ d(h₍₂₎)`. It is the action of `d` in the differentiated regular representation. -/
-noncomputable def invariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
+noncomputable def leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
     Derivation R H H :=
   Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
     have hcounit (c : H) :
@@ -99,58 +93,63 @@ noncomputable def invariantDerivation (d : Derivation R H (CounitAlgebra R H R))
     simp only [Comodule.differential_apply, Comodule.instSelf_coact,
       _root_.Bialgebra.comul_mul, tensorComponent_mul, hcounit, smul_eq_mul]
 
-/-- The invariant derivation is the differentiated regular representation. -/
-theorem toLinearMap_invariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
-    (invariantDerivation d).toLinearMap = Comodule.differential (R := R) (H := H) (M := H) d :=
-  (rfl)
+/-- The left-invariant derivation is the differentiated regular representation. -/
+theorem toLinearMap_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) :
+    (leftInvariantDerivation d).toLinearMap = Comodule.differential (R := R) (H := H) (M := H) d :=
+  Derivation.coe_mk'_linearMap _ _
 
-/-- The invariant derivation contracts the comultiplication against the tangent vector. -/
-theorem invariantDerivation_apply (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
-    invariantDerivation d h =
+/-- The left-invariant derivation contracts the comultiplication against the tangent vector. -/
+theorem leftInvariantDerivation_apply (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
+    leftInvariantDerivation d h =
       tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap)
         (Coalgebra.comul (R := R) h) := by
-  rw [← Derivation.coeFn_coe, toLinearMap_invariantDerivation, Comodule.differential_apply,
+  rw [← Derivation.coeFn_coe, toLinearMap_leftInvariantDerivation, Comodule.differential_apply,
     Comodule.instSelf_coact]
 
-/-- **The invariant derivation has value `d` at the identity**: `ε ∘ D = d`. -/
+/-- **The left-invariant derivation has value `d` at the identity**: `ε ∘ D = d`. -/
 @[simp]
-theorem counit_invariantDerivation (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
-    Coalgebra.counit (R := R) (invariantDerivation d h) =
+theorem counit_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
+    Coalgebra.counit (R := R) (leftInvariantDerivation d h) =
       CounitAlgebra.algEquivSelf R H R (d h) := by
-  have hcomp : Coalgebra.counit (R := R) (A := H) ∘ₗ
-        tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) =
-      ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) ∘ₗ
-        (TensorProduct.lid R H).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := H)).rTensor H := by
-    refine TensorProduct.ext' fun a b ↦ ?_
-    simp only [LinearMap.comp_apply, tensorComponent_tmul, map_smul, smul_eq_mul,
-      rTensor_tmul, LinearEquiv.coe_coe, TensorProduct.lid_tmul, mul_comm]
-  have h' := LinearMap.congr_fun hcomp (Coalgebra.comul (R := R) (A := H) h)
-  rw [LinearMap.comp_apply, ← invariantDerivation_apply] at h'
+  have h' := LinearMap.congr_fun
+    (TauCeti.LinearMap.comp_tensorComponent (Coalgebra.counit (R := R) (A := H))
+      ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap))
+    (Coalgebra.comul (R := R) (A := H) h)
+  rw [LinearMap.comp_apply, ← leftInvariantDerivation_apply] at h'
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Coalgebra.rTensor_counit_comul,
     TensorProduct.lid_tmul, one_smul, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe] at h'
   exact h'
 
-/-- **The invariant derivation commutes with left translations**:
+/-- **The left-invariant derivation commutes with left translations**:
 `Δ ∘ D = (id ⊗ D) ∘ Δ`. -/
-theorem comul_invariantDerivation (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
-    Coalgebra.comul (R := R) (invariantDerivation d h) =
-      (invariantDerivation d).toLinearMap.lTensor H (Coalgebra.comul (R := R) h) := by
+theorem comul_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
+    Coalgebra.comul (R := R) (leftInvariantDerivation d h) =
+      (leftInvariantDerivation d).toLinearMap.lTensor H (Coalgebra.comul (R := R) h) := by
   set φ := (CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap
-  have hassoc (u : H ⊗[R] (H ⊗[R] H)) :
-      tensorComponent φ ((TensorProduct.assoc R H H H).symm u) =
-        (tensorComponent φ).lTensor H u := by
-    induction u using TensorProduct.inductionOn with
-    | add u v hu hv => simp only [map_add, hu, hv]
-    | tmul a v =>
-      induction v using TensorProduct.inductionOn with
-      | add v w hv hw => simp only [tmul_add, map_add, hv, hw]
-      | tmul b c =>
-        simp only [TensorProduct.assoc_symm_tmul, tensorComponent_tmul, lTensor_tmul,
-          TensorProduct.tmul_smul]
-  have hD : (invariantDerivation d).toLinearMap = tensorComponent φ ∘ₗ Coalgebra.comul :=
-    LinearMap.ext (invariantDerivation_apply d)
-  rw [invariantDerivation_apply, hD, LinearMap.lTensor_comp, LinearMap.comp_apply, ← hassoc,
+  have hD : (leftInvariantDerivation d).toLinearMap = tensorComponent φ ∘ₗ Coalgebra.comul :=
+    LinearMap.ext (leftInvariantDerivation_apply d)
+  rw [leftInvariantDerivation_apply, hD, LinearMap.lTensor_comp, LinearMap.comp_apply,
+    ← TauCeti.LinearMap.tensorComponent_assoc_symm,
     Coalgebra.coassoc_symm_apply, LinearMap.rTensor, tensorComponent_map, LinearMap.comp_id]
+
+/-- A left-invariant derivation with value `d` at the identity is the left-invariant
+extension of `d`. -/
+theorem eq_leftInvariantDerivation (D : Derivation R H H)
+    (d : Derivation R H (CounitAlgebra R H R))
+    (hε : ∀ h, Coalgebra.counit (R := R) (D h) = CounitAlgebra.algEquivSelf R H R (d h))
+    (hΔ : ∀ h, Coalgebra.comul (R := R) (D h) =
+      D.toLinearMap.lTensor H (Coalgebra.comul (R := R) h)) :
+    D = leftInvariantDerivation d := by
+  have hvalue : Coalgebra.counit (R := R) ∘ₗ D.toLinearMap =
+      (CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap := LinearMap.ext hε
+  ext h
+  have hc := congrArg (tensorComponent (Coalgebra.counit (R := R))) (hΔ h)
+  rw [LinearMap.lTensor, tensorComponent_map, hvalue, LinearMap.id_apply,
+    ← leftInvariantDerivation_apply] at hc
+  have hidentity := LinearMap.congr_fun
+    (Comodule.coactComponent_counit (R := R) (C := H) (M := H)) (D h)
+  rw [Comodule.coactComponent_apply, Comodule.instSelf_coact, LinearMap.id_apply] at hidentity
+  exact hidentity.symm.trans hc
 
 end TauCeti.Bialgebra
 
@@ -161,17 +160,17 @@ open TauCeti
 variable {R H : Type*} [CommRing R] [IsDomain R] [CharZero R] [CommRing H] [Bialgebra R H]
 
 /-- **In characteristic zero, a tangent vector at the identity vanishes on nilpotent
-functions.** The value `d x` is the counit of `D x` for the invariant extension `D` of `d`, and
-`D` sends the nilpotent `x` into the prime ideal `ker ε`, whose residue ring `R` has
-characteristic zero. -/
+functions.** The base ring may be any domain of characteristic zero. -/
 theorem apply_eq_zero_of_isNilpotent (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
     {x : H} (hx : IsNilpotent x) : d x = 0 := by
+  -- The left-invariant extension sends `x` into the prime ideal `ker ε`, whose residue
+  -- ring is the characteristic-zero domain `R`; its counit is the original tangent value.
   have _ : (Bialgebra.AugmentationIdeal R H).IsPrime := RingHom.ker_isPrime _
-  have hmem := (Bialgebra.invariantDerivation d).apply_mem_of_isNilpotent
+  have hmem := (Bialgebra.leftInvariantDerivation d).apply_mem_of_isNilpotent
     (p := Bialgebra.AugmentationIdeal R H) (fun n hn ↦ by simpa using hn) hx
   rw [RingHom.mem_ker] at hmem
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H R).injective
-  rw [← Bialgebra.counit_invariantDerivation, map_zero]
+  rw [← Bialgebra.counit_leftInvariantDerivation, map_zero]
   exact hmem
 
 end Derivation

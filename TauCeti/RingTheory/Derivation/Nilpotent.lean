@@ -47,15 +47,13 @@ namespace Derivation
 variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
 
 /-- **A derivation sends nilpotent elements into every prime ideal of residual characteristic
-zero.**
-
-If `s ∉ p` kills `x ^ (n + 1)`, applying `D` and multiplying by `s` shows that
-`(n + 1) s² D(x)` kills `x ^ n`; when `D x ∉ p` this element again lies outside `p`. Descending
-from a vanishing power of `x` to `x ^ 0 = 1` then puts an element outside `p` equal to zero. -/
+zero.** The hypothesis `hchar` says that `p` contains no positive integer. -/
 theorem apply_mem_of_isNilpotent (D : Derivation R A A) {p : Ideal A} [hp : p.IsPrime]
     (hchar : ∀ n : ℕ, (n : A) ∈ p → n = 0) {x : A} (hx : IsNilpotent x) : D x ∈ p := by
   by_contra hDx
   obtain ⟨m, hm⟩ := hx
+  -- Differentiating an annihilation relation and multiplying by `s` lowers the exponent;
+  -- if `D x ∉ p`, the new annihilator `(n + 1) s² D(x)` still lies outside `p`.
   have step : ∀ n : ℕ, (∃ s ∉ p, s * x ^ (n + 1) = 0) → ∃ s ∉ p, s * x ^ n = 0 := by
     rintro n ⟨s, hs, hsx⟩
     have hn : ((n + 1 : ℕ) : A) ∉ p := fun h ↦ n.succ_ne_zero (hchar _ h)
@@ -65,13 +63,15 @@ theorem apply_mem_of_isNilpotent (D : Derivation R A A) {p : Ideal A} [hp : p.Is
     rw [D.leibniz, D.leibniz_pow, map_zero, Nat.add_sub_cancel] at hD
     simp only [smul_eq_mul, nsmul_eq_mul] at hD
     linear_combination s * hD - D s * hsx
+  -- Descend from a vanishing power to `x ^ 0`, forcing an element outside `p` to be zero.
   have key : ∀ j ≤ m, ∃ s ∉ p, s * x ^ (m - j) = 0 := by
     intro j hj
     induction j with
     | zero => exact ⟨1, (Ideal.ne_top_iff_one p).mp hp.ne_top, by rw [Nat.sub_zero, hm, mul_zero]⟩
     | succ j ih =>
       apply step
-      rw [show m - (j + 1) + 1 = m - j by omega]
+      have hsub : m - (j + 1) + 1 = m - j := by omega
+      rw [hsub]
       exact ih (by omega)
   obtain ⟨s, hs, hsx⟩ := key m le_rfl
   rw [Nat.sub_self, pow_zero, mul_one] at hsx
