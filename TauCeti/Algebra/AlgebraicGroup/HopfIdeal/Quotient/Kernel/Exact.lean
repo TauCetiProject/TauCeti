@@ -87,10 +87,6 @@ namespace IsShortExact
 
 variable {p : Q ⟶ G} {i : G ⟶ N}
 
-/-- The coordinate map of the quotient map in a short exact sequence is injective. -/
-theorem injective (h : IsShortExact p i) : Function.Injective p.hom :=
-  h.faithfullyFlat.injective
-
 /-- In a short exact sequence, the Hopf ideal cutting out the subgroup is the kernel Hopf ideal
 of the quotient map. -/
 theorem kerOfSurjective_eq (h : IsShortExact p i) :
