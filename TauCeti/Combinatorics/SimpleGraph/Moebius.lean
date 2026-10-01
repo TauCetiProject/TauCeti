@@ -5,8 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Finite
-public import Mathlib.Data.Set.Card
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.Data.Finset.Basic
 
 /-!
@@ -25,8 +24,8 @@ between a graph parameter and its "contains exactly" coefficients.
 * `SimpleGraph.sum_neg_one_pow_ncard_edgeSet_sub_right` — the same for `(-1)^{e(H) - e(G)}`.
 
 They are the graph counterparts of `Finset.sum_Icc_neg_one_pow_card_sub_card_left` and
-`Finset.sum_Icc_neg_one_pow_card_sub_card_right`: `G ↦ G.edgeFinset` maps the graphs between `F`
-and `H` bijectively onto the edge sets between theirs.
+`Finset.sum_Icc_neg_one_pow_card_sub_card_right`, to which
+`SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` identifies them.
 -/
 
 public section
@@ -36,25 +35,6 @@ open Finset
 namespace SimpleGraph
 
 variable {V R : Type*} [Fintype V] [DecidableEq V] [Ring R]
-
-/-- Summing over the graphs between `F` and `H` a function of their edge sets is summing it over the
-edge sets between theirs. -/
-private theorem sum_filter_le_le_eq_sum_Icc_edgeFinset {M : Type*} [AddCommMonoid M]
-    (F H : SimpleGraph V) [DecidablePred fun G : SimpleGraph V => F ≤ G ∧ G ≤ H]
-    [∀ G : SimpleGraph V, Fintype G.edgeSet] (f : Finset (Sym2 V) → M) :
-    ∑ G with F ≤ G ∧ G ≤ H, f G.edgeFinset = ∑ s ∈ Icc F.edgeFinset H.edgeFinset, f s := by
-  -- An edge set below `H.edgeFinset` carries no diagonal pair, so it is the edge set of a graph.
-  have hset : ∀ s ∈ Icc F.edgeFinset H.edgeFinset,
-      (fromEdgeSet (s : Set (Sym2 V))).edgeFinset = s := fun s hs => coe_injective <| by
-    rw [coe_edgeFinset, edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
-    exact fun e he => not_isDiag_of_mem_edgeSet H (mem_edgeFinset.1 ((mem_Icc.1 hs).2 he))
-  refine sum_nbij' (fun G => G.edgeFinset) (fun s => fromEdgeSet (s : Set (Sym2 V)))
-    (fun G hG => ?_) (fun s hs => ?_) (fun G _ => ?_) hset (fun G _ => rfl)
-  · simpa [edgeFinset_subset_edgeFinset] using hG
-  · refine mem_coe.2 ((mem_filter_univ _).2 ?_)
-    rw [← edgeFinset_subset_edgeFinset, ← edgeFinset_subset_edgeFinset, hset s hs]
-    exact mem_Icc.1 hs
-  · rw [coe_edgeFinset, fromEdgeSet_edgeSet]
 
 /-- **The Möbius function of the lattice of graphs, measured from the bottom.** The signed sum
 `∑_{F ≤ G ≤ H} (-1)^{e(G) - e(F)}` is `1` if `F = H` and `0` otherwise. -/
