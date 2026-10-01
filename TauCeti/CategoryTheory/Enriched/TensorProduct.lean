@@ -107,12 +107,14 @@ lemma eHom_tensor_eq (X Y : C × D) :
 
 /-- The identity of an object of the tensor product of two enriched categories is the tensor
 product of the identities of its two components. -/
+@[reassoc]
 lemma eId_tensor_eq (X : C × D) :
     eId V X = (λ_ (𝟙_ V)).inv ≫ (eId V X.1 ⊗ₘ eId V X.2) :=
   rfl
 
 /-- Composition in the tensor product of two enriched categories: interchange the two middle
 factors with `MonoidalCategory.tensorμ`, then compose in each factor. -/
+@[reassoc]
 lemma eComp_tensor_eq (X Y Z : C × D) :
     eComp V X Y Z =
       tensorμ (X.1 ⟶[V] Y.1) (X.2 ⟶[V] Y.2) (Y.1 ⟶[V] Z.1) (Y.2 ⟶[V] Z.2) ≫

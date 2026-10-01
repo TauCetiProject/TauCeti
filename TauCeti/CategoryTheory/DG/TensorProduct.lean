@@ -189,12 +189,8 @@ lemma dgCompMap_tensor (X Y Z : C × D) (p q p' q' n n' m : ℤ)
           (by omega)) := by
   subst h h'
   rw [dgCompMap_def, eComp_tensor_eq, HomologicalComplex.comp_f]
-  -- The Hom complexes of the tensor product are tensor products only up to unfolding
-  -- `TauCeti.tensorEnrichedCategory` (`TauCeti.eHom_tensor_eq`).
-  have hι : ιTensorObj (dgHomComplex R X Y) (dgHomComplex R Y Z) (p + q) (p' + q') m hm =
-      ιTensorObj (dgHomComplex R X.1 Y.1 ⊗ dgHomComplex R X.2 Y.2)
-        (dgHomComplex R Y.1 Z.1 ⊗ dgHomComplex R Y.2 Z.2) (p + q) (p' + q') m hm := rfl
-  rw [hι, ι_tensorμ_assoc, Linear.units_smul_comp, Category.assoc, Category.assoc,
+  simp only [eHom_tensor_eq]
+  rw [ι_tensorμ_assoc, Linear.units_smul_comp, Category.assoc, Category.assoc,
     tensorHom_eq_mapBifunctorMap, ι_mapBifunctorMap, curriedTensor_map_app, curriedTensor_obj_map,
     ← tensorHom_def_assoc, tensorHom_comp_tensorHom_assoc, ← dgCompMap_def, ← dgCompMap_def]
 
