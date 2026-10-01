@@ -116,20 +116,19 @@ theorem TschirnhausAdmissible.nonempty_galMulEquiv (h : TschirnhausAdmissible f 
   refine ⟨(MulEquiv.ofBijective (Gal.restrict (f.tschirnhausPolynomial T) f.SplittingField)
     ⟨?_, Gal.restrict_surjective (f.tschirnhausPolynomial T) f.SplittingField⟩).symm⟩
   intro φ ψ hφψ
-  change f.Gal at φ ψ
   apply Gal.ext
   intro x hx
   apply (tschirnhausAdmissible_iff_injOn hsp).mp h
   · exact (rootSet_mapsTo φ.toAlgHom) hx
   · exact (rootSet_mapsTo ψ.toAlgHom) hx
-  · change aeval (φ x) T = aeval (ψ x) T
-    rw [aeval_algHom_apply φ, aeval_algHom_apply ψ]
-    let y : (f.tschirnhausPolynomial T).rootSet f.SplittingField :=
+  · let y : (f.tschirnhausPolynomial T).rootSet f.SplittingField :=
       ⟨aeval (x : f.SplittingField) T, by
       rw [rootSet_tschirnhausPolynomial hf hsp]
       exact ⟨x, hx, rfl⟩⟩
     calc
-      φ (aeval (x : f.SplittingField) T) =
+      aeval (φ x) T = φ (aeval (x : f.SplittingField) T) :=
+        aeval_algHom_apply φ x T
+      _ =
           (Gal.galActionHom (f.tschirnhausPolynomial T) f.SplittingField)
             ((Gal.restrict (f.tschirnhausPolynomial T) f.SplittingField) φ) y :=
         (Gal.galActionHom_restrict (f.tschirnhausPolynomial T) f.SplittingField φ y).symm
@@ -137,6 +136,7 @@ theorem TschirnhausAdmissible.nonempty_galMulEquiv (h : TschirnhausAdmissible f 
           ((Gal.restrict (f.tschirnhausPolynomial T) f.SplittingField) ψ) y := by rw [hφψ]
       _ = ψ (aeval (x : f.SplittingField) T) :=
         Gal.galActionHom_restrict (f.tschirnhausPolynomial T) f.SplittingField ψ y
+      _ = aeval (ψ x) T := (aeval_algHom_apply ψ x T).symm
 
 section GaloisImage
 
