@@ -156,16 +156,33 @@ private noncomputable def shortComplexHomologyDiagramIso (F : J ⥤ ShortComplex
     (fun j ↦ ShortComplex.homologyMapIso (shortComplexDiagramEvaluationIso F j).symm ≪≫
       (shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj j))
     (fun {X Y} f ↦ by
-      have h : ShortComplex.homologyMap (F.map f) ≫
-            (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F Y).inv ≫
-              ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom) =
-          (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F X).inv ≫
+      calc
+        ShortComplex.homologyMap (F.map f) ≫
+              (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F Y).inv ≫
+                ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom) =
+            ShortComplex.homologyMap
+                (F.map f ≫ (shortComplexDiagramEvaluationIso F Y).inv) ≫
+              ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom := by
+          rw [← Category.assoc, ← ShortComplex.homologyMap_comp]
+        _ = ShortComplex.homologyMap
+                ((shortComplexDiagramEvaluationIso F X).inv ≫
+                  (shortComplexDiagram F).mapNatTrans ((evaluation J C).map f)) ≫
+              ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom := by
+          rw [shortComplexDiagramEvaluationIso_inv_naturality]
+        _ = ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F X).inv ≫
+              (ShortComplex.homologyMap
+                  ((shortComplexDiagram F).mapNatTrans ((evaluation J C).map f)) ≫
+                ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj Y)).hom) := by
+          simp only [ShortComplex.homologyMap_comp, Category.assoc]
+        _ = ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F X).inv ≫
+              (((shortComplexDiagram F).mapHomologyIso
+                  ((evaluation J C).obj X)).hom ≫
+                (shortComplexDiagram F).homology.map f) := by
+          rw [mapHomologyIso_evaluation_naturality]
+        _ = (ShortComplex.homologyMap (shortComplexDiagramEvaluationIso F X).inv ≫
               ((shortComplexDiagram F).mapHomologyIso ((evaluation J C).obj X)).hom) ≫
             (shortComplexDiagram F).homology.map f := by
-        rw [Category.assoc, ← mapHomologyIso_evaluation_naturality, ← Category.assoc,
-          ← Category.assoc, ← ShortComplex.homologyMap_comp, ← ShortComplex.homologyMap_comp,
-          shortComplexDiagramEvaluationIso_inv_naturality]
-      exact h)
+          simp only [Category.assoc])
 
 private theorem shortComplex_mapHomologyIso_limit (F : J ⥤ ShortComplex C) (j : J) :
     ((shortComplexDiagram F).mapHomologyIso lim).inv ≫
