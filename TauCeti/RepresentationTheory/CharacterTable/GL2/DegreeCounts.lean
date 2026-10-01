@@ -26,9 +26,13 @@ of each degree:
 * `(q - 1)(q - 2)/2` characters have degree `q + 1`;
 * `q(q - 1)/2` characters have degree `q - 1`.
 
-The lower bound `q ≥ 3` is necessary: for `q = 2`, the linear and cuspidal degrees both equal
-one, while the principal-series family is empty. The final theorem verifies that the squares of
-the four degrees, with these multiplicities, sum to the order of `GL₂(F)`.
+`TauCeti.GL2_sum_degreeCount_mul_degree_sq_eq_natCard` verifies that the squares of the four
+degrees, with these multiplicities, sum to the order of `GL₂(F)`; it needs no lower bound on `q`.
+
+The lower bound `q ≥ 3` is necessary for the degree-`1` and degree-`(q - 1)` identifications, since
+at `q = 2` those two degrees coincide. The last section treats that degenerate case separately: over
+the field with two elements the principal series is empty and the three irreducible characters of
+`GL₂(𝔽₂)` have degrees `1`, `1` and `2`, which are the degrees of `S₃`.
 
 ## Main results
 
@@ -37,6 +41,12 @@ the four degrees, with these multiplicities, sum to the order of `GL₂(F)`.
 * `TauCeti.ncard_irreducibleCharacters_GL2_degree_one` and its three companions count those sets.
 * `TauCeti.GL2_sum_degreeCount_mul_degree_sq_eq_natCard` adds the four degree counts, each
   weighted by the square of the degree it counts.
+* `TauCeti.image_character_GL2PrincipalSeries_eq_empty_of_card_eq_two`: the principal series of
+  `GL₂(𝔽₂)` is empty.
+* `TauCeti.image_degree_irreducibleCharacters_GL2_of_card_eq_two`,
+  `TauCeti.ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_two` and
+  `TauCeti.ncard_irreducibleCharacters_GL2_degree_two_of_card_eq_two`: `GL₂(𝔽₂)` has two
+  irreducible characters of degree `1` and one of degree `2`, and no others.
 
 ## References
 
@@ -258,5 +268,108 @@ theorem GL2_sum_degreeCount_mul_degree_sq_eq_natCard :
   push_cast [Nat.cast_sub hq_one, Nat.cast_sub hq_two, Nat.cast_sub hq_sq,
     Nat.cast_div_charZero hprincipal, Nat.cast_div_charZero hcuspidal]
   ring
+
+/-! ### The degenerate case `q = 2`
+
+Over the field with two elements the four families of the classification degenerate: there is one
+linear character and one Steinberg twist, the principal series is empty because `Fˣ` carries only
+the trivial character, and the single cuspidal character has degree `q - 1 = 1`, the same degree as
+the linear one. So the three irreducible characters of `GL₂(𝔽₂)` have degrees `1`, `1` and `2`,
+which are the degrees of `S₃`; the isomorphism `GL₂(𝔽₂) ≅ S₃` itself is proved in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/SymmetricGroup.lean`. -/
+
+section CardTwo
+
+/-- **There are no principal-series characters of `GL₂(𝔽₂)`**: a principal series needs two
+distinct characters of `Fˣ`, and `Fˣ` is trivial. -/
+theorem image_character_GL2PrincipalSeries_eq_empty_of_card_eq_two (hq : Fintype.card F = 2) :
+    (fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) => (GL2PrincipalSeries F p.1 p.2).character) ''
+      {p | p.1 ≠ p.2} = ∅ := by
+  have : Subsingleton Fˣ := by
+    rw [← Finite.card_le_one_iff_subsingleton, Nat.card_units, Nat.card_eq_fintype_card, hq]
+  rw [Set.image_eq_empty, Set.eq_empty_iff_forall_notMem]
+  exact fun p hp => hp (Subsingleton.elim p.1 p.2)
+
+/-- **Every irreducible character of `GL₂(𝔽₂)` has degree `1` or `2`**: the linear and cuspidal
+characters have degree `1`, the Steinberg twist has degree `q = 2`, and the principal series, whose
+degree would be `3`, is empty. -/
+theorem character_degree_eq_one_or_two_of_card_eq_two (hq : Fintype.card F = 2)
+    {chi : GL (Fin 2) F → ℂ} (hchi : chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F)) :
+    chi 1 = 1 ∨ chi 1 = 2 := by
+  rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
+    (primitiveChar_to_Complex_ne_one F)] at hchi
+  rcases hchi with (((hlin | hstein) | hprincipal) | hcuspidal)
+  · exact .inl (character_degree_eq_of_mem_linear F hlin)
+  · refine .inr ?_
+    rw [character_degree_eq_of_mem_steinberg F hstein, hq]
+    norm_num
+  · rw [image_character_GL2PrincipalSeries_eq_empty_of_card_eq_two F hq] at hprincipal
+    exact absurd hprincipal (Set.notMem_empty chi)
+  · refine .inl ?_
+    rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F) hcuspidal, hq]
+    norm_num
+
+/-- **The degrees of the irreducible characters of `GL₂(𝔽₂)` are `1` and `2`**: both occur, the
+first on the linear character and the second on the Steinberg character. -/
+theorem image_degree_irreducibleCharacters_GL2_of_card_eq_two (hq : Fintype.card F = 2) :
+    (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) = {1, 2} := by
+  refine Set.Subset.antisymm ?_ ?_
+  · rintro - ⟨chi, hchi, rfl⟩
+    exact character_degree_eq_one_or_two_of_card_eq_two F hq hchi
+  · have hsteinberg : (GL2SteinbergTwist F 1).character 1 = 2 := by
+      rw [character_degree_eq_of_mem_steinberg F
+        (chi := (GL2SteinbergTwist F 1).character) ⟨1, rfl⟩, hq]
+      norm_num
+    rintro x (rfl | rfl)
+    · exact ⟨_, character_GL2Linear_mem_irreducibleCharacters (F := F) 1,
+        character_degree_eq_of_mem_linear F ⟨1, rfl⟩⟩
+    · exact ⟨_, character_GL2SteinbergTwist_mem_irreducibleCharacters F 1, hsteinberg⟩
+
+/-- **`GL₂(𝔽₂)` has one irreducible character of degree `2`**, the Steinberg character. -/
+@[simp]
+theorem ncard_irreducibleCharacters_GL2_degree_two_of_card_eq_two (hq : Fintype.card F = 2) :
+    {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 2}.ncard = 1 := by
+  -- rewrite the degree `2` back into `q`, where the general count applies
+  have h2 : ((Fintype.card F : ℕ) : ℂ) = 2 := by rw [hq]; norm_num
+  rw [← h2, ncard_irreducibleCharacters_GL2_degree_card F, hq]
+
+/-- **`GL₂(𝔽₂)` has no irreducible character of degree `3`**: the degree `q + 1` belongs to the
+principal series, which is empty. -/
+theorem irreducibleCharacters_GL2_degree_three_eq_empty_of_card_eq_two
+    (hq : Fintype.card F = 2) :
+    {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 3} = ∅ := by
+  -- rewrite the degree `3` back into `q + 1`, where the general identification applies
+  have h3 : ((Fintype.card F : ℕ) : ℂ) + 1 = 3 := by rw [hq]; norm_num
+  rw [← h3, irreducibleCharacters_GL2_degree_card_add_one_eq_image F,
+    image_character_GL2PrincipalSeries_eq_empty_of_card_eq_two F hq]
+
+/-- **`GL₂(𝔽₂)` has two irreducible characters of degree `1`**, the trivial character and the
+cuspidal one: there are `q² - 1 = 3` irreducible characters in all, and one of them has
+degree `2`. -/
+@[simp]
+theorem ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_two (hq : Fintype.card F = 2) :
+    {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1}.ncard = 2 := by
+  have htotal : (irreducibleCharacters ℂ (GL (Fin 2) F)).ncard = 3 := by
+    rw [← Nat.card_coe_set_eq, card_irreducibleCharacters, card_conjClasses_GL2,
+      Nat.card_eq_fintype_card, hq]
+    norm_num
+  have hunion : {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1} ∪
+      {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 2} =
+      irreducibleCharacters ℂ (GL (Fin 2) F) := by
+    refine Set.Subset.antisymm (Set.union_subset (fun _ h => h.1) fun _ h => h.1) fun chi hchi => ?_
+    rcases character_degree_eq_one_or_two_of_card_eq_two F hq hchi with h | h
+    · exact .inl ⟨hchi, h⟩
+    · exact .inr ⟨hchi, h⟩
+  have hdisj : Disjoint {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1}
+      {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 2} := by
+    rw [Set.disjoint_left]
+    intro chi h1 h2
+    have : (1 : ℂ) = 2 := h1.2.symm.trans h2.2
+    norm_num at this
+  have hadd := Set.ncard_union_eq hdisj (Set.toFinite _) (Set.toFinite _)
+  rw [hunion, htotal, ncard_irreducibleCharacters_GL2_degree_two_of_card_eq_two F hq] at hadd
+  omega
+
+end CardTwo
 
 end TauCeti

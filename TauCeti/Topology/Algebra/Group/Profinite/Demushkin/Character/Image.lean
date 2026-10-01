@@ -64,6 +64,8 @@ of `r` in turn compute `q`, through the abelianization `G^{ab} ≅ ℤ_p^{n-1} �
   `p = 2`, the canonical character lands in `1 + 4ℤ_2`.
 * `TauCeti.demushkinQ_eq_of_range_demushkinCharacter_eq`: **the image of the canonical character
   determines the `q`-invariant**, for every value of `q`.
+* `TauCeti.demushkinQ_eq_two_of_neg_one_mem_range_demushkinCharacter`: at `p = 2`, a canonical
+  character taking the value `-1` has `q(G) = 2`.
 
 ## References
 
@@ -223,5 +225,16 @@ theorem demushkinQ_eq_of_range_demushkinCharacter_eq {H : Type w} [Group H] [Top
     exact (hdvd t).2 (dvd_of_eq ht.symm)
 
 end Demushkin
+
+/-- **A canonical character taking the value `-1` forces `q(G) = 2`.** For a Demushkin group at
+`p = 2` whose canonical character has `-1` in its image, the image does not lie in `1 + 4ℤ_2`, so
+`q(G) = 2` by `TauCeti.demushkinQ_ne_two_iff_range_demushkinCharacter_le`. -/
+theorem demushkinQ_eq_two_of_neg_one_mem_range_demushkinCharacter {G : Type v} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+    (hG : IsDemushkin 2 G) (h : -1 ∈ (demushkinCharacter hG).toMonoidHom.range) :
+    demushkinQ hG = 2 := by
+  by_contra hq
+  exact notMem_unitsPrincipal_two_of_neg_mem le_rfl (by rw [neg_neg]; exact one_mem _)
+    ((demushkinQ_ne_two_iff_range_demushkinCharacter_le hG).1 hq rfl h)
 
 end TauCeti

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.Data.ZMod.MulCastHom
+public import TauCeti.GroupTheory.Torsion
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
@@ -51,6 +53,10 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
 ## Main results
 
 * `TauCeti.ZModTwist.isProP_multiplicative`: `I(χ)/pⁱ` is pro-`p`.
+* `TauCeti.ZModTwist.moduleBaer`: `I(χ)/pⁱ` satisfies Baer's criterion over `ℤ/pⁱ`, so that
+  `Hom(-, I(χ)/pⁱ)` is exact on the modules killed by `pⁱ` and the twisted dual `M^∨(χ)` of a short
+  exact sequence of such modules is again short exact
+  (`TauCeti.ContCohomology.DiscreteShortExact.dual`).
 * `TauCeti.IsProP.charScalar_one_eq_one`, `TauCeti.IsProP.smul_zModTwist_one_eq_self`: a pro-`p`
   group acts trivially on the bottom level `I(χ)/p`, because a continuous character of a pro-`p`
   group takes principal-unit values.
@@ -59,6 +65,13 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
 * `TauCeti.ZModTwist.reduce_mulPow_eq_mulPow_reduce`: the reductions commute with the
   multiplications, and `TauCeti.ZModTwist.explicitCoeff1_reduce_explicitCoeff1_mulPow` is the
   induced commutation on `H¹`.
+* `TauCeti.ZModTwist.mulPow_reduce`: multiplying by `pʲ` after reducing from level `i + j` to
+  level `i` is multiplication by `pʲ`, and
+  `TauCeti.ZModTwist.explicitCoeff2_mulPow_explicitCoeff2_reduce` is the induced identity on `H²`.
+* `TauCeti.ZModTwist.pow_nsmul_eq_zero`, `TauCeti.ZModTwist.isPPrimaryTorsion`: `pⁱ` kills
+  `I(χ)/pⁱ`, which is therefore `p`-primary torsion;
+  `TauCeti.ZModTwist.exists_mulPow_eq_of_nsmul_eq_zero`: the `pⁱ`-torsion of `I(χ)/pⁱ⁺ʲ` is the
+  image of `I(χ)/pⁱ` under multiplication by `pʲ`.
 
 ## References
 
@@ -145,11 +158,42 @@ def equiv : ZModTwist χ i ≃+ ZMod (p ^ i) where
 
 @[simp] theorem val_sub (x y : ZModTwist χ i) : (x - y).val = x.val - y.val := (rfl)
 
+@[simp] theorem val_nsmul (k : ℕ) (x : ZModTwist χ i) : (k • x).val = k • x.val :=
+  map_nsmul (equiv χ i) k x
+
+/-- `pⁱ` kills `I(χ)/pⁱ`. -/
+@[simp]
+theorem pow_nsmul_eq_zero (x : ZModTwist χ i) : p ^ i • x = 0 :=
+  (equiv χ i).injective (by rw [map_nsmul, map_zero, nsmul_eq_mul, ZMod.natCast_self, zero_mul])
+
+/-- `I(χ)/pⁱ` is `p`-primary torsion. -/
+theorem isPPrimaryTorsion : IsPPrimaryTorsion p (ZModTwist χ i) :=
+  isPPrimaryTorsion_iff.2 fun x ↦ ⟨i, pow_nsmul_eq_zero χ i x⟩
+
 instance : TopologicalSpace (ZModTwist χ i) := ⊥
 
 instance : DiscreteTopology (ZModTwist χ i) := ⟨rfl⟩
 
 instance : Finite (ZModTwist χ i) := Finite.of_equiv _ (equiv χ i).symm.toEquiv
+
+/-- `I(χ)/pⁱ` is a `ℤ/pⁱ`-module, being killed by `pⁱ` (`AddCommGroup.zmodModule`); `equiv` is
+`ℤ/pⁱ`-linear for it, as every additive homomorphism of `ℤ/pⁱ`-modules is, and the scalar `c` acts
+on the residue class `x.val` by multiplication (`val_zmod_smul`). -/
+instance : Module (ZMod (p ^ i)) (ZModTwist χ i) :=
+  AddCommGroup.zmodModule fun x => (equiv χ i).injective <| by
+    rw [map_nsmul, map_zero, equiv_apply, ZModModule.char_nsmul_eq_zero]
+
+@[simp]
+theorem val_zmod_smul (c : ZMod (p ^ i)) (x : ZModTwist χ i) : (c • x).val = c * x.val := by
+  rw [← equiv_apply, ZMod.map_smul, equiv_apply, smul_eq_mul]
+
+/-- **`I(χ)/pⁱ` is an injective `ℤ/pⁱ`-module**, in the form of Baer's criterion: it is `ℤ/pⁱ` as
+a `ℤ/pⁱ`-module, which is self-injective (`Module.Baer.zmod_self`). Hence `Hom(-, I(χ)/pⁱ)` is exact
+on the modules killed by `pⁱ`, which is what makes the twisted dual `M ↦ Hom(M, I(χ)/pⁱ)` exact on
+short exact sequences of such modules (`TauCeti.InternalHom.precomp_surjective_of_baer`). -/
+theorem moduleBaer : Module.Baer (ZMod (p ^ i)) (ZModTwist χ i) :=
+  Module.Baer.of_equiv ((equiv χ i).symm.toLinearEquiv fun c x => ZMod.map_smul _ c x)
+    (Module.Baer.zmod_self _)
 
 /-- `G` acts on `I(χ)/pⁱ` through the scalar `charScalar χ i`. -/
 noncomputable instance : SMul G (ZModTwist χ i) where
@@ -268,6 +312,16 @@ theorem reduce_mulPow (h : i + j = n) (x : ZModTwist χ i) :
     reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h)) (mulPow χ h x) = 0 :=
   ZModTwist.ext (ZMod.castHom_mulCastHom _ _ x.val)
 
+/-- Multiplying by `pʲ` after reducing from level `n` to level `i`, `i + j = n`, is multiplication
+by `pʲ` on `I(χ)/pⁿ`. -/
+@[simp]
+theorem mulPow_reduce (h : i + j = n) (y : ZModTwist χ n) :
+    mulPow χ h (reduce χ (Nat.le.intro h) y) = p ^ j • y := by
+  obtain ⟨a, ha⟩ := ZMod.intCast_surjective y.val
+  refine ZModTwist.ext ?_
+  rw [val_mulPow, val_reduce, val_nsmul, ← ha, map_intCast, ZMod.mulCastHom_intCast, nsmul_eq_mul,
+    mul_comm]
+
 /-- The reductions commute with the multiplications: reducing `pʲ x` from level `n` to level `n'`
 is `pʲ` times the reduction of `x` from level `i` to level `i'`, when `i + j = n` and
 `i' + j = n'`. -/
@@ -335,6 +389,16 @@ theorem shortExact_projDistribMulActionHom (h : i + j = n) :
   DistribMulActionHom.ext fun y ↦
     ((shortExact χ h).projDistribMulActionHom_apply y).trans (shortExact_proj_apply χ h y)
 
+/-- **The `pⁱ`-torsion of `I(χ)/pⁿ` is the image of `I(χ)/pⁱ`**, for `i + j = n`: an element killed
+by `pⁱ` is a multiple of `pʲ`. -/
+theorem exists_mulPow_eq_of_nsmul_eq_zero (h : i + j = n) {y : ZModTwist χ n}
+    (hy : p ^ i • y = 0) : ∃ x : ZModTwist χ i, mulPow χ h x = y := by
+  have h' : j + i = n := (Nat.add_comm j i).trans h
+  have hred : reduce χ (Nat.le.intro h') y = 0 :=
+    mulPow_injective χ h' (by rw [mulPow_reduce, map_zero, hy])
+  obtain ⟨x, hx⟩ := ((shortExact χ h).exact y).1 (by rwa [shortExact_proj_apply])
+  exact ⟨x, by rwa [shortExact_incl_apply] at hx⟩
+
 /-! ### The induced maps on `H¹`
 
 The reductions and multiplications induce maps on the explicit first continuous cohomology, and
@@ -366,6 +430,36 @@ theorem explicitCoeff1_reduce_explicitCoeff1_mulPow {i' n' : ℕ} (h : i + j = n
   exact congrArg (fun f : ZModTwist χ i →+[G] ZModTwist χ n' ↦
     explicitCoeff1 G (ZModTwist χ i) f continuous_of_discreteTopology x)
     (reduce_comp_mulPow χ h h' hi hn)
+
+/-! ### The induced maps on `H²` -/
+
+section DegreeTwo
+
+variable [ContinuousMul G]
+
+/-- Two successive reductions on `H²` compose to the reduction between the outer levels. -/
+theorem explicitCoeff2_reduce_explicitCoeff2_reduce {j k : ℕ} (h₁ : j ≤ i) (h₂ : k ≤ j)
+    (x : H2 G (ZModTwist χ i)) :
+    explicitCoeff2 G (ZModTwist χ j) (reduce χ h₂) continuous_of_discreteTopology
+        (explicitCoeff2 G (ZModTwist χ i) (reduce χ h₁) continuous_of_discreteTopology x) =
+      explicitCoeff2 G (ZModTwist χ i) (reduce χ (h₂.trans h₁))
+        continuous_of_discreteTopology x := by
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff2_comp]
+  exact congrArg (fun f : ZModTwist χ i →+[G] ZModTwist χ k ↦
+    explicitCoeff2 G (ZModTwist χ i) f continuous_of_discreteTopology x)
+    (reduce_comp_reduce χ h₁ h₂)
+
+/-- On `H²`, multiplying by `pʲ` after reducing from level `n` to level `i`, `i + j = n`, is
+multiplication by `pʲ`. -/
+theorem explicitCoeff2_mulPow_explicitCoeff2_reduce (h : i + j = n) (x : H2 G (ZModTwist χ n)) :
+    explicitCoeff2 G (ZModTwist χ i) (mulPow χ h) continuous_of_discreteTopology
+        (explicitCoeff2 G (ZModTwist χ n) (reduce χ (Nat.le.intro h))
+          continuous_of_discreteTopology x) =
+      p ^ j • x := by
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff2_comp]
+  exact explicitCoeff2_eq_nsmul G _ _ _ (mulPow_reduce χ h) x
+
+end DegreeTwo
 
 end ZModTwist
 

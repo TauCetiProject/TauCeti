@@ -12,6 +12,7 @@ public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
 
+import TauCeti.Algebra.Group.Hom.Instances
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
 
 /-!
@@ -29,11 +30,12 @@ The three pairings are compatible with the maps of coefficients in two ways (Ser
 §9.1, following Tate). First, they are **natural in the module**: a `G`-map `f : M →+[G] M'` and
 its dual `InternalHom.precomp G f` are adjoint, `⟨φ, f_* b⟩ = ⟨f^* φ, b⟩` in each of the three
 shapes. Second, they are **compatible with the connecting maps** of a short exact sequence
-`0 → A → B → C → 0` of modules killed by a prime and of its dual sequence `0 → C' → B' → A' → 0`:
-in the two shapes of total degree two that involve a connecting map, the connecting map of the dual
-sequence, paired against a class of the original one, is the connecting map of the original
-sequence paired against the dual class, with the Leibniz sign `(-1)^(p+1)` of the degree `p` of the
-dual class. These are the low-degree identities needed to compare the duality maps
+`0 → A → B → C → 0` and of its dual sequence `0 → C' → B' → A' → 0`, whenever the latter exists
+(`DiscreteShortExact.dual`, for instance for modules killed by a prime): in the two shapes of
+total degree two that involve a connecting map, the connecting map of the dual sequence, paired
+against a class of the original one, is the connecting map of the original sequence paired against
+the dual class, with the Leibniz sign `(-1)^(p+1)` of the degree `p` of the dual class. These are
+the low-degree identities needed to compare the duality maps
 `Hⁱ(G, M) → Hom(H²⁻ⁱ(G, M'), H²(G, N))`, `i = 0, 1, 2`, along the segment
 
 ```text
@@ -53,6 +55,11 @@ by evaluation at `1`, and the duality maps are scalar multiplication on `H²(G, 
 `0` and `2` and the cup product of multiplication in degree `1`. In that setting `α₂` is always
 bijective, and `α₀` is bijective as soon as `H²(G, ZMod p)` is one-dimensional.
 
+Read through the duality maps, naturality in the module says `αᵢ (f_* x) b = αᵢ x (f^* b)`, so for a
+bijective `f` the square formed by `αᵢ` on `M`, `αᵢ` on `M'`, `f_*` on cohomology and `f^*` on the
+targets commutes, and bijectivity of each `αᵢ` transports from `M'` to `M`. This is how a base case
+stated for `ZMod p` applies to every trivial module of order `p`.
+
 ## Main statements
 
 * `TauCeti.ContCohomology.explicitDualityPairing02`, `explicitDualityPairing11` and
@@ -70,6 +77,20 @@ bijective, and `α₀` is bijective as soon as `H²(G, ZMod p)` is one-dimension
   with their cochain formulas `dualityMap0_mk`, `dualityMap1_mk`, `dualityMap2_mk` and their
   comparison with the evaluation cups `dualityMap0_eq_explicitDualityPairing20`,
   `dualityMap1_eq_neg_explicitDualityPairing11` and `dualityMap2_eq_explicitDualityPairing02`.
+* `TauCeti.ContCohomology.dualityMap0_explicitCoeff0`, `dualityMap1_explicitCoeff1` and
+  `dualityMap2_explicitCoeff2`: **naturality of the duality maps in the module**,
+  `αᵢ (f_* x) b = αᵢ x (f^* b)`.
+* `TauCeti.ContCohomology.dualityMap0_bijective_of_bijective`, `dualityMap1_bijective_of_bijective`
+  and `dualityMap2_bijective_of_bijective`: bijectivity of each duality map transports along an
+  isomorphism of modules.
+* `TauCeti.ContCohomology.explicitCoeff2_dualityMap0`, `explicitCoeff2_dualityMap1` and
+  `explicitCoeff2_dualityMap2`: **naturality of the duality maps in the coefficients**,
+  `f_* (αᵢ x b) = αᵢ x ((f ∘ -)_* b)` for a `G`-map `f : N →+[G] N'`.
+* `TauCeti.ContCohomology.dualityMap0_bijective_of_injective_of_forall_nsmul_eq_zero`,
+  `dualityMap1_bijective_of_injective_of_forall_nsmul_eq_zero` and
+  `dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero`: on a module killed by `n`,
+  bijectivity of each duality map transports along an injection of coefficients `N →+[G] N'` whose
+  range is the `n`-torsion, on the modules and on `H²`.
 * `TauCeti.ContCohomology.dualityMap2_zmod_bijective` and
   `dualityMap0_zmod_bijective_of_finrank_eq_one`: bijectivity of `α₂` and of `α₀` for a trivial
   action on `ZMod n`.
@@ -90,7 +111,7 @@ public section
 
 namespace TauCeti.ContCohomology
 
-universe uG uM uM' uN uA uB uC
+universe uG uM uM' uN uN' uA uB uC
 
 section ZeroTwo
 
@@ -319,11 +340,12 @@ end NaturalityInModuleFinite
 
 /-! ### Compatibility with the connecting maps of a short exact sequence and of its dual
 
-Let `0 → A → B → C → 0` be a short exact sequence of finite discrete `G`-modules killed by a prime
-`p`, and let `0 → C' → B' → A' → 0` be its dual sequence `DiscreteShortExact.dual`, where
-`X' = InternalHom G X N`. The sub-object `C'` of the dual sequence pairs with the quotient `C` of
-the original one, and the quotient `A'` pairs with the sub-object `A`, so the two sequences are a
-compatibly paired pair in the sense of
+Let `0 → A → B → C → 0` be a short exact sequence of finite discrete `G`-modules and let
+`0 → C' → B' → A' → 0` be its dual sequence `DiscreteShortExact.dual`, where
+`X' = InternalHom G X N`; the dual sequence exists whenever homomorphisms `A →+ N` extend to
+`B`, for instance when `B` is killed by a prime. The sub-object `C'` of the dual sequence pairs
+with the quotient `C` of the original one, and the quotient `A'` pairs with the sub-object `A`, so
+the two sequences are a compatibly paired pair in the sense of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/Cup/ConnectingMap.lean`, and the
 adjointness identities there specialize to the evaluation pairings. -/
 
@@ -346,7 +368,7 @@ variable {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (S : DiscreteShortExact G A B C)
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N]
-  {p : ℕ} [Fact p.Prime] (hB : ∀ b : B, p • b = 0)
+  (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)))
 
 omit [Finite A] in
 /-- **The connecting maps `δ⁰` of the dual sequence and `δ¹` of the original sequence are
@@ -355,11 +377,11 @@ a class `y ∈ H¹(G, C)`, the `(1,1)` pairing of `δ⁰ x ∈ H¹(G, C')` with 
 `(0,2)` pairing of `x` with `δ¹ y ∈ H²(G, A)`. -/
 theorem explicitDualityPairing11_explicitDelta0_dual_eq_neg_explicitDualityPairing02_explicitDelta1
     (x : H0 G (InternalHom G A N)) (y : H1 G C) :
-    explicitDualityPairing11 G C N ((S.dual N hB).explicitDelta0 x) y =
+    explicitDualityPairing11 G C N ((S.dual N hsurj).explicitDelta0 x) y =
       -explicitDualityPairing02 G A N x (S.explicitDelta1 y) :=
-  explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 (S.dual N hB) S
+  explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 (S.dual N hsurj) S
     (InternalHom.evalPairing G) (InternalHom.evalPairing G) (InternalHom.evalPairing G)
-    (S.evalPairing_dual_incl N hB) (fun ψ a => (S.evalPairing_dual_proj N hB ψ a).symm)
+    (S.evalPairing_dual_incl N hsurj) (fun ψ a => (S.evalPairing_dual_proj N hsurj ψ a).symm)
     (InternalHom.evalPairing_equivariant (G := G)) x y
 
 /-- **The connecting maps `δ¹` of the dual sequence and `δ⁰` of the original sequence are adjoint
@@ -368,11 +390,11 @@ invariant `y` of `C`, the `(2,0)` pairing of `δ¹ x ∈ H²(G, C')` with `y` is
 `x` with `δ⁰ y ∈ H¹(G, A)`; the Leibniz sign is `1` because `x` has degree one. -/
 theorem explicitDualityPairing20_explicitDelta1_dual_eq_explicitDualityPairing11_explicitDelta0
     (x : H1 G (InternalHom G A N)) (y : H0 G C) :
-    explicitDualityPairing20 G C N ((S.dual N hB).explicitDelta1 x) y =
+    explicitDualityPairing20 G C N ((S.dual N hsurj).explicitDelta1 x) y =
       explicitDualityPairing11 G A N x (S.explicitDelta0 y) :=
-  explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 (S.dual N hB) S
+  explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 (S.dual N hsurj) S
     (InternalHom.evalPairing G) (InternalHom.evalPairing G) (InternalHom.evalPairing G)
-    (S.evalPairing_dual_incl N hB) (fun ψ a => (S.evalPairing_dual_proj N hB ψ a).symm)
+    (S.evalPairing_dual_incl N hsurj) (fun ψ a => (S.evalPairing_dual_proj N hsurj ψ a).symm)
     (InternalHom.evalPairing_equivariant (G := G)) x y
 
 end ConnectingMaps
@@ -489,6 +511,312 @@ theorem dualityMap2_eq_explicitDualityPairing02 (b : H2 G M) (φ : H0 G (Interna
     continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G)) φ b).symm
 
 end DualityMapTwo
+
+/-! ### Naturality of the duality maps in the module
+
+Through the comparison with the evaluation cups, the adjunction `⟨φ, f_* b⟩ = ⟨f^* φ, b⟩` reads
+`αᵢ (f_* x) b = αᵢ x (f^* b)` for each of the three duality maps. As for the evaluation cups, these
+are not `simp` lemmas: neither side is a normal form. -/
+
+section DualityMapNaturality
+
+variable {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
+  {M' : Type uM'} [AddCommGroup M'] [TopologicalSpace M'] [DiscreteTopology M']
+    [DistribMulAction G M'] [ContinuousSMul G M'] [Finite M']
+  {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N]
+  (f : M →+[G] M')
+
+/-- **Naturality of `α₀` in the module**: `α₀ (f_* x) b = α₀ x (f^* b)`. -/
+theorem dualityMap0_explicitCoeff0 (x : H0 G M) (b : H2 G (InternalHom G M' N)) :
+    dualityMap0 G M' N (explicitCoeff0 G M f x) b =
+      dualityMap0 G M N x (explicitCoeff2 G (InternalHom G M' N) (InternalHom.precomp G f)
+        continuous_of_discreteTopology b) := by
+  rw [dualityMap0_eq_explicitDualityPairing20, dualityMap0_eq_explicitDualityPairing20,
+    explicitDualityPairing20_explicitCoeff0]
+
+/-- **Naturality of `α₁` in the module**: `α₁ (f_* x) b = α₁ x (f^* b)`. -/
+theorem dualityMap1_explicitCoeff1 (x : H1 G M) (b : H1 G (InternalHom G M' N)) :
+    dualityMap1 G M' N (explicitCoeff1 G M f continuous_of_discreteTopology x) b =
+      dualityMap1 G M N x (explicitCoeff1 G (InternalHom G M' N) (InternalHom.precomp G f)
+        continuous_of_discreteTopology b) := by
+  rw [dualityMap1_eq_neg_explicitDualityPairing11, dualityMap1_eq_neg_explicitDualityPairing11,
+    explicitDualityPairing11_explicitCoeff1]
+
+end DualityMapNaturality
+
+section DualityMapTwoNaturality
+
+variable {G : Type uG} [Group G] [TopologicalSpace G] [ContinuousMul G]
+  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  {M' : Type uM'} [AddCommGroup M'] [TopologicalSpace M'] [DiscreteTopology M']
+    [DistribMulAction G M'] [ContinuousSMul G M']
+  {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N]
+  (f : M →+[G] M')
+
+/-- **Naturality of `α₂` in the module**: `α₂ (f_* x) b = α₂ x (f^* b)`. -/
+theorem dualityMap2_explicitCoeff2 (x : H2 G M) (b : H0 G (InternalHom G M' N)) :
+    dualityMap2 G M' N (explicitCoeff2 G M f continuous_of_discreteTopology x) b =
+      dualityMap2 G M N x (explicitCoeff0 G (InternalHom G M' N) (InternalHom.precomp G f) b) := by
+  rw [dualityMap2_eq_explicitDualityPairing02, dualityMap2_eq_explicitDualityPairing02,
+    explicitDualityPairing02_explicitCoeff2]
+
+end DualityMapTwoNaturality
+
+/-! ### Transport along an isomorphism of modules
+
+A bijective equivariant homomorphism `f : M →+[G] M'` induces bijections on cohomology and, through
+its dual `f^*`, on the targets of the duality maps; the naturality squares then carry bijectivity
+of each duality map from `M'` to `M`. -/
+
+section Transport
+
+variable {G : Type uG} [Group G] [TopologicalSpace G]
+  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  {M' : Type uM'} [AddCommGroup M'] [TopologicalSpace M'] [DiscreteTopology M']
+    [DistribMulAction G M'] [ContinuousSMul G M']
+  {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N]
+  {f : M →+[G] M'} (hf : Function.Bijective f)
+
+include hf
+
+section ContinuousMul
+
+variable [ContinuousMul G]
+
+/-- **Bijectivity of `α₂` transports along an isomorphism of modules.** -/
+theorem dualityMap2_bijective_of_bijective (h : Function.Bijective (dualityMap2 G M' N)) :
+    Function.Bijective (dualityMap2 G M N) := by
+  have hu : Function.Bijective (explicitCoeff2 G M f continuous_of_discreteTopology) :=
+    explicitCoeff2_bijective G M hf
+  have hw : Function.Bijective (explicitCoeff0 G (InternalHom G M' N) (InternalHom.precomp G f)) :=
+    explicitCoeff0_bijective G (InternalHom G M' N) (InternalHom.precomp_bijective (N := N) hf)
+  have hsq : ⇑(explicitCoeff0 G (InternalHom G M' N) (InternalHom.precomp G f)).compHom' ∘
+      ⇑(dualityMap2 G M N) =
+      ⇑(dualityMap2 G M' N) ∘ ⇑(explicitCoeff2 G M f continuous_of_discreteTopology) :=
+    funext fun x => AddMonoidHom.ext fun b => by
+      simp only [Function.comp_apply, AddMonoidHom.compHom'_apply_apply]
+      exact (dualityMap2_explicitCoeff2 f x b).symm
+  refine (Function.Bijective.of_comp_iff' (AddMonoidHom.compHom'_bijective (P := H2 G N) hw) _).1 ?_
+  rw [hsq]
+  exact h.comp hu
+
+end ContinuousMul
+
+variable [IsTopologicalGroup G] [Finite M] [Finite M']
+
+/-- **Bijectivity of `α₀` transports along an isomorphism of modules.** -/
+theorem dualityMap0_bijective_of_bijective (h : Function.Bijective (dualityMap0 G M' N)) :
+    Function.Bijective (dualityMap0 G M N) := by
+  have hu : Function.Bijective (explicitCoeff0 G M f) := explicitCoeff0_bijective G M hf
+  have hw : Function.Bijective (explicitCoeff2 G (InternalHom G M' N) (InternalHom.precomp G f)
+      continuous_of_discreteTopology) :=
+    explicitCoeff2_bijective G (InternalHom G M' N) (InternalHom.precomp_bijective (N := N) hf)
+  have hsq : ⇑(explicitCoeff2 G (InternalHom G M' N) (InternalHom.precomp G f)
+      continuous_of_discreteTopology).compHom' ∘ ⇑(dualityMap0 G M N) =
+      ⇑(dualityMap0 G M' N) ∘ ⇑(explicitCoeff0 G M f) := funext fun x =>
+    AddMonoidHom.ext fun b => by
+      simp only [Function.comp_apply, AddMonoidHom.compHom'_apply_apply]
+      exact (dualityMap0_explicitCoeff0 f x b).symm
+  refine (Function.Bijective.of_comp_iff' (AddMonoidHom.compHom'_bijective (P := H2 G N) hw) _).1 ?_
+  rw [hsq]
+  exact h.comp hu
+
+/-- **Bijectivity of `α₁` transports along an isomorphism of modules.** -/
+theorem dualityMap1_bijective_of_bijective (h : Function.Bijective (dualityMap1 G M' N)) :
+    Function.Bijective (dualityMap1 G M N) := by
+  have hu : Function.Bijective (explicitCoeff1 G M f continuous_of_discreteTopology) :=
+    explicitCoeff1_bijective G M hf
+  have hw : Function.Bijective (explicitCoeff1 G (InternalHom G M' N) (InternalHom.precomp G f)
+      continuous_of_discreteTopology) :=
+    explicitCoeff1_bijective G (InternalHom G M' N) (InternalHom.precomp_bijective (N := N) hf)
+  have hsq : ⇑(explicitCoeff1 G (InternalHom G M' N) (InternalHom.precomp G f)
+      continuous_of_discreteTopology).compHom' ∘ ⇑(dualityMap1 G M N) =
+      ⇑(dualityMap1 G M' N) ∘ ⇑(explicitCoeff1 G M f continuous_of_discreteTopology) :=
+    funext fun x => AddMonoidHom.ext fun b => by
+      simp only [Function.comp_apply, AddMonoidHom.compHom'_apply_apply]
+      exact (dualityMap1_explicitCoeff1 f x b).symm
+  refine (Function.Bijective.of_comp_iff' (AddMonoidHom.compHom'_bijective (P := H2 G N) hw) _).1 ?_
+  rw [hsq]
+  exact h.comp hu
+
+end Transport
+
+/-! ### Naturality of the duality maps in the coefficients
+
+An equivariant homomorphism `f : N →+[G] N'` of coefficient modules induces `f_*` on `H²(G, -)` and,
+through postcomposition `f ∘ -` on the internal hom, maps between the sources of the targets of the
+duality maps, and the three duality maps are natural in the coefficients:
+`f_* (αᵢ x b) = αᵢ x ((f ∘ -)_* b)`. When `f` is injective with range the `n`-torsion of `N'`, both
+on the modules and on `H²`, and `M` is killed by `n`, bijectivity of each `αᵢ` transports from `N`
+to `N'`: the groups `H²⁻ⁱ(G, InternalHom G M N)` are killed by `n`, so postcomposition with `f_*`
+is a bijection onto the homomorphisms into `H²(G, N')`. This is how the duality at `𝔽_p`
+coefficients is read at the coefficients `ℤ/pⁱ`, on a module killed by `p`. -/
+
+section NaturalityInCoefficients
+
+variable {G : Type uG} [Group G] [TopologicalSpace G]
+  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N]
+  {N' : Type uN'} [AddCommGroup N'] [TopologicalSpace N'] [DiscreteTopology N']
+    [DistribMulAction G N'] [ContinuousSMul G N']
+  (f : N →+[G] N')
+
+section DegreeTwo
+
+variable [ContinuousMul G]
+
+/-- **Naturality of `α₂` in the coefficients**: `f_* (α₂ x b) = α₂ x ((f ∘ -)_* b)`. -/
+theorem explicitCoeff2_dualityMap2 (x : H2 G M) (b : H0 G (InternalHom G M N)) :
+    explicitCoeff2 G N f continuous_of_discreteTopology (dualityMap2 G M N x b) =
+      dualityMap2 G M N' x (explicitCoeff0 G (InternalHom G M N) (InternalHom.postcomp G f) b) := by
+  have h := explicitCoeff2_explicitCup20 G M (InternalHom G M N) N M (InternalHom G M N') N'
+    (InternalHom.evalPairing G).flip continuous_of_discreteTopology
+    (InternalHom.evalPairing_flip_equivariant (G := G))
+    (InternalHom.evalPairing G).flip continuous_of_discreteTopology
+    (InternalHom.evalPairing_flip_equivariant (G := G))
+    (DistribMulActionHom.id G) (InternalHom.postcomp G f) f continuous_id
+    continuous_of_discreteTopology (fun m φ => (InternalHom.evalPairing_postcomp f φ m).symm) x b
+  simpa only [explicitCoeff2_id, AddMonoidHom.id_apply, dualityMap2] using h
+
+/-- **Bijectivity of `α₂` transports along an injection of coefficients onto the `n`-torsion**, on
+a module `M` killed by `n`: if `f : N →+[G] N'` is injective with range the `n`-torsion of `N'`, and
+`f_*` is injective on `H²` with range the `n`-torsion of `H²(G, N')`, then `α₂` at the coefficients
+`N'` is bijective as soon as it is at the coefficients `N`. -/
+theorem dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero {n : ℕ}
+    (hM : ∀ x : M, n • x = 0) (hf : Function.Injective f)
+    (hN' : ∀ y : N', n • y = 0 → ∃ x, f x = y)
+    (hH : Function.Injective (explicitCoeff2 G N f continuous_of_discreteTopology))
+    (hH' : ∀ y : H2 G N', n • y = 0 →
+      ∃ x, explicitCoeff2 G N f continuous_of_discreteTopology x = y)
+    (h : Function.Bijective (dualityMap2 G M N)) : Function.Bijective (dualityMap2 G M N') := by
+  have hw : Function.Bijective (explicitCoeff0 G (InternalHom G M N) (InternalHom.postcomp G f)) :=
+    explicitCoeff0_bijective G (InternalHom G M N)
+      (InternalHom.postcomp_bijective_of_forall_nsmul_eq_zero hf hM hN')
+  have hΨ : Function.Bijective (AddMonoidHom.compHom
+      (explicitCoeff2 G N f continuous_of_discreteTopology) :
+        (H0 G (InternalHom G M N) →+ H2 G N) →+ H0 G (InternalHom G M N) →+ H2 G N') :=
+    AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero hH
+      (fun v => Subtype.ext (by simpa using InternalHom.nsmul_eq_zero_of_domain hM v.1)) hH'
+  have hsq : ⇑(AddMonoidHom.compHom' (explicitCoeff0 G (InternalHom G M N)
+      (InternalHom.postcomp G f))) ∘ ⇑(dualityMap2 G M N') =
+      ⇑(AddMonoidHom.compHom (explicitCoeff2 G N f continuous_of_discreteTopology)) ∘
+        ⇑(dualityMap2 G M N) :=
+    funext fun x => AddMonoidHom.ext fun b => by
+      simp only [Function.comp_apply, AddMonoidHom.compHom'_apply_apply,
+        AddMonoidHom.compHom_apply_apply, AddMonoidHom.comp_apply]
+      exact (explicitCoeff2_dualityMap2 f x b).symm
+  refine (Function.Bijective.of_comp_iff'
+    (AddMonoidHom.compHom'_bijective (P := H2 G N') hw) _).1 ?_
+  rw [hsq]
+  exact hΨ.comp h
+
+end DegreeTwo
+
+variable [IsTopologicalGroup G] [Finite M]
+
+/-- **Naturality of `α₀` in the coefficients**: `f_* (α₀ x b) = α₀ x ((f ∘ -)_* b)`. -/
+theorem explicitCoeff2_dualityMap0 (x : H0 G M) (b : H2 G (InternalHom G M N)) :
+    explicitCoeff2 G N f continuous_of_discreteTopology (dualityMap0 G M N x b) =
+      dualityMap0 G M N' x (explicitCoeff2 G (InternalHom G M N) (InternalHom.postcomp G f)
+        continuous_of_discreteTopology b) := by
+  have h := explicitCoeff2_explicitCup02 G M (InternalHom G M N) N M (InternalHom G M N') N'
+    (InternalHom.evalPairing G).flip continuous_of_discreteTopology
+    (InternalHom.evalPairing_flip_equivariant (G := G))
+    (InternalHom.evalPairing G).flip continuous_of_discreteTopology
+    (InternalHom.evalPairing_flip_equivariant (G := G))
+    (DistribMulActionHom.id G) (InternalHom.postcomp G f) f continuous_of_discreteTopology
+    continuous_of_discreteTopology (fun m φ => (InternalHom.evalPairing_postcomp f φ m).symm) x b
+  simpa only [explicitCoeff0_id, AddMonoidHom.id_apply, dualityMap0] using h
+
+/-- **Naturality of `α₁` in the coefficients**: `f_* (α₁ x b) = α₁ x ((f ∘ -)_* b)`. -/
+theorem explicitCoeff2_dualityMap1 (x : H1 G M) (b : H1 G (InternalHom G M N)) :
+    explicitCoeff2 G N f continuous_of_discreteTopology (dualityMap1 G M N x b) =
+      dualityMap1 G M N' x (explicitCoeff1 G (InternalHom G M N) (InternalHom.postcomp G f)
+        continuous_of_discreteTopology b) := by
+  have h := explicitCoeff2_explicitCup11 G M (InternalHom G M N) N M (InternalHom G M N') N'
+    (InternalHom.evalPairing G).flip continuous_of_discreteTopology
+    (InternalHom.evalPairing_flip_equivariant (G := G))
+    (InternalHom.evalPairing G).flip continuous_of_discreteTopology
+    (InternalHom.evalPairing_flip_equivariant (G := G))
+    (DistribMulActionHom.id G) (InternalHom.postcomp G f) f continuous_id
+    continuous_of_discreteTopology continuous_of_discreteTopology
+    (fun m φ => (InternalHom.evalPairing_postcomp f φ m).symm) x b
+  simpa only [explicitCoeff1_id, AddMonoidHom.id_apply, dualityMap1] using h
+
+/-- **Bijectivity of `α₀` transports along an injection of coefficients onto the `n`-torsion**, on
+a finite module `M` killed by `n`; the hypotheses are those of
+`dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero`. -/
+theorem dualityMap0_bijective_of_injective_of_forall_nsmul_eq_zero {n : ℕ}
+    (hM : ∀ x : M, n • x = 0) (hf : Function.Injective f)
+    (hN' : ∀ y : N', n • y = 0 → ∃ x, f x = y)
+    (hH : Function.Injective (explicitCoeff2 G N f continuous_of_discreteTopology))
+    (hH' : ∀ y : H2 G N', n • y = 0 →
+      ∃ x, explicitCoeff2 G N f continuous_of_discreteTopology x = y)
+    (h : Function.Bijective (dualityMap0 G M N)) : Function.Bijective (dualityMap0 G M N') := by
+  have hw : Function.Bijective (explicitCoeff2 G (InternalHom G M N) (InternalHom.postcomp G f)
+      continuous_of_discreteTopology) :=
+    explicitCoeff2_bijective G (InternalHom G M N)
+      (InternalHom.postcomp_bijective_of_forall_nsmul_eq_zero hf hM hN')
+  have hΨ : Function.Bijective (AddMonoidHom.compHom
+      (explicitCoeff2 G N f continuous_of_discreteTopology) :
+        (H2 G (InternalHom G M N) →+ H2 G N) →+ H2 G (InternalHom G M N) →+ H2 G N') :=
+    AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero hH
+      (nsmul_H2_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM)) hH'
+  have hsq : ⇑(AddMonoidHom.compHom' (explicitCoeff2 G (InternalHom G M N)
+      (InternalHom.postcomp G f) continuous_of_discreteTopology)) ∘ ⇑(dualityMap0 G M N') =
+      ⇑(AddMonoidHom.compHom (explicitCoeff2 G N f continuous_of_discreteTopology)) ∘
+        ⇑(dualityMap0 G M N) :=
+    funext fun x => AddMonoidHom.ext fun b => by
+      simp only [Function.comp_apply, AddMonoidHom.compHom'_apply_apply,
+        AddMonoidHom.compHom_apply_apply, AddMonoidHom.comp_apply]
+      exact (explicitCoeff2_dualityMap0 f x b).symm
+  refine (Function.Bijective.of_comp_iff'
+    (AddMonoidHom.compHom'_bijective (P := H2 G N') hw) _).1 ?_
+  rw [hsq]
+  exact hΨ.comp h
+
+/-- **Bijectivity of `α₁` transports along an injection of coefficients onto the `n`-torsion**, on
+a finite module `M` killed by `n`; the hypotheses are those of
+`dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero`. -/
+theorem dualityMap1_bijective_of_injective_of_forall_nsmul_eq_zero {n : ℕ}
+    (hM : ∀ x : M, n • x = 0) (hf : Function.Injective f)
+    (hN' : ∀ y : N', n • y = 0 → ∃ x, f x = y)
+    (hH : Function.Injective (explicitCoeff2 G N f continuous_of_discreteTopology))
+    (hH' : ∀ y : H2 G N', n • y = 0 →
+      ∃ x, explicitCoeff2 G N f continuous_of_discreteTopology x = y)
+    (h : Function.Bijective (dualityMap1 G M N)) : Function.Bijective (dualityMap1 G M N') := by
+  have hw : Function.Bijective (explicitCoeff1 G (InternalHom G M N) (InternalHom.postcomp G f)
+      continuous_of_discreteTopology) :=
+    explicitCoeff1_bijective G (InternalHom G M N)
+      (InternalHom.postcomp_bijective_of_forall_nsmul_eq_zero hf hM hN')
+  have hΨ : Function.Bijective (AddMonoidHom.compHom
+      (explicitCoeff2 G N f continuous_of_discreteTopology) :
+        (H1 G (InternalHom G M N) →+ H2 G N) →+ H1 G (InternalHom G M N) →+ H2 G N') :=
+    AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero hH
+      (nsmul_H1_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM)) hH'
+  have hsq : ⇑(AddMonoidHom.compHom' (explicitCoeff1 G (InternalHom G M N)
+      (InternalHom.postcomp G f) continuous_of_discreteTopology)) ∘ ⇑(dualityMap1 G M N') =
+      ⇑(AddMonoidHom.compHom (explicitCoeff2 G N f continuous_of_discreteTopology)) ∘
+        ⇑(dualityMap1 G M N) :=
+    funext fun x => AddMonoidHom.ext fun b => by
+      simp only [Function.comp_apply, AddMonoidHom.compHom'_apply_apply,
+        AddMonoidHom.compHom_apply_apply, AddMonoidHom.comp_apply]
+      exact (explicitCoeff2_dualityMap1 f x b).symm
+  refine (Function.Bijective.of_comp_iff'
+    (AddMonoidHom.compHom'_bijective (P := H2 G N') hw) _).1 ?_
+  rw [hsq]
+  exact hΨ.comp h
+
+end NaturalityInCoefficients
 
 section TrivialZMod
 

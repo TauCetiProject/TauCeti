@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.QuotientRing
+public import Mathlib.Data.ZMod.Units
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 
@@ -37,6 +38,7 @@ and a class with positive sign is determined by its residue.
   part of `ratModulus n hn` is `ZMod n`.
 * `TauCeti.GlobalNumberFields.ratModulusEquivZMod`: the ray class group of `ratModulus n hn` is
   `(ZMod n)ˣ`.
+* `TauCeti.GlobalNumberFields.ratFiniteModulus`: the modulus `(n)` of `ℚ` without the real place.
 
 ## Main results
 
@@ -44,6 +46,13 @@ and a class with positive sign is determined by its residue.
   the principal ray class of a positive rational number with residue `u`.
 * `TauCeti.GlobalNumberFields.coe_ratModulusEquivZMod_idealClass`: the ray class of a nonzero
   integral ideal prime to `n` is its absolute norm modulo `n`.
+* `TauCeti.GlobalNumberFields.ratModulusEquivZMod_classMap`: the transition map from `(n)·∞` to
+  `(d)·∞` is reduction modulo `d`.
+* `TauCeti.GlobalNumberFields.ratModulusEquivZMod_residueSignRayClass_neg_one`: the class of the
+  sign `-1` at the real place is `-1 ∈ (ZMod n)ˣ`.
+* `TauCeti.GlobalNumberFields.ratModulus_dvd_ratModulus_iff` and
+  `TauCeti.GlobalNumberFields.ratFiniteModulus_dvd_ratModulus_iff`: divisibility of the moduli
+  `(d)·∞` and `(d)` into `(n)·∞` is `d ∣ n`.
 
 ## References
 
@@ -195,5 +204,78 @@ theorem coe_ratModulusEquivZMod_idealClass (I : integralIdealsPrimeTo (ratModulu
   have h : (ratModulusEquivZMod n hn).symm u = idealClass (ratModulus n hn) I := by
     rw [ratModulusEquivZMod_symm_apply, ← zmodUnitsToRayClass_apply, hcl]
   rw [← hu, ← h, MulEquiv.apply_symm_apply]
+
+/-! ### Divisibility of the moduli `(n)·∞` and compatibility of the identification -/
+
+variable {n hn}
+
+/-- **The moduli `(d)·∞` and `(n)·∞` of `ℚ` divide each other as `d` and `n` do.** -/
+theorem ratModulus_dvd_ratModulus_iff {d : ℕ} {hd : d ≠ 0} :
+    ratModulus d hd ∣ ratModulus n hn ↔ d ∣ n := by
+  rw [Modulus.dvd_iff, ratModulus_finitePart, ratModulus_finitePart, ratModulus_infinitePart,
+    ratModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
+    Rat.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.Subset.refl _)]
+
+/-- **The transition map from `(n)·∞` to `(d)·∞` is reduction modulo `d` on `(ZMod n)ˣ`.** -/
+theorem ratModulusEquivZMod_classMap {d : ℕ} {hd : d ≠ 0} (h : ratModulus d hd ∣ ratModulus n hn)
+    (c : RayClassGroup (ratModulus n hn)) :
+    ratModulusEquivZMod d hd (classMap h c) =
+      ZMod.unitsMap (ratModulus_dvd_ratModulus_iff.mp h) (ratModulusEquivZMod n hn c) := by
+  obtain ⟨I, rfl⟩ := idealClass_surjective _ c
+  refine Units.ext ?_
+  rw [classMap_idealClass, coe_ratModulusEquivZMod_idealClass, ZMod.unitsMap_val,
+    coe_ratModulusEquivZMod_idealClass, coe_integralIdealsPrimeToInclusion,
+    ZMod.cast_natCast (ratModulus_dvd_ratModulus_iff.mp h)]
+
+/-- **The class of the sign `-1` at the real place corresponds to `-1 ∈ (ZMod n)ˣ`.**  The ray
+class of a negative rational with residue `1` modulo `n` is the ray class of a positive rational
+with residue `-1`: the two differ by the unit `-1`. -/
+theorem ratModulusEquivZMod_residueSignRayClass_neg_one :
+    ratModulusEquivZMod n hn (residueSignRayClass (ratModulus n hn) (1, fun _ ↦ -1)) = -1 := by
+  have hker : residueSignRayClass (ratModulus n hn)
+      (unitsResidueSignHom (ratModulus n hn) (-1)) = 1 := by
+    rw [← MonoidHom.mem_ker, ker_residueSignRayClass]
+    exact ⟨-1, rfl⟩
+  have hunit : Units.mapEquiv (ratModulusResidueEquiv n hn).symm.toMulEquiv (-1) = -1 := by
+    ext
+    simp
+  have hmul : ((1, fun _ ↦ -1) :
+      (𝓞 ℚ ⧸ (ratModulus n hn).finitePart)ˣ × ((ratModulus n hn).infinitePart → ℤˣ)) =
+        (-1, 1) * unitsResidueSignHom (ratModulus n hn) (-1) := by
+    rw [unitsResidueSignHom_neg_one, Prod.mk_mul_mk, neg_one_mul, neg_neg, one_mul]
+  rw [hmul, map_mul, hker, mul_one]
+  refine (MulEquiv.eq_symm_apply _).mp ?_
+  rw [ratModulusEquivZMod_symm_apply, hunit]
+
+/-! ### The modulus `(n)` without the real place -/
+
+variable (n hn)
+
+/-- **The modulus `(n)` of `ℚ` without the real place.**  A ray class character of `(n)·∞` is
+induced from it exactly when the corresponding Dirichlet character is even. -/
+noncomputable def ratFiniteModulus : Modulus ℚ where
+  finitePart := Ideal.span {(n : 𝓞 ℚ)}
+  finitePart_ne_bot := by
+    rw [Ne, Ideal.span_singleton_eq_bot]
+    exact_mod_cast hn
+  infinitePart := ∅
+
+@[simp] theorem ratFiniteModulus_finitePart :
+    (ratFiniteModulus n hn).finitePart = Ideal.span {(n : 𝓞 ℚ)} := (rfl)
+
+@[simp] theorem ratFiniteModulus_infinitePart : (ratFiniteModulus n hn).infinitePart = ∅ := (rfl)
+
+variable {n hn}
+
+/-- **The modulus `(d)` divides `(n)·∞` exactly when `d ∣ n`.** -/
+theorem ratFiniteModulus_dvd_ratModulus_iff {d : ℕ} {hd : d ≠ 0} :
+    ratFiniteModulus d hd ∣ ratModulus n hn ↔ d ∣ n := by
+  rw [Modulus.dvd_iff, ratFiniteModulus_finitePart, ratModulus_finitePart,
+    ratFiniteModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
+    Rat.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.empty_subset _)]
+
+/-- The modulus `(n)` divides `(n)·∞`. -/
+theorem ratFiniteModulus_dvd_ratModulus : ratFiniteModulus n hn ∣ ratModulus n hn :=
+  ratFiniteModulus_dvd_ratModulus_iff.mpr dvd_rfl
 
 end TauCeti.GlobalNumberFields

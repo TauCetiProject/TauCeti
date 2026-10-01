@@ -71,18 +71,18 @@ private theorem δ_comp_resTensorMap {D : ShortComplex (Rep k H)} (hD : D.ShortE
     {r : D.X₂.V →ₗ[k] D.X₁.V} (hr : Function.LeftInverse r D.f.hom) (n : ℤ) :
     _root_.TateCohomology.δ (haveI := ((shortExact_res (e : G →* H)).2 hD).epi_g;
       shortExact_map_tensorLeft_of_leftInverse ((shortExact_res (e : G →* H)).2 hD).exact
-        (Rep.res (e : G →* H) N₁) r hr) n ≫
+        (Rep.res (e : G →* H) N₁) hr) n ≫
         map (Rep.isIntertwiningMap_tensor_res N₁ D.X₁ (e : G →* H)) (n + 1) =
       map (Rep.isIntertwiningMap_tensor_res N₁ D.X₃ (e : G →* H)) n ≫ _root_.TateCohomology.δ
-        (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ r hr) n := by
+        (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ hr) n := by
   have := hD.epi_g
   have := ((shortExact_res (e : G →* H)).2 hD).epi_g
   exact δ_comp_map
     (S := (D.map (resFunctor (e : G →* H))).map (tensorLeft (Rep.res (e : G →* H) N₁)))
     (S' := D.map (tensorLeft N₁))
     (shortExact_map_tensorLeft_of_leftInverse ((shortExact_res (e : G →* H)).2 hD).exact
-      (Rep.res (e : G →* H) N₁) r hr)
-    (shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ r hr)
+      (Rep.res (e : G →* H) N₁) hr)
+    (shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ hr)
     (Rep.isIntertwiningMap_tensor_res N₁ D.X₁ (e : G →* H))
     (Rep.isIntertwiningMap_tensor_res N₁ D.X₂ (e : G →* H))
     (Rep.isIntertwiningMap_tensor_res N₁ D.X₃ (e : G →* H)) (TensorProduct.ext' fun _ _ ↦ rfl)
@@ -124,7 +124,7 @@ private theorem map_res_cup_δ {D : ShortComplex (Rep k H)} (hD : D.ShortExact)
         (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) D.X₁) p (q + 1) (n + 1) (by omega) x
           (_root_.TateCohomology.δ ((shortExact_res (e : G →* H)).2 hD) q y)) =
       p.negOnePow • _root_.TateCohomology.δ
-        (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ r hr) n
+        (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ hr) n
         (map (Rep.isIntertwiningMap_tensor_res N₁ D.X₃ (e : G →* H)) n
           (cup (Rep.res (e : G →* H) N₁) (Rep.res (e : G →* H) D.X₃) p q n h x y)) := by
   -- `x ∪ δ y = (-1)^p δ (x ∪ y)` for the restricted sequence, which is still split by `r`.
@@ -145,7 +145,7 @@ private theorem cup_map_res_δ {D : ShortComplex (Rep k H)} (hD : D.ShortExact)
         (map (Rep.isIntertwiningMap_res D.X₁ (e : G →* H)) (q + 1)
           (_root_.TateCohomology.δ ((shortExact_res (e : G →* H)).2 hD) q y)) =
       p.negOnePow • _root_.TateCohomology.δ
-        (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ r hr) n
+        (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ hr) n
         (cup N₁ D.X₃ p q n h x (map (Rep.isIntertwiningMap_res D.X₃ (e : G →* H)) q y)) := by
   rw [← ModuleCat.comp_apply, δ_comp_map_res e hD, ModuleCat.comp_apply]
   exact cup_δ_of_leftInverse N₁ hD hr h x _
@@ -223,10 +223,10 @@ private theorem map_res_cup_of_add_one (N₂ : Rep k H) {p q r : ℤ} (h : p + q
   obtain ⟨s, hs⟩ := exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N₂)
   -- The connecting map of `N₁ ⊗ D` in degree `r` is the tensored downward shift, an isomorphism.
   have hinj : Function.Injective (_root_.TateCohomology.δ
-      (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ s hs) r) := by
+      (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ hs) r) := by
     have hiso : (tensorDimensionShiftDownIso N₂ N₁ r (r + 1) rfl).hom =
         _root_.TateCohomology.δ
-          (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ s hs) r :=
+          (haveI := hD.epi_g; shortExact_map_tensorLeft_of_leftInverse hD.exact N₁ hs) r :=
       tensorDimensionShiftDownIso_hom N₂ N₁ r (r + 1) rfl
     rw [← hiso]
     exact (ModuleCat.mono_iff_injective _).1 inferInstance

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Hasse
+import TauCeti.Algebra.Ring.Int.Units
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 
 /-!
@@ -44,12 +45,12 @@ theorem mem_unitValueSet_binary_iff_hilbertSymbol_eq (a b c : Kˣ) :
     c ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]) ↔
       hilbertSymbol c (-(a * b)) = hilbertSymbol a b := by
   have hself : hilbertSymbol (-(a * b)) a = hilbertSymbol a b := by
-    rw [hilbertSymbol_comm, ← mul_neg, hilbertSymbol_self_mul (Invertible.ne_zero 2), neg_neg]
+    rw [hilbertSymbol_comm, hilbertSymbol_neg_self_mul (Invertible.ne_zero 2)]
   rw [mem_unitValueSet_binary_iff_mul_mem_quadraticNormSubgroup,
     ← Units.val_mul, ← Units.val_neg,
     ← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (-(a * b)),
     hilbertSymbol_mul_right (Invertible.ne_zero 2), hself, hilbertSymbol_comm (-(a * b)) c]
-  rw [mul_eq_one_iff_eq_inv, Int.units_inv_eq_self, eq_comm]
+  rw [← Int.units_eq_iff_mul_eq_one, eq_comm]
 
 /-- **Local binary classification.** Two binary diagonal forms over a nonarchimedean local field
 are isometric exactly when their discriminants and local Hasse invariants agree. -/
@@ -65,8 +66,7 @@ theorem equivalent_binary_iff_isSquare_and_hilbertSymbol_eq (a b c d : Kˣ) :
   rw [mem_unitValueSet_binary_iff_hilbertSymbol_eq]
   have hneg : IsSquare (-(a * b) * -(c * d)) := by simpa using hd
   rw [hilbertSymbol_congr_sq c c (-(a * b)) (-(c * d)) ⟨c, rfl⟩ hneg, hs]
-  exact (mem_unitValueSet_binary_iff_hilbertSymbol_eq c d c).mp
-    (mem_unitValueSet_binary_left c d)
+  exact hilbertSymbol_neg_self_mul (Invertible.ne_zero 2) c d
 
 namespace RegularFormClass
 
@@ -83,16 +83,11 @@ private theorem eq_of_rank_eq_two {x y : RegularFormClass K} (hx : x.rank = 2)
       subst m n
       have hw : w = ![w 0, w 1] := by ext i; fin_cases i <;> rfl
       have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
-      rw [hw, hv] at hd hs ⊢
+      rw [hw, hv] at hd hs
       rw [discr_mk, discr_mk, Fin.prod_univ_two, Fin.prod_univ_two,
         squareClass_eq_iff_isSquare_mul] at hd
       rw [localHasse_mk_binary, localHasse_mk_binary] at hs
-      rw [mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
-        presentedForm_eq_weightedSumSquares_coe]
-      have coe_vec (a b : Kˣ) : (fun i => (![a, b] i : K)) = ![(a : K), (b : K)] := by
-        ext i
-        fin_cases i <;> rfl
-      rw [coe_vec, coe_vec]
+      rw [mk_eq_mk_iff, presentedForm_two, presentedForm_two]
       exact (equivalent_binary_iff_isSquare_and_hilbertSymbol_eq _ _ _ _).mpr ⟨hd, hs⟩
 
 /-- **Local classification in rank at most two.** Equal rank, discriminant and local Hasse
@@ -163,11 +158,7 @@ theorem mem_unitValueSet_iff_hilbertSymbol_eq_localHasse_of_finrank_eq_two
   rw [formClass_mk Q hQ ⟨2, w⟩ hw, hwvec, RegularFormClass.localHasse_mk_binary,
     RegularFormClass.discr_mk, Fin.prod_univ_two, ← squareClass_mul, neg_one_mul,
     hilbertSymbolOnSquareClasses_squareClass, hw.unitValueSet_eq]
-  rw [presentedForm_eq_weightedSumSquares_coe]
-  have coe_vec : (fun i => (w i : K)) = ![(w 0 : K), (w 1 : K)] := by
-    ext i
-    fin_cases i <;> rfl
-  rw [coe_vec]
+  rw [presentedForm_two]
   exact mem_unitValueSet_binary_iff_hilbertSymbol_eq _ _ _
 
 end QuadraticForm

@@ -40,6 +40,8 @@ curvature zero it is the Hom complex of the underlying ordinary DG right modules
   zero.
 * `TauCeti.dgRightModuleCochains.curvedDifferential_zero_eq_zero_iff`: the closed degree-zero
   cochains are the maps commuting with the module differentials.
+* `TauCeti.dgRightModuleCochains.curvedDifferential_neg_one_apply`: the boundary of an odd
+  homotopy `k` is `dN ∘ k + k ∘ dM`.
 * `TauCeti.curvedDGRightModuleHomComplex_zero`: at curvature zero the curved Hom complex is the
   ordinary DG Hom complex.
 
@@ -120,6 +122,16 @@ theorem curvedDifferential_zero_eq_zero_iff
     curvedDifferential (hM := hM) (hN := hN) 0 f = 0 ↔ ∀ x, dN (f.1 x) = f.1 (dM x) := by
   simp only [Subtype.ext_iff, LinearMap.ext_iff, curvedDifferential_apply, Int.negOnePow_zero,
     one_smul, Submodule.coe_zero, LinearMap.zero_apply, sub_eq_zero]
+
+/-- The curved Hom differential of a cochain `k` of degree `-1`, an **odd homotopy**, is the
+boundary `dN ∘ k + k ∘ dM`: in the degree `-1` case of the graded commutator, the Koszul sign
+`(-1) ^ (-1) = -1` turns the subtraction into an addition. -/
+theorem curvedDifferential_neg_one_apply
+    (k : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) (-1)) (x : M) :
+    ((curvedDifferential (hM := hM) (hN := hN) (-1) k).1 : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (k.1 x) + k.1 (dM x) := by
+  rw [curvedDifferential_apply, Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul,
+    sub_neg_eq_add]
 
 /-- **Zero curvature.** For ordinary differential graded right modules, regarded as curved
 modules of curvature zero, the curved Hom differential is the ordinary DG Hom differential. -/

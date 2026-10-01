@@ -31,6 +31,8 @@ index-two root lattice.
 * `TauCeti.DynkinType.typeBSpinWeight`: a spin weight in fundamental-weight coordinates.
 * `TauCeti.DynkinType.algebraMap_typeBSpinWeight_apply`: comparison with the half-integer
   orthonormal coordinates of `TauCeti.spinWeight`.
+* `TauCeti.DynkinType.typeBSpinWeight_univ_eq_single`: the all-positive sign vector carries the
+  terminal fundamental weight.
 * `TauCeti.DynkinType.span_range_typeBSpinWeight_eq_top`: the spin weights generate the full
   simply connected character lattice.
 
@@ -120,7 +122,7 @@ theorem algebraMap_typeBSpinWeight {K : Type*} [CommRing K] [Invertible (2 : K)]
 /-! ## A spanning family -/
 
 /-- The all-positive sign weight has only its terminal fundamental-weight coordinate nonzero. -/
-private theorem typeBSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
+theorem typeBSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
     typeBSpinWeight (Finset.univ : Finset (Fin n)) i =
       if (i : ℕ) + 1 = n then 1 else 0 := by
   rw [typeBSpinWeight_apply]
@@ -131,6 +133,19 @@ private theorem typeBSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
   · have heq : (i : ℕ) + 1 = n := by omega
     rw [ite_eq_right hnext, ite_eq_left heq]
     simp
+
+/-- **The all-positive type-`B` spin weight is the terminal fundamental weight.** In
+fundamental-weight coordinates it has value one at the terminal short node and zero at every
+other node. -/
+theorem typeBSpinWeight_univ_eq_single {n : ℕ} (hn : 1 ≤ n) :
+    typeBSpinWeight (Finset.univ : Finset (Fin n)) =
+      Pi.single (⟨n - 1, by omega⟩ : Fin n) 1 := by
+  funext i
+  rw [typeBSpinWeight_univ_apply, Pi.single_apply]
+  refine if_congr ?_ rfl rfl
+  rw [Fin.ext_iff]
+  dsimp only
+  omega
 
 /-- The cut weight has a `1` at the cut, a `-1` at a later terminal node, and zero in every
 other coordinate. -/
