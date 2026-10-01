@@ -14,8 +14,6 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Combinatorics
 -- The unordered tuple `TauCeti.Sym.ofFn f` underlying an ordered one, and its surjectivity.
 public import TauCeti.Data.Sym.Basic
--- The basis of a tensor product indexed by tuples of basis indices.
-public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 
 /-!
 # The weights of a tensor power of the standard representation
@@ -39,9 +37,9 @@ therefore the coordinate *subspace* on the tuples of content `l`
 (`TauCeti.weightSpace_tensorPowerRep_eq_span_image`), and its dimension is the number of such
 tuples (`TauCeti.finrank_weightSpace_tensorPowerRep`).  That number is the multinomial coefficient
 `d!/∏ᵢ lᵢ!`, and the sum of the corresponding monomials is the multinomial expansion of
-`(t_0 + ⋯ + t_{n-1})^d`, the value `TauCeti.char_tensorPower` gives for the character of the tensor
-power on the diagonal torus; neither evaluation is carried out here, the dimension being stated as
-the count itself.
+`(t_0 + ⋯ + t_{n-1})^d`, which is the `d`-th power of the trace that
+`TauCeti.char_tensorPowerRep` gives for the character of the tensor power, read on a diagonal
+matrix; neither evaluation is carried out here, the dimension being stated as the count itself.
 
 Two features make these weight spaces the arena for the representations cut out of `(kⁿ)^{⊗d}` by
 the symmetric group.  The set of weights is the same as for `Symᵈ(kⁿ)` — the nonnegative integer
@@ -91,17 +89,6 @@ variable {k : Type u} [CommRing k] {n d : ℕ}
 
 /-! ### The pure tensors of standard basis vectors are weight vectors -/
 
-/-- **The torus character of the content of a tuple** is the product of the entries the tuple
-lists, repetitions included.
-
-This is deliberately not a `simp` lemma: `TauCeti.Sym.coe_ofFn` already rewrites the inner
-coercion to the list of values of `f`, so the left-hand side is not in `simp` normal form. -/
-theorem weightChar_weightOfMultiset_ofFn (f : Fin d → Fin n) (t : Fin n → kˣ) :
-    weightChar k (weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n))) t = ∏ j, t (f j) := by
-  rw [weightChar_weightOfMultiset, TauCeti.Sym.coe_ofFn, Multiset.map_coe, List.map_ofFn,
-    Multiset.prod_coe, List.prod_ofFn]
-  simp
-
 /-- **A pure tensor of standard basis vectors is an eigenvector of every diagonal matrix**, with
 eigenvalue the product of the entries it lists, repetitions included.
 
@@ -125,7 +112,9 @@ theorem basis_mem_weightSpace_tensorPowerRep (f : Fin d → Fin n) :
         (weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n))) := by
   rw [mem_weightSpace_iff]
   intro t
-  rw [tensorPowerRep_diagGL_apply_basis, weightChar_weightOfMultiset_ofFn, Units.coe_prod]
+  rw [tensorPowerRep_diagGL_apply_basis, weightChar_weightOfMultiset, TauCeti.Sym.coe_ofFn,
+    Multiset.map_coe, List.map_ofFn, Multiset.prod_coe, List.prod_ofFn, Function.comp_def,
+    Units.coe_prod]
 
 /-- **The weight spaces of a tensor power of the standard representation span it**: the tensor
 basis consists of weight vectors. -/

@@ -55,7 +55,7 @@ first.
 * `Module.Basis.isInternal_weightSpace`: **a representation with a basis of weight vectors is the
   internal direct sum of its weight spaces.**
 * `Module.Basis.finrank_weightSpace_eq_card`: **the multiplicity of a weight is the number of basis
-  vectors carrying it**, over a finite index type;
+  vectors carrying it**, whenever that number is finite;
   `Module.Basis.finrank_weightSpace_eq_one` is the case of a distinctly labelled weight, which
   needs no finiteness.
 
@@ -188,12 +188,13 @@ theorem _root_.Module.Basis.isInternal_weightSpace (b : Module.Basis ι k W)
 number of basis vectors labelled `l`.  The labelling need not be injective, which is the point:
 this is the statement that survives when several basis vectors share a weight.
 
-Finiteness of the index type is what makes the count a natural number; the injective case needs
-none, because there the weight space is a single exhibited line
-(`Module.Basis.finrank_weightSpace_eq_one`). -/
-theorem _root_.Module.Basis.finrank_weightSpace_eq_card [Finite ι] (b : Module.Basis ι k W)
+Finiteness of the fibre over `l` is what makes the count a natural number, and the rest of the
+basis may be infinite; the injective case needs no finiteness at all, because there the weight
+space is a single exhibited line (`Module.Basis.finrank_weightSpace_eq_one`). -/
+theorem _root_.Module.Basis.finrank_weightSpace_eq_card (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
-    (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
+    (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ)
+    [Finite {i // wt i = l}] :
     Module.finrank k (weightSpace ρ l) = Nat.card {i // wt i = l} := by
   have : Fintype {i // wt i = l} := Fintype.ofFinite _
   have himg : b '' {i | wt i = l} = Set.range fun i : {i // wt i = l} => b (i : ι) := by
