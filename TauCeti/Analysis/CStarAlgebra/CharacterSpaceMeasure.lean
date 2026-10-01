@@ -31,8 +31,6 @@ into a measure on the joint spectrum.
 
 * `LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq`: a functional nonnegative on
   `star a * a` is integration against a finite measure on the character space.
-* `PositiveLinearMap.exists_isFiniteMeasure_integral_characterSpace_eq`: the same for a positive
-  linear functional, for any order making `A` a star-ordered ring.
 
 ## References
 
