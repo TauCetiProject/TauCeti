@@ -14,7 +14,7 @@ public import TauCeti.KnotTheory.Grid.Stabilization.Cone
 Let `G'` be the `X`-stabilization of a grid diagram `G` at a column `s`. The mapping cone of the
 fully blocked comparison from the off-center block to the center block has generators
 
-`G.StabilizeXOffCenterState s ⊞ GridState n`.
+`G.StabilizeXOffCenterState s ⊕ GridState n`.
 
 These generators are naturally all grid states of `G'`: an off-center generator is already such
 a state, while a center generator is sent to the state obtained by inserting the center of the
@@ -40,12 +40,14 @@ provide the matching data needed to prove exactness of the reduced stabilization
 
 * `TauCeti.GridDiagram.stabilizeXMatching_involutive`: the matching is an involution.
 * `TauCeti.GridDiagram.stabilizeXMatching_ne`: the matching has no fixed points.
-* `TauCeti.GridDiagram.stabilizeXMatchingSource_matching_iff`: exactly one endpoint of each pair
-  is a matching source.
+* `TauCeti.GridDiagram.stabilizeXMatchingSource_stabilizeXMatching_iff`: exactly one endpoint
+  of each pair is a matching source.
 * `TauCeti.GridDiagram.not_stabilizeXMatchingSource_inr`: no center generator is a matching
   source.
-* `TauCeti.GridDiagram.stabilizeXLevel_matching`: the stabilization level is constant on matched
-  pairs.
+* `TauCeti.GridDiagram.stabilizeXLevel_swapRows`: the stabilization level is unchanged by
+  swapping the two stabilization rows.
+* `TauCeti.GridDiagram.stabilizeXLevel_stabilizeXMatching`: the stabilization level is constant on
+  matched pairs.
 
 ## References
 
@@ -63,52 +65,46 @@ namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 
-private def stabilizeXConeStateToState :
-    G.StabilizeXOffCenterState s ⊕ GridState n → GridState (n + 1)
-  | .inl y => y.1
-  | .inr x => x.insertPoint s.succ (G.X s).succ
+private theorem stabilizeXCenterState_injective :
+    Function.Injective fun x : GridState n =>
+      (⟨x.insertPoint s.succ (G.X s).succ, not_not_intro (x.insertPoint_apply_newColumn _ _)⟩ :
+        {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ}) :=
+  fun _ _ h => GridState.insertPoint_injective _ _ (congrArg Subtype.val h)
 
-private theorem stabilizeXConeStateToState_injective :
-    Function.Injective (G.stabilizeXConeStateToState s) := by
-  rintro (y | x) (z | w) h
-  · exact congrArg Sum.inl (Subtype.ext h)
-  · change y.1 = w.insertPoint s.succ (G.X s).succ at h
-    have h' := congrArg (fun q : GridState (n + 1) => q s.succ) h
-    rw [GridState.insertPoint_apply_newColumn] at h'
-    exact (y.2 h').elim
-  · change x.insertPoint s.succ (G.X s).succ = z.1 at h
-    have h' := congrArg (fun q : GridState (n + 1) => q s.succ) h
-    rw [GridState.insertPoint_apply_newColumn] at h'
-    exact (z.2 h'.symm).elim
-  · exact congrArg Sum.inr (GridState.insertPoint_injective _ _ h)
+private theorem stabilizeXCenterState_surjective :
+    Function.Surjective fun x : GridState n =>
+      (⟨x.insertPoint s.succ (G.X s).succ, not_not_intro (x.insertPoint_apply_newColumn _ _)⟩ :
+        {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ}) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨x, rfl⟩ := GridState.exists_insertPoint_eq (not_not.1 hy)
+  exact ⟨x, rfl⟩
 
-private theorem stabilizeXConeStateToState_surjective :
-    Function.Surjective (G.stabilizeXConeStateToState s) := by
-  intro y
-  by_cases hy : y s.succ = (G.X s).succ
-  · obtain ⟨x, rfl⟩ := GridState.exists_insertPoint_eq hy
-    exact ⟨.inr x, rfl⟩
-  · exact ⟨.inl ⟨y, hy⟩, rfl⟩
+private noncomputable def stabilizeXCenterStateEquiv :
+    GridState n ≃ {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ} :=
+  Equiv.ofBijective _
+    ⟨G.stabilizeXCenterState_injective s, G.stabilizeXCenterState_surjective s⟩
 
 /-- Mapping-cone generators for the fully blocked `X`-stabilization comparison are naturally the
 grid states of the stabilized diagram. The left summand consists of off-center states; the right
 summand consists of states obtained by inserting the center of the new block. -/
 noncomputable def stabilizeXConeStateEquiv :
     G.StabilizeXOffCenterState s ⊕ GridState n ≃ GridState (n + 1) :=
-  Equiv.ofBijective (G.stabilizeXConeStateToState s)
-    ⟨G.stabilizeXConeStateToState_injective s, G.stabilizeXConeStateToState_surjective s⟩
+  ((Equiv.refl _).sumCongr (G.stabilizeXCenterStateEquiv s)).trans
+    (Equiv.sumCompl fun y : GridState (n + 1) => y s.succ ≠ (G.X s).succ)
 
 /-- The cone-state equivalence sends an off-center generator to its underlying stabilized state. -/
 @[simp]
 theorem stabilizeXConeStateEquiv_apply_inl (y : G.StabilizeXOffCenterState s) :
-    G.stabilizeXConeStateEquiv s (.inl y) = y.1 :=
-  Equiv.ofBijective_apply _ _ _
+    G.stabilizeXConeStateEquiv s (.inl y) = y.1 := by
+  simp [stabilizeXConeStateEquiv]
 
 /-- The cone-state equivalence sends a center generator to the state with the center inserted. -/
 @[simp]
 theorem stabilizeXConeStateEquiv_apply_inr (x : GridState n) :
-    G.stabilizeXConeStateEquiv s (.inr x) = x.insertPoint s.succ (G.X s).succ :=
-  Equiv.ofBijective_apply _ _ _
+    G.stabilizeXConeStateEquiv s (.inr x) = x.insertPoint s.succ (G.X s).succ := by
+  simp only [stabilizeXConeStateEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr,
+    Equiv.sumCompl_apply_inr]
+  exact congrArg Subtype.val (Equiv.ofBijective_apply _ _ x)
 
 /-- The matching on generators of the reduced stabilization mapping cone. Under
 `stabilizeXConeStateEquiv`, it swaps the row `(G.X s).castSucc` containing the new `O`-marking
@@ -121,7 +117,7 @@ noncomputable def stabilizeXMatching
 
 /-- Under the cone-state equivalence, matching a generator swaps the stabilization rows. -/
 @[simp]
-theorem stabilizeXConeStateEquiv_matching
+theorem stabilizeXConeStateEquiv_apply_stabilizeXMatching
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
     G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i) =
       (G.stabilizeXConeStateEquiv s i).swapRows (G.X s).castSucc (G.X s).succ := by
@@ -140,12 +136,12 @@ theorem stabilizeXMatching_ne (i : G.StabilizeXOffCenterState s ⊕ GridState n)
     G.stabilizeXMatching s i ≠ i := by
   intro h
   have h' := congrArg (G.stabilizeXConeStateEquiv s) h
-  rw [G.stabilizeXConeStateEquiv_matching s] at h'
+  rw [G.stabilizeXConeStateEquiv_apply_stabilizeXMatching s] at h'
   let y := G.stabilizeXConeStateEquiv s i
   let c := y.transpose (G.X s).castSucc
   have hc : y c = (G.X s).castSucc := y.apply_transpose_apply _
   have := congrArg (fun z : GridState (n + 1) => z c) h'
-  change Equiv.swap (G.X s).castSucc (G.X s).succ (y c) = y c at this
+  simp only [GridState.swapRows_apply] at this
   rw [hc, Equiv.swap_apply_left] at this
   exact (ne_of_lt (G.X s).castSucc_lt_succ) this.symm
 
@@ -164,18 +160,19 @@ private theorem stabilizeXMatching_transpose_castSucc
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
     (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)).transpose (G.X s).castSucc =
       (G.stabilizeXConeStateEquiv s i).transpose (G.X s).succ := by
-  rw [G.stabilizeXConeStateEquiv_matching s, GridState.swapRows_transpose]
+  rw [G.stabilizeXConeStateEquiv_apply_stabilizeXMatching s, GridState.swapRows_transpose]
   simp
 
 private theorem stabilizeXMatching_transpose_succ
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
     (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)).transpose (G.X s).succ =
       (G.stabilizeXConeStateEquiv s i).transpose (G.X s).castSucc := by
-  rw [G.stabilizeXConeStateEquiv_matching s, GridState.swapRows_transpose]
+  rw [G.stabilizeXConeStateEquiv_apply_stabilizeXMatching s, GridState.swapRows_transpose]
   simp
 
 /-- Exactly one endpoint of every matched pair is selected as a matching source. -/
-theorem stabilizeXMatchingSource_matching_iff
+@[simp]
+theorem stabilizeXMatchingSource_stabilizeXMatching_iff
     (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
     G.StabilizeXMatchingSource s (G.stabilizeXMatching s i) ↔
       ¬G.StabilizeXMatchingSource s i := by
@@ -196,32 +193,29 @@ theorem stabilizeXMatchingSource_matching_iff
 
 /-- A center generator is never a matching source: its partner is off-center, and the mapping
 cone has no component from the center block to the off-center block. -/
+@[simp]
 theorem not_stabilizeXMatchingSource_inr (x : GridState n) :
     ¬G.StabilizeXMatchingSource s (.inr x) := by
-  let y := G.stabilizeXConeStateEquiv s (.inr x)
+  rw [StabilizeXMatchingSource, stabilizeXConeStateEquiv_apply_inr]
+  set y := x.insertPoint s.succ (G.X s).succ
   have hb : y.transpose (G.X s).succ = s.succ := by
     rw [← GridState.transpose_apply_apply y s.succ]
     simp [y]
   have ha : y.transpose (G.X s).castSucc ≠ s.succ := fun h =>
     (ne_of_lt (G.X s).castSucc_lt_succ) (by rw [← hb] at h; exact y.transpose.toPerm.injective h)
-  change s.castSucc ∉ Grid.cIco (y.transpose (G.X s).succ) (y.transpose (G.X s).castSucc)
   rw [hb]
   generalize y.transpose (G.X s).castSucc = a at ha
   have ha' : a.val ≠ s.val + 1 := fun h => ha (Fin.ext (by simpa using h))
   rw [Grid.mem_cIco]
   split_ifs with h <;> simp only [Fin.val_succ, Fin.val_castSucc] at h ⊢ <;> omega
 
-private theorem stabilizeXMatchingRectangle_coveredRows
-    (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
-    let y := G.stabilizeXConeStateEquiv s i
+private theorem stabilizeXRowSwapRectangle_coveredRows (y : GridState (n + 1)) :
     let a := y.transpose (G.X s).castSucc
     let b := y.transpose (G.X s).succ
-    let R : GridRectangleBetween y
-        (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)) :=
+    let R : GridRectangleBetween y (y.swapRows (G.X s).castSucc (G.X s).succ) :=
       GridRectangleBetween.ofSwapColumns y _ a b
         (fun h => (ne_of_lt (G.X s).castSucc_lt_succ) (y.transpose.toPerm.injective h)) (by
-          rw [G.stabilizeXConeStateEquiv_matching s,
-            GridState.swapColumns_eq_swapRows, y.apply_transpose_apply,
+          rw [GridState.swapColumns_eq_swapRows, y.apply_transpose_apply,
             y.apply_transpose_apply])
     R.toGridRectangle.coveredRows = {(G.X s).castSucc} := by
   dsimp only
@@ -235,23 +229,18 @@ private theorem stabilizeXMatchingRectangle_coveredRows
   apply Fin.ext
   simp
 
-/-- The stabilization level is constant on matched pairs. The matching rectangle covers only the
-row of the new `O`-marking and hence no outer square. -/
-theorem stabilizeXLevel_matching
-    (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
-    G.stabilizeXLevel s (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)) =
-      G.stabilizeXLevel s (G.stabilizeXConeStateEquiv s i) := by
-  let y := G.stabilizeXConeStateEquiv s i
+/-- The stabilization level is unchanged by swapping the two stabilization rows. The swap is
+realized by a rectangle covering only the row of the new `O`-marking and hence no outer square. -/
+@[simp]
+theorem stabilizeXLevel_swapRows (y : GridState (n + 1)) :
+    G.stabilizeXLevel s (y.swapRows (G.X s).castSucc (G.X s).succ) = G.stabilizeXLevel s y := by
   let a := y.transpose (G.X s).castSucc
   let b := y.transpose (G.X s).succ
   have hab : a ≠ b := fun h =>
     (ne_of_lt (G.X s).castSucc_lt_succ) (y.transpose.toPerm.injective h)
-  have htarget : G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i) =
-      y.swapColumns a b := by
-    rw [G.stabilizeXConeStateEquiv_matching s, GridState.swapColumns_eq_swapRows,
-      y.apply_transpose_apply, y.apply_transpose_apply]
-  let R : GridRectangleBetween y
-      (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)) :=
+  have htarget : y.swapRows (G.X s).castSucc (G.X s).succ = y.swapColumns a b := by
+    rw [GridState.swapColumns_eq_swapRows, y.apply_transpose_apply, y.apply_transpose_apply]
+  let R : GridRectangleBetween y (y.swapRows (G.X s).castSucc (G.X s).succ) :=
     GridRectangleBetween.ofSwapColumns y _ a b hab htarget
   symm
   apply G.stabilizeXLevel_eq_of_disjoint s R
@@ -260,9 +249,16 @@ theorem stabilizeXLevel_matching
   have hrow : q.2 = (G.X s).castSucc := by
     have : q.2 ∈ R.toGridRectangle.coveredRows :=
       (GridRectangle.mem_coveredSquares R.toGridRectangle q).1 hq |>.2
-    rw [G.stabilizeXMatchingRectangle_coveredRows s i, Finset.mem_singleton] at this
+    rw [G.stabilizeXRowSwapRectangle_coveredRows s y, Finset.mem_singleton] at this
     exact this
   exact ((G.mem_stabilizeXOuterSquares s q).1 houter).2 hrow
+
+/-- The stabilization level is constant on matched pairs. -/
+theorem stabilizeXLevel_stabilizeXMatching
+    (i : G.StabilizeXOffCenterState s ⊕ GridState n) :
+    G.stabilizeXLevel s (G.stabilizeXConeStateEquiv s (G.stabilizeXMatching s i)) =
+      G.stabilizeXLevel s (G.stabilizeXConeStateEquiv s i) := by
+  rw [G.stabilizeXConeStateEquiv_apply_stabilizeXMatching s, stabilizeXLevel_swapRows]
 
 end GridDiagram
 
