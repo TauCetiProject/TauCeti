@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Char
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.NeTwo
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Twisted
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Endpoint
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupSquare
 
 /-!
@@ -18,7 +19,7 @@ The normal form of a Demushkin group records more than its abstract isomorphism 
 isomorphism can be chosen so that the canonical character takes Labute's prescribed values on the
 marked generators. This file states the marked classification for the `q ≠ 2` family, for the
 dyadic family of odd rank, and for the dyadic family of even rank whose orientation image is a
-twisted subgroup `U^[g]` of `ℤ_2ˣ`.
+twisted subgroup `U^[g]` of `ℤ_2ˣ` or the endpoint `{±1}`.
 
 For `q ≠ 2` the relator is
 
@@ -55,6 +56,10 @@ The fourth-generator clause is stated only for `n ≥ 4`: at rank two it would r
 (`TauCeti.not_marked_of_demushkinRank_le`), although the other hypotheses are met there, by
 `⟨x₁, x₂ ∣ x₁⁶ (x₁, x₂)⟩` with `g = 2`.
 
+For even rank `n` with orientation image `{±1}`, the endpoint `f = ∞` of the even family, the
+relator is `x₁² (x₁, x₂)(x₃, x₄) ⋯ (xₙ₋₁, xₙ)`, the `q ≠ 2` word read at `q = 2`, and the canonical
+character takes the value `-1` on `x₂` and is trivial on the other generators.
+
 ## Main results
 
 * `TauCeti.isDemushkin_marked_of_q_ne_two`: the marked classification of a Demushkin group whose
@@ -65,6 +70,8 @@ The fourth-generator clause is stated only for `n ≥ 4`: at rank two it would r
   `TauCeti.isDemushkin_marked_of_q_two_rank_two_twisted`: the marked classification of a Demushkin
   group of even rank whose orientation image is a twisted subgroup `U^[g]`, at rank `n ≥ 4` and at
   rank `2`.
+* `TauCeti.isDemushkin_marked_of_q_two_even_top`: the marked classification of a Demushkin group
+  of even rank whose orientation image is `{±1}`.
 
 ## References
 
@@ -203,5 +210,31 @@ theorem isDemushkin_marked_of_q_two_rank_two_twisted (hG : IsDemushkin 2 G)
     demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordTwoRankTwo hG
       (dvd_pow_self 2 (by omega)) e
   exact ⟨e, hfirst, by exact_mod_cast hsecond⟩
+
+/-- **The marked classification at `q = 2` with `n` even, level `f = ∞`.** A Demushkin group at
+`p = 2` of even rank `n` whose canonical character has image `{±1}` is isomorphic to
+`⟨x₁, …, xₙ ∣ x₁² (x₁, x₂)(x₃, x₄) ⋯ (xₙ₋₁, xₙ)⟩`. Under this isomorphism the canonical character
+takes the value `-1` on the second marked generator and is trivial on every other marked
+generator. -/
+theorem isDemushkin_marked_of_q_two_even_top (hG : IsDemushkin 2 G)
+    (heven : Even (demushkinRank hG))
+    (hrange : (demushkinCharacter hG).toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ)) :
+    ∃ e : G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG))
+        {demushkinWordNeTwo 2 (demushkinRank hG) (freeProPGen 2 (demushkinRank hG))},
+      demushkinCharacter hG (e.symm (presentedProPGen 2 (demushkinRank hG) _ 1)) = -1 ∧
+        ∀ i : ℕ, i ≠ 1 → i < demushkinRank hG →
+          demushkinCharacter hG (e.symm (presentedProPGen 2 (demushkinRank hG) _ i)) = 1 := by
+  obtain ⟨e⟩ :=
+    hG.nonempty_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_range_eq_zpowers_neg_one
+      heven hrange
+  have hn : 1 < demushkinRank hG := by
+    obtain ⟨k, hk⟩ := heven
+    have := hG.demushkinRank_pos
+    omega
+  obtain ⟨hsecond, htrivial⟩ :=
+    demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordNeTwo hG dvd_rfl heven hn e
+  refine ⟨e, Units.ext ?_, fun i hi _ ↦ htrivial i hi⟩
+  push_cast at hsecond ⊢
+  linear_combination -hsecond
 
 end TauCeti
