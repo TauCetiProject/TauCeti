@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Basic
 
 /-!
@@ -43,6 +44,8 @@ through its orientation (Serre's exposé, §9); that specialization lives in
 * `TauCeti.HasPrescriptionProperty.isAddCyclic_H2_zModTwist`,
   `TauCeti.HasPrescriptionProperty.nonempty_addEquiv_H2_zModTwist_zmod`: `H²(G, I(χ)/pⁱ)` is
   cyclic, isomorphic to `ℤ/pⁱ`.
+* `TauCeti.HasPrescriptionProperty.moduleBaer_H2_zModTwist`: `H²(G, I(χ)/pⁱ)` satisfies Baer's
+  criterion over `ℤ/pⁱ`, so that `Hom(-, H²(G, I(χ)/pⁱ))` is exact on the groups killed by `pⁱ`.
 
 ## References
 
@@ -152,6 +155,15 @@ theorem nonempty_addEquiv_H2_zModTwist_zmod (i : ℕ) :
   have := hχ.isAddCyclic_H2_zModTwist hsurj hcard i
   ⟨addEquivOfAddCyclicCardEq
     ((hχ.natCard_H2_zModTwist hsurj hcard i).trans (Nat.card_zmod _).symm)⟩
+
+/-- **`H²(G, I(χ)/pⁱ)` is self-injective over `ℤ/pⁱ`.** Under the prescription property, if every
+reduction `H²(G, I(χ)/pⁱ⁺¹) → H²(G, I(χ)/p)` is surjective and `H²(G, I(χ)/p)` has order `p`, then
+`H²(G, I(χ)/pⁱ)`, a `ℤ/pⁱ`-module isomorphic to `ℤ/pⁱ`, satisfies Baer's criterion over `ℤ/pⁱ`:
+`Hom(-, H²(G, I(χ)/pⁱ))` is exact on the groups killed by `pⁱ`. -/
+theorem moduleBaer_H2_zModTwist (i : ℕ) : Module.Baer (ZMod (p ^ i)) (H2 G (ZModTwist χ i)) :=
+  have : NeZero (p ^ i) := ⟨pow_ne_zero i (Fact.out : p.Prime).ne_zero⟩
+  (hχ.nonempty_addEquiv_H2_zModTwist_zmod hsurj hcard i).elim fun e ↦
+    Module.Baer.of_addEquiv_zmod e
 
 end HasPrescriptionProperty
 
