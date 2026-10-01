@@ -28,7 +28,7 @@ finite-level characters are continuous.
 
 ## Main results
 
-* `TauCeti.zHat.isUnit_iff`, `TauCeti.zHat.isUnit_iff_component`: the finite-level and
+* `TauCeti.zHat.isUnit_iff_toZMod`, `TauCeti.zHat.isUnit_iff_component`: the finite-level and
   `ℓ`-adic unit criteria.
 * `TauCeti.zHat.map_toZMod_unitsLift`, `TauCeti.zHat.unitsLift_unique`: the characterizing
   property of the assembled character.
@@ -53,14 +53,12 @@ theorem isUnit_iff_component (a : Additive zHat.{u}) :
   constructor
   · exact fun ha ℓ _ ↦ ha.map (component ℓ)
   · intro h
-    have ha : IsUnit (ringEquivPiPadicInt.{u} a) :=
-      Pi.isUnit_iff.mpr fun ℓ ↦ by
-        simpa only [ringEquivPiPadicInt_apply] using h ℓ ⟨ℓ.2⟩
-    simpa using ha.map ringEquivPiPadicInt.{u}.symm.toRingHom
+    rw [← MulEquiv.isUnit_map ringEquivPiPadicInt.{u}, Pi.isUnit_iff]
+    exact fun ℓ ↦ by simpa only [ringEquivPiPadicInt_apply] using h ℓ ⟨ℓ.2⟩
 
 /-- A profinite integer is a unit exactly when its reduction modulo every positive integer is a
 unit. -/
-theorem isUnit_iff (a : Additive zHat.{u}) :
+theorem isUnit_iff_toZMod (a : Additive zHat.{u}) :
     IsUnit a ↔ ∀ n : ℕ+, IsUnit (toZMod n a) := by
   refine ⟨fun ha n ↦ ha.map (toZMod n), fun h ↦ (isUnit_iff_component a).2 fun ℓ hℓ ↦ ?_⟩
   by_contra hunit
@@ -71,8 +69,10 @@ theorem isUnit_iff (a : Additive zHat.{u}) :
   have hlevel : IsUnit (PadicInt.toZModPow 1 (component ℓ a)) := by
     rw [toZModPow_component]
     exact h _
-  exact @not_isUnit_zero (ZMod (ℓ ^ 1)) _
-    (ZMod.nontrivial_iff.mpr (by simpa using hℓ.out.ne_one)) (hz ▸ hlevel)
+  have : Nontrivial (ZMod (ℓ ^ 1)) :=
+    ZMod.nontrivial_iff.mpr (by simpa using hℓ.out.ne_one)
+  rw [hz] at hlevel
+  exact not_isUnit_zero hlevel
 
 /-- **The unit-group decomposition of the profinite integers.** The product decomposition
 `Additive zHat ≃+* ∀ ℓ, ℤ_[ℓ]` restricts to an isomorphism of topological groups on units. -/
@@ -87,18 +87,29 @@ noncomputable def unitsEquivPiPadicInt :
 /-- The `ℓ`-adic coordinate of the unit-group decomposition is induced by `zHat.component ℓ`. -/
 @[simp]
 theorem unitsEquivPiPadicInt_apply (a : (Additive zHat.{u})ˣ) (ℓ : Nat.Primes) :
-    unitsEquivPiPadicInt a ℓ = Units.map (component ℓ).toMonoidHom a := by
+    unitsEquivPiPadicInt a ℓ = Units.map (component ℓ) a := by
+  rw [unitsEquivPiPadicInt, ContinuousMulEquiv.trans_apply]
   apply Units.ext
-  -- Unfold the two standard unit equivalences to expose their common underlying ring map.
+  refine (MulEquiv.val_piUnits_apply _ _).trans ?_
+  rw [Units.mapContinuousMulEquiv_apply, Units.coe_map, Units.coe_map]
   change ringEquivPiPadicInt (a : Additive zHat.{u}) ℓ = component ℓ a
   exact ringEquivPiPadicInt_apply (a : Additive zHat.{u}) ℓ
+
+/-- The `ℓ`-adic component of the inverse unit-group decomposition is the prescribed unit. -/
+@[simp]
+theorem component_unitsEquivPiPadicInt_symm (a : ∀ ℓ : Nat.Primes, ℤ_[ℓ]ˣ)
+    (ℓ : Nat.Primes) :
+    component ℓ (unitsEquivPiPadicInt.symm a : Additive zHat.{u}) = a ℓ := by
+  have h := congrFun (unitsEquivPiPadicInt.apply_symm_apply a) ℓ
+  rw [unitsEquivPiPadicInt_apply] at h
+  exact congrArg Units.val h
 
 section UnitsLift
 
 variable {G : Type v} [Group G]
 variable (χ : ∀ n : ℕ+, G →* (ZMod n)ˣ)
 variable (hχ : ∀ (m n : ℕ+) (h : (n : ℕ) ∣ m) (g : G),
-  Units.map (ZMod.castHom h (ZMod n)).toMonoidHom (χ m g) = χ n g)
+  ZMod.unitsMap h (χ m g) = χ n g)
 
 include hχ
 
@@ -115,58 +126,34 @@ private theorem toZMod_unitsLiftValue (g : G) (n : ℕ+) :
   (existsUnique_forall_toZMod_eq (fun n ↦ (χ n g : ZMod n))
     (unitsCoe_compatible χ hχ g)).exists.choose_spec n
 
-private theorem isUnit_unitsLiftValue (g : G) : IsUnit (unitsLiftValue χ hχ g) :=
-  (isUnit_iff _).2 fun n ↦ (toZMod_unitsLiftValue χ hχ g n).symm ▸ (χ n g).isUnit
-
-private noncomputable def unitsLiftUnit (g : G) : (Additive zHat.{u})ˣ :=
-  (isUnit_unitsLiftValue χ hχ g).unit
-
-private theorem coe_unitsLiftUnit (g : G) :
-    (unitsLiftUnit χ hχ g : Additive zHat.{u}) = unitsLiftValue χ hχ g :=
-  (isUnit_unitsLiftValue χ hχ g).unit_spec
+private noncomputable def unitsLiftMonoid : G →* Additive zHat.{u} :=
+  { toFun := unitsLiftValue χ hχ
+    map_one' := ext_of_toZMod fun n ↦ by
+      rw [toZMod_unitsLiftValue, map_one, map_one, Units.val_one]
+    map_mul' := fun g g' ↦ ext_of_toZMod fun n ↦ by
+      rw [toZMod_unitsLiftValue, map_mul, map_mul, toZMod_unitsLiftValue,
+        toZMod_unitsLiftValue, Units.val_mul] }
 
 /-- **Assembly of compatible finite-level characters.** A family of characters
 `χ n : G →* (ZMod n)ˣ` compatible with reduction along divisibility assembles into a character
 `G →* (Additive zHat)ˣ`, characterized by `zHat.map_toZMod_unitsLift`. -/
-noncomputable def unitsLift : G →* (Additive zHat.{u})ˣ where
-  toFun := unitsLiftUnit χ hχ
-  map_one' := by
-    apply Units.ext
-    apply ext_of_toZMod
-    intro n
-    calc
-      toZMod n (unitsLiftUnit χ hχ 1 : Additive zHat.{u}) = (χ n 1 : ZMod n) := by
-        rw [coe_unitsLiftUnit, toZMod_unitsLiftValue]
-      _ = 1 := congrArg Units.val (map_one (χ n))
-      _ = toZMod n 1 := (map_one (toZMod n)).symm
-  map_mul' g g' := by
-    apply Units.ext
-    apply ext_of_toZMod
-    intro n
-    calc
-      toZMod n (unitsLiftUnit χ hχ (g * g') : Additive zHat.{u}) =
-          (χ n (g * g') : ZMod n) := by
-        rw [coe_unitsLiftUnit, toZMod_unitsLiftValue]
-      _ = (χ n g : ZMod n) * (χ n g' : ZMod n) :=
-        congrArg Units.val (map_mul (χ n) g g')
-      _ = toZMod n ((unitsLiftUnit χ hχ g : Additive zHat.{u}) *
-          (unitsLiftUnit χ hχ g' : Additive zHat.{u})) := by
-        rw [map_mul, coe_unitsLiftUnit, coe_unitsLiftUnit, toZMod_unitsLiftValue,
-          toZMod_unitsLiftValue]
+noncomputable def unitsLift : G →* (Additive zHat.{u})ˣ :=
+  (unitsLiftMonoid χ hχ).toHomUnits
 
-private theorem coe_unitsLift (g : G) :
-    (unitsLift χ hχ g : Additive zHat.{u}) = unitsLiftValue χ hχ g :=
-  coe_unitsLiftUnit χ hχ g
+/-- The underlying profinite integer of the assembled character has the prescribed reduction
+modulo `n`. -/
+@[simp]
+theorem toZMod_coe_unitsLift (n : ℕ+) (g : G) :
+    toZMod n (unitsLift.{u, v} χ hχ g : Additive zHat.{u}) = (χ n g : ZMod n) := by
+  rw [unitsLift, MonoidHom.coe_toHomUnits]
+  exact toZMod_unitsLiftValue χ hχ g n
 
 /-- The reduction modulo `n` of the assembled character is its prescribed level-`n` character. -/
 @[simp]
 theorem map_toZMod_unitsLift (n : ℕ+) (g : G) :
     Units.map (toZMod.{u} n) (unitsLift.{u, v} χ hχ g) = χ n g := by
   apply Units.ext
-  -- `Units.map` exposes the monoid-hom coercion of `toZMod`; its value is the ring-hom value.
-  rw [Units.coe_map]
-  change toZMod n (unitsLift.{u, v} χ hχ g : Additive zHat.{u}) = (χ n g : ZMod n)
-  rw [coe_unitsLift, toZMod_unitsLiftValue]
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, toZMod_coe_unitsLift]
 
 /-- The compatible finite-level reductions uniquely determine the assembled character. -/
 theorem unitsLift_unique (ψ : G →* (Additive zHat.{u})ˣ)
@@ -179,19 +166,18 @@ theorem unitsLift_unique (ψ : G →* (Additive zHat.{u})ˣ)
   intro n
   have hn := congrArg Units.val
     ((hψ n g).trans (map_toZMod_unitsLift χ hχ n g).symm)
-  -- The unit maps in `hn` use the monoid-hom coercion of `toZMod`.
-  simp only [Units.coe_map] at hn
+  simp only [Units.coe_map, MonoidHom.coe_ofClass] at hn
   exact hn
 
 /-- The assembled character is continuous whenever all of its finite-level characters are
 continuous. -/
-theorem continuous_unitsLift [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_unitsLift [TopologicalSpace G] [ContinuousInv G]
     (hcont : ∀ n : ℕ+, Continuous (χ n)) : Continuous (unitsLift.{u, v} χ hχ) := by
   apply Continuous.of_coeHom_comp
   apply continuous_iff_forall_continuous_toZMod.mpr
   intro n
   exact (Units.continuous_val.comp (hcont n)).congr fun g ↦
-    congrArg Units.val (map_toZMod_unitsLift χ hχ n g).symm
+    (toZMod_coe_unitsLift χ hχ n g).symm
 
 end UnitsLift
 
