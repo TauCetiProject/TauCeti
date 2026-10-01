@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.SuccPredOrder
+public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.RepresentationTheory.Spin.Weight
 
 /-!
@@ -26,6 +28,16 @@ The spanning result is the full-weight input needed to construct the simply conn
 Chevalley carrier from the spin representation: the adjoint representation supplies only the
 index-two root lattice.
 
+The file then describes how the Weyl group moves these weights around, at every rank.  A spin
+weight is minuscule: each of its simple-coroot coordinates is `-1`, `0` or `1`, so the `i`-th
+simple reflection carries a spin weight to a spin weight, and it does so by exchanging the signs
+at the two nonterminal nodes `i` and `i + 1`, or by flipping the last sign at the terminal node.
+That involution of sign sets is `TauCeti.DynkinType.typeBSpinReflection`; it is identified with
+reflection in the pinned datum, distinct sign sets are shown to have distinct weights, and every
+sign set is reached from the all-negative one by a finite sequence of simple reflections.  So the
+spin weights form a single Weyl orbit of pairwise distinct minuscule weights, which is what makes
+the spin module of the type-`B` Chevalley carrier irreducible in every characteristic.
+
 ## Main declarations
 
 * `TauCeti.DynkinType.typeBSpinWeight`: a spin weight in fundamental-weight coordinates.
@@ -33,6 +45,18 @@ index-two root lattice.
   orthonormal coordinates of `TauCeti.spinWeight`.
 * `TauCeti.DynkinType.span_range_typeBSpinWeight_eq_top`: the spin weights generate the full
   simply connected character lattice.
+* `TauCeti.DynkinType.typeBSpinReflection`: the `i`-th simple reflection as an involution of sign
+  sets, with `TauCeti.DynkinType.typeBSpinWeight_typeBSpinReflection` the reflection formula
+  against the Bourbaki-numbered Cartan matrix and
+  `TauCeti.DynkinType.typeBSimplyConnectedRootDatum_reflection_typeBSpinWeight` its
+  identification with reflection in the pinned datum.
+* `TauCeti.DynkinType.typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one`: the spin weights are
+  minuscule.
+* `TauCeti.DynkinType.typeBSpinWeight_injective`: distinct sign sets have distinct weights.
+* `TauCeti.DynkinType.typeBSpinReflection_eq_self_iff`: a simple reflection fixes a sign set
+  exactly when the matching coordinate of its weight vanishes.
+* `TauCeti.DynkinType.exists_typeBSpinReflections_eq`: the sign sets form a single orbit of the
+  simple reflections.
 
 ## References
 
@@ -40,9 +64,9 @@ index-two root lattice.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Section 20.1.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Section 13.2.
 
-This advances Layer 9, "The Chevalley--Demazure construction", of the ReductiveGroups roadmap:
-the explicit simply connected type `B` carrier requires an admissible spin lattice whose weights
-generate the full character lattice.
+The reflection interface follows the fixed-rank tables of
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.MinusculeWeight`, which the
+minuscule weights of type `E₆` carry; here the orbit is described uniformly in the rank instead.
 -/
 
 public section
@@ -210,5 +234,384 @@ theorem span_range_typeBSpinWeight_eq_top (n : ℕ) :
     exact Submodule.add_mem _
       (Submodule.subset_span ⟨Finset.Iic i, rfl⟩)
       (Submodule.subset_span ⟨Finset.univ, rfl⟩)
+
+/-! ## The simple reflections on sign sets -/
+
+/-- Away from the terminal node, the order successor in `Fin n` increments the value. -/
+private theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j : Fin m, i = j.castSucc := ⟨⟨(i : ℕ), by omega⟩, by ext; simp⟩
+  simp
+
+/-- The underlying involution of sign sets: exchange the two signs at a nonterminal node, and
+flip the last sign at the terminal node. -/
+private def typeBSpinReflectionSet {n : ℕ} (i : Fin n) (s : Finset (Fin n)) : Finset (Fin n) :=
+  if (i : ℕ) + 1 < n then s.map (Equiv.swap i (Order.succ i)).toEmbedding else symmDiff s {i}
+
+private theorem typeBSpinReflectionSet_involutive {n : ℕ} (i : Fin n) :
+    Function.Involutive (typeBSpinReflectionSet (n := n) i) := by
+  intro s
+  by_cases h : (i : ℕ) + 1 < n
+  · ext a
+    rw [typeBSpinReflectionSet, ite_eq_left h, typeBSpinReflectionSet, ite_eq_left h]
+    simp [Finset.mem_map_equiv]
+  · rw [typeBSpinReflectionSet, ite_eq_right h, typeBSpinReflectionSet, ite_eq_right h,
+      symmDiff_symmDiff_cancel_right]
+
+/-- **The `i`-th simple reflection of type `Bₙ`, acting on spin sign sets.**
+
+The spin weights are indexed by the finite set of positive signs, and the Weyl group acts on them
+by signed permutations of the orthonormal coordinates. At a nonterminal node the simple root is
+`eᵢ - eᵢ₊₁`, so its reflection exchanges the signs at `i` and `i + 1`; at the terminal node the
+simple root is `e_{n-1}`, so its reflection flips the last sign. -/
+def typeBSpinReflection {n : ℕ} (i : Fin n) : Equiv.Perm (Finset (Fin n)) :=
+  Function.Involutive.toPerm _ (typeBSpinReflectionSet_involutive i)
+
+/-- At a nonterminal node the simple reflection transports a sign set along the transposition of
+the node with its successor. -/
+theorem typeBSpinReflection_apply_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n)
+    (s : Finset (Fin n)) :
+    typeBSpinReflection i s = s.map (Equiv.swap i (Order.succ i)).toEmbedding := by
+  rw [typeBSpinReflection, Function.Involutive.coe_toPerm, typeBSpinReflectionSet, ite_eq_left h]
+
+/-- At the terminal node the simple reflection toggles the membership of that node. -/
+theorem typeBSpinReflection_apply_of_last {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n)
+    (s : Finset (Fin n)) :
+    typeBSpinReflection i s = symmDiff s {i} := by
+  rw [typeBSpinReflection, Function.Involutive.coe_toPerm, typeBSpinReflectionSet, ite_eq_right h]
+
+/-- **The simple reflections are involutions.** -/
+@[simp]
+theorem typeBSpinReflection_typeBSpinReflection {n : ℕ} (i : Fin n) (s : Finset (Fin n)) :
+    typeBSpinReflection i (typeBSpinReflection i s) = s :=
+  typeBSpinReflectionSet_involutive i s
+
+/-- Membership in a reflected sign set at a nonterminal node, read through the transposition of
+the node with its successor. -/
+theorem mem_typeBSpinReflection_iff_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n)
+    {s : Finset (Fin n)} {a : Fin n} :
+    a ∈ typeBSpinReflection i s ↔ Equiv.swap i (Order.succ i) a ∈ s := by
+  rw [typeBSpinReflection_apply_of_lt h, Finset.mem_map_equiv, Equiv.symm_swap]
+
+/-- Membership in a reflected sign set at the terminal node: only that node's sign changes. -/
+theorem mem_typeBSpinReflection_iff_of_last {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n)
+    {s : Finset (Fin n)} {a : Fin n} :
+    a ∈ typeBSpinReflection i s ↔ (if a = i then a ∉ s else a ∈ s) := by
+  rw [typeBSpinReflection_apply_of_last h]
+  by_cases hai : a = i
+  · subst hai
+    simp [Finset.mem_symmDiff]
+  · simp [Finset.mem_symmDiff, hai]
+
+/-! ## The reflection formula -/
+
+private theorem ite_mem_typeBSpinReflection_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n)
+    (s : Finset (Fin n)) (a : Fin n) :
+    (if a ∈ typeBSpinReflection i s then (1 : ℤ) else 0) =
+      if Equiv.swap i (Order.succ i) a ∈ s then 1 else 0 := by
+  simp only [mem_typeBSpinReflection_iff_of_lt h]
+
+private theorem ite_mem_typeBSpinReflection_of_last {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n)
+    (s : Finset (Fin n)) {a : Fin n} (ha : a ≠ i) :
+    (if a ∈ typeBSpinReflection i s then (1 : ℤ) else 0) = if a ∈ s then 1 else 0 := by
+  simp only [mem_typeBSpinReflection_iff_of_last h, ite_eq_right ha]
+
+private theorem ite_self_mem_typeBSpinReflection_of_last {n : ℕ} {i : Fin n}
+    (h : ¬(i : ℕ) + 1 < n) (s : Finset (Fin n)) :
+    (if i ∈ typeBSpinReflection i s then (1 : ℤ) else 0) = 1 - if i ∈ s then 1 else 0 := by
+  by_cases hs : i ∈ s <;> simp [mem_typeBSpinReflection_iff_of_last h, hs]
+
+/-- **The reflection formula for type-`Bₙ` spin weights.** Reflecting a sign set in the `i`-th
+simple root subtracts, from its weight, the `i`-th simple-coroot coordinate of that weight times
+the `i`-th simple root. In the fundamental-weight basis the `i`-th simple root is the `i`-th row
+of the Bourbaki-numbered Cartan matrix, so the spin weights are permuted by the Weyl group. -/
+theorem typeBSpinWeight_typeBSpinReflection {n : ℕ} (i : Fin n) (s : Finset (Fin n))
+    (j : Fin n) :
+    typeBSpinWeight (typeBSpinReflection i s) j =
+      typeBSpinWeight s j - typeBSpinWeight s i * CartanMatrix.B n i j := by
+  classical
+  have hi := i.isLt
+  have hj := j.isLt
+  by_cases hilt : (i : ℕ) + 1 < n
+  · have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := val_orderSucc_of_lt hilt
+    have hiw : typeBSpinWeight s i =
+        (if i ∈ s then (1 : ℤ) else 0) - if (Order.succ i : Fin n) ∈ s then 1 else 0 := by
+      rw [typeBSpinWeight_apply, ite_eq_left hilt]
+    by_cases hji : j = i
+    · -- the reflecting node itself: the two signs are exchanged
+      have hC : CartanMatrix.B n i j = 2 := by
+        simp only [CartanMatrix.B, Matrix.of_apply, hji]
+        simp
+      rw [hji, typeBSpinWeight_apply (typeBSpinReflection i s) i, ite_eq_left hilt,
+        ite_mem_typeBSpinReflection_of_lt hilt, ite_mem_typeBSpinReflection_of_lt hilt,
+        Equiv.swap_apply_left, Equiv.swap_apply_right, hiw]
+      rw [hji] at hC
+      rw [hC]
+      ring
+    · by_cases hjsucc : (j : ℕ) = (i : ℕ) + 1
+      · -- the successor node, whose sign is replaced by the one at `i`
+        have hjeq : j = (Order.succ i : Fin n) := Fin.ext (by omega)
+        have hswapj : Equiv.swap i (Order.succ i) j = i := by
+          rw [hjeq]; exact Equiv.swap_apply_right i (Order.succ i)
+        have hjs : (if j ∈ s then (1 : ℤ) else 0) =
+            if (Order.succ i : Fin n) ∈ s then 1 else 0 := by rw [hjeq]
+        by_cases hjlt : (j : ℕ) + 1 < n
+        · have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := val_orderSucc_of_lt hjlt
+          have h1 : (Order.succ j : Fin n) ≠ i := fun hc => by rw [hc] at hsuccj; omega
+          have h2 : (Order.succ j : Fin n) ≠ (Order.succ i : Fin n) := fun hc => by
+            rw [hc, hsucci] at hsuccj; omega
+          have hC : CartanMatrix.B n i j = -1 := by
+            simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
+            split_ifs <;> omega
+          rw [typeBSpinWeight_apply (typeBSpinReflection i s) j, ite_eq_left hjlt,
+            ite_mem_typeBSpinReflection_of_lt hilt, ite_mem_typeBSpinReflection_of_lt hilt,
+            hswapj, Equiv.swap_apply_of_ne_of_ne h1 h2,
+            typeBSpinWeight_apply s j, ite_eq_left hjlt, hiw, hjs, hC]
+          ring
+        · have hC : CartanMatrix.B n i j = -2 := by
+            simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
+            split_ifs <;> omega
+          rw [typeBSpinWeight_apply (typeBSpinReflection i s) j, ite_eq_right hjlt,
+            ite_mem_typeBSpinReflection_of_lt hilt, hswapj,
+            typeBSpinWeight_apply s j, ite_eq_right hjlt, hiw, hjs, hC]
+          ring
+      · by_cases hjpred : (j : ℕ) + 1 = (i : ℕ)
+        · -- the predecessor node, whose successor is the reflecting node
+          have hjlt : (j : ℕ) + 1 < n := by omega
+          have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := val_orderSucc_of_lt hjlt
+          have hsj : (Order.succ j : Fin n) = i := Fin.ext (by omega)
+          have h1 : j ≠ (Order.succ i : Fin n) := fun hc => by
+            rw [hc, hsucci] at hjpred; omega
+          have hswapsj : Equiv.swap i (Order.succ i) (Order.succ j) = (Order.succ i : Fin n) := by
+            rw [hsj]; exact Equiv.swap_apply_left i (Order.succ i)
+          have hs_sj : (if (Order.succ j : Fin n) ∈ s then (1 : ℤ) else 0) =
+              if i ∈ s then 1 else 0 := by rw [hsj]
+          have hC : CartanMatrix.B n i j = -1 := by
+            simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
+            split_ifs <;> omega
+          rw [typeBSpinWeight_apply (typeBSpinReflection i s) j, ite_eq_left hjlt,
+            ite_mem_typeBSpinReflection_of_lt hilt, ite_mem_typeBSpinReflection_of_lt hilt,
+            Equiv.swap_apply_of_ne_of_ne hji h1, hswapsj,
+            typeBSpinWeight_apply s j, ite_eq_left hjlt, hs_sj, hiw, hC]
+          ring
+        · -- a node not adjacent to the reflecting one: its weight is unchanged
+          have h1 : j ≠ (Order.succ i : Fin n) := fun hc => by
+            rw [hc, hsucci] at hjsucc; omega
+          have hC : CartanMatrix.B n i j = 0 := by
+            simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
+            split_ifs <;> omega
+          have hL : typeBSpinWeight (typeBSpinReflection i s) j = typeBSpinWeight s j := by
+            by_cases hjlt : (j : ℕ) + 1 < n
+            · have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := val_orderSucc_of_lt hjlt
+              have h2 : (Order.succ j : Fin n) ≠ i := fun hc => by rw [hc] at hsuccj; omega
+              have h3 : (Order.succ j : Fin n) ≠ (Order.succ i : Fin n) := fun hc => by
+                rw [hc, hsucci] at hsuccj
+                exact hji (Fin.ext (by omega))
+              rw [typeBSpinWeight_apply (typeBSpinReflection i s) j, ite_eq_left hjlt,
+                ite_mem_typeBSpinReflection_of_lt hilt, ite_mem_typeBSpinReflection_of_lt hilt,
+                Equiv.swap_apply_of_ne_of_ne hji h1, Equiv.swap_apply_of_ne_of_ne h2 h3,
+                typeBSpinWeight_apply s j, ite_eq_left hjlt]
+            · rw [typeBSpinWeight_apply (typeBSpinReflection i s) j, ite_eq_right hjlt,
+                ite_mem_typeBSpinReflection_of_lt hilt,
+                Equiv.swap_apply_of_ne_of_ne hji h1, typeBSpinWeight_apply s j,
+                ite_eq_right hjlt]
+          rw [hL, hC]
+          ring
+  · -- the terminal node: the last sign is flipped
+    have hilast : (i : ℕ) + 1 = n := by omega
+    have hiw : typeBSpinWeight s i = 2 * (if i ∈ s then (1 : ℤ) else 0) - 1 := by
+      rw [typeBSpinWeight_apply, ite_eq_right hilt]
+    by_cases hji : j = i
+    · have hC : CartanMatrix.B n i j = 2 := by
+        simp only [CartanMatrix.B, Matrix.of_apply, hji]
+        simp
+      rw [hji, typeBSpinWeight_apply (typeBSpinReflection i s) i, ite_eq_right hilt,
+        ite_self_mem_typeBSpinReflection_of_last hilt, hiw]
+      rw [hji] at hC
+      rw [hC]
+      ring
+    · by_cases hjpred : (j : ℕ) + 1 = (i : ℕ)
+      · have hjlt : (j : ℕ) + 1 < n := by omega
+        have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := val_orderSucc_of_lt hjlt
+        have hsj : (Order.succ j : Fin n) = i := Fin.ext (by omega)
+        have hrefl_sj : (if (Order.succ j : Fin n) ∈ typeBSpinReflection i s then (1 : ℤ) else 0)
+            = 1 - if i ∈ s then 1 else 0 := by
+          rw [hsj]; exact ite_self_mem_typeBSpinReflection_of_last hilt s
+        have hs_sj : (if (Order.succ j : Fin n) ∈ s then (1 : ℤ) else 0) =
+            if i ∈ s then 1 else 0 := by rw [hsj]
+        have hC : CartanMatrix.B n i j = -1 := by
+          simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
+          split_ifs <;> omega
+        rw [typeBSpinWeight_apply (typeBSpinReflection i s) j, ite_eq_left hjlt,
+          ite_mem_typeBSpinReflection_of_last hilt s hji, hrefl_sj,
+          typeBSpinWeight_apply s j, ite_eq_left hjlt, hs_sj, hiw, hC]
+        ring
+      · have hjlt : (j : ℕ) + 1 < n := by
+          rcases Nat.lt_or_ge ((j : ℕ) + 1) n with h | h
+          · exact h
+          · exact absurd (Fin.ext (by omega) : j = i) hji
+        have hsuccj : ((Order.succ j : Fin n) : ℕ) = (j : ℕ) + 1 := val_orderSucc_of_lt hjlt
+        have h2 : (Order.succ j : Fin n) ≠ i := fun hc => by rw [hc] at hsuccj; omega
+        have hC : CartanMatrix.B n i j = 0 := by
+          simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
+          split_ifs <;> omega
+        rw [typeBSpinWeight_apply (typeBSpinReflection i s) j, ite_eq_left hjlt,
+          ite_mem_typeBSpinReflection_of_last hilt s hji,
+          ite_mem_typeBSpinReflection_of_last hilt s h2,
+          typeBSpinWeight_apply s j, ite_eq_left hjlt, hC]
+        ring
+
+/-! ## Distinct weights and fixed points -/
+
+/-- Every simple-coroot coordinate of a type-`Bₙ` spin weight is `-1`, `0` or `1`: the spin
+weights are minuscule. -/
+theorem typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one {n : ℕ} (s : Finset (Fin n))
+    (i : Fin n) :
+    typeBSpinWeight s i = -1 ∨ typeBSpinWeight s i = 0 ∨ typeBSpinWeight s i = 1 := by
+  rw [typeBSpinWeight_apply]
+  split_ifs <;> omega
+
+private theorem mem_iff_of_ite_eq {n : ℕ} {s t : Finset (Fin n)} {a : Fin n}
+    (h : (if a ∈ s then (1 : ℤ) else 0) = if a ∈ t then 1 else 0) : a ∈ s ↔ a ∈ t := by
+  by_cases hs : a ∈ s <;> by_cases ht : a ∈ t <;> simp_all
+
+private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n)}
+    (h : typeBSpinWeight s = typeBSpinWeight t) (k : ℕ) :
+    ∀ i : Fin n, (i : ℕ) + k + 1 = n → (i ∈ s ↔ i ∈ t) := by
+  induction k with
+  | zero =>
+    intro i hik
+    have hilt : ¬(i : ℕ) + 1 < n := by omega
+    have hw := congrFun h i
+    rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_right hilt,
+      ite_eq_right hilt] at hw
+    exact mem_iff_of_ite_eq (by linarith)
+  | succ k ih =>
+    intro i hik
+    have hilt : (i : ℕ) + 1 < n := by omega
+    have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := val_orderSucc_of_lt hilt
+    have hmem := ih (Order.succ i) (by omega)
+    have hsuccind : (if (Order.succ i : Fin n) ∈ s then (1 : ℤ) else 0) =
+        if (Order.succ i : Fin n) ∈ t then 1 else 0 := by simp only [hmem]
+    have hw := congrFun h i
+    rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_left hilt, ite_eq_left hilt] at hw
+    rw [hsuccind] at hw
+    exact mem_iff_of_ite_eq (by linarith)
+
+/-- **Distinct sign sets have distinct type-`Bₙ` spin weights.** The last coordinate of the weight
+recovers the last sign, and the remaining signs follow from the adjacent differences. -/
+theorem typeBSpinWeight_injective {n : ℕ} : Function.Injective (typeBSpinWeight (n := n)) := by
+  intro s t h
+  ext i
+  have := i.isLt
+  exact mem_iff_mem_of_typeBSpinWeight_eq h (n - 1 - (i : ℕ)) i (by omega)
+
+/-- A simple reflection fixes a sign set exactly when the matching simple-coroot coordinate of its
+weight vanishes. -/
+@[simp]
+theorem typeBSpinReflection_eq_self_iff {n : ℕ} (i : Fin n) (s : Finset (Fin n)) :
+    typeBSpinReflection i s = s ↔ typeBSpinWeight s i = 0 := by
+  constructor
+  · intro h
+    have hw := typeBSpinWeight_typeBSpinReflection i s i
+    rw [h, CartanMatrix.B_diag] at hw
+    linarith
+  · intro h
+    apply typeBSpinWeight_injective
+    funext k
+    rw [typeBSpinWeight_typeBSpinReflection, h]
+    ring
+
+/-! ## A single Weyl orbit -/
+
+/-- Moving the largest positive sign up to the terminal node and flipping it there reduces a sign
+set to one with a smaller support, which is the induction step behind
+`TauCeti.DynkinType.exists_typeBSpinReflections_eq`. -/
+private theorem exists_typeBSpinReflections_eq_aux {n : ℕ} (d : ℕ) :
+    ∀ (a : Fin n) (s : Finset (Fin n)), n - 1 - (a : ℕ) = d → a ∈ s →
+      (∀ b : Fin n, a < b → b ∉ s) →
+      (∃ l : List (Fin n), l.foldl (fun t i => typeBSpinReflection i t) ∅ = s.erase a) →
+      ∃ l : List (Fin n), l.foldl (fun t i => typeBSpinReflection i t) ∅ = s := by
+  induction d with
+  | zero =>
+    intro a s hd ha _ hrec
+    obtain ⟨l, hl⟩ := hrec
+    have halast : ¬(a : ℕ) + 1 < n := by have := a.isLt; omega
+    refine ⟨l ++ [a], ?_⟩
+    rw [List.foldl_append, hl]
+    simp only [List.foldl_cons, List.foldl_nil]
+    rw [typeBSpinReflection_apply_of_last halast]
+    ext b
+    simp only [Finset.mem_symmDiff, Finset.mem_erase, Finset.mem_singleton]
+    by_cases hb : b = a
+    · subst hb
+      simp [ha]
+    · simp [hb]
+  | succ d ih =>
+    intro a s hd ha hmax hrec
+    have hlt : (a : ℕ) + 1 < n := by have := a.isLt; omega
+    have hsucca : ((Order.succ a : Fin n) : ℕ) = (a : ℕ) + 1 := val_orderSucc_of_lt hlt
+    have hane : a ≠ (Order.succ a : Fin n) := fun hc => by rw [← hc] at hsucca; omega
+    have hasucclt : a < (Order.succ a : Fin n) := by rw [Fin.lt_def, hsucca]; omega
+    have hsuccnotmem : (Order.succ a : Fin n) ∉ s := hmax _ hasucclt
+    have hrefl : typeBSpinReflection a s = insert (Order.succ a : Fin n) (s.erase a) := by
+      ext b
+      rw [mem_typeBSpinReflection_iff_of_lt hlt, Finset.mem_insert, Finset.mem_erase]
+      by_cases hba : b = a
+      · subst hba
+        rw [Equiv.swap_apply_left]
+        simp [hsuccnotmem, hane]
+      · by_cases hbs : b = (Order.succ a : Fin n)
+        · subst hbs
+          rw [Equiv.swap_apply_right]
+          simp [ha]
+        · rw [Equiv.swap_apply_of_ne_of_ne hba hbs]
+          simp [hba, hbs]
+    have hmax' : ∀ b : Fin n, (Order.succ a : Fin n) < b → b ∉ insert
+        (Order.succ a : Fin n) (s.erase a) := by
+      intro b hb hmem
+      have hab : a < b := lt_trans hasucclt hb
+      rw [Finset.mem_insert, Finset.mem_erase] at hmem
+      rcases hmem with h | ⟨-, h⟩
+      · exact absurd h.symm hb.ne
+      · exact hmax b hab h
+    obtain ⟨l, hl⟩ := ih (Order.succ a) (insert (Order.succ a : Fin n) (s.erase a))
+      (by rw [hsucca]; omega) (Finset.mem_insert_self _ _) hmax'
+      (by rw [Finset.erase_insert (fun hc => hsuccnotmem (Finset.mem_of_mem_erase hc))]
+          exact hrec)
+    refine ⟨l ++ [a], ?_⟩
+    rw [List.foldl_append, hl]
+    simp only [List.foldl_cons, List.foldl_nil]
+    rw [← hrefl, typeBSpinReflection_typeBSpinReflection]
+
+/-- **The type-`Bₙ` spin weights form a single orbit of the simple reflections.** Every sign set is
+reached from the all-negative one by a finite sequence of simple reflections, so the spin module is
+minuscule with a connected weight graph. -/
+theorem exists_typeBSpinReflections_eq {n : ℕ} (s : Finset (Fin n)) :
+    ∃ l : List (Fin n), l.foldl (fun t i => typeBSpinReflection i t) ∅ = s := by
+  induction s using Finset.strongInduction with
+  | _ s ih =>
+    rcases s.eq_empty_or_nonempty with rfl | hs
+    · exact ⟨[], rfl⟩
+    · exact exists_typeBSpinReflections_eq_aux (n - 1 - ((s.max' hs : Fin n) : ℕ))
+        (s.max' hs) s rfl (s.max'_mem hs)
+        (fun b hb hbs => absurd (s.le_max' b hbs) (not_le.2 hb))
+        (ih _ (Finset.erase_ssubset (s.max'_mem hs)))
+
+/-- **The sign-set reflection is reflection in the pinned type-`Bₙ` datum.** The weight of a
+reflected sign set is the Weyl reflection of its weight in the corresponding simple root of
+`TauCeti.DynkinType.typeBSimplyConnectedRootDatum`. -/
+theorem typeBSimplyConnectedRootDatum_reflection_typeBSpinWeight {n : ℕ} (i : Fin n)
+    (s : Finset (Fin n)) :
+    (typeBSimplyConnectedRootDatum n).reflection (typeBSimpleIndex n i) (typeBSpinWeight s) =
+      typeBSpinWeight (typeBSpinReflection i s) := by
+  have hcoroot : (typeBSimplyConnectedRootDatum n).coroot' (typeBSimpleIndex n i)
+      (typeBSpinWeight s) = typeBSpinWeight s i := by
+    simp
+  rw [RootPairing.reflection_apply, hcoroot]
+  funext k
+  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, root_typeBSimpleIndex]
+  rw [typeBSpinWeight_typeBSpinReflection]
 
 end TauCeti.DynkinType
