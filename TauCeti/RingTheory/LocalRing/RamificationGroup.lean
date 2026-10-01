@@ -652,6 +652,23 @@ theorem ramificationGroupGradedConj_mk (g : G) (i : ℤ)
       QuotientGroup.mk (MulAut.conjNormal g x) := by
   exact QuotientGroup.congr_mk _ _ _ _ x
 
+/-- Conjugation by the identity acts trivially on each ramification quotient. -/
+@[simp]
+theorem ramificationGroupGradedConj_one (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S 1 i x = x := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
+
+/-- Conjugation by a product is the composite of the corresponding conjugation automorphisms. -/
+@[simp]
+theorem ramificationGroupGradedConj_mul (g h : G) (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S (g * h) i x =
+      ramificationGroupGradedConj G S g i (ramificationGroupGradedConj G S h i x) := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
+
 end Subgroup
 
 section Real
