@@ -133,12 +133,12 @@ private noncomputable def unitsLiftMonoid : G →* Additive zHat.{u} :=
       rw [toZMod_unitsLiftValue, map_mul, map_mul, toZMod_unitsLiftValue,
         toZMod_unitsLiftValue, Units.val_mul] }
 
+private theorem unitsLiftMonoid_apply (g : G) :
+    unitsLiftMonoid χ hχ g = unitsLiftValue χ hχ g := rfl
+
 private theorem isUnit_unitsLiftMonoid (g : G) : IsUnit (unitsLiftMonoid χ hχ g) :=
   (isUnit_iff_toZMod _).2 fun n ↦ by
-    rw [unitsLiftMonoid]
-    change IsUnit (toZMod n (unitsLiftValue χ hχ g))
-    rw [toZMod_unitsLiftValue]
-    exact Units.isUnit _
+    simpa only [unitsLiftMonoid_apply, toZMod_unitsLiftValue] using Units.isUnit (χ n g)
 
 /-- **Assembly of compatible finite-level characters.** A family of characters
 `χ n : G →* (ZMod n)ˣ` compatible with reduction along divisibility assembles into a character
