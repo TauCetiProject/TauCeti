@@ -54,7 +54,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
 private lemma of_eq_of_components (X : C × D) :
     (of X : SplitK0 (C × D)) = of (X.1, 0) + of (0, X.2) := by
   rw [← of_biprod]
-  exact of_congr (biprodComponentsIso X).symm
+  exact of_congr (prod.biprodComponentsIso X).symm
 
 /-- Split `K₀` takes a product of additive categories to the product of their split
 Grothendieck groups. -/
@@ -133,7 +133,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
 private lemma of_eq_of_components (X : C × D) :
     (of X : ExactK0 (E.prod E')) = of (X.1, 0) + of (0, X.2) := by
   rw [← of_biprod]
-  exact of_congr (biprodComponentsIso X).symm
+  exact of_congr (prod.biprodComponentsIso X).symm
 
 /-- Exact `K₀` takes a componentwise product of exact categories to the product of their exact
 Grothendieck groups. -/

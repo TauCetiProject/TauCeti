@@ -16,7 +16,7 @@ This file equips product categories with componentwise binary biproducts and, wh
 are preadditive, a componentwise preadditive structure and additive projection and product
 functors. These constructions let additive invariants, including split Grothendieck groups,
 compare a product category with its factors. Every object of such a product is the biproduct of
-its two zero-padded components (`TauCeti.biprodComponentsIso`).
+its two zero-padded components (`CategoryTheory.prod.biprodComponentsIso`).
 -/
 
 public section
@@ -163,9 +163,14 @@ instance (F : C ⥤ C') (G : D ⥤ D') [F.Additive] [G.Additive] : (F.prod G).Ad
 
 end AdditiveFunctors
 
-section Components
+end TauCeti
 
-variable [Preadditive C] [Preadditive D] [HasZeroObject C] [HasZeroObject D]
+namespace CategoryTheory.prod
+
+open Limits ZeroObject
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D]
+  [Preadditive C] [Preadditive D] [HasZeroObject C] [HasZeroObject D]
   [HasBinaryBiproducts C] [HasBinaryBiproducts D]
 
 /-- An object of a product of preadditive categories is the biproduct of its two components,
@@ -194,6 +199,4 @@ theorem biprodComponentsIso_hom (X : C × D) :
 theorem biprodComponentsIso_inv (X : C × D) :
     (biprodComponentsIso X).inv = biprod.lift (𝟙 X.1, 0) (0, 𝟙 X.2) := (rfl)
 
-end Components
-
-end TauCeti
+end CategoryTheory.prod
