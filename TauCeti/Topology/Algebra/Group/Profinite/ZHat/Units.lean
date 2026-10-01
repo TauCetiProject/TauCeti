@@ -135,6 +135,7 @@ private noncomputable def unitsLiftMonoid : G →* Additive zHat.{u} :=
 
 private theorem isUnit_unitsLiftMonoid (g : G) : IsUnit (unitsLiftMonoid χ hχ g) :=
   (isUnit_iff_toZMod _).2 fun n ↦ by
+    rw [unitsLiftMonoid]
     change IsUnit (toZMod n (unitsLiftValue χ hχ g))
     rw [toZMod_unitsLiftValue]
     exact Units.isUnit _
