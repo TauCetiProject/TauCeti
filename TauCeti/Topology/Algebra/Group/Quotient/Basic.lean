@@ -17,8 +17,9 @@ public import TauCeti.Topology.Discrete
 # Quotients of topological groups by subgroups
 
 Generic facts about quotients by subgroups of topological groups. Most results use
-`[IsTopologicalGroup G]`; continuity of translation on a coset quotient needs only
-`[SeparatelyContinuousMul G]`. Neither compactness nor total disconnectedness is needed.
+`[IsTopologicalGroup G]`; forward translation of a fixed coset needs only
+`[SeparatelyContinuousMul G]`. The inverse-translation results additionally require
+`[DiscreteTopology (G ⧸ U)]`. Neither compactness nor total disconnectedness is needed.
 
 ## Main definitions
 
@@ -29,6 +30,10 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 ## Main results
 
 * `TauCeti.QuotientGroup.continuous_smul_const`: translation of a fixed coset is continuous.
+* `TauCeti.QuotientGroup.continuous_inv_smul_const`: inverse translation of a fixed coset is
+  continuous when the quotient is discrete.
+* `TauCeti.QuotientGroup.continuous_inv_smul`: inverse translation is jointly continuous when
+  the quotient is discrete.
 * `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
   discrete.
 * `QuotientGroup.continuous_mapOfLE`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for normal

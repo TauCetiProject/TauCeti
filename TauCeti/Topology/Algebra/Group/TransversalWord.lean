@@ -15,10 +15,11 @@ public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 For a subgroup `U` of a group `G` and a map `t : G ⧸ U → G`, the transversal word
 `ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of `TauCeti.lWord` is a purely group-theoretic construction.
 If multiplication on `G` is separately continuous and `U` is *open*, then
-`γ ↦ ℓᵗ_u(γ)` is continuous (`TauCeti.continuous_lWord`). Of the three factors,
-`(t u)⁻¹` is constant and `γ ↦ γ` is the continuous identity; the only one whose continuity is not
-immediate is `γ ↦ t (γ⁻¹ • u)`, and openness of `U` makes `G ⧸ U` discrete, so that factor is
-locally constant and no continuity is required of `t` itself. The variant
+`γ ↦ ℓᵗ_u(γ)` is continuous (`TauCeti.continuous_lWord`). Openness of `U` makes `G ⧸ U`
+discrete, so `γ ↦ γ⁻¹ • u`, and hence `γ ↦ t (γ⁻¹ • u)`, is locally constant. On each such
+neighborhood the word has the form `γ ↦ c₁ * γ * c₂` for fixed `c₁` and `c₂`, which is
+continuous by separate continuity of multiplication. No continuity is required of `t` itself.
+The variant
 `TauCeti.continuous_lWord_inv_smul` lets the coset index itself be translated by a second group
 variable, which is the shape the degree-two corestriction sum is indexed by.
 

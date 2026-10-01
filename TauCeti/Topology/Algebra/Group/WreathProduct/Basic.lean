@@ -18,6 +18,13 @@ The base has the product topology and the permutation group has the topology of 
 convergence. Relabeling the index type by a continuous equivalence is continuous. When the base
 is a topological group and the index type is discrete, this topology makes the wreath product a
 topological group.
+
+This is the topology used to prove continuity of `TauCeti.monomialHom` and
+`TauCeti.monomialFinHom` for an open subgroup. Pointwise convergence on the permutation factor
+reduces that part of continuity to the orbit maps of individual cosets.
+`TauCeti.WreathProduct.continuous_iff` gives the coordinate criterion for maps into the wreath
+product, and `TauCeti.WreathProduct.isEmbedding_left_right` identifies it with its image in the
+product of the two function spaces.
 -/
 
 public section

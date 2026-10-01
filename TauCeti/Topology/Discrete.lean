@@ -12,6 +12,10 @@ public import Mathlib.Topology.Order
 
 Pointwise continuous families of equivalences have continuous inverse evaluation when the
 target space is discrete.
+
+This supplies continuity of inverse permutation evaluation in
+`TauCeti.WreathProduct.continuous_right_inv` and inverse coset translation in
+`TauCeti.QuotientGroup.continuous_inv_smul_const`, over a discrete index or coset quotient.
 -/
 
 public section
