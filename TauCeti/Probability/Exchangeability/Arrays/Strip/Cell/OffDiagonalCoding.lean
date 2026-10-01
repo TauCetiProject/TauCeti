@@ -512,7 +512,7 @@ private theorem map_prod_orientedPairCoding_eq
   rw [← hfwd]
   refine Eq.trans (congrArg (Measure.map · _) (funext fun q => ?_))
     (TauCeti.MeasureTheory.Measure.map_ite_mem_eq (hcoding i j) (hswap.comp (hcoding j i)) hO'
-      rfl (hfwd.trans hbwd.symm))
+      (Filter.Eventually.of_forall fun _ => Iff.rfl) (hfwd.trans hbwd.symm))
   by_cases hq : offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1 ∈ O <;>
     simp [hq, offDiagonalPairSquareContextOfStripsAndDiagonal_swap e i j]
 
