@@ -116,26 +116,6 @@ private theorem hasStrictFDerivAt_picardResidual_path
     simp only [picardResidual_apply, hcomp, map_zero, sub_zero]
   exact (hasStrictFDerivAt_sub_const (ContinuousMap.const _ x₀)).congr_of_eventuallyEq heq
 
-/-- A path on `[0, 1]` satisfying the integral equation `q t = x₀ + ∫₀ᵗ v` for a continuous `v`
-has derivative `v t` at every interior time, and from the right at every `t ∈ [0, 1)`. -/
-private theorem hasDerivAt_of_forall_eq_integral [CompleteSpace F] {v : ℝ → F}
-    (hv : Continuous v) {x₀ : F} {q : C(Set.Icc (0 : ℝ) 1, F)}
-    (hq : ∀ t : Set.Icc (0 : ℝ) 1, q t = x₀ + ∫ s in (0 : ℝ)..t, v s) :
-    (∀ t ∈ Set.Ioo (0 : ℝ) 1,
-      HasDerivAt (fun s ↦ q (Set.projIcc 0 1 zero_le_one s)) (v t) t) ∧
-    ∀ t ∈ Set.Ico (0 : ℝ) 1,
-      HasDerivWithinAt (fun s ↦ q (Set.projIcc 0 1 zero_le_one s)) (v t) (Set.Ici t) t := by
-  have heq : Set.EqOn (fun s ↦ q (Set.projIcc 0 1 zero_le_one s))
-      (fun s ↦ x₀ + ∫ u in (0 : ℝ)..s, v u) (Set.Icc 0 1) := fun s hs ↦ by
-    simpa only [Set.projIcc_of_mem zero_le_one hs] using hq ⟨s, hs⟩
-  have hderiv (t : ℝ) : HasDerivAt (fun s ↦ x₀ + ∫ u in (0 : ℝ)..s, v u) (v t) t :=
-    (hv.integral_hasStrictDerivAt 0 t).hasDerivAt.const_add x₀
-  refine ⟨fun t ht ↦ (hderiv t).congr_of_eventuallyEq
-      (heq.eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2)),
-    fun t ht ↦ (hderiv t).hasDerivWithinAt.congr_of_eventuallyEq
-      ((heq.mono (Set.Icc_subset_Icc_left ht.1)).eventuallyEq_of_mem (Icc_mem_nhdsGE ht.2))
-      (heq ⟨ht.1, ht.2.le⟩)⟩
-
 /-- **The path-derivative of the Picard residual at the constant base solution is invertible.**
 For a continuously differentiable field vanishing near `x₀` at the base parameter `p₀`, the
 restriction of
@@ -209,7 +189,22 @@ theorem exists_contDiffAt_picard_solution_of_contDiff
     hR.implicitFunction_apply_self hn hinvertible, ?_⟩
   filter_upwards [hγeq] with p hp
   have hpicard := (picardResidual_eq_zero_iff gc x₀ p (γ p)).mp hp
-  exact ⟨hpicard, hasDerivAt_of_forall_eq_integral (by fun_prop) hpicard⟩
+  -- On `[0, 1]` the extended path is its initial value plus the integral of the field along it,
+  -- so the fundamental theorem of calculus gives its derivatives.
+  have heq : Set.EqOn (fun s ↦ γ p (Set.projIcc 0 1 zero_le_one s))
+      (fun s ↦ x₀ + ∫ r in (0 : ℝ)..s, f (p, γ p (Set.projIcc 0 1 zero_le_one r)))
+      (Set.Icc 0 1) := fun s hs ↦ by
+    simp only [Set.projIcc_of_mem zero_le_one hs]
+    exact hpicard ⟨s, hs⟩
+  have hderiv (t : ℝ) : HasDerivAt
+      (fun s ↦ x₀ + ∫ r in (0 : ℝ)..s, f (p, γ p (Set.projIcc 0 1 zero_le_one r)))
+      (f (p, γ p (Set.projIcc 0 1 zero_le_one t))) t :=
+    ((hf.continuous.comp (by fun_prop)).integral_hasStrictDerivAt 0 t).hasDerivAt.const_add x₀
+  refine ⟨hpicard, fun t ht ↦ (hderiv t).congr_of_eventuallyEq
+      (heq.eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2)),
+    fun t ht ↦ (hderiv t).hasDerivWithinAt.congr_of_eventuallyEq
+      ((heq.mono (Set.Icc_subset_Icc_left ht.1)).eventuallyEq_of_mem (Icc_mem_nhdsGE ht.2))
+      (heq ⟨ht.1, ht.2.le⟩)⟩
 
 /-- A parameterized autonomous vector field which is `C^(n+1)` at the base point of a
 finite-dimensional space and vanishes near the base state at the base parameter admits a
