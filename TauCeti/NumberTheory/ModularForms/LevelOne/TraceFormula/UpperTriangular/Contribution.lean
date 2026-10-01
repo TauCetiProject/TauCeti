@@ -47,62 +47,6 @@ open Matrix MvPolynomial MulOpposite MonoidAlgebra
 
 namespace TauCeti
 
-private theorem coeff_linearSubst_upperTriangular_monomial {R : Type*} [CommRing R]
-    (a b d : R) (s : Fin 2 →₀ ℕ) :
-    (linearSubst (!![a, b; 0, d] : Matrix (Fin 2) (Fin 2) R) (monomial s 1)).coeff s =
-      a ^ s 0 * d ^ s 1 := by
-  have hCX (r : R) (i : Fin 2) :
-      C r * X i = monomial (Finsupp.single i 1) r := by
-    rw [X, C_mul_monomial, mul_one]
-  have hMC (u : Fin 2 →₀ ℕ) (r q : R) :
-      monomial u r * C q = monomial u (r * q) := by
-    rw [mul_comm, C_mul_monomial, mul_comm]
-  have hnat (m : ℕ) : (m : MvPolynomial (Fin 2) R) = C (m : R) := by
-    simp
-  have hexp (x : ℕ) (hx : x ≤ s 0) :
-      Finsupp.single (0 : Fin 2) x +
-          (Finsupp.single (1 : Fin 2) (s 0) - Finsupp.single (1 : Fin 2) x) +
-          Finsupp.single (1 : Fin 2) (s 1) = s ↔
-        x = s 0 := by
-    constructor
-    · intro h
-      have h0 := DFunLike.congr_fun h (0 : Fin 2)
-      simpa using h0
-    · rintro rfl
-      ext i
-      fin_cases i <;> simp
-  have hsplit :
-      Finsupp.single (0 : Fin 2) (s 0) + Finsupp.single (1 : Fin 2) (s 1) = s := by
-    ext i
-    fin_cases i <;> simp
-  rw [linearSubst_eq_aeval, aeval_monomial]
-  rw [s.prod_fintype (fun i k ↦
-    (∑ j, C ((!![a, b; 0, d] : Matrix (Fin 2) (Fin 2) R) i j) * X j) ^ k) (by simp)]
-  simp only [Fin.sum_univ_two, Fin.prod_univ_two]
-  simp only [map_one, one_mul]
-  simp only [Fin.isValue, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_fin_one, Matrix.cons_val_one, C_0, zero_mul, zero_add]
-  change (((C a * X (0 : Fin 2) + C b * X (1 : Fin 2)) ^ s 0 *
-    (C d * X (1 : Fin 2)) ^ s 1).coeff s = _)
-  rw [hCX, hCX, hCX]
-  rw [add_pow, Finset.sum_mul]
-  simp_rw [monomial_pow, monomial_mul_monomial]
-  simp_rw [hnat]
-  rw [MvPolynomial.coeff_sum]
-  change (∑ c ∈ Finset.range (s 0 + 1),
-    (monomial
-        (c • Finsupp.single (0 : Fin 2) 1 +
-          (s 0 - c) • Finsupp.single (1 : Fin 2) 1)
-        (a ^ c * b ^ (s 0 - c)) * C ((s 0).choose c : R) *
-      monomial ((s 1) • Finsupp.single (1 : Fin 2) 1) (d ^ s 1)).coeff s) = _
-  simp_rw [hMC, monomial_mul_monomial]
-  simp only [coeff_monomial]
-  rw [Finset.sum_eq_single (s 0)]
-  · simp [hsplit]
-  · intro x hx hne
-    simp [hexp _ (Nat.le_of_lt_succ (Finset.mem_range.mp hx)), hne]
-  · simp
-
 private theorem binaryFormRep_upperTriangular_basis_repr {R : Type*} [CommRing R] (w : ℕ)
     (a b d : ℤ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
     (TauCeti.homogeneousMonomialBasis (R := R) w).repr
@@ -174,7 +118,9 @@ theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) (hd : 0 < d) :
       if 0 < b ∧ b < d - a then 12
       else if a = d ∧ b = 0 then 2
       else if 0 ≤ b ∧ b ≤ d - a then 6 else 0 := by
-  change weight₁ a b 0 d - weight₂ a b 0 d - weight₃ a b 0 d - weight₄ a b 0 d = _
+  rw [weight]
+  simp only [Matrix.of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one,
+    Fin.isValue]
   grind [weight₁, weight₂, weight₃, weight₄, chainWeight₃]
 
 end PopaZagier
