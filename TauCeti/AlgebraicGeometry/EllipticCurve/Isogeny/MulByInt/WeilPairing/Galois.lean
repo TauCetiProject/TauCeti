@@ -32,6 +32,8 @@ divisor attached to `T` to the divisor attached to `σ T`
 
 ## Main results
 
+* `TauCeti.Isogeny.divisorGaloisAction_divisorPullback_mulByIntIsogeny_ofPoint`: the pullback
+  `[n]^* (T)` is Galois-equivariant in `T`.
 * `TauCeti.Isogeny.divisorGaloisAction_weilPairingDivisor`: the divisor
   `[n]^* (T) - [n]^* (O)` is Galois-equivariant in `T`.
 * `TauCeti.Isogeny.weilPairing_torsionGaloisAction`: the Weil pairing is Galois-equivariant.
@@ -53,6 +55,28 @@ open AlgebraicGeometry
 variable {F K : Type*} [Field F] [Field K] [DecidableEq K] [Algebra F K] [IsSepClosed K]
   (W : WeierstrassCurve F) [W.IsElliptic]
 
+/-- **Pullback along `[n]` is Galois-equivariant on points**: an `F`-automorphism `σ` of a
+separably closed field `K` in which `n` is invertible carries `[n]^* (T)` to `[n]^* (σ T)`. -/
+theorem divisorGaloisAction_divisorPullback_mulByIntIsogeny_ofPoint (σ : K ≃ₐ[F] K) {n : ℤ}
+    (hchar : (n : K) ≠ 0) (T : (W⁄K).toAffine.Point) :
+    letI := (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).fieldPullback.toAlgebra
+    Multiplicative.toAdd (W.divisorGaloisAction σ)
+        ((mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).divisorPullback
+          (fun _ ↦ rfl) (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace T).1)) =
+      (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).divisorPullback
+        (fun _ ↦ rfl) (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace
+          (Multiplicative.toAdd (W.pointGaloisAction σ) T)).1) := by
+  let _ := (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).fieldPullback.toAlgebra
+  set e := Multiplicative.toAdd (W.pointGaloisAction σ)
+  -- `σ` carries the fibre of `[n]` over `T` onto the fibre over `σ T`
+  rw [divisorPullback_mulByIntIsogeny_ofPoint _ hchar,
+    divisorPullback_mulByIntIsogeny_ofPoint _ hchar, map_sum]
+  refine Finset.sum_equiv e.toEquiv (fun R ↦ ?_) fun R _ ↦ ?_
+  · simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, AddEquiv.toEquiv_eq_coe,
+      EquivLike.coe_coe, ← map_zsmul, e.injective.eq_iff]
+  · rw [divisorGaloisAction_ofPoint, placeGaloisAction_pointEquivDegreeOnePlace]
+    simp only [e, AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe]
+
 /-- **The divisor `[n]^* (T) - [n]^* (O)` is Galois-equivariant**: an `F`-automorphism `σ` of a
 separably closed field `K` in which `n` is invertible carries it to `[n]^* (σ T) - [n]^* (O)`. -/
 @[simp]
@@ -62,32 +86,21 @@ theorem divisorGaloisAction_weilPairingDivisor (σ : K ≃ₐ[F] K) {n : ℤ} (h
         (weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar) T) =
       weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)
         (Multiplicative.toAdd (W.pointGaloisAction σ) T) := by
-  let _ := (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).fieldPullback.toAlgebra
-  let e := Multiplicative.toAdd (W.pointGaloisAction σ)
-  -- `σ` carries the fibre of `[n]` over `T` onto the fibre over `σ T`
-  have hfib (T : (W⁄K).toAffine.Point) :
-      Multiplicative.toAdd (W.divisorGaloisAction σ)
-          ((mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).divisorPullback
-            (fun _ ↦ rfl) (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace T).1)) =
-        (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).divisorPullback
-          (fun _ ↦ rfl)
-          (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (e T)).1) := by
-    rw [divisorPullback_mulByIntIsogeny_ofPoint _ hchar,
-      divisorPullback_mulByIntIsogeny_ofPoint _ hchar, map_sum]
-    refine Finset.sum_equiv e.toEquiv (fun R ↦ ?_) fun R _ ↦ ?_
-    · simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, AddEquiv.toEquiv_eq_coe,
-        EquivLike.coe_coe, ← map_zsmul, e.injective.eq_iff]
-    · rw [divisorGaloisAction_ofPoint, placeGaloisAction_pointEquivDegreeOnePlace]
-      simp only [e, AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe]
-  have h0 : e .zero = .zero := by rw [← Point.zero_def, map_zero]
+  have h0 : Multiplicative.toAdd (W.pointGaloisAction σ) .zero = .zero := by
+    rw [← Point.zero_def, map_zero]
   rw [weilPairingDivisor_def, weilPairingDivisor_def, map_sub,
-    ← coe_pointEquivDegreeOnePlace_zero, hfib, hfib, h0]
+    ← coe_pointEquivDegreeOnePlace_zero,
+    divisorGaloisAction_divisorPullback_mulByIntIsogeny_ofPoint W σ hchar,
+    divisorGaloisAction_divisorPullback_mulByIntIsogeny_ofPoint W σ hchar, h0]
 
 variable (N : ℕ) [NeZero N] (hN : (N : K) ≠ 0)
 
 /-- **The Weil pairing is Galois-equivariant** (Silverman III.8.1(e)): for an `F`-automorphism `σ`
 of a separably closed field `K` in which `N` is invertible, `e_N(σ S, σ T) = σ (e_N(S, T))`. -/
 @[simp]
+-- `torsionGaloisAction` acts on `AddSubgroup.torsionBy`, which Mathlib defines as
+-- `(Submodule.torsionBy ℤ _ _).toAddSubgroup`, so its carrier is that of the Weil pairing's domain
+-- `Submodule.torsionBy ℤ _ _` and `S`, `T` may be fed to it directly.
 theorem weilPairing_torsionGaloisAction (σ : K ≃ₐ[F] K)
     (S T : Submodule.torsionBy ℤ (W⁄K).toAffine.Point (N : ℤ)) :
     weilPairing (W⁄K) N hN (Multiplicative.toAdd (W.torsionGaloisAction N σ) S)
@@ -100,10 +113,12 @@ theorem weilPairing_torsionGaloisAction (σ : K ≃ₐ[F] K)
   have hσg : Divisor.principal (W⁄K).toAffine.isFunctionField σg =
       weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)
         (Multiplicative.toAdd (W.torsionGaloisAction N σ) T :) := by
+    -- `torsionGaloisAction_apply_coe` fires through the unfolding of `AddSubgroup.torsionBy`
     rw [divisorGaloisAction_principal, hg, divisorGaloisAction_weilPairingDivisor W σ hchar,
       torsionGaloisAction_apply_coe]
   refine Additive.toMul.injective <| Subtype.val_injective <| Units.val_injective <|
     (algebraMap K (W⁄K).toAffine.FunctionField).injective ?_
+  -- as above, `torsionGaloisAction_apply_coe` fires by unfolding `AddSubgroup.torsionBy`
   rw [algebraMap_weilPairing (W⁄K) N hN hσg, toMul_ofMul, restrictRootsOfUnity_coe_apply,
     ← functionFieldGaloisAction_algebraMap, algebraMap_weilPairing (W⁄K) N hN hg, map_div₀,
     functionFieldGaloisAction_translation, torsionGaloisAction_apply_coe]
