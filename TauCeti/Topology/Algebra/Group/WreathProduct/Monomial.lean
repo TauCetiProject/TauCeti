@@ -19,13 +19,15 @@ coordinate topology of the permutation wreath product when multiplication on the
 separately continuous.
 The finite-coordinate form is continuous after a chosen relabeling of the cosets by
 `Fin U.index`.
-The public continuous maps are `TauCeti.monomialContinuousHom` and
-`TauCeti.monomialFinContinuousHom`, with `U` as their first explicit argument.
+The public continuous maps are `Subgroup.monomialContinuousHom` and
+`Subgroup.monomialFinContinuousHom`, used as `U.monomialContinuousHom hU s`.
 -/
 
 public section
 
-namespace TauCeti
+namespace Subgroup
+
+open TauCeti
 
 universe u
 
@@ -47,7 +49,7 @@ theorem continuous_monomialHom [TopologicalSpace G] [SeparatelyContinuousMul G]
       apply Subtype.ext
       simp only [monomialHom_left, Subtype.coe_mk]
   · intro x
-    exact (QuotientGroup.continuous_smul_const U x).congr fun g =>
+    exact (U.continuous_smul_const x).congr fun g =>
       (monomialHom_right U s g x).symm
 
 /-- The continuous monomial homomorphism for an open subgroup and a chosen transversal. -/
@@ -91,4 +93,4 @@ its underlying map. -/
 
 end FiniteCoordinates
 
-end TauCeti
+end Subgroup

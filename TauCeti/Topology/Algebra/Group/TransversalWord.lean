@@ -48,7 +48,7 @@ theorem continuous_lWord (hU : IsOpen (U : Set G)) (u : G ⧸ U) : Continuous (l
   rw [h]
   exact (continuous_lWord_mul U t).comp
     (continuous_id.prodMk
-      (continuous_const.prodMk (QuotientGroup.continuous_inv_smul_const U u)))
+      (continuous_const.prodMk (U.continuous_inv_smul_const u)))
 
 /-- For an *open* subgroup `U` the transversal word is continuous jointly in its group variable
 and in a coset index translated by a second group variable: `(γ, η) ↦ ℓᵗ_{γ⁻¹ • u}(η)`. Here both
@@ -62,9 +62,9 @@ theorem continuous_lWord_inv_smul (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
     funext fun q => lWord_def U t _ _
   rw [h]
   have hfst : Continuous fun q : G × G => (q.1⁻¹ • u : G ⧸ U) :=
-    (QuotientGroup.continuous_inv_smul_const U u).comp continuous_fst
+    (U.continuous_inv_smul_const u).comp continuous_fst
   have hsnd : Continuous fun q : G × G => (q.2⁻¹ • q.1⁻¹ • u : G ⧸ U) :=
-    (QuotientGroup.continuous_inv_smul U).comp (continuous_snd.prodMk hfst)
+    U.continuous_inv_smul.comp (continuous_snd.prodMk hfst)
   exact (continuous_lWord_mul U t).comp (continuous_snd.prodMk (hfst.prodMk hsnd))
 
 end TauCeti

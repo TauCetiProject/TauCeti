@@ -14,11 +14,11 @@ public import TauCeti.GroupTheory.TransversalWord
 A transversal for `U ≤ G` embeds `G` in the permutation wreath product with base group `U`
 and coordinates indexed by `G ⧸ U`. Its permutation part is left translation on cosets; its
 coordinate at `x` is the transversal word `r(x)⁻¹ g r(g⁻¹ • x)`, where
-`r = leftTransversalRep U s` for `s : U.LeftTransversal`. Mathlib's bundled transversal supplies
+`r = U.leftTransversalRep s` for `s : U.LeftTransversal`. Mathlib's bundled transversal supplies
 the representatives and their section property; the monomial maps consume that same choice.
 The cocycle law gives the homomorphism, and both the coset-indexed and finite-coordinate forms
-are injective. The public maps are called as `TauCeti.monomialHom U s` and
-`TauCeti.monomialFinHom U s e`, where `e` labels the cosets by `Fin U.index`.
+are injective. The public maps live in the `Subgroup` namespace and are called as
+`U.monomialHom s` and `U.monomialFinHom s e`, where `e` labels the cosets by `Fin U.index`.
 Continuity for an open subgroup is proved in
 `TauCeti.Topology.Algebra.Group.WreathProduct.Monomial`.
 
@@ -29,7 +29,9 @@ This is the monomial construction used in Evens' multiplicative transfer; see L.
 
 public section
 
-namespace TauCeti
+namespace Subgroup
+
+open TauCeti
 
 universe u v
 
@@ -37,7 +39,7 @@ variable {G : Type u} [Group G] (U : Subgroup G)
 
 /-- The monomial homomorphism associated to a bundled transversal `s` of `U`. Its permutation
 part is left translation on `G ⧸ U`; the coordinate at `x` is the element
-`r(x)⁻¹ g r(g⁻¹ • x)` of `U`, where `r = leftTransversalRep U s`. -/
+`r(x)⁻¹ g r(g⁻¹ • x)` of `U`, where `r = U.leftTransversalRep s`. -/
 noncomputable def monomialHom (s : U.LeftTransversal) :
     G →* WreathProduct U (G ⧸ U) where
   toFun g := ⟨(fun x => ⟨lWord U (leftTransversalRep U s) x g,
@@ -151,4 +153,4 @@ theorem monomialFinHom_injective (s : U.LeftTransversal)
 
 end FiniteCoordinates
 
-end TauCeti
+end Subgroup

@@ -29,10 +29,10 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 
 ## Main results
 
-* `TauCeti.QuotientGroup.continuous_smul_const`: translation of a fixed coset is continuous.
-* `TauCeti.QuotientGroup.continuous_inv_smul_const`: inverse translation of a fixed coset is
+* `Subgroup.continuous_smul_const`: translation of a fixed coset is continuous.
+* `Subgroup.continuous_inv_smul_const`: inverse translation of a fixed coset is
   continuous when the quotient is discrete.
-* `TauCeti.QuotientGroup.continuous_inv_smul`: inverse translation is jointly continuous when
+* `Subgroup.continuous_inv_smul`: inverse translation is jointly continuous when
   the quotient is discrete.
 * `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
   discrete.
@@ -48,9 +48,9 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 
 public section
 
-namespace TauCeti
+namespace Subgroup
 
-namespace QuotientGroup
+open TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
@@ -73,6 +73,12 @@ theorem continuous_inv_smul (U : Subgroup G) [DiscreteTopology (G ⧸ U)] :
     Continuous (fun p : G × (G ⧸ U) => p.1⁻¹ • p.2) :=
   continuous_prod_of_discrete_right.mpr fun u => by
     simpa using continuous_inv_smul_const U u
+
+end Subgroup
+
+namespace TauCeti
+
+namespace QuotientGroup
 
 section Discrete
 
