@@ -52,10 +52,6 @@ is the identification, and `TauCeti.Quiver.Cycle.index` reads the underlying ind
 `PLift` of the proposition that the head is the cyclic successor of the tail, which makes the
 arrows between any two vertices a subsingleton for free.
 
-`TauCeti.Quiver.Cycle.induction_of_ne_last` is proved by induction on the *underlying natural
-number* of the index, not on the vertex: the successor step needs to know that the index does not
-wrap around, which is exactly what excluding `TauCeti.Quiver.Cycle.last` supplies.
-
 ## References
 
 The cycle quiver is the cyclic orientation of the extended Dynkin diagram `Ã_{n+1}`, one of the
@@ -146,6 +142,9 @@ the first vertex and passes from a vertex other than the last one to its cyclic 
 every vertex: walking forward from `first` reaches every vertex without ever leaving `last`. -/
 theorem induction_of_ne_last {P : Cycle n → Prop} (hfirst : P first)
     (hstep : ∀ i : Cycle n, i ≠ last → P i → P i.succ) (i : Cycle n) : P i := by
+  -- The induction runs on the underlying natural number of the index rather than on the vertex:
+  -- the successor step needs to know that the index does not wrap around, which is exactly what
+  -- excluding `last` supplies.
   obtain ⟨⟨v, hv⟩⟩ := i
   induction v with
   | zero =>

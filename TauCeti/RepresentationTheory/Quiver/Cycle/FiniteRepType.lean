@@ -58,16 +58,13 @@ vertices -- is drawn in `TauCeti.RepresentationTheory.Quiver.FiniteRepType.Obstr
 All the arrows act by multiplication by an element of `k[X]/(Xᵐ⁺¹)`, recorded by
 `TauCeti.cycleNilpotentWeight`, rather than the closing arrow acting by multiplication and the
 others by the identity: with one uniform shape the representation is a single application of
-`CategoryTheory.Paths.lift`, and the two cases of the naturality argument are the two values of
-the weight.
+`CategoryTheory.Paths.lift`.
 
 `TauCeti.cycleNilpotentRep` carries `@[expose]` for the same reason as
-`TauCeti.oneLoopNilpotentRep`: the vertex space has to reduce to `k[X]/(Xᵐ⁺¹)` for the statements
-below to elaborate at all, a functor built by `CategoryTheory.Paths.lift` revealing its value on
-objects only through its definition. The components of an endomorphism are read off by the private
-`cycleApp`, which also absorbs the passage from a vertex to the corresponding object of
-`CategoryTheory.Paths`; stating the naturality square through it, rather than through
-`CategoryTheory.NatTrans.app` directly, is what keeps that coercion out of the rewrite motives.
+`TauCeti.oneLoopNilpotentRep`: a functor built by `CategoryTheory.Paths.lift` records its value on
+objects only in its definition, so the vertex spaces are visible as `k[X]/(Xᵐ⁺¹)` only once the
+body is exposed. The components of an endomorphism at the vertices of the cycle are collected by
+the private `cycleApp`.
 
 ## References
 
@@ -98,6 +95,7 @@ theorem cycleNilpotentWeight_last :
   ite_eq_left rfl
 
 /-- Every arrow but the closing one has weight `1`. -/
+@[simp]
 theorem cycleNilpotentWeight_of_ne_last {i : Quiver.Cycle n} (h : i ≠ Quiver.Cycle.last) :
     cycleNilpotentWeight k n m i = 1 :=
   ite_eq_right h
@@ -143,11 +141,11 @@ private noncomputable def cycleApp
     AdjoinRoot ((X : k[X]) ^ (m + 1)) →ₗ[k] AdjoinRoot ((X : k[X]) ^ (m + 1)) :=
   (f.app (i : Paths (Quiver.Cycle n))).hom
 
-/-- The component at a vertex is the value of the natural transformation at the corresponding
-object of `CategoryTheory.Paths`, named through `CategoryTheory.Paths.of`. This is what the
-identities below rewrite with: unfolding `cycleApp` instead leaves a vertex where an object of
-`CategoryTheory.Paths` is expected, and the goal is then no longer type-correct at the transparency
-`rw` matches at, so the `CategoryTheory.NatTrans` lemmas cease to apply to it. -/
+-- Rewriting with this lemma, rather than unfolding `cycleApp`, is what keeps the passage from a
+-- vertex to the corresponding object of `CategoryTheory.Paths` named as `Paths.of`, where the
+-- `CategoryTheory.NatTrans` lemmas can still see it.
+/-- The component at a vertex is the value of the natural transformation at the image of that
+vertex under the embedding `CategoryTheory.Paths.of` of the quiver in its path category. -/
 private theorem cycleApp_def (f : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m)
     (i : Quiver.Cycle n) :
     cycleApp f i = (f.app ((Paths.of (Quiver.Cycle n)).obj i)).hom := (rfl)
@@ -160,20 +158,22 @@ private theorem cycleNilpotentRep_hom_ext
   funext v
   exact ModuleCat.hom_ext (h v)
 
-/-- The zero morphism, the identity and a composite are read off componentwise. Each of the three
-identities below closes with a `rfl` that only reconciles the `k`-module instances carried by
-`ModuleCat.of k (AdjoinRoot (Xᵐ⁺¹))` with those on `AdjoinRoot (Xᵐ⁺¹)` itself; the two sides are
-otherwise identical. -/
+-- Each of the three identities below closes with a `rfl` that only reconciles the `k`-module
+-- instances carried by `ModuleCat.of k (AdjoinRoot (Xᵐ⁺¹))` with those on `AdjoinRoot (Xᵐ⁺¹)`
+-- itself; the two sides are otherwise identical.
+/-- Every component of the zero endomorphism is zero. -/
 private theorem cycleApp_zero (i : Quiver.Cycle n) :
     cycleApp (0 : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m) i = 0 := by
   rw [cycleApp_def, NatTrans.app_zero, ModuleCat.hom_zero]
   rfl
 
+/-- Every component of the identity endomorphism is the identity. -/
 private theorem cycleApp_id (i : Quiver.Cycle n) :
     cycleApp (𝟙 (cycleNilpotentRep k n m)) i = LinearMap.id := by
   rw [cycleApp_def, NatTrans.id_app, ModuleCat.hom_id]
   rfl
 
+/-- The components of a composite of endomorphisms are the composites of their components. -/
 private theorem cycleApp_comp (f g : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m)
     (i : Quiver.Cycle n) : cycleApp (f ≫ g) i = (cycleApp g i).comp (cycleApp f i) := by
   rw [cycleApp_def, cycleApp_def, cycleApp_def, NatTrans.comp_app, ModuleCat.hom_comp]
