@@ -142,13 +142,13 @@ theorem IsTateRing.eq_top_of_isAdic [IsTateRing A] {I : Ideal A} (hI : IsAdic I)
   exact Ideal.eq_top_of_isUnit_mem _ (hI.isTopologicallyNilpotent_iff_mem_radical.mp
     ha.isTopologicallyNilpotent) ha.isUnit
 
-/-- **A finitely generated adic ring is Tate exactly when its ideal is the unit ideal.** For
-`I = ⊤` the topology is indiscrete and `1` is a pseudouniformiser; otherwise
+/-- **An adic ring is Tate exactly when its ideal is the unit ideal.** For `I = ⊤` the topology
+is indiscrete and `1` is a pseudouniformiser; otherwise
 `TauCeti.Huber.IsTateRing.eq_top_of_isAdic` applies. -/
-theorem isTateRing_iff_eq_top_of_isAdic {I : Ideal A} (hI : IsAdic I) (hfg : I.FG) :
+theorem isTateRing_iff_eq_top_of_isAdic {I : Ideal A} (hI : IsAdic I) :
     IsTateRing A ↔ I = ⊤ := by
   refine ⟨fun _ ↦ IsTateRing.eq_top_of_isAdic hI, fun h ↦ ?_⟩
-  have := isHuberRing_of_isAdic I hI hfg
+  have := isHuberRing_of_isAdic I hI (h ▸ ⟨{1}, by simp⟩)
   refine ⟨⟨1, isPseudoUniformizer_iff.mpr ⟨isUnit_one, ?_⟩⟩⟩
   rw [hI.isTopologicallyNilpotent_iff_mem_radical, h, Ideal.radical_top]
   exact Submodule.mem_top
