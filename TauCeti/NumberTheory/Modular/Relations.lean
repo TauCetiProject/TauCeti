@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -24,7 +24,7 @@ the lower-triangular matrix `T′ = (1 0; 1 1)`.
 * `TauCeti.ModularGroup.coe_S_sq`, `TauCeti.ModularGroup.coe_S_inv`: `S² = 1` and `S⁻¹ = S`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_pow_three`, `TauCeti.ModularGroup.coe_T_mul_coe_S_inv`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_inv`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
-* `TauCeti.ModularGroup.coe_S_mul_coe_S`, `Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S`:
+* `ModularGroup.S_mul_S_PSL2Z`, `Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S`:
   `S * S = 1` and `g * S * S = g`, the product forms of `S² = 1`; in particular `U * S = T`.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
@@ -69,16 +69,11 @@ theorem coe_T_mul_coe_S_inv : ((T : PSL(2, ℤ)) * S)⁻¹ = ((T : PSL(2, ℤ)) 
 theorem coe_T_mul_coe_S_sq_inv : (((T : PSL(2, ℤ)) * S) ^ 2)⁻¹ = (T : PSL(2, ℤ)) * S := by
   rw [← coe_T_mul_coe_S_inv, inv_inv]
 
-/-- The product form of `S² = 1` in `PSL(2, ℤ)`. -/
--- Mathlib's `ModularGroup.S_mul_S_PSL2Z` already simplifies this product.
-theorem coe_S_mul_coe_S : (S : PSL(2, ℤ)) * S = 1 := by
-  rw [← sq, coe_S_sq]
-
 /-- Right multiplication by `S` is an involution of `PSL(2, ℤ)`. -/
 @[simp]
 theorem _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S (g : PSL(2, ℤ)) :
     g * S * S = g := by
-  rw [mul_assoc, coe_S_mul_coe_S, mul_one]
+  rw [mul_assoc, _root_.ModularGroup.S_mul_S_PSL2Z, mul_one]
 
 /-- Popa and Zagier's `T′ = (1 0; 1 1)`, the lower-triangular counterpart of `T`. -/
 def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
