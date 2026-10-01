@@ -81,13 +81,10 @@ variable [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
   (htriv : ∀ (g : G) (x : ZMod p), g • x = x) (hcd : CohomologicalDimensionLE.{u} p G 2)
 include htriv hcd
 
-/-- **A character that cups trivially with `H¹` doubles the order of `H²` on its kernel.** Let `G`
-be a profinite group with `cd_p G ≤ 2` and let `χ : G → 𝔽_p` be a surjective continuous character
+/-- **A character cupping trivially with `H¹` bounds `H²` of its kernel from below.** Let `G` be a
+profinite group with `cd_p G ≤ 2` and let `χ : G → 𝔽_p` be a surjective continuous character
 with `χ ⌣ y = 0` in `H²(G, 𝔽_p)` for every `y ∈ H¹(G, 𝔽_p)`. Then
-`|H²(G, 𝔽_p)|² ≤ |H²(ker χ, 𝔽_p)|`, when the right-hand side is finite.
-
-Proof: the connecting map of `0 → 𝔽_p → E(χ) → 𝔽_p → 0` is `χ ⌣ -`, so `H²(G, E(χ))` has order
-`|H²(G, 𝔽_p)|²`, and it is a quotient of `H²(G, Coind_{ker χ}^G 𝔽_p) ≅ H²(ker χ, 𝔽_p)`. -/
+`|H²(G, 𝔽_p)|² ≤ |H²(ker χ, 𝔽_p)|`, when the right-hand side is finite. -/
 theorem natCard_H2_sq_le_natCard_H2_ker (χ : G →ₜ* Multiplicative (ZMod p))
     (hχ : Function.Surjective χ)
     (hcup : ∀ y : H1 G (ZMod p), explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul
@@ -190,15 +187,6 @@ end Counting
 
 section Recognition
 
-/-- A one-dimensional `H²(H, 𝔽_p)` has order `p` on the explicit model. -/
-private theorem natCard_H2_eq_of_finrank_cohomFp_two {H : Type u} [Group H] [TopologicalSpace H]
-    [IsTopologicalGroup H] [LocallyCompactSpace H] [DistribMulAction H (ZMod p)]
-    [ContinuousSMul H (ZMod p)] (htriv : ∀ (h : H) (x : ZMod p), h • x = x)
-    (h2 : Module.finrank (ZMod p) (cohomFp p H 2) = 1) : Nat.card (H2 H (ZMod p)) = p := by
-  have : Module.Finite (ZMod p) (cohomFp p H 2) := Module.finite_of_finrank_eq_succ h2
-  rw [← Nat.card_congr (cohomFpAddEquivH2 p H htriv).toEquiv,
-    Module.natCard_eq_pow_finrank (K := ZMod p), h2, pow_one, Nat.card_zmod]
-
 variable (hcd : CohomologicalDimensionLE.{u} p G 2)
 include hcd
 
@@ -206,15 +194,14 @@ include hcd
 implication from (ii) to (i), in the sharpened form over the subgroups of index `p`). Let `G` be a
 topologically finitely generated pro-`p` group with `cd_p G ≤ 2` and `dim H²(G, 𝔽_p) = 1`. If
 `dim H²(U, 𝔽_p) = 1` for every open normal subgroup `U` of index `p`, then `G` is a Demushkin
-group.
-
-A nonzero class `a ∈ H¹(G, 𝔽_p)` with `a ⌣ H¹(G, 𝔽_p) = 0` would give a character `χ` with
-`|H²(G, 𝔽_p)|² ≤ |H²(ker χ, 𝔽_p)|` (`natCard_H2_sq_le_natCard_H2_ker`), that is `p² ≤ p`. -/
+group. -/
 theorem isDemushkin_of_finrank_cohomFp_two_openSubgroup (hG : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) (h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1)
     (hU : ∀ U : OpenSubgroup G, (U : Subgroup G).Normal → (U : Subgroup G).index = p →
       Module.finrank (ZMod p) (cohomFp p (U : Subgroup G) 2) = 1) :
     IsDemushkin p G := by
+  -- A nonzero class `a ∈ H¹(G, 𝔽_p)` with `a ⌣ H¹(G, 𝔽_p) = 0` would give a character `χ` with
+  -- `|H²(G, 𝔽_p)|² ≤ |H²(ker χ, 𝔽_p)|` (`natCard_H2_sq_le_natCard_H2_ker`), that is `p² ≤ p`.
   -- The explicit models need an action of `G` on `𝔽_p`; the trivial one is installed for the
   -- duration of the proof and does not appear in the statement.
   let _ := trivialZModAction p G
@@ -253,12 +240,15 @@ theorem isDemushkin_of_finrank_cohomFp_two_openSubgroup (hG : IsProP p G)
       exact Nat.card_zmod p
     have : CompactSpace N := isCompact_iff_compactSpace.mp (N.isClosed_of_isOpen hNopen).isCompact
     have hN2 := hU ⟨N, hNopen⟩ (MonoidHom.normal_ker _) hNindex
-    have hcardN := natCard_H2_eq_of_finrank_cohomFp_two (H := N) (fun n m ↦ htriv n m) hN2
+    have : Module.Finite (ZMod p) (cohomFp p N 2) := Module.finite_of_finrank_eq_succ hN2
+    have hcardN : Nat.card (H2 N (ZMod p)) = p := by
+      rw [natCard_H2_eq_pow_finrank_cohomFp_two p N fun n m ↦ htriv n m, hN2, pow_one]
     have : Finite (H2 N (ZMod p)) :=
       Nat.finite_of_card_ne_zero (by rw [hcardN]; exact hp.out.ne_zero)
     have hle := natCard_H2_sq_le_natCard_H2_ker htriv hcd χ (MonoidHom.range_eq_top.1 hrange)
       hcup
-    rw [natCard_H2_eq_of_finrank_cohomFp_two htriv h2, hcardN] at hle
+    have : Module.Finite (ZMod p) (cohomFp p G 2) := Module.finite_of_finrank_eq_succ h2
+    rw [natCard_H2_eq_pow_finrank_cohomFp_two p G htriv, h2, pow_one, hcardN] at hle
     have := hp.out.two_le
     nlinarith
   exact
@@ -274,16 +264,14 @@ theorem isDemushkin_of_finrank_cohomFp_two_openSubgroup (hG : IsProP p G)
 the implication from (iii) to (i), in the sharpened form over the subgroups of index `p`). Let `G`
 be a topologically finitely generated pro-`p` group with `cd_p G ≤ 2` and `dim H²(G, 𝔽_p) = 1`. If
 `d(U) - 2 = [G : U] (d(G) - 2)` for every open normal subgroup `U` of index `p`, where `d` is the
-topological generator rank, then `G` is a Demushkin group.
-
-By the three-term Euler formula the rank condition says `dim H²(U, 𝔽_p) = 1`, which is
-`isDemushkin_of_finrank_cohomFp_two_openSubgroup`. -/
+topological generator rank, then `G` is a Demushkin group. -/
 theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup (hG : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) (h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1)
     (hU : ∀ U : OpenSubgroup G, (U : Subgroup G).Normal → (U : Subgroup G).index = p →
       (topologicalGeneratorRankNat (U : Subgroup G) (hfg.of_openSubgroup U) : ℤ) - 2 =
         p * ((topologicalGeneratorRankNat G hfg : ℤ) - 2)) :
     IsDemushkin p G := by
+  -- By the three-term Euler formula the rank condition says `dim H²(U, 𝔽_p) = 1`.
   refine isDemushkin_of_finrank_cohomFp_two_openSubgroup hcd hG hfg h2 fun U hUn hUi ↦ ?_
   -- The explicit models need an action of `G` on `𝔽_p`; the trivial one is installed for the
   -- duration of the proof and does not appear in the statement.
@@ -291,9 +279,9 @@ theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup (hG : IsProP p G
   have htriv : ∀ (g : G) (m : ZMod p), g • m = m := fun _ _ ↦ rfl
   have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
   have : CompactSpace (U : Subgroup G) := isCompact_iff_compactSpace.mp U.isClosed.isCompact
-  have hcardG := natCard_H2_eq_of_finrank_cohomFp_two htriv h2
-  have : Finite (H2 G (ZMod p)) :=
-    Nat.finite_of_card_ne_zero (by rw [hcardG]; exact hp.out.ne_zero)
+  have : Module.Finite (ZMod p) (cohomFp p G 2) := Module.finite_of_finrank_eq_succ h2
+  have : Finite (H2 G (ZMod p)) := Nat.finite_of_card_ne_zero (by
+    rw [natCard_H2_eq_pow_finrank_cohomFp_two p G htriv]; exact pow_ne_zero _ hp.out.ne_zero)
   -- the three-term Euler formula for `U`
   have hE := one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG hfg htriv hcd U
   rw [← (cohomFpLinearEquivH2 p G htriv).finrank_eq, h2, hUi] at hE

@@ -43,8 +43,8 @@ the comparison of the explicit and canonical long exact sequences requires.
 
 ## Main definitions
 
-* `TauCeti.CharacterExtension`: the extension module `E(χ)`, a finite discrete `G`-module with
-  continuous action.
+* `TauCeti.CharacterExtension`: the extension module `E(χ)`, a discrete `G`-module with continuous
+  action, finite when `p ≠ 0`.
 * `TauCeti.CharacterExtension.shortExact`: the short exact sequence `0 → 𝔽_p → E(χ) → 𝔽_p → 0`.
 * `TauCeti.CharacterExtension.coindTrace`: the equivariant map `Coind_N^G 𝔽_p → E(χ)` for a
   subgroup `N` on which `χ` vanishes.
