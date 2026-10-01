@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.PDCode.Kauffman
 public import TauCeti.KnotTheory.PDCode.Planar
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.SumCongr
 import TauCeti.GroupTheory.Perm.SwapFactors
 
@@ -867,9 +868,8 @@ private theorem faceCount_insertClasp_eq_ite
     (D.insertClasp p q b hqp hqe).faceCount = D.faceCount +
       if (D.crossingRotation * D.edgePair.val).SameCycle p (D.edgePair.val q) then 2 else 0 := by
   rw [faceCount_def, facePerm_def, crossingRotation_insertClasp, insertClasp_edgePair_val,
-    ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr, ← orbitCount_conj
-      (Perm.sumCongr (Perm.sumCongr D.crossingRotation (finRotate 4)) (finRotate 4)),
-    mul_assoc, mul_assoc, mul_inv_cancel, mul_one, orbitCount_finRotate_mul_claspMatching,
+    ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr, orbitCount_mul_comm,
+    orbitCount_finRotate_mul_claspMatching,
     faceCount_eq_orbitCount_crossingRotation_mul_edgePair]
 
 /-- **Clasp insertion inside a face adds two faces.** When the face at the far end
@@ -920,18 +920,6 @@ private theorem claspOrbit_claspFun (z : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
   rw [← insertClasp_edgePair_apply, ← toPermutationTriple_σ1]
   exact PermutationTriple.mk_σ1_apply _ _
 
-/-- A function on the slots of a crossing unchanged by turning to the next slot is constant. -/
-private theorem apply_eq_apply_zero_of_add_one {β : Type*} {f : Fin 4 → β}
-    (h : ∀ i, f (i + 1) = f i) (i : Fin 4) : f i = f 0 := by
-  have h1 : f 1 = f 0 := h 0
-  have h2 : f 2 = f 0 := (h 1).trans h1
-  have h3 : f 3 = f 0 := (h 2).trans h2
-  fin_cases i
-  · rfl
-  · exact h1
-  · exact h2
-  · exact h3
-
 /-- The two new crossings and the ends of the two cut arcs all lie in one connected component of
 the new code. -/
 private theorem claspOrbit_eq_inl_inr_zero :
@@ -967,6 +955,25 @@ private theorem claspOrbit_eq_inl_inr_zero :
     simpa [claspFun] using hE (.inl (.inr 1))
   · rw [← hv' 2]
     simpa [claspFun] using hE (.inr 2)
+
+/-- Running along an old arc stays in one connected component of the new code. -/
+private theorem claspOrbit_inl_inl_edgePair (x : Fin (4 * n)) :
+    claspOrbit D p q b hqp hqe (.inl (.inl (D.edgePair.val x))) =
+      claspOrbit D p q b hqp hqe (.inl (.inl x)) := by
+  obtain ⟨-, -, hends⟩ := claspOrbit_eq_inl_inr_zero D p q b hqp hqe
+  by_cases hx : x = p ∨ x = D.edgePair.val p ∨ x = q ∨ x = D.edgePair.val q
+  · have hx' : D.edgePair.val x = p ∨ D.edgePair.val x = D.edgePair.val p ∨
+        D.edgePair.val x = q ∨ D.edgePair.val x = D.edgePair.val q := by
+      rcases hx with rfl | rfl | rfl | rfl
+      · exact .inr (.inl rfl)
+      · exact .inl (D.edgePair.prop.apply_apply _)
+      · exact .inr (.inr (.inr rfl))
+      · exact .inr (.inr (.inl (D.edgePair.prop.apply_apply _)))
+    rw [hends x hx, hends _ hx']
+  · simp only [not_or] at hx
+    obtain ⟨hxp, hxe, hxq, hxe'⟩ := hx
+    have h := claspOrbit_claspFun D p q b hqp hqe (.inl (.inl x))
+    rwa [claspFun_of_ne hxp hxe hxq hxe'] at h
 
 /-- The connected component of `D` containing an old half-edge, or that of `p` for a slot of a
 new crossing. -/
@@ -1051,17 +1058,7 @@ theorem card_monodromyOrbit_insertClasp
       (f := fun x => claspOrbit D p q b hqp hqe (.inl (.inl x))) (fun x => ?_) (fun x => ?_) hσ x
     · simpa [toPermutationTriple_σ0] using claspOrbit_sumCongr D p q b hqp hqe (.inl (.inl x))
     · rw [toPermutationTriple_σ1]
-      by_cases hx : x = p ∨ x = D.edgePair.val p ∨ x = q ∨ x = D.edgePair.val q
-      · rw [hends x hx, hends]
-        rcases hx with rfl | rfl | rfl | rfl
-        · simp
-        · simp [D.edgePair.prop.apply_apply]
-        · simp
-        · simp [D.edgePair.prop.apply_apply]
-      · simp only [not_or] at hx
-        obtain ⟨hxp, hxe, hxq, hxe'⟩ := hx
-        have h := claspOrbit_claspFun D p q b hqp hqe (.inl (.inl x))
-        rwa [claspFun_of_ne hxp hxe hxq hxe'] at h
+      exact claspOrbit_inl_inl_edgePair D p q b hqp hqe x
   · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
     simp only [Quotient.lift_mk, symm_apply_apply]
     rcases z with (x | i) | i

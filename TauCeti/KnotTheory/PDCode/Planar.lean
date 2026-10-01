@@ -227,22 +227,19 @@ theorem face_relabel_eq_face_relabel_iff (D : PDCode n) (half : Perm (Fin (4 * n
   rw [face_eq_face_iff, face_eq_face_iff, facePerm_relabel, permCongr_eq_mul, sameCycle_conj,
     Perm.inv_def, symm_apply_apply, symm_apply_apply]
 
-/-- Turning and then crossing an arc runs through the same orbits as crossing an arc and then
-turning: the two traversals are conjugate by the arc matching. -/
+/-- Two half-edges lie in one orbit of running along an arc and then turning exactly when the far
+ends of their arcs lie on one face: this traversal is conjugate to the face traversal by the arc
+matching. -/
 theorem sameCycle_crossingRotation_mul_edgePair_iff (D : PDCode n) {h h' : Fin (4 * n)} :
     (D.crossingRotation * D.edgePair.val).SameCycle h h' ↔
       D.face (D.edgePair.val h) = D.face (D.edgePair.val h') := by
-  have hconj : D.facePerm = D.edgePair.val * (D.crossingRotation * D.edgePair.val) *
-      D.edgePair.val⁻¹ := by
-    rw [facePerm_def, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
-  rw [face_eq_face_iff, hconj, sameCycle_conj, Perm.inv_def, symm_apply_apply, symm_apply_apply]
+  rw [face_eq_face_iff, facePerm_def, sameCycle_mul_comm_iff]
 
-/-- The faces may equally be counted as the orbits of turning and then crossing an arc, which is
-conjugate to the face traversal. -/
+/-- The faces may equally be counted as the orbits of running along an arc and then turning to
+the next slot, which is conjugate to the face traversal. -/
 theorem faceCount_eq_orbitCount_crossingRotation_mul_edgePair (D : PDCode n) :
     D.faceCount = orbitCount (D.crossingRotation * D.edgePair.val) := by
-  rw [faceCount_def, facePerm_def, ← orbitCount_conj D.crossingRotation]
-  group
+  rw [faceCount_def, facePerm_def, orbitCount_mul_comm]
 
 /-! ### The permutation triple -/
 
