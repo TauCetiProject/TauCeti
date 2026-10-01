@@ -12,7 +12,6 @@ public import TauCeti.Topology.Algebra.Star.Unitary
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!
 # The Lie algebra of the unitary group
@@ -29,12 +28,14 @@ Lie algebra of a closed subgroup of units,
 hypothesis is supplied by `TauCeti.isClosed_unitarySubgroup_units`.
 
 Specialized to `R = Matrix n n 𝕜` with `𝕜 = ℝ` or `ℂ` this is the classical statement that the
-Lie algebra of the unitary group `Matrix.unitaryGroup n 𝕜` is the skew-Hermitian matrices,
-`Aᴴ = -A`: over `ℂ` the unitary Lie algebra `𝔲 n`, and over `ℝ`, where the conjugate transpose is
-the transpose, the orthogonal Lie algebra `LieAlgebra.Orthogonal.so n ℝ`.  Unlike the symplectic
-and special orthogonal computations, which are matrix-level from the start, nothing here is
-special to matrices, so the general algebra is the natural altitude and the matrix groups are
-read off from it.
+Lie algebra of the unitary matrix group is the skew-Hermitian matrices, `Aᴴ = -A`: over `ℂ` the
+unitary Lie algebra `𝔲 n`, and over `ℝ`, where the conjugate transpose is the transpose, the
+orthogonal Lie algebra `LieAlgebra.Orthogonal.so n ℝ`.  The subgroup appearing there,
+`unitarySubgroup (Matrix n n 𝕜)ˣ`, is the preimage of Mathlib's `Matrix.unitaryGroup n 𝕜`, which
+is `unitary (Matrix n n 𝕜)`, under the coercion `Units.val`; that is Mathlib's
+`Units.unitary_eq`.  Unlike the symplectic and special orthogonal computations, which are
+matrix-level from the start, nothing here is special to matrices, so the general algebra is the
+natural altitude and the matrix groups are read off from it.
 
 Over `ℝ` this meets `TauCeti/Geometry/Lie/Subgroup/SpecialOrthogonal.lean` without overlapping
 it: that file computes the Lie algebra of the *special* orthogonal carrier cut out by a quadratic
@@ -42,9 +43,8 @@ form, this one the Lie algebra of the full orthogonal group `unitarySubgroup (Ma
 The two subgroups differ, and their Lie algebras agree because the special orthogonal group is
 open in the orthogonal one, so the two have the same exponential lines through `1`.
 
-The *special* unitary group is not treated: cutting it out of the unitary group needs
-`det (exp A) = exp (Matrix.trace A)`, which Mathlib does not have -- it is still a TODO in
-`Mathlib/Analysis/Normed/Algebra/MatrixExponential.lean`.
+The *special* unitary group needs `det (exp A) = exp (Matrix.trace A)` to cut it out of the
+unitary group, and is not treated here.
 
 ## Main results
 
@@ -52,16 +52,10 @@ The *special* unitary group is not treated: cutting it out of the unitary group 
   abstract exponential line of `x` stays unitary exactly when `x` is skew-adjoint.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`:
   **the Lie algebra of the unitary group is the skew-adjoint elements.**
-* `unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_unitary_iff_conjTranspose_eq_neg`:
+* `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg`:
   the matrix form, with the skew-adjointness spelled out as `Aᴴ = -A`.
-* `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_unitary_iff_mem_so`: over
-  `ℝ` the unitary matrix group is the orthogonal group, and its Lie algebra is Mathlib's `so`.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "Consequences", which asks for the Lie algebra of
-  `Matrix.unitaryGroup` to be the skew-Hermitian matrices.
+* `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_so`: over `ℝ` the
+  unitary matrix group is the orthogonal group, and its Lie algebra is Mathlib's `so`.
 -/
 
 public section
@@ -122,24 +116,23 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 /-- **The Lie algebra of the unitary matrix group is the skew-Hermitian matrices.**  Over `ℂ`
 this is `𝔲 n`; over `ℝ`, where the conjugate transpose is the transpose, it is the orthogonal Lie
 algebra. -/
-theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_unitary_iff_conjTranspose_eq_neg
+-- Normalize membership before the Lie equivalence simplifies to its linear equivalence.
+@[simp↓]
+theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg
     (A : Matrix n n 𝕜) :
     (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm A ∈
         lieSubalgebraOfSubgroup (unitarySubgroup (Matrix n n 𝕜)ˣ) ↔ Aᴴ = -A := by
   rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint,
-    skewAdjoint.mem_iff]
-  rfl
+    skewAdjoint.mem_iff, Matrix.star_eq_conjTranspose]
 
 /-- The real unitary matrix Lie algebra is Mathlib's orthogonal Lie algebra: over `ℝ` the
 conjugate transpose is the transpose, so skew-Hermitian is skew-symmetric. -/
-theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_unitary_iff_mem_so
-    (A : Matrix n n ℝ) :
+theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_so (A : Matrix n n ℝ) :
     (unitsLieAlgebraLieEquiv (R := Matrix n n ℝ)).symm A ∈
         lieSubalgebraOfSubgroup (unitarySubgroup (Matrix n n ℝ)ˣ) ↔
       A ∈ LieAlgebra.Orthogonal.so n ℝ := by
-  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_unitary_iff_conjTranspose_eq_neg,
-    LieAlgebra.Orthogonal.mem_so]
-  rfl
+  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg,
+    LieAlgebra.Orthogonal.mem_so, Matrix.conjTranspose_eq_transpose_of_trivial]
 
 end Matrix
 

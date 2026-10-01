@@ -33,12 +33,6 @@ statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
   the negative as its adjoint.
 * `TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint`: **an exponential line lies in the
   unitary group exactly when its generator is skew-adjoint.**
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "Consequences", which asks for the Lie algebra of `Matrix.unitaryGroup`
-  to be the skew-Hermitian matrices.
 -/
 
 public section
@@ -51,11 +45,11 @@ variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R] [Sta
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
-/-- The adjoint of a unitary exponential is the exponential of the negative.  Unitarity gives
-`star (exp y) * exp y = 1`, and `exp (-y) = (exp y)⁻¹ʳ` also cancels `exp y`; since `exp y` is a
-unit, the two left factors agree. -/
+/-- The adjoint of a unitary exponential is the exponential of the negative. -/
 theorem star_exp_eq_exp_neg_of_exp_mem_unitary {y : R} (h : exp y ∈ unitary R) :
     star (exp y) = exp (-y) :=
+  -- Unitarity gives `star (exp y) * exp y = 1`, and `exp (-y) = (exp y)⁻¹ʳ` also cancels
+  -- `exp y`; since `exp y` is a unit, the two left factors agree.
   (isUnit_exp y).mul_right_cancel <| by
     rw [Unitary.star_mul_self_of_mem h, ← Ring.inverse_exp,
       Ring.inverse_mul_cancel _ (isUnit_exp y)]

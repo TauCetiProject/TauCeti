@@ -38,10 +38,8 @@ preimage of the closed set `unitary M` under the continuous coercion `Units.val`
 theorem isClosed_unitarySubgroup_units :
     IsClosed ((unitarySubgroup Mˣ : Subgroup Mˣ) : Set Mˣ) := by
   have hpre : ((unitarySubgroup Mˣ : Subgroup Mˣ) : Set Mˣ) =
-      Units.val ⁻¹' (unitary M : Set M) := by
-    rw [show ((unitarySubgroup Mˣ : Subgroup Mˣ) : Set Mˣ) = (unitary Mˣ : Set Mˣ) from rfl,
-      Units.unitary_eq]
-    rfl
+      Units.val ⁻¹' (unitary M : Set M) :=
+    Set.ext fun _ => by simp [Units.unitary_eq]
   rw [hpre]
   exact isClosed_unitary.preimage Units.continuous_val
 

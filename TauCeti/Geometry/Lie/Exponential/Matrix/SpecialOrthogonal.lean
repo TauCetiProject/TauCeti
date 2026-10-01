@@ -26,6 +26,8 @@ determinant condition cutting out the special orthogonal group is proved from sc
 
 ## Main results
 
+* `Matrix.mem_so_iff_mem_skewAdjoint` identifies the real orthogonal Lie algebra with the
+  skew-adjoint matrices.
 * `Matrix.exp_mem_specialOrthogonalGroup_of_mem_so` sends a skew-symmetric matrix to a special
   orthogonal exponential.
 * `Matrix.forall_exp_smul_mem_orthogonalGroup_iff_mem_so` characterizes the matrices whose entire
@@ -49,14 +51,19 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 -- Select the matrix topology underlying the operator norm, and continuity of the star for it.
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
-/-- The matrix exponential of an element of the real orthogonal Lie algebra is orthogonal.  Over
-`ℝ` skew-symmetric is skew-adjoint and the orthogonal group is the unitary group, so this is
-Mathlib's `exp_mem_unitary_of_mem_skewAdjoint`. -/
+/-- Over `ℝ` the orthogonal Lie algebra is the skew-adjoint part of the matrix algebra: the star
+of a real matrix is its conjugate transpose, which is its transpose. -/
+theorem mem_so_iff_mem_skewAdjoint (A : Matrix n n ℝ) :
+    A ∈ LieAlgebra.Orthogonal.so n ℝ ↔ A ∈ skewAdjoint (Matrix n n ℝ) := by
+  rw [LieAlgebra.Orthogonal.mem_so, skewAdjoint.mem_iff, Matrix.star_eq_conjTranspose,
+    Matrix.conjTranspose_eq_transpose_of_trivial]
+
+/-- The matrix exponential of an element of the real orthogonal Lie algebra is orthogonal. -/
 theorem exp_mem_orthogonalGroup_of_mem_so (A : Matrix n n ℝ)
     (hA : A ∈ LieAlgebra.Orthogonal.so n ℝ) :
     exp A ∈ orthogonalGroup n ℝ :=
-  exp_mem_unitary_of_mem_skewAdjoint
-    (skewAdjoint.mem_iff.mpr ((LieAlgebra.Orthogonal.mem_so n ℝ A).mp hA))
+  -- Over `ℝ` skew-symmetric is skew-adjoint and the orthogonal group is the unitary group.
+  exp_mem_unitary_of_mem_skewAdjoint ((mem_so_iff_mem_skewAdjoint A).mp hA)
 
 /-- The exponential of a real skew-symmetric matrix has determinant one. -/
 theorem det_exp_eq_one_of_transpose_eq_neg (A : Matrix n n ℝ) (hA : Aᵀ = -A) :
@@ -91,15 +98,15 @@ theorem exp_mem_specialOrthogonalGroup_of_mem_so (A : Matrix n n ℝ)
     det_exp_eq_one_of_transpose_eq_neg A ((LieAlgebra.Orthogonal.mem_so n ℝ A).mp hA)⟩
 
 /-- A real matrix generates a one-parameter subgroup of the orthogonal group exactly when it is
-skew-symmetric.  This is `TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint` at the algebra
-`Matrix n n ℝ`, where the unitary group is the orthogonal group and skew-adjoint is
 skew-symmetric. -/
 @[simp]
 theorem forall_exp_smul_mem_orthogonalGroup_iff_mem_so (A : Matrix n n ℝ) :
     (∀ t : ℝ, exp (t • A) ∈ orthogonalGroup n ℝ) ↔
       A ∈ LieAlgebra.Orthogonal.so n ℝ :=
+  -- This is `TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint` at the algebra
+  -- `Matrix n n ℝ`, whose unitary group is the orthogonal group.
   (TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint A).trans
-    (by rw [skewAdjoint.mem_iff, LieAlgebra.Orthogonal.mem_so]; rfl)
+    (mem_so_iff_mem_skewAdjoint A).symm
 
 /-- A real matrix generates a one-parameter subgroup of the special orthogonal group exactly when
 it is skew-symmetric. -/
