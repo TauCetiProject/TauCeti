@@ -5,29 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
-import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 
 /-!
-# Moving `I` to a given point of the upper half-plane
+# Affine maps of the upper half-plane: dilations and moving `I` to a given point
 
-For `P : ℍ`, the affine map `UpperHalfPlane.toPoint P : z ↦ P.im * z + P.re` is the element of
-`PSL(2, ℝ)` given by a dilation followed by a real translation; it sends `I` to `P`
-(`UpperHalfPlane.toPoint_smul_I`). This file records its action, the action of its inverse, and
-its derivative.
+The dilation `Matrix.SpecialLinearGroup.dilation s` acts on `ℍ` as `z ↦ exp s * z`
+(`TauCeti.UpperHalfPlane.coe_dilation_smul`). For `P : ℍ`, the affine map
+`UpperHalfPlane.toPoint P : z ↦ P.im * z + P.re` is the element of `PSL(2, ℝ)` given by a dilation
+followed by a real translation; it sends `I` to `P` (`UpperHalfPlane.toPoint_smul_I`). This file
+records its action, the action of its inverse, and its derivative.
 -/
 
 public section
 
 noncomputable section
 
-open Matrix.ProjectiveSpecialLinearGroup TauCeti.UpperHalfPlane
+open Matrix.ProjectiveSpecialLinearGroup TauCeti.UpperHalfPlane UpperHalfPlane
 open scoped MatrixGroups
 
-namespace UpperHalfPlane
-
 open Matrix.SpecialLinearGroup (dilation)
+
+namespace TauCeti.UpperHalfPlane
+
+/-- `dilation s` acts on `ℍ` as `z ↦ exp s * z`. -/
+theorem coe_dilation_smul (s : ℝ) (z : ℍ) : ((dilation s • z : ℍ) : ℂ) = Real.exp s * z := by
+  rw [UpperHalfPlane.coe_specialLinearGroup_apply]
+  simp only [Matrix.SpecialLinearGroup.coe_dilation, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+    Algebra.algebraMap_self_apply, Complex.ofReal_zero, zero_mul, add_zero, zero_add]
+  have h2 : (Real.exp s : ℂ) = Real.exp (s / 2) * Real.exp (s / 2) := by
+    rw [← Complex.ofReal_mul, ← Real.exp_add, add_halves]
+  have hne : (Real.exp (-(s / 2)) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne'
+  rw [div_eq_iff hne, h2, Real.exp_neg]
+  push_cast
+  field_simp
+
+end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
 
 /-- The affine map `z ↦ P.im * z + P.re`, an element of `PSL(2, ℝ)` sending `I` to `P`. -/
 def toPoint (P : ℍ) : PSL(2, ℝ) := upperRightHom P.re * ↑(dilation (Real.log P.im))

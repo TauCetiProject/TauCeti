@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 
 /-!
 # Half-planes bounded by a geodesic line
