@@ -114,7 +114,7 @@ theorem two_mul_apply_mem_normIdeal (B : LinearMap.BilinForm R M) (hB : B.IsSymm
   have h := self_mem_normIdeal B (x + y)
   have hx := self_mem_normIdeal B x
   have hy := self_mem_normIdeal B y
-  rw [BilinForm.IsSymm.apply_add_self hB x y] at h
+  rw [bilinForm_apply_add_self_of_isSymm hB x y] at h
   convert (normIdeal B).sub_mem ((normIdeal B).sub_mem h hx) hy using 1; ring
 
 /-- A spanning set generates the norm ideal through self-pairings and twice the pairings. -/
@@ -141,7 +141,7 @@ theorem normIdeal_eq_span_of_span (B : LinearMap.BilinForm R M) (hB : B.IsSymm) 
     | mem x hx => exact Ideal.subset_span (Or.inl ⟨x, hx, rfl⟩)
     | zero => simp
     | add x y _ _ hx hy =>
-        rw [BilinForm.IsSymm.apply_add_self hB x y]
+        rw [bilinForm_apply_add_self_of_isSymm hB x y]
         exact I.add_mem (I.add_mem hx hy) (hpair x y)
     | smul a x _ hx =>
         have hsmul : B (a • x) (a • x) = a ^ 2 * B x x := by

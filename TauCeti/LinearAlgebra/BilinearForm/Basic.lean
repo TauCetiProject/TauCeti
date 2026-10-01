@@ -28,7 +28,7 @@ field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
-* `TauCeti.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `TauCeti.bilinForm_apply_add_self_of_isSymm`: polarization of a symmetric bilinear form.
 -/
 
 public section
@@ -38,7 +38,7 @@ namespace TauCeti
 open LinearMap (BilinForm)
 
 /-- Polarization of a symmetric bilinear form over a commutative semiring. -/
-theorem BilinForm.IsSymm.apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+theorem bilinForm_apply_add_self_of_isSymm {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] {B : BilinForm R M} (hB : B.IsSymm) (x y : M) :
     B (x + y) (x + y) = B x x + B y y + 2 * B x y := by
   simp only [map_add, LinearMap.add_apply, hB.eq y x]

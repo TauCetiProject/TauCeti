@@ -143,7 +143,7 @@ theorem norm_smul (L : IntegralLattice V) (a : ℚ) (x : V) :
 theorem norm_add (L : IntegralLattice V) (x y : V) :
     L.norm (x + y) = L.norm x + L.norm y + 2 * L.form x y := by
   simp only [norm_apply]
-  exact BilinForm.IsSymm.apply_add_self L.isSymm x y
+  exact bilinForm_apply_add_self_of_isSymm L.isSymm x y
 
 /-- The subtraction form of the norm polarization identity. -/
 theorem norm_sub (L : IntegralLattice V) (x y : V) :
@@ -171,7 +171,7 @@ theorem integralNorm_add (L : IntegralLattice V) (x y : L) :
     L.integralNorm (x + y) =
       L.integralNorm x + L.integralNorm y + 2 * L.integralForm x y := by
   simp only [integralNorm_apply]
-  exact BilinForm.IsSymm.apply_add_self L.isSymm_integralForm x y
+  exact bilinForm_apply_add_self_of_isSymm L.isSymm_integralForm x y
 
 /-- The norm modulo two, as an additive character of the carrier. -/
 noncomputable def normParity (L : IntegralLattice V) : L →+ ZMod 2 where
