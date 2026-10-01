@@ -14,8 +14,9 @@ public import TauCeti.RingTheory.Norm.Units
 
 Let `L/K` be a finite Galois extension. Every `K`-embedding `ι : L →ₐ[K] Kˢ` into the separable
 closure has the same image, so the subgroup of `G_K = Gal(Kˢ/K)` fixing it does not depend on
-`ι`: it is the open normal subgroup `fixingOpenNormalSubgroup K L`, the fixing subgroup of the
-normal closure of `L` in `Kˢ`, equal to `TauCeti.galoisOpenNormalSubgroup K L ι` for every `ι`.
+`ι`: it is the open normal subgroup `TauCeti.fixingOpenNormalSubgroup K L`, the fixing subgroup of
+the normal closure of `L` in `Kˢ`, equal to `TauCeti.galoisOpenNormalSubgroup K L ι` for every
+`ι`.
 Its layer `V ◁ G_K` in the formation `unitsFormation K` of `(Kˢ)ˣ` is the abstract counterpart of
 `L/K`, and this file identifies its two ends with the concrete objects of finite class field
 theory:
@@ -24,7 +25,8 @@ theory:
   along `ι` (`TauCeti.quotientFixingSubgroupFieldRangeEquiv`); another embedding changes this
   identification by an inner automorphism of `Gal(L/K)` (`layerGalEquiv_comp`), so its
   abelianization does not depend on `ι` (`abelianizationCongr_layerGalEquiv`);
-* the ground and top levels of the layer are `Kˣ` and `Lˣ` (`unitsLevelEquiv`), the norm of the
+* the ground and top levels of the layer are `Kˣ` and `Lˣ`
+  (`TauCeti.ClassFieldTheory.unitsLevelEquiv`), the norm of the
   layer is the field norm `N_{L/K}` (`norm_unitsLevelEquiv`), and so the norm quotient of the layer
   is `Kˣ / N_{L/K}(Lˣ)` (`layerNormQuotientEquiv`).
 
@@ -34,18 +36,15 @@ reciprocity. Nothing here uses that `K` is local.
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.fixingOpenNormalSubgroup K L`: the open normal subgroup of `G_K`
-  fixing every `K`-embedding of `L` into `Kˢ`.
-* `TauCeti.ClassFieldTheory.unitsLevelEquiv ι hU`: the level of an open subgroup `U` whose fixed
-  field is the image of `ι : E →ₐ[K] Kˢ` is `Eˣ`.
 * `TauCeti.ClassFieldTheory.layerGalEquiv ι`: the Galois group of the layer is `Gal(L/K)`.
 * `TauCeti.ClassFieldTheory.layerNormQuotientEquiv K L`: the norm quotient of the layer is
   `Kˣ / N_{L/K}(Lˣ)`.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`: the fixing
-  subgroup is the subgroup fixing the image of any embedding.
+* `TauCeti.ClassFieldTheory.fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup`: the top
+  level of the layer is cut out by the image of any embedding of `L`, so that
+  `TauCeti.ClassFieldTheory.unitsLevelEquiv` identifies it with `Lˣ`.
 * `TauCeti.ClassFieldTheory.abelianizationCongr_layerGalEquiv`: the identification of the
   abelianized Galois group does not depend on the embedding.
 * `TauCeti.ClassFieldTheory.norm_unitsLevelEquiv`: the norm of the layer is the field norm.
@@ -68,122 +67,9 @@ open IntermediateField
 
 variable {K : Type} [Field K]
 
-/-! ### The fixing subgroup of a finite extension -/
-
-section Subgroup
-
-variable (K) (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
-
-/-- **The open normal subgroup cut out by a finite extension** `L/K`: the subgroup of
-`G_K = Gal(Kˢ/K)` fixing the normal closure of `L` in `Kˢ`, that is, fixing the image of every
-`K`-embedding of `L` into `Kˢ`. When `L/K` is Galois all these images coincide, so this is
-`TauCeti.galoisOpenNormalSubgroup K L ι` for every embedding `ι`
-(`fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`), with no embedding chosen. -/
-def fixingOpenNormalSubgroup : OpenNormalSubgroup (AbsoluteGaloisGroup K) where
-  toSubgroup := (normalClosure K L (SeparableClosure K)).fixingSubgroup
-  isOpen' := (normalClosure K L (SeparableClosure K)).fixingSubgroup_isOpen
-  isNormal' := (InfiniteGalois.normal_iff_isGalois _).2 inferInstance
-
-variable {K L} [IsGalois K L]
-
-/-- The subgroup underlying `fixingOpenNormalSubgroup K L` is the fixing subgroup of the image of
-any `K`-embedding `ι` of the Galois extension `L` into `Kˢ`. -/
-theorem fixingOpenNormalSubgroup_toSubgroup (ι : L →ₐ[K] SeparableClosure K) :
-    (fixingOpenNormalSubgroup K L).toSubgroup = ι.fieldRange.fixingSubgroup := by
-  rw [← IntermediateField.normalClosure_eq_fieldRange ι]
-  rfl
-
-/-- **The fixing subgroup of a Galois extension does not depend on the embedding**: it is the
-subgroup `TauCeti.galoisOpenNormalSubgroup K L ι` fixing the image of any `K`-embedding `ι`. -/
-theorem fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup (ι : L →ₐ[K] SeparableClosure K) :
-    fixingOpenNormalSubgroup K L = galoisOpenNormalSubgroup K L ι :=
-  OpenNormalSubgroup.toSubgroup_injective <|
-    (fixingOpenNormalSubgroup_toSubgroup ι).trans (galoisOpenNormalSubgroup_toSubgroup K L ι).symm
-
-/-- An element of `G_K` lies in `fixingOpenNormalSubgroup K L` exactly when it fixes the image
-of a (any) `K`-embedding `ι` of the Galois extension `L` into `Kˢ`. -/
-theorem mem_fixingOpenNormalSubgroup_iff (ι : L →ₐ[K] SeparableClosure K)
-    {σ : AbsoluteGaloisGroup K} :
-    σ ∈ fixingOpenNormalSubgroup K L ↔ ∀ x : L, σ (ι x) = ι x := by
-  -- Membership in an open normal subgroup is by definition membership in its underlying subgroup;
-  -- Mathlib states no lemma for this.
-  change σ ∈ (fixingOpenNormalSubgroup K L).toSubgroup ↔ _
-  rw [fixingOpenNormalSubgroup_toSubgroup ι, IntermediateField.mem_fixingSubgroup_iff]
-  exact ⟨fun h x => h _ ⟨x, rfl⟩, fun h _ ⟨x, hx⟩ => hx ▸ h x⟩
-
-end Subgroup
-
-/-! ### Levels of the formation of units as unit groups -/
+/-! ### The ground and top levels of the layer -/
 
 section Level
-
-variable {E : Type*} [Field E] [Algebra K E]
-
-/-- The image of a `K`-embedding of a unit of `E` lies in the level of an open subgroup whose
-fixed field is the image of the embedding. -/
-private theorem unitsCoeffEquivUnitsFormation_map_mem_level (ι : E →ₐ[K] SeparableClosure K)
-    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange)
-    (x : Eˣ) :
-    unitsCoeffEquivUnitsFormation K (Additive.ofMul (Units.map (ι : E →* SeparableClosure K) x))
-      ∈ (unitsFormation K).level U := by
-  rw [mem_level_unitsFormation_iff, hU]
-  exact ⟨x, rfl⟩
-
-/-- The additive map `Eˣ → ((Kˢ)ˣ)^U` underlying `unitsLevelEquiv`. -/
-private def unitsLevelHom (ι : E →ₐ[K] SeparableClosure K)
-    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange) :
-    Additive Eˣ →+ (unitsFormation K).level U :=
-  AddMonoidHom.codRestrict ((unitsCoeffEquivUnitsFormation K).toAddMonoidHom.comp
-      (Units.map (ι : E →* SeparableClosure K)).toAdditive) _
-    (unitsCoeffEquivUnitsFormation_map_mem_level ι hU)
-
-private theorem coe_unitsLevelHom (ι : E →ₐ[K] SeparableClosure K)
-    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange)
-    (x : Additive Eˣ) :
-    ((unitsLevelHom ι hU x : (unitsFormation K).level U) : (unitsFormation K).toRep.V) =
-      unitsCoeffEquivUnitsFormation K
-        (Additive.ofMul (Units.map (ι : E →* SeparableClosure K) x.toMul)) :=
-  (rfl)
-
-private theorem bijective_unitsLevelHom (ι : E →ₐ[K] SeparableClosure K)
-    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange) :
-    Function.Bijective (unitsLevelHom ι hU) := by
-  refine ⟨fun x y h => ?_, fun z => ?_⟩
-  · have h := congrArg Subtype.val h
-    rw [coe_unitsLevelHom, coe_unitsLevelHom] at h
-    exact Additive.toMul.injective <| Units.map_injective ι.injective <|
-      Additive.ofMul.injective ((unitsCoeffEquivUnitsFormation K).injective h)
-  · -- The unit underlying `z` lies in the fixed field of `U`, the image of `ι`.
-    obtain ⟨z, hz⟩ := z
-    obtain ⟨w, rfl⟩ := (unitsCoeffEquivUnitsFormation K).surjective z
-    obtain ⟨e, he⟩ : ((w.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) ∈ ι.fieldRange := by
-      rw [← hU, ← mem_level_unitsFormation_iff]
-      exact hz
-    have he0 : e ≠ 0 := fun h0 => w.toMul.ne_zero (by rw [← he, h0, map_zero])
-    refine ⟨Additive.ofMul (Units.mk0 e he0), Subtype.ext ?_⟩
-    rw [coe_unitsLevelHom]
-    exact congrArg _ (Additive.toMul.injective (Units.ext he))
-
-/-- **The level of an open subgroup is the unit group of its fixed field**, presented as `Eˣ`:
-if the fixed field of `U` is the image of a `K`-embedding `ι : E →ₐ[K] Kˢ`, then `ι` identifies
-`Eˣ` with the level `((Kˢ)ˣ)^U` of `unitsFormation K`. Applied to `K` itself and to a finite
-Galois extension `L`, it identifies the ground and top levels of the layer of `L` with `Kˣ` and
-`Lˣ`. -/
-def unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
-    (hU : fixedField U.toSubgroup = ι.fieldRange) :
-    Additive Eˣ ≃+ (unitsFormation K).level U :=
-  AddEquiv.ofBijective (unitsLevelHom ι hU) (bijective_unitsLevelHom ι hU)
-
-/-- `unitsLevelEquiv ι hU` sends a unit `x` of `E` to the unit `ι x` of `Kˢ`. -/
-@[simp]
-theorem unitsLevelEquiv_apply_coe (ι : E →ₐ[K] SeparableClosure K)
-    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange)
-    (x : Additive Eˣ) :
-    (dsimp% only
-      ((unitsLevelEquiv ι hU x : (unitsFormation K).level U) : (unitsFormation K).toRep.V)) =
-      unitsCoeffEquivUnitsFormation K
-        (Additive.ofMul (Units.map (ι : E →* SeparableClosure K) x.toMul)) :=
-  (rfl)
 
 variable (K) in
 /-- The fixed field of the ground subgroup `G_K` of a layer `V ◁ G_K` is `K`, the image of the
