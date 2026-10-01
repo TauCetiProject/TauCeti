@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Opposite
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose
 
 /-!
@@ -84,23 +85,12 @@ theorem opExp_def (k : ℕ) (d : ℕ → ℤ) :
     opExp k d =
       (∑ j ∈ Finset.range k, ∑ i ∈ Finset.range j, d i * d j) + ((k - 1).choose 2 : ℕ) := (rfl)
 
-/-- Twice the sum over pairs `i < j < k` is the square of the sum minus the sum of squares. -/
-private theorem two_mul_sum_range_pair (k : ℕ) (d : ℕ → ℤ) :
-    2 * ∑ j ∈ Finset.range k, ∑ i ∈ Finset.range j, d i * d j =
-      (∑ i ∈ Finset.range k, d i) ^ 2 - ∑ i ∈ Finset.range k, d i ^ 2 := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [Finset.sum_range_succ, mul_add, ih, ← Finset.sum_mul, Finset.sum_range_succ d,
-      Finset.sum_range_succ (fun i ↦ d i ^ 2)]
-    ring
-
 /-- The exponent of the opposite sign through the sum and the sum of squares of the degrees. -/
 theorem two_mul_opExp (k : ℕ) (d : ℕ → ℤ) :
     2 * opExp k d =
       (∑ i ∈ Finset.range k, d i) ^ 2 - ∑ i ∈ Finset.range k, d i ^ 2 +
         2 * ((k - 1).choose 2 : ℕ) := by
-  rw [opExp_def, mul_add, two_mul_sum_range_pair]
+  rw [opExp_def, mul_add, TauCeti.two_mul_sum_range_pair]
 
 /-- In arity zero the opposite sign is trivial. -/
 @[simp]
@@ -255,28 +245,6 @@ private theorem isHomogeneous_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ
   simp only [Fin.revPerm_apply] at hrev
   rwa [hrev] at h
 
-/-- Pass between the decompositions `p + s + t` and `t + s + p` of an arity-`n` Stasheff sum. -/
-private theorem sum_stasheff_reflect {M : Type*} [AddCommMonoid M] (n : ℕ)
-    (f : ℕ → ℕ → ℕ → M) :
-    ∑ p ∈ Finset.range (n + 1), ∑ s ∈ Finset.Icc 1 (n - p), f p s (n - p - s) =
-      ∑ p ∈ Finset.range (n + 1), ∑ s ∈ Finset.Icc 1 (n - p), f (n - p - s) s p := by
-  rw [Finset.sum_sigma', Finset.sum_sigma']
-  refine Finset.sum_nbij' (fun a ↦ ⟨n - a.1 - a.2, a.2⟩) (fun a ↦ ⟨n - a.1 - a.2, a.2⟩)
-    ?_ ?_ ?_ ?_ ?_
-  all_goals
-    simp only [Finset.mem_sigma, Finset.mem_range, Finset.mem_Icc]
-  · intro a ha
-    omega
-  · intro a ha
-    omega
-  · intro a ha
-    exact Sigma.ext (by dsimp only; omega) HEq.rfl
-  · intro a ha
-    exact Sigma.ext (by dsimp only; omega) HEq.rfl
-  · intro a ha
-    congr 1
-    omega
-
 /-- A Stasheff term of the opposite operations is, up to the opposite sign of the whole word, the
 Stasheff term of the original operations on the reversed word, with the reversed decomposition. -/
 private theorem stasheffTerm_opOperation (𝒜 : AInfinityAlgebra R A) (d : ℕ → ℤ) (x : ℕ → A)
@@ -319,7 +287,8 @@ private theorem stasheffTerm_opOperation (𝒜 : AInfinityAlgebra R A) (d : ℕ 
         replaceBlock_of_lt _ _ _ _ h]
       congr 1
       omega
-    · rw [show p + 1 + i - 1 - i = p by omega, replaceBlock_self, replaceBlock_self]
+    · have hp : p + 1 + i - 1 - i = p := by omega
+      rw [hp, replaceBlock_self, replaceBlock_self]
     · rw [replaceBlock_of_lt _ _ _ _ (by omega : p + 1 + t - 1 - i < p),
         replaceBlock_of_gt _ _ _ _ h]
       congr 1
@@ -331,7 +300,7 @@ original operations on the reversed word. -/
 private theorem stasheffSum_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) (hn : 0 < n)
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < n, x i ∈ 𝒜.grading.piece (d i)) :
     AInfinity.stasheffSum (opOperation 𝒜) d x n = 0 := by
-  have hrefl := sum_stasheff_reflect n fun a b c ↦
+  have hrefl := AInfinity.sum_stasheff_reflect n fun a b c ↦
     AInfinity.stasheffTerm 𝒜.m (fun i ↦ d (n - 1 - i)) (fun i ↦ x (n - 1 - i)) a b c
   beta_reduce at hrefl
   have h : AInfinity.stasheffSum (opOperation 𝒜) d x n =
@@ -371,21 +340,14 @@ theorem op_m_apply (𝒜 : AInfinityAlgebra R A) {n : ℕ} (d : ℕ → ℤ) (x 
   rw [op, ofStasheff_m]
   exact opOperation_apply 𝒜 d x hx
 
-/-- Two operations of the same arity on `A` agree once they agree on homogeneous inputs whose
-degrees are recorded by a family indexed by the naturals. -/
-private theorem m_ext {n : ℕ} (G : InternalGrading R A)
-    {f g : MultilinearMap R (fun _ : Fin n ↦ A) A}
-    (h : ∀ (d : ℕ → ℤ) (x : Fin n → A), (∀ i : Fin n, x i ∈ G.piece (d i)) → f x = g x) :
-    f = g := by
-  refine InternalGrading.multilinearMap_ext (fun _ : Fin n ↦ G) fun d x hx ↦ ?_
-  exact h (fun i ↦ if hi : i < n then d ⟨i, hi⟩ else 0) x fun i ↦ by simpa using hx i
-
 /-- **The opposite is an involution.** -/
 @[simp]
 theorem op_op (𝒜 : AInfinityAlgebra R A) : 𝒜.op.op = 𝒜 := by
-  refine ext (by rw [op_grading, op_grading]) (funext fun n ↦ m_ext 𝒜.grading fun d x hx ↦ ?_)
+  refine ext (by rw [op_grading, op_grading]) (funext fun n ↦
+    InternalGrading.multilinearMap_ext_nat 𝒜.grading fun d x hx ↦ ?_)
   have hrev : ∀ i : Fin n, x i.rev ∈ 𝒜.grading.piece (d (n - 1 - i)) := fun i ↦ by
-    simpa [Fin.val_rev, show n - (i + 1) = n - 1 - i by omega] using hx i.rev
+    have hi : n - (i + 1) = n - 1 - i := by omega
+    simpa [Fin.val_rev, hi] using hx i.rev
   rw [op_m_apply 𝒜.op d x (by simpa using hx), op_m_apply 𝒜 (fun i ↦ d (n - 1 - i)) _ hrev,
     AInfinity.opExp_reverse, smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul,
     one_smul]
@@ -410,14 +372,14 @@ higher operations. -/
 @[simp]
 theorem op_m_eq_zero_iff (𝒜 : AInfinityAlgebra R A) (n : ℕ) : 𝒜.op.m n = 0 ↔ 𝒜.m n = 0 := by
   have key (ℬ : AInfinityAlgebra R A) (h : ℬ.m n = 0) : ℬ.op.m n = 0 :=
-    m_ext ℬ.grading fun d x hx ↦ by simp [op_m_apply ℬ d x hx, h]
+    InternalGrading.multilinearMap_ext_nat ℬ.grading fun d x hx ↦ by simp [op_m_apply ℬ d x hx, h]
   refine ⟨fun h ↦ ?_, key 𝒜⟩
   simpa using key 𝒜.op h
 
 /-- The unary operation of the opposite is the original unary operation. -/
 @[simp]
 theorem op_m_one (𝒜 : AInfinityAlgebra R A) : 𝒜.op.m 1 = 𝒜.m 1 := by
-  refine m_ext 𝒜.grading fun d x hx ↦ ?_
+  refine InternalGrading.multilinearMap_ext_nat 𝒜.grading fun d x hx ↦ ?_
   rw [op_m_apply 𝒜 d x hx, AInfinity.opExp_one, negOnePowCast_zero, one_smul]
   congr 1
   funext i
