@@ -12,13 +12,14 @@ public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 # Oriented angles between three vectors with positive sign
 
 For vectors `x`, `y`, `z` of an oriented real inner product space of dimension two such that
-`y` and `z` make oriented angles of positive sign (i.e. in `(0, π)`) with `x`, Mathlib's
-`Orientation.oangle_sub_left` gives `oangle y z = oangle x z - oangle x y`, and this identity
-holds for the real representatives in `(-π, π]` as well
-(`Orientation.oangle_toReal_sub_of_sign_eq_one`, from
+`y` and `z` lie on the same open side of the line through `x` — their oriented angles from `x`
+have the same nonzero sign — Mathlib's `Orientation.oangle_sub_left` gives
+`oangle y z = oangle x z - oangle x y`, and this identity holds for the real representatives in
+`(-π, π]` as well (`Orientation.oangle_toReal_sub_of_sign_eq`, from
 `Real.Angle.toReal_sub_of_sign_eq`). Consequently the real angles from `x` add
-(`Orientation.oangle_toReal_add_of_sign_eq_one`), and the sign of `oangle y z` is the order of
-the real angles of `y` and `z` measured from `x` (`Orientation.oangle_sign_eq_one_iff_toReal_lt`).
+(`Orientation.oangle_toReal_add_of_sign_eq`), and the sign of `oangle y z` is the order of the
+real angles of `y` and `z` measured from `x`
+(`Orientation.oangle_sign_eq_one_iff_toReal_lt_of_sign_eq`).
 -/
 
 public section
@@ -30,31 +31,31 @@ namespace Orientation
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (Module.finrank ℝ V = 2)]
   (o : Orientation ℝ V (Fin 2))
 
-/-- For two vectors `y`, `z` making oriented angles of positive sign with `x`, the real oriented
-angle from `y` to `z` is the difference of their real angles from `x`. -/
-theorem oangle_toReal_sub_of_sign_eq_one {x y z : V} (h₁ : (o.oangle x y).sign = 1)
-    (h₂ : (o.oangle x z).sign = 1) :
+/-- For two vectors `y`, `z` on the same open side of the line through `x` (their oriented angles
+from `x` have the same nonzero sign), the real oriented angle from `y` to `z` is the difference of
+their real angles from `x`. -/
+theorem oangle_toReal_sub_of_sign_eq {x y z : V} (hs : (o.oangle x y).sign = (o.oangle x z).sign)
+    (h0 : (o.oangle x y).sign ≠ 0) :
     (o.oangle y z).toReal = (o.oangle x z).toReal - (o.oangle x y).toReal := by
-  rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_eq_one h₁)
-    (o.right_ne_zero_of_oangle_sign_eq_one h₁) (o.right_ne_zero_of_oangle_sign_eq_one h₂)]
-  exact Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 (by rw [h₁]; decide)).2
-    (h₂.trans h₁.symm)
+  rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_ne_zero h0)
+    (o.right_ne_zero_of_oangle_sign_ne_zero h0) (o.right_ne_zero_of_oangle_sign_ne_zero (hs ▸ h0))]
+  exact Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 h0).2 hs.symm
 
-/-- For two vectors `y`, `z` making oriented angles of positive sign with `x`, the real angles from
-`x` add: the angle to `z` is the angle to `y` plus the angle from `y` to `z`. -/
-theorem oangle_toReal_add_of_sign_eq_one {x y z : V} (h₁ : (o.oangle x y).sign = 1)
-    (h₂ : (o.oangle x z).sign = 1) :
+/-- For two vectors `y`, `z` on the same open side of the line through `x`, the real angles from `x`
+add: the angle to `z` is the angle to `y` plus the angle from `y` to `z`. -/
+theorem oangle_toReal_add_of_sign_eq {x y z : V} (hs : (o.oangle x y).sign = (o.oangle x z).sign)
+    (h0 : (o.oangle x y).sign ≠ 0) :
     (o.oangle x z).toReal = (o.oangle x y).toReal + (o.oangle y z).toReal := by
-  rw [o.oangle_toReal_sub_of_sign_eq_one h₁ h₂]
+  rw [o.oangle_toReal_sub_of_sign_eq hs h0]
   ring
 
-/-- For two vectors `y`, `z` making oriented angles of positive sign with `x`, the oriented angle
-from `y` to `z` is positive exactly when the angle of `y` from `x` is smaller than that of `z`. -/
-theorem oangle_sign_eq_one_iff_toReal_lt {x y z : V} (h₁ : (o.oangle x y).sign = 1)
-    (h₂ : (o.oangle x z).sign = 1) :
+/-- For two vectors `y`, `z` on the same open side of the line through `x`, the oriented angle from
+`y` to `z` is positive exactly when the angle of `y` from `x` is smaller than that of `z`. -/
+theorem oangle_sign_eq_one_iff_toReal_lt_of_sign_eq {x y z : V}
+    (hs : (o.oangle x y).sign = (o.oangle x z).sign) (h0 : (o.oangle x y).sign ≠ 0) :
     (o.oangle y z).sign = 1 ↔ (o.oangle x y).toReal < (o.oangle x z).toReal := by
-  rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_eq_one h₁)
-    (o.right_ne_zero_of_oangle_sign_eq_one h₁) (o.right_ne_zero_of_oangle_sign_eq_one h₂)]
-  exact Real.Angle.sign_sub_pos_iff_toReal_lt h₁ h₂
+  rw [← o.oangle_sub_left (o.left_ne_zero_of_oangle_sign_ne_zero h0)
+    (o.right_ne_zero_of_oangle_sign_ne_zero h0) (o.right_ne_zero_of_oangle_sign_ne_zero (hs ▸ h0))]
+  exact Real.Angle.sign_sub_eq_one_iff_toReal_lt_of_sign_eq hs h0
 
 end Orientation
