@@ -131,11 +131,11 @@ theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/
 theorem UpperHalfPlane.tendsto_div_qParam_atImInfty {f : ℍ → ℂ} (hh : 0 < h)
     (hfper : Function.Periodic (f ∘ ofComplex) h)
-    (hfanalytic : AnalyticAt ℂ (cuspFunction h f) 0) (hf0 : (qExpansion h f).coeff 0 = 0) :
+    (hfdiff : DifferentiableAt ℂ (cuspFunction h f) 0) (hf0 : (qExpansion h f).coeff 0 = 0) :
     Filter.Tendsto (fun τ ↦ f τ / Function.Periodic.qParam h τ) atImInfty
       (nhds ((qExpansion h f).coeff 1)) := by
   have hderiv : HasDerivAt (cuspFunction h f) ((qExpansion h f).coeff 1) 0 := by
-    simpa [_root_.UpperHalfPlane.qExpansion_coeff] using hfanalytic.differentiableAt.hasDerivAt
+    simpa [_root_.UpperHalfPlane.qExpansion_coeff] using hfdiff.hasDerivAt
   have h0 : cuspFunction h f 0 = 0 := by
     simpa [_root_.UpperHalfPlane.qExpansion_coeff] using hf0
   have hq : Filter.Tendsto (fun τ : ℍ ↦ Function.Periodic.qParam h τ) atImInfty

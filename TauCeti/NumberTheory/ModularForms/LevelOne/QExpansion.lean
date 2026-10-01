@@ -105,7 +105,7 @@ theorem tendsto_discriminant_div_qParam_atImInfty :
       (SlashInvariantFormClass.periodic_comp_ofComplex CuspForm.discriminant
         one_mem_strictPeriods_SL)
       (ModularFormClass.analyticAt_cuspFunction_zero CuspForm.discriminant one_pos
-        one_mem_strictPeriods_SL)
+        one_mem_strictPeriods_SL).differentiableAt
       discriminant_qExpansion_coeff_zero
 
 end TauCeti.ModularForm
