@@ -51,6 +51,8 @@ non-flat base is the base change of the integral carrier.
   `TauCeti.TypeBSpinCarrier.isIso_kostantGeneratedToToral`: in rank at least three, the carrier is
   the root-generated Kostant group scheme, and the canonical comparison between them is an
   isomorphism.
+* `TauCeti.TypeBSpinCarrier.groupScheme_hom_ext_of_rootSubgroup`: in rank at least three, a
+  morphism out of the carrier is determined by its restrictions to the numbered root subgroups.
 
 ## References
 
@@ -69,7 +71,7 @@ universe v
 
 namespace TauCeti.TypeBSpinCarrier
 
-open TauCeti.UniversalEnvelopingAlgebra
+open CategoryTheory TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
@@ -183,5 +185,18 @@ theorem isIso_kostantGeneratedToToral :
       (latticeBasis n) (basisWeight n)) :=
   isIso_kostantGeneratedToToral_of_universal_torus_mem_elementary _ _ _ _ _ _ _ (basisWeight n)
     (universalWeightTorus_mem_elementarySubgroup n hn)
+
+/-- **In rank at least three, two morphisms out of the type-`Bₙ₊₁` spin carrier agree as soon as
+they agree on its numbered positive and negative simple root subgroups.** This drops the
+weight-torus hypothesis of `TauCeti.TypeBSpinCarrier.groupScheme_hom_ext`, which root generation of
+the carrier makes redundant. -/
+theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
+    (f g : groupScheme n ⟶
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
+    (hroot : ∀ k, rootSubgroup n k ≫ f = rootSubgroup n k ≫ g) : f = g := by
+  apply (cancel_epi (eqToHom (groupScheme_eq_kostantToralGroupScheme n).symm)).1
+  exact kostantToralGroupScheme_hom_ext_of_universal_torus_mem_elementary _ _ _ _ _ _ _
+    (basisWeight n) (universalWeightTorus_mem_elementarySubgroup n hn) _ _
+    fun k => by simpa only [rootSubgroup_def, Category.assoc] using hroot k
 
 end TauCeti.TypeBSpinCarrier
