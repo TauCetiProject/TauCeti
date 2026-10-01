@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.InfinitePlace
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real.Basic
+import TauCeti.FieldTheory.AlgHom
 
 /-!
 # Genus fields of quadratic fields

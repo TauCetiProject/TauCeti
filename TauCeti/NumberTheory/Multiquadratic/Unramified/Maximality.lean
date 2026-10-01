@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.AlgHom
+public import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Subfields

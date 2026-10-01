@@ -6,40 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.FieldTheory.Minpoly
 
 /-!
-# Algebra homomorphisms out of fields
+# Conjugating square roots by algebra homomorphisms
 
-This file promotes an algebra homomorphism from a finite-dimensional division algebra to an
-algebra equivalence when the dimensions agree, and moves square roots of a common scalar onto each
-other by algebra homomorphisms into a normal extension.
+If `y` and `z` are square roots of the same scalar `r : K` and `K(y)` is quadratic, any
+`K`-algebra homomorphism from the algebra containing `z` into the normal field containing `y`
+can be adjusted to carry `z` to `y`.
 -/
 
 public section
-
-namespace AlgHom
-
-variable {K L M : Type*} [Field K] [DivisionRing L] [Ring M] [Algebra K L] [Algebra K M]
-  [FiniteDimensional K L] [FiniteDimensional K M]
-
-/-- An algebra homomorphism from a finite-dimensional division algebra to a finite-dimensional
-algebra of the same finrank promotes to an algebra equivalence. -/
-noncomputable def algEquivOfFinrankEq (f : L →ₐ[K] M)
-    (hfin : Module.finrank K L = Module.finrank K M) : L ≃ₐ[K] M :=
-  haveI : Nontrivial M := Module.nontrivial_of_finrank_pos (R := K) (hfin ▸ Module.finrank_pos)
-  AlgEquiv.ofBijective f
-    ⟨f.injective, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin
-      (f := f.toLinearMap)).mp f.injective⟩
-
-@[simp]
-theorem algEquivOfFinrankEq_apply (f : L →ₐ[K] M)
-    (hfin : Module.finrank K L = Module.finrank K M) (x : L) :
-    f.algEquivOfFinrankEq hfin x = f x :=
-  (rfl)
-
-end AlgHom
 
 namespace TauCeti
 
