@@ -41,6 +41,10 @@ holds over every commutative coefficient ring, at every unit `u`, because both s
 anything: the square-zero hypothesis truncates every divided-power exponential after its first
 term, so no denominator is ever introduced.
 
+Together these are the rank-one inputs to the scheme-theoretic root generation of an explicit
+Chevalley--Demazure carrier whose representation has short `α`-strings, the standard symplectic
+carrier of type `Cₙ` among them.
+
 ## Main results
 
 * `e_mul_f_mul_e_of_mul_self_eq_zero` and `f_mul_e_mul_f_of_mul_self_eq_zero`: the halved `sl₂`
@@ -51,12 +55,6 @@ term, so no denominator is ever introduced.
   diagonal element rescales its two root terms.
 * `mul_apply_of_eq_intCast_smul`: an integer eigenvector of `H` has eigenvalue `1`, `0` or `-1`,
   and in the outer two cases it is fixed by one of the two idempotents and killed by the other.
-
-## Roadmap
-
-These are the rank-one inputs to the scheme-theoretic root generation of the explicit
-Chevalley--Demazure carriers of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` whose
-representation has short `α`-strings, the standard symplectic carrier of type `Cₙ` among them.
 
 ## References
 
