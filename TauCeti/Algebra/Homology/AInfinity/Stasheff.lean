@@ -113,7 +113,7 @@ namespace TauCeti
 
 /-- Evaluating an operation on a tuple whose replaced entry is scaled scales the value: the
 replaced entry sits in a single slot, in which the operation is linear. -/
-private theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
+theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
     {R : Type uR} {A : Type uA} [Semiring R] [AddCommMonoid A] [Module R A]
     [AddCommMonoid N] [Module R N]
     (f : MultilinearMap R (fun _ : Fin u ↦ A) N)
