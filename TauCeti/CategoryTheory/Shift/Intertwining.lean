@@ -196,6 +196,129 @@ noncomputable instance mapFunctorCommShift
 
 end CategoryTheory.Equivalence.IntSequence
 
+namespace CategoryTheory.Equivalence
+
+open CategoryTheory.Functor IntSequence
+
+variable {C : Type u₁} [Category.{v₁} C] (e : C ≌ C)
+
+/-- The degree-zero component of the inverse evaluation functor's degree-one shift comparison. -/
+private theorem evalInverseCommShiftIso_one_hom_app_f_zero (X : C) :
+    letI := e.hasShift
+    letI : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+    letI : (eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
+      (eval (e := e)).asEquivalence.commShiftInverse ℤ
+    (eval (e := e)).map
+        (((eval (e := e)).asEquivalence.inverse.commShiftIso (1 : ℤ)).hom.app X) =
+      (eval (e := e)).asEquivalence.counitIso.hom.app ((shiftFunctor C 1).obj X) ≫
+        (shiftFunctor C 1).map
+          ((eval (e := e)).asEquivalence.counitIso.inv.app X) ≫
+          e.shiftFunctorOneIso.hom.app ((eval (e := e)).obj ((eval (e := e)).inv.obj X)) ≫
+            (reindexOneCompEvalIso (e := e)).inv.app ((eval (e := e)).inv.obj X) := by
+  let _ := e.hasShift
+  let _ : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+  let _ : (eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
+    (eval (e := e)).asEquivalence.commShiftInverse ℤ
+  let _ : (eval (e := e)).asEquivalence.CommShift ℤ :=
+    (eval (e := e)).asEquivalence.commShift_of_functor ℤ
+  rw [← cancel_mono (((eval (e := e)).asEquivalence.functor.commShiftIso (1 : ℤ)).hom.app
+    ((eval (e := e)).inv.obj X))]
+  rw [← cancel_mono ((shiftFunctor C 1).map
+    ((eval (e := e)).asEquivalence.counitIso.hom.app X))]
+  have hcomp : (eval (e := e)).map
+        (((eval (e := e)).asEquivalence.inverse.commShiftIso (1 : ℤ)).hom.app X) ≫
+      ((eval (e := e)).asEquivalence.functor.commShiftIso (1 : ℤ)).hom.app
+        ((eval (e := e)).inv.obj X) =
+      (((eval (e := e)).asEquivalence.inverse ⋙
+        (eval (e := e)).asEquivalence.functor).commShiftIso (1 : ℤ)).hom.app X := by
+    simpa only [Functor.asEquivalence_functor, Functor.asEquivalence_inverse,
+      Functor.comp_obj] using
+      (Functor.commShiftIso_comp_hom_app
+        (F := (eval (e := e)).asEquivalence.inverse)
+        (G := (eval (e := e)).asEquivalence.functor) (1 : ℤ) X).symm
+  have hc :
+      (((eval (e := e)).asEquivalence.inverse ⋙
+        (eval (e := e)).asEquivalence.functor).commShiftIso (1 : ℤ)).hom.app X ≫
+      (shiftFunctor C 1).map
+            ((eval (e := e)).asEquivalence.counitIso.hom.app X) =
+        (eval (e := e)).asEquivalence.counitIso.hom.app ((shiftFunctor C 1).obj X) := by
+    simpa only [Equivalence.toAdjunction_counit] using
+      (CategoryTheory.Adjunction.commShiftIso_hom_app_counit_app_shift
+        (eval (e := e)).asEquivalence.toAdjunction ℤ (1 : ℤ) X)
+  rw [← Category.assoc, hcomp, hc]
+  have hi := congrArg Iso.inv e.evalCommShiftIso_one
+  have hi' :
+      e.shiftFunctorOneIso.inv.app ((eval (e := e)).obj ((eval (e := e)).inv.obj X)) ≫
+          ((eval (e := e)).asEquivalence.functor.commShiftIso (1 : ℤ)).inv.app
+            ((eval (e := e)).inv.obj X) =
+        (reindexOneCompEvalIso (e := e)).inv.app ((eval (e := e)).inv.obj X) := by
+    simpa only [Iso.trans_inv, NatTrans.comp_app, isoWhiskerLeft_inv,
+      Functor.whiskerLeft_app, Functor.asEquivalence_functor] using
+        congr_app hi ((eval (e := e)).inv.obj X)
+  rw [← hi']
+  rw [Iso.hom_inv_id_app_assoc]
+  have hβ : ((eval (e := e)).asEquivalence.functor.commShiftIso (1 : ℤ)).inv.app
+        ((eval (e := e)).inv.obj X) ≫
+      ((eval (e := e)).asEquivalence.functor.commShiftIso (1 : ℤ)).hom.app
+        ((eval (e := e)).inv.obj X) = 𝟙 _ := by
+    exact Iso.inv_hom_id_app
+      ((eval (e := e)).asEquivalence.functor.commShiftIso (1 : ℤ))
+        ((eval (e := e)).inv.obj X)
+  simp only [Category.assoc]
+  slice_rhs 3 4 => rw [hβ]
+  erw [Category.id_comp]
+  rw [← (shiftFunctor C 1).map_comp,
+    Iso.inv_hom_id_app]
+  erw [Functor.map_id]
+  exact (Category.comp_id
+    ((eval (e := e)).asEquivalence.counitIso.hom.app ((shiftFunctor C 1).obj X))).symm
+
+/-- The inverse degree-zero component of the inverse evaluation functor's degree-one shift
+comparison. -/
+private theorem evalInverseCommShiftIso_one_inv_app_f_zero (X : C) :
+    letI := e.hasShift
+    letI : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+    letI : (eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
+      (eval (e := e)).asEquivalence.commShiftInverse ℤ
+    (eval (e := e)).map
+        (((eval (e := e)).asEquivalence.inverse.commShiftIso (1 : ℤ)).inv.app X) =
+      (reindexOneCompEvalIso (e := e)).hom.app ((eval (e := e)).inv.obj X) ≫
+        e.shiftFunctorOneIso.inv.app ((eval (e := e)).obj ((eval (e := e)).inv.obj X)) ≫
+          (shiftFunctor C 1).map
+            ((eval (e := e)).asEquivalence.counitIso.hom.app X) ≫
+            (eval (e := e)).asEquivalence.counitIso.inv.app
+              ((shiftFunctor C 1).obj X) := by
+  let _ := e.hasShift
+  let _ : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+  let _ : (eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
+    (eval (e := e)).asEquivalence.commShiftInverse ℤ
+  rw [← cancel_epi ((eval (e := e)).map
+    (((eval (e := e)).asEquivalence.inverse.commShiftIso (1 : ℤ)).hom.app X))]
+  rw [← (eval (e := e)).map_comp, Iso.hom_inv_id_app, Functor.map_id]
+  rw [e.evalInverseCommShiftIso_one_hom_app_f_zero]
+  simp only [Category.assoc]
+  rw [Iso.inv_hom_id_app_assoc, Iso.hom_inv_id_app_assoc]
+  slice_rhs 2 3 =>
+    rw [← (shiftFunctor C 1).map_comp, Iso.inv_hom_id_app]
+    simp only [Functor.id_obj, Functor.map_id]
+  erw [Category.id_comp]
+  exact (Iso.hom_inv_id_app (eval (e := e)).asEquivalence.counitIso
+    ((shiftFunctor C 1).obj X)).symm
+
+/-- Evaluation in degree zero of a morphism lifted through the inverse evaluation equivalence. -/
+private theorem evalInverse_map_f_zero {X Y : C} (f : X ⟶ Y) :
+    ((eval (e := e)).inv.map f).f 0 =
+      (show ((eval (e := e)).inv.obj X).X 0 ⟶ X from
+        (eval (e := e)).asEquivalence.counitIso.hom.app X) ≫ f ≫
+        (show Y ⟶ ((eval (e := e)).inv.obj Y).X 0 from
+          (eval (e := e)).asEquivalence.counitIso.inv.app Y) := by
+  -- The degree-zero field is definitionally evaluation; normalize it to apply the equivalence's
+  -- public formula for mapping through its inverse.
+  change (eval (e := e)).map ((eval (e := e)).inv.map f) = _
+  exact (eval (e := e)).asEquivalence.fun_inv_map X Y f
+
+end CategoryTheory.Equivalence
+
 namespace CategoryTheory.Functor
 
 open CategoryTheory.Equivalence Equivalence.IntSequence
@@ -226,6 +349,58 @@ private noncomputable def comparison :
   ((whiskeringRight C (IntSequence e') D).obj (eval (e := e'))).preimageIso
     (comparisonAfterEval F α)
 
+private lemma comparison_hom_app_f_zero (X : C) :
+    ((comparison F α).hom.app X).f 0 =
+      (show ((eval (e := e')).inv.obj (F.obj X)).X 0 ⟶ F.obj X from
+        (eval (e := e')).asEquivalence.counitIso.hom.app (F.obj X)) ≫
+        F.map (show X ⟶ ((eval (e := e)).inv.obj X).X 0 from
+          (eval (e := e)).asEquivalence.counitIso.inv.app X) := by
+  -- Postcomposition by evaluation is definitionally the degree-zero component. This exposes the
+  -- `map_preimage` equation without unfolding the chosen preimage itself.
+  change (((whiskeringRight C (IntSequence e') D).obj (eval (e := e'))).map
+    (comparison F α).hom).app X = _
+  unfold comparison
+  simp only [Functor.preimageIso_hom, Functor.map_preimage]
+  simp only [comparisonAfterEval, Functor.asEquivalence_functor, Iso.trans_hom,
+    isoWhiskerLeft_hom, NatTrans.comp_app, Functor.comp_obj, Functor.associator_hom_app,
+    Functor.id_obj, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app,
+    Iso.trans_symm, Iso.symm_hom, Iso.symm_inv, isoWhiskerRight_inv, isoWhiskerLeft_inv,
+    Functor.associator_inv_app, Functor.whiskerRight_app, mapFunctorCompEvalIso_inv_app,
+    Functor.leftUnitor_inv_app, Category.id_comp, Category.comp_id]
+  erw [Category.id_comp, Category.comp_id]
+  rfl
+
+private lemma comparison_inv_app_f_zero (X : C) :
+    ((comparison F α).inv.app X).f 0 =
+      F.map (show ((eval (e := e)).inv.obj X).X 0 ⟶ X from
+        (eval (e := e)).asEquivalence.counitIso.hom.app X) ≫
+        (show F.obj X ⟶ ((eval (e := e')).inv.obj (F.obj X)).X 0 from
+          (eval (e := e')).asEquivalence.counitIso.inv.app (F.obj X)) := by
+  -- As above, normalize only the evaluation component in order to use `map_preimage`.
+  change (((whiskeringRight C (IntSequence e') D).obj (eval (e := e'))).map
+    (comparison F α).inv).app X = _
+  unfold comparison
+  simp only [Functor.preimageIso_inv, Functor.map_preimage]
+  simp only [comparisonAfterEval, Iso.trans_inv, Functor.asEquivalence_functor,
+    Iso.trans_symm, Iso.symm_inv, Iso.symm_hom, isoWhiskerLeft_inv, isoWhiskerLeft_hom,
+    NatTrans.comp_app, Functor.comp_obj,
+    Functor.associator_inv_app, Functor.id_obj, Functor.whiskerLeft_app,
+    Functor.rightUnitor_inv_app, isoWhiskerRight_hom,
+    Functor.associator_hom_app, Functor.whiskerRight_app, mapFunctorCompEvalIso_hom_app,
+    Functor.leftUnitor_hom_app, Category.id_comp, Category.comp_id]
+  erw [Category.id_comp, Category.id_comp]
+  rfl
+
+private lemma comparison_inv_app_f_one (X : C) :
+    ((comparison F α).inv.app X).f 1 =
+      (((mapFunctor α).obj ((eval (e := e)).inv.obj X)).iso 0 1 rfl).inv ≫
+        e'.functor.map (((comparison F α).inv.app X).f 0) ≫
+          (((eval (e := e')).inv.obj (F.obj X)).iso 0 1 rfl).hom := by
+  rw [← cancel_epi
+    (((mapFunctor α).obj ((eval (e := e)).inv.obj X)).iso 0 1 rfl).hom]
+  simp only [Iso.hom_inv_id_assoc]
+  exact (((comparison F α).inv.app X).comm 0 1 rfl).symm
+
 end CommShiftOfIntertwining
 
 /-- A functor intertwining two autoequivalences commutes coherently with the integral shifts
@@ -245,5 +420,157 @@ noncomputable def commShiftOfIntertwining (F : C ⥤ D) (e : C ≌ C) (e' : D �
   letI : (eval (e := e')).inv.CommShift ℤ :=
     (eval (e := e')).asEquivalence.commShiftInverse ℤ
   exact Functor.CommShift.ofComp (CommShiftOfIntertwining.comparison F α) ℤ
+
+/-- At degree one, the coherent shift comparison recovers the supplied intertwining
+isomorphism. -/
+theorem commShiftOfIntertwining_iso_one (F : C ⥤ D) (e : C ≌ C) (e' : D ≌ D)
+    (α : e.functor ⋙ F ≅ F ⋙ e'.functor) :
+    letI := e.hasShift
+    letI := e'.hasShift
+    letI := commShiftOfIntertwining F e e' α
+    F.commShiftIso (1 : ℤ) =
+      isoWhiskerRight e.shiftFunctorOneIso F ≪≫ α ≪≫
+        isoWhiskerLeft F e'.shiftFunctorOneIso.symm := by
+  let _ := e.hasShift
+  let _ := e'.hasShift
+  let _ : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+  let _ : (eval (e := e')).asEquivalence.functor.CommShift ℤ := e'.evalCommShift
+  let _ : (eval (e := e)).inv.CommShift ℤ :=
+    (eval (e := e)).asEquivalence.commShiftInverse ℤ
+  let _ : (eval (e := e')).inv.CommShift ℤ :=
+    (eval (e := e')).asEquivalence.commShiftInverse ℤ
+  let _ : F.CommShift ℤ := commShiftOfIntertwining F e e' α
+  apply Iso.ext
+  apply NatTrans.ext
+  funext X
+  -- `OfComp.iso` is the public comparison underlying the installed `CommShift` structure.
+  change (Functor.CommShift.OfComp.iso
+    (CommShiftOfIntertwining.comparison F α) (1 : ℤ)).hom.app X = _
+  apply (eval (e := e')).inv.map_injective
+  rw [Functor.CommShift.OfComp.map_iso_hom_app]
+  apply (eval (e := e')).map_injective
+  simp only [Functor.comp_obj, shiftFunctor_eq_reindex, eval_map, comp_f, reindex_obj_X,
+    Int.reduceAdd, reindex_map_f, Iso.trans_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
+    Iso.symm_hom, NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
+    Functor.map_comp]
+  rw [Functor.commShiftIso_comp_hom_app]
+  simp only [comp_f, mapFunctor_map_f]
+  rw [show (mapFunctor α).commShiftIso (1 : ℤ) = mapFunctorShiftIso α 1 from rfl]
+  simp only [mapFunctorShiftIso_hom_app_f]
+  erw [Category.comp_id]
+  rw [CommShiftOfIntertwining.comparison_hom_app_f_zero]
+  simp only [shiftFunctor_eq_reindex, reindex_obj_X, Int.reduceAdd]
+  rw [CommShiftOfIntertwining.comparison_inv_app_f_one,
+    CommShiftOfIntertwining.comparison_inv_app_f_zero]
+  simp only [mapFunctor, Functor.comp_obj, Iso.trans_inv, Functor.mapIso_inv, Iso.symm_inv,
+    Iso.app_hom, Category.assoc]
+  have hγ : (((eval (e := e)).inv.commShiftIso (1 : ℤ)).hom.app X).f 0 =
+      (eval (e := e)).asEquivalence.counitIso.hom.app ((shiftFunctor C 1).obj X) ≫
+        (shiftFunctor C 1).map
+          ((eval (e := e)).asEquivalence.counitIso.inv.app X) ≫
+          e.shiftFunctorOneIso.hom.app
+            ((eval (e := e)).obj ((eval (e := e)).inv.obj X)) ≫
+            (((eval (e := e)).inv.obj X).iso 0 1 rfl).hom := by
+    have h := e.evalInverseCommShiftIso_one_hom_app_f_zero X
+    rw [reindexOneCompEvalIso_inv_app] at h
+    -- Evaluation of a sequence morphism is its degree-zero component.
+    change (((eval (e := e)).inv.commShiftIso (1 : ℤ)).hom.app X).f 0 = _ at h
+    exact h
+  have hγ' : (((eval (e := e')).inv.commShiftIso (1 : ℤ)).inv.app (F.obj X)).f 0 =
+      (((eval (e := e')).inv.obj (F.obj X)).iso 0 1 rfl).inv ≫
+        e'.shiftFunctorOneIso.inv.app
+          ((eval (e := e')).obj ((eval (e := e')).inv.obj (F.obj X))) ≫
+          (shiftFunctor D 1).map
+            ((eval (e := e')).asEquivalence.counitIso.hom.app (F.obj X)) ≫
+            (eval (e := e')).asEquivalence.counitIso.inv.app
+              ((shiftFunctor D 1).obj (F.obj X)) := by
+    have h := e'.evalInverseCommShiftIso_one_inv_app_f_zero (F.obj X)
+    rw [reindexOneCompEvalIso_hom_app] at h
+    -- Normalize the same evaluation component for the inverse comparison.
+    change (((eval (e := e')).inv.commShiftIso (1 : ℤ)).inv.app (F.obj X)).f 0 = _ at h
+    exact h
+  rw [hγ, hγ']
+  rw [e'.evalInverse_map_f_zero, e'.evalInverse_map_f_zero,
+    e'.evalInverse_map_f_zero]
+  simp only [Functor.comp_obj, Functor.id_obj]
+  simp only [Functor.asEquivalence_functor]
+  repeat' erw [Category.assoc]
+  erw [Functor.map_comp]
+  erw [Functor.map_comp]
+  erw [Functor.map_comp]
+  erw [Functor.map_comp]
+  repeat' erw [Category.assoc]
+  erw [Iso.inv_hom_id_app_map_assoc]
+  erw [← F.map_comp_assoc]
+  erw [Iso.hom_inv_id_assoc]
+  erw [Iso.hom_inv_id_map_assoc]
+  erw [Iso.inv_hom_id_app_assoc]
+  erw [Iso.inv_hom_id_app_assoc]
+  have hshift := e.shiftFunctorOneIso.hom.naturality
+    ((eval (e := e)).asEquivalence.counitIso.inv.app X)
+  -- Normalize the exposed evaluation object's degree-zero field in the naturality equation.
+  change (shiftFunctor C 1).map
+      ((eval (e := e)).asEquivalence.counitIso.inv.app X) ≫
+        e.shiftFunctorOneIso.hom.app ((eval (e := e)).obj ((eval (e := e)).inv.obj X)) =
+      e.shiftFunctorOneIso.hom.app X ≫ e.functor.map
+        ((eval (e := e)).asEquivalence.counitIso.inv.app X) at hshift
+  rw [hshift]
+  erw [Functor.map_comp]
+  repeat' erw [Category.assoc]
+  have hα := α.hom.naturality
+    ((eval (e := e)).asEquivalence.counitIso.inv.app X)
+  -- The target of the evaluation counit is definitionally the degree-zero term used by `α`.
+  change F.map (e.functor.map
+      ((eval (e := e)).asEquivalence.counitIso.inv.app X)) ≫
+        α.hom.app (((eval (e := e)).inv.obj X).X 0) =
+      α.hom.app X ≫ e'.functor.map (F.map
+        ((eval (e := e)).asEquivalence.counitIso.inv.app X)) at hα
+  let t := e'.functor.map (F.map
+      ((eval (e := e)).asEquivalence.counitIso.hom.app X)) ≫
+    e'.functor.map ((eval (e := e')).asEquivalence.counitIso.inv.app (F.obj X)) ≫
+    e'.shiftFunctorOneIso.inv.app
+      ((eval (e := e')).obj ((eval (e := e')).inv.obj (F.obj X))) ≫
+    (shiftFunctor D 1).map
+      ((eval (e := e')).asEquivalence.counitIso.hom.app (F.obj X)) ≫
+    (eval (e := e')).asEquivalence.counitIso.inv.app
+      ((shiftFunctor D 1).obj (F.obj X))
+  have hα_assoc : F.map (e.functor.map
+        ((eval (e := e)).asEquivalence.counitIso.inv.app X)) ≫
+      (α.hom.app (((eval (e := e)).inv.obj X).X 0) ≫ t) =
+      α.hom.app X ≫
+        (e'.functor.map (F.map
+          ((eval (e := e)).asEquivalence.counitIso.inv.app X)) ≫ t) := by
+    exact (Category.assoc _ _ _).symm.trans ((hα =≫ t).trans (Category.assoc _ _ _))
+  dsimp only [t] at hα_assoc
+  erw [hα_assoc]
+  erw [← e'.functor.map_comp_assoc]
+  erw [← F.map_comp, Iso.inv_hom_id_app, F.map_id, e'.functor.map_id,
+    Category.id_comp]
+  have hshift' := e'.shiftFunctorOneIso.inv.naturality
+    ((eval (e := e')).asEquivalence.counitIso.inv.app (F.obj X))
+  -- Normalize the target evaluation component in the second shift naturality equation.
+  change e'.functor.map
+      ((eval (e := e')).asEquivalence.counitIso.inv.app (F.obj X)) ≫
+        e'.shiftFunctorOneIso.inv.app
+          ((eval (e := e')).obj ((eval (e := e')).inv.obj (F.obj X))) =
+      e'.shiftFunctorOneIso.inv.app (F.obj X) ≫
+        (shiftFunctor D 1).map
+          ((eval (e := e')).asEquivalence.counitIso.inv.app (F.obj X)) at hshift'
+  have htarget : e'.functor.map
+        ((eval (e := e')).asEquivalence.counitIso.inv.app (F.obj X)) ≫
+      (e'.shiftFunctorOneIso.inv.app
+          ((eval (e := e')).obj ((eval (e := e')).inv.obj (F.obj X))) ≫
+        (shiftFunctor D 1).map
+          ((eval (e := e')).asEquivalence.counitIso.hom.app (F.obj X)) ≫
+        (eval (e := e')).asEquivalence.counitIso.inv.app
+          ((shiftFunctor D 1).obj (F.obj X))) =
+      e'.shiftFunctorOneIso.inv.app (F.obj X) ≫
+        (eval (e := e')).asEquivalence.counitIso.inv.app
+          ((shiftFunctor D 1).obj (F.obj X)) := by
+    refine (Category.assoc _ _ _).symm.trans ((hshift' =≫ _).trans ?_)
+    rw [Category.assoc]
+    erw [Iso.inv_hom_id_app_map_assoc]
+  erw [htarget]
+  rfl
 
 end CategoryTheory.Functor
