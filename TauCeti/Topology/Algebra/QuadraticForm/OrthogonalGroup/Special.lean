@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 /-!
 # The determinant-one subgroup of an orthogonal group
 
-Over a Hausdorff topological commutative ring, the determinant-one subgroup is closed
+Over a T₁ topological commutative ring, the determinant-one subgroup is closed
 when the underlying module is finite free. For a quadratic form over a domain with
 left-separating polar form, every orthogonal determinant is `1` or `-1`, so this
 subgroup is also open. The topology is the one induced from linear automorphisms.
@@ -55,7 +55,7 @@ theorem _root_.QuadraticMap.continuous_orthogonalDet_val :
     Continuous (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) :=
   Units.continuous_val.comp (continuous_orthogonalDet Q)
 
-variable [T2Space K]
+variable [T1Space K]
 
 /-- The determinant-one subgroup is closed in the orthogonal group. -/
 theorem _root_.QuadraticMap.isClosed_specialOrthogonalWithin :
@@ -75,7 +75,7 @@ theorem _root_.QuadraticMap.isClosed_specialOrthogonalWithin :
 end CommRing
 
 variable {K V : Type*} [CommRing K] [IsDomain K] [TopologicalSpace K]
-  [IsTopologicalRing K] [T2Space K] [AddCommGroup V] [Module K V]
+  [IsTopologicalRing K] [T1Space K] [AddCommGroup V] [Module K V]
   [Module.Free K V] [Module.Finite K V] (Q : QuadraticForm K V)
 
 /-- The determinant-one subgroup is open in the orthogonal group. -/
