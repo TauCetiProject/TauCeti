@@ -34,7 +34,7 @@ bilinear form of the split-octonion norm, and entries
 `½ (x (i + 1) * y (i + 2) + y (i + 1) * x (i + 2))`. Both halves of the Leibniz rule are then
 octonion facts already in `TauCeti/Algebra/Octonion/Derivation.lean`: on the diagonal the two
 surviving terms are `β (D x) y + β x (D y)`, which vanishes because a derivation is **skew** for
-the norm form (`TauCeti.Octonion.polar_derivation_apply_left_eq_neg`), and off it the entries are
+the norm form (`TauCeti.Octonion.associated_derivation_add_eq_zero`), and off it the entries are
 differentiated by the octonion Leibniz rule together with the fact that a derivation **commutes
 with conjugation** (`TauCeti.Octonion.derivation_apply_conj`).
 
@@ -65,16 +65,20 @@ fourteen independent derivations of `𝕆` of
 
 ## Implementation notes
 
-Everything is stated over a commutative ring; `2` is inverted only from the point where the
-symmetrized product enters, as it must be for that product to exist at all, and the base is a field
-only in the final rank bound.
+The entrywise action itself uses nothing but the module structures, so it is stated over a
+commutative semiring; a commutative ring and an invertible `2` are asked for only from the point
+where the symmetrized product enters, as they must be for that product to exist at all, and the
+base is a field only in the final rank bound. (A commutative semiring and not a bare one: the
+assignment is an `R`-linear map between modules of `R`-linear endomorphisms, which needs `R` to
+commute with itself.)
 
 `TauCeti.AlbertAlgebra.offDiagMap` is built on bare endomorphisms rather than on derivations, so
 that its additivity, its homogeneity and its multiplicativity for composition are available before
 any Leibniz rule is proved; `TauCeti.AlbertAlgebra.ofOctonionDerivation` is then assembled from
 those three facts with no further computation. The skewness of a derivation for the norm form is
-available as a statement about `QuadraticMap.polar`, whereas the Hermitian product is written with
-`QuadraticMap.associated`, its half; the private lemma below crosses that factor of two once.
+available both as a statement about `QuadraticMap.polar` and, in the half of it that the Hermitian
+product is written with, as `TauCeti.Octonion.associated_derivation_add_eq_zero`; it is the latter
+that the Leibniz rule on the diagonal consumes.
 
 ## References
 
@@ -92,9 +96,11 @@ namespace TauCeti
 
 namespace AlbertAlgebra
 
-variable {R : Type*} [CommRing R]
-
 /-! ### Acting on the off-diagonal entries -/
+
+section Endomorphism
+
+variable {R : Type*} [CommSemiring R]
 
 /-- A linear endomorphism `f` of the split octonions acts on `H₃(𝕆)` by applying `f` to each of the
 three off-diagonal entries and sending the scalar diagonal to `0`. The assignment `f ↦ this` is
@@ -153,26 +159,14 @@ theorem offDiagMap_injective : Function.Injective (offDiagMap (R := R)) := by
     (fun F : Module.End R (AlbertAlgebra R) => (F (offDiagSingle 0 x)).offDiag 0) h
   simpa using h'
 
+end Endomorphism
+
 /-! ### The induced derivation -/
 
 section Derivation
 
-variable [Invertible (2 : R)] (D : derivationLieAlgebra R (Octonion R))
-
-/-- The skewness of an octonion derivation for the norm form, in the half-polar form
-`QuadraticMap.associated` in which the Hermitian product of
-`TauCeti/Algebra/AlbertAlgebra/Basic.lean` is written: `β (D x) y + β x (D y) = 0`. -/
-private theorem associated_derivation_add_eq_zero (x y : Octonion R) :
-    QuadraticMap.associated (Octonion.normQuadraticForm R)
-        ((D : Module.End R (Octonion R)) x) y
-      + QuadraticMap.associated (Octonion.normQuadraticForm R) x
-        ((D : Module.End R (Octonion R)) y) = 0 := by
-  have hhalf : ∀ a b : Octonion R,
-      QuadraticMap.associated (Octonion.normQuadraticForm R) a b
-        = ⅟(2 : Module.End R R) • QuadraticMap.polar (Octonion.normQuadraticForm R) a b :=
-    fun _ _ => (rfl)
-  rw [hhalf, hhalf, ← smul_add, Octonion.polar_derivation_apply_left_eq_neg, neg_add_cancel,
-    smul_zero]
+variable {R : Type*} [CommRing R] [Invertible (2 : R)]
+  (D : derivationLieAlgebra R (Octonion R))
 
 /-- **A derivation of `𝕆` acts on `H₃(𝕆)` by a derivation.** On the scalar diagonal the Leibniz
 rule is the skewness of `D` for the norm form, and on the octonion entries it is the Leibniz rule
@@ -184,8 +178,9 @@ theorem offDiagMap_mem_derivationLieAlgebra :
   refine AlbertAlgebra.ext (funext fun i => ?_) (funext fun i => ?_)
   · simp only [offDiagMap_apply_diag, Pi.zero_apply, add_diag, Pi.add_apply, mul_diag,
       offDiagMap_apply_offDiag, zero_mul, mul_zero, zero_add]
-    linear_combination -associated_derivation_add_eq_zero D (A.offDiag (i + 1)) (B.offDiag (i + 1))
-      - associated_derivation_add_eq_zero D (A.offDiag (i + 2)) (B.offDiag (i + 2))
+    linear_combination
+      -Octonion.associated_derivation_add_eq_zero D (A.offDiag (i + 1)) (B.offDiag (i + 1))
+      - Octonion.associated_derivation_add_eq_zero D (A.offDiag (i + 2)) (B.offDiag (i + 2))
   · simp only [offDiagMap_apply_offDiag, add_offDiag, Pi.add_apply, mul_offDiag,
       offDiagMap_apply_diag, Pi.zero_apply, map_add, map_smul, add_zero, zero_add, zero_smul,
       Octonion.derivation_apply_conj, derivationLieAlgebra.leibniz, smul_add]

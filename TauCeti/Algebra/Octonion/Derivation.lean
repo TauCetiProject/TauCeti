@@ -80,9 +80,11 @@ Together the three families depend on `8 + 3 + 3 = 14` independent parameters, s
 * `TauCeti.Octonion.derivation_apply_conj`: a derivation commutes with conjugation.
 * `TauCeti.Octonion.polar_derivation_apply_self_eq_zero` and
   `TauCeti.Octonion.polar_derivation_apply_left_eq_neg`: a derivation is **skew** for the symmetric
-  bilinear form of the norm, `⟨D x, y⟩ = -⟨x, D y⟩`.
+  bilinear form of the norm, `⟨D x, y⟩ = -⟨x, D y⟩`;
+  `TauCeti.Octonion.associated_derivation_add_eq_zero` is the same statement written with
+  `QuadraticMap.associated`, half the polar form.
 * `TauCeti.Octonion.derivationLieAlgebra_le_skewAdjointLieSubalgebra`: `Der 𝕆 ≤ 𝔰𝔬(N)`, the
-  previous item as an inclusion of Lie subalgebras of `Module.End R 𝕆`.
+  skewness as an inclusion of Lie subalgebras of `Module.End R 𝕆`.
 * `TauCeti.Octonion.isFaithful_imaginaryLieSubmodule`: when scalar multiplication by `2` on `𝕆` is
   regular, `Der 𝕆` acts faithfully on `Im 𝕆`; `TauCeti.Octonion.instIsFaithfulImaginaryLieSubmodule`
   is the instance form of that, under `[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`.
@@ -99,8 +101,10 @@ Together the three families depend on `8 + 3 + 3 = 14` independent parameters, s
 
 ## Implementation notes
 
-Everything is stated over a commutative ring, except the rank bound
-`14 ≤ finrank (Der 𝕆)`, which asks for a field. The faithfulness result
+Everything is stated over a commutative ring, except
+`TauCeti.Octonion.associated_derivation_add_eq_zero`, which asks for an invertible `2` because
+`QuadraticMap.associated` does, and the rank bound `14 ≤ finrank (Der 𝕆)`, which asks for a
+field. The faithfulness result
 is stated for the exact hypothesis its proof uses, `IsSMulRegular (Octonion R) (2 : R)`, which is
 not a class; the instance form of it therefore asks for the two classes
 `[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`, which imply it but are strictly
@@ -292,6 +296,22 @@ theorem polar_derivation_apply_left_eq_neg (x y : Octonion R) :
     polar_derivation_apply_self_eq_zero, zero_add, add_zero] at h
   rw [QuadraticMap.polar_comm]
   exact eq_neg_of_add_eq_zero_right h
+
+/-- **A derivation is skew for the norm form**, in the half-polar form
+`QuadraticMap.associated`: `β (D x) y + β x (D y) = 0`. This is
+`TauCeti.Octonion.polar_derivation_apply_left_eq_neg` carried across the factor of two that
+separates `QuadraticMap.polar` from `QuadraticMap.associated`, for the benefit of constructions
+that write the symmetric bilinear form of the norm the latter way, as the product of the split
+Albert algebra does. -/
+theorem associated_derivation_add_eq_zero [Invertible (2 : R)] (x y : Octonion R) :
+    QuadraticMap.associated (normQuadraticForm R) ((D : Module.End R (Octonion R)) x) y
+      + QuadraticMap.associated (normQuadraticForm R) x
+        ((D : Module.End R (Octonion R)) y) = 0 := by
+  have hhalf : ∀ a b : Octonion R,
+      QuadraticMap.associated (normQuadraticForm R) a b
+        = ⅟(2 : Module.End R R) • QuadraticMap.polar (normQuadraticForm R) a b :=
+    fun _ _ => (rfl)
+  rw [hhalf, hhalf, ← smul_add, polar_derivation_apply_left_eq_neg, neg_add_cancel, smul_zero]
 
 /-- **`Der 𝕆 ≤ 𝔰𝔬(N)`**: every derivation of the split octonions is skew-adjoint for the symmetric
 bilinear form of the norm, so the derivation algebra is a Lie subalgebra of the orthogonal Lie
