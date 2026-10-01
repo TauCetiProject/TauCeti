@@ -564,9 +564,7 @@ theorem mem_typeDSpinReflection_of_not_add_one_lt {n : ℕ} {i : Fin n} (hi : ¬
       (Equiv.swap (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) i x ∈ s ↔
         x ≠ (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) ∧ x ≠ i) := by
   rw [typeDSpinReflection_of_not_add_one_lt hi]
-  simp only [Finset.mem_symmDiff, Finset.mem_map_equiv, Equiv.symm_swap, Finset.mem_insert,
-    Finset.mem_singleton]
-  grind
+  exact Finset.mem_map_swap_symmDiff_pair_iff _ _ _ _
 
 /-- Each simple reflection of the spin basis is an involution. -/
 @[simp]
@@ -659,10 +657,8 @@ private theorem typeDSpinSign_symmDiff_pair_map_swap {n : ℕ} {a b : Fin n} (ha
         (typeDSpinSign s a + typeDSpinSign s b) *
           ((Pi.single a 1 + Pi.single b 1 : Fin n → ℤ) x) := by
   have hmem : x ∈ s.map (Equiv.swap a b).toEmbedding ∆ {a, b} ↔
-      (Equiv.swap a b x ∈ s ↔ x ≠ a ∧ x ≠ b) := by
-    simp only [Finset.mem_symmDiff, Finset.mem_map_equiv, Equiv.symm_swap, Finset.mem_insert,
-      Finset.mem_singleton]
-    grind
+      (Equiv.swap a b x ∈ s ↔ x ≠ a ∧ x ≠ b) :=
+    Finset.mem_map_swap_symmDiff_pair_iff a b s x
   by_cases hx : x = a
   · -- `subst` renames `a` to `x`, so the two signs below are those at `x` and at `b`.
     subst hx
