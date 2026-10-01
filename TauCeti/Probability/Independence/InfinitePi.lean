@@ -15,8 +15,8 @@ The restrictions of a product sample to disjoint index sets are independent, and
 selections along maps with disjoint ranges.  The resulting joint-law identities are useful when a
 conditionally independent process is split into observed and unobserved coordinates.
 
-When the factors have no atoms, two distinct coordinates of a product sample are moreover almost
-surely different, so a sample can be used to order the indices it is attached to.
+When one of two factors has no atoms, the two corresponding coordinates of a product sample are
+moreover almost surely different, so a sample can be used to order the indices it is attached to.
 -/
 
 public section
@@ -82,12 +82,12 @@ theorem infinitePi_map_pair_comp {ι κ₁ κ₂ β : Type*} [MeasurableSpace β
     (Measurable.of_eval fun b => measurable_pi_apply _).aemeasurable,
     Measure.map_infinitePi_infinitePi_of_inj hg]
 
-/-- **Two coordinates of a product of atomless laws are almost surely distinct.** Under a product
-of probability laws without atoms on a space with a measurable diagonal, two distinct coordinates
-of a sample almost surely take different values. -/
-theorem ae_apply_ne_apply_infinitePi {ι β : Type*} [MeasurableSpace β] [MeasurableEq β]
-    (P : ι → Measure β) [∀ i, IsProbabilityMeasure (P i)] [∀ i, NullSingletonClass (P i)]
-    {i j : ι} (hij : i ≠ j) :
+/-- **Two coordinates of a product are almost surely distinct when one law is atomless.** Under a
+product of probability laws on a space with a measurable diagonal, two distinct coordinates `i` and
+`j` of a sample almost surely take different values as soon as the law at `j` has no atoms. -/
+theorem ae_eval_ne_eval_infinitePi {ι β : Type*} [MeasurableSpace β] [MeasurableEq β]
+    (P : ι → Measure β) [∀ i, IsProbabilityMeasure (P i)] {i j : ι} [NullSingletonClass (P j)]
+    (hij : i ≠ j) :
     ∀ᵐ x ∂Measure.infinitePi P, x i ≠ x j := by
   have hmeas : Measurable fun x : ι → β => (x i, x j) :=
     (measurable_pi_apply i).prodMk (measurable_pi_apply j)

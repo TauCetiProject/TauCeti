@@ -130,6 +130,11 @@ theorem indexEquiv_cell {κ ι : Type*} (vertexPerm : κ → Equiv.Perm ℕ)
 def noiseMeasure (κ ι : Type*) : Measure (NoiseIndex κ ι → I) :=
   Measure.infinitePi fun _ => (volume : Measure I)
 
+/-- The canonical Aldous--Hoover noise law is the product of uniform laws on its coordinates. -/
+theorem noiseMeasure_eq_infinitePi (κ ι : Type*) :
+    noiseMeasure κ ι = Measure.infinitePi fun _ => (volume : Measure I) :=
+  (rfl)
+
 /-- The canonical Aldous--Hoover noise law is a probability measure. -/
 instance instIsProbabilityMeasureNoiseMeasure (κ ι : Type*) :
     IsProbabilityMeasure (noiseMeasure κ ι) :=
