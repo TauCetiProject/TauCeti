@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.GuitartExact.KanExtension
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
 public import TauCeti.CategoryTheory.Sites.TopologicalBasis
+public import TauCeti.CategoryTheory.Thin
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Presheaves adapted to a basis
@@ -35,6 +38,12 @@ adaptedness; the other direction holds for every sheaf.
   sheaf for the restricted topology.
 * `TopCat.Presheaf.isSheaf_iff_of_isAdapted`: for a presheaf adapted to a basis, the two sheaf
   conditions are equivalent.
+* `TopCat.Presheaf.IsAdapted.mono`: a presheaf adapted to `B` is adapted to every `B' ⊇ B`. This
+  is how adaptedness to the rational opens of an adic spectrum yields adaptedness to its open
+  affinoid subspaces.
+* `TopCat.Presheaf.IsAdapted.of_iso`, `TopCat.Presheaf.IsAdapted.pushforward_of_iso`:
+  adaptedness is invariant under isomorphism of presheaves and under homeomorphism, for the family
+  of opens whose preimages lie in `B`.
 
 ## References
 
@@ -48,7 +57,7 @@ public section
 
 universe w v u
 
-open CategoryTheory CategoryTheory.Limits TopologicalSpace
+open AlgebraicGeometry CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
 
 namespace TopCat.Presheaf
 
@@ -60,6 +69,173 @@ is the pointwise right Kan extension of its restriction to `B`. -/
 @[expose] def IsAdapted : Prop :=
   Nonempty (Functor.RightExtension.mk F
     (𝟙 ((inducedFunctor (Subtype.val : B → Opens X)).op ⋙ F))).IsPointwiseRightKanExtension
+
+/-! ### Enlarging the family -/
+
+section Mono
+
+variable {F} {B} {B' : Set (Opens X)}
+
+/-- For `B ⊆ B'`, the functor from the members of `B` to the members of `B'`, reading a member of
+`B` as a member of `B'`. -/
+private def inducedOfSubset (hBB' : B ⊆ B') :
+    InducedCategory (Opens X) (Subtype.val : B → Opens X) ⥤
+      InducedCategory (Opens X) (Subtype.val : B' → Opens X) where
+  obj b := ⟨b.1, hBB' b.2⟩
+  map φ := InducedCategory.homMk φ.hom
+
+/-- For `B ⊆ B'`, the functor from the members of `B` below an open `Y` to the members of `B'`
+below `Y`, reading a member of `B` as a member of `B'`. -/
+private def structuredArrowOfSubset (hBB' : B ⊆ B') (Y : (Opens X)ᵒᵖ) :
+    StructuredArrow Y (inducedFunctor (Subtype.val : B → Opens X)).op ⥤
+      StructuredArrow Y (inducedFunctor (Subtype.val : B' → Opens X)).op :=
+  StructuredArrow.map₂ (F := (inducedOfSubset hBB').op) (G := 𝟭 _) (𝟙 Y) (𝟙 _)
+
+/-- Reading a member of `B` below `Y` as a member of `B'` does not change the leg of the
+Kan-extension cone of `F` at it: both are the restriction map of `F` from `Y`. -/
+private theorem coneAt_π_app_structuredArrowOfSubset_obj (hBB' : B ⊆ B') {Y : (Opens X)ᵒᵖ}
+    (g : StructuredArrow Y (inducedFunctor (Subtype.val : B → Opens X)).op) :
+    ((Functor.RightExtension.mk F
+      (𝟙 ((inducedFunctor (Subtype.val : B' → Opens X)).op ⋙ F))).coneAt Y).π.app
+        ((structuredArrowOfSubset hBB' Y).obj g) =
+      ((Functor.RightExtension.mk F
+        (𝟙 ((inducedFunctor (Subtype.val : B → Opens X)).op ⋙ F))).coneAt Y).π.app g := by
+  -- both legs are `F.map` of a morphism out of `Y` in the thin category `(Opens X)ᵒᵖ`
+  simp only [Functor.RightExtension.coneAt_π_app, Functor.RightExtension.mk_left,
+    Functor.RightExtension.mk_hom, NatTrans.id_app, Functor.comp_obj, Category.comp_id]
+  exact congrArg F.map (Subsingleton.elim _ _)
+
+/-- **Adaptedness passes to a larger family.** If `F` is adapted to `B` and `B ⊆ B'`, then `F`
+is adapted to `B'`: a compatible family on the members of `B'` below `V` is determined by its
+restriction to the members of `B`, and a compatible family on the members of `B` below `V`
+extends to the members `U' ∈ B'` below `V` through the limit description of `F(U')`. -/
+theorem IsAdapted.mono (hBB' : B ⊆ B') (hF : F.IsAdapted B) : F.IsAdapted B' := by
+  obtain ⟨h⟩ := hF
+  refine ⟨fun Y ↦ IsLimit.mk (fun s ↦ (h Y).lift (s.whisker (structuredArrowOfSubset hBB' Y)))
+    (fun s g ↦ ?_) (fun s m hm ↦ ?_)⟩
+  · -- the leg at `U' ∈ B'` is determined by its restrictions to the members `U ∈ B` below `U'`
+    refine (h ((inducedFunctor (Subtype.val : B' → Opens X)).op.obj g.right)).hom_ext'
+      fun U φ ↦ ?_
+    -- both sides are the leg of `s` at `U`, read as a member of `B'` below `Y`
+    have h₁ := (h Y).fac (s.whisker (structuredArrowOfSubset hBB' Y))
+      (StructuredArrow.mk (g.hom ≫ φ))
+    -- the restriction along `φ`, read as a morphism of members of `B'` below `Y`; the type
+    -- ascription records that its image under the diagram is `F.map φ`, which holds by definition
+    have h₂ : s.π.app g ≫ F.map φ =
+        s.π.app ((structuredArrowOfSubset hBB' Y).obj (StructuredArrow.mk (g.hom ≫ φ))) :=
+      s.w (StructuredArrow.homMk
+        (InducedCategory.homMk (X := (inducedOfSubset hBB').obj U.unop) (Y := g.right.unop)
+          φ.unop).op (Subsingleton.elim _ _) :
+        g ⟶ (structuredArrowOfSubset hBB' Y).obj (StructuredArrow.mk (g.hom ≫ φ)))
+    simp only [Functor.RightExtension.coneAt_π_app, Functor.RightExtension.mk_left,
+      Functor.RightExtension.mk_hom, NatTrans.id_app, Functor.comp_obj, Category.comp_id,
+      StructuredArrow.mk_right, StructuredArrow.mk_hom_eq_self, Functor.map_comp,
+      Cone.whisker_π, Functor.whiskerLeft_app] at h₁ ⊢
+    exact (Category.assoc _ _ _).trans (h₁.trans h₂.symm)
+  · -- a morphism into `F(Y)` is determined by its restrictions to the members of `B` below `Y`
+    refine (h Y).uniq (s.whisker (structuredArrowOfSubset hBB' Y)) m fun g ↦ ?_
+    rw [Cone.whisker_π, Functor.whiskerLeft_app, ← coneAt_π_app_structuredArrowOfSubset_obj hBB' g]
+    exact hm _
+
+end Mono
+
+/-! ### Transport along isomorphisms -/
+
+section OfIso
+
+variable {F} {B}
+
+/-- **Adaptedness is invariant under isomorphism of presheaves.** -/
+theorem IsAdapted.of_iso {G : X.Presheaf C} (e : F ≅ G) (hF : F.IsAdapted B) : G.IsAdapted B := by
+  obtain ⟨h⟩ := hF
+  refine ⟨fun Y ↦ IsLimit.equivOfNatIsoOfIso
+    (Functor.isoWhiskerLeft (StructuredArrow.proj Y (inducedFunctor (Subtype.val : B → Opens X)).op)
+      (Functor.isoWhiskerLeft (inducedFunctor (Subtype.val : B → Opens X)).op e))
+    ((Functor.RightExtension.mk F (𝟙 _)).coneAt Y) ((Functor.RightExtension.mk G (𝟙 _)).coneAt Y)
+    (Cone.ext (e.app Y) fun g ↦ ?_) (h Y)⟩
+  simp
+
+end OfIso
+
+section Pushforward
+
+variable {F} {Y : TopCat.{w}} (f : X ≅ Y)
+
+/-- For a homeomorphism `f : X ≅ Y`, the functor from the members of the preimage of `B` to the
+members of `B`, taking preimages. -/
+private def inducedMapIso :
+    InducedCategory (Opens Y) (Subtype.val : (Opens.map f.hom).obj ⁻¹' B → Opens Y) ⥤
+      InducedCategory (Opens X) (Subtype.val : B → Opens X) where
+  obj b := ⟨(Opens.map f.hom).obj b.1, b.2⟩
+  map φ := InducedCategory.homMk ((Opens.map f.hom).map φ.hom)
+
+private instance : (inducedMapIso B f).Full where
+  map_surjective {b₁ b₂} ψ :=
+    ⟨InducedCategory.homMk (X := b₁) (Y := b₂)
+      -- `Opens.map f.hom` is the functor of the equivalence `Opens.mapMapIso f`, hence full
+      (leOfHom ((Opens.mapMapIso f).functor.preimage ψ.hom)).hom, Subsingleton.elim _ _⟩
+
+private instance : (inducedMapIso B f).EssSurj where
+  mem_essImage b := by
+    -- the member `f(U)` of the preimage of `B`, for `U = b` a member of `B`
+    have hmem : (Opens.map f.inv).obj b.1 ∈ (Opens.map f.hom).obj ⁻¹' B := by
+      rw [Set.mem_preimage, Opens.map_hom_obj_map_inv_obj]
+      exact b.2
+    exact ⟨⟨(Opens.map f.inv).obj b.1, hmem⟩,
+      ⟨eqToIso (Subtype.ext (Opens.map_hom_obj_map_inv_obj f b.1))⟩⟩
+
+private instance : (inducedMapIso B f).IsEquivalence where
+
+/-- The commutative square of the inclusions of the members of the preimage of `B` and of `B` into
+the opens, and of the preimage functors; its two-square is the identity. -/
+private def pushforwardSquare :
+    TwoSquare (inducedFunctor (Subtype.val : (Opens.map f.hom).obj ⁻¹' B → Opens Y)).op
+      (inducedMapIso B f).op (Opens.map f.hom).op (inducedFunctor (Subtype.val : B → Opens X)).op :=
+  TwoSquare.mk _ _ _ _ (𝟙 _)
+
+private instance : IsIso (pushforwardSquare B f).natTrans := inferInstanceAs (IsIso (𝟙 _))
+
+/-- The components of the identity two-square `pushforwardSquare` are identities, read along the
+definitional equality of the two spellings of `f⁻¹(U)` for a member `U` of the preimage of `B`:
+as the preimage of `U`, and as the member of `B` that `U` is read as. `F` maps them to
+identities. -/
+private theorem map_pushforwardSquare_natTrans_app
+    (b : (InducedCategory (Opens Y) (Subtype.val : (Opens.map f.hom).obj ⁻¹' B → Opens Y))ᵒᵖ) :
+    F.map ((pushforwardSquare B f).natTrans.app b) =
+      𝟙 (F.obj ((Opens.map f.hom).op.obj ((inducedFunctor _).op.obj b))) :=
+  F.map_id _
+
+variable {B} in
+/-- **Adaptedness is invariant under homeomorphism.** If `F` is adapted to `B` and `f : X ≅ Y` is
+an isomorphism of topological spaces, the pushforward `f_* F` is adapted to the opens of `Y` whose
+preimages lie in `B`. -/
+theorem IsAdapted.pushforward_of_iso (hF : F.IsAdapted B) :
+    (f.hom _* F).IsAdapted ((Opens.map f.hom).obj ⁻¹' B) := by
+  obtain ⟨h⟩ := hF
+  refine ⟨fun V ↦ ?_⟩
+  -- the square `pushforwardSquare` is Guitart exact, its vertical functors being equivalences
+  -- (`Opens.map f.hom` is the functor of the equivalence `Opens.mapMapIso f`), so the cone at `V`
+  -- of the right extension `f_* F = (Opens.map f.hom).op ⋙ F` is a limit cone exactly when the
+  -- cone at `f⁻¹(V)` of the right extension `F` is
+  have : (Opens.map f.hom).IsEquivalence := (Opens.mapMapIso f).isEquivalence_functor
+  have := ((Functor.RightExtension.mk F (𝟙 _)).isPointwiseRightKanExtensionAtCompTwoSquareEquiv
+    (pushforwardSquare B f) V).symm (h _)
+  -- the legs agree: both are the restriction map of `f_* F` from `V`, composed with identities
+  refine IsLimit.ofIsoLimit this (Cone.ext (Iso.refl _) fun g ↦ ?_)
+  simp only [Functor.RightExtension.coneAt_π_app, Functor.RightExtension.coneAt_pt,
+    Functor.RightExtension.mk_left, Functor.RightExtension.mk_hom, Functor.comp_map,
+    Functor.comp_obj, NatTrans.comp_app, Functor.associator_inv_app, Functor.whiskerRight_app,
+    Functor.associator_hom_app, Functor.whiskerLeft_app, NatTrans.id_app, Category.comp_id,
+    map_pushforwardSquare_natTrans_app (F := F) B f, Iso.refl_hom, pushforward_obj_map,
+    Functor.op_map]
+  -- the identities are those of `F(f⁻¹(U))` for `U = g.right`, composed along the definitional
+  -- equality of the two spellings of `f⁻¹(U)`, which `simp` does not see through
+  exact (congrArg (F.map _ ≫ ·) ((Category.id_comp _).trans (Category.id_comp _))).trans
+    ((Category.comp_id _).trans (Category.id_comp _).symm)
+
+end Pushforward
+
+/-! ### The sheaf condition on a basis -/
 
 /-- **The sheaf condition on a basis `B` suffices for an adapted presheaf.** If `F` is adapted to
 the basis `B` and its restriction to `B` is a sheaf for the topology restricted to `B`, then `F` is
