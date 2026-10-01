@@ -9,6 +9,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.CharacterE
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Cup
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CohomologicalDimension
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.ThreeTerm
 
 /-!
@@ -17,13 +19,21 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.
 A Demushkin group is a pro-`p` group with finite-dimensional `H¹(G, 𝔽_p)`, one-dimensional
 `H²(G, 𝔽_p)` and a nondegenerate cup product `H¹ × H¹ → H²`. This file proves that the cup product
 condition can be replaced by conditions on the open normal subgroups of index `p`, for a group of
-`p`-cohomological dimension at most `2` (NSW (3.9.15), due to Andozhskii and to Dummit–Labute):
+`p`-cohomological dimension at most `2`, and assembles the resulting recognition criteria
+(NSW (3.9.15), due to Andozhskii and to Dummit–Labute): a topologically finitely generated
+one-relator pro-`p` group `G` with `d(G) > 1` is Demushkin if and only if `cd_p G = 2` and
+`dim H²(N, 𝔽_p) = 1` for every open normal subgroup `N`, if and only if `cd_p G = 2` and
+`d(N) - 2 = [G : N] (d(G) - 2)` for every open normal subgroup `N`; in both criteria `N` may
+range over the open normal subgroups of index `p` only.
+
+The two implications towards `IsDemushkin`, in the namespace `TauCeti.CohomologicalDimensionLE`,
+are:
 
 * if `dim H²(U, 𝔽_p) = 1` for every open normal subgroup `U` of index `p`, then `G` is Demushkin
-  (`TauCeti.CohomologicalDimensionLE.isDemushkin_of_finrank_cohomFp_two_openSubgroup`);
+  (`isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq`);
 * if `d(U) - 2 = [G : U] (d(G) - 2)` for every open normal subgroup `U` of index `p`, where `d` is
   the topological generator rank, then `G` is Demushkin
-  (`TauCeti.CohomologicalDimensionLE.isDemushkin_of_topologicalGeneratorRankNat_openSubgroup`).
+  (`isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq`).
 
 The second statement reduces to the first through the three-term Euler formula
 `1 - d(U) + dim H²(U, 𝔽_p) = [G : U] (1 - d(G) + dim H²(G, 𝔽_p))`.
@@ -39,19 +49,31 @@ module `Coind_U^G 𝔽_p`, by a kernel killed by `p`, so `H²(G, E(χ))` is a qu
 (`TauCeti.CohomologicalDimensionLE.natCard_H2_sq_le_natCard_H2_ker`), which is impossible when both
 groups have order `p`.
 
-The converse implications, that a Demushkin group satisfies both conditions, rest on the theorem
-that an open subgroup of an infinite Demushkin group is Demushkin,
-`TauCeti.IsDemushkin.openSubgroup` in
-`TauCeti/Topology/Algebra/Group/Profinite/Demushkin/OpenSubgroup.lean`; they are not proved here.
+The converse implications, that a Demushkin group satisfies both conditions, rest on Tate's
+theorem `cd_p G = 2` for an infinite Demushkin group and on the open-subgroup theorem of
+`TauCeti/Topology/Algebra/Group/Profinite/Demushkin/OpenSubgroup.lean`: an open subgroup `U` of an
+infinite Demushkin group is Demushkin, so `dim H²(U, 𝔽_p) = 1`, with rank
+`n(U) - 2 = [G : U] (n(G) - 2)`. The hypothesis `d(G) > 1` makes the Demushkin group infinite,
+which excludes `ℤ/2`, the finite Demushkin group, whose `cd_2` is infinite.
 
 ## Main results
 
 * `TauCeti.CohomologicalDimensionLE.natCard_H2_sq_le_natCard_H2_ker`: a surjective character that
   cups trivially with `H¹(G, 𝔽_p)` has `|H²(G, 𝔽_p)|² ≤ |H²(ker χ, 𝔽_p)|`, when `cd_p G ≤ 2`.
-* `TauCeti.CohomologicalDimensionLE.isDemushkin_of_finrank_cohomFp_two_openSubgroup`: the
-  recognition criterion through `dim H²` of the open normal subgroups of index `p`.
-* `TauCeti.CohomologicalDimensionLE.isDemushkin_of_topologicalGeneratorRankNat_openSubgroup`: the
+* `TauCeti.CohomologicalDimensionLE.isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq`:
+  the recognition criterion through `dim H²` of the open normal subgroups of index `p`.
+* `isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq`, in the same namespace: the
   recognition criterion through the ranks of the open normal subgroups of index `p`.
+* `TauCeti.isDemushkin_iff_finrank_cohomFp_two_openSubgroup` and
+  `TauCeti.isDemushkin_iff_finrank_cohomFp_two_openSubgroup_index_eq`: **the recognition
+  criterion through `dim H²`**, as an equivalence: `G` is Demushkin if and only if `cd_p G = 2`
+  and `dim H²(U, 𝔽_p) = 1` for every open normal `U`, respectively for every open normal `U` of
+  index `p`. The first does not assume `dim H²(G, 𝔽_p) = 1`, which is the case `U = ⊤`.
+* `TauCeti.isDemushkin_iff_topologicalGeneratorRankNat_openSubgroup` and
+  `TauCeti.isDemushkin_iff_topologicalGeneratorRankNat_openSubgroup_index_eq`: **the recognition
+  criterion through the ranks**, as an equivalence: `G` is Demushkin if and only if `cd_p G = 2`
+  and `d(U) - 2 = [G : U] (d(G) - 2)` for every open normal `U`, respectively for every open
+  normal `U` of index `p`.
 
 ## References
 
@@ -195,7 +217,7 @@ implication from (ii) to (i), in the sharpened form over the subgroups of index 
 topologically finitely generated pro-`p` group with `cd_p G ≤ 2` and `dim H²(G, 𝔽_p) = 1`. If
 `dim H²(U, 𝔽_p) = 1` for every open normal subgroup `U` of index `p`, then `G` is a Demushkin
 group. -/
-theorem isDemushkin_of_finrank_cohomFp_two_openSubgroup (hG : IsProP p G)
+theorem isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq (hG : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) (h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1)
     (hU : ∀ U : OpenSubgroup G, (U : Subgroup G).Normal → (U : Subgroup G).index = p →
       Module.finrank (ZMod p) (cohomFp p (U : Subgroup G) 2) = 1) :
@@ -265,14 +287,14 @@ the implication from (iii) to (i), in the sharpened form over the subgroups of i
 be a topologically finitely generated pro-`p` group with `cd_p G ≤ 2` and `dim H²(G, 𝔽_p) = 1`. If
 `d(U) - 2 = [G : U] (d(G) - 2)` for every open normal subgroup `U` of index `p`, where `d` is the
 topological generator rank, then `G` is a Demushkin group. -/
-theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup (hG : IsProP p G)
+theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq (hG : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) (h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1)
     (hU : ∀ U : OpenSubgroup G, (U : Subgroup G).Normal → (U : Subgroup G).index = p →
       (topologicalGeneratorRankNat (U : Subgroup G) (hfg.of_openSubgroup U) : ℤ) - 2 =
         p * ((topologicalGeneratorRankNat G hfg : ℤ) - 2)) :
     IsDemushkin p G := by
   -- By the three-term Euler formula the rank condition says `dim H²(U, 𝔽_p) = 1`.
-  refine isDemushkin_of_finrank_cohomFp_two_openSubgroup hcd hG hfg h2 fun U hUn hUi ↦ ?_
+  refine isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq hcd hG hfg h2 fun U hUn hUi ↦ ?_
   -- The explicit models need an action of `G` on `𝔽_p`; the trivial one is installed for the
   -- duration of the proof and does not appear in the statement.
   let _ := trivialZModAction p G
@@ -295,5 +317,96 @@ theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup (hG : IsProP p G
 end Recognition
 
 end CohomologicalDimensionLE
+
+section Equivalences
+
+variable (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G)
+  (h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1) (hn : 1 < topologicalGeneratorRankNat G hfg)
+include hG hfg hn
+
+omit h2 in
+/-- **Recognition of Demushkin groups by `H²` of the open normal subgroups, as an equivalence**
+(NSW (3.9.15), (i) ⇔ (ii)). A topologically finitely generated pro-`p` group `G` with `d(G) > 1`
+is a Demushkin group if and only if `cd_p G = 2` and `dim H²(U, 𝔽_p) = 1` for every open normal
+subgroup `U`. The one-relator hypothesis `dim H²(G, 𝔽_p) = 1` of NSW's statement is the case
+`U = ⊤` of the right-hand side, so it is not assumed here. -/
+theorem isDemushkin_iff_finrank_cohomFp_two_openSubgroup :
+    IsDemushkin p G ↔ cohomologicalDimensionAt.{u} p G = 2 ∧
+      ∀ U : OpenSubgroup G, (U : Subgroup G).Normal →
+        Module.finrank (ZMod p) (cohomFp p (U : Subgroup G) 2) = 1 := by
+  refine ⟨fun hD ↦ ?_, fun ⟨hcd, hU⟩ ↦ ?_⟩
+  -- a Demushkin group of rank `> 1` is infinite, so Tate's theorem and the open-subgroup theorem
+  -- apply
+  · have : Infinite G := hD.infinite_of_one_lt_topologicalGeneratorRankNat hn
+    exact ⟨hD.cohomologicalDimensionAt_eq_two, fun U _ ↦ hD.finrank_cohomFp_two_openSubgroup U⟩
+  -- the one-relator hypothesis is the case `U = ⊤`, transported along `G ≃ₜ* ⊤`
+  have h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1 :=
+    (finrank_cohomFp_two_congr p
+      ({ toFun := fun x ↦ ⟨x, Subgroup.mem_top x⟩
+         invFun := Subtype.val
+         left_inv := fun _ ↦ rfl
+         right_inv := fun _ ↦ rfl
+         map_mul' := fun _ _ ↦ rfl
+         continuous_toFun := continuous_id.subtype_mk fun x ↦ Subgroup.mem_top x
+         continuous_invFun := continuous_subtype_val } : G ≃ₜ* (⊤ : Subgroup G))).trans
+      (hU ⊤ Subgroup.normal_top)
+  exact CohomologicalDimensionLE.isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq
+    ((cohomologicalDimensionAt_le_iff p G 2).1 hcd.le) hG hfg h2 fun U hUn _ ↦ hU U hUn
+
+include h2
+
+/-- **Recognition of Demushkin groups by `H²` of the subgroups of index `p`, as an equivalence**
+(NSW (3.9.15), (i) ⇔ (ii), in the sharpened form over the subgroups of index `p`). A topologically
+finitely generated one-relator pro-`p` group `G` with `d(G) > 1` is a Demushkin group if and only
+if `cd_p G = 2` and `dim H²(U, 𝔽_p) = 1` for every open normal subgroup `U` of index `p`. -/
+theorem isDemushkin_iff_finrank_cohomFp_two_openSubgroup_index_eq :
+    IsDemushkin p G ↔ cohomologicalDimensionAt.{u} p G = 2 ∧
+      ∀ U : OpenSubgroup G, (U : Subgroup G).Normal → (U : Subgroup G).index = p →
+        Module.finrank (ZMod p) (cohomFp p (U : Subgroup G) 2) = 1 := by
+  refine ⟨fun hD ↦ ?_, fun ⟨hcd, hU⟩ ↦
+    CohomologicalDimensionLE.isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq
+      ((cohomologicalDimensionAt_le_iff p G 2).1 hcd.le) hG hfg h2 hU⟩
+  obtain ⟨hcd, hU⟩ := (isDemushkin_iff_finrank_cohomFp_two_openSubgroup hG hfg hn).1 hD
+  exact ⟨hcd, fun U hUn _ ↦ hU U hUn⟩
+
+/-- **Recognition of Demushkin groups by the ranks of the open normal subgroups, as an
+equivalence** (NSW (3.9.15), (i) ⇔ (iii)). A topologically finitely generated one-relator pro-`p`
+group `G` with `d(G) > 1` is a Demushkin group if and only if `cd_p G = 2` and
+`d(U) - 2 = [G : U] (d(G) - 2)` for every open normal subgroup `U`. -/
+theorem isDemushkin_iff_topologicalGeneratorRankNat_openSubgroup :
+    IsDemushkin p G ↔ cohomologicalDimensionAt.{u} p G = 2 ∧
+      ∀ U : OpenSubgroup G, (U : Subgroup G).Normal →
+        (topologicalGeneratorRankNat (U : Subgroup G) (hfg.of_openSubgroup U) : ℤ) - 2 =
+          (U : Subgroup G).index * ((topologicalGeneratorRankNat G hfg : ℤ) - 2) := by
+  refine ⟨fun hD ↦ ?_, fun ⟨hcd, hU⟩ ↦
+    CohomologicalDimensionLE.isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq
+      ((cohomologicalDimensionAt_le_iff p G 2).1 hcd.le) hG hfg h2
+      fun U hUn hUi ↦ by rw [← hUi]; exact hU U hUn⟩
+  -- a Demushkin group of rank `> 1` is infinite, so Tate's theorem and the open-subgroup theorem
+  -- apply
+  have : Infinite G := hD.infinite_of_one_lt_topologicalGeneratorRankNat hn
+  refine ⟨hD.cohomologicalDimensionAt_eq_two, fun U _ ↦ ?_⟩
+  have h := hD.demushkinRank_openSubgroup_sub_two U
+  rw [demushkinRank_def, demushkinRank_def] at h
+  -- the two proofs of topological finite generation agree by proof irrelevance
+  exact h
+
+/-- **Recognition of Demushkin groups by the ranks of the subgroups of index `p`, as an
+equivalence** (NSW (3.9.15), (i) ⇔ (iii), in the sharpened form over the subgroups of index `p`).
+A topologically finitely generated one-relator pro-`p` group `G` with `d(G) > 1` is a Demushkin
+group if and only if `cd_p G = 2` and `d(U) - 2 = p (d(G) - 2)` for every open normal subgroup
+`U` of index `p`. -/
+theorem isDemushkin_iff_topologicalGeneratorRankNat_openSubgroup_index_eq :
+    IsDemushkin p G ↔ cohomologicalDimensionAt.{u} p G = 2 ∧
+      ∀ U : OpenSubgroup G, (U : Subgroup G).Normal → (U : Subgroup G).index = p →
+        (topologicalGeneratorRankNat (U : Subgroup G) (hfg.of_openSubgroup U) : ℤ) - 2 =
+          p * ((topologicalGeneratorRankNat G hfg : ℤ) - 2) := by
+  refine ⟨fun hD ↦ ?_, fun ⟨hcd, hU⟩ ↦
+    CohomologicalDimensionLE.isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq
+      ((cohomologicalDimensionAt_le_iff p G 2).1 hcd.le) hG hfg h2 hU⟩
+  obtain ⟨hcd, hU⟩ := (isDemushkin_iff_topologicalGeneratorRankNat_openSubgroup hG hfg h2 hn).1 hD
+  exact ⟨hcd, fun U hUn hUi ↦ by rw [← hUi]; exact hU U hUn⟩
+
+end Equivalences
 
 end TauCeti

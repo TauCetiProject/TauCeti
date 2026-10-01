@@ -95,12 +95,13 @@ block is stable under the biregular representation
 model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
 `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
-block with `End(V_π)` is not proved either. The library now supplies bi-translation
-`((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)` as `TauCeti.biRegularLp`, but not the action
-`(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_π)` or the proof that the identification intertwines
-them. `TauCeti.endEquivPeterWeylBlock` is built from the canonical basis of the model, so nothing is
-claimed here about its equivariance. The character averaging operator
-`TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
+block with `End(V_π)` is not proved here either: `TauCeti.endEquivPeterWeylBlock` is built from the
+canonical basis of the model, so nothing is claimed below about its equivariance. The equivariant
+comparison is the basis-free trace pairing `T ↦ (x ↦ trace (T ∘ π x⁻¹))` of
+`TauCeti/RepresentationTheory/Compact/TraceCoefficient.lean`, which intertwines bi-translation with
+the action `(g, h) · A = π g ∘ A ∘ π h⁻¹` and differs from the comparison below by a transposition
+(`TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`). The character
+averaging operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
 `TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
