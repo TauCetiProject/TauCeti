@@ -45,7 +45,8 @@ the scalar by which `φ` acts on the class of `x_0` in the abelianization `ℤ_p
 * `TauCeti.Peripheral.topologicalClosure_closure_range_peripheralTuple_comp_succ`: so does the
   peripheral tuple of the basis without its first entry.
 * `TauCeti.Peripheral.hom_ext_basis`: continuous homomorphisms out of `F` into a Hausdorff monoid
-  that agree on the basis are equal.
+  that agree on the basis are equal; `TauCeti.Peripheral.continuousAut_ext_basis` is the same
+  statement for continuous automorphisms of `F`.
 * `TauCeti.Peripheral.prod_mul_cusp`, `TauCeti.Peripheral.prod_ofFn_peripheralTuple`: the
   defining relation `x_0 ⋯ x_{r-1} · cusp x = 1`, and the ordered product of the peripheral tuple
   is `1`.
@@ -106,6 +107,13 @@ theorem hom_ext_basis [IsTopologicalGroup F] {M : Type*} [Monoid M] [Topological
     MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top
       (topologicalClosure_closure_range_basis e) f.continuous g.continuous
       (Set.forall_mem_range.mpr h)
+
+/-- Two continuous automorphisms of `F` that agree on the basis are equal. -/
+theorem continuousAut_ext_basis [IsTopologicalGroup F] [T2Space F]
+    (e : F ≃ₜ* freeProP p (Fin r)) {φ ψ : ContinuousAut F}
+    (h : ∀ i, φ (basis e i) = ψ (basis e i)) : φ = ψ :=
+  ContinuousMulEquiv.ext fun y ↦ congrArg (fun f : F →ₜ* F ↦ f y)
+    (hom_ext_basis (f := (φ : F →ₜ* F)) (g := (ψ : F →ₜ* F)) e h)
 
 end Basis
 
