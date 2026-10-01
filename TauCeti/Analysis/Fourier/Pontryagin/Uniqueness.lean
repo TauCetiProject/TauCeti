@@ -23,6 +23,12 @@ two continuous homomorphisms that agree at every group element are equal.  Mathl
 theorem for finite measures then promotes equality of the character integrals to equality of the
 measures.
 
+The construction of `evalMonoidHom`, `evalAlgHom` and `evalPoly`, together with the proofs that
+`evalPoly` is closed under `star` and separates points, is adapted from Jakob Stiefel's
+`charMonoidHom`, `charAlgHom`, `charPoly`, `star_mem_range_charAlgHom` and
+`separatesPoints_charPoly` in `Mathlib.Analysis.Fourier.BoundedContinuousFunctionChar`, which
+treats characters of the form `v ↦ e (L v w)` on a real vector space.
+
 ## Main declarations
 
 * `PontryaginDual.evalBoundedContinuous`: evaluation at a group element, bundled as a
@@ -35,6 +41,7 @@ measures.
 ## References
 
 * W. Rudin, *Fourier Analysis on Groups*, Chapter 1.
+* J. Stiefel, `Mathlib.Analysis.Fourier.BoundedContinuousFunctionChar`, Mathlib.
 -/
 
 public section
