@@ -92,27 +92,31 @@ section Action
 Normalization is preserved because `σ` is bijective, and triviality on the constants because
 `σ` fixes `F`, hence `k`, pointwise. -/
 instance instMulActionAlgEquiv : MulAction (F' ≃ₐ[F] F') (Place k F') where
-  smul σ P :=
-    { valuation := P.valuation.comap (σ.symm : F' →+* F')
-      valuation_surjective := fun y ↦ by
-        obtain ⟨x, hx⟩ := P.valuation_surjective y
-        exact ⟨σ x, by simpa using hx⟩
-      isTrivialOn :=
-        { eq_one := fun c hc ↦ by
-            have hfix : (σ.symm : F' →+* F') (algebraMap k F' c) = algebraMap k F' c := by
-              rw [IsScalarTower.algebraMap_apply k F F']
-              simp
-            rw [Valuation.comap_apply, hfix]
-            exact P.isTrivialOn.eq_one c hc } }
-  one_smul P := Place.ext (Valuation.ext fun _ ↦ rfl)
-  mul_smul σ τ P := Place.ext (Valuation.ext fun _ ↦ rfl)
+  smul σ P := P.map (σ.restrictScalars k)
+  one_smul P :=
+    (congrArg (Place.map · P)
+      (AlgEquiv.ext fun _ ↦ rfl : (1 : F' ≃ₐ[F] F').restrictScalars k = AlgEquiv.refl)).trans
+      (map_refl P)
+  mul_smul σ τ P :=
+    (congrArg (Place.map · P) (AlgEquiv.ext fun _ ↦ rfl :
+      (σ * τ).restrictScalars k = (τ.restrictScalars k).trans (σ.restrictScalars k))).trans
+      (map_map (τ.restrictScalars k) P (σ.restrictScalars k)).symm
 
 variable (σ : F' ≃ₐ[F] F') (P : Place k F')
+
+/-- **The action is transport along the automorphism**: `σ • P` is the place obtained from `P`
+by transport along `σ`, viewed as a `k`-algebra isomorphism of `F'` with itself. -/
+theorem smul_eq_map : σ • P = P.map (σ.restrictScalars k) := rfl
+
+@[simp]
+private theorem restrictScalars_symm_apply (x : F') : (σ.restrictScalars k).symm x = σ.symm x :=
+  rfl
 
 /-- **The defining property of the action**: the valuation of `σ • P` is the valuation of `P`
 composed with `σ⁻¹`. -/
 @[simp]
-theorem valuation_smul (x : F') : (σ • P).valuation x = P.valuation (σ.symm x) := rfl
+theorem valuation_smul (x : F') : (σ • P).valuation x = P.valuation (σ.symm x) := by
+  rw [smul_eq_map, valuation_map, restrictScalars_symm_apply]
 
 /-- The action moves the valuation along `σ`. -/
 theorem valuation_smul_apply (x : F') : (σ • P).valuation (σ x) = P.valuation x := by
@@ -160,11 +164,6 @@ an intermediate field `E` down to `F` does not change the place it produces. -/
 theorem restrictScalars_smul (E : IntermediateField F F') (τ : F' ≃ₐ[E] F') (Q : Place k F') :
     τ.restrictScalars F • Q = τ • Q := rfl
 
-/-- **The action is transport along the automorphism**: `σ • P` is the place obtained from `P`
-by transport along `σ`, viewed as a `k`-algebra isomorphism of `F'` with itself. -/
-theorem smul_eq_map : σ • P = P.map (σ.restrictScalars k) :=
-  Place.ext (Valuation.ext fun x ↦ by rw [valuation_smul, valuation_map]; rfl)
-
 /-- **The stabilizer of a place is the decomposition group** of its valuation ring
 (Stichtenoth, Definition 3.8.1). -/
 theorem stabilizer_eq_decompositionSubgroup :
@@ -211,36 +210,11 @@ private def integersEquivOfEq {P Q : Place k F} (h : P = Q) : P.integers ≃+* Q
 private theorem coe_integersEquivOfEq {P Q : Place k F} (h : P = Q) (x : P.integers) :
     ((integersEquivOfEq h x : Q.integers) : F) = (x : F) := rfl
 
-/-- The automorphism `σ⁻¹` carries the valuation ring of `σ • P` isomorphically onto the
-valuation ring of `P`. -/
-private def integersEquivSmul : (σ • P).integers ≃+* P.integers where
-  toFun x := ⟨σ.symm x, (mem_integers_smul_iff σ P).mp x.2⟩
-  invFun y := ⟨σ y, (mem_integers_smul_iff σ P).mpr (by simp)⟩
-  left_inv _ := Subtype.ext (by simp)
-  right_inv _ := Subtype.ext (by simp)
-  map_mul' _ _ := Subtype.ext (by simp)
-  map_add' _ _ := Subtype.ext (by simp)
-
-@[simp]
-private theorem coe_integersEquivSmul (x : (σ • P).integers) :
-    ((integersEquivSmul σ P x : P.integers) : F') = σ.symm (x : F') := rfl
-
-/-- **The action preserves the degree of a place**: `σ⁻¹` carries the valuation ring of `σ • P`
-onto that of `P` and fixes the constants, so it identifies the two residue fields as
-`k`-algebras. -/
+/-- **The action preserves the degree of a place**: it is transport along `σ`, which identifies
+the residue fields of `P` and `σ • P` as `k`-algebras. -/
 @[simp]
 theorem degree_smul : (σ • P).degree = P.degree := by
-  rw [degree_eq_finrank, degree_eq_finrank]
-  refine Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl k)
-    (IsLocalRing.ResidueField.mapEquiv (integersEquivSmul σ P)) (RingHom.ext fun c ↦ ?_)
-  have hfix : integersEquivSmul σ P (algebraMap k (σ • P).integers c) =
-      algebraMap k P.integers c :=
-    Subtype.ext (by simp [IsScalarTower.algebraMap_apply k F F'])
-  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    RingEquiv.refl_apply, IsLocalRing.ResidueField.mapEquiv_apply,
-    IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
-    IsScalarTower.algebraMap_apply k (σ • P).integers (σ • P).ResidueField,
-    IsLocalRing.ResidueField.algebraMap_eq, IsLocalRing.ResidueField.map_residue, hfix]
+  rw [smul_eq_map, degree_map]
 
 end Action
 
@@ -270,11 +244,13 @@ theorem relativeDegree_smul : relativeDegree k F (σ • P) = relativeDegree k F
   rw [relativeDegree_def k F (σ • P), relativeDegree_def k F P]
   refine Algebra.finrank_eq_of_equiv_equiv
     (IsLocalRing.ResidueField.mapEquiv (integersEquivOfEq (restrict_smul σ P)))
-    (IsLocalRing.ResidueField.mapEquiv (integersEquivSmul σ P)) (RingHom.ext fun z ↦ ?_)
+    (IsLocalRing.ResidueField.mapEquiv (integersEquivMap (σ.restrictScalars k) P).symm)
+    (RingHom.ext fun z ↦ ?_)
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := ((σ • P).restrict k F).integers) z
   have hAB : algebraMap (P.restrict k F).integers P.integers
         (integersEquivOfEq (restrict_smul σ P) x) =
-      integersEquivSmul σ P (algebraMap ((σ • P).restrict k F).integers (σ • P).integers x) :=
+      (integersEquivMap (σ.restrictScalars k) P).symm
+        (algebraMap ((σ • P).restrict k F).integers (σ • P).integers x) :=
     Subtype.ext (by simp)
   simpa [IsLocalRing.ResidueField.map_residue] using congrArg (IsLocalRing.residue _) hAB
 
