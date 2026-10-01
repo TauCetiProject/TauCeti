@@ -65,19 +65,8 @@ theorem _root_.Real.Angle.toReal_sub_of_sign_eq {θ ψ : Real.Angle} (hψ : ψ �
 representatives are in increasing order. -/
 theorem _root_.Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq {θ ψ : Real.Angle}
     (hs : θ.sign = ψ.sign) (h0 : θ.sign ≠ 0) : (ψ - θ).sign = 1 ↔ θ.toReal < ψ.toReal := by
-  rw [← Real.Angle.toReal_mem_Ioo_iff_sign_pos,
-    Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 h0).2 hs.symm, Set.mem_Ioo,
-    sub_pos, and_iff_left_iff_imp]
-  intro _
-  have := θ.neg_pi_lt_toReal
-  have := ψ.neg_pi_lt_toReal
-  obtain h | h | h := θ.sign.trichotomy
-  · have h₁ := Real.Angle.toReal_neg_iff_sign_neg.2 h
-    have h₂ := Real.Angle.toReal_neg_iff_sign_neg.2 (hs ▸ h)
-    linarith
-  · exact absurd h h0
-  · have h₁ := Real.Angle.toReal_mem_Ioo_iff_sign_pos.2 h
-    have h₂ := Real.Angle.toReal_mem_Ioo_iff_sign_pos.2 (hs ▸ h)
-    linarith [h₁.1, h₂.2]
+  rw [← Real.Angle.sign_toReal (Real.Angle.sub_ne_pi_of_sign_eq_of_sign_ne_zero ψ θ hs.symm h0),
+    Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 h0).2 hs.symm, sign_eq_one_iff,
+    sub_pos]
 
 end TauCeti
