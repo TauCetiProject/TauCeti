@@ -52,8 +52,6 @@ unconditionally: `TauCeti.LFunctions.primeIdealVonMangoldtBoundary`.  Applied to
 * `TauCeti.primeIdealTheorem`: the prime ideal theorem `ψ_K(x) ~ x`, `ϑ_K(x) ~ x`, and
   `π_K(x) ~ Li(x)`.
 * `TauCeti.primeCount_univ_isEquivalent_div_log`: its classical form `π_K(x) ~ x / log x`.
-* `TauCeti.primeCount_univ_sub_logIntegral_isLittleO`: its additive form
-  `π_K(x) = Li(x) + o(x / log x)`, by Abel summation from `ϑ_K(x) ~ x`.
 
 ## References
 
@@ -170,16 +168,6 @@ variable (K) in
 theorem primeCount_univ_isEquivalent_div_log :
     primeCount K Set.univ ~[atTop] fun x : ℝ ↦ x / Real.log x :=
   (primeIdealTheorem K).2.2.trans Real.logIntegral_isEquivalent_div_log
-
-variable (K) in
-/-- **The prime ideal theorem, with the logarithmic integral.** For every number field `K`, the
-number of primes of `K` of norm at most `x` is `Li(x) + o(x / log x)`. This follows from
-`ϑ_K(x) ~ x` by Abel summation, `TauCeti.primeCount_sub_mul_logIntegral_isLittleO`. -/
-theorem primeCount_univ_sub_logIntegral_isLittleO :
-    (fun x : ℝ ↦ primeCount K Set.univ x - Real.logIntegral x) =o[atTop]
-      fun x : ℝ ↦ x / Real.log x := by
-  simpa using primeCount_sub_mul_logIntegral_isLittleO (δ := 1)
-    ((primeIdealTheorem K).2.1.isLittleO.congr_left fun x ↦ by simp)
 
 end PrimeIdealTheorem
 
