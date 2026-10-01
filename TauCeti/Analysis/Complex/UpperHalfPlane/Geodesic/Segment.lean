@@ -61,10 +61,12 @@ theorem mem_geodesicSegment_iff (z w u : ℍ) :
   Iff.rfl
 
 /-- `z` lies on the segment from `z` to `w`. -/
+@[simp]
 theorem left_mem_geodesicSegment (z w : ℍ) : z ∈ geodesicSegment z w :=
   ⟨0, ⟨le_rfl, dist_nonneg⟩, geodesicLine_geodesicBetween_zero z w⟩
 
 /-- `w` lies on the segment from `z` to `w`. -/
+@[simp]
 theorem right_mem_geodesicSegment (z w : ℍ) : w ∈ geodesicSegment z w :=
   ⟨dist z w, ⟨dist_nonneg, le_rfl⟩, geodesicLine_geodesicBetween_dist z w⟩
 
