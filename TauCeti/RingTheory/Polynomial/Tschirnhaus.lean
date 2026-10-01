@@ -94,10 +94,6 @@ theorem tschirnhausPolynomial_eq_resultant {f : R[X]} (hf : f.Monic) (T : R[X]) 
   rw [← natDegree_map_eq_of_injective C_injective f,
     (hf.map C).resultant_of_le ((natDegree_C_X_sub_map_C_le T).trans hn), tschirnhausPolynomial]
 
-private theorem map_map_C (f : R[X]) (φ : R →+* S) :
-    (f.map C).map (mapRingHom φ) = (f.map φ).map C := by
-  simp [Polynomial.map_map, mapRingHom_comp_C]
-
 /-- **Base change.** For monic `f`, the Tschirnhaus transform commutes with every ring
 morphism. No hypothesis on `T` is needed, although its degree may drop. -/
 @[simp]
@@ -108,7 +104,8 @@ theorem map_tschirnhausPolynomial {f : R[X]} (hf : f.Monic) (T : R[X]) (φ : R �
     tschirnhausPolynomial_eq_resultant (hf.map φ) (T.map φ) natDegree_map_le, hf.natDegree_map]
   simp only [← coe_mapRingHom]
   rw [← resultant_map_map]
-  congr 1 <;> simp [map_map_C]
+  have hC : (mapRingHom φ).comp C = C.comp φ := RingHom.ext fun a ↦ by simp
+  congr 1 <;> simp [Polynomial.map_map, hC]
 
 /-- The Tschirnhaus transform commutes with an injective base change, without requiring `f` to
 be monic. -/
@@ -120,9 +117,11 @@ theorem map_tschirnhausPolynomial_of_injective (f T : R[X]) (φ : R →+* S)
   rw [tschirnhausPolynomial, tschirnhausPolynomial]
   conv_lhs => rw [← coe_mapRingHom φ]
   rw [← resultant_map_map]
-  have hfmap := map_map_C f φ
+  have hC : (mapRingHom φ).comp C = C.comp φ := RingHom.ext fun a ↦ by simp
+  have hfmap : (f.map C).map (mapRingHom φ) = (f.map φ).map C := by
+    simp [Polynomial.map_map, hC]
   have hgmap : (C X - T.map C : R[X][X]).map (mapRingHom φ) =
-      C X - (T.map φ).map C := by simp [map_map_C]
+      C X - (T.map φ).map C := by simp [Polynomial.map_map, hC]
   rw [hfmap, hgmap]
   congr 1
   · simp [natDegree_map_eq_of_injective C_injective,
@@ -154,19 +153,12 @@ theorem tschirnhausPolynomial_eq_prod_roots [IsDomain R] {f : R[X]} (hf : f.Moni
 /-- For a nonzero polynomial over a domain that splits, the roots of its Tschirnhaus transform
 are the values of `T` at its roots, counted with multiplicity. -/
 @[simp]
-theorem roots_tschirnhausPolynomial_of_ne_zero [IsDomain R] {f : R[X]} (hf : f ≠ 0)
+theorem roots_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hf : f ≠ 0)
     (hs : f.Splits) (T : R[X]) :
     (tschirnhausPolynomial f T).roots = f.roots.map T.eval := by
   rw [tschirnhausPolynomial_eq_C_mul_prod_roots hs T,
     roots_C_mul _ (pow_ne_zero _ (leadingCoeff_ne_zero.mpr hf)),
     roots_multiset_prod_X_sub_C]
-
-/-- Over a domain in which the monic polynomial `f` splits, the roots of the Tschirnhaus
-transform are the values of `T` at the roots of `f`, counted with multiplicity. -/
-@[simp]
-theorem roots_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hf : f.Monic) (hs : f.Splits)
-    (T : R[X]) : (tschirnhausPolynomial f T).roots = f.roots.map T.eval :=
-  roots_tschirnhausPolynomial_of_ne_zero hf.ne_zero hs T
 
 /-- The Tschirnhaus transform splits in every domain in which `f` splits. -/
 theorem splits_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hs : f.Splits)
@@ -246,7 +238,8 @@ multiplicity. -/
 theorem aroots_tschirnhausPolynomial {f : K[X]} (hf : f.Monic)
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
     (tschirnhausPolynomial f T).aroots L = (f.aroots L).map fun a ↦ aeval a T := by
-  rw [aroots_def, map_tschirnhausPolynomial hf, roots_tschirnhausPolynomial (hf.map _) hs,
+  rw [aroots_def, map_tschirnhausPolynomial hf,
+    roots_tschirnhausPolynomial (hf.map _).ne_zero hs,
     aroots_def]
   exact Multiset.map_congr rfl fun a _ ↦ eval_map_algebraMap T a
 
@@ -281,7 +274,7 @@ theorem aroots_tschirnhausPolynomial_field {f : K[X]} (hf : f ≠ 0)
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
     (tschirnhausPolynomial f T).aroots L = (f.aroots L).map fun a ↦ aeval a T := by
   rw [aroots_def, map_tschirnhausPolynomial_of_injective f T _ (algebraMap K L).injective,
-    roots_tschirnhausPolynomial_of_ne_zero (map_ne_zero hf) hs, aroots_def]
+    roots_tschirnhausPolynomial (map_ne_zero hf) hs, aroots_def]
   exact Multiset.map_congr rfl fun a _ ↦ eval_map_algebraMap T a
 
 /-- The root set of the transform of a nonzero field polynomial is the image of the root set
@@ -393,6 +386,16 @@ theorem TschirnhausAdmissible.coe_rootSetEquiv_apply {f T : K[X]}
     (hT.rootSetEquiv hf hs x : L) = aeval (x : L) T := by
   rw [TschirnhausAdmissible.rootSetEquiv, Equiv.coe_ofBijective,
     (hT.bijOn_rootSet hf hs).mapsTo.val_restrict_apply]
+
+/-- Applying `T` to the inverse image under the canonical root equivalence recovers the root. -/
+@[simp]
+theorem TschirnhausAdmissible.aeval_coe_rootSetEquiv_symm_apply {f T : K[X]}
+    (hT : TschirnhausAdmissible f T) (hf : f ≠ 0)
+    (hs : (f.map (algebraMap K L)).Splits)
+    (y : (tschirnhausPolynomial f T).rootSet L) :
+    aeval ((hT.rootSetEquiv hf hs).symm y : L) T = (y : L) := by
+  rw [← hT.coe_rootSetEquiv_apply hf hs]
+  exact congrArg Subtype.val ((hT.rootSetEquiv hf hs).apply_symm_apply y)
 
 end Field
 

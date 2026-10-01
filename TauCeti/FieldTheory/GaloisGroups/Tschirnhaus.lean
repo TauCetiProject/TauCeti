@@ -74,19 +74,17 @@ theorem TschirnhausAdmissible.eqOn_rootSet (h : TschirnhausAdmissible f T) (hf :
   · exact rootSet_mapsTo φ.toAlgHom hx
   · exact rootSet_mapsTo ψ.toAlgHom hx
   · have hmem : aeval x T ∈ (f.tschirnhausPolynomial T).rootSet E := by
-      rw [rootSet_tschirnhausPolynomial_field hf hs]
-      exact ⟨x, hx, rfl⟩
+      exact (h.bijOn_rootSet hf hs).mapsTo hx
     simpa only [aeval_algHom_apply] using hφψ hmem
 
 /-- Two automorphisms of a splitting field of `f` are equal if they agree on every `T(α)`, when
 `T` is admissible for the nonzero polynomial `f`. -/
 theorem TschirnhausAdmissible.algEquiv_ext [IsSplittingField F E f]
-    (h : TschirnhausAdmissible f T) (hf : f ≠ 0)
-    (hs : (f.map (algebraMap F E)).Splits) {φ ψ : E ≃ₐ[F] E}
+    (h : TschirnhausAdmissible f T) (hf : f ≠ 0) {φ ψ : E ≃ₐ[F] E}
     (hφψ : ∀ x ∈ f.rootSet E, φ (aeval x T) = ψ (aeval x T)) : φ = ψ := by
+  have hs : (f.map (algebraMap F E)).Splits := IsSplittingField.splits E f
   have hroots : Set.EqOn φ ψ (f.rootSet E) := h.eqOn_rootSet hf hs fun y hy ↦ by
-    rw [rootSet_tschirnhausPolynomial_field hf hs] at hy
-    obtain ⟨x, hx, rfl⟩ := hy
+    obtain ⟨x, hx, rfl⟩ := (h.bijOn_rootSet hf hs).surjOn hy
     exact hφψ x hx
   have heq := AlgHom.ext_of_adjoin_eq_top
     (φ₁ := φ.toAlgHom) (φ₂ := ψ.toAlgHom)
@@ -112,11 +110,10 @@ theorem TschirnhausAdmissible.isSplittingField {L : Type*} [Field L] [Algebra F 
     rw [eq_bot_iff]
     intro ϕ hϕ
     apply Subgroup.mem_bot.mpr
-    apply h.algEquiv_ext hsep.ne_zero hsp
+    apply h.algEquiv_ext hsep.ne_zero
     intro α hα
     have hmem : aeval α T ∈ (f.tschirnhausPolynomial T).rootSet L := by
-      rw [rootSet_tschirnhausPolynomial_field hsep.ne_zero hsp]
-      exact ⟨α, hα, rfl⟩
+      exact (h.bijOn_rootSet hsep.ne_zero hsp).mapsTo hα
     have h1 : ϕ (aeval α T) = aeval α T :=
         (mem_fixingSubgroup_iff Gal(L/F)).mp hϕ _
           (hM ▸ IntermediateField.subset_adjoin F _ hmem)
@@ -143,7 +140,7 @@ theorem TschirnhausAdmissible.nonempty_mulEquiv_gal (h : TschirnhausAdmissible f
   refine ⟨(MulEquiv.ofBijective (Gal.restrict (f.tschirnhausPolynomial T) f.SplittingField)
     ⟨?_, Gal.restrict_surjective (f.tschirnhausPolynomial T) f.SplittingField⟩).symm⟩
   intro φ ψ hφψ
-  apply h.algEquiv_ext hf hsp
+  apply h.algEquiv_ext hf
   intro x hx
   let y := h.rootSetEquiv hf hsp ⟨x, hx⟩
   have heq := congrArg (fun σ ↦
