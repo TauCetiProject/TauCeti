@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Exact
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Kernel
+import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Augmentation
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.Algebra.MonoidAlgebra.FaithfullyFlat
 import TauCeti.Algebra.MonoidAlgebra.MapDomain
@@ -54,16 +55,31 @@ universe u v
 variable (R : Type u) [CommRing R]
 variable {L M N : Type v} [CommGroup L] [CommGroup M] [CommGroup N] (p : L →* M) (q : M →* N)
 
+/-- The coordinate ring map of the diagonalizable-group morphism induced by `f` is
+`MonoidAlgebra.mapDomainRingHom R f`. -/
+private theorem ofHom_mapDomainBialgHom_toRingHom {A B : Type v} [CommGroup A] [CommGroup B]
+    (f : A →* B) :
+    (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R f)).hom.toAlgHom.toRingHom =
+      MonoidAlgebra.mapDomainRingHom R f := by
+  rw [_root_.CommHopfAlgCat.hom_ofHom, AlgHom.toRingHom_eq_coe,
+    MonoidAlgebra.mapDomainBialgHom_toRingHom]
+
 /-- A short exact sequence `1 → L → M → N → 1` of commutative groups induces a short exact
 sequence `1 → D(N) → D(M) → D(L) → 1` of diagonalizable groups over every commutative ring. -/
 theorem isShortExact_mapDomainBialgHom (hp : Function.Injective p)
     (hq : Function.Surjective q) (hpq : p.range = q.ker) :
     CommHopfAlgCat.IsShortExact (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R p))
       (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R q)) where
-  faithfullyFlat := MonoidAlgebra.faithfullyFlat_mapDomainRingHom_of_injective R p hp
-  surjective := MonoidAlgebra.mapDomain_surjective hq
+  faithfullyFlat := by
+    rw [ofHom_mapDomainBialgHom_toRingHom]
+    exact MonoidAlgebra.faithfullyFlat_mapDomainRingHom_of_injective R p hp
+  surjective := by
+    rw [_root_.CommHopfAlgCat.hom_ofHom, ← BialgHom.coe_toAlgHom, ← RingHom.coe_coe,
+      MonoidAlgebra.mapDomainBialgHom_toRingHom]
+    exact fun y ↦ (MonoidAlgebra.mapDomain_surjective hq y).imp fun x hx ↦
+      (MonoidAlgebra.mapDomainRingHom_apply R q x).trans hx
   ker_eq := by
-    rw [kernelHopfIdeal_mapDomainBialgHom_toIdeal]
+    rw [kernelHopfIdeal_mapDomainBialgHom_toIdeal, ofHom_mapDomainBialgHom_toRingHom]
     exact (MonoidAlgebra.map_ker_augmentation_eq_ker_mapDomainRingHom R p q
       (congrArg Subgroup.toSubmonoid hpq)).symm.trans
         (MonoidAlgebra.map_ker_augmentation_eq_ker_mapDomainRingHom R p _
@@ -78,7 +94,9 @@ theorem isShortExact_mapDomainBialgHom_iff [Nontrivial R] :
         (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom R q)) ↔
       Function.Injective p ∧ Function.Surjective q ∧ p.range = q.ker := by
   refine ⟨fun h ↦ ⟨?_, ?_, ?_⟩, fun ⟨hp, hq, hpq⟩ ↦ isShortExact_mapDomainBialgHom R p q hp hq hpq⟩
-  · exact (MonoidAlgebra.faithfullyFlat_mapDomainRingHom_iff R p).mp h.faithfullyFlat
+  · have hp := h.faithfullyFlat
+    rw [ofHom_mapDomainBialgHom_toRingHom] at hp
+    exact (MonoidAlgebra.faithfullyFlat_mapDomainRingHom_iff R p).mp hp
   · intro n
     obtain ⟨x, hx⟩ := h.surjective (MonoidAlgebra.single n 1)
     refine Finsupp.mem_range_of_mapDomain_ne_zero (x := x.coeff) (b := n) ?_
@@ -87,9 +105,8 @@ theorem isShortExact_mapDomainBialgHom_iff [Nontrivial R] :
       MonoidAlgebra.coeff_mapDomainBialgHom_apply, MonoidAlgebra.coeff_single,
       Finsupp.single_eq_same] at hc
     exact hc ▸ one_ne_zero
-  · have hker : RingHom.ker (MonoidAlgebra.mapDomainRingHom R q) =
-        RingHom.ker (MonoidAlgebra.mapDomainRingHom R (QuotientGroup.mk' p.range)) :=
-      h.ker_eq.trans (kernelHopfIdeal_mapDomainBialgHom_toIdeal R p)
+  · have hker := h.ker_eq
+    rw [ofHom_mapDomainBialgHom_toRingHom, kernelHopfIdeal_mapDomainBialgHom_toIdeal] at hker
     ext m
     rw [MonoidHom.mem_ker, ← MonoidAlgebra.single_sub_one_mem_ker_mapDomainRingHom_iff R, hker,
       MonoidAlgebra.single_sub_one_mem_ker_mapDomainRingHom_iff, QuotientGroup.mk'_apply,
