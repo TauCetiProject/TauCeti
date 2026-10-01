@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Functor
+public import Mathlib.CategoryTheory.Adjunction.Mates
+public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 public import Mathlib.CategoryTheory.Functor.TwoSquare
 
 /-!
-# Lax monoidal functors: tensorator squares and transport
+# Lax monoidal functors: tensorator squares, transport, and conjugates
 
 The tensorator of a lax monoidal functor is natural in its right argument, giving a
 square between left tensoring and the functor.
@@ -18,6 +19,15 @@ A lax monoidal structure transports along a natural isomorphism of functors
 (`CategoryTheory.Functor.LaxMonoidal.transport`), in the same way as Mathlib's
 `CategoryTheory.Functor.Monoidal.transport` transports a monoidal structure. This is how a
 functor isomorphic to a composite of lax monoidal functors inherits a lax monoidal structure.
+
+For two monoidal adjunctions `F₁ ⊣ G₁` and `F₂ ⊣ G₂`, where the right adjoints are lax monoidal
+and the left adjoints carry the induced oplax monoidal structures, a natural transformation
+`σ : F₂ ⟶ F₁` whose conjugate `G₁ ⟶ G₂` is a monoidal natural transformation is compatible with
+the oplax structures (`CategoryTheory.Adjunction.app_tensorUnit_comp_η_of_conjugateEquiv` and
+`CategoryTheory.Adjunction.app_tensor_comp_δ_of_conjugateEquiv`). This is how the comparison
+isomorphisms between left adjoints, such as the composition isomorphism of pullback functors, are
+shown to respect their oplax monoidal structures from the corresponding facts about the right
+adjoints.
 -/
 
 public section
@@ -100,3 +110,42 @@ lemma transport_μ {F G : C ⥤ D} [F.LaxMonoidal] (i : F ≅ G) (X Y : C) : let
 end LaxMonoidal
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Adjunction
+
+open MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+variable {F₁ F₂ : C ⥤ D} {G₁ G₂ : D ⥤ C} (adj₁ : F₁ ⊣ G₁) (adj₂ : F₂ ⊣ G₂)
+  [F₁.OplaxMonoidal] [F₂.OplaxMonoidal] [G₁.LaxMonoidal] [G₂.LaxMonoidal]
+  [adj₁.IsMonoidal] [adj₂.IsMonoidal] {σ : F₂ ⟶ F₁} {τ : G₁ ⟶ G₂} [NatTrans.IsMonoidal τ]
+
+/-- A natural transformation between left adjoints whose conjugate is a monoidal natural
+transformation of the lax monoidal right adjoints is compatible with the units of the oplax
+monoidal structures. -/
+theorem app_tensorUnit_comp_η_of_conjugateEquiv (h : conjugateEquiv adj₁ adj₂ σ = τ) :
+    σ.app (𝟙_ C) ≫ η F₁ = η F₂ := by
+  apply (adj₂.homEquiv _ _).injective
+  rw [homEquiv_unit, homEquiv_unit, Functor.map_comp, ← Category.assoc,
+    ← unit_conjugateEquiv, h, Category.assoc, ← τ.naturality, ← Category.assoc,
+    unit_app_unit_comp_map_η, NatTrans.IsMonoidal.unit, unit_app_unit_comp_map_η]
+
+/-- A natural transformation between left adjoints whose conjugate is a monoidal natural
+transformation of the lax monoidal right adjoints is compatible with the tensor comparison maps of
+the oplax monoidal structures. -/
+@[reassoc]
+theorem app_tensor_comp_δ_of_conjugateEquiv (h : conjugateEquiv adj₁ adj₂ σ = τ) (X Y : C) :
+    σ.app (X ⊗ Y) ≫ δ F₁ X Y = δ F₂ X Y ≫ (σ.app X ⊗ₘ σ.app Y) := by
+  apply (adj₂.homEquiv _ _).injective
+  have hσ (Z : C) : adj₂.unit.app Z ≫ G₂.map (σ.app Z) = adj₁.unit.app Z ≫ τ.app _ := by
+    rw [← unit_conjugateEquiv, h]
+  rw [homEquiv_unit, homEquiv_unit, Functor.map_comp, ← Category.assoc, hσ, Category.assoc,
+    ← τ.naturality, ← Category.assoc, unit_app_tensor_comp_map_δ, Category.assoc,
+    NatTrans.IsMonoidal.tensor, Functor.map_comp, ← Category.assoc (adj₂.unit.app _),
+    unit_app_tensor_comp_map_δ, Category.assoc, ← μ_natural]
+  simp only [tensorHom_comp_tensorHom_assoc, hσ]
+
+end CategoryTheory.Adjunction
