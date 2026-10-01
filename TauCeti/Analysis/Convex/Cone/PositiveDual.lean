@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Cone.Dual
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Monotone continuous functionals determine a closed order
@@ -15,7 +16,9 @@ its module structure, whose positive cone `{x | 0 ≤ x}` is closed. Farkas' lem
 (`ProperCone.hyperplane_separation_point`) separates a point outside this cone from the cone by a
 continuous linear functional that is nonnegative on it, that is, by a monotone one. Consequently
 `x ≤ y` exactly when `f x ≤ f y` for every monotone continuous linear functional `f`, and such
-functionals separate the points of `E`.
+functionals separate the points of `E`. When `E` is moreover finite-dimensional, evaluation at the
+monotone functionals is an injective linear map, hence a closed embedding, so convergence in `E` is
+detected by the monotone functionals.
 
 This reduces statements about vectors with nonnegative coordinates in an ordered space to
 statements about nonnegative real numbers, one monotone functional at a time.
@@ -25,9 +28,13 @@ statements about nonnegative real numbers, one monotone functional at a time.
 * `TauCeti.le_iff_forall_monotone_dual_le`: `x ≤ y` if and only if `f x ≤ f y` for every
   monotone continuous linear functional `f`.
 * `TauCeti.eq_of_forall_monotone_dual_eq`: monotone continuous linear functionals separate points.
+* `TauCeti.tendsto_iff_forall_monotone_dual`: in finite dimension, `f → c` if and only if
+  `φ ∘ f → φ c` for every monotone continuous linear functional `φ`.
 -/
 
 public section
+
+open Filter Topology
 
 namespace TauCeti
 
@@ -58,5 +65,25 @@ theorem eq_of_forall_monotone_dual_eq (h : ∀ f : StrongDual ℝ E, Monotone f 
     x = y :=
   le_antisymm (le_iff_forall_monotone_dual_le.2 fun f hf ↦ (h f hf).le)
     (le_iff_forall_monotone_dual_le.2 fun f hf ↦ (h f hf).ge)
+
+/-- **Monotone functionals detect convergence in finite dimension.** In a finite-dimensional
+locally convex real ordered vector space with closed positive cone, `f` tends to `c` along `l` if
+and only if `φ ∘ f` tends to `φ c` for every monotone continuous linear functional `φ`. -/
+theorem tendsto_iff_forall_monotone_dual [FiniteDimensional ℝ E] {α : Type*} {l : Filter α}
+    {f : α → E} {c : E} :
+    Tendsto f l (𝓝 c) ↔
+      ∀ φ : StrongDual ℝ E, Monotone φ → Tendsto (fun a ↦ φ (f a)) l (𝓝 (φ c)) := by
+  refine ⟨fun h φ _ ↦ (φ.continuous.tendsto c).comp h, fun h ↦ ?_⟩
+  -- Evaluation at the monotone functionals is injective, so it embeds `E` into a product of
+  -- copies of `ℝ`, where convergence is coordinatewise.
+  let ev : E →ₗ[ℝ] ({φ : StrongDual ℝ E // Monotone φ} → ℝ) :=
+    LinearMap.pi fun φ ↦ (φ.1 : E →ₗ[ℝ] ℝ)
+  have ev_apply (x : E) (φ : {φ : StrongDual ℝ E // Monotone φ}) : ev x φ = φ.1 x := by
+    rw [LinearMap.pi_apply, ContinuousLinearMap.coe_coe]
+  have hev : IsClosedEmbedding ev := LinearMap.isClosedEmbedding_of_injective <|
+    LinearMap.ker_eq_bot.2 fun x y hxy ↦ eq_of_forall_monotone_dual_eq fun φ hφ ↦ by
+      simpa only [ev_apply] using congr_fun hxy ⟨φ, hφ⟩
+  refine hev.tendsto_nhds_iff.2 <| tendsto_pi_nhds.2 fun φ ↦ ?_
+  simpa only [Function.comp_apply, ev_apply] using h φ.1 φ.2
 
 end TauCeti

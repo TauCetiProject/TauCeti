@@ -26,7 +26,7 @@ to `Re s ≥ 1`. The scalar theorem then gives the asymptotic for every `φ (a n
 continuous functionals separate the points of `E` because its positive cone is closed
 (`TauCeti.eq_of_forall_monotone_dual_eq`, a consequence of Farkas' lemma), so evaluation at them is
 an injective linear map from the finite-dimensional space `E`, hence a closed embedding, and the
-scalar limits assemble to the limit in `E`.
+scalar limits assemble to the limit in `E` (`TauCeti.tendsto_iff_forall_monotone_dual`).
 
 Finite dimensionality is what turns convergence against each functional into convergence in `E`.
 Closedness of the positive cone is what makes the monotone functionals separate points: for the
@@ -66,19 +66,15 @@ theorem wienerIkehara_of_forall_monotone_dual {a : ℕ → E} {κ : E}
       (∀ s : ℂ, 1 < s.re → LSeriesHasSum (fun n ↦ (φ (a n) : ℂ)) s (F s)) ∧
       ContinuousOn G {s : ℂ | 1 ≤ s.re} ∧ ∀ s : ℂ, 1 < s.re → G s = F s - φ κ / (s - 1)) :
     Tendsto (fun x : ℝ ↦ x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) atTop (𝓝 κ) := by
-  -- Evaluation at the monotone functionals is injective, so it embeds `E` into a product of
-  -- copies of `ℝ`, where convergence is coordinatewise.
-  let ev : E →ₗ[ℝ] ({φ : StrongDual ℝ E // Monotone φ} → ℝ) :=
-    LinearMap.pi fun φ ↦ (φ.1 : E →ₗ[ℝ] ℝ)
-  have hev : IsClosedEmbedding ev := LinearMap.isClosedEmbedding_of_injective <|
-    LinearMap.ker_eq_bot.2 fun x y hxy ↦ eq_of_forall_monotone_dual_eq fun φ hφ ↦
-      congr_fun hxy ⟨φ, hφ⟩
-  refine hev.tendsto_nhds_iff.2 <| tendsto_pi_nhds.2 fun ⟨φ, hφm⟩ ↦ ?_
-  -- In each coordinate this is the scalar theorem for the coefficients `φ (a n)`.
+  -- Convergence in `E` is detected by the monotone functionals, and in each of them this is the
+  -- scalar theorem for the coefficients `φ (a n)`.
+  refine tendsto_iff_forall_monotone_dual.2 fun φ hφm ↦ ?_
   obtain ⟨F, G, hF, hG, hGF⟩ := hφ φ hφm
   have hφa : ∀ᶠ n in atTop, 0 ≤ φ (a n) :=
     ha.mono fun n hn ↦ (monotone_iff_map_nonneg φ).1 hφm _ hn
-  simpa [ev, Function.comp_def, map_sum] using
-    wienerIkehara_of_eventually_nonneg hφa hF hG hGF
+  have key (x : ℝ) : φ (x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) =
+      x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, φ (a n) := by
+    rw [map_smul, map_sum, smul_eq_mul]
+  simpa only [key] using wienerIkehara_of_eventually_nonneg hφa hF hG hGF
 
 end TauCeti.LSeries
