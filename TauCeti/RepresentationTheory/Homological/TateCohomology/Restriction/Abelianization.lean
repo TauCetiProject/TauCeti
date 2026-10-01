@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Abelianization
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Basic
 
@@ -45,21 +46,6 @@ universe u
 
 open CategoryTheory Rep Finsupp
 open scoped TensorProduct
-
-namespace TauCeti
-
-variable {R M N : Type*} [CommSemiring R]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-/-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
-@[simp]
-theorem tensorProduct_rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
-    TensorProduct.rid R N (LinearMap.rTensor R f t) = f (TensorProduct.rid R M t) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul m r => simp
-  | add x y hx hy => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
-
-end TauCeti
 
 namespace TauCeti.TateCohomology
 
@@ -104,7 +90,8 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor {H : Type u} [Group H] [Fint
     HNegTwoCor_comp_isoGroupHomology_hom_apply]
   convert TauCeti.groupHomology.H1AddEquivOfIsTrivial_map f (𝟙 (Rep.res f A))
     ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (res f A) y) using 1
-  rfl
+  rw [LinearMap.rTensor_def, Rep.hom_id, Representation.IntertwiningMap.toLinearMap_id]
+  congr 1
 
 section TrivialInt
 

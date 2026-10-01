@@ -54,13 +54,15 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRes
   rw [T.trivialTateRes_neg_two, ModuleCat.comp_apply]
   rw [T.transferHom_eq_map_comp_lift_transfer, AddMonoidHom.comp_apply]
   apply (MonoidHom.ofInjective T.galHom_injective).abelianizationCongr.toAdditive.injective
-  have hc := T.trivialTateRangeIso_hom_neg_two_tateHMinusTwoEquivAbelianization
+  have hc := T.tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two
     ((T.trivialTateRangeIso (-2)).inv
     (TauCeti.TateCohomology.HNegTwoRes (Rep.trivial ℤ big.Gal ℤ) T.galHom.range x))
   rw [Iso.inv_hom_id_apply] at hc
   have hr := TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_HNegTwoRes
     T.galHom.range x
   rw [← NormalLayer.tateHMinusTwoEquivAbelianization_apply] at hr
+  -- `abelianizationCongr` is definitionally `Abelianization.map` in both directions, and the
+  -- additive equivalence and right unitor coerce to their underlying functions here.
   calc
     _ = (TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))).toAddEquiv
         (TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial
@@ -83,7 +85,7 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateCor
   rw [T.trivialTateCor_neg_two, ModuleCat.comp_apply,
     NormalLayer.tateHMinusTwoEquivAbelianization_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_HNegTwoCor,
-    T.trivialTateRangeIso_hom_neg_two_tateHMinusTwoEquivAbelianization]
+    T.tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two]
   rw [T.inclusionHom_apply, MonoidHom.toAdditive_apply_apply,
     MonoidHom.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply,
     toMul_ofMul, Abelianization.map_map_apply]

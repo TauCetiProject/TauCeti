@@ -5,9 +5,10 @@ Authors: Codex, Claude
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Abelianization
 
 /-!
 # Range comparisons for finite-layer Tate cohomology
@@ -206,6 +207,11 @@ theorem trivialRangeRepHom_apply (T : LayerRestriction small big) (x : ℤ) :
     (dsimp% only (T.trivialRangeRepHom x)) = x :=
   (rfl)
 
+/-- The coefficient map in the trivial range comparison is the identity linear map. -/
+theorem trivialRangeRepHom_hom_toLinearMap (T : LayerRestriction small big) :
+    T.trivialRangeRepHom.hom.toLinearMap = LinearMap.id :=
+  (rfl)
+
 /-- Below degree minus one, the trivial-coefficient range comparison agrees with the
 group-homology change-of-group isomorphism. -/
 @[simp, reassoc]
@@ -252,17 +258,12 @@ theorem tensorProduct_map_trivialRangeRepHom (T : LayerRestriction small big) :
         (Abelianization.map
           (MonoidHom.ofInjective T.galHom_injective :
             small.Gal →* T.galHom.range)).toAdditive) := by
-  apply TensorProduct.ext'
-  intro y n
-  rw [TensorProduct.map_tmul, LinearMap.rTensor_tmul]
-  -- Expose the bundled representation morphism so its pointwise identity lemma can rewrite.
-  change _ ⊗ₜ T.trivialRangeRepHom n = _
-  rw [T.trivialRangeRepHom_apply]
+  rw [T.trivialRangeRepHom_hom_toLinearMap, LinearMap.rTensor_def]
 
 /-- In degree `-2`, the trivial range comparison becomes the map induced on abelianizations
 under the low-degree identifications. -/
 @[simp]
-theorem trivialTateRangeIso_hom_neg_two_tateHMinusTwoEquivAbelianization
+theorem tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two
     (T : LayerRestriction small big) (x : small.TrivialTateH (-2)) :
     TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
         (TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial
