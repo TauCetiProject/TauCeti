@@ -196,12 +196,14 @@ theorem typeBSumNegativeRootMatrix_mul_sumNegativeRootMatrix (i j k l : ι) :
   simp [typeBSumNegativeRootMatrix_def, mul_sub, sub_mul, Matrix.single_mul_single_of_ne]
 
 /-- Positive sum-root vectors commute: the sum of two of their roots is never a root. -/
+@[simp]
 theorem typeBSumRootMatrix_lie_sumRootMatrix (i j k l : ι) :
     ⁅typeBSumRootMatrix (K := K) i j, typeBSumRootMatrix (K := K) k l⁆ = 0 := by
   rw [LieRing.of_associative_ring_bracket]
   simp
 
 /-- Negative sum-root vectors commute. -/
+@[simp]
 theorem typeBSumNegativeRootMatrix_lie_sumNegativeRootMatrix (i j k l : ι) :
     ⁅typeBSumNegativeRootMatrix (K := K) i j,
       typeBSumNegativeRootMatrix (K := K) k l⁆ = 0 := by
@@ -281,6 +283,13 @@ theorem typeBSumNegativeRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i
 def typeBSumCorootMatrix (i j : ι) : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
   typeBDiagonalMatrix (Pi.single i 1 + Pi.single j 1)
 
+omit [Fintype ι] in
+/-- The sum coroot matrix as the split diagonal matrix of coordinate vector `εᵢ + εⱼ`. -/
+theorem typeBSumCorootMatrix_def (i j : ι) :
+    typeBSumCorootMatrix (K := K) i j =
+      typeBDiagonalMatrix (Pi.single i 1 + Pi.single j 1) :=
+  (rfl)
+
 /-- The coroot `h_{εᵢ+εⱼ}` in the split type-`B` Lie algebra. -/
 def typeBSumCorootGenerator (i j : ι) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBSumCorootMatrix i j, typeBDiagonalMatrix_mem_typeB _⟩
@@ -355,6 +364,7 @@ theorem typeBShortNegativeRootMatrix_lie_shortNegativeRootMatrix (i j : ι) :
 
 /-- A short-root vector commutes with a positive sum-root vector: `εᵢ + ε_k + ε_l` is never a
 root, so this bracket vanishes for all index choices. -/
+@[simp]
 theorem typeBShortRootMatrix_lie_sumRootMatrix (i k l : ι) :
     ⁅typeBShortRootMatrix (K := K) i, typeBSumRootMatrix (K := K) k l⁆ = 0 := by
   rw [LieRing.of_associative_ring_bracket]
@@ -362,6 +372,7 @@ theorem typeBShortRootMatrix_lie_sumRootMatrix (i k l : ι) :
     Matrix.single_mul_single_of_ne]
 
 /-- A negative short-root vector commutes with a negative sum-root vector. -/
+@[simp]
 theorem typeBShortNegativeRootMatrix_lie_sumNegativeRootMatrix (i k l : ι) :
     ⁅typeBShortNegativeRootMatrix (K := K) i, typeBSumNegativeRootMatrix (K := K) k l⁆ = 0 := by
   rw [LieRing.of_associative_ring_bracket]
@@ -379,6 +390,7 @@ theorem typeBLongRootMatrix_lie_sumRootMatrix (i j k : ι) (hij : i ≠ j) (hjk 
 
 /-- A difference-root vector commutes with a positive sum-root vector whose coordinates avoid the
 lowered one: `εᵢ - εⱼ + ε_k + ε_l` is then not a root. -/
+@[simp]
 theorem typeBLongRootMatrix_lie_sumRootMatrix_of_ne (i j k l : ι) (hij : i ≠ j) (hjk : j ≠ k)
     (hjl : j ≠ l) :
     ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumRootMatrix (K := K) k l⁆ = 0 := by
@@ -398,6 +410,7 @@ theorem typeBLongRootMatrix_lie_sumNegativeRootMatrix (i j l : ι) (hij : i ≠ 
 
 /-- A difference-root vector commutes with a negative sum-root vector whose coordinates avoid the
 raised one. -/
+@[simp]
 theorem typeBLongRootMatrix_lie_sumNegativeRootMatrix_of_ne (i j k l : ι) (hij : i ≠ j)
     (hik : i ≠ k) (hil : i ≠ l) :
     ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumNegativeRootMatrix (K := K) k l⁆ = 0 := by
@@ -407,6 +420,7 @@ theorem typeBLongRootMatrix_lie_sumNegativeRootMatrix_of_ne (i j k l : ι) (hij 
 
 /-- A positive and a negative sum-root vector commute when their index pairs are disjoint: the
 sum of their roots is then not a root. -/
+@[simp]
 theorem typeBSumRootMatrix_lie_sumNegativeRootMatrix_of_ne (i j k l : ι) (hik : i ≠ k)
     (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l) :
     ⁅typeBSumRootMatrix (K := K) i j, typeBSumNegativeRootMatrix (K := K) k l⁆ = 0 := by
@@ -439,6 +453,7 @@ theorem typeBSumRootMatrix_lie_shortNegativeRootMatrix (i j : ι) (hij : i ≠ j
 
 /-- A positive sum-root vector commutes with a negative short-root vector at a third coordinate:
 `εᵢ + εⱼ - ε_k` is then not a root. -/
+@[simp]
 theorem typeBSumRootMatrix_lie_shortNegativeRootMatrix_of_ne (i j k : ι) (hik : i ≠ k)
     (hjk : j ≠ k) :
     ⁅typeBSumRootMatrix (K := K) i j, typeBShortNegativeRootMatrix (K := K) k⁆ = 0 := by
