@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Opens
+public import Mathlib.CategoryTheory.Sites.IsSheafFor
+public import Mathlib.Topology.Category.TopCat.Opens
 
 /-!
 # Transitivity of the sheaf condition along a cover of an open set
@@ -62,13 +63,15 @@ theorem isSheafFor_trans {W : Opens X} {ι : Type*} (Y : ι → Opens X) (hY : �
     intro i j Z gi gj _
     have hij : F.map (homOfLE inf_le_left : Y i ⊓ Y j ⟶ Y i).op (t i) =
         F.map (homOfLE inf_le_right : Y i ⊓ Y j ⟶ Y j).op (t j) := by
+      -- Arrows between opens encode proofs of inclusion, so proof irrelevance identifies
+      -- the composite arrows indexing `x` with those in `x.pullback`.
       refine hS₂ i j (x.pullback _) _ _ (fun V g hg ↦ ?_) (fun V g hg ↦ ?_)
       · rw [← Functor.map_comp_apply, ← op_comp,
           ht i (g ≫ homOfLE inf_le_left) (by simpa using hg)]
-        exact TauCeti.CategoryTheory.familyOfElements_congr x _ _ _ _
+        rfl
       · rw [← Functor.map_comp_apply, ← op_comp,
           ht j (g ≫ homOfLE inf_le_right) (by simpa using hg)]
-        exact TauCeti.CategoryTheory.familyOfElements_congr x _ _ _ _
+        rfl
     have hZ : Z ≤ Y i ⊓ Y j := le_inf gi.le gj.le
     -- Factor both arrows from `Z` through the meet's canonical inclusions; uniqueness of
     -- morphisms between opens then lets `hij` identify their restrictions.
