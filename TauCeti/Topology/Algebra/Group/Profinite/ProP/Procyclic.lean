@@ -51,6 +51,13 @@ namespace TauCeti.IsProP
 variable {p : ℕ} [Fact p.Prime] {P : Type*} [Group P] [TopologicalSpace P]
   [IsTopologicalGroup P] [CompactSpace P] [TotallyDisconnectedSpace P]
 
+/-- **A `p`-adic power with exponent divisible by `p` lies in the pro-`p` Frattini subgroup.** -/
+theorem padicPow_mem_proPFrattini_of_dvd (hP : IsProP p P) {l : ℤ_[p]} (hl : (p : ℤ_[p]) ∣ l)
+    (a : P) : hP.padicPow a l ∈ proPFrattini p P := by
+  obtain ⟨m, rfl⟩ := hl
+  rw [hP.padicPow_mul, hP.padicPow_natCast]
+  exact hP.padicPow_mem isClosed_proPFrattini (pow_mem_proPFrattini a) m
+
 /-- **A unit power of a topological generator is a topological generator, and nothing else is.**
 If `a` topologically generates the nontrivial pro-`p` group `P`, then the `p`-adic power `a ^ u`
 topologically generates `P` if and only if `u` is a unit of `ℤ_[p]`. -/
@@ -61,10 +68,9 @@ theorem topologicalClosure_closure_padicPow_eq_top_iff [Nontrivial P] (hP : IsPr
   · intro h
     by_contra hu
     -- A non-unit is `p * w`, so `a ^ u = (a ^ w) ^ p` lies in the closed proper Frattini subgroup.
-    obtain ⟨w, hw⟩ := (PadicInt.norm_lt_one_iff_dvd u).mp (PadicInt.not_isUnit_iff.mp hu)
-    have hmem : hP.padicPow a u ∈ proPFrattini p P := by
-      rw [hw, mul_comm, hP.padicPow_mul, hP.padicPow_natCast]
-      exact pow_mem_proPFrattini _
+    have hmem : hP.padicPow a u ∈ proPFrattini p P :=
+      hP.padicPow_mem_proPFrattini_of_dvd
+        ((PadicInt.norm_lt_one_iff_dvd u).mp (PadicInt.not_isUnit_iff.mp hu)) a
     refine hP.proPFrattini_ne_top (top_le_iff.mp (h ▸ ?_))
     exact Subgroup.topologicalClosure_minimal _
       ((Subgroup.closure_le _).mpr (Set.singleton_subset_iff.mpr hmem)) isClosed_proPFrattini

@@ -44,7 +44,6 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
 
 /-- A geodesic from the centre of a normal ball that reaches `exp_p v` with the same length
 as the radial segment to `v` agrees with that radial segment on `[0, 1]`. The initial velocity

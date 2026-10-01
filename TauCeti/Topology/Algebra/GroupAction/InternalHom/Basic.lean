@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.GroupWithZero.Action.Hom
+public import TauCeti.Algebra.Group.Hom.Instances
 public import TauCeti.Algebra.Module.ZMod.Extend
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 
@@ -24,8 +25,9 @@ which is the action for which evaluation `(φ, m) ↦ φ m` is equivariant, in t
 continuous action on a discrete module when `M` is finite discrete and `N` is discrete: the set of
 group elements fixing a given `φ` is open, and over a compact `G` it contains an open normal
 subgroup. The internal hom is contravariantly functorial in its source, by precomposition with an
-equivariant homomorphism, and `Hom(-, N)` is exact on the modules killed by a prime `p`, for every
-`N`: this is the algebra behind the dual of a short exact sequence of finite `𝔽_p[G]`-modules.
+equivariant homomorphism, and covariantly functorial in its target, by postcomposition; `Hom(-, N)`
+is exact on the modules killed by a prime `p`, for every `N`: this is the algebra behind the dual
+of a short exact sequence of finite `𝔽_p[G]`-modules.
 
 ## Main definitions
 
@@ -43,6 +45,13 @@ equivariant homomorphism, and `Hom(-, N)` is exact on the modules killed by a pr
   the equivariant homomorphism `InternalHom G M' N →+[G] InternalHom G M N`, with
   `TauCeti.InternalHom.evalPairing_precomp` as its defining equation and the functor laws
   `precomp_id` and `precomp_comp`.
+* `TauCeti.InternalHom.postcomp`: postcomposition with an equivariant homomorphism `f : N →+[G] N'`,
+  the equivariant homomorphism `InternalHom G M N →+[G] InternalHom G M N'`, with
+  `TauCeti.InternalHom.evalPairing_postcomp` as its defining equation and the functor laws
+  `postcomp_id` and `postcomp_comp`.
+* `TauCeti.InternalHom.restrict`: restriction of the acting group to a subgroup `U ≤ G`, the
+  `U`-equivariant bijection `InternalHom G M N →+[U] InternalHom U M N` that leaves the underlying
+  homomorphism unchanged.
 * `TauCeti.InternalHom.zmodEquiv`: for a `ZMod n`-module `A`, evaluation at `1` identifies
   `InternalHom G (ZMod n) A` with `A` additively; `TauCeti.InternalHom.toAddMonoidHom_apply_eq_smul`
   recovers a homomorphism from its value at `1`. For a trivial action of `G` on `ZMod n`,
@@ -64,12 +73,19 @@ equivariant homomorphism, and `Hom(-, N)` is exact on the modules killed by a pr
   what makes it again a discrete `G`-module for finite discrete `M` and discrete `N`.
 * `TauCeti.exists_openNormalSubgroup_homAction_eq_self`: over a compact topological group that
   set contains an open normal subgroup.
-* `TauCeti.InternalHom.precomp_injective`, `TauCeti.InternalHom.exact_precomp` and
-  `TauCeti.InternalHom.precomp_surjective`: `Hom(-, N)` takes a surjection to an injection, an
-  exact pair with surjective second map to an exact pair, and, when the target of the injection is
-  killed by a prime `p`, an injection to a surjection. The internal hom of finite modules is
-  finite, and it is killed by any natural number killing the codomain
-  (`TauCeti.InternalHom.nsmul_eq_zero`).
+* `TauCeti.InternalHom.precomp_injective`, `TauCeti.InternalHom.exact_precomp`,
+  `TauCeti.InternalHom.precomp_surjective` and `TauCeti.InternalHom.precomp_surjective_of_baer`:
+  `Hom(-, N)` takes a surjection to an injection, an exact pair with surjective second map to an
+  exact pair, and an injection to a surjection when the target of the injection is killed by a
+  prime `p`, or is killed by `n` with `N` satisfying Baer's criterion over `ℤ/nℤ`; both are cases of
+  `TauCeti.InternalHom.precomp_surjective_of_forall_exists_comp_eq`, precomposition is surjective
+  as soon as every additive homomorphism extends. The internal hom of finite modules is finite, and
+  it is killed by any natural number killing the codomain (`TauCeti.InternalHom.nsmul_eq_zero`) or
+  the domain (`TauCeti.InternalHom.nsmul_eq_zero_of_domain`).
+* `TauCeti.InternalHom.postcomp_injective`, `TauCeti.InternalHom.postcomp_bijective` and
+  `TauCeti.InternalHom.postcomp_bijective_of_forall_nsmul_eq_zero`: `Hom(M, -)` takes an injection
+  to an injection and an isomorphism to an isomorphism, and, when `M` is killed by `n`, it takes an
+  injection whose range is the `n`-torsion of its target to an isomorphism.
 
 ## Implementation notes
 
@@ -314,6 +330,12 @@ instance [Finite M] [Finite N] : Finite (InternalHom G M N) :=
   Finite.of_injective (fun φ : InternalHom G M N => (φ.toAddMonoidHom : M → N))
     fun _ _ h => InternalHom.ext (DFunLike.coe_injective h)
 
+/-- The internal hom out of a subsingleton module is a subsingleton: a homomorphism out of the zero
+module is zero. -/
+instance [Subsingleton M] : Subsingleton (InternalHom G M N) :=
+  ⟨fun φ ψ => InternalHom.ext (AddMonoidHom.ext fun m => by
+    rw [Subsingleton.elim m 0, map_zero, map_zero])⟩
+
 section Additive
 
 variable (G) {N : Type*} [AddCommMonoid N]
@@ -359,6 +381,12 @@ theorem of_nsmul (n : ℕ) (φ : M →+ N) : of G (n • φ) = n • of G φ := 
 theorem nsmul_eq_zero {n : ℕ} (hN : ∀ x : N, n • x = 0) (φ : InternalHom G M N) : n • φ = 0 := by
   ext m
   simp [hN]
+
+/-- A natural number killing the domain kills the internal hom. -/
+theorem nsmul_eq_zero_of_domain {n : ℕ} (hM : ∀ x : M, n • x = 0) (φ : InternalHom G M N) :
+    n • φ = 0 := by
+  ext m
+  simp [← map_nsmul, hM]
 
 end Additive
 
@@ -531,7 +559,124 @@ theorem precomp_injective {f : M →+[G] M'} (hf : Function.Surjective f) :
   obtain ⟨m, rfl⟩ := hf m'
   exact congrArg (fun χ : InternalHom G M N => evalPairing G χ m) h
 
+/-- Precomposition with a bijection is bijective: `Hom(-, N)` takes isomorphisms to isomorphisms.
+The inverse is precomposition with the inverse bijection. -/
+theorem precomp_bijective {f : M →+[G] M'} (hf : Function.Bijective f) :
+    Function.Bijective (precomp G f (N := N)) :=
+  ⟨precomp_injective hf.2, fun φ =>
+    ⟨of G (φ.toAddMonoidHom.comp (AddEquiv.ofBijective (f : M →+ M') hf).symm.toAddMonoidHom),
+      InternalHom.ext (AddMonoidHom.ext fun m =>
+        congrArg φ.toAddMonoidHom ((AddEquiv.ofBijective (f : M →+ M') hf).symm_apply_apply m))⟩⟩
+
 end Precomp
+
+/-! ### Covariant functoriality in the target -/
+
+section Postcomp
+
+variable (G : Type*) [Group G] {M : Type*} [AddMonoid M] [DistribMulAction G M]
+  {N N' : Type*} [AddCommMonoid N] [AddCommMonoid N'] [DistribMulAction G N]
+  [DistribMulAction G N']
+
+/-- Postcomposition with an equivariant homomorphism `f : N →+[G] N'`, as an equivariant
+homomorphism `InternalHom G M N →+[G] InternalHom G M N'`: the internal hom is covariantly
+functorial in its target. Its values are characterized by `evalPairing_postcomp`. -/
+def postcomp (f : N →+[G] N') : InternalHom G M N →+[G] InternalHom G M N' where
+  toFun φ := of G ((f : N →+ N').comp φ.toAddMonoidHom)
+  map_smul' g φ := by
+    ext m
+    simp [homAction_apply, map_smul]
+  map_zero' := by
+    ext m
+    simp
+  map_add' _ _ := by
+    ext m
+    simp
+
+variable {G}
+
+@[simp]
+theorem toAddMonoidHom_postcomp (f : N →+[G] N') (φ : InternalHom G M N) :
+    (postcomp G f φ).toAddMonoidHom = (f : N →+ N').comp φ.toAddMonoidHom := (rfl)
+
+/-- Postcomposition is compatible with evaluation: `(f ∘ φ) m = f (φ m)`. Not a `simp` lemma, since
+`evalPairing_apply` already rewrites its left-hand side to `toAddMonoidHom_postcomp`. -/
+theorem evalPairing_postcomp (f : N →+[G] N') (φ : InternalHom G M N) (m : M) :
+    evalPairing G (postcomp G f φ) m = f (evalPairing G φ m) := (rfl)
+
+@[simp]
+theorem postcomp_id : postcomp G (DistribMulActionHom.id G : N →+[G] N) (M := M) =
+    DistribMulActionHom.id G :=
+  DistribMulActionHom.ext fun _ => InternalHom.ext (AddMonoidHom.ext fun _ => rfl)
+
+theorem postcomp_comp {N'' : Type*} [AddCommMonoid N''] [DistribMulAction G N''] (g : N' →+[G] N'')
+    (f : N →+[G] N') : postcomp G (g.comp f) (M := M) = (postcomp G g).comp (postcomp G f) :=
+  DistribMulActionHom.ext fun _ => InternalHom.ext (AddMonoidHom.ext fun _ => rfl)
+
+/-- Postcomposition with an injection is injective: `Hom(M, -)` takes injections to injections. -/
+theorem postcomp_injective {f : N →+[G] N'} (hf : Function.Injective f) :
+    Function.Injective (postcomp G f (M := M)) := fun _ _ h =>
+  InternalHom.ext (AddMonoidHom.ext fun m => hf (congrArg (fun χ : InternalHom G M N' =>
+    evalPairing G χ m) h))
+
+/-- **Postcomposition with an injection onto the `n`-torsion is bijective** on the internal homs out
+of a module killed by `n`: if `f : N →+[G] N'` is injective and every element of `N'` killed by `n`
+lies in its range, then `Hom(M, f)` is bijective for every `M` killed by `n`, because every
+homomorphism out of `M` takes values in the `n`-torsion. -/
+theorem postcomp_bijective_of_forall_nsmul_eq_zero {f : N →+[G] N'} (hf : Function.Injective f)
+    {n : ℕ} (hM : ∀ x : M, n • x = 0) (hN' : ∀ y : N', n • y = 0 → ∃ x, f x = y) :
+    Function.Bijective (postcomp G f (M := M)) := by
+  have h := AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero (M := M) (f := (f : N →+ N'))
+    hf hM hN'
+  refine ⟨fun φ ψ hφψ => InternalHom.ext (h.1 ?_), fun ψ => ?_⟩
+  · simpa only [AddMonoidHom.compHom_apply_apply, toAddMonoidHom_postcomp] using
+      congrArg toAddMonoidHom hφψ
+  · obtain ⟨φ, hφ⟩ := h.2 ψ.toAddMonoidHom
+    exact ⟨of G φ, InternalHom.ext (by
+      simpa only [AddMonoidHom.compHom_apply_apply, toAddMonoidHom_postcomp] using hφ)⟩
+
+/-- Postcomposition with a bijection is bijective: `Hom(M, -)` takes isomorphisms to isomorphisms.
+This is the case `n = 0` of `postcomp_bijective_of_forall_nsmul_eq_zero`. -/
+theorem postcomp_bijective {f : N →+[G] N'} (hf : Function.Bijective f) :
+    Function.Bijective (postcomp G f (M := M)) :=
+  postcomp_bijective_of_forall_nsmul_eq_zero hf.1 (n := 0) (fun x => zero_nsmul x)
+    fun y _ => hf.2 y
+
+end Postcomp
+
+/-! ### Restricting the acting group -/
+
+section Restrict
+
+variable {G : Type*} [Group G] {M : Type*} [AddMonoid M] [DistribMulAction G M]
+  {N : Type*} [AddCommMonoid N] [DistribMulAction G N]
+
+/-- Restricting the acting group to a subgroup `U ≤ G`: the internal hom of `M` and `N` as
+`G`-modules, regarded as a `U`-module through the restricted action, is the internal hom of `M` and
+`N` as `U`-modules. The underlying homomorphism does not move (`toAddMonoidHom_restrict`), the
+evaluation pairing is unchanged (`evalPairing_restrict`) and the map is a bijection
+(`restrict_bijective`). It is recorded as a `U`-equivariant homomorphism because that is the form in
+which the coefficient maps of continuous cohomology consume it. -/
+def restrict (U : Subgroup G) : InternalHom G M N →+[U] InternalHom U M N where
+  toFun φ := of U φ.toAddMonoidHom
+  map_smul' _ _ := InternalHom.ext (AddMonoidHom.ext fun _ => rfl)
+  map_zero' := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+theorem toAddMonoidHom_restrict (U : Subgroup G) (φ : InternalHom G M N) :
+    (restrict U φ).toAddMonoidHom = φ.toAddMonoidHom := (rfl)
+
+/-- Restricting the acting group does not change the evaluation pairing. -/
+theorem evalPairing_restrict (U : Subgroup G) (φ : InternalHom G M N) (m : M) :
+    evalPairing U (restrict U φ) m = evalPairing G φ m := (rfl)
+
+theorem restrict_bijective (U : Subgroup G) :
+    Function.Bijective (restrict U : InternalHom G M N → InternalHom U M N) :=
+  ⟨fun _ _ h => InternalHom.ext (by simpa using congrArg toAddMonoidHom h),
+    fun ψ => ⟨of G ψ.toAddMonoidHom, (rfl)⟩⟩
+
+end Restrict
 
 section Exact
 
@@ -568,17 +713,43 @@ variable {G : Type*} [Group G] {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
   [DistribMulAction G M] [DistribMulAction G M'] {N : Type*} [AddCommMonoid N]
   [DistribMulAction G N]
 
+/-- Precomposition with `f` is surjective on internal homs as soon as every additive homomorphism
+`M →+ N` is the restriction along `f` of an additive homomorphism `M' →+ N`: the extension, with
+the conjugation action, is a preimage in the internal hom. -/
+theorem precomp_surjective_of_forall_exists_comp_eq {f : M →+[G] M'}
+    (h : ∀ φ : M →+ N, ∃ ψ : M' →+ N, ψ.comp f = φ) :
+    Function.Surjective (precomp G f (N := N)) := fun φ =>
+  let ⟨ψ, hψ⟩ := h φ.toAddMonoidHom
+  ⟨of G ψ, InternalHom.ext hψ⟩
+
 /-- Precomposition with an injection into a module killed by a prime `p` is surjective, for any
 `N`: `Hom(-, N)` is exact on the modules killed by `p`. This is
 `AddMonoidHom.exists_comp_eq_of_injective` on the internal hom. -/
 theorem precomp_surjective {p : ℕ} [Fact p.Prime] (hM' : ∀ x : M', p • x = 0)
     {f : M →+[G] M'} (hf : Function.Injective f) :
-    Function.Surjective (precomp G f (N := N)) := fun φ => by
-  obtain ⟨ψ, hψ⟩ :=
-    AddMonoidHom.exists_comp_eq_of_injective hM' (f := (f : M →+ M')) hf φ.toAddMonoidHom
-  exact ⟨of G ψ, InternalHom.ext hψ⟩
+    Function.Surjective (precomp G f (N := N)) :=
+  precomp_surjective_of_forall_exists_comp_eq fun φ =>
+    AddMonoidHom.exists_comp_eq_of_injective hM' (f := (f : M →+ M')) hf φ
 
 end Surjective
+
+section SurjectiveOfBaer
+
+variable {G : Type*} [Group G] {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
+  [DistribMulAction G M] [DistribMulAction G M'] {N : Type*} [AddCommGroup N]
+  [DistribMulAction G N]
+
+/-- Precomposition with an injection into a module killed by `n` is surjective when the target `N`
+satisfies Baer's criterion over `ℤ/nℤ`: for such `N`, `Hom(-, N)` is exact on the modules killed by
+`n`. This holds for `N = ℤ/nℤ` with any action when `n ≠ 0`, by `Module.Baer.zmod_self`, and is
+`AddMonoidHom.exists_comp_eq_of_injective_of_baer` on the internal hom. -/
+theorem precomp_surjective_of_baer {n : ℕ} [Module (ZMod n) N] (hN : Module.Baer (ZMod n) N)
+    (hM' : ∀ x : M', n • x = 0) {f : M →+[G] M'} (hf : Function.Injective f) :
+    Function.Surjective (precomp G f (N := N)) :=
+  precomp_surjective_of_forall_exists_comp_eq fun φ =>
+    AddMonoidHom.exists_comp_eq_of_injective_of_baer hN hM' (f := (f : M →+ M')) hf φ
+
+end SurjectiveOfBaer
 
 end InternalHom
 

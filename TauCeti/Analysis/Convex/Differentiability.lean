@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Rademacher
 public import TauCeti.Analysis.Convex.EffectiveDomain
 public import TauCeti.Analysis.Convex.Subdifferential
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 
 /-!
@@ -29,7 +30,9 @@ transport maps, as in Brenier's theorem.
 At such a point the subdifferential of `f` for a pairing `B` reduces to the derivative:
 every subgradient `y` satisfies `D f (x) v = B v y` for all `v`
 (`TauCeti.hasFDerivAt_apply_eq_of_mem_subdifferential`). This needs neither convexity nor finite
-dimension.
+dimension. On a real inner product space, with the inner product as pairing, the subgradient is
+then the gradient (`TauCeti.hasGradientAt_toReal_of_mem_subdifferential`): this is how the
+gradient of a convex potential becomes a transport map.
 
 ## Main statements
 
@@ -38,7 +41,10 @@ dimension.
   nearby and differentiable;
 * `TauCeti.hasFDerivAt_apply_eq_of_mem_subdifferential` and
   `TauCeti.fderiv_apply_eq_of_mem_subdifferential` — at an interior point of the effective
-  domain where `f` is differentiable, every subgradient is the derivative.
+  domain where `f` is differentiable, every subgradient is the derivative;
+* `TauCeti.hasGradientAt_toReal_of_mem_subdifferential` and
+  `TauCeti.gradient_toReal_eq_of_mem_subdifferential` — the same statement for the inner product,
+  where every subgradient is the gradient.
 
 ## References
 
@@ -117,5 +123,35 @@ theorem fderiv_apply_eq_of_mem_subdifferential (hy : y ∈ subdifferential B f x
   hasFDerivAt_apply_eq_of_mem_subdifferential B hy hdom hf.hasFDerivAt v
 
 end Normed
+
+section InnerProduct
+
+open InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → EReal} {x y : E}
+
+/-- **Subgradients at a point of differentiability are gradients.** If `f : E → EReal` is finite
+near `x`, its real representative is differentiable at `x`, and `y` is a subgradient of `f` at `x`
+for the inner product, then `y` is the gradient of the real representative at `x`. -/
+theorem hasGradientAt_toReal_of_mem_subdifferential (hy : y ∈ subdifferential (innerₗ E) f x)
+    (hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) (hf : DifferentiableAt ℝ (fun x' => (f x').toReal) x) :
+    HasGradientAt (fun x' => (f x').toReal) y x := by
+  have hderiv : toDual ℝ E y = fderiv ℝ (fun x' => (f x').toReal) x := by
+    ext v
+    rw [fderiv_apply_eq_of_mem_subdifferential (innerₗ E) hy hdom hf v, toDual_apply_apply,
+      innerₗ_apply_apply, real_inner_comm]
+  rw [hasGradientAt_iff_hasFDerivAt, hderiv]
+  exact hf.hasFDerivAt
+
+/-- The `gradient` form of `TauCeti.hasGradientAt_toReal_of_mem_subdifferential`: at a point where
+`f` is finite nearby and differentiable, every subgradient for the inner product is the gradient of
+the real representative. -/
+theorem gradient_toReal_eq_of_mem_subdifferential (hy : y ∈ subdifferential (innerₗ E) f x)
+    (hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) (hf : DifferentiableAt ℝ (fun x' => (f x').toReal) x) :
+    gradient (fun x' => (f x').toReal) x = y :=
+  (hasGradientAt_toReal_of_mem_subdifferential hy hdom hf).gradient
+
+end InnerProduct
 
 end TauCeti

@@ -64,6 +64,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   `Polynomial.Monic.discr_ne_zero_iff_separable_map`: a monic polynomial is separable exactly
   when its discriminant is a unit; over a field that reads `discr f ≠ 0`, and over a domain the
   correct statement passes to the fraction field.
+* `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
+  separable exactly when its discriminant is nonzero.
 * `Polynomial.Monic.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
@@ -638,6 +640,20 @@ monic polynomial over `ℤ` with nonzero discriminant that is not separable. -/
 theorem _root_.Polynomial.Monic.discr_ne_zero_iff {K : Type*} [Field K] {f : K[X]}
     (hf : f.Monic) : f.discr ≠ 0 ↔ f.Separable := by
   rw [← hf.isUnit_discr_iff, isUnit_iff_ne_zero]
+
+/-- Over a field, a nonzero polynomial is separable exactly when its discriminant is nonzero.
+
+The hypothesis `f ≠ 0` cannot be dropped: the zero polynomial has discriminant `1` but is not
+separable. -/
+theorem _root_.Polynomial.discr_ne_zero_iff {K : Type*} [Field K] {f : K[X]} (hf : f ≠ 0) :
+    f.discr ≠ 0 ↔ f.Separable := by
+  have hc : f.leadingCoeff⁻¹ ≠ 0 := inv_ne_zero (leadingCoeff_ne_zero.mpr hf)
+  have hmonic : (C f.leadingCoeff⁻¹ * f).Monic := by
+    rw [mul_comm]
+    exact monic_mul_leadingCoeff_inv hf
+  rw [← mul_ne_zero_iff_left (pow_ne_zero (2 * f.natDegree - 2) hc), ← discr_C_mul _ hc,
+    hmonic.discr_ne_zero_iff]
+  exact ⟨fun h ↦ h.of_mul_right, Separable.unit_mul (isUnit_C.mpr hc.isUnit)⟩
 
 /-- The product of the differences of a numbering of distinct roots is nonzero. -/
 theorem discrSqrt_ne_zero {F E : Type*} [CommRing F] [CommRing E] [IsDomain E]

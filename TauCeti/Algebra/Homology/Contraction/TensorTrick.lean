@@ -282,6 +282,24 @@ theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M) (n : {n : 
   refine Finset.sum_congr rfl fun j _ ↦ congrArg _ (congrArg _ (funext fun i ↦ ?_))
   split_ifs <;> rfl
 
+/-- On a single letter the tensor-trick homotopy is the homotopy of the contraction. -/
+@[simp]
+theorem reducedTensorWordsHomotopy_ofLetter (G : InternalGrading R M) (a : M) :
+    c.reducedTensorWordsHomotopy G (ofLetter R M a) = ofLetter R M (c.homotopy a) := by
+  rw [ofLetter_eq_of_tprod, ofLetter_eq_of_tprod, c.reducedTensorWordsHomotopy_of_tprod G 1]
+  simp
+
+/-- On a two-letter word the tensor-trick homotopy is `h ⊗ i p + τ ⊗ h`, where `τ` is the Koszul
+twist of parameter one. -/
+theorem reducedTensorWordsHomotopy_of_two (G : InternalGrading R M) (a b : M) :
+    c.reducedTensorWordsHomotopy G (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![c.homotopy a, c.incl (c.proj b)]) +
+        of R M (2 : ℕ+) (PiTensorProduct.tprod R ![G.koszulTwist 1 a, c.homotopy b]) := by
+  have h := c.reducedTensorWordsHomotopy_of_tprod G ⟨2, two_pos⟩ ![a, b]
+  rw [Finset.sum_range_succ, Finset.sum_range_one] at h
+  refine h.trans ?_
+  congr 3 <;> funext i <;> fin_cases i <;> simp
+
 /-- The tensor-trick homotopy lowers the total degree of words by one when the homotopy of the
 contraction has degree `-1` and its inclusion and projection have degree zero. -/
 theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)

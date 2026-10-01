@@ -15,7 +15,8 @@ public import TauCeti.CategoryTheory.Products.Basic
 This file equips product categories with componentwise binary biproducts and, when the factors
 are preadditive, a componentwise preadditive structure and additive projection and product
 functors. These constructions let additive invariants, including split Grothendieck groups,
-compare a product category with its factors.
+compare a product category with its factors. Every object of such a product is the biproduct of
+its two zero-padded components (`CategoryTheory.prod.biprodComponentsIso`).
 -/
 
 public section
@@ -163,3 +164,77 @@ instance (F : C ⥤ C') (G : D ⥤ D') [F.Additive] [G.Additive] : (F.prod G).Ad
 end AdditiveFunctors
 
 end TauCeti
+
+namespace CategoryTheory.prod
+
+open Limits ZeroObject
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D]
+  [HasZeroMorphisms C] [HasZeroMorphisms D] [HasZeroObject C] [HasZeroObject D]
+  [HasBinaryBiproducts C] [HasBinaryBiproducts D]
+
+/-- An object of a product of categories with zero morphisms and zero objects is the biproduct
+of its two components, each padded by a zero object in the other coordinate. -/
+noncomputable def biprodComponentsIso (X : C × D) : (X.1, (0 : D)) ⊞ ((0 : C), X.2) ≅ X :=
+  let A : C × D := (X.1, (0 : D))
+  let B : C × D := ((0 : C), X.2)
+  let b : BinaryBicone A B :=
+    { pt := X
+      fst := (𝟙 X.1, 0)
+      snd := (0, 𝟙 X.2)
+      inl := (𝟙 X.1, 0)
+      inr := (0, 𝟙 X.2)
+      inl_fst := by
+        apply Prod.hom_ext
+        · simp [A]
+        · simp [A]
+      inl_snd := by ext
+      inr_fst := by ext
+      inr_snd := by
+        apply Prod.hom_ext
+        · simp [B]
+        · simp [B] }
+  let hb : b.IsBilimit := by
+    refine ⟨BinaryFan.IsLimit.mk _
+      (fun f g => (f.1, g.2))
+      (fun f _ => by
+        apply Prod.hom_ext
+        · simp [b, A]
+        · exact (isZero_zero D).eq_of_tgt _ _)
+      (fun _ g => by
+        apply Prod.hom_ext
+        · exact (isZero_zero C).eq_of_tgt _ _
+        · simp [b, B])
+      (fun f g m h₁ h₂ => by
+        dsimp [b] at m h₁ h₂ ⊢
+        apply Prod.hom_ext
+        · simpa using congrArg (fun p => p.1) h₁
+        · simpa using congrArg (fun p => p.2) h₂),
+      BinaryCofan.IsColimit.mk _
+      (fun f g => (f.1, g.2))
+      (fun f _ => by
+        apply Prod.hom_ext
+        · simp [b, A]
+        · exact (isZero_zero D).eq_of_src _ _)
+      (fun _ g => by
+        apply Prod.hom_ext
+        · exact (isZero_zero C).eq_of_src _ _
+        · simp [b, B])
+      (fun f g m h₁ h₂ => by
+        dsimp [b] at m h₁ h₂ ⊢
+        apply Prod.hom_ext
+        · simpa using congrArg (fun p => p.1) h₁
+        · simpa using congrArg (fun p => p.2) h₂)⟩
+  (biprod.uniqueUpToIso A B hb).symm
+
+/-- The forward map of `biprodComponentsIso` is induced by the two coordinate inclusions. -/
+@[simp]
+theorem biprodComponentsIso_hom (X : C × D) :
+    (biprodComponentsIso X).hom = biprod.desc (𝟙 X.1, 0) (0, 𝟙 X.2) := (rfl)
+
+/-- The inverse of `biprodComponentsIso` is induced by the two coordinate projections. -/
+@[simp]
+theorem biprodComponentsIso_inv (X : C × D) :
+    (biprodComponentsIso X).inv = biprod.lift (𝟙 X.1, 0) (0, 𝟙 X.2) := (rfl)
+
+end CategoryTheory.prod

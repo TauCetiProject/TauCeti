@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Complement
 public import TauCeti.GroupTheory.Index.Two
 import Mathlib.GroupTheory.IndexNormal
 import Mathlib.Tactic.Group
@@ -25,8 +26,8 @@ lies in `U` whenever `t` really is a transversal, and it is a `1`-cocycle for th
 ℓᵗ_u(γ) * ℓᵗ_{γ⁻¹ • u}(η) = ℓᵗ_u(γ * η).
 ```
 
-This file records that calculus: `TauCeti.lWord` and the three identities that make it useful,
-namely `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
+This file records the word calculus through `TauCeti.lWord` and the three identities that make it
+useful: `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
 `TauCeti.transversal_mul_lWord`, the last of which is the rewriting rule
 `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` that turns a `U`-cocycle relation into a `G`-cocycle relation.
 It also records how the word changes when the transversal does (`TauCeti.transversalDiff` and
@@ -39,26 +40,28 @@ it is `γ * s` and `s⁻¹ * γ` respectively. Continuity of `γ ↦ ℓᵗ_u(γ
 an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
 
-The transversal is a variable throughout, and no condition is imposed on it except where one is
-needed: only `lWord_mem` and `transversalDiff_mem` ask that `t` be a transversal at all.
+In the word calculus, the transversal is a variable, and only `lWord_mem` and
+`transversalDiff_mem` ask that `t` actually represent each coset.
 
 ## Implementation notes
 
-Mathlib's `Subgroup.LeftTransversal` bundles a *set* of coset representatives, with
-`Subgroup.IsComplement.leftQuotientEquiv`, applied to the complement proof `S.2` of such an `S`,
-turning it into an equivalence `G ⧸ U ≃ S`. The formulas that consume the
-transversal word index sums by `G ⧸ U`, so a transversal is taken here in the equivalent form of a
-map `t : G ⧸ U → G` satisfying `↑(t u) = u`; `Quotient.out` is the canonical example.
+The word calculus takes a map `t : G ⧸ U → G` because its consuming formulas index by `G ⧸ U`.
+The map satisfies `↑(t u) = u` when membership in `U` is needed; `Quotient.out` is the canonical
+example. A Mathlib `Subgroup.LeftTransversal` yields the map `Subgroup.leftTransversalRep` via
+`Subgroup.IsComplement.leftQuotientEquiv`; `Subgroup.leftTransversalRep_mk` gives its
+representative property.
 
-This material is the group-theoretic input to the corestriction maps of the roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, Layer 6, whose §3 fixes the displayed formula.
+The transversal word supplies the subgroup-valued arguments in the cochain formulas for
+corestriction; its cocycle and change-of-transversal identities support their algebraic proofs.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] (U : Subgroup G) (t t' : G ⧸ U → G)
+variable {G : Type*} [Group G]
+
+variable (U : Subgroup G) (t t' : G ⧸ U → G)
 
 /-- The **transversal word** `ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of a subgroup `U ≤ G`, a map
 `t : G ⧸ U → G`, a coset `u` and a group element `γ`. It lies in `U` as soon as `t` is a
@@ -203,9 +206,42 @@ end Factorization
 
 end TauCeti
 
-/-! ### The two-element transversal of a subgroup of index two -/
-
 namespace Subgroup
+
+/-! ### Representatives of a bundled left transversal -/
+
+section LeftTransversalRep
+
+variable {G : Type*} [Group G] (U : Subgroup G) (t : G ⧸ U → G)
+
+/-- Representatives supplied by Mathlib's bundled left transversal. -/
+noncomputable def leftTransversalRep (s : U.LeftTransversal) : G ⧸ U → G :=
+  fun x => (s.2.leftQuotientEquiv x : G)
+
+/-- The representative of a coset from a bundled left transversal. -/
+theorem leftTransversalRep_apply (s : U.LeftTransversal) (x : G ⧸ U) :
+    leftTransversalRep U s x = (s.2.leftQuotientEquiv x : G) := (rfl)
+
+/-- The chosen representative belongs to the left transversal. -/
+theorem leftTransversalRep_mem (s : U.LeftTransversal) (x : G ⧸ U) :
+    leftTransversalRep U s x ∈ (s : Set G) :=
+  (s.2.leftQuotientEquiv x).2
+
+/-- The chosen representative maps back to its coset. -/
+@[simp] theorem leftTransversalRep_mk (s : U.LeftTransversal) (x : G ⧸ U) :
+    (QuotientGroup.mk (leftTransversalRep U s x) : G ⧸ U) = x :=
+  s.2.quotientGroupMk_leftQuotientEquiv x
+
+/-- Packaging a section as a left transversal recovers the original representative map. -/
+@[simp] theorem leftTransversalRep_range
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u) :
+    leftTransversalRep U ⟨Set.range t, Subgroup.isComplement_range_left ht⟩ = t := by
+  funext x
+  rw [leftTransversalRep_apply, Subgroup.IsComplement.leftQuotientEquiv_apply ht]
+
+end LeftTransversalRep
+
+/-! ### The two-element transversal of a subgroup of index two -/
 
 variable {G : Type*} [Group G] {U : Subgroup G}
 

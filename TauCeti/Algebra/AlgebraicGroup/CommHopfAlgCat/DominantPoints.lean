@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 public import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 public import TauCeti.Topology.Constructible
 public import Mathlib.RingTheory.Spectrum.Prime.Chevalley
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Dominant affine group morphisms on algebraically closed points
@@ -95,15 +96,9 @@ theorem mapPointsFunctor_app_surjective_of_injective
     (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] (f : H ⟶ K)
     (hf : Function.Injective f.hom) :
     Function.Surjective ((mapPointsFunctor f).app (CommAlgCat.of k L)) := by
-  have hinj : Function.Injective (baseChangeMap (K := L) f).hom :=
-    TensorProduct.map_injective_of_flat_flat
-      (AlgHom.id k L).toLinearMap f.hom.toLinearMap Function.injective_id hf
   have hd : DenseRange (PrimeSpectrum.comap
-      (baseChangeMap (K := L) f).hom.toAlgHom.toRingHom) := by
-    rw [PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical,
-      (RingHom.injective_iff_ker_eq_bot
-        (baseChangeMap (K := L) f).hom.toAlgHom.toRingHom).mp hinj]
-    exact bot_le
+      (baseChangeMap (K := L) f).hom.toAlgHom.toRingHom) :=
+    RingHom.denseRange_comap_of_injective _ (baseChangeMap_injective f hf)
   intro p
   let eH := AlgHom.baseChangePointsMulEquiv (k := k) (K := L) (A := H) (R := L)
   let eK := AlgHom.baseChangePointsMulEquiv (k := k) (K := L) (A := K) (R := L)
