@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
 public import TauCeti.Analysis.SpecificLimits.FastGeometric
 public import TauCeti.Analysis.Sobolev.Embedding
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Local boundedness of weak subsolutions (De Giorgi)
@@ -268,8 +269,9 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
   -- The left-hand side is below the cutoff integral, since `ψ = 1` on the smaller ball.
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
-    setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
-      (fun x => hnn l x) hψ hψ01 hψ1
+    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
+      (fun x => hnn l x) hψ.continuous.aestronglyMeasurable hψ01 measurableSet_ball
+      (hψ1.mono Metric.ball_subset_closedBall)
       ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
         ((Metric.ball_subset_ball hr₀R).trans hball))
   -- The integral over `Ω ∩ supp ψ` is below `Y`.

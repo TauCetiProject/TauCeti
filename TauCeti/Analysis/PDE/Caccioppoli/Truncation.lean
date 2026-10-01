@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChainRule
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Caccioppoli inequality for truncations of weak subsolutions
@@ -260,8 +261,9 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
   -- On `B(x₀, r)` the cutoff is one.
   have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
-    setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
-      (fun x => sq_nonneg _) hψ hrange hone ((ball_subset_ball hrR.le).trans hball)
+    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
+      (fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable hrange measurableSet_ball
+      (hone.mono ball_subset_closedBall) ((ball_subset_ball hrR.le).trans hball)
   -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       G ^ 2 * ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu :=

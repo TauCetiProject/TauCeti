@@ -129,34 +129,6 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
       field_simp
       ring
 
-omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- A cutoff equal to one on a ball bounds the integral of a nonnegative function over that ball
-by the corresponding cutoff-weighted integral over the ambient domain. -/
-theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {f : EuclideanSpace ℝ ι → ℝ}
-    (hf : IntegrableOn f (Omega : Set (EuclideanSpace ℝ ι)) mu) (hf0 : ∀ x, 0 ≤ f x)
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψ01 : range ψ ⊆ Icc 0 1)
-    {x₀ : EuclideanSpace ℝ ι} {r : ℝ} (hψ1 : EqOn ψ 1 (Metric.closedBall x₀ r))
-    (hball : Metric.ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
-    ∫ x in Metric.ball x₀ r, f x ∂mu ≤ ∫ x in Omega, ψ x ^ 2 * f x ∂mu := by
-  have hψabs : ∀ x, |ψ x| ≤ 1 := fun x => by
-    obtain ⟨h0, h1⟩ := hψ01 (mem_range_self x)
-    rw [abs_of_nonneg h0]
-    exact h1
-  have hint : IntegrableOn (fun x => ψ x ^ 2 * f x) (Omega : Set _) mu :=
-    hf.bdd_mul (hψ.continuous.pow 2).aestronglyMeasurable (c := 1)
-      (Filter.Eventually.of_forall fun x => by
-        rw [Real.norm_eq_abs, abs_pow]
-        exact pow_le_one₀ (abs_nonneg _) (hψabs x))
-  calc
-    ∫ x in Metric.ball x₀ r, f x ∂mu =
-        ∫ x in Metric.ball x₀ r, ψ x ^ 2 * f x ∂mu :=
-      setIntegral_congr_fun Metric.isOpen_ball.measurableSet fun x hx => by
-        rw [hψ1 (Metric.ball_subset_closedBall hx), Pi.one_apply, one_pow, one_mul]
-    _ ≤ ∫ x in Omega, ψ x ^ 2 * f x ∂mu :=
-      setIntegral_mono_set hint
-        (Filter.Eventually.of_forall fun x => mul_nonneg (sq_nonneg _) (hf0 x))
-        hball.eventuallyLE
-
 omit [DecidableEq ι] in
 /-- Bound the cutoff-gradient term by the squared gradient bound and an integral over a set
 containing the support of the cutoff. The comparison function may dominate the Sobolev value only
