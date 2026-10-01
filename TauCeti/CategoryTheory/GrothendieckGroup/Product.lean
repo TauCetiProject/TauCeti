@@ -41,6 +41,31 @@ open CategoryTheory CategoryTheory.Limits ZeroObject
 
 universe w w' w₁ w₂ v v' v₁ v₂ u u' u₁ u₂
 
+private noncomputable def prodAddEquivOfGenerators
+    {P A B O : Type*} [AddCommGroup P] [AddCommGroup A] [AddCommGroup B]
+    (of : O → P) (fst : P →+ A) (snd : P →+ B) (sectL : A →+ P) (sectR : B →+ P)
+    (hom_ext : ∀ f g : P →+ P, (∀ X, f (of X) = g (of X)) → f = g)
+    (of_eq_components : ∀ X, of X = sectL (fst (of X)) + sectR (snd (of X)))
+    (fst_sectL : fst.comp sectL = AddMonoidHom.id A)
+    (fst_sectR : fst.comp sectR = 0)
+    (snd_sectL : snd.comp sectL = 0)
+    (snd_sectR : snd.comp sectR = AddMonoidHom.id B) : P ≃+ A × B where
+  toFun := fst.prod snd
+  invFun := sectL.coprod sectR
+  map_add' := map_add _
+  left_inv x := by
+    have h : (sectL.coprod sectR).comp (fst.prod snd) = AddMonoidHom.id P := by
+      apply hom_ext
+      intro X
+      simpa using (of_eq_components X).symm
+    exact DFunLike.congr_fun h x
+  right_inv := fun ⟨x, y⟩ => by
+    apply Prod.ext
+    · simpa using congrArg₂ (fun a b => a + b)
+        (DFunLike.congr_fun fst_sectL x) (DFunLike.congr_fun fst_sectR y)
+    · simpa using congrArg₂ (fun a b => a + b)
+        (DFunLike.congr_fun snd_sectL x) (DFunLike.congr_fun snd_sectR y)
+
 namespace SplitK0
 
 section Product
@@ -49,14 +74,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
   {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
   [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
-
-private noncomputable def toProd : SplitK0 (C × D) →+ SplitK0 C × SplitK0 D :=
-  AddMonoidHom.prod (map (CategoryTheory.Prod.fst C D))
-    (map (CategoryTheory.Prod.snd C D))
-
-private noncomputable def fromProd : SplitK0 C × SplitK0 D →+ SplitK0 (C × D) :=
-  (map (CategoryTheory.Prod.sectL C (0 : D))).coprod
-    (map (CategoryTheory.Prod.sectR (0 : C) D))
 
 private lemma of_eq_of_components (X : C × D) :
     (of X : SplitK0 (C × D)) = of (X.1, 0) + of (0, X.2) := by
@@ -73,66 +90,16 @@ private lemma of_eq_of_components (X : C × D) :
       (isoZeroBiprod (isZero_zero D)).symm ≪≫
       prod.etaIso X).symm
 
-omit [HasZeroObject C] [HasZeroObject D] in
-@[simp] private lemma toProd_of (X : C × D) : toProd (of X) = (of X.1, of X.2) := by
-  simp [toProd]
-
-omit [HasZeroObject C] in
-@[simp] private lemma map_fst_sectL (x : SplitK0 C) :
-    map (CategoryTheory.Prod.fst C D) (map (CategoryTheory.Prod.sectL C (0 : D)) x) = x := by
-  have h : (map (CategoryTheory.Prod.fst C D)).comp
-      (map (CategoryTheory.Prod.sectL C (0 : D))) = AddMonoidHom.id _ := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h x
-
-omit [HasZeroObject D] in
-@[simp] private lemma map_fst_sectR (y : SplitK0 D) :
-    map (CategoryTheory.Prod.fst C D) (map (CategoryTheory.Prod.sectR (0 : C) D) y) = 0 := by
-  have h : (map (CategoryTheory.Prod.fst C D)).comp
-      (map (CategoryTheory.Prod.sectR (0 : C) D)) = 0 := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h y
-
-omit [HasZeroObject C] in
-@[simp] private lemma map_snd_sectL (x : SplitK0 C) :
-    map (CategoryTheory.Prod.snd C D) (map (CategoryTheory.Prod.sectL C (0 : D)) x) = 0 := by
-  have h : (map (CategoryTheory.Prod.snd C D)).comp
-      (map (CategoryTheory.Prod.sectL C (0 : D))) = 0 := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h x
-
-omit [HasZeroObject D] in
-@[simp] private lemma map_snd_sectR (y : SplitK0 D) :
-    map (CategoryTheory.Prod.snd C D) (map (CategoryTheory.Prod.sectR (0 : C) D) y) = y := by
-  have h : (map (CategoryTheory.Prod.snd C D)).comp
-      (map (CategoryTheory.Prod.sectR (0 : C) D)) = AddMonoidHom.id _ := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h y
-
-private lemma fromProd_toProd :
-    (fromProd (C := C) (D := D)).comp toProd = AddMonoidHom.id _ := by
-  apply hom_ext
-  intro X
-  simpa [toProd, fromProd] using (of_eq_of_components X).symm
-
-private lemma toProd_fromProd :
-    (toProd (C := C) (D := D)).comp fromProd = AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  rintro ⟨x, y⟩
-  ext <;> simp [toProd, fromProd]
-
 /-- Split `K₀` takes a product of additive categories to the product of their split
 Grothendieck groups. -/
-noncomputable def prodEquiv : SplitK0 (C × D) ≃+ SplitK0 C × SplitK0 D where
-  toFun := toProd
-  invFun := fromProd
-  map_add' := map_add _
-  left_inv x := DFunLike.congr_fun fromProd_toProd x
-  right_inv x := DFunLike.congr_fun toProd_fromProd x
+noncomputable def prodEquiv : SplitK0 (C × D) ≃+ SplitK0 C × SplitK0 D :=
+  prodAddEquivOfGenerators of
+    (map (CategoryTheory.Prod.fst C D)) (map (CategoryTheory.Prod.snd C D))
+    (map (CategoryTheory.Prod.sectL C (0 : D)))
+    (map (CategoryTheory.Prod.sectR (0 : C) D))
+    (fun _ _ h => hom_ext h) (by intro X; simpa using of_eq_of_components X)
+    (by apply hom_ext; simp) (by apply hom_ext; simp)
+    (by apply hom_ext; simp) (by apply hom_ext; simp)
 
 /-- The forward product equivalence is induced by the two projection functors. -/
 @[simp]
@@ -197,17 +164,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
   (E : ExactStructure C) (E' : ExactStructure D)
 
-private noncomputable def toProd : ExactK0 (E.prod E') →+ ExactK0 E × ExactK0 E' :=
-  AddMonoidHom.prod
-    (map (CategoryTheory.Prod.fst C D) (ExactStructure.isConflationExact_fst_prod E E'))
-    (map (CategoryTheory.Prod.snd C D) (ExactStructure.isConflationExact_snd_prod E E'))
-
-private noncomputable def fromProd : ExactK0 E × ExactK0 E' →+ ExactK0 (E.prod E') :=
-  (map (CategoryTheory.Prod.sectL C (0 : D))
-      (ExactStructure.isConflationExact_sectL_prod E E')).coprod
-    (map (CategoryTheory.Prod.sectR (0 : C) D)
-      (ExactStructure.isConflationExact_sectR_prod E E'))
-
 private lemma of_eq_of_components (X : C × D) :
     (of X : ExactK0 (E.prod E')) = of (X.1, 0) + of (0, X.2) := by
   let _ : PreservesBinaryBiproducts (CategoryTheory.Prod.fst C D) :=
@@ -223,78 +179,19 @@ private lemma of_eq_of_components (X : C × D) :
       (isoZeroBiprod (isZero_zero D)).symm ≪≫
       prod.etaIso X).symm
 
-@[simp] private lemma toProd_of (X : C × D) :
-    toProd E E' (of X) = (of X.1, of X.2) := by
-  simp [toProd]
-
-@[simp] private lemma map_fst_sectL (x : ExactK0 E) :
-    map (CategoryTheory.Prod.fst C D) (ExactStructure.isConflationExact_fst_prod E E')
-        (map (CategoryTheory.Prod.sectL C (0 : D))
-          (ExactStructure.isConflationExact_sectL_prod E E') x) = x := by
-  have h : (map (CategoryTheory.Prod.fst C D)
-      (ExactStructure.isConflationExact_fst_prod E E')).comp
-      (map (CategoryTheory.Prod.sectL C (0 : D))
-        (ExactStructure.isConflationExact_sectL_prod E E')) = AddMonoidHom.id _ := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h x
-
-@[simp] private lemma map_fst_sectR (y : ExactK0 E') :
-    map (CategoryTheory.Prod.fst C D) (ExactStructure.isConflationExact_fst_prod E E')
-        (map (CategoryTheory.Prod.sectR (0 : C) D)
-          (ExactStructure.isConflationExact_sectR_prod E E') y) = 0 := by
-  have h : (map (CategoryTheory.Prod.fst C D)
-      (ExactStructure.isConflationExact_fst_prod E E')).comp
-      (map (CategoryTheory.Prod.sectR (0 : C) D)
-        (ExactStructure.isConflationExact_sectR_prod E E')) = 0 := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h y
-
-@[simp] private lemma map_snd_sectL (x : ExactK0 E) :
-    map (CategoryTheory.Prod.snd C D) (ExactStructure.isConflationExact_snd_prod E E')
-        (map (CategoryTheory.Prod.sectL C (0 : D))
-          (ExactStructure.isConflationExact_sectL_prod E E') x) = 0 := by
-  have h : (map (CategoryTheory.Prod.snd C D)
-      (ExactStructure.isConflationExact_snd_prod E E')).comp
-      (map (CategoryTheory.Prod.sectL C (0 : D))
-        (ExactStructure.isConflationExact_sectL_prod E E')) = 0 := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h x
-
-@[simp] private lemma map_snd_sectR (y : ExactK0 E') :
-    map (CategoryTheory.Prod.snd C D) (ExactStructure.isConflationExact_snd_prod E E')
-        (map (CategoryTheory.Prod.sectR (0 : C) D)
-          (ExactStructure.isConflationExact_sectR_prod E E') y) = y := by
-  have h : (map (CategoryTheory.Prod.snd C D)
-      (ExactStructure.isConflationExact_snd_prod E E')).comp
-      (map (CategoryTheory.Prod.sectR (0 : C) D)
-        (ExactStructure.isConflationExact_sectR_prod E E')) = AddMonoidHom.id _ := by
-    apply hom_ext
-    simp
-  exact DFunLike.congr_fun h y
-
-private lemma fromProd_toProd :
-    (fromProd E E').comp (toProd E E') = AddMonoidHom.id _ := by
-  apply hom_ext
-  intro X
-  simpa [toProd, fromProd] using (of_eq_of_components E E' X).symm
-
-private lemma toProd_fromProd :
-    (toProd E E').comp (fromProd E E') = AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  rintro ⟨x, y⟩
-  ext <;> simp [toProd, fromProd]
-
 /-- Exact `K₀` takes a componentwise product of exact categories to the product of their exact
 Grothendieck groups. -/
-noncomputable def prodEquiv : ExactK0 (E.prod E') ≃+ ExactK0 E × ExactK0 E' where
-  toFun := toProd E E'
-  invFun := fromProd E E'
-  map_add' := map_add _
-  left_inv x := DFunLike.congr_fun (fromProd_toProd E E') x
-  right_inv x := DFunLike.congr_fun (toProd_fromProd E E') x
+noncomputable def prodEquiv : ExactK0 (E.prod E') ≃+ ExactK0 E × ExactK0 E' :=
+  prodAddEquivOfGenerators of
+    (map (CategoryTheory.Prod.fst C D) (ExactStructure.isConflationExact_fst_prod E E'))
+    (map (CategoryTheory.Prod.snd C D) (ExactStructure.isConflationExact_snd_prod E E'))
+    (map (CategoryTheory.Prod.sectL C (0 : D))
+      (ExactStructure.isConflationExact_sectL_prod E E'))
+    (map (CategoryTheory.Prod.sectR (0 : C) D)
+      (ExactStructure.isConflationExact_sectR_prod E E'))
+    (fun _ _ h => hom_ext h) (by intro X; simpa using of_eq_of_components E E' X)
+    (by apply hom_ext; simp) (by apply hom_ext; simp)
+    (by apply hom_ext; simp) (by apply hom_ext; simp)
 
 /-- The forward exact-`K₀` product equivalence is induced by the two projection functors. -/
 @[simp]

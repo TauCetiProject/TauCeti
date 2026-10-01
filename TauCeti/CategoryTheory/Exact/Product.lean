@@ -28,6 +28,9 @@ for exact Grothendieck groups.
 
 * `TauCeti.ExactStructure.prod_conflation_iff`: a short complex in the product is a conflation
   exactly when both projected short complexes are conflations.
+* `TauCeti.ExactStructure.prod_isInflation_iff` and
+  `TauCeti.ExactStructure.prod_isDeflation_iff`: inflations and deflations are characterized
+  componentwise.
 * `TauCeti.ExactStructure.isConflationExact_fst_prod` and
   `TauCeti.ExactStructure.isConflationExact_snd_prod`: the two projections preserve conflations.
 * `TauCeti.ExactStructure.isConflationExact_sectL_prod` and
@@ -309,6 +312,20 @@ noncomputable def prod : ExactStructure (C × D) where
             ((prodConflationClass_isDeflation_iff E E' _).1 hp).1,
           E'.isStableUnderBaseChange_deflations.of_isPullback (isPullback_snd sq)
             ((prodConflationClass_isDeflation_iff E E' _).1 hp).2⟩ }
+
+/-- A morphism is an inflation for the product exact structure exactly when both components are
+inflations. -/
+@[simp]
+theorem prod_isInflation_iff {X Y : C × D} (i : X ⟶ Y) :
+    (E.prod E').IsInflation i ↔ E.IsInflation i.1 ∧ E'.IsInflation i.2 :=
+  prodConflationClass_isInflation_iff E E' i
+
+/-- A morphism is a deflation for the product exact structure exactly when both components are
+deflations. -/
+@[simp]
+theorem prod_isDeflation_iff {Y Z : C × D} (p : Y ⟶ Z) :
+    (E.prod E').IsDeflation p ↔ E.IsDeflation p.1 ∧ E'.IsDeflation p.2 :=
+  prodConflationClass_isDeflation_iff E E' p
 
 /-- A short complex is a conflation for the product exact structure exactly when both projected
 short complexes are conflations. -/
