@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Generated.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 
@@ -73,7 +74,9 @@ variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (wt : Fin n → κ → ℤ)
 
 /-- If the represented universal weight-torus point belongs to the elementary subgroup, then the
-root-generated defining ideal is killed by the weight-torus coordinate map. -/
+root-generated defining ideal is killed by the weight-torus coordinate map. This is the `A = ℤ`
+case of `commonKernelHopfIdeal_toIdeal_le_ker_weightTorusBaseChangeCoordinateMap`, whose root
+hypothesis the root-subgroup coordinate maps discharge. -/
 theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_universal_torus_mem_elementary
     (huniv :
       let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
@@ -85,39 +88,23 @@ theorem kostantGeneratedDefiningIdeal_toIdeal_le_torus_ker_of_universal_torus_me
         kostantElementarySubgroup e h ρ M hM hnil A) :
     (kostantGeneratedDefiningIdeal e h ρ M hM hnil b).toIdeal ≤
       RingHom.ker (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom.toRingHom := by
-  let T := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
-  let A := CommAlgCat.of ℤ T
-  let q : HopfAlgebra.points
-      (R := ℤ) (H := DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)) A :=
-    toConv (AlgHom.id ℤ T)
-  let s : κ → Aˣ := SplitTorus.pointsMulEquiv q
-  have hs : kostantTorusPoints M b wt A s ∈
-      kostantElementarySubgroup e h ρ M hM hnil A := huniv
-  have hmatrix : kostantTorusMatrix M b wt s ∈
-      kostantGeneratedPointsSubgroup e h ρ M hM hnil b T := by
-    apply map_kostantElementarySubgroup_le_generatedPoints e h ρ M hM hnil b T
-    rw [← basisMatrix_kostantTorusPoints M b wt s]
-    exact ⟨_, hs, rfl⟩
-  have hq_matrix : GeneralLinear.pointsMulEquiv n
-      ((CommHopfAlgCat.mapPointsFunctor
-        (GeneralLinear.weightTorusCoordinateMap wt)).app A q) =
-      kostantTorusMatrix M b wt s := by
-    rw [GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap,
-      kostantTorusMatrix_apply]
-  have hmatrix' : GeneralLinear.pointToGeneralLinear n
-      (toConv (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom) ∈
-      kostantGeneratedPointsSubgroup e h ρ M hM hnil b T := by
-    have hp : (CommHopfAlgCat.mapPointsFunctor
-        (GeneralLinear.weightTorusCoordinateMap wt)).app A q =
-        toConv (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom := by
-      rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
-        WithConv.ofConv_toConv, AlgHom.id_comp]
-    rw [← GeneralLinear.pointsMulEquiv_apply, ← hp, hq_matrix]
-    exact hmatrix
-  rw [kostantGeneratedPointsSubgroup_def] at hmatrix'
-  exact (GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker
-    n (kostantGeneratedDefiningIdeal e h ρ M hM hnil b) T
-    (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom).mp hmatrix'
+  have hroot : ∀ (i : I) (q : HopfAlgebra.points
+      (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
+      (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ
+        (SplitTorus.characterGroup κ)).obj)),
+      kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q ∈
+        GeneralLinear.generatedPointsSubgroup n
+          (fun i => kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b)
+          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj := by
+    intro i q
+    have hmem := kostantRootSubgroupMatrix_mem_generatedPoints e h ρ M hM hnil b
+      (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj i q
+    rw [kostantGeneratedPointsSubgroup_def, kostantGeneratedDefiningIdeal_def] at hmem
+    rwa [GeneralLinear.generatedPointsSubgroup_def]
+  rw [kostantGeneratedDefiningIdeal_def,
+    ← GeneralLinear.weightTorusBaseChangeCoordinateMap_eq ℤ ℤ wt]
+  exact commonKernelHopfIdeal_toIdeal_le_ker_weightTorusBaseChangeCoordinateMap
+    e h ρ M hM hnil b wt ℤ _ hroot huniv
 
 /-- **A root-generated universal weight-torus point makes the torus scheme-theoretically
 redundant.** If the represented torus over its own coordinate ring belongs to the elementary
