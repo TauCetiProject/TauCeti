@@ -20,7 +20,7 @@ cycle through more than one vertex: the one-vertex case is the loop quiver
 `TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`, so the family starts at two vertices here.
 
 This file carries only the vertex and arrow data, together with the induction principle that walks
-a vertex back to the first one along the arrows that are not the closing one
+forward from the first vertex to every vertex along the arrows that are not the closing one
 (`TauCeti.Quiver.Cycle.induction_of_ne_last`). That principle is what makes the cycle's
 representations tractable: an endomorphism of a representation whose non-closing arrows all act
 by the identity is constant along the cycle, which is how

@@ -60,11 +60,12 @@ All the arrows act by multiplication by an element of `k[X]/(Xᵐ⁺¹)`, record
 others by the identity: with one uniform shape the representation is a single application of
 `CategoryTheory.Paths.lift`.
 
-`TauCeti.cycleNilpotentRep` carries `@[expose]` for the same reason as
-`TauCeti.oneLoopNilpotentRep`: a functor built by `CategoryTheory.Paths.lift` records its value on
-objects only in its definition, so the vertex spaces are visible as `k[X]/(Xᵐ⁺¹)` only once the
-body is exposed. The components of an endomorphism at the vertices of the cycle are collected by
-the private `cycleApp`.
+No definition here exposes its body. A functor built by `CategoryTheory.Paths.lift` records its
+value on objects only in its definition, so `TauCeti.cycleNilpotentRep_obj` is what names the vertex
+spaces as `k[X]/(Xᵐ⁺¹)` downstream. The two lemmas on the action of an arrow are stated on
+`k[X]/(Xᵐ⁺¹)` itself, so their statements need that identification already at elaboration time,
+which an unexposed body does not supply; they are therefore private to this file, as are the
+components of an endomorphism at the vertices of the cycle, collected by `cycleApp`.
 
 ## References
 
@@ -104,7 +105,6 @@ theorem cycleNilpotentWeight_of_ne_last {i : Quiver.Cycle n} (h : i ≠ Quiver.C
 algebra `k[X]/(Xᵐ⁺¹)` at every vertex, with each arrow acting by multiplication by its weight
 `TauCeti.cycleNilpotentWeight`, so that the closing arrow multiplies by `X` and every other arrow
 is the identity. -/
-@[expose]
 noncomputable def cycleNilpotentRep : QuiverRep.{u, 0, 0, u} k (Quiver.Cycle n) :=
   Paths.lift
     { obj := fun _ ↦ ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (m + 1)))
@@ -112,22 +112,27 @@ noncomputable def cycleNilpotentRep : QuiverRep.{u, 0, 0, u} k (Quiver.Cycle n) 
 
 variable {k n m}
 
+-- `(rfl)`, not `rfl`: the two sides agree only by unfolding the body of `cycleNilpotentRep`, which
+-- is not exposed, and the bare `rfl` elaborator checks the equation against the exposed view of
+-- this module.
 /-- Every vertex space of `TauCeti.cycleNilpotentRep` is `k[X]/(Xᵐ⁺¹)`. -/
 @[simp]
 theorem cycleNilpotentRep_obj (v : Paths (Quiver.Cycle n)) :
     (cycleNilpotentRep k n m).obj v = ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (m + 1))) :=
-  rfl
+  (rfl)
 
 /-- The arrow out of a vertex acts on `TauCeti.cycleNilpotentRep` by multiplication by its
-weight. -/
-theorem cycleNilpotentRep_map_arrow (i : Quiver.Cycle n) :
+weight. Private: its statement names the vertex space of `TauCeti.cycleNilpotentRep`, which the
+public API reaches only through `TauCeti.cycleNilpotentRep_obj`. -/
+private theorem cycleNilpotentRep_map_arrow (i : Quiver.Cycle n) :
     (cycleNilpotentRep k n m).map (Quiver.Hom.toPath (Quiver.Cycle.arrow i)) =
       ModuleCat.ofHom (LinearMap.mulLeft k (cycleNilpotentWeight k n m i)) :=
   Paths.lift_toPath _ _
 
-/-- The action of an arrow, read on an element of the vertex space. -/
+/-- The action of an arrow, read on an element of the vertex space. Private for the same reason as
+`cycleNilpotentRep_map_arrow`. -/
 @[simp]
-theorem cycleNilpotentRep_map_arrow_apply (i : Quiver.Cycle n)
+private theorem cycleNilpotentRep_map_arrow_apply (i : Quiver.Cycle n)
     (x : AdjoinRoot ((X : k[X]) ^ (m + 1))) :
     ((cycleNilpotentRep k n m).map (Quiver.Hom.toPath (Quiver.Cycle.arrow i))).hom x =
       cycleNilpotentWeight k n m i * x := by
