@@ -33,8 +33,8 @@ quotient representations. Instead, each is the target of a surjective morphism `
 subrepresentation `F n`, whose kernel is contained in `F (n + 1)`. When `F` is decreasing, `Q n`
 is thus a quotient of `F n` refining the graded piece `F n / F (n + 1)`; this is how the graded
 pieces arise in practice, with kernel exactly `F (n + 1)`, but only the containment is needed.
-For finite cyclic `G`, Tate cohomology is two-periodic, so vanishing in degrees `0` and `-1` on
-every `Q n` makes `M` cohomologically trivial, with Herbrand quotient `1`.
+Vanishing in degrees `0` and `-1` on every `Q n` gives `M` Herbrand quotient `1`. For finite
+cyclic `G`, Tate cohomology is two-periodic, so it also makes `M` cohomologically trivial.
 
 The motivating application is to the units of a finite Galois extension `L/K` of nonarchimedean
 local fields. For a uniformizer `ϖ` of `K` and a Galois-stable lattice `A ⊆ 𝒪[L]`, free over
@@ -50,8 +50,8 @@ local fields. For a uniformizer `ϖ` of `K` and a Galois-stable lattice `A ⊆ �
   vanishes if it vanishes on every `Q n`.
 * `TauCeti.TateCohomology.isZero_tateCohomology_of_filtration`: for finite cyclic `G`, all Tate
   cohomology vanishes if it vanishes on every `Q n` in degrees `0` and `-1`.
-* `TauCeti.TateCohomology.herbrandQuotient_eq_one_of_filtration`: the Herbrand quotient is then
-  `1`.
+* `TauCeti.TateCohomology.herbrandQuotient_eq_one_of_filtration`: the Herbrand quotient is `1`
+  if every `Q n` has vanishing Tate cohomology in degrees `0` and `-1`.
 
 ## References
 
@@ -262,8 +262,9 @@ theorem isZero_tateCohomology_of_filtration [IsCyclic G] (hF0 : F 0 = ⊤)
       (Rep.FiniteCyclicGroup.periodicIso M k (-1) (by rw [Int.ModEq, hk]; rfl))
 
 /-- **The Herbrand quotient of a complete filtered representation.** Under the hypotheses of
-`isZero_tateCohomology_of_filtration`, the Herbrand quotient of `M` is `1`. -/
-theorem herbrandQuotient_eq_one_of_filtration [IsCyclic G] (hF0 : F 0 = ⊤)
+`isZero_tateCohomology_of_filtration`, except that `G` need not be cyclic, the Herbrand quotient
+of `M` is `1`: it only involves Tate cohomology in degrees `0` and `-1`. -/
+theorem herbrandQuotient_eq_one_of_filtration (hF0 : F 0 = ⊤)
     (hsep : ∀ x : M, (∀ n, x ∈ F n) → x = 0)
     (hcomplete : ∀ x : ℕ → M, (∀ n, x n ∈ F n) →
       ∃ s : M, ∀ n, s - ∑ i ∈ Finset.range n, x i ∈ F n)
@@ -272,8 +273,10 @@ theorem herbrandQuotient_eq_one_of_filtration [IsCyclic G] (hF0 : F 0 = ⊤)
     (hQ₀ : ∀ n, IsZero (tateCohomology (Q n) 0))
     (hQ₁ : ∀ n, IsZero (tateCohomology (Q n) (-1))) :
     herbrandQuotient M = 1 := by
-  have h k := ModuleCat.subsingleton_of_isZero <|
-    isZero_tateCohomology_of_filtration hF π hF0 hsep hcomplete hπ hker hQ₀ hQ₁ k
+  have := ModuleCat.subsingleton_of_isZero <|
+    isZero_tateCohomology_zero_of_filtration hF π hF0 hsep hcomplete hπ hker hQ₀
+  have := ModuleCat.subsingleton_of_isZero <|
+    isZero_tateCohomology_negOne_of_filtration hF π hF0 hsep hcomplete hπ hker hQ₁
   rw [herbrandQuotient_def, Nat.card_of_subsingleton (0 : tateCohomology M 0),
     Nat.card_of_subsingleton (0 : tateCohomology M (-1)), Nat.cast_one, div_one]
 
