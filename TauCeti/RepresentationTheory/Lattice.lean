@@ -54,8 +54,9 @@ open TensorProduct
 
 section Localization
 
-variable {R : Type*} [CommRing R] {A : Type*} [CommRing A] [Algebra R A]
-  {G : Type*} [Monoid G] {V W : Type*} [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+variable {R : Type*} [CommSemiring R] {A : Type*} [CommSemiring A] [Algebra R A]
+  {G : Type*} [Monoid G] {V W : Type*} [AddCommMonoid V] [Module R V] [AddCommMonoid W]
+  [Module R W]
   {ρ : Representation R G V} {σ : Representation R G W}
 
 /-- Two representations on finitely generated modules on which `S` acts injectively, whose
@@ -90,11 +91,6 @@ theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
   have he' (g : G) (y : A ⊗[R] W) : e.symm (Representation.baseChange A σ g y) =
       Representation.baseChange A ρ g (e.symm y) :=
     Representation.IntertwiningMap.isIntertwining _ _ e.symm.toIntertwiningMap g y
-  -- `e` is `A`-linear, hence commutes with the scalars of `R`.
-  have hes (r : R) (x : A ⊗[R] V) : e (r • x) = r • e x := by
-    rw [← algebraMap_smul A r x, map_smul, algebraMap_smul]
-  have hes' (r : R) (y : A ⊗[R] W) : e.symm (r • y) = r • e.symm y := by
-    rw [← algebraMap_smul A r y, map_smul, algebraMap_smul]
   have hint (g : G) (v : V) : h (ρ g v) = σ g (h v) := hiW <| by
     rw [hh, hσ, hh, hρ, he]
     simp [LinearMap.map_smul_of_tower]
@@ -103,10 +99,10 @@ theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
     simp [LinearMap.map_smul_of_tower]
   have hcomp (v : V) : h' (h v) = ((s * t : S) : R) • v := hiV <| by
     rw [hh', hh]
-    simp [hes', mul_smul, smul_comm (t : R) (s : R)]
+    simp [LinearMapClass.map_smul_of_tower e.symm, mul_smul, smul_comm (t : R) (s : R)]
   have hcomp' (w : W) : h (h' w) = ((s * t : S) : R) • w := hiW <| by
     rw [hh, hh']
-    simp [hes, mul_smul]
+    simp [LinearMapClass.map_smul_of_tower e, mul_smul]
   exact ⟨⟨h, fun g ↦ LinearMap.ext (hint g)⟩, ⟨h', fun g ↦ LinearMap.ext (hint' g)⟩, s * t,
     by simpa using hcomp, by simpa using hcomp'⟩
 
@@ -126,17 +122,17 @@ theorem exists_injective_finite_quotient_range_of_nonempty_equiv
       (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
     ∃ f : V →+[G] W, Function.Injective f ∧ Finite (W ⧸ (f : V →+ W).range) := by
   obtain ⟨e⟩ := h
-  have hreg (s : nonZeroDivisors ℤ) : IsRegular (s : ℤ) :=
-    isRegular_iff_ne_zero.mpr (mem_nonZeroDivisors_iff_ne_zero.mp s.2)
   obtain ⟨f, f', s, hf'f, hff'⟩ := e.exists_intertwiningMap_comp_eq_smul (nonZeroDivisors ℤ)
-    (fun s ↦ (hreg s).isSMulRegular) fun s ↦ (hreg s).isSMulRegular
+    (fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s))
+    fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s)
   let φ : V →+[G] W :=
     { toFun := f
-      map_smul' g v := Representation.IntertwiningMap.isIntertwining _ _ f g v
+      map_smul' g v := by simpa using Representation.IntertwiningMap.isIntertwining _ _ f g v
       map_zero' := map_zero f
       map_add' := map_add f }
   have hf : Function.Injective f := fun a b hab ↦
-    (hreg s).isSMulRegular (by simpa only [hf'f] using congrArg f' hab)
+    IsSMulRegular.of_ne_zero (nonZeroDivisors.coe_ne_zero s)
+      (by simpa only [hf'f] using congrArg f' hab)
   -- `φ` is `f` with its equivariance recorded, so it has the same underlying function.
   refine ⟨φ, hf, ?_⟩
   have : AddGroup.FG W := Module.Finite.iff_addGroup_fg.mp inferInstance

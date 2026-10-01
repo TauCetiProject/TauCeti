@@ -50,10 +50,10 @@ theorem exists_lift_of_isLocalizedModule_of_injective [Module.Finite R M]
   -- The elements whose image under `s • l` comes from `N` form a submodule containing `T`.
   have hrange : LinearMap.range (s • l) ≤ LinearMap.range g := by
     rw [LinearMap.range_le_iff_comap, eq_top_iff, ← hT, Submodule.span_le]
-    exact fun x hx ↦ hs x hx
+    exact fun x hx ↦ by simpa [IsLocalizedModule.IsInteger, Submonoid.smul_def] using hs x hx
   refine ⟨(LinearEquiv.ofInjective g hg).symm.toLinearMap ∘ₗ
     (s • l).codRestrict _ fun m ↦ hrange (LinearMap.mem_range_self _ m), s, ?_⟩
   ext m
-  simp [← LinearEquiv.ofInjective_apply (h := hg)]
+  simp [LinearEquiv.ofInjective_symm_apply]
 
 end Module.Finite
