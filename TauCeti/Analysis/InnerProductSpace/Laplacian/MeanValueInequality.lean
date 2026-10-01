@@ -136,7 +136,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 `(r - ρ) ^ 2 * w z` over `{(ρ, z) | 0 ≤ ρ ≤ r, dist z x₀ ≤ ρ}` satisfies
 `r ^ 2 * w x₀ ≤ (r - ρ) ^ 2 * w z`, and `((r - ρ) / 2) ^ 2 * w y ≤ (r - ρ) ^ 2 * w z` for every
 `y` within `(r - ρ) / 2` of `z`. -/
-private lemma exists_centre {w : E → ℝ} {x₀ : E} {r : ℝ} (hr : 0 < r)
+private lemma exists_center {w : E → ℝ} {x₀ : E} {r : ℝ} (hr : 0 < r)
     (hwc : ContinuousOn w (closedBall x₀ r)) :
     ∃ ρ z, 0 ≤ ρ ∧ ρ ≤ r ∧ dist z x₀ ≤ ρ ∧ r ^ 2 * w x₀ ≤ (r - ρ) ^ 2 * w z ∧
       ∀ y ∈ closedBall z ((r - ρ) / 2), ((r - ρ) / 2) ^ 2 * w y ≤ (r - ρ) ^ 2 * w z := by
@@ -215,7 +215,7 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
       simpa using hV
     · rwa [hA'_def, max_eq_left hA]
   -- Choose the centre `z` and the radius `ε = (r - ρ) / 2`, and put `c = w z`.
-  obtain ⟨ρ, z, -, hρr, hz, hcentre, hw4⟩ := exists_centre hr hwc
+  obtain ⟨ρ, z, -, hρr, hz, hcenter, hw4⟩ := exists_center hr hwc
   rcases le_or_gt ((r - ρ) ^ 2 * w z) 0 with hpos | hpos
   · -- Then `w x₀ ≤ 0`, and the claim is trivial.
     have hwx₀ : w x₀ ≤ 0 := by nlinarith [sq_pos_of_pos hr]
@@ -226,7 +226,7 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
   set ε := (r - ρ) / 2 with hε_def
   have hε : 0 < ε := by rw [hε_def]; linarith
   have hrρ : (r - ρ) ^ 2 = 4 * ε ^ 2 := by rw [hε_def]; ring
-  rw [hrρ] at hcentre hw4
+  rw [hrρ] at hcenter hw4
   -- Every ball `ball z δ` with `δ ≤ ε` lies in `ball x₀ r`, and `w ≤ 4 c` on it.
   have hsub : ∀ δ ≤ ε, closedBall z δ ⊆ ball x₀ r := fun δ hδ y hy ↦
     mem_ball.mpr ((dist_triangle y z x₀).trans_lt (by linarith [mem_closedBall.mp hy]))
