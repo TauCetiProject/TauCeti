@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.Complex.NormSq
-public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Hyperbolic triangles and the Gauss–Bonnet formula
@@ -39,7 +39,7 @@ radius vectors of the two semicircles (`interiorAngle_I_geodesicLine_one`,
 `interiorAngle_geodesicLine_one_I`, `interiorAngle_of_normal_form`). The comparison of the two
 discs uses the radical-line identity `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`.
 
-Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 8 (2008), §5 p. 19–20:
+Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010), §5 p. 19–20:
 the definition of a hyperbolic triangle and Theorem 5.4 (Gauss–Bonnet) with its proof.
 -/
 
