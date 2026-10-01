@@ -39,9 +39,11 @@ equivalence
 
 `End(V_π) ≃ (π-block of L²(G))`
 
-of representations of `G × G`. Summed over a skeleton of the irreducibles this is the equivariant
-Peter-Weyl decomposition `L²(G) ≅ ⨁̂_π End(V_π)`, the Hilbert-sum half of which is
-`TauCeti.isHilbertSum_peterWeylBlock`.
+of representations of `G × G`. Only this block-by-block identification is built here: assembling
+the blocks into an equivariant equivalence `L²(G) ≅ ⨁̂_π End(V_π)` over a skeleton of the
+irreducibles is not provided, and would have to combine these maps with the Hilbert-sum
+decomposition `TauCeti.isHilbertSum_peterWeylBlock` of
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean`.
 
 ## Main definitions
 
@@ -85,11 +87,6 @@ a basis and without assuming `𝕜` algebraically closed; only the passage from 
 ## References
 
 * Daniel Bump, *Lie Groups*, second edition, Chapter 2.
-
-This is the isotypic-decomposition milestone of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-which asks for the decomposition of `L²(G)` as a representation of `G × G` under left and right
-translation.
 
 ## Tags
 

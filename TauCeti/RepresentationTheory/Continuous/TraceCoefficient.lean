@@ -29,25 +29,24 @@ same functions; what the operator form adds is that the *whole* space of operato
 space, with no choice of basis and no sesquilinearity to track.
 
 The reason to name it is the two-sided symmetry. The operators carry the `G × G`-action
-`(g, h) • T = π g ∘ T ∘ π h⁻¹` — the Hom representation of
-`TauCeti/RepresentationTheory/Continuous/LinHom.lean` of `π` against itself, read along the two
-projections of `G × G`, packaged here as `ContRepresentation.biLinHom`. Under the trace coefficient
-that action becomes **bi-translation** of functions,
+`(g, h) • T = π g ∘ T ∘ π h⁻¹` of `ContRepresentation.biLinHom`, built in
+`TauCeti/RepresentationTheory/Continuous/LinHom.lean`. Under the trace coefficient that action
+becomes **bi-translation** of functions,
 
 `traceCoeff π hπ ((g, h) • T) x = traceCoeff π hπ T (g⁻¹ * x * h)`
 
 (`ContRepresentation.traceCoeff_biLinHom_apply`): the cyclicity of the trace moves `π g` from the
-left of `T` to the right of it, where it meets `π h⁻¹ ∘ π x⁻¹`. No unitarity is needed for that,
-only the group law. Composed with `ContinuousMap.toLp` this is the equivariance of the Peter-Weyl
-block of a compact group, in
+left of `T` to the right of it, where it meets `π h⁻¹ ∘ π x⁻¹`. No inner product is needed for that,
+only the group law; so the trace coefficient and its bi-translation identities are stated for a
+finite-dimensional normed space over a complete nontrivially normed field, and the inner product
+enters only in the comparison with the matrix coefficients. Composed with `ContinuousMap.toLp`
+this is the equivariance of the Peter-Weyl block of a compact group, in
 `TauCeti/RepresentationTheory/Compact/TraceCoefficient.lean`.
 
 ## Main definitions
 
 * `ContRepresentation.traceCoeff`: the trace coefficient `T ↦ (x ↦ trace (T ∘ π x⁻¹))`, as a linear
   map into `C(G, 𝕜)`.
-* `ContRepresentation.biLinHom`: the two-sided Hom representation of `G × G` on the operators of
-  `V`, acting by `(g, h) • T = π g ∘ T ∘ π h⁻¹`.
 
 ## Main statements
 
@@ -63,9 +62,7 @@ block of a compact group, in
 
 ## References
 
-The pairing is the one behind the identification `L²(G) ≅ ⨁̂_π End(V_π)` of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
-The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+* Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
@@ -78,8 +75,9 @@ namespace ContRepresentation
 
 section TraceCoeff
 
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Group G]
+  [TopologicalSpace G] [IsTopologicalGroup G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 /-- **The trace coefficient** of an operator against a representation with continuous
 operator-valued action: `T ↦ (x ↦ trace (T ∘ π x⁻¹))`, a linear map from the operators of `V` to
@@ -115,7 +113,15 @@ theorem traceCoeff_one :
   ext x
   simp [character_apply, Module.End.one_eq_id]
 
+end TraceCoeff
+
 /-! ### Comparison with the matrix coefficients -/
+
+section MatrixCoeff
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
 /-- **The trace coefficient of a rank-one operator is a matrix coefficient** of a unitary
 representation: `rankOne 𝕜 w v` pairs to `x ↦ ⟪π x v, w⟫`. Unitarity enters through the adjoint of
@@ -127,83 +133,33 @@ theorem traceCoeff_rankOne (hunitary : IsUnitary π) (v w : V) :
   rw [traceCoeff_apply, matrixCoeff_apply, InnerProductSpace.rankOne_comp,
     hunitary.adjoint_eq_inv, inv_inv, traceCLM_apply, InnerProductSpace.trace_rankOne]
 
-omit [FiniteDimensional 𝕜 V] in
-/-- An operator is the sum of the rank-one operators built from an orthonormal basis and its own
-values on that basis. This is the expansion `T = ∑ᵢ T eᵢ ⊗ eᵢ*` that
-`ContRepresentation.traceCoeff_eq_sum` runs on. -/
-private theorem sum_rankOne_eq {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι 𝕜 V)
-    (T : V →L[𝕜] V) : ∑ i, InnerProductSpace.rankOne 𝕜 (T (e i)) (e i) = T := by
-  ext z
-  simp only [sum_apply, InnerProductSpace.rankOne_apply, ← map_smul, ← map_sum]
-  rw [e.sum_repr']
-
 /-- **A trace coefficient expands over an orthonormal basis as a sum of matrix coefficients**, one
 for each basis vector. So the trace coefficients of `π` span exactly the same subspace of
-`C(G, 𝕜)` as its matrix coefficients. -/
+`C(G, 𝕜)` as its matrix coefficients.
+
+The expansion `T = ∑ᵢ T eᵢ ⊗ eᵢ*` of the operator is Mathlib's resolution of the identity
+`OrthonormalBasis.sum_rankOne_eq_id`, composed with `T` through
+`InnerProductSpace.comp_rankOne`. -/
 theorem traceCoeff_eq_sum {ι : Type*} [Fintype ι] (hunitary : IsUnitary π)
     (e : OrthonormalBasis ι 𝕜 V) (T : V →L[𝕜] V) :
     traceCoeff π hπ T = ∑ i, matrixCoeff π hπ (e i) (T (e i)) := by
-  conv_lhs => rw [← sum_rankOne_eq e T]
+  have hT : ∑ i, InnerProductSpace.rankOne 𝕜 (T (e i)) (e i) = T := by
+    simp only [← InnerProductSpace.comp_rankOne, ← ContinuousLinearMap.comp_finsetSum,
+      e.sum_rankOne_eq_id, ContinuousLinearMap.comp_id]
+  conv_lhs => rw [← hT]
   rw [map_sum]
   exact Finset.sum_congr rfl fun i _ => traceCoeff_rankOne π hπ hunitary (e i) (T (e i))
 
-end TraceCoeff
+end MatrixCoeff
 
-/-! ### The two-sided Hom representation, and bi-translation -/
-
-section BiLinHom
-
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-
-/-- **The two-sided Hom representation** of `G × G` on the operators of `V`: `(g, h)` acts by
-`T ↦ π g ∘ T ∘ π h⁻¹`.
-
-It is the Hom representation `ContRepresentation.linHom` of `π` against itself, with the source
-copy restricted along the second projection of `G × G` and the target copy along the first; the two
-factors are ordered so that the first acts on the values of `T` and the second on its argument. -/
-noncomputable def biLinHom (π : ContRepresentation 𝕜 G V) :
-    ContRepresentation 𝕜 (G × G) (V →L[𝕜] V) :=
-  linHom (π.restrict (MonoidHom.snd G G)) (π.restrict (MonoidHom.fst G G))
-
-variable (π : ContRepresentation 𝕜 G V)
-
-/-- The action operators of the two-sided Hom representation are two-sided conjugation. -/
-@[simp]
-theorem biLinHom_apply (p : G × G) (T : V →L[𝕜] V) :
-    biLinHom π p T = (π p.1).comp (T.comp (π p.2⁻¹)) := by
-  rw [biLinHom, linHom_apply]
-  rfl
-
-/-- The two-sided Hom representation, evaluated at an operator and a vector. -/
-theorem biLinHom_apply_apply (p : G × G) (T : V →L[𝕜] V) (v : V) :
-    biLinHom π p T v = π p.1 (T (π p.2⁻¹ v)) := by
-  rw [biLinHom_apply]
-  rfl
-
-/-- The first factor of the two-sided Hom representation acts on the values of an operator. -/
-theorem biLinHom_apply_mk_one (g : G) (T : V →L[𝕜] V) :
-    biLinHom π (g, 1) T = (π g).comp T := by
-  simp [ContinuousLinearMap.one_def]
-
-/-- The second factor of the two-sided Hom representation acts on the argument of an operator. -/
-theorem biLinHom_apply_one_mk (h : G) (T : V →L[𝕜] V) :
-    biLinHom π (1, h) T = T.comp (π h⁻¹) := by
-  simp [ContinuousLinearMap.one_def]
-
-end BiLinHom
+/-! ### Bi-translation -/
 
 section Bitranslation
 
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-variable (π : ContRepresentation 𝕜 G V)
-
-/-- **The two-sided Hom representation of a representation with continuous operator-valued action
-has one.** -/
-theorem continuous_biLinHom (hπ : Continuous π) : Continuous (biLinHom π) :=
-  continuous_linHom _ _ (hπ.comp continuous_snd) (hπ.comp continuous_fst)
-
-variable [FiniteDimensional 𝕜 V] (hπ : Continuous π)
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Group G]
+  [TopologicalSpace G] [IsTopologicalGroup G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
 /-- **The two-sided Hom action becomes bi-translation of the trace coefficient**: pairing
 `(g, h) • T = π g ∘ T ∘ π h⁻¹` with `π` gives the function `x ↦ traceCoeff π hπ T (g⁻¹ * x * h)`.
