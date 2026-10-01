@@ -34,12 +34,6 @@ open MvPolynomial Set
 
 namespace TauCeti
 
-/-- The first projection of the coordinate-splitting equivalence is restriction to `Sum.inl`. -/
-private theorem sumArrowEquivProdArrow_fst {σ τ R : Type*} (z : σ ⊕ τ → R) :
-    (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
-  funext i
-  exact Equiv.sumArrowEquivProdArrow_apply_fst z i
-
 variable {σ τ R : Type*} [CommRing R] [LinearOrder R]
 
 /-- A function `f : (σ → R) → (τ → R)` is semialgebraic on `s` if `s` is semialgebraic and the
@@ -86,7 +80,10 @@ theorem IsSemialgebraicOn.mono {f : (σ → R) → (τ → R)} {s t : Set (σ �
       (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' s.graphOn f) ∩
         (fun z : σ ⊕ τ → R => z ∘ Sum.inl) ⁻¹' t := by
     ext z
-    simp only [mem_preimage, mem_graphOn, mem_inter_iff]
+    have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
+      funext i
+      exact Equiv.sumArrowEquivProdArrow_apply_fst z i
+    simp only [mem_preimage, mem_graphOn, mem_inter_iff, hfst]
     constructor
     · intro hz
       exact ⟨⟨h hz.1, hz.2⟩, hz.1⟩
@@ -128,8 +125,10 @@ theorem IsSemialgebraicOn.glue {f g h : (σ → R) → (τ → R)} {s t : Set (�
       (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' (s ∩ t).graphOn h) ∪
         (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' (s \ t).graphOn h) := by
     ext z
-    simp only [mem_preimage, mem_graphOn, mem_union, mem_inter_iff, mem_sdiff]
-    rw [sumArrowEquivProdArrow_fst]
+    have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
+      funext i
+      exact Equiv.sumArrowEquivProdArrow_apply_fst z i
+    simp only [mem_preimage, mem_graphOn, mem_union, mem_inter_iff, mem_sdiff, hfst]
     by_cases hz : z ∘ Sum.inl ∈ t <;> simp [hz]
   rw [hgraph]
   exact hhst.graph.union hhst'.graph
@@ -147,18 +146,19 @@ theorem isSemialgebraicOn_eval [Finite τ] (p : τ → MvPolynomial σ R)
       ((fun z : σ ⊕ τ → R => z ∘ Sum.inl) ⁻¹' s) ∩
         ⋂ i, {z | eval z (X (Sum.inr i) - rename Sum.inl (p i)) = 0} := by
     ext z
-    simp only [mem_preimage, mem_graphOn, mem_inter_iff, mem_iInter, mem_ofPred_eq]
+    have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
+      funext i
+      exact Equiv.sumArrowEquivProdArrow_apply_fst z i
+    simp only [mem_preimage, mem_graphOn, mem_inter_iff, mem_iInter, mem_ofPred_eq, hfst]
     constructor
     · rintro ⟨hz, hp⟩
       refine ⟨hz, fun i => ?_⟩
-      simpa [sub_eq_zero, MvPolynomial.eval_rename, sumArrowEquivProdArrow_fst] using
-        (congrFun hp i).symm
+      simpa [sub_eq_zero, MvPolynomial.eval_rename] using (congrFun hp i).symm
     · rintro ⟨hz, hp⟩
       refine ⟨hz, funext fun i => ?_⟩
       have hi := hp i
       have hi' : z (Sum.inr i) = eval (z ∘ Sum.inl) (p i) := by
         simpa [sub_eq_zero, MvPolynomial.eval_rename] using hi
-      rw [sumArrowEquivProdArrow_fst]
       exact hi'.symm
   rw [hgraph]
   exact (hs.preimage_comp Sum.inl).inter <|
