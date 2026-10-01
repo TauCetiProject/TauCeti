@@ -69,7 +69,9 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
   level `i` is multiplication by `pʲ`, and
   `TauCeti.ZModTwist.explicitCoeff2_mulPow_explicitCoeff2_reduce` is the induced identity on `H²`.
 * `TauCeti.ZModTwist.pow_nsmul_eq_zero`, `TauCeti.ZModTwist.isPPrimaryTorsion`: `pⁱ` kills
-  `I(χ)/pⁱ`, which is therefore `p`-primary torsion.
+  `I(χ)/pⁱ`, which is therefore `p`-primary torsion;
+  `TauCeti.ZModTwist.exists_mulPow_eq_of_nsmul_eq_zero`: the `pⁱ`-torsion of `I(χ)/pⁱ⁺ʲ` is the
+  image of `I(χ)/pⁱ` under multiplication by `pʲ`.
 
 ## References
 
@@ -386,6 +388,16 @@ theorem shortExact_projDistribMulActionHom (h : i + j = n) :
       reduce χ (Nat.le.intro ((Nat.add_comm j i).trans h)) :=
   DistribMulActionHom.ext fun y ↦
     ((shortExact χ h).projDistribMulActionHom_apply y).trans (shortExact_proj_apply χ h y)
+
+/-- **The `pⁱ`-torsion of `I(χ)/pⁿ` is the image of `I(χ)/pⁱ`**, for `i + j = n`: an element killed
+by `pⁱ` is a multiple of `pʲ`. -/
+theorem exists_mulPow_eq_of_nsmul_eq_zero (h : i + j = n) {y : ZModTwist χ n}
+    (hy : p ^ i • y = 0) : ∃ x : ZModTwist χ i, mulPow χ h x = y := by
+  have h' : j + i = n := (Nat.add_comm j i).trans h
+  have hred : reduce χ (Nat.le.intro h') y = 0 :=
+    mulPow_injective χ h' (by rw [mulPow_reduce, map_zero, hy])
+  obtain ⟨x, hx⟩ := ((shortExact χ h).exact y).1 (by rwa [shortExact_proj_apply])
+  exact ⟨x, by rwa [shortExact_incl_apply] at hx⟩
 
 /-! ### The induced maps on `H¹`
 

@@ -208,31 +208,17 @@ theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) 
     (Fin.last n) x
   rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
 
-/-- The representation-theoretic coroot weight is the simply connected type-`B` spin weight. -/
-theorem typeBSpinCorootWeight_eq_typeBSpinWeight (s : Finset (Fin (n + 1))) :
-    SpinPolarizationData.typeBSpinCorootWeight s =
-      TauCeti.DynkinType.typeBSpinWeight s := by
-  funext i
-  refine Fin.lastCases ?_ (fun j ↦ ?_) i
-  · rw [SpinPolarizationData.typeBSpinCorootWeight_last,
-      TauCeti.DynkinType.typeBSpinWeight_apply]
-    by_cases h : Fin.last n ∈ s <;> simp [h]
-  · rw [SpinPolarizationData.typeBSpinCorootWeight_castSucc,
-      TauCeti.DynkinType.typeBSpinWeight_apply]
-    simp
-
 /-- Every exterior basis vector has its named integral type-`B` spin weight. -/
 theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :
     IsCartanWeightVector (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)
       (basisWeight n i)
       ((latticeBasis n i : (lattice n).toAddSubgroup) :
         ExteriorAlgebra ℚ (polarization n).W) := by
-  rw [isCartanWeightVector_iff]
-  intro j
-  rw [coe_latticeBasis, _root_.UniversalEnvelopingAlgebra.ι_apply,
-    SpinPolarizationData.typeBSpinRep_ι,
-    SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis]
-  rw [typeBSpinCorootWeight_eq_typeBSpinWeight]
+  have h := (polarization n).isCartanWeightVector_typeBSpinRep_exteriorBasis
+    (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
+    (signSet n i)
+  rw [SpinPolarizationData.typeBSpinCorootWeight_eq_typeBSpinWeight] at h
+  rwa [coe_latticeBasis]
 
 /-- The full spin weights span the simply connected type-`B` character lattice. -/
 theorem span_range_basisWeight_eq_top :

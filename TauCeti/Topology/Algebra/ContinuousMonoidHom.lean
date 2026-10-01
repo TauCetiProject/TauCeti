@@ -22,11 +22,13 @@ packages those maps for a topological group and the subspace and quotient topolo
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
-on the target. Integer powers of continuous homomorphisms into a commutative topological group
-are computed pointwise, and the multiplicative isomorphism underlying a continuous multiplicative
-isomorphism has the same underlying function. It also records the pointwise characterization of
-finite-order continuous homomorphisms and the open kernel of a finite-order continuous character
-into complex units.
+on the target. The projections of a product of topological monoids onto its factors are
+packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
+`ContinuousMonoidHom.snd`. Integer powers of continuous homomorphisms into a commutative
+topological group are computed pointwise, and the multiplicative isomorphism underlying a
+continuous multiplicative isomorphism has the same underlying function. It also records the
+pointwise characterization of finite-order continuous homomorphisms and the open kernel of a
+finite-order continuous character into complex units.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -120,6 +122,23 @@ namespace ContinuousMonoidHom
 theorem _root_.ContinuousMonoidHom.coe_mk {A B : Type*} [Monoid A] [TopologicalSpace A] [Monoid B]
     [TopologicalSpace B] (f : A →* B) (hf : Continuous f) : ⇑(⟨f, hf⟩ : A →ₜ* B) = f :=
   rfl
+
+/-- The projection of a product `∀ i, A i` of topological monoids onto its `i`-th factor, as a
+continuous homomorphism. This is the analogue for products of `ContinuousMonoidHom.fst` and
+`ContinuousMonoidHom.snd`. -/
+@[to_additive /-- The projection of a product `∀ i, A i` of topological additive monoids onto its
+`i`-th factor, as a continuous additive homomorphism. This is the analogue for products of
+`ContinuousAddMonoidHom.fst` and `ContinuousAddMonoidHom.snd`. -/]
+def _root_.ContinuousMonoidHom.proj {ι : Type*} {A : ι → Type*} [∀ i, Monoid (A i)]
+    [∀ i, TopologicalSpace (A i)] (i : ι) : (∀ i, A i) →ₜ* A i :=
+  ⟨Pi.evalMonoidHom A i, continuous_apply i⟩
+
+/-- The projection onto the `i`-th factor evaluates a function at `i`. -/
+@[to_additive (attr := simp) /-- The projection onto the `i`-th factor evaluates a function at
+`i`. -/]
+theorem _root_.ContinuousMonoidHom.proj_apply {ι : Type*} {A : ι → Type*} [∀ i, Monoid (A i)]
+    [∀ i, TopologicalSpace (A i)] (i : ι) (f : ∀ i, A i) : ContinuousMonoidHom.proj i f = f i :=
+  (rfl)
 
 /-- The multiplicative isomorphism underlying a continuous multiplicative isomorphism has the same
 underlying function.  This is the `ContinuousMulEquiv` analogue of `RingEquiv.coe_toMulEquiv`. -/

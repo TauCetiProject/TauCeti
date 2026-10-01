@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.OpenSubgroup
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Duality
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Duality.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Finite
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomologicalDimension
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.ThreeTerm
@@ -17,8 +17,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.
 An open subgroup `U` of an infinite Demushkin group `G` is again a Demushkin group, and its rank is
 `n(U) = 2 + [G : U] (n(G) - 2)` (Serre's exposé, §9.2). Both statements are read off Tate's perfect
 duality on the finite `𝔽_p[G]`-modules of `G`
-(`TauCeti/Topology/Algebra/Group/Profinite/Demushkin/Duality.lean`), applied to the permutation
-module `Coind_U^G 𝔽_p`, whose cohomology is that of `U` by Shapiro's lemma.
+(`TauCeti/Topology/Algebra/Group/Profinite/Demushkin/Duality/Basic.lean`), applied to the
+permutation module `Coind_U^G 𝔽_p`, whose cohomology is that of `U` by Shapiro's lemma.
 
 * `H²(U, 𝔽_p)` is one-dimensional: it is `H²(G, Coind_U^G 𝔽_p)`, which the duality map `α₂`
   identifies with the dual of `H⁰(G, Hom(Coind_U^G 𝔽_p, 𝔽_p))`; the dual of the permutation module

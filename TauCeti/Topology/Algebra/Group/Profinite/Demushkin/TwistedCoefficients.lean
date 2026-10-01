@@ -36,6 +36,9 @@ is trivial. The general argument is
   `TauCeti.IsDemushkin.isAddCyclic_H2_zModTwist_demushkinCharacter`,
   `TauCeti.IsDemushkin.nonempty_addEquiv_H2_zModTwist_demushkinCharacter_zmod`: for an infinite
   Demushkin group, `H²(G, I(χ)/pⁱ)` is cyclic of order `pⁱ`, isomorphic to `ℤ/pⁱ`.
+* `TauCeti.IsDemushkin.exists_explicitCoeff2_mulPow_eq_of_nsmul_eq_zero`: for an infinite Demushkin
+  group, the `pⁱ`-torsion of `H²(G, I(χ)/pⁱ⁺ʲ)` is the image of `H²(G, I(χ)/pⁱ)` under
+  multiplication by `pʲ`.
 
 ## References
 
@@ -114,6 +117,41 @@ theorem nonempty_addEquiv_H2_zModTwist_demushkinCharacter_zmod (i : ℕ) :
   (hasPrescriptionProperty_demushkinCharacter hG).nonempty_addEquiv_H2_zModTwist_zmod
     (fun _ ↦ hG.surjective_explicitCoeff2_reduce_demushkinCharacter _)
     hG.natCard_H2_zModTwist_demushkinCharacter_one i
+
+/-- **The `pⁱ`-torsion of `H²(G, I(χ)/pⁿ)` is the image of `H²(G, I(χ)/pⁱ)`**, for `i + j = n` and
+an infinite Demushkin group `G` with canonical character `χ`: multiplication by `pʲ` is injective on
+`H²` by the prescription property, its image lies in the `pⁱ`-torsion, and the `pⁱ`-torsion of the
+cyclic group `H²(G, I(χ)/pⁿ)` has at most `pⁱ` elements. -/
+theorem exists_explicitCoeff2_mulPow_eq_of_nsmul_eq_zero {i j n : ℕ} (h : i + j = n)
+    {y : H2 G (ZModTwist (demushkinCharacter hG) n)} (hy : p ^ i • y = 0) :
+    ∃ x, explicitCoeff2 G (ZModTwist (demushkinCharacter hG) i)
+      (ZModTwist.mulPow (demushkinCharacter hG) h) continuous_of_discreteTopology x = y := by
+  classical
+  have hp : p.Prime := Fact.out
+  set F := explicitCoeff2 G (ZModTwist (demushkinCharacter hG) i)
+    (ZModTwist.mulPow (demushkinCharacter hG) h) continuous_of_discreteTopology
+  have hinj : Function.Injective F :=
+    (hasPrescriptionProperty_demushkinCharacter hG).injective_explicitCoeff2_mulPow h
+  have : Finite (H2 G (ZModTwist (demushkinCharacter hG) n)) :=
+    Nat.finite_of_card_ne_zero ((hG.natCard_H2_zModTwist_demushkinCharacter n).trans_ne
+      (pow_ne_zero n hp.ne_zero))
+  have := hG.isAddCyclic_H2_zModTwist_demushkinCharacter n
+  let := Fintype.ofFinite (H2 G (ZModTwist (demushkinCharacter hG) n))
+  -- the image of `F` lies in the `pⁱ`-torsion `T`, which has at most `pⁱ` elements
+  set T : Finset (H2 G (ZModTwist (demushkinCharacter hG) n)) := {z | p ^ i • z = 0} with hT
+  have hsub : Set.range F ⊆ ↑T := by
+    rintro _ ⟨x, rfl⟩
+    simp only [hT, Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_ofPred_eq]
+    rw [← map_nsmul, nsmul_H2_eq_zero (ZModTwist.pow_nsmul_eq_zero _ i), map_zero]
+  have hcard : (T : Set (H2 G (ZModTwist (demushkinCharacter hG) n))).ncard ≤
+      (Set.range F).ncard := by
+    rw [Set.ncard_coe_finset, Set.ncard_range_of_injective hinj,
+      hG.natCard_H2_zModTwist_demushkinCharacter i]
+    exact IsAddCyclic.card_nsmul_eq_zero_le (pow_pos hp.pos i)
+  have hy' : y ∈ Set.range F := by
+    rw [Set.eq_of_subset_of_ncard_le hsub hcard]
+    simpa [hT] using hy
+  exact hy'
 
 end IsDemushkin
 
