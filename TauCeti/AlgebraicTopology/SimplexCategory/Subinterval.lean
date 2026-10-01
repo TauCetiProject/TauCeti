@@ -15,7 +15,9 @@ Mathlib's `SimplexCategory.subinterval j l h : ⦋l⦌ ⟶ ⦋n⦌` is the inert
 a face of a subinterval is again a subinterval, possibly of a face.  With `j = 0` the
 subinterval is the front face of a simplex and with `j + l = n` it is the back face, so these are
 the identities behind the Alexander–Whitney formula and its compatibility with the simplicial
-boundary.
+boundary.  It also records that a subinterval of a subinterval is a subinterval and that the
+front face of full length is the identity, the identities behind associativity and the unit laws
+of the cup product.
 -/
 
 public section
@@ -94,5 +96,23 @@ lemma subinterval_zero_comp_δ_of_lt {n p : ℕ} (k : Fin (n + 2)) (hk : p < (k 
     Fin.succAbove, Fin.lt_def, apply_ite Fin.val, Fin.val_castSucc, Fin.val_succ,
     val_subinterval_toOrderHom_apply]
   split_ifs <;> omega
+
+/-- A subinterval of a subinterval is a subinterval: the vertices `i, …, i + a` of the
+subinterval `j, …, j + m` are the vertices `j + i, …, j + i + a`. -/
+lemma subinterval_comp_subinterval {n m : ℕ} (i a j l : ℕ) (h : i + a ≤ m) (h' : j + m ≤ n)
+    (hl : j + i = l) :
+    subinterval i a h ≫ subinterval j m h' = subinterval l a (by omega) := by
+  ext v : 3
+  rw [Fin.ext_iff]
+  simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply,
+    val_subinterval_toOrderHom_apply]
+  omega
+
+/-- The front face of full length is the identity. -/
+@[simp]
+lemma subinterval_zero_eq_id {n : ℕ} (h : 0 + n ≤ n) : subinterval 0 n h = 𝟙 ⦋n⦌ := by
+  ext v : 3
+  rw [Fin.ext_iff]
+  simp
 
 end SimplexCategory
