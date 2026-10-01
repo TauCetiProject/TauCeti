@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Restrict
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StableUniform
 
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Uniform
+
 /-!
 # The Laurent sheaf condition on rational subsets of a stably uniform affinoid
 
@@ -66,12 +68,8 @@ theorem injective_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform
   have _ := PairOfDefinition.isStablyUniform_completion_locTopology P T s _ hden hT
   have _ := Huber.IsStablyUniform.isUniform
     (A := UniformSpace.Completion (Localization.Away s))
-  exact injective_presentationLimitMap_of_locOpensComap P Aplus T s _ hden hAplus hT
-    (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
-      (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
-    (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
-    (locOpensComap_inf_laurentCoverOpen P Aplus T s _ hden f) (fun _ ↦ le_top)
-    (injective_presentationLimitMap_laurentCoverOpen_of_isUniform _
+  exact injective_presentationLimitMap_inf_laurentCoverOpen_of_locOpensComap P Aplus T s _ hden
+    hAplus hT f (injective_presentationLimitMap_laurentCoverOpen_of_isUniform _
       (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _)
 
 /-- **Laurent gluing on a rational subset of a stably uniform affinoid.** Compatible sections on
@@ -101,17 +99,8 @@ theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_isStablyUnifor
   have _ := PairOfDefinition.isStablyUniform_completion_locTopology P T s _ hden hT
   have _ := Huber.IsStablyUniform.isUniform
     (A := UniformSpace.Completion (Localization.Away s))
-  have hU := locOpensComap_inf_laurentCoverOpen P Aplus T s _ hden f
-  have hO : locOpensComap P Aplus T s _ hden ((spaBasicOpen Aplus T s ⊓
-      laurentCoverOpen Aplus f true) ⊓ (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false)) =
-      laurentCoverOpen _ (toCompletionLoc P T s _ hden f) true ⊓
-        laurentCoverOpen _ (toCompletionLoc P T s _ hden f) false := by
-    rw [locOpensComap_inf, hU, hU]
-  exact exists_presentationLimitMap_eq_of_locOpensComap P Aplus T s _ hden hAplus hT
-    (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
-      (laurentCoverOpen_mem_spaRationalOpens Aplus f b)) (fun _ ↦ inf_le_left)
-    (locOpensComap_spaBasicOpen_self P Aplus T s _ hden) hU hO (fun _ ↦ le_top) inf_le_left
-    inf_le_right (exists_presentationLimitMap_eq_of_laurentCoverOpen_of_isUniform _
+  exact exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_locOpensComap P Aplus T s _ hden
+    hAplus hT f (exists_presentationLimitMap_eq_of_laurentCoverOpen_of_isUniform _
       (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s _ hden) _) x hx
 
 end TauCeti.ValuationSpectrum
