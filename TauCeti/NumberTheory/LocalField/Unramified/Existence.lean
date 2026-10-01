@@ -89,7 +89,8 @@ theorem unramifiedExtension_def (f : ℕ) :
   (rfl)
 
 /-- Every root of `X^{q^f} − X` in `Ω` lies in the unramified extension of degree `f`. -/
-@[simp]
+-- Apply the containment formula before normalizing the residue field cardinality.
+@[simp↓]
 theorem rootSet_subset_unramifiedExtension (f : ℕ) :
     (X ^ Nat.card 𝓀[K] ^ f - X : K[X]).rootSet Ω ⊆ unramifiedExtension K Ω f :=
   subset_adjoin _ _
