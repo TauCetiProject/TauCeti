@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 public import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 import Mathlib.NumberTheory.ModularForms.RamanujanFormula
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold

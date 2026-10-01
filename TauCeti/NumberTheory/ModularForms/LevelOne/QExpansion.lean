@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
@@ -42,25 +41,32 @@ open scoped ArithmeticFunction.sigma MatrixGroups
 
 namespace TauCeti.ModularForm
 
+/- `bernoulli` is computed through `bernoulli'`, which is defined by well-founded recursion, so
+neither `norm_num` nor elaborator-side `decide` can evaluate it; the kernel can. -/
+
+private theorem bernoulli_four : bernoulli 4 = -1 / 30 := by decide +kernel
+
+private theorem bernoulli_six : bernoulli 6 = 1 / 42 := by decide +kernel
+
 /-- The `q²`-coefficient of `E₄` is `240 σ₃(2) = 2160`. -/
 theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
-  norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, show bernoulli 4 = -1 / 30 by decide +kernel,
-    show σ 3 2 = 9 by decide]
+  norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, bernoulli_four, ArithmeticFunction.sigma_apply,
+    Nat.prime_two.divisors]
 
 /-- The `q³`-coefficient of `E₄` is `240 σ₃(3) = 6720`. -/
 theorem E₄_qExpansion_coeff_three : (qExpansion 1 E₄).coeff 3 = 6720 := by
-  norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, show bernoulli 4 = -1 / 30 by decide +kernel,
-    show σ 3 3 = 28 by decide]
+  norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, bernoulli_four, ArithmeticFunction.sigma_apply,
+    Nat.prime_three.divisors]
 
 /-- The `q²`-coefficient of `E₆` is `-504 σ₅(2) = -16632`. -/
 theorem E₆_qExpansion_coeff_two : (qExpansion 1 E₆).coeff 2 = -16632 := by
-  norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, show bernoulli 6 = 1 / 42 by decide +kernel,
-    show σ 5 2 = 33 by decide]
+  norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, bernoulli_six, ArithmeticFunction.sigma_apply,
+    Nat.prime_two.divisors]
 
 /-- The `q³`-coefficient of `E₆` is `-504 σ₅(3) = -122976`. -/
 theorem E₆_qExpansion_coeff_three : (qExpansion 1 E₆).coeff 3 = -122976 := by
-  norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, show bernoulli 6 = 1 / 42 by decide +kernel,
-    show σ 5 3 = 244 by decide]
+  norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, bernoulli_six, ArithmeticFunction.sigma_apply,
+    Nat.prime_three.divisors]
 
 /-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the power-series form of
 Mathlib's `ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq`. -/
