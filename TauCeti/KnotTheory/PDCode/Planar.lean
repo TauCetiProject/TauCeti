@@ -65,7 +65,8 @@ operation `TauCeti.PDCode.insertClasp`.
   most `n + 2 * c` faces, with equality exactly for planar codes
   (`TauCeti.PDCode.isPlanar_iff_faceCount_eq`).
 * `TauCeti.PDCode.mem_orbit_of_face_eq_face`: half-edges on one face lie in one connected
-  component.
+  component, and so does a half-edge `h` with every half-edge on the face at the far end
+  `D.edgePair.val h` of its arc (`TauCeti.PDCode.mem_orbit_of_face_edgePair_eq_face`).
 * `TauCeti.PDCode.isPlanar_mirror` and `TauCeti.PDCode.isPlanar_relabel`: invariance.
 * `TauCeti.PDCode.isPlanar_kink` and `TauCeti.PDCode.exists_not_isPlanar`.
 
@@ -226,6 +227,23 @@ theorem face_relabel_eq_face_relabel_iff (D : PDCode n) (half : Perm (Fin (4 * n
   rw [face_eq_face_iff, face_eq_face_iff, facePerm_relabel, permCongr_eq_mul, sameCycle_conj,
     Perm.inv_def, symm_apply_apply, symm_apply_apply]
 
+/-- Turning and then crossing an arc runs through the same orbits as crossing an arc and then
+turning: the two traversals are conjugate by the arc matching. -/
+theorem sameCycle_crossingRotation_mul_edgePair_iff (D : PDCode n) {h h' : Fin (4 * n)} :
+    (D.crossingRotation * D.edgePair.val).SameCycle h h' ↔
+      D.face (D.edgePair.val h) = D.face (D.edgePair.val h') := by
+  have hconj : D.facePerm = D.edgePair.val * (D.crossingRotation * D.edgePair.val) *
+      D.edgePair.val⁻¹ := by
+    rw [facePerm_def, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
+  rw [face_eq_face_iff, hconj, sameCycle_conj, Perm.inv_def, symm_apply_apply, symm_apply_apply]
+
+/-- The faces may equally be counted as the orbits of turning and then crossing an arc, which is
+conjugate to the face traversal. -/
+theorem faceCount_eq_orbitCount_crossingRotation_mul_edgePair (D : PDCode n) :
+    D.faceCount = orbitCount (D.crossingRotation * D.edgePair.val) := by
+  rw [faceCount_def, facePerm_def, ← orbitCount_conj D.crossingRotation]
+  group
+
 /-! ### The permutation triple -/
 
 /-- The permutation triple of the underlying graph of a PD-code: the crossing rotation, the arc
@@ -261,17 +279,39 @@ theorem toPermutationTriple_relabel (D : PDCode n) (half : Perm (Fin (4 * n)))
     (D.relabel half cross).toPermutationTriple = half • D.toPermutationTriple := by
   simp [toPermutationTriple, PerfectMatching.congr_val, permCongr_eq_mul]
 
+/-- The crossing rotation lies in the monodromy group of the underlying graph. -/
+@[simp]
+theorem crossingRotation_mem_monodromyGroup (D : PDCode n) :
+    D.crossingRotation ∈ D.toPermutationTriple.monodromyGroup :=
+  D.toPermutationTriple.σ0_mem_monodromyGroup
+
+/-- The arc matching lies in the monodromy group of the underlying graph. -/
+@[simp]
+theorem edgePair_mem_monodromyGroup (D : PDCode n) :
+    D.edgePair.val ∈ D.toPermutationTriple.monodromyGroup :=
+  D.toPermutationTriple.σ1_mem_monodromyGroup
+
+/-- The face traversal lies in the monodromy group of the underlying graph. -/
+@[simp]
+theorem facePerm_mem_monodromyGroup (D : PDCode n) :
+    D.facePerm ∈ D.toPermutationTriple.monodromyGroup :=
+  mul_mem D.edgePair_mem_monodromyGroup D.crossingRotation_mem_monodromyGroup
+
 /-- Two half-edges on one face lie in one connected component of the underlying graph: the face
 traversal is a product of the crossing rotation and the arc matching. -/
 theorem mem_orbit_of_face_eq_face (D : PDCode n) {h h' : Fin (4 * n)}
     (hface : D.face h = D.face h') :
     h' ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup h := by
   obtain ⟨k, hk⟩ := D.face_eq_face_iff.mp hface
-  have hF : D.facePerm ∈ D.toPermutationTriple.monodromyGroup := by
-    rw [facePerm_def, ← toPermutationTriple_σ0, ← toPermutationTriple_σ1]
-    exact mul_mem (PermutationTriple.σ1_mem_monodromyGroup _)
-      (PermutationTriple.σ0_mem_monodromyGroup _)
-  exact ⟨⟨D.facePerm ^ k, zpow_mem hF k⟩, hk⟩
+  exact ⟨⟨D.facePerm ^ k, zpow_mem D.facePerm_mem_monodromyGroup k⟩, hk⟩
+
+/-- If the face at the far end of the arc ending at `h` is the face at `h'`, then `h'` lies in the
+connected component of `h`. -/
+theorem mem_orbit_of_face_edgePair_eq_face (D : PDCode n) {h h' : Fin (4 * n)}
+    (hface : D.face (D.edgePair.val h) = D.face h') :
+    h' ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup h := by
+  obtain ⟨g, hg⟩ := D.mem_orbit_of_face_eq_face hface
+  exact ⟨g * ⟨D.edgePair.val, D.edgePair_mem_monodromyGroup⟩, (mul_smul g _ h).trans hg⟩
 
 /-- **Euler's formula for a PD-code.** The underlying graph has `n` vertices and `2 * n` edges,
 so its Euler characteristic is the number of faces less the number of crossings. -/

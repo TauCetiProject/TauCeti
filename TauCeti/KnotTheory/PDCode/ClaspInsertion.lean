@@ -41,17 +41,23 @@ loop value `δ = -(a ^ 2 + a⁻¹ ^ 2)`, the reconnected terms cancel, so the cl
 the **Kauffman bracket invariant**. The insertion also keeps the number of components.
 
 On its own the insertion is an algebraic operation on the code: nothing forces the two arcs to
-border a common region of the diagram. Going round the clasp counterclockwise, its four outer ends
-are met in the order `p`, `q`, `D.edgePair.val q`, `D.edgePair.val p`, so it can be drawn inside a
-region bordered by both arcs when the faces of `TauCeti.PDCode.face` at `D.edgePair.val p` and at
-`q` agree. The insertion is then the **second Reidemeister move**: the clasp cuts that face in two
-and adds the bigon between its two crossings, so the code gets two more faces
+border a common region of the diagram. An arc borders a face of `TauCeti.PDCode.face` on each
+side, the face at each of its two ends: `P` borders the faces at `p` and at `D.edgePair.val p`.
+Going round the clasp counterclockwise, its four outer ends are met in the order `p`, `q`,
+`D.edgePair.val q`, `D.edgePair.val p`, so it can be drawn inside a face bordered by both arcs
+when the face at the far end `D.edgePair.val p` of `P` is the face at `q`, that is, when `P` and
+`Q` border a common face on the side of `D.edgePair.val p` and of `q` respectively. Every common
+face of the two arcs is of this form for a suitable choice of the ends passed as `p` and `q`; for
+instance, passing `D.edgePair.val q` instead of `q` uses the other side of `Q`. Under this face
+condition the insertion is the **second Reidemeister move**: the clasp cuts that face in two and
+adds the bigon between its two crossings, so the code gets two more faces
 (`TauCeti.PDCode.faceCount_insertClasp_of_face_eq`), its underlying graph keeps its connected
 components, and it is planar exactly when `D` is (`TauCeti.PDCode.isPlanar_insertClasp_iff`). The
-face condition cannot be dropped: if the two arcs lie in one connected component but border no
-common face, the clasp joins two faces into one, which its bigon only makes up for, and the new
-code is never planar (`TauCeti.PDCode.not_isPlanar_insertClasp_of_face_ne`). The insertion applies
-only to codes with a crossing; an insertion involving a crossing-free circle is not treated here.
+face condition cannot be dropped: if the two arcs lie in one connected component but the face at
+`D.edgePair.val p` is not the face at `q`, the clasp joins two faces into one, which its bigon
+only makes up for, and the new code is never planar
+(`TauCeti.PDCode.not_isPlanar_insertClasp_of_face_ne`). The insertion applies only to codes with a
+crossing; an insertion involving a crossing-free circle is not treated here.
 
 ## Main definitions
 
@@ -66,13 +72,13 @@ only to codes with a crossing; an insertion involving a crossing-free circle is 
 * `TauCeti.PDCode.mirror_insertClasp`: mirroring the new code inserts the clasp with the other
   strand over into the mirror code.
 * `TauCeti.PDCode.faceCount_insertClasp_of_face_eq` and
-  `TauCeti.PDCode.faceCount_insertClasp_of_face_ne`: the insertion adds two faces when the two
-  arcs border a common face, and none otherwise.
+  `TauCeti.PDCode.faceCount_insertClasp_of_face_ne`: the insertion adds two faces when the face
+  at `D.edgePair.val p` is the face at `q`, and none otherwise.
 * `TauCeti.PDCode.card_monodromyOrbit_insertClasp`: the insertion keeps the connected components
   of the underlying graph when the two arcs lie in one of them.
-* `TauCeti.PDCode.isPlanar_insertClasp_iff`: inserted along a common face, the clasp keeps the
-  code planar, and `TauCeti.PDCode.not_isPlanar_insertClasp_of_face_ne`: otherwise, between arcs
-  of one component, it never yields a planar code.
+* `TauCeti.PDCode.isPlanar_insertClasp_iff`: when the face at `D.edgePair.val p` is the face at
+  `q`, the clasp keeps the code planar, and `TauCeti.PDCode.not_isPlanar_insertClasp_of_face_ne`:
+  otherwise, between arcs of one component, it never yields a planar code.
 
 ## References
 
@@ -512,8 +518,10 @@ private theorem halfEdgeTwoSuccEquiv_inr (slot : Fin 4) :
 
 /-- **Algebraic clasp insertion**: route the arc of `D` ending at the half-edge `p` and the
 distinct arc ending at `q` through a two-crossing clasp. This operation carries no claim that the
-two arcs border a common face; under that condition, `D.face (D.edgePair.val p) = D.face q`, it is
-the second Reidemeister move (`TauCeti.PDCode.isPlanar_insertClasp_iff`).
+two arcs border a common face. When the face at the far end `D.edgePair.val p` of the first arc is
+the face at `q`, that is, `D.face (D.edgePair.val p) = D.face q`, it is the second Reidemeister
+move (`TauCeti.PDCode.isPlanar_insertClasp_iff`); passing `D.edgePair.val q` instead of `q` uses
+the other side of the second arc.
 The two new crossings are `(Fin.last n).castSucc`, whose slots `0`
 and `1` are joined to `p` and `q`, and `Fin.last (n + 1)`, whose slots `3` and `2` are joined to
 the other ends `D.edgePair.val p` and `D.edgePair.val q` of the two arcs. Slot `2` of the first
@@ -854,47 +862,34 @@ private theorem crossingRotation_insertClasp :
   · intro i slot
     rw [crossingRotation_crossing, finRotate_apply]
 
-/-- Turning and then crossing an arc runs through the same orbits as crossing an arc and then
-turning: the two traversals are conjugate by the arc matching. -/
-private theorem sameCycle_crossingRotation_mul_edgePair_iff {x y : Fin (4 * n)} :
-    (D.crossingRotation * D.edgePair.val).SameCycle x y ↔
-      D.face (D.edgePair.val x) = D.face (D.edgePair.val y) := by
-  have h : D.facePerm = D.edgePair.val * (D.crossingRotation * D.edgePair.val) *
-      D.edgePair.val⁻¹ := by
-    rw [facePerm_def, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
-  rw [face_eq_face_iff, h, sameCycle_conj, Perm.inv_def, symm_apply_apply, symm_apply_apply]
-
 private theorem faceCount_insertClasp_eq_ite
     [Decidable ((D.crossingRotation * D.edgePair.val).SameCycle p (D.edgePair.val q))] :
     (D.insertClasp p q b hqp hqe).faceCount = D.faceCount +
       if (D.crossingRotation * D.edgePair.val).SameCycle p (D.edgePair.val q) then 2 else 0 := by
-  have hconj : D.faceCount = orbitCount (D.crossingRotation * D.edgePair.val) := by
-    rw [faceCount_def, facePerm_def, ← orbitCount_conj D.crossingRotation]
-    group
   rw [faceCount_def, facePerm_def, crossingRotation_insertClasp, insertClasp_edgePair_val,
     ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr, ← orbitCount_conj
       (Perm.sumCongr (Perm.sumCongr D.crossingRotation (finRotate 4)) (finRotate 4)),
     mul_assoc, mul_assoc, mul_inv_cancel, mul_one, orbitCount_finRotate_mul_claspMatching,
-    hconj]
+    faceCount_eq_orbitCount_crossingRotation_mul_edgePair]
 
-/-- **Clasp insertion inside a face adds two faces.** When the arc ending at `q` and the arc
-ending at `D.edgePair.val p` border one face of `D`, the clasp can be drawn inside that face: it
-cuts the face in two and adds the bigon between its two crossings. -/
+/-- **Clasp insertion inside a face adds two faces.** When the face at the far end
+`D.edgePair.val p` of the arc ending at `p` is the face at `q`, the clasp can be drawn inside that
+face: it cuts the face in two and adds the bigon between its two crossings. -/
 theorem faceCount_insertClasp_of_face_eq (hface : D.face (D.edgePair.val p) = D.face q) :
     (D.insertClasp p q b hqp hqe).faceCount = D.faceCount + 2 := by
   classical
   have h : (D.crossingRotation * D.edgePair.val).SameCycle p (D.edgePair.val q) := by
-    rwa [sameCycle_crossingRotation_mul_edgePair_iff, D.edgePair.prop.apply_apply]
+    rwa [D.sameCycle_crossingRotation_mul_edgePair_iff, D.edgePair.prop.apply_apply]
   simp only [faceCount_insertClasp_eq_ite, h, ↓reduceIte]
 
-/-- When the arc ending at `q` and the arc ending at `D.edgePair.val p` border no common face of
-`D`, inserting the clasp joins two faces into one, which the bigon between the two new crossings
+/-- When the face at the far end `D.edgePair.val p` of the arc ending at `p` is not the face at
+`q`, inserting the clasp joins two faces into one, which the bigon between the two new crossings
 makes up for: the number of faces is unchanged. -/
 theorem faceCount_insertClasp_of_face_ne (hface : D.face (D.edgePair.val p) ≠ D.face q) :
     (D.insertClasp p q b hqp hqe).faceCount = D.faceCount := by
   classical
   have h : ¬ (D.crossingRotation * D.edgePair.val).SameCycle p (D.edgePair.val q) := by
-    rwa [sameCycle_crossingRotation_mul_edgePair_iff, D.edgePair.prop.apply_apply]
+    rwa [D.sameCycle_crossingRotation_mul_edgePair_iff, D.edgePair.prop.apply_apply]
   simp only [faceCount_insertClasp_eq_ite, h, ↓reduceIte, add_zero]
 
 /-! ### Connected components after clasp insertion -/
@@ -925,6 +920,18 @@ private theorem claspOrbit_claspFun (z : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
   rw [← insertClasp_edgePair_apply, ← toPermutationTriple_σ1]
   exact PermutationTriple.mk_σ1_apply _ _
 
+/-- A function on the slots of a crossing unchanged by turning to the next slot is constant. -/
+private theorem apply_eq_apply_zero_of_add_one {β : Type*} {f : Fin 4 → β}
+    (h : ∀ i, f (i + 1) = f i) (i : Fin 4) : f i = f 0 := by
+  have h1 : f 1 = f 0 := h 0
+  have h2 : f 2 = f 0 := (h 1).trans h1
+  have h3 : f 3 = f 0 := (h 2).trans h2
+  fin_cases i
+  · rfl
+  · exact h1
+  · exact h2
+  · exact h3
+
 /-- The two new crossings and the ends of the two cut arcs all lie in one connected component of
 the new code. -/
 private theorem claspOrbit_eq_inl_inr_zero :
@@ -942,34 +949,76 @@ private theorem claspOrbit_eq_inl_inr_zero :
       claspOrbit D p q b hqp hqe (.inr i) := fun i => by
     simpa [finRotate_apply] using hR (.inr i)
   have hu' : ∀ i, claspOrbit D p q b hqp hqe (.inl (.inr i)) =
-      claspOrbit D p q b hqp hqe (.inl (.inr 0)) := by
-    have h1 := hu 0
-    have h2 := hu 1
-    have h3 := hu 2
-    simp only [zero_add, Fin.reduceAdd] at h1 h2 h3
-    intro i
-    fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk] <;> grind
-  have hv1 : claspOrbit D p q b hqp hqe (.inr 1) = claspOrbit D p q b hqp hqe (.inl (.inr 0)) := by
-    rw [← hu' 2, ← hE (.inl (.inr 2))]
-    rfl
+      claspOrbit D p q b hqp hqe (.inl (.inr 0)) :=
+    apply_eq_apply_zero_of_add_one (f := fun i => claspOrbit D p q b hqp hqe (.inl (.inr i))) hu
+  have hv0 : claspOrbit D p q b hqp hqe (.inr 0) = claspOrbit D p q b hqp hqe (.inl (.inr 0)) := by
+    rw [← hu' 3]
+    simpa [claspFun] using (hE (.inr 0)).symm
   have hv' : ∀ i, claspOrbit D p q b hqp hqe (.inr i) =
-      claspOrbit D p q b hqp hqe (.inl (.inr 0)) := by
-    have h1 := hv 1
-    have h2 := hv 2
-    have h3 := hv 3
-    simp only [Fin.reduceAdd] at h1 h2 h3
-    intro i
-    fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk] <;> grind
+      claspOrbit D p q b hqp hqe (.inl (.inr 0)) := fun i =>
+    (apply_eq_apply_zero_of_add_one (f := fun i => claspOrbit D p q b hqp hqe (.inr i)) hv i).trans
+      hv0
   refine ⟨hu', hv', ?_⟩
   rintro x (rfl | rfl | rfl | rfl)
-  · rw [← hE (.inl (.inr 0))]
-    rfl
-  · rw [← hv' 3, ← hE (.inr 3)]
-    rfl
-  · rw [← hu' 1, ← hE (.inl (.inr 1))]
-    rfl
-  · rw [← hv' 2, ← hE (.inr 2)]
-    rfl
+  · simpa [claspFun] using hE (.inl (.inr 0))
+  · rw [← hv' 3]
+    simpa [claspFun] using hE (.inr 3)
+  · rw [← hu' 1]
+    simpa [claspFun] using hE (.inl (.inr 1))
+  · rw [← hv' 2]
+    simpa [claspFun] using hE (.inr 2)
+
+/-- The connected component of `D` containing an old half-edge, or that of `p` for a slot of a
+new crossing. -/
+private def oldOrbit : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4 → D.toPermutationTriple.MonodromyOrbit :=
+  Sum.elim (Sum.elim (Quotient.mk _) fun _ => Quotient.mk _ p) fun _ => Quotient.mk _ p
+
+private theorem oldOrbit_inl_inl (x : Fin (4 * n)) :
+    oldOrbit D p (.inl (.inl x)) = Quotient.mk _ x := (rfl)
+
+private theorem oldOrbit_inl_inr (i : Fin 4) : oldOrbit D p (.inl (.inr i)) = Quotient.mk _ p :=
+  (rfl)
+
+private theorem oldOrbit_inr (i : Fin 4) : oldOrbit D p (.inr i) = Quotient.mk _ p := (rfl)
+
+private theorem oldOrbit_sumCongr (z : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
+    oldOrbit D p
+        (Perm.sumCongr (Perm.sumCongr D.crossingRotation (finRotate 4)) (finRotate 4) z) =
+      oldOrbit D p z := by
+  rcases z with (x | i) | i
+  · rw [Perm.sumCongr_apply, Sum.map_inl, Perm.sumCongr_apply, Sum.map_inl, oldOrbit_inl_inl,
+      oldOrbit_inl_inl, ← toPermutationTriple_σ0, PermutationTriple.mk_σ0_apply]
+  · rw [Perm.sumCongr_apply, Sum.map_inl, Perm.sumCongr_apply, Sum.map_inr, oldOrbit_inl_inr,
+      oldOrbit_inl_inr]
+  · rw [Perm.sumCongr_apply, Sum.map_inr, oldOrbit_inr, oldOrbit_inr]
+
+include hqp hqe in
+private theorem oldOrbit_claspFun
+    (hpq : q ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup p)
+    (z : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4) :
+    oldOrbit D p (claspFun D.edgePair.val p q z) = oldOrbit D p z := by
+  have hq : (Quotient.mk _ q : D.toPermutationTriple.MonodromyOrbit) = Quotient.mk _ p :=
+    Quotient.sound hpq
+  have he (x : Fin (4 * n)) :
+      (Quotient.mk _ (D.edgePair.val x) : D.toPermutationTriple.MonodromyOrbit) =
+        Quotient.mk _ x := by
+    simpa only [toPermutationTriple_σ1] using D.toPermutationTriple.mk_σ1_apply x
+  rcases z with (x | i) | i
+  · by_cases hxp : x = p
+    · subst hxp
+      rw [claspFun_self, oldOrbit_inl_inr, oldOrbit_inl_inl]
+    by_cases hxe : x = D.edgePair.val p
+    · subst hxe
+      rw [claspFun_apply_self D.edgePair.prop, oldOrbit_inr, oldOrbit_inl_inl, he]
+    by_cases hxq : x = q
+    · subst hxq
+      rw [claspFun_right hqp hqe, oldOrbit_inl_inr, oldOrbit_inl_inl, hq]
+    by_cases hxe' : x = D.edgePair.val q
+    · subst hxe'
+      rw [claspFun_apply_right D.edgePair.prop hqp hqe, oldOrbit_inr, oldOrbit_inl_inl, he, hq]
+    rw [claspFun_of_ne hxp hxe hxq hxe', oldOrbit_inl_inl, oldOrbit_inl_inl, he]
+  · fin_cases i <;> simp [claspFun, oldOrbit_inl_inl, oldOrbit_inl_inr, oldOrbit_inr, hq]
+  · fin_cases i <;> simp [claspFun, oldOrbit_inl_inl, oldOrbit_inl_inr, oldOrbit_inr, hq, he]
 
 /-- **Clasp insertion keeps the connected components** of the underlying graph when the two cut
 arcs already lie in one component. -/
@@ -982,53 +1031,21 @@ theorem card_monodromyOrbit_insertClasp
   -- are constant along the crossing rotation and the arc matching, which is checked on old
   -- half-edges and new slots, and they are inverse to each other.
   obtain ⟨hu, hv, hends⟩ := claspOrbit_eq_inl_inr_zero D p q b hqp hqe
-  have hq : (Quotient.mk _ q : D.toPermutationTriple.MonodromyOrbit) = Quotient.mk _ p :=
-    Quotient.sound hpq
-  have hr (x : Fin (4 * n)) := D.toPermutationTriple.mk_σ0_apply x
-  have he (x : Fin (4 * n)) := D.toPermutationTriple.mk_σ1_apply x
-  simp only [toPermutationTriple_σ0, toPermutationTriple_σ1] at hr he
-  -- The component of the old code containing an old half-edge, or that of `p` for a new slot.
-  let g : (Fin (4 * n) ⊕ Fin 4) ⊕ Fin 4 → D.toPermutationTriple.MonodromyOrbit :=
-    Sum.elim (Sum.elim (Quotient.mk _) fun _ => Quotient.mk _ p) fun _ => Quotient.mk _ p
-  have hgR (z) : g (Perm.sumCongr (Perm.sumCongr D.crossingRotation (finRotate 4))
-      (finRotate 4) z) = g z := by
-    rcases z with (x | i) | i <;> simp [g, hr]
-  have hgE (z) : g (claspFun D.edgePair.val p q z) = g z := by
-    rcases z with (x | i) | i
-    · by_cases hxp : x = p
-      · subst hxp
-        rw [claspFun_self]
-        rfl
-      by_cases hxe : x = D.edgePair.val p
-      · subst hxe
-        rw [claspFun_apply_self D.edgePair.prop]
-        exact (he p).symm
-      by_cases hxq : x = q
-      · subst hxq
-        rw [claspFun_right hqp hqe]
-        exact hq.symm
-      by_cases hxe' : x = D.edgePair.val q
-      · subst hxe'
-        rw [claspFun_apply_right D.edgePair.prop hqp hqe]
-        exact ((he q).trans hq).symm
-      rw [claspFun_of_ne hxp hxe hxq hxe']
-      exact he x
-    · fin_cases i <;> simp [g, claspFun, hq]
-    · fin_cases i <;> simp [g, claspFun, hq, he]
   refine Nat.card_congr
-    { toFun := Quotient.lift (fun y => g ((halfEdgeTwoSuccEquiv n).symm y)) ?_
+    { toFun := Quotient.lift (fun y => oldOrbit D p ((halfEdgeTwoSuccEquiv n).symm y)) ?_
       invFun := Quotient.lift (fun x => claspOrbit D p q b hqp hqe (.inl (.inl x))) ?_
       left_inv := Quotient.ind fun y => ?_
       right_inv := Quotient.ind fun x => ?_ }
   · rintro _ y ⟨⟨σ, hσ⟩, rfl⟩
     refine PermutationTriple.apply_eq_of_mem_monodromyGroup _
-      (f := fun y => g ((halfEdgeTwoSuccEquiv n).symm y)) (fun y => ?_) (fun y => ?_) hσ y
+      (f := fun y => oldOrbit D p ((halfEdgeTwoSuccEquiv n).symm y)) (fun y => ?_) (fun y => ?_) hσ
+      y
     · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
       rw [toPermutationTriple_σ0, crossingRotation_insertClasp_apply, symm_apply_apply,
-        symm_apply_apply, hgR]
+        symm_apply_apply, oldOrbit_sumCongr]
     · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
       rw [toPermutationTriple_σ1, insertClasp_edgePair_apply, symm_apply_apply,
-        symm_apply_apply, hgE]
+        symm_apply_apply, oldOrbit_claspFun D p q hqp hqe hpq]
   · rintro _ x ⟨⟨σ, hσ⟩, rfl⟩
     refine PermutationTriple.apply_eq_of_mem_monodromyGroup _
       (f := fun x => claspOrbit D p q b hqp hqe (.inl (.inl x))) (fun x => ?_) (fun x => ?_) hσ x
@@ -1048,35 +1065,26 @@ theorem card_monodromyOrbit_insertClasp
   · obtain ⟨z, rfl⟩ := (halfEdgeTwoSuccEquiv n).surjective y
     simp only [Quotient.lift_mk, symm_apply_apply]
     rcases z with (x | i) | i
-    · rfl
-    · exact (hends p (.inl rfl)).trans (hu i).symm
-    · exact (hends p (.inl rfl)).trans (hv i).symm
-  · simp only [claspOrbit, Quotient.lift_mk, symm_apply_apply]
-    rfl
+    · rw [oldOrbit_inl_inl, Quotient.lift_mk, claspOrbit]
+    · rw [oldOrbit_inl_inr, Quotient.lift_mk]
+      exact (hends p (.inl rfl)).trans (hu i).symm
+    · rw [oldOrbit_inr, Quotient.lift_mk]
+      exact (hends p (.inl rfl)).trans (hv i).symm
+  · simp only [claspOrbit, Quotient.lift_mk, symm_apply_apply, oldOrbit_inl_inl]
 
-/-- The arcs ending at `q` and at `D.edgePair.val p` border one face only if they lie in one
-connected component of the underlying graph. -/
-private theorem mem_orbit_of_face_eq (hface : D.face (D.edgePair.val p) = D.face q) :
-    q ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup p := by
-  obtain ⟨g, hg⟩ := D.mem_orbit_of_face_eq_face hface
-  have he : D.edgePair.val ∈ D.toPermutationTriple.monodromyGroup := by
-    rw [← toPermutationTriple_σ1]
-    exact PermutationTriple.σ1_mem_monodromyGroup _
-  exact ⟨g * ⟨D.edgePair.val, he⟩, (mul_smul g _ p).trans hg⟩
-
-/-- **Clasp insertion inside a face keeps planarity.** When the arc ending at `q` and the arc ending
-at `D.edgePair.val p` border one face of `D`, the clasp insertion is the second Reidemeister move
-drawn inside that face, and the new code is planar exactly when `D` is. -/
+/-- **Clasp insertion inside a face keeps planarity.** When the face at the far end
+`D.edgePair.val p` of the arc ending at `p` is the face at `q`, the clasp insertion is the second
+Reidemeister move drawn inside that face, and the new code is planar exactly when `D` is. -/
 theorem isPlanar_insertClasp_iff (hface : D.face (D.edgePair.val p) = D.face q) :
     (D.insertClasp p q b hqp hqe).IsPlanar ↔ D.IsPlanar := by
   rw [isPlanar_iff_faceCount_eq, isPlanar_iff_faceCount_eq,
     faceCount_insertClasp_of_face_eq D p q b hqp hqe hface,
-    card_monodromyOrbit_insertClasp D p q b hqp hqe (mem_orbit_of_face_eq D p q hface)]
+    card_monodromyOrbit_insertClasp D p q b hqp hqe (D.mem_orbit_of_face_edgePair_eq_face hface)]
   omega
 
 /-- **The face condition is necessary.** When the two cut arcs lie in one connected component of
-the underlying graph but border no common face, the clasp cannot be drawn in the plane: the new
-code is never planar. -/
+the underlying graph but the face at the far end `D.edgePair.val p` of the arc ending at `p` is not
+the face at `q`, the clasp cannot be drawn in the plane: the new code is never planar. -/
 theorem not_isPlanar_insertClasp_of_face_ne (hface : D.face (D.edgePair.val p) ≠ D.face q)
     (hpq : q ∈ MulAction.orbit D.toPermutationTriple.monodromyGroup p) :
     ¬ (D.insertClasp p q b hqp hqe).IsPlanar := by

@@ -77,6 +77,7 @@ theorem _root_.Equiv.Perm.disjoint_sumCongr_one_one_sumCongr (σ : Perm α) (τ 
   · exact Or.inl rfl
 
 /-- The powers of a sum permutation are taken separately on the two summands. -/
+@[simp]
 theorem _root_.Equiv.Perm.sumCongr_zpow (σ : Perm α) (τ : Perm β) (k : ℤ) :
     Perm.sumCongr σ τ ^ k = Perm.sumCongr (σ ^ k) (τ ^ k) := by
   simpa using (map_zpow (Perm.sumCongrHom α β) (σ, τ) k).symm
