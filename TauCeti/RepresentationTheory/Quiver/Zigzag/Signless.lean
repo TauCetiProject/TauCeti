@@ -88,12 +88,13 @@ noncomputable def signlessArrow (i j : ℕ) : signlessPreprojectiveAlgebra k (Do
 variable {G}
 
 /-- Between adjacent vertices, `signlessArrow` is the class of the doubled arrow. -/
-theorem signlessArrow_of_adj {i j : Fin n} (h : G.Adj i j) :
+@[simp] theorem signlessArrow_of_adj {i j : Fin n} (h : G.Adj i j) :
     signlessArrow k G i j = signlessPreprojectiveMk k _ (ofArrow (arrow G h)) := by
   simp [signlessArrow, h]
 
 /-- Between non-adjacent vertices, `signlessArrow` vanishes. -/
-theorem signlessArrow_eq_zero {i j : ℕ} (h : ∀ (hi : i < n) (hj : j < n), ¬G.Adj ⟨i, hi⟩ ⟨j, hj⟩) :
+@[simp] theorem signlessArrow_eq_zero {i j : ℕ}
+    (h : ∀ (hi : i < n) (hj : j < n), ¬G.Adj ⟨i, hi⟩ ⟨j, hj⟩) :
     signlessArrow k G i j = 0 := by
   by_cases hn : i < n ∧ j < n
   · simp [signlessArrow, hn, h hn.1 hn.2]

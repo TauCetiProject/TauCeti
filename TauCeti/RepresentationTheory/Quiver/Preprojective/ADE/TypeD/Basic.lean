@@ -156,13 +156,15 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
       (by simp only [Finset.mem_insert, Finset.mem_singleton]; omega)
       (fun u _ hu => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu; omega)
     rw [Finset.sum_pair (by omega)] at h
+    have hrung : v + (w + 1) - (w + 1) = v := by omega
+    have hprev : v + (w + 1) - w = v + 1 := by omega
     simp only [forkUp, forkDown]
-    rwa [show v + (w + 1) - (w + 1) = v by omega, show v + (w + 1) - w = v + 1 by omega,
-      Nat.add_sub_cancel]
+    rwa [hrung, hprev, Nat.add_sub_cancel]
   · -- Beyond the end of the long arm every step vanishes.
     have h0 : signlessArrow k G 0 0 = 0 := signlessArrow_fork_eq_zero k hG (by omega)
-    simp only [forkUp, forkDown, show c - (w + 1) = 0 by omega, show c - w = 0 by omega, h0,
-      mul_zero, add_zero]
+    have hrung : c - (w + 1) = 0 := by omega
+    have hprev : c - w = 0 := by omega
+    simp only [forkUp, forkDown, hrung, hprev, h0, mul_zero, add_zero]
 
 /-- **The relation at a leaf**: the backtrack from a leaf `l` vanishes. -/
 private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln : l < n) :
@@ -243,10 +245,11 @@ private theorem forkNormalForm_cons_valley {i₀ j j' L : ℕ}
     rw [hz]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
     · -- The valley reaches the branch node: a climb out of it after a descent into it.
+      have hj'r : c - j' = r := by omega
       refine .inr (.inl ⟨0, s + 1, 1, (ε * (-1) ^ r) • (ladderValley (forkUp k G c)
         (forkDown k G c) 0 (s + 1) 0 * E), one_mem_forkSpan_pow_zero k, by omega, hj', by omega,
         ?_⟩)
-      rw [show c - j' = r by omega, mul_one, mul_smul_comm, ← mul_assoc,
+      rw [hj'r, mul_one, mul_smul_comm, ← mul_assoc,
         ladderValley_zero_mul_ladderValley]
     · exact .inl ⟨m, s + 1, r, ε * (-1) ^ r, hm', by omega, by omega, by omega, rfl⟩
   · -- A step away from the branch node extends the climb.
@@ -278,15 +281,17 @@ private theorem forkNormalForm_cons_arm {i₀ j j' L : ℕ}
     · rw [pow_succ']
       exact Submodule.smul_mem _ _
         (Submodule.mul_mem_mul (forkDown_mul_forkUp_mem_forkSpan k hn hG) hw)
-    · rw [hr, harr, show c - j' = r by omega, ← mul_assoc, ← mul_assoc,
+    · have hj'r : c - j' = r := by omega
+      rw [hr, harr, hj'r, ← mul_assoc, ← mul_assoc,
         d_mul_ladderValley_zero_zero (forkDown_mul_forkUp_add k hn hG), neg_one_pow_mul_eq_zsmul]
       simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
   · -- A step away from the branch node extends the climb.
     have harr : signlessArrow k G j j' = forkUp k G c (c - j) := by
       rw [forkUp]
       congr 1 <;> omega
+    have hj'r : c - j' = c - j + 1 := by omega
     refine .inr (.inl ⟨t, s₀, w, D, hw, hs₀, by omega, by omega, ?_⟩)
-    rw [harr, ← mul_assoc, ← mul_assoc, show c - j' = c - j + 1 by omega, ← u_mul_ladderValley,
+    rw [harr, ← mul_assoc, ← mul_assoc, hj'r, ← u_mul_ladderValley,
       zero_add]
   · -- A step from the branch node into a leaf.
     refine .inr (.inr (.inl ⟨t, s₀, w, D, hw, hs₀, hj', by omega, ?_⟩))
@@ -392,7 +397,8 @@ private theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
     ¬(diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j := by
   rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
   rintro ⟨hij, h, -⟩
-  simp [CartanMatrix.D, show n ≤ 2 by omega, hij] at h
+  have hn' : n ≤ 2 := by omega
+  simp [CartanMatrix.D, hn', hij] at h
 
 /-- The two-colouring of `Dₙ`: the parity along the long arm, with both leaves coloured like the
 node `n - 2`. -/
