@@ -9,6 +9,7 @@ public import Mathlib.Data.Fin.SuccPredOrder
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.RepresentationTheory.Spin.Weight
+import TauCeti.LinearAlgebra.RootSystem.Chain
 
 /-!
 # Type `B` spin weights in the simply connected character lattice
@@ -327,38 +328,6 @@ private theorem ite_self_mem_typeBSpinReflection_of_last {n : ℕ} {i : Fin n}
     (if i ∈ typeBSpinReflection i s then (1 : ℤ) else 0) = 1 - if i ∈ s then 1 else 0 := by
   by_cases hs : i ∈ s <;> simp [mem_typeBSpinReflection_iff_of_last h, hs]
 
-/-! ### Entries of the type-`B` Cartan matrix -/
-
-/-- The entry of `CartanMatrix.B n` one step past the diagonal, at a nonterminal column. -/
-private theorem cartanMatrixB_apply_of_succ_of_lt {n : ℕ} {i j : Fin n}
-    (hij : (i : ℕ) + 1 = (j : ℕ)) (hj : (j : ℕ) + 1 < n) :
-    CartanMatrix.B n i j = -1 := by
-  simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> omega
-
-/-- The entry of `CartanMatrix.B n` one step past the diagonal, at the terminal column. The
-Bourbaki numbering puts the long simple root at the terminal node, so this entry is `-2`. -/
-private theorem cartanMatrixB_apply_of_succ_of_last {n : ℕ} {i j : Fin n}
-    (hij : (i : ℕ) + 1 = (j : ℕ)) (hj : ¬(j : ℕ) + 1 < n) :
-    CartanMatrix.B n i j = -2 := by
-  have := j.isLt
-  simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> omega
-
-/-- The entry of `CartanMatrix.B n` one step before the diagonal. -/
-private theorem cartanMatrixB_apply_of_pred {n : ℕ} {i j : Fin n}
-    (hij : (j : ℕ) + 1 = (i : ℕ)) :
-    CartanMatrix.B n i j = -1 := by
-  simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> omega
-
-/-- The entries of `CartanMatrix.B n` away from the diagonal and its two neighbours vanish. -/
-private theorem cartanMatrixB_apply_of_not_adjacent {n : ℕ} {i j : Fin n}
-    (hne : (j : ℕ) ≠ (i : ℕ)) (hsucc : (j : ℕ) ≠ (i : ℕ) + 1) (hpred : (j : ℕ) + 1 ≠ (i : ℕ)) :
-    CartanMatrix.B n i j = 0 := by
-  simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> omega
-
 /-! ### Coordinates of a reflected spin weight -/
 
 /-- A spin weight coordinate depends only on the signs at that node and at its successor. -/
@@ -409,8 +378,9 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_succ {n : ℕ} {i j
     typeBSpinWeight_apply s i, ite_eq_left hilt, hmem]
   ring
 
-/-- At the terminal node one step past the reflecting one, where the simple root is long, the
-reflected coordinate gains twice the coordinate at the reflecting node. -/
+/-- At the terminal node one step past the reflecting one, where the simple root is the short one
+and its coroot the long one, the reflected coordinate gains twice the coordinate at the reflecting
+node. -/
 private theorem typeBSpinWeight_typeBSpinReflection_apply_of_succ_of_last {n : ℕ} {i j : Fin n}
     (hij : (j : ℕ) = (i : ℕ) + 1) (hjlt : ¬(j : ℕ) + 1 < n) (s : Finset (Fin n)) :
     typeBSpinWeight (typeBSpinReflection i s) j =
@@ -498,29 +468,36 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_not_adjacent {n : �
 /-- **The reflection formula for type-`Bₙ` spin weights.** Reflecting a sign set in the `i`-th
 simple root subtracts, from its weight, the `i`-th simple-coroot coordinate of that weight times
 the `i`-th simple root. In the fundamental-weight basis the `i`-th simple root is the `i`-th row
-of the Bourbaki-numbered Cartan matrix, so the spin weights are permuted by the Weyl group. -/
+of the Bourbaki-numbered Cartan matrix, so the spin weights are permuted by the Weyl group.
+
+That row is the row of a chain of type `B`, `TauCeti.chainBEntry`, whose double edge points at the
+terminal node: the terminal simple root is the short one, so the root before it pairs to `-2` with
+the long terminal coroot, while the terminal root pairs to `-1` with the coroot before it. -/
 theorem typeBSpinWeight_typeBSpinReflection_apply {n : ℕ} (i : Fin n) (s : Finset (Fin n))
     (j : Fin n) :
     typeBSpinWeight (typeBSpinReflection i s) j =
       typeBSpinWeight s j - typeBSpinWeight s i * CartanMatrix.B n i j := by
+  have hjv := j.isLt
+  rw [← chainBEntry_eq_cartanMatrix_B]
   by_cases hji : (j : ℕ) = (i : ℕ)
   · obtain rfl : j = i := Fin.ext hji
-    rw [typeBSpinWeight_typeBSpinReflection_apply_self, CartanMatrix.B_diag]
+    rw [typeBSpinWeight_typeBSpinReflection_apply_self, chainBEntry_self]
     ring
   · by_cases hsucc : (j : ℕ) = (i : ℕ) + 1
-    · by_cases hjlt : (j : ℕ) + 1 < n
+    · rw [hsucc, chainBEntry_succ_right]
+      by_cases hjlt : (j : ℕ) + 1 < n
       · rw [typeBSpinWeight_typeBSpinReflection_apply_of_succ hsucc hjlt,
-          cartanMatrixB_apply_of_succ_of_lt hsucc.symm hjlt]
+          ite_eq_right (show (i : ℕ) + 1 ≠ n - 1 by omega)]
         ring
       · rw [typeBSpinWeight_typeBSpinReflection_apply_of_succ_of_last hsucc hjlt,
-          cartanMatrixB_apply_of_succ_of_last hsucc.symm hjlt]
+          ite_eq_left (show (i : ℕ) + 1 = n - 1 by omega)]
         ring
     · by_cases hpred : (j : ℕ) + 1 = (i : ℕ)
-      · rw [typeBSpinWeight_typeBSpinReflection_apply_of_pred hpred,
-          cartanMatrixB_apply_of_pred hpred]
+      · rw [typeBSpinWeight_typeBSpinReflection_apply_of_pred hpred, ← hpred,
+          chainBEntry_succ_left]
         ring
       · rw [typeBSpinWeight_typeBSpinReflection_apply_of_not_adjacent hji hsucc hpred,
-          cartanMatrixB_apply_of_not_adjacent hji hsucc hpred]
+          chainBEntry_eq_zero (Ne.symm hji) (Ne.symm hsucc) hpred]
         ring
 
 /-! ## Distinct weights and fixed points -/
