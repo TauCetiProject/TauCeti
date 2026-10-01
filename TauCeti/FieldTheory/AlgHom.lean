@@ -10,53 +10,52 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.FieldTheory.Minpoly
 
 /-!
-# Algebra homomorphisms between finite-dimensional fields
+# Algebra homomorphisms out of fields
 
-This file contains dimension and conjugacy criteria for algebra homomorphisms between fields.
+This file promotes an algebra homomorphism from a finite-dimensional division algebra to an
+algebra equivalence when the dimensions agree, and moves square roots of a common scalar onto each
+other by algebra homomorphisms into a normal extension.
 -/
 
 public section
 
-namespace TauCeti
+namespace AlgHom
 
-section Finrank
-
-variable {K L M : Type*} [Field K] [Field L] [Field M] [Algebra K L] [Algebra K M]
+variable {K L M : Type*} [Field K] [DivisionRing L] [Ring M] [Algebra K L] [Algebra K M]
   [FiniteDimensional K L] [FiniteDimensional K M]
 
-/-- An algebra homomorphism between finite-dimensional field extensions of equal finrank promotes
-to an algebra equivalence. -/
+/-- An algebra homomorphism from a finite-dimensional division algebra to a finite-dimensional
+algebra of the same finrank promotes to an algebra equivalence. -/
 noncomputable def algEquivOfFinrankEq (f : L →ₐ[K] M)
     (hfin : Module.finrank K L = Module.finrank K M) : L ≃ₐ[K] M :=
+  haveI : Nontrivial M := Module.nontrivial_of_finrank_pos (R := K) (hfin ▸ Module.finrank_pos)
   AlgEquiv.ofBijective f
-    ⟨f.injective,
-      (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin
-        (f := f.toLinearMap)).mp f.injective⟩
+    ⟨f.injective, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin
+      (f := f.toLinearMap)).mp f.injective⟩
 
 @[simp]
 theorem algEquivOfFinrankEq_apply (f : L →ₐ[K] M)
     (hfin : Module.finrank K L = Module.finrank K M) (x : L) :
-    algEquivOfFinrankEq f hfin x = f x :=
-  AlgEquiv.ofBijective_apply f _ x
+    f.algEquivOfFinrankEq hfin x = f x :=
+  (rfl)
 
-end Finrank
+end AlgHom
 
-variable {K L M : Type*} [Field K] [Field L] [Field M] [Algebra K L] [Algebra K M]
+namespace TauCeti
+
+variable {K L M : Type*} [Field K] [Field L] [Semiring M] [Algebra K L] [Algebra K M]
   {r : K} {y : L} {z : M}
 
 /-- If `y` and `z` are square roots of the same scalar and `K(y)` is quadratic, any
-`K`-embedding from the field containing `z` into the normal field containing `y` can be
-adjusted by a target automorphism to carry `z` to `y`. -/
+`K`-algebra homomorphism from the algebra containing `z` into the normal field containing `y` can
+be adjusted by an automorphism of the target to carry `z` to `y`. -/
 theorem exists_algHom_apply_eq_of_sq_eq [Normal K L]
     (hy : y ^ 2 = algebraMap K L r)
     (hydegree : Module.finrank K (IntermediateField.adjoin K {y}) = 2)
     (hz : z ^ 2 = algebraMap K M r) (hφ : Nonempty (M →ₐ[K] L)) :
     ∃ φ : M →ₐ[K] L, φ z = y := by
   obtain ⟨φ⟩ := hφ
-  have hyint : IsIntegral K y := by
-    apply IsIntegral.of_pow (by norm_num : 0 < 2)
-    rw [hy]
-    exact isIntegral_algebraMap
+  have hyint : IsIntegral K y := .of_pow two_pos (hy ▸ isIntegral_algebraMap)
   have hmin : minpoly K y = Polynomial.X ^ 2 - Polynomial.C r := by
     apply Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hy
     rw [← IntermediateField.adjoin.finrank hyint, hydegree]

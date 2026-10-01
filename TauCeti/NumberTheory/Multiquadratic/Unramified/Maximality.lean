@@ -241,7 +241,7 @@ theorem nonempty_algEquiv_candidateGenusField {d : ℤ} (hd : Squarefree d)
   obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hnsqd hy hunr
   have hrank : Module.finrank ℚ M = Module.finrank ℚ (candidateGenusField hd) := by
     rw [hfr, finrank_candidateGenusField hd]
-  exact ⟨TauCeti.algEquivOfFinrankEq φ hrank⟩
+  exact ⟨φ.algEquivOfFinrankEq hrank⟩
 
 end IsAbelianGalois
 
