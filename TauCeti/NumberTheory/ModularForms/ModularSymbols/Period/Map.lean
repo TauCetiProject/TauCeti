@@ -36,6 +36,8 @@ symbol `{α, β} ⊗ P` the functional of `f` is the period `∫_β^α f(z) P(z,
   invariant under the diagonal action of `Γ` on `Div⁰(ℙ¹(ℚ)) ⊗ Sym^w(R²)`.
 * `TauCeti.ModularSymbols.periodMap_mk`: on the class of `x`, the functional of `f` is the raw
   pairing of `f` with `x`.
+* `TauCeti.ModularSymbols.periodMap_symbol`: on the symbol `{α, β} ⊗ P`, the functional of `f` is
+  the period `∫_β^α f(z) P(z, 1) dz`.
 
 ## References
 
@@ -105,6 +107,13 @@ theorem periodMap_mk (hk : k = w + 2) (f : CuspForm (Γ.map (mapGL ℝ)) k)
     (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
     periodMap R Γ hk f (Coinvariants.mk _ x) = rawPairing R f hk x :=
   periodFunctional_mk hk f x
+
+/-- On the symbol `{α, β} ⊗ P`, the period map is the period `∫_β^α f(z) P(z, 1) dz`. -/
+@[simp]
+theorem periodMap_symbol (hk : k = w + 2) (f : CuspForm (Γ.map (mapGL ℝ)) k) (α β : OnePoint ℚ)
+    (P : homogeneousSubmodule (Fin 2) R w) :
+    periodMap R Γ hk f (symbol Γ α β P) = cuspIntegral (periodIntegrand f P) β α := by
+  rw [symbol_apply, periodMap_mk, rawPairing_single_sub_single_tmul]
 
 end TauCeti.ModularSymbols
 
