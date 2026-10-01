@@ -8,8 +8,6 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
 
-import Mathlib.RingTheory.Flat.Equalizer
-
 /-!
 # Flatness and tensor products of algebra homomorphisms
 
