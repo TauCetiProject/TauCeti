@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
@@ -177,19 +176,10 @@ theorem setIntegral_ball_zero_eq_integral_Ioo {f : E → F} {R : ℝ}
 theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} :
     (∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1)) * μ.toSphere.real univ =
       μ.real (ball (0 : E) R) := by
-  rcases le_or_gt R 0 with hR | hR
-  · simp [Ioo_eq_empty_of_le hR, ball_eq_empty.mpr hR]
-  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (Module.finrank_pos (R := ℝ) (M := E)).ne'
-  have hball : μ.real (ball (0 : E) R) = R ^ (m + 1) * μ.real (ball (0 : E) 1) := by
-    rw [measureReal_def, Measure.addHaar_ball μ _ hR.le, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by positivity), hm, measureReal_def]
-  have hsph : μ.toSphere.real univ = ((m : ℝ) + 1) * μ.real (ball (0 : E) 1) := by
-    rw [Measure.toSphere_real_apply_univ, hm]
-    push_cast
-    ring
-  rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hR.le, integral_pow,
-    hball, hsph, hm, Nat.add_sub_cancel, zero_pow (Nat.succ_ne_zero m), sub_zero]
-  field_simp
+  have h := setIntegral_ball_zero_eq_integral_Ioo (μ := μ) (f := fun _ : E ↦ (1 : ℝ)) (R := R)
+    (integrableOn_const measure_ball_lt_top.ne)
+  simp only [integral_const, smul_eq_mul, mul_one, measureReal_restrict_apply_univ] at h
+  rw [h, ← integral_mul_const]
 
 /-- **Radial fundamental theorem of calculus.** For a `C¹` function `f` with compact support on a
 nontrivial finite-dimensional real normed space of dimension `d`,
