@@ -61,10 +61,10 @@ end ConvexCone.Salient
 
 namespace PointedCone
 
-section Hull
+section HullSalient
 
-variable {R V : Type*} [DivisionRing R] [PartialOrder R] [IsOrderedRing R]
-  [AddCommGroup V] [Module R V]
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommGroup V] [Module R V] [NoZeroSMulDivisors R V]
 
 /-- The cone hull of a single vector is salient. -/
 theorem salient_hull_singleton (x : V) : (hull R {x} : ConvexCone R V).Salient := by
@@ -72,9 +72,16 @@ theorem salient_hull_singleton (x : V) : (hull R {x} : ConvexCone R V).Salient :
   obtain ⟨r, hr0, rfl⟩ := mem_hull_singleton.1 hy
   obtain ⟨t, ht0, ht⟩ := mem_hull_singleton.1 hny
   have hrt : (r + t) • x = 0 := by rw [add_smul, ht, add_neg_cancel]
-  rcases smul_eq_zero.1 hrt with h | h
+  rcases eq_zero_or_eq_zero_of_smul_eq_zero hrt with h | h
   · exact hy0 (by rw [((add_eq_zero_iff_of_nonneg hr0 ht0).1 h).1, zero_smul])
   · exact hy0 (by rw [h, smul_zero])
+
+end HullSalient
+
+section HullSpan
+
+variable {R V : Type*} [DivisionRing R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommGroup V] [Module R V]
 
 /-- The linear span of the cone hull of a nonzero vector is the line it spans, of dimension one.
 Passing from the cone hull to the linear span extends scalars from the nonnegative elements of the
@@ -83,7 +90,7 @@ theorem finrank_span_coe_hull_singleton {x : V} (hx : x ≠ 0) :
     Module.finrank R (Submodule.span R ((hull R {x} : PointedCone R V) : Set V)) = 1 := by
   rw [Submodule.span_span_of_tower (Nonneg R) R, finrank_span_singleton hx]
 
-end Hull
+end HullSpan
 
 section Prod
 
