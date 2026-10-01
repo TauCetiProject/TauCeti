@@ -21,12 +21,12 @@ lower central series, the lower `p`-series at `p = 0`. Each `gr_n(F)` is an abel
 hence a `ℤ_p`-module, and the bracket `gr_j(F) × gr_k(F) → gr_{j+k+1}(F)` is `ℤ_p`-bilinear. This
 file computes the first two pieces:
 
-* `gr_0(F)` is free over `ℤ_p` on the classes `x̄_i` of the generators: the map
+* `gr_0(F)` is free over `ℤ_p` on the classes `x_i` of the generators: the map
   `a ↦ Σ_i [x_i ^ a_i]`, `(X → ℤ_p) → gr_0(F)`, is a bijection;
-* for `X` linearly ordered, `gr_1(F)` is free over `ℤ_p` on the brackets `[x̄_i, x̄_j]` for
+* for `X` linearly ordered, `gr_1(F)` is free over `ℤ_p` on the brackets `[x_i, x_j]` for
   `i < j`: the map `c ↦ Σ_{i<j} [⁅x_i, x_j⁆ ^ c_ij]` is a bijection. So `gr_1(F)` is the exterior
   square of `gr_0(F)`, of rank `#X (#X - 1) / 2`;
-* in particular `[x̄_i, x̄_j] ≠ 0` for `i ≠ j`.
+* in particular `[x_i, x_j] ≠ 0` for `i ≠ j`.
 
 Here `g ^ a` is the `p`-adic power `TauCeti.IsProP.padicPow`. Both maps are `ℤ_p`-linear, because
 the class of `g ^ a` is `a` times the class of `g` (`TauCeti.IsProP.gradedMk_padicPow`), so they
@@ -38,7 +38,7 @@ Both degrees are proved by detecting homomorphisms supplied by the universal pro
 degree zero the detector is the exponent-sum map `F → ℤ_p^X`, through the identification of
 `gr_0(F)` with the topological abelianization. In degree one, spanning is the one-term spanning
 theorem `TauCeti.exists_sum_gradedBracket_eq_of_range` together with bilinearity and alternation,
-and the coefficient of `[x̄_i, x̄_j]` is read off by the continuous homomorphism to the Heisenberg
+and the coefficient of `[x_i, x_j]` is read off by the continuous homomorphism to the Heisenberg
 group over `ℤ_p` sending `x_i ↦ (1, 0, 0)`, `x_j ↦ (0, 1, 0)` and the other generators to `1`
 (`TauCeti.freeProP.exists_heisenberg_detect`): its closed lower central series stops at `γ_2 = 1`,
 and the commutator of the two images is `(0, 0, 1)`.
@@ -48,7 +48,7 @@ and the commutator of the two images is `(0, 0, 1)`.
 * `TauCeti.lcsGradedPiece_zero_freeProP_bijective`: the classes of the generators form a
   `ℤ_p`-basis of `gr_0(F)`.
 * `TauCeti.freeProP.exists_heisenberg_detect`: the detecting homomorphisms to the Heisenberg group.
-* `TauCeti.lcsGradedPiece_one_freeProP_bijective`: the brackets `[x̄_i, x̄_j]`, `i < j`, form a
+* `TauCeti.lcsGradedPiece_one_freeProP_bijective`: the brackets `[x_i, x_j]`, `i < j`, form a
   `ℤ_p`-basis of `gr_1(F)`.
 * `TauCeti.lcsBracket_freeProP_ne_zero`: the bracket of two distinct generator classes is nonzero.
 
@@ -155,7 +155,7 @@ private noncomputable def degreeOneSum (c : {ij : X × X // ij.1 < ij.2} → ℤ
           (mem_pLowerCentralSeries_zero 0 _)) (c ij)⟩
 
 /-- The degree-one sum is the `ℤ_p`-linear combination with coefficients `c_ij` of the brackets
-`[x̄_i, x̄_j]` of the generator classes. -/
+`[x_i, x_j]` of the generator classes. -/
 private theorem degreeOneSum_eq_linearCombination (c : {ij : X × X // ij.1 < ij.2} → ℤ_[p]) :
     letI := (isProP_freeProP p X).gradedPieceModule 0 (0 + 0 + 1)
     degreeOneSum p X c = Fintype.linearCombination ℤ_[p] (fun ij : {ij : X × X // ij.1 < ij.2} ↦
@@ -205,9 +205,9 @@ private theorem eq_zero_of_degreeOneSum_eq_zero {c : {ij : X × X // ij.1 < ij.2
         IsProP.one_padicPow, one_mem]
 
 /-- **Spanning in degree one.** Every class in `gr_1(F)` is a degree-one sum: by the spanning
-theorem it is a sum of brackets `[x̄_i, y_i]`, and expanding each `y_i` in the degree-zero basis
-makes it a `ℤ_p`-combination of the brackets `[x̄_i, x̄_k]`, which are `0` for `i = k` and
-`-[x̄_k, x̄_i]` for `k < i`. -/
+theorem it is a sum of brackets `[x_i, y_i]`, and expanding each `y_i` in the degree-zero basis
+makes it a `ℤ_p`-combination of the brackets `[x_i, x_k]`, which are `0` for `i = k` and
+`-[x_k, x_i]` for `k < i`. -/
 private theorem degreeOneSum_surjective : Function.Surjective (degreeOneSum p X) := by
   classical
   have hF := isProP_freeProP p X
@@ -245,12 +245,12 @@ private theorem degreeOneSum_surjective : Function.Surjective (degreeOneSum p X)
   exact Submodule.smul_mem _ _ (hB i k)
 
 /-- **The degree-one basis of a free pro-`p` group.** For the free pro-`p` group `F` on a finite
-linearly ordered type `X`, the brackets `[x̄_i, x̄_j]` of the generator classes for `i < j` form a
+linearly ordered type `X`, the brackets `[x_i, x_j]` of the generator classes for `i < j` form a
 `ℤ_p`-basis of the degree-one piece of the closed lower central series: the map
 `c ↦ Σ_{i<j} [⁅x_i, x_j⁆ ^ c_ij]` is a bijection `({(i, j) | i < j} → ℤ_p) → gr_1(F)`. It is
 `ℤ_p`-linear, because the class of `g ^ u` is `u` times the class of `g`
 (`TauCeti.IsProP.gradedMk_padicPow`), so `gr_1(F)` is the exterior square of `gr_0(F)`, with
-`x̄_i ∧ x̄_j ↦ [x̄_i, x̄_j]`. -/
+`x_i ∧ x_j ↦ [x_i, x_j]`. -/
 theorem lcsGradedPiece_one_freeProP_bijective :
     Function.Bijective fun c : {ij : X × X // ij.1 < ij.2} → ℤ_[p] ↦
       ∑ ij, gradedMk 0 (freeProP p X) 1
