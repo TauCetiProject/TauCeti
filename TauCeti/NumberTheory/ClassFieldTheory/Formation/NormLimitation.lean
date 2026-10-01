@@ -31,10 +31,10 @@ abelianized Galois groups (`ClassFormation.natCard_normQuotient_eq_natCard_abeli
 the inclusion is an equality exactly when those orders agree
 (`ClassFormation.map_normSubgroup_eq_iff`). Applied to an open normal subgroup `V` and its
 maximal abelian sublayer `V · closure [G, G]`, whose Galois group `G ⧸ (V · closure [G, G])` has
-the same order as `(G ⧸ V)^ab` (`natCard_abelianization_gal_ofOpenNormal`), this is the **norm
-limitation theorem** (`ClassFormation.normSubgroup_maximalAbelianLayer`): a layer and its maximal
-abelian sublayer have the same norm subgroup. It is a consequence of reciprocity, not of an
-existence theorem, and it is why a norm subgroup can only determine an abelian layer.
+the same order as `(G ⧸ V)^ab` (`natCard_abelianization_gal_eq_degree_maximalAbelianLayer`), this
+is the **norm limitation theorem** (`ClassFormation.normSubgroup_maximalAbelianLayer`): a layer and
+its maximal abelian sublayer have the same norm subgroup. It is a consequence of reciprocity, not of
+an existence theorem, and it is why a norm subgroup can only determine an abelian layer.
 
 ## Main definitions
 
@@ -45,6 +45,8 @@ existence theorem, and it is why a norm subgroup can only determine an abelian l
 
 * `TauCeti.ClassFieldTheory.NormalLayer.norm_apply_coe_eq_explicitCor0Le`: the norm of a layer
   is relative degree-zero corestriction from its top subgroup to its ground subgroup.
+* `TauCeti.ClassFieldTheory.LayerRefinement.topNorm_trans`: top-level norms compose along a
+  tower of refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.groundEquiv_norm_topNorm`: transitivity of the norm
   along a refinement.
 * `TauCeti.ClassFieldTheory.LayerRefinement.normSubgroup_le_map`: refining a layer shrinks its
@@ -104,13 +106,10 @@ namespace LayerRefinement
 variable {old new : NormalLayer G} (T : LayerRefinement old new) (F : Formation G)
 
 /-- The **norm** `N_{V/V'} : A^{V'} → A^V` between the top levels of a refinement, whose top
-subgroup shrinks from `V` to `V'`: the relative degree-zero corestriction
-`ContCohomology.explicitCor0Le` along `V' ≤ V`, read on levels and evaluated by
-`topNorm_apply_coe`. In field notation it is the norm `N_{L/K}` for `F ⊆ K ⊆ L`. -/
+subgroup shrinks from `V` to `V'`: the norm `Formation.levelNorm` between the two top levels,
+evaluated by `topNorm_apply_coe`. In field notation it is the norm `N_{L/K}` for `F ⊆ K ⊆ L`. -/
 def topNorm : F.level new.top →+ F.level old.top :=
-  (F.levelEquivH0 old.top).symm.toAddMonoidHom.comp <|
-    (ContCohomology.explicitCor0Le G F.toRep.V _ _ T.top_toSubgroup_le).comp
-      (F.levelEquivH0 new.top).toAddMonoidHom
+  F.levelNorm T.top_le
 
 -- `dsimp% only` on the left-hand side, as explained in the implementation notes of
 -- `Formation/Basic.lean`.
@@ -121,14 +120,19 @@ representatives, read in the ambient module: `N_{V/V'} x = ∑ ρ(g) x` over the
 theorem topNorm_apply_coe (x : F.level new.top) :
     (dsimp% only (T.topNorm F x : F.toRep.V)) =
       ∑ᶠ q : old.top.toSubgroup ⧸ new.top.toSubgroup.subgroupOf old.top.toSubgroup,
-        F.toRep.ρ (q.out : G) x := by
-  rw [topNorm, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    Formation.levelEquivH0_symm_apply_coe, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    ContCohomology.coe_explicitCor0Le, finsum_eq_sum_of_fintype,
-    Formation.levelEquivH0_apply_coe]
-  -- Termwise, the action of a coset representative of `V/V'` on the level is by definition the
-  -- operator `ρ` of the formation at its underlying element of `G`.
-  rfl
+        F.toRep.ρ (q.out : G) x :=
+  F.levelNorm_apply_coe T.top_le x
+
+/-- The norm along the trivial refinement is the identity. -/
+@[simp]
+theorem topNorm_self {L : NormalLayer G} (T : LayerRefinement L L) :
+    T.topNorm F = AddMonoidHom.id (F.level L.top) :=
+  F.levelNorm_self T.top_le
+
+/-- Top-level norms compose along a tower of refinements. -/
+theorem topNorm_trans {a b c : NormalLayer G} (T : LayerRefinement a b)
+    (T' : LayerRefinement b c) : (T.trans T').topNorm F = (T.topNorm F).comp (T'.topNorm F) :=
+  F.levelNorm_trans T.top_le T'.top_le
 
 /-- **Transitivity of the norm along a refinement**: `N_{L/F} = N_{K/F} ∘ N_{L/K}`, the two ground
 levels being identified by `groundEquiv`. -/
@@ -143,9 +147,8 @@ theorem groundEquiv_norm_topNorm (x : F.level new.top) :
   subst hg
   ext
   rw [groundEquiv_apply_coe, NormalLayer.norm_apply_coe_eq_explicitCor0Le,
-    NormalLayer.norm_apply_coe_eq_explicitCor0Le, topNorm, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, AddEquiv.apply_symm_apply, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, ContCohomology.explicitCor0Le_trans G F.toRep.V ot.toSubgroup
+    NormalLayer.norm_apply_coe_eq_explicitCor0Le, topNorm, Formation.levelEquivH0_levelNorm,
+    ContCohomology.explicitCor0Le_trans G F.toRep.V ot.toSubgroup
       nt.toSubgroup (OpenSubgroup.toSubgroup_le.2 ht) og.toSubgroup
       (OpenSubgroup.toSubgroup_le.2 oh), AddMonoidHom.comp_apply]
 
@@ -203,8 +206,9 @@ theorem normSubgroup_maximalAbelianLayer (V : OpenNormalSubgroup G) :
         ((LayerRefinement.ofOpenNormal V.le_maximalAbelianLayer).groundEquiv F).toLinearMap =
       (NormalLayer.ofOpenNormal V).normSubgroup F := by
   refine (cf.map_normSubgroup_eq_iff _).2 ?_
-  rw [natCard_abelianization_gal_ofOpenNormal V, Nat.card_congr (abelianizationGalEquiv
-    V.isAbelianClassFieldLayer_maximalAbelianLayer).toEquiv, NormalLayer.degree_eq_natCard_gal]
+  rw [natCard_abelianization_gal_eq_degree_maximalAbelianLayer V,
+    Nat.card_congr (abelianizationGalEquiv V.isAbelianClassFieldLayer_maximalAbelianLayer).toEquiv,
+    NormalLayer.degree_eq_natCard_gal]
 
 end ClassFormation
 
