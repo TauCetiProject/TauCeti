@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
+public import TauCeti.CategoryTheory.Preadditive.Equivalence
 
 /-!
 # The Krull-Schmidt theorem for quiver representations
@@ -22,9 +23,11 @@ The theorem is not proved again here. It is the Krull-Schmidt theorem for module
 algebra, `TauCeti.exists_indecomposable_iso_biproduct` and
 `TauCeti.exists_equiv_iso_of_iso_biproduct`, read through the dictionary
 `TauCeti.quiverRepEquivalence : QuiverRep k Q ≌ ModuleCat (pathAlgebra k Q)`. Three properties of
-that dictionary carry it across: both of its directions are additive, so they carry finite
-biproducts to finite biproducts; both are fully faithful, so they carry indecomposable objects to
-indecomposable objects (`CategoryTheory.Functor.indecomposable_obj_of_map_bijective`); and a
+that dictionary carry it across: both of its directions are additive, by
+`CategoryTheory.Equivalence.functor_additive` and `CategoryTheory.Equivalence.inverse_additive`, so
+they carry finite biproducts to finite biproducts; both are fully faithful, so they carry
+indecomposable objects to indecomposable objects
+(`CategoryTheory.Functor.indecomposable_obj_of_map_bijective`); and a
 pointwise finite-dimensional representation of a finite quiver goes to a module that is
 finite-dimensional over the base field
 (`TauCeti.module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim`), hence Artinian and Noetherian
