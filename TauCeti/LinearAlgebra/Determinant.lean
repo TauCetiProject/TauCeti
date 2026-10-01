@@ -136,7 +136,10 @@ conclusion, which is an equality of bilinear maps. -/
 theorem IsAlt.compl₁₂_self_eq_det_smul (b : Basis (Fin 2) R M) {ω : M →ₗ[R] M →ₗ[R] N}
     (halt : ω.IsAlt) (φ : M →ₗ[R] M) : ω.compl₁₂ φ φ = LinearMap.det φ • ω := by
   ext x y
-  simpa using congr($(AlternatingMap.compLinearMap_eq_det_smul b halt.toAlternatingMap φ) ![x, y])
+  simpa only [compl₁₂_apply, smul_apply, AlternatingMap.compLinearMap_apply,
+    IsAlt.toAlternatingMap_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, AlternatingMap.smul_apply] using
+    congr($(AlternatingMap.compLinearMap_eq_det_smul b halt.toAlternatingMap φ) ![x, y])
 
 /-- **The multiplier of a nonzero alternating bilinear form on a rank-two module is the
 determinant.** This is the form the additivised Weil pairing supplies: its scaling by an isogeny's
