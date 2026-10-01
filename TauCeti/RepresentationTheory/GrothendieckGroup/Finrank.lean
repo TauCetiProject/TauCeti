@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.Algebra.Category.ModuleCat.Free
 public import TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis
 
 /-!
@@ -18,12 +18,11 @@ descends to a homomorphism `TauCeti.finrankK0 : G₀(mod A) →+ ℤ` out of the
 of `TauCeti.finiteModulesExactStructure`.  It is the invariant that turns a relation in `G₀(mod A)`
 into an identity between dimensions, and in particular it detects the zero module.
 
-Beside it this file records the integral structure of `G₀(mod R)` that the simple-class basis of
-`TauCeti/RepresentationTheory/GrothendieckGroup/SimpleBasis.lean` gives for free over any Artinian
-ring: the group is a free `ℤ`-module, finite of rank the number of isomorphism classes of simple
-finitely generated modules.  Reading the dimension homomorphism in that basis expresses the
-dimension of a class as the sum of its Jordan--Hölder multiplicities weighted by the dimensions of
-the simple modules, which is the dimension count behind the Wedderburn identity `∑ nᵢ² = dim A`.
+Read in the simple-class basis of
+`TauCeti/RepresentationTheory/GrothendieckGroup/SimpleBasis.lean`, the dimension of a class is the
+sum of its Jordan--Hölder multiplicities weighted by the dimensions of the simple modules.  When
+every simple module is isomorphic to one fixed line the dimension is an isomorphism
+`G₀(mod A) ≃+ ℤ`.
 
 The finite-dimensionality of `A` over `k` is essential and not cosmetic: `Module.finrank` has a junk
 value on an infinite-dimensional space, so without it the function below is not additive.  The same
@@ -41,10 +40,6 @@ restriction appears, for the same reason, in `TauCeti.pathAlgebraDimensionVector
 * `TauCeti.finrankK0_unique`: the dimension homomorphism is the only one with that property.
 * `TauCeti.finrankK0_of_eq_zero_iff` and `TauCeti.finrankK0_of_pos`: the dimension of an object
   class vanishes exactly for the zero module, and is positive otherwise.
-* `TauCeti.free_exactK0_of_isExhaustiveSimpleFamily`,
-  `TauCeti.finite_exactK0_of_isExhaustiveSimpleFamily` and
-  `TauCeti.finrank_exactK0_eq_card_of_isExhaustiveSimpleFamily`: over an Artinian ring,
-  `G₀(mod R)` is a free `ℤ`-module, finite of rank the number of simple classes.
 * `TauCeti.finrankK0_eq_sum_jordanHolderCoordinate_mul`: the dimension of a class is the sum of its
   Jordan--Hölder multiplicities weighted by the dimensions of the simple modules.
 * `TauCeti.eq_finrankK0_smul_of_finrank_eq_one`: when every simple module is isomorphic to one
@@ -52,11 +47,6 @@ restriction appears, for the same reason, in `TauCeti.pathAlgebraDimensionVector
 
 ## References
 
-* [Modular-induction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ModularInduction/README.md),
-  Layer 0, whose "Dimension" bullet asks for the dimension homomorphism on the Grothendieck group of
-  a group algebra and whose "simple-class basis" bullet asks for the freeness and the rank recorded
-  here.  Both are stated for an arbitrary finite-dimensional algebra, the group algebra of a finite
-  group over a field being the case the roadmap consumes.
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II, Section 6.
 -/
 
@@ -69,61 +59,11 @@ open scoped ModuleCat
 
 universe u v
 
-/-! ### The integral structure of `G₀(mod R)` -/
-
-section IntegralStructure
-
-variable {R : Type u} [Ring R] [IsArtinianRing R] {I : Type v} (S : I → FGModuleCat.{u} R)
-  [∀ i, IsSimpleModule R (S i)]
-  (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[R] S j))
-  (hexhaustive : IsExhaustiveSimpleFamily S)
-
-include S hnoniso hexhaustive in
-/-- **`G₀(mod R)` is a free `ℤ`-module**, on the classes of an exhaustive family of pairwise
-nonisomorphic simple modules. -/
-theorem free_exactK0_of_isExhaustiveSimpleFamily :
-    Module.Free ℤ (ExactK0 (finiteModulesExactStructure R)) :=
-  Module.Free.of_basis (simpleClassBasis S hnoniso hexhaustive)
-
-include S hnoniso hexhaustive in
-/-- **`G₀(mod R)` is a finitely generated `ℤ`-module** when there are finitely many simple
-classes. -/
-theorem finite_exactK0_of_isExhaustiveSimpleFamily [Finite I] :
-    Module.Finite ℤ (ExactK0 (finiteModulesExactStructure R)) :=
-  Module.Finite.of_basis (simpleClassBasis S hnoniso hexhaustive)
-
-include S hnoniso hexhaustive in
-/-- **The rank of `G₀(mod R)` is the number of isomorphism classes of simple modules.** -/
-theorem finrank_exactK0_eq_card_of_isExhaustiveSimpleFamily [Fintype I] :
-    Module.finrank ℤ (ExactK0 (finiteModulesExactStructure R)) = Fintype.card I :=
-  Module.finrank_eq_card_basis (simpleClassBasis S hnoniso hexhaustive)
-
-end IntegralStructure
-
 /-! ### The dimension homomorphism -/
 
 section Finrank
 
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
-
-/-- Dimension is additive along a short exact sequence of vector spaces.  Mathlib's
-`ModuleCat.free_shortExact_finrank_add` is the same count one category up; it is not used directly
-because it wants the sequence packaged as a `ShortComplex (ModuleCat k)` and the two outer terms
-finite as hypotheses, whereas a conflation of `TauCeti.finiteModulesExactStructure` unfolds to an
-exact pair of plain linear maps with only the middle term known finite. -/
-private theorem finrank_middle_eq_add_of_exact {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module k M₁]
-    [AddCommGroup M₂] [Module k M₂] [AddCommGroup M₃] [Module k M₃] [FiniteDimensional k M₂]
-    (f : M₁ →ₗ[k] M₂) (g : M₂ →ₗ[k] M₃) (hf : Function.Injective f) (hg : Function.Surjective g)
-    (h : Function.Exact f g) :
-    Module.finrank k M₂ = Module.finrank k M₁ + Module.finrank k M₃ := by
-  have hrank := g.finrank_range_add_finrank_ker
-  have hker : Module.finrank k (LinearMap.ker g) = Module.finrank k (LinearMap.range f) :=
-    congrArg (fun T : Submodule k M₂ ↦ Module.finrank k T) h.linearMap_ker_eq
-  have hsurj : Module.finrank k (LinearMap.range g) = Module.finrank k M₃ := by
-    rw [LinearMap.range_eq_top.mpr hg, finrank_top]
-  have hinj : Module.finrank k (LinearMap.range f) = Module.finrank k M₁ :=
-    LinearMap.finrank_range_of_inj hf
-  omega
 
 /-- **A finitely generated module over a finite-dimensional algebra is finite-dimensional over the
 base field.** This is what makes `Module.finrank` over the base field an honest invariant of such a
@@ -136,11 +76,15 @@ private noncomputable def moduleFinrankInvariant :
   obj M := (Module.finrank k M.obj : ℤ)
   map_conflation {T} hT := by
     have hshort := (finiteModulesExactStructure_conflation_iff A T).mp hT
-    have hexact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hshort.exact
-    have h₂ := finiteDimensional_fgModuleCat_obj k A T.X₂
-    exact_mod_cast finrank_middle_eq_add_of_exact k (LinearMap.restrictScalars k T.f.hom.hom)
-      (LinearMap.restrictScalars k T.g.hom.hom) hshort.moduleCat_injective_f
-      hshort.moduleCat_surjective_g hexact
+    have hexact : Function.Exact (LinearMap.restrictScalars k T.f.hom.hom)
+        (LinearMap.restrictScalars k T.g.hom.hom) :=
+      (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hshort.exact
+    have h₁ := finiteDimensional_fgModuleCat_obj k A T.X₁
+    have h₃ := finiteDimensional_fgModuleCat_obj k A T.X₃
+    exact_mod_cast ModuleCat.free_shortExact_finrank_add
+      (ModuleCat.shortComplex_shortExact
+        (ModuleCat.shortComplexOfCompEqZero _ _ hexact.linearMap_comp_eq_zero) hexact
+        hshort.moduleCat_injective_f hshort.moduleCat_surjective_g) rfl rfl
 
 /-- **The dimension homomorphism** on the Grothendieck group of the finitely generated modules over
 a finite-dimensional algebra: on the class of `M` it is `dim_k M`. -/
@@ -184,8 +128,10 @@ end Finrank
 
 section SimpleCoordinates
 
--- `[IsArtinianRing A]` follows from `[FiniteDimensional k A]`, but
--- `TauCeti.jordanHolderCoordinate` needs it to elaborate, so it is carried as a hypothesis.
+-- `[IsArtinianRing A]` follows from `[FiniteDimensional k A]`, but `TauCeti.jordanHolderCoordinate`
+-- and `TauCeti.IsExhaustiveSimpleFamily` take it as an instance argument and both appear in the
+-- statements below, so it cannot be confined to the proofs; and an instance deriving it from
+-- `[FiniteDimensional k A]` has no synthesization order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
   [IsArtinianRing A] {I : Type v} (S : I → FGModuleCat.{u} A) [∀ i, IsSimpleModule A (S i)]
   (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[A] S j))
@@ -216,7 +162,9 @@ end SimpleCoordinates
 section UniqueSimple
 
 -- `[IsArtinianRing A]` follows from `[FiniteDimensional k A]`, but
--- `TauCeti.IsExhaustiveSimpleFamily` needs it to elaborate, so it is carried as a hypothesis.
+-- `TauCeti.IsExhaustiveSimpleFamily` takes it as an instance argument and appears in the statements
+-- below, so it cannot be confined to the proofs; and an instance deriving it from
+-- `[FiniteDimensional k A]` has no synthesization order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
   [IsArtinianRing A] (S : FGModuleCat.{u} A)
   (hexhaustive : IsExhaustiveSimpleFamily fun _ : Unit ↦ S)
@@ -248,7 +196,7 @@ theorem eq_finrankK0_smul_of_finrank_eq_one (hdim : Module.finrank k S.obj = 1)
 include hexhaustive in
 /-- The dimension homomorphism is bijective when every simple module is isomorphic to the line
 `S`. -/
-theorem bijective_finrankK0_of_finrank_eq_one (hdim : Module.finrank k S.obj = 1) :
+theorem finrankK0_bijective_of_finrank_eq_one (hdim : Module.finrank k S.obj = 1) :
     Function.Bijective (finrankK0 k A) := by
   constructor
   · intro x y hxy
@@ -259,18 +207,24 @@ theorem bijective_finrankK0_of_finrank_eq_one (hdim : Module.finrank k S.obj = 1
     rw [map_zsmul, finrankK0_of, hdim, Nat.cast_one, smul_eq_mul, mul_one]
 
 /-- **`G₀(mod A) ≃+ ℤ` when every simple module is isomorphic to the line `S`**, the isomorphism
-being the dimension.  The roadmap's `ℓ`-group case, where in characteristic `ℓ` the only simple
-`k[P]`-module is the trivial one, is an instance. -/
+being the dimension.  The group algebra of a finite `ℓ`-group over a field of characteristic `ℓ`,
+whose only simple module is the trivial one, is an instance. -/
 noncomputable def finrankK0Equiv (hdim : Module.finrank k S.obj = 1) :
     ExactK0 (finiteModulesExactStructure A) ≃+ ℤ :=
   AddEquiv.ofBijective (finrankK0 k A)
-    (bijective_finrankK0_of_finrank_eq_one k A S hexhaustive hdim)
+    (finrankK0_bijective_of_finrank_eq_one k A S hexhaustive hdim)
 
 @[simp]
 theorem finrankK0Equiv_apply (hdim : Module.finrank k S.obj = 1)
     (x : ExactK0 (finiteModulesExactStructure A)) :
     finrankK0Equiv k A S hexhaustive hdim x = finrankK0 k A x :=
   (rfl)
+
+@[simp]
+theorem finrankK0Equiv_symm_apply (hdim : Module.finrank k S.obj = 1) (n : ℤ) :
+    (finrankK0Equiv k A S hexhaustive hdim).symm n = n • ExactK0.of S := by
+  rw [AddEquiv.symm_apply_eq, finrankK0Equiv_apply, map_zsmul, finrankK0_of, hdim, Nat.cast_one,
+    smul_eq_mul, mul_one]
 
 end UniqueSimple
 
