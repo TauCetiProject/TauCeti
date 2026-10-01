@@ -88,8 +88,8 @@ theorem index_range_spinorNorm_of_finrank_eq_two_of_anisotropic (Q : QuadraticFo
       squareClassHom_surjective hker
   rw [range_spinorNorm_of_equivalent_binary Q hQ h]
   refine hmap.trans ?_
-  rw [show -((w (e 0) : K) * w (e 1)) = ((-(w (e 0) * w (e 1)) : Kˣ) : K) by simp]
-  exact quadraticNormSubgroup_index_eq_two_of_not_isSquare (Invertible.ne_zero (2 : K)) hsq
+  -- The norm-index theorem is stated for the unit `-(a b) : Kˣ`; push its coercion into `K`.
+  simpa using quadraticNormSubgroup_index_eq_two_of_not_isSquare (Invertible.ne_zero (2 : K)) hsq
 
 /-- Over a nonarchimedean local field with `2 ≠ 0`, the spinor norm on the special orthogonal group
 of a nondegenerate binary form is surjective exactly when the form is isotropic. -/
