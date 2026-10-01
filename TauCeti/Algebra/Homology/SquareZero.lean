@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
+public import TauCeti.Algebra.Module.Submodule.Ker
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -61,8 +62,7 @@ namespace LinearMap
 
 section Semiring
 
-variable {S M N : Type*} [Semiring S] [AddCommMonoid M] [Module S M] [AddCommMonoid N]
-  [Module S N] (d : M →ₗ[S] M)
+variable {S M : Type*} [Semiring S] [AddCommMonoid M] [Module S M] (d : M →ₗ[S] M)
 
 /-- The intersection of the image and kernel of a linear endomorphism `d`, viewed as a submodule
 of the kernel. For a square-zero endomorphism, this is its full image. -/
@@ -72,13 +72,6 @@ abbrev boundariesInKer : Submodule S (ker d) :=
 /-- An element of the kernel of `d` is a boundary exactly when it is a value of `d`. -/
 theorem mem_boundariesInKer {z : ker d} : z ∈ d.boundariesInKer ↔ (z : M) ∈ range d :=
   Iff.rfl
-
-variable {d} in
-/-- A chain map `f`, one with `f ∘ d = e ∘ f`, sends the kernel of `d` into the kernel of `e`. -/
-theorem map_mem_ker_of_comp_eq {e : N →ₗ[S] N} (f : M →ₗ[S] N) (hf : f ∘ₗ d = e ∘ₗ f) {x : M}
-    (hx : x ∈ ker d) :
-    f x ∈ ker e := by
-  rw [mem_ker, ← comp_apply e f, ← hf, comp_apply, mem_ker.mp hx, map_zero]
 
 end Semiring
 
