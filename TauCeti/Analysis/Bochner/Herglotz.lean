@@ -25,11 +25,11 @@ Every function on the discrete group `ℤ` is continuous, so no continuity hypot
 
 The measure is obtained from Fejér means. For `N ≥ 1` the trigonometric polynomial
 
-`F_N(z) = N⁻¹ ∑_{a, b < N} φ(a - b) z̄ᵃ zᵇ`
+`F_N(z) = N⁻¹ ∑_{a, b < N} φ(a - b) conj(z)ᵃ zᵇ`
 
 is `N⁻¹` times the positive-definiteness form of `φ` at the points `0, …, N - 1` with weights
-`z̄ᵃ`, hence nonnegative. The measure `ν_N` with density `F_N` against normalized arc length has
-total mass `φ 0`, and by the orthogonality of the characters `z ↦ zⁿ` its moments are
+`conj(z)ᵃ`, hence nonnegative. The measure `ν_N` with density `F_N` against normalized arc length
+has total mass `φ 0`, and by the orthogonality of the characters `z ↦ zⁿ` its moments are
 `∫ zⁿ dν_N = (1 - |n| / N)₊ φ n`, the number of pairs `(a, b)` with `a - b = n` divided by `N`.
 A weak cluster point of the `ν_N`, which exists by Prokhorov's theorem on the compact circle,
 has moments `φ n`.
@@ -68,8 +68,8 @@ namespace TauCeti
 
 variable {φ : ℤ → ℂ}
 
-/-- The Fejér quadratic form `∑_{a, b < N} z̄ᵃ conj(z̄ᵇ) φ(a - b)`: the positive-definiteness
-form of `φ` at the points `0, …, N - 1` with weights `z̄ᵃ`. -/
+/-- The Fejér quadratic form `∑_{a, b < N} conj(z)ᵃ conj(conj(z)ᵇ) φ(a - b)`: the
+positive-definiteness form of `φ` at the points `0, …, N - 1` with weights `conj(z)ᵃ`. -/
 private def fejerSum (φ : ℤ → ℂ) (N : ℕ) (ζ : ℂ) : ℂ :=
   ∑ a ∈ range N, ∑ b ∈ range N, conj ζ ^ a * conj (conj ζ ^ b) * φ (a - b)
 
@@ -83,7 +83,7 @@ private lemma continuous_fejerSum (N : ℕ) : Continuous (fejerSum φ N) := by
   unfold fejerSum
   fun_prop
 
-/-- On the unit circle, `z̄ = z⁻¹`, so each term of the Fejér form times `zᵐ` is a power of
+/-- On the unit circle, `conj z = z⁻¹`, so each term of the Fejér form times `zᵐ` is a power of
 `z`. -/
 private lemma fejerSum_mul_zpow {ζ : ℂ} (hζ : ζ ∈ sphere (0 : ℂ) 1) (N : ℕ) (m : ℤ) :
     fejerSum φ N ζ * ζ ^ m =
