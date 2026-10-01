@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.Analysis.Calculus.ContDiff.Translation
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -293,13 +294,14 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.average_toSphere_eq {x₀ : E}
 
 /-- The mean-value property on balls about the origin. -/
 private lemma setIntegral_ball_eq_of_harmonicOnNhd_zero
-    (hu : HarmonicOnNhd u (closedBall (0 : E) R)) (hR : 0 < R) :
+    (hu : HarmonicOnNhd u (closedBall (0 : E) R)) :
     ∫ x in ball (0 : E) R, u x ∂μ = μ.real (ball (0 : E) R) • u 0 := by
-  rw [setIntegral_ball_zero_eq_integral_Ioo hu.contDiffOn.continuousOn,
+  rw [setIntegral_ball_zero_eq_integral_Ioo ((hu.contDiffOn.continuousOn.integrableOn_compact
+      (isCompact_closedBall _ _)).mono_set ball_subset_closedBall),
     setIntegral_congr_fun measurableSet_Ioo fun s hs ↦ by
       rw [integral_toSphere_eq_of_harmonicOnNhd_zero
         (hu.mono (closedBall_subset_closedBall hs.2.le)) hs.1.le],
-    integral_smul_const, smul_smul, integral_Ioo_pow_mul_toSphere_real_univ hR]
+    integral_smul_const, smul_smul, integral_Ioo_pow_mul_toSphere_real_univ]
 
 omit [Nontrivial E] in
 /-- **The mean-value property on balls.** If `u` is harmonic on a neighbourhood of the closed
@@ -308,14 +310,12 @@ the measure of the ball times `u x₀`. (For `R ≤ 0` the ball is empty and bot
 theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_eq {x₀ : E}
     (hu : HarmonicOnNhd u (closedBall x₀ R)) :
     ∫ x in ball x₀ R, u x ∂μ = μ.real (ball x₀ R) • u x₀ := by
-  rcases le_or_gt R 0 with hR | hR
-  · simp [ball_eq_empty.mpr hR]
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In the trivial space `u` is constant, with value `u x₀`.
     rw [setIntegral_congr_fun measurableSet_ball (g := fun _ ↦ u x₀)
       fun x _ ↦ congrArg u (Subsingleton.elim x x₀), setIntegral_const]
   have h := setIntegral_ball_eq_of_harmonicOnNhd_zero (μ := μ)
-    ((harmonicOnNhd_comp_add_right_closedBall_zero_iff x₀ R).mpr hu) hR
+    ((harmonicOnNhd_comp_add_right_closedBall_zero_iff x₀ R).mpr hu)
   rw [zero_add] at h
   rw [Measure.addHaar_real_ball_center, ← h, setIntegral_ball_eq_setIntegral_ball_zero_add]
 
@@ -376,14 +376,6 @@ private lemma mul_le_integral_toSphere_of_laplacian_nonneg_zero
   calc μ.toSphere.real univ * f 0 = Φ 0 := by simp [hΦ_def, integral_const]
     _ ≤ Φ R := h₁.trans h₂
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E] in
-/-- A `C²` function on `ball x₀ R` translates to a `C²` function on `ball 0 R`, with translated
-Laplacian. -/
-private lemma contDiffOn_comp_add_ball_zero {x₀ : E} (hf : ContDiffOn ℝ 2 f (ball x₀ R)) :
-    ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball (0 : E) R) :=
-  hf.comp (contDiffOn_id.add contDiffOn_const) fun y hy ↦ by
-    simpa [mem_ball, dist_eq_norm] using hy
-
 omit [Nontrivial E] in
 /-- **The sub-mean-value inequality on spheres.** If `f` is `C²` on the ball `ball x₀ R`,
 continuous on its closure, and has nonnegative Laplacian on the ball, then `f x₀` times the total
@@ -398,7 +390,8 @@ theorem mul_le_integral_toSphere_of_laplacian_nonneg {x₀ : E}
       ⟨fun θ ↦ by simpa [Subsingleton.elim (θ : E) 0] using norm_eq_of_mem_sphere θ⟩
     simp [integral_of_isEmpty, Measure.eq_zero_of_isEmpty]
   have h := mul_le_integral_toSphere_of_laplacian_nonneg_zero (μ := μ)
-    (contDiffOn_comp_add_ball_zero hf)
+    (sub_self x₀ ▸ hf.comp_add_right_ball x₀ :
+      ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R))
     (hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
       simpa [mem_closedBall, dist_eq_norm] using hy)
     (fun y hy ↦ by
@@ -420,12 +413,14 @@ theorem le_average_toSphere_of_laplacian_nonneg {x₀ : E}
 /-- The sub-mean-value inequality on balls about the origin. -/
 private lemma mul_le_setIntegral_ball_of_laplacian_nonneg_zero
     (hf : ContDiffOn ℝ 2 f (ball (0 : E) R)) (hfc : ContinuousOn f (closedBall (0 : E) R))
-    (hΔ : ∀ x ∈ ball (0 : E) R, 0 ≤ Δ f x) (hR : 0 < R) :
+    (hΔ : ∀ x ∈ ball (0 : E) R, 0 ≤ Δ f x) :
     μ.real (ball (0 : E) R) * f 0 ≤ ∫ x in ball (0 : E) R, f x ∂μ := by
   have hcont : ContinuousOn (fun s : ℝ ↦ s ^ (Module.finrank ℝ E - 1) *
       ∫ θ : sphere (0 : E) 1, f (s • (θ : E)) ∂μ.toSphere) (Icc 0 R) :=
     (continuousOn_pow _).mul hfc.integral_toSphere_smul
-  rw [setIntegral_ball_zero_eq_integral_Ioo hfc, ← integral_Ioo_pow_mul_toSphere_real_univ hR,
+  rw [setIntegral_ball_zero_eq_integral_Ioo ((hfc.integrableOn_compact
+      (isCompact_closedBall _ _)).mono_set ball_subset_closedBall),
+    ← integral_Ioo_pow_mul_toSphere_real_univ,
     mul_assoc, ← integral_mul_const]
   have hpow : IntegrableOn (fun s : ℝ ↦ s ^ (Module.finrank ℝ E - 1)) (Ioo 0 R) :=
     (continuous_pow _).integrableOn_Icc.mono_set Ioo_subset_Icc_self
@@ -444,19 +439,18 @@ theorem mul_le_setIntegral_ball_of_laplacian_nonneg {x₀ : E}
     (hf : ContDiffOn ℝ 2 f (ball x₀ R)) (hfc : ContinuousOn f (closedBall x₀ R))
     (hΔ : ∀ x ∈ ball x₀ R, 0 ≤ Δ f x) :
     μ.real (ball x₀ R) * f x₀ ≤ ∫ x in ball x₀ R, f x ∂μ := by
-  rcases le_or_gt R 0 with hR | hR
-  · simp [ball_eq_empty.mpr hR]
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In the trivial space `f` is constant, with value `f x₀`.
     rw [setIntegral_congr_fun measurableSet_ball (g := fun _ ↦ f x₀)
       fun x _ ↦ congrArg f (Subsingleton.elim x x₀), setIntegral_const, smul_eq_mul]
   have h := mul_le_setIntegral_ball_of_laplacian_nonneg_zero (μ := μ)
-    (contDiffOn_comp_add_ball_zero hf)
+    (sub_self x₀ ▸ hf.comp_add_right_ball x₀ :
+      ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R))
     (hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
       simpa [mem_closedBall, dist_eq_norm] using hy)
     (fun y hy ↦ by
       rw [laplacian_comp_add_right]
-      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy)) hR
+      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy))
   rw [zero_add] at h
   rw [Measure.addHaar_real_ball_center, setIntegral_ball_eq_setIntegral_ball_zero_add]
   exact h

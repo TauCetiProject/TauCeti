@@ -159,16 +159,15 @@ theorem setIntegral_ball_eq_setIntegral_ball_zero_add (f : E → F) (x₀ : E) (
   rw [indicator_apply, indicator_apply]
   simp only [mem_ball, dist_eq_norm, add_sub_cancel_right, sub_zero]
 
-/-- **Integration over a ball in polar coordinates.** For `f` continuous on the closed ball
-`closedBall 0 R`, the integral of `f` over `ball 0 R` is the integral over the radii
-`s ∈ (0, R)` of the sphere integrals, against the radial Jacobian `s ^ (d - 1)`. -/
+/-- **Integration over a ball in polar coordinates.** For `f` integrable on the ball
+`ball 0 R`, the integral of `f` over `ball 0 R` is the integral over the radii `s ∈ (0, R)` of
+the sphere integrals, against the radial Jacobian `s ^ (d - 1)`. -/
 theorem setIntegral_ball_zero_eq_integral_Ioo {f : E → F} {R : ℝ}
-    (hf : ContinuousOn f (closedBall (0 : E) R)) :
+    (hf : IntegrableOn f (ball (0 : E) R) μ) :
     ∫ x in ball (0 : E) R, f x ∂μ = ∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1) •
       ∫ θ : sphere (0 : E) 1, f (s • (θ : E)) ∂μ.toSphere := by
   have hint : Integrable ((ball (0 : E) R).indicator f) μ :=
-    ((hf.integrableOn_compact (isCompact_closedBall _ _)).mono_set
-      ball_subset_closedBall).integrable_indicator measurableSet_ball
+    hf.integrable_indicator measurableSet_ball
   rw [← integral_indicator measurableSet_ball, integral_eq_integral_Ioi_integral_toSphere _ hint]
   -- The sphere integrals of the truncation: those of `f` below the radius `R`, zero above.
   have hinner : ∀ s ∈ Ioi (0 : ℝ), s ^ (Module.finrank ℝ E - 1) •
@@ -190,9 +189,11 @@ theorem setIntegral_ball_zero_eq_integral_Ioo {f : E → F} {R : ℝ}
 
 /-- The radial Jacobian integrates against the total surface measure to the measure of the ball:
 `(∫ s in (0, R), s ^ (d - 1)) * μ.toSphere(S) = μ (ball 0 R)`. -/
-theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} (hR : 0 < R) :
+theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} :
     (∫ s in Ioo 0 R, s ^ (Module.finrank ℝ E - 1)) * μ.toSphere.real univ =
       μ.real (ball (0 : E) R) := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Ioo_eq_empty_of_le hR, ball_eq_empty.mpr hR]
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (Module.finrank_pos (R := ℝ) (M := E)).ne'
   have hball : μ.real (ball (0 : E) R) = R ^ (m + 1) * μ.real (ball (0 : E) 1) := by
     rw [measureReal_def, Measure.addHaar_ball μ _ hR.le, ENNReal.toReal_mul,
