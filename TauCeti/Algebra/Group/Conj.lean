@@ -439,6 +439,22 @@ theorem conjClassesEquiv_trans (e : M ≃* N) (f : N ≃* P) :
   obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
   simp
 
+/-- The equivalence on conjugacy classes induced by an inverse multiplicative equivalence is the
+inverse equivalence. -/
+@[simp]
+theorem conjClassesEquiv_symm (e : M ≃* N) :
+    e.symm.conjClassesEquiv = e.conjClassesEquiv.symm := by
+  ext C
+  rfl
+
+/-- The identity multiplicative equivalence induces the identity on conjugacy classes. -/
+@[simp]
+theorem conjClassesEquiv_refl :
+    (MulEquiv.refl M).conjClassesEquiv = Equiv.refl (ConjClasses M) := by
+  ext C
+  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+  simp
+
 end MulEquiv
 
 namespace ConjClasses

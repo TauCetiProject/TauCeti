@@ -210,6 +210,24 @@ noncomputable def periphInfClass (x : ThricePuncturedSphere) :
     ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
   FundamentalGroup.conjClassesEquivOfPathConnected basePt x (ConjClasses.mk periphInf)
 
+/-- At the standard basepoint, the canonical peripheral class around `0` is the class of
+`periph0`. -/
+@[simp]
+theorem periph0Class_basePt : periph0Class basePt = ConjClasses.mk periph0 := by
+  simp [periph0Class]
+
+/-- At the standard basepoint, the canonical peripheral class around `1` is the class of
+`periph1`. -/
+@[simp]
+theorem periph1Class_basePt : periph1Class basePt = ConjClasses.mk periph1 := by
+  simp [periph1Class]
+
+/-- At the standard basepoint, the canonical peripheral class around `∞` is the class of
+`periphInf`. -/
+@[simp]
+theorem periphInfClass_basePt : periphInfClass basePt = ConjClasses.mk periphInf := by
+  simp [periphInfClass]
+
 /-- Transport along any path from `basePt` carries `periph0` to a representative of the canonical
 peripheral conjugacy class around `0`. -/
 theorem conjClassesEquivOfPath_mk_periph0 {x : ThricePuncturedSphere} (γ : Path basePt x) :
@@ -232,31 +250,25 @@ theorem conjClassesEquivOfPath_mk_periphInf {x : ThricePuncturedSphere} (γ : Pa
 @[simp]
 theorem conjClassesEquivOfPath_periph0Class {x y : ThricePuncturedSphere} (γ : Path x y) :
     FundamentalGroup.conjClassesEquivOfPath γ (periph0Class x) = periph0Class y := by
-  change
-    ((FundamentalGroup.conjClassesEquivOfPathConnected basePt x).trans
-      (FundamentalGroup.conjClassesEquivOfPath γ)) (ConjClasses.mk periph0) =
-        FundamentalGroup.conjClassesEquivOfPathConnected basePt y (ConjClasses.mk periph0)
-  rw [FundamentalGroup.conjClassesEquivOfPathConnected_trans]
+  simpa only [periph0Class] using
+    FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected basePt γ
+      (ConjClasses.mk periph0)
 
 /-- The peripheral conjugacy class around `1` is preserved by basepoint change. -/
 @[simp]
 theorem conjClassesEquivOfPath_periph1Class {x y : ThricePuncturedSphere} (γ : Path x y) :
     FundamentalGroup.conjClassesEquivOfPath γ (periph1Class x) = periph1Class y := by
-  change
-    ((FundamentalGroup.conjClassesEquivOfPathConnected basePt x).trans
-      (FundamentalGroup.conjClassesEquivOfPath γ)) (ConjClasses.mk periph1) =
-        FundamentalGroup.conjClassesEquivOfPathConnected basePt y (ConjClasses.mk periph1)
-  rw [FundamentalGroup.conjClassesEquivOfPathConnected_trans]
+  simpa only [periph1Class] using
+    FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected basePt γ
+      (ConjClasses.mk periph1)
 
 /-- The peripheral conjugacy class around `∞` is preserved by basepoint change. -/
 @[simp]
 theorem conjClassesEquivOfPath_periphInfClass {x y : ThricePuncturedSphere} (γ : Path x y) :
     FundamentalGroup.conjClassesEquivOfPath γ (periphInfClass x) = periphInfClass y := by
-  change
-    ((FundamentalGroup.conjClassesEquivOfPathConnected basePt x).trans
-      (FundamentalGroup.conjClassesEquivOfPath γ)) (ConjClasses.mk periphInf) =
-        FundamentalGroup.conjClassesEquivOfPathConnected basePt y (ConjClasses.mk periphInf)
-  rw [FundamentalGroup.conjClassesEquivOfPathConnected_trans]
+  simpa only [periphInfClass] using
+    FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected basePt γ
+      (ConjClasses.mk periphInf)
 
 /-! ### The involution `z ↦ 1 − z` on the fundamental group
 
