@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
-public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
@@ -343,7 +344,8 @@ theorem circleCenter_lt_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 
 
 /-- In normal form, the ideal-vertex region over the semicircle through `i exp d` and `C` is
 contained in the one over the semicircle through `I` and `C`. -/
-theorem idealRegionAbove_subset_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
+private theorem idealRegionAbove_subset_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ}
+    (hC : 0 < C.re) :
     idealRegionAbove (circleCenter (geodesicLine 1 d) C)
         (Real.sqrt (Complex.normSq ((C : ℂ) - circleCenter (geodesicLine 1 d) C))) 0 C.re ⊆
       idealRegionAbove (circleCenter UpperHalfPlane.I C)
@@ -360,7 +362,7 @@ theorem idealRegionAbove_subset_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} 
   nlinarith [mul_nonneg (sub_nonneg.2 hlt.le) (sub_nonneg.2 hz)]
 
 /-- In normal form, the difference of the two ideal-vertex regions lies in the triangle. -/
-theorem diff_subset_triangle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
+private theorem diff_subset_triangle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
     idealRegionAbove (circleCenter UpperHalfPlane.I C)
           (Real.sqrt (Complex.normSq ((C : ℂ) - circleCenter UpperHalfPlane.I C))) 0 C.re \
         idealRegionAbove (circleCenter (geodesicLine 1 d) C)
@@ -377,7 +379,8 @@ theorem diff_subset_triangle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC
 
 /-- In normal form, the triangle lies in the difference of the two ideal-vertex regions, up to
 the arc `B C`. -/
-theorem triangle_subset_diff_union_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
+private theorem triangle_subset_diff_union_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ}
+    (hC : 0 < C.re) :
     triangle UpperHalfPlane.I (geodesicLine 1 d) C ⊆
       (idealRegionAbove (circleCenter UpperHalfPlane.I C)
           (Real.sqrt (Complex.normSq ((C : ℂ) - circleCenter UpperHalfPlane.I C))) 0 C.re \
