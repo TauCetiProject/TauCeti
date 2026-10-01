@@ -28,8 +28,8 @@ the class of `x ↦ trace (T ∘ π x⁻¹)`. It is basis-free, it carries the r
 (`ContRepresentation.biRegularLp_traceCoeffLp`): the biregular action
 `((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)`, built in
 `TauCeti/RepresentationTheory/Compact/BiregularRepresentation.lean`, corresponds under it to the
-two-sided conjugation `T ↦ π g ∘ T ∘ π h⁻¹` of `ContRepresentation.biLinHom`. The trace is cyclic,
-which is the whole proof.
+two-sided conjugation `T ↦ π g ∘ T ∘ π h⁻¹` of `ContRepresentation.biLinHom π π`. The trace is
+cyclic, which is the whole proof.
 
 Counting dimensions turns that into an **equivalence of `G × G`-representations**. The block of an
 irreducible model over an algebraically closed field has dimension `(dim V_π)²`
@@ -66,7 +66,8 @@ decomposition `TauCeti.isHilbertSum_peterWeylBlock` of
 * `TauCeti.range_traceCoeffLp`: the trace coefficients of a model are exactly its Peter-Weyl block.
 * `TauCeti.surjective_traceCoeffBlock` and `TauCeti.bijective_traceCoeffBlock`: the trace
   coefficient is onto its block, and bijective onto it for an algebraically closed `𝕜`.
-* `TauCeti.isUnitary_peterWeylBlockRep`: a block is a unitary `G × G`-representation.
+* `TauCeti.isUnitary_peterWeylBlockRep` and `TauCeti.continuous_peterWeylBlockRep`: a block is a
+  unitary `G × G`-representation, with a continuous operator-valued action.
 * `TauCeti.coe_endEquivPeterWeylBlock_eq_smul_traceCoeffLp`: the comparison of
   `TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean` is the trace coefficient of the
   transposed operator, scaled by `√(dim V_π)`.
@@ -78,7 +79,7 @@ different maps. `TauCeti.endEquivPeterWeylBlock` matches the matrix unit at a po
 normalized matrix coefficient at that position, in the canonical basis; the trace coefficient
 reaches the same matrix coefficient from the matrix unit at the *transposed* position
 (`TauCeti.coe_endEquivPeterWeylBlock_eq_smul_traceCoeffLp`). Transposition is not equivariant for
-`ContRepresentation.biLinHom` — it conjugates that action into the one built from the
+`ContRepresentation.biLinHom π π` — it conjugates that action into the one built from the
 contragredient of `π` — so the basis-built comparison cannot be reused for the equivariant
 statement, and rescaling it cannot repair this. The trace pairing is also defined without choosing
 a basis, without an inner product on the carrier and without assuming `𝕜` algebraically closed:
@@ -179,7 +180,7 @@ This is the equivariance that the basis-built comparison
 `TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean` does not provide. No unitarity is needed:
 it is the cyclicity of the trace. -/
 theorem biRegularLp_traceCoeffLp (p : G × G) (T : V →L[𝕜] V) :
-    biRegularLp 𝕜 G p (traceCoeffLp π hπ T) = traceCoeffLp π hπ (biLinHom π p T) := by
+    biRegularLp 𝕜 G p (traceCoeffLp π hπ T) = traceCoeffLp π hπ (biLinHom π π p T) := by
   simp only [traceCoeffLp_def, biRegularLp_toLp, traceCoeff_biLinHom]
 
 /-- Left translation of a trace coefficient postcomposes its operator with the action. -/
@@ -281,13 +282,49 @@ theorem coe_peterWeylBlockRep_apply (model : IrrepModel 𝕜 G) (p : G × G)
       biRegularLp 𝕜 G p (f : Lp 𝕜 2 (haarProb G)) :=
   ContRepresentation.coe_subrepresentation_apply p f
 
+/-- **A Peter-Weyl block has a continuous operator-valued action.** This is not
+`TauCeti.ContRepresentation.continuous_subrepresentation`: the ambient biregular representation of
+`L²(G)` is only *strongly* continuous (`TauCeti.continuous_biRegularLp_apply`), and for an infinite
+compact group it is not continuous in the operator norm. The block, however, is finite-dimensional,
+so the surjection `TauCeti.traceCoeffBlock` onto it has a continuous linear section `s`, and the
+equivariance `ContRepresentation.biRegularLp_traceCoeffLp` then writes the action as the composite
+`traceCoeffBlock ∘ biLinHom π π (g, h) ∘ s`, which is continuous in `(g, h)` because
+`ContRepresentation.continuous_biLinHom` is.
+
+Only surjectivity of the trace coefficient onto the block is used, not the injectivity of
+`TauCeti.bijective_traceCoeffBlock`, so no algebraic closedness is needed. -/
+theorem continuous_peterWeylBlockRep (model : IrrepModel 𝕜 G) :
+    Continuous (peterWeylBlockRep model) := by
+  obtain ⟨s, hs⟩ :=
+    (LinearMap.toContinuousLinearMap (traceCoeffBlock model)).exists_rightInverse_of_surjective
+      (LinearMap.range_eq_top.2 (surjective_traceCoeffBlock model))
+  have key : ⇑(peterWeylBlockRep model) = fun p ↦
+      (LinearMap.toContinuousLinearMap (traceCoeffBlock model)).comp
+        ((_root_.ContRepresentation.biLinHom model.rep model.rep p).comp s) := by
+    funext p
+    refine (ContinuousLinearMap.ext fun f ↦ ?_).symm
+    have hsf : traceCoeffBlock model (s f) = f := by
+      simpa using congr($hs f)
+    have hequiv : traceCoeffBlock model
+        (_root_.ContRepresentation.biLinHom model.rep model.rep p (s f)) =
+          peterWeylBlockRep model p (traceCoeffBlock model (s f)) :=
+      Subtype.ext <| by
+        rw [coe_traceCoeffBlock, coe_peterWeylBlockRep_apply, coe_traceCoeffBlock,
+          _root_.ContRepresentation.biRegularLp_traceCoeffLp]
+    simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap']
+    rw [hequiv, hsf]
+  rw [key]
+  exact continuous_const.clm_comp
+    ((_root_.ContRepresentation.continuous_biLinHom model.rep model.rep model.continuous_rep
+      model.continuous_rep).clm_comp continuous_const)
+
 /-- **The basis-built comparison of `TauCeti.endEquivPeterWeylBlock` is the trace coefficient of
 the transposed operator**, scaled by `√(dim V_π)`: the matrix unit `Basis.end b (i, j)` sends
 `b j ↦ b i`, that is, it is the rank-one operator `rankOne 𝕜 (b i) (b j)`, while the trace
 coefficient reaches the same matrix coefficient from `rankOne 𝕜 (b j) (b i)`.
 
 The swap of the two indices is a transposition, and transposition turns the two-sided conjugation
-`ContRepresentation.biLinHom` into the conjugation by the *contragredient* of `π`. That is
+`ContRepresentation.biLinHom π π` into the conjugation by the *contragredient* of `π`. That is
 why `TauCeti.endEquivPeterWeylBlock` cannot carry the equivariance of
 `TauCeti.biLinHomEquivPeterWeylBlock`, and why the basis-free trace pairing is the comparison the
 `G × G`-action sees. -/
@@ -311,7 +348,7 @@ This is the equivariant form of `TauCeti.endEquivPeterWeylBlock`, which compares
 spaces as modules only. -/
 noncomputable def biLinHomEquivPeterWeylBlock [IsAlgClosed 𝕜] (model : IrrepModel 𝕜 G) :
     _root_.ContRepresentation.Equiv
-      (_root_.ContRepresentation.biLinHom model.rep) (peterWeylBlockRep model) :=
+      (_root_.ContRepresentation.biLinHom model.rep model.rep) (peterWeylBlockRep model) :=
   .mk (LinearEquiv.ofBijective _ (bijective_traceCoeffBlock model)).toContinuousLinearEquiv
     fun p ↦ ContinuousLinearMap.ext fun T ↦ Subtype.ext <| by
       simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,

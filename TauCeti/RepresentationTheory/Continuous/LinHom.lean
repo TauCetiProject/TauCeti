@@ -26,10 +26,13 @@ Together these turn a character integral into the dimension of a space of intert
 compact group, Haar-averaging this representation counts its invariants, which is what
 `TauCeti/RepresentationTheory/Compact/Intertwiner/Dimension.lean` does.
 
-Taking `ρ = π` and reading the two copies of `G` as the two factors of `G × G` gives the
-**two-sided** Hom representation `ContRepresentation.biLinHom`, on which `(g, h)` acts by
-`T ↦ π g ∘ T ∘ π h⁻¹`. It is the same construction, restricted along the two projections, so it
-needs nothing beyond what `ContRepresentation.linHom` needs.
+Restricting the two sides along the two projections of a product of groups gives the **two-sided**
+Hom representation `ContRepresentation.biLinHom`: for `π` on `V` over `H` and `ρ` on `W` over `G`
+it is the representation of `G × H` on `V →L[𝕜] W` on which `(g, h)` acts by
+`T ↦ ρ g ∘ T ∘ π h⁻¹`. It is the same construction, restricted along the two projections, so it
+needs nothing beyond what `ContRepresentation.linHom` needs. Taking `H = G`, `W = V` and `ρ = π`
+specializes it to the two-sided action of `G × G` on the operators of a single representation,
+which is how the Peter-Weyl block of a compact group is read.
 
 The carrier is the operator space `V →L[𝕜] W`, not `V →ₗ[𝕜] W`: a `ContRepresentation` acts by
 continuous linear maps on a topological module, and the operator norm is what makes the operators
@@ -41,8 +44,8 @@ this one along `LinearMap.toContinuousLinearMap`.
 
 * `ContRepresentation.linHom`: the Hom representation `T ↦ ρ g ∘ T ∘ π g⁻¹` on
   `V →L[𝕜] W`.
-* `ContRepresentation.biLinHom`: its two-sided specialization, the representation of `G × G` on the
-  operators of `V` acting by `(g, h) • T = π g ∘ T ∘ π h⁻¹`.
+* `ContRepresentation.biLinHom`: its two-sided form, the representation of `G × H` on
+  `V →L[𝕜] W` acting by `(g, h) • T = ρ g ∘ T ∘ π h⁻¹`.
 * `ContRepresentation.invariantsEquivContIntertwiningMap`: its invariant subspace is the
   space of continuous intertwiners `π →ⁱL ρ`.
 
@@ -50,7 +53,7 @@ this one along `LinearMap.toContinuousLinearMap`.
 
 * `ContRepresentation.continuous_linHom` and `ContRepresentation.continuous_biLinHom`: the Hom
   representation of two representations with continuous operator-valued action again has one, and
-  likewise for the two-sided specialization.
+  likewise for the two-sided form.
 * `ContRepresentation.linHom_apply_eq_self_iff_isIntertwining`: an operator is fixed by the
   conjugation action exactly when it intertwines, and
   `ContRepresentation.mem_linHom_invariants_iff_isIntertwining`: the same read on the invariant
@@ -130,50 +133,52 @@ end Definition
 
 section BiLinHom
 
-variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [Group G]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+variable {𝕜 G H V W : Type*} [NontriviallyNormedField 𝕜] [Group G] [Group H]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
 
-/-- **The two-sided Hom representation** of `G × G` on the operators of `V`: `(g, h)` acts by
-`T ↦ π g ∘ T ∘ π h⁻¹`.
+/-- **The two-sided Hom representation** of `G × H` on the operators `V →L[𝕜] W`, for `π` a
+representation of `H` on `V` and `ρ` one of `G` on `W`: `(g, h)` acts by `T ↦ ρ g ∘ T ∘ π h⁻¹`.
 
-It is `ContRepresentation.linHom` of `π` against itself, with the source copy restricted along the
-second projection of `G × G` and the target copy along the first; the two factors are ordered so
-that the first acts on the values of `T` and the second on its argument. -/
-noncomputable def biLinHom (π : ContRepresentation 𝕜 G V) :
-    ContRepresentation 𝕜 (G × G) (V →L[𝕜] V) :=
-  linHom (π.restrict (MonoidHom.snd G G)) (π.restrict (MonoidHom.fst G G))
+It is `ContRepresentation.linHom` of `π` against `ρ`, with the source copy restricted along the
+second projection of `G × H` and the target copy along the first; the two factors are ordered so
+that the first acts on the values of `T` and the second on its argument. Taking `π = ρ` is the
+two-sided action of `G × G` on the operators of a single representation. -/
+noncomputable def biLinHom (π : ContRepresentation 𝕜 H V) (ρ : ContRepresentation 𝕜 G W) :
+    ContRepresentation 𝕜 (G × H) (V →L[𝕜] W) :=
+  linHom (π.restrict (MonoidHom.snd G H)) (ρ.restrict (MonoidHom.fst G H))
 
-variable (π : ContRepresentation 𝕜 G V)
+variable (π : ContRepresentation 𝕜 H V) (ρ : ContRepresentation 𝕜 G W)
 
 /-- The action operators of the two-sided Hom representation are two-sided conjugation. -/
 @[simp]
-theorem biLinHom_apply (p : G × G) (T : V →L[𝕜] V) :
-    biLinHom π p T = (π p.1).comp (T.comp (π p.2⁻¹)) := by
+theorem biLinHom_apply (p : G × H) (T : V →L[𝕜] W) :
+    biLinHom π ρ p T = (ρ p.1).comp (T.comp (π p.2⁻¹)) := by
   rw [biLinHom, linHom_apply]
   rfl
 
 /-- The two-sided Hom representation, evaluated at an operator and a vector. -/
-theorem biLinHom_apply_apply (p : G × G) (T : V →L[𝕜] V) (v : V) :
-    biLinHom π p T v = π p.1 (T (π p.2⁻¹ v)) := by
+theorem biLinHom_apply_apply (p : G × H) (T : V →L[𝕜] W) (v : V) :
+    biLinHom π ρ p T v = ρ p.1 (T (π p.2⁻¹ v)) := by
   rw [biLinHom_apply]
   rfl
 
 /-- The first factor of the two-sided Hom representation acts on the values of an operator. -/
-theorem biLinHom_apply_mk_one (g : G) (T : V →L[𝕜] V) :
-    biLinHom π (g, 1) T = (π g).comp T := by
+theorem biLinHom_apply_mk_one (g : G) (T : V →L[𝕜] W) :
+    biLinHom π ρ (g, 1) T = (ρ g).comp T := by
   simp [ContinuousLinearMap.one_def]
 
 /-- The second factor of the two-sided Hom representation acts on the argument of an operator. -/
-theorem biLinHom_apply_one_mk (h : G) (T : V →L[𝕜] V) :
-    biLinHom π (1, h) T = T.comp (π h⁻¹) := by
+theorem biLinHom_apply_one_mk (h : H) (T : V →L[𝕜] W) :
+    biLinHom π ρ (1, h) T = T.comp (π h⁻¹) := by
   simp [ContinuousLinearMap.one_def]
 
-variable [TopologicalSpace G] [IsTopologicalGroup G]
+variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H]
 
-/-- **The two-sided Hom representation of a representation with continuous operator-valued action
-has one.** -/
-theorem continuous_biLinHom (hπ : Continuous π) : Continuous (biLinHom π) :=
-  continuous_linHom _ _ (hπ.comp continuous_snd) (hπ.comp continuous_fst)
+/-- **The two-sided Hom representation of two representations with continuous operator-valued
+action has one.** -/
+theorem continuous_biLinHom (hπ : Continuous π) (hρ : Continuous ρ) :
+    Continuous (biLinHom π ρ) :=
+  continuous_linHom _ _ (hπ.comp continuous_snd) (hρ.comp continuous_fst)
 
 end BiLinHom
 

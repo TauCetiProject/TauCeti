@@ -29,7 +29,7 @@ same functions; what the operator form adds is that the *whole* space of operato
 space, with no choice of basis and no sesquilinearity to track.
 
 The reason to name it is the two-sided symmetry. The operators carry the `G × G`-action
-`(g, h) • T = π g ∘ T ∘ π h⁻¹` of `ContRepresentation.biLinHom`, built in
+`(g, h) • T = π g ∘ T ∘ π h⁻¹` of `ContRepresentation.biLinHom π π`, built in
 `TauCeti/RepresentationTheory/Continuous/LinHom.lean`. Under the trace coefficient that action
 becomes **bi-translation** of functions,
 
@@ -168,8 +168,8 @@ The trace is cyclic, so `π g` passes from the left of `T` to its right, where t
 factors multiply to `π ((g⁻¹ * x * h)⁻¹)`. Nothing is assumed beyond the group law; in particular
 no unitarity. -/
 theorem traceCoeff_biLinHom_apply (p : G × G) (T : V →L[𝕜] V) (x : G) :
-    traceCoeff π hπ (biLinHom π p T) x = traceCoeff π hπ T (p.1⁻¹ * x * p.2) := by
-  have h₁ : ((biLinHom π p T) ∘L π x⁻¹ : V →ₗ[𝕜] V) =
+    traceCoeff π hπ (biLinHom π π p T) x = traceCoeff π hπ T (p.1⁻¹ * x * p.2) := by
+  have h₁ : ((biLinHom π π p T) ∘L π x⁻¹ : V →ₗ[𝕜] V) =
       (π p.1 : V →ₗ[𝕜] V) * ((T ∘L π (p.2⁻¹ * x⁻¹) : V →L[𝕜] V) : V →ₗ[𝕜] V) := by
     ext v
     simp [map_mul]
@@ -184,7 +184,7 @@ theorem traceCoeff_biLinHom_apply (p : G × G) (T : V →L[𝕜] V) (x : G) :
 continuous functions. This is `ContRepresentation.traceCoeff_biLinHom_apply` in the form the
 `L²`-level equivariance consumes. -/
 theorem traceCoeff_biLinHom (p : G × G) (T : V →L[𝕜] V) :
-    traceCoeff π hπ (biLinHom π p T) =
+    traceCoeff π hπ (biLinHom π π p T) =
       (traceCoeff π hπ T).comp
         ⟨fun x => p.1⁻¹ * x * p.2,
           continuous_const.mul continuous_id |>.mul continuous_const⟩ :=
