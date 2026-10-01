@@ -9,6 +9,7 @@ public import TauCeti.Data.Nat.Factorization.GcdSplit
 public import TauCeti.Data.Nat.Factorization.PrimePowerProd.Basic
 public import Mathlib.Data.Finset.NatDivisors
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Tactic.Ring
 
 /-!
 # The divisor multiplication table of a prime-power-multiplicative family
@@ -83,10 +84,11 @@ private theorem mul_div_sq_eq_pow_mul_of_not_dvd {p a b m' n' m n d' j : ℕ} (h
   have hquot : ¬p ∣ m' * n' / d' ^ 2 := fun h ↦
     hp.not_dvd_mul hm' hn' (h.trans (Nat.div_dvd_of_dvd hdd))
   refine ⟨?_, (hp.coprime_iff_not_dvd.2 hquot).pow_left _⟩
-  obtain ⟨r, hr⟩ : ∃ r, a + b = 2 * j + r := ⟨a + b - 2 * j, by omega⟩
-  rw [min_add_max, hr, Nat.add_sub_cancel_left, mul_mul_mul_comm, ← pow_add, hr, pow_add,
-    mul_pow, ← pow_mul, mul_comm j 2, mul_assoc,
-    Nat.mul_div_mul_left _ _ (pow_pos hp.pos _), Nat.mul_div_assoc _ hdd]
+  have hj2 : 2 * j ≤ min a b + max a b := by omega
+  have hnum : p ^ a * m' * (p ^ b * n') = p ^ (min a b + max a b) * (m' * n') := by
+    rw [min_add_max]; ring
+  have hden : (p ^ j * d') ^ 2 = p ^ (2 * j) * d' ^ 2 := by ring
+  rw [hnum, hden, ← Nat.div_mul_div_comm (pow_dvd_pow p hj2) hdd, Nat.pow_div hj2 hp.pos]
 
 /-! ### The table -/
 
