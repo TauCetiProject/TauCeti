@@ -30,10 +30,11 @@ its values, and is the multiplicity vector `TauCeti.weightOfMultiset` of that un
 exactly the weight the corresponding product of basis vectors carries in `Symᵈ(kⁿ)`.  Those pure
 tensors are the basis `Basis.piTensorProduct` of `(kⁿ)^{⊗d}`, indexed by `Fin d → Fin n`.
 
-The difference from the symmetric and exterior powers is that **the labelling is not injective**,
-and that is the whole point of this file: the tuples of a given content all carry the same weight,
-so they span a weight space of that many dimensions rather than a line.  The weight-`l` space is
-therefore the coordinate *subspace* on the tuples of content `l`
+The difference from the symmetric and exterior powers is that **the labelling is in general not
+injective**, and that is the whole point of this file: the tuples of a given content all carry the
+same weight, so they span a weight space of that many dimensions, which need not be a line (it is
+one exactly when the content admits a single tuple).  The weight-`l` space is therefore the
+coordinate *subspace* on the tuples of content `l`
 (`TauCeti.weightSpace_tensorPowerRep_eq_span_image`), and its dimension is the number of such
 tuples (`TauCeti.finrank_weightSpace_tensorPowerRep`).  That number is the multinomial coefficient
 `d!/∏ᵢ lᵢ!`, and the sum of the corresponding monomials is the multinomial expansion of
@@ -41,13 +42,24 @@ tuples (`TauCeti.finrank_weightSpace_tensorPowerRep`).  That number is the multi
 `TauCeti.char_tensorPowerRep` gives for the character of the tensor power, read on a diagonal
 matrix; neither evaluation is carried out here, the dimension being stated as the count itself.
 
+As in `TauCeti/RepresentationTheory/ClassicalGroups/Weight/Basic.lean`, every statement below that
+pins a weight space down, rather than merely exhibiting vectors in it — the identification of the
+weight spaces with coordinate subspaces, the description of the set of weights, the dimension
+count and the internal direct sum — assumes that the coefficients separate weights, in the sense
+that `l ↦ weightChar k l` is injective.  This is not automatic: over `𝔽₂` the diagonal torus of
+`GL n 𝔽₂` is trivial, so every weight space of every representation is everything, and the
+statements are false.  `TauCeti.weightChar_injective` discharges the hypothesis over an infinite
+field.
+
 Two features make these weight spaces the arena for the representations cut out of `(kⁿ)^{⊗d}` by
 the symmetric group.  The set of weights is the same as for `Symᵈ(kⁿ)` — the nonnegative integer
 vectors of total degree `d` — because every unordered tuple is the unordered tuple of an ordered
 one (`TauCeti.Sym.ofFn_surjective`).  And the symmetric group acts on each weight space separately
 (`TauCeti.map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le`), because the two actions
-commute, so every subrepresentation of `(kⁿ)^{⊗d}` cut out by an element of `k[S_d]` — a Young
-symmetrizer, say — inherits this weight decomposition.
+commute; so once `(kⁿ)^{⊗d}` is the internal direct sum of its weight spaces
+(`TauCeti.isInternal_weightSpace_tensorPowerRep`, over a field separating weights), a
+subrepresentation cut out by an element of `k[S_d]` — a Young symmetrizer, say — inherits that
+decomposition.
 
 ## Main results
 
@@ -55,9 +67,10 @@ symmetrizer, say — inherits this weight decomposition.
   eigenvector of every diagonal matrix**, with eigenvalue the product of the entries it lists.
 * `TauCeti.basis_mem_weightSpace_tensorPowerRep`: that pure tensor lies in the weight space of the
   multiplicity vector of its unordered tuple of indices.
-* `TauCeti.iSup_weightSpace_tensorPowerRep_eq_top` and
-  `TauCeti.isInternal_weightSpace_tensorPowerRep`: **a tensor power of the standard representation
-  is the internal direct sum of its weight spaces.**
+* `TauCeti.iSup_weightSpace_tensorPowerRep_eq_top`: **the weight spaces of a tensor power of the
+  standard representation span it**, over any commutative ring, and
+  `TauCeti.isInternal_weightSpace_tensorPowerRep`: **the tensor power is their internal direct
+  sum**, over a field whose weight characters are distinct.
 * `TauCeti.weightSpace_tensorPowerRep_eq_span_image`: **the weight spaces are the coordinate
   subspaces of the tensor basis**, the weight-`l` space being spanned by the pure tensors whose
   indices have content `l`, with `TauCeti.weightSpace_tensorPowerRep_eq_bot` for the weights that
@@ -68,6 +81,12 @@ symmetrizer, say — inherits this weight decomposition.
   tuples of that content.**
 * `TauCeti.map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le`: **the group algebra of the
   symmetric group preserves every weight space.**
+
+Of these, `TauCeti.isInternal_weightSpace_tensorPowerRep`,
+`TauCeti.weightSpace_tensorPowerRep_eq_span_image`, `TauCeti.weightSpace_tensorPowerRep_eq_bot`,
+`TauCeti.weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq` and
+`TauCeti.finrank_weightSpace_tensorPowerRep` carry the weight-separation hypothesis described
+above; the rest hold over any commutative ring.
 
 ## References
 
@@ -126,8 +145,10 @@ theorem iSup_weightSpace_tensorPowerRep_eq_top :
 /-- **The group algebra of the symmetric group preserves every weight space** of a tensor power of
 the standard representation: it commutes with the general-linear action, hence with the torus.
 
-This is what lets a subrepresentation of `(kⁿ)^{⊗d}` cut out by an element of `k[S_d]` inherit the
-weight decomposition of the tensor power. -/
+This is what lets a subrepresentation of `(kⁿ)^{⊗d}` cut out by an element of `k[S_d]` inherit a
+weight decomposition of the tensor power, once there is one to inherit:
+`TauCeti.isInternal_weightSpace_tensorPowerRep` supplies it over a field whose weight characters
+are distinct. -/
 theorem map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le
     (a : MonoidAlgebra k (Equiv.Perm (Fin d))) (l : Fin n → ℤ) :
     (weightSpace (tensorPowerRep k n d) l).map (permTensorActionAlgHom k n d a) ≤
@@ -149,7 +170,8 @@ variable {k : Type u} [CommRing k] [IsCancelMulZero k] {n d : ℕ}
 /-- **The weight spaces of a tensor power of the standard representation are the coordinate
 subspaces of the tensor basis**: the weight-`l` space of `(kⁿ)^{⊗d}` is spanned by the pure tensors
 of standard basis vectors whose indices have content `l`.  Unlike for the symmetric and exterior
-powers, this span is not a line: all the tuples of one content contribute to the same weight. -/
+powers, this span need not be a line: all the tuples of one content contribute to the same weight,
+and a content is in general realised by more than one tuple. -/
 theorem weightSpace_tensorPowerRep_eq_span_image
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (tensorPowerRep k n d) l =
