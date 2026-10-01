@@ -65,31 +65,6 @@ namespace TauCeti
 
 namespace Nat
 
-/-! ### The index, split at a prime -/
-
-/-- For `m = p^a·m'` and `n = p^b·n'` with `p` dividing neither `m'` nor `n'`, and `d'` a common
-divisor of `m'` and `n'` with `j ≤ min a b`:
-
-`mn/(p^j·d')² = p^{min a b + max a b − 2j} · (m'n'/d'²)`,
-
-and those two factors are coprime. -/
-private theorem mul_div_sq_eq_pow_mul_of_not_dvd {p a b m' n' m n d' j : ℕ} (hp : p.Prime)
-    (hm_eq : m = p ^ a * m') (hn_eq : n = p ^ b * n') (hm' : ¬p ∣ m') (hn' : ¬p ∣ n')
-    (hd' : d' ∣ Nat.gcd m' n') (hj : j ≤ min a b) :
-    m * n / (p ^ j * d') ^ 2 = p ^ (min a b + max a b - 2 * j) * (m' * n' / d' ^ 2) ∧
-      Nat.Coprime (p ^ (min a b + max a b - 2 * j)) (m' * n' / d' ^ 2) := by
-  subst hm_eq hn_eq
-  have hdd : d' ^ 2 ∣ m' * n' := sq d' ▸
-    Nat.mul_dvd_mul (hd'.trans (Nat.gcd_dvd_left m' n')) (hd'.trans (Nat.gcd_dvd_right m' n'))
-  have hquot : ¬p ∣ m' * n' / d' ^ 2 := fun h ↦
-    hp.not_dvd_mul hm' hn' (h.trans (Nat.div_dvd_of_dvd hdd))
-  refine ⟨?_, (hp.coprime_iff_not_dvd.2 hquot).pow_left _⟩
-  have hj2 : 2 * j ≤ min a b + max a b := by omega
-  have hnum : p ^ a * m' * (p ^ b * n') = p ^ (min a b + max a b) * (m' * n') := by
-    rw [min_add_max]; ring
-  have hden : (p ^ j * d') ^ 2 = p ^ (2 * j) * d' ^ 2 := by ring
-  rw [hnum, hden, ← Nat.div_mul_div_comm (pow_dvd_pow p hj2) hdd, Nat.pow_div hj2 hp.pos]
-
 /-! ### The table -/
 
 section CommSemiring
@@ -106,10 +81,23 @@ private theorem primePowerProd_smul_mul_smul_of_not_dvd {p a b m' n' m n d' j : 
       d' • (primePowerProd S d' * primePowerProd D (m' * n' / d' ^ 2)) =
     (p ^ j * d') • (primePowerProd S (p ^ j * d') *
       primePowerProd D (m * n / (p ^ j * d') ^ 2)) := by
-  obtain ⟨hidx, hcopD⟩ := mul_div_sq_eq_pow_mul_of_not_dvd hp hm_eq hn_eq hm' hn' hd' hj
+  subst hm_eq hn_eq
+  have hdd : d' ^ 2 ∣ m' * n' := sq d' ▸
+    Nat.mul_dvd_mul (hd'.trans (Nat.gcd_dvd_left m' n')) (hd'.trans (Nat.gcd_dvd_right m' n'))
+  have hquot : ¬p ∣ m' * n' / d' ^ 2 := fun h ↦
+    hp.not_dvd_mul hm' hn' (h.trans (Nat.div_dvd_of_dvd hdd))
+  have hcopD : Nat.Coprime (p ^ (min a b + max a b - 2 * j)) (m' * n' / d' ^ 2) :=
+    (hp.coprime_iff_not_dvd.2 hquot).pow_left _
   have hcopS : Nat.Coprime (p ^ j) d' :=
     (hp.coprime_iff_not_dvd.2 fun h ↦
       hm' (h.trans (hd'.trans (Nat.gcd_dvd_left m' n')))).pow_left j
+  have hj2 : 2 * j ≤ min a b + max a b := by omega
+  have hidx : (p ^ a * m') * (p ^ b * n') / (p ^ j * d') ^ 2 =
+      p ^ (min a b + max a b - 2 * j) * (m' * n' / d' ^ 2) := by
+    have hnum : p ^ a * m' * (p ^ b * n') = p ^ (min a b + max a b) * (m' * n') := by
+      rw [min_add_max]; ring
+    have hden : (p ^ j * d') ^ 2 = p ^ (2 * j) * d' ^ 2 := by ring
+    rw [hnum, hden, ← Nat.div_mul_div_comm (pow_dvd_pow p hj2) hdd, Nat.pow_div hj2 hp.pos]
   rw [smul_mul_smul_comm, hidx,
     primePowerProd_mul_of_coprime D hcopD fun _ _ _ _ _ ↦ Commute.all _ _,
     primePowerProd_mul_of_coprime S hcopS fun _ _ _ _ _ ↦ Commute.all _ _, mul_mul_mul_comm]
