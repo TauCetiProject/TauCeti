@@ -60,7 +60,9 @@ so the embedding restricts to the special orthogonal groups.
 
 public section
 
-namespace TauCeti.QuadraticMap
+namespace QuadraticMap
+
+section Smul
 
 variable {R S M₁ M₂ P : Type*} [CommSemiring R] [Monoid S]
   [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
@@ -74,9 +76,7 @@ theorem smul_prod (c : S) (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R 
   ext x
   simp [smul_add]
 
-end TauCeti.QuadraticMap
-
-namespace QuadraticMap
+end Smul
 
 variable {R M₁ M₂ M₃ P : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
   [AddCommMonoid M₃] [AddCommMonoid P] [Module R M₁] [Module R M₂] [Module R M₃] [Module R P]
