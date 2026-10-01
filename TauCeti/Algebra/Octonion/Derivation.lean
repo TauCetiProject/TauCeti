@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Action.Regular
+public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.Octonion.Basic
+import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Lie.GeneralLinear.Finrank
+import TauCeti.LinearAlgebra.Matrix.CrossProduct
 
 /-!
 # Derivations of the split octonions
@@ -16,7 +20,8 @@ public import TauCeti.Algebra.Octonion.Basic
 `G₂` is the derivation algebra of the split octonions, and its fundamental representation is
 supposed to be the `7`-dimensional space of imaginary octonions. Neither statement can even be made
 until one knows that a derivation of `𝕆` lands in the imaginary octonions and respects the norm
-form; that is what this file proves.
+form; that is what this file proves first. It then writes down fourteen independent derivations,
+giving the lower bound `14 ≤ finrank (Der 𝕆)`.
 
 Let `D` be a derivation of `TauCeti.Octonion R`. Applying `D` to the rank-two equation
 `x² = tr x · x - N x · 1` and to the polarization
@@ -38,12 +43,35 @@ octonions are a Lie submodule (`TauCeti.Octonion.imaginaryLieSubmodule`) — thi
 `7`-dimensional fundamental representation — and, when scalar multiplication by `2` on `𝕆` is
 regular, `Der 𝕆` acts faithfully on it, since `𝕆 = R · 1 ⊕ Im 𝕆` and a derivation kills `1`.
 
+The derivations exhibited here come from the action of `SL₃` on a Zorn vector matrix,
+`⟨a, b, v, w⟩ ↦ ⟨a, b, A v, (Aᵀ)⁻¹ w⟩`, differentiated at the identity: a trace-zero matrix `M`
+acts by `M` on the upper vector entry and by `-Mᵀ` on the lower one
+(`TauCeti.Octonion.slDerivation`), and this is a homomorphism of Lie algebras `𝔰𝔩₃ → Der 𝕆`. The
+Leibniz rule for it is the identity `(M u) ⨯₃ w + u ⨯₃ (M w) = -(Mᵀ (u ⨯₃ w))`, valid exactly
+because `M` has trace zero
+(`Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero`). Two further three-parameter families
+(`TauCeti.Octonion.upperDerivation` and `TauCeti.Octonion.lowerDerivation`) are attached to a
+vector `u`, are read off the idempotent `⟨1, 0, 0, 0⟩`, and exchange the two vector entries; there
+they are the two nonzero pieces of the `ℤ/3`-grading of `𝕆` by scalar diagonal, upper vector and
+lower vector. That grading is visible in the five brackets between the three families: `𝔰𝔩₃` acts
+on the upper family by its defining representation and on the lower one by the dual, two upper or
+two lower derivations bracket into the opposite vector family by twice the cross product, and an
+upper against a lower one brackets back into `𝔰𝔩₃` through `TauCeti.Octonion.slOfVectors`.
+Together the three families depend on `8 + 3 + 3 = 14` independent parameters, so
+`14 ≤ finrank (Der 𝕆)`.
+
 ## Main definitions
 
 * `TauCeti.Octonion.imaginaryLieSubmodule`: the imaginary octonions as a Lie submodule of `𝕆` over
   `Der 𝕆`, so that `Im 𝕆` is a representation of `Der 𝕆`.
-* `TauCeti.Octonion.diagonalDerivation`: the derivations coming from the diagonal torus of the
-  `SL₃` acting on the vector entries of a Zorn vector matrix.
+* `TauCeti.Octonion.slDerivation`: the homomorphism of Lie algebras `𝔰𝔩₃ → Der 𝕆`, the
+  differentiated action of `SL₃` on the vector entries of a Zorn vector matrix.
+* `TauCeti.Octonion.upperDerivation` and `TauCeti.Octonion.lowerDerivation`: the two
+  three-parameter families of derivations attached to a vector.
+* `TauCeti.Octonion.derivationOfTriple`: the three families assembled into one linear map out of
+  `𝔰𝔩₃ × R³ × R³`.
+* `TauCeti.Octonion.slOfVectors`: the trace-zero matrix through which an upper and a lower vector
+  derivation bracket back into `𝔰𝔩₃`.
 
 ## Main results
 
@@ -58,13 +86,21 @@ regular, `Der 𝕆` acts faithfully on it, since `𝕆 = R · 1 ⊕ Im 𝕆` and
 * `TauCeti.Octonion.isFaithful_imaginaryLieSubmodule`: when scalar multiplication by `2` on `𝕆` is
   regular, `Der 𝕆` acts faithfully on `Im 𝕆`; `TauCeti.Octonion.instIsFaithfulImaginaryLieSubmodule`
   is the instance form of that, under `[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`.
-* `TauCeti.Octonion.diagonalDerivation` and
-  `TauCeti.Octonion.instNontrivialDerivationLieAlgebra`: the diagonal endomorphisms are derivations,
-  so `Der 𝕆` is not the zero Lie algebra and none of the above is vacuous.
+* `TauCeti.Octonion.lie_slDerivation_upperDerivation`,
+  `TauCeti.Octonion.lie_slDerivation_lowerDerivation`,
+  `TauCeti.Octonion.lie_upperDerivation_upperDerivation`,
+  `TauCeti.Octonion.lie_lowerDerivation_lowerDerivation` and
+  `TauCeti.Octonion.lie_upperDerivation_lowerDerivation`: the brackets of the three families with
+  one another, the relations of the `ℤ/3`-grading.
+* `TauCeti.Octonion.derivationOfTriple_injective`: the fourteen parameters are independent, and
+  `TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra`: hence `14 ≤ finrank (Der 𝕆)` over a
+  field. In particular `Der 𝕆` is not the zero Lie algebra
+  (`TauCeti.Octonion.instNontrivialDerivationLieAlgebra`), so none of the above is vacuous.
 
 ## Implementation notes
 
-Everything is stated over a commutative ring; the base is a field nowhere. The faithfulness result
+Everything is stated over a commutative ring, except the rank bound
+`14 ≤ finrank (Der 𝕆)`, which asks for a field. The faithfulness result
 is stated for the exact hypothesis its proof uses, `IsSMulRegular (Octonion R) (2 : R)`, which is
 not a class; the instance form of it therefore asks for the two classes
 `[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`, which imply it but are strictly
@@ -81,11 +117,8 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (O
 
 ## References
 
-This is the first half of the `G₂ = Der(𝕆)` target of Layer 8 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` ("Build
-`derivationLieAlgebra (Octonion K)` ... and that `Im 𝕆` is its `7`-dimensional irreducible"). The
-count `finrank (Der 𝕆) = 14`, the type-`G₂` Killing-simplicity, and the identification with
-`LieAlgebra.g₂` are not proved here.
+The matching upper bound `finrank (Der 𝕆) ≤ 14`, the type-`G₂` Killing-simplicity of `Der 𝕆`, and
+its identification with `LieAlgebra.g₂` are not proved here.
 
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §2.
 * R. D. Schafer, *An Introduction to Nonassociative Algebras*, Ch. III, where the skewness of a
@@ -331,85 +364,403 @@ instance instIsFaithfulImaginaryLieSubmodule [NoZeroSMulDivisors R (Octonion R)]
   isFaithful_imaginaryLieSubmodule <| IsSMulRegular.of_right_eq_zero_of_smul fun _ h =>
     (eq_zero_or_eq_zero_of_smul_eq_zero h).resolve_left (NeZero.ne (2 : R))
 
-/-! ### An explicit family of derivations
-
-Everything above is a statement about an arbitrary derivation, so it is worth knowing that there
-are some. `SL₃` acts on the Zorn vector matrices by `⟨a, b, v, w⟩ ↦ ⟨a, b, A v, (Aᵀ)⁻¹ w⟩`, and
-differentiating that action at the identity along a traceless *diagonal* matrix `diag (r, s, -r-s)`
-gives the derivations below. -/
-
-/-- The endomorphism underlying `TauCeti.Octonion.diagonalDerivation`. -/
-private def diagonalDerivationEnd (r s : R) : Module.End R (Octonion R) where
-  toFun x := ⟨0, 0, fun i => ![r, s, -r - s] i * x.v i, fun i => -(![r, s, -r - s] i) * x.w i⟩
-  map_add' x y := by
-    refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_) <;> simp <;> ring
-  map_smul' c x := by
-    refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_) <;> simp <;> ring
-
-@[simp] private theorem diagonalDerivationEnd_apply_a (r s : R) (x : Octonion R) :
-    (diagonalDerivationEnd r s x).a = 0 := (rfl)
-
-@[simp] private theorem diagonalDerivationEnd_apply_b (r s : R) (x : Octonion R) :
-    (diagonalDerivationEnd r s x).b = 0 := (rfl)
-
-@[simp] private theorem diagonalDerivationEnd_apply_v (r s : R) (x : Octonion R) (i : Fin 3) :
-    (diagonalDerivationEnd r s x).v i = ![r, s, -r - s] i * x.v i := (rfl)
-
-@[simp] private theorem diagonalDerivationEnd_apply_w (r s : R) (x : Octonion R) (i : Fin 3) :
-    (diagonalDerivationEnd r s x).w i = -(![r, s, -r - s] i) * x.w i := (rfl)
-
-section Coordinates
+section SpecialLinear
 
 open Matrix
 
-attribute [local simp] vec3_dotProduct cross_apply Matrix.vecHead Matrix.vecTail
+/-! ### The special linear derivations -/
 
-/-- **The diagonal endomorphisms are derivations.** On the scalar entries the two dot products
-`v ⬝ᵥ w'` pick up opposite scalings and cancel; on the vector entries the Leibniz rule is the
-infinitesimal Cauchy--Binet relation `(c ⊙ u) ⨯₃ w + u ⨯₃ (c ⊙ w) = -c ⊙ (u ⨯₃ w)`, valid exactly
-because `r + s + (-r - s) = 0`. -/
-private theorem diagonalDerivationEnd_mem (r s : R) :
-    diagonalDerivationEnd r s ∈ derivationLieAlgebra R (Octonion R) := by
+/-- The endomorphism underlying `TauCeti.Octonion.slDerivation`. -/
+private def slDerivationEnd (M : Matrix (Fin 3) (Fin 3) R) : Module.End R (Octonion R) where
+  toFun x := ⟨0, 0, M *ᵥ x.v, -(Mᵀ *ᵥ x.w)⟩
+  map_add' x y := by
+    refine Octonion.ext (by simp) (by simp) ?_ ?_ <;>
+      simp [Matrix.mulVec_add, add_comm]
+  map_smul' c x := by
+    refine Octonion.ext (by simp) (by simp) ?_ ?_ <;>
+      simp [Matrix.mulVec_smul]
+
+@[simp] private theorem slDerivationEnd_apply_a (M : Matrix (Fin 3) (Fin 3) R) (x : Octonion R) :
+    (slDerivationEnd M x).a = 0 := (rfl)
+
+@[simp] private theorem slDerivationEnd_apply_b (M : Matrix (Fin 3) (Fin 3) R) (x : Octonion R) :
+    (slDerivationEnd M x).b = 0 := (rfl)
+
+@[simp] private theorem slDerivationEnd_apply_v (M : Matrix (Fin 3) (Fin 3) R) (x : Octonion R) :
+    (slDerivationEnd M x).v = M *ᵥ x.v := (rfl)
+
+@[simp] private theorem slDerivationEnd_apply_w (M : Matrix (Fin 3) (Fin 3) R) (x : Octonion R) :
+    (slDerivationEnd M x).w = -(Mᵀ *ᵥ x.w) := (rfl)
+
+private theorem slDerivationEnd_mem {M : Matrix (Fin 3) (Fin 3) R} (hM : M.trace = 0) :
+    slDerivationEnd M ∈ derivationLieAlgebra R (Octonion R) := by
   rw [mem_derivationLieAlgebra]
   intro x y
-  refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
-  · simp; ring
-  · simp; ring
-  · fin_cases i <;> simp <;> ring
-  · fin_cases i <;> simp <;> ring
+  have hMt : Mᵀ.trace = 0 := by rwa [Matrix.trace_transpose]
+  have hdot : ∀ (N : Matrix (Fin 3) (Fin 3) R) (u w : Fin 3 → R),
+      (N *ᵥ u) ⬝ᵥ w = u ⬝ᵥ (Nᵀ *ᵥ w) := fun N u w => by
+    rw [Matrix.dotProduct_transpose_mulVec, dotProduct_comm]
+  have hv : M *ᵥ (x.w ⨯₃ y.w) = -((Mᵀ *ᵥ x.w) ⨯₃ y.w + x.w ⨯₃ (Mᵀ *ᵥ y.w)) := by
+    rw [Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero Mᵀ hMt, Matrix.transpose_transpose,
+      neg_neg]
+  have hw : Mᵀ *ᵥ (x.v ⨯₃ y.v) = -((M *ᵥ x.v) ⨯₃ y.v + x.v ⨯₃ (M *ᵥ y.v)) := by
+    rw [Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero M hM, neg_neg]
+  refine Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot M x.v y.w]
+  · simp [hdot Mᵀ x.w y.v]
+  · simp only [slDerivationEnd_apply_v, slDerivationEnd_apply_a, slDerivationEnd_apply_b,
+      slDerivationEnd_apply_w, mul_v, add_v, Matrix.mulVec_sub, Matrix.mulVec_add,
+      Matrix.mulVec_smul, zero_smul, map_neg, LinearMap.neg_apply, hv]
+    abel
+  · simp only [slDerivationEnd_apply_v, slDerivationEnd_apply_a, slDerivationEnd_apply_b,
+      slDerivationEnd_apply_w, mul_w, add_w, Matrix.mulVec_add, Matrix.mulVec_smul, zero_smul,
+      smul_neg, hw]
+    abel
 
-end Coordinates
+/-! ### The two vector families of derivations -/
 
-/-- **The diagonal derivations of `𝕆`**, the tangent directions at the identity of the diagonal
-torus of the `SL₃` acting on the vector entries. They are what shows the results above are not
-vacuous: `TauCeti.Octonion.instNontrivialDerivationLieAlgebra`. -/
-def diagonalDerivation (r s : R) : derivationLieAlgebra R (Octonion R) :=
-  ⟨diagonalDerivationEnd r s, diagonalDerivationEnd_mem r s⟩
+section Vector
 
-@[simp] theorem diagonalDerivation_apply_a (r s : R) (x : Octonion R) :
-    ((diagonalDerivation r s : Module.End R (Octonion R)) x).a = 0 := (rfl)
+/- The vector `simp` set, as in `TauCeti/Algebra/Octonion/Basic.lean`: dot and cross products are
+pushed through the linear combinations that make up an entry of a product, dot products are
+normalised by commutativity, and the compound products that survive are reduced by Mathlib's own
+identities -- `Matrix.cross_dot_cross` for a dot product of two cross products,
+`Matrix.cross_cross_eq_smul_sub_smul` and its primed form for an iterated one. What is left is a
+polynomial in the dot products, which `ring` closes, or a linear combination of the entries and
+their cross products, which `module` closes; the triple products that neither identity reaches are
+rotated by `Matrix.triple_product_permutation` and `Matrix.cross_anticomm`. -/
+attribute [local simp] LinearMap.map_add₂ LinearMap.map_sub₂ LinearMap.map_smul₂
+  dotProduct_comm cross_dot_cross cross_cross_eq_smul_sub_smul cross_cross_eq_smul_sub_smul'
 
-@[simp] theorem diagonalDerivation_apply_b (r s : R) (x : Octonion R) :
-    ((diagonalDerivation r s : Module.End R (Octonion R)) x).b = 0 := (rfl)
+/-- The endomorphism underlying `TauCeti.Octonion.upperDerivation`. -/
+private def upperDerivationEnd (u : Fin 3 → R) : Module.End R (Octonion R) where
+  toFun x := ⟨-(u ⬝ᵥ x.w), u ⬝ᵥ x.w, (x.a - x.b) • u, u ⨯₃ x.v⟩
+  map_add' x y := by
+    refine Octonion.ext (by simp [add_comm]) (by simp) (funext fun i => ?_) (by simp)
+    simp
+    ring
+  map_smul' c x := by
+    refine Octonion.ext (by simp) (by simp) (funext fun i => ?_) (by simp)
+    simp
+    ring
 
-@[simp] theorem diagonalDerivation_apply_v (r s : R) (x : Octonion R) (i : Fin 3) :
-    ((diagonalDerivation r s : Module.End R (Octonion R)) x).v i =
-      ![r, s, -r - s] i * x.v i := (rfl)
+@[simp] private theorem upperDerivationEnd_apply_a (u : Fin 3 → R) (x : Octonion R) :
+    (upperDerivationEnd u x).a = -(u ⬝ᵥ x.w) := (rfl)
 
-@[simp] theorem diagonalDerivation_apply_w (r s : R) (x : Octonion R) (i : Fin 3) :
-    ((diagonalDerivation r s : Module.End R (Octonion R)) x).w i =
-      -(![r, s, -r - s] i) * x.w i := (rfl)
+@[simp] private theorem upperDerivationEnd_apply_b (u : Fin 3 → R) (x : Octonion R) :
+    (upperDerivationEnd u x).b = u ⬝ᵥ x.w := (rfl)
+
+@[simp] private theorem upperDerivationEnd_apply_v (u : Fin 3 → R) (x : Octonion R) :
+    (upperDerivationEnd u x).v = (x.a - x.b) • u := (rfl)
+
+@[simp] private theorem upperDerivationEnd_apply_w (u : Fin 3 → R) (x : Octonion R) :
+    (upperDerivationEnd u x).w = u ⨯₃ x.v := (rfl)
+
+/-- The endomorphism underlying `TauCeti.Octonion.lowerDerivation`. -/
+private def lowerDerivationEnd (t : Fin 3 → R) : Module.End R (Octonion R) where
+  toFun x := ⟨-(t ⬝ᵥ x.v), t ⬝ᵥ x.v, t ⨯₃ x.w, (x.a - x.b) • t⟩
+  map_add' x y := by
+    refine Octonion.ext (by simp [add_comm]) (by simp) (by simp) (funext fun i => ?_)
+    simp
+    ring
+  map_smul' c x := by
+    refine Octonion.ext (by simp) (by simp) (by simp) (funext fun i => ?_)
+    simp
+    ring
+
+@[simp] private theorem lowerDerivationEnd_apply_a (t : Fin 3 → R) (x : Octonion R) :
+    (lowerDerivationEnd t x).a = -(t ⬝ᵥ x.v) := (rfl)
+
+@[simp] private theorem lowerDerivationEnd_apply_b (t : Fin 3 → R) (x : Octonion R) :
+    (lowerDerivationEnd t x).b = t ⬝ᵥ x.v := (rfl)
+
+@[simp] private theorem lowerDerivationEnd_apply_v (t : Fin 3 → R) (x : Octonion R) :
+    (lowerDerivationEnd t x).v = t ⨯₃ x.w := (rfl)
+
+@[simp] private theorem lowerDerivationEnd_apply_w (t : Fin 3 → R) (x : Octonion R) :
+    (lowerDerivationEnd t x).w = (x.a - x.b) • t := (rfl)
+
+private theorem upperDerivationEnd_mem (u : Fin 3 → R) :
+    upperDerivationEnd u ∈ derivationLieAlgebra R (Octonion R) := by
+  rw [mem_derivationLieAlgebra]
+  intro x y
+  have hdot : x.v ⬝ᵥ (u ⨯₃ y.v) = -(u ⬝ᵥ (x.v ⨯₃ y.v)) := by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot]
+    ring
+  · simp [triple_product_permutation y.v u x.v]
+    ring
+  · simp
+    module
+  · simp
+    linear_combination (norm := module) (y.b - y.a) • cross_anticomm' u x.v
+
+private theorem lowerDerivationEnd_mem (t : Fin 3 → R) :
+    lowerDerivationEnd t ∈ derivationLieAlgebra R (Octonion R) := by
+  rw [mem_derivationLieAlgebra]
+  intro x y
+  have hdot : x.w ⬝ᵥ (t ⨯₃ y.w) = -(t ⬝ᵥ (x.w ⨯₃ y.w)) := by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine Octonion.ext ?_ ?_ ?_ ?_
+  · simp [triple_product_permutation y.w t x.w]
+    ring
+  · simp [hdot]
+    ring
+  · simp
+    linear_combination (norm := module) (y.a - y.b) • cross_anticomm' t x.w
+  · simp
+    module
+
+/-! ### The three families, bundled -/
+
+/-- **The special linear derivations of `𝕆`**: the homomorphism of Lie algebras
+`𝔰𝔩₃ → Der 𝕆` that sends a trace-zero matrix `M` to the derivation acting by `M` on the
+upper vector entry of a Zorn vector matrix and by `-Mᵀ` on the lower one. -/
+def slDerivation :
+    LieAlgebra.SpecialLinear.sl (Fin 3) R →ₗ⁅R⁆ derivationLieAlgebra R (Octonion R) where
+  -- `𝔰𝔩₃` is the kernel of the trace, so membership in it is exactly the hypothesis of
+  -- `slDerivationEnd_mem`.
+  toFun M := ⟨slDerivationEnd M.1, slDerivationEnd_mem (LinearMap.mem_ker.mp M.2)⟩
+  map_add' M N := derivationLieAlgebra.ext fun x => by
+    refine Octonion.ext (by simp) (by simp) (by simp [Matrix.add_mulVec]) ?_
+    simp [Matrix.transpose_add, Matrix.add_mulVec, add_comm]
+  map_smul' c M := derivationLieAlgebra.ext fun x => by
+    refine Octonion.ext (by simp) (by simp) (by simp [Matrix.smul_mulVec]) ?_
+    simp [Matrix.transpose_smul, Matrix.smul_mulVec]
+  map_lie' {M N} := derivationLieAlgebra.ext fun x => by
+    refine Octonion.ext (by simp) (by simp) ?_ ?_
+    · simp [Ring.lie_def, Matrix.sub_mulVec]
+    · simp [Ring.lie_def, Matrix.transpose_sub, Matrix.sub_mulVec, Matrix.mulVec_neg]
+
+@[simp] theorem slDerivation_apply_a (M : LieAlgebra.SpecialLinear.sl (Fin 3) R) (x : Octonion R) :
+    ((slDerivation M : Module.End R (Octonion R)) x).a = 0 := (rfl)
+
+@[simp] theorem slDerivation_apply_b (M : LieAlgebra.SpecialLinear.sl (Fin 3) R) (x : Octonion R) :
+    ((slDerivation M : Module.End R (Octonion R)) x).b = 0 := (rfl)
+
+@[simp] theorem slDerivation_apply_v (M : LieAlgebra.SpecialLinear.sl (Fin 3) R) (x : Octonion R) :
+    ((slDerivation M : Module.End R (Octonion R)) x).v = (M : Matrix (Fin 3) (Fin 3) R) *ᵥ x.v :=
+  (rfl)
+
+@[simp] theorem slDerivation_apply_w (M : LieAlgebra.SpecialLinear.sl (Fin 3) R) (x : Octonion R) :
+    ((slDerivation M : Module.End R (Octonion R)) x).w =
+      -((M : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ x.w) := (rfl)
+
+/-- **The upper vector derivations of `𝕆`**: the linear map sending `u : R³` to the derivation
+that takes the idempotent `⟨1, 0, 0, 0⟩` to the vector matrix with upper entry `u`. -/
+def upperDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion R) where
+  toFun u := ⟨upperDerivationEnd u, upperDerivationEnd_mem u⟩
+  map_add' u u' := derivationLieAlgebra.ext fun x => by
+    refine Octonion.ext (by simp [add_comm]) (by simp) ?_ (by simp)
+    simp [smul_add]
+  map_smul' c u := derivationLieAlgebra.ext fun x => by
+    refine Octonion.ext (by simp) (by simp) ?_ (by simp)
+    simp [smul_smul, mul_comm]
+
+@[simp] theorem upperDerivation_apply_a (u : Fin 3 → R) (x : Octonion R) :
+    ((upperDerivation u : Module.End R (Octonion R)) x).a = -(u ⬝ᵥ x.w) := (rfl)
+
+@[simp] theorem upperDerivation_apply_b (u : Fin 3 → R) (x : Octonion R) :
+    ((upperDerivation u : Module.End R (Octonion R)) x).b = u ⬝ᵥ x.w := (rfl)
+
+@[simp] theorem upperDerivation_apply_v (u : Fin 3 → R) (x : Octonion R) :
+    ((upperDerivation u : Module.End R (Octonion R)) x).v = (x.a - x.b) • u := (rfl)
+
+@[simp] theorem upperDerivation_apply_w (u : Fin 3 → R) (x : Octonion R) :
+    ((upperDerivation u : Module.End R (Octonion R)) x).w = u ⨯₃ x.v := (rfl)
+
+/-- **The lower vector derivations of `𝕆`**: the linear map sending `t : R³` to the derivation
+that takes the idempotent `⟨1, 0, 0, 0⟩` to the vector matrix with lower entry `t`. -/
+def lowerDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion R) where
+  toFun t := ⟨lowerDerivationEnd t, lowerDerivationEnd_mem t⟩
+  map_add' t t' := derivationLieAlgebra.ext fun x => by
+    refine Octonion.ext (by simp [add_comm]) (by simp) (by simp) ?_
+    simp [smul_add]
+  map_smul' c t := derivationLieAlgebra.ext fun x => by
+    refine Octonion.ext (by simp) (by simp) (by simp) ?_
+    simp [smul_smul, mul_comm]
+
+@[simp] theorem lowerDerivation_apply_a (t : Fin 3 → R) (x : Octonion R) :
+    ((lowerDerivation t : Module.End R (Octonion R)) x).a = -(t ⬝ᵥ x.v) := (rfl)
+
+@[simp] theorem lowerDerivation_apply_b (t : Fin 3 → R) (x : Octonion R) :
+    ((lowerDerivation t : Module.End R (Octonion R)) x).b = t ⬝ᵥ x.v := (rfl)
+
+@[simp] theorem lowerDerivation_apply_v (t : Fin 3 → R) (x : Octonion R) :
+    ((lowerDerivation t : Module.End R (Octonion R)) x).v = t ⨯₃ x.w := (rfl)
+
+@[simp] theorem lowerDerivation_apply_w (t : Fin 3 → R) (x : Octonion R) :
+    ((lowerDerivation t : Module.End R (Octonion R)) x).w = (x.a - x.b) • t := (rfl)
+
+/-! ### The brackets of the three families -/
+
+/-- The trace of `⟨u, t⟩ • 1 - 3 • u tᵀ` vanishes: the rank-one matrix `u tᵀ` has trace `⟨u, t⟩`,
+and `1 : Matrix (Fin 3) (Fin 3) R` has trace `3`. -/
+private theorem trace_smul_one_sub_smul_vecMulVec_eq_zero (u t : Fin 3 → R) :
+    Matrix.trace ((u ⬝ᵥ t) • (1 : Matrix (Fin 3) (Fin 3) R) -
+      (3 : R) • Matrix.vecMulVec u t) = 0 := by
+  simp [Matrix.trace_sub, mul_comm]
+
+/-- **The `𝔰𝔩₃` parameter of the bracket of an upper and a lower vector derivation**: the matrix
+`⟨u, t⟩ • 1 - 3 • u tᵀ`, whose trace vanishes because the rank-one matrix `u tᵀ` has trace
+`⟨u, t⟩`.  See `TauCeti.Octonion.lie_upperDerivation_lowerDerivation`. -/
+def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
+  ⟨(u ⬝ᵥ t) • 1 - (3 : R) • Matrix.vecMulVec u t,
+    LinearMap.mem_ker.mpr (trace_smul_one_sub_smul_vecMulVec_eq_zero u t)⟩
+
+@[simp] theorem coe_slOfVectors (u t : Fin 3 → R) :
+    (slOfVectors u t : Matrix (Fin 3) (Fin 3) R) =
+      (u ⬝ᵥ t) • 1 - (3 : R) • Matrix.vecMulVec u t := (rfl)
+
+/-- **The upper vector derivations carry the defining representation of `𝔰𝔩₃`**:
+`⁅slDerivation M, upperDerivation u⁆ = upperDerivation (M u)`, the degree `0` piece of the
+`ℤ/3`-grading acting on the degree `1` piece. -/
+@[simp] theorem lie_slDerivation_upperDerivation (M : LieAlgebra.SpecialLinear.sl (Fin 3) R)
+    (u : Fin 3 → R) :
+    ⁅slDerivation M, upperDerivation u⁆ =
+      upperDerivation ((M : Matrix (Fin 3) (Fin 3) R) *ᵥ u) := by
+  have hM : (M : Matrix (Fin 3) (Fin 3) R).trace = 0 := LinearMap.mem_ker.mp M.2
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
+  · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
+  · simp [Matrix.mulVec_smul]
+  · simp only [LieSubalgebra.coe_bracket, LieHom.lie_apply, Module.End.lie_apply, sub_w,
+      slDerivation_apply_w, upperDerivation_apply_w, slDerivation_apply_v]
+    exact (eq_sub_of_add_eq (Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero
+      (M : Matrix (Fin 3) (Fin 3) R) hM u x.v)).symm
+
+/-- **The lower vector derivations carry the dual of the defining representation of `𝔰𝔩₃`**:
+`⁅slDerivation M, lowerDerivation t⁆ = lowerDerivation (-(Mᵀ t))`, the degree `0` piece of the
+`ℤ/3`-grading acting on the degree `2` piece. -/
+@[simp] theorem lie_slDerivation_lowerDerivation (M : LieAlgebra.SpecialLinear.sl (Fin 3) R)
+    (t : Fin 3 → R) :
+    ⁅slDerivation M, lowerDerivation t⁆ =
+      lowerDerivation (-((M : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ t)) := by
+  have hM : (M : Matrix (Fin 3) (Fin 3) R)ᵀ.trace = 0 := by
+    rw [Matrix.trace_transpose]
+    exact LinearMap.mem_ker.mp M.2
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]
+  · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]
+  · have h := Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero
+      (M : Matrix (Fin 3) (Fin 3) R)ᵀ hM x.w t
+    rw [Matrix.transpose_transpose, ← cross_anticomm t x.w, Matrix.mulVec_neg, neg_neg] at h
+    simp only [LieSubalgebra.coe_bracket, LieHom.lie_apply, Module.End.lie_apply, sub_v,
+      slDerivation_apply_v, lowerDerivation_apply_v, slDerivation_apply_w, map_neg, cross_anticomm,
+      NegMemClass.coe_neg, LinearMap.neg_apply, neg_v]
+    exact (eq_sub_of_add_eq' h).symm
+  · simp [Matrix.mulVec_smul]
+
+/-- **Two upper vector derivations bracket into the lower family**, by twice the cross product:
+`⁅upperDerivation u, upperDerivation u'⁆ = lowerDerivation (2 (u ⨯₃ u'))`.  In the `ℤ/3`-grading
+this is `1 + 1 = 2`. -/
+@[simp] theorem lie_upperDerivation_upperDerivation (u u' : Fin 3 → R) :
+    ⁅upperDerivation u, upperDerivation u'⁆ = lowerDerivation ((2 : R) • (u ⨯₃ u')) := by
+  have hdot : ∀ v : Fin 3 → R, u' ⬝ᵥ (u ⨯₃ v) = -(u ⬝ᵥ (u' ⨯₃ v)) := fun v => by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot, triple_product_permutation x.v u u']
+    ring
+  · simp [hdot, triple_product_permutation x.v u u']
+    ring
+  · simp
+    module
+  · simp
+    linear_combination (norm := module) (x.b - x.a) • cross_anticomm' u u'
+
+/-- **Two lower vector derivations bracket into the upper family**, by twice the cross product:
+`⁅lowerDerivation t, lowerDerivation t'⁆ = upperDerivation (2 (t ⨯₃ t'))`.  In the `ℤ/3`-grading
+this is `2 + 2 = 1`. -/
+@[simp] theorem lie_lowerDerivation_lowerDerivation (t t' : Fin 3 → R) :
+    ⁅lowerDerivation t, lowerDerivation t'⁆ = upperDerivation ((2 : R) • (t ⨯₃ t')) := by
+  have hdot : ∀ v : Fin 3 → R, t' ⬝ᵥ (t ⨯₃ v) = -(t ⬝ᵥ (t' ⨯₃ v)) := fun v => by
+    rw [triple_product_permutation, ← cross_anticomm, dotProduct_neg]
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp [hdot, triple_product_permutation x.w t t']
+    ring
+  · simp [hdot, triple_product_permutation x.w t t']
+    ring
+  · simp
+    linear_combination (norm := module) (x.b - x.a) • cross_anticomm' t t'
+  · simp
+    module
+
+/-- **An upper and a lower vector derivation bracket back into `𝔰𝔩₃`**:
+`⁅upperDerivation u, lowerDerivation t⁆ = slDerivation (slOfVectors u t)`.  In the `ℤ/3`-grading
+this is `1 + 2 = 0`, the bracket that makes the fourteen derivations a Lie subalgebra. -/
+@[simp] theorem lie_upperDerivation_lowerDerivation (u t : Fin 3 → R) :
+    ⁅upperDerivation u, lowerDerivation t⁆ = slDerivation (slOfVectors u t) := by
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
+  · simp
+  · simp
+  · simp [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec]
+    module
+  · simp [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec]
+    module
+
+end Vector
+
+/-! ### Fourteen independent derivations -/
+
+/-- **The fourteen-parameter family of derivations of `𝕆`**: a trace-zero matrix together with an
+upper and a lower vector.  The three summands are `TauCeti.Octonion.slDerivation`,
+`TauCeti.Octonion.upperDerivation` and `TauCeti.Octonion.lowerDerivation`. -/
+def derivationOfTriple :
+    (LieAlgebra.SpecialLinear.sl (Fin 3) R × (Fin 3 → R) × (Fin 3 → R)) →ₗ[R]
+      derivationLieAlgebra R (Octonion R) :=
+  (slDerivation (R := R)).toLinearMap.coprod (upperDerivation.coprod lowerDerivation)
+
+@[simp]
+theorem derivationOfTriple_apply (M : LieAlgebra.SpecialLinear.sl (Fin 3) R)
+    (u t : Fin 3 → R) :
+    derivationOfTriple (M, u, t) = slDerivation M + (upperDerivation u + lowerDerivation t) :=
+  (rfl)
+
+/-- **The fourteen-parameter family is faithful in its parameters.**  Applying a derivation in the
+family to the idempotent `⟨1, 0, 0, 0⟩` reads off the upper and the lower vector, and applying it
+to a vector matrix with upper entry `v` and nothing else then reads off `M v`. -/
+theorem derivationOfTriple_injective :
+    Function.Injective (derivationOfTriple (R := R)) := by
+  refine (injective_iff_map_eq_zero _).mpr ?_
+  rintro ⟨M, u, t⟩ h
+  have hx : ∀ x : Octonion R,
+      ((derivationOfTriple (M, u, t) : derivationLieAlgebra R (Octonion R)) :
+        Module.End R (Octonion R)) x = 0 := fun x => by rw [h]; simp
+  have hu : u = 0 := by
+    have hv := congrArg Octonion.v (hx ⟨1, 0, 0, 0⟩)
+    simpa using hv
+  have ht : t = 0 := by
+    have hw := congrArg Octonion.w (hx ⟨1, 0, 0, 0⟩)
+    simpa using hw
+  have hM : (M : Matrix (Fin 3) (Fin 3) R) = 0 := by
+    ext i j
+    have hv := congrArg (fun z => Octonion.v z i) (hx ⟨0, 0, Pi.single j 1, 0⟩)
+    simpa [hu, ht, Matrix.mulVec_single] using hv
+  simp [Prod.ext_iff, hu, ht, Subtype.ext_iff, hM]
+
+/-- **`Der 𝕆` has rank at least `14`.**  The fourteen parameters of
+`TauCeti.Octonion.derivationOfTriple` -- eight for a trace-zero `3 × 3` matrix and three for each
+of the two vectors -- are independent, so they bound the dimension of the derivation algebra from
+below.  The matching upper bound, and with it the identification of `Der 𝕆` with the exceptional
+Lie algebra `G₂`, is not proved here. -/
+theorem fourteen_le_finrank_derivationLieAlgebra (K : Type*) [Field K] :
+    14 ≤ Module.finrank K (derivationLieAlgebra K (Octonion K)) := by
+  have h := LinearMap.finrank_le_finrank_of_injective (derivationOfTriple_injective (R := K))
+  rwa [Module.finrank_prod, Module.finrank_prod, finrank_sl, Module.finrank_fintype_fun_eq_card,
+    Fintype.card_fin] at h
 
 /-- **`𝕆` has nonzero derivations**, so the derivation algebra whose skewness the rest of this file
-establishes is not the zero Lie algebra. The witness is the diagonal derivation
-`diag (1, 0, -1)`, which sends `⟨0, 0, e₀, 0⟩` to itself. -/
+establishes is not the zero Lie algebra.  The witness is the upper vector derivation attached to
+the first basis vector, which sends the idempotent `⟨1, 0, 0, 0⟩` to `⟨0, 0, e₀, 0⟩`. -/
 instance instNontrivialDerivationLieAlgebra [Nontrivial R] :
     Nontrivial (derivationLieAlgebra R (Octonion R)) := by
-  refine ⟨diagonalDerivation 1 0, 0, fun h => ?_⟩
-  -- the derivation sends `⟨0, 0, e₀, 0⟩` to itself, so `h` reads `(1 : R) = 0`
+  refine ⟨upperDerivation (Pi.single 0 1), 0, fun h => ?_⟩
   have h₁ := congrArg (fun D : derivationLieAlgebra R (Octonion R) =>
-    ((D : Module.End R (Octonion R)) ⟨0, 0, ![1, 0, 0], 0⟩).v 0) h
+    ((D : Module.End R (Octonion R)) ⟨1, 0, 0, 0⟩).v 0) h
   simp at h₁
+
+end SpecialLinear
 
 end Octonion
 

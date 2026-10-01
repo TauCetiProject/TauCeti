@@ -73,6 +73,8 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
   `TauCeti.Multiquadratic.ncard_primesOver_two_eq_two_pow_sub_one`: when some `dᵢ` is `5`
   modulo `8`, there are `[K : ℚ] / 2` primes above `2`, which is `2ⁿ⁻¹` under square-class
   independence.
+* `TauCeti.Multiquadratic.inertiaDeg_dvd_two`: at every rational prime, ramified or not, the
+  residue degree divides `2`.
 
 ## References
 
@@ -396,5 +398,22 @@ theorem ncard_primesOver_two_eq_two_pow_sub_one [Finite ι]
   have : Nonempty ι := let ⟨i, _⟩ := h5; ⟨i⟩
   exact eq_two_pow_sub_one_of_mul_two_eq_finrank hr htop hindep
     (ncard_primesOver_two_mul_two_eq_finrank hr htop hd h5)
+
+/-! ### Residue degrees divide two
+
+At any rational prime, ramified or not, the residue degree divides the order of a Frobenius, which
+is an involution. -/
+
+/-- **Residue degrees in a multiquadratic field divide `2`.** Let `K` be generated over `ℚ` by
+square roots of integers. Then every prime of `𝓞 K`, ramified or not and above any rational prime
+`p`, including `p = 2`, has residue degree `1` or `2` over `p`. -/
+theorem inertiaDeg_dvd_two [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] : Q.inertiaDeg ℤ ∣ 2 := by
+  have := isGalois_rat hr htop
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
+  exact (Ideal.inertiaDeg_dvd_orderOf Q hσ).trans (orderOf_dvd_of_pow_eq_one
+    (aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
+      (fun i => by rw [hr i]; simp) htop σ))
 
 end TauCeti.Multiquadratic
