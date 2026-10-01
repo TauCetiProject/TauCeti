@@ -52,6 +52,9 @@ with the same line image gives the same *unordered* pair of sides is not proved 
   `rightHalfPlane`/`leftHalfPlane` depend on the chosen representative of a geodesic line, not
   just its image (`TauCeti.pslS` is the `PSL(2, ℝ)` element of `z ↦ -1/z`;
   `Geodesic.lean`'s `range_geodesicLine_mul_pslS` is the companion fact for the line itself).
+* `TauCeti.UpperHalfPlane.rightHalfPlane_mul_dilation`, `leftHalfPlane_mul_dilation` — by
+  contrast, reparametrising a geodesic line by a dilation (`geodesicLine_mul_dilation`) changes
+  neither half-plane.
 -/
 
 public section
@@ -243,5 +246,34 @@ theorem rightHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
 theorem leftHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     leftHalfPlane (g * pslS) = rightHalfPlane g := by
   rw [← rightHalfPlane_mul_pslS (g * pslS), mul_assoc, pslS_mul_self, mul_one]
+
+/-! ### Reparametrisation by dilations -/
+
+section Dilation
+
+open Matrix.SpecialLinearGroup (dilation)
+
+/-- Reparametrising a geodesic line by a dilation does not change its right half-plane. -/
+@[simp]
+theorem rightHalfPlane_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
+    rightHalfPlane (g * ↑(dilation s)) = rightHalfPlane g := by
+  ext z
+  rw [mem_rightHalfPlane_iff, mem_rightHalfPlane_iff, mul_inv_rev, mul_smul,
+    ← QuotientGroup.mk_inv, Matrix.SpecialLinearGroup.dilation_inv, UpperHalfPlane.pslMk_smul,
+    ← UpperHalfPlane.coe_re, coe_dilation_smul, Complex.re_ofReal_mul, UpperHalfPlane.coe_re]
+  exact mul_pos_iff_of_pos_left (Real.exp_pos _)
+
+/-- Reparametrising a geodesic line by a dilation does not change its left half-plane. -/
+@[simp]
+theorem leftHalfPlane_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
+    leftHalfPlane (g * ↑(dilation s)) = leftHalfPlane g := by
+  ext z
+  rw [mem_leftHalfPlane_iff, mem_leftHalfPlane_iff, mul_inv_rev, mul_smul,
+    ← QuotientGroup.mk_inv, Matrix.SpecialLinearGroup.dilation_inv, UpperHalfPlane.pslMk_smul,
+    ← UpperHalfPlane.coe_re, coe_dilation_smul, Complex.re_ofReal_mul, UpperHalfPlane.coe_re]
+  exact ⟨fun h ↦ neg_of_mul_neg_right h (Real.exp_pos _).le,
+    fun h ↦ mul_neg_of_pos_of_neg (Real.exp_pos _) h⟩
+
+end Dilation
 
 end TauCeti.UpperHalfPlane

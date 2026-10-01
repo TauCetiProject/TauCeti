@@ -45,29 +45,6 @@ namespace TauCeti.UpperHalfPlane
 
 open Matrix.SpecialLinearGroup (rotation dilation)
 
-/-! ### Reparametrisation by dilations -/
-
-/-- Reparametrising a geodesic line by a dilation does not change its right half-plane. -/
-@[simp]
-theorem rightHalfPlane_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
-    rightHalfPlane (g * ↑(dilation s)) = rightHalfPlane g := by
-  ext z
-  rw [mem_rightHalfPlane_iff, mem_rightHalfPlane_iff, mul_inv_rev, mul_smul,
-    ← QuotientGroup.mk_inv, Matrix.SpecialLinearGroup.dilation_inv, UpperHalfPlane.pslMk_smul,
-    ← UpperHalfPlane.coe_re, coe_dilation_smul, Complex.re_ofReal_mul, UpperHalfPlane.coe_re]
-  exact mul_pos_iff_of_pos_left (Real.exp_pos _)
-
-/-- Reparametrising a geodesic line by a dilation does not change its left half-plane. -/
-@[simp]
-theorem leftHalfPlane_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
-    leftHalfPlane (g * ↑(dilation s)) = leftHalfPlane g := by
-  ext z
-  rw [mem_leftHalfPlane_iff, mem_leftHalfPlane_iff, mul_inv_rev, mul_smul,
-    ← QuotientGroup.mk_inv, Matrix.SpecialLinearGroup.dilation_inv, UpperHalfPlane.pslMk_smul,
-    ← UpperHalfPlane.coe_re, coe_dilation_smul, Complex.re_ofReal_mul, UpperHalfPlane.coe_re]
-  exact ⟨fun h ↦ neg_of_mul_neg_right h (Real.exp_pos _).le,
-    fun h ↦ mul_neg_of_pos_of_neg (Real.exp_pos _) h⟩
-
 /-! ### The half-planes of a rotated axis, explicitly -/
 
 /-- The real part after the inverse rotation by `θ`, as a quadratic form in the point: the
@@ -156,12 +133,6 @@ def circleCenter (P Q : ℍ) : ℝ :=
 theorem circleCenter_def (P Q : ℍ) :
     circleCenter P Q = (Complex.normSq (Q : ℂ) - Complex.normSq (P : ℂ)) / (2 * (Q.re - P.re)) := by
   rfl
-
-/-- The derivative of a translation is `1`. -/
-theorem smulDeriv_upperRightHom (x : ℝ) (z : ℍ) : smulDeriv (upperRightHom x) z = 1 := by
-  rw [upperRightHom_apply, Matrix.SpecialLinearGroup.smulDeriv_coe]
-  simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix,
-    Matrix.SpecialLinearGroup.transvection_coe]
 
 /-- The derivative of the affine map `toPoint P` is `P.im`. -/
 theorem smulDeriv_toPoint (P z : ℍ) : smulDeriv (toPoint P) z = P.im := by
@@ -409,14 +380,15 @@ theorem exists_velocity_geodesicBetween_zero_eq {P Q : ℍ} (hPQ : P.re ≠ Q.re
   obtain ⟨θ, hgb, hE2, hc⟩ := exists_rotation_of_re_ne hPQ
   have hα0 : Real.sin θ * Real.cos θ ≠ 0 := fun h ↦ by simp [h] at hE2
   refine ⟨2 * (Real.sin θ * Real.cos θ), ?_, ?_⟩
-  · linarith [show 2 * (Real.sin θ * Real.cos θ) * (Q.re - P.re) =
-      -2 * (Real.sin θ * Real.cos θ * (P.re - Q.re)) by ring]
+  · have h : 2 * (Real.sin θ * Real.cos θ) * (Q.re - P.re) =
+        -2 * (Real.sin θ * Real.cos θ * (P.re - Q.re)) := by ring
+    linarith
   · rw [hgb, velocity_mul, geodesicLine_zero, UpperHalfPlane.pslMk_smul, rotation_smul_I,
       smulDeriv_toPoint, velocity_rotation_zero, hc, ← UpperHalfPlane.re_add_im P]
     have he : Complex.exp (2 * θ * Complex.I) =
         ((Real.cos θ : ℂ) + Real.sin θ * Complex.I) ^ 2 := by
-      rw [show (2 * θ * Complex.I : ℂ) = θ * Complex.I + θ * Complex.I by ring, Complex.exp_add,
-        Complex.exp_mul_I, sq, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
+      have h2θ : (2 * θ * Complex.I : ℂ) = θ * Complex.I + θ * Complex.I := by ring
+      rw [h2θ, Complex.exp_add, Complex.exp_mul_I, sq, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
     rw [he]
     obtain ⟨hs, hcθ⟩ := mul_ne_zero_iff.1 hα0
     apply Complex.ext

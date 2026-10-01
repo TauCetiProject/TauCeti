@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
+public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Hyperbolic triangles and the Gauss–Bonnet formula
@@ -16,6 +17,12 @@ half-planes bounded by the geodesic through two of the vertices and containing t
 (`triangle`). Its interior angle at `A` is the angle between the geodesics from `A` to `B` and
 from `A` to `C` (`interiorAngle`). The **Gauss–Bonnet formula** (`volume_triangle`) computes its
 invariant area as the angular defect `π - α - β - γ`.
+
+Membership is read off with `mem_closedSide_iff` and `mem_triangle_iff`. A triangle contains its
+vertices (`left_mem_triangle`), is invariant under cyclic permutation of them
+(`triangle_rotate`) and, when nondegenerate, under every transposition (`triangle_swap_left`,
+`triangle_swap_right`, `triangle_reverse`). An interior angle is the Euclidean angle between any
+positive multiples of the two velocities (`interiorAngle_eq_angle_of_velocity_eq`).
 
 Following Katok, the formula is first proved for triangles with a vertex at infinity
 (`volume_idealRegion`), and a general triangle is the difference of two such, cut along the
@@ -59,6 +66,17 @@ theorem closedSide_def (z w u : ℍ) :
       else closure (leftHalfPlane (geodesicBetween z w)) := by
   rfl
 
+/-- Membership in a closed side: it is the closed right half-plane of the geodesic from `z` to
+`w` when `u` lies in the open right half-plane, and the closed left half-plane otherwise. -/
+theorem mem_closedSide_iff {z w u x : ℍ} :
+    x ∈ closedSide z w u ↔
+      u ∈ rightHalfPlane (geodesicBetween z w) ∧
+          x ∈ closure (rightHalfPlane (geodesicBetween z w)) ∨
+        u ∉ rightHalfPlane (geodesicBetween z w) ∧
+          x ∈ closure (leftHalfPlane (geodesicBetween z w)) := by
+  rw [closedSide_def]
+  split_ifs with h <;> simp [h]
+
 /-- The reference point lies in its closed side. -/
 theorem mem_closedSide_self (z w u : ℍ) : u ∈ closedSide z w u := by
   unfold closedSide
@@ -72,6 +90,12 @@ theorem mem_closedSide_self (z w u : ℍ) : u ∈ closedSide z w u := by
     · exact absurd hu h
     · exact Or.inr hu
     · exact Or.inl hu
+
+/-- The bounding line lies in the closed side. -/
+theorem range_geodesicLine_subset_closedSide (z w u : ℍ) :
+    Set.range (geodesicLine (geodesicBetween z w)) ⊆ closedSide z w u := by
+  rw [closedSide_def]
+  split_ifs <;> simp
 
 /-- Closed sides are closed. -/
 theorem isClosed_closedSide (z w u : ℍ) : IsClosed (closedSide z w u) := by
@@ -124,6 +148,12 @@ theorem triangle_def (A B C : ℍ) :
     triangle A B C = closedSide A B C ∩ closedSide B C A ∩ closedSide C A B := by
   rfl
 
+/-- A point lies in the triangle `A B C` when it lies in each of its three closed sides. -/
+@[simp]
+theorem mem_triangle_iff {A B C z : ℍ} :
+    z ∈ triangle A B C ↔ z ∈ closedSide A B C ∧ z ∈ closedSide B C A ∧ z ∈ closedSide C A B := by
+  rw [triangle_def, Set.mem_inter_iff, Set.mem_inter_iff, and_assoc]
+
 /-- Triangles are closed. -/
 theorem isClosed_triangle (A B C : ℍ) : IsClosed (triangle A B C) :=
   ((isClosed_closedSide _ _ _).inter (isClosed_closedSide _ _ _)).inter (isClosed_closedSide _ _ _)
@@ -138,7 +168,17 @@ theorem smul_triangle (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hBC : B �
   rw [triangle, triangle, Set.smul_set_inter, Set.smul_set_inter, smul_closedSide h hAB,
     smul_closedSide h hBC, smul_closedSide h hCA]
 
-/-- The triangle does not depend on the order of its vertices. -/
+/-- The triangle is invariant under cyclic permutation of its vertices. -/
+theorem triangle_rotate (A B C : ℍ) : triangle B C A = triangle A B C := by
+  rw [triangle_def, triangle_def, Set.inter_comm, ← Set.inter_assoc]
+
+/-- A triangle contains its first vertex; by `triangle_rotate`, it contains all three. -/
+theorem left_mem_triangle (A B C : ℍ) : A ∈ triangle A B C :=
+  mem_triangle_iff.2 ⟨range_geodesicLine_subset_closedSide _ _ _
+    (mem_range_geodesicLine_geodesicBetween_left A B), mem_closedSide_self B C A,
+    range_geodesicLine_subset_closedSide _ _ _ (mem_range_geodesicLine_geodesicBetween_right C A)⟩
+
+/-- The nondegenerate triangle does not depend on the order of its first two vertices. -/
 theorem triangle_swap_left {A B C : ℍ} (hAB : A ≠ B)
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
     triangle B A C = triangle A B C := by
@@ -154,6 +194,19 @@ theorem triangle_swap_left {A B C : ℍ} (hAB : A ≠ B)
       mem_range_geodesicLine_geodesicBetween_left C B)
   rw [triangle, triangle, closedSide_swap hAB hC, closedSide_swap hAC hB,
     closedSide_swap hBC.symm hA, Set.inter_right_comm]
+
+/-- The nondegenerate triangle does not depend on the order of its last two vertices. -/
+theorem triangle_swap_right {A B C : ℍ} (hAB : A ≠ B)
+    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
+    triangle A C B = triangle A B C := by
+  rw [triangle_rotate B A C, triangle_swap_left hAB hC]
+
+/-- The nondegenerate triangle does not depend on the order of its first and last vertices: it
+is unchanged by reversing the order of the vertices. -/
+theorem triangle_reverse {A B C : ℍ} (hAB : A ≠ B)
+    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
+    triangle C B A = triangle A B C := by
+  rw [triangle_rotate A C B, triangle_swap_right hAB hC]
 
 /-- The interior angle of the triangle `A B C` at the vertex `A`: the angle between the geodesics
 from `A` to `B` and from `A` to `C`. -/
@@ -200,11 +253,9 @@ theorem mem_triangle_normal_form_iff {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
   set B := geodesicLine 1 d with hB
   have hBre : B.re = 0 := by rw [hB, geodesicLine_one_apply]; rfl
   have hBim : B.im = Real.exp d := by rw [hB, geodesicLine_one_apply]; rfl
-  have hIre : UpperHalfPlane.I.re = 0 := rfl
-  have hIim : UpperHalfPlane.I.im = 1 := rfl
   have hexp : 1 < Real.exp d := Real.one_lt_exp_iff.2 hd
   have hBC : B.re < C.re := by rw [hBre]; exact hC
-  have hIC : UpperHalfPlane.I.re < C.re := by rw [hIre]; exact hC
+  have hIC : UpperHalfPlane.I.re < C.re := by rw [UpperHalfPlane.I_re]; exact hC
   -- the side `I B` is the imaginary axis, with `C` on its right
   have h1 : closedSide UpperHalfPlane.I B C = {z : ℍ | 0 ≤ z.re} := by
     unfold closedSide
@@ -224,7 +275,7 @@ theorem mem_triangle_normal_form_iff {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
       rw [mem_rightHalfPlane_geodesicBetween_iff_of_re_lt hBC]
       simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
         Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, hBre, hBim,
-        hIre, hIim]
+        UpperHalfPlane.I_re, UpperHalfPlane.I_im]
       nlinarith
     simp only [hImem, ↓reduceIte]
     ext z
@@ -245,13 +296,13 @@ theorem mem_triangle_normal_form_iff {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
         normSq_sub_circleCenter hIC.ne]
       simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
         Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, hBre, hBim,
-        hIre, hIim]
+        UpperHalfPlane.I_re, UpperHalfPlane.I_im]
       nlinarith
     simp only [hBmem, ↓reduceIte]
     ext z
     rw [mem_closure_rightHalfPlane_iff, Set.mem_ofPred_eq]
     obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hIC.ne' z
-    rw [h, hIre, sub_zero, circleCenter_comm, mul_nonneg_iff_of_pos_left hκ,
+    rw [h, UpperHalfPlane.I_re, sub_zero, circleCenter_comm, mul_nonneg_iff_of_pos_left hκ,
       mul_nonneg_iff_of_pos_left hC, sub_nonneg]
   rw [triangle, h1, h2, h3]
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
@@ -268,18 +319,18 @@ theorem circleCenter_lt_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 
   have hIn : Complex.normSq ((UpperHalfPlane.I : ℍ) : ℂ) = 1 := by
     rw [UpperHalfPlane.coe_I, Complex.normSq_I]
   have hexp : 1 < Real.exp d := Real.one_lt_exp_iff.2 hd
-  rw [circleCenter_def, circleCenter_def, hBre, hBn, hIn, show UpperHalfPlane.I.re = 0 from rfl,
-    sub_zero, div_lt_div_iff_of_pos_right (by positivity)]
+  rw [circleCenter_def, circleCenter_def, hBre, hBn, hIn, UpperHalfPlane.I_re, sub_zero,
+    div_lt_div_iff_of_pos_right (by positivity)]
   nlinarith
 
 /-- The "radical line" identity: the difference of the two power functions of `z` with respect
 to the semicircles through `C` is affine in `z.re` and vanishes at `C.re`. -/
-theorem normSq_sub_circleCenter_sub_eq {c₁ c₂ : ℝ} (C z : ℍ) :
-    (Complex.normSq ((z : ℂ) - c₁) - Complex.normSq ((C : ℂ) - c₁)) -
-        (Complex.normSq ((z : ℂ) - c₂) - Complex.normSq ((C : ℂ) - c₂)) =
+theorem normSq_sub_circleCenter_sub_eq {c₁ c₂ : ℝ} (C z : ℂ) :
+    (Complex.normSq (z - c₁) - Complex.normSq (C - c₁)) -
+        (Complex.normSq (z - c₂) - Complex.normSq (C - c₂)) =
       2 * (c₂ - c₁) * (z.re - C.re) := by
   simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-    Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
+    Complex.ofReal_im, sub_zero]
   ring
 
 /-- In normal form, the ideal-vertex region over the semicircle through `i exp d` and `C` is
@@ -296,6 +347,7 @@ theorem idealRegionAbove_subset_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} 
   rw [Real.sq_sqrt (Complex.normSq_nonneg _)] at h2 ⊢
   have hrad := normSq_sub_circleCenter_sub_eq (c₁ := circleCenter UpperHalfPlane.I C)
     (c₂ := circleCenter (geodesicLine 1 d) C) C z
+  rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_re] at hrad
   have hlt := circleCenter_lt_of_normal_form hd hC
   nlinarith [mul_nonneg (sub_nonneg.2 hlt.le) (sub_nonneg.2 hz)]
 
@@ -331,6 +383,7 @@ theorem triangle_subset_diff_union_of_normal_form {d : ℝ} (hd : 0 < d) {C : �
   have hBC : (geodesicLine 1 d).re < C.re := by rw [hBre]; exact hC
   have hrad := normSq_sub_circleCenter_sub_eq (c₁ := circleCenter UpperHalfPlane.I C)
     (c₂ := circleCenter (geodesicLine 1 d) C) C z
+  rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_re] at hrad
   have hlt := circleCenter_lt_of_normal_form hd hC
   -- the triangle lies over `[0, C.re]`
   have hzC : z.re ≤ C.re := by
@@ -350,46 +403,40 @@ theorem triangle_subset_diff_union_of_normal_form {d : ℝ} (hd : 0 < d) {C : �
     rw [mem_range_geodesicLine_geodesicBetween_iff_of_re_ne hBC.ne, h2,
       normSq_sub_circleCenter hBC.ne]
 
-/-- `√(normSq z)` is the norm. -/
-private theorem sqrt_normSq_eq_norm (z : ℂ) : Real.sqrt (Complex.normSq z) = ‖z‖ := by
-  rw [Complex.normSq_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)]
-
-/-- The argument of a quotient of two points of the upper half-plane whose quotient also has
-nonnegative imaginary part is the difference of the arguments. -/
-private theorem arg_div_eq_sub_of_im_pos {x y : ℂ} (hx : 0 < x.im) (hy : 0 < y.im) :
-    Complex.arg (x / y) = Complex.arg x - Complex.arg y := by
-  have hx0 : x ≠ 0 := fun h ↦ hx.ne' (by rw [h, Complex.zero_im])
-  have hy0 : y ≠ 0 := fun h ↦ hy.ne' (by rw [h, Complex.zero_im])
-  have h := Complex.arg_div_coe_angle hx0 hy0
-  rw [← Real.Angle.coe_sub] at h
-  have h' := (Real.Angle.toReal_coe_eq_self_iff (θ := Complex.arg x - Complex.arg y)).2
-    ⟨by linarith [Complex.arg_nonneg_iff.2 hx.le, Complex.arg_lt_pi_iff.2 (Or.inr hy.ne')],
-      by linarith [Complex.arg_nonneg_iff.2 hy.le, Complex.arg_le_pi x]⟩
-  rw [← h, Complex.arg_coe_angle_toReal_eq_arg] at h'
-  exact h'
+/-- If the velocities at `P` of the geodesics to `Q₁` and `Q₂` are positive multiples of `v₁` and
+`v₂`, the interior angle at `P` is the Euclidean angle between `v₁` and `v₂`. -/
+theorem interiorAngle_eq_angle_of_velocity_eq {P Q₁ Q₂ : ℍ} {μ₁ μ₂ : ℝ} {v₁ v₂ : ℂ}
+    (hμ₁ : 0 < μ₁) (hμ₂ : 0 < μ₂) (h₁ : velocity (geodesicBetween P Q₁) 0 = μ₁ * v₁)
+    (h₂ : velocity (geodesicBetween P Q₂) 0 = μ₂ * v₂) :
+    interiorAngle P Q₁ Q₂ = InnerProductGeometry.angle v₁ v₂ := by
+  rw [interiorAngle, geodesicAngle_def, h₁, h₂, ← Complex.real_smul, ← Complex.real_smul,
+    InnerProductGeometry.angle_smul_left_of_pos _ _ hμ₁,
+    InnerProductGeometry.angle_smul_right_of_pos _ _ hμ₂]
 
 /-- The interior angle at `I` of the triangle in normal form. -/
 theorem interiorAngle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
     interiorAngle UpperHalfPlane.I (geodesicLine 1 d) C =
       Real.arccos (circleCenter UpperHalfPlane.I C /
         Real.sqrt (Complex.normSq ((UpperHalfPlane.I : ℂ) - circleCenter UpperHalfPlane.I C))) := by
-  have hIC : UpperHalfPlane.I.re ≠ C.re := by
-    rw [show UpperHalfPlane.I.re = 0 from rfl]
-    exact hC.ne
-  obtain ⟨μ, hμ, hv⟩ := exists_velocity_geodesicBetween_zero_eq hIC
-  rw [show UpperHalfPlane.I.re = 0 from rfl, sub_zero] at hμ
-  have hμ' : μ < 0 := (neg_of_mul_neg_left hμ hC.le)
-  set c := circleCenter UpperHalfPlane.I C with hc
-  have hne : (c : ℂ) - UpperHalfPlane.I ≠ 0 := fun h ↦ by
-    have := congrArg Complex.im h
-    simp at this
-  rw [interiorAngle, geodesicBetween_I_geodesicLine_one hd, geodesicAngle_def, velocity_one,
-    Real.exp_zero, Complex.ofReal_one, mul_one, hv, ← Complex.real_smul,
-    InnerProductGeometry.angle_smul_right_of_neg _ _ hμ', ← mul_neg, ← mul_one Complex.I,
-    mul_assoc, one_mul, Complex.angle_mul_left Complex.I_ne_zero, neg_sub,
-    Complex.angle_one_left hne, Complex.arg_of_im_neg (by simp), abs_neg,
-    abs_of_nonneg (Real.arccos_nonneg _), sqrt_normSq_eq_norm, norm_sub_rev]
-  congr 2
+  set c := circleCenter UpperHalfPlane.I C
+  obtain ⟨μ, hμ, hv⟩ := exists_velocity_geodesicBetween_zero_eq (UpperHalfPlane.I_re.trans_ne hC.ne)
+  rw [UpperHalfPlane.I_re, sub_zero] at hμ
+  -- the geodesic to `B` runs up the imaginary axis, the one to `C` clockwise along the semicircle
+  have h₁ : velocity (geodesicBetween UpperHalfPlane.I (geodesicLine 1 d)) 0 =
+      (1 : ℝ) * (Complex.I * 1) := by
+    rw [geodesicBetween_I_geodesicLine_one hd, velocity_one]
+    simp
+  have h₂ : velocity (geodesicBetween UpperHalfPlane.I C) 0 =
+      (-μ : ℝ) * (Complex.I * (c - Complex.I)) := by
+    rw [hv, UpperHalfPlane.coe_I]
+    push_cast
+    ring
+  have hne : (c : ℂ) - Complex.I ≠ 0 := sub_ne_zero.2 fun h ↦ by
+    simpa using congrArg Complex.im h
+  rw [interiorAngle_eq_angle_of_velocity_eq one_pos (neg_pos.2 (neg_of_mul_neg_left hμ hC.le))
+      h₁ h₂, Complex.angle_mul_left Complex.I_ne_zero, Complex.angle_one_left hne,
+    Complex.arg_of_im_neg (by simp), abs_neg, abs_of_nonneg (Real.arccos_nonneg _),
+    ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm, UpperHalfPlane.coe_I, norm_sub_rev]
   simp
 
 /-- The interior angle at `i exp d` of the triangle in normal form. -/
@@ -399,39 +446,37 @@ theorem interiorAngle_geodesicLine_one_I {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 
         Real.sqrt (Complex.normSq ((geodesicLine 1 d : ℂ) -
           circleCenter (geodesicLine 1 d) C))) := by
   set B := geodesicLine 1 d with hB
+  set c := circleCenter B C
   have hBre : B.re = 0 := by rw [hB, geodesicLine_one_apply]; rfl
   have hBim : B.im = Real.exp d := by rw [hB, geodesicLine_one_apply]; rfl
-  have hBC : B.re ≠ C.re := by rw [hBre]; exact hC.ne
+  have hexp : 1 < Real.exp d := Real.one_lt_exp_iff.2 hd
   have hBI : B ≠ UpperHalfPlane.I := fun h ↦ by
     have := congrArg UpperHalfPlane.im h
-    rw [hBim] at this
-    exact (Real.one_lt_exp_iff.2 hd).ne' this
-  obtain ⟨μ, hμ, hv⟩ := exists_velocity_geodesicBetween_zero_eq hBC
+    rw [hBim, UpperHalfPlane.I_im] at this
+    exact hexp.ne' this
+  obtain ⟨μ, hμ, hv⟩ := exists_velocity_geodesicBetween_zero_eq (hBre.trans_ne hC.ne)
   rw [hBre, sub_zero] at hμ
-  have hμ' : μ < 0 := neg_of_mul_neg_left hμ hC.le
-  obtain ⟨ν, hν, hv'⟩ := exists_velocity_geodesicBetween_zero_eq_of_re_eq (P := B)
-    (Q := UpperHalfPlane.I) hBre hBI
-  rw [show UpperHalfPlane.I.im = 1 from rfl, hBim] at hv'
-  have hρ : ν * (1 - Real.exp d) < 0 :=
-    mul_neg_of_pos_of_neg hν (by linarith [Real.one_lt_exp_iff.2 hd])
-  set c := circleCenter B C with hc
-  have hne : (B : ℂ) - c ≠ 0 := fun h ↦ by
-    have := congrArg Complex.im h
-    simp [hBim] at this
-  have hv'' : velocity (geodesicBetween B UpperHalfPlane.I) 0 =
-      (ν * (1 - Real.exp d)) • Complex.I := by
-    rw [hv', Complex.real_smul]
+  obtain ⟨ν, hν, hv'⟩ :=
+    exists_velocity_geodesicBetween_zero_eq_of_re_eq (hBre.trans UpperHalfPlane.I_re.symm) hBI
+  rw [UpperHalfPlane.I_im, hBim] at hv'
+  -- the geodesic to `C` runs clockwise along the semicircle, the one to `I` down the axis
+  have h₁ : velocity (geodesicBetween B C) 0 = (-μ : ℝ) * (-Complex.I * (B - c)) := by
+    rw [hv]
     push_cast
     ring
-  rw [interiorAngle, geodesicAngle_def, hv, hv'', ← Complex.real_smul,
-    InnerProductGeometry.angle_smul_left_of_neg _ _ hμ',
-    InnerProductGeometry.angle_smul_right_of_neg _ _ hρ, InnerProductGeometry.angle_neg_neg,
-    Complex.angle_eq_abs_arg (mul_ne_zero Complex.I_ne_zero hne) Complex.I_ne_zero,
-    mul_div_cancel_left₀ _ Complex.I_ne_zero,
-    Complex.arg_of_im_pos (by simp [hBim, Real.exp_pos]),
-    abs_of_nonneg (Real.arccos_nonneg _), sqrt_normSq_eq_norm, ← Real.arccos_neg]
-  congr 2
-  simp [hBre, neg_div]
+  have h₂ : velocity (geodesicBetween B UpperHalfPlane.I) 0 =
+      (ν * (Real.exp d - 1) : ℝ) * (-Complex.I * 1) := by
+    rw [hv']
+    push_cast
+    ring
+  have hne : (B : ℂ) - c ≠ 0 := sub_ne_zero.2 fun h ↦ by
+    simpa [hBim, (Real.exp_pos d).ne'] using congrArg Complex.im h
+  rw [interiorAngle_eq_angle_of_velocity_eq (neg_pos.2 (neg_of_mul_neg_left hμ hC.le))
+      (mul_pos hν (sub_pos.2 hexp)) h₁ h₂,
+    Complex.angle_mul_left (neg_ne_zero.2 Complex.I_ne_zero), Complex.angle_one_right hne,
+    Complex.arg_of_im_pos (by simp [hBim, Real.exp_pos]), abs_of_nonneg (Real.arccos_nonneg _),
+    ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm, ← Real.arccos_neg, ← neg_div]
+  simp [hBre]
 
 /-- The interior angle at `C` of the triangle in normal form: the difference of the angles
 between the vertical through `C` and the two semicircles. -/
@@ -443,24 +488,17 @@ theorem interiorAngle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
           Real.sqrt (Complex.normSq ((geodesicLine 1 d : ℂ) -
             circleCenter (geodesicLine 1 d) C))) := by
   have hBre : (geodesicLine 1 d).re = 0 := by rw [geodesicLine_one_apply]; rfl
-  have hCI : C.re ≠ UpperHalfPlane.I.re := by
-    rw [show UpperHalfPlane.I.re = 0 from rfl]
-    exact hC.ne'
-  have hCB : C.re ≠ (geodesicLine 1 d).re := by rw [hBre]; exact hC.ne'
+  have hCI : C.re ≠ UpperHalfPlane.I.re := hC.ne'.trans_eq UpperHalfPlane.I_re.symm
+  have hCB : C.re ≠ (geodesicLine 1 d).re := hC.ne'.trans_eq hBre.symm
+  -- both geodesics run counterclockwise along their semicircles
   obtain ⟨μ₁, hμ₁, hv₁⟩ := exists_velocity_geodesicBetween_zero_eq hCI
   obtain ⟨μ₂, hμ₂, hv₂⟩ := exists_velocity_geodesicBetween_zero_eq hCB
-  rw [show UpperHalfPlane.I.re = 0 from rfl, zero_sub] at hμ₁
+  rw [UpperHalfPlane.I_re, zero_sub] at hμ₁
   rw [hBre, zero_sub] at hμ₂
-  have hμ₁' : 0 < μ₁ := by nlinarith
-  have hμ₂' : 0 < μ₂ := by nlinarith
   rw [circleCenter_comm] at hv₁ hv₂
   have hlt := circleCenter_lt_of_normal_form hd hC
   have hx : 0 < ((C : ℂ) - circleCenter UpperHalfPlane.I C).im := by simp [C.im_pos]
   have hy : 0 < ((C : ℂ) - circleCenter (geodesicLine 1 d) C).im := by simp [C.im_pos]
-  have hx0 : (C : ℂ) - circleCenter UpperHalfPlane.I C ≠ 0 := fun h ↦
-    hx.ne' (by rw [h, Complex.zero_im])
-  have hy0 : (C : ℂ) - circleCenter (geodesicLine 1 d) C ≠ 0 := fun h ↦
-    hy.ne' (by rw [h, Complex.zero_im])
   -- the quotient of the two radius vectors has nonnegative imaginary part, as `c₂ < c₁`
   have him : 0 ≤ (((C : ℂ) - circleCenter UpperHalfPlane.I C) /
       ((C : ℂ) - circleCenter (geodesicLine 1 d) C)).im := by
@@ -469,20 +507,14 @@ theorem interiorAngle_of_normal_form {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
     simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, sub_zero,
       UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
     nlinarith [C.im_pos]
-  rw [interiorAngle, geodesicAngle_def, hv₁, hv₂, ← Complex.real_smul, ← Complex.real_smul,
-    InnerProductGeometry.angle_smul_left_of_pos _ _ hμ₁',
-    InnerProductGeometry.angle_smul_right_of_pos _ _ hμ₂',
-    Complex.angle_mul_left Complex.I_ne_zero, Complex.angle_eq_abs_arg hx0 hy0,
-    abs_of_nonneg (Complex.arg_nonneg_iff.2 him), arg_div_eq_sub_of_im_pos hx hy,
-    Complex.arg_of_im_pos hx, Complex.arg_of_im_pos hy, ← sqrt_normSq_eq_norm,
-    ← sqrt_normSq_eq_norm, normSq_sub_circleCenter (Ne.symm hCI),
-    normSq_sub_circleCenter (Ne.symm hCB)]
-  simp only [Complex.sub_re, Complex.ofReal_re, UpperHalfPlane.coe_re]
-
-private theorem lt_sqrt_of_sq_lt {a b : ℝ} (h : a ^ 2 < b) : a < Real.sqrt b := by
-  rcases lt_or_ge a 0 with ha | ha
-  · exact ha.trans_le (Real.sqrt_nonneg _)
-  · exact (Real.lt_sqrt ha).2 h
+  rw [interiorAngle_eq_angle_of_velocity_eq (by nlinarith) (by nlinarith) hv₁ hv₂,
+    Complex.angle_mul_left Complex.I_ne_zero,
+    Complex.angle_eq_abs_arg (by rintro h; simp [h] at hx) (by rintro h; simp [h] at hy),
+    abs_of_nonneg (Complex.arg_nonneg_iff.2 him), Complex.arg_div_of_im_pos hx hy,
+    Complex.arg_of_im_pos hx, Complex.arg_of_im_pos hy, ← normSq_sub_circleCenter hCI.symm,
+    ← normSq_sub_circleCenter hCB.symm, ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm,
+    ← RCLike.normSq_to_complex, RCLike.sqrt_normSq_eq_norm]
+  simp
 
 /-- The Gauss–Bonnet formula for the triangle in normal form. -/
 theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
@@ -493,10 +525,8 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
   set B := geodesicLine 1 d with hB
   have hBre : B.re = 0 := by rw [hB, geodesicLine_one_apply]; rfl
   have hBim : B.im = Real.exp d := by rw [hB, geodesicLine_one_apply]; rfl
-  have hIC : UpperHalfPlane.I.re ≠ C.re := by
-    rw [show UpperHalfPlane.I.re = 0 from rfl]
-    exact hC.ne
-  have hBC : B.re ≠ C.re := by rw [hBre]; exact hC.ne
+  have hIC : UpperHalfPlane.I.re ≠ C.re := UpperHalfPlane.I_re.trans_ne hC.ne
+  have hBC : B.re ≠ C.re := hBre.trans_ne hC.ne
   set c₁ := circleCenter UpperHalfPlane.I C with hc₁
   set c₂ := circleCenter B C with hc₂
   set r₁ := Real.sqrt (Complex.normSq ((C : ℂ) - c₁)) with hr₁
@@ -520,16 +550,16 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
   have hr₂sq : r₂ ^ 2 = Complex.normSq ((C : ℂ) - c₂) := Real.sq_sqrt (Complex.normSq_nonneg _)
   have h1a : c₁ - r₁ < 0 := by
     rw [sub_neg]
-    exact lt_sqrt_of_sq_lt (by rw [hn₁]; linarith)
+    exact Real.lt_sqrt_of_sq_lt (by rw [hn₁]; linarith)
   have h1b : C.re < c₁ + r₁ := by
     rw [← sub_lt_iff_lt_add']
-    exact lt_sqrt_of_sq_lt (by rw [hnC]; nlinarith [C.im_pos])
+    exact Real.lt_sqrt_of_sq_lt (by rw [hnC]; nlinarith [C.im_pos])
   have h2a : c₂ - r₂ < 0 := by
     rw [sub_neg]
-    exact lt_sqrt_of_sq_lt (by rw [hn₂]; nlinarith [Real.exp_pos d])
+    exact Real.lt_sqrt_of_sq_lt (by rw [hn₂]; nlinarith [Real.exp_pos d])
   have h2b : C.re < c₂ + r₂ := by
     rw [← sub_lt_iff_lt_add']
-    exact lt_sqrt_of_sq_lt (by rw [hnC]; nlinarith [C.im_pos])
+    exact Real.lt_sqrt_of_sq_lt (by rw [hnC]; nlinarith [C.im_pos])
   -- the areas of the two ideal-vertex regions
   have hV₁ := volume_idealRegionAbove hr₁0 h1a hC.le h1b
   have hV₂ := volume_idealRegionAbove hr₂0 h2a hC.le h2b
