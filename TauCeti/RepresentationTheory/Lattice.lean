@@ -1,0 +1,153 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.GroupTheory.FiniteAbelian.Basic
+public import Mathlib.RingTheory.Localization.BaseChange
+public import TauCeti.Algebra.Module.LocalizedModule.Lift
+public import TauCeti.RepresentationTheory.BaseChange
+
+/-!
+# Lattices with equivalent localizations
+
+Let `ρ` and `σ` be representations of a monoid `G` on finitely generated `R`-modules `V` and `W`,
+and let `A` be the localization of `R` at a submonoid `S` whose elements act injectively on `V`
+and on `W`. If the scalar extensions `A ⊗[R] V` and `A ⊗[R] W` are equivalent representations,
+then `V` and `W` are equivalent up to a scalar of `S`: there are intertwining maps `f : V → W` and
+`f' : W → V` and an `s ∈ S` with `f' ∘ f = s • id` and `f ∘ f' = s • id`.
+
+The maps are obtained by clearing denominators. The equivalence `e` restricted to `V ⊆ A ⊗[R] V`
+takes values with denominators in `S`, and because `V` is finitely generated a single `s ∈ S`
+clears all of them (`Module.Finite.exists_lift_of_isLocalizedModule_of_injective`), so that
+`s • e` maps `V` into `W`. Intertwining is inherited from `e`, since `W` embeds in `A ⊗[R] W`.
+
+For `G`-modules over `ℤ` (abelian groups with a distributive `G`-action), with `S` the nonzero
+integers and `A = ℚ`, this says that two finitely generated torsion-free `G`-modules with
+isomorphic rationalizations are related by an injective `G`-equivariant map with finite
+cokernel. This is the lattice input to the comparison of the reductions modulo a prime `ℓ` of two
+`ℤ[G]`-lattices with isomorphic rationalizations: the reductions need not be isomorphic, but the
+finite-index embedding forces their classes in the Grothendieck group of `𝔽_ℓ[G]` to agree.
+
+## Main results
+
+* `Representation.Equiv.exists_intertwiningMap_comp_eq_smul`: representations on `S`-torsion-free
+  finitely generated modules with equivalent localizations are equivalent up to a scalar of `S`.
+* `TauCeti.exists_injective_finite_quotient_range_of_nonempty_equiv`: two finitely generated
+  torsion-free `G`-modules over `ℤ` with equivalent rationalizations admit an injective
+  equivariant map from one to the other with finite cokernel.
+
+## References
+
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
+  §VII.3, (7.3.3).
+* J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed. (2006), Chapter I, Lemma 2.12.
+-/
+
+public section
+
+namespace TauCeti
+
+open TensorProduct
+
+section Localization
+
+variable {R : Type*} [CommRing R] {A : Type*} [CommRing A] [Algebra R A]
+  {G : Type*} [Monoid G] {V W : Type*} [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+  {ρ : Representation R G V} {σ : Representation R G W}
+
+/-- Two representations on finitely generated modules on which `S` acts injectively, whose
+scalar extensions to the localization `A` of `R` at `S` are equivalent, are equivalent up to a
+scalar of `S`: there are intertwining maps `f : V → W` and `f' : W → V` and `s ∈ S` with
+`f' ∘ f = s • id` and `f ∘ f' = s • id`. -/
+theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
+    (e : (Representation.baseChange A ρ).Equiv (Representation.baseChange A σ))
+    (S : Submonoid R) [IsLocalization S A] [Module.Finite R V] [Module.Finite R W]
+    (hV : ∀ s : S, IsSMulRegular V (s : R)) (hW : ∀ s : S, IsSMulRegular W (s : R)) :
+    ∃ (f : ρ.IntertwiningMap σ) (f' : σ.IntertwiningMap ρ) (s : S),
+      (∀ v, f' (f v) = (s : R) • v) ∧ ∀ w, f (f' w) = (s : R) • w := by
+  set iV := TensorProduct.mk R A V 1
+  set iW := TensorProduct.mk R A W 1
+  have hiV : Function.Injective iV := (IsLocalizedModule.injective_iff_isRegular S iV).mpr hV
+  have hiW : Function.Injective iW := (IsLocalizedModule.injective_iff_isRegular S iW).mpr hW
+  -- Clear the denominators of `e` on `V` and of `e.symm` on `W`.
+  obtain ⟨h, s, hh⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective S hiW
+    (e.toLinearMap.restrictScalars R ∘ₗ iV)
+  obtain ⟨h', t, hh'⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective S hiV
+    (e.symm.toLinearMap.restrictScalars R ∘ₗ iW)
+  replace hh (v : V) : iW (h v) = (s : R) • e (iV v) := congr($hh v)
+  replace hh' (w : W) : iV (h' w) = (t : R) • e.symm (iW w) := congr($hh' w)
+  -- The inclusions `V → A ⊗[R] V` and `W → A ⊗[R] W` are equivariant.
+  have hρ (g : G) (v : V) : iV (ρ g v) = Representation.baseChange A ρ g (iV v) := by
+    simp [iV]
+  have hσ (g : G) (w : W) : iW (σ g w) = Representation.baseChange A σ g (iW w) := by
+    simp [iW]
+  have he (g : G) (x : A ⊗[R] V) : e (Representation.baseChange A ρ g x) =
+      Representation.baseChange A σ g (e x) :=
+    Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g x
+  have he' (g : G) (y : A ⊗[R] W) : e.symm (Representation.baseChange A σ g y) =
+      Representation.baseChange A ρ g (e.symm y) :=
+    Representation.IntertwiningMap.isIntertwining _ _ e.symm.toIntertwiningMap g y
+  -- `e` is `A`-linear, hence commutes with the scalars of `R`.
+  have hes (r : R) (x : A ⊗[R] V) : e (r • x) = r • e x := by
+    rw [← algebraMap_smul A r x, map_smul, algebraMap_smul]
+  have hes' (r : R) (y : A ⊗[R] W) : e.symm (r • y) = r • e.symm y := by
+    rw [← algebraMap_smul A r y, map_smul, algebraMap_smul]
+  have hint (g : G) (v : V) : h (ρ g v) = σ g (h v) := hiW <| by
+    rw [hh, hσ, hh, hρ, he]
+    simp [LinearMap.map_smul_of_tower]
+  have hint' (g : G) (w : W) : h' (σ g w) = ρ g (h' w) := hiV <| by
+    rw [hh', hρ, hh', hσ, he']
+    simp [LinearMap.map_smul_of_tower]
+  have hcomp (v : V) : h' (h v) = ((s * t : S) : R) • v := hiV <| by
+    rw [hh', hh]
+    simp [hes', mul_smul, smul_comm (t : R) (s : R)]
+  have hcomp' (w : W) : h (h' w) = ((s * t : S) : R) • w := hiW <| by
+    rw [hh, hh']
+    simp [hes, mul_smul]
+  exact ⟨⟨h, fun g ↦ LinearMap.ext (hint g)⟩, ⟨h', fun g ↦ LinearMap.ext (hint' g)⟩, s * t,
+    by simpa using hcomp, by simpa using hcomp'⟩
+
+end Localization
+
+section Int
+
+variable {G : Type*} [Monoid G]
+  {V : Type*} [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [Module.IsTorsionFree ℤ V]
+  {W : Type*} [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [Module.IsTorsionFree ℤ W]
+
+/-- Two finitely generated torsion-free `G`-modules over `ℤ` whose rationalizations `ℚ ⊗[ℤ] V`
+and `ℚ ⊗[ℤ] W` are equivalent representations admit an injective `G`-equivariant additive map
+`V → W` with finite cokernel. -/
+theorem exists_injective_finite_quotient_range_of_nonempty_equiv
+    (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
+      (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
+    ∃ f : V →+[G] W, Function.Injective f ∧ Finite (W ⧸ (f : V →+ W).range) := by
+  obtain ⟨e⟩ := h
+  have hreg (s : nonZeroDivisors ℤ) : IsRegular (s : ℤ) :=
+    isRegular_iff_ne_zero.mpr (mem_nonZeroDivisors_iff_ne_zero.mp s.2)
+  obtain ⟨f, f', s, hf'f, hff'⟩ := e.exists_intertwiningMap_comp_eq_smul (nonZeroDivisors ℤ)
+    (fun s ↦ (hreg s).isSMulRegular) fun s ↦ (hreg s).isSMulRegular
+  let φ : V →+[G] W :=
+    { toFun := f
+      map_smul' g v := Representation.IntertwiningMap.isIntertwining _ _ f g v
+      map_zero' := map_zero f
+      map_add' := map_add f }
+  have hf : Function.Injective f := fun a b hab ↦
+    (hreg s).isSMulRegular (by simpa only [hf'f] using congrArg f' hab)
+  -- `φ` is `f` with its equivariance recorded, so it has the same underlying function.
+  refine ⟨φ, hf, ?_⟩
+  have : AddGroup.FG W := Module.Finite.iff_addGroup_fg.mp inferInstance
+  refine AddCommGroup.finite_of_fg_isAddTorsion _ fun q ↦ ?_
+  induction q using QuotientAddGroup.induction_on with | H w => ?_
+  -- `s • w = f (f' w)` lies in the range of `f`.
+  refine isOfFinAddOrder_iff_zsmul_eq_zero.mpr
+    ⟨s, mem_nonZeroDivisors_iff_ne_zero.mp s.2, ?_⟩
+  rw [← QuotientAddGroup.mk_zsmul, QuotientAddGroup.eq_zero_iff, ← hff']
+  exact ⟨f' w, rfl⟩
+
+end Int
+
+end TauCeti
