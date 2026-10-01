@@ -76,6 +76,12 @@ def padicCompletionUnits :
     (Pi.evalMonoidHom _ m)
 
 omit [Fact p.Prime] in
+/-- The commutative group structure of `A(L)`, recorded directly: deriving it through the product
+of the power-class groups is slow enough to defeat instance searches built on top of it, such as
+the one for the quotient of `Additive A(L)` by a submodule. -/
+instance : CommGroup ↑(padicCompletionUnits p L) := inferInstance
+
+omit [Fact p.Prime] in
 /-- A compatible family is characterized by the transition equation at every level. -/
 @[simp]
 theorem mem_padicCompletionUnits_iff
