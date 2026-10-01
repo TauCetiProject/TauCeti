@@ -99,7 +99,8 @@ Together the three families depend on `8 + 3 + 3 = 14` independent parameters, s
 
 ## Implementation notes
 
-Everything is stated over a commutative ring; the base is a field nowhere. The faithfulness result
+Everything is stated over a commutative ring, except the rank bound
+`14 ≤ finrank (Der 𝕆)`, which asks for a field. The faithfulness result
 is stated for the exact hypothesis its proof uses, `IsSMulRegular (Octonion R) (2 : R)`, which is
 not a class; the instance form of it therefore asks for the two classes
 `[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`, which imply it but are strictly
@@ -113,19 +114,6 @@ statement here is about entries of a vector matrix.
 Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (Octonion R)` of
 `TauCeti/Algebra/Lie/Derivation/Basic.lean`, and are applied through the coercion
 `(D : Module.End R (Octonion R))`, which is the simp-normal form of their action there.
-
-The three families are built from an underlying endomorphism and a private membership lemma, so
-that the bundled objects are the only public surface; their twelve entrywise `simp` lemmas, four
-for each family, and their five brackets are that surface, and no consumer unfolds a definition.
-Those brackets and the Leibniz rules of the two vector families are checked entry by entry, each
-entry reduced by the vector `simp` set of `TauCeti/Algebra/Octonion/Basic.lean` to a polynomial in
-the dot products or a linear combination of the entries and their cross products; the `𝔰𝔩₃`
-brackets instead quote `Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero` directly. Only
-the rank bound asks for a field, and only because `TauCeti.finrank_sl` and the
-finite-dimensionality of `Der 𝕆` are what turn an injection into an inequality of ranks; that one
-lemma is the whole of this file's use of `TauCeti/Algebra/Lie/GeneralLinear/Finrank.lean`, which is
-therefore imported privately, while `𝔰𝔩₃` itself, which the statements do mention, comes from
-Mathlib.
 
 ## References
 
