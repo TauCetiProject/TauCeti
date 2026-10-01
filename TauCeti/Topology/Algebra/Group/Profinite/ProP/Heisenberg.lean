@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
 public import TauCeti.Topology.Algebra.Group.Heisenberg
-public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
@@ -33,19 +32,15 @@ universal property of free pro-`p` groups it receives a continuous homomorphism 
 group sending two chosen generators to `(1, 0, 0)` and `(0, 1, 0)`; since their commutator is
 `(0, 0, 1)`, this detects the brackets of generators in the graded Lie ring of the closed lower
 central series of a free pro-`p` group. Two facts make the detection work: the closed lower
-central series of the Heisenberg group over a Hausdorff topological ring stops at `γ_2 = 1`, its
-first term lying in the central `z`-axis, and the `p`-adic powers of `(0, 0, z)` are the elements
-`(0, 0, c z)`.
+central series of the Heisenberg group over a Hausdorff topological ring stops at `γ_2 = 1`
+(`TauCeti.HeisenbergGroup.closedLowerCentralSeries_two_eq_bot`), and the `p`-adic powers of
+`(0, 0, z)` are the elements `(0, 0, c z)`.
 
 ## Main results
 
 * `TauCeti.HeisenbergGroup.isProP`: the Heisenberg group over a compact Hausdorff topological ring
   with pro-`p` additive group is pro-`p`.
 * `TauCeti.HeisenbergGroup.isProP_padicInt`: the Heisenberg group over `ℤ_[p]` is pro-`p`.
-* `TauCeti.HeisenbergGroup.isClosed_zAxis`: the `z`-axis is closed.
-* `TauCeti.HeisenbergGroup.closedLowerCentralSeries_one_le_zAxis`,
-  `TauCeti.HeisenbergGroup.closedLowerCentralSeries_two_eq_bot`: `γ_1` lies in the `z`-axis and
-  `γ_2` is trivial.
 * `TauCeti.HeisenbergGroup.padicPow_mk_zero_zero`: the `p`-adic power of `(0, 0, z)` by `c` is
   `(0, 0, c z)`.
 
@@ -125,6 +120,7 @@ theorem isProP_padicInt (p : ℕ) [Fact p.Prime] : IsProP p (HeisenbergGroup ℤ
 
 /-- The `p`-adic power of an element `(0, 0, z)` of the `z`-axis of the Heisenberg group over
 `ℤ_[p]` by `c` is `(0, 0, c z)`. -/
+@[simp]
 theorem padicPow_mk_zero_zero {p : ℕ} [Fact p.Prime] (z c : ℤ_[p]) :
     (isProP_padicInt p).padicPow ⟨0, 0, z⟩ c = ⟨0, 0, c * z⟩ := by
   -- The continuous homomorphism `c ↦ (0, 0, c z)` out of `ℤ_[p]` sends `1` to `(0, 0, z)`.
@@ -138,42 +134,6 @@ theorem padicPow_mk_zero_zero {p : ℕ} [Fact p.Prime] (z c : ℤ_[p]) :
         c.toAdd * z)⟩
   have h := (isProP_multiplicative_padicInt p).map_padicPow (isProP_padicInt p) g hg (ofAdd 1) c
   simpa [g] using h.symm
-
-section ClosedLowerCentralSeries
-
-variable {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R] [T2Space R]
-
-omit [IsTopologicalRing R] in
-/-- The `z`-axis of the Heisenberg group over a ring with a Hausdorff topology is closed. -/
-theorem isClosed_zAxis :
-    IsClosed ((zAxis : Subgroup (HeisenbergGroup R)) : Set (HeisenbergGroup R)) := by
-  have h : ((zAxis : Subgroup (HeisenbergGroup R)) : Set (HeisenbergGroup R)) =
-      {a | a.x = 0} ∩ {a | a.y = 0} := by
-    ext a
-    simp
-  rw [h]
-  exact (isClosed_eq continuous_x continuous_const).inter
-    (isClosed_eq continuous_y continuous_const)
-
-/-- The first term `γ_1` of the closed lower central series of the Heisenberg group over a
-Hausdorff topological ring lies in the `z`-axis. -/
-theorem closedLowerCentralSeries_one_le_zAxis :
-    closedLowerCentralSeries (HeisenbergGroup R) 1 ≤ zAxis := by
-  rw [closedLowerCentralSeries_one]
-  exact Subgroup.topologicalClosure_minimal _
-    (Subgroup.commutator_le.mpr fun a _ b _ ↦ commutatorElement_mem_zAxis a b) isClosed_zAxis
-
-/-- The closed lower central series of the Heisenberg group over a Hausdorff topological ring
-stops at `γ_2 = 1`. -/
-theorem closedLowerCentralSeries_two_eq_bot :
-    closedLowerCentralSeries (HeisenbergGroup R) 2 = ⊥ := by
-  rw [closedLowerCentralSeries_succ, eq_bot_iff]
-  refine Subgroup.topologicalClosure_minimal _ (Subgroup.commutator_le.mpr fun a ha b _ ↦ ?_)
-    (by simp)
-  rw [commutatorElement_eq_one_of_mem_zAxis (closedLowerCentralSeries_one_le_zAxis ha)]
-  exact one_mem _
-
-end ClosedLowerCentralSeries
 
 end HeisenbergGroup
 

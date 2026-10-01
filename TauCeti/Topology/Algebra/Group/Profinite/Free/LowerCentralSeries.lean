@@ -94,6 +94,15 @@ theorem exists_heisenberg_detect {i j : X} (hij : i ≠ j) :
 
 end freeProP
 
+/-- A degree-one class of the closed lower central series of the Heisenberg group over a
+Hausdorff topological ring vanishes exactly when its representative is trivial, because `γ_2 = 1`
+there. This is how the Heisenberg detecting homomorphisms read off brackets. -/
+private theorem heisenberg_gradedMk_one_eq_zero_iff {R : Type*} [Ring R] [TopologicalSpace R]
+    [IsTopologicalRing R] [T2Space R] {g : pLowerCentralSeries 0 (HeisenbergGroup R) 1} :
+    gradedMk 0 (HeisenbergGroup R) 1 g = 0 ↔ (g : HeisenbergGroup R) = 1 := by
+  rw [gradedMk_eq_zero_iff, ← closedLowerCentralSeries_def,
+    HeisenbergGroup.closedLowerCentralSeries_two_eq_bot, Subgroup.mem_bot]
+
 /-- **Nonvanishing of the brackets of generators.** In the degree-one piece of the closed lower
 central series of a free pro-`p` group, the bracket of the classes of two distinct generators is
 nonzero. -/
@@ -105,9 +114,8 @@ theorem lcsBracket_freeProP_ne_zero {i j : X} (hij : i ≠ j) :
   have h' := gradedMap_gradedBracket (p := 0) φ hφc
     (gradedMkZero 0 _ (freeProP.of i)) (gradedMkZero 0 _ (freeProP.of j))
   rw [h, map_zero, gradedMap_gradedMkZero, gradedMap_gradedMkZero, gradedBracket_gradedMkZero,
-    eq_comm, gradedMk_eq_zero_iff, Subgroup.coe_mk, hφi, hφj, HeisenbergGroup.commutatorElement_eq,
-    ← closedLowerCentralSeries_def, HeisenbergGroup.closedLowerCentralSeries_two_eq_bot,
-    Subgroup.mem_bot] at h'
+    eq_comm, heisenberg_gradedMk_one_eq_zero_iff, Subgroup.coe_mk, hφi, hφj,
+    HeisenbergGroup.commutatorElement_eq] at h'
   simpa using congrArg HeisenbergGroup.z h'
 
 variable (p X) [Fintype X]
@@ -185,12 +193,11 @@ private theorem eq_zero_of_degreeOneSum_eq_zero {c : {ij : X × X // ij.1 < ij.2
     rw [hF.map_padicPow hH φ hφc, map_commutatorElement]
   have h' := congrArg (gradedMap 0 φ hφc 1) h
   rw [degreeOneSum, map_sum, map_zero, Fintype.sum_eq_single ⟨(a, b), hab⟩] at h'
-  · rw [gradedMap_gradedMk, gradedMk_eq_zero_iff, Subgroup.coe_mk, hφ, hφa, hφb,
-      HeisenbergGroup.commutatorElement_eq, ← closedLowerCentralSeries_def,
-      HeisenbergGroup.closedLowerCentralSeries_two_eq_bot, Subgroup.mem_bot] at h'
-    simpa [HeisenbergGroup.padicPow_mk_zero_zero] using congrArg HeisenbergGroup.z h'
+  · rw [gradedMap_gradedMk, heisenberg_gradedMk_one_eq_zero_iff, Subgroup.coe_mk, hφ, hφa, hφb,
+      HeisenbergGroup.commutatorElement_eq] at h'
+    simpa using congrArg HeisenbergGroup.z h'
   · rintro ⟨⟨k, l⟩, hkl⟩ hne
-    rw [gradedMap_gradedMk, gradedMk_eq_zero_iff, Subgroup.coe_mk, hφ]
+    rw [gradedMap_gradedMk, heisenberg_gradedMk_one_eq_zero_iff, Subgroup.coe_mk, hφ]
     -- Unless `(k, l) = (a, b)`, one of `x_k` and `x_l` is sent to `1`.
     have hzero : φ (freeProP.of k) = 1 ∨ φ (freeProP.of l) = 1 := by
       by_cases hka : k = a
@@ -202,7 +209,7 @@ private theorem eq_zero_of_degreeOneSum_eq_zero {c : {ij : X × X // ij.1 < ij.2
         · exact .inl (hφk k hka hkb)
     rcases hzero with h0 | h0 <;>
       simp only [h0, commutatorElement_one_left, commutatorElement_one_right,
-        IsProP.one_padicPow, one_mem]
+        IsProP.one_padicPow]
 
 /-- **Spanning in degree one.** Every class in `gr_1(F)` is a degree-one sum: by the spanning
 theorem it is a sum of brackets `[x_i, y_i]`, and expanding each `y_i` in the degree-zero basis
@@ -221,8 +228,7 @@ private theorem degreeOneSum_surjective : Function.Surjective (degreeOneSum p X)
   have hB (i k : X) : B i k ∈ LinearMap.range L := by
     rcases lt_trichotomy i k with hik | rfl | hik
     · exact ⟨Pi.single ⟨(i, k), hik⟩ 1, by simp [L]⟩
-    · rw [show B i i = 0 from gradedBracket_self _]
-      exact zero_mem _
+    · simp only [B, gradedBracket_self, zero_mem]
     · have hswap : B i k = -B k i := by
         rw [← gradedCast_gradedBracket_swap, gradedCast_rfl]
       rw [hswap]
