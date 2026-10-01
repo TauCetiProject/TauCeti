@@ -106,7 +106,7 @@ end Semiring
 
 section Ring
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- Twice a pairing of a symmetric form belongs to its norm ideal. -/
 theorem two_mul_apply_mem_normIdeal (B : LinearMap.BilinForm R M) (hB : B.IsSymm) (x y : M) :
