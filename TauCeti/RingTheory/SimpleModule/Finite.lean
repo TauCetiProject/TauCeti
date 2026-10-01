@@ -80,8 +80,8 @@ theorem exists_prime_torsionBy_modN_dichotomy (R M : Type*) [Ring R] [AddCommGro
       ∀ ℓ : ℕ, ℓ.Prime → ℓ ≠ p →
         AddSubgroup.torsionBy M (ℓ : ℤ) = ⊥ ∧ Subsingleton (ModN M ℓ) := by
   obtain ⟨p, hp, hkill⟩ := exists_prime_forall_nsmul_eq_zero R M
-  refine ⟨p, hp, eq_top_iff.mpr fun m _ ↦ AddSubgroup.torsionBy.nsmul_iff.mpr (hkill m),
-    ⟨modNEquiv hkill⟩, fun ℓ hℓ hne ↦ ?_⟩
+  refine ⟨p, hp, torsionBy_eq_top_of_forall_nsmul_eq_zero hkill, ⟨modNEquiv hkill⟩,
+    fun ℓ hℓ hne ↦ ?_⟩
   have hcop : Nat.Coprime ℓ p := (Nat.coprime_primes hℓ hp).mpr hne
   exact ⟨torsionBy_eq_bot_of_coprime hkill hcop, subsingleton_modN_of_coprime hkill hcop⟩
 

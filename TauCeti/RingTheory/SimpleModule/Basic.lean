@@ -42,29 +42,21 @@ variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
 
 section SimpleModule
 
-variable (R M)
-
-/-- Membership in the kernel of multiplication by `n`, read without the `ℕ`-action on linear
-maps. -/
-private theorem mem_ker_nsmul_id_iff {n : ℕ} {m : M} :
-    m ∈ LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ↔ n • m = 0 := by
-  rw [LinearMap.mem_ker, LinearMap.smul_apply, LinearMap.id_apply]
-
-variable {R M}
-
 /-- **In a simple module a natural number that kills one nonzero element kills every element.**
 Multiplication by `n` is the `R`-linear endomorphism `n • LinearMap.id`, so its kernel is an
 `R`-submodule; a nonzero element of that kernel keeps it from being `⊥`, and in a simple module it
 is then `⊤`. -/
 theorem forall_nsmul_eq_zero_of_ne_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M} (hm₀ : m₀ ≠ 0)
     (h : n • m₀ = 0) (m : M) : n • m = 0 := by
+  -- Membership in that kernel, read without the `ℕ`-action on linear maps.
+  have hmem : ∀ x : M, x ∈ LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ↔ n • x = 0 := fun x ↦ by
+    simp only [LinearMap.mem_ker, LinearMap.smul_apply, LinearMap.id_apply]
   have hne : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ≠ ⊥ := by
     intro hbot
-    have hmem : m₀ ∈ (⊥ : Submodule R M) := hbot ▸ (mem_ker_nsmul_id_iff R M).mpr h
-    exact hm₀ ((Submodule.mem_bot R).mp hmem)
+    exact hm₀ ((Submodule.mem_bot R).mp (hbot ▸ (hmem m₀).mpr h))
   have htop : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) = ⊤ :=
     (eq_bot_or_eq_top _).resolve_left hne
-  exact (mem_ker_nsmul_id_iff R M).mp (htop ▸ Submodule.mem_top)
+  exact (hmem m).mp (htop ▸ Submodule.mem_top)
 
 end SimpleModule
 

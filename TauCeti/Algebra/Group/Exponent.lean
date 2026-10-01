@@ -25,8 +25,8 @@ For a commutative `M` this computes the torsion subgroups and the reductions of 
 natural number at once. Away from the exponent, injectivity makes the torsion subgroup `M[n]` —
 Mathlib's `AddSubgroup.torsionBy M (n : ℤ)` — trivial and surjectivity makes `nM = M`, so the
 reduction `M / nM` — Mathlib's `ModN M n` — is trivial. At the exponent the two computations are the
-opposite ones: `M[p] = ⊤` is Mathlib's `AddSubgroup.torsionBy.nsmul_iff`, and `pM = ⊥` makes the
-reduction `M` itself (`TauCeti.modNEquiv`).
+opposite ones: `M[p] = ⊤` (`TauCeti.torsionBy_eq_top_of_forall_nsmul_eq_zero`) and `pM = ⊥`, the
+latter making the reduction `M` itself (`TauCeti.modNEquiv`).
 
 ## Main definitions
 
@@ -39,8 +39,9 @@ reduction `M` itself (`TauCeti.modNEquiv`).
   `TauCeti.eq_of_prime_forall_nsmul_eq_zero` the uniqueness consequences.
 * `TauCeti.torsionBy_eq_bot_of_coprime`, `TauCeti.subsingleton_modN_of_coprime`: away from the
   exponent both the torsion subgroup and the reduction vanish.
-* `TauCeti.range_lsmul_eq_bot_of_forall_nsmul_eq_zero`: at the exponent itself multiplication is
-  zero.
+* `TauCeti.torsionBy_eq_top_of_forall_nsmul_eq_zero`,
+  `TauCeti.range_lsmul_eq_bot_of_forall_nsmul_eq_zero`: at the exponent itself everything is torsion
+  and multiplication is zero.
 -/
 
 public section
@@ -120,6 +121,12 @@ theorem subsingleton_modN_of_coprime (hp : ∀ m : M, p • m = 0) (h : Nat.Copr
     Submodule.unique_quotient_iff_eq_top.mpr (range_lsmul_eq_top_of_coprime hp h)
   exact @Unique.instSubsingleton _ hu
 
+/-- **At the exponent everything is torsion.** If `p` kills `M` then the `p`-torsion subgroup
+`M[p]` — Mathlib's `AddSubgroup.torsionBy M (p : ℤ)` — is everything. -/
+theorem torsionBy_eq_top_of_forall_nsmul_eq_zero (hp : ∀ m : M, p • m = 0) :
+    AddSubgroup.torsionBy M (p : ℤ) = ⊤ :=
+  eq_top_iff.mpr fun m _ ↦ AddSubgroup.torsionBy.nsmul_iff.mpr (hp m)
+
 /-- **At the exponent multiplication is zero.** -/
 theorem range_lsmul_eq_bot_of_forall_nsmul_eq_zero (hp : ∀ m : M, p • m = 0) :
     LinearMap.range (LinearMap.lsmul ℤ M (p : ℤ)) = ⊥ := by
@@ -131,11 +138,16 @@ theorem range_lsmul_eq_bot_of_forall_nsmul_eq_zero (hp : ∀ m : M, p • m = 0)
 noncomputable def modNEquiv (hp : ∀ m : M, p • m = 0) : ModN M p ≃ₗ[ℤ] M :=
   Submodule.quotEquivOfEqBot _ (range_lsmul_eq_bot_of_forall_nsmul_eq_zero hp)
 
+/-- `TauCeti.modNEquiv` undoes Mathlib's quotient map `ModN.mkQ`. Mathlib's
+`Submodule.quotEquivOfEqBot_apply_mk` is this statement for the `Submodule.Quotient.mk` spelling,
+which `ModN.mkQ` is definitionally but not syntactically, so it never fires here. -/
 @[simp]
 theorem modNEquiv_apply_mkQ (hp : ∀ m : M, p • m = 0) (m : M) :
     modNEquiv hp (ModN.mkQ p m) = m :=
   Submodule.quotEquivOfEqBot_apply_mk _ _ m
 
+/-- The inverse of `TauCeti.modNEquiv` is the quotient map `ModN.mkQ`, the `ModN` spelling that
+Mathlib's `Submodule.quotEquivOfEqBot_symm_apply` does not match. -/
 @[simp]
 theorem modNEquiv_symm_apply (hp : ∀ m : M, p • m = 0) (m : M) :
     (modNEquiv hp).symm m = ModN.mkQ p m :=
