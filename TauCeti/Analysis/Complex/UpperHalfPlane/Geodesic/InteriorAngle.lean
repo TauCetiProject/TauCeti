@@ -56,7 +56,7 @@ end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
 
-/-- Interior angles are invariant under the action. -/
+/-- Interior angles at `A` are invariant under the action, for `A ≠ B` and `A ≠ C`. -/
 theorem interiorAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
     interiorAngle (h • A) (h • B) (h • C) = interiorAngle A B C := by
   rw [interiorAngle_def, interiorAngle_def, geodesicBetween_smul h hAB, geodesicBetween_smul h hAC,

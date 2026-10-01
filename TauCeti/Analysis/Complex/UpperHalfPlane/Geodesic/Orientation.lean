@@ -113,7 +113,7 @@ attribute [local instance] Complex.finrank_real_complex_fact
 
 /-! ### Invariance of the oriented angle -/
 
-/-- **Möbius transformations preserve oriented angles**.
+/-- **Möbius transformations preserve oriented angles** at `A`, for `A ≠ B` and `A ≠ C`.
 Source: Katok, *Fuchsian groups, geodesic flows…* (Clay Math. Proc. 10), Corollary 5.2 p. 18. -/
 theorem orientedAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC : A ≠ C) :
     orientedAngle (h • A) (h • B) (h • C) = orientedAngle A B C := by
@@ -187,20 +187,20 @@ private theorem sign_orientedAngle_eq {A B C : ℍ} (hAC : A ≠ C) :
     ← geodesicLine_geodesicBetween_dist UpperHalfPlane.I ((geodesicBetween A B)⁻¹ • C), hθ,
     sign_orientedAngle_I_geodesicLine_one_rotation (dist_pos.2 hAB) (dist_pos.2 hIC) θ]
 
-/-- The sign of the oriented angle is `+1` exactly when `C` lies to the left of the geodesic
-from `A` to `B`. -/
+/-- For `A ≠ C`, the sign of the oriented angle is `+1` exactly when `C` lies to the left of the
+geodesic from `A` to `B`. -/
 theorem orientedAngle_sign_eq_one_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = 1 ↔ C ∈ leftHalfPlane (geodesicBetween A B) := by
   rw [sign_orientedAngle_eq hAC, sign_eq_one_iff, mem_leftHalfPlane_iff, neg_pos]
 
-/-- The sign of the oriented angle is `-1` exactly when `C` lies to the right of the geodesic
-from `A` to `B`. -/
+/-- For `A ≠ C`, the sign of the oriented angle is `-1` exactly when `C` lies to the right of the
+geodesic from `A` to `B`. -/
 theorem orientedAngle_sign_eq_neg_one_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = -1 ↔ C ∈ rightHalfPlane (geodesicBetween A B) := by
   rw [sign_orientedAngle_eq hAC, sign_eq_neg_one_iff, mem_rightHalfPlane_iff, neg_lt_zero]
 
-/-- The sign of the oriented angle is `0` exactly when `C` lies on the geodesic through `A`
-and `B`. -/
+/-- For `A ≠ C`, the sign of the oriented angle is `0` exactly when `C` lies on the geodesic
+through `A` and `B`. -/
 theorem orientedAngle_sign_eq_zero_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = 0 ↔ C ∈ Set.range (geodesicLine (geodesicBetween A B)) := by
   rw [sign_orientedAngle_eq hAC, sign_eq_zero_iff, mem_range_geodesicLine_iff, neg_eq_zero]
@@ -227,12 +227,14 @@ theorem interiorAngle_lt_pi {A B C : ℍ}
 
 /-! ### Reversal and cyclic invariance of the sides -/
 
-/-- Reversing the direction of a geodesic swaps its two half-planes. -/
+/-- Reversing the direction of the geodesic through two distinct points swaps its two
+half-planes. -/
 theorem leftHalfPlane_geodesicBetween_swap {z w : ℍ} (hzw : z ≠ w) :
     leftHalfPlane (geodesicBetween w z) = rightHalfPlane (geodesicBetween z w) := by
   rw [geodesicBetween_swap hzw, leftHalfPlane_mul_pslS, rightHalfPlane_mul_dilation]
 
-/-- Reversing the direction of a geodesic swaps its two half-planes. -/
+/-- Reversing the direction of the geodesic through two distinct points swaps its two
+half-planes. -/
 theorem rightHalfPlane_geodesicBetween_swap {z w : ℍ} (hzw : z ≠ w) :
     rightHalfPlane (geodesicBetween w z) = leftHalfPlane (geodesicBetween z w) := by
   rw [geodesicBetween_swap hzw, rightHalfPlane_mul_pslS, leftHalfPlane_mul_dilation]
@@ -242,8 +244,8 @@ theorem notMem_range_geodesicLine_of_mem_leftHalfPlane {g : PSL(2, ℝ)} {z : �
     (hz : z ∈ leftHalfPlane g) : z ∉ Set.range (geodesicLine g) :=
   Set.disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine g) hz
 
-/-- **Orientation is cyclically invariant**: if `C` lies to the left of the geodesic from `A` to
-`B`, then `A` lies to the left of the geodesic from `B` to `C`. -/
+/-- **Orientation is cyclically invariant**: for `A ≠ B`, if `C` lies to the left of the geodesic
+from `A` to `B`, then `A` lies to the left of the geodesic from `B` to `C`. -/
 theorem mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane {A B C : ℍ} (hAB : A ≠ B)
     (h : C ∈ leftHalfPlane (geodesicBetween A B)) :
     A ∈ leftHalfPlane (geodesicBetween B C) := by
@@ -264,8 +266,8 @@ theorem mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane {A B C : ℍ} (hA
     Complex.ofReal_re, Complex.ofReal_im]
   nlinarith
 
-/-- **Orientation is cyclically invariant**: if `C` lies to the right of the geodesic from `A` to
-`B`, then `A` lies to the right of the geodesic from `B` to `C`. -/
+/-- **Orientation is cyclically invariant**: for `A ≠ B`, if `C` lies to the right of the geodesic
+from `A` to `B`, then `A` lies to the right of the geodesic from `B` to `C`. -/
 theorem mem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {A B C : ℍ} (hAB : A ≠ B)
     (h : C ∈ rightHalfPlane (geodesicBetween A B)) :
     A ∈ rightHalfPlane (geodesicBetween B C) := by
