@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
@@ -36,6 +37,8 @@ not used.
 * `TauCeti.Huber.isBounded_iff`: unfolding lemma for `IsBounded`.
 * `TauCeti.Huber.isBounded_finsetProd`: a finite pointwise product of bounded sets is bounded.
 * `TauCeti.Huber.isBounded_finite`: finite sets are bounded.
+* `TauCeti.Huber.isBounded_of_isLinearTopology`: in a linearly topologized commutative ring, such
+  as an adic ring, every subset is bounded.
 * `TauCeti.Huber.IsBounded.union`, `TauCeti.Huber.IsBounded.mul`: unions and pointwise products
   of bounded sets are bounded.
 * `TauCeti.Huber.IsBounded.add`, `TauCeti.Huber.IsBounded.addSubgroupClosure`: over a ring with a
@@ -196,6 +199,21 @@ theorem isBounded_finsetProd {ι : Type*} (s : Finset ι) {S : ι → Set M}
     (isBounded_pair_zero_one.subset (by simp)) hS
 
 end CommMonoidWithZero
+
+section LinearTopology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsLinearTopology A A]
+
+/-- Every subset of a linearly topologized commutative ring is bounded: a neighbourhood of zero
+contains an open ideal, which absorbs every subset. This covers the adic rings, such as `ℤ_[p]`
+or `W(𝒪_F)` with its `(p, [ϖ])`-adic topology, and in particular the discrete rings. -/
+theorem isBounded_of_isLinearTopology (S : Set A) : IsBounded S := fun U hU ↦ by
+  obtain ⟨I, hI, hIU⟩ := (IsLinearTopology.hasBasis_ideal (R := A)).mem_iff.mp hU
+  exact ⟨I, hI, by
+    rintro _ ⟨i, hi, s, -, rfl⟩
+    exact hIU (I.mul_mem_right s hi)⟩
+
+end LinearTopology
 
 section Nonarchimedean
 

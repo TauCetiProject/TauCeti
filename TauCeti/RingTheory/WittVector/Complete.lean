@@ -29,6 +29,8 @@ with pair of definition `(A_inf, (p, [ϖ]))`.
 * `WittVector.mem_span_p_teichmuller_pow_of_pow_dvd_coeff`: conversely, if `R` is
   perfect, a Witt vector whose `i`-th coordinate is divisible by `ϖ ^ ((n - i) * p ^ i)` for
   every `i < n` lies in `(p, [ϖ]) ^ n`.
+* `WittVector.span_p_teichmuller_eq_top_iff`: if `R` has characteristic `p`, the ideal `(p, [ϖ])`
+  is proper exactly when `ϖ` is not a unit.
 * `WittVector.isHausdorff_span_p_teichmuller`: if `R` has characteristic `p` and is
   `ϖ`-adically Hausdorff, then `𝕎 R` is `(p, [ϖ])`-adically Hausdorff.
 * `WittVector.isPrecomplete_span_p_teichmuller`: if `R` is perfect of characteristic `p`
@@ -103,6 +105,16 @@ instance isHausdorff_span_p_teichmuller (ϖ : R) [IsHausdorff (span {ϖ}) R] :
     refine IsHausdorff.haus ‹_› (x.coeff i) fun n ↦ ?_
     simp only [smul_eq_mul, mul_top, SModEq.zero, span_singleton_pow, mem_span_singleton] at hx ⊢
     exact pow_dvd_coeff_of_mem_span_p_teichmuller_pow (hx (i + 1 + n)) (Nat.lt_succ_self i)
+
+/-- The ideal `(p, [ϖ])` of `𝕎 R` is the unit ideal exactly when `ϖ` is a unit of `R`: the
+constant coefficient `𝕎 R → R` kills `p` and sends `[ϖ]` to `ϖ`, while a unit `ϖ` has a unit
+Teichmüller representative. -/
+theorem span_p_teichmuller_eq_top_iff {ϖ : R} :
+    span {(p : 𝕎 R), teichmuller p ϖ} = ⊤ ↔ IsUnit ϖ := by
+  refine ⟨fun h ↦ ?_, fun h ↦
+    eq_top_of_isUnit_mem _ (subset_span (by simp)) (h.map (teichmuller p))⟩
+  simpa [map_span, Ideal.map_top, Set.image_pair, span_singleton_eq_top] using
+    congrArg (Ideal.map (constantCoeff : 𝕎 R →+* R)) h
 
 section PerfectRing
 

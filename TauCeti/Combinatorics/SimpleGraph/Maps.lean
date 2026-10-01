@@ -31,7 +31,8 @@ is how a graph on an infinite label set is read as a finite sample.
   intersection;
 * `SimpleGraph.map_sup` — pushing forward along any map commutes with joins;
 * `SimpleGraph.restrictFin_adj` — two labels are joined in a window exactly when they are joined
-  in the graph.
+  in the graph;
+* `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window.
 -/
 
 public section
@@ -104,6 +105,14 @@ theorem comap_restrictFin_natAdd (G : SimpleGraph ℕ) (k l : ℕ) :
 theorem comap_val (G : SimpleGraph ℕ) (n : ℕ) :
     SimpleGraph.comap (fun i : Fin n => (i : ℕ)) G = G.restrictFin n := by
   ext a b; simp [restrictFin_adj]
+
+/-- A window of a longer window is the shorter window: pulling the length-`n` window back along
+the inclusion of `Fin m` in `Fin n` is the length-`m` window. -/
+@[simp]
+theorem comap_restrictFin_castLE {m n : ℕ} (G : SimpleGraph ℕ) (h : m ≤ n) :
+    SimpleGraph.comap (Fin.castLE h) (G.restrictFin n) = G.restrictFin m := by
+  rw [comap_restrictFin]
+  simp
 
 open Classical in
 /-- The adjacency array of a graph: `true` exactly on edges. -/

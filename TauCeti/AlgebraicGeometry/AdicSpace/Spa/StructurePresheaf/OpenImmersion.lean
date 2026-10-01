@@ -47,6 +47,8 @@ the stalk valuations, it makes the rational subset `U` an open affinoid subspace
 
 * `TauCeti.ValuationSpectrum.presentationLimitMap_comp_presentationLimitLocImageIso_hom` : the
   rational-level identification commutes with restriction.
+* `TauCeti.ValuationSpectrum.presentationLimitLocImageIso_hom` : the rational-level identification
+  is `presentationLimitLocIso` at `j(W)`, up to transport along `j⁻¹(j(W)) = W`.
 * `TauCeti.ValuationSpectrum.presentationLimitPresheafLocIso_hom_app_comp_map` and
   `TauCeti.ValuationSpectrum.presentationLimitPresheafLocIso_hom_app` : the presheaf isomorphism,
   followed by restriction to a rational open, is the rational-level identification; on a rational
@@ -95,6 +97,23 @@ noncomputable def presentationLimitLocImageIso :
       (spaComapLoc_functor_obj_mem_spaRationalOpens P Aplus hP T s S hden hT W hW)
       (spaComapLoc_functor_obj_le_spaBasicOpen P Aplus hP T s S hden W) ≪≫
     eqToIso (congrArg _ (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W))
+
+/-- On a rational open `W` of `Spa(B, A_U⁺)`, the identification `presentationLimitLocImageIso` is
+`presentationLimitLocIso` at the rational open `j(W)`, followed by the transport along
+`j⁻¹(j(W)) = W`. -/
+theorem presentationLimitLocImageIso_hom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ (W : Opens ↥(spa (completedPlusSubring P Aplus T s S hden)))
+      (hW : W ∈ spaRationalOpens (completedPlusSubring P Aplus T s S hden)),
+      (presentationLimitLocImageIso P Aplus T s S hden hAplus hP hT W hW).hom =
+        (presentationLimitLocIso P Aplus T s S hden hAplus hT _
+            (spaComapLoc_functor_obj_mem_spaRationalOpens P Aplus hP T s S hden hT W hW)
+            (spaComapLoc_functor_obj_le_spaBasicOpen P Aplus hP T s S hden W)).hom ≫
+          eqToHom (congrArg _ (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W)) := by
+  intro W hW
+  rw [presentationLimitLocImageIso, Iso.trans_hom, eqToIso.hom]
 
 /-- **The identification on rational opens is natural**: for rational opens `W' ⊆ W` of
 `Spa(B, A_U⁺)`, the isomorphisms at `W` and `W'` carry the restriction map from `j(W)` to `j(W')`

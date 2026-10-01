@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # Tensoring a short exact sequence of representations
@@ -18,7 +19,8 @@ records that a short exact sequence of representations which is split as a seque
 the first map survives tensoring and keeps the tensored first map injective, while right
 exactness of the tensor product supplies exactness and the surjectivity of the last map. The
 dimension-shifting sequences through the modules induced and coinduced from the trivial subgroup
-are of this kind.
+are of this kind. Tensoring with a representation whose underlying module is flat over `k`
+preserves every short exact sequence.
 
 ## Main statements
 
@@ -34,6 +36,8 @@ are of this kind.
   `Rep.shortExact_map_tensorLeft_of_rightInverse`: tensoring on the left preserves a short exact
   sequence whose first map has a `k`-linear retraction, or whose last map has a `k`-linear
   section.
+* `Rep.shortExact_map_tensorLeft_of_flat`: tensoring on the left with a representation whose
+  underlying module is flat preserves every short exact sequence.
 -/
 
 public section
@@ -74,6 +78,14 @@ theorem shortExact_map_tensorLeft_of_injective {S : ShortComplex (Rep.{u} k G)}
   mono_f := (mono_iff_injective _).2 hf
   epi_g := (epi_iff_surjective _).2 <|
     LinearMap.lTensor_surjective M.V ((epi_iff_surjective S.g).1 inferInstance)
+
+/-- Tensoring on the left with a representation whose underlying module is flat over `k` preserves
+short exact sequences. -/
+theorem shortExact_map_tensorLeft_of_flat {S : ShortComplex (Rep.{u} k G)} (hS : S.ShortExact)
+    (M : Rep k G) [Module.Flat k M.V] : (S.map (tensorLeft M)).ShortExact :=
+  have := hS.epi_g
+  shortExact_map_tensorLeft_of_injective hS.exact M <|
+    Module.Flat.lTensor_preserves_injective_linearMap _ ((mono_iff_injective S.f).1 hS.mono_f)
 
 /-- Tensoring on the left with `M` keeps a `k`-linear retraction `r` of a morphism of
 representations: `M ⊗ r` is a retraction of `M ◁ f`. -/
