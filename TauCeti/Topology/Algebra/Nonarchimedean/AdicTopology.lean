@@ -108,14 +108,15 @@ theorem isLinearTopology (hI : IsAdic I) : IsLinearTopology R R :=
   hI ▸ I.isLinearTopology
 
 /-- A ring homomorphism from an `I`-adic ring to a `J`-adic ring is continuous as soon as it
-carries `I` into the radical of `J`, provided `I` is finitely generated. The image of `I` is then
-finitely generated, so some power `(f I) ^ k` lies in `J`, and `f` carries `I ^ (k * n)` into
-`J ^ n`. Mapping `I` into `J` itself is the special case `J ≤ J.radical`. -/
+carries `I` into the radical of `J`, provided `I` is finitely generated. Mapping `I` into `J`
+itself is the special case `J ≤ J.radical`. -/
 theorem continuous_of_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace S] {J : Ideal S}
     (hI : IsAdic I) (hJ : IsAdic J) (hfg : I.FG) {f : R →+* S} (hf : I.map f ≤ J.radical) :
     Continuous f := by
   have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
   have : IsTopologicalRing S := hJ ▸ J.nonarchimedean.toIsTopologicalRing
+  -- the image of `I` is finitely generated, so some power `(f I) ^ k` lies in `J`, and `f`
+  -- carries `I ^ (k * n)` into `J ^ n`
   obtain ⟨k, hk⟩ := Ideal.exists_pow_le_of_le_radical_of_fg hf (hfg.map f)
   refine continuous_of_tendsto_nhds_zero f ?_
   rw [hI.hasBasis_nhds_zero.tendsto_iff hJ.hasBasis_nhds_zero]

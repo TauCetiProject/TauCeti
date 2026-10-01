@@ -83,11 +83,12 @@ open Topology TauCeti.Huber
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 /-- **Topologically nilpotent elements are eventually dominated at a continuous point.** If `v`
-is continuous, `t` is topologically nilpotent and `v f ≠ 0`, then `v (tⁿ) < v f` for some `n`:
-the ball `{a | v a < v f}` is open by continuity and contains `0`, so it contains a power of `t`. -/
+is continuous, `t` is topologically nilpotent and `v f ≠ 0`, then `v (tⁿ) < v f` for some `n`. -/
 theorem IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent {v : Spv A} (hv : v.IsContinuous)
     {t : A} (ht : IsTopologicallyNilpotent t) {f : A} (hf : f ∉ v.supp) :
     ∃ n : ℕ, v.toValuativeRel.vlt (t ^ n) f := by
+  -- the ball `{a | v a < v f}` is open by continuity and contains `0`, so it contains a power
+  -- of `t`
   have hfne : v.valuation f ≠ 0 := by
     rwa [Ne, ← Valuation.mem_supp_iff, ← supp_eq_valuation_supp]
   obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent (v := v.valuation)

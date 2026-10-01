@@ -104,16 +104,17 @@ theorem spaAnalytic_antitone : Antitone (spaAnalytic (A := A)) := fun _ _ hle �
   Set.inter_subset_inter_left _ (spa_antitone hle)
 
 /-- In a ring whose topology is `I`-adic, a point is analytic exactly when its support does not
-contain `I`. An open prime ideal contains a power of `I`, hence `I` itself, and conversely a prime
-containing `I` contains the open subgroup `I`. -/
+contain `I`. -/
 theorem isAnalyticPoint_iff_not_le_supp_of_isAdic {I : Ideal A} (hI : IsAdic I) (v : Spv A) :
     IsAnalyticPoint v ↔ ¬ I ≤ v.supp := by
   have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
   rw [isAnalyticPoint_def, not_iff_not]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds v.supp.zero_mem)
+  · -- an open prime ideal contains a power of `I`, hence `I` itself
+    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds v.supp.zero_mem)
     exact Ideal.IsPrime.le_of_pow_le hn
-  · exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := v.supp.toAddSubgroup) h
+  · -- a prime containing `I` contains the open subgroup `I`
+    exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := v.supp.toAddSubgroup) h
       (by simpa using IsAdic.isOpen_pow hI 1)
 
 section TopologicalRing
