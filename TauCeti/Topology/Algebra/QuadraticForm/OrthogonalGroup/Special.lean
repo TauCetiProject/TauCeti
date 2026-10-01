@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.Algebra.Module.Determinant
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
+import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
 # The determinant-one subgroup of an orthogonal group
@@ -60,17 +62,12 @@ variable [T1Space K]
 /-- The determinant-one subgroup is closed in the orthogonal group. -/
 theorem _root_.QuadraticMap.isClosed_specialOrthogonalWithin :
     IsClosed (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) := by
-  have hset : (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) =
-      {g | (orthogonalDet Q g : K) = 1} := by
+  let det : orthogonalGroup Q →ₜ* Kˣ := ⟨orthogonalDet Q, continuous_orthogonalDet Q⟩
+  have hker : specialOrthogonalWithin Q = (orthogonalDet Q).ker := by
     ext g
-    simp only [Set.mem_ofPred_eq, orthogonalDet_apply]
-    constructor
-    · intro hg
-      exact congrArg Units.val (mem_specialOrthogonalWithin_iff.mp hg)
-    · intro hg
-      exact mem_specialOrthogonalWithin_iff.mpr (Units.val_injective hg)
-  rw [hset]
-  exact isClosed_singleton.preimage (continuous_orthogonalDet_val Q)
+    simp only [mem_specialOrthogonalWithin_iff, MonoidHom.mem_ker, orthogonalDet_apply]
+  rw [hker]
+  exact det.isClosed_ker
 
 end CommRing
 
@@ -81,45 +78,24 @@ variable {K V : Type*} [CommRing K] [IsDomain K] [TopologicalSpace K]
 /-- The determinant-one subgroup is open in the orthogonal group. -/
 theorem _root_.QuadraticMap.isOpen_specialOrthogonalWithin (hQ : Q.polarBilin.SeparatingLeft) :
     IsOpen (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) := by
-  have hrange : Set.range (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) ⊆
-      ({1, -1} : Set K) := by
+  have hrange : Set.range (orthogonalDet Q) ⊆ ({1, -1} : Set Kˣ) := by
     rintro u ⟨g, rfl⟩
     have hs : (orthogonalDet Q g : K) ^ 2 = 1 := by
       simpa only [Units.val_pow_eq_pow_val, Units.val_one] using
         congrArg Units.val (orthogonalDet_sq hQ g)
-    simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using (sq_eq_one_iff.mp hs)
-  by_cases hchar : (1 : K) = -1
-  · have htop : (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) = Set.univ := by
-      ext g
-      simp only [Set.mem_univ, iff_true]
-      apply mem_specialOrthogonalWithin_iff.mpr
-      apply Units.ext
-      rcases Set.mem_insert_iff.mp (hrange (Set.mem_range_self g)) with h | h
-      · simpa only [orthogonalDet_apply, Units.val_one] using h
-      · simpa only [Set.mem_singleton_iff, orthogonalDet_apply, Units.val_one, ← hchar]
-          using h
-    rw [htop]
-    exact isOpen_univ
-  · have hclosed : IsClosed {g : orthogonalGroup Q | (orthogonalDet Q g : K) = -1} :=
-      isClosed_singleton.preimage (continuous_orthogonalDet_val Q)
-    have hset : (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) =
-        {g | (orthogonalDet Q g : K) ≠ -1} := by
-      ext g
-      constructor
-      · intro hg
-        have h : (orthogonalDet Q g : K) = 1 := by
-          simpa only [orthogonalDet_apply, Units.val_one] using
-            congrArg Units.val (mem_specialOrthogonalWithin_iff.mp hg)
-        change (orthogonalDet Q g : K) ≠ -1
-        simpa only [h] using hchar
-      · intro hg
-        apply mem_specialOrthogonalWithin_iff.mpr
-        apply Units.ext
-        rcases Set.mem_insert_iff.mp (hrange (Set.mem_range_self g)) with h | h
-        · simpa only [orthogonalDet_apply, Units.val_one] using h
-        · exact (hg (Set.mem_singleton_iff.mp h)).elim
-    rw [hset]
-    simpa only [Set.compl_ofPred] using hclosed.isOpen_compl
+    rcases sq_eq_one_iff.mp hs with h | h
+    · exact Set.mem_insert_iff.mpr (Or.inl (Units.val_injective (by simpa using h)))
+    · exact Set.mem_insert_iff.mpr (Or.inr (Set.mem_singleton_iff.mpr
+        (Units.val_injective (by simpa using h))))
+  have : Finite (orthogonalDet Q).range :=
+    (Set.Finite.subset (Set.toFinite _) hrange).to_subtype
+  have : Module.Finite K (Module.End K V) := Module.Finite.linearMap K K V V
+  have hker : specialOrthogonalWithin Q = (orthogonalDet Q).ker := by
+    ext g
+    simp only [mem_specialOrthogonalWithin_iff, MonoidHom.mem_ker, orthogonalDet_apply]
+  have : (specialOrthogonalWithin Q).FiniteIndex := hker ▸ Subgroup.finiteIndex_ker _
+  exact (specialOrthogonalWithin Q).isOpen_of_isClosed_of_finiteIndex
+    (isClosed_specialOrthogonalWithin Q)
 
 end QuadraticMap
 
