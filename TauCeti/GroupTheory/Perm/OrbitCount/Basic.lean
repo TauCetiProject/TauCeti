@@ -23,6 +23,9 @@ permutation with one of a *different* type and are stated to allow that; the thi
 permutations of the same type.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
+* `TauCeti.orbitCount_mul_comm` and `Equiv.Perm.sameCycle_mul_comm_iff`: the two products `σ * τ`
+  and `τ * σ` are conjugate, so they have the same number of orbits, and their cycles correspond
+  under `σ`.
 * `TauCeti.orbitCount_prodCongrRight_const`: permuting the second factor of a product by the same
   permutation over every point of the first multiplies the number of orbits by the size of the
   first factor.
@@ -132,6 +135,19 @@ theorem orbitCount_conj (g σ : Equiv.Perm α) : orbitCount (g * σ * g⁻¹) = 
     rw [sameCycle_conj]
     simp
   exact h.symm
+
+/-- The two products of a pair of permutations are conjugate by either factor, so a pair of points
+lies in one cycle of `τ * σ` exactly when their images under `σ` lie in one cycle of `σ * τ`. -/
+theorem _root_.Equiv.Perm.sameCycle_mul_comm_iff (σ τ : Equiv.Perm α) {x y : α} :
+    (τ * σ).SameCycle x y ↔ (σ * τ).SameCycle (σ x) (σ y) := by
+  rw [show σ * τ = σ * (τ * σ) * σ⁻¹ by group, sameCycle_conj]
+  simp
+
+/-- The two products of a pair of permutations have the same number of orbits, being conjugate
+by either factor. -/
+theorem orbitCount_mul_comm (σ τ : Equiv.Perm α) : orbitCount (σ * τ) = orbitCount (τ * σ) := by
+  rw [← orbitCount_conj σ (τ * σ)]
+  group
 
 /-- Inverting a permutation does not change its number of orbits. -/
 @[simp]

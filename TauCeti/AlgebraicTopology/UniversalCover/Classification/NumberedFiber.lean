@@ -7,7 +7,12 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Transport
+import Mathlib.Algebra.Group.Action.TransferInstance
+-- The realisation proof uses the defining equation of `Equiv.permutationRepresentation`.
+import all TauCeti.Algebra.GroupAction.PermutationRepresentation
 import TauCeti.Topology.Covering.Clopen
+import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic
+import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Monodromy
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`
@@ -58,6 +63,20 @@ and full (`TauCeti.CoveringSpace.fiberActionFunctor_faithful`,
 `TauCeti.CoveringSpace.fiberActionFunctor_full`), and the numberings turn equal representations
 into an isomorphism of `π₁(X, x)`-sets preserving the labels.
 
+Conversely, over a locally path-connected, semilocally simply connected base, every
+representation `π₁(X, x) →* Equiv.Perm (Fin n)` with `n ≠ 0` and transitive image is the numbered
+monodromy of some numbered cover: the realisation theorem for transitive fundamental-group sets
+(`TauCeti.ConnectedCoveringSpace.exists_fiberAction_iso`) supplies a connected cover whose fibre
+is equivariantly identified with the finite set, and that identification is a numbering.
+
+A deck transformation of a numbered cover permutes the fibre, hence the labels
+(`TauCeti.ConnectedFiberNumberedCover.deckPerm`). Over a preconnected base this determines the deck
+transformation, and over a path-connected, locally path-connected base the permutations so obtained
+are exactly those commuting with the numbered monodromy: a permutation `τ` commuting with it leaves
+the numbered monodromy of the relabelled cover unchanged, so some isomorphism from the cover to its
+relabelling preserves every label, and that isomorphism is a deck transformation inducing `τ`.
+Relabelling the fibre conjugates the induced permutations.
+
 ## Main declarations
 
 * `TauCeti.ConnectedFiberNumberedCover`, `TauCeti.ConnectedPointedCover`,
@@ -82,11 +101,18 @@ into an isomorphism of `π₁(X, x)`-sets preserving the labels.
   `TauCeti.ConnectedCover.ne_zero`: over a preconnected base the degree is positive.
 * `TauCeti.connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq`: two numbered
   covers are isomorphic exactly when their numbered monodromy representations agree.
+* `TauCeti.ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq`: over a
+  semilocally simply connected base, every transitive representation on `Fin n` is the numbered
+  monodromy of some numbered cover.
+* `TauCeti.ConnectedFiberNumberedCover.deckPerm`: the permutation of the labels induced by a deck
+  transformation, with `deckPerm_injective` and `deckPerm_smul`.
+* `TauCeti.ConnectedFiberNumberedCover.range_deckPerm`: the induced permutations are exactly those
+  commuting with the numbered monodromy.
 
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, §1.3 (isomorphism of
-  covering spaces, and the change of basepoint within a fibre).
+  covering spaces, the change of basepoint within a fibre, and deck transformations).
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
   §2.7 (the monodromy of a cover is well defined up to the numbering of the fibre).
@@ -139,6 +165,10 @@ variable {x : X} {n : ℕ}
 private def coverHomeomorph {p q : ConnectedCoveringSpace X} (f : p ≅ q) :
     (p : TopCat) ≃ₜ (q : TopCat) :=
   TopCat.homeoOfIso ((CoveringSpace.FullSubcategory.totalSpace X _).mapIso f)
+
+private theorem coverHomeomorph_apply {p q : ConnectedCoveringSpace X} (f : p ≅ q)
+    (e : (p : TopCat)) : coverHomeomorph f e = f.hom.hom.left e :=
+  rfl
 
 private theorem proj_coverHomeomorph {p q : ConnectedCoveringSpace X} (f : p ≅ q)
     (e : (p : TopCat)) : q.proj (coverHomeomorph f e) = p.proj e :=
@@ -755,5 +785,124 @@ theorem connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq
     ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq⟩
 
 end Monodromy
+
+/-! ### Realising a numbered monodromy -/
+
+/-- **Every transitive representation on `Fin n` is the numbered monodromy of a cover.** Over a
+locally path-connected, semilocally simply connected base, a homomorphism
+`ρ : π₁(X, x) →* Equiv.Perm (Fin n)` whose image acts transitively on the nonempty set `Fin n` is
+the monodromy representation, read through the numbering, of some connected cover with numbered
+fibre. -/
+theorem ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    (ρ : FundamentalGroup X x →* Perm (Fin n)) (hn : n ≠ 0)
+    (hρ : MulAction.IsPretransitive ρ.range (Fin n)) :
+    ∃ c : ConnectedFiberNumberedCover x n,
+      c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) = ρ := by
+  -- `π₁(X, x)` acts on `Fin n` through `ρ`, transitively because the image of `ρ` does.
+  let _ : MulAction (FundamentalGroup X x) (Fin n) := MulAction.compHom _ ρ.rangeRestrict
+  have := MulAction.isPretransitive_compHom (G := Fin n) ρ.rangeRestrict_surjective
+  -- Lift the finite set to the universe of the base before applying the realisation theorem.
+  let _ := (Equiv.ulift : ULift.{u} (Fin n) ≃ Fin n).mulAction (FundamentalGroup X x)
+  let A := Action.ofMulAction (FundamentalGroup X x) (ULift.{u} (Fin n))
+  have hA : isTransitiveAction (FundamentalGroup X x) A := by
+    rw [isTransitiveAction_iff]
+    refine ⟨⟨fun i j => ?_⟩, ⟨ULift.up ⟨0, Nat.pos_of_ne_zero hn⟩⟩⟩
+    obtain ⟨γ, hγ⟩ := MulAction.exists_smul_eq (FundamentalGroup X x) i.down j.down
+    exact ⟨γ, ULift.ext hγ⟩
+  obtain ⟨c, ⟨e⟩⟩ := ConnectedCoveringSpace.exists_fiberAction_iso x A hA
+  let ν : ⇑c.proj ⁻¹' {x} ≃ Fin n :=
+    ((Action.forget _ _).mapIso e).toEquiv.trans Equiv.ulift
+  let _ := c.isCoveringMap_proj.fundamentalGroupMulAction x
+  refine ⟨⟨c, ν⟩, ?_⟩
+  rw [← c.isCoveringMap_proj.toPermHom_eq_monodromyPerm,
+    ← Equiv.permutationRepresentation.eq_def]
+  refine Equiv.permutationRepresentation_eq_of_map_smul ν (ρ := ρ) fun γ a => ?_
+  -- Spell out both actions: their carriers are hidden under the functor and `A.V`, so
+  -- rewriting the composition in `e.hom.comm` cannot identify the underlying types.
+  have he : e.hom.hom (c.isCoveringMap_proj.monodromy γ a) = ULift.up (ρ γ (ν a)) :=
+    ConcreteCategory.congr_hom (e.hom.comm γ) a
+  exact congrArg ULift.down he
+
+/-! ### Deck transformations -/
+
+namespace ConnectedFiberNumberedCover
+
+variable (c : ConnectedFiberNumberedCover x n)
+
+/-- The permutation of the labels induced by a deck transformation of a numbered cover: the label
+`i` goes to the label of the image of the point labelled `i` (`deckPerm_apply`). This is the
+permutation representation of the deck action on the fibre, read through the numbering. -/
+def deckPerm : deck ⇑c.cover.proj →* Perm (Fin n) :=
+  Equiv.permutationRepresentation c.ν
+
+/-- The label of the image of the point labelled `i` under a deck transformation. -/
+@[simp]
+theorem deckPerm_apply (φ : deck ⇑c.cover.proj) (i : Fin n) :
+    c.deckPerm φ i = c.ν (φ • c.ν.symm i) :=
+  Equiv.permutationRepresentation_apply c.ν φ i
+
+/-- The permutations of the labels induced by deck transformations act transitively exactly when
+the deck group acts transitively on the fibre. -/
+theorem isPretransitive_range_deckPerm_iff :
+    MulAction.IsPretransitive c.deckPerm.range (Fin n) ↔
+      MulAction.IsPretransitive (deck ⇑c.cover.proj) (⇑c.cover.proj ⁻¹' {x}) :=
+  Equiv.isPretransitive_range_permutationRepresentation_iff c.ν
+
+/-- Relabelling the fibre by `τ` conjugates the permutation induced by each deck transformation
+by `τ`. -/
+@[simp]
+theorem deckPerm_smul (τ : Perm (Fin n)) (φ : deck ⇑c.cover.proj) :
+    (τ • c).deckPerm φ = τ * c.deckPerm φ * τ⁻¹ := by
+  ext i
+  simp [Perm.mul_apply]
+
+/-- **A deck transformation of a numbered cover is determined by the permutation it induces on the
+labels.** Over a preconnected base the fibre is nonempty, and a deck transformation of a connected
+cover is determined by its value at one point. -/
+theorem deckPerm_injective [PreconnectedSpace X] : Function.Injective c.deckPerm := by
+  intro φ ψ h
+  have hi := DFunLike.congr_fun h ⟨0, Nat.pos_of_ne_zero c.forgetNumbering.ne_zero⟩
+  simp only [deckPerm_apply, EmbeddingLike.apply_eq_iff_eq] at hi
+  exact Deck.eq_of_fiber_smul_eq_fiber_smul c.cover.isCoveringMap_proj φ ψ hi
+
+/-- **The permutations of the labels induced by deck transformations are exactly those commuting
+with the numbered monodromy.** Over a path-connected, locally path-connected base, the image of
+`deckPerm` is the centralizer in `Equiv.Perm (Fin n)` of the monodromy representation
+`π₁(X, x) →* Equiv.Perm (Fin n)` read through the numbering. -/
+theorem range_deckPerm [PathConnectedSpace X] [LocallyPathConnectedSpace X] :
+    c.deckPerm.range = Subgroup.centralizer
+      ((c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x)).range :
+        Set (Perm (Fin n))) := by
+  ext τ
+  constructor
+  · -- Deck transformations commute with monodromy.
+    rintro ⟨φ, rfl⟩
+    rw [Subgroup.mem_centralizer_iff]
+    rintro _ ⟨γ, rfl⟩
+    ext i
+    simp [Perm.mul_apply, permCongr_apply, Deck.monodromy_smul]
+  · -- A relabelling commuting with the monodromy does not change it, so it is induced by a
+    -- label-preserving isomorphism from the cover to its relabelling, that is, by a deck
+    -- transformation.
+    intro hτ
+    have h : c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) =
+        (τ⁻¹ • c).ν.permCongrHom.toMonoidHom.comp
+          ((τ⁻¹ • c).cover.isCoveringMap_proj.monodromyPerm x) := by
+      refine MonoidHom.ext fun γ => Equiv.ext fun i => ?_
+      have hci := DFunLike.congr_fun (Subgroup.mem_centralizer_iff.1 hτ _ ⟨γ, rfl⟩) i
+      simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, permCongrHom_coe,
+        permCongr_apply, Perm.mul_apply, smul_ν, symm_trans_apply, Perm.inv_def, symm_symm,
+        trans_apply] at hci ⊢
+      rw [hci, symm_apply_apply]
+    obtain ⟨f, hf⟩ := ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq h
+    refine ⟨⟨coverHomeomorph f, deck.mem_iff.2 (funext (proj_coverHomeomorph f))⟩, ?_⟩
+    refine Equiv.ext fun i => ?_
+    rw [deckPerm_apply, ← c.ν.apply_symm_apply (τ i)]
+    refine congrArg c.ν (Subtype.ext ?_)
+    simp only [deck.fiber_smul_coe]
+    rw [coverHomeomorph_apply, hf i, smul_ν, symm_trans_apply, Perm.inv_def, symm_symm]
+
+end ConnectedFiberNumberedCover
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 
 /-!
 # The multiplicative group of a nonarchimedean local field
@@ -59,6 +60,8 @@ the graded pieces of the unit filtration. This is the shape used to count power 
 * `TauCeti.unitsMap_subtype_snd_unitsEquivProd` and
   `TauCeti.unitFiltrationToIntegerUnits_snd_integerUnitsEquivProd`: the remaining components,
   which are what is left after dividing by the image of the section.
+* `TauCeti.exists_forall_pow_eq_mem_unitFiltration_mul_zpow`: for any `ϖ` of nonzero valuation
+  and any depth `i`, the quotient `Kˣ / (U(K,i) · ϖ ^ ℤ)` has finite exponent.
 
 ## References
 
@@ -258,5 +261,31 @@ theorem unitFiltrationToIntegerUnits_snd_integerUnitsEquivProd (u : 𝒪[K]ˣ) :
   exact h
 
 end Teichmuller
+
+/-! ### Units up to a deep unit and a power of a fixed element -/
+
+/-- For every depth `i` and every `ϖ : Kˣ` of nonzero valuation, a single exponent `M ≠ 0`
+carries every unit of `K` into `U(K,i) · ϖ ^ ℤ`: `Kˣ / (U(K,i) · ϖ ^ ℤ)` has finite exponent.
+Taking `ϖ = p` in a `p`-adic field, this is how `Kˣ` is compared with its deep units, on which
+the logarithm is an isomorphism. -/
+theorem exists_forall_pow_eq_mem_unitFiltration_mul_zpow (i : ℕ) {ϖ : Kˣ}
+    (hϖ : normalizedValuation K ϖ ≠ 1) :
+    ∃ M : ℕ, M ≠ 0 ∧ ∀ u : Kˣ, ∃ w ∈ unitFiltration K i, ∃ k : ℤ, u ^ M = w * ϖ ^ k := by
+  set e := (normalizedValuation K ϖ).toAdd
+  have he : e ≠ 0 := by simpa [e] using hϖ
+  set R := (unitFiltration K i).relIndex (unitFiltration K 0)
+  refine ⟨e.natAbs * R, mul_ne_zero (Int.natAbs_ne_zero.mpr he) Subgroup.relIndex_ne_zero,
+    fun u ↦ ?_⟩
+  -- `u ^ |e|` and `ϖ ^ (± v_K(u))` have the same valuation, so their quotient is a unit.
+  set k := (normalizedValuation K u).toAdd
+  set w₀ : Kˣ := u ^ e.natAbs * ϖ ^ (-(k * e.sign))
+  have hw₀ : w₀ ∈ unitFiltration K 0 := by
+    rw [← ker_normalizedValuation, MonoidHom.mem_ker, ← toAdd_eq_zero]
+    simp only [w₀, map_mul, map_pow, map_zpow, toAdd_mul, toAdd_pow, toAdd_zpow, smul_eq_mul]
+    rw [nsmul_eq_mul, ← Int.sign_mul_self e]
+    ring
+  refine ⟨w₀ ^ R, Subgroup.pow_relIndex_mem _ hw₀, k * e.sign * R, ?_⟩
+  rw [mul_pow, mul_assoc, ← zpow_natCast (ϖ ^ _), ← zpow_mul, ← zpow_add, pow_mul]
+  simp
 
 end TauCeti

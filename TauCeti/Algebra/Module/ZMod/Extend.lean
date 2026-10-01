@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -29,6 +30,8 @@ inclusion `2ℤ/4ℤ ⊆ ℤ/4ℤ` to a homomorphism `ℤ/4ℤ → ℤ/2ℤ`, si
 * `AddMonoidHom.exists_comp_eq_of_injective`: for `p` prime and `B` killed by `p`, every additive
   homomorphism `A →+ N` is the restriction along an injective `f : A →+ B` of an additive
   homomorphism `B →+ N`.
+* `Function.Exact.compHom'`: `Hom(-, W)` is exact on the groups killed by `p`: an exact pair
+  `X → Y → Z` with `Z` killed by `p` dualises to an exact pair `Hom(Z, W) → Hom(Y, W) → Hom(X, W)`.
 -/
 
 public section
@@ -54,5 +57,28 @@ theorem _root_.AddMonoidHom.exists_comp_eq_of_injective (hB : ∀ b : B, p • b
   simp only [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap,
     LinearMap.id_apply] at h
   simp [h]
+
+/-- **`Hom(-, W)` is exact on groups killed by a prime.** If `X → Y → Z` is an exact pair of
+additive homomorphisms with `Z` killed by `p`, then for every additive commutative monoid `W` the
+pair `Hom(Z, W) → Hom(Y, W) → Hom(X, W)` obtained by precomposition is exact. A homomorphism on `Y`
+killing the range of `f`, which is the kernel of `g`, descends to `Y ⧸ ker g`, and extends from
+there along the embedding of `Y ⧸ ker g` into `Z`. -/
+theorem _root_.Function.Exact.compHom' {X Y Z W : Type*} [AddCommGroup X] [AddCommGroup Y]
+    [AddCommGroup Z] [AddCommMonoid W] {f : X →+ Y} {g : Y →+ Z} (h : Function.Exact f g)
+    (hZ : ∀ z : Z, p • z = 0) :
+    Function.Exact (g.compHom' (P := W)) (f.compHom') := by
+  intro ψ
+  constructor
+  · intro hψ
+    have hker : g.ker ≤ ψ.ker := fun y hy => by
+      obtain ⟨x, rfl⟩ := (h y).1 hy
+      simpa using DFunLike.congr_fun hψ x
+    obtain ⟨χ, hχ⟩ := AddMonoidHom.exists_comp_eq_of_injective hZ
+      (QuotientAddGroup.kerLift_injective g) (QuotientAddGroup.lift g.ker ψ hker)
+    exact ⟨χ, AddMonoidHom.ext fun y => by
+      simpa using DFunLike.congr_fun hχ (QuotientAddGroup.mk y)⟩
+  · rintro ⟨χ, rfl⟩
+    ext x
+    simp [h.apply_apply_eq_zero]
 
 end TauCeti

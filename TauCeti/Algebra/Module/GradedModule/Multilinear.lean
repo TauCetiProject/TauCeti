@@ -80,6 +80,16 @@ theorem multilinearMap_ext {f g : MultilinearMap R M N}
   ext x
   simpa using h d (fun i ↦ (x i : M i)) (fun i ↦ (x i).property)
 
+/-- Multilinear maps in finitely many slots of one graded module are determined by their values
+on homogeneous tuples whose degrees are recorded by a family indexed by the naturals, as for
+operations whose inputs are indexed by `ℕ`. -/
+theorem multilinearMap_ext_nat {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
+    (G : InternalGrading R P) {f g : MultilinearMap R (fun _ : Fin n ↦ P) N}
+    (h : ∀ (d : ℕ → ℤ) (x : Fin n → P), (∀ i : Fin n, x i ∈ G.piece (d i)) → f x = g x) :
+    f = g := by
+  refine multilinearMap_ext (fun _ : Fin n ↦ G) fun d x hx ↦ ?_
+  exact h (fun i ↦ if hi : i < n then d ⟨i, hi⟩ else 0) x fun i ↦ by simpa using hx i
+
 /-- Extending the restrictions of a multilinear map recovers the map. -/
 @[simp]
 theorem multilinearFromPieces_comp_subtype (f : MultilinearMap R M N) :

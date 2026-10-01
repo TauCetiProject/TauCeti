@@ -28,6 +28,9 @@ degree-zero cocycles are exactly `TauCeti.DGRightModuleHom`.
 
 * `TauCeti.dgRightModuleCochains`: homogeneous cochains of a fixed degree between two right DG
   modules.
+* `TauCeti.dgRightModuleCochains.gradedCommutator`: the graded commutator of a cochain with two
+  module differentials obeying the right Leibniz rule.  Only the Leibniz rule and the degree of
+  the differentials enter, so it also differentiates cochains between curved DG right modules.
 * `TauCeti.dgRightModuleHomComplex`: the cochain complex of homogeneous right-module maps.
 * `TauCeti.dgRightModuleHomLinearEquivZeroCocycles`: the linear identification of DG morphisms
   with closed degree-zero cochains.
@@ -97,7 +100,16 @@ theorem map_mem {p q : ℤ}
     {x : M} (hx : x ∈ ℳ q) : f.1 x ∈ ℳN (q + p) :=
   (mem_iff.mp f.2).map_mem hx
 
-private def differentialLinearMap (p : ℤ)
+section gradedCommutator
+
+variable (hMh : LinearMap.IsHomogeneous dM ℳ ℳ 1)
+  (hMl : ∀ {q : ℤ} {x : M}, x ∈ ℳ q → ∀ a : A,
+    dM (op a • x) = op a • dM x + q.negOnePow • (op (d a) • x))
+  (hNh : LinearMap.IsHomogeneous dN ℳN ℳN 1)
+  (hNl : ∀ {q : ℤ} {x : N}, x ∈ ℳN q → ∀ a : A,
+    dN (op a • x) = op a • dN x + q.negOnePow • (op (d a) • x))
+
+private def gradedCommutatorLinearMap (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) :
     M →ₗ[Aᵐᵒᵖ] N where
   toFun x := dN (f.1 x) - p.negOnePow • f.1 (dM x)
@@ -110,9 +122,9 @@ private def differentialLinearMap (p : ℤ)
       ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun q _ ↦ ?_
     let y : ℳ q := decompose ℳ x q
-    have hNq := hN.leibniz (q := q + p) (x := f.1 (y : M))
+    have hNq := hNl (q := q + p) (x := f.1 (y : M))
       (map_mem f (SetLike.coe_mem y)) (unop a)
-    have hMq := hM.leibniz (q := q) (x := (y : M)) (SetLike.coe_mem y) (unop a)
+    have hMq := hMl (q := q) (x := (y : M)) (SetLike.coe_mem y) (unop a)
     simp only [op_unop] at hNq hMq
     rw [map_smul, hNq, hMq, map_add, map_smul]
     have fmap (z : M) : f.1 (q.negOnePow • z) = q.negOnePow • f.1 z := by
@@ -129,32 +141,34 @@ private def differentialLinearMap (p : ℤ)
     change a • dN (f.1 (y : M)) + _ - _ = a • dN (f.1 (y : M)) - _
     abel
 
+omit [DirectSum.Decomposition ℳN] in
 @[simp]
-private theorem differentialLinearMap_apply (p : ℤ)
+private theorem gradedCommutatorLinearMap_apply (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p)
     (x : M) :
-    (dgRightModuleCochains.differentialLinearMap (hM := hM) (hN := hN) p f) x =
-      dN (f.1 x) - p.negOnePow • f.1 (dM x) :=
+    gradedCommutatorLinearMap hMl hNl p f x = dN (f.1 x) - p.negOnePow • f.1 (dM x) :=
   (rfl)
 
-/-- The differential on homogeneous right-module cochains. -/
-def differential (p : ℤ) :
+/-- The **graded commutator** `f ↦ dN ∘ f - (-1) ^ p • f ∘ dM` on degree-`p` right-module
+cochains.  It only needs module differentials of degree one obeying the right graded Leibniz
+rule against the same algebra map `d`; neither a square-zero nor a curvature equation enters.
+It is the differential of the Hom complexes of both ordinary and curved differential graded
+right modules. -/
+def gradedCommutator (p : ℤ) :
     dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p →ₗ[R]
       dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) (p + 1) where
-  toFun f := ⟨differentialLinearMap (hM := hM) (hN := hN) p f, by
+  toFun f := ⟨gradedCommutatorLinearMap hMl hNl p f, by
     apply mem_iff.mpr
     rw [LinearMap.isHomogeneous_def]
     intro q x hx
-    -- Align the restricted-linear-map coercion with the public application lemma.
-    change (differentialLinearMap (hM := hM) (hN := hN) p f) x ∈ ℳN (q + (p + 1))
-    rw [differentialLinearMap_apply]
+    -- Align the restricted-linear-map coercion with the private application lemma.
+    change (gradedCommutatorLinearMap hMl hNl p f) x ∈ ℳN (q + (p + 1))
+    rw [gradedCommutatorLinearMap_apply]
     apply Submodule.sub_mem
-    · simpa only [add_assoc] using
-        hN.isHomogeneous.map_mem (map_mem f hx)
+    · simpa only [add_assoc] using hNh.map_mem (map_mem f hx)
     · rw [Units.smul_def]
       apply zsmul_mem
-      simpa only [add_assoc, add_comm (1 : ℤ) p] using
-        map_mem f (hM.isHomogeneous.map_mem hx)⟩
+      simpa only [add_assoc, add_comm (1 : ℤ) p] using map_mem f (hMh.map_mem hx)⟩
   map_add' f g := by
     apply Subtype.ext
     apply LinearMap.ext
@@ -175,6 +189,37 @@ def differential (p : ℤ) :
     simp only [Submodule.coe_smul_of_tower, LinearMap.smul_apply, map_smul, smul_sub]
     rw [smul_comm r p.negOnePow]
 
+omit [DirectSum.Decomposition ℳN] in
+/-- Evaluating the graded commutator of a cochain. -/
+@[simp]
+theorem gradedCommutator_apply (p : ℤ)
+    (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) (x : M) :
+    ((gradedCommutator hMh hMl hNh hNl p f).1 : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (f.1 x) - p.negOnePow • f.1 (dM x) :=
+  (rfl)
+
+omit [DirectSum.Decomposition ℳN] in
+/-- Applying the graded commutator twice composes the cochain with the squares of the two
+module differentials: the mixed terms cancel by the sign rule. -/
+theorem gradedCommutator_gradedCommutator_apply (p : ℤ)
+    (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) (x : M) :
+    ((gradedCommutator hMh hMl hNh hNl (p + 1)
+        (gradedCommutator hMh hMl hNh hNl p f)).1 : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (dN (f.1 x)) - f.1 (dM (dM x)) := by
+  simp only [gradedCommutator_apply, map_sub, map_zsmul_unit, Int.negOnePow_succ]
+  rcases Int.units_eq_one_or p.negOnePow with hp | hp
+  · simp [hp]
+  · simp only [hp, Units.neg_smul, one_smul, neg_neg]
+    abel
+
+end gradedCommutator
+
+/-- The differential on homogeneous right-module cochains. -/
+def differential (p : ℤ) :
+    dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p →ₗ[R]
+      dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) (p + 1) :=
+  gradedCommutator hM.isHomogeneous hM.leibniz hN.isHomogeneous hN.leibniz p
+
 /-- Evaluating the differential gives the graded commutator with the module differentials. -/
 @[simp]
 theorem differential_apply (p : ℤ)
@@ -189,11 +234,8 @@ theorem differential_comp_self (p : ℤ) :
     (differential (hM := hM) (hN := hN) (p + 1)).comp
       (differential (hM := hM) (hN := hN) p) = 0 := by
   ext f x
-  simp only [LinearMap.comp_apply, differential_apply, map_sub, hN.sq_zero, hM.sq_zero,
-    map_zero, smul_zero, sub_zero, Int.negOnePow_succ, Submodule.coe_zero,
-    LinearMap.zero_apply]
-  rw [Units.smul_def, map_zsmul, ← Units.smul_def]
-  simp
+  simp only [LinearMap.comp_apply, differential, gradedCommutator_gradedCommutator_apply,
+    hN.sq_zero, hM.sq_zero, map_zero, sub_zero, Submodule.coe_zero, LinearMap.zero_apply]
 
 end dgRightModuleCochains
 

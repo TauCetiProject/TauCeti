@@ -43,6 +43,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
+* `TauCeti.apply_eq_apply_zero_of_add_one`: a function on `Fin (n + 1)` unchanged by adding one
+  is constant.
 * `TauCeti.eq_add_one_or_eq_add_two_fin_three`: a distinct index of `Fin 3` is one of the two
   shifts of the other.
 * `TauCeti.add_one_add_one_fin_three`, `TauCeti.add_one_add_two_fin_three`,
@@ -238,6 +240,13 @@ theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) 
     simpa [add_assoc] using h
   have hval := congrArg Fin.val htwo
   simp [Fin.val_add, Nat.mod_eq_of_lt (by omega : 2 < n)] at hval
+
+/-- **A function on `Fin (n + 1)` unchanged by adding one is constant.** -/
+theorem apply_eq_apply_zero_of_add_one {β : Type*} {n : ℕ} {f : Fin (n + 1) → β}
+    (h : ∀ i, f (i + 1) = f i) (i : Fin (n + 1)) : f i = f 0 := by
+  induction i using Fin.induction with
+  | zero => rfl
+  | succ i ih => rw [← Fin.coeSucc_eq_succ, h, ih]
 
 /-- **Adding one in `Fin n` flips the sign `(-1) ^ ·` read off the value** when `n` is even.  The
 wraparound at the last index respects the sign exactly because `n` is even. -/

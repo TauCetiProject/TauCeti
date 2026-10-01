@@ -131,7 +131,8 @@ theorem SeparatelyExchangeable.exists_vertex_strip_coding
     (g := fun h (u : ℕ → I) b ↦ unitIntervalCoding (ℕ → α) (C h) (u b))
     (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
     (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
-    (measurable_pi_uncurry_prod hr) (measurable_pi_uncurry_prod hc) hrow.symm hcol.symm
+    (measurable_pi_uncurry_prod fun _ ↦ hr) (measurable_pi_uncurry_prod fun _ ↦ hc)
+    hrow.symm hcol.symm
 
 /-- **The vertex strips and diagonal are coded by i.i.d. vertex noise.** Let `e` enumerate hidden
 vertices, `d` a reservoir of further vertices and `g` visible vertices, all injectively and with

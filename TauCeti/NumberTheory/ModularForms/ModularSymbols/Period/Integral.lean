@@ -70,7 +70,9 @@ law, stated through `TauCeti.binaryFormRep`, needs `R` to be a ring.
 * `TauCeti.ModularSymbols.geodesicIntegral_mapGL_mul_periodIntegrand`: the transformation law
   `∫_{γβ}^{γα} f(z) P(z, 1) dz = ∫_β^α (f ∣[k] γ)(z) (P ∣ γ)(z, 1) dz` for `γ ∈ SL(2, ℤ)`, and
   `TauCeti.ModularSymbols.geodesicIntegral_mapGL_mul_periodIntegrand_of_mem`: its form for `γ`
-  in the level of `f`.
+  in the level of `f`, and
+  `TauCeti.ModularSymbols.cuspIntegral_periodIntegrand_mapGL_smul_of_mem`: the same between
+  arbitrary cusps, `∫_{γβ}^{γα} f(z) P(z, 1) dz = ∫_β^α f(z) (P ∣ γ)(z, 1) dz`.
 
 ## References
 
@@ -391,6 +393,23 @@ theorem geodesicIntegral_mapGL_mul_periodIntegrand_of_mem {Γ : Subgroup SL(2, �
       g.geodesicIntegral
         (periodIntegrand f (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)) := by
   rw [geodesicIntegral_mapGL_mul_periodIntegrand hk, ModularForm.SL_slash,
+    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
+
+/-- **The periods between cusps respect the modular-symbol relation**: for `γ` in the level `Γ`
+of a slash-invariant `f` and cusps `α`, `β`,
+`∫_{γβ}^{γα} f(z) P(z, 1) dz = ∫_β^α f(z) (P ∣ γ)(z, 1) dz`, the analytic counterpart of
+`{γα, γβ} ⊗ P = {α, β} ⊗ (P ∣ γ)` in `𝕄_w(Γ; R)` (`TauCeti.ModularSymbols.symbol_mapGL_smul`). -/
+theorem cuspIntegral_periodIntegrand_mapGL_smul_of_mem {Γ : Subgroup SL(2, ℤ)}
+    [SlashInvariantFormClass F (Γ.map (mapGL ℝ)) k] (f : F) (hk : k = w + 2)
+    (P : homogeneousSubmodule (Fin 2) R w) {γ : SL(2, ℤ)} (hγ : γ ∈ Γ) (α β : OnePoint ℚ) :
+    cuspIntegral (periodIntegrand f P) (mapGL ℚ γ • β) (mapGL ℚ γ • α) =
+      cuspIntegral
+        (periodIntegrand f (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)) β α := by
+  have hdet : 0 < ((mapGL ℚ γ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
+    rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
+    exact one_pos
+  rw [← cuspIntegral_slash _ hdet, periodIntegrand_slash_mapGL hk, ModularForm.SL_slash,
     TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
 
