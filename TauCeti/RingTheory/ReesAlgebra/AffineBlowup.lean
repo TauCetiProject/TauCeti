@@ -32,8 +32,8 @@ algebras `R[I/a]` are the coordinate rings of the charts of the blowup.
 * `reesAlgebra.algebraMap_pow_mul_awayEquivAffineBlowup_mk`: the fraction `x/(a t)ⁿ`, with `x`
   homogeneous of degree `n`, corresponds to the fraction `b/aⁿ` of `S`, where `b` is the
   coefficient of `x`.
-* `reesAlgebra.awayEquivAffineBlowup_mk_monomial_one`: the fraction `(i t)/(a t)` corresponds to
-  the generator `i/a` of `R[I/a]`.
+* `reesAlgebra.awayEquivAffineBlowup_mk_monomialDegreeOne`: the fraction `(i t)/(a t)` corresponds
+  to the generator `i/a` of `R[I/a]`.
 * `reesAlgebra.awayEquivAffineBlowup_algebraMap`: the isomorphism is compatible with the
   structure maps from `R`.
 
@@ -65,26 +65,31 @@ private theorem evalInv_of_mem_grade {n : ℕ} {x : reesAlgebra I} (hx : x ∈ g
     ← mem_grade_iff_monomial_coeff.mp hx, coe_eval₂RingHom, eval₂_monomial, coeff_monomial_same,
     mul_left_comm, ← mul_pow, IsLocalization.Away.mul_invSelf, one_pow, mul_one]
 
-private theorem evalInv_monomialOne (ha : a ∈ I) : evalInv a S (monomialOne ha) = 1 := by
+private theorem evalInv_monomialDegreeOne (ha : a ∈ I) :
+    evalInv a S (monomialDegreeOne ha) = 1 := by
   simp [evalInv, IsLocalization.Away.mul_invSelf]
 
 /-- The ring map `R[It]_(a t) → S` sending `x/(a t)ⁿ` to `x(1/a)`. -/
-private noncomputable def awayToLocalization (ha : a ∈ I) : Away (grade I) (monomialOne ha) →+* S :=
-  (IsLocalization.Away.lift (S := Localization.Away (monomialOne ha)) (monomialOne ha)
-    (g := evalInv a S) (by rw [evalInv_monomialOne]; exact isUnit_one)).comp
-    (algebraMap (Away (grade I) (monomialOne ha)) (Localization.Away (monomialOne ha)))
+private noncomputable def awayToLocalization (ha : a ∈ I) :
+    Away (grade I) (monomialDegreeOne ha) →+* S :=
+  (IsLocalization.Away.lift (S := Localization.Away (monomialDegreeOne ha))
+    (monomialDegreeOne ha) (g := evalInv a S)
+    (by rw [evalInv_monomialDegreeOne]; exact isUnit_one)).comp
+    (algebraMap (Away (grade I) (monomialDegreeOne ha))
+      (Localization.Away (monomialDegreeOne ha)))
 
 private theorem awayToLocalization_mk (ha : a ∈ I) {n : ℕ} {x : reesAlgebra I}
     (hx : x ∈ grade I (n • 1)) :
-    awayToLocalization S ha (Away.mk (grade I) (monomialOne_mem_grade ha) n x hx) =
+    awayToLocalization S ha (Away.mk (grade I) (monomialDegreeOne_mem_grade ha) n x hx) =
       evalInv a S x := by
-  have hspec := IsLocalization.mk'_spec (Localization.Away (monomialOne ha)) x
-    ⟨monomialOne ha ^ n, (Submonoid.mem_powers_iff _ _).mpr ⟨n, rfl⟩⟩
+  have hspec := IsLocalization.mk'_spec (Localization.Away (monomialDegreeOne ha)) x
+    ⟨monomialDegreeOne ha ^ n, (Submonoid.mem_powers_iff _ _).mpr ⟨n, rfl⟩⟩
   rw [← Localization.mk_eq_mk'] at hspec
-  have := congr_arg (IsLocalization.Away.lift (S := Localization.Away (monomialOne ha))
-    (monomialOne ha) (g := evalInv a S) (by rw [evalInv_monomialOne]; exact isUnit_one)) hspec
+  have := congr_arg (IsLocalization.Away.lift (S := Localization.Away (monomialDegreeOne ha))
+    (monomialDegreeOne ha) (g := evalInv a S)
+    (by rw [evalInv_monomialDegreeOne]; exact isUnit_one)) hspec
   rw [map_mul, IsLocalization.Away.lift_eq, IsLocalization.Away.lift_eq, map_pow] at this
-  simp only [evalInv_monomialOne, one_pow, mul_one] at this
+  simp only [evalInv_monomialDegreeOne, one_pow, mul_one] at this
   rw [awayToLocalization, RingHom.comp_apply, HomogeneousLocalization.algebraMap_apply,
     Away.val_mk]
   exact this
@@ -92,7 +97,7 @@ private theorem awayToLocalization_mk (ha : a ∈ I) {n : ℕ} {x : reesAlgebra 
 private theorem algebraMap_pow_mul_awayToLocalization_mk (ha : a ∈ I) {n : ℕ}
     {x : reesAlgebra I} (hx : x ∈ grade I (n • 1)) :
     algebraMap R S a ^ n *
-        awayToLocalization S ha (Away.mk (grade I) (monomialOne_mem_grade ha) n x hx) =
+        awayToLocalization S ha (Away.mk (grade I) (monomialDegreeOne_mem_grade ha) n x hx) =
       algebraMap R S ((x : R[X]).coeff n) := by
   rw [awayToLocalization_mk]
   exact evalInv_of_mem_grade S (by simpa using hx)
@@ -100,24 +105,25 @@ private theorem algebraMap_pow_mul_awayToLocalization_mk (ha : a ∈ I) {n : ℕ
 private theorem awayToLocalization_injective (ha : a ∈ I) :
     Function.Injective (awayToLocalization S ha) := by
   refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-  obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective (grade I) (monomialOne_mem_grade ha) z
+  obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective (grade I) (monomialDegreeOne_mem_grade ha) z
   have hx' : x ∈ grade I n := by simpa using hx
   have h := algebraMap_pow_mul_awayToLocalization_mk S ha hx
   rw [hz, mul_zero, eq_comm, IsLocalization.map_eq_zero_iff (Submonoid.powers a)] at h
   obtain ⟨⟨_, k, rfl⟩, hk⟩ := h
   -- The numerator `x` is killed by `(a t)ᵏ` in the Rees algebra.
-  have hxk : monomialOne ha ^ k * x = 0 := by
+  have hxk : monomialDegreeOne ha ^ k * x = 0 := by
     refine Subtype.ext ?_
-    rw [Subalgebra.coe_mul, Subalgebra.coe_pow, coe_monomialOne, monomial_pow, one_mul,
+    rw [Subalgebra.coe_mul, Subalgebra.coe_pow, coe_monomialDegreeOne, monomial_pow, one_mul,
       ← mem_grade_iff_monomial_coeff.mp hx', monomial_mul_monomial, hk, map_zero,
       ZeroMemClass.coe_zero]
   ext1
   rw [Away.val_mk, val_zero, Localization.mk_eq_mk', IsLocalization.mk'_eq_zero_iff]
   exact ⟨⟨_, k, rfl⟩, hxk⟩
 
-private theorem awayToLocalization_mem (ha : a ∈ I) (z : Away (grade I) (monomialOne ha)) :
+private theorem awayToLocalization_mem (ha : a ∈ I)
+    (z : Away (grade I) (monomialDegreeOne ha)) :
     awayToLocalization S ha z ∈ I.affineBlowup a S := by
-  obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective (grade I) (monomialOne_mem_grade ha) z
+  obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective (grade I) (monomialDegreeOne_mem_grade ha) z
   exact (Ideal.mem_affineBlowup_iff ha).mpr ⟨n, _, (mem_reesAlgebra_iff I _).mp x.2 n,
     algebraMap_pow_mul_awayToLocalization_mk S ha hx⟩
 
@@ -126,7 +132,7 @@ private theorem exists_awayToLocalization_eq (ha : a ∈ I) {w : S}
   obtain ⟨k, y, hy, hyw⟩ := (Ideal.mem_affineBlowup_iff ha).mp hw
   have hx : (⟨monomial k y, monomial_mem.mpr hy⟩ : reesAlgebra I) ∈ grade I (k • 1) := by
     simpa using monomial_mem_grade hy
-  refine ⟨Away.mk (grade I) (monomialOne_mem_grade ha) k _ hx,
+  refine ⟨Away.mk (grade I) (monomialDegreeOne_mem_grade ha) k _ hx,
     ((IsLocalization.Away.algebraMap_isUnit (S := S) a).pow k).mul_left_cancel ?_⟩
   rw [algebraMap_pow_mul_awayToLocalization_mk, hyw, coeff_monomial_same]
 
@@ -135,7 +141,7 @@ private theorem exists_awayToLocalization_eq (ha : a ∈ I) {w : S}
 `Proj R[It]`, is isomorphic to the affine blowup algebra `R[I/a]`; the fraction `x/(a t)ⁿ`
 corresponds to `b/aⁿ`, where `x = b tⁿ`. -/
 noncomputable def awayEquivAffineBlowup (ha : a ∈ I) :
-    Away (grade I) (monomialOne ha) ≃+* I.affineBlowup a S :=
+    Away (grade I) (monomialDegreeOne ha) ≃+* I.affineBlowup a S :=
   RingEquiv.ofBijective ((awayToLocalization S ha).codRestrict _ (awayToLocalization_mem S ha))
     ⟨fun _ _ h ↦ awayToLocalization_injective S ha (congr_arg Subtype.val h),
       fun w ↦ (exists_awayToLocalization_eq S ha w.2).imp fun _ h ↦ Subtype.ext h⟩
@@ -145,33 +151,31 @@ noncomputable def awayEquivAffineBlowup (ha : a ∈ I) :
 theorem algebraMap_pow_mul_awayEquivAffineBlowup_mk (ha : a ∈ I) {n : ℕ} {x : reesAlgebra I}
     (hx : x ∈ grade I (n • 1)) :
     algebraMap R S a ^ n *
-        (awayEquivAffineBlowup S ha (Away.mk (grade I) (monomialOne_mem_grade ha) n x hx) : S) =
+        (awayEquivAffineBlowup S ha
+          (Away.mk (grade I) (monomialDegreeOne_mem_grade ha) n x hx) : S) =
       algebraMap R S ((x : R[X]).coeff n) :=
   algebraMap_pow_mul_awayToLocalization_mk S ha hx
 
 /-- The fraction `(i t)/(a t)` corresponds to the generator `i/a` of `R[I/a]`. -/
-theorem awayEquivAffineBlowup_mk_monomial_one (ha : a ∈ I) {i : R} (hi : i ∈ I)
-    (hx : (⟨monomial 1 i, monomial_mem.mpr (by rwa [pow_one])⟩ : reesAlgebra I) ∈
-      grade I (1 • 1)) :
-    awayEquivAffineBlowup S ha (Away.mk (grade I) (monomialOne_mem_grade ha) 1 _ hx) =
+theorem awayEquivAffineBlowup_mk_monomialDegreeOne (ha : a ∈ I) {i : R} (hi : i ∈ I) :
+    awayEquivAffineBlowup S ha (Away.mk (grade I) (monomialDegreeOne_mem_grade ha) 1
+        (monomialDegreeOne hi) (by simpa using monomialDegreeOne_mem_grade hi)) =
       ⟨divBy i a, Ideal.divBy_mem_affineBlowup hi⟩ := by
   refine Subtype.ext ((IsLocalization.Away.algebraMap_isUnit (S := S) a).mul_left_cancel ?_)
-  have h := algebraMap_pow_mul_awayEquivAffineBlowup_mk S ha hx
-  rw [pow_one] at h
-  rw [h, algebraMap_mul_divBy]
-  exact congr_arg _ (coeff_monomial_same 1 i)
+  rw [← pow_one (algebraMap R S a), algebraMap_pow_mul_awayEquivAffineBlowup_mk, pow_one,
+    algebraMap_mul_divBy, coe_monomialDegreeOne, coeff_monomial_same]
 
 /-- The isomorphism `R[It]_(a t) ≃+* R[I/a]` is compatible with the structure maps from `R`,
 where `R` is the degree zero part of `R[It]`. -/
 @[simp]
 theorem awayEquivAffineBlowup_algebraMap (ha : a ∈ I) (r : R) :
     awayEquivAffineBlowup S ha
-        (fromZeroRingHom (grade I) (.powers (monomialOne ha)) (gradeZeroEquiv I r)) =
+        (fromZeroRingHom (grade I) (.powers (monomialDegreeOne ha)) (gradeZeroEquiv I r)) =
       algebraMap R (I.affineBlowup a S) r := by
   have hx : (gradeZeroEquiv I r : reesAlgebra I) ∈ grade I (0 • 1) := by
     simp
-  have : fromZeroRingHom (grade I) (.powers (monomialOne ha)) (gradeZeroEquiv I r) =
-      Away.mk (grade I) (monomialOne_mem_grade ha) 0 _ hx := by
+  have : fromZeroRingHom (grade I) (.powers (monomialDegreeOne ha)) (gradeZeroEquiv I r) =
+      Away.mk (grade I) (monomialDegreeOne_mem_grade ha) 0 _ hx := by
     ext1
     -- `fromZeroRingHom` sends `f` to the fraction `f/1` by definition.
     simp only [Away.val_mk, pow_zero]
