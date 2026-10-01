@@ -25,9 +25,9 @@ measures.
 
 ## Main declarations
 
-* `TauCeti.PontryaginDual.evalBoundedContinuous`: evaluation at a group element, bundled as a
+* `PontryaginDual.evalBoundedContinuous`: evaluation at a group element, bundled as a
   bounded continuous function on the dual.
-* `TauCeti.PontryaginDual.evalPoly`: the star subalgebra of finite linear combinations of
+* `PontryaginDual.evalPoly`: the star subalgebra of finite linear combinations of
   evaluation characters.
 * `MeasureTheory.FiniteMeasure.ext_of_forall_pontryaginMeasureTransform_eq`: finite measures on a
   Polish dual with the same Fourier--Stieltjes transform are equal.
@@ -43,8 +43,6 @@ noncomputable section
 
 open BoundedContinuousFunction MeasureTheory
 
-namespace TauCeti
-
 namespace PontryaginDual
 
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
@@ -55,7 +53,7 @@ def evalBoundedContinuous (g : G) :
     _root_.PontryaginDual (Multiplicative G) →ᵇ ℂ :=
   BoundedContinuousFunction.ofNormedAddCommGroup
     (fun χ => (χ (Multiplicative.ofAdd g) : ℂ))
-    (continuous_coe_eval_const (Multiplicative.ofAdd g)) 1 fun χ => by simp
+    (TauCeti.PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)) 1 fun χ => by simp
 
 /-- Evaluation of `evalBoundedContinuous` at a character. -/
 @[simp]
@@ -163,6 +161,8 @@ theorem evalPoly_separatesPoints :
 
 end PontryaginDual
 
+namespace TauCeti
+
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
   [MeasurableSpace (_root_.PontryaginDual (Multiplicative G))]
   [PolishSpace (_root_.PontryaginDual (Multiplicative G))]
@@ -176,11 +176,12 @@ theorem _root_.MeasureTheory.FiniteMeasure.ext_of_forall_pontryaginMeasureTransf
     P = Q := by
   apply FiniteMeasure.toMeasure_injective
   apply ext_of_forall_mem_subalgebra_integral_eq_of_polish
-    PontryaginDual.evalPoly_separatesPoints
+    _root_.PontryaginDual.evalPoly_separatesPoints
   intro f hf
-  obtain ⟨a, rfl⟩ := (PontryaginDual.mem_evalPoly f).mp hf
+  obtain ⟨a, rfl⟩ := (_root_.PontryaginDual.mem_evalPoly f).mp hf
   simp only [Finsupp.sum, BoundedContinuousFunction.coe_sum, Finset.sum_apply,
-    BoundedContinuousFunction.coe_smul, PontryaginDual.evalBoundedContinuous_apply, smul_eq_mul]
+    BoundedContinuousFunction.coe_smul, _root_.PontryaginDual.evalBoundedContinuous_apply,
+    smul_eq_mul]
   rw [integral_finsetSum, integral_finsetSum]
   · congr with g
     rw [integral_const_mul, integral_const_mul]
@@ -189,7 +190,8 @@ theorem _root_.MeasureTheory.FiniteMeasure.ext_of_forall_pontryaginMeasureTransf
     exact congrArg (a.coeff g * ·) (h g)
   all_goals
     intro g _
-    exact (PontryaginDual.integrable_coe_eval (Multiplicative.ofAdd g)).const_mul (a.coeff g)
+    exact (_root_.TauCeti.PontryaginDual.integrable_coe_eval
+      (Multiplicative.ofAdd g)).const_mul (a.coeff g)
 
 /-- The Fourier--Stieltjes transform is injective on finite measures on a Polish Pontryagin
 dual. -/
