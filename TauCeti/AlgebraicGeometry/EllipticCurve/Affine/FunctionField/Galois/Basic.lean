@@ -117,39 +117,44 @@ theorem functionFieldGaloisAction_map_algebraMap (σ : K ≃ₐ[F] K)
     functionFieldGaloisAction W σ
         (Affine.FunctionField.map W.toAffine (algebraMap F K) z) =
       Affine.FunctionField.map W.toAffine (algebraMap F K) z := by
+  have hmap_const (a : F) :
+      Affine.FunctionField.map W.toAffine (algebraMap F K)
+          (algebraMap F W.toAffine.FunctionField a) =
+        algebraMap K (W⁄K).toAffine.FunctionField (algebraMap F K a) :=
+    Affine.FunctionField.map_algebraMap W.toAffine (algebraMap F K) a
+  have hmap_x :
+      Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericX =
+        (W⁄K).toAffine.genericX :=
+    Affine.FunctionField.map_genericX W.toAffine (algebraMap F K)
+  have hmap_y :
+      Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericY =
+        (W⁄K).toAffine.genericY :=
+    Affine.FunctionField.map_genericY W.toAffine (algebraMap F K)
   let m : W.toAffine.FunctionField →+* (W⁄K).toAffine.FunctionField :=
     Affine.FunctionField.map W.toAffine (algebraMap F K)
   have h : (functionFieldGaloisAction W σ).toRingHom.comp m = m := by
     apply Affine.FunctionField.ringHom_ext
     · intro a
       simp only [RingHom.comp_apply]
+      -- `ringHom_ext` states this through the local map `m`; expose its pointwise application
+      -- so the named `FunctionField.map` compatibility lemmas can perform the calculation.
       change functionFieldGaloisAction W σ
           (Affine.FunctionField.map W.toAffine (algebraMap F K)
             (algebraMap F W.toAffine.FunctionField a)) =
         Affine.FunctionField.map W.toAffine (algebraMap F K)
           (algebraMap F W.toAffine.FunctionField a)
-      rw [Affine.FunctionField.map_algebraMap]
-      change functionFieldGaloisAction W σ
-          (algebraMap K (W⁄K).toAffine.FunctionField (algebraMap F K a)) =
-        algebraMap K (W⁄K).toAffine.FunctionField (algebraMap F K a)
-      rw [functionFieldGaloisAction_algebraMap]
+      rw [hmap_const, functionFieldGaloisAction_algebraMap]
       exact congrArg (algebraMap K (W⁄K).toAffine.FunctionField) (σ.commutes a)
     · simp only [RingHom.comp_apply]
       change functionFieldGaloisAction W σ
           (Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericX) =
         Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericX
-      rw [Affine.FunctionField.map_genericX]
-      change functionFieldGaloisAction W σ (W⁄K).toAffine.genericX =
-        (W⁄K).toAffine.genericX
-      exact functionFieldGaloisAction_genericX W σ
+      rw [hmap_x, functionFieldGaloisAction_genericX]
     · simp only [RingHom.comp_apply]
       change functionFieldGaloisAction W σ
           (Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericY) =
         Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericY
-      rw [Affine.FunctionField.map_genericY]
-      change functionFieldGaloisAction W σ (W⁄K).toAffine.genericY =
-        (W⁄K).toAffine.genericY
-      exact functionFieldGaloisAction_genericY W σ
+      rw [hmap_y, functionFieldGaloisAction_genericY]
   exact RingHom.congr_fun h z
 
 variable [DecidableEq K] [W.IsElliptic]
