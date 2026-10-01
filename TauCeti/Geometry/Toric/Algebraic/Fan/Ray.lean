@@ -39,7 +39,7 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Phi : Fan i)
 
 /-- A ray of a fan is a one-dimensional cone belonging to the fan. -/
-abbrev Ray :=
+abbrev Ray : Type _ :=
   {rho : Phi.cones //
     Module.finrank ℝ (Submodule.span ℝ (rho.1 : Set V)) = 1}
 
