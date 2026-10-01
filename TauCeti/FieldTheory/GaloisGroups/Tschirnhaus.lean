@@ -150,14 +150,17 @@ theorem TschirnhausAdmissible.exists_equiv_range_galActionHom_eq (h : Tschirnhau
     rw [Equiv.coe_ofBijective, hbij.mapsTo.val_restrict_apply]
   refine ⟨e, hcoe, ?_⟩
   have : Normal F E := Normal.of_isSplittingField f
+  have hequiv (phi : E ≃ₐ[F] E) (x : f.rootSet E) :
+      (Gal.galActionHom g E) ((Gal.restrict g E) phi) (e x) =
+        e ((Gal.galActionHom f E) ((Gal.restrict f E) phi) x) := by
+    apply Subtype.ext
+    rw [Gal.galActionHom_restrict, hcoe x, hcoe _, Gal.galActionHom_restrict,
+      aeval_algHom_apply phi _ T]
   have hcomp : (Gal.galActionHom g E).comp (Gal.restrict g E) =
       (Equiv.permCongrHom e).toMonoidHom.comp
         ((Gal.galActionHom f E).comp (Gal.restrict f E)) := by
-    refine MonoidHom.ext fun ϕ ↦ Equiv.ext fun y ↦ Subtype.ext ?_
-    rw [MonoidHom.comp_apply, Gal.galActionHom_restrict, MonoidHom.comp_apply,
-      MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe,
-      Equiv.permCongr_apply, hcoe, Gal.galActionHom_restrict, aeval_algHom_apply ϕ _ T,
-      ← hcoe, e.apply_symm_apply]
+    refine MonoidHom.ext fun phi ↦ Equiv.ext fun y ↦ ?_
+    simpa using hequiv phi (e.symm y)
   have hg : (Gal.galActionHom g E).range =
       ((Gal.galActionHom g E).comp (Gal.restrict g E)).range := by
     rw [MonoidHom.range_comp, MonoidHom.range_eq_top.mpr (Gal.restrict_surjective g E),
