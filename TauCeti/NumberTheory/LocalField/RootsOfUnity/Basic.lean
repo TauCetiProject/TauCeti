@@ -180,10 +180,7 @@ theorem finite_pPowerRootsOfUnity (hpK : (p : K) ≠ 0) :
   have hdisjoint := disjoint_pPowerRootsOfUnity_unitFiltration hpK hi
   have hle : unitFiltration K i ≤ unitFiltration K 0 :=
     unitFiltration_antitone (Nat.zero_le _)
-  have hindex : (unitFiltration K i).IsFiniteRelIndex (unitFiltration K 0) := by
-    have hsucc : (unitFiltration K i).IsFiniteRelIndex (unitFiltration K 1) :=
-      inferInstance
-    exact hsucc.trans (unitFiltration_one_isFiniteRelIndex_zero (K := K))
+  have hindex : (unitFiltration K i).IsFiniteRelIndex (unitFiltration K 0) := inferInstance
   have hfinite : Finite (unitFiltration K 0 ⧸ (unitFiltration K i).subgroupOf
       (unitFiltration K 0)) := by
     exact (Subgroup.finiteIndex_iff_finite_quotient).mp

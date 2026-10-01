@@ -37,10 +37,9 @@ whole spectrum have density one and ensures that a fixed finite error disappears
 More generally, a set of density zero can be added or removed without changing a natural density.
 
 Comparison with `x / log x` is a theorem rather than the definition. The prime ideal theorem
-`π_K(x) ~ Li(x) ~ x / log x`, obtained from the boundary data
-`TauCeti.LFunctions.primeIdealVonMangoldtBoundary` of the Dedekind zeta function through
-`TauCeti.primeIdealTheorem_of_boundary`, shows that `S` has natural density `δ` exactly when
-`π_S(x) / (x / log x) → δ`, equivalently when `π_S(x) = δ Li(x) + o(x / log x)`.
+`π_K(x) ~ x / log x` (`TauCeti.primeCount_univ_isEquivalent_div_log`) shows that `S` has natural
+density `δ` exactly when `π_S(x) / (x / log x) → δ`, equivalently when
+`π_S(x) = δ Li(x) + o(x / log x)`.
 
 ## Main results
 
@@ -403,11 +402,8 @@ asymptotic to `x / log x`, so a set `S` of prime ideals has natural density `δ`
 theorem hasNaturalDensity_iff_tendsto_div_div_log :
     HasNaturalDensity S δ ↔
       Tendsto (fun x : ℝ => TauCeti.primeCount K S x / (x / Real.log x)) atTop (𝓝 δ) := by
-  -- The prime ideal theorem `π_K(x) ~ Li(x)`, from the boundary data of `ζ_K`.
-  have hπ := (TauCeti.primeIdealTheorem_of_boundary
-    (TauCeti.LFunctions.primeIdealVonMangoldtBoundary K)).2.2
   exact (IsEquivalent.refl.div
-    (hπ.trans TauCeti.Real.logIntegral_isEquivalent_div_log)).tendsto_nhds_iff
+    (TauCeti.primeCount_univ_isEquivalent_div_log K)).tendsto_nhds_iff
 
 /-- **Natural density from prime counting against the logarithmic integral.** A set `S` of prime
 ideals has natural density `δ` exactly when `π_S(x) = δ Li(x) + o(x / log x)`. -/

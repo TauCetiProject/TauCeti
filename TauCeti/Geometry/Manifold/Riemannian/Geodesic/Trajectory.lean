@@ -70,9 +70,9 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-variable [T2Space (TangentBundle I M)]
+variable [T2Space M]
 
-omit [T2Space (TangentBundle I M)] in
+omit [T2Space M] in
 private theorem contMDiffOn_two_proj_of_isMIntegralCurveOn_geodesicSpray
     {z : ℝ → TangentBundle I M} {s : Set ℝ} (hs : IsOpen s)
     (hz : IsMIntegralCurveOn z (geodesicSpray I M) s) :
@@ -85,7 +85,7 @@ private theorem contMDiffOn_two_proj_of_isMIntegralCurveOn_geodesicSpray
     Bundle.contMDiffAt_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := (2 : ℕ∞ω))
   exact (hproj.comp t hz2).contMDiffWithinAt
 
-omit [T2Space (TangentBundle I M)] in
+omit [T2Space M] in
 /-- The maximal integral-curve domain of the geodesic spray through `(p, v)` is the maximal
 geodesic interval with initial data `(p, v)`. -/
 theorem maximalIntegralCurveInterval_geodesicSpray (p : M) (v : TangentSpace I p) :
@@ -119,7 +119,7 @@ theorem maximalIntegralCurveInterval_geodesicSpray (p : M) (v : TangentSpace I p
       simpa only [curveVelocityLiftWithin_apply] using hγ.initial_eq
     exact hlift.subset_maximalIntegralCurveInterval hγ.zero_mem hinitial ht
 
-omit [T2Space (TangentBundle I M)] in
+omit [T2Space M] in
 /-- The maximal geodesic interval contains an open interval with the same right endpoint and a
 negative left endpoint. In particular a finite least upper bound of the interval is positive. -/
 theorem exists_Ioo_subset_geodesicInterval_of_isLUB {p : M} {v : TangentSpace I p} {b : ℝ}
@@ -129,7 +129,7 @@ theorem exists_Ioo_subset_geodesicInterval_of_isLUB {p : M} {v : TangentSpace I 
   exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB
     ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) hb
 
-omit [T2Space (TangentBundle I M)] in
+omit [T2Space M] in
 /-- The maximal geodesic interval contains an open interval with the same left endpoint and a
 positive right endpoint. In particular a finite greatest lower bound of the interval is
 negative. -/
@@ -146,7 +146,7 @@ maximal interval. -/
 def maximalGeodesic (p : M) (v : TangentSpace I p) (t : ℝ) : M :=
   (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- The maximal geodesic is the base projection of the corresponding maximal integral curve of
 the geodesic spray. -/
 theorem maximalGeodesic_def (p : M) (v : TangentSpace I p) (t : ℝ) :
@@ -320,7 +320,7 @@ theorem alongCurve_curveVelocity_maximalGeodesic_eq_zero {p : M} {v : TangentSpa
   exact (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).isGeodesicCurveOn
     |>.alongCurveWithin_curveVelocityWithin_eq_zero t ht
 
-omit [T2Space (TangentBundle I M)] in
+omit [T2Space M] in
 /-- Outside its maximal interval, the total maximal geodesic takes its junk value `p`. -/
 @[simp] theorem maximalGeodesic_eq_of_not_mem {p : M} {v : TangentSpace I p} {t : ℝ}
     (ht : t ∉ geodesicInterval I M p v) : maximalGeodesic I M p v t = p := by

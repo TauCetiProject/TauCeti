@@ -31,13 +31,18 @@ Over the `p`-adic integers this gives the compact, totally disconnected pro-`p` 
 universal property of free pro-`p` groups it receives a continuous homomorphism from a free pro-`p`
 group sending two chosen generators to `(1, 0, 0)` and `(0, 1, 0)`; since their commutator is
 `(0, 0, 1)`, this detects the brackets of generators in the graded Lie ring of the closed lower
-central series of a free pro-`p` group.
+central series of a free pro-`p` group. Two facts make the detection work: the closed lower
+central series of the Heisenberg group over a Hausdorff topological ring stops at `γ_2 = 1`
+(`TauCeti.HeisenbergGroup.closedLowerCentralSeries_two_eq_bot`), and the `p`-adic powers of
+`(0, 0, z)` are the elements `(0, 0, c z)`.
 
 ## Main results
 
 * `TauCeti.HeisenbergGroup.isProP`: the Heisenberg group over a compact Hausdorff topological ring
   with pro-`p` additive group is pro-`p`.
 * `TauCeti.HeisenbergGroup.isProP_padicInt`: the Heisenberg group over `ℤ_[p]` is pro-`p`.
+* `TauCeti.HeisenbergGroup.padicPow_mk_zero_zero`: the `p`-adic power of `(0, 0, z)` by `c` is
+  `(0, 0, c z)`.
 
 ## References
 
@@ -112,6 +117,23 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
 /-- The Heisenberg group over the `p`-adic integers is pro-`p`. -/
 theorem isProP_padicInt (p : ℕ) [Fact p.Prime] : IsProP p (HeisenbergGroup ℤ_[p]) :=
   isProP (isProP_multiplicative_padicInt p)
+
+/-- The `p`-adic power of an element `(0, 0, z)` of the `z`-axis of the Heisenberg group over
+`ℤ_[p]` by `c` is `(0, 0, c z)`. -/
+@[simp]
+theorem padicPow_mk_zero_zero {p : ℕ} [Fact p.Prime] (z c : ℤ_[p]) :
+    (isProP_padicInt p).padicPow ⟨0, 0, z⟩ c = ⟨0, 0, c * z⟩ := by
+  -- The continuous homomorphism `c ↦ (0, 0, c z)` out of `ℤ_[p]` sends `1` to `(0, 0, z)`.
+  let g : Multiplicative ℤ_[p] →* HeisenbergGroup ℤ_[p] :=
+    { toFun c := ⟨0, 0, c.toAdd * z⟩
+      map_one' := by ext <;> simp
+      map_mul' a b := by ext <;> simp [add_mul] }
+  have hg : Continuous g :=
+    continuous_iff.mpr ⟨continuous_const, continuous_const,
+      (continuous_toAdd.mul continuous_const : Continuous fun c : Multiplicative ℤ_[p] ↦
+        c.toAdd * z)⟩
+  have h := (isProP_multiplicative_padicInt p).map_padicPow (isProP_padicInt p) g hg (ofAdd 1) c
+  simpa [g] using h.symm
 
 end HeisenbergGroup
 
