@@ -176,7 +176,7 @@ end HomologicalComplex
 
 namespace TauCeti
 
-variable (R : Type v) [CommRing R]
+variable {R : Type v} [CommRing R]
 
 /-- The inverse associator of cochain complexes of modules, restricted to a homogeneous
 summand with arbitrary intermediate degrees, is the inverse associator of the three summands. -/

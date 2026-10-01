@@ -129,10 +129,11 @@ end Bilinear
 of the morphisms of degree `n` which holds for `0` and for every tensor product of homogeneous
 morphisms, and is closed under addition, holds for every morphism of degree `n`. -/
 @[elab_as_elim]
-theorem dgTensorHom_induction {X Y : C × D} {n : ℤ} {P : DGHom R n X Y → Prop} (zero : P 0)
+theorem dgTensorHom_induction {X Y : C × D} {n : ℤ} {motive : DGHom R n X Y → Prop}
+    (zero : motive 0)
     (tmul : ∀ (p q : ℤ) (h : p + q = n) (f : DGHom R p X.1 Y.1) (g : DGHom R q X.2 Y.2),
-      P (dgTensorHom R f g h))
-    (add : ∀ x y, P x → P y → P (x + y)) (x : DGHom R n X Y) : P x := by
+      motive (dgTensorHom R f g h))
+    (add : ∀ x y, motive x → motive y → motive (x + y)) (x : DGHom R n X Y) : motive x := by
   let S : Submodule R (DGHom R n X Y) := Submodule.span R
     {y | ∃ (p q : ℤ) (h : p + q = n) (f : DGHom R p X.1 Y.1) (g : DGHom R q X.2 Y.2),
       dgTensorHom R f g h = y}
@@ -148,8 +149,8 @@ theorem dgTensorHom_induction {X Y : C × D} {n : ℤ} {P : DGHom R n X Y → Pr
     exact hmem
   have hx : x ∈ S := (Submodule.Quotient.mk_eq_zero S).mp
     (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom hmk) x)
-  -- `P` need not be closed under scalars, so induct on the property `∀ r, P (r • y)`.
-  suffices ∀ r : R, P (r • x) by simpa using this 1
+  -- `motive` need not be closed under scalars, so induct on the property `∀ r, motive (r • y)`.
+  suffices ∀ r : R, motive (r • x) by simpa using this 1
   induction hx using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨p, q, h, f, g, rfl⟩ := hy
