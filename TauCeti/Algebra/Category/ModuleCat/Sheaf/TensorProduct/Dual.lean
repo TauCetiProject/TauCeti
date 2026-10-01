@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
-public import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Closed
 
@@ -256,7 +255,9 @@ abbrev _root_.SheafOfModules.dual
 /-- An isomorphism of sheaves induces an isomorphism of their duals. -/
 def _root_.SheafOfModules.dualIso {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
     (e : M ≅ N) : M.dual ≅ N.dual := by
-  have hpre : IsIso (pre e.inv) := MonoidalClosed.pre_isIso e.symm
+  have hpre : IsIso (pre e.inv) := by
+    unfold pre
+    infer_instance
   exact asIso ((pre e.inv).app (unit (ringCatSheaf R)))
 
 private lemma ιFree_pUnit_eq_sigma_ι :
@@ -292,7 +293,9 @@ theorem _root_.SheafOfModules.isIso_evaluation_dual_of_iso_freePUnit
     (e : free (R := ringCatSheaf R) PUnit ≅ M) :
     IsIso ((ihom.ev M).app (unit (ringCatSheaf R))) := by
   have h := id_tensor_pre_app_comp_ev e.hom (unit (ringCatSheaf R))
-  have hpre : IsIso (pre e.hom) := MonoidalClosed.pre_isIso e
+  have hpre : IsIso (pre e.hom) := by
+    unfold pre
+    infer_instance
   have : IsIso ((pre e.hom).app (unit (ringCatSheaf R))) :=
     (NatTrans.isIso_iff_isIso_app (pre e.hom)).1 hpre _
   have : IsIso (free (R := ringCatSheaf R) PUnit ◁
