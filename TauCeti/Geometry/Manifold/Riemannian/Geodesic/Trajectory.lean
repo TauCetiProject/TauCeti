@@ -119,6 +119,27 @@ theorem maximalIntegralCurveInterval_geodesicSpray (p : M) (v : TangentSpace I p
       simpa only [curveVelocityLiftWithin_apply] using hγ.initial_eq
     exact hlift.subset_maximalIntegralCurveInterval hγ.zero_mem hinitial ht
 
+omit [T2Space (TangentBundle I M)] in
+/-- The maximal geodesic interval contains an open interval with the same right endpoint and a
+negative left endpoint. In particular a finite least upper bound of the interval is positive. -/
+theorem exists_Ioo_subset_geodesicInterval_of_isLUB {p : M} {v : TangentSpace I p} {b : ℝ}
+    (hb : IsLUB (geodesicInterval I M p v) b) :
+    ∃ a < (0 : ℝ), 0 < b ∧ Ioo a b ⊆ geodesicInterval I M p v := by
+  rw [← maximalIntegralCurveInterval_geodesicSpray] at hb ⊢
+  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB
+    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) hb
+
+omit [T2Space (TangentBundle I M)] in
+/-- The maximal geodesic interval contains an open interval with the same left endpoint and a
+positive right endpoint. In particular a finite greatest lower bound of the interval is
+negative. -/
+theorem exists_Ioo_subset_geodesicInterval_of_isGLB {p : M} {v : TangentSpace I p} {a : ℝ}
+    (ha : IsGLB (geodesicInterval I M p v) a) :
+    ∃ b > (0 : ℝ), a < 0 ∧ Ioo a b ⊆ geodesicInterval I M p v := by
+  rw [← maximalIntegralCurveInterval_geodesicSpray] at ha ⊢
+  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB
+    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) ha
+
 variable (I M) in
 /-- The maximal geodesic through `p` with initial velocity `v`, junk-valued at `p` outside its
 maximal interval. -/

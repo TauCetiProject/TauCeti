@@ -37,6 +37,7 @@ A free pro-`p` group is not Demushkin, since its `H²(G, 𝔽_p)` vanishes.
 * `TauCeti.IsDemushkin.isTopologicallyFinitelyGenerated`: a Demushkin group is topologically
   finitely generated.
 * `TauCeti.IsDemushkin.finrank_cohomFp_one`: `dim_{𝔽_p} H¹(G, 𝔽_p) = demushkinRank`.
+* `TauCeti.IsDemushkin.finite_cohomFp_two`: `H²(G, 𝔽_p)` is finite.
 * `TauCeti.IsDemushkin.exists_mem_proPFrattini_continuousMulEquiv_presentedProP`: a Demushkin group
   is a one-relator pro-`p` group with relator in the Frattini subgroup.
 * `TauCeti.IsDemushkin.exists_mem_proPFrattini_continuousMulEquiv_presentedProP_fin`: the same
@@ -141,6 +142,13 @@ include hG
 theorem finrank_cohomFp_one : Module.finrank (ZMod p) (cohomFp p G 1) = demushkinRank hG :=
   hG.isProP.finrank_cohomFp_one hG.isTopologicallyFinitelyGenerated
 
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+/-- **`H²(G, 𝔽_p)` of a Demushkin group is finite**, being one-dimensional over `𝔽_p`. -/
+theorem finite_cohomFp_two : Finite (cohomFp p G 2) :=
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have := Module.finite_of_finrank_eq_succ hG.finrank_cohomFp_two
+  Module.finite_of_finite (ZMod p)
+
 /-- **A Demushkin group is a one-relator pro-`p` group.** On any finite type `X` with
 `demushkinRank hG` elements, a Demushkin group `G` is presented by a single relator `r` of the free
 pro-`p` group on `X`, and `r` lies in the Frattini subgroup `Φ(F) = closure (Fᵖ [F, F])`, so the
@@ -159,8 +167,8 @@ theorem exists_mem_proPFrattini_continuousMulEquiv_presentedProP (X : Type u) [F
   have h2 : Module.finrank (ZMod p) (H2 G (ZMod p)) = 1 := by
     rw [← (cohomFpLinearEquivH2 p G htriv).finrank_eq]
     exact hG.finrank_cohomFp_two
-  have : Module.Finite (ZMod p) (H2 G (ZMod p)) := Module.finite_of_finrank_eq_succ h2
-  have hfin : Finite (H2 G (ZMod p)) := Module.finite_of_finite (ZMod p)
+  have hfin : Finite (H2 G (ZMod p)) :=
+    (cohomFpLinearEquivH2 p G htriv).toEquiv.finite_iff.1 hG.finite_cohomFp_two
   have hfg := (presentedProP.finite_H2_iff rels hrels e htriv).1 hfin
   obtain ⟨s, hs, hsR⟩ := (presentedProP.finrank_H2_le_iff rels hrels e htriv hfg 1).1 h2.le
   obtain ⟨x, hx⟩ := Finset.card_le_one_iff_subset_singleton.1 hs
