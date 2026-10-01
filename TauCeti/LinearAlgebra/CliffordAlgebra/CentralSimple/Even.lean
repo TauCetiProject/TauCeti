@@ -19,7 +19,7 @@ two, its even Clifford algebra is a simple ring. Together with centrality and fi
 dimensionality, this supplies the odd-dimensional algebra whose Brauer class defines the
 Clifford invariant.
 
-The reduction uses diagonalization and `TauCeti.CliffordAlgebra.evenProdSmulSqEquiv`: splitting
+The reduction uses diagonalization and `TauCeti.CliffordAlgebra.evenProdSMulSqEquiv`: splitting
 off a nondegenerate line identifies the even algebra with the full Clifford algebra of a regular
 form in one lower dimension. No square root or extension of the base field is needed for
 this reduction. Finite dimensionality is inherited from the full Clifford algebra.
@@ -59,7 +59,7 @@ theorem isSimpleRing_even_of_odd_finrank (hQ : Q.Nondegenerate) (hV : Odd (finra
       (nondegenerate_smul_iff a.isUnit P).mpr (nondegenerate_presentedForm _)
     have en := e.trans (presentedFormConsIsometryEquiv w).symm
     have ec := en.trans (QuadraticMap.IsometryEquiv.prodComm _ P)
-    let e := (evenEquivOfIsometry ec).trans (evenProdSmulSqEquiv P (w 0))
+    let e := (evenEquivOfIsometry ec).trans (evenProdSMulSqEquiv P (w 0))
     have hn' : Even n := by
       simpa [← Nat.not_even_iff_odd, Nat.even_add_one] using hn
     exact IsSimpleRing.of_ringEquiv e.symm.toRingEquiv

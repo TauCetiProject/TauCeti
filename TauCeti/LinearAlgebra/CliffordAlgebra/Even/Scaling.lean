@@ -87,14 +87,14 @@ private def normalizeLast (Q : QuadraticForm R M) (a : Rˣ) :
       (EquivEven.Q' ((↑(-a⁻¹) : R) • Q)) where
   toLinearEquiv := LinearEquiv.refl R _
   map_app' x := congrArg (fun P : QuadraticForm R (M × R) => P x)
-    (by simp [TauCeti.smul_quadraticMap_prod, EquivEven.Q', smul_smul])
+    (by simp [TauCeti.QuadraticMap.smul_prod, EquivEven.Q', smul_smul])
 
 private theorem normalizeLast_apply (Q : QuadraticForm R M) (a : Rˣ) (x : M × R) :
     normalizeLast Q a x = x := (rfl)
 
 /-- The even Clifford algebra of `q ⊥ ⟨a⟩` is the Clifford algebra of `-a⁻¹ • q`.
 This reduces the even algebra of a regular space to a Clifford algebra in one lower dimension. -/
-noncomputable def evenProdSmulSqEquiv (Q : QuadraticForm R M) (a : Rˣ) :
+noncomputable def evenProdSMulSqEquiv (Q : QuadraticForm R M) (a : Rˣ) :
     even (Q.prod ((a : R) • QuadraticMap.sq)) ≃ₐ[R]
       CliffordAlgebra (-(↑a⁻¹ : R) • Q) :=
   -- The target is the simp-normal form of `↑(-a⁻¹) • Q`: `Units.val_neg` is `rfl`,
@@ -105,12 +105,12 @@ noncomputable def evenProdSmulSqEquiv (Q : QuadraticForm R M) (a : Rˣ) :
 /-- On a pair of generators, the dimension-reduction equivalence is Mathlib's `ofEven`
 formula multiplied by `-a`. -/
 @[simp]
-theorem evenProdSmulSqEquiv_ι (Q : QuadraticForm R M) (a : Rˣ) (x y : M × R) :
-    evenProdSmulSqEquiv Q a ((even.ι (Q.prod ((a : R) • QuadraticMap.sq))).bilin x y) =
+theorem evenProdSMulSqEquiv_ι (Q : QuadraticForm R M) (a : Rˣ) (x y : M × R) :
+    evenProdSMulSqEquiv Q a ((even.ι (Q.prod ((a : R) • QuadraticMap.sq))).bilin x y) =
       -(a : R) •
         ((ι (-(↑a⁻¹ : R) • Q) x.1 + algebraMap R _ x.2) *
           (ι (-(↑a⁻¹ : R) • Q) y.1 - algebraMap R _ y.2)) := by
-  rw [evenProdSmulSqEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply, evenEquivEvenSMul_ι]
+  rw [evenProdSMulSqEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply, evenEquivEvenSMul_ι]
   simp only [map_smul, evenEquivOfIsometry_ι, equivEven_symm_apply, ofEven_ι]
   rw [normalizeLast_apply, normalizeLast_apply]
   simp
@@ -118,12 +118,12 @@ theorem evenProdSmulSqEquiv_ι (Q : QuadraticForm R M) (a : Rˣ) (x y : M × R) 
 /-- The inverse dimension-reduction equivalence sends a vector to the last basis vector
 times that vector, multiplied by `-a⁻¹`. -/
 @[simp]
-theorem evenProdSmulSqEquiv_symm_ι (Q : QuadraticForm R M) (a : Rˣ) (m : M) :
-    (evenProdSmulSqEquiv Q a).symm (ι (-(↑a⁻¹ : R) • Q) m) =
+theorem evenProdSMulSqEquiv_symm_ι (Q : QuadraticForm R M) (a : Rˣ) (m : M) :
+    (evenProdSMulSqEquiv Q a).symm (ι (-(↑a⁻¹ : R) • Q) m) =
       -(↑a⁻¹ : R) •
         (even.ι (Q.prod ((a : R) • QuadraticMap.sq))).bilin (0, 1) (m, 0) := by
-  apply (evenProdSmulSqEquiv Q a).injective
-  rw [map_smul, evenProdSmulSqEquiv_ι]
+  apply (evenProdSMulSqEquiv Q a).injective
+  rw [map_smul, evenProdSMulSqEquiv_ι]
   simp [smul_smul]
 
 end TauCeti.CliffordAlgebra
