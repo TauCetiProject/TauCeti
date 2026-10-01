@@ -14,7 +14,7 @@ import Mathlib.Algebra.Polynomial.AlgebraMap
 /-! # Simple roots of squarefree polynomials
 
 A squarefree polynomial has nonzero derivative at every root in its coefficient ring.
-This supplies the pointwise simple-root premise used in root counting.
+This is the pointwise simple-root condition at the roots lying in the coefficient ring.
 -/
 
 public section
