@@ -41,9 +41,6 @@ commutative value algebra `A`. Its projection has kernel exactly the universally
 
 * J. S. Milne, *Algebraic Groups* (2017), §§5 and 19.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 14.
-
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap toward
-the adjoint form by constructing the required quotient by `Z(G)` in fppf sheaves.
 -/
 
 public section

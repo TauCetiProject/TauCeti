@@ -65,6 +65,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
+* `TauCeti.gradedMap_symm_gradedMap`: the graded map of the inverse of a topological isomorphism
+  inverts the graded map of the isomorphism.
 * `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
   isomorphic to `ℤ/pⁿ⁺¹`, `π^n` of the class of the generator is nonzero.
 
@@ -901,6 +903,17 @@ theorem gradedMap_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : C
   obtain ⟨x, rfl⟩ := gradedMk_surjective k x
   rw [AddMonoidHom.comp_apply, gradedMap_gradedMk, gradedMap_gradedMk, gradedMap_gradedMk]
   rfl
+
+/-- The graded map of the inverse of a topological isomorphism inverts the graded map of the
+isomorphism, in every degree. -/
+@[simp]
+theorem gradedMap_symm_gradedMap (e : G ≃ₜ* H) (k : ℕ) (x : gradedPiece p G k) :
+    gradedMap p (e.symm : H →* G) (map_continuous e.symm) k
+      (gradedMap p (e : G →* H) (map_continuous e) k x) = x := by
+  obtain ⟨x, rfl⟩ := gradedMk_surjective k x
+  rw [gradedMap_gradedMk, gradedMap_gradedMk]
+  congr 1
+  exact Subtype.ext (e.symm_apply_apply x)
 
 /-- A continuous closed surjection (for instance a continuous surjection from a compact group onto
 a Hausdorff group, by `Continuous.isClosedMap`) induces a surjection in every degree. -/

@@ -32,13 +32,6 @@ while an included `αₚ`-point reads off a `p`-nilpotent element (`aᵖ = 0`), 
 vanishes. Conversely a `𝔾ₐ`-point read off as an element `a` with `aᵖ = 0` is a `p`-nilpotent
 element, hence the image of the `αₚ`-point attached to it
 (`TauCeti.AlphaP.mem_range_pointsHom_iff`).
-
-This is a worked-example check for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap): the standing hypotheses flag `αₚ` as one of the
-non-smooth / non-reduced groups an affine group scheme of finite type must admit, described there
-as "the kernel of the Frobenius endomorphism", and Layer 3 develops "Hopf ideals ↔ closed
-subgroup schemes" with their kernels.
-
 ## Main declarations
 
 * `TauCeti.AlphaP.inclusion`: the inclusion `αₚ ↪ 𝔾ₐ` on points, the contravariant image of the
@@ -51,7 +44,7 @@ subgroup schemes" with their kernels.
 * `TauCeti.AlphaP.range_inclusion`: as subgroups of the `𝔾ₐ`-points, the image of `αₚ ↪ 𝔾ₐ` is
   the kernel of the Frobenius endomorphism of `𝔾ₐ`.
 
-## References
+## See also
 
 The Frobenius endomorphism `TauCeti.AdditiveGroup.frobeniusEnd` of `𝔾ₐ` is Tau Ceti's
 `TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Frobenius`; the Frobenius kernel `αₚ` and its
