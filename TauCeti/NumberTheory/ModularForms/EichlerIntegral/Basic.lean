@@ -148,7 +148,6 @@ theorem eichlerIntegral_sub {g : ℍ → ℂ} (hh : 0 < h)
       (hasSum_eichlerIntegral hh hgper hghol hgbdd n τ)).tsum_eq
 
 /-- The `0`-fold Eichler integral is the function itself. -/
-@[simp]
 theorem eichlerIntegral_order_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) : eichlerIntegral h 0 f = f :=
   funext fun τ ↦ (hasSum_eichlerIntegral hh hfper hfhol hfbdd 0 τ).unique (by
@@ -236,7 +235,6 @@ theorem isZeroAtImInfty_eichlerIntegral (hh : 0 < h) (hfper : Periodic (f ∘ of
     (by simpa using hasSum_eichlerIntegral hh hfper hfhol hfbdd (n + 1))
 
 /-- **The `q`-expansion of the Eichler integral**: its `m`-th coefficient is `(h / m)ⁿ aₘ`. -/
-@[simp]
 theorem qExpansion_eichlerIntegral_coeff (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) (n m : ℕ) :
     (qExpansion h (eichlerIntegral h n f)).coeff m =
