@@ -38,10 +38,12 @@ strictly lowers a weight except the edges of this matching, which have coefficie
 Generators are weighted lexicographically by the level of their underlying state of `G'`
 (`GridDiagram.stabilizeXLevel`), which is constant on matched pairs
 (`GridDiagram.stabilizeXLevel_stabilizeXMatching`), and by the position of the row the state
-uses in column `s.succ`, read cyclically from the row above `ρ'`, a center generator getting the
-position of `ρ`. The terms of equal weight are the row swaps, along the thin rectangle in row `ρ`
-between a state and its row swap; the other rectangles covering no outer square are width-one
-moves in column `κ`, which lower the position. A row swap term of the cone is a matching edge:
+uses in column `s.succ`, read cyclically from the row above `ρ'` (`Grid.cyclicPosition`), a
+center generator getting the position of `ρ`. The terms of equal weight are the row swaps, along
+the thin rectangle in row `ρ` between a state and its row swap
+(`GridDiagram.stabilizeXRowSwapRectangle`); the other rectangles covering no outer square are
+width-one moves in column `κ`, which lower the position. A row swap term of the cone is a
+matching edge:
 
 * between off-center states using neither `ρ` nor `ρ'` in column `s.succ`, the thin rectangle
   from the source avoids the markings `O_new = (κ, ρ)` and `X₂ = (s.succ, ρ)` of row `ρ`, while
@@ -77,42 +79,6 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 
 /-! ### The row swap rectangle -/
 
-/-- The thin rectangle in the row `(G.X s).castSucc` from a state of the stabilization to the state
-with the two stabilization rows swapped: its sides are the columns where the state uses the rows
-`(G.X s).castSucc` and `(G.X s).succ`. -/
-private def stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
-    GridRectangleBetween y (y.swapRows (G.X s).castSucc (G.X s).succ) :=
-  GridRectangleBetween.ofSwapColumns y _ (y.transpose (G.X s).castSucc)
-    (y.transpose (G.X s).succ) (fun h ↦ Fin.castSucc_lt_succ.ne (y.transpose.toPerm.injective h))
-    (by rw [GridState.swapColumns_eq_swapRows, y.apply_transpose_apply, y.apply_transpose_apply])
-
-private theorem stabilizeXRowSwapRectangle_left (y : GridState (n + 1)) :
-    (G.stabilizeXRowSwapRectangle s y).left = y.transpose (G.X s).castSucc :=
-  GridRectangleBetween.ofSwapColumns_left ..
-
-private theorem stabilizeXRowSwapRectangle_right (y : GridState (n + 1)) :
-    (G.stabilizeXRowSwapRectangle s y).right = y.transpose (G.X s).succ :=
-  GridRectangleBetween.ofSwapColumns_right ..
-
-private theorem stabilizeXRowSwapRectangle_bottom (y : GridState (n + 1)) :
-    (G.stabilizeXRowSwapRectangle s y).bottom = (G.X s).castSucc := by
-  rw [stabilizeXRowSwapRectangle, GridRectangleBetween.ofSwapColumns_bottom,
-    GridState.apply_transpose_apply]
-
-private theorem stabilizeXRowSwapRectangle_top (y : GridState (n + 1)) :
-    (G.stabilizeXRowSwapRectangle s y).top = (G.X s).succ := by
-  rw [stabilizeXRowSwapRectangle, GridRectangleBetween.ofSwapColumns_top,
-    GridState.apply_transpose_apply]
-
-/-- The row swap rectangle covers only the row `(G.X s).castSucc`. -/
-private theorem coveredRows_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
-    (G.stabilizeXRowSwapRectangle s y).toGridRectangle.coveredRows = {(G.X s).castSucc} :=
-  Grid.cIco_eq_singleton_iff.mpr ⟨G.stabilizeXRowSwapRectangle_bottom s y,
-    (G.stabilizeXRowSwapRectangle_top s y).trans (Fin.finRotate_castSucc _).symm, by
-      rw [GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
-        stabilizeXRowSwapRectangle_bottom, stabilizeXRowSwapRectangle_top]
-      exact Fin.castSucc_lt_succ.ne⟩
-
 /-- The row swap rectangle is empty: its two rows are cyclically consecutive. -/
 private theorem isEmpty_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
     (G.stabilizeXRowSwapRectangle s y).IsEmpty := by
@@ -122,12 +88,22 @@ private theorem isEmpty_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
     stabilizeXRowSwapRectangle_top, h]
   simp
 
-/-- A rectangle from a state to another whose sides run from the row `(G.X s).castSucc` to the
-row `(G.X s).succ` ends at the state with the two stabilization rows swapped. -/
-private theorem eq_swapRows_of_bottom_of_top {y z : GridState (n + 1)}
-    (r : GridRectangleBetween y z) (hb : r.bottom = (G.X s).castSucc)
-    (ht : r.top = (G.X s).succ) : z = y.swapRows (G.X s).castSucc (G.X s).succ :=
-  r.target_eq_swapRows.trans (by rw [← r.bottom_def, ← r.top_def, hb, ht])
+/-- A state whose row swap avoids the row `(G.X s).succ` in column `s.succ` does not use the row
+`(G.X s).castSucc` there. -/
+private theorem apply_succ_ne_castSucc_of_swapRows_apply_ne {y : GridState (n + 1)}
+    (h : y.swapRows (G.X s).castSucc (G.X s).succ s.succ ≠ (G.X s).succ) :
+    y s.succ ≠ (G.X s).castSucc := fun hy ↦ h (by
+  rw [GridState.swapRows_apply, hy, Equiv.swap_apply_left])
+
+/-- A state whose row swap is a center insertion uses the row `(G.X s).castSucc` in column
+`s.succ`. -/
+private theorem apply_succ_eq_castSucc_of_insertPoint_eq_swapRows {x : GridState n}
+    {y : GridState (n + 1)}
+    (h : x.insertPoint s.succ (G.X s).succ = y.swapRows (G.X s).castSucc (G.X s).succ) :
+    y s.succ = (G.X s).castSucc := by
+  have h := congrArg (fun z : GridState (n + 1) ↦ z s.succ) h
+  simp only [GridState.insertPoint_apply_newColumn, GridState.swapRows_apply] at h
+  rwa [eq_comm, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right] at h
 
 /-! ### Rectangles to the row swap -/
 
@@ -348,43 +324,14 @@ private theorem stabilizeXRowSwapRectangle_mem_fullyBlockedRectangles_of_source
 
 /-! ### The weight -/
 
-/-- The position of a row on the cycle of rows read from the row above the center row
-`(G.X s).succ`: the rows `(G.X s).castSucc` and `(G.X s).succ` come last. -/
-private def stabilizeXRowPosition (r : Fin (n + 1)) : ℕ :=
-  ((r - (G.X s).succ - 1 : Fin (n + 1)) : ℕ)
-
-/-- Two distinct rows whose half-open cyclic interval avoids the row `(G.X s).succ` come in
-strictly increasing order of position. -/
-private theorem stabilizeXRowPosition_lt_of_notMem_cIco {a b : Fin (n + 1)} (hab : a ≠ b)
-    (h : (G.X s).succ ∉ Grid.cIco a b) :
-    G.stabilizeXRowPosition s a < G.stabilizeXRowPosition s b := by
-  have hk := (G.X s).isLt
-  have hmod : ∀ x, x < 2 * (n + 1) → x % (n + 1) = if x < n + 1 then x else x - (n + 1) := by
-    intro x hx
-    split_ifs with h
-    · exact Nat.mod_eq_of_lt h
-    · rw [Nat.mod_eq_sub_mod (not_lt.mp h), Nat.mod_eq_of_lt (by omega)]
-  have key : ∀ r : Fin (n + 1), G.stabilizeXRowPosition s r =
-      if (G.X s).val + 2 ≤ r.val then r.val - ((G.X s).val + 2)
-      else r.val + (n + 1) - ((G.X s).val + 2) := by
-    intro r
-    have hr := r.isLt
-    simp only [stabilizeXRowPosition, Fin.val_sub, Fin.val_succ, Fin.val_one']
-    rw [Nat.mod_eq_of_lt (a := 1) (by omega), hmod (n + 1 - ((G.X s).val + 1) + r.val) (by omega)]
-    split_ifs <;> rw [hmod _ (by omega)] <;> split_ifs <;> omega
-  have hab' : a.val ≠ b.val := Fin.val_ne_of_ne hab
-  rw [Grid.mem_cIco, Fin.val_succ] at h
-  rw [key, key]
-  split_ifs at h ⊢ <;> simp only [ne_eq, hab, not_false_eq_true, true_and, not_and_or] at h <;>
-    omega
-
 /-- The weight of a generator of the reduced cone: the level of its state, then the position of
-the row its state uses in column `s.succ`. Center generators get the position of the row
+the row its state uses in column `s.succ`, read cyclically from the row above `(G.X s).succ` so
+that the two stabilization rows come last. Center generators get the position of the row
 `(G.X s).castSucc`. -/
 private noncomputable def stabilizeXConeWeight : G.StabilizeXOffCenterState s ⊕ GridState n → ℚ ×ₗ ℕ
-  | .inl y => toLex (G.stabilizeXLevel s y.1, G.stabilizeXRowPosition s (y.1 s.succ))
+  | .inl y => toLex (G.stabilizeXLevel s y.1, Grid.cyclicPosition (G.X s).succ (y.1 s.succ))
   | .inr x => toLex (G.stabilizeXLevel s (x.insertPoint s.succ (G.X s).succ),
-      G.stabilizeXRowPosition s (G.X s).castSucc)
+      Grid.cyclicPosition (G.X s).succ (G.X s).castSucc)
 
 /-- The stabilization matching preserves the weight. -/
 private theorem stabilizeXConeWeight_stabilizeXMatching
@@ -396,14 +343,11 @@ private theorem stabilizeXConeWeight_stabilizeXMatching
     subst hzi
     rcases i with y | x
     · rw [stabilizeXConeStateEquiv_apply_inl] at hz
-      have hy : y.1 s.succ ≠ (G.X s).castSucc := fun hy ↦ hz (by
-        rw [GridState.swapRows_apply, hy, Equiv.swap_apply_left])
-      simp [stabilizeXConeWeight, Equiv.swap_apply_of_ne_of_ne hy y.2]
+      simp [stabilizeXConeWeight, Equiv.swap_apply_of_ne_of_ne
+        (G.apply_succ_ne_castSucc_of_swapRows_apply_ne s hz) y.2]
     · simp [stabilizeXConeWeight]
   · have hx := (G.stabilizeXMatching_eq_inr_iff s i x).mp h
-    have hs := congrArg (fun z : GridState (n + 1) ↦ z s.succ) hx
-    simp only [GridState.insertPoint_apply_newColumn, GridState.swapRows_apply] at hs
-    rw [eq_comm, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right] at hs
+    have hs := G.apply_succ_eq_castSucc_of_insertPoint_eq_swapRows s hx
     rcases i with y | x'
     · rw [stabilizeXConeStateEquiv_apply_inl] at hx hs
       simp [stabilizeXConeWeight, hx, hs]
@@ -436,7 +380,7 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_fullyBlockedRectangles
     simp only [GridRectangleBetween.toGridRectangle_bottom,
       GridRectangleBetween.toGridRectangle_top,
       Fin.finRotate_castSucc] at hbot htop
-    obtain rfl := G.eq_swapRows_of_bottom_of_top s r hbot htop
+    obtain rfl := r.target_eq_swapRows_of_bottom_of_top hbot htop
     exact Or.inr ⟨G.stabilizeXMatchingSource_inl_of_mem_fullyBlockedRectangles s (y := ⟨y, hy⟩) hr,
       ((G.stabilizeXMatching_eq_inl_iff s _ _).mpr
         (by rw [stabilizeXConeStateEquiv_apply_inl])).symm⟩
@@ -451,7 +395,7 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_fullyBlockedRectangles
       rw [← hright, ← hleft]
       exact r.map_right
     rw [hzs]
-    refine G.stabilizeXRowPosition_lt_of_notMem_cIco s
+    refine Grid.cyclicPosition_lt_of_notMem_cIco
       (fun h ↦ (Fin.castSucc_lt_succ (i := s)).ne (y.toPerm.injective h)) fun hρ' ↦ ?_
     refine Finset.disjoint_left.mp hX ((GridRectangle.mem_coveredSquares _ _).mpr ⟨?_, ?_⟩)
       ((mk_mem_XSet _ s.castSucc (G.X s).succ).mpr (by simp))
@@ -492,11 +436,8 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_XHomotopyRectangles
   obtain ⟨hbot, htop, -⟩ := Grid.cIco_eq_singleton_iff.mp hrow
   simp only [GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
     Fin.finRotate_castSucc] at hbot htop
-  have hswap := G.eq_swapRows_of_bottom_of_top s r hbot htop
-  have hy : y.1 s.succ = (G.X s).castSucc := by
-    have h := congrArg (fun z : GridState (n + 1) ↦ z s.succ) hswap
-    simp only [GridState.insertPoint_apply_newColumn, GridState.swapRows_apply] at h
-    rwa [eq_comm, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right] at h
+  have hswap := r.target_eq_swapRows_of_bottom_of_top hbot htop
+  have hy := G.apply_succ_eq_castSucc_of_insertPoint_eq_swapRows s hswap
   exact ⟨G.stabilizeXMatchingSource_inl_of_eq s hy,
     ((G.stabilizeXMatching_eq_inr_iff s _ _).mpr
       (by rw [stabilizeXConeStateEquiv_apply_inl, hswap])).symm⟩
@@ -606,8 +547,7 @@ private theorem stabilizeXReducedCone_single_apply_stabilizeXMatching
   rcases h : G.stabilizeXMatching s (.inl y) with z | x
   · have hz := (G.stabilizeXMatching_eq_inl_iff s _ z).mp h
     rw [stabilizeXConeStateEquiv_apply_inl] at hz
-    have hy : y.1 s.succ ≠ (G.X s).castSucc := fun hy ↦ z.2 (by
-      rw [hz, GridState.swapRows_apply, hy, Equiv.swap_apply_left])
+    have hy := G.apply_succ_ne_castSucc_of_swapRows_apply_ne s (hz ▸ z.2)
     obtain ⟨z, hz'⟩ := z
     dsimp only at hz
     subst hz
@@ -619,10 +559,7 @@ private theorem stabilizeXReducedCone_single_apply_stabilizeXMatching
       Nat.cast_one, one_mul, CharTwo.neg_eq]
   · have hx := (G.stabilizeXMatching_eq_inr_iff s _ x).mp h
     rw [stabilizeXConeStateEquiv_apply_inl] at hx
-    have hy : y.1 s.succ = (G.X s).castSucc := by
-      have h := congrArg (fun z : GridState (n + 1) ↦ z s.succ) hx
-      simp only [GridState.insertPoint_apply_newColumn, GridState.swapRows_apply] at h
-      rwa [eq_comm, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right] at h
+    have hy := G.apply_succ_eq_castSucc_of_insertPoint_eq_swapRows s hx
     rw [LinearMap.sumMappingCone_single_inl_apply_inr,
       constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply, hx,
       G.card_filter_XHomotopyRectangles_swapRows s hy, Nat.cast_one, one_mul]

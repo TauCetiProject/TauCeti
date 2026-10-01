@@ -36,6 +36,8 @@ is a single row or a single column of squares
 * `TauCeti.GridDiagram.stabilizeXOuterSquares`: the squares off the row and the column of `O_new`.
 * `TauCeti.GridDiagram.stabilizeXWeight`: the balanced weight on squares.
 * `TauCeti.GridDiagram.stabilizeXLevel`: the level of a grid state of the stabilization.
+* `TauCeti.GridDiagram.stabilizeXRowSwapRectangle`: the thin rectangle in the row `ρ` from a
+  state to the state with the row `ρ` and the following row swapped.
 
 ## Main results
 
@@ -45,6 +47,8 @@ is a single row or a single column of squares
   drops unless the rectangle covers no outer square.
 * `TauCeti.GridDiagram.coveredRows_eq_or_coveredColumns_eq_of_disjoint_stabilizeXOuterSquares`:
   a rectangle covering no outer square covers the single row `ρ` or the single column `κ`.
+* `TauCeti.GridDiagram.coveredRows_stabilizeXRowSwapRectangle`: the row swap rectangle covers
+  only the row `ρ`.
 * `TauCeti.GridDiagram.stabilizeXLevel_swapRows`: the level is unchanged by swapping the row `ρ`
   with the following row.
 
@@ -207,49 +211,59 @@ theorem coveredRows_eq_or_coveredColumns_eq_of_disjoint_stabilizeXOuterSquares
   exact Finset.disjoint_left.1 h (GridRectangle.mem_coveredSquares _ (c, r₀) |>.2 ⟨hc, hr₀⟩)
     ((G.mem_stabilizeXOuterSquares s (c, r₀)).2 ⟨hcκ, hne⟩)
 
-private theorem stabilizeXRowSwapRectangle_coveredRows (y : GridState (n + 1)) :
-    let a := y.transpose (G.X s).castSucc
-    let b := y.transpose (G.X s).succ
-    let R : GridRectangleBetween y (y.swapRows (G.X s).castSucc (G.X s).succ) :=
-      GridRectangleBetween.ofSwapColumns y _ a b
-        (fun h => (ne_of_lt (G.X s).castSucc_lt_succ) (y.transpose.toPerm.injective h)) (by
-          rw [GridState.swapColumns_eq_swapRows, y.apply_transpose_apply,
-            y.apply_transpose_apply])
-    R.toGridRectangle.coveredRows = {(G.X s).castSucc} := by
-  dsimp only
-  rw [GridRectangle.coveredRows_def, GridRectangleBetween.toGridRectangle_bottom,
-    GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.ofSwapColumns_bottom,
-    GridRectangleBetween.ofSwapColumns_top]
-  simp only [GridState.apply_transpose_apply]
-  rw [Grid.cIco_eq_singleton_iff]
-  refine ⟨rfl, ?_, ne_of_lt (G.X s).castSucc_lt_succ⟩
-  rw [finRotate_apply]
-  apply Fin.ext
-  simp
+/-! ### The row swap rectangle -/
+
+/-- The row swap rectangle of a state of the stabilization: the thin rectangle in the row
+`(G.X s).castSucc` from the state to the state with the two stabilization rows `(G.X s).castSucc`
+and `(G.X s).succ` swapped. Its sides are the columns where the state uses these two rows. -/
+def stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
+    GridRectangleBetween y (y.swapRows (G.X s).castSucc (G.X s).succ) :=
+  GridRectangleBetween.ofSwapColumns y _ (y.transpose (G.X s).castSucc)
+    (y.transpose (G.X s).succ) (fun h ↦ Fin.castSucc_lt_succ.ne (y.transpose.toPerm.injective h))
+    (by rw [GridState.swapColumns_eq_swapRows, y.apply_transpose_apply, y.apply_transpose_apply])
+
+/-- The initial side of the row swap rectangle is the column using the row `(G.X s).castSucc`. -/
+theorem stabilizeXRowSwapRectangle_left (y : GridState (n + 1)) :
+    (G.stabilizeXRowSwapRectangle s y).left = y.transpose (G.X s).castSucc :=
+  GridRectangleBetween.ofSwapColumns_left ..
+
+/-- The terminal side of the row swap rectangle is the column using the row `(G.X s).succ`. -/
+theorem stabilizeXRowSwapRectangle_right (y : GridState (n + 1)) :
+    (G.stabilizeXRowSwapRectangle s y).right = y.transpose (G.X s).succ :=
+  GridRectangleBetween.ofSwapColumns_right ..
+
+/-- The bottom row of the row swap rectangle is `(G.X s).castSucc`. -/
+theorem stabilizeXRowSwapRectangle_bottom (y : GridState (n + 1)) :
+    (G.stabilizeXRowSwapRectangle s y).bottom = (G.X s).castSucc := by
+  rw [stabilizeXRowSwapRectangle, GridRectangleBetween.ofSwapColumns_bottom,
+    GridState.apply_transpose_apply]
+
+/-- The top row of the row swap rectangle is `(G.X s).succ`. -/
+theorem stabilizeXRowSwapRectangle_top (y : GridState (n + 1)) :
+    (G.stabilizeXRowSwapRectangle s y).top = (G.X s).succ := by
+  rw [stabilizeXRowSwapRectangle, GridRectangleBetween.ofSwapColumns_top,
+    GridState.apply_transpose_apply]
+
+/-- The row swap rectangle covers only the row `(G.X s).castSucc`. -/
+theorem coveredRows_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
+    (G.stabilizeXRowSwapRectangle s y).toGridRectangle.coveredRows = {(G.X s).castSucc} :=
+  Grid.cIco_eq_singleton_iff.mpr ⟨G.stabilizeXRowSwapRectangle_bottom s y,
+    (G.stabilizeXRowSwapRectangle_top s y).trans (Fin.finRotate_castSucc _).symm, by
+      rw [GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
+        stabilizeXRowSwapRectangle_bottom, stabilizeXRowSwapRectangle_top]
+      exact Fin.castSucc_lt_succ.ne⟩
 
 /-- The stabilization level is unchanged by swapping the two stabilization rows. The swap is
-realized by a rectangle covering only the row of the new `O`-marking and hence no outer square. -/
+realized by the row swap rectangle, which covers only the row of the new `O`-marking and hence no
+outer square. -/
 @[simp]
 theorem stabilizeXLevel_swapRows (y : GridState (n + 1)) :
     G.stabilizeXLevel s (y.swapRows (G.X s).castSucc (G.X s).succ) = G.stabilizeXLevel s y := by
-  let a := y.transpose (G.X s).castSucc
-  let b := y.transpose (G.X s).succ
-  have hab : a ≠ b := fun h =>
-    (ne_of_lt (G.X s).castSucc_lt_succ) (y.transpose.toPerm.injective h)
-  have htarget : y.swapRows (G.X s).castSucc (G.X s).succ = y.swapColumns a b := by
-    rw [GridState.swapColumns_eq_swapRows, y.apply_transpose_apply, y.apply_transpose_apply]
-  let R : GridRectangleBetween y (y.swapRows (G.X s).castSucc (G.X s).succ) :=
-    GridRectangleBetween.ofSwapColumns y _ a b hab htarget
-  symm
-  apply G.stabilizeXLevel_eq_of_disjoint s R
-  rw [Finset.disjoint_left]
-  intro q hq houter
-  have hrow : q.2 = (G.X s).castSucc := by
-    have : q.2 ∈ R.toGridRectangle.coveredRows :=
-      (GridRectangle.mem_coveredSquares R.toGridRectangle q).1 hq |>.2
-    rw [G.stabilizeXRowSwapRectangle_coveredRows s y, Finset.mem_singleton] at this
-    exact this
-  exact ((G.mem_stabilizeXOuterSquares s q).1 houter).2 hrow
+  refine (G.stabilizeXLevel_eq_of_disjoint s (G.stabilizeXRowSwapRectangle s y)
+    (Finset.disjoint_left.mpr fun q hq houter ↦ ?_)).symm
+  have hrow := ((GridRectangle.mem_coveredSquares _ q).mp hq).2
+  rw [coveredRows_stabilizeXRowSwapRectangle, Finset.mem_singleton] at hrow
+  exact ((G.mem_stabilizeXOuterSquares s q).mp houter).2 hrow
 
 end GridDiagram
 
