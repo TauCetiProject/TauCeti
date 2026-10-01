@@ -66,8 +66,6 @@ open MvPolynomial Finset
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R]
-
 /-- **Interlacing, read on beta-numbers.**  For diagrams `μ` and `ν` with at most `N` rows, the
 beta-number of `ν` at `j` is at most the beta-number of `μ` at `i` exactly for `i ≤ j` precisely
 when the row lengths interlace, `μ₀ ≥ ν₀ ≥ μ₁ ≥ ⋯`, that is, when `μ / ν` is a horizontal strip. -/
@@ -106,6 +104,10 @@ theorem forall_betaNumber_le_iff_interlacedBy {N : ℕ} {μ ν : YoungDiagram}
     · have h1 : ν.rowLen j ≤ μ.rowLen j := (h j).2
       have h2 : μ.rowLen j ≤ μ.rowLen i := μ.rowLen_anti _ _ hle
       omega
+
+section Alternant
+
+variable {R : Type*} [CommRing R]
 
 open scoped Classical in
 /-- **The Pieri rule for alternants of beta-numbers.**  Let `ν` be a Young diagram with at most `N`
@@ -255,6 +257,10 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
   refine Finset.sum_congr (Finset.filter_congr fun μ _ => ?_) fun _ _ => rfl
   exact and_comm
 
+end Alternant
+
+variable {R : Type*} [CommSemiring R]
+
 open scoped Classical in
 /-- **The Pieri rule for Schur polynomials.**  Multiplying the Schur polynomial of a Young diagram
 `ν` in the alphabet `Fin N` by the complete homogeneous symmetric polynomial `h_r` gives the sum of
@@ -267,11 +273,18 @@ theorem hsymm_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) (r : ℕ) :
       ∑ μ : (ν.card + r).Partition with (diagramOf μ).InterlacedBy ν,
         diagramSchurPoly N R (diagramOf μ) := by
   -- Prove the identity over `ℤ`, where the nonzero Vandermonde alternant `a_δ` can be
-  -- cancelled in `ℤ[x]`, then map its integer coefficients to the target commutative ring.
+  -- cancelled in `ℤ[x]`.  Both sides have natural-number coefficients, so the identity descends
+  -- along the injection `ℕ → ℤ`, and the resulting identity over `ℕ` maps to any commutative
+  -- semiring.
   suffices hℤ : hsymm (Fin N) ℤ r * diagramSchurPoly N ℤ ν =
       ∑ μ : (ν.card + r).Partition with (diagramOf μ).InterlacedBy ν,
         diagramSchurPoly N ℤ (diagramOf μ) by
-    have h := congrArg (MvPolynomial.map (Int.castRingHom R)) hℤ
+    have hℕ : hsymm (Fin N) ℕ r * diagramSchurPoly N ℕ ν =
+        ∑ μ : (ν.card + r).Partition with (diagramOf μ).InterlacedBy ν,
+          diagramSchurPoly N ℕ (diagramOf μ) :=
+      MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective <| by
+        simpa [map_diagramSchurPoly, map_hsymm, map_sum] using hℤ
+    have h := congrArg (MvPolynomial.map (Nat.castRingHom R)) hℕ
     simpa [map_diagramSchurPoly, map_hsymm, map_sum] using h
   by_cases hν : ν.colLen 0 ≤ N
   · -- Cancel the staircase alternant, whose exponents are pairwise distinct.
