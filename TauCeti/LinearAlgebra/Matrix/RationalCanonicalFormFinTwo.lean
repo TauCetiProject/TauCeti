@@ -12,12 +12,8 @@ public import TauCeti.LinearAlgebra.Matrix.Commute
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 -- `Matrix.trace` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.Trace
--- `linearIndependent_fin2` and `LinearIndependent.pair_symm_iff` read off the invertibility of
--- the conjugating matrix from its two columns.
-import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
--- `Matrix.linearIndependent_rows_iff_isUnit` and `Matrix.isUnit_iff_isUnit_det`.
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
--- The entry identities below are polynomial, and are solved by `ring`.
+-- The entry identities below are polynomial, and are solved by `ring` and `linear_combination`.
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -44,8 +40,9 @@ describing the centralizer of a non-scalar matrix rather than its normal form.
 * `TauCeti.exists_forall_mulVec_ne_smul`: a non-scalar `2 × 2` matrix over a semiring has a vector
   that is not an eigenvector; over a field such a vector is cyclic.
 * `TauCeti.exists_det_ne_zero_mul_eq_mul_companionFinTwo`: **rational canonical form in size two**,
-  a non-scalar `2 × 2` matrix over a field is similar to the companion matrix of its characteristic
-  polynomial.
+  a non-scalar `2 × 2` matrix over a commutative ring is intertwined, by a matrix of nonzero
+  determinant, with the companion matrix of its characteristic polynomial; over a field it is
+  similar to it.
 
 ## References
 
@@ -116,32 +113,36 @@ end Semiring
 
 /-! ### Rational canonical form in size two -/
 
-section Field
+section CommRing
 
-variable {F : Type*} [Field F] {M : Matrix (Fin 2) (Fin 2) F}
+variable {R : Type*} [CommRing R] {M : Matrix (Fin 2) (Fin 2) R}
 
-/-- **Rational canonical form in size two.** A non-scalar `2 × 2` matrix `M` over a field is
-similar to the companion matrix of its characteristic polynomial `X² - (trace M) X + det M`: in the
-basis `v, M *ᵥ v` given by a cyclic vector `v`, the matrix of `M` is that companion matrix.
+/-- **Rational canonical form in size two.** A non-scalar `2 × 2` matrix `M` over a commutative
+ring is intertwined, by a matrix of nonzero determinant, with the companion matrix of its
+characteristic polynomial `X² - (trace M) X + det M`. Over a field the intertwiner is invertible,
+so `M` is similar to that companion matrix.
 
 The conjugating matrix is produced together with its determinant rather than as an element of
 `GL₂`, so that the statement also covers a matrix that is not itself invertible;
 `TauCeti.isConj_companionGL` is the group-level form. -/
 theorem exists_det_ne_zero_mul_eq_mul_companionFinTwo
     (hM : M ∉ Set.range (Matrix.scalar (Fin 2))) :
-    ∃ P : Matrix (Fin 2) (Fin 2) F,
+    ∃ P : Matrix (Fin 2) (Fin 2) R,
       P.det ≠ 0 ∧ M * P = P * companionFinTwo M.trace M.det := by
-  obtain ⟨v, hv⟩ := exists_forall_mulVec_ne_smul hM
-  refine ⟨(of ![v, M *ᵥ v])ᵀ, ?_, ?_⟩
-  · rw [det_transpose, ← isUnit_iff_ne_zero, ← isUnit_iff_isUnit_det,
-      ← linearIndependent_rows_iff_isUnit, row_eq_self, Equiv.symm_apply_apply,
-      LinearIndependent.pair_symm_iff, linearIndependent_fin2]
-    exact ⟨fun hv0 => hv 0 (by simp_all), fun c hc => hv c hc.symm⟩
-  · ext i j
+  suffices ∃ v : Fin 2 → R, !![v 0, (M *ᵥ v) 0; v 1, (M *ᵥ v) 1].det ≠ 0 by
+    obtain ⟨v, hv⟩ := this
+    refine ⟨_, hv, ?_⟩
+    ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [companionFinTwo, Matrix.mul_apply, Fin.sum_univ_two, Matrix.mulVec,
-        dotProduct, Matrix.det_fin_two, Matrix.trace_fin_two] <;> ring
+      simp [companionFinTwo, mul_apply, Fin.sum_univ_two, mulVec, dotProduct, det_fin_two,
+        trace_fin_two] <;> ring
+  by_contra! h
+  have h10 : M 1 0 = 0 := by simpa [det_fin_two_of, mulVec, dotProduct] using h ![1, 0]
+  have h01 : M 0 1 = 0 := by simpa [det_fin_two_of, mulVec, dotProduct] using h ![0, 1]
+  have h11 : M 1 0 + M 1 1 - (M 0 0 + M 0 1) = 0 := by
+    simpa [det_fin_two_of, mulVec, dotProduct] using h ![1, 1]
+  exact hM (mem_range_scalar_fin_two_iff.2 ⟨h01, h10, by linear_combination h10 - h01 - h11⟩)
 
-end Field
+end CommRing
 
 end TauCeti
