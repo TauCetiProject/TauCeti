@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Combinatorics.Young.Interlacing
 public import TauCeti.Combinatorics.Young.Partitions
-public import TauCeti.GroupTheory.Perm.SignedDomination
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
 import TauCeti.Data.Fin.StrictAnti
+import TauCeti.GroupTheory.Perm.SignedDomination
 
 /-!
 # The Pieri rule for Schur polynomials
@@ -40,14 +40,12 @@ beta-numbers (`YoungDiagram.exists_eq_betaNumber_of_strictAnti`), and a repeated
 alternant.  Grouping the shifts by the shape they sort to leaves, for each shape `μ`, the signed
 count of the permutations `τ` with `β_j ≤ β(μ)_{τ j}` for all `j`.  That count is `1` exactly when
 the comparisons cut out the initial segments, which is interlacing, and `0` otherwise
-(`TauCeti.sum_sign_filter_forall_le_of_strictAnti`).  Both the sorting and the cancellation are
+(`TauCeti.sum_sign_filter_forall_le_of_antitone`).  Both the sorting and the cancellation are
 genuinely needed: a shift of total degree `r` is an arbitrary exponent vector, so the shifted
 beta-numbers are in general neither distinct nor decreasing.
 
 ## Main statements
 
-* `TauCeti.forall_betaNumber_le_iff_interlacedBy`: the comparisons of beta-numbers that cut out
-  initial segments are exactly interlacing.
 * `TauCeti.hsymm_mul_alternant_betaNumber`: the Pieri rule for alternants of beta-numbers.
 * `TauCeti.hsymm_mul_diagramSchurPoly`: the Pieri rule for the Schur polynomial of a Young diagram.
 * `TauCeti.hsymm_mul_schurPoly`: the Pieri rule for the Schur polynomial of a partition in a finite
@@ -65,45 +63,6 @@ public section
 open MvPolynomial Finset
 
 namespace TauCeti
-
-/-- **Interlacing, read on beta-numbers.**  For diagrams `μ` and `ν` with at most `N` rows, the
-beta-number of `ν` at `j` is at most the beta-number of `μ` at `i` exactly for `i ≤ j` precisely
-when the row lengths interlace, `μ₀ ≥ ν₀ ≥ μ₁ ≥ ⋯`, that is, when `μ / ν` is a horizontal strip. -/
-theorem forall_betaNumber_le_iff_interlacedBy {N : ℕ} {μ ν : YoungDiagram}
-    (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N) :
-    (∀ i j : Fin N, ν.betaNumber N j ≤ μ.betaNumber N i ↔ i ≤ j) ↔
-      μ.InterlacedBy ν := by
-  simp only [YoungDiagram.betaNumber_def, YoungDiagram.interlacedBy_iff]
-  constructor
-  · intro h i
-    have h' : ∀ a b : ℕ, a < N → b < N →
-        (ν.rowLen b + (N - 1 - b) ≤ μ.rowLen a + (N - 1 - a) ↔ a ≤ b) := by
-      intro a b ha hb
-      simpa [Fin.le_def] using h ⟨a, ha⟩ ⟨b, hb⟩
-    refine ⟨?_, ?_⟩
-    · by_cases hi : i + 1 < N
-      · have hlt := ((h' (i + 1) i hi (by omega)).not).mpr (by omega)
-        omega
-      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
-        exact Nat.zero_le _
-    · by_cases hi : i < N
-      · have := (h' i i hi hi).mpr le_rfl
-        omega
-      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hν.trans (by omega))]
-        exact Nat.zero_le _
-  · intro h i j
-    rw [Fin.le_def]
-    have hiN : (i : ℕ) < N := i.isLt
-    have hjN : (j : ℕ) < N := j.isLt
-    refine ⟨fun hle => ?_, fun hle => ?_⟩
-    · by_contra hij
-      have hij' : (j : ℕ) < (i : ℕ) := by omega
-      have h1 : μ.rowLen i ≤ μ.rowLen ((j : ℕ) + 1) := μ.rowLen_anti _ _ (by omega)
-      have h2 : μ.rowLen ((j : ℕ) + 1) ≤ ν.rowLen j := (h j).1
-      omega
-    · have h1 : ν.rowLen j ≤ μ.rowLen j := (h j).2
-      have h2 : μ.rowLen j ≤ μ.rowLen i := μ.rowLen_anti _ _ hle
-      omega
 
 section Alternant
 
@@ -249,7 +208,8 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
       rw [hcomp, alternant_comp_perm]
       simp [Units.smul_def]
     rw [hT, Finset.sum_congr rfl fun τ _ => hstep τ, ← Finset.sum_smul,
-      sum_sign_filter_forall_le_of_strictAnti hβanti ((diagramOf μ).strictAnti_betaNumber N)]
+      sum_sign_filter_forall_le_of_antitone hβanti.antitone
+        ((diagramOf μ).strictAnti_betaNumber N).antitone]
     -- `hβ` unfolds the abbreviation so that the beta-number criterion applies to the condition.
     simp only [hβ, forall_betaNumber_le_iff_interlacedBy hcol hν]
     split_ifs <;> simp

@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.LinearAlgebra.Determinant
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
 
 /-!
 # Alternants

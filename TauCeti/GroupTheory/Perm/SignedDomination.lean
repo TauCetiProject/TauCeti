@@ -11,8 +11,8 @@ public import Mathlib.Order.Preorder.Finite
 /-!
 # Signed counts of the permutations carrying one antitone sequence above another
 
-Let `β` and `η` be strictly antitone sequences indexed by `Fin n` with values in a linear order.
-Say that a permutation `τ` of `Fin n` **dominates** `β` by `η` when `β j ≤ η (τ j)` for every `j`.
+Let `β` and `η` be antitone sequences indexed by `Fin n` with values in a preorder.  Say that a
+permutation `τ` of `Fin n` **dominates** `β` by `η` when `β j ≤ η (τ j)` for every `j`.
 The signed count of the dominating permutations is `1` when the comparisons `β j ≤ η i` cut out
 exactly the initial segments `i ≤ j`, and `0` otherwise.
 
@@ -29,8 +29,8 @@ against the opposite one.
 
 ## Main results
 
-* `TauCeti.sum_sign_filter_forall_le_of_strictAnti`: the signed count of the permutations
-  dominating one strictly antitone sequence by another.
+* `TauCeti.sum_sign_filter_forall_le_of_antitone`: the signed count of the permutations
+  dominating one antitone sequence by another.
 -/
 
 public section
@@ -39,12 +39,12 @@ namespace TauCeti
 
 open Equiv Finset
 
-variable {n : ℕ} {α : Type*} [LinearOrder α] {β η : Fin n → α}
+variable {n : ℕ} {α : Type*} [Preorder α] [DecidableLE α] {β η : Fin n → α}
 
-/-- **The signed count of the permutations carrying `β` above `η`.**  For strictly antitone `β` and
-`η` indexed by `Fin n`, the sum of the signs of the permutations `τ` with `β j ≤ η (τ j)` for every
-`j` is `1` when the comparisons `β j ≤ η i` hold exactly for `i ≤ j`, and `0` otherwise. -/
-theorem sum_sign_filter_forall_le_of_strictAnti (hβ : StrictAnti β) (hη : StrictAnti η) :
+/-- **The signed count of the permutations carrying `β` above `η`.**  For antitone `β` and `η`
+indexed by `Fin n`, the sum of the signs of the permutations `τ` with `β j ≤ η (τ j)` for every `j`
+is `1` when the comparisons `β j ≤ η i` hold exactly for `i ≤ j`, and `0` otherwise. -/
+theorem sum_sign_filter_forall_le_of_antitone (hβ : Antitone β) (hη : Antitone η) :
     ∑ τ : Perm (Fin n) with (∀ j, β j ≤ η (τ j)), (Perm.sign τ : ℤ) =
       if ∀ i j, β j ≤ η i ↔ i ≤ j then 1 else 0 := by
   classical
@@ -80,9 +80,9 @@ theorem sum_sign_filter_forall_le_of_strictAnti (hβ : StrictAnti β) (hη : Str
   have hmem : ∀ i j : Fin n, β j ≤ η i ↔ i ≤ c j := by
     refine fun i j => ⟨fun hij => (S j).le_max' i (mem_filter.mpr ⟨mem_univ _, hij⟩), fun hij => ?_⟩
     have hcj : β j ≤ η (c j) := (mem_filter.mp ((S j).max'_mem (hSne j))).2
-    exact hcj.trans (hη.antitone hij)
+    exact hcj.trans (hη hij)
   have hmono : Monotone c := fun j j' hjj' =>
-    (hmem (c j) j').mp ((hβ.antitone hjj').trans ((hmem (c j) j).mpr le_rfl))
+    (hmem (c j) j').mp ((hβ hjj').trans ((hmem (c j) j).mpr le_rfl))
   -- Injectivity of the largest elements would force the complete flag, which is excluded.
   by_cases hinj : Function.Injective c
   · refine absurd (fun i j => ?_) h
