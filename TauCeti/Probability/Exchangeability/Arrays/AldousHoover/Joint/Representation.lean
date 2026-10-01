@@ -490,8 +490,8 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
           (Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} => (volume : Measure I))).map
         (fun q => (q.1, fun t => G (visibleSquareContext t q.1) (q.2 t))) =
       ρ.map fun x => (vertexLayerData e d g x, visiblePairs g x) := by
-  obtain ⟨G, hG, hP⟩ :=
-    hρ.exists_common_offDiagonalArray_coding he
+  obtain ⟨G, hG, -, hP⟩ :=
+    hρ.exists_common_offDiagonalArray_coding he MeasurableSet.empty
   refine ⟨G, hG, ?_⟩
   set H : Set (ℕ × ℕ) :=
     (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2}
