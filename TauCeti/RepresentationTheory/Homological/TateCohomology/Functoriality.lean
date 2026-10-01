@@ -66,6 +66,11 @@ invariants of its conjugate through the resulting map in degree two.
   a norm-zero element to the class of its image (`TauCeti.TateCohomology.mapKerNorm`).
 * `TauCeti.TateCohomology.H0π_comp_tateCohomologyFunctor_map`: in degree zero, Mathlib's
   coefficient functoriality sends the class of an invariant to the class of its image.
+* `TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map` and
+  `TauCeti.TateCohomology.δ_comp_map`: the construction is natural in the coefficients and commutes
+  with the connecting maps of short exact sequences.
+* `TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map_res`: every compatible pair factors
+  as a morphism into the restriction of its target followed by the pair `Res(e)(N) → N`.
 
 ## References
 
@@ -588,6 +593,76 @@ theorem H0π_comp_tateCohomologyFunctor_map {M N : Rep R G} (f : M ⟶ N) :
   rw [← h, H0π_comp_map]
   -- `mapInvariants hf` restricts `f` to the invariants, which is how `Rep.invariantsFunctor` acts.
   rfl
+
+/-! ### Naturality in the coefficients and the connecting maps -/
+
+/-- **The map of Tate complexes of a compatible pair is natural in the coefficients**: if
+morphisms `f : M ⟶ M'` and `f' : N ⟶ N'` commute with the linear parts of compatible pairs
+`M → N` and `M' → N'`, the induced square of Tate complexes commutes. -/
+theorem complexMap_naturality {M M' : Rep R G} {N N' : Rep R H} {e : G ≃* H}
+    {φ : M.V →ₗ[R] N.V} {φ' : M'.V →ₗ[R] N'.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ)
+    (hφ' : M'.ρ.IsIntertwiningMap (N'.ρ.comp (e : G →* H)) φ') (f : M ⟶ M') (f' : N ⟶ N')
+    (hf : φ' ∘ₗ f.hom.toLinearMap = f'.hom.toLinearMap ∘ₗ φ) :
+    tateComplex.map f ≫ complexMap hφ' = complexMap hφ ≫ tateComplex.map f' := by
+  have hf₀ : M.ρ.IsIntertwiningMap (M'.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+      f.hom.toLinearMap := ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  have hf₀' : N.ρ.IsIntertwiningMap (N'.ρ.comp ((MulEquiv.refl H : H ≃* H) : H →* H))
+      f'.hom.toLinearMap := ⟨fun g v ↦ Rep.hom_comm_apply f' g v⟩
+  -- `complexMap_refl` produces `Rep.ofHom ⟨f.hom.toLinearMap, _⟩`, which is `f` by structure eta.
+  rw [show tateComplex.map f = complexMap hf₀ from (complexMap_refl hf₀).symm,
+    show tateComplex.map f' = complexMap hf₀' from (complexMap_refl hf₀').symm,
+    complexMap_comp, complexMap_comp]
+  exact complexMap_congr (by ext; rfl) hf
+
+/-- **Tate cohomology of a compatible pair is natural in the coefficients**, in every degree. -/
+@[reassoc]
+theorem tateCohomologyFunctor_map_comp_map {M M' : Rep R G} {N N' : Rep R H} {e : G ≃* H}
+    {φ : M.V →ₗ[R] N.V} {φ' : M'.V →ₗ[R] N'.V}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ)
+    (hφ' : M'.ρ.IsIntertwiningMap (N'.ρ.comp (e : G →* H)) φ') (f : M ⟶ M') (f' : N ⟶ N')
+    (hf : φ' ∘ₗ f.hom.toLinearMap = f'.hom.toLinearMap ∘ₗ φ) (n : ℤ) :
+    (tateCohomologyFunctor n).map f ≫ map hφ' n = map hφ n ≫ (tateCohomologyFunctor n).map f' := by
+  rw [map_def, map_def]
+  -- `(tateCohomologyFunctor n).map f` is the homology map of `tateComplex.map f` by definition.
+  exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (complexMap_naturality hφ hφ' f f' hf)).trans (HomologicalComplex.homologyMap_comp _ _ n)
+
+/-- **Tate cohomology of compatible pairs commutes with the connecting maps.** Compatible pairs
+between the terms of a short exact sequence `S` of `G`-representations and those of a short exact
+sequence `S'` of `H`-representations, whose linear parts commute with the maps of the two
+sequences, intertwine the connecting maps of `S` and `S'` in every degree. -/
+theorem δ_comp_map {S : ShortComplex (Rep R G)} {S' : ShortComplex (Rep R H)}
+    (hS : S.ShortExact) (hS' : S'.ShortExact) {e : G ≃* H} {φ₁ : S.X₁.V →ₗ[R] S'.X₁.V}
+    {φ₂ : S.X₂.V →ₗ[R] S'.X₂.V} {φ₃ : S.X₃.V →ₗ[R] S'.X₃.V}
+    (h₁ : S.X₁.ρ.IsIntertwiningMap (S'.X₁.ρ.comp (e : G →* H)) φ₁)
+    (h₂ : S.X₂.ρ.IsIntertwiningMap (S'.X₂.ρ.comp (e : G →* H)) φ₂)
+    (h₃ : S.X₃.ρ.IsIntertwiningMap (S'.X₃.ρ.comp (e : G →* H)) φ₃)
+    (hf : φ₂ ∘ₗ S.f.hom.toLinearMap = S'.f.hom.toLinearMap ∘ₗ φ₁)
+    (hg : φ₃ ∘ₗ S.g.hom.toLinearMap = S'.g.hom.toLinearMap ∘ₗ φ₂) (r : ℤ) :
+    _root_.TateCohomology.δ hS r ≫ map h₁ (r + 1) = map h₃ r ≫ _root_.TateCohomology.δ hS' r := by
+  let Φ : S.map (tateComplexFunctor R G) ⟶ S'.map (tateComplexFunctor R H) :=
+    { τ₁ := complexMap h₁
+      τ₂ := complexMap h₂
+      τ₃ := complexMap h₃
+      comm₁₂ := (complexMap_naturality h₁ h₂ S.f S'.f hf).symm
+      comm₂₃ := (complexMap_naturality h₂ h₃ S.g S'.g hg).symm }
+  rw [map_def, map_def]
+  exact HomologicalComplex.HomologySequence.δ_naturality Φ
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS)
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS') r (r + 1) rfl
+
+/-- **A compatible pair factors through the restriction of its target**: Tate cohomology of the
+pair `(e, φ)` is the coefficient map induced by a morphism `f : M ⟶ Res(e)(N)` with linear part `φ`,
+followed by Tate cohomology of the pair `Res(e)(N) → N`. -/
+theorem tateCohomologyFunctor_map_comp_map_res {M : Rep R G} {N : Rep R H} {e : G ≃* H}
+    {φ : M.V →ₗ[R] N.V} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ)
+    (f : M ⟶ Rep.res (e : G →* H) N) (hf : f.hom.toLinearMap = φ) (n : ℤ) :
+    (tateCohomologyFunctor n).map f ≫
+        map (e := e) (Rep.isIntertwiningMap_res N (e : G →* H)) n = map hφ n := by
+  rw [tateCohomologyFunctor_map_comp_map hφ (Rep.isIntertwiningMap_res N (e : G →* H)) f (𝟙 N)
+    (by rw [hf]; rfl) n, CategoryTheory.Functor.map_id, Category.comp_id]
 
 end Degrees
 

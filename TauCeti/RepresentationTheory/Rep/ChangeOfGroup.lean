@@ -43,6 +43,8 @@ does.
   their linear part is an equivalence.
 * `Representation.IsIntertwiningMap.comp_norm`: an intertwining map along an isomorphism of
   finite groups intertwines the two norms.
+* `Representation.IsIntertwiningMap.tensor`: intertwining maps along one homomorphism of monoids
+  tensor to an intertwining map between the tensor product representations.
 * `Rep.isIntertwiningMap_id` and `Rep.isIntertwiningMap_res`: the identity
   map is intertwining along the identity isomorphism of the monoid, and along `f` between a
   restricted representation and the representation it restricts.
@@ -131,6 +133,27 @@ theorem IsIntertwiningMap.comp_norm {ρ : Representation R G V} {σ : Representa
       fun g ↦ hφ.isIntertwining g x
 
 end Norm
+
+section TensorProduct
+
+variable {R : Type u} {G : Type uG} {H : Type uH} {V : Type uV} {W : Type uW} {V' : Type*}
+  {W' : Type*} [CommSemiring R] [Monoid G] [Monoid H] [AddCommMonoid V] [Module R V]
+  [AddCommMonoid W] [Module R W] [AddCommMonoid V'] [Module R V'] [AddCommMonoid W']
+  [Module R W']
+
+/-- **Intertwining maps along a homomorphism of monoids tensor**: if `φ` intertwines `ρ` with
+`σ.comp f` and `ψ` intertwines `ρ'` with `σ'.comp f`, then `φ ⊗ ψ` intertwines the tensor product
+representations. This is Mathlib's `Representation.IntertwiningMap.tensor` for the
+representations `σ.comp f` and `σ'.comp f`. -/
+theorem IsIntertwiningMap.tensor {ρ : Representation R G V} {σ : Representation R H W}
+    {ρ' : Representation R G V'} {σ' : Representation R H W'} {f : G →* H} {φ : V →ₗ[R] W}
+    {ψ : V' →ₗ[R] W'} (hφ : ρ.IsIntertwiningMap (σ.comp f) φ)
+    (hψ : ρ'.IsIntertwiningMap (σ'.comp f) ψ) :
+    (ρ.tprod ρ').IsIntertwiningMap ((σ.tprod σ').comp f) (TensorProduct.map φ ψ) :=
+  ⟨((φ.intertwiningMap_of_isIntertwiningMap _ _ hφ.isIntertwining).tensor
+    (ψ.intertwiningMap_of_isIntertwiningMap _ _ hψ.isIntertwining)).isIntertwining⟩
+
+end TensorProduct
 
 end Representation
 

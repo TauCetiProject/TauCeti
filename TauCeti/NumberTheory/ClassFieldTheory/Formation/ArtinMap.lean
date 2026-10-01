@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Theorem
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Conjugation
 
 /-!
 # The abstract Artin map of a class formation
@@ -35,6 +35,11 @@ surjective (`ClassFormation.surjective_artinMap`), the norm quotient has as many
 generates `Γ^ab` exactly when the class of `a` generates the norm quotient
 (`ClassFormation.isGenerator_artinMap_iff`).
 
+Conjugation by an element `g` of the ambient group carries the layer to `gVg⁻¹ ◁ gUg⁻¹`. Since
+Tate's isomorphism commutes with conjugation (`ClassFormation.tateIso_conj`), so do the Nakayama
+map and Artin reciprocity, and the Artin map is equivariant: the Artin symbol of `g · a` for the
+conjugate layer is the conjugate of the Artin symbol of `a` (`ClassFormation.artinMap_conj`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.ClassFormation.nakayamaNegTwo`: the Nakayama map
@@ -52,6 +57,7 @@ generates `Γ^ab` exactly when the class of `a` generates the norm quotient
   `TauCeti.ClassFieldTheory.ClassFormation.artinMap_eq_zero_iff`: the kernel of the Artin map is
   the norm subgroup.
 * `TauCeti.ClassFieldTheory.ClassFormation.surjective_artinMap`: the Artin map is surjective.
+* `TauCeti.ClassFieldTheory.ClassFormation.artinMap_conj`: the Artin map commutes with conjugation.
 
 ## References
 
@@ -182,5 +188,38 @@ theorem isGenerator_artinMap_iff (a : F.level L.ground) :
   rw [artinMap_apply, ← AddMonoidHom.coe_ofClass, ← AddMonoidHom.map_zmultiples,
     ← AddSubgroup.map_equiv_top (cf.artinEquiv L),
     (AddSubgroup.map_injective (cf.artinEquiv L).injective).eq_iff]
+
+/-! ### Conjugation -/
+
+/-- **The Nakayama map commutes with conjugation**: conjugating the abelianized Galois group by
+`g` and conjugating the norm quotient by `g` are matched by the Nakayama maps of a layer and its
+conjugate. -/
+theorem nakayamaNegTwo_conj (g : G) (σ : Additive (Abelianization L.Gal)) :
+    cf.nakayamaNegTwo (L.conjugate g) ((L.conjugateGalEquiv g).abelianizationCongr.toAdditive σ) =
+      L.conjugateNormQuotientEquiv F g (cf.nakayamaNegTwo L σ) := by
+  obtain ⟨x, rfl⟩ := L.tateHMinusTwoEquivAbelianization.surjective σ
+  rw [nakayamaNegTwo_apply, nakayamaNegTwo_apply, AddEquiv.symm_apply_apply,
+    ← L.tateHMinusTwoEquivAbelianization_conjugateTrivialTateIso_hom g x,
+    AddEquiv.symm_apply_apply, ← tateIso_apply, ← tateIso_apply, ← cf.tateIso_conj L g (-2) x]
+  exact L.tateHZeroEquivNormQuotient_conjugateTateIso_apply F g _
+
+/-- **Artin reciprocity commutes with conjugation**: Artin reciprocity of the conjugate layer,
+applied to the conjugate of a class modulo norms, is the conjugate of its Artin symbol. -/
+@[simp]
+theorem artinEquiv_conj (g : G) (y : L.NormQuotient F) :
+    cf.artinEquiv (L.conjugate g) (L.conjugateNormQuotientEquiv F g y) =
+      (L.conjugateGalEquiv g).abelianizationCongr.toAdditive (cf.artinEquiv L y) := by
+  rw [← nakayamaNegTwo_artinEquiv cf L y, ← nakayamaNegTwo_conj, artinEquiv_nakayamaNegTwo,
+    nakayamaNegTwo_artinEquiv]
+
+/-- **The Artin map commutes with conjugation**, one of the four Artin–Tate functoriality
+diagrams: the Artin symbol of `g · a` for the conjugate layer `gVg⁻¹ ◁ gUg⁻¹` is the conjugate by
+`g` of the Artin symbol of `a`. -/
+@[simp]
+theorem artinMap_conj (g : G) (a : F.level L.ground) :
+    cf.artinMap (L.conjugate g) (L.conjugateGroundLevelEquiv F g a) =
+      (L.conjugateGalEquiv g).abelianizationCongr.toAdditive (cf.artinMap L a) := by
+  rw [artinMap_apply, artinMap_apply, ← artinEquiv_conj, NormalLayer.normQuotientMk_apply,
+    NormalLayer.normQuotientMk_apply, NormalLayer.conjugateNormQuotientEquiv_mk]
 
 end TauCeti.ClassFieldTheory.ClassFormation

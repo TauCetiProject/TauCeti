@@ -33,6 +33,9 @@ that the reciprocity isomorphism `Gᵃᵇ ≃ H_Tate⁰(G, C)` inherits.
   is the Verlagerung.
 * `TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor`: corestriction in degree
   `-2` is the map induced on abelianizations.
+* `TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_map`: with integral coefficients, Tate
+  cohomology along an isomorphism of finite groups is, in degree `-2`, the induced isomorphism of
+  abelianizations.
 
 ## References
 
@@ -130,6 +133,45 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoCor {H : Type} [Group H] [Fintype H
   rw [HNegTwoAddEquivAbelianization_apply,
     HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor,
     TauCeti.tensorProduct_rid_rTensor_apply, AddMonoidHom.coe_toIntLinearMap]
+
+omit [Fintype G] in
+/-- The identity of `ℤ` intertwines the trivial integral representations of two groups along an
+isomorphism between them: the compatible pair along which an isomorphism of finite groups acts on
+Tate cohomology with integral coefficients. -/
+theorem isIntertwiningMap_trivial {H : Type} [Group H] (e : G ≃* H) :
+    (Rep.trivial ℤ G ℤ).ρ.IsIntertwiningMap ((Rep.trivial ℤ H ℤ).ρ.comp (e : G →* H))
+      (LinearEquiv.refl ℤ ℤ) :=
+  ⟨fun _ _ ↦ rfl⟩
+
+/-- **The integral degree-`-2` identification is natural along isomorphisms of groups**: Tate
+cohomology along an isomorphism `e : G ≃* H` of finite groups, with integral coefficients, is the
+isomorphism `Gᵃᵇ ≃ Hᵃᵇ` induced by `e` in degree `-2`. -/
+theorem HNegTwoAddEquivAbelianization_map {H : Type} [Group H] [Fintype H] (e : G ≃* H)
+    (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
+    HNegTwoAddEquivAbelianization (map (isIntertwiningMap_trivial e) (-2) x) =
+      e.abelianizationCongr.toAdditive (HNegTwoAddEquivAbelianization x) := by
+  -- In degree `-2` the pair acts on first homology as the change-of-group map along `e`.
+  have hm : (_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ H ℤ)
+      (map (isIntertwiningMap_trivial e) (-2) x) =
+      groupHomology.map (e : G →* H)
+        (Representation.IsIntertwiningMap.toRes (isIntertwiningMap_trivial e)) 1
+        ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ G ℤ) x) :=
+    ConcreteCategory.congr_hom
+      (map_comp_isoGroupHomology_hom (isIntertwiningMap_trivial e) (-2) 1 rfl) x
+  rw [HNegTwoAddEquivAbelianization_apply, HNegTwoAddEquivAbelianization_apply,
+    HNegTwoAddEquivTensorOfIsTrivial_apply, HNegTwoAddEquivTensorOfIsTrivial_apply, hm]
+  -- On first homology with trivial coefficients, the change of group along `e` is
+  -- `Abelianization.map e` tensored with the identity of `ℤ`.
+  have h1 := TauCeti.groupHomology.H1AddEquivOfIsTrivial_map (e : G →* H)
+    (Representation.IsIntertwiningMap.toRes (isIntertwiningMap_trivial e))
+    ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app (Rep.trivial ℤ G ℤ) x :
+      groupHomology.H1 (Rep.trivial ℤ G ℤ))
+  refine (congrArg (TensorProduct.rid ℤ (Additive (Abelianization H))) h1).trans ?_
+  simp only [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, LinearEquiv.refl_toLinearMap,
+    LinearMap.restrictScalars_self]
+  rw [← LinearMap.rTensor_def, TauCeti.tensorProduct_rid_rTensor_apply]
+  -- `MulEquiv.abelianizationCongr e` is `Abelianization.map e` on underlying functions.
+  rfl
 
 end TrivialInt
 
