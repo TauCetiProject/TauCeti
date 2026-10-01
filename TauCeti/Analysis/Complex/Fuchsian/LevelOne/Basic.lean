@@ -33,6 +33,8 @@ orbits.
 * `TauCeti.ModularGroup.isCofinite_psl2zToPSL2RRange`: that image is a cofinite Fuchsian group.
 * `TauCeti.ModularGroup.card_stabilizer_psl2zToPSL2RRange_I` and
   `TauCeti.ModularGroup.card_stabilizer_psl2zToPSL2RRange_ρ`: the elliptic orders `2` and `3`.
+* `TauCeti.ModularGroup.quotientMk_psl2zToPSL2RRange_eq_iff_quotientMk_sl_eq`: the orbits of the
+  projective image are those of `SL(2, ℤ)`.
 * `TauCeti.ModularGroup.stabilizer_psl2zToPSL2RRange_eq_bot_iff`: a stabilizer is trivial exactly
   off the orbits of `i` and `ρ`.
 
@@ -78,7 +80,7 @@ theorem isCofinite_psl2zToPSL2RRange : psl2zToPSL2R.range.IsCofinite := by
 
 /-- The point stabilizers of the effective level-one group are those of `PSL(2, ℤ)`, transported
 along the injective homomorphism `psl2zToPSL2R`. -/
-theorem card_stabilizer_psl2zToPSL2RRange (z : ℍ) :
+theorem card_stabilizer_psl2zToPSL2RRange_eq_card_stabilizer_psl (z : ℍ) :
     Nat.card (stabilizer psl2zToPSL2R.range z) = Nat.card (stabilizer PSL(2, ℤ) z) :=
   TauCeti.card_stabilizer_congr (f := id) (MonoidHom.ofInjective psl2zToPSL2R_injective) z
     (fun g ↦ by
@@ -87,7 +89,7 @@ theorem card_stabilizer_psl2zToPSL2RRange (z : ℍ) :
 
 /-- Two points lie in the same orbit of the effective level-one group exactly when they lie in
 the same orbit of `SL(2, ℤ)`. -/
-theorem orbitRel_psl2zToPSL2RRange_iff {z w : ℍ} :
+theorem orbitRel_psl2zToPSL2RRange_iff_orbitRel_sl {z w : ℍ} :
     orbitRel psl2zToPSL2R.range ℍ z w ↔ orbitRel SL(2, ℤ) ℍ z w := by
   simp only [orbitRel_apply, mem_orbit_iff]
   constructor
@@ -102,12 +104,19 @@ theorem orbitRel_psl2zToPSL2RRange_iff {z w : ℍ} :
 /-- The stabilizer of `i` in the effective level-one group has order `2`. -/
 theorem card_stabilizer_psl2zToPSL2RRange_I :
     Nat.card (stabilizer psl2zToPSL2R.range I) = 2 := by
-  rw [card_stabilizer_psl2zToPSL2RRange, card_stabilizer_psl_I]
+  rw [card_stabilizer_psl2zToPSL2RRange_eq_card_stabilizer_psl, card_stabilizer_psl_I]
 
 /-- The stabilizer of `ρ` in the effective level-one group has order `3`. -/
 theorem card_stabilizer_psl2zToPSL2RRange_ρ :
     Nat.card (stabilizer psl2zToPSL2R.range ρ) = 3 := by
-  rw [card_stabilizer_psl2zToPSL2RRange, card_stabilizer_psl_ρ]
+  rw [card_stabilizer_psl2zToPSL2RRange_eq_card_stabilizer_psl, card_stabilizer_psl_ρ]
+
+/-- Two points have the same orbit under the effective level-one group exactly when they have the
+same orbit under `SL(2, ℤ)`. -/
+theorem quotientMk_psl2zToPSL2RRange_eq_iff_quotientMk_sl_eq {z w : ℍ} :
+    Quotient.mk (orbitRel psl2zToPSL2R.range ℍ) z = Quotient.mk _ w ↔
+      (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' w := by
+  rw [Quotient.eq, Quotient.eq'', orbitRel_psl2zToPSL2RRange_iff_orbitRel_sl]
 
 /-- **The elliptic points of the level-one group.** The stabilizer of `z` in the effective
 level-one group is trivial exactly when `z` lies in neither the orbit of `i` nor that of `ρ`. -/
@@ -115,11 +124,9 @@ theorem stabilizer_psl2zToPSL2RRange_eq_bot_iff (z : ℍ) :
     stabilizer psl2zToPSL2R.range z = ⊥ ↔
       Quotient.mk (orbitRel psl2zToPSL2R.range ℍ) z ≠ Quotient.mk _ I ∧
         Quotient.mk (orbitRel psl2zToPSL2R.range ℍ) z ≠ Quotient.mk _ ρ := by
-  have hq (w : ℍ) : Quotient.mk (orbitRel psl2zToPSL2R.range ℍ) z = Quotient.mk _ w ↔
-      (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' w := by
-    rw [Quotient.eq, Quotient.eq'', orbitRel_psl2zToPSL2RRange_iff]
-  rw [← Subgroup.card_eq_one, card_stabilizer_psl2zToPSL2RRange, ← ellipticOrder_mk, ne_eq, ne_eq,
-    hq, hq]
+  rw [← Subgroup.card_eq_one, card_stabilizer_psl2zToPSL2RRange_eq_card_stabilizer_psl,
+    ← ellipticOrder_mk, ne_eq, ne_eq, quotientMk_psl2zToPSL2RRange_eq_iff_quotientMk_sl_eq,
+    quotientMk_psl2zToPSL2RRange_eq_iff_quotientMk_sl_eq]
   refine ⟨fun h ↦ ⟨fun hI ↦ ?_, fun hρ ↦ ?_⟩,
     fun h ↦ ellipticOrder_eq_one_of_orbit_ne_I_of_orbit_ne_ρ h.1 h.2⟩
   · rw [hI, ellipticOrder_I] at h

@@ -35,13 +35,14 @@ concerns the uncompactified quotient; the behaviour of `j` at the cusp is not tr
   the ramification indices `3` and `2` of `j` at `ρ` and `i`.
 * `TauCeti.ModularGroup.jQuotient`: the descent of `j` to the coarse level-one quotient, with
   `TauCeti.ModularGroup.jQuotient_mk` and `TauCeti.ModularGroup.mdifferentiable_jQuotient`.
-* `TauCeti.ModularGroup.localMultiplicity_j_eq_card_stabilizer_mul`: the local multiplicity of
-  `j` at `z` is the stabilizer order of `z` times that of `jQuotient` at the orbit of `z`.
+* `TauCeti.ModularGroup.localMultiplicity_j_eq_card_stabilizer_mul_localMultiplicity_jQuotient`:
+  the local multiplicity of `j` at `z` is the stabilizer order of `z` times that of `jQuotient` at
+  the orbit of `z`.
 * `TauCeti.ModularGroup.localMultiplicity_jQuotient_ρ` and
   `TauCeti.ModularGroup.localMultiplicity_jQuotient_I`: the descended function is unramified at
   both elliptic orbits.
-* `TauCeti.ModularGroup.localMultiplicity_jQuotient_of_stabilizer_eq_bot`: away from the
-  elliptic orbits the local multiplicities upstairs and downstairs agree.
+* `TauCeti.ModularGroup.localMultiplicity_jQuotient_eq_localMultiplicity_j_of_stabilizer_eq_bot`:
+  away from the elliptic orbits the local multiplicities upstairs and downstairs agree.
 
 ## References
 
@@ -61,17 +62,14 @@ namespace TauCeti.ModularForm
 
 /-- The modular invariant has ramification index `3` at the elliptic point `ρ`. -/
 theorem localMultiplicity_j_ρ : localMultiplicity j ρ = 3 := by
-  have h := analyticOrderAt_j_comp_ofComplex_ρ
-  rw [Function.comp_def] at h
-  rw [UpperHalfPlane.localMultiplicity_eq_analyticOrderNatAt_sub, j_ρ, analyticOrderNatAt]
-  simp [h]
+  rw [UpperHalfPlane.localMultiplicity_eq_toNat_analyticOrderAt_comp_ofComplex (g := j)
+    fun w ↦ by rw [j_ρ, sub_zero], analyticOrderAt_j_comp_ofComplex_ρ, ENat.toNat_ofNat]
 
 /-- The modular invariant has ramification index `2` at the elliptic point `i`. -/
 theorem localMultiplicity_j_I : localMultiplicity j I = 2 := by
-  have h := analyticOrderAt_j_sub_1728_comp_ofComplex_I
-  simp only [Function.comp_def, Pi.sub_apply, Pi.ofNat_apply] at h
-  rw [UpperHalfPlane.localMultiplicity_eq_analyticOrderNatAt_sub, j_I, analyticOrderNatAt,
-    coe_I, h, ENat.toNat_ofNat]
+  rw [UpperHalfPlane.localMultiplicity_eq_toNat_analyticOrderAt_comp_ofComplex (g := j - 1728)
+    fun w ↦ by rw [j_I, Pi.sub_apply, Pi.ofNat_apply], coe_I,
+    analyticOrderAt_j_sub_1728_comp_ofComplex_I, ENat.toNat_ofNat]
 
 end TauCeti.ModularForm
 
@@ -101,7 +99,7 @@ theorem jQuotient_mk (z : ℍ) : jQuotient (Quotient.mk _ z) = j z :=
 
 /-- The pullback of the descended modular invariant along the orbit projection is `j`. -/
 theorem jQuotient_comp_quotientMk : jQuotient ∘ Quotient.mk _ = j :=
-  (rfl)
+  funext jQuotient_mk
 
 /-- The modular invariant on the coarse level-one quotient is holomorphic, including at the two
 elliptic orbits. -/
@@ -111,30 +109,34 @@ theorem mdifferentiable_jQuotient : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) jQuotien
 /-- **The ramification formula for `j`.** The local multiplicity of `j` at `z` is the order of the
 stabilizer of `z` in the effective level-one group times the local multiplicity of its descent at
 the orbit of `z`. -/
-theorem localMultiplicity_j_eq_card_stabilizer_mul (z : ℍ) :
+theorem localMultiplicity_j_eq_card_stabilizer_mul_localMultiplicity_jQuotient (z : ℍ) :
     localMultiplicity j z = Nat.card (stabilizer psl2zToPSL2R.range z) *
-      localMultiplicity jQuotient (Quotient.mk _ z) :=
-  psl2zToPSL2R.range.localMultiplicity_comp_quotientMk
+      localMultiplicity jQuotient (Quotient.mk _ z) := by
+  rw [← jQuotient_comp_quotientMk]
+  exact psl2zToPSL2R.range.localMultiplicity_comp_quotientMk
     (.of_forall fun q ↦ mdifferentiable_jQuotient q)
 
 /-- The descended modular invariant is unramified at the orbit of `ρ`. -/
+@[simp]
 theorem localMultiplicity_jQuotient_ρ : localMultiplicity jQuotient (Quotient.mk _ ρ) = 1 := by
-  have h := localMultiplicity_j_eq_card_stabilizer_mul ρ
+  have h := localMultiplicity_j_eq_card_stabilizer_mul_localMultiplicity_jQuotient ρ
   rw [localMultiplicity_j_ρ, card_stabilizer_psl2zToPSL2RRange_ρ] at h
   omega
 
 /-- The descended modular invariant is unramified at the orbit of `i`. -/
+@[simp]
 theorem localMultiplicity_jQuotient_I : localMultiplicity jQuotient (Quotient.mk _ I) = 1 := by
-  have h := localMultiplicity_j_eq_card_stabilizer_mul I
+  have h := localMultiplicity_j_eq_card_stabilizer_mul_localMultiplicity_jQuotient I
   rw [localMultiplicity_j_I, card_stabilizer_psl2zToPSL2RRange_I] at h
   omega
 
 /-- At an orbit with trivial stabilizer, the descended modular invariant has the same local
 multiplicity as `j`. By `stabilizer_psl2zToPSL2RRange_eq_bot_iff` these are exactly the orbits
 other than those of `i` and `ρ`. -/
-theorem localMultiplicity_jQuotient_of_stabilizer_eq_bot {z : ℍ}
+theorem localMultiplicity_jQuotient_eq_localMultiplicity_j_of_stabilizer_eq_bot {z : ℍ}
     (hz : stabilizer psl2zToPSL2R.range z = ⊥) :
     localMultiplicity jQuotient (Quotient.mk _ z) = localMultiplicity j z := by
-  rw [localMultiplicity_j_eq_card_stabilizer_mul, Subgroup.card_eq_one.mpr hz, one_mul]
+  rw [localMultiplicity_j_eq_card_stabilizer_mul_localMultiplicity_jQuotient,
+    Subgroup.card_eq_one.mpr hz, one_mul]
 
 end TauCeti.ModularGroup
