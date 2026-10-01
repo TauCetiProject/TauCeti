@@ -311,7 +311,8 @@ vector into joint eigenvectors, so the joint eigenspaces indexed by `G →* Kˣ`
 
 variable [CommGroup G] [Finite G]
 
-attribute [local instance] Fintype.ofFinite
+private noncomputable instance : Fintype G :=
+  Fintype.ofFinite _
 
 open Finset
 
