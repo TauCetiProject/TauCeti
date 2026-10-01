@@ -79,6 +79,7 @@ variable (k : Type) [Field k] [CharZero k] (n : ℕ) (μ : YoungDiagram)
 that shape**, evaluated at the diagonal entries. Such a Weyl module is a symmetric power of the
 standard representation, whose character is a complete homogeneous symmetric polynomial, and that
 is the Schur polynomial of a one-row shape. -/
+@[simp]
 theorem char_weylRepOfShape_diagonal_of_colLen_le_one (h : μ.colLen 0 ≤ 1) (t : Fin n → kˣ) :
     Representation.character (V := ↥(weylModuleOfShape k n μ).toSubmodule)
         (weylRepOfShape k n μ) (diagGL t) =
@@ -86,9 +87,9 @@ theorem char_weylRepOfShape_diagonal_of_colLen_le_one (h : μ.colLen 0 ≤ 1) (t
   rw [Representation.char_iso (weylRepOfShapeEquivSymPowerRep k n μ h),
     char_symPowerRep_diagonal, diagramSchurPoly_eq_hsymm_of_colLen_le_one h]
 
-/-- The bundled form of `TauCeti.char_weylRepOfShape_diagonal_of_colLen_le_one`: the carrier of
-`TauCeti.weylFDRepOfShape` is the same module with the same action, so this is that statement
-verbatim. -/
+/-- **The character of the bundled Weyl module of a shape with at most one row is the Schur
+polynomial of that shape**, evaluated at the diagonal entries. -/
+@[simp]
 theorem char_weylFDRepOfShape_diagonal_of_colLen_le_one (h : μ.colLen 0 ≤ 1) (t : Fin n → kˣ) :
     (weylFDRepOfShape k n μ).character (diagGL t) =
       eval (fun i => (t i : k)) (diagramSchurPoly n k μ) :=
@@ -117,6 +118,7 @@ variable (k : Type u) [Field k] [CharZero k] (n : ℕ) (μ : YoungDiagram)
 of that shape**, evaluated at the diagonal entries. Such a Weyl module is an exterior power of the
 standard representation, whose character is an elementary symmetric polynomial, and that is the
 Schur polynomial of a one-column shape. -/
+@[simp]
 theorem char_weylRepOfShape_diagonal_of_rowLen_le_one (h : μ.rowLen 0 ≤ 1) (t : Fin n → kˣ) :
     Representation.character (V := ↥(weylModuleOfShape k n μ).toSubmodule)
         (weylRepOfShape k n μ) (diagGL t) =
@@ -124,9 +126,9 @@ theorem char_weylRepOfShape_diagonal_of_rowLen_le_one (h : μ.rowLen 0 ≤ 1) (t
   rw [Representation.char_iso (weylRepOfShapeEquivExtPowerRep k n μ h),
     char_extPowerRep_diagonal, diagramSchurPoly_eq_esymm_of_rowLen_le_one h]
 
-/-- The bundled form of `TauCeti.char_weylRepOfShape_diagonal_of_rowLen_le_one`: the carrier of
-`TauCeti.weylFDRepOfShape` is the same module with the same action, so this is that statement
-verbatim. -/
+/-- **The character of the bundled Weyl module of a shape with at most one column is the Schur
+polynomial of that shape**, evaluated at the diagonal entries. -/
+@[simp]
 theorem char_weylFDRepOfShape_diagonal_of_rowLen_le_one (h : μ.rowLen 0 ≤ 1) (t : Fin n → kˣ) :
     (weylFDRepOfShape k n μ).character (diagGL t) =
       eval (fun i => (t i : k)) (diagramSchurPoly n k μ) :=
@@ -164,9 +166,8 @@ theorem char_weylRepOfShape_diagramOf_indiscrete_diagonal (t : Fin n → kˣ) :
     diagramSchurPoly_eq_hsymm_of_colLen_le_one (colLen_diagramOf_indiscrete_le_one d),
     card_diagramOf, schurPoly_indiscrete]
 
-/-- The bundled form of `TauCeti.char_weylRepOfShape_diagramOf_indiscrete_diagonal`: the carrier of
-`TauCeti.weylFDRepOfShape` is the same module with the same action, so this is that statement
-verbatim. -/
+/-- **The character of the bundled `𝕊^{(d)}(kⁿ)` is the Schur polynomial of the partition
+`(d)`**, evaluated at the diagonal entries. -/
 theorem char_weylFDRepOfShape_diagramOf_indiscrete_diagonal (t : Fin n → kˣ) :
     (weylFDRepOfShape k n (diagramOf (Nat.Partition.indiscrete d))).character (diagGL t) =
       eval (fun i => (t i : k)) (schurPoly (Fin n) k (Nat.Partition.indiscrete d)) :=
@@ -184,9 +185,8 @@ theorem char_weylRepOfShape_diagramOf_ones_diagonal (t : Fin n → kˣ) :
     diagramSchurPoly_eq_esymm_of_rowLen_le_one (rowLen_diagramOf_ones_le_one d 0),
     card_diagramOf, schurPoly_ones]
 
-/-- The bundled form of `TauCeti.char_weylRepOfShape_diagramOf_ones_diagonal`: the carrier of
-`TauCeti.weylFDRepOfShape` is the same module with the same action, so this is that statement
-verbatim. -/
+/-- **The character of the bundled `𝕊^{(1ᵈ)}(kⁿ)` is the Schur polynomial of the partition
+`(1ᵈ)`**, evaluated at the diagonal entries. -/
 theorem char_weylFDRepOfShape_diagramOf_ones_diagonal (t : Fin n → kˣ) :
     (weylFDRepOfShape k n (diagramOf (Nat.Partition.ones d))).character (diagGL t) =
       eval (fun i => (t i : k)) (schurPoly (Fin n) k (Nat.Partition.ones d)) :=
