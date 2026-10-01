@@ -6,32 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NaturalDensity
-public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Cyclotomic
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Transfer
 
 /-!
-# The prime ideal theorem
+# The prime ideal theorem with the logarithmic integral
 
 `NumberField.Set.HasNaturalDensity` measures a set `S` of primes of a number field `K` by the
-ratio `π_S(x) / π_K(x)` of prime counts. This file derives the size of the denominator `π_K(x)`,
-the prime ideal theorem, in its `ϑ` and `π` forms from the `ψ` form
-`NumberField.Chebotarev.primePsi_univ_asymptotic`, which is proved by the Wiener--Ikehara theorem
-with no boundary hypothesis:
+ratio `π_S(x) / π_K(x)` of prime counts. This file sharpens the prime ideal theorem
+`TauCeti.primeIdealTheorem`, which gives `ϑ_K(x) ~ x` and `π_K(x) ~ Li(x)`, to
 
 ```text
-ϑ_K(x) = x + o(x),      π_K(x) = Li(x) + o(x / log x),      π_K(x) ~ Li(x).
+π_K(x) = Li(x) + o(x / log x).
 ```
 
-The two passages are the generic transfers `TauCeti.primeTheta_asymptotic_of_primePsi`, which
-removes the prime powers with exponent at least two, and
-`TauCeti.primeCount_sub_mul_logIntegral_isLittleO`, which is Abel summation.
+The passage from `ϑ` is Abel summation, `TauCeti.primeCount_sub_mul_logIntegral_isLittleO`.
 
 ## Main results
 
-* `NumberField.Chebotarev.primeTheta_univ_asymptotic`: `ϑ_K(x) = x + o(x)`.
 * `NumberField.Chebotarev.primeCount_univ_sub_logIntegral_isLittleO`:
   `π_K(x) = Li(x) + o(x / log x)`.
-* `NumberField.Chebotarev.primeCount_univ_isEquivalent_logIntegral`: `π_K(x) ~ Li(x)`.
 
 ## References
 
@@ -50,26 +44,12 @@ namespace NumberField.Chebotarev
 
 variable (K : Type*) [Field K] [NumberField K]
 
-/-- **The prime ideal theorem, for `ϑ`.** For every number field `K`, the logarithmically weighted
-prime count `ϑ_K(x) = ∑_{N𝔭 ≤ x} log N𝔭` satisfies `ϑ_K(x) = x + o(x)`. -/
-theorem primeTheta_univ_asymptotic :
-    (fun x : ℝ ↦ primeTheta K Set.univ x - x) =o[atTop] fun x : ℝ ↦ x := by
-  simpa using primeTheta_asymptotic_of_primePsi (δ := 1) (standardPrimePowerRemoval K Set.univ)
-    (by simpa using primePsi_univ_asymptotic K)
-
 /-- **The prime ideal theorem, with the logarithmic integral.** For every number field `K`, the
 number of primes of `K` of norm at most `x` is `Li(x) + o(x / log x)`. -/
 theorem primeCount_univ_sub_logIntegral_isLittleO :
     (fun x : ℝ ↦ primeCount K Set.univ x - Real.logIntegral x) =o[atTop]
       fun x : ℝ ↦ x / Real.log x := by
   simpa using primeCount_sub_mul_logIntegral_isLittleO (δ := 1)
-    ((primeTheta_univ_asymptotic K).congr_left fun x ↦ by rw [one_mul])
-
-/-- **The prime ideal theorem.** The number of primes of a number field of norm at most `x` is
-asymptotic to the logarithmic integral `Li(x)`. -/
-theorem primeCount_univ_isEquivalent_logIntegral :
-    primeCount K Set.univ ~[atTop] Real.logIntegral :=
-  (primeCount_univ_sub_logIntegral_isLittleO K).trans_isBigO
-    Real.logIntegral_isEquivalent_div_log.isBigO_symm
+    ((primeIdealTheorem K).2.1.isLittleO.congr_left fun x ↦ by simp)
 
 end NumberField.Chebotarev
