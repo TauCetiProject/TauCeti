@@ -18,8 +18,7 @@ public import TauCeti.Algebra.Group.Subgroup.Centralizer
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 -- `Nat.card` occurs in the statement of `TauCeti.natCard_diagonalTorus`.
 public import Mathlib.SetTheory.Cardinal.Finite
--- Non-public: `Nat.card_units`, the number of units of a `GroupWithZero`, is used only inside the
--- proof of `TauCeti.natCard_diagonalTorus`, so downstream importers do not pay for it.
+-- `Nat.card_units`, the number of units of a `GroupWithZero`.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
@@ -27,63 +26,29 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 # Diagonal elements of the general linear group, and the diagonal torus
 
 A family of units indexed by a finite type `ι` is the diagonal of an invertible diagonal matrix,
-and this assignment is a group homomorphism `TauCeti.diagGL : (ι → kˣ) →* GL ι k`. Its entries,
-its trace, its determinant and its injectivity are recorded here, together with the fact that
-invertibility of a diagonal matrix upgrades its diagonal entries to units.  The facts about
-diagonal matrices that involve no general linear group live in
-`TauCeti/LinearAlgebra/Matrix/Diagonal.lean`; the one used below is that a matrix commuting with a
-diagonal matrix has no entry away from the diagonal wherever that diagonal matrix separates two
-coordinates.
+and this assignment is an injective group homomorphism `TauCeti.diagGL : (ι → kˣ) →* GL ι k`.
+Its entries, trace and determinant are recorded here, together with the fact that the diagonal
+entries of an invertible diagonal matrix are units.
 
-The image of `diagGL` is gathered into a subgroup
+The image of `diagGL` is the **diagonal torus**
 
-`TauCeti.diagonalTorus k n = (TauCeti.diagGL : (Fin n → kˣ) →* GL (Fin n) k).range`,
+`TauCeti.diagonalTorus k n = (TauCeti.diagGL : (Fin n → kˣ) →* GL (Fin n) k).range`
 
-the **diagonal torus** of `GL n k`, and what makes it a *maximal* torus is proved.
+of `GL n k`, for which three descriptions are given. As the range of an injective homomorphism
+it is isomorphic to the coordinatewise units `Fin n → kˣ` (`TauCeti.diagonalTorusEquiv`), whence
+its order `(q - 1)ⁿ` over a division semiring with `q` elements
+(`TauCeti.natCard_diagonalTorus`). An invertible matrix lies in it exactly when it is diagonal
+(`TauCeti.mem_diagonalTorus_iff`). And over a commutative semiring with cancellation by nonzero
+elements and at least two units it is its own centralizer (`TauCeti.centralizer_diagonalTorus`),
+hence a maximal abelian subgroup of `GL n k`.
 
-Three descriptions of the same subgroup are given.  It is the range of `diagGL`, so it is
-isomorphic as a group to the coordinatewise units `Fin n → kˣ`
-(`TauCeti.diagonalTorusEquiv`), whence its order `(q - 1)ⁿ` over a division ring with `q` elements
-(`TauCeti.natCard_diagonalTorus`).  It is cut out inside `GL n k` by a condition on matrix entries:
-an invertible matrix lies in it exactly when it is diagonal (`TauCeti.mem_diagonalTorus_iff`),
-the point being that invertibility upgrades the diagonal entries of a diagonal matrix to units
-(`TauCeti.isUnit_apply_of_isDiag`).  And it is its own centralizer
-(`TauCeti.centralizer_diagonalTorus`), so it is a maximal abelian subgroup: no larger subgroup of
-`GL n k` contains it and is commutative.
+The hypothesis that `kˣ` is nontrivial cannot be dropped: over a semiring with a single unit,
+such as `𝔽₂`, the torus is trivial (`TauCeti.diagonalTorus_eq_bot`) while its centralizer is the
+whole of `GL n k` (`TauCeti.centralizer_diagonalTorus_eq_top`).
 
-The embedding, the torus, the equivalence and the membership criterion ask only that `k` be a
-semiring; commutativity of `k` enters with the self-centralization and with the determinant,
-cancellation by nonzero elements with the self-centralization as well, and the order asks for a
-division ring, where the nonzero elements are exactly the units.
-
-Self-centralization is proved under two hypotheses, neither of them idle.  Cancellation is a
-sufficient hypothesis rather than a necessary one: an off-diagonal entry `g i j` of a centralizing
-matrix satisfies `g i j * t i = g i j * t j` for diagonal entries `t i ≠ t j`, and
-`IsCancelMulZero k` is what forces that entry to vanish — no subtraction is involved, so a
-commutative semiring suffices, and the two diagonal entries need not differ by a unit
-(`TauCeti.apply_eq_zero_of_commute_diagonal`).  Over a ring, `IsCancelMulZero` is exactly
-`NoZeroDivisors`.  The second
-hypothesis, that the unit group has two distinct elements, is there because a diagonal matrix can
-only separate the coordinate lines it distinguishes; two units already suffice, because only one
-pair of coordinates is separated at a time.  That one cannot simply be dropped, and what happens
-without it is recorded here: over a ring with only one unit, such as `𝔽₂`, the torus is trivial
-(`TauCeti.diagonalTorus_eq_bot`) while its centralizer is the whole of `GL n k`
-(`TauCeti.centralizer_diagonalTorus_eq_top`).  These two subgroups differ, so self-centralization
-genuinely fails, exactly when `GL n k` is itself nontrivial — over `𝔽₂` that is the case for
-`n ≥ 2`, while for `n ≤ 1` the whole group is trivial and the conclusion survives for want of
-anything to contradict it.
-
-The smallest diagonal matrices, the scalar ones, are treated here as well: a scalar matrix is
-central in `GL ι k` (`TauCeti.scalar_mem_center`), so its centralizer is the whole group
-(`TauCeti.centralizer_scalar`). Nothing there is special to `Fin n` or to a field, so both are
-stated for an arbitrary finite index type over a commutative semiring. The size of the resulting
-conjugacy class — the easy end of the class table of `GL₂(𝔽_q)` — is
-`TauCeti.ncard_carrier_mk_scalar`, in
-`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Centralizer` alongside the other class sizes, so
-that conjugacy theory stays out of this module's imports.
-
-The action of the torus on the coordinate lines of the standard representation is in
-`TauCeti.RepresentationTheory.ClassicalGroups.Torus`.
+A scalar matrix is central in `GL ι k` over any commutative semiring
+(`TauCeti.scalar_mem_center`), and `diagGL` sends a constant family to the corresponding scalar
+element (`TauCeti.diagGL_const`).
 
 ## Main definitions
 
@@ -100,20 +65,18 @@ The action of the torus on the coordinate lines of the standard representation i
 * `TauCeti.mem_diagonalTorus_iff`: membership in the torus is diagonality of the matrix.
 * `TauCeti.mul_diagGL_of_coe_eq_permMatrix`: a permutation matrix moves past a diagonal by
   relabelling its entries.
-* `TauCeti.natCard_diagonalTorus`: the torus has `(q - 1)ⁿ` elements over a division ring with `q`
-  elements.
+* `TauCeti.natCard_diagonalTorus`: the torus has `(q - 1)ⁿ` elements over a division semiring
+  with `q` elements.
 * `TauCeti.centralizer_diagonalTorus`: the diagonal torus is its own centralizer.
-* `TauCeti.centralizer_diagonalTorus_eq_top`: over a ring with a single unit the centralizer is
-  instead the whole group.
+* `TauCeti.centralizer_diagonalTorus_eq_top`: over a semiring with a single unit the centralizer
+  is instead the whole group.
 * `TauCeti.scalar_mem_center` and `TauCeti.centralizer_scalar`: a scalar matrix is central, so its
   centralizer is the whole group.
 * `TauCeti.diagGL_const` and `TauCeti.notMem_range_scalar_diagGL`: the diagonal embedding sends a
-  constant family to the corresponding scalar element, and in size two it is scalar *only* there.
+  constant family to the corresponding scalar element, and it is scalar *only* there.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layers 1 and 3.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
@@ -125,100 +88,77 @@ universe u
 
 namespace TauCeti
 
-variable {k : Type u} {n : ℕ}
+variable {k : Type u} {n : ℕ} {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 section Semiring
 
 variable [Semiring k]
 
 /-- Coordinatewise units embed in a general linear group as diagonal matrices. -/
-def diagGL {ι : Type*} [Fintype ι] [DecidableEq ι] : (ι → kˣ) →* GL ι k :=
+def diagGL : (ι → kˣ) →* GL ι k :=
   (Units.map (Matrix.diagonalRingHom ι k).toMonoidHom).comp
     (MulEquiv.piUnits).symm.toMonoidHom
 
 /-- The matrix underlying `diagGL t` is the diagonal matrix with entries `t i`. -/
 @[simp]
-theorem diagGL_coe {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ) :
-    (diagGL t : Matrix ι ι k) =
-      Matrix.diagonal fun i => (t i : k) := by
+theorem diagGL_coe (t : ι → kˣ) :
+    (diagGL t : Matrix ι ι k) = Matrix.diagonal fun i => (t i : k) := by
   rfl
 
 /-- The entries of `diagGL t` vanish off the diagonal and equal `t i` on it. -/
 @[simp]
-theorem diagGL_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ) (i j : ι) :
+theorem diagGL_apply (t : ι → kˣ) (i j : ι) :
     diagGL t i j = if i = j then (t i : k) else 0 := by
-  rw [diagGL_coe]
-  exact Matrix.diagonal_apply ..
+  rw [diagGL_coe, Matrix.diagonal_apply]
 
 /-- The trace of a diagonal element of the general linear group is the sum of its diagonal
-entries. Unlike `TauCeti.det_diagGL` this asks nothing of `k` beyond what `TauCeti.diagGL` itself
-does, so it is stated here rather than beside the determinant. It is deliberately not a `simp`
-lemma: `TauCeti.diagGL_coe` and `Matrix.trace_diagonal` are, so `simp` already rewrites its
-left-hand side and a tag here would not be in simp-normal form. -/
-theorem trace_diagGL {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ) :
+entries. -/
+theorem trace_diagGL (t : ι → kˣ) :
     (diagGL t : Matrix ι ι k).trace = ∑ i, (t i : k) := by
   rw [diagGL_coe, Matrix.trace_diagonal]
 
 /-- The diagonal embedding is injective. -/
-theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
-    Function.Injective (diagGL (k := k) (ι := ι)) := by
-  intro t s h
-  funext i
-  apply Units.ext
-  have := congrArg (fun g : GL ι k ↦ (g : Matrix ι ι k) i i) h
-  simpa using this
+theorem diagGL_injective : Function.Injective (diagGL (k := k) (ι := ι)) := fun t s h =>
+  funext fun i => Units.ext <| by
+    simpa using congrArg (fun g : GL ι k ↦ (g : Matrix ι ι k) i i) h
 
 /-- **A constant family of units embeds as the corresponding scalar element** of the general linear
-group. Together with `TauCeti.notMem_range_scalar_diagGL` this says that in size two the diagonal
-embedding is scalar exactly on the diagonal of `kˣ × kˣ`. -/
+group. Together with `TauCeti.notMem_range_scalar_diagGL` this says that the diagonal embedding is
+scalar exactly on the constant families. -/
 @[simp]
-theorem diagGL_const {ι : Type*} [Fintype ι] [DecidableEq ι] (a : kˣ) :
+theorem diagGL_const (a : kˣ) :
     diagGL (fun _ : ι => a) = Matrix.GeneralLinearGroup.scalar ι a :=
   Units.ext <| by rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
 
-/-- An invertible diagonal matrix with distinct diagonal entries is not scalar. Like `diagGL`
-itself, this needs only a semiring; it is what supplies the non-scalarity — the regularity — of a
-diagonal matrix in size two. -/
-theorem notMem_range_scalar_diagGL {t : Fin 2 → kˣ} (ht : t 0 ≠ t 1) :
-    (diagGL t : Matrix (Fin 2) (Fin 2) k) ∉ Set.range (Matrix.scalar (Fin 2)) := by
+/-- An invertible diagonal matrix with two distinct diagonal entries is not scalar. -/
+theorem notMem_range_scalar_diagGL {t : ι → kˣ} {i j : ι} (ht : t i ≠ t j) :
+    (diagGL t : Matrix ι ι k) ∉ Set.range (Matrix.scalar ι) := by
   rintro ⟨c, hc⟩
   refine ht (Units.ext ?_)
-  have h0 : c = (t 0 : k) := by simpa using congrFun (congrFun hc 0) 0
-  have h1 : c = (t 1 : k) := by simpa using congrFun (congrFun hc 1) 1
-  rw [← h0, ← h1]
+  have hi : c = (t i : k) := by simpa using congrFun (congrFun hc i) i
+  have hj : c = (t j : k) := by simpa using congrFun (congrFun hc j) j
+  rw [← hi, ← hj]
 
 /-- A general-linear element whose underlying matrix is the permutation matrix of `π` moves
 past a diagonal matrix by relabelling its diagonal entries along `π`. -/
-theorem mul_diagGL_of_coe_eq_permMatrix {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem mul_diagGL_of_coe_eq_permMatrix
     (g : GL ι k) (π : Equiv.Perm ι) (hg : (g : Matrix ι ι k) = π.permMatrix k)
     (d : ι → kˣ) :
     g * diagGL d = diagGL (d ∘ π) * g := by
-  apply Units.ext
-  simp only [Units.val_mul, diagGL_coe, hg]
-  rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv]
   ext i j
-  rw [Matrix.submatrix_apply, Matrix.submatrix_apply, id_eq, id_eq,
-    Matrix.diagonal_apply, Matrix.diagonal_apply]
-  exact if_congr π.eq_symm_apply.symm rfl rfl
+  simp only [Units.val_mul, diagGL_coe, hg, PEquiv.mul_toMatrix_toPEquiv,
+    PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, Matrix.diagonal_apply]
+  grind
 
-/-- The diagonal entries of an invertible diagonal matrix are units: the inverse matrix supplies
-the inverse entry, because for a diagonal matrix each of the two products defining invertibility
-collapses on the diagonal to a single term.
-
-(Mathlib's `Matrix.isUnit_diagonal` says the same thing over a `CommRing`, where it is proved
-through the adjugate; the fact itself needs no commutativity, and the diagonal torus below is a
-subgroup of `GL n k` already over a semiring.) -/
-theorem isUnit_apply_of_isDiag {ι : Type*} [Fintype ι] [DecidableEq ι] {g : GL ι k}
-    (hg : (g : Matrix ι ι k).IsDiag) (i : ι) : IsUnit ((g : Matrix ι ι k) i i) := by
-  refine ⟨⟨(g : Matrix ι ι k) i i, ((g⁻¹ : GL ι k) : Matrix ι ι k) i i, ?_, ?_⟩, rfl⟩
-  · have h : ((g : Matrix ι ι k) * ((g⁻¹ : GL ι k) : Matrix ι ι k)) i i =
-        (1 : Matrix ι ι k) i i := by rw [g.mul_inv]
-    rwa [Matrix.mul_apply, Finset.sum_eq_single_of_mem i (Finset.mem_univ i)
-      (fun b _ hb => by rw [hg (Ne.symm hb), zero_mul]), Matrix.one_apply_eq] at h
-  · have h : (((g⁻¹ : GL ι k) : Matrix ι ι k) * (g : Matrix ι ι k)) i i =
-        (1 : Matrix ι ι k) i i := by rw [g.inv_mul]
-    rwa [Matrix.mul_apply, Finset.sum_eq_single_of_mem i (Finset.mem_univ i)
-      (fun b _ hb => by rw [hg hb, mul_zero]), Matrix.one_apply_eq] at h
+/-- The diagonal entries of an invertible diagonal matrix are units. Unlike Mathlib's
+`Matrix.isUnit_diagonal`, this assumes no commutativity of `k`. -/
+theorem isUnit_apply_of_isDiag {g : GL ι k} (hg : (g : Matrix ι ι k).IsDiag) (i : ι) :
+    IsUnit ((g : Matrix ι ι k) i i) := by
+  have h₁ := congrFun (congrFun g.mul_inv i) i
+  have h₂ := congrFun (congrFun g.inv_mul i) i
+  rw [← hg.diagonal_diag, Matrix.diagonal_mul, Matrix.one_apply_eq] at h₁
+  rw [← hg.diagonal_diag, Matrix.mul_diagonal, Matrix.one_apply_eq] at h₂
+  exact ⟨⟨_, _, h₁, h₂⟩, rfl⟩
 
 /-- The **diagonal torus** of `GL n k`: the image of the coordinatewise units under `diagGL`. -/
 def diagonalTorus (k : Type u) [Semiring k] (n : ℕ) : Subgroup (GL (Fin n) k) :=
@@ -234,20 +174,13 @@ theorem mem_diagonalTorus_iff_exists_diagGL {g : GL (Fin n) k} :
 @[simp]
 theorem mem_diagonalTorus_iff {g : GL (Fin n) k} :
     g ∈ diagonalTorus k n ↔ (g : Matrix (Fin n) (Fin n) k).IsDiag := by
-  constructor
+  refine ⟨?_, fun hg => ⟨fun i => (isUnit_apply_of_isDiag hg i).unit, Units.ext ?_⟩⟩
   · rintro ⟨t, rfl⟩
     rw [diagGL_coe]
     exact Matrix.isDiag_diagonal _
-  · intro hg
-    refine ⟨fun i => (isUnit_apply_of_isDiag hg i).unit, Units.ext ?_⟩
-    rw [diagGL_coe]
+  · rw [diagGL_coe]
     simp only [IsUnit.unit_spec]
     exact hg.diagonal_diag
-
-/-- The matrix of an element of the diagonal torus is diagonal. -/
-theorem isDiag_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k n) :
-    (g : Matrix (Fin n) (Fin n) k).IsDiag :=
-  mem_diagonalTorus_iff.mp hg
 
 /-- The diagonal torus is the group of coordinatewise units. -/
 noncomputable def diagonalTorusEquiv (k : Type u) [Semiring k] (n : ℕ) :
@@ -270,37 +203,40 @@ theorem coe_diagonalTorusEquiv_symm_apply (g : diagonalTorus k n) (i : Fin n) :
   conv_rhs => rw [← h, diagGL_coe]
   rw [Matrix.diagonal_apply_eq]
 
+/-- **The order of the diagonal torus**: over a division semiring with `q` elements it has
+`(q - 1)ⁿ` elements, one invertible scalar per diagonal entry. Over an infinite division semiring
+both sides vanish. -/
+theorem natCard_diagonalTorus (k : Type u) [DivisionSemiring k] (n : ℕ) :
+    Nat.card (diagonalTorus k n) = (Nat.card k - 1) ^ n := by
+  rw [← Nat.card_congr (diagonalTorusEquiv k n).toEquiv, Nat.card_fun, Nat.card_units,
+    Nat.card_fin]
+
 /-- An element centralizing the diagonal torus commutes, as a matrix, with every diagonal matrix
 of units. -/
 theorem commute_diagonal_of_mem_centralizer {g : GL (Fin n) k}
     (hg : g ∈ Subgroup.centralizer (diagonalTorus k n : Set (GL (Fin n) k))) (t : Fin n → kˣ) :
     Commute (Matrix.diagonal fun i => (t i : k)) (g : Matrix (Fin n) (Fin n) k) := by
-  have hcomm : Commute (diagGL t) g :=
-    Subgroup.mem_centralizer_iff.mp hg _ (MonoidHom.mem_range.mpr ⟨t, rfl⟩)
-  have h : ((diagGL t * g : GL (Fin n) k) : Matrix (Fin n) (Fin n) k) =
-      ((g * diagGL t : GL (Fin n) k) : Matrix (Fin n) (Fin n) k) := congrArg _ hcomm.eq
+  have h := congrArg Units.val <|
+    Subgroup.mem_centralizer_iff.mp hg _ (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨t, rfl⟩)
   rwa [Units.val_mul, Units.val_mul, diagGL_coe] at h
 
 section Subsingleton
 
 variable [Subsingleton kˣ]
 
-/-- Over a ring with only one unit, such as `𝔽₂`, the diagonal torus is trivial. -/
+/-- Over a semiring with only one unit, such as `𝔽₂`, the diagonal torus is trivial. -/
 theorem diagonalTorus_eq_bot : diagonalTorus k n = ⊥ := by
   refine eq_bot_iff.mpr ?_
   rintro - ⟨t, rfl⟩
   rw [Subgroup.mem_bot, Subsingleton.elim t 1, map_one]
 
-/-- Over a ring with only one unit the centralizer of the diagonal torus is the whole group,
-while the torus itself is trivial by `TauCeti.diagonalTorus_eq_bot`.  So the hypothesis
+/-- Over a semiring with only one unit the centralizer of the diagonal torus is the whole group,
+while the torus itself is trivial by `TauCeti.diagonalTorus_eq_bot`. So the hypothesis
 `Nontrivial kˣ` of `TauCeti.centralizer_diagonalTorus` cannot simply be dropped: the two
-subgroups differ as soon as `GL n k` is nontrivial, as it is over `𝔽₂` for `n ≥ 2`.  For `n ≤ 1`
-the group is trivial and the present theorem says nothing more than `⊤ = ⊥`. -/
+subgroups differ as soon as `GL n k` is nontrivial, as it is over `𝔽₂` for `n ≥ 2`. -/
 theorem centralizer_diagonalTorus_eq_top :
     Subgroup.centralizer (diagonalTorus k n : Set (GL (Fin n) k)) = ⊤ := by
-  refine eq_top_iff.mpr fun g _ => Subgroup.mem_centralizer_iff.mpr fun h hh => ?_
-  rw [diagonalTorus_eq_bot, SetLike.mem_coe, Subgroup.mem_bot] at hh
-  rw [hh, one_mul, mul_one]
+  simp [diagonalTorus_eq_bot, Subgroup.centralizer_eq_top_iff_subset]
 
 end Subsingleton
 
@@ -310,22 +246,14 @@ section CommSemiring
 
 variable [CommSemiring k]
 
-/-- The diagonal torus is commutative: diagonal matrices multiply coordinatewise.  This is where
-commutativity of `k` is first needed: `kˣ` is commutative only then. -/
+/-- The diagonal torus is commutative. -/
 instance instIsMulCommutativeDiagonalTorus : IsMulCommutative (diagonalTorus k n) :=
-  ⟨⟨by
-    rintro ⟨-, t, rfl⟩ ⟨-, s, rfl⟩
-    refine Subtype.ext ?_
-    rw [Subgroup.coe_mul, Subgroup.coe_mul, ← map_mul, ← map_mul, mul_comm]⟩⟩
+  Subgroup.range_isMulCommutative _
 
 section Scalar
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- **A scalar matrix is central in `GL ι k`**: it commutes with every matrix, invertible or not.
-Mathlib's `Matrix.GeneralLinearGroup.scalar_commute` asks for a commutative ring; a commutative
-semiring is enough, since `Matrix.scalar_commute` needs only that the scalar commute with every
-element. -/
+/-- **A scalar matrix is central in `GL ι k`**. Mathlib's
+`Matrix.GeneralLinearGroup.scalar_commute` asks for a commutative ring. -/
 theorem scalar_mem_center (u : kˣ) :
     Matrix.GeneralLinearGroup.scalar ι u ∈ Subgroup.center (GL ι k) :=
   Subgroup.mem_center_iff.mpr fun g => Units.ext
@@ -341,11 +269,9 @@ theorem centralizer_scalar (u : kˣ) :
 
 end Scalar
 
-section IsCancelMulZero
+section IsLeftCancelMulZero
 
-variable [IsCancelMulZero k]
-
-variable [Nontrivial kˣ]
+variable [IsLeftCancelMulZero k] [Nontrivial kˣ]
 
 /-- **The diagonal torus is its own centralizer**, hence a maximal abelian subgroup of `GL n k`. -/
 theorem centralizer_diagonalTorus :
@@ -363,10 +289,9 @@ maximality of the torus among abelian subgroups. -/
 theorem eq_diagonalTorus_of_le_of_isMulCommutative (H : Subgroup (GL (Fin n) k))
     [IsMulCommutative H] (hle : diagonalTorus k n ≤ H) :
     H = diagonalTorus k n :=
-  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
-    (centralizer_diagonalTorus (k := k) (n := n)) hle
+  Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative centralizer_diagonalTorus hle
 
-end IsCancelMulZero
+end IsLeftCancelMulZero
 
 end CommSemiring
 
@@ -374,16 +299,15 @@ variable [CommRing k]
 
 /-- The determinant of a diagonal matrix is the product of its diagonal entries. -/
 @[simp]
-theorem det_diagGL {ι : Type*} [Fintype ι] [DecidableEq ι] (t : ι → kˣ) :
+theorem det_diagGL (t : ι → kˣ) :
     Matrix.GeneralLinearGroup.det (diagGL t) = ∏ i, t i := by
   apply Units.ext
-  simp [Matrix.GeneralLinearGroup.val_det_apply, diagGL_coe, Matrix.det_diagonal]
+  simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_diagonal]
 
 /-- Mapping the entries of `diagGL t` along a ring homomorphism gives the diagonal matrix of the
 mapped units. -/
 @[simp]
-theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (f : k →+* S) (t : ι → kˣ) :
+theorem map_diagGL {S : Type*} [CommRing S] (f : k →+* S) (t : ι → kˣ) :
     Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
   ext i j
   simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map,
@@ -392,59 +316,34 @@ theorem map_diagGL {S : Type*} [CommRing S] {ι : Type*} [Fintype ι] [Decidable
 
 /-- Rescaling one column makes an invertible matrix have determinant one. For an empty index
 type, every invertible matrix already has determinant one. -/
-theorem exists_det_mul_diagGL_eq_one {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (P : GL ι k) :
+theorem exists_det_mul_diagGL_eq_one (P : GL ι k) :
     ∃ u : ι → kˣ, Matrix.GeneralLinearGroup.det (P * diagGL u) = 1 := by
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-  · let _ := hι
-    have hP : Matrix.GeneralLinearGroup.det P = 1 := by
-      apply Units.ext
-      simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_isEmpty]
-    refine ⟨1, ?_⟩
-    simp [hP]
+  · exact ⟨1, Units.ext <| by simp [Matrix.GeneralLinearGroup.val_det_apply]⟩
   refine ⟨Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹, ?_⟩
   rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' i, mul_inv_cancel]
 
 /-- If `P` intertwines `M` with a diagonal matrix, there is an intertwining matrix of determinant
 one, obtained in the nonempty case by rescaling one of the columns of `P`. -/
-theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q ι : Type*} [CommRing Q]
-    [Fintype ι] [DecidableEq ι] (f : k →+* Q) (M : GL ι Q) (P : GL ι k)
-    (t : ι → Qˣ)
+theorem exists_det_eq_one_mul_map_eq_map_mul_diagGL {Q : Type*} [CommRing Q]
+    (f : k →+* Q) (M : GL ι Q) (P : GL ι k) (t : ι → Qˣ)
     (h : M * Matrix.GeneralLinearGroup.map f P =
       Matrix.GeneralLinearGroup.map f P * diagGL t) :
     ∃ P' : GL ι k, Matrix.GeneralLinearGroup.det P' = 1 ∧
       M * Matrix.GeneralLinearGroup.map f P' =
         Matrix.GeneralLinearGroup.map f P' * diagGL t := by
   obtain ⟨u, hu⟩ := exists_det_mul_diagGL_eq_one P
+  have hcomm : Commute (diagGL t) (Matrix.GeneralLinearGroup.map f (diagGL u)) := by
+    rw [map_diagGL]
+    exact (Commute.all _ _).map diagGL
   refine ⟨P * diagGL u, hu, ?_⟩
-  · have hcomm : Commute (diagGL t) (Matrix.GeneralLinearGroup.map f (diagGL u)) := by
-      rw [map_diagGL]
-      exact (Commute.all _ _).map diagGL
-    calc
-      M * Matrix.GeneralLinearGroup.map f (P * diagGL u) =
-          (M * Matrix.GeneralLinearGroup.map f P) *
-            Matrix.GeneralLinearGroup.map f (diagGL u) := by rw [map_mul, mul_assoc]
-      _ = (Matrix.GeneralLinearGroup.map f P * diagGL t) *
-            Matrix.GeneralLinearGroup.map f (diagGL u) := by rw [h]
-      _ = Matrix.GeneralLinearGroup.map f P *
-            (Matrix.GeneralLinearGroup.map f (diagGL u) * diagGL t) := by
-          rw [mul_assoc, hcomm.eq]
-      _ = Matrix.GeneralLinearGroup.map f (P * diagGL u) * diagGL t := by
-          rw [map_mul, mul_assoc]
+  rw [map_mul, ← mul_assoc, h, mul_assoc, hcomm.eq, ← mul_assoc]
 
 /-- The determinant of an element of the diagonal torus is the product of its diagonal entries. -/
 theorem det_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k n) :
     (Matrix.GeneralLinearGroup.det g : k) = ∏ i, (g : Matrix (Fin n) (Fin n) k) i i := by
   rw [Matrix.GeneralLinearGroup.val_det_apply,
-    ← (isDiag_of_mem_diagonalTorus hg).diagonal_diag, Matrix.det_diagonal]
+    ← (mem_diagonalTorus_iff.mp hg).diagonal_diag, Matrix.det_diagonal]
   simp [Matrix.diag]
-
-/-- **The order of the diagonal torus**: over a division ring with `q` elements it has `(q - 1)ⁿ`
-elements, one invertible scalar per diagonal entry.  Over an infinite division ring both sides
-vanish. -/
-theorem natCard_diagonalTorus (k : Type u) [DivisionRing k] (n : ℕ) :
-    Nat.card (diagonalTorus k n) = (Nat.card k - 1) ^ n := by
-  rw [← Nat.card_congr (diagonalTorusEquiv k n).toEquiv, Nat.card_fun, Nat.card_units,
-    Nat.card_fin]
 
 end TauCeti
