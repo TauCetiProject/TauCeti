@@ -94,9 +94,11 @@ private lemma norm_eichlerTerm_le (hh : 0 < h) (n m : ℕ) (a q : ℂ) :
 theorem hasSum_eichlerIntegral (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) (n : ℕ) (τ : ℍ) :
     HasSum (fun m : ℕ ↦ ((h : ℂ) / m) ^ n * (qExpansion h f).coeff m * 𝕢 h τ ^ m)
-      (eichlerIntegral h n f τ) :=
-  (Summable.of_norm_bounded ((UpperHalfPlane.summable_norm_qExpansion_coeff_mul_pow hh hfper
-    hfhol hfbdd (norm_nonneg _) (Periodic.norm_qParam_lt_one hh τ.im_pos)).mul_left (h ^ n))
+      (eichlerIntegral h n f τ) := by
+  have hs := (hasSum_qExpansion_of_norm_lt hh hfper hfhol hfbdd
+    (q := (‖𝕢 h τ‖ : ℂ)) (by simpa using Periodic.norm_qParam_lt_one hh τ.im_pos)).summable.norm
+  simp only [norm_smul, norm_pow, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)] at hs
+  exact (Summable.of_norm_bounded (hs.mul_left (h ^ n))
     fun m ↦ norm_eichlerTerm_le hh n m _ _).hasSum
 
 /-- The Eichler integral of the zero function is zero. -/
@@ -146,6 +148,7 @@ theorem eichlerIntegral_sub {g : ℍ → ℂ} (hh : 0 < h)
       (hasSum_eichlerIntegral hh hgper hghol hgbdd n τ)).tsum_eq
 
 /-- The `0`-fold Eichler integral is the function itself. -/
+@[simp]
 theorem eichlerIntegral_order_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) : eichlerIntegral h 0 f = f :=
   funext fun τ ↦ (hasSum_eichlerIntegral hh hfper hfhol hfbdd 0 τ).unique (by
@@ -184,8 +187,12 @@ private lemma eichlerSeries_hasSum_deriv (hh : 0 < h) (hfper : Periodic (f ∘ o
   have hzU : z ∈ {w : ℂ | ε < w.im} := half_lt_self hz
   have hr : Real.exp (-2 * π * ε / h) < 1 :=
     Real.exp_lt_one_iff.mpr (div_neg_of_neg_of_pos (by nlinarith [Real.pi_pos]) hh)
-  have hu := (UpperHalfPlane.summable_norm_qExpansion_coeff_mul_pow hh hfper hfhol hfbdd
-    (Real.exp_pos _).le hr).mul_left (h ^ n)
+  have hu := (hasSum_qExpansion_of_norm_lt hh hfper hfhol hfbdd
+    (q := (Real.exp (-2 * π * ε / h) : ℂ))
+    (by simpa only [Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+      using hr)).summable.norm
+  simp only [norm_smul, norm_pow, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le] at hu
+  have hu := hu.mul_left (h ^ n)
   have hdiff (m : ℕ) : DifferentiableOn ℂ
       (fun w : ℂ ↦ ((h : ℂ) / m) ^ n * (qExpansion h f).coeff m * 𝕢 h w ^ m)
       {w : ℂ | ε < w.im} :=
@@ -195,7 +202,14 @@ private lemma eichlerSeries_hasSum_deriv (hh : 0 < h) (hfper : Periodic (f ∘ o
   refine ⟨(differentiableOn_tsum_of_summable_norm hu hdiff hU hle).differentiableAt
     (hU.mem_nhds hzU), ?_⟩
   convert hasSum_deriv_of_summable_norm hu hdiff hU hle hzU using 2 with m
-  exact (((TauCeti.Periodic.hasDerivAt_qParam_pow h m z).const_mul _).deriv).symm
+  have hpow : HasDerivAt (fun w ↦ 𝕢 h w ^ m) (2 * π * I * m / h * 𝕢 h z ^ m) z := by
+    convert (TauCeti.Periodic.hasDerivAt_qParam h z).pow m using 1
+    rcases m with _ | m
+    · simp
+    · rw [Nat.add_sub_cancel, pow_succ]
+      push_cast
+      ring
+  exact ((hpow.const_mul _).deriv).symm
 
 /-- The Eichler integral, read on `ℂ` through `ofComplex`, agrees with its defining series near
 every point of the upper half-plane. -/
@@ -222,6 +236,7 @@ theorem isZeroAtImInfty_eichlerIntegral (hh : 0 < h) (hfper : Periodic (f ∘ of
     (by simpa using hasSum_eichlerIntegral hh hfper hfhol hfbdd (n + 1))
 
 /-- **The `q`-expansion of the Eichler integral**: its `m`-th coefficient is `(h / m)ⁿ aₘ`. -/
+@[simp]
 theorem qExpansion_eichlerIntegral_coeff (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) (n m : ℕ) :
     (qExpansion h (eichlerIntegral h n f)).coeff m =

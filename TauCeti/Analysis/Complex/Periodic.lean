@@ -16,9 +16,8 @@ Identities for the local parameter `𝕢 h z = exp (2 π I z / h)` at a cusp: tr
 the argument multiplies by an exponential, the `m`-th power of the local parameter at
 period `m * h` is the local parameter at period `h`, the values at the integer offsets
 `b < p` satisfy the roots-of-unity orthogonality relation, the parameter differentiates to
-itself times `2πi/h` (so its `m`-th power differentiates to itself times `2πim/h`), and
-the logarithmic derivative of any periodic function of nonzero width `h` factors through
-its cusp function along the parameter.
+itself times `2πi/h`, and the logarithmic derivative of any periodic function of
+nonzero width `h` factors through its cusp function along the parameter.
 
 ## Main declarations
 
@@ -28,8 +27,6 @@ its cusp function along the parameter.
   `∑_{b < p} 𝕢 p b ^ m = if p ∣ m then p else 0`.
 * `TauCeti.Periodic.hasDerivAt_qParam` (with `deriv_qParam`): the `q`-parameter
   differentiates to itself times `2πi/h`.
-* `TauCeti.Periodic.hasDerivAt_qParam_pow`: the `m`-th power of the `q`-parameter
-  differentiates to itself times `2πim/h`.
 * `TauCeti.Periodic.logDeriv_eq_logDeriv_cuspFunction_mul_deriv_qParam`: the chain rule
   for the logarithmic derivative of a periodic function of nonzero width through its
   cusp function.
@@ -105,17 +102,6 @@ theorem hasDerivAt_qParam (h : ℝ) (z : ℂ) :
 @[simp]
 theorem deriv_qParam (h : ℝ) (z : ℂ) : deriv (𝕢 h) z = 𝕢 h z * (2 * π * I / h) :=
   (hasDerivAt_qParam h z).deriv
-
-/-- The `m`-th power of the `q`-parameter differentiates to itself times `2πim/h`: it is the
-exponential `exp (2πimz/h)`. -/
-theorem hasDerivAt_qParam_pow (h : ℝ) (m : ℕ) (z : ℂ) :
-    HasDerivAt (fun z ↦ 𝕢 h z ^ m) (2 * π * I * m / h * 𝕢 h z ^ m) z := by
-  convert (hasDerivAt_qParam h z).pow m using 1
-  rcases m with _ | m
-  · simp
-  · rw [Nat.add_sub_cancel, pow_succ]
-    push_cast
-    ring
 
 /-- The chain rule for the logarithmic derivative of a periodic function through its
 cusp function: `logDeriv g` factors through `logDeriv (cuspFunction h g)` along the
