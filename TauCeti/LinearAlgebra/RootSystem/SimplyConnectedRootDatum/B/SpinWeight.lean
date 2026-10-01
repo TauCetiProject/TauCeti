@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.RepresentationTheory.Spin.Weight
 import TauCeti.Data.Fin.Basic
-import TauCeti.Data.Finset.Basic
 import TauCeti.LinearAlgebra.RootSystem.Chain
 
 /-!
@@ -240,21 +239,6 @@ theorem span_range_typeBSpinWeight_eq_top (n : ℕ) :
 
 /-! ## The simple reflections on sign sets -/
 
-/-- The underlying involution of sign sets: exchange the two signs at a nonterminal node, and
-flip the last sign at the terminal node. -/
-private def typeBSpinReflectionSet {n : ℕ} (i : Fin n) (s : Finset (Fin n)) : Finset (Fin n) :=
-  if (i : ℕ) + 1 < n then s.map (Equiv.swap i (Order.succ i)).toEmbedding else symmDiff s {i}
-
-private theorem typeBSpinReflectionSet_involutive {n : ℕ} (i : Fin n) :
-    Function.Involutive (typeBSpinReflectionSet (n := n) i) := by
-  intro s
-  by_cases h : (i : ℕ) + 1 < n
-  · ext a
-    rw [typeBSpinReflectionSet, ite_eq_left h, typeBSpinReflectionSet, ite_eq_left h]
-    simp [Finset.mem_map_equiv]
-  · rw [typeBSpinReflectionSet, ite_eq_right h, typeBSpinReflectionSet, ite_eq_right h,
-      symmDiff_symmDiff_cancel_right]
-
 /-- **The `i`-th simple reflection of type `Bₙ`, acting on spin sign sets.**
 
 The spin weights are indexed by the finite set of positive signs, and the Weyl group acts on them
@@ -262,26 +246,34 @@ by signed permutations of the orthonormal coordinates. At a nonterminal node the
 `eᵢ - eᵢ₊₁`, so its reflection exchanges the signs at `i` and `i + 1`; at the terminal node the
 simple root is `e_{n-1}`, so its reflection flips the last sign. -/
 def typeBSpinReflection {n : ℕ} (i : Fin n) : Equiv.Perm (Finset (Fin n)) :=
-  Function.Involutive.toPerm _ (typeBSpinReflectionSet_involutive i)
+  if (i : ℕ) + 1 < n then
+    Equiv.finsetCongr (Equiv.swap i (Order.succ i))
+  else
+    (symmDiff_left_involutive {i}).toPerm (fun s ↦ symmDiff s {i})
 
 /-- At a nonterminal node the simple reflection transports a sign set along the transposition of
 the node with its successor. -/
 theorem typeBSpinReflection_apply_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n)
     (s : Finset (Fin n)) :
     typeBSpinReflection i s = s.map (Equiv.swap i (Order.succ i)).toEmbedding := by
-  rw [typeBSpinReflection, Function.Involutive.coe_toPerm, typeBSpinReflectionSet, ite_eq_left h]
+  simp [typeBSpinReflection, h]
 
 /-- At the terminal node the simple reflection toggles the membership of that node. -/
 theorem typeBSpinReflection_apply_of_last {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n)
     (s : Finset (Fin n)) :
     typeBSpinReflection i s = symmDiff s {i} := by
-  rw [typeBSpinReflection, Function.Involutive.coe_toPerm, typeBSpinReflectionSet, ite_eq_right h]
+  simp [typeBSpinReflection, h]
 
 /-- **The simple reflections are involutions.** -/
 @[simp]
 theorem typeBSpinReflection_apply_apply {n : ℕ} (i : Fin n) (s : Finset (Fin n)) :
     typeBSpinReflection i (typeBSpinReflection i s) = s :=
-  typeBSpinReflectionSet_involutive i s
+  by
+    by_cases h : (i : ℕ) + 1 < n
+    · rw [typeBSpinReflection_apply_of_lt h, typeBSpinReflection_apply_of_lt h]
+      simpa [Equiv.finsetCongr_symm] using
+        (Equiv.symm_apply_apply (Equiv.finsetCongr (Equiv.swap i (Order.succ i))) s)
+    · simp [typeBSpinReflection_apply_of_last h]
 
 /-- Membership in a reflected sign set at a nonterminal node, read through the transposition of
 the node with its successor. -/
@@ -504,6 +496,10 @@ theorem typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one {n : ℕ} (s : Fin
   rw [typeBSpinWeight_apply]
   split_ifs <;> omega
 
+private theorem mem_iff_of_ite_eq [DecidableEq α] {s t : Finset α} {a : α}
+    (h : (if a ∈ s then (1 : ℤ) else 0) = if a ∈ t then 1 else 0) : a ∈ s ↔ a ∈ t := by
+  by_cases hs : a ∈ s <;> by_cases ht : a ∈ t <;> simp_all
+
 private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n)}
     (h : typeBSpinWeight s = typeBSpinWeight t) (k : ℕ) :
     ∀ i : Fin n, (i : ℕ) + k + 1 = n → (i ∈ s ↔ i ∈ t) := by
@@ -514,7 +510,7 @@ private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n
     have hw := congrFun h i
     rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_right hilt,
       ite_eq_right hilt] at hw
-    exact Finset.mem_iff_of_ite_eq (by linarith)
+    exact mem_iff_of_ite_eq (by linarith)
   | succ k ih =>
     intro i hik
     have hilt : (i : ℕ) + 1 < n := by omega
@@ -525,7 +521,7 @@ private theorem mem_iff_mem_of_typeBSpinWeight_eq {n : ℕ} {s t : Finset (Fin n
     have hw := congrFun h i
     rw [typeBSpinWeight_apply, typeBSpinWeight_apply, ite_eq_left hilt, ite_eq_left hilt] at hw
     rw [hsuccind] at hw
-    exact Finset.mem_iff_of_ite_eq (by linarith)
+    exact mem_iff_of_ite_eq (by linarith)
 
 /-- **Distinct sign sets have distinct type-`Bₙ` spin weights.** The last coordinate of the weight
 recovers the last sign, and the remaining signs follow from the adjacent differences. -/
