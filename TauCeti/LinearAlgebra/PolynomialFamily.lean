@@ -101,8 +101,8 @@ namespace Module.Basis
 /-- **A family of endomorphisms whose matrix entries are polynomial in the parameter is a finite
 power sum of fixed endomorphisms.** The `m`-th coefficient is read off entrywise from the `m`-th
 coefficients of the entry polynomials. -/
-theorem exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval {K : Type u} [CommRing K]
-    {W : Type v} [AddCommGroup W] [Module K W] {ι : Type w} [Fintype ι] [DecidableEq ι]
+theorem exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval {K : Type u} [CommSemiring K]
+    {W : Type v} [AddCommMonoid W] [Module K W] {ι : Type w} [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι K W) (f : K → Module.End K W) (Q : ι → ι → Polynomial K)
     (hQ : ∀ (c : K) (a a' : ι), LinearMap.toMatrix b b (f c) a a' = Polynomial.eval c (Q a a')) :
     ∃ (d : ℕ) (A : ℕ → Module.End K W), ∀ c : K, f c = ∑ m ∈ Finset.range d, c ^ m • A m := by
