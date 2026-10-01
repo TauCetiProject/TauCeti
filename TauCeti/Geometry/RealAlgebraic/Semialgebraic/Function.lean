@@ -149,7 +149,10 @@ theorem isSemialgebraicOn_eval [Finite τ] (p : τ → MvPolynomial σ R)
     have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
       funext i
       exact Equiv.sumArrowEquivProdArrow_apply_fst z i
-    simp only [mem_preimage, mem_graphOn, mem_inter_iff, mem_iInter, mem_ofPred_eq, hfst]
+    have hsnd : (Equiv.sumArrowEquivProdArrow σ τ R z).2 = z ∘ Sum.inr := by
+      funext i
+      exact Equiv.sumArrowEquivProdArrow_apply_snd z i
+    simp only [mem_preimage, mem_graphOn, mem_inter_iff, mem_iInter, mem_ofPred_eq, hfst, hsnd]
     constructor
     · rintro ⟨hz, hp⟩
       refine ⟨hz, fun i => ?_⟩
