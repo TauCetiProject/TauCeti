@@ -31,6 +31,8 @@ modules.
 * `TauCeti.expCircle_coe`: its value on the class of a rational number.
 * `TauCeti.expCircle_eq_one_iff`: it is faithful.
 * `TauCeti.expCircle_neg`: its value at `-x` is the complex conjugate of its value at `x`.
+* `TauCeti.expCircle_half`, `TauCeti.expCircle_quarter`, `TauCeti.expCircle_eighth`: its values
+  `-1`, `i` and `(1 + i) / √2` at `1/2`, `1/4` and `1/8`.
 * `CharacterModule.sum_expCircle`: the orthogonality relation
   `∑ m, e^{2πi χ(m)} = if χ = 0 then #M else 0` for a `ℚ/ℤ`-valued character `χ` of a finite
   abelian group `M`.
@@ -89,6 +91,30 @@ theorem expCircle_neg (x : AddCircle (1 : ℚ)) : expCircle (-x) = conj (expCirc
   induction x using QuotientAddGroup.induction_on with | H r =>
   rw [← QuotientAddGroup.mk_neg, expCircle_coe, expCircle_coe, ← exp_conj]
   simp [map_ofNat]
+
+/-- The value of `expCircle` at `1/2` is `e^{πi} = -1`. -/
+theorem expCircle_half : expCircle ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = -1 := by
+  rw [expCircle_coe]
+  push_cast
+  rw [show 2 * (π : ℂ) * I * (1 / 2) = π * I by ring, exp_pi_mul_I]
+
+/-- The value of `expCircle` at `1/4` is `e^{πi/2} = i`. -/
+theorem expCircle_quarter : expCircle ((1 / 4 : ℚ) : AddCircle (1 : ℚ)) = I := by
+  rw [expCircle_coe]
+  push_cast
+  rw [show 2 * (π : ℂ) * I * (1 / 4) = π / 2 * I by ring, exp_pi_div_two_mul_I]
+
+/-- The value of `expCircle` at `1/8` is `e^{πi/4} = (1 + i) / √2`. -/
+theorem expCircle_eighth : expCircle ((1 / 8 : ℚ) : AddCircle (1 : ℚ)) = (1 + I) / √2 := by
+  have h2 : (√2 : ℂ) ≠ 0 := ofReal_ne_zero.2 (Real.sqrt_ne_zero'.2 zero_lt_two)
+  have hsq : (√2 : ℂ) * √2 = 2 := by
+    rw [← ofReal_mul, Real.mul_self_sqrt zero_le_two, ofReal_ofNat]
+  rw [expCircle_coe, eq_div_iff h2]
+  push_cast
+  rw [show 2 * (π : ℂ) * I * (1 / 8) = ((π / 4 : ℝ) : ℂ) * I by push_cast; ring, exp_mul_I,
+    ← ofReal_cos, ← ofReal_sin, Real.cos_pi_div_four, Real.sin_pi_div_four]
+  push_cast
+  linear_combination (1 / 2 + 1 / 2 * I) * hsq
 
 end TauCeti
 
