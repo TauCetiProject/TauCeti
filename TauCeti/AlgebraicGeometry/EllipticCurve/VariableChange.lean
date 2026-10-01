@@ -209,7 +209,7 @@ instance isElliptic_baseChange_smul (V : WeierstrassCurve R) (C : VariableChange
 
 /-- **A change of variables with `u = 1` leaves `c₄` alone**, and base change carries that along:
 the scaling factor `u⁻¹ ^ 4` of `WeierstrassCurve.variableChange_c₄` is `1`. -/
-lemma baseChange_smul_c₄ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+@[simp] lemma baseChange_smul_c₄ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
     ((C • V).baseChange L).c₄ = (V.baseChange L).c₄ := by
   rw [← baseChange_smul_baseChange, variableChange_c₄, VariableChange.baseChange,
     VariableChange.map_u, hu]
@@ -217,7 +217,7 @@ lemma baseChange_smul_c₄ {C : VariableChange R} (hu : C.u = 1) (V : Weierstras
 
 /-- **A change of variables with `u = 1` leaves `c₆` alone**, and base change carries that along:
 the scaling factor `u⁻¹ ^ 6` of `WeierstrassCurve.variableChange_c₆` is `1`. -/
-lemma baseChange_smul_c₆ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+@[simp] lemma baseChange_smul_c₆ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
     ((C • V).baseChange L).c₆ = (V.baseChange L).c₆ := by
   rw [← baseChange_smul_baseChange, variableChange_c₆, VariableChange.baseChange,
     VariableChange.map_u, hu]

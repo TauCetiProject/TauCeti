@@ -42,9 +42,6 @@ those coefficients — a single `b₂` above `3`, where completing the square is
 * `TauCeti.KrausLocalCondition`: integrality of `c₄`, `c₆` and `Δ`, nonvanishing of `Δ`, and the
   two witness conditions, each imposed only when the corresponding numeral is a nonunit.
 
-`TauCeti.hasKrausThreeWitness_iff` and `TauCeti.hasKrausTwoWitness_iff` expose the witnesses of
-the two predicates, so downstream code never has to unfold them.
-
 ## Main results
 
 * `TauCeti.krausLocalCondition_iff_exists_integralModel`: over a local ring the condition holds
@@ -90,18 +87,6 @@ the general prescription `(b₂/12, a₁/2, a₃/2)`. -/
 def HasKrausTwoWitness : Prop :=
   ∃ a₁ a₃ : R, ((⟨1, algebraMap R K a₁ ^ 2 / 12, algebraMap R K a₁ / 2,
     algebraMap R K a₃ / 2⟩ : VariableChange K) • ofCInvariants c₄ c₆).IsIntegral R
-
-/-- The witness of `TauCeti.HasKrausThreeWitness`, extracted: this is how a consumer gets at the
-`b₂` and its integrality statement, rather than unfolding the definition. -/
-@[simp] theorem hasKrausThreeWitness_iff : HasKrausThreeWitness R c₄ c₆ ↔
-    ∃ b₂ : R, ((⟨1, algebraMap R K b₂ / 12, 0, 0⟩ : VariableChange K) •
-      ofCInvariants c₄ c₆).IsIntegral R := Iff.rfl
-
-/-- The witnesses of `TauCeti.HasKrausTwoWitness`, extracted: this is how a consumer gets at the
-pair `(a₁, a₃)` and its integrality statement, rather than unfolding the definition. -/
-@[simp] theorem hasKrausTwoWitness_iff : HasKrausTwoWitness R c₄ c₆ ↔
-    ∃ a₁ a₃ : R, ((⟨1, algebraMap R K a₁ ^ 2 / 12, algebraMap R K a₁ / 2,
-      algebraMap R K a₃ / 2⟩ : VariableChange K) • ofCInvariants c₄ c₆).IsIntegral R := Iff.rfl
 
 /-- **Kraus's local condition on a pair of invariants.** The first four fields ask that `c₄`, `c₆`
 and the discriminant of the canonical equation lie in `R` and that this discriminant is nonzero;
@@ -162,7 +147,7 @@ variable [Invertible (2 : K)] [Invertible (3 : K)]
 private theorem hasKrausTwoWitness_of_baseChange (V : WeierstrassCurve R) (ha₂ : V.a₂ = 0)
     (h₄ : (V⁄K).c₄ = c₄) (h₆ : (V⁄K).c₆ = c₆) : HasKrausTwoWitness R c₄ c₆ := by
   subst h₄; subst h₆
-  refine (hasKrausTwoWitness_iff _ _ _).mpr ⟨V.a₁, V.a₃, ?_⟩
+  refine ⟨V.a₁, V.a₃, ?_⟩
   have ha₁' : (V⁄K).a₁ = algebraMap R K V.a₁ := by rw [baseChange, map_a₁]
   have ha₃' : (V⁄K).a₃ = algebraMap R K V.a₃ := by rw [baseChange, map_a₃]
   have hb : (V⁄K).b₂ = algebraMap R K V.a₁ ^ 2 := by
@@ -179,7 +164,7 @@ is the `(b₂/12, 0, 0)`-transform of the canonical one. -/
 private theorem hasKrausThreeWitness_of_baseChange (V : WeierstrassCurve R) (ha₁ : V.a₁ = 0)
     (ha₃ : V.a₃ = 0) (h₄ : (V⁄K).c₄ = c₄) (h₆ : (V⁄K).c₆ = c₆) : HasKrausThreeWitness R c₄ c₆ := by
   subst h₄; subst h₆
-  refine (hasKrausThreeWitness_iff _ _ _).mpr ⟨V.b₂, ?_⟩
+  refine ⟨V.b₂, ?_⟩
   have ha₁' : (V⁄K).a₁ = 0 := by rw [baseChange, map_a₁, ha₁, map_zero]
   have ha₃' : (V⁄K).a₃ = 0 := by rw [baseChange, map_a₃, ha₃, map_zero]
   have hb : (V⁄K).b₂ = algebraMap R K V.b₂ := by rw [baseChange, map_b₂]
@@ -216,9 +201,9 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
         have h6 : IsUnit (6 : R) :=
           isUnit_of_eq_two_pow_mul_three_pow h2 h3 (m := 1) (n := 1) (by norm_num)
         exact isIntegral_ofCInvariants h6 h.exists_c₄ h.exists_c₆
-      · obtain ⟨b₂, hb₂⟩ := (hasKrausThreeWitness_iff _ _ _).mp (h.hasKrausThreeWitness h3)
+      · obtain ⟨b₂, hb₂⟩ := h.hasKrausThreeWitness h3
         exact exists_integralModel_of_isIntegral_smul hb₂ h.Δ_ne_zero
-    · obtain ⟨a₁, a₃, ha⟩ := (hasKrausTwoWitness_iff _ _ _).mp (h.hasKrausTwoWitness h2)
+    · obtain ⟨a₁, a₃, ha⟩ := h.hasKrausTwoWitness h2
       exact exists_integralModel_of_isIntegral_smul ha h.Δ_ne_zero
   · rintro ⟨W, hW, rfl, rfl, hΔ⟩
     obtain ⟨V, rfl⟩ := hW.integral

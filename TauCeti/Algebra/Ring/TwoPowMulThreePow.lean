@@ -13,8 +13,8 @@ public import Mathlib.Algebra.Ring.Defs
 # Numerals of the form `2 ^ m * 3 ^ n`
 
 A numeral whose only prime factors are `2` and `3` — `6`, `12`, `48`, `864`, `1728` — is a unit as
-soon as `2` and `3` are, and in that case it is nonzero. Such numerals are the denominators of
-the classical invariants of a Weierstrass equation, so the two statements below are the side
+soon as `2` and `3` are, and in a nontrivial ring it is nonzero. Such numerals are the denominators
+of the classical invariants of a Weierstrass equation, so the two statements below are the side
 conditions that a computation over a ring where `2` and `3` are invertible keeps presenting,
 `field_simp` included.
 
