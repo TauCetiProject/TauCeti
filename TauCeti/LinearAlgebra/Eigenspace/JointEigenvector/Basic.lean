@@ -15,7 +15,7 @@ import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 
 The eigenvalue function of a joint eigenvector of a monoid-hom representation
 `ρ : G →* Module.End K V` is a character: it maps `1` to `1`, is multiplicative, and, for
-a group, valued in units, assembling into `unitHomOfJointEigenvector : G →* Kˣ`. This much
+a group, valued in units, assembling into `MonoidHom.unitHomOfJointEigenvector : G →* Kˣ`. This much
 needs no division — a nonzero vector cancels over a commutative ring without zero divisors
 acting torsion-freely, and on a group multiplicativity exhibits the inverse of `χ g` as
 `χ g⁻¹`. This yields the simultaneous-diagonalization toolkit for a commuting family of
@@ -38,7 +38,7 @@ components of `M_k(Γ₁(N))`.
 
 ## Main results
 
-* `unitHomOfJointEigenvector`: the eigenvalue function of a nonzero joint eigenvector of a
+* `MonoidHom.unitHomOfJointEigenvector`: the eigenvalue function of a nonzero joint eigenvector of a
   group representation, as a monoid homomorphism `G →* Kˣ`.
 * `iSupIndep_iInf_eigenspace`,
   `iSup_iInf_eigenspace_eq_top_of_isSemisimple`,
@@ -46,9 +46,9 @@ components of `M_k(Γ₁(N))`.
   independent (with no further hypotheses), exhaust the space when semisimple, and
   decompose every invariant submodule — with the character-indexed forms (`…_unitHom…`)
   for group representations.
-* `finite_nonzeroJointWeights`, `natCard_nonzeroJointWeights_le_finrank`: a representation on a
-  finite module over a domain has finitely many nonzero joint weights, with their number bounded
-  by its rank.
+* `MonoidHom.finite_nonzeroJointWeights`, `MonoidHom.natCard_nonzeroJointWeights_le_finrank`:
+  a representation on a finite module over a domain has finitely many nonzero joint weights,
+  with their number bounded by its rank.
 * `iSup_iInf_eigenspace_unitHom_eq_top_of_commGroup`,
   `iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup`: for a finite commutative `G`
   with `[HasEnoughRootsOfUnity K (Monoid.exponent G)]` and `IsUnit (Nat.card G : K)`, the
@@ -104,8 +104,8 @@ variable [MulOne G]
 /-- If `v ≠ 0` is a joint eigenvector of a monoid-hom representation
 `ρ : G →* Module.End K V` with eigenvalues `χ g`, then the eigenvalue at the
 identity is `1`. -/
-lemma eigenvalue_one_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G → K) (v : V)
-    (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) : χ 1 = 1 := by
+lemma _root_.MonoidHom.eigenvalue_one_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G → K)
+    (v : V) (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) : χ 1 = 1 := by
   have h1 := hv_mem 1
   rw [Module.End.mem_eigenspace_iff, map_one, Module.End.one_apply] at h1
   exact (smul_left_inj hv).mp (by rw [← h1, one_smul])
@@ -113,8 +113,8 @@ lemma eigenvalue_one_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G �
 /-- If `v ≠ 0` is a joint eigenvector of a monoid-hom representation
 `ρ : G →* Module.End K V` with eigenvalues `χ g`, then the eigenvalues are
 multiplicative: `χ (g₁ * g₂) = χ g₁ * χ g₂`. -/
-lemma eigenvalue_mul_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G → K) (v : V)
-    (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) (g₁ g₂ : G) :
+lemma _root_.MonoidHom.eigenvalue_mul_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G → K)
+    (v : V) (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) (g₁ g₂ : G) :
     χ (g₁ * g₂) = χ g₁ * χ g₂ := by
   have h := hv_mem (g₁ * g₂)
   rw [Module.End.mem_eigenspace_iff, map_mul] at h
@@ -131,25 +131,27 @@ variable [Group G]
 /-- Given a joint eigenvector `v ≠ 0` for a monoid-hom representation
 `ρ : G →* Module.End K V` of a group `G`, the eigenvalue function `χ : G → K`
 factors through a monoid homomorphism `G →* Kˣ`. -/
-def unitHomOfJointEigenvector (ρ : G →* Module.End K V) (χ : G → K) (v : V)
+def _root_.MonoidHom.unitHomOfJointEigenvector (ρ : G →* Module.End K V) (χ : G → K) (v : V)
     (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) : G →* Kˣ :=
   MonoidHom.toHomUnits
     { toFun := χ
-      map_one' := eigenvalue_one_of_jointEigenvector ρ χ v hv hv_mem
-      map_mul' := eigenvalue_mul_of_jointEigenvector ρ χ v hv hv_mem }
+      map_one' := ρ.eigenvalue_one_of_jointEigenvector χ v hv hv_mem
+      map_mul' := ρ.eigenvalue_mul_of_jointEigenvector χ v hv hv_mem }
 
 @[simp]
-lemma unitHomOfJointEigenvector_apply (ρ : G →* Module.End K V) (χ : G → K)
+lemma _root_.MonoidHom.unitHomOfJointEigenvector_apply (ρ : G →* Module.End K V) (χ : G → K)
     (v : V) (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) (g : G) :
-    ((unitHomOfJointEigenvector ρ χ v hv hv_mem g) : K) = χ g := (rfl)
+    ((ρ.unitHomOfJointEigenvector χ v hv hv_mem g) : K) = χ g := (rfl)
 
 /-- The eigenvalues of a nonzero joint eigenvector of a group representation are
 nonzero. -/
-lemma eigenvalue_ne_zero_of_jointEigenvector [Nontrivial K]
+lemma _root_.MonoidHom.eigenvalue_ne_zero_of_jointEigenvector
     (ρ : G →* Module.End K V) (χ : G → K) (v : V)
     (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) (g : G) :
     χ g ≠ 0 := by
-  simpa using (unitHomOfJointEigenvector ρ χ v hv hv_mem g).ne_zero
+  have := nontrivial_of_ne v 0 hv
+  have := Module.nontrivial K V
+  simpa using (ρ.unitHomOfJointEigenvector χ v hv hv_mem g).ne_zero
 
 /-- If the joint eigenspace of an eigenvalue function `χ` of a group representation is
 nonzero, then `χ` is (the underlying function of) a character `G →* Kˣ`. -/
@@ -157,7 +159,7 @@ lemma exists_unitHom_of_iInf_eigenspace_ne_bot {ρ : G →* Module.End K V}
     {χ : G → K} (hχ : ⨅ g, (ρ g).eigenspace (χ g) ≠ ⊥) :
     ∃ χ₀ : G →* Kˣ, (fun g ↦ ((χ₀ g) : K)) = χ := by
   obtain ⟨v, hv_mem, hv_ne⟩ := (Submodule.ne_bot_iff _).mp hχ
-  exact ⟨unitHomOfJointEigenvector ρ χ v hv_ne ((Submodule.mem_iInf _).mp hv_mem), rfl⟩
+  exact ⟨ρ.unitHomOfJointEigenvector χ v hv_ne ((Submodule.mem_iInf _).mp hv_mem), rfl⟩
 
 /-- A family of submodules lying in the joint eigenspaces of a group representation has the
 same supremum over the characters `G →* Kˣ` as over all eigenvalue functions `G → K`. -/
@@ -200,14 +202,15 @@ lemma iSupIndep_iInf_eigenspace_unitHom :
 
 /-- A representation on a finite module has only finitely many characters with nonzero joint
 weight space. -/
-instance finite_nonzeroJointWeights [Module.Finite K V] (ρ : G →* Module.End K V) :
+instance _root_.MonoidHom.finite_nonzeroJointWeights [Module.Finite K V]
+    (ρ : G →* Module.End K V) :
     Finite {χ : G →* Kˣ // (⨅ g : G, (ρ g).eigenspace (χ g)) ≠ ⊥} :=
   let _ := iSupIndep_iInf_eigenspace_unitHom (ρ := ρ).fintypeNeBotOfFiniteDimensional
   inferInstance
 
 /-- The number of characters with nonzero joint weight space in a representation on a finite
 module is bounded by the rank of the module. -/
-theorem natCard_nonzeroJointWeights_le_finrank [Module.Finite K V]
+theorem _root_.MonoidHom.natCard_nonzeroJointWeights_le_finrank [Module.Finite K V]
     (ρ : G →* Module.End K V) :
     Nat.card {χ : G →* Kˣ // (⨅ g : G, (ρ g).eigenspace (χ g)) ≠ ⊥} ≤
       Module.finrank K V := by
