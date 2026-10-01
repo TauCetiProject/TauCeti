@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Instances.EReal.Lemmas
 public import Mathlib.Topology.Semicontinuity.Basic
@@ -49,7 +50,8 @@ keep `⊥ + ⊤` from arising, and those hypotheses are recorded exactly rather 
 blanket properness assumption.
 
 For a self-paired real inner product space, `B` is `innerₗ E`, whose transpose is itself, so the
-two Galois-connection maps coincide.
+two Galois-connection maps coincide, and every conjugate is lower semicontinuous for the norm
+topology, the inner product being continuous in each variable.
 
 ## Main definitions
 
@@ -72,7 +74,8 @@ two Galois-connection maps coincide.
 * `TauCeti.convex_epigraph_fenchelConjugate` — the real epigraph of a conjugate is convex, and
   `TauCeti.lowerSemicontinuous_fenchelConjugate` — a conjugate is lower semicontinuous for any
   topology on `F` making every functional `B x` continuous, such as the weak topology of the
-  pairing.
+  pairing, and `TauCeti.lowerSemicontinuous_fenchelConjugate_innerₗ` — for the inner product
+  pairing of a real inner product space, every conjugate is lower semicontinuous.
 
 ## Implementation notes
 
@@ -267,6 +270,21 @@ theorem lowerSemicontinuous_fenchelConjugate [TopologicalSpace F] (hB : ∀ x, C
   | top =>
     simp only [EReal.sub_top]
     exact lowerSemicontinuous_const
+
+/-! ### The inner product pairing -/
+
+section InnerProduct
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+
+/-- The Legendre–Fenchel conjugate for the inner product pairing is lower semicontinuous, the
+inner product being continuous in each variable. -/
+theorem lowerSemicontinuous_fenchelConjugate_innerₗ (f : G → EReal) :
+    LowerSemicontinuous (fenchelConjugate (innerₗ G) f) :=
+  lowerSemicontinuous_fenchelConjugate (innerₗ G)
+    (fun x => (continuous_const.inner continuous_id).congr fun y => (innerₗ_apply_apply x y).symm) f
+
+end InnerProduct
 
 end TauCeti
 
