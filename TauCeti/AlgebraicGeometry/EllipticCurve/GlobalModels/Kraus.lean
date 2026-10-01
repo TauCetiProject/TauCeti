@@ -15,10 +15,11 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 /-!
 # Kraus's criterion: which pairs of invariants come from an integral equation
 
-A pair `(c₄, c₆)` in a field `K` with `c₄³ ≠ c₆²` is the pair of `c`-invariants of exactly one
-Weierstrass equation up to a change of variables with `u = 1`, namely
-`ofCInvariants c₄ c₆ : y² = x³ - (c₄/48)x - c₆/864`. Given a commutative ring `R` with an algebra
-map to `K` — a localisation `𝒪_{K,v}` of a ring of integers, in the application — the question
+A pair `(c₄, c₆)` in a field `K` where `2` and `3` are invertible, with `c₄³ ≠ c₆²`, is the
+pair of `c`-invariants of exactly one Weierstrass equation up to a change of variables with
+`u = 1`, namely `ofCInvariants c₄ c₆ : y² = x³ - (c₄/48)x - c₆/864`. Given a commutative ring
+`R` with an algebra map to `K` — a localisation `𝒪_{K,v}` of a ring of integers, in the
+application — the question
 Kraus answers is a different one: is there an equation whose coefficients come from `R` and whose
 invariants are `c₄` and `c₆` **on the nose**? Integrality of `c₄`, `c₆` and `Δ` is necessary but
 not sufficient, and what is missing is visible only at the residue characteristics `2` and `3`,
@@ -37,8 +38,9 @@ those coefficients — a single `b₂` above `3`, where completing the square is
 * `TauCeti.HasKrausThreeWitness`: some `b₂ ∈ R` makes the `(b₂/12, 0, 0)`-transform of
   `ofCInvariants c₄ c₆` integral.
 * `TauCeti.HasKrausTwoWitness`: some `a₁, a₃ ∈ R` make the `(a₁²/12, a₁/2, a₃/2)`-transform of
-  `ofCInvariants c₄ c₆` integral. The two triples agree when `b₂ = a₁²`, which is the case
-  `a₂ = 0` of the general prescription.
+  `ofCInvariants c₄ c₆` integral. Each triple specialises the general prescription
+  `(b₂/12, a₁/2, a₃/2)`: the three-witness sets `a₁ = a₃ = 0`, while the two-witness sets
+  `a₂ = 0`, so `b₂ = a₁²`.
 * `TauCeti.KrausLocalCondition`: integrality of `c₄`, `c₆` and `Δ`, nonvanishing of `Δ`, and the
   two witness conditions, each imposed only when the corresponding numeral is a nonunit.
 
