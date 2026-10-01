@@ -659,7 +659,7 @@ theorem eq_graphAutomorphism_hom_of_rootSubgroup (φ : groupScheme r ⟶ groupSc
     rw [hroot k, rootSubgroup_comp_graphAutomorphism_hom]
 
 /-- **The graph automorphism is the unique automorphism of the carrier reversing the Bourbaki
-numbering of the simple-root subgroups.** -/
+numbering of the parametrized simple-root subgroups while preserving their additive parameters.** -/
 theorem eq_graphAutomorphism_of_rootSubgroup (γ : Aut (groupScheme r))
     (hroot : ∀ k, rootSubgroup r k ≫ γ.hom = rootSubgroup r (graphRootPerm r k)) :
     γ = graphAutomorphism r :=

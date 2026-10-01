@@ -177,31 +177,14 @@ theorem val_cartanGenerator (i : Fin r) :
     (cartanGenerator r i : Matrix (Fin (r + 1)) (Fin (r + 1)) ℚ) =
       Matrix.single i.castSucc i.castSucc 1 - Matrix.single i.succ i.succ 1 := (rfl)
 
-/-- The numbered raising generator is the matrix unit `E_{i, i+1}` of `sl_{r+1}`. -/
-theorem rootGenerator_inl_eq_single (i : Fin r) :
-    rootGenerator r (.inl i) = single i.castSucc i.succ (Fin.castSucc_lt_succ (i := i)).ne 1 :=
-  Subtype.ext (by rw [val_rootGenerator, val_single, rootTarget_inl, rootSource_inl])
-
-/-- The numbered lowering generator is the matrix unit `E_{i+1, i}` of `sl_{r+1}`. -/
-theorem rootGenerator_inr_eq_single (i : Fin r) :
-    rootGenerator r (.inr i) = single i.succ i.castSucc (Fin.castSucc_lt_succ (i := i)).ne' 1 :=
-  Subtype.ext (by rw [val_rootGenerator, val_single, rootTarget_inr, rootSource_inr])
-
-/-- The numbered Cartan generator is the diagonal difference `E_{i,i} - E_{i+1,i+1}` of
-`sl_{r+1}`. -/
-theorem cartanGenerator_eq_singleSubSingle (i : Fin r) :
-    cartanGenerator r i = singleSubSingle i.castSucc i.succ 1 :=
-  Subtype.ext (by rw [val_cartanGenerator, val_singleSubSingle])
-
 /-- **The numbered Chevalley generators at a Bourbaki node form an `sl₂` triple** in `sl_{r+1}`:
 they are the matrix units `E_{i, i+1}`, `E_{i+1, i}` and the diagonal difference
 `E_{i,i} - E_{i+1,i+1}`. -/
 theorem isSl2Triple_rootGenerator (i : Fin r) :
     _root_.IsSl2Triple (cartanGenerator r i) (rootGenerator r (.inl i))
       (rootGenerator r (.inr i)) := by
-  rw [cartanGenerator_eq_singleSubSingle, rootGenerator_inl_eq_single,
-    rootGenerator_inr_eq_single]
-  exact isSl2Triple_single (Fin.castSucc_lt_succ (i := i)).ne
+  simpa only [rootGenerator, cartanGenerator, rootTarget, rootSource] using
+    isSl2Triple_single (Fin.castSucc_lt_succ (i := i)).ne
 
 /-! ## The standard representation -/
 
