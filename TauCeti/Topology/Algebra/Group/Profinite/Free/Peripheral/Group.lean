@@ -52,33 +52,36 @@ variable {hF : IsProP p F} {x : Fin r → F} {u v : ℤ_[p]ˣ}
 /-- Composition of peripheral automorphisms multiplies their exponents. -/
 theorem IsPeripheralAut.mul (hφ : IsPeripheralAut hF x u φ)
     (hψ : IsPeripheralAut hF x v ψ) : IsPeripheralAut hF x (u * v) (φ * ψ) := by
-  rw [isPeripheralAut_def] at hφ hψ ⊢
-  intro i
-  let y := peripheralTuple x i
-  obtain ⟨g, hg⟩ := isConj_iff.mp (hφ i)
-  have hpow : IsConj (hF.padicPow y ↑(u * v)) (hF.padicPow (φ y) v) := by
-    apply isConj_iff.mpr
-    refine ⟨g, ?_⟩
-    rw [← hg, hF.conj_padicPow, ← hF.padicPow_mul, Units.val_mul]
-  have hmap := (φ : F →* F).map_isConj (hψ i)
-  rw [hF.map_padicPow hF (φ : F →* F) φ.continuous] at hmap
-  exact hpow.trans hmap
+  rw [isPeripheralAut_iff] at hφ hψ ⊢
+  have h (y : F) (hφ : IsConj (hF.padicPow y u) (φ y))
+      (hψ : IsConj (hF.padicPow y v) (ψ y)) :
+      IsConj (hF.padicPow y ↑(u * v)) ((φ * ψ) y) := by
+    obtain ⟨g, hg⟩ := isConj_iff.mp hφ
+    have hpow : IsConj (hF.padicPow y ↑(u * v)) (hF.padicPow (φ y) v) := by
+      apply isConj_iff.mpr
+      refine ⟨g, ?_⟩
+      rw [← hg, hF.conj_padicPow, ← hF.padicPow_mul, Units.val_mul]
+    have hmap := (φ : F →* F).map_isConj hψ
+    rw [hF.map_padicPow hF (φ : F →* F) φ.continuous] at hmap
+    exact hpow.trans hmap
+  exact ⟨fun i ↦ h (x i) (hφ.1 i) (hψ.1 i), h (cusp x) hφ.2 hψ.2⟩
 
 /-- The inverse of a peripheral automorphism has inverse exponent. -/
 theorem IsPeripheralAut.inv (hφ : IsPeripheralAut hF x u φ) :
     IsPeripheralAut hF x u⁻¹ φ⁻¹ := by
-  rw [isPeripheralAut_def] at hφ ⊢
-  intro i
-  let y := peripheralTuple x i
-  have hmap := (φ.symm : F →* F).map_isConj (hφ i)
-  simp only [MonoidHom.coe_ofClass, ContinuousMulEquiv.symm_apply_apply] at hmap
-  obtain ⟨g, hg⟩ := isConj_iff.mp hmap.symm
-  apply isConj_iff.mpr
-  refine ⟨g, ?_⟩
-  rw [← hF.conj_padicPow, hg, ContinuousAut.inv_apply]
-  simpa only [MonoidHom.coe_ofClass, hF.padicPow_padicPow_inv] using
-    (hF.map_padicPow hF (φ.symm : F →* F) φ.symm.continuous
-      (hF.padicPow y u) ↑u⁻¹).symm
+  rw [isPeripheralAut_iff] at hφ ⊢
+  have h (y : F) (hφ : IsConj (hF.padicPow y u) (φ y)) :
+      IsConj (hF.padicPow y ↑u⁻¹) (φ⁻¹ y) := by
+    have hmap := (φ.symm : F →* F).map_isConj hφ
+    simp only [MonoidHom.coe_ofClass, ContinuousMulEquiv.symm_apply_apply] at hmap
+    obtain ⟨g, hg⟩ := isConj_iff.mp hmap.symm
+    apply isConj_iff.mpr
+    refine ⟨g, ?_⟩
+    rw [← hF.conj_padicPow, hg, ContinuousAut.inv_apply]
+    simpa only [MonoidHom.coe_ofClass, hF.padicPow_padicPow_inv] using
+      (hF.map_padicPow hF (φ.symm : F →* F) φ.symm.continuous
+        (hF.padicPow y u) ↑u⁻¹).symm
+  exact ⟨fun i ↦ h (x i) (hφ.1 i), h (cusp x) hφ.2⟩
 
 /-- The continuous automorphisms peripheral for `x` with some common unit exponent. -/
 def peripheralAut (hF : IsProP p F) (x : Fin r → F) : Subgroup (ContinuousAut F) where
