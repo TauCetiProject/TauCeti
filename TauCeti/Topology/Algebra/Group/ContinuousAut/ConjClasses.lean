@@ -42,14 +42,14 @@ representative. -/
 @[simp]
 theorem smul_conjClasses_mk (φ : ContinuousAut G) (x : G) :
     φ • ConjClasses.mk x = ConjClasses.mk (φ x) := by
-  rw [MulAction.compHom_smul_def, mulAut_smul_conjClasses_mk]
+  rw [MulAction.compHom_smul_def, MulAut.smul_conjClasses_mk]
   simp only [coe_toMulAut]
 
 /-- Continuous automorphisms commute with powering conjugacy classes. -/
 @[simp]
 theorem smul_conjClasses_pow (φ : ContinuousAut G) (c : ConjClasses G) (n : ℕ) :
     φ • (c ^ n) = (φ • c) ^ n := by
-  simp only [MulAction.compHom_smul_def, mulAut_smul_conjClasses_pow]
+  simp only [MulAction.compHom_smul_def, MulAut.smul_conjClasses_pow]
 
 end Monoid
 
@@ -59,7 +59,7 @@ variable [Group G]
 @[simp]
 theorem smul_conjClasses_inv (φ : ContinuousAut G) (c : ConjClasses G) :
     φ • c⁻¹ = (φ • c)⁻¹ := by
-  simp only [MulAction.compHom_smul_def, mulAut_smul_conjClasses_inv]
+  simp only [MulAction.compHom_smul_def, MulAut.smul_conjClasses_inv]
 
 variable [SeparatelyContinuousMul G]
 
