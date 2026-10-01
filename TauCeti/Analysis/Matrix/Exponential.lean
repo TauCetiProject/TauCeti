@@ -124,8 +124,11 @@ theorem eq_conj_diagonal_of_conjTranspose_eq_neg {A : Matrix n n ℂ} (hA : Aᴴ
 
 /-- **The determinant of the exponential of a skew-Hermitian complex matrix is the exponential of
 its trace.** This is the input that cuts the special unitary group out of the unitary group: the
-exponential of a skew-Hermitian matrix is unitary, and it has determinant one exactly when the
-trace of the matrix vanishes. -/
+exponential of a skew-Hermitian matrix is unitary, and it has determinant one as soon as the trace
+of the matrix vanishes. The converse fails for a single exponential, since the trace of a
+skew-Hermitian matrix is purely imaginary and the exponential is periodic along the imaginary
+axis; it is determinant one along the *whole* real exponential line `t ↦ exp (t • A)` that forces
+the trace to vanish. -/
 theorem det_exp_of_conjTranspose_eq_neg {A : Matrix n n ℂ} (hA : Aᴴ = -A) :
     (exp A).det = exp A.trace := by
   obtain ⟨U, hU, d, hd⟩ := eq_conj_diagonal_of_conjTranspose_eq_neg hA
