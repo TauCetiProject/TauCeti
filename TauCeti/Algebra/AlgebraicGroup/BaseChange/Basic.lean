@@ -131,7 +131,8 @@ inverse of a base-changed point has value `s • f (S a)`.
 
 The `≃*` `AlgHom.baseChangePointsMulEquiv` is automatically a group isomorphism here, since
 `A` is a Hopf algebra; this records the value of an inverse point on pure tensors. -/
-@[simp]
+-- Normalize the composite before the general inverse rule unfolds its argument.
+@[simp↓]
 lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ (s ⊗ₜ[k] a) =
       s • f.ofConv (antipode k a) := by
@@ -140,7 +141,7 @@ lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s 
 
 /-- Pointwise inverse formula after restricting a base-changed point along `a ↦ 1 ⊗ a`:
 the inverse of `(e.symm f)` has value `f (1 ⊗ S a)` at `a`. -/
-@[simp]
+@[simp↓]
 lemma baseChangePointsMulEquiv_symm_inv_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
     (((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹).ofConv a =
       f.ofConv (1 ⊗ₜ[k] antipode k a) := by

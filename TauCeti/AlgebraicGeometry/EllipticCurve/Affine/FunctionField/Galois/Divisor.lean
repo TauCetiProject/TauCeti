@@ -83,7 +83,7 @@ conjugates of those of `f`, with the same multiplicities. -/
 @[simp]
 theorem divisorGaloisAction_principal (σ : K ≃ₐ[F] K) (f : (W⁄K).toAffine.FunctionFieldˣ) :
     Divisor.principal (W⁄K).toAffine.isFunctionField
-        (Units.map (W.functionFieldGaloisAction σ).toMonoidHom f) =
+        (Units.map (MonoidHom.ofClass (W.functionFieldGaloisAction σ)) f) =
       Multiplicative.toAdd (W.divisorGaloisAction σ)
         (Divisor.principal (W⁄K).toAffine.isFunctionField f) := by
   ext v
@@ -100,11 +100,11 @@ theorem divisorGaloisAction_linearlyEquivalent_iff (σ : K ≃ₐ[F] K)
   rw [Divisor.linearlyEquivalent_iff, Divisor.linearlyEquivalent_iff]
   constructor
   · rintro ⟨f, hf⟩
-    refine ⟨Units.map (W.functionFieldGaloisAction σ.symm).toMonoidHom f, ?_⟩
+    refine ⟨Units.map (MonoidHom.ofClass (W.functionFieldGaloisAction σ.symm)) f, ?_⟩
     rw [divisorGaloisAction_principal, hf, map_sub]
     simp [← AlgEquiv.aut_inv]
   · rintro ⟨f, hf⟩
-    refine ⟨Units.map (W.functionFieldGaloisAction σ).toMonoidHom f, ?_⟩
+    refine ⟨Units.map (MonoidHom.ofClass (W.functionFieldGaloisAction σ)) f, ?_⟩
     rw [divisorGaloisAction_principal, hf, map_sub]
 
 end WeierstrassCurve
