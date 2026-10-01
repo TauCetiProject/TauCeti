@@ -17,6 +17,9 @@ coalgebra: flatness makes the inclusion of its tensor square injective. The indu
 is supplied as a definition, with formulas relating its operations to those of the ambient
 coalgebra. This construction supplies the coalgebra underlying a flat Hopf subalgebra.
 
+For `D : TauCeti.Subcoalgebra R C`, the induced coalgebra has carrier `D.toSubmodule`;
+use `D.coalgebra` for the structure and `D.comul_apply` and `D.counit_apply` for its operations.
+
 ## References
 
 * M. E. Sweedler, *Hopf Algebras* (1969), Chapter 2.
