@@ -239,6 +239,15 @@ theorem scaling_mul_generator_zpow_mul_inv (n : ℤ) :
       upperRightHom (n * D.width) := by
   rw [mul_zpow_mul_inv_eq_upperRightHom D.scaling_mul_generator_mul_inv]
 
+/-- The selected generator of the stabilizer of a cusp has infinite order: its `n`-th power is
+conjugate to translation by `n * width ≠ 0`. -/
+theorem orderOf_generator_eq_zero : orderOf D.generator = 0 := by
+  refine orderOf_eq_zero_iff'.mpr fun n hn hpow ↦ ?_
+  have h := D.scaling_mul_generator_zpow_mul_inv n
+  rw [zpow_natCast, ← Subgroup.coe_pow, hpow, Subgroup.coe_one, mul_one, mul_inv_cancel,
+    ← AddChar.map_zero_eq_one upperRightHom] at h
+  simpa [hn.ne', D.width_pos.ne'] using upperRightHom_injective h
+
 /-- **The conjugated cusp stabilizer is `width * ℤ`.** An element of `Γ` fixes the cusp exactly
 when its conjugate by the scaling is translation by an integer multiple of the width. -/
 theorem mem_stabilizer_iff_conj {g : Γ} :
