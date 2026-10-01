@@ -21,16 +21,19 @@ Baker–Campbell–Hausdorff map near the origin.
 
 * `NormedSpace.logOneAddSeries`: the formal multilinear series for `log (1 + u)`.
 * `NormedSpace.logOneAddSeries_apply`: its homogeneous terms.
+* `NormedSpace.logOneAddSeries_partialSum_three`: its third partial sum, `u - 2⁻¹ • u ^ 2`.
 * `NormedSpace.logOneAdd`: its sum.
 * `NormedSpace.logOneAdd_eq_tsum`: the defining series equation.
 * `NormedSpace.one_le_logOneAddSeries_radius`: the radius of convergence is at least one.
 * `NormedSpace.hasFPowerSeriesOnBall_logOneAdd`: the series represents `logOneAdd` on the
   unit ball.
+* `NormedSpace.isBigO_logOneAdd_sub_quadratic`: `logOneAdd u - (u - 2⁻¹ • u ^ 2)` is
+  `O(‖u‖ ^ 3)` at the origin.
 -/
 
 public section
 
-open Filter
+open Asymptotics Filter
 open scoped ENNReal Topology
 
 noncomputable section
@@ -56,6 +59,14 @@ theorem logOneAddSeries_apply {n : ℕ} (v : Fin n → A) :
       ((-1 : 𝕂) ^ (n + 1) / n) • (List.ofFn v).prod := by
   simp only [logOneAddSeries, FormalMultilinearSeries.ofScalars,
     Nat.castEmbedding_apply, smul_apply, ContinuousMultilinearMap.mkPiAlgebraFin_apply]
+
+/-- The third partial sum of the series for `log (1 + u)` is the quadratic truncation
+`u - 2⁻¹ • u ^ 2`. -/
+theorem logOneAddSeries_partialSum_three (u : A) :
+    (logOneAddSeries 𝕂 A).partialSum 3 u = u - (2⁻¹ : 𝕂) • u ^ 2 := by
+  simp only [FormalMultilinearSeries.partialSum, Finset.sum_range_succ, Finset.range_zero,
+    Finset.sum_empty, logOneAddSeries_apply, List.ofFn_const, List.prod_replicate]
+  norm_num [neg_div, neg_smul, sub_eq_add_neg]
 
 /-- The `tsum` of the power series for `log (1 + u)`. -/
 def logOneAdd (u : A) : A :=
@@ -119,6 +130,13 @@ theorem hasFPowerSeriesOnBall_logOneAdd :
 /-- `logOneAdd` is analytic at the origin. -/
 theorem analyticAt_logOneAdd : AnalyticAt 𝕂 (logOneAdd 𝕂 A) 0 :=
   hasFPowerSeriesOnBall_logOneAdd 𝕂 A |>.analyticAt
+
+/-- **The quadratic Taylor estimate for the Banach algebra logarithm.**  The difference
+`logOneAdd u - (u - 2⁻¹ • u ^ 2)` is `O(‖u‖ ^ 3)` as `u → 0`. -/
+theorem isBigO_logOneAdd_sub_quadratic :
+    (fun u : A ↦ logOneAdd 𝕂 A u - (u - (2⁻¹ : 𝕂) • u ^ 2)) =O[𝓝 (0 : A)] fun u ↦ ‖u‖ ^ 3 := by
+  simpa only [zero_add, logOneAddSeries_partialSum_three] using
+    (hasFPowerSeriesOnBall_logOneAdd 𝕂 A).hasFPowerSeriesAt.isBigO_sub_partialSum_pow 3
 
 end Normed
 
