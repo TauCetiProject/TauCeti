@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fourier.Pontryagin.Measure
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.CStarAlgebra.CharacterSpaceMeasure
+import Mathlib.Analysis.CStarAlgebra.Fuglede
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import Mathlib.Topology.Algebra.StarSubalgebra
 
@@ -20,10 +21,11 @@ Let `ρ` be a unitary representation of a discrete abelian group `G` on a comple
 Fourier–Stieltjes transform of a finite positive measure on the Pontryagin dual of `G`.
 
 The operators `ρ(g)` are commuting unitaries, so they generate a unital commutative C⋆-subalgebra
-`B` of `H →L[ℂ] H`. The vector state `a ↦ ⟪ξ, a ξ⟫` is nonnegative on `star a * a`, hence is
-integration against a finite measure on the character space of `B`. A character `ω` of `B` sends
-each unitary `ρ(g)` into the unit circle, so `g ↦ ω(ρ(g))` is a character of `G`, and this
-assignment is continuous. The image of the measure on the dual group is the required measure.
+`B` of `H →L[ℂ] H`. The positive vector functional `a ↦ ⟪ξ, a ξ⟫` is nonnegative on
+`star a * a`, hence is integration against a finite measure on the character space of `B`. A
+character `ω` of `B` sends each unitary `ρ(g)` into the unit circle, so `g ↦ ω(ρ(g))` is a
+character of `G`, and this assignment is continuous. The image of the measure on the dual group
+is the required measure.
 
 This is the cyclic form of the spectral theorem for unitary representations of a discrete
 abelian group (the discrete case of the Stone–Naimark–Ambrose–Godement theorem).
@@ -58,20 +60,9 @@ private abbrev generatedAlgebra (ρ : G →* unitary (H →L[ℂ] H)) : StarSuba
 
 private lemma isMulCommutative_adjoin (ρ : G →* unitary (H →L[ℂ] H)) :
     IsMulCommutative (StarAlgebra.adjoin ℂ (Set.range fun g ↦ (ρ g : H →L[ℂ] H))) := by
-  -- The generators commute with each other and with their adjoints `ρ(g)⋆ = ρ(g⁻¹)`.
-  have hcomm (g h : G) : Commute (ρ g : H →L[ℂ] H) (ρ h) := by
-    have hgh : ρ g * ρ h = ρ h * ρ g := by rw [← map_mul, ← map_mul, mul_comm]
-    exact congrArg Subtype.val hgh
-  have hstar (g : G) : star (ρ g : H →L[ℂ] H) = ρ g⁻¹ := by
-    rw [← Unitary.coe_star, Unitary.star_eq_inv, map_inv]
-  refine StarAlgebra.isMulCommutative_adjoin ℂ ?_ ?_ ?_
-  · rintro _ ⟨g, rfl⟩
-    exact ⟨by rw [hstar]; exact hcomm _ _⟩
-  · rintro _ ⟨g, rfl⟩ _ ⟨h, rfl⟩ -
-    exact hcomm g h
-  · rintro _ ⟨g, rfl⟩ _ ⟨h, rfl⟩ -
-    rw [hstar]
-    exact hcomm _ _
+  refine CStarAlgebra.isMulCommutative_adjoin (by rintro _ ⟨g, rfl⟩; infer_instance) ?_
+  rintro _ ⟨g, rfl⟩ _ ⟨h, rfl⟩ -
+  exact congrArg Subtype.val (by rw [← map_mul, ← map_mul, mul_comm] : ρ g * ρ h = ρ h * ρ g)
 
 private instance (ρ : G →* unitary (H →L[ℂ] H)) : IsMulCommutative (generatedAlgebra ρ) :=
   have := isMulCommutative_adjoin ρ
@@ -124,6 +115,11 @@ private def dualOfCharacter (ρ : G →* unitary (H →L[ℂ] H))
     rw [coe_characterValue, Circle.coe_mul, coe_characterValue, coe_characterValue,
       generator_mul, map_mul])
 
+private lemma coe_dualOfCharacter_apply (ρ : G →* unitary (H →L[ℂ] H))
+    (ω : characterSpace ℂ (generatedAlgebra ρ)) (g : G) :
+    (dualOfCharacter ρ ω g : ℂ) = ω (generator ρ g) :=
+  rfl
+
 end TauCeti.UnitaryRepresentation
 
 open TauCeti.UnitaryRepresentation
@@ -143,7 +139,7 @@ theorem MonoidHom.exists_pontryaginMeasureTransform_eq_inner
       ∀ g, μ.pontryaginMeasureTransform g =
         ⟪ξ, (ρ (Multiplicative.ofAdd g) : H →L[ℂ] H) ξ⟫_ℂ := by
   set B := generatedAlgebra ρ
-  -- The vector state of `ξ` on the generated algebra.
+  -- The positive vector functional of `ξ` on the generated algebra.
   let f : B →ₗ[ℂ] ℂ :=
     { toFun a := ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ
       map_add' a b := by simp [inner_add_right]
@@ -168,4 +164,13 @@ theorem MonoidHom.exists_pontryaginMeasureTransform_eq_inner
   rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
     integral_map hθ.aemeasurable
       (TauCeti.PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable]
-  exact (hrep (generator ρ (Multiplicative.ofAdd g))).symm
+  -- Both sides are the integral of `ω ↦ ω (ρ g)` against `μ`.
+  have hθg (ω : characterSpace ℂ B) :
+      (θ ω (Multiplicative.ofAdd g) : ℂ) = ω (generator ρ (Multiplicative.ofAdd g)) :=
+    coe_dualOfCharacter_apply ρ ω _
+  have hfg : f (generator ρ (Multiplicative.ofAdd g)) =
+      ⟪ξ, (ρ (Multiplicative.ofAdd g) : H →L[ℂ] H) ξ⟫_ℂ := by
+    simp only [f, LinearMap.coe_mk, AddHom.coe_mk, generator]
+  simp_rw [hθg]
+  simp only [μf, FiniteMeasure.toMeasure_mk]
+  rw [← hrep, hfg]

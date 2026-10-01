@@ -23,9 +23,9 @@ The Gelfand transform identifies `A` with `C(Δ, ℂ)`, and under this identific
 `star a * a` runs through the nonnegative functions, so `f` becomes a positive linear functional
 on `C(Δ, ℝ)`. The compact space `Δ` then carries its Riesz–Markov–Kakutani measure.
 
-This is the commutative case of the passage from states to spectral data; it turns a cyclic
-commuting family of operators, such as a unitary representation of an abelian group, into a
-measure on the joint spectrum.
+This is the commutative case of the passage from positive functionals to spectral data; it turns
+a cyclic commuting family of operators, such as a unitary representation of an abelian group,
+into a measure on the joint spectrum.
 
 ## Main declarations
 
@@ -116,9 +116,9 @@ open TauCeti.CharacterSpaceMeasure
 
 variable [MeasurableSpace (characterSpace ℂ A)] [BorelSpace (characterSpace ℂ A)]
 
-/-- **States on a commutative C⋆-algebra are measures on its character space.** A linear
-functional on a unital commutative C⋆-algebra that is nonnegative on every `star a * a` is
-integration against a finite positive measure `μ` on the character space:
+/-- **Positive functionals on a commutative C⋆-algebra are measures on its character space.**
+A linear functional on a unital commutative C⋆-algebra that is nonnegative on every
+`star a * a` is integration against a finite positive measure `μ` on the character space:
 `f a = ∫ ω, ω a ∂μ`. -/
 theorem LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq (f : A →ₗ[ℂ] ℂ)
     (hf : ∀ a, 0 ≤ f (star a * a)) :
@@ -146,13 +146,3 @@ theorem LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq (f : A →�
       rw [hF, map_add, map_smul, map_add, map_smul, hreal, hreal, smul_eq_mul, mul_comm]
     _ = ∫ ω, F ω ∂μ := integral_re_add_im hFint
     _ = ∫ ω, ω a ∂μ := by simp [F]
-
-/-- **Positive functionals on a commutative C⋆-algebra are measures on its character space.**
-For any order making the unital commutative C⋆-algebra `A` a star-ordered ring, a positive
-linear functional `f : A →ₚ[ℂ] ℂ` is integration against a finite positive measure on the
-character space. -/
-theorem PositiveLinearMap.exists_isFiniteMeasure_integral_characterSpace_eq [PartialOrder A]
-    [StarOrderedRing A] (f : A →ₚ[ℂ] ℂ) :
-    ∃ μ : Measure (characterSpace ℂ A), IsFiniteMeasure μ ∧ ∀ a, f a = ∫ ω, ω a ∂μ :=
-  (f : A →ₗ[ℂ] ℂ).exists_isFiniteMeasure_integral_characterSpace_eq fun a ↦
-    f.map_nonneg (star_mul_self_nonneg a)
