@@ -87,9 +87,6 @@ theorem ae_vertexNoise_ne_of_ne {i j : ℕ} (hij : i ≠ j) :
 vertex family. -/
 theorem ae_injective_vertexNoise :
     ∀ᵐ u ∂noiseMeasure Unit (Sym2 ℕ), Function.Injective fun i => u (.vertex () i) := by
-  rw [show (fun u : NoiseIndex Unit (Sym2 ℕ) → I =>
-      Function.Injective fun i => u (.vertex () i)) =
-      (fun u => ∀ i j, u (.vertex () i) = u (.vertex () j) → i = j) by rfl]
   refine ae_all_iff.2 fun i => ae_all_iff.2 fun j => ?_
   by_cases hij : i = j
   · exact Filter.Eventually.of_forall fun _ _ => hij
@@ -102,6 +99,20 @@ the same way as the input marks: when they arrive in decreasing order, both the 
 output coordinates are swapped. -/
 def orientPairCoding (g : I → I → I → I → α × α) (z a b t : I) : α × α :=
   if a ≤ b then g z a b t else (g z b a t).swap
+
+omit [MeasurableSpace α] in
+/-- With increasing vertex marks, the oriented pair coder reads the supplied coder directly. -/
+@[simp]
+theorem orientPairCoding_of_le (g : I → I → I → I → α × α) (z a b t : I) (hab : a ≤ b) :
+    orientPairCoding g z a b t = g z a b t := by
+  simp [orientPairCoding, hab]
+
+omit [MeasurableSpace α] in
+/-- With decreasing vertex marks, the oriented pair coder swaps both inputs and outputs. -/
+@[simp]
+theorem orientPairCoding_of_lt (g : I → I → I → I → α × α) (z a b t : I) (hba : b < a) :
+    orientPairCoding g z a b t = (g z b a t).swap := by
+  simp [orientPairCoding, not_le_of_gt hba]
 
 omit [MeasurableSpace α] in
 /-- Reversing two distinct vertex marks swaps the output of the oriented pair coder. -/
