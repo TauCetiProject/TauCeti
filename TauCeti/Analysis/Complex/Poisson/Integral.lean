@@ -8,14 +8,14 @@ module
 public import TauCeti.Analysis.Complex.Poisson.Basic
 public import Mathlib.Analysis.Complex.Harmonic.Poisson
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+import Mathlib.Analysis.Normed.Group.Bounded
 
 /-!
 # Harmonicity of the planar Poisson integral
 
-The Poisson average of integrable real boundary data is harmonic in the disk. This supplies the
-interior harmonicity needed for the planar Dirichlet construction. The Poisson formula for an
-already harmonic function gives the reverse identity; boundary convergence requires a separate
-estimate.
+The Poisson average of integrable real boundary data is harmonic in the disk. For continuous
+boundary data, it converges to the prescribed value as the interior point approaches the boundary.
+Together these facts solve the planar Dirichlet problem on a disk.
 
 The Poisson integral is the real part of Mathlib's analytic Herglotz–Riesz integral.
 See L. C. Evans, *Partial Differential Equations*, Section 2.2.4.
@@ -27,7 +27,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Complex InnerProductSpace Metric MeasureTheory Real
+open Complex Filter InnerProductSpace Metric MeasureTheory Real
 
 /-- The Poisson average of real boundary data on the circle of radius `R` centered at `c`.
 For integrable data it is harmonic at points off the circle. -/
@@ -163,6 +163,146 @@ theorem planarPoissonIntegral_nonneg {g : ℂ → ℝ} {c : ℂ} {R : ℝ} {w : 
       (poissonKernel_nonneg_on_sphere hw hz)
       (hnonneg z hz)
   simpa [planarPoissonIntegral_def] using circleAverage_nonneg_of_nonneg hpoint
+
+/-- The Poisson integral of continuous boundary data converges to the prescribed value when its
+argument approaches a boundary point through the open disk. -/
+theorem tendsto_planarPoissonIntegral {g : ℂ → ℝ} {c z : ℂ} {R : ℝ}
+    (hR : 0 < R) (hg : ContinuousOn g (sphere c R)) (hz : z ∈ sphere c R) :
+    Tendsto (planarPoissonIntegral g c R) (nhdsWithin z (ball c R)) (nhds (g z)) := by
+  -- Compactness of the boundary gives both a global bound and a uniform local estimate for `g`.
+  have hgi : CircleIntegrable g c R := hg.circleIntegrable hR.le
+  have hbound_cont : ContinuousOn (fun y ↦ g y - g z) (sphere c R) :=
+    hg.sub continuousOn_const
+  obtain ⟨C, hC⟩ := (isCompact_sphere c R).exists_bound_of_continuousOn hbound_cont
+  have hCnonneg : 0 ≤ C := by
+    have := hC z hz
+    simpa using this
+  have hgunif : UniformContinuousOn g (sphere c R) :=
+    (isCompact_sphere c R).uniformContinuousOn_of_continuous hg
+  rw [Metric.uniformContinuousOn_iff] at hgunif
+  rw [Metric.tendsto_nhds]
+  intro eps heps
+  obtain ⟨delta, hdelta, hdelta_g⟩ := hgunif (eps / 2) (half_pos heps)
+  -- This far-field bound tends to zero as the pole approaches the boundary point.
+  let B : ℂ → ℝ := fun w ↦ (R ^ 2 - ‖w - c‖ ^ 2) / (delta / 2) ^ 2
+  have hBcont : Continuous B := by
+    dsimp [B]
+    fun_prop
+  have hBz : B z = 0 := by
+    have hznorm : ‖z - c‖ = R := by
+      simpa [mem_sphere, dist_eq_norm, abs_of_pos hR] using hz
+    simp [B, hznorm]
+  have hBlim : Tendsto (fun w ↦ B w * C) (nhdsWithin z (ball c R)) (nhds 0) := by
+    have hmulcont : Continuous (fun w ↦ B w * C) := hBcont.mul continuous_const
+    have h := hmulcont.continuousAt.tendsto.mono_left
+      (nhdsWithin_le_nhds : nhdsWithin z (ball c R) ≤ nhds z)
+    simpa [hBz] using h
+  have hsmall : ∀ᶠ w in nhdsWithin z (ball c R), B w * C < eps / 2 :=
+    (Metric.tendsto_nhds.1 hBlim (eps / 2) (half_pos heps)).mono fun w hw ↦ by
+      simpa [Real.dist_eq] using (abs_lt.mp hw).2
+  have hnear : ∀ᶠ w in nhdsWithin z (ball c R), dist w z ≤ delta / 2 := by
+    have hmem : ball z (delta / 2) ∈ nhds z := ball_mem_nhds z (half_pos hdelta)
+    have hevent : ∀ᶠ w in nhds z, w ∈ ball z (delta / 2) := hmem
+    filter_upwards [hevent.filter_mono nhdsWithin_le_nhds] with w hw
+    exact (mem_ball.mp hw).le
+  filter_upwards [self_mem_nhdsWithin, hsmall, hnear] with w hw hwsmall hwnear
+  have hwR : w ∈ ball c |R| := by simpa [abs_of_pos hR] using hw
+  have hws : w ∉ sphere c |R| := by
+    rw [mem_sphere]
+    exact ne_of_lt hwR
+  have hKcont : ContinuousOn (poissonKernel c w) (sphere c |R|) := by
+    rw [poissonKernel_eq_re_herglotzRieszKernel]
+    exact Complex.continuous_re.comp_continuousOn
+      (continuousOn_herglotzRieszKernel_sphere hws)
+  have hprod_i : CircleIntegrable (poissonKernel c w • g) c R :=
+    hgi.continuousOn_smul hKcont
+  have hconst_i : CircleIntegrable (poissonKernel c w • fun _ : ℂ ↦ g z) c R :=
+    (continuousOn_const.circleIntegrable hR.le).continuousOn_smul hKcont
+  have hdiff_i : CircleIntegrable (fun y ↦ poissonKernel c w y * (g y - g z)) c R := by
+    convert hprod_i.sub hconst_i using 1
+    ext y
+    simp [Pi.sub_apply, mul_sub]
+  have habs_i : CircleIntegrable
+      (fun y ↦ |poissonKernel c w y * (g y - g z)|) c R := hdiff_i.abs
+  have hmajor_i : CircleIntegrable
+      (fun y ↦ poissonKernel c w y * (eps / 2) + B w * C) c R := by
+    fun_prop
+  have hBnonneg : 0 ≤ B w := by
+    dsimp [B]
+    exact div_nonneg (by
+      have hwnorm : ‖w - c‖ < R := by
+        simpa [mem_ball, dist_eq_norm] using hw
+      nlinarith [norm_nonneg (w - c)]) (sq_nonneg _)
+  -- On the near arc uniform continuity controls the data; on the far arc `B` controls the kernel.
+  have hpoint (y : ℂ) (hy : y ∈ sphere c R) :
+      |poissonKernel c w y * (g y - g z)| ≤
+        poissonKernel c w y * (eps / 2) + B w * C := by
+    have hKnonneg : 0 ≤ poissonKernel c w y :=
+      poissonKernel_nonneg_on_sphere hwR (by simpa [abs_of_pos hR] using hy)
+    rw [abs_mul, abs_of_nonneg hKnonneg]
+    by_cases hynear : dist y z < delta
+    · have hgnear : |g y - g z| < eps / 2 := by
+        simpa [Real.dist_eq] using hdelta_g y hy z hz hynear
+      have hBCnonneg : 0 ≤ B w * C := by
+        exact mul_nonneg hBnonneg hCnonneg
+      exact (mul_le_mul_of_nonneg_left hgnear.le hKnonneg).trans
+        (le_add_of_nonneg_right hBCnonneg)
+    · have hKle : poissonKernel c w y ≤ B w :=
+        poissonKernel_le_of_dist_le_half_of_le_dist hdelta
+          (mem_closedBall.mpr (mem_ball.mp hw).le) hwnear hy (le_of_not_gt hynear)
+      have hgnorm : |g y - g z| ≤ C := by simpa using hC y hy
+      calc
+        poissonKernel c w y * |g y - g z| ≤ B w * C :=
+          mul_le_mul hKle hgnorm (abs_nonneg _) hBnonneg
+        _ ≤ poissonKernel c w y * (eps / 2) + B w * C :=
+          le_add_of_nonneg_left (mul_nonneg hKnonneg (half_pos heps).le)
+  have hdiff : planarPoissonIntegral g c R w - g z =
+      circleAverage (fun y ↦ poissonKernel c w y * (g y - g z)) c R := by
+    calc
+      planarPoissonIntegral g c R w - g z =
+          circleAverage (poissonKernel c w • g) c R -
+            circleAverage (poissonKernel c w • fun _ : ℂ ↦ g z) c R := by
+        rw [planarPoissonIntegral_def]
+        congr 1
+        exact (planarPoissonIntegral_const hwR (g z)).symm.trans
+          (planarPoissonIntegral_def (fun _ : ℂ ↦ g z) c R w)
+      _ = circleAverage ((poissonKernel c w • g) -
+            (poissonKernel c w • fun _ : ℂ ↦ g z)) c R :=
+        (circleAverage_sub hprod_i hconst_i).symm
+      _ = circleAverage (fun y ↦ poissonKernel c w y * (g y - g z)) c R := by
+        congr 1
+        ext y
+        simp [Pi.sub_apply, mul_sub]
+  -- Positivity and mass one turn the pointwise majorant into the required integral estimate.
+  rw [Real.dist_eq, hdiff]
+  calc
+    ‖circleAverage (fun y ↦ poissonKernel c w y * (g y - g z)) c R‖ ≤
+        circleAverage (fun y ↦ |poissonKernel c w y * (g y - g z)|) c R :=
+      norm_circleAverage_le_circleAverage_norm
+    _ ≤ circleAverage (fun y ↦ poissonKernel c w y * (eps / 2) + B w * C) c R :=
+      circleAverage_mono habs_i hmajor_i (by simpa [abs_of_pos hR] using hpoint)
+    _ = eps / 2 + B w * C := by
+      rw [circleAverage_fun_add (by fun_prop) (by fun_prop), circleAverage_const]
+      have hfirst : circleAverage (fun y ↦ poissonKernel c w y * (eps / 2)) c R = eps / 2 := by
+        have hmass : circleAverage (poissonKernel c w) c R = 1 := by
+          calc
+            circleAverage (poissonKernel c w) c R =
+                planarPoissonIntegral (fun _ : ℂ ↦ (1 : ℝ)) c R w := by
+              rw [planarPoissonIntegral_def]
+              congr 1
+              ext y
+              simp
+            _ = 1 := planarPoissonIntegral_const hwR 1
+        calc
+          circleAverage (fun y ↦ poissonKernel c w y * (eps / 2)) c R =
+              circleAverage ((eps / 2) • poissonKernel c w) c R := by
+            congr 1
+            ext y
+            simp [mul_comm]
+          _ = (eps / 2) • circleAverage (poissonKernel c w) c R := circleAverage_smul
+          _ = eps / 2 := by rw [hmass]; simp
+      rw [hfirst]
+    _ < eps := by linarith
 
 end TauCeti
 
