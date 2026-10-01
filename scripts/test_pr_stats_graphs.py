@@ -798,15 +798,18 @@ class CategoryGroupingTest(unittest.TestCase):
             stats.render_roadmap_heatmap(path, "Grid", "merged PRs", matrix, "merges")
             svg = path.read_text(encoding="utf-8")
         ET.fromstring(svg)
-        self.assertIn(">math.NT</text>", svg)
+        self.assertIn(">Number Theory</text>", svg)  # the name, never the code
+        self.assertNotIn(">math.NT</text>", svg)
         self.assertIn(">Unsorted</text>", svg)
         self.assertNotIn(stats.UNSORTED_CATEGORY, svg)
         self.assertIn("per contributor per arXiv category", svg)
 
-    def test_subtitles_fit_the_card(self):
+    def test_subtitles_and_headings_fit_the_card(self):
         """Each subtitle line is one unwrapped <text>. Its right edge is estimated at 0.5 em per
         character; Chromium measures these lines in the site's font stack at 0.46 em, and the first
-        category wording of this chart (168 characters) overflowed by 87-96 units at every width."""
+        category wording of this chart (168 characters) overflowed by 87-96 units at every width.
+        The column headings are category names up to 27 characters, rotated 45 degrees: the last
+        one must end inside the card too (estimated at HEADING_ASPECT, the chart's own allowance)."""
         def subtitles_fit(matrix):
             for key in ("merges", "reviews"):
                 with tempfile.TemporaryDirectory() as temporary:
@@ -816,17 +819,29 @@ class CategoryGroupingTest(unittest.TestCase):
                     root = ET.parse(path).getroot()
                 width = float(root.attrib["viewBox"].split()[2])
                 em = 13 * width / chart_style.REFERENCE_WIDTH
+                heading_em = 12 * width / chart_style.REFERENCE_WIDTH
                 for text in root.iter("{http://www.w3.org/2000/svg}text"):
                     if text.attrib.get("class") == "subtitle":
                         right = float(text.attrib["x"]) + len(text.text) * em * 0.5
                         self.assertLessEqual(right, width, f"{len(text.text)} characters: {text.text}")
+                    if text.attrib.get("class") == "collab":
+                        right = float(text.attrib["x"]) + len(text.text) * heading_em * stats.HEADING_ASPECT / 1.414
+                        self.assertLessEqual(right, width, f"heading {text.text!r}")
 
-        for n in (2, 17, 20):
-            codes = [f"math.{chr(65 + i // 26)}{chr(65 + i % 26)}" for i in range(n)]
-            prs = [self.labelled(i + 1, f"person-{i:02d}", f"Area{i:02d}") for i in range(n)]
-            column_of = {f"roadmap/Area{i:02d}": code for i, code in enumerate(codes)}
-            subtitles_fit(stats.roadmap_matrix(prs, [], date(2026, 1, 31), column_of=column_of,
-                                               roadmap_limit=stats.CATEGORY_LIMIT))
+        by_length = sorted(stats.ARXIV_MATH, key=lambda code: (-len(stats.ARXIV_MATH[code]), code))
+        for n in (1, 2, 17, 20):
+            codes = by_length[:n]
+            # Columns are ordered by merges, so give the longest name the fewest: its heading is
+            # then the last one, the one that runs toward the card's right edge.
+            prs, column_of = [], {}
+            for i, code in enumerate(codes):
+                column_of[f"roadmap/Area{i:02d}"] = code
+                for _ in range(1 if i == 0 else 2):
+                    prs.append(self.labelled(len(prs) + 1, f"person-{i:02d}", f"Area{i:02d}"))
+            matrix = stats.roadmap_matrix(prs, [], date(2026, 1, 31), column_of=column_of,
+                                          roadmap_limit=stats.CATEGORY_LIMIT)
+            self.assertEqual(matrix["merges"]["axis"][-1], codes[0])
+            subtitles_fit(matrix)
         prs = [self.labelled(i + 1, "alice", f"Area{i:02d}") for i in range(15)]
         subtitles_fit(stats.roadmap_matrix(prs, [], date(2026, 1, 31)))
 

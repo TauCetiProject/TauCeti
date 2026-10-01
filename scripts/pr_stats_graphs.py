@@ -40,12 +40,12 @@ import subprocess
 import sys
 import tempfile
 import time
-import tomllib
 from collections import Counter
 from datetime import date, datetime, time as day_time, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
+from arxiv_categories import ARXIV_MATH, read_topic
 from chart_style import (
     BAR_BG, BG, MUTED, PALETTE, REFERENCE_WIDTH, TEXT, base_css, card_rect, css_px,
 )
@@ -119,7 +119,6 @@ UNSORTED_CATEGORY = "unsorted/category"
 # Columns when grouping by category: enough for every category in use (seventeen in 2026-10), so
 # no category is folded into "Other" merely for being small.
 CATEGORY_LIMIT = 20
-ARXIV_MATH_RE = re.compile(r"math\.[A-Z]{2}")
 # Minimum viewBox width for the grids. They are served at `width: 100%`, so a narrow viewBox is
 # scaled UP; matching the other cards keeps a sparse grid the same size on the page as a full one.
 REFERENCE_HEATMAP_WIDTH = 1500
@@ -834,8 +833,9 @@ def roadmap_categories(roadmap_dir: Path) -> dict[str, str]:
     (`topic = "math.NT"`), for the roadmaps (directories with a README.md) under `TauCetiRoadmap/`
     and `Completed/` of a TauCetiRoadmap checkout. Where a name is in both, the active roadmap
     decides, whatever its metadata says: an archived roadmap's category never stands in for an
-    active one's, so an active roadmap with no file, an unreadable one or a value that is not a
-    `math.XX` code is left out, and its PRs count as unsorted, like any roadmap without a category.
+    active one's, so an active roadmap with no file, an unreadable one or a value that is not an
+    arXiv mathematics category is left out, and its PRs count as unsorted, like any roadmap without
+    a category.
     Never raises: a missing checkout gives an empty map."""
     out: dict[str, str] = {}
     decided: set[str] = set()
@@ -847,11 +847,8 @@ def roadmap_categories(roadmap_dir: Path) -> dict[str, str]:
             if d.name in decided:
                 continue
             decided.add(d.name)
-            try:
-                topic = tomllib.loads((d / "metadata.toml").read_text(encoding="utf-8")).get("topic")
-            except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
-                continue
-            if isinstance(topic, str) and ARXIV_MATH_RE.fullmatch(topic):
+            topic = read_topic(d)
+            if topic is not None:
                 out[f"{ROADMAP_PREFIX}{d.name}"] = topic
     return out
 
@@ -1281,6 +1278,10 @@ def render_roadmap_heatmap(
             return f"Other ({len(matrix['bundled'])})"
         if area == UNSORTED_CATEGORY:
             return "Unsorted"
+        if area in ARXIV_MATH:
+            # A category by its name, which readers know better than its code; the longest arXiv
+            # mathematics name is 27 characters, so none is elided.
+            return clip(ARXIV_MATH[area], 28)
         return clip(area[len(ROADMAP_PREFIX):] if area.startswith(ROADMAP_PREFIX) else area, 20)
 
     def row_label(who: str) -> str:
@@ -1305,6 +1306,19 @@ def render_roadmap_heatmap(
     # with one or two columns would otherwise be scaled up into an enormous near-space card
     # of mostly whitespace.
     width = max(REFERENCE_HEATMAP_WIDTH, left + len(axis) * cell_w + right)
+    # A long heading needs more than that reserve: the last one starts at its column's centre and
+    # runs right by its length over root two. Category names reach 27 characters, against twenty
+    # for the clipped roadmap names the reserve was sized for. The font scales with the width,
+    # which grows with the reserve, so settle the two together (each round adds less: a heading
+    # spans well under the width).
+    longest_heading = max((len(column_label(area)) for area in axis), default=0)
+    for _ in range(6):
+        reach_right = longest_heading * (12 * width / REFERENCE_WIDTH) * HEADING_ASPECT / 1.414
+        needed = int(math.ceil(reach_right - cell_w / 2)) + 16
+        if needed <= right:
+            break
+        right = needed
+        width = max(REFERENCE_HEATMAP_WIDTH, left + len(axis) * cell_w + right)
     # The header band is sized from the longest heading rather than fixed, because a heading
     # rotated 45 degrees reaches upward by its own length over root two -- and css_px scales a
     # design-space 12 to about 18 user units at this width, so `RepresentationTheory` reaches
