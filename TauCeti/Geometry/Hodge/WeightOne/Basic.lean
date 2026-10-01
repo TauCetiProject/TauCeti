@@ -20,7 +20,7 @@ This file identifies the `i`- and `-i`-eigenspaces of the Weil operator with `H^
 `H^{0,1}`. It then transfers those identifications to the scalar extension of the real almost
 complex structure constructed in `TauCeti.Geometry.Hodge.WeilOperator`. In weight one without
 effectivity, the two eigenspaces aggregate all Hodge components according to their first index
-modulo two.
+modulo two, so the identifications with `H^{1,0}` and `H^{0,1}` characterize effectivity.
 
 Conversely, an almost complex structure on a real vector space determines an effective pure Hodge
 structure of weight one on its complexification. Its Hodge components are the `i`- and
@@ -42,6 +42,12 @@ original complex vector space. The almost-complex structure reuses
 * `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_I` and
   `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_neg_I`: for an effective structure, the
   two eigenspaces of the Weil operator are the two Hodge components.
+* `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_I_eq_iSup` and
+  `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_neg_I_eq_iSup`: in general, the two
+  eigenspaces are spanned by the Hodge components `H^{p,1-p}` with `p` odd, respectively even.
+* `TauCeti.Hodge.HodgeStructureOn.isEffective_iff_eigenspace_weilOperator_I` and
+  `TauCeti.Hodge.HodgeStructureOn.isEffective_iff_eigenspace_weilOperator_neg_I`: either
+  eigenspace comparison holds exactly for effective structures.
 * `TauCeti.Hodge.HodgeStructureOn.eigenspace_baseChange_realAlmostComplexStructure_I` and
   `TauCeti.Hodge.HodgeStructureOn.eigenspace_baseChange_realAlmostComplexStructure_neg_I`: the same
   comparison on the literal complexification of the real form.
@@ -132,6 +138,81 @@ theorem eigenspace_weilOperator_neg_I (hs : HodgeStructureOn W ω 1) (heff : hs.
     (fun x hx ↦ by simpa only [neg_smul] using hs.weilOperator_apply_of_mem_piece_zero hx)
     (fun x hx ↦ hs.weilOperator_apply_of_mem_piece_one hx) ?_
   exact (neg_ne_self.mpr Complex.I_ne_zero).symm
+
+/-- In weight one the Weil operator acts on `H^{p,1-p}` by `i^{2p-1} = -(-1)^p i`. -/
+private theorem I_zpow_two_mul_sub_one (p : ℤ) :
+    Complex.I ^ (2 * p - 1) = -((-1 : ℂ) ^ p * Complex.I) := by
+  rw [zpow_sub₀ Complex.I_ne_zero, zpow_mul, zpow_one, div_eq_mul_inv, Complex.inv_I]
+  norm_num
+
+/-- The scalar `i^{2p-1}` is `i` exactly for odd `p`. -/
+private theorem I_zpow_two_mul_sub_one_eq_I_iff (p : ℤ) :
+    Complex.I ^ (2 * p - 1) = Complex.I ↔ Odd p := by
+  rcases Int.even_or_odd p with hp | hp
+  · rw [I_zpow_two_mul_sub_one, hp.neg_one_zpow, one_mul]
+    simp only [Int.not_odd_iff_even.2 hp, iff_false]
+    exact neg_ne_self.2 Complex.I_ne_zero
+  · simp [I_zpow_two_mul_sub_one, hp.neg_one_zpow, hp]
+
+/-- The scalar `i^{2p-1}` is `-i` exactly for even `p`. -/
+private theorem I_zpow_two_mul_sub_one_eq_neg_I_iff (p : ℤ) :
+    Complex.I ^ (2 * p - 1) = -Complex.I ↔ Even p := by
+  rcases Int.even_or_odd p with hp | hp
+  · simp [I_zpow_two_mul_sub_one, hp.neg_one_zpow, hp]
+  · rw [I_zpow_two_mul_sub_one, hp.neg_one_zpow, neg_one_mul, neg_neg]
+    simp only [Int.not_even_iff_odd.2 hp, iff_false]
+    exact (neg_ne_self.2 Complex.I_ne_zero).symm
+
+/-- In weight one, without assuming effectivity, the `i`-eigenspace of the Weil operator is
+spanned by the Hodge components `H^{p,1-p}` with `p` odd. -/
+theorem eigenspace_weilOperator_I_eq_iSup (hs : HodgeStructureOn W ω 1) :
+    Module.End.eigenspace hs.weilOperator Complex.I = ⨆ p, ⨆ (_ : Odd p), hs.piece p := by
+  simp only [eigenspace_weilOperator, I_zpow_two_mul_sub_one_eq_I_iff]
+
+/-- In weight one, without assuming effectivity, the `-i`-eigenspace of the Weil operator is
+spanned by the Hodge components `H^{p,1-p}` with `p` even. -/
+theorem eigenspace_weilOperator_neg_I_eq_iSup (hs : HodgeStructureOn W ω 1) :
+    Module.End.eigenspace hs.weilOperator (-Complex.I) = ⨆ p, ⨆ (_ : Even p), hs.piece p := by
+  simp only [eigenspace_weilOperator, I_zpow_two_mul_sub_one_eq_neg_I_iff]
+
+/-- A weight-one Hodge structure is effective as soon as, in each negative degree `p`, the
+component `H^{p,1-p}` or its conjugate `H^{1-p,p}` vanishes. -/
+private theorem isEffective_of_forall_neg (hs : HodgeStructureOn W ω 1)
+    (h : ∀ p < 0, hs.piece p = ⊥ ∨ hs.piece (1 - p) = ⊥) : hs.IsEffective := by
+  refine hs.isEffective_iff_piece_eq_bot.2 fun p hp ↦ (h p hp).elim id fun h1 ↦ ?_
+  rw [← sub_sub_cancel 1 p, ← hs.conj_piece, h1, Submodule.map_bot]
+
+/-- **The eigenspace comparison characterizes effectivity.** A weight-one Hodge structure is
+effective exactly when the `i`-eigenspace of its Weil operator is `H^{1,0}`; otherwise that
+eigenspace also contains a nonzero component `H^{p,1-p}` with `p ≠ 1` odd. -/
+theorem isEffective_iff_eigenspace_weilOperator_I (hs : HodgeStructureOn W ω 1) :
+    hs.IsEffective ↔ Module.End.eigenspace hs.weilOperator Complex.I = hs.piece 1 := by
+  refine ⟨hs.eigenspace_weilOperator_I, fun h ↦ ?_⟩
+  have hodd : ∀ q, Odd q → q ≠ 1 → hs.piece q = ⊥ := fun q hq hq1 ↦ by
+    have hle : hs.piece q ≤ hs.piece 1 := by
+      rw [← h, eigenspace_weilOperator_I_eq_iSup]
+      exact le_iSup₂_of_le q hq le_rfl
+    exact Disjoint.eq_bot_of_le (hs.piece_iSupIndep.pairwiseDisjoint hq1) hle
+  refine hs.isEffective_of_forall_neg fun p hp ↦ ?_
+  rcases Int.even_or_odd p with hpe | hpo
+  · exact Or.inr (hodd _ (odd_one.sub_even hpe) (by omega))
+  · exact Or.inl (hodd p hpo (by omega))
+
+/-- A weight-one Hodge structure is effective exactly when the `-i`-eigenspace of its Weil
+operator is `H^{0,1}`; otherwise that eigenspace also contains a nonzero component `H^{p,1-p}`
+with `p ≠ 0` even. -/
+theorem isEffective_iff_eigenspace_weilOperator_neg_I (hs : HodgeStructureOn W ω 1) :
+    hs.IsEffective ↔ Module.End.eigenspace hs.weilOperator (-Complex.I) = hs.piece 0 := by
+  refine ⟨hs.eigenspace_weilOperator_neg_I, fun h ↦ ?_⟩
+  have heven : ∀ q, Even q → q ≠ 0 → hs.piece q = ⊥ := fun q hq hq0 ↦ by
+    have hle : hs.piece q ≤ hs.piece 0 := by
+      rw [← h, eigenspace_weilOperator_neg_I_eq_iSup]
+      exact le_iSup₂_of_le q hq le_rfl
+    exact Disjoint.eq_bot_of_le (hs.piece_iSupIndep.pairwiseDisjoint hq0) hle
+  refine hs.isEffective_of_forall_neg fun p hp ↦ ?_
+  rcases Int.even_or_odd p with hpe | hpo
+  · exact Or.inl (heven p hpe (by omega))
+  · exact Or.inr (heven _ (odd_one.sub_odd hpo) (by omega))
 
 /-- **An effective weight-one Hodge structure is determined by its Weil operator.** Its filtration
 is `⊤` in nonpositive degrees and `⊥` above degree one, while `F¹ = H^{1,0}` is the

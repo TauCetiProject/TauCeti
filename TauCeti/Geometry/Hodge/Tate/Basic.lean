@@ -30,7 +30,8 @@ Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.
 * `TauCeti.Hodge.tate_F`: its filtration is `⊤` exactly in degrees at most `-m`.
 * `TauCeti.Hodge.tate_piece`: its only nonzero Hodge component has bidegree `(-m,-m)`.
 * `TauCeti.Hodge.finrank_tate_piece`: its Hodge number there is one and all others are zero.
-* `TauCeti.Hodge.tateHodgeType`: the numerical Hodge type of `ℤ(m)`.
+* `TauCeti.Hodge.tateHodgeType`: the numerical Hodge type of `ℤ(m)`, effective exactly when
+  `m ≤ 0` (`TauCeti.Hodge.tateHodgeType_isEffective_iff`).
 * `TauCeti.Hodge.isPolarization_tate`: multiplication of integers satisfies the Hodge–Riemann
   relations for it, and `TauCeti.Hodge.tatePolarization` bundles that as a polarization.
 -/
@@ -163,6 +164,11 @@ theorem tate_hodgeNumber (m p : ℤ) : (tate m).hodgeNumber p = if p = -m then 1
 @[simp]
 theorem tate_hodgeType (m : ℤ) : (tate m).hodgeType = tateHodgeType m := by
   ext p <;> simp
+
+/-- The Hodge type of `ℤ(m)` is effective exactly when `m ≤ 0`. -/
+@[simp]
+theorem tateHodgeType_isEffective_iff (m : ℤ) : (tateHodgeType m).IsEffective ↔ m ≤ 0 := by
+  rw [← tate_hodgeType, HodgeStructureOn.hodgeType_isEffective_iff, tate_isEffective_iff]
 
 /-- The single Hodge number of `ℤ(m)` accounts for the whole rank-one lattice. -/
 theorem finsum_tateHodgeType_h_eq_one (m : ℤ) : ∑ᶠ p, (tateHodgeType m).h p = 1 := by
