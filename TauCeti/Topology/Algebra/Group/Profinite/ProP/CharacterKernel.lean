@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Subgroup.Ker
+public import TauCeti.Algebra.Group.Subgroup.ModularLaw
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Generation
 
@@ -25,7 +25,7 @@ compact, hence closed (`Subgroup.isCompact_sup_of_le_normalizer`); and it contai
 generators. Every element of `H` is a `p`-adic power `a ^ l`, and `χ (a ^ l) = 1` forces `l = 0`,
 since otherwise some `a ^ (p ^ k)` would lie in the closed kernel
 (`TauCeti.IsProP.eq_zero_of_padicPow_mem`); so `H ⊓ ker χ = ⊥`, and Dedekind's modular law
-(`MonoidHom.ker_eq_of_sup_eq_top_of_inf_ker_eq_bot`) gives `ker χ = N`.
+(`Subgroup.eq_of_sup_eq_top_of_inf_eq_bot`) gives `ker χ = N`.
 
 If a further generator `b` has `χ b = χ (a ^ l)` for a `p`-adic exponent `l`, then `b` may be
 traded for `b * (a ^ l)⁻¹`, which `χ` kills, so the kernel is the closed normal closure of `S`
@@ -104,7 +104,7 @@ theorem ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder {S : Set G} 
     · exact Subgroup.mem_sup_left (Subgroup.le_topologicalClosure _ (Subgroup.subset_closure rfl))
     · exact Subgroup.mem_sup_right
         (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hx))
-  exact MonoidHom.ker_eq_of_sup_eq_top_of_inf_ker_eq_bot Subgroup.le_normalizer_of_normal
+  exact Subgroup.eq_of_sup_eq_top_of_inf_eq_bot Subgroup.le_normalizer_of_normal
     (Subgroup.topologicalClosure_minimal _
       (Subgroup.normalClosure_le_normal fun s hs ↦ MonoidHom.mem_ker.2 (hS s hs)) hker)
     hHN (hG.topologicalClosure_closure_singleton_inf_ker_eq_bot χ hker ha)
