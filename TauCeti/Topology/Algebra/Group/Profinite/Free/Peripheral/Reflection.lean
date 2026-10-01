@@ -52,6 +52,7 @@ they are unique since the basis generates `F` topologically.
 * `TauCeti.Peripheral.isPeripheralAut_of_apply_basis_eq_inv_two`: in rank two such an
   automorphism is peripheral of exponent `-1`, with cusp conjugator `x_0`
   (`TauCeti.Peripheral.apply_cusp_of_apply_basis_eq_inv_two`).
+* `TauCeti.Peripheral.exists_inversion_two`: the rank-two inversion exists, with these properties.
 * `TauCeti.Peripheral.not_isPeripheralAut_of_apply_basis_eq_inv`: in rank at least three it is
   peripheral of no exponent.
 
@@ -178,6 +179,18 @@ theorem isPeripheralAut_of_apply_basis_eq_inv_two (hF : IsProP p F)
     IsPeripheralAut hF (basis e) (-1) φ :=
   isPeripheralAut_of_apply_eq_conj hF (c := 1) (d := basis e 0) (fun i ↦ by simp [hφ])
     (by simp [apply_cusp_of_apply_basis_eq_inv_two e hφ])
+
+/-- **The rank-two inversion.** In rank two, some continuous automorphism inverts both basis
+elements. It sends the cusp `z = (x_0 x_1)⁻¹` to `x_0⁻¹ * z⁻¹ * x_0` and is peripheral of
+exponent `-1`. -/
+theorem exists_inversion_two (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin 2)) :
+    ∃ φ : ContinuousAut F, (∀ i, φ (basis e i) = (basis e i)⁻¹) ∧
+      φ (cusp (basis e)) = (basis e 0)⁻¹ * (cusp (basis e))⁻¹ * basis e 0 ∧
+      IsPeripheralAut hF (basis e) (-1) φ := by
+  obtain ⟨φ, hφ⟩ := hF.exists_continuousAut_apply_eq_conj_padicPow_const e (-1) 1
+  have hφ' : ∀ i, φ (basis e i) = (basis e i)⁻¹ := fun i ↦ by simpa [← basis_apply] using hφ i
+  exact ⟨φ, hφ', apply_cusp_of_apply_basis_eq_inv_two e hφ',
+    isPeripheralAut_of_apply_basis_eq_inv_two hF e hφ'⟩
 
 /-- **Inversion is not peripheral in rank at least three.** For `r ≥ 3`, an automorphism
 inverting every basis element is peripheral of no exponent: it sends the cusp to
