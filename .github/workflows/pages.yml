@@ -311,8 +311,17 @@ jobs:
             "${data_arg[@]}" \
             --out web/static_files/progress.json \
           || {
-            echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
             echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+            # What is in static_files now is the last published snapshot, restored from the cache
+            # above. Keep it only if it is in the current topic scheme: one from before the switch
+            # to arXiv categories carries the old hand-assigned topics, and the board would show
+            # them under its "by arXiv category" label. Otherwise publish the committed fallback.
+            if python3 scripts/roadmap_progress.py --check-snapshot web/static_files/progress.json; then
+              echo "::warning::roadmap progress generation failed; keeping the last published JSON"
+            else
+              git checkout -- web/static_files/progress.json
+              echo "::warning::roadmap progress generation failed, and the last published JSON predates the current topic scheme; publishing the committed fallback"
+            fi
           }
 
       # TauCetiCI records every Actions run in the organisation and publishes a SQLite database

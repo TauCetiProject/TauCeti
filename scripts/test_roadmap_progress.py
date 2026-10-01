@@ -6,7 +6,9 @@ Run with: PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
 
 import datetime as dt
 import json
+import os
 import pathlib
+import subprocess
 import tempfile
 import unittest
 
@@ -452,6 +454,91 @@ class Topics(unittest.TestCase):
         data = rp.build(self.rows, [], now, now, None, None, "test")
         self.assertEqual(data["topics"], ["Algebraic Geometry (math.AG)", "Combinatorics (math.CO)",
                                           "Number Theory (math.NT)"])
+
+
+class TopicScheme(unittest.TestCase):
+    """A snapshot says which classification its topics follow, so one from before the switch to
+    arXiv categories can be told apart from a current one."""
+
+    def test_build_stamps_the_scheme(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        self.assertEqual(rp.build([], [], now, now, None, None, "test")["topic_scheme"], rp.TOPIC_SCHEME)
+
+    def test_only_a_current_snapshot_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / "progress.json"
+            self.assertFalse(rp.snapshot_is_current(path))  # missing
+            path.write_text("{not json")
+            self.assertFalse(rp.snapshot_is_current(path))
+            path.write_text(json.dumps({"schema_version": 3, "topics": ["Number theory"]}))
+            self.assertFalse(rp.snapshot_is_current(path))  # from before the scheme existed
+            path.write_text(json.dumps({"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME}))
+            self.assertTrue(rp.snapshot_is_current(path))
+            self.assertEqual(rp.main(["--check-snapshot", str(path)]), 0)
+            path.write_text("[]")
+            self.assertEqual(rp.main(["--check-snapshot", str(path)]), 1)
+
+
+class PagesFailurePath(unittest.TestCase):
+    """The Pages workflow restores the last published static files from a cache and then
+    regenerates them. When the progress board's regeneration fails, the restored snapshot is
+    published only if it is in the current topic scheme; one from before the switch would show the
+    old hand-assigned topics under the new label, so the committed fallback replaces it. This runs
+    the workflow step's own script, with generation made to fail."""
+
+    REPO = pathlib.Path(__file__).resolve().parents[1]
+    COMMITTED = {"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME, "topics": ["Number Theory (math.NT)"],
+                 "which": "committed"}
+
+    def step_script(self):
+        text = (self.REPO / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
+        start = text.index("- name: Regenerate the roadmap progress board into static_files")
+        lines = text[text.index("run: |", start):].split("\n")[1:]
+        indent = len(lines[0]) - len(lines[0].lstrip())
+        body = []
+        for line in lines:
+            if line.strip() and len(line) - len(line.lstrip()) < indent:
+                break
+            body.append(line[indent:])
+        return "\n".join(body)
+
+    def publish_after_failure(self, restored):
+        """The JSON left for publication when generation fails over `restored` (None: no file)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / "scripts").mkdir()
+            (root / "scripts" / "roadmap_progress.py").write_text(
+                (self.REPO / "scripts" / "roadmap_progress.py").read_text(encoding="utf-8"))
+            static = root / "web" / "static_files"
+            static.mkdir(parents=True)
+            (static / "progress.json").write_text(json.dumps(self.COMMITTED))
+            git = ["git", "-C", d, "-c", "user.name=t", "-c", "user.email=t@t"]
+            subprocess.run(["git", "init", "-q", d], check=True)
+            subprocess.run(git + ["add", "."], check=True)
+            subprocess.run(git + ["commit", "-qm", "fallback"], check=True)
+            if restored is None:
+                (static / "progress.json").unlink()
+            else:
+                (static / "progress.json").write_text(json.dumps(restored))
+            script = (self.step_script()
+                      .replace("${{ github.repository }}", "example/repo")
+                      .replace("/tmp/roadmap", str(root / "no-roadmap-here")))  # generation fails
+            run = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", script], cwd=d, text=True,
+                                 capture_output=True, env={**os.environ, "RUNNER_TEMP": d})
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertIn("roadmap progress", (root / "data-failures").read_text())
+            return json.loads((static / "progress.json").read_text())
+
+    def test_a_legacy_restored_snapshot_is_replaced_by_the_committed_fallback(self):
+        legacy = {"schema_version": 3, "topics": ["Number theory", "Algebraic geometry"], "which": "legacy"}
+        self.assertEqual(self.publish_after_failure(legacy)["which"], "committed")
+
+    def test_a_current_restored_snapshot_is_kept(self):
+        current = {**self.COMMITTED, "which": "last published"}
+        self.assertEqual(self.publish_after_failure(current)["which"], "last published")
+
+    def test_no_restored_snapshot_means_the_committed_fallback(self):
+        self.assertEqual(self.publish_after_failure(None)["which"], "committed")
 
 
 class Activity(unittest.TestCase):

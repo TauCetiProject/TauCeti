@@ -77,6 +77,12 @@ import tomllib
 AREAS_DIR = "TauCetiRoadmap"
 COMPLETED_DIR = "Completed"
 UNSORTED = "Unsorted"
+# Which classification `topic` follows. Written into every snapshot so a published one can be told
+# apart from one made before the switch to arXiv categories: those carry the six hand-assigned
+# topics, and the Pages workflow, which restores the last published static files before it
+# regenerates them, must not publish one under the board's "by arXiv category" label when
+# regeneration fails (see `snapshot_is_current`).
+TOPIC_SCHEME = "arxiv-math"
 # arXiv's mathematics categories, https://arxiv.org/category_taxonomy. A roadmap's `metadata.toml`
 # names one by its code; the board shows the name with the code beside it.
 ARXIV_MATH = {
@@ -104,6 +110,17 @@ def read_arxiv_topic(dirpath: pathlib.Path) -> str | None:
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
         return None
     return topic if isinstance(topic, str) and topic in ARXIV_MATH else None
+
+
+def snapshot_is_current(path: pathlib.Path) -> bool:
+    """Is the snapshot at `path` one this generator could have written: readable JSON whose topics
+    follow TOPIC_SCHEME? False for one from before the scheme existed, and for a missing or
+    unreadable file."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return False
+    return isinstance(data, dict) and data.get("topic_scheme") == TOPIC_SCHEME
 
 
 def topic_label(code: str | None) -> str:
@@ -687,6 +704,7 @@ def build(rows: list[dict], prs: list[dict], exported_at: dt.datetime,
         "global": {**glob, "first_merge": min((p["merged_at"] for p in prs if p["merged_at"] and parse_ts(p["merged_at"]) <= cutoff), default=None)},
         # The categories in use, by name, as arXiv lists them; "Unsorted" is never listed (the board
         # appends it).
+        "topic_scheme": TOPIC_SCHEME,
         "topics": sorted({r["topic"] for r in rows} - {UNSORTED}),
         "rows": rows,
     }
@@ -695,7 +713,7 @@ def build(rows: list[dict], prs: list[dict], exported_at: dt.datetime,
 def main(argv=None) -> int:
     here = pathlib.Path(__file__).resolve().parent
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--roadmap-dir", type=pathlib.Path, required=True,
+    p.add_argument("--roadmap-dir", type=pathlib.Path,
                    help="a checkout of TauCetiRoadmap")
     p.add_argument("--repo", default="TauCetiProject/TauCeti",
                    help="repository whose merged PRs carry the roadmap labels")
@@ -708,8 +726,15 @@ def main(argv=None) -> int:
     p.add_argument("--cutoff", type=parse_ts, default=None,
                    help="count pull requests merged up to this ISO-8601 UTC time (default: the "
                         "snapshot's collection time when it records one, else now)")
-    p.add_argument("--out", type=pathlib.Path, required=True)
+    p.add_argument("--out", type=pathlib.Path)
+    p.add_argument("--check-snapshot", type=pathlib.Path, metavar="FILE",
+                   help="only say whether FILE is a snapshot in the current topic scheme: exit 0 if "
+                        "it is, 1 if not (missing, unreadable, or from before arXiv categories)")
     args = p.parse_args(argv)
+    if args.check_snapshot:
+        return 0 if snapshot_is_current(args.check_snapshot) else 1
+    if args.roadmap_dir is None or args.out is None:
+        p.error("--roadmap-dir and --out are required")
     now = dt.datetime.now(dt.timezone.utc)
 
     transitional = json.loads(args.coverage.read_text(encoding="utf-8")) if args.coverage.is_file() else {}
