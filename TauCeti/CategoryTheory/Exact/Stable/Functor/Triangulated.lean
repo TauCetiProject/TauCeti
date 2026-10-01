@@ -72,7 +72,9 @@ private noncomputable def mapStableConflationTriangleIso
       Functor.isoWhiskerLeft_hom, NatTrans.comp_app, Functor.whiskerRight_app,
       Functor.whiskerLeft_app, Iso.symm_hom, Category.assoc]
     simp only [← Functor.map_comp_assoc, Iso.inv_hom_id_app,
-      stableSuspensionCompStableFunctorIso_hom_app, eqToHom_map, Category.assoc,
+      stableSuspensionCompStableFunctorIso_hom_app,
+      ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_hom,
+      eqToHom_map, Category.assoc,
       eqToHom_trans_assoc]
     rw [(hF.stableFunctor hE).map_id]
     simp only [Category.id_comp, eqToHom_trans_assoc]

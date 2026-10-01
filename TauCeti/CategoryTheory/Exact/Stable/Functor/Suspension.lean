@@ -115,8 +115,9 @@ theorem map_connectingMap_comp_suspensionComparison
     E'.projectiveStableFunctor.map (F.map (hE.connectingMap hS)) ≫
         eqToHom (congrArg E'.projectiveStableFunctor.obj
           (hF.mapSuspensionPresentation_K hE S.X₁).symm) ≫
-        (hE'.projectiveStableIsoSuspensionObj
-          (hF.mapSuspensionPresentation hE S.X₁)).hom =
+        E'.projectiveStableFunctor.map
+          ((hF.mapSuspensionPresentation hE S.X₁).cokernelMap
+            (hE'.suspensionPresentation (F.obj S.X₁)) (𝟙 _)) =
       E'.projectiveStableFunctor.map
         (hE'.connectingMap (hF.isConflationExact.map_conflation hS)) := by
   let P := hF.mapSuspensionPresentation hE S.X₁
