@@ -15,8 +15,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.
 For a field `K` with separable closure `Kˢ` and absolute Galois group `G_K = Gal(Kˢ/K)`, this file
 builds the **formation** `unitsFormation K` whose coefficient module is the multiplicative group
 `(Kˢ)ˣ`, written additively. Its level at an open subgroup `U` is the unit group of the fixed field
-of `U`, and its finite normal layers are the finite Galois extensions `E/F` inside `Kˢ`. It is the
-formation on which the local class formation is to be built.
+of `U` (`mem_level_unitsFormation_iff`), presented as `Eˣ` when that fixed field is the image of a
+`K`-embedding of `E` (`unitsLevelEquiv`), and its finite normal layers are the finite Galois
+extensions `E/F` inside `Kˢ`. It is the formation on which the local class formation is to be
+built.
 
 The first input of the class-formation axioms is proved here, for every field `K`: **Hilbert 90 on
 every finite normal layer** (`subsingleton_h1_unitsFormation`), `H¹(U ⧸ V, ((Kˢ)ˣ)^V) = 0` for
@@ -34,6 +36,8 @@ The body of `unitsFormation` is not exposed; its coefficient module is read thro
 * `TauCeti.ClassFieldTheory.unitsFormation K`: the formation of `(Kˢ)ˣ` over `G_K`.
 * `TauCeti.ClassFieldTheory.unitsCoeffEquivUnitsFormation K`: its coefficient module as
   `TauCeti.UnitsCoeff K`.
+* `TauCeti.ClassFieldTheory.unitsLevelEquiv ι hU`: the level of an open subgroup `U` whose fixed
+  field is the image of `ι : E →ₐ[K] Kˢ` is `Eˣ`.
 
 ## Main results
 
@@ -103,6 +107,82 @@ theorem mem_level_unitsFormation_iff {U : OpenSubgroup (AbsoluteGaloisGroup K)}
   rw [← unitsCoeffEquivUnitsFormation_smul, (unitsCoeffEquivUnitsFormation K).injective.eq_iff,
     ← Additive.toMul.injective.eq_iff, Units.ext_iff]
   rfl
+
+/-! ### Levels as unit groups of embedded fields -/
+
+section Level
+
+open IntermediateField
+
+variable {E : Type*} [Field E] [Algebra K E]
+
+/-- The image of a `K`-embedding of a unit of `E` lies in the level of an open subgroup whose
+fixed field is the image of the embedding. -/
+private theorem unitsCoeffEquivUnitsFormation_map_mem_level (ι : E →ₐ[K] SeparableClosure K)
+    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange)
+    (x : Eˣ) :
+    unitsCoeffEquivUnitsFormation K (Additive.ofMul (Units.map (ι : E →* SeparableClosure K) x))
+      ∈ (unitsFormation K).level U := by
+  rw [mem_level_unitsFormation_iff, hU]
+  exact ⟨x, rfl⟩
+
+/-- The additive map `Eˣ → ((Kˢ)ˣ)^U` underlying `unitsLevelEquiv`. -/
+private def unitsLevelHom (ι : E →ₐ[K] SeparableClosure K)
+    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange) :
+    Additive Eˣ →+ (unitsFormation K).level U :=
+  AddMonoidHom.codRestrict ((unitsCoeffEquivUnitsFormation K).toAddMonoidHom.comp
+      (Units.map (ι : E →* SeparableClosure K)).toAdditive) _
+    (unitsCoeffEquivUnitsFormation_map_mem_level ι hU)
+
+private theorem coe_unitsLevelHom (ι : E →ₐ[K] SeparableClosure K)
+    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange)
+    (x : Additive Eˣ) :
+    ((unitsLevelHom ι hU x : (unitsFormation K).level U) : (unitsFormation K).toRep.V) =
+      unitsCoeffEquivUnitsFormation K
+        (Additive.ofMul (Units.map (ι : E →* SeparableClosure K) x.toMul)) :=
+  (rfl)
+
+private theorem bijective_unitsLevelHom (ι : E →ₐ[K] SeparableClosure K)
+    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange) :
+    Function.Bijective (unitsLevelHom ι hU) := by
+  refine ⟨fun x y h => ?_, fun z => ?_⟩
+  · have h := congrArg Subtype.val h
+    rw [coe_unitsLevelHom, coe_unitsLevelHom] at h
+    exact Additive.toMul.injective <| Units.map_injective ι.injective <|
+      Additive.ofMul.injective ((unitsCoeffEquivUnitsFormation K).injective h)
+  · -- The unit underlying `z` lies in the fixed field of `U`, the image of `ι`.
+    obtain ⟨z, hz⟩ := z
+    obtain ⟨w, rfl⟩ := (unitsCoeffEquivUnitsFormation K).surjective z
+    obtain ⟨e, he⟩ : ((w.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) ∈ ι.fieldRange := by
+      rw [← hU, ← mem_level_unitsFormation_iff]
+      exact hz
+    have he0 : e ≠ 0 := fun h0 => w.toMul.ne_zero (by rw [← he, h0, map_zero])
+    refine ⟨Additive.ofMul (Units.mk0 e he0), Subtype.ext ?_⟩
+    rw [coe_unitsLevelHom]
+    exact congrArg _ (Additive.toMul.injective (Units.ext he))
+
+/-- **The level of an open subgroup is the unit group of its fixed field**, presented as `Eˣ`:
+if the fixed field of `U` is the image of a `K`-embedding `ι : E →ₐ[K] Kˢ`, then `ι` identifies
+`Eˣ` with the level `((Kˢ)ˣ)^U` of `unitsFormation K`. Applied to `K` itself and to a finite
+Galois extension `L`, it identifies the ground and top levels of the layer of `L` with `Kˣ` and
+`Lˣ`. -/
+def unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
+    (hU : fixedField U.toSubgroup = ι.fieldRange) :
+    Additive Eˣ ≃+ (unitsFormation K).level U :=
+  AddEquiv.ofBijective (unitsLevelHom ι hU) (bijective_unitsLevelHom ι hU)
+
+/-- `unitsLevelEquiv ι hU` sends a unit `x` of `E` to the unit `ι x` of `Kˢ`. -/
+@[simp]
+theorem unitsLevelEquiv_apply_coe (ι : E →ₐ[K] SeparableClosure K)
+    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = ι.fieldRange)
+    (x : Additive Eˣ) :
+    (dsimp% only
+      ((unitsLevelEquiv ι hU x : (unitsFormation K).level U) : (unitsFormation K).toRep.V)) =
+      unitsCoeffEquivUnitsFormation K
+        (Additive.ofMul (Units.map (ι : E →* SeparableClosure K) x.toMul)) :=
+  (rfl)
+
+end Level
 
 /-! ### Hilbert 90 on the finite normal layers -/
 
