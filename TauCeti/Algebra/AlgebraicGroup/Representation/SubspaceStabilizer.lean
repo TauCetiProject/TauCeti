@@ -63,11 +63,29 @@ theorem baseChange_definingSubspace (I : HopfIdeal k H) (V : Subcomodule k H H)
     (I.definingSubspace V).baseChange A =
       LinearMap.ker (((Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap.comp
         (SMulMemClass.subtype V)).baseChange A) := by
+  -- Subcomodule has AddSubmonoidClass but no AddSubgroupClass; the flat-kernel lemma needs a group.
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   rw [definingSubspace, Submodule.baseChange]
   exact (Module.Flat.ker_lTensor_eq (R := k) A A
     ((Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap.comp
       (SMulMemClass.subtype V))).symm
+
+/-- Over a free coordinate Hopf algebra, a finitely generated Hopf ideal has generators in
+one finite regular subcomodule. The generator property lets the same subcomodule be used in
+the stabilizer characterizations at any value-algebra universe. -/
+theorem exists_finite_subcomodule_generating [Module.Free k H]
+    (I : HopfIdeal k H) (hI : I.toIdeal.FG) :
+    ∃ V : Subcomodule k H H, Module.Finite k V.toSubmodule ∧
+      I.toIdeal ≤ Ideal.span ((V : Set H) ∩ (I : Set H)) := by
+  obtain ⟨s, hs, hspan⟩ := Submodule.fg_def.mp hI
+  obtain ⟨V, hV, hsV⟩ := Subcomodule.exists_finite_subcomodule_of_setFinite
+    (R := k) (C := H) hs
+  refine ⟨V, hV, ?_⟩
+  rw [← hspan]
+  apply Ideal.span_mono
+  intro x hx
+  have hxI : x ∈ I.toIdeal := hspan ▸ Submodule.subset_span hx
+  exact ⟨hsV hx, hxI⟩
 
 variable [Module.Flat k H]
 
@@ -84,15 +102,8 @@ theorem endOfPoint_mapsTo_definingSubspace (I : HopfIdeal k H) (V : Subcomodule 
   have hsub := Comodule.baseChange_comp_endOfPoint (Subcomodule.subtype V)
     (g'.ofConv.comp q.toAlgHom)
   rw [baseChange_definingSubspace, ← Subcomodule.subtype_toLinearMap]
-  have hg : ((CommHopfAlgCat.quotientPointsHom H I A).hom g').ofConv =
-      g'.ofConv.comp q.toAlgHom := by
-    ext h
-    exact CommHopfAlgCat.quotientPointsHom_apply_apply H I A g' h
-  rw [hg]
-  have hq : q.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
-    ext x
-    exact CommHopfAlgCat.mkQuotient_apply H I x
-  rw [hq] at hnat
+  rw [CommHopfAlgCat.quotientPointsHom_apply, ofConv_toConv]
+  rw [CommHopfAlgCat.mkQuotient_toLinearMap] at hnat
   intro x hx
   simp only [SetLike.mem_coe, LinearMap.mem_ker] at hx ⊢
   simp only [LinearMap.baseChange_comp, LinearMap.comp_apply] at hx ⊢
@@ -107,7 +118,7 @@ theorem endOfPoint_mapsTo_definingSubspace (I : HopfIdeal k H) (V : Subcomodule 
 subspace forces a point to lie in the subgroup. -/
 theorem mem_quotientPointsSubgroup_of_mapsTo_definingSubspace
     (I : HopfIdeal k H) (V : Subcomodule k H H)
-    (hgen : Ideal.span ((V : Set H) ∩ (I : Set H)) = I.toIdeal)
+    (hgen : I.toIdeal ≤ Ideal.span ((V : Set H) ∩ (I : Set H)))
     (A : CommAlgCat.{w} k) (g : HopfAlgebra.points (R := k) (H := H) A)
     (hg : Set.MapsTo (Comodule.endOfPoint V g.ofConv)
       ((I.definingSubspace V).baseChange A) ((I.definingSubspace V).baseChange A)) :
@@ -117,14 +128,14 @@ theorem mem_quotientPointsSubgroup_of_mapsTo_definingSubspace
   have heval (z : A ⊗[k] V) (hz : z ∈ (I.definingSubspace V).baseChange A) :
       Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ) z = 0 := by
     obtain ⟨t, rfl⟩ := hz
-    induction t using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy, add_zero]
-    | tmul a x =>
-      have hx := I.counit_eq_zero ((mem_definingSubspace I V x).mp x.property)
-      simpa [φ, LinearMap.baseChange_tmul,
-        Module.Dual.baseChangeEvaluation_tmul] using congrArg (fun r : k ↦ a * algebraMap k A r) hx
+    rw [Module.Dual.baseChangeEvaluation_one_tmul_baseChange]
+    have hφ : φ ∘ₗ (I.definingSubspace V).subtype = 0 := by
+      ext x
+      simpa [φ, Subcomodule.subtype_toLinearMap] using
+        I.counit_eq_zero ((mem_definingSubspace I V x).mp x.2)
+    rw [hφ, TensorProduct.tmul_zero, map_zero, LinearMap.zero_apply]
   have hker : I.toIdeal ≤ RingHom.ker g.ofConv.toRingHom := by
-    rw [← hgen, Ideal.span_le]
+    refine hgen.trans (Ideal.span_le.mpr ?_)
     rintro x ⟨hxV, hxI⟩
     have hx : (⟨x, hxV⟩ : V) ∈ I.definingSubspace V :=
       (mem_definingSubspace I V _).mpr hxI
@@ -139,7 +150,7 @@ theorem mem_quotientPointsSubgroup_of_mapsTo_definingSubspace
 stabilizer of its defining subspace, over every flat value algebra. -/
 theorem mem_quotientPointsSubgroup_iff_mapsTo_definingSubspace
     (I : HopfIdeal k H) (V : Subcomodule k H H)
-    (hgen : Ideal.span ((V : Set H) ∩ (I : Set H)) = I.toIdeal)
+    (hgen : I.toIdeal ≤ Ideal.span ((V : Set H) ∩ (I : Set H)))
     (A : CommAlgCat.{w} k) [Module.Flat k A] (g : HopfAlgebra.points (R := k) (H := H) A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
       Set.MapsTo (Comodule.endOfPoint V g.ofConv)
@@ -151,22 +162,16 @@ theorem mem_quotientPointsSubgroup_iff_mapsTo_definingSubspace
 scalar-extended subspace. -/
 theorem mem_quotientPointsSubgroup_iff_map_definingSubspace_eq
     (I : HopfIdeal k H) (V : Subcomodule k H H)
-    (hgen : Ideal.span ((V : Set H) ∩ (I : Set H)) = I.toIdeal)
+    (hgen : I.toIdeal ≤ Ideal.span ((V : Set H) ∩ (I : Set H)))
     (A : CommAlgCat.{w} k) [Module.Flat k A] (g : HopfAlgebra.points (R := k) (H := H) A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
       ((I.definingSubspace V).baseChange A).map (Comodule.endOfPoint V g.ofConv) =
         (I.definingSubspace V).baseChange A := by
   constructor
   · intro hg
-    apply le_antisymm
-    · rintro _ ⟨x, hx, rfl⟩
-      exact I.endOfPoint_mapsTo_definingSubspace V A g hg hx
-    · intro x hx
-      refine ⟨Comodule.endOfPoint V (g⁻¹).ofConv x,
-        I.endOfPoint_mapsTo_definingSubspace V A g⁻¹ (inv_mem hg) hx, ?_⟩
-      have h := LinearMap.congr_fun (Comodule.endOfPoint_convMul V g g⁻¹) x
-      simpa only [mul_inv_cancel, Comodule.endOfPoint_convOne, LinearMap.id_apply,
-        LinearMap.comp_apply] using h.symm
+    exact Comodule.map_endOfPoint_eq_of_mapsTo V g g⁻¹ (mul_inv_cancel g) _
+      (I.endOfPoint_mapsTo_definingSubspace V A g hg)
+      (I.endOfPoint_mapsTo_definingSubspace V A g⁻¹ (inv_mem hg))
   · intro hg
     apply I.mem_quotientPointsSubgroup_of_mapsTo_definingSubspace V hgen A g
     intro x hx
@@ -186,16 +191,7 @@ theorem exists_finite_subcomodule_stabilizer (I : HopfIdeal k H) (hI : I.toIdeal
         g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
           ((I.definingSubspace V).baseChange A).map (Comodule.endOfPoint V g.ofConv) =
             (I.definingSubspace V).baseChange A := by
-  obtain ⟨s, hs, hspan⟩ := Submodule.fg_def.mp hI
-  obtain ⟨V, hV, hsV⟩ := Subcomodule.exists_finite_subcomodule_of_setFinite
-    (R := k) (C := H) hs
-  refine ⟨V, hV, fun A g ↦ I.mem_quotientPointsSubgroup_iff_map_definingSubspace_eq V ?_ A g⟩
-  apply le_antisymm
-  · exact Ideal.span_le.mpr fun x hx ↦ hx.2
-  · rw [← hspan]
-    apply Ideal.span_mono
-    intro x hx
-    have hxI : x ∈ I.toIdeal := hspan ▸ Submodule.subset_span hx
-    exact ⟨hsV hx, hxI⟩
+  obtain ⟨V, hV, hgen⟩ := I.exists_finite_subcomodule_generating hI
+  exact ⟨V, hV, fun A g ↦ I.mem_quotientPointsSubgroup_iff_map_definingSubspace_eq V hgen A g⟩
 
 end TauCeti.HopfIdeal

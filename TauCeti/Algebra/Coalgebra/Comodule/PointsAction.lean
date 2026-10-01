@@ -42,6 +42,9 @@ the functor of points on scalar extensions of `V`.
   convolution monoid of points on the scalar extension.
 * `TauCeti.Comodule.baseChange_comp_endOfPoint`: the action is functorial in the
   comodule.
+* `BialgHom.baseChange_comp_endOfPoint_regular`: bialgebra morphisms intertwine regular actions.
+* `TauCeti.Comodule.map_endOfPoint_eq_of_mapsTo`: inverse points preserving a submodule
+  carry it onto itself.
 
 ## References
 
@@ -366,6 +369,22 @@ lemma endOfPoint_convMul (g h : WithConv (H →ₐ[R] A)) :
     endOfPoint_tmul, map_smul, c1, c2, c3, c4, c5]
 
 variable (V) in
+/-- If two points whose convolution product is one both preserve a submodule, the first
+point carries that submodule onto itself. -/
+theorem map_endOfPoint_eq_of_mapsTo (g h : WithConv (H →ₐ[R] A)) (hgh : g * h = 1)
+    (p : Submodule A (A ⊗[R] V))
+    (hg : Set.MapsTo (endOfPoint V g.ofConv) p p)
+    (hh : Set.MapsTo (endOfPoint V h.ofConv) p p) :
+    p.map (endOfPoint V g.ofConv) = p := by
+  apply le_antisymm
+  · rintro _ ⟨x, hx, rfl⟩
+    exact hg hx
+  · intro x hx
+    refine ⟨endOfPoint V h.ofConv x, hh hx, ?_⟩
+    have heq := LinearMap.congr_fun (endOfPoint_convMul V g h) x
+    simpa only [hgh, endOfPoint_convOne, LinearMap.id_apply, LinearMap.comp_apply] using heq.symm
+
+variable (V) in
 /-- The points action of a comodule, as a representation of the convolution monoid of
 points on the scalar extension. -/
 noncomputable def pointsRepresentation :
@@ -411,6 +430,8 @@ theorem _root_.BialgHom.baseChange_comp_endOfPoint_regular (f : H →ₐc[R] K) 
     | tmul x y =>
         simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
           TensorProduct.comm_tmul, LinearMap.baseChange_tmul, TensorProduct.map_tmul]
+        -- The inherited toLinearMap projection and toAlgHom use the same underlying function;
+        -- BialgHom.coe_toLinearMap rewrites the coercion, not this inherited projection.
         rfl
     | add x y hx hy => simp only [map_add, hx, hy]
   rw [ht]
