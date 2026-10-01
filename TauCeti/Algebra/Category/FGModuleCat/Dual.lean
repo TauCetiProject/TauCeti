@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 /-!
 # Duality for finitely generated projective modules
@@ -82,15 +83,6 @@ def dualMap {M N : FGModuleCat.{u} R} [Module.Projective R M] [Module.Projective
 @[simp] theorem dualMap_hom {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f : M ⟶ N) : (dualMap f).hom.hom = f.hom.hom.dualMap := (rfl)
 
-private theorem hom_hom_smul (a : R) {M N : FGModuleCat.{u} R} (f : M ⟶ N) :
-    (a • f).hom.hom = a • f.hom.hom := rfl
-
-private theorem hom_hom_neg {M N : FGModuleCat.{u} R} (f : M ⟶ N) :
-    (-f).hom.hom = -f.hom.hom := rfl
-
-private theorem hom_hom_add {M N : FGModuleCat.{u} R} (f g : M ⟶ N) :
-    (f + g).hom.hom = f.hom.hom + g.hom.hom := rfl
-
 /-- The transpose of the identity is the identity. -/
 @[simp] theorem dualMap_id {M : FGModuleCat.{u} R} [Module.Projective R M] :
     dualMap (𝟙 M) = 𝟙 (dual R M) := by
@@ -106,12 +98,12 @@ private theorem hom_hom_add {M N : FGModuleCat.{u} R} (f g : M ⟶ N) :
 transpose. -/
 @[simp] theorem dualMap_smul (a : R) {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f : M ⟶ N) : dualMap (a • f) = a • dualMap f := by
-  ext; simp [hom_hom_smul]
+  ext; simp
 
 /-- The transpose of a negated morphism is the negation of the transpose. -/
 @[simp] theorem dualMap_neg {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f : M ⟶ N) : dualMap (-f) = -dualMap f := by
-  ext; simp [hom_hom_neg]
+  ext; simp
 
 /-- The transpose of the zero morphism is the zero morphism. -/
 @[simp] theorem dualMap_zero {M N : FGModuleCat.{u} R} [Module.Projective R M]
@@ -121,7 +113,7 @@ transpose. -/
 /-- The transpose of a sum of morphisms is the sum of the transposes. -/
 @[simp] theorem dualMap_add {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f g : M ⟶ N) : dualMap (f + g) = dualMap f + dualMap g := by
-  ext; simp [hom_hom_add]
+  ext; simp
 
 /-- A double dual is canonically isomorphic to the original module, by the evaluation pairing. -/
 noncomputable def dualEvalIso (M : FGModuleCat.{u} R) [Module.Projective R M] :
