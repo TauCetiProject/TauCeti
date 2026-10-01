@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.LinearAlgebra.Determinant
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
 
 /-!
 # Alternants
@@ -55,6 +56,8 @@ of beta-numbers, which is how the Murnaghan-Nakayama rule arises from it.
 * `TauCeti.alternant_fin_val_eq_vandermonde`: for the exponents `0, 1, …, n - 1` the alternant
   is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
+* `TauCeti.hsymm_mul_alternant`: the complete-homogeneous multiplication rule
+  `h_r · a_α = ∑_{|γ| = r} a_{α + γ}`.
 
 ## References
 
@@ -208,5 +211,48 @@ theorem psum_mul_alternant (r : ℕ) (α : σ → ℕ) :
     · simp [hA, Matrix.updateRow_ne hk, Function.update_of_ne hk]
   rw [sum_congr rfl fun j _ => hcol j, Matrix.sum_det_updateRow_mul_row, Matrix.det_transpose,
     psum, alternant_def]
+
+/-- **The complete-homogeneous multiplication rule for alternants**: multiplying `a_α` by the
+complete homogeneous symmetric polynomial `h_r` gives the sum of the alternants obtained from `α` by
+adding an exponent vector of total degree `r`, `h_r · a_α = ∑_{|γ| = r} a_{α + γ}`.
+
+Unlike the power-sum rule, the shifts here are not supported at a single index, so the terms with a
+repeated exponent do not account for all the cancellation: the surviving terms still have to be
+sorted back into decreasing order.  That extra step is what separates the Pieri rule from the
+Murnaghan-Nakayama rule. -/
+theorem hsymm_mul_alternant (r : ℕ) (α : σ → ℕ) :
+    hsymm σ R r * alternant σ R α =
+      ∑ γ ∈ Finset.piAntidiag (Finset.univ : Finset σ) r,
+        alternant σ R fun i => α i + γ i := by
+  have hsum : ∀ (τ : Perm σ) (γ : σ → ℕ), ∑ i, γ (τ i) = ∑ i, γ i := fun τ γ =>
+    Equiv.sum_comp τ γ
+  -- Twisting the alphabet by a permutation permutes the exponent vectors of total degree `r`, so
+  -- the monomials of `h_r` are the same whichever variable each exponent is attached to.
+  have key : ∀ τ : Perm σ,
+      ∑ γ ∈ Finset.piAntidiag (Finset.univ : Finset σ) r,
+          ∏ i, (X (τ i) : MvPolynomial σ R) ^ γ i = hsymm σ R r := by
+    intro τ
+    rw [hsymm_eq_sum_piAntidiag]
+    refine Finset.sum_nbij' (fun γ => γ ∘ τ.symm) (fun γ => γ ∘ τ) (fun γ hγ => ?_)
+      (fun γ hγ => ?_) (fun γ _ => funext fun i => by simp) (fun γ _ => funext fun i => by simp)
+      fun γ _ => ?_
+    · simp only [Finset.mem_piAntidiag, Finset.mem_univ, implies_true, and_true,
+        Function.comp_apply] at hγ ⊢
+      rw [hsum τ.symm γ, hγ]
+    · simp only [Finset.mem_piAntidiag, Finset.mem_univ, implies_true, and_true,
+        Function.comp_apply] at hγ ⊢
+      rw [hsum τ γ, hγ]
+    · simp only [Function.comp_apply]
+      rw [← Equiv.prod_comp τ fun k => (X k : MvPolynomial σ R) ^ γ (τ.symm k)]
+      exact Finset.prod_congr rfl fun i _ => by rw [Equiv.symm_apply_apply]
+  simp only [alternant_eq_sum, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun τ _ => ?_
+  rw [mul_smul_comm, ← Finset.smul_sum]
+  congr 1
+  rw [← key τ, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun γ _ => ?_
+  rw [← Finset.prod_mul_distrib]
+  exact Finset.prod_congr rfl fun i _ => by rw [← pow_add, Nat.add_comm]
 
 end TauCeti
