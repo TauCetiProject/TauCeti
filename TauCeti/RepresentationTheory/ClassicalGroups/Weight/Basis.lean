@@ -54,7 +54,10 @@ first.
   exactly the labels `wt i`.
 * `Module.Basis.isInternal_weightSpace`: **a representation with a basis of weight vectors is the
   internal direct sum of its weight spaces.**
-* `Module.Basis.finrank_weightSpace_eq_one`: each distinctly labelled weight has multiplicity one.
+* `Module.Basis.finrank_weightSpace_eq_card`: **the multiplicity of a weight is the number of basis
+  vectors carrying it**, over a finite index type;
+  `Module.Basis.finrank_weightSpace_eq_one` is the case of a distinctly labelled weight, which
+  needs no finiteness.
 
 These are stated in the `Module.Basis` namespace, so that they read as `b.weightSpace_eq_span` on a
 basis `b`, like the coordinate lemmas of `TauCeti/LinearAlgebra/Eigenspace/DiagonalBasis.lean` they
@@ -180,6 +183,30 @@ theorem _root_.Module.Basis.isInternal_weightSpace (b : Module.Basis ι k W)
     (hchar : Function.Injective (weightChar k (κ := Fin n))) :
     DirectSum.IsInternal fun l : Fin n → ℤ => weightSpace ρ l :=
   isInternal_weightSpace_of_iSup_eq_top hchar (b.iSup_weightSpace_eq_top hb)
+
+/-- **A basis of weight vectors counts the weight multiplicities**: the multiplicity of `l` is the
+number of basis vectors labelled `l`.  The labelling need not be injective, which is the point:
+this is the statement that survives when several basis vectors share a weight.
+
+Finiteness of the index type is what makes the count a natural number; the injective case needs
+none, because there the weight space is a single exhibited line
+(`Module.Basis.finrank_weightSpace_eq_one`). -/
+theorem _root_.Module.Basis.finrank_weightSpace_eq_card [Finite ι] (b : Module.Basis ι k W)
+    (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
+    (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
+    Module.finrank k (weightSpace ρ l) = Nat.card {i // wt i = l} := by
+  have : Fintype {i // wt i = l} := Fintype.ofFinite _
+  have himg : b '' {i | wt i = l} = Set.range fun i : {i // wt i = l} => b (i : ι) := by
+    ext x
+    constructor
+    · rintro ⟨i, hi, rfl⟩
+      exact ⟨⟨i, hi⟩, rfl⟩
+    · rintro ⟨⟨i, hi⟩, rfl⟩
+      exact ⟨i, hi, rfl⟩
+  have hli : LinearIndependent k fun i : {i // wt i = l} => b (i : ι) :=
+    b.linearIndependent.comp _ Subtype.val_injective
+  rw [b.weightSpace_eq_span_image hb hchar l, himg, finrank_span_eq_card hli,
+    Nat.card_eq_fintype_card]
 
 /-- **Distinctly labelled basis weights have multiplicity one.** -/
 theorem _root_.Module.Basis.finrank_weightSpace_eq_one (b : Module.Basis ι k W)
