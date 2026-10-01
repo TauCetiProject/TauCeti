@@ -110,30 +110,6 @@ theorem IsOptimalCoupling.exists_support_subset_subdifferential [IsFiniteMeasure
 
 end InnerProduct
 
-section SecondMoment
-
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
-  [SecondCountableTopology E]
-
-/-- Laws with finite second moment have finite transport cost for `‖x - y‖ ^ 2 / 2`: the cost is
-at most `‖x - y‖ ^ 2`, whose transport cost is the square of their finite `2`-Wasserstein
-distance. -/
-theorem transportCost_norm_sub_sq_div_two_ne_top (μ ν : WassersteinSpace 2 E) :
-    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) ≠ ∞ := by
-  refine ne_top_of_le_ne_top ?_ (transportCost_mono (c' := fun z : E × E ↦ edist z.1 z.2 ^
-    (2 : ℝ≥0∞).toReal) fun z => ?_)
-  · rw [← wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
-      ENNReal.ofNat_ne_top]
-    exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
-      (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν)
-  · beta_reduce
-    rw [ENNReal.toReal_ofNat, edist_dist, dist_eq_norm,
-      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two, Real.rpow_two]
-    exact ENNReal.ofReal_le_ofReal (half_le_self (by positivity))
-
-end SecondMoment
-
 section FiniteDimensional
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
