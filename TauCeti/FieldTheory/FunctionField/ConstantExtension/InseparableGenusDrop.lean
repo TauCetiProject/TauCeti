@@ -10,8 +10,8 @@ public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
 public import TauCeti.FieldTheory.RatFunc.PowerTower
 public import TauCeti.FieldTheory.RatFunc.Transcendental
--- Proof-only: irreducibility of `X ^ n - C a` for odd `n`.
-import Mathlib.FieldTheory.KummerExtension
+-- Proof-only: irreducibility of `X ^ p - C a` for prime `p` when `a` is not a `p`-th power.
+import Mathlib.FieldTheory.KummerPolynomial
 
 /-!
 # The genus can drop under an inseparable constant field extension
@@ -33,7 +33,7 @@ field `k`. The compositum `F · k'` is all of `F'`, because `w = y / (x - s) ^ (
 * `TauCeti.GenusDrop.curveField`: the function field `F = k(x, y)` inside `F' = 𝔽_p(s)(w)`.
 * `TauCeti.GenusDrop.genus_curveField`: `F / k` has genus `(p - 1) / 2`.
 * `TauCeti.GenusDrop.constantCompositum_eq_top`: `F' = F · k'`.
-* `TauCeti.GenusDrop.genus_ne_genus`: `F' / k'` has genus `0`, so the genus drops.
+* `TauCeti.GenusDrop.genus_lt_genus`: `F' / k'` has genus `0`, so the genus drops.
 * `TauCeti.GenusDrop.finrank_constants` and `TauCeti.GenusDrop.not_isSeparable_constants`:
   `k' / k` has degree `p` and is not separable.
 
@@ -90,22 +90,18 @@ theorem pow_ne_radicand (b : constants p) : b ^ p ≠ radicand p := by
   exact X_notMem_constants p (hsub ▸ b.2)
 
 /-- `X ^ p - t` is irreducible over `k`. -/
-theorem irreducible_X_pow_sub_C_radicand (h2 : p ≠ 2) :
-    Irreducible (X ^ p - C (radicand p)) :=
-  X_pow_sub_C_irreducible_of_odd (hp.out.odd_of_ne_two h2) fun q hq hqp b ↦ by
-    rw [(Nat.prime_dvd_prime_iff_eq hq hp.out).mp hqp]
-    exact pow_ne_radicand p b
+theorem irreducible_X_pow_sub_C_radicand : Irreducible (X ^ p - C (radicand p)) :=
+  X_pow_sub_C_irreducible_of_prime hp.out (pow_ne_radicand p)
 
 /-- `k' / k` is not separable: the minimal polynomial `X ^ p - t` of `s` has zero derivative. -/
-theorem not_isSeparable_constants (h2 : p ≠ 2) :
-    ¬ Algebra.IsSeparable (constants p) (RatFunc (ZMod p)) := by
+theorem not_isSeparable_constants : ¬ Algebra.IsSeparable (constants p) (RatFunc (ZMod p)) := by
   intro _
   have hs := Algebra.IsSeparable.isSeparable (constants p) (RatFunc.X : RatFunc (ZMod p))
   have hmin : minpoly (constants p) (RatFunc.X : RatFunc (ZMod p)) = X ^ p - C (radicand p) :=
-    (minpoly.eq_of_irreducible_of_monic (irreducible_X_pow_sub_C_radicand p h2)
+    (minpoly.eq_of_irreducible_of_monic (irreducible_X_pow_sub_C_radicand p)
       (by simp [IntermediateField.algebraMap_apply]) (monic_X_pow_sub_C _ hp.out.ne_zero)).symm
   rw [IsSeparable, hmin,
-    separable_iff_derivative_ne_zero (irreducible_X_pow_sub_C_radicand p h2)] at hs
+    separable_iff_derivative_ne_zero (irreducible_X_pow_sub_C_radicand p)] at hs
   apply hs
   rw [derivative_sub, derivative_X_pow, derivative_C, sub_zero, CharP.cast_eq_zero, C_0, zero_mul]
 
@@ -142,9 +138,26 @@ instance instIsScalarTowerRatFunc :
     IsScalarTower (constants p) (RatFunc (constants p)) (RatFunc (RatFunc (ZMod p))) :=
   isScalarTower_ratFuncAlgebraOfTranscendental (transcendental_genX p)
 
-theorem algebraMap_ratFunc_X :
-    algebraMap (RatFunc (constants p)) (RatFunc (RatFunc (ZMod p))) RatFunc.X = genX p :=
-  algebraMap_ratFuncAlgebraOfTranscendental_X (transcendental_genX p)
+/-- `t`, viewed in `F'`, is `s ^ p`. -/
+theorem algebraMap_radicand :
+    algebraMap (constants p) (RatFunc (RatFunc (ZMod p))) (radicand p) = sElement p ^ p := by
+  rw [IsScalarTower.algebraMap_apply (constants p) (RatFunc (ZMod p)),
+    IntermediateField.algebraMap_apply, coe_radicand, map_pow]
+  rfl
+
+/-- The equation `y ^ 2 = x ^ p - t` in `F'`: `(w ^ 2 + s) ^ p = w ^ (2 p) + s ^ p` in
+characteristic `p`. -/
+theorem sq_genY : genY p ^ 2 = genX p ^ p - sElement p ^ p := by
+  rw [genX, genY, add_pow_char _ _ p, add_sub_cancel_right, ← pow_mul, ← pow_mul, mul_comm]
+
+/-- The value `f(x)` of `f = X ^ p - C t` at `x`, viewed in `F'`. -/
+theorem algebraMap_X_pow_sub_C_radicand :
+    algebraMap (RatFunc (constants p)) (RatFunc (RatFunc (ZMod p)))
+      (algebraMap (constants p)[X] (RatFunc (constants p)) (X ^ p - C (radicand p))) =
+      genX p ^ p - sElement p ^ p := by
+  rw [map_sub, map_sub, map_pow, map_pow, RatFunc.algebraMap_X,
+    algebraMap_ratFuncAlgebraOfTranscendental_X (transcendental_genX p), RatFunc.algebraMap_C,
+    ← RatFunc.algebraMap_eq_C, ← IsScalarTower.algebraMap_apply, algebraMap_radicand]
 
 /-- The function field `F = k(x, y)` of `y ^ 2 = x ^ p - t`, as the subfield `k(x)(y)` of
 `F'`. -/
@@ -171,12 +184,8 @@ theorem sq_genY' :
     genY' p ^ 2 = algebraMap (RatFunc (constants p)) (curveField p)
       (algebraMap (constants p)[X] (RatFunc (constants p)) (X ^ p - C (radicand p))) := by
   refine Subtype.ext ?_
-  rw [IntermediateField.coe_pow, coe_genY', IntermediateField.coe_algebraMap_apply, map_sub,
-    map_sub, map_pow, map_pow, RatFunc.algebraMap_X, algebraMap_ratFunc_X, RatFunc.algebraMap_C,
-    ← RatFunc.algebraMap_eq_C, ← IsScalarTower.algebraMap_apply,
-    IsScalarTower.algebraMap_apply (constants p) (RatFunc (ZMod p)),
-    IntermediateField.algebraMap_apply, coe_radicand, map_pow, genX, genY, sElement,
-    add_pow_char _ _ p, add_sub_cancel_right, ← pow_mul, ← pow_mul, mul_comm]
+  rw [IntermediateField.coe_pow, coe_genY', IntermediateField.coe_algebraMap_apply,
+    algebraMap_X_pow_sub_C_radicand, sq_genY]
 
 /-- `2 ≠ 0` in `k` for `p ≠ 2`. -/
 theorem two_ne_zero_of_ne_two (h2 : p ≠ 2) : (2 : constants p) ≠ 0 := fun h ↦
@@ -187,13 +196,13 @@ theorem two_ne_zero_of_ne_two (h2 : p ≠ 2) : (2 : constants p) ≠ 0 := fun h 
 theorem isIntegrallyClosedIn_curveField (h2 : p ≠ 2) :
     IsIntegrallyClosedIn (constants p) (curveField p) :=
   isIntegrallyClosedIn_of_sq_eq (two_ne_zero_of_ne_two p h2)
-    (irreducible_X_pow_sub_C_radicand p h2).squarefree
+    (irreducible_X_pow_sub_C_radicand p).squarefree
     (by rw [natDegree_X_pow_sub_C]; exact hp.out.pos) (adjoin_genY'_eq_top p) (sq_genY' p)
 
 /-- **The genus of `y ^ 2 = x ^ p - t` over `k = 𝔽_p(t)` is `(p - 1) / 2`.** -/
 theorem genus_curveField (h2 : p ≠ 2) : genus (constants p) (curveField p) = (p - 1) / 2 := by
   rw [genus_eq_of_sq_eq (two_ne_zero_of_ne_two p h2)
-    (irreducible_X_pow_sub_C_radicand p h2).squarefree
+    (irreducible_X_pow_sub_C_radicand p).squarefree
     (by rw [natDegree_X_pow_sub_C]; exact hp.out.pos) (adjoin_genY'_eq_top p) (sq_genY' p),
     natDegree_X_pow_sub_C]
 
@@ -213,8 +222,8 @@ theorem constantCompositum_eq_top (h2 : p ≠ 2) :
   have hs : sElement p ∈ C := algebraMap_mem_constantCompositum _ _ _ RatFunc.X
   have hy : genY p ∈ C := IntermediateField.algebraMap_mem C (genY' p)
   have hx : genX p ∈ C := by
-    rw [← algebraMap_ratFunc_X, IsScalarTower.algebraMap_apply (RatFunc (constants p))
-      (curveField p)]
+    rw [← algebraMap_ratFuncAlgebraOfTranscendental_X (transcendental_genX p),
+      IsScalarTower.algebraMap_apply (RatFunc (constants p)) (curveField p)]
     exact IntermediateField.algebraMap_mem C _
   have hX : (RatFunc.X : RatFunc (RatFunc (ZMod p))) ∈ C := by
     rw [X_eq_genY_div p h2]
@@ -230,8 +239,8 @@ theorem constantCompositum_eq_top (h2 : p ≠ 2) :
 
 /-- **The genus drops**: `F' / k'` is rational, of genus `0`, while `F / k` has genus
 `(p - 1) / 2 ≥ 1`. -/
-theorem genus_ne_genus (h2 : p ≠ 2) :
-    genus (RatFunc (ZMod p)) (RatFunc (RatFunc (ZMod p))) ≠ genus (constants p) (curveField p) := by
+theorem genus_lt_genus (h2 : p ≠ 2) :
+    genus (RatFunc (ZMod p)) (RatFunc (RatFunc (ZMod p))) < genus (constants p) (curveField p) := by
   rw [genus_ratFunc, genus_curveField p h2]
   have := hp.out.two_le
   omega
