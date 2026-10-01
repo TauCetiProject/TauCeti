@@ -54,7 +54,9 @@ covered squares further for the gradings.
 * `TauCeti.GridRectangle.isEmptyFor_iff_forall_notMem_cIoo`: emptiness of a toroidal rectangle
   for a grid state, quantified over the columns strictly inside it, and
   `TauCeti.GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo`, its form for an oriented
-  rectangle and its source state.
+  rectangle and its source state, with
+  `TauCeti.GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo_target` the same test read through
+  the target state.
 * `TauCeti.GridRectangleBetween.isEmpty_of_right_eq_finRotate`: a rectangle one column wide is
   empty.
 * `TauCeti.GridRectangle.avoidsMarkings_iff_forall`: marking avoidance tested column by column.
@@ -523,6 +525,21 @@ theorem mem_toGridRectangle_interior (p : Fin n × Fin n) :
       p.1 ∈ Grid.cIoo R.left R.right ∧ p.2 ∈ Grid.cIoo (x R.left) (x R.right) := by
   simp [bottom, top]
 
+/-- Membership in the covered squares of an oriented rectangle is membership in the half-open
+cyclic intervals between its side columns and the corresponding source-state rows. -/
+theorem mem_toGridRectangle_coveredSquares (p : Fin n × Fin n) :
+    p ∈ R.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco R.left R.right ∧ p.2 ∈ Grid.cIco (x R.left) (x R.right) := by
+  simp [bottom, top]
+
+/-- The covered squares of an oriented rectangle, read through its target state: the rows it
+covers run from the target-state row at its terminal side to the target-state row at its initial
+side. -/
+theorem mem_toGridRectangle_coveredSquares_target (p : Fin n × Fin n) :
+    p ∈ R.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco R.left R.right ∧ p.2 ∈ Grid.cIco (y R.right) (y R.left) := by
+  rw [mem_toGridRectangle_coveredSquares, R.map_left, R.map_right]
+
 /-- The two side rows of a rectangle between states are distinct. -/
 theorem bottom_ne_top : R.bottom ≠ R.top := by
   intro h
@@ -656,6 +673,17 @@ theorem isEmpty_iff_target :
 theorem notMem_interior_target_of_isEmpty (h : R.IsEmpty) {p : Fin n × Fin n}
     (hp : p ∈ y.pointSet) : p ∉ R.toGridRectangle.interior :=
   (R.isEmpty_iff_target).mp h p hp
+
+/-- A rectangle between states is empty exactly when the target state sends every column strictly
+between its two side columns to a row outside the open arc between its two side rows, read
+through the target state: from its row at the terminal side to its row at the initial side.
+
+This is `isEmpty_iff_forall_notMem_cIoo` for rectangles into a distinguished target state. -/
+theorem isEmpty_iff_forall_notMem_cIoo_target :
+    R.IsEmpty ↔ ∀ c ∈ Grid.cIoo R.left R.right, y c ∉ Grid.cIoo (y R.right) (y R.left) := by
+  rw [isEmpty_iff_forall_notMem_cIoo, bottom_def, top_def, R.map_left, R.map_right]
+  exact forall₂_congr fun c hc => by
+    rw [R.map_of_ne c (Grid.ne_left_of_mem_cIoo hc) (Grid.ne_right_of_mem_cIoo hc)]
 
 /-- A rectangle between states avoids markings exactly when neither marking set meets the
 squares it covers. -/

@@ -547,8 +547,8 @@ private lemma toConv_mem_ker_iff
     toConv ψ₀ ∈ tangentKer R A B ↔
       (fstHom R _ _).comp ψ₀ =
         IsScalarTower.toAlgHom R A (Bialgebra.CounitAlgebra R A B) := by
-  rw [tangentKer, MonoidHom.mem_ker, toAlgHom_eq_one_ofConv]
-  exact ⟨fun h => congrArg ofConv h, fun h => ofConv_injective h⟩
+  rw [tangentKer, MonoidHom.mem_ker, dualNumberReduction_def, AlgHom.mapValue_apply,
+    ofConv_toConv, toAlgHom_eq_one_ofConv, toConv_injective.eq_iff]
 
 variable (R A B) in
 /-- The group of the tangent space at the identity: the kernel of the dual-number

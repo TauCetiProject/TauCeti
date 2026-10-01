@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
+import TauCeti.Topology.Algebra.Group.Heisenberg
 import Mathlib.FieldTheory.Finiteness
 
 /-!
@@ -50,6 +51,8 @@ not additive.
 
 * `TauCeti.freeProP.degreeZeroBasis`: the basis `x'_i` of `gr_0(F)` formed by the generator classes.
 * `TauCeti.freeProP.degreeOneBasis`: the basis `π x'_i`, `[x'_i, x'_j]` (`i < j`) of `gr_1(F)`.
+* `TauCeti.freeProP.gradedPowIterSpan`: the span in `gr_j(F)` of the `π^j x'_i` over a set `S` of
+  generators.
 
 ## Main results
 
@@ -65,6 +68,9 @@ not additive.
   when `p ^ (k + 1)` divides the `i`-th exponent sum of `y`.
 * `TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`: the classes `π^j x'_i` are
   linearly independent in `gr_j(F)`, for every `j`.
+* `TauCeti.freeProP.finrank_gradedPowIterSpan`, `TauCeti.freeProP.gradedPowIterSpan_succ`: the
+  span of the `π^j x'_i` over a finite `S` has dimension `#S`, and for `j ≥ 1` the operator `π`
+  carries it onto the span in degree `j + 1`.
 * `TauCeti.freeProP.finrank_gradedPiece_one`: `dim gr_1(F) = #X + (#X choose 2)`;
   `TauCeti.freeProP.natCard_gradedPiece_one`: so `gr_1(F)` has `p ^ (#X + (#X choose 2))` elements.
 * `TauCeti.gradedBracket_freeProP_two_ne_zero`: the bracket of the two generator classes of
@@ -102,8 +108,6 @@ variable {p : ℕ} {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology
 /-- A discrete group isomorphic to the Heisenberg group over `ZMod p` has `p`-class at most two. -/
 theorem _root_.MulEquiv.pLowerCentralSeries_two_eq_bot_heisenbergGroup
     (e : H ≃* HeisenbergGroup (ZMod p)) : pLowerCentralSeries p H 2 = ⊥ := by
-  let : TopologicalSpace (HeisenbergGroup (ZMod p)) := ⊥
-  have : DiscreteTopology (HeisenbergGroup (ZMod p)) := ⟨rfl⟩
   rw [← Subgroup.map_eq_bot_iff_of_injective (f := e.toMonoidHom) _ e.injective,
     e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
     HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot]
@@ -306,8 +310,6 @@ theorem linearIndependent_degreeOneFamily_of :
         exact one_mem _
   · -- The coefficient of `[x'_i, x'_j]`: send `x_i, x_j` to the standard generators of the
     -- Heisenberg group over `𝔽_p` and the others to `1`.
-    let : TopologicalSpace (ULift.{u} (HeisenbergGroup (ZMod p))) := ⊥
-    have : DiscreteTopology (ULift.{u} (HeisenbergGroup (ZMod p))) := ⟨rfl⟩
     let e : ULift.{u} (HeisenbergGroup (ZMod p)) ≃* HeisenbergGroup (ZMod p) := MulEquiv.ulift
     have hP : IsProP p (ULift.{u} (HeisenbergGroup (ZMod p))) :=
       ((HeisenbergGroup.isPGroup_zmod p).of_equiv e.symm).isProP
@@ -426,6 +428,113 @@ theorem natCard_gradedPiece_one :
   have := (isTopologicallyFinitelyGenerated_freeProP p X).finite_gradedPiece (Fact.out : p.Prime) 1
   rw [Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod, finrank_gradedPiece_one,
     Nat.card_eq_fintype_card]
+
+end freeProP
+
+namespace freeProP
+
+/-! ### The spans of the iterated `p`-power classes -/
+
+section PowIterSpan
+
+variable {p : ℕ} [Fact p.Prime] {X : Type u}
+
+variable (p X) in
+/-- **The span of the `p`-power classes of a set of generators**: for `S : Set X`, the subspace
+of `gr_j(F)` spanned by the iterated `p`-powers `π^j x'_i` of the generator classes `x'_i ∈ gr_0(F)`
+with `i ∈ S`. The vectors `π^j x'_i` are linearly independent, so when `S` is finite it has
+dimension `#S` (`TauCeti.freeProP.finrank_gradedPowIterSpan`), and above degree zero `π` carries it
+onto the span in the next degree (`TauCeti.freeProP.gradedPowIterSpan_succ`). The tails of the
+successive-approximation arguments of the classification of Demushkin groups are its instances at
+the index sets those arguments leave free. -/
+noncomputable def gradedPowIterSpan (S : Set X) (j : ℕ) :
+    Submodule (ZMod p) (gradedPiece p (freeProP p X) j) :=
+  span (ZMod p)
+    ((fun i ↦ gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i))) '' S)
+
+/-- The span of the `p`-power classes over `S` is the span of the image of `S` under
+`i ↦ π^j x'_i`. -/
+theorem gradedPowIterSpan_def (S : Set X) (j : ℕ) :
+    gradedPowIterSpan p X S j =
+      span (ZMod p)
+        ((fun i ↦ gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i))) '' S) :=
+  (rfl)
+
+/-- **Generator membership in the span of the `p`-power classes**: an iterated power `π^j x'_i`
+belongs to the span over `S` if and only if `i ∈ S`, because the `π^j x'_i` are linearly
+independent (`TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`). -/
+-- `simp↓`: this must fire before `TauCeti.gradedPowIter_gradedMkZero` rewrites the generator.
+@[simp↓]
+theorem gradedPowIter_mem_gradedPowIterSpan_iff {S : Set X} {i : X} {j : ℕ} :
+    gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) ∈
+      gradedPowIterSpan p X S j ↔ i ∈ S :=
+  ⟨fun h ↦ by_contra fun hi ↦
+    (linearIndependent_gradedPowIter_gradedMkZero_of p X j).notMem_span_image hi h,
+    fun hi ↦ subset_span ⟨i, hi, rfl⟩⟩
+
+/-- A submodule contains the span of the `p`-power classes over `S` if and only if it contains
+every generator `π^j x'_i` with `i ∈ S`. -/
+@[simp]
+theorem gradedPowIterSpan_le_iff {S : Set X} {j : ℕ}
+    {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) j)} :
+    gradedPowIterSpan p X S j ≤ W ↔
+      ∀ i ∈ S, gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) ∈ W := by
+  simp only [gradedPowIterSpan, span_le, Set.subset_def, SetLike.mem_coe, Set.forall_mem_image]
+
+/-- The span of the `p`-power classes is monotone in the index set. -/
+@[gcongr]
+theorem gradedPowIterSpan_mono {S T : Set X} (h : S ⊆ T) (j : ℕ) :
+    gradedPowIterSpan p X S j ≤ gradedPowIterSpan p X T j :=
+  span_mono (Set.image_mono h)
+
+/-- **`π` carries the span of the `p`-power classes onto the span in the next degree above degree
+zero**: for `j ≥ 1`, the span over `S` in degree `j + 1` is the image under `π` of the span over
+`S` in degree `j`, since `π` is additive on `gr_j(F)` and `π (π^j x'_i) = π^{j+1} x'_i`. -/
+theorem gradedPowIterSpan_succ (S : Set X) {j : ℕ} (hj : 1 ≤ j) :
+    gradedPowIterSpan p X S (j + 1) =
+      (gradedPowIterSpan p X S j).map
+        ((gradedPowAddMonoidHom p (freeProP p X) hj).toZModLinearMap p) := by
+  rw [gradedPowIterSpan, gradedPowIterSpan, map_span, Set.image_image]
+  simp only [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply, gradedPowIter_succ]
+
+/-- **The dimension of the span of the `p`-power classes over `S`** is the cardinality of `S`,
+because the `π^j x'_i` are linearly independent
+(`TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`). -/
+theorem finrank_gradedPowIterSpan (S : Set X) [Finite S] (j : ℕ) :
+    Module.finrank (ZMod p) (gradedPowIterSpan p X S j) = Nat.card S := by
+  classical
+  have := Fintype.ofFinite S
+  rw [gradedPowIterSpan, Set.image_eq_range]
+  exact (finrank_span_eq_card ((linearIndependent_gradedPowIter_gradedMkZero_of p X j).comp
+    (Subtype.val : S → X) Subtype.val_injective)).trans Nat.card_eq_fintype_card.symm
+
+/-- **Membership in the span of the `p`-power classes**: the elements of the span over `S` are
+the finitely supported linear combinations of the `π^j x'_i` over the indices `i ∈ S`. For a
+finite index set, `TauCeti.freeProP.mem_gradedPowIterSpan_iff` states this with a plain
+coefficient function. -/
+theorem mem_gradedPowIterSpan_iff_exists_finsupp {S : Set X} {j : ℕ}
+    {v : gradedPiece p (freeProP p X) j} :
+    v ∈ gradedPowIterSpan p X S j ↔
+      ∃ c : S →₀ ZMod p,
+        (c.sum fun i a ↦
+          a • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of (i : X)))) =
+          v := by
+  rw [gradedPowIterSpan, Set.image_eq_range]
+  exact Finsupp.mem_span_range_iff_exists_finsupp
+
+/-- **Membership in the span of the `p`-power classes over a finite index set**: the elements of
+the span over a finite `S` are the linear combinations of the `π^j x'_i` over the indices `i ∈ S`.
+This is the finite-sum form of `TauCeti.freeProP.mem_gradedPowIterSpan_iff_exists_finsupp`. -/
+theorem mem_gradedPowIterSpan_iff {S : Set X} [Fintype S] {j : ℕ}
+    {v : gradedPiece p (freeProP p X) j} :
+    v ∈ gradedPowIterSpan p X S j ↔
+      ∃ c : S → ZMod p,
+        ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of (i : X))) =
+          v := by
+  rw [gradedPowIterSpan, Set.image_eq_range]
+  exact mem_span_range_iff_exists_fun _
+
+end PowIterSpan
 
 end freeProP
 

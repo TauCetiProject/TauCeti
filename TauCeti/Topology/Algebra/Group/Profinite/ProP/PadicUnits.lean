@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.GeneratedClosedSubgroups
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 
@@ -20,7 +21,9 @@ is what makes `ℤ_2ˣ` an admissible target for continuous characters of pro-`2
 the orientation character of a dyadic Demushkin group. For odd `p` the unit group `ℤ_pˣ` is not
 pro-`p`, since it contains the roots of unity of order `p - 1`. In the other direction, a
 continuous character of a pro-`p` group into `ℤ_pˣ` has pro-`p` range, so it takes values in the
-principal units `1 + pℤ_p`.
+principal units `1 + pℤ_p`. More precisely, a continuous character with values in `1 + pℤ_p` takes
+the `k`-th term `λ_k(G)` of the lower `p`-series into `1 + p ^ (k + 1) ℤ_p`, one power of `p` per
+step, because `p`-th powers raise the level of a principal unit by one and `ℤ_pˣ` is commutative.
 
 Since `ℤ_2ˣ` is pro-`2`, its elements have `2`-adic powers `v ^ l`, `l ∈ ℤ_2`
 (`TauCeti.IsProP.padicPow`), and a unit is a `2`-adic power of `v` exactly when it lies in the
@@ -43,6 +46,8 @@ situation `v ^ 2 = (-v) ^ 2 ∈ U^(f)` is a `2`-adic power of a topological gene
   level `f ≥ 2`, then `v ^ 2` is a `2`-adic power of `u`.
 * `TauCeti.IsProP.mem_unitsPrincipal_one`: a continuous character of a pro-`p` group into `ℤ_pˣ`
   takes values in the principal units `1 + pℤ_p`.
+* `TauCeti.mem_unitsPrincipal_of_mem_pLowerCentralSeries`: a continuous character with values in
+  `1 + pℤ_p` takes `λ_k(G)` into `1 + p ^ (k + 1) ℤ_p`.
 * `TauCeti.exists_padicPow_eq_of_not_dvd`: when `4 ∣ a` and `2 ^ f ∤ a`, the unit `(1 - 2^f)⁻¹`
   is a `2`-adic power of `-(1 + a)⁻¹` in `ℤ_2ˣ`.
 -/
@@ -50,6 +55,8 @@ situation `v ^ 2 = (-v) ^ 2 ∈ U^(f)` is a `2`-adic power of a topological gene
 public section
 
 namespace TauCeti
+
+open scoped commutatorElement
 
 variable {p : ℕ} [Fact p.Prime] {G : Type*} [Group G] [TopologicalSpace G]
 
@@ -61,6 +68,31 @@ theorem IsProP.mem_unitsPrincipal_one (hG : IsProP p G) (χ : G →ₜ* ℤ_[p]�
     hG.of_surjective χ.toMonoidHom.rangeRestrict (continuous_induced_rng.mpr χ.continuous)
       χ.toMonoidHom.rangeRestrict_surjective
   this.le_unitsPrincipal_one ⟨g, rfl⟩
+
+/-- **A character with values in `1 + pℤ_p` takes `λ_k(G)` into `1 + p ^ (k + 1) ℤ_p`.** The
+`p`-th power of an element of `1 + p ^ (k + 1) ℤ_p` lies in `1 + p ^ (k + 2) ℤ_p`, commutators are
+killed because `ℤ_pˣ` is commutative, and `1 + p ^ (k + 2) ℤ_p` is closed. -/
+theorem mem_unitsPrincipal_of_mem_pLowerCentralSeries [IsTopologicalGroup G] {χ : G →ₜ* ℤ_[p]ˣ}
+    (hχ : ∀ g, χ g ∈ unitsPrincipal p 1) {k : ℕ} {g : G} (hg : g ∈ pLowerCentralSeries p G k) :
+    χ g ∈ unitsPrincipal p (k + 1) := by
+  suffices h : ∀ k, pLowerCentralSeries p G k ≤ (unitsPrincipal p (k + 1)).comap (χ : G →* ℤ_[p]ˣ)
+    from h k hg
+  intro k
+  induction k with
+  | zero => exact fun g _ ↦ hχ g
+  | succ k ih =>
+    rw [pLowerCentralSeries_succ]
+    have hK : IsClosed
+        (((unitsPrincipal p (k + 1 + 1)).comap (χ : G →* ℤ_[p]ˣ) : Subgroup G) : Set G) := by
+      rw [Subgroup.coe_comap]
+      exact (isClosed_unitsPrincipal (p := p) _).preimage (by exact χ.continuous)
+    refine (pLowerCentralStep_le_iff hK).2
+      ⟨fun x hx ↦ ?_, Subgroup.commutator_le.2 fun x _ y _ ↦ ?_⟩
+    · rw [Subgroup.mem_comap, map_pow]
+      simpa using pow_pow_mem_unitsPrincipal k.succ_pos (ih hx) 1
+    · rw [Subgroup.mem_comap, map_commutatorElement,
+        commutatorElement_eq_one_iff_mul_comm.2 (mul_comm _ _)]
+      exact one_mem _
 
 /-- **`ℤ_2ˣ` is pro-`2`**: every open normal subgroup contains a principal unit group `U^(f)`, of
 index `2 ^ (f - 1)`. -/
@@ -128,6 +160,32 @@ theorem exists_padicPow_eq_sq_of_neg_mem_unitsPrincipal {f : ℕ} (hf : 2 ≤ f)
   rw [← topologicalClosure_zpowers_eq_unitsPrincipal (by omega) (fun _ ↦ hf) hu hu',
     Subgroup.zpowers_eq_closure] at hv2
   exact isProP_units_padicInt_two.mem_topologicalClosure_closure_singleton_iff.mp hv2
+
+open scoped Classical in
+/-- **Elements of the twisted subgroup `U^[f]` as `2`-adic powers of a generator.** Let `f ≥ 2`
+and let `u` generate `U^[f]`, that is, `-u` has exact level `f`. Every `x ∈ U^[f]` is then a
+`2`-adic power of `u ^ 2`, which generates `U^(f+1) = U^[f] ∩ (1 + 4ℤ_2)`, after division by `u`
+when `x ∉ 1 + 4ℤ_2`. -/
+theorem exists_padicPow_sq_eq_of_mem_topologicalClosure_zpowers_two {f : ℕ} (hf : 2 ≤ f)
+    {u x : ℤ_[2]ˣ} (hu : -u ∈ unitsPrincipal 2 f) (hu' : -u ∉ unitsPrincipal 2 (f + 1))
+    (hx : x ∈ (Subgroup.zpowers u).topologicalClosure) :
+    ∃ s : ℤ_[2], isProP_units_padicInt_two.padicPow (u ^ 2) s =
+      if x ∈ unitsPrincipal 2 2 then x else u⁻¹ * x := by
+  -- The squares of `u` topologically generate `U^(f+1)`.
+  have hpow : ∀ y ∈ unitsPrincipal 2 (f + 1),
+      ∃ s : ℤ_[2], isProP_units_padicInt_two.padicPow (u ^ 2) s = y := fun y hy ↦
+    isProP_units_padicInt_two.mem_topologicalClosure_closure_singleton_iff.1 (by
+      rwa [← Subgroup.zpowers_eq_closure,
+        topologicalClosure_zpowers_sq_eq_unitsPrincipal_two hf hu hu'])
+  by_cases hx2 : x ∈ unitsPrincipal 2 2
+  · rw [ite_eq_left hx2]
+    refine hpow x ?_
+    rw [← topologicalClosure_zpowers_inf_unitsPrincipal_two hf hu hu']
+    exact Subgroup.mem_inf.2 ⟨hx, hx2⟩
+  · rw [ite_eq_right hx2]
+    refine hpow _ ?_
+    rw [mem_topologicalClosure_zpowers_two_iff hf hu hu'] at hx
+    exact hx.resolve_left fun h ↦ hx2 (unitsPrincipal_antitone 2 (by omega) h)
 
 /-- **When `4 ∣ a` and `2 ^ f ∤ a`, the unit `(1 - 2^f)⁻¹` is a `2`-adic power of `-(1 + a)⁻¹`**:
 for units `v`, `u` of `ℤ_2` with `v (1 + a) = -1` and `u (1 - 2^f) = 1`, there is `l ∈ ℤ_2` with

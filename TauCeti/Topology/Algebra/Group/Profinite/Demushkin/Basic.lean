@@ -118,6 +118,14 @@ theorem demushkinRank_def (hG : IsDemushkin p G) :
     demushkinRank hG = topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated :=
   (rfl)
 
+/-- **The rank of a presented Demushkin group is the number of generators** when the relators lie
+in the Frattini subgroup: such a presentation is minimal. -/
+theorem demushkinRank_presentedProP {X : Type v} [Finite X] {rels : Set (freeProP p X)}
+    (hrels : rels ⊆ proPFrattini p (freeProP p X)) (hG : IsDemushkin p (presentedProP p X rels)) :
+    demushkinRank hG = Nat.card X := by
+  rw [demushkinRank_def]
+  exact (presentedProP.topologicalGeneratorRankNat_eq_card_iff rels).mpr hrels
+
 /-- The rank of a Demushkin group is an isomorphism invariant. -/
 theorem demushkinRank_congr {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     [CompactSpace H] [TotallyDisconnectedSpace H] (hG : IsDemushkin p G) (hH : IsDemushkin p H)

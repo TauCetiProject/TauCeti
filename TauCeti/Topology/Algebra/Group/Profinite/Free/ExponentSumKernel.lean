@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.BasisModification
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CharacterKernel
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 
 /-!
 # The kernel of an exponent sum of a free pro-`p` group and its graded pieces
@@ -51,6 +52,18 @@ The graded pieces `gr_m(X_i) ≤ gr_m(F)` of `X_i` along the lower `p`-series
   orientation, which is what keeps the orientation fixed along a successive approximation. The
   statement holds for every prime `p`; the relators `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` with
   `p ∣ q` satisfy its hypotheses with `i₀ = x₁` and `i₁ = x₂`.
+* **The exceptional generator** (Lemma 3 of Labute's §4.2). When one further generator class
+  `ξ_{i₂}` can only be reached through the derivative `∂_{i₀} ρ` at the `p`-power generator, the
+  same argument gives
+
+    `gr_{m+1}(X_{i₁}) = δ_ρ(gr_m(X_{i₁})^X) + T_{m+1} + 𝔽_p π^m [ξ_{i₂}, ξ_{i₁}]`
+
+  (`gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket`), and
+  when the coefficient of `∂_{i₀} ρ` in `ξ_{i₂}` is nonzero the tail `π^{m+1} ξ_{i₂}` lies in the
+  image of `δ_ρ`, so the tail may be taken over the `a ≠ i₁, i₂`
+  (`gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket_of_ne`).
+  The extra vector `π^m [ξ_{i₂}, ξ_{i₁}]` is genuinely needed at `p = 2`: the relator
+  `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` has `i₀ = x₁`, `i₁ = x₄` and `i₂ = x₂`.
 
 ## Main definitions
 
@@ -59,7 +72,14 @@ The graded pieces `gr_m(X_i) ≤ gr_m(F)` of `X_i` along the lower `p`-series
 ## Main results
 
 * `TauCeti.freeProP.exponentSumKer_eq_topologicalClosure_normalClosure`: `X_i` is the closed
-  normal closure of the generators `x_j`, `j ≠ i`.
+  normal closure of the generators `x_j`, `j ≠ i`; hence a continuous homomorphism trivial on
+  those generators is trivial on `X_i` (`ContinuousMonoidHom.exponentSumKer_le_ker`), and a
+  dyadic character whose values at those generators square to `1` is trivial on `X_i ∩ λ_1(F)`
+  (`ContinuousMonoidHom.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one`).
+* `ContinuousMonoidHom.exponentSumKer_eq_ker`: `X_i` is the kernel of every continuous character
+  trivial on the generators `x_j`, `j ≠ i`, and of infinite order at `x_i`.
+* `ContinuousMonoidHom.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem`: a continuous
+  endomorphism moving each generator inside `X_i` preserves `X_i`.
 * `TauCeti.freeProP.gradedMk_mem_gradedPieceOf_exponentSumKer_iff`: the class of `y ∈ λ_m(F)`
   lies in `gr_m(X_i)` exactly when `p ^ (m + 1)` divides its `i`-th exponent sum.
 * `TauCeti.freeProP.isCompl_gradedPieceOf_exponentSumKer_span_gradedPowIter`:
@@ -68,8 +88,11 @@ The graded pieces `gr_m(X_i) ≤ gr_m(F)` of `X_i` along the lower `p`-series
   `gr_m(X_i)` which together with `π^m ξ_i` spans `gr_m(X_i)` is `gr_m(X_i)`.
 * `TauCeti.freeProP.gradedPieceOf_exponentSumKer_succ_le`: the generation criterion for
   `gr_{m+1}(X_i)`.
-* `gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_span_gradedPowIter` (in
-  `TauCeti.freeProP`): the constrained span statement.
+* `gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_span_gradedPowIter`,
+  `gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket` and
+  `gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket_of_ne` (in
+  `TauCeti.freeProP`): the constrained span statement, without and with an exceptional
+  generator.
 
 ## References
 
@@ -142,6 +165,26 @@ theorem of_mem_exponentSumKer {i j : X} (h : j ≠ i) : of j ∈ exponentSumKer 
 theorem of_notMem_exponentSumKer (i : X) : of i ∉ exponentSumKer p X i := fun h ↦
   of_mem_exponentSumKer_iff.1 h rfl
 
+omit [Fact p.Prime] in
+/-- The generator `x_i` together with the other generators `x_j`, `j ≠ i`, topologically generates
+`F`: this is the generating family of `TauCeti.freeProP.topologicalClosure_closure_range_of_eq_top`
+split at `i`. -/
+theorem topologicalClosure_closure_insert_of_image_eq_top (i : X) :
+    (Subgroup.closure (insert (of i) (of '' {j : X | j ≠ i}))).topologicalClosure =
+      (⊤ : Subgroup (freeProP p X)) := by
+  rw [← topologicalClosure_closure_range_of_eq_top p X]
+  congr 2
+  ext y
+  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_image, Set.mem_ofPred_eq]
+  constructor
+  · rintro (rfl | ⟨j, -, rfl⟩)
+    · exact ⟨i, rfl⟩
+    · exact ⟨j, rfl⟩
+  · rintro ⟨j, rfl⟩
+    by_cases h : j = i
+    · exact Or.inl (by rw [h])
+    · exact Or.inr ⟨j, h, rfl⟩
+
 /-- **The kernel of the `i`-th exponent sum is the closed normal closure of the other
 generators.** -/
 theorem exponentSumKer_eq_topologicalClosure_normalClosure (i : X) :
@@ -149,19 +192,7 @@ theorem exponentSumKer_eq_topologicalClosure_normalClosure (i : X) :
       (Subgroup.normalClosure (of '' {j : X | j ≠ i})).topologicalClosure := by
   classical
   refine (isProP_freeProP p X).ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder _
-    (isClosed_exponentSumKer i) (a := of i) ?_ ?_ ?_
-  · rw [← topologicalClosure_closure_range_of_eq_top p X]
-    congr 2
-    ext y
-    simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_image, Set.mem_ofPred_eq]
-    constructor
-    · rintro (rfl | ⟨j, -, rfl⟩)
-      · exact ⟨i, rfl⟩
-      · exact ⟨j, rfl⟩
-    · rintro ⟨j, rfl⟩
-      by_cases h : j = i
-      · exact Or.inl (by rw [h])
-      · exact Or.inr ⟨j, h, rfl⟩
+    (isClosed_exponentSumKer i) (topologicalClosure_closure_insert_of_image_eq_top i) ?_ ?_
   · rintro _ ⟨j, hj, rfl⟩
     exact MonoidHom.mem_ker.1 (of_mem_exponentSumKer hj)
   · intro h
@@ -171,6 +202,85 @@ theorem exponentSumKer_eq_topologicalClosure_normalClosure (i : X) :
       ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass, map_pow, exponentSum_of,
       toAdd_pow, toAdd_ofAdd, Pi.smul_apply, Pi.single_eq_same, nsmul_eq_mul, mul_one] at hpow
     exact hn.ne' (Nat.cast_eq_zero.1 hpow)
+
+/-- **A continuous homomorphism trivial on the generators `x_j`, `j ≠ i`, is trivial on the kernel
+of the `i`-th exponent sum**, for a `T1` target: its kernel is a closed normal subgroup containing
+those generators, and `X` is their closed normal closure. -/
+theorem _root_.ContinuousMonoidHom.exponentSumKer_le_ker {H : Type*} [Group H]
+    [TopologicalSpace H] [T1Space H] (φ : freeProP p X →ₜ* H) {i : X}
+    (h : ∀ j, j ≠ i → φ (of j) = 1) : exponentSumKer p X i ≤ φ.ker := by
+  rw [exponentSumKer_eq_topologicalClosure_normalClosure]
+  exact topologicalClosure_normalClosure_le_ker (by rintro _ ⟨j, hj, rfl⟩; exact h j hj)
+
+/-! ### Endomorphisms preserving the kernel of an exponent sum -/
+
+/-- **An endomorphism moving each generator inside `X` preserves the `i`-th exponent sum**, for
+`X` the kernel of that exponent sum: the exponent vector is linear,
+`exponentSum (φ y) = ∑ x, (exponentSum y)_x • exponentSum (φ x_x)`
+(`TauCeti.freeProP.toAdd_exponentSum_apply_eq_sum_smul`), and the `i`-th coordinate of each
+column `exponentSum (φ x_x)` is `δ_{xi}`, so the `i`-th coordinate of `exponentSum (φ y)` is
+`(exponentSum y)_i`. -/
+theorem _root_.ContinuousMonoidHom.toAdd_exponentSum_apply_apply_eq_of_forall_inv_mul_apply_mem
+    [Finite X]
+    (φ : freeProP p X →ₜ* freeProP p X) {i : X}
+    (hφ : ∀ j, (of j)⁻¹ * φ (of j) ∈ exponentSumKer p X i) (y : freeProP p X) :
+    (exponentSum p X (φ y)).toAdd i = (exponentSum p X y).toAdd i := by
+  classical
+  cases nonempty_fintype X
+  have h : ∀ x, (exponentSum p X (φ (of x))).toAdd i = if i = x then 1 else 0 := fun x ↦ by
+    rw [← mul_inv_cancel_left (of x) (φ (of x)), map_mul, toAdd_mul, Pi.add_apply,
+      mem_exponentSumKer_iff.1 (hφ x), add_zero, exponentSum_of, toAdd_ofAdd, Pi.single_apply]
+  rw [toAdd_exponentSum_apply_eq_sum_smul, Finset.sum_apply]
+  simp only [Pi.smul_apply, h, smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true]
+
+/-- **An endomorphism moving each generator inside `X` preserves `X`**, for `X` the kernel of an
+exponent sum. -/
+theorem _root_.ContinuousMonoidHom.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem
+    [Finite X]
+    (φ : freeProP p X →ₜ* freeProP p X) {i : X}
+    (hφ : ∀ j, (of j)⁻¹ * φ (of j) ∈ exponentSumKer p X i) (y : freeProP p X) :
+    φ y ∈ exponentSumKer p X i ↔ y ∈ exponentSumKer p X i := by
+  rw [mem_exponentSumKer_iff, mem_exponentSumKer_iff,
+    φ.toAdd_exponentSum_apply_apply_eq_of_forall_inv_mul_apply_mem hφ]
+
+/-- **The kernel of a character trivial on all generators but one is the kernel of the exponent
+sum at that generator**, when the value at that generator has infinite order: both are the closed
+normal closure of the other generators
+(`TauCeti.freeProP.exponentSumKer_eq_topologicalClosure_normalClosure` and
+`TauCeti.IsProP.ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder`). -/
+theorem _root_.ContinuousMonoidHom.exponentSumKer_eq_ker {H : Type*} [Group H]
+    [TopologicalSpace H] [T1Space H] (φ : freeProP p X →ₜ* H) {i : X}
+    (h : ∀ j, j ≠ i → φ (of j) = 1) (hi : ¬ IsOfFinOrder (φ (of i))) :
+    exponentSumKer p X i = φ.toMonoidHom.ker := by
+  rw [exponentSumKer_eq_topologicalClosure_normalClosure]
+  exact ((isProP_freeProP p X).ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder
+    φ.toMonoidHom φ.isClosed_ker (topologicalClosure_closure_insert_of_image_eq_top i)
+    (by rintro _ ⟨j, hj, rfl⟩; exact h j hj) hi).symm
+
+/-- **A dyadic character whose values at the generators `x_j`, `j ≠ i`, square to `1` is trivial
+on `X_i ∩ λ_1(F)`**: on `X_i` its values square to `1`, since `X_i` is the closed normal closure of
+those generators, and on `λ_1(F)` they lie in `1 + 4ℤ_2`, which contains no element of order two.
+This is how the kernel of the orientation `χ(x₂) = -1`, `χ(x₄) = (1 - 2^f)⁻¹`, `χ(x_i) = 1`
+otherwise, of the dyadic even-rank normal form `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` meets the lower
+`2`-series: `ker χ ∩ λ_1(F) = X_{x₄} ∩ λ_1(F)`. -/
+theorem _root_.ContinuousMonoidHom.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one
+    (χ : freeProP 2 X →ₜ* ℤ_[2]ˣ) {i : X} (h : ∀ j, j ≠ i → χ (of j) ^ 2 = 1) {w : freeProP 2 X}
+    (hw : w ∈ exponentSumKer 2 X i) (hw₁ : w ∈ pLowerCentralSeries 2 (freeProP 2 X) 1) :
+    χ w = 1 := by
+  have hsq : (χ ^ 2) w = 1 := MonoidHom.mem_ker.1 ((χ ^ 2).exponentSumKer_le_ker (i := i)
+    (fun j hj ↦ by rw [ContinuousMonoidHom.pow_apply]; exact h j hj) hw)
+  rw [ContinuousMonoidHom.pow_apply] at hsq
+  have hU : χ w ∈ unitsPrincipal 2 2 :=
+    mem_unitsPrincipal_of_mem_pLowerCentralSeries
+      ((isProP_freeProP 2 X).mem_unitsPrincipal_one χ) hw₁
+  have hval : (χ w : ℤ_[2]) * χ w = 1 := by
+    rw [← sq, ← Units.val_pow_eq_pow_val, hsq, Units.val_one]
+  rcases mul_self_eq_one_iff.1 hval with h1 | h1
+  · exact Units.val_eq_one.1 h1
+  · have : χ w = -1 := Units.ext (by rw [h1, Units.val_neg, Units.val_one])
+    rw [this, neg_one_mem_unitsPrincipal_two_iff] at hU
+    omega
 
 /-! ### The graded pieces of the kernel of an exponent sum -/
 
@@ -453,40 +563,42 @@ end
 
 variable [Fintype X]
 
-/-- For `τ ∈ gr_m(X)` and `a ≠ i₁`, the bracket `[τ, ξ_a]` is `δ_ρ` of a family of classes of
+/-- For `τ ∈ gr_m(X)` and `a ≠ i₁, i₂`, the bracket `[τ, ξ_a]` is `δ_ρ` of a family of classes of
 `gr_m(X)`, when `ξ_a` is a combination of the derivatives `∂_k ρ` with `k ≠ i₀` and `x_{i₀}` is the
 only generator with a `p`-power coefficient in `ρ`. -/
 private theorem gradedBracket_gradedMkZero_mem_map_basisModificationDelta_pi (hm : 1 ≤ m)
     (hc : ∀ j, j ≠ i₀ → (degreeOneBasis p X).repr ρ (Sum.inl j) = 0)
-    (hd : ∀ j, j ≠ i₁ → ∃ b : X → ZMod p, b i₀ = 0 ∧
+    (hd : ∀ j, j ≠ i₁ → j ≠ i₂ → ∃ b : X → ZMod p, b i₀ = 0 ∧
       ∑ k, b k • degreeOneDeriv p X k ρ = gradedMkZero p (freeProP p X) (of j))
     {τ : gradedPiece p (freeProP p X) m} (hτ : τ ∈ gradedPieceOf p (exponentSumKer p X i₁) m)
-    {a : X} (ha : a ≠ i₁) :
+    {a : X} (ha : a ≠ i₁) (ha₂ : a ≠ i₂) :
     gradedBracket p (freeProP p X) m 0 τ (gradedMkZero p (freeProP p X) (of a)) ∈
       (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
         (basisModificationDelta p X hm ρ) := by
-  obtain ⟨b, hb₀, hb⟩ := hd a ha
+  obtain ⟨b, hb₀, hb⟩ := hd a ha ha₂
   refine ⟨fun k ↦ b k • τ, Submodule.mem_pi.2 fun k _ ↦ smul_mem _ _ hτ, ?_⟩
   rw [basisModificationDelta_smul_eq_gradedBracket_of_eq_zero hm hc hb₀, hb]
 
 /-- The degree-one case of the `p`-power step of the constrained span statement: for
-`τ ∈ gr_1(X)`, `π τ` lies in `δ_ρ(gr_1(X)^X) + T_2`. -/
+`τ ∈ gr_1(X)`, `π τ` lies in `δ_ρ(gr_1(X)^X) + T_2 + 𝔽_p π [ξ_{i₂}, ξ_{i₁}]`. -/
 private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIter_one
     (hρ : span (ZMod p) (Set.range fun j ↦ degreeOneDeriv p X j ρ) = ⊤)
     (hc : ∀ j, j ≠ i₀ → (degreeOneBasis p X).repr ρ (Sum.inl j) = 0)
-    (hd : ∀ j, j ≠ i₁ → ∃ b : X → ZMod p, b i₀ = 0 ∧
+    (hd : ∀ j, j ≠ i₁ → j ≠ i₂ → ∃ b : X → ZMod p, b i₀ = 0 ∧
       ∑ k, b k • degreeOneDeriv p X k ρ = gradedMkZero p (freeProP p X) (of j))
     {τ : gradedPiece p (freeProP p X) 1} (hτ : τ ∈ gradedPieceOf p (exponentSumKer p X i₁) 1) :
     gradedPow p (freeProP p X) 1 τ ∈
       (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) 1).map
         (basisModificationDelta p X le_rfl ρ) ⊔
       span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
-        gradedPowIter p (freeProP p X) (1 + 1) (gradedMkZero p (freeProP p X) (of a))) := by
+        gradedPowIter p (freeProP p X) (1 + 1) (gradedMkZero p (freeProP p X) (of a))) ⊔
+      span (ZMod p) {gradedPowIterBracket p (freeProP p X) 1 (of i₂) (of i₁)} := by
   have hK : commutator (freeProP p X) ≤ exponentSumKer p X i₁ := commutator_le_exponentSumKer i₁
   set H := (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) 1).map
     (basisModificationDelta p X le_rfl ρ) ⊔
       span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
-        gradedPowIter p (freeProP p X) (1 + 1) (gradedMkZero p (freeProP p X) (of a))) with hH
+        gradedPowIter p (freeProP p X) (1 + 1) (gradedMkZero p (freeProP p X) (of a))) ⊔
+      span (ZMod p) {gradedPowIterBracket p (freeProP p X) 1 (of i₂) (of i₁)} with hH
   -- The `p`-power classes `π ξ_a` with `a ≠ i₁` lie in `gr_1(X)`, and their `p`-powers `π² ξ_a`
   -- in the tail.
   have hξ (a : X) (ha : a ≠ i₁) :
@@ -498,18 +610,34 @@ private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIt
   have hξ₂ (a : X) (ha : a ≠ i₁) :
       gradedPow p (freeProP p X) 1 (gradedPow p (freeProP p X) 0
         (gradedMkZero p (freeProP p X) (of a))) ∈ H :=
-    mem_sup_right (subset_span ⟨⟨a, ha⟩, by
+    mem_sup_left (mem_sup_right (subset_span ⟨⟨a, ha⟩, by
       dsimp only
-      rw [gradedPowIter_succ, gradedPowIter_succ, gradedPowIter_zero]⟩)
-  -- `π [ξ_a, ξ_b] = [π ξ_a, ξ_b] + (p choose 2) • [[ξ_a, ξ_b], ξ_a]` lies in `H` for `a ≠ i₁`.
-  have hgen (a : X) (ha : a ≠ i₁) (b : X) :
+      rw [gradedPowIter_succ, gradedPowIter_succ, gradedPowIter_zero]⟩))
+  -- The exceptional class `π [ξ_{i₂}, ξ_{i₁}]` is the last spanning vector.
+  have hB : gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+      (gradedMkZero p (freeProP p X) (of i₂)) (gradedMkZero p (freeProP p X) (of i₁))) ∈ H := by
+    rw [← gradedPowIterBracket_zero, gradedPow_gradedPowIterBracket]
+    exact mem_sup_right (subset_span rfl)
+  -- `π [ξ_a, ξ_b] = -π [ξ_b, ξ_a]`.
+  have hswap (a b : X) :
+      gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+        (gradedMkZero p (freeProP p X) (of a)) (gradedMkZero p (freeProP p X) (of b))) =
+      -gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
+        (gradedMkZero p (freeProP p X) (of b)) (gradedMkZero p (freeProP p X) (of a))) := by
+    have h := gradedCast_gradedBracket_swap (gradedMkZero p (freeProP p X) (of b))
+      (gradedMkZero p (freeProP p X) (of a))
+    rw [gradedCast_rfl] at h
+    rw [h, gradedPow_neg_of_one_le le_rfl]
+  -- `π [ξ_a, ξ_b] = [π ξ_a, ξ_b] + (p choose 2) • [[ξ_a, ξ_b], ξ_a]` lies in `H` for `a ≠ i₁, i₂`.
+  have hgen (a : X) (ha : a ≠ i₁) (ha₂ : a ≠ i₂) (b : X) :
       gradedPow p (freeProP p X) 1 (gradedBracket p (freeProP p X) 0 0
         (gradedMkZero p (freeProP p X) (of a)) (gradedMkZero p (freeProP p X) (of b))) ∈ H := by
     rw [gradedPow_gradedBracket_zero_zero]
-    refine add_mem ?_ (nsmul_mem (mem_sup_left
+    refine add_mem ?_ (nsmul_mem (mem_sup_left (mem_sup_left
       (gradedBracket_gradedMkZero_mem_map_basisModificationDelta_pi le_rfl hc hd
-        (gradedBracket_mem_gradedPieceOf_of_commutator_le hK (j := 0) (k := 0) _ _) ha)) _)
-    exact sup_le le_sup_left (span_le.2 (Set.singleton_subset_iff.2 (hξ₂ a ha)))
+        (gradedBracket_mem_gradedPieceOf_of_commutator_le hK (j := 0) (k := 0) _ _) ha ha₂))) _)
+    exact sup_le (le_sup_left.trans le_sup_left)
+      (span_le.2 (Set.singleton_subset_iff.2 (hξ₂ a ha)))
       (gradedBracket_mem_map_basisModificationDelta_pi_sup_span_gradedPow le_rfl hρ (hξ a ha) _)
   -- The preimage of `H` under `π`, inside `gr_1(X)`, contains every basis vector of `gr_1(F)`
   -- other than `π ξ_{i₁}`, so it is all of `gr_1(X)`.
@@ -541,14 +669,101 @@ private theorem gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIt
     rw [Submodule.mem_comap, hL₁']
     by_cases ha : a = i₁
     · -- `[ξ_{i₁}, ξ_b] = -[ξ_b, ξ_{i₁}]` with `b ≠ i₁`.
-      have hb : b ≠ i₁ := fun hb ↦ hab.ne (hb.trans ha.symm).symm
-      have hswap := gradedCast_gradedBracket_swap (gradedMkZero p (freeProP p X) (of a))
-        (gradedMkZero p (freeProP p X) (of b))
-      rw [gradedCast_rfl] at hswap
-      rw [← neg_neg (gradedBracket p (freeProP p X) 0 0 _ _), ← hswap,
-        gradedPow_neg_of_one_le le_rfl]
-      exact neg_mem (hgen b hb a)
-    · exact hgen a ha b
+      subst ha
+      have hb : b ≠ a := hab.ne'
+      by_cases hb₂ : b = i₂
+      · subst hb₂
+        rw [hswap]
+        exact neg_mem hB
+      · rw [hswap]
+        exact neg_mem (hgen b hb hb₂ a)
+    · by_cases ha₂ : a = i₂
+      · -- `[ξ_{i₂}, ξ_b]`: the exceptional class when `b = i₁`, otherwise `-[ξ_b, ξ_{i₂}]`.
+        subst ha₂
+        by_cases hb : b = i₁
+        · subst hb
+          exact hB
+        · rw [hswap]
+          exact neg_mem (hgen b hb hab.ne' a)
+      · exact hgen a ha ha₂ b
+
+/-- **The constrained span statement with an exceptional generator** (Labute, §4, Lemma 3 in both
+its forms). Let `F` be the free pro-`p` group on a finite linearly ordered type `X`, let
+`ρ ∈ gr_1(F)` have partial derivatives spanning `gr_0(F)`, let `x_{i₀}` be the only generator
+whose coefficient of `π ξ_i` in `ρ` may be nonzero, and let every generator class `ξ_j` with
+`j ≠ i₁, i₂` be a combination of the derivatives `∂_k ρ` with `k ≠ i₀`. Let `X = ker` be the
+kernel of the `i₁`-th exponent sum. Then for every `m ≥ 1`
+
+  `gr_{m+1}(X) = δ_ρ(gr_m(X)^X) + T_{m+1} + 𝔽_p π^m [ξ_{i₂}, ξ_{i₁}]`,
+
+where the tail `T_{m+1}` is spanned by the `p`-powers `π^{m+1} ξ_a` with `a ≠ i₁`. The exceptional
+generator `x_{i₂}`, whose class needs the derivative `∂_{i₀} ρ`, contributes the extra spanning
+vector `π^m [ξ_{i₂}, ξ_{i₁}]`, which for `p = 2` need not lie in the other two terms; with
+`i₂ = i₁` it vanishes and the statement is
+`gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_span_gradedPowIter`. The two
+even-rank dyadic Demushkin relators `x₁^{2+2^f} (x₁, x₂)(x₃, x₄) ⋯` and
+`x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` have `i₀ = x₁`, and respectively `i₂ = i₁ = x₂` and
+`i₁ = x₄`, `i₂ = x₂`. -/
+theorem gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket
+    (hm : 1 ≤ m) (hρ : span (ZMod p) (Set.range fun j ↦ degreeOneDeriv p X j ρ) = ⊤)
+    (hc : ∀ j, j ≠ i₀ → (degreeOneBasis p X).repr ρ (Sum.inl j) = 0)
+    (hd : ∀ j, j ≠ i₁ → j ≠ i₂ → ∃ b : X → ZMod p, b i₀ = 0 ∧
+      ∑ k, b k • degreeOneDeriv p X k ρ = gradedMkZero p (freeProP p X) (of j)) :
+    gradedPieceOf p (exponentSumKer p X i₁) (m + 1) =
+      (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
+        (basisModificationDelta p X hm ρ) ⊔
+      span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
+        gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of a))) ⊔
+      span (ZMod p) {gradedPowIterBracket p (freeProP p X) m (of i₂) (of i₁)} := by
+  -- `π` is linear in degree `m ≥ 1`.
+  have hπsmul (m : ℕ) (hm : 1 ≤ m) (c : ZMod p) (v : gradedPiece p (freeProP p X) m) :
+      gradedPow p (freeProP p X) m (c • v) = c • gradedPow p (freeProP p X) m v := by
+    have h := map_smul ((gradedPowAddMonoidHom p (freeProP p X) hm).toZModLinearMap p) c v
+    simpa only [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply] using h
+  -- `π τ` lies in the sum for every `τ ∈ gr_m(X)`, by induction on `m`.
+  have hpow : ∀ (m : ℕ) (hm : 1 ≤ m), ∀ τ ∈ gradedPieceOf p (exponentSumKer p X i₁) m,
+      gradedPow p (freeProP p X) m τ ∈
+        (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
+          (basisModificationDelta p X hm ρ) ⊔
+        span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
+          gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of a))) ⊔
+        span (ZMod p) {gradedPowIterBracket p (freeProP p X) m (of i₂) (of i₁)} := by
+    intro m hm
+    induction m, hm using Nat.le_induction with
+    | base =>
+      exact fun τ hτ ↦
+        gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIter_one hρ hc hd hτ
+    | succ m hm ih =>
+      -- `gr_{m+1}(X)` lies in the sum at level `m`, and `π` carries that sum to level `m + 1`.
+      have hle : gradedPieceOf p (exponentSumKer p X i₁) (m + 1) ≤
+          (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
+            (basisModificationDelta p X hm ρ) ⊔
+          span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
+            gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of a))) ⊔
+          span (ZMod p) {gradedPowIterBracket p (freeProP p X) m (of i₂) (of i₁)} :=
+        gradedPieceOf_exponentSumKer_succ_le i₁ hm ih fun τ hτ j ↦
+          sup_le (le_sup_left.trans le_sup_left)
+            (span_le.2 (Set.singleton_subset_iff.2 (ih τ hτ)))
+            (gradedBracket_mem_map_basisModificationDelta_pi_sup_span_gradedPow hm hρ hτ _)
+      intro τ hτ
+      obtain ⟨_, hx, _, hy, rfl⟩ := mem_sup.1 (hle hτ)
+      obtain ⟨_, ⟨v, hv, rfl⟩, t, ht, rfl⟩ := mem_sup.1 hx
+      obtain ⟨c, rfl⟩ := mem_span_singleton.1 hy
+      rw [gradedPow_add_of_one_le (by omega), gradedPow_add_of_one_le (by omega),
+        gradedPow_basisModificationDelta, hπsmul _ (by omega), gradedPow_gradedPowIterBracket]
+      refine add_mem (mem_sup_left (add_mem (mem_sup_left ⟨_, Submodule.mem_pi.2 fun k _ ↦
+          gradedPow_mem_gradedPieceOf (Submodule.mem_pi.1 hv k (Set.mem_univ k)), rfl⟩)
+        (mem_sup_right (gradedPow_mem_span_range_gradedPowIter_succ _ (by omega) ht))))
+        (mem_sup_right (smul_mem _ _ (subset_span rfl)))
+  refine le_antisymm ?_ (sup_le (sup_le
+    (map_basisModificationDelta_pi_gradedPieceOf_exponentSumKer_le hm ρ i₁)
+    (span_range_gradedPowIter_le_gradedPieceOf_exponentSumKer i₁ (m + 1)))
+    (span_le.2 (Set.singleton_subset_iff.2
+      (gradedPowIterBracket_mem_gradedPieceOf (commutator_le_exponentSumKer i₁) m _ _))))
+  exact gradedPieceOf_exponentSumKer_succ_le i₁ hm (hpow m hm) fun τ hτ j ↦
+    sup_le (le_sup_left.trans le_sup_left)
+      (span_le.2 (Set.singleton_subset_iff.2 (hpow m hm τ hτ)))
+      (gradedBracket_mem_map_basisModificationDelta_pi_sup_span_gradedPow hm hρ hτ _)
 
 /-- **The constrained span statement** (Labute, §4, Lemma 3). Let `F` be the free pro-`p` group on
 a finite linearly ordered type `X`, let `ρ ∈ gr_1(F)` have partial derivatives spanning `gr_0(F)`,
@@ -572,39 +787,82 @@ theorem gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_span_grad
         (basisModificationDelta p X hm ρ) ⊔
       span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
         gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of a))) := by
-  -- `π τ` lies in the sum for every `τ ∈ gr_m(X)`, by induction on `m`.
-  have hpow : ∀ (m : ℕ) (hm : 1 ≤ m), ∀ τ ∈ gradedPieceOf p (exponentSumKer p X i₁) m,
-      gradedPow p (freeProP p X) m τ ∈
-        (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
-          (basisModificationDelta p X hm ρ) ⊔
-        span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
-          gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of a))) := by
-    intro m hm
-    induction m, hm using Nat.le_induction with
-    | base =>
-      exact fun τ hτ ↦
-        gradedPow_mem_map_basisModificationDelta_pi_sup_span_gradedPowIter_one hρ hc hd hτ
-    | succ m hm ih =>
-      -- `gr_{m+1}(X)` lies in the sum at level `m`, and `π` carries that sum to level `m + 1`.
-      have hle : gradedPieceOf p (exponentSumKer p X i₁) (m + 1) ≤
-          (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
-            (basisModificationDelta p X hm ρ) ⊔
-          span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁} ↦
-            gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of a))) :=
-        gradedPieceOf_exponentSumKer_succ_le i₁ hm ih fun τ hτ j ↦
-          sup_le le_sup_left (span_le.2 (Set.singleton_subset_iff.2 (ih τ hτ)))
-            (gradedBracket_mem_map_basisModificationDelta_pi_sup_span_gradedPow hm hρ hτ _)
-      intro τ hτ
-      obtain ⟨_, ⟨v, hv, rfl⟩, t, ht, rfl⟩ := mem_sup.1 (hle hτ)
-      rw [gradedPow_add_of_one_le (by omega), gradedPow_basisModificationDelta]
-      exact add_mem (mem_sup_left ⟨_, Submodule.mem_pi.2 fun k _ ↦
-          gradedPow_mem_gradedPieceOf (Submodule.mem_pi.1 hv k (Set.mem_univ k)), rfl⟩)
-        (mem_sup_right (gradedPow_mem_span_range_gradedPowIter_succ _ (by omega) ht))
-  refine le_antisymm ?_ (sup_le (map_basisModificationDelta_pi_gradedPieceOf_exponentSumKer_le hm
-    ρ i₁) (span_range_gradedPowIter_le_gradedPieceOf_exponentSumKer i₁ (m + 1)))
-  exact gradedPieceOf_exponentSumKer_succ_le i₁ hm (hpow m hm) fun τ hτ j ↦
-    sup_le le_sup_left (span_le.2 (Set.singleton_subset_iff.2 (hpow m hm τ hτ)))
-      (gradedBracket_mem_map_basisModificationDelta_pi_sup_span_gradedPow hm hρ hτ _)
+  rw [gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket
+      hm hρ hc (i₂ := i₁) fun j hj _ ↦ hd j hj,
+    gradedPowIterBracket_self, span_zero_singleton, sup_bot_eq]
+
+/-- **The `p`-power tail at the exceptional generator lies in the image of `δ_ρ`**: if `ξ_{i₂}` is
+a combination `Σ_k b_k ∂_k ρ` of the derivatives in which the coefficient `b_{i₀} c_{i₀}` of the
+`p`-power term `π` is nonzero, then `π^{m+1} ξ_{i₂} ∈ δ_ρ(gr_m(X)^X)` for `m ≥ 1` and `i₂ ≠ i₁`,
+since `δ_ρ(b • π^m ξ_{i₂}) = (b_{i₀} c_{i₀}) • π^{m+1} ξ_{i₂} + [π^m ξ_{i₂}, ξ_{i₂}]` and the
+bracket vanishes. -/
+theorem gradedPowIter_gradedMkZero_mem_map_basisModificationDelta_pi (hm : 1 ≤ m)
+    (hc : ∀ j, j ≠ i₀ → (degreeOneBasis p X).repr ρ (Sum.inl j) = 0)
+    (hb : ∃ b : X → ZMod p,
+      ∑ k, b k • degreeOneDeriv p X k ρ = gradedMkZero p (freeProP p X) (of i₂) ∧
+        b i₀ * (degreeOneBasis p X).repr ρ (Sum.inl i₀) ≠ 0)
+    (hi : i₂ ≠ i₁) :
+    gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of i₂)) ∈
+      (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
+        (basisModificationDelta p X hm ρ) := by
+  obtain ⟨b, hb, hb₀⟩ := hb
+  have hτ : gradedPowIter p (freeProP p X) m (gradedMkZero p (freeProP p X) (of i₂)) ∈
+      gradedPieceOf p (exponentSumKer p X i₁) m :=
+    gradedPowIter_gradedMkZero_mem_gradedPieceOf (of_mem_exponentSumKer hi) m
+  have key : basisModificationDelta p X hm ρ
+      (fun k ↦ b k • gradedPowIter p (freeProP p X) m (gradedMkZero p (freeProP p X) (of i₂))) =
+      (b i₀ * (degreeOneBasis p X).repr ρ (Sum.inl i₀)) •
+        gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of i₂)) := by
+    rw [basisModificationDelta_smul, hb, gradedBracket_gradedPowIter_self, add_zero,
+      gradedPowIter_succ, Finset.sum_eq_single i₀ (fun k _ hk ↦ by rw [hc k hk, mul_zero])
+        fun h ↦ (h (Finset.mem_univ _)).elim]
+  refine ⟨fun k ↦ (b i₀ * (degreeOneBasis p X).repr ρ (Sum.inl i₀))⁻¹ •
+    (b k • gradedPowIter p (freeProP p X) m (gradedMkZero p (freeProP p X) (of i₂))),
+    Submodule.mem_pi.2 fun k _ ↦ smul_mem _ _ (smul_mem _ _ hτ), ?_⟩
+  rw [← Pi.smul_def, map_smul, key, smul_smul, inv_mul_cancel₀ hb₀, one_smul]
+
+/-- **The constrained span statement with an exceptional generator, sharp form** (Labute, §4.2,
+Lemma 3). Under the hypotheses of
+`gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket`, if moreover
+`ξ_{i₂}` is a combination of the derivatives with nonzero coefficient `b_{i₀} c_{i₀}` at the
+`p`-power generator and `i₂ ≠ i₁`, then the tail at `x_{i₂}` is absorbed by the image of `δ_ρ`:
+
+  `gr_{m+1}(X) = δ_ρ(gr_m(X)^X) + T'_{m+1} + 𝔽_p π^m [ξ_{i₂}, ξ_{i₁}]`,
+
+with `T'_{m+1}` spanned by the `π^{m+1} ξ_a` for `a ≠ i₁, i₂`. For the relator
+`x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` these are Labute's spanning vectors `π^{m+1} ξ_a` (`a ≠ x₂, x₄`)
+and `π^m [ξ₂, ξ₄]`. -/
+theorem gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket_of_ne
+    (hm : 1 ≤ m) (hρ : span (ZMod p) (Set.range fun j ↦ degreeOneDeriv p X j ρ) = ⊤)
+    (hc : ∀ j, j ≠ i₀ → (degreeOneBasis p X).repr ρ (Sum.inl j) = 0)
+    (hd : ∀ j, j ≠ i₁ → j ≠ i₂ → ∃ b : X → ZMod p, b i₀ = 0 ∧
+      ∑ k, b k • degreeOneDeriv p X k ρ = gradedMkZero p (freeProP p X) (of j))
+    (hb : ∃ b : X → ZMod p,
+      ∑ k, b k • degreeOneDeriv p X k ρ = gradedMkZero p (freeProP p X) (of i₂) ∧
+        b i₀ * (degreeOneBasis p X).repr ρ (Sum.inl i₀) ≠ 0)
+    (hi : i₂ ≠ i₁) :
+    gradedPieceOf p (exponentSumKer p X i₁) (m + 1) =
+      (Submodule.pi Set.univ fun _ : X ↦ gradedPieceOf p (exponentSumKer p X i₁) m).map
+        (basisModificationDelta p X hm ρ) ⊔
+      span (ZMod p) (Set.range fun a : {a : X // a ≠ i₁ ∧ a ≠ i₂} ↦
+        gradedPowIter p (freeProP p X) (m + 1) (gradedMkZero p (freeProP p X) (of a))) ⊔
+      span (ZMod p) {gradedPowIterBracket p (freeProP p X) m (of i₂) (of i₁)} := by
+  refine le_antisymm ?_ (sup_le (sup_le
+    (map_basisModificationDelta_pi_gradedPieceOf_exponentSumKer_le hm ρ i₁) (span_le.2 ?_))
+    (span_le.2 (Set.singleton_subset_iff.2
+      (gradedPowIterBracket_mem_gradedPieceOf (commutator_le_exponentSumKer i₁) m _ _))))
+  · rw [gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPowIterBracket
+      hm hρ hc hd]
+    refine sup_le (sup_le (le_sup_left.trans le_sup_left) (span_le.2 ?_)) le_sup_right
+    rintro _ ⟨a, rfl⟩
+    by_cases ha : (a : X) = i₂
+    · dsimp only
+      rw [ha]
+      exact mem_sup_left (mem_sup_left
+        (gradedPowIter_gradedMkZero_mem_map_basisModificationDelta_pi hm hc hb hi))
+    · exact mem_sup_left (mem_sup_right (subset_span ⟨⟨a, a.2, ha⟩, rfl⟩))
+  · rintro _ ⟨a, rfl⟩
+    exact gradedPowIter_gradedMkZero_mem_gradedPieceOf (of_mem_exponentSumKer a.2.1) _
 
 end ConstrainedSpan
 

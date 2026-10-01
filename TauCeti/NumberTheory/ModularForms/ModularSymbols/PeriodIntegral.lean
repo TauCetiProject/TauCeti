@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.NumberTheory.ModularForms.BinaryForms
-public import TauCeti.NumberTheory.ModularForms.GeodesicIntegral
+public import TauCeti.NumberTheory.ModularForms.GeodesicIntegral.BetweenCusps
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
@@ -35,9 +35,11 @@ of `f ∣[k] γ` against `P ∣ γ`, the right action of `TauCeti.binaryFormRep`
 the periods compatible with the relation `{γα, γβ} ⊗ P = {α, β} ⊗ (P ∣ γ)` defining modular
 symbols. Second, **absolute convergence**: both endpoints of the geodesic are cusps, and the
 integrand is integrable along the whole geodesic. Moving each endpoint to `i∞` reduces this to
-the exponential decay of a cusp form there, which beats the polynomial growth of `P`. Only the
-`SL(2, ℤ)` form of the transformation law, stated through `TauCeti.binaryFormRep`, needs `R` to be
-a ring.
+the exponential decay of a cusp form there, which beats the polynomial growth of `P`. The same
+estimate, uniform on vertical strips, gives the hypotheses of `TauCeti.cuspIntegral_add_adjacent`,
+so the periods are **additive**: `∫_γ^β + ∫_β^α = ∫_γ^α`, the analytic form of the relation
+`{α, β} + {β, γ} = {α, γ}` of modular symbols. Only the `SL(2, ℤ)` form of the transformation
+law, stated through `TauCeti.binaryFormRep`, needs `R` to be a ring.
 
 ## Main definitions
 
@@ -59,6 +61,10 @@ a ring.
 * `TauCeti.ModularSymbols.integrableOn_resToImagAxis_periodIntegrand_slash`: **absolute
   convergence** of the period integral of a cusp form of weight `w + 2` against a binary form of
   degree `w` along the geodesic between any two distinct cusps.
+* `TauCeti.ModularSymbols.tendsto_periodIntegrand_slash`: the slashed integrand tends to `0` at
+  `i∞` uniformly on vertical strips.
+* `TauCeti.ModularSymbols.cuspIntegral_periodIntegrand_add_adjacent`: **additivity** of the
+  periods, `∫_α^β f(z) P(z, 1) dz + ∫_β^γ f(z) P(z, 1) dz = ∫_α^γ f(z) P(z, 1) dz`.
 * `TauCeti.ModularSymbols.periodIntegrand_slash_mapGL`: for `γ ∈ SL(2, ℤ)`, slashing the
   integrand of `f` against `P` by `γ` gives the integrand of `f ∣[k] γ` against `P ∣ γ`.
 * `TauCeti.ModularSymbols.geodesicIntegral_mapGL_mul_periodIntegrand`: the transformation law
@@ -77,7 +83,7 @@ a ring.
 public section
 
 open Asymptotics Complex Filter Matrix Matrix.SpecialLinearGroup MeasureTheory ModularGroup
-  MulOpposite MvPolynomial Set
+  MulOpposite MvPolynomial Set Topology
 open UpperHalfPlane hiding I
 open scoped Manifold MatrixGroups ModularForm Pointwise
 
@@ -273,6 +279,67 @@ theorem integrableOn_resToImagAxis_periodIntegrand_slash [Γ.IsArithmetic] [Cusp
   have := integrableOn_resToImagAxis_periodIntegrand_slash_Ici f hk P hgS
   rwa [SlashAction.slash_mul, ModularForm.rat_slash_mapGL,
     ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash] at this
+
+/-- **Decay on vertical strips**: for a cusp form `f` of weight `w + 2` on an arithmetic
+subgroup, a binary form `P` of degree `w`, and a rational matrix `g` of positive determinant, the
+slashed integrand `(f(z) P(z, 1)) ∣[2] g` tends to `0` at `i∞` uniformly on every vertical strip:
+the exponential decay of `f ∣[k] g` beats the polynomial growth of `P`, which on a strip is
+polynomial in the imaginary part. -/
+theorem tendsto_periodIntegrand_slash [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F)
+    (hk : k = w + 2) (P : homogeneousSubmodule (Fin 2) R w) {g : GL (Fin 2) ℚ}
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) (a b : ℝ) :
+    Tendsto (periodIntegrand f P ∣[(2 : ℤ)] g) (atImInfty ⊓ 𝓟 {τ | τ.re ∈ Icc a b}) (𝓝 0) := by
+  set g' := Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g with hg'
+  set l := atImInfty ⊓ 𝓟 {τ : ℍ | τ.re ∈ Icc a b}
+  have h1 : ∀ᶠ τ : ℍ in atImInfty, 1 ≤ τ.im := (atImInfty_mem _).mpr ⟨1, fun _ h ↦ h⟩
+  have hl : ∀ᶠ τ : ℍ in l, 1 ≤ τ.im ∧ τ.re ∈ Icc a b :=
+    (h1.filter_mono inf_le_left).and (mem_inf_of_right (mem_principal_self _))
+  -- on the strip, `|τ| = O(Im τ)`, so `P(aτ + b, cτ + d) = O((Im τ) ^ w)`
+  have hone : (fun _ : ℍ ↦ (1 : ℝ)) =O[l] fun τ ↦ τ.im :=
+    IsBigO.of_bound 1 (hl.mono fun τ hτ ↦ by simpa [abs_of_pos τ.im_pos] using hτ.1)
+  have hcoe : (fun τ : ℍ ↦ (τ : ℂ)) =O[l] fun τ ↦ τ.im := by
+    refine IsBigO.of_bound (max |a| |b| + 1) (hl.mono fun τ hτ ↦ ?_)
+    obtain ⟨him, hre⟩ := hτ
+    have hre' : |τ.re| ≤ max |a| |b| := abs_le_max_abs_abs hre.1 hre.2
+    rw [Real.norm_of_nonneg τ.im_pos.le]
+    calc ‖(τ : ℂ)‖ ≤ |τ.re| + |τ.im| := Complex.norm_le_abs_re_add_abs_im _
+      _ ≤ max |a| |b| + τ.im := by rw [abs_of_pos τ.im_pos]; linarith
+      _ ≤ (max |a| |b| + 1) * τ.im := by
+        have hM : 0 ≤ max |a| |b| := le_max_of_le_left (abs_nonneg a)
+        nlinarith [mul_le_mul_of_nonneg_left him hM]
+  have haffine (c d : ℂ) : (fun τ : ℍ ↦ c * τ + d) =O[l] fun τ ↦ τ.im :=
+    (hcoe.const_mul_left c).add ((isBigO_const_const d one_ne_zero l).trans hone)
+  have hpoly : (fun τ : ℍ ↦ aeval ![num g' τ, denom g' τ] (P : MvPolynomial (Fin 2) R)) =O[l]
+      fun τ ↦ τ.im ^ w := by
+    refine TauCeti.isBigO_aeval_of_totalDegree_le
+      ((mem_homogeneousSubmodule w _).mp P.2).totalDegree_le (fun i ↦ ?_) hone
+    fin_cases i
+    · simpa [num] using haffine (g' 0 0 : ℂ) (g' 0 1 : ℂ)
+    · simpa [denom] using haffine (g' 1 0 : ℂ) (g' 1 1 : ℂ)
+  obtain ⟨c, hc, hdecay⟩ := exists_isBigO_rat_slash_exp f g
+  have hO : (periodIntegrand f P ∣[(2 : ℤ)] g) =O[l] fun τ ↦ τ.im ^ w / Real.exp (c * τ.im) := by
+    refine (((hdecay.mono inf_le_left).mul hpoly).const_mul_left
+      (((g : Matrix (Fin 2) (Fin 2) ℚ).det : ℂ) ^ (-(w : ℤ)))).congr
+      (fun τ ↦ ?_) (fun τ ↦ ?_)
+    · rw [periodIntegrand_slash_apply hk f P hg, mul_assoc, ← hg']
+    · rw [neg_mul, Real.exp_neg, div_eq_mul_inv, mul_comm]
+  have him : Tendsto (fun τ : ℍ ↦ τ.im) l atTop := tendsto_comap.mono_left inf_le_left
+  exact hO.trans_tendsto
+    ((isLittleO_pow_exp_pos_mul_atTop w hc).tendsto_div_nhds_zero.comp him)
+
+/-- **The periods are additive**: for a cusp form `f` of weight `w + 2` on an arithmetic subgroup
+and a binary form `P` of degree `w`, the periods satisfy
+`∫_α^β f(z) P(z, 1) dz + ∫_β^γ f(z) P(z, 1) dz = ∫_α^γ f(z) P(z, 1) dz` for all cusps `α`, `β`,
+`γ`. Since the symbol `{α, β} ⊗ P` pairs to `∫_β^α f(z) P(z, 1) dz`, this is the analytic
+counterpart of the relation `{α, β} + {β, γ} = {α, γ}` of modular symbols, and is what lets the
+periods define a linear functional on degree-zero divisors on the cusps. -/
+theorem cuspIntegral_periodIntegrand_add_adjacent [Γ.IsArithmetic] [CuspFormClass F Γ k]
+    (f : F) (hk : k = w + 2) (P : homogeneousSubmodule (Fin 2) R w) (α β γ : OnePoint ℚ) :
+    cuspIntegral (periodIntegrand f P) α β + cuspIntegral (periodIntegrand f P) β γ =
+      cuspIntegral (periodIntegrand f P) α γ :=
+  cuspIntegral_add_adjacent (mdifferentiable_periodIntegrand (ModularFormClass.holo f) P)
+    (fun _ hg ↦ integrableOn_resToImagAxis_periodIntegrand_slash_Ici f hk P hg)
+    (fun _ hg ↦ tendsto_periodIntegrand_slash f hk P hg) α β γ
 
 end CommSemiring
 

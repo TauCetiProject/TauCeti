@@ -23,6 +23,9 @@ permutation with one of a *different* type and are stated to allow that; the thi
 permutations of the same type.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
+* `TauCeti.orbitCount_prodCongrRight_const`: permuting the second factor of a product by the same
+  permutation over every point of the first multiplies the number of orbits by the size of the
+  first factor.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
   of parts in Mathlib's full, fixed-point-aware permutation partition, through the decomposition
   `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints` of `TauCeti.GroupTheory.Perm.Partition`.
@@ -39,6 +42,9 @@ permutations of the same type.
   orbit more than `σ` — the extra orbit is the fixed point `p`.
 * `TauCeti.orbitCount_mul_swap_add_one`: multiplying a permutation by a transposition that moves
   one of its fixed points splices that fixed point into another orbit, so the count drops by one.
+* `List.IsSwapForest.orbitCount_add_length`: iterating the splicing step, the product of a
+  `List.IsSwapForest` list of `n` transpositions on a finite type has `n` orbits fewer than the
+  identity.
 * `TauCeti.orbitCount_add_one_of_merge`: if the orbits of `τ` are the orbits of `σ` with the orbit
   of one point and the orbit of another merged, then `τ` has one orbit fewer.
 
@@ -152,6 +158,26 @@ theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
       simpa only [Equiv.permCongrHom_coe] using map_zpow e.permCongrHom σ i
     rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply] at hi
     exact hi
+
+/-- Rotating the second coordinate of `α × β` by the same permutation `τ` over every point of `α`
+has one copy of each orbit of `τ` over every point of `α`. -/
+theorem orbitCount_prodCongrRight_const (τ : Equiv.Perm β) :
+    orbitCount (Equiv.prodCongrRight fun _ : α ↦ τ) = Nat.card α * orbitCount τ := by
+  let f : Equiv.Perm β →* Equiv.Perm (α × β) :=
+    { toFun := fun σ ↦ Equiv.prodCongrRight fun _ ↦ σ
+      map_one' := rfl
+      map_mul' := fun _ _ ↦ rfl }
+  have hsc : ∀ x y : α × β, SameCycle (Equiv.prodCongrRight fun _ : α ↦ τ) x y ↔
+      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := by
+    rintro ⟨a, b⟩ ⟨a', b'⟩
+    have hpow (k : ℤ) :
+        (Equiv.prodCongrRight fun _ : α ↦ τ) ^ k = Equiv.prodCongrRight fun _ ↦ τ ^ k :=
+      (map_zpow f τ k).symm
+    simp only [SameCycle, hpow, Equiv.prodCongrRight_apply, Prod.mk.injEq, one_zpow, one_apply]
+    exact ⟨fun ⟨k, ha, hb⟩ ↦ ⟨⟨0, ha⟩, k, hb⟩, fun ⟨⟨_, ha⟩, k, hb⟩ ↦ ⟨k, ha, hb⟩⟩
+  rw [orbitCount_def, Nat.card_congr ((Quotient.congr (rb := (SameCycle.setoid 1).prod
+    (SameCycle.setoid τ)) (Equiv.refl _) hsc).trans (Setoid.prodQuotientEquiv _ _).symm),
+    Nat.card_prod, ← orbitCount_def, ← orbitCount_def, orbitCount_one]
 
 section Finite
 
@@ -343,6 +369,48 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
         (F x)).trans ?_
       rw [id, hi]
     exact ((hFsame x).trans hxy).trans (hFsame y).symm
+
+/-- A list of transpositions `[(a₁, p₁), …, (aₙ, pₙ)]` is a *swap forest* if each factor
+`Equiv.swap aᵢ pᵢ` moves a point `pᵢ ≠ aᵢ` that the product of the later factors still fixes. The
+head of the list is the rightmost factor of the product
+`(factors.reverse.map (Function.uncurry Equiv.swap)).prod`, so each factor splices a fixed point
+into another orbit, as in `TauCeti.orbitCount_mul_swap_add_one`. -/
+def _root_.List.IsSwapForest [DecidableEq β] : List (β × β) → Prop
+  | [] => True
+  | (a, p) :: factors =>
+      factors.IsSwapForest ∧
+        (factors.reverse.map (Function.uncurry Equiv.swap)).prod p = p ∧ a ≠ p
+
+/-- The empty list of transpositions is a swap forest. -/
+@[simp] theorem _root_.List.isSwapForest_nil [DecidableEq β] :
+    ([] : List (β × β)).IsSwapForest :=
+  trivial
+
+/-- Unfolding `List.IsSwapForest` at a cons: the tail is a swap forest and the new factor
+moves a point `p ≠ a` fixed by the product of the tail. -/
+@[simp] theorem _root_.List.isSwapForest_cons [DecidableEq β] (a p : β)
+    (factors : List (β × β)) :
+    ((a, p) :: factors).IsSwapForest ↔
+      factors.IsSwapForest ∧
+        (factors.reverse.map (Function.uncurry Equiv.swap)).prod p = p ∧ a ≠ p :=
+  Iff.rfl
+
+/-- **A swap forest removes one orbit per factor.** Iterating
+`TauCeti.orbitCount_mul_swap_add_one`, the product of a swap forest of `n` transpositions on a
+finite type has `n` orbits fewer than the identity. -/
+theorem _root_.List.IsSwapForest.orbitCount_add_length [DecidableEq β] [Finite β]
+    {factors : List (β × β)} (hforest : factors.IsSwapForest) :
+    orbitCount (factors.reverse.map (Function.uncurry Equiv.swap)).prod + factors.length =
+      Nat.card β := by
+  induction factors with
+  | nil => simp [orbitCount_one]
+  | cons factor factors ih =>
+      rcases factor with ⟨a, p⟩
+      have hstep := orbitCount_mul_swap_add_one hforest.2.1 hforest.2.2
+      have htail := ih hforest.1
+      simp only [List.reverse_cons, List.map_append, List.prod_append, List.map_singleton,
+        List.prod_singleton, Function.uncurry_apply_pair, List.length_cons] at hstep ⊢
+      omega
 
 /-- **Merging two orbits removes one orbit.** If every orbit of `σ` is contained in an orbit of
 `τ`, if two points `a` and `b` lying in different orbits of `σ` lie in one orbit of `τ`, and if no

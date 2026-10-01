@@ -13,6 +13,7 @@ import TauCeti.RingTheory.Ideal.GoingDown
 import TauCeti.RingTheory.KrullDimension.Equidimensional
 import TauCeti.RingTheory.KrullDimension.Integral
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+import TauCeti.RingTheory.Flat.NonZeroDivisors
 import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.KrullDimension.Field
 
@@ -47,6 +48,8 @@ fields by `TauCeti.NodeAlgebra.baseChange`.
 ## Main results
 
 * `TauCeti.NodeAlgebra.instFree`: the node algebra is a free `R`-module.
+* `TauCeti.NodeAlgebra.coord_mem_nonZeroDivisors`: if `a` is a nonzerodivisor of `R`, then, the
+  node algebra being flat, both coordinates are nonzerodivisors.
 * `TauCeti.NodeAlgebra.ringKrullDim_eq_ringKrullDim_polynomial`: its Krull dimension is that of
   `R[s]`.
 * `TauCeti.NodeAlgebra.ringKrullDim_eq_ringKrullDim_add_one`: over a Noetherian ring `R` it has
@@ -159,6 +162,17 @@ flat `R`-algebra. -/
 instance [Nontrivial R] : Nontrivial (NodeAlgebra R a) :=
   have := nontrivial_adjoinRoot a
   (adjoinRootEquiv a).injective.nontrivial
+
+variable {a} in
+/-- If `a` is a nonzerodivisor of `R`, then both coordinates are nonzerodivisors of the node
+algebra of `xy = a`. -/
+theorem coord_mem_nonZeroDivisors (ha : a ∈ nonZeroDivisors R) (i : Fin 2) :
+    coord a i ∈ nonZeroDivisors (NodeAlgebra R a) := by
+  -- If `xz = 0`, then `az = y · xz = 0`, and `a` is a nonzerodivisor of the flat algebra.
+  have key : ∀ z, coord a i * z = 0 → z = 0 := fun z hz ↦
+    (Module.Flat.algebraMap_mem_nonZeroDivisors ha).1 z
+      (by rw [← coord_mul_coord_one_sub, mul_right_comm, hz, zero_mul])
+  exact mem_nonZeroDivisors_iff_left.mpr key
 
 /-- The node algebra has the Krull dimension of the polynomial ring `R[s]`, over which it is
 integral and which it contains. -/

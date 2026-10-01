@@ -19,9 +19,9 @@ conjugating along the chosen total-space homeomorphism.
 
 * `TauCeti.Deck.conjMulEquiv`: if `h : E ≃ₜ F` satisfies `q (h e) = p e`, then
   conjugation by `h` gives `deck p ≃* deck q`.
-* `TauCeti.Deck.conjMulEquivRefl`: the identity over-base homeomorphism induces the
+* `TauCeti.Deck.conjMulEquiv_refl`: the identity over-base homeomorphism induces the
   identity deck-group equivalence.
-* `TauCeti.Deck.conjMulEquivTrans`: conjugating along a composite over-base
+* `TauCeti.Deck.conjMulEquiv_trans`: conjugating along a composite over-base
   homeomorphism is the composite of the conjugation equivalences.
 -/
 
@@ -146,7 +146,7 @@ lemma conjMulEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) 
 /-- Conjugating deck transformations along the identity over-base homeomorphism gives the
 identity deck-group equivalence. -/
 @[simp]
-lemma conjMulEquivRefl :
+lemma conjMulEquiv_refl :
     conjMulEquiv (Homeomorph.refl E) (p := p) (q := p) (fun _ => rfl) =
       MulEquiv.refl (deck p) := by
   ext φ e
@@ -159,7 +159,7 @@ lemma conjMulEquivRefl :
 -- attribute would never fire.
 /-- Conjugating along a composite over-base homeomorphism is the composite of the two
 conjugation equivalences. -/
-lemma conjMulEquivTrans (h : E ≃ₜ F) (k : F ≃ₜ G)
+lemma conjMulEquiv_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
     (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) :
     conjMulEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) =
       (conjMulEquiv h hpq).trans (conjMulEquiv k hqr) := by
@@ -170,7 +170,7 @@ lemma conjMulEquivTrans (h : E ≃ₜ F) (k : F ≃ₜ G)
 lemma subgroup_map_conj_refl (H : Subgroup (deck p)) :
     H.map ((conjMulEquiv (Homeomorph.refl E) (p := p) (q := p)
       (fun e => by rfl) : deck p ≃* deck p) : deck p →* deck p) = H := by
-  rw [conjMulEquivRefl]
+  rw [conjMulEquiv_refl]
   simp
 
 /-- Mapping a subgroup through two successive conjugations agrees with mapping it through the

@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+-- Proof-only: extensionality for ring homomorphisms out of the coordinate ring.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
 -- Proof-only: evaluation of the coordinate ring, which supplies the equation at the generic point.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 -- Proof-only: `polynomialY_ne_zero`, that `W_Y` is a nonzero polynomial once `Δ ≠ 0`.
@@ -53,6 +55,8 @@ consumer may rely on that.
   the Weierstrass polynomial.
 * `WeierstrassCurve.Affine.isIntegral_genericY`: it is integral over any commutative
   `R[X]`-algebra mapping compatibly to the function field.
+* `WeierstrassCurve.Affine.FunctionField.ringHom_ext`: a ring homomorphism out of the function
+  field is determined by the constants and the generic coordinates.
 * `WeierstrassCurve.Affine.algebraMap_eq_aeval_genericX`: the image of `R[X]` in the
   function field is the polynomials in the generic `x`-coordinate.
 * `WeierstrassCurve.Affine.algebraMap_mem_adjoin_genericX_genericY`: the coordinate ring, read
@@ -122,6 +126,20 @@ to the function field. -/
 theorem genericX_eq_algebraMap : genericX W = algebraMap R[X] W.FunctionField X := by
   rw [genericX_def, WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
     IsScalarTower.algebraMap_apply R[X] W.CoordinateRing W.FunctionField]
+
+variable {W} in
+/-- **Ring homomorphisms out of the function field are determined by the constants and the generic
+coordinates.** The function field is a localization of the coordinate ring, which is generated
+over `R` by the classes of `x` and `y`. -/
+theorem FunctionField.ringHom_ext {S : Type*} [Semiring S] {f g : W.FunctionField →+* S}
+    (hc : ∀ a : R, f (algebraMap R W.FunctionField a) = g (algebraMap R W.FunctionField a))
+    (hx : f W.genericX = g W.genericX) (hy : f W.genericY = g W.genericY) : f = g := by
+  refine IsLocalization.ringHom_ext (nonZeroDivisors W.CoordinateRing) <|
+    CoordinateRing.ringHom_ext W (fun a ↦ ?_) ?_ ?_
+  · simpa only [IsScalarTower.algebraMap_apply R W.CoordinateRing W.FunctionField,
+      RingHom.comp_apply] using hc a
+  · simpa [genericX_def, CoordinateRing.mk_C_eq_algebraMap] using hx
+  · simpa [genericY_def] using hy
 
 /-- **Evaluating at the generic point is reduction modulo the Weierstrass relation.** A bivariate
 polynomial over `R`, pushed to the function field and evaluated at `(genericX, genericY)`, is the
@@ -310,14 +328,8 @@ theorem map_genericPoint_injective [W.IsElliptic] {Ω : Type*} [Field Ω] [Algeb
     simpa only [Point.xCoord_map, xCoord_genericPoint] using congrArg Point.xCoord h
   have hy : σ (genericY W) = τ (genericY W) := by
     simpa only [Point.yCoord_map, yCoord_genericPoint] using congrArg Point.yCoord h
-  have key : σ.comp (IsScalarTower.toAlgHom F W.CoordinateRing W.FunctionField) =
-      τ.comp (IsScalarTower.toAlgHom F W.CoordinateRing W.FunctionField) := by
-    refine CoordinateRing.algHom_ext ?_ ?_
-    · simpa [genericX_def] using hx
-    · simpa [genericY_def] using hy
-  refine AlgHom.toRingHom_injective
-    (IsFractionRing.ringHom_ext (A := W.CoordinateRing) fun a ↦ ?_)
-  exact congrArg (fun f : W.CoordinateRing →ₐ[F] Ω ↦ f a) key
+  apply AlgHom.toRingHom_injective
+  exact FunctionField.ringHom_ext (fun a ↦ by simp) hx hy
 
 /-- **An embedding is determined by the rational point it displaces the generic point by.** If
 each index `i` carries a rational point whose base change is `e i`'s displacement of the generic

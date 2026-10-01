@@ -71,6 +71,8 @@ Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coeffic
   inverse are continuous.
 * `TauCeti.ClassFieldTheory.isSmoothDiscrete_muNRep`: `muNRep n F` is a smooth discrete
   coefficient object.
+* `TauCeti.ClassFieldTheory.muNRep_ρ_apply_eq_self`: `G_F` acts trivially on `muNRep n F` when `F`
+  contains a primitive `n`th root of unity.
 * `TauCeti.ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`: the Kummer class of
   `a` is the transported class of `g ↦ g α / α`, for any `n`th root `α` of `a`.
 * `TauCeti.ClassFieldTheory.kummerClass_eq_zero_iff`: the Kummer class of `a` vanishes exactly
@@ -156,6 +158,14 @@ attribute [local instance] TopRep.distribMulAction
 /-- The action of `G_F` on `μₙ` is continuous, `μₙ` being smooth discrete. -/
 instance : ContinuousSMul (Field.absoluteGaloisGroup F) (muNRep n F).V :=
   (isSmoothDiscrete_muNRep n F).continuousSMul
+
+variable {n F} in
+/-- **`G_F` acts trivially on `μₙ` when `F` contains a primitive `n`th root of unity**, by
+`TauCeti.smul_kummerCoeff_eq_self` read through the coefficient dictionary. -/
+theorem muNRep_ρ_apply_eq_self [NeZero n] {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (g : Field.absoluteGaloisGroup F) (x : (muNRep n F).V) : (muNRep n F).ρ g x = x := by
+  have h := kummerCoeffEquivMuNRep_smul n F g ((kummerCoeffEquivMuNRep n F).symm x)
+  rwa [smul_kummerCoeff_eq_self hζ, AddEquiv.apply_symm_apply, eq_comm] at h
 
 /-! ### Transport of `H¹` -/
 

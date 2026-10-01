@@ -54,6 +54,8 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
   `TauCeti.ContinuousCohomology.coeffMap_comp_resLE` and
   `TauCeti.ContinuousCohomology.coeffMap_comp_infl`: naturality of restriction and of inflation in
   the coefficients.
+* `TauCeti.ContinuousCohomology.map_comp_coeffMap`: the map of a compatible pair is natural in
+  the coefficients, under simultaneous change of group and coefficients.
 * `TauCeti.ContinuousCohomology.map_congr`: two compatible pairs that agree induce the same map.
 * `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply` and
   `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply`: evaluation of mapped homogeneous
@@ -140,6 +142,22 @@ theorem coeffMap_comp {X Y Z : TopRep R G} (f : X ⟶ Y) (g : Y ⟶ Z) (n : ℕ)
     coeffMap (f ≫ g) n = coeffMap f n ≫ coeffMap g n :=
   _root_.ContinuousCohomology.map_comp (X := X) (ContinuousMonoidHom.id G)
     (ContinuousMonoidHom.id G) f g n
+
+/-- **Naturality of compatible-pair maps in the coefficients**: for compatible pairs `(φ, f)` and
+`(φ, f')` and coefficient morphisms `a`, `b` forming a commutative square
+`res φ a ≫ f' = f ≫ b`, the induced maps satisfy `map φ f ≫ coeffMap b = coeffMap a ≫ map φ f'`. -/
+@[reassoc]
+theorem map_comp_coeffMap {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X X' : TopRep R G} {Y Y' : TopRep R H} (φ : H →ₜ* G) (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    (f' : TopRep.res (φ : H →* G) X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
+    (h : (TopRep.resFunctor (φ : H →* G)).map a ≫ f' = f ≫ b) (n : ℕ) :
+    _root_.ContinuousCohomology.map φ f n ≫ coeffMap b n =
+      coeffMap a n ≫ _root_.ContinuousCohomology.map φ f' n := by
+  rw [coeffMap_def, coeffMap_def,
+    ← _root_.ContinuousCohomology.map_comp φ (ContinuousMonoidHom.id H) f b n,
+    ← _root_.ContinuousCohomology.map_comp (ContinuousMonoidHom.id G) φ a f' n]
+  -- Both composite group homomorphisms are `φ`, and the coefficient square is `h`.
+  exact map_congr (ContinuousMonoidHom.ext fun _ ↦ rfl) (heq_of_eq h.symm) n
 
 end CoeffMap
 

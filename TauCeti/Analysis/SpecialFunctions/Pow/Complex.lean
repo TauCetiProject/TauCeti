@@ -23,6 +23,8 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
+  multiplies the exponents.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
   complex base.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
@@ -52,6 +54,14 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
+
+/-- A principal complex power of a natural power of a nonnegative real multiplies the exponents:
+`((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s)`.  The argument of `(r : ℂ)` is `0`, so the principal branch
+is not crossed. -/
+theorem ofReal_pow_cpow {r : ℝ} (hr : 0 ≤ r) (n : ℕ) (s : ℂ) :
+    ((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s) := by
+  have harg : (r : ℂ).arg = 0 := arg_ofReal_of_nonneg hr
+  rw [cpow_nat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
 
 /-- A principal complex power with nonzero base takes a finite sum of exponents to the
 corresponding product. -/

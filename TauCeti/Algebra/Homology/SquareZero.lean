@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.LinearAlgebra.Finsupp.SumProd
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -32,6 +33,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a chain map `f` with `f ∘ d = e ∘ f`.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of such a chain map.
+* `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
+  `κ →₀ S`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S`.
 
 ## Main results
 
@@ -43,6 +46,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   descriptions of surjectivity and injectivity of the map induced on homology.
 * `LinearMap.ker_le_range_mappingCone_iff`: a chain map induces a bijection on homology exactly when
   its mapping cone is exact.
+* `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
+  in its range exactly when the same holds for the mapping cone on `(ι →₀ S) × (κ →₀ S)`.
 * `HomologicalComplex.quasiIso_iff_bijective_homologyMap`: a morphism of complexes of modules of
   shape `ComplexShape.refl Unit`, that is, of modules with a square-zero endomorphism, is a
   quasi-isomorphism exactly when it induces a bijection on `ker d ⧸ im d`.
@@ -329,6 +334,80 @@ theorem ker_le_range_mappingCone_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (
     abel
 
 end Map
+
+/-! ### Mapping cones of maps between free modules -/
+
+section SumMappingCone
+
+open Finsupp
+
+variable {ι κ : Type*}
+
+/-- The mapping cone of a map `f : (ι →₀ S) → (κ →₀ S)` between free modules with endomorphisms
+`d` and `e`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S` on the disjoint union of the two
+bases: `LinearMap.mappingCone d e f` transported along `Finsupp.sumFinsuppLEquivProdFinsupp`. -/
+noncomputable def sumMappingCone (d : (ι →₀ S) →ₗ[S] (ι →₀ S)) (e : (κ →₀ S) →ₗ[S] (κ →₀ S))
+    (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) : ((ι ⊕ κ) →₀ S) →ₗ[S] ((ι ⊕ κ) →₀ S) :=
+  (sumFinsuppLEquivProdFinsupp S).symm.conjRingEquiv (mappingCone d e f)
+
+/-- The mapping cone on `(ι ⊕ κ) →₀ S` is the mapping cone on `(ι →₀ S) × (κ →₀ S)` between the
+two `Finsupp` sum-product equivalences. -/
+@[simp]
+theorem sumMappingCone_apply (d : (ι →₀ S) →ₗ[S] (ι →₀ S)) (e : (κ →₀ S) →ₗ[S] (κ →₀ S))
+    (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (x : (ι ⊕ κ) →₀ S) :
+    sumMappingCone d e f x =
+      (sumFinsuppLEquivProdFinsupp S).symm (mappingCone d e f (sumFinsuppLEquivProdFinsupp S x)) :=
+  (rfl)
+
+/-- The coefficient of the mapping cone between two generators of `ι` is minus that of `d`. -/
+theorem sumMappingCone_single_inl_apply_inl (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (i j : ι) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inl i) c) (.inl j) = -d (Finsupp.single i c) j := by
+  simp
+
+/-- The coefficient of the mapping cone from a generator of `ι` to a generator of `κ` is that
+of `f`. -/
+theorem sumMappingCone_single_inl_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (i : ι) (k : κ) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inl i) c) (.inr k) = f (Finsupp.single i c) k := by
+  simp
+
+/-- The mapping cone has no coefficient from a generator of `κ` to a generator of `ι`. -/
+theorem sumMappingCone_single_inr_apply_inl (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (k : κ) (i : ι) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inr k) c) (.inl i) = 0 := by
+  simp
+
+/-- The coefficient of the mapping cone between two generators of `κ` is that of `e`. -/
+theorem sumMappingCone_single_inr_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (k k' : κ) (c : S) :
+    sumMappingCone d e f (Finsupp.single (.inr k) c) (.inr k') = e (Finsupp.single k c) k' := by
+  simp
+
+/-- The mapping cone on `(ι ⊕ κ) →₀ S` of a chain map between square-zero endomorphisms squares
+to zero. -/
+theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)} {e : (κ →₀ S) →ₗ[S] (κ →₀ S)}
+    {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
+    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
+  unfold sumMappingCone
+  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp,
+    mappingCone_comp_self f hd he hf, map_zero]
+
+/-- The kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies in its range exactly when the kernel of
+the mapping cone on `(ι →₀ S) × (κ →₀ S)` lies in its range. -/
+theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
+    {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
+    ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
+      ker (mappingCone d e f) ≤ range (mappingCone d e f) := by
+  -- Rewrite the transported cone as a composition through its application rule.
+  have hcomp : sumMappingCone d e f = (sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ
+      mappingCone d e f ∘ₗ (sumFinsuppLEquivProdFinsupp S).toLinearMap :=
+    LinearMap.ext fun x ↦ by simp
+  rw [hcomp, LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
+    Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
+  exact Submodule.comap_le_comap_iff_of_surjective (LinearEquiv.surjective _)
+
+end SumMappingCone
 
 end LinearMap
 

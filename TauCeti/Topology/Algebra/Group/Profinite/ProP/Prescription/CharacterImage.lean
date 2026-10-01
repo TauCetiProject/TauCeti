@@ -156,6 +156,32 @@ theorem HasPrescriptionProperty.range_le_unitsPrincipal_iff_forall_pow_dvd_expon
       exact pow_succ_dvd_sub_one_of_forall_pow_succ_dvd_exponentSum hr hnd hkill
         (ih fun x ↦ (pow_dvd_pow _ k.le_succ).trans (he x)) he
 
+omit [Fact p.Prime] in
+/-- **At `p = 2`, a character with the prescription property taking a value outside `1 + 4ℤ_2`
+has nonalternating degree-one form.** For `G = ⟨X ∣ r⟩` with `r ∈ Φ(F)` of nondegenerate
+degree-one form, an alternating form has vanishing diagonal, that is, `4` divides every exponent
+sum of `r`, which puts the image of every character with the prescription property inside
+`1 + 4ℤ_2`. -/
+theorem HasPrescriptionProperty.not_isAlt_degreeOneForm_of_not_range_le_unitsPrincipal_two
+    [Finite X] {r : freeProP 2 X} (hr : r ∈ proPFrattini 2 (freeProP 2 X))
+    (hnd : (degreeOneForm (gradedMk 2 (freeProP 2 X) 1
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).Nondegenerate)
+    {χ : presentedProP 2 X {r} →ₜ* ℤ_[2]ˣ} (hχ : HasPrescriptionProperty χ)
+    (h : ¬ χ.toMonoidHom.range ≤ unitsPrincipal 2 2) :
+    ¬ (degreeOneForm (gradedMk 2 (freeProP 2 X) 1
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).IsAlt := by
+  intro halt
+  -- The standard basis of `gr_1(F)` needs an order on `X`; the diagonal of the form does not.
+  obtain ⟨_, ⟨e⟩⟩ := Finite.exists_equiv_fin X
+  let : LinearOrder X := LinearOrder.lift' e e.injective
+  refine h ((hχ.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum hr hnd 2).2 fun x ↦
+    (degreeOneBasis_repr_gradedMk_inl_eq_zero_iff
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩ x).1 ?_)
+  have h' := degreeOneForm_dualBasis_self (gradedMk 2 (freeProP 2 X) 1
+    ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩) x
+  rw [halt.self_eq_zero, Nat.choose_self, one_nsmul] at h'
+  exact h'.symm
+
 end Presented
 
 end TauCeti
