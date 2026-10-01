@@ -18,7 +18,7 @@ that every series `∑ n, x n` with `x n ∈ F n` has a limit `s`, in the sense 
 vanishing Tate cohomology in degree `0`, respectively `-1`. Then so does `M`.
 
 The proof is by successive approximation, using the low-degree descriptions
-`Ĥ⁰(G, M) = Mᴳ / N_G M` and `Ĥ⁻¹(G, M) = ker N_G / I_G M`. In degree `0`, an invariant
+`H-hat^0(G, M) = Mᴳ / N_G M` and `H-hat^(-1)(G, M) = ker N_G / I_G M`. In degree `0`, an invariant
 `m ∈ F n` is a norm modulo `F (n + 1)` because its image in the graded piece is a norm there; the
 correction terms `y n ∈ F n` sum to some `s` with `N_G s = m`. In degree `-1`, an element `m` of
 norm zero lies in `I_G M` modulo `F (n + 1)` once it lies in `F n`, and `I_G M` is the set of sums
