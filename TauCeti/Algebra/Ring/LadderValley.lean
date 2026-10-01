@@ -101,11 +101,6 @@ section Ring
 
 variable [Ring A] {u d : ℕ → A}
 
-private theorem neg_mul_neg_one_pow (a b : A) (r : ℕ) :
-    -(a * ((-1) ^ r * b)) = (-1) ^ (r + 1) * (a * b) := by
-  rw [← mul_assoc, ((Commute.neg_one_right a).pow_right r).eq]
-  simp [pow_succ, mul_assoc]
-
 /-- **A final descent moves the valley down.** If the turns at every positive rung cancel, then
 descending one rung after the valley word with bottom `m + 1` gives, up to the sign `(-1) ^ r`,
 the valley word with bottom `m`, one more descent and the same number `r` of climbs. -/
@@ -113,19 +108,11 @@ the valley word with bottom `m`, one more descent and the same number `r` of cli
 theorem d_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) (m s r : ℕ) :
     d (m + r) * ladderValley u d (m + 1) s r = (-1) ^ r * ladderValley u d m (s + 1) r := by
   induction r with
-  | zero => simp [d_mul_ladderValley_succ_zero]
+  | zero => simp
   | succ r ih =>
-    have hturn : d (m + r + 1) * u (m + r + 1) = -(u (m + r) * d (m + r)) :=
-      eq_neg_of_add_eq_zero_left (hud (m + r))
-    have hindex : m + 1 + r = m + r + 1 := by omega
-    calc
-      d (m + (r + 1)) * ladderValley u d (m + 1) s (r + 1) =
-          -(u (m + r) * (d (m + r) * ladderValley u d (m + 1) s r)) := by
-            rw [← u_mul_ladderValley, ← mul_assoc, ← add_assoc, hindex, hturn,
-              neg_mul, mul_assoc]
-      _ = -(u (m + r) * ((-1) ^ r * ladderValley u d m (s + 1) r)) := by rw [ih]
-      _ = (-1) ^ (r + 1) * ladderValley u d m (s + 1) (r + 1) := by
-        rw [neg_mul_neg_one_pow, u_mul_ladderValley]
+    rw [← u_mul_ladderValley, ← u_mul_ladderValley, ← mul_assoc, add_right_comm, ← add_assoc,
+      eq_neg_of_add_eq_zero_left (hud (m + r)), neg_mul, mul_assoc, ih]
+    rcases neg_one_pow_eq_or A r with h | h <;> simp [h, pow_succ]
 
 /-- **A valley at the bottom rung cannot be followed by a descent.** If the turns at every rung
 cancel, then descending after a valley word which reaches rung `0` and climbs back up vanishes. -/
