@@ -97,6 +97,7 @@ theorem _root_.TauCeti.AlgebraicGeometry.WeilDivisor.IsEffective.divisorPullback
 
 /-- Pulling back a point divisor gives the fibre, with each point weighted by its local
 multiplicity. -/
+@[simp]
 theorem divisorPullback_ofPoint (f : FiniteHolomorphicMap X Y) (y : Y) :
     divisorPullback f (WeilDivisor.ofPoint y) =
       WeilDivisor.ofFinsetWithMultiplicity (f.finite_fiber y).toFinset
@@ -127,6 +128,7 @@ section Compact
 variable [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 
 /-- Pullback of divisors reverses composition of finite holomorphic maps. -/
+@[simp]
 theorem divisorPullback_comp [TopologicalSpace Z] [ChartedSpace ℂ Z]
     [IsManifold 𝓘(ℂ) 1 Z] (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     divisorPullback (g.comp f) = (divisorPullback f).comp (divisorPullback g) := by
@@ -149,6 +151,7 @@ theorem degree_divisorPullback_ofPoint (f : FiniteHolomorphicMap X Y) (y : Y) :
   exact_mod_cast (degree_eq_fiber_sum f y).symm
 
 /-- Pullback multiplies the degree of a divisor by the degree of the finite holomorphic map. -/
+@[simp]
 theorem degree_divisorPullback (f : FiniteHolomorphicMap X Y)
     (D : WeilDivisor Y) :
     WeilDivisor.degree (divisorPullback f D) =
