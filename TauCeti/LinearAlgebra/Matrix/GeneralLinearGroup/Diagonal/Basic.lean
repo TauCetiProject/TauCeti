@@ -205,7 +205,7 @@ theorem coe_diagonalTorusEquiv_symm_apply (g : diagonalTorus k n) (i : Fin n) :
 
 /-- **The order of the diagonal torus**: over a division semiring with `q` elements it has
 `(q - 1)ⁿ` elements, one invertible scalar per diagonal entry. Over an infinite division semiring
-both sides vanish. -/
+both sides vanish when `n > 0`. -/
 theorem natCard_diagonalTorus (k : Type u) [DivisionSemiring k] (n : ℕ) :
     Nat.card (diagonalTorus k n) = (Nat.card k - 1) ^ n := by
   rw [← Nat.card_congr (diagonalTorusEquiv k n).toEquiv, Nat.card_fun, Nat.card_units,
