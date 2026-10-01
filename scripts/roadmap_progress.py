@@ -53,8 +53,9 @@ a human decision, recorded separately from any layer assessment; the two are sho
 and neither is inferred from the other.
 
 Rows are grouped by the arXiv category each roadmap declares in its own `metadata.toml` in
-TauCetiRoadmap (`topic = "math.NT"`); a sub-roadmap is in its parent's category, and a roadmap that
-declares none (or something that is not an arXiv math category) is shown under "Unsorted".
+TauCetiRoadmap (`topic = "math.NT"`), shown by its name ("Number Theory"); a sub-roadmap is in its
+parent's category, and a roadmap that declares none (or something that is not an arXiv mathematics
+category) is shown under "Unsorted". `scripts/arxiv_categories.py` holds the names.
 `scripts/roadmap_links.json` lists per-roadmap pages elsewhere (a contributor's route map, say)
 that a row should point at.
 
@@ -72,7 +73,8 @@ import pathlib
 import re
 import subprocess
 import sys
-import tomllib
+
+from arxiv_categories import ARXIV_MATH, read_topic
 
 AREAS_DIR = "TauCetiRoadmap"
 COMPLETED_DIR = "Completed"
@@ -83,35 +85,6 @@ UNSORTED = "Unsorted"
 # regenerates them, must not publish one under the board's "by arXiv category" label when
 # regeneration fails (see `snapshot_is_current`).
 TOPIC_SCHEME = "arxiv-math"
-# arXiv's mathematics categories, https://arxiv.org/category_taxonomy. A roadmap's `metadata.toml`
-# names one by its code; the board shows the name with the code beside it.
-ARXIV_MATH = {
-    "math.AC": "Commutative Algebra", "math.AG": "Algebraic Geometry", "math.AP": "Analysis of PDEs",
-    "math.AT": "Algebraic Topology", "math.CA": "Classical Analysis and ODEs",
-    "math.CO": "Combinatorics", "math.CT": "Category Theory", "math.CV": "Complex Variables",
-    "math.DG": "Differential Geometry", "math.DS": "Dynamical Systems",
-    "math.FA": "Functional Analysis", "math.GM": "General Mathematics", "math.GN": "General Topology",
-    "math.GR": "Group Theory", "math.GT": "Geometric Topology", "math.HO": "History and Overview",
-    "math.IT": "Information Theory", "math.KT": "K-Theory and Homology", "math.LO": "Logic",
-    "math.MG": "Metric Geometry", "math.MP": "Mathematical Physics", "math.NA": "Numerical Analysis",
-    "math.NT": "Number Theory", "math.OA": "Operator Algebras", "math.OC": "Optimization and Control",
-    "math.PR": "Probability", "math.QA": "Quantum Algebra", "math.RA": "Rings and Algebras",
-    "math.RT": "Representation Theory", "math.SG": "Symplectic Geometry", "math.SP": "Spectral Theory",
-    "math.ST": "Statistics Theory",
-}
-
-
-def read_arxiv_topic(dirpath: pathlib.Path) -> str | None:
-    """The arXiv category a roadmap declares in its `metadata.toml`, or None when it declares none
-    or one this page does not know. Never raises: a malformed file leaves the roadmap unsorted
-    rather than failing the board."""
-    try:
-        topic = tomllib.loads((dirpath / "metadata.toml").read_text(encoding="utf-8")).get("topic")
-    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
-        return None
-    return topic if isinstance(topic, str) and topic in ARXIV_MATH else None
-
-
 def snapshot_is_current(path: pathlib.Path) -> bool:
     """Is the snapshot at `path` one this generator could have written: readable JSON whose topics
     follow TOPIC_SCHEME? False for one from before the scheme existed, and for a missing or
@@ -124,8 +97,8 @@ def snapshot_is_current(path: pathlib.Path) -> bool:
 
 
 def topic_label(code: str | None) -> str:
-    """How a category is shown on the board: its name, with the code beside it."""
-    return f"{ARXIV_MATH[code]} ({code})" if code in ARXIV_MATH else UNSORTED
+    """How a category is shown on the board: by its name ("Number Theory"), not its code."""
+    return ARXIV_MATH[code] if code in ARXIV_MATH else UNSORTED
 AREA_PREFIX = "roadmap/"
 EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
 WEEKS = 16
@@ -442,7 +415,7 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
         "readme": f"{rel}/README.md",
         "readme_sha": sha256(text),
         # A sub-roadmap declares no category of its own; read_roadmaps gives it its parent's.
-        "arxiv": None if parent else read_arxiv_topic(dirpath),
+        "arxiv": None if parent else read_topic(dirpath),
         "layers": layers,
         "layer_ids": [layer_id(t) for t in layers],
         "layer_lines": [line for _, line in with_lines],

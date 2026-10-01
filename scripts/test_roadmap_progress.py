@@ -434,14 +434,14 @@ class Topics(unittest.TestCase):
     def test_each_roadmap_is_grouped_by_its_declared_category(self):
         now = dt.datetime(2026, 10, 1, tzinfo=UTC)
         data = rp.build(self.rows, [], now, now, None, None, "test")
-        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes"), "Number Theory (math.NT)")
-        self.assertEqual(self.topic(data, "TauCetiRoadmap/Curves"), "Algebraic Geometry (math.AG)")
-        self.assertEqual(self.topic(data, "Completed/Finished"), "Combinatorics (math.CO)")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes"), "Number Theory")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Curves"), "Algebraic Geometry")
+        self.assertEqual(self.topic(data, "Completed/Finished"), "Combinatorics")
 
     def test_a_sub_roadmap_is_in_its_parent_s_category(self):
         now = dt.datetime(2026, 10, 1, tzinfo=UTC)
         data = rp.build(self.rows, [], now, now, None, None, "test")
-        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes/Sub"), "Number Theory (math.NT)")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes/Sub"), "Number Theory")
 
     def test_no_or_unknown_or_malformed_metadata_is_unsorted(self):
         now = dt.datetime(2026, 10, 1, tzinfo=UTC)
@@ -452,8 +452,8 @@ class Topics(unittest.TestCase):
     def test_the_topic_list_is_the_categories_in_use_by_name(self):
         now = dt.datetime(2026, 10, 1, tzinfo=UTC)
         data = rp.build(self.rows, [], now, now, None, None, "test")
-        self.assertEqual(data["topics"], ["Algebraic Geometry (math.AG)", "Combinatorics (math.CO)",
-                                          "Number Theory (math.NT)"])
+        self.assertEqual(data["topics"], ["Algebraic Geometry", "Combinatorics",
+                                          "Number Theory"])
 
 
 class TopicScheme(unittest.TestCase):
@@ -487,7 +487,7 @@ class PagesFailurePath(unittest.TestCase):
     the workflow step's own script, with generation made to fail."""
 
     REPO = pathlib.Path(__file__).resolve().parents[1]
-    COMMITTED = {"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME, "topics": ["Number Theory (math.NT)"],
+    COMMITTED = {"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME, "topics": ["Number Theory"],
                  "which": "committed"}
 
     def step_script(self):
@@ -507,8 +507,8 @@ class PagesFailurePath(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = pathlib.Path(d)
             (root / "scripts").mkdir()
-            (root / "scripts" / "roadmap_progress.py").write_text(
-                (self.REPO / "scripts" / "roadmap_progress.py").read_text(encoding="utf-8"))
+            for name in ("roadmap_progress.py", "arxiv_categories.py"):
+                (root / "scripts" / name).write_text((self.REPO / "scripts" / name).read_text(encoding="utf-8"))
             static = root / "web" / "static_files"
             static.mkdir(parents=True)
             (static / "progress.json").write_text(json.dumps(self.COMMITTED))
@@ -612,8 +612,8 @@ class Activity(unittest.TestCase):
         self.assertEqual(data["rows"][0]["activity"]["total"], 2)
         self.assertEqual(data["rows"][0]["activity"]["open"], 1)
         self.assertEqual(data["global"]["open"], 1)
-        self.assertEqual(data["rows"][0]["topic"], "Number Theory (math.NT)")
-        self.assertEqual(data["topics"], ["Number Theory (math.NT)"])
+        self.assertEqual(data["rows"][0]["topic"], "Number Theory")
+        self.assertEqual(data["topics"], ["Number Theory"])
         self.assertEqual(data["global"]["first_merge"], "2026-08-30T00:00:00Z")
         self.assertEqual(data["global"]["total"], 3)
         self.assertEqual(data["global"]["unattributed"]["no_label"], 1)
