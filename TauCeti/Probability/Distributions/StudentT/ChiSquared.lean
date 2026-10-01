@@ -86,12 +86,8 @@ theorem studentTMeasure_map_sq {ν : ℝ} (hν : 0 < ν) :
       simp [Measure.real]
     · have hxpos : 0 < x := lt_of_le_of_ne hx0 (Ne.symm hxzero)
       have hsqrtpos : 0 < √x := Real.sqrt_pos.2 hxpos
-      have hIoc :
-          (studentTMeasure ν).real (Ioc (-√x) √x) =
-            cdf (studentTMeasure ν) √x - cdf (studentTMeasure ν) (-√x) := by
-        rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 (by linarith)) measurableSet_Iic,
-          cdf_eq_real, cdf_eq_real]
-      rw [← measureReal_congr (Ioc_ae_eq_Icc (a := -√x) (b := √x)), hIoc,
+      rw [← measureReal_congr (Ioc_ae_eq_Icc (a := -√x) (b := √x)),
+        Measure.measureReal_Ioc_eq_cdf_sub _ (by linarith),
         cdf_studentTMeasure_eq hν, cdf_studentTMeasure_eq hν,
         ite_eq_right (not_lt_of_ge (Real.sqrt_nonneg x)),
         ite_eq_left (neg_lt_zero.mpr hsqrtpos), ite_eq_right (not_le_of_gt hxpos), neg_sq,

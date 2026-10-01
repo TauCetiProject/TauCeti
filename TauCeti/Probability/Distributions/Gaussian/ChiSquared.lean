@@ -91,13 +91,9 @@ theorem gaussianReal_map_sq :
     rw [hpreimage]
     let _ : NullSingletonClass (gaussianReal 0 1) :=
       nullSingletonClass_gaussianReal one_ne_zero
-    have hIoc :
-        (gaussianReal 0 1).real (Ioc (-√x) √x) =
-          cdf (gaussianReal 0 1) √x - cdf (gaussianReal 0 1) (-√x) := by
-      rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 (by linarith [Real.sqrt_nonneg x]))
-        measurableSet_Iic, cdf_eq_real, cdf_eq_real]
     rw [← measureReal_congr (Ioc_ae_eq_Icc (a := -√x) (b := √x)),
-      hIoc, cdf_gaussianReal_zero_one, cdf_gaussianReal_zero_one]
+      Measure.measureReal_Ioc_eq_cdf_sub _ (by linarith [Real.sqrt_nonneg x]),
+      cdf_gaussianReal_zero_one, cdf_gaussianReal_zero_one]
     have hneg : -√x / √2 = -(√x / √2) := by ring
     rw [hneg, Real.erf_neg]
     have herf : 0 ≤ √x / √2 := by positivity

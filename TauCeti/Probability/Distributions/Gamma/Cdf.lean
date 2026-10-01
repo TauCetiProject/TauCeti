@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
 public import TauCeti.Probability.Distributions.Gamma.Basic
+import TauCeti.Probability.Cdf
 
 /-!
 # The cumulative distribution function of a gamma law
@@ -143,8 +144,8 @@ theorem measureReal_Ioc_gammaMeasure (ha : 0 < a) (hr : 0 < r) {y : ℝ} (hyx : 
     (gammaMeasure a r).real (Ioc y x) =
       regularizedGamma a (r * x) - regularizedGamma a (r * y) := by
   have hp : IsProbabilityMeasure (gammaMeasure a r) := isProbabilityMeasure_gammaMeasure ha hr
-  rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hyx) measurableSet_Iic,
-    measureReal_Iic_gammaMeasure ha hr x, measureReal_Iic_gammaMeasure ha hr y]
+  rw [Measure.measureReal_Ioc_eq_cdf_sub _ hyx, cdf_gammaMeasure_eq ha hr,
+    cdf_gammaMeasure_eq ha hr]
 
 /-- The upper tail of a gamma law is `1 - P(a, r * x)`. -/
 @[simp]
