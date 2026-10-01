@@ -41,11 +41,11 @@ The second half of the file describes how the Weyl group moves the spin basis ar
 in the rank. Reflection in a chain simple root `eᵢ - eᵢ₊₁` exchanges two adjacent signs;
 reflection in the fork simple root `e_{n-2} + e_{n-1}` exchanges the last two signs and reverses
 both. Both act on the indexing sign sets, giving `TauCeti.DynkinType.typeDSpinReflection`, and
-both change the number of positive signs by an even amount. The spin weights are minuscule and
-pairwise distinct, so the spin module is multiplicity free, and the orbits of the simple
-reflections on its basis are exactly the two half-spin parity classes. So the weight basis of
-the full spin module splits into two Weyl orbits, and its weights alone do not exhibit it as
-irreducible.
+both change the number of positive signs by an even amount. Every pairing of a spin weight with
+a simple coroot is `-1`, `0`, or `1`, and the spin weights are pairwise distinct, so the spin
+module is multiplicity free, and the orbits of the simple reflections on its basis are exactly
+the two half-spin parity classes. So the weight basis of the full spin module splits into two
+Weyl orbits, and its weights alone do not exhibit it as irreducible.
 
 ## Main declarations
 
@@ -66,14 +66,14 @@ irreducible.
 * `TauCeti.DynkinType.typeDSpinReflection`: the `i`-th simple reflection on the sign sets, with
   `TauCeti.DynkinType.mem_typeDSpinReflection_of_add_one_lt` and
   `TauCeti.DynkinType.mem_typeDSpinReflection_of_not_add_one_lt` for membership and
-  `TauCeti.DynkinType.typeDSpinReflection_typeDSpinReflection` for involutivity.
+  `TauCeti.DynkinType.typeDSpinReflection_apply_apply` for involutivity.
 * `TauCeti.DynkinType.typeDSpinWeight_typeDSpinReflection_apply` and
   `TauCeti.DynkinType.typeDSimplyConnectedRootDatum_reflection_typeDSpinWeight`: the reflection
   formula against the `i`-th row of `CartanMatrix.D n`, and its identification with reflection in
   the pinned datum.
 * `TauCeti.DynkinType.typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one` and
-  `TauCeti.DynkinType.typeDSpinWeight_injective`: the spin weights are minuscule and pairwise
-  distinct.
+  `TauCeti.DynkinType.typeDSpinWeight_injective`: every pairing of a spin weight with a simple
+  coroot is `-1`, `0`, or `1`, and the spin weights are pairwise distinct.
 * `TauCeti.DynkinType.typeDSpinReflection_eq_self_iff`: a simple reflection fixes a sign set
   exactly where the corresponding weight coordinate vanishes.
 * `TauCeti.DynkinType.typeDSpinReflection_typeDSpinReflection_fork`: the two fork reflections
@@ -568,41 +568,22 @@ theorem mem_typeDSpinReflection_of_not_add_one_lt {n : ℕ} {i : Fin n} (hi : ¬
     Finset.mem_singleton]
   grind
 
-/-- Transposing twice restores a sign set. This helper and the next isolate the two shapes that
-`TauCeti.DynkinType.typeDSpinReflection` takes, so that its involutivity needs no index
-arithmetic. -/
-private theorem map_swap_map_swap {n : ℕ} (a b : Fin n) (s : Finset (Fin n)) :
-    (s.map (Equiv.swap a b).toEmbedding).map (Equiv.swap a b).toEmbedding = s := by
-  ext x
-  rw [Finset.mem_map_equiv, Finset.mem_map_equiv, Equiv.symm_swap, Equiv.swap_apply_self]
-
-/-- Transposing two signs and reversing both is an involution. -/
-private theorem symmDiff_pair_map_swap_involutive {n : ℕ} (a b : Fin n) (s : Finset (Fin n)) :
-    (s.map (Equiv.swap a b).toEmbedding ∆ {a, b}).map (Equiv.swap a b).toEmbedding ∆ {a, b} =
-      s := by
-  have h1 : ∀ x : Fin n, Equiv.swap a b x = a ↔ x = b := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_left]
-  have h2 : ∀ x : Fin n, Equiv.swap a b x = b ↔ x = a := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_right]
-  ext x
-  simp only [Finset.mem_symmDiff, Finset.mem_map_equiv, Equiv.symm_swap, Finset.mem_insert,
-    Finset.mem_singleton, Equiv.swap_apply_self, h1, h2]
-  grind
-
 /-- Each simple reflection of the spin basis is an involution. -/
 @[simp]
-theorem typeDSpinReflection_typeDSpinReflection {n : ℕ} (i : Fin n) (s : Finset (Fin n)) :
+theorem typeDSpinReflection_apply_apply {n : ℕ} (i : Fin n) (s : Finset (Fin n)) :
     typeDSpinReflection i (typeDSpinReflection i s) = s := by
   by_cases hi : (i : ℕ) + 1 < n
   · rw [typeDSpinReflection_of_add_one_lt hi, typeDSpinReflection_of_add_one_lt hi]
-    exact map_swap_map_swap _ _ s
+    have h := (Equiv.swap i (⟨(i : ℕ) + 1, hi⟩ : Fin n)).finsetCongr.apply_symm_apply s
+    rwa [Equiv.finsetCongr_apply, Equiv.finsetCongr_symm, Equiv.symm_swap,
+      Equiv.finsetCongr_apply] at h
   · rw [typeDSpinReflection_of_not_add_one_lt hi, typeDSpinReflection_of_not_add_one_lt hi]
-    exact symmDiff_pair_map_swap_involutive _ _ s
+    exact Finset.involutive_map_swap_symmDiff_pair _ _ s
 
 /-- The involution underlying each simple reflection of the spin basis. -/
 theorem typeDSpinReflection_involutive {n : ℕ} (i : Fin n) :
     Function.Involutive (typeDSpinReflection i) :=
-  typeDSpinReflection_typeDSpinReflection i
+  typeDSpinReflection_apply_apply i
 
 /-! ## The reflection formula -/
 
@@ -784,8 +765,9 @@ theorem typeDSimplyConnectedRootDatum_reflection_typeDSpinWeight {n : ℕ} (hn :
   simp [RootPairing.reflection_apply, toLinearMap_typeDSimplyConnectedRootDatum,
     coroot_typeDSimpleIndex hn]
 
-/-- **The type-`Dₙ` spin weights are minuscule**: every pairing with a simple coroot is `-1`, `0`,
-or `1`. -/
+/-- **Every pairing of a type-`Dₙ` spin weight with a simple coroot is `-1`, `0`, or `1`**, that
+is, every coordinate in the fundamental-weight basis is one of the three. The corresponding bound
+over all coroots, which is what minusculeity asks for, is not proved here. -/
 theorem typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one {n : ℕ} (s : Finset (Fin n))
     (i : Fin n) :
     typeDSpinWeight s i = -1 ∨ typeDSpinWeight s i = 0 ∨ typeDSpinWeight s i = 1 := by
@@ -820,13 +802,13 @@ private theorem typeDSpinSign_eq_of_typeDSpinWeight_eq {n : ℕ} (hn : 2 ≤ n)
     induction k with
     | zero =>
         intro j hj
-        rw [show j = p from Fin.ext (by omega)]
+        have hjp : j = p := Fin.ext (by omega)
+        rw [hjp]
         exact hsignp
     | succ k ih =>
         intro j hj
         have hjlt : (j : ℕ) + 1 < n := by omega
-        have hstep := ih (⟨(j : ℕ) + 1, hjlt⟩ : Fin n)
-          (show (j : ℕ) + 1 + k + 2 = n by omega)
+        have hstep := ih (⟨(j : ℕ) + 1, hjlt⟩ : Fin n) (by dsimp only; omega)
         have ej := two_mul_typeDSpinWeight_of_add_one_lt hjlt s
         have ejt := two_mul_typeDSpinWeight_of_add_one_lt hjlt t
         have hwj := congrFun h j
@@ -834,35 +816,50 @@ private theorem typeDSpinSign_eq_of_typeDSpinWeight_eq {n : ℕ} (hn : 2 ≤ n)
   funext j
   by_cases hj : (j : ℕ) + 2 ≤ n
   · exact key (n - (j : ℕ) - 2) j (by omega)
-  · rw [show j = q from Fin.ext (by have := j.isLt; omega)]
+  · have hjq : j = q := Fin.ext (by have := j.isLt; omega)
+    rw [hjq]
     exact hsignq
 
 /-- **The type-`Dₙ` spin weights are pairwise distinct**, so the spin module is multiplicity
 free. -/
-theorem typeDSpinWeight_injective {n : ℕ} (hn : 2 ≤ n) :
+theorem typeDSpinWeight_injective {n : ℕ} :
     Function.Injective (typeDSpinWeight (n := n)) := by
-  intro s t h
-  have hsign := typeDSpinSign_eq_of_typeDSpinWeight_eq hn h
-  ext x
-  have hx := congrFun hsign x
-  simp only [typeDSpinSign_apply] at hx
-  by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp_all
+  rcases Nat.lt_or_ge n 2 with hn | hn
+  · -- In ranks `0` and `1` there is at most one index, and there the fork coordinate is
+    -- `2 * [x ∈ s] - 1`, which already determines the single sign.
+    intro s t h
+    ext x
+    have hlast : ¬(x : ℕ) + 1 < n := by have := x.isLt; omega
+    have hprev : (⟨(x : ℕ) - 1, by have := x.isLt; omega⟩ : Fin n) = x :=
+      Fin.ext (by dsimp only; have := x.isLt; omega)
+    have hx := congrFun h x
+    rw [typeDSpinWeight_apply, typeDSpinWeight_apply, dite_eq_right hlast, dite_eq_right hlast,
+      hprev] at hx
+    by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp_all
+  · intro s t h
+    have hsign := typeDSpinSign_eq_of_typeDSpinWeight_eq hn h
+    ext x
+    have hx := congrFun hsign x
+    simp only [typeDSpinSign_apply] at hx
+    by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp_all
 
 /-- A simple reflection fixes a sign set exactly when the corresponding coordinate of its spin
 weight vanishes. -/
 @[simp]
-theorem typeDSpinReflection_eq_self_iff {n : ℕ} (hn : 4 ≤ n) (i : Fin n) (s : Finset (Fin n)) :
+theorem typeDSpinReflection_eq_self_iff {n : ℕ} (i : Fin n) (s : Finset (Fin n)) :
     typeDSpinReflection i s = s ↔ typeDSpinWeight s i = 0 := by
-  constructor
-  · intro hfix
-    have h1 := congrFun (congrArg typeDSpinWeight hfix) i
-    rw [typeDSpinWeight_typeDSpinReflection_apply hn] at h1
-    simp only [CartanMatrix.D_diag] at h1
-    omega
-  · intro hzero
-    apply typeDSpinWeight_injective (n := n) (by omega)
-    rw [typeDSpinWeight_typeDSpinReflection hn, hzero]
-    simp
+  rw [typeDSpinWeight_apply]
+  by_cases hi : (i : ℕ) + 1 < n
+  · -- At a chain node the reflection transposes the two adjacent signs, and the coordinate is
+    -- their difference.
+    rw [typeDSpinReflection_of_add_one_lt hi, Finset.map_swap_eq_self_iff, dite_eq_left hi]
+    by_cases h1 : i ∈ s <;> by_cases h2 : (⟨(i : ℕ) + 1, hi⟩ : Fin n) ∈ s <;> simp [h1, h2]
+  · -- At the fork node the reflection transposes the last two signs and reverses both, and the
+    -- coordinate is their sum.
+    rw [typeDSpinReflection_of_not_add_one_lt hi, Finset.map_swap_symmDiff_pair_eq_self_iff,
+      dite_eq_right hi]
+    by_cases h1 : (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) ∈ s <;>
+      by_cases h2 : i ∈ s <;> simp [h1, h2]
 
 /-- **The simple reflections preserve the parity of a sign set**, so each of the two half-spin
 families of weights is stable under all of them. The graph automorphism behaves the other way
@@ -894,29 +891,6 @@ private theorem typeDSpinReflection_symmDiff_of_add_one_lt {n : ℕ} {i : Fin n}
   ext x
   simp only [mem_typeDSpinReflection_of_add_one_lt hi, Finset.mem_symmDiff]
 
-/-- A transposition fixes the pair it transposes. -/
-private theorem map_swap_pair {n : ℕ} (a b : Fin n) :
-    ({a, b} : Finset (Fin n)).map (Equiv.swap a b).toEmbedding = {a, b} := by
-  have h1 : ∀ x : Fin n, Equiv.swap a b x = a ↔ x = b := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_left]
-  have h2 : ∀ x : Fin n, Equiv.swap a b x = b ↔ x = a := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_right]
-  ext x
-  simp only [Finset.mem_map_equiv, Equiv.symm_swap, Finset.mem_insert, Finset.mem_singleton,
-    h1, h2]
-  grind
-
-/-- A transposition moves a pair along its first index, provided the second index is fixed. -/
-private theorem map_swap_pair_right {n : ℕ} {a b c : Fin n} (hca : c ≠ a) (hcb : c ≠ b) :
-    ({b, c} : Finset (Fin n)).map (Equiv.swap a b).toEmbedding = {a, c} := by
-  have h2 : ∀ x : Fin n, Equiv.swap a b x = b ↔ x = a := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_right]
-  have h3 : ∀ x : Fin n, Equiv.swap a b x = c ↔ x = c := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne hca hcb]
-  ext x
-  simp only [Finset.mem_map_equiv, Equiv.symm_swap, Finset.mem_insert, Finset.mem_singleton,
-    h2, h3]
-
 /-- **The two fork reflections compose to the toggle of the last two signs.** Their composite
 reverses both fork signs and leaves every other sign alone, so the reflections move a sign set
 inside its parity class by an arbitrary even number of sign changes. -/
@@ -926,16 +900,16 @@ theorem typeDSpinReflection_typeDSpinReflection_fork {n : ℕ} {p q : Fin n}
   have hqlt : ¬(q : ℕ) + 1 < n := by omega
   have hplt : (p : ℕ) + 1 < n := by omega
   have hprev : (⟨(q : ℕ) - 1, by omega⟩ : Fin n) = p :=
-    Fin.ext (show (q : ℕ) - 1 = (p : ℕ) by omega)
+    Fin.ext (by dsimp only; omega)
   have hnext : (⟨(p : ℕ) + 1, hplt⟩ : Fin n) = q :=
-    Fin.ext (show (p : ℕ) + 1 = (q : ℕ) by omega)
+    Fin.ext (by dsimp only; omega)
   have hmapp : ∀ u : Finset (Fin n),
       typeDSpinReflection p u = u.map (Equiv.swap p q).toEmbedding := fun u => by
     rw [typeDSpinReflection_of_add_one_lt hplt, hnext]
   have hreflq : typeDSpinReflection q s = typeDSpinReflection p s ∆ {p, q} := by
     rw [typeDSpinReflection_of_not_add_one_lt hqlt, hprev, hmapp s]
   rw [hreflq, typeDSpinReflection_symmDiff_of_add_one_lt hplt,
-    typeDSpinReflection_typeDSpinReflection, hmapp ({p, q} : Finset (Fin n)), map_swap_pair]
+    typeDSpinReflection_apply_apply, hmapp ({p, q} : Finset (Fin n)), Finset.map_swap_pair]
 
 /-- Base case of the toggle construction: the two fork indices themselves. -/
 private theorem exists_toggle_last_base {n : ℕ} (p q : Fin n) (hp : (p : ℕ) + 2 = n)
@@ -963,8 +937,8 @@ private theorem exists_toggle_last {n : ℕ} (q : Fin n) (hq : (q : ℕ) + 1 = n
       by_cases hc2 : (c : ℕ) + 2 = n
       · exact exists_toggle_last_base c q hc2 hq
       · have hclt : (c : ℕ) + 1 < n := by omega
-        obtain ⟨l, hl⟩ := ih (⟨(c : ℕ) + 1, hclt⟩ : Fin n)
-          (show n ≤ (c : ℕ) + 1 + 2 + d by omega) (show (c : ℕ) + 1 + 2 ≤ n by omega)
+        obtain ⟨l, hl⟩ := ih (⟨(c : ℕ) + 1, hclt⟩ : Fin n) (by dsimp only; omega)
+          (by dsimp only; omega)
         have hqc : q ≠ c := fun h => by
           have hv := congrArg Fin.val h
           omega
@@ -975,15 +949,17 @@ private theorem exists_toggle_last {n : ℕ} (q : Fin n) (hq : (q : ℕ) + 1 = n
         refine ⟨c :: (l ++ [c]), fun s => ?_⟩
         simp only [List.foldl_cons, List.foldl_append, List.foldl_nil]
         rw [hl (typeDSpinReflection c s), typeDSpinReflection_symmDiff_of_add_one_lt hclt,
-          typeDSpinReflection_typeDSpinReflection, typeDSpinReflection_of_add_one_lt hclt,
-          map_swap_pair_right hqc hqc']
+          typeDSpinReflection_apply_apply, typeDSpinReflection_of_add_one_lt hclt,
+          Finset.map_swap_pair_right hqc hqc']
 
 /-- **Every pair of distinct indices is toggled by a word of simple reflections.** -/
 private theorem exists_toggle_pair {n : ℕ} (hn : 2 ≤ n) {a b : Fin n} (hab : a ≠ b) :
     ∃ l : List (Fin n), ∀ s : Finset (Fin n),
       l.foldl (fun u j ↦ typeDSpinReflection j u) s = s ∆ {a, b} := by
-  obtain ⟨q, hq⟩ : ∃ q : Fin n, (q : ℕ) + 1 = n :=
-    ⟨⟨n - 1, by omega⟩, show n - 1 + 1 = n by omega⟩
+  obtain ⟨q, hq⟩ : ∃ q : Fin n, (q : ℕ) + 1 = n := by
+    refine ⟨⟨n - 1, by omega⟩, ?_⟩
+    dsimp only
+    omega
   have hlast : ∀ c : Fin n, c ≠ q → ∃ l : List (Fin n), ∀ s : Finset (Fin n),
       l.foldl (fun u j ↦ typeDSpinReflection j u) s = s ∆ {c, q} := by
     intro c hc
