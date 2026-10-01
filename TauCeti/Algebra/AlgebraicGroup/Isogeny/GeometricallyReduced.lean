@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Descent
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.FiniteFlat
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Finite dominant homomorphisms to geometrically reduced groups
@@ -51,20 +52,12 @@ theorem isIsogeny_iff_finite_and_dominant (f : H ⟶ K) :
       ((RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hf.faithfullyFlat).2).denseRange⟩
   · rintro ⟨hfin, hdom⟩
     have : IsReduced H := Algebra.isReduced_of_isGeometricallyReduced k
-    have hinj : Function.Injective f.hom := by
-      apply (RingHom.injective_iff_ker_eq_bot f.hom.toAlgHom.toRingHom).mpr
-      apply bot_unique
-      simpa only [nilradical_eq_zero, Ideal.zero_eq_bot] using
-        (PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical _).mp hdom
+    have hinj : Function.Injective f.hom :=
+      (RingHom.denseRange_comap_iff_injective _).mp hdom
     let L := AlgebraicClosure k
     let fL := baseChangeMap (K := L) f
-    have hinjL : Function.Injective fL.hom :=
-      TensorProduct.map_injective_of_flat_flat
-        (AlgHom.id k L).toLinearMap f.hom.toLinearMap Function.injective_id hinj
-    have hdomL : DenseRange (PrimeSpectrum.comap fL.hom.toAlgHom.toRingHom) := by
-      rw [PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical,
-        (RingHom.injective_iff_ker_eq_bot fL.hom.toAlgHom.toRingHom).mp hinjL]
-      exact bot_le
+    have hdomL : DenseRange (PrimeSpectrum.comap fL.hom.toAlgHom.toRingHom) :=
+      RingHom.denseRange_comap_of_injective _ (baseChangeMap_injective f hinj)
     have hmap : fL.hom.toAlgHom.toRingHom =
         (Algebra.TensorProduct.map (AlgHom.id k L) f.hom.toAlgHom).toRingHom := by
       exact congrArg (fun g ↦ g.toAlgHom.toRingHom) (hom_baseChangeMap (K := L) f)
