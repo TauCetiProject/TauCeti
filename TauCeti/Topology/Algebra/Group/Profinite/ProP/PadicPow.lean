@@ -49,7 +49,9 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.continuous_padicPow`: the action `ℤ_[p] × A → A` is jointly continuous.
 * `TauCeti.IsProP.eq_padicPow_of_continuous`, `TauCeti.IsProP.map_padicPow`: the power is the
   unique continuous extension of the natural powers, and continuous homomorphisms preserve it.
-* `TauCeti.IsProP.padicPow_mem`: a closed subgroup containing `a` contains its `p`-adic powers.
+* `TauCeti.IsProP.padicPow_mem`: a closed subgroup containing `a` contains its `p`-adic powers;
+  `TauCeti.IsProP.map_padicPow_eq_one_of_eq_one`: a continuous homomorphism into a `T1` monoid
+  trivial on `a` is trivial on its `p`-adic powers.
 * `TauCeti.IsProP.eq_zero_of_padicPow_mem`: a closed subgroup containing no `p`-power `a ^ (p ^ k)`
   contains the `p`-adic power `a ^ l` only for `l = 0`.
 * `TauCeti.IsProP.conj_padicPow`: the power commutes with conjugation;
@@ -263,6 +265,13 @@ theorem padicPow_mem (hA : IsProP p A) {H : Subgroup A} (hH : IsClosed (H : Set 
     simpa using H.pow_mem ha k
   exact hclosed.closure_subset_iff.mpr hnat
     ((PadicInt.denseRange_natCast (p := p)).closure_range ▸ Set.mem_univ l)
+
+/-- A continuous homomorphism into a `T1` monoid that is trivial on `a` is trivial on every `p`-adic
+power of `a`. -/
+theorem map_padicPow_eq_one_of_eq_one {B : Type*} [Monoid B] [TopologicalSpace B] [T1Space B]
+    (hA : IsProP p A) (f : A →ₜ* B) {a : A} (ha : f a = 1) (l : ℤ_[p]) :
+    f (hA.padicPow a l) = 1 :=
+  hA.padicPow_mem f.isClosed_ker (MonoidHom.mem_ker.mpr ha) l
 
 /-- **A `p`-adic power lying in a closed subgroup has exponent `0` unless a `p`-power of the base
 does.** If the closed subgroup `H` contains `a ^ l` but no `a ^ (p ^ k)`, then `l = 0`: a nonzero

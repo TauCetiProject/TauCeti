@@ -259,6 +259,17 @@ theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.
 /-- An element of `B` killed by the projection comes from `A`. -/
 theorem exists_incl_eq {b : B} (hb : S.proj b = 0) : ∃ a : A, S.incl a = b := S.exact b |>.1 hb
 
+include S in
+/-- A natural number killing the middle term of a short exact sequence kills its sub-object. -/
+theorem nsmul_eq_zero_left {n : ℕ} (hB : ∀ b : B, n • b = 0) (a : A) : n • a = 0 :=
+  S.incl_injective (by rw [map_nsmul, hB, map_zero])
+
+include S in
+/-- A natural number killing the middle term of a short exact sequence kills its quotient. -/
+theorem nsmul_eq_zero_right {n : ℕ} (hB : ∀ b : B, n • b = 0) (c : C) : n • c = 0 := by
+  obtain ⟨b, rfl⟩ := S.proj_surjective c
+  rw [← map_nsmul, hB, map_zero]
+
 end Basic
 
 section CanonicalCoefficientMaps

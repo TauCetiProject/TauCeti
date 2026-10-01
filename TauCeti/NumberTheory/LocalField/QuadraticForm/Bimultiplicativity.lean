@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.HilbertSymbol.SquareClassIndex
 import TauCeti.NumberTheory.LocalField.FiniteExtension.SquareClass
+import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
+import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # The index theorem for quadratic norms, and bimultiplicativity of the local Hilbert symbol
@@ -34,6 +36,11 @@ the value `-1` off the subgroup. The field-level statement is
 `TauCeti.exists_hilbertSymbol_eq_neg_one_of_index_eq_two`, which asks only that the norm subgroup of
 `a` have index two.
 
+Nondegeneracy has two consequences for prescribing values of the symbol. Two distinct nontrivial
+characters `(·, a)_K` and `(·, b)_K` of the group `Kˣ/(Kˣ)²` of exponent two take every pair of
+values. And the norm group of `K(√a)` contains a nonsquare for every `a`: among a uniformizer, the
+unramified unit and their product, three nonsquares, the symbols with `a` multiply to `1`.
+
 The diagonal entry `(a, a)_K = (a, -1)_K` needs no arithmetic input and is stated for an arbitrary
 field in `TauCeti.NumberTheory.HilbertSymbol.NormSubgroup`, as
 `TauCeti.hilbertSymbol_self`.
@@ -44,9 +51,14 @@ field in `TauCeti.NumberTheory.HilbertSymbol.NormSubgroup`, as
   radicand.
 * `TauCeti.hilbertSymbol_mul_right` and `TauCeti.hilbertSymbol_mul_left`: the Hilbert symbol is
   bilinear in both arguments.
-* `TauCeti.hilbertSymbol_self_mul`: `(a, ab)_K = (a, -b)_K`.
+* `TauCeti.hilbertSymbol_self_mul` and `TauCeti.hilbertSymbol_neg_self_mul`:
+  `(a, ab)_K = (a, -b)_K` and `(a, -ab)_K = (a, b)_K`.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one`: for every nonsquare `a` there is a `b` with
   `(a, b)_K = -1`.
+* `TauCeti.exists_hilbertSymbol_eq_and_hilbertSymbol_eq`: for nonsquares `a`, `b` with `ab` a
+  nonsquare, the characters `(·, a)_K` and `(·, b)_K` take every pair of values.
+* `TauCeti.exists_not_isSquare_hilbertSymbol_eq_one`: the norm group of `K(√a)` contains a
+  nonsquare, for every `a`.
 
 ## References
 
@@ -104,6 +116,12 @@ theorem hilbertSymbol_self_mul (h2 : (2 : K) ≠ 0) (a b : Kˣ) :
     hilbertSymbol a (a * b) = hilbertSymbol a (-b) := by
   rw [← neg_mul_neg, hilbertSymbol_mul_right h2, hilbertSymbol_neg_self, one_mul]
 
+/-- If `2 ≠ 0` in `K`, then `(a, -ab)_K = (a, b)_K`: the two second arguments differ by the norm
+`-a` from `K(√a)`. -/
+theorem hilbertSymbol_neg_self_mul (h2 : (2 : K) ≠ 0) (a b : Kˣ) :
+    hilbertSymbol a (-(a * b)) = hilbertSymbol a b := by
+  rw [← mul_neg, hilbertSymbol_self_mul h2, neg_neg]
+
 /-- The Hilbert symbol is multiplicative on integer powers of its second argument. -/
 @[simp]
 theorem hilbertSymbol_zpow_right (h2 : (2 : K) ≠ 0)
@@ -130,5 +148,59 @@ theorem exists_hilbertSymbol_eq_neg_one (h2 : (2 : K) ≠ 0) {a : Kˣ} (ha : ¬I
     ∃ b : Kˣ, hilbertSymbol a b = -1 :=
   exists_hilbertSymbol_eq_neg_one_of_index_eq_two a
     (quadraticNormSubgroup_index_eq_two_of_not_isSquare h2 ha)
+
+/-! ### Prescribing values of the Hilbert symbol -/
+
+/-- If `2 ≠ 0` in `K`, then for a nonsquare `a` and any `b` with `ab` a nonsquare, some `y ∈ Kˣ`
+has `(y, a)_K = -1` and `(y, b)_K = 1`: the character `(·, a)_K` is nontrivial and differs from
+`(·, b)_K`. -/
+private theorem exists_hilbertSymbol_eq_neg_one_and_eq_one (h2 : (2 : K) ≠ 0) {a b : Kˣ}
+    (ha : ¬IsSquare a) (hab : ¬IsSquare (a * b)) :
+    ∃ y : Kˣ, hilbertSymbol y a = -1 ∧ hilbertSymbol y b = 1 := by
+  have : Invertible (2 : K) := invertibleOfNonzero h2
+  obtain ⟨x₁, hx₁⟩ := exists_hilbertSymbol_eq_neg_one h2 ha
+  obtain ⟨x₃, hx₃⟩ := exists_hilbertSymbol_eq_neg_one h2 hab
+  rw [hilbertSymbol_comm] at hx₁ hx₃
+  rw [hilbertSymbol_mul_right h2] at hx₃
+  rcases Int.units_eq_one_or (hilbertSymbol x₁ b) with h₁ | h₁
+  · exact ⟨x₁, hx₁, h₁⟩
+  rcases Int.units_eq_one_or (hilbertSymbol x₃ a) with h₃ | h₃
+  · rw [h₃, one_mul] at hx₃
+    exact ⟨x₁ * x₃, by rw [hilbertSymbol_mul_left h2, hx₁, h₃, mul_one],
+      by rw [hilbertSymbol_mul_left h2, h₁, hx₃]; decide⟩
+  · rw [h₃, neg_one_mul, neg_inj] at hx₃
+    exact ⟨x₃, h₃, hx₃⟩
+
+/-- **Two distinct nontrivial characters take every pair of values.** If `2 ≠ 0` in `K`, then for
+nonsquares `a`, `b` with `ab` a nonsquare, every pair of signs `(s, t)` is `((x, a)_K, (x, b)_K)`
+for some `x ∈ Kˣ`. -/
+theorem exists_hilbertSymbol_eq_and_hilbertSymbol_eq (h2 : (2 : K) ≠ 0) {a b : Kˣ}
+    (ha : ¬IsSquare a) (hb : ¬IsSquare b) (hab : ¬IsSquare (a * b)) (s t : ℤˣ) :
+    ∃ x : Kˣ, hilbertSymbol x a = s ∧ hilbertSymbol x b = t := by
+  have : Invertible (2 : K) := invertibleOfNonzero h2
+  obtain ⟨y, hya, hyb⟩ := exists_hilbertSymbol_eq_neg_one_and_eq_one h2 ha hab
+  obtain ⟨z, hzb, hza⟩ := exists_hilbertSymbol_eq_neg_one_and_eq_one h2 hb (mul_comm a b ▸ hab)
+  rcases Int.units_eq_one_or s with rfl | rfl <;> rcases Int.units_eq_one_or t with rfl | rfl
+  · exact ⟨1, hilbertSymbol_one_left a, hilbertSymbol_one_left b⟩
+  · exact ⟨z, hza, hzb⟩
+  · exact ⟨y, hya, hyb⟩
+  · exact ⟨y * z, by rw [hilbertSymbol_mul_left h2, hya, hza, mul_one],
+      by rw [hilbertSymbol_mul_left h2, hyb, hzb, one_mul]⟩
+
+/-- **The norm group of `K(√a)` contains a nonsquare.** If `2 ≠ 0` in `K`, then for every `a ∈ Kˣ`
+there is a nonsquare `b` with `(b, a)_K = 1`: among a uniformizer `π`, the unramified unit `Δ` and
+their product, three nonsquares, the symbols with `a` multiply to `1`, so one of them is `1`. -/
+theorem exists_not_isSquare_hilbertSymbol_eq_one (h2 : (2 : K) ≠ 0) (a : Kˣ) :
+    ∃ b : Kˣ, ¬IsSquare b ∧ hilbertSymbol b a = 1 := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  obtain ⟨Δ, hΔ, hΔv, -⟩ := exists_unramified_class h2
+  by_cases hπa : hilbertSymbol π a = 1
+  · exact ⟨π, not_isSquare_of_isUniformizer hπ, hπa⟩
+  by_cases hΔa : hilbertSymbol Δ a = 1
+  · exact ⟨Δ, hΔ, hΔa⟩
+  refine ⟨π * Δ,
+    not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation hπ (hΔv ▸ Even.zero), ?_⟩
+  rw [hilbertSymbol_mul_left h2, Int.units_ne_iff_eq_neg.mp hπa, Int.units_ne_iff_eq_neg.mp hΔa]
+  decide
 
 end TauCeti

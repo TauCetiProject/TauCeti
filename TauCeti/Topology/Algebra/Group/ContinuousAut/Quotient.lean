@@ -12,7 +12,8 @@ public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 
 A continuous automorphism of a group with a topology induces an abstract automorphism of each
 quotient by a topologically characteristic normal subgroup. These quotient automorphisms are
-the coordinates used in the congruence topology on `ContinuousAut G`. Their formula on quotient
+the coordinates used in the congruence topology on `ContinuousAut G`. Two automorphisms share a
+coordinate exactly when they agree modulo the subgroup at every point, and the formula on quotient
 classes also shows that inner automorphisms descend to inner automorphisms.
 
 See Ribes–Zalesskii, *Profinite Groups*, §4.4.
@@ -50,6 +51,16 @@ def mapQuotient [N.Normal] : ContinuousAut G →* MulAut (G ⧸ N) where
 theorem mapQuotient_mk [N.Normal] (φ : ContinuousAut G) (x : G) :
     mapQuotient hN φ (x : G ⧸ N) = (φ x : G ⧸ N) :=
   QuotientGroup.congr_mk N N φ.toMulEquiv ((isTopCharacteristic_iff_map_eq.mp hN) φ) x
+
+/-- Two continuous automorphisms induce the same automorphism of a characteristic quotient
+exactly when they agree modulo the subgroup at every point. -/
+@[simp]
+theorem mapQuotient_eq_iff [N.Normal] {φ ψ : ContinuousAut G} :
+    mapQuotient hN φ = mapQuotient hN ψ ↔ ∀ x : G, (φ x : G ⧸ N) = ψ x := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ MulEquiv.ext fun q ↦ ?_⟩
+  · simpa using congrArg (fun α : MulAut (G ⧸ N) ↦ α (x : G ⧸ N)) h
+  · obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
+    simpa using h x
 
 /-- The quotient coordinate carries conjugation by `g` to conjugation by its class. -/
 @[simp]
