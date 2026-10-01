@@ -552,7 +552,6 @@ lemma M.mk_mul_mk_mul_mk_eq_one_iff {a b c : W.A} (ha : IsUnit a) (hb : IsUnit b
   simpa only [IsUnit.unit_spec] using
     TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow 2 ((ha.mul hb).mul hc).unit
 
-@[simp]
 lemma M.sq_eq_one (m : W.M) : m ^ 2 = 1 := by
   obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective m
   rw [← QuotientGroup.mk_pow]
