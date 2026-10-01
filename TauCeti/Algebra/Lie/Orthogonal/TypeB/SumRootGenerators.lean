@@ -34,16 +34,24 @@ Two features of these vectors are what a Chevalley construction over `ℤ` asks 
 square-zero -- indeed any product of two positive, or of two negative, sum-root matrices
 vanishes -- so their exponentials are `1 + t X` and no divided power is involved. And a
 sum-root vector is not the bracket of two short-root vectors: the Chevalley structure constant
-of a pair of short roots whose sum is long is `2`, so `⁅e_{εᵢ}, e_{εⱼ}⁆` is *twice*
-`e_{εᵢ+εⱼ}`, and the integral vector itself has to be written down. Once it is, bracketing it
-with a difference-root vector moves one of its coordinates and bracketing it with an opposite
-short-root vector returns a short-root vector, so the four families interact by the expected
-relations.
+of a pair of short roots whose sum is long has absolute value `2`, and in the normalization
+below `⁅e_{εᵢ}, e_{εⱼ}⁆ = -2 e_{εᵢ+εⱼ}`, so the integral vector itself has to be written down.
+Once it is, bracketing it with a difference-root vector moves one of its coordinates,
+bracketing it with an opposite sum-root vector sharing one coordinate returns a difference-root
+vector, and bracketing it with an opposite short-root vector returns a short-root vector, so the
+four families interact by the expected relations.
+
+Both displayed matrices are antisymmetric in `i` and `j`, so swapping the coordinates negates
+them. In particular the two families are not Chevalley partners at matching indices: the vector
+`f` with `⁅e_{εᵢ+εⱼ}, f⁆ = h_{εᵢ+εⱼ}` is `e_{-εⱼ-εᵢ} = -e_{-εᵢ-εⱼ}`, so the sl₂-triple of the
+root `εᵢ + εⱼ` pairs `typeBSumRootGenerator i j` with `typeBSumNegativeRootGenerator j i`.
 
 ## Main definitions
 
 * `TauCeti.typeBSumRootGenerator`: the root vector `e_{εᵢ+εⱼ}`.
-* `TauCeti.typeBSumNegativeRootGenerator`: the opposite root vector `e_{-εᵢ-εⱼ}`.
+* `TauCeti.typeBSumNegativeRootGenerator`: the opposite root vector `e_{-εᵢ-εⱼ}`; the Chevalley
+  partner `f_{εᵢ+εⱼ}` of `e_{εᵢ+εⱼ}` is its index-swapped instance
+  `typeBSumNegativeRootGenerator j i`.
 * `TauCeti.typeBSumCorootGenerator`: the paired coroot `h_{εᵢ+εⱼ}`, of coordinate vector
   `εᵢ + εⱼ`.
 
@@ -57,10 +65,11 @@ relations.
 * `TauCeti.typeBDiagonalEquiv_lie_sumRootGenerator` and
   `TauCeti.typeBDiagonalEquiv_lie_sumNegativeRootGenerator`: the split diagonal Cartan acts by
   the weights `εᵢ + εⱼ` and `-εᵢ - εⱼ`.
-* `TauCeti.typeBSumRootGenerator_lie_negative`: opposite sum-root vectors bracket to their
-  coroot.
-* `TauCeti.typeBShortRootMatrix_lie_shortRootMatrix`,
+* `TauCeti.typeBSumRootGenerator_lie_negative`: `e_{εᵢ+εⱼ}` brackets with the index-swapped
+  opposite vector `e_{-εⱼ-εᵢ}` to the coroot `h_{εᵢ+εⱼ}`.
+* `TauCeti.typeBShortRootMatrix_lie_shortRootMatrix` (with structure constant `-2`),
   `TauCeti.typeBLongRootMatrix_lie_sumRootMatrix`,
+  `TauCeti.typeBSumRootMatrix_lie_sumNegativeRootMatrix`,
   `TauCeti.typeBSumRootMatrix_lie_shortNegativeRootMatrix` and their lowering-side
   counterparts: the Chevalley relations linking the sum-root family to the short and
   difference-root families.
@@ -200,7 +209,11 @@ theorem typeBSumNegativeRootMatrix_lie_sumNegativeRootMatrix (i j k l : ι) :
 def typeBSumRootGenerator (i j : ι) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBSumRootMatrix i j, typeBSumRootMatrix_mem_typeB i j⟩
 
-/-- The opposite sum-root vector `f_{εᵢ+εⱼ} = e_{-εᵢ-εⱼ}`. -/
+/-- The opposite sum-root vector `e_{-εᵢ-εⱼ}`, of weight `-εᵢ - εⱼ`.
+
+It is antisymmetric in `i` and `j`, so it is the Chevalley `f_{εᵢ+εⱼ}` only up to sign: the
+partner of `typeBSumRootGenerator i j` in the sl₂-triple is the index-swapped instance
+`typeBSumNegativeRootGenerator j i`, as `typeBSumRootGenerator_lie_negative` records. -/
 def typeBSumNegativeRootGenerator (i j : ι) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBSumNegativeRootMatrix i j, typeBSumNegativeRootMatrix_mem_typeB i j⟩
 
@@ -277,17 +290,13 @@ theorem typeBDiagonalEquiv_lie_sumRootGenerator (d : ι → K) (i j : ι) :
     ⁅(⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :
         LieAlgebra.Orthogonal.typeB ι K), typeBSumRootGenerator (K := K) i j⁆ =
       (d i + d j) • typeBSumRootGenerator i j := by
+  have hd : typeBDiagonalMatrix d ∈ diagonalCartan K (Unit ⊕ ι ⊕ ι) :=
+    mem_diagonalCartan_iff.mpr fun a b hab => by simp [typeBDiagonalMatrix_apply, hab]
   apply Subtype.ext
-  -- The subtype bracket reduces definitionally to the ambient matrix commutator.
-  change typeBDiagonalMatrix d * typeBSumRootMatrix i j -
-      typeBSumRootMatrix i j * typeBDiagonalMatrix d =
-        (d i + d j) • typeBSumRootMatrix i j
-  ext (a | (a | a)) (b | (b | b)) <;>
-    simp [typeBSumRootMatrix, typeBDiagonalMatrix_apply, Matrix.mul_apply,
-      Matrix.single_apply, sub_eq_add_neg]
-  all_goals
-    by_cases hia : i = a <;> by_cases hja : j = a <;>
-      by_cases hib : i = b <;> by_cases hjb : j = b <;> simp_all
+  rw [LieSubalgebra.coe_bracket, SetLike.val_smul, coe_typeBSumRootGenerator,
+    typeBSumRootMatrix_def, lie_sub, lie_single_of_mem_diagonalCartan hd,
+    lie_single_of_mem_diagonalCartan hd, smul_sub]
+  simp [add_comm]
 
 /-- A split diagonal element acts on the sum-root vector of weight `-εᵢ - εⱼ`. -/
 @[simp]
@@ -295,22 +304,19 @@ theorem typeBDiagonalEquiv_lie_sumNegativeRootGenerator (d : ι → K) (i j : ι
     ⁅(⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :
         LieAlgebra.Orthogonal.typeB ι K), typeBSumNegativeRootGenerator (K := K) i j⁆ =
       -(d i + d j) • typeBSumNegativeRootGenerator i j := by
+  have hd : typeBDiagonalMatrix d ∈ diagonalCartan K (Unit ⊕ ι ⊕ ι) :=
+    mem_diagonalCartan_iff.mpr fun a b hab => by simp [typeBDiagonalMatrix_apply, hab]
   apply Subtype.ext
-  -- The subtype bracket reduces definitionally to the ambient matrix commutator.
-  change typeBDiagonalMatrix d * typeBSumNegativeRootMatrix i j -
-      typeBSumNegativeRootMatrix i j * typeBDiagonalMatrix d =
-        -(d i + d j) • typeBSumNegativeRootMatrix i j
-  ext (a | (a | a)) (b | (b | b)) <;>
-    simp [typeBSumNegativeRootMatrix, typeBDiagonalMatrix_apply, Matrix.mul_apply,
-      Matrix.single_apply, sub_eq_add_neg]
-  all_goals
-    by_cases hia : i = a <;> by_cases hja : j = a <;>
-      by_cases hib : i = b <;> by_cases hjb : j = b <;> simp_all [add_comm]
+  rw [LieSubalgebra.coe_bracket, SetLike.val_smul, coe_typeBSumNegativeRootGenerator,
+    typeBSumNegativeRootMatrix_def, lie_sub, lie_single_of_mem_diagonalCartan hd,
+    lie_single_of_mem_diagonalCartan hd, smul_sub]
+  simp [sub_eq_add_neg, add_comm]
 
 /-! ### Chevalley relations with the long and short families -/
 
-/-- Two positive short-root vectors bracket to twice a sum-root vector. The structure constant
-`2` is the Chevalley one for a pair of short type-`B` roots whose sum is long. -/
+/-- Two positive short-root vectors bracket to minus twice a sum-root vector:
+`⁅e_{εᵢ}, e_{εⱼ}⁆ = -2 e_{εᵢ+εⱼ}`. A structure constant of absolute value `2` is the Chevalley
+one for a pair of short type-`B` roots whose sum is long. -/
 theorem typeBShortRootMatrix_lie_shortRootMatrix (i j : ι) :
     ⁅typeBShortRootMatrix (K := K) i, typeBShortRootMatrix (K := K) j⁆ =
       -(2 • typeBSumRootMatrix (K := K) i j) := by
@@ -320,7 +326,8 @@ theorem typeBShortRootMatrix_lie_shortRootMatrix (i j : ι) :
     Matrix.smul_single]
   abel
 
-/-- Two negative short-root vectors bracket to twice a negative sum-root vector. -/
+/-- Two negative short-root vectors bracket to minus twice a negative sum-root vector:
+`⁅f_{εᵢ}, f_{εⱼ}⁆ = -2 e_{-εᵢ-εⱼ}`. -/
 theorem typeBShortNegativeRootMatrix_lie_shortNegativeRootMatrix (i j : ι) :
     ⁅typeBShortNegativeRootMatrix (K := K) i, typeBShortNegativeRootMatrix (K := K) j⁆ =
       -(2 • typeBSumNegativeRootMatrix (K := K) i j) := by
@@ -331,7 +338,7 @@ theorem typeBShortNegativeRootMatrix_lie_shortNegativeRootMatrix (i j : ι) :
   abel
 
 /-- Bracketing a long difference-root vector with a sum-root vector moves the sum-root
-vector's first coordinate. -/
+vector's first coordinate: `⁅e_{εᵢ-εⱼ}, e_{εⱼ+ε_k}⁆ = e_{εᵢ+ε_k}`. -/
 theorem typeBLongRootMatrix_lie_sumRootMatrix (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) :
     ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumRootMatrix (K := K) j k⁆ =
       typeBSumRootMatrix (K := K) i k := by
@@ -340,7 +347,7 @@ theorem typeBLongRootMatrix_lie_sumRootMatrix (i j k : ι) (hij : i ≠ j) (hjk 
     Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne, hjk, hjk.symm]
 
 /-- Bracketing a long difference-root vector with a negative sum-root vector moves the latter's
-first coordinate. -/
+first coordinate, with a sign: `⁅e_{εᵢ-εⱼ}, e_{-εᵢ-ε_l}⁆ = -e_{-εⱼ-ε_l}`. -/
 theorem typeBLongRootMatrix_lie_sumNegativeRootMatrix (i j l : ι) (hij : i ≠ j) (hil : i ≠ l) :
     ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumNegativeRootMatrix (K := K) i l⁆ =
       -typeBSumNegativeRootMatrix (K := K) j l := by
@@ -349,8 +356,20 @@ theorem typeBLongRootMatrix_lie_sumNegativeRootMatrix (i j l : ι) (hij : i ≠ 
     Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne, hil, hil.symm]
   abel
 
-/-- Lowering a sum-root vector by a negative short-root vector gives a positive short-root
-vector. -/
+/-- Bracketing a sum-root vector with an opposite sum-root vector that shares one coordinate
+gives the difference-root vector of the remaining pair: `⁅e_{εᵢ+εⱼ}, e_{-εⱼ-ε_k}⁆ = e_{εᵢ-ε_k}`.
+With this the four root families are closed under the bracket. -/
+theorem typeBSumRootMatrix_lie_sumNegativeRootMatrix (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k)
+    (hik : i ≠ k) :
+    ⁅typeBSumRootMatrix (K := K) i j, typeBSumNegativeRootMatrix (K := K) j k⁆ =
+      typeBLongRootMatrix (K := K) i k hik := by
+  rw [LieRing.of_associative_ring_bracket]
+  simp [typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, typeBLongRootMatrix_def,
+    mul_sub, sub_mul, Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne,
+    hij, hij.symm, hjk, hjk.symm, hik, hik.symm]
+
+/-- Lowering a sum-root vector by a negative short-root vector gives minus a positive short-root
+vector: `⁅e_{εᵢ+εⱼ}, f_{εⱼ}⁆ = -e_{εᵢ}`. -/
 theorem typeBSumRootMatrix_lie_shortNegativeRootMatrix (i j : ι) (hij : i ≠ j) :
     ⁅typeBSumRootMatrix (K := K) i j, typeBShortNegativeRootMatrix (K := K) j⁆ =
       -typeBShortRootMatrix (K := K) i := by
@@ -360,8 +379,8 @@ theorem typeBSumRootMatrix_lie_shortNegativeRootMatrix (i j : ι) (hij : i ≠ j
     hij, hij.symm]
   abel
 
-/-- Raising a negative sum-root vector by a positive short-root vector gives a negative
-short-root vector. -/
+/-- Raising a negative sum-root vector by a positive short-root vector gives minus a negative
+short-root vector: `⁅e_{-εᵢ-εⱼ}, e_{εⱼ}⁆ = -f_{εᵢ}`. -/
 theorem typeBSumNegativeRootMatrix_lie_shortRootMatrix (i j : ι) (hij : i ≠ j) :
     ⁅typeBSumNegativeRootMatrix (K := K) i j, typeBShortRootMatrix (K := K) j⁆ =
       -typeBShortNegativeRootMatrix (K := K) i := by
@@ -370,15 +389,17 @@ theorem typeBSumNegativeRootMatrix_lie_shortRootMatrix (i j : ι) (hij : i ≠ j
     typeBShortNegativeRootMatrix_def, mul_sub, sub_mul, Matrix.single_mul_single_same,
     Matrix.single_mul_single_of_ne, hij, hij.symm]
 
-/-- Opposite sum-root vectors bracket to their diagonal coroot. -/
+/-- A sum-root vector and the index-swapped opposite sum-root vector bracket to the diagonal
+coroot: `⁅e_{εᵢ+εⱼ}, e_{-εⱼ-εᵢ}⁆ = h_{εᵢ+εⱼ}`. Since swapping the coordinates negates the
+opposite vector, the matching-index bracket is `-h_{εᵢ+εⱼ}`. -/
 @[simp]
 theorem typeBSumRootGenerator_lie_negative (i j : ι) (hij : i ≠ j) :
     ⁅typeBSumRootGenerator (K := K) i j, typeBSumNegativeRootGenerator (K := K) j i⁆ =
       typeBSumCorootGenerator i j := by
   apply Subtype.ext
-  -- The subtype bracket reduces definitionally to the ambient matrix commutator.
-  change typeBSumRootMatrix (K := K) i j * typeBSumNegativeRootMatrix j i -
-      typeBSumNegativeRootMatrix j i * typeBSumRootMatrix i j = typeBSumCorootMatrix i j
+  rw [LieSubalgebra.coe_bracket, coe_typeBSumRootGenerator,
+    coe_typeBSumNegativeRootGenerator, coe_typeBSumCorootGenerator,
+    LieRing.of_associative_ring_bracket]
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBSumRootMatrix, typeBSumNegativeRootMatrix, typeBSumCorootMatrix,
       typeBDiagonalMatrix_apply, mul_sub, sub_mul, Matrix.single_mul_single_same,
