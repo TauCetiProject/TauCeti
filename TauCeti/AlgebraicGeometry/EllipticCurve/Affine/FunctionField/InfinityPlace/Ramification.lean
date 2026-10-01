@@ -15,7 +15,8 @@ public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 For a Weierstrass curve `W` over a field `F`, the place at infinity of the function field `F(W)`
 lies over the place at infinity of the rational function field `F(x)`, with ramification index
 `2`: the order at infinity of a rational function of `x` is twice its order at infinity in
-`F(x)`. It is the only place of `F(W)` over that place.
+`F(x)`. When the coordinate ring of `W` is a Dedekind domain, for instance when `W` is an elliptic
+curve, it is the only place of `F(W)` over that place.
 
 ## Main results
 
@@ -23,7 +24,8 @@ lies over the place at infinity of the rational function field `F(x)`, with rami
   twice its order at `∞`.
 * `TauCeti.Place.restrict_infinity`: the place at infinity of `F(W)` restricts to `∞` on `F(x)`.
 * `TauCeti.Place.ramificationIdx_infinity`: its ramification index over `F(x)` is `2`.
-* `TauCeti.Place.restrict_eq_infty_iff`: it is the only place of `F(W)` over `∞`.
+* `TauCeti.Place.restrict_eq_infty_iff`: for a Dedekind coordinate ring, it is the only place of
+  `F(W)` over `∞`.
 -/
 
 public section
