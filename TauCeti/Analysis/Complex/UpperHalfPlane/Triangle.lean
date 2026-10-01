@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
+import TauCeti.Analysis.Complex.NormSq
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
@@ -112,9 +113,11 @@ theorem measurableSet_closedSide (z w u : ℍ) : MeasurableSet (closedSide z w u
 
 /-- The closed side does not depend on the direction of the bounding geodesic, as long as the
 reference point is off the line. -/
-theorem closedSide_swap {z w u : ℍ} (hzw : z ≠ w)
+theorem closedSide_swap {z w u : ℍ}
     (hu : u ∉ Set.range (geodesicLine (geodesicBetween z w))) :
     closedSide w z u = closedSide z w u := by
+  rcases eq_or_ne z w with rfl | hzw
+  · rfl
   unfold closedSide
   rw [geodesicBetween_swap hzw, rightHalfPlane_mul_pslS, leftHalfPlane_mul_pslS,
     rightHalfPlane_mul_dilation, leftHalfPlane_mul_dilation]
@@ -168,10 +171,13 @@ theorem left_mem_triangle (A B C : ℍ) : A ∈ triangle A B C :=
     (mem_range_geodesicLine_geodesicBetween_left A B), mem_closedSide_self B C A,
     range_geodesicLine_subset_closedSide _ _ _ (mem_range_geodesicLine_geodesicBetween_right C A)⟩
 
-/-- The nondegenerate triangle does not depend on the order of its first two vertices. -/
-theorem triangle_swap_left {A B C : ℍ} (hAB : A ≠ B)
+/-- The triangle does not depend on the order of its first two vertices, as long as the third is
+off the line through them. -/
+theorem triangle_swap_left {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
     triangle B A C = triangle A B C := by
+  rcases eq_or_ne A B with rfl | hAB
+  · rfl
   have hAC : A ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_left A B)
   have hBC : B ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_right A B)
   -- `B` is off the line `A C`, and `A` is off the line `C B`: otherwise that line would be `A B`
@@ -182,21 +188,21 @@ theorem triangle_swap_left {A B C : ℍ} (hAB : A ≠ B)
     ((range_geodesicLine_geodesicBetween_of_mem hA
       (mem_range_geodesicLine_geodesicBetween_right C B) hAB).symm ▸
       mem_range_geodesicLine_geodesicBetween_left C B)
-  rw [triangle, triangle, closedSide_swap hAB hC, closedSide_swap hAC hB,
-    closedSide_swap hBC.symm hA, Set.inter_right_comm]
+  rw [triangle, triangle, closedSide_swap hC, closedSide_swap hB, closedSide_swap hA,
+    Set.inter_right_comm]
 
 /-- The nondegenerate triangle does not depend on the order of its last two vertices. -/
-theorem triangle_swap_right {A B C : ℍ} (hAB : A ≠ B)
+theorem triangle_swap_right {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
     triangle A C B = triangle A B C := by
-  rw [triangle_rotate B A C, triangle_swap_left hAB hC]
+  rw [triangle_rotate B A C, triangle_swap_left hC]
 
 /-- The nondegenerate triangle does not depend on the order of its first and last vertices: it
 is unchanged by reversing the order of the vertices. -/
-theorem triangle_reverse {A B C : ℍ} (hAB : A ≠ B)
+theorem triangle_reverse {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
     triangle C B A = triangle A B C := by
-  rw [triangle_rotate A C B, triangle_swap_right hAB hC]
+  rw [triangle_rotate A C B, triangle_swap_right hC]
 
 /-- The interior angle of the triangle `A B C` at the vertex `A`: the angle between the geodesics
 from `A` to `B` and from `A` to `C`. -/
@@ -221,20 +227,6 @@ theorem interiorAngle_le_pi (A B C : ℍ) : interiorAngle A B C ≤ π :=
   geodesicAngle_le_pi _ _
 
 end UpperHalfPlane
-
-namespace Complex
-
-/-- The "radical line" identity: for real centres `c₁` and `c₂`, the difference of the two power
-functions `|z - c|² - |C - c|²` of `z` is affine in `z.re` and vanishes at `C.re`. -/
-theorem normSq_sub_ofReal_sub_normSq_sub_ofReal {c₁ c₂ : ℝ} (C z : ℂ) :
-    (Complex.normSq (z - c₁) - Complex.normSq (C - c₁)) -
-        (Complex.normSq (z - c₂) - Complex.normSq (C - c₂)) =
-      2 * (c₂ - c₁) * (z.re - C.re) := by
-  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-    Complex.ofReal_im, sub_zero]
-  ring
-
-end Complex
 
 namespace TauCeti.UpperHalfPlane
 
@@ -656,11 +648,10 @@ theorem volume_triangle {A B C : ℍ} (hAB : A ≠ B)
   · rw [hA, hB, volume_triangle_I_geodesicLine_one hd hCre, ← hA, ← hB,
       interiorAngle_smul h hAB hAC, interiorAngle_smul h hBC hAB.symm,
       interiorAngle_smul h hAC.symm hBC.symm]
-  · have hAB' : h • A ≠ h • B := (MulAction.injective h).ne hAB
-    have hC' : h • C ∉ Set.range (geodesicLine (geodesicBetween (h • A) (h • B))) := by
+  · have hC' : h • C ∉ Set.range (geodesicLine (geodesicBetween (h • A) (h • B))) := by
       rw [geodesicBetween_smul h hAB, ← smul_range_geodesicLine, Set.smul_mem_smul_set_iff]
       exact hC
-    rw [← triangle_swap_left hAB' hC', hB, hA, volume_triangle_I_geodesicLine_one hd hCre, ← hB,
+    rw [← triangle_swap_left hC', hB, hA, volume_triangle_I_geodesicLine_one hd hCre, ← hB,
       ← hA, interiorAngle_smul h hAB.symm hBC, interiorAngle_smul h hAC hAB,
       interiorAngle_smul h hBC.symm hAC.symm, interiorAngle_comm B C A, interiorAngle_comm A B C,
       interiorAngle_comm C A B]
