@@ -107,14 +107,9 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le
   have hmeasO := Omega.isOpen.measurableSet
   have hT : MeasurableSet T := (isClosed_tsupport ψ).measurableSet
   have hTfin : mu T ≠ (∞ : ℝ≥0∞) := hcpt.measure_lt_top.ne
-  have hvm : AEStronglyMeasurable (fun x => max (W1p.value u x - l) 0) (mu.restrict Omega) :=
-    ((continuous_id.sub continuous_const).max continuous_const).comp_aestronglyMeasurable
-      (Lp.aestronglyMeasurable _)
   -- The truncation at the higher level is dominated by the one at the lower level.
   have hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega) :=
-    hwLp.of_le hvm (Eventually.of_forall fun x => by
-      rw [Real.norm_of_nonneg (le_max_right _ _), Real.norm_of_nonneg (le_max_right _ _)]
-      exact max_le_max (by linarith) le_rfl)
+    W1p.memLp_posPartAbove_of_le u hkl.le hwLp
   set w := W1p.posPartAboveOfMemLp (by norm_num) l u hwl
   obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
   have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
@@ -124,16 +119,8 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le
     W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hM hψM' hgradM'
       hcpt hts w
   -- Caccioppoli's inequality for `w = (u - l)⁺`, with zero forcing.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha
-    (f := 0) (fun v hv => (hu v hv).trans_eq (integral_eq_zero_of_ae (by
-      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
-      rw [hx, Pi.zero_apply, zero_mul])).symm) hwl hψ hcpt hts
-  have hzero : ∫ x in Omega, ψ x ^ 2 * (0 : Lp ℝ 2 (mu.restrict Omega)) x *
-      W1p.value w x ∂mu = 0 := integral_eq_zero_of_ae (by
-    filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
-    rw [hx, Pi.zero_apply, mul_zero, zero_mul])
-  dsimp only at hcacc
-  rw [hzero, mul_zero, add_zero] at hcacc
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hwl
+    hψ hcpt hts
   set J := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
   -- The truncation in `hcacc` carries its own proof of `2 ≠ ∞`; by proof irrelevance it is `w`.
   replace hcacc : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
@@ -142,28 +129,15 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le
   have hgradz : ‖W1p.gradient z‖ ^ 2 ≤ 2 * (1 + (2 * Lam / lam) ^ 2) * J := by
     have hleib := W1p.norm_gradient_contDiffSMul_sq_le hψ hM hψM' hgradM' w
     linarith
-  have hI2 : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq w).bdd_mul
-      ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
-      (Eventually.of_forall fun x => by
-        rw [Real.norm_eq_abs, abs_pow, abs_norm]
-        exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)
   -- `∇ψ` vanishes off the support of `ψ`, where `(u - l)⁺ ≤ (u - k)⁺`.
   have hJ : J ≤ G ^ 2 * I := by
-    have hind : Integrable (T.indicator fun x => max (W1p.value u x - k) 0 ^ 2)
-        (mu.restrict Omega) := hwLp.integrable_sq.indicator hT
-    calc J ≤ ∫ x in Omega, G ^ 2 * T.indicator (fun x => max (W1p.value u x - k) 0 ^ 2) x ∂mu :=
-          integral_mono_ae hI2 (hind.const_mul _) (by
-            filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) l u hwl] with x hx
-            by_cases hxT : x ∈ T
-            · rw [indicator_of_mem hxT, hx]
-              exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (hG x) 2)
-                (pow_le_pow_left₀ (le_max_right _ _) (max_le_max (by linarith) le_rfl) 2)
-                (by positivity) (by positivity)
-            · have hfd : fderiv ℝ ψ x = 0 :=
-                Function.notMem_support.1 fun hx' => hxT (support_fderiv_subset ℝ hx')
-              simp [indicator_of_notMem hxT, _root_.gradient, hfd])
-      _ = G ^ 2 * I := by rw [integral_const_mul, setIntegral_indicator hT]
+    have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG hT
+      (by simp [T]) hwLp.integrable_sq (by
+        filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) l u hwl] with x hx
+        rw [hx]
+        exact pow_le_pow_left₀ (le_max_right _ _)
+          (max_le_max (sub_le_sub_left hkl.le _) le_rfl) 2)
+    simpa only [J, I] using hbound
   -- `z` vanishes off `A = supp ψ ∩ {u > l}`, whose measure Chebyshev's inequality controls.
   set A := T ∩ {x | l < W1p.value u x}
   have hA : MeasurableSet A :=
@@ -293,22 +267,11 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
   have hY : 0 ≤ Y := integral_nonneg (hnn k)
   -- The left-hand side is below the cutoff integral, since `ψ = 1` on the smaller ball.
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
-      ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu := by
-    have hψ2 : IntegrableOn (fun x => ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2)
-        (Omega : Set _) mu :=
-      (hint l (hk0.trans hkl.le)).bdd_mul (hψ.continuous.pow 2).aestronglyMeasurable (c := 1)
-        (Eventually.of_forall fun x => by
-          obtain ⟨h0, h1⟩ := hψ01 (mem_range_self x)
-          rw [Real.norm_eq_abs, abs_pow, abs_of_nonneg h0]
-          exact pow_le_one₀ h0 h1)
-    calc ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu
-        = ∫ x in Metric.ball x₀ r₁, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
-          setIntegral_congr_fun Metric.isOpen_ball.measurableSet fun x hx => by
-            rw [hψ1 (Metric.ball_subset_closedBall hx), Pi.one_apply, one_pow, one_mul]
-      _ ≤ ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
-          setIntegral_mono_set hψ2 (Eventually.of_forall fun x => by positivity)
-            ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
-              ((Metric.ball_subset_ball hr₀R).trans hball)).eventuallyLE
+      ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
+    setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
+      (fun x => hnn l x) hψ hψ01 hψ1
+      ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
+        ((Metric.ball_subset_ball hr₀R).trans hball))
   -- The integral over `Ω ∩ supp ψ` is below `Y`.
   have hI : ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ,
       max (W1p.value u x - k) 0 ^ 2 ∂mu ≤ Y :=

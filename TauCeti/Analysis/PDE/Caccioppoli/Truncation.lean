@@ -161,6 +161,35 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
   exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam w hψ hψM hgradM hE hpt
     hforce
 
+/-- **The zero-forcing Caccioppoli inequality for a positive truncation of a weak
+subsolution.** This is the specialization of
+`UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp` to
+`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. -/
+theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
+    {k : ℝ} (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega))
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hcpt : HasCompactSupport ψ) (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    let w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
+    ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+      (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu := by
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha
+    (f := 0) (fun v hv => (hu v hv).trans_eq (integral_eq_zero_of_ae (by
+      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
+      rw [hx, Pi.zero_apply, zero_mul])).symm) hwLp hψ hcpt hts
+  have hzero : ∫ x in Omega, ψ x ^ 2 * (0 : Lp ℝ 2 (mu.restrict Omega)) x *
+      W1p.value (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x ∂mu = 0 :=
+    integral_eq_zero_of_ae (by
+      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
+      rw [hx, Pi.zero_apply, mul_zero, zero_mul])
+  dsimp only at hcacc ⊢
+  rw [hzero, mul_zero, add_zero] at hcacc
+  exact hcacc
+
 /-- **The Caccioppoli inequality for a nonnegative-level truncation of a weak subsolution.**
 This specializes
 `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp`; the
@@ -226,61 +255,20 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
     exact div_le_div_of_nonneg_right (by linarith) (by linarith))
   set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
   -- Caccioppoli's inequality for `w`, with zero forcing.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha
-    (f := 0) (fun v hv => (hu v hv).trans_eq (integral_eq_zero_of_ae (by
-      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
-      rw [hx, Pi.zero_apply, zero_mul])).symm) hwLp hψ hcpt htsΩ
-  have hzero : ∫ x in Omega, ψ x ^ 2 * (0 : Lp ℝ 2 (mu.restrict Omega)) x *
-      W1p.value w x ∂mu = 0 := integral_eq_zero_of_ae (by
-    filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
-    rw [hx, Pi.zero_apply, mul_zero, zero_mul])
-  dsimp only at hcacc
-  rw [hzero, mul_zero, add_zero] at hcacc
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hwLp
+    hψ hcpt htsΩ
   -- On `B(x₀, r)` the cutoff is one.
   have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
-      ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu := by
-    have hψ1 : ∀ x, |ψ x| ≤ 1 := fun x => by
-      obtain ⟨h0, h1⟩ := hrange (mem_range_self x)
-      rw [abs_of_nonneg h0]
-      exact h1
-    have hint : IntegrableOn (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) Omega mu :=
-      (W1p.integrable_norm_gradient_sq w).bdd_mul (hψ.continuous.pow 2).aestronglyMeasurable
-        (c := 1) (Eventually.of_forall fun x => by
-          rw [Real.norm_eq_abs, abs_pow]
-          exact pow_le_one₀ (abs_nonneg _) (hψ1 x))
-    calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
-        = ∫ x in ball x₀ r, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
-          setIntegral_congr_fun measurableSet_ball fun x hx => by
-            rw [hone (ball_subset_closedBall hx), Pi.one_apply, one_pow, one_mul]
-      _ ≤ ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
-          setIntegral_mono_set hint (Eventually.of_forall fun x => by positivity)
-            ((ball_subset_ball hrR.le).trans hball).eventuallyLE
+      ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
+    setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
+      (fun x => sq_nonneg _) hψ hrange hone ((ball_subset_ball hrR.le).trans hball)
   -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
-      G ^ 2 * ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-    have hI2 : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-      (W1p.integrable_value_sq w).bdd_mul
-        ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := G ^ 2)
-        (Eventually.of_forall fun x => by
-          rw [Real.norm_eq_abs, abs_pow, abs_norm]
-          exact pow_le_pow_left₀ (norm_nonneg _) (hG x) 2)
-    have hind : Integrable ((ball x₀ R).indicator fun x => max (W1p.value u x - k) 0 ^ 2)
-        (mu.restrict Omega) := hwLp.integrable_sq.indicator measurableSet_ball
-    calc ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
-        ≤ ∫ x in Omega, G ^ 2 *
-            (ball x₀ R).indicator (fun x => max (W1p.value u x - k) 0 ^ 2) x ∂mu :=
-          integral_mono_ae hI2 (hind.const_mul _) (by
-            filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx
-            by_cases hxR : x ∈ ball x₀ R
-            · rw [indicator_of_mem hxR, hx]
-              exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hG x) 2)
-                (by positivity)
-            · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
-                hxR (htsR (support_fderiv_subset ℝ hx'))
-              simp [indicator_of_notMem hxR, _root_.gradient, hfd])
-      _ = G ^ 2 * ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-          rw [integral_const_mul, setIntegral_indicator measurableSet_ball,
-            inter_eq_right.2 hball]
+      G ^ 2 * ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu :=
+    (W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG measurableSet_ball htsR
+      hwLp.integrable_sq (by
+        filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx
+        rw [hx])).trans_eq (by rw [inter_eq_right.2 hball])
   calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
       ≤ (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu :=
         hleft.trans hcacc

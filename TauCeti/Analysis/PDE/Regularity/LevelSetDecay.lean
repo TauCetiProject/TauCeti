@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.DeGiorgi
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Measure.AddHaar
 
 /-!
 # Decay of upper level sets of weak subsolutions (De Giorgi)
@@ -65,6 +66,37 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
+/-- Caccioppoli on `B_R ⊆ B_{2R}`, followed by the bound `(u - k)⁺ ≤ M - k` coming from
+`u ≤ M` almost everywhere on the larger ball. -/
+private theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_ae_le :
+    ∃ c : ℝ, 0 < c ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+      {lam Lam : ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R k M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
+      0 < R → ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) → k ≤ M →
+      (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega)) →
+      (∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value u x ≤ M) →
+      ∫ x in ball x₀ R,
+          ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x‖ ^ 2 ∂mu ≤
+        (2 * Lam / lam) ^ 2 * (c / R) ^ 2 *
+          ((M - k) ^ 2 * mu.real (ball x₀ (2 * R))) := by
+  obtain ⟨c, hc0, hcacc⟩ := exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le (ι := ι)
+  refine ⟨c, hc0, ?_⟩
+  intro mu _ Omega a lam Lam u x₀ R k M h ha hu hR hball hkM hwLp hM
+  have henergy := hcacc hwLp h ha hu hR (by linarith : R < 2 * R) hball
+  rw [(by ring : 2 * R - R = R)] at henergy
+  refine henergy.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  refine (setIntegral_mono_ae_restrict (g := fun _ => (M - k) ^ 2)
+    (IntegrableOn.mono_set hwLp.integrable_sq hball)
+    (integrableOn_const measure_ball_lt_top.ne) ?_).trans_eq (by
+      rw [setIntegral_const, smul_eq_mul, mul_comm])
+  filter_upwards [hM] with x hx
+  exact pow_le_pow_left₀ (le_max_right _ _) (max_le (sub_le_sub_right hx k) (sub_nonneg.2 hkM)) 2
+
 omit [DecidableEq ι] in
 /-- One step of De Giorgi's level-set decay, for `u ∈ W^{1,2}(Ω)` on a ball `B_R = B(x₀, R) ⊆ Ω`.
 Let `k < l` be levels with `w = (u - k)⁺ ∈ L²(Ω)`, and suppose that `{u ≤ k}` occupies a proportion
@@ -86,9 +118,6 @@ private theorem sq_mul_sq_sub_mul_measureReal_le (u : W1p mu Omega 2)
         ∫ x in ball x₀ R,
           ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x‖ ^ 2 ∂mu := by
   set n := finrank ℝ (EuclideanSpace ℝ ι)
-  set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
-  have hBO : B ≤ Omega := hball
-  set v := W1p.restrictL hBO u
   set nu := mu.restrict (ball x₀ R)
   have : IsFiniteMeasure nu := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
@@ -97,26 +126,8 @@ private theorem sq_mul_sq_sub_mul_measureReal_le (u : W1p mu Omega 2)
     (Lp.stronglyMeasurable _).measurable
   have hS : MeasurableSet S :=
     (measurableSet_lt measurable_const hm).inter (measurableSet_lt hm measurable_const)
-  -- De Giorgi's isoperimetric inequality for the restriction of `u` to `B_R`, which has the
-  -- same value and gradient there.
-  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := W1p.value_restrictL_ae hBO u
-  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u := W1p.gradient_restrictL_ae hBO u
-  have hiso := W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball hR.le rfl v hkl
-  have hA : nu.real {x | l ≤ W1p.value v x} = nu.real {x | l ≤ W1p.value u x} :=
-    measureReal_congr (by filter_upwards [hv] with x hx; simp [hx])
-  have hB : nu.real {x | W1p.value v x ≤ k} = nu.real {x | W1p.value u x ≤ k} :=
-    measureReal_congr (by filter_upwards [hv] with x hx; simp [hx])
-  have hSv : {x | k < W1p.value v x ∧ W1p.value v x < l} =ᵐ[nu] S := by
-    filter_upwards [hv] with x hx
-    simp [S, hx]
-  have hI : ∫ x in {x | k < W1p.value v x ∧ W1p.value v x < l}, ‖W1p.gradient v x‖ ∂nu =
-      ∫ x in S, ‖W1p.gradient u x‖ ∂nu := by
-    rw [setIntegral_congr_set hSv]
-    exact integral_congr_ae (ae_restrict_of_ae (by filter_upwards [hgv] with x hx; rw [hx]))
-  replace hiso : (l - k) * nu.real {x | l ≤ W1p.value u x} * nu.real {x | W1p.value u x ≤ k} ≤
-      mu.real (ball 0 1) * (2 * R) ^ (n + 1) * ∫ x in S, ‖W1p.gradient u x‖ ∂nu := by
-    rw [← hA, ← hB, ← hI]
-    exact hiso
+  -- De Giorgi's isoperimetric inequality on the ball contained in `Ω`.
+  have hiso := W1p.sub_mul_measureReal_mul_measureReal_le_of_ball_subset hR.le hball u hkl
   -- Cauchy–Schwarz on the strip `S`, where `∇u = ∇w`.
   have hmem : MemLp (fun x => ‖W1p.gradient u x‖) 2 nu :=
     ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono_set mu hball)).norm
@@ -136,8 +147,7 @@ private theorem sq_mul_sq_sub_mul_measureReal_le (u : W1p mu Omega 2)
   -- The scaling `μ(B(0, 1)) (2R)^{n+1} = 2^{n+1} R |B_R|`, and the division by `|B_R|²`.
   set V := mu.real (ball x₀ R) with hVdef
   have hω : mu.real (ball 0 1) * (2 * R) ^ (n + 1) = 2 ^ (n + 1) * R * V := by
-    rw [hVdef, measureReal_def, measureReal_def, Measure.addHaar_ball_of_pos mu x₀ hR,
-      ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+    rw [hVdef, mu.addHaar_real_ball_of_pos x₀ hR]
     ring
   have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos mu x₀ hR).ne' measure_ball_lt_top.ne
   rw [hω] at hiso
@@ -183,7 +193,8 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
       θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k} →
       ∀ j : ℕ, √j * (mu.restrict (ball x₀ R)).real {x | M - (M - k) / 2 ^ j ≤ W1p.value u x} ≤
         C * mu.real (ball x₀ R) := by
-  obtain ⟨c, hc0, hcacc⟩ := exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le (ι := ι)
+  obtain ⟨c, hc0, henergy⟩ :=
+    exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_ae_le (ι := ι)
   set n := finrank ℝ (EuclideanSpace ℝ ι)
   set K : ℝ := 2 ^ (3 * n + 4) * (1 + (2 * Lam / lam) ^ 2) * c ^ 2 / θ ^ 2
   have hK : 0 < K := by positivity
@@ -200,13 +211,9 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
   have hballR : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (ball_subset_ball (by linarith)).trans hball
   -- Scaling of the balls: `|B(x₀, ρ)| = ρⁿ μ(B(0, 1))`.
-  have hball_real : ∀ ρ : ℝ, 0 < ρ → mu.real (ball x₀ ρ) = ρ ^ n * mu.real (ball 0 1) :=
-    fun ρ hρ => by
-      rw [measureReal_def, Measure.addHaar_ball_of_pos mu x₀ hρ, ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
-  have hVeq : V = R ^ n * mu.real (ball 0 1) := hball_real R hR
+  have hVeq : V = R ^ n * mu.real (ball 0 1) := mu.addHaar_real_ball_of_pos x₀ hR
   have hV2 : mu.real (ball x₀ (2 * R)) = 2 ^ n * V := by
-    rw [hball_real _ (by positivity), hVeq]
+    rw [mu.addHaar_real_ball_of_pos x₀ (by positivity), hVeq]
     ring
   have hV : 0 < V := by
     rw [hVeq]
@@ -230,26 +237,16 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
       rw [← sub_pos, hlev_succ]
       positivity
     have hwj : MemLp (fun x => max (W1p.value u x - lev j) 0) 2 (mu.restrict Omega) :=
-      hwLp.of_le (((continuous_id.sub continuous_const).max
-        continuous_const).comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
-        (Eventually.of_forall fun x => by
-          rw [Real.norm_of_nonneg (le_max_right _ _), Real.norm_of_nonneg (le_max_right _ _)]
-          exact max_le_max (by linarith [hk_le j]) le_rfl)
+      W1p.memLp_posPartAbove_of_le u (hk_le j) hwLp
     set w := W1p.posPartAboveOfMemLp (by norm_num) (lev j) u hwj
     -- The energy of the truncation on `B_R`, from Caccioppoli on `B_R ⊆ B_{2R}`.
     have hE : ∫ x in ball x₀ R, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
         (2 * Lam / lam) ^ 2 * (c / R) ^ 2 * ((d / 2 ^ j) ^ 2 * (2 ^ n * V)) := by
-      have h1 := hcacc hwj h ha hu hR (by linarith : R < 2 * R) hball
-      rw [(by ring : 2 * R - R = R)] at h1
-      refine h1.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
-      rw [← hV2]
-      refine (setIntegral_mono_ae_restrict (g := fun _ => (d / 2 ^ j) ^ 2)
-        (IntegrableOn.mono_set hwj.integrable_sq hball)
-        (integrableOn_const measure_ball_lt_top.ne) ?_).trans_eq (by
-          rw [setIntegral_const, smul_eq_mul, mul_comm])
-      filter_upwards [hM] with x hx
       have hdj : M - lev j = d / 2 ^ j := by simp [lev]
-      exact pow_le_pow_left₀ (le_max_right _ _) (max_le (by linarith) (by positivity)) 2
+      have hlevM : lev j ≤ M := by
+        simp only [lev]
+        exact sub_le_self _ (by positivity)
+      simpa only [w, hdj, hV2] using henergy h ha hu hR hball hlevM hwj hM
     have hθj : θ * V ≤ nu.real {x | W1p.value u x ≤ lev j} :=
       hθk.trans (measureReal_mono fun x (hx : W1p.value u x ≤ k) =>
         hx.trans (hk_le j))

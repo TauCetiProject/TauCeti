@@ -129,6 +129,69 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
       field_simp
       ring
 
+omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
+/-- A cutoff equal to one on a ball bounds the integral of a nonnegative function over that ball
+by the corresponding cutoff-weighted integral over the ambient domain. -/
+theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : IntegrableOn f (Omega : Set (EuclideanSpace ℝ ι)) mu) (hf0 : ∀ x, 0 ≤ f x)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψ01 : range ψ ⊆ Icc 0 1)
+    {x₀ : EuclideanSpace ℝ ι} {r : ℝ} (hψ1 : EqOn ψ 1 (Metric.closedBall x₀ r))
+    (hball : Metric.ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ∫ x in Metric.ball x₀ r, f x ∂mu ≤ ∫ x in Omega, ψ x ^ 2 * f x ∂mu := by
+  have hψabs : ∀ x, |ψ x| ≤ 1 := fun x => by
+    obtain ⟨h0, h1⟩ := hψ01 (mem_range_self x)
+    rw [abs_of_nonneg h0]
+    exact h1
+  have hint : IntegrableOn (fun x => ψ x ^ 2 * f x) (Omega : Set _) mu :=
+    hf.bdd_mul (hψ.continuous.pow 2).aestronglyMeasurable (c := 1)
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_pow]
+        exact pow_le_one₀ (abs_nonneg _) (hψabs x))
+  calc
+    ∫ x in Metric.ball x₀ r, f x ∂mu =
+        ∫ x in Metric.ball x₀ r, ψ x ^ 2 * f x ∂mu :=
+      setIntegral_congr_fun Metric.isOpen_ball.measurableSet fun x hx => by
+        rw [hψ1 (Metric.ball_subset_closedBall hx), Pi.one_apply, one_pow, one_mul]
+    _ ≤ ∫ x in Omega, ψ x ^ 2 * f x ∂mu :=
+      setIntegral_mono_set hint
+        (Filter.Eventually.of_forall fun x => mul_nonneg (sq_nonneg _) (hf0 x))
+        hball.eventuallyLE
+
+omit [DecidableEq ι] in
+/-- Bound the cutoff-gradient term by the squared gradient bound and an integral over a set
+containing the support of the cutoff. The comparison function may dominate the Sobolev value only
+almost everywhere. -/
+theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) {G : ℝ}
+    (hG : ∀ x, ‖∇ ψ x‖ ≤ G) {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S)
+    (hts : tsupport ψ ⊆ S) {g : EuclideanSpace ℝ ι → ℝ}
+    (hg : Integrable g (mu.restrict Omega))
+    (hwg : ∀ᵐ x ∂mu.restrict Omega, W1p.value w x ^ 2 ≤ g x) :
+    ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+      G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+  have hleft : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2)
+      (mu.restrict Omega) :=
+    (W1p.integrable_value_sq w).bdd_mul
+      ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := G ^ 2)
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_pow, abs_norm]
+        exact pow_le_pow_left₀ (norm_nonneg _) (hG x) 2)
+  have hright : Integrable (S.indicator g) (mu.restrict Omega) := hg.indicator hS
+  calc
+    ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+        ∫ x in Omega, G ^ 2 * S.indicator g x ∂mu :=
+      integral_mono_ae hleft (hright.const_mul _) (by
+        filter_upwards [hwg] with x hx
+        by_cases hxS : x ∈ S
+        · rw [indicator_of_mem hxS]
+          exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (hG x) 2) hx
+            (sq_nonneg _) (sq_nonneg _)
+        · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
+            hxS (hts (support_fderiv_subset ℝ hx'))
+          simp [indicator_of_notMem hxS, _root_.gradient, hfd])
+    _ = G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+      rw [integral_const_mul, setIntegral_indicator hS]
+
 /-- **The Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on `Ω` with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, in
 the sense that `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`.

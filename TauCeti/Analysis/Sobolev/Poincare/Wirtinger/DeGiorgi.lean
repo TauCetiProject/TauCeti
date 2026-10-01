@@ -34,6 +34,8 @@ why the inequality is stated for every exponent `p` and proved at `p = 1`.
   convex domain.
 * `TauCeti.W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball`: the inequality on a ball of
   radius `R`, with constant `μ(B(0, 1)) (2R) ^ (n + 1)`.
+* `TauCeti.W1p.sub_mul_measureReal_mul_measureReal_le_of_ball_subset`: the same inequality for
+  a ball contained in a larger Sobolev domain.
 
 ## References
 
@@ -211,5 +213,42 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball {c : E} {R : ℝ} 
   gcongr
   rw [hOmega]
   exact diam_ball hR
+
+/-- **De Giorgi's isoperimetric inequality on a ball contained in the Sobolev domain.**
+For `u ∈ W^{1,p}(Ω)`, a ball `B(c, R) ⊆ Ω`, and levels `k < l`, all level sets and the gradient
+integral being restricted to the ball,
+
+`(l - k) · |{u ≥ l}| · |{u ≤ k}| ≤ μ(B(0, 1)) · (2R) ^ (n + 1) · ∫_{k < u < l} |∇u|`.
+
+This is the ball inequality applied to the Sobolev restriction of `u`. -/
+theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_ball_subset {c : E} {R : ℝ}
+    (hR : 0 ≤ R) (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega p)
+    {k l : ℝ} (hkl : k < l) :
+    (l - k) * (mu.restrict (ball c R)).real {x | l ≤ W1p.value u x} *
+        (mu.restrict (ball c R)).real {x | W1p.value u x ≤ k} ≤
+      mu.real (ball 0 1) * (2 * R) ^ (finrank ℝ E + 1) *
+        ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖
+          ∂mu.restrict (ball c R) := by
+  let B : Opens E := ⟨ball c R, isOpen_ball⟩
+  have hBO : B ≤ Omega := hball
+  let v := W1p.restrictL hBO u
+  let nu := mu.restrict (ball c R)
+  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := W1p.value_restrictL_ae hBO u
+  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u := W1p.gradient_restrictL_ae hBO u
+  have hiso := W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball hR rfl v hkl
+  have hA : nu.real {x | l ≤ W1p.value v x} = nu.real {x | l ≤ W1p.value u x} :=
+    measureReal_congr (by filter_upwards [hv] with x hx; simp [hx])
+  have hB : nu.real {x | W1p.value v x ≤ k} = nu.real {x | W1p.value u x ≤ k} :=
+    measureReal_congr (by filter_upwards [hv] with x hx; simp [hx])
+  have hS : {x | k < W1p.value v x ∧ W1p.value v x < l} =ᵐ[nu]
+      {x | k < W1p.value u x ∧ W1p.value u x < l} := by
+    filter_upwards [hv] with x hx
+    simp [hx]
+  have hI : ∫ x in {x | k < W1p.value v x ∧ W1p.value v x < l}, ‖W1p.gradient v x‖ ∂nu =
+      ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖ ∂nu := by
+    rw [setIntegral_congr_set hS]
+    exact integral_congr_ae (ae_restrict_of_ae (by filter_upwards [hgv] with x hx; rw [hx]))
+  rw [← hA, ← hB, ← hI]
+  exact hiso
 
 end TauCeti
