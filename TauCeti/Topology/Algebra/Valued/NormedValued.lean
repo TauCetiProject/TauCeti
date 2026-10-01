@@ -15,8 +15,9 @@ public import Mathlib.Topology.Algebra.Valued.NormedValued
 Let `K` be a complete nonarchimedean normed field and let `O` be its ring of integers, in the
 sense that `O` is a ring of integers (`Valuation.Integers`) for the valuation
 `NormedField.valuation` given by the norm. Divisibility in `O` is governed by the norm: `ϖ ^ n`
-divides `x` exactly when `‖x‖ ≤ ‖ϖ‖ ^ n`. Consequently, if `‖ϖ‖ < 1`, the `ϖ`-adic filtration of
-`O` is cofinal with the balls about zero, and `O` is `ϖ`-adically complete and Hausdorff.
+divides `x` exactly when `‖x‖ ≤ ‖ϖ‖ ^ n`. Consequently, if `0 < ‖ϖ‖ < 1`, the `ϖ`-adic
+filtration of `O` is cofinal with the balls about zero; and whenever `‖ϖ‖ < 1` (including
+`ϖ = 0`), `O` is `ϖ`-adically complete and Hausdorff.
 
 For a complete perfect nonarchimedean field `F` of characteristic `p` with pseudouniformiser `ϖ`,
 this is the completeness input for the ring of integers `𝒪_F` required to make the Witt vectors
