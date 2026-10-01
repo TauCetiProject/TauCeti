@@ -37,6 +37,7 @@ open MvPolynomial
 
 /-- The MacWilliams substitution of the repetition enumerator is its cardinality times the
 single-parity-check enumerator. -/
+@[simp]
 theorem aeval_weightEnumerator_repetitionCode (R ι : Type*) [Ring R] [Finite R] [DecidableEq R]
     [Fintype ι] :
     aeval ![X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
