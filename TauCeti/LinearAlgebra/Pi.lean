@@ -41,9 +41,21 @@ the fibres; it says nothing about the submodules cut out by a support condition.
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
+* `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
+  one-point family `Pi.single` at the last index.
 * `LinearMap.det_pi_of_apply_eq_dependent`: the determinant of a coordinatewise endomorphism of a
   finite dependent product is the product of the determinants on its factors.
 -/
+
+/-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
+tuple of length `n` gives the family supported at the last index with value `x` there. -/
+public theorem Fin.snoc_zero_eq_single {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, Zero (M i)]
+    (x : M (Fin.last n)) :
+    Fin.snoc (0 : (i : Fin n) → M i.castSucc) x = Pi.single (Fin.last n) x := by
+  funext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i => simp
 
 namespace Submodule
 
