@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.DegreeOneForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ExponentSumKernel
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.QInvariant
 
 /-!
 # The constrained span statement at the normal form `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)`
@@ -57,6 +58,13 @@ open Subgroup Submodule
 namespace freeProP
 
 variable {p : ℕ} [Fact p.Prime] {n : ℕ}
+
+/-- The normal-form word `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` lies in the kernel `X` of the exponent
+sum at `x₂`: its exponent vector is `q` at `x₁` and `0` elsewhere. -/
+theorem demushkinWordNeTwo_freeProPGen_mem_exponentSumKer (hn1 : 1 < n) (q : ℕ) :
+    demushkinWordNeTwo q n (freeProPGen p n) ∈ exponentSumKer p (Fin n) ⟨1, hn1⟩ := by
+  rw [mem_exponentSumKer_iff, toAdd_exponentSum_demushkinWordNeTwo, Pi.smul_apply,
+    toAdd_exponentSum_freeProPGen_apply, ite_eq_right (by simp), smul_zero]
 
 /-- The derivative `∂_k` of a bracket `[ξ_{2b}, ξ_{2b+1}]` of the commutator part of the word, when
 `k` differs from both `2b` and `2b + 1`. -/

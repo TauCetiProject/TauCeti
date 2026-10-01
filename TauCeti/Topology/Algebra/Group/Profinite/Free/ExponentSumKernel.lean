@@ -76,6 +76,10 @@ The graded pieces `gr_m(X_i) ≤ gr_m(F)` of `X_i` along the lower `p`-series
   those generators is trivial on `X_i` (`ContinuousMonoidHom.exponentSumKer_le_ker`), and a
   dyadic character whose values at those generators square to `1` is trivial on `X_i ∩ λ_1(F)`
   (`ContinuousMonoidHom.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one`).
+* `ContinuousMonoidHom.exponentSumKer_eq_ker`: `X_i` is the kernel of every continuous character
+  trivial on the generators `x_j`, `j ≠ i`, and of infinite order at `x_i`.
+* `ContinuousMonoidHom.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem`: a continuous
+  endomorphism moving each generator inside `X_i` preserves `X_i`.
 * `TauCeti.freeProP.gradedMk_mem_gradedPieceOf_exponentSumKer_iff`: the class of `y ∈ λ_m(F)`
   lies in `gr_m(X_i)` exactly when `p ^ (m + 1)` divides its `i`-th exponent sum.
 * `TauCeti.freeProP.isCompl_gradedPieceOf_exponentSumKer_span_gradedPowIter`:
@@ -161,6 +165,26 @@ theorem of_mem_exponentSumKer {i j : X} (h : j ≠ i) : of j ∈ exponentSumKer 
 theorem of_notMem_exponentSumKer (i : X) : of i ∉ exponentSumKer p X i := fun h ↦
   of_mem_exponentSumKer_iff.1 h rfl
 
+omit [Fact p.Prime] in
+/-- The generator `x_i` together with the other generators `x_j`, `j ≠ i`, topologically generates
+`F`: this is the generating family of `TauCeti.freeProP.topologicalClosure_closure_range_of_eq_top`
+split at `i`. -/
+theorem topologicalClosure_closure_insert_of_image_eq_top (i : X) :
+    (Subgroup.closure (insert (of i) (of '' {j : X | j ≠ i}))).topologicalClosure =
+      (⊤ : Subgroup (freeProP p X)) := by
+  rw [← topologicalClosure_closure_range_of_eq_top p X]
+  congr 2
+  ext y
+  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_image, Set.mem_ofPred_eq]
+  constructor
+  · rintro (rfl | ⟨j, -, rfl⟩)
+    · exact ⟨i, rfl⟩
+    · exact ⟨j, rfl⟩
+  · rintro ⟨j, rfl⟩
+    by_cases h : j = i
+    · exact Or.inl (by rw [h])
+    · exact Or.inr ⟨j, h, rfl⟩
+
 /-- **The kernel of the `i`-th exponent sum is the closed normal closure of the other
 generators.** -/
 theorem exponentSumKer_eq_topologicalClosure_normalClosure (i : X) :
@@ -168,19 +192,7 @@ theorem exponentSumKer_eq_topologicalClosure_normalClosure (i : X) :
       (Subgroup.normalClosure (of '' {j : X | j ≠ i})).topologicalClosure := by
   classical
   refine (isProP_freeProP p X).ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder _
-    (isClosed_exponentSumKer i) (a := of i) ?_ ?_ ?_
-  · rw [← topologicalClosure_closure_range_of_eq_top p X]
-    congr 2
-    ext y
-    simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_image, Set.mem_ofPred_eq]
-    constructor
-    · rintro (rfl | ⟨j, -, rfl⟩)
-      · exact ⟨i, rfl⟩
-      · exact ⟨j, rfl⟩
-    · rintro ⟨j, rfl⟩
-      by_cases h : j = i
-      · exact Or.inl (by rw [h])
-      · exact Or.inr ⟨j, h, rfl⟩
+    (isClosed_exponentSumKer i) (topologicalClosure_closure_insert_of_image_eq_top i) ?_ ?_
   · rintro _ ⟨j, hj, rfl⟩
     exact MonoidHom.mem_ker.1 (of_mem_exponentSumKer hj)
   · intro h
@@ -199,6 +211,52 @@ theorem _root_.ContinuousMonoidHom.exponentSumKer_le_ker {H : Type*} [Group H]
     (h : ∀ j, j ≠ i → φ (of j) = 1) : exponentSumKer p X i ≤ φ.ker := by
   rw [exponentSumKer_eq_topologicalClosure_normalClosure]
   exact topologicalClosure_normalClosure_le_ker (by rintro _ ⟨j, hj, rfl⟩; exact h j hj)
+
+/-! ### Endomorphisms preserving the kernel of an exponent sum -/
+
+/-- **An endomorphism moving each generator inside `X` preserves the `i`-th exponent sum**, for
+`X` the kernel of that exponent sum: the exponent vector is linear,
+`exponentSum (φ y) = ∑ x, (exponentSum y)_x • exponentSum (φ x_x)`
+(`TauCeti.freeProP.toAdd_exponentSum_apply_eq_sum_smul`), and the `i`-th coordinate of each
+column `exponentSum (φ x_x)` is `δ_{xi}`, so the `i`-th coordinate of `exponentSum (φ y)` is
+`(exponentSum y)_i`. -/
+theorem _root_.ContinuousMonoidHom.toAdd_exponentSum_apply_apply_eq_of_forall_inv_mul_apply_mem
+    [Finite X]
+    (φ : freeProP p X →ₜ* freeProP p X) {i : X}
+    (hφ : ∀ j, (of j)⁻¹ * φ (of j) ∈ exponentSumKer p X i) (y : freeProP p X) :
+    (exponentSum p X (φ y)).toAdd i = (exponentSum p X y).toAdd i := by
+  classical
+  cases nonempty_fintype X
+  have h : ∀ x, (exponentSum p X (φ (of x))).toAdd i = if i = x then 1 else 0 := fun x ↦ by
+    rw [← mul_inv_cancel_left (of x) (φ (of x)), map_mul, toAdd_mul, Pi.add_apply,
+      mem_exponentSumKer_iff.1 (hφ x), add_zero, exponentSum_of, toAdd_ofAdd, Pi.single_apply]
+  rw [toAdd_exponentSum_apply_eq_sum_smul, Finset.sum_apply]
+  simp only [Pi.smul_apply, h, smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true]
+
+/-- **An endomorphism moving each generator inside `X` preserves `X`**, for `X` the kernel of an
+exponent sum. -/
+theorem _root_.ContinuousMonoidHom.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem
+    [Finite X]
+    (φ : freeProP p X →ₜ* freeProP p X) {i : X}
+    (hφ : ∀ j, (of j)⁻¹ * φ (of j) ∈ exponentSumKer p X i) (y : freeProP p X) :
+    φ y ∈ exponentSumKer p X i ↔ y ∈ exponentSumKer p X i := by
+  rw [mem_exponentSumKer_iff, mem_exponentSumKer_iff,
+    φ.toAdd_exponentSum_apply_apply_eq_of_forall_inv_mul_apply_mem hφ]
+
+/-- **The kernel of a character trivial on all generators but one is the kernel of the exponent
+sum at that generator**, when the value at that generator has infinite order: both are the closed
+normal closure of the other generators
+(`TauCeti.freeProP.exponentSumKer_eq_topologicalClosure_normalClosure` and
+`TauCeti.IsProP.ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder`). -/
+theorem _root_.ContinuousMonoidHom.exponentSumKer_eq_ker {H : Type*} [Group H]
+    [TopologicalSpace H] [T1Space H] (φ : freeProP p X →ₜ* H) {i : X}
+    (h : ∀ j, j ≠ i → φ (of j) = 1) (hi : ¬ IsOfFinOrder (φ (of i))) :
+    exponentSumKer p X i = φ.toMonoidHom.ker := by
+  rw [exponentSumKer_eq_topologicalClosure_normalClosure]
+  exact ((isProP_freeProP p X).ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder
+    φ.toMonoidHom φ.isClosed_ker (topologicalClosure_closure_insert_of_image_eq_top i)
+    (by rintro _ ⟨j, hj, rfl⟩; exact h j hj) hi).symm
 
 /-- **A dyadic character whose values at the generators `x_j`, `j ≠ i`, square to `1` is trivial
 on `X_i ∩ λ_1(F)`**: on `X_i` its values square to `1`, since `X_i` is the closed normal closure of

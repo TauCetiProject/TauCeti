@@ -37,11 +37,18 @@ equivariant homomorphism, and `Hom(-, N)` is exact on the modules killed by a pr
   from `M →+ N`.
 * `TauCeti.InternalHom.evalPairing`: the evaluation pairing, the additive homomorphism
   `InternalHom G M N →+ (M →+ N)` whose value at `φ` and `m` is the evaluation `φ m`; its
-  equivariance is `TauCeti.InternalHom.evalPairing_equivariant`.
+  equivariance is `TauCeti.InternalHom.evalPairing_equivariant`, and that of the opposite pairing
+  `(m, φ) ↦ φ m` is `TauCeti.InternalHom.evalPairing_flip_equivariant`.
 * `TauCeti.InternalHom.precomp`: precomposition with an equivariant homomorphism `f : M →+[G] M'`,
   the equivariant homomorphism `InternalHom G M' N →+[G] InternalHom G M N`, with
   `TauCeti.InternalHom.evalPairing_precomp` as its defining equation and the functor laws
   `precomp_id` and `precomp_comp`.
+* `TauCeti.InternalHom.zmodEquiv`: for a `ZMod n`-module `A`, evaluation at `1` identifies
+  `InternalHom G (ZMod n) A` with `A` additively; `TauCeti.InternalHom.toAddMonoidHom_apply_eq_smul`
+  recovers a homomorphism from its value at `1`. For a trivial action of `G` on `ZMod n`,
+  evaluation at `1` is equivariant (`TauCeti.InternalHom.zmodEquiv_smul`); for trivial actions on
+  both `M` and `N` the conjugation action on `InternalHom G M N` is trivial
+  (`TauCeti.InternalHom.smul_eq_self_of_smul_eq_self`).
 
 ## Main results
 
@@ -416,6 +423,12 @@ theorem smul_eq_self_iff {g : G} {φ : InternalHom G M N} :
     g • φ = φ ↔ ∀ m : M, φ.toAddMonoidHom (g • m) = g • φ.toAddMonoidHom m := by
   rw [InternalHom.ext_iff, toAddMonoidHom_smul, homAction_eq_self_iff]
 
+/-- For trivial actions on `M` and `N`, the conjugation action on `InternalHom G M N` is
+trivial. -/
+theorem smul_eq_self_of_smul_eq_self (hM : ∀ (g : G) (m : M), g • m = m)
+    (hN : ∀ (g : G) (x : N), g • x = x) (g : G) (φ : InternalHom G M N) : g • φ = φ :=
+  smul_eq_self_iff.2 fun m => by rw [hM, hN]
+
 /-- The fixed points of the internal hom are the `G`-equivariant homomorphisms. This is the
 degree-zero invariants of the conjugation action, phrased through Mathlib's
 `MulAction.fixedPoints`, which is the invariants object the surrounding development uses. It is
@@ -457,6 +470,12 @@ theorem evalPairing_equivariant (g : G) (φ : InternalHom G M N) (m : M) :
     evalPairing G (g • φ) (g • m) = g • evalPairing G φ m := by
   simp only [evalPairing_apply, toAddMonoidHom_smul]
   exact homAction_apply_smul g _ m
+
+/-- The opposite evaluation pairing `(m, φ) ↦ φ m` is `G`-equivariant: `evalPairing_equivariant`
+with its two arguments swapped, in the form a cup product along the opposite pairing takes. -/
+theorem evalPairing_flip_equivariant (g : G) (m : M) (φ : InternalHom G M N) :
+    (evalPairing G).flip (g • m) (g • φ) = g • (evalPairing G).flip m φ :=
+  evalPairing_equivariant g φ m
 
 end Distrib
 
@@ -581,5 +600,67 @@ theorem exists_openNormalSubgroup_homAction_eq_self (φ : M →+ N) :
   exact ⟨U, fun u hu => homAction_eq_self_iff.mpr (InternalHom.smul_eq_self_iff.mp (hU u hu))⟩
 
 end Compact
+
+namespace InternalHom
+
+/-! ### Homomorphisms out of `ZMod n`
+
+An additive homomorphism out of `ZMod n` is determined by its value at `1`, so the internal hom
+`InternalHom G (ZMod n) A` is additively `A` itself whenever `A` is a `ZMod n`-module. The action of
+`G` plays no part in this identification. -/
+
+section ZMod
+
+variable (G : Type*) {n : ℕ} {A : Type*} [AddCommGroup A] [Module (ZMod n) A]
+
+/-- A homomorphism out of `ZMod n` into a `ZMod n`-module is scalar multiplication by its value at
+`1`: it is `ZMod n`-linear, and `x = x • 1`. -/
+theorem toAddMonoidHom_apply_eq_smul (φ : InternalHom G (ZMod n) A) (x : ZMod n) :
+    φ.toAddMonoidHom x = x • φ.toAddMonoidHom 1 := by
+  rw [← ZMod.map_smul φ.toAddMonoidHom x 1, smul_eq_mul, mul_one]
+
+/-- **Homomorphisms out of `ZMod n` are elements.** For a `ZMod n`-module `A`, evaluation at `1`
+identifies the internal hom `InternalHom G (ZMod n) A` with `A`, additively; the inverse sends
+`a` to `x ↦ x • a`. -/
+def zmodEquiv : InternalHom G (ZMod n) A ≃+ A where
+  toFun φ := φ.toAddMonoidHom 1
+  invFun a := of G
+    { toFun x := x • a
+      map_zero' := zero_smul (ZMod n) a
+      map_add' x y := add_smul x y a }
+  left_inv φ :=
+    InternalHom.ext (AddMonoidHom.ext fun x => (toAddMonoidHom_apply_eq_smul G φ x).symm)
+  right_inv a := one_smul (ZMod n) a
+  map_add' _ _ := rfl
+
+@[simp]
+theorem zmodEquiv_apply (φ : InternalHom G (ZMod n) A) :
+    zmodEquiv G φ = φ.toAddMonoidHom 1 :=
+  (rfl)
+
+@[simp]
+theorem zmodEquiv_symm_apply (a : A) (x : ZMod n) :
+    ((zmodEquiv G).symm a).toAddMonoidHom x = x • a :=
+  (rfl)
+
+section TrivialAction
+
+variable {G} [Group G] [DistribMulAction G (ZMod n)] [DistribMulAction G A]
+  (htriv : ∀ (g : G) (m : ZMod n), g • m = m)
+
+include htriv
+
+/-- For a trivial action on the source `ZMod n`, evaluation at `1` is `G`-equivariant for the
+conjugation action on `InternalHom G (ZMod n) A` and any action on `A`: `(g • φ) 1 = g • φ 1`,
+since `g⁻¹ • 1 = 1`. -/
+theorem zmodEquiv_smul (g : G) (φ : InternalHom G (ZMod n) A) :
+    zmodEquiv G (g • φ) = g • zmodEquiv G φ := by
+  rw [zmodEquiv_apply, zmodEquiv_apply, toAddMonoidHom_smul, homAction_apply, htriv]
+
+end TrivialAction
+
+end ZMod
+
+end InternalHom
 
 end TauCeti

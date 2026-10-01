@@ -57,6 +57,8 @@ integer indexing that Herbrand theory uses.
   `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` reads that off as Mathlib's
   `ValuationSubring.inertiaSubgroup` for a valuation subring of a field.
 * `TauCeti.IsLocalRing.instNormalRamificationGroup`: each `G_i` is normal in `G`.
+* `TauCeti.IsLocalRing.ramificationGroupGradedSubgroupHom`: subgroup inclusion induces an
+  injective homomorphism `H_i / H_{i+1} → G_i / G_{i+1}` on successive quotients.
 * `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
   `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`: over a Noetherian local ring the
   filtration cuts out the kernel of the action, and reaches it at a finite index once `G_0` is
@@ -544,6 +546,69 @@ the ambient group. -/
 theorem subgroupOf_ramificationGroup (H : Subgroup G) (i : ℤ) :
     (ramificationGroup G S i).subgroupOf H = ramificationGroup H S i :=
   AddSubgroup.subgroupOf_inertia _ H
+
+/-- Inclusion of the `i`-th ramification group for a subgroup `H ≤ G` into the `i`-th
+ramification group for `G`. -/
+def ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ) :
+    ramificationGroup H S i →* ramificationGroup G S i where
+  toFun σ := ⟨((σ : H) : G), by
+    have hσ : (σ : H) ∈ (ramificationGroup G S i).subgroupOf H := by
+      rw [subgroupOf_ramificationGroup]
+      exact σ.2
+    exact hσ⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+/-- The inclusion of a subgroup ramification group agrees with the ambient inclusion. -/
+@[simp]
+theorem coe_ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ)
+    (σ : ramificationGroup H S i) :
+    (ramificationGroupSubgroupHom G S H i σ : G) = σ := by
+  simp [ramificationGroupSubgroupHom]
+
+/-- Inclusion `H → G` induces a homomorphism `H_i/H_{i+1} → G_i/G_{i+1}` on every
+successive ramification quotient. -/
+def ramificationGroupGradedSubgroupHom (H : Subgroup G) (i : ℤ) :
+    RamificationGroupGraded H S i →* RamificationGroupGraded G S i :=
+  QuotientGroup.map
+    ((ramificationGroup H S (i + 1)).subgroupOf (ramificationGroup H S i))
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    (ramificationGroupSubgroupHom G S H i) fun σ hσ ↦ by
+      rw [Subgroup.mem_comap, Subgroup.mem_subgroupOf]
+      rw [Subgroup.mem_subgroupOf] at hσ
+      have hσ' : (σ : H) ∈ (ramificationGroup G S (i + 1)).subgroupOf H := by
+        rw [subgroupOf_ramificationGroup]
+        exact hσ
+      exact hσ'
+
+/-- The map on ramification quotients induced by subgroup inclusion sends the class of an element
+to the class of the same element in the ambient group. -/
+@[simp]
+theorem ramificationGroupGradedSubgroupHom_mk (H : Subgroup G) (i : ℤ)
+    (σ : ramificationGroup H S i) :
+    ramificationGroupGradedSubgroupHom G S H i (QuotientGroup.mk σ) =
+      QuotientGroup.mk (ramificationGroupSubgroupHom G S H i σ) :=
+  QuotientGroup.map_mk _ _ _ _ _
+
+/-- The map `H_i/H_{i+1} → G_i/G_{i+1}` induced by subgroup inclusion is injective. -/
+theorem ramificationGroupGradedSubgroupHom_injective (H : Subgroup G) (i : ℤ) :
+    Function.Injective (ramificationGroupGradedSubgroupHom G S H i) := by
+  intro x y hxy
+  induction x using QuotientGroup.induction_on with
+  | _ σ =>
+    induction y using QuotientGroup.induction_on with
+    | _ τ =>
+      rw [ramificationGroupGradedSubgroupHom_mk,
+        ramificationGroupGradedSubgroupHom_mk] at hxy
+      rw [QuotientGroup.eq] at hxy ⊢
+      rw [Subgroup.mem_subgroupOf] at hxy ⊢
+      have hmem : ((σ⁻¹ * τ : ramificationGroup H S i) : H) ∈
+          (ramificationGroup G S (i + 1)).subgroupOf H := by
+        rw [Subgroup.mem_subgroupOf]
+        simpa only [coe_ramificationGroupSubgroupHom, Subgroup.coe_inv,
+          Subgroup.coe_mul] using hxy
+      rw [subgroupOf_ramificationGroup] at hmem
+      exact hmem
 
 end Subgroup
 
