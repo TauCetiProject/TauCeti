@@ -92,6 +92,18 @@ theorem graphClass_ne_zero_of_explicitGraphClass [LocallyCompactSpace G] (U : Op
     (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V)
     (explicitGraphClass U hU α hα) hne
 
+/-- An involution detected by a character and fixed by conjugation by an element outside the
+index-two subgroup makes the canonical continuous Evens graph class nonzero. -/
+theorem graphClass_ne_zero_of_involution_of_conj [LocallyCompactSpace G] (U : OpenSubgroup G)
+    (hU : U.toSubgroup.index = 2) (α : U.toSubgroup →* Multiplicative (ZMod 2))
+    (hα : Continuous α) (s : G) (hs : s ∉ U)
+    (v : U.toSubgroup) (hv : (v : G) * v = 1)
+    (hconj : s⁻¹ * (v : G) * s = v)
+    (hαv : Multiplicative.toAdd (α v) = 1) :
+    graphClass U hU α hα ≠ 0 :=
+  graphClass_ne_zero_of_explicitGraphClass U hU α hα
+    (explicitGraphClass_ne_zero_of_involution_of_conj U hU α hα s hs v hv hconj hαv)
+
 /-- A central involution detected by a character makes the canonical continuous Evens graph
 class nonzero. -/
 theorem graphClass_ne_zero_of_involution [LocallyCompactSpace G] (U : OpenSubgroup G)
@@ -99,8 +111,8 @@ theorem graphClass_ne_zero_of_involution [LocallyCompactSpace G] (U : OpenSubgro
     (hα : Continuous α) (v : U.toSubgroup) (hv : (v : G) * v = 1)
     (hcentral : ∀ s : G, s⁻¹ * (v : G) * s = v)
     (hαv : Multiplicative.toAdd (α v) = 1) :
-    graphClass U hU α hα ≠ 0 :=
-  graphClass_ne_zero_of_explicitGraphClass U hU α hα
-    (explicitGraphClass_ne_zero_of_involution U hU α hα v hv hcentral hαv)
+    graphClass U hU α hα ≠ 0 := by
+  obtain ⟨s, hs, -⟩ := Subgroup.index_eq_two_iff_exists_notMem_and.mp hU
+  exact graphClass_ne_zero_of_involution_of_conj U hU α hα s hs v hv (hcentral s) hαv
 
 end TauCeti.ContCohomology
