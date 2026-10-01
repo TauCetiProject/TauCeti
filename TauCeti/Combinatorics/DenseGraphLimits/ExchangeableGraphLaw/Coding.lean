@@ -49,6 +49,8 @@ graphon value, and whose coding graphon is `W` itself.
   coding is the joint sampling law of its coding graphon.
 * `TauCeti.DenseGraphLimits.graphLawOfArray_map_jointArray` — the graph law of any joint coding is
   the uniform mixture, over the global variable, of the joint sampling laws of the frozen codings.
+* `TauCeti.DenseGraphLimits.measurable_codingGraphon` — the coding graphons of the frozen codings
+  depend jointly measurably on the frozen variable, so they form a measurable family of graphons.
 * `TauCeti.DenseGraphLimits.codingGraphon_graphonCoding` and
   `TauCeti.DenseGraphLimits.graphLawOfArray_map_jointArray_graphonCoding` — every graphon on the
   unit interval is the coding graphon of its threshold coding, so its joint sampling law is the
@@ -111,6 +113,20 @@ in either orientation. -/
 theorem codingGraphon_apply (hg : Measurable g) (x y : I) :
     codingGraphon g hg x y = volume.real {t : I | g (x, y, t) = true ∨ g (y, x, t) = true} :=
   (rfl)
+
+/-- **Coding graphons depend measurably on a parameter.** For a measurable coding `f` with an
+extra parameter `t`, the coding graphon of the frozen coding `(x, y, s) ↦ f (t, x, y, s)` is
+jointly measurable in `t` and its two arguments. -/
+theorem measurable_codingGraphon {T : Type*} [MeasurableSpace T] {f : T × I × I × I → Bool}
+    (hf : Measurable f) :
+    Measurable fun p : T × I × I =>
+      codingGraphon (fun q => f (p.1, q)) (hf.comp measurable_prodMk_left) p.2.1 p.2.2 := by
+  have hcells : MeasurableSet {q : (T × I × I) × I |
+      f (q.1.1, q.1.2.1, q.1.2.2, q.2) = true ∨ f (q.1.1, q.1.2.2, q.1.2.1, q.2) = true} :=
+    (measurableSet_eq_fun (by fun_prop) measurable_const).union
+      (measurableSet_eq_fun (by fun_prop) measurable_const)
+  simp only [codingGraphon_apply, measureReal_def]
+  exact (measurable_measure_prodMk_left hcells).ennreal_toReal
 
 /-! ### The graph read off a coding -/
 

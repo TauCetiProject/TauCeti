@@ -55,7 +55,7 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
+  [T2Space M]
 
 /-- **The pointwise polar inequality.** The radial component of a tangent vector at `v` is no
 larger than the norm of its image under the differential of the Riemannian exponential map. -/

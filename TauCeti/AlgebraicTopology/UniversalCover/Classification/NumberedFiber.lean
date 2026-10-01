@@ -7,6 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Transport
+import Mathlib.Algebra.Group.Action.TransferInstance
+-- The realisation proof uses the defining equation of `Equiv.permutationRepresentation`.
+import all TauCeti.Algebra.GroupAction.PermutationRepresentation
 import TauCeti.Topology.Covering.Clopen
 
 /-!
@@ -58,6 +61,12 @@ and full (`TauCeti.CoveringSpace.fiberActionFunctor_faithful`,
 `TauCeti.CoveringSpace.fiberActionFunctor_full`), and the numberings turn equal representations
 into an isomorphism of `π₁(X, x)`-sets preserving the labels.
 
+Conversely, over a locally path-connected, semilocally simply connected base, every
+representation `π₁(X, x) →* Equiv.Perm (Fin n)` with `n ≠ 0` and transitive image is the numbered
+monodromy of some numbered cover: the realisation theorem for transitive fundamental-group sets
+(`TauCeti.ConnectedCoveringSpace.exists_fiberAction_iso`) supplies a connected cover whose fibre
+is equivariantly identified with the finite set, and that identification is a numbering.
+
 ## Main declarations
 
 * `TauCeti.ConnectedFiberNumberedCover`, `TauCeti.ConnectedPointedCover`,
@@ -82,6 +91,9 @@ into an isomorphism of `π₁(X, x)`-sets preserving the labels.
   `TauCeti.ConnectedCover.ne_zero`: over a preconnected base the degree is positive.
 * `TauCeti.connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq`: two numbered
   covers are isomorphic exactly when their numbered monodromy representations agree.
+* `TauCeti.ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq`: over a
+  semilocally simply connected base, every transitive representation on `Fin n` is the numbered
+  monodromy of some numbered cover.
 
 ## References
 
@@ -755,5 +767,43 @@ theorem connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq
     ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq⟩
 
 end Monodromy
+
+/-! ### Realising a numbered monodromy -/
+
+/-- **Every transitive representation on `Fin n` is the numbered monodromy of a cover.** Over a
+locally path-connected, semilocally simply connected base, a homomorphism
+`ρ : π₁(X, x) →* Equiv.Perm (Fin n)` whose image acts transitively on the nonempty set `Fin n` is
+the monodromy representation, read through the numbering, of some connected cover with numbered
+fibre. -/
+theorem ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    (ρ : FundamentalGroup X x →* Perm (Fin n)) (hn : n ≠ 0)
+    (hρ : MulAction.IsPretransitive ρ.range (Fin n)) :
+    ∃ c : ConnectedFiberNumberedCover x n,
+      c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) = ρ := by
+  -- `π₁(X, x)` acts on `Fin n` through `ρ`, transitively because the image of `ρ` does.
+  let _ : MulAction (FundamentalGroup X x) (Fin n) := MulAction.compHom _ ρ.rangeRestrict
+  have := MulAction.isPretransitive_compHom (G := Fin n) ρ.rangeRestrict_surjective
+  -- Lift the finite set to the universe of the base before applying the realisation theorem.
+  let _ := (Equiv.ulift : ULift.{u} (Fin n) ≃ Fin n).mulAction (FundamentalGroup X x)
+  let A := Action.ofMulAction (FundamentalGroup X x) (ULift.{u} (Fin n))
+  have hA : isTransitiveAction (FundamentalGroup X x) A := by
+    rw [isTransitiveAction_iff]
+    refine ⟨⟨fun i j => ?_⟩, ⟨ULift.up ⟨0, Nat.pos_of_ne_zero hn⟩⟩⟩
+    obtain ⟨γ, hγ⟩ := MulAction.exists_smul_eq (FundamentalGroup X x) i.down j.down
+    exact ⟨γ, ULift.ext hγ⟩
+  obtain ⟨c, ⟨e⟩⟩ := ConnectedCoveringSpace.exists_fiberAction_iso x A hA
+  let ν : ⇑c.proj ⁻¹' {x} ≃ Fin n :=
+    ((Action.forget _ _).mapIso e).toEquiv.trans Equiv.ulift
+  let _ := c.isCoveringMap_proj.fundamentalGroupMulAction x
+  refine ⟨⟨c, ν⟩, ?_⟩
+  rw [← c.isCoveringMap_proj.toPermHom_eq_monodromyPerm,
+    ← Equiv.permutationRepresentation.eq_def]
+  refine Equiv.permutationRepresentation_eq_of_map_smul ν (ρ := ρ) fun γ a => ?_
+  -- Spell out both actions: their carriers are hidden under the functor and `A.V`, so
+  -- rewriting the composition in `e.hom.comm` cannot identify the underlying types.
+  have he : e.hom.hom (c.isCoveringMap_proj.monodromy γ a) = ULift.up (ρ γ (ν a)) :=
+    ConcreteCategory.congr_hom (e.hom.comm γ) a
+  exact congrArg ULift.down he
 
 end TauCeti

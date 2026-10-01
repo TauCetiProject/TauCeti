@@ -127,6 +127,25 @@ theorem perturbationSeries_comp_homotopy_comp_assoc (f : P →ₗ[R] M) :
   rw [← LinearMap.sub_comp, ← c.perturbationSeries_comp_homotopy_comp δ hU,
     LinearMap.comp_assoc, LinearMap.comp_assoc]
 
+/-- On an element `z` killed by `(δ h)^k δ`, the perturbation operator is the finite geometric
+series `∑_{j < k} (-1)^j (δ h)^j δ`. -/
+theorem perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero {z : M} {k : ℕ}
+    (hz : ((δ * c.homotopy) ^ k) (δ z) = 0) :
+    c.perturbationSeries δ z = ∑ j ∈ Finset.range k, ((-(δ * c.homotopy)) ^ j) (δ z) := by
+  set u := δ * c.homotopy with hu
+  have hgeom : (1 + u) * ∑ j ∈ Finset.range k, (-u) ^ j = 1 - (-u) ^ k := by
+    simpa only [sub_neg_eq_add] using mul_neg_geom_sum (-u) k
+  have hk : ((-u) ^ k) (δ z) = 0 := by
+    rw [neg_pow, Module.End.mul_apply, hz, map_zero]
+  have h1 : (1 + u) ((∑ j ∈ Finset.range k, (-u) ^ j) (δ z)) = δ z := by
+    rw [← Module.End.mul_apply, hgeom, LinearMap.sub_apply, Module.End.one_apply, hk, sub_zero]
+  calc c.perturbationSeries δ z
+      = Ring.inverse (1 + u) ((1 + u) ((∑ j ∈ Finset.range k, (-u) ^ j) (δ z))) := by
+        rw [h1, perturbationSeries_def, Module.End.mul_apply]
+    _ = (∑ j ∈ Finset.range k, (-u) ^ j) (δ z) := by
+        rw [← Module.End.mul_apply, Ring.inverse_mul_cancel _ hU, Module.End.one_apply]
+    _ = ∑ j ∈ Finset.range k, ((-u) ^ j) (δ z) := LinearMap.sum_apply _ _ _
+
 /-- The perturbation operator satisfies the Maurer--Cartan-type identity
 `dM X + X dM + X i p X = 0`; this single identity drives every equation of the basic
 perturbation lemma. -/
