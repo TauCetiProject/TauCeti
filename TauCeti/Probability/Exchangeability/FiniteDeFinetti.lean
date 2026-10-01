@@ -96,24 +96,32 @@ variable {ι κ : Type*} [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
 /-- Sampling with replacement from a random finite population.
 
-First draw a population `x : κ → α` with law `ρ`; independently draw a uniform index map
-`k : ι → κ`; then return the sample `i ↦ x (k i)`. This is `samplePopulation` along the uniform
-law on all index maps, the same construction as `sampleWithoutReplacement` without the
-injectivity constraint. -/
-def sampleWithReplacement [Finite κ] (ρ : Measure (κ → α)) : Measure (ι → α) :=
-  samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ
+First draw a population `x : κ → α` with law `ρ`; independently draw the indices `k i : κ`,
+`i : ι`, independently and uniformly; then return the sample `i ↦ x (k i)`. This is
+`samplePopulation` along the `ι`-fold product of the uniform law on `κ`, which is the uniform law
+on all index maps (`sampleWithReplacement_eq_samplePopulation_uniformOn`): the same construction
+as `sampleWithoutReplacement` without the injectivity constraint.
 
-/-- Sampling with replacement is `samplePopulation` along uniform index maps. -/
-theorem sampleWithReplacement_def [Finite κ] (ρ : Measure (κ → α)) :
-    sampleWithReplacement (ι := ι) ρ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ :=
+The sample index is finite because the selection law is a finite product. -/
+def sampleWithReplacement [Fintype ι] [Finite κ] (ρ : Measure (κ → α)) : Measure (ι → α) :=
+  samplePopulation (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) ρ
+
+/-- Sampling with replacement is `samplePopulation` along independent uniform indices. -/
+theorem sampleWithReplacement_def [Fintype ι] [Finite κ] (ρ : Measure (κ → α)) :
+    sampleWithReplacement (ι := ι) ρ =
+      samplePopulation (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) ρ :=
   (rfl)
 
+/-- Sampling with replacement is `samplePopulation` along the uniform law on all index maps. -/
+theorem sampleWithReplacement_eq_samplePopulation_uniformOn [Fintype ι] [Finite κ]
+    (ρ : Measure (κ → α)) :
+    sampleWithReplacement (ι := ι) ρ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ := by
+  rw [sampleWithReplacement_def, ← uniformOn_pi, Set.pi_univ]
+
 /-- Sampling with replacement from a random population preserves probability mass. -/
-theorem isProbabilityMeasure_sampleWithReplacement [Finite ι] [Finite κ] [Nonempty κ]
+theorem isProbabilityMeasure_sampleWithReplacement [Fintype ι] [Finite κ] [Nonempty κ]
     (ρ : Measure (κ → α)) [IsProbabilityMeasure ρ] :
     IsProbabilityMeasure (sampleWithReplacement (ι := ι) ρ) := by
-  let _ : IsProbabilityMeasure (uniformOn (Set.univ : Set (ι → κ))) :=
-    isProbabilityMeasure_uniformOn (Set.toFinite _) Set.univ_nonempty
   rw [sampleWithReplacement_def]
   infer_instance
 
@@ -124,7 +132,7 @@ theorem sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype [Fintype ι] 
     sampleWithReplacement ρ =
       ρ.bind fun x =>
         (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure := by
-  simp_rw [sampleWithReplacement_def, samplePopulation_eq_bind,
+  simp_rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_eq_bind,
     pi_empiricalMeasureOfFintype_eq_map_uniformOn]
 
 section Bounds
@@ -138,7 +146,7 @@ theorem sampleWithoutReplacement_le_sampleWithReplacement_add
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_def,
+  rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
     samplePopulation_apply_population hA, samplePopulation_apply_population hA]
   let c : ℝ≥0∞ := (Fintype.card ι).choose 2 / Fintype.card κ
   let f : (κ → α) → ℝ≥0∞ := fun x =>
@@ -159,7 +167,7 @@ theorem sampleWithReplacement_le_sampleWithoutReplacement_add
     {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_def,
+  rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
     samplePopulation_apply_population hA, samplePopulation_apply_population hA]
   let c : ℝ≥0∞ := (Fintype.card ι).choose 2 / Fintype.card κ
   let f : (κ → α) → ℝ≥0∞ := fun x =>
