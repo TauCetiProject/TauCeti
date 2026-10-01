@@ -52,6 +52,8 @@ class-field correspondences directly in terms of their abelian Galois groups.
   abelian sublayer.
 * `OpenNormalSubgroup.maximalAbelianLayer_eq_self_iff`: the construction fixes exactly the
   abelian layers.
+* `TauCeti.ClassFieldTheory.natCard_abelianization_gal_ofOpenNormal`: the abelianized Galois
+  group of a layer has the order of the Galois group of its maximal abelian sublayer.
 
 ## References
 
@@ -218,6 +220,37 @@ theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
     abelianizationGalEquiv hV (Abelianization.of x) = x := by
   rw [← abelianizationGalEquiv_symm_apply hV x]
   exact (abelianizationGalEquiv hV).apply_symm_apply x
+
+
+/-- **The abelianized Galois group of a layer has the order of the Galois group of its maximal
+abelian sublayer**: `(G ⧸ V)^ab` has `[G : V · closure [G, G]]` elements. This is the counting
+input to norm limitation. -/
+theorem natCard_abelianization_gal_ofOpenNormal (V : OpenNormalSubgroup G) :
+    Nat.card (Abelianization (NormalLayer.ofOpenNormal V).Gal) =
+      (NormalLayer.ofOpenNormal V.maximalAbelianLayer).degree := by
+  -- The commutator subgroup of `G ⧸ V` is the image of that of `G`, and closing the commutator
+  -- subgroup adds nothing to the open, hence closed, subgroup `V · [G, G]`.
+  have hcomm : commutator (G ⧸ V.toSubgroup) =
+      (commutator G).map (QuotientGroup.mk' V.toSubgroup) := by
+    rw [map_commutator_eq, QuotientGroup.range_mk', commutator_def]
+  have hopen : IsOpen ((commutator G ⊔ V.toSubgroup : Subgroup G) : Set G) :=
+    Subgroup.isOpen_mono (H₁ := V.toSubgroup) le_sup_right V.toOpenSubgroup.isOpen
+  have hclosure : (commutator G).topologicalClosure ≤ commutator G ⊔ V.toSubgroup :=
+    Subgroup.topologicalClosure_minimal _ le_sup_left (Subgroup.isClosed_of_isOpen _ hopen)
+  have hsup : V.maximalAbelianLayer.toSubgroup = commutator G ⊔ V.toSubgroup := by
+    rw [OpenNormalSubgroup.toSubgroup_maximalAbelianLayer]
+    exact le_antisymm (sup_le le_sup_right hclosure)
+      (sup_le ((Subgroup.le_topologicalClosure _).trans le_sup_right) le_sup_left)
+  have hindex :
+      (commutator (G ⧸ V.toSubgroup)).index = (commutator G ⊔ V.toSubgroup).index := by
+    rw [hcomm, Subgroup.index_map, QuotientGroup.ker_mk', QuotientGroup.range_mk',
+      Subgroup.index_top, mul_one]
+  rw [Nat.card_congr (NormalLayer.galOfOpenNormalEquiv V).abelianizationCongr.toEquiv,
+    NormalLayer.degree_eq_natCard_gal,
+    Nat.card_congr (NormalLayer.galOfOpenNormalEquiv V.maximalAbelianLayer).toEquiv,
+    ← Subgroup.index_eq_card, hsup, ← hindex]
+  -- `Abelianization H` is by definition the quotient `H ⧸ commutator H`.
+  exact (Subgroup.index_eq_card _).symm
 
 end AbelianLayer
 
