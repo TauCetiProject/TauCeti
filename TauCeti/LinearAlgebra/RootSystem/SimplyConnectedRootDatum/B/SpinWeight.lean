@@ -285,12 +285,14 @@ theorem typeBSpinReflection_apply_apply {n : ℕ} (i : Fin n) (s : Finset (Fin n
 
 /-- Membership in a reflected sign set at a nonterminal node, read through the transposition of
 the node with its successor. -/
+@[simp]
 theorem mem_typeBSpinReflection_iff_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n)
     {s : Finset (Fin n)} {a : Fin n} :
     a ∈ typeBSpinReflection i s ↔ Equiv.swap i (Order.succ i) a ∈ s := by
   rw [typeBSpinReflection_apply_of_lt h, Finset.mem_map_equiv, Equiv.symm_swap]
 
 /-- Membership in a reflected sign set at the terminal node: only that node's sign changes. -/
+@[simp]
 theorem mem_typeBSpinReflection_iff_of_last {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n)
     {s : Finset (Fin n)} {a : Fin n} :
     a ∈ typeBSpinReflection i s ↔ (if a = i then a ∉ s else a ∈ s) := by
