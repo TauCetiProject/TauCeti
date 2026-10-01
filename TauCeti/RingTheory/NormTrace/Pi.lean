@@ -42,16 +42,10 @@ variable {L : ι → Type*} [∀ i, Ring (L i)] [∀ i, Algebra K (L i)]
 theorem Algebra.norm_pi (x : ∀ i, L i) :
     Algebra.norm K x = ∏ i, Algebra.norm K (x i) := by
   rw [Algebra.norm_apply]
-  have h : Algebra.lmul K (∀ i, L i) x =
-      LinearMap.pi (fun i ↦ (Algebra.lmul K (L i) (x i)).comp (LinearMap.proj i)) := by
+  have h : Algebra.lmul K (∀ i, L i) x = LinearMap.piMap fun i ↦ Algebra.lmul K (L i) (x i) := by
     ext y i
     simp [Algebra.lmul]
-  rw [h]
-  rw [LinearMap.det_pi_of_apply_eq_dependent
-    (f := fun i ↦ Algebra.lmul K (L i) (x i)) (hT := by
-    intro y i
-    simp [Algebra.lmul])]
-  simp_rw [Algebra.norm_apply]
+  simp_rw [h, LinearMap.det_piMap, Algebra.norm_apply]
 
 end Norm
 
