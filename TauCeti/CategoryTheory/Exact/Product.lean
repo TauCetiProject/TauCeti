@@ -117,7 +117,7 @@ private theorem prod_hasPushouts : (prodConflationClass E E').inflations.HasPush
     let inl : X ⟶ P := (pushout.inl f.1 g.1, pushout.inl f.2 g.2)
     let inr : Y ⟶ P := (pushout.inr f.1 g.1, pushout.inr f.2 g.2)
     apply IsPushout.hasPushout
-    apply isPushout_prod (f' := inl) (g' := inr)
+    apply IsPushout.prod (f' := inl) (g' := inr)
     · simpa [inl] using IsPushout.of_hasPushout f.1 g.1
     · simpa [inr] using IsPushout.of_hasPushout f.2 g.2
 
@@ -130,7 +130,7 @@ private theorem prod_hasPullbacks : (prodConflationClass E E').deflations.HasPul
     let fst : P ⟶ X := (pullback.fst f.1 g.1, pullback.fst f.2 g.2)
     let snd : P ⟶ Y := (pullback.snd f.1 g.1, pullback.snd f.2 g.2)
     apply IsPullback.hasPullback
-    apply isPullback_prod (f := fst) (g := snd)
+    apply IsPullback.prod (f := fst) (g := snd)
     · simpa [fst] using IsPullback.of_hasPullback f.1 g.1
     · simpa [snd] using IsPullback.of_hasPullback f.2 g.2
 
@@ -159,16 +159,16 @@ noncomputable def prod : ExactStructure (C × D) where
   hasPushouts_inflations := prod_hasPushouts E E'
   isStableUnderCobaseChange_inflations :=
     { of_isPushout := fun sq hf => (prodConflationClass_isInflation_iff E E' _).2
-        ⟨E.isStableUnderCobaseChange_inflations.of_isPushout (isPushout_fst sq)
+        ⟨E.isStableUnderCobaseChange_inflations.of_isPushout sq.fst
             ((prodConflationClass_isInflation_iff E E' _).1 hf).1,
-          E'.isStableUnderCobaseChange_inflations.of_isPushout (isPushout_snd sq)
+          E'.isStableUnderCobaseChange_inflations.of_isPushout sq.snd
             ((prodConflationClass_isInflation_iff E E' _).1 hf).2⟩ }
   hasPullbacks_deflations := prod_hasPullbacks E E'
   isStableUnderBaseChange_deflations :=
     { of_isPullback := fun sq hp => (prodConflationClass_isDeflation_iff E E' _).2
-        ⟨E.isStableUnderBaseChange_deflations.of_isPullback (isPullback_fst sq)
+        ⟨E.isStableUnderBaseChange_deflations.of_isPullback sq.fst
             ((prodConflationClass_isDeflation_iff E E' _).1 hp).1,
-          E'.isStableUnderBaseChange_deflations.of_isPullback (isPullback_snd sq)
+          E'.isStableUnderBaseChange_deflations.of_isPullback sq.snd
             ((prodConflationClass_isDeflation_iff E E' _).1 hp).2⟩ }
 
 /-- A morphism is an inflation for the product exact structure exactly when both components are
