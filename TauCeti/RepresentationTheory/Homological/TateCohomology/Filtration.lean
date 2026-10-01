@@ -14,23 +14,25 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQu
 Let `M` be a representation of a finite group `G`, and let `F 0 = ⊤, F 1, F 2, …` be
 `G`-stable submodules of `M` that are separated, meaning `⋂ n, F n = 0`, and complete, meaning
 that every series `∑ n, x n` with `x n ∈ F n` has a limit `s`, in the sense that
-`s - ∑ i < n, x i ∈ F n` for every `n`. Suppose that each graded piece `F n / F (n + 1)` has
-vanishing Tate cohomology in degree `0`, respectively `-1`. Then so does `M`.
+`s - ∑ i < n, x i ∈ F n` for every `n`. Suppose that each `F n` surjects onto a representation
+`Q n` with kernel contained in `F (n + 1)`, and that every `Q n` has vanishing Tate cohomology in
+degree `0`, respectively `-1`. Then so does `M`. In the main case the kernel is exactly `F (n + 1)`
+and `Q n` is the graded piece `F n / F (n + 1)`.
 
 The proof is by successive approximation, using the low-degree descriptions
 `H-hat^0(G, M) = Mᴳ / N_G M` and `H-hat^(-1)(G, M) = ker N_G / I_G M`. In degree `0`, an invariant
-`m ∈ F n` is a norm modulo `F (n + 1)` because its image in the graded piece is a norm there; the
+`m ∈ F n` is a norm modulo `F (n + 1)` because its image in `Q n` is a norm there; the
 correction terms `y n ∈ F n` sum to some `s` with `N_G s = m`. In degree `-1`, an element `m` of
 norm zero lies in `I_G M` modulo `F (n + 1)` once it lies in `F n`, and `I_G M` is the set of sums
 `∑ g, (g • y g - y g)`, so one approximates each of the finitely many coordinates `y g`
 separately.
 
-The graded pieces are not formed as quotient representations. Instead, each is presented by a
-surjective morphism `π n` from the subrepresentation `F n` onto a representation `Q n`, whose
-kernel is contained in `F (n + 1)`. This is how the graded pieces arise in practice, with kernel
-exactly `F (n + 1)`, but only the containment is needed. For finite cyclic `G`, Tate
-cohomology is two-periodic, so vanishing in degrees `0` and `-1` on the graded pieces makes `M`
-cohomologically trivial, with Herbrand quotient `1`.
+The quotients `Q n` are not formed as quotient representations. Instead, each is the target of a
+surjective morphism `π n` from the subrepresentation `F n`, whose kernel is contained in
+`F (n + 1)`, so that `Q n` is a quotient of `F n` refining the graded piece `F n / F (n + 1)`. This
+is how the graded pieces arise in practice, with kernel exactly `F (n + 1)`, but only the
+containment is needed. For finite cyclic `G`, Tate cohomology is two-periodic, so vanishing in
+degrees `0` and `-1` on every `Q n` makes `M` cohomologically trivial, with Herbrand quotient `1`.
 
 The motivating application is to the units of a finite Galois extension `L/K` of nonarchimedean
 local fields. For a uniformizer `ϖ` of `K` and a Galois-stable lattice `A ⊆ 𝒪[L]`, free over
@@ -41,11 +43,11 @@ local fields. For a uniformizer `ϖ` of `K` and a Galois-stable lattice `A ⊆ �
 ## Main results
 
 * `TauCeti.TateCohomology.isZero_tateCohomology_zero_of_filtration`: degree-zero Tate cohomology
-  vanishes if it vanishes on every graded piece.
+  vanishes if it vanishes on every `Q n`.
 * `TauCeti.TateCohomology.isZero_tateCohomology_negOne_of_filtration`: degree `-1` Tate cohomology
-  vanishes if it vanishes on every graded piece.
+  vanishes if it vanishes on every `Q n`.
 * `TauCeti.TateCohomology.isZero_tateCohomology_of_filtration`: for finite cyclic `G`, all Tate
-  cohomology vanishes if it vanishes on every graded piece in degrees `0` and `-1`.
+  cohomology vanishes if it vanishes on every `Q n` in degrees `0` and `-1`.
 * `TauCeti.TateCohomology.herbrandQuotient_eq_one_of_filtration`: the Herbrand quotient is then
   `1`.
 
@@ -70,7 +72,7 @@ variable {R G : Type u} [CommRing R] [Group G] [Fintype G] {M : Rep R G}
 
 include π in
 /-- One step of the degree-zero approximation: an invariant of `F n` is the norm of an element of
-`F n` modulo `F (n + 1)`, as soon as the graded piece has vanishing degree-zero Tate cohomology. -/
+`F n` modulo `F (n + 1)`, as soon as `Q n` has vanishing degree-zero Tate cohomology. -/
 private theorem exists_sub_norm_mem_succ (hπ : ∀ n, Function.Surjective (π n).hom)
     (hker : ∀ n (x : F n), (π n).hom x = 0 → (x : M) ∈ F (n + 1))
     (hQ : ∀ n, IsZero (tateCohomology (Q n) 0)) (n : ℕ) {m : M} (hm : m ∈ F n)
@@ -95,8 +97,8 @@ private theorem exists_sub_norm_mem_succ (hπ : ∀ n, Function.Surjective (π n
 
 include π in
 /-- One step of the degree `-1` approximation: an element of `F n` of norm zero lies in the
-coinvariant kernel modulo `F (n + 1)`, with coordinates in `F n`, as soon as the graded piece has
-vanishing degree `-1` Tate cohomology. -/
+coinvariant kernel modulo `F (n + 1)`, with coordinates in `F n`, as soon as `Q n` has vanishing
+degree `-1` Tate cohomology. -/
 private theorem exists_sub_sum_mem_succ (hπ : ∀ n, Function.Surjective (π n).hom)
     (hker : ∀ n (x : F n), (π n).hom x = 0 → (x : M) ∈ F (n + 1))
     (hQ : ∀ n, IsZero (tateCohomology (Q n) (-1))) (n : ℕ) {m : M} (hm : m ∈ F n)
@@ -220,25 +222,28 @@ theorem isZero_tateCohomology_negOne_of_filtration (hF0 : F 0 = ⊤)
       rw [Finset.sum_range_succ, ← sub_sub, ← ih]
   choose s hs using fun g ↦
     hcomplete (fun n ↦ Y n (r n) g) fun n ↦ (hY n (r n) (hr n).1 (hr n).2).1 g
-  refine Submodule.mem_comap.2 ?_
-  rw [Submodule.subtype_apply, show (m : M) = D s from sub_eq_zero.1 (hsep _ fun n ↦ ?_)]
-  · exact Representation.mem_coinvariantsKer_iff_exists_sum.2 ⟨s, rfl⟩
-  have hdiff : D s - ∑ i ∈ Finset.range n, D (Y i (r i)) =
-      D fun g ↦ s g - ∑ i ∈ Finset.range n, Y i (r i) g := by
-    simp only [D, map_sub, map_sum, Finset.sum_sub_distrib,
-      Finset.sum_comm (s := Finset.range n) (t := (Finset.univ : Finset G))]
+  -- By separatedness, `m` equals `D s`, which lies in the coinvariant kernel.
+  have hmDs : (m : M) = D s := by
+    refine sub_eq_zero.1 (hsep _ fun n ↦ ?_)
+    have hdiff : D s - ∑ i ∈ Finset.range n, D (Y i (r i)) =
+        D fun g ↦ s g - ∑ i ∈ Finset.range n, Y i (r i) g := by
+      simp only [D, map_sub, map_sum, Finset.sum_sub_distrib,
+        Finset.sum_comm (s := Finset.range n) (t := (Finset.univ : Finset G))]
+      abel
+    have hmem : D (fun g ↦ s g - ∑ i ∈ Finset.range n, Y i (r i) g) ∈ F n :=
+      Submodule.sum_mem _ fun g _ ↦ sub_mem (hF n g (hs g n)) (hs g n)
+    convert sub_mem (hr n).1 hmem using 1
+    rw [← hdiff, hrsum]
     abel
-  have hmem : D (fun g ↦ s g - ∑ i ∈ Finset.range n, Y i (r i) g) ∈ F n :=
-    Submodule.sum_mem _ fun g _ ↦ sub_mem (hF n g (hs g n)) (hs g n)
-  convert sub_mem (hr n).1 hmem using 1
-  rw [← hdiff, hrsum]
-  abel
+  refine Submodule.mem_comap.2 ?_
+  rw [Submodule.subtype_apply, hmDs]
+  exact Representation.mem_coinvariantsKer_iff_exists_sum.2 ⟨s, rfl⟩
 
-/-- **A complete filtered representation of a finite cyclic group with cohomologically trivial
-graded pieces is cohomologically trivial.** Let `F` be a separated and complete filtration of `M`
-by `G`-stable submodules with `F 0 = ⊤`, and let `π n` be a surjection from `F n` onto `Q n` whose
-kernel lies in `F (n + 1)`. If every `Q n` has vanishing Tate cohomology in degrees `0` and `-1`,
-then by two-periodicity `M` has vanishing Tate cohomology in every degree. -/
+/-- **A complete filtered representation of a finite cyclic group is cohomologically trivial if
+the quotients `Q n` of its filtration steps are.** Let `F` be a separated and complete filtration
+of `M` by `G`-stable submodules with `F 0 = ⊤`, and let `π n` be a surjection from `F n` onto
+`Q n` whose kernel lies in `F (n + 1)`. If every `Q n` has vanishing Tate cohomology in degrees
+`0` and `-1`, then by two-periodicity `M` has vanishing Tate cohomology in every degree. -/
 theorem isZero_tateCohomology_of_filtration [IsCyclic G] (hF0 : F 0 = ⊤)
     (hsep : ∀ x : M, (∀ n, x ∈ F n) → x = 0)
     (hcomplete : ∀ x : ℕ → M, (∀ n, x n ∈ F n) →
