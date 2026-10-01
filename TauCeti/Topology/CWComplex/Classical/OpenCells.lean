@@ -54,6 +54,7 @@ namespace TauCeti
 variable {X : Type u} [TopologicalSpace X] {C D : Set X} [RelCWComplex C D] (n : ℕ)
 
 /-- The target of a characteristic map is the corresponding open cell. -/
+@[simp]
 lemma target_map_eq_openCell (i : cell C n) : (map n i).target = openCell (C := C) n i := by
   rw [← PartialEquiv.image_source_eq_target, source_eq]
   -- The open cell is by definition the image of the open unit ball.
@@ -146,6 +147,18 @@ lemma skeletonLT_succ_diff_skeletonLT :
     exact biUnion_lt_succ _ n
   rw [hunion, union_sdiff_cancel_left]
   exact (disjoint_iUnion_right.2 fun _ ↦ disjoint_skeletonLT_openCell le_rfl).le_bot
+
+/-- A point of `skeletonLT C (n + 1)` that lies in no open `n`-cell lies in `skeletonLT C n`. -/
+lemma mem_skeletonLT_of_forall_notMem_openCell {x : X}
+    (hx : x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
+    (h : ∀ j : cell C n, x ∉ openCell (C := C) n j) : x ∈ (skeletonLT C (n : ℕ∞) : Set X) := by
+  by_contra hxn
+  -- Otherwise the point lies in the difference of the two skeleta, hence in an open `n`-cell.
+  have hmem : x ∈ ⋃ j : cell C n, openCell (C := C) n j := by
+    rw [← skeletonLT_succ_diff_skeletonLT n]
+    exact mem_sdiff_of_mem hx hxn
+  obtain ⟨j, hj⟩ := mem_iUnion.1 hmem
+  exact h j hj
 
 /-- Each open `n`-cell is open in the union of all open `n`-cells: its complement there is cut out
 by the closed set obtained by adjoining the remaining closed `n`-cells to the

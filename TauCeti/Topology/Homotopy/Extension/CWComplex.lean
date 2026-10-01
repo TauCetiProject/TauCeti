@@ -56,18 +56,6 @@ section Step
 
 variable {n : ℕ}
 
-/-- A point of `skeletonLT C (n + 1)` that lies in no open `n`-cell lies in `skeletonLT C n`. -/
-private lemma mem_skeletonLT_of_forall_notMem_openCell {x : X}
-    (hx : x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
-    (h : ∀ j : cell C n, x ∉ openCell n j) : x ∈ (skeletonLT C (n : ℕ∞) : Set X) := by
-  obtain hx | ⟨m, hm, j, hxj⟩ := mem_skeletonLT_iff.1 hx
-  · exact (skeletonLT C n).base_subset hx
-  · have hm : m < n := by
-      rcases (Nat.lt_succ_iff.1 (by exact_mod_cast hm)).lt_or_eq with hm | rfl
-      · exact hm
-      · exact absurd hxj (h j)
-    exact skeletonLT_mono (by exact_mod_cast hm) (openCell_subset_skeletonLT m j hxj)
-
 /-- An open `n`-cell is disjoint from `skeletonLT C n`. -/
 private lemma notMem_openCell_of_mem_skeletonLT {x : X} (hx : x ∈ (skeletonLT C n : Set X))
     (j : cell C n) : x ∉ openCell n j :=
@@ -97,7 +85,7 @@ private def extendOverCells (K : cell C n → C(I × closedBall (0 : Fin n → �
   if h : ∃ j : cell C n, (p.2 : X) ∈ openCell n j then
     K h.choose (p.1, ⟨(map n h.choose).symm p.2,
       ball_subset_closedBall (map_symm_mem_ball _ h.choose_spec)⟩)
-  else G (p.1, ⟨p.2, mem_skeletonLT_of_forall_notMem_openCell p.2.2 (not_exists.1 h)⟩)
+  else G (p.1, ⟨p.2, mem_skeletonLT_of_forall_notMem_openCell _ p.2.2 (not_exists.1 h)⟩)
 
 variable {G} {K : cell C n → C(I × closedBall (0 : Fin n → ℝ) 1, Y)}
 
@@ -184,7 +172,7 @@ theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
       exact hG ⟨x, hx⟩
     · obtain ⟨j, hj⟩ : ∃ j : cell C n, (x : X) ∈ openCell n j := by
         by_contra h
-        exact hx (mem_skeletonLT_of_forall_notMem_openCell x.2 (not_exists.1 h))
+        exact hx (mem_skeletonLT_of_forall_notMem_openCell _ x.2 (not_exists.1 h))
       set y : closedBall (0 : Fin n → ℝ) 1 :=
         ⟨(map n j).symm x, ball_subset_closedBall (map_symm_mem_ball _ hj)⟩
       have hxy : x = ⟨map n j y, map_mem_skeletonLT_succ j y⟩ :=
