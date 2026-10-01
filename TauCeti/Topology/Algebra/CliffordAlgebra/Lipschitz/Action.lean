@@ -37,6 +37,8 @@ forward-and-inverse topology on linear automorphisms.
   continuously with the Lipschitz element.
 * `CliffordAlgebra.continuous_lipschitzVectorAction_toLinearMap`: the underlying endomorphism
   varies continuously.
+* `CliffordAlgebra.continuous_lipschitzVectorAction_linearEquiv`: the automorphism-valued action
+  varies continuously.
 * `CliffordAlgebra.continuous_lipschitzToOrthogonal`: the vector representation is continuous.
 
 ## References
@@ -120,10 +122,9 @@ theorem continuous_lipschitzVectorAction_toLinearMap :
       (lipschitzVectorAction Q x : Module.End K V)) := by
   let b := Module.finBasis K V
   let : IsModuleTopology K (Matrix (Fin (Module.finrank K V))
-      (Fin (Module.finrank K V)) K) := by
-    change IsModuleTopology K
-      (Fin (Module.finrank K V) → Fin (Module.finrank K V) → K)
-    infer_instance
+      (Fin (Module.finrank K V)) K) :=
+    inferInstanceAs (IsModuleTopology K
+      (Fin (Module.finrank K V) → Fin (Module.finrank K V) → K))
   have hmatrix : Continuous (fun x : lipschitzGroup Q =>
       LinearMap.toMatrix b b
         (lipschitzVectorAction Q x : Module.End K V)) := by
@@ -140,24 +141,28 @@ theorem continuous_lipschitzVectorAction_toLinearMap :
   funext x
   exact ((LinearMap.toMatrixAlgEquiv b).symm_apply_apply _).symm
 
+/-- The linear-automorphism-valued Lipschitz action varies continuously. -/
+@[fun_prop]
+theorem continuous_lipschitzVectorAction_linearEquiv :
+    Continuous (fun x : lipschitzGroup Q => lipschitzVectorAction Q x) := by
+  rw [continuous_linearEquiv_iff]
+  constructor
+  · exact continuous_lipschitzVectorAction_toLinearMap Q
+  · have h := (continuous_lipschitzVectorAction_toLinearMap Q).comp
+        (continuous_inv : Continuous fun x : lipschitzGroup Q => x⁻¹)
+    convert h using 1
+    funext x
+    congr 1
+    apply inv_eq_of_mul_eq_one_left
+    rw [← lipschitzVectorAction_mul, inv_mul_cancel, lipschitzVectorAction_one]
+    rfl
+
 /-- The twisted-conjugation homomorphism from the Lipschitz group to the orthogonal group is
 continuous for the canonical subgroup topologies. -/
 @[fun_prop]
 theorem continuous_lipschitzToOrthogonal : Continuous (lipschitzToOrthogonal Q) := by
   apply continuous_induced_rng.mpr
-  have haction : Continuous (fun x : lipschitzGroup Q => lipschitzVectorAction Q x) := by
-    rw [continuous_linearEquiv_iff]
-    constructor
-    · exact continuous_lipschitzVectorAction_toLinearMap Q
-    · have h := (continuous_lipschitzVectorAction_toLinearMap Q).comp
-          (continuous_inv : Continuous fun x : lipschitzGroup Q => x⁻¹)
-      convert h using 1
-      funext x
-      congr 1
-      apply inv_eq_of_mul_eq_one_left
-      rw [← lipschitzVectorAction_mul, inv_mul_cancel, lipschitzVectorAction_one]
-      rfl
-  convert haction using 1
+  convert continuous_lipschitzVectorAction_linearEquiv Q using 1
   funext x
   apply LinearEquiv.ext
   intro v
