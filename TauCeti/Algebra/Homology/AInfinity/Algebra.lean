@@ -615,7 +615,7 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
   -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
   let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
   have hE : E = 0 := by
-    apply 𝒜.grading.multilinearMap_ext
+    apply InternalGrading.multilinearMap_ext (fun _ ↦ 𝒜.grading)
     intro d a ha
     have avec : a = ![a 0, a 1, a 2] := by
       funext i
@@ -717,7 +717,7 @@ theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : �
       fin_cases k <;> rfl
     · exact Fin.elim0 j
   have hcurry : L.curryRight = Q.curryRight := by
-    apply 𝒜.grading.multilinearMap_ext
+    apply InternalGrading.multilinearMap_ext (fun _ ↦ 𝒜.grading)
     intro d a ha
     ext c
     have h := 𝒜.stasheff_arity_three (a 0) (a 1) c (d 0) (d 1) (ha 0) (ha 1)
