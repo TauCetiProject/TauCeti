@@ -27,6 +27,8 @@ for set and probability integrals.
 
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
   integral, in squared form.
+* `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
+  integral over a larger set, for a `[0, 1]`-valued weight equal to one on the smaller set.
 * The set-integral inequality specializes to the second-moment lower bound for a real-valued
   function on a probability space.
 
@@ -159,6 +161,25 @@ theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [Measurabl
       _ ≤ μ.real S ^ 2 * ((μ.real S)⁻¹ * ∫ x in S, f x ^ 2 ∂μ) :=
         mul_le_mul_of_nonneg_left hkey (sq_nonneg _)
       _ = μ.real S * ∫ x in S, f x ^ 2 ∂μ := by field_simp
+
+/-- A weight `ψ` with values in `[0, 1]` that equals one on a measurable set `t ⊆ s` bounds the
+integral of a nonnegative function over `t` by the `ψ²`-weighted integral over `s`. -/
+theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {s t : Set X} {f ψ : X → ℝ} (hf : IntegrableOn f s μ) (hf0 : ∀ x, 0 ≤ f x)
+    (hψ : AEStronglyMeasurable ψ (μ.restrict s)) (hψ01 : Set.range ψ ⊆ Set.Icc 0 1)
+    (ht : MeasurableSet t) (hψ1 : Set.EqOn ψ 1 t) (hts : t ⊆ s) :
+    ∫ x in t, f x ∂μ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ := by
+  have hint : IntegrableOn (fun x => ψ x ^ 2 * f x) s μ :=
+    hf.bdd_mul (hψ.pow 2) (c := 1) (Eventually.of_forall fun x => by
+      obtain ⟨h0, h1⟩ := hψ01 (Set.mem_range_self x)
+      rw [Real.norm_eq_abs, abs_pow, abs_of_nonneg h0]
+      exact pow_le_one₀ h0 h1)
+  calc
+    ∫ x in t, f x ∂μ = ∫ x in t, ψ x ^ 2 * f x ∂μ :=
+      setIntegral_congr_fun ht fun x hx => by rw [hψ1 hx, Pi.one_apply, one_pow, one_mul]
+    _ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ :=
+      setIntegral_mono_set hint
+        (Eventually.of_forall fun x => mul_nonneg (sq_nonneg _) (hf0 x)) hts.eventuallyLE
 
 /-- The positive part of the integral of a real-valued function is at most the integral of its
 pointwise positive part. No integrability or pointwise sign assumption on `f` is needed. -/

@@ -7,9 +7,10 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Product
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
-# The cup product and the connecting maps of a split sequence
+# The cup product and the connecting maps of a short exact sequence
 
 The Tate cup product is defined in the second variable by the rule `x ∪ δ y = (-1)^p δ (x ∪ y)`
 for the connecting maps `δ` of the upward dimension-shifting sequence when `y` has degree `q ≥ 0`,
@@ -20,17 +21,27 @@ map has a `k`-linear retraction (`TauCeti.TateCohomology.cup_δ_of_leftInverse`)
 particular to the tensor products of the dimension-shifting sequences with a representation, which
 are split `k`-linearly but in general not as sequences of representations.
 
+When the first factor `M` is flat over `k`, the rule holds for every short exact sequence in the
+second variable (`TauCeti.TateCohomology.cup_δ_of_flat`). This covers sequences which do not split
+over `k`, such as `0 → ℤ → ℚ → ℚ/ℤ → 0` against classes of the trivial representation `ℤ`, whose
+connecting map produces the class `δχ ∈ H²(G, ℤ)` of a character `χ` in the Artin–Tate character
+formula.
+
 ## Main statements
 
 * `TauCeti.TateCohomology.cup_δ_of_leftInverse`: for a short exact sequence whose first map has a
   `k`-linear retraction, `x ∪ δ y = (-1)^p δ (x ∪ y)` for `x` of degree `p` and `y` of any degree
   `q`.
+* `TauCeti.TateCohomology.cup_δ_of_flat`: if the underlying module of `M` is flat over `k`, then
+  `x ∪ δ y = (-1)^p δ (x ∪ y)` for every short exact sequence, `x` of degree `p` and `y` of any
+  degree `q`.
 
 ## References
 
 * J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic Number Theory*, Chapter IV (Atiyah–Wall),
   §7.
 * K. S. Brown, *Cohomology of Groups*, Chapter VI, §5.
+* J.-P. Serre, *Local Fields*, Chapter XI, §3.
 -/
 
 public noncomputable section
@@ -175,5 +186,120 @@ theorem cup_δ_of_leftInverse (M : Rep k G) {S : ShortComplex (Rep k G)} (hS : S
   · have := hS.epi_g
     obtain ⟨s, hs⟩ := Rep.exists_rightInverse_of_leftInverse hS.exact hr
     exact cup_δ_of_rightInverse_of_neg M hS hs _ hq h x y
+
+/- Proof of `cup_δ_of_flat` for `S : 0 → N₁ → N₂ → N₃ → 0`. The sequence
+`T : 0 → K → Ind_⊥^G N₂ → N₃ → 0`, whose last map is the projection onto `N₂` followed by
+`N₂ → N₃`, maps to `S` through the projection `Ind_⊥^G N₂ → N₂`, and to the downward
+dimension-shifting sequence `D` of `N₃` through `Ind_⊥^G N₂ → Ind_⊥^G N₃`, in both cases by the
+identity on `N₃`. The defect `x ∪ δ y - (-1)^p δ (x ∪ y)` is natural along such morphisms. It
+vanishes for `D`, which splits `k`-linearly. The tensored sequences `M ⊗ T` and `M ⊗ D` are short
+exact because `M` is flat, and their middle terms have no Tate cohomology, so their connecting maps
+are isomorphisms; hence `M ⊗ K → M ⊗ dimensionShiftDown N₃` is an isomorphism on Tate cohomology,
+and the defect vanishes for `T`, hence for `S`. -/
+
+/-- The left side `x ∪ δ y` of the cup product rule is natural along a morphism of short exact
+sequences. -/
+private theorem cup_δ_naturality (M : Rep k G) {S S' : ShortComplex (Rep k G)}
+    (hS : S.ShortExact) (hS' : S'.ShortExact) (Φ : S' ⟶ S) {p q r : ℤ} (h : p + (q + 1) = r)
+    (x : tateCohomology M p) (y : tateCohomology S'.X₃ q) :
+    cup M S.X₁ p (q + 1) r h x
+        (_root_.TateCohomology.δ hS q ((tateCohomologyFunctor q).map Φ.τ₃ y)) =
+      (tateCohomologyFunctor r).map (M ◁ Φ.τ₁)
+        (cup M S'.X₁ p (q + 1) r h x (_root_.TateCohomology.δ hS' q y)) := by
+  rw [← ModuleCat.comp_apply, ← _root_.TateCohomology.δ_naturality hS' hS Φ q,
+    ModuleCat.comp_apply, cup_map_right]
+
+/-- The right side `δ (x ∪ y)` of the cup product rule is natural along a morphism of short exact
+sequences. -/
+private theorem δ_cup_naturality (M : Rep k G) {S S' : ShortComplex (Rep k G)}
+    (hMS : (S.map (tensorLeft M)).ShortExact) (hMS' : (S'.map (tensorLeft M)).ShortExact)
+    (Φ : S' ⟶ S) {p q n : ℤ} (h : p + q = n) (x : tateCohomology M p)
+    (y : tateCohomology S'.X₃ q) :
+    _root_.TateCohomology.δ hMS n (cup M S.X₃ p q n h x ((tateCohomologyFunctor q).map Φ.τ₃ y)) =
+      (tateCohomologyFunctor (n + 1)).map (M ◁ Φ.τ₁)
+        (_root_.TateCohomology.δ hMS' n (cup M S'.X₃ p q n h x y)) := by
+  rw [cup_map_right]
+  exact congrArg (fun φ ↦ φ (cup M S'.X₃ p q n h x y)) (_root_.TateCohomology.δ_naturality hMS'
+    hMS ((tensorLeft M).mapShortComplex.map Φ) n).symm
+
+/-- **The cup product rule for a flat first factor.** If the underlying module of `M` is flat
+over `k`, then for every short exact sequence `S`, `x` of degree `p` and `y` of any degree `q`,
+`x ∪ δ y = (-1)^p δ (x ∪ y)`, where the second `δ` is the connecting map of the tensor product of
+`S` with `M`, which is short exact by `Rep.shortExact_map_tensorLeft_of_flat`. Unlike
+`TauCeti.TateCohomology.cup_δ_of_leftInverse`, the sequence need not split `k`-linearly: for
+`k = ℤ` and `M` the trivial representation `ℤ`, this applies to `0 → ℤ → ℚ → ℚ/ℤ → 0`. -/
+theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep k G)}
+    (hS : S.ShortExact) {p q n : ℤ} (h : p + q = n) (x : tateCohomology M p)
+    (y : tateCohomology S.X₃ q) :
+    cup M S.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hS q y) =
+      p.negOnePow • _root_.TateCohomology.δ (shortExact_map_tensorLeft_of_flat hS M) n
+        (cup M S.X₃ p q n h x y) := by
+  have := hS.epi_g
+  have := hS.mono_f
+  -- The sequence `T : 0 → K → Ind_⊥^G N₂ → N₃ → 0` and the dimension-shifting sequence `D` of `N₃`.
+  let T := ShortComplex.kernelSequence (indBotCounit S.X₂ ≫ S.g)
+  have hT : T.ShortExact := TauCeti.kernelSequence_shortExact _
+  let D := ShortComplex.mk (dimensionShiftDownι S.X₃) (indBotCounit S.X₃)
+    (dimensionShiftDownι_comp_indBotCounit S.X₃)
+  have hD : D.ShortExact := by
+    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact S.X₃
+  have := hD.mono_f
+  obtain ⟨r, hr⟩ := exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit S.X₃)
+  -- The morphisms `φ : T ⟶ S` and `ψ : T ⟶ D`, both the identity on `N₃`.
+  let φ : T ⟶ S := ShortComplex.homMk
+    (hS.exact.lift (T.f ≫ indBotCounit S.X₂) ((Category.assoc _ _ _).trans T.zero))
+    (indBotCounit S.X₂) (𝟙 S.X₃) (hS.exact.lift_f _ _) (Category.comp_id _).symm
+  let ψ : T ⟶ D := ShortComplex.homMk
+    (hD.exact.lift (T.f ≫ indBotMap S.g) ((Category.assoc _ _ _).trans
+      ((congrArg (T.f ≫ ·) (indBotCounit_naturality S.g)).trans T.zero)))
+    (indBotMap S.g) (𝟙 S.X₃) (hD.exact.lift_f _ _)
+    ((indBotCounit_naturality S.g).trans (Category.comp_id _).symm)
+  have hMT := shortExact_map_tensorLeft_of_flat hT M
+  have hMD : (D.map (tensorLeft M)).ShortExact := by
+    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_tensorLeft_shortExact S.X₃ M
+  -- The connecting maps of `M ⊗ T` and `M ⊗ D` are isomorphisms, so `M ◁ ψ.τ₁` induces an
+  -- injection on Tate cohomology.
+  have hinj : Function.Injective ((tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁)) := by
+    have hδT : IsIso (_root_.TateCohomology.δ hMT n) :=
+      ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hMT).δIso n (n + 1) rfl
+        (isZero_tensor_indBot S.X₂.V M n) (isZero_tensor_indBot S.X₂.V M (n + 1))).isIso_hom
+    have hδD : IsIso (_root_.TateCohomology.δ hMD n) :=
+      ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hMD).δIso n (n + 1) rfl
+        (isZero_tensor_indBot S.X₃.V M n) (isZero_tensor_indBot S.X₃.V M (n + 1))).isIso_hom
+    -- `ψ.τ₃` is the identity, so naturality of the connecting maps along `M ◁ ψ` reads
+    -- `δ_{M ⊗ T} ≫ (M ◁ ψ.τ₁)_* = δ_{M ⊗ D}`.
+    have e₃ : (tateCohomologyFunctor n).map ((tensorLeft M).mapShortComplex.map ψ).τ₃ = 𝟙 _ :=
+      (congrArg (tateCohomologyFunctor n).map ((tensorLeft M).map_id S.X₃)).trans
+        ((tateCohomologyFunctor n).map_id _)
+    have e := _root_.TateCohomology.δ_naturality hMT hMD ((tensorLeft M).mapShortComplex.map ψ) n
+    rw [e₃] at e
+    have e' : _root_.TateCohomology.δ hMT n ≫ (tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁) =
+        _root_.TateCohomology.δ hMD n :=
+      e.trans (Category.id_comp _)
+    have : IsIso (_root_.TateCohomology.δ hMT n ≫
+        (tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁)) := by
+      rw [e']
+      exact hδD
+    have := IsIso.of_isIso_comp_left (_root_.TateCohomology.δ hMT n)
+      ((tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁))
+    exact (ModuleCat.mono_iff_injective _).1 inferInstance
+  -- The rule for `T`, from the rule for `D` through `ψ`.
+  have hT' : cup M T.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hT q y) =
+      p.negOnePow • _root_.TateCohomology.δ hMT n (cup M T.X₃ p q n h x y) := by
+    apply hinj
+    have e₁ := cup_δ_naturality M hD hT ψ (r := n + 1) (by omega) x y
+    have e₂ := δ_cup_naturality M hMD hMT ψ h x y
+    rw [Units.smul_def, map_zsmul, ← e₁, ← e₂, ← Units.smul_def]
+    exact cup_δ_of_leftInverse M hD hr h x ((tateCohomologyFunctor q).map ψ.τ₃ y)
+  -- The rule for `S`, from the rule for `T` through `φ`.
+  have e₁ := cup_δ_naturality M hS hT φ (r := n + 1) (by omega) x y
+  have e₂ := δ_cup_naturality M (shortExact_map_tensorLeft_of_flat hS M) hMT φ h x y
+  -- `φ.τ₃` is the identity of `N₃`.
+  have e₃ : (tateCohomologyFunctor q).map φ.τ₃ = 𝟙 _ := (tateCohomologyFunctor q).map_id S.X₃
+  rw [hT', Units.smul_def, map_zsmul, ← e₂, ← Units.smul_def, e₃] at e₁
+  -- `e₁` now applies the identity of the degree-`q` Tate cohomology of `N₃` to `y` on both sides,
+  -- which is `y` by definition; it is not rewritten away because the identity is stated on `T.X₃`,
+  -- which is `N₃` only up to unfolding `T`.
+  exact e₁
 
 end TauCeti.TateCohomology

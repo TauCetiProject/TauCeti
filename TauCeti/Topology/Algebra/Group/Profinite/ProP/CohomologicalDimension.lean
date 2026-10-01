@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.RightExact
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.SingleDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.TrivialFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Devissage
@@ -37,6 +38,13 @@ The equivalence is restated for `<`, `=` and `= ⊤`: `n < cd_p G` exactly when 
 `cd_p G = n` exactly when `Hⁿ⁺¹(G, 𝔽_p) = 0` and `Hⁿ(G, 𝔽_p) ≠ 0`, and `cd_p G = ⊤` exactly when
 `Hⁿ(G, 𝔽_p) ≠ 0` for every `n`.
 
+The file also records Tate's criterion for a profinite pro-`p` group: if `Hⁿ(G, -)` is right exact
+on the finite discrete `G`-modules killed by `p`, then `cd_p G ≤ n`. The vanishing of `Hⁿ⁺¹` on
+those modules is
+`TauCeti.subsingleton_continuousCohomology_succ_of_forall_coeffMap_proj_surjective`, and
+dévissage extends it to all finite `p`-primary modules. This is how the cohomological dimension of
+a Demushkin group is bounded (Serre, *Structure de certains pro-`p`-groupes*, §9.1).
+
 ## Main results
 
 * `TauCeti.IsProP.cohomologicalDimensionAt_le_iff_forall_smul_eq_self`,
@@ -47,10 +55,15 @@ The equivalence is restated for `<`, `=` and `= ⊤`: `n < cd_p G` exactly when 
 * `TauCeti.IsProP.lt_cohomologicalDimensionAt_iff_nontrivial_cohomFp`,
   `TauCeti.IsProP.cohomologicalDimensionAt_eq_iff`,
   `TauCeti.IsProP.cohomologicalDimensionAt_eq_top_iff`: the `<`, `=` and `= ⊤` forms.
+* `TauCeti.IsProP.cohomologicalDimensionAt_le_of_forall_coeffMap_proj_surjective`: **Tate's
+  criterion**: right exactness of `Hⁿ(G, -)` on the finite discrete `G`-modules killed by `p`
+  gives `cd_p G ≤ n`.
 
 ## References
 
 * J.-P. Serre, *Galois Cohomology*, Ch. I, §4.1, Prop. 21.
+* J.-P. Serre, *Structure de certains pro-`p`-groupes (d'après Demuškin)*, Séminaire Bourbaki,
+  exp. 252 (1963), §9.1.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (3.3.2).
 * H. Koch, *Galois Theory of `p`-Extensions*, Springer (2002), Definition 5.1.
 -/
@@ -144,5 +157,29 @@ theorem IsProP.cohomologicalDimensionAt_eq_top_iff :
   cases n with
   | zero => exact nontrivial_cohomFp_zero p G
   | succ m => exact (hG.lt_cohomologicalDimensionAt_iff_nontrivial_cohomFp m).1 (h m)
+
+/-- **Tate's criterion for the cohomological dimension of a pro-`p` group.** Let `G` be a profinite
+pro-`p` group. If for every short exact sequence `0 → A → B → C → 0` of finite discrete `G`-modules
+killed by `p` the map `Hⁿ(G, B) → Hⁿ(G, C)` is surjective, then `cd_p G ≤ n`: right exactness
+kills `Hⁿ⁺¹` on those modules, and dévissage extends the vanishing to every finite discrete
+`p`-primary module. -/
+theorem IsProP.cohomologicalDimensionAt_le_of_forall_coeffMap_proj_surjective
+    [TotallyDisconnectedSpace G] (n : ℕ)
+    (h : ∀ (A B C : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+      [DistribMulAction G A] [ContinuousSMul G A] [Finite A]
+      [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+      [DistribMulAction G B] [ContinuousSMul G B] [Finite B]
+      [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
+      [DistribMulAction G C] [ContinuousSMul G C] [Finite C]
+      (S : DiscreteShortExact G A B C),
+      (∀ a : A, p • a = 0) → (∀ b : B, p • b = 0) → (∀ c : C, p • c = 0) →
+      Function.Surjective (ContinuousCohomology.coeffMap
+        (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n)) :
+    cohomologicalDimensionAt.{u} p G ≤ n := by
+  rw [cohomologicalDimensionAt_le_iff_forall_finite_subsingleton_succ p G hp.out.ne_zero n]
+  intro M _ _ _ _ _ _ hM
+  exact hG.subsingleton_continuousCohomology_of_forall_smul_eq_self
+    (fun A _ _ _ _ _ _ hA _ ↦
+      subsingleton_continuousCohomology_succ_of_forall_coeffMap_proj_surjective h A hA) M hM
 
 end TauCeti

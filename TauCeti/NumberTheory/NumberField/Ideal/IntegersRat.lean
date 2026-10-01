@@ -49,6 +49,9 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
 * `Ideal.inertiaDeg_eq_orderOf` and
   `Ideal.ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt`:
   the unramified Frobenius order and prime-count formulas over `ℤ`.
+* `Ideal.inertiaDeg_dvd_orderOf` and `Ideal.inertiaDeg_eq_one_iff_mem_inertia`: at a possibly
+  ramified prime, the residue degree over `ℤ` divides the order of a Frobenius, and is `1`
+  exactly when that Frobenius lies in the inertia subgroup.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for a prime `Q` above the rational prime `p`,
   the primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 * `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
@@ -223,6 +226,23 @@ theorem inertiaDeg_eq_orderOf [IsGalois ℚ K] (Q : Ideal (𝓞 K)) [Q.IsPrime]
   rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
     Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ
       ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
+
+/-- At any prime of a number field, ramified or not, the residue degree over `ℤ` divides the order
+of a Frobenius. This is `Ideal.inertiaDeg_dvd_orderOf_of_isArithFrobAt` with base ring `ℤ`. -/
+theorem inertiaDeg_dvd_orderOf (Q : Ideal (𝓞 K)) [Q.IsPrime] {σ : K ≃ₐ[ℚ] K}
+    (hσ : IsArithFrobAt ℤ σ Q) : Q.inertiaDeg ℤ ∣ orderOf σ := by
+  have hσ' := (Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ
+  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hσ.ne_bot]
+  exact Ideal.inertiaDeg_dvd_orderOf_of_isArithFrobAt Q hσ'
+
+/-- At any prime of a number field, ramified or not, the residue degree over `ℤ` is `1` exactly
+when a Frobenius lies in the inertia subgroup. This is
+`Ideal.inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt` with base ring `ℤ`. -/
+theorem inertiaDeg_eq_one_iff_mem_inertia (Q : Ideal (𝓞 K)) [Q.IsPrime] {σ : K ≃ₐ[ℚ] K}
+    (hσ : IsArithFrobAt ℤ σ Q) : Q.inertiaDeg ℤ = 1 ↔ σ ∈ Q.inertia (K ≃ₐ[ℚ] K) := by
+  have hσ' := (Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ
+  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hσ.ne_bot]
+  exact Ideal.inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt Q hσ'
 
 /-- At an unramified prime of a Galois number field, the number of primes above `p` times the
 residue degree is `[K : ℚ]`. -/
