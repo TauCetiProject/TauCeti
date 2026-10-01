@@ -21,8 +21,8 @@ hypotheses on `Ω`.
 
 ## Main declarations
 
-* `TauCeti.PDE.energyFormH1_restrictL`: `a(u|_U, v) = a(u, ṽ)` for `v ∈ H¹₀(U)` with zero
-  extension `ṽ ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.energyFormH1_restrictL`: `a(u|_U, v) = a(u, v₀)` for `v ∈ H¹₀(U)` with zero
+  extension `v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 -/
 
