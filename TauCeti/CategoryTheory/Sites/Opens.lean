@@ -14,7 +14,7 @@ public import Mathlib.Topology.Category.TopCat.Opens
 A family of elements indexed by arrows between opens depends only on the domain, since there is
 at most one arrow between two opens.
 
-Use `TauCeti.CategoryTheory.familyOfElements_congr x f g hf hg` to compare these values.
+Use `TauCeti.CategoryTheory.Presieve.FamilyOfElements.congr x f g hf hg` to compare these values.
 -/
 
 public section
@@ -23,17 +23,17 @@ open CategoryTheory _root_.TopologicalSpace
 
 universe u w
 
-namespace TauCeti.CategoryTheory
+namespace TauCeti.CategoryTheory.Presieve.FamilyOfElements
 
 variable {X : Type u} [_root_.TopologicalSpace X] {F : (Opens X)ᵒᵖ ⥤ Type w}
 
 /-- Two values of a family of elements at arrows with the same domain are equal, since arrows
 between opens are subsingletons. -/
-theorem familyOfElements_congr {W V : Opens X} {R : Presieve W}
+theorem congr {W V : Opens X} {R : Presieve W}
     (x : _root_.CategoryTheory.Presieve.FamilyOfElements F R) (f g : V ⟶ W)
     (hf : R f) (hg : R g) :
     x f hf = x g hg := by
   obtain rfl : f = g := Subsingleton.elim _ _
   rfl
 
-end TauCeti.CategoryTheory
+end TauCeti.CategoryTheory.Presieve.FamilyOfElements
