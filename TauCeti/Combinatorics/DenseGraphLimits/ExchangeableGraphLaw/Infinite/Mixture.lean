@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Correspondence
+public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Measurable
 import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
