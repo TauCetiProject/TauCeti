@@ -15,9 +15,8 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 `ℤ_[p]` with its norm topology is a Huber ring, with `(ℤ_[p], (p))` as a pair of definition, and
 it is not a Tate ring. It is the roadmap's Layer-0 example after the discrete case, and the first
-to separate `TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the units of `ℤ_[p]` are
-exactly the elements of norm one, whose powers again have norm one, so no unit is topologically
-nilpotent.
+to separate `TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the topology is adic for
+the proper ideal `(p)`, so no unit is topologically nilpotent.
 
 ## Main results
 
@@ -102,15 +101,8 @@ instance isHuberRing : IsHuberRing ℤ_[p] :=
 
 /-- **`ℤ_[p]` is not a Tate ring**: it admits no pseudouniformiser. Together with
 `TauCeti.Huber.PadicInt.isHuberRing` this separates `IsHuberRing` from `IsTateRing`. -/
-theorem not_isTateRing : ¬ IsTateRing ℤ_[p] := by
-  intro h
-  obtain ⟨a, ha⟩ := h.exists_isPseudoUniformizer
-  have hone : ∀ n : ℕ, ‖a ^ n‖ = 1 := fun n ↦ by
-    rw [norm_pow, _root_.PadicInt.isUnit_iff.mp ha.isUnit, one_pow]
-  have hnorm : Filter.Tendsto (fun n : ℕ ↦ ‖a ^ n‖) Filter.atTop (nhds ‖(0 : ℤ_[p])‖) :=
-    (continuous_norm.tendsto _).comp ha.isTopologicallyNilpotent
-  rw [norm_zero, Filter.tendsto_congr hone] at hnorm
-  exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds hnorm)
+theorem not_isTateRing : ¬ IsTateRing ℤ_[p] := fun _ ↦
+  (maximalIdeal.isMaximal ℤ_[p]).ne_top (IsTateRing.eq_top_of_isAdic isAdic_maximalIdeal)
 
 end PadicInt
 
