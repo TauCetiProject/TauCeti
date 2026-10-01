@@ -55,7 +55,6 @@ theorem geodesicSegment_def (z w : ℍ) :
   rfl
 
 /-- Membership in `geodesicSegment z w`. -/
-@[simp]
 theorem mem_geodesicSegment_iff (z w u : ℍ) :
     u ∈ geodesicSegment z w ↔ ∃ t ∈ Icc 0 (dist z w), geodesicLine (geodesicBetween z w) t = u :=
   Iff.rfl
