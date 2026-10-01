@@ -42,7 +42,8 @@ below describe them.
 * `FGModuleCat.dualMap_hom`: the underlying module map of a transpose is the dual map of the
   underlying module map.
 * `FGModuleCat.dualMap_id`, `FGModuleCat.dualMap_comp`, `FGModuleCat.dualMap_smul`,
-  `FGModuleCat.dualMap_neg`, `FGModuleCat.dualMap_zero`, `FGModuleCat.dualMap_add`: transposing is
+  `FGModuleCat.dualMap_neg`, `FGModuleCat.dualMap_zero`, `FGModuleCat.dualMap_add`,
+  `FGModuleCat.dualMap_sub`: transposing is
   contravariant and compatible with the additive and `R`-linear structure on morphisms.
 * `FGModuleCat.dualEvalIso_hom`, `FGModuleCat.dualEvalIso_inv`: the underlying module maps of the
   double dual isomorphism and its inverse are the two halves of the evaluation pairing.
@@ -113,6 +114,11 @@ transpose. -/
 /-- The transpose of a sum of morphisms is the sum of the transposes. -/
 @[simp] theorem dualMap_add {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f g : M ⟶ N) : dualMap (f + g) = dualMap f + dualMap g := by
+  ext; simp
+
+/-- The transpose of a difference of morphisms is the difference of the transposes. -/
+@[simp] theorem dualMap_sub {M N : FGModuleCat.{u} R} [Module.Projective R M]
+    [Module.Projective R N] (f g : M ⟶ N) : dualMap (f - g) = dualMap f - dualMap g := by
   ext; simp
 
 /-- A double dual is canonically isomorphic to the original module, by the evaluation pairing. -/
