@@ -195,8 +195,8 @@ theorem isSemialgebraic_eval_neg (p : MvPolynomial σ R) :
     IsSemialgebraic {x : σ → R | eval x p < 0} := by
   convert ((isSemialgebraic_eval_eq_zero p).union (isSemialgebraic_eval_pos p)).compl using 1
   ext x
-  change eval x p < 0 ↔ ¬(eval x p = 0 ∨ 0 < eval x p)
-  rw [not_or, not_lt, lt_iff_le_and_ne]
+  simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, Set.mem_union, not_or, not_lt]
+  rw [lt_iff_le_and_ne]
   exact and_comm
 
 /-- The set where a polynomial is nonnegative is semialgebraic. -/
