@@ -137,6 +137,7 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoCor {H : Type} [Group H] [Fintype H
 /-- **The integral degree-`-2` identification is natural along isomorphisms of groups**: Tate
 cohomology along an isomorphism `e : G ≃* H` of finite groups, with integral coefficients, is the
 isomorphism `Gᵃᵇ ≃ Hᵃᵇ` induced by `e` in degree `-2`. -/
+@[simp]
 theorem HNegTwoAddEquivAbelianization_map {H : Type} [Group H] [Fintype H] (e : G ≃* H)
     (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
     HNegTwoAddEquivAbelianization
