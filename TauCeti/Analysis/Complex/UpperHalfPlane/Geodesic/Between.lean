@@ -154,4 +154,16 @@ theorem exists_geodesicBetween_I_eq_rotation (z : ℍ) :
   exists_rotation_eq_of_smul_I_eq_I
     (by rw [← geodesicLine_zero, geodesicLine_geodesicBetween_zero])
 
+/-- A line through a point `geodesicLine g t₀` of the line `g` and a point `C` off it meets the
+line `g` only at the parameter `t₀`. -/
+theorem eq_of_mem_range_geodesicLine {g k : PSL(2, ℝ)} {C : ℍ}
+    (hC : C ∉ Set.range (geodesicLine g)) (hCk : C ∈ Set.range (geodesicLine k)) {t₀ s : ℝ}
+    (h₀ : geodesicLine g t₀ ∈ Set.range (geodesicLine k))
+    (hs : geodesicLine g s ∈ Set.range (geodesicLine k)) : s = t₀ := by
+  by_contra hne
+  have hne' : geodesicLine g s ≠ geodesicLine g t₀ := fun h ↦ hne (geodesicLine_injective g h)
+  rw [← range_geodesicLine_geodesicBetween_of_mem hs h₀ hne',
+    range_geodesicLine_geodesicBetween_of_mem (g := g) ⟨s, rfl⟩ ⟨t₀, rfl⟩ hne'] at hCk
+  exact hC hCk
+
 end TauCeti.UpperHalfPlane

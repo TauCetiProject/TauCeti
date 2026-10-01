@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Duality
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Duality.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomologicalDimension
 
 /-!

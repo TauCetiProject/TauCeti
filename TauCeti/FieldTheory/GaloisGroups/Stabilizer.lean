@@ -113,7 +113,7 @@ Separability cannot be dropped: an inseparable irreducible polynomial has fewer 
 degree. -/
 theorem index_stabilizer_eq_natDegree (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) : (stabilizer p.Gal x).index = p.natDegree := by
-  have := isPretransitive_of_irreducible hp
+  have := Gal.galActionAux_isPretransitive hp
   rw [MulAction.index_stabilizer_of_transitive, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep (IsSplittingField.splits p.SplittingField p)]
 
