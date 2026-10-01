@@ -24,7 +24,7 @@ computations.
 
 ## Main results
 
-* `TauCeti.tameCharacterGraded_ramificationGroupGradedConj`: inertia acts trivially on
+* `TauCeti.ramificationGroupGradedConj_zero`: inertia acts trivially on
   `G_0/G_1`.
 * `TauCeti.ramificationGroupGradedToResidueField_conj`: at depth `i > 0`, conjugation scales the
   residue coordinate by the `i`th power of the tame character.
@@ -78,12 +78,12 @@ private theorem residue_uniformizerChangeUnit_inv_smul
 
 /-- Conjugation by inertia acts trivially on the tame quotient `G_0/G_1`. -/
 @[simp]
-theorem tameCharacterGraded_ramificationGroupGradedConj (π : 𝒪[L]) (hπ : Irreducible π)
+theorem ramificationGroupGradedConj_zero
     (σ : ramificationGroup G 𝒪[L] 0)
     (τ : RamificationGroupGraded G 𝒪[L] 0) :
-    tameCharacterGraded hπ
-        (ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ) =
-      tameCharacterGraded hπ τ := by
+    ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ = τ := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[L])
+  apply tameCharacterGraded_injective hπ
   induction τ using QuotientGroup.induction_on with
   | _ τ =>
     simp only [ramificationGroupGradedConj_mk, tameCharacterGraded_mk]
