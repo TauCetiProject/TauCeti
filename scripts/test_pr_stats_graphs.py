@@ -733,11 +733,22 @@ class CategoryGroupingTest(unittest.TestCase):
                                  ("TauCetiRoadmap", "Odd", 'topic = "<script>"\n'),
                                  ("TauCetiRoadmap", "Broken", "topic =\n"),
                                  ("Completed", "Finished", 'topic = "math.CO"\n'),
-                                 ("Completed", "Curves", 'topic = "math.NT"\n')):
+                                 ("Completed", "Curves", 'topic = "math.NT"\n'),
+                                 # Active with no usable category, archived with one: still unsorted.
+                                 ("TauCetiRoadmap", "Revived", None),
+                                 ("Completed", "Revived", 'topic = "math.CO"\n'),
+                                 ("TauCetiRoadmap", "Rewritten", "topic = \"math.nt\"\n"),
+                                 ("Completed", "Rewritten", 'topic = "math.CO"\n'),
+                                 ("TauCetiRoadmap", "Garbled", "topic =\n"),
+                                 ("Completed", "Garbled", 'topic = "math.CO"\n')):
             d = root / base / name
             d.mkdir(parents=True)
+            (d / "README.md").write_text(f"# {name}\n")
             if meta is not None:
                 (d / "metadata.toml").write_text(meta)
+        # Not a roadmap (no README): its metadata is never read.
+        (root / "TauCetiRoadmap" / "references").mkdir()
+        (root / "TauCetiRoadmap" / "references" / "metadata.toml").write_text('topic = "math.GT"\n')
         self.root = root
 
     def tearDown(self):
@@ -754,7 +765,11 @@ class CategoryGroupingTest(unittest.TestCase):
         self.assertEqual(stats.roadmap_categories(self.root), {
             "roadmap/Primes": "math.NT", "roadmap/Forms": "math.NT", "roadmap/Curves": "math.AG",
             "roadmap/Finished": "math.CO",
-        })  # active Curves wins over the archived one; bad or missing metadata is left out
+        })
+        # The active roadmap decides: its archived namesake's category never stands in for a
+        # missing, invalid or unreadable one of its own (review on TauCetiProject/TauCeti#10413).
+        for name in ("Revived", "Rewritten", "Garbled"):
+            self.assertNotIn(f"roadmap/{name}", stats.roadmap_categories(self.root))
 
     def test_no_checkout_means_no_categories(self):
         self.assertEqual(stats.roadmap_categories(self.root / "missing"), {})
@@ -787,6 +802,33 @@ class CategoryGroupingTest(unittest.TestCase):
         self.assertIn(">Unsorted</text>", svg)
         self.assertNotIn(stats.UNSORTED_CATEGORY, svg)
         self.assertIn("per contributor per arXiv category", svg)
+
+    def test_subtitles_fit_the_card(self):
+        """Each subtitle line is one unwrapped <text>. Its right edge is estimated at 0.5 em per
+        character; Chromium measures these lines in the site's font stack at 0.46 em, and the first
+        category wording of this chart (168 characters) overflowed by 87-96 units at every width."""
+        def subtitles_fit(matrix):
+            for key in ("merges", "reviews"):
+                with tempfile.TemporaryDirectory() as temporary:
+                    path = Path(temporary) / "heat.svg"
+                    stats.render_roadmap_heatmap(path, "Merged PRs by arXiv category and contributor",
+                                                 "merged PRs", matrix, key)
+                    root = ET.parse(path).getroot()
+                width = float(root.attrib["viewBox"].split()[2])
+                em = 13 * width / chart_style.REFERENCE_WIDTH
+                for text in root.iter("{http://www.w3.org/2000/svg}text"):
+                    if text.attrib.get("class") == "subtitle":
+                        right = float(text.attrib["x"]) + len(text.text) * em * 0.5
+                        self.assertLessEqual(right, width, f"{len(text.text)} characters: {text.text}")
+
+        for n in (2, 17, 20):
+            codes = [f"math.{chr(65 + i // 26)}{chr(65 + i % 26)}" for i in range(n)]
+            prs = [self.labelled(i + 1, f"person-{i:02d}", f"Area{i:02d}") for i in range(n)]
+            column_of = {f"roadmap/Area{i:02d}": code for i, code in enumerate(codes)}
+            subtitles_fit(stats.roadmap_matrix(prs, [], date(2026, 1, 31), column_of=column_of,
+                                               roadmap_limit=stats.CATEGORY_LIMIT))
+        prs = [self.labelled(i + 1, "alice", f"Area{i:02d}") for i in range(15)]
+        subtitles_fit(stats.roadmap_matrix(prs, [], date(2026, 1, 31)))
 
     def test_generate_groups_by_category_given_a_checkout(self):
         data = {"repo": "TauCetiProject/TauCeti", "fetched_at": "2026-01-31T23:00:00Z",

@@ -831,22 +831,28 @@ def roadmap_of(labels: Iterable[str]) -> str | None:
 
 def roadmap_categories(roadmap_dir: Path) -> dict[str, str]:
     """`roadmap/<Area>` -> the arXiv category that roadmap declares in its `metadata.toml`
-    (`topic = "math.NT"`), for the roadmaps under `TauCetiRoadmap/` and then `Completed/` of a
-    TauCetiRoadmap checkout; where a name is in both, the active roadmap's. A roadmap with no file,
-    an unreadable one or a value that is not a `math.XX` code is left out, and its PRs count as
-    unsorted. Never raises: a missing checkout gives an empty map."""
+    (`topic = "math.NT"`), for the roadmaps (directories with a README.md) under `TauCetiRoadmap/`
+    and `Completed/` of a TauCetiRoadmap checkout. Where a name is in both, the active roadmap
+    decides, whatever its metadata says: an archived roadmap's category never stands in for an
+    active one's, so an active roadmap with no file, an unreadable one or a value that is not a
+    `math.XX` code is left out, and its PRs count as unsorted, like any roadmap without a category.
+    Never raises: a missing checkout gives an empty map."""
     out: dict[str, str] = {}
+    decided: set[str] = set()
     for base in ("TauCetiRoadmap", "Completed"):
         root = roadmap_dir / base
         if not root.is_dir():
             continue
-        for d in sorted(p for p in root.iterdir() if p.is_dir()):
+        for d in sorted(p for p in root.iterdir() if p.is_dir() and (p / "README.md").is_file()):
+            if d.name in decided:
+                continue
+            decided.add(d.name)
             try:
                 topic = tomllib.loads((d / "metadata.toml").read_text(encoding="utf-8")).get("topic")
             except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
                 continue
             if isinstance(topic, str) and ARXIV_MATH_RE.fullmatch(topic):
-                out.setdefault(f"{ROADMAP_PREFIX}{d.name}", topic)
+                out[f"{ROADMAP_PREFIX}{d.name}"] = topic
     return out
 
 
@@ -1281,10 +1287,13 @@ def render_roadmap_heatmap(
         return (f"Other ({data['omitted_contributors']:,})"
                 if who == OTHER_CONTRIBUTOR else clip(who, 24))
 
+    # Each subtitle line is one unwrapped <text>, so its length is bounded by the card: these fit
+    # with room to spare at every grid width (the font scales with the width, so the length in
+    # characters is what matters). Which roadmap a PR's category comes from is the page's to say.
     by_category = matrix.get("grouping") == "category"
     per = "arXiv category" if by_category else "roadmap"
-    columns_are = ("arXiv categories (of the roadmaps the PRs advance)" if by_category
-                   else "roadmaps")
+    columns_are = "arXiv categories" if by_category else "roadmaps"
+    every = "category" if by_category else "roadmap"
 
     left = 230
     cell_w, cell_h, gap = 74, 26, 2
@@ -1318,7 +1327,7 @@ def render_roadmap_heatmap(
             f"Count of {noun} per contributor per {per}, "
             f"{matrix['from']}–{matrix['to']} ({matrix['window_days']} days)",
             f"columns are the {len(matrix['columns'])} {columns_are} with the most merges in "
-            f"that window; exact counts for every contributor and {per} in JSON",
+            f"that window; exact counts for every contributor and {every} in JSON",
         ],
         css=f'.rowlab{{font-size:{css_px(width, 12.5)};text-anchor:end}}'
             f'.collab{{font-size:{css_px(width, 12)}}}'
