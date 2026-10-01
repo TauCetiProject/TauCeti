@@ -76,9 +76,11 @@ def padicCompletionUnits :
     (Pi.evalMonoidHom _ m)
 
 omit [Fact p.Prime] in
-/-- The commutative group structure of `A(L)`, recorded directly: deriving it through the product
-of the power-class groups is slow enough to defeat instance searches built on top of it, such as
-the one for the quotient of `Additive A(L)` by a submodule. -/
+-- Recorded directly: deriving this structure through the product of the power-class groups is
+-- slow enough to defeat instance searches built on top of it, such as the one for the quotient
+-- of `Additive A(L)` by a submodule.
+/-- `A(L)` is a commutative group, with the pointwise group structure of compatible families of
+power classes inherited from the product `∏ₘ Lˣ/(Lˣ)^(p^m)`. -/
 instance : CommGroup ↑(padicCompletionUnits p L) := inferInstance
 
 omit [Fact p.Prime] in
@@ -179,6 +181,19 @@ theorem padicCompletionUnits_natCast_smul (n : ℕ)
   rw [padicCompletionUnits_smul_apply, toMul_nsmul]
   exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq n m)
     (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
+
+/-- Adding a `p ^ m`-multiple in `A(L)` does not change the level-`m` coordinate. -/
+theorem padicCompletionUnits_add_pow_smul_apply (m : ℕ)
+    (y z : Additive ↑(padicCompletionUnits p L)) :
+    (y + (p : ℤ_[p]) ^ m • z).toMul.1 m = y.toMul.1 m := by
+  have h : (y + (p : ℤ_[p]) ^ m • z).toMul.1 m =
+      (y.toMul.1 m : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) * z.toMul.1 m ^ p ^ m := by
+    simp only [← Nat.cast_pow, padicCompletionUnits_natCast_smul, toMul_add, toMul_nsmul,
+      Subgroup.coe_mul, Subgroup.coe_pow, Pi.mul_apply, Pi.pow_apply]
+  rw [h, QuotientGroup.pow_eq_one_quotient_range_powMonoidHom]
+  -- `rw [mul_one]` fails here: the type of the coordinate is the beta-redex
+  -- `(fun m ↦ Lˣ ⧸ _) m`, so `mul_one` needs its argument at the reduced type.
+  exact mul_one (y.toMul.1 m : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range)
 
 section GaloisAction
 

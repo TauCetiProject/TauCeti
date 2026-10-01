@@ -24,8 +24,8 @@ instance the rank `[L : ℚ_p] + 1` of the `p`-adic completion of the multiplica
 
 ## Main results
 
-* `TauCeti.nonempty_quotient_torsion_linearEquiv_of_injective`: if `f : R^ι → M` is injective and
-  `r • M ⊆ range f` for some `r ≠ 0`, then `M ⧸ torsion R M ≃ R^ι`.
+* `TauCeti.nonempty_quotient_torsion_linearEquiv_of_injective_of_smul_mem_range`: if
+  `f : R^ι → M` is injective and `r • M ⊆ range f` for some `r ≠ 0`, then `M ⧸ torsion R M ≃ R^ι`.
 -/
 
 public section
@@ -39,8 +39,9 @@ variable {R M ι : Type*} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R] [Ad
 
 /-- Over a principal ideal domain `R`, if an injective linear map `f : R^ι → M` has cokernel
 killed by some nonzero `r ∈ R`, then `M` modulo its torsion is free on `ι`. -/
-theorem nonempty_quotient_torsion_linearEquiv_of_injective {f : (ι → R) →ₗ[R] M}
-    (hf : Function.Injective f) {r : R} (hr : r ≠ 0) (hrf : ∀ x, r • x ∈ LinearMap.range f) :
+theorem nonempty_quotient_torsion_linearEquiv_of_injective_of_smul_mem_range
+    {f : (ι → R) →ₗ[R] M} (hf : Function.Injective f) {r : R} (hr : r ≠ 0)
+    (hrf : ∀ x, r • x ∈ LinearMap.range f) :
     Nonempty ((M ⧸ torsion R M) ≃ₗ[R] (ι → R)) := by
   -- `φ x = f⁻¹ (r • x)`; it kills the torsion of `M`, and `φ ∘ f = r • id`.
   let φ : M →ₗ[R] (ι → R) := (LinearEquiv.ofInjective f hf).symm.toLinearMap ∘ₗ

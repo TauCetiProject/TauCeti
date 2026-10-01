@@ -31,11 +31,12 @@ the ring of integers `𝒪[L]` over that of `ℚ_[p]`, which is `ℤ_[p]`. The c
 and of the deep units `exp (p ^ i * b_k)` define a `ℤ_p`-linear map
 `ℤ_p ^ ([L : ℚ_p] + 1) → A(L)`, using that the class of `exp (c • x)` is `c` times the class of
 `exp x` for `c ∈ ℤ_p`. This map is injective: a relation in `A(L)` is, at each finite level, an
-equation `p ^ a * exp x = y ^ (p ^ m)` in `Lˣ`, and a fixed power `y ^ M` lies in `U(L,i) · p ^ ℤ`
-(`TauCeti.exists_forall_pow_eq_mul_zpow`), so comparing valuations and logarithms forces the
-coefficients to be divisible by arbitrarily large powers of `p`. Conversely, the same power `M`
-times `p ^ i` carries the class of every unit, hence all of `A(L)`, into its image. The algebraic
-conclusion is `TauCeti.nonempty_quotient_torsion_linearEquiv_of_injective`.
+equation `p ^ a * exp x = y ^ (p ^ m)` in `Lˣ`, and a fixed power `y ^ M` lies in
+`U(L,i) · p ^ ℤ` (`TauCeti.exists_forall_pow_eq_mem_unitFiltration_mul_zpow`), so comparing
+valuations and logarithms forces the coefficients to be divisible by arbitrarily large powers of
+`p`. Conversely, the same power `M` times `p ^ i` carries the class of every unit, hence all of
+`A(L)`, into its image. The algebraic conclusion is
+`TauCeti.nonempty_quotient_torsion_linearEquiv_of_injective_of_smul_mem_range`.
 
 ## Main results
 
@@ -246,7 +247,7 @@ private theorem latticeMap_apply_level (c : Fin (Module.finrank ℚ_[p] L + 1) �
   simp
 
 private theorem latticeMap_injective : Function.Injective (latticeMap p L hi) := by
-  obtain ⟨M, hM0, hM⟩ := exists_forall_pow_eq_mul_zpow i
+  obtain ⟨M, hM0, hM⟩ := exists_forall_pow_eq_mem_unitFiltration_mul_zpow i
     (normalizedValuation_primeUnit_ne_one (p := p) (L := L))
   -- A `p`-adic integer `c` with `r * c ≡ 0` modulo every `p ^ m`, read on the approximations
   -- `c.appr m`, vanishes when `r ≠ 0` (Krull's intersection theorem in `ℤ_[p]`).
@@ -294,7 +295,7 @@ private theorem latticeMap_injective : Function.Injective (latticeMap p L hi) :=
 
 private theorem exists_smul_mem_range_latticeMap :
     ∃ M : ℕ, M ≠ 0 ∧ ∀ a, (M : ℤ_[p]) • a ∈ LinearMap.range (latticeMap p L hi) := by
-  obtain ⟨M, hM0, hM⟩ := exists_forall_pow_eq_mul_zpow i
+  obtain ⟨M, hM0, hM⟩ := exists_forall_pow_eq_mem_unitFiltration_mul_zpow i
     (normalizedValuation_primeUnit_ne_one (p := p) (L := L))
   refine ⟨M * p ^ i, mul_ne_zero hM0 (pow_ne_zero _ (Fact.out : p.Prime).ne_zero), fun a ↦ ?_⟩
   have := finiteIndex_range_powMonoidHom (primeUnit p L).ne_zero
@@ -338,8 +339,8 @@ private theorem nonempty_quotient_torsion_linearEquiv_of_finitePadicExtension :
     (Nat.lt_succ_self _).trans_le
       (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
   obtain ⟨M, hM0, hM⟩ := exists_smul_mem_range_latticeMap hi
-  exact nonempty_quotient_torsion_linearEquiv_of_injective (latticeMap_injective hi)
-    (Nat.cast_ne_zero.mpr hM0) hM
+  exact nonempty_quotient_torsion_linearEquiv_of_injective_of_smul_mem_range
+    (latticeMap_injective hi) (Nat.cast_ne_zero.mpr hM0) hM
 
 variable (p) in
 /-- **The free quotient of `A(L)`.** For a finite extension `L` of `ℚ_[p]`, the `p`-adic

@@ -81,13 +81,13 @@ noncomputable def integerRingEquiv : 𝒪[ℚ_[p]] ≃+* ℤ_[p] :=
 /-- The identification of the ring of integers of `ℚ_[p]` with `ℤ_[p]` is the identity on the
 underlying `p`-adic numbers. -/
 @[simp]
-theorem coe_integerRingEquiv (x : 𝒪[ℚ_[p]]) : ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p]) = x :=
+theorem coe_integerRingEquiv_apply (x : 𝒪[ℚ_[p]]) : ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p]) = x :=
   (rfl)
 
 /-- The inverse identification of `ℤ_[p]` with the ring of integers of `ℚ_[p]` is the identity on
 the underlying `p`-adic numbers. -/
 @[simp]
-theorem coe_integerRingEquiv_symm (x : ℤ_[p]) :
+theorem coe_integerRingEquiv_symm_apply (x : ℤ_[p]) :
     (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p]) = x :=
   (rfl)
 

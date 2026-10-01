@@ -60,8 +60,8 @@ the graded pieces of the unit filtration. This is the shape used to count power 
 * `TauCeti.unitsMap_subtype_snd_unitsEquivProd` and
   `TauCeti.unitFiltrationToIntegerUnits_snd_integerUnitsEquivProd`: the remaining components,
   which are what is left after dividing by the image of the section.
-* `TauCeti.exists_forall_pow_eq_mul_zpow`: for any `ϖ` of nonzero valuation and any depth `i`,
-  the quotient `Kˣ / (U(K,i) · ϖ ^ ℤ)` has finite exponent.
+* `TauCeti.exists_forall_pow_eq_mem_unitFiltration_mul_zpow`: for any `ϖ` of nonzero valuation
+  and any depth `i`, the quotient `Kˣ / (U(K,i) · ϖ ^ ℤ)` has finite exponent.
 
 ## References
 
@@ -268,7 +268,8 @@ end Teichmuller
 carries every unit of `K` into `U(K,i) · ϖ ^ ℤ`: `Kˣ / (U(K,i) · ϖ ^ ℤ)` has finite exponent.
 Taking `ϖ = p` in a `p`-adic field, this is how `Kˣ` is compared with its deep units, on which
 the logarithm is an isomorphism. -/
-theorem exists_forall_pow_eq_mul_zpow (i : ℕ) {ϖ : Kˣ} (hϖ : normalizedValuation K ϖ ≠ 1) :
+theorem exists_forall_pow_eq_mem_unitFiltration_mul_zpow (i : ℕ) {ϖ : Kˣ}
+    (hϖ : normalizedValuation K ϖ ≠ 1) :
     ∃ M : ℕ, M ≠ 0 ∧ ∀ u : Kˣ, ∃ w ∈ unitFiltration K i, ∃ k : ℤ, u ^ M = w * ϖ ^ k := by
   set e := (normalizedValuation K ϖ).toAdd
   have he : e ≠ 0 := by simpa [e] using hϖ
