@@ -471,9 +471,13 @@ theorem finrank_shorten_add_finrank_puncture_compl (C : LinearCode F ι) [Finite
     simp [f, Submodule.mem_pi, funext_iff, LinearMap.funLeft_apply]
   have hrange : LinearMap.range (f.domRestrict C) = puncture C sᶜ := by
     rw [LinearMap.range_domRestrict, puncture_def]
-  rw [← (f.domRestrict C).finrank_range_add_finrank_ker, hrange, add_comm, finrank_shorten_eq,
-    LinearMap.ker_domRestrict, ← Submodule.finrank_map_subtype_eq, Submodule.map_comap_subtype,
-    hker]
+  have hkerdim : Module.finrank F (LinearMap.ker (f.domRestrict C)) =
+      Module.finrank F (shorten C s) := by
+    rw [finrank_shorten_eq, LinearMap.ker_domRestrict, ← Submodule.finrank_map_subtype_eq,
+      Submodule.map_comap_subtype, hker]
+  have hrn := (f.domRestrict C).finrank_range_add_finrank_ker
+  rw [hrange, hkerdim] at hrn
+  exact (add_comm _ _).trans hrn
 
 /-- The dimensions of `puncture C s` and `shorten C sᶜ` add up to the dimension of `C`. -/
 theorem finrank_puncture_add_finrank_shorten_compl (C : LinearCode F ι) [FiniteDimensional F C]
