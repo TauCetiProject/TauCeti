@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SideLength
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
@@ -30,9 +31,7 @@ a finite vertex (`S < -1`) or to a vertex at infinity (`-1 ≤ S`, this file).
   edges have infinite length when the total exponent is at least `-1`.
 * `TauCeti.tendsto_schwarzChristoffelBoundary_atTop_cobounded` and
   `TauCeti.tendsto_schwarzChristoffelBoundary_atBot_cobounded` show that the boundary values on
-  those edges tend to the cobounded filter of `ℂ`; their
-  `tendsto_norm_schwarzChristoffelBoundary_atTop` and
-  `tendsto_norm_schwarzChristoffelBoundary_atBot` companions express this through the norm.
+  those edges tend to the cobounded filter of `ℂ`.
 
 ## References
 
@@ -110,17 +109,10 @@ nonzero exponent tends to infinity at positive infinity. -/
 theorem tendsto_integral_schwarzChristoffelDensity_atTop {a e : ι → ℝ} {p : ℝ}
     (hp : ∀ i, e i ≠ 0 → a i < p) (hsum : -1 ≤ ∑ i, e i) :
     Tendsto (fun x => ∫ t in p..x, schwarzChristoffelDensity a e t) atTop atTop := by
-  have hnear : ∀ i, ∀ᶠ q in 𝓝[<] p, e i ≠ 0 → a i < q := fun i => by
-    by_cases hi : e i = 0
-    · exact .of_forall fun _ h => (h hi).elim
-    · exact ((eventually_gt_nhds (hp i hi)).filter_mono nhdsWithin_le_nhds).mono
-        fun _ h _ => h
-  obtain ⟨q, hq, hqp⟩ : ∃ q, (∀ i, e i ≠ 0 → a i < q) ∧ q < p :=
-    ((eventually_all.2 hnear).and self_mem_nhdsWithin).exists
   obtain ⟨R, hR⟩ := eventually_atTop.1
     ((eventually_inv_two_mul_le_schwarzChristoffelDensity a e hsum).and
-      (eventually_ge_atTop (max p 1)))
-  have hRp : p ≤ R := (le_max_left _ _).trans (hR R le_rfl).2
+      (eventually_ge_atTop (max (p + 1) 1)))
+  have hpR : p < R := (lt_add_one p).trans_le ((le_max_left _ _).trans (hR R le_rfl).2)
   have hR0 : 0 < R := zero_lt_one.trans_le ((le_max_right _ _).trans (hR R le_rfl).2)
   have hlog : Tendsto (fun x : ℝ => (∫ t in p..R, schwarzChristoffelDensity a e t) +
       2⁻¹ * Real.log (x / R)) atTop atTop :=
@@ -128,18 +120,20 @@ theorem tendsto_integral_schwarzChristoffelDensity_atTop {a e : ι → ℝ} {p :
       (tendsto_id.atTop_div_const hR0)).const_mul_atTop (by norm_num))
   refine tendsto_atTop_mono' atTop ?_ hlog
   filter_upwards [eventually_ge_atTop R] with x hx
-  have hcont : ContinuousOn (schwarzChristoffelDensity a e) (uIcc p x) :=
-    (continuousOn_schwarzChristoffelDensity a e (p := q) (q := x + 1)
-      fun i hi hai => lt_asymm hai.1 (hq i hi)).mono fun t ht => by
-        rw [uIcc_of_le (hRp.trans hx)] at ht
-        exact ⟨hqp.trans_le ht.1, by linarith [ht.2]⟩
-  have hRmem : R ∈ uIcc p x := mem_uIcc_of_le hRp hx
+  have hzero : ∀ c, p ≤ c → ∑ k with a k = c, e k = 0 := fun c hc =>
+    Finset.sum_eq_zero fun k hk => by_contra fun h =>
+      ((hp k h).trans_le hc).ne (Finset.mem_filter.1 hk).2
+  have hint : IntervalIntegrable (schwarzChristoffelDensity a e) volume p x :=
+    intervalIntegrable_schwarzChristoffelDensity a e (hpR.trans_le hx)
+      (fun k hk hmem => lt_asymm hmem.1 (hp k hk)) (by rw [hzero p le_rfl]; norm_num)
+      (by rw [hzero x (hpR.le.trans hx)]; norm_num)
+  have hRmem : R ∈ uIcc p x := mem_uIcc_of_le hpR.le hx
   have hinv : ContinuousOn (fun t : ℝ => (2 * t)⁻¹) (Icc R x) :=
     (continuousOn_const.mul continuousOn_id).inv₀ fun t ht =>
       mul_ne_zero two_ne_zero (hR0.trans_le ht.1).ne'
   rw [← intervalIntegral.integral_add_adjacent_intervals
-    ((hcont.mono (uIcc_subset_uIcc_left hRmem)).intervalIntegrable)
-    ((hcont.mono (uIcc_subset_uIcc_right hRmem)).intervalIntegrable)]
+    (hint.mono_set (uIcc_subset_uIcc_left hRmem))
+    (hint.mono_set (uIcc_subset_uIcc_right hRmem))]
   refine add_le_add le_rfl ?_
   calc
     2⁻¹ * Real.log (x / R) = ∫ t in R..x, (2 * t)⁻¹ := by
@@ -147,8 +141,7 @@ theorem tendsto_integral_schwarzChristoffelDensity_atTop {a e : ι → ℝ} {p :
       rw [intervalIntegral.integral_const_mul, integral_inv_of_pos hR0 (hR0.trans_le hx)]
     _ ≤ ∫ t in R..x, schwarzChristoffelDensity a e t :=
       intervalIntegral.integral_mono_on hx (hinv.intervalIntegrable_of_Icc hx)
-        ((hcont.mono (uIcc_subset_uIcc_right hRmem)).intervalIntegrable)
-        fun t ht => (hR t ht.1).1
+        (hint.mono_set (uIcc_subset_uIcc_right hRmem)) fun t ht => (hR t ht.1).1
 
 /-- **The left-hand outer edge has infinite length.**  If the total turning exponent is at least
 `-1`, the integral of the boundary density up to any point to the left of every prevertex with a
@@ -189,14 +182,6 @@ theorem tendsto_schwarzChristoffelBoundary_atTop_cobounded (a e : ι → ℝ)
     rw [hx, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hnonneg]
   simpa [Function.comp_def] using (tendsto_add_const_cobounded (B R)).comp hdiff
 
-/-- In the nonintegrable exponent range, the canonical boundary values tend to infinity in norm
-along the positive real direction. -/
-theorem tendsto_norm_schwarzChristoffelBoundary_atTop (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) (hsum : -1 ≤ ∑ i, e i) :
-    Tendsto (fun x => ‖schwarzChristoffelBoundary a e z₀ x‖) atTop atTop :=
-  tendsto_norm_atTop_iff_cobounded.mpr
-    (tendsto_schwarzChristoffelBoundary_atTop_cobounded a e z₀ hsum)
-
 /-- **A Schwarz--Christoffel boundary edge escapes at negative infinity.**  If the total turning
 exponent is at least `-1`, the canonical boundary values on the left-hand outer edge tend to the
 cobounded filter of the complex plane. -/
@@ -222,14 +207,6 @@ theorem tendsto_schwarzChristoffelBoundary_atBot_cobounded (a e : ι → ℝ)
     rw [hx, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hnonneg,
       Complex.norm_exp_ofReal_mul_I, mul_one]
   simpa [Function.comp_def] using (tendsto_const_sub_cobounded (B R)).comp hdiff
-
-/-- In the nonintegrable exponent range, the canonical boundary values tend to infinity in norm
-along the negative real direction. -/
-theorem tendsto_norm_schwarzChristoffelBoundary_atBot (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) (hsum : -1 ≤ ∑ i, e i) :
-    Tendsto (fun x => ‖schwarzChristoffelBoundary a e z₀ x‖) atBot atTop :=
-  tendsto_norm_atTop_iff_cobounded.mpr
-    (tendsto_schwarzChristoffelBoundary_atBot_cobounded a e z₀ hsum)
 
 end TauCeti
 
