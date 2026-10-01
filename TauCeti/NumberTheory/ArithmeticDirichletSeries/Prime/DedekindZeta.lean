@@ -52,7 +52,7 @@ unconditionally: `TauCeti.LFunctions.primeIdealVonMangoldtBoundary`.  Applied to
 * `TauCeti.primeIdealTheorem`: the prime ideal theorem `ψ_K(x) ~ x`, `ϑ_K(x) ~ x`, and
   `π_K(x) ~ Li(x)`.
 * `TauCeti.primeCount_univ_isEquivalent_div_log`: its classical form `π_K(x) ~ x / log x`.
-* `TauCeti.primeCount_univ_sub_logIntegral_isLittleO`: its sharper form
+* `TauCeti.primeCount_univ_sub_logIntegral_isLittleO`: its additive form
   `π_K(x) = Li(x) + o(x / log x)`, by Abel summation from `ϑ_K(x) ~ x`.
 
 ## References
