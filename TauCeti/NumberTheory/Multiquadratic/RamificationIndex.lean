@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 import TauCeti.NumberTheory.Multiquadratic.RamifiedPrimes
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.RamificationInertia.Galois
@@ -41,12 +40,13 @@ degree `f` satisfy `g · f · 2 = [K : ℚ]`.
 
 The residue degree is read off from a Frobenius `σ` at `Q`, which is determined only up to the
 inertia group: `f = 1` exactly when `σ` lies in the inertia group
-(`Ideal.inertiaDeg_eq_one_iff_mem_inertia`), and otherwise `f = 2`, since `f` divides the order of
-`σ`, which is at most `2`. The Frobenius acts on a root `r i` of a radicand prime to `p` by the
-Legendre symbol `(dᵢ/p)`, and on `rᵢ rⱼ / p` by the Legendre symbol of `(dᵢ / p) (dⱼ / p)` when
-`p` divides `dᵢ` and `dⱼ`. So for squarefree radicands, `f = 1` exactly when every radicand prime
-to `p` is a quadratic residue mod `p` and the `p`-free parts `dᵢ / p` of the radicands divisible
-by `p` all have the same Legendre symbol. Without ramification this is the criterion
+(`Ideal.inertiaDeg_eq_one_iff_mem_inertia`), and otherwise `f = 2`, since `f` divides the order
+of `σ`, which is at most `2` (`TauCeti.Multiquadratic.inertiaDeg_dvd_two`). The Frobenius acts on
+a root `r i` of a radicand prime to `p` by the Legendre symbol `(dᵢ/p)`, and on `rᵢ rⱼ / p` by
+the Legendre symbol of `(dᵢ / p) (dⱼ / p)` when `p` divides `dᵢ` and `dⱼ`. So for squarefree
+radicands, `f = 1` exactly when every radicand prime to `p` is a quadratic residue mod `p` and the
+`p`-free parts `dᵢ / p` of the radicands divisible by `p` all have the same Legendre
+symbol. Without ramification this is the criterion
 `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_forall_legendreSym_eq_one`.
 
 ## Main results
@@ -73,7 +73,6 @@ by `p` all have the same Legendre symbol. Without ramification this is the crite
 * `TauCeti.Multiquadratic.isArithFrobAt_mem_inertia_iff`: at an odd ramified prime, a Frobenius
   lies in the inertia group exactly when every radicand prime to `p` is a quadratic residue mod `p`
   and the `p`-free parts of the radicands divisible by `p` have equal Legendre symbols.
-* `TauCeti.Multiquadratic.inertiaDeg_dvd_two`: every residue degree divides `2`.
 * `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_of_squarefree` and
   `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_of_squarefree`: the residue degree at any odd
   prime, ramified or not, in terms of Legendre symbols.
@@ -97,14 +96,6 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} {d : ι → ℤ} {r 
   {p : ℕ} [Fact p.Prime]
 
 /-! ### The action of inertia on the roots -/
-
-/-- The product of the `p`-free parts of two integers divisible by `p` but not by `p²` is prime to
-`p`. -/
-private theorem not_dvd_div_mul_div {c c' : ℤ} (hc : (p : ℤ) ∣ c) (hc2 : ¬ (p : ℤ) ^ 2 ∣ c)
-    (hc' : (p : ℤ) ∣ c') (hc'2 : ¬ (p : ℤ) ^ 2 ∣ c') : ¬ (p : ℤ) ∣ c / p * (c' / p) := fun h =>
-  ((Nat.prime_iff_prime_int.mp Fact.out).dvd_or_dvd h).elim
-    (fun h => hc2 (pow_two (p : ℤ) ▸ Int.mul_dvd_of_dvd_ediv hc h))
-    (fun h => hc'2 (pow_two (p : ℤ) ▸ Int.mul_dvd_of_dvd_ediv hc' h))
 
 /-- If `p` divides the radicands `d i` and `d j`, then `r i * r j / p` is a square root of the
 product `(d i / p) * (d j / p)` of their `p`-free parts. -/
@@ -133,7 +124,9 @@ theorem apply_mul_apply_eq_mul_of_mem_inertia (hr : ∀ i, r i ^ 2 = algebraMap 
     τ (r i) * τ (r j) = r i * r j := by
   have hp0 : (p : K) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   have h := apply_eq_self_of_mem_inertia (mul_div_sq_eq hr hi hj) hodd
-    (not_dvd_div_mul_div hi hi2 hj hj2) Q hτ
+    ((Nat.prime_iff_prime_int.mp Fact.out).not_dvd_mul
+      (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
+      (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two])) Q hτ
   rw [map_div₀, map_mul, map_natCast] at h
   exact (div_left_inj' hp0).mp h
 
@@ -150,8 +143,10 @@ theorem isArithFrobAt_apply_mul_apply_eq_mul_iff (hr : ∀ i, r i ^ 2 = algebraM
     [Q.LiesOver (span {(p : ℤ)})] {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
     σ (r i) * σ (r j) = r i * r j ↔ legendreSym p (d i / p) = legendreSym p (d j / p) := by
   have hp0 : (p : K) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
-  have h := isArithFrobAt_apply_sqrt_eq_self_iff hodd (not_dvd_div_mul_div hi hi2 hj hj2)
-    (mul_div_sq_eq hr hi hj) Q hσ
+  have h := isArithFrobAt_apply_sqrt_eq_self_iff hodd
+    ((Nat.prime_iff_prime_int.mp Fact.out).not_dvd_mul
+      (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
+      (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two])) (mul_div_sq_eq hr hi hj) Q hσ
   rw [map_div₀, map_mul, map_natCast, div_left_inj' hp0, legendreSym.mul] at h
   rw [h]
   -- Both symbols are `±1`, since the `p`-free parts are prime to `p`.
@@ -337,18 +332,6 @@ theorem ncard_primesOver_mul_inertiaDeg_mul_two_eq_finrank [Finite ι]
 end Inertia
 
 /-! ### The residue degree at an odd prime -/
-
-/-- **Residue degrees in a multiquadratic field divide `2`.** Let `K` be generated over `ℚ` by
-square roots of integers. Then every prime of `𝓞 K`, ramified or not and above any rational prime
-`p`, including `p = 2`, has residue degree `1` or `2` over `p`. -/
-theorem inertiaDeg_dvd_two [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
-    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (Q : Ideal (𝓞 K)) [Q.IsPrime]
-    [Q.LiesOver (span {(p : ℤ)})] : Q.inertiaDeg ℤ ∣ 2 := by
-  have := isGalois_rat hr htop
-  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
-  exact (Ideal.inertiaDeg_dvd_orderOf Q hσ).trans (orderOf_dvd_of_pow_eq_one
-    (aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
-      (fun i => by rw [hr i]; simp) htop σ))
 
 /-- **A Frobenius at an odd ramified prime lies in the inertia group exactly at the residues.**
 Let `K` be generated over `ℚ` by square roots `r i` of squarefree integers `d i`, let `Q` be a
