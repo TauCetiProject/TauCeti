@@ -16,8 +16,9 @@ Let `M` be a representation of a finite group `G`, and let `F 0 = ⊤, F 1, F 2,
 that every series `∑ n, x n` with `x n ∈ F n` has a limit `s`, in the sense that
 `s - ∑ i < n, x i ∈ F n` for every `n`. Suppose that each `F n` surjects onto a representation
 `Q n` with kernel contained in `F (n + 1)`, and that every `Q n` has vanishing Tate cohomology in
-degree `0`, respectively `-1`. Then so does `M`. In the main case the kernel is exactly `F (n + 1)`
-and `Q n` is the graded piece `F n / F (n + 1)`.
+degree `0`, respectively `-1`. Then so does `M`. In the main case `F` is a decreasing filtration,
+the kernel is exactly `F (n + 1)`, and `Q n` is the graded piece `F n / F (n + 1)`; neither
+assumption is needed.
 
 The proof is by successive approximation, using the low-degree descriptions
 `H-hat^0(G, M) = Mᴳ / N_G M` and `H-hat^(-1)(G, M) = ker N_G / I_G M`. In degree `0`, an invariant
@@ -27,12 +28,13 @@ norm zero lies in `I_G M` modulo `F (n + 1)` once it lies in `F n`, and `I_G M` 
 `∑ g, (g • y g - y g)`, so one approximates each of the finitely many coordinates `y g`
 separately.
 
-The quotients `Q n` are not formed as quotient representations. Instead, each is the target of a
-surjective morphism `π n` from the subrepresentation `F n`, whose kernel is contained in
-`F (n + 1)`, so that `Q n` is a quotient of `F n` refining the graded piece `F n / F (n + 1)`. This
-is how the graded pieces arise in practice, with kernel exactly `F (n + 1)`, but only the
-containment is needed. For finite cyclic `G`, Tate cohomology is two-periodic, so vanishing in
-degrees `0` and `-1` on every `Q n` makes `M` cohomologically trivial, with Herbrand quotient `1`.
+The family `F` is not required to be decreasing, and the quotients `Q n` are not formed as
+quotient representations. Instead, each is the target of a surjective morphism `π n` from the
+subrepresentation `F n`, whose kernel is contained in `F (n + 1)`. When `F` is decreasing, `Q n`
+is thus a quotient of `F n` refining the graded piece `F n / F (n + 1)`; this is how the graded
+pieces arise in practice, with kernel exactly `F (n + 1)`, but only the containment is needed.
+For finite cyclic `G`, Tate cohomology is two-periodic, so vanishing in degrees `0` and `-1` on
+every `Q n` makes `M` cohomologically trivial, with Herbrand quotient `1`.
 
 The motivating application is to the units of a finite Galois extension `L/K` of nonarchimedean
 local fields. For a uniformizer `ϖ` of `K` and a Galois-stable lattice `A ⊆ 𝒪[L]`, free over
@@ -127,7 +129,7 @@ private theorem exists_sub_sum_mem_succ (hπ : ∀ n, Function.Surjective (π n)
   simpa [x] using h
 
 /-- **Degree-zero Tate cohomology of a complete filtered representation.** Let `F` be a separated
-and complete filtration of `M` by `G`-stable submodules with `F 0 = ⊤`, and let `π n` be a
+and complete family of `G`-stable submodules of `M` with `F 0 = ⊤`, and let `π n` be a
 surjection from `F n` onto `Q n` whose kernel lies in `F (n + 1)`. If every `Q n` has vanishing
 degree-zero Tate cohomology, so does `M`: every invariant of `M` is a norm. -/
 theorem isZero_tateCohomology_zero_of_filtration (hF0 : F 0 = ⊤)
@@ -176,7 +178,7 @@ theorem isZero_tateCohomology_zero_of_filtration (hF0 : F 0 = ⊤)
   abel
 
 /-- **Degree `-1` Tate cohomology of a complete filtered representation.** Let `F` be a separated
-and complete filtration of `M` by `G`-stable submodules with `F 0 = ⊤`, and let `π n` be a
+and complete family of `G`-stable submodules of `M` with `F 0 = ⊤`, and let `π n` be a
 surjection from `F n` onto `Q n` whose kernel lies in `F (n + 1)`. If every `Q n` has vanishing
 degree `-1` Tate cohomology, so does `M`: every element of `M` of norm zero lies in the
 coinvariant kernel `I_G M`. -/
@@ -240,8 +242,8 @@ theorem isZero_tateCohomology_negOne_of_filtration (hF0 : F 0 = ⊤)
   exact Representation.mem_coinvariantsKer_iff_exists_sum.2 ⟨s, rfl⟩
 
 /-- **A complete filtered representation of a finite cyclic group is cohomologically trivial if
-the quotients `Q n` of its filtration steps are.** Let `F` be a separated and complete filtration
-of `M` by `G`-stable submodules with `F 0 = ⊤`, and let `π n` be a surjection from `F n` onto
+the quotients `Q n` of the steps `F n` are.** Let `F` be a separated and complete family
+of `G`-stable submodules of `M` with `F 0 = ⊤`, and let `π n` be a surjection from `F n` onto
 `Q n` whose kernel lies in `F (n + 1)`. If every `Q n` has vanishing Tate cohomology in degrees
 `0` and `-1`, then by two-periodicity `M` has vanishing Tate cohomology in every degree. -/
 theorem isZero_tateCohomology_of_filtration [IsCyclic G] (hF0 : F 0 = ⊤)
