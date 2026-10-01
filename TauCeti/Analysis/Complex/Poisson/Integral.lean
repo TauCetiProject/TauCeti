@@ -238,9 +238,8 @@ theorem tendsto_planarPoissonIntegral {g : ℂ → ℝ} {c z : ℂ} {R : ℝ}
   rw [Real.dist_eq, planarPoissonIntegral_sub_const hg.circleIntegrable' hw]
   calc
     |circleAverage (fun y ↦ poissonKernel c w y * (g y - g z)) c R| ≤
-        circleAverage (fun y ↦ |poissonKernel c w y * (g y - g z)|) c R := by
-      simp only [← Real.norm_eq_abs]
-      exact norm_circleAverage_le_circleAverage_norm
+        circleAverage (fun y ↦ |poissonKernel c w y * (g y - g z)|) c R :=
+      abs_circleAverage_le_circleAverage_abs
     _ ≤ circleAverage (fun y ↦ eps / 2 * poissonKernel c w y + B w * C) c R :=
       circleAverage_mono hdiff_i.fun_abs (by fun_prop) fun y hy ↦
         abs_poissonKernel_mul_sub_le hdelta (half_pos heps).le hw hy hwnear
