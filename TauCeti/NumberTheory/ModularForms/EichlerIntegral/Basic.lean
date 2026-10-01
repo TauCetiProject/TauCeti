@@ -34,6 +34,8 @@ file.
 
 ## Main results
 
+* `TauCeti.eichlerIntegral_zero`, `TauCeti.eichlerIntegral_add`,
+  `TauCeti.eichlerIntegral_smul`: linearity under the appropriate analytic hypotheses.
 * `TauCeti.hasSum_eichlerIntegral`: the defining series converges to
   `eichlerIntegral h n f` at every point of `ℍ`.
 * `TauCeti.qExpansion_eichlerIntegral_coeff`: the `q`-expansion coefficients of
@@ -97,8 +99,54 @@ theorem hasSum_eichlerIntegral (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) 
     hfhol hfbdd (norm_nonneg _) (Periodic.norm_qParam_lt_one hh τ.im_pos)).mul_left (h ^ n))
     fun m ↦ norm_eichlerTerm_le hh n m _ _).hasSum
 
+/-- The Eichler integral of the zero function is zero. -/
+@[simp]
+theorem eichlerIntegral_zero (h : ℝ) (n : ℕ) : eichlerIntegral h n 0 = 0 := by
+  ext τ
+  simp [eichlerIntegral, qExpansion_zero]
+
+/-- The Eichler integral commutes with complex scalar multiplication when the cusp function
+is analytic at zero. -/
+theorem eichlerIntegral_smul (hf : AnalyticAt ℂ (cuspFunction h f) 0) (n : ℕ) (a : ℂ) :
+    eichlerIntegral h n (a • f) = a • eichlerIntegral h n f := by
+  ext τ
+  simp only [eichlerIntegral, qExpansion_smul hf, PowerSeries.coeff_smul, smul_eq_mul,
+    Pi.smul_apply]
+  simp_rw [mul_left_comm (((h : ℂ) / _) ^ n) a, mul_assoc a]
+  rw [tsum_mul_left]
+
+/-- The Eichler integral commutes with negation when the cusp function is analytic at zero. -/
+theorem eichlerIntegral_neg (hf : AnalyticAt ℂ (cuspFunction h f) 0) (n : ℕ) :
+    eichlerIntegral h n (-f) = -eichlerIntegral h n f := by
+  simpa using eichlerIntegral_smul hf n (-1)
+
+/-- The Eichler integral is additive on holomorphic periodic functions bounded at `i∞`. -/
+theorem eichlerIntegral_add {g : ℍ → ℂ} (hh : 0 < h)
+    (hfper : Periodic (f ∘ ofComplex) h) (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f)
+    (hgper : Periodic (g ∘ ofComplex) h) (hghol : MDiff g) (hgbdd : IsBoundedAtImInfty g)
+    (n : ℕ) : eichlerIntegral h n (f + g) = eichlerIntegral h n f + eichlerIntegral h n g := by
+  ext τ
+  have hf := analyticAt_cuspFunction_zero hh hfper hfhol hfbdd
+  have hg := analyticAt_cuspFunction_zero hh hgper hghol hgbdd
+  simpa only [eichlerIntegral, qExpansion_add hf hg, map_add, mul_add, add_mul, Pi.add_apply]
+    using ((hasSum_eichlerIntegral hh hfper hfhol hfbdd n τ).add
+      (hasSum_eichlerIntegral hh hgper hghol hgbdd n τ)).tsum_eq
+
+/-- The Eichler integral commutes with subtraction on holomorphic periodic functions bounded
+at `i∞`. -/
+theorem eichlerIntegral_sub {g : ℍ → ℂ} (hh : 0 < h)
+    (hfper : Periodic (f ∘ ofComplex) h) (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f)
+    (hgper : Periodic (g ∘ ofComplex) h) (hghol : MDiff g) (hgbdd : IsBoundedAtImInfty g)
+    (n : ℕ) : eichlerIntegral h n (f - g) = eichlerIntegral h n f - eichlerIntegral h n g := by
+  ext τ
+  have hf := analyticAt_cuspFunction_zero hh hfper hfhol hfbdd
+  have hg := analyticAt_cuspFunction_zero hh hgper hghol hgbdd
+  simpa only [eichlerIntegral, qExpansion_sub hf hg, map_sub, mul_sub, sub_mul, Pi.sub_apply]
+    using ((hasSum_eichlerIntegral hh hfper hfhol hfbdd n τ).sub
+      (hasSum_eichlerIntegral hh hgper hghol hgbdd n τ)).tsum_eq
+
 /-- The `0`-fold Eichler integral is the function itself. -/
-theorem eichlerIntegral_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+theorem eichlerIntegral_order_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) : eichlerIntegral h 0 f = f :=
   funext fun τ ↦ (hasSum_eichlerIntegral hh hfper hfhol hfbdd 0 τ).unique (by
     simpa using hasSum_qExpansion hh hfper hfhol hfbdd τ)
