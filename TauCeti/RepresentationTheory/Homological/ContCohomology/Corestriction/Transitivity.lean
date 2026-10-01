@@ -84,7 +84,7 @@ private theorem lWord_composite (t : G ⧸ U → G)
   have hsnd := congrArg Prod.snd hcoords
   simp only at hfst hsnd
   rw [lWord_def, lWord_def]
-  rw [Subgroup.compositeTransversal_apply]
+  simp only [Subgroup.compositeTransversal_apply]
   -- Expose the outer and inner representatives in the two transversal words.
   change (t (e q).1 * (s (e q).2 : G))⁻¹ * γ *
       (t (e (γ⁻¹ • q)).1 * (s (e (γ⁻¹ • q)).2 : G)) =

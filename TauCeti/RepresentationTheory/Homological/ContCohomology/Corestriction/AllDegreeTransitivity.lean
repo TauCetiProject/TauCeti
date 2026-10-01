@@ -80,6 +80,17 @@ noncomputable def subgroupOfMap (n : ℕ) :
       (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →* V)
       (LinearMap.id : M →ₗ[ℤ] M) (id_subgroupOf_smul U V hVU M)) n
 
+omit [CompactSpace G] [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
+/-- The defining equation for transport to the canonical copy `V.subgroupOf U`. -/
+theorem subgroupOfMap_def (n : ℕ) :
+    subgroupOfMap U V hVU M n =
+      _root_.ContinuousCohomology.map
+        (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
+        (ofDiscreteModulePair
+          (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →* V)
+          (LinearMap.id : M →ₗ[ℤ] M) (by intro x m; rfl)) n := by
+  rfl
+
 /-- **All-degree corestriction along an inclusion** `V ≤ U`: transport the cohomology of `V` to
 its canonical copy `V.subgroupOf U`, then apply corestriction inside `U`. The intermediate subgroup
 `U` need only be closed in the compact group `G`; the lower subgroup is required to be open in

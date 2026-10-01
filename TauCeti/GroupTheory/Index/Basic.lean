@@ -67,7 +67,6 @@ theorem exists_mul_out_eq {G : Type u} [Group G] (S : Subgroup G) (x : G) :
 `t` for `G/U`, and representatives `s` for `U/V`, this chooses the representative
 `t a * s b` of a coset of `V`, where `(a, b)` are its coordinates under
 `Subgroup.quotientEquivProdOfLE'`. -/
-@[expose]
 def compositeTransversal (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
     (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
@@ -83,7 +82,8 @@ theorem compositeTransversal_apply (G : Type u) [Group G] (U V : Subgroup G) (hV
     (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) :
     compositeTransversal G U V hVU t ht s q =
       t ((Subgroup.quotientEquivProdOfLE' hVU t ht q).1) *
-        s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2) := rfl
+        s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2) := by
+  rw [compositeTransversal]
 
 /-- The composite transversal for `V ≤ U ≤ G` represents each coset of `V`. -/
 theorem compositeTransversal_spec (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
