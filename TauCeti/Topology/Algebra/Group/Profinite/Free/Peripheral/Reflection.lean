@@ -101,7 +101,9 @@ theorem eq_reflect_iff (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) (φ 
     φ = reflect hF e ↔ ∀ i, φ (basis e i) =
       partialProd (basis e) i.castSucc * (basis e i)⁻¹ * (partialProd (basis e) i.castSucc)⁻¹ :=
   ⟨fun h i ↦ h ▸ reflect_basis hF e i,
-    fun h ↦ continuousAut_ext_basis e fun i ↦ (h i).trans (reflect_basis hF e i).symm⟩
+    fun h ↦ ContinuousMulEquiv.ext fun y ↦ congrArg (fun f : F →ₜ* F ↦ f y)
+      (hom_ext_basis (f := (φ : F →ₜ* F)) (g := (reflect hF e : F →ₜ* F)) e fun i ↦
+        (h i).trans (reflect_basis hF e i).symm)⟩
 
 /-- The reflection inverts every initial product `P_j = x_0 ⋯ x_{j-1}` of the basis. -/
 @[simp]
@@ -131,7 +133,9 @@ theorem reflect_cusp (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :
 @[simp]
 theorem reflect_mul_reflect (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :
     reflect hF e * reflect hF e = 1 :=
-  continuousAut_ext_basis e fun i ↦ by simp [mul_assoc]
+  ContinuousMulEquiv.ext fun y ↦ congrArg (fun f : F →ₜ* F ↦ f y)
+    (hom_ext_basis (f := ((reflect hF e * reflect hF e : ContinuousAut F) : F →ₜ* F))
+      (g := ((1 : ContinuousAut F) : F →ₜ* F)) e fun i ↦ by simp [mul_assoc])
 
 /-- The reflection is its own inverse. -/
 @[simp]
