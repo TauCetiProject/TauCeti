@@ -27,6 +27,8 @@ the residue of `a ^ m`.
 
 * `TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer`: the residue coordinate
   determined by a uniformizer.
+* `TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue`: its value
+  on a representative whose difference from one is given explicitly.
 * `TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_change`: changing the
   uniformizer scales the coordinate by the corresponding residue-field unit.
 
@@ -67,6 +69,20 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ
   simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     unitFiltrationGradedSuccEquivMaximalIdealGraded_mk]
   exact LinearEquiv.apply_symm_apply _ _
+
+/-- If `u - 1 = y * π^(n+1)`, then the uniformizer coordinate of the class of `u` is the
+residue of `y`. This is the representative form of the positive-depth graded equivalence used in
+ramification computations. -/
+theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue
+    (n : ℕ) (π : 𝒪[K]) (hπ : Irreducible π) (x : unitFiltration K (n + 1)) (y : 𝒪[K])
+    (hxy : (unitFiltrationDifference n x : 𝒪[K]) = y * π ^ (n + 1)) :
+    unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ
+        (Additive.ofMul (QuotientGroup.mk x)) =
+      IsLocalRing.residue 𝒪[K] y := by
+  apply (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)).injective
+  rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk,
+    residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
+  exact congrArg Submodule.Quotient.mk (Subtype.ext hxy)
 
 /-- Coordinates attached to `π` and `π'` differ by multiplication by the residue of the
 `(n+1)`st power of the unit carrying `π` to `π'`. -/
