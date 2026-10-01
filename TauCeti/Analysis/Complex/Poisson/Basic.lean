@@ -64,8 +64,8 @@ theorem poissonKernel_le_of_le_dist {c w y : ℂ} {R d : ℝ}
   have hden : d ^ 2 ≤ ‖(y - c) - (w - c)‖ ^ 2 := by
     rw [sub_sub_sub_cancel_right, ← dist_eq_norm, dist_comm]
     exact pow_le_pow_left₀ hd.le hdist 2
-  have hyR : ‖y - c‖ ^ 2 = R ^ 2 := by
-    rw [show ‖y - c‖ = |R| by simpa [mem_sphere, dist_eq_norm] using hy, sq_abs]
+  have hynorm : ‖y - c‖ = |R| := by simpa [mem_sphere, dist_eq_norm] using hy
+  have hyR : ‖y - c‖ ^ 2 = R ^ 2 := by rw [hynorm, sq_abs]
   rw [poissonKernel_def, hyR]
   exact div_le_div_of_nonneg_left hnum (by positivity) hden
 
