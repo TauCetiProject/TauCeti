@@ -23,9 +23,9 @@ out by this ideal identify with the existing subgroup `TauCeti.SL2Borel A`.
 
 Over a field, this closed subgroup is maximal among closed subgroups whose coordinate algebra is
 reduced and whose geometric points are solvable. In particular, it is maximal among smooth closed
-subgroups with solvable geometric points. This is the maximality input for proving that the
-standard upper-triangular subgroup scheme of `SL₂` is Borel; its smoothness, geometric
-connectedness, and base-change compatibility are separate coordinate-geometric inputs.
+subgroups with solvable geometric points. This is a direct rank-two maximality statement; that
+the upper-triangular subgroup is a Borel subgroup is proved in every rank in
+`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Borel`.
 
 ## Main declarations
 
