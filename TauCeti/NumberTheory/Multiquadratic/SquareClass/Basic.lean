@@ -117,8 +117,8 @@ theorem sqrtTower_sq_mem {root : ℕ → L} {j : ℕ} {a : K}
 /-- **Square-class descent over a finite set of indices.** In characteristic not two, if
 `y² = r` over `K` and `y ∈ K(root i | i ∈ S)`, where `root i` is a chosen square root of
 `d i`, then `r` is a square times a subset product of the `d i` with `i ∈ S`. -/
-theorem squareClass_of_sq_mem_finset {ι : Type*} (d : ι → K) (root : ι → L)
-    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) [NeZero (2 : K)] (S : Finset ι)
+theorem squareClass_of_sq_mem_finset {ι : Type*} (d : ι → K) (root : ι → L) (S : Finset ι)
+    (hroot : ∀ i ∈ S, root i ^ 2 = algebraMap K L (d i)) [NeZero (2 : K)]
     {r : K} {y : L} (hy : y ^ 2 = algebraMap K L r)
     (hmem : y ∈ IntermediateField.adjoin K (root '' S)) :
     ∃ T ⊆ S, ∃ s : K, r = s ^ 2 * ∏ i ∈ T, d i := by
@@ -134,6 +134,8 @@ theorem squareClass_of_sq_mem_finset {ι : Type*} (d : ι → K) (root : ι → 
       rw [Finset.prod_empty, mul_one]
       exact (algebraMap K L).injective (by rw [map_pow, hy])
   | insert i S hiS ih =>
+      have hrooti : root i ^ 2 = algebraMap K L (d i) := hroot i (Finset.mem_insert_self i S)
+      have ih := @ih fun j hj => hroot j (Finset.mem_insert_of_mem hj)
       set F := IntermediateField.adjoin K (root '' S)
       rw [Finset.coe_insert, Set.image_insert_eq, Set.insert_eq,
         IntermediateField.adjoin_union, sup_comm] at hmem
@@ -141,7 +143,7 @@ theorem squareClass_of_sq_mem_finset {ι : Type*} (d : ι → K) (root : ι → 
       · rw [sup_eq_left.mpr (IntermediateField.adjoin_simple_le_iff.mpr hnext)] at hmem
         obtain ⟨T, hT, s, hs⟩ := ih hy hmem
         exact ⟨T, hT.trans (Finset.subset_insert i S), s, hs⟩
-      · have hx2 : root i ^ 2 ∈ F := hroot i ▸ F.algebraMap_mem (d i)
+      · have hx2 : root i ^ 2 ∈ F := hrooti ▸ F.algebraMap_mem (d i)
         obtain ⟨a, b, ha, hb, rfl⟩ :=
           TauCeti.IntermediateField.exists_add_mul_of_mem_sup_adjoin_sq hx2 hmem
         -- `(a + b * root i)² = r` lies in `F` while `root i ∉ F`, so the cross term vanishes.
@@ -152,13 +154,13 @@ theorem squareClass_of_sq_mem_finset {ι : Type*} (d : ι → K) (root : ι → 
           have hdi : d i ≠ 0 := by
             rintro hdi
             have hroot0 : root i = 0 :=
-              (pow_eq_zero_iff two_ne_zero).mp (by rw [hroot, hdi, map_zero])
+              (pow_eq_zero_iff two_ne_zero).mp (by rw [hrooti, hdi, map_zero])
             exact hnext (hroot0 ▸ zero_mem F)
           have hmul : (b * root i * root i) ^ 2 = algebraMap K L (r * d i) := by
-            rw [map_mul, ← hy, ← hroot]
+            rw [map_mul, ← hy, ← hrooti]
             ring
           have hmul_mem : b * root i * root i ∈ F := by
-            rw [mul_assoc, ← sq, hroot]
+            rw [mul_assoc, ← sq, hrooti]
             exact mul_mem hb (F.algebraMap_mem _)
           obtain ⟨T, hT, s, hs⟩ := ih hmul hmul_mem
           refine ⟨insert i T, Finset.insert_subset_insert i hT, s / d i, ?_⟩
@@ -172,13 +174,14 @@ theorem squareClass_of_sq_mem_finset {ι : Type*} (d : ι → K) (root : ι → 
 /-- **Square-class descent.** In characteristic not two, if `y² = r` over `K` and
 `y ∈ K(root₀, …, rootₙ₋₁)`, where `root j` is a chosen square root of `d j`, then `r` is a
 square times a subset product of the `d j` with `j < n`. -/
-theorem squareClass_of_sq_mem (d : ℕ → K) (root : ℕ → L)
-    (hroot : ∀ j, root j ^ 2 = algebraMap K L (d j)) [NeZero (2 : K)]
-    {n : ℕ} {r : K} {y : L} (hy : y ^ 2 = algebraMap K L r)
+theorem squareClass_of_sq_mem (d : ℕ → K) (root : ℕ → L) {n : ℕ}
+    (hroot : ∀ j < n, root j ^ 2 = algebraMap K L (d j)) [NeZero (2 : K)]
+    {r : K} {y : L} (hy : y ^ 2 = algebraMap K L r)
     (hmem : y ∈ sqrtTower (K := K) root n) :
     ∃ (T : Finset ℕ) (s : K), ↑T ⊆ Set.Iio n ∧ r = s ^ 2 * ∏ j ∈ T, d j := by
   rw [sqrtTower_def, ← Finset.coe_range] at hmem
-  obtain ⟨T, hT, s, hs⟩ := squareClass_of_sq_mem_finset d root hroot _ hy hmem
+  obtain ⟨T, hT, s, hs⟩ := squareClass_of_sq_mem_finset d root _
+    (fun j hj => hroot j (Finset.mem_range.mp hj)) hy hmem
   exact ⟨T, s, by simpa [← Finset.coe_range] using hT, hs⟩
 
 /-- **Finite-index square-class descent.** If `y² = r` over `K` and
@@ -191,16 +194,18 @@ theorem squareClass_of_sq_mem_fintype {ι : Type*} [Finite ι] (d : ι → K) (r
     ∃ (T : Finset ι) (s : K), r = s ^ 2 * ∏ j ∈ T, d j := by
   have := Fintype.ofFinite ι
   obtain ⟨T, -, s, hs⟩ :=
-    squareClass_of_sq_mem_finset d root hroot Finset.univ hy (by simpa using hmem)
+    squareClass_of_sq_mem_finset d root Finset.univ (fun j _ => hroot j) hy
+      (by simpa using hmem)
   exact ⟨T, s, hs⟩
 
 /-- **Square-class descent for real rational square roots.** If `r` is a nonnegative
-rational with `√r ∈ ℚ(√c₀, …, √cₙ₋₁)` and every `c j` is nonnegative, then `r` is a
-rational square times a subset product of the `c j`. -/
-theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) (hc : ∀ j, 0 ≤ c j) {n : ℕ} {r : ℚ} (hr : 0 ≤ r)
+rational with `√r ∈ ℚ(√c₀, …, √cₙ₋₁)` and every `c j` with `j < n` is nonnegative, then
+`r` is a rational square times a subset product of the `c j`. -/
+theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) {n : ℕ} (hc : ∀ j < n, 0 ≤ c j) {r : ℚ} (hr : 0 ≤ r)
     (hmem : (Real.sqrt r : ℝ) ∈ sqrtTower (K := ℚ) (fun j => Real.sqrt (c j)) n) :
     ∃ (T : Finset ℕ) (s : ℚ), ↑T ⊆ Set.Iio n ∧ r = s ^ 2 * ∏ j ∈ T, c j :=
-  squareClass_of_sq_mem c _ (fun j => by simpa using Real.sq_sqrt (Rat.cast_nonneg.mpr (hc j)))
+  squareClass_of_sq_mem c _
+    (fun j hj => by simpa using Real.sq_sqrt (Rat.cast_nonneg.mpr (hc j hj)))
     (by simpa using Real.sq_sqrt (Rat.cast_nonneg.mpr hr)) hmem
 
 /-- The real square root of a nonnegative integer squares back to its rational value, in the form

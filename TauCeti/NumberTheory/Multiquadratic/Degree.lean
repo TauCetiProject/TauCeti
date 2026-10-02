@@ -54,7 +54,7 @@ theorem finrank_sqrtTower {d : ℕ → K} {root : ℕ → L}
       have hxK : root n ∉ sqrtTower (K := K) root n := by
         intro hmem
         obtain ⟨T, s, hT, heq⟩ :=
-          squareClass_of_sq_mem d root hroot (hroot n) hmem
+          squareClass_of_sq_mem d root (fun j _ => hroot j) (hroot n) hmem
         have hnT : n ∉ T := fun h =>
           absurd (Set.mem_Iio.mp (hT (Finset.mem_coe.mpr h))) (lt_irrefl n)
         refine hindep (insert n T) (Finset.insert_nonempty n T) ?_ ?_
