@@ -46,7 +46,7 @@ span a complement.
   points.
 * `TauCeti.D4Tripled.summandSubcomodule`: the subcomodule spanned by a union of summands.
 * `TauCeti.D4Tripled.torusCorestrict_eq_ofWeights`: the weight decomposition under the weight
-  torus.
+  torus, over every commutative ring.
 * `TauCeti.D4Tripled.isCompletelyReducible_standardComodule`: complete reducibility over a field.
 
 ## References
@@ -188,11 +188,7 @@ theorem mem_summandSubcomodule (s : Set (Fin 24))
   simp only [Set.subset_def, Finset.mem_coe, Finsupp.mem_support_iff, Pi.basisFun_repr]
   exact forall_congr' fun a ↦ not_imp_comm
 
-/-! ## Complete reducibility over a field -/
-
-section CompletelyReducible
-
-variable (k : Type u) [Field k]
+/-! ## The weight decomposition under the weight torus -/
 
 /-- The character of the weight torus on the coordinate vector at a tripled weight index. -/
 noncomputable abbrev tripledCharacter (a : Fin 24) : Multiplicative (Fin 4 →₀ ℤ) :=
@@ -200,24 +196,24 @@ noncomputable abbrev tripledCharacter (a : Fin 24) : Multiplicative (Fin 4 →�
 
 /-- **Restricting the standard carrier comodule to the rank-four weight torus gives the direct sum
 of the twenty-four distinct tripled weight comodules.** The coordinate vector at `a` spans the
-weight line of the torus character `tripledCharacter a`. -/
+weight line of the torus character `tripledCharacter a`, over every commutative ring. -/
 theorem torusCorestrict_eq_ofWeights :
-    let _ := standardComodule k
-    Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom =
-      Comodule.ofWeights (Pi.basisFun k (Fin 24)) tripledCharacter := by
-  let _ := GeneralLinear.standardComodule k 24
-  let _ := standardComodule k
+    let _ := standardComodule R
+    Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap R).hom.toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun R (Fin 24)) tripledCharacter := by
+  let _ := GeneralLinear.standardComodule R 24
+  let _ := standardComodule R
   apply Comodule.ext
   rw [Comodule.corestrict_coact,
-    ← Comodule.corestrictCoact_comp (coordinateMap k).hom.toCoalgHom
-      (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom]
+    ← Comodule.corestrictCoact_comp (coordinateMap R).hom.toCoalgHom
+      (weightTorusToBaseChangeCoordinateMap R).hom.toCoalgHom]
   have hcomp :
-      _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom)
-          ((coordinateMap k).hom.toCoalgHom) =
-        (GeneralLinear.weightTorusCoordinateBialgHom (S := k) d4TripledWeight).toCoalgHom := by
+      _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap R).hom.toCoalgHom)
+          ((coordinateMap R).hom.toCoalgHom) =
+        (GeneralLinear.weightTorusCoordinateBialgHom (S := R) d4TripledWeight).toCoalgHom := by
     have hb :
-        (weightTorusToBaseChangeCoordinateMap k).hom.comp (coordinateMap k).hom =
-          GeneralLinear.weightTorusCoordinateBialgHom (S := k) d4TripledWeight := by
+        (weightTorusToBaseChangeCoordinateMap R).hom.comp (coordinateMap R).hom =
+          GeneralLinear.weightTorusCoordinateBialgHom (S := R) d4TripledWeight := by
       rw [← _root_.CommHopfAlgCat.hom_comp,
         coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
         GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
@@ -226,9 +222,15 @@ theorem torusCorestrict_eq_ofWeights :
     exact DFunLike.congr_fun hb x
   rw [hcomp]
   simpa only [Comodule.corestrict_coact] using
-    congrArg (fun c : Comodule k _ (Fin 24 → k) ↦ c.coact)
+    congrArg (fun c : Comodule R _ (Fin 24 → R) ↦ c.coact)
       (GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
         d4TripledWeight)
+
+/-! ## Complete reducibility over a field -/
+
+section CompletelyReducible
+
+variable (k : Type u) [Field k]
 
 private theorem tripledCharacter_injective : Function.Injective tripledCharacter := by
   intro a b h
