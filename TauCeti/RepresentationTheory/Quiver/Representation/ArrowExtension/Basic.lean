@@ -92,6 +92,19 @@ theorem arrowExtensionSnd_app (c : HomArrow M N) (i : Q) :
     (arrowExtensionSnd M N c).app i =
       ModuleCat.ofHom (LinearMap.snd k (vertexSpace k Q N i) (vertexSpace k Q M i)) := (rfl)
 
+/-- The inclusion sends a vector to the first factor of the vertex product. -/
+@[simp]
+theorem arrowExtensionInl_app_apply (c : HomArrow M N) (i : Q)
+    (x : vertexSpace k Q N i) :
+    ((arrowExtensionInl M N c).app ((Paths.of Q).obj i)).hom x =
+      (x, (0 : vertexSpace k Q M i)) := (rfl)
+
+/-- The projection takes the second factor of the vertex product. -/
+@[simp]
+theorem arrowExtensionSnd_app_apply (c : HomArrow M N) (i : Q)
+    (x : vertexSpace k Q N i × vertexSpace k Q M i) :
+    ((arrowExtensionSnd M N c).app ((Paths.of Q).obj i)).hom x = x.2 := (rfl)
+
 /-- The short complex `0 → N → E(c) → M → 0` associated to an arrow family. -/
 -- The end terms must reduce to `N` and `M` to type its maps and sections.
 @[expose]
