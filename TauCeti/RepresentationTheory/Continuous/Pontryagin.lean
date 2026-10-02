@@ -49,16 +49,19 @@ the multiplier on every integrated operator, independently of the witnessing wei
 theorem _root_.ContRepresentation.existsUnique_pontryaginDual_of_integratedOperatorL1
     (π : ContRepresentation ℂ (Multiplicative G) H)
     {hcont : ∀ v, Continuous fun g : G => π (.ofAdd g) v}
-    {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C} (hπ : ContRepresentation.IsUnitary π)
-    (A : StarSubalgebra ℂ (H →L[ℂ] H)) [CompleteSpace A]
-    (hA : ∀ f : G →₁[μ] ℂ, π.integratedOperatorL1 hcont hbdd μ f ∈ A)
-    (ω : characterSpace ℂ A)
-    (hω : ∃ f : G →₁[μ] ℂ, ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0) :
+    (hπ : ContRepresentation.IsUnitary π)
+    (A : StarSubalgebra ℂ (H →L[ℂ] H)) [CompleteSpace A] :
+    let hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C :=
+      ⟨1, fun g => (π g).opNorm_le_bound zero_le_one (fun v => by simp [hπ.norm_map])⟩
+    ∀ (hA : ∀ f : G →₁[μ] ℂ, π.integratedOperatorL1 hcont hbdd μ f ∈ A)
+    (ω : characterSpace ℂ A),
+    (∃ f : G →₁[μ] ℂ, ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0) →
     ∃! χ : PontryaginDual (Multiplicative G), ∀ (g : G) (f : G →₁[μ] ℂ),
       ω ⟨π.integratedOperatorL1 hcont hbdd μ
           (Lp.compMeasurePreserving (fun t => -g + t)
             (measurePreserving_add_left μ (-g)) f), hA _⟩ =
         (χ (.ofAdd g) : ℂ) * ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ := by
+  intro hbdd hA ω hω
   have hmem (g : G) (f : G →₁[μ] ℂ) :
       π (.ofAdd g) * π.integratedOperatorL1 hcont hbdd μ f ∈ A := by
     rw [ContinuousLinearMap.mul_def, π.comp_integratedOperatorL1]
