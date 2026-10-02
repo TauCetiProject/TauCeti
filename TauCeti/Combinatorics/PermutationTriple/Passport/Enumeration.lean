@@ -101,6 +101,18 @@ computed triple fiber. -/
       ∃ t ∈ passportTriples G lam0 lam1 laminf, (ConnectedIsoClass.mk t).orbitFinset = s := by
   simp [passportClasses]
 
+/-- Every triple in the computed passport fiber lies in exactly one of its listed relabeling
+orbits, for arbitrary input finsets and ordered cycle partitions. -/
+theorem existsUnique_mem_passportClasses {G : Finset (Perm (Fin n))}
+    {lam0 lam1 laminf : Multiset ℕ} (t : ConnectedTriple n)
+    (ht : t ∈ passportTriples G lam0 lam1 laminf) :
+    ∃! s, s ∈ passportClasses G lam0 lam1 laminf ∧ t ∈ s := by
+  refine ⟨(ConnectedIsoClass.mk t).orbitFinset,
+    ⟨mem_passportClasses.mpr ⟨t, ht, rfl⟩, ConnectedIsoClass.mem_orbitFinset.mpr rfl⟩,
+    fun s ⟨hs, hts⟩ => ?_⟩
+  obtain ⟨t', _, rfl⟩ := mem_passportClasses.mp hs
+  rw [ConnectedIsoClass.mem_orbitFinset.mp hts]
+
 /-- The computed class fiber consists exactly of the orbit finsets of the canonical passport
 class set. This equality supplies both soundness and completeness of the enumeration. -/
 theorem passportClasses_eq_image_classSet (P : PassportSpec n)
