@@ -130,14 +130,17 @@ theorem natCard_code : Nat.card code = 729 := by
 theorem generator_mul_transpose_eq_zero : generator * generatorᵀ = 0 := by decide
 
 /-- The extended ternary Golay code is Euclidean self-dual. -/
-@[simp]
-theorem euclideanDual_code : code.euclideanDual = code := by
-  symm
-  apply Submodule.eq_euclideanDual_of_le_of_card_le_two_mul_finrank
-  · rw [code_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
-      Matrix.generatedBy_le_checkedBy_iff]
+theorem isSelfDual_code : code.IsSelfDual := by
+  apply Submodule.IsSelfOrthogonal.isSelfDual_of_card_le_two_mul_finrank
+  · rw [Submodule.isSelfOrthogonal_iff_le, code_def,
+      ← Matrix.checkedBy_eq_euclideanDual_generatedBy, Matrix.generatedBy_le_checkedBy_iff]
     exact generator_mul_transpose_eq_zero
   · simp
+
+/-- The Euclidean dual of the extended ternary Golay code is the code itself. -/
+@[simp]
+theorem euclideanDual_code : code.euclideanDual = code :=
+  isSelfDual_code.euclideanDual_eq
 
 /-- The generator is also a parity-check matrix of the same code. -/
 @[simp↓]
@@ -199,8 +202,8 @@ theorem weightDistribution_code (w : ℕ) :
 
 /-- Every weight of the extended ternary Golay code is divisible by three. -/
 theorem three_dvd_hammingNorm {x : Fin 12 → ZMod 3} (hx : x ∈ code) :
-    3 ∣ hammingNorm x := by
-  exact three_dvd_hammingNorm_of_le_euclideanDual euclideanDual_code.ge hx
+    3 ∣ hammingNorm x :=
+  three_dvd_hammingNorm_of_isSelfOrthogonal isSelfDual_code.isSelfOrthogonal hx
 
 /-- The minimum distance of the extended ternary Golay code is six. -/
 @[simp]
