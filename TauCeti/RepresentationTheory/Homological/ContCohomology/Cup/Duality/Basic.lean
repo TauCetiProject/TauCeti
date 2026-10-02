@@ -65,7 +65,8 @@ stated for `ZMod p` applies to every trivial module of order `p`.
 Finally, when `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, injectivity of `αᵢ` on a finite module `M`
 killed by `n` upgrades to bijectivity by counting
 (`TauCeti.ContCohomology.dualityMap0_bijective_of_injective_of_addEquiv_zmod` and its companions in
-degrees `1` and `2`), once `α₂₋ᵢ` is known to be injective on the dual `M' = InternalHom G M N`:
+degrees `1` and `2`), once `α₂₋ᵢ` is known to be injective on the dual `M' = InternalHom G M N`,
+and, in degree `1`, `H¹(G, M')` is known to be finite:
 `Hom(-, H²(G, N))` preserves the order of a finite group killed by `n`, and `M` is its own double
 dual with values in `N` (`TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`), so the two
 injections `Hⁱ(G, M) ↪ Hom(H²⁻ⁱ(G, M'), H²(G, N))` and `H²⁻ⁱ(G, M') ↪ Hom(Hⁱ(G, M''), H²(G, N))`
@@ -112,8 +113,8 @@ systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
 * `TauCeti.ContCohomology.dualityMap0_bijective_of_injective_of_addEquiv_zmod`,
   `dualityMap1_bijective_of_injective_of_addEquiv_zmod` and
   `dualityMap2_bijective_of_injective_of_addEquiv_zmod`: for `N ≃+ ZMod n` and
-  `H²(G, N) ≃+ ZMod n`, if `αᵢ` is injective on `M` and `α₂₋ᵢ` is injective on its dual, then `αᵢ`
-  is bijective on `M`, by counting.
+  `H²(G, N) ≃+ ZMod n`, if `αᵢ` is injective on `M` and `α₂₋ᵢ` is injective on its dual `M'`
+  (and, for `i = 1`, `H¹(G, M')` is finite), then `αᵢ` is bijective on `M`, by counting.
 * `TauCeti.ContCohomology.dualityMap2_zmod_bijective` and
   `dualityMap0_zmod_bijective_of_finrank_eq_one`: bijectivity of `α₂` and of `α₀` for a trivial
   action on `ZMod n`.
