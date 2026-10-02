@@ -113,12 +113,12 @@ theorem barMap_sub_barMap_iff {f g : AInfinityHom AA BB}
     f.barMap - g.barMap = BB.barDifferential ∘ₗ H + H ∘ₗ AA.barDifferential ↔
       f.taylor - g.taylor = BB.taylor ∘ₗ H +
         (ReducedTensorWords.letter R B ∘ₗ H) ∘ₗ AA.barDifferential := by
-  rw [hH.sub_eq_comp_add_comp_iff hH₁ (by decide) AA.isGradedCoderivation_barDifferential
+  simpa only [LinearMap.comp_sub, LinearMap.comp_add, ← LinearMap.comp_assoc,
+    BB.letter_comp_barDifferential, AInfinityHom.taylor_def] using
+    hH.sub_eq_comp_add_comp_iff hH₁ (by decide) AA.isGradedCoderivation_barDifferential
     AA.isHomogeneous_barDifferential (by decide) BB.isGradedCoderivation_barDifferential
     f.isCoalgHom_barMap g.isCoalgHom_barMap f.isHomogeneous_barMap
-    f.barDifferential_comp_barMap g.barDifferential_comp_barMap, LinearMap.comp_sub,
-    LinearMap.comp_add, ← LinearMap.comp_assoc, BB.letter_comp_barDifferential,
-    LinearMap.comp_assoc, AInfinityHom.taylor_def, AInfinityHom.taylor_def]
+    f.barDifferential_comp_barMap g.barDifferential_comp_barMap
 
 namespace Homotopy
 
@@ -196,6 +196,12 @@ noncomputable def ofCoderivation (H : ReducedTensorWords R A →ₗ[R] ReducedTe
 theorem barHomotopy_ofCoderivation (H : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B)
     (hH hH₁ e) : (ofCoderivation (f := f) (g := g) H hH hH₁ e).barHomotopy = H := (rfl)
 
+/-- The Taylor components of a homotopy constructed from a coderivation are its letter component. -/
+@[simp]
+theorem taylor_ofCoderivation (H : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B)
+    (hH hH₁ e) : (ofCoderivation (f := f) (g := g) H hH hH₁ e).taylor =
+      ReducedTensorWords.letter R B ∘ₗ H := (rfl)
+
 /-! ### The arity-one component -/
 
 /-- The arity-one component `h₁` of a homotopy: its Taylor component on single letters. -/
@@ -236,10 +242,8 @@ theorem linearPart_sub_linearPart (h : Homotopy f g) (a : A) :
       BB.m 1 ![h.linearHomotopy a] + h.linearHomotopy (AA.m 1 ![a]) := by
   have e := congrArg (ReducedTensorWords.letter R B)
     (h.barMap_sub_barMap_apply (ReducedTensorWords.ofLetter R A a))
-  rwa [barMap_ofLetter, barMap_ofLetter, barHomotopy_ofLetter,
-    AInfinityAlgebra.barDifferential_ofLetter, AInfinityAlgebra.barDifferential_ofLetter,
-    barHomotopy_ofLetter, ← map_sub, map_add, ReducedTensorWords.letter_ofLetter,
-    ReducedTensorWords.letter_ofLetter, ReducedTensorWords.letter_ofLetter] at e
+  simpa only [map_sub, map_add, barMap_ofLetter, barHomotopy_ofLetter,
+    AInfinityAlgebra.barDifferential_ofLetter, ReducedTensorWords.letter_ofLetter] using e
 
 /-! ### Cohomology -/
 
@@ -270,6 +274,11 @@ def refl (f : AInfinityHom AA BB) : Homotopy f f where
 @[simp]
 theorem barHomotopy_refl (f : AInfinityHom AA BB) : (refl f).barHomotopy = 0 := (rfl)
 
+/-- The zero homotopy has zero Taylor components. -/
+@[simp]
+theorem taylor_refl (f : AInfinityHom AA BB) : (refl f).taylor = 0 := by
+  simp only [taylor_def, barHomotopy_refl, LinearMap.comp_zero]
+
 /-- A homotopy from `f` to `g` followed by an `A∞` morphism `k`: a homotopy from `k ∘ f` to
 `k ∘ g`. -/
 def compRight (h : Homotopy f g) (k : AInfinityHom BB CC) : Homotopy (k.comp f) (k.comp g) where
@@ -280,13 +289,17 @@ def compRight (h : Homotopy f g) (k : AInfinityHom BB CC) : Homotopy (k.comp f) 
   isHomogeneous_barHomotopy := by
     simpa only [add_zero] using k.isHomogeneous_barMap.comp h.isHomogeneous_barHomotopy
   barMap_sub_barMap := by
-    rw [barMap_comp, barMap_comp, ← LinearMap.comp_sub, h.barMap_sub_barMap, LinearMap.comp_add,
-      ← LinearMap.comp_assoc, ← k.barDifferential_comp_barMap, LinearMap.comp_assoc,
-      LinearMap.comp_assoc]
+    rw [barMap_comp, barMap_comp, ← LinearMap.comp_sub, h.barMap_sub_barMap]
+    simp only [LinearMap.comp_add, ← LinearMap.comp_assoc, ← k.barDifferential_comp_barMap]
 
 @[simp]
 theorem barHomotopy_compRight (h : Homotopy f g) (k : AInfinityHom BB CC) :
     (h.compRight k).barHomotopy = k.barMap ∘ₗ h.barHomotopy := (rfl)
+
+/-- Postcomposition computes the Taylor components using the Taylor map of the morphism. -/
+theorem taylor_compRight (h : Homotopy f g) (k : AInfinityHom BB CC) :
+    (h.compRight k).taylor = k.taylor ∘ₗ h.barHomotopy := by
+  simp only [taylor_def, barHomotopy_compRight, AInfinityHom.taylor_def, LinearMap.comp_assoc]
 
 /-- An `A∞` morphism `k` followed by a homotopy from `f` to `g`: a homotopy from `f ∘ k` to
 `g ∘ k`. -/
@@ -299,13 +312,16 @@ def compLeft (h : Homotopy f g) (k : AInfinityHom CC AA) : Homotopy (f.comp k) (
   isHomogeneous_barHomotopy := by
     simpa only [zero_add] using h.isHomogeneous_barHomotopy.comp k.isHomogeneous_barMap
   barMap_sub_barMap := by
-    rw [barMap_comp, barMap_comp, ← LinearMap.sub_comp, h.barMap_sub_barMap, LinearMap.add_comp,
-      LinearMap.comp_assoc, LinearMap.comp_assoc, LinearMap.comp_assoc,
-      k.barDifferential_comp_barMap]
+    rw [barMap_comp, barMap_comp, ← LinearMap.sub_comp, h.barMap_sub_barMap]
+    simp only [LinearMap.add_comp, LinearMap.comp_assoc, k.barDifferential_comp_barMap]
 
 @[simp]
 theorem barHomotopy_compLeft (h : Homotopy f g) (k : AInfinityHom CC AA) :
     (h.compLeft k).barHomotopy = h.barHomotopy ∘ₗ k.barMap := (rfl)
+
+/-- Precomposition computes the Taylor components using the bar map of the morphism. -/
+theorem taylor_compLeft (h : Homotopy f g) (k : AInfinityHom CC AA) :
+    (h.compLeft k).taylor = h.taylor ∘ₗ k.barMap := (rfl)
 
 end Homotopy
 
