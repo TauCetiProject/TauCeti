@@ -75,7 +75,7 @@ private noncomputable def signlessPreprojectiveIsoHom (e : G ≃g H) :
       exact signlessPreprojectiveMk_signlessPreprojectiveRelator k _
 
 /-- A graph isomorphism identifies the signless preprojective algebras by relabelling paths. -/
-noncomputable def signlessPreprojectiveAlgebraGraphEquiv (e : G ≃g H) :
+noncomputable def signlessPreprojectiveAlgebraEquiv (e : G ≃g H) :
     signlessPreprojectiveAlgebra k (DoubledQuiver G) ≃ₐ[k]
       signlessPreprojectiveAlgebra k (DoubledQuiver H) :=
   AlgEquiv.ofAlgHom (signlessPreprojectiveIsoHom k e) (signlessPreprojectiveIsoHom k e.symm)
@@ -91,10 +91,44 @@ noncomputable def signlessPreprojectiveAlgebraGraphEquiv (e : G ≃g H) :
 /-- The graph-isomorphism comparison sends a quotient class to the class of the relabelled path
 algebra element. -/
 @[simp]
-theorem signlessPreprojectiveAlgebraGraphEquiv_signlessPreprojectiveMk
+theorem signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk
     (e : G ≃g H) (x : pathAlgebra k (DoubledQuiver G)) :
-    signlessPreprojectiveAlgebraGraphEquiv k e (signlessPreprojectiveMk k _ x) =
+    signlessPreprojectiveAlgebraEquiv k e (signlessPreprojectiveMk k _ x) =
       signlessPreprojectiveMk k _ (pathAlgebraEquiv k e x) := by
-  simp [signlessPreprojectiveAlgebraGraphEquiv, signlessPreprojectiveIsoHom]
+  simp [signlessPreprojectiveAlgebraEquiv, signlessPreprojectiveIsoHom]
+
+/-- The inverse quotient isomorphism is induced by the inverse graph relabelling. -/
+@[simp]
+theorem signlessPreprojectiveAlgebraEquiv_symm (e : G ≃g H) :
+    (signlessPreprojectiveAlgebraEquiv k e).symm =
+      signlessPreprojectiveAlgebraEquiv k e.symm := by
+  refine AlgEquiv.ext fun z => ?_
+  obtain ⟨x, rfl⟩ := signlessPreprojectiveMk_surjective k _ z
+  apply (signlessPreprojectiveAlgebraEquiv k e).injective
+  rw [AlgEquiv.apply_symm_apply, signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, ← pathAlgebraEquiv_symm,
+    AlgEquiv.apply_symm_apply]
+
+/-- The identity graph relabelling induces the identity of signless preprojective algebras. -/
+@[simp]
+theorem signlessPreprojectiveAlgebraEquiv_refl :
+    signlessPreprojectiveAlgebraEquiv k (SimpleGraph.Iso.refl (G := G)) = AlgEquiv.refl := by
+  refine AlgEquiv.ext fun z => ?_
+  obtain ⟨x, rfl⟩ := signlessPreprojectiveMk_surjective k _ z
+  rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_refl]
+  rfl
+
+/-- Composing graph isomorphisms composes their induced signless preprojective equivalences. -/
+theorem signlessPreprojectiveAlgebraEquiv_trans {X : Type*} [Finite X] {K : SimpleGraph X}
+    [∀ i, Fintype (K.neighborSet i)] (e : G ≃g H) (f : H ≃g K) :
+    signlessPreprojectiveAlgebraEquiv k (e.trans f) =
+      (signlessPreprojectiveAlgebraEquiv k e).trans
+        (signlessPreprojectiveAlgebraEquiv k f) := by
+  refine AlgEquiv.ext fun z => ?_
+  obtain ⟨x, rfl⟩ := signlessPreprojectiveMk_surjective k _ z
+  rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_trans,
+    AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
 
 end TauCeti

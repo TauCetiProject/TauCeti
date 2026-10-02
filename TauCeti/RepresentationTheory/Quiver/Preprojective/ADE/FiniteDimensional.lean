@@ -8,8 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeA.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 
 /-!
 # Finite-dimensional preprojective algebras of finite ADE diagrams
@@ -22,10 +20,8 @@ for zigzag algebras.
 The signless results retain the caller's neighborhood `Fintype` instances as explicit
 parameters, so their conclusions refer to the quotient carrier formed with those enumerations.
 
-The `A`, `D`, `E₆`, and `E₈` calculations are supplied by the type-specific developments.
-For `E₇`, the Bourbaki-labelled inclusion into `E₈`, recorded in
-`TauCeti.DynkinType.cartanMatrix_E7_eq_submatrix_E8`, identifies its algebra with an induced
-subgraph quotient. The local presentation and finite-Dynkin finiteness theorem are discussed in
+The `A`, `D`, and `E` calculations are supplied by the type-specific developments.
+The local presentation and finite-Dynkin finiteness theorem are discussed in
 Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*,
 Section 1. The signless comparison follows Huerfano--Khovanov,
 *A category for the adjoint representation*, Section 3, https://arxiv.org/abs/math/0002060.
@@ -41,54 +37,7 @@ open DoubledQuiver
 private noncomputable local instance adeNeighborSetFintype {V : Type*} [Finite V]
     (G : SimpleGraph V) (i : V) : Fintype (G.neighborSet i) := Fintype.ofFinite _
 
-private abbrev e7Nodes := Set.range (Fin.castAdd 1 : Fin 7 → Fin 8)
-
-private noncomputable def e7InducedIso :
-    diagramGraph DynkinType.E7.cartanMatrix ≃g zigzagE8Graph.induce e7Nodes where
-  toEquiv := Equiv.ofInjective (Fin.castAdd 1 : Fin 7 → Fin 8) (Fin.castAdd_injective 7 1)
-  map_rel_iff' := fun {i j : Fin 7} => by
-    -- Normalize the range equivalence before rewriting the matrix: its coerced function
-    -- otherwise retains the `DynkinType.E7.rank` index underneath the `Fin 7` presentation.
-    change zigzagE8Graph.Adj (Fin.castAdd 1 i) (Fin.castAdd 1 j) ↔
-      (diagramGraph DynkinType.E7.cartanMatrix).Adj i j
-    rw [DynkinType.cartanMatrix_E7]
-    -- The Cartan-matrix equation also changes the implicit vertex type to `Fin 7`.
-    change zigzagE8Graph.Adj (Fin.castAdd 1 i) (Fin.castAdd 1 j) ↔
-      (diagramGraph (CartanMatrix.E 7)).Adj i j
-    rw [DynkinType.cartanMatrix_E7_eq_submatrix_E8,
-      diagramGraph_submatrix (Fin.castAdd_injective 7 1), SimpleGraph.comap_adj,
-      zigzagE8Graph_eq_diagramGraph, DynkinType.cartanMatrix_E8]
-    rfl
-
-private noncomputable def e7Coloring :
-    (diagramGraph DynkinType.E7.cartanMatrix).Coloring Bool :=
-  zigzagE8Coloring.comap
-    ((SimpleGraph.Embedding.induce e7Nodes).toHom.comp e7InducedIso.toHom)
-
 variable (k : Type*) [Field k]
-
-/-- The signless preprojective algebra of the Bourbaki-labelled `E₇` diagram is
-finite-dimensional over every field. -/
-instance instFiniteDimensionalSignlessPreprojectiveAlgebraE7
-    [∀ i, Fintype ((diagramGraph DynkinType.E7.cartanMatrix).neighborSet i)] :
-    FiniteDimensional k
-      (signlessPreprojectiveAlgebra k
-        (DoubledQuiver (diagramGraph DynkinType.E7.cartanMatrix))) := by
-  let := moduleFinite_signlessPreprojectiveAlgebra_induce k zigzagE8Graph e7Nodes
-  exact LinearEquiv.finiteDimensional
-    (signlessPreprojectiveAlgebraGraphEquiv k e7InducedIso).symm.toLinearEquiv
-
-/-- The additive preprojective algebra of every orientation of `E₇` is finite-dimensional
-over every field. -/
-instance instFiniteDimensionalPreprojectiveAlgebraE7
-    (o : Orientation (diagramGraph DynkinType.E7.cartanMatrix)) :
-    FiniteDimensional k
-      (preprojectiveAlgebra k (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o)) := by
-  let c := fun i : OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o =>
-    e7Coloring ((OrientedQuiver.vertexEquiv _ o).symm i)
-  have hc : ∀ ⦃i j⦄ (a : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.1
-  exact ((orientationSignlessPreprojectiveAlgebraEquiv o k).trans
-    (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)).toLinearEquiv.finiteDimensional
 
 /-- The signless preprojective algebra of every finite simply-laced Dynkin diagram is
 finite-dimensional over every field. -/
