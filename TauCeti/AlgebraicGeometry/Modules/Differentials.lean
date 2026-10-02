@@ -20,19 +20,18 @@ general it is the first object of the cotangent formalism of `X` over `R`.
 
 The construction follows Mathlib's presheaf of relative differentials
 `PresheafOfModulesOfCommRing.DifferentialsConstruction.relativeDifferentials'` of a morphism of
-presheaves of commutative rings, applied to the morphism from the constant presheaf `R` to the
-structure presheaf `𝒪_X`, followed by sheafification of presheaves of modules. Since
-sheafification is left adjoint to the inclusion of sheaves of modules, the universal property
-of the presheaf of differentials passes to the sheaf: morphisms `Ω_{X/R} ⟶ M` to a sheaf of
-`𝒪_X`-modules correspond to `R`-derivations `𝒪_X ⟶ M`, by composition with `d`.
+presheaves of commutative rings, applied to the morphism `Scheme.baseRingToStructurePresheaf`
+from the constant presheaf `R` to the structure presheaf `𝒪_X`, followed by sheafification of
+presheaves of modules. Since sheafification is left adjoint to the inclusion of sheaves of
+modules, the universal property of the presheaf of differentials passes to the sheaf: morphisms
+`Ω_{X/R} ⟶ M` to a sheaf of `𝒪_X`-modules correspond to `R`-derivations `𝒪_X ⟶ M`, by
+composition with `d`.
 
 The base is the affine scheme `Spec R`, which covers varieties over a field. Over a general base
 scheme `S` the constant presheaf `R` would be replaced by the inverse image of `𝒪_S`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.baseRingToStructurePresheaf R X`: the morphism from the constant
-  presheaf `R` to the structure presheaf of `X`;
 * `AlgebraicGeometry.Scheme.Modules.Derivation R M`: the `R`-derivations of `𝒪_X` with values in
   a sheaf of `𝒪_X`-modules `M`;
 * `AlgebraicGeometry.Scheme.relativeDifferentials R X`: the sheaf `Ω_{X/R}` of relative
@@ -63,27 +62,6 @@ universe u
 noncomputable section
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
-
-/-- The morphism from the constant presheaf of rings `R` to the structure presheaf of a scheme
-over `R`: on an open `U` it is the base ring map to global functions followed by restriction
-to `U`. -/
-def _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf :
-    (Functor.const X.Opensᵒᵖ).obj (CommRingCat.of R) ⟶ X.presheaf where
-  app U := CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections R X) ≫
-    X.presheaf.map U.unop.leTop.op
-  naturality U V i := by
-    simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.id_comp, Category.assoc,
-      ← Functor.map_comp]
-    rfl
-
-/-- On an open `U`, the base ring maps to sections over `U` through global functions followed by
-restriction to `U`. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app (U : X.Opensᵒᵖ) :
-    (X.baseRingToStructurePresheaf R).app U =
-      CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections R X) ≫
-        X.presheaf.map U.unop.leTop.op :=
-  (rfl)
 
 variable {X} in
 /-- The `R`-derivations of the structure sheaf of a scheme `X` over `R` with values in a sheaf
