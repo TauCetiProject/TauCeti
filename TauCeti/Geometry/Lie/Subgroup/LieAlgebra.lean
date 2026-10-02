@@ -82,6 +82,8 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
   subset of `𝔤`.
 * `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`: the Lie algebra of `K` is invariant under the
   adjoint action of `K`.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
+  intersection is the intersection of the Lie algebras.
 
 ## References
 
@@ -334,6 +336,25 @@ theorem isClosed_lieSubalgebraOfSubgroup {K : Subgroup G} (hK : IsClosed (K : Se
 theorem lieSubalgebraOfSubgroup_mono {K K' : Subgroup G} (h : K ≤ K') :
     lieSubalgebraOfSubgroup (I := I) K ≤ lieSubalgebraOfSubgroup (I := I) K' :=
   LieSubalgebra.lieSpan_mono fun _ hX t => h (hX t)
+
+/-- **The Lie algebra of an intersection is the intersection of the Lie algebras.** For closed
+subgroups both sides say that the one-parameter subgroup of `X` lies in each factor, so the
+statement is an interchange of the two quantifiers. Closedness is what collapses each generated
+subalgebra to that defining condition; without it only `≤` is available, from
+`lieSubalgebraOfSubgroup_mono`. This is how a subgroup cut out by two independent conditions —
+such as the special unitary group, unitary and of determinant one — has its Lie algebra computed
+one condition at a time. -/
+theorem lieSubalgebraOfSubgroup_inf {K K' : Subgroup G} (hK : IsClosed (K : Set G))
+    (hK' : IsClosed (K' : Set G)) :
+    lieSubalgebraOfSubgroup (I := I) (K ⊓ K') =
+      lieSubalgebraOfSubgroup (I := I) K ⊓ lieSubalgebraOfSubgroup (I := I) K' := by
+  have hinf : IsClosed ((K ⊓ K' : Subgroup G) : Set G) := by
+    rw [Subgroup.coe_inf]
+    exact hK.inter hK'
+  refine SetLike.ext fun X => ?_
+  rw [mem_lieSubalgebraOfSubgroup hinf, LieSubalgebra.mem_inf,
+    mem_lieSubalgebraOfSubgroup hK, mem_lieSubalgebraOfSubgroup hK', ← forall_and]
+  exact forall_congr' fun _ => Subgroup.mem_inf
 
 /-- The Lie algebra of the whole group is the whole Lie algebra. -/
 @[simp]
