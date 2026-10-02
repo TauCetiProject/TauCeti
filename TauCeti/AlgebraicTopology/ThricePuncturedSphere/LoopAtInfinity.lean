@@ -507,14 +507,12 @@ lying on the same side of `0` and on the same side of `1`. -/
 private noncomputable def realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
     (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) : Path z w where
   toFun t := ⟨((1 - t) * a + t * b : ℝ),
-    -- a convex combination of two reals of the same sign is not zero
+    -- a convex combination of two reals of the same sign is not zero, by convexity of the
+    -- open half-lines `Ioi 0` and `Iio 0`
     have hne {a b : ℝ} (hab : 0 < a * b) : (1 - t) * a + t * b ≠ 0 := by
-      intro h
-      rcases t.2.1.eq_or_lt with ht | ht
-      · simp only [← ht, sub_zero, one_mul, zero_mul, add_zero] at h
-        simp [h] at hab
-      · have h' : (1 - t) * a ^ 2 + t * (a * b) = 0 := by linear_combination a * h
-        nlinarith [mul_nonneg (sub_nonneg.2 t.2.2) (sq_nonneg a), mul_pos ht hab]
+      rcases mul_pos_iff.1 hab with ⟨ha, hb⟩ | ⟨ha, hb⟩
+      · exact (convex_Ioi 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne'
+      · exact (convex_Iio 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne
     ⟨fun h ↦ hne h₀ (by exact_mod_cast h), fun h ↦ hne h₁ (by
       have : ((1 - t) * a + t * b : ℝ) = 1 := by exact_mod_cast h
       linear_combination this)⟩⟩
@@ -585,9 +583,7 @@ private theorem mob1InfMulAut_fromPath (γ : Path basePt basePt) :
       (Path.Homotopic.Quotient.mk αMob1Inf.symm).trans
         ((Path.Homotopic.Quotient.mk (γ.map mob1Inf.continuous)).trans
           (Path.Homotopic.Quotient.mk αMob1Inf)) := by
-  rw [mob1InfMulAut_def, MulEquiv.trans_apply, FundamentalGroup.homeomorphMulEquiv_apply,
-    FundamentalGroup.mapOfEq_apply, Path.Homotopic.Quotient.cast_rfl_rfl,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply, Path.Homotopic.Quotient.mk_symm]
+  simp [mob1InfMulAut_def, FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
   -- `FundamentalGroup.fromPath` is an abbreviation for the identity, which blocks rewriting with
   -- `Path.Homotopic.Quotient.mk_map`; that lemma holds by `rfl`
   rfl
@@ -632,9 +628,9 @@ theorem mob1InfMulAut_periph0 : mob1InfMulAut periph0 = periph0 := by
   rw [← Path.Homotopic.Quotient.eq] at hL hU
   -- `periph0` is by definition the class of `γ0`
   have h0 : periph0 = FundamentalGroup.fromPath (.mk γ0) := periph0_def
-  rw [h0, mob1InfMulAut_fromPath, mk_map_mob1Inf mk_γ0, hL, hU, mk_γ0, αMob1Inf, Path.trans_symm,
-    Path.symm_symm]
-  simp only [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm]
+  rw [h0, mob1InfMulAut_fromPath, mk_map_mob1Inf mk_γ0, hL, hU]
+  simp only [mk_γ0, αMob1Inf, Path.trans_symm, Path.symm_symm, Path.Homotopic.Quotient.mk_trans,
+    Path.Homotopic.Quotient.mk_symm]
   grind
 
 /-- **`z ↦ z / (z − 1)` carries the peripheral element at `1` to the peripheral element at `∞`.**
@@ -674,7 +670,7 @@ theorem mob1InfMulAut_periph1 : mob1InfMulAut periph1 = periphInf := by
   -- check `mob1InfMulAut periph1 * (periph1 * periph0) = 1`, which involves no inverse of a product
   rw [periphInf_def, eq_inv_iff_mul_eq_one, h1, h0, mob1InfMulAut_fromPath,
     FundamentalGroup.mul_def, FundamentalGroup.mul_def, FundamentalGroup.one_def,
-    mk_map_mob1Inf mk_γ1, hL, hU, mk_γ0, mk_γ1, αMob1Inf, Path.trans_symm, Path.symm_symm]
+    mk_map_mob1Inf mk_γ1, hL, hU]
   -- the word cancels letter by letter once it is reassociated to the right
   have hcancel {x y z : ThricePuncturedSphere} (p : Path.Homotopic.Quotient x y)
       (q : Path.Homotopic.Quotient x z) : p.trans (p.symm.trans q) = q := by
@@ -684,7 +680,8 @@ theorem mob1InfMulAut_periph1 : mob1InfMulAut periph1 = periphInf := by
       (q : Path.Homotopic.Quotient y z) : p.symm.trans (p.trans q) = q := by
     rw [← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.symm_trans,
       Path.Homotopic.Quotient.refl_trans]
-  simp only [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm,
+  simp only [mk_γ0, mk_γ1, αMob1Inf, Path.trans_symm, Path.symm_symm,
+    Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm,
     Path.Homotopic.Quotient.trans_assoc, hcancel, hcancel', Path.Homotopic.Quotient.trans_symm]
 
 /-- `z ↦ z / (z − 1)` carries the peripheral element at `∞` to the conjugate
