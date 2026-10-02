@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
+public import Mathlib.Data.Set.Card
 import Mathlib.Logic.Equiv.Sigma
 
 /-!
@@ -36,7 +37,8 @@ indexed family of sets on which the action leaves the index fixed.
 
 ## Implementation notes
 
-Everything is phrased with `Nat.card`; Mathlib's Burnside lemma is stated with `Fintype.card` and
+Counts are phrased with `Nat.card`, with `Set.ncard` simp forms for disjoint unions.
+Mathlib's Burnside lemma is stated with `Fintype.card` and
 carries `Fintype` instances for each fixed-point set, which are supplied here from `Finite X` and
 `Finite Y` rather than assumed.
 -/
@@ -77,6 +79,13 @@ theorem card_fixedBy_sum {G X Y : Type*} [Monoid G] [MulAction G X] [MulAction G
       (Equiv.subtypeEquivRight fun y ↦ by simp [mem_fixedBy]))
   rw [Nat.card_congr e, Nat.card_sum]
 
+/-- The fixed-point count on a disjoint union, in simp normal form. -/
+@[simp]
+theorem ncard_fixedBy_sum {G X Y : Type*} [Monoid G] [MulAction G X] [MulAction G Y]
+    [Finite X] [Finite Y] (g : G) :
+    (fixedBy (X ⊕ Y) g).ncard = (fixedBy X g).ncard + (fixedBy Y g).ncard := by
+  simpa only [Nat.card_coe_set_eq] using card_fixedBy_sum g
+
 /-- For the fiberwise action on an indexed disjoint union, fixed-point counts add over the
 indices. The monoid fixes the index of each point. -/
 theorem card_fixedBy_sigma {G ι : Type*} [Monoid G] [Fintype ι] (X : ι → Type*)
@@ -88,6 +97,13 @@ theorem card_fixedBy_sigma {G ι : Type*} [Monoid G] [Fintype ι] (X : ι → Ty
   rw [hset, Nat.card_congr (Equiv.Set.sigma _ _), Nat.card_sigma]
   exact (Finset.sum_subtype Finset.univ (by simp)
     (fun i ↦ Nat.card (fixedBy (X i) g))).symm
+
+/-- The fixed-point count on a fiberwise indexed disjoint union, in simp normal form. -/
+@[simp]
+theorem ncard_fixedBy_sigma {G ι : Type*} [Monoid G] [Fintype ι] (X : ι → Type*)
+    [∀ i, MulAction G (X i)] [∀ i, Finite (X i)] (g : G) :
+    (fixedBy (Σ i, X i) g).ncard = ∑ i, (fixedBy (X i) g).ncard := by
+  simpa only [Nat.card_coe_set_eq] using card_fixedBy_sigma X g
 
 variable [Group G] [MulAction G X] [MulAction G Y]
 

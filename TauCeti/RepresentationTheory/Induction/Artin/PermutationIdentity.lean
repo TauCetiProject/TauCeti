@@ -77,6 +77,14 @@ theorem card_fixedBy_artinPositiveSet (g : G) :
   simp only [card_fixedBy_sigma, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, Nat.cast_id, finsum_eq_sum_of_fintype]
 
+/-- The positive Artin fixed-point count with explicit multiplicities, in simp normal form. -/
+@[simp]
+theorem ncard_fixedBy_artinPositiveSet (g : G) :
+    (fixedBy (ArtinPositiveSet G) g).ncard =
+      ∑ᶠ C : Subgroup G,
+        (C.artinCoeff * (Nat.card C : ℤ)).toNat * (fixedBy (G ⧸ C) g).ncard := by
+  simpa only [Nat.card_coe_set_eq] using card_fixedBy_artinPositiveSet g
+
 /-- The fixed-point count of the negative Artin set includes the `|G|` fixed points. -/
 theorem card_fixedBy_artinNegativeSet (g : G) :
     Nat.card (fixedBy (ArtinNegativeSet G) g) = Nat.card G +
@@ -93,6 +101,15 @@ theorem card_fixedBy_artinNegativeSet (g : G) :
   simp only [card_fixedBy_sigma, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, Nat.cast_id, htop, Nat.card_congr (Equiv.Set.univ (G ⧸ (⊤ : Subgroup G))),
     Nat.card_unique, mul_one, finsum_eq_sum_of_fintype]
+
+/-- The negative Artin fixed-point count including the fixed points, in simp normal form. -/
+-- Prefer this formula over unfolding the abbreviation with `ncard_fixedBy_sum`.
+@[simp high]
+theorem ncard_fixedBy_artinNegativeSet (g : G) :
+    (fixedBy (ArtinNegativeSet G) g).ncard = Nat.card G +
+      ∑ᶠ C : Subgroup G,
+        (-(C.artinCoeff * (Nat.card C : ℤ))).toNat * (fixedBy (G ⧸ C) g).ncard := by
+  simpa only [Nat.card_coe_set_eq] using card_fixedBy_artinNegativeSet g
 
 /-- The two sides of Artin's permutation identity have the same fixed-point counts. -/
 theorem card_fixedBy_artinPositiveSet_eq_card_fixedBy_artinNegativeSet (g : G) :
