@@ -115,11 +115,7 @@ theorem le_card_of_mul_two_pow_eq_finrank [Finite ι]
   have hdeg := finrank_adjoin_range (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr' hindep
   rw [htop, IntermediateField.finrank_top'] at hdeg
   rw [hdeg] at h
-  have hg : g ≠ 0 := by rintro rfl; exact (pow_pos two_pos _).ne (by simpa using h)
-  by_contra hlt
-  have h1 : 2 ^ Nat.card ι < 2 ^ k := Nat.pow_lt_pow_right one_lt_two (not_le.mp hlt)
-  have h2 : 2 ^ k ≤ g * 2 ^ k := Nat.le_mul_of_pos_left _ (Nat.pos_of_ne_zero hg)
-  omega
+  exact (Nat.pow_dvd_pow_iff_le_right one_lt_two).mp ⟨g, by simpa [mul_comm] using h.symm⟩
 
 /-- **Reading a prime count off the degree.** Under square-class independence of `n` radicands,
 `[K : ℚ] = 2 ^ n`, so a number `g` with `g * 2 ^ k = [K : ℚ]` is `2 ^ (n - k)`; the equation itself
