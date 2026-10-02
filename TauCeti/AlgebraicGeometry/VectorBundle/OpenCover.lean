@@ -57,45 +57,6 @@ noncomputable section
 
 variable {X : Scheme.{u}}
 
-/-- The identification of modules on the slice site over an open `U` with modules on the open
-subscheme `U` preserves free modules. -/
-private def overEquivFunctorObjFreeIso (U : X.Opens) (I : Type u) :
-    (overEquiv U).functor.obj (SheafOfModules.free I) ≅ SheafOfModules.free I :=
-  -- The functor is rebound with its type as a functor between categories of sheaves of modules,
-  -- where `SheafOfModules.mapFreeIso` seeks its colimit-preservation instance.
-  let F : SheafOfModules (X.ringCatSheaf.over U) ⥤ SheafOfModules (U : Scheme).ringCatSheaf :=
-    (overEquiv U).functor
-  have : Limits.PreservesColimitsOfShape (Discrete I) F :=
-    (overEquiv U).toAdjunction.leftAdjoint_preservesColimits.preservesColimitsOfShape
-  (SheafOfModules.mapFreeIso F I (U.sheafOfModulesEquivOverUnit X.ringCatSheaf).symm).symm
-
-/-- A trivialization of `M` on the slice site over an open `U` gives a trivialization of the
-restriction of `M` to the open subscheme `U`. -/
-private def restrictIsoFreeOfOverIsoFree (M : X.Modules) (U : X.Opens) {I : Type u}
-    (e : M.over U ≅ SheafOfModules.free I) : M.restrict U.ι ≅ SheafOfModules.free I :=
-  ((overFunctorEquiv U).app M).symm ≪≫ (overEquiv U).functor.mapIso e ≪≫
-    overEquivFunctorObjFreeIso U I
-
-/-- A trivialization of the restriction of `M` to the open subscheme `U` gives a trivialization
-of `M` on the slice site over `U`. -/
-private def overIsoFreeOfRestrictIsoFree (M : X.Modules) (U : X.Opens) {I : Type u}
-    (e : M.restrict U.ι ≅ SheafOfModules.free I) : M.over U ≅ SheafOfModules.free I :=
-  (overEquiv U).fullyFaithfulFunctor.preimageIso ((overFunctorEquiv U).app M ≪≫ e ≪≫
-    (overEquivFunctorObjFreeIso U I).symm)
-
-/-- A trivialization of the pullback of `M` along an open immersion `f` gives a trivialization of
-the restriction of `M` to the open image of `f`. -/
-private def restrictOpensRangeIsoFree {Y : Scheme.{u}} (M : X.Modules) (f : Y ⟶ X)
-    [IsOpenImmersion f] {I : Type u} (e : (pullback f).obj M ≅ SheafOfModules.free I) :
-    M.restrict f.opensRange.ι ≅ SheafOfModules.free I :=
-  letI : (SheafOfModules.pushforward.{u} f.isoOpensRange.inv.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f.isoOpensRange.inv).IsRightAdjoint
-  (restrictFunctorIsoPullback f.opensRange.ι).app M ≪≫
-    (pullbackCongr f.isoOpensRange_inv_comp).symm.app M ≪≫
-    ((pullbackComp f.isoOpensRange.inv f).app M).symm ≪≫
-    (pullback f.isoOpensRange.inv).mapIso e ≪≫
-    SheafOfModules.pullbackObjFreeIso f.isoOpensRange.inv.toRingCatSheafHom I
-
 /-- An `𝒪_X`-module is finite locally free if and only if it is trivialized by an open cover:
 for some open cover `fᵢ : Uᵢ ⟶ X`, each pullback `fᵢ^* M` is isomorphic to the free
 `𝒪_{Uᵢ}`-module on a finite type. -/
