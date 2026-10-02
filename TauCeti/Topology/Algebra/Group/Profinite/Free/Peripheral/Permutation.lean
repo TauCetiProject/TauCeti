@@ -339,9 +339,9 @@ theorem exists_rotation_two (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin 2))
   have ht1 : peripheralTuple (basis e) 1 = basis e 1 := peripheralTuple_castSucc _ 1
   have ht2 : peripheralTuple (basis e) 2 = cusp (basis e) := peripheralTuple_last _
   refine ⟨φ, ?_, ?_, ?_, hφ⟩
-  · simpa only [ht0, ht1, show finRotate (2 + 1) 0 = 1 from rfl] using h 0
-  · simpa only [ht1, ht2, show finRotate (2 + 1) 1 = 2 from rfl] using h 1
-  · simpa only [ht0, ht2, show finRotate (2 + 1) 2 = 0 from rfl] using h 2
+  · simpa only [ht0, ht1, finRotate_apply, Fin.reduceAdd] using h 0
+  · simpa only [ht1, ht2, finRotate_apply, Fin.reduceAdd] using h 1
+  · simpa only [ht0, ht2, finRotate_apply, Fin.reduceAdd] using h 2
 
 /-- **The rank-two swap.** In rank two some continuous automorphism exchanges the two basis
 elements. It sends the cusp `z = (x_0 x_1)⁻¹` to `(x_1 x_0)⁻¹ = x_0⁻¹ * z * x_0`, so it is
