@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RingTheory.Semisimple.Schur
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
@@ -69,6 +70,10 @@ finite-dimensional `k`-algebra setting.
 * `TauCeti.finrank_linearMap_pos_of_ne_bot`: for a finite-dimensional `M`, the hom space out of
   any nonzero submodule is positive-dimensional.  This asks for neither simplicity nor an
   algebraically closed field, so it lives apart from the results above.
+* `TauCeti.range_isotypicEval`: **the range of evaluation is the isotypic component**, where
+  `TauCeti.isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` is `s ⊗ f ↦ f s`.  Evaluation and its
+  naturality in the target (`TauCeti.isotypicEval_comp`) are stated over a commutative ring, no
+  finiteness and no field operations being involved.
 
 ## The isotypic component
 
@@ -79,6 +84,12 @@ finite-dimensional.  What the multiplicity theorem adds is the value of the expo
 (`TauCeti.apply_mem_isotypicComponent`), so `M` and its component have the same hom space out of
 `S`, and the count above identifies the exponent with `finrank k (S →ₗ[A] M)`.  This is the
 decomposition-free description of the component that a multiplicity computation needs.
+
+The same fact says that evaluation `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` has the isotypic component as its
+range: a map out of `S` lands there, and every submodule isomorphic to `S` is the range of such a
+map.  This half of the uncounted decomposition needs no scalars beyond a commutative ring; that
+evaluation is moreover injective, and hence an isomorphism onto the component, is proved over an
+algebraically closed field in `TauCeti/RingTheory/Semisimple/IsotypicTensor.lean`.
 
 ## Implementation notes
 
@@ -354,9 +365,11 @@ end Isotypic
 
 section IsotypicComponent
 
-variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
+section Ring
+
+variable {A M S : Type*} [Ring A]
+variable [AddCommGroup M] [Module A M]
+variable [AddCommGroup S] [Module A S] [IsSimpleModule A S]
 
 omit [IsSimpleModule A S] in
 /-- **A module is its own isotypic component**: the sum of the submodules of `S` isomorphic to `S`
@@ -374,6 +387,12 @@ theorem apply_mem_isotypicComponent (f : S →ₗ[A] M) (s : S) :
   have h := LinearMap.le_comap_isotypicComponent (M := S) (N := M) S f
   rw [isotypicComponent_self_eq_top] at h
   exact h Submodule.mem_top
+
+end Ring
+
+variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
 
 /-- Corestriction to the isotypic component, an equivalence of hom spaces out of `S`.  It is the
 reason the multiplicity of `S` in `M` and in its `S`-isotypic component agree. -/
@@ -425,6 +444,79 @@ theorem finrank_isotypicComponent :
   simp [Module.finrank_pi_fintype]
 
 end IsotypicComponent
+
+/-! ### Evaluation of the multiplicity space -/
+
+section Evaluation
+
+open TensorProduct
+
+variable (k : Type*) {A S M N : Type*} [CommRing k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+
+/-- Evaluation of a multiplicity space at a vector, curried.  It is `A`-linear in the vector
+because an `A`-linear map commutes with the action of `A`, and `k`-linear in the map because the
+`k`-action on a hom space is pointwise. -/
+private def isotypicEvalAux : S →ₗ[A] (S →ₗ[A] M) →ₗ[k] M where
+  toFun s :=
+    { toFun := fun f ↦ f s
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  map_add' s t := by ext f; exact f.map_add s t
+  map_smul' a s := by ext f; exact f.map_smul a s
+
+/-- **Evaluation** `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`.  Only the left factor carries an
+`A`-action, so this is a map of `A`-modules for the `TensorProduct.leftModule` structure. -/
+def isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M :=
+  AlgebraTensorModule.lift (isotypicEvalAux k)
+
+@[simp]
+theorem isotypicEval_tmul (s : S) (f : S →ₗ[A] M) : isotypicEval k (s ⊗ₜ f) = f s :=
+  (rfl)
+
+/-- **Naturality of evaluation in the target.**  Postcomposition with an `A`-linear map
+`g : M →ₗ[A] N` is, on the tensor factorization, the map `g` induces on multiplicity spaces; the
+left factor is untouched.  So an operator commuting with `A` acts through the multiplicity space
+alone, which is what makes the second factor a module over the commutant. -/
+theorem isotypicEval_comp (g : M →ₗ[A] N) :
+    g ∘ₗ isotypicEval k (S := S) =
+      isotypicEval k ∘ₗ
+        AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
+          (LinearMap.compRight (M := S) k g) := by
+  refine AlgebraTensorModule.curry_injective ?_
+  ext s f
+  rfl
+
+/-- The value form of `TauCeti.isotypicEval_comp`. -/
+@[simp]
+theorem isotypicEval_map_apply (g : M →ₗ[A] N) (x : S ⊗[k] (S →ₗ[A] M)) :
+    isotypicEval k
+        (AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
+          (LinearMap.compRight (M := S) k g) x) = g (isotypicEval k x) :=
+  (LinearMap.congr_fun (isotypicEval_comp k g) x).symm
+
+variable [IsSimpleModule A S]
+
+/-- **The range of evaluation is the `S`-isotypic component of `M`.**  A map out of `S` lands in
+the component, and every submodule of `M` isomorphic to `S` is the range of such a map.  This
+needs neither finiteness nor any hypothesis on the scalars. -/
+@[simp]
+theorem range_isotypicEval :
+    LinearMap.range (isotypicEval k (S := S) (M := M)) = isotypicComponent A M S := by
+  apply le_antisymm
+  · intro y hy
+    obtain ⟨x, rfl⟩ := hy
+    induction x using TensorProduct.inductionOn with
+    | tmul s f => simpa using apply_mem_isotypicComponent f s
+    | add x y hx hy => simpa using Submodule.add_mem _ hx hy
+  · refine sSup_le ?_
+    rintro m ⟨e⟩ x hx
+    refine ⟨e ⟨x, hx⟩ ⊗ₜ (m.subtype ∘ₗ (e.symm : S →ₗ[A] m)), ?_⟩
+    simp
+
+end Evaluation
 
 /-! ### Positivity for an arbitrary nonzero submodule -/
 
