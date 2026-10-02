@@ -156,8 +156,7 @@ Not a `simp` lemma, for the reason given for
 theorem composeDiagram_capCup_capCup_eq_relabel_right (hab : a ≠ b) (c : Fin k) :
     composeDiagram (capCup a b) (capCup b c) =
       (capCup a b).relabel (Equiv.swap a b * Equiv.swap b c) 1 := by
-  simpa only [flip_composeDiagram, BrauerDiagram.flip_relabel, BrauerDiagram.flip_capCup] using
-    congrArg BrauerDiagram.flip (composeDiagram_capCup_capCup_eq_relabel_left hab c)
+  simpa using congrArg BrauerDiagram.flip (composeDiagram_capCup_capCup_eq_relabel_left hab c)
 
 /-! ### The relations of two overlapping pairs -/
 
@@ -215,9 +214,7 @@ Not a `simp` lemma, for the reason given for
 theorem composeDiagram_capCup_capCup_permToBrauer_swap (hab : a ≠ b) (c : Fin k) :
     composeDiagram (composeDiagram (capCup a b) (capCup b c)) (permToBrauer (Equiv.swap a b)) =
       composeDiagram (capCup a b) (permToBrauer (Equiv.swap b c)) := by
-  simpa only [flip_composeDiagram, BrauerDiagram.flip_capCup, BrauerDiagram.flip_permToBrauer,
-    Equiv.Perm.inv_def, Equiv.symm_swap] using
-    congrArg BrauerDiagram.flip (composeDiagram_permToBrauer_swap_capCup_capCup hab c)
+  simpa using congrArg BrauerDiagram.flip (composeDiagram_permToBrauer_swap_capCup_capCup hab c)
 
 /-! ### The middle loops of two overlapping pairs -/
 

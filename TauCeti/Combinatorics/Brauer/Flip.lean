@@ -12,19 +12,22 @@ public import TauCeti.Combinatorics.Brauer.LoopCount
 
 Reflecting a Brauer diagram in a horizontal line exchanges its bottom and its top boundary.  On
 the perfect matching of `Fin k ⊕ Fin k` that a diagram is, that reflection is conjugation by
-`Sum.swap`, and this file builds it as `TauCeti.BrauerDiagram.flip`, together with the two
-compatibilities that make it the **anti-automorphism** of the Brauer algebra `B_k(δ)`:
+`Sum.swap`, and this file builds it as `TauCeti.BrauerDiagram.flip`, together with its two
+compatibilities with the vertical stacking of diagrams:
 
 `flip (composeDiagram D₁ D₂) = composeDiagram (flip D₂) (flip D₁)`,
 `middleLoopCount (flip D₂) (flip D₁) = middleLoopCount D₁ D₂`.
 
-Together they say that `D ↦ flip D` reverses the loop-weighted stacking
-`D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` on the diagram basis, so it is the
-diagrammatic source of the transpose `(x y)* = y* x*` of `B_k(δ)`.  It also halves the work in the
-relations of that multiplication: each relation between diagrams has a mirror, read off the same
-stack turned upside down, and the mirrors in `TauCeti/Combinatorics/Brauer/Relations.lean` are
-deduced from their companions through this reflection rather than proved again.  The fixed point
-that makes those deductions work, a cap-cup diagram, is `TauCeti.BrauerDiagram.flip_capCup` in
+Reflection therefore reverses the order of a stack and leaves the number of loops that close up in
+its middle alone, so `D ↦ flip D` reverses the loop-weighted stacking
+`D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of diagrams.  That is the
+diagram-level operation an anti-automorphism `(x y)* = y* x*` of the Brauer algebra `B_k(δ)` is
+read off from; the algebra itself is not built here, and nothing below is a map of algebras.
+Reflection also halves the work in the relations of that stacking: each relation between diagrams
+has a mirror, read off the same stack turned upside down, and the mirrors in
+`TauCeti/Combinatorics/Brauer/Relations.lean` are deduced from their companions through this
+reflection rather than proved again.  The fixed point that makes those deductions work, a cap-cup
+diagram, is `TauCeti.BrauerDiagram.flip_capCup` in
 `TauCeti/Combinatorics/Brauer/Generator.lean`, where `TauCeti.capCup` is defined.
 
 Reflection is an involution, exchanges caps with cups, inverts a permutation diagram, and on a
@@ -32,19 +35,17 @@ relabelled diagram exchanges the two renamings.
 
 ## The two stacking compatibilities
 
-Both rest on the same observation.  A strand of the stack of `D₂*` above `D₁*` -- writing `D*` for
-`flip D` -- is a strand of the stack of `D₁` above `D₂` read in the reflected labels.  A state of
-`TauCeti.stackStep` is a middle point together with the diagram the strand runs through next;
-reflecting the picture exchanges those two diagrams and leaves the middle point where it is, so
-`TauCeti.stackStart_flip` and `TauCeti.stackStep_flip` transport a strand along `Sum.swap` on the
-middle states and on the outer boundary alike.  `TauCeti.flip_composeDiagram` then reads
-`TauCeti.composeDiagram_val_eq_iff` on both sides of the comparison.
+Reflecting the stack of `D₁` above `D₂` gives the stack of the reflection of `D₂` above the
+reflection of `D₁`: a strand of either is a strand of the other read in the reflected labels, so
+the two stacks match the same pairs of outer points once those are reflected
+(`TauCeti.flip_composeDiagram`).
 
-The middle graph of `TauCeti/Combinatorics/Brauer/LoopCount.lean` needs no transport at all.  Its
-adjacency is "a cap of the upper diagram or a cup of the lower one joins these two middle points",
-and reflection exchanges the two disjuncts without moving the middle point, so the two stacks have
-literally the same middle graph (`TauCeti.middleAdj_flip`) with the same interior vertices
-(`TauCeti.isMiddleVertex_flip`).  Their loops, and hence their loop counts, therefore agree.
+The middle of the stack is unchanged as a graph.  Two middle points are joined by an arc of it when
+a cap of the upper diagram or a cup of the lower one joins them, and reflection exchanges those two
+kinds of arc without moving the middle point, so the two stacks have literally the same middle
+graph (`TauCeti.middleAdj_flip`) with the same interior vertices
+(`TauCeti.isMiddleVertex_flip`).  Their closed loops, and hence their loop counts, therefore agree
+(`TauCeti.middleLoopCount_flip`).
 
 ## Main definitions
 
@@ -68,8 +69,6 @@ literally the same middle graph (`TauCeti.middleAdj_flip`) with the same interio
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -223,14 +222,14 @@ private theorem reflTransGen_stackStep_flip {D₁ D₂ : BrauerDiagram k} {s t :
 
 /-- **Reflection reverses stacking**: the stack of `D₁` above `D₂`, read upside down, is the stack
 of the reflection of `D₂` above the reflection of `D₁`.  Together with
-`TauCeti.middleLoopCount_flip` this is the anti-multiplicativity of reflection for the
-loop-weighted multiplication of the Brauer algebra. -/
+`TauCeti.middleLoopCount_flip` this says that reflection reverses the loop-weighted stacking of
+diagrams, the multiplication the Brauer algebra carries on its diagram basis. -/
+@[simp]
 theorem flip_composeDiagram (D₁ D₂ : BrauerDiagram k) :
     (composeDiagram D₁ D₂).flip = composeDiagram D₂.flip D₁.flip := by
   refine Subtype.ext (Equiv.ext fun z => ?_)
   obtain ⟨x, rfl⟩ : ∃ x, z = x.swap := ⟨z.swap, (Sum.swap_swap z).symm⟩
-  rw [show (composeDiagram D₁ D₂).flip.val x.swap = ((composeDiagram D₁ D₂).val x).swap from
-    BrauerDiagram.flip_val_swap _ x]
+  rw [BrauerDiagram.flip_val_swap]
   refine ((composeDiagram_val_eq_iff D₂.flip D₁.flip).mpr ?_).symm
   rcases (composeDiagram_val_eq_iff D₁ D₂).mp rfl with hstart | ⟨s, t, hstart, hpath, hexit⟩
   · exact Or.inl (by rw [stackStart_flip, hstart]; rfl)
@@ -241,6 +240,7 @@ theorem flip_composeDiagram (D₁ D₂ : BrauerDiagram k) :
 
 /-- **The two stacks have the same middle graph**: reflection exchanges a cap of the upper diagram
 with a cup of the lower one, and both join the same two middle points. -/
+@[simp]
 theorem middleAdj_flip (D₁ D₂ : BrauerDiagram k) (a b : Fin k) :
     MiddleAdj D₂.flip D₁.flip a b ↔ MiddleAdj D₁ D₂ a b := by
   rcases h₁ : D₂.val (Sum.inr a) with m | m <;> rcases h₂ : D₁.val (Sum.inl a) with n | n <;>
@@ -248,6 +248,7 @@ theorem middleAdj_flip (D₁ D₂ : BrauerDiagram k) (a b : Fin k) :
 
 /-- **Reflection preserves reachability in the middle graph**: the two stacks have the same middle
 graph, so the same middle points are joined by a chain of its arcs. -/
+@[simp]
 theorem reflTransGen_middleAdj_flip (D₁ D₂ : BrauerDiagram k) (a b : Fin k) :
     Relation.ReflTransGen (MiddleAdj D₂.flip D₁.flip) a b ↔
       Relation.ReflTransGen (MiddleAdj D₁ D₂) a b :=
@@ -256,6 +257,7 @@ theorem reflTransGen_middleAdj_flip (D₁ D₂ : BrauerDiagram k) (a b : Fin k) 
 
 /-- **The two stacks have the same interior middle points**: keeping both arcs in the middle means
 being capped above and cupped below, and reflection exchanges the two conditions. -/
+@[simp]
 theorem isMiddleVertex_flip (D₁ D₂ : BrauerDiagram k) (a : Fin k) :
     IsMiddleVertex D₂.flip D₁.flip a ↔ IsMiddleVertex D₁ D₂ a := by
   rw [isMiddleVertex_def, isMiddleVertex_def, BrauerDiagram.isCap_flip,
@@ -264,6 +266,7 @@ theorem isMiddleVertex_flip (D₁ D₂ : BrauerDiagram k) (a : Fin k) :
 
 /-- **Reflection preserves the closed middle loops**: a middle point lies on a loop of the
 reflected stack exactly when it lies on a loop of the stack. -/
+@[simp]
 theorem onMiddleLoop_flip (D₁ D₂ : BrauerDiagram k) (a : Fin k) :
     OnMiddleLoop D₂.flip D₁.flip a ↔ OnMiddleLoop D₁ D₂ a := by
   rw [onMiddleLoop_def, onMiddleLoop_def]
@@ -272,6 +275,7 @@ theorem onMiddleLoop_flip (D₁ D₂ : BrauerDiagram k) (a : Fin k) :
 
 /-- Reflection preserves the least point of a closed middle loop, the point the loops are counted
 by. -/
+@[simp]
 theorem isMiddleLoopMin_flip (D₁ D₂ : BrauerDiagram k) (a : Fin k) :
     IsMiddleLoopMin D₂.flip D₁.flip a ↔ IsMiddleLoopMin D₁ D₂ a := by
   rw [isMiddleLoopMin_def, isMiddleLoopMin_def]
@@ -280,8 +284,10 @@ theorem isMiddleLoopMin_flip (D₁ D₂ : BrauerDiagram k) (a : Fin k) :
 
 /-- **Reflection preserves the middle-loop count**: turning a stack of two Brauer diagrams upside
 down closes up the same loops in the middle.  With `TauCeti.flip_composeDiagram` this says that
-reflection is an anti-automorphism for the loop-weighted multiplication
-`D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of the Brauer algebra. -/
+reflection reverses the loop-weighted stacking
+`D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of diagrams, the multiplication the
+Brauer algebra carries on its diagram basis. -/
+@[simp]
 theorem middleLoopCount_flip (D₁ D₂ : BrauerDiagram k) :
     middleLoopCount D₂.flip D₁.flip = middleLoopCount D₁ D₂ := by
   rw [middleLoopCount_def, middleLoopCount_def]
