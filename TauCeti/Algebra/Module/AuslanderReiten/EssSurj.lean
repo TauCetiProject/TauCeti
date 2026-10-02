@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.AuslanderReiten.DualPresentation
 public import TauCeti.Algebra.Module.AuslanderReiten.Functor
 public import TauCeti.Algebra.Module.AuslanderReiten.DoubleTranspose.Basic
 
@@ -44,33 +45,8 @@ left presentation. The recovered module is linearly isomorphic before passing to
 category. -/
 theorem exists_transpose_linearEquiv (Q : FiniteProjectivePresentation N) :
     ∃ (M : ModuleCat.{max u v} A) (_ : Module.FinitePresentation A M)
-      (P : FiniteProjectivePresentation M), Nonempty (AuslanderReitenTranspose P.p ≃ₗ[Aᵐᵒᵖ] N) := by
-  let D₀ := Q.P₀ →ₗ[Aᵐᵒᵖ] A
-  let D₁ := Q.P₁ →ₗ[Aᵐᵒᵖ] A
-  let : Module.Finite A D₀ :=
-    Module.Finite.of_surjective (opDualCodomainEquiv A Q.P₀).symm.toLinearMap
-      (opDualCodomainEquiv A Q.P₀).symm.surjective
-  let : Module.Finite A D₁ :=
-    Module.Finite.of_surjective (opDualCodomainEquiv A Q.P₁).symm.toLinearMap
-      (opDualCodomainEquiv A Q.P₁).symm.surjective
-  let : Module.Projective A D₀ :=
-    Module.Projective.of_equiv (opDualCodomainEquiv A Q.P₀).symm
-  let : Module.Projective A D₁ :=
-    Module.Projective.of_equiv (opDualCodomainEquiv A Q.P₁).symm
-  let d : D₀ →ₗ[A] D₁ := Q.p.lcomp A A
-  let M := ModuleCat.of A (D₁ ⧸ LinearMap.range d)
-  let : Module.FinitePresentation A D₁ := Module.finitePresentation_of_projective A D₁
-  let : Module.FinitePresentation A M :=
-    Module.finitePresentation_of_surjective (LinearMap.range d).mkQ
-      (Submodule.mkQ_surjective _) (by rw [Submodule.ker_mkQ]; exact Submodule.fg_range d)
-  let P : FiniteProjectivePresentation M :=
-    { P₀ := ModuleCat.of A D₁
-      P₁ := ModuleCat.of A D₀
-      p := d
-      π := (LinearMap.range d).mkQ
-      exact := LinearMap.exact_map_mkQ_range d
-      surjective := Submodule.mkQ_surjective _ }
-  exact ⟨M, inferInstance, P,
+      (P : FiniteProjectivePresentation M), Nonempty (AuslanderReitenTranspose P.p ≃ₗ[Aᵐᵒᵖ] N) :=
+  ⟨Q.rightTranspose, inferInstance, Q.rightTransposePresentation,
     ⟨rightDoubleTransposePresentationEquiv A Q.p Q.π Q.exact Q.surjective⟩⟩
 
 end FiniteProjectivePresentation

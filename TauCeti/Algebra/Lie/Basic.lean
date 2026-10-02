@@ -36,6 +36,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
   of the Lie action on `v`.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
+* `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
+  Lie homomorphism.
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
 * `TauCeti.ad_pow_apply_eq_ad_pow_apply`: iterating the adjoint action gives the same element
   whichever base ring the Lie algebra is read over.
@@ -254,6 +256,19 @@ theorem _root_.LieHom.map_ad_pow {R L L' : Type*} [CommRing R] [LieRing L] [LieA
   | succ n ih =>
     simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply] at ih ⊢
     rw [ih, f.map_lie]
+
+/-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends
+to a quotient by any Lie ideal, without a finiteness or characteristic hypothesis. -/
+theorem _root_.LieHom.isNilpotent_ad_of_surjective {R L L' : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+    (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) {x : L}
+    (hx : IsNilpotent (LieAlgebra.ad R L x)) :
+    IsNilpotent (LieAlgebra.ad R L' (f x)) := by
+  obtain ⟨n, hn⟩ := hx
+  refine ⟨n, LinearMap.ext fun y ↦ ?_⟩
+  obtain ⟨z, rfl⟩ := hf y
+  rw [← f.map_ad_pow, hn]
+  simp
 
 end TauCeti
 

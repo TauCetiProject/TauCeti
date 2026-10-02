@@ -41,7 +41,7 @@ only the group law; so the trace coefficient and its bi-translation identities a
 finite-dimensional normed space over a complete nontrivially normed field, and the inner product
 enters only in the comparison with the matrix coefficients. Composed with `ContinuousMap.toLp`
 this is the equivariance of the Peter-Weyl block of a compact group, in
-`TauCeti/RepresentationTheory/Compact/TraceCoefficient.lean`.
+`TauCeti/RepresentationTheory/Compact/TraceCoefficient/Basic.lean`.
 
 ## Main definitions
 
