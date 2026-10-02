@@ -25,7 +25,7 @@ equivalence, with the same direction on coordinates.
 ## Main results
 
 * `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
-  kernels and ranges across an intertwining linear equivalence.
+  kernels and ranges across an intertwining semilinear equivalence.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
@@ -54,15 +54,16 @@ end Coordinates
 
 section Intertwining
 
-variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
-  [Module R M] [Module R N]
+variable {R S M N : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module S N] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ]
 
-/-- If a linear equivalence `e` intertwines two endomorphisms `f` and `g` pointwise
+/-- If a semilinear equivalence `e` intertwines two endomorphisms `f` and `g` pointwise
 (`g (e d) = e (f d)`), it carries the kernel of `f` onto the kernel of `g`. -/
 theorem map_ker_of_intertwine
-    (e : M ≃ₗ[R] N) (f : M →ₗ[R] M) (g : N →ₗ[R] N)
+    (e : M ≃ₛₗ[σ] N) (f : M →ₗ[R] M) (g : N →ₗ[S] N)
     (h : ∀ d, g (e d) = e (f d)) :
-    Submodule.map (e : M →ₗ[R] N) (LinearMap.ker f) = LinearMap.ker g := by
+    Submodule.map (e : M →ₛₗ[σ] N) (LinearMap.ker f) = LinearMap.ker g := by
   ext c
   simp only [Submodule.mem_map, LinearMap.mem_ker, LinearEquiv.coe_coe]
   constructor
@@ -73,12 +74,12 @@ theorem map_ker_of_intertwine
     have : e (f (e.symm c)) = 0 := by rw [← h, e.apply_symm_apply, hc]
     exact e.map_eq_zero_iff.mp this
 
-/-- If a linear equivalence `e` intertwines two endomorphisms `f` and `g` pointwise
+/-- If a semilinear equivalence `e` intertwines two endomorphisms `f` and `g` pointwise
 (`g (e d) = e (f d)`), it carries the range of `f` onto the range of `g`. -/
 theorem map_range_of_intertwine
-    (e : M ≃ₗ[R] N) (f : M →ₗ[R] M) (g : N →ₗ[R] N)
+    (e : M ≃ₛₗ[σ] N) (f : M →ₗ[R] M) (g : N →ₗ[S] N)
     (h : ∀ d, g (e d) = e (f d)) :
-    Submodule.map (e : M →ₗ[R] N) (LinearMap.range f) = LinearMap.range g := by
+    Submodule.map (e : M →ₛₗ[σ] N) (LinearMap.range f) = LinearMap.range g := by
   ext c
   simp only [Submodule.mem_map, LinearMap.mem_range, LinearEquiv.coe_coe]
   constructor
