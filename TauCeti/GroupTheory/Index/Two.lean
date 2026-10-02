@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.NthRewrite
@@ -44,6 +45,8 @@ sum over `G ⧸ N` has exactly those two terms.
   `TauCeti.sum_quotient_eq_add_of_index_two`: a finite sum over them is the sum of two terms.
 * `TauCeti.smul_mk_one_of_notMem_of_index_two` and `TauCeti.smul_mk_of_notMem_of_index_two`: an
   element outside a subgroup of index two exchanges the two cosets.
+* `Subgroup.indexTwoCharacter`: the character `G →* Multiplicative (ZMod 2)` with kernel a given
+  subgroup of index two (`Subgroup.ker_indexTwoCharacter`).
 -/
 
 public section
@@ -188,3 +191,58 @@ theorem smul_mk_of_notMem_of_index_two (hindex : N.index = 2) {s γ : G} (hs : s
   exact (Subgroup.mul_mem_iff_of_index_two hindex).2 (iff_of_false hγ hs)
 
 end TauCeti
+
+namespace Subgroup
+
+/-! ### The character of a subgroup of index two -/
+
+variable {G : Type*} [Group G] (N : Subgroup G)
+
+open scoped Classical in
+/-- **The character of a subgroup of index two**: the homomorphism `χ_N : G → 𝔽₂`, written
+multiplicatively, that is `0` on `N` and `1` off it. Index two is what makes this indicator a
+homomorphism (`Subgroup.mul_mem_iff_of_index_two`): for the trivial subgroup of a cyclic group of
+order three the indicator of the complement takes the value `1` at a generator and at its square,
+so it is not additive. Its kernel is `N` (`Subgroup.ker_indexTwoCharacter`). -/
+noncomputable def indexTwoCharacter (hN : N.index = 2) : G →* Multiplicative (ZMod 2) where
+  toFun γ := Multiplicative.ofAdd (if γ ∈ N then 0 else 1)
+  map_one' := by simp [N.one_mem]
+  map_mul' x y := by
+    rw [← ofAdd_add]
+    congr 1
+    have h := mul_mem_iff_of_index_two hN (a := x) (b := y)
+    by_cases hx : x ∈ N <;> by_cases hy : y ∈ N <;>
+      simp only [hx, hy, h, iff_self, iff_true, iff_false, not_true, ite_true, ite_false] <;> decide
+
+variable {N}
+
+/-- The character of a subgroup of index two vanishes on the subgroup. -/
+@[simp]
+theorem toAdd_indexTwoCharacter_of_mem (hN : N.index = 2) {γ : G} (h : γ ∈ N) :
+    (N.indexTwoCharacter hN γ).toAdd = 0 := by
+  simp [indexTwoCharacter, h]
+
+/-- The character of a subgroup of index two is `1` off the subgroup. -/
+@[simp]
+theorem toAdd_indexTwoCharacter_of_notMem (hN : N.index = 2) {γ : G} (h : γ ∉ N) :
+    (N.indexTwoCharacter hN γ).toAdd = 1 := by
+  simp [indexTwoCharacter, h]
+
+/-- The character of a subgroup of index two is trivial exactly on the subgroup. -/
+theorem indexTwoCharacter_eq_one_iff (hN : N.index = 2) {γ : G} :
+    N.indexTwoCharacter hN γ = 1 ↔ γ ∈ N := by
+  by_cases h : γ ∈ N
+  · simp only [h, iff_true]
+    exact Multiplicative.toAdd.injective (toAdd_indexTwoCharacter_of_mem hN h)
+  · simp only [h, iff_false]
+    intro h1
+    have := toAdd_indexTwoCharacter_of_notMem hN h
+    rw [h1, toAdd_one] at this
+    exact absurd this (by decide)
+
+/-- **The kernel of the character of a subgroup of index two is the subgroup.** -/
+@[simp]
+theorem ker_indexTwoCharacter (hN : N.index = 2) : (N.indexTwoCharacter hN).ker = N :=
+  Subgroup.ext fun _ => (MonoidHom.mem_ker).trans (indexTwoCharacter_eq_one_iff hN)
+
+end Subgroup
