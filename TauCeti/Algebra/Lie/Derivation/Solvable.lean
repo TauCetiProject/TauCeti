@@ -26,6 +26,9 @@ compare nilradicals along a flag of ideals between the nilradical and the radica
 
 ## Main results
 
+* `LieIdeal.nilradical_le_restrict_nilradical_of_forall`: if the nilradical of an ideal `I` of a
+  Noetherian Lie algebra is stable under every derivation of `I`, it lies in the nilradical of the
+  ambient Lie algebra.
 * `LieDerivation.apply_mem_nilradical_of_isSolvable`: every derivation of a finite-dimensional
   solvable Lie algebra in characteristic zero takes values in its nilradical.
 * `TauCeti.LieAlgebra.lie_radical_le_nilradical`: `⁅L, radical K L⁆ ≤ nilradical K L`.
@@ -51,6 +54,42 @@ open LieAlgebra
 namespace TauCeti
 
 open LieAlgebra.SemiDirectSum
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [LieRing M] [LieAlgebra R M]
+
+/-- If the nilradical of an ideal `I` of a Noetherian Lie algebra `M` is stable under every
+derivation of `I`, then it is an ideal of `M`, hence contained in the nilradical of `M`. -/
+theorem _root_.LieIdeal.nilradical_le_restrict_nilradical_of_forall [IsNoetherian R M]
+    (I : LieIdeal R M)
+    (h : ∀ (D : LieDerivation R I I) (z : I), z ∈ LieAlgebra.nilradical R I →
+      D z ∈ LieAlgebra.nilradical R I) :
+    LieAlgebra.nilradical R I ≤ I.restrict (LieAlgebra.nilradical R M) := by
+  -- The nilradical of `I`, as a submodule of `M`, is stable under every `ad x`.
+  let N : LieIdeal R M :=
+    { toSubmodule := (LieAlgebra.nilradical R I).toSubmodule.map I.incl.toLinearMap
+      lie_mem := by
+        rintro x _ ⟨z, hz, rfl⟩
+        refine ⟨LieIdeal.ad I x z, h _ z hz, ?_⟩
+        rw [LieHom.coe_toLinearMap, LieIdeal.incl_apply, LieIdeal.ad_apply_apply]
+        exact LieSubmodule.coe_bracket _ x z }
+  -- It is the image of the nilpotent Lie algebra `nilradical R I`, so it is nilpotent.
+  let f : LieAlgebra.nilradical R I →ₗ⁅R⁆ N :=
+    { toFun := fun z ↦ ⟨(z : I), z, z.2, rfl⟩
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl
+      map_lie' := fun {y z} ↦ Subtype.ext <|
+        (congrArg _ ((LieAlgebra.nilradical R I : LieSubalgebra R I).coe_bracket y z)).trans <|
+          ((I : LieSubalgebra R M).coe_bracket _ _).trans
+            ((N : LieSubalgebra R M).coe_bracket (⟨_, y, y.2, rfl⟩ : N) ⟨_, z, z.2, rfl⟩).symm }
+  have hf : Function.Surjective f := by
+    rintro ⟨_, z, hz, rfl⟩
+    exact ⟨⟨z, hz⟩, rfl⟩
+  have : LieRing.IsNilpotent N := hf.lieAlgebra_isNilpotent
+  exact fun z hz ↦ LieIdeal.mem_restrict.mpr (LieIdeal.le_nilradical R M N this ⟨z, hz, rfl⟩)
+
+end CommRing
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
 
@@ -86,35 +125,6 @@ private theorem apply_mem_nilradical_of_lie_mem (D : LieDerivation K L L) (x : L
 
 variable [FiniteDimensional K L]
 
-/-- If the nilradical of an ideal `I` is stable under every derivation of `I`, then it is an
-ideal of `L`, hence contained in the nilradical of `L`. -/
-private theorem nilradical_le_restrict_of_forall (I : LieIdeal K L)
-    (h : ∀ (D : LieDerivation K I I) (z : I), z ∈ LieAlgebra.nilradical K I →
-      D z ∈ LieAlgebra.nilradical K I) :
-    LieAlgebra.nilradical K I ≤ I.restrict (LieAlgebra.nilradical K L) := by
-  -- The nilradical of `I`, as a subspace of `L`, is stable under every `ad x`.
-  let N : LieIdeal K L :=
-    { toSubmodule := (LieAlgebra.nilradical K I).toSubmodule.map I.incl.toLinearMap
-      lie_mem := by
-        rintro x _ ⟨z, hz, rfl⟩
-        refine ⟨LieIdeal.ad I x z, h _ z hz, ?_⟩
-        rw [LieHom.coe_toLinearMap, LieIdeal.incl_apply, LieIdeal.ad_apply_apply]
-        exact LieSubmodule.coe_bracket _ x z }
-  -- It is the image of the nilpotent Lie algebra `nilradical K I`, so it is nilpotent.
-  let f : LieAlgebra.nilradical K I →ₗ⁅K⁆ N :=
-    { toFun := fun z ↦ ⟨(z : I), z, z.2, rfl⟩
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl
-      map_lie' := fun {y z} ↦ Subtype.ext <|
-        (congrArg _ ((LieAlgebra.nilradical K I : LieSubalgebra K I).coe_bracket y z)).trans <|
-          ((I : LieSubalgebra K L).coe_bracket _ _).trans
-            ((N : LieSubalgebra K L).coe_bracket (⟨_, y, y.2, rfl⟩ : N) ⟨_, z, z.2, rfl⟩).symm }
-  have hf : Function.Surjective f := by
-    rintro ⟨_, z, hz, rfl⟩
-    exact ⟨⟨z, hz⟩, rfl⟩
-  have : LieRing.IsNilpotent N := hf.lieAlgebra_isNilpotent
-  exact fun z hz ↦ LieIdeal.mem_restrict.mpr (LieIdeal.le_nilradical K L N this ⟨z, hz, rfl⟩)
-
 variable [CharZero K]
 
 /-- Every derivation of a finite-dimensional solvable Lie algebra in characteristic zero
@@ -137,7 +147,7 @@ characteristic zero. -/
 theorem lie_radical_le_nilradical : ⁅(⊤ : LieIdeal K L), radical K L⁆ ≤ nilradical K L := by
   rw [LieSubmodule.lie_le_iff]
   intro x _ r hr
-  have h := LieIdeal.mem_restrict.mp <| nilradical_le_restrict_of_forall (radical K L)
+  have h := LieIdeal.mem_restrict.mp <| (radical K L).nilradical_le_restrict_nilradical_of_forall
     (fun D z _ ↦ D.apply_mem_nilradical_of_isSolvable z)
     ((LieIdeal.ad (radical K L) x).apply_mem_nilradical_of_isSolvable ⟨r, hr⟩)
   rwa [LieIdeal.ad_apply_apply, LieSubmodule.coe_bracket] at h
@@ -198,8 +208,8 @@ nilradical of `L`. -/
 @[simp]
 theorem _root_.LieIdeal.restrict_nilradical (I : LieIdeal K L) :
     I.restrict (LieAlgebra.nilradical K L) = LieAlgebra.nilradical K I := by
-  refine le_antisymm (fun z hz ↦ ?_)
-    (nilradical_le_restrict_of_forall I fun D _ hz ↦ D.apply_mem_nilradical_of_mem_nilradical hz)
+  refine le_antisymm (fun z hz ↦ ?_) <| I.nilradical_le_restrict_nilradical_of_forall
+    fun D _ hz ↦ D.apply_mem_nilradical_of_mem_nilradical hz
   exact LieIdeal.le_nilradical K I _
     ((LieAlgebra.nilradical K L).isNilpotent_comap_of_injective I.incl I.incl_injective)
     (LieIdeal.mem_comap.mpr (LieIdeal.mem_restrict.mp hz))
