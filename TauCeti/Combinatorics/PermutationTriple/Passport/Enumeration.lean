@@ -117,7 +117,7 @@ theorem passportClasses_eq_image_classSet (P : PassportSpec n)
       ((ConnectedIsoClass.hasPassport_mk t P).mp hc), rfl⟩
 
 /-- A relabeling orbit belongs to the computed fiber exactly when its class has the passport. -/
-@[simp] theorem orbitFinset_mem_passportClasses_iff (P : PassportSpec n)
+theorem orbitFinset_mem_passportClasses_iff (P : PassportSpec n)
     (G : Finset (Perm (Fin n))) (hG : (G : Set (Perm (Fin n))) = P.G)
     (c : ConnectedIsoClass n) :
     c.orbitFinset ∈ passportClasses G P.lam0 P.lam1 P.laminf ↔ c.HasPassport P := by
