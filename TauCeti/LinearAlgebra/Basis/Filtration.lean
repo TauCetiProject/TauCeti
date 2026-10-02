@@ -65,8 +65,12 @@ theorem exists_basis_weight_of_antitone (F : ℕ → Submodule K V) (hF : Antito
       | inr i => simp [w]
     · intro k x
       cases k with
-      | zero => simp [hzero, show ∀ i, ¬w i ≤ 0 from fun i ↦ by
-          cases i <;> simp [w]]
+      | zero =>
+        -- Every weight is positive, so the zero-index condition is vacuous.
+        have hw0 : ∀ i, ¬w i ≤ 0 := by
+          intro i
+          cases i <;> simp [w]
+        simp [hzero, hw0]
       | succ k =>
         constructor
         · intro hx
