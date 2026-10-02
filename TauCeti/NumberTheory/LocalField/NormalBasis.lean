@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.NormalBasis
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.NumberTheory.LocalField.GaloisAction
-public import TauCeti.NumberTheory.LocalField.IntegerRing
+public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 
 /-!
 # Galois-stable lattices from normal bases of local fields

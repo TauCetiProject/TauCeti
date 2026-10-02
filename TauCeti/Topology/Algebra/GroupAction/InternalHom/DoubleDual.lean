@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.ZMod.Dual
 public import TauCeti.Topology.Algebra.GroupAction.InternalHom.Basic
-import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Double duality for internal homs of discrete modules
@@ -19,13 +18,14 @@ hom `M →+ N` with its conjugation action. Evaluation
 
 is a `G`-equivariant additive homomorphism from `M` to the double internal dual
 `InternalHom G (InternalHom G M N) N`, and it is natural in `M`: precomposing twice with an
-equivariant `f : M →+[G] M'` carries `eval m` to `eval (f m)`. When `N = ZMod p` for a prime `p` and
-`M` is killed by `p`, evaluation is injective, because it is evaluation of the `𝔽_p`-vector space
-`M` into its double dual; when `M` is moreover finite it is bijective, by counting: the internal
-hom `InternalHom G M (ZMod p)` has the order of `M`. So a finite discrete `G`-module killed
-by `p` is canonically and equivariantly its own double dual, which is what identifies the dual of
-the dual of a short exact sequence of such modules with the sequence itself, and what turns the
-duality statements about a module `M` into statements about its dual `InternalHom G M (ZMod p)`.
+equivariant `f : M →+[G] M'` carries `eval m` to `eval (f m)`. When `N = ZMod n` for `n ≠ 0` and
+`M` is killed by `n`, evaluation is injective, because the homomorphisms to `ZMod n` separate the
+points of `M`; when `M` is moreover finite it is bijective, by counting: the internal hom
+`InternalHom G M (ZMod n)` has the order of `M`. So a finite discrete `G`-module killed by `n` is
+canonically and equivariantly its own double dual, which is what identifies the dual of the dual
+of a short exact sequence of such modules with the sequence itself, and what turns the duality
+statements about a module `M` into statements about its dual `InternalHom G M (ZMod n)`. The
+coefficient systems `ℤ/pⁱ` of a pro-`p` group are the case `n = pⁱ`.
 
 ## Main definitions
 
@@ -35,11 +35,14 @@ duality statements about a module `M` into statements about its dual `InternalHo
 
 ## Main results
 
-* `TauCeti.InternalHom.natCard_zmod`: `Nat.card (InternalHom G M (ZMod p)) = Nat.card M` for
-  finite `M` killed by the prime `p`.
-* `TauCeti.InternalHom.eval_injective` and `TauCeti.InternalHom.eval_bijective`: evaluation into the
-  double dual with values in `ZMod p` is injective on a module killed by `p`, and bijective when
-  that module is finite.
+* `TauCeti.InternalHom.natCard_of_addEquiv_zmod`: `Nat.card (InternalHom G M N) = Nat.card M` for
+  finite `M` killed by `n ≠ 0` and values in any additive group `N ≃+ ZMod n`.
+* `TauCeti.InternalHom.eval_injective_of_addEquiv_zmod` and
+  `TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`: evaluation into the double dual with
+  values in any additive group `N ≃+ ZMod n`, whatever the action of `G` on `N`, is injective on a
+  module killed by `n ≠ 0`, and bijective when that module is finite. The untwisted coefficients
+  `ZMod n` are the case `e = AddEquiv.refl _`, and the twisted coefficients `ℤ/pⁱ` of a character
+  are the case in use.
 -/
 
 public section
@@ -91,35 +94,46 @@ end Eval
 
 section ZMod
 
-variable {G : Type*} {M : Type*} [AddCommGroup M] {p : ℕ} [Fact p.Prime]
+variable {G : Type*} {M : Type*} [AddCommGroup M] {n : ℕ} [NeZero n]
 
-/-- **The internal dual of a finite module killed by `p` has the same order.** -/
-theorem natCard_zmod [Finite M] (hM : ∀ x : M, p • x = 0) :
-    Nat.card (InternalHom G M (ZMod p)) = Nat.card M := by
-  rw [← natCard_addMonoidHom_zmod hM]
+section AddEquivZMod
+
+variable {N : Type*} [AddCommGroup N] (e : N ≃+ ZMod n)
+include e
+
+/-- **The internal dual of a finite module killed by `n` has the same order**, for values in any
+additive group `N ≃+ ZMod n`. -/
+theorem natCard_of_addEquiv_zmod [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Nat.card (InternalHom G M N) = Nat.card M := by
+  rw [← natCard_addMonoidHom_of_addEquiv_zmod e hM]
   exact Nat.card_congr ⟨toAddMonoidHom, of G, fun _ => rfl, fun _ => rfl⟩
 
-variable [Group G] [DistribMulAction G M] [DistribMulAction G (ZMod p)]
+variable [Group G] [DistribMulAction G M] [DistribMulAction G N]
 
-/-- For a module `M` killed by a prime `p`, evaluation into the double dual with values in `ZMod p`
-is injective: it is evaluation of the `𝔽_p`-vector space `M` into its double dual. -/
-theorem eval_injective (hM : ∀ x : M, p • x = 0) : Function.Injective (eval G M (ZMod p)) := by
-  have _i : Module (ZMod p) M := AddCommGroup.zmodModule hM
-  intro m₁ m₂ h
-  refine Module.eval_apply_injective (ZMod p) (LinearMap.ext fun ψ => ?_)
-  have := congrArg (fun χ : InternalHom G (InternalHom G M (ZMod p)) (ZMod p) =>
-    evalPairing G χ (of G ψ.toAddMonoidHom)) h
-  simpa only [evalPairing_apply, toAddMonoidHom_eval, AddMonoidHom.flip_apply,
-    LinearMap.toAddMonoidHom_coe, Module.Dual.eval_apply] using this
+/-- For a module `M` killed by `n ≠ 0`, evaluation into the double dual with values in any additive
+group `N ≃+ ZMod n` is injective: the homomorphisms `M →+ N` separate the points of `M`. -/
+theorem eval_injective_of_addEquiv_zmod (hM : ∀ x : M, n • x = 0) :
+    Function.Injective (eval G M N) := by
+  refine (injective_iff_map_eq_zero _).2 fun m hm => by_contra fun hne => ?_
+  obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hM hne
+  refine hf ((AddEquiv.map_eq_zero_iff e.symm).1 ?_)
+  have := congrArg (fun χ : InternalHom G (InternalHom G M N) N =>
+    evalPairing G χ (of G (e.symm.toAddMonoidHom.comp f))) hm
+  simpa only [evalPairing_apply, toAddMonoidHom_eval, AddMonoidHom.flip_apply, map_zero,
+    AddMonoidHom.zero_apply, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom] using this
 
-/-- **Double duality.** For a finite module `M` killed by a prime `p`, evaluation into the double
-dual with values in `ZMod p` is bijective: `M` is equivariantly its own double dual. -/
-theorem eval_bijective [Finite M] (hM : ∀ x : M, p • x = 0) :
-    Function.Bijective (eval G M (ZMod p)) := by
-  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  refine (eval_injective hM).bijective_of_nat_card_le ?_
-  rw [natCard_zmod (nsmul_eq_zero fun x : ZMod p => by
-    rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]), natCard_zmod hM]
+/-- **Double duality.** For a finite module `M` killed by `n ≠ 0`, evaluation into the double dual
+with values in any additive group `N ≃+ ZMod n` is bijective: `M` is equivariantly its own double
+dual. -/
+theorem eval_bijective_of_addEquiv_zmod [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Function.Bijective (eval G M N) := by
+  have : Finite N := Finite.of_equiv _ e.symm.toEquiv
+  have hN : ∀ y : N, n • y = 0 := fun y => by
+    rw [← e.map_eq_zero_iff, map_nsmul, nsmul_eq_mul, ZMod.natCast_self, zero_mul]
+  refine (eval_injective_of_addEquiv_zmod e hM).bijective_of_nat_card_le ?_
+  rw [natCard_of_addEquiv_zmod e (nsmul_eq_zero hN), natCard_of_addEquiv_zmod e hM]
+
+end AddEquivZMod
 
 end ZMod
 

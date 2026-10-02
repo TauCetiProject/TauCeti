@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Topology.Category.TopCat.Opens
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 
 /-!
@@ -26,6 +27,7 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.spaComap`: the pullback map `spa Bplus → spa Aplus`.
+* `TauCeti.ValuationSpectrum.spaComapTopHom`: the same map as a morphism of `TopCat`.
 
 ## Main results
 
@@ -35,7 +37,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 * `TauCeti.ValuationSpectrum.continuous_spaComap`: `spaComap` is continuous.
 * `TauCeti.ValuationSpectrum.spaComap_id`, `spaComap_comp`: contravariant functoriality.
 * `TauCeti.ValuationSpectrum.comap_preimage_rationalSubset_inter_spa`,
-  `spaComap_preimage_rationalSubset`: preimages of rational subsets.
+  `spaComap_preimage_rationalSubset`, `map_spaComapTopHom_obj_spaBasicOpen`: preimages of
+  rational subsets.
 * `TauCeti.ValuationSpectrum.comap_mem_rationalSubset`,
   `rationalSubset_image_eq_spa`: elementwise criteria for rational subsets under pullback.
 * `TauCeti.ValuationSpectrum.isEmbedding_spaComap`: an embedding of valuation spectra restricts
@@ -187,6 +190,32 @@ theorem spaComap_preimage_rationalSubset (φ : A →+* B) (hφ : Continuous φ)
   simp only [Set.mem_preimage, spaComap_val]
   simpa only [Set.mem_inter_iff, Set.mem_preimage, hv, and_true] using
     Set.ext_iff.mp (comap_preimage_rationalSubset_inter_spa φ hφ hplus T s) v
+
+section TopCat
+
+universe v
+
+variable {A B : Type v} [CommRing A] [TopologicalSpace A] [CommRing B] [TopologicalSpace B]
+  {Aplus : Subring A} {Bplus : Subring B} (φ : A →+* B) (hφ : Continuous φ)
+  (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+
+/-- The map of adic spectra `Spa(B, B⁺) → Spa(A, A⁺)` induced by `φ`, as a morphism of `TopCat`. -/
+noncomputable abbrev spaComapTopHom : TopCat.of ↥(spa Bplus) ⟶ TopCat.of ↥(spa Aplus) :=
+  TopCat.ofHom ⟨spaComap φ hφ Aplus Bplus hplus, continuous_spaComap φ hφ Aplus Bplus hplus⟩
+
+open scoped Classical in
+/-- **The preimage of a basic open is a basic open**: the preimage of `R(T/s)` under the induced
+map of adic spectra is `R(φ(T)/φ(s))`. This is `spaComap_preimage_rationalSubset` for `Opens`. -/
+@[simp]
+theorem map_spaComapTopHom_obj_spaBasicOpen (T : Finset A) (s : A) :
+    (TopologicalSpace.Opens.map (spaComapTopHom φ hφ hplus)).obj (spaBasicOpen Aplus T s) =
+      spaBasicOpen Bplus (T.image φ) (φ s) :=
+  TopologicalSpace.Opens.ext <| Set.ext fun w ↦
+    (TopologicalSpace.Opens.mem_map.trans mem_spaBasicOpen).trans <|
+      (Set.ext_iff.mp (spaComap_preimage_rationalSubset φ hφ Aplus Bplus hplus T s) w).trans
+        mem_spaBasicOpen.symm
+
+end TopCat
 
 /-- If pullback along `φ` embeds valuation spectra, then its restriction to compatible sub-unit
 loci is also an embedding. -/

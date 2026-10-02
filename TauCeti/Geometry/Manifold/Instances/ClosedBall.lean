@@ -5,9 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Analysis.Normed.Module.Ball.LinearIsometry
+public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Boundary.Basic
+public import TauCeti.Geometry.Manifold.Immersion
 
 /-!
 # The closed unit ball as an analytic manifold with boundary
@@ -40,6 +46,14 @@ isometry, hence analytic, so the ball is an analytic manifold.
 * `TauCeti.contMDiff_subtypeVal_closedBall`: the inclusion into `E` is analytic.
 * `TauCeti.contMDiff_iff_comp_subtypeVal_closedBall`: a map into the ball is `C^k` exactly when
   it is `C^k` as a map into `E`.
+* `LinearIsometry.isSmoothEmbedding_unitClosedBallMap`: a linear isometry `F →ₗᵢ[ℝ] E` restricts
+  to a smooth embedding of closed unit balls, in the sense of manifolds with boundary. In charts
+  `closedBallChart φ` and `closedBallChart ψ` with `ψ ∘ ι ∘ φ⁻¹` fixing `e₀`, the inversions
+  cancel and the map reads as that linear isometry of the model spaces, which is the inclusion of a
+  factor of a product decomposition (`LinearIsometry.prodOrthogonalRangeEquiv`). This is the flat
+  disc `D² ⊆ D⁴` bounded by a great circle, the slice disc of the unknot.
+* `LinearIsometryEquiv.unitClosedBallDiffeomorph`: a linear isometry equivalence restricts to a
+  diffeomorphism of closed unit balls.
 
 ## References
 
@@ -51,8 +65,8 @@ public section
 
 noncomputable section
 
-open Set Metric Function Module EuclideanGeometry
-open scoped Manifold ContDiff
+open Set Metric Function Manifold Module EuclideanGeometry
+open scoped Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
 
@@ -355,5 +369,101 @@ theorem contMDiff_iff_comp_subtypeVal_closedBall {k : ℕ∞ω} {f : M → close
   filter_upwards [hcont.continuousAt.preimage_mem_nhds
     ((closedBallChart φ).open_source.mem_nhds hx)] with y hy
   simp [h, closedBallChart_apply_val φ hy]
+
+/-! ### Smooth embeddings of closed balls induced by linear isometries -/
+
+section LinearIsometry
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {m : ℕ} [NeZero m]
+  [Fact (finrank ℝ F = m)] (ι : F →ₗᵢ[ℝ] E)
+
+omit [Fact (finrank ℝ F = m)] in
+/-- Given a chart isometry `φ` of the closed ball of `F`, there is a chart isometry `ψ` of the
+closed ball of `E` in which `ι` reads as a linear isometry `L` of the model spaces fixing `e₀`, the
+negative of the centre of the inversions defining the charts. -/
+private theorem exists_linearIsometryEquiv_comp_eq (φ : F ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin m)) :
+    ∃ (ψ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+      (L : EuclideanSpace ℝ (Fin m) →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)),
+      L (EuclideanSpace.single (0 : Fin m) (1 : ℝ)) = EuclideanSpace.single (0 : Fin n) (1 : ℝ) ∧
+        ∀ y, ψ (ι y) = L (φ y) := by
+  set w : EuclideanSpace ℝ (Fin n) :=
+    closedBallIsometry (ι (φ.symm (EuclideanSpace.single (0 : Fin m) (1 : ℝ))))
+  have hw : ‖w‖ = ‖(EuclideanSpace.single (0 : Fin n) (1 : ℝ))‖ := by simp [w]
+  refine ⟨closedBallIsometry.trans (ℝ ∙ (w - e₀))ᗮ.reflection,
+    (closedBallIsometry.trans (ℝ ∙ (w - e₀))ᗮ.reflection).toLinearIsometry.comp
+      (ι.comp φ.symm.toLinearIsometry), ?_, fun y ↦ by simp⟩
+  simpa [w] using Submodule.reflection_sub hw
+
+variable {k : ℕ∞ω}
+
+/-- The restriction of a linear isometry to the closed unit balls is an immersion at every point,
+in the sense of manifolds with boundary: in suitable inversion charts it reads as a linear
+isometry of the model spaces, hence as the inclusion of a factor of a product decomposition. -/
+theorem _root_.LinearIsometry.isImmersionAt_unitClosedBallMap (x : closedBall (0 : F) 1) :
+    IsImmersionAt (𝓡∂ m) (𝓡∂ n) k ι.unitClosedBallMap x := by
+  obtain ⟨φ, hφx, -⟩ := exists_chartAt_closedBall_eq (n := m) x
+  obtain ⟨ψ, L, hL, hψ⟩ := exists_linearIsometryEquiv_comp_eq (n := n) ι φ
+  have hL' : L (-e₀) = -e₀ := by rw [map_neg, hL]
+  have hne : ∀ y : closedBall (0 : F) 1, φ y ≠ -e₀ → ψ (ι.unitClosedBallMap y) ≠ -e₀ := by
+    intro y hy h
+    rw [LinearIsometry.coe_unitClosedBallMap_apply, hψ, ← hL', L.map_eq_iff] at h
+    exact hy h
+  refine (IsImmersionAtOfComplement.mk_of_charts L.prodOrthogonalRangeEquiv (closedBallChart φ)
+    (closedBallChart ψ) hφx (hne x hφx)
+    (IsManifold.maximalAtlas_subset_of_le le_top
+      (IsManifold.subset_maximalAtlas (atlas_closedBall (E := F) (n := m) ▸ mem_range_self φ)))
+    (IsManifold.maximalAtlas_subset_of_le le_top
+      (IsManifold.subset_maximalAtlas (atlas_closedBall (E := E) (n := n) ▸ mem_range_self ψ)))
+    (fun y hy ↦ hne y hy) fun u hu ↦ ?_).isImmersionAt
+  rw [OpenPartialHomeomorph.extend_target', closedBallChart_target, image_univ,
+    range_modelWithCornersEuclideanHalfSpace] at hu
+  have hu : 0 ≤ u 0 := hu
+  have hLu : 0 ≤ L u 0 := by rw [LinearIsometry.apply_eq_of_map_single hL]; exact hu
+  -- `L` fixes the centre `-e₀` of the inversion, so it commutes with the inversion.
+  have key (y : EuclideanSpace ℝ (Fin m)) :
+      inversion (-e₀) √2 (L y) = L (inversion (-e₀) √2 y) := by
+    rw [L.map_inversion, hL']
+  simp only [comp_apply, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+    modelWithCornersEuclideanHalfSpace_symm_apply_of_le hu, closedBallChart_apply,
+    LinearIsometry.coe_unitClosedBallMap_apply, closedBallChart_symm_apply_coe, hψ,
+    LinearIsometryEquiv.apply_symm_apply, key, inversion_inversion _ (by positivity : (√2 : ℝ) ≠ 0),
+    modelWithCornersEuclideanHalfSpace_symm_apply_of_le hLu,
+    modelWithCornersEuclideanHalfSpace_apply, LinearIsometry.prodOrthogonalRangeEquiv_apply_zero]
+
+/-- The restriction of a linear isometry to the closed unit balls is a `C^k` immersion. -/
+theorem _root_.LinearIsometry.isImmersion_unitClosedBallMap :
+    IsImmersion (𝓡∂ m) (𝓡∂ n) k ι.unitClosedBallMap :=
+  isImmersion_iff_forall_isImmersionAt.2 ι.isImmersionAt_unitClosedBallMap
+
+/-- The restriction of a linear isometry to the closed unit balls is a `C^k` smooth embedding of
+manifolds with boundary. -/
+theorem _root_.LinearIsometry.isSmoothEmbedding_unitClosedBallMap :
+    IsSmoothEmbedding (𝓡∂ m) (𝓡∂ n) k ι.unitClosedBallMap :=
+  ⟨ι.isImmersion_unitClosedBallMap, ι.isEmbedding_unitClosedBallMap⟩
+
+/-- A linear isometry equivalence restricts to a `C^k` diffeomorphism of closed unit balls, in the
+sense of manifolds with boundary. -/
+def _root_.LinearIsometryEquiv.unitClosedBallDiffeomorph (e : F ≃ₗᵢ[ℝ] E) :
+    closedBall (0 : F) 1 ≃ₘ^k⟮𝓡∂ m, 𝓡∂ n⟯ closedBall (0 : E) 1 where
+  toFun := e.toLinearIsometry.unitClosedBallMap
+  invFun := e.symm.toLinearIsometry.unitClosedBallMap
+  left_inv x := Subtype.ext (by simp)
+  right_inv x := Subtype.ext (by simp)
+  contMDiff_toFun := e.toLinearIsometry.isSmoothEmbedding_unitClosedBallMap.contMDiff
+  contMDiff_invFun := e.symm.toLinearIsometry.isSmoothEmbedding_unitClosedBallMap.contMDiff
+
+@[simp]
+theorem _root_.LinearIsometryEquiv.coe_unitClosedBallDiffeomorph (e : F ≃ₗᵢ[ℝ] E) :
+    ⇑(e.unitClosedBallDiffeomorph (m := m) (n := n) (k := k)) =
+      e.toLinearIsometry.unitClosedBallMap :=
+  (rfl)
+
+@[simp]
+theorem _root_.LinearIsometryEquiv.unitClosedBallDiffeomorph_symm (e : F ≃ₗᵢ[ℝ] E) :
+    (e.unitClosedBallDiffeomorph (m := m) (n := n) (k := k)).symm =
+      e.symm.unitClosedBallDiffeomorph :=
+  (rfl)
+
+end LinearIsometry
 
 end TauCeti

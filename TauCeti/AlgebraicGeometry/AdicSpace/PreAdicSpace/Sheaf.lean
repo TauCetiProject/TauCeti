@@ -35,6 +35,19 @@ not merely its underlying presheaf of sets or rings. -/
 @[expose] def PreAdicSpace.isSheafy : ObjectProperty PreAdicSpace.{u} :=
   fun X ↦ X.toPresheafedSpace.presheaf.IsSheaf
 
+/-- Being sheafy is invariant under isomorphism in `𝒱^pre`: an isomorphism `e : X ≅ Y` is a
+homeomorphism of the underlying spaces along which `e.hom.c` identifies the structure presheaf of
+`Y` with the pushforward of that of `X`, and the pushforward of a sheaf is a sheaf. -/
+instance PreAdicSpace.isSheafy.instIsClosedUnderIsomorphisms :
+    PreAdicSpace.isSheafy.{u}.IsClosedUnderIsomorphisms where
+  of_iso e hX :=
+    -- `e.hom.c` is an isomorphism because `e.hom.toHom` is, as the image of `e` under the
+    -- forgetful functor, whose `map` is `Hom.toHom` by definition
+    have : IsIso (C := PresheafedSpace CompleteSeparatedTopCommRingCat.{u}) e.hom.toHom :=
+      inferInstanceAs (IsIso (PreAdicSpace.forgetToPresheafedSpace.map e.hom))
+    TopCat.Presheaf.isSheaf_of_iso (asIso e.hom.c).symm
+      (TopCat.Sheaf.pushforward_sheaf_of_sheaf e.hom.base hX)
+
 /-- The category of pre-adic spaces with sheaf structure presheaves. It is the full
 subcategory of pre-adic spaces cut out by the sheaf condition. -/
 abbrev SheafyPreAdicSpace : Type (u + 1) :=

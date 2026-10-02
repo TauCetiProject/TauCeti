@@ -37,6 +37,8 @@ the relevant quotients discrete; the preimage criterion needs it only on the tar
 
 * `OpenNormalSubgroup.continuous_mk_inf`, `OpenNormalSubgroup.continuous_mk_comap`: continuity of
   a map into the quotient by an intersection, and by a preimage, of open normal subgroups.
+* `TauCeti.mem_openNormalSubgroupBot`: the trivial open normal subgroup contains only the
+  identity.
 -/
 
 public section
@@ -155,6 +157,12 @@ def openNormalSubgroupBot (G : Type*) [Group G] [TopologicalSpace G] [DiscreteTo
 theorem openNormalSubgroupBot_toSubgroup (G : Type*) [Group G] [TopologicalSpace G]
     [DiscreteTopology G] : (openNormalSubgroupBot G).toSubgroup = ⊥ :=
   (rfl)
+
+/-- The trivial open normal subgroup contains only the identity. -/
+@[simp]
+theorem mem_openNormalSubgroupBot {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+    {x : G} : x ∈ openNormalSubgroupBot G ↔ x = 1 :=
+  Subgroup.mem_bot
 
 /-- The whole group, as an open normal subgroup. It is the greatest element of
 `OpenNormalSubgroup G`, and in particular witnesses that this type is nonempty. -/

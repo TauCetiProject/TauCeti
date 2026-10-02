@@ -234,9 +234,8 @@ theorem iCondIndepFun.map_prod_pi_coding_eq
     have hmap_all : ∀ᵐ z ∂μ.map Z,
         ∀ i, (ρ i).map (f i z) = condDistrib (X i) Z μ z := ae_all_iff.2 hmap
     have hcode : Measurable (fun p : δ × (∀ i, ξ i) =>
-        (p.1, fun i => f i p.1 (p.2 i))) := by
-      exact measurable_fst.prodMk <| Measurable.of_eval fun i =>
-        (hf i).comp (measurable_fst.prodMk ((measurable_pi_apply i).comp measurable_snd))
+        (p.1, fun i => f i p.1 (p.2 i))) :=
+      measurable_fst.prodMk (TauCeti.Probability.measurable_pi_uncurry_prod hf)
     have hprod :
         (μ.prod (Measure.pi ρ)).map (Prod.map Z id) =
           (μ.map Z).prod (Measure.pi ρ) := by
@@ -334,8 +333,7 @@ theorem iCondIndepFun.map_prod_pi_eq_of_map_prod_eq
       ((hfX i).symm.trans (κ.map_prod_eq_compProd_of_map (ρ i) (f i) (hf i) fun _ => rfl))]
       with z hz using hz.symm
   have hcode : Measurable (fun p : δ × (∀ i, ξ i) => (p.1, fun i => f i p.1 (p.2 i))) :=
-    measurable_fst.prodMk <| Measurable.of_eval fun i =>
-      (hf i).comp (measurable_fst.prodMk ((measurable_pi_apply i).comp measurable_snd))
+    measurable_fst.prodMk (TauCeti.Probability.measurable_pi_uncurry_prod hf)
   have hprod : (μ.map Z).prod (Measure.pi ρ) = (μ.prod (Measure.pi ρ)).map (Prod.map Z id) := by
     simpa using Measure.map_prod_map μ (Measure.pi ρ) hZ measurable_id
   rw [hprod, Measure.map_map hcode (hZ.prodMap measurable_id)]

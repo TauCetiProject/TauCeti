@@ -68,6 +68,10 @@ groups of even rank.
   and on the iterated `p`-powers of degree-zero classes.
 * `TauCeti.IsCrossedHom.gradedFunctional_gradedPowIterBracket`: its value on the iterated
   `p`-power `π^m [ξ_g, ξ_h]` of a bracket is its value on the bracket itself.
+* `TauCeti.IsCrossedHom.map_padicPow_eq_zero_of_eq_zero`,
+  `TauCeti.IsCrossedHom.map_padicPow_of_eq_one`: a continuous crossed homomorphism vanishing at `x`
+  vanishes on the `p`-adic powers of `x`, and is `ℤ_p`-linear along the `p`-adic powers of an
+  element on which the character is trivial.
 
 ## References
 

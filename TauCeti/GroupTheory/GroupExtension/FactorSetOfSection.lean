@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupExtension.Basic
+public import TauCeti.GroupTheory.GroupExtension.Basic
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 
 /-!
@@ -57,6 +58,9 @@ bookkeeping (`TauCeti.GroupExtension.factorSetFun`, `TauCeti.GroupExtension.norm
   `TauCeti.GroupExtension.inducesAction_iff_smul_eq_self`: `InducesAction` holds exactly when the
   descended conjugation action is the ambient one, and, for a central extension, exactly when the
   ambient action is trivial.
+* `TauCeti.GroupExtension.factorSet_monoidHomComp`: the factor set of a section transported along a
+  homomorphism of extensions over `G` restricting to `f` on the kernels is the pushforward along
+  `f` of the factor set of the section.
 * `TauCeti.GroupExtension.section_mul`: `σ g * σ h = inl (α (g, h)) * σ (g * h)`, the defining
   property of the factor set.
 * `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv`: the extension is equivalent to the
@@ -270,6 +274,24 @@ theorem inl_factorSet (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
     S.inl (factorSet σ hσ hact (g, h)) = σ g * σ h * (σ (g * h))⁻¹ := by
   simp only [coe_factorSet]
   exact inl_factorSetFun σ g h
+
+/-- **The factor set of a section transported along a homomorphism of extensions** `φ` over the
+identity of `G` that restricts to the equivariant `f` on the kernels is the pushforward along `f`
+of the factor set of the section. -/
+theorem factorSet_monoidHomComp {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    {E' : Type*} [Group E'] {S' : GroupExtension N E' G} (σ : S.Section) (hσ : σ 1 = 1)
+    (hact : InducesAction S) (hact' : InducesAction S') (f : M →*[G] N) (φ : E →* E')
+    (hinl : φ.comp S.inl = S'.inl.comp f.toMonoidHom) (hright : S'.rightHom.comp φ = S.rightHom) :
+    factorSet (σ.monoidHomComp φ hright) (by rw [σ.monoidHomComp_apply, hσ, map_one]) hact' =
+      (factorSet σ hσ hact).map f := by
+  -- The two factor sets agree after the injective inclusion of the kernel into `E'`, where both
+  -- read `φ (σ g) * φ (σ h) * (φ (σ (g * h)))⁻¹`.
+  ext ⟨g, h⟩
+  refine S'.inl_injective ?_
+  have key : S'.inl (f (factorSet σ hσ hact (g, h))) = φ (S.inl (factorSet σ hσ hact (g, h))) :=
+    (DFunLike.congr_fun hinl _).symm
+  rw [inl_factorSet, FactorSet.map_apply, key, inl_factorSet, map_mul φ, map_mul φ, map_inv φ]
+  simp only [GroupExtension.Section.monoidHomComp_apply]
 
 end FactorSet
 

@@ -222,6 +222,11 @@ theorem ideal_span_absNorm_eq_self (J : Ideal (𝓞 ℚ)) :
   rwa [← Ideal.map_symm, Ideal.map_span, Set.image_singleton, map_natCast,
     Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective] at h'
 
+/-- **Divisibility of natural numbers in `𝓞 ℚ` is divisibility in `ℕ`**, transported along
+`Rat.ringOfIntegersEquiv : 𝓞 ℚ ≃+* ℤ`. -/
+theorem natCast_dvd_natCast {m n : ℕ} : (m : 𝓞 ℚ) ∣ (n : 𝓞 ℚ) ↔ m ∣ n := by
+  rw [← map_dvd_iff Rat.ringOfIntegersEquiv, map_natCast, map_natCast, Int.natCast_dvd_natCast]
+
 end Rat.RingOfIntegers
 
 namespace Ideal

@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Cup
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Heisenberg
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank
 
 /-!
 # The relator functional of a minimal presentation and the cup product

@@ -39,6 +39,9 @@ class.
   finite-place conditions in `IsCongrOne`.
 * `TauCeti.GlobalNumberFields.residueHom_eq_one_of_mem_congruenceSubgroup`: an element congruent to
   one maps to one under reduction.
+* `TauCeti.GlobalNumberFields.isCongrOne_iff_residueHom_eq_one_of_finitePart_eq`: for two moduli
+  with the same finite part, congruence to one modulo one of them is reduction to one modulo the
+  other together with positivity at its real places.
 * `TauCeti.GlobalNumberFields.IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul`: an element
   congruent to one is a quotient of two algebraic integers congruent to one.
 * `TauCeti.GlobalNumberFields.residueHom_surjective`: every residue unit modulo the finite part is
@@ -255,6 +258,19 @@ theorem isCongrOne_of_residue_eq_one {𝔪 : Modulus K} {x : Kˣ} (hx : x ∈ pr
     (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
     IsCongrOne 𝔪 x :=
   isCongrOne_iff.mpr ⟨(residue_eq_one_iff ⟨x, hx⟩).mp hres, hpos⟩
+
+/-- **Congruence to one sees the finite part only through the reduction.**  For two moduli with the
+same finite part, an element that is a unit at that finite part is congruent to one modulo `𝔪`
+exactly when it reduces to one modulo `𝔫` and is positive at the real places of `𝔪`.  This is how
+the finite conditions of one modulus are read off the reduction attached to another. -/
+theorem isCongrOne_iff_residueHom_eq_one_of_finitePart_eq {𝔪 𝔫 : Modulus K}
+    (hfin : 𝔪.finitePart = 𝔫.finitePart) {x : Kˣ} (hx : x ∈ primeToSubgroup 𝔫) :
+    IsCongrOne 𝔪 x ↔ residueHom 𝔫 ⟨x, hx⟩ = 1 ∧
+      ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+  have hexp : ∀ v, 𝔪.exponent v = 𝔫.exponent v := fun v ↦ by
+    rw [Modulus.exponent_def, Modulus.exponent_def, hfin]
+  rw [isCongrOne_iff, Units.ext_iff, coe_residueHom, Units.val_one, residue_eq_one_iff]
+  simp only [hfin, hexp]
 
 /-- **An element congruent to one modulo `𝔪` reduces to one**: the congruence subgroup lies in the
 kernel of `residueHom 𝔪`. -/

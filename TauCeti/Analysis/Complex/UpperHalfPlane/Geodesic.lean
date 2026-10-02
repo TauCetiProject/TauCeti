@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
 
 /-!
@@ -62,8 +63,7 @@ reverses the axis (`geodesicLine_mul_pslS`).
   dilation `Matrix.SpecialLinearGroup.dilation s` shifts the parameter by `s`;
   `range_geodesicLine_mul_dilation` is the same fact at the level of the line as a set, which is
   unchanged. `geodesicLine_one_eq_dilation_smul_I` is the underlying description of the imaginary
-  axis as the orbit of `I` under the dilations, and `coe_dilation_smul` the action `z ↦ exp s * z`
-  of a dilation.
+  axis as the orbit of `I` under the dilations.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_dist_eq` — two-point transitivity:
   a geodesic line with `z` at parameter `0` and `w` at parameter `dist z w`, for any `z`, `w`;
   `exists_mem_range_geodesicLine_and_mem_range` is the same at the level of the line as a set.
@@ -180,19 +180,6 @@ theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
 /-! ### Dilations along a geodesic line -/
 
 open Matrix.SpecialLinearGroup (dilation)
-
-/-- `dilation s` acts on `ℍ` as `z ↦ exp s * z`. -/
-theorem coe_dilation_smul (s : ℝ) (z : ℍ) : ((dilation s • z : ℍ) : ℂ) = Real.exp s * z := by
-  rw [UpperHalfPlane.coe_specialLinearGroup_apply]
-  simp only [Matrix.SpecialLinearGroup.coe_dilation, Matrix.of_apply, Matrix.cons_val',
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-    Algebra.algebraMap_self_apply, Complex.ofReal_zero, zero_mul, add_zero, zero_add]
-  have h2 : (Real.exp s : ℂ) = Real.exp (s / 2) * Real.exp (s / 2) := by
-    rw [← Complex.ofReal_mul, ← Real.exp_add, add_halves]
-  have hne : (Real.exp (-(s / 2)) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne'
-  rw [div_eq_iff hne, h2, Real.exp_neg]
-  push_cast
-  field_simp
 
 /-- The imaginary axis is the orbit of `I` under the dilations. -/
 theorem geodesicLine_one_eq_dilation_smul_I (t : ℝ) :

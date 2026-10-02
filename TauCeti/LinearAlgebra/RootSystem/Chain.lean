@@ -7,8 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 import Mathlib.Tactic.NoncommRing
-import Mathlib.Tactic.Push
-import TauCeti.Data.Fin.Basic
 
 /-!
 # Chains with simple or double edges
@@ -17,14 +15,13 @@ The diagrams that the classification of finite-type Cartan matrices has to weigh
 **chains**. This file isolates the entry functions for a simply-laced chain and for a chain whose
 last edge may be double, together with the summation identities used by weighting arguments.
 
-Nothing here mentions `TauCeti.IsFiniteType`, which is why the file sits above the finite-type
-directory rather than in it. It exists because the diagrams that carry the length constraints of
-the classification - the stars of `TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.Basic`, the
-double-edge chains of `TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic`, and the
-forked double-edge diagrams of `TauCeti.LinearAlgebra.RootSystem.FiniteType.ForkedDoubleEdge` -
-are all assembled from chains and are all excluded by a vector that is linear along each chain
-they contain. The simply-laced entry function and row sum are the special case `L = 0` of their
-type-`B` counterparts.
+The diagrams that carry the length constraints of the classification - the stars of
+`TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.Basic`, the double-edge chains of
+`TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic`, and the forked double-edge
+diagrams of `TauCeti.LinearAlgebra.RootSystem.FiniteType.ForkedDoubleEdge` - are all assembled from
+chains and are all excluded by a vector that is linear along each chain they contain. The
+simply-laced entry function and row sum are the special case `L = 0` of their type-`B`
+counterparts.
 
 ## Main definitions
 
@@ -40,6 +37,7 @@ type-`B` counterparts.
   that is linear in the position is annihilated there.
 * `TauCeti.sum_range_chainEntry_mul_affine`: the resulting formula for an affine weight.
 * `TauCeti.sum_range_chainBEntry_mul`: the corresponding row sum with a double last edge.
+
 ## References
 
 The chain weighting is the calculation of J. E. Humphreys, *Introduction to Lie Algebras and
@@ -95,57 +93,31 @@ lemma chainBEntry_eq_cartanMatrix_B {n : ℕ} (i j : Fin n) :
 
 /-- **A single entry of a chain of type `B`, against a weight, split into its three positions.**
 The entry at `(a, s)` contributes only when `s` is `a`, its predecessor, or its successor, and the
-successor contribution is doubled at the short end.
-
-The identity is pointwise in `s`: it mentions neither the summation range of the row it is used in
-nor any bound on `a`. The last position `L` does appear, in the doubled coefficient at the short
-end. -/
+successor contribution is doubled at the short end. -/
 private theorem chainBEntry_mul_eq_add_add {R : Type*} [NonAssocRing R] (L a s : ℕ) (g : ℕ → R) :
-    ((chainBEntry L a s : ℤ) : R) * g s
+    (chainBEntry L a s : R) * g s
       = (if s = a then 2 * g a else 0) + (if s + 1 = a then -g s else 0)
         + (if s = a + 1 then -((if a + 1 = L then 2 else 1) * g (a + 1)) else 0) := by
-  -- the four cases `s = a`, `s + 1 = a`, `s = a + 1` and otherwise each pin the entry
-  rcases eq_or_ne s a with rfl | h1
-  · rw [chainBEntry_self]
-    split_ifs <;> first | (exfalso; omega) | (push_cast; noncomm_ring)
-  rcases eq_or_ne (s + 1) a with rfl | h2
-  · rw [chainBEntry_succ_left]
-    split_ifs <;> first | (exfalso; omega) | (push_cast; noncomm_ring)
-  rcases eq_or_ne s (a + 1) with rfl | h3
-  · rw [chainBEntry_succ_right]
-    split_ifs <;> first | (exfalso; omega) | (push_cast; noncomm_ring)
-  · rw [chainBEntry_eq_zero (Ne.symm h1) (fun h ↦ h3 h.symm) h2]
-    split_ifs <;> first | (exfalso; omega) | (push_cast; noncomm_ring)
+  rw [chainBEntry_def]
+  split_ifs <;> subst_vars <;> first | omega | simp
 
 /-- **A row of a chain of type `B`, against an arbitrary weighting of its positions.** The row `a`
 collects `2 g a`, the weight of the position before it - absent at the head of the chain - and the
 weight of the position after it, doubled when that position is the short end and absent when the row
-is the short end itself. Only ring operations and integer casts are used. -/
+is the last of the `m` positions. -/
 theorem sum_range_chainBEntry_mul {R : Type*} [NonAssocRing R] {L m a : ℕ} (ha : a < m)
     (g : ℕ → R) :
     ∑ s ∈ Finset.range m, (chainBEntry L a s : R) * g s
       = 2 * g a - (if a = 0 then 0 else g (a - 1))
         - (if a + 1 = m then 0 else (if a + 1 = L then 2 else 1) * g (a + 1)) := by
-  rw [Finset.sum_congr rfl (fun s _ ↦ chainBEntry_mul_eq_add_add L a s g),
-    Finset.sum_add_distrib, Finset.sum_add_distrib]
-  have h1 : ∑ s ∈ Finset.range m, (if s = a then 2 * g a else 0) = 2 * g a := by
-    rw [Finset.sum_ite_eq' (Finset.range m) a fun _ ↦ 2 * g a]
-    simp [Finset.mem_range, ha]
-  have h3 : ∑ s ∈ Finset.range m,
-      (if s = a + 1 then -((if a + 1 = L then 2 else 1) * g (a + 1)) else 0)
-      = -(if a + 1 = m then 0 else (if a + 1 = L then 2 else 1) * g (a + 1)) := by
-    rw [Finset.sum_ite_eq' (Finset.range m) (a + 1)
-      fun _ ↦ -((if a + 1 = L then 2 else 1) * g (a + 1))]
-    by_cases hm : a + 1 = m
-    · simp [Finset.mem_range, hm]
-    · rw [ite_eq_left (Finset.mem_range.2 (by omega)), ite_eq_right hm]
-  have h2 : ∑ s ∈ Finset.range m, (if s + 1 = a then -g s else 0)
+  have h : ∑ s ∈ Finset.range m, (if s + 1 = a then -g s else 0)
       = -(if a = 0 then 0 else g (a - 1)) := by
-    rw [← Fin.sum_univ_eq_sum_range]
-    have hcond : (a - 1 < m ∧ 1 ≤ a) ↔ a ≠ 0 := by omega
-    simpa [eq_comm, hcond, neg_ite] using sum_ite_val_add (n := m) (fun i : Fin m ↦ -g i) a 1
-  rw [h1, h2, h3]
-  noncomm_ring
+    rcases a with _ | a
+    · simp
+    · simp [Finset.sum_ite_eq', show a < m by omega]
+  simp only [chainBEntry_mul_eq_add_add, Finset.sum_add_distrib, Finset.sum_ite_eq',
+    Finset.mem_range, ha, ite_true, h]
+  split_ifs <;> first | omega | noncomm_ring
 
 /-- The Cartan-matrix entry of a **chain** between the positions `s` and `t` along it: `2` on the
 diagonal, `-1` between consecutive positions, and `0` otherwise. A chain is simply laced, so this
@@ -153,25 +125,26 @@ single function describes all of its edges. -/
 def chainEntry (s t : ℕ) : ℤ :=
   chainBEntry 0 s t
 
--- `(rfl)`, not `rfl`: the body of `TauCeti.chainEntry` is deliberately left unexposed, and the
--- parenthesised form keeps this equation out of the exported definitional-equality check.
+/-- The entries of a chain, spelled out: this is how a file that has to case on all of them at
+once reaches the definition, whose body is not exposed. -/
 lemma chainEntry_def (s t : ℕ) :
-    chainEntry s t = if s = t then 2 else if s = t + 1 then -1 else if t = s + 1 then -1 else 0 :=
-  by unfold chainEntry chainBEntry; split_ifs <;> omega
+    chainEntry s t =
+      if s = t then 2 else if s = t + 1 then -1 else if t = s + 1 then -1 else 0 := by
+  rw [chainEntry, chainBEntry_def]
+  split_ifs <;> omega
 
 @[simp] lemma chainEntry_self (s : ℕ) : chainEntry s s = 2 := chainBEntry_self 0 s
 
-@[simp] lemma chainEntry_succ_left (s : ℕ) : chainEntry (s + 1) s = -1 := by
-  exact chainBEntry_succ_left 0 s
+@[simp] lemma chainEntry_succ_left (s : ℕ) : chainEntry (s + 1) s = -1 :=
+  chainBEntry_succ_left 0 s
 
 @[simp] lemma chainEntry_succ_right (s : ℕ) : chainEntry s (s + 1) = -1 := by
-  rw [chainEntry, chainBEntry_succ_right]
-  omega
+  simp [chainEntry]
 
 /-- Away from the diagonal and its two neighbours a chain has no entry. -/
 @[simp] lemma chainEntry_eq_zero {s t : ℕ} (h1 : s ≠ t) (h2 : s ≠ t + 1) (h3 : t ≠ s + 1) :
-    chainEntry s t = 0 := by
-  exact chainBEntry_eq_zero h1 (fun h ↦ h3 h.symm) (fun h ↦ h2 h.symm)
+    chainEntry s t = 0 :=
+  chainBEntry_eq_zero h1 h3.symm h2.symm
 
 /-- Shifting both positions of a chain by one leaves the entry unchanged: only the difference of
 the positions matters. This is not a `simp` lemma: it would rewrite the right-hand sides of the
@@ -198,50 +171,27 @@ weights `g 1, …, g n`, the entries at the position `m` collect `2 g (m + 1) - 
 term `g m` being absent at `m = 0` and the term `g (m + 2)` at the far end. A weight that is linear
 in the position is therefore annihilated away from the two ends.
 
-The offset by one in the argument of `g` leaves room for a further vertex at the position `0`,
-which is how both diagrams that consume this identity attach a chain to the rest of themselves.
-
-Only the ring operations and the integer cast of the entries are used, so the weight may take its
-values in any ring; the diagrams weigh their vertices by rational numbers. -/
-theorem sum_range_chainEntry_mul {R : Type*} [Ring R] {n m : ℕ} (hm : m < n) (g : ℕ → R) :
+The offset by one in the argument of `g` leaves room for a further vertex at the position `0`, to
+which the chain is attached in the diagrams assembled from it. -/
+theorem sum_range_chainEntry_mul {R : Type*} [NonAssocRing R] {n m : ℕ} (hm : m < n) (g : ℕ → R) :
     ∑ s ∈ Finset.range n, (chainEntry m s : R) * g (s + 1)
       = 2 * g (m + 1) - (if m = 0 then 0 else g m)
         - (if m + 1 = n then 0 else g (m + 2)) := by
-  by_cases h0 : m = 0
-  · subst m
-    simpa [chainEntry] using
-      (sum_range_chainBEntry_mul (L := 0) hm (fun s ↦ g (s + 1)))
-  · have h1 : 1 ≤ m := Nat.one_le_iff_ne_zero.mpr h0
-    simpa [chainEntry, h0, Nat.sub_add_cancel h1, Nat.add_assoc] using
-      (sum_range_chainBEntry_mul (L := 0) hm (fun s ↦ g (s + 1)))
+  have := sum_range_chainBEntry_mul (L := 0) hm (fun s ↦ g (s + 1))
+  rcases m with _ | m <;> simpa [chainEntry] using this
 
 /-- **A row of a chain evaluated at an affine weight.** Interior rows vanish; the first row leaves
 `b - a`, the last row leaves `a * n + b`, and the unique row of a one-vertex chain leaves `2 * b`.
 -/
-theorem sum_range_chainEntry_mul_affine {R : Type*} [Ring R] {n m : ℕ} (hm : m < n)
+theorem sum_range_chainEntry_mul_affine {R : Type*} [NonAssocRing R] {n m : ℕ} (hm : m < n)
     (a b : R) :
     ∑ s ∈ Finset.range n, (chainEntry m s : R) * (a * (s : R) + b) =
       if m = 0 then (if m + 1 = n then 2 * b else b - a)
       else if m + 1 = n then a * (n : R) + b else 0 := by
-  have hrow := sum_range_chainEntry_mul hm
-    (fun u : ℕ ↦ a * ((u - 1 : ℕ) : R) + b)
+  have hrow := sum_range_chainEntry_mul hm fun u : ℕ ↦ a * ((u - 1 : ℕ) : R) + b
   simp only [Nat.add_sub_cancel] at hrow
   rw [hrow]
-  by_cases hzero : m = 0
-  · subst m
-    by_cases hend : 1 = n
-    · subst n
-      simp
-    · simp only [Nat.cast_zero, mul_zero, zero_add, hend, ite_false, ite_true]
-      push_cast
-      noncomm_ring
-  · have hpos : 1 ≤ m := Nat.one_le_iff_ne_zero.mpr hzero
-    by_cases hend : m + 1 = n
-    · subst n
-      simp only [hzero, ite_false, Nat.cast_sub hpos, Nat.cast_add, Nat.cast_one, ite_true]
-      noncomm_ring
-    · simp only [hzero, hend, ite_false, Nat.cast_sub hpos, Nat.cast_one]
-      push_cast
-      noncomm_ring
+  rcases m with _ | m <;> split_ifs <;> subst_vars <;>
+    first | contradiction | omega | (push_cast; noncomm_ring)
 
 end TauCeti

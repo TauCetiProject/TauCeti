@@ -53,6 +53,14 @@ theorem _root_.Matrix.checkedBy_eq_euclideanDual_generatedBy [Fintype ρ]
   simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
   simp only [funext_iff, Matrix.mulVec_apply, Pi.zero_apply]
 
+/-- Two matrices check the same code exactly when their rows span the same code. -/
+theorem _root_.Matrix.checkedBy_eq_iff_generatedBy_eq {σ : Type*} [Fintype ρ] [Fintype σ]
+    (H : Matrix ρ ι F) (H' : Matrix σ ι F) :
+    H.checkedBy = H'.checkedBy ↔ H.generatedBy = H'.generatedBy := by
+  rw [Matrix.checkedBy_eq_euclideanDual_generatedBy,
+    Matrix.checkedBy_eq_euclideanDual_generatedBy]
+  exact Submodule.euclideanDual_injective.eq_iff
+
 namespace LinearCode
 
 /-- A matrix generates `C` exactly when it checks the Euclidean dual of `C`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
-public import TauCeti.NumberTheory.LocalField.RootsOfUnity
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity.Basic
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 
 /-!
