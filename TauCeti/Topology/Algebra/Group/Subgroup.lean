@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.Topology.Algebra.Group.Subgroup
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
