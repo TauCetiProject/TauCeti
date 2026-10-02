@@ -80,7 +80,7 @@ instance [Preadditive C] [HasBinaryBiproducts C] : HasBinaryBiproducts (Homologi
 a kernel–cokernel pair: kernels and cokernels in `HomologicalComplex C c` may be computed
 degreewise. -/
 theorem IsKernelCokernelPair.of_eval [HasZeroMorphisms C]
-    (S : ShortComplex (HomologicalComplex C c))
+    {S : ShortComplex (HomologicalComplex C c)}
     (h : ∀ i, IsKernelCokernelPair (S.map (HomologicalComplex.eval C c i))) :
     IsKernelCokernelPair S where
   nonempty_fIsKernel := ⟨HomologicalComplex.isLimitOfEval _ _ fun i =>
@@ -115,8 +115,8 @@ variable [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] (E : ExactStr
 /-- The degreewise conflation class on homological complexes. -/
 private def homologicalComplexConflationClass : ConflationClass (HomologicalComplex C c) where
   Conflation S := ∀ i, E.Conflation (S.map (HomologicalComplex.eval C c i))
-  isKernelCokernelPair S hS :=
-    IsKernelCokernelPair.of_eval S fun i => E.isKernelCokernelPair _ (hS i)
+  isKernelCokernelPair _ hS :=
+    IsKernelCokernelPair.of_eval fun i => E.isKernelCokernelPair _ (hS i)
   isClosedUnderIsomorphisms :=
     { of_iso := fun e hS i =>
         E.conflation_of_iso ((HomologicalComplex.eval C c i).mapShortComplex.mapIso e) (hS i) }
