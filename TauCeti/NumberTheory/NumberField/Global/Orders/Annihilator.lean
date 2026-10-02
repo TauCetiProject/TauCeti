@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
-public import Mathlib.RingTheory.Ideal.Colon
+import Mathlib.RingTheory.Ideal.Colon
 import Mathlib.Algebra.Algebra.Subalgebra.Tower
 
 /-!
@@ -40,6 +40,7 @@ variable {K : Type*} [Field K] [NumberField K] (O : NumberFieldOrder K)
 
 /-- The annihilator of the normalization quotient is the conductor, viewed as an ideal of
 the order rather than of the maximal order. -/
+@[simp]
 theorem annihilator_quotient_eq_conductor_comap :
     Module.annihilator O.toRingOfIntegers
         (𝓞 K ⧸ (1 : Submodule O.toRingOfIntegers (𝓞 K))) =
