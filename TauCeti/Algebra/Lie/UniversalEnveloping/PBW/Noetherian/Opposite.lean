@@ -40,7 +40,8 @@ variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
 /-- A left Noetherian universal enveloping algebra is also right Noetherian. In particular,
 this applies to every module-finite Lie algebra over a commutative Noetherian ring. -/
-instance instIsNoetherianRingOpposite [IsNoetherianRing (_root_.UniversalEnvelopingAlgebra R L)] :
+instance instIsNoetherianRingMulOpposite
+    [IsNoetherianRing (_root_.UniversalEnvelopingAlgebra R L)] :
     IsNoetherianRing (_root_.UniversalEnvelopingAlgebra R L)ᵐᵒᵖ :=
   isNoetherianRing_of_ringEquiv _ (antipodeEquiv (L := L) R).toRingEquiv
 
