@@ -337,9 +337,13 @@ section `D a` of `Ω[A⁄R]~`. -/
 @[simp]
 lemma relativeDifferentialsSpecIso_hom_app_d (U : (Spec A).Opens) (a : A) :
     (relativeDifferentialsSpecIso R A).hom.val.app (op U)
-        (((Spec A).universalDerivation R).d (algebraMap A Γ(Spec A, U) a)) =
-      tilde.toOpen (ModuleCat.of A Ω[A⁄R]) U (KaehlerDifferential.D R A a) :=
-  (toTilde_universalDerivation R A _ _).trans (tildeDerivation_d_algebraMap R A U a)
+        (((Spec A).universalDerivation R).d
+          (((Spec A).presheaf.map (homOfLE le_top).op).hom ((Scheme.ΓSpecIso A).inv.hom a))) =
+      tilde.toOpen (ModuleCat.of A Ω[A⁄R]) U (KaehlerDifferential.D R A a) := by
+  change (toTilde R A).val.app (op U) _ = _
+  simpa only [IsAffineOpen.algebraMap_Spec_obj, CommRingCat.hom_comp, RingHom.coe_comp,
+    Function.comp_apply] using
+    (toTilde_universalDerivation R A _ _).trans (tildeDerivation_d_algebraMap R A U a)
 
 /-- The inverse of `Ω_{Spec A/R} ≅ Ω[A⁄R]~` sends the section `D a` of `Ω[A⁄R]~` to the
 differential `d a`. -/

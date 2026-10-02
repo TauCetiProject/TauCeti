@@ -57,8 +57,11 @@ variable {G : Type*} [Group G]
 /-- The subgroup of points fixed by an endomorphism of a group, `F.eqLocus (MonoidHom.id G)`. -/
 abbrev fixedSubgroup (F : G →* G) : Subgroup G := F.eqLocus (MonoidHom.id G)
 
-/-- A point lies in the fixed subgroup of `F` exactly when `F` fixes it. -/
-@[simp]
+/-- A point lies in the fixed subgroup of `F` exactly when `F` fixes it.
+
+This is a pre-simp lemma: `fixedSubgroup` abbreviates `MonoidHom.eqLocus`, whose generic
+membership lemma otherwise rewrites first. -/
+@[simp↓]
 theorem mem_fixedSubgroup {F : G →* G} {x : G} : x ∈ fixedSubgroup F ↔ F x = x := Iff.rfl
 
 /-- Only the identity fixes every point. -/
