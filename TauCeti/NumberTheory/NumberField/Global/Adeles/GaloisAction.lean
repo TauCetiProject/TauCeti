@@ -85,6 +85,7 @@ theorem infiniteAdeleEquiv_symm (e : K ≃+* L) :
 
 /-- The placewise formula for transport of infinite adeles. The local map uses the algebra
 structure induced by `e`, not any pre-existing algebra structure on `L` over `K`. -/
+@[simp]
 theorem infiniteAdeleEquiv_apply (e : K ≃+* L) (a : InfiniteAdeleRing K)
     (w : InfinitePlace L) :
     letI := e.toRingHom.toAlgebra
@@ -166,6 +167,7 @@ theorem finiteAdeleEquiv_symm (e : K ≃+* L) :
 
 /-- The placewise formula for transport of finite adeles. The prime below `w` is its comap
 under the induced isomorphism of rings of integers. -/
+@[simp]
 theorem finiteAdeleEquiv_apply (e : K ≃+* L) (a : FiniteAdeleRing (𝓞 K) K)
     (w : HeightOneSpectrum (𝓞 L)) :
     letI := e.toRingHom.toAlgebra
