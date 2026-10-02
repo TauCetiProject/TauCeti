@@ -24,7 +24,7 @@ The proof is Silverman's. The divisor `[N]^* (T) - [N]^* (O)` is the formal sum 
 `[N]` over `T` minus that over `O`, and `σ` carries the fibre of `[N]` over `T` bijectively onto
 the fibre over `σ T`, because it acts on points by a group automorphism. So `σ` carries the
 divisor attached to `T` to the divisor attached to `σ T`
-(`TauCeti.Isogeny.divisorGaloisAction_weilPairingDivisor`). If `g` has divisor
+(`WeierstrassCurve.divisorGaloisAction_weilPairingDivisor`). If `g` has divisor
 `[N]^* (T) - [N]^* (O)`, then `σ g` therefore has divisor `[N]^* (σ T) - [N]^* (O)`, and since
 `σ` intertwines translation by `S` with translation by `σ S`,
 
@@ -32,11 +32,11 @@ divisor attached to `T` to the divisor attached to `σ T`
 
 ## Main results
 
-* `TauCeti.Isogeny.divisorGaloisAction_divisorPullback_mulByIntIsogeny_ofPoint`: the pullback
+* `WeierstrassCurve.divisorGaloisAction_divisorPullback_mulByIntIsogeny_ofPoint`: the pullback
   `[n]^* (T)` is Galois-equivariant in `T`.
-* `TauCeti.Isogeny.divisorGaloisAction_weilPairingDivisor`: the divisor
+* `WeierstrassCurve.divisorGaloisAction_weilPairingDivisor`: the divisor
   `[n]^* (T) - [n]^* (O)` is Galois-equivariant in `T`.
-* `TauCeti.Isogeny.weilPairing_torsionGaloisAction`: the Weil pairing is Galois-equivariant.
+* `WeierstrassCurve.weilPairing_torsionGaloisAction`: the Weil pairing is Galois-equivariant.
 
 ## References
 
@@ -45,12 +45,12 @@ divisor attached to `T` to the divisor attached to `σ T`
 
 public section
 
-open WeierstrassCurve WeierstrassCurve.Affine
+open TauCeti TauCeti.Isogeny AlgebraicGeometry
 open scoped WeierstrassCurve
 
-namespace TauCeti.Isogeny
+namespace WeierstrassCurve
 
-open AlgebraicGeometry
+open WeierstrassCurve.Affine
 
 variable {F K : Type*} [Field F] [Field K] [DecidableEq K] [Algebra F K] [IsSepClosed K]
   (W : WeierstrassCurve F) [W.IsElliptic]
@@ -124,4 +124,4 @@ theorem weilPairing_torsionGaloisAction (σ : K ≃ₐ[F] K)
     functionFieldGaloisAction_translation, torsionGaloisAction_apply_coe]
   simp [σg]
 
-end TauCeti.Isogeny
+end WeierstrassCurve
