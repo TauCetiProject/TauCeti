@@ -126,9 +126,10 @@ theorem map_smul_side (i : Fin n) : σ.map i • P.side i = P.side (σ.pair i) :
   rw [side_def, side_def, smul_geodesicSegment, σ.map_smul_vertex, σ.map_smul_vertex_add_one,
     geodesicSegment_comm]
 
-/-- A side-pairing map is not the identity: it would fix both endpoints of its side, forcing
-`pair i + 1 = i` and `pair i = i + 1`, impossible with at least three vertices. -/
+/-- A side-pairing map is not the identity. -/
 theorem map_ne_one (i : Fin n) : σ.map i ≠ 1 := by
+  -- the identity would fix both endpoints of side `i`, forcing `pair i + 1 = i` and
+  -- `pair i = i + 1`, impossible with at least three vertices
   intro h
   have h₁ := P.vertex_injective (by simpa [h] using σ.map_smul_vertex i)
   have h₂ := P.vertex_injective (by simpa [h] using σ.map_smul_vertex_add_one i)
@@ -217,6 +218,11 @@ theorem cycleLength_le (j : Fin n) : σ.cycleLength j ≤ n :=
 theorem cycleLength_next (j : Fin n) : σ.cycleLength (σ.next j) = σ.cycleLength j :=
   Function.minimalPeriod_apply (σ.mem_periodicPts_next j)
 
+/-- The cycle length is constant along a cycle, in the simp-normal form of `next`. -/
+@[simp]
+theorem cycleLength_pair_add_one (j : Fin n) : σ.cycleLength (σ.pair j + 1) = σ.cycleLength j := by
+  rw [← next_apply, cycleLength_next]
+
 /-- Going once around the cycle returns to the starting vertex. -/
 theorem next_iterate_cycleLength (j : Fin n) : σ.next^[σ.cycleLength j] j = j :=
   Function.iterate_minimalPeriod
@@ -282,6 +288,11 @@ theorem cycle_next (j : Fin n) : σ.cycle (σ.next j) = σ.cycle j := by
   simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
   exact Equiv.Perm.sameCycle_apply_left
 
+/-- The cycle does not depend on the starting vertex, in the simp-normal form of `next`. -/
+@[simp]
+theorem cycle_pair_add_one (j : Fin n) : σ.cycle (σ.pair j + 1) = σ.cycle j := by
+  rw [← next_apply, cycle_next]
+
 /-- The cycle through `j` is enumerated by the first `cycleLength j` successors of `j`. -/
 theorem cycle_eq_image (j : Fin n) :
     σ.cycle j = (Finset.range (σ.cycleLength j)).image fun m ↦ σ.next^[m] j := by
@@ -312,6 +323,12 @@ theorem cycleAngleSum_def (j : Fin n) : σ.cycleAngleSum j = ∑ i ∈ σ.cycle 
 /-- The angle sum does not depend on the starting vertex of the cycle. -/
 theorem cycleAngleSum_next (j : Fin n) : σ.cycleAngleSum (σ.next j) = σ.cycleAngleSum j := by
   rw [cycleAngleSum, cycleAngleSum, cycle_next]
+
+/-- The angle sum does not depend on the starting vertex, in the simp-normal form of `next`. -/
+@[simp]
+theorem cycleAngleSum_pair_add_one (j : Fin n) :
+    σ.cycleAngleSum (σ.pair j + 1) = σ.cycleAngleSum j := by
+  rw [← next_apply, cycleAngleSum_next]
 
 /-- The angle sum along a cycle is positive. -/
 theorem cycleAngleSum_pos (j : Fin n) : 0 < σ.cycleAngleSum j :=
