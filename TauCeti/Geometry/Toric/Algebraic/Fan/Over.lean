@@ -82,10 +82,14 @@ theorem algebraicRealization_over (hΦ : Φ.IsRegular) :
 instance isOver_affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
     (Φ.affineToricChartι hΦ σ).IsOver (Spec (.of ℂ)) where
   comp_over := by
-    -- The colimit factorization is stated using the legs of the affine cocone.
-    have h := (Φ.isColimitAffineToricCocone hΦ).fac (structureCocone Φ) σ
-    rw [affineToricCocone_ι_app] at h
-    exact h
+    rw [algebraicRealization_over, specOverSpec_over]
+    -- State the factorization on the chart carriers before rewriting their over-structures.
+    have h : Φ.affineToricChartι hΦ σ ≫ Φ.algebraicRealizationStructureMap hΦ =
+        Φ.affineToricChart σ ↘ Spec (.of ℂ) := by
+      have h := (Φ.isColimitAffineToricCocone hΦ).fac (structureCocone Φ) σ
+      rw [affineToricCocone_ι_app] at h
+      exact h
+    simpa only [specOverSpec_over] using h
 
 end Fan
 
