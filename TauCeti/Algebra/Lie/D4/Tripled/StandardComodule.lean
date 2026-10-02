@@ -59,17 +59,16 @@ variable (R : Type u) [CommRing R]
 @[instance_reducible]
 noncomputable def standardComodule :
     Comodule R (coordinateHopfAlgebra R) (Fin 24 → R) :=
-  let _ := GeneralLinear.standardComodule R 24
-  Comodule.Corestrict (coordinateMap R).hom.toCoalgHom
+  GeneralLinear.corestrictStandardComodule R 24 (coordinateMap R).hom
 
 attribute [local instance] GeneralLinear.standardComodule standardComodule
 
 /-- **The standard comodule of the specialized tripled type-`D₄` carrier is faithful.** -/
 theorem isFaithful_standardComodule :
-    Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R) (V := Fin 24 → R) := by
-  exact Comodule.isFaithful_corestrict_of_surjective (coordinateMap R).hom
-    (coordinateMap_surjective R)
-    (GeneralLinear.isFaithful_standardComodule R 24)
+    Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R)
+      (V := Fin 24 → R) :=
+  GeneralLinear.isFaithful_corestrictStandardComodule R 24
+    (coordinateMap R).hom (coordinateMap_surjective R)
 
 section PointAction
 
@@ -110,17 +109,11 @@ theorem mulVec_mem
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 24) (baseChangeDefiningIdeal R)
           (CommAlgCat.of R R) g) : Matrix (Fin 24) (Fin 24) R) *ᵥ w ∈ N := by
-  have h := Comodule.basePointsRepresentation_mem N g hw
-  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R).hom g,
-    GeneralLinear.basePointsRepresentation_eq_mulVec] at h
-  have hpoint :
-      AlgHom.mapDomain (coordinateMap R).hom g =
-        CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra R 24) (baseChangeDefiningIdeal R)
-          (CommAlgCat.of R R) g := by
-    exact mapPointsFunctor_coordinateMap_app R g
-  rw [hpoint] at h
-  exact h
+  have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 24
+    (coordinateMap R).hom N g hw
+  have hpoint : AlgHom.mapDomain (coordinateMap R).hom g = _ :=
+    mapPointsFunctor_coordinateMap_app R g
+  rwa [hpoint] at h
 
 /-- A subcomodule of the standard carrier comodule is stable under every concrete tripled
 type-`D₄` carrier point. -/

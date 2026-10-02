@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWe
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
@@ -113,6 +115,46 @@ noncomputable abbrev signSet (i : Fin (dimension n)) : Finset (Fin (n + 1)) :=
 noncomputable abbrev basisWeight (i : Fin (dimension n)) : Fin (n + 1) → ℤ :=
   TauCeti.DynkinType.typeBSpinWeight (signSet n i)
 
+/-- The `i`-th simple reflection on the finite-ordinal spin-basis indices. -/
+noncomputable def basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
+    Fin (dimension n) :=
+  Fintype.equivFin (Finset (Fin (n + 1))) (DynkinType.typeBSpinReflection i (signSet n a))
+
+/-- Enumerating a reflected basis index recovers the reflected sign set. -/
+theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
+    signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) := by
+  simp [basisReflection, signSet]
+
+/-- A simple reflection fixes a spin-basis index exactly when its coroot pairing vanishes. -/
+@[simp]
+theorem basisReflection_eq_self_iff (i : Fin (n + 1)) (a : Fin (dimension n)) :
+    basisReflection n i a = a ↔ basisWeight n a i = 0 := by
+  constructor
+  · intro h
+    apply (DynkinType.typeBSpinReflection_eq_self_iff i _).1
+    simpa only [signSet_basisReflection] using congrArg (signSet n) h
+  · intro h
+    rw [basisReflection, (DynkinType.typeBSpinReflection_eq_self_iff i _).2 h]
+    exact (Fintype.equivFin (Finset (Fin (n + 1)))).apply_symm_apply a
+
+/-- Each simple reflection on enumerated spin-basis indices is an involution. -/
+theorem basisReflection_involutive (i : Fin (n + 1)) :
+    Function.Involutive (basisReflection n i) := by
+  intro a
+  simp [basisReflection, signSet]
+
+/-- Enumeration transports a sequence of sign-set reflections to basis-index reflections. -/
+theorem foldl_basisReflection (l : List (Fin (n + 1))) (t : Finset (Fin (n + 1))) :
+    l.foldl (fun b j ↦ basisReflection n j b) (Fintype.equivFin (Finset (Fin (n + 1))) t) =
+      Fintype.equivFin (Finset (Fin (n + 1)))
+        (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) := by
+  induction l generalizing t with
+  | nil => rfl
+  | cons j l ih =>
+    rw [List.foldl_cons, List.foldl_cons, ← ih]
+    congr 1
+    simp [basisReflection, signSet]
+
 /-- A reindexed lattice-basis vector is the exterior basis vector of its sign set. -/
 @[simp]
 theorem coe_latticeBasis (i : Fin (dimension n)) :
@@ -207,6 +249,69 @@ theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) 
     (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
     (Fin.last n) x
   rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
+
+/-- A positive numbered simple root generator moves an exterior basis vector whose spin weight
+pairs to `-1` with the simple coroot to the basis vector of the reflected sign set, up to sign. -/
+theorem exists_rep_rootGenerator_inl_exteriorBasis (i : Fin (n + 1))
+    (s t : Finset (Fin (n + 1))) (hs : DynkinType.typeBSpinWeight s i = -1)
+    (ht : DynkinType.typeBSpinReflection i s = t) :
+    ∃ c : ℤˣ, rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inl i)))
+        ((polarizationBasis n).ExteriorAlgebra s) =
+      c • (polarizationBasis n).ExteriorAlgebra t := by
+  subst ht
+  revert hs
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · intro hs
+    have hlt : ¬((Fin.last n : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
+    have hlast := (DynkinType.typeBSpinWeight_eq_neg_one_iff_of_last hlt s).1 hs
+    have hrefl := DynkinType.typeBSpinReflection_eq_insert_of_not_mem_last hlt hlast
+    rw [rep_rootGenerator_inl_last, TauCeti.ExteriorAlgebra.involute_basis, mul_smul_comm,
+      TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_right hlast, hrefl]
+    exact ⟨_, neg_one_pow_smul_units_smul _ _ _⟩
+  · intro hs
+    have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
+    obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_neg_one_iff_of_lt hlt s).1 hs
+    rw [Fin.orderSucc_castSucc] at hsucc
+    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_not_mem hlt hj
+      (by simpa using hsucc)
+    rw [Fin.orderSucc_castSucc] at hrefl
+    rw [rep_rootGenerator_inl_castSucc, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
+      ite_eq_left hsucc, mul_smul_comm, TauCeti.ExteriorAlgebra.ι_mul_basis,
+      ite_eq_right (by simp [hj]), smul_smul, hrefl]
+    exact ⟨_, rfl⟩
+
+/-- A negative numbered simple root generator moves an exterior basis vector whose spin weight
+pairs to `1` with the simple coroot to the basis vector of the reflected sign set, up to sign. -/
+theorem exists_rep_rootGenerator_inr_exteriorBasis (i : Fin (n + 1))
+    (s t : Finset (Fin (n + 1))) (hs : DynkinType.typeBSpinWeight s i = 1)
+    (ht : DynkinType.typeBSpinReflection i s = t) :
+    ∃ c : ℤˣ, rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily (.inr i)))
+        ((polarizationBasis n).ExteriorAlgebra s) =
+      c • (polarizationBasis n).ExteriorAlgebra t := by
+  subst ht
+  revert hs
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · intro hs
+    have hlt : ¬((Fin.last n : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
+    have hlast := (DynkinType.typeBSpinWeight_eq_one_iff_of_last hlt s).1 hs
+    have hrefl := DynkinType.typeBSpinReflection_eq_erase_of_mem_last hlt hlast
+    rw [rep_rootGenerator_inr_last, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
+      ite_eq_left hlast, Units.smul_def, map_zsmul, TauCeti.ExteriorAlgebra.involute_basis,
+      smul_comm, ← Units.smul_def, hrefl]
+    exact ⟨_, neg_one_pow_smul_units_smul _ _ _⟩
+  · intro hs
+    have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
+    obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_one_iff_of_lt hlt s).1 hs
+    rw [Fin.orderSucc_castSucc] at hsucc
+    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_mem hlt hj
+      (by simpa using hsucc)
+    rw [Fin.orderSucc_castSucc] at hrefl
+    rw [rep_rootGenerator_inr_castSucc, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
+      ite_eq_left hj, mul_smul_comm, TauCeti.ExteriorAlgebra.ι_mul_basis,
+      ite_eq_right (by simp [hsucc]), smul_smul, hrefl]
+    exact ⟨_, rfl⟩
 
 /-- Every exterior basis vector has its named integral type-`B` spin weight. -/
 theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :

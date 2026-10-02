@@ -43,6 +43,9 @@ left to the caller in the general construction.
 
 ## Main declarations
 
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix`: the represented generator
+  in an integral lattice basis, shared with the matrix construction of
+  `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm`.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_baseChange`: the coordinates
   of a root-subgroup point on a base-changed basis vector.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_of_isRootStep`: a root step
@@ -162,6 +165,39 @@ variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
 variable (i : ι)
 variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable {η : Type*} (b : Module.Basis η ℤ M)
+
+/-- The integral matrix of a represented root generator in an invariant lattice basis. -/
+@[expose] noncomputable def kostantRootGeneratorIntMatrix [Fintype η] (i : ι)
+    (b : Module.Basis η ℤ M) : Matrix η η ℤ :=
+  b.toMatrix fun s ↦
+    ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
+      hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
+
+/-- A represented root generator acts on each lattice basis vector by its integral matrix column. -/
+theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis η ℤ M) (s : η) :
+    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) =
+      ∑ r, kostantRootGeneratorIntMatrix e h ρ M hM i b r s • (b r : V) := by
+  have hexp := congrArg Subtype.val ((b.sum_toMatrix_smul_self
+    (fun s ↦ (⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
+      hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩ : M)) s).symm)
+  simpa only [kostantRootGeneratorIntMatrix, AddSubmonoidClass.coe_finsetSum,
+    AddSubgroupClass.coe_zsmul] using hexp
+
+/-- A root generator taking one lattice basis vector to a scalar multiple of another has a
+single nonzero entry in the corresponding integral matrix column. -/
+theorem kostantRootGeneratorIntMatrix_apply_of_eq [Fintype η] [DecidableEq η]
+    (i : ι) (b : Module.Basis η ℤ M) {a a' : η} {c : ℤ}
+    (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b a : V) = c • (b a' : V))
+    (r : η) :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b r a = if r = a' then c else 0 := by
+  have hvec : (⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b a),
+      hM _ (rootVector_mem_kostantForm e h i) _ (b a).2⟩ : M) = c • b a' :=
+    Subtype.ext hstep
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, hvec,
+    map_zsmul, Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_apply]
+  by_cases hr : r = a'
+  · simp [hr]
+  · simp [hr, Ne.symm hr]
 
 /-- The coordinates of a root-subgroup point on a base-changed basis vector: the `r`-th
 coordinate of `xᵢ(t) (1 ⊗ b s)` is the divided-power polynomial in `t` whose coefficients are the

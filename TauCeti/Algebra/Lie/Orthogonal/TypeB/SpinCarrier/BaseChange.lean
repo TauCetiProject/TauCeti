@@ -181,6 +181,13 @@ theorem coordinateMap_surjective : Function.Surjective (coordinateMap n A).hom :
   exact CommHopfAlgCat.mkQuotient_surjective
     (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n A)
 
+/-- The specialized coordinate morphism kills exactly the defining Hopf ideal. -/
+@[simp]
+theorem coordinateMap_ker :
+    RingHom.ker (coordinateMap n A).hom.toAlgHom = (baseChangeDefiningIdeal n A).toIdeal := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_ker _ _
+
 /-- Mapping a carrier point along the coordinate morphism gives the corresponding quotient point
 of the ambient general linear group. -/
 theorem mapPointsFunctor_coordinateMap_app {B : Type w} [CommRing B] [Algebra A B]
@@ -189,12 +196,19 @@ theorem mapPointsFunctor_coordinateMap_app {B : Type w} [CommRing B] [Algebra A 
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n A)
         (CommAlgCat.of A B) g := by
+  -- The quotient points map is constructed by precomposition with the quotient morphism.
   unfold coordinateMap CommHopfAlgCat.quotientPointsHom
   rfl
 
 /-- The specialized type-`Bₙ₊₁` spin carrier as a finite-type commutative Hopf algebra. -/
 abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat.{v, v} A :=
   FiniteTypeCommHopfAlgCat.of A (coordinateHopfAlgebra n A)
+
+/-- The underlying Hopf algebra of the finite-type carrier is its coordinate Hopf algebra. -/
+@[simp]
+theorem finiteTypeCoordinateHopfAlgebra_obj :
+    (finiteTypeCoordinateHopfAlgebra n A).obj = coordinateHopfAlgebra n A :=
+  (rfl)
 
 /-! ## Points of the base-changed carrier -/
 
