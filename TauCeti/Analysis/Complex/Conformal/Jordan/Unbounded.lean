@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
-public import TauCeti.Topology.JordanCurve.OnePoint
+public import TauCeti.Topology.JordanCurve.Inversion
 import Mathlib.Topology.Bornology.BoundedOperation
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 
@@ -23,14 +23,15 @@ to infinity at infinity.
 
 The inversion `z ↦ (z - p)⁻¹` is a bijection of `ℂ` (it sends `p` to `0` because `0⁻¹ = 0`),
 inverted by `w ↦ w⁻¹ + p`.  It is not continuous at `p`, but on a set whose closure omits `p` it
-behaves as a homeomorphism should, which is what the first results below record.
+behaves as a homeomorphism should, which is what the first results below record.  Its elementary
+properties, and the fact that it turns a frontier homeomorphic to the real line into a Jordan
+curve (`TauCeti.isJordanCurve_insert_zero_image_inv_sub`), are in
+`TauCeti.Topology.JordanCurve.Inversion`.
 
 ## Main results
 
 * `TauCeti.closure_image_inv_sub`, `TauCeti.frontier_image_inv_sub`: inverting an unbounded set
   about a point outside its closure adjoins `0` to the inverted closure and frontier.
-* `TauCeti.isJordanCurve_insert_zero_image_inv_sub`: a closed copy of the real line, inverted
-  about a point off it and completed by `0`, is a Jordan curve.
 * `TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_frontier_homeomorph_real`:
   Carathéodory's theorem on the closed upper half-plane for a simply connected domain whose
   frontier is homeomorphic to the real line, with infinity sent to infinity.
@@ -51,35 +52,6 @@ open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 namespace TauCeti
 
 variable {p : ℂ}
-
-/-- The inversion about `p` is injective on all of `ℂ`. -/
-private theorem injective_inv_sub : Injective fun z : ℂ => (z - p)⁻¹ :=
-  fun _ _ h => sub_left_injective (inv_injective h)
-
-/-- On all of `ℂ`, the inversion about `p` is inverted by `w ↦ w⁻¹ + p`, so it maps any set `S`
-bijectively onto its image with that inverse. -/
-private theorem bijOn_inv_add_image_inv_sub (S : Set ℂ) :
-    BijOn (fun w : ℂ => w⁻¹ + p) ((fun z : ℂ => (z - p)⁻¹) '' S) S :=
-  injective_inv_sub.injOn.bijOn_image.symm ⟨fun _ _ => by simp, fun _ _ => by simp⟩
-
-/-- The inversion about `p` is continuous on any set omitting `p`. -/
-private theorem continuousOn_inv_sub {S : Set ℂ} (hp : p ∉ S) :
-    ContinuousOn (fun z : ℂ => (z - p)⁻¹) S := fun _ hz =>
-  ((continuous_sub_right p).continuousAt.inv₀
-    (sub_ne_zero.2 fun h => hp (h ▸ hz))).continuousWithinAt
-
-/-- The inversion about `p` is holomorphic on any set omitting `p`. -/
-private theorem differentiableOn_inv_sub {S : Set ℂ} (hp : p ∉ S) :
-    DifferentiableOn ℂ (fun z : ℂ => (z - p)⁻¹) S := fun _ hz =>
-  ((differentiableAt_id.sub_const p).inv
-    (sub_ne_zero.2 fun h => hp (h ▸ hz))).differentiableWithinAt
-
-/-- The inversion about `p` vanishes only at `p`. -/
-private theorem zero_notMem_image_inv_sub {S : Set ℂ} (hp : p ∉ S) :
-    (0 : ℂ) ∉ (fun z : ℂ => (z - p)⁻¹) '' S := by
-  rintro ⟨z, hz, hz0⟩
-  rw [inv_eq_zero, sub_eq_zero] at hz0
-  exact hp (hz0 ▸ hz)
 
 /-- **The closure of an inverted set.**  Inverting an unbounded set `U` about a point `p` outside
 its closure, the closure of the image is the image of the closure of `U` together with `0`, the
@@ -114,42 +86,11 @@ theorem frontier_image_inv_sub {U : Set ℂ} (hUo : IsOpen U) (hp : p ∉ closur
       insert 0 ((fun z : ℂ => (z - p)⁻¹) '' frontier U) := by
   have hpU : p ∉ U := fun h => hp (subset_closure h)
   have hVo : IsOpen ((fun z : ℂ => (z - p)⁻¹) '' U) :=
-    isOpen_image_of_differentiableOn_of_injOn hUo (differentiableOn_inv_sub hpU)
+    isOpen_image_of_differentiableOn_of_injOn hUo
+      ((differentiableOn_id.sub_const p).inv fun _ hz => sub_ne_zero.2 fun h => hpU (h ▸ hz))
       injective_inv_sub.injOn
   rw [hVo.frontier_eq, closure_image_inv_sub hp hU, hUo.frontier_eq,
     image_sdiff injective_inv_sub, insert_sdiff_of_notMem _ (zero_notMem_image_inv_sub hpU)]
-
-/-- **A line through infinity, inverted, is a Jordan curve.**  If `C` is a closed subset of `ℂ`
-homeomorphic to the real line and `p ∉ C`, then the image of `C` under the inversion about `p`,
-completed by `0`, is a Jordan curve: the homeomorphism is proper, so both ends of the line tend to
-infinity, and inverting sends them both to `0`. -/
-theorem isJordanCurve_insert_zero_image_inv_sub {C : Set ℂ} (hC : IsClosed C) (e : C ≃ₜ ℝ)
-    (hp : p ∉ C) : IsJordanCurve (insert 0 ((fun z : ℂ => (z - p)⁻¹) '' C)) := by
-  let Φ : OnePoint ℝ → ℂ := fun x => x.elim 0 fun t => ((e.symm t : ℂ) - p)⁻¹
-  have hemb : IsClosedEmbedding fun t => (e.symm t : ℂ) :=
-    hC.isClosedEmbedding_subtypeVal.comp e.symm.isClosedEmbedding
-  have hΦ : Continuous Φ := by
-    refine (OnePoint.continuous_iff Φ).2 ⟨?_, ?_⟩
-    · rw [coclosedCompact_eq_cocompact]
-      exact tendsto_inv₀_cobounded.comp ((tendsto_sub_const_cobounded p).comp
-        (cobounded_eq_cocompact (α := ℂ) ▸ hemb.tendsto_cocompact))
-    · exact (continuousOn_inv_sub hp).comp_continuous hemb.continuous fun t => (e.symm t).2
-  have hΦi : Injective Φ := by
-    have hne (t : ℝ) : ((e.symm t : ℂ) - p)⁻¹ ≠ 0 :=
-      inv_ne_zero (sub_ne_zero.2 fun h => hp (h ▸ (e.symm t).2))
-    rintro (_ | s) (_ | t) h
-    · rfl
-    · exact absurd h.symm (hne t)
-    · exact absurd h (hne s)
-    · exact congrArg _ (e.symm.injective (Subtype.ext (injective_inv_sub h)))
-  convert isJordanCurve_univ_onePoint_real.image hΦ.continuousOn hΦi.injOn using 1
-  ext w
-  simp only [mem_insert_iff, mem_image, mem_univ, true_and, OnePoint.exists]
-  refine or_congr (eq_comm.trans (by rfl)) ⟨?_, ?_⟩
-  · rintro ⟨z, hz, rfl⟩
-    exact ⟨e ⟨z, hz⟩, by simp [Φ]⟩
-  · rintro ⟨t, rfl⟩
-    exact ⟨_, (e.symm t).2, rfl⟩
 
 /-- **Carathéodory's theorem for a domain bounded by a line.**  Let `U` be a simply connected open
 subset of `ℂ` whose closure is not the whole plane and whose frontier is homeomorphic to the real
@@ -178,7 +119,8 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_frontier_homeomorph_real 
     exact not_compactSpace_iff.2 inferInstance (e.compactSpace)
   -- inverting about `p` turns `U` into a bounded Jordan domain `g '' U`
   set g : ℂ → ℂ := fun z => (z - p)⁻¹
-  have hgd : DifferentiableOn ℂ g U := differentiableOn_inv_sub hpU
+  have hgd : DifferentiableOn ℂ g U :=
+    (differentiableOn_id.sub_const p).inv fun _ hz => sub_ne_zero.2 fun h => hpU (h ▸ hz)
   have hgi : InjOn g U := injective_inv_sub.injOn
   have hVb : IsBounded (g '' U) := by
     obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 isClosed_closure.isOpen_compl _ hp
@@ -229,6 +171,7 @@ theorem exists_prevertices_of_frontier_homeomorph_real
     Complex.ext (by simp) (by simpa using (hx i).symm)
   have hfa (i : ι) : f (x i).re = v i := by rw [hax, hfx]
   refine ⟨f, fun i => (x i).re, fun i j h => hv ?_, hfd, hfc, hfcl.injOn, hfH, hfa, hfinf⟩
-  rw [← hfa i, ← hfa j, show (x i).re = (x j).re from h]
+  rw [← hfa i, ← hfa j]
+  exact congrArg (fun t : ℝ => f t) h
 
 end TauCeti
