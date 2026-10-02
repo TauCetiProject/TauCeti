@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Lattice
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Filtration
-public import TauCeti.RepresentationTheory.RestrictScalars
 
 /-!
 # The Herbrand quotient of the units of a local field
@@ -16,9 +15,10 @@ public import TauCeti.RepresentationTheory.RestrictScalars
 Let `L/K` be a finite Galois extension of nonarchimedean local fields whose Galois group
 `G = L ≃ₐ[K] L` is cyclic. This file proves that the Herbrand quotient of the unit group
 `𝒪[L]ˣ = U(L, 0)`, with its Galois action and read as an integral representation of `G`, is `1`
-(`TauCeti.herbrandQuotient_unitFiltration_zero`). Together with the Herbrand quotient `|G|` of the
-trivial module `ℤ` and the valuation sequence `0 → 𝒪[L]ˣ → Lˣ → ℤ → 0`, this is the cyclic
-computation `h(Lˣ) = [L : K]` from which the order of `H²(G, Lˣ)` is bounded by the degree.
+(`TauCeti.TateCohomology.herbrandQuotient_unitFiltration_zero`). Together with the Herbrand
+quotient `|G|` of the trivial module `ℤ` and the valuation sequence `0 → 𝒪[L]ˣ → Lˣ → ℤ → 0`, this
+is the cyclic computation `h(Lˣ) = [L : K]` from which the order of `H²(G, Lˣ)` is bounded by the
+degree.
 
 The unit group is replaced by a commensurable one on which the computation can be carried out.
 For a uniformizer `ϖ` of `K`, a scaled normal basis element spans a Galois-stable lattice
@@ -34,8 +34,8 @@ residue field of `L` and are in general not free over the group ring.
 
 ## Main results
 
-* `TauCeti.herbrandQuotient_unitFiltration_zero`: the Herbrand quotient of `𝒪[L]ˣ` is `1` for a
-  cyclic extension `L/K` of nonarchimedean local fields.
+* `TauCeti.TateCohomology.herbrandQuotient_unitFiltration_zero`: the Herbrand quotient of `𝒪[L]ˣ`
+  is `1` for a cyclic extension `L/K` of nonarchimedean local fields.
 
 ## References
 
@@ -73,6 +73,12 @@ private def mulDistribMulAction : MulDistribMulAction (L ≃ₐ[K] L) (hA.filtra
         hA.unitsMap_mem_filtration σ (fun _ ha ↦ hσ σ ha) x.2⟩⟩
   Subtype.coe_injective.mulDistribMulAction (hA.filtration 0).subtype fun _ _ ↦ rfl
 
+/-- The Galois action on step zero `1 + A` is the restriction of the Galois action on `Lˣ`. -/
+private theorem coe_smul (σ : L ≃ₐ[K] L) (x : hA.filtration 0) :
+    letI := hA.mulDistribMulAction hσ
+    ((σ • x : hA.filtration 0) : Lˣ) = σ • (x : Lˣ) :=
+  rfl
+
 /-- Step zero `1 + A` of the unit filtration of a Galois-stable lattice, written additively, as an
 integral representation of the Galois group. -/
 private abbrev rep : Rep ℤ (L ≃ₐ[K] L) :=
@@ -90,8 +96,9 @@ private theorem toUnits_injective : Function.Injective (hA.toUnits hσ) := fun _
   Additive.toMul.injective (Subtype.ext h)
 
 private theorem toUnits_ρ (σ : L ≃ₐ[K] L) (x : hA.rep hσ) :
-    hA.toUnits hσ ((hA.rep hσ).ρ σ x) = σ • hA.toUnits hσ x :=
-  rfl
+    hA.toUnits hσ ((hA.rep hσ).ρ σ x) = σ • hA.toUnits hσ x := by
+  simp only [toUnits, Representation.ofMulDistribMulAction_apply_apply, toMul_ofMul]
+  exact hA.coe_smul hσ σ _
 
 private theorem toUnits_sub (x y : hA.rep hσ) :
     hA.toUnits hσ (x - y) = hA.toUnits hσ x / hA.toUnits hσ y := by
@@ -106,8 +113,9 @@ private def step (n : ℕ) : Submodule ℤ (hA.rep hσ) :=
   (Subgroup.toAddSubgroup ((hA.filtration n).subgroupOf (hA.filtration 0))).toIntSubmodule
 
 private theorem mem_step {n : ℕ} {x : hA.rep hσ} :
-    x ∈ hA.step hσ n ↔ hA.toUnits hσ x ∈ hA.filtration n :=
-  Iff.rfl
+    x ∈ hA.step hσ n ↔ hA.toUnits hσ x ∈ hA.filtration n := by
+  rw [step, ← Submodule.mem_toAddSubgroup, AddSubgroup.toIntSubmodule_toAddSubgroup,
+    Additive.mem_toAddSubgroup, Subgroup.mem_subgroupOf, toUnits]
 
 private theorem step_zero : hA.step hσ 0 = ⊤ :=
   eq_top_iff.2 fun x _ ↦ (hA.mem_step hσ).2 (hA.toUnits_mem hσ x)
@@ -204,13 +212,12 @@ private theorem filtration_zero_le : hA.filtration 0 ≤ unitFiltration L 0 :=
 
 /-- The inclusion of `1 + A` into `𝒪[L]ˣ = U(L, 0)`, additively. -/
 private def inclusionHom : hA.rep hσ →+ Additive (unitFiltration L 0) :=
-  AddMonoidHom.mk' (fun x ↦ Additive.ofMul
-    (⟨hA.toUnits hσ x, hA.filtration_zero_le (hA.toUnits_mem hσ x)⟩ : unitFiltration L 0))
-    fun _ _ ↦ rfl
+  MonoidHom.toAdditive (α := hA.filtration 0) (Subgroup.inclusion hA.filtration_zero_le)
 
 private theorem coe_inclusionHom (x : hA.rep hσ) :
-    ((Additive.toMul (hA.inclusionHom hσ x) : unitFiltration L 0) : Lˣ) = hA.toUnits hσ x :=
-  rfl
+    ((Additive.toMul (hA.inclusionHom hσ x) : unitFiltration L 0) : Lˣ) = hA.toUnits hσ x := by
+  rw [inclusionHom, MonoidHom.coe_toAdditive, Function.comp_apply, Function.comp_apply,
+    toMul_ofMul, Subgroup.coe_inclusion, toUnits]
 
 private theorem inclusionHom_ρ (σ : L ≃ₐ[K] L) (x : hA.rep hσ) :
     hA.inclusionHom hσ ((hA.rep hσ).ρ σ x) =
@@ -260,10 +267,13 @@ private theorem finite_cokernel_inclusion : Finite ↑(cokernel (hA.inclusion h�
 
 end IsUnitFiltrationLattice
 
+namespace TateCohomology
+
 /-- **The Herbrand quotient of the local units.** For a finite Galois extension `L/K` of
 nonarchimedean local fields with cyclic Galois group `G`, the Herbrand quotient of the unit group
 `𝒪[L]ˣ = U(L, 0)`, with its Galois action and read as an integral representation of `G`, is `1`:
 its Tate cohomology groups in degrees `0` and `-1` are finite of the same order. -/
+@[simp]
 theorem herbrandQuotient_unitFiltration_zero [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] :
     TateCohomology.herbrandQuotient
       (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) = 1 := by
@@ -278,5 +288,7 @@ theorem herbrandQuotient_unitFiltration_zero [IsGalois K L] [IsCyclic (L ≃ₐ[
   have := (Rep.mono_iff_injective _).2 (hA.inclusion_injective hσ)
   rw [← TateCohomology.herbrandQuotient_eq_of_mono_of_finite_cokernel (hA.inclusion hσ)]
   exact hA.herbrandQuotient_rep hσ (spanOrbitEquiv hα)
+
+end TateCohomology
 
 end TauCeti
