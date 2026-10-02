@@ -43,6 +43,14 @@ Khovanov--Seidel and Huerfano--Khovanov let the braid group of the graph act on 
 category of graded `Z`-modules; this file constructs the complexes and their gradings, not the braid
 relations.
 
+The declarations are stated for the relation quotient `TauCeti.nonisolatedZigzagQuotient`, as for
+the vertex projectives `TauCeti.zigzagProjective`. That quotient is the zigzag algebra only when
+the graph has no isolated vertex. The hypothesis `hns` saying so is taken exactly where it is
+used: by the coevaluation, the Casimir commutation and the inverse complex, which need the
+Frobenius trace. The evaluation, the complex `B_i` and the gradings are constructions on the
+quotient and need no hypothesis; for a graph with an isolated vertex they concern that quotient,
+not the componentwise zigzag algebra `TauCeti.zigzagAlgebra`.
+
 The coevaluation is a map of bimodules because its value at `1` is the image of the **Casimir
 element** `∑_b b ⊗ b^∨` of the symmetric Frobenius trace under `u ↦ u (e_i ⊗ e_i)`, with `b` running
 over the vertex, arrow and volume basis and `b^∨` over its dual basis, and the Casimir element of a
