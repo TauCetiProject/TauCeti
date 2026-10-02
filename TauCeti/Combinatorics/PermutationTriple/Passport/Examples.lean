@@ -44,8 +44,7 @@ theorem card_passportClasses_symmetric_three :
 
 namespace PermutationTriple
 
-/-- The passport of the degree-three symmetric triple has size one, as certified by the
-computed class fiber. -/
+/-- The passport of the degree-three symmetric triple has size one. -/
 theorem passportSize_passportOf_s3Triple :
     (ConnectedTriple.passportOf ⟨s3Triple, isConnected_s3Triple⟩).passportSize = 1 := by
   let t : ConnectedTriple 3 := ⟨s3Triple, isConnected_s3Triple⟩
