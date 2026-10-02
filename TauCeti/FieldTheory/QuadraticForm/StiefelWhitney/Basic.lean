@@ -208,18 +208,13 @@ diagonal forms `q = ⟨a₁, …, aₘ⟩` and `r = ⟨b₁, …, bₙ⟩`. The 
 theorem sw2_append {m : ℕ} (v : Fin m → Kˣ) (w : Fin n → Kˣ) :
     sw2 (Fin.append v w) = sw2 v + sw2 w +
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1 v) (sw1 w) := by
-  -- The pair sum is a pair product in `Multiplicative`, whose cross term for a
-  -- bimultiplicative pairing is the pairing of the coefficient products.
-  have key := prod_prod_Ioi_append_of_mul
-    (fun a b : Kˣ => Multiplicative.ofAdd (kummerCup K (squareClass a) (squareClass b)))
-    (fun b => by
-      rw [(squareClass_eq_zero_iff 1).2 IsSquare.one, map_zero, AddMonoidHom.zero_apply,
-        ofAdd_zero])
-    (fun a => by rw [(squareClass_eq_zero_iff 1).2 IsSquare.one, map_zero, ofAdd_zero])
-    (fun a b c => by rw [squareClass_mul, map_add, AddMonoidHom.add_apply, ofAdd_add])
-    (fun a b c => by rw [squareClass_mul, map_add, ofAdd_add]) v w
-  rw [sw1_eq_kummerClass_prod, sw1_eq_kummerClass_prod, ← kummerCup_squareClass_squareClass]
-  simpa only [sw2_def, ← ofAdd_sum, ← ofAdd_add, EmbeddingLike.apply_eq_iff_eq] using key
+  rw [sw2_def, sw2_def, sw2_def, sum_sum_Ioi_append_of_mul
+    (fun a b : Kˣ => kummerCup K (squareClass a) (squareClass b))
+    (fun b => by rw [squareClass_one, map_zero, AddMonoidHom.zero_apply])
+    (fun a => by rw [squareClass_one, map_zero])
+    (fun a b c => by rw [squareClass_mul, map_add, AddMonoidHom.add_apply])
+    (fun a b c => by rw [squareClass_mul, map_add]) v w,
+    sw1_eq_kummerClass_prod, sw1_eq_kummerClass_prod, kummerCup_squareClass_squareClass]
 
 /-! ### Tuples of squares -/
 
