@@ -11,10 +11,11 @@ public import TauCeti.Topology.Algebra.Module.BaseChange
 /-!
 # Continuous scalar extension for orthogonal point groups
 
-Let `K → L` be a continuous homomorphism of topological fields. Extending scalars from a
-finite-dimensional quadratic space over `K` to `L` induces continuous homomorphisms on its
-orthogonal and special orthogonal groups. The topology on each group is the subtype topology from
-the forward-and-inverse topology on linear automorphisms.
+Let `K → L` be a continuous homomorphism of commutative rings carrying topologies, with `2`
+invertible in `K`. Extending scalars from a quadratic space over `K` to `L` induces continuous
+homomorphisms on its orthogonal group, and, for finite free modules, on its special orthogonal
+group. The topology on each group is the subtype topology from the forward-and-inverse topology
+on linear automorphisms.
 
 These maps are the topological form of the localization maps used to compare rational orthogonal
 point groups with local point groups.
@@ -36,10 +37,9 @@ namespace QuadraticMap
 universe u v w
 
 variable {K : Type u} {L : Type v} {V : Type w}
-  [Field K] [Field L] [Algebra K L]
+  [CommRing K] [CommRing L] [Algebra K L]
   [TopologicalSpace K] [TopologicalSpace L]
-  [IsTopologicalRing K]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup V] [Module K V] [ContinuousMul (Module.End K V)]
   [Invertible (2 : K)]
 
 /-- Extension of scalars is continuous on orthogonal groups when the scalar homomorphism is
@@ -55,7 +55,8 @@ theorem continuous_orthogonalGroupBaseChange (hKL : Continuous (algebraMap K L))
 /-- Extension of scalars is continuous on special orthogonal groups when the scalar homomorphism
 is continuous. -/
 @[fun_prop]
-theorem continuous_specialOrthogonalGroupBaseChange (hKL : Continuous (algebraMap K L))
+theorem continuous_specialOrthogonalGroupBaseChange [Module.Free K V] [Module.Finite K V]
+    (hKL : Continuous (algebraMap K L))
     (Q : _root_.QuadraticForm K V) :
     Continuous (specialOrthogonalGroupBaseChange (A := L) Q) := by
   apply continuous_induced_rng.mpr

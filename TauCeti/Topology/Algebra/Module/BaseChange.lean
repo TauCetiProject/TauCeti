@@ -44,11 +44,10 @@ module topologies, provided the scalar homomorphism is continuous. -/
 theorem continuous_baseChange (hKL : Continuous (algebraMap K L)) :
     Continuous (fun f : Module.End K V => f.baseChange L) := by
   let F : Module.End K V →ₛₗ[algebraMap K L] Module.End L (L ⊗[K] V) :=
-    { toFun := fun f => f.baseChange L
-      map_add' := baseChange_add
-      map_smul' := fun c f => by
-        rw [baseChange_smul]
-        exact (IsScalarTower.algebraMap_smul L c (f.baseChange L)).symm }
+    { (Module.End.baseChangeHom K L V).toLinearMap with
+      map_smul' := fun c f =>
+        (map_smul (Module.End.baseChangeHom K L V) c f).trans
+          (IsScalarTower.algebraMap_smul L c (f.baseChange L)).symm }
   let _ : ContinuousAdd (Module.End L (L ⊗[K] V)) :=
     IsModuleTopology.toContinuousAdd L _
   exact IsModuleTopology.continuous_of_linearMapₛₗ hKL F
@@ -72,7 +71,8 @@ theorem continuous_baseChange (hKL : Continuous (algebraMap K L)) :
   rw [TauCeti.continuous_linearEquiv_iff]
   constructor
   · exact ((LinearMap.continuous_baseChange (V := V) hKL).comp
-        TauCeti.continuous_linearEquiv_toLinearMap).congr fun _ => rfl
+        TauCeti.continuous_linearEquiv_toLinearMap).congr fun e =>
+          (LinearEquiv.coe_baseChange K L V V e).symm
   · have h := (LinearMap.continuous_baseChange (V := V) hKL).comp
         (TauCeti.continuous_linearEquiv_toLinearMap.comp continuous_inv)
     refine h.congr fun e => ?_

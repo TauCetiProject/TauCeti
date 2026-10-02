@@ -47,11 +47,10 @@ topologies when the scalar homomorphism is continuous. -/
 theorem continuous_ofBaseChangeAux (hKL : Continuous (algebraMap K L))
     (Q : QuadraticForm K V) : Continuous (ofBaseChangeAux L Q) := by
   let F : CliffordAlgebra Q →ₛₗ[algebraMap K L] CliffordAlgebra (Q.baseChange L) :=
-    { toFun := ofBaseChangeAux L Q
-      map_add' := map_add _
-      map_smul' := fun c x => by
-        rw [map_smul]
-        exact (IsScalarTower.algebraMap_smul L c (ofBaseChangeAux L Q x)).symm }
+    { (ofBaseChangeAux L Q).toLinearMap with
+      map_smul' := fun c x =>
+        (map_smul (ofBaseChangeAux L Q) c x).trans
+          (IsScalarTower.algebraMap_smul L c (ofBaseChangeAux L Q x)).symm }
   let _ : ContinuousAdd (CliffordAlgebra (Q.baseChange L)) :=
     IsModuleTopology.toContinuousAdd L _
   exact IsModuleTopology.continuous_of_linearMapₛₗ hKL F
