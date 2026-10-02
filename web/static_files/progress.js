@@ -77,6 +77,7 @@
       for (var q = 0; q < r.layer_ids.length; q++) { if (seenIds[r.layer_ids[q]]) return "repeated layer id in " + r.id; seenIds[r.layer_ids[q]] = true; }
       for (var j = 0; j < r.states.length; j++) if (STATES.indexOf(r.states[j]) < 0) return "unknown layer state in " + r.id;
       if (!r.assessment || typeof r.assessment.reason !== "string") return "missing assessment in " + r.id;
+      if (r.assessment.readme_changed !== undefined && typeof r.assessment.readme_changed !== "boolean") return "malformed README flag in " + r.id;
       if (r.status !== null) {
         var s = r.status;
         if (!s || typeof s.to_sha !== "string" || !/^[0-9a-f]{7,40}$/.test(s.to_sha) || (s.ts !== null && !isTs(s.ts)) || typeof s.glance !== "string" || !Array.isArray(s.frontier) || typeof s.path !== "string" || typeof s.progress_path !== "string") return "malformed report in " + r.id;
@@ -139,7 +140,10 @@
       ch.forEach(function (k) { var kc = counts(k.states); STATES.forEach(function (s) { c[s] += kc[s]; }); n += k.layers.length; });
       return { c: c, n: n, subs: ch.length };
     }
-    function due(r) { return !r.completed && r.status && r.activity && r.activity.since_report !== null && r.activity.since_report >= data.update_due_prs; }
+    function prsDue(r) { return !r.completed && r.status && r.activity && r.activity.since_report !== null && r.activity.since_report >= data.update_due_prs; }
+    // The report's states assess an earlier README with the same layers (absent in older snapshots).
+    function readmeChanged(r) { return r.assessment.reason === "ok" && r.assessment.readme_changed === true; }
+    function due(r) { return prsDue(r) || readmeChanged(r); }
     function hasReport(r) { return !!r.status; }
     function ownReport(r) { return !!r.status && !r.status.inherited; }
     function reportAge(r) { return r.status && r.status.ts ? daysBetween(r.status.ts, cutoff) : null; }
@@ -207,7 +211,7 @@
           bars(g.weekly, 200, 34, gmax, "All merged pull requests per week, " + data.weeks.length + " weeks") +
           '<div class="pb-sub"><b>' + g.total + "</b> merged up to the cutoff" + (g.first_merge ? ", since " + esc(g.first_merge.slice(0, 10)) : "") + " · <b>" + g.open + "</b> open" + (unN ? " · <b>" + unN + "</b> merged with no single roadmap label" : "") + "</div></div>" +
         '<div class="pb-tile pb-tile-more"><div class="pb-label">Reports</div><div class="pb-big">' + reported.length + "<small>of " + tops.length + " roadmaps</small></div>" +
-          '<div class="pb-sub">' + (ages.length ? "oldest <b>" + ages[ages.length - 1] + "</b> days before the cutoff · " : "") + "<b>" + dueN + "</b> due an update (" + data.update_due_prs + "+ PRs since)</div></div>" +
+          '<div class="pb-sub">' + (ages.length ? "oldest <b>" + ages[ages.length - 1] + "</b> days before the cutoff · " : "") + "<b>" + dueN + "</b> due an update (" + data.update_due_prs + "+ PRs since, or README changed)</div></div>" +
         '<button type="button" class="pb-more" aria-expanded="false">More figures</button>' +
         "</div>";
     }
@@ -282,7 +286,8 @@
     function chips(r) {
       var out = "";
       if (r.completed) out += '<a class="pb-chip complete" href="' + ROADMAP_REPO + '/blob/main/Completed/README.md" title="The maintainers archived this roadmap as complete against its README; a human decision, separate from the report’s layer states.">declared complete</a>';
-      if (due(r)) out += '<span class="pb-chip behind" title="' + r.activity.since_report + ' pull requests merged since the report; TauCetiProgress opens a new window at ' + data.update_due_prs + '">update due</span>';
+      if (prsDue(r)) out += '<span class="pb-chip behind" title="' + r.activity.since_report + ' pull requests merged since the report; TauCetiProgress opens a new window at ' + data.update_due_prs + '">update due</span>';
+      if (readmeChanged(r)) out += '<span class="pb-chip behind" title="The README changed after the report. The layer states shown assess it as it was then; the next report assesses it as it now stands.">README changed</span>';
       return out;
     }
     function rowHtml(r, ctx, shownKids, totalKids) {
@@ -343,6 +348,7 @@
             (typeof rem === "string" ? '<div class="pb-note"><b>Remaining:</b> ' + inline(rem) + "</div>" : "") +
             (typeof note === "string" ? '<div class="pb-note">' + esc(note) + "</div>" : "") + "</span></li>";
         }).join("") + "</ul>";
+        if (readmeChanged(r)) right += '<div class="pb-note">The README changed after this report, so these states assess it as it was then; the headings link to it as it is now. The next report assesses it as it now stands.</div>';
         if (r.retired) right += '<div class="pb-note">A retired transcription' + (typeof r.retired.to_sha === "string" ? ", made against library commit " + esc(r.retired.to_sha) : "") + ", read: " + esc(r.layers.map(function (l, i) { return l + ": " + r.retired.states[i]; }).join("; ")) + ". It is not the current report.</div>";
       }
       if (r.activity) right += "<h4>Activity</h4>" + weeklyTable(r.activity.weekly);

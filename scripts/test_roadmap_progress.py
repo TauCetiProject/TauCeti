@@ -157,7 +157,9 @@ class Status(unittest.TestCase):
         states, why = rp.states_from_marker(unbound, "Widgets", layers, SHA, README_SHA)
         self.assertIsNone(states)
         self.assertIn("no readme_sha", why)
-        self.assertIsNone(rp.states_from_marker(dict(m, readme_sha="abc"), "Widgets", layers, SHA, README_SHA)[0])
+        states, why = rp.states_from_marker(dict(m, readme_sha="abc"), "Widgets", layers, SHA, README_SHA)
+        self.assertIsNone(states)
+        self.assertIn("not a README hash", why)
 
     def test_marker_is_refused_whole_with_a_reason(self):
         st = rp.parse_status(MARKER + STATUS)
@@ -320,10 +322,11 @@ class Tree(unittest.TestCase):
                                                "readme_sha": sub_readme[:12], "layers": {"Layer 0": "p", "Layer 1": "p"}}}
         gadgets, gtwin, widgets, sub, wtwin, done = rp.read_roadmaps(self.root, hand)
         self.assertEqual((sub["states"], sub["assessment"]["source"]), (["done", "untouched"], "marker"))
-        # Twin's marker was made against another README, so it is refused, with the reason.
-        self.assertEqual(wtwin["assessment"]["reason"], "invalid-marker")
-        self.assertIn("different README", wtwin["assessment"]["detail"])
-        self.assertEqual(wtwin["states"], ["unassessed"] * 2)
+        # Twin's marker was made against another README with the same layers, so its verdicts are
+        # kept, flagged, exactly as for a top-level roadmap.
+        self.assertEqual((wtwin["assessment"]["reason"], wtwin["assessment"]["readme_changed"]), ("ok", True))
+        self.assertEqual(wtwin["states"], ["done", "untouched"])
+        self.assertFalse(sub["assessment"]["readme_changed"])
         # The umbrella's own marker is still its own, and a child of another umbrella with the same
         # name is not touched by Widgets/Twin's.
         self.assertEqual((widgets["states"], widgets["assessment"]["source"]), (["done", "partial", "untouched"], "marker"))
@@ -384,13 +387,38 @@ class Tree(unittest.TestCase):
         widgets = rp.read_roadmaps(self.root, {})[2]
         self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
         self.assertIn("does not parse", widgets["assessment"]["detail"])
-        # A valid marker over an edited README: unassessed, with the README reason, no fallback.
-        status.write_text(MARKER + STATUS)
-        (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text(README.replace("text\n", "new requirements\n"))
+        self.assertFalse(widgets["assessment"]["readme_changed"])
+
+    def test_a_marker_for_an_edited_readme_keeps_its_states_flagged_while_the_layers_are_the_same(self):
+        status = self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md"
+        readme = self.root / rp.AREAS_DIR / "Widgets" / "README.md"
+        status.write_text(MARKER.replace('"state":"partial"', '"state":"partial","remaining":"the other half"') + STATUS)
+        widgets = rp.read_roadmaps(self.root, {})[2]
+        self.assertFalse(widgets["assessment"]["readme_changed"])
+        # Same layer ids, edited requirements: the report's verdicts stay, flagged, and the marker
+        # is still preferred to a transcription.
+        readme.write_text(README.replace("text\n", "new requirements\n"))
         widgets = rp.read_roadmaps(self.root, {"TauCetiRoadmap/Widgets": entry()})[2]
-        self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
-        self.assertIn("different README", widgets["assessment"]["detail"])
-        self.assertEqual(widgets["states"], ["unassessed"] * 3)
+        a = widgets["assessment"]
+        self.assertEqual((a["source"], a["reason"], a["readme_changed"]), ("marker", "ok", True))
+        self.assertEqual(widgets["states"], ["done", "partial", "untouched"])
+        self.assertEqual(a["remaining"], {"Layer 1": "the other half"})
+        self.assertIn("README changed after this report", a["detail"])
+        # A re-layered README cannot take the old verdicts: unassessed, saying both what changed
+        # and why the layers no longer fit.
+        readme.write_text(README.replace("### Layer 2.5: gizmos — and more\n", "### Layer 2.5: gizmos\n### Layer 3: more\n"))
+        widgets = rp.read_roadmaps(self.root, {})[2]
+        a = widgets["assessment"]
+        self.assertEqual((a["reason"], a["readme_changed"]), ("invalid-marker", False))
+        self.assertIn("different README", a["detail"])
+        self.assertIn("Layer 3", a["detail"])
+        self.assertEqual(widgets["states"], ["unassessed"] * 4)
+        # Other faults are reported as before, not retried against the marker's own README.
+        readme.write_text(README.replace("text\n", "new requirements\n"))
+        status.write_text(MARKER.replace('"roadmap":"Widgets"', '"roadmap":"Gadgets"') + STATUS)
+        a = rp.read_roadmaps(self.root, {})[2]["assessment"]
+        self.assertEqual((a["reason"], a["readme_changed"]), ("invalid-marker", False))
+        self.assertNotIn("different README", a["detail"])
 
     def test_no_layers_and_no_report_are_distinct_reasons(self):
         (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text("# Roadmap: widgets\n\nprose\n")
