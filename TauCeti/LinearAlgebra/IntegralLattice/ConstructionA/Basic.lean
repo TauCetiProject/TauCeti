@@ -269,4 +269,22 @@ theorem isUnimodular_integralLattice_iff (C : AddSubgroup (ι → ZMod m))
     integralLattice_carrier, lattice_le_lattice_iff]
   exact ⟨fun h ↦ le_antisymm hC h, fun h ↦ h.ge⟩
 
+/-! ### Linear codes -/
+
+/-- For a linear code over `ZMod m`, the integrality hypothesis of Construction A is
+self-orthogonality of the code. -/
+theorem toZModSubmodule_toAddSubgroup_le_euclideanDual_iff (C : Submodule (ZMod m) (ι → ZMod m)) :
+    AddSubgroup.toZModSubmodule m C.toAddSubgroup ≤
+        (AddSubgroup.toZModSubmodule m C.toAddSubgroup).euclideanDual ↔ C.IsSelfOrthogonal := by
+  rw [Submodule.toAddSubgroup_toZModSubmodule, Submodule.isSelfOrthogonal_iff_le]
+
+/-- The Construction A lattice of a self-orthogonal linear code over `ZMod m` is unimodular
+exactly when the code is self-dual. -/
+theorem isUnimodular_integralLattice_toAddSubgroup_iff (C : Submodule (ZMod m) (ι → ZMod m))
+    (hC : AddSubgroup.toZModSubmodule m C.toAddSubgroup ≤
+      (AddSubgroup.toZModSubmodule m C.toAddSubgroup).euclideanDual) :
+    (integralLattice m C.toAddSubgroup hC).IsUnimodular ↔ C.IsSelfDual := by
+  rw [isUnimodular_integralLattice_iff, Submodule.toAddSubgroup_toZModSubmodule,
+    Submodule.isSelfDual_iff]
+
 end TauCeti.ConstructionA

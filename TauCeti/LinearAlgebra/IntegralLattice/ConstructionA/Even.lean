@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.InformationTheory.Coding.Binary.TypeII
 public import TauCeti.InformationTheory.Coding.Discriminant
-public import TauCeti.InformationTheory.Coding.TwoPowTypeII
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 
@@ -30,9 +30,10 @@ it always contains a coordinate vector of norm `m`.
 At `m = 2` the quadratic value is a quarter of the Hamming weight, so evenness of the lattice is
 divisibility of all codeword weights by four. With the unimodularity criterion, a self-orthogonal
 binary code therefore has an even unimodular Construction A lattice exactly when it is a Type II
-code, doubly even and Euclidean self-dual; like every Construction A lattice it is also positive
-definite (`isPosDef_integralLattice`). More generally, over `ℤ/2^r` with `r ≥ 1` a
-self-orthogonal code has an even unimodular Construction A lattice exactly when it is a Type II
+code, doubly even and Euclidean self-dual
+(`isEven_and_isUnimodular_integralLattice_two_iff_isTypeII`); like every Construction A lattice it
+is also positive definite (`isPosDef_integralLattice`). More generally, over `ℤ/2^r` with `r ≥ 1`
+a self-orthogonal code has an even unimodular Construction A lattice exactly when it is a Type II
 code: self-dual with every Euclidean weight divisible by `2^(r+1)`.
 
 ## References
@@ -151,6 +152,34 @@ theorem isEven_integralLattice_two_iff_isDoublyEven (C : LinearCode (ZMod 2) ι)
   rw [BinaryCode.isDoublyEven_iff]
   refine (isEven_integralLattice_two_iff C.toAddSubgroup hC).trans ?_
   simp only [Submodule.mem_toAddSubgroup]
+
+/-- **A self-orthogonal binary linear code has an even unimodular Construction A lattice exactly
+when it is a Type II code**, doubly even and Euclidean self-dual. -/
+theorem isEven_and_isUnimodular_integralLattice_two_iff_isTypeII (C : LinearCode (ZMod 2) ι)
+    (hC : AddSubgroup.toZModSubmodule 2 C.toAddSubgroup ≤
+      (AddSubgroup.toZModSubmodule 2 C.toAddSubgroup).euclideanDual) :
+    (integralLattice 2 C.toAddSubgroup hC).IsEven ∧
+        (integralLattice 2 C.toAddSubgroup hC).IsUnimodular ↔ BinaryCode.IsTypeII C :=
+  ((isEven_integralLattice_two_iff_isDoublyEven C hC).and
+    (isUnimodular_integralLattice_toAddSubgroup_iff 2 C hC)).trans
+    ⟨fun h ↦ h.1.isTypeII h.2, fun h ↦ ⟨h.isDoublyEven, h.isSelfDual⟩⟩
+
+/-- The Construction A lattice of a binary Type II code is even. Like every Construction A
+lattice it is also positive definite, by `isPosDef_integralLattice`. -/
+theorem isEven_integralLattice_two_of_isTypeII {C : LinearCode (ZMod 2) ι}
+    (hC : BinaryCode.IsTypeII C) :
+    (integralLattice 2 C.toAddSubgroup
+      ((toZModSubmodule_toAddSubgroup_le_euclideanDual_iff 2 C).mpr
+        hC.isSelfDual.isSelfOrthogonal)).IsEven :=
+  ((isEven_and_isUnimodular_integralLattice_two_iff_isTypeII C _).mpr hC).1
+
+/-- The Construction A lattice of a binary Type II code is unimodular. -/
+theorem isUnimodular_integralLattice_two_of_isTypeII {C : LinearCode (ZMod 2) ι}
+    (hC : BinaryCode.IsTypeII C) :
+    (integralLattice 2 C.toAddSubgroup
+      ((toZModSubmodule_toAddSubgroup_le_euclideanDual_iff 2 C).mpr
+        hC.isSelfDual.isSelfOrthogonal)).IsUnimodular :=
+  (isUnimodular_integralLattice_toAddSubgroup_iff 2 C _).mpr hC.isSelfDual
 
 /-! ## Type II codes over `ℤ/2^r` -/
 
