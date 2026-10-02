@@ -12,17 +12,20 @@ public import TauCeti.Algebra.Lie.SemiDirect.AdNilpotent
 /-!
 # Nilpotence of representations on enveloping quotients
 
-The multiplication-plus-derivation action on a stable enveloping quotient is nilpotent on
-an element `(s, h)` when every ideal element acts nilpotently by multiplication and `ψ(h)`
-is locally nilpotent. The two summands need not commute: the ideal summand is normalized by
-the complementary summand, so the nilpotent-extension lemma applies.
+On a stable enveloping quotient that is Noetherian over the coefficient ring, the
+multiplication-plus-derivation action is nilpotent on an element `(s, h)` when every ideal
+element acts nilpotently by multiplication and the complementary quotient operator is
+nilpotent. Local nilpotence of `ψ(h)` suffices for the latter condition. The two summands
+need not commute: the ideal summand is normalized by the complementary summand, so the
+nilpotent-extension lemma applies.
 
 For a nilpotent split Lie extension, nilpotence of its adjoint action supplies the condition
-on `ψ(h)`. Consequently a nilrepresentation of the ideal gives a nilrepresentation of the
-whole extension on any Noetherian stable quotient retaining its nilpotence guarantees.
+on `ψ(h)`. Consequently every element of the extension acts nilpotently on any Noetherian
+stable quotient where the images of the ideal's nilradical are nilpotent.
 When the ambient nilradical is contained in the embedded nilradical of the ideal, nilpotence
 control instead follows from the multiplication action alone, without a finiteness hypothesis
-on the quotient.
+on the quotient. When the quotient is finite dimensional over a field, these results give
+nilrepresentations of the extension.
 
 The argument combines `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall` with
 the descended-derivation nilpotence theorem used by
@@ -55,14 +58,15 @@ variable (ψ : H →ₗ⁅R⁆ LieDerivation R S S)
   (hJ : ∀ h : H, envelopingDerivation R S (ψ h) ∈
     stableDerivations R (J.restrictScalars R))
 
-/-- If all ideal generators have nilpotent images and the complementary derivation is locally
+/-- If all ideal generators have nilpotent images and the complementary quotient operator is
 nilpotent, the full multiplication-plus-derivation operator is nilpotent. The quotient need
 only be Noetherian over the coefficient ring; the two operators need not commute. -/
 theorem isNilpotent_envelopingQuotientRep [IsNoetherian R (U ⧸ J)]
     (hnil : ∀ s : S, IsNilpotent
       (Ideal.Quotient.mk J (_root_.UniversalEnvelopingAlgebra.ι R s)))
     (x : S ⋊⁅ψ⁆ H)
-    (hψ : ∀ s : S, ∃ n : ℕ, ((ψ x.right).toLinearMap ^ n) s = 0) :
+    (hH : IsNilpotent
+      (envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ x.right))) :
     IsNilpotent (envelopingQuotientRep R S ψ J hJ x) := by
   let ρ := envelopingQuotientRep R S ψ J hJ
   let K := (ρ.comp (SemiDirectSum.inl ψ)).range
@@ -86,7 +90,7 @@ theorem isNilpotent_envelopingQuotientRep [IsNoetherian R (U ⧸ J)]
   have hnilH : IsNilpotent (LieModule.toEnd R (Module.End R (U ⧸ J)) (U ⧸ J)
       (ρ (SemiDirectSum.inr ψ x.right))) := by
     simp only [LieModule.toEnd_module_end, LieHom.id_apply]
-    exact isNilpotent_envelopingQuotientRep_inr R S ψ J hJ x.right hψ
+    exact hH
   have hsum := K.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall hy hK hnilH
     (K.smul_add_mem_lieSpan_insert hy (1 : R)
       ((ρ.comp (SemiDirectSum.inl ψ)).mem_range_self x.left))
@@ -94,8 +98,19 @@ theorem isNilpotent_envelopingQuotientRep [IsNoetherian R (U ⧸ J)]
     LieHom.comp_apply, ← map_add, SemiDirectSum.inr_eq_mk, SemiDirectSum.inl_eq_mk,
     SemiDirectSum.add_eq_mk, zero_add, add_zero] using hsum
 
-/-- On a nilpotent split extension, the stable enveloping-quotient representation remains a
-nilrepresentation whenever the images of the ideal's nilradical are nilpotent. -/
+/-- Local nilpotence of the complementary derivation and nilpotence of all ideal-generator
+images imply nilpotence of the full action on a Noetherian stable enveloping quotient. -/
+theorem isNilpotent_envelopingQuotientRep_of_locallyNilpotent [IsNoetherian R (U ⧸ J)]
+    (hnil : ∀ s : S, IsNilpotent
+      (Ideal.Quotient.mk J (_root_.UniversalEnvelopingAlgebra.ι R s)))
+    (x : S ⋊⁅ψ⁆ H)
+    (hψ : ∀ s : S, ∃ n : ℕ, ((ψ x.right).toLinearMap ^ n) s = 0) :
+    IsNilpotent (envelopingQuotientRep R S ψ J hJ x) :=
+  isNilpotent_envelopingQuotientRep R S ψ J hJ hnil x
+    (isNilpotent_envelopingQuotientRep_inr R S ψ J hJ x.right hψ)
+
+/-- On a nilpotent split extension, every element acts nilpotently on the stable enveloping
+quotient whenever the images of the ideal's nilradical are nilpotent. -/
 theorem isNilpotent_envelopingQuotientRep_of_isNilpotent [IsNoetherian R (U ⧸ J)]
     [LieRing.IsNilpotent (S ⋊⁅ψ⁆ H)]
     (hnil : ∀ s : S, s ∈ LieAlgebra.nilradical R S → IsNilpotent
@@ -103,7 +118,7 @@ theorem isNilpotent_envelopingQuotientRep_of_isNilpotent [IsNoetherian R (U ⧸ 
     (x : S ⋊⁅ψ⁆ H) : IsNilpotent (envelopingQuotientRep R S ψ J hJ x) := by
   have : LieRing.IsNilpotent S :=
     (SemiDirectSum.inl_injective ψ).lieAlgebra_isNilpotent
-  apply isNilpotent_envelopingQuotientRep R S ψ J hJ
+  apply isNilpotent_envelopingQuotientRep_of_locallyNilpotent R S ψ J hJ
     (fun s ↦ hnil s (by simp)) x
   have hψ := SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad_inr ψ x.right
     (LieModule.isNilpotent_toEnd_of_isNilpotent R (S ⋊⁅ψ⁆ H) (S ⋊⁅ψ⁆ H)
@@ -111,9 +126,9 @@ theorem isNilpotent_envelopingQuotientRep_of_isNilpotent [IsNoetherian R (U ⧸ 
   obtain ⟨n, hn⟩ := hψ
   exact fun s ↦ ⟨n, by simp [hn]⟩
 
-/-- If the ambient nilradical lies in the embedded nilradical of the ideal, retaining nilpotence
-of the ideal's nilradical is enough for the extension to remain a nilrepresentation. This
-includes equality of the two nilradicals and requires no finiteness of the quotient. -/
+/-- If the ambient nilradical lies in the embedded nilradical of the ideal and the images of
+the ideal's nilradical are nilpotent, every element of the ambient nilradical acts nilpotently.
+This includes equality of the two nilradicals and requires no finiteness of the quotient. -/
 theorem isNilpotent_envelopingQuotientRep_of_mem_nilradical
     (hnil : ∀ s : S, s ∈ LieAlgebra.nilradical R S → IsNilpotent
       (Ideal.Quotient.mk J (_root_.UniversalEnvelopingAlgebra.ι R s)))

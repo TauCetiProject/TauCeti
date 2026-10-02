@@ -140,6 +140,18 @@ theorem envelopingQuotientRep_mk_zero (s : S) :
   simp only [envelopingQuotientRep_apply, map_zero,
     ZeroMemClass.coe_zero, LinearMap.zero_apply, add_zero, LinearMap.mulLeft_apply]
 
+/-- On the complementary summand, the extension acts by the descended enveloping derivation. -/
+@[simp]
+theorem envelopingQuotientRep_zero_mk (h : H) :
+    envelopingQuotientRep R S ψ J hJ ⟨0, h⟩ =
+      (derivationQuotientHom R J ⟨envelopingDerivation R S (ψ h), hJ h⟩ :
+        Module.End R (U ⧸ J)) := by
+  apply LinearMap.ext
+  intro q
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp only [envelopingQuotientRep_apply, map_zero, zero_mul, zero_add,
+    envelopingQuotientDerivation_apply_mk, derivationQuotientHom_apply_mk]
+
 /-- Refining the enveloping kernel of a representation preserves all directions it detects:
 the kernel of the new action restricted to `S` lies in the starting representation's kernel. -/
 theorem ker_envelopingQuotientRep_comp_inl_le {V : Type*} [AddCommGroup V] [Module R V]
@@ -159,16 +171,7 @@ any stable enveloping quotient that is finitely generated over the coefficient r
 theorem isNilpotent_envelopingQuotientRep_inr [Module.Finite R (U ⧸ J)] (h : H)
     (hψ : ∀ s : S, ∃ n : ℕ, ((ψ h).toLinearMap ^ n) s = 0) :
     IsNilpotent (envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ h)) := by
-  have heq : envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ h) =
-      (derivationQuotientHom R J ⟨envelopingDerivation R S (ψ h), hJ h⟩ :
-        Module.End R (U ⧸ J)) := by
-    apply LinearMap.ext
-    intro q
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
-    simp only [SemiDirectSum.inr_eq_mk, envelopingQuotientRep_apply, map_zero,
-      zero_mul, zero_add, envelopingQuotientDerivation_apply_mk,
-      derivationQuotientHom_apply_mk]
-  rw [heq]
+  rw [SemiDirectSum.inr_eq_mk, envelopingQuotientRep_zero_mk]
   exact isNilpotent_envelopingDerivation_quotient R S (ψ h) hψ J (hJ h)
 
 end TauCeti
