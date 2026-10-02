@@ -43,6 +43,24 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
+/-- Extension of archimedean completions preserves the ordinary norm. -/
+@[simp]
+theorem norm_completionMap
+    {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
+    ‖LiesOver.completionMap (w := w) x‖ = ‖x‖ := by
+  -- `completionMap` has an unexposed body, so use its public continuity and coercion lemmas
+  -- to transport Mathlib's norm preservation from the dense base field.
+  induction x using InfinitePlace.Completion.induction_on with
+  | hp =>
+    exact isClosed_eq
+      (continuous_norm.comp (LiesOver.continuous_completionMap (v := v) (w := w)))
+      continuous_norm
+  | ih y =>
+    rw [LiesOver.completionMap_coe]
+    simpa only [InfinitePlace.Completion.norm_coe, WithAbs.norm_eq_apply_ofAbs,
+      WithAbs.equiv_apply, InfinitePlace.coe_apply] using
+      (InfinitePlace.LiesOver.isometry_algebraMap w v).norm_map_of_map_zero (map_zero _) y
+
 /-- Under extension of archimedean completions the normalized absolute value is raised to the
 local degree. This includes the real-to-complex case and the value at zero. -/
 @[simp↓]
@@ -50,20 +68,7 @@ theorem infiniteCompletionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
     infiniteCompletionNormalizedAbsValue w (LiesOver.completionMap x) =
       infiniteCompletionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
-  -- `completionMap` has an unexposed body, so use its public continuity and coercion lemmas
-  -- to transport Mathlib's norm preservation from the dense base field.
-  have hnorm : ‖LiesOver.completionMap (w := w) x‖ = ‖x‖ := by
-    induction x using InfinitePlace.Completion.induction_on with
-    | hp =>
-      exact isClosed_eq
-        (continuous_norm.comp (LiesOver.continuous_completionMap (v := v) (w := w)))
-        continuous_norm
-    | ih y =>
-      rw [LiesOver.completionMap_coe]
-      simpa only [InfinitePlace.Completion.norm_coe, WithAbs.norm_eq_apply_ofAbs,
-        WithAbs.equiv_apply, InfinitePlace.coe_apply] using
-        (InfinitePlace.LiesOver.isometry_algebraMap w v).norm_map_of_map_zero (map_zero _) y
-  rw [infiniteCompletionNormalizedAbsValue_apply, hnorm,
+  rw [infiniteCompletionNormalizedAbsValue_apply, norm_completionMap,
     infiniteCompletionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
 
 variable [NumberField K] [NumberField L]

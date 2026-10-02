@@ -68,19 +68,9 @@ theorem ideleExtension_self : ideleExtension K K = MonoidHom.id _ := by
   intro x
   apply Units.ext
   rw [coe_ideleExtension, MonoidHom.id_apply]
-  apply Prod.ext
-  · simp only [NumberField.adeleExtension_fst]
-    exact RingHom.congr_fun (NumberField.infiniteAdeleExtension_self K) (x : AdeleRing (𝓞 K) K).1
-  · -- Use the ring-of-integers algebra chosen by `ideleExtension`, rather than the
-    -- competing self-algebra instance, so uniqueness applies without a diamond.
-    let : Algebra (𝓞 K) (𝓞 K) := NumberField.inst_ringOfIntegersAlgebra K K
-    have h : finiteAdeleExtension (𝓞 K) K (𝓞 K) K = RingHom.id _ := by
-      symm
-      apply eq_finiteAdeleExtension_of_continuous (𝓞 K) K (𝓞 K) K continuous_id
-      intro a
-      simp
-    simpa only [NumberField.adeleExtension_snd, RingHom.id_apply] using
-      RingHom.congr_fun h (x : AdeleRing (𝓞 K) K).2
+  -- Match the ring-of-integers algebra used by `ideleExtension` to avoid the self-algebra diamond.
+  let : Algebra (𝓞 K) (𝓞 K) := NumberField.inst_ringOfIntegersAlgebra K K
+  exact RingHom.congr_fun (NumberField.adeleExtension_self (𝓞 K) K) _
 
 /-- Extension of ideles composes in a tower. -/
 @[simp]
