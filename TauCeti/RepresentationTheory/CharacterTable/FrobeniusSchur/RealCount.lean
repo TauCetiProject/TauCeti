@@ -34,8 +34,8 @@ conjugacy classes, because the inversion-invariant rows already are
 rest of the table; and the **unweighted** sum `∑ᵢ ν₂(χᵢ)` is the difference
 `#{orthogonal} - #{symplectic}`.  That unweighted sum is not the weighted one of
 `TauCeti.card_squareRoot_one_eq_sum_frobeniusSchurIndicatorRow_mul_characterDegree`, whose terms
-carry the degrees `χᵢ(1)` and which counts the solutions of `g² = 1`; the two agree only when every
-degree is `1`.
+carry the degrees `χᵢ(1)` and which counts the solutions of `g² = 1`; every degree being `1` is
+enough for the two to agree.
 
 A group all of whose rows are orthogonal is **totally orthogonal**.  Two consequences are recorded
 in that case: every conjugacy class is real, and the solutions of `g² = 1` are as many as the sum of
@@ -73,28 +73,16 @@ The counts are stated with `Nat.card` on subtypes of the row index type, matchin
 are performed by `subtypeOrEquiv` and `Equiv.sumCompl` rather than by `Finset.filter`, so no
 decidability hypothesis reaches a statement.
 
-`Representation.card_inv_mul_sum_character_sq_eq_finrank_invariantForms` takes an explicit
-`Representation` argument and so is declared into the root `Representation` namespace, not into
-`TauCeti.Representation`: `scripts/lint-dot-notation.py` reports a new finding for a declaration
-named `TauCeti.<MathlibNamespace>.foo` whose first explicit argument has that Mathlib type, and the
-pre-existing `TauCeti.Representation` names of
-`TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Trichotomy.lean` are grandfathered in
-`scripts/lint-dot-notation-baseline.txt` rather than permitted for new code.  Everything indexed by
-a row of the character table is named in plain `TauCeti`, as in the sibling module
-`TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/InvolutionCount.lean`.
+`Representation.card_inv_mul_sum_character_sq_eq_finrank_invariantForms` takes a Mathlib
+`Representation` as its first explicit argument, so that it is available by dot notation it is
+declared into the root `Representation` namespace rather than into `TauCeti.Representation`.
+Everything indexed by a row of the character table is named in plain `TauCeti`, as in the sibling
+module `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/InvolutionCount.lean`.
 
 The field is taken in `Type` rather than an arbitrary universe, matching
 `TauCeti.frobeniusSchurIndicatorRow`.
 
 ## References
-
-This proves the unweighted-count clause of Layer 7 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-flagged there twice: the involution-count bullet ends "This is distinct from the **unweighted**
-count `∑_χ ν₂(χ) = #{orthogonal} − #{quaternionic}`; do not conflate the two", and the
-"Real characters and real classes" bullet asks that "the real-valued characters split into
-orthogonal (`ν₂ = +1`) and quaternionic (`ν₂ = -1`), and the unweighted difference `∑_χ ν₂(χ)`
-counts orthogonal minus quaternionic irreducibles".
 
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 4, and J.-P. Serre, *Linear
 Representations of Finite Groups*, GTM 42 (1977), §13.2.
@@ -132,19 +120,6 @@ end Representation
 
 namespace TauCeti
 
-section OneNeNegOne
-
-variable (k : Type) [Field k] [CharZero k]
-
-/-- In characteristic zero `1` and `-1` are distinct, which is what makes the orthogonal and the
-symplectic rows disjoint families.  This is Mathlib's
-`Ring.neg_one_ne_one_of_char_ne_two` with the characteristic read off `CharZero`. -/
-private theorem one_ne_neg_one : (1 : k) ≠ -1 :=
-  (Ring.neg_one_ne_one_of_char_ne_two (R := k)
-    (by rw [ringChar.eq_zero]; exact two_ne_zero.symm)).symm
-
-end OneNeNegOne
-
 section Rows
 
 variable (k : Type) (G : Type v) [Field k] [CharZero k] [Group G] [Fintype G] [IsAlgClosed k]
@@ -156,7 +131,7 @@ open scoped Classical in
 otherwise.**  A representation affording the row is irreducible, so by Schur's lemma it admits at
 most one invariant bilinear form up to scalars; which of the two cases occurs is decided by the
 average `|G|⁻¹ ∑_g χ(g)²`, computed on one side by
-`TauCeti.Representation.card_inv_mul_sum_character_sq_eq_finrank_invariantForms` and on the other by
+`Representation.card_inv_mul_sum_character_sq_eq_finrank_invariantForms` and on the other by
 `TauCeti.card_inv_mul_sum_irreducibleCharacter_sq`. -/
 theorem finrank_invariantForms_irreducibleRepresentation (i : Fin (Nat.card (ConjClasses G))) :
     finrank k (Representation.invariantForms (irreducibleRepresentation k i)) =
@@ -221,9 +196,11 @@ theorem card_frobeniusSchurIndicatorRow_ne_zero_eq_card_realClasses :
 indicator both `1` and `-1`. -/
 private theorem disjoint_frobeniusSchurIndicatorRow_eq_one_eq_neg_one :
     Disjoint (fun i : Fin (Nat.card (ConjClasses G)) => frobeniusSchurIndicatorRow k i = 1)
-      (fun i => frobeniusSchurIndicatorRow k i = -1) :=
-  Pi.disjoint_iff.mpr fun _ =>
-    Prop.disjoint_iff.mpr fun h => one_ne_neg_one k (h.1 ▸ h.2)
+      (fun i => frobeniusSchurIndicatorRow k i = -1) := by
+  have hne : (-1 : k) ≠ 1 :=
+    Ring.neg_one_ne_one_of_char_ne_two (by rw [ringChar.eq_zero]; exact two_ne_zero.symm)
+  exact Pi.disjoint_iff.mpr fun _ =>
+    Prop.disjoint_iff.mpr fun h => hne (h.2.symm.trans h.1)
 
 /-- **The orthogonal and the symplectic rows of the character table together are as many as the real
 conjugacy classes.**
@@ -278,6 +255,8 @@ theorem sum_frobeniusSchurIndicatorRow :
         (Nat.card {i : Fin (Nat.card (ConjClasses G)) //
           frobeniusSchurIndicatorRow k i = -1} : k) := by
   classical
+  have hne : (-1 : k) ≠ 1 :=
+    Ring.neg_one_ne_one_of_char_ne_two (by rw [ringChar.eq_zero]; exact two_ne_zero.symm)
   have hone : (Nat.card {i : Fin (Nat.card (ConjClasses G)) //
       frobeniusSchurIndicatorRow k i = 1} : k) =
       ∑ i : Fin (Nat.card (ConjClasses G)),
@@ -291,11 +270,10 @@ theorem sum_frobeniusSchurIndicatorRow :
   rw [hone, hneg, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rcases frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one k i with h | h | h
-  · rw [h, ite_eq_left rfl, ite_eq_right (one_ne_neg_one k), sub_zero]
+  · rw [h, ite_eq_left rfl, ite_eq_right hne.symm, sub_zero]
   · rw [h, ite_eq_right fun hz : (0 : k) = 1 => one_ne_zero hz.symm,
       ite_eq_right fun hz : (0 : k) = -1 => one_ne_zero (neg_eq_zero.mp hz.symm), sub_zero]
-  · rw [h, ite_eq_right fun hz : (-1 : k) = 1 => one_ne_neg_one k hz.symm, ite_eq_left rfl,
-      zero_sub]
+  · rw [h, ite_eq_right hne, ite_eq_left rfl, zero_sub]
 
 end Counting
 
@@ -315,10 +293,11 @@ theorem card_realClasses_eq_card_conjClasses_of_forall_frobeniusSchurIndicatorRo
   simp
 
 omit [CharZero k] in
-/-- **For a totally orthogonal group the solutions of `g² = 1` are as many as the sum of the
-degrees** of the irreducible characters.  This is the involution-counting formula
-`TauCeti.card_squareRoot_one_eq_sum_frobeniusSchurIndicatorRow_mul_characterDegree` with every
-indicator equal to `1`. -/
+/-- **For a totally orthogonal group the number of solutions of `g² = 1` is the sum of the
+degrees** of the irreducible characters, as an identity in `k`.  This is the involution-counting
+formula `TauCeti.card_squareRoot_one_eq_sum_frobeniusSchurIndicatorRow_mul_characterDegree` with
+every indicator equal to `1`.  Characteristic zero is not assumed here, so in characteristic `p`
+the two sides are compared only as residues, not as integers. -/
 theorem card_squareRoot_one_eq_sum_characterDegree_of_forall_frobeniusSchurIndicatorRow_eq_one
     (h : ∀ i : Fin (Nat.card (ConjClasses G)), frobeniusSchurIndicatorRow k i = 1) :
     (Nat.card {g : G // g * g = 1} : k) =
