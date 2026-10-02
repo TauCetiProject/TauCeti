@@ -73,6 +73,23 @@ def vertexEquiv : AffineD m ≃ Fin 4 ⊕ Fin (m + 1) where
   left_inv v := by cases v <;> rfl
   right_inv s := by cases s <;> rfl
 
+/-- Leaves correspond to the left summand of the vertex coordinates. -/
+@[simp]
+theorem vertexEquiv_leaf (i : Fin 4) : (vertexEquiv m) (leaf i) = Sum.inl i := (rfl)
+
+/-- Spine vertices correspond to the right summand of the vertex coordinates. -/
+@[simp]
+theorem vertexEquiv_spine (j : Fin (m + 1)) : (vertexEquiv m) (spine j) = Sum.inr j := (rfl)
+
+/-- The left summand of the vertex coordinates gives a leaf. -/
+@[simp]
+theorem vertexEquiv_symm_inl (i : Fin 4) : (vertexEquiv m).symm (Sum.inl i) = leaf i := (rfl)
+
+/-- The right summand of the vertex coordinates gives a spine vertex. -/
+@[simp]
+theorem vertexEquiv_symm_inr (j : Fin (m + 1)) :
+    (vertexEquiv m).symm (Sum.inr j) = spine j := (rfl)
+
 instance : Fintype (AffineD m) := Fintype.ofEquiv _ (vertexEquiv m).symm
 
 /-- `TauCeti.Quiver.AffineD m` has `m + 5` vertices, as the extended Dynkin diagram `D~ₘ₊₄`
@@ -89,6 +106,17 @@ variable (m) in
 for the leaves `2` and `3`. -/
 def leafTarget (i : Fin 4) : Fin (m + 1) :=
   if (i : ℕ) < 2 then 0 else Fin.last m
+
+/-- Leaves with index less than two attach to the first spine vertex. -/
+@[simp]
+theorem leafTarget_of_lt_two (i : Fin 4) (h : (i : ℕ) < 2) : leafTarget m i = 0 := by
+  simp [leafTarget, h]
+
+/-- Leaves with index not less than two attach to the last spine vertex. -/
+@[simp]
+theorem leafTarget_of_not_lt_two (i : Fin 4) (h : ¬ (i : ℕ) < 2) :
+    leafTarget m i = Fin.last m := by
+  simp [leafTarget, h]
 
 /-- The arrows are from each leaf to its endpoint `leafTarget m i`, and from each spine vertex
 to the next. All other hom types are empty. -/
