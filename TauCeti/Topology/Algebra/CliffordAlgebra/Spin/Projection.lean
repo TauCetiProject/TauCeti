@@ -43,10 +43,7 @@ variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
 Clifford-algebra and linear-automorphism topologies. -/
 @[fun_prop]
 theorem continuous_spinToOrthogonal : Continuous (spinToOrthogonal Q) := by
-  have hinc : Continuous (spinToPin Q) := by
-    apply continuous_induced_rng.mpr
-    exact continuous_subtype_val.congr fun x => (coe_spinToPin_apply x).symm
-  exact ((continuous_pinToOrthogonal Q).comp hinc).congr fun x =>
+  exact ((continuous_pinToOrthogonal Q).comp (continuous_spinToPin Q)).congr fun x =>
     pinToOrthogonal_spinToPin x
 
 /-- The Spin projection into the special orthogonal group is continuous for its subgroup

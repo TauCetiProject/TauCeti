@@ -10,13 +10,14 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
 public import Mathlib.Topology.Algebra.Group.Units
 
 /-!
-# Continuity of the Pin inclusion
+# Continuity of the Spin and Pin inclusions
 
 The Pin group inherits the subtype topology from the Clifford algebra with its module topology.
 Its inclusion into the Lipschitz group is continuous for the subgroup topology inside the units
 of the Clifford algebra. Both unit coordinates are continuous: the forward coordinate is the
 subtype coercion, and the inverse coordinate is Clifford star. This inclusion allows continuity
 of the Lipschitz representation to restrict to Pin and Spin.
+The Spin inclusion into Pin is continuous for their Clifford-algebra subtype topologies.
 
 ## References
 
@@ -33,6 +34,13 @@ open _root_.CliffordAlgebra
 
 variable {R V : Type*} [CommRing R] [TopologicalSpace R]
   [AddCommGroup V] [Module R V] (Q : QuadraticForm R V)
+
+/-- The Spin inclusion into the Pin group is continuous for their canonical
+Clifford-algebra subtype topologies. -/
+@[fun_prop]
+theorem continuous_spinToPin : Continuous (spinToPin Q) := by
+  apply continuous_induced_rng.mpr
+  exact continuous_subtype_val.congr fun x => (coe_spinToPin_apply x).symm
 
 /-- The Pin inclusion into the Lipschitz group is continuous for the canonical
 Clifford-algebra and unit-group topologies. -/
