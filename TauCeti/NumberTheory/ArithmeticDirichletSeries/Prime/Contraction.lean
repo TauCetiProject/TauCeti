@@ -40,9 +40,10 @@ theorem, where a relative Frobenius fibre over the fixed field of a cyclic subgr
 over the primes of the base field.
 
 The same fibre count multiplies the prime counts: for every cutoff `x`, `π_T(x) = c π_S(x)` and
-`ϑ_T(x) = c ϑ_S(x)`, with no error term and without the hypothesis `c ≠ 0`. Both counting
-functions are measured against `x / log x` by the prime ideal theorem in either field, so the
-transfer, its bounded-fibre variant, and the contraction form hold for natural density as well.
+`ϑ_T(x) = c ϑ_S(x)`, with no error term and without the hypothesis `c ≠ 0`. By the prime ideal
+theorem the ordinary prime counts of both fields are asymptotic to `x / log x` (and the weighted
+counts `ϑ` to `x`), so the transfer, its bounded-fibre variant, and the contraction form hold for
+natural density as well.
 
 ## Main results
 
