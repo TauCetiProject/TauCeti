@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.Basic
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.NegativeZero
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.PositiveZero
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Delta
 
 /-!
@@ -75,8 +73,7 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
 
 /-
 The proof is by induction on `q`, starting from the bidegrees `(p, 0)`, where the cup product is
-induced by a morphism of coefficients (`TauCeti.TateCohomology.cup_res_zero_zero`,
-`TauCeti.TateCohomology.cup_posRes_zero_right`, `TauCeti.TateCohomology.cup_res_zero_right_of_neg`).
+induced by a morphism of coefficients (`TauCeti.TateCohomology.cup_res_zero_right`).
 A class `y` of degree `q + 1` is the image of a class `y'` of degree `q` of the upward dimension
 shift of `N` under the connecting map of the dimension-shifting sequence, and
 `x ∪ δ y' = (-1)^p δ (x ∪ y')`. Restriction commutes with the connecting maps in every degree
@@ -97,13 +94,7 @@ theorem cup_res_of_nonneg_right (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   induction q, hq using Int.leInduction generalizing N r with
   | base =>
     obtain rfl : p = r := by omega
-    rcases lt_trichotomy p 0 with hp | rfl | hp
-    · rw [res_zero]
-      exact cup_res_zero_right_of_neg M N H hp x y
-    · exact cup_res_zero_zero M N H x y
-    · obtain ⟨n, rfl⟩ : ∃ n : ℕ, p = (n : ℤ) + 1 := ⟨p.toNat - 1, by omega⟩
-      simp only [res_ofNat_succ, res_zero]
-      exact cup_posRes_zero_right M N H n x y
+    simpa only [res_zero] using cup_res_zero_right M N H p x y
   | succ q hq ih =>
     obtain rfl : r = p + q + 1 := by omega
     exact cup_res_add_one M N H hq rfl x (ih (dimensionShiftUp N) rfl) y

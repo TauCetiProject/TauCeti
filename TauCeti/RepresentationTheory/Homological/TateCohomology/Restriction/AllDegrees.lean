@@ -70,18 +70,6 @@ theorem res_neg_one (M : Rep.{u} R G) (H : Subgroup G) :
 theorem res_negSucc_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
     res M H (Int.negSucc (n + 1)) = negSuccRes M H (n + 1) := by rfl
 
-/-- **Tate restriction in negative degrees is natural in the coefficient representation.** -/
-@[reassoc]
-theorem res_natural_of_neg {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) {r : ℤ}
-    (hr : r < 0) :
-    (tateCohomologyFunctor r).map f ≫ res N H r =
-      res M H r ≫ (tateCohomologyFunctor r).map ((Rep.resFunctor H.subtype).map f) := by
-  obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat hr.le
-  rcases n with _ | _ | n
-  · simp at hr
-  · exact HNegOneRes_natural M H f
-  · exact negSuccRes_natural M H f (n + 1)
-
 /-- Tate restriction is natural in the coefficient representation, in every integer degree. -/
 @[reassoc]
 theorem res_natural {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) (r : ℤ) :
@@ -103,7 +91,9 @@ theorem res_natural {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) (r : ℤ)
     | succ n =>
       simp only [Int.ofNat_eq_natCast, Int.natCast_add, Int.cast_ofNat_Int, res_ofNat_succ]
       exact posRes_natural M H f n
-  · exact res_natural_of_neg f H (Int.negSucc_lt_zero n)
+  · cases n with
+    | zero => exact HNegOneRes_natural M H f
+    | succ n => exact negSuccRes_natural M H f (n + 1)
 
 /-- Corestriction of Tate cohomology from a subgroup of a finite group, in every integer
 degree. -/
