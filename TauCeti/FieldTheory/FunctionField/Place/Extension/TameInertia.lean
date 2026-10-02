@@ -38,6 +38,7 @@ analogous statements for nonarchimedean local fields are in
 
 * `TauCeti.Place.tameCharacter`: for a uniformizer `t` at `P`, the homomorphism
   `σ ↦ (σ t / t)(P)` from `G_0(P)` to the units of the residue field.
+* `TauCeti.Place.tameCharacterGraded`: the induced homomorphism on `G_0(P) / G_1(P)`.
 
 ## Main results
 
@@ -49,10 +50,13 @@ analogous statements for nonarchimedean local fields are in
   `G_0(P)` lies in `G_1(P)` exactly when it fixes a uniformizer modulo `𝔪_P²`.
 * `TauCeti.Place.ker_tameCharacter`: for a separable residue extension, the kernel of the tame
   character is `G_1(P)`.
+* `TauCeti.Place.tameCharacterGraded_injective`: for a separable residue extension, the induced
+  tame character on `G_0(P) / G_1(P)` is injective.
 * `TauCeti.Place.isCyclic_quotient_ramificationGroup_one` and
-  `TauCeti.Place.not_dvd_index_ramificationGroup_one`: **`G_0(P) / G_1(P)` is cyclic of order prime
-  to the residue characteristic**.
-* `TauCeti.Place.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: the first
+  `TauCeti.Place.not_dvd_index_ramificationGroup_one`: for finite inertia and a separable residue
+  extension, **`G_0(P) / G_1(P)` is cyclic of order prime to the residue characteristic**.
+* `TauCeti.Place.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: for finite
+  inertia and a separable residue extension, the first
   ramification group is trivial exactly when the residue characteristic does not divide the order
   of the inertia group, and `TauCeti.Place.ramificationGroup_one_eq_bot_iff_not_dvd_ramificationIdx`
   its form for a finite Galois extension: **no wild inertia exactly in the tame case**.
@@ -222,6 +226,27 @@ theorem ramificationGroup_one_subgroupOf_le_ker_tameCharacter (ht : P.ord t = 1)
   rw [MonoidHom.mem_ker, tameCharacter_eq_one_iff]
   simpa using (mem_ramificationGroup_iff F P).mp hg t (mem_integers_of_ord_eq_one P ht)
 
+/-- The tame character induced on `G_0(P) / G_1(P)`. It is injective when the residue extension
+is separable (`TauCeti.Place.tameCharacterGraded_injective`). -/
+noncomputable def tameCharacterGraded (ht : P.ord t = 1) :
+    ramificationGroup F P 0 ⧸ (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)
+      →* P.ResidueFieldˣ :=
+  QuotientGroup.lift _ (tameCharacter F P ht)
+    (ramificationGroup_one_subgroupOf_le_ker_tameCharacter F P ht)
+
+/-- The induced tame character evaluated on the class of an inertia automorphism. -/
+@[simp]
+theorem tameCharacterGraded_mk (ht : P.ord t = 1) (g : ramificationGroup F P 0) :
+    tameCharacterGraded F P ht (QuotientGroup.mk g) = tameCharacter F P ht g := by
+  rw [tameCharacterGraded, QuotientGroup.lift_mk]
+
+/-- The induced tame character does not depend on the choice of uniformizer. -/
+theorem tameCharacterGraded_eq_of_ord_eq_one {t' : F'} (ht : P.ord t = 1)
+    (ht' : P.ord t' = 1) :
+    tameCharacterGraded F P ht = tameCharacterGraded F P ht' := by
+  ext g
+  simp [tameCharacter_eq_of_ord_eq_one F P ht ht']
+
 end Character
 
 section Separable
@@ -236,9 +261,14 @@ private theorem residue_eval_map (q : (P.restrict k F).integers[X]) (z : P.integ
       aeval (IsLocalRing.residue P.integers z)
         (q.map (IsLocalRing.residue (P.restrict k F).integers)) := by
   rw [eval_map, hom_eval₂, aeval_def, eval₂_map]
-  -- The two composite ring homomorphisms `𝒪_{P ∩ F} → F'_P` agree by
-  -- `IsLocalRing.ResidueField.algebraMap_residue`, which holds definitionally.
-  congr 1
+  have hmap : (IsLocalRing.residue P.integers).comp
+      (algebraMap (P.restrict k F).integers P.integers) =
+      (algebraMap (P.restrict k F).ResidueField P.ResidueField).comp
+        (IsLocalRing.residue (P.restrict k F).integers) := by
+    apply RingHom.ext
+    intro x
+    exact (IsLocalRing.ResidueField.algebraMap_residue x).symm
+  rw [hmap]
 
 /-- An automorphism fixing `P` commutes with evaluating a polynomial over `𝒪_{P ∩ F}`. -/
 private theorem apply_coe_eval_map (g : P.integers.decompositionSubgroup F)
@@ -365,21 +395,13 @@ theorem ker_tameCharacter [Algebra.IsSeparable (P.restrict k F).ResidueField P.R
   rw [Subgroup.mem_subgroupOf]
   exact mem_ramificationGroup_one_of_sub_mem_filtration_two F P ht g.2 hg
 
-/-- The tame character induces an injective homomorphism from `G_0(P) / G_1(P)` to the units of
-the residue field, when the residue extension is separable. -/
-private theorem exists_injective_quotient_ramificationGroup_one
-    [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField] :
-    ∃ φ : ramificationGroup F P 0 ⧸ (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)
-      →* P.ResidueFieldˣ, Function.Injective φ := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  have hker := ker_tameCharacter F P ht
-  refine ⟨QuotientGroup.lift _ (tameCharacter F P ht) hker.ge, ?_⟩
-  refine (injective_iff_map_eq_one _).mpr fun a ha ↦ ?_
-  induction a using QuotientGroup.induction_on with
-  | H g =>
-    rw [QuotientGroup.lift_mk, ← MonoidHom.mem_ker, hker] at ha
-    exact (QuotientGroup.eq_one_iff g).mpr ha
+/-- The induced tame character is injective when the residue extension is separable. -/
+theorem tameCharacterGraded_injective
+    [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField] (ht : P.ord t = 1) :
+    Function.Injective (tameCharacterGraded F P ht) :=
+  (QuotientGroup.injective_lift_iff _ (tameCharacter F P ht)
+    (ramificationGroup_one_subgroupOf_le_ker_tameCharacter F P ht)).2
+      (ker_tameCharacter F P ht).symm
 
 /-- **The tame quotient `G_0(P) / G_1(P)` is cyclic** when the inertia group is finite and the
 residue extension is separable (Stichtenoth, Proposition 3.8.5): it embeds in the multiplicative
@@ -389,7 +411,10 @@ theorem isCyclic_quotient_ramificationGroup_one
     [Finite (ramificationGroup F P 0)] :
     IsCyclic (ramificationGroup F P 0 ⧸
       (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)) := by
-  obtain ⟨φ, hφ⟩ := exists_injective_quotient_ramificationGroup_one F P
+  obtain ⟨t, ht⟩ := P.exists_isUniformizer
+  rw [isUniformizer_iff_ord_eq_one] at ht
+  let φ := tameCharacterGraded F P ht
+  have hφ := tameCharacterGraded_injective F P ht
   exact isCyclic_of_injective_ringHom ((Units.coeHom P.ResidueField).comp φ)
     ((Units.val_injective).comp hφ)
 
@@ -401,7 +426,10 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [Fact p.Prime] [CharP P.Re
     [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
     [Finite (ramificationGroup F P 0)] :
     ¬ p ∣ ((ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)).index := by
-  obtain ⟨φ, hφ⟩ := exists_injective_quotient_ramificationGroup_one F P
+  obtain ⟨t, ht⟩ := P.exists_isUniformizer
+  rw [isUniformizer_iff_ord_eq_one] at ht
+  let φ := tameCharacterGraded F P ht
+  have hφ := tameCharacterGraded_injective F P ht
   intro hp
   obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' p hp
   -- The image of `x` is a primitive `p`-th root of unity, impossible in characteristic `p`.
@@ -423,11 +451,17 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p 
   have hindex := not_dvd_index_ramificationGroup_one F P p
   rwa [h, Subgroup.bot_subgroupOf, Subgroup.index_bot] at hindex
 
+end Separable
+
+section Galois
+
+variable (F) [FiniteDimensional F F'] [IsGalois F F'] (P : Place k F')
+
 /-- **A place of a finite Galois extension is tamely ramified exactly when it has no wild
 inertia**, when the residue extension is separable: the first ramification group is trivial if and
 only if the residue characteristic `p` does not divide the ramification index. -/
 theorem ramificationGroup_one_eq_bot_iff_not_dvd_ramificationIdx (p : ℕ) [Fact p.Prime]
-    [CharP P.ResidueField p] [FiniteDimensional F F'] [IsGalois F F']
+    [CharP P.ResidueField p]
     [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField] :
     ramificationGroup F P 1 = ⊥ ↔ ¬ p ∣ ramificationIdx F P := by
   have : Finite (ramificationGroup F P 0) :=
@@ -436,7 +470,7 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_ramificationIdx (p : ℕ) [Fact
   rw [ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero F P p,
     ramificationGroup_zero, card_inertiaSubgroup F P]
 
-end Separable
+end Galois
 
 end Place
 
