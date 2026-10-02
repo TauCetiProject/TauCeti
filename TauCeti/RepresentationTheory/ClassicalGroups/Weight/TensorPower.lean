@@ -26,7 +26,8 @@ again a weight vector: a diagonal matrix scales it by the product `t_{f 0} ⋯ t
 corresponding entries.  Its weight therefore depends on `f` only through the unordered tuple of
 its values, and is the multiplicity vector `TauCeti.weightOfMultiset` of that unordered tuple,
 exactly the weight the corresponding product of basis vectors carries in `Symᵈ(kⁿ)`.  Those pure
-tensors are the basis `Basis.piTensorProduct` of `(kⁿ)^{⊗d}`, indexed by `Fin d → Fin n`.
+tensors are the monomial basis `TauCeti.tensorPowerBasis` of `(kⁿ)^{⊗d}`, indexed by
+`Fin d → Fin n`.
 
 The difference from the symmetric and exterior powers is that **the labelling is in general not
 injective**, and that is the whole point of this file: the tuples of a given content all carry the

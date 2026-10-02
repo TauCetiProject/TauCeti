@@ -74,15 +74,8 @@ theorem sum_take_rowLens_le_of_injective (t : YoungTableau lam) (s : YoungTablea
       (by simpa only [Equiv.apply_symm_apply] using congrArg Prod.snd hxy)
     exact σ.symm.injective h
   have hcount : (Finset.univ.filter fun y => rowIndex s (σ.symm y) < k).card =
-      (Finset.univ.filter fun x => rowIndex s x < k).card := by
-    refine Finset.card_bij (fun y _ => σ.symm y) ?_ ?_ ?_
-    · intro y hy
-      simpa only [Finset.mem_filter, Finset.mem_univ, true_and] using hy
-    · intro x _ y _ hxy
-      exact σ.symm.injective hxy
-    · intro x hx
-      exact ⟨σ x, by simpa only [Finset.mem_filter, Finset.mem_univ, true_and,
-        Equiv.symm_apply_apply] using hx, σ.symm_apply_apply x⟩
+      (Finset.univ.filter fun x => rowIndex s x < k).card :=
+    Finset.card_equiv σ.symm fun y => by simp
   simpa only [hcount, card_filter_rowIndex_lt] using
     card_filter_lt_le_card_filter_rowIndex_lt t hp k
 
