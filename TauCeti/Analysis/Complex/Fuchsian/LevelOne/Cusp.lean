@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
+public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
 import Mathlib.NumberTheory.Modular
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
@@ -90,10 +90,6 @@ theorem cuspDatumInfty_width : cuspDatumInfty.width = 1 := (rfl)
 theorem cuspDatumInfty_generator :
     (cuspDatumInfty.generator : PSL(2, ℝ)) =
       psl2zToPSL2R (_root_.ModularGroup.T : PSL(2, ℤ)) := (rfl)
-
-@[simp]
-theorem cuspDatumInfty_cuspOrbit : cuspDatumInfty.cuspOrbit = cuspOrbitInfty :=
-  Subsingleton.elim _ _
 
 /-- The surface cusp coordinate for the normalized modular datum is the usual width-one
 q-parameter. -/

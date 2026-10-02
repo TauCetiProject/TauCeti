@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Cusp
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.ModularInvariant
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Meromorphic
 
@@ -57,41 +57,6 @@ theorem jCompactified_ofCusp (C : psl2zToPSL2R.range.CuspOrbit) :
 theorem jCompactified_comp_ofQuotient : jCompactified ∘ ofQuotient = jQuotient :=
   funext jCompactified_ofQuotient
 
-private theorem cuspFunction_qParam_mul_j_zero :
-    cuspFunction 1 (fun τ : ℍ ↦ Periodic.qParam 1 τ * j τ) 0 = 1 := by
-  rw [cuspFunction_apply_zero one_pos analyticAt_cuspFunction_qParam_mul_j
-    periodic_qParam_mul_j_comp_ofComplex]
-  exact tendsto_qParam_mul_j_atImInfty.limUnder_eq
-
-private theorem cuspFunction_j_eventuallyEq :
-    cuspFunction 1 j =ᶠ[𝓝[≠] 0]
-      fun q ↦ cuspFunction 1 (fun τ : ℍ ↦ Periodic.qParam 1 τ * j τ) q / q := by
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  simp only [mem_compl_iff, mem_singleton_iff] at hq
-  simp only [UpperHalfPlane.cuspFunction, Periodic.cuspFunction_eq_of_nonzero _ _ hq,
-    Function.comp_apply]
-  have hpos := Periodic.im_invQParam_pos_of_norm_lt_one one_pos
-    (mem_ball_zero_iff.mp hqn) hq
-  rw [ofComplex_apply_of_im_pos hpos, Periodic.qParam_right_inv one_ne_zero hq]
-  exact (mul_div_cancel_left₀ _ hq).symm
-
-private theorem meromorphicAt_cuspFunction_j : _root_.MeromorphicAt (cuspFunction 1 j) 0 :=
-  (analyticAt_cuspFunction_qParam_mul_j.meromorphicAt.div analyticAt_id.meromorphicAt).congr
-    cuspFunction_j_eventuallyEq.symm
-
-private theorem meromorphicOrderAt_cuspFunction_j :
-    _root_.meromorphicOrderAt (cuspFunction 1 j) 0 = -1 := by
-  have hdiv := _root_.meromorphicOrderAt_div
-    analyticAt_cuspFunction_qParam_mul_j.meromorphicAt
-    (g := id) analyticAt_id.meromorphicAt
-  simp only [Pi.div_def, id_eq] at hdiv
-  rw [_root_.meromorphicOrderAt_congr cuspFunction_j_eventuallyEq, hdiv]
-  have hzero := analyticAt_cuspFunction_qParam_mul_j.analyticOrderAt_eq_zero.mpr
-    (by rw [cuspFunction_qParam_mul_j_zero]; exact one_ne_zero)
-  rw [analyticAt_cuspFunction_qParam_mul_j.meromorphicOrderAt_eq, hzero]
-  simp [meromorphicOrderAt_id]
-
 /-- The extended modular invariant is meromorphic at every point of the constructed compact
 level-one surface, including its cusp. -/
 theorem meromorphicAt_jCompactified (x : psl2zToPSL2R.range.CompactifiedQuotient) :
@@ -122,9 +87,8 @@ the descended modular invariant. -/
 theorem localMultiplicity_jCompactified_ofQuotient
     (p : orbitRel.Quotient psl2zToPSL2R.range ℍ) :
     localMultiplicity jCompactified (ofQuotient p) = localMultiplicity jQuotient p := by
-  rw [localMultiplicity_def, localMultiplicity_def, chartAt_ofQuotient,
-    ofQuotientChart_ofQuotient]
-  simp only [ofQuotientChart_symm_apply, jCompactified_ofQuotient]
+  rw [TauCeti.Subgroup.CompactifiedQuotient.localMultiplicity_ofQuotient,
+    jCompactified_comp_ofQuotient]
 
 /-- The unique cusp is the only pole of the modular invariant on the compactified surface. -/
 @[simp]
