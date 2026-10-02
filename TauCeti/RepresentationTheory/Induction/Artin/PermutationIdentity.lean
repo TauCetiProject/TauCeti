@@ -121,7 +121,7 @@ variable (G)
 /-- Artin's signed permutation identity is an equivalence of actual representations over any
 characteristic-zero field. In particular, at `k = ℚ` it gives the rational isomorphism needed to
 compare the reductions of the two integral permutation lattices. -/
-theorem nonempty_equiv_artinPermutationSets (k : Type v) [Field k] [CharZero k] :
+theorem nonempty_equiv_artinPermutationRepresentations (k : Type v) [Field k] [CharZero k] :
     Nonempty ((Representation.ofMulAction k G (ArtinPositiveSet G)).Equiv
       (Representation.ofMulAction k G (ArtinNegativeSet G))) :=
   (nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq k).mpr
@@ -139,7 +139,7 @@ theorem nonempty_equiv_rationalized_artinPermutationLattices :
         (Representation.ofDistribMulAction ℤ G (ArtinPositiveSet G →₀ ℤ))).Equiv
       (Representation.baseChange ℚ
         (Representation.ofDistribMulAction ℤ G (ArtinNegativeSet G →₀ ℤ)))) := by
-  obtain ⟨e⟩ := nonempty_equiv_artinPermutationSets G ℚ
+  obtain ⟨e⟩ := nonempty_equiv_artinPermutationRepresentations G ℚ
   exact ⟨((baseChangeComapEquiv ℤ ℚ G (ArtinPositiveSet G)).trans e).trans
     (baseChangeComapEquiv ℤ ℚ G (ArtinNegativeSet G)).symm⟩
 
