@@ -29,11 +29,7 @@ identifies its defining ideal with the augmentation ideal. The reducedness that 
 The generated subgroup is also smooth and geometrically connected, by
 `smoothCommHopfAlgProperty_generatedCoordinateHopfAlgebra` and
 `geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra` in the namespace
-`TauCeti.G2ShortRoot.PrimeField`. Packaging the three facts as
-`TauCeti.reductiveCommHopfAlgProperty`, whose last condition is phrased after extension to
-`AlgebraicClosure k`, is not done here. Nor is
-`G` identified with the base change of the prime-field carrier, or with the pinned simply
-connected group scheme of type `G₂`.
+`TauCeti.G2ShortRoot.PrimeField`.
 
 ## Main declarations
 
@@ -41,8 +37,7 @@ In the namespace `TauCeti.G2ShortRoot.PrimeField`:
 
 * `eq_augmentation_generatedCoordinateHopfAlgebra_of_isNormal_of_smoothUnipotent`: every normal
   smooth unipotent closed subgroup of `G` is trivial.
-* `unipotentRadicalDefiningIdeal_finiteTypeGeneratedCoordinateHopfAlgebra`: the unipotent radical
-  of `G` is trivial.
+* `unipotentRadicalDefiningIdeal_eq_augmentation`: the unipotent radical of `G` is trivial.
 
 ## References
 
@@ -84,7 +79,7 @@ theorem eq_augmentation_generatedCoordinateHopfAlgebra_of_isNormal_of_smoothUnip
 
 /-- **The unipotent radical of the generated short-root type-`G₂` subgroup is trivial**, over an
 algebraically closed field of characteristic three. -/
-theorem unipotentRadicalDefiningIdeal_finiteTypeGeneratedCoordinateHopfAlgebra :
+theorem unipotentRadicalDefiningIdeal_eq_augmentation :
     FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
         (finiteTypeGeneratedCoordinateHopfAlgebra k) =
       HopfIdeal.augmentation k (generatedCoordinateHopfAlgebra k) :=
