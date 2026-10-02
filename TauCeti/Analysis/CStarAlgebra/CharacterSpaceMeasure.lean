@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.Topology.Algebra.StarSubalgebra
 import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
@@ -32,6 +34,11 @@ into a measure on the joint spectrum.
 
 * `LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq`: a functional nonnegative on
   `star a * a` is integration against a finite measure on the character space.
+* `StarSubalgebra.exists_isFiniteMeasure_integral_characterSpace_eq_inner`: for a closed
+  commutative star algebra of operators on a Hilbert space, each vector state `a ↦ ⟪ξ, a ξ⟫` is
+  integration against a finite measure on the character space.
+* `StarSubalgebra.integral_norm_sq_eq_norm_apply_sq`: such a measure computes `‖a ξ‖²` as the
+  squared `L²` norm of `ω ↦ ω a`.
 
 ## References
 
@@ -145,3 +152,46 @@ theorem LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq (f : A →�
       rw [hF, map_add, map_smul, map_add, map_smul, hreal, hreal, smul_eq_mul, mul_comm]
     _ = ∫ ω, F ω ∂μ := integral_re_add_im hFint
     _ = ∫ ω, ω a ∂μ := by simp [F]
+
+section Operator
+
+open scoped InnerProductSpace IsMulCommutative
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  (B : StarSubalgebra ℂ (H →L[ℂ] H)) [IsMulCommutative B] [IsClosed (B : Set (H →L[ℂ] H))]
+  [MeasurableSpace (characterSpace ℂ B)] [BorelSpace (characterSpace ℂ B)]
+
+/-- **Vector states are measures on the character space.** For a closed commutative star algebra
+`B` of operators on a complex Hilbert space and a vector `ξ`, the vector state `a ↦ ⟪ξ, a ξ⟫` is
+integration against a finite positive measure on the character space of `B`. -/
+theorem StarSubalgebra.exists_isFiniteMeasure_integral_characterSpace_eq_inner (ξ : H) :
+    ∃ μ : Measure (characterSpace ℂ B), IsFiniteMeasure μ ∧
+      ∀ a : B, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂μ := by
+  let f : B →ₗ[ℂ] ℂ :=
+    { toFun a := ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ
+      map_add' a b := by simp [inner_add_right]
+      map_smul' c a := by simp [inner_smul_right] }
+  refine f.exists_isFiniteMeasure_integral_characterSpace_eq fun a ↦ ?_
+  -- `f (star a * a) = ⟪ξ, a† (a ξ)⟫ = ‖a ξ‖ ^ 2`.
+  simp only [f, LinearMap.coe_mk, AddHom.coe_mk, MulMemClass.coe_mul, StarMemClass.coe_star,
+    ContinuousLinearMap.star_eq_adjoint, mul_apply_eq_comp,
+    ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
+  rw [← RCLike.ofReal_pow]
+  exact RCLike.ofReal_nonneg.mpr (sq_nonneg _)
+
+omit [BorelSpace (characterSpace ℂ B)] in
+/-- If a measure `μ` on the character space represents the vector state of `ξ`, then
+`∫ |ω a|² dμ(ω) = ‖a ξ‖²` for every `a ∈ B`. -/
+theorem StarSubalgebra.integral_norm_sq_eq_norm_apply_sq {μ : Measure (characterSpace ℂ B)}
+    {ξ : H} (hμ : ∀ a : B, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂μ) (a : B) :
+    ∫ ω, ‖ω a‖ ^ 2 ∂μ = ‖(a : H →L[ℂ] H) ξ‖ ^ 2 := by
+  -- Evaluate the representation at `star a * a`, where `ω (star a * a) = |ω a|²`.
+  have h := hμ (star a * a)
+  simp only [MulMemClass.coe_mul, StarMemClass.coe_star, ContinuousLinearMap.star_eq_adjoint,
+    mul_apply_eq_comp, ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K,
+    map_mul, map_star] at h
+  simp_rw [Complex.star_def, Complex.conj_mul', ← Complex.ofReal_pow] at h
+  rw [integral_complex_ofReal] at h
+  exact Complex.ofReal_injective (by rw [Complex.ofReal_pow]; exact h.symm)
+
+end Operator
