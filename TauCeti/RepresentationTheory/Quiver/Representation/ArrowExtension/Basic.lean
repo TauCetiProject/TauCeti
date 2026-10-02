@@ -15,8 +15,8 @@ public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 An arrow family `c : HomArrow M N` defines an extension of `M` by `N`: the vertex
 spaces are `Nᵢ × Mᵢ`, and an arrow acts by the upper triangular matrix with diagonal
 entries `N(a)`, `M(a)` and upper right entry `c(a)`. This extension splits exactly
-when `c` belongs to the range of the Hom differential. Consequently that differential
-is surjective if and only if every extension of `M` by `N` splits.
+when `c` belongs to the range of the Hom differential. Changes of vertex splittings
+induce isomorphisms fixing both end terms, with explicit composition and inverse formulas.
 
 This gives concrete extensions realizing the obstructions in the cokernel of the Hom
 differential, without finiteness or acyclicity assumptions.
@@ -162,6 +162,176 @@ theorem arrowExtensionComplex_shortExact (c : HomArrow M N) :
           exact Prod.ext (add_zero _) (zero_add _) }).shortExact
   exact (h.shortExact_iff _).mpr fun i ↦ hv i
 
+/-- A change of vertex splittings induces a map between the corresponding extensions,
+fixing both end terms. -/
+noncomputable def arrowExtensionHom (c c' : HomArrow M N) (h : HomVertex M N)
+    (hh : homDifferential M N h = c - c') :
+    arrowExtension M N c ⟶ arrowExtension M N c' :=
+  Paths.liftNatTrans (fun i ↦ ModuleCat.ofHom
+    (((LinearMap.fst k _ _) + (h i).comp (LinearMap.snd k _ _)).prod
+      (LinearMap.snd k _ _))) (by
+    intro i j a
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro x
+    have hx := congrArg (fun d ↦ d i j a x.2) hh
+    simp only [homDifferential_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+      Pi.sub_apply] at hx
+    -- Path-category objects are retyped as vertices to expose the product coordinates.
+    change vertexSpace k Q N i × vertexSpace k Q M i at x
+    change (((arrowExtension M N c).map a.toPath x).1 +
+        h j ((arrowExtension M N c).map a.toPath x).2,
+        ((arrowExtension M N c).map a.toPath x).2) =
+      (arrowExtension M N c').map a.toPath (x.1 + h i x.2, x.2)
+    simp only [arrowExtension_map_toPath]
+    apply Prod.ext
+    · rw [map_add]
+      have hc := (sub_eq_sub_iff_add_eq_add).mp hx
+      grind only
+    · rfl)
+
+/-- The change of splittings acts by an upper triangular matrix with identity diagonal. -/
+@[simp]
+theorem arrowExtensionHom_app_apply (c c' : HomArrow M N) (h : HomVertex M N)
+    (hh : homDifferential M N h = c - c') (i : Q)
+    (x : vertexSpace k Q N i × vertexSpace k Q M i) :
+    ((arrowExtensionHom M N c c' h hh).app ((Paths.of Q).obj i)).hom x =
+      (x.1 + h i x.2, x.2) := (rfl)
+
+/-- A change of splittings fixes the inclusion of the subrepresentation. -/
+@[reassoc (attr := simp)]
+theorem arrowExtensionInl_arrowExtensionHom (c c' : HomArrow M N) (h : HomVertex M N)
+    (hh : homDifferential M N h = c - c') :
+    arrowExtensionInl M N c ≫ arrowExtensionHom M N c c' h hh =
+      arrowExtensionInl M N c' := by
+  apply NatTrans.ext
+  funext i
+  apply ModuleCat.hom_ext
+  ext x
+  -- Retype the path-category vertex so the component API applies.
+  change Q at i
+  change vertexSpace k Q N i at x
+  -- The composite is retyped between the fixed end terms before rewriting.
+  change ((arrowExtensionHom M N c c' h hh).app ((Paths.of Q).obj i)).hom
+    (((arrowExtensionInl M N c).app ((Paths.of Q).obj i)).hom x) =
+      ((arrowExtensionInl M N c').app ((Paths.of Q).obj i)).hom x
+  rw [arrowExtensionInl_app_apply, arrowExtensionInl_app_apply, arrowExtensionHom_app_apply]
+  simp only [map_zero, add_zero]
+  rfl
+
+/-- A change of splittings fixes the projection to the quotient representation. -/
+@[reassoc (attr := simp)]
+theorem arrowExtensionHom_arrowExtensionSnd (c c' : HomArrow M N) (h : HomVertex M N)
+    (hh : homDifferential M N h = c - c') :
+    arrowExtensionHom M N c c' h hh ≫ arrowExtensionSnd M N c' =
+      arrowExtensionSnd M N c := by
+  apply NatTrans.ext
+  funext i
+  apply ModuleCat.hom_ext
+  ext x
+  -- Retype the path-category vertex so the component API applies.
+  change Q at i
+  change vertexSpace k Q N i × vertexSpace k Q M i at x
+  -- The composite is retyped between the fixed end terms before rewriting.
+  change ((arrowExtensionSnd M N c').app ((Paths.of Q).obj i)).hom
+    (((arrowExtensionHom M N c c' h hh).app ((Paths.of Q).obj i)).hom x) =
+      ((arrowExtensionSnd M N c).app ((Paths.of Q).obj i)).hom x
+  rw [arrowExtensionSnd_app_apply, arrowExtensionHom_app_apply,
+    arrowExtensionSnd_app_apply]
+
+/-- A morphism from an arrow extension to a short exact sequence, fixing both
+end terms, is an isomorphism. -/
+theorem isIso_of_arrowExtension_fixing_ends
+    {S : ShortComplex (QuiverRep.{u, v, w, t} k Q)} (hS : S.ShortExact)
+    (c : HomArrow S.X₃ S.X₁) (α : arrowExtension S.X₃ S.X₁ c ⟶ S.X₂)
+    (hf : arrowExtensionInl S.X₃ S.X₁ c ≫ α = S.f)
+    (hg : α ≫ S.g = arrowExtensionSnd S.X₃ S.X₁ c) : IsIso α := by
+  let φ : arrowExtensionComplex S.X₃ S.X₁ c ⟶ S :=
+    { τ₁ := 𝟙 S.X₁
+      τ₂ := α
+      τ₃ := 𝟙 S.X₃
+      comm₁₂ := (Category.id_comp _).trans hf.symm
+      comm₂₃ := hg.trans (Category.comp_id _).symm }
+  have : IsIso φ.τ₁ := inferInstanceAs (IsIso (𝟙 S.X₁))
+  have : IsIso φ.τ₃ := inferInstanceAs (IsIso (𝟙 S.X₃))
+  exact ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ
+    (arrowExtensionComplex_shortExact S.X₃ S.X₁ c) hS
+
+/-- Every change of splittings is an isomorphism of extensions. -/
+instance isIso_arrowExtensionHom (c c' : HomArrow M N) (h : HomVertex M N)
+    (hh : homDifferential M N h = c - c') :
+    IsIso (arrowExtensionHom M N c c' h hh) :=
+  isIso_of_arrowExtension_fixing_ends (arrowExtensionComplex_shortExact M N c') c
+    (arrowExtensionHom M N c c' h hh)
+    (arrowExtensionInl_arrowExtensionHom M N c c' h hh)
+    (arrowExtensionHom_arrowExtensionSnd M N c c' h hh)
+
+/-- Composing changes of vertex splittings adds their vertex families. -/
+theorem arrowExtensionHom_comp (c c' c'' : HomArrow M N) (h h' : HomVertex M N)
+    (hh : homDifferential M N h = c - c')
+    (hh' : homDifferential M N h' = c' - c'') :
+    arrowExtensionHom M N c c' h hh ≫ arrowExtensionHom M N c' c'' h' hh' =
+      arrowExtensionHom M N c c'' (h + h') (by rw [map_add, hh, hh']; abel) := by
+  ext i x
+  -- Retype the path vertex and composite so the component API matches.
+  change Q at i
+  change vertexSpace k Q N i × vertexSpace k Q M i at x
+  change ((arrowExtensionHom M N c' c'' h' hh').app ((Paths.of Q).obj i)).hom
+      (((arrowExtensionHom M N c c' h hh).app ((Paths.of Q).obj i)).hom x) =
+    ((arrowExtensionHom M N c c'' (h + h') _).app ((Paths.of Q).obj i)).hom x
+  rw [arrowExtensionHom_app_apply, arrowExtensionHom_app_apply, arrowExtensionHom_app_apply]
+  simp only [Pi.add_apply, LinearMap.add_apply, add_assoc]
+  rfl
+
+/-- A zero change of vertex splittings is the identity. -/
+@[simp]
+theorem arrowExtensionHom_zero (c : HomArrow M N) :
+    arrowExtensionHom M N c c 0 (by simp) = 𝟙 _ := by
+  ext i x
+  -- Retype the path vertex so the component API matches.
+  change Q at i
+  change vertexSpace k Q N i × vertexSpace k Q M i at x
+  change ((arrowExtensionHom M N c c 0 _).app ((Paths.of Q).obj i)).hom x = x
+  rw [arrowExtensionHom_app_apply]
+  simp only [Pi.zero_apply, LinearMap.zero_apply, add_zero]
+  rfl
+
+/-- The inverse change of vertex splittings negates the vertex family. -/
+@[simp]
+theorem inv_arrowExtensionHom (c c' : HomArrow M N) (h : HomVertex M N)
+    (hh : homDifferential M N h = c - c') :
+    inv (arrowExtensionHom M N c c' h hh) =
+      arrowExtensionHom M N c' c (-h) (by rw [map_neg, hh, neg_sub]) := by
+  apply IsIso.inv_eq_of_hom_inv_id
+  rw [arrowExtensionHom_comp]
+  simp
+
+/-- The zero arrow family has the canonical section into the second vertex factor. -/
+noncomputable def arrowExtensionSection : M ⟶ arrowExtension M N 0 :=
+  Paths.liftNatTrans (fun i ↦ ModuleCat.ofHom
+    (LinearMap.inr k (vertexSpace k Q N i) (vertexSpace k Q M i))) (by
+    intro i j a
+    apply ModuleCat.hom_ext
+    ext x
+    -- Retype the path objects to apply the arrow-action formula.
+    change vertexSpace k Q M i at x
+    change (0, mapₗ k Q M a.toPath x) = (arrowExtension M N 0).map a.toPath (0, x)
+    simp only [arrowExtension_map_toPath, Pi.zero_apply, LinearMap.zero_apply, map_zero,
+      add_zero])
+
+/-- The canonical section of the zero arrow extension is inclusion in the second factor. -/
+@[simp]
+theorem arrowExtensionSection_app_apply (i : Q) (x : vertexSpace k Q M i) :
+    ((arrowExtensionSection M N).app ((Paths.of Q).obj i)).hom x =
+      ((0 : vertexSpace k Q N i), x) := (rfl)
+
+/-- The canonical section is a right inverse to the projection. -/
+@[reassoc (attr := simp)]
+theorem arrowExtensionSection_arrowExtensionSnd :
+    arrowExtensionSection M N ≫ arrowExtensionSnd M N 0 = 𝟙 M := by
+  ext i x
+  rfl
+
 /-- An arrow extension splits exactly when its arrow family is a coboundary. -/
 @[simp]
 theorem nonempty_splitting_arrowExtensionComplex_iff (c : HomArrow M N) :
@@ -189,45 +359,16 @@ theorem nonempty_splitting_arrowExtensionComplex_iff (c : HomArrow M N) :
     rw [map_neg, ← hn]
     abel
   · rintro ⟨h, hh⟩
-    let s : M ⟶ arrowExtension M N c := Paths.liftNatTrans
-      (fun i ↦ ModuleCat.ofHom ((-h i).prod (LinearMap.id :
-        vertexSpace k Q M i →ₗ[k] vertexSpace k Q M i))) (by
-        intro i j a
-        apply ModuleCat.hom_ext
-        apply LinearMap.ext
-        intro x
-        have hx : (mapₗ k Q N a.toPath) (h i x) -
-            h j ((mapₗ k Q M a.toPath) x) = c i j a x :=
-          (congrArg (fun f ↦ f x) (homDifferential_apply M N h a)).symm.trans
-            (congrArg (fun d ↦ d i j a x) hh)
-        -- Compute the triangular arrow matrix, retyping path objects as vertices.
-        change (-h j ((mapₗ k Q M a.toPath) x), (mapₗ k Q M a.toPath) x) =
-          ((mapₗ k Q N a.toPath) (-h i x) + c i j a x, (mapₗ k Q M a.toPath) x)
-        apply Prod.ext
-        · simp only [map_neg]
-          rw [← hx]
-          abel
-        · rfl)
+    let s := arrowExtensionSection M N ≫ arrowExtensionHom M N 0 c (-h)
+      (by rw [map_neg, hh]; simp)
     have hsg : s ≫ (arrowExtensionComplex M N c).g = 𝟙 M := by
-      ext i x
-      rfl
+      -- Retype the complex endpoints as representations before rewriting the composite.
+      change (arrowExtensionSection M N ≫ arrowExtensionHom M N 0 c (-h) _) ≫
+        arrowExtensionSnd M N c = 𝟙 M
+      rw [Category.assoc, arrowExtensionHom_arrowExtensionSnd,
+        arrowExtensionSection_arrowExtensionSnd]
     exact ⟨ShortComplex.Splitting.ofExactOfSection _
       (arrowExtensionComplex_shortExact M N c).exact s hsg
       (arrowExtensionComplex_shortExact M N c).mono_f⟩
-
-/-- The Hom differential is surjective if and only if every short exact sequence with
-quotient `M` and subrepresentation `N` splits. -/
-theorem homDifferential_surjective_iff_all_extensions_split :
-    Function.Surjective (homDifferential M N) ↔
-      ∀ (E : QuiverRep.{u, v, w, t} k Q) (f : N ⟶ E) (g : E ⟶ M)
-        (hfg : f ≫ g = 0), (ShortComplex.mk f g hfg).ShortExact →
-          Nonempty (ShortComplex.mk f g hfg).Splitting := by
-  constructor
-  · intro h E f g hfg hS
-    exact TauCeti.nonempty_splitting_of_surjective_homDifferential hS h
-  · intro h c
-    have hs := h _ (arrowExtensionInl M N c) (arrowExtensionSnd M N c)
-      (arrowExtensionComplex M N c).zero (arrowExtensionComplex_shortExact M N c)
-    exact (nonempty_splitting_arrowExtensionComplex_iff M N c).mp hs
 
 end TauCeti.QuiverRep
