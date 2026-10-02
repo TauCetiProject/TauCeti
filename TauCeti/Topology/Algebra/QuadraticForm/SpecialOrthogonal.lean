@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import Mathlib.Topology.Algebra.Group.Matrix
 
 /-!
@@ -13,7 +13,7 @@ public import Mathlib.Topology.Algebra.Group.Matrix
 
 For a quadratic map `Q` on a finite coordinate space `n → R`, this file induces the
 standard coordinate topology from the faithful map of `specialOrthogonalGroup Q` into `GL(n, R)`
-defined in `TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup`. Over a topological ring the
+defined in `TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic`. Over a topological ring the
 resulting special orthogonal group is a topological group, and it is Hausdorff when `R` is
 Hausdorff.
 

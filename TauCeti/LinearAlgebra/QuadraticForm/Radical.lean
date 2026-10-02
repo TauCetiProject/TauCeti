@@ -371,4 +371,9 @@ theorem nondegenerate_of_span_singleton_eq_top {Q : QuadraticForm R V} {v : V}
   have hc : c = 0 := by simpa [(isUnit_of_invertible (2 : R)).ne_zero, hv] using hpolar
   rw [hc, zero_smul]
 
+/-- The form `x ↦ a x²` on `R` is nondegenerate for `a ≠ 0`. -/
+theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
+    (a • QuadraticMap.sq : QuadraticForm R R).Nondegenerate :=
+  nondegenerate_of_span_singleton_eq_top (v := 1) (by simp) (by simpa using ha)
+
 end TauCeti
