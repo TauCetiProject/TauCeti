@@ -80,9 +80,9 @@ noncomputable def extendOfIsLocalization (S : Submonoid A) [IsLocalization S T]
 theorem extendOfIsLocalization_algebraMap (S : Submonoid A) [IsLocalization S T]
     (D : Derivation R A N) (a : A) :
     D.extendOfIsLocalization S (algebraMap A T a) = D a := by
-  rw [extendOfIsLocalization, coe_comp, LinearMap.comp_apply, coeFn_coe,
-    ← KaehlerDifferential.map_D R R A T, LinearMap.coe_restrictScalars,
-    LinearMap.extendScalarsOfIsLocalization_apply', IsLocalizedModule.lift_apply,
-    Derivation.liftKaehlerDifferential_comp_D]
+  simp only [extendOfIsLocalization, coe_comp, LinearMap.comp_apply, coeFn_coe]
+  rw [← KaehlerDifferential.map_D R R A T]
+  -- Keep the differential in the image of `map` so the localization lift simplifies.
+  simp [-KaehlerDifferential.map_D]
 
 end Derivation
