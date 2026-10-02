@@ -90,7 +90,7 @@ namespace TauCeti
 
 variable {R K S : Type*} [CommRing R] [IsDedekindDomain R] [Field K]
   [Algebra R K] [IsFractionRing R K] [CommSemiring S] [Algebra S R]
-  (v : IsDedekindDomain.HeightOneSpectrum R)
+  {v : IsDedekindDomain.HeightOneSpectrum R}
 
 /-- An algebra action on the affine model acts on the integers of its adic completion. -/
 -- Keep the canonical natural- and integer-algebra actions ahead of this inherited action.
