@@ -318,9 +318,11 @@ theorem IsPolarization.comp {Q : LinearMap.BilinForm ℤ V} (hQ : IsPolarization
         exact_mod_cast hv w
       | smul c z hz => rw [map_smul, map_smul, hz, smul_zero]
       | add z z' hz hz' => rw [map_add, map_add, hz, hz', add_zero]
-    have hu : ιℂ (f.toIntLinearMap v) = 0 := by
-      rw [← P.hodgeForm_self_eq_zero_iff, P.hodgeForm_apply, latticeConj_ι, P.Q_symm_weight,
-        ← f.apply_ι, ← f.commutes_weilOperator, f.apply_ι, hzero, mul_zero]
+    have hnorm : P.hodgeForm (ιℂ (f.toIntLinearMap v)) (ιℂ (f.toIntLinearMap v)) =
+        (n.negOnePow : ℤ) * P.Q (ιℂ (f.toIntLinearMap v)) (f (hs'.weilOperator (ι'ℂ v))) := by
+      rw [P.hodgeForm_apply, latticeConj_ι, P.Q_symm_weight, f.commutes_weilOperator, f.apply_ι]
+    have hu : ιℂ (f.toIntLinearMap v) = 0 :=
+      P.hodgeForm_self_eq_zero_iff.mp (by rw [hnorm, hzero, mul_zero])
     refine hf ((hQ.nondegenerate.1 _ fun w ↦ ?_).trans (map_zero _).symm)
     have hw := integralFormBaseChange_ι hℂ Q (f.toIntLinearMap v) w
     rw [hu, map_zero, LinearMap.zero_apply] at hw
