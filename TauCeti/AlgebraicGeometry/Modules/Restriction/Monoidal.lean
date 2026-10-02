@@ -68,14 +68,9 @@ theorem pullbackInclusionExactPairing_evaluation (U : X.Opens) (M N : X.Modules)
         Functor.LaxMonoidal.μ (Scheme.Modules.restrictFunctor U.ι) N M ≫
         (Scheme.Modules.restrictFunctor U.ι).map (ε_ M N) ≫
         Functor.OplaxMonoidal.η (Scheme.Modules.restrictFunctor U.ι) := by
-  calc
-    _ = (Scheme.Modules.pullback U.ι).obj N ◁
-          ((Scheme.Modules.restrictFunctorIsoPullback U.ι).app M).inv ≫
-        (((Scheme.Modules.restrictFunctorIsoPullback U.ι).app N).inv ▷
-          (Scheme.Modules.restrictFunctor U.ι).obj M ≫
-        @ExactPairing.evaluation U.toScheme.Modules _ _ _ _
-          ((Scheme.Modules.restrictFunctor U.ι).mapExactPairing M N)) := (rfl)
-    _ = _ := by rw [Functor.mapExactPairing_evaluation]
+  let := (Scheme.Modules.restrictFunctor U.ι).mapExactPairing M N
+  rw [exactPairingCongr_evaluation, Functor.mapExactPairing_evaluation]
+  simp only [Iso.symm_hom]
 
 /-- Coevaluation of the pulled-back pairing is restricted coevaluation through the same
 canonical comparisons. -/
@@ -91,14 +86,9 @@ theorem pullbackInclusionExactPairing_coevaluation (U : X.Opens) (M N : X.Module
           ((Scheme.Modules.restrictFunctorIsoPullback U.ι).app N).hom ≫
         ((Scheme.Modules.restrictFunctorIsoPullback U.ι).app M).hom ▷
           (Scheme.Modules.pullback U.ι).obj N := by
-  calc
-    _ = (@ExactPairing.coevaluation U.toScheme.Modules _ _ _ _
-          ((Scheme.Modules.restrictFunctor U.ι).mapExactPairing M N) ≫
-        (Scheme.Modules.restrictFunctor U.ι).obj M ◁
-          ((Scheme.Modules.restrictFunctorIsoPullback U.ι).app N).hom) ≫
-        ((Scheme.Modules.restrictFunctorIsoPullback U.ι).app M).hom ▷
-          (Scheme.Modules.pullback U.ι).obj N := (rfl)
-    _ = _ := by rw [Functor.mapExactPairing_coevaluation]; simp only [Category.assoc]
+  let := (Scheme.Modules.restrictFunctor U.ι).mapExactPairing M N
+  rw [exactPairingCongr_coevaluation, Functor.mapExactPairing_coevaluation]
+  simp only [Iso.symm_inv, Category.assoc]
 
 /-- A module with a left dual still has a left dual after pullback to an open subscheme. -/
 theorem nonempty_hasLeftDual_pullback_inclusion (U : X.Opens) (M : X.Modules)
@@ -134,6 +124,27 @@ theorem nonempty_hasLeftDual_pullback_inclusion (U : X.Opens) (E : Quasicoherent
       ((pullback U.ι).obj E).obj :=
     exactPairingCongr (eqToIso (pullback_obj_obj U.ι D)) (eqToIso (pullback_obj_obj U.ι E))
   let : ExactPairing ((pullback U.ι).obj D) ((pullback U.ι).obj E) :=
+    @ObjectProperty.exactPairingFullSubcategory U.toScheme.Modules _ _ _
+      (Scheme.Modules.isMonoidal_isQuasicoherent U.toScheme) _ _ h
+  exact ⟨⟨(pullback U.ι).obj D⟩⟩
+
+/-- A quasicoherent sheaf with a right dual still has a right dual after pullback to an open
+subscheme. -/
+theorem nonempty_hasRightDual_pullback_inclusion (U : X.Opens) (E : QuasicoherentSheaf X)
+    (hE : Nonempty (HasRightDual E)) :
+    Nonempty (HasRightDual ((pullback U.ι).obj E)) := by
+  obtain ⟨hE⟩ := hE
+  let D := Eᘁ
+  let : ExactPairing (C := X.Modules) E.obj D.obj :=
+    @Functor.mapExactPairing (QuasicoherentSheaf X) inferInstance inferInstance X.Modules
+      inferInstance (Scheme.Modules.instMonoidalCategory X) (ObjectProperty.ι _)
+      (@ObjectProperty.monoidalι X.Modules _ _ _
+        (Scheme.Modules.isMonoidal_isQuasicoherent X)) E D (inferInstanceAs (ExactPairing E D))
+  let := pullbackInclusionExactPairing U E.obj D.obj
+  let h : ExactPairing (C := U.toScheme.Modules) ((pullback U.ι).obj E).obj
+      ((pullback U.ι).obj D).obj :=
+    exactPairingCongr (eqToIso (pullback_obj_obj U.ι E)) (eqToIso (pullback_obj_obj U.ι D))
+  let : ExactPairing ((pullback U.ι).obj E) ((pullback U.ι).obj D) :=
     @ObjectProperty.exactPairingFullSubcategory U.toScheme.Modules _ _ _
       (Scheme.Modules.isMonoidal_isQuasicoherent U.toScheme) _ _ h
   exact ⟨⟨(pullback U.ι).obj D⟩⟩
