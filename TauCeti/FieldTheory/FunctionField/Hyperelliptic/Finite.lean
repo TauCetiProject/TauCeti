@@ -21,7 +21,8 @@ function field of genus at least two.
 
 ## Main results
 
-* `TauCeti.branchPermHom`: the action of `Aut(F / k)` on the branch places of `k(x)`.
+* `TauCeti.branchPermHom`: the action of `Aut(F / k)` on the branch places of `k(x)`, evaluated by
+  `TauCeti.branchPermHom_apply` and `TauCeti.branchPermHom_symm_apply`.
 * `TauCeti.ker_branchPermHom`: its kernel is the group of automorphisms over `k(x)`.
 * `TauCeti.finite_algEquiv_of_finrank_adjoin_eq_two`: **`Aut(F / k)` is finite**, and
   `TauCeti.card_algEquiv_le_of_finrank_adjoin_eq_two`: of order at most `2 · (2g + 2)!`.
@@ -49,6 +50,20 @@ noncomputable def branchPermHom : (F ≃ₐ[k] F) →* Equiv.Perm (branchPlaces 
   placePermHomOfInvariant (restrictAdjoinHom hF hex hg hx hdeg)
     fun σ _ hP ↦ smul_mem_branchPlaces hF hex hx hdeg hg σ hP
 
+/-- The action of an automorphism on a branch place is the action of its restriction to `k(x)`. -/
+@[simp]
+theorem branchPermHom_apply (σ : F ≃ₐ[k] F) (P : branchPlaces hx) :
+    ((branchPermHom hF hex hg hx hdeg σ) P : Place k k⟮x⟯) =
+      restrictAdjoinHom hF hex hg hx hdeg σ • (P : Place k k⟮x⟯) :=
+  placePermHomOfInvariant_apply _ _ σ P
+
+/-- The inverse action of an automorphism on a branch place. -/
+@[simp]
+theorem branchPermHom_symm_apply (σ : F ≃ₐ[k] F) (P : branchPlaces hx) :
+    (((branchPermHom hF hex hg hx hdeg σ).symm) P : Place k k⟮x⟯) =
+      (restrictAdjoinHom hF hex hg hx hdeg σ)⁻¹ • (P : Place k k⟮x⟯) :=
+  placePermHomOfInvariant_symm_apply _ _ σ P
+
 /-- **The kernel of the action on the branch places is the group of automorphisms over `k(x)`**,
 when `k` is algebraically closed: an automorphism acting trivially on the branch places restricts
 to an automorphism of the genus-zero field `k(x)` fixing `2g + 2 ≥ 3` of its rational places, so it
@@ -65,7 +80,7 @@ theorem ker_branchPermHom [IsAlgClosed k] :
     omega
   · rw [MonoidHom.mem_ker] at hσ ⊢
     refine Equiv.ext fun P ↦ Subtype.ext ?_
-    rw [branchPermHom, placePermHomOfInvariant_apply, hσ, one_smul]
+    rw [branchPermHom_apply, hσ, one_smul]
     rfl
 
 include hF hex hg hx hdeg in
