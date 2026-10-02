@@ -95,7 +95,8 @@ noncomputable def dual (a : LineBundleClass X) : LineBundleClass X :=
 noncomputable instance : Inv (LineBundleClass X) where
   inv := dual
 
-private lemma inv_eq_dual (a : LineBundleClass X) : a⁻¹ = dual a :=
+/-- Inversion of line-bundle classes is induced by duality. -/
+lemma inv_eq_dual (a : LineBundleClass X) : a⁻¹ = dual a :=
   rfl
 
 /-- The inverse of the class of a line bundle is the class of its dual. -/

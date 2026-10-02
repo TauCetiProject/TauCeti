@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Products
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Biproduct
@@ -244,11 +244,6 @@ theorem ιFree_tensorHom_dualFreeι_comp_ev_of_ne {i j : I} (h : i ≠ j) :
     (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree j)).trans
       (ιFree_tensorHom_ιFree_evaluation_of_ne (R := R) h)
 
-private lemma ιFree_pUnit_eq_sigma_ι :
-    ιFree (R := ringCatSheaf R) PUnit.unit =
-      Sigma.ι (fun _ : PUnit.{u + 1} ↦ unit (ringCatSheaf R)) PUnit.unit :=
-  rfl
-
 /-- Evaluation of the standard free rank-one sheaf against its dual is an isomorphism. -/
 instance _root_.SheafOfModules.isIso_evaluation_dual_freePUnit :
     IsIso ((ihom.ev (free (R := ringCatSheaf R) PUnit)).app
@@ -256,9 +251,8 @@ instance _root_.SheafOfModules.isIso_evaluation_dual_freePUnit :
   let ι := ιFree (R := ringCatSheaf R) PUnit.unit
   have : IsIso ι := by
     dsimp only [ι]
-    rw [ιFree_pUnit_eq_sigma_ι, ← coproductUniqueIso_inv
-      (fun _ : PUnit.{u + 1} ↦ unit (ringCatSheaf R))]
-    exact Iso.isIso_inv _
+    rw [← freePUnitIsoUnit_inv]
+    infer_instance
   let ιdual := dualFreeι (R := R) PUnit.unit
   have : IsIso ιdual := by
     exact IsIso.of_isIso_fac_right (dualFreeι_comp_dualFreeIso_hom (R := R) PUnit.unit)
