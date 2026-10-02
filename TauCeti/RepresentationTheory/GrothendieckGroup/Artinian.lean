@@ -62,7 +62,7 @@ theorem exists_isExhaustiveSimpleFamily :
   have hexhaustive : IsExhaustiveSimpleFamily S := by
     rw [isExhaustiveSimpleFamily_iff]
     intro M hM
-    have := hM
+    let instSimpleM : IsSimpleModule R M := hM
     obtain ⟨i, hi⟩ := exists_isCompositionFactorAt_regular R M s hbot htop
     obtain ⟨e⟩ := (isCompositionFactorAt_iff).mp hi
     let q : I := Quotient.mk t i
@@ -84,7 +84,7 @@ private theorem free_and_finite_exactK0 :
     Module.Free ℤ (ExactK0 (finiteModulesExactStructure R)) ∧
       Module.Finite ℤ (ExactK0 (finiteModulesExactStructure R)) := by
   obtain ⟨n, S, hS, hnoniso, hexhaustive⟩ := exists_isExhaustiveSimpleFamily R
-  let := hS
+  let instSimpleFamily : ∀ i, IsSimpleModule R (S i) := hS
   exact ⟨free_exactK0_of_isExhaustiveSimpleFamily S hnoniso hexhaustive,
     finite_exactK0_of_isExhaustiveSimpleFamily S hnoniso hexhaustive⟩
 
