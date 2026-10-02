@@ -70,6 +70,9 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
 * `IntermediateField.fixingSubgroup_inf_separableClosure`
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
+* `IntermediateField.finiteDimensional_fixedField`, `IntermediateField.isGalois_fixedField` and
+  `IntermediateField.finrank_fixedField_eq_natCard`: Artin's theorem on the fixed field of a finite
+  subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
@@ -276,6 +279,33 @@ theorem fixingSubgroup_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Fini
     (AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) fun x ↦ hσ x x.2)
   have hgσ : (g : M ≃ₐ[K] M) = σ := AlgEquiv.ext fun z ↦ congrArg (fun τ ↦ τ z) hg
   exact hgσ ▸ g.2
+
+/-- **Artin's theorem**: `M` is finite over the field fixed by a finite group of automorphisms.
+
+Mathlib has this for `FixedPoints.subfield H M`; the fixed field of the Galois correspondence is
+the same subfield, and this is the instance on that form, with no hypothesis on `M / K`. -/
+instance finiteDimensional_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+    FiniteDimensional (fixedField H) M :=
+  have := Fintype.ofFinite H
+  inferInstanceAs (FiniteDimensional (FixedPoints.subfield H M) M)
+
+/-- **Artin's theorem**: `M` is Galois over the field fixed by a finite group of automorphisms,
+Mathlib's `IsGalois.of_fixed_field` on the fixed field of the Galois correspondence. -/
+instance isGalois_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+    IsGalois (fixedField H) M :=
+  IsGalois.of_fixed_field M H
+
+/-- **Artin's theorem, degree form**: the degree of `M` over the field fixed by a finite group of
+automorphisms is the order of the group.
+
+Mathlib's `IntermediateField.finrank_fixedField_eq_card` is the same conclusion under
+`[FiniteDimensional K M]`, which a subgroup of the automorphism group of an infinite extension does
+not supply. -/
+theorem finrank_fixedField_eq_natCard (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+    Module.finrank (fixedField H) M = Nat.card H := by
+  have := Fintype.ofFinite H
+  rw [Nat.card_eq_fintype_card]
+  exact FixedPoints.finrank_eq_card H M
 
 /-- **An intermediate field of finite degree has a finite fixing subgroup**, being a copy of the
 automorphism group of a finite extension. -/
