@@ -278,12 +278,12 @@ the residue degree above `2` is `1` if every `dᵢ` is `1` modulo `8` and `2` ot
 
 /-- **Inertia above `2` fixes the square roots of integers that are `1` modulo `4`.** Let `Q` be a
 prime of `𝓞 K` above `2`, and let `x ∈ K` square to an integer `c ≡ 1 (mod 4)`. Then every element
-of the inertia group of `Q` in `Gal(K/ℚ)` fixes `x`. Indeed `τ x = ± x`, and `τ x = -x` would move
-the integral half-generator `(1 + x) / 2` by `-x`, putting `c = x ^ 2` in `Q`, hence `2 ∣ c`. -/
+of the inertia group of `Q` in `Gal(K/ℚ)` fixes `x`. -/
 theorem apply_eq_self_of_mem_inertia_of_mod_four_eq_one {x : K} {c : ℤ}
     (hx : x ^ 2 = algebraMap ℤ K c) (hc : c % 4 = 1) (Q : Ideal (𝓞 K))
     [Q.LiesOver (span {(2 : ℤ)})] {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) :
     τ x = x := by
+  -- `τ x = ± x`; we rule out `τ x = -x`.
   refine (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq τ hx).resolve_right fun hneg => ?_
   -- The half-generator `w = (1 + x) / 2` is integral, and `τ • w - w = -x`.
   let w : 𝓞 K := ⟨(1 + x) / 2, isIntegral_one_add_div_two_of_sq_eq hx hc⟩

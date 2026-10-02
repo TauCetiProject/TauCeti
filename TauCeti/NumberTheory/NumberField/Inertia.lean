@@ -390,17 +390,15 @@ open _root_.NumberField
 /-- **Inertia negates a square root generating a ramified quadratic field.** Let `K / ℚ` be
 Galois, let `x ∈ K` square to a rational number, and let `p` be a prime ramifying in `ℚ(x)`. Then
 the inertia group of every prime `Q` of `𝓞 K` above `p` contains an automorphism `τ` with
-`τ x = -x`.
-
-Some prime `P` above `p` has an inertia element moving `x`
-(`NumberField.notMem_ramifiedPrimes_iff_forall_inertia_le`). The prime `Q` is a Galois translate
-`g • P`, its inertia group contains the conjugate `g σ g⁻¹`, and conjugation preserves the sign by
-which an automorphism acts on `x`, since every automorphism sends `x` to `± x`. -/
+`τ x = -x`. -/
 theorem exists_mem_inertia_apply_eq_neg {K : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
     {x : K} {c : ℚ} (hx : x ^ 2 = algebraMap ℚ K c) {p : ℕ}
     (hp : p ∈ ramifiedPrimes (IntermediateField.adjoin ℚ {x} : IntermediateField ℚ K))
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (Ideal.span {(p : ℤ)})] :
     ∃ τ ∈ Q.inertia (K ≃ₐ[ℚ] K), τ x = -x := by
+  -- Some prime `P` above `p` has an inertia element `σ` moving `x`. The prime `Q` is a Galois
+  -- translate `g • P`, its inertia group contains `g σ g⁻¹`, and conjugation preserves the sign by
+  -- which an automorphism acts on `x`, since every automorphism sends `x` to `± x`.
   have hpp : p.Prime := NumberField.prime_of_mem_ramifiedPrimes hp
   let _ : NumberField (IntermediateField.adjoin ℚ {x} : IntermediateField ℚ K) :=
     NumberField.of_intermediateField _
