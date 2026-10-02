@@ -242,13 +242,15 @@ def characteristicPairMap (n : ℕ) : sigmaDiskPair (cell C n) n ⟶ skeletonPai
 @[simp]
 lemma characteristicPairMap_fst_apply (n : ℕ)
     (p : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1) :
-    (TopPair.Hom.fst (characteristicPairMap C n) p).1 = map n p.1 p.2 :=
+    (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C (n + 1)))
+      (TopPair.Hom.fst (characteristicPairMap C n)) p).1 = map n p.1 p.2 :=
   (rfl)
 
 @[simp]
 lemma characteristicPairMap_snd_apply (n : ℕ)
     (p : {p : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1 // ‖(p.2 : Fin n → ℝ)‖ = 1}) :
-    (TopPair.Hom.snd (characteristicPairMap C n) p).1 = map n p.1.1 p.1.2 :=
+    (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C n))
+      (TopPair.Hom.snd (characteristicPairMap C n)) p).1 = map n p.1.1 p.1.2 :=
   (rfl)
 
 /-- The characteristic maps, as a map of pairs from the disks relative to their shells to the

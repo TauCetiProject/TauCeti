@@ -69,12 +69,14 @@ def skeletonPairToNeighborhood (n : ℕ) : skeletonPair C n ⟶ skeletonNeighbor
 
 @[simp]
 lemma skeletonPairToNeighborhood_fst_apply (n : ℕ) (x : (skeletonPair C n).fst) :
-    TopPair.Hom.fst (skeletonPairToNeighborhood C n) x = x :=
+    ConcreteCategory.hom (X := TopCat.of (skeletonLT C (n + 1)))
+      (TopPair.Hom.fst (skeletonPairToNeighborhood C n)) x = x :=
   TopPair.ofInclusionMap_fst_apply _ _ x
 
 @[simp]
 lemma skeletonPairToNeighborhood_snd_apply (n : ℕ) (x : (skeletonPair C n).snd) :
-    (TopPair.Hom.snd (skeletonPairToNeighborhood C n) x).1 = x.1 :=
+    (ConcreteCategory.hom (X := TopCat.of (skeletonLT C n))
+      (TopPair.Hom.snd (skeletonPairToNeighborhood C n)) x).1 = x.1 :=
   TopPair.ofInclusionMap_snd_apply _ _ x
 
 /-- The radial deformation retraction, as a map of pairs
