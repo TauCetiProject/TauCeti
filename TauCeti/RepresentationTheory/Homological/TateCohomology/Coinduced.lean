@@ -21,17 +21,17 @@ is Shapiro's lemma for cohomology, in degrees below `-1` Shapiro's lemma for hom
 coinduction from the trivial subgroup agree for a finite group), and degrees `0` and `-1` are
 checked by hand. The same holds for `Ind_⊥^G X`. For a finite subgroup `S` of an arbitrary
 group `G`, the Tate cohomology of `S` with coefficients in the restrictions of `Coind_⊥^G X`,
-`Ind_⊥^G X` and `k[G]` vanishes as well.
+`Ind_⊥^G X` and `k[G]` vanishes as well. These statements follow
+`ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.lean` in `kbuzzard/ClassFieldTheory`,
+commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
 
 More generally, Tate cohomology vanishes for every representation whose identity is a norm
 `x ↦ ∑ g, g φ(g⁻¹ x)` of a linear map `φ`, since such an identity factors through
 `Coind_⊥^G`. This criterion is stable under reduction modulo a scalar `r : k`. Hence a
 representation free of rank one over `k[G]` remains Tate-trivial modulo `r`, read as an integral
 representation. This is the form in which the graded pieces `A ⧸ ϖ • A` of a Galois-stable lattice
-`A` in a local field enter the computation of the Herbrand quotient of its local units.
-
-The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.lean` in
-`kbuzzard/ClassFieldTheory`, commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
+`A` in a local field enter Serre's computation of the Herbrand quotient of its local units
+(Serre, *Local class field theory*, VI §1.4).
 
 ## Main statements
 
@@ -40,11 +40,17 @@ The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.le
 * `TauCeti.TateCohomology.isZero_leftRegular`: for a finite group `G`, `Ĥⁿ(G, k[G]) = 0`.
 * `TauCeti.TateCohomology.isZero_res_coindBot`, `TauCeti.TateCohomology.isZero_res_indBot`,
   `TauCeti.TateCohomology.isZero_res_leftRegular`: for a finite subgroup `S` of any group `G`,
-  `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
+  `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
+* `TauCeti.TateCohomology.isZero_of_forall_eq_sum`: if the identity of `C` is a norm
+  `x ↦ ∑ g, g φ(g⁻¹ x)`, then `Ĥⁿ(G, C) = 0` for all `n : ℤ`.
+* `TauCeti.TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular`: if `V` is
+  free of rank one over `k[G]`, then `Ĥⁿ(G, V ⧸ r • V) = 0` over `ℤ` for every `r : k`.
 
 ## References
 
 * J. S. Milne, *Class Field Theory*, Chapter II, §3.
+* J.-P. Serre, *Local class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.),
+  *Algebraic Number Theory*, Chapter VI, §1.4.
 -/
 
 public section
@@ -278,34 +284,41 @@ end Restriction
 
 section QuotSMulTop
 
-/-! ### Free representations modulo a scalar -/
+/-! ### Free representations modulo a scalar
 
-variable {k : Type*} [CommRing k] {G V : Type} [Group G] [Fintype G] [AddCommGroup V] [Module k V]
-  {ρ : Representation k G V}
+This is the graded-piece step of Serre's computation of the Herbrand quotient of the units of a
+local field (Serre, *Local class field theory*, VI §1.4). -/
+
+variable {k : Type*} {G V : Type} [Group G] [Fintype G] [AddCommGroup V]
+
+/-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
+all Tate cohomology of `ρ`, read as an integral representation, vanishes. -/
+theorem isZero_restrictScalarsInt_of_forall_eq_sum [Semiring k] [Module k V]
+    {ρ : Representation k G V} (φ : V →ₗ[k] V) (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)))
+    (n : ℤ) : IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+  isZero_of_forall_eq_sum (C := Rep.of _) (φ.restrictScalars ℤ) (fun x ↦ by simpa using hφ x) n
+
+variable [CommRing k] [Module k V] {ρ : Representation k G V}
 
 /-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
 for every `r : k` all Tate cohomology of the reduction `V ⧸ r • V`, as an integral representation,
 vanishes: its identity is the norm of the reduction of `φ`. -/
-theorem isZero_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k] V)
+theorem isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k] V)
     (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x))) (r : k) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) := by
-  refine isZero_of_forall_eq_sum (C := Rep.of _) ((QuotSMulTop.map r φ).restrictScalars ℤ)
-    (fun x ↦ ?_) n
-  induction x using Submodule.Quotient.induction_on with | H x => ?_
-  conv_lhs => rw [hφ x, ← Submodule.mkQ_apply, map_sum]
-  simp
+    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
+  isZero_restrictScalarsInt_of_forall_eq_sum _ (ρ.quotSMulTop_forall_eq_sum φ hφ r) n
 
 /-- **A free representation modulo a scalar has trivial Tate cohomology.** If `ρ` is free of rank
 one over the group ring `k[G]`, then for every `r : k` all Tate cohomology of the reduction
-`V ⧸ r • V`, a free module of rank one over `(k ⧸ (r))[G]`, vanishes. Its identity is the norm of
-the projection onto the coefficient of `1 ∈ G`. -/
-theorem isZero_quotSMulTop_of_equiv_leftRegular
+`V ⧸ r • V`, a free module of rank one over `(k ⧸ (r))[G]`, read as an integral representation,
+vanishes. Its identity is the norm of the projection onto the coefficient of `1 ∈ G`. -/
+theorem isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular
     (e : (Representation.leftRegular k G).Equiv ρ) (r : k) (n : ℤ) :
     IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) := by
   classical
-  refine isZero_quotSMulTop_of_forall_eq_sum (e.toLinearMap ∘ₗ MonoidAlgebra.lsingle 1 ∘ₗ
-    Finsupp.lapply 1 ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ e.symm.toLinearMap)
-    (fun x ↦ ?_) r n
+  refine isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum (e.toLinearMap ∘ₗ
+    MonoidAlgebra.lsingle 1 ∘ₗ Finsupp.lapply 1 ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ
+    e.symm.toLinearMap) (fun x ↦ ?_) r n
   have he (g : G) (f : MonoidAlgebra k G) : e (Representation.leftRegular k G g f) = ρ g (e f) :=
     e.toIntertwiningMap.isIntertwining _ _ g f
   -- Writing `x = e f`, the `g`-th summand is `e (single g (f.coeff g))`.

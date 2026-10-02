@@ -15,7 +15,7 @@ For a representation `ρ` of a monoid `G` on a module `V` over a commutative rin
 element `r : k`, every operator `ρ g` is `k`-linear and so preserves `r • V`. The representation
 therefore descends to the quotient `QuotSMulTop r V = V ⧸ r • V`; this is
 `Representation.quotSMulTop`, whose operators are Mathlib's `QuotSMulTop.map r` applied to those
-of `ρ`.
+of `ρ`. It is Mathlib's `Representation.quotient` by the `G`-stable submodule `r • ⊤`.
 
 Reducing the regular representation `k[G]` modulo `r` gives, up to isomorphism, the regular
 representation of `G` over `k ⧸ (r)`. Such reductions are the graded pieces of filtrations
@@ -25,26 +25,58 @@ groups modelled on them.
 ## Main definitions
 
 * `Representation.quotSMulTop`: the representation induced by `ρ` on `V ⧸ r • V`.
+
+## Main statements
+
+* `Representation.quotSMulTop_forall_eq_sum`: if the identity of `ρ` is a norm
+  `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))`, then so is the identity of `ρ.quotSMulTop r`.
 -/
 
 public section
+
+open scoped Pointwise
 
 namespace Representation
 
 variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
 
-/-- The representation induced by `ρ` on the reduction `V ⧸ r • V` of `V` modulo `r`. Its value on
-the class of `x` is computed by `Representation.quotSMulTop_apply_mk`. -/
+/-- Every operator of `ρ` preserves `r • V`, so `r • ⊤` is a `G`-stable submodule. -/
+theorem smul_top_le_comap (ρ : Representation k G V) (r : k) (g : G) :
+    r • (⊤ : Submodule k V) ≤ (r • ⊤ : Submodule k V).comap (ρ g) :=
+  Submodule.map_le_iff_le_comap.mp <|
+    (Submodule.map_pointwise_smul r ⊤ (ρ g)).trans_le (smul_mono_right r le_top)
+
+/-- The representation induced by `ρ` on the reduction `V ⧸ r • V` of `V` modulo `r`: Mathlib's
+quotient representation `Representation.quotient` by the `G`-stable submodule `r • ⊤`. Its
+operators are `QuotSMulTop.map r (ρ g)` (`Representation.quotSMulTop_apply`). -/
 noncomputable def quotSMulTop (ρ : Representation k G V) (r : k) :
-    Representation k G (QuotSMulTop r V) where
-  toFun g := QuotSMulTop.map r (ρ g)
-  map_one' := by simp [Module.End.one_eq_id]
-  map_mul' g h := by simp [Module.End.mul_eq_comp]
+    Representation k G (QuotSMulTop r V) :=
+  ρ.quotient (r • ⊤) (ρ.smul_top_le_comap r)
+
+/-- The operators of `ρ.quotSMulTop r` are the reductions `QuotSMulTop.map r (ρ g)`. -/
+@[simp]
+theorem quotSMulTop_apply (ρ : Representation k G V) (r : k) (g : G) :
+    ρ.quotSMulTop r g = QuotSMulTop.map r (ρ g) :=
+  (rfl)
 
 /-- `ρ.quotSMulTop r g` sends the class of `x` to the class of `ρ g x`. -/
-@[simp]
 theorem quotSMulTop_apply_mk (ρ : Representation k G V) (r : k) (g : G) (x : V) :
     ρ.quotSMulTop r g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (ρ g x) :=
   (rfl)
+
+section Group
+
+variable {G : Type*} [Group G] [Fintype G] {ρ : Representation k G V}
+
+/-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
+the identity of `ρ.quotSMulTop r` is the norm of the reduction `QuotSMulTop.map r φ`. -/
+theorem quotSMulTop_forall_eq_sum (φ : V →ₗ[k] V) (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)))
+    (r : k) (x : QuotSMulTop r V) :
+    x = ∑ g : G, ρ.quotSMulTop r g (QuotSMulTop.map r φ (ρ.quotSMulTop r g⁻¹ x)) := by
+  induction x using Submodule.Quotient.induction_on with | H x => ?_
+  conv_lhs => rw [hφ x, ← Submodule.mkQ_apply, map_sum]
+  simp
+
+end Group
 
 end Representation
