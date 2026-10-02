@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Eval.Sign
+public import TauCeti.Algebra.Polynomial.Thom
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.Basic.Sign.Basic
 import Mathlib.Topology.Algebra.Order.Field
@@ -45,7 +46,7 @@ variable {R : Type*} [CommRing R] [LinearOrder R]
 For a nonzero polynomial over an ordered field this is its first nonzero derivative.
 The zero polynomial has sign zero. -/
 noncomputable def _root_.Polynomial.signRight (p : R[X]) (a : R) : SignType :=
-  sign ((derivative^[p.rootMultiplicity a] p).eval a)
+  p.derivativeSign a (p.rootMultiplicity a)
 
 /-- The left-hand sign is the right-hand sign corrected by multiplicity parity. -/
 noncomputable def _root_.Polynomial.signLeft (p : R[X]) (a : R) : SignType :=
@@ -53,7 +54,8 @@ noncomputable def _root_.Polynomial.signLeft (p : R[X]) (a : R) : SignType :=
 
 /-- The derivative formula for the right-hand sign. -/
 theorem _root_.Polynomial.signRight_def (p : R[X]) (a : R) :
-    p.signRight a = sign ((derivative^[p.rootMultiplicity a] p).eval a) := (rfl)
+    p.signRight a = sign ((derivative^[p.rootMultiplicity a] p).eval a) :=
+  derivativeSign_def p a _
 
 /-- The parity formula for the left-hand sign. -/
 theorem _root_.Polynomial.signLeft_def (p : R[X]) (a : R) :
