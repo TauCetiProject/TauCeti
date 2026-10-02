@@ -207,15 +207,6 @@ lemma _root_.FundamentalGroup.conjClassesEquivOfPath_trans
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans,
     MulEquiv.conjClassesEquiv_trans]
 
-/-- Transport along a concatenated path acts by the two transports in succession. -/
-lemma _root_.FundamentalGroup.conjClassesEquivOfPath_trans_apply
-    {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X} (γ : Path x₀ x₁) (δ : Path x₁ x₂)
-    (C : ConjClasses (_root_.FundamentalGroup X x₀)) :
-    _root_.FundamentalGroup.conjClassesEquivOfPath (γ.trans δ) C =
-      _root_.FundamentalGroup.conjClassesEquivOfPath δ
-        (_root_.FundamentalGroup.conjClassesEquivOfPath γ C) := by
-  rw [_root_.FundamentalGroup.conjClassesEquivOfPath_trans, Equiv.trans_apply]
-
 /-- Reversing a path gives the inverse equivalence on conjugacy classes. -/
 @[simp]
 lemma _root_.FundamentalGroup.conjClassesEquivOfPath_symm
@@ -270,8 +261,7 @@ lemma _root_.FundamentalGroup.conjClassesEquivOfPath_eq
     rw [MulEquiv.trans_apply, ← htransport, MulEquiv.trans_apply,
       MulEquiv.symm_apply_apply]
   ext C
-  change (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).conjClassesEquiv C =
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ).conjClassesEquiv C
+  simp only [_root_.FundamentalGroup.conjClassesEquivOfPath]
   rw [h, MulEquiv.conjClassesEquiv_trans, Equiv.trans_apply,
     MulAut.conjClassesEquiv_apply, TauCeti.mulAut_conj_smul_conjClasses]
 
@@ -281,7 +271,19 @@ noncomputable def _root_.FundamentalGroup.conjClassesEquivOfPathConnected
     {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (x₀ x₁ : X) :
     ConjClasses (_root_.FundamentalGroup X x₀) ≃
       ConjClasses (_root_.FundamentalGroup X x₁) :=
-  _root_.FundamentalGroup.conjClassesEquivOfPath (PathConnectedSpace.somePath x₀ x₁)
+  (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁).conjClassesEquiv
+
+/-- Canonical transport sends the conjugacy class of a representative to the class of its
+image under Mathlib's canonical basepoint-change equivalence. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_mk
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (x₀ x₁ : X)
+    (g : _root_.FundamentalGroup X x₀) :
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected x₀ x₁ (ConjClasses.mk g) =
+      ConjClasses.mk
+        (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁ g) := by
+  exact MulEquiv.conjClassesEquiv_mk
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁) g
 
 /-- The canonical equivalence of conjugacy classes in a path-connected space agrees with
 transport along any specified path. -/
@@ -321,7 +323,8 @@ lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_trans
     (_root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₀).trans
         (_root_.FundamentalGroup.conjClassesEquivOfPath γ) =
       _root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₁ := by
-  rw [_root_.FundamentalGroup.conjClassesEquivOfPathConnected,
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq
+      (PathConnectedSpace.somePath b x₀),
     ← _root_.FundamentalGroup.conjClassesEquivOfPath_trans]
   exact _root_.FundamentalGroup.conjClassesEquivOfPath_eq _ _
 
