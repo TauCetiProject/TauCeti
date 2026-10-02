@@ -29,8 +29,9 @@ The answer is the **dominance bound**: writing `r` for the row filling of `t`
 `∑_{j < m} l j ≤ ∑_{j < m} μ.rowLen j`
 
 for every bound `m`, and the right-hand side is the weight `TauCeti.weightOfShape n μ` of the shape
-itself, which does occur.  So `weightOfShape n μ` is the highest weight of the Weyl module in the
-dominance order, and it is the weight of the image of the monomial basis vector `e_r`.
+itself.  When `μ.colLen 0 ≤ n`, this weight occurs and is the highest weight of the Weyl module in
+the dominance order, carried by the image of the monomial basis vector `e_r`.
+When `n < μ.colLen 0`, the Weyl module is zero (`TauCeti.YoungTableau.weylModule_eq_bot`).
 
 Both halves come from the vanishing criterion of
 `TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic`, read one monomial basis vector at
@@ -38,8 +39,9 @@ a time.  The symmetrizer annihilates `e_p` as soon as the filling `p` gives two 
 column the same basis index; so a filling whose basis vector survives is injective on columns, and
 such a filling takes small values no more often than the row index does
 (`TauCeti.YoungTableau.card_filter_lt_le_card_filter_rowIndex_lt`), which is the displayed
-inequality once both counts are read as partial sums of contents.  Conversely `e_r` itself has
-content the row lengths of `μ` and is not annihilated, so the bound is attained.
+inequality once both counts are read as partial sums of contents.  Conversely, when
+`μ.colLen 0 ≤ n`, `e_r` itself has content the row lengths of `μ` and is not annihilated,
+so the bound is attained.
 
 The field is a `ℚ`-algebra, as everywhere the Young symmetrizer appears; it therefore has
 characteristic zero, so it is infinite and its weight characters separate weights, which is the
@@ -57,11 +59,11 @@ hypothesis under which the weight spaces of the tensor power are its coordinate 
   the Weyl module are dominated by the weight of its shape**, and
   `TauCeti.YoungTableau.nonneg_and_sum_eq_of_weightSpace_weylRep_ne_bot`: they are nonnegative of
   total degree `|μ|`, so the comparison is the dominance order.
-* `TauCeti.YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot`: **the weight of the shape occurs
-  in the Weyl module**, so it is the highest weight.
+* `TauCeti.YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot`: **when `μ.colLen 0 ≤ n`,
+  the weight of the shape occurs in the Weyl module**, so it is the highest weight.
 * `TauCeti.sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot` and
   `TauCeti.weightSpace_weylRepOfShape_weightOfShape_ne_bot`: the two halves for the shape-indexed
-  Weyl module, hence for `TauCeti.schurFunctor`.
+  Weyl module when `μ.colLen 0 ≤ n`, hence for `TauCeti.schurFunctor`.
 
 ## Implementation notes
 
@@ -232,12 +234,12 @@ theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
   rw [← weightOfMultiset_ofFn_rowFilling t hn, tensorPowerBasis_def]
   exact basis_mem_weightSpace_tensorPowerRep _
 
-/-- **The weight of the shape occurs in the Weyl module**: the image under the symmetrizer of the
-monomial basis vector of the row filling is a nonzero vector of that weight.
+/-- **When `μ.colLen 0 ≤ n`, the weight of the shape occurs in the Weyl module**: the image under
+the symmetrizer of the monomial basis vector of the row filling is a nonzero vector of that weight.
 
 Together with `TauCeti.YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot` this
 says that `TauCeti.weightOfShape n μ` is the highest weight, in the dominance order, of the Weyl
-module of any `μ`-tableau. -/
+module of any `μ`-tableau whose shape satisfies `μ.colLen 0 ≤ n`. -/
 theorem weightSpace_weylRep_weightOfShape_ne_bot (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t)
       (weightOfShape n μ).1 ≠ ⊥ := by
@@ -279,9 +281,9 @@ theorem sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot {μ : Youn
     YoungTableau.weylModule_toSubmodule] at hbot
   exact hbot
 
-/-- **The weight of a shape occurs in the Weyl module of that shape**, so it is the highest weight
-of `TauCeti.weylRepOfShape` — and hence, over `ℂ`, of `TauCeti.schurFunctor` — in the dominance
-order. -/
+/-- **When `μ.colLen 0 ≤ n`, the weight of a shape occurs in the Weyl module of that shape**, so it
+is the highest weight of `TauCeti.weylRepOfShape` — and hence, over `ℂ`, of `TauCeti.schurFunctor` —
+in the dominance order. -/
 theorem weightSpace_weylRepOfShape_weightOfShape_ne_bot {μ : YoungDiagram}
     (hn : μ.colLen 0 ≤ n) :
     weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ)
