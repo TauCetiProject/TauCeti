@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PositiveDefinite.PontryaginMeasure
-import TauCeti.Analysis.Fourier.Pontryagin.UnitaryRepresentation
-import TauCeti.Analysis.PositiveDefinite.Function.GNS
+import TauCeti.Analysis.Bochner.LocallyCompactGroup
 
 /-!
 # Bochner's theorem on discrete abelian groups
@@ -18,20 +17,15 @@ Fourier–Stieltjes transform `φ(g) = ∫ χ(g) dμ(χ)` of a finite positive m
 Pontryagin dual of `G`. Every function on a discrete group is continuous, so no continuity
 hypothesis appears.
 
-The measure comes from the GNS construction. The positive-definite function `φ` is a matrix
-coefficient `φ(g) = ⟪U(g) v, v⟫` of the unitary translation representation `U` on its GNS Hilbert
-space, and the cyclic spectral theorem for unitary representations of discrete abelian groups,
-`MonoidHom.exists_pontryaginMeasureTransform_eq_inner`, writes such a matrix coefficient as a
-Fourier–Stieltjes transform.
+The representing measure is the one of Bochner's theorem on locally compact abelian groups,
+`TauCeti.IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuousAt`, whose
+continuity hypothesis is automatic on a discrete group.
 
 For `G = ℤ` this recovers Herglotz's theorem, proved separately by Fejér means in
 `TauCeti.Analysis.Bochner.Herglotz`.
 
 ## Main declarations
 
-* `TauCeti.IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq`: a positive-definite
-  function on a discrete abelian group is the Fourier–Stieltjes transform of a finite measure on
-  the dual group.
 * `TauCeti.isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq`: **Bochner's theorem**
   for discrete abelian groups.
 
@@ -52,19 +46,6 @@ variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [DiscreteTopology G]
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [BorelSpace (PontryaginDual (Multiplicative G))]
 
-/-- A positive-definite function on a discrete abelian group is the Fourier–Stieltjes transform
-of a finite measure on the Pontryagin dual. -/
-theorem IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq {φ : G → ℂ}
-    (hφ : IsPositiveDefiniteSub φ) :
-    ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative G)), μ.pontryaginMeasureTransform = φ := by
-  -- `φ g = ⟪U(g) v, v⟫ = ⟪v, U(-g) v⟫` for the GNS representation `U` and the vector `v` at `0`,
-  -- so `φ` is a matrix coefficient of the representation `g ↦ U(-g)`.
-  let ρ : Multiplicative G →* unitary (hφ.gnsSpace →L[ℂ] hφ.gnsSpace) :=
-    Unitary.linearIsometryEquiv.symm.toMonoidHom.comp (hφ.gnsRepresentation.comp invMonoidHom)
-  obtain ⟨μ, hμ⟩ := ρ.exists_pontryaginMeasureTransform_eq_inner (hφ.gnsVector 0)
-  refine ⟨μ, funext fun g ↦ ?_⟩
-  simp [hμ, ρ, ← ofAdd_neg]
-
 /-- **Bochner's theorem on a discrete abelian group.** A function on a discrete abelian group is
 positive definite if and only if it is the Fourier–Stieltjes transform of a finite measure on the
 Pontryagin dual. -/
@@ -72,7 +53,8 @@ theorem isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq (φ : G �
     IsPositiveDefiniteSub φ ↔
       ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
         μ.pontryaginMeasureTransform = φ :=
-  ⟨IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq,
+  ⟨fun hφ ↦ hφ.exists_pontryaginMeasureTransform_eq_of_continuousAt
+      continuous_of_discreteTopology.continuousAt,
     fun ⟨μ, hμ⟩ ↦ hμ ▸ μ.isPositiveDefiniteSub_pontryaginMeasureTransform⟩
 
 end TauCeti
