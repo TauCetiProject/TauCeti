@@ -73,34 +73,31 @@ theorem one_cohomologous_of_algHom_end (c : TwoCocycle K L)
   let ψ : L →ₐ[K] Module.End K V := ρ.comp (inc c)
   let φ : L →ₗ[K] V := LinearMap.applyₗ v ∘ₗ ψ.toLinearMap
   have hφ (x : L) : φ x = ρ (inc c x) v := by simp [φ, ψ]
-  have hψφ (x y : L) : ρ (inc c x) (φ y) = φ (x * y) := by
-    rw [hφ, hφ, map_mul, map_mul, Module.End.mul_apply]
+  -- the action of a product, and of `ι(x)` in the coordinate `φ`
+  have hρ (a b : CrossedProduct c) (w : V) : ρ (a * b) w = ρ a (ρ b w) := by simp
+  have hψφ (x y : L) : ρ (inc c x) (φ y) = φ (x * y) := by simp [hφ]
   have hinj : Function.Injective φ := by
     refine (injective_iff_map_eq_zero φ).2 fun x hx ↦ by_contra fun hx0 ↦ hv ?_
-    have h := hψφ x⁻¹ x
-    rw [hx, map_zero, inv_mul_cancel₀ hx0, hφ, map_one, map_one, Module.End.one_apply] at h
-    exact h.symm
+    simpa [hx, hx0, hφ] using (hψφ x⁻¹ x).symm
   have hsurj : Function.Surjective φ :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hV.symm).1 hinj
   -- `u_σ · v = ι(b₀(σ)) · v`, and `u_σ` acts `σ`-semilinearly
   choose b₀ hb₀ using fun σ : L ≃ₐ[K] L ↦ hsurj (ρ (basis c σ) v)
   have hu (σ : L ≃ₐ[K] L) (x : L) : ρ (basis c σ) (φ x) = φ (σ x * b₀ σ) := by
-    rw [hφ x, ← Module.End.mul_apply, ← map_mul, basis_mul_inc, map_mul, Module.End.mul_apply,
-      ← hb₀, hψφ]
+    rw [hφ x, ← hρ, basis_mul_inc, hρ, ← hb₀, hψφ]
   have hb₀ne (σ : L ≃ₐ[K] L) : b₀ σ ≠ 0 := by
     intro h0
-    have h := hu σ⁻¹ (b₀ σ)
-    rw [hb₀, ← Module.End.mul_apply, ← map_mul, basis_mul_basis, inv_mul_cancel, basis_one,
-      ← map_mul, ← hφ, h0, map_zero, zero_mul] at h
-    refine mul_ne_zero (c.toFun σ⁻¹ σ).ne_zero (c.toFun 1 1).ne_zero (hinj ?_)
-    rw [h, map_zero]
+    -- `u_{σ⁻¹} · u_σ · v = 0`, but `u_{σ⁻¹} · u_σ` is a unit of `L`
+    have h : ρ (basis c σ⁻¹ * basis c σ) v = 0 := by
+      rw [hρ, ← hb₀, h0, map_zero, map_zero]
+    rw [basis_mul_basis, inv_mul_cancel, basis_one, ← map_mul, ← hφ, ← map_zero φ] at h
+    exact mul_ne_zero (c.toFun σ⁻¹ σ).ne_zero (c.toFun 1 1).ne_zero (hinj h)
   let b : (L ≃ₐ[K] L) → Lˣ := fun σ ↦ Units.mk0 (b₀ σ) (hb₀ne σ)
   refine cohomologous_iff.2 ⟨b, fun σ τ ↦ ?_⟩
   -- expand `u_σ · u_τ · v = c(σ, τ) · u_{στ} · v` in the coordinate `φ`
   have key : c.toFun σ τ * b₀ (σ * τ) = σ (b₀ τ) * b₀ σ := by
     refine hinj ?_
-    rw [← hψφ, hb₀, ← Module.End.mul_apply, ← map_mul, ← basis_mul_basis, map_mul,
-      Module.End.mul_apply, ← hb₀, hu]
+    rw [← hψφ, hb₀, ← hρ, ← basis_mul_basis, hρ, ← hb₀, hu]
   simp only [toFun_one, Units.val_one, one_mul, Units.val_inv_eq_inv_val, Units.val_mk0, b]
   rw [mul_right_comm, ← key, mul_inv_cancel_right₀ (hb₀ne _)]
 
