@@ -50,6 +50,8 @@ theorem infiniteCompletionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
     infiniteCompletionNormalizedAbsValue w (LiesOver.completionMap x) =
       infiniteCompletionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
+  -- `completionMap` has an unexposed body, so use its public continuity and coercion lemmas
+  -- to transport Mathlib's norm preservation from the dense base field.
   have hnorm : ‖LiesOver.completionMap (w := w) x‖ = ‖x‖ := by
     induction x using InfinitePlace.Completion.induction_on with
     | hp =>
