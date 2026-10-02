@@ -1073,10 +1073,12 @@ a finite discrete `G`-module killed by `n` whose dual `M' = InternalHom G M N` h
 `α₁ : H¹(G, M) → Hom(H¹(G, M'), H²(G, N))` is bijective: its target has the order of `H¹(G, M')`,
 which `α₁` embeds into `Hom(H¹(G, M''), H²(G, N))`, of the order of `H¹(G, M'')`, and `M'' ≅ M` by
 double duality. -/
-theorem dualityMap1_bijective_of_injective_of_addEquiv_zmod [Finite N] (e : N ≃+ ZMod n)
+theorem dualityMap1_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
     (e₂ : H2 G N ≃+ ZMod n) (hM : ∀ x : M, n • x = 0) [Finite (H1 G (InternalHom G M N))]
-    (h₁' : Function.Injective (dualityMap1 G (InternalHom G M N) N))
+    (h₁' : haveI : Finite N := Finite.of_equiv _ e.symm.toEquiv
+      Function.Injective (dualityMap1 G (InternalHom G M N) N))
     (h₁ : Function.Injective (dualityMap1 G M N)) : Function.Bijective (dualityMap1 G M N) := by
+  have : Finite N := Finite.of_equiv _ e.symm.toEquiv
   have hM' : ∀ φ : InternalHom G M N, n • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
   have hev := explicitCoeff1_bijective G M (InternalHom.eval_bijective_of_addEquiv_zmod e hM)
   have : Finite (H2 G N) := Finite.of_equiv _ e₂.symm.toEquiv
@@ -1099,10 +1101,12 @@ on `M` and `α₀` is injective on `M'`, then `α₂ : H²(G, M) → Hom(H⁰(G,
 its target has the order of `H⁰(G, M')`, which `α₀` embeds into `Hom(H²(G, M''), H²(G, N))`, of the
 order of `H²(G, M'')`, and `M'' ≅ M` by double duality. The hypothesis `H²(G, N) ≃+ ZMod n` is what
 makes `Hom(-, H²(G, N))` preserve the order of every finite group killed by `n`. -/
-theorem dualityMap2_bijective_of_injective_of_addEquiv_zmod [Finite N] (e : N ≃+ ZMod n)
+theorem dualityMap2_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
     (e₂ : H2 G N ≃+ ZMod n) (hM : ∀ x : M, n • x = 0)
-    (h₀ : Function.Injective (dualityMap0 G (InternalHom G M N) N))
+    (h₀ : haveI : Finite N := Finite.of_equiv _ e.symm.toEquiv
+      Function.Injective (dualityMap0 G (InternalHom G M N) N))
     (h₂ : Function.Injective (dualityMap2 G M N)) : Function.Bijective (dualityMap2 G M N) := by
+  have : Finite N := Finite.of_equiv _ e.symm.toEquiv
   have hM' : ∀ φ : InternalHom G M N, n • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
   have hev := explicitCoeff2_bijective G M (InternalHom.eval_bijective_of_addEquiv_zmod e hM)
   have : Finite (H2 G N) := Finite.of_equiv _ e₂.symm.toEquiv
