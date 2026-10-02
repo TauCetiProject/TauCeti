@@ -77,7 +77,7 @@ irreducible ones is not carved out here.
   instances.
 * `TauCeti.Representation.apply_conjNormal_inv`: the basic intertwining identity between an
   ambient representation operator and the action of a normal subgroup.
-* `TauCeti.Representation.apply_conjNormal_coe`: its inner counterpart for a representation of
+* `Representation.apply_conjNormal_coe`: its inner counterpart for a representation of
   the normal subgroup itself.
 * `TauCeti.res_conjRep`, `TauCeti.res_conjFDRep`: the normal-subgroup conjugation is the general
   conjugate representation, read through `MulAut.conj g • N = N`.
@@ -539,14 +539,6 @@ theorem apply_conjNormal_inv (g : G) (n : N) (v : V) :
     group
   rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hg]
 
-/-- For a representation of the normal subgroup itself, acting by `n` and then by `m ∈ N` is the
-same as acting by `m` and then by the conjugate `m n m⁻¹`: the inner case of
-`TauCeti.Representation.apply_conjNormal_inv`. -/
-theorem apply_conjNormal_coe (σ : _root_.Representation k N V) (m n : N) (v : V) :
-    σ m (σ n v) = σ (MulAut.conjNormal (m : G) n) (σ m v) := by
-  have hm : m * n = MulAut.conjNormal (m : G) n * m := Subtype.ext (by simp [mul_assoc])
-  rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hm]
-
 end Representation
 
 /-- Conjugating a normal subgroup by `1` is the identity automorphism.  The `MulAut.conjNormal`
@@ -918,3 +910,13 @@ end NormalCharacter
 end Normal
 
 end TauCeti
+
+/-- For a representation of the normal subgroup itself, acting by `n` and then by `m ∈ N` is the
+same as acting by `m` and then by the conjugate `m n m⁻¹`: the inner case of
+`TauCeti.Representation.apply_conjNormal_inv`. -/
+theorem Representation.apply_conjNormal_coe {k : Type u} {G : Type v} {V : Type w} [Group G]
+    [Semiring k] [AddCommMonoid V] [Module k V] {N : Subgroup G} [N.Normal]
+    (σ : Representation k N V) (m n : N) (v : V) :
+    σ m (σ n v) = σ (MulAut.conjNormal (m : G) n) (σ m v) := by
+  have hm : m * n = MulAut.conjNormal (m : G) n * m := Subtype.ext (by simp [mul_assoc])
+  rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hm]
