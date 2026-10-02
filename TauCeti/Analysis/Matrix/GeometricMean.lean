@@ -34,6 +34,10 @@ reversed equation.
   geometric mean is Hermitian, and this one is positive definite when `T` is.
 * `Matrix.PosDef.mul_mul_conjTranspose_geometricMean`: the solution satisfies `A * S * Aᴴ = T`.
 * `Matrix.PosDef.inv_geometricMean_ringInverse`: reversing `S` and `T` inverts the solution.
+* `Matrix.PosDef.trace_geometricMean_ringInverse_mul`: the cross trace of the solution is the
+  trace of the square root of the covariance sandwich.
+* `Matrix.PosDef.trace_one_sub_geometricMean_mul_mul_conjTranspose`: the trace of the covariance
+  left by subtracting the standard positive map.
 -/
 
 public section
@@ -109,6 +113,45 @@ theorem PosDef.mul_mul_conjTranspose_geometricMean (hS : S.PosDef) (hT : T.PosSe
     geometricMean S⁻¹ʳ T * S * (geometricMean S⁻¹ʳ T)ᴴ = T := by
   rw [isHermitian_geometricMean.eq,
     geometricMean_ringInverse_mul_mul_geometricMean_ringInverse hS.isStrictlyPositive hT.nonneg]
+
+/-- The trace of the standard positive solution multiplied by `S` is the trace of the positive
+square root of the sandwich `sqrt S * T * sqrt S`. -/
+theorem PosDef.trace_geometricMean_ringInverse_mul (hS : S.PosDef) :
+    (geometricMean S⁻¹ʳ T * S).trace =
+      (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace := by
+  let Q := CFC.sqrt S
+  let R := CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)
+  have hQdet : IsUnit Q.det :=
+    Matrix.isUnit_iff_isUnit_det Q |>.mp (hS.isStrictlyPositive.isUnit_cfcSqrt S)
+  have hSsqrt : Q * Q = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
+  rw [hS.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt]
+  change ((Q⁻¹ * R * Q⁻¹) * S).trace = R.trace
+  rw [← hSsqrt]
+  simp only [Matrix.mul_assoc]
+  rw [← Matrix.mul_assoc Q⁻¹ Q Q, Matrix.nonsing_inv_mul Q hQdet, Matrix.one_mul]
+  rw [← Matrix.mul_assoc Q⁻¹ R Q, Matrix.trace_mul_cycle]
+  rw [Matrix.mul_nonsing_inv Q hQdet, Matrix.one_mul]
+
+/-- The trace of the covariance transformed by `1 - A`, for the standard positive solution
+`A * S * A = T`, is the Bures covariance expression. -/
+theorem PosDef.trace_one_sub_geometricMean_mul_mul_conjTranspose (hS : S.PosDef)
+    (hT : T.PosSemidef) :
+    ((1 - geometricMean S⁻¹ʳ T) * S * (1 - geometricMean S⁻¹ʳ T)ᴴ).trace =
+      S.trace + T.trace -
+        2 * (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace := by
+  let A := geometricMean S⁻¹ʳ T
+  have hA : A.IsHermitian := isHermitian_geometricMean
+  have hASA : A * S * Aᴴ = T := hS.mul_mul_conjTranspose_geometricMean hT
+  have hcross : (A * S).trace =
+      (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace :=
+    hS.trace_geometricMean_ringInverse_mul
+  have hexpand : (1 - A) * S * (1 - A)ᴴ = S - A * S - S * Aᴴ + A * S * Aᴴ := by
+    rw [Matrix.conjTranspose_sub, Matrix.conjTranspose_one]
+    noncomm_ring
+  change ((1 - A) * S * (1 - A)ᴴ).trace = _
+  rw [hexpand, Matrix.trace_add, Matrix.trace_sub, Matrix.trace_sub, hASA, hA.eq,
+    Matrix.trace_mul_comm S A, hcross]
+  ring
 
 /-- **Reversing the equation inverts the solution.** The solution of `A * S * A = T`, inverted, is
 the solution of `B * T * B = S`: the geometric mean commutes with inversion and is symmetric in
