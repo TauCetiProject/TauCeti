@@ -126,7 +126,7 @@ theorem isLagrangian_dyadicU_top_prod_bot :
 
 /-- **The dyadic hyperbolic generators are metabolic**, including the trivial module at
 `k = 0`. -/
-@[simp]
+@[simp high] -- Apply before `isMetabolic_def` unfolds the predicate.
 theorem isMetabolic_dyadicU : (dyadicU k).IsMetabolic := by
   rw [isMetabolic_def]
   exact ⟨_, isLagrangian_dyadicU_top_prod_bot k⟩
