@@ -55,7 +55,8 @@ namespace TauCeti
 variable {G : Type*} [Group G]
 
 /-- The subgroup of points fixed by an endomorphism of a group, `F.eqLocus (MonoidHom.id G)`. -/
-abbrev fixedSubgroup (F : G →* G) : Subgroup G := F.eqLocus (MonoidHom.id G)
+@[expose]
+def fixedSubgroup (F : G →* G) : Subgroup G := F.eqLocus (MonoidHom.id G)
 
 /-- A point lies in the fixed subgroup of `F` exactly when `F` fixes it. -/
 @[simp]

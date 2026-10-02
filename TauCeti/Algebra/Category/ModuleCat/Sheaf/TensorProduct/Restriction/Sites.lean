@@ -58,14 +58,17 @@ local notation "restrictionSheafification" => presheafRestriction ⋙ targetShea
 local notation "sourceW" => MorphismProperty.inverseImage (K.W (A := AddCommGrpCat))
   (PresheafOfModules.toPresheaf (ObjectProperty.FullSubcategory.obj (ringCatSheaf R)))
 
+/-- The restricted coefficient presheaf carries the sectionwise monoidal structure. -/
 local instance : MonoidalCategory (PresheafOfModules.{u}
     (Functor.obj (F.sheafPushforwardContinuous RingCat.{u} J K) (ringCatSheaf R)).obj) :=
   PresheafOfModulesOfCommRing.monoidalCategory (R := F.op ⋙ R.obj)
 
+/-- The restricted coefficient sheaf carries the sheafified monoidal structure. -/
 local instance : MonoidalCategory (_root_.SheafOfModules.{u}
     (Functor.obj (F.sheafPushforwardContinuous RingCat.{u} J K) (ringCatSheaf R))) :=
   monoidalCategory (pushforwardCommRing (J := J) (K := K) F R)
 
+/-- Sheafification over the restricted coefficients is strong monoidal. -/
 local instance : (targetSheafification).Monoidal :=
   sheafificationMonoidal (pushforwardCommRing (J := J) (K := K) F R)
 
@@ -95,16 +98,20 @@ theorem pushforwardSheafificationNatIso_inv_app
       (pushforwardSheafificationIso (J := J) (K := K) F (ringCatSheaf R) M).inv :=
   (rfl)
 
+/-- Sheaf restriction lifts presheaf restriction followed by sheafification through the
+source sheafification localization. -/
 local instance restrictionLifting : CategoryTheory.Localization.Lifting
     sourceSheafification sourceW restrictionSheafification
       (pushforwardModule (J := J) (K := K) F R) where
   iso := pushforwardSheafificationNatIso F R
 
+/-- Presheaf restriction is strong monoidal because its coefficient comparison is the identity. -/
 local instance presheafRestrictionMonoidal : (presheafRestriction).Monoidal := by
   -- The coefficient comparison is the identity, so this is precomposition of presheaves.
   change (PresheafOfModules.pushforward₀OfCommRingCat F R.obj).Monoidal
   infer_instance
 
+/-- Presheaf restriction followed by target sheafification is strong monoidal. -/
 local instance restrictionSheafificationMonoidal : (restrictionSheafification).Monoidal :=
   @Functor.Monoidal.instComp _ _ _ _ _ _ _ _ _
     presheafRestriction targetSheafification (presheafRestrictionMonoidal F R)
