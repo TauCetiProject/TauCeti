@@ -63,7 +63,7 @@ elements of the subgroup. This is the discreteness step in the Poincaré polygon
 theorem discreteTopology_of_disjoint_smul_interior (hP : (interior P.carrier).Nonempty)
     (hdisj : ∀ γ : Γ, γ ≠ 1 → Disjoint (γ • interior P.carrier) (interior P.carrier)) :
     DiscreteTopology Γ :=
-  TauCeti.discreteTopology_of_disjoint_smul isOpen_interior hP hdisj
+  TauCeti.discreteTopology_of_disjoint_smul (fun _ ↦ by fun_prop) isOpen_interior hP hdisj
 
 end TauCeti.UpperHalfPlane.CompactConvexPolygon
 

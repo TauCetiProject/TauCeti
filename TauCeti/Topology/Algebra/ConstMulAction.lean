@@ -74,14 +74,12 @@ theorem injOn_quotientMk_of_disjoint_smul
     (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
     Set.InjOn (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X) U := by
   intro x hx y hy hxy
-  obtain ⟨g, hg⟩ := Quotient.exact hxy
+  obtain ⟨g, rfl⟩ :=
+    MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp (Quotient.exact hxy))
   have hg_one : g = 1 := by
     by_contra hg_ne
-    refine Set.disjoint_left.mp (hU g hg_ne) (Set.smul_mem_smul_set hy) ?_
-    change (fun m : G ↦ m • y) g ∈ U
-    rw [hg]
-    exact hx
-  simpa [hg_one] using hg.symm
+    exact Set.disjoint_left.mp (hU g hg_ne) (Set.smul_mem_smul_set hy) hx
+  rw [hg_one, one_smul]
 
 variable [TopologicalSpace X] [ContinuousConstSMul G X]
 
@@ -112,14 +110,12 @@ theorem injOn_quotientMk_of_disjoint_vadd
     (hU : ∀ a : A, a ≠ 0 → Disjoint (a +ᵥ U) U) :
     Set.InjOn (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X) U := by
   intro x hx y hy hxy
-  obtain ⟨a, ha⟩ := Quotient.exact hxy
+  obtain ⟨a, rfl⟩ :=
+    AddAction.mem_orbit_iff.mp (AddAction.orbitRel_apply.mp (Quotient.exact hxy))
   have ha_zero : a = 0 := by
     by_contra ha_ne
-    refine Set.disjoint_left.mp (hU a ha_ne) (Set.vadd_mem_vadd_set hy) ?_
-    change (fun b : A ↦ b +ᵥ y) a ∈ U
-    rw [ha]
-    exact hx
-  simpa [ha_zero] using ha.symm
+    exact Set.disjoint_left.mp (hU a ha_ne) (Set.vadd_mem_vadd_set hy) hx
+  rw [ha_zero, zero_vadd]
 
 variable [TopologicalSpace X] [ContinuousConstVAdd A X]
 
@@ -142,21 +138,22 @@ section DiscreteTopology
 open Set
 
 variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-  [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X] {U : Set X}
+  [TopologicalSpace X] [MulAction G X] {U : Set X}
 
-/-- **Discreteness from a disjoint open translate.** If a topological group acts continuously and
-some nonempty open set is disjoint from all of its translates by nonidentity elements, then the
-group is discrete. Indeed, the elements carrying one chosen point back into that open set form an
-open neighbourhood consisting only of the identity. -/
+/-- **Discreteness from a disjoint open translate.** If a topological group acts with continuous
+orbit maps and some nonempty open set is disjoint from all of its translates by nonidentity
+elements, then the group is discrete. Indeed, the elements carrying one chosen point back into
+that open set form an open neighbourhood consisting only of the identity. -/
 @[to_additive
-/-- **Discreteness from a disjoint open translate.** If a topological additive group acts
-continuously and some nonempty open set is disjoint from all of its translates by nonzero
+/-- **Discreteness from a disjoint open translate.** If a topological additive group acts with
+continuous orbit maps and some nonempty open set is disjoint from all of its translates by nonzero
 elements, then the group is discrete. -/]
-theorem discreteTopology_of_disjoint_smul (hU_open : IsOpen U) (hU_nonempty : U.Nonempty)
-    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) : DiscreteTopology G := by
+theorem discreteTopology_of_disjoint_smul (hcont : ∀ x : X, Continuous fun g : G ↦ g • x)
+    (hU_open : IsOpen U) (hU_nonempty : U.Nonempty) (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
+    DiscreteTopology G := by
   apply discreteTopology_of_isOpen_singleton_one
   obtain ⟨x, hx⟩ := hU_nonempty
-  have hopen : IsOpen ((fun g : G ↦ g • x) ⁻¹' U) := hU_open.preimage (by fun_prop)
+  have hopen : IsOpen ((fun g : G ↦ g • x) ⁻¹' U) := hU_open.preimage (hcont x)
   have heq : (fun g : G ↦ g • x) ⁻¹' U = {1} := by
     ext g
     simp only [Set.mem_preimage, Set.mem_singleton_iff]
@@ -168,7 +165,7 @@ theorem discreteTopology_of_disjoint_smul (hU_open : IsOpen U) (hU_nonempty : U.
       simpa using hx
   rwa [heq] at hopen
 
-variable [T1Space G] {S : Set X}
+variable [ContinuousSMul G X] [T1Space G] {S : Set X}
 
 /-- **Local finiteness of the translates of a nonempty set forces the acting group to be
 discrete.**
