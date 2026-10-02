@@ -34,8 +34,8 @@ For a holomorphic disk `u` in `Sym^g(Σ)` and a basepoint `z` of a Heegaard diag
 multiplicity `n_z(u)` of Ozsváth--Szabó, *Holomorphic disks and topological invariants for closed
 three-manifolds*, Section 2, is the sum of these local orders over the finitely many intersections
 of `u` with `V_z` (`TauCeti.finite_basepointDivisor_intersections_of_isPreconnected`), each of
-which is positive. Forming that sum, and identifying it with the topological intersection number
-of the homotopy class of `u` with `V_z`, are not part of this file.
+which is positive. That sum is `TauCeti.basepointIntersectionNumber`; identifying it with the
+topological intersection number of the homotopy class of `u` with `V_z` is not formalized.
 
 ## Main declarations
 
@@ -48,6 +48,8 @@ of the homotopy class of `u` with `V_z`, are not part of this file.
   `TauCeti.basepointIntersectionOrder_eq_top_iff`: for a curve analytic in the chosen chart at
   `f w`, the order vanishes exactly off `V_z`; for a curve continuous at `w`, it is infinite
   exactly when the curve lies in `V_z` near `w`.
+* `TauCeti.basepointIntersectionOrder_comp`: the order is unchanged by a holomorphic
+  reparametrization with nonzero derivative.
 -/
 
 public section
@@ -123,6 +125,18 @@ theorem basepointIntersectionOrder_eq_top_iff (hf : ContinuousAt f w) :
     rw [hℓ _ ht, sub_eq_zero]
   · rw [basepointIntersectionOrder_eq_zero_of_notMem hz]
     exact iff_of_false ENat.top_ne_zero.symm fun h => hz h.self_of_nhds
+
+/-- **The intersection order is invariant under holomorphic reparametrization.** If `g` is
+analytic at `w` with nonzero derivative there, then `f ∘ g` meets the basepoint divisor at `w` to
+the same order as `f` does at `g w`. -/
+theorem basepointIntersectionOrder_comp {g : ℂ → ℂ} (hg : AnalyticAt ℂ g w)
+    (hg' : deriv g w ≠ 0) :
+    basepointIntersectionOrder z (f ∘ g) w = basepointIntersectionOrder z f (g w) := by
+  simp only [basepointIntersectionOrder, Function.comp_apply]
+  split_ifs with h
+  · exact analyticOrderAt_comp_of_deriv_ne_zero (f := fun t =>
+      h.choose (symChartAt (K := ℂ) (f (g w)) (f t)) - h.choose_spec.choose) hg hg'
+  · rfl
 
 variable [IsManifold 𝓘(ℂ) 1 α]
 
