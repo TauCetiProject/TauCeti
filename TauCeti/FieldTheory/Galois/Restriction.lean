@@ -43,6 +43,8 @@ of restriction of scalars.
   the image of restriction of scalars.
 * `AlgEquiv.restrictNormal_mul_restrictScalars`: multiplying by an automorphism of the top field
   over the intermediate one does not change the restriction.
+* `AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff`: restriction to a normal simple
+  subextension `F⟮α⟯` is trivial precisely when the automorphism fixes `α`.
 -/
 
 public section
@@ -220,3 +222,22 @@ theorem AlgEquiv.restrictNormal_mul_restrictScalars (σ : M ≃ₐ[K] M) (τ : M
       (τ.restrictScalars K)).1 ⟨τ, rfl⟩, mul_one]
 
 end Tower
+
+/-! ### Restriction to a simple normal subextension -/
+
+section AdjoinSimple
+
+open IntermediateField
+
+variable {F E : Type*} [Field F] [Field E] [Algebra F E]
+
+/-- **`σ` restricts to the identity on `F⟮α⟯` exactly when it fixes `α`**, for a normal simple
+subextension `F⟮α⟯` of `E/F`. -/
+theorem AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff {α : E} [Normal F F⟮α⟯]
+    (σ : Gal(E/F)) : AlgEquiv.restrictNormalHom F⟮α⟯ σ = 1 ↔ σ α = α := by
+  refine ⟨fun h ↦ ?_, fun h ↦ AlgEquiv.coe_toAlgHom_injective (adjoin_algHom_ext F fun x hx ↦ ?_)⟩
+  · simpa [h] using (AlgEquiv.restrictNormalHom_apply F⟮α⟯ σ (AdjoinSimple.gen F α)).symm
+  · obtain rfl := Set.mem_singleton_iff.1 hx
+    exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply _ σ _).trans h)
+
+end AdjoinSimple
