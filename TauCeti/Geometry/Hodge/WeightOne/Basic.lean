@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.IZPow
 public import TauCeti.Geometry.Hodge.WeilOperator
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
 public import TauCeti.LinearAlgebra.Eigenspace.Transport
@@ -139,41 +140,19 @@ theorem eigenspace_weilOperator_neg_I (hs : HodgeStructureOn W ω 1) (heff : hs.
     (fun x hx ↦ hs.weilOperator_apply_of_mem_piece_one hx) ?_
   exact (neg_ne_self.mpr Complex.I_ne_zero).symm
 
-/-- In weight one the Weil operator acts on `H^{p,1-p}` by `i^{2p-1} = -(-1)^p i`. -/
-private theorem I_zpow_two_mul_sub_one (p : ℤ) :
-    Complex.I ^ (2 * p - 1) = -((-1 : ℂ) ^ p * Complex.I) := by
-  rw [zpow_sub₀ Complex.I_ne_zero, zpow_mul, zpow_one, div_eq_mul_inv, Complex.inv_I]
-  norm_num
-
-/-- The scalar `i^{2p-1}` is `i` exactly for odd `p`. -/
-private theorem I_zpow_two_mul_sub_one_eq_I_iff (p : ℤ) :
-    Complex.I ^ (2 * p - 1) = Complex.I ↔ Odd p := by
-  rcases Int.even_or_odd p with hp | hp
-  · rw [I_zpow_two_mul_sub_one, hp.neg_one_zpow, one_mul]
-    simp only [Int.not_odd_iff_even.2 hp, iff_false]
-    exact neg_ne_self.2 Complex.I_ne_zero
-  · simp [I_zpow_two_mul_sub_one, hp.neg_one_zpow, hp]
-
-/-- The scalar `i^{2p-1}` is `-i` exactly for even `p`. -/
-private theorem I_zpow_two_mul_sub_one_eq_neg_I_iff (p : ℤ) :
-    Complex.I ^ (2 * p - 1) = -Complex.I ↔ Even p := by
-  rcases Int.even_or_odd p with hp | hp
-  · simp [I_zpow_two_mul_sub_one, hp.neg_one_zpow, hp]
-  · rw [I_zpow_two_mul_sub_one, hp.neg_one_zpow, neg_one_mul, neg_neg]
-    simp only [Int.not_even_iff_odd.2 hp, iff_false]
-    exact (neg_ne_self.2 Complex.I_ne_zero).symm
-
 /-- In weight one, without assuming effectivity, the `i`-eigenspace of the Weil operator is
 spanned by the Hodge components `H^{p,1-p}` with `p` odd. -/
 theorem eigenspace_weilOperator_I_eq_iSup (hs : HodgeStructureOn W ω 1) :
     Module.End.eigenspace hs.weilOperator Complex.I = ⨆ p, ⨆ (_ : Odd p), hs.piece p := by
-  simp only [eigenspace_weilOperator, I_zpow_two_mul_sub_one_eq_I_iff]
+  have h (p : ℤ) : (2 * p - 1) % 4 = 1 ↔ Odd p := by rw [Int.odd_iff]; omega
+  simp only [eigenspace_weilOperator, Complex.I_zpow_eq_I_iff, h]
 
 /-- In weight one, without assuming effectivity, the `-i`-eigenspace of the Weil operator is
 spanned by the Hodge components `H^{p,1-p}` with `p` even. -/
 theorem eigenspace_weilOperator_neg_I_eq_iSup (hs : HodgeStructureOn W ω 1) :
     Module.End.eigenspace hs.weilOperator (-Complex.I) = ⨆ p, ⨆ (_ : Even p), hs.piece p := by
-  simp only [eigenspace_weilOperator, I_zpow_two_mul_sub_one_eq_neg_I_iff]
+  have h (p : ℤ) : (2 * p - 1) % 4 = 3 ↔ Even p := by rw [Int.even_iff]; omega
+  simp only [eigenspace_weilOperator, Complex.I_zpow_eq_neg_I_iff, h]
 
 /-- A weight-one Hodge structure is effective as soon as, in each negative degree `p`, the
 component `H^{p,1-p}` or its conjugate `H^{1-p,p}` vanishes. -/
