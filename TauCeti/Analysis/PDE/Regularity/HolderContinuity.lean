@@ -20,8 +20,7 @@ Haar measure. No regularity of the coefficients beyond measurability is assumed.
 The representative is the precise representative `TauCeti.MeasureTheory.preciseRepresentative`
 of `u`, the limit of its averages over shrinking balls. It agrees with `u` almost everywhere on
 `Ω` by the Lebesgue differentiation theorem
-(`TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`, applied to
-`TauCeti.HasWeakFDerivOn.locallyIntegrableOn`). The Hölder estimate on a set `K` whose closed
+(`TauCeti.W1p.ae_eq_preciseRepresentative`). The Hölder estimate on a set `K` whose closed
 `R`-thickening lies in `Ω` combines two a-priori estimates on the balls `B(x, R)`, `x ∈ K`:
 De Giorgi's interior oscillation estimate, which bounds the oscillation of `u` on `B(x, r)` by
 `C r^α`, and local boundedness, which bounds `|u|` on `B(x, R/2)`. Both constants are controlled
@@ -31,9 +30,13 @@ turns them into a Hölder bound for the precise representative, with constant
 
 ## Main declarations
 
+* `TauCeti.W1p.ae_eq_preciseRepresentative`: a Sobolev function agrees almost everywhere with its
+  precise representative.
 * `TauCeti.PDE.exists_holderOnWith_preciseRepresentative`: **De Giorgi's theorem**; the precise
   representative of a weak solution is Hölder continuous on every set at positive distance from
   `∂Ω`, with an explicit constant and a uniform exponent.
+* `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_isCompact`: the precise representative
+  of a weak solution is Hölder continuous on every compact subset of `Ω`, with a uniform exponent.
 * `TauCeti.PDE.continuousOn_preciseRepresentative`: the precise representative of a weak solution
   is continuous on `Ω`.
 
@@ -55,6 +58,13 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
+/-- A Sobolev function agrees almost everywhere on its domain with its precise representative. -/
+theorem W1p.ae_eq_preciseRepresentative {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E}
+    [mu.IsAddHaarMeasure] {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : W1p mu Omega p) :
+    W1p.value u =ᵐ[mu.restrict Omega] preciseRepresentative mu (W1p.value u) :=
+  ae_eq_restrict_preciseRepresentative Omega.isOpen (W1p.hasWeakFDerivOn u).locallyIntegrableOn
+
 namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
@@ -70,7 +80,7 @@ precise representative of `u` is Hölder continuous on `K` with exponent `α` an
 `C R^(-α - n/2) ‖u‖_{L²(Ω)}`.
 
 The precise representative agrees with `u` almost everywhere on `Ω`
-(`TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`). No regularity of the coefficients
+(`TauCeti.W1p.ae_eq_preciseRepresentative`). No regularity of the coefficients
 beyond measurability is assumed. -/
 theorem exists_holderOnWith_preciseRepresentative {pstar : ℝ≥0∞}
     (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
@@ -151,6 +161,29 @@ theorem exists_holderOnWith_preciseRepresentative {pstar : ℝ≥0∞}
           rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
           gcongr
           exact le_max_right _ _
+
+/-- **De Giorgi's theorem on compact sets.** Let `2*` be the Sobolev exponent of `W^{1,2}` in
+dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There is
+`α ∈ (0, 1]`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
+Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
+`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. Then the
+precise representative of `u` is Hölder continuous with exponent `α` on every compact `K ⊆ Ω`. -/
+theorem exists_holderOnWith_preciseRepresentative_of_isCompact {pstar : ℝ≥0∞}
+    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+    ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {K : Set (EuclideanSpace ℝ ι)},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
+      IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+        ∃ C : ℝ≥0, HolderOnWith C α (preciseRepresentative mu (W1p.value u)) K := by
+  obtain ⟨α, _, hα, hα1, -, hhol⟩ :=
+    exists_holderOnWith_preciseRepresentative (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp
+  refine ⟨α, hα, hα1, ?_⟩
+  intro Omega a u K h ha hu hK hKΩ
+  obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKΩ
+  exact ⟨_, hhol h ha hu hR hRK⟩
 
 /-- **Continuity of weak solutions.** Let `2*` be the Sobolev exponent of `W^{1,2}` in dimension
 `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). Let `a` be measurable and

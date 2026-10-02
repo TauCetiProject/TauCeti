@@ -138,7 +138,7 @@ theorem holderOnWith_of_iteratedFDeriv_eq_zero {A V : Set E} {C : ℝ≥0}
     (hC : ∀ y ∈ V, ‖iteratedFDeriv ℝ (k + 1) f y‖ ≤ C) (hAV : A ⊆ V)
     (hzero : ∀ x ∈ A, ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
     HolderOnWith C (k + 1) f A := by
-  refine HolderOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
   have hcast : (((k : ℝ≥0) + 1 : ℝ≥0) : ℝ) = ((k + 1 : ℕ) : ℝ) := by push_cast; ring
   rw [dist_eq_norm, dist_eq_norm, hcast, Real.rpow_natCast]
   exact norm_sub_le_pow_of_iteratedFDeriv_eq_zero hf hV (hAV hy) (hAV hx) hC (hzero y hy)

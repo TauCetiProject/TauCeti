@@ -43,6 +43,8 @@ representative.
   on the almost-everywhere class.
 * `TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`: a function locally integrable on
   an open set agrees almost everywhere there with its precise representative.
+* `TauCeti.MeasureTheory.preciseRepresentative_eq_of_continuousAt`: the precise representative at
+  `x` of a function equal almost everywhere near `x` to a function `g` continuous at `x` is `g x`.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative`: the averages
   converge at points where the essential oscillation vanishes.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative_of_rpow`: the
@@ -172,6 +174,40 @@ theorem preciseRepresentative_mem {S : Set E} (hSc : Convex ℝ S) (hS : IsClose
     preciseRepresentative μ f x ∈ S :=
   hS.mem_of_tendsto hlim (eventually_setAverage_closedBall_mem hSc hS hr hf hfS)
 
+/-- **The precise representative reproduces continuous representatives.** If `f` agrees almost
+everywhere near `x` with a function `g` which is continuous at `x`, then the precise
+representative of `f` at `x` is `g x`. -/
+theorem preciseRepresentative_eq_of_continuousAt [OpensMeasurableSpace X] {V : Set X}
+    (hV : V ∈ 𝓝 x) (hf : IntegrableAtFilter f (𝓝 x) μ) (h : f =ᵐ[μ.restrict V] g)
+    (hg : ContinuousAt g x) : preciseRepresentative μ f x = g x := by
+  refine preciseRepresentative_eq_of_tendsto (Metric.tendsto_nhds.2 fun ε hε => ?_)
+  obtain ⟨δ, hδ, hsub⟩ := nhds_basis_ball.mem_iff.1
+    (inter_mem hV (hg.preimage_mem_nhds (closedBall_mem_nhds (g x) (half_pos hε))))
+  have hfg : ∀ᵐ y ∂μ.restrict (ball x δ), f y ∈ closedBall (g x) (ε / 2) := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (fun _ hy => (hsub hy).1) h,
+      self_mem_ae_restrict measurableSet_ball] with y hy hyδ
+    exact hy ▸ (hsub hyδ).2
+  filter_upwards [eventually_setAverage_closedBall_mem (convex_closedBall _ _) isClosed_closedBall
+    hδ hf hfg] with r hr
+  exact (mem_closedBall.1 hr).trans_lt (half_lt_self hε)
+
+/-- The precise representative of a function agrees on an open set `U` with any function `g`
+continuous on `U` which equals it almost everywhere on `U`. -/
+theorem eqOn_preciseRepresentative_of_continuousOn [OpensMeasurableSpace X] {U : Set X}
+    (hU : IsOpen U) (hf : LocallyIntegrableOn f U μ) (h : f =ᵐ[μ.restrict U] g)
+    (hg : ContinuousOn g U) :
+    EqOn (preciseRepresentative μ f) g U := fun x hx =>
+  preciseRepresentative_eq_of_continuousAt (hU.mem_nhds hx)
+    (by simpa [nhdsWithin_eq_nhds.2 (hU.mem_nhds hx)] using hf x hx) h (hg.continuousAt
+      (hU.mem_nhds hx))
+
+/-- The precise representative of a locally integrable continuous function is the function
+itself. -/
+theorem preciseRepresentative_eq_self_of_continuous [OpensMeasurableSpace X]
+    (hf : LocallyIntegrable f μ) (hcont : Continuous f) : preciseRepresentative μ f = f :=
+  funext fun x => preciseRepresentative_eq_of_continuousAt univ_mem (hf x)
+    (ae_of_all _ fun _ => rfl) hcont.continuousAt
+
 /-- **Vanishing oscillation gives convergence of the averages.** If the essential oscillation of
 `f` on `ball x r` tends to `0` with `r`, in the sense that for every `ε > 0` the function takes
 values almost everywhere on some ball around `x` in a closed ball of radius `ε`, then the averages
@@ -263,7 +299,7 @@ theorem holderOnWith_preciseRepresentative {s : Set X} {C M α ρ : ℝ≥0}
   have hlim : ∀ x ∈ s, Tendsto (fun ε => ⨍ y in closedBall x ε, f y ∂μ) (𝓝[>] 0)
       (𝓝 (preciseRepresentative μ f x)) := fun x hx =>
     tendsto_setAverage_closedBall_preciseRepresentative_of_rpow hα' hρ' (hf x hx) (hosc x hx)
-  refine HolderOnWith.of_dist_le_mul fun x hx y hy => ?_
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
   push_cast
   rcases lt_or_ge (dist x y) ρ with hd | hd
   · -- Nearby points: both values lie in the closed ball of radius `C r^α` supplied by the
