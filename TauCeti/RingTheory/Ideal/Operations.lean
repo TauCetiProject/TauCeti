@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.RingTheory.Ideal.Operations
 
 import Mathlib.LinearAlgebra.Pi
-import Mathlib.Tactic.Ring
 
 /-!
 # Complements on ideal multiplication and the ideal action
@@ -33,9 +32,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.sup_pow_le_sup_pow_right`: modulo a two-sided ideal `I`, powers of
   `I ⊔ J` are controlled by the corresponding power of the left ideal `J`.
 * `Ideal.isTwoSided_span_of_subset_center`: a left ideal spanned by central elements is two-sided.
-* `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal ideal
-  additively span the ambient algebra, and the subalgebra contains a generator of the ideal,
-  then the same holds with the ideal replaced by any power.
+* `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
+  ideal additively span the ambient algebra, and the subalgebra contains a generator of the
+  ideal, then the same holds with the ideal replaced by any power.
 -/
 
 public section
@@ -166,31 +165,31 @@ theorem Ideal.sup_pow_le_sup_pow_right {R : Type u} [Semiring R] (I J : Ideal R)
 
 namespace Subalgebra
 
-variable {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
 
 /-- If every element of `S` is a sum of an element of a subalgebra `T` and an element of a
-principal ideal `I`, and `T` contains a generator of `I`, then the same holds with `I` replaced
-by any power. -/
+principal left ideal `I`, and `T` contains a generator of `I`, then the same holds with `I`
+replaced by any power. -/
 theorem toSubmodule_sup_pow_restrictScalars_eq_top {T : Subalgebra R S} {I : Ideal S} {π : S}
     (hπ : Ideal.span {π} = I) (hπT : π ∈ T)
     (h : T.toSubmodule ⊔ I.restrictScalars R = ⊤) (n : ℕ) :
     T.toSubmodule ⊔ (I ^ n).restrictScalars R = ⊤ := by
+  subst I
   induction n with
-  | zero => simp
+  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
   | succ n ih =>
-    have hpow : I ^ n = Ideal.span {π ^ n} := by
-      rw [← hπ, Ideal.span_singleton_pow]
     refine eq_top_iff.mpr fun s _ => ?_
-    obtain ⟨t, ht, m, hm, rfl⟩ := Submodule.mem_sup.mp (ih.ge Submodule.mem_top : s ∈ _)
-    obtain ⟨u, rfl⟩ : ∃ u, m = π ^ n * u := by
-      rw [Submodule.restrictScalars_mem, hpow, Ideal.mem_span_singleton] at hm
+    obtain ⟨t, ht, m, hm, rfl⟩ := Submodule.mem_sup.mp (h.ge Submodule.mem_top : s ∈ _)
+    obtain ⟨u, rfl⟩ : ∃ u, u * π = m := by
+      rw [Submodule.restrictScalars_mem, Ideal.mem_span_singleton'] at hm
       exact hm
-    obtain ⟨t', ht', m', hm', rfl⟩ := Submodule.mem_sup.mp (h.ge Submodule.mem_top : u ∈ _)
-    refine Submodule.mem_sup.mpr ⟨t + π ^ n * t', ?_, π ^ n * m', ?_, by ring⟩
+    obtain ⟨t', ht', m', hm', rfl⟩ := Submodule.mem_sup.mp (ih.ge Submodule.mem_top : u ∈ _)
+    refine Submodule.mem_sup.mpr ⟨t + t' * π, ?_, m' * π, ?_, by
+      simp only [add_mul, add_assoc]⟩
     · rw [Subalgebra.mem_toSubmodule] at ht ht' ⊢
-      exact add_mem ht (mul_mem (pow_mem hπT n) ht')
-    · rw [Submodule.restrictScalars_mem, pow_succ]
-      exact Ideal.mul_mem_mul (hpow ▸ Ideal.mem_span_singleton_self _) hm'
+      exact add_mem ht (mul_mem ht' hπT)
+    · rw [Submodule.restrictScalars_mem, Submodule.pow_succ]
+      exact Ideal.mul_mem_mul hm' (Ideal.mem_span_singleton_self _)
 
 end Subalgebra
 
