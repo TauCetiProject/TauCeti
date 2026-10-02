@@ -25,6 +25,28 @@ public section
 
 open MvPolynomial Finset
 
+namespace TauCeti
+
+private theorem weightEnumerator_sumElim_eq_sum {ι κ A : Type*}
+    [Fintype ι] [Fintype κ] [Zero A] [DecidableEq A]
+    {C : Set (ι → A)} {D : Set (κ → A)} (hC : C.Finite) (hD : D.Finite) :
+    ((fun p : (ι → A) × (κ → A) ↦ Sum.elim p.1 p.2) '' (C ×ˢ D)).weightEnumerator =
+      ∑ x ∈ hC.toFinset, ∑ y ∈ hD.toFinset,
+        X 0 ^ (Fintype.card (ι ⊕ κ) - hammingNorm (Sum.elim x y)) *
+          X 1 ^ hammingNorm (Sum.elim x y) := by
+  classical
+  let e := (Equiv.sumArrowEquivProdArrow ι κ A).symm
+  have he : (fun p : (ι → A) × (κ → A) ↦ Sum.elim p.1 p.2) = e := by
+    funext p i
+    rcases p with ⟨x, y⟩
+    cases i <;> simp [e]
+  rw [he, Set.weightEnumerator_eq_sum ((hC.prod hD).image e)]
+  rw [Set.Finite.toFinset_image e (hC.prod hD), ← Set.Finite.toFinset_prod hC hD]
+  rw [Finset.sum_image (fun _ _ _ _ h ↦ e.injective h), Finset.sum_product]
+  simp only [← he]
+
+end TauCeti
+
 namespace Set
 
 variable {ι κ A : Type*} [Fintype ι] [Fintype κ] [Zero A] [DecidableEq A]
@@ -35,16 +57,8 @@ theorem weightEnumerator_sumElim (hC : C.Finite) (hD : D.Finite) :
     ((fun p : (ι → A) × (κ → A) ↦ Sum.elim p.1 p.2) '' (C ×ˢ D)).weightEnumerator =
       C.weightEnumerator * D.weightEnumerator := by
   classical
-  let e := (Equiv.sumArrowEquivProdArrow ι κ A).symm
-  have he : (fun p : (ι → A) × (κ → A) ↦ Sum.elim p.1 p.2) = e := by
-    funext p i
-    rcases p with ⟨x, y⟩
-    cases i <;> simp [e]
-  rw [he, weightEnumerator_eq_sum ((hC.prod hD).image e), weightEnumerator_eq_sum hC,
-    weightEnumerator_eq_sum hD, Set.Finite.toFinset_image e (hC.prod hD),
-    ← Set.Finite.toFinset_prod hC hD,
-    Finset.sum_image (fun _ _ _ _ h ↦ e.injective h), Finset.sum_product,
-    Finset.sum_mul_sum]
+  rw [TauCeti.weightEnumerator_sumElim_eq_sum hC hD]
+  simp only [weightEnumerator_eq_sum hC, weightEnumerator_eq_sum hD, Finset.sum_mul_sum]
   apply Finset.sum_congr rfl
   intro x hx
   apply Finset.sum_congr rfl
@@ -54,7 +68,7 @@ theorem weightEnumerator_sumElim (hC : C.Finite) (hD : D.Finite) :
     have : hammingNorm x ≤ Fintype.card ι := hammingNorm_le_card_fintype
     have : hammingNorm y ≤ Fintype.card κ := hammingNorm_le_card_fintype
     omega
-  rw [← he, TauCeti.hammingNorm_sumElim, Fintype.card_sum, hsub]
+  rw [TauCeti.hammingNorm_sumElim, Fintype.card_sum, hsub]
   ring
 
 /-- Concatenating two finite sets of words multiplies their one-variable weight enumerators. -/
