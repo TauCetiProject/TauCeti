@@ -32,6 +32,10 @@ its torus is maximal, or that its root datum is the simply connected type-`Bₙ�
 * `TauCeti.TypeBSpinCarrier.baseChangeDefiningIdeal`: the transported defining ideal.
 * `TauCeti.TypeBSpinCarrier.baseChangeCoordinateIso`: its quotient is the scalar extension of
   the integral carrier coordinate Hopf algebra.
+* `TauCeti.TypeBSpinCarrier.coordinateHopfAlgebra` and `TauCeti.TypeBSpinCarrier.coordinateMap`:
+  that quotient, the specialized carrier coordinate algebra, and its ambient quotient map;
+  `TauCeti.TypeBSpinCarrier.finiteTypeCoordinateHopfAlgebra` bundles it with its finite-type
+  property.
 * `TauCeti.TypeBSpinCarrier.baseChangePointsMulEquiv`: the points of that quotient in a
   commutative `A`-algebra are the matrix points of the integral carrier over that algebra.
 * `TauCeti.TypeBSpinCarrier.rootSubgroupToBaseChangeCoordinateMap`: the transported numbered
@@ -156,6 +160,41 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n) A (definingIdeal_def n)
+
+/-! ## The specialized coordinate Hopf algebra -/
+
+/-- The coordinate Hopf algebra of the full-weight type-`Bₙ₊₁` spin carrier after base change to
+`A`. -/
+abbrev coordinateHopfAlgebra :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
+    (baseChangeDefiningIdeal n A)
+
+/-- The quotient coordinate morphism `O(GL_(2^(n+1))) ⟶ O(carrier)`, representing the closed
+immersion of the specialized spin carrier into the ambient general linear group. -/
+def coordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A (dimension n) ⟶ coordinateHopfAlgebra n A :=
+  CommHopfAlgCat.mkQuotient _ _
+
+/-- The specialized carrier coordinate morphism is surjective. -/
+theorem coordinateMap_surjective : Function.Surjective (coordinateMap n A).hom := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_surjective
+    (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n A)
+
+/-- Mapping a carrier point along the coordinate morphism gives the corresponding quotient point
+of the ambient general linear group. -/
+theorem mapPointsFunctor_coordinateMap_app {B : Type w} [CommRing B] [Algebra A B]
+    (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra n A) (CommAlgCat.of A B)) :
+    (CommHopfAlgCat.mapPointsFunctor (coordinateMap n A)).app (CommAlgCat.of A B) g =
+      CommHopfAlgCat.quotientPointsHom
+        (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n A)
+        (CommAlgCat.of A B) g := by
+  unfold coordinateMap CommHopfAlgCat.quotientPointsHom
+  rfl
+
+/-- The specialized type-`Bₙ₊₁` spin carrier as a finite-type commutative Hopf algebra. -/
+abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat.{v, v} A :=
+  FiniteTypeCommHopfAlgCat.of A (coordinateHopfAlgebra n A)
 
 /-! ## Points of the base-changed carrier -/
 
@@ -500,6 +539,15 @@ theorem mkQuotient_comp_weightTorusToBaseChangeCoordinateMap :
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n) A
+
+/-- The factored weight-torus map composed with the carrier coordinate morphism recovers its
+ambient transported coordinate map. -/
+@[simp]
+theorem coordinateMap_comp_weightTorusToBaseChangeCoordinateMap :
+    coordinateMap n A ≫ weightTorusToBaseChangeCoordinateMap n A =
+      GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (basisWeight n) := by
+  unfold coordinateMap
+  exact mkQuotient_comp_weightTorusToBaseChangeCoordinateMap n A
 
 /-- Under the base-change coordinate isomorphism, the factored weight-torus map is the scalar
 extension of its integral coordinate map. -/
