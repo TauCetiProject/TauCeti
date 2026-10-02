@@ -21,9 +21,6 @@ For a finite code, neither operation increases cardinality. Deleting finitely ma
 over a finite alphabet decreases cardinality by at most a factor equal to the number of possible
 words on those coordinates.
 
-The kernel identification uses extension by zero; the counting argument uses Mathlib's
-`AddSubgroup.card_ker_mul_card_of_surjective` rather than a separate coset calculation.
-
 ## References
 
 * W. C. Huffman and V. Pless, *Fundamentals of Error-Correcting Codes*, §§1.5–1.6,
@@ -103,6 +100,8 @@ theorem coe_kerPunctureEquivShorten_symm_apply (C : AdditiveCode A ι) (s : Set 
 The coordinates in each set are retained. No finiteness assumption is needed for `Nat.card`. -/
 theorem natCard_shorten_mul_natCard_puncture_compl (C : AdditiveCode A ι) (s : Set ι) :
     Nat.card (shorten C s) * Nat.card (puncture C sᶜ) = Nat.card C := by
+  -- The kernel identification uses extension by zero; the counting argument uses Mathlib's
+  -- `AddSubgroup.card_ker_mul_card_of_surjective` rather than a separate coset calculation.
   rw [← Nat.card_congr (kerPunctureEquivShorten C s).toEquiv]
   exact AddSubgroup.card_ker_mul_card_of_surjective (punctureHom_surjective C sᶜ)
 
