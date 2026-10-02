@@ -27,7 +27,7 @@ supported near `t₀` as profile, is a fixed-endpoint variation whose variation 
 the coordinate field of `e`.  For `e` the coordinate vector of `D_t γ'(t₀)`, the pairing `g` of
 that coordinate field with `D_t γ'` is positive at `t₀`; it is continuous there, because the
 first-variation integrand of such a variation is
-(`TauCeti.Manifold.continuousAt_inner_variationField_alongCurve`).  A bump supported where
+(`TauCeti.Manifold.continuousAt_inner_variationField_acceleration`).  A bump supported where
 `g > 0` then gives a variation whose first variation `-∫_a^b φ g` is nonzero.
 
 ## Main definitions and results
@@ -191,10 +191,9 @@ vector with trivialization coordinates `e` against the covariant acceleration of
 private theorem inner_variationField_chartVariation
     (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφJ : Function.support φ ⊆ J) (t : ℝ) :
     inner ℝ (variationField I (chartVariation I γ x₀ J φ e) t)
-        (alongCurve (leviCivitaConnection I M) (chartVariation I γ x₀ J φ e 0)
-          (curveVelocity I (chartVariation I γ x₀ J φ e 0)) t) =
+        (acceleration (leviCivitaConnection I M) (chartVariation I γ x₀ J φ e 0) t) =
       φ t * inner ℝ ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
-        (alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t) := by
+        (acceleration (leviCivitaConnection I M) γ t) := by
   by_cases htJ : t ∈ J
   · rw [chartVariation_zero hJ, variationField_chartVariation hJ htJ, real_inner_smul_left]
   · have hφt : φ t = 0 := Function.notMem_support.mp fun h ↦ htJ (hφJ h)
@@ -213,10 +212,10 @@ private theorem IsEnergyCritical.integral_mul_inner_eq_zero (h : IsEnergyCritica
     (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
     (e : E) :
     (∫ t in a..b, φ t * inner ℝ ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
-        (alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t)) = 0 ∧
+        (acceleration (leviCivitaConnection I M) γ t)) = 0 ∧
       ∀ t ∈ uIcc a b, ContinuousAt (fun t ↦ φ t * inner ℝ
         ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
-        (alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t)) t := by
+        (acceleration (leviCivitaConnection I M) γ t)) t := by
   have hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun z : ℝ × ℝ ↦ chartVariation I γ x₀ J φ e z.1 z.2) (0, t) :=
     fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (h.contMDiffAt t ht)
@@ -227,7 +226,7 @@ private theorem IsEnergyCritical.integral_mul_inner_eq_zero (h : IsEnergyCritica
   refine ⟨?_, fun t ht ↦ ?_⟩
   · simpa only [hpt] using (isEnergyCritical_iff_integral_inner_eq_zero h.contMDiffAt).mp h _
       (chartVariation_zero hJ) hF (hend a left_notMem_uIoo) (hend b right_notMem_uIoo)
-  · simpa only [hpt] using continuousAt_inner_variationField_alongCurve (hF t ht)
+  · simpa only [hpt] using continuousAt_inner_variationField_acceleration (hF t ht)
 
 /-- **Critical points of the energy are geodesics.** On a boundaryless manifold, a critical point
 of the energy between `a` and `b` among variations with fixed endpoints is a geodesic on the open
@@ -238,7 +237,7 @@ theorem IsEnergyCritical.isGeodesicCurveOn (h : IsEnergyCritical I γ a b) :
   refine (isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mpr
     ⟨fun t ht ↦ (hγ t (uIoo_subset_uIcc_self ht)).contMDiffWithinAt, fun t₀ ht₀ ↦ ?_⟩
   by_contra hA
-  set A := alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ)
+  set A := acceleration (leviCivitaConnection I M) γ
   -- `g t` pairs the vector with the coordinates `e` of `A t₀` in the trivialization at `γ t₀`
   -- against `A t`; it is positive at `t₀`
   set e : E := (trivializationAt E (TangentSpace I) (γ t₀)).continuousLinearMapAt ℝ (γ t₀) (A t₀)
