@@ -370,7 +370,7 @@ noncomputable def blockIndexOrbitEquiv (C : Set (Fin m)) :
     rw [← hT, ← preimage_blockIndex_smul e ht hB hBne
       (h := ⟨_, blockActionHom_mem_monodromyGroup e g⟩) rfl, Set.preimage_image_preimage]
 
-/-- The translate of `C` corresponding to a translate of its preimage is its preimage. -/
+/-- The translate of the preimage of `C` corresponding to a translate of `C` is its preimage. -/
 @[simp] theorem coe_blockIndexOrbitEquiv_apply (C : Set (Fin m))
     (S : orbit (t.blockQuotient B e).monodromyGroup C) :
     (blockIndexOrbitEquiv e ht hB hBne C S : Set (Fin n)) = blockIndex ht hB hBne e ⁻¹' S :=
