@@ -375,7 +375,7 @@ is it.  It is `0` when no place of `F'` lies over `P`, which does not happen for
 function fields (`TauCeti.Place.restrict_surjective_of_finiteDimensional`).  This is the analogue
 for places of Mathlib's `Ideal.ramificationIdxIn`. -/
 noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
-    [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] [IsGalois F F'] : ℕ :=
+    [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] : ℕ :=
   if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
 
 /-- The ramification index of a place of the base is the ramification index of any place above
