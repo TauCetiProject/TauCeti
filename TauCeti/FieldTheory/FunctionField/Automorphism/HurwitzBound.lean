@@ -52,7 +52,9 @@ residue extensions are separable.
 * `TauCeti.natCard_le_eighty_four_mul_genus_sub_one`: **the Hurwitz bound**, `|G| ≤ 84 (g - 1)` for
   a finite tame group of automorphisms of a function field of genus at least two.
 * `TauCeti.natCard_le_eighty_four_mul_genus_sub_one_of_charZero`: the same with no tameness
-  hypothesis, over a constant field of characteristic zero.
+  hypothesis, over a constant field of characteristic zero, with
+  `TauCeti.natCard_algEquiv_le_eighty_four_mul_genus_sub_one_of_charZero` for the full
+  automorphism group once it is finite.
 
 ## References
 
@@ -79,7 +81,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     (htame : ∀ P : Place k F, Place.IsTame k (IntermediateField.fixedField G) P) :
     Nat.card G ≤ 84 * (genus k F - 1) := by
   classical
-  set E := IntermediateField.fixedField G with hE
+  set E := IntermediateField.fixedField G
   have _ : Fintype G := Fintype.ofFinite G
   have hcard : Module.finrank ↥E F = Nat.card G := by
     rw [Nat.card_eq_fintype_card]
@@ -162,5 +164,16 @@ theorem natCard_le_eighty_four_mul_genus_sub_one_of_charZero [CharZero k] (hF : 
     (hgenus : 2 ≤ genus k F) :
     Nat.card G ≤ 84 * (genus k F - 1) :=
   natCard_le_eighty_four_mul_genus_sub_one hF hex G hgenus fun _ ↦ Place.isTame_of_charZero _ _ _
+
+/-- **The Hurwitz bound for the whole automorphism group**: over a constant field of characteristic
+zero, a function field of genus `g ≥ 2` with a finite automorphism group has
+`|Aut(F / k)| ≤ 84 (g - 1)`.  Finiteness itself is the separate Layer 11 milestone; this is the
+bound on it. -/
+theorem natCard_algEquiv_le_eighty_four_mul_genus_sub_one_of_charZero [CharZero k]
+    [Finite (F ≃ₐ[k] F)] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (hgenus : 2 ≤ genus k F) :
+    Nat.card (F ≃ₐ[k] F) ≤ 84 * (genus k F - 1) := by
+  have h := natCard_le_eighty_four_mul_genus_sub_one_of_charZero hF hex ⊤ hgenus
+  rwa [Nat.card_congr Subgroup.topEquiv.toEquiv] at h
 
 end TauCeti
