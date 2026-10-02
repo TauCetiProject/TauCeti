@@ -16,9 +16,9 @@ The direct sum is additively equivalent to the product of the codes, so their ca
 multiply. This supplies the disjoint-coordinate construction used in additive-code distance
 calculations.
 
-The alphabet is an arbitrary commutative additive group, with no finiteness or field assumption.
-The construction uses Mathlib's identification of additive subgroups with integer submodules to
-reuse the module-alphabet direct sum.
+The alphabet is an arbitrary additive group, with no finiteness or field assumption.
+The product equivalence restricts Mathlib's `Equiv.sumArrowEquivProdArrow`. For commutative
+alphabets, the construction agrees with the direct sum of the corresponding integer submodules.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.6.
 -/
@@ -29,33 +29,26 @@ namespace TauCeti
 
 open AddSubgroup
 
-variable {A ι κ : Type*} [AddCommGroup A]
+variable {A ι κ : Type*}
+
+section AddGroup
+
+variable [AddGroup A]
 
 /-- The direct sum of additive codes on the disjoint union of their coordinate types. -/
 def _root_.AddSubgroup.directSum (C : AddSubgroup (ι → A)) (D : AddSubgroup (κ → A)) :
-    AddSubgroup (ι ⊕ κ → A) :=
-  (C.toIntSubmodule.directSum D.toIntSubmodule).toAddSubgroup
-
-/-- An additive direct sum is the underlying subgroup of the integer-module direct sum. -/
-theorem _root_.AddSubgroup.directSum_def (C : AddSubgroup (ι → A))
-    (D : AddSubgroup (κ → A)) :
-    C.directSum D = (C.toIntSubmodule.directSum D.toIntSubmodule).toAddSubgroup := (rfl)
-
-/-- Passing to integer submodules commutes with the direct sum of additive codes. -/
-@[simp]
-theorem _root_.AddSubgroup.toIntSubmodule_directSum (C : AddSubgroup (ι → A))
-    (D : AddSubgroup (κ → A)) :
-    (C.directSum D).toIntSubmodule = C.toIntSubmodule.directSum D.toIntSubmodule := by
-  rw [directSum_def, Submodule.toAddSubgroup_toIntSubmodule]
+    AddSubgroup (ι ⊕ κ → A) where
+  carrier := {x | (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D}
+  zero_mem' := ⟨C.zero_mem, D.zero_mem⟩
+  add_mem' hx hy := ⟨C.add_mem hx.1 hy.1, D.add_mem hx.2 hy.2⟩
+  neg_mem' hx := ⟨C.neg_mem hx.1, D.neg_mem hx.2⟩
 
 /-- A word belongs to an additive direct sum exactly when its restrictions belong to the two
 constituent codes. -/
 @[simp]
 theorem _root_.AddSubgroup.mem_directSum_iff {C : AddSubgroup (ι → A)}
     {D : AddSubgroup (κ → A)} {x : ι ⊕ κ → A} :
-    x ∈ C.directSum D ↔ (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D := by
-  rw [directSum_def, Submodule.mem_toAddSubgroup, Submodule.mem_directSum_iff]
-  simp only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule]
+    x ∈ C.directSum D ↔ (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D := (Iff.rfl)
 
 /-- A word from the first code extended by zero belongs to the direct sum. -/
 theorem _root_.AddSubgroup.sumElim_zero_right_mem_directSum {C : AddSubgroup (ι → A)}
@@ -72,31 +65,45 @@ theorem _root_.AddSubgroup.sumElim_zero_left_mem_directSum (C : AddSubgroup (ι 
 /-- An additive direct sum is additively equivalent to the product of its constituent codes. -/
 def _root_.AddSubgroup.directSumEquivProd (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) : C.directSum D ≃+ C × D :=
-  (Submodule.directSumEquivProd C.toIntSubmodule D.toIntSubmodule).toAddEquiv
+  { ((Equiv.sumArrowEquivProdArrow ι κ A).subtypeEquiv
+      (fun _ ↦ mem_directSum_iff)).trans (Equiv.Set.prod (C : Set (ι → A)) (D : Set (κ → A)))
+    with map_add' := fun _ _ ↦ rfl }
+
+private theorem directSumEquivProd_apply_eq (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) (x : C.directSum D) :
+    C.directSumEquivProd D x =
+      (⟨fun i ↦ x.1 (.inl i), (mem_directSum_iff.mp x.2).1⟩,
+        ⟨fun j ↦ x.1 (.inr j), (mem_directSum_iff.mp x.2).2⟩) := by
+  simp only [directSumEquivProd, Equiv.Set.prod, Equiv.sumArrowEquivProdArrow]
+  rfl
 
 @[simp]
 theorem _root_.AddSubgroup.directSumEquivProd_apply_fst (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C.directSum D) (i : ι) :
-    (C.directSumEquivProd D x).1.1 i = x.1 (.inl i) :=
-  Submodule.directSumEquivProd_apply_fst _ _ _ _
+    (C.directSumEquivProd D x).1.1 i = x.1 (.inl i) := by
+  exact congrArg (fun y : C × D ↦ y.1.1 i) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
 theorem _root_.AddSubgroup.directSumEquivProd_apply_snd (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C.directSum D) (j : κ) :
-    (C.directSumEquivProd D x).2.1 j = x.1 (.inr j) :=
-  Submodule.directSumEquivProd_apply_snd _ _ _ _
+    (C.directSumEquivProd D x).2.1 j = x.1 (.inr j) := by
+  exact congrArg (fun y : C × D ↦ y.2.1 j) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
 theorem _root_.AddSubgroup.directSumEquivProd_symm_apply_inl (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C) (y : D) (i : ι) :
-    ((C.directSumEquivProd D).symm (x, y)).1 (.inl i) = x.1 i :=
-  Submodule.directSumEquivProd_symm_apply_inl _ _ _ _ _
+    ((C.directSumEquivProd D).symm (x, y)).1 (.inl i) = x.1 i := by
+  have h := directSumEquivProd_apply_eq C D ((C.directSumEquivProd D).symm (x, y))
+  rw [AddEquiv.apply_symm_apply] at h
+  exact (congrArg (fun z : C × D ↦ z.1.1 i) h).symm
 
 @[simp]
 theorem _root_.AddSubgroup.directSumEquivProd_symm_apply_inr (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C) (y : D) (j : κ) :
-    ((C.directSumEquivProd D).symm (x, y)).1 (.inr j) = y.1 j :=
-  Submodule.directSumEquivProd_symm_apply_inr _ _ _ _ _
+    ((C.directSumEquivProd D).symm (x, y)).1 (.inr j) = y.1 j := by
+  have h := directSumEquivProd_apply_eq C D ((C.directSumEquivProd D).symm (x, y))
+  rw [AddEquiv.apply_symm_apply] at h
+  exact (congrArg (fun z : C × D ↦ z.2.1 j) h).symm
 
 /-- The cardinality of an additive direct sum is the product of the two code cardinalities. -/
 @[simp↓]
@@ -109,9 +116,27 @@ theorem _root_.AddSubgroup.natCard_directSum (C : AddSubgroup (ι → A))
 theorem _root_.AddSubgroup.directSum_le_directSum_iff {C C' : AddSubgroup (ι → A)}
     {D D' : AddSubgroup (κ → A)} :
     C.directSum D ≤ C'.directSum D' ↔ C ≤ C' ∧ D ≤ D' := by
-  rw [← AddSubgroup.toIntSubmodule.le_iff_le, toIntSubmodule_directSum,
-    toIntSubmodule_directSum, Submodule.directSum_le_directSum_iff]
-  rfl
+  constructor
+  · intro h
+    exact ⟨fun x hx ↦ (mem_directSum_iff.mp (h (sumElim_zero_right_mem_directSum D hx))).1,
+      fun y hy ↦ (mem_directSum_iff.mp (h (sumElim_zero_left_mem_directSum C hy))).2⟩
+  · rintro ⟨hC, hD⟩ x hx
+    exact mem_directSum_iff.mpr ⟨hC (mem_directSum_iff.mp hx).1, hD (mem_directSum_iff.mp hx).2⟩
+
+/-- Direct sum is monotone in both constituent additive codes. -/
+@[gcongr]
+theorem _root_.AddSubgroup.directSum_mono {C C' : AddSubgroup (ι → A)}
+    {D D' : AddSubgroup (κ → A)} (hC : C ≤ C') (hD : D ≤ D') :
+    C.directSum D ≤ C'.directSum D' :=
+  directSum_le_directSum_iff.mpr ⟨hC, hD⟩
+
+/-- Two additive direct sums are equal exactly when their constituent codes are equal. -/
+@[simp]
+theorem _root_.AddSubgroup.directSum_inj {C C' : AddSubgroup (ι → A)}
+    {D D' : AddSubgroup (κ → A)} :
+    C.directSum D = C'.directSum D' ↔ C = C' ∧ D = D' := by
+  simp only [le_antisymm_iff, directSum_le_directSum_iff]
+  tauto
 
 /-- The direct sum of two zero codes is zero. -/
 @[simp]
@@ -121,6 +146,27 @@ theorem _root_.AddSubgroup.bot_directSum_bot :
   simp only [mem_directSum_iff, AddSubgroup.mem_bot, funext_iff, Pi.zero_apply]
   exact ⟨fun h i ↦ Sum.rec h.1 h.2 i, fun h ↦ ⟨fun i ↦ h (.inl i), fun j ↦ h (.inr j)⟩⟩
 
+end AddGroup
+
+section AddCommGroup
+
+variable [AddCommGroup A]
+
+/-- An additive direct sum is the underlying subgroup of the integer-module direct sum. -/
+theorem _root_.AddSubgroup.directSum_def (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) :
+    C.directSum D = (C.toIntSubmodule.directSum D.toIntSubmodule).toAddSubgroup := by
+  ext x
+  rw [mem_directSum_iff, Submodule.mem_toAddSubgroup, Submodule.mem_directSum_iff]
+  simp only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule]
+
+/-- Passing to integer submodules commutes with the direct sum of additive codes. -/
+@[simp]
+theorem _root_.AddSubgroup.toIntSubmodule_directSum (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) :
+    (C.directSum D).toIntSubmodule = C.toIntSubmodule.directSum D.toIntSubmodule := by
+  rw [directSum_def, Submodule.toAddSubgroup_toIntSubmodule]
+
 /-- Forgetting scalar closure commutes with the direct sum of linear codes. -/
 @[simp]
 theorem _root_.Submodule.toAddSubgroup_directSum {R : Type*} [Ring R] [Module R A]
@@ -129,5 +175,7 @@ theorem _root_.Submodule.toAddSubgroup_directSum {R : Type*} [Ring R] [Module R 
   ext x
   simp only [Submodule.mem_toAddSubgroup, AddSubgroup.mem_directSum_iff,
     Submodule.mem_directSum_iff]
+
+end AddCommGroup
 
 end TauCeti

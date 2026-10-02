@@ -20,7 +20,7 @@ the distance unchanged. The zero-code cases matter because minimum distance is d
 zero for the zero code.
 
 The direct-sum formulas apply both to submodules with a module alphabet and to additive subgroups
-with a commutative additive group alphabet. Neither alphabet needs to be finite.
+with an additive group alphabet. Neither alphabet needs to be finite.
 They follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §§1.5–1.6.
 -/
 
@@ -282,7 +282,7 @@ section AdditiveDirectSum
 
 open AddSubgroup
 
-variable {A ι κ : Type*} [AddCommGroup A] [DecidableEq A] [Fintype ι] [Fintype κ]
+variable {A ι κ : Type*} [AddGroup A] [DecidableEq A] [Fintype ι] [Fintype κ]
 
 /-- The minimum distance of an additive direct sum of two nonzero codes is the smaller of their
 minimum distances. -/
@@ -291,28 +291,93 @@ theorem _root_.AddSubgroup.hammingMinDist_directSum (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
     Set.hammingMinDist (C.directSum D : Set (ι ⊕ κ → A)) =
       min (Set.hammingMinDist (C : Set (ι → A))) (Set.hammingMinDist (D : Set (κ → A))) := by
-  have hC' : C.toIntSubmodule ≠ ⊥ := by simpa using hC
-  have hD' : D.toIntSubmodule ≠ ⊥ := by simpa using hD
-  simpa only [directSum_def, Submodule.coe_toAddSubgroup, AddSubgroup.coe_toIntSubmodule] using
-    TauCeti.hammingMinDist_directSum C.toIntSubmodule D.toIntSubmodule hC' hD'
+  obtain ⟨x, hx, hx0, hxd⟩ := exists_hammingNorm_eq_hammingMinDist hC
+  obtain ⟨y, hy, hy0, hyd⟩ := exists_hammingNorm_eq_hammingMinDist hD
+  have hxmem := sumElim_zero_right_mem_directSum D hx
+  have hxne : Sum.elim x (0 : κ → A) ≠ 0 := fun h ↦
+    hx0 (funext fun i ↦ congrFun h (.inl i))
+  have hsum : C.directSum D ≠ ⊥ := by
+    intro h
+    exact hxne (by simpa only [h, AddSubgroup.mem_bot] using hxmem)
+  apply le_antisymm
+  · apply le_min
+    · simpa only [hammingNorm_sumElim, hammingNorm_zero, add_zero, hxd] using
+        hammingMinDist_le_hammingNorm hxmem hxne
+    · have hyne : Sum.elim (0 : ι → A) y ≠ 0 := fun h ↦
+        hy0 (funext fun j ↦ congrFun h (.inr j))
+      simpa only [hammingNorm_sumElim, hammingNorm_zero, zero_add, hyd] using
+        hammingMinDist_le_hammingNorm (sumElim_zero_left_mem_directSum C hy) hyne
+  · apply (le_hammingMinDist_iff_hammingNorm hsum).mpr
+    intro z hz hz0
+    obtain ⟨hzC, hzD⟩ := mem_directSum_iff.mp hz
+    have hsplit : hammingNorm z =
+        hammingNorm (z ∘ Sum.inl) + hammingNorm (z ∘ Sum.inr) := by
+      simpa only [Sum.elim_comp_inl_inr] using
+        hammingNorm_sumElim (z ∘ Sum.inl) (z ∘ Sum.inr)
+    rw [hsplit]
+    by_cases hleft : z ∘ Sum.inl = 0
+    · have hright : z ∘ Sum.inr ≠ 0 := by
+        intro hright
+        apply hz0
+        funext i
+        cases i with
+        | inl i => exact congrFun hleft i
+        | inr j => exact congrFun hright j
+      exact (min_le_right _ _).trans
+        ((hammingMinDist_le_hammingNorm hzD hright).trans (Nat.le_add_left _ _))
+    · exact (min_le_left _ _).trans
+        ((hammingMinDist_le_hammingNorm hzC hleft).trans (Nat.le_add_right _ _))
 
 /-- Adding a zero code on the right preserves minimum distance, including for a zero left code. -/
 @[simp]
 theorem _root_.AddSubgroup.hammingMinDist_directSum_bot (C : AddSubgroup (ι → A)) :
     Set.hammingMinDist (C.directSum (⊥ : AddSubgroup (κ → A)) : Set (ι ⊕ κ → A)) =
       Set.hammingMinDist (C : Set (ι → A)) := by
-  simpa only [directSum_def, Submodule.coe_toAddSubgroup, AddSubgroup.coe_toIntSubmodule,
-    OrderIso.map_bot] using
-    TauCeti.hammingMinDist_directSum_bot C.toIntSubmodule (κ := κ)
+  rw [hammingMinDist_eq_sInf_hammingNorm, hammingMinDist_eq_sInf_hammingNorm]
+  congr 1
+  ext d
+  constructor
+  · rintro ⟨z, hz, hz0, hzd⟩
+    obtain ⟨hzC, hzD⟩ := mem_directSum_iff.mp hz
+    have hzD0 : z ∘ Sum.inr = 0 := AddSubgroup.mem_bot.mp hzD
+    have hzsplit : Sum.elim (z ∘ Sum.inl) 0 = z := by
+      rw [← hzD0, Sum.elim_comp_inl_inr]
+    refine ⟨z ∘ Sum.inl, hzC, fun h ↦ hz0 ?_, ?_⟩
+    · rw [← hzsplit, h]
+      funext i
+      cases i <;> rfl
+    · rw [← hzsplit, hammingNorm_sumElim, hammingNorm_zero, add_zero] at hzd
+      exact hzd
+  · rintro ⟨x, hx, hx0, hxd⟩
+    refine ⟨Sum.elim x 0, sumElim_zero_right_mem_directSum _ hx, ?_, ?_⟩
+    · exact fun h ↦ hx0 (funext fun i ↦ congrFun h (.inl i))
+    · simpa only [hammingNorm_sumElim, hammingNorm_zero, add_zero] using hxd
 
 /-- Adding a zero code on the left preserves minimum distance. -/
 @[simp]
 theorem _root_.AddSubgroup.hammingMinDist_bot_directSum (D : AddSubgroup (κ → A)) :
     Set.hammingMinDist ((⊥ : AddSubgroup (ι → A)).directSum D : Set (ι ⊕ κ → A)) =
       Set.hammingMinDist (D : Set (κ → A)) := by
-  simpa only [directSum_def, Submodule.coe_toAddSubgroup, AddSubgroup.coe_toIntSubmodule,
-    OrderIso.map_bot] using
-    TauCeti.hammingMinDist_bot_directSum (ι := ι) D.toIntSubmodule
+  have hset : (fun z : ι ⊕ κ → A ↦ z ∘ Equiv.sumComm κ ι) ''
+      ((⊥ : AddSubgroup (ι → A)).directSum D : Set (ι ⊕ κ → A)) =
+      (D.directSum (⊥ : AddSubgroup (ι → A)) : Set (κ ⊕ ι → A)) := by
+    ext z
+    constructor
+    · rintro ⟨w, hw, rfl⟩
+      simpa only [SetLike.mem_coe, mem_directSum_iff, Function.comp_def, Equiv.sumComm_apply,
+        Sum.swap_inl, Sum.swap_inr, and_comm] using hw
+    · intro hz
+      refine ⟨z ∘ Equiv.sumComm ι κ, ?_, ?_⟩
+      · simpa only [SetLike.mem_coe, mem_directSum_iff, Function.comp_def, Equiv.sumComm_apply,
+          Sum.swap_inl, Sum.swap_inr, and_comm] using hz
+      · funext i
+        cases i <;> rfl
+  have hdist := hammingMinDist_image
+    (C := ((⊥ : AddSubgroup (ι → A)).directSum D : Set (ι ⊕ κ → A)))
+    (fun z ↦ z ∘ Equiv.sumComm κ ι)
+    (fun x _ y _ _ ↦ (Equiv.sumComm κ ι).hammingDist_comp x y)
+  rw [hset, AddSubgroup.hammingMinDist_directSum_bot] at hdist
+  exact hdist.symm
 
 end AdditiveDirectSum
 
