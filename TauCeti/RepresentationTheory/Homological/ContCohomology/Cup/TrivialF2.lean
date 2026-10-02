@@ -28,6 +28,7 @@ continuous cohomology are formed from. It is the `ℤ`-coefficient counterpart o
 * `TauCeti.trivialF2TopPairing_bil_apply`: the pairing multiplies the underlying values in
   `ZMod 2`.
 * `TauCeti.trivialF2TopPairing_flip`: the opposite of the multiplication pairing is itself.
+* `TauCeti.trivialF2Map_cup`: pullback preserves cup products with trivial `𝔽₂` coefficients.
 * `TauCeti.trivialF2TopPairing_cup_one_one_explicitH1`: on explicit cocycles, the cup product of
   two classes of `H¹(G, 𝔽₂)` is the class of the product cocycle `(g, h) ↦ a g * b h`.
 -/
@@ -78,6 +79,23 @@ theorem trivialF2TopPairing_flip : (trivialF2TopPairing G).flip = trivialF2TopPa
   -- structure on the carrier as `AddCommGroup.toIntModule`, not the coefficient object's own.
   TopPairing.ext (DFunLike.ext _ _ fun x ↦ DFunLike.ext _ _ fun y ↦ by
     rw [TopPairing.flip_bil, trivialF2TopPairing_bil_comm])
+
+/-- Pullback with trivial `𝔽₂` coefficients preserves the cup product in every bidegree. -/
+@[simp]
+theorem trivialF2Map_cup {G H : Type u} [Group G] [Group H]
+    [TopologicalSpace G] [TopologicalSpace H] [IsTopologicalGroup G] [IsTopologicalGroup H]
+    (φ : H →ₜ* G) (m n : ℕ)
+    (x : continuousCohomology m (trivialF2 G))
+    (y : continuousCohomology n (trivialF2 G)) :
+    trivialF2Map φ (m + n) ((trivialF2TopPairing G).cup m n x y) =
+      (trivialF2TopPairing H).cup m n (trivialF2Map φ m x) (trivialF2Map φ n y) := by
+  simp only [trivialF2Map_def]
+  apply (trivialF2TopPairing G).cup_map (trivialF2TopPairing H)
+  intro a b
+  apply (trivialF2Equiv H).injective
+  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ)]
+  simp only [trivialF2TopPairing_bil_apply, TopRep.eqToHom_hom_apply (res_trivialF2_hom φ),
+    trivialF2Equiv_cast, AddEquiv.apply_symm_apply]
 
 end TauCeti
 

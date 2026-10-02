@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.GroupTheory.PGroup
+import TauCeti.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.GroupTheory.PLowerCentralSeries
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.ElementaryAbelian
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
 # Finite embedding problems with `p`-group kernel
@@ -56,6 +59,8 @@ extends it to `p`-group kernels.
   surjection `φ : E ↠ F` of finite groups whose kernel is commutative and killed by `p`.
 * `TauCeti.HasElementaryAbelianSolutions.hasPGroupSolutions`: for a prime `p`, solvability with
   elementary abelian kernel gives solvability with `p`-group kernel.
+* `TauCeti.FiniteEmbeddingProblem.isPGroup_E`: over a pro-`p` group, a finite embedding problem
+  with `p`-group kernel involves only finite `p`-groups.
 
 ## References
 
@@ -71,7 +76,7 @@ namespace TauCeti
 open Subgroup
 open scoped commutatorElement
 
-universe u
+universe u v w
 
 variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
@@ -184,5 +189,17 @@ theorem HasElementaryAbelianSolutions.hasPGroupSolutions [Fact p.Prime]
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
       ← _root_.QuotientGroup.lift_mk' _ (P.α.ker.pLowerCentralSeries_le p m),
       MonoidHom.coe_ofClass, hg, ← MonoidHom.comp_apply, hβπ]
+
+/-- Over a pro-`p` group, a finite embedding problem with `p`-group kernel is an extension of
+finite `p`-groups: the quotient `Q` of `G` is a `p`-group, hence so is the extension `E` of `Q` by
+`ker α`. -/
+theorem FiniteEmbeddingProblem.isPGroup_E (P : FiniteEmbeddingProblem.{u, v, w} G)
+    (hG : IsProP p G) (hP : IsPGroup p P.α.ker) : IsPGroup p P.E := by
+  let _ : TopologicalSpace P.Q := ⊥
+  have : DiscreteTopology P.Q := ⟨rfl⟩
+  have hQ : IsPGroup p P.Q := isProP_iff_isPGroup.mp (hG.of_surjective P.π
+    (P.π.continuous_of_isOpen_ker P.isOpen_ker_π) P.π_surjective)
+  exact IsPGroup.of_subgroup_of_quotient hP
+    (hQ.of_equiv (QuotientGroup.quotientKerEquivOfSurjective P.α P.α_surjective).symm)
 
 end TauCeti

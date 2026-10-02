@@ -25,6 +25,8 @@ dimension, or characteristic zero is required.
 
 * `LieAlgebra.SemiDirectSum.isNilpotent_ad_right`: adjoint nilpotence passes to the right
   component of a semidirect sum.
+* `LieAlgebra.SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad_inr`: adjoint nilpotence
+  of a complementary element implies nilpotence of its derivation on the ideal.
 * `LieIdeal.isNilpotent_ad_right_of_isCompl`: the corresponding result for an internal split
   ideal extension, stated on a sum of elements in the two complementary factors.
 
@@ -49,6 +51,24 @@ theorem _root_.LieAlgebra.SemiDirectSum.isNilpotent_ad_right (x : I ⋊⁅ψ⁆ 
   simpa only [LieAlgebra.SemiDirectSum.projr_mk] using
     (LieAlgebra.SemiDirectSum.projr ψ).isNilpotent_ad_of_surjective
     (LieAlgebra.SemiDirectSum.projr_surjective ψ) hx
+
+/-- If a complementary element has nilpotent adjoint action on a semidirect sum, its defining
+derivation on the ideal is nilpotent. No finiteness assumption is required. -/
+theorem _root_.LieAlgebra.SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad_inr
+    (ψ : H →ₗ⁅R⁆ LieDerivation R I I) (h : H)
+    (hh : IsNilpotent (LieAlgebra.ad R (I ⋊⁅ψ⁆ H) (LieAlgebra.SemiDirectSum.inr ψ h))) :
+    IsNilpotent (ψ h).toLinearMap := by
+  open LieAlgebra.SemiDirectSum in
+  have hcomm : Function.Semiconj (inl ψ) (ψ h).toLinearMap
+      (LieAlgebra.ad R (I ⋊⁅ψ⁆ H) (inr ψ h)) := by
+    intro s
+    simp only [inl_eq_mk, inr_eq_mk, LieAlgebra.ad_apply, lie_eq_mk,
+      zero_lie, map_zero, sub_zero, zero_add, lie_zero, LieDerivation.coeFn_coe]
+  obtain ⟨n, hn⟩ := hh
+  refine ⟨n, LinearMap.ext fun s ↦ ?_⟩
+  apply LieAlgebra.SemiDirectSum.inl_injective ψ
+  simpa only [← Module.End.pow_apply, hn, LinearMap.zero_apply, map_zero] using
+    hcomm.iterate_right n s
 
 variable {L : Type*} [LieRing L] [LieAlgebra R L]
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
-import TauCeti.GroupTheory.PGroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Projective
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Pointed.Basic
 
@@ -67,9 +66,7 @@ theorem hasPGroupSolutions_freeProCPointed :
   have hF : IsProP p (freeProCPointed (finiteGroupClassP.{u} p) x₀) :=
     isProC_finiteGroupClassP_iff.mp (isProC_freeProCPointed (finiteGroupClassP.{u} p) x₀)
   have hπ : Continuous P.π := P.π.continuous_iff_isOpen_ker.mpr P.isOpen_ker_π
-  have hQ : IsPGroup p P.Q := isProP_iff_isPGroup.mp (hF.of_surjective P.π hπ P.π_surjective)
-  have hE : IsPGroup p P.E := IsPGroup.of_subgroup_of_quotient hP
-    (hQ.of_equiv (QuotientGroup.quotientKerEquivOfSurjective P.α P.α_surjective).symm)
+  have hE : IsPGroup p P.E := P.isPGroup_E hF hP
   have hE' : IsProC (finiteGroupClassP.{u} p) P.E := isProC_finiteGroupClassP_iff.mpr hE.isProP
   -- A set-theoretic section of `α`, normalised at `1`.
   set σ : P.Q → P.E :=

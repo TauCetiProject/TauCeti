@@ -78,7 +78,7 @@ presheaves are built from the same pair of definition `P`.
 Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
 restriction along a containment is reindexing, and the two functor laws hold. On a rational open
 `U` the value is identified with `A_U` in
-`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational`, when `A⁺` consists of
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic`, when `A⁺` consists of
 power-bounded elements.
 
 ## References

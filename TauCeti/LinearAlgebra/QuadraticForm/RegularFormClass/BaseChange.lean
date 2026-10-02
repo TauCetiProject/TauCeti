@@ -76,6 +76,12 @@ def RegularFormPresentation.baseChange (p : RegularFormPresentation K) :
   ⟨p.1, fun i ↦ Units.map (algebraMap K L).toMonoidHom (p.2 i)⟩
 
 variable (L) in
+/-- Scalar extension of a presentation keeps its rank and maps its weights into `L`. -/
+theorem RegularFormPresentation.baseChange_def (p : RegularFormPresentation K) :
+    RegularFormPresentation.baseChange L p =
+      ⟨p.1, fun i ↦ Units.map (algebraMap K L).toMonoidHom (p.2 i)⟩ := (rfl)
+
+variable (L) in
 /-- Mapping the weights into `L` leaves the rank unchanged. -/
 @[simp]
 theorem RegularFormPresentation.fst_baseChange (p : RegularFormPresentation K) :
