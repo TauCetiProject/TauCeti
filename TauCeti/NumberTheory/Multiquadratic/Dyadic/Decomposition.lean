@@ -23,14 +23,12 @@ it is `2 ^ (n - (a + b))`. The companion `dyadic_exponents_add_le_card` exposes 
 `a + b ≤ n`, so subtraction cannot conceal an impossible decomposition type. Independence is
 unnecessary for the formula in terms of the field degree.
 
-The arithmetic criteria come from `Dyadic.Inertia`; the counting argument uses Mathlib's
-Galois fundamental identity `Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn`
-and the existing `eq_two_pow_sub_of_mul_two_pow_eq_finrank`.
-
 ## References
 
 * D. A. Cox, *Primes of the Form x² + ny²*, §5.B.
 * J. Neukirch, *Algebraic Number Theory*, Chapter I, §9 and Chapter II, §5.
+* Mathlib, `Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn`
+  (the Galois fundamental identity).
 -/
 
 public section
