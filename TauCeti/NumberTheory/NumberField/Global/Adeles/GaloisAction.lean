@@ -30,23 +30,87 @@ open NumberField IsDedekindDomain
 
 namespace TauCeti.GlobalNumberFields
 
-variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L]
+variable (K L : Type*) [Field K] [Field L]
 
 private noncomputable def infiniteMap (e : K ≃+* L) :
     InfiniteAdeleRing K →+* InfiniteAdeleRing L :=
   letI := e.toRingHom.toAlgebra
   infiniteAdeleExtension K L
 
-omit [NumberField K] [NumberField L] in
 private theorem continuous_infiniteMap (e : K ≃+* L) : Continuous (infiniteMap K L e) := by
   let := e.toRingHom.toAlgebra
   exact continuous_infiniteAdeleExtension K L
 
-omit [NumberField K] [NumberField L] in
 private theorem infiniteMap_algebraMap (e : K ≃+* L) (x : K) :
     infiniteMap K L e (algebraMap K _ x) = algebraMap L _ (e x) := by
   let := e.toRingHom.toAlgebra
   exact infiniteAdeleExtension_algebraMap K L x
+
+private theorem infiniteMap_comp (M : Type*) [Field M]
+    (e : K ≃+* L) (f : L ≃+* M) :
+    (infiniteMap L M f).comp (infiniteMap K L e) = infiniteMap K M (e.trans f) := by
+  let := e.toRingHom.toAlgebra
+  let := f.toRingHom.toAlgebra
+  let := (e.trans f).toRingHom.toAlgebra
+  let : IsScalarTower K L M := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  exact infiniteAdeleExtension_comp K L M
+
+private theorem infiniteMap_refl : infiniteMap K K (RingEquiv.refl K) = RingHom.id _ :=
+  infiniteAdeleExtension_self K
+
+/-- The transport of infinite adeles along a field isomorphism. The component at `w` uses the
+completion map from the place obtained by pulling `w` back along the isomorphism. -/
+noncomputable def infiniteAdeleEquiv (e : K ≃+* L) :
+    InfiniteAdeleRing K ≃+* InfiniteAdeleRing L :=
+  RingEquiv.ofRingHom (infiniteMap K L e) (infiniteMap L K e.symm)
+    (by rw [infiniteMap_comp, RingEquiv.symm_trans_self, infiniteMap_refl])
+    (by rw [infiniteMap_comp, RingEquiv.self_trans_symm, infiniteMap_refl])
+
+/-- Transport of infinite adeles is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_infiniteAdeleEquiv (e : K ≃+* L) : Continuous (infiniteAdeleEquiv K L e) :=
+  continuous_infiniteMap K L e
+
+/-- Transport of infinite adeles commutes with the diagonal field embeddings. -/
+@[simp]
+theorem infiniteAdeleEquiv_algebraMap (e : K ≃+* L) (x : K) :
+    infiniteAdeleEquiv K L e (algebraMap K _ x) = algebraMap L _ (e x) :=
+  infiniteMap_algebraMap K L e x
+
+/-- The inverse transport of infinite adeles is transport along the inverse field isomorphism. -/
+@[simp]
+theorem infiniteAdeleEquiv_symm (e : K ≃+* L) :
+    (infiniteAdeleEquiv K L e).symm = infiniteAdeleEquiv L K e.symm :=
+  (rfl)
+
+/-- The placewise formula for transport of infinite adeles. The local map uses the algebra
+structure induced by `e`, not any pre-existing algebra structure on `L` over `K`. -/
+theorem infiniteAdeleEquiv_apply (e : K ≃+* L) (a : InfiniteAdeleRing K)
+    (w : InfinitePlace L) :
+    letI := e.toRingHom.toAlgebra
+    infiniteAdeleEquiv K L e a w =
+      LiesOver.completionMap (v := w.comap (algebraMap K L)) (w := w)
+        (a (w.comap (algebraMap K L))) := by
+  let := e.toRingHom.toAlgebra
+  exact infiniteAdeleExtension_apply a w
+
+/-- Transport of infinite adeles along the identity field isomorphism is the identity. -/
+@[simp]
+theorem infiniteAdeleEquiv_refl :
+    infiniteAdeleEquiv K K (RingEquiv.refl K) = RingEquiv.refl _ := by
+  ext a : 1
+  exact RingHom.congr_fun (infiniteMap_refl K) a
+
+/-- Transport of infinite adeles respects composition of field isomorphisms. -/
+@[simp]
+theorem infiniteAdeleEquiv_trans (M : Type*) [Field M]
+    (e : K ≃+* L) (f : L ≃+* M) :
+    (infiniteAdeleEquiv K L e).trans (infiniteAdeleEquiv L M f) =
+      infiniteAdeleEquiv K M (e.trans f) := by
+  ext a : 1
+  exact RingHom.congr_fun (infiniteMap_comp K L M e f) a
+
+variable [NumberField K] [NumberField L]
 
 private noncomputable def finiteMap (e : K ≃+* L) :
     FiniteAdeleRing (𝓞 K) K →+* FiniteAdeleRing (𝓞 L) L := by
@@ -62,48 +126,18 @@ private theorem finiteMap_algebraMap (e : K ≃+* L) (x : K) :
   let := e.toRingHom.toAlgebra
   exact finiteAdeleExtension_algebraMap (𝓞 K) K (𝓞 L) L x
 
-omit [NumberField L] in
-private theorem infiniteMap_comp (M : Type*) [Field M]
-    (e : K ≃+* L) (f : L ≃+* M) :
-    (infiniteMap L M f).comp (infiniteMap K L e) = infiniteMap K M (e.trans f) := by
-  apply DFunLike.coe_injective
-  apply (InfiniteAdeleRing.denseRange_algebraMap K).equalizer
-    ((continuous_infiniteMap L M f).comp (continuous_infiniteMap K L e))
-    (continuous_infiniteMap K M (e.trans f))
-  funext x
-  simp [Function.comp_apply, infiniteMap_algebraMap]
-
 private theorem finiteMap_comp (M : Type*) [Field M] [NumberField M]
     (e : K ≃+* L) (f : L ≃+* M) :
     (finiteMap L M f).comp (finiteMap K L e) = finiteMap K M (e.trans f) := by
-  apply DFunLike.coe_injective
-  apply (FiniteAdeleRing.denseRange_algebraMap (𝓞 K) K).equalizer
+  let := (e.trans f).toRingHom.toAlgebra
+  apply eq_finiteAdeleExtension_of_continuous (𝓞 K) K (𝓞 M) M
     ((continuous_finiteMap L M f).comp (continuous_finiteMap K L e))
-    (continuous_finiteMap K M (e.trans f))
-  funext x
-  simp [Function.comp_apply, finiteMap_algebraMap]
+  intro x
+  simp only [RingHom.comp_apply, finiteMap_algebraMap]
+  rfl
 
-private theorem infiniteMap_refl : infiniteMap K K (RingEquiv.refl K) = RingHom.id _ := by
-  apply DFunLike.coe_injective
-  apply (InfiniteAdeleRing.denseRange_algebraMap K).equalizer
-    (continuous_infiniteMap K K _) continuous_id
-  funext x
-  simp [Function.comp_apply, infiniteMap_algebraMap]
-
-private theorem finiteMap_refl : finiteMap K K (RingEquiv.refl K) = RingHom.id _ := by
-  apply DFunLike.coe_injective
-  apply (FiniteAdeleRing.denseRange_algebraMap (𝓞 K) K).equalizer
-    (continuous_finiteMap K K _) continuous_id
-  funext x
-  simp [Function.comp_apply, finiteMap_algebraMap]
-
-/-- The transport of infinite adeles along a field isomorphism. The component at `w` uses the
-completion map from the place obtained by pulling `w` back along the isomorphism. -/
-noncomputable def infiniteAdeleEquiv (e : K ≃+* L) :
-    InfiniteAdeleRing K ≃+* InfiniteAdeleRing L :=
-  RingEquiv.ofRingHom (infiniteMap K L e) (infiniteMap L K e.symm)
-    (by rw [infiniteMap_comp, RingEquiv.symm_trans_self, infiniteMap_refl])
-    (by rw [infiniteMap_comp, RingEquiv.self_trans_symm, infiniteMap_refl])
+private theorem finiteMap_refl : finiteMap K K (RingEquiv.refl K) = RingHom.id _ :=
+  finiteAdeleExtension_self (𝓞 K) K
 
 /-- The transport of finite adeles along a field isomorphism, including preservation of
 integrality at all but finitely many places. -/
@@ -113,46 +147,22 @@ noncomputable def finiteAdeleEquiv (e : K ≃+* L) :
     (by rw [finiteMap_comp, RingEquiv.symm_trans_self, finiteMap_refl])
     (by rw [finiteMap_comp, RingEquiv.self_trans_symm, finiteMap_refl])
 
-/-- Transport of infinite adeles is continuous. -/
-@[continuity, fun_prop]
-theorem continuous_infiniteAdeleEquiv (e : K ≃+* L) : Continuous (infiniteAdeleEquiv K L e) :=
-  continuous_infiniteMap K L e
-
 /-- Transport of finite adeles is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_finiteAdeleEquiv (e : K ≃+* L) : Continuous (finiteAdeleEquiv K L e) :=
   continuous_finiteMap K L e
 
-@[simp]
-theorem infiniteAdeleEquiv_algebraMap (e : K ≃+* L) (x : K) :
-    infiniteAdeleEquiv K L e (algebraMap K _ x) = algebraMap L _ (e x) :=
-  infiniteMap_algebraMap K L e x
-
+/-- Transport of finite adeles commutes with the diagonal field embeddings. -/
 @[simp]
 theorem finiteAdeleEquiv_algebraMap (e : K ≃+* L) (x : K) :
     finiteAdeleEquiv K L e (algebraMap K _ x) = algebraMap L _ (e x) :=
   finiteMap_algebraMap K L e x
 
-@[simp]
-theorem infiniteAdeleEquiv_symm (e : K ≃+* L) :
-    (infiniteAdeleEquiv K L e).symm = infiniteAdeleEquiv L K e.symm :=
-  (rfl)
-
+/-- The inverse transport of finite adeles is transport along the inverse field isomorphism. -/
 @[simp]
 theorem finiteAdeleEquiv_symm (e : K ≃+* L) :
     (finiteAdeleEquiv K L e).symm = finiteAdeleEquiv L K e.symm :=
   (rfl)
-
-/-- The placewise formula for transport of infinite adeles. The local map uses the algebra
-structure induced by `e`, not any pre-existing algebra structure on `L` over `K`. -/
-theorem infiniteAdeleEquiv_apply (e : K ≃+* L) (a : InfiniteAdeleRing K)
-    (w : InfinitePlace L) :
-    letI := e.toRingHom.toAlgebra
-    infiniteAdeleEquiv K L e a w =
-      LiesOver.completionMap (v := w.comap (algebraMap K L)) (w := w)
-        (a (w.comap (algebraMap K L))) := by
-  let := e.toRingHom.toAlgebra
-  exact infiniteAdeleExtension_apply a w
 
 /-- The placewise formula for transport of finite adeles. The prime below `w` is its comap
 under the induced isomorphism of rings of integers. -/
@@ -164,26 +174,14 @@ theorem finiteAdeleEquiv_apply (e : K ≃+* L) (a : FiniteAdeleRing (𝓞 K) K)
   let := e.toRingHom.toAlgebra
   exact finiteAdeleExtension_apply a w
 
-@[simp]
-theorem infiniteAdeleEquiv_refl :
-    infiniteAdeleEquiv K K (RingEquiv.refl K) = RingEquiv.refl _ := by
-  ext a : 1
-  exact RingHom.congr_fun (infiniteMap_refl K) a
-
+/-- Transport of finite adeles along the identity field isomorphism is the identity. -/
 @[simp]
 theorem finiteAdeleEquiv_refl :
     finiteAdeleEquiv K K (RingEquiv.refl K) = RingEquiv.refl _ := by
   ext a : 1
   exact RingHom.congr_fun (finiteMap_refl K) a
 
-@[simp]
-theorem infiniteAdeleEquiv_trans (M : Type*) [Field M] [NumberField M]
-    (e : K ≃+* L) (f : L ≃+* M) :
-    (infiniteAdeleEquiv K L e).trans (infiniteAdeleEquiv L M f) =
-      infiniteAdeleEquiv K M (e.trans f) := by
-  ext a : 1
-  exact RingHom.congr_fun (infiniteMap_comp K L M e f) a
-
+/-- Transport of finite adeles respects composition of field isomorphisms. -/
 @[simp]
 theorem finiteAdeleEquiv_trans (M : Type*) [Field M] [NumberField M]
     (e : K ≃+* L) (f : L ≃+* M) :
@@ -211,6 +209,7 @@ theorem adeleEquiv_snd (e : K ≃+* L) (a : AdeleRing (𝓞 K) K) :
 theorem continuous_adeleEquiv (e : K ≃+* L) : Continuous (adeleEquiv K L e) :=
   (continuous_infiniteAdeleEquiv K L e).prodMap (continuous_finiteAdeleEquiv K L e)
 
+/-- The inverse transport of full adeles is transport along the inverse field isomorphism. -/
 @[simp]
 theorem adeleEquiv_symm (e : K ≃+* L) :
     (adeleEquiv K L e).symm = adeleEquiv L K e.symm := by
@@ -224,11 +223,13 @@ theorem adeleEquiv_algebraMap (e : K ≃+* L) (x : K) :
     adeleEquiv K L e (algebraMap K _ x) = algebraMap L _ (e x) := by
   apply Prod.ext <;> simp
 
+/-- Transport of full adeles along the identity field isomorphism is the identity. -/
 @[simp]
 theorem adeleEquiv_refl : adeleEquiv K K (RingEquiv.refl K) = RingEquiv.refl _ := by
   ext a : 1
   apply Prod.ext <;> simp
 
+/-- Transport of full adeles respects composition of field isomorphisms. -/
 @[simp]
 theorem adeleEquiv_trans (M : Type*) [Field M] [NumberField M]
     (e : K ≃+* L) (f : L ≃+* M) :
@@ -271,22 +272,22 @@ theorem adeleGaloisAction_algebraMap (σ : L ≃ₐ[K] L) (x : L) :
 theorem adeleGaloisAction_adeleExtension [NumberField K] (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 K) K) :
     adeleGaloisAction K L σ (adeleExtension (𝓞 K) K (𝓞 L) L a) =
       adeleExtension (𝓞 K) K (𝓞 L) L a := by
-  -- The diagonal is dense in each half separately, but not in the full adele ring.
-  have hi := (InfiniteAdeleRing.denseRange_algebraMap K).equalizer
+  have hi := eq_infiniteAdeleExtension_of_continuous K L
+    (f := (infiniteAdeleEquiv L L σ.toRingEquiv).toRingHom.comp (infiniteAdeleExtension K L))
     ((continuous_infiniteAdeleEquiv L L σ.toRingEquiv).comp
       (continuous_infiniteAdeleExtension K L))
-    (continuous_infiniteAdeleExtension K L)
-    (funext fun x ↦ by simp [Function.comp_apply])
-  have hf := (FiniteAdeleRing.denseRange_algebraMap (𝓞 K) K).equalizer
+    (fun x ↦ by simp)
+  have hf := eq_finiteAdeleExtension_of_continuous (𝓞 K) K (𝓞 L) L
+    (f := (finiteAdeleEquiv L L σ.toRingEquiv).toRingHom.comp
+      (finiteAdeleExtension (𝓞 K) K (𝓞 L) L))
     ((continuous_finiteAdeleEquiv L L σ.toRingEquiv).comp
       (continuous_finiteAdeleExtension (𝓞 K) K (𝓞 L) L))
-    (continuous_finiteAdeleExtension (𝓞 K) K (𝓞 L) L)
-    (funext fun x ↦ by simp [Function.comp_apply])
+    (fun x ↦ by simp)
   apply Prod.ext
   · simp only [adeleGaloisAction_apply, adeleEquiv_fst, adeleExtension_fst]
-    exact congrFun hi a.1
+    exact RingHom.congr_fun hi a.1
   · simp only [adeleGaloisAction_apply, adeleEquiv_snd, adeleExtension_snd]
-    exact congrFun hf a.2
+    exact RingHom.congr_fun hf a.2
 
 /-- Every automorphism acts continuously on full adeles. -/
 @[continuity, fun_prop]
