@@ -88,6 +88,10 @@ instance : _root_.Quiver.{0} AffineE7 where
 instance instSubsingletonHom (a b : AffineE7) : Subsingleton (a ⟶ b) :=
   ⟨fun e e' ↦ by cases e <;> cases e' <;> rfl⟩
 
+/-- Each arrow space of `TauCeti.Quiver.AffineE7` is finite, having at most one arrow. -/
+noncomputable instance instFintypeHom (a b : AffineE7) : Fintype (a ⟶ b) :=
+  Fintype.ofFinite _
+
 end AffineE7
 
 end Quiver

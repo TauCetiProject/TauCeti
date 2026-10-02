@@ -63,6 +63,9 @@ apart coordinatewise.
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras*, Volume I, Chapter VII.
 * H. Derksen, J. Weyman, *An Introduction to Quiver Representations*, Chapter 4.
+* The file layout and the shape of the API are adapted from the parallel treatment of `E₆~` in
+  `TauCeti.RepresentationTheory.Quiver.AffineE6.FiniteRepType` (TauCeti PR #10945); the two files
+  share no code.
 -/
 
 public section
@@ -146,48 +149,32 @@ theorem affineE7LoopRep_obj_outer (i : Fin 2) :
     (affineE7LoopRep M).obj (Quiver.AffineE7.outer i) = M.obj vertex :=
   (rfl)
 
-/-- The outer arrow of the first long arm is `x ↦ (x, 0)`. -/
+/-- The outer arrow of the long arm `i` is `x ↦ (x, 0)` for `i = 0` and `x ↦ (0, x)` for
+`i = 1`. -/
 @[simp]
-theorem affineE7LoopRep_map_outerMiddle_zero :
-    (affineE7LoopRep M).map (Quiver.Hom.toPath (.outerMiddle 0)) =
-      ModuleCat.ofHom (LinearMap.inl k (M.obj vertex) (M.obj vertex)) :=
+theorem affineE7LoopRep_map_outerMiddle (i : Fin 2) :
+    (affineE7LoopRep M).map (Quiver.Hom.toPath (.outerMiddle i)) =
+      ModuleCat.ofHom (![LinearMap.inl k (M.obj vertex) (M.obj vertex),
+        LinearMap.inr k (M.obj vertex) (M.obj vertex)] i) :=
   Paths.lift_toPath _ _
 
-/-- The middle arrow of the first long arm is `(a, b) ↦ (a, b, 0)`. -/
+/-- The middle arrow of the long arm `i` is `(a, b) ↦ (a, b, 0)` for `i = 0` and
+`(c, d) ↦ (0, c, d)` for `i = 1`. -/
 @[simp]
-theorem affineE7LoopRep_map_middleInner_zero :
-    (affineE7LoopRep M).map (Quiver.Hom.toPath (.middleInner 0)) =
-      ModuleCat.ofHom (LinearMap.id.prodMap (LinearMap.inl k (M.obj vertex) (M.obj vertex))) :=
+theorem affineE7LoopRep_map_middleInner (i : Fin 2) :
+    (affineE7LoopRep M).map (Quiver.Hom.toPath (.middleInner i)) =
+      ModuleCat.ofHom (![LinearMap.id.prodMap (LinearMap.inl k (M.obj vertex) (M.obj vertex)),
+        LinearMap.inr k (M.obj vertex) (M.obj vertex × M.obj vertex)] i) :=
   Paths.lift_toPath _ _
 
-/-- The inner arrow of the first long arm is `(a, b, c) ↦ (a, b, c, 0)`. -/
+/-- The inner arrow of the long arm `i` is `(a, b, c) ↦ (a, b, c, 0)` for `i = 0` and
+`(b, c, d) ↦ (0, b, c, d)` for `i = 1`. -/
 @[simp]
-theorem affineE7LoopRep_map_innerCenter_zero :
-    (affineE7LoopRep M).map (Quiver.Hom.toPath (.innerCenter 0)) =
-      ModuleCat.ofHom (LinearMap.id.prodMap
-        (LinearMap.id.prodMap (LinearMap.inl k (M.obj vertex) (M.obj vertex)))) :=
-  Paths.lift_toPath _ _
-
-/-- The outer arrow of the second long arm is `x ↦ (0, x)`. -/
-@[simp]
-theorem affineE7LoopRep_map_outerMiddle_one :
-    (affineE7LoopRep M).map (Quiver.Hom.toPath (.outerMiddle 1)) =
-      ModuleCat.ofHom (LinearMap.inr k (M.obj vertex) (M.obj vertex)) :=
-  Paths.lift_toPath _ _
-
-/-- The middle arrow of the second long arm is `(c, d) ↦ (0, c, d)`. -/
-@[simp]
-theorem affineE7LoopRep_map_middleInner_one :
-    (affineE7LoopRep M).map (Quiver.Hom.toPath (.middleInner 1)) =
-      ModuleCat.ofHom (LinearMap.inr k (M.obj vertex) (M.obj vertex × M.obj vertex)) :=
-  Paths.lift_toPath _ _
-
-/-- The inner arrow of the second long arm is `(b, c, d) ↦ (0, b, c, d)`. -/
-@[simp]
-theorem affineE7LoopRep_map_innerCenter_one :
-    (affineE7LoopRep M).map (Quiver.Hom.toPath (.innerCenter 1)) =
-      ModuleCat.ofHom
-        (LinearMap.inr k (M.obj vertex) (M.obj vertex × M.obj vertex × M.obj vertex)) :=
+theorem affineE7LoopRep_map_innerCenter (i : Fin 2) :
+    (affineE7LoopRep M).map (Quiver.Hom.toPath (.innerCenter i)) =
+      ModuleCat.ofHom (![LinearMap.id.prodMap
+          (LinearMap.id.prodMap (LinearMap.inl k (M.obj vertex) (M.obj vertex))),
+        LinearMap.inr k (M.obj vertex) (M.obj vertex × M.obj vertex × M.obj vertex)] i) :=
   Paths.lift_toPath _ _
 
 /-- The short arrow is `(a, b) ↦ (a, b, a + b, a + f b)`, for the endomorphism `f` by which the
