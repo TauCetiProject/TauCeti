@@ -303,11 +303,14 @@ private theorem hom_ext_of_outerApp {e e' : subspaceJordanRep k n ⟶ subspaceJo
     change outerApp e i = outerApp e' i
     rw [outerApp_eq e i, outerApp_eq e' i, h]
 
-/-- **`TauCeti.subspaceJordanRep k n` is indecomposable.** An endomorphism is multiplication by
-its value at `1` at the first outer vertex and is determined by it, so that value records the
-endomorphism faithfully in `k[X]/(Xⁿ⁺¹)`, a local ring (`TauCeti.isLocalRing_adjoinRoot_X_pow`),
-sending `0` to `0`, the identity to `1` and squares to squares. -/
+/-- **`TauCeti.subspaceJordanRep k n` is indecomposable**: it is not a direct sum of two nonzero
+subrepresentations. Its endomorphism ring is isomorphic to the local ring `k[X]/(Xⁿ⁺¹)`, so its
+only idempotent endomorphisms are `0` and `1`. -/
 theorem indecomposable_subspaceJordanRep : Indecomposable (subspaceJordanRep k n) := by
+  -- An endomorphism is multiplication by its value at `1` at the first outer vertex and is
+  -- determined by it, so that value records the endomorphism faithfully in the local ring
+  -- `k[X]/(Xⁿ⁺¹)` (`TauCeti.isLocalRing_adjoinRoot_X_pow`), sending `0` to `0`, the identity to
+  -- `1` and squares to squares.
   refine indecomposable_of_injective_of_isLocalRing not_isZero_subspaceJordanRep
     (fun e ↦ outerApp e 0 1) (fun e e' h ↦ ?_) rfl rfl
     fun e ↦ ?_
