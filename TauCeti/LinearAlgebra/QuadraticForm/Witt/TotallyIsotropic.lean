@@ -6,27 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 
 /-!
 # Totally isotropic subspaces and the Witt index
 
-A subspace `W` of a quadratic space `(V, Q)` is *totally isotropic* when `Q` vanishes on every
-vector of `W`. Over a field in which `2` is invertible, every maximal totally isotropic subspace
-of a regular finite-dimensional quadratic space has dimension equal to the Witt index of `Q`
-(Lam I.4.4). The Witt index, defined by `TauCeti.RegularFormClass.wittIndex` as the number of
-hyperbolic planes in the Witt decomposition `Q ≅ m × ℍ ⊥ Q_a`, is therefore intrinsic to the
-quadratic space: it is the common dimension of its maximal totally isotropic subspaces, and the
-largest dimension of a totally isotropic subspace.
-
-## Main definitions
-
-* `QuadraticMap.IsTotallyIsotropic`: a submodule on which a quadratic map vanishes.
+A subspace `W` of a quadratic space `(V, Q)` is *totally isotropic*
+(`QuadraticMap.IsTotallyIsotropic`) when `Q` vanishes on every vector of `W`. Over a field in
+which `2` is invertible, every maximal totally isotropic subspace of a regular finite-dimensional
+quadratic space has dimension equal to the Witt index of `Q` (Lam I.4.4). The Witt index,
+defined by `TauCeti.RegularFormClass.wittIndex` as the number of hyperbolic planes in the Witt
+decomposition `Q ≅ m × ℍ ⊥ Q_a`, is therefore intrinsic to the quadratic space: it is the common
+dimension of its maximal totally isotropic subspaces, and the largest dimension of a totally
+isotropic subspace.
 
 ## Main results
 
-* `QuadraticMap.maximal_isTotallyIsotropic_bot_iff`: the zero subspace is maximal totally
-  isotropic exactly when the form is anisotropic.
 * `QuadraticForm.finrank_eq_wittIndex_of_maximal`: **Lam I.4.4**, a maximal totally isotropic
   subspace of a regular space has dimension the Witt index.
 * `QuadraticMap.IsTotallyIsotropic.finrank_le_wittIndex`: every totally isotropic subspace of a
@@ -51,72 +47,6 @@ maximal totally isotropic subspace of `U` of dimension one less.
 public section
 
 open Module
-
-namespace QuadraticMap
-
-section Semiring
-
-variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-  [AddCommMonoid N] [Module R N] {Q : QuadraticMap R M N} {W W' : Submodule R M}
-
-/-- A submodule `W` is *totally isotropic* for a quadratic map `Q` when `Q` vanishes on every
-vector of `W`. -/
-def IsTotallyIsotropic (Q : QuadraticMap R M N) (W : Submodule R M) : Prop :=
-  ∀ v ∈ W, Q v = 0
-
-/-- Unfolds `QuadraticMap.IsTotallyIsotropic`. -/
-theorem isTotallyIsotropic_iff : Q.IsTotallyIsotropic W ↔ ∀ v ∈ W, Q v = 0 := Iff.rfl
-
-/-- A quadratic map vanishes on each vector of a totally isotropic submodule. -/
-theorem IsTotallyIsotropic.apply_eq_zero (hW : Q.IsTotallyIsotropic W) {v : M} (hv : v ∈ W) :
-    Q v = 0 :=
-  hW v hv
-
-/-- The zero submodule is totally isotropic. -/
-@[simp]
-theorem isTotallyIsotropic_bot : Q.IsTotallyIsotropic ⊥ := by
-  intro v hv
-  rw [Submodule.mem_bot] at hv
-  rw [hv, map_zero]
-
-/-- A submodule of a totally isotropic submodule is totally isotropic. -/
-theorem IsTotallyIsotropic.mono (hW : Q.IsTotallyIsotropic W) (h : W' ≤ W) :
-    Q.IsTotallyIsotropic W' :=
-  fun v hv ↦ hW v (h hv)
-
-/-- A line is totally isotropic exactly when its spanning vector is isotropic. -/
-@[simp]
-theorem isTotallyIsotropic_span_singleton_iff {v : M} :
-    Q.IsTotallyIsotropic (R ∙ v) ↔ Q v = 0 := by
-  refine ⟨fun h ↦ h v (Submodule.mem_span_singleton_self v), fun h u hu ↦ ?_⟩
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hu
-  rw [QuadraticMap.map_smul, h, smul_zero]
-
-/-- The zero subspace is a maximal totally isotropic subspace exactly when the form is
-anisotropic. -/
-theorem maximal_isTotallyIsotropic_bot_iff :
-    Maximal Q.IsTotallyIsotropic ⊥ ↔ Q.Anisotropic := by
-  refine ⟨fun h v hv ↦ ?_, fun h ↦ ⟨isTotallyIsotropic_bot, fun U hU _ v hv ↦ ?_⟩⟩
-  · have hle := h.2 (isTotallyIsotropic_span_singleton_iff.mpr hv) bot_le
-    rwa [le_bot_iff, Submodule.span_singleton_eq_bot] at hle
-  · rw [Submodule.mem_bot]
-    exact h v (hU v hv)
-
-end Semiring
-
-section Group
-
-variable {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {Q : QuadraticMap R M N} {W : Submodule R M}
-
-/-- The polar form vanishes on pairs of vectors of a totally isotropic submodule. -/
-theorem IsTotallyIsotropic.polar_eq_zero (hW : Q.IsTotallyIsotropic W) {v w : M} (hv : v ∈ W)
-    (hw : w ∈ W) : polar Q v w = 0 := by
-  rw [polar, hW _ (W.add_mem hv hw), hW v hv, hW w hw, sub_zero, sub_zero]
-
-end Group
-
-end QuadraticMap
 
 namespace TauCeti
 
@@ -166,7 +96,7 @@ private theorem finrank_comap_orthogonal_span_pair_add_one [FiniteDimensional K 
   have hsup : (K ∙ w) ⊔ (U ⊓ W) = W := by
     refine le_antisymm (sup_le ((Submodule.span_singleton_le_iff_mem w W).mpr hwW) inf_le_right)
       fun v hv ↦ ?_
-    rw [show v = polar Q f v • w + (v - polar Q f v • w) by abel]
+    rw [← add_sub_cancel (polar Q f v • w) v]
     exact Submodule.add_mem_sup (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self w))
       ⟨sub_polar_smul_mem_orthogonal_span_pair hTI hwW hwf hv, W.sub_mem hv (W.smul_mem _ hwW)⟩
   have hinf : (K ∙ w) ⊓ (U ⊓ W) = ⊥ := by
@@ -193,20 +123,20 @@ private theorem maximal_comap_orthogonal_span_pair (hW : Maximal Q.IsTotallyIsot
         (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f})).subtype) := by
   set U := LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f})
   have hTI := hW.prop
-  refine ⟨fun u hu ↦ hTI.apply_eq_zero hu, fun T hT hle t ht ↦ ?_⟩
+  refine ⟨hTI.restrict U, fun T hT hle t ht ↦ ?_⟩
   -- Adjoining the line through `w` to a totally isotropic `T ⊆ U` keeps it totally isotropic.
   have hT' : Q.IsTotallyIsotropic ((K ∙ w) ⊔ T.map U.subtype) := by
-    intro v hv
+    refine isTotallyIsotropic_iff.mpr fun v hv ↦ ?_
     obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp hv
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
     obtain ⟨s, hs, rfl⟩ := Submodule.mem_map.mp hz
-    have hsQ : Q s = 0 := hT.apply_eq_zero hs
-    rw [QuadraticMap.map_add Q, Q.map_smul, hTI.apply_eq_zero hwW, Submodule.subtype_apply,
-      hsQ, polar_smul_left, (mem_orthogonal_span_pair_iff_polar.mp s.2).1]
+    rw [QuadraticMap.map_add Q, Q.map_smul, hTI.apply_eq_zero hwW,
+      (isTotallyIsotropic_restrict_iff.mp hT).apply_eq_zero (Submodule.mem_map_of_mem hs),
+      polar_smul_left, Submodule.subtype_apply, (mem_orthogonal_span_pair_iff_polar.mp s.2).1]
     simp
   have hWle : W ≤ (K ∙ w) ⊔ T.map U.subtype := by
     intro v hv
-    rw [show v = polar Q f v • w + (v - polar Q f v • w) by abel]
+    rw [← add_sub_cancel (polar Q f v • w) v]
     refine Submodule.add_mem_sup (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self w))
       ⟨⟨_, sub_polar_smul_mem_orthogonal_span_pair hTI hwW hwf hv⟩, hle ?_, rfl⟩
     exact W.sub_mem hv (W.smul_mem _ hwW)
