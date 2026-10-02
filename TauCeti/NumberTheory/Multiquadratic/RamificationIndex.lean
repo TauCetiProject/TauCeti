@@ -166,7 +166,7 @@ theorem apply_eq_neg_of_mem_inertia_of_ne_one {τ : K ≃ₐ[ℚ] K}
     (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) (hτ1 : τ ≠ 1) {i : ι} (hi : (p : ℤ) ∣ d i) :
     τ (r i) = -r i := by
   have hri : r i ≠ 0 := ne_zero_of_sq_eq_intCast (hr i) fun h0 => hd i (h0 ▸ dvd_zero _)
-  refine (TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq τ (hr i)).resolve_left fun hfix => hτ1 ?_
+  refine (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq τ (hr i)).resolve_left fun hfix => hτ1 ?_
   -- If `τ` fixes `r i`, it fixes every generator, so it is the identity.
   refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
   rintro _ ⟨j, rfl⟩

@@ -417,7 +417,7 @@ theorem exists_mem_inertia_apply_eq_neg {K : Type*} [Field K] [NumberField K] [I
   rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
     AlgEquiv.smul_def] at hσx
   have hσneg : σ x = -x :=
-    (TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hx).resolve_left hσx
+    (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hx).resolve_left hσx
   have : P.IsPrime := hP
   have : P.LiesOver (Ideal.span {(p : ℤ)}) := hPp
   obtain ⟨g, rfl⟩ :=
@@ -426,7 +426,7 @@ theorem exists_mem_inertia_apply_eq_neg {K : Type*} [Field K] [NumberField K] [I
   · rw [Ideal.mem_inertia_pointwise_smul_iff]
     simpa [mul_assoc] using hσI
   · have hy : σ (g⁻¹ x) = -g⁻¹ x := by
-      rcases TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq g⁻¹ hx with h | h <;>
+      rcases AlgEquiv.apply_eq_or_eq_neg_of_sq_eq g⁻¹ hx with h | h <;>
         rw [h] <;> simp [hσneg]
     rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, hy, map_neg, ← AlgEquiv.mul_apply,
       mul_inv_cancel, AlgEquiv.one_apply]

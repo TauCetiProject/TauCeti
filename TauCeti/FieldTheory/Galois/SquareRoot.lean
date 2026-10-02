@@ -25,8 +25,8 @@ identity fixes each of `n` square roots has at most `2ⁿ` elements.
 
 ## Main results
 
-* `TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
-* `TauCeti.AlgEquiv.ne_one_of_apply_eq_neg`: an automorphism negating a nonzero element is not
+* `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
+* `AlgEquiv.ne_one_of_apply_eq_neg`: an automorphism negating a nonzero element is not
   the identity.
 * `TauCeti.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
@@ -35,8 +35,6 @@ identity fixes each of `n` square roots has at most `2ⁿ` elements.
 -/
 
 public section
-
-namespace TauCeti
 
 namespace AlgEquiv
 
@@ -72,6 +70,8 @@ theorem apply_eq_neg_of_apply_div_eq_neg (σ : L ≃ₐ[F] L) {x e : L} (he : e 
 
 end AlgEquiv
 
+namespace TauCeti
+
 variable {R F L : Type*} [CommRing R] [CommRing F] [CommRing L] [IsDomain L] [Algebra R F]
   [Algebra R L] [Algebra F L] [IsScalarTower R F L]
 
@@ -88,9 +88,9 @@ theorem card_le_two_pow_of_forall_apply_eq_self {n : ℕ} {y : Fin n → L} {c :
     have hk (k : Fin n) : (σ : L ≃ₐ[F] L) (y k) = (τ : L ≃ₐ[F] L) (y k) := by
       have h := congrFun hστ k
       simp only [f, decide_eq_decide] at h
-      rcases TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq (σ : L ≃ₐ[F] L) (hy k) with h1 | h1
+      rcases AlgEquiv.apply_eq_or_eq_neg_of_sq_eq (σ : L ≃ₐ[F] L) (hy k) with h1 | h1
       · rw [h1, h.mp h1]
-      · rcases TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq (τ : L ≃ₐ[F] L) (hy k) with h2 | h2
+      · rcases AlgEquiv.apply_eq_or_eq_neg_of_sq_eq (τ : L ≃ₐ[F] L) (hy k) with h2 | h2
         · rw [h.mpr h2, h2]
         · rw [h1, h2]
     have h1 := h ((τ : L ≃ₐ[F] L)⁻¹ * σ) (mul_mem (inv_mem τ.2) σ.2) fun k => by
@@ -112,16 +112,16 @@ theorem card_eq_four_of_exists_apply_eq_neg {F L : Type*} [CommRing F] [CommRing
   interval_cases hc : Nat.card H
   · have : Subsingleton H := (Nat.card_eq_one_iff_unique.mp hc).1
     exact absurd (congrArg Subtype.val (Subsingleton.elim (⟨τ₁, hτ₁⟩ : H) 1))
-      (TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ₁ hy hτ₁y)
+      (AlgEquiv.ne_one_of_apply_eq_neg τ₁ hy hτ₁y)
   · obtain ⟨u, -, hu⟩ := (Nat.card_eq_two_iff' (1 : H)).mp hc
     have heq {τ : L ≃ₐ[F] L} (hτ : τ ∈ H) (hτ1 : τ ≠ 1) : τ = u :=
       congrArg Subtype.val (hu ⟨τ, hτ⟩ fun h => hτ1 (congrArg Subtype.val h))
     have h12 : τ₃ = τ₁ :=
-      (heq hτ₃ (TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ₃ (mul_ne_zero hy hz) hτ₃yz)).trans
-        (heq hτ₁ (TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ₁ hy hτ₁y)).symm
+      (heq hτ₃ (AlgEquiv.ne_one_of_apply_eq_neg τ₃ (mul_ne_zero hy hz) hτ₃yz)).trans
+        (heq hτ₁ (AlgEquiv.ne_one_of_apply_eq_neg τ₁ hy hτ₁y)).symm
     have h22 : τ₃ = τ₂ :=
-      (heq hτ₃ (TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ₃ (mul_ne_zero hy hz) hτ₃yz)).trans
-        (heq hτ₂ (TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ₂ hz hτ₂z)).symm
+      (heq hτ₃ (AlgEquiv.ne_one_of_apply_eq_neg τ₃ (mul_ne_zero hy hz) hτ₃yz)).trans
+        (heq hτ₂ (AlgEquiv.ne_one_of_apply_eq_neg τ₂ hz hτ₂z)).symm
     rw [h12, map_mul, hτ₁y, h12.symm.trans h22, hτ₂z, neg_mul_neg,
       CharZero.eq_neg_self_iff] at hτ₃yz
     exact absurd hτ₃yz (mul_ne_zero hy hz)

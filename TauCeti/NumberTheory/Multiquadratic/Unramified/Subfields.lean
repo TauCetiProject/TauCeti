@@ -168,7 +168,7 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
   · rw [Subgroup.disjoint_def.mp hdisj hσ hσF]
     rfl
   by_cases hτF : τ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
-  · exact False.elim ((TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ hx0 hτneg)
+  · exact False.elim ((AlgEquiv.ne_one_of_apply_eq_neg τ hx0 hτneg)
       (Subgroup.disjoint_def.mp hdisj hτI hτF))
   have hone : σ * τ = 1 := Subgroup.disjoint_def.mp hdisj (mul_mem hσ hτI)
     ((Subgroup.mul_mem_iff_of_index_two hindex).mpr (by simp only [hσF, hτF]))
@@ -177,7 +177,7 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
     rw [AlgEquiv.mul_apply, hτneg, map_neg] at h1
     exact neg_eq_iff_eq_neg.mp h1
   have hσy : σ y = -y :=
-    (TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hy).resolve_left fun hfix =>
+    (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hy).resolve_left fun hfix =>
     hσF (by
       change σ ∈ (adjoin ℚ {y}).fixingSubgroup
       rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
