@@ -104,7 +104,7 @@ theorem isOpen_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
     rw [hF, affineConeOrbit_eq_orbit Phi.lattice hσ, distinguishedPoint_bot]
     exact isOpen_orbit_complexTorus_default Phi.lattice hσ.toIsToricCone hb
       (Phi.analyticChartGenerators sigma).2
-  rw [← Phi.analyticAffineChart_str_eq sigma hσ
+  rw [← Phi.analyticAffineChart_str_eq sigma
     (Phi.analyticChartGenerators sigma).2] at hopen
   exact hopen
 

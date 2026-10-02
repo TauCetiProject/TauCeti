@@ -220,7 +220,7 @@ private theorem contMDiffOn_piece_iff (σ : Φ.cones) {E' H' M : Type*} [NormedA
 data. -/
 private noncomputable def pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
     (Φ.analyticGlueData hΦ).U τ → (Φ.analyticGlueData hΦ).U σ :=
-  (Φ.analyticAffineChartDiagram hΦ).map f
+  (Φ.analyticAffineChartDiagram).map f
 
 /-- A map of affine analytic charts along a face inclusion is an open embedding. -/
 private theorem isOpenEmbedding_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
@@ -231,7 +231,7 @@ private theorem isOpenEmbedding_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
 private theorem toPoint_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) (x : (Φ.analyticGlueData hΦ).U τ) :
     Φ.toPoint hΦ σ (Φ.pieceMap hΦ f x) =
       faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) (Φ.toPoint hΦ τ x) :=
-  Φ.analyticFaceMap_apply _ _ f x
+  Φ.analyticFaceMap_apply f x
 
 /-- The gluing of two pieces is compatible with a map along a face inclusion. -/
 private theorem ι_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) (x : (Φ.analyticGlueData hΦ).U τ) :
@@ -294,7 +294,7 @@ private theorem exists_contMDiffAt_transition (σ τ : Φ.cones) (x : (Φ.analyt
   let e := hl.toOpenPartialHomeomorph _
   have hleft : ∀ v, e.symm (Φ.pieceMap hΦ l v) = v := fun v ↦
     hl.toOpenPartialHomeomorph_left_inv _
-  have hz : Φ.analyticOverlapLeft hΦ σ τ z = Φ.pieceMap hΦ l z := by
+  have hz : Φ.analyticOverlapLeft σ τ z = Φ.pieceMap hΦ l z := by
     rw [analyticOverlapLeft_def]
     -- `pieceMap` is the map of the chart diagram.
     rfl

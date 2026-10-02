@@ -101,8 +101,8 @@ theorem preimage_analyticAffineChartι_analyticBoundaryComponent
     {rho : Phi.Ray} {sigma : Phi.cones}
     (h : rho.toCone ≤ sigma) :
     Phi.analyticAffineChartι hPhi sigma ⁻¹' Phi.analyticBoundaryComponent hPhi rho =
-      @closure ((Phi.analyticAffineChartDiagram hPhi).obj sigma)
-        ((Phi.analyticAffineChartDiagram hPhi).obj sigma).str
+      @closure ((Phi.analyticAffineChartDiagram).obj sigma)
+        ((Phi.analyticAffineChartDiagram).obj sigma).str
         (affineConeOrbit Phi.lattice
           (⟨rho.toCone.1, Phi.isFaceOf_of_le sigma.2 rho.toCone.2 h⟩ : sigma.1.Face)) := by
   let hι := Phi.isOpenEmbedding_analyticAffineChartι hPhi sigma

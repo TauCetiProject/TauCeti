@@ -86,7 +86,7 @@ theorem isLocalDiffeomorph_subfanAnalyticMap (n : ℕ∞ω) :
     have h : Φ.subfanAnalyticMap hΦ S hS hface (PΨ y) = PΦ y := by
       rw [analyticAffineChartPartialDiffeomorph_apply, analyticAffineChartPartialDiffeomorph_apply]
       exact (Φ.subfanAnalyticMap_analyticAffineChartι hΦ S hS hface σ y).trans
-        (congrArg _ (Φ.subfanAnalyticChartMap_apply hΦ S hS hface σ y))
+        (congrArg _ (Φ.subfanAnalyticChartMap_apply S hS hface σ y))
     -- The composite `PΦ ∘ PΨ.symm` is, by definition, the composite partial diffeomorphism.
     exact h.trans (congrArg PΦ hy.symm)
 

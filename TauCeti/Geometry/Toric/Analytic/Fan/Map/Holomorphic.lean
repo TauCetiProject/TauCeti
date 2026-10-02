@@ -92,6 +92,6 @@ theorem contMDiff_analyticMap (n : ℕ∞ω) :
     exact P.left_inv ((Φ.analyticAffineChartPartialDiffeomorph_source hΦ σ hB κ g n).symm ▸
       mem_univ y)
   rw [analyticMap_analyticAffineChartι, Function.comp_apply, Function.comp_apply, hPy]
-  exact congrArg (Ψ.analyticAffineChartι hΨ υ) (f.analyticChartMap_apply hΦ hΨ _ y)
+  exact congrArg (Ψ.analyticAffineChartι hΨ υ) (f.analyticChartMap_apply _ y)
 
 end TauCeti.Toric.FanHom
