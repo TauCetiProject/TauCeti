@@ -210,7 +210,7 @@ since conjugation by the image of `σ` raises it to the `q`-th power. -/
 private theorem coprime_orderOf_mk_iwasawaTau (U : OpenNormalSubgroup (IwasawaGroup K)) :
     (Nat.card 𝓀[K]).Coprime (orderOf (iwasawaTau K : IwasawaGroup K ⧸ U.toSubgroup)) :=
   have : Finite (IwasawaGroup K ⧸ U.toSubgroup) := Subgroup.quotient_finite_of_isOpen _ U.isOpen
-  coprime_orderOf_of_mul_mul_inv_eq_pow Nat.card_pos.ne' (isOfFinOrder_of_finite _)
+  coprime_orderOf_of_mul_mul_inv_eq_pow (isOfFinOrder_of_finite _)
     (mk_iwasawaSigma_mul_mk_iwasawaTau_mul_inv K U)
 
 /-- In a finite quotient of the Iwasawa group, the image of `τ` generates a normal subgroup: it is
@@ -232,7 +232,7 @@ private theorem normal_zpowers_mk_iwasawaTau (U : OpenNormalSubgroup (IwasawaGro
     at hgen
   rw [← Subgroup.normalizer_eq_top_iff, eq_top_iff, ← hgen, Subgroup.closure_le,
     Set.pair_subset_iff]
-  exact ⟨mem_normalizer_zpowers_of_mul_mul_inv_eq_pow Nat.card_pos.ne'
+  exact ⟨mem_normalizer_zpowers_of_mul_mul_inv_eq_pow
     (isOfFinOrder_of_finite _) (mk_iwasawaSigma_mul_mk_iwasawaTau_mul_inv K U),
     Subgroup.le_normalizer (Subgroup.mem_zpowers _)⟩
 
