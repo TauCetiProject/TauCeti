@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
-import TauCeti.Geometry.Manifold.IntegralCurve.Flow
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
 import TauCeti.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -23,12 +23,15 @@ every theorem about its mathematical value carries the corresponding domain hypo
 homogeneity of maximal geodesics turns into the two basic facts relating the exponential map to
 geodesics: `t` lies in the maximal interval of `v` exactly when `t • v` lies in the domain, and
 then `exp_p (t • v)` is the maximal geodesic at time `t`.  In particular the domain is star-shaped
-at `0`.  Smooth dependence of the maximal geodesic flow shows that this domain is open and that
-the exponential map is smooth there.  Its differential at the origin is the identity of `T_p M`,
-once the tangent space to `T_p M` at `0` is identified with `T_p M` itself by
-`NormedSpace.fromTangentSpace`; by the inverse function theorem the exponential map is therefore
-a local diffeomorphism at `0`, the input to normal neighbourhoods.  Finally, the domain is all of
-`T_p M` exactly when every geodesic leaving `p` is defined for all time.
+at `0`.  Smooth dependence of the maximal geodesic flow shows that the tangent vectors `z ∈ T_x M`
+with `z` in the domain of `exp_x` form an open subset of the tangent bundle, on which
+`z ↦ exp_x z` is smooth, being the geodesic flow at time `1` followed by the base projection.
+Restricting to the fibre over `p`, the domain of `exp_p` is open and `exp_p` is smooth there.
+Its differential at the origin is the identity of `T_p M`, once the tangent space to `T_p M` at
+`0` is identified with `T_p M` itself by `NormedSpace.fromTangentSpace`; by the inverse function
+theorem the exponential map is therefore a local diffeomorphism at `0`, the input to normal
+neighbourhoods.  Finally, the domain is all of `T_p M` exactly when every geodesic leaving `p` is
+defined for all time.
 
 ## Main definitions and results
 
@@ -40,6 +43,11 @@ a local diffeomorphism at `0`, the input to normal neighbourhoods.  Finally, the
 * `TauCeti.Manifold.riemannianExp_smul`: `exp_p (t • v)` is the maximal geodesic at time `t`,
   on and off its natural interval (where both sides take the junk value).
 * `TauCeti.Manifold.starConvex_expDomain`: the domain is star-shaped at `0`.
+* `TauCeti.Manifold.riemannianExp_eq_proj_maximalIntegralCurve`: the exponential map is the base
+  projection of the geodesic flow at time `1`.
+* `TauCeti.Manifold.isOpen_setOf_mem_expDomain` and
+  `TauCeti.Manifold.contMDiffOn_riemannianExp_tangentBundle`: on the tangent bundle, the domain of
+  the exponential map is open and the exponential map is smooth there.
 * `TauCeti.Manifold.isOpen_expDomain`: the natural domain is open.
 * `TauCeti.Manifold.contMDiffOn_riemannianExp`: the exponential map is smooth on its domain.
 * `TauCeti.Manifold.curveVelocity_riemannianExp_add_smul` and
@@ -167,62 +175,50 @@ local instance tangentSpaceChartedSpace (p : M) :
     ChartedSpace (TangentSpace I p) (TangentSpace I p) :=
   chartedSpaceSelf (TangentSpace I p)
 
-/-- The domain of the exponential map at `p` is the slice at time `1` of the maximal flow domain
-of the geodesic spray over the fibre `T_p M`. -/
-private theorem expDomain_eq_preimage_maximalIntegralCurveFlowDomain (p : M) :
-    expDomain I M p = (fun v : TangentSpace I p ↦ (TotalSpace.mk' E p v, (1 : ℝ))) ⁻¹'
-      maximalIntegralCurveFlowDomain (geodesicSpray I M) := by
-  ext v
-  simp only [mem_expDomain_iff, mem_preimage, mem_maximalIntegralCurveFlowDomain,
-    maximalIntegralCurveInterval_geodesicSpray]
+omit [I.Boundaryless] in
+/-- The exponential map at the base point of a tangent vector `z`, applied to `z`, is the base
+point reached at time `1` by the maximal integral curve of the geodesic spray through `z`. -/
+theorem riemannianExp_eq_proj_maximalIntegralCurve (z : TangentBundle I M) :
+    riemannianExp I M z.proj z.2 = (maximalIntegralCurve (geodesicSpray I M) z 1).proj := by
+  rw [riemannianExp_def, maximalGeodesic_def]
+
+/-- **The domain of the exponential map in the tangent bundle is open**: the tangent vectors
+`z ∈ T_x M` lying in the natural domain of `exp_x` form an open subset of `TM`. -/
+theorem isOpen_setOf_mem_expDomain [T2Space M] :
+    IsOpen {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := by
+  simp only [mem_expDomain_iff]
+  exact isOpen_setOf_mem_geodesicInterval.preimage (continuous_id.prodMk continuous_const)
+
+/-- **The exponential map is smooth on the tangent bundle.**  The map `z ↦ exp_x z`, for `z` a
+tangent vector at `x`, is smooth on the open subset of `TM` where it is naturally defined: it is
+the geodesic flow at time `1` followed by the base projection. -/
+theorem contMDiffOn_riemannianExp_tangentBundle [T2Space M] :
+    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
+      {z | z.2 ∈ expDomain I M z.proj} :=
+  contMDiffOn_maximalGeodesic.comp (contMDiff_id.prodMk contMDiff_const).contMDiffOn
+    fun _ hz ↦ mem_expDomain_iff.1 hz
+
+/-- The exponential map is continuous on the open subset of the tangent bundle where it is
+naturally defined. -/
+theorem continuousOn_riemannianExp_tangentBundle [T2Space M] :
+    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
+      {z | z.2 ∈ expDomain I M z.proj} :=
+  contMDiffOn_riemannianExp_tangentBundle.continuousOn
 
 /-- The natural domain of the Riemannian exponential map is open. -/
 theorem isOpen_expDomain [T2Space M] (p : M) :
-    IsOpen (expDomain I M p) := by
-  have hspray : ContMDiff I.tangent I.tangent.tangent 1
-      (fun z : TangentBundle I M ↦
-        (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
-    (contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω))
-      (m := ∞) (k := ∞) (by norm_num) (by norm_num)).of_le (by norm_num)
-  have hinitial : Continuous
-      (fun v : TangentSpace I p ↦ TotalSpace.mk' E p v) :=
-    FiberBundle.continuous_totalSpaceMk E (TangentSpace I) p
-  have hinput : Continuous (fun v : TangentSpace I p ↦
-      (TotalSpace.mk' E p v, (1 : ℝ))) :=
-    hinitial.prodMk continuous_const
-  have hflow : IsOpen (maximalIntegralCurveFlowDomain (geodesicSpray I M)) :=
-    isOpen_maximalIntegralCurveFlowDomain hspray
-  rw [expDomain_eq_preimage_maximalIntegralCurveFlowDomain]
-  exact hflow.preimage hinput
+    IsOpen (expDomain I M p) :=
+  isOpen_setOf_mem_expDomain.preimage (FiberBundle.continuous_totalSpaceMk E (TangentSpace I) p)
 
 /-- The Riemannian exponential map is smooth on its natural domain. -/
 theorem contMDiffOn_riemannianExp [T2Space M] (p : M) :
     ContMDiffOn 𝓘(ℝ, TangentSpace I p) I ∞
       (riemannianExp I M p) (expDomain I M p) := by
-  have hspray : ContMDiff I.tangent I.tangent.tangent ∞
-      (fun z : TangentBundle I M ↦
-        (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
-    contMDiff_geodesicSpray (I := I) (M := M) (n := ∞)
-      (m := ∞) (k := ∞) (by simp) (by simp)
   have hinitial : ContMDiff 𝓘(ℝ, TangentSpace I p) I.tangent ∞
       (fun v : TangentSpace I p ↦ TotalSpace.mk' E p v) :=
     contMDiff_tangentBundle_mk_constBase (I := I) (M := M) (n := ∞)
       ((tangentSpaceCastModel I p).toContinuousLinearMap.contMDiff (n := ∞)) p
-  have hinput : ContMDiff 𝓘(ℝ, TangentSpace I p)
-      (I.tangent.prod 𝓘(ℝ, ℝ)) ∞
-      (fun v : TangentSpace I p ↦ (TotalSpace.mk' E p v, (1 : ℝ))) :=
-    hinitial.prodMk contMDiff_const
-  have hflow := contMDiffOn_maximalIntegralCurve (I := I.tangent) (n := (⊤ : ℕ∞))
-    (by simp) hspray
-  have hstate : ContMDiffOn 𝓘(ℝ, TangentSpace I p) I.tangent ∞
-      (fun v : TangentSpace I p ↦ maximalIntegralCurve (geodesicSpray I M)
-        (TotalSpace.mk' E p v) 1) (expDomain I M p) := by
-    apply hflow.comp hinput.contMDiffOn
-    rw [← expDomain_eq_preimage_maximalIntegralCurveFlowDomain]
-  have hbase := (Bundle.contMDiff_proj
-    (fun x : M ↦ TangentSpace I x) (n := ∞)).comp_contMDiffOn hstate
-  exact hbase.congr fun v _ ↦ by
-    simp only [Function.comp_apply, riemannianExp_def, maximalGeodesic_def]
+  exact contMDiffOn_riemannianExp_tangentBundle.comp hinitial.contMDiffOn fun _ hv ↦ hv
 
 /-- The Riemannian exponential map is continuous on its natural domain. -/
 theorem continuousOn_riemannianExp [T2Space M] (p : M) :
