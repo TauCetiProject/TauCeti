@@ -7,8 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import Mathlib.Analysis.Calculus.ContDiff.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Bilinear
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # Green's formula for a bilinear pairing of partial derivatives on a rectangle
@@ -25,7 +24,8 @@ out as four interval integrals. This is Green's theorem for the pullback along `
 obtained from Mathlib's divergence theorem on a rectangle
 (`MeasureTheory.integral_divergence_prod_Icc_of_hasFDerivAt_of_le`) applied to the vector field
 `(B u (∂t u), -B u (∂s u))`, whose divergence is the integrand above once the mixed second
-derivatives of `u` cancel by symmetry.
+derivatives of `u` cancel by symmetry; the derivatives of the two components are
+`TauCeti.hasFDerivAt_bilinear_fderiv_apply`.
 
 For a compactly supported map on the whole plane the boundary terms are absent and the integral
 vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is the formula that
@@ -46,19 +46,6 @@ open MeasureTheory Set
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W]
-
-/-- The derivative of `y ↦ B (u y) (∂_w u y)` in the direction `v`, at a point where `u` is `C²`,
-is `B (∂_v u) (∂_w u) + B u (∂_v ∂_w u)`. -/
-private lemma hasFDerivAt_bilinear_fderiv_apply (B : V →L[ℝ] V →L[ℝ] W) {u : ℝ × ℝ → V}
-    {z : ℝ × ℝ} (hu : ContDiffAt ℝ 2 u z) (w : ℝ × ℝ) :
-    HasFDerivAt (fun y ↦ B (u y) (fderiv ℝ u y w))
-      (B.precompR (ℝ × ℝ) (u z) ((fderiv ℝ (fderiv ℝ u) z).flip w) +
-        B.precompL (ℝ × ℝ) (fderiv ℝ u z) (fderiv ℝ u z w)) z := by
-  have hdu : DifferentiableAt ℝ (fderiv ℝ u) z :=
-    (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hw : HasFDerivAt (fun y ↦ fderiv ℝ u y w) ((fderiv ℝ (fderiv ℝ u) z).flip w) z := by
-    simpa using hdu.hasFDerivAt.clm_apply (hasFDerivAt_const w z)
-  exact B.hasFDerivAt_of_bilinear (hu.differentiableAt (by norm_num)).hasFDerivAt hw
 
 /-- **Green's formula for a bilinear pairing of partial derivatives.** If `u` is `C²` at every
 point of the rectangle `Icc a b ⊆ ℝ × ℝ` and `B` is a continuous bilinear map, the integral over

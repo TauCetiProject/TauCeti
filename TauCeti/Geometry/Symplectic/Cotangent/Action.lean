@@ -40,9 +40,13 @@ energy density is the area density, so the energy of the strip over `[a, b] × [
 action drop (`TauCeti.stdComplexLineEnergy_eq_cotangentAction_sub`), the action decreases along
 the strip (`TauCeti.cotangentAction_le_cotangentAction`), and a strip whose actions converge at
 both ends has energy equal to the difference of the limits
-(`TauCeti.stdComplexLineEnergy_eq_of_tendsto_cotangentAction`). This is the energy identity of
-Lagrangian Floer theory for exact Lagrangians, `E(u) = A(x₋) - A(x₊)`, which bounds the energy of
-every strip connecting two given intersection points.
+(`TauCeti.stdComplexLineEnergy_eq_of_tendsto_cotangentAction`). The theorem is stated for the
+limits of the actions. When the paths `t ↦ u(s, t)` converge to the constant paths at
+intersection points `x₋` and `x₊` uniformly together with their `t`-derivatives, and `h₀`, `h₁`
+are continuous at `π x₋` and `π x₊`, those limits are the critical values `A(x₋)` and `A(x₊)`.
+This gives the energy identity of Lagrangian Floer theory for exact Lagrangians,
+`E(u) = A(x₋) - A(x₊)`, which bounds the energy of every such strip connecting two given
+intersection points.
 
 ## Main declarations
 
@@ -249,8 +253,11 @@ theorem cotangentAction_le_cotangentAction
 `ℝ × [0, 1]` and holomorphic there for an almost complex structure `J` tamed by `ω`, with
 `u(s, 0)` in the graph of `dh₀` and `u(s, 1)` in the graph of `dh₁`. If the actions of the paths
 `t ↦ u(s, t)` tend to `A₁` as `s → -∞` and to `A₂` as `s → ∞`, then the energy of `u` is
-`A₁ - A₂`. For a strip converging to intersection points `x₋` and `x₊` at its ends, `A₁` and
-`A₂` are the critical values `h₀(π x₋) - h₁(π x₋)` and `h₀(π x₊) - h₁(π x₊)` of the action. -/
+`A₁ - A₂`. If the paths `t ↦ u(s, t)` converge as `s → ∓∞` to the constant paths at
+intersection points `x₋` and `x₊`, uniformly together with their `t`-derivatives, and `h₀` and
+`h₁` are continuous at `π x₋` and `π x₊`, then `A₁` and `A₂` are the critical values
+`h₀(π x₋) - h₁(π x₋)` and `h₀(π x₊) - h₁(π x₊)` of the action; this theorem assumes only the
+convergence of the actions. -/
 theorem stdComplexLineEnergy_eq_of_tendsto_cotangentAction
     (hω : strongDualCotangentSymplecticForm.Tames J)
     (hu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ContDiffAt ℝ 2 u z)
