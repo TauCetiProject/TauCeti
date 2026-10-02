@@ -41,10 +41,12 @@ representative.
   balls.
 * `TauCeti.MeasureTheory.preciseRepresentative_congr_ae`: the precise representative depends only
   on the almost-everywhere class.
-* `TauCeti.MeasureTheory.ae_restrict_eq_preciseRepresentative`: a function locally integrable on
+* `TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`: a function locally integrable on
   an open set agrees almost everywhere there with its precise representative.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative`: the averages
   converge at points where the essential oscillation vanishes.
+* `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative_of_rpow`: the
+  averages converge at points where the essential oscillation decays like a power of the radius.
 * `TauCeti.MeasureTheory.dist_preciseRepresentative_le`: two points of a ball on which `f` takes
   values in a closed ball of radius `L` have precise representatives at distance at most `2 L`.
 * `TauCeti.MeasureTheory.holderOnWith_preciseRepresentative`: oscillation decaying like `r^α`
@@ -104,7 +106,7 @@ theorem preciseRepresentative_congr_ae (h : f =ᵐ[μ] g) :
 /-- **Lebesgue differentiation for the precise representative.** For a uniformly locally doubling
 measure, a function which is locally integrable on an open set `U` agrees almost everywhere on `U`
 with its precise representative. -/
-theorem ae_restrict_eq_preciseRepresentative [SecondCountableTopology X] [BorelSpace X]
+theorem ae_eq_restrict_preciseRepresentative [SecondCountableTopology X] [BorelSpace X]
     [IsUnifLocDoublingMeasure μ] [IsLocallyFiniteMeasure μ] [CompleteSpace E] {U : Set X}
     (hU : IsOpen U) (hf : LocallyIntegrableOn f U μ) :
     f =ᵐ[μ.restrict U] preciseRepresentative μ f := by
@@ -135,7 +137,7 @@ representative. -/
 theorem ae_eq_preciseRepresentative [SecondCountableTopology X] [BorelSpace X]
     [IsUnifLocDoublingMeasure μ] [IsLocallyFiniteMeasure μ] [CompleteSpace E]
     (hf : LocallyIntegrable f μ) : f =ᵐ[μ] preciseRepresentative μ f := by
-  simpa using ae_restrict_eq_preciseRepresentative isOpen_univ (hf.locallyIntegrableOn univ)
+  simpa using ae_eq_restrict_preciseRepresentative isOpen_univ (hf.locallyIntegrableOn univ)
 
 section Oscillation
 
@@ -215,6 +217,35 @@ theorem dist_preciseRepresentative_le {y : X} {c : E} {r L : ℝ} (hxy : dist x 
     _ ≤ L + L := add_le_add hxc hyc
     _ = 2 * L := by ring
 
+/-- If `f` is essentially bounded by `M` on `ball x r` and the averages of `f` over the closed balls
+around `x` converge, then the precise representative of `f` at `x` has norm at most `M`. -/
+theorem norm_preciseRepresentative_le {r M : ℝ} (hr : 0 < r) (hf : IntegrableAtFilter f (𝓝 x) μ)
+    (hbdd : ∀ᵐ y ∂μ.restrict (ball x r), ‖f y‖ ≤ M)
+    (hlim : Tendsto (fun ε => ⨍ y in closedBall x ε, f y ∂μ) (𝓝[>] 0)
+      (𝓝 (preciseRepresentative μ f x))) :
+    ‖preciseRepresentative μ f x‖ ≤ M := by
+  simpa using preciseRepresentative_mem (convex_closedBall (0 : E) M) isClosed_closedBall hr hf
+    (by simpa using hbdd) hlim
+
+/-- **Power-law oscillation decay gives convergence of the averages.** Let `α > 0` and `ρ > 0`. If
+for every `0 < r ≤ ρ` the function `f` takes values almost everywhere on `ball x r` in a closed
+ball of radius `C r^α`, then the averages of `f` over the closed balls around `x` converge to the
+precise representative of `f` at `x`. -/
+theorem tendsto_setAverage_closedBall_preciseRepresentative_of_rpow {C α ρ : ℝ} (hα : 0 < α)
+    (hρ : 0 < ρ) (hf : IntegrableAtFilter f (𝓝 x) μ)
+    (hosc : ∀ r : ℝ, 0 < r → r ≤ ρ →
+      ∃ c : E, ∀ᵐ y ∂μ.restrict (ball x r), f y ∈ closedBall c (C * r ^ α)) :
+    Tendsto (fun ε => ⨍ y in closedBall x ε, f y ∂μ) (𝓝[>] 0)
+      (𝓝 (preciseRepresentative μ f x)) := by
+  refine tendsto_setAverage_closedBall_preciseRepresentative hf fun ε hε => ?_
+  have hcont : Continuous fun r : ℝ => C * r ^ α :=
+    continuous_const.mul (Real.continuous_rpow_const hα.le)
+  have h0 : Tendsto (fun r : ℝ => C * r ^ α) (𝓝[>] 0) (𝓝 0) := by
+    simpa [Real.zero_rpow hα.ne'] using hcont.continuousWithinAt.tendsto (x := 0) (s := Ioi 0)
+  obtain ⟨r, hrε, hr⟩ := ((h0.eventually (gt_mem_nhds hε)).and (Ioc_mem_nhdsGT hρ)).exists
+  obtain ⟨c, hc⟩ := hosc r hr.1 hr.2
+  exact ⟨r, hr.1, c, by filter_upwards [hc] with y hy using closedBall_subset_closedBall hrε.le hy⟩
+
 /-- **Hölder continuity from oscillation decay.** Let `s` be a set, `ρ > 0` and `α > 0`. Suppose
 `f` is integrable near every point of `s`, essentially bounded by `M` on the balls `ball x ρ`,
 `x ∈ s`, and that its essential oscillation decays like a power of the radius: for every `x ∈ s`
@@ -227,21 +258,11 @@ theorem holderOnWith_preciseRepresentative {s : Set X} {C M α ρ : ℝ≥0}
       ∃ c : E, ∀ᵐ y ∂μ.restrict (ball x r), f y ∈ closedBall c (C * r ^ (α : ℝ)))
     (hbdd : ∀ x ∈ s, ∀ᵐ y ∂μ.restrict (ball x ρ), ‖f y‖ ≤ M) :
     HolderOnWith (max (2 * C) (2 * M / ρ ^ (α : ℝ))) α (preciseRepresentative μ f) s := by
-  have hα' : (0 : ℝ) < α := hα
-  have hρ' : (0 : ℝ) < ρ := hρ
-  have hcont : Continuous fun r : ℝ => (C : ℝ) * r ^ (α : ℝ) :=
-    continuous_const.mul (Real.continuous_rpow_const hα'.le)
-  -- The averages converge at every point of `s`, since the oscillation `C r^α` tends to `0`.
+  have hα' : (0 : ℝ) < α := NNReal.coe_pos.2 hα
+  have hρ' : (0 : ℝ) < ρ := NNReal.coe_pos.2 hρ
   have hlim : ∀ x ∈ s, Tendsto (fun ε => ⨍ y in closedBall x ε, f y ∂μ) (𝓝[>] 0)
-      (𝓝 (preciseRepresentative μ f x)) := by
-    intro x hx
-    refine tendsto_setAverage_closedBall_preciseRepresentative (hf x hx) fun ε hε => ?_
-    have h0 : Tendsto (fun r : ℝ => (C : ℝ) * r ^ (α : ℝ)) (𝓝[>] 0) (𝓝 0) := by
-      simpa [Real.zero_rpow hα'.ne'] using hcont.continuousWithinAt.tendsto (x := 0) (s := Ioi 0)
-    obtain ⟨r, hrε, hr⟩ := ((h0.eventually (gt_mem_nhds hε)).and (Ioc_mem_nhdsGT hρ')).exists
-    obtain ⟨c, hc⟩ := hosc x hx r hr.1 hr.2
-    exact ⟨r, hr.1, c, by
-      filter_upwards [hc] with y hy using closedBall_subset_closedBall hrε.le hy⟩
+      (𝓝 (preciseRepresentative μ f x)) := fun x hx =>
+    tendsto_setAverage_closedBall_preciseRepresentative_of_rpow hα' hρ' (hf x hx) (hosc x hx)
   refine HolderOnWith.of_dist_le_mul fun x hx y hy => ?_
   push_cast
   rcases lt_or_ge (dist x y) ρ with hd | hd
@@ -254,6 +275,8 @@ theorem holderOnWith_preciseRepresentative {s : Set X} {C M α ρ : ℝ≥0}
       exact dist_preciseRepresentative_le hdr (hf x hx) (hf y hy) hc (hlim x hx) (hlim y hy)
     have hle : dist (preciseRepresentative μ f x) (preciseRepresentative μ f y) ≤
         2 * C * dist x y ^ (α : ℝ) := by
+      have hcont : Continuous fun r : ℝ => (C : ℝ) * r ^ (α : ℝ) :=
+        continuous_const.mul (Real.continuous_rpow_const hα'.le)
       have ht : Tendsto (fun r : ℝ => 2 * ((C : ℝ) * r ^ (α : ℝ))) (𝓝[>] (dist x y))
           (𝓝 (2 * (C * dist x y ^ (α : ℝ)))) :=
         (hcont.tendsto _).mono_left nhdsWithin_le_nhds |>.const_mul 2
@@ -263,9 +286,8 @@ theorem holderOnWith_preciseRepresentative {s : Set X} {C M α ρ : ℝ≥0}
       exact key r hr.1 hr.2
     exact hle.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
   · -- Distant points: both values have norm at most `M`, and `2M ≤ (2M / ρ^α) dist^α`.
-    have hbound : ∀ z ∈ s, ‖preciseRepresentative μ f z‖ ≤ M := fun z hz => by
-      simpa using preciseRepresentative_mem (convex_closedBall (0 : E) M) isClosed_closedBall
-        hρ' (hf z hz) (by simpa using hbdd z hz) (hlim z hz)
+    have hbound : ∀ z ∈ s, ‖preciseRepresentative μ f z‖ ≤ M := fun z hz =>
+      norm_preciseRepresentative_le hρ' (hf z hz) (hbdd z hz) (hlim z hz)
     have hρα : (0 : ℝ) < (ρ : ℝ) ^ (α : ℝ) := Real.rpow_pos_of_pos hρ' _
     calc dist (preciseRepresentative μ f x) (preciseRepresentative μ f y)
         ≤ ‖preciseRepresentative μ f x‖ + ‖preciseRepresentative μ f y‖ := dist_le_norm_add_norm _ _
