@@ -46,27 +46,15 @@ the nilpotent Jordan blocks already give infinitely many indecomposables of `•
   it on `•↺`.
 * `TauCeti.not_isFiniteRepType_affineE7`: `E₇~` has infinite representation type over every field.
 
-## Implementation notes
-
-`TauCeti.affineE7LoopRep` carries `@[expose]` for the reason recorded in
-`TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType`: a functor built by
-`CategoryTheory.Paths.lift` reveals its vertex spaces only through its definition, and the
-components of the functor on morphisms are typed by them.
-
-In the proof of fullness the components of a morphism are recorded as linear maps between
-products of the vertex spaces, so that its seven naturality squares, read on elements through
-`CategoryTheory.NatTrans.naturality_apply`, are equations between tuples which `simp` can take
-apart coordinatewise.
-
 ## References
 
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras*, Volume I, Chapter VII.
 * H. Derksen, J. Weyman, *An Introduction to Quiver Representations*, Chapter 4.
-* The file layout and the shape of the API are adapted from the parallel treatment of `E₆~` in
-  `TauCeti.RepresentationTheory.Quiver.AffineE6.FiniteRepType` (TauCeti PR #10945); the two files
-  share no code.
 -/
+
+-- The file layout and the shape of the API are adapted from the parallel treatment of `E₆~`
+-- (TauCeti PR #10945); the two files share no code.
 
 public section
 
@@ -86,6 +74,8 @@ outer vertex of each long arm, and `V²` at the short vertex. Along the first lo
 are `x ↦ (x, 0)`, `(a, b) ↦ (a, b, 0)` and `(a, b, c) ↦ (a, b, c, 0)`; along the second they are
 `x ↦ (0, x)`, `(c, d) ↦ (0, c, d)` and `(b, c, d) ↦ (0, b, c, d)`; the short arrow is
 `(a, b) ↦ (a, b, a + b, a + f b)`. -/
+-- `@[expose]`: a functor built by `CategoryTheory.Paths.lift` reveals its vertex spaces only
+-- through its definition, and the components of the functor on morphisms are typed by them.
 @[expose]
 noncomputable def affineE7LoopRep (M : QuiverRep.{u, 0, w, t} k Quiver.OneLoop) :
     QuiverRep.{u, 0, 0, t} k Quiver.AffineE7 :=
@@ -331,6 +321,10 @@ theorem affineE7LoopFunctor_map_app_outer (φ : M ⟶ N) (i : Fin 2) :
 section Full
 
 variable (g : affineE7LoopRep M ⟶ affineE7LoopRep N)
+
+-- The components of `g` are recorded as linear maps between products of the vertex spaces, so
+-- that its naturality squares, read on elements, are equations between tuples which `simp` can
+-- take apart coordinatewise.
 
 /-- The component of `g` at the centre, as a linear map between fourth powers. -/
 private noncomputable def centerHom :
