@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Submonoid.MulAction
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Compactness.LocallyCompact
+public import Mathlib.Topology.LocallyFinite
 
 /-!
 # Transfer instances for restricted and properly discontinuous actions
@@ -17,7 +19,7 @@ This file records generic instances for actions on a topological space that type
 cannot otherwise reach. A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
-countable.
+countable, and that the translates of a compact set under it form a locally finite family.
 
 ## Main results
 
@@ -29,6 +31,8 @@ countable.
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
   nonempty σ-compact space is countable.
+* `TauCeti.locallyFinite_smul_of_isCompact`: under a properly discontinuous action on a weakly
+  locally compact space, the translates of a compact set form a locally finite family.
 -/
 
 public section
@@ -113,5 +117,26 @@ theorem countable_of_properlyDiscontinuousSMul (G : Type*) {T : Type*} [Topologi
       fun g _ ↦ ?_
   obtain ⟨n, hn⟩ := mem_iUnion.mp (iUnion_compactCovering T ▸ mem_univ (g • x₀))
   exact mem_iUnion.mpr ⟨n, g • x₀, ⟨x₀, mem_insert _ _, rfl⟩, mem_insert_of_mem _ hn⟩
+
+section LocallyFinite
+
+open scoped Pointwise
+
+variable {Γ T : Type*} [TopologicalSpace T] [SMul Γ T] [ProperlyDiscontinuousSMul Γ T]
+  {S : Set T}
+
+/-- **The translates of a compact set under a properly discontinuous action are locally
+finite** (Katok, *Fuchsian groups, geodesic flows on surfaces of constant negative curvature and
+symbolic coding of geodesics*, Clay Math. Proc. 10 (2010), Definition 8.2, p. 27): every point
+has a compact neighbourhood meeting only finitely many of them. -/
+@[to_additive
+/-- **The translates of a compact set under a properly discontinuous additive action are locally
+finite.** -/]
+theorem locallyFinite_smul_of_isCompact [WeaklyLocallyCompactSpace T] (hS : IsCompact S) :
+    LocallyFinite fun γ : Γ ↦ γ • S := fun x ↦
+  let ⟨K, hK, hKx⟩ := exists_compact_mem_nhds x
+  ⟨K, hKx, properlyDiscontinuousSMul_iff.1 ‹_› hS hK⟩
+
+end LocallyFinite
 
 end TauCeti
