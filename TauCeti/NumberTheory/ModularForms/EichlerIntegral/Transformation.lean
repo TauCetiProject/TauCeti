@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.EichlerIntegral.Integral
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Integral
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
@@ -81,22 +82,6 @@ private lemma periodIntegrand_eichlerForm (f : ℍ → ℂ) (n : ℕ) (τ : ℂ)
   funext z
   simp [eichlerForm]
 
-/-- For `σ ∈ SL(2, ℤ)`, `σ • z - σ • τ = (z - τ) / ((cz + d)(cτ + d))`, in the form
-`(az + b) - (σ • τ)(cz + d) = (z - τ) / (cτ + d)`. -/
-private lemma num_sub_smul_mul_denom (σ : SL(2, ℤ)) (τ z : ℍ) :
-    num σ z - (σ • τ : ℍ) * denom σ z = ((z : ℂ) - τ) / denom σ τ := by
-  have hτ : denom σ τ ≠ 0 := denom_ne_zero σ τ
-  have hdet : ((σ 0 0 : ℤ) : ℂ) * σ 1 1 - σ 0 1 * σ 1 0 = 1 := by
-    have := σ.det_coe
-    rw [Matrix.det_fin_two] at this
-    exact_mod_cast this
-  rw [sl_moeb, coe_smul_of_det_pos (by simp), eq_div_iff hτ]
-  field_simp
-  simp only [num, denom, Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Int.coe_castRingHom,
-    Matrix.map_apply, ofReal_intCast]
-  linear_combination ((z : ℂ) - τ) * hdet
-
 /-- The image of `σ ∈ SL(2, ℤ)` in `GL(2, ℚ)` has determinant `1`. -/
 private lemma det_mapGL_rat (σ : SL(2, ℤ)) :
     ((mapGL ℚ σ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det = 1 := by
@@ -117,7 +102,10 @@ private lemma periodIntegrand_eichlerForm_slash (hk : k = n + 2) (f : ℍ → �
   simp only [det_mapGL_rat, Rat.cast_one, one_zpow, one_mul, eichlerForm, map_pow, map_sub, aeval_X,
     map_mul, aeval_C, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
     Algebra.algebraMap_self, RingHom.id_apply]
-  rw [num_sub_smul_mul_denom, div_pow, zpow_neg, zpow_natCast, div_eq_inv_mul]
+  have hσ : ((σ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det = 1 := by
+    rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.SpecialLinearGroup.det_coe]
+  rw [sl_moeb, num_sub_smul_mul_denom (hσ ▸ one_pos), hσ, Complex.ofReal_one, one_mul, div_pow,
+    zpow_neg, zpow_natCast, div_eq_inv_mul]
   ring
 
 /-- **The transformation law of the Eichler integral.** Let `f` be a cusp form of weight
