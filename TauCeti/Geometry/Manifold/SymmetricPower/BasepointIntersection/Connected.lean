@@ -23,8 +23,9 @@ symmetric charts.
 For a holomorphic disk in `Sym^g(Σ)` with boundary on the tori `T_α`, `T_β` and a basepoint `z`
 off the attaching curves, the boundary condition supplies, by continuity, the parameter outside
 the divisor. This is the
-local noncontainment input to the basepoint multiplicity `n_z` of such a disk; identifying the
-local orders across charts and summing them is a separate step.
+local noncontainment input to the basepoint multiplicity `n_z` of such a disk, the sum of its
+chart-independent local intersection orders `TauCeti.basepointIntersectionOrder`; forming that sum
+is a separate step.
 
 The local analytic equation is `TauCeti.basepointDivisor_intersection_order`, and the compact
 finiteness statement that these results feed is

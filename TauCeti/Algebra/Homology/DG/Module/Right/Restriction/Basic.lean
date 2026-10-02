@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.Algebra.Module.TransferInstance
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
-public import TauCeti.Algebra.Homology.DG.Module.Right.Hom
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
 
 /-!
 # Restriction of scalars for differential graded right modules

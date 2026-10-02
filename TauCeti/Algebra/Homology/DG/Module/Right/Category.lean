@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
-public import TauCeti.Algebra.Homology.DG.Module.Right.Hom
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
 
 /-!
 # The category of differential graded right modules

@@ -271,21 +271,7 @@ theorem exists_relBrInfl_eq (x : Br K) :
       (y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2),
       relBrInfl K E E.val y = x := by
   obtain ⟨U, y, rfl⟩ := exists_brLevelInfl_eq x
-  -- The fixed field `E` of `U` is finite Galois over `K`, and `U` is the subgroup fixing it.
-  obtain ⟨E, hE⟩ : ∃ E : IntermediateField K (SeparableClosure K),
-      E.fixingSubgroup = U.toSubgroup :=
-    ⟨_, InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩⟩
-  have : FiniteDimensional K E := by
-    rw [← InfiniteGalois.isOpen_iff_finite, hE]
-    exact U.isOpen
-  have : IsGalois K E := by
-    rw [← InfiniteGalois.normal_iff_isGalois, hE]
-    infer_instance
-  have hU : galoisOpenNormalSubgroup K E E.val = U := by
-    refine OpenNormalSubgroup.toSubgroup_injective ?_
-    dsimp only
-    rw [galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val, hE]
-  subst hU
+  obtain ⟨E, _, _, rfl⟩ := exists_galoisOpenNormalSubgroup_eq U
   exact ⟨E, inferInstance, inferInstance, _, relBrInfl_relBrLevelEquiv_symm K E E.val y⟩
 
 end Relative

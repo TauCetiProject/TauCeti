@@ -37,6 +37,15 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
+* `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
+  interacts with the cyclic successor and predecessor.
+* `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
+* `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
+  last one.
+* `Fin.last_ne_zero`, `Fin.castSucc_last_ne_zero`, `Fin.castSucc_last_ne_one`, `Fin.last_ne_one`:
+  the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
+* `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
+  summands split off.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
@@ -46,7 +55,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
-* `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
+* `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`;
+  `TauCeti.sub_one_ne_self` and `TauCeti.add_one_ne_sub_one` are the companions for subtraction.
 * `TauCeti.apply_eq_apply_zero_of_add_one`: a function on `Fin (n + 1)` unchanged by adding one
   is constant.
 * `TauCeti.eq_add_one_or_eq_add_two_fin_three`: a distinct index of `Fin 3` is one of the two
@@ -159,6 +169,53 @@ theorem predAbove_succ_succAbove {n : ℕ} (p i : Fin n) : p.predAbove (p.succ.s
   · rw [succAbove_succ_of_le _ _ h, predAbove_castSucc_of_le _ _ h]
   · rw [succAbove_succ_of_lt _ _ h, predAbove_succ_of_le _ _ h.le]
 
+
+/-- Adding one commutes with `Fin.castSucc` away from the last index. -/
+theorem castSucc_add_one_of_ne_last {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ last n) :
+    castSucc (i + 1) = castSucc i + 1 := by
+  simp [Fin.ext_iff, val_add_one, hi]
+
+/-- Subtracting one commutes with `Fin.castSucc` away from `0`. -/
+theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :
+    castSucc (i - 1) = castSucc i - 1 := by
+  simp [Fin.ext_iff, coe_sub_one, hi]
+
+/-- Subtracting one from `0` gives the last index. -/
+theorem zero_sub_one_eq_last {n : ℕ} : (0 : Fin (n + 1)) - 1 = last n :=
+  (eq_sub_of_add_eq (last_add_one n)).symm
+
+/-- The last index of `Fin (n + 1)` is not `0` when `n ≠ 0`. -/
+theorem last_ne_zero {n : ℕ} (hn : n ≠ 0) : last n ≠ (0 : Fin (n + 1)) :=
+  mt last_eq_zero_iff.1 hn
+
+/-- The penultimate index of `Fin (n + 2)` is not `0` when `n ≠ 0`. -/
+theorem castSucc_last_ne_zero {n : ℕ} (hn : n ≠ 0) : castSucc (last n) ≠ (0 : Fin (n + 2)) :=
+  castSucc_ne_zero_iff.2 (last_ne_zero hn)
+
+/-- The penultimate index of `Fin (n + 2)` is not `1` when `n ≠ 1`. -/
+theorem castSucc_last_ne_one {n : ℕ} (hn : n ≠ 1) : castSucc (last n) ≠ (1 : Fin (n + 2)) :=
+  ne_of_val_ne (by simp only [val_castSucc, val_last, val_one]; omega)
+
+/-- The last index of `Fin (n + 2)` is not `1` when `n ≠ 0`. -/
+theorem last_ne_one {n : ℕ} (hn : n ≠ 0) : last (n + 1) ≠ (1 : Fin (n + 2)) :=
+  ne_of_val_ne (by simp only [val_last, val_one]; omega)
+
+/-- An index of `Fin (n + 2)` that is at least `n` is the penultimate or the last one. -/
+theorem eq_castSucc_last_or_eq_last {n : ℕ} {i : Fin (n + 2)} (hi : n ≤ i.val) :
+    i = castSucc (last n) ∨ i = last (n + 1) := by
+  have := i.isLt
+  simp only [Fin.ext_iff, val_castSucc, val_last]
+  omega
+
+/-- A sum over `Fin (n + 1)` with the first and the last summands split off. -/
+theorem sum_univ_eq_zero_add_last_add_sum_erase {n : ℕ} {M : Type*} [AddCommMonoid M]
+    (hn : n ≠ 0)
+    (f : Fin (n + 1) → M) :
+    ∑ i, f i = f 0 + f (last n) + ∑ i ∈ (Finset.univ.erase 0).erase (last n), f i := by
+  rw [add_assoc, Finset.add_sum_erase _ _
+    (Finset.mem_erase.2 ⟨mt last_eq_zero_iff.1 hn, Finset.mem_univ _⟩),
+    Finset.add_sum_erase _ _ (Finset.mem_univ 0)]
+
 /-- Below the top element of `Fin n`, the order successor increments the value. -/
 theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
     ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := by
@@ -256,6 +313,14 @@ theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) 
     simpa [add_assoc] using h
   have hval := congrArg Fin.val htwo
   simp [Fin.val_add, Nat.mod_eq_of_lt (by omega : 2 < n)] at hval
+
+/-- Subtracting one in `Fin n` never returns to the same element when `2 ≤ n`. -/
+theorem sub_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i - 1 ≠ i := fun h ↦
+  add_one_ne_self hn (i - 1) (by rw [sub_add_cancel, h])
+
+/-- In `Fin n` with `3 ≤ n`, the successor and the predecessor of an element are distinct. -/
+theorem add_one_ne_sub_one {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) : i + 1 ≠ i - 1 :=
+  mt eq_sub_iff_add_eq.1 (add_one_add_one_ne_self hn i)
 
 /-- **A function on `Fin (n + 1)` unchanged by adding one is constant.** -/
 theorem apply_eq_apply_zero_of_add_one {β : Type*} {n : ℕ} {f : Fin (n + 1) → β}
