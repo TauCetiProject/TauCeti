@@ -124,12 +124,13 @@ theorem PosDef.trace_geometricMean_ringInverse_mul (hS : S.PosDef) :
       (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace := by
   rw [← hS.posSemidef.trace_sqrt_mul_mul_sqrt (geometricMean S⁻¹ʳ T),
     hS.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt]
-  have hQdet : IsUnit (CFC.sqrt S).det :=
-    Matrix.isUnit_iff_isUnit_det (CFC.sqrt S) |>.mp
-      (hS.isStrictlyPositive.isUnit_cfcSqrt S)
-  simp only [Matrix.mul_assoc]
-  rw [Matrix.nonsing_inv_mul _ hQdet, Matrix.mul_one, ← Matrix.mul_assoc,
-    Matrix.mul_nonsing_inv _ hQdet, Matrix.one_mul]
+  set R := CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)
+  set Q := CFC.sqrt S
+  have hQ : IsUnit Q := hS.isStrictlyPositive.isUnit_cfcSqrt S
+  let _ : Invertible Q := hQ.invertible
+  rw [Matrix.mul_assoc, Matrix.trace_mul_comm Q ((Q⁻¹ * R * Q⁻¹) * Q)]
+  simpa only [Matrix.mul_assoc, Matrix.inv_mul_of_invertible, Matrix.one_mul] using
+    Matrix.trace_conj' hQ R
 
 /-- The trace of the covariance transformed by `1 - A`, for the standard positive solution
 `A * S * A = T`, is the Bures covariance expression. -/
