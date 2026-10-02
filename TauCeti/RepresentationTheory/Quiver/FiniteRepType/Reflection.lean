@@ -69,42 +69,9 @@ namespace TauCeti
 open CategoryTheory
 open _root_.TauCeti.Quiver
 
-universe u v w x v' w' t
+universe u v w x
 
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
-
-/-- **Finite representation type descends along a map of indecomposables reflecting isomorphisms
-away from one isomorphism class.** If a map `F` carries the finite-dimensional indecomposable
-representations of `Q` outside an exceptional family `E` to finite-dimensional indecomposables of
-`Q'`, reflects isomorphisms among them, and the members of `E` are mutually isomorphic, then finite
-representation type of `Q'` implies that of `Q`. -/
-private theorem isFiniteRepType_of_map {Q' : Type v'} [Quiver.{w'} Q']
-    (E : QuiverRep.{u, v, w, max v w x} k Q → Prop)
-    (F : QuiverRep.{u, v, w, max v w x} k Q → QuiverRep.{u, v', w', t} k Q')
-    (hF : ∀ M, IsFinDim k Q M → Indecomposable M → ¬ E M →
-      IsFinDim k Q' (F M) ∧ Indecomposable (F M))
-    (hFiso : ∀ M N, Indecomposable M → Indecomposable N → ¬ E M → ¬ E N →
-      Nonempty (F M ≅ F N) → Nonempty (M ≅ N))
-    (hE : ∀ M N, Indecomposable M → Indecomposable N → E M → E N → Nonempty (M ≅ N))
-    (h : IsFiniteRepType.{u, v', w', t} k Q') : IsFiniteRepType.{u, v, w, max v w x} k Q := by
-  classical
-  let P : ObjectProperty (QuiverRep.{u, v, w, max v w x} k Q) :=
-    fun M ↦ IsFinDim k Q M ∧ Indecomposable M
-  let M : Skeleton P.FullSubcategory → QuiverRep.{u, v, w, max v w x} k Q :=
-    fun a ↦ ((fromSkeleton _).obj a).obj
-  have hM (a : Skeleton P.FullSubcategory) : P (M a) := ((fromSkeleton _).obj a).property
-  have heq (a b : Skeleton P.FullSubcategory) (hab : Nonempty (M a ≅ M b)) : a = b := by
-    rw [← toSkeleton_fromSkeleton_obj a, ← toSkeleton_fromSkeleton_obj b]
-    exact (ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso P (hM a) (hM b)).mpr hab
-  -- the classes outside `E` embed in the classes of `Q'`
-  have hreg : Finite {a // ¬ E (M a)} := h.finite_of_pairwise_nonisomorphic
-    (M := fun a ↦ F (M a.1)) (fun a ↦ (hF _ (hM a).1 (hM a).2 a.2).1)
-    (fun a ↦ (hF _ (hM a).1 (hM a).2 a.2).2) fun a b hab hiso ↦
-      hab (Subtype.ext (heq _ _ (hFiso _ _ (hM a).2 (hM b).2 a.2 b.2 hiso)))
-  -- the classes in `E` are a single one
-  have hexc : Subsingleton {a // E (M a)} :=
-    ⟨fun a b ↦ Subtype.ext (heq _ _ (hE _ _ (hM a).2 (hM b).2 a.2 b.2))⟩
-  exact isFiniteRepType_iff.mpr (Finite.of_equiv _ (Equiv.sumCompl fun a ↦ E (M a)))
 
 variable {i : Q}
 
