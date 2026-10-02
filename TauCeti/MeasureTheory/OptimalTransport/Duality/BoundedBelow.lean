@@ -13,8 +13,9 @@ public import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 
 For an extended-real cost bounded below by integrable marginal terms, subtracting those terms
 reduces both the primal and dual problems to the nonnegative cost regime. This file proves weak
-duality on arbitrary measurable spaces and strong duality on Polish spaces for lower
-semicontinuous costs with upper semicontinuous split lower bounds.
+duality on arbitrary measurable spaces and strong duality on Polish spaces when the nonnegative
+residual is lower semicontinuous. In particular, this holds for lower semicontinuous costs with
+upper semicontinuous split lower bounds.
 
 The supremum of the dual values is taken in `EReal`, without truncation at zero: the common value
 can be negative or infinite. Feasible potentials are real and integrable, and their constraint is
@@ -24,6 +25,8 @@ stated directly as `φ x + ψ y ≤ c (x, y)`. No dual attainment is asserted.
 
 * `TauCeti.dualFeasible_residual_iff`: normalization of the signed dual constraint.
 * `TauCeti.kantorovichDualValue_le_transportCostBddBelow`: weak duality for signed costs.
+* `TauCeti.isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow`: Polish strong
+  duality for a lower semicontinuous residual.
 * `TauCeti.isLUB_kantorovichDualValue_of_lowerSemicontinuous_bddBelow`: Polish strong duality.
 * `TauCeti.transportCostBddBelow_eq_sSup_kantorovichDualValue`: its supremum formula.
 
@@ -49,6 +52,8 @@ variable {X : Type u} {Y : Type v} [MeasurableSpace X] [MeasurableSpace Y]
 
 /-- Subtracting a split lower bound from each potential identifies the signed dual constraint
 with dual feasibility for the nonnegative residual cost. -/
+-- Normalize before simplification rewrites subtraction inside the potential functions.
+@[simp↓]
 theorem dualFeasible_residual_iff (h : IntegrableSplitLowerBound c μ ν) :
     DualFeasible h.residual (fun x ↦ φ x - h.fst x) (fun y ↦ ψ y - h.snd y) ↔
       ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y) := by
@@ -95,19 +100,15 @@ variable [TopologicalSpace X] [PolishSpace X] [BorelSpace X]
   [TopologicalSpace Y] [PolishSpace Y] [BorelSpace Y]
   [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
 
-/-- **Polish Kantorovich duality for costs bounded below.** For a lower semicontinuous
-extended-real cost with an integrable upper semicontinuous split lower bound, the signed primal
-value is the least upper bound of the values of all integrable feasible real potentials. The
-value may be negative or `∞`; no integrable split upper envelope or dual attainment is assumed. -/
-theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_bddBelow
-    (h : IntegrableSplitLowerBound c μ ν) (hc : LowerSemicontinuous c)
-    (ha : UpperSemicontinuous h.fst) (hb : UpperSemicontinuous h.snd) :
+/-- **Polish Kantorovich duality for costs bounded below.** If the nonnegative residual of an
+integrable split lower bound is lower semicontinuous, the signed primal value is the least upper
+bound of the values of all integrable feasible real potentials. The value may be negative or
+`∞`; no integrable split upper envelope or dual attainment is assumed. -/
+theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow
+    (h : IntegrableSplitLowerBound c μ ν) (hres : LowerSemicontinuous h.residual) :
     IsLUB {r : EReal | ∃ (φ : X → ℝ) (ψ : Y → ℝ), Integrable φ μ ∧ Integrable ψ ν ∧
       (∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) ∧
       (kantorovichDualValue μ ν φ ψ : EReal) = r} (transportCostBddBelow c μ ν h) := by
-  have hres : LowerSemicontinuous h.residual := by
-    rw [funext h.residual_def]
-    exact lowerSemicontinuous_residual h.fst h.snd hc ha hb
   have hlu := isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     (μ := μ) (ν := ν) hres
   constructor
@@ -141,6 +142,30 @@ theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_bddBelow
       (.inl (EReal.coe_ne_top k))).1 hr'
     rw [transportCostBddBelow_eq_transportCost_residual]
     simpa only [k, kantorovichDualValue_def] using hfinal
+
+/-- The signed transport value is the supremum in `EReal` of all integrable feasible dual
+values on Polish spaces when the residual of an integrable split lower bound is lower
+semicontinuous. -/
+theorem transportCostBddBelow_eq_sSup_kantorovichDualValue_of_lowerSemicontinuous_residual
+    (h : IntegrableSplitLowerBound c μ ν) (hres : LowerSemicontinuous h.residual) :
+    transportCostBddBelow c μ ν h = sSup {r : EReal | ∃ (φ : X → ℝ) (ψ : Y → ℝ),
+      Integrable φ μ ∧ Integrable ψ ν ∧
+      (∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) ∧
+      (kantorovichDualValue μ ν φ ψ : EReal) = r} :=
+  (isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow h hres).sSup_eq.symm
+
+/-- For a lower semicontinuous extended-real cost with an integrable upper semicontinuous split
+lower bound on Polish spaces, the signed primal value is the least upper bound of the values of
+all integrable feasible real potentials. -/
+theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_bddBelow
+    (h : IntegrableSplitLowerBound c μ ν) (hc : LowerSemicontinuous c)
+    (ha : UpperSemicontinuous h.fst) (hb : UpperSemicontinuous h.snd) :
+    IsLUB {r : EReal | ∃ (φ : X → ℝ) (ψ : Y → ℝ), Integrable φ μ ∧ Integrable ψ ν ∧
+      (∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) ∧
+      (kantorovichDualValue μ ν φ ψ : EReal) = r} (transportCostBddBelow c μ ν h) := by
+  apply isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow h
+  rw [funext h.residual_def]
+  exact lowerSemicontinuous_residual h.fst h.snd hc ha hb
 
 /-- The signed transport value is the supremum in `EReal` of all integrable feasible dual
 values, for lower semicontinuous costs on Polish spaces with an integrable upper semicontinuous
