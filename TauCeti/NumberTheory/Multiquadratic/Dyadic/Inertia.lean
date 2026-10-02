@@ -24,8 +24,9 @@ Let `K = ℚ(√d₁, …, √dₙ)` be a number field generated over `ℚ` by s
 `d i` not divisible by `4` (for instance squarefree), and let `Q` be a prime of `𝓞 K` above `2`.
 When every `dᵢ` is `1` modulo `4` the prime `2` is unramified
 (`TauCeti.Multiquadratic.inertia_eq_bot_of_forall_mod_four_eq_one`). This file computes the
-ramification index `e` and the residue degree `f` of `Q` in general, and the number `g` of primes
-above `2` when the `dᵢ` are square-class independent. Unlike at an odd prime, `e` can be `4`:
+ramification index `e` and the residue degree `f` of `Q` in general. The number of primes above
+`2` is computed in `TauCeti.NumberTheory.Multiquadratic.Dyadic.Decomposition`. Unlike at an odd
+prime, `e` can be `4`:
 
 * `e = 4` exactly when some `dᵢ` is `3` modulo `4` and some `dⱼ` is even, or some `dᵢ` is `2` and
   some `dⱼ` is `6` modulo `8`;
@@ -60,8 +61,9 @@ and work with the action of inertia and Frobenius on square roots in `K` instead
 
 Since `K / ℚ` is Galois, the number `g` of primes above `2` then satisfies `g · e · f = [K : ℚ]`.
 When the `dᵢ` are square-class independent (no nonempty subset product is a square),
-`[K : ℚ] = 2 ^ n`, so this gives `g` explicitly and completes the decomposition law above `2` in
-that case.
+`[K : ℚ] = 2 ^ n`, so the formulas in
+`TauCeti.NumberTheory.Multiquadratic.Dyadic.Decomposition` give `g` explicitly and complete the
+decomposition law above `2` in that case.
 
 ## Main results
 
@@ -87,9 +89,6 @@ that case.
 * `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_not_four_dvd_prod`
   and `inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_not_four_dvd_prod`:
   when no subset product is divisible by four, finite tests on the subset products modulo eight.
-* `TauCeti.Multiquadratic.ncard_primesOver_two_eq_two_pow_sub`: under square-class independence
-  of `n` radicands, the number of primes above `2` is `2 ^ (n - a - b)`, where `e = 2 ^ a` and
-  `f = 2 ^ b` are given by the criteria above.
 
 ## References
 
@@ -579,64 +578,5 @@ theorem inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_not_four_dvd_prod
     simp [h]
 
 end ResidueDegree
-
-/-! ### The number of primes above `2`
-
-Since `K / ℚ` is Galois, the primes above `2` share their ramification index `e` and residue degree
-`f`, and their number `g` satisfies `g · e · f = [K : ℚ]`
-(`Ideal.ncard_primesOver_mul_card_inertia_mul_finrank`). The criteria above for `e` and `f`
-therefore determine `g`. Under square-class independence of `n` radicands, `[K : ℚ] = 2 ^ n`, so
-`g = 2 ^ (n - a - b)` where `e = 2 ^ a` and `f = 2 ^ b`. -/
-
-section PrimeCount
-
-variable (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
-  (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hd : ∀ i, ¬ (4 : ℤ) ∣ d i)
-include hr htop hd
-
-open scoped Classical in
-/-- **The number of primes above `2`.** Let `K` be generated over `ℚ` by square roots of `n`
-square-class independent integers `d i` (no nonempty subset product is a square) not divisible by
-`4`. Then there are exactly `2 ^ (n - a - b)` primes of `𝓞 K` above `2`, where the ramification
-index is `e = 2 ^ a` and the residue degree is `f = 2 ^ b`:
-
-* `a = 2` when some `d i` is `3` modulo `4` and some `d j` is even, or some `d i` is `2` and some
-  `d j` is `6` modulo `8`; otherwise `a = 0` when every `d i` is `1` modulo `4`, and `a = 1` when
-  not;
-* `b = 1` when some subset product `∏_{i ∈ T} dᵢ` lies in the rational square class of an integer
-  that is `5` modulo `8`, and `b = 0` otherwise. -/
-theorem ncard_primesOver_two_eq_two_pow_sub [Finite ι]
-    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ))) :
-    (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι -
-      ((if (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6 then 2
-        else if ∀ i, d i % 4 = 1 then 0 else 1) +
-      if ∃ (T : Finset ι) (c : ℤ) (q : ℚ), c % 8 = 5 ∧ q ≠ 0 ∧ ∏ i ∈ T, (d i : ℚ) = c * q ^ 2
-        then 1 else 0)) := by
-  have := isGalois_rat hr htop
-  have : (span {(2 : ℤ)}).IsMaximal := Int.ideal_span_isMaximal_of_prime 2
-  obtain ⟨Q, hQ, hQ2⟩ :=
-    Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 K) (span {(2 : ℤ)})
-  refine eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep ?_
-  have h := Ideal.ncard_primesOver_mul_card_inertia_mul_finrank (G := K ≃ₐ[ℚ] K)
-    (span {(2 : ℤ)}) Q
-  rw [IsGalois.card_aut_eq_finrank] at h
-  rw [← h, pow_add, ← mul_assoc]
-  congr 2
-  · -- The ramification index.
-    split_ifs with h4 h1
-    · rw [card_inertia_eq_four hr htop hd Q h4]
-      norm_num
-    · rw [inertia_eq_bot_of_forall_mod_four_eq_one hr htop h1 Q, Subgroup.card_bot, pow_zero]
-    · push Not at h1
-      rw [Ideal.card_inertia_eq_ramificationIdx ℤ (K ≃ₐ[ℚ] K) Q,
-        (ramificationIdx_eq_two_iff_of_liesOver_two hr htop hd Q).mpr ⟨h1, h4⟩, pow_one]
-  · -- The residue degree.
-    split_ifs with h5
-    · rw [(inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq hr htop Q).mpr h5,
-        pow_one]
-    · rw [(inertiaDeg_eq_one_iff_not_exists_prod_eq_mod_eight_eq_five_mul_sq hr htop Q).mpr h5,
-        pow_zero]
-
-end PrimeCount
 
 end TauCeti.Multiquadratic
