@@ -67,6 +67,7 @@ lemma unitBallHomeomorph_apply (x : E) :
 
 /-- `ContinuousLinearEquiv.unitBallHomeomorph L` carries the closed unit ball onto the closed unit
 ball. -/
+@[simp]
 theorem image_unitBallHomeomorph_closedBall :
     L.unitBallHomeomorph '' closedBall 0 1 = closedBall 0 1 := by
   have h := image_gaugeRescaleHomeomorph_closure (convex_image_closedBall L)
@@ -81,6 +82,7 @@ theorem image_unitBallHomeomorph_closedBall :
 
 /-- `ContinuousLinearEquiv.unitBallHomeomorph L` carries the open unit ball onto the open unit
 ball. -/
+@[simp]
 theorem image_unitBallHomeomorph_ball :
     L.unitBallHomeomorph '' ball 0 1 = ball 0 1 := by
   have h := image_gaugeRescaleHomeomorph_interior (convex_image_closedBall L)
@@ -95,6 +97,7 @@ theorem image_unitBallHomeomorph_ball :
   rfl
 
 /-- `ContinuousLinearEquiv.unitBallHomeomorph L` carries the unit sphere onto the unit sphere. -/
+@[simp]
 theorem image_unitBallHomeomorph_sphere :
     L.unitBallHomeomorph '' sphere 0 1 = sphere 0 1 := by
   rw [← closedBall_sdiff_ball, image_sdiff L.unitBallHomeomorph.injective,

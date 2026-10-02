@@ -16,7 +16,9 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 For a relative CW complex and coefficients `R` in an abelian category in which coproducts indexed
 by the `n`-cells are exact (for instance modules over a ring), the cellular chain group
 `Hₙ(Xⁿ, Xⁿ⁻¹)` is the coproduct of one copy of `R` for each `n`-cell
-(`TauCeti.cellularChainGroupIso`).  For `R`-modules this is the free module on the `n`-cells.
+(`TauCeti.cellularChainGroupIso`).  For modules over a ring `k`, this is the direct sum of copies
+of the coefficient module `R`, one per `n`-cell; when `R = k`, it is the free `k`-module on the
+`n`-cells.
 
 The identification is induced by maps: the summand of the cell `j` is the image of the relative
 homology `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` of the Euclidean disk pair under the characteristic map of `j`
