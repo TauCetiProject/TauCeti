@@ -65,19 +65,8 @@ private theorem ramificationIndex_mul_succ_le (n : ℕ) :
     simp only [g, Nat.cast_zero]
     ring
   -- Hilbert's formula, truncated at `m`: `∑_{i ≤ m} (#G_i - 1) ≤ d(L/K)`.
-  obtain ⟨N, hN⟩ := exists_forall_lowerRamificationGroup_eq_bot K L
-  have hsupp : Function.support (fun i : ℕ ↦ g i - 1) ⊆
-      ↑(Finset.range (max (m + 1) N.toNat)) := by
-    intro i hi
-    simp only [Function.mem_support, ne_eq] at hi
-    simp only [Finset.coe_range, Set.mem_Iio]
-    by_contra h
-    have hbot : lowerRamificationGroup K L i = ⊥ := hN i (by omega)
-    exact hi (by simp only [g, hbot, Subgroup.card_bot, Nat.sub_self])
-  have htrunc : ∑ i ∈ Finset.range (m + 1), (g i - 1) ≤ differentExponent K L := by
-    rw [differentExponent_eq_finsum_lowerRamificationGroup,
-      finsum_eq_sum_of_support_subset _ hsupp]
-    exact Finset.sum_le_sum_of_subset (Finset.range_subset_range.2 (le_max_left _ _))
+  have htrunc : ∑ i ∈ Finset.range (m + 1), (g i - 1) ≤ differentExponent K L :=
+    sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent K L (m + 1)
   have hsub : ∑ i ∈ Finset.range (m + 1), (g i - 1) + (m + 1) =
       ∑ i ∈ Finset.range (m + 1), g i := by
     calc ∑ i ∈ Finset.range (m + 1), (g i - 1) + (m + 1)
