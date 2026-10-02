@@ -24,10 +24,10 @@ decreasing (`TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly
 Together with the monomial expansion `s_μ = ∑_ξ K_{μξ} m_ξ`
 (`TauCeti.schurPoly_eq_sum_kostkaNumber_smul_msymm`), the expansion computes the coefficients of
 `h_ν` in terms of Kostka numbers alone: the coefficient of `x^ξ` in `h_ν` is `∑_μ K_{μν} K_{μξ}`
-(`TauCeti.coeff_hsymmPart_partWeight`).  On the side of the symmetric groups `h_ν` corresponds to
-the permutation module `M^ν` and `s_μ` to the Specht module `S^μ` (classically, through the
-Frobenius characteristic map), so this is the symmetric-function half of Young's rule
-`M^ν ≅ ⊕_μ K_{μν} S^μ`.
+(`TauCeti.coeff_hsymmPart`, and `TauCeti.coeff_hsymmPart_partWeight` at partitions).  On the side
+of the symmetric groups `h_ν` corresponds to the permutation module `M^ν` and `s_μ` to the Specht
+module `S^μ` (classically, through the Frobenius characteristic map), so this is the
+symmetric-function half of Young's rule `M^ν ≅ ⊕_μ K_{μν} S^μ`.
 
 ## The argument
 
@@ -49,8 +49,9 @@ whose size is fixed by how often the erased letter occurred.
   `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly`, the same in a finite alphabet.
 * `TauCeti.hsymmPart_eq_sum_kostkaNumber_smul_schurPoly`: **`h_ν = ∑_μ K_{μν} s_μ`** for a partition
   `ν`, in a finite alphabet.
-* `TauCeti.coeff_hsymmPart_partWeight`: the coefficient of `h_ν` at the monomial of a partition `ξ`
-  is `∑_μ K_{μν} K_{μξ}`.
+* `TauCeti.coeff_hsymmPart`: the coefficient of `h_ν` at an arbitrary monomial `x^d` is
+  `∑_μ K_{μν} K_{μd}`, and `TauCeti.coeff_hsymmPart_partWeight`, the same at the monomial of a
+  partition `ξ`.
 
 ## References
 
@@ -192,15 +193,27 @@ theorem hsymmPart_eq_sum_kostkaNumber_smul_schurPoly (σ : Type*) [Fintype σ] [
     mapDomain_rowLenWeight (by rw [hl, YoungDiagram.length_rowLens])]
   simp only [kostkaNumber_def]
 
-/-- **The coefficients of `h_ν` are sums of products of Kostka numbers**: the coefficient of the
-monomial recording the parts of `ξ` in `h_ν` is `∑_μ K_{μν} K_{μξ}`.  The row bound is what makes
-the monomial record all of `ξ`, as in `TauCeti.coeff_schurPoly_partWeight`. -/
+/-- **The coefficients of `h_ν` are sums of products of Kostka numbers**: the coefficient of `h_ν`
+at an arbitrary exponent `d` is `∑_μ K_{μν} K_{μd}`, where `K_{μd}` is the Kostka number of the
+shape of `μ` and the content obtained from `d` by numbering the alphabet with `Fintype.equivFin`,
+as in `TauCeti.coeff_schurPoly`. -/
+theorem coeff_hsymmPart {σ : Type*} [Fintype σ] [DecidableEq σ] {n : ℕ} (ν : n.Partition)
+    (d : σ →₀ ℕ) :
+    (hsymmPart σ R ν).coeff d =
+      ∑ μ : n.Partition, (kostkaNumber μ ν * diagramKostkaNumber (diagramOf μ)
+        (Finsupp.mapDomain (fun x => (Fintype.equivFin σ x : ℕ)) d) : R) := by
+  rw [hsymmPart_eq_sum_kostkaNumber_smul_schurPoly, coeff_sum]
+  exact sum_congr rfl fun μ _ => by rw [coeff_smul, coeff_schurPoly, smul_eq_mul]
+
+/-- **The coefficients of `h_ν` at partitions**: the coefficient of the monomial recording the parts
+of `ξ` in `h_ν` is `∑_μ K_{μν} K_{μξ}`.  The row bound is what makes the monomial record all of
+`ξ`, as in `TauCeti.coeff_schurPoly_partWeight`. -/
 theorem coeff_hsymmPart_partWeight {σ : Type*} [Fintype σ] [DecidableEq σ] {n : ℕ}
     (ν ξ : n.Partition) (h : (diagramOf ξ).colLen 0 ≤ Fintype.card σ) :
     (hsymmPart σ R ν).coeff (partWeight σ ξ) =
       ∑ μ : n.Partition, (kostkaNumber μ ν * kostkaNumber μ ξ : R) := by
-  rw [hsymmPart_eq_sum_kostkaNumber_smul_schurPoly, coeff_sum]
+  rw [coeff_hsymmPart]
   exact sum_congr rfl fun μ _ => by
-    rw [coeff_smul, coeff_schurPoly_partWeight μ ξ h, smul_eq_mul]
+    rw [← coeff_schurPoly (R := R) μ, coeff_schurPoly_partWeight μ ξ h]
 
 end TauCeti
