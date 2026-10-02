@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Relations
 
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
+import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 import TauCeti.RingTheory.DividedPowers.Associative
 
 /-!
@@ -39,6 +40,8 @@ CFSGStatement roadmap.
 * `TauCeti.SpinPolarizationData.typeDSpinRep`: its extension to the universal enveloping algebra.
 * `TauCeti.SpinPolarizationData.typeDSpinRep_rootGenerator_sq`: the represented root operators
   are square-zero.
+* `TauCeti.SpinPolarizationData.typeDSpinRep_rootGenerator_mem_evenOdd`: they preserve exterior
+  parity, hence each half-spin summand.
 * `TauCeti.SpinPolarizationData.isCartanWeightVector_typeDSpinRep_integralLatticeBasis`: the
   integral exterior basis is a weight basis with weights `typeDSpinWeight`.
 * `TauCeti.SpinPolarizationData.typeDSpinRep_serreKostantForm_apply_mem_integralLattice`: the
@@ -151,6 +154,25 @@ theorem typeDSpinRep_serreF_eq_spinAction (i : Fin n) :
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreF ℚ (CartanMatrix.D n) i)) =
       spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) i) := by
   rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreF b hn]
+
+/-- **The represented root generators preserve exterior parity**, for a polarization without a
+line summand. Each acts through a simple-root Clifford bivector, which is even, so it maps each
+half-spin summand into itself. -/
+theorem typeDSpinRep_rootGenerator_mem_evenOdd (hline : P.line = ⊥) (k : Fin n ⊕ Fin n)
+    {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W} (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) :
+    P.typeDSpinRep b hn
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ
+          (TauCeti.serreRootGenerator (CartanMatrix.D n) k)) s ∈
+      evenOdd (0 : QuadraticForm ℚ P.W) j := by
+  cases k with
+  | inl i =>
+    rw [TauCeti.serreRootGenerator_inl, P.typeDSpinRep_serreE_eq_spinAction b hn]
+    exact spinAction_mem_evenOdd_of_mem_even P hline (quadraticLieSubalgebra_le_even Q
+      (P.typeDSimpleRootBivector_mem_quadraticLieSubalgebra b (by omega) i)) hs
+  | inr i =>
+    rw [TauCeti.serreRootGenerator_inr, P.typeDSpinRep_serreF_eq_spinAction b hn]
+    exact spinAction_mem_evenOdd_of_mem_even P hline (quadraticLieSubalgebra_le_even Q
+      (P.typeDSimpleNegativeRootBivector_mem_quadraticLieSubalgebra b (by omega) i)) hs
 
 /-- At a chain node, the positive type-`D` root generator moves the singleton exterior-basis
 vector at `i + 1` to the singleton at `i`. -/

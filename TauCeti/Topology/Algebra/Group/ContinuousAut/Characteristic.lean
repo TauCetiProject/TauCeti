@@ -21,7 +21,8 @@ automorphisms need not be continuous.
 The predicate `TauCeti.IsTopCharacteristic G N` is expressed by the image equation
 `N.map φ = N`. Its equivalent image and preimage inclusion criteria make it convenient to prove,
 and it is stable under arbitrary suprema and infima. A topologically characteristic subgroup is
-normal as soon as inner automorphisms are continuous.
+normal as soon as inner automorphisms are continuous, and so is a topologically characteristic
+subgroup of a normal subgroup.
 
 In a topologically finitely generated compact group the topologically characteristic open normal
 subgroups are cofinal among the open subgroups: an open subgroup has finite index, there are
@@ -43,6 +44,8 @@ The characterizations and lattice API parallel Mathlib's API for
   topologically characteristic.
 * `TauCeti.IsTopCharacteristic.normal`: a topologically characteristic subgroup is normal when
   inner automorphisms are continuous.
+* `TauCeti.IsTopCharacteristic.map_subtype_normal`: a topologically characteristic subgroup of a
+  normal subgroup is normal in the ambient group.
 * `TauCeti.IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_le`: in a topologically
   finitely generated compact group, every open subgroup contains a topologically characteristic
   open normal subgroup.
@@ -177,6 +180,24 @@ theorem normal [SeparatelyContinuousMul G] (hN : IsTopCharacteristic G N) : N.No
     rw [← hN (ContinuousAut.conj g)]
     rw [← ContinuousAut.conj_apply]
     exact Subgroup.mem_map_of_mem (ContinuousAut.conj g).toMulEquiv.toMonoidHom hn
+
+/-- A topologically characteristic subgroup of a normal subgroup is normal in the ambient group
+when inner automorphisms are continuous. This is the topological analogue of
+`Subgroup.normal_of_characteristic_of_normal`. -/
+theorem map_subtype_normal [SeparatelyContinuousMul G] {H : Subgroup G} [H.Normal]
+    {K : Subgroup H} (hK : IsTopCharacteristic H K) : (K.map H.subtype).Normal where
+  conj_mem := by
+    rintro _ ⟨k, hk, rfl⟩ g
+    -- Conjugation by `g` restricts to a continuous automorphism of the normal subgroup `H`.
+    have hconj (g : G) : Continuous (MulAut.conjNormal (H := H) g) :=
+      continuous_induced_rng.mpr <| (continuous_subtype_val.const_mul g).mul_const g⁻¹ |>.congr
+        fun h ↦ (MulAut.conjNormal_apply g h).symm
+    let φ : ContinuousAut H :=
+      { MulAut.conjNormal g with
+        continuous_toFun := hconj g
+        continuous_invFun := (hconj g⁻¹).congr fun h ↦ Subtype.ext <| by simp }
+    exact ⟨φ k, isTopCharacteristic_iff_map_le.mp hK φ ⟨k, hk, rfl⟩,
+      MulAut.conjNormal_apply g k⟩
 
 end IsTopCharacteristic
 

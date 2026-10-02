@@ -22,6 +22,8 @@ upper-half-plane transport to that map.
 * TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier: the Riemann map
   of a Jordan domain, normalized to send infinity to a prescribed boundary point, as a continuous
   injection of the closed upper half-plane.
+* `TauCeti.exists_injective_forall_eq_of_surjOn_im_eq_zero`: distinct real prevertices of distinct
+  points of the image of the real line.
 * `TauCeti.exists_prevertices_of_isJordanCurve_frontier`: a Carathéodory map of a bounded Jordan
   domain with real prevertices mapping to prescribed frontier points.
 
@@ -59,6 +61,19 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier {�
     (injOn_closedBall_of_isJordanCurve_frontier one_pos hgd hgΩ.injOn (himg ▸ hΩb) (himg ▸ hΩJ)
       hgc fun _ _ => rfl) himg hp
 
+/-- Real prevertices: if `f` maps the real line surjectively onto a set `T`, then distinct points
+`v i` of `T` are the images `f (a i)` of distinct real numbers `a i`. -/
+theorem exists_injective_forall_eq_of_surjOn_im_eq_zero {ι : Type*} {f : ℂ → ℂ} {T : Set ℂ}
+    (hf : SurjOn f {z : ℂ | z.im = 0} T) {v : ι → ℂ} (hv : Injective v) (hvT : ∀ i, v i ∈ T) :
+    ∃ a : ι → ℝ, Injective a ∧ ∀ i, f (a i) = v i := by
+  choose x hx hfx using fun i => hf (hvT i)
+  have hfa (i : ι) : f ((x i).re : ℂ) = v i := by
+    rw [← hfx i]
+    congr 1
+    exact Complex.ext (by simp) (by simpa using (hx i).symm)
+  exact ⟨fun i => (x i).re, fun i j (h : (x i).re = (x j).re) => hv (by rw [← hfa i, ← hfa j, h]),
+    hfa⟩
+
 /-- A Carathéodory map of the upper half-plane onto a bounded Jordan domain, sending infinity
 to a frontier point `p` distinct from the specified points `v i`, together with real prevertices
 `a i` mapping to those frontier points. -/
@@ -78,15 +93,9 @@ theorem exists_prevertices_of_isJordanCurve_frontier
       (not_subsingleton_iff.mp hUJ.not_subsingleton)).sdiff (finite_range v)).nonempty
   obtain ⟨f, hfc, hfd, hfH, hfcl, hfR, hfp⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hUo hUc hUb hUJ hpU
-  -- every specified point lies on the frontier, so it has a real preimage under `f`
-  have hvp (i : ι) : v i ∈ frontier U \ {p} :=
-    ⟨hvU i, fun h => hpv ⟨i, h⟩⟩
-  choose x hx hfx using fun i => hfR.surjOn (hvp i)
-  let a : ι → ℝ := fun i => (x i).re
-  have hax (i : ι) : ((a i : ℝ) : ℂ) = x i :=
-    Complex.ext (by simp [a]) (by simpa [a] using (hx i).symm)
-  have hfa (i : ι) : f (a i) = v i := by rw [hax, hfx]
-  exact ⟨f, a, p, fun i j h => hv (by rw [← hfa i, ← hfa j, h]), hfd, hfc, hfcl.injOn, hfH, hfa,
-    hfp, fun ⟨z, hz, hzp⟩ => (hfcl.mapsTo hz).2 hzp⟩
+  obtain ⟨a, ha, hfa⟩ := exists_injective_forall_eq_of_surjOn_im_eq_zero hfR.surjOn hv
+    fun i => ⟨hvU i, fun h => hpv ⟨i, h⟩⟩
+  exact ⟨f, a, p, ha, hfd, hfc, hfcl.injOn, hfH, hfa, hfp,
+    fun ⟨z, hz, hzp⟩ => (hfcl.mapsTo hz).2 hzp⟩
 
 end TauCeti

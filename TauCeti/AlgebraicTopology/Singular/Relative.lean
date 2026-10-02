@@ -198,6 +198,15 @@ protected noncomputable abbrev singularHomologyMap (n : ℕ) :
     P.singularHomology R n ⟶ P'.singularHomology R n :=
   SSetPair.homologyMap (toSSetPair.map f) R n
 
+variable {P P'} in
+/-- Relative singular homology sends a composite of maps of pairs to the composite of the induced
+maps. -/
+@[reassoc]
+lemma singularHomologyMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') (n : ℕ) :
+    P.singularHomologyMap (f ≫ g) R n =
+      P.singularHomologyMap f R n ≫ P'.singularHomologyMap g R n := by
+  rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
+
 /-- Relative singular homology as a functor on topological pairs. -/
 @[no_expose]
 noncomputable def singularHomologyFunctor (n : ℕ) : TopPair.{w} ⥤ C :=

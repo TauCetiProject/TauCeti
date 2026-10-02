@@ -28,7 +28,8 @@ The monomials, that is, the character functions of the dual semigroup, are holom
 manifold: in the ambient coordinates a monomial is a product of natural powers of the ray
 coordinates and integral powers of the torus coordinates, which do not vanish on the chart.
 Conversely, the ambient coordinates are themselves monomials, so a map into the complex points is
-holomorphic exactly when all of its monomials are; this criterion refers to no coordinates.
+holomorphic exactly when all of its monomials are; this criterion refers to no coordinates.  In
+particular, pulling complex points back along a homomorphism of dual semigroups is holomorphic.
 
 ## Main declarations
 
@@ -44,6 +45,8 @@ holomorphic exactly when all of its monomials are; this criterion refers to no c
   holomorphic exactly when its value on every monomial is.
 * `TauCeti.Toric.contMDiff_id_coneChartedSpace`: changing the extending basis or the generating
   family preserves the complex structure.
+* `TauCeti.Toric.AffineSemigroupComplexPoint.contMDiff_comap`: pulling complex points back along a
+  homomorphism of dual semigroups is holomorphic.
 
 ## References
 
@@ -267,5 +270,37 @@ theorem contMDiff_id_coneChartedSpace
     (coneChartAmbient_mem_mixedChartDomain hi hσ hB κ)).congr
   intro x
   exact (basisChangeOpenPartialHomeomorph_coneChartAmbient hi hσ hB hB' κ x).symm
+
+/-! ### Maps of dual semigroups -/
+
+section Comap
+
+variable {N' V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V'] {i' : N' →+ V'}
+  {τ : PointedCone ℝ V'} {k' l' : ℕ} (hi' : IsIntegralLattice i') (hτ : IsToricCone i' τ)
+  {C : Module.Basis (ToricRay τ ⊕ Fin l') ℤ N'}
+  (hC : ∀ ρ, IsPrimitiveGenerator i' ρ (C (Sum.inl ρ))) (κ' : ToricRay τ ≃ Fin k')
+
+/-- Pulling complex points back along a homomorphism of dual semigroups of regular cones is
+holomorphic, for the complex structures of any extending bases of the two cones: the value of a
+pulled-back point on a monomial is the value of the original point on the image monomial. -/
+theorem AffineSemigroupComplexPoint.contMDiff_comap
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    (g' : AddGeneratingFamily (dualSemigroup hi' τ) s')
+    (φ : dualSemigroup hi' τ →+ dualSemigroup hi σ) (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace hi hσ hB κ g
+    let _ := affinePointTopology g'
+    let _ := coneChartedSpace hi' hτ hC κ' g'
+    ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) n
+      (AffineSemigroupComplexPoint.comap φ) := by
+  let _ := affinePointTopology g
+  let _ := coneChartedSpace hi hσ hB κ g
+  let _ := affinePointTopology g'
+  let _ := coneChartedSpace hi' hτ hC κ' g'
+  refine (contMDiff_iff_forall_contMDiff_apply_single hi' hτ hC κ' g').2 fun m ↦ ?_
+  simp only [AffineSemigroupComplexPoint.comap_apply_single]
+  exact contMDiff_apply_single hi hσ hB κ g (φ m) n
+
+end Comap
 
 end TauCeti.Toric

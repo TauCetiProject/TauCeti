@@ -34,6 +34,8 @@ connected type-`Dₙ` datum.
   coordinate ring of `GL_(2^n)/A`.
 * `TauCeti.TypeDSpinCarrier.baseChangeCoordinateIso`: the quotient is the scalar extension of
   the integral carrier coordinate Hopf algebra.
+* `TauCeti.TypeDSpinCarrier.coordinateHopfAlgebra` and `TauCeti.TypeDSpinCarrier.coordinateMap`:
+  that quotient, the specialized carrier coordinate algebra, and its ambient quotient map.
 * `TauCeti.TypeDSpinCarrier.baseChangePointsMulEquiv`: the points of that quotient in a
   commutative `A`-algebra are the matrix points of the integral carrier over that algebra.
 * `TauCeti.TypeDSpinCarrier.rootSubgroupToBaseChangeCoordinateMap`: the transported numbered
@@ -186,6 +188,34 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
     (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n hn)
     (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) A (definingIdeal_def n hn)
+
+/-! ## The specialized coordinate Hopf algebra -/
+
+/-- The coordinate Hopf algebra of the full-weight type-`Dₙ` spin carrier after base change to
+`A`. -/
+abbrev coordinateHopfAlgebra :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
+    (baseChangeDefiningIdeal n hn A)
+
+/-- The quotient coordinate morphism `O(GL_(2^n)) ⟶ O(carrier)`, representing the closed
+immersion of the specialized spin carrier into the ambient general linear group. -/
+def coordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A (dimension n) ⟶ coordinateHopfAlgebra n hn A :=
+  CommHopfAlgCat.mkQuotient _ _
+
+/-- The specialized carrier coordinate morphism is surjective. -/
+theorem coordinateMap_surjective : Function.Surjective (coordinateMap n hn A).hom := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_surjective
+    (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n hn A)
+
+/-- The specialized coordinate morphism kills exactly the defining Hopf ideal. -/
+@[simp]
+theorem coordinateMap_ker :
+    RingHom.ker (coordinateMap n hn A).hom = (baseChangeDefiningIdeal n hn A).toIdeal := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_ker
+    (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n hn A)
 
 /-! ## Points of the base-changed carrier -/
 

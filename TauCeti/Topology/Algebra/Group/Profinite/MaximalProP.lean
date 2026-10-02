@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.PGroup
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 
 /-!
 # The maximal pro-`p` quotient of a profinite group
@@ -31,6 +32,12 @@ pro-`p` and `f : G →* P` is continuous, then for each open normal `V ≤ P` th
 `V.comap f` is an open normal subgroup of `G` with `p`-group quotient, so `f` maps
 `proPKernel p G` into every `V`, and the open normal subgroups of a profinite group intersect
 in `1`.
+
+The pro-`p` kernel `N` of a profinite group `G` has trivial maximal pro-`p` quotient itself. This
+is not the definition, since the open normal subgroups of `N` need not come from those of `G`.
+The pro-`p` kernel `K` of `N` is topologically characteristic in `N`, hence normal and closed in
+`G`; then `G ⧸ K` is an extension of the pro-`p` group `G ⧸ N` by a quotient of the pro-`p` group
+`N ⧸ K`, so it is pro-`p`, and the universal property gives `N ≤ K`.
 
 Everything before the compactness lemma is stated for an arbitrary topological group: the
 kernel, its normality, its closedness and its behaviour under continuous homomorphisms all
@@ -62,6 +69,9 @@ hold there. Compactness of `G` is assumed exactly where it is used.
 * `TauCeti.map_proPKernel_eq`: continuous multiplicative equivalences preserve the pro-`p`
   kernel.
 * `TauCeti.isTopCharacteristic_proPKernel`: the pro-`p` kernel is topologically characteristic.
+* `TauCeti.proPKernel_proPKernel_eq_top`: the pro-`p` kernel of a profinite group has no
+  nontrivial continuous `p`-group quotient, so every continuous homomorphism from it to a
+  profinite pro-`p` group is trivial (`TauCeti.eq_one_of_proPKernel_eq_top`).
 
 ## References
 
@@ -392,6 +402,12 @@ theorem existsUnique_continuousMonoidHom_maximalProPQuotient (hP : IsProP p P) (
     ⟨maximalProPQuotient.continuous_lift hP f hf, maximalProPQuotient.lift_mk hP f hf⟩,
     fun _ hg ↦ maximalProPQuotient.lift_unique hP f hf hg.2⟩
 
+/-- A topological group with no nontrivial continuous `p`-group quotient admits no nontrivial
+continuous homomorphism to a profinite pro-`p` group. -/
+theorem eq_one_of_proPKernel_eq_top (h : proPKernel p G = ⊤) (hP : IsProP p P) (f : G →* P)
+    (hf : Continuous f) : f = 1 :=
+  MonoidHom.ker_eq_top_iff.mp (top_le_iff.mp (h ▸ proPKernel_le_ker hP f hf))
+
 end UniversalProperty
 
 /-! ### Pro-`p` groups and idempotence -/
@@ -448,5 +464,66 @@ theorem maximalProPQuotient.idempotentEquiv_mk (x : maximalProPQuotient p G) :
   (rfl)
 
 end Idempotence
+
+/-! ### The pro-`p` kernel has no `p`-quotient -/
+
+section Kernel
+
+variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **The pro-`p` kernel has no `p`-quotient.** The pro-`p` kernel of the pro-`p` kernel `N` of a
+profinite group is all of `N`. Equivalently, `N` has no nontrivial continuous `p`-group quotient
+(`TauCeti.proPKernel_eq_top_iff`), so every continuous homomorphism from `N` to a profinite
+pro-`p` group is trivial (`TauCeti.eq_one_of_proPKernel_eq_top`). -/
+@[simp]
+theorem proPKernel_proPKernel_eq_top : proPKernel p (proPKernel p G) = ⊤ := by
+  set N := proPKernel p G
+  have : CompactSpace N := isCompact_iff_compactSpace.mp (isClosed_proPKernel (G := G)).isCompact
+  set K := proPKernel p N
+  -- The image `K'` of `K` in `G` is closed, and normal because `K` is topologically
+  -- characteristic in the normal subgroup `N`.
+  set K' : Subgroup G := K.map N.subtype
+  have hK'N : K' ≤ N := Subgroup.map_subtype_le K
+  have : K'.Normal := (isTopCharacteristic_proPKernel p).map_subtype_normal
+  have : IsClosed (K' : Set G) := by
+    rw [Subgroup.coe_map]
+    exact (isClosed_proPKernel (G := G)).isClosedMap_subtype_val _ (isClosed_proPKernel (G := N))
+  -- `G ⧸ K'` maps onto the pro-`p` group `G ⧸ N`.
+  let f : G ⧸ K' →* G ⧸ N := QuotientGroup.map K' N (MonoidHom.id G) hK'N
+  have hf : Continuous f :=
+    -- `f ∘ QuotientGroup.mk` is `QuotientGroup.mk` by `QuotientGroup.map_mk`, definitionally.
+    (QuotientGroup.isQuotientMap_mk K').continuous_iff.mpr QuotientGroup.continuous_mk
+  have hfs : Function.Surjective f :=
+    QuotientGroup.map_surjective_of_surjective K' N (MonoidHom.id G)
+      (QuotientGroup.mk'_surjective N) hK'N
+  -- The kernel of that map is a continuous image of the pro-`p` group `N ⧸ K`.
+  let ψ : N →* f.ker := ((QuotientGroup.mk' K').comp N.subtype).codRestrict f.ker fun n ↦
+    (QuotientGroup.eq_one_iff (N := N) _).mpr n.2
+  have hψK : K ≤ ψ.ker := fun k hk ↦
+    Subtype.ext <| (QuotientGroup.eq_one_iff _).mpr ⟨k, hk, rfl⟩
+  let φ : maximalProPQuotient p N →* f.ker := QuotientGroup.lift K ψ hψK
+  have hφ : Continuous φ :=
+    -- `φ ∘ QuotientGroup.mk` is `ψ` by `QuotientGroup.lift_mk`, definitionally.
+    (QuotientGroup.isQuotientMap_mk K).continuous_iff.mpr
+      ((QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _)
+  have hφs : Function.Surjective φ := by
+    rintro ⟨x, hx⟩
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+    exact ⟨QuotientGroup.mk ⟨g, (QuotientGroup.eq_one_iff g).mp hx⟩, rfl⟩
+  -- So `G ⧸ K'` is pro-`p`, and the universal property puts `N` inside `K'`.
+  have hpro : IsProP p (G ⧸ K') := isProP_maximalProPQuotient.of_ker_isProP hf hfs
+    (isProP_maximalProPQuotient.of_surjective φ hφ hφs)
+  have hle : N ≤ K' := by
+    simpa using proPKernel_le_ker hpro (QuotientGroup.mk' K') QuotientGroup.continuous_mk
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  obtain ⟨k, hk, hkx⟩ := hle x.2
+  rwa [Subtype.ext hkx] at hk
+
+/-- The maximal pro-`p` quotient of the pro-`p` kernel of a profinite group is trivial. -/
+theorem maximalProPQuotient.subsingleton_proPKernel :
+    Subsingleton (maximalProPQuotient p (proPKernel p G)) :=
+  maximalProPQuotient.subsingleton_iff.mpr proPKernel_proPKernel_eq_top
+
+end Kernel
 
 end TauCeti

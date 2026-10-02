@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
 
 import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
-import TauCeti.AlgebraicTopology.FundamentalGroupoid.Glue
+import TauCeti.AlgebraicTopology.FundamentalGroupoid.Pushout
 import TauCeti.CategoryTheory.Groupoid.SingleObj
 
 /-!
@@ -32,12 +32,12 @@ over `π₁(A ∩ B, x)`. When `A ∩ B` is moreover simply connected, the amalg
 canonical map `π₁(A, x) ∗ π₁(B, x) →* π₁(X, x)` from the free product is an isomorphism.
 
 The homomorphism out of `π₁(X, x)` induced by compatible homomorphisms `fA` and `fB` out of
-`π₁(A, x)` and `π₁(B, x)` is built from the fundamental-groupoid gluing theorem
-`TauCeti.FundamentalGroupoid.glue`. Choose for every point `z` of `A` a morphism from `x` to `z` in
-the fundamental groupoid of `A`, taken inside `A ∩ B` whenever `z ∈ A ∩ B`, and similarly for `B`.
-Conjugating by these morphisms turns `fA` and `fB` into functors out of the fundamental groupoids of
-`A` and `B`; on `A ∩ B` both functors are induced by the common restriction of `fA` and `fB` to
-`π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half of van Kampen,
+`π₁(A, x)` and `π₁(B, x)` is built from the fundamental-groupoid gluing theorem for two sets,
+`TauCeti.FundamentalGroupoid.glueTwo`. Choose for every point `z` of `A` a morphism from `x` to
+`z` in the fundamental groupoid of `A`, taken inside `A ∩ B` whenever `z ∈ A ∩ B`, and similarly
+for `B`. Conjugating by these morphisms turns `fA` and `fB` into functors out of the fundamental
+groupoids of `A` and `B`; on `A ∩ B` both functors are induced by the common restriction of `fA`
+and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half of van Kampen,
 `TauCeti.FundamentalGroup.range_map_subtypeVal_sup_eq_top`.
 
 ## Main declarations
@@ -167,78 +167,23 @@ variable {A B : Set X} {x : X}
 /-- The basepoint of `A ∩ B`. -/
 private abbrev interBase (hxA : x ∈ A) (hxB : x ∈ B) : ↥(A ∩ B) := ⟨x, hxA, hxB⟩
 
-private def swapInter : C(↥(B ∩ A), ↥(A ∩ B)) where
-  toFun z := ⟨z.1, z.2.2, z.2.1⟩
-  continuous_toFun := continuous_subtype_val.subtype_mk fun z ↦ ⟨z.2.2, z.2.1⟩
-
-/-- The cover of `X` by `A` and `B`, indexed by `Bool`. -/
-private abbrev twoCover (A B : Set X) : Bool → Set X := fun b ↦ Bool.rec B A b
-
-private theorem exists_twoCover_mem_nhds (hCover : interior A ∪ interior B = univ) (y : X) :
-    ∃ b, twoCover A B b ∈ 𝓝 y := by
-  rcases (hCover ▸ mem_univ y : y ∈ interior A ∪ interior B) with hy | hy
-  · exact ⟨true, mem_interior_iff_mem_nhds.1 hy⟩
-  · exact ⟨false, mem_interior_iff_mem_nhds.1 hy⟩
-
-variable {D : Type*} [Category D]
-
-/-- Functors out of the fundamental groupoids of `A` and `B` which agree on `A ∩ B`, as a family
-indexed by `twoCover A B`, satisfy the compatibility hypothesis of the gluing theorem. -/
-private theorem twoCover_compatibility (FA : FundamentalGroupoid A ⥤ D)
-    (FB : FundamentalGroupoid B ⥤ D)
-    (h : FundamentalGroupoid.map (ContinuousMap.inclusion inter_subset_left) ⋙ FA =
-      FundamentalGroupoid.map (ContinuousMap.inclusion inter_subset_right) ⋙ FB) (i j : Bool) :
-    FundamentalGroupoid.map (ContinuousMap.inclusion
-        (inter_subset_left : twoCover A B i ∩ twoCover A B j ⊆ twoCover A B i)) ⋙
-        (Bool.rec FB FA i : FundamentalGroupoid (twoCover A B i) ⥤ D) =
-      FundamentalGroupoid.map (ContinuousMap.inclusion
-        (inter_subset_right : twoCover A B i ∩ twoCover A B j ⊆ twoCover A B j)) ⋙
-        (Bool.rec FB FA j : FundamentalGroupoid (twoCover A B j) ⥤ D) := by
-  cases i <;> cases j
-  · rfl
-  · -- The inclusions of `B ∩ A` factor through the swap `B ∩ A ≃ A ∩ B`.
-    have hr : FundamentalGroupoid.map (ContinuousMap.inclusion (inter_subset_left : B ∩ A ⊆ B)) =
-        FundamentalGroupoid.map (swapInter (A := A) (B := B)) ⋙
-          FundamentalGroupoid.map (ContinuousMap.inclusion (inter_subset_right : A ∩ B ⊆ B)) := by
-      rw [← FundamentalGroupoid.map_comp]
-      congr 1
-    have hl : FundamentalGroupoid.map (ContinuousMap.inclusion (inter_subset_right : B ∩ A ⊆ A)) =
-        FundamentalGroupoid.map (swapInter (A := A) (B := B)) ⋙
-          FundamentalGroupoid.map (ContinuousMap.inclusion (inter_subset_left : A ∩ B ⊆ A)) := by
-      rw [← FundamentalGroupoid.map_comp]
-      congr 1
-    rw [hr, hl]
-    exact congrArg (FundamentalGroupoid.map (swapInter (A := A) (B := B)) ⋙ ·) h.symm
-  · exact h
-  · rfl
-
 variable {K : Type*} [Monoid K]
 
-/-- The local functors of `A` and `B`, as a family indexed by `twoCover A B`. -/
-private noncomputable def coverFunctor (hA : IsPathConnected A) (hB : IsPathConnected B)
-    (hAB : IsPathConnected (A ∩ B)) (hxA : x ∈ A) (hxB : x ∈ B)
-    (fA : FundamentalGroup A ⟨x, hxA⟩ →* K) (fB : FundamentalGroup B ⟨x, hxB⟩ →* K) (b : Bool) :
-    FundamentalGroupoid (twoCover A B b) ⥤ SingleObj K :=
-  Bool.rec (localFunctor inter_subset_right hAB hB (interBase hxA hxB) fB)
-    (localFunctor inter_subset_left hAB hA (interBase hxA hxB) fA) b
-
 /-- The local functors of `A` and `B` agree on the fundamental groupoid of `A ∩ B`. -/
-private theorem coverFunctor_compatibility (hA : IsPathConnected A) (hB : IsPathConnected B)
+private theorem localFunctor_compatibility (hA : IsPathConnected A) (hB : IsPathConnected B)
     (hAB : IsPathConnected (A ∩ B)) (hxA : x ∈ A) (hxB : x ∈ B)
     (fA : FundamentalGroup A ⟨x, hxA⟩ →* K) (fB : FundamentalGroup B ⟨x, hxB⟩ →* K)
     (h : fA.comp (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left)
         (interBase hxA hxB)) =
       fB.comp (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
-        (interBase hxA hxB))) (i j : Bool) :
-    FundamentalGroupoid.map (ContinuousMap.inclusion
-        (inter_subset_left : twoCover A B i ∩ twoCover A B j ⊆ twoCover A B i)) ⋙
-        coverFunctor hA hB hAB hxA hxB fA fB i =
-      FundamentalGroupoid.map (ContinuousMap.inclusion
-        (inter_subset_right : twoCover A B i ∩ twoCover A B j ⊆ twoCover A B j)) ⋙
-        coverFunctor hA hB hAB hxA hxB fA fB j :=
-  twoCover_compatibility _ _ ((map_inclusion_comp_localFunctor _ _ _ _ _).trans <|
+        (interBase hxA hxB))) :
+    FundamentalGroupoid.map (ContinuousMap.inclusion inter_subset_left) ⋙
+        localFunctor inter_subset_left hAB hA (interBase hxA hxB) fA =
+      FundamentalGroupoid.map (ContinuousMap.inclusion inter_subset_right) ⋙
+        localFunctor inter_subset_right hAB hB (interBase hxA hxB) fB :=
+  (map_inclusion_comp_localFunctor _ _ _ _ _).trans <|
     (congrArg (Groupoid.functorOfEndHom _ (baseHom hAB _)) h).trans
-      (map_inclusion_comp_localFunctor _ _ _ _ _).symm) i j
+      (map_inclusion_comp_localFunctor _ _ _ _ _).symm
 
 /-- **The homomorphism out of `π₁(X, x)` given by the based Seifert--van Kampen theorem.**
 
@@ -257,12 +202,13 @@ noncomputable def vanKampenDesc (hCover : interior A ∪ interior B = univ)
         ⟨x, hxA, hxB⟩)) :
     FundamentalGroup X x →* K :=
   (SingleObj.mapHom _ _).symm (Groupoid.singleObjFunctor (FundamentalGroupoid.mk x) ⋙
-    FundamentalGroupoid.glue (exists_twoCover_mem_nhds hCover)
-      (coverFunctor hA hB hAB hxA hxB fA fB)
-      (coverFunctor_compatibility hA hB hAB hxA hxB fA fB h))
+    FundamentalGroupoid.glueTwo hCover
+      (localFunctor inter_subset_left hAB hA (interBase hxA hxB) fA)
+      (localFunctor inter_subset_right hAB hB (interBase hxA hxB) fB)
+      (localFunctor_compatibility hA hB hAB hxA hxB fA fB h))
 
-/-- `vanKampenDesc` restricts on a fundamental group of a member of the cover to the
-corresponding local functor. -/
+/-- `vanKampenDesc` restricts on the fundamental group of a set `U` to a functor `F` out of the
+fundamental groupoid of `U` through which the glued functor restricts. -/
 private theorem vanKampenDesc_map_subtypeVal (hCover : interior A ∪ interior B = univ)
     (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsPathConnected (A ∩ B))
     (hxA : x ∈ A) (hxB : x ∈ B) (fA : FundamentalGroup A ⟨x, hxA⟩ →* K)
@@ -271,13 +217,16 @@ private theorem vanKampenDesc_map_subtypeVal (hCover : interior A ∪ interior B
         ⟨x, hxA, hxB⟩) =
       fB.comp (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right)
         ⟨x, hxA, hxB⟩))
-    (b : Bool) (hx : x ∈ twoCover A B b) (g : FundamentalGroup (twoCover A B b) ⟨x, hx⟩) :
+    {U : Set X} (hx : x ∈ U) (F : FundamentalGroupoid U ⥤ SingleObj K)
+    (hF : FundamentalGroupoid.map (ContinuousMap.subtypeVal U) ⋙
+      FundamentalGroupoid.glueTwo hCover
+        (localFunctor inter_subset_left hAB hA (interBase hxA hxB) fA)
+        (localFunctor inter_subset_right hAB hB (interBase hxA hxB) fB)
+        (localFunctor_compatibility hA hB hAB hxA hxB fA fB h) = F)
+    (g : FundamentalGroup U ⟨x, hx⟩) :
     vanKampenDesc hCover hA hB hAB hxA hxB fA fB h
-        (FundamentalGroup.map (ContinuousMap.subtypeVal _) ⟨x, hx⟩ g) =
-      (coverFunctor hA hB hAB hxA hxB fA fB b).map g := by
-  have hg := CategoryTheory.Functor.congr_hom (FundamentalGroupoid.map_subtypeVal_comp_glue
-    (exists_twoCover_mem_nhds hCover) (coverFunctor hA hB hAB hxA hxB fA fB)
-    (coverFunctor_compatibility hA hB hAB hxA hxB fA fB h) b) g
+        (FundamentalGroup.map (ContinuousMap.subtypeVal _) ⟨x, hx⟩ g) = F.map g := by
+  have hg := CategoryTheory.Functor.congr_hom hF g
   simp only [Functor.comp_map, eqToHom_refl, Category.comp_id, Category.id_comp] at hg
   -- `SingleObj.mapHom` has no evaluation lemma: its inverse evaluates a functor on a loop, and
   -- `FundamentalGroup.map` applies `FundamentalGroupoid.map` to it, so `hg` is the claim.
@@ -295,7 +244,8 @@ theorem vanKampenDesc_map_left (hCover : interior A ∪ interior B = univ)
     (g : FundamentalGroup A ⟨x, hxA⟩) :
     vanKampenDesc hCover hA hB hAB hxA hxB fA fB h
         (FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩ g) = fA g :=
-  (vanKampenDesc_map_subtypeVal hCover hA hB hAB hxA hxB fA fB h true hxA g).trans
+  (vanKampenDesc_map_subtypeVal hCover hA hB hAB hxA hxB fA fB h hxA _
+    (FundamentalGroupoid.map_subtypeVal_comp_glueTwo_left hCover _ _ _) g).trans
     (localFunctor_map_base inter_subset_left hAB hA (interBase hxA hxB) fA g)
 
 /-- `vanKampenDesc` restricts to `fB` on `π₁(B, x)`. -/
@@ -310,7 +260,8 @@ theorem vanKampenDesc_map_right (hCover : interior A ∪ interior B = univ)
     (g : FundamentalGroup B ⟨x, hxB⟩) :
     vanKampenDesc hCover hA hB hAB hxA hxB fA fB h
         (FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩ g) = fB g :=
-  (vanKampenDesc_map_subtypeVal hCover hA hB hAB hxA hxB fA fB h false hxB g).trans
+  (vanKampenDesc_map_subtypeVal hCover hA hB hAB hxA hxB fA fB h hxB _
+    (FundamentalGroupoid.map_subtypeVal_comp_glueTwo_right hCover _ _ _) g).trans
     (localFunctor_map_base inter_subset_right hAB hB (interBase hxA hxB) fB g)
 
 /-- `vanKampenDesc` restricts to `fA` on `π₁(A, x)`. -/

@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!

@@ -89,9 +89,10 @@ be an additive group over a `CommRing`; the automatic invertibility of an isomet
 left-separating form needs an integral domain and a finite free module.
 
 This is the bilinear-form counterpart of `TauCeti.QuadraticMap.orthogonalGroup` in
-`TauCeti/LinearAlgebra/QuadraticForm/OrthogonalGroup.lean`, whose API it follows; for a quadratic
-form `Q` over a ring in which `2` is a regular scalar the orthogonal group of `Q` is the isometry
-group of `Q.polarBilin`, `TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`.
+`TauCeti/LinearAlgebra/QuadraticForm/OrthogonalGroup/Basic.lean`, whose API it follows; for a
+quadratic form `Q` over a ring in which `2` is a regular scalar the orthogonal group of `Q` is the
+isometry group of `Q.polarBilin`,
+`TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`.
 -/
 
 public section

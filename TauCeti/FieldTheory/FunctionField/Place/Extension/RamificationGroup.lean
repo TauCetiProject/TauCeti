@@ -42,7 +42,8 @@ trivial.
 
 This is Stichtenoth, Definition 3.8.4 and Proposition 3.8.5.  Nothing here consumes perfectness of
 the residue fields; the complementary statement that `G_0(P) / G_1(P)` is cyclic of order prime to
-the characteristic needs additional hypotheses absent from this module and is not proved here.
+the characteristic needs the residue extension to be separable, and is proved in
+`TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`.
 
 ## Main definitions
 

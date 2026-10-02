@@ -9,11 +9,14 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 import TauCeti.Algebra.CharP.LocalRing
+import TauCeti.NumberTheory.LocalField.TamelyRamified
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Finite
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Conjugacy
+import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Functoriality
 
 /-!
 # The maximal tamely ramified extension and wild inertia
@@ -46,6 +49,11 @@ restrictions lies in the first lower ramification group `G_1` of `L/K`. As each 
 since `I_K` acts on them through roots of unity of order prime to `p`. So `P_K` is the largest
 pro-`p` subgroup of `I_K`: it is the unique Sylow pro-`p` subgroup of `I_K`.
 
+Restriction to a finite Galois subextension `L` maps `I_K` onto the inertia group `G_0` of `L/K`,
+and a continuous surjection carries a Sylow pro-`p` subgroup onto a Sylow subgroup; since `G_1` is
+the unique Sylow `p`-subgroup of `G_0`, the image of `P_K` is all of `G_1`. Consequently `L` lies
+in `K^{t}` exactly when `G_1` of `L/K` is trivial, that is, exactly when `L/K` is tamely ramified.
+
 ## Main definitions
 
 * `TauCeti.maximalTameExtension K Ω`: the maximal tamely ramified extension `K^{t}` of `K` in `Ω`.
@@ -69,6 +77,10 @@ pro-`p` subgroup of `I_K`: it is the unique Sylow pro-`p` subgroup of `I_K`.
 * `TauCeti.isProPSylow_wildInertiaSubgroup` and
   `TauCeti.eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow`: `P_K` is the unique Sylow pro-`p`
   subgroup of `I_K`.
+* `TauCeti.map_wildInertiaSubgroup_restrictNormalHom`: the image of `P_K` in the Galois group of a
+  finite Galois subextension `L` is the first lower ramification group `G_1` of `L/K`.
+* `TauCeti.le_maximalTameExtension_iff`: a finite Galois subextension `L` lies in `K^{t}` exactly
+  when `L/K` is tamely ramified.
 * `TauCeti.mem_wildInertiaSubgroup_iff_of_isUniformizer`: `σ ∈ P_K` exactly when `σ ∈ I_K` and `σ`
   fixes every `m`-th root of a given uniformizer, for `p ∤ m`.
 
@@ -557,5 +569,80 @@ theorem eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow {Q : Subgroup (inertiaS
     isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
   exact (IsProPSylow.eq_of_normal p _ _ _ (isProPSylow_wildInertiaSubgroup K p) hQ
     Subgroup.normal_subgroupOf).symm
+
+/-! ### The image of wild inertia at finite level -/
+
+variable {K}
+variable (L : IntermediateField K (AlgebraicClosure K)) [Module.Finite K L] [IsGalois K L]
+  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
+
+/-- **Wild inertia maps onto finite wild inertia.** For every compatible local-field structure on
+a finite Galois subextension `L/K`, the image of `P_K` under restriction is `G_1(L/K)`. -/
+@[simp]
+theorem map_wildInertiaSubgroup_restrictNormalHom :
+    (wildInertiaSubgroup K).map (AlgEquiv.restrictNormalHom L) =
+      lowerRamificationGroup K L 1 := by
+  set p := ringChar 𝓀[K]
+  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[K] p⟩
+  have : CharP 𝓀[L] p := charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
+  have : CompactSpace (inertiaSubgroup K) :=
+    isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
+  set f := AlgEquiv.restrictNormalHom (F := K) (K₁ := AlgebraicClosure K) L
+  set I := inertiaSubgroup K
+  -- Restriction maps `I_K` onto `A = G_0(L/K)`, a finite discrete group containing `G_1(L/K)`.
+  set A := I.map f
+  have h1A : lowerRamificationGroup K L 1 ≤ A :=
+    (lowerRamificationGroup_antitone K L zero_le_one).trans
+      (map_inertiaSubgroup_restrictNormalHom L).ge
+  have hf : Continuous (f.subgroupMap I) :=
+    continuous_induced_rng.2 ((InfiniteGalois.restrictNormalHom_continuous L).comp
+      continuous_subtype_val)
+  -- The image of the Sylow pro-`p` subgroup `P_K` of `I_K` is Sylow in `A`, and it lies in the
+  -- `p`-group `G_1(L/K)`, so the two agree.
+  have hS := (isProPSylow_wildInertiaSubgroup K p).map_of_surjective _ hf
+    (f.subgroupMap_surjective I)
+  have hG1 : IsProP p ((lowerRamificationGroup K L 1).subgroupOf A) := by
+    rw [isProP_iff_isPGroup]
+    have := isPGroup_ramificationGroup (L := L) (L ≃ₐ[K] L) p (i := 1) one_pos
+    rw [← lowerRamificationGroup_def] at this
+    exact this.of_equiv (Subgroup.subgroupOfEquivOfLe h1A).symm
+  have hle : ((wildInertiaSubgroup K).subgroupOf I).map (f.subgroupMap I) ≤
+      (lowerRamificationGroup K L 1).subgroupOf A := by
+    rintro _ ⟨σ, hσ, rfl⟩
+    exact restrictNormal_mem_lowerRamificationGroup_one L hσ
+  refine le_antisymm (Subgroup.map_le_iff_le_comap.2 fun σ hσ ↦
+    restrictNormal_mem_lowerRamificationGroup_one L hσ) fun τ hτ ↦ ?_
+  have hτA : (⟨τ, h1A hτ⟩ : A) ∈ (lowerRamificationGroup K L 1).subgroupOf A :=
+    Subgroup.mem_subgroupOf.2 hτ
+  obtain ⟨σ, hσ, hστ⟩ := (hS.eq_of_le hG1 hle).ge hτA
+  exact ⟨σ.1, Subgroup.mem_subgroupOf.1 hσ, congrArg Subtype.val hστ⟩
+
+/-- Every element of finite wild inertia lifts to an element of absolute wild inertia. -/
+theorem exists_mem_wildInertiaSubgroup_restrictNormal_eq {τ : Gal(L/K)}
+    (hτ : τ ∈ lowerRamificationGroup K L 1) :
+    ∃ σ ∈ wildInertiaSubgroup K, AlgEquiv.restrictNormal σ L = τ := by
+  rw [← map_wildInertiaSubgroup_restrictNormalHom L] at hτ
+  exact hτ
+
+/-- **The tame criterion at finite level.** A finite Galois subextension `L` of `K^{alg}/K` lies
+in the maximal tamely ramified extension `K^{t}` exactly when `L/K` is tamely ramified. -/
+theorem le_maximalTameExtension_iff :
+    L ≤ maximalTameExtension K (AlgebraicClosure K) ↔ IsTamelyRamified K L := by
+  set T := maximalTameExtension K (AlgebraicClosure K)
+  -- `P_K` fixes `L` exactly when its image `G_1(L/K)` in `Gal(L/K)` is trivial.
+  have hfix : T.fixingSubgroup ≤ L.fixingSubgroup ↔ IsTamelyRamified K L := by
+    rw [← lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified,
+      ← map_wildInertiaSubgroup_restrictNormalHom, wildInertiaSubgroup_def,
+      ← IntermediateField.restrictNormalHom_ker L]
+    -- `Field.absoluteGaloisGroup K` is `Gal(K^{alg}/K)` by definition, but its group structure is
+    -- not reducibly that of `Gal(K^{alg}/K)`, so `rw [Subgroup.map_eq_bot_iff]` cannot fire.
+    exact (Subgroup.map_eq_bot_iff _).symm
+  rw [← hfix]
+  refine ⟨fun h ↦ fixingSubgroup_antitone h, fun h ↦ ?_⟩
+  -- Both fields are separable, and the Galois correspondence on the separable closure is
+  -- inclusion-reversing.
+  have hT : T ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure _ _ T
+  rw [← lift_restrict hT, ← fixedField_fixingSubgroup_lift_inf_separableClosure, lift_restrict]
+  exact le_inf ((le_iff_le _ _).2 h) (le_separableClosure _ _ L)
 
 end TauCeti

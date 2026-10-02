@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.KnotTheory.Grid.Rotation
 
 /-!
@@ -21,7 +22,8 @@ the permutation
 Its cycles are exactly the link components. This file packages that permutation, its cycle
 decomposition and component count, and the predicate that the represented link is a knot. The
 grid-diagram disjointness condition makes the component permutation fixed-point-free, so
-Mathlib's cycle decomposition accounts for every marking.
+Mathlib's cycle decomposition accounts for every marking, and the component count is also the
+number of orbits `TauCeti.orbitCount` of the component permutation.
 
 Row relabeling leaves the component permutation unchanged, while column relabeling conjugates it.
 Consequently the cycle type, component count, and knot predicate are preserved by both
@@ -73,14 +75,26 @@ theorem componentPerm_apply (c : Fin n) :
     G.componentPerm c = G.X.transpose (G.O c) := by
   rw [componentPerm_def, Equiv.Perm.mul_apply, Equiv.Perm.inv_def, GridState.transpose_apply]
 
+/-- The component permutation sends `c` to `d` exactly when the `X`-marking of column `d` lies in
+the row of the `O`-marking of column `c`. -/
+theorem componentPerm_apply_eq_iff {c d : Fin n} : G.componentPerm c = d ↔ G.X d = G.O c := by
+  rw [componentPerm_apply]
+  constructor
+  · rintro rfl
+    exact G.X.apply_transpose_apply _
+  · intro h
+    rw [← h, GridState.transpose_apply_apply]
+
+/-- The `X`-marking of column `componentPerm c` lies in the row of the `O`-marking of column
+`c`. -/
+theorem X_componentPerm_apply (c : Fin n) : G.X (G.componentPerm c) = G.O c :=
+  G.componentPerm_apply_eq_iff.mp rfl
+
 /-- The `O`-marking in the row of the `X`-marking of column `componentPerm c` is the `O`-marking
 of column `c`: the component permutation walks from `O_c` along its row to that `X`-marking. -/
 theorem O_transpose_X_componentPerm (c : Fin n) :
     G.O.transpose (G.X (G.componentPerm c)) = c := by
-  have h : G.X (G.componentPerm c) = G.O c := by
-    rw [componentPerm_def, Equiv.Perm.mul_apply, Equiv.Perm.inv_def]
-    exact G.X.toPerm.apply_symm_apply _
-  rw [h, GridState.transpose_apply_apply]
+  rw [X_componentPerm_apply, GridState.transpose_apply_apply]
 
 /-- The component permutation has no fixed columns, because an `O` and an `X` cannot occupy the
 same square. -/
@@ -137,6 +151,13 @@ theorem card_componentCycles : G.componentCycles.card = G.componentCount := by
 theorem sum_componentCycleType : G.componentCycleType.sum = n := by
   rw [componentCycleType, Equiv.Perm.sum_cycleType, support_componentPerm,
     Finset.card_univ, Fintype.card_fin]
+
+/-- The number of components is the number of orbits of the component permutation. Every orbit
+is a genuine cycle here, since the component permutation has no fixed column. -/
+theorem componentCount_eq_orbitCount : G.componentCount = orbitCount G.componentPerm := by
+  rw [Equiv.Perm.orbitCount_eq_card_parts_partition,
+    Equiv.Perm.parts_partition_eq_cycleType G.support_componentPerm,
+    componentCount, componentCycleType]
 
 /-- A grid diagram represents a knot when its component permutation has exactly one cycle. -/
 def IsKnot : Prop :=

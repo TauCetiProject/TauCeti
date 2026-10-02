@@ -137,6 +137,12 @@ def toTameQuotient : Field.absoluteGaloisGroup K →ₜ* tameQuotient K :=
   ContinuousMonoidHom.quotientMk _
 
 variable {K} in
+/-- The quotient map onto the tame quotient sends `σ` to its class modulo wild inertia. -/
+theorem toTameQuotient_apply (σ : Field.absoluteGaloisGroup K) :
+    toTameQuotient K σ = (σ : tameQuotient K) :=
+  (rfl)
+
+variable {K} in
 /-- An element of `G_K` has trivial image in the tame quotient exactly when it is wild. -/
 @[simp]
 theorem toTameQuotient_eq_one_iff {σ : Field.absoluteGaloisGroup K} :

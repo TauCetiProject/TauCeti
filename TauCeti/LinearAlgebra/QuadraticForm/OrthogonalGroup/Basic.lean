@@ -61,6 +61,8 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   `orthogonalGroup Q`, so that statements about products of reflections and about the ranges of the
   Pin and Spin actions can name it. `TauCeti.QuadraticMap.reflectionOrthogonal_mul_self` and
   `TauCeti.QuadraticMap.reflectionOrthogonal_inv` are its group-level involution facts.
+* `QuadraticMap.negOrthogonal Q`: the isometry `x ↦ -x`, as an element of
+  `orthogonalGroup Q`.
 
 ## Main results
 
@@ -394,6 +396,38 @@ end QuadraticMap
 end TauCeti
 
 namespace QuadraticMap
+
+section Neg
+
+variable {R : Type u} {M : Type v} {N : Type w} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (Q : QuadraticMap R M N)
+
+/-- Negation `x ↦ -x` preserves every quadratic map. -/
+theorem neg_mem_orthogonalGroup : LinearEquiv.neg R ∈ TauCeti.QuadraticMap.orthogonalGroup Q :=
+  fun m ↦ Q.map_neg m
+
+/-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a free module of rank one
+over a domain, it and `1` are the only isometries of a nonzero quadratic map valued in a
+torsion-free module (`TauCeti.QuadraticMap.eq_one_or_eq_negOrthogonal_of_finrank_eq_one`), and
+it differs from `1` when `2 ≠ 0`. There it is also the reflection in every vector of invertible
+norm (`QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`). -/
+def negOrthogonal : TauCeti.QuadraticMap.orthogonalGroup Q :=
+  ⟨LinearEquiv.neg R, neg_mem_orthogonalGroup Q⟩
+
+@[simp]
+theorem coe_negOrthogonal : (negOrthogonal Q : M ≃ₗ[R] M) = LinearEquiv.neg R := by
+  simp only [negOrthogonal]
+
+/-- Negation is an involution of the orthogonal group. -/
+@[simp]
+theorem negOrthogonal_mul_self : negOrthogonal Q * negOrthogonal Q = 1 :=
+  Subtype.ext <| LinearEquiv.ext fun m ↦ by simp
+
+@[simp]
+theorem negOrthogonal_inv : (negOrthogonal Q)⁻¹ = negOrthogonal Q :=
+  inv_eq_of_mul_eq_one_left (negOrthogonal_mul_self Q)
+
+end Neg
 
 section Det
 

@@ -148,6 +148,14 @@ theorem isNilpotent_rep_rootGenerator (k : Fin n ⊕ Fin n) :
         (TauCeti.serreRootGenerator (CartanMatrix.D n) k))) :=
   (polarization n).isNilpotent_typeDSpinRep_rootGenerator (polarizationBasis n) hn k
 
+/-- Every represented numbered root generator has nilpotency class at most two: it squares to
+zero. -/
+theorem nilpotencyClass_rep_rootGenerator_le_two (k : Fin n ⊕ Fin n) :
+    nilpotencyClass (rep n hn
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.D n) k))) ≤ 2 :=
+  Nat.sInf_le ((polarization n).typeDSpinRep_rootGenerator_sq (polarizationBasis n) hn k)
+
 private theorem rep_serreH_ne_zero (i : Fin n) :
     rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (TauCeti.serreH ℚ (CartanMatrix.D n) i)) ≠ 0 := by

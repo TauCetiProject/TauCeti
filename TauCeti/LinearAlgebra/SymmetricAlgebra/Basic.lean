@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 The canonical map from a module over a commutative semiring into its symmetric algebra is
 injective, without a freeness assumption. Its main application is that an abelian Lie algebra
 embeds in its universal enveloping algebra, which is its symmetric algebra
-(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`).
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`).
 -/
 
 public section

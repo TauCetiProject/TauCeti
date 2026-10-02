@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 

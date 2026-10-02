@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Eval.Sign
+public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.Algebra.Polynomial.Thom
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.Basic.Sign.Basic
@@ -86,6 +87,27 @@ theorem _root_.Polynomial.signRight_eq_sign_eval (p : R[X]) {a : R} (ha : p.eval
 theorem _root_.Polynomial.signLeft_eq_sign_eval (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
     p.signLeft a = sign (p.eval a) := by
   simp [signLeft_def, rootMultiplicity_eq_zero ha, signRight_eq_sign_eval p ha]
+
+/-- Adding a multiple of a higher power of `X - C a` leaves the right-hand sign at `a` of a
+nonzero polynomial unchanged. -/
+theorem _root_.Polynomial.signRight_add_eq_left_of_dvd {p q : R[X]} {a : R} (hp : p ≠ 0)
+    (hq : (X - C a) ^ (p.rootMultiplicity a + 1) ∣ q) :
+    (p + q).signRight a = p.signRight a := by
+  have hq0 : (derivative^[p.rootMultiplicity a] q).eval a = 0 := by
+    by_cases hq0 : q = 0
+    · simp [hq0]
+    exact isRoot_iterate_derivative_of_lt_rootMultiplicity
+      (Nat.lt_of_succ_le ((le_rootMultiplicity_iff hq0).mpr hq))
+  rw [signRight_def, signRight_def, rootMultiplicity_add_eq_left_of_dvd hp hq,
+    iterate_map_add derivative, eval_add, hq0, add_zero]
+
+/-- Adding a multiple of a higher power of `X - C a` leaves the left-hand sign at `a` of a
+nonzero polynomial unchanged. -/
+theorem _root_.Polynomial.signLeft_add_eq_left_of_dvd {p q : R[X]} {a : R} (hp : p ≠ 0)
+    (hq : (X - C a) ^ (p.rootMultiplicity a + 1) ∣ q) :
+    (p + q).signLeft a = p.signLeft a := by
+  rw [signLeft_def, signLeft_def, rootMultiplicity_add_eq_left_of_dvd hp hq,
+    signRight_add_eq_left_of_dvd hp hq]
 
 end Definitions
 

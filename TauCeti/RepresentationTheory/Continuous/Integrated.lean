@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convolution
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
+public import TauCeti.MeasureTheory.Integral.PeakFunction
+public import TauCeti.Order.Filter.SmallSets
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 
 /-!
@@ -52,6 +54,10 @@ theorem (Folland, Chapter 4).
 * `ContRepresentation.inner_integratedOperatorL1_apply`: the matrix coefficients
   `⟪w, π(f) v⟫ = ∫ g, f g * ⟪w, π g v⟫ ∂μ`.
 * `ContRepresentation.adjoint_integratedOperatorL1`: `π(f)† = π(f^*)` for a unitary `π`.
+* `ContRepresentation.tendsto_integratedOperatorL1_apply`: weights of unit integral and bounded
+  `L¹` norm concentrating at `0` form an approximate identity, `π(f i) v → v`.
+* `ContRepresentation.mem_closure_range_integratedOperatorL1_apply`: the integrated form is
+  nondegenerate, every `v` being a limit of vectors `π(f) v`.
 
 ## Implementation notes
 
@@ -74,8 +80,8 @@ Measurability of the orbits is read off from their continuity, which needs
 
 public section
 
-open MeasureTheory
-open scoped InnerProductSpace
+open Filter MeasureTheory
+open scoped InnerProductSpace Topology
 
 namespace TauCeti
 
@@ -295,5 +301,46 @@ theorem _root_.ContRepresentation.adjoint_integratedOperatorL1 [MeasurableNeg G]
     RCLike.conj_conj, inner_conj_symm, hπ.inner_map_left, ← ofAdd_neg]
 
 end InnerProduct
+
+section ApproximateIdentity
+
+variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
+  [OpensMeasurableSpace G]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
+  [CompleteSpace E] [SecondCountableTopologyEither G E]
+  {μ : Measure G} {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
+
+/-- **Approximate identities for the integrated form.** If the weights `f i` eventually have unit
+integral and `L¹` norm at most `C`, and concentrate at `0` (for every neighbourhood `U` of `0`,
+eventually `f i` vanishes almost everywhere outside `U`), then `π(f i)` tends strongly to the
+identity: `π(f i) v → v` for every `v`. -/
+theorem _root_.ContRepresentation.tendsto_integratedOperatorL1_apply {ι : Type*} {l : Filter ι}
+    {f : ι → G →₁[μ] 𝕜} {C : ℝ} (hf : ∀ᶠ i in l, ∫ g, f i g ∂μ = 1)
+    (hfC : ∀ᶠ i in l, ‖f i‖ ≤ C)
+    (hf₀ : ∀ U ∈ 𝓝 (0 : G), ∀ᶠ i in l, ∀ᵐ g ∂μ, g ∉ U → f i g = 0) (v : E) :
+    Tendsto (fun i ↦ π.integratedOperatorL1 hcont hbdd μ (f i) v) l (𝓝 v) := by
+  simp_rw [ContRepresentation.integratedOperatorL1_apply]
+  refine tendsto_integral_smul_of_tendsto hf hfC hf₀ (hcont v).aestronglyMeasurable ?_
+  simpa using (hcont v).tendsto 0
+
+/-- **The integrated form is nondegenerate.** For a measure positive on nonempty open sets and
+finite on some neighbourhood of each point, such as a Haar measure on a locally compact group, every
+vector `v` is a limit of vectors `π(f) v`. -/
+theorem _root_.ContRepresentation.mem_closure_range_integratedOperatorL1_apply
+    [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] (v : E) :
+    v ∈ closure (Set.range fun f : G →₁[μ] 𝕜 ↦ π.integratedOperatorL1 hcont hbdd μ f v) := by
+  -- One normalized weight inside each neighbourhood of `0`, indexed as a net shrinking to `0`.
+  choose f hf using fun U : {U : Set G // U ∈ 𝓝 (0 : G)} ↦
+    exists_integral_eq_one_norm_eq_one 𝕜 μ U.2
+  have := comap_val_smallSets_neBot (𝓝 (0 : G))
+  refine mem_closure_of_tendsto (ContRepresentation.tendsto_integratedOperatorL1_apply
+    (l := comap Subtype.val (𝓝 (0 : G)).smallSets) (C := 1) (.of_forall fun U ↦ (hf U).1)
+    (.of_forall fun U ↦ (hf U).2.1.le) (fun V hV ↦ ?_) v)
+    (.of_forall fun U ↦ Set.mem_range_self _)
+  filter_upwards [(eventually_smallSets_subset.2 hV).comap Subtype.val] with U hU
+  filter_upwards [(hf U).2.2] with g hg hgV using hg fun hgU ↦ hgV (hU hgU)
+
+end ApproximateIdentity
 
 end TauCeti
