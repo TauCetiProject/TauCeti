@@ -22,10 +22,10 @@ The file also provides the cut of a polygon along the diagonal from its penultim
 (`CompactConvexPolygon.induction`): the first `n - 1` vertices form a convex polygon
 (`CompactConvexPolygon.eraseLast`); seen from `vertex 0` the vertices are in increasing angular
 order (`CompactConvexPolygon.toReal_orientedAngle_lt`); the diagonal has the last vertex strictly on
-its right and the others strictly on its left
+its right and the vertices other than its two endpoints strictly on its left
 (`CompactConvexPolygon.last_mem_rightHalfPlane_diagonal`,
 `CompactConvexPolygon.mem_leftHalfPlane_diagonal`); the carrier is the union of the carrier of
-`eraseLast` and the triangle on the last three vertices
+`eraseLast` and the triangle on the penultimate vertex, the last vertex and `vertex 0`
 (`CompactConvexPolygon.carrier_eq_union_triangle`), which meet only on the line through the
 diagonal (`CompactConvexPolygon.carrier_eraseLast_inter_triangle_subset`); and the angle sum
 splits accordingly (`CompactConvexPolygon.sum_interiorAngle_eq`).
@@ -82,8 +82,8 @@ theorem vertex_add_one_mem_leftHalfPlane {i k : Fin n} (hi : i ≠ k) (hi' : i �
     (mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane (P.vertex_ne_vertex_add_one k)
       (P.vertex_mem_leftHalfPlane k i hi hi'))
 
-/-- Seen from `vertex 0`, every other vertex lies to the left of the first edge, so its oriented
-angle from the first edge is positive. -/
+/-- Seen from `vertex 0`, every vertex other than `vertex 0` and `vertex 1` lies to the left of the
+first edge, so its oriented angle from the first edge is positive. -/
 theorem toReal_orientedAngle_pos {j : Fin n} (hj₀ : j ≠ 0) (hj₁ : j ≠ 1) :
     0 < (orientedAngle (P.vertex 0) (P.vertex 1) (P.vertex j)).toReal := by
   have hsign := (orientedAngle_sign_eq_one_iff (P.vertex_injective.ne hj₀.symm)).2
@@ -223,8 +223,9 @@ private theorem last_mem_leftHalfPlane_zero_penultimate :
   exact P.last_mem_rightHalfPlane_diagonal hn
 
 include hn in
-/-- The triangle on the last three vertices is the intersection of the closed left half-planes of
-the last two edges with the closed right half-plane of the diagonal. -/
+/-- The triangle on the penultimate vertex, the last vertex and `vertex 0` is the intersection of
+the closed left half-planes of the last two edges with the closed right half-plane of the diagonal.
+-/
 private theorem triangle_eq_inter :
     triangle (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1))) (P.vertex 0) =
       closure (leftHalfPlane (geodesicBetween (P.vertex (Fin.castSucc (Fin.last n)))
@@ -265,9 +266,10 @@ theorem mem_carrier_eraseLast_iff (z : ℍ) :
     · rw [Fin.castSucc_add_one_of_ne_last hi]
       exact h _ (Fin.val_lt_last hi)
 
-/-- The carrier of a convex polygon is the union of the carrier of `eraseLast` and the triangle
-on the last three vertices, provided both lie in the relevant closed half-planes. These
-hypotheses are discharged in `carrier_eq_union_triangle` once the hull property is known. -/
+/-- The carrier of a convex polygon is the union of the carrier of `eraseLast` and the triangle on
+the penultimate vertex, the last vertex and `vertex 0`, provided both lie in the relevant closed
+half-planes. These hypotheses are discharged in `carrier_eq_union_triangle` once the hull property
+is known. -/
 private theorem carrier_eq_union_triangle_of_subset
     (hK : ∀ i : Fin (n + 2), n ≤ i.val → (P.eraseLast hn).carrier ⊆
       closure (leftHalfPlane (geodesicBetween (P.vertex i) (P.vertex (i + 1)))))
@@ -363,7 +365,8 @@ theorem interiorAngle_penultimate_eq :
   exact (interiorAngle_add (P.zero_mem_leftHalfPlane_penultimate_last hn) hD hCD).trans
     (add_comm _ _)
 
-/-- The interior angle at the last vertex is that of the triangle on the last three vertices. -/
+/-- The interior angle at the last vertex is that of the triangle on the penultimate vertex, the
+last vertex and `vertex 0`. -/
 theorem interiorAngle_last_eq :
     P.interiorAngle (Fin.last (n + 1)) =
       UpperHalfPlane.interiorAngle (P.vertex (Fin.last (n + 1)))
@@ -417,7 +420,8 @@ private theorem zero_notMem_range_geodesicLine_penultimate_last :
     (by rw [(Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]; exact (Fin.last_pos' ..).ne)
 
 include hn in
-/-- The triangle on the last three vertices lies in the closed left half-plane of every edge. -/
+/-- The triangle on the penultimate vertex, the last vertex and `vertex 0` lies in the closed left
+half-plane of every edge. -/
 private theorem triangle_subset_closure_leftHalfPlane_edge (i : Fin (n + 2)) :
     triangle (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1))) (P.vertex 0) ⊆
       closure (leftHalfPlane (geodesicBetween (P.vertex i) (P.vertex (i + 1)))) :=
@@ -476,7 +480,7 @@ theorem carrier_subset_closure_leftHalfPlane {g : PSL(2, ℝ)}
 
 omit [NeZero n] in
 /-- The carrier of a convex polygon is the union of the carrier of `eraseLast` and the triangle
-on the last three vertices. -/
+on the penultimate vertex, the last vertex and `vertex 0`. -/
 theorem carrier_eq_union_triangle (P : CompactConvexPolygon (n + 2)) (hn : 2 ≤ n) :
     P.carrier = (P.eraseLast hn).carrier ∪
       triangle (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))

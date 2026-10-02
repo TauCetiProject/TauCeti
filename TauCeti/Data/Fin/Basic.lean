@@ -37,9 +37,13 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
-* `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`, `Fin.zero_sub_one_eq_last`,
-  `Fin.eq_castSucc_last_or_eq_last`: how `Fin.castSucc` interacts with
-  the cyclic successor and predecessor.
+* `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
+  interacts with the cyclic successor and predecessor.
+* `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
+* `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
+  last one.
+* `Fin.last_ne_zero`, `Fin.castSucc_last_ne_zero`, `Fin.castSucc_last_ne_one`, `Fin.last_ne_one`:
+  the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
   summands split off.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
