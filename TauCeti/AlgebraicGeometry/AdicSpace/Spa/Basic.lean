@@ -47,6 +47,8 @@ it; the subspace form here needs no such comparison.)
 * `TauCeti.ValuationSpectrum.spa_def` and `TauCeti.ValuationSpectrum.mem_spa_iff` : the
   set-level and membership-level characterizations — the definition is not exposed across the
   module boundary, so these two are the exported interface.
+* `TauCeti.ValuationSpectrum.valuation_le_one_of_mem_spa` : a point of `Spa (A, A⁺)` has
+  valuation at most `1` on `A⁺`.
 * `TauCeti.ValuationSpectrum.spa_antitone` : the spectrum shrinks as the plus ring grows. Its
   inclusion into `Cont A` is `spa_def ▸ Set.inter_subset_left`.
 * `TauCeti.ValuationSpectrum.spa_integralClosure` : replacing the plus ring by its integral
@@ -112,6 +114,13 @@ plus ring: `v ∈ Spa (A, A⁺)` iff `v` is continuous and `v(a) ≤ 1` for ever
 theorem mem_spa_iff (Aplus : Subring A) (v : Spv A) :
     v ∈ spa Aplus ↔ v.IsContinuous ∧ ∀ a ∈ Aplus, v.toValuativeRel.vle a 1 := by
   rw [spa_def, Set.mem_inter_iff, mem_cont_iff, Set.mem_ofPred_eq]
+
+/-- At a point of `Spa (A, A⁺)`, every element of the plus ring has valuation at most `1`: the
+sub-unit condition of `mem_spa_iff`, read through the valuation `v.valuation`. -/
+theorem valuation_le_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus) {a : A}
+    (ha : a ∈ Aplus) : v.valuation a ≤ 1 := by
+  rw [← map_one v.valuation, valuation_le_iff]
+  exact ((mem_spa_iff Aplus v).mp hv).2 a ha
 
 /-- Enlarging the plus ring shrinks the adic spectrum. -/
 theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by

@@ -153,12 +153,6 @@ end CharP
 
 variable [TopologicalSpace (WittVector p R)]
 
-/-- Every element has valuation at most `1` at a point of `Spa(𝕎 R, 𝕎 R)`. -/
-private theorem valuation_le_one {v : Spv (WittVector p R)}
-    (hv : v ∈ spa (⊤ : Subring (WittVector p R))) (x : WittVector p R) : v.valuation x ≤ 1 := by
-  rw [← map_one v.valuation, valuation_le_iff]
-  exact ((mem_spa_iff _ v).mp hv).2 x (Subring.mem_top x)
-
 /-- **Lower radius bounds are closed downwards** on `Spa(𝕎 R, 𝕎 R)`: if `q ≤ κ(v)` and `q' ≤ q`
 then `q' ≤ κ(v)`, since `v(p) ≤ 1`. -/
 theorem IsRadiusLowerBound.of_le {q q' : ℚ≥0} {v : Spv (WittVector p R)}
@@ -169,7 +163,8 @@ theorem IsRadiusLowerBound.of_le {q q' : ℚ≥0} {v : Spv (WittVector p R)}
   rw [isRadiusLowerBound_iff_of_eq_div hb h₁] at h
   rw [isRadiusLowerBound_iff_of_eq_div hb h₂, ← valuation_le_iff, map_pow, map_pow]
   rw [← valuation_le_iff, map_pow, map_pow] at h
-  exact h.trans (pow_le_pow_of_le_one zero_le (valuation_le_one hv _) (NNRat.le_def.mp hq))
+  exact h.trans (pow_le_pow_of_le_one zero_le
+    (valuation_le_one_of_mem_spa hv (Subring.mem_top _)) (NNRat.le_def.mp hq))
 
 /-- **Upper radius bounds are closed upwards** on `Spa(𝕎 R, 𝕎 R)`: if `κ(v) ≤ q` and `q ≤ q'`
 then `κ(v) ≤ q'`, since `v(p) ≤ 1`. -/
@@ -181,7 +176,8 @@ theorem IsRadiusUpperBound.of_le {q q' : ℚ≥0} {v : Spv (WittVector p R)}
   rw [isRadiusUpperBound_iff_of_eq_div hb h₁] at h
   rw [isRadiusUpperBound_iff_of_eq_div hb h₂, ← valuation_le_iff, map_pow, map_pow]
   rw [← valuation_le_iff, map_pow, map_pow] at h
-  exact (pow_le_pow_of_le_one zero_le (valuation_le_one hv _) (NNRat.le_def.mp hq)).trans h
+  exact (pow_le_pow_of_le_one zero_le
+    (valuation_le_one_of_mem_spa hv (Subring.mem_top _)) (NNRat.le_def.mp hq)).trans h
 
 variable (p) in
 /-- At a point of `𝒴`, the valuation of `p` is nonzero and strictly below `1`: `p` lies off the
@@ -226,7 +222,8 @@ theorem exists_isRadiusLowerBound_zpow
     refine IsRadiusLowerBound.of_le hspa ((isRadiusLowerBound_iff_of_eq_div (a := 1)
       (b := b + 1) b.succ_ne_zero rfl v).mpr ?_) ?_
     · rw [← valuation_le_iff, map_pow, map_pow, pow_succ, pow_one]
-      exact (mul_le_of_le_one_right zero_le (valuation_le_one hspa _)).trans hb.le
+      exact (mul_le_of_le_one_right zero_le
+        (valuation_le_one_of_mem_spa hspa (Subring.mem_top _))).trans hb.le
     · rw [zpow_neg, zpow_natCast, inv_eq_one_div, Nat.cast_one]
       exact one_div_le_one_div_of_le (by positivity)
         (by exact_mod_cast (Nat.lt_pow_self (Fact.out : p.Prime).one_lt).le)
