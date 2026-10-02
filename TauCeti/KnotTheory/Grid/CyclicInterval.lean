@@ -712,7 +712,7 @@ theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
       split_ifs <;> omega
 
 /-- The value of the cyclic successor, split into the wrapping and the non-wrapping case. -/
-private theorem val_finRotate_cases {m : ℕ} (i : Fin (m + 1)) :
+theorem val_finRotate_cases {m : ℕ} (i : Fin (m + 1)) :
     (i.val = m ∧ (finRotate (m + 1) i).val = 0) ∨
       (i.val < m ∧ (finRotate (m + 1) i).val = i.val + 1) := by
   rw [coe_finRotate]
