@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Golay
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.OrthogonalQuotient
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Quadratic
-public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Metabolic
 
 /-!
 # The Golay code as discriminant glue for Construction A
@@ -17,9 +16,8 @@ The extended binary Golay code is a quadratic-isotropic subgroup of the discrimi
 the zero-code lattice `2 ℤ²⁴`. Gluing that subgroup gives the same integral lattice, in the same
 rational ambient space, as Construction A applied directly to the code. Its self-duality makes
 the code Lagrangian in the coordinate discriminant module, hence also in the discriminant group
-of `2 ℤ²⁴`, so its orthogonal quotient is trivial. The general gluing API then gives the glued
-lattice its properties: it is even because the glue is quadratic-isotropic, and unimodular
-because the glue is Lagrangian.
+of `2 ℤ²⁴`, so its orthogonal quotient is trivial. The general gluing API then shows that the
+glued lattice is unimodular because the glue is Lagrangian.
 
 This identifies the code and lattice descriptions of the Golay construction through the actual
 discriminant subgroup, with no choice of an abstract lattice isomorphism. The final discriminant
@@ -148,22 +146,27 @@ quotient of the Lagrangian Golay code is. -/
 instance subsingleton_discriminantBilinearModule :
     Subsingleton constructionALattice.discriminantBilinearModule :=
   (Equiv.subsingleton_congr discriminantBilinearOrthogonalQuotientIsometry.toAddEquiv.toEquiv).mpr
-    (Nat.card_eq_one_iff_unique.mp natCard_orthogonalQuotient_code_eq_one).1
+    ((FiniteBilinearModule.subsingleton_orthogonalQuotient_iff_isLagrangian _
+      isLagrangian_code.isIsotropic).mpr isLagrangian_code)
 
 /-- The discriminant bilinear group of the Golay lattice has one element. -/
 theorem natCard_discriminantBilinearModule_eq_one :
     Nat.card constructionALattice.discriminantBilinearModule = 1 :=
   Nat.card_unique
 
-/-- The discriminant quadratic group of the Golay lattice is also trivial, because the
-quadratic orthogonal quotient of the Golay code has the same underlying group as the bilinear one.
--/
+/-- The discriminant quadratic group of the Golay lattice is also trivial: it is the quadratic
+orthogonal quotient of the Lagrangian Golay code. -/
 instance subsingleton_discriminantQuadraticModule :
     Subsingleton
       (constructionALattice.discriminantQuadraticModule isEven_constructionALattice) := by
   let A := (FiniteQuadraticModule.zmodStandard 2 even_two).coordinatePower (Fin 24)
+  have hLag : A.toFiniteBilinearModule.IsLagrangian code.toAddSubgroup := by
+    dsimp only [A, FiniteQuadraticModule.coordinatePower_toFiniteBilinearModule,
+      FiniteQuadraticModule.zmodStandard_toFiniteBilinearModule]
+    exact isLagrangian_code
   have hbilin : Subsingleton (A.toFiniteBilinearModule.orthogonalQuotient code.toAddSubgroup) :=
-    (Nat.card_eq_one_iff_unique.mp natCard_orthogonalQuotient_code_eq_one).1
+    (A.toFiniteBilinearModule.subsingleton_orthogonalQuotient_iff_isLagrangian
+      hLag.isIsotropic).mpr hLag
   have hq : Subsingleton (A.orthogonalQuotient code.toAddSubgroup isIsotropic_code) :=
     (Equiv.subsingleton_congr
       (A.orthogonalQuotientUnderlyingEquiv code.toAddSubgroup isIsotropic_code)).mpr hbilin
