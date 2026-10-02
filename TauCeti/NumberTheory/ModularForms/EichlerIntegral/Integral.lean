@@ -65,7 +65,7 @@ variable {h : ℝ} {f : ℍ → ℂ}
 `𝕢(τ + it)ᵐ = 𝕢(τ)ᵐ e^{-2πmt/h}`. -/
 private lemma qParam_add_mul_I_pow (h : ℝ) (τ : ℂ) (t : ℝ) (m : ℕ) :
     𝕢 h (τ + t * I) ^ m = 𝕢 h τ ^ m * (Real.exp (-(2 * π * m / h * t)) : ℂ) := by
-  rw [show τ + t * I = τ - -(t * I) by ring, TauCeti.Periodic.qParam_sub, mul_pow,
+  rw [← sub_neg_eq_add, TauCeti.Periodic.qParam_sub, mul_pow,
     ← Complex.exp_nat_mul, ofReal_exp]
   congr 2
   push_cast
