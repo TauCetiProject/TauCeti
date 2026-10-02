@@ -141,8 +141,7 @@ theorem affineE7LoopRep_obj_outer (i : Fin 2) :
 
 /-- The outer arrow of the long arm `i` is `x ↦ (x, 0)` for `i = 0` and `x ↦ (0, x)` for
 `i = 1`. -/
-@[simp]
-theorem affineE7LoopRep_map_outerMiddle (i : Fin 2) :
+private theorem affineE7LoopRep_map_outerMiddle (i : Fin 2) :
     (affineE7LoopRep M).map (Quiver.Hom.toPath (.outerMiddle i)) =
       ModuleCat.ofHom (![LinearMap.inl k (M.obj vertex) (M.obj vertex),
         LinearMap.inr k (M.obj vertex) (M.obj vertex)] i) :=
@@ -150,8 +149,7 @@ theorem affineE7LoopRep_map_outerMiddle (i : Fin 2) :
 
 /-- The middle arrow of the long arm `i` is `(a, b) ↦ (a, b, 0)` for `i = 0` and
 `(c, d) ↦ (0, c, d)` for `i = 1`. -/
-@[simp]
-theorem affineE7LoopRep_map_middleInner (i : Fin 2) :
+private theorem affineE7LoopRep_map_middleInner (i : Fin 2) :
     (affineE7LoopRep M).map (Quiver.Hom.toPath (.middleInner i)) =
       ModuleCat.ofHom (![LinearMap.id.prodMap (LinearMap.inl k (M.obj vertex) (M.obj vertex)),
         LinearMap.inr k (M.obj vertex) (M.obj vertex × M.obj vertex)] i) :=
@@ -159,8 +157,7 @@ theorem affineE7LoopRep_map_middleInner (i : Fin 2) :
 
 /-- The inner arrow of the long arm `i` is `(a, b, c) ↦ (a, b, c, 0)` for `i = 0` and
 `(b, c, d) ↦ (0, b, c, d)` for `i = 1`. -/
-@[simp]
-theorem affineE7LoopRep_map_innerCenter (i : Fin 2) :
+private theorem affineE7LoopRep_map_innerCenter (i : Fin 2) :
     (affineE7LoopRep M).map (Quiver.Hom.toPath (.innerCenter i)) =
       ModuleCat.ofHom (![LinearMap.id.prodMap
           (LinearMap.id.prodMap (LinearMap.inl k (M.obj vertex) (M.obj vertex))),
@@ -169,14 +166,81 @@ theorem affineE7LoopRep_map_innerCenter (i : Fin 2) :
 
 /-- The short arrow is `(a, b) ↦ (a, b, a + b, a + f b)`, for the endomorphism `f` by which the
 loop acts on `M`. -/
-@[simp]
-theorem affineE7LoopRep_map_shortCenter :
+private theorem affineE7LoopRep_map_shortCenter :
     (affineE7LoopRep M).map (Quiver.Hom.toPath .shortCenter) =
       ModuleCat.ofHom ((LinearMap.fst k (M.obj vertex) (M.obj vertex)).prod
         ((LinearMap.snd k (M.obj vertex) (M.obj vertex)).prod
           ((LinearMap.fst k _ _ + LinearMap.snd k _ _).prod
             (LinearMap.fst k _ _ + (M.map loop.toPath).hom ∘ₗ LinearMap.snd k _ _)))) :=
   Paths.lift_toPath _ _
+
+-- Specify the source and target of `Hom.hom` in simp-normal form: otherwise the object
+-- lemmas above simplify its implicit arguments before the arrow application lemmas can fire.
+/-- The outer arrow of the first long arm sends `x` to `(x, 0)`. -/
+@[simp]
+theorem affineE7LoopRep_map_outerMiddle_zero_apply (x : M.obj vertex) :
+    ModuleCat.Hom.hom (A := M.obj vertex) (B := ModuleCat.of k (M.obj vertex × M.obj vertex))
+      ((affineE7LoopRep M).map (Quiver.Hom.toPath (.outerMiddle 0))) x = (x, 0) := by
+  rw [affineE7LoopRep_map_outerMiddle]
+  rfl
+
+/-- The outer arrow of the second long arm sends `x` to `(0, x)`. -/
+@[simp]
+theorem affineE7LoopRep_map_outerMiddle_one_apply (x : M.obj vertex) :
+    ModuleCat.Hom.hom (A := M.obj vertex) (B := ModuleCat.of k (M.obj vertex × M.obj vertex))
+      ((affineE7LoopRep M).map (Quiver.Hom.toPath (.outerMiddle 1))) x = (0, x) := by
+  rw [affineE7LoopRep_map_outerMiddle]
+  rfl
+
+/-- The middle arrow of the first long arm sends `(a, b)` to `(a, b, 0)`. -/
+@[simp]
+theorem affineE7LoopRep_map_middleInner_zero_apply (x : M.obj vertex × M.obj vertex) :
+    ModuleCat.Hom.hom (A := ModuleCat.of k (M.obj vertex × M.obj vertex))
+      (B := ModuleCat.of k (M.obj vertex × M.obj vertex × M.obj vertex))
+      ((affineE7LoopRep M).map (Quiver.Hom.toPath (.middleInner 0))) x = (x.1, x.2, 0) := by
+  rw [affineE7LoopRep_map_middleInner]
+  rfl
+
+/-- The middle arrow of the second long arm sends `(c, d)` to `(0, c, d)`. -/
+@[simp]
+theorem affineE7LoopRep_map_middleInner_one_apply (x : M.obj vertex × M.obj vertex) :
+    ModuleCat.Hom.hom (A := ModuleCat.of k (M.obj vertex × M.obj vertex))
+      (B := ModuleCat.of k (M.obj vertex × M.obj vertex × M.obj vertex))
+      ((affineE7LoopRep M).map (Quiver.Hom.toPath (.middleInner 1))) x = (0, x) := by
+  rw [affineE7LoopRep_map_middleInner]
+  rfl
+
+/-- The inner arrow of the first long arm sends `(a, b, c)` to `(a, b, c, 0)`. -/
+@[simp]
+theorem affineE7LoopRep_map_innerCenter_zero_apply
+    (x : M.obj vertex × M.obj vertex × M.obj vertex) :
+    ModuleCat.Hom.hom (A := ModuleCat.of k (M.obj vertex × M.obj vertex × M.obj vertex))
+      (B := ModuleCat.of k (M.obj vertex × M.obj vertex × M.obj vertex × M.obj vertex))
+      ((affineE7LoopRep M).map (Quiver.Hom.toPath (.innerCenter 0))) x =
+      (x.1, x.2.1, x.2.2, 0) := by
+  rw [affineE7LoopRep_map_innerCenter]
+  rfl
+
+/-- The inner arrow of the second long arm sends `(b, c, d)` to `(0, b, c, d)`. -/
+@[simp]
+theorem affineE7LoopRep_map_innerCenter_one_apply
+    (x : M.obj vertex × M.obj vertex × M.obj vertex) :
+    ModuleCat.Hom.hom (A := ModuleCat.of k (M.obj vertex × M.obj vertex × M.obj vertex))
+      (B := ModuleCat.of k (M.obj vertex × M.obj vertex × M.obj vertex × M.obj vertex))
+      ((affineE7LoopRep M).map (Quiver.Hom.toPath (.innerCenter 1))) x = (0, x) := by
+  rw [affineE7LoopRep_map_innerCenter]
+  rfl
+
+/-- The short arrow sends `(a, b)` to `(a, b, a + b, a + f b)`, for the endomorphism `f` by which
+the loop acts on `M`. -/
+@[simp]
+theorem affineE7LoopRep_map_shortCenter_apply (x : M.obj vertex × M.obj vertex) :
+    ModuleCat.Hom.hom (A := ModuleCat.of k (M.obj vertex × M.obj vertex))
+      (B := ModuleCat.of k (M.obj vertex × M.obj vertex × M.obj vertex × M.obj vertex))
+      ((affineE7LoopRep M).map (Quiver.Hom.toPath .shortCenter)) x =
+      (x.1, x.2, x.1 + x.2, x.1 + (M.map loop.toPath).hom x.2) := by
+  rw [affineE7LoopRep_map_shortCenter]
+  rfl
 
 /-- **A finite-dimensional representation of `•↺` gives a finite-dimensional representation of
 `E₇~`**: the vertex spaces of `TauCeti.affineE7LoopRep M` are powers of the vertex space of `M`. -/
@@ -352,40 +416,54 @@ private noncomputable def outerHom (i : Fin 2) : M.obj vertex →ₗ[k] N.obj ve
   (g.app (Quiver.AffineE7.outer i)).hom
 
 /-! The seven naturality squares of `g`, read on elements. Each is
-`CategoryTheory.NatTrans.naturality_apply` along one arrow, whose action is the one recorded in
-the docstring of `TauCeti.affineE7LoopRep`. -/
+`CategoryTheory.NatTrans.naturality_apply` along one arrow, whose action on elements is given by
+the corresponding `TauCeti.affineE7LoopRep_map_*_apply` lemma. -/
 
 private theorem middleHom_zero_inl (x : M.obj vertex) :
-    middleHom g 0 (x, 0) = (outerHom g 0 x, 0) :=
-  NatTrans.naturality_apply g (Quiver.Hom.toPath (.outerMiddle 0)) x
+    middleHom g 0 (x, 0) = (outerHom g 0 x, 0) := by
+  rw [← affineE7LoopRep_map_outerMiddle_zero_apply x,
+    ← affineE7LoopRep_map_outerMiddle_zero_apply (outerHom g 0 x)]
+  exact NatTrans.naturality_apply g (Quiver.Hom.toPath (.outerMiddle 0)) x
 
 private theorem innerHom_zero_mk (a b : M.obj vertex) :
-    innerHom g 0 (a, b, 0) = ((middleHom g 0 (a, b)).1, (middleHom g 0 (a, b)).2, 0) :=
-  NatTrans.naturality_apply g (Quiver.Hom.toPath (.middleInner 0)) (a, b)
+    innerHom g 0 (a, b, 0) = ((middleHom g 0 (a, b)).1, (middleHom g 0 (a, b)).2, 0) := by
+  rw [← affineE7LoopRep_map_middleInner_zero_apply (a, b),
+    ← affineE7LoopRep_map_middleInner_zero_apply (middleHom g 0 (a, b))]
+  exact NatTrans.naturality_apply g (Quiver.Hom.toPath (.middleInner 0)) (a, b)
 
 private theorem centerHom_innerCenter_zero (a b c : M.obj vertex) :
     centerHom g (a, b, c, 0) = ((innerHom g 0 (a, b, c)).1, (innerHom g 0 (a, b, c)).2.1,
-      (innerHom g 0 (a, b, c)).2.2, 0) :=
-  NatTrans.naturality_apply g (Quiver.Hom.toPath (.innerCenter 0)) (a, b, c)
+      (innerHom g 0 (a, b, c)).2.2, 0) := by
+  rw [← affineE7LoopRep_map_innerCenter_zero_apply (a, b, c),
+    ← affineE7LoopRep_map_innerCenter_zero_apply (innerHom g 0 (a, b, c))]
+  exact NatTrans.naturality_apply g (Quiver.Hom.toPath (.innerCenter 0)) (a, b, c)
 
 private theorem middleHom_one_inr (x : M.obj vertex) :
-    middleHom g 1 (0, x) = (0, outerHom g 1 x) :=
-  NatTrans.naturality_apply g (Quiver.Hom.toPath (.outerMiddle 1)) x
+    middleHom g 1 (0, x) = (0, outerHom g 1 x) := by
+  rw [← affineE7LoopRep_map_outerMiddle_one_apply x,
+    ← affineE7LoopRep_map_outerMiddle_one_apply (outerHom g 1 x)]
+  exact NatTrans.naturality_apply g (Quiver.Hom.toPath (.outerMiddle 1)) x
 
 private theorem innerHom_one_mk (c d : M.obj vertex) :
-    innerHom g 1 (0, c, d) = (0, middleHom g 1 (c, d)) :=
-  NatTrans.naturality_apply g (Quiver.Hom.toPath (.middleInner 1)) (c, d)
+    innerHom g 1 (0, c, d) = (0, middleHom g 1 (c, d)) := by
+  rw [← affineE7LoopRep_map_middleInner_one_apply (c, d),
+    ← affineE7LoopRep_map_middleInner_one_apply (middleHom g 1 (c, d))]
+  exact NatTrans.naturality_apply g (Quiver.Hom.toPath (.middleInner 1)) (c, d)
 
 private theorem centerHom_innerCenter_one (b c d : M.obj vertex) :
-    centerHom g (0, b, c, d) = (0, innerHom g 1 (b, c, d)) :=
-  NatTrans.naturality_apply g (Quiver.Hom.toPath (.innerCenter 1)) (b, c, d)
+    centerHom g (0, b, c, d) = (0, innerHom g 1 (b, c, d)) := by
+  rw [← affineE7LoopRep_map_innerCenter_one_apply (b, c, d),
+    ← affineE7LoopRep_map_innerCenter_one_apply (innerHom g 1 (b, c, d))]
+  exact NatTrans.naturality_apply g (Quiver.Hom.toPath (.innerCenter 1)) (b, c, d)
 
 private theorem centerHom_shortCenter (a b : M.obj vertex) :
     centerHom g (a, b, a + b, a + (M.map loop.toPath).hom b) =
       ((shortHom g (a, b)).1, (shortHom g (a, b)).2,
         (shortHom g (a, b)).1 + (shortHom g (a, b)).2,
-        (shortHom g (a, b)).1 + (N.map loop.toPath).hom (shortHom g (a, b)).2) :=
-  NatTrans.naturality_apply g (Quiver.Hom.toPath .shortCenter) (a, b)
+        (shortHom g (a, b)).1 + (N.map loop.toPath).hom (shortHom g (a, b)).2) := by
+  rw [← affineE7LoopRep_map_shortCenter_apply (a, b),
+    ← affineE7LoopRep_map_shortCenter_apply (shortHom g (a, b))]
+  exact NatTrans.naturality_apply g (Quiver.Hom.toPath .shortCenter) (a, b)
 
 /-- The centre component of `g` sends the first axis by the first outer component. -/
 private theorem centerHom_first_axis (a : M.obj vertex) :
