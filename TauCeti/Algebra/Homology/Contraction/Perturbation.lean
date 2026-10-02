@@ -301,6 +301,28 @@ theorem perturb_proj_comp_one_add_mul :
   simp only [LinearMap.sub_comp, LinearMap.comp_assoc, h]
   abel
 
+/-- The perturbed homotopy solves the fixed-point equation `h' (1 + δ h) = h`. -/
+theorem perturb_homotopy_comp_one_add_mul :
+    (c.perturb δ hδ hU).homotopy ∘ₗ (1 + δ * c.homotopy) = c.homotopy := by
+  have h := congrArg (fun f ↦ c.homotopy ∘ₗ f ∘ₗ c.homotopy)
+    (c.perturbationSeries_comp_homotopy_comp δ hU)
+  simp only [LinearMap.comp_assoc, LinearMap.comp_sub, LinearMap.sub_comp] at h
+  rw [perturb_homotopy, Module.End.mul_eq_comp, LinearMap.comp_add, Module.End.one_eq_id,
+    LinearMap.comp_id]
+  simp only [LinearMap.sub_comp, LinearMap.comp_assoc, h]
+  abel
+
+/-- The perturbed inclusion satisfies `i' + h' δ i = i`. -/
+theorem perturb_incl_add_homotopy_comp :
+    (c.perturb δ hδ hU).incl +
+      (c.perturb δ hδ hU).homotopy ∘ₗ δ ∘ₗ c.incl = c.incl := by
+  have h := congrArg (fun f ↦ c.homotopy ∘ₗ f ∘ₗ c.incl)
+    (c.perturbationSeries_comp_homotopy_comp δ hU)
+  simp only [LinearMap.comp_assoc, LinearMap.comp_sub, LinearMap.sub_comp] at h
+  rw [perturb_incl, perturb_homotopy]
+  simp only [LinearMap.sub_comp, LinearMap.comp_assoc, h]
+  abel
+
 end Perturb
 
 end LinearSpecialContraction
