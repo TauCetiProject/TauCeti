@@ -190,7 +190,7 @@ theorem weightSpace_weylRep_eq_bot_of_card_filter_lt (t : YoungTableau μ)
     (h : ((Finset.univ.filter fun x => rowIndex t x < m).card : ℤ) <
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j) :
     weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t) l = ⊥ :=
-  (weightSpace_toRepresentation_eq_bot_iff (weylModule k n t) l).mpr
+  ((weylModule k n t).weightSpace_toRepresentation_eq_bot_iff l).mpr
     (weylModule_toSubmodule_inf_weightSpace_eq_bot t h)
 
 /-- **The weights of the Weyl module are dominated by the weight of its shape**: for a shape with
@@ -222,7 +222,7 @@ theorem nonneg_and_sum_eq_of_weightSpace_weylRep_ne_bot (t : YoungTableau μ) {l
     (∀ i, 0 ≤ l i) ∧ ∑ i, l i = μ.card := by
   refine (weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq
     (weightChar_injective_of_algebraRat k n) l).mp fun hbot => hl ?_
-  rw [weightSpace_toRepresentation_eq_bot_iff, hbot, inf_bot_eq]
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, hbot, inf_bot_eq]
 
 /-! ## The highest weight -/
 
@@ -244,7 +244,7 @@ theorem weightSpace_weylRep_weightOfShape_ne_bot (t : YoungTableau μ) (hn : μ.
     weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t)
       (weightOfShape n μ).1 ≠ ⊥ := by
   intro hbot
-  have hbot' := (weightSpace_toRepresentation_eq_bot_iff (weylModule k n t)
+  have hbot' := ((weylModule k n t).weightSpace_toRepresentation_eq_bot_iff
     (weightOfShape n μ).1).mp hbot
   refine permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
     (k := k) t hn ?_
@@ -276,8 +276,8 @@ theorem sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot {μ : Youn
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
   refine YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (k := k)
     (StandardYoungTableau.rowSuperstandard μ).toTableau hn (fun hbot => hl ?_) m
-  rw [weightSpace_toRepresentation_eq_bot_iff, weylModuleOfShape_toSubmodule]
-  rw [weightSpace_toRepresentation_eq_bot_iff,
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, weylModuleOfShape_toSubmodule]
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
     YoungTableau.weylModule_toSubmodule] at hbot
   exact hbot
 
@@ -291,9 +291,9 @@ theorem weightSpace_weylRepOfShape_weightOfShape_ne_bot {μ : YoungDiagram}
   intro hbot
   refine YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot (k := k)
     (StandardYoungTableau.rowSuperstandard μ).toTableau hn ?_
-  rw [weightSpace_toRepresentation_eq_bot_iff,
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
     YoungTableau.weylModule_toSubmodule]
-  rw [weightSpace_toRepresentation_eq_bot_iff,
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
     weylModuleOfShape_toSubmodule] at hbot
   exact hbot
 

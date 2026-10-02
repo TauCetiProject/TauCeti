@@ -63,10 +63,10 @@ The definitions themselves need only a commutative ring, and are stated there.
 * `TauCeti.map_weightSpace_le_of_commute`: **an operator commuting with the torus action preserves
   every weight space**, so when the ambient representation is the internal direct sum of its weight
   spaces, a subrepresentation the operator cuts out inherits that decomposition.
-* `TauCeti.weightSpace_toRepresentation`: **the weight spaces of a
+* `Subrepresentation.weightSpace_toRepresentation`: **the weight spaces of a
   subrepresentation are the traces of the ambient ones**, with
-  `TauCeti.map_weightSpace_toRepresentation` and
-  `TauCeti.weightSpace_toRepresentation_eq_bot_iff` reading that trace in the
+  `Subrepresentation.map_weightSpace_toRepresentation` and
+  `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` reading that trace in the
   ambient module and as the criterion for a weight not to occur in the subrepresentation.
 
 ## Implementation notes
@@ -146,7 +146,18 @@ theorem map_weightSpace_le_of_commute {ρ : Representation k (GL (Fin n) k) W} (
   intro t
   rw [← Module.End.mul_apply, ← (hφ t).eq, Module.End.mul_apply, hw t, map_smul]
 
+end CommRing
+
+end TauCeti
+
 /-! ## The weight spaces of a subrepresentation -/
+
+namespace Subrepresentation
+
+open TauCeti
+
+variable {k : Type u} [CommRing k] {n : ℕ}
+variable {W : Type v} [AddCommGroup W] [Module k W]
 
 /-- **The weight spaces of a subrepresentation are the traces of the ambient ones**: a vector of a
 subrepresentation has weight `l` exactly when it has weight `l` in the ambient representation, the
@@ -177,6 +188,14 @@ theorem weightSpace_toRepresentation_eq_bot_iff {ρ : Representation k (GL (Fin 
   refine ⟨fun h => by rw [h, Submodule.map_bot], fun h => ?_⟩
   exact Submodule.map_injective_of_injective (Submodule.injective_subtype _)
     (by rw [h, Submodule.map_bot])
+
+end Subrepresentation
+
+namespace TauCeti
+
+section CommRing
+
+variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-! ## The standard representation and the determinant powers -/
 
