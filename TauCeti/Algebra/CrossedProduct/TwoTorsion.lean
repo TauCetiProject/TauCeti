@@ -91,15 +91,23 @@ variable (K : Type) [Field K]
 
 open BrauerGroup
 
+/-- A Brauer class is `2`-torsion exactly when its image under the comparison
+`brauerCohomologyEquiv K` is, written additively. -/
+private theorem mem_twoTorsion_iff_brauerCohomologyEquiv_add_self (x : BrauerGroup K) :
+    x ∈ twoTorsion K ↔
+      brauerCohomologyEquiv K (Additive.ofMul x) + brauerCohomologyEquiv K (Additive.ofMul x) =
+        0 := by
+  simp [← map_add, ← ofMul_mul, sq]
+
 variable [Invertible (2 : K)]
 
 /-- The Brauer class corresponding to `h2MuToUnits K y` under the comparison
 `brauerCohomologyEquiv K` is `2`-torsion, because `h2MuToUnits K y` is. -/
 private theorem toMul_brauerCohomologyEquiv_symm_h2MuToUnits_mem_twoTorsion
     (y : continuousCohomology 2 (trivialF2 (AbsoluteGaloisGroup K))) :
-    ((brauerCohomologyEquiv K).symm ((h2MuToUnits K).hom y)).toMul ∈ twoTorsion K := by
-  rw [mem_twoTorsion, sq, ← toMul_add, ← map_add, (h2MuToUnits_range K _).1 ⟨y, rfl⟩, map_zero,
-    toMul_zero]
+    ((brauerCohomologyEquiv K).symm ((h2MuToUnits K).hom y)).toMul ∈ twoTorsion K :=
+  (mem_twoTorsion_iff_brauerCohomologyEquiv_add_self K _).2 <| by
+    simpa using (h2MuToUnits_range K _).1 ⟨y, rfl⟩
 
 /-- The inverse direction of `brauer2EquivH2`: a class of `H²_cont(G_K, 𝔽₂)` goes to the
 `2`-torsion Brauer class corresponding to its image under `h2MuToUnits K`. -/
@@ -129,14 +137,12 @@ private theorem h2ToTwoTorsion_bijective : Function.Bijective (h2ToTwoTorsion K)
   · have h' := congrArg (fun x ↦ ((Additive.toMul x : twoTorsion K) : BrauerGroup K)) h
     simpa only [coe_toMul_h2ToTwoTorsion, EmbeddingLike.apply_eq_iff_eq] using h'
   · intro x
-    have hx : brauerCohomologyEquiv K (Additive.ofMul (x.toMul : BrauerGroup K)) +
-        brauerCohomologyEquiv K (Additive.ofMul (x.toMul : BrauerGroup K)) = 0 := by
-      rw [← map_add, ← ofMul_mul, ← sq, mem_twoTorsion.1 x.toMul.2, ofMul_one, map_zero]
-    obtain ⟨y, hy⟩ := (h2MuToUnits_range K _).2 hx
+    obtain ⟨y, hy⟩ := (h2MuToUnits_range K _).2
+      ((mem_twoTorsion_iff_brauerCohomologyEquiv_add_self K _).1 x.toMul.2)
     refine ⟨y, ?_⟩
     apply Additive.toMul.injective
     ext
-    rw [coe_toMul_h2ToTwoTorsion, hy, AddEquiv.symm_apply_apply, toMul_ofMul]
+    simp [coe_toMul_h2ToTwoTorsion, hy]
 
 /-- **The `2`-torsion of the Brauer group is `H²(G_K, 𝔽₂)`.** The identification
 `Br(K)[2] ≃ H²_cont(G_K, 𝔽₂)`, with multiplication of Brauer classes going to addition of
