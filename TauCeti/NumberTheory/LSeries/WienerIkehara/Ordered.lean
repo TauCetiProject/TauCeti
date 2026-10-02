@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Variants
 import TauCeti.Analysis.Convex.Cone.PositiveDual
 
