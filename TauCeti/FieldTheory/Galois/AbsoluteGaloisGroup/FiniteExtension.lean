@@ -68,6 +68,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
   to `σ.restrictNormalHom g`.
+* `TauCeti.exists_galoisOpenNormalSubgroup_eq`: every open normal subgroup of `G_K` is
+  `galoisOpenNormalSubgroup K E E.val` for a finite Galois intermediate field `E` of `Kˢ/K`.
 * `TauCeti.restrictNormalHom_of_compatible`: a compatible pair between normal subextensions of
   `Kˢ` carries restriction to the larger field to restriction to the smaller field.
 
@@ -253,5 +255,25 @@ theorem galoisOpenNormalSubgroup_toSubgroup :
   (rfl)
 
 end OpenNormal
+
+variable {K} in
+/-- **Every open normal subgroup of `G_K` is the level of a finite Galois subextension**: it is
+`galoisOpenNormalSubgroup K E E.val` for its fixed field `E`, an intermediate field of `Kˢ/K`
+finite and Galois over `K`. -/
+theorem exists_galoisOpenNormalSubgroup_eq (U : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    ∃ (E : IntermediateField K (SeparableClosure K)) (_ : FiniteDimensional K E)
+      (_ : IsGalois K E), galoisOpenNormalSubgroup K E E.val = U := by
+  obtain ⟨E, hE⟩ : ∃ E : IntermediateField K (SeparableClosure K),
+      E.fixingSubgroup = U.toSubgroup :=
+    ⟨_, InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩⟩
+  have : FiniteDimensional K E := by
+    rw [← InfiniteGalois.isOpen_iff_finite, hE]
+    exact U.isOpen
+  have : IsGalois K E := by
+    rw [← InfiniteGalois.normal_iff_isGalois, hE]
+    infer_instance
+  refine ⟨E, inferInstance, inferInstance, OpenNormalSubgroup.toSubgroup_injective ?_⟩
+  dsimp only
+  rw [galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val, hE]
 
 end TauCeti

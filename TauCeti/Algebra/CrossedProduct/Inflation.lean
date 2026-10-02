@@ -458,20 +458,7 @@ theorem exists_galoisCocycle_inflateZ2
     (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
     ∃ c : GaloisCocycle K, c.cocycle.inflateZ2 c.extension = z := by
   obtain ⟨U, y, hy⟩ := exists_openNormalSubgroup_descendZ2 z
-  obtain ⟨L, hfix⟩ : ∃ L : IntermediateField K (SeparableClosure K),
-      L.fixingSubgroup = U.toSubgroup :=
-    ⟨_, InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩⟩
-  have : FiniteDimensional K L := by
-    rw [← InfiniteGalois.isOpen_iff_finite, hfix]
-    exact U.isOpen
-  have : IsGalois K L := by
-    rw [← InfiniteGalois.normal_iff_isGalois, hfix]
-    infer_instance
-  have hU : galoisOpenNormalSubgroup K L L.val = U := by
-    refine OpenNormalSubgroup.toSubgroup_injective ?_
-    dsimp only
-    rw [galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val, hfix]
-  subst hU
+  obtain ⟨L, _, _, rfl⟩ := exists_galoisOpenNormalSubgroup_eq U
   let c : GaloisCocycle K :=
     { extension := L
       cocycle := TwoCocycle.ofFiniteLevelZ2 L y }
