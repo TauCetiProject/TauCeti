@@ -53,7 +53,6 @@ open scoped IsMulCommutative Topology
 variable {G H : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  [SecondCountableTopologyEither G H]
   {μ : Measure G} [μ.IsAddLeftInvariant] [μ.InnerRegularCompactLTTop]
   [IsLocallyFiniteMeasure μ]
 
@@ -71,8 +70,7 @@ detects a point of the Pontryagin dual. -/
 def integratedCharacterSet : Set (characterSpace ℂ A) :=
   {ω | ∃ f : G →₁[μ] ℂ, ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0}
 
-omit [IsTopologicalAddGroup G] [μ.IsAddLeftInvariant] [μ.InnerRegularCompactLTTop]
-    [IsLocallyFiniteMeasure μ] [CompleteSpace A] in
+omit [μ.IsAddLeftInvariant] [IsLocallyFiniteMeasure μ] [CompleteSpace A] in
 /-- Membership in the integrated-character set means nonvanishing on some integrated operator. -/
 @[simp]
 theorem mem_integratedCharacterSet_iff (ω : characterSpace ℂ A) :
@@ -80,8 +78,7 @@ theorem mem_integratedCharacterSet_iff (ω : characterSpace ℂ A) :
       ∃ f : G →₁[μ] ℂ, ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0 :=
   Iff.rfl
 
-omit [IsTopologicalAddGroup G] [μ.IsAddLeftInvariant] [μ.InnerRegularCompactLTTop]
-    [IsLocallyFiniteMeasure μ] in
+omit [μ.IsAddLeftInvariant] [IsLocallyFiniteMeasure μ] in
 /-- The integrated-character set is open in the character space. -/
 theorem isOpen_integratedCharacterSet :
     IsOpen (π.integratedCharacterSet hcont hbdd A hA) := by
