@@ -95,7 +95,7 @@ theorem card_fixedBy_artinNegativeSet (g : G) :
     Nat.card_unique, mul_one, finsum_eq_sum_of_fintype]
 
 /-- The two sides of Artin's permutation identity have the same fixed-point counts. -/
-theorem card_fixedBy_artinPositiveSet_eq_artinNegativeSet (g : G) :
+theorem card_fixedBy_artinPositiveSet_eq_card_fixedBy_artinNegativeSet (g : G) :
     Nat.card (fixedBy (ArtinPositiveSet G) g) =
       Nat.card (fixedBy (ArtinNegativeSet G) g) := by
   classical
@@ -125,7 +125,7 @@ theorem nonempty_equiv_artinPermutationRepresentations (k : Type v) [Field k] [C
     Nonempty ((Representation.ofMulAction k G (ArtinPositiveSet G)).Equiv
       (Representation.ofMulAction k G (ArtinNegativeSet G))) :=
   (nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq k).mpr
-    card_fixedBy_artinPositiveSet_eq_artinNegativeSet
+    card_fixedBy_artinPositiveSet_eq_card_fixedBy_artinNegativeSet
 
 section Lattices
 
