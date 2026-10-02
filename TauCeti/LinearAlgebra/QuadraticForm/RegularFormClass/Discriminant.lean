@@ -49,6 +49,8 @@ is killed by two.
 * `TauCeti.RegularFormClass.signedDiscr_add` and `TauCeti.RegularFormClass.signedDiscr_mul`: the
   signed discriminant of an orthogonal sum picks up the sign `(-1)^{mn}`, and that of a tensor
   product is `(-1)^{mn(mn-1)/2} d(q)^n d(r)^m`.
+* `TauCeti.discr_formClass_eq_squareClass`: the discriminant of a regular form is the square
+  class of its Gram determinant in any basis.
 * `TauCeti.RegularFormClass.discr_mk_rankOne_mul` and
   `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: scaling by `a` adds
   `m • squareClass a` to the (signed) discriminant of a class of rank `m`.
@@ -308,6 +310,35 @@ theorem discr_formClass {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimens
     (hp : Q.Equivalent (presentedForm p)) :
     RegularFormClass.discr (formClass Q hQ) = squareClass (∏ i, p.2 i) := by
   rw [formClass_mk Q hQ p hp, RegularFormClass.discr_mk]
+
+/-- **The discriminant is the Gram determinant modulo squares**: the discriminant of a regular
+form is the square class of the determinant `QuadraticForm.discr b Q` of its Gram matrix in any
+basis `b`. -/
+theorem discr_formClass_eq_squareClass {V : Type v} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] {ι : Type*} [Fintype ι] [DecidableEq ι] (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (b : Module.Basis ι K V) {u : Kˣ} (hu : (u : K) = Q.discr b) :
+    RegularFormClass.discr (formClass Q hQ) = squareClass u := by
+  obtain ⟨⟨n, w⟩, hp⟩ := exists_presentedForm_equivalent Q hQ
+  rw [discr_formClass Q hQ ⟨n, w⟩ hp, squareClass_eq_iff_isSquare_mul]
+  obtain ⟨g, hg⟩ : ∃ g : V ≃ₗ[K] (Fin n → K), Q = (presentedForm ⟨n, w⟩).comp g.toLinearMap :=
+    hp.elim fun f => ⟨f.toLinearEquiv, by ext x; exact (f.map_app x).symm⟩
+  let e : ι ≃ Fin n := Fintype.equivOfCardEq <| by
+    rw [← Module.finrank_eq_card_basis b, g.finrank_eq, Module.finrank_fin_fun, Fintype.card_fin]
+  -- Reindexing the basis permutes the rows and columns of the Gram matrix.
+  have hre : Q.discr (b.reindex e) = Q.discr b := by
+    have hM : Q.toMatrix (b.reindex e) = (Q.toMatrix b).submatrix e.symm e.symm := by
+      ext i j
+      simp [QuadraticForm.toMatrix, LinearMap.toMatrix₂_apply]
+    rw [QuadraticForm.discr, hM, Matrix.det_submatrix_equiv_self, QuadraticForm.discr]
+  set c := (g.toLinearMap.toMatrix (b.reindex e) (Pi.basisFun K (Fin n))).det
+  have hdiscr : (u : K) = c * c * ∏ i, (w i : K) := by
+    rw [hu, ← hre, hg, QuadraticForm.discr_comp (b := b.reindex e) (Pi.basisFun K (Fin n)),
+      QuadraticForm.discr_eq_discr', presentedForm_eq_weightedSumSquares_coe,
+      QuadraticForm.discr'_weightedSumSquares]
+  have hc : c * ∏ i, (w i : K) ≠ 0 := fun h => u.ne_zero (by rw [hdiscr, mul_assoc, h, mul_zero])
+  refine ⟨Units.mk0 _ hc, Units.ext ?_⟩
+  simp only [Units.val_mul, Units.coe_prod, Units.val_mk0, hdiscr]
+  ring
 
 /-- The signed discriminant of a regular form is computed by any of its diagonalizations. -/
 theorem signedDiscr_formClass {V : Type v} [AddCommGroup V] [Module K V]

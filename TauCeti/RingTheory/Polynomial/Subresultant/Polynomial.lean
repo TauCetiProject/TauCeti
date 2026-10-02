@@ -24,6 +24,10 @@ that controls the subresultant gcd criterion.
 
 ## Main results
 
+* `Polynomial.subresultantCoeffMatrix_eq_updateRow`: the coefficient matrix replaces the first row
+  of the principal matrix.
+* `TauCeti.subresultantCoeffMatrix_mulVec`: the coefficient matrix reads the coefficients of
+  `A * q + B * p`, with degree `k` in the first row.
 * `Polynomial.subresultant_coeff`: at a strict index `j < min m n`, the coefficients are the
   prescribed minors through degree `j`, and vanish above `j`; outside that range they all
   vanish.
@@ -81,6 +85,35 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_natAdd [Semiring R]
       let d := if i.val = 0 then k else i.val + j
       if (l : ℕ) ≤ d ∧ d ≤ l.val + m then p.coeff (d - l.val) else 0 := by
   simp [subresultantCoeffMatrix]
+
+/-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
+matrix by the row of degree `k`. -/
+theorem _root_.Polynomial.subresultantCoeffMatrix_eq_updateRow [Semiring R]
+    (p q : R[X]) (m n j k : ℕ)
+    (i₀ : Fin ((m - j) + (n - j))) (hi₀ : i₀.val = 0) :
+    subresultantCoeffMatrix p q m n j k =
+      (subresultantMatrix p q m n j).updateRow i₀
+        (subresultantCoeffMatrix p q m n j k i₀) := by
+  classical
+  ext i l
+  by_cases hi : i = i₀
+  · subst i
+    simp
+  · have hi' : i.val ≠ 0 := fun h => hi (Fin.ext (h.trans hi₀.symm))
+    induction l using Fin.addCases <;> simp [Matrix.updateRow_apply, hi, hi']
+
+/-- A subresultant coefficient matrix reads coefficients of `A * q + B * p` from the
+coefficient vector of `(A, B)`. Its first row reads degree `k`; the other rows read degrees
+`i.val + j`. The formal bounds dominate the actual input degrees. -/
+theorem subresultantCoeffMatrix_mulVec [CommSemiring R] [DecidableEq R]
+    {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (j k : ℕ)
+    (v : Fin ((m - j) + (n - j)) → R) (i : Fin ((m - j) + (n - j))) :
+    (subresultantCoeffMatrix p q m n j k).mulVec v i =
+      (ofFn (m - j) (fun l => v (Fin.castAdd (n - j) l)) * q +
+        ofFn (n - j) (fun l => v (Fin.natAdd (m - j) l)) * p).coeff
+        (if i.val = 0 then k else i.val + j) := by
+  exact coefficientRow_dotProduct hm hn (m - j) (n - j)
+    (if i.val = 0 then k else i.val + j) v
 
 /-- At `k = j`, the coefficient matrix is the principal subresultant matrix. -/
 @[simp]

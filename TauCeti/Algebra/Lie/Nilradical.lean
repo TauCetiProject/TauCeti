@@ -149,6 +149,12 @@ theorem isNilpotent_of_le {I J : LieIdeal R L} (h : I ≤ J) (_ : LieRing.IsNilp
     LieRing.IsNilpotent I :=
   (inclusion_injective h).lieAlgebra_isNilpotent
 
+/-- The preimage of a nilpotent ideal under an injective Lie homomorphism is nilpotent. -/
+theorem isNilpotent_comap_of_injective {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (I : LieIdeal R L') (f : L →ₗ⁅R⁆ L') (hf : Function.Injective f)
+    [LieRing.IsNilpotent I] : LieRing.IsNilpotent (I.comap f) :=
+  (f.lieIdealComap_injective I hf).lieAlgebra_isNilpotent
+
 /-- A surjective Lie algebra homomorphism maps a nilpotent ideal to a nilpotent ideal. -/
 theorem isNilpotent_map_of_surjective {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (I : LieIdeal R L) (g : L →ₗ⁅R⁆ L') (hg : Function.Surjective g)

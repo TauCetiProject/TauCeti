@@ -74,10 +74,11 @@ theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
   rw [hset]
   exact (isOpen_discrete _).preimage (χ.continuous.subtype_mk hmem)
 
-/-- A homomorphism with open kernel out of a topological group is continuous for every topology
-on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
-theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousMul G] {F : Type*} [MulOneClass F]
-    [TopologicalSpace F] (f : G →* F) (hf : IsOpen (f.ker : Set G)) : Continuous f := by
+/-- A homomorphism with open kernel out of a group with continuous translations is continuous for
+every topology on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
+theorem _root_.MonoidHom.continuous_of_isOpen_ker [SeparatelyContinuousMul G] {F : Type*}
+    [MulOneClass F] [TopologicalSpace F] (f : G →* F) (hf : IsOpen (f.ker : Set G)) :
+    Continuous f := by
   refine continuous_iff_continuousAt.mpr fun x ↦ tendsto_const_nhds.congr' ?_
   have hcoset : ∀ᶠ y in nhds x, x⁻¹ * y ∈ f.ker := by
     have hmul : Filter.Tendsto (fun y ↦ x⁻¹ * y) (nhds x) (nhds 1) := by

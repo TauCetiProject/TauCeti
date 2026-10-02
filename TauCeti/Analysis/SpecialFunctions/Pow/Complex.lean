@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
-# Principal complex powers: positive real scaling and inversion on a sector
+# Principal complex powers: scaling, sector inversion, and holomorphic products
 
 Multiplication of a complex number by a nonnegative real scalar is compatible with principal
 complex powers.  Away from zero, this follows because positive scaling does not cross the branch
@@ -19,6 +21,9 @@ raising the result back to the power `r` returns `u` — but only as long as the
 argument stays inside the principal range `(-π, π]`, which is where `Complex.cpow_mul` may be
 applied.  For a positive real exponent `r` that range is reached exactly on the sector
 `-(r * π) < arg u ≤ r * π`.
+
+Products `∏ i, (1 - a i * w) ^ e i` are holomorphic near zero, with derivative
+`-∑ i, e i * a i` at zero.
 
 ## Main results
 
@@ -92,6 +97,28 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
     calc
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
+
+/-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
+where every base equals one. -/
+theorem analyticAt_prod_one_sub_mul_cpow {ι : Type*} [Fintype ι] (a e : ι → ℂ) :
+    AnalyticAt ℂ (fun w : ℂ => ∏ i, (1 - a i * w) ^ e i) 0 := by
+  have hfactor (i : ι) : AnalyticAt ℂ (fun w : ℂ => (1 - a i * w) ^ e i) 0 :=
+    ((analyticAt_const (v := (1 : ℂ))).sub
+      ((analyticAt_const (v := a i)).mul analyticAt_id)).cpow
+        analyticAt_const (by simp [slitPlane])
+  exact Finset.analyticAt_fun_prod Finset.univ (fun i _ => hfactor i)
+
+/-- The derivative at zero of the reciprocal-coordinate product is the negative
+weighted sum of its coefficients. -/
+theorem hasDerivAt_prod_one_sub_mul_cpow {ι : Type*} [Fintype ι] (a e : ι → ℂ) :
+    HasDerivAt (fun w : ℂ => ∏ i, (1 - a i * w) ^ e i) (-∑ i, e i * a i) 0 := by
+  classical
+  have hfactor (i : ι) : HasDerivAt (fun w : ℂ => (1 - a i * w) ^ e i)
+      (-e i * a i) 0 := by
+    simpa using (((hasDerivAt_id (0 : ℂ)).const_mul (a i)).const_sub 1).cpow_const
+      (c := e i) (by simp [slitPlane])
+  simpa [Finset.sum_neg_distrib] using HasDerivAt.fun_finsetProd
+    (u := Finset.univ) (fun i _ => hfactor i)
 
 end TauCeti
 

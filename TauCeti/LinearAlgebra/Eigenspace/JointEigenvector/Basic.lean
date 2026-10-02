@@ -15,7 +15,9 @@ import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 
 The eigenvalue function of a joint eigenvector of a monoid-hom representation
 `ρ : G →* Module.End K V` is a character: it maps `1` to `1`, is multiplicative, and, for
-a group, valued in units, assembling into `MonoidHom.unitHomOfJointEigenvector : G →* Kˣ`. This much
+a group, valued in units, assembling into `MonoidHom.unitHomOfJointEigenvector : G →* Kˣ`.
+For an algebra representation it is moreover additive and `R`-linear, assembling into
+`AlgHom.eigenvalueHomOfJointEigenvector : A →ₐ[R] K`. This much
 needs no division — a nonzero vector cancels over a commutative ring without zero divisors
 acting torsion-freely, and on a group multiplicativity exhibits the inverse of `χ g` as
 `χ g⁻¹`. This yields the simultaneous-diagonalization toolkit for a commuting family of
@@ -40,6 +42,8 @@ components of `M_k(Γ₁(N))`.
 
 * `MonoidHom.unitHomOfJointEigenvector`: the eigenvalue function of a nonzero joint eigenvector of a
   group representation, as a monoid homomorphism `G →* Kˣ`.
+* `AlgHom.eigenvalueHomOfJointEigenvector`: the eigenvalue function of a nonzero joint
+  eigenvector of an algebra representation, as an algebra homomorphism `A →ₐ[R] K`.
 * `iSupIndep_iInf_eigenspace`,
   `iSup_iInf_eigenspace_eq_top_of_isSemisimple`,
   `iSup_inf_iInf_eigenspace_of_invariant`: joint eigenspaces of a commuting family are
@@ -123,6 +127,36 @@ lemma _root_.MonoidHom.eigenvalue_mul_of_jointEigenvector (ρ : G →* Module.En
     Module.End.mem_eigenspace_iff.mp (hv_mem g₁), smul_smul, mul_comm (χ g₂) (χ g₁)]
 
 end MulOne
+
+section Algebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Algebra R K] [Module R V]
+  [IsScalarTower R K V]
+
+/-- Given a joint eigenvector `v ≠ 0` for an algebra representation
+`ρ : A →ₐ[R] Module.End K V`, the eigenvalue function `χ : A → K` is an `R`-algebra
+homomorphism. -/
+def _root_.AlgHom.eigenvalueHomOfJointEigenvector (ρ : A →ₐ[R] Module.End K V) (χ : A → K)
+    (v : V) (hv : v ≠ 0) (hv_mem : ∀ a, v ∈ (ρ a).eigenspace (χ a)) : A →ₐ[R] K where
+  toFun := χ
+  map_one' := ρ.toMonoidHom.eigenvalue_one_of_jointEigenvector χ v hv hv_mem
+  map_mul' := ρ.toMonoidHom.eigenvalue_mul_of_jointEigenvector χ v hv hv_mem
+  map_zero' := (smul_left_inj hv).mp <| by
+    rw [← Module.End.mem_eigenspace_iff.mp (hv_mem 0), map_zero, zero_smul, LinearMap.zero_apply]
+  map_add' a b := (smul_left_inj hv).mp <| by
+    rw [← Module.End.mem_eigenspace_iff.mp (hv_mem (a + b)), add_smul,
+      ← Module.End.mem_eigenspace_iff.mp (hv_mem a), ← Module.End.mem_eigenspace_iff.mp (hv_mem b),
+      map_add, LinearMap.add_apply]
+  commutes' r := (smul_left_inj hv).mp <| by
+    rw [← Module.End.mem_eigenspace_iff.mp (hv_mem _), AlgHom.commutes,
+      Module.algebraMap_end_apply, algebraMap_smul]
+
+@[simp]
+lemma _root_.AlgHom.eigenvalueHomOfJointEigenvector_apply (ρ : A →ₐ[R] Module.End K V)
+    (χ : A → K) (v : V) (hv : v ≠ 0) (hv_mem : ∀ a, v ∈ (ρ a).eigenspace (χ a)) (a : A) :
+    ρ.eigenvalueHomOfJointEigenvector χ v hv hv_mem a = χ a := (rfl)
+
+end Algebra
 
 section Group
 

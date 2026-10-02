@@ -31,6 +31,13 @@ open subgroup `U` it feeds the reduction of finiteness of cohomology to an open 
 * `TauCeti.ContCohomology.coindShortExact`: the short exact sequence
   `0 → M → Coind_U^G M → Coind_U^G M ⧸ M → 0` of discrete `G`-modules.
 
+## Main results
+
+* `TauCeti.ContCohomology.CoindQuotient.smul_eq_self_of_forall_smul_eq_self`: a normal subgroup
+  `U` acting trivially on `M` acts trivially on `Coind_U^G M ⧸ M`.
+* `TauCeti.ContCohomology.precomp_coindShortExact_inclDistribMulActionHom_surjective`: every
+  homomorphism out of `M` extends along the unit, so `coindShortExact` has a dual sequence.
+
 ## Implementation notes
 
 As for `TauCeti.DiscreteCoind`, the quotient is a type synonym carrying the discrete topology; the
@@ -118,6 +125,13 @@ instance : DistribMulAction G (CoindQuotient G U M) where
 @[simp]
 theorem mk_smul (g : G) (f : DiscreteCoind G U M) : mk G U M (g • f) = g • mk G U M f := (rfl)
 
+/-- **A normal subgroup acting trivially on `M` acts trivially on `Coind_U^G M ⧸ M`**, as it does on
+`Coind_U^G M` (`TauCeti.DiscreteCoind.smul_eq_self_of_forall_smul_eq_self`). -/
+theorem smul_eq_self_of_forall_smul_eq_self [U.Normal] (htriv : ∀ (u : U) (m : M), u • m = m)
+    {g : G} (hg : g ∈ U) (q : CoindQuotient G U M) : g • q = q := by
+  induction q using induction_on with
+  | h f => rw [← mk_smul, DiscreteCoind.smul_eq_self_of_forall_smul_eq_self htriv hg f]
+
 end CoindQuotient
 
 /-- **The short exact sequence `0 → M → Coind_U^G M → Coind_U^G M ⧸ M → 0`** of discrete
@@ -143,6 +157,17 @@ Coind_U^G M ⧸ M`. -/
 @[simp]
 theorem coindShortExact_proj :
     (coindShortExact G U M).proj = CoindQuotient.mk G U M := (rfl)
+
+/-- **Homomorphisms out of `M` extend along the unit of coinduction**: precomposition with the
+inclusion of `coindShortExact` is surjective on internal homs into any `N`, since `φ : M →+ N`
+extends to `Coind_U^G M` as `f ↦ φ (f 1)`. So the dual sequence of `coindShortExact`
+(`TauCeti.ContCohomology.DiscreteShortExact.dual`) exists for all coefficients. -/
+theorem precomp_coindShortExact_inclDistribMulActionHom_surjective {N : Type*} [AddCommGroup N]
+    [DistribMulAction G N] :
+    Function.Surjective
+      (InternalHom.precomp G (coindShortExact G U M).inclDistribMulActionHom (N := N)) :=
+  InternalHom.precomp_surjective_of_forall_exists_comp_eq fun φ =>
+    ⟨φ.comp (DiscreteCoind.eval G U M), AddMonoidHom.ext fun m => by simp⟩
 
 end ContinuousMul
 

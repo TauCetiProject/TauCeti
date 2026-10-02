@@ -19,7 +19,8 @@ from creation and annihilation operators.
 Each of the two halves acts on an exterior basis vector by a single coordinate move, up to the
 shuffle sign that carries the moved coordinate to the front: contraction erases the coordinate
 from the index set, and left multiplication inserts it, each vanishing when the index set is on
-the wrong side of that move.
+the wrong side of that move. Creation after contraction at distinct coordinates therefore
+replaces an occupied coordinate with an unoccupied one, with the product of their shuffle signs.
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
@@ -208,6 +209,17 @@ theorem contractLeft_coord_basis {I : Type w} [LinearOrder I]
       have h := congrArg Neg.neg hcontract
       simpa [hsign] using h
   · exact contractLeft_coord_basis_eq_zero_of_not_mem b i s hi
+
+/-- Creating an unoccupied coordinate after contracting an occupied one replaces that
+coordinate in an exterior-basis vector, with the product of the two shuffle signs. -/
+theorem ι_mul_contractLeft_coord_basis_of_not_mem_of_mem {I : Type w} [LinearOrder I]
+    (b : Module.Basis I R M) (i j : I) (s : Finset I) (hi : i ∉ s) (hj : j ∈ s) :
+    ExteriorAlgebra.ι R (b i) *
+        contractLeft (Q := (0 : QuadraticForm R M)) (b.coord j) (b.ExteriorAlgebra s) =
+      (basisEraseSign j s * basisEraseSign i (insert i (s.erase j))) •
+        b.ExteriorAlgebra (insert i (s.erase j)) := by
+  classical
+  simp [contractLeft_coord_basis, ι_mul_basis, hi, hj, mul_smul_comm, smul_smul]
 
 /-- Creation after contraction by a basis coordinate is the projection onto exterior basis
 vectors containing that coordinate.

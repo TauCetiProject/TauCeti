@@ -146,8 +146,7 @@ theorem card_support_different_adjoin [IsAlgClosed k] :
       have := differentExponent_adjoin_le_one hdeg Q
       have := (Divisor.mem_support_different_iff k F hx.isFunctionField_adjoin).mp hQ
       omega
-    have : FiniteDimensional k Q.ResidueField := Place.finiteDimensional_residueField Q hF
-    rw [hcoeff, hd, Place.degree_eq_one_of_isAlgClosed_of_isIntegral]
+    rw [hcoeff, hd, Q.degree_eq_one_of_isAlgClosed_of_isFunctionField hF]
     simp
   have h := degree_different_adjoin hF hex hx hdeg
   rw [Divisor.degree_apply, Finsupp.sum, Finset.sum_congr rfl hsummand, Finset.sum_const,

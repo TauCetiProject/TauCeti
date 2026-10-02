@@ -8,13 +8,16 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 
 /-!
-# Degree bounds for products of polynomials
+# Degree bounds for products and sums of products of polynomials
 
 Mathlib's `Polynomial.degree_mul_le` bounds the degree of a product by the sum of the degrees.
 This file records the strict form with one factor of degree below a natural number `a` and the
 other of `natDegree` at most `n`: the product has degree below `a + n`.  Stating the bound with
 `degree` on the strict side lets the zero polynomial through on either side, which is what a
 coefficient window of prescribed length needs when it is read off polynomials that may vanish.
+
+`TauCeti.degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le` combines two such product bounds
+into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`.
 -/
 
 public section
@@ -36,5 +39,19 @@ theorem _root_.Polynomial.degree_mul_lt_of_degree_lt_of_natDegree_le {A q : R[X]
       _ < (a : WithBot ℕ) + n :=
         WithBot.add_lt_add_of_lt_of_le (degree_ne_bot.mpr hq0) hA (degree_le_of_natDegree_le hq)
       _ = ((a + n : ℕ) : WithBot ℕ) := by push_cast; rfl
+
+/-- A relation with multipliers of degrees below `m - j` and `n - j` has degree below
+`(m - j) + (n - j) + j`, provided the input degrees are bounded by `m` and `n` and `j` lies
+below both bounds. Either input or multiplier may be zero. -/
+theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n j : ℕ}
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j ≤ m) (hjn : j ≤ n)
+    (hA : A.degree < (m - j : ℕ)) (hB : B.degree < (n - j : ℕ)) :
+    (A * q + B * p).degree < (((m - j) + (n - j) + j : ℕ) : WithBot ℕ) := by
+  apply (degree_add_le _ _).trans_lt
+  apply max_lt
+  · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hA hn).trans_le
+      (WithBot.coe_le_coe.mpr (by omega : m - j + n ≤ (m - j) + (n - j) + j))
+  · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hB hm).trans_le
+      (WithBot.coe_le_coe.mpr (by omega : n - j + m ≤ (m - j) + (n - j) + j))
 
 end TauCeti

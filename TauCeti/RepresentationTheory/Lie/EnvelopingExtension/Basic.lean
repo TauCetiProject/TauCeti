@@ -130,23 +130,24 @@ theorem envelopingQuotientRep_apply (x : S ⋊⁅ψ⁆ H) (a : U ⧸ J) :
   simp only [LieHom.leftRegularRep_apply, LieHom.comp_apply, AlgHom.coe_toLieHom,
     Ideal.Quotient.mkₐ_eq_mk]
 
-/-- The kernel of the extension representation restricted to `S` is exactly the preimage of
-`J` under the canonical enveloping map. -/
+/-- On the ideal summand, the extension acts by left multiplication by the canonical image. -/
 @[simp]
-theorem envelopingQuotientRep_mk_zero_eq_zero_iff (s : S) :
-    envelopingQuotientRep R S ψ J hJ ⟨s, 0⟩ = 0 ↔
-      _root_.UniversalEnvelopingAlgebra.ι R s ∈ J := by
-  let q : S →ₗ⁅R⁆ (U ⧸ J) :=
-    ((Ideal.Quotient.mkₐ R J : U →ₐ[R] U ⧸ J) : U →ₗ⁅R⁆ U ⧸ J).comp
-      (_root_.UniversalEnvelopingAlgebra.ι R)
-  have hρ : envelopingQuotientRep R S ψ J hJ ⟨s, 0⟩ = LieHom.leftRegularRep q s := by
-    apply LinearMap.ext
-    intro a
-    simp only [envelopingQuotientRep_apply, LieHom.leftRegularRep_apply, q,
-      LieHom.comp_apply, AlgHom.coe_toLieHom, Ideal.Quotient.mkₐ_eq_mk, map_zero,
-      ZeroMemClass.coe_zero, LinearMap.zero_apply, add_zero]
-  rw [hρ, LieHom.leftRegularRep_eq_zero_iff]
-  exact Ideal.Quotient.eq_zero_iff_mem
+theorem envelopingQuotientRep_mk_zero (s : S) :
+    envelopingQuotientRep R S ψ J hJ ⟨s, 0⟩ =
+      LinearMap.mulLeft R (Ideal.Quotient.mk J (_root_.UniversalEnvelopingAlgebra.ι R s)) := by
+  apply LinearMap.ext
+  intro a
+  simp only [envelopingQuotientRep_apply, map_zero,
+    ZeroMemClass.coe_zero, LinearMap.zero_apply, add_zero, LinearMap.mulLeft_apply]
+
+/-- On the complementary summand, the extension acts by the descended enveloping derivation. -/
+@[simp]
+theorem envelopingQuotientRep_zero_mk (h : H) :
+    envelopingQuotientRep R S ψ J hJ ⟨0, h⟩ =
+      (envelopingQuotientDerivation R S ψ J hJ h : Module.End R (U ⧸ J)) := by
+  apply LinearMap.ext
+  intro a
+  simp only [envelopingQuotientRep_apply, map_zero, zero_mul, zero_add]
 
 /-- Refining the enveloping kernel of a representation preserves all directions it detects:
 the kernel of the new action restricted to `S` lies in the starting representation's kernel. -/
@@ -156,7 +157,8 @@ theorem ker_envelopingQuotientRep_comp_inl_le {V : Type*} [AddCommGroup V] [Modu
     ((envelopingQuotientRep R S ψ J hJ).comp (SemiDirectSum.inl ψ)).ker ≤ σ.ker := by
   intro s hs
   rw [LieHom.mem_ker, LieHom.comp_apply,
-    SemiDirectSum.inl_eq_mk, envelopingQuotientRep_mk_zero_eq_zero_iff] at hs
+    SemiDirectSum.inl_eq_mk, envelopingQuotientRep_mk_zero,
+    LinearMap.mulLeft_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem] at hs
   have := hker hs
   rw [LieHom.mem_ker]
   simpa only [RingHom.mem_ker, _root_.UniversalEnvelopingAlgebra.lift_ι_apply] using this
@@ -166,16 +168,15 @@ any stable enveloping quotient that is finitely generated over the coefficient r
 theorem isNilpotent_envelopingQuotientRep_inr [Module.Finite R (U ⧸ J)] (h : H)
     (hψ : ∀ s : S, ∃ n : ℕ, ((ψ h).toLinearMap ^ n) s = 0) :
     IsNilpotent (envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ h)) := by
-  have heq : envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ h) =
+  rw [SemiDirectSum.inr_eq_mk, envelopingQuotientRep_zero_mk]
+  have hδ : (envelopingQuotientDerivation R S ψ J hJ h : Module.End R (U ⧸ J)) =
       (derivationQuotientHom R J ⟨envelopingDerivation R S (ψ h), hJ h⟩ :
         Module.End R (U ⧸ J)) := by
     apply LinearMap.ext
     intro q
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
-    simp only [SemiDirectSum.inr_eq_mk, envelopingQuotientRep_apply, map_zero,
-      zero_mul, zero_add, envelopingQuotientDerivation_apply_mk,
-      derivationQuotientHom_apply_mk]
-  rw [heq]
+    simp only [envelopingQuotientDerivation_apply_mk, derivationQuotientHom_apply_mk]
+  rw [hδ]
   exact isNilpotent_envelopingDerivation_quotient R S (ψ h) hψ J (hJ h)
 
 end TauCeti

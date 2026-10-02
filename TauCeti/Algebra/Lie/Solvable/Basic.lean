@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Semisimple.Basic
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -165,17 +166,12 @@ theorem mem_restrict {I J : LieIdeal R L} {x : I} : x ∈ I.restrict J ↔ (x : 
 
 /-- The inclusion of `I.restrict J` into `J`: both are the elements of `L` lying in `I` and in
 `J`, presented inside `↥I` and inside `L` respectively. -/
-private def restrictIncl (I J : LieIdeal R L) : ↥(I.restrict J) →ₗ⁅R⁆ ↥J where
-  toFun x := ⟨((x : I) : L), mem_restrict.mp x.2⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_lie' := rfl
+private def restrictIncl (I J : LieIdeal R L) : ↥(I.restrict J) →ₗ⁅R⁆ ↥J :=
+  I.incl.lieIdealComap J
 
 private theorem restrictIncl_injective (I J : LieIdeal R L) :
-    Function.Injective (restrictIncl I J) := by
-  intro x y h
-  have h' := Subtype.ext_iff.mp h
-  exact Subtype.ext (Subtype.ext h')
+    Function.Injective (restrictIncl I J) :=
+  I.incl.lieIdealComap_injective J I.incl_injective
 
 private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
     Function.Surjective (restrictIncl I J) :=

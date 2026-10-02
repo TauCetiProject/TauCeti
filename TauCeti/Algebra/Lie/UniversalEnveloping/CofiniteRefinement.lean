@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.LieIdeal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Cofinite
 public import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.RingTheory.Ideal.Operations
+public import TauCeti.Algebra.Lie.Derivation.Solvable
 
 /-!
 # Cofinite refinements stable under lifted derivations
@@ -21,12 +22,12 @@ inside `I`, has module-finite quotient, and is stable under every lifted derivat
 on `L` lie in `N`. Moreover, every element nilpotent modulo `I` remains nilpotent modulo the
 refinement, and conversely.
 
-For a solvable Lie algebra in characteristic zero, taking `N` to be its nilradical reduces
-construction of a derivation-stable cofinite representation kernel to the structural statement
-that derivations take values in the nilradical. The refinement below applies independently of
-that structural statement, to any Lie ideal with the stated nilpotent action. It also works over
-commutative coefficient rings when the original quotient is Noetherian, and
-does not require a free Lie algebra.
+For a finite-dimensional solvable Lie algebra in characteristic zero, every derivation takes
+values in its nilradical. `Ideal.exists_cofinite_refinement_stableDerivations_of_isSolvable`
+therefore supplies a refinement stable under all lifted derivations, when the nilradical acts
+nilpotently modulo the original ideal. The general refinement also works over commutative
+coefficient rings when the original quotient is Noetherian, and does not require a free Lie
+algebra.
 
 ## References
 
@@ -82,5 +83,38 @@ theorem _root_.LieIdeal.exists_cofinite_refinement_stableDerivations (N : LieIde
         simpa only [Ideal.Quotient.factorₐ_apply_mk]
           using ha.map (Ideal.Quotient.factorₐ R hIB)
       exact B.isNilpotent_quotient_pow_of_isNilpotent_quotient hBa n
+
+end TauCeti
+
+namespace TauCeti
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [LieAlgebra.IsSolvable L]
+
+local notation "U" => UniversalEnvelopingAlgebra K L
+
+/-- A cofinite two-sided enveloping ideal `I` of a finite-dimensional solvable Lie algebra in
+characteristic zero, on whose quotient the nilradical acts nilpotently, admits a cofinite
+refinement stable under every lifted derivation. The refinement is a power of
+`I ⊔ (nilradical K L).envelopingIdeal` lying inside `I`, and it has exactly the same nilpotent
+elements modulo it as `I`. -/
+theorem _root_.Ideal.exists_cofinite_refinement_stableDerivations_of_isSolvable
+    (I : Ideal U) [I.IsTwoSided] [Module.Finite K (U ⧸ I)]
+    (hnil : ∀ x : L, x ∈ LieAlgebra.nilradical K L →
+      IsNilpotent (Ideal.Quotient.mk I (UniversalEnvelopingAlgebra.ι K x))) :
+    ∃ n : ℕ,
+      (I ⊔ (LieAlgebra.nilradical K L).envelopingIdeal) ^ n ≤ I ∧
+      Module.Finite K (U ⧸ (I ⊔ (LieAlgebra.nilradical K L).envelopingIdeal) ^ n) ∧
+      (∀ D : LieDerivation K L L,
+        UniversalEnvelopingAlgebra.envelopingDerivation K L D ∈
+          stableDerivations K
+            (((I ⊔ (LieAlgebra.nilradical K L).envelopingIdeal) ^ n).restrictScalars K)) ∧
+      ∀ a : U,
+        IsNilpotent (Ideal.Quotient.mk
+          ((I ⊔ (LieAlgebra.nilradical K L).envelopingIdeal) ^ n) a) ↔
+        IsNilpotent (Ideal.Quotient.mk I a) := by
+  obtain ⟨n, hn, hfinite, hstable, hnilpotent⟩ :=
+    (LieAlgebra.nilradical K L).exists_cofinite_refinement_stableDerivations I hnil
+  exact ⟨n, hn, hfinite, fun D ↦ hstable D D.apply_mem_nilradical_of_isSolvable, hnilpotent⟩
 
 end TauCeti

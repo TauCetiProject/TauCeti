@@ -24,6 +24,8 @@ This file supplies general constructions for Lie modules that are missing from M
   precomposition with an equivalence of Lie modules, as linear equivalences of morphism spaces.
 * `TauCeti.lieAnnihilator`: the Lie subalgebra of elements annihilating a vector in a Lie
   module.
+* `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
+  Lie homomorphism into that ideal.
 
 ## Main results
 
@@ -38,6 +40,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
+* `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
+  preimage of a Lie ideal is injective.
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
 * `TauCeti.ad_pow_apply_eq_ad_pow_apply`: iterating the adjoint action gives the same element
   whichever base ring the Lie algebra is read over.
@@ -269,6 +273,33 @@ theorem _root_.LieHom.isNilpotent_ad_of_surjective {R L L' : Type*} [CommRing R]
   obtain ⟨z, rfl⟩ := hf y
   rw [← f.map_ad_pow, hn]
   simp
+
+section LieIdealComap
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
+  [LieAlgebra R L'] (f : L →ₗ⁅R⁆ L') (I : LieIdeal R L')
+
+/-- The restriction of a Lie homomorphism `f` to the preimage of a Lie ideal `I`, as a Lie
+homomorphism into `I`. This is the Lie analogue of `LinearMap.submoduleComap`. -/
+@[expose]
+def _root_.LieHom.lieIdealComap : I.comap f →ₗ⁅R⁆ I where
+  toFun x := ⟨f x, LieIdeal.mem_comap.mp x.property⟩
+  map_add' _ _ := Subtype.ext (map_add f _ _)
+  map_smul' _ _ := Subtype.ext (map_smul f _ _)
+  map_lie' := Subtype.ext (f.map_lie _ _)
+
+@[simp]
+theorem _root_.LieHom.coe_lieIdealComap_apply (x : I.comap f) :
+    (f.lieIdealComap I x : L') = f x :=
+  rfl
+
+/-- The restriction of an injective Lie homomorphism to the preimage of a Lie ideal is
+injective. -/
+theorem _root_.LieHom.lieIdealComap_injective (hf : Function.Injective f) :
+    Function.Injective (f.lieIdealComap I) := fun x y h ↦
+  Subtype.ext (hf (by simpa using congrArg Subtype.val h))
+
+end LieIdealComap
 
 end TauCeti
 
