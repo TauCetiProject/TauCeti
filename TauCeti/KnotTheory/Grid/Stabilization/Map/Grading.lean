@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.Grading
-public import TauCeti.KnotTheory.Grid.Stabilization.Map
+public import TauCeti.KnotTheory.Grid.Stabilization.Map.Basic
 
 /-!
 # The chain map of an `X`-stabilization preserves the bigrading

@@ -45,7 +45,7 @@ multiplication by this difference on `I`; the latter is the cone that
 `HomologicalComplex.polynomialExtensionMulXSubCHomotopyEquiv` compares with `GC⁻(G)`, once `I` is
 identified with the polynomial extension of `GC⁻(G)` in the new variable. The map of cones is a
 quasi-isomorphism when `H_I^N` is; both steps are carried out in
-`TauCeti.KnotTheory.Grid.Stabilization.Map`.
+`TauCeti.KnotTheory.Grid.Stabilization.Map.Basic`.
 
 ## Main definitions
 
