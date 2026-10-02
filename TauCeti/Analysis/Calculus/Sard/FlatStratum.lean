@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Sard's lemma on the flat stratum
@@ -68,16 +69,6 @@ variable {E F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : E → F} {k : ℕ} {s : Set E}
-
-/-- A Hölder bound stated with `dist` upgrades to `HolderOnWith`, which is phrased with `edist`. -/
-private theorem holderOnWith_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
-    {C r : ℝ≥0} {g : X → Y} {t : Set X}
-    (h : ∀ x ∈ t, ∀ y ∈ t, dist (g x) (g y) ≤ C * dist x y ^ (r : ℝ)) :
-    HolderOnWith C r g t := by
-  intro x hx y hy
-  rw [edist_dist, edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg,
-    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul C.coe_nonneg]
-  exact ENNReal.ofReal_le_ofReal (h x hx y hy)
 
 /-- The descending induction behind `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: if the
 derivatives of order `1 ≤ i ≤ k` vanish at `x`, then the derivative of order `k - j` grows at most
@@ -147,7 +138,7 @@ theorem holderOnWith_of_iteratedFDeriv_eq_zero {A V : Set E} {C : ℝ≥0}
     (hC : ∀ y ∈ V, ‖iteratedFDeriv ℝ (k + 1) f y‖ ≤ C) (hAV : A ⊆ V)
     (hzero : ∀ x ∈ A, ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
     HolderOnWith C (k + 1) f A := by
-  refine holderOnWith_of_dist_le fun x hx y hy ↦ ?_
+  refine HolderOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
   have hcast : (((k : ℝ≥0) + 1 : ℝ≥0) : ℝ) = ((k + 1 : ℕ) : ℝ) := by push_cast; ring
   rw [dist_eq_norm, dist_eq_norm, hcast, Real.rpow_natCast]
   exact norm_sub_le_pow_of_iteratedFDeriv_eq_zero hf hV (hAV hy) (hAV hx) hC (hzero y hy)
