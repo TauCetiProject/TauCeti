@@ -92,7 +92,7 @@ immersion. -/
 theorem isOpenImmersion_affineToricDiagram_map {τ σ : Φ.cones} (hσ : IsRegularCone i σ.1)
     (f : τ ⟶ σ) : IsOpenImmersion (Φ.affineToricDiagram.map f) := by
   rw [affineToricDiagram_map]
-  exact hσ.isOpenImmersion_faceAffineToricSchemeMap _ _
+  exact hσ.rational.isOpenImmersion_faceAffineToricSchemeMap _ _
 
 /-- The diagram of affine toric charts of a regular fan is locally directed: if points of the
 charts of two faces `τ` and `υ` of a cone `σ` have the same image in the chart of `σ`, they come
@@ -106,12 +106,12 @@ theorem isLocallyDirected_affineToricDiagram (hΦ : Φ.IsRegular) :
   have h' : faceAffineToricSchemeMap Φ.lattice hτσ xτ =
       faceAffineToricSchemeMap Φ.lattice hυσ xυ := h
   have hσ := isRegular_iff.1 hΦ _ σ.2
-  have := hσ.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hτσ
-  have := hσ.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hυσ
+  have := hσ.rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hτσ
+  have := hσ.rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hυσ
   -- The common image lies in the image of the chart of `τ ⊓ υ`.
   obtain ⟨x, hx⟩ : faceAffineToricSchemeMap Φ.lattice hτσ xτ ∈
       Set.range (faceAffineToricSchemeMap Φ.lattice (hτσ.inf_left hυσ)) := by
-    rw [hσ.range_faceAffineToricSchemeMap_inf Φ.lattice hτσ hυσ]
+    rw [hσ.rational.range_faceAffineToricSchemeMap_inf Φ.lattice hτσ hυσ]
     exact ⟨⟨xτ, rfl⟩, ⟨xυ, h'.symm⟩⟩
   have hτ : faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le τ.2 (Φ.inf_mem τ.2 υ.2)
       inf_le_left) x = xτ := by

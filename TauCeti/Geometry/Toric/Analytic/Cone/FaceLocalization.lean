@@ -343,7 +343,7 @@ theorem range_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf
     Set.range (faceAffinePointMap hi hτσ) =
       {x | ∀ m : dualSemigroup hi σ, (∀ v ∈ τ, hi.realCharacter m v = 0) →
         x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0} := by
-  obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
+  obtain ⟨m, hm, hmτ⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
   exact range_faceAffinePointMap_of_exists_inf_ker_eq hi hσ.fg hτσ ⟨⟨m, hm⟩, hmτ⟩
 
 /-- For a face `τ` of a regular cone `σ`, the face map is an open embedding of the chart of `τ`
@@ -354,7 +354,7 @@ theorem isOpenEmbedding_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : �
     (h : AddGeneratingFamily (dualSemigroup hi τ) r') :
     @IsOpenEmbedding _ _ (affinePointTopology h) (affinePointTopology g)
       (faceAffinePointMap hi hτσ) := by
-  obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
+  obtain ⟨m, hm, hmτ⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
   exact isOpenEmbedding_faceAffinePointMap_of_inf_ker_eq hi hσ.fg hτσ ⟨m, hm⟩ hmτ g h
 
 /-- For two faces `τ` and `υ` of a regular cone `σ`, the image of the chart of `τ ⊓ υ` in the
@@ -363,8 +363,8 @@ theorem range_faceAffinePointMap_inf (hσ : IsRegularCone i σ) (hτσ : τ.IsFa
     (hυσ : υ.IsFaceOf σ) :
     Set.range (faceAffinePointMap hi (hτσ.inf_left hυσ)) =
       Set.range (faceAffinePointMap hi hτσ) ∩ Set.range (faceAffinePointMap hi hυσ) := by
-  obtain ⟨m₁, hm₁, h₁⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
-  obtain ⟨m₂, hm₂, h₂⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hυσ
+  obtain ⟨m₁, hm₁, h₁⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
+  obtain ⟨m₂, hm₂, h₂⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi hυσ
   exact range_faceAffinePointMap_inf_of_inf_ker_eq hi hσ.fg hτσ hυσ ⟨m₁, hm₁⟩ h₁ ⟨m₂, hm₂⟩ h₂
 
 end IsRegularCone
@@ -452,7 +452,7 @@ theorem contMDiffOn_faceAffinePointMap_comp_iff (hσ : IsRegularCone i σ) (hτ�
     let _ := coneChartedSpace hi (hσ.toIsToricCone.of_isFaceOf hτσ) hB' κ' h
     ContMDiffOn I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (faceAffinePointMap hi hτσ ∘ f) t ↔
       ContMDiffOn I 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) n f t := by
-  obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
+  obtain ⟨m, hm, hmτ⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
   exact contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq hi hτσ hσ.toIsToricCone hB κ g
     hB' κ' h ⟨m, hm⟩ hmτ
 
