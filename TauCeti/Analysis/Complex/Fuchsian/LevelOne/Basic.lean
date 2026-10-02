@@ -84,8 +84,8 @@ theorem card_stabilizer_psl2zToPSL2RRange_eq_card_stabilizer_psl (z : ℍ) :
     Nat.card (stabilizer psl2zToPSL2R.range z) = Nat.card (stabilizer PSL(2, ℤ) z) :=
   TauCeti.card_stabilizer_congr (f := id) (MonoidHom.ofInjective psl2zToPSL2R_injective) z
     (fun g ↦ by
-      rw [id, id, Subgroup.smul_def, MonoidHom.ofInjective_apply, psl2zToPSL2R_smul])
-    fun _ h ↦ h
+      simp only [id_eq, Subgroup.smul_def, MonoidHom.ofInjective_apply, psl2zToPSL2R_smul])
+    fun _ ↦ by simp only [id_eq, imp_self]
 
 /-- Two points lie in the same orbit of the effective level-one group exactly when they lie in
 the same orbit of `SL(2, ℤ)`. -/

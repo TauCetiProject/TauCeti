@@ -61,14 +61,16 @@ open scoped Manifold MatrixGroups
 namespace TauCeti.ModularForm
 
 /-- The modular invariant has ramification index `3` at the elliptic point `ρ`. -/
+@[simp]
 theorem localMultiplicity_j_ρ : localMultiplicity j ρ = 3 := by
-  rw [UpperHalfPlane.localMultiplicity_eq_toNat_analyticOrderAt_comp_ofComplex (g := j)
-    fun w ↦ by rw [j_ρ, sub_zero], analyticOrderAt_j_comp_ofComplex_ρ, ENat.toNat_ofNat]
+  rw [UpperHalfPlane.localMultiplicity_eq_toNat_analyticOrderAt_comp_ofComplex_of_sub_eq (g := j)
+    fun w ↦ by simp [j_ρ], analyticOrderAt_j_comp_ofComplex_ρ, ENat.toNat_ofNat]
 
 /-- The modular invariant has ramification index `2` at the elliptic point `i`. -/
+@[simp]
 theorem localMultiplicity_j_I : localMultiplicity j I = 2 := by
-  rw [UpperHalfPlane.localMultiplicity_eq_toNat_analyticOrderAt_comp_ofComplex (g := j - 1728)
-    fun w ↦ by rw [j_I, Pi.sub_apply, Pi.ofNat_apply], coe_I,
+  rw [UpperHalfPlane.localMultiplicity_eq_toNat_analyticOrderAt_comp_ofComplex_of_sub_eq
+    (g := j - 1728) fun w ↦ by simp [j_I], coe_I,
     analyticOrderAt_j_sub_1728_comp_ofComplex_I, ENat.toNat_ofNat]
 
 end TauCeti.ModularForm
@@ -98,6 +100,7 @@ theorem jQuotient_mk (z : ℍ) : jQuotient (Quotient.mk _ z) = j z :=
   (rfl)
 
 /-- The pullback of the descended modular invariant along the orbit projection is `j`. -/
+@[simp]
 theorem jQuotient_comp_quotientMk : jQuotient ∘ Quotient.mk _ = j :=
   funext jQuotient_mk
 
