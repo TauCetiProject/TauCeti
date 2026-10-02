@@ -39,6 +39,10 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
+* `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
+  read off the value, below and at the top element.  Mathlib's `Fin.orderSucc_castSucc` and
+  `Fin.orderSucc_last` state the same thing in the `castSucc`/`last` normal form; these are the
+  versions keyed on the inequality `i + 1 < n`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
@@ -154,6 +158,18 @@ theorem predAbove_succ_succAbove {n : ℕ} (p i : Fin n) : p.predAbove (p.succ.s
   rcases le_or_gt i p with h | h
   · rw [succAbove_succ_of_le _ _ h, predAbove_castSucc_of_le _ _ h]
   · rw [succAbove_succ_of_lt _ _ h, predAbove_succ_of_le _ _ h.le]
+
+/-- Below the top element of `Fin n`, the order successor increments the value. -/
+theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j : Fin m, i = j.castSucc := ⟨⟨(i : ℕ), by omega⟩, by ext; simp⟩
+  simp
+
+/-- At the top element of `Fin n` the order successor is that element itself. -/
+theorem orderSucc_eq_self_of_not_lt {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n) :
+    (Order.succ i : Fin n) = i :=
+  IsMax.succ_eq fun b _ => Fin.le_def.2 (by have := b.isLt; have := i.isLt; omega)
 
 end Fin
 
