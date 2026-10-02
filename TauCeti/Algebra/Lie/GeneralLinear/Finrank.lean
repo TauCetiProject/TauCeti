@@ -34,7 +34,7 @@ from finiteness of the matrices.
 
 A private linear equivalence identifies `sl n R` with the entries away from one diagonal place.
 Freeness, finiteness and dimension follow by transporting the corresponding facts about this
-function space. Membership is read through `TauCeti.slIdeal_toLieSubalgebra_eq_sl`.
+function space. Membership is read through `LieAlgebra.SpecialLinear.mem_sl_iff`.
 -/
 
 public section
@@ -56,11 +56,6 @@ matrix. -/
 private def diagIdx (k : {k : n // k ≠ i₀}) : {p : n × n // p ≠ (i₀, i₀)} :=
   ⟨(k.1, k.1), fun hk => k.2 (congrArg Prod.fst hk)⟩
 
-/-- Membership in `sl n R` is the vanishing of the trace. -/
-private lemma mem_sl_iff {A : Matrix n n R} : A ∈ SpecialLinear.sl n R ↔ A.trace = 0 := by
-  rw [← slIdeal_toLieSubalgebra_eq_sl R n]
-  exact mem_slIdeal_iff
-
 /-- A trace-zero matrix is determined by its entries away from `(i₀, i₀)`. -/
 private def slEquivFun : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i₀, i₀)} → R) where
   toFun A p := A.val p.1.1 p.1.2
@@ -69,7 +64,7 @@ private def slEquivFun : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i
   invFun g := ⟨Matrix.of fun i j =>
     if h : (i, j) = (i₀, i₀) then -∑ k : {k : n // k ≠ i₀}, g (diagIdx i₀ k)
     else g ⟨(i, j), h⟩, by
-      rw [mem_sl_iff]
+      rw [SpecialLinear.mem_sl_iff]
       simp only [Matrix.trace, Matrix.diag_apply, Matrix.of_apply]
       rw [Fintype.sum_eq_add_sum_subtype_ne _ i₀]
       simp only [Prod.mk.injEq, and_self, dite_true]
@@ -86,7 +81,7 @@ private def slEquivFun : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i
     · rename_i h
       obtain ⟨hi, hj⟩ := Prod.mk.inj h
       subst i j
-      have hA := mem_sl_iff.mp A.property
+      have hA := SpecialLinear.mem_sl_iff.mp A.property
       simp only [Matrix.trace, Matrix.diag_apply] at hA
       rw [Fintype.sum_eq_add_sum_subtype_ne _ i₀] at hA
       exact neg_eq_of_add_eq_zero_left hA
