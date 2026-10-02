@@ -93,7 +93,8 @@ end FiniteInformationSet
 open Classical in
 /-- A matrix with rows in the code and identity information columns is the systematic
 generator, without any finiteness assumption. -/
-theorem generatorMatrix_eq_of_row_mem_of_submatrix_eq_one {G : Matrix s ι F}
+theorem generatorMatrix_eq_of_row_mem_of_submatrix_eq_one [DecidableEq s]
+    {G : Matrix s ι F}
     (hG : ∀ r, G.row r ∈ C) (hI : G.submatrix id (Subtype.val : s → ι) = 1) :
     h.generatorMatrix = G := by
   ext r i
@@ -103,7 +104,14 @@ theorem generatorMatrix_eq_of_row_mem_of_submatrix_eq_one {G : Matrix s ι F}
     simpa [Matrix.submatrix_apply, Matrix.one_apply, Pi.single_apply, eq_comm] using
       congrFun (congrFun hI r) j
   have hx := congrArg (fun x : C ↦ (x : ι → F) i) (h.equiv.symm_apply_eq.mpr he.symm)
-  exact hx
+  rw [generatorMatrix_apply]
+  -- The generator uses classical equality, while the supplied identity block may use
+  -- any decidable equality; their unit messages agree pointwise.
+  convert hx using 2
+  · congr 1
+    ext j
+    simp [Pi.single_apply]
+  · rfl
 
 /-- Relabelling coordinates relabels the information rows and the columns of the systematic
 generator by the corresponding equivalences. -/
@@ -155,6 +163,25 @@ open Classical in
 def parityCheckMatrix : Matrix ↥(sᶜ) ι F :=
   (fromCols (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)
     (1 : Matrix ↥(sᶜ) ↥(sᶜ) F)).submatrix id (Equiv.Set.sumCompl s).symm
+
+open Classical in
+/-- The systematic check matrix is `[-Aᵀ | I]` transported to the original coordinates,
+where `A` is the complementary block of the systematic generator. -/
+theorem parityCheckMatrix_def [DecidableEq ↥sᶜ] [DecidablePred (· ∈ s)] :
+    h.parityCheckMatrix =
+      (fromCols (-(h.generatorMatrix.submatrix id (Subtype.val : ↥(sᶜ) → ι))ᵀ)
+        (1 : Matrix ↥(sᶜ) ↥(sᶜ) F)).submatrix id (Equiv.Set.sumCompl s).symm := by
+  ext r i
+  by_cases hi : i ∈ s
+  · have hc := @Equiv.Set.sumCompl_symm_apply_of_mem ι s
+      (fun _ ↦ Classical.propDecidable _) i hi
+    simp [parityCheckMatrix, hc, Equiv.Set.sumCompl_symm_apply_of_mem hi]
+  · have hc := @Equiv.Set.sumCompl_symm_apply_of_notMem ι s
+      (fun _ ↦ Classical.propDecidable _) i hi
+    simp only [parityCheckMatrix, Matrix.submatrix_apply, id_eq, hc,
+      Equiv.Set.sumCompl_symm_apply_of_notMem hi, Matrix.fromCols_apply_inr,
+      Matrix.one_apply]
+    split_ifs <;> rfl
 
 /-- On the information coordinates, the check matrix is the negative transpose of the
 redundancy block. -/
