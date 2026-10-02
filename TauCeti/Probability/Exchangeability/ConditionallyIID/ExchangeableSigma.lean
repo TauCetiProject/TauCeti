@@ -31,14 +31,6 @@ exchangeable σ-algebra modulo null sets.
   is measurable for a σ-algebra `m`, every exchangeable event of the path agrees almost everywhere
   with an `m`-measurable event.
 
-## Implementation
-
-The proof reads the joint law of `(ν, X)` through the full-path disintegration
-`ConditionallyIIDWith.jointPathLaw_eq_iidMixtureLaw`: the measure of `{ν ∈ A, X ∈ B}` is the
-integral of `δ_P(A) · P^{⊗ℕ}(B)` against the mixing law, which vanishes as soon as `P^{⊗ℕ}(B) = 0`
-for every `P ∈ A`. The two halves of the symmetric difference are rectangles of this kind, with
-`(A, B) = (Dᶜ, s)` and `(D, sᶜ)`.
-
 ## References
 
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1,
@@ -62,6 +54,12 @@ namespace Probability
 
 variable {Ω α : Type*} [mΩ : MeasurableSpace Ω] [MeasurableSpace α]
   {μ : Measure Ω} {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α}
+
+/- The proof reads the joint law of `(ν, X)` through the full-path disintegration
+`ConditionallyIIDWith.jointPathLaw_eq_iidMixtureLaw`: the measure of `{ν ∈ A, X ∈ B}` is the
+integral of `δ_P(A) · P^{⊗ℕ}(B)` against the mixing law, which vanishes as soon as `P^{⊗ℕ}(B) = 0`
+for every `P ∈ A`. The two halves of the symmetric difference are rectangles of this kind, with
+`(A, B) = (Dᶜ, s)` and `(D, sᶜ)`. -/
 
 /-- The event `{ν ∈ A, X ∈ B}` is null when `B` is null under the i.i.d. law of every `P ∈ A`. -/
 private theorem ConditionallyIIDWith.measure_preimage_inter_eq_zero [IsFiniteMeasure μ]
