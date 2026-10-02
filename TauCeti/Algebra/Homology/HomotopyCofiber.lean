@@ -37,6 +37,9 @@ a direct sum `K ⊕ L`, with `L` a subcomplex, is the mapping cone of the compon
 differential. This is how the unblocked complex of a stabilized grid diagram is presented as a
 mapping cone.
 
+The mapping cone of an identity is contractible (`homotopyCofiber.homotopyToZeroOfId`), the
+analogue for `homotopyCofiber` of Mathlib's `CochainComplex.mappingCone.homotopyToZeroOfId`.
+
 Finally, a morphism of arrows `α` from `φ : F ⟶ G` to `φ' : F' ⟶ G'` induces a map of mapping
 cones `homotopyCofiber.mapArrowHom φ φ' _ α`. If both components of `α` are
 quasi-isomorphisms, so is the induced map of cones. For grid stabilization, this transfers a
@@ -49,6 +52,8 @@ complex.
   between the mapping cone of `S.f` and `S.X₃` for a split short complex of complexes `S`.
 * `HomologicalComplex.homotopyCofiber.isoOfSplitting`: a one-object complex with a block
   lower-triangular differential is isomorphic to the mapping cone of its off-diagonal block.
+* `HomologicalComplex.homotopyCofiber.homotopyToZeroOfId`: a contraction of the mapping cone of
+  an identity.
 
 ## Main results
 
@@ -192,6 +197,35 @@ theorem isoOfSplitting_inv_f :
     (isoOfSplitting φ σ hs hr).inv.f () =
       fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ () :=
   (rfl)
+
+end HomologicalComplex.homotopyCofiber
+
+/-! ### The mapping cone of an identity is contractible -/
+
+namespace HomologicalComplex.homotopyCofiber
+
+variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  (K : HomologicalComplex C c) [HasHomotopyCofiber (𝟙 K)]
+
+/-- **The mapping cone of an identity is contractible.** In the cone of `𝟙 K`, whose term in
+degree `i` is `K.X j ⊞ K.X i` for `c.Rel i j`, the contracting homotopy sends the second summand
+identically onto the first summand of the term in the previous degree. This needs every index
+of the complex shape to be the target of some relation. -/
+noncomputable def homotopyToZeroOfId (hc : ∀ j, ∃ i, c.Rel i j) :
+    Homotopy (𝟙 (homotopyCofiber (𝟙 K))) 0 where
+  hom i j := if hij : c.Rel j i then sndX (𝟙 K) i ≫ inlX (𝟙 K) i j hij else 0
+  zero _ _ hij := dite_eq_right hij
+  comm j := by
+    obtain ⟨i, hij⟩ := hc j
+    rw [prevD_eq _ hij, dite_eq_left hij]
+    by_cases hj : c.Rel j (c.next j)
+    · rw [dNext_eq _ hj, dite_eq_left hj]
+      apply ext_from_X (𝟙 K) (c.next j) j hj
+      · simp [d_sndX_assoc _ _ _ hj]
+      · simp [inlX_d (𝟙 K) i j _ hij hj, d_sndX_assoc _ _ _ hj]
+    · rw [dNext_eq_zero _ _ hj, zero_add]
+      apply ext_from_X' (𝟙 K) j hj
+      simp [inlX_d' (𝟙 K) i j hij hj]
 
 end HomologicalComplex.homotopyCofiber
 

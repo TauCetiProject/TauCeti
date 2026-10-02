@@ -154,6 +154,13 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   generalize hB : ofFn (n - d) (fun k => v (Fin.natAdd (m - d) k)) = B at hwin
   have hAdeg : A.degree < (m - d : ℕ) := hA ▸ ofFn_degree_lt _
   have hBdeg : B.degree < (n - d : ℕ) := hB ▸ ofFn_degree_lt _
+  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
+    rcases eq_or_ne q 0 with rfl | hq0
+    · rw [mul_zero, zero_add]
+      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm.le).trans_le
+        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
+    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm.le hn hdm
+        (hd ▸ (natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
   have hdeg : (A * q + B * p).degree < d := by
     rw [degree_lt_iff_coeff_zero]
     intro e he
@@ -161,15 +168,8 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
     · have := hwin ⟨e - d, by omega⟩
       rwa [Nat.sub_add_cancel he] at this
     · apply coeff_eq_zero_of_degree_lt
-      refine lt_of_lt_of_le ((degree_add_le _ _).trans_lt (max_lt ?_ ?_)) (WithBot.coe_le_coe.mpr
+      exact hsumdeg.trans_le (WithBot.coe_le_coe.mpr
         (by omega : (m - d) + (n - d) + d ≤ e))
-      · rcases eq_or_ne q 0 with rfl | hq0
-        · simp
-        · have hdn : d ≤ n := hd ▸ (natDegree_le_of_dvd hgq hq0).trans hn
-          exact (degree_mul_lt_of_degree_lt_of_natDegree_le hAdeg hn).trans_le
-            (WithBot.coe_le_coe.mpr (by omega : m - d + n ≤ m - d + (n - d) + d))
-      · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm.le).trans_le
-          (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
   have hzero : A * q + B * p = 0 :=
     eq_zero_of_dvd_of_degree_lt (dvd_add (dvd_mul_of_dvd_right hgq _) (dvd_mul_of_dvd_right hgp _))
       (by rw [degree_eq_natDegree hg0, ← hd]; exact hdeg)

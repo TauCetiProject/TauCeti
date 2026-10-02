@@ -348,7 +348,7 @@ theorem typeDSpinRep_serreKostantForm_apply_mem_integralLattice
     (fun k m _ hw ↦ by
       rw [Associative.map_dividedPower]
       exact Associative.dividedPower_apply_mem_of_pow_two_eq_zero _
-        (TauCeti.ExteriorAlgebra.integralLattice b).toAddSubgroup
+        (TauCeti.ExteriorAlgebra.integralLattice b) (zero_mem _)
         (P.typeDSpinRep_rootGenerator_sq b hn k)
         (fun hw' ↦ P.typeDSpinRep_rootGenerator_apply_mem_integralLattice b hn k hw') m hw)
     (fun i m _ hw ↦

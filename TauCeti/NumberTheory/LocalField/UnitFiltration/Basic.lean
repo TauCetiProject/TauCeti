@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.Topology.Algebra.Group.Units
+import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -58,6 +59,8 @@ action on a finite extension, and its behaviour under a field embedding.
 * `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration` and
   `TauCeti.hasBasis_nhds_one_unitFiltration`: every `U(K,i)` is an open compact subgroup of
   `Kˣ`, and the family is a neighbourhood basis of `1`; in particular `Kˣ` is Hausdorff.
+* `TauCeti.unitFiltration_le_of_isClosed_of_le_sup`: successive one-step approximations by a
+  closed subgroup imply containment of the entire filtration step.
 
 ## Implementation notes
 
@@ -466,6 +469,25 @@ theorem hasBasis_nhds_one_unitFiltration :
     exact hγ (((mem_unitFiltration_iff_valuation_le hπ).mp hx).2.trans_lt hi)
   · rintro ⟨i, -, hi⟩
     exact mem_of_superset (unitFiltration_mem_nhds_one i) hi
+
+/-- A closed subgroup containing each `U(K,n)` modulo `U(K,n+1)` for `i ≤ n` contains
+`U(K,i)`. Successive approximation gives containment modulo every deeper step, and the
+unit-filtration neighbourhood basis then gives containment in the subgroup's closure. -/
+theorem unitFiltration_le_of_isClosed_of_le_sup {S : Subgroup Kˣ} {i : ℕ}
+    (hS : IsClosed (S : Set Kˣ))
+    (hstep : ∀ n, i ≤ n → unitFiltration K n ≤ S ⊔ unitFiltration K (n + 1)) :
+    unitFiltration K i ≤ S := by
+  have happrox (n : ℕ) : unitFiltration K i ≤ S ⊔ unitFiltration K (i + n) := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      exact ih.trans <| sup_le le_sup_left (by simpa [Nat.add_assoc] using hstep (i + n) (by omega))
+  intro x hx
+  rw [← SetLike.mem_coe, ← hS.closure_eq,
+    ← hasBasis_nhds_one_unitFiltration.iInter_mul_right_eq_closure, Set.mem_iInter₂]
+  intro n _
+  rw [← Subgroup.mul_normal]
+  exact sup_le_sup_left (unitFiltration_antitone (Nat.le_add_left n i)) _ (happrox n hx)
 
 end Topology
 

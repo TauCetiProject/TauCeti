@@ -15,7 +15,7 @@ Let `S` carry the `I`-adic topology for an ideal `I`, and let `f` be a multivari
 evaluated at a family `a : σ → S` through a continuous coefficient map `φ`. This file bounds the
 value `eval₂ φ a f` by a power of `I`, in the three forms the estimate is used in: the value is
 confined to `I ^ k` as soon as the arguments are and `φ` sends the constant term there, and the
-confinement improves when the series vanishes in low total degree or when `φ` sends every
+confinement improves when its coefficient images vanish in low total degree or when `φ` sends every
 coefficient into a power of `I`.
 
 Three further results serve the same arguments from either side. Over finitely many variables a
@@ -55,8 +55,8 @@ it from there.
 
 * `MvPowerSeries.eval₂_mem_pow` : arguments in `I ^ k`, and a constant term whose image under
   `φ` lies in `I ^ k`, confine the value to `I ^ k`.
-* `MvPowerSeries.eval₂_mem_pow_mul` : a series vanishing below total degree `c`, evaluated at
-  arguments of `I ^ j`, takes values in `I ^ (c * j)`.
+* `MvPowerSeries.eval₂_mem_pow_mul` : if the coefficient images vanish below total degree `c`,
+  evaluation at arguments in `I ^ j` takes values in `I ^ (c * j)`.
 * `MvPowerSeries.eval₂_mem_pow_add_mul` : if moreover `φ` sends every coefficient into `I ^ k`,
   the value lies in `I ^ (k + c * j)`.
 * `MvPowerSeries.hasEval_of_finite_of_isTopologicallyNilpotent` : finitely many topologically
@@ -88,37 +88,6 @@ public section
 
 namespace MvPowerSeries
 
-section Monomial
-
-variable {σ : Type*} {S : Type*} [CommRing S] {a : σ → S} {I : Ideal S}
-
-/-- The monomial estimate behind all three results: a product of powers of elements of `I ^ j`
-lies in `I ^ (j * ∑ exponents)`. Stated over an arbitrary `Finset` so that the induction has
-somewhere to run. -/
-private theorem prod_mem_pow_mul_sum {j : ℕ} (hmem : ∀ i, a i ∈ I ^ j) (d : σ →₀ ℕ)
-    (t : Finset σ) : (∏ s ∈ t, a s ^ d s) ∈ I ^ (j * ∑ s ∈ t, d s) := by
-  classical
-  induction t using Finset.induction with
-  | empty => simp
-  | insert s t hs ih =>
-    rw [Finset.prod_insert hs, Finset.sum_insert hs, Nat.mul_add, pow_add]
-    exact Ideal.mul_mem_mul (pow_mul I j (d s) ▸ Ideal.pow_mem_pow (hmem s) (d s)) ih
-
-/-- A monomial of total degree at least `c`, evaluated at arguments of `I ^ j`, lies in
-`I ^ (c * j)`: it carries at least `c` of them. -/
-private theorem prod_mem_pow_mul {j c : ℕ} (hmem : ∀ i, a i ∈ I ^ j) {d : σ →₀ ℕ}
-    (hge : c ≤ d.degree) : d.prod (fun s e ↦ a s ^ e) ∈ I ^ (c * j) := by
-  have hle : c * j ≤ j * d.degree := by
-    calc c * j ≤ d.degree * j := by gcongr
-      _ = j * d.degree := mul_comm _ _
-  have hprod : d.prod (fun s e ↦ a s ^ e) ∈ I ^ (j * d.degree) := by
-    have hdeg : d.degree = ∑ s ∈ d.support, d s := rfl
-    rw [Finsupp.prod, hdeg]
-    exact prod_mem_pow_mul_sum hmem d d.support
-  exact IsConcreteLE.le_iff.mp (Ideal.pow_le_pow_right hle) hprod
-
-end Monomial
-
 section Eval
 
 variable {σ : Type*}
@@ -148,31 +117,35 @@ theorem eval₂_mem_pow (hφ : Continuous φ) (ha : HasEval a) (hI : IsAdic I) {
   have hsum := tsum_mem (hI.isClosed_pow k) hval
   rwa [htot.tsum_eq] at hsum
 
-/-- **Small coefficient images improve the bound.** If in addition `φ` sends every coefficient of
-`f` into `I ^ k`, the two contributions multiply and the value lies in `I ^ (k + c * j)`. -/
+/-- **Small coefficient images improve the bound.** If `φ` kills the coefficients below total degree
+`c` and sends every coefficient of `f` into `I ^ k`, evaluation at arguments of `I ^ j` lies in
+`I ^ (k + c * j)`. -/
 theorem eval₂_mem_pow_add_mul (hφ : Continuous φ) (ha : HasEval a) (hI : IsAdic I) {j c k : ℕ}
     (hmem : ∀ i, a i ∈ I ^ j) (f : MvPowerSeries σ R)
     (hcoeff : ∀ d : σ →₀ ℕ, φ (coeff d f) ∈ I ^ k)
-    (hlow : ∀ d : σ →₀ ℕ, d.degree < c → coeff d f = 0) :
+    (hlow : ∀ d : σ →₀ ℕ, d.degree < c → φ (coeff d f) = 0) :
     eval₂ φ a f ∈ I ^ (k + c * j) := by
   classical
   have htot := hasSum_eval₂ hφ ha f
   have hval : ∀ d : σ →₀ ℕ, φ (coeff d f) * d.prod (fun s e ↦ a s ^ e) ∈ I ^ (k + c * j) := by
     intro d
     rcases lt_or_ge d.degree c with hlt | hge
-    · rw [hlow d hlt, map_zero, zero_mul]
+    · rw [hlow d hlt, zero_mul]
       exact zero_mem _
     · rw [pow_add]
-      exact Ideal.mul_mem_mul (hcoeff d) (prod_mem_pow_mul hmem hge)
+      apply Ideal.mul_mem_mul (hcoeff d)
+      apply Ideal.pow_le_pow_right (Nat.mul_le_mul_right j hge)
+      simpa only [Finsupp.prod, Finsupp.degree_apply,
+        Finset.prod_pow_eq_pow_sum, ← pow_mul, Nat.mul_comm, Finset.mul_sum] using
+        (Ideal.prod_mem_prod fun s (_ : s ∈ d.support) ↦ Ideal.pow_mem_pow (hmem s) (d s))
   have hsum := tsum_mem (hI.isClosed_pow (k + c * j)) hval
   rwa [htot.tsum_eq] at hsum
 
-/-- **A series vanishing below total degree `c`, evaluated at arguments of `I ^ j`, takes values
-in `I ^ (c * j)`.** This is the `k = 0` case of `eval₂_mem_pow_add_mul`: every coefficient image
-lies in `I ^ 0 = ⊤`, so that hypothesis is vacuous and the exponent collapses. -/
+/-- **If the coefficient images vanish below total degree `c`, evaluation at arguments of
+`I ^ j` takes values in `I ^ (c * j)`.** -/
 theorem eval₂_mem_pow_mul (hφ : Continuous φ) (ha : HasEval a) (hI : IsAdic I) {j c : ℕ}
     (hmem : ∀ i, a i ∈ I ^ j) (f : MvPowerSeries σ R)
-    (hcoeff : ∀ d : σ →₀ ℕ, d.degree < c → coeff d f = 0) :
+    (hcoeff : ∀ d : σ →₀ ℕ, d.degree < c → φ (coeff d f) = 0) :
     eval₂ φ a f ∈ I ^ (c * j) := by
   simpa using eval₂_mem_pow_add_mul (k := 0) hφ ha hI hmem f (fun _ ↦ by simp) hcoeff
 
