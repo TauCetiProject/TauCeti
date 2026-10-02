@@ -52,8 +52,7 @@ theorem continuous_spinToOrthogonal : Continuous (spinToOrthogonal Q) := by
     · have hinv (x : spinGroup Q) :
           (((pinToLipschitz Q (spinToPin Q x) : (CliffordAlgebra Q)ˣ)⁻¹ :
             (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = star (x : CliffordAlgebra Q) := by
-        apply Units.inv_eq_of_mul_eq_one_right
-        simp
+        simpa only [coe_spinToPin_apply] using pinToLipschitz_inv_coe (spinToPin Q x)
       exact continuous_subtype_val.star.congr fun x => (hinv x).symm
   have h := (_root_.CliffordAlgebra.continuous_lipschitzToOrthogonal Q).comp hinc
   exact h.congr fun x =>

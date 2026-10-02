@@ -59,7 +59,8 @@ def pinToOrthogonal : pinGroup Q →* QuadraticMap.orthogonalGroup Q :=
 variable {Q}
 
 omit [Invertible (2 : R)] in
-private theorem pinToLipschitz_inv_coe (x : pinGroup Q) :
+/-- The inverse unit coordinate of a Pin element in the Lipschitz group is its Clifford star. -/
+theorem pinToLipschitz_inv_coe (x : pinGroup Q) :
     (((pinToLipschitz Q x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = star (x : CliffordAlgebra Q) :=
   Units.inv_eq_of_mul_eq_one_right (by
