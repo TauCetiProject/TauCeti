@@ -58,7 +58,8 @@ good primes; this is the engine behind both
   `TauCeti.MultiplicativeIdealWeight.normTwist_pow` and
   `TauCeti.MultiplicativeIdealWeight.restrict_pow`, with their unitary counterparts: powers, in
   particular the pointwise square `χ ^ 2` used by the `3-4-1` argument, keep the bad primes and
-  commute with the operations, the `n`-th power of a twist by `z` being the twist by `n * z`;
+  commute with the operations, the `n`-th power of a twist by `z` being the twist by `n * z`.
+  Preservation of bad primes and compatibility with restriction require a nonzero exponent;
 * `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood` and
   `TauCeti.MultiplicativeIdealWeight.IsTrivialOnGood`: the weights agreeing with a purely
   imaginary norm twist, respectively with the trivial weight, on their good ideals, with the
