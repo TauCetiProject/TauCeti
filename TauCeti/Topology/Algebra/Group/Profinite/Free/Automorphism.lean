@@ -32,9 +32,10 @@ exponent, are shown to be automorphisms.
 Burnside's basis theorem also shows that every abstract automorphism `σ` of the Frattini quotient
 `freeProP p X ⧸ proPFrattini p (freeProP p X)` comes from a continuous automorphism: lifts of the
 images under `σ` of the classes of the generators `of i` generate the free group, so the
-automorphism sending each `of i` to such a lift induces `σ`. Hence `ContinuousAut (freeProP p X) →* MulAut (freeProP p X ⧸ proPFrattini p _)` is
-surjective. Its target is the automorphism group of the `𝔽_p`-vector space with basis the classes of
-the generators (`TauCeti.freeProP.frattiniQuotientBasis`), that is `GL_n(𝔽_p)` for `X = Fin n`.
+automorphism sending each `of i` to such a lift induces `σ`. Hence the map
+`ContinuousAut (freeProP p X) →* MulAut (freeProP p X ⧸ proPFrattini p _)` is surjective. Its
+target is the automorphism group of the `𝔽_p`-vector space with basis the classes of the
+generators (`TauCeti.freeProP.frattiniQuotientBasis`), that is `GL_n(𝔽_p)` for `X = Fin n`.
 
 ## Main definitions
 
