@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Y
 import Mathlib.Data.Int.LeastGreatest
+import TauCeti.Algebra.Order.GroupWithZero.Pow
+import TauCeti.Data.NNRat.CommonDenominator
 import TauCeti.RingTheory.Huber.Adic
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
@@ -97,21 +99,6 @@ def IsRadiusUpperBound (ϖ : R) (q : ℚ≥0) (v : Spv (WittVector p R)) : Prop 
 
 variable {p} {ϖ : R}
 
-/-- In a linearly ordered commutative group with zero, raising both sides of `x ^ m ≤ y ^ n` to a
-nonzero power does not change it, so the comparison depends only on the ratio of the exponents. -/
-private theorem pow_le_pow_iff_of_mul_eq {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
-    (x y : Γ₀) {m n m' n' c c' : ℕ} (hc : c ≠ 0) (hc' : c' ≠ 0) (hm : m * c = m' * c')
-    (hn : n * c = n' * c') : x ^ m ≤ y ^ n ↔ x ^ m' ≤ y ^ n' := by
-  rw [← pow_le_pow_iff_left₀ zero_le zero_le hc, ← pow_mul, ← pow_mul, hm, hn, pow_mul, pow_mul,
-    pow_le_pow_iff_left₀ zero_le zero_le hc']
-
-/-- Cross-multiplying an equality `q = a / b` of nonnegative rationals with the reduced fraction
-of `q`. -/
-private theorem num_mul_eq_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0) (hq : q = a / b) :
-    q.num * b = a * q.den := by
-  rw [← NNRat.num_div_den q, div_eq_div_iff (by simp) (by simpa using hb)] at hq
-  exact_mod_cast hq
-
 /-- **The lower radius bound from any fraction**: if `q = a / b` with `b ≠ 0`, then
 `q ≤ κ(v)` exactly when `v([ϖ]) ^ b ≤ v(p) ^ a`. -/
 theorem isRadiusLowerBound_iff_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0) (hq : q = a / b)
@@ -120,7 +107,8 @@ theorem isRadiusLowerBound_iff_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0
       v.toValuativeRel.vle (teichmuller p ϖ ^ b) ((p : WittVector p R) ^ a) := by
   rw [IsRadiusLowerBound, ← valuation_le_iff, ← valuation_le_iff, map_pow, map_pow, map_pow,
     map_pow]
-  exact pow_le_pow_iff_of_mul_eq _ _ hb q.den_ne_zero (mul_comm _ _) (num_mul_eq_of_eq_div hb hq)
+  exact pow_le_pow_iff_of_mul_eq zero_le zero_le hb q.den_ne_zero (mul_comm _ _)
+    (NNRat.num_mul_eq_of_eq_div hb hq)
 
 /-- **The upper radius bound from any fraction**: if `q = a / b` with `b ≠ 0`, then
 `κ(v) ≤ q` exactly when `v(p) ^ a ≤ v([ϖ]) ^ b`. -/
@@ -130,7 +118,8 @@ theorem isRadiusUpperBound_iff_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0
       v.toValuativeRel.vle ((p : WittVector p R) ^ a) (teichmuller p ϖ ^ b) := by
   rw [IsRadiusUpperBound, ← valuation_le_iff, ← valuation_le_iff, map_pow, map_pow, map_pow,
     map_pow]
-  exact pow_le_pow_iff_of_mul_eq _ _ hb q.den_ne_zero (num_mul_eq_of_eq_div hb hq) (mul_comm _ _)
+  exact pow_le_pow_iff_of_mul_eq zero_le zero_le hb q.den_ne_zero
+    (NNRat.num_mul_eq_of_eq_div hb hq) (mul_comm _ _)
 
 /-- A point that is not a lower bound `q ≤ κ(v)` satisfies the upper bound `κ(v) ≤ q`, since the
 value group is linearly ordered. -/
@@ -170,20 +159,12 @@ private theorem valuation_le_one {v : Spv (WittVector p R)}
   rw [← map_one v.valuation, valuation_le_iff]
   exact ((mem_spa_iff _ v).mp hv).2 x (Subring.mem_top x)
 
-/-- Two nonnegative rationals over the common denominator `q.den * q'.den`. -/
-private theorem eq_div_den_mul_den (q q' : ℚ≥0) :
-    q = ((q.num * q'.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) ∧
-      q' = ((q'.num * q.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) := by
-  rw [Nat.cast_mul, Nat.cast_mul, Nat.cast_mul, mul_div_mul_right _ _ (by simp),
-    mul_comm (q.den : ℚ≥0), mul_div_mul_right _ _ (by simp), NNRat.num_div_den, NNRat.num_div_den]
-  exact ⟨rfl, rfl⟩
-
 /-- **Lower radius bounds are closed downwards** on `Spa(𝕎 R, 𝕎 R)`: if `q ≤ κ(v)` and `q' ≤ q`
 then `q' ≤ κ(v)`, since `v(p) ≤ 1`. -/
 theorem IsRadiusLowerBound.of_le {q q' : ℚ≥0} {v : Spv (WittVector p R)}
     (hv : v ∈ spa (⊤ : Subring (WittVector p R))) (h : IsRadiusLowerBound p ϖ q v)
     (hq : q' ≤ q) : IsRadiusLowerBound p ϖ q' v := by
-  obtain ⟨h₁, h₂⟩ := eq_div_den_mul_den q q'
+  obtain ⟨h₁, h₂⟩ := NNRat.eq_div_den_mul_den q q'
   have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
   rw [isRadiusLowerBound_iff_of_eq_div hb h₁] at h
   rw [isRadiusLowerBound_iff_of_eq_div hb h₂, ← valuation_le_iff, map_pow, map_pow]
@@ -195,7 +176,7 @@ then `κ(v) ≤ q'`, since `v(p) ≤ 1`. -/
 theorem IsRadiusUpperBound.of_le {q q' : ℚ≥0} {v : Spv (WittVector p R)}
     (hv : v ∈ spa (⊤ : Subring (WittVector p R))) (h : IsRadiusUpperBound p ϖ q v)
     (hq : q ≤ q') : IsRadiusUpperBound p ϖ q' v := by
-  obtain ⟨h₁, h₂⟩ := eq_div_den_mul_den q q'
+  obtain ⟨h₁, h₂⟩ := NNRat.eq_div_den_mul_den q q'
   have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
   rw [isRadiusUpperBound_iff_of_eq_div hb h₁] at h
   rw [isRadiusUpperBound_iff_of_eq_div hb h₂, ← valuation_le_iff, map_pow, map_pow]
@@ -222,7 +203,7 @@ theorem IsRadiusLowerBound.not_isRadiusUpperBound
     {q q' : ℚ≥0} {v : Spv (WittVector p R)} (hv : v ∈ spaY p ϖ)
     (h : IsRadiusLowerBound p ϖ q v) (hq : q' < q) : ¬ IsRadiusUpperBound p ϖ q' v := by
   intro h'
-  obtain ⟨h₁, h₂⟩ := eq_div_den_mul_den q q'
+  obtain ⟨h₁, h₂⟩ := NNRat.eq_div_den_mul_den q q'
   have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
   rw [isRadiusLowerBound_iff_of_eq_div hb h₁, ← valuation_le_iff, map_pow, map_pow] at h
   rw [isRadiusUpperBound_iff_of_eq_div hb h₂, ← valuation_le_iff, map_pow, map_pow] at h'
