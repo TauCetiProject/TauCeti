@@ -113,7 +113,7 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
     { e.symm.toMulEquiv.subgroupMap U with
       continuous_toFun := continuous_induced_rng.2 (e.symm.continuous.comp continuous_subtype_val)
       continuous_invFun := continuous_induced_rng.2 (e.continuous.comp continuous_subtype_val) }
-  refine finite_continuousCohomology_of_isOpen_of_normal_of_prime V
+  refine finite_continuousCohomology_of_isOpen_of_normal_of_prime (V := V)
     (e.symm.isOpenMap _ (galoisSubgroup F L L.val).isOpen) 1 (N := n) ?_ A.V (fun a ↦ ?_)
     fun v hv a ↦ ?_
   · intro j hj₀ hj M _ _ _ _ _ _ hM hMn hMtriv

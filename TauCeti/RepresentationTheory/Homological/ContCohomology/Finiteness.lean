@@ -117,7 +117,7 @@ normal subgroup, `N` a natural number and `i` a degree. Suppose that for every `
 `Hʲ(V, M)` is finite for every finite discrete `V`-module `M` killed by `N` on which `V` acts
 trivially. Then `Hⁱ(G, A)` is finite for every finite discrete `G`-module `A` killed by `N` on which
 `V` acts trivially. Degree zero needs no hypothesis, `H⁰(G, A)` being a subgroup of `A`. -/
-theorem finite_continuousCohomology_of_isOpen_of_normal (V : Subgroup G) [V.Normal]
+theorem finite_continuousCohomology_of_isOpen_of_normal {V : Subgroup G} [V.Normal]
     (hV : IsOpen (V : Set G)) {N : ℕ} (i : ℕ)
     (h : ∀ j, 0 < j → j ≤ i → ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M]
       [DiscreteTopology M] [DistribMulAction V M] [ContinuousSMul V M] [Finite M],
@@ -154,7 +154,7 @@ group, `V` an open normal subgroup, `N` a natural number and `i` a degree. Suppo
 `0 < j ≤ i`, `Hʲ(V, M)` is finite for every discrete `V`-module `M` of prime order dividing `N` on
 which `V` acts trivially. Then `Hⁱ(G, A)` is finite for every finite discrete `G`-module `A` killed
 by `N` on which `V` acts trivially. -/
-theorem finite_continuousCohomology_of_isOpen_of_normal_of_prime (V : Subgroup G) [V.Normal]
+theorem finite_continuousCohomology_of_isOpen_of_normal_of_prime {V : Subgroup G} [V.Normal]
     (hV : IsOpen (V : Set G)) {N : ℕ} (i : ℕ)
     (h : ∀ j, 0 < j → j ≤ i → ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M]
       [DiscreteTopology M] [DistribMulAction V M] [ContinuousSMul V M] [Finite M],
@@ -165,7 +165,7 @@ theorem finite_continuousCohomology_of_isOpen_of_normal_of_prime (V : Subgroup G
     (htriv : ∀ v ∈ V, ∀ a : A, v • a = a) :
     Finite (continuousCohomology i (ofDiscreteModule ℤ G A)) :=
   have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
-  finite_continuousCohomology_of_isOpen_of_normal V hV i
+  finite_continuousCohomology_of_isOpen_of_normal hV i
     (fun j hj₀ hj M _ _ _ _ _ _ hM hMtriv ↦
       finite_continuousCohomology_of_forall_natCard_prime (h j hj₀ hj) M hM hMtriv) A hN htriv
 
