@@ -95,8 +95,8 @@ noncomputable def cyclicMulLeft (a b : A) (hab : a * b = 0) :
 /-- Left multiplication by `a` sends the class of `c` to `c * op a = op (a * unop c)`. -/
 @[simp]
 theorem cyclicMulLeft_mk (a b : A) (hab : a * b = 0) (c : Aᵐᵒᵖ) :
-    cyclicMulLeft a b hab (Submodule.Quotient.mk c) = c * op a :=
-  (rfl)
+    cyclicMulLeft a b hab (Submodule.Quotient.mk c) = c * op a := by
+  rw [cyclicMulLeft, Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, smul_eq_mul]
 
 /-- The image of left multiplication by `a` is `aA`, the kernel of the quotient map onto
 `A ⧸ aA`. -/
@@ -107,7 +107,7 @@ theorem exact_cyclicMulLeft_mkQ (a b : A) (hab : a * b = 0) :
 
 /-- If the right annihilator of `a` is `bA`, then left multiplication by `a` is injective on
 `A ⧸ bA`. -/
-theorem injective_cyclicMulLeft {a b : A} (hab : ∀ c : A, a * c = 0 ↔ b ∣ c) :
+theorem cyclicMulLeft_injective {a b : A} (hab : ∀ c : A, a * c = 0 ↔ b ∣ c) :
     Function.Injective (cyclicMulLeft a b ((hab b).2 dvd_rfl)) := by
   rw [← LinearMap.ker_eq_bot, cyclicMulLeft]
   refine Submodule.ker_liftQ_eq_bot _ _ _ fun c hc ↦ ?_
@@ -134,7 +134,7 @@ variable [IsNoetherianRing Aᵐᵒᵖ]
 theorem cyclicShortComplex_shortExact {a b : A} (hab : ∀ c : A, a * c = 0 ↔ b ∣ c) :
     (cyclicShortComplex a b ((hab b).2 dvd_rfl)).ShortExact := by
   refine ShortComplex.ShortExact.mk' ?_
-    (ConcreteCategory.mono_of_injective _ (injective_cyclicMulLeft hab))
+    (ConcreteCategory.mono_of_injective _ (cyclicMulLeft_injective hab))
     (ConcreteCategory.epi_of_surjective _ (Submodule.mkQ_surjective _))
   rw [← ShortComplex.exact_map_iff_of_faithful _
       (forget₂ (FGModuleCat.{u} Aᵐᵒᵖ) (ModuleCat.{u} Aᵐᵒᵖ)),
