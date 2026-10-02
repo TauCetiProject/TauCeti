@@ -74,6 +74,7 @@ def DualFeasible (c : X × Y → ℝ≥0∞) (φ : X → ℝ) (ψ : Y → ℝ) :
   ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ (c (x, y) : EReal)
 
 /-- The pointwise characterization of dual feasibility. -/
+@[simp]
 theorem dualFeasible_iff : DualFeasible c φ ψ ↔
     ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ (c (x, y) : EReal) :=
   Iff.rfl
