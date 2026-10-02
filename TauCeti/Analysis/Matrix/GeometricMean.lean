@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.GeometricMean
 
+import TauCeti.Analysis.Matrix.Sqrt
+
 /-!
 # The positive semidefinite solution of `A * S * A = T`
 
@@ -114,22 +116,20 @@ theorem PosDef.mul_mul_conjTranspose_geometricMean (hS : S.PosDef) (hT : T.PosSe
   rw [isHermitian_geometricMean.eq,
     geometricMean_ringInverse_mul_mul_geometricMean_ringInverse hS.isStrictlyPositive hT.nonneg]
 
-/-- The trace of the standard positive solution multiplied by `S` is the trace of the positive
-square root of the sandwich `sqrt S * T * sqrt S`. -/
+/-- An algebraic trace identity for `geometricMean S⁻¹ʳ T`. When `T` is positive semidefinite,
+the geometric mean is the standard positive solution and the right-hand side is the trace of the
+positive square root of the covariance sandwich. -/
 theorem PosDef.trace_geometricMean_ringInverse_mul (hS : S.PosDef) :
     (geometricMean S⁻¹ʳ T * S).trace =
       (CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)).trace := by
-  rw [hS.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt]
-  set R := CFC.sqrt (CFC.sqrt S * T * CFC.sqrt S)
-  set Q := CFC.sqrt S
-  have hQdet : IsUnit Q.det :=
-    Matrix.isUnit_iff_isUnit_det Q |>.mp (hS.isStrictlyPositive.isUnit_cfcSqrt S)
-  have hSsqrt : Q * Q = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
-  rw [← hSsqrt]
+  rw [← hS.posSemidef.trace_sqrt_mul_mul_sqrt (geometricMean S⁻¹ʳ T),
+    hS.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt]
+  have hQdet : IsUnit (CFC.sqrt S).det :=
+    Matrix.isUnit_iff_isUnit_det (CFC.sqrt S) |>.mp
+      (hS.isStrictlyPositive.isUnit_cfcSqrt S)
   simp only [Matrix.mul_assoc]
-  rw [← Matrix.mul_assoc Q⁻¹ Q Q, Matrix.nonsing_inv_mul Q hQdet, Matrix.one_mul]
-  rw [← Matrix.mul_assoc Q⁻¹ R Q, Matrix.trace_mul_cycle]
-  rw [Matrix.mul_nonsing_inv Q hQdet, Matrix.one_mul]
+  rw [Matrix.nonsing_inv_mul _ hQdet, Matrix.mul_one, ← Matrix.mul_assoc,
+    Matrix.mul_nonsing_inv _ hQdet, Matrix.one_mul]
 
 /-- The trace of the covariance transformed by `1 - A`, for the standard positive solution
 `A * S * A = T`, is the Bures covariance expression. -/

@@ -197,13 +197,8 @@ theorem wassersteinEDist_two_multivariateGaussian_rpow_two
         ∫⁻ x, ENNReal.ofReal (‖x - T x‖ ^ 2) ∂(multivariateGaussian m₁ S₁) := by
       apply lintegral_congr
       intro x
-      dsimp only [cHalf]
-      calc
-        (2 : ℝ≥0∞) * ENNReal.ofReal (‖x - T x‖ ^ 2 / 2) =
-            ENNReal.ofReal 2 * ENNReal.ofReal (‖x - T x‖ ^ 2 / 2) := by norm_num
-        _ = ENNReal.ofReal (2 * (‖x - T x‖ ^ 2 / 2)) :=
-          (ENNReal.ofReal_mul (by norm_num)).symm
-        _ = ENNReal.ofReal (‖x - T x‖ ^ 2) := by congr 1; ring
+      simpa only [ENNReal.toReal_ofNat, edist_dist, dist_eq_norm, ENNReal.rpow_two,
+        ← ENNReal.ofReal_pow (norm_nonneg _)] using (congrFun hcost (x, T x)).symm
     _ = ENNReal.ofReal (∫ x, ‖x - T x‖ ^ 2 ∂(multivariateGaussian m₁ S₁)) :=
       (ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun x ↦ sq_nonneg _)).symm
     _ = ENNReal.ofReal (gaussianWassersteinSq m₁ m₂ S₁ S₂) := by
