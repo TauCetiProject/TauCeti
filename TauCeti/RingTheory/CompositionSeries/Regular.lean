@@ -28,12 +28,13 @@ namespace TauCeti
 
 universe u v
 
-variable (R : Type u) [Ring R] [IsArtinianRing R]
+variable (R : Type u) [Ring R]
 variable (S : Type v) [AddCommGroup S] [Module R S] [IsSimpleModule R S]
 
 /-- Every simple module over an Artinian ring occurs with positive multiplicity in the
 left regular module. -/
-theorem jordanHolderMultiplicity_regular_pos : 0 < jordanHolderMultiplicity R R S := by
+theorem jordanHolderMultiplicity_regular_pos [IsArtinianRing R] :
+    0 < jordanHolderMultiplicity R R S := by
   have := IsSimpleModule.nontrivial R S
   obtain ⟨x, hx⟩ := exists_ne (0 : S)
   have hle := jordanHolderMultiplicity_le_of_surjective (S := S)
@@ -42,12 +43,14 @@ theorem jordanHolderMultiplicity_regular_pos : 0 < jordanHolderMultiplicity R R 
     (LinearEquiv.refl R S)] at hle
   exact hle
 
-/-- The factors of any composition series of an Artinian ring's left regular module
+/-- The factors of any exhaustive composition series of a ring's left regular module
 include a copy of every simple left module. -/
 theorem exists_isCompositionFactorAt_regular (s : CompositionSeries (Submodule R R))
     (hbot : s.head = ⊥) (htop : s.last = ⊤) :
-    ∃ i, IsCompositionFactorAt s i S :=
-  (jordanHolderMultiplicity_ne_zero_iff s hbot htop S).mp
+    ∃ i, IsCompositionFactorAt s i S := by
+  have ⟨instNoetherian, instArtinian⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp
+    (isFiniteLength_of_exists_compositionSeries ⟨s, hbot, htop⟩)
+  exact (jordanHolderMultiplicity_ne_zero_iff s hbot htop S).mp
     (jordanHolderMultiplicity_regular_pos R S).ne'
 
 end TauCeti
