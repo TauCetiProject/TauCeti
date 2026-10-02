@@ -31,6 +31,8 @@ acting derivations and `TauCeti.derivationQuotientHom` to descend them to the qu
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Appendix E, §E.2,
   Proposition E.5, for the multiplication-plus-derivation construction.
+* S. Asgarli, [*Ado's Theorem*](https://personal.math.ubc.ca/~reichst/Ado%27s-Theorem.pdf),
+  Proposition 2, for the split-extension argument and its kernel control.
 -/
 
 public section
@@ -133,16 +135,17 @@ theorem envelopingQuotientRep_apply (x : S ⋊⁅ψ⁆ H) (a : U ⧸ J) :
 theorem envelopingQuotientRep_mk_zero_eq_zero_iff (s : S) :
     envelopingQuotientRep R S ψ J hJ ⟨s, 0⟩ = 0 ↔
       _root_.UniversalEnvelopingAlgebra.ι R s ∈ J := by
-  constructor
-  · intro hs
-    have := LinearMap.congr_fun hs 1
-    exact Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using this)
-  · intro hs
+  let q : S →ₗ⁅R⁆ (U ⧸ J) :=
+    ((Ideal.Quotient.mkₐ R J : U →ₐ[R] U ⧸ J) : U →ₗ⁅R⁆ U ⧸ J).comp
+      (_root_.UniversalEnvelopingAlgebra.ι R)
+  have hρ : envelopingQuotientRep R S ψ J hJ ⟨s, 0⟩ = LieHom.leftRegularRep q s := by
     apply LinearMap.ext
     intro a
-    simp only [envelopingQuotientRep_apply]
-    rw [(Ideal.Quotient.eq_zero_iff_mem).mpr hs]
-    simp
+    simp only [envelopingQuotientRep_apply, LieHom.leftRegularRep_apply, q,
+      LieHom.comp_apply, AlgHom.coe_toLieHom, Ideal.Quotient.mkₐ_eq_mk, map_zero,
+      ZeroMemClass.coe_zero, LinearMap.zero_apply, add_zero]
+  rw [hρ, LieHom.leftRegularRep_eq_zero_iff]
+  exact Ideal.Quotient.eq_zero_iff_mem
 
 /-- Refining the enveloping kernel of a representation preserves all directions it detects:
 the kernel of the new action restricted to `S` lies in the starting representation's kernel. -/
