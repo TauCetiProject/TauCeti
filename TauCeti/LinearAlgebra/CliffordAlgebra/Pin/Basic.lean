@@ -51,6 +51,16 @@ theorem coe_pinToLipschitz_apply (x : pinGroup Q) :
   rw [pinToLipschitz]
   rfl
 
+variable {Q} in
+/-- The inverse unit coordinate of a Pin element in the Lipschitz group is its Clifford star. -/
+@[simp]
+theorem _root_.TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz (x : pinGroup Q) :
+    (((pinToLipschitz Q x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) :
+        CliffordAlgebra Q) = star (x : CliffordAlgebra Q) :=
+  Units.inv_eq_of_mul_eq_one_right (by
+    rw [coe_pinToLipschitz_apply]
+    exact pinGroup.mul_star_self_of_mem x.2)
+
 /-- The spin group sits inside the Pin group. -/
 def spinToPin : spinGroup Q →* pinGroup Q :=
   Submonoid.inclusion fun _ hx => spinGroup.mem_pin hx
