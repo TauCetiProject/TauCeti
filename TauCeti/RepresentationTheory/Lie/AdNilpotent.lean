@@ -22,6 +22,11 @@ commutator eigenvalue for the operator representing `x`. This operator is algebr
 the representation is finite dimensional, so the associative derivation result proves it
 nilpotent. Neither algebraic closedness nor a choice of `sl₂`-triple is needed.
 
+For a Killing Lie subalgebra `S` of a finite-dimensional `L`, apply the result to the restricted
+adjoint action on `L` and the restricted action on a finite-dimensional `L`-module `M`.
+Nilpotence of `ad_S s` implies nilpotence of `ad_L s` and of the action of `s` on `M`. These
+applications use the subalgebra and its Killing form, without requiring a decomposition of `L`.
+
 ## Main results
 
 * `TauCeti.isNilpotent_apply_of_lie_eq_smul`: a nonzero adjoint eigenvalue forces nilpotence
