@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelationModule
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacter
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Character
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Twisted
@@ -17,8 +18,9 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Labu
 
 Let `F` be the free pro-`p` group on a set `X` and `r ∈ F` a relator presenting a Demushkin group
 `G = F ⧸ (r)`. The canonical character of `G` read on `F` is a continuous character
-`χ : F → ℤ_pˣ` (`TauCeti.demushkinRelatorCharacter`), the character Labute attaches to `r`
-(Labute, §4 Definition, p. 121). Its kernel contains `r`
+`χ : F → ℤ_pˣ` (`TauCeti.demushkinRelatorCharacter`, in
+`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacter`), the character
+Labute attaches to `r` (Labute, §4 Definition, p. 121). Its kernel contains `r`
 (`TauCeti.demushkinRelatorCharacter_mem_ker`), so `r` has a class `cl(r)` in Labute's module
 `E = ker χ ⧸ (ker χ, ker χ)` (`TauCeti.labuteRelatorClass`), a module over
 `Λ = ℤ_p[[F ⧸ ker χ]]`.
@@ -50,9 +52,6 @@ multipliers `2 + 2^f + T` and `2^f + T`, where `1 + T` is the class of an elemen
 
 ## Main results
 
-* `TauCeti.demushkinRelatorCharacter`: the character of a Demushkin relator, the canonical
-  character of the presented group read on the free pro-`p` group.
-* `TauCeti.demushkinRelatorCharacter_mem_ker`: the relator lies in the kernel of its character.
 * `TauCeti.exists_labuteRelatorClass_eq_smul_of_range_eq_procyclicClosure`: the factorization of
   the relator class in the twisted branch (Labute, §4.1, p. 123).
 * `TauCeti.exists_labuteRelatorClass_eq_add_smul_of_range_eq_unitsPlusMinus`: the factorization
@@ -67,58 +66,6 @@ multipliers `2 + 2^f + T` and `2^f + T`, where `1 + T` is the class of an elemen
 public section
 
 namespace TauCeti
-
-/-! ### The character of a Demushkin relator -/
-
-section Character
-
-variable {p : ℕ} [Fact p.Prime] {X : Type*} {r : freeProP p X}
-
-/-- **The character of a Demushkin relator** (Labute, §4): for a relator `r` of the free pro-`p`
-group `F` on `X` presenting a Demushkin group `G = F ⧸ (r)`, the canonical character of `G`
-composed with the quotient map `F → G`. Labute's module is the topological abelianization of its
-kernel. -/
-noncomputable def demushkinRelatorCharacter (hr : IsDemushkin p (presentedProP p X {r})) :
-    freeProP p X →ₜ* ℤ_[p]ˣ :=
-  (demushkinCharacter hr).comp (presentedProP.mk p {r})
-
-/-- The character of a Demushkin relator is the canonical character on classes. -/
-@[simp]
-theorem demushkinRelatorCharacter_apply (hr : IsDemushkin p (presentedProP p X {r}))
-    (x : freeProP p X) :
-    demushkinRelatorCharacter hr x = demushkinCharacter hr (presentedProP.mk p {r} x) :=
-  (rfl)
-
-/-- The character of a Demushkin relator has the same image as the canonical character. -/
-theorem range_demushkinRelatorCharacter (hr : IsDemushkin p (presentedProP p X {r})) :
-    (demushkinRelatorCharacter hr).toMonoidHom.range =
-      (demushkinCharacter hr).toMonoidHom.range := by
-  ext a
-  simp only [MonoidHom.mem_range, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
-    demushkinRelatorCharacter_apply]
-  exact ⟨fun ⟨x, hx⟩ ↦ ⟨_, hx⟩, fun ⟨g, hg⟩ ↦
-    (presentedProP.mk_surjective p {r} g).imp fun x hx ↦ by rwa [hx]⟩
-
-/-- **The relator lies in the kernel of its character**, so it has a class in Labute's module. -/
-theorem demushkinRelatorCharacter_mem_ker (hr : IsDemushkin p (presentedProP p X {r})) :
-    r ∈ (demushkinRelatorCharacter hr : freeProP p X →* ℤ_[p]ˣ).ker := by
-  simp [presentedProP.mk_relator r (Set.mem_singleton r)]
-
-/-- **The character of a Demushkin relator on a transported basis.** If a continuous automorphism
-`e` of the free pro-`p` group on `n` generators carries `r` to `r'`, the character of `r` takes on
-`e⁻¹(x_i)` the value of the canonical character on the generator `x_i` of `⟨x₁, …, x_n ∣ r'⟩`,
-read back along the induced isomorphism `⟨x₁, …, x_n ∣ r⟩ ≃ ⟨x₁, …, x_n ∣ r'⟩`. -/
-theorem demushkinRelatorCharacter_symm_freeProPGen {n : ℕ} {r : freeProP p (Fin n)}
-    (hr : IsDemushkin p (presentedProP p (Fin n) {r}))
-    (e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n)) {r' : freeProP p (Fin n)} (he : e r = r')
-    (i : ℕ) :
-    demushkinRelatorCharacter hr (e.symm (freeProPGen p n i)) =
-      demushkinCharacter hr
-        ((presentedProP.congrSingleton e he).symm (presentedProPGen p n _ i)) := by
-  rw [← presentedProP.mk_freeProPGen, presentedProP.congrSingleton_symm_mk,
-    demushkinRelatorCharacter_apply]
-
-end Character
 
 /-! ### The relator class in the two finite-level branches of even rank at `p = 2` -/
 
@@ -169,8 +116,8 @@ theorem exists_labuteRelatorClass_eq_smul_of_range_eq_procyclicClosure
   -- The character table of the normal form gives the values of `χ` on `x`.
   obtain ⟨h₁, hx⟩ := demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordNeTwo hr hq hn hn1
     (presentedProP.congrSingleton e he)
-  simp only [← demushkinRelatorCharacter_symm_freeProPGen, ← Function.comp_apply (f := e.symm),
-    ← hx_def] at h₁ hx
+  simp only [← presentedProP.mk_freeProPGen, ← demushkinRelatorCharacter_apply_equiv_symm,
+    ← Function.comp_apply (f := e.symm), ← hx_def] at h₁ hx
   have hclass := (isProP_freeProP 2 (Fin n)).ofMul_mk_demushkinWordNeTwo_ker χ (2 + 2 ^ f) hn1
     (x := x) (fun i hi _ ↦ hx i hi)
   -- `[x₂]⁻¹ = [y]` in `F ⧸ ker χ`, since both have character value `-(1 + 2^f)`.
@@ -240,8 +187,8 @@ theorem exists_labuteRelatorClass_eq_add_smul_of_range_eq_unitsPlusMinus
   -- The character table of the normal form gives the values of `χ` on `x`.
   obtain ⟨h₁, h₃, hx⟩ := demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordTwoEven hr
     (dvd_zero 2) (by omega) hn hn3 (presentedProP.congrSingleton e he)
-  simp only [← demushkinRelatorCharacter_symm_freeProPGen, ← Function.comp_apply (f := e.symm),
-    ← hx_def] at h₁ h₃ hx
+  simp only [← presentedProP.mk_freeProPGen, ← demushkinRelatorCharacter_apply_equiv_symm,
+    ← Function.comp_apply (f := e.symm), ← hx_def] at h₁ h₃ hx
   obtain ⟨z₁, z₃, hz⟩ :=
     (isProP_freeProP 2 (Fin n)).exists_ofMul_mk_demushkinWordTwoEven_ker_eq_add_smul χ 0 f hn3 hf
       (x := x) (fun i hi hi' _ ↦ hx i hi hi') h₁ h₃ (by simp) hs hy
