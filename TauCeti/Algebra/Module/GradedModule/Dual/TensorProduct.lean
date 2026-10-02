@@ -177,7 +177,6 @@ theorem isHomogeneous_signedDualDistribEquiv_symm (G : InternalGrading R M)
 
 /-- A functional on the tensor product has degree `p` exactly when its inverse image under
 the signed comparison has total degree `p`. -/
-@[simp]
 theorem signedDualDistribEquiv_mem_piece_iff (G : InternalGrading R M)
     (H : InternalGrading R N) (p : ℤ) (w : Module.Dual R M ⊗[R] Module.Dual R N) :
     G.signedDualDistribEquiv H w ∈ (G.tensorProduct H).dualPiece p ↔
