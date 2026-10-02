@@ -39,7 +39,7 @@ Hilbert space is second countable; the GNS space carries no such hypothesis, so 
 * `TauCeti.IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuousAt`: a
   positive-definite function, continuous at `0`, on a second-countable locally compact abelian
   group is the Fourier–Stieltjes transform of a finite measure on the dual group.
-* `TauCeti.continuous_isPositiveDefiniteSub_iff_existsUnique_pontryaginMeasureTransform_eq`:
+* `TauCeti.continuous_and_isPositiveDefiniteSub_iff_existsUnique_pontryaginMeasureTransform_eq`:
   the full Bochner characterization by unique finite measures.
 
 ## References
@@ -86,7 +86,7 @@ theorem IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuous
 /-- **Bochner's characterization on a second-countable locally compact abelian group.** A
 function is continuous and positive definite if and only if it is the Fourier–Stieltjes
 transform of a unique finite positive Borel measure on the dual group. -/
-theorem continuous_isPositiveDefiniteSub_iff_existsUnique_pontryaginMeasureTransform_eq
+theorem continuous_and_isPositiveDefiniteSub_iff_existsUnique_pontryaginMeasureTransform_eq
     (φ : G → ℂ) :
     (Continuous φ ∧ IsPositiveDefiniteSub φ) ↔
       ∃! μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
