@@ -148,7 +148,9 @@ noncomputable def affineToricChartι (σ : Φ.cones) :
   colimit.ι Φ.affineToricDiagram σ
 
 /-- The colimit cocone from the affine toric charts to the toric scheme of a finite fan. -/
--- Expose the point and legs so the dependent colimit API uses the chart carriers directly.
+-- Expose the named point and legs so the dependent colimit API uses the chart carriers directly.
+-- Using `colimit.cocone` here would require exposing `algebraicRealization`; this shell keeps
+-- the realization's colimit implementation hidden while reusing Mathlib's naturality proof.
 @[expose] noncomputable def affineToricCocone : Cocone Φ.affineToricDiagram where
   pt := Φ.algebraicRealization
   ι :=
