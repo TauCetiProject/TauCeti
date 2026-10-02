@@ -16,6 +16,10 @@ The direct sum is additively equivalent to the product of the codes, so their ca
 multiply. This supplies the disjoint-coordinate construction used in additive-code distance
 calculations.
 
+Hamming weight and distance split as sums over the two coordinate blocks. Canonical reindexings
+by the commutativity and associativity equivalences for `Sum` give the corresponding code
+identities, using Mathlib's `AddEquiv.arrowCongr`.
+
 The alphabet is an arbitrary additive group, with no finiteness or field assumption.
 The product equivalence restricts Mathlib's `Equiv.sumArrowEquivProdArrow`. For commutative
 alphabets, the construction agrees with the direct sum of the corresponding integer submodules.
@@ -29,7 +33,7 @@ namespace TauCeti
 
 open AddSubgroup
 
-variable {A ι κ : Type*}
+variable {A ι κ ν : Type*}
 
 section AddGroup
 
@@ -138,6 +142,29 @@ theorem _root_.AddSubgroup.directSum_inj {C C' : AddSubgroup (ι → A)}
   simp only [le_antisymm_iff, directSum_le_directSum_iff]
   tauto
 
+/-- Reindexing an additive direct sum by swapping the coordinate summands swaps the two codes. -/
+@[simp↓]
+theorem _root_.AddSubgroup.map_directSum_sumComm (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) :
+    (C.directSum D).map
+        (AddEquiv.arrowCongr (Equiv.sumComm ι κ) (AddEquiv.refl A)).toAddMonoidHom =
+      D.directSum C := by
+  ext x
+  rw [mem_map_equiv, mem_directSum_iff, mem_directSum_iff]
+  exact and_comm
+
+/-- Reindexing an iterated additive direct sum by associating its coordinate summands associates
+the three codes in the same way. -/
+@[simp↓]
+theorem _root_.AddSubgroup.map_directSum_sumAssoc (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) (E : AddSubgroup (ν → A)) :
+    ((C.directSum D).directSum E).map
+        (AddEquiv.arrowCongr (Equiv.sumAssoc ι κ ν) (AddEquiv.refl A)).toAddMonoidHom =
+      C.directSum (D.directSum E) := by
+  ext x
+  simp only [mem_map_equiv, mem_directSum_iff]
+  exact and_assoc
+
 /-- The direct sum of two zero codes is zero. -/
 @[simp]
 theorem _root_.AddSubgroup.bot_directSum_bot :
@@ -145,6 +172,37 @@ theorem _root_.AddSubgroup.bot_directSum_bot :
   ext x
   simp only [mem_directSum_iff, AddSubgroup.mem_bot, funext_iff, Pi.zero_apply]
   exact ⟨fun h i ↦ Sum.rec h.1 h.2 i, fun h ↦ ⟨fun i ↦ h (.inl i), fun j ↦ h (.inr j)⟩⟩
+
+section Hamming
+
+variable [DecidableEq A] [Fintype ι] [Fintype κ]
+
+/-- Hamming weight is additive on words in an additive direct sum. -/
+@[simp]
+theorem _root_.AddSubgroup.hammingNorm_directSumEquivProd_symm (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) (x : C) (y : D) :
+    hammingNorm ((C.directSumEquivProd D).symm (x, y) : ι ⊕ κ → A) =
+      hammingNorm x.1 + hammingNorm y.1 := by
+  rw [← hammingNorm_sumElim x.1 y.1]
+  apply congrArg hammingNorm
+  funext i
+  cases i <;> simp
+
+/-- Hamming distance is additive on pairs of words in an additive direct sum. -/
+@[simp]
+theorem _root_.AddSubgroup.hammingDist_directSumEquivProd_symm (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) (x x' : C) (y y' : D) :
+    hammingDist ((C.directSumEquivProd D).symm (x, y) : ι ⊕ κ → A)
+        ((C.directSumEquivProd D).symm (x', y') : ι ⊕ κ → A) =
+      hammingDist x.1 x'.1 + hammingDist y.1 y'.1 := by
+  rw [← hammingDist_sumElim x.1 x'.1 y.1 y'.1]
+  apply congrArg₂ hammingDist
+  · funext i
+    cases i <;> simp
+  · funext i
+    cases i <;> simp
+
+end Hamming
 
 end AddGroup
 
