@@ -52,7 +52,6 @@ lemma dual_obj (L : InvertibleSheaf X) :
   (rfl)
 
 /-- The sheaf isomorphism underlying transport through duality. -/
-@[expose]
 def dualCongrIso {L K : InvertibleSheaf X} (e : L ≅ K) :
     @Iso (SheafOfModules X.ringCatSheaf) _ (dual L).obj (dual K).obj :=
   eqToIso (dual_obj L) ≪≫
@@ -68,7 +67,7 @@ lemma dualCongrIso_hom {L K : InvertibleSheaf X} (e : L ≅ K) :
         (SheafOfModules.dualIso (R := X.sheaf)
           ((SheafOfModules.isInvertible X).ι.mapIso e)).hom ≫
         (eqToIso (dual_obj K)).inv :=
-  rfl
+  (rfl)
 
 /-- The inverse map of `dualCongrIso` is the internal-Hom map induced by precomposition with the
 forward isomorphism, transported to the underlying sheaves of the dual line bundles. -/
@@ -78,7 +77,7 @@ lemma dualCongrIso_inv {L K : InvertibleSheaf X} (e : L ≅ K) :
         (SheafOfModules.dualIso (R := X.sheaf)
           ((SheafOfModules.isInvertible X).ι.mapIso e)).inv ≫
         (eqToIso (dual_obj L)).inv :=
-  rfl
+  (rfl)
 
 /-- An isomorphism of line bundles induces an isomorphism of their duals. -/
 def dualCongr {L K : InvertibleSheaf X} (e : L ≅ K) : dual L ≅ dual K :=
@@ -98,7 +97,6 @@ lemma dualCongr_inv_val {L K : InvertibleSheaf X} (e : L ≅ K) :
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
 /-- Evaluation of a line bundle against its internal-Hom dual, as an isomorphism of sheaves. -/
-@[expose]
 def evaluationDualIsoSheaf (L : InvertibleSheaf X) :
     L.obj ⊗ L.obj.dual ≅ SheafOfModules.unit X.ringCatSheaf :=
   let _ : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
@@ -111,10 +109,9 @@ def evaluationDualIsoSheaf (L : InvertibleSheaf X) :
 lemma evaluationDualIsoSheaf_hom (L : InvertibleSheaf X) :
     (evaluationDualIsoSheaf L).hom =
       (ihom.ev L.obj).app (SheafOfModules.unit X.ringCatSheaf) :=
-  rfl
+  (rfl)
 
 /-- The sheaf isomorphism underlying evaluation of a line bundle against its dual. -/
-@[expose]
 def tensorDualIsoSheaf (L : InvertibleSheaf X) :
     @Iso (SheafOfModules X.ringCatSheaf) _
       (tensorProduct L (dual L)).obj (trivial X).obj :=
@@ -134,7 +131,7 @@ lemma tensorDualIsoSheaf_hom (L : InvertibleSheaf X) :
         (L.obj.tensorUnderlyingIso L.obj.dual).inv ≫
         (ihom.ev L.obj).app (SheafOfModules.unit X.ringCatSheaf) ≫
         (trivialObjIsoUnit X).inv :=
-  rfl
+  (rfl)
 
 /-- The inverse map of `tensorDualIsoSheaf` is the inverse evaluation map, transported back
 through the tensor and trivial-bundle comparisons. -/
@@ -145,7 +142,7 @@ lemma tensorDualIsoSheaf_inv (L : InvertibleSheaf X) :
         (SheafOfModules.tensorProductIso X.sheaf L.obj L.obj.dual).inv ≫
         (SheafOfModules.tensorProductCongrRight X.sheaf (eqToIso (dual_obj L))).inv ≫
         (eqToIso (tensorProduct_obj L (dual L))).inv :=
-  rfl
+  (rfl)
 
 /-- Tensoring a line bundle with its dual gives the trivial line bundle. -/
 def tensorDualIso (L : InvertibleSheaf X) : tensorProduct L (dual L) ≅ trivial X :=

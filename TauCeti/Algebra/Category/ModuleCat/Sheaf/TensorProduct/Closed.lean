@@ -107,7 +107,6 @@ abbrev _root_.SheafOfModules.dual
   (ihom M).obj (_root_.SheafOfModules.unit (ringCatSheaf R))
 
 /-- An isomorphism of sheaves induces an isomorphism of their duals. -/
-@[expose]
 def _root_.SheafOfModules.dualIso {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
     (e : M ≅ N) : M.dual ≅ N.dual := by
   have hpre : IsIso (pre e.inv) := by
