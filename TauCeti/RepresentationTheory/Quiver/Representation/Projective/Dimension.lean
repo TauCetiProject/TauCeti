@@ -19,9 +19,10 @@ whose first-arrow resolution has length one, and this bound is preserved by
 extensions. In particular the result applies to every module finite-dimensional over
 the coefficient field.
 
-The standard free presentation therefore has projective kernel and is a length-one
-projective resolution. Its terms need not be finitely generated. These resolutions
-allow Ext computations to stop at degree one.
+Applying `TauCeti.projective_projectiveShortComplex_X₁` to either bound shows that the
+standard free presentation has projective kernel and is a length-one projective
+resolution. Its terms need not be finitely generated. These resolutions allow Ext
+computations to stop at degree one.
 
 The simple-module classification and first-arrow resolutions are those of
 `TauCeti.RepresentationTheory.Quiver.Representation.VertexSimpleModule`.
@@ -71,22 +72,5 @@ theorem hasProjectiveDimensionLT_two_pathAlgebra_of_finiteDimensional
   have : IsArtinian (pathAlgebra k Q) M := isArtinian_of_tower k inferInstance
   exact hasProjectiveDimensionLT_two_pathAlgebra k Q hQ M
     (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
-
-/-- The standard free presentation of a finite-length module over an acyclic path
-algebra has projective kernel, so it is a projective resolution of length one. -/
-theorem projective_projectiveShortComplex_X₁_pathAlgebra (hQ : Quiver.IsAcyclic Q)
-    (M : ModuleCat.{max v w x} (pathAlgebra k Q))
-    (hM : IsFiniteLength (pathAlgebra k Q) M) :
-    Projective M.projectiveShortComplex.X₁ := by
-  exact projective_projectiveShortComplex_X₁
-    (hasProjectiveDimensionLT_two_pathAlgebra k Q hQ M hM)
-
-/-- The standard free presentation of a finite-dimensional module over an acyclic path
-algebra has projective kernel, so it is a projective resolution of length one. -/
-theorem projective_projectiveShortComplex_X₁_pathAlgebra_of_finiteDimensional
-    (hQ : Quiver.IsAcyclic Q) (M : ModuleCat.{max v w x} (pathAlgebra k Q))
-    [FiniteDimensional k M] : Projective M.projectiveShortComplex.X₁ := by
-  exact projective_projectiveShortComplex_X₁
-    (hasProjectiveDimensionLT_two_pathAlgebra_of_finiteDimensional k Q hQ M)
 
 end TauCeti
