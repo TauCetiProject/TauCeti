@@ -34,6 +34,8 @@ that `Diff(D⁴, ∂)` is not contractible.
 ## Main results
 
 * `TauCeti.DiscDiff.apply_eq`: an element of `Diff(Dⁿ, ∂)` fixes every unit vector.
+* `TauCeti.watanabeTheorem_iff`: unfolds `WatanabeTheorem` to the existence of an element of
+  infinite order in `π₁(Diff(D⁴, ∂))`.
 * `TauCeti.WatanabeTheorem.not_contractibleSpace_discDiff_four`: Watanabe's theorem implies that
   `Diff(D⁴, ∂)` is not contractible, refuting the four-dimensional disc Smale conjecture.
 
@@ -75,6 +77,11 @@ and based at the identity, has an element of infinite order. This fundamental gr
 `Diff(D⁴, ∂)` being a topological group, so this says that `π₁(Diff(D⁴, ∂)) ⊗ ℚ ≠ 0`. -/
 def WatanabeTheorem : Prop :=
   ∃ γ : π_ 1 (DiscDiff 4) 1, ¬ IsOfFinOrder γ
+
+/-- Unfold Watanabe's theorem: `π₁(Diff(D⁴, ∂))`, based at the identity, has an element of
+infinite order. -/
+theorem watanabeTheorem_iff : WatanabeTheorem ↔ ∃ γ : π_ 1 (DiscDiff 4) 1, ¬ IsOfFinOrder γ :=
+  (Iff.rfl)
 
 /-- Watanabe's theorem refutes the four-dimensional disc Smale conjecture: `Diff(D⁴, ∂)` is not
 contractible in the weak Whitney topology. -/
