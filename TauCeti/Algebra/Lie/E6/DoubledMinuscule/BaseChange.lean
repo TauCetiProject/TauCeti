@@ -99,6 +99,17 @@ noncomputable def baseChangeDefiningIdeal :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
     matrixWeight A
 
+/-- The transported defining ideal is the ideal supplied by the generic Kostant toral-closure base
+change. -/
+theorem baseChangeDefiningIdeal_def :
+    baseChangeDefiningIdeal A =
+      kostantToralBaseChangePresentationIdeal
+        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+        (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
+        matrixWeight A := by
+  rw [baseChangeDefiningIdeal]
+
 /-- Membership in the transported defining ideal is membership of the corresponding element in the
 base change of the named integral defining ideal. -/
 @[simp]
@@ -330,6 +341,26 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
     matrixWeight A definingIdeal_def
+
+/-- The coordinate Hopf algebra of the doubled minuscule carrier after base change to `A`. -/
+noncomputable abbrev coordinateHopfAlgebra :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 54)
+    (baseChangeDefiningIdeal A)
+
+/-- The quotient coordinate morphism representing the carrier's closed immersion into `GL₅₄`. -/
+noncomputable def coordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A 54 ⟶ coordinateHopfAlgebra A :=
+  CommHopfAlgCat.mkQuotient _ (baseChangeDefiningIdeal A)
+
+/-- The carrier coordinate morphism is surjective. -/
+theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom :=
+  CommHopfAlgCat.mkQuotient_surjective _ _
+
+/-- The kernel of the carrier coordinate morphism is its transported defining ideal. -/
+@[simp]
+theorem coordinateMap_ker :
+    RingHom.ker (coordinateMap A).hom = (baseChangeDefiningIdeal A).toIdeal :=
+  CommHopfAlgCat.mkQuotient_ker _ _
 
 /-- The coordinate algebras of the numbered root subgroups and weight torus. -/
 noncomputable abbrev generatorCoordinateAlgebra :

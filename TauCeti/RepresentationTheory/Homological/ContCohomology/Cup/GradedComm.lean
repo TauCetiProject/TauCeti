@@ -9,23 +9,33 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Cohomo
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 
 /-!
-# Graded commutativity of the cup product in bidegree `(1, 1)`
+# Graded commutativity of the cup product in bidegrees `(0, n)` and `(1, 1)`
 
 Let `P : TopPairing X Y Z` be a coefficient pairing of topological representations of a
 topological group `G`, and let `P.flip : TopPairing Y X Z` be the opposite pairing
 `TauCeti.TopPairing.flip`, `P.flip.bil y x = P.bil x y`. On continuous cohomology the cup
 products in the two orders are related by graded commutativity,
-`a ⌣_P b = (-1)^{mn} (b ⌣_{P.flip} a)`. This file proves the case of bidegree `(1, 1)`,
+`a ⌣_P b = (-1)^{mn} (b ⌣_{P.flip} a)`. This file proves the cases in which the first
+degree is zero and the case of bidegree `(1, 1)`,
 
 ```text
 cup P 1 1 a b = - cup P.flip 1 1 b a,
 ```
 
-which is the case the cup square `H¹(G, M) × H¹(G, M) → H²(G, M)` of a commutative coefficient
-ring is stated against.
+where the latter is the case the cup square `H¹(G, M) × H¹(G, M) → H²(G, M)` of a commutative
+coefficient ring is stated against.
 
-The identity fails on cochains, and the proof is a homotopy. For homogeneous one-cochains `a` and
-`b` the **cup-one product** `TauCeti.TopPairing.cupOneCochain a b` is the pointwise pairing
+In bidegree `(0, n)` the identity already holds on cocycles. A homogeneous zero-cocycle is a
+constant function, and the two Alexander–Whitney products therefore pair the same constant
+coefficient with the same value of the `n`-cochain. The recursion on Mathlib's iterated-curried
+coinduction resolution is recorded by
+`TauCeti.TopPairing.resolutionCupPairing_zero_eq_flip`; its restrictions to homogeneous cochains
+and cohomology are `TauCeti.TopPairing.cupCochain_zero_eq_flip` and
+`TauCeti.TopPairing.cup_zero_eq_flip`.
+
+In bidegree `(1, 1)` the identity fails on cochains, and the proof is a homotopy. For homogeneous
+one-cochains `a` and `b` the **cup-one product** `TauCeti.TopPairing.cupOneCochain a b` is the
+pointwise pairing
 `(g₀, g₁) ↦ μ (a g₀ g₁) (b g₀ g₁)`, the bidegree-`(1, 1)` case of Steenrod's `∪₁`. When `a` and
 `b` are cocycles, its differential is `-(a ⌣ b) - (b ⌣ᵒᵖ a)`
 (`TauCeti.TopPairing.d_cupOneCochain`): expanding `μ (a g₀ g₂) (b g₀ g₂)` along the cocycle
@@ -58,6 +68,8 @@ convention affects; both descents therefore read `cup a b = - cup b a`.
 
 ## Main results
 
+* `TauCeti.TopPairing.cup_zero_eq_flip`: **graded commutativity in bidegree `(0, n)`** for every
+  `n`, with the degree transport between `n + 0` and `0 + n` explicit.
 * `TauCeti.TopPairing.d_cupOneCochain`: the differential of the cup-one product of two cocycles
   is `-(a ⌣ b) - (b ⌣ᵒᵖ a)`.
 * `TauCeti.TopPairing.cup_one_one_eq_neg_flip`: **graded commutativity in bidegree `(1, 1)`**,
@@ -81,6 +93,95 @@ open CategoryTheory ContRepresentation TopRep _root_.ContinuousCohomology Contin
 universe u v w
 
 namespace TopPairing
+
+section degreeZero
+
+variable {R : Type u} [CommRing R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {X Y Z : TopRep.{max v w} R G} (P : TopPairing X Y Z)
+
+/-! ### Graded commutativity with a degree-zero cocycle -/
+
+/-- Pairing a fixed coefficient pointwise with an `(n + 1)`-fold iterated function is the
+Alexander–Whitney pairing in the opposite order against the constant zero-degree resolution
+element. This is the recursive identity behind graded commutativity in bidegree `(0, n)`. -/
+private theorem pointwise_succ_eq_flip_resolutionCup : ∀ (n k : ℕ) (hk : k = n) (x : X.V)
+    (b : (TopRep.resolutionX Y (n + 1)).V),
+    P.pointwise (n + 1) (k + 1) (congrArg Nat.succ hk) (x, b) =
+      P.flip.resolutionCup n 0 k (by omega) (b, (TopRep.d X 0).hom x)
+  | 0, 0, _, x, b => ContinuousMap.ext fun g ↦ by
+      rw [P.pointwise_succ_apply, P.pointwise_zero_apply,
+        P.flip.resolutionCup_zero_apply, P.flip.pointwise_zero_apply, flip_bil]
+      rfl
+  | n + 1, k + 1, hk, x, b => ContinuousMap.ext fun g ↦ by
+      rw [P.pointwise_succ_apply, P.flip.resolutionCup_succ_apply]
+      exact pointwise_succ_eq_flip_resolutionCup n k (Nat.succ.inj hk) x (b g)
+
+/-- The Alexander–Whitney pairing of the constant zero-degree resolution element with a degree
+`n` element agrees with the opposite pairing in bidegree `(n, 0)`. -/
+private theorem resolutionCup_zero_eq_flip : ∀ (n k : ℕ) (hk : k = n) (x : X.V)
+    (b : (TopRep.resolutionX Y (n + 1)).V),
+    P.resolutionCup 0 n k (by omega) ((TopRep.d X 0).hom x, b) =
+      P.flip.resolutionCup n 0 k (by omega) (b, (TopRep.d X 0).hom x)
+  | 0, 0, _, x, b => ContinuousMap.ext fun g ↦ by
+      rw [P.resolutionCup_zero_apply, P.flip.resolutionCup_zero_apply,
+        P.pointwise_zero_apply, P.flip.pointwise_zero_apply, flip_bil]
+  | n + 1, k + 1, hk, x, b => ContinuousMap.ext fun g ↦ by
+      rw [P.resolutionCup_zero_apply, P.flip.resolutionCup_succ_apply]
+      exact P.pointwise_succ_eq_flip_resolutionCup n k (Nat.succ.inj hk) x (b g)
+
+/-- **Graded commutativity on the resolution in bidegree `(0, n)`**, for a constant
+zero-degree element. The opposite product is transported from degree `n + 0` to degree `0 + n`.
+-/
+theorem resolutionCupPairing_zero_eq_flip (n : ℕ) (x : X.V)
+    (b : (TopRep.resolution'X Y n).V) :
+    P.resolutionCupPairing 0 n ((TopRep.d X 0).hom x) b =
+      ((TopRep.resolution Z).XIsoOfEq (by omega : n + 0 + 1 = 0 + n + 1)).hom.hom
+        (P.flip.resolutionCupPairing n 0 b ((TopRep.d X 0).hom x)) := by
+  rw [resolutionCupPairing_apply, resolutionCupPairing_apply]
+  calc
+    _ = P.flip.resolutionCup n 0 (0 + n) (by omega)
+        (b, (TopRep.d X 0).hom x) :=
+      P.resolutionCup_zero_eq_flip n (0 + n) (by omega) x b
+    _ = ((TopRep.resolution Z).XIsoOfEq
+          (by omega : n + 0 + 1 = 0 + n + 1)).hom.hom
+        (P.flip.resolutionCup n 0 (n + 0) (Nat.add_comm n 0)
+          (b, (TopRep.d X 0).hom x)) :=
+      (P.flip.resolutionCup_cast (Nat.add_comm n 0) (by omega)
+        (by omega : n + 0 + 1 = 0 + n + 1) (b, (TopRep.d X 0).hom x)).symm
+
+/-- **Graded commutativity of homogeneous cochains in bidegree `(0, n)`**: if `a` is a
+zero-cocycle, then `a ⌣_P b` is the degree transport of `b ⌣_{P.flip} a`. No cocycle condition
+on `b` is needed. -/
+theorem cupCochain_zero_eq_flip (n : ℕ) {a : (TopRep.homogeneousCochains X).X 0}
+    (ha : ((TopRep.homogeneousCochains X).d 0 1).hom a = 0)
+    (b : (TopRep.homogeneousCochains Y).X n) :
+    P.cupCochain 0 n a b =
+      ((TopRep.homogeneousCochains Z).XIsoOfEq (by omega : n + 0 = 0 + n)).hom
+        (P.flip.cupCochain n 0 b a) := by
+  apply Subtype.ext
+  rw [coe_cupCochain, ContinuousCohomology.coe_homogeneousCochains_XIsoOfEq_hom_apply,
+    coe_cupCochain, TopRep.homogeneousCochains.eq_d_zero_apply_of_d_eq_zero ha]
+  exact P.resolutionCupPairing_zero_eq_flip n (a.val 1) b.val
+
+/-- **Graded commutativity of the cup product in bidegree `(0, n)`**:
+`a ⌣_P b = b ⌣_{P.flip} a`, with the opposite product transported from degree `n + 0` to
+degree `0 + n`. This is the zero-degree base case of the all-bidegree graded-commutativity
+homotopy. -/
+theorem cup_zero_eq_flip (n : ℕ) (a : continuousCohomology 0 X)
+    (b : continuousCohomology n Y) :
+    P.cup 0 n a b =
+      (ContinuousCohomology.degreeCast Z (by omega : n + 0 = 0 + n)).hom
+        (P.flip.cup n 0 b a) := by
+  obtain ⟨a, rfl⟩ := (TopRep.homogeneousCochains X).homologyπ_surjective 0 a
+  obtain ⟨b, rfl⟩ := (TopRep.homogeneousCochains Y).homologyπ_surjective n b
+  rw [cup_π, cup_π]
+  refine ContinuousCohomology.π_eq_degreeCast_π (by omega : n + 0 = 0 + n) _ _ ?_
+  rw [iCycles_cupCocycles, iCycles_cupCocycles]
+  exact P.cupCochain_zero_eq_flip n
+    ((TopRep.homogeneousCochains X).d_iCycles_apply 1 a) _
+
+end degreeZero
 
 section cupOne
 

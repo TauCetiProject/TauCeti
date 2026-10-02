@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Data.ZMod.Four
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Character
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift

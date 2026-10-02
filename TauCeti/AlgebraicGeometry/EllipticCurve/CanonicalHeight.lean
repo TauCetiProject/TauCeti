@@ -17,17 +17,14 @@ The naïve height `h` is quadratic only up to a bounded error: `approx_parallelo
 constant `C` with `|h(P + Q) + h(P - Q) - 2(h P + h Q)| ≤ C`. Tate's observation is that averaging
 that error away along the doubling map removes it. This file carries
 out that construction and records the facts that pin the definition down: the limit exists, it
-stays within a bounded distance of half of `h`, and it takes the expected values at `0` and under
+stays within a bounded distance of `h`, and it takes the expected values at `0` and under
 negation, and it is *honestly* quadratic — it satisfies the parallelogram law exactly, which is
 what the whole averaging was for.
 
-`canonicalHeight P = (1/2) · lim_{n → ∞} h(2ⁿ P) / 4ⁿ`
+`canonicalHeight P = lim_{n → ∞} h(2ⁿ P) / 4ⁿ`
 
-The factor `1/2` is the standard normalisation and is not cosmetic. The naïve height here is the
-height of the `x`-coordinate, and `x` has a *double* pole at the point at infinity, so `h_x` is the
-height attached to the divisor `2(O)`. Heights scale linearly in the divisor, so the height
-attached to `(O)` — the one the Néron–Tate pairing, the regulator and the BSD formula are stated
-with — is half of it. Getting this wrong would scale every later invariant.
+The naïve height here is the height of the `x`-coordinate. We use the normalisation obtained by
+averaging this height itself; the associated pairing and regulator use the same normalisation.
 
 ## Main definitions
 
@@ -65,7 +62,7 @@ with — is half of it. Getting this wrong would scale every later invariant.
   vanishing multiple and needs no finiteness, while `isOfFinAddOrder_of_canonicalHeight_eq_zero`
   assumes Northcott finiteness for the canonical height itself.
 * `WeierstrassCurve.Affine.Point.abs_canonicalHeight_sub_naiveHeight_le`: the canonical height stays
-  within a bounded distance of *half* the naïve one, by a
+  within a bounded distance of the naïve one, by a
   constant depending only on the curve. This is what makes the two interchangeable in
   finiteness arguments — in particular Northcott finiteness transfers to it, which the `Northcott`
   instance below makes formal.
@@ -89,11 +86,11 @@ private; `canonicalHeight_parallelogram_law` needs the full two-point law, and t
 from `approx_parallelogram_law`.
 
 Convergence is `cauchySeq_of_le_geometric` at ratio `1/4`: consecutive terms of
-`h(2ⁿ P) / (2 · 4ⁿ)` differ by
-`|h(2 · 2ⁿ P) - 4 h(2ⁿ P)| / (2 · 4ⁿ⁺¹) ≤ C / (2 · 4ⁿ⁺¹) = (C/8) · (1/4)ⁿ`. The same estimate
+`h(2ⁿ P) / 4ⁿ` differ by
+`|h(2 · 2ⁿ P) - 4 h(2ⁿ P)| / 4ⁿ⁺¹ ≤ C / 4ⁿ⁺¹ = (C/4) · (1/4)ⁿ`. The same estimate
 feeds Mathlib's
 `dist_le_of_le_geometric_of_tendsto₀`, which bounds the distance from the *zeroth* term — and the
-zeroth term is `h(P) / 2` — giving `|canonicalHeight P - h(P)/2| ≤ (C / 8) / (1 - 1/4) = C / 6`
+zeroth term is `h(P)` — giving `|canonicalHeight P - h(P)| ≤ (C / 4) / (1 - 1/4) = C / 3`
 with no further work.
 
 The `[DecidableEq F]` hypothesis is not incidental: `W.Point`'s `AddCommGroup` instance needs it,
@@ -113,16 +110,14 @@ namespace WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] {W : Affine F} [AdmissibleAbsValues F] [DecidableEq F]
 
-/-- **The canonical (Néron–Tate) height** `canonicalHeight P = lim h(2ⁿ P) / (2 · 4ⁿ)`.
-
-The `2` is the standard normalisation: `h` is the height of the `x`-coordinate, which has a double
-pole at infinity, so `h` is attached to `2(O)` and the Néron–Tate height to `(O)` is half of it.
+/-- **The canonical (Néron–Tate) height** `canonicalHeight P = lim h(2ⁿ P) / 4ⁿ`,
+normalised against the naïve height of the `x`-coordinate.
 
 The limit exists whenever the curve is elliptic
 (`Point.tendsto_naiveHeight_two_pow_nsmul_div_four_pow`); the definition itself needs no hypothesis
 beyond those making `2 ^ n • P` meaningful, so it is stated without one. -/
 noncomputable def Point.canonicalHeight (P : W.Point) : ℝ :=
-  limUnder atTop fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / (2 * 4 ^ n)
+  limUnder atTop fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / 4 ^ n
 
 variable (W) in
 /-- The parallelogram law at `Q = P`: doubling multiplies the naïve height by `4` up to a bounded
@@ -138,43 +133,43 @@ private theorem exists_abs_naiveHeight_two_nsmul_sub [W.toAffine.IsElliptic] :
   convert h using 2
   ring
 
-/-- Consecutive terms of `h(2ⁿ P) / (2 · 4ⁿ)` differ geometrically at ratio `1/4`, by
-`(C/8) · (1/4)ⁿ`. This is the single estimate both results below run on. -/
+/-- Consecutive terms of `h(2ⁿ P) / 4ⁿ` differ geometrically at ratio `1/4`, by
+`(C/4) · (1/4)ⁿ`. This is the single estimate both results below run on. -/
 private theorem dist_naiveHeight_div_succ_le {C : ℝ}
     (hC : ∀ P : W.Point, |(2 • P).naiveHeight - 4 * P.naiveHeight| ≤ C) (P : W.Point) (n : ℕ) :
-    dist (((2 ^ n) • P).naiveHeight / (2 * 4 ^ n))
-        (((2 ^ (n + 1)) • P).naiveHeight / (2 * 4 ^ (n + 1)))
-      ≤ C / 8 * (1 / 4) ^ n := by
+    dist (((2 ^ n) • P).naiveHeight / 4 ^ n)
+        (((2 ^ (n + 1)) • P).naiveHeight / 4 ^ (n + 1))
+      ≤ C / 4 * (1 / 4) ^ n := by
   have key : ((2 : ℕ) ^ (n + 1)) • P = 2 • (((2 : ℕ) ^ n) • P) := by
     rw [smul_smul]; congr 1; ring
-  have e : ((2 : ℕ) ^ n • P).naiveHeight / (2 * 4 ^ n)
-        - ((2 : ℕ) ^ (n + 1) • P).naiveHeight / (2 * 4 ^ (n + 1))
+  have e : ((2 : ℕ) ^ n • P).naiveHeight / 4 ^ n
+        - ((2 : ℕ) ^ (n + 1) • P).naiveHeight / 4 ^ (n + 1)
       = (4 * ((2 : ℕ) ^ n • P).naiveHeight - (2 • ((2 : ℕ) ^ n • P)).naiveHeight)
-          / (2 * 4 ^ (n + 1)) := by
+          / 4 ^ (n + 1) := by
     rw [key]; field_simp [pow_succ]; ring
-  rw [Real.dist_eq, e, abs_div, abs_of_pos (by positivity : (0 : ℝ) < 2 * 4 ^ (n + 1)),
-    div_le_iff₀ (by positivity : (0 : ℝ) < 2 * 4 ^ (n + 1))]
+  rw [Real.dist_eq, e, abs_div, abs_of_pos (by positivity : (0 : ℝ) < 4 ^ (n + 1)),
+    div_le_iff₀ (by positivity : (0 : ℝ) < 4 ^ (n + 1))]
   have h := hC ((2 : ℕ) ^ n • P)
   rw [abs_sub_comm] at h
   calc |4 * ((2 : ℕ) ^ n • P).naiveHeight - (2 • ((2 : ℕ) ^ n • P)).naiveHeight| ≤ C := h
-    _ = C / 8 * (1 / 4 : ℝ) ^ n * (2 * 4 ^ (n + 1)) := by
+    _ = C / 4 * (1 / 4 : ℝ) ^ n * 4 ^ (n + 1) := by
         have h1 : ((1 : ℝ) / 4) ^ n * 4 ^ n = 1 := by rw [← mul_pow]; norm_num
         linear_combination (-C) * h1
 
 /-- **The defining limit is attained.** `canonicalHeight` is `limUnder`, which returns a junk value
 on a divergent sequence; this says the sequence converges, so the definition means what it says. -/
 theorem Point.tendsto_naiveHeight_two_pow_nsmul_div_four_pow [W.toAffine.IsElliptic] (P : W.Point) :
-    Tendsto (fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / (2 * 4 ^ n)) atTop
+    Tendsto (fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / 4 ^ n) atTop
       (𝓝 P.canonicalHeight) := by
   obtain ⟨C, _, hC⟩ := exists_abs_naiveHeight_two_nsmul_sub W
-  exact (cauchySeq_of_le_geometric (1 / 4) (C / 8) (by norm_num)
+  exact (cauchySeq_of_le_geometric (1 / 4) (C / 4) (by norm_num)
     (dist_naiveHeight_div_succ_le hC P)).tendsto_limUnder
 
 /-- The point at infinity has canonical height zero: every term of the defining sequence is
-`h 0 / (2 · 4 ^ n) = 0`. This is termwise, so it needs no convergence and no ellipticity. -/
+`h 0 / 4 ^ n = 0`. This is termwise, so it needs no convergence and no ellipticity. -/
 @[simp]
 theorem Point.canonicalHeight_zero : (0 : W.Point).canonicalHeight = 0 := by
-  have h : (fun n : ℕ ↦ ((2 ^ n) • (0 : W.Point)).naiveHeight / (2 * 4 ^ n)) = fun _ ↦ 0 := by
+  have h : (fun n : ℕ ↦ ((2 ^ n) • (0 : W.Point)).naiveHeight / 4 ^ n) = fun _ ↦ 0 := by
     funext n; simp
   rw [Point.canonicalHeight, h]
   exact tendsto_const_nhds.limUnder_eq
@@ -185,38 +180,37 @@ ellipticity needed. -/
 @[simp]
 theorem Point.canonicalHeight_neg (P : W.Point) :
     (-P).canonicalHeight = P.canonicalHeight := by
-  have h : (fun n : ℕ ↦ ((2 ^ n) • (-P)).naiveHeight / (2 * 4 ^ n))
-      = fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / (2 * 4 ^ n) := by
+  have h : (fun n : ℕ ↦ ((2 ^ n) • (-P)).naiveHeight / 4 ^ n)
+      = fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / 4 ^ n := by
     funext n; rw [smul_neg, Point.naiveHeight_neg]
   rw [Point.canonicalHeight, Point.canonicalHeight, h]
 
-/-- **The canonical height differs from half the naïve height by a bounded amount**, the bound
-depending only on the curve. The half is the normalisation described in the module docstring;
+/-- **The canonical height differs from the naïve height by a bounded amount**, the bound
+depending only on the curve. This is the normalisation described in the module docstring;
 Northcott finiteness for `h` transfers to the canonical height through this. -/
 theorem Point.abs_canonicalHeight_sub_naiveHeight_le [W.toAffine.IsElliptic] :
-    ∃ D, ∀ P : W.Point, |P.canonicalHeight - P.naiveHeight / 2| ≤ D := by
+    ∃ D, ∀ P : W.Point, |P.canonicalHeight - P.naiveHeight| ≤ D := by
   obtain ⟨C, _, hC⟩ := exists_abs_naiveHeight_two_nsmul_sub W
-  refine ⟨C / 8 / (1 - 1 / 4), fun P ↦ ?_⟩
-  have hd := dist_le_of_le_geometric_of_tendsto₀ (1 / 4) (C / 8) (by norm_num)
+  refine ⟨C / 4 / (1 - 1 / 4), fun P ↦ ?_⟩
+  have hd := dist_le_of_le_geometric_of_tendsto₀ (1 / 4) (C / 4) (by norm_num)
     (dist_naiveHeight_div_succ_le hC P) (P.tendsto_naiveHeight_two_pow_nsmul_div_four_pow)
-  -- the zeroth term of the sequence is `h P / 2`
+  -- the zeroth term of the sequence is `h P`
   simpa [Real.dist_eq, abs_sub_comm] using hd
 
 /-- **The canonical height satisfies the parallelogram law exactly.**
 
 The naïve height satisfies it only up to a bounded error (`approx_parallelogram_law`); dividing
-that error by `2 · 4ⁿ` and letting `n → ∞` removes it. This is what the construction is for: the
-canonical height is the quadratic function that `h` was approximating. The normalisation factor
-`1/2` is common to both sides, so it does not affect the identity. -/
+that error by `4ⁿ` and letting `n → ∞` removes it. This is what the construction is for: the
+canonical height is the quadratic function that `h` was approximating. -/
 theorem Point.canonicalHeight_parallelogram_law [W.toAffine.IsElliptic] (P Q : W.Point) :
     (P + Q).canonicalHeight + (P - Q).canonicalHeight
       = 2 * (P.canonicalHeight + Q.canonicalHeight) := by
   obtain ⟨C, hC⟩ := approx_parallelogram_law W
-  set f : W.Point → ℕ → ℝ := fun X n ↦ ((2 ^ n) • X).naiveHeight / (2 * 4 ^ n) with hf
+  set f : W.Point → ℕ → ℝ := fun X n ↦ ((2 ^ n) • X).naiveHeight / 4 ^ n with hf
   have hlim : ∀ X : W.Point, Tendsto (f X) atTop (𝓝 X.canonicalHeight) :=
     fun X ↦ X.tendsto_naiveHeight_two_pow_nsmul_div_four_pow
   -- the same combination, read two ways: as a limit of the four sequences, and as something
-  -- squeezed to `0` by the error bound divided by `2 · 4ⁿ`.
+  -- squeezed to `0` by the error bound divided by `4ⁿ`.
   have hg : Tendsto (fun n ↦ f (P + Q) n + f (P - Q) n - 2 * (f P n + f Q n)) atTop
       (𝓝 ((P + Q).canonicalHeight + (P - Q).canonicalHeight
             - 2 * (P.canonicalHeight + Q.canonicalHeight))) :=
@@ -226,15 +220,15 @@ theorem Point.canonicalHeight_parallelogram_law [W.toAffine.IsElliptic] (P Q : W
     have h := hC ((2 ^ n) • P) ((2 ^ n) • Q)
     rw [← smul_add, ← smul_sub] at h
     simp only [hf, Real.norm_eq_abs]
-    -- The four terms are separate quotients by `2 · 4ⁿ`; `abs_div` below needs them as a single
+    -- The four terms are separate quotients by `4ⁿ`; `abs_div` below needs them as a single
     -- quotient, and no rewrite reaches that shape, since collecting them is division arithmetic
     -- rather than a rewrite. `field_simp` proves the collected form, so it is named here and
     -- rewritten in one step; the denominator is nonzero by `positivity` at each later use.
     rw [show f (P + Q) n + f (P - Q) n - 2 * (f P n + f Q n)
         = (((2 ^ n) • (P + Q)).naiveHeight + ((2 ^ n) • (P - Q)).naiveHeight
-            - 2 * (((2 ^ n) • P).naiveHeight + ((2 ^ n) • Q).naiveHeight)) / (2 * 4 ^ n) from by
+            - 2 * (((2 ^ n) • P).naiveHeight + ((2 ^ n) • Q).naiveHeight)) / 4 ^ n from by
       simp only [hf]; field_simp]
-    rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < 2 * 4 ^ n),
+    rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < 4 ^ n),
       div_le_div_iff₀ (by positivity) (by positivity)]
     nlinarith [h, abs_nonneg (((2 ^ n) • (P + Q)).naiveHeight + ((2 ^ n) • (P - Q)).naiveHeight
       - 2 * (((2 ^ n) • P).naiveHeight + ((2 ^ n) • Q).naiveHeight)),
@@ -258,7 +252,7 @@ theorem Point.canonicalHeight_two_nsmul [W.toAffine.IsElliptic] (P : W.Point) :
   rw [two_nsmul]
   linarith
 -- Read off the defining sequence termwise: each term is a quotient of non-negative quantities.
--- The bounded difference from `h` would only give `canonicalHeight P ≥ -C/6`, so it is not used.
+-- The bounded difference from `h` gives no direct nonnegativity bound, so it is not used.
 /-- **The canonical height is non-negative.** This is what makes it a candidate for the
 positive-definite form behind the Néron–Tate pairing and the regulator, and what lets
 `canonicalHeight P = 0` be a meaningful characterisation of torsion rather than one inequality
@@ -308,10 +302,10 @@ the naïve height — or, through `MordellWeil/NaiveHeight.lean`, only the field
 instance [W.toAffine.IsElliptic] [Northcott (Point.naiveHeight (W := W))] :
     Northcott (Point.canonicalHeight (W := W)) := by
   -- `abs_canonicalHeight_sub_naiveHeight_le` gives a `D` for which `canonicalHeight Q ≤ B` forces
-  -- `naiveHeight Q ≤ 2 (B + D)`, so every sublevel set of the former sits inside a finite sublevel
+  -- `naiveHeight Q ≤ B + D`, so every sublevel set of the former sits inside a finite sublevel
   -- set of the latter.
   obtain ⟨D, hD⟩ := Point.abs_canonicalHeight_sub_naiveHeight_le (W := W)
-  refine ⟨fun B ↦ (Northcott.finite_le (h := Point.naiveHeight (W := W)) (2 * (B + D))).subset ?_⟩
+  refine ⟨fun B ↦ (Northcott.finite_le (h := Point.naiveHeight (W := W)) (B + D)).subset ?_⟩
   intro Q hQ
   simp only [Set.mem_ofPred_eq] at hQ ⊢
   linarith [(abs_le.1 (hD Q)).1]

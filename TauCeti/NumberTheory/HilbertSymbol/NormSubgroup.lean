@@ -10,6 +10,9 @@ public import Mathlib.Algebra.QuadraticAlgebra.AlgHom
 
 public import TauCeti.GroupTheory.Index.Indicator
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The quadratic norm subgroup
@@ -31,6 +34,14 @@ so it contains `a` exactly when it contains `-1`.
 The subgroup contains every square and, when `a` is a unit, `-a`, the norm of the square-root
 generator. Thus its index may be computed in the square-class group, as in O'Meara,
 *Introduction to Quadratic Forms*, §63A.
+
+The unit values of a binary diagonal form `⟨a, b⟩` are the coset `a N` of the norm subgroup `N`
+of its discriminant algebra `R[√(-a b)]`
+(`TauCeti.mem_unitValueSet_binary_iff_mul_mem_quadraticNormSubgroup`); this is how the norm
+subgroup computes the spinor norms of binary forms. In particular the unit values of the norm form
+`⟨1, -b⟩` of the quadratic algebra `K[√b]` are the units `c` with `(b, c) = 1`
+(`TauCeti.mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one`); this algebra is the field
+`K(√b)` only when `b` is not a square.
 -/
 
 public section
@@ -147,6 +158,31 @@ theorem quadraticNormSubgroup_mul_sq (a : R) (c : Rˣ) :
   have h := key (a * (c : R) ^ 2) c⁻¹
   simpa [mul_assoc, ← mul_pow, ← Units.val_mul] using h
 
+/-- **The values of a binary form are a coset of norms.** A unit `c` is represented by the binary
+diagonal form `⟨a, b⟩` exactly when `a * c` is a norm from the discriminant algebra
+`R[√(-a b)]`, because `a (a x² + b y²) = (a x)² + a b y²`. Over a field this says that the
+nonzero values of `⟨a, b⟩` are the coset `a N` of the norm group `N` of `R[√(-a b)]`. -/
+theorem mem_unitValueSet_binary_iff_mul_mem_quadraticNormSubgroup (a : Rˣ) (b : R) (c : Rˣ) :
+    c ∈ QuadraticMap.unitValueSet (QuadraticMap.weightedSumSquares R ![(a : R), b]) ↔
+      a * c ∈ quadraticNormSubgroup (-(a * b) : R) := by
+  rw [QuadraticMap.mem_unitValueSet, QuadraticMap.represents_iff,
+    mem_quadraticNormSubgroup_iff_exists_norm_eq]
+  constructor
+  · rintro ⟨v, hv⟩
+    refine ⟨⟨a * v 0, v 1⟩, ?_⟩
+    simp only [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one, smul_eq_mul] at hv
+    rw [QuadraticAlgebra.norm_def, Units.val_mul, ← hv]
+    ring
+  · rintro ⟨z, hz⟩
+    refine ⟨![(a⁻¹ : Rˣ) * z.re, z.im], ?_⟩
+    rw [QuadraticAlgebra.norm_def, Units.val_mul] at hz
+    simp only [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one, smul_eq_mul]
+    -- Divide the norm equation `z.re² + a b z.im² = a c` by `a`.
+    linear_combination ((a⁻¹ : Rˣ) : R) * hz +
+      (((a⁻¹ : Rˣ) : R) * z.re ^ 2 - b * z.im ^ 2 + c) * a.mul_inv
+
 end CommRing
 
 section Field
@@ -173,6 +209,13 @@ theorem quadraticNormSubgroup_eq_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a *
 theorem hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (a b : Kˣ) :
     hilbertSymbol a b = 1 ↔ b ∈ quadraticNormSubgroup (a : K) := by
   rw [mem_quadraticNormSubgroup_iff, hilbertSymbol_eq_one_iff_exists_unit_norm_eq]
+
+/-- **The values of the norm form.** The binary form `⟨1, -b⟩`, the norm form of the quadratic
+algebra `K[√b]`, represents a unit `c` exactly when the Hilbert symbol `(b, c)` is `1`. -/
+theorem mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one (b c : Kˣ) :
+    c ∈ QuadraticMap.unitValueSet (QuadraticMap.weightedSumSquares K ![1, -(b : K)]) ↔
+      hilbertSymbol b c = 1 := by
+  simpa using mem_unitValueSet_binary_iff_mul_mem_quadraticNormSubgroup 1 (-(b : K)) c
 
 /-- **The diagonal entry of the Hilbert symbol.** The sign of `(a, a)` is the sign of `(a, -1)` for
 every `a`, with no hypothesis beyond `K` being a field, so the diagonal entry is no separate

@@ -68,8 +68,9 @@ the class of `a` to `(a)`.
 * `TauCeti.mu2_smul_eq_self`: the Galois action on `μ₂` is trivial.
 * `TauCeti.kummerClass_one` and `TauCeti.kummerClass_mul`: the Kummer class of a unit is a
   homomorphism from `Kˣ` into `H¹(G_K, 𝔽₂)` written additively.
-* `TauCeti.kummerCocycleModTwo_apply`: the explicit Kummer cocycle is `0` when a Galois
-  element fixes the chosen square root and `1` otherwise.
+* `TauCeti.mu2EquivZMod2_kummerCocycle` and `TauCeti.kummerCocycleModTwo_apply`: the Kummer
+  cocycle, read in `ZMod 2`, is `0` when a Galois element fixes the chosen square root and `1`
+  otherwise.
 * `TauCeti.kummerCocycleModTwoClass_eq_explicitCoeff1Equiv`: the explicit mod-two cocycle class
   is the generic Kummer cocycle class read through the coefficient dictionary `μ₂ ≃ 𝔽₂`.
 * `TauCeti.kummerClass_eq_kummerCocycleModTwoClass_of_sq_eq`: that explicit class is the canonical
@@ -434,22 +435,13 @@ noncomputable def kummerCocycleModTwo {a : Kˣ} {α : (SeparableClosure K)ˣ}
     continuous_of_discreteTopology (fun g x => by simp [kummerCoeffEquiv_apply])
     ⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩
 
-/-- **The square-root formula for the mod-two Kummer cocycle.** Its value at `g` is `0` when
-`g` fixes the chosen square root and `1` when it exchanges the two square roots. -/
+/-- **The value of the Kummer cocycle in `ZMod 2`.** The Kummer ratio `g • α / α` of a chosen
+square root `α` is `0` when `g` fixes `α` and `1` when it exchanges the two square roots. -/
 @[simp]
-theorem kummerCocycleModTwo_apply {a : Kˣ} {α : (SeparableClosure K)ˣ}
+theorem mu2EquivZMod2_kummerCocycle {a : Kˣ} {α : (SeparableClosure K)ˣ}
     (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
     (g : AbsoluteGaloisGroup K) :
-    trivialF2Equiv (AbsoluteGaloisGroup K)
-        ((kummerCocycleModTwo K hα : _ → _) g) =
-      if g • α = α then 0 else 1 := by
-  classical
-  rw [kummerCocycleModTwo, cocyclesMap1_apply, ContinuousMonoidHom.coe_id, id_eq]
-  -- The coefficient map inside `cocyclesMap1` is stored as an additive homomorphism; expose
-  -- its underlying equivalence application so the two value dictionaries can cancel.
-  change trivialF2Equiv (AbsoluteGaloisGroup K)
-    (kummerCoeffEquiv K (kummerCocycle hα g)) = _
-  rw [kummerCoeffEquiv_apply, AddEquiv.apply_symm_apply]
+    mu2EquivZMod2 K (kummerCocycle hα g) = if g • α = α then 0 else 1 := by
   split_ifs with hfix
   · have hc : kummerCocycle hα g = (0 : KummerCoeff K 2) := by
       refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
@@ -466,6 +458,22 @@ theorem kummerCocycleModTwo_apply {a : Kˣ} {α : (SeparableClosure K)ˣ}
       · exact hz
     simp [hc]
 
+/-- **The square-root formula for the mod-two Kummer cocycle.** Its value at `g` is `0` when
+`g` fixes the chosen square root and `1` when it exchanges the two square roots. -/
+@[simp]
+theorem kummerCocycleModTwo_apply {a : Kˣ} {α : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (g : AbsoluteGaloisGroup K) :
+    trivialF2Equiv (AbsoluteGaloisGroup K)
+        ((kummerCocycleModTwo K hα : _ → _) g) =
+      if g • α = α then 0 else 1 := by
+  rw [kummerCocycleModTwo, cocyclesMap1_apply, ContinuousMonoidHom.coe_id, id_eq]
+  -- The coefficient map inside `cocyclesMap1` is stored as an additive homomorphism; expose
+  -- its underlying equivalence application so the two value dictionaries can cancel.
+  change trivialF2Equiv (AbsoluteGaloisGroup K)
+    (kummerCoeffEquiv K (kummerCocycle hα g)) = _
+  rw [kummerCoeffEquiv_apply, AddEquiv.apply_symm_apply, mu2EquivZMod2_kummerCocycle]
+
 /-- The explicit cohomology class of the mod-two Kummer cocycle attached to a chosen square
 root. It is independent of that choice because it is the coefficient transport of
 `TauCeti.kummerCocycleClass`. -/
@@ -473,6 +481,14 @@ noncomputable def kummerCocycleModTwoClass {a : Kˣ} {α : (SeparableClosure K)�
     (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
     H1 (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V :=
   kummerCocycleModTwo K hα
+
+/-- The explicit mod-two Kummer class is the class of the explicit mod-two Kummer cocycle. -/
+theorem kummerCocycleModTwoClass_def {a : Kˣ} {α : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    kummerCocycleModTwoClass K hα =
+      (kummerCocycleModTwo K hα :
+        H1 (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V) :=
+  (rfl)
 
 /-- The explicit mod-two cocycle class is the generic Kummer cocycle class transported along
 the coefficient equivalence `μ₂ ≃ 𝔽₂`. -/

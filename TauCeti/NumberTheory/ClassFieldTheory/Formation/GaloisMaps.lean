@@ -94,6 +94,12 @@ def inclusionHom (T : LayerRestriction small big) :
     Additive (Abelianization small.Gal) →+ Additive (Abelianization big.Gal) :=
   (Abelianization.map T.galHom).toAdditive
 
+/-- Inclusion on abelianized Galois groups is induced by the layer's Galois-group homomorphism. -/
+theorem inclusionHom_apply (T : LayerRestriction small big)
+    (x : Additive (Abelianization small.Gal)) :
+    T.inclusionHom x = (Abelianization.map T.galHom).toAdditive x :=
+  (rfl)
+
 /-- The inclusion map sends the abelianization class of `x` to the class of its image in the
 larger Galois group. -/
 @[simp]
@@ -137,6 +143,31 @@ theorem transferHom_of (T : LayerRestriction small big) (x : big.Gal) :
         (Abelianization.of.comp
           (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom) x) :=
   (rfl)
+
+/-- The transfer between the Galois groups of two layers is the transfer to the image subgroup,
+followed by transport back along the equivalence from the smaller Galois group to that image. -/
+theorem transferHom_eq_map_comp_lift_transfer (T : LayerRestriction small big) :
+    T.transferHom =
+      (Abelianization.map (MonoidHom.ofInjective T.galHom_injective).symm).toAdditive.comp
+        (Abelianization.lift ((Abelianization.of :
+          T.galHom.range →* Abelianization T.galHom.range).transfer)).toAdditive := by
+  apply AddMonoidHom.ext
+  intro x
+  obtain ⟨x, rfl⟩ := Additive.ofMul.surjective x
+  obtain ⟨y, rfl⟩ : ∃ y, Abelianization.of y = x := QuotientGroup.mk_surjective x
+  rw [transferHom_of, AddMonoidHom.comp_apply]
+  rw [MonoidHom.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply]
+  simp only [toMul_ofMul, Abelianization.lift_apply_of]
+  congr 1
+  have hmap :
+      Abelianization.of.comp (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom =
+        (Abelianization.map
+          (MonoidHom.ofInjective T.galHom_injective).symm.toMonoidHom).comp
+          (Abelianization.of : T.galHom.range →* Abelianization T.galHom.range) := by
+    ext
+    simp
+  rw [hmap, MonoidHom.transfer_comp]
+  rw [MulEquiv.toMonoidHom_eq_coe, MonoidHom.comp_apply]
 
 /-- Transfer on abelianized Galois groups is functorial along a tower of restrictions: for
 `F ⊆ E ⊆ E' ⊆ K`, the transfer `Gal(K/F)^ab → Gal(K/E')^ab` is the transfer

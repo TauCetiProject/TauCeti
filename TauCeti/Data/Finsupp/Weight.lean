@@ -24,13 +24,14 @@ public section
 
 namespace Finsupp
 
-variable {σ M : Type*} [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
+variable {σ M : Type*} [AddCommMonoid M] [Preorder M] [AddLeftMono M]
 
 /-- If every variable has weight at most `c`, then the weight of `f` is at most its degree times
 `c`. -/
 theorem weight_le_degree_nsmul (f : σ →₀ ℕ) {w : σ → M} {c : M} (hw : ∀ s, w s ≤ c) :
     weight w f ≤ degree f • c := by
   rw [weight_apply, degree_apply, Finsupp.sum, ← Finset.sum_nsmul_assoc]
-  exact Finset.sum_le_sum fun s _ ↦ nsmul_le_nsmul_right (hw s) _
+  gcongr with s
+  exact hw s
 
 end Finsupp

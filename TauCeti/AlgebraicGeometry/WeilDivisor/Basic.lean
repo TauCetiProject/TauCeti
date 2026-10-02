@@ -152,6 +152,15 @@ lemma IsEffective.nsmul {D : WeilDivisor X} (hD : IsEffective D) (n : ℕ) :
   intro x
   simpa [IsEffective, coeff] using nsmul_nonneg (hD x) n
 
+/-- An effective divisor is nonnegative in the pointwise order. -/
+lemma IsEffective.zero_le {D : WeilDivisor X} (hD : IsEffective D) : 0 ≤ D :=
+  Finsupp.le_def.mpr fun x ↦ by simpa [coeff] using hD x
+
+/-- Multiples of an effective divisor are monotone in the multiplier. -/
+lemma IsEffective.zsmul_le_zsmul {D : WeilDivisor X} (hD : IsEffective D) {m n : ℤ} (h : m ≤ n) :
+    m • D ≤ n • D :=
+  Finsupp.le_def.mpr fun x ↦ by simpa [coeff] using mul_le_mul_of_nonneg_right h (hD x)
+
 /-- A nonzero effective divisor has some point with positive coefficient. -/
 lemma IsEffective.exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : IsEffective D)
     (hD0 : D ≠ 0) : ∃ x, 0 < coeff D x := by

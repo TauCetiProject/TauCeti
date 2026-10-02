@@ -58,7 +58,8 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   `Representation.IntertwiningMap`s.
 * `TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`: the two translations as functors.
 * `TauCeti.smoothDiscreteResFunctor`: restriction to a subgroup as a functor between the smooth
-  discrete subcategories.
+  discrete subcategories; `TauCeti.smoothDiscreteResTopRep` is its object map as a transparent
+  abbreviation.
 
 ## Main results
 
@@ -720,6 +721,15 @@ section Restriction
 
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] (U : Subgroup G)
+
+variable {R G} in
+/-- Restriction of a bundled smooth discrete representation to a subgroup, as an object whose
+underlying representation is definitionally `TopRep.res U.subtype A.obj`. The object map of
+`smoothDiscreteResFunctor` is not exposed, so statements that must see this definitional equality
+(for instance the domain of `coindTraceHom`) use this abbreviation instead. -/
+noncomputable abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
+    SmoothDiscreteTopRep.{u, v, w} R U :=
+  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
 
 /-- Restriction along `U → G` on smooth discrete representations. -/
 noncomputable def smoothDiscreteResFunctor :

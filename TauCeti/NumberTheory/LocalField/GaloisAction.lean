@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.IsGaloisGroup.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-public import TauCeti.NumberTheory.LocalField.IntegerRing
+public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!

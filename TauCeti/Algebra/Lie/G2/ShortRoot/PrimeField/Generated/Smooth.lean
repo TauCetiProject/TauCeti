@@ -30,7 +30,7 @@ it as the pinned simply connected group scheme of type `G₂`, are separate ques
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
 
 The interface follows the generated-subgroup smoothness construction for the type-`E₇`
-minuscule carrier in `TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
+minuscule carrier in `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
 -/
 
 public section

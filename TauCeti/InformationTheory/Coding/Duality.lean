@@ -9,7 +9,8 @@ public import TauCeti.Data.Matrix.DotProduct
 public import TauCeti.InformationTheory.Coding.DirectSum
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Coding.EuclideanDual
-public import TauCeti.InformationTheory.Coding.Puncture
+public import TauCeti.InformationTheory.Coding.Puncture.Basic
+public import TauCeti.InformationTheory.Coding.Reindex
 
 /-!
 # Euclidean duals of derived codes
@@ -23,13 +24,15 @@ sum is the direct sum of the duals. A monomial transformation which rescales coo
 `u` acts on the dual through the contragredient transformation, which rescales by the inverse
 units `u⁻¹` and relabels the coordinates in the same way; in particular, monomially (respectively
 permutation) equivalent codes have monomially (respectively permutation) equivalent duals, and a
-coordinate permutation preserves Euclidean self-duality.
+coordinate permutation preserves self-orthogonality and self-duality. A direct sum is
+self-orthogonal (respectively self-dual) exactly when both summands are.
 
 ## Main statements
 
 * `TauCeti.euclideanDual_puncture`, `TauCeti.euclideanDual_shorten`: duality exchanges
   puncturing and shortening.
 * `Submodule.euclideanDual_directSum`: the dual of a direct sum.
+* `Submodule.isSelfDual_directSum_iff`: a direct sum is self-dual exactly when both summands are.
 * `TauCeti.euclideanDual_reindex`: duality commutes with a change of coordinates.
 * `TauCeti.euclideanDual_map_monomialEquiv`: the contragredient action of a monomial
   transformation on the dual.
@@ -69,6 +72,18 @@ theorem euclideanDual_directSum (C : Submodule R (ι → R)) (D : Submodule R (�
   · rintro ⟨hC, hD⟩ x hx
     obtain ⟨hxC, hxD⟩ := mem_directSum_iff.mp hx
     rw [hdot, hC _ hxC, hD _ hxD, add_zero]
+
+/-- A direct sum is self-orthogonal exactly when both summands are. -/
+@[simp]
+theorem isSelfOrthogonal_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → R)} :
+    (directSum C D).IsSelfOrthogonal ↔ C.IsSelfOrthogonal ∧ D.IsSelfOrthogonal := by
+  simp only [isSelfOrthogonal_iff_le, euclideanDual_directSum, directSum_le_directSum_iff]
+
+/-- A direct sum is self-dual exactly when both summands are. -/
+@[simp]
+theorem isSelfDual_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → R)} :
+    (directSum C D).IsSelfDual ↔ C.IsSelfDual ∧ D.IsSelfDual := by
+  simp only [isSelfDual_iff, euclideanDual_directSum, directSum_inj]
 
 end Submodule
 
@@ -165,14 +180,25 @@ theorem IsPermutationEquivalent.euclideanDual {C : Submodule R (ι → R)}
   rw [inv_one, monomialEquiv_one] at h
   exact h.symm
 
-/-- Permutation equivalence preserves Euclidean self-duality. -/
-theorem IsPermutationEquivalent.eq_euclideanDual_iff {C : Submodule R (ι → R)}
+/-- Permutation equivalence preserves self-orthogonality. -/
+theorem IsPermutationEquivalent.isSelfOrthogonal_iff {C : Submodule R (ι → R)}
     {D : Submodule R (κ → R)} (h : IsPermutationEquivalent C D) :
-    C = C.euclideanDual ↔ D = D.euclideanDual := by
+    C.IsSelfOrthogonal ↔ D.IsSelfOrthogonal := by
   obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp h
   have hdual := euclideanDual_map_monomialEquiv (1 : ι → Rˣ) e C
   rw [inv_one, monomialEquiv_one] at hdual
-  rw [hdual, (map_injective_of_injective (LinearEquiv.funCongrLeft R R e.symm).injective).eq_iff]
+  rw [isSelfOrthogonal_iff_le, isSelfOrthogonal_iff_le, hdual,
+    map_le_map_iff_of_injective (LinearEquiv.funCongrLeft R R e.symm).injective]
+
+/-- Permutation equivalence preserves self-duality. -/
+theorem IsPermutationEquivalent.isSelfDual_iff {C : Submodule R (ι → R)}
+    {D : Submodule R (κ → R)} (h : IsPermutationEquivalent C D) :
+    C.IsSelfDual ↔ D.IsSelfDual := by
+  obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp h
+  have hdual := euclideanDual_map_monomialEquiv (1 : ι → Rˣ) e C
+  rw [inv_one, monomialEquiv_one] at hdual
+  rw [Submodule.isSelfDual_iff, Submodule.isSelfDual_iff, hdual,
+    (map_injective_of_injective (LinearEquiv.funCongrLeft R R e.symm).injective).eq_iff]
 
 end Monomial
 

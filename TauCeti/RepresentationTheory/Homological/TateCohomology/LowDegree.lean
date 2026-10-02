@@ -461,6 +461,15 @@ def HNegTwoAddEquivAbelianization :
   (HNegTwoAddEquivTensorOfIsTrivial (Rep.trivial ℤ G ℤ)).trans
     (TensorProduct.rid ℤ (Additive (Abelianization G))).toAddEquiv
 
+/-- The integral degree-`-2` identification is the tensor description followed by the right
+unitor. -/
+theorem HNegTwoAddEquivAbelianization_apply
+    (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
+    HNegTwoAddEquivAbelianization x =
+      (TensorProduct.rid ℤ (Additive (Abelianization G)))
+        (HNegTwoAddEquivTensorOfIsTrivial (Rep.trivial ℤ G ℤ) x) :=
+  (rfl)
+
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
 /-- The degree-`-2` identification sends the homology class represented by `(g, 1)` to the class
 of `g` in the additive abelianization. -/

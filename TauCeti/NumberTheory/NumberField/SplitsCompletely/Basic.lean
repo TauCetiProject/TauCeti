@@ -72,7 +72,7 @@ theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRing A]
     [IsTorsionFree A (𝓞 L)] [IsGaloisGroup Gal(L/K) A (𝓞 L)] (P : Ideal A) [P.IsMaximal] :
     (primesOver P (𝓞 L)).ncard = finrank K L ↔
       P.ramificationIdxIn (𝓞 L) = 1 ∧ P.inertiaDegIn (𝓞 L) = 1 := by
-  have h := TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
+  have h := Ideal.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
     (B := 𝓞 L) Gal(L/K) P
   rw [IsGaloisGroup.card_eq_finrank Gal(L/K) K L] at h
   exact h

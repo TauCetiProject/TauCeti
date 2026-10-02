@@ -150,6 +150,44 @@ theorem splitPoint_apply_succAbove (x : GridState n) (newColumn newRow : Fin (n 
         (fun hc ↦ h (Fin.succAbove_right_injective hc))]
     simpa using h
 
+/-- After inserting a point, the new row is occupied only in the new column. -/
+@[simp]
+theorem insertPoint_apply_eq_iff (x : GridState n) (newColumn newRow c : Fin (n + 1)) :
+    x.insertPoint newColumn newRow c = newRow ↔ c = newColumn := by
+  refine ⟨fun h ↦ (x.insertPoint newColumn newRow).toPerm.injective ?_, ?_⟩
+  · exact h.trans (by simp)
+  · rintro rfl
+    simp
+
+/-- After splitting a point, the new row is occupied only in the embedded split column. -/
+@[simp]
+theorem splitPoint_apply_eq_iff (x : GridState n) (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) (c : Fin (n + 1)) :
+    x.splitPoint newColumn newRow splitColumn c = newRow ↔ c = newColumn.succAbove splitColumn := by
+  refine ⟨fun h ↦ (x.splitPoint newColumn newRow splitColumn).toPerm.injective ?_, ?_⟩
+  · exact h.trans (by simp)
+  · rintro rfl
+    simp
+
+/-- Splitting the point of column `s` across a column inserted just before it is inserting the
+point `(s.succ, newRow)`: the old point of column `s` moves to the new column `s.castSucc`, and
+every other column is embedded alike by `s.castSucc.succAbove` and `s.succ.succAbove`. -/
+theorem splitPoint_castSucc_eq_insertPoint (x : GridState n) (s : Fin n)
+    (newRow : Fin (n + 1)) :
+    x.splitPoint s.castSucc newRow s = x.insertPoint s.succ newRow := by
+  refine GridState.ext fun c => ?_
+  induction c using Fin.succAboveCases s.castSucc with
+  | x => rw [splitPoint_apply_newColumn, ← Fin.succAbove_succ_self, insertPoint_apply_succAbove]
+  | p c =>
+    rw [splitPoint_apply_succAbove]
+    split_ifs with hc
+    · rw [hc, Fin.succAbove_castSucc_self, insertPoint_apply_newColumn]
+    · rcases lt_or_gt_of_ne hc with h | h
+      · rw [Fin.succAbove_castSucc_of_lt _ _ h, ← Fin.succAbove_succ_of_le _ _ h.le,
+          insertPoint_apply_succAbove]
+      · rw [Fin.succAbove_castSucc_of_le _ _ h.le, ← Fin.succAbove_succ_of_lt _ _ h,
+          insertPoint_apply_succAbove]
+
 end GridState
 
 namespace GridDiagram
@@ -232,6 +270,20 @@ theorem stabilizeX_X (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
       G.X.splitPoint newColumn newRow splitColumn :=
   (rfl)
 
+/-- In the stabilization splitting the `X`-marking of column `s`, the row `(G.X s).castSucc`
+carries its `O`-marking only in the new column `s.castSucc`. -/
+theorem stabilizeX_O_eq_castSucc_iff (s : Fin n) (c : Fin (n + 1)) :
+    (G.O.insertPoint s.castSucc (G.X s).castSucc) c = (G.X s).castSucc ↔
+      c = s.castSucc := by
+  simp
+
+/-- In the stabilization splitting the `X`-marking of column `s`, the row `(G.X s).castSucc`
+carries its `X`-marking only in the column `s.succ`. -/
+theorem stabilizeX_X_eq_castSucc_iff (s : Fin n) (c : Fin (n + 1)) :
+    (G.X.splitPoint s.castSucc (G.X s).castSucc s) c = (G.X s).castSucc ↔
+      c = s.succ := by
+  simp
+
 /-- In the stabilization splitting the `X`-marking of column `s`, the `X`-marking of each column
 collapses under `Fin.predAbove` onto the `X`-marking of `G` in the collapsed column: both
 `X`-markings of the new block collapse onto the split marking. -/
@@ -273,6 +325,17 @@ def IsOStabilization (G : GridDiagram n) (G' : GridDiagram (n + 1)) : Prop :=
       finRotate (n + 1) (newRow.succAbove (G.O splitColumn)) = newRow) ∧
     G' = G.stabilizeO newColumn newRow splitColumn
 
+/-- An elementary `O`-stabilization is the `O`-stabilization construction at a new row and column
+cyclically adjacent to the split marking. -/
+theorem isOStabilization_iff (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsOStabilization G G' ↔ ∃ newColumn newRow splitColumn,
+      (finRotate (n + 1) newColumn = newColumn.succAbove splitColumn ∨
+        finRotate (n + 1) (newColumn.succAbove splitColumn) = newColumn) ∧
+      (finRotate (n + 1) newRow = newRow.succAbove (G.O splitColumn) ∨
+        finRotate (n + 1) (newRow.succAbove (G.O splitColumn)) = newRow) ∧
+      G' = G.stabilizeO newColumn newRow splitColumn :=
+  Iff.rfl
+
 /-- A local `O`-stabilization construction is an elementary `O`-stabilization. -/
 theorem isOStabilization_stabilizeO (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n)
     (hColumn : finRotate (n + 1) newColumn = newColumn.succAbove splitColumn ∨
@@ -305,6 +368,17 @@ def IsXStabilization (G : GridDiagram n) (G' : GridDiagram (n + 1)) : Prop :=
     (finRotate (n + 1) newRow = newRow.succAbove (G.X splitColumn) ∨
       finRotate (n + 1) (newRow.succAbove (G.X splitColumn)) = newRow) ∧
     G' = G.stabilizeX newColumn newRow splitColumn
+
+/-- An elementary `X`-stabilization is the `X`-stabilization construction at a new row and column
+cyclically adjacent to the split marking. -/
+theorem isXStabilization_iff (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsXStabilization G G' ↔ ∃ newColumn newRow splitColumn,
+      (finRotate (n + 1) newColumn = newColumn.succAbove splitColumn ∨
+        finRotate (n + 1) (newColumn.succAbove splitColumn) = newColumn) ∧
+      (finRotate (n + 1) newRow = newRow.succAbove (G.X splitColumn) ∨
+        finRotate (n + 1) (newRow.succAbove (G.X splitColumn)) = newRow) ∧
+      G' = G.stabilizeX newColumn newRow splitColumn :=
+  Iff.rfl
 
 /-- A local `X`-stabilization construction is an elementary `X`-stabilization. -/
 theorem isXStabilization_stabilizeX (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n)
@@ -352,6 +426,11 @@ theorem isXStabilization_swapMarkings (G : GridDiagram n) (G' : GridDiagram (n +
 /-- One elementary grid stabilization, splitting either an `O`- or an `X`-marking. -/
 def IsStabilization (G : GridDiagram n) (G' : GridDiagram (n + 1)) : Prop :=
   IsOStabilization G G' ∨ IsXStabilization G G'
+
+/-- An elementary stabilization splits either an `O`-marking or an `X`-marking. -/
+theorem isStabilization_iff (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsStabilization G G' ↔ IsOStabilization G G' ∨ IsXStabilization G G' :=
+  Iff.rfl
 
 /-- Exchanging the marking types preserves the elementary stabilization relation. -/
 @[simp]

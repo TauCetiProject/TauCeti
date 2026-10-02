@@ -96,6 +96,9 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
   the representative of `h₂`'s class; and any family of representatives of the right cosets is
   matched with the chosen one by a bijection — the coset bookkeeping every operator built by
   summing over the decomposition (slash sums, Hecke sums on a representation) reindexes with.
+* `DoubleCoset.card_filter_eq_of_rightCosetRep_smul_eq`: a family naming each right coset of the
+  double coset exactly `m` times has exactly `m` members over each chosen representative — the
+  counting half of collapsing such a sum to `m •` the operator.
 * `DoubleCoset.doubleCoset_mul_doubleCoset_eq_iUnion_rightCosets`: Shimura's covering identity —
   the products `aᵢbⱼ` of two families of right-coset representatives cover the product set
   `Γ₁δ₁Γ₂ · Γ₂δ₂Γ₃`, though not without repetition.
@@ -808,6 +811,39 @@ theorem exists_bijective_rightCosetRep_smul_eq {Γ₁ Γ₂ : Subgroup G} (D : H
   refine ⟨φ, ⟨fun i j hij ↦ hinj (hcoset i j hij), fun v ↦ ?_⟩, hφ⟩
   obtain ⟨i, hi⟩ := key' v
   exact ⟨i, (op_rightCosetRep_smul_injective D (hi.trans (hφ i))).symm⟩
+
+/-- **Each fibre of the naming map has `m` elements.** Let `g` name, for each index `i`, the
+right coset that `aᵢ` lies in — `Γ₁ aᵢ = Γ₁ (rightCosetRep D (g i))` — and let every right coset
+of the double coset be named by exactly `m` members of the family. Then `g i = v` for exactly
+`m` indices `i`, whatever `v`.
+
+The hypothesis counts indices by the coset they name and the conclusion counts them by their
+image under `g`; the two agree because `rightCosetRep` names distinct cosets by distinct
+elements (`op_rightCosetRep_smul_injective`).
+
+Like `exists_bijective_rightCosetRep_smul_eq` this is pure coset bookkeeping. It is the counting
+half of the multiplicity-weighted collapse of a sum over a family that names each right coset `m`
+times: each fibre has `m` elements. Reaching `m •` a single operator needs the other half too —
+that the terms on a fibre agree, which is what a summand depending only on the right coset
+supplies. -/
+theorem card_filter_eq_of_rightCosetRep_smul_eq {Γ₁ Γ₂ : Subgroup G} (D : HeckeCoset Δ Γ₁ Γ₂)
+    {ι : Type*} [Fintype ι] {a : ι → G} {m : ℕ}
+    (hcard : ∀ x ∈ doubleCoset (D.out : G) Γ₁ Γ₂,
+      Nat.card {i // MulOpposite.op (a i) • (Γ₁ : Set G) = MulOpposite.op x • (Γ₁ : Set G)} = m)
+    {g : ι → DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹}
+    (hg : ∀ i, MulOpposite.op (a i) • (Γ₁ : Set G) =
+      MulOpposite.op (rightCosetRep D (g i)) • (Γ₁ : Set G))
+    (v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) [DecidablePred fun i ↦ g i = v] :
+    (Finset.univ.filter fun i ↦ g i = v).card = m := by
+  classical
+  have hfib : (Finset.univ.filter fun i ↦ g i = v) =
+      Finset.univ.filter fun i ↦ MulOpposite.op (a i) • (Γ₁ : Set G) =
+        MulOpposite.op (rightCosetRep D v) • (Γ₁ : Set G) :=
+    Finset.filter_congr fun i _ ↦
+      ⟨fun h ↦ h ▸ hg i, fun h ↦ op_rightCosetRep_smul_injective D ((hg i).symm.trans h)⟩
+  have hm := hcard _ (rightCosetRep_mem_doubleCoset D v)
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype] at hm
+  rw [hfib, hm]
 
 end DoubleCoset
 

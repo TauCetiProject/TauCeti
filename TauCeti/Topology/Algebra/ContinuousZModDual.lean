@@ -29,6 +29,7 @@ the algebraic dual, injectively.
 
 * `TauCeti.continuousZModDual`: the group of continuous `ZMod n`-valued characters of a topological
   group, written additively; for a prime `p` it is the continuous `𝔽_p`-dual.
+* `TauCeti.continuousZModDual.evalₗ`: evaluation at a point, as a linear functional on the dual.
 * `ContinuousMonoidHom.continuousZModDualMap`: precomposition with a continuous homomorphism, the
   transpose map between continuous duals.
   The transpose of a topological group isomorphism is bijective
@@ -61,6 +62,20 @@ instance instModuleContinuousZModDual : Module (ZMod n) (continuousZModDual n G)
     rw [toMul_nsmul, toMul_zero]
     ext g
     simp [ContinuousMonoidHom.pow_apply, toAdd_pow, nsmul_eq_mul]
+
+/-- **Evaluation at a point** `g : G`, as a `ZMod n`-linear functional on the continuous
+`ZMod n`-dual of `G`: a character `χ` goes to its value at `g`, read additively. -/
+def continuousZModDual.evalₗ (g : G) : continuousZModDual n G →ₗ[ZMod n] ZMod n :=
+  AddMonoidHom.toZModLinearMap n
+    { toFun χ := Multiplicative.toAdd (Additive.toMul χ g)
+      map_zero' := by simp
+      map_add' := fun χ ψ ↦ by simp [toMul_add] }
+
+/-- Evaluation at `g` sends a character to its value at `g`. -/
+@[simp]
+theorem continuousZModDual.evalₗ_apply (g : G) (χ : continuousZModDual n G) :
+    continuousZModDual.evalₗ g χ = Multiplicative.toAdd (Additive.toMul χ g) :=
+  (rfl)
 
 variable {H : Type*} [Group H] [TopologicalSpace H]
 

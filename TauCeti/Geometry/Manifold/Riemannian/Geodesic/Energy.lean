@@ -115,7 +115,7 @@ theorem IsGeodesicCurveOn.riemannianEnergy_eq {γ : ℝ → M} {s : Set ℝ}
       fun t ht ↦ by simp only [hγ.norm_curveVelocityWithin_eq hconn (hsub ht) hc]]
   simp only [intervalIntegral.integral_const, smul_eq_mul]
 
-variable [I.Boundaryless] [T2Space (TangentBundle I M)]
+variable [I.Boundaryless]
 
 /-- On any subinterval of its maximal domain, a geodesic has energy equal to half its
 initial squared speed times the duration. -/

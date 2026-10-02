@@ -105,7 +105,8 @@ theorem productMap_comp_conjugationAlgHom
       Bialgebra.TensorProduct.includeLeft_toAlgHom,
       Bialgebra.TensorProduct.includeRight_toAlgHom,
       Algebra.TensorProduct.productMap_left, Algebra.TensorProduct.productMap_right]
-  exact congrArg WithConv.ofConv hmap
+  have h := congrArg WithConv.ofConv hmap
+  rwa [AlgHom.mapValue_apply, ofConv_toConv] at h
 
 /-- **Evaluation against an arbitrary algebra map out of the tensor square.** Every algebra map
 `φ : H ⊗[R] H →ₐ[R] A` is the product map of its two restrictions, so composing it with the

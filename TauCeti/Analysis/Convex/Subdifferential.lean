@@ -92,6 +92,15 @@ theorem add_le_of_mem_subdifferential (h : y ∈ subdifferential B f x) (x' : E)
     f x + (B (x' - x) y : EReal) ≤ f x' :=
   h.2.2 x'
 
+/-- A function with a subgradient somewhere never takes the value `⊥`: the affine minorant
+through the subgradient is real everywhere. -/
+theorem apply_ne_bot_of_mem_subdifferential (h : y ∈ subdifferential B f x) (x' : E) :
+    f x' ≠ ⊥ := by
+  intro hx'
+  have h' := add_le_of_mem_subdifferential B h x'
+  rw [hx', le_bot_iff, EReal.add_eq_bot_iff] at h'
+  exact h'.elim (ne_bot_of_mem_subdifferential B h) (EReal.coe_ne_bot _)
+
 /-- The subdifferential is empty where the function takes the value `⊥`. -/
 theorem subdifferential_eq_empty_of_eq_bot (h : f x = ⊥) : subdifferential B f x = ∅ :=
   Set.eq_empty_of_forall_notMem fun _ hy => ne_bot_of_mem_subdifferential B hy h

@@ -93,15 +93,16 @@ theorem localMultiplicity_quotientMk (z : ℍ) :
   have hcomp : localMultiplicity
       (stabilizerBallQuotientChart hε hopen ∘ Quotient.mk (orbitRel Γ ℍ)) z
       = localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z := by
-    rw [localMultiplicity_comp hchart hπ,
+    rw [localMultiplicity_comp_of_eventually_mdifferentiableAt hchart hπ,
       localMultiplicity_eq_one_of_mem_maximalAtlas hmax hsource, one_mul]
   -- On the hyperbolic disc about `z` that composition is the `m`-th power of the disc coordinate.
   have hmodel : (stabilizerBallQuotientChart hε hopen ∘ Quotient.mk (orbitRel Γ ℍ)) =ᶠ[𝓝 z]
       (fun u : ℂ ↦ u ^ Nat.card (stabilizer Γ z)) ∘ discCoordinate z := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hε)] with τ hτ
     exact stabilizerBallQuotientChart_mk hε hopen (mem_ball.1 hτ)
-  rw [← hcomp, localMultiplicity_congr hmodel, localMultiplicity_comp hpow hdisc,
-    discCoordinate_self, localMultiplicity_pow_zero,
+  rw [← hcomp, localMultiplicity_congr hmodel,
+    localMultiplicity_comp_of_eventually_mdifferentiableAt hpow hdisc, discCoordinate_self,
+    localMultiplicity_pow_zero,
     (localMultiplicity_eq_one_iff hdisc).2 ⟨univ, univ_mem, (discCoordinate_injective z).injOn⟩,
     mul_one]
 
@@ -112,6 +113,12 @@ theorem localMultiplicity_quotientMk_pos (z : ℍ) :
     (ProperlyDiscontinuousSMul.finite_stabilizer z).to_subtype
   rw [localMultiplicity_quotientMk]
   exact Nat.card_pos
+
+/-- The orbit projection is not constant on any neighbourhood of a point. -/
+theorem not_eventuallyConst_quotientMk (z : ℍ) :
+    ¬ EventuallyConst (Quotient.mk (orbitRel Γ ℍ)) (𝓝 z) :=
+  (localMultiplicity_pos_iff (.of_forall (mdifferentiable_quotientMk Γ))).1
+    (localMultiplicity_quotientMk_pos Γ z)
 
 /-- The ramification index of the orbit projection depends only on the orbit. -/
 -- Not `@[simp]`: as for `TauCeti.card_stabilizer_smul`, whether the value at `g • z` is in normal
@@ -162,7 +169,7 @@ theorem localMultiplicity_comp_quotientMk {Y : Type*} [TopologicalSpace Y] [Char
     (hF : ∀ᶠ q in 𝓝 (Quotient.mk (orbitRel Γ ℍ) z), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) F q) :
     localMultiplicity (F ∘ Quotient.mk (orbitRel Γ ℍ)) z
       = Nat.card (stabilizer Γ z) * localMultiplicity F (Quotient.mk (orbitRel Γ ℍ) z) := by
-  rw [localMultiplicity_comp hF (.of_forall (mdifferentiable_quotientMk Γ)),
-    localMultiplicity_quotientMk, mul_comm]
+  rw [localMultiplicity_comp_of_eventually_mdifferentiableAt hF
+    (.of_forall (mdifferentiable_quotientMk Γ)), localMultiplicity_quotientMk, mul_comm]
 
 end Subgroup

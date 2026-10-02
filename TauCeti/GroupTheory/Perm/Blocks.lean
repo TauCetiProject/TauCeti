@@ -5,21 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
 import TauCeti.Algebra.Group.Subgroup.Cover
 
 /-!
-# Primitive actions from extremal blocks
+# Primitive actions from blocks and chains of blocks
 
 For a transitive group action, the blocks containing a chosen point are order-isomorphic to the
 subgroups containing its stabilizer. This file applies that correspondence at the two ends of the
-block lattice.
+block lattice, and then along a chain of blocks.
 
 A minimal non-singleton block gives a primitive action of its setwise stabilizer on the block.
 A maximal proper block gives a maximal subgroup of the original group, and hence a primitive
 action of the original group on the translates of the block. These are different actions: the
 first resolves the action inside one block, while the second passes to the induced block system.
+
+Both are ends of one statement. Covering relations among blocks containing `a` are exactly the
+covering relations among their stabilizers, so the maximal chains of blocks `{a} = B₀ ⋖ ⋯ ⋖ Bₖ = X`
+correspond to the maximal chains of subgroups from the stabilizer of `a` to `G` (as flags, this is
+`Flag.map (MulAction.block_stabilizerOrderIso G a)`). At a step `Bᵢ ⋖ Bᵢ₊₁` the stabilizer of
+`Bᵢ₊₁` acts primitively on the translates of `Bᵢ` contained in `Bᵢ₊₁`, and the cardinality of
+`X` is the product of the degrees of these primitive actions. This is the chain of imprimitivity
+along which a transitive group is built from primitive pieces.
 
 ## Main results
 
@@ -31,6 +40,14 @@ first resolves the action inside one block, while the second passes to the induc
   stabilizer is a maximal subgroup.
 * `MulAction.IsBlock.isPreprimitive_orbit_of_isCoatom`: the action on the translates of a
   coatomic block is primitive.
+* `MulAction.BlockMem.covBy_iff_stabilizer_covBy`: a block covers another exactly when its
+  stabilizer covers the other's.
+* `MulAction.IsBlock.mem_orbit_stabilizer_iff`: the translates of `B` by the stabilizer of a block
+  `C ⊇ B` are the translates of `B` contained in `C`.
+* `MulAction.BlockMem.isPreprimitive_stabilizer_orbit_of_covBy`: for blocks `B₁ ⋖ B₂`, the
+  stabilizer of `B₂` acts primitively on the translates of `B₁` that it contains.
+* `MulAction.BlockMem.natCard_eq_prod_ncard_orbit_stabilizer`: along a chain of blocks from `{a}`
+  to `X`, the cardinality of `X` is the product of the numbers of translates at each step.
 
 ## References
 
@@ -143,5 +160,119 @@ theorem _root_.MulAction.IsBlock.isPreprimitive_orbit_of_isCoatom
   ext g
   rw [mem_stabilizer_iff, mem_stabilizer_iff]
   exact ⟨fun h => congrArg Subtype.val h, fun h => Subtype.ext h⟩
+
+/-! ### Chains of blocks
+
+Between the two extremal cases sits the general step. If `B ⋖ C` in the lattice of blocks
+containing `a`, the setwise stabilizer of `C` permutes the translates of `B` contained in `C`, and
+this action is primitive. Iterating along a chain `{a} = B 0 ⋖ B 1 ⋖ ⋯ ⋖ B k = X` of blocks
+resolves the action into a tower of primitive actions, and the degree of the action is the product
+of their degrees. -/
+
+/-- A block covers another in the lattice of blocks containing `a` exactly when the setwise
+stabilizer of the first covers that of the second in the subgroup lattice. -/
+theorem _root_.MulAction.BlockMem.covBy_iff_stabilizer_covBy {B₁ B₂ : BlockMem G a} :
+    B₁ ⋖ B₂ ↔ stabilizer G (B₁ : Set X) ⋖ stabilizer G (B₂ : Set X) := by
+  rw [← apply_covBy_apply_iff (block_stabilizerOrderIso G a)]
+  obtain ⟨B₁, ha₁, hB₁⟩ := B₁
+  obtain ⟨B₂, ha₂, hB₂⟩ := B₂
+  exact (Set.OrdConnected.apply_covBy_apply_iff
+    (OrderEmbedding.subtype fun H : Subgroup G => stabilizer G a ≤ H)
+    (by simpa only [OrderEmbedding.coe_subtype, Subtype.range_coe_subtype] using!
+      Set.ordConnected_Ici)).symm
+
+omit [IsPretransitive G X] in
+/-- Let `B` be a subset of a block `C`. A set is a translate of `B` by the setwise stabilizer of
+`C` exactly when it is a translate of `B` contained in `C`. -/
+theorem _root_.MulAction.IsBlock.mem_orbit_stabilizer_iff {C D : Set X} (hC : IsBlock G C)
+    (hBC : B ⊆ C) :
+    D ∈ orbit (stabilizer G C) B ↔ D ∈ orbit G B ∧ D ⊆ C := by
+  constructor
+  · rintro ⟨⟨g, hg⟩, rfl⟩
+    refine ⟨⟨g, rfl⟩, ?_⟩
+    beta_reduce
+    rw [Subgroup.mk_smul, ← mem_stabilizer_iff.mp hg]
+    exact Set.smul_set_mono hBC
+  · rintro ⟨⟨g, rfl⟩, hgC⟩
+    rcases B.eq_empty_or_nonempty with rfl | ⟨b, hb⟩
+    · exact ⟨1, by simp⟩
+    have hg : g ∈ stabilizer G C :=
+      hC.smul_eq_of_mem (hBC hb) (hgC (Set.smul_mem_smul_set hb))
+    exact ⟨⟨g, hg⟩, rfl⟩
+
+/-- If `B₁ ≤ B₂` are blocks containing `a`, then `B₂` is the disjoint union of the translates of
+`B₁` by its setwise stabilizer, so its cardinality is that of `B₁` times their number. -/
+theorem _root_.MulAction.BlockMem.ncard_mul_ncard_orbit_stabilizer_eq {B₁ B₂ : BlockMem G a}
+    (h : B₁ ≤ B₂) :
+    (B₁ : Set X).ncard * (orbit (stabilizer G (B₂ : Set X)) (B₁ : Set X)).ncard =
+      (B₂ : Set X).ncard := by
+  have hle : stabilizer G (B₁ : Set X) ≤ stabilizer G (B₂ : Set X) :=
+    (block_stabilizerOrderIso G a).monotone h
+  obtain ⟨B₁, ha₁, hB₁⟩ := B₁
+  obtain ⟨B₂, ha₂, hB₂⟩ := B₂
+  have key : (stabilizer G B₁).subgroupOf (stabilizer G B₂) =
+      stabilizer (stabilizer G B₂) B₁ := by
+    ext g
+    rw [Subgroup.mem_subgroupOf, mem_stabilizer_iff, mem_stabilizer_iff, Subgroup.smul_def]
+  rw [hB₁.ncard_block_eq_relIndex ha₁, hB₂.ncard_block_eq_relIndex ha₂, ← index_stabilizer,
+    ← key, ← Subgroup.relIndex, Subgroup.relIndex_mul_relIndex _ _ _ (hB₁.stabilizer_le ha₁) hle]
+
+/-- **The step of a chain of imprimitivity.** If `B₁ ⋖ B₂` in the lattice of blocks containing
+`a`, then the setwise stabilizer of `B₂` acts primitively on the translates of `B₁` by its elements,
+which are the translates of `B₁` contained in `B₂`
+(`MulAction.IsBlock.mem_orbit_stabilizer_iff`).
+
+For `B₁ = {a}` this is the primitive action of the stabilizer of an atomic block on that block,
+`MulAction.IsBlock.isPreprimitive_stabilizer_of_isAtom`, read on singletons; for `B₂ = Set.univ`
+it is the primitive action on the block system of a coatomic block,
+`MulAction.IsBlock.isPreprimitive_orbit_of_isCoatom`. -/
+theorem _root_.MulAction.BlockMem.isPreprimitive_stabilizer_orbit_of_covBy
+    {B₁ B₂ : BlockMem G a} (h : B₁ ⋖ B₂) :
+    IsPreprimitive (stabilizer G (B₂ : Set X))
+      (orbit (stabilizer G (B₂ : Set X)) (B₁ : Set X)) := by
+  have hcov := BlockMem.covBy_iff_stabilizer_covBy.mp h
+  let b : orbit (stabilizer G (B₂ : Set X)) (B₁ : Set X) := ⟨B₁, mem_orbit_self _⟩
+  have hnt : (orbit (stabilizer G (B₂ : Set X)) (B₁ : Set X)).Nontrivial := by
+    rw [← Set.not_subsingleton_iff]
+    intro hsub
+    refine hcov.lt.not_ge fun g hg ↦ ?_
+    exact (subsingleton_orbit_iff_mem_fixedPoints.mp hsub) ⟨g, hg⟩
+  let _ : Nontrivial (orbit (stabilizer G (B₂ : Set X)) (B₁ : Set X)) := hnt.coe_sort
+  rw [← isCoatom_stabilizer_iff_preprimitive (stabilizer G (B₂ : Set X)) b]
+  convert hcov.isCoatom_subgroupOf using 1
+  ext g
+  rw [mem_stabilizer_iff, Subgroup.mem_subgroupOf, mem_stabilizer_iff]
+  exact ⟨fun h ↦ congrArg Subtype.val h, fun h ↦ Subtype.ext h⟩
+
+/-- Along a chain `B 0 ≤ B 1 ≤ ⋯ ≤ B k` of blocks containing `a`, the cardinality of the last
+block is that of the first times the number of translates of `B i` by the stabilizer of `B (i + 1)`,
+taken over all steps. -/
+theorem _root_.MulAction.BlockMem.ncard_last_eq_mul_prod_ncard_orbit_stabilizer {k : ℕ}
+    (B : Fin (k + 1) → BlockMem G a) (hB : Monotone B) :
+    (B (Fin.last k) : Set X).ncard = (B 0 : Set X).ncard *
+      ∏ i : Fin k, (orbit (stabilizer G (B i.succ : Set X)) (B i.castSucc : Set X)).ncard := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Fin.prod_univ_castSucc, ← mul_assoc]
+    simp only [Fin.succ_castSucc]
+    have := ih (fun i ↦ B i.castSucc) (hB.comp Fin.strictMono_castSucc.monotone)
+    simp only [Fin.castSucc_zero] at this
+    rw [← this, Fin.succ_last]
+    exact (BlockMem.ncard_mul_ncard_orbit_stabilizer_eq (hB (Fin.last k).castSucc_le_succ)).symm
+
+/-- **The degree along a chain of imprimitivity.** For a chain
+`{a} = B 0 ≤ B 1 ≤ ⋯ ≤ B k = X` of blocks containing `a`, the cardinality of `X` is the product
+over the steps of the number of translates of `B i` by the stabilizer of `B (i + 1)`. When every
+step is a cover these are the degrees of the primitive actions of
+`MulAction.BlockMem.isPreprimitive_stabilizer_orbit_of_covBy`. -/
+theorem _root_.MulAction.BlockMem.natCard_eq_prod_ncard_orbit_stabilizer {k : ℕ}
+    (B : Fin (k + 1) → BlockMem G a) (hB : Monotone B) (h0 : B 0 = ⊥)
+    (hk : B (Fin.last k) = ⊤) :
+    Nat.card X =
+      ∏ i : Fin k, (orbit (stabilizer G (B i.succ : Set X)) (B i.castSucc : Set X)).ncard := by
+  have h := BlockMem.ncard_last_eq_mul_prod_ncard_orbit_stabilizer B hB
+  rwa [h0, hk, BlockMem.coe_top, BlockMem.coe_bot, Set.ncard_univ, Set.ncard_singleton,
+    one_mul] at h
 
 end TauCeti

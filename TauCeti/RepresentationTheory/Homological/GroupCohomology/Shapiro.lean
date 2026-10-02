@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
-public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 public import TauCeti.RepresentationTheory.Homological.Resolution
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 
 /-!
 # Shapiro's isomorphism is restriction followed by evaluation
@@ -96,33 +96,20 @@ private theorem shapiroCochains :
 `S ≤ G` induced by the counit `Res_S Coind_S^G A ⟶ A` of restriction–coinduction. -/
 theorem coindIso_hom (n : ℕ) :
     (coindIso A n).hom = map S.subtype ((resCoindAdjunction k S.subtype).counit.app A) n := by
-  -- `resFunctor` is pinned here and in `h1`: with `k` and its universe left open, instance search
-  -- for the restricted resolution first fails slowly.
-  have hext := ProjectiveResolution.isoExt_hom_comp_homologyMap (R := k) (barResolution k S)
-    ((resFunctor.{u} (k := k) S.subtype).mapProjectiveResolution (barResolution k G))
-    (TauCeti.Rep.barComplex.resChainMap S.subtype)
-    (TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S.subtype) n A
-  have hinhom : (isoOfQuasiIsoAt (HomotopyEquiv.ofIso (inhomogeneousCochainsIso A)).hom n).inv =
-      HomologicalComplex.homologyMap (inhomogeneousCochainsIso A).inv n :=
-    Iso.inv_ext ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans
-      ((congrArg (HomologicalComplex.homologyMap · n) (inhomogeneousCochainsIso A).hom_inv_id).trans
-        (HomologicalComplex.homologyMap_id _ n)))
+  -- `resFunctor` is pinned: with `k` and its universe left open, instance search for the
+  -- restricted resolution first fails slowly.
   -- `coindIso` is by definition the homology of the Shapiro cochain isomorphism followed by the
   -- comparison, through `Ext`, of the restricted bar resolution of `G` with the bar resolution
-  -- of `S`. The unfolding is taken from the `Iso.trans` lemmas, not restated and proved by `rfl`:
+  -- of `S`. The unfolding is taken from `Iso.trans_hom`, not restated and proved by `rfl`:
   -- restated, its `Ext` objects carry fresh instance terms and the kernel unfolds `Ext` to match.
   have e : (coindIso A n).hom = _ := Iso.trans_hom _ _
-  have h1 : (groupCohomologyIso A n
-      ((resFunctor.{u} (k := k) S.subtype).mapProjectiveResolution (barResolution k G))).inv = _ :=
-    Iso.trans_inv _ _
-  have h2 : (groupCohomologyIsoExt A n).inv = _ := Iso.trans_inv _ _
-  rw [e, Iso.symm_hom, h1, h2, Iso.symm_inv, hinhom]
-  exact (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans
-      (congrArg (· ≫ _) ((Iso.inv_comp_eq _).2 hext.symm)))).trans
-    ((congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n).symm).trans
-    ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+  rw [e, Iso.symm_hom, TauCeti.Rep.groupCohomologyIso_inv_eq_homologyMap A
+    ((resFunctor.{u} (k := k) S.subtype).mapProjectiveResolution (barResolution k G))
+    (TauCeti.Rep.barComplex.resChainMap S.subtype)
+    (TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π S.subtype) n]
+  exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
     (congrArg (HomologicalComplex.homologyMap · n)
-      ((Category.assoc _ _ _).trans (shapiroCochains S A)))))
+      ((Category.assoc _ _ _).trans (shapiroCochains S A)))
 
 /-- **Shapiro's isomorphism is natural in the coefficients**: for a morphism `φ : A ⟶ B` of
 `S`-representations, it intertwines the maps induced by `Coind_S^G φ` and by `φ`. -/

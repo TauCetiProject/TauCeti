@@ -62,7 +62,7 @@ variable [FiniteDimensional ℝ E]
 
 section RadialVariation
 
-variable [I.Boundaryless] [T2Space (TangentBundle I M)] {p : M} {v w : TangentSpace I p}
+variable [I.Boundaryless] [T2Space M] {p : M} {v w : TangentSpace I p}
   {F : ℝ → ℝ → M}
 
 /-! ### The radial variation
@@ -164,7 +164,7 @@ end RadialVariation
 /-- **The Gauss lemma.** The differential of the Riemannian exponential map preserves the inner
 product with the radial direction at every vector in its natural domain. -/
 theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
-    [T2Space (TangentBundle I M)] {p : M} {v w : TangentSpace I p}
+    [T2Space M] {p : M} {v w : TangentSpace I p}
     (hv : v ∈ expDomain I M p) :
     inner ℝ
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v)
@@ -277,7 +277,7 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
 /-- **Radial norm preservation.** The differential of the Riemannian exponential map preserves
 the norm of the radial direction at every vector in its natural domain. -/
 @[simp] theorem norm_mfderiv_riemannianExp_radial [I.Boundaryless]
-    [T2Space (TangentBundle I M)] {p : M} {v : TangentSpace I p}
+    [T2Space M] {p : M} {v : TangentSpace I p}
     (hv : v ∈ expDomain I M p) :
     ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v‖ = ‖v‖ := by
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), sq, sq,

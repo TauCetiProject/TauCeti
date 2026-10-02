@@ -54,8 +54,7 @@ theorem differentiableOn_comp_stabilizerBallQuotientChart_symm
   have : NeZero m := ⟨Nat.card_pos.ne'⟩
   let f : ℂ → E := fun w ↦ F (e.symm (w ^ m))
   have hr : 0 < Real.tanh (ε / 2) := by
-    rw [← Real.tanh_zero]
-    exact Real.tanh_strictMono (by linarith)
+    rw [← Real.tanh_zero]; exact Real.tanh_strictMono (by linarith)
   have hf : DifferentiableOn ℂ f (ball 0 (Real.tanh (ε / 2))) := by
     intro w₀ hw₀
     have hw₀' := mem_ball_zero_iff.mp hw₀

@@ -26,7 +26,9 @@ in the plan.
 No finiteness or normalisation is assumed of the measures, and the cost need not be measurable.
 Subadditivity cannot in general be improved to an equality: splitting `δ_x + δ_y` against itself
 as `(δ_x, δ_y) + (δ_y, δ_x)` with the cost `edist` gives a strict inequality whenever `x ≠ y`.
-Homogeneity is stated for a finite scaling factor.
+Homogeneity is stated for a finite scaling factor. By homogeneity, two optimal plans for the same
+pair of marginals add up to an optimal plan for the doubled marginals; uniqueness theorems for
+optimal plans compare two optimal plans through their sum.
 
 ## Main statements
 
@@ -34,7 +36,9 @@ Homogeneity is stated for a finite scaling factor.
   cost;
 * `TauCeti.transportCost_sum_le` — countable subadditivity for `MeasureTheory.Measure.sum`;
 * `TauCeti.transportCost_finset_sum_le` and `TauCeti.transportCost_add_le` — the finite and binary
-  forms of subadditivity.
+  forms of subadditivity;
+* `TauCeti.IsOptimalCoupling.add` — the sum of two optimal plans for the same marginals is optimal
+  for the doubled marginals.
 
 ## References
 
@@ -113,5 +117,16 @@ theorem transportCost_add_le (c : X × Y → ℝ≥0∞) (μ μ' : Measure X) (�
   simpa only [Finset.sum_pair zero_ne_one, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.head_cons] using
     transportCost_finset_sum_le {0, 1} c ![μ, μ'] ![ν, ν']
+
+/-- **Two optimal plans add up to an optimal plan.** If `π` and `π'` are optimal plans between `μ`
+and `ν`, their sum is an optimal plan between `μ + μ` and `ν + ν`, whose transport cost is twice
+that of `μ` and `ν` by homogeneity. -/
+protected theorem IsOptimalCoupling.add {c : X × Y → ℝ≥0∞} {π π' : Measure (X × Y)}
+    {μ : Measure X} {ν : Measure Y} (h : IsOptimalCoupling c π μ ν)
+    (h' : IsOptimalCoupling c π' μ ν) : IsOptimalCoupling c (π + π') (μ + μ) (ν + ν) where
+  toIsCoupling := h.toIsCoupling.add h'.toIsCoupling
+  lintegral_eq := by
+    rw [lintegral_add_measure, h.lintegral_eq, h'.lintegral_eq, ← two_smul ℝ≥0∞ μ,
+      ← two_smul ℝ≥0∞ ν, transportCost_smul ENNReal.ofNat_ne_top, two_mul]
 
 end TauCeti

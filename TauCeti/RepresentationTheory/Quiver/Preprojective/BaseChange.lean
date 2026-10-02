@@ -169,7 +169,7 @@ theorem preprojectiveBaseChange_algebraMap (f : k →+* l) (r : k) :
 @[simp]
 theorem preprojectiveBaseChange_id :
     preprojectiveBaseChange (RingHom.id k) = RingHom.id (preprojectiveAlgebra k Q) := by
-  apply preprojectiveAlgebra_ringHom_ext
+  apply ringHom_ext_of_surjective (preprojectiveMk k Q) (preprojectiveMk_surjective k Q)
   · intro r
     simp
   · intro x
@@ -181,7 +181,7 @@ maps. -/
 theorem preprojectiveBaseChange_comp {m : Type*} [CommRing m] (f : k →+* l) (g : l →+* m) :
     preprojectiveBaseChange (Q := Q) (g.comp f) =
       (preprojectiveBaseChange (Q := Q) g).comp (preprojectiveBaseChange (Q := Q) f) := by
-  apply preprojectiveAlgebra_ringHom_ext
+  apply ringHom_ext_of_surjective (preprojectiveMk k Q) (preprojectiveMk_surjective k Q)
   · intro r
     simp
   · intro x

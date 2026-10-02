@@ -125,8 +125,7 @@ theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
   have := hPprime
   have := hPover
   have := hun P
-  rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P
-      (Ideal.ne_bot_of_liesOver_of_ne_bot hp0 P),
+  rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P,
     Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
 
 end TauCeti.NumberField

@@ -190,10 +190,10 @@ private theorem unblockedDifferential_XHomotopy_add_XHomotopy_unblockedDifferent
       (MvPolynomial.X s.succ + MvPolynomial.X s.castSucc : S) • v := by
   -- The `O`-marking in the row of the southeast `X`-marking is the new one, in column
   -- `s.castSucc`.
-  have hj : (G.stabilizeX s.castSucc (G.X s).castSucc s).O.columnOfRow
+  have hj : (G.stabilizeX s.castSucc (G.X s).castSucc s).O.transpose
       ((G.stabilizeX s.castSucc (G.X s).castSucc s).X s.succ) = s.castSucc := by
     rw [stabilizeX_X, GridState.splitPoint_castSucc_apply_succ, stabilizeX_O]
-    simpa using (G.O.insertPoint s.castSucc (G.X s).castSucc).columnOfRow_apply s.castSucc
+    simpa using (G.O.insertPoint s.castSucc (G.X s).castSucc).transpose_apply_apply s.castSucc
   have h := LinearMap.congr_fun (unblockedDifferential_comp_XHomotopy_add_XHomotopy_comp
     (G.stabilizeX s.castSucc (G.X s).castSucc s) R s.succ) v
   rwa [hj] at h

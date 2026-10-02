@@ -108,10 +108,10 @@ lemma conflationRelation_def (S : ShortComplex C) :
 /-- An additive homomorphism annihilates the relation of a short complex exactly when it is
 additive on that complex. This evaluates a conflation relation once and for all, for both the
 quotient map presenting exact `K₀` and the free extension of an invariant. -/
-lemma map_conflationRelation_eq_zero_iff {G : Type*} [AddCommGroup G]
+lemma map_conflationRelation_eq_zero_iff {G : Type*} [AddGroup G]
     (f : FreeAbelianGroup (ObjectCode C) →+ G) (S : ShortComplex C) :
     f (conflationRelation S) = 0 ↔ f (freeOf S.X₂) = f (freeOf S.X₁) + f (freeOf S.X₃) := by
-  rw [conflationRelation_def, map_sub, map_sub, sub_sub, sub_eq_zero]
+  rw [conflationRelation_def, sub_sub, map_sub, map_add, sub_eq_zero]
 
 /-- The free map of a functor carries the relation of a short complex to the relation of its
 image. -/
@@ -191,8 +191,8 @@ theorem of_eq_add_of_conflation {X Y Z : C} {i : X ⟶ Y} {p : Y ⟶ Z} (zero : 
 omit [EssentiallySmall.{w} C] in
 /-- An ambient conflation whose outer terms satisfy an extension-closed property gives the
 defining relation in the exact `K₀` of the induced full subcategory. -/
-theorem of_conflation_fullSubcategory {P : ObjectProperty C} [LocallySmall.{w} C]
-    [ObjectProperty.EssentiallySmall.{w} P] [P.ContainsZero]
+theorem of_conflation_fullSubcategory {P : ObjectProperty C}
+    [EssentiallySmall.{w} P.FullSubcategory] [P.ContainsZero]
     [P.IsClosedUnderBinaryProducts] (hP : E.IsExtensionClosed P)
     {S : ShortComplex C} (hS : E.Conflation S)
     (h₁ : P S.X₁) (h₃ : P S.X₃) :
@@ -229,8 +229,8 @@ omit [EssentiallySmall.{w} C] in
 subcategory is the sum of the classes of its summands. The middle object is the one supplied by
 closure under binary products; by proof irrelevance the statement applies to any presentation of
 it. -/
-theorem of_biprod_fullSubcategory [LocallySmall.{w} C]
-    [ObjectProperty.EssentiallySmall.{w} P] (hP : E.IsExtensionClosed P) {X Y : C}
+theorem of_biprod_fullSubcategory [EssentiallySmall.{w} P.FullSubcategory]
+    (hP : E.IsExtensionClosed P) {X Y : C}
     (hX : P X) (hY : P Y) :
     (of ⟨X ⊞ Y, P.prop_biprod_of_isClosedUnderBinaryProducts hX hY⟩ :
         ExactK0 (E.fullSubcategory P hP)) =
@@ -273,20 +273,44 @@ theorem hom_ext {f g : ExactK0 E →+ G} (h : ∀ X : C, f (of X) = g (of X)) : 
 
 end HomExt
 
+/-- A homomorphism into exact `K₀` whose range contains the class of every object is surjective. -/
+theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ ExactK0 E}
+    (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f :=
+  PresentedK0.surjective_of_forall_of_mem_range h
+
 variable {G : Type*} [AddCommGroup G]
 
 variable (E) in
-/-- An additive invariant for exact `K₀`: a function on objects of `C`, constant on isomorphism
-classes and additive on the conflations of `E`. These are exactly the data that factor through
-`TauCeti.ExactK0 E`; see `TauCeti.ExactK0.liftEquiv`. -/
+/-- An additive invariant for exact `K₀`: a function on objects of `C` additive on the conflations
+of `E`. It is then constant on isomorphism classes (`TauCeti.ExactK0.AdditiveInvariant.map_iso`).
+These are exactly the data that factor through `TauCeti.ExactK0 E`; see
+`TauCeti.ExactK0.liftEquiv`. -/
 @[ext]
 structure AdditiveInvariant (G : Type*) [AddCommGroup G] where
   /-- The value of the invariant on an object. -/
   obj : C → G
-  /-- Isomorphic objects receive equal values. -/
-  map_iso : ∀ ⦃X Y : C⦄, (X ≅ Y) → obj X = obj Y
   /-- The value on the middle term of a conflation is the sum of the outer values. -/
   map_conflation : ∀ ⦃S : ShortComplex C⦄, E.Conflation S → obj S.X₂ = obj S.X₁ + obj S.X₃
+
+omit [EssentiallySmall.{w} C] in
+/-- **An additive invariant takes equal values on isomorphic objects.** Additivity on conflations
+alone forces invariance under isomorphisms of objects, which is the invariance the presentation of
+exact `K₀` requires. -/
+theorem AdditiveInvariant.map_iso (a : AdditiveInvariant E G) ⦃X Y : C⦄ (e : X ≅ Y) :
+    a.obj X = a.obj Y := by
+  have h0 : a.obj (0 : C) = 0 := by
+    simpa using a.map_conflation (E.conflation_id_zero (0 : C))
+  have hY := a.map_conflation (E.conflation_of_splitting
+    (S := ShortComplex.mk e.hom (0 : Y ⟶ (0 : C)) (by simp))
+    (ShortComplex.Splitting.ofIsIsoOfIsZero _ inferInstance (isZero_zero C)))
+  simpa [h0] using hY.symm
+
+omit [EssentiallySmall.{w} C] in
+/-- An additive invariant vanishes on zero objects. -/
+theorem AdditiveInvariant.obj_eq_zero_of_isZero (a : AdditiveInvariant E G) {X : C}
+    (hX : IsZero X) : a.obj X = 0 := by
+  rw [a.map_iso (hX.iso (isZero_zero C))]
+  simpa using a.map_conflation (E.conflation_id_zero (0 : C))
 
 private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant E G) :
     PresentedK0.AdditiveInvariant (exactRelations E) G where
@@ -322,7 +346,6 @@ noncomputable def liftEquiv : AdditiveInvariant E G ≃ (ExactK0 E →+ G) where
   toFun := lift
   invFun f :=
     { obj := fun X => f (of X)
-      map_iso := fun _ _ e => by rw [of_congr e]
       map_conflation := fun _ hS => by rw [of_conflation hS, map_add] }
   left_inv a := by ext X; exact lift_of a X
   right_inv f := (lift_unique _ f fun _ => rfl).symm
@@ -337,7 +360,9 @@ lemma liftEquiv_symm_apply_obj (f : ExactK0 E →+ G) (X : C) :
 /-! ### Biadditive invariants -/
 
 /-- An object-level invariant on an indexing category and an exact category which is invariant
-under isomorphisms in both variables and additive on conflations in the second variable. -/
+under isomorphisms in the first variable and additive on conflations in the second variable.
+Additivity already makes it invariant under isomorphisms in the second variable
+(`TauCeti.ExactK0.RightAdditiveInvariant.map_iso₂`). -/
 @[ext]
 structure RightAdditiveInvariant (C : Type u) [Category.{v} C] (E' : ExactStructure D)
     (G : Type*) [AddCommGroup G] where
@@ -345,8 +370,6 @@ structure RightAdditiveInvariant (C : Type u) [Category.{v} C] (E' : ExactStruct
   obj : C → D → G
   /-- Isomorphic objects in the first variable receive equal values. -/
   map_iso₁ : ∀ {X X' : C}, (X ≅ X') → ∀ Y : D, obj X Y = obj X' Y
-  /-- Isomorphic objects in the second variable receive equal values. -/
-  map_iso₂ : ∀ (X : C) {Y Y' : D}, (Y ≅ Y') → obj X Y = obj X Y'
   /-- The invariant is additive on conflations in the second variable. -/
   map_conflation₂ : ∀ (X : C) {S : ShortComplex D}, E'.Conflation S →
     obj X S.X₂ = obj X S.X₁ + obj X S.X₃
@@ -357,8 +380,14 @@ variable (a : RightAdditiveInvariant C E' G)
 
 private noncomputable def additiveInvariant (X : C) : AdditiveInvariant E' G where
   obj := a.obj X
-  map_iso := fun {_ _} i ↦ a.map_iso₂ X i
   map_conflation := fun {_} hS ↦ a.map_conflation₂ X hS
+
+omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
+  [EssentiallySmall.{w'} D] in
+/-- A right-additive invariant takes equal values on isomorphic objects in its second variable,
+since it is additive on conflations there. -/
+theorem map_iso₂ (X : C) {Y Y' : D} (e : Y ≅ Y') : a.obj X Y = a.obj X Y' :=
+  (a.additiveInvariant X).map_iso e
 
 /-- A right-additive invariant with its first argument fixed, descended through the exact
 Grothendieck group in its second variable. -/
@@ -402,7 +431,6 @@ variable (a : BiadditiveInvariant E E' G)
 
 private noncomputable def leftInvariant : AdditiveInvariant E (ExactK0 E' →+ G) where
   obj := a.toRightAdditiveInvariant.rightLift
-  map_iso := fun {_ _} i ↦ a.toRightAdditiveInvariant.rightLift_congr i
   map_conflation := by
     intro S hS
     refine hom_ext fun Y ↦ ?_
@@ -413,10 +441,15 @@ private noncomputable def leftInvariant : AdditiveInvariant E (ExactK0 E' →+ G
 noncomputable def bilift : ExactK0 E →+ ExactK0 E' →+ G :=
   lift a.leftInvariant
 
-/-- The two-variable descent evaluates on object classes as the original invariant. -/
+/-- The two-variable descent at an object class of the first variable is the one-sided descent in
+the second variable. -/
 @[simp]
+lemma bilift_of (X : C) : a.bilift (of X) = a.toRightAdditiveInvariant.rightLift X := by
+  rw [bilift, lift_of, leftInvariant]
+
+/-- The two-variable descent evaluates on object classes as the original invariant. -/
 lemma bilift_of_of (X : C) (Y : D) : a.bilift (of X) (of Y) = a.obj X Y := by
-  rw [bilift, lift_of, leftInvariant, RightAdditiveInvariant.rightLift_of]
+  rw [bilift_of, RightAdditiveInvariant.rightLift_of]
 
 /-- The two-variable descent is the unique biadditive map with the prescribed values on pairs of
 object classes. -/
@@ -468,10 +501,10 @@ theorem map_comp {K : Type u''} [Category.{v''} K] [Preadditive K] [HasZeroObjec
     map (F ⋙ H) (hF.comp hH) = (map H hH).comp (map F hF) :=
   hom_ext fun X => by rw [map_of, AddMonoidHom.comp_apply, map_of, map_of, Functor.comp_obj]
 
-/-- Naturally isomorphic conflation-exact functors induce the same map. -/
-theorem map_congr {F' : C ⥤ D} [F'.Additive] (e : F ≅ F') (hF : E.IsConflationExact E' F)
-    (hF' : E.IsConflationExact E' F') : map F hF = map F' hF' :=
-  hom_ext fun X => by rw [map_of, map_of, of_congr (e.app X)]
+/-- Conflation-exact functors with isomorphic values on every object induce the same map. -/
+theorem map_congr {F' : C ⥤ D} [F'.Additive] (h : ∀ X : C, Nonempty (F.obj X ≅ F'.obj X))
+    (hF : E.IsConflationExact E' F) (hF' : E.IsConflationExact E' F') : map F hF = map F' hF' :=
+  PresentedK0.map_congr h (mapsTo_exactRelations F hF) (mapsTo_exactRelations F' hF')
 
 /-- **Equivalence invariance of exact `K₀`**: an exact equivalence, that is an equivalence whose
 two functors are conflation-exact, induces an isomorphism of exact Grothendieck groups. -/
@@ -545,18 +578,8 @@ theorem ofLE_unique (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflati
 /-- The comparison map is surjective: exact `K₀` is a quotient of the exact `K₀` of any exact
 structure with fewer conflations. -/
 theorem ofLE_surjective (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflation S) :
-    Function.Surjective (ofLE h) := by
-  intro x
-  induction x using ExactK0.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of X => exact ⟨of X, ofLE_of h X⟩
-  | add a b ha hb =>
-    obtain ⟨a', rfl⟩ := ha
-    obtain ⟨b', rfl⟩ := hb
-    exact ⟨a' + b', map_add _ _ _⟩
-  | neg a ha =>
-    obtain ⟨a', rfl⟩ := ha
-    exact ⟨-a', map_neg _ _⟩
+    Function.Surjective (ofLE h) :=
+  surjective_of_forall_of_mem_range fun X => ⟨of X, ofLE_of h X⟩
 
 /-- The comparison map of an exact structure with itself is the identity. -/
 @[simp]
@@ -602,47 +625,32 @@ theorem fromSplit_unique (f : SplitK0 C →+ ExactK0 E)
 
 /-- The canonical comparison out of split `K₀` is surjective: the classes of objects generate
 exact `K₀`, so the exact `K₀` of any exact structure is a quotient of split `K₀`. -/
-theorem fromSplit_surjective : Function.Surjective (fromSplit E) := by
-  intro x
-  induction x using ExactK0.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of X => exact ⟨SplitK0.of X, fromSplit_of (E := E) X⟩
-  | add a b ha hb =>
-    obtain ⟨a', rfl⟩ := ha
-    obtain ⟨b', rfl⟩ := hb
-    exact ⟨a' + b', map_add _ _ _⟩
-  | neg a ha =>
-    obtain ⟨a', rfl⟩ := ha
-    exact ⟨-a', map_neg _ _⟩
+theorem fromSplit_surjective : Function.Surjective (fromSplit E) :=
+  surjective_of_forall_of_mem_range fun X => ⟨SplitK0.of X, fromSplit_of (E := E) X⟩
 
 /-- The canonical comparison from split `K₀` to exact `K₀` is an equivalence when every
 conflation splits. -/
 noncomputable def fromSplitEquiv
     (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) :
-    SplitK0 C ≃+ ExactK0 E := by
+    SplitK0 C ≃+ ExactK0 E :=
   let a : AdditiveInvariant E (SplitK0 C) :=
     { obj := SplitK0.of
-      map_iso := fun _ _ e ↦ SplitK0.of_congr e
       map_conflation := fun {S} hS ↦ by
         obtain ⟨s⟩ := h hS
         rw [SplitK0.of_congr s.isoBinaryBiproduct, SplitK0.of_biprod] }
-  apply AddEquiv.ofBijective (fromSplit E)
-  constructor
-  · intro x y hxy
-    have hleft : (lift a).comp (fromSplit E) = AddMonoidHom.id (SplitK0 C) := by
-      apply SplitK0.hom_ext
-      intro X
-      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply]
-    apply_fun lift a at hxy
-    simpa only [← AddMonoidHom.comp_apply, hleft, AddMonoidHom.id_apply] using hxy
-  · exact fromSplit_surjective
+  (fromSplit E).toAddEquiv (lift a)
+    (SplitK0.hom_ext fun X ↦ by
+      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply])
+    (hom_ext fun X ↦ by
+      rw [AddMonoidHom.comp_apply, lift_of, AddMonoidHom.id_apply]
+      exact fromSplit_of X)
 
 /-- The split-to-exact equivalence acts by the canonical comparison homomorphism. -/
 @[simp]
 lemma fromSplitEquiv_apply
     (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (x : SplitK0 C) :
     fromSplitEquiv h x = fromSplit E x :=
-  AddEquiv.ofBijective_apply _ _ _
+  (rfl)
 
 /-- The inverse split-to-exact equivalence sends an object class to its split class. -/
 @[simp]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Complement
-public import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.Topology.Algebra.Group.Quotient.Section
 
 import Mathlib.Order.Zorn
 import Mathlib.Tactic.Group
@@ -47,8 +47,10 @@ intersection of a chain of such `C`'s still meets every coset.
 
 The nearby false statement is that `G ⧸ H` is a projective object, so that *every* continuous
 surjection onto it splits: profinite spaces are projective only when they are extremally
-disconnected, and the section below genuinely uses the group structure of the fibres. Nothing here
-is needed when `H` is *open*: then `G ⧸ H` is discrete and `Quotient.out` is already continuous.
+disconnected, and the section below genuinely uses the group structure of the fibres. None of this
+is needed when `H` is *open*: then `G ⧸ H` is discrete and `Quotient.out` is already continuous,
+which is how `Subgroup.exists_continuous_rightCosetFactorization_of_isOpen` is proved in the
+general quotient section module.
 
 ## References
 
@@ -278,23 +280,8 @@ theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisco
       (∀ (h : H) (g : G), w ((h : G) * g) = h * w g) ∧
       (∀ (h : H) (g : G), r ((h : G) * g) = r g) ∧ w 1 = 1 := by
   obtain ⟨s, hs_cont, hs_sec, hs_one⟩ := exists_continuous_section H hH
-  have hcoset : ∀ (h : H) (g : G),
-      (QuotientGroup.mk (((h : G) * g)⁻¹) : G ⧸ H) = QuotientGroup.mk g⁻¹ := by
-    intro h g
-    rw [QuotientGroup.eq]
-    simp [mul_assoc, h.2]
-  have hmem : ∀ g : G, g * s (QuotientGroup.mk g⁻¹) ∈ H := by
-    intro g
-    have h := hs_sec (QuotientGroup.mk g⁻¹)
-    rw [QuotientGroup.eq] at h
-    simpa using H.inv_mem h
-  refine ⟨fun g => ⟨g * s (QuotientGroup.mk g⁻¹), hmem g⟩,
-    fun g => (s (QuotientGroup.mk g⁻¹))⁻¹, ?_, ?_, fun g => by simp, fun h g => ?_, fun h g => ?_,
-    Subtype.ext (by simp [hs_one])⟩
-  · exact continuous_induced_rng.2 (continuous_id.mul
-      (hs_cont.comp (QuotientGroup.continuous_mk.comp continuous_inv)))
-  · exact (hs_cont.comp (QuotientGroup.continuous_mk.comp continuous_inv)).inv
-  · exact Subtype.ext (by simp only [hcoset, mul_assoc, Subgroup.coe_mul])
-  · simp only [hcoset]
+  obtain ⟨w, r, hw, hr, hwr, hwh, hrh, hw1⟩ :=
+    H.exists_continuous_rightCosetFactorization_of_section s hs_cont hs_sec
+  exact ⟨w, r, hw, hr, hwr, hwh, hrh, Subtype.ext (hw1.trans hs_one)⟩
 
 end TauCeti

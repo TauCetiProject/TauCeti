@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
 import Mathlib.Tactic.Group
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Basepoint change for fundamental groups
@@ -16,7 +18,8 @@ The pointed classification of connected covers records a subgroup of the fundame
 a chosen basepoint. Changing the basepoint along a path transports that subgroup by the
 standard path-conjugation isomorphism of fundamental groups. This file packages that transport
 and the induced transport of the normalizer quotient `N(H) / H` used for deck groups of covers
-attached to subgroups.
+attached to subgroups. It also descends basepoint change to conjugacy classes, where the result is
+independent of the chosen path.
 
 It also records the element-level behaviour of the transport: path-quotient formulas and its
 compatibility with concatenation of paths.
@@ -40,6 +43,10 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
   path is the composite of the basepoint changes.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
   conjugation by its class.
+* `FundamentalGroup.conjClassesEquivOfPath`: the induced equivalence of conjugacy classes.
+* `FundamentalGroup.conjClassesEquivOfPath_eq`: this equivalence is independent of the path.
+* `FundamentalGroup.conjClassesEquivOfPathConnected_trans`: canonical conjugacy-class transport
+  in a path-connected space is natural under further path transport.
 * `TauCeti.FundamentalGroup.mem_basepointChangeSubgroup` and the representative `[simp]`
   lemmas for membership and quotient calculations under these domain-specific names.
 
@@ -54,6 +61,7 @@ namespace FundamentalGroup
 open CategoryTheory in
 /-- The inverse basepoint-change equivalence is represented by conjugation with the reverse path.
 This path-quotient formula is the interface for computations with the equivalence. -/
+@[simp]
 lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply
     {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
     (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₁) :
@@ -149,6 +157,200 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans
       (Path.Homotopic.Quotient.mk (γ.trans δ))).conj g = β.conj (α.conj g)
   rw [h]
   exact CategoryTheory.Iso.trans_conj α β g
+
+/-- Reversing a basepoint-change path gives the inverse equivalence of fundamental groups. -/
+@[simp]
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ.symm =
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm := by
+  ext g
+  simp
+
+/-- Basepoint change along the constant path is the identity equivalence. -/
+@[simp]
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_refl
+    {X : Type*} [TopologicalSpace X] (x : X) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath (Path.refl x) =
+      MulEquiv.refl (_root_.FundamentalGroup X x) := by
+  ext g
+  simp
+
+/-- Changing basepoint along a path induces an equivalence between conjugacy classes in the two
+fundamental groups. -/
+noncomputable def _root_.FundamentalGroup.conjClassesEquivOfPath
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁) :
+    ConjClasses (_root_.FundamentalGroup X x₀) ≃
+      ConjClasses (_root_.FundamentalGroup X x₁) :=
+  (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).conjClassesEquiv
+
+/-- On a representative, transport of conjugacy classes is induced by the usual basepoint-change
+equivalence of fundamental groups. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_mk
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁)
+    (g : _root_.FundamentalGroup X x₀) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath γ (ConjClasses.mk g) =
+      ConjClasses.mk (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) := by
+  exact MulEquiv.conjClassesEquiv_mk
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) g
+
+/-- Transport of conjugacy classes along a concatenated path is transport along each piece in
+turn. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_trans
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X} (γ : Path x₀ x₁) (δ : Path x₁ x₂) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath (γ.trans δ) =
+      (_root_.FundamentalGroup.conjClassesEquivOfPath γ).trans
+        (_root_.FundamentalGroup.conjClassesEquivOfPath δ) := by
+  simp only [_root_.FundamentalGroup.conjClassesEquivOfPath,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans,
+    MulEquiv.conjClassesEquiv_trans]
+
+/-- Reversing a path gives the inverse equivalence on conjugacy classes. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_symm
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath γ.symm =
+      (_root_.FundamentalGroup.conjClassesEquivOfPath γ).symm := by
+  simp only [_root_.FundamentalGroup.conjClassesEquivOfPath,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm,
+    MulEquiv.conjClassesEquiv_symm]
+
+/-- Inverse transport of a conjugacy-class representative is induced by inverse basepoint
+change on the representative. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_symm_mk
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁)
+    (g : _root_.FundamentalGroup X x₁) :
+    (_root_.FundamentalGroup.conjClassesEquivOfPath γ).symm (ConjClasses.mk g) =
+      ConjClasses.mk
+        ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) := by
+  exact MulEquiv.conjClassesEquiv_symm_mk
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) g
+
+/-- Transport along the constant path is the identity on conjugacy classes. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_refl
+    {X : Type*} [TopologicalSpace X] (x : X) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath (Path.refl x) =
+      Equiv.refl (ConjClasses (_root_.FundamentalGroup X x)) := by
+  simp only [_root_.FundamentalGroup.conjClassesEquivOfPath,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_refl,
+    MulEquiv.conjClassesEquiv_refl]
+
+/-- **Conjugacy-class basepoint change is independent of the path.** Two paths with the same
+endpoints can change individual fundamental-group elements by an inner automorphism, but induce
+the same equivalence on conjugacy classes. -/
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_eq
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ δ : Path x₀ x₁) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath γ =
+      _root_.FundamentalGroup.conjClassesEquivOfPath δ := by
+  let q := _root_.FundamentalGroup.fromPath
+    (Path.Homotopic.Quotient.mk (γ.symm.trans δ))
+  have htransport :
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm.trans
+          (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ) =
+        MulAut.conj q := by
+    rw [← _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm,
+      ← _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_trans]
+    exact _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj (γ.symm.trans δ)
+  have h : _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath δ =
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).trans (MulAut.conj q) := by
+    ext g
+    rw [MulEquiv.trans_apply, ← htransport, MulEquiv.trans_apply,
+      MulEquiv.symm_apply_apply]
+  ext C
+  simp only [_root_.FundamentalGroup.conjClassesEquivOfPath]
+  rw [h, MulEquiv.conjClassesEquiv_trans, Equiv.trans_apply,
+    MulAut.conjClassesEquiv_apply, TauCeti.mulAut_conj_smul_conjClasses]
+
+/-- In a path-connected space, conjugacy classes of fundamental groups at two points are
+canonically equivalent: the result does not depend on the path chosen by the instance. -/
+noncomputable def _root_.FundamentalGroup.conjClassesEquivOfPathConnected
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (x₀ x₁ : X) :
+    ConjClasses (_root_.FundamentalGroup X x₀) ≃
+      ConjClasses (_root_.FundamentalGroup X x₁) :=
+  (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁).conjClassesEquiv
+
+/-- Canonical transport sends the conjugacy class of a representative to the class of its
+image under Mathlib's canonical basepoint-change equivalence. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_mk
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (x₀ x₁ : X)
+    (g : _root_.FundamentalGroup X x₀) :
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected x₀ x₁ (ConjClasses.mk g) =
+      ConjClasses.mk
+        (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁ g) := by
+  exact MulEquiv.conjClassesEquiv_mk
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x₀ x₁) g
+
+/-- The canonical equivalence of conjugacy classes in a path-connected space agrees with
+transport along any specified path. -/
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] {x₀ x₁ : X}
+    (γ : Path x₀ x₁) :
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected x₀ x₁ =
+      _root_.FundamentalGroup.conjClassesEquivOfPath γ :=
+  _root_.FundamentalGroup.conjClassesEquivOfPath_eq _ _
+
+/-- Canonical conjugacy-class transport from a point to itself is the identity. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_self
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (x : X) :
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected x x =
+      Equiv.refl (ConjClasses (_root_.FundamentalGroup X x)) := by
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq (Path.refl x),
+    _root_.FundamentalGroup.conjClassesEquivOfPath_refl]
+
+/-- Reversing the endpoints of canonical conjugacy-class transport gives its inverse. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_symm
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (x₀ x₁ : X) :
+    (_root_.FundamentalGroup.conjClassesEquivOfPathConnected x₀ x₁).symm =
+      _root_.FundamentalGroup.conjClassesEquivOfPathConnected x₁ x₀ := by
+  let γ := PathConnectedSpace.somePath x₀ x₁
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq γ,
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq γ.symm,
+    _root_.FundamentalGroup.conjClassesEquivOfPath_symm]
+
+/-- Canonical conjugacy-class transport in a path-connected space is compatible with subsequent
+transport along a specified path. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_trans
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (b : X) {x₀ x₁ : X}
+    (γ : Path x₀ x₁) :
+    (_root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₀).trans
+        (_root_.FundamentalGroup.conjClassesEquivOfPath γ) =
+      _root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₁ := by
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq
+      (PathConnectedSpace.somePath b x₀),
+    ← _root_.FundamentalGroup.conjClassesEquivOfPath_trans]
+  exact _root_.FundamentalGroup.conjClassesEquivOfPath_eq _ _
+
+/-- Applying path transport after canonical transport is canonical transport to the new
+basepoint. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (b : X) {x₀ x₁ : X}
+    (γ : Path x₀ x₁) (C : ConjClasses (_root_.FundamentalGroup X b)) :
+    _root_.FundamentalGroup.conjClassesEquivOfPath γ
+        (_root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₀ C) =
+      _root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₁ C := by
+  rw [← Equiv.trans_apply,
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected_trans]
+
+/-- Applying canonical transport twice is canonical transport directly to the final basepoint. -/
+@[simp]
+lemma _root_.FundamentalGroup.conjClassesEquivOfPathConnected_trans_conjClassesEquivOfPathConnected
+    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] (b x₀ x₁ : X)
+    (C : ConjClasses (_root_.FundamentalGroup X b)) :
+    _root_.FundamentalGroup.conjClassesEquivOfPathConnected x₀ x₁
+        (_root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₀ C) =
+      _root_.FundamentalGroup.conjClassesEquivOfPathConnected b x₁ C := by
+  rw [_root_.FundamentalGroup.conjClassesEquivOfPathConnected_eq
+      (PathConnectedSpace.somePath x₀ x₁),
+    _root_.FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected]
 
 variable {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
 

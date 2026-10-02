@@ -154,6 +154,34 @@ theorem existsUnique_monoidHom_mk'_comp_eq {H : Type*} [MulOneClass H]
           QuotientGroup.mk'_apply]
   · exact (DFunLike.congr_fun (hψ N) a).trans (hφ a N).symm
 
+/-- **Limit description of a profinite group, for homomorphisms along a cofinal family.** A family
+of homomorphisms `x i : H →* G ⧸ N i` into the quotients of `G` by open normal subgroups `N i`
+below every open normal subgroup of `G`, compatible along the quotient maps `G ⧸ N i → G ⧸ N j`
+for `N i ≤ N j`, is induced by a unique homomorphism `H →* G`: the cofinal family already
+computes the inverse limit of all the finite quotients. -/
+theorem existsUnique_monoidHom_mk'_comp_eq_of_forall_exists_le {ι : Type*}
+    {N : ι → OpenNormalSubgroup G} (hcof : ∀ U : OpenNormalSubgroup G, ∃ i, N i ≤ U)
+    {H : Type*} [MulOneClass H] (x : ∀ i, H →* G ⧸ (N i).toSubgroup)
+    (hx : ∀ ⦃i j : ι⦄ (hle : N i ≤ N j), (QuotientGroup.mapOfLE hle).comp (x i) = x j) :
+    ∃! φ : H →* G, ∀ i, (QuotientGroup.mk' (N i).toSubgroup).comp φ = x i := by
+  choose k hk using hcof
+  -- Any member of the family below `U` computes the same homomorphism into `G ⧸ U`: two members
+  -- below `U` lie above a common third one, through which both factor.
+  have hext : ∀ (i : ι) (U : OpenNormalSubgroup G) (hle : N i ≤ U),
+      (QuotientGroup.mapOfLE hle).comp (x i) =
+        (QuotientGroup.mapOfLE (hk U)).comp (x (k U)) := by
+    intro i U hle
+    have hl := hk (N i ⊓ N (k U))
+    rw [← hx (hl.trans inf_le_left), ← hx (hl.trans inf_le_right), ← MonoidHom.comp_assoc,
+      ← MonoidHom.comp_assoc, QuotientGroup.mapOfLE_comp, QuotientGroup.mapOfLE_comp]
+  -- Extend `x` to every open normal subgroup and apply the limit description for all of them.
+  obtain ⟨φ, hφ, huniq⟩ := existsUnique_monoidHom_mk'_comp_eq
+    (fun U ↦ (QuotientGroup.mapOfLE (hk U)).comp (x (k U))) fun U V hle ↦ by
+      rw [← hext (k U) V ((hk U).trans hle), ← MonoidHom.comp_assoc, QuotientGroup.mapOfLE_comp]
+  refine ⟨φ, fun i ↦ ?_, fun ψ hψ ↦ huniq ψ fun U ↦ ?_⟩
+  · rw [hφ (N i), ← hext i (N i) le_rfl, QuotientGroup.mapOfLE_refl, MonoidHom.id_comp]
+  · rw [← hψ (k U), ← MonoidHom.comp_assoc, QuotientGroup.mapOfLE_comp_mk']
+
 end LimitDescription
 
 section LimitSubgroup

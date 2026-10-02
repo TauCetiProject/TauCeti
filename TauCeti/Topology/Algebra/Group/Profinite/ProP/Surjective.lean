@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 
 /-!
 # Surjectivity detected by the Frattini quotient
@@ -18,6 +19,13 @@ the images are closed, so these criteria detect surjectivity itself.
 These are the homomorphism forms of Burnside's basis theorem: they check surjectivity of a
 map given on generators by checking its values modulo the Frattini subgroup. The source
 need not be pro-`p`, and the density criteria need no topology on the source.
+
+The same reduction shows that a topological generating family stays one when each member is
+replaced by a conjugate of a `p`-adic power of it by a unit
+(`IsProP.topologicalClosure_closure_range_eq_top_of_isConj_padicPow`): modulo the Frattini
+subgroup conjugation is trivial, and a unit power generates the same closed subgroup as its base.
+This is what makes a continuous endomorphism of a free pro-`p` group of finite rank that sends each
+generator to a conjugate of a unit power of itself an automorphism.
 
 ## References
 
@@ -96,6 +104,30 @@ theorem surjective_iff_surjective_frattiniQuotient (hH : IsProP p H) (f : G →*
   simpa only [denseRange_iff_closure_range, hf.isClosedMap.isClosed_range.closure_eq,
     hfq.isClosedMap.isClosed_range.closure_eq,
     Set.range_eq_univ] using h
+
+/-- **Conjugates of unit powers of topological generators generate.** If `x` topologically
+generates a profinite pro-`p` group `H` and each `y i` is conjugate to the `p`-adic power of `x i`
+by a unit `u i`, then `y` topologically generates `H`. -/
+theorem topologicalClosure_closure_range_eq_top_of_isConj_padicPow (hH : IsProP p H)
+    {ι : Type*} {x y : ι → H} (hx : (Subgroup.closure (Set.range x)).topologicalClosure = ⊤)
+    (u : ι → ℤ_[p]ˣ) (h : ∀ i, IsConj (hH.padicPow (x i) (u i)) (y i)) :
+    (Subgroup.closure (Set.range y)).topologicalClosure = ⊤ := by
+  let q := QuotientGroup.mk' (proPFrattini p H)
+  have hQ : IsProP p (H ⧸ proPFrattini p H) := hH.quotient _
+  rw [topologicallyGenerates_iff_frattiniQuotient hH] at hx ⊢
+  refine top_unique (hx ▸ Subgroup.topologicalClosure_minimal _ ?_
+    (Subgroup.isClosed_topologicalClosure _))
+  rw [Subgroup.closure_le, ← Set.range_comp]
+  rintro _ ⟨i, rfl⟩
+  -- In the abelian Frattini quotient, the class of `y i` is the unit power of the class of `x i`.
+  have hyi : q (y i) = hQ.padicPow (q (x i)) (u i) :=
+    (isConj_iff_eq.mp (q.map_isConj (h i))).symm.trans (hH.mk_padicPow_quotient _ (x i) (u i))
+  have hmem : q (x i) ∈ (Subgroup.closure {q (y i)}).topologicalClosure := by
+    rw [hyi, hQ.topologicalClosure_closure_padicPow]
+    exact Subgroup.le_topologicalClosure _ (Subgroup.subset_closure rfl)
+  refine Subgroup.topologicalClosure_mono (Subgroup.closure_mono ?_) hmem
+  rw [Set.singleton_subset_iff, ← Set.range_comp]
+  exact ⟨i, rfl⟩
 
 end IsProP
 

@@ -34,7 +34,7 @@ becomes **nilpotent** in it.
 * `TauCeti.IsAdmissibleIdeal.finiteDimensional_quotient`: **a bound quiver algebra is
   finite-dimensional**, over a quiver with finitely many vertices and finitely many arrows. No
   acyclicity is needed, and the one-loop quiver shows that this is a genuine gain: its path
-  algebra `k[X]` is infinite-dimensional (`TauCeti.not_finiteDimensional_pathAlgebra_oneLoop`)
+  algebra `k[X]` is infinite-dimensional (`TauCeti.not_module_finite_pathAlgebra_oneLoop`)
   while the quotients `k[X] ⧸ (Xⁿ)` by the admissible ideals of
   `TauCeti.isAdmissibleIdeal_arrowIdeal_pow` are not.
 * `TauCeti.IsAdmissibleIdeal.isNilpotent_mk_of_mem_arrowIdeal`: the image of an element of

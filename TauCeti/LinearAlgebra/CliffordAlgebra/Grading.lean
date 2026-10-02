@@ -22,8 +22,8 @@ In the other direction, the ordered product `(l.map (ι Q)).prod` of a list of v
 spelling `TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement.lean` uses for the volume element —
 is homogeneous of degree `l.length`, which is Mathlib's
 `SetLike.list_prod_map_mem_graded` for the graded monoid `CliffordAlgebra.evenOdd Q` with the
-degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. The case of odd length, where
-the product is odd, is the one that matters downstream.
+degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. Reading it off by the parity of
+the length is what matters downstream.
 
 The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
 indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basis vector is nonzero
@@ -38,11 +38,15 @@ belongs to the grading API independently of any spin representation.
 * `CliffordAlgebra.ι_range_pow_le_evenOdd`: the `n`-th power of the range of `ι` lies in the
   graded piece of degree `n`.
 * `CliffordAlgebra.prod_map_ι_mem_evenOdd`: an ordered product of `n` generators is homogeneous
-  of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` reads that off in
-  the odd case.
+  of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_zero_of_even_length` and
+  `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` read that off in the even and the odd
+  case.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
+* `Module.Basis.mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero`: an exterior element is
+  homogeneous of a given parity exactly when its coordinates vanish at every index set of the
+  other parity.
 -/
 
 public section
@@ -81,6 +85,13 @@ theorem prod_map_ι_mem_evenOdd (l : List M) :
     (l.map (ι Q)).prod ∈ evenOdd Q (l.length : ZMod 2) := by
   simpa using SetLike.list_prod_map_mem_graded (A := evenOdd Q) l (fun _ => (1 : ZMod 2)) (ι Q)
     fun j _ => ι_mem_evenOdd_one Q j
+
+/-- **The ordered product of an even number of vectors is even.** -/
+theorem prod_map_ι_mem_evenOdd_zero_of_even_length {l : List M} (hlen : Even l.length) :
+    (l.map (ι Q)).prod ∈ evenOdd Q 0 := by
+  have h : (l.length : ZMod 2) = 0 := by
+    rw [← ZMod.natCast_mod l.length 2, Nat.even_iff.mp hlen, Nat.cast_zero]
+  exact h ▸ prod_map_ι_mem_evenOdd l
 
 /-- **The ordered product of an odd number of vectors is odd.** -/
 theorem prod_map_ι_mem_evenOdd_one_of_odd_length {l : List M} (hlen : Odd l.length) :
@@ -128,5 +139,45 @@ theorem exteriorAlgebra_mem_evenOdd_iff [Nontrivial R] (b : Module.Basis I R M) 
   rw [(CliffordAlgebra.evenOdd_isCompl (Q := (0 : QuadraticForm R M))).inf_eq_bot,
     Submodule.mem_bot] at hbot
   exact b.ExteriorAlgebra.ne_zero s hbot
+
+/-- **An exterior element is homogeneous of parity `i` exactly when it has no coordinates of the
+other parity**: its coordinate in the exterior coordinate basis vanishes at every index set whose
+cardinality has the other parity. -/
+theorem mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {i : ZMod 2}
+    {x : _root_.ExteriorAlgebra R M} :
+    x ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i ↔
+      ∀ t : Finset I, (t.card : ZMod 2) ≠ i → b.ExteriorAlgebra.repr x t = 0 := by
+  classical
+  have hsupp : ∀ (j : ZMod 2) (y : _root_.ExteriorAlgebra R M),
+      (∀ t : Finset I, (t.card : ZMod 2) ≠ j → b.ExteriorAlgebra.repr y t = 0) →
+        y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) j := by
+    intro j y hy
+    rw [← b.ExteriorAlgebra.linearCombination_repr y, Finsupp.linearCombination_apply]
+    refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
+    have hs' : (s.card : ZMod 2) = j := by_contra fun h ↦ Finsupp.mem_support_iff.1 hs (hy s h)
+    exact hs' ▸ b.exteriorAlgebra_mem_evenOdd_card s
+  refine ⟨fun hx t ht ↦ ?_, hsupp i x⟩
+  -- `y` is the part of `x` of the parity opposite to `i`; it is homogeneous of both parities.
+  let y := b.ExteriorAlgebra.repr.symm
+    ((b.ExteriorAlgebra.repr x).filter fun s ↦ (s.card : ZMod 2) ≠ i)
+  have hrepr (s : Finset I) : b.ExteriorAlgebra.repr y s =
+      if (s.card : ZMod 2) ≠ i then b.ExteriorAlgebra.repr x s else 0 := by
+    simp only [y, LinearEquiv.apply_symm_apply, Finsupp.filter_apply]
+  have hflip : ∀ c d : ZMod 2, c ≠ d + 1 → c = d := by decide
+  have hy₁ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1) :=
+    hsupp _ y fun s hs ↦ by rw [hrepr, ite_eq_right (not_not.2 (hflip _ _ hs))]
+  have hy₀ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i := by
+    have hrest : x - y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i :=
+      hsupp i _ fun s hs ↦ by rw [map_sub, Finsupp.sub_apply, hrepr, ite_eq_left hs, sub_self]
+    simpa using Submodule.sub_mem _ hx hrest
+  have hdisj : Disjoint (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i)
+      (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1)) := by
+    rcases (by decide : ∀ c : ZMod 2, c = 0 ∨ c = 1) i with rfl | rfl
+    · exact (CliffordAlgebra.evenOdd_isCompl (0 : QuadraticForm R M)).disjoint
+    · exact (CliffordAlgebra.evenOdd_isCompl (0 : QuadraticForm R M)).disjoint.symm
+  have hy : y = 0 := (Submodule.disjoint_def.1 hdisj) y hy₀ hy₁
+  have hcoord := hrepr t
+  rw [hy, ite_eq_left ht, map_zero, Finsupp.coe_zero, Pi.zero_apply] at hcoord
+  exact hcoord.symm
 
 end Module.Basis

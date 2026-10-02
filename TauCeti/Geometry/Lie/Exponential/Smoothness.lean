@@ -166,20 +166,12 @@ theorem contMDiffAt_mulInvariantExp_modelSpace_zero
       have h := hFlip (x := (p, y)) (y := (p, z))
         (hPS ⟨hp, hy⟩) (hPS ⟨hp, hz⟩)
       simpa only [Prod.edist_eq, edist_self, zero_max] using h
-    obtain ⟨ε, hε, hεS⟩ := Metric.mem_nhds_iff.mp hS
+    obtain ⟨U, hUS, hUopen, hUcenter⟩ := mem_nhds_iff.mp hS
     have hγS : ∀ᶠ p in 𝓝 (0 : E), ∀ t : Set.Icc (0 : ℝ) 1, γ p t ∈ S := by
-      have hnear := hγsmooth.continuousAt
-        -- The path-space neighborhood is the sup-norm ball around the constant center path.
-        (show Metric.ball (ContinuousMap.const _ center) ε ∈ 𝓝 (γ 0) by
-          rw [hγzero]
-          exact Metric.ball_mem_nhds _ hε)
-      filter_upwards [hnear] with p hp
-      intro t
-      apply hεS
-      rw [Metric.mem_ball]
-      simpa only [hγzero, ContinuousMap.const_apply] using
-        (ContinuousMap.dist_apply_le_dist (f := γ p)
-          (g := ContinuousMap.const _ center) t).trans_lt hp
+      filter_upwards [hγsmooth.continuousAt.eventually
+        (ContinuousMap.eventually_mapsTo isCompact_univ hUopen fun t _ ↦ by
+          simpa [hγzero] using hUcenter)] with p hp t
+      exact hUS (hp (Set.mem_univ t))
     have hexpCoord : ContinuousAt
         (fun v : E => extChartAt I (1 : G)
           (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) 0 := by

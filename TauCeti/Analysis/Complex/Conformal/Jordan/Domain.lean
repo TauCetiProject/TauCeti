@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.BoundaryCorrespondence
+public import TauCeti.Topology.FilledHull
 public import TauCeti.Topology.JordanCurve.Basic
 public import TauCeti.Topology.UniformlyLocallyConnected
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
+import TauCeti.Analysis.Complex.PlaneSeparation.LocalSeparation
 
 /-!
 # Jordan domains, and the domains a conformal map takes onto a disc
@@ -52,6 +54,9 @@ are.
   frontier statement `TauCeti.isJordanCurve_frontier_of_convex` that generalises the circle.
 * `TauCeti.isJordanDomain_ball` — its special case at a disc of positive radius, the basic example
   and the one Carathéodory's theorem compares every other Jordan domain to.
+* `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff_of_locally_eq_line` — the inside of a
+  Jordan curve that is straight near one of its points, such as a simple polygon, is a Jordan
+  domain.
 * `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` — the boundary of a Jordan domain is
   locally connected, which is the hypothesis the *hard* direction of the L5 milestone runs on:
   Carathéodory's continuity theorem produces a continuous extension of the Riemann map exactly for
@@ -141,6 +146,24 @@ the circle of the same centre and radius. This is the model Jordan domain, and t
 Riemann map. -/
 theorem isJordanDomain_ball (c : ℂ) (hr : 0 < r) : IsJordanDomain (ball c r) :=
   isJordanDomain_of_convex (convex_ball c r) isOpen_ball (nonempty_ball.mpr hr) isBounded_ball
+
+/-- **The inside of a Jordan curve with a straight piece is a Jordan domain.** If a Jordan curve
+`C` agrees with a line in a ball about one of its points — as a polygon does at an interior point
+of one of its sides — then its filled hull minus `C`, the bounded complementary component, is a
+Jordan domain with frontier `C`. -/
+theorem IsJordanCurve.isJordanDomain_filledHull_sdiff_of_locally_eq_line {C : Set ℂ}
+    (hC : IsJordanCurve C) {p v : ℂ} (hr : 0 < r)
+    (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) :
+    IsJordanDomain (filledHull C \ C) := by
+  obtain ⟨x, hx⟩ := hC.nonempty_filledHull_sdiff_of_locally_eq_line hr hline
+  have hU := hC.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line hr v hline hx
+  refine ⟨?_, ?_, (isBounded_filledHull.mpr hC.isCompact.isBounded).subset sdiff_subset, ?_⟩
+  · rw [hU]
+    exact hC.isClosed.isOpen_compl.connectedComponentIn
+  · rw [hU]
+    exact isConnected_connectedComponentIn_iff.mpr hx.2
+  · rw [hC.frontier_filledHull_sdiff_of_locally_eq_line hr hline]
+    exact hC
 
 /-! ## Elementary consequences of being a Jordan domain -/
 

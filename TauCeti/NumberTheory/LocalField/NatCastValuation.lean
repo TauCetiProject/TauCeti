@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
@@ -141,8 +142,7 @@ variable (K) in
 exactly when the residue characteristic of `K` does not divide `n`. -/
 theorem natCastValuation_eq_zero_iff_not_dvd (n : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K n hn = 0 ↔ ¬ ringChar 𝓀[K] ∣ n := by
-  rw [natCastValuation_eq_zero_iff, ← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast,
-    ne_eq, ← ringChar.spec]
+  rw [natCastValuation_eq_zero_iff, IsLocalRing.isUnit_natCast_iff_not_dvd]
 
 variable (K) in
 /-- For a prime `p`, the normalized valuation of `p` is nonzero exactly when `p` is the residue

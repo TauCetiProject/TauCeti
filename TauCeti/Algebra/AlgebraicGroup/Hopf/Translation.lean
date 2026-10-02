@@ -339,3 +339,21 @@ theorem comap_rightTranslationAlgEquiv_augmentationPoint
 end Field
 
 end TauCeti.HopfAlgebra
+
+namespace BialgHom
+
+open TauCeti WithConv
+
+variable {R H K : Type*} [CommRing R] [CommRing H] [CommRing K]
+  [HopfAlgebra R H] [HopfAlgebra R K]
+
+/-- A homomorphism of affine groups commutes with right translation by a point and its image. -/
+theorem comp_rightTranslationAlgHom (f : H →ₐc[R] K) (g : WithConv (K →ₐ[R] R)) :
+    f.toAlgHom.comp (TauCeti.HopfAlgebra.rightTranslationAlgHom (AlgHom.mapDomain f g)) =
+      (TauCeti.HopfAlgebra.rightTranslationAlgHom g).comp f.toAlgHom := by
+  simp only [TauCeti.HopfAlgebra.rightTranslationAlgHom,
+    _root_.AlgHom.comp_convMul_distrib, _root_.AlgHom.convMul_comp_bialgHom_distrib,
+    ofConv_toConv, _root_.AlgHom.comp_id, _root_.AlgHom.id_comp,
+    AlgHom.mapDomain_apply, ← _root_.AlgHom.comp_assoc, Algebra.comp_ofId]
+
+end BialgHom

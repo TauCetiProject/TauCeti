@@ -40,7 +40,7 @@ quasi-isomorphisms are quasi-isomorphisms
 (`HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`), `stabilizeXMap` is a
 quasi-isomorphism as soon as `H_I^N` is (`quasiIso_stabilizeXMap`). This reduces the
 stabilization invariance of `GH⁻` for this stabilization to the statement that `H_I^N` is a
-quasi-isomorphism, which is not proved here.
+quasi-isomorphism, which is proved in `TauCeti.KnotTheory.Grid.Stabilization.Comparison`.
 
 ## Main definitions
 
@@ -145,7 +145,7 @@ noncomputable def stabilizeXMap :
 /-- **Stabilization invariance reduces to `H_I^N`.** The chain map `GC⁻(G') ⟶ GC⁻(G)` of an
 `X`-stabilization is a quasi-isomorphism if the component `H_I^N` of the `X`-marking homotopy
 from off-center states to center states is. -/
-theorem quasiIso_stabilizeXMap [QuasiIso (G.stabilizeXOffCenterToCenterHom s R)] :
+instance quasiIso_stabilizeXMap [QuasiIso (G.stabilizeXOffCenterToCenterHom s R)] :
     QuasiIso (G.stabilizeXMap s R) := by
   have := G.quasiIso_stabilizeXConeMap s R
   rw [stabilizeXMap]

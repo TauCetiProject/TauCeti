@@ -449,7 +449,7 @@ noncomputable def IsStrict.toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · rw [AA.m_zero, BB.m_zero, LinearMap.compMultilinearMap_zero,
         MultilinearMap.zero_compLinearMap]
-    apply AA.grading.multilinearMap_ext
+    apply InternalGrading.multilinearMap_ext (fun _ ↦ AA.grading)
     intro d x hx
     let e : ℕ → ℤ := fun i ↦ if h : i < n then d ⟨i, h⟩ else 0
     let y : ℕ → A := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0

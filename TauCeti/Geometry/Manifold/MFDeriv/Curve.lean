@@ -142,6 +142,21 @@ vector. -/
 theorem curveVelocity_apply : curveVelocity I γ t = mfderiv 𝓘(𝕜, 𝕜) I γ t (1 : 𝕜) := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_apply, mfderivWithin_univ]
 
+/-- The velocity of the image of a curve under a differentiable map is the differential of the
+map applied to the velocity of the curve. The derivative within the parameter set is uniquely
+determined at `t`. -/
+theorem curveVelocityWithin_map
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {f : M → N}
+    (hf : MDifferentiableAt I J f (γ t))
+    (hs : UniqueDiffWithinAt 𝕜 s t)
+    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t) :
+    curveVelocityWithin J (f ∘ γ) s t =
+      mfderiv I J f (γ t) (curveVelocityWithin I γ s t) := by
+  rw [curveVelocityWithin_apply, curveVelocityWithin_apply]
+  rw [mfderiv_comp_mfderivWithin t hf hγ hs.uniqueMDiffWithinAt]
+  rfl
+
 /-- Evaluating the `smulRight` presentation of a velocity at the unit tangent vector returns that
 velocity.  The tangent space of the scalar model is definitionally `𝕜`, but its instances block
 rewriting by `ContinuousLinearMap.smulRight_apply` until that identification is exposed, which is

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Face
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Separation
 public import TauCeti.Geometry.Toric.Analytic.Cone.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Basic
 public import TauCeti.Topology.ZeroPattern
@@ -40,6 +40,8 @@ single character of the dual semigroup.
 * `TauCeti.Toric.mem_affineConeOrbit_iff_coneChartEquiv`: its coordinate zero-pattern.
 * `TauCeti.Toric.closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero`: the coordinate
   form of its closure.
+* `TauCeti.Toric.closure_affineConeOrbit_toricRay_eq_setOf_coneChartEquiv_fst_eq_zero`: the
+  closure of the orbit of a ray is a coordinate hyperplane.
 * `TauCeti.Toric.isLocallyClosed_affineConeOrbit`: every affine-cone orbit is locally closed.
 * `TauCeti.Toric.closure_affineConeOrbit`: the intrinsic union formula for its closure.
 * `TauCeti.Toric.affineConeOrbit_subset_closure_iff`: face inclusion is the reverse closure order.
@@ -232,6 +234,21 @@ theorem closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero
         (coneChartEquiv hi hσ.toIsToricCone hb x).1 ρ = 0} := by
       rw [closure_zeroPatternSet]
       rfl
+
+/-- The closure of the orbit of a ray is the coordinate hyperplane on which the coordinate of
+that ray vanishes. -/
+theorem closure_affineConeOrbit_toricRay_eq_setOf_coneChartEquiv_fst_eq_zero
+    (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
+    {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (ρ : ToricRay σ)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
+    let _ := affinePointTopology g
+    closure (affineConeOrbit hi ρ.1) =
+      {x | (coneChartEquiv hi hσ.toIsToricCone hb x).1 ρ = 0} := by
+  dsimp only
+  rw [closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero hi hσ hb ρ.1 g,
+    hσ.faceOrderIso_toricRay hi ρ]
+  simp
 
 /-- A point of the orbit of `G` lies in the closure of the orbit of `F` exactly when `F` is a
 face of `G`. -/
@@ -730,7 +747,7 @@ theorem mem_stabilizer_distinguishedPoint_iff (hi : IsIntegralLattice i) (hσ : 
       simp only [ambient_smul_apply_single, distinguishedPoint_apply_single, ite_eq_left hs,
         mul_one] at h
       exact Units.ext h
-    obtain ⟨u, hu, hFu⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi F.isFaceOf
+    obtain ⟨u, hu, hFu⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi F.isFaceOf
     have huF (y : V) (hy : y ∈ F) : hi.realCharacter u y = 0 := by
       have hy' : y ∈ σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter u)) := by
         rw [hFu]

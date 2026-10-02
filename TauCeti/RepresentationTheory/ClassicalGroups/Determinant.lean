@@ -20,6 +20,11 @@ polynomial representations.
 * `TauCeti.detPowerRep` is the representation on the scalar module with action by `det(g)^m`.
 * `TauCeti.detRep` is the determinant representation, the case `m = 1`.
 
+## Main results
+
+* `TauCeti.detPowerRep_def` is its defining equation, as the one-dimensional representation of the
+  linear character `det ^ m`.
+
 ## References
 
 * [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md)
@@ -43,6 +48,14 @@ variable [CommRing k]
 representation carrying the linear character `det ^ m`. -/
 def detPowerRep (m : ℤ) : Representation k (GL (Fin n) k) k :=
   Representation.ofLinearCharacter ((Matrix.GeneralLinearGroup.det : GL (Fin n) k →* kˣ) ^ m)
+
+/-- The defining equation of `TauCeti.detPowerRep`: it is the one-dimensional representation of
+the linear character `det ^ m`.  The body is not exposed, so this is how a downstream module
+applies the general theory of `Representation.ofLinearCharacter` and of its twists to it. -/
+theorem detPowerRep_def (m : ℤ) :
+    detPowerRep k n m =
+      Representation.ofLinearCharacter ((Matrix.GeneralLinearGroup.det : GL (Fin n) k →* kˣ) ^ m) :=
+  (rfl)
 
 /-- The determinant representation of `GL n k`. -/
 abbrev detRep : Representation k (GL (Fin n) k) k := detPowerRep k n 1

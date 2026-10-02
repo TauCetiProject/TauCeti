@@ -56,11 +56,9 @@ identification.
 * `TauCeti.Manifold.tangentMap_subtype_val`: the tangent map of the inclusion under this
   equivalence.
 * `TauCeti.Manifold.instT2SpaceTangentBundleModelSpace`: a model space has a Hausdorff tangent
-  bundle.
-* `TauCeti.Manifold.instT2SpaceTangentBundleOpen`: Hausdorffness of the tangent bundle passes to
-  an open submanifold.
-  Both Hausdorffness theorems are instances in the `TauCeti` scope; use `open scoped TauCeti`
-  to supply the standing `T2Space (TangentBundle I M)` hypothesis of the geodesic API.
+  bundle. It is an instance in the `TauCeti` scope, for model spaces `H` whose Hausdorffness is
+  not already an instance; over a Hausdorff manifold the tangent bundle is Hausdorff by the general
+  instance `TauCeti.FiberBundle.t2Space_totalSpace`.
 * `TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq`: near a point, the
   inverse tangent-bundle trivializations agree through this equivalence.
 -/
@@ -599,29 +597,6 @@ theorem instT2SpaceTangentBundleModelSpace :
   exact (tangentBundleModelSpaceHomeomorph I).symm.t2Space
 
 scoped[TauCeti] attribute [instance] Manifold.instT2SpaceTangentBundleModelSpace
-
-/-- The tangent bundle of an open submanifold is Hausdorff when the ambient tangent bundle is. -/
-theorem instT2SpaceTangentBundleOpen [IsManifold I 1 M]
-    [T2Space (TangentBundle I M)] (U : Opens M) : T2Space (TangentBundle I U) := by
-  apply T2Space.of_injective_continuous
-    (f := tangentMap I I (Subtype.val : U → M))
-  · intro a b hab
-    cases a with
-    | mk x v =>
-      cases b with
-      | mk y w =>
-        have hxy : x = y := Subtype.val_injective (by
-          simpa only [tangentMap_proj] using congrArg TotalSpace.proj hab)
-        subst y
-        simp only [tangentMap_subtype_val] at hab
-        have hmap : (tangentSpaceOpenEquiv (I := I) x) v =
-            (tangentSpaceOpenEquiv (I := I) x) w := by
-          simpa only [TotalSpace.mk_inj] using hab
-        exact congrArg (TotalSpace.mk x) ((tangentSpaceOpenEquiv (I := I) x).injective hmap)
-  · have hc : ContMDiff I I 1 (Subtype.val : U → M) := contMDiff_subtype_val
-    exact hc.continuous_tangentMap (by norm_num)
-
-scoped[TauCeti] attribute [instance] Manifold.instT2SpaceTangentBundleOpen
 
 /-- Near a point of an open submanifold, its inverse tangent-bundle trivialization agrees with the
 ambient inverse trivialization under the canonical tangent-space identification. -/

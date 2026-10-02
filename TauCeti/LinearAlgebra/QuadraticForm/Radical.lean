@@ -24,6 +24,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.nondegenerate_neg`: negating a quadratic map does not change its nondegeneracy.
+* `QuadraticMap.radical_smul`, `QuadraticMap.nondegenerate_smul_iff`: scaling a quadratic map by a
+  unit does not change its radical or its nondegeneracy.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
@@ -100,6 +102,27 @@ theorem nondegenerate_neg (Q : QuadraticMap R M P) :
     refine ⟨by simpa only [radical_neg] using h, hker.symm ▸ hrank⟩
   · rintro ⟨h, hrank⟩
     refine ⟨by simpa only [radical_neg] using h, hker ▸ hrank⟩
+
+/-- Scaling a quadratic map by a unit does not change its radical. -/
+@[simp]
+theorem radical_smul {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) :
+    (a • Q).radical = Q.radical := by
+  ext x
+  simp only [mem_radical_iff', smul_apply, ha.smul_eq_zero, ha.smul_left_cancel]
+
+/-- Scaling a quadratic map by a unit does not change its nondegeneracy. -/
+@[simp]
+theorem nondegenerate_smul_iff {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) :
+    (a • Q).Nondegenerate ↔ Q.Nondegenerate := by
+  have hker : (a • Q).polarBilin.ker = Q.polarBilin.ker := by
+    ext x
+    simp only [LinearMap.mem_ker, LinearMap.ext_iff, polarBilin_apply_apply, LinearMap.zero_apply,
+      FunLike.coe_smul, polar_smul, ha.smul_eq_zero]
+  constructor
+  · rintro ⟨h, hrank⟩
+    exact ⟨radical_smul ha Q ▸ h, hker ▸ hrank⟩
+  · rintro ⟨h, hrank⟩
+    exact ⟨(radical_smul ha Q).symm ▸ h, hker.symm ▸ hrank⟩
 
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
 
@@ -347,5 +370,10 @@ theorem nondegenerate_of_span_singleton_eq_top {Q : QuadraticForm R V} {v : V}
   rw [QuadraticMap.polar_smul_left, QuadraticMap.polar_self] at hpolar
   have hc : c = 0 := by simpa [(isUnit_of_invertible (2 : R)).ne_zero, hv] using hpolar
   rw [hc, zero_smul]
+
+/-- The form `x ↦ a x²` on `R` is nondegenerate for `a ≠ 0`. -/
+theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
+    (a • QuadraticMap.sq : QuadraticForm R R).Nondegenerate :=
+  nondegenerate_of_span_singleton_eq_top (v := 1) (by simp) (by simpa using ha)
 
 end TauCeti

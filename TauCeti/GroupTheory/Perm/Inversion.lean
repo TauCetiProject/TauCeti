@@ -19,6 +19,8 @@ finite set of inversions, which is the form met by combinatorial permutation cou
 
 * `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation of `Fin n` is
   `(-1)` to the number of its inversions.
+* `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
+  first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
 
 This result was first proved on the earlier Tau Ceti split branch at commit `05c2722248` and is
 adapted here to current `main`.
@@ -62,5 +64,49 @@ theorem sign_eq_neg_one_pow_card_inversion (σ : Equiv.Perm (Fin n)) :
   rw [σ.sign_eq_prod_prod_Ioi, hprod, Finset.prod_ite]
   simp only [Finset.prod_const_one, Finset.prod_const, one_mul]
   rw [hinv]
+
+private lemma card_inversion_finAddFlip_trans_finCongr (m n : ℕ) :
+    (Finset.univ.filter fun p : Fin (m + n) × Fin (m + n) =>
+      p.1 < p.2 ∧
+        (finAddFlip.trans (finCongr (add_comm n m))) p.2 <
+          (finAddFlip.trans (finCongr (add_comm n m))) p.1).card = m * n := by
+  classical
+  let e := Equiv.prodCongr
+    (finSumFinEquiv : Fin m ⊕ Fin n ≃ Fin (m + n))
+    (finSumFinEquiv : Fin m ⊕ Fin n ≃ Fin (m + n))
+  let f : Fin m × Fin n ↪ (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) :=
+    ⟨Prod.map Sum.inl Sum.inr, Sum.inl_injective.prodMap Sum.inr_injective⟩
+  calc
+    _ = ((Finset.univ.filter fun p : (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) =>
+        (e p).1 < (e p).2 ∧
+          (finAddFlip.trans (finCongr (add_comm n m))) (e p).2 <
+            (finAddFlip.trans (finCongr (add_comm n m))) (e p).1).map e.toEmbedding).card := by
+      congr 1
+      ext p
+      simp [e]
+    _ = m * n := by
+      rw [Finset.card_map]
+      have hfilter :
+          (Finset.univ.filter fun p : (Fin m ⊕ Fin n) × (Fin m ⊕ Fin n) =>
+            (e p).1 < (e p).2 ∧
+              (finAddFlip.trans (finCongr (add_comm n m))) (e p).2 <
+                (finAddFlip.trans (finCongr (add_comm n m))) (e p).1) =
+            Finset.univ.map f := by
+        ext ⟨a, b⟩
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map, e, f,
+          Equiv.prodCongr_apply, Function.Embedding.coeFn_mk, Prod.map_apply, Prod.exists,
+          Prod.mk.injEq]
+        rcases a with a | a <;> rcases b with b | b <;>
+          simp [finAddFlip, Fin.ext_iff, ← Fin.val_fin_lt, Fin.val_castAdd, Fin.val_natAdd,
+            Fin.val_addNat] <;> omega
+      rw [hfilter, Finset.card_map, Finset.card_univ, Fintype.card_prod,
+        Fintype.card_fin, Fintype.card_fin]
+
+/-- The block swap of `Fin (m + n)`, exchanging the first `m` indices with the last `n` while
+preserving the order within each block, has sign `(-1) ^ (m * n)`: its inversions are exactly the
+`m * n` pairs taken from different blocks. -/
+theorem sign_finAddFlip_trans_finCongr (m n : ℕ) :
+    Equiv.Perm.sign (finAddFlip.trans (finCongr (add_comm n m))) = (-1) ^ (m * n) := by
+  rw [sign_eq_neg_one_pow_card_inversion, card_inversion_finAddFlip_trans_finCongr]
 
 end TauCeti

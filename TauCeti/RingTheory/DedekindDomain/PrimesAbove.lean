@@ -33,6 +33,8 @@ The Selmer group of the fraction field of `B` relative to these primes is
 
 * `IsDedekindDomain.HeightOneSpectrum.liesOver_under`: the `LiesOver` instance relating a prime
   to its contraction, which the `under`-indexed results downstream need.
+* `IsDedekindDomain.HeightOneSpectrum.under_under`: contraction through a tower agrees with
+  direct contraction.
 * `IsDedekindDomain.HeightOneSpectrum.mem_primesAbove_iff`: `w` lies above `S` iff
   `HeightOneSpectrum.under R w ∈ S`.
 * `IsDedekindDomain.HeightOneSpectrum.primesAbove_finite`: finitely many primes lie above a
@@ -76,6 +78,23 @@ stated at `under R w` and consuming a `LiesOver` hypothesis, such as
 instance liesOver_under (w : HeightOneSpectrum B) :
     w.asIdeal.LiesOver (under R w).asIdeal :=
   ⟨rfl⟩
+
+section UnderTower
+
+variable {A C : Type*} [CommRing A] [IsDomain A] [CommRing C] [IsDomain C]
+  [Algebra A R] [Algebra R C] [Algebra A C] [IsScalarTower A R C]
+  [Algebra.IsIntegral A R] [Algebra.IsIntegral R C]
+
+/-- Contracting a height-one prime through an intermediate integral domain agrees with direct
+contraction. -/
+@[simp]
+theorem under_under (w : HeightOneSpectrum C) :
+    letI : Algebra.IsIntegral A C := Algebra.IsIntegral.trans R
+    (w.under R).under A = w.under A := by
+  apply asIdeal_injective
+  simp only [under_asIdeal, Ideal.under_under]
+
+end UnderTower
 
 /-- The primes of `B` lying above a set `S` of primes of `R`: the preimage of `S` under the
 contraction `HeightOneSpectrum.under R`. -/

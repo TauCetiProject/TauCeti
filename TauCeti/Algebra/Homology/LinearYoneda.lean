@@ -16,7 +16,9 @@ For a chain complex `X` in a `k`-linear abelian category `C` and an object `Y : 
 module of morphisms `X.X i ⟶ Y`, with differential given by precomposition with the differential
 of `X`.  This file makes the construction a contravariant functor of `X`, shows that it takes a
 chain homotopy to a cochain homotopy, and shows that it takes a short exact sequence of chain
-complexes which is split in each degree to a short exact sequence of cochain complexes.
+complexes which is split in each degree to a short exact sequence of cochain complexes.  It also
+records elementwise descriptions of the differential, cocycles, coboundaries and cohomology classes
+of `Hom(X, Y)`, and of the maps between them induced by chain maps.
 
 The functor `Hom(-, Y)` is only left exact, so the splitting hypothesis cannot be dropped.  It
 holds for the singular chains of a pair of spaces, which is how the long exact sequence in
@@ -101,6 +103,54 @@ lemma shortExact_map_linearYonedaFunctor {S : ShortComplex (ChainComplex C α)}
   have hi := hS.map_of_exact (HomologicalComplex.eval C _ i)
   exact ((ShortComplex.Splitting.ofExactOfRetraction _ hi.exact (retraction (S.f.f i))
     (IsSplitMono.id (S.f.f i)) hi.epi_g).op.map ((linearYoneda k C).obj Y)).shortExact
+
+section Elementwise
+
+variable {k Y} {X : ChainComplex C α}
+
+/-- The differential of `Hom(X, Y)` is precomposition with the differential of `X`. -/
+lemma linearYonedaObj_d_apply (i j : α) (g : (X.linearYonedaObj k Y).X i) :
+    (X.linearYonedaObj k Y).d i j g = X.d j i ≫ g :=
+  rfl
+
+/-- A cocycle `a` of `Hom(X, Y)` vanishes on boundaries: `a ∘ d` is the zero of the module
+`(X.linearYonedaObj k Y).X j`. -/
+lemma d_comp_linearYonedaObj_iCycles (i j : α) (a : (X.linearYonedaObj k Y).cycles i) :
+    X.d j i ≫ (X.linearYonedaObj k Y).iCycles i a = (0 : (X.linearYonedaObj k Y).X j) :=
+  ConcreteCategory.congr_hom ((X.linearYonedaObj k Y).iCycles_d i j) a
+
+/-- The coboundary of a cochain `g` of `Hom(X, Y)` is `g ∘ d`. -/
+lemma linearYonedaObj_iCycles_toCycles_apply (i j : α) (g : (X.linearYonedaObj k Y).X i) :
+    (X.linearYonedaObj k Y).iCycles j ((X.linearYonedaObj k Y).toCycles i j g) = X.d j i ≫ g :=
+  ConcreteCategory.congr_hom ((X.linearYonedaObj k Y).toCycles_i i j) g
+
+/-- A coboundary of `Hom(X, Y)` has zero cohomology class. -/
+lemma linearYonedaObj_homologyπ_toCycles_apply (i j : α) (g : (X.linearYonedaObj k Y).X i) :
+    (X.linearYonedaObj k Y).homologyπ j ((X.linearYonedaObj k Y).toCycles i j g) = 0 :=
+  ConcreteCategory.congr_hom ((X.linearYonedaObj k Y).toCycles_comp_homologyπ i j) g
+
+/-- The map on cohomology `H(Hom(X, Y)) ⟶ H(Hom(X', Y))` induced by a chain map `f : X' ⟶ X`
+sends the class of a cocycle to the class of its image in the cocycles of `Hom(X', Y)`. -/
+lemma homologyMap_linearYonedaFunctor_map_homologyπ_apply {X' : ChainComplex C α} (f : X' ⟶ X)
+    (i : α) (a : (X.linearYonedaObj k Y).cycles i) :
+    HomologicalComplex.homologyMap (K := X.linearYonedaObj k Y) (L := X'.linearYonedaObj k Y)
+        ((linearYonedaFunctor k Y).map f.op) i ((X.linearYonedaObj k Y).homologyπ i a) =
+      (X'.linearYonedaObj k Y).homologyπ i
+        (HomologicalComplex.cyclesMap (K := X.linearYonedaObj k Y) (L := X'.linearYonedaObj k Y)
+          ((linearYonedaFunctor k Y).map f.op) i a) :=
+  ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ i) a
+
+/-- The map on cocycles `Z(Hom(X, Y)) ⟶ Z(Hom(X', Y))` induced by a chain map `f : X' ⟶ X` is
+precomposition with `f`. -/
+lemma iCycles_cyclesMap_linearYonedaFunctor_map_apply {X' : ChainComplex C α} (f : X' ⟶ X)
+    (i : α) (a : (X.linearYonedaObj k Y).cycles i) :
+    (X'.linearYonedaObj k Y).iCycles i
+        (HomologicalComplex.cyclesMap (K := X.linearYonedaObj k Y) (L := X'.linearYonedaObj k Y)
+          ((linearYonedaFunctor k Y).map f.op) i a) =
+      f.f i ≫ (X.linearYonedaObj k Y).iCycles i a :=
+  ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a
+
+end Elementwise
 
 end Abelian
 

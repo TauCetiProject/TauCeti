@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.ArtinCoefficient
 public import TauCeti.GroupTheory.Elementary
 public import TauCeti.RepresentationTheory.Induction.Spanning
-import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 
 /-!
 # Artin's induction theorem
@@ -31,8 +31,9 @@ characters, over an algebraically closed field in which the selected subgroup or
 invertible.  Combining that comparison with the sharp canonical theorem gives the conventional
 characteristic-zero induced-character-span endpoint.
 
-The sharp identity is proved by Möbius inversion on the finite poset of cyclic subgroups, and the
-projection formula propagates it from the trivial character to every virtual character.
+The sharp identity rests on the Artin coefficients `Subgroup.artinCoeff` and their upper sums
+`TauCeti.sum_artinCoeff_of_mem` (`TauCeti.GroupTheory.ArtinCoefficient`), and the projection
+formula propagates it from the trivial character to every virtual character.
 
 ## Main statements
 
@@ -80,51 +81,6 @@ private noncomputable def cyclicSubgroupFintype {G : Type*} [Group G] [Finite G]
 
 attribute [local instance] cyclicSubgroupFintype
 
-@[instance_reducible]
-private noncomputable def cyclicSubgroupLocallyFiniteOrder {G : Type*} [Group G] [Finite G] :
-    LocallyFiniteOrder (CyclicSubgroup G) := by
-  classical
-  exact Fintype.toLocallyFiniteOrder
-
-attribute [local instance] cyclicSubgroupLocallyFiniteOrder
-
-@[instance_reducible]
-private noncomputable def cyclicSubgroupLocallyFiniteOrderTop {G : Type*} [Group G]
-    [Finite G] : LocallyFiniteOrderTop (CyclicSubgroup G) := by
-  classical
-  exact LocallyFiniteOrderTop.ofIci _ (fun C ↦ Finset.univ.filter (C ≤ ·)) (by simp)
-
-attribute [local instance] cyclicSubgroupLocallyFiniteOrderTop
-
-/-- The sum of `μ(C, D)` over cyclic subgroups `D` containing `C`; this is the coefficient of `C`
-in the Artin identity. -/
-private noncomputable def artinCoeff {G : Type*} [Group G] [Finite G]
-    (C : CyclicSubgroup G) : ℤ := by
-  classical
-  exact ∑ D ∈ Finset.Ici C, IncidenceAlgebra.mu ℤ C D
-
-/-- The sum of the Artin coefficients over cyclic subgroups `C` containing `H`; this is the
-quantity shown to equal one by `artinUpperSum_eq_one`. -/
-private noncomputable def artinUpperSum {G : Type*} [Group G] [Finite G]
-    (H : CyclicSubgroup G) : ℤ := by
-  classical
-  exact ∑ C ∈ Finset.Ici H, artinCoeff C
-
-/-- The upper sums of the Artin coefficients are one. -/
-private theorem artinUpperSum_eq_one {G : Type*} [Group G] [Finite G]
-    (H : CyclicSubgroup G) : artinUpperSum H = 1 := by
-  classical
-  simp_rw [artinUpperSum, artinCoeff]
-  calc
-    ∑ C ∈ Finset.Ici H, ∑ D ∈ Finset.Ici C, IncidenceAlgebra.mu ℤ C D =
-        ∑ D ∈ Finset.Ici H, ∑ C ∈ Finset.Icc H D, IncidenceAlgebra.mu ℤ C D :=
-      Finset.sum_comm' fun C D ↦ by
-        simp only [Finset.mem_Ici, Finset.mem_Icc]
-        aesop (add unsafe le_trans)
-    _ = 1 := by
-      simp only [IncidenceAlgebra.sum_Icc_mu_left, Finset.sum_ite_eq, Finset.mem_Ici,
-        le_refl, ite_true]
-
 variable {k : Type u} {G : Type v} [Field k] [Group G]
 variable [Finite G]
 
@@ -133,32 +89,40 @@ variable [Finite G]
 open scoped Classical in
 /-- Weighting each cyclic subgroup containing `y` by its Artin coefficient gives `1`. The sum ranges
 over all cyclic subgroups, the ones missing `y` contributing zero. At `y = 1` every cyclic subgroup
-contributes, and the value is still `1`. -/
+contributes, and the value is still `1`. This is `TauCeti.sum_artinCoeff_of_mem`, read over the
+cyclic subgroups -- the noncyclic ones have vanishing coefficient -- and in `k`. -/
 private theorem sum_artinCoeff_cyclicSubgroups_containing_eq_one {k : Type u}
     [AddCommGroupWithOne k] (y : G) :
     (∑ C : CyclicSubgroup G,
-      if _h : y ∈ (C : Subgroup G) then (artinCoeff C : k) else (0 : k)) = 1 := by
-  -- Only the cyclic subgroups above `zpowers y` contribute, and over those the Artin coefficients
-  -- sum to `artinUpperSum`, which is one.
-  let H : CyclicSubgroup G := ⟨Subgroup.zpowers y, Subgroup.isCyclic_zpowers y⟩
-  have hu : ((artinUpperSum H : ℤ) : k) = 1 := by rw [artinUpperSum_eq_one]; simp
-  rw [← hu]
-  simp only [artinUpperSum, Int.cast_sum]
+      if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) = 1 := by
+  classical
+  let _ := Fintype.ofFinite (Subgroup G)
+  have hZ : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff = 1 := by
+    rw [← finsum_cond_eq_sum_of_cond_iff (p := fun C : Subgroup G => y ∈ C)
+      (t := Finset.univ.filter (fun C : Subgroup G => y ∈ C)) _ (by simp)]
+    exact sum_artinCoeff_of_mem y
+  have hsub : (∑ C : CyclicSubgroup G,
+      if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ)) =
+      ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => IsCyclic C),
+        (if y ∈ C then C.artinCoeff else 0) := by
+    rw [Finset.sum_subtype (p := fun C : Subgroup G => IsCyclic C)
+      (s := Finset.univ.filter (fun C : Subgroup G => IsCyclic C)) (by simp)]
+  have hcyclic : (∑ C : CyclicSubgroup G,
+      if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ)) = 1 := by
+    rw [hsub, Finset.sum_subset
+        (Finset.filter_subset (fun C : Subgroup G => IsCyclic C) Finset.univ)
+        (fun C _ hC ↦ by
+          simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hC
+          rw [_root_.Subgroup.artinCoeff_eq_zero_of_not_isCyclic hC, ite_self]),
+      ← Finset.sum_filter, hZ]
   calc
-    (∑ C : CyclicSubgroup G, if _h : y ∈ (C : Subgroup G) then (artinCoeff C : k) else 0) =
-        ∑ C ∈ Finset.Ici H, if _h : y ∈ (C : Subgroup G) then (artinCoeff C : k) else 0 := by
-      symm
-      apply Finset.sum_subset (Finset.Ici H).subset_univ
-      intro C _ hC
-      rw [dite_eq_right]
-      intro hmem
-      apply hC
-      exact Finset.mem_Ici.mpr (Subgroup.zpowers_le_of_mem hmem)
-    _ = ∑ C ∈ Finset.Ici H, (artinCoeff C : k) := by
-      apply Finset.sum_congr rfl
-      intro C hHC
-      rw [dite_eq_left]
-      exact (Finset.mem_Ici.mp hHC) (Subgroup.mem_zpowers _)
+    (∑ C : CyclicSubgroup G,
+        if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) =
+        ((∑ C : CyclicSubgroup G,
+          if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ) : ℤ) : k) := by
+      push_cast
+      exact Finset.sum_congr rfl fun C _ ↦ by split <;> simp
+    _ = 1 := by rw [hcyclic]; simp
 
 /-- **Artin induction for the trivial character.** The order of `G` times the trivial character
 belongs to the subgroup generated by virtual characters induced from cyclic subgroups.  When
@@ -171,7 +135,7 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   classical
   let _ := Fintype.ofFinite G
   let α : CyclicSubgroup G → (G → k) := fun C ↦
-    artinCoeff C • (Nat.card (C : Subgroup G) •
+    (C : Subgroup G).artinCoeff • (Nat.card (C : Subgroup G) •
       indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)))
   have hα (C : CyclicSubgroup G) : α C ∈ indVirtualCharacters k G (fun C ↦ IsCyclic C) := by
     exact AddSubgroup.zsmul_mem _ (AddSubgroup.nsmul_mem _

@@ -205,10 +205,8 @@ theorem coordinatePointsEquiv_map_frobeniusCoordinateMap
     ((q.ofConv.comp frobeniusCoordinateMap.hom.toAlgHom).comp _)) = _
   rw [h]
   simp only [pow_one]
-  exact GeneralLinear.pointsMulEquiv_mapValue 26 (FiniteField.frobeniusAlgHom (ZMod 2) A)
-    (WithConv.toConv (q.ofConv.comp (CommHopfAlgCat.mkQuotient
-      (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
-      (CommHopfAlgCat.commonKernelHopfIdeal generator)).hom.toAlgHom))
+  rw [← AlgHom.mapValue_apply]
+  exact GeneralLinear.pointsMulEquiv_mapValue 26 (FiniteField.frobeniusAlgHom (ZMod 2) A) _
 
 /-- The characteristic-two Frobenius of the explicit F4 carrier group scheme. -/
 noncomputable def frobeniusHom : groupScheme ⟶ groupScheme :=

@@ -166,7 +166,7 @@ theorem isOpenEmbedding_analyticAffineChartDiagram_map (hΦ : Φ.IsRegular) {τ 
     (affinePointTopology (analyticChartGenerators Φ τ ((isRegular_iff.mp hΦ) τ.1 τ.2)).2)
     (affinePointTopology (analyticChartGenerators Φ σ ((isRegular_iff.mp hΦ) σ.1 σ.2)).2)
     (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)))
-  exact ((isRegular_iff.mp hΦ) σ.1 σ.2).isOpenEmbedding_faceAffinePointMap
+  exact ((isRegular_iff.mp hΦ) σ.1 σ.2).rational.isOpenEmbedding_faceAffinePointMap
     Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))
     (analyticChartGenerators Φ σ ((isRegular_iff.mp hΦ) σ.1 σ.2)).2
     (analyticChartGenerators Φ τ ((isRegular_iff.mp hΦ) τ.1 τ.2)).2
@@ -189,14 +189,14 @@ theorem isLocallyDirected_analyticAffineChartDiagram (hΦ : Φ.IsRegular) :
   let _ := affinePointTopology (analyticChartGenerators Φ τ hτ).2
   let _ := affinePointTopology (analyticChartGenerators Φ υ hυ).2
   have heτ : Function.Injective (faceAffinePointMap Φ.lattice hτσ) :=
-    (hσ.isOpenEmbedding_faceAffinePointMap Φ.lattice hτσ
+    (hσ.rational.isOpenEmbedding_faceAffinePointMap Φ.lattice hτσ
       (analyticChartGenerators Φ σ hσ).2 (analyticChartGenerators Φ τ hτ).2).injective
   have heυ : Function.Injective (faceAffinePointMap Φ.lattice hυσ) :=
-    (hσ.isOpenEmbedding_faceAffinePointMap Φ.lattice hυσ
+    (hσ.rational.isOpenEmbedding_faceAffinePointMap Φ.lattice hυσ
       (analyticChartGenerators Φ σ hσ).2 (analyticChartGenerators Φ υ hυ).2).injective
   obtain ⟨x, hx⟩ : faceAffinePointMap Φ.lattice hτσ xτ ∈
       Set.range (faceAffinePointMap Φ.lattice (hτσ.inf_left hυσ)) := by
-    rw [hσ.range_faceAffinePointMap_inf Φ.lattice hτσ hυσ]
+    rw [hσ.rational.range_faceAffinePointMap_inf Φ.lattice hτσ hυσ]
     exact ⟨⟨xτ, rfl⟩, ⟨xυ, h'.symm⟩⟩
   have hτ : faceAffinePointMap Φ.lattice
       (Φ.isFaceOf_of_le τ.2 (Φ.inf_mem τ.2 υ.2) inf_le_left) x = xτ := by

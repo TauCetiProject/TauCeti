@@ -11,6 +11,7 @@ import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormDet
+import Mathlib.Tactic.NormNum.IsSquare
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
@@ -52,6 +53,9 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant of a minimal polynomial is a norm.
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
+* `Polynomial.discr_X_pow_sub_C`: the discriminant of a binomial `X ^ n - C a`.
+* `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
+  `X ^ 5 - C a` over `ℚ` with `a ≠ 0` is not a square.
 * `TauCeti.discr_C_mul`, `TauCeti.isSquare_discr_iff_mem_range`: the scaling law and
   square-root criterion for a not-necessarily-monic polynomial over a field.
 * `Polynomial.discr_map_of_natDegree_eq`, `Polynomial.Monic.discr_map`: base change whenever the
@@ -60,6 +64,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   `Polynomial.Monic.discr_ne_zero_iff_separable_map`: a monic polynomial is separable exactly
   when its discriminant is a unit; over a field that reads `discr f ≠ 0`, and over a domain the
   correct statement passes to the fraction field.
+* `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
+  separable exactly when its discriminant is nonzero.
 * `Polynomial.Monic.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
@@ -118,6 +124,40 @@ theorem _root_.Polynomial.Monic.resultant_deriv {f : R[X]} (hf : f.Monic) :
     simp [h1]
   · rw [_root_.Polynomial.resultant_deriv (natDegree_pos_iff_degree_pos.mp h), hf.leadingCoeff,
       mul_one]
+
+/-- **The discriminant of a binomial.** Over any commutative ring,
+`discr (X ^ n - C a) = (-1) ^ (n (n - 1) / 2) · nⁿ · (-a) ^ (n - 1)`; for `n = 0` both sides
+are `1`. -/
+@[simp] theorem _root_.Polynomial.discr_X_pow_sub_C (a : R) (n : ℕ) :
+    (X ^ n - C a).discr = (-1) ^ (n * (n - 1) / 2) * (n : R) ^ n * (-a) ^ (n - 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [pow_zero, ← C_1, ← C_sub, discr_C]
+    simp
+  nontriviality R
+  have hf : (X ^ n - C a).Monic := monic_X_pow_sub_C a hn
+  have h := hf.resultant_deriv
+  rw [natDegree_X_pow_sub_C, derivative_sub, derivative_X_pow, derivative_C, sub_zero,
+    resultant_C_mul_right, resultant_X_pow_right _ _ _ natDegree_X_pow_sub_C.le,
+    coeff_sub, coeff_X_pow, coeff_C_zero, (Nat.even_mul_pred_self n).neg_one_pow, one_mul] at h
+  simp only [Ne.symm hn, ↓reduceIte, zero_sub] at h
+  -- The sign `(-1) ^ (n (n - 1) / 2)` squares to `1`, so it can be moved across the identity.
+  have hsq : ((-1 : R) ^ (n * (n - 1) / 2)) ^ 2 = 1 := by
+    rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
+  calc (X ^ n - C a).discr
+      = ((-1 : R) ^ (n * (n - 1) / 2)) ^ 2 * (X ^ n - C a).discr := by rw [hsq, one_mul]
+    _ = (-1) ^ (n * (n - 1) / 2) * ((-1) ^ (n * (n - 1) / 2) * (X ^ n - C a).discr) := by ring
+    _ = _ := by rw [← h]; ring
+
+/-- The discriminant `3125a⁴` of a pure quintic `X⁵ - a` over `ℚ`, with `a ≠ 0`, is not a
+square in `ℚ`. -/
+theorem not_isSquare_discr_X_pow_five_sub_C {a : ℚ} (ha : a ≠ 0) :
+    ¬ IsSquare (X ^ 5 - C a : ℚ[X]).discr := by
+  rw [discr_X_pow_sub_C]
+  rintro ⟨r, hr⟩
+  have h5 : IsSquare (5 : ℚ) := ⟨r / (25 * a ^ 2), by
+    rw [div_mul_div_comm, eq_div_iff (by positivity)]
+    linear_combination hr⟩
+  exact absurd h5 (by norm_num)
 
 private noncomputable def Polynomial.sylvesterDerivIndexEquiv {f : R[X]} (φ : R →+* S)
     (hdeg : (f.map φ).natDegree = f.natDegree) :
@@ -600,6 +640,20 @@ monic polynomial over `ℤ` with nonzero discriminant that is not separable. -/
 theorem _root_.Polynomial.Monic.discr_ne_zero_iff {K : Type*} [Field K] {f : K[X]}
     (hf : f.Monic) : f.discr ≠ 0 ↔ f.Separable := by
   rw [← hf.isUnit_discr_iff, isUnit_iff_ne_zero]
+
+/-- Over a field, a nonzero polynomial is separable exactly when its discriminant is nonzero.
+
+The hypothesis `f ≠ 0` cannot be dropped: the zero polynomial has discriminant `1` but is not
+separable. -/
+theorem _root_.Polynomial.discr_ne_zero_iff {K : Type*} [Field K] {f : K[X]} (hf : f ≠ 0) :
+    f.discr ≠ 0 ↔ f.Separable := by
+  have hc : f.leadingCoeff⁻¹ ≠ 0 := inv_ne_zero (leadingCoeff_ne_zero.mpr hf)
+  have hmonic : (C f.leadingCoeff⁻¹ * f).Monic := by
+    rw [mul_comm]
+    exact monic_mul_leadingCoeff_inv hf
+  rw [← mul_ne_zero_iff_left (pow_ne_zero (2 * f.natDegree - 2) hc), ← discr_C_mul _ hc,
+    hmonic.discr_ne_zero_iff]
+  exact ⟨fun h ↦ h.of_mul_right, Separable.unit_mul (isUnit_C.mpr hc.isUnit)⟩
 
 /-- The product of the differences of a numbering of distinct roots is nonzero. -/
 theorem discrSqrt_ne_zero {F E : Type*} [CommRing F] [CommRing E] [IsDomain E]

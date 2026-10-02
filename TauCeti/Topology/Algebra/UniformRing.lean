@@ -64,6 +64,9 @@ being completed.
 
 * `UniformSpace.Completion.ringHom_ext_of_continuous`: two continuous ring homomorphisms out of
   a completion that agree on the image of the coercion are equal.
+* `UniformSpace.Completion.continuous_mapRingEquiv` and
+  `UniformSpace.Completion.continuous_mapRingEquiv_symm`: the isomorphism of completions induced
+  by a topological ring isomorphism is continuous in both directions.
 * `UniformSpace.Completion.coe_completeRingEquivSelf` and
   `UniformSpace.Completion.coe_completeRingEquivSelf_symm`: the isomorphism is
   `UniformCompletion.completeEquivSelf` and its inverse is the coercion into the completion.
@@ -115,6 +118,25 @@ theorem ringHom_ext_of_continuous {g h : Completion R →+* B} (hg : Continuous 
   DFunLike.ext' (ext hg hh fun x ↦ congrArg (fun k : R →+* B ↦ k x) hcomp)
 
 end Ext
+
+section MapRingEquiv
+
+variable {α β : Type*} [Ring α] [UniformSpace α] [IsTopologicalRing α] [IsUniformAddGroup α]
+  [Ring β] [UniformSpace β] [IsTopologicalRing β] [IsUniformAddGroup β]
+
+/-- The ring isomorphism of completions induced by a topological ring isomorphism is continuous:
+its underlying map is `UniformSpace.Completion.map`. -/
+theorem continuous_mapRingEquiv (f : α ≃+* β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    Continuous (mapRingEquiv f hf hf') :=
+  continuous_map.congr fun x ↦ (mapRingEquiv_apply f hf hf' x).symm
+
+/-- The inverse of the ring isomorphism of completions induced by a topological ring isomorphism
+is continuous. -/
+theorem continuous_mapRingEquiv_symm (f : α ≃+* β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    Continuous (mapRingEquiv f hf hf').symm :=
+  continuous_map.congr fun x ↦ (mapRingEquiv_symm_apply f hf hf' x).symm
+
+end MapRingEquiv
 
 variable (S : Type*) [Ring S] [UniformSpace S] [IsTopologicalRing S] [IsUniformAddGroup S]
   [CompleteSpace S] [T0Space S]

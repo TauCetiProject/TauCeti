@@ -28,7 +28,7 @@ public section
 
 namespace TauCeti.ContCohomology
 
-variable {p : ℕ} (G : Type*) [Group G] [TopologicalSpace G] [CompactSpace G]
+variable {p : ℕ} (G : Type*) [Group G] [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
   (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 

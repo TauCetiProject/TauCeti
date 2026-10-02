@@ -31,6 +31,8 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
 * `WeierstrassCurve.Affine.exists_point_zsmul_eq_of_zsmul_eq_zero` and
   `WeierstrassCurve.Affine.natCard_setOf_zsmul_eq_zero`: the same two facts on the points of `W`
   itself rather than of `W⁄F`.
+* `WeierstrassCurve.Affine.infinite_point`: the points of `W` are infinitely many, the torsion
+  alone being unbounded.
 
 ## References
 
@@ -133,6 +135,28 @@ theorem natCard_setOf_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0) :
   · rw [← map_zsmul, h, map_zero]
   · have := (Submodule.mem_torsionBy_iff _ _).mp h
     rwa [← map_zsmul, AddEquiv.map_eq_zero_iff] at this
+
+end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [IsSepClosed F] (W : Affine F) [W.IsElliptic]
+
+/-- **An elliptic curve has infinitely many points over a separably closed field**: for every prime
+`ℓ` other than the characteristic, its `ℓ`-torsion alone has `ℓ ²` points. -/
+instance infinite_point : Infinite W.Point := by
+  classical
+  refine not_finite_iff_infinite.mp fun _ ↦ ?_
+  obtain ⟨p, hp_le, hp⟩ := Nat.exists_infinite_primes (Nat.card W.Point + ringChar F + 1)
+  have hchar : ((p : ℤ) : F) ≠ 0 := fun h0 ↦ by
+    rw [Int.cast_natCast] at h0
+    have := CharP.ringChar_of_prime_eq_zero hp h0
+    omega
+  have hle : Nat.card {R : W.Point | (p : ℤ) • R = 0} ≤ Nat.card W.Point :=
+    Nat.card_le_card_of_injective _ Subtype.val_injective
+  rw [W.natCard_setOf_zsmul_eq_zero hchar, Int.natAbs_natCast] at hle
+  have := Nat.le_self_pow two_ne_zero p
+  omega
 
 end WeierstrassCurve.Affine
 

@@ -22,7 +22,12 @@ The theorem of this file is that `V_G` is an **ideal** of the virtual-character 
 (`TauCeti.ClassFunction.mul_mem_indVirtualCharacters`): multiplying an induced virtual character by
 a virtual character of `G` gives another induced virtual character.  This is the projection formula
 `TauCeti.indClassFun_comp_subtype_mul` -- Frobenius reciprocity in its module form -- together with
-the closure of the virtual characters of a subgroup under restriction and under products.
+the closure of the virtual characters of a subgroup under restriction and under products.  The
+projection formula asks only that the multiplier be a class function whose restriction to each
+subgroup of the family is a virtual character, and
+`TauCeti.ClassFunction.mul_mem_indVirtualCharacters_of_forall_comp_subtype` records the ideal
+property under that weaker hypothesis; it is the form in which a class function known only locally
+to be a virtual character is recognized as one.
 
 The family-general induction map is also bundled here as
 `TauCeti.ClassFunction.indVirtualCharacterDirectSumAddHom`, the homomorphism
@@ -36,6 +41,15 @@ Its consequence `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters
 standard reduction of an induction theorem to a single membership: `V_G` is all of `R(G)` **iff**
 the constant function `1` lies in `V_G`.  Brauer's induction theorem is exactly the statement that
 `1 ∈ V_G` for the elementary subgroups, and that arithmetic input is not proved here.
+
+Putting the two together gives the **restriction criterion**
+`TauCeti.mem_virtualCharacters_of_forall_comp_subtype`: as soon as `1 ∈ V_G`, a class function
+whose restriction to every subgroup of the family is a virtual character is itself a virtual
+character, and `TauCeti.mem_virtualCharacters_iff_forall_comp_subtype` makes that an equivalence,
+its forward direction being the compatibility of restriction with the lattice.  Both are stated for
+an arbitrary family and use no cyclic or elementary input;
+`TauCeti.RepresentationTheory.Induction.Brauer.Characterization` specializes them to the elementary
+subgroups, where Brauer's induction theorem supplies the hypothesis.
 
 What is proved here is the form in which that membership is established:
 `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff_forall_prime` weakens it to
@@ -65,6 +79,9 @@ induced virtual characters with coefficients in a ring such as `ℤ[ζ]`. The co
   map is surjective exactly when the induced virtual characters exhaust all virtual characters.
 * `TauCeti.ClassFunction.indVirtualCharacterDirectSumBaseChangeRat_surjective_of_nsmul_one_mem`: a
   general criterion for rational surjectivity of the scalar-extended induction map.
+* `TauCeti.ClassFunction.mul_mem_indVirtualCharacters_of_forall_comp_subtype`: the
+  projection-formula step, for a class function that is a virtual character on each subgroup of
+  the family.
 * `TauCeti.ClassFunction.mul_mem_indVirtualCharacters`: the ideal property.
 * `TauCeti.ClassFunction.mul_mem_span_indVirtualCharacters`: the corresponding ideal property for
   spans over a subring of the coefficient field.
@@ -75,6 +92,12 @@ induced virtual characters with coefficients in a ring such as `ℤ[ζ]`. The co
 * `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff_forall_prime`: equivalently,
   for every prime `p` some multiple `m • 1` with `p ∤ m` is induced with coefficients in a subring
   of `k` that retracts additively onto `ℤ`.
+* `TauCeti.mem_virtualCharacters_of_forall_comp_subtype`: if `1` is induced from a family of
+  subgroups, a class function whose restrictions to the family are virtual characters is a virtual
+  character.
+* `TauCeti.mem_virtualCharacters_iff_forall_comp_subtype`: for a family of subgroups satisfying an
+  induction theorem, the restrictions to that family detect the virtual characters among the class
+  functions.
 
 ## References
 
@@ -254,26 +277,39 @@ theorem indVirtualCharacterDirectSumAddHom_surjective_iff :
     obtain ⟨x, hx⟩ := hf
     exact ⟨x, Subtype.ext hx⟩
 
-/-- **The induced virtual characters form an ideal of the virtual-character ring.**  For a virtual
-character `f` of `G` and a virtual character `ψ` of a subgroup `S` of the family, the projection
-formula rewrites `f · Ind_S^G ψ` as `Ind_S^G ((Res_S f) · ψ)`, and `(Res_S f) · ψ` is again a
-virtual character of `S`, restriction and multiplication both preserving them.
+/-- **The induced virtual characters absorb multiplication by a class function that is a virtual
+character on the family.**  For a virtual character `ψ` of a subgroup `S` of the family, the
+projection formula rewrites `f · Ind_S^G ψ` as `Ind_S^G ((Res_S f) · ψ)`, and `(Res_S f) · ψ` is a
+virtual character of `S` as soon as `Res_S f` is, the virtual characters being closed under
+products.  Only the class-function property of `f` enters, through the projection formula.
+
+`TauCeti.ClassFunction.mul_mem_indVirtualCharacters` is the case of a virtual character `f`, where
+the restriction hypothesis is automatic. -/
+theorem mul_mem_indVirtualCharacters_of_forall_comp_subtype {f : G → k}
+    (hf : f ∈ ClassFunction k G)
+    (hres : ∀ S : Subgroup G, P S → (fun s : S => f s) ∈ virtualCharacters k S)
+    {u : G → k} (hu : u ∈ indVirtualCharacters k G P) :
+    f * u ∈ indVirtualCharacters k G P := by
+  have hle : indVirtualCharacters k G P ≤
+      (indVirtualCharacters k G P).comap (AddMonoidHom.mulLeft f) := by
+    refine indVirtualCharacters_le_iff.mpr fun S hS ψ hψ => ?_
+    rw [AddSubgroup.mem_comap, AddMonoidHom.coe_mulLeft,
+      ← indClassFun_comp_subtype_mul hf ψ]
+    exact indClassFun_mem_indVirtualCharacters hS (mul_mem_virtualCharacters (hres S hS) hψ)
+  exact hle hu
+
+/-- **The induced virtual characters form an ideal of the virtual-character ring.**  Multiplying an
+induced virtual character by a virtual character of `G` gives an induced virtual character, because
+a virtual character is a class function whose restriction to every subgroup is again a virtual
+character.
 
 This is the structural half of every induction theorem: once `1` is known to be induced from the
 family, `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff` turns the ideal into
 all of `R(G)`. -/
 theorem mul_mem_indVirtualCharacters {f u : G → k} (hf : f ∈ virtualCharacters k G)
-    (hu : u ∈ indVirtualCharacters k G P) : f * u ∈ indVirtualCharacters k G P := by
-  have hle : indVirtualCharacters k G P ≤
-      (indVirtualCharacters k G P).comap (AddMonoidHom.mulLeft f) := by
-    refine indVirtualCharacters_le_iff.mpr fun S hS ψ hψ => ?_
-    have hres : (fun s : S => f s) * ψ ∈ virtualCharacters k S :=
-      mul_mem_virtualCharacters (comp_subtype_mem_virtualCharacters S hf) hψ
-    have hproj : f * indClassFun S ψ = indClassFun S ((fun s : S => f s) * ψ) :=
-      (indClassFun_comp_subtype_mul (virtualCharacters_le_classFunction hf) ψ).symm
-    rw [AddSubgroup.mem_comap, AddMonoidHom.coe_mulLeft, hproj]
-    exact indClassFun_mem_indVirtualCharacters hS hres
-  exact hle hu
+    (hu : u ∈ indVirtualCharacters k G P) : f * u ∈ indVirtualCharacters k G P :=
+  mul_mem_indVirtualCharacters_of_forall_comp_subtype (virtualCharacters_le_classFunction hf)
+    (fun S _ => comp_subtype_mem_virtualCharacters S hf) hu
 
 /-- Multiplying an `A`-linear combination of virtual characters by an `A`-linear combination of
 virtual characters induced from a family of subgroups remains in the induced span. -/
@@ -355,6 +391,47 @@ theorem indVirtualCharacters_eq_virtualCharacters_iff :
   refine ⟨fun h => h ▸ one_mem_virtualCharacters, fun h => le_antisymm
     indVirtualCharacters_le_virtualCharacters fun f hf => ?_⟩
   simpa using mul_mem_indVirtualCharacters hf h
+
+end ClassFunction
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] {P : Subgroup G → Prop}
+
+/-- **The restriction criterion for virtual characters.**  If the constant function `1` is induced
+from a family of subgroups, then a class function on `G` whose restriction to every subgroup of the
+family is a virtual character is itself a virtual character.
+
+Writing `f = f · 1` and pushing `f` inside the inductions through the projection formula
+(`TauCeti.ClassFunction.mul_mem_indVirtualCharacters_of_forall_comp_subtype`) exhibits `f` as a sum
+of virtual characters induced from the family.  By
+`TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff` the hypothesis on the family
+is exactly the induction theorem for it. -/
+theorem mem_virtualCharacters_of_forall_comp_subtype
+    (h1 : (1 : G → k) ∈ ClassFunction.indVirtualCharacters k G P) {f : G → k}
+    (hf : f ∈ ClassFunction k G)
+    (hres : ∀ S : Subgroup G, P S → (fun s : S => f s) ∈ virtualCharacters k S) :
+    f ∈ virtualCharacters k G := by
+  have h := ClassFunction.mul_mem_indVirtualCharacters_of_forall_comp_subtype hf hres h1
+  rw [mul_one] at h
+  exact ClassFunction.indVirtualCharacters_le_virtualCharacters h
+
+/-- **An induction theorem for a family of subgroups makes restriction to that family detect the
+virtual characters.**  For a class function on `G`, membership in the virtual-character lattice is
+equivalent to membership of all its restrictions to the family.
+
+The forward direction `TauCeti.comp_subtype_mem_virtualCharacters` needs no hypothesis on the
+family; the hypothesis is used only for the converse. -/
+theorem mem_virtualCharacters_iff_forall_comp_subtype
+    (hP : ClassFunction.indVirtualCharacters k G P = virtualCharacters k G) {f : G → k}
+    (hf : f ∈ ClassFunction k G) :
+    f ∈ virtualCharacters k G ↔
+      ∀ S : Subgroup G, P S → (fun s : S => f s) ∈ virtualCharacters k S :=
+  ⟨fun h S _ => comp_subtype_mem_virtualCharacters S h,
+    mem_virtualCharacters_of_forall_comp_subtype
+      (ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff.mp hP) hf⟩
+
+namespace ClassFunction
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] {P : Subgroup G → Prop}
 
 /-- **An induction theorem, one prime at a time and with coefficients in a subring.** Let `A` be a
 subring of `k` admitting an additive map `t : A → ℤ` with `t 1 = 1`; for example `ℤ[ζ]` for a root

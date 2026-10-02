@@ -26,6 +26,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.toAddSubgroup_mul_eq_closure_mul`: additive generators of a product of ideals.
 * `Ideal.smul_top_eq_top_of_pi`: an ideal that expands the whole of a product of modules expands
   the whole of every factor.
+* `LinearMap.apply_mem_of_mem_smul_top`: a linear functional carries `I • M` into `I`.
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
   belongs to `S'`.
@@ -123,6 +124,19 @@ theorem isTwoSided_span_of_subset_center (hs : s ⊆ Set.center A) :
 end Span
 
 end Ideal
+
+namespace LinearMap
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- A linear functional `f : M → R` carries `I • M` into the ideal `I`: the ideal action on `R`
+itself is multiplication, and `f` is linear over it. -/
+theorem apply_mem_of_mem_smul_top (f : M →ₗ[R] R) {I : Ideal R} [I.IsTwoSided] {x : M}
+    (hx : x ∈ I • (⊤ : Submodule R M)) : f x ∈ I := by
+  have := Submodule.smul_top_le_comap_smul_top I f hx
+  rwa [Submodule.mem_comap, smul_eq_mul, Ideal.mul_top] at this
+
+end LinearMap
 
 universe u
 

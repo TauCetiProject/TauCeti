@@ -50,6 +50,8 @@ along `h ↦ 1 ⊗ h`.
   Hopf ideal back along an ambient isomorphism.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le`: the subgroup generated
   by a base-changed family sits inside the base change of the subgroup it generates.
+* `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_baseChangeHopfIdeal`: base change of Hopf ideals
+  along a tower `k → E → K` agrees with one-step base change across the tower comparison.
 * `TauCeti.CommHopfAlgCat.quotientBaseChangeIso`: the identification
   `(K ⊗[k] H) ⧸ J_K ≅ K ⊗[k] (H ⧸ J)`.
 * `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso`: an ambient base-change
@@ -462,6 +464,49 @@ theorem map_baseChangeHopfIdeal_kerOfSurjective
   map_baseChangeHopfIdeal_of_quotientIso _ _ e t (quotientKerOfSurjectiveIso f hf)
     (mkQuotient_comp_quotientKerOfSurjectiveIso_hom f hf) hbase
     (fun _ ↦ HopfIdeal.mem_kerOfSurjective _ _)
+
+section Tower
+
+variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
+
+/-- **Base change of Hopf ideals composes in stages.** For a tower `k → E → K`, base-changing a
+Hopf ideal to `E` and then to `K` gives the pullback of its one-step base change along the tower
+comparison `K ⊗[E] (E ⊗[k] H) ≅ K ⊗[k] H`. -/
+theorem baseChangeHopfIdeal_baseChangeHopfIdeal (J : HopfIdeal k H) :
+    baseChangeHopfIdeal (K := K) (baseChangeHopfIdeal (K := E) J) =
+      (baseChangeHopfIdeal (K := K) J).comapOfSurjective (baseChangeTowerIso (E := E) k K H).hom.hom
+        (ConcreteCategory.bijective_of_isIso (baseChangeTowerIso (E := E) k K H).hom).2 := by
+  let e := baseChangeTowerIso (E := E) k K H
+  ext x
+  rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal, HopfIdeal.comapOfSurjective_toIdeal,
+    baseChangeHopfIdeal_toIdeal, baseChangeHopfIdeal_toIdeal, baseChangeHopfIdeal_toIdeal]
+  constructor
+  · intro hx
+    refine (Ideal.map_le_iff_le_comap.mpr (Ideal.map_le_iff_le_comap.mpr fun h hh ↦ ?_)) hx
+    rw [Ideal.mem_comap, Ideal.mem_comap, Ideal.mem_comap, Algebra.TensorProduct.includeRight_apply,
+      Algebra.TensorProduct.includeRight_apply]
+    -- The ideal goal applies the underlying ring hom of `e.hom`; expose the Hopf morphism so the
+    -- tower comparison's pure-tensor equation can rewrite it.
+    change e.hom.hom ((1 : K) ⊗ₜ[E] ((1 : E) ⊗ₜ[k] h)) ∈ _
+    rw [baseChangeTowerIso_hom_apply, one_smul]
+    exact Ideal.mem_map_of_mem _ hh
+  · intro hx
+    rw [Ideal.mem_comap] at hx
+    have hle : J.toIdeal.map (Algebra.TensorProduct.includeRight : H →ₐ[k] K ⊗[k] H) ≤
+        Ideal.comap (e.inv.hom : K ⊗[k] H →+* K ⊗[E] (E ⊗[k] H))
+          ((J.toIdeal.map (Algebra.TensorProduct.includeRight : H →ₐ[k] E ⊗[k] H)).map
+            (Algebra.TensorProduct.includeRight : E ⊗[k] H →ₐ[E] K ⊗[E] (E ⊗[k] H))) := by
+      rw [Ideal.map_le_iff_le_comap]
+      intro h hh
+      rw [Ideal.mem_comap, Ideal.mem_comap, Algebra.TensorProduct.includeRight_apply]
+      -- As above, expose the Hopf morphism `e.inv` so its pure-tensor equation applies.
+      change e.inv.hom ((1 : K) ⊗ₜ[k] h) ∈ _
+      rw [baseChangeTowerIso_inv_apply]
+      exact Ideal.mem_map_of_mem _ (Ideal.mem_map_of_mem _ hh)
+    rw [← _root_.CommHopfAlgCat.inv_hom_apply e x]
+    exact hle hx
+
+end Tower
 
 /-- Pulling a target Hopf ideal back along an ambient isomorphism which is its image recovers
 the original ideal. -/

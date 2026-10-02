@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.DimensionShift
+import TauCeti.GroupTheory.Index.Exact
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
@@ -27,7 +28,10 @@ the complex. The file provides injectivity and exactness under these hypotheses.
 
 When `Hⁱ(S, A)` vanishes also in degree `n + 1`, inflation is an isomorphism
 (`isIso_infRes_f`). This is the form used for Tate's cohomological triviality criterion, where a
-module is shown to be cohomologically trivial by induction along a normal series.
+module is shown to be cohomologically trivial by induction along a normal series. Counting along
+the exact sequence instead bounds the order of `Hⁿ⁺¹(G, A)` by those of its outer terms
+(`natCard_groupCohomology_succ_dvd_mul`), the form used to bound the order of a cohomology group of
+a solvable group by induction on the order of the group.
 
 ## Main definitions
 
@@ -39,6 +43,8 @@ module is shown to be cohomologically trivial by induction along a normal series
 * `TauCeti.groupCohomology.infRes_exact`: the inflation-restriction sequence is exact.
 * `TauCeti.groupCohomology.isIso_infRes_f`: inflation is an isomorphism when `Hⁱ(S, A) = 0` for
   `0 < i ≤ n + 1`.
+* `TauCeti.groupCohomology.natCard_groupCohomology_succ_dvd_mul`: the order of `Hⁿ⁺¹(G, A)` divides
+  the product of the orders of `Hⁿ⁺¹(G ⧸ S, A^S)` and `Hⁿ⁺¹(S, A)`.
 
 ## References
 
@@ -194,5 +200,20 @@ theorem isIso_infRes_f (n : ℕ)
   have := mono_infRes_f A n fun i hi => hA i hi.le
   have := (infRes_exact A n fun i hi => hA i hi.le).epi_f ((hA n le_rfl).eq_of_tgt _ _)
   isIso_of_mono_of_epi _
+
+/-- **Counting along the inflation-restriction sequence.** If `Hⁱ(S, A) = 0` for `0 < i ≤ n`, the
+order of `Hⁿ⁺¹(G, A)` divides the product of the orders of `Hⁿ⁺¹(G ⧸ S, A^S)` and `Hⁿ⁺¹(S, A)`.
+No finiteness is assumed; in particular `Hⁿ⁺¹(G, A)` is finite when the two outer groups are. -/
+theorem natCard_groupCohomology_succ_dvd_mul (n : ℕ)
+    (hA : ∀ i < n, IsZero (groupCohomology (res S.subtype A) (i + 1))) :
+    Nat.card (groupCohomology A (n + 1)) ∣
+      Nat.card (groupCohomology (A.quotientToInvariants S) (n + 1)) *
+        Nat.card (groupCohomology (res S.subtype A) (n + 1)) := by
+  -- the middle term of an exact sequence of modules, counted through its underlying groups
+  have key (T : ShortComplex (ModuleCat k)) (hT : T.Exact) :
+      Nat.card T.X₂ ∣ Nat.card T.X₁ * Nat.card T.X₃ :=
+    AddMonoidHom.card_dvd_card_mul_card_of_exact T.f.hom.toAddMonoidHom T.g.hom.toAddMonoidHom <| by
+      rw [← LinearMap.range_toAddSubgroup, ← LinearMap.ker_toAddSubgroup, hT.moduleCat_range_eq_ker]
+  exact key _ (infRes_exact A n hA)
 
 end TauCeti.groupCohomology

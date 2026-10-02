@@ -146,7 +146,7 @@ noncomputable section
 /-- **The ambient group of an ordinary or graph-twisted index**: the group of
 algebraic-closure-valued points of the explicit carrier assigned to its family. It is generally
 infinite, and it is not identified with the points of the pinned simply connected group scheme of
-the diagram. The three families on a type-`D` diagram other than `³D₄(q)` share the spin carrier of
+the diagram. The two families on a type-`D` diagram other than `³D₄(q)` share the spin carrier of
 `TauCeti.TypeDDiagramLieIndex`, while `³D₄(q)` runs on the tripled carrier that carries
 triality. -/
 -- The body is exposed so that on each constructor the ambient group reduces to the family carrier:
@@ -1077,24 +1077,27 @@ theorem steinberg_eq_graphAut_comp_frobenius (d : GraphTwistedIndex) :
   · rw [steinberg_eq_frobenius d hd, graphAut_eq_one_of_twistOrder_eq_one d hd]
     exact MonoidHom.ext fun g => by
       rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.one_apply]
+  -- The family index is left as `_` for unification, not rebuilt with a `by simp` proof: a
+  -- postponed tactic proof blocks unifying the family lemma with the goal, which then unfolds the
+  -- family maps (up to 1 s a branch).
   obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
   · exact absurd (twistOrder_A hv) hd
   · rw [steinberg_twistedA, graphAut_twistedA, frobenius_twistedA]
-    exact TypeALieIndex.steinberg_eq_graphAut_comp_frobenius ⟨⟨_, hv⟩, by simp⟩
+    exact TypeALieIndex.steinberg_eq_graphAut_comp_frobenius _
   · exact absurd (twistOrder_B hv) hd
   · exact absurd (twistOrder_C hv) hd
   · exact absurd (twistOrder_D hv) hd
   · rw [steinberg_twistedD, graphAut_twistedD, frobenius_twistedD]
-    exact TypeTwistedDLieIndex.steinberg_def ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTwistedDLieIndex.steinberg_def _
   · exact absurd (twistOrder_E6 hv) hd
   · exact absurd (twistOrder_E7 hv) hd
   · exact absurd (twistOrder_E8 hv) hd
   · exact absurd (twistOrder_F4 hv) hd
   · exact absurd (twistOrder_G2 hv) hd
   · rw [steinberg_twistedE6, graphAut_twistedE6, frobenius_twistedE6]
-    exact TypeTwistedE6LieIndex.steinberg_def ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTwistedE6LieIndex.steinberg_def _
   · rw [steinberg_trialityD4, graphAut_trialityD4, frobenius_trialityD4]
-    exact TypeTrialityD4LieIndex.steinberg_def ⟨⟨_, hv⟩, by simp⟩
+    exact TypeTrialityD4LieIndex.steinberg_def _
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- The Steinberg endomorphism may equally be read with its Frobenius factor last, the two factors

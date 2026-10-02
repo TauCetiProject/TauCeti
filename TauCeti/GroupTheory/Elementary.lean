@@ -297,7 +297,7 @@ theorem IsPHyperelementary.of_injective (h : IsPHyperelementary p G) (f : H →*
   obtain ⟨C, hCnormal, hCcyclic, hCp, hquot⟩ := h
   have := hCcyclic
   refine ⟨C.comap f, hCnormal.comap f,
-    isCyclic_of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf C),
+    isCyclic_of_injective _ (f.subgroupComap_injective C hf),
     fun hdvd => hCp (hdvd.trans (Subgroup.card_comap_dvd_of_injective C f hf)), fun y => ?_⟩
   obtain ⟨k, hk⟩ := hquot (f y)
   exact ⟨k, mem_comap.mpr (by rwa [map_pow])⟩
@@ -329,9 +329,9 @@ private theorem exists_mem_comap_mul_mem_comap_eq {C P : Subgroup G}
   have hym : f (y ^ m) ∈ P := by
     rw [map_pow, ← hab, (hcomm a a.2 b b.2).mul_pow, ha, one_mul]
     exact pow_mem b.2 _
-  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime hcop y
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := H) hcop
   exact ⟨(y ^ n) ^ i, zpow_mem (mem_comap.mpr hyn) _,
-    (y ^ m) ^ j, zpow_mem (mem_comap.mpr hym) _, hij⟩
+    (y ^ m) ^ j, zpow_mem (mem_comap.mpr hym) _, hij y⟩
 
 /-- `p`-elementarity passes to subgroups, in the form of an injective homomorphism into the group.
 
@@ -344,9 +344,9 @@ theorem IsPElementary.of_injective [Fact p.Prime] (h : IsPElementary p G) (f : H
   obtain ⟨C, P, hC, hCp, hP, hcomm, hcompl⟩ := h
   have := hC
   refine ⟨C.comap f, P.comap f,
-    isCyclic_of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf C),
+    isCyclic_of_injective _ (f.subgroupComap_injective C hf),
     fun hdvd => hCp (hdvd.trans (Subgroup.card_comap_dvd_of_injective C f hf)),
-    hP.of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf P), ?_, ?_⟩
+    hP.of_injective _ (f.subgroupComap_injective P hf), ?_, ?_⟩
   · intro c hc x hx
     refine hf ?_
     rw [map_mul, map_mul]

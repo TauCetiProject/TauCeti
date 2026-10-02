@@ -88,6 +88,8 @@ conjugation with the resulting map on norm quotients.
   `TauCeti.ClassFieldTheory.NormalLayer.isIntertwiningMap_conjugateCoefficientEquiv`.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv_conjugateCohomologyIso_zero_apply`: in
   degree zero, conjugation of cohomology is the action of `g` on the ground level.
+* `TauCeti.ClassFieldTheory.NormalLayer.conjugateTateIso_hom_tateHIsoH_inv`: in positive degrees,
+  conjugation of Tate cohomology is conjugation of ordinary cohomology.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm_conjugateCoefficientEquiv` and
   `TauCeti.ClassFieldTheory.NormalLayer.map_normSubgroup_conjugateGroundLevelEquiv`: conjugation
   commutes with the norm of a layer and carries its norm subgroup onto that of the conjugate
@@ -401,6 +403,38 @@ change-of-group map of that theory, by `TauCeti.TateCohomology.map_comp_isoGroup
 and `TauCeti.TateCohomology.map_comp_isoGroupHomology_hom`. -/
 def conjugateTateIso (r : ℤ) : L.TateH F r ≅ (L.conjugate g).TateH F r :=
   TateCohomology.mapIso (L.isIntertwiningMap_conjugateCoefficientEquiv F g) r
+
+/-- Conjugation on Tate cohomology is the Tate map of the compatible pair
+`isIntertwiningMap_conjugateCoefficientEquiv`. -/
+theorem conjugateTateIso_hom (r : ℤ) :
+    (L.conjugateTateIso F g r).hom =
+      TateCohomology.map (L.isIntertwiningMap_conjugateCoefficientEquiv F g) r :=
+  TateCohomology.mapIso_hom _ r
+
+/-- **In positive degrees, conjugation of Tate cohomology is conjugation of ordinary
+cohomology**, through the identifications `tateHIsoH` of a layer and its conjugate. -/
+theorem conjugateTateIso_hom_tateHIsoH_inv (n : ℕ) [NeZero n] (u : L.H F n) :
+    (L.conjugateTateIso F g n).hom ((L.tateHIsoH F n).inv u) =
+      ((L.conjugate g).tateHIsoH F n).inv ((L.conjugateCohomologyIso F g n).hom u) := by
+  refine (ModuleCat.mono_iff_injective ((L.conjugate g).tateHIsoH F n).hom).1 inferInstance ?_
+  rw [Iso.inv_hom_id_apply, conjugateTateIso_hom, tateHIsoH_def, tateHIsoH_def]
+  -- The Tate map of the conjugation pair is the change-of-group map of ordinary cohomology, which
+  -- is how `conjugateCohomologyIso` is defined.
+  have hm : (TateCohomology.isoGroupCohomology n).hom.app ((L.conjugate g).rep F)
+      (TateCohomology.map (L.isIntertwiningMap_conjugateCoefficientEquiv F g) n
+        (((TateCohomology.isoGroupCohomology n).app (L.rep F)).inv u)) =
+      groupCohomology.map ((L.conjugateGalEquiv g).symm : (L.conjugate g).Gal →* L.Gal)
+        (Representation.IsIntertwiningMap.ofRes (L.isIntertwiningMap_conjugateCoefficientEquiv F g))
+        n ((TateCohomology.isoGroupCohomology n).hom.app (L.rep F)
+          (((TateCohomology.isoGroupCohomology n).app (L.rep F)).inv u)) :=
+    ConcreteCategory.congr_hom (TateCohomology.map_comp_isoGroupCohomology_hom
+      (L.isIntertwiningMap_conjugateCoefficientEquiv F g) n) _
+  refine hm.trans <| (congrArg _ (((TateCohomology.isoGroupCohomology n).app
+    (L.rep F)).inv_hom_id_apply u)).trans ?_
+  rw [conjugateCohomologyIso, groupCohomology.mapIso_hom]
+  congr 3
+  ext x
+  simp
 
 /-- **In degree zero, conjugation of cohomology is the action of `g` on the ground level.** Read
 through the identification of `H⁰(U/V, A^V)` with `A^U`, conjugating a class is applying `g` to

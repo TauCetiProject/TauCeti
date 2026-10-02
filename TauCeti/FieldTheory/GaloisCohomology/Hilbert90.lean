@@ -7,9 +7,11 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
 /-!
@@ -41,6 +43,11 @@ multiplicative `1`-cocycle `Gal(F/K) → Fˣ`, which is a coboundary by Noether'
   `Gal(L/K) ⧸ U` with coefficients `(Lˣ)^U`.
 * `TauCeti.subsingleton_H1_additive_units`: `H¹(Gal(L/K), Lˣ) = 0` for any Galois `L/K`.
 * `TauCeti.subsingleton_H1_unitsCoeff`: `H¹(G_K, (Kˢ)ˣ) = 0`.
+* `TauCeti.subsingleton_H1_unitsCoeff_fixingSubgroup`,
+  `TauCeti.subsingleton_H1_unitsCoeff_of_isClosed`: `H¹(N, (Kˢ)ˣ) = 0` for the subgroup `N` fixing
+  a subextension, equivalently for every closed subgroup `N` of `G_K`.
+* `TauCeti.explicitInfl2_unitsCoeff_injective`: consequently inflation from `G_K ⧸ N` into
+  `H²(G_K, (Kˢ)ˣ)` is injective for every closed normal subgroup `N`.
 * `TauCeti.hilbert90`: the preceding vanishing for Mathlib's canonical continuous cohomology.
 
 ## References
@@ -135,6 +142,44 @@ variable (K : Type*) [Field K]
 instance subsingleton_H1_unitsCoeff :
     Subsingleton (H1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
   subsingleton_H1_additive_units
+
+/-- **Hilbert 90 for the subgroup of `G_K` fixing a subextension**: for a `K`-embedding
+`σ : L →ₐ[K] Kˢ`, the continuous `H¹(Gal(Kˢ/σ(L)), (Kˢ)ˣ)` vanishes. The isomorphism
+`G_L ≃ₜ* Gal(Kˢ/σ(L))` of `TauCeti.absoluteGaloisGroupEquivFixingSubgroup`, together with the
+matching identification `(Kˢ)ˣ ≃ (Lˢ)ˣ` of coefficients, carries it to Hilbert 90 for `G_L`. -/
+theorem subsingleton_H1_unitsCoeff_fixingSubgroup {L : Type*} [Field L] [Algebra K L]
+    (σ : L →ₐ[K] SeparableClosure K) :
+    Subsingleton (H1 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K)) :=
+  (explicitMap1Equiv (↥σ.fieldRange.fixingSubgroup) (UnitsCoeff K) (AbsoluteGaloisGroup L)
+    (UnitsCoeff L) (absoluteGaloisGroupEquivFixingSubgroup K L σ)
+    (Units.mapEquiv (separableClosureRingEquiv K L σ).symm.toMulEquiv).toAdditive
+    continuous_of_discreteTopology continuous_of_discreteTopology fun g m ↦ by
+      refine Additive.toMul.injective (Units.ext ?_)
+      rw [Subgroup.smul_def (α := UnitsCoeff K), Additive.toMul_smul]
+      simp only [MulEquiv.toAdditive_apply_apply, toMul_ofMul, Additive.toMul_smul]
+      simp [AlgEquiv.smul_units_def]).toEquiv.subsingleton_congr.2 inferInstance
+
+/-- **Hilbert 90 for a closed subgroup of `G_K`**: `H¹(N, (Kˢ)ˣ) = 0` for every closed subgroup
+`N`, which is the subgroup fixing its fixed field (`InfiniteGalois.fixingSubgroup_fixedField`). -/
+theorem subsingleton_H1_unitsCoeff_of_isClosed (N : Subgroup (AbsoluteGaloisGroup K))
+    (hN : IsClosed (N : Set (AbsoluteGaloisGroup K))) :
+    Subsingleton (H1 N (UnitsCoeff K)) := by
+  have h : (IntermediateField.fixedField N).val.fieldRange.fixingSubgroup = N := by
+    rw [IntermediateField.fieldRange_val]
+    exact InfiniteGalois.fixingSubgroup_fixedField ⟨N, hN⟩
+  rw [← h]
+  exact subsingleton_H1_unitsCoeff_fixingSubgroup K (IntermediateField.fixedField N).val
+
+/-- **Inflation into `H²(G_K, (Kˢ)ˣ)` is injective**: for a closed normal subgroup `N` of `G_K`,
+inflation `H²(G_K ⧸ N, ((Kˢ)ˣ)^N) → H²(G_K, (Kˢ)ˣ)` is injective, since by Hilbert 90 for `N`
+the transgression out of `H¹(N, (Kˢ)ˣ)` vanishes. For the subgroup fixing a Galois subextension
+`L/K` this is the injectivity of `H²(Gal(L/K), Lˣ)` into the cohomological Brauer group. -/
+theorem explicitInfl2_unitsCoeff_injective (N : Subgroup (AbsoluteGaloisGroup K)) [N.Normal]
+    (hN : IsClosed (N : Set (AbsoluteGaloisGroup K)))
+    [ContinuousSMul (AbsoluteGaloisGroup K ⧸ N) (FixedPoints.addSubgroup N (UnitsCoeff K))] :
+    Function.Injective (explicitInfl2 (AbsoluteGaloisGroup K) (UnitsCoeff K) N) :=
+  have := subsingleton_H1_unitsCoeff_of_isClosed K N hN
+  explicitInfl2_injective_of_subsingleton _ _ N hN
 
 /-- **Hilbert 90 for the absolute Galois group**, stated for Mathlib's canonical continuous
 cohomology: `H¹(G_K, (Kˢ)ˣ) = 0` (NSW (6.2.1)). This is the form in which the vanishing feeds

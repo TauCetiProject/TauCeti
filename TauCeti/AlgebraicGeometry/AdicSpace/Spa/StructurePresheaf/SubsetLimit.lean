@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.Spaces
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
 
@@ -15,7 +16,8 @@ Wedhorn §8.1 assigns `A⟨T/s⟩` to the rational subset `R(T/s)` and sets
 `𝒪_X(V) = lim_U 𝒪_X(U)`, the limit over the rational subsets `U` contained in the open `V`.
 `TauCeti.ValuationSpectrum.presentationLimit` takes the same limit over *presentations* `(T, s)`.
 This file builds the diagram of coordinate rings on `TauCeti.ValuationSpectrum.RationalSubsetIndex`
-— the rational subsets of `V` — and identifies the two limits.
+— the rational subsets of `V` — identifies the two limits, and assembles the limits over rational
+subsets into a presheaf isomorphic to `TauCeti.ValuationSpectrum.presentationLimitPresheaf`.
 
 ## The diagram, and why the choice of presentation is invisible
 
@@ -34,6 +36,19 @@ the limit unchanged. That isomorphism of diagrams is stated on its own, as
 `TauCeti.ValuationSpectrum.presentationIndexDiagramIso`, so that it is available apart from the
 identification of the limits it is used for here.
 
+## The presheaf
+
+For `W ≤ V` every rational subset of `W` is one of `V`, and restriction from `V` to `W` is the map
+of limits along that inclusion of index categories. The two diagrams may choose different
+presentations of the same rational subset, so the restriction map also applies the comparison
+morphisms of Proposition 8.2(1) between them. The value-wise identification of the two limits
+commutes with these restriction maps, which makes it an isomorphism of presheaves and lets
+sheafhood pass between them.
+
+All coordinate rings here are those of presentations over one pair of definition `P`, so both
+presheaves are built from `P`; this file does not compare the presheaves of two pairs of
+definition.
+
 ## Main definitions
 
 * `TauCeti.ValuationSpectrum.RationalSubsetIndex.presentationIndex` : the admissible presentation
@@ -48,6 +63,13 @@ identification of the limits it is used for here.
   the presentation-indexed limit to the subset-indexed one.
 * `TauCeti.ValuationSpectrum.presentationLimitIsoRationalSubsetLimit` : that comparison map as an
   isomorphism.
+* `TauCeti.ValuationSpectrum.rationalSubsetIndexRestrict` : the inclusion of the rational subsets
+  of `W` among those of `V`, for `W ≤ V`.
+* `TauCeti.ValuationSpectrum.rationalSubsetLimitMap` : the restriction map of the limits over
+  rational subsets.
+* `TauCeti.ValuationSpectrum.rationalSubsetLimitPresheaf` : the presheaf `V ↦ lim_{U ⊆ V} A⟨U⟩`.
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoRationalSubsetLimitPresheaf` : **the
+  presentation-indexed presheaf is the presheaf of limits over rational subsets.**
 
 ## Main results
 
@@ -57,11 +79,11 @@ identification of the limits it is used for here.
   projects at a rational subset to the projection at the presentation chosen for it.
 * `TauCeti.ValuationSpectrum.isIso_presentationLimitToRationalSubsetLimit` : **the two limits
   agree**, when `A⁺` consists of power-bounded elements.
-
-## What this does not give
-
-The identification is of *values* — it is not known to commute with the restriction maps, so the
-two presheaves are not identified.
+* `TauCeti.ValuationSpectrum.presentationLimitToRationalSubsetLimit_naturality` : the comparison
+  map commutes with restriction.
+* `isSheaf_presentationLimitPresheaf_iff_isSheaf_rationalSubsetLimitPresheaf` : the
+  presentation-indexed presheaf is a sheaf exactly when the presheaf of limits over rational
+  subsets is.
 
 ## References
 
@@ -408,6 +430,205 @@ theorem presentationLimitIsoRationalSubsetLimit_hom (Aplus : Subring A)
     (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) (V : Opens ↥(spa Aplus)) :
     (presentationLimitIsoRationalSubsetLimit (P := P) Aplus hAplus V).hom =
       presentationLimitToRationalSubsetLimit Aplus hAplus V := (rfl)
+
+/-! ### The presheaf of limits over rational subsets -/
+
+/-- **The inclusion of the rational subsets of `W` among those of `V`**, for `W ≤ V`, as a functor
+of index categories: precomposing with it restricts a diagram on the rational subsets of `V` to
+those of `W`. -/
+def rationalSubsetIndexRestrict {V W : Opens ↥(spa Aplus)} (h : W ≤ V) :
+    RationalSubsetIndex Aplus W ⥤ RationalSubsetIndex Aplus V :=
+  (Subtype.orderEmbedding fun _ hU ↦ ⟨hU.1, hU.2.trans h⟩).dual.monotone.functor
+
+omit [IsTopologicalRing A] in
+/-- Including a rational subset of `W` among those of `V` keeps its underlying open. -/
+@[simp]
+theorem rationalSubsetIndexRestrict_obj_open {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
+    (U : RationalSubsetIndex Aplus W) :
+    (OrderDual.ofDual ((rationalSubsetIndexRestrict h).obj U)).1 = (OrderDual.ofDual U).1 := (rfl)
+
+omit [IsTopologicalRing A] in
+/-- Including a rational subset of `U` among those of `W`, and then among those of `V`, is including
+it among those of `V` directly. -/
+theorem rationalSubsetIndexRestrict_obj_restrict {U V W : Opens ↥(spa Aplus)} (h₁ : W ≤ V)
+    (h₂ : U ≤ W) (X : RationalSubsetIndex Aplus U) :
+    (rationalSubsetIndexRestrict h₁).obj ((rationalSubsetIndexRestrict h₂).obj X) =
+      (rationalSubsetIndexRestrict (h₂.trans h₁)).obj X :=
+  (rfl)
+
+/-- For `W ≤ V`, the presentations chosen for a rational subset `U` of `W` in `W` and in `V` both
+present `U`, so the comparison morphism of Proposition 8.2(1) runs from the second to the first. -/
+theorem rationalSubset_presentationIndex_subset_restrict {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
+    (U : RationalSubsetIndex Aplus W) : rationalSubset Aplus (U.presentationIndex (P := P)).pres.num
+      (U.presentationIndex (P := P)).pres.den ⊆ rationalSubset Aplus
+        (((rationalSubsetIndexRestrict h).obj U).presentationIndex (P := P)).pres.num
+        (((rationalSubsetIndexRestrict h).obj U).presentationIndex (P := P)).pres.den :=
+  spaBasicOpen_le_spaBasicOpen_iff.mp <| by simp
+
+/-- **The comparison of the two diagrams on the rational subsets of `W`**, for `W ≤ V`: from the
+diagram of `V`, restricted to the rational subsets of `W`, to the diagram of `W`. The body is not
+exposed; `rationalSubsetIndexDiagramRestrictComparison_app` gives the components. -/
+noncomputable def rationalSubsetIndexDiagramRestrictComparison
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {V W : Opens ↥(spa Aplus)} (h : W ≤ V) :
+    rationalSubsetIndexRestrict h ⋙ rationalSubsetIndexDiagram (P := P) Aplus hAplus V ⟶
+      rationalSubsetIndexDiagram (P := P) Aplus hAplus W where
+  app U := homOfRationalSubsetSubset Aplus hAplus
+    (rationalSubset_presentationIndex_subset_restrict (P := P) h U)
+  -- all four maps in the square are comparison morphisms of Proposition 8.2(1), which compose
+  naturality _ _ _ := by simp [rationalSubsetIndexDiagram]
+
+/-- At a rational subset `U` of `W`, the comparison of the two diagrams is the comparison morphism
+of Proposition 8.2(1) from the coordinate ring of the presentation chosen for `U` in `V` to that of
+the one chosen in `W`, transported to the diagram objects. -/
+@[simp]
+theorem rationalSubsetIndexDiagramRestrictComparison_app
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
+    (U : RationalSubsetIndex Aplus W) :
+    (rationalSubsetIndexDiagramRestrictComparison (P := P) hAplus h).app U =
+      eqToHom (rationalSubsetIndexDiagram_obj Aplus hAplus V _) ≫
+        homOfRationalSubsetSubset Aplus hAplus
+          (rationalSubset_presentationIndex_subset_restrict (P := P) h U) ≫
+        eqToHom (rationalSubsetIndexDiagram_obj Aplus hAplus W U).symm := (rfl)
+
+/-- **The restriction map of the limit over rational subsets**, for `W ≤ V`: the map
+`lim_{U ⊆ V} A⟨U⟩ ⟶ lim_{U ⊆ W} A⟨U⟩` of Wedhorn §8.1, reindexing along
+`rationalSubsetIndexRestrict h` followed by `rationalSubsetIndexDiagramRestrictComparison`. The
+body is not exposed; `rationalSubsetLimitMap_comp_π` gives its projections. -/
+noncomputable def rationalSubsetLimitMap (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a)
+    {V W : Opens ↥(spa Aplus)} (h : W ≤ V) :
+    limit (rationalSubsetIndexDiagram (P := P) Aplus hAplus V) ⟶
+      limit (rationalSubsetIndexDiagram (P := P) Aplus hAplus W) :=
+  limit.pre _ (rationalSubsetIndexRestrict h) ≫
+    limMap (rationalSubsetIndexDiagramRestrictComparison (P := P) hAplus h)
+
+/-- **Restriction then projection**: projecting the restriction at a rational subset `U` of `W` is
+projecting at `U` as a rational subset of `V`, then comparing the two diagrams at `U`. -/
+@[simp]
+theorem rationalSubsetLimitMap_comp_π (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a)
+    {V W : Opens ↥(spa Aplus)} (h : W ≤ V) (U : RationalSubsetIndex Aplus W) :
+    rationalSubsetLimitMap (P := P) hAplus h ≫
+        limit.π (rationalSubsetIndexDiagram (P := P) Aplus hAplus W) U =
+      limit.π (rationalSubsetIndexDiagram (P := P) Aplus hAplus V)
+          ((rationalSubsetIndexRestrict h).obj U) ≫
+        (rationalSubsetIndexDiagramRestrictComparison (P := P) hAplus h).app U := by
+  simp [rationalSubsetLimitMap]
+
+/-- **The comparison of the two limits commutes with restriction**: for `W ≤ V`, restricting the
+presentation-indexed limit from `V` to `W` and then comparing agrees with comparing at `V` and then
+restricting the limit over rational subsets. -/
+theorem presentationLimitToRationalSubsetLimit_naturality
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {V W : Opens ↥(spa Aplus)} (h : W ≤ V) :
+    presentationLimitMap (P := P) h ≫ presentationLimitToRationalSubsetLimit Aplus hAplus W =
+      presentationLimitToRationalSubsetLimit Aplus hAplus V ≫ rationalSubsetLimitMap hAplus h := by
+  refine limit.hom_ext fun U ↦ ?_
+  -- both sides project to a comparison morphism out of the presentation chosen for `U` in `V`
+  have hU := rationalSubset_presentationIndex_subset_restrict (P := P) h U
+  have hπ := presentationLimitπ_eq_π_comp hAplus _
+    ((presentationIndexRestrict h).obj (U.presentationIndex (P := P))) (hU.trans_eq' <| by simp)
+  -- on the left, the transport between the two equal presentations of `U` is absorbed into it
+  simp only [Category.assoc, presentationLimitToRationalSubsetLimit_comp_π,
+    reassoc_of% presentationLimitMap_comp_πToPresentation, hπ,
+    reassoc_of% homOfRationalSubsetSubset_comp_eqToHom hAplus
+      (presentationIndexRestrict_obj_pres h _) _ hU]
+  -- on the right, it is the comparison of the two diagrams at `U`
+  simp [reassoc_of% presentationLimitToRationalSubsetLimit_comp_π Aplus hAplus]
+
+/-- **Restricting along `le_refl` is the identity.** -/
+@[simp]
+theorem rationalSubsetLimitMap_refl (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a)
+    (V : Opens ↥(spa Aplus)) : rationalSubsetLimitMap (P := P) hAplus (le_refl V) = 𝟙 _ := by
+  refine limit.hom_ext fun U ↦ ?_
+  -- `(rationalSubsetIndexRestrict (le_refl V)).obj U` is `U`, and the comparison there is the
+  -- diagram's own map along that equality
+  rw [rationalSubsetLimitMap_comp_π, Category.id_comp,
+    ← limit.w _ (homOfLE le_rfl : (rationalSubsetIndexRestrict (le_refl V)).obj U ⟶ U)]
+  simp
+
+/-- **Successive restrictions compose** to the restriction along the transitive containment. -/
+@[simp]
+theorem rationalSubsetLimitMap_comp (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a)
+    {U V W : Opens ↥(spa Aplus)} (h₁ : W ≤ V) (h₂ : U ≤ W) :
+    rationalSubsetLimitMap (P := P) hAplus h₁ ≫ rationalSubsetLimitMap hAplus h₂ =
+      rationalSubsetLimitMap hAplus (h₂.trans h₁) := by
+  refine limit.hom_ext fun U' ↦ ?_
+  -- both sides are one comparison morphism out of the same rational subset of `V`, reached by
+  -- restricting along `h₂` and then `h₁`, or along `h₂.trans h₁`
+  rw [Category.assoc, rationalSubsetLimitMap_comp_π, reassoc_of% rationalSubsetLimitMap_comp_π,
+    rationalSubsetLimitMap_comp_π,
+    ← limit.w _ (homOfLE (rationalSubsetIndexRestrict_obj_restrict h₁ h₂ U').le), Category.assoc]
+  simp
+
+/-- **The presheaf `V ↦ lim_{U ⊆ V} A⟨U⟩`** on `Spa(A,A⁺)` of Wedhorn §8.1, valued in
+`CompleteSeparatedTopCommRingCat`, with the coordinate rings of presentations over `P` and
+restriction maps `rationalSubsetLimitMap`. The body is not exposed;
+`rationalSubsetLimitPresheaf_obj` and `rationalSubsetLimitPresheaf_map` give its values and
+restriction maps. -/
+noncomputable def rationalSubsetLimitPresheaf (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) :
+    (Opens ↥(spa Aplus))ᵒᵖ ⥤ CompleteSeparatedTopCommRingCat.{v} where
+  obj V := limit (rationalSubsetIndexDiagram (P := P) Aplus hAplus V.unop)
+  map h := rationalSubsetLimitMap hAplus (leOfHom h.unop)
+  map_id V := rationalSubsetLimitMap_refl hAplus V.unop
+  map_comp f g := (rationalSubsetLimitMap_comp hAplus (leOfHom f.unop) (leOfHom g.unop)).symm
+
+/-- Evaluating the presheaf on an open is the limit over the rational subsets it contains. -/
+@[simp]
+theorem rationalSubsetLimitPresheaf_obj (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) (V : (Opens ↥(spa Aplus))ᵒᵖ) :
+    (rationalSubsetLimitPresheaf P Aplus hAplus).obj V =
+      limit (rationalSubsetIndexDiagram (P := P) Aplus hAplus V.unop) :=
+  (rfl)
+
+/-- The presheaf's action on a containment is `rationalSubsetLimitMap`, transported along
+`rationalSubsetLimitPresheaf_obj`. -/
+@[simp]
+theorem rationalSubsetLimitPresheaf_map (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {V W : (Opens ↥(spa Aplus))ᵒᵖ} (h : V ⟶ W) :
+    (rationalSubsetLimitPresheaf P Aplus hAplus).map h =
+      eqToHom (rationalSubsetLimitPresheaf_obj P Aplus hAplus V) ≫
+        rationalSubsetLimitMap hAplus (leOfHom h.unop) ≫
+          eqToHom (rationalSubsetLimitPresheaf_obj P Aplus hAplus W).symm :=
+  (rfl)
+
+/-- **The presentation-indexed presheaf is the presheaf of limits over rational subsets**, when
+`A⁺` consists of power-bounded elements; at an open `V` it is
+`presentationLimitIsoRationalSubsetLimit`. Both presheaves are built from the pair of definition
+`P`. The body is not exposed; `presentationLimitPresheafIsoRationalSubsetLimitPresheaf_hom_app`
+gives its components. -/
+noncomputable def presentationLimitPresheafIsoRationalSubsetLimitPresheaf (P : PairOfDefinition A)
+    (Aplus : Subring A) (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) :
+    presentationLimitPresheaf P Aplus ≅ rationalSubsetLimitPresheaf P Aplus hAplus :=
+  NatIso.ofComponents
+    (fun V ↦ eqToIso (presentationLimitPresheaf_obj P Aplus V) ≪≫
+      presentationLimitIsoRationalSubsetLimit Aplus hAplus V.unop ≪≫
+      eqToIso (rationalSubsetLimitPresheaf_obj P Aplus hAplus V).symm)
+    -- instantiating the naturality lemma at `hAplus` keeps this `simp` fast
+    (by simp [reassoc_of% presentationLimitToRationalSubsetLimit_naturality hAplus])
+
+-- Deliberately not `@[simp]`: `simp` would rewrite the forward component before
+-- `Iso.hom_inv_id_app` or `Iso.inv_hom_id_app` could cancel it against the inverse component.
+/-- At an open `V`, the forward map of the isomorphism of the two presheaves is the comparison map
+`presentationLimitToRationalSubsetLimit` of the two limits at `V`, transported along
+`presentationLimitPresheaf_obj` and `rationalSubsetLimitPresheaf_obj`. -/
+theorem presentationLimitPresheafIsoRationalSubsetLimitPresheaf_hom_app (P : PairOfDefinition A)
+    (Aplus : Subring A) (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a)
+    (V : (Opens ↥(spa Aplus))ᵒᵖ) :
+    (presentationLimitPresheafIsoRationalSubsetLimitPresheaf P Aplus hAplus).hom.app V =
+      eqToHom (presentationLimitPresheaf_obj P Aplus V) ≫
+        presentationLimitToRationalSubsetLimit Aplus hAplus V.unop ≫
+          eqToHom (rationalSubsetLimitPresheaf_obj P Aplus hAplus V).symm :=
+  (rfl)
+
+/-- **Sheafhood transfers between the two presheaves**: when `A⁺` consists of power-bounded
+elements, `presentationLimitPresheaf P Aplus` is a sheaf exactly when
+`rationalSubsetLimitPresheaf P Aplus hAplus` is. -/
+theorem isSheaf_presentationLimitPresheaf_iff_isSheaf_rationalSubsetLimitPresheaf
+    (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) : Presheaf.IsSheaf
+      (Opens.grothendieckTopology ↥(spa Aplus)) (presentationLimitPresheaf P Aplus) ↔
+      Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+        (rationalSubsetLimitPresheaf P Aplus hAplus) :=
+  Presheaf.isSheaf_of_iso_iff (presentationLimitPresheafIsoRationalSubsetLimitPresheaf _ _ _)
 
 end
 

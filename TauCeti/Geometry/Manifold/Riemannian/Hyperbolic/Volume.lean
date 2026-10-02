@@ -35,7 +35,7 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [T2Space (TangentBundle I M)] [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
+  [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
   [LindelofSpace M]
 
 /-- The total Riemannian volume carried by a bundled complete constant-curvature `-1` metric. -/
@@ -47,7 +47,7 @@ noncomputable def hypVolumeOfMetric (g : HyperbolicMetric (I := I) (M := M)) : �
       (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   exact riemannianTotalVolume I M
 
-omit [T2Space (TangentBundle I M)] [LindelofSpace M] in
+omit [LindelofSpace M] in
 /-- `hypVolumeOfMetric` is the total volume for the metric carried by `g`. -/
 theorem hypVolumeOfMetric_def (g : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g =
@@ -59,7 +59,7 @@ theorem hypVolumeOfMetric_def (g : HyperbolicMetric (I := I) (M := M)) :
       riemannianTotalVolume I M := by
   rfl
 
-omit [T2Space (TangentBundle I M)] [LindelofSpace M] in
+omit [LindelofSpace M] in
 /-- Hyperbolic volume is nonnegative, as a total Riemannian volume. -/
 theorem hypVolumeOfMetric_nonneg (g : HyperbolicMetric (I := I) (M := M)) :
     0 ≤ hypVolumeOfMetric (I := I) g := by

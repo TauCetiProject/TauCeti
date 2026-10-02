@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Equiv
 
 /-!
-# Evaluating multiplication by a unit of the base ring
+# Linear equivalences and their underlying maps
 
 Mathlib's `LinearEquiv.smulOfUnit` packages multiplication by a unit `u` of the base ring as a
 linear equivalence, but records no lemma evaluating it at a vector. This file supplies that
@@ -19,6 +19,8 @@ evaluation lemma, in the `simp`-normal form that rewrites an application of
 `LinearEquiv.smulOfUnit` to a scalar multiplication. It also records how a linear automorphism,
 viewed as a permutation of the module through `MulAction.toPermHom`, moves the set underlying a
 submodule.
+For coordinate transport, forgetting linearity gives the corresponding additive word
+equivalence, with the same direction on coordinates.
 
 ## Main results
 
@@ -27,11 +29,28 @@ submodule.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
+* `LinearEquiv.funCongrLeft_toAddMonoidHom`: forgetting linearity in coordinate transport
+  gives additive coordinate transport.
 -/
 
 public section
 
 namespace LinearEquiv
+
+section Coordinates
+
+variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] {ι κ : Type*}
+
+/-- The additive homomorphism underlying linear coordinate transport is the one underlying
+`AddEquiv.arrowCongr`, with the coordinate equivalence reversed. -/
+@[simp]
+theorem funCongrLeft_toAddMonoidHom (e : κ ≃ ι) :
+    ((funCongrLeft R M e : (ι → M) →ₗ[R] κ → M) : (ι → M) →+ κ → M) =
+      (AddEquiv.arrowCongr e.symm (AddEquiv.refl M)) := by
+  ext x i
+  simp
+
+end Coordinates
 
 section Intertwining
 

@@ -101,7 +101,7 @@ variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
 nontrivial finite discrete `p`-primary additive group fixes a nonzero element. -/
 theorem exists_ne_zero_invariant_of_isProP (hG : IsProP p G) [Nontrivial M]
     (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) : ∃ m : M, m ≠ 0 ∧ ∀ g : G, g • m = m :=
-  exists_ne_zero_invariant_of_isProP_of_isOpen_ker hG (isOpen_toPermHom_ker G M) htors
+  exists_ne_zero_invariant_of_isProP_of_isOpen_ker hG (isOpen_ker_toPermHom G M) htors
 
 /-- A pro-`p` group acting continuously on a nontrivial finite discrete `p`-primary additive
 group fixes a nonzero element of order `p`. -/
@@ -109,7 +109,7 @@ theorem exists_ne_zero_nsmul_eq_zero_invariant_of_isProP (hG : IsProP p G) [Nont
     (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) :
     ∃ m : M, m ≠ 0 ∧ p • m = 0 ∧ ∀ g : G, g • m = m :=
   exists_ne_zero_nsmul_eq_zero_invariant_of_isProP_of_isOpen_ker hG
-    (isOpen_toPermHom_ker G M) htors
+    (isOpen_ker_toPermHom G M) htors
 
 /-- A nontrivial finite discrete `p`-primary additive group with a continuous action of a
 pro-`p` group contains a `G`-stable subgroup of order `p` on which `G` acts trivially: a copy of
@@ -143,7 +143,7 @@ theorem exists_notMem_nsmul_mem_smul_sub_mem_of_isProP (hG : IsProP p G)
   let _ := N.quotientDistribMulAction hN
   -- the stabilizer of a class is the preimage of the open set `N`, so the kernel is open
   have hK : IsOpen ((MulAction.toPermHom G (M ⧸ N)).ker : Set G) := by
-    rw [toPermHom_ker_eq_iInf_stabilizer, Subgroup.coe_iInf]
+    rw [ker_toPermHom_eq_iInf_stabilizer, Subgroup.coe_iInf]
     refine isOpen_iInter_of_finite fun y ↦ ?_
     obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
     have : (MulAction.stabilizer G (x : M ⧸ N) : Set G) = (fun g : G ↦ g • x - x) ⁻¹' N := by

@@ -105,9 +105,8 @@ theorem toConv_eq_one (f : R →ₐ[R] A) : toConv f = (1 : WithConv (R →ₐ[R
 /-- Evaluating the inverse of a trivial-group point gives the algebra map. -/
 theorem convInv_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
     f⁻¹ r = algebraMap R A r := by
-  rw [convPoint_eq_one f]
-  rw [AlgHom.convOne_def]
-  rfl
+  rw [convPoint_eq_one f, inv_one]
+  exact convPoint_apply 1 r
 
 section Naturality
 

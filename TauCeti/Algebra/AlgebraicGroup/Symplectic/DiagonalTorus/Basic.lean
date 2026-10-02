@@ -232,9 +232,11 @@ theorem mapPointsFunctor_diagonalTorusCoordinateMap_app
         (CommHopfAlgCat.mapPointsFunctor
           (diagonalTorusCoordinateMap (R := R) (m := m))).app A
             (AlgHom.mapValue (H := K) t.ofConv p) := by
-    exact DFunLike.congr_fun
+    have h := DFunLike.congr_fun
       (AlgHom.mapValue_mapDomain
-        (diagonalTorusCoordinateMap (R := R) (m := m)).hom t.ofConv) p
+        (diagonalTorusCoordinateMap (R := R) (m := m)).hom t.ofConv).symm p
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
+    exact h
   rw [← htp, ← hnat, hp, mapValue_diagonalTorusPoints]
 
 /-- The Laurent coordinate ring in which the generic diagonal symplectic matrix is evaluated. -/

@@ -40,6 +40,8 @@ sign of the permutation.
   pairs separates into the strictly increasing pairs and the diagonal.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
+* `TauCeti.prod_prod_Ioi_three` and `TauCeti.prod_prod_Ioi_four`: the products over the increasing
+  pairs of `Fin 3` and of `Fin 4`, written out.
 * `TauCeti.prod_prod_Ioi_snoc`: splits the pair product of a tuple with a final entry.
 * `TauCeti.prod_prod_Ioi_append`: the pair product of appended tuples splits into the pair
   products of each tuple and their cross terms.
@@ -76,6 +78,16 @@ theorem prod_prod_Ioi_eq_of_two {M : Type*} [CommMonoid M] {m : ℕ}
         ∏ i : Fin m, ∏ j ∈ Ioi i, f i.succ.succ j.succ.succ := by
   simp only [Fin.prod_univ_succ, Fin.prod_Ioi_zero, Fin.prod_Ioi_succ, Fin.succ_zero_eq_one]
   ac_rfl
+
+/-- The product over the three increasing pairs of `Fin 3`. -/
+theorem prod_prod_Ioi_three {M : Type*} [CommMonoid M] (f : Fin 3 → Fin 3 → M) :
+    ∏ i, ∏ j ∈ Ioi i, f i j = f 0 1 * f 0 2 * f 1 2 := by
+  simp [Fin.prod_univ_succ, Fin.prod_Ioi_succ, mul_assoc]
+
+/-- The product over the six increasing pairs of `Fin 4`. -/
+theorem prod_prod_Ioi_four {M : Type*} [CommMonoid M] (f : Fin 4 → Fin 4 → M) :
+    ∏ i, ∏ j ∈ Ioi i, f i j = f 0 1 * f 0 2 * f 0 3 * f 1 2 * f 1 3 * f 2 3 := by
+  simp [Fin.prod_univ_succ, Fin.prod_Ioi_succ, mul_assoc]
 
 /-- A pair product on a tuple extended by a final entry splits into the old pairs and the
 pairings with that entry. -/

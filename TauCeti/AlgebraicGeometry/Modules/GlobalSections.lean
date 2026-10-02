@@ -16,7 +16,9 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 `f^♯ r` is multiplication by `r`, and pulling back multiplication by `r` is multiplication by
 `f^♯ r` (`Scheme.Modules.pushforward_map_globalSectionsSmul` and
 `Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this
-action to the base ring for a scheme over a commutative ring.
+action to the base ring for a scheme over a commutative ring, and the morphism
+`Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
+presheaf.
 
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`.
@@ -202,6 +204,27 @@ global function obtained by pulling back the function on `Spec R` corresponding 
 lemma _root_.AlgebraicGeometry.Scheme.Modules.baseRingToGlobalSections_apply (r : R) :
     baseRingToGlobalSections R X r =
       (X ↘ Spec (.of R)).appTop ((Scheme.ΓSpecIso (.of R)).inv r) :=
+  (rfl)
+
+/-- The morphism from the constant presheaf of rings `R` to the structure presheaf of a scheme
+over `R`: on an open `U` it is the base ring map to global functions followed by restriction
+to `U`. -/
+def _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf :
+    (Functor.const X.Opensᵒᵖ).obj (CommRingCat.of R) ⟶ X.presheaf where
+  app U := CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections R X) ≫
+    X.presheaf.map U.unop.leTop.op
+  naturality U V i := by
+    simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.id_comp, Category.assoc,
+      ← Functor.map_comp]
+    rfl
+
+/-- On an open `U`, the base ring maps to sections over `U` through global functions followed by
+restriction to `U`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app (U : X.Opensᵒᵖ) :
+    (X.baseRingToStructurePresheaf R).app U =
+      CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections R X) ≫
+        X.presheaf.map U.unop.leTop.op :=
   (rfl)
 
 /-- Global sections of a sheaf of modules on a scheme over a commutative ring form a module over

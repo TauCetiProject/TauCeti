@@ -299,14 +299,9 @@ theorem _root_.IntermediateField.eq_unramifiedExtension_finrank (E : Intermediat
   -- The residue field of `E` has `q ^ [E : K]` elements.
   have hcard : Nat.card 𝓀[E] = Nat.card 𝓀[K] ^ Module.finrank K E := by
     rw [natCard_residueField K E, IsUnramified.inertiaDegree_eq_finrank]
-  -- Its unit group lifts to a group of `q ^ [E : K] − 1` roots of unity in `E`, so `E` contains a
-  -- primitive `(q ^ [E : K] − 1)`-st root of unity; hence it contains the unramified extension of
-  -- degree `[E : K]`, which has the same degree.
-  have : NeZero (Nat.card 𝓀[E] - 1) := ⟨card_residueField_sub_one_ne_zero 𝒪[E]⟩
-  obtain ⟨η, hη⟩ : ∃ η : E, IsPrimitiveRoot η (Nat.card 𝓀[E] - 1) := by
-    refine card_rootsOfUnity_eq_iff_exists_isPrimitiveRoot.1 ?_
-    rw [Nat.card_congr (rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[E] E).toEquiv,
-      Nat.card_units]
+  -- So `E` contains a primitive `(q ^ [E : K] − 1)`-st root of unity; hence it contains the
+  -- unramified extension of degree `[E : K]`, which has the same degree.
+  obtain ⟨η, hη⟩ := exists_isPrimitiveRoot_natCard_residueField_sub_one E
   rw [hcard] at hη
   have hηΩ := hη.map_of_injective (f := E.val) E.val.injective
   refine (eq_of_le_of_finrank_eq ?_ (finrank_unramifiedExtension_of_isPrimitiveRoot hf hηΩ)).symm

@@ -16,8 +16,8 @@ file installs that instance, so fractional ideals and Picard groups can be forme
 order.
 
 Every order consists of algebraic integers, because module-finiteness implies integrality.  Thus it
-embeds canonically in the maximal order `𝓞 K`.  The maximal order itself is packaged as
-`maximalNumberFieldOrder K`.
+embeds canonically in the maximal order `𝓞 K`; in particular it is never the whole field.  The
+maximal order itself is packaged as `maximalNumberFieldOrder K`.
 
 ## Main definitions
 
@@ -30,6 +30,8 @@ embeds canonically in the maximal order `𝓞 K`.  The maximal order itself is p
   fraction field of any order.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.le_ringOfIntegers`: every order is contained in the
   ring of integers.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.toSubalgebra_ne_top`: an order is a proper subring
+  of its number field.
 
 ## References
 
@@ -79,6 +81,14 @@ theorem isIntegral (O : NumberFieldOrder K) (x : O.toSubalgebra) :
 theorem le_ringOfIntegers (O : NumberFieldOrder K) :
     O.toSubalgebra ≤ integralClosure ℤ K := fun x hx => by
   exact (O.isIntegral ⟨x, hx⟩)
+
+/-- An order is a proper subring of its number field. -/
+theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ := by
+  intro h
+  have : Algebra.IsIntegral ℤ K := ⟨fun x => O.isIntegral ⟨x, by rw [h]; exact Algebra.mem_top⟩⟩
+  exact Int.not_isField
+    ((Algebra.IsIntegral.isField_iff_isField (algebraMap ℤ K).injective_int).mpr
+      (Field.toIsField K))
 
 private theorem exists_order_div (O : NumberFieldOrder K) (z : K) :
     ∃ a b : O.toSubalgebra, (b : K) ≠ 0 ∧ z = (a : K) / (b : K) := by

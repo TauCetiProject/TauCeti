@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 
 /-!
@@ -42,8 +44,9 @@ corollaries, where smoothness re-enters, live in the companion files
 The file also records the base second-derivative computation `laplacian_norm_sq`
 (`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on the squared norm,
 its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial functions
-`x ↦ ρ (‖x‖²)`, and the locality statement `tsupport_laplacian_subset` that `Δ f` vanishes
-wherever `f` vanishes identically.
+`x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
+`ContDiffAt.laplacian_fun_smul` for products with a scalar function, and the locality
+statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes identically.
 
 ## Main declarations
 
@@ -59,6 +62,9 @@ wherever `f` vanishes identically.
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
   `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`.
+* `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
+* `ContDiffAt.laplacian_fun_smul`: its vector-valued form
+  `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
 -/
 
@@ -259,6 +265,71 @@ theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDif
   rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, ← Finset.mul_sum,
     b.sum_sq_inner_left x]
   simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  ring
+
+open Filter Gradient Topology in
+/-- **The Leibniz rule for the Laplacian.** For scalar functions twice differentiable at `x`,
+`Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf` at `x`. -/
+theorem _root_.ContDiffAt.laplacian_fun_mul {f g : E → ℝ} {x : E} (hf : ContDiffAt ℝ 2 f x)
+    (hg : ContDiffAt ℝ 2 g x) :
+    Δ (fun y ↦ f y * g y) x = f x * Δ g x + 2 * ⟪∇ f x, ∇ g x⟫_ℝ + g x * Δ f x := by
+  have hfd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y :=
+    (hf.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
+  have hgd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y :=
+    (hg.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
+  have hfg : fderiv ℝ (fun y ↦ f y * g y) =ᶠ[𝓝 x]
+      fun y ↦ f y • fderiv ℝ g y + g y • fderiv ℝ f y := by
+    filter_upwards [hfd, hgd] with y hfy hgy
+    exact fderiv_mul hfy hgy
+  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
+    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hg' : DifferentiableAt ℝ (fderiv ℝ g) x :=
+    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  -- Each diagonal Hessian entry of the product, by differentiating the product rule once more.
+  have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ f y * g y) x ![v, v] =
+      f x * iteratedFDeriv ℝ 2 g x ![v, v] + 2 * (fderiv ℝ f x v * fderiv ℝ g x v) +
+        g x * iteratedFDeriv ℝ 2 f x ![v, v] := by
+    intro v
+    have h1 : DifferentiableAt ℝ (fun y ↦ f y • fderiv ℝ g y) x := hfd.self_of_nhds.smul hg'
+    have h2 : DifferentiableAt ℝ (fun y ↦ g y • fderiv ℝ f y) x := hgd.self_of_nhds.smul hf'
+    rw [iteratedFDeriv_two_apply, hfg.fderiv_eq, fderiv_fun_add h1 h2,
+      fderiv_fun_smul hfd.self_of_nhds hg', fderiv_fun_smul hgd.self_of_nhds hf',
+      iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
+    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+      add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+    ring
+  set b := stdOrthonormalBasis ℝ E
+  -- The mixed first-order terms assemble into the inner product of the gradients.
+  have hgrad : ⟪∇ f x, ∇ g x⟫_ℝ = ∑ i, fderiv ℝ f x (b i) * fderiv ℝ g x (b i) := by
+    rw [← b.sum_inner_mul_inner (∇ f x) (∇ g x)]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [inner_gradient_left, real_inner_comm, inner_gradient_left]
+  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
+    congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis f b) x,
+    congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis g b) x, hgrad]
+  simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+open Gradient in
+/-- **The Leibniz rule for the Laplacian**, vector-valued form.  For a scalar function `f` and a
+vector-valued function `g`, both twice differentiable at `x`,
+`Δ (f • g) = f • Δg + 2 • Dg(∇f) + Δf • g` at `x`. -/
+theorem _root_.ContDiffAt.laplacian_fun_smul {f : E → ℝ} {g : E → F} {x : E}
+    (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+    Δ (fun y ↦ f y • g y) x = f x • Δ g x + (2 : ℝ) • fderiv ℝ g x (∇ f x) + Δ f x • g x := by
+  -- Test both sides against continuous linear functionals, reducing to the scalar rule.
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun ℓ ↦ ?_
+  have hℓg : ContDiffAt ℝ 2 (ℓ ∘ g) x := ℓ.contDiff.contDiffAt.comp x hg
+  have hcomp : ⇑ℓ ∘ (fun y ↦ f y • g y) = fun y ↦ f y * (ℓ ∘ g) y := by
+    funext y
+    simp
+  have hd : fderiv ℝ (ℓ ∘ g) x = ℓ.comp (fderiv ℝ g x) :=
+    (ℓ.hasFDerivAt.comp x (hg.differentiableAt (by norm_num)).hasFDerivAt).fderiv
+  have hfg : ContDiffAt ℝ 2 (fun y ↦ f y • g y) x := hf.smul hg
+  have h := hfg.laplacian_CLM_comp_left (l := ℓ)
+  rw [hcomp, hf.laplacian_fun_mul hℓg, hg.laplacian_CLM_comp_left, inner_gradient_right,
+    conj_trivial, hd] at h
+  rw [← Function.comp_apply (f := ℓ), ← h]
+  simp only [Function.comp_apply, map_add, map_smul, smul_eq_mul, ContinuousLinearMap.comp_apply]
   ring
 
 open Topology in

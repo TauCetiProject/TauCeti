@@ -44,8 +44,8 @@ the infimum on the compact set of couplings.
   element of the bundled type `TauCeti.Coupling`;
 * `TauCeti.isCompact_setOfPred_isOptimalCoupling` — the optimal plans themselves form a weakly
   compact set;
-* `TauCeti.transportCost_iSup_eq_iSup` — minimization over compact coupling sets commutes with an
-  increasing supremum of lower-semicontinuous costs;
+* `TauCeti.transportCost_iSup_eq_iSup` — minimization over a compact coupling set supplied by
+  tight marginals commutes with an increasing supremum of lower-semicontinuous costs;
 * `TauCeti.transportCost_eq_iSup_transportCost_lscApprox` — transport cost commutes with the
   canonical monotone approximation of a lower-semicontinuous cost;
 * `TauCeti.exists_isOptimalCoupling_edist` and `TauCeti.exists_isOptimalCoupling_edist_rpow` — the
@@ -128,20 +128,23 @@ theorem isCompact_setOfPred_isOptimalCoupling {μ : Measure X} [IsProbabilityMea
 
 end Tight
 
-section CompactMetrizable
+section TightMetrizable
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace.MetrizableSpace X]
-  [CompactSpace X] [MeasurableSpace X] [BorelSpace X] [TopologicalSpace Y]
-  [TopologicalSpace.MetrizableSpace Y] [CompactSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  [MeasurableSpace X] [BorelSpace X] [TopologicalSpace Y]
+  [TopologicalSpace.MetrizableSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  [SecondCountableTopologyEither X Y]
   {μ : Measure X} {ν : Measure Y} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
 
-/-- **Monotone convergence of optimal transport costs on compact spaces.** The transport cost of
-the pointwise supremum of an increasing sequence of lower-semicontinuous costs is the supremum of
-their transport costs. No finiteness assumption is made: both sides may be `∞`.
+/-- **Monotone convergence of optimal transport costs for tight marginals.** The transport cost
+of the pointwise supremum of an increasing sequence of lower-semicontinuous costs is the supremum
+of their transport costs. No finiteness assumption is made: both sides may be `∞`.
 
-Compactness of the feasible set is load-bearing. Without it, an escaping sequence of approximate
-minimizers can make the supremum of the minima strictly smaller than the minimum of the supremum. -/
+Tightness is load-bearing because it makes the fixed-marginal coupling set compact. Without
+compactness, an escaping sequence of approximate minimizers can make the supremum of the minima
+strictly smaller than the minimum of the supremum. -/
 theorem transportCost_iSup_eq_iSup {cs : ℕ → X × Y → ℝ≥0∞}
+    (hμ : IsTightMeasureSet {μ}) (hν : IsTightMeasureSet {ν})
     (hcs : ∀ n, LowerSemicontinuous (cs n)) (hmono : Monotone cs) :
     transportCost (fun z ↦ ⨆ n, cs n z) μ ν = ⨆ n, transportCost (cs n) μ ν := by
   let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
@@ -156,8 +159,7 @@ theorem transportCost_iSup_eq_iSup {cs : ℕ → X × Y → ℝ≥0∞}
     exact le_antisymm this ha_le
   have hK_nonempty (n : ℕ) : (K n).Nonempty := by
     obtain ⟨π, hπ⟩ := exists_isOptimalCoupling_of_isTightMeasureSet
-      (μ := μ) (ν := ν) IsTightMeasureSet.of_compactSpace
-      IsTightMeasureSet.of_compactSpace (hcs n)
+      (μ := μ) (ν := ν) hμ hν (hcs n)
     let π' : ProbabilityMeasure (X × Y) := ⟨π, hπ.toIsCoupling.isProbabilityMeasure⟩
     refine ⟨π', hπ.toIsCoupling, ?_⟩
     -- `π'` only bundles the raw optimal plan `π`; expose that coercion to use its optimal value.
@@ -168,14 +170,14 @@ theorem transportCost_iSup_eq_iSup {cs : ℕ → X × Y → ℝ≥0∞}
     refine ⟨hπ, hπcost.trans' (lintegral_mono fun z ↦ ?_)⟩
     exact hmono (Nat.le_succ n) z
   have hK_closed (n : ℕ) : IsClosed (K n) := by
-    exact (isClosed_setOfPred_isCoupling_of_compactSpace
+    exact (isClosed_setOfPred_isCoupling
       (⟨μ, ‹IsProbabilityMeasure μ›⟩ : ProbabilityMeasure X)
       (⟨ν, ‹IsProbabilityMeasure ν›⟩ : ProbabilityMeasure Y)).inter
         (isClosed_setOfPred_lintegral_le_probabilityMeasure (hcs n) a)
   have hK_compact : IsCompact (K 0) :=
-    (isCompact_setOfPred_isCoupling_of_compactSpace
-      (⟨μ, ‹IsProbabilityMeasure μ›⟩ : ProbabilityMeasure X)
-      (⟨ν, ‹IsProbabilityMeasure ν›⟩ : ProbabilityMeasure Y)).inter_right
+    (isCompact_setOfPred_isCoupling
+      (μ := (⟨μ, ‹IsProbabilityMeasure μ›⟩ : ProbabilityMeasure X))
+      (ν := (⟨ν, ‹IsProbabilityMeasure ν›⟩ : ProbabilityMeasure Y)) hμ hν).inter_right
         (isClosed_setOfPred_lintegral_le_probabilityMeasure (hcs 0) a)
   obtain ⟨π, hπ⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed
     K hK_succ hK_nonempty hK_compact hK_closed
@@ -184,29 +186,32 @@ theorem transportCost_iSup_eq_iSup {cs : ℕ → X × Y → ℝ≥0∞}
   rw [lintegral_iSup (fun n ↦ (hcs n).measurable) hmono]
   exact iSup_le fun n ↦ (hπK n).2
 
-end CompactMetrizable
+end TightMetrizable
 
-section CompactPseudoMetric
+section TightPseudoMetric
 
-variable {X Y : Type*} [PseudoMetricSpace X] [T0Space X] [CompactSpace X]
-  [MeasurableSpace X] [BorelSpace X] [PseudoMetricSpace Y] [T0Space Y] [CompactSpace Y]
+variable {X Y : Type*} [PseudoMetricSpace X] [T0Space X]
+  [MeasurableSpace X] [BorelSpace X] [PseudoMetricSpace Y] [T0Space Y]
   [MeasurableSpace Y] [BorelSpace Y] {μ : Measure X} {ν : Measure Y}
-  [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {c : X × Y → ℝ≥0∞}
+  [SecondCountableTopologyEither X Y] [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+  {c : X × Y → ℝ≥0∞}
 
-/-- On compact metrizable spaces, the transport costs of the canonical bounded-continuous
-approximations of a lower-semicontinuous cost increase to the transport cost of the original
-cost. This is the minimization counterpart of
+/-- For tight marginals on metrizable spaces, the transport costs of the canonical
+bounded-continuous approximations of a lower-semicontinuous cost increase to the transport cost
+of the original cost. This is the minimization counterpart of
 `TauCeti.lintegral_eq_iSup_lintegral_lscApprox`. -/
-theorem transportCost_eq_iSup_transportCost_lscApprox (hc : LowerSemicontinuous c) :
+theorem transportCost_eq_iSup_transportCost_lscApprox
+    (hμ : IsTightMeasureSet {μ}) (hν : IsTightMeasureSet {ν})
+    (hc : LowerSemicontinuous c) :
     transportCost c μ ν =
       ⨆ n : ℕ, transportCost (fun z ↦ (lscApprox c n z : ℝ≥0∞)) μ ν := by
   simpa only [iSup_coe_lscApprox hc] using
-    transportCost_iSup_eq_iSup
+    transportCost_iSup_eq_iSup hμ hν
       (cs := fun n z ↦ (lscApprox c n z : ℝ≥0∞))
       (fun n ↦ (ENNReal.continuous_coe.comp (lscApprox c n).continuous).lowerSemicontinuous)
       (monotone_coe_lscApprox c)
 
-end CompactPseudoMetric
+end TightPseudoMetric
 
 section Polish
 

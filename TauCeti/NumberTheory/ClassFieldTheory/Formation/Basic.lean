@@ -439,6 +439,12 @@ def tateHMinusTwoEquivAbelianization :
     L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
   TauCeti.TateCohomology.HNegTwoAddEquivAbelianization
 
+/-- The layer's degree-`-2` identification is the generic identification for its Galois group. -/
+theorem tateHMinusTwoEquivAbelianization_apply (x : L.TrivialTateH (-2)) :
+    L.tateHMinusTwoEquivAbelianization x =
+      TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x :=
+  (rfl)
+
 -- `dsimp% only` on the left-hand side, as explained in the implementation notes: Mathlib's
 -- `Rep.trivial` is also an `abbrev` for `Rep.of`, so `simp` reduces its carrier as well.
 /-- The degree `-2` identification sends the standard first-homology class represented by

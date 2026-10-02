@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.Algebra.Lie.Presentation.Serre
+public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
@@ -122,8 +123,8 @@ private theorem fromBlocks_mem_sp (P Q S R : _root_.Matrix (Fin (n + 1)) (Fin (n
     (hQ : Qᵀ = Q) (hS : Sᵀ = S) (hR : R = -Pᵀ) :
     _root_.Matrix.fromBlocks P Q S R ∈ sp (Fin (n + 1)) ℚ := by
   subst R
-  rw [sp, mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule]
-  simp only [_root_.Matrix.IsSkewAdjoint, _root_.Matrix.IsAdjointPair, _root_.Matrix.J,
+  rw [mem_sp]
+  simp only [_root_.Matrix.J,
     _root_.Matrix.fromBlocks_transpose, _root_.Matrix.transpose_neg,
     _root_.Matrix.transpose_transpose, _root_.Matrix.fromBlocks_multiply,
     _root_.Matrix.mul_zero, _root_.Matrix.mul_one, _root_.Matrix.zero_mul,

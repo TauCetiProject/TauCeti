@@ -197,6 +197,11 @@ theorem hom_ext {f g : SplitK0 C →+ G} (h : ∀ X : C, f (of X) = g (of X)) : 
 
 end HomExt
 
+/-- A homomorphism into split `K₀` whose range contains the class of every object is surjective. -/
+theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ SplitK0 C}
+    (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f :=
+  PresentedK0.surjective_of_forall_of_mem_range h
+
 variable {G : Type*} [AddCommGroup G]
 
 variable (C) in

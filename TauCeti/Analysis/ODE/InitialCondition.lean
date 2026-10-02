@@ -89,9 +89,9 @@ section
 
 variable [CompleteSpace E]
 
-/-- The finite-order form of `ODE.contDiffAt_globalSolution`, which is where the parameterized
-Picard theorem applies. -/
-private theorem contDiffAt_globalSolution_nat (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
+/-- **The global solution of a globally Lipschitz field depends smoothly on time and on its
+initial condition**, near time `0`, at the order of the field. -/
+theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) (a : E) :
     ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) (a, 0) := by
   -- The field of the rescaled equation, with the initial condition and the speed as parameters.
@@ -101,12 +101,12 @@ private theorem contDiffAt_globalSolution_nat (n : ℕ) (v : E → E) {K : ℝ�
       (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (((a, (0 : ℝ))), y) = 0 :=
     .of_forall fun y ↦ zero_smul ℝ _
   obtain ⟨γ, hγ, -, hprop⟩ :=
-    exists_contDiffAt_picard_solution_of_contDiff n
+    exists_contDiffAt_picard_solution_of_contDiff
       (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (a, (0 : ℝ)) (0 : E) hf hzero
   have hsmooth : ContDiffAt ℝ (n + 1)
       (fun p : E × ℝ ↦ p.1 + γ p ⟨1, by norm_num⟩) (a, 0) := by
     have := ((ContinuousMap.evalCLM (R := ℝ) (⟨1, by norm_num⟩ : Icc (0 : ℝ) 1)).contDiff
-      (n := (n + 1 : ℕ))).comp_contDiffAt (a, (0 : ℝ)) hγ
+      (n := n + 1)).comp_contDiffAt (a, (0 : ℝ)) hγ
     exact contDiffAt_fst.add (by simpa [Function.comp_def] using this)
   refine hsmooth.congr_of_eventuallyEq ?_
   filter_upwards [hprop] with p hp
@@ -123,21 +123,6 @@ private theorem contDiffAt_globalSolution_nat (n : ℕ) (v : E → E) {K : ℝ�
     (u := fun s : ℝ ↦ p.1 + γ p (projIcc 0 1 zero_le_one s))
     (by simpa [projIcc_left] using congrArg (fun w : E ↦ p.1 + w) hbase) hcont hderiv
   simpa [projIcc_right] using this.symm
-
-/-- **The global solution of a globally Lipschitz field depends smoothly on time and on its
-initial condition**, near time `0`, at the order of the field. -/
-theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
-    (hvs : ContDiff ℝ (n + 1) v) (a : E) :
-    ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) (a, 0) := by
-  induction n using ENat.recTopCoe with
-  | top =>
-    have htop : ((⊤ : ℕ∞) : WithTop ℕ∞) + 1 = ∞ := by
-      norm_cast
-    rw [htop] at hvs ⊢
-    exact contDiffAt_infty.2 fun m ↦
-      (contDiffAt_globalSolution_nat m v hv (hvs.of_le (by exact_mod_cast le_top)) a).of_le
-        (by exact_mod_cast Nat.le_succ m)
-  | coe m => exact contDiffAt_globalSolution_nat m v hv (by exact_mod_cast hvs) a
 
 /-- **`C^(n+1)` dependence on the initial condition.** For every small time the time-`t` map of a
 globally Lipschitz `C^(n+1)` field is `C^(n+1)` at the base point. The order is finite here

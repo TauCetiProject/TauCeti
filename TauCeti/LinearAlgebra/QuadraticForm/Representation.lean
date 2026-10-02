@@ -24,7 +24,9 @@ coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_b
 nondegenerate isotropic form over a field also contains an isotropic pair: two isotropic vectors
 whose polar pairing is one. If the orthogonal sum of a form with trivial radical and an
 anisotropic form on a nonzero space is isotropic, the two summands therefore share a nonzero
-opposite value. These results provide the basic bridge from value questions to isotropy questions,
+opposite value; for two nondegenerate summands, the first with some unit value and the second on
+a nonzero space, isotropy of the sum is equivalent to such a shared opposite unit value. These
+results provide the basic bridge from value questions to isotropy questions,
 following Lam,
 *Introduction to Quadratic Forms over Fields*, I.2.3 and I.3.5.
 -/
@@ -388,5 +390,30 @@ theorem _root_.QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod
     a ∈ unitValueSet Q ↔
       ¬(Q.prod ((-(a : K)) • (QuadraticMap.sq : QuadraticForm K K))).Anisotropic :=
   mem_unitValueSet_iff_not_anisotropic_prod_of_radical_eq_bot Q hQ.radical_eq_bot a
+
+/-- The orthogonal sum of a form `Q₁` with trivial radical and some unit value and a form `Q₂`
+with trivial radical on a nonzero space is isotropic exactly when some unit value `x` of `Q₁` has
+`-x` a value of `Q₂`. -/
+theorem _root_.QuadraticMap.not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem
+    {V' : Type*} [AddCommGroup V'] [Module K V'] [Nontrivial V']
+    {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K V'} (hQ₁ : Q₁.radical = ⊥)
+    (hQ₂ : Q₂.radical = ⊥) (h : (unitValueSet Q₁).Nonempty) :
+    ¬(Q₁.prod Q₂).Anisotropic ↔ ∃ x : Kˣ, x ∈ unitValueSet Q₁ ∧ -x ∈ unitValueSet Q₂ := by
+  constructor
+  · intro hiso
+    by_cases hani : Q₂.Anisotropic
+    · obtain ⟨x, y, hx, hxy⟩ := hani.exists_ne_zero_eq_neg_of_not_anisotropic_prod hQ₁ hiso
+      refine ⟨Units.mk0 _ hx, mem_unitValueSet.mpr ((represents_iff _ _).mpr ⟨x, rfl⟩),
+        mem_unitValueSet.mpr ((represents_iff _ _).mpr ⟨y, ?_⟩)⟩
+      rw [Units.val_neg, Units.val_mk0, hxy, neg_neg]
+    · -- An isotropic `Q₂` represents every scalar, in particular the negative of a unit value of
+      -- `Q₁`.
+      obtain ⟨a, ha⟩ := h
+      refine ⟨a, ha, ?_⟩
+      rw [mem_unitValueSet, Units.val_neg]
+      exact represents_of_radical_eq_bot_of_not_anisotropic _ hQ₂ hani _
+  · rintro ⟨x, hx₁, hx₂⟩
+    exact not_anisotropic_prod_of_represents_neg (mem_unitValueSet.mp hx₁)
+      (by simpa using mem_unitValueSet.mp hx₂) x.ne_zero
 
 end TauCeti

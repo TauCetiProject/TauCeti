@@ -135,6 +135,14 @@ theorem exists_analyticAffineChartι_apply_eq (x : Φ.analyticRealization hΦ) :
       Φ.analyticAffineChartι hΦ σ y = x :=
   (Φ.analyticGlueData hΦ).ι_jointly_surjective x
 
+/-- Two maps out of the analytic realization agree when they agree on every affine analytic
+chart. -/
+theorem analyticRealization_hom_ext {Z : TopCat} {g g' : Φ.analyticRealization hΦ ⟶ Z}
+    (h : ∀ σ, Φ.analyticAffineChartι hΦ σ ≫ g = Φ.analyticAffineChartι hΦ σ ≫ g') : g = g' := by
+  ext x
+  obtain ⟨σ, y, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
+  exact ConcreteCategory.congr_hom (h σ) y
+
 /-- A subset of the analytic realization is open exactly when its preimage in every affine
 analytic chart is open. -/
 theorem isOpen_iff_forall_preimage_analyticAffineChartι (s : Set (Φ.analyticRealization hΦ)) :

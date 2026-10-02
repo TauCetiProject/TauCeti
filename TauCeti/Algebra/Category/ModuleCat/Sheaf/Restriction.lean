@@ -38,6 +38,9 @@ adapted from
 
 * `SheafOfModules.pushforwardSheafificationIso` is the sheafification-pushforward comparison for
   a continuous and cocontinuous functor;
+* `SheafOfModules.pushforwardSheafificationIso_inv_comp_map_counit` and
+  `SheafOfModules.sheafification_map_pushforward_map_comp_counit` describe the comparison through
+  the counits of the sheafification adjunctions;
 * `SheafOfModules.overSheafificationIso` is its specialization to a slice site;
 * `Sheaf.iteratedSliceEquivalence` identifies restriction to an iterated slice
   with restriction to the underlying object, with
@@ -372,6 +375,70 @@ theorem pushforwardSheafificationIso_inv_naturality
   simp only [Functor.map_comp]
   rw [Category.assoc, sheafificationIso_hom_naturality]
   rw [Category.assoc]
+
+/-- On the underlying presheaf of a sheaf of modules `M`, the inverse sheafification--pushforward
+comparison followed by the pushforward of the counit of the sheafification adjunction at `M` is
+the counit at the pushforward of `M`. -/
+@[reassoc]
+theorem pushforwardSheafificationIso_inv_comp_map_counit (M : SheafOfModules.{v} R) :
+    (pushforwardSheafificationIso F R
+        ((SheafOfModules.forget R ⋙ PresheafOfModules.restrictScalars (𝟙 R.obj)).obj M)).inv ≫
+        (SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
+          ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).counit.app M) =
+      (PresheafOfModules.sheafificationAdjunction
+        (𝟙 ((F.sheafPushforwardContinuous RingCat.{u} J K).obj R).obj)).counit.app
+        ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).obj M) := by
+  -- The counits are the forward maps of `sheafificationIso`, in terms of which naturality of the
+  -- counit is stated on underlying presheaves.
+  have key : (pushforwardSheafificationIso F R M.val).inv ≫
+        (SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
+          (sheafificationIso R M).hom =
+      (sheafificationIso _
+        ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).obj M)).hom := by
+    rw [pushforwardSheafificationIso_inv, Category.assoc, ← sheafificationIso_hom_naturality,
+      ← Category.assoc, ← Functor.map_comp]
+    -- By the triangle identity, the pushforward of the sheafification unit at `M.val` followed
+    -- by the underlying map of the counit at `M` is the identity.
+    have h : pushforwardToSheafify (J := J) (K := K) F R M.val ≫
+        ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
+          (sheafificationIso R M).hom).val =
+          𝟙 ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).obj M).val := by
+      rw [pushforwardToSheafify, SheafOfModules.pushforward_map_val, sheafificationIso_hom]
+      exact ((presheafPushforward F R).map_comp _ _).symm.trans
+        ((congrArg _ ((PresheafOfModules.sheafificationAdjunction
+          (𝟙 R.obj)).right_triangle_components M)).trans (CategoryTheory.Functor.map_id _ _))
+    have h' : (PresheafOfModules.sheafification
+        (𝟙 ((F.sheafPushforwardContinuous RingCat.{u} J K).obj R).obj)).map
+        (pushforwardToSheafify (J := J) (K := K) F R M.val ≫
+          ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
+            (sheafificationIso R M).hom).val) = 𝟙 _ := by
+      rw [h]
+      exact CategoryTheory.Functor.map_id _ _
+    rw [h']
+    exact Category.id_comp _
+  rw [sheafificationIso_hom, sheafificationIso_hom] at key
+  exact key
+
+/-- The sheafification of the pushforward of a morphism `f : P ⟶ M` from a presheaf of modules
+into (the underlying presheaf of) a sheaf of modules, followed by the counit for the pushforward
+of `M`, is the inverse sheafification--pushforward comparison followed by the pushforward of the
+adjoint morphism `P^# ⟶ M`. -/
+theorem sheafification_map_pushforward_map_comp_counit
+    {P : PresheafOfModules.{v} R.obj} {M : SheafOfModules.{v} R}
+    (f : P ⟶ (SheafOfModules.forget R ⋙ PresheafOfModules.restrictScalars (𝟙 R.obj)).obj M) :
+    (PresheafOfModules.sheafification
+        (𝟙 ((F.sheafPushforwardContinuous RingCat.{u} J K).obj R).obj)).map
+        ((PresheafOfModules.pushforward (F := F)
+          (pushforwardRingIso (J := J) (K := K) F R).inv).map f) ≫
+      (PresheafOfModules.sheafificationAdjunction
+        (𝟙 ((F.sheafPushforwardContinuous RingCat.{u} J K).obj R).obj)).counit.app
+        ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).obj M) =
+    (pushforwardSheafificationIso F R P).inv ≫
+      (SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).homEquiv P M).symm f) := by
+  rw [Adjunction.homEquiv_counit, Functor.map_comp, ← Category.assoc,
+    ← pushforwardSheafificationIso_inv_naturality, Category.assoc,
+    pushforwardSheafificationIso_inv_comp_map_counit]
 
 end General
 

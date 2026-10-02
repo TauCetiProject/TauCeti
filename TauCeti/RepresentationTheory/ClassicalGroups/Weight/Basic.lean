@@ -58,6 +58,9 @@ The definitions themselves need only a commutative ring, and are stated there.
 * `TauCeti.weightSpace_detPowerRep`: all of `det ^ m` has the constant weight `m`, that is, its
   weight space at the constant sequence `m` is `⊤`. Over a general commutative ring this says
   nothing about the other weight spaces — over `𝔽₂` all of them are `⊤` as well.
+* `TauCeti.map_weightSpace_le_of_commute`: **an operator commuting with the torus action preserves
+  every weight space**, so when the ambient representation is the internal direct sum of its weight
+  spaces, a subrepresentation the operator cuts out inherits that decomposition.
 
 ## Implementation notes
 
@@ -118,6 +121,23 @@ theorem apply_of_mem_weightSpace {ρ : Representation k (GL (Fin n) k) W} {l : F
     (hw : w ∈ weightSpace ρ l) (t : Fin n → kˣ) :
     ρ (diagGL t) w = ((weightChar k l t : kˣ) : k) • w :=
   (mem_weightSpace_iff ρ l w).mp hw t
+
+/-- **An operator commuting with the torus action preserves every weight space.**  A weight space
+is a joint eigenspace of the torus, and an operator commuting with an endomorphism carries each of
+its eigenvectors to an eigenvector of the same eigenvalue.
+
+The operator therefore acts on each weight space separately, which is how a subrepresentation cut
+out of `W` by such an operator inherits a weight decomposition of `W` — when `W` has one, that is;
+the statement itself says nothing about whether the weight spaces of `W` span it or are
+independent. -/
+theorem map_weightSpace_le_of_commute {ρ : Representation k (GL (Fin n) k) W} (l : Fin n → ℤ)
+    {φ : Module.End k W} (hφ : ∀ t : Fin n → kˣ, Commute φ (ρ (diagGL t))) :
+    (weightSpace ρ l).map φ ≤ weightSpace ρ l := by
+  rw [Submodule.map_le_iff_le_comap]
+  intro w hw
+  simp only [Submodule.mem_comap, mem_weightSpace_iff] at hw ⊢
+  intro t
+  rw [← Module.End.mul_apply, ← (hφ t).eq, Module.End.mul_apply, hw t, map_smul]
 
 /-! ## The standard representation and the determinant powers -/
 

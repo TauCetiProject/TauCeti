@@ -45,6 +45,7 @@ converts "a.e." back into "everywhere".
 ## Main results
 
 * `Graphon.toAEEqFun_eq_iff` — two graphons have the same class exactly when they agree a.e.;
+* `Graphon.ae_eq_const_of_dirac` — a graphon on a point mass agrees a.e. with its value there;
 * `Graphon.toAEEqFun_mem_Icc_ae`, `Graphon.toAEEqFun_symm_ae` — the class of a graphon is a.e.
   `[0, 1]`-valued and a.e. symmetric;
 * `Graphon.toAEEqFun_comap` — the class of a measure-preserving pullback is the composition of the
@@ -104,6 +105,19 @@ namespace TauCeti
 namespace DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- **A graphon on a point mass is almost everywhere constant**: on `(Ω, δ_b)` it agrees
+`δ_b ⊗ δ_b`-almost everywhere with the constant graphon at its value `W b b`.
+
+No measurable-singleton hypothesis is needed: the set where `W` takes the value `W b b` is
+measurable because `W` is. -/
+theorem Graphon.ae_eq_const_of_dirac {b : Ω}
+    (W : Graphon Ω (Measure.dirac b)) :
+    ∀ᵐ x ∂(Measure.dirac b).prod (Measure.dirac b),
+      W x.1 x.2 = Graphon.const (Measure.dirac b) ⟨W b b, W.mem_Icc b b⟩ x.1 x.2 := by
+  rw [Measure.dirac_prod_dirac]
+  exact (ae_dirac_iff (measurableSet_eq_fun W.measurable (Graphon.const _ _).measurable)).2
+    (by simp)
 
 /-- **A rectangle integral only sees the a.e. class of the kernel.** Almost everywhere equality on
 `μ ⊗ μ` restricts to any rectangle, so the two integrands agree there. -/

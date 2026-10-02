@@ -23,7 +23,9 @@ The stabilizer of the coset `sH` is the conjugate subgroup `sHs⁻¹`
 covers the trivial coset, transported along `MulAction.stabilizer_smul_eq_stabilizer_map_conj`.
 Read on elements, it says that `g` fixes `sH` exactly when `s⁻¹ g s` lies in `H`
 (`TauCeti.smul_quotientGroup_mk_eq_self_iff`), which is the form a fixed-coset count is checked
-in.
+in.  Reading that criterion over all of `G` counts the elements `x` with `x⁻¹ g x ∈ H`: they form
+the preimage of the `g`-fixed cosets, a union of `|(G ⧸ H)^g|` cosets of `H`, hence there are
+`|H| * |(G ⧸ H)^g|` of them (`Subgroup.natCard_mul_natCard_fixedBy`).
 
 The cosets of `⊥` in a group `G` are the elements of `G`, and Mathlib's
 `QuotientGroup.quotientBot` is that identification.  The identification is equivariant for left
@@ -37,6 +39,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
+* `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
+  `|H| * |(G ⧸ H)^g|`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
@@ -94,6 +98,22 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
   rw [← mem_stabilizer_iff, stabilizer_quotientGroup_mk,
     Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def, MulAut.conj_apply]
   simp
+
+/-- The elements `x` of `G` with `x⁻¹ g x ∈ H` are the preimage of the `g`-fixed points of `G ⧸ H`,
+a union of `|(G ⧸ H)^g|` cosets of `H`. -/
+theorem _root_.Subgroup.natCard_mul_natCard_fixedBy (H : Subgroup G) (g : G) :
+    Nat.card H * Nat.card (MulAction.fixedBy (G ⧸ H) g) =
+      Nat.card {x : G // x⁻¹ * g * x ∈ H} := by
+  have hmem : ∀ x : G,
+      x ∈ QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ H) g) ↔ x⁻¹ * g * x ∈ H := by
+    intro x
+    rw [Set.mem_preimage, MulAction.mem_fixedBy]
+    exact smul_quotientGroup_mk_eq_self_iff H g x
+  calc Nat.card H * Nat.card (MulAction.fixedBy (G ⧸ H) g)
+      = Nat.card (H × MulAction.fixedBy (G ⧸ H) g) := (Nat.card_prod _ _).symm
+    _ = Nat.card (QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ H) g) : Set G) :=
+        (Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet H _)).symm
+    _ = Nat.card {x : G // x⁻¹ * g * x ∈ H} := Nat.card_congr (Equiv.subtypeEquivRight hmem)
 
 /-- Left translation on the cosets of the trivial subgroup is left translation in the group.
 

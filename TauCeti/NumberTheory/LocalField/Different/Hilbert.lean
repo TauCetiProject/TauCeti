@@ -33,6 +33,8 @@ group. Hence `d(L/K) = ∑_{σ ≠ 1} v_L(σ x - x)`, and `σ` lies in `G_i` exa
 * `TauCeti.natCast_differentExponent_eq_sum_addVal_smul_sub`: `d(L/K) = ∑_{σ ≠ 1} v_L(σ x - x)`
   for a generator `x` of `𝒪[L]` over `𝒪[K]`.
 * `TauCeti.differentExponent_eq_finsum_lowerRamificationGroup`: Hilbert's formula.
+* `TauCeti.sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent`: its truncations
+  bound the different exponent from below.
 
 ## References
 
@@ -93,5 +95,24 @@ theorem differentExponent_eq_finsum_lowerRamificationGroup :
   rw [TauCeti.IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one hx,
     Nat.cast_inj] at h
   simpa only [LocalFieldsRamification.lowerRamificationGroup_def] using h
+
+/-- **Hilbert's formula, truncated**: for a finite Galois extension `L/K` of nonarchimedean local
+fields, `∑_{i < m} (#G_i - 1) ≤ d(L/K)` for every `m`. -/
+theorem sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent (m : ℕ) :
+    ∑ i ∈ Finset.range m,
+        (Nat.card (LocalFieldsRamification.lowerRamificationGroup K L i) - 1) ≤
+      differentExponent K L := by
+  obtain ⟨N, hN⟩ := LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot K L
+  have hsupp : Function.support
+      (fun i : ℕ ↦ Nat.card (LocalFieldsRamification.lowerRamificationGroup K L i) - 1) ⊆
+        ↑(Finset.range (max m N.toNat)) := by
+    intro i hi
+    simp only [Function.mem_support, ne_eq] at hi
+    simp only [Finset.coe_range, Set.mem_Iio]
+    by_contra h
+    exact hi (by rw [hN i (by omega), Subgroup.card_bot, Nat.sub_self])
+  rw [differentExponent_eq_finsum_lowerRamificationGroup,
+    finsum_eq_sum_of_support_subset _ hsupp]
+  exact Finset.sum_le_sum_of_subset (Finset.range_subset_range.2 (le_max_left _ _))
 
 end TauCeti

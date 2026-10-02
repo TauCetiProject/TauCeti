@@ -101,12 +101,12 @@ abbrev dual (X : MatrixFactorization S w) : MatrixFactorization S (-w) :=
 /-- The even differential of a dual matrix factorization is the transpose of the *odd*
 differential of the original. -/
 @[simp] theorem dual_obj_d₀ (X : MatrixFactorization S w) :
-    (dual (S := S) (w := w) X).obj.d₀ = FGModuleCat.dualMap S X.obj.d₁ := rfl
+    (dual (S := S) (w := w) X).obj.d₀ = FGModuleCat.dualMap X.obj.d₁ := rfl
 
 /-- The odd differential of a dual matrix factorization is the negated transpose of the even
 differential of the original, the sign that turns the potential `w` into `-w`. -/
 @[simp] theorem dual_obj_d₁ (X : MatrixFactorization S w) :
-    (dual (S := S) (w := w) X).obj.d₁ = -FGModuleCat.dualMap S X.obj.d₀ := rfl
+    (dual (S := S) (w := w) X).obj.d₁ = -FGModuleCat.dualMap X.obj.d₀ := rfl
 
 /-- The dual of a morphism of matrix factorizations is a morphism from the dual of the target to
 the dual of the source, with transposed components. -/
@@ -121,13 +121,13 @@ def dualMap {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
 /-- The even component of the dual of a morphism of matrix factorizations is the transpose of
 the even component of the morphism. -/
 theorem dualMap_f₀ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
-    (dualMap f).hom.f₀ = FGModuleCat.dualMap S f.hom.f₀ := by
+    (dualMap f).hom.f₀ = FGModuleCat.dualMap f.hom.f₀ := by
   rw [dualMap_hom, CurvedDuplex.dualMap_f₀]
 
 /-- The odd component of the dual of a morphism of matrix factorizations is the transpose of the
 odd component of the morphism. -/
 theorem dualMap_f₁ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
-    (dualMap f).hom.f₁ = FGModuleCat.dualMap S f.hom.f₁ := by
+    (dualMap f).hom.f₁ = FGModuleCat.dualMap f.hom.f₁ := by
   rw [dualMap_hom, CurvedDuplex.dualMap_f₁]
 
 /-- Dualization is contravariant on morphisms: the dual of the identity of a matrix
@@ -220,13 +220,13 @@ component. -/
 of the even differential of the original. -/
 @[simp] theorem doubleDual_obj_d₀ (X : MatrixFactorization S w) :
     (doubleDual (S := S) (w := w) X).obj.d₀ =
-      -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.obj.d₀) := rfl
+      -FGModuleCat.dualMap (FGModuleCat.dualMap X.obj.d₀) := rfl
 
 /-- The odd differential of a double dual matrix factorization is the negated double transpose
 of the odd differential of the original. -/
 @[simp] theorem doubleDual_obj_d₁ (X : MatrixFactorization S w) :
     (doubleDual (S := S) (w := w) X).obj.d₁ =
-      -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.obj.d₁) := rfl
+      -FGModuleCat.dualMap (FGModuleCat.dualMap X.obj.d₁) := rfl
 
 /-- A double dual of a matrix factorization is isomorphic to the original, by the evaluation
 pairing with the single minus sign on the even component. -/
@@ -249,25 +249,25 @@ dual isomorphism of the underlying curved duplex. -/
 the even component, the placement of the sign which makes the two commutativity conditions
 hold against the negated double transposes. -/
 theorem doubleDualIso_f₀ (X : MatrixFactorization S w) :
-    (X.doubleDualIso).hom.hom.f₀ = -(FGModuleCat.dualEvalIso S X.obj.X₀).hom :=
+    (X.doubleDualIso).hom.hom.f₀ = -(FGModuleCat.dualEvalIso X.obj.X₀).hom :=
   by rw [doubleDualIso_hom_hom, CurvedDuplex.doubleDualIso_f₀]
 
 /-- The odd component of the double dual isomorphism is the evaluation isomorphism on the odd
 component. -/
 theorem doubleDualIso_f₁ (X : MatrixFactorization S w) :
-    (X.doubleDualIso).hom.hom.f₁ = (FGModuleCat.dualEvalIso S X.obj.X₁).hom :=
+    (X.doubleDualIso).hom.hom.f₁ = (FGModuleCat.dualEvalIso X.obj.X₁).hom :=
   by rw [doubleDualIso_hom_hom, CurvedDuplex.doubleDualIso_f₁]
 
 /-- The even component of the inverse of the double dual isomorphism is the negated inverse
 evaluation isomorphism. -/
 theorem doubleDualIso_inv_f₀ (X : MatrixFactorization S w) :
-    (X.doubleDualIso).inv.hom.f₀ = -(FGModuleCat.dualEvalIso S X.obj.X₀).inv :=
+    (X.doubleDualIso).inv.hom.f₀ = -(FGModuleCat.dualEvalIso X.obj.X₀).inv :=
   by rw [doubleDualIso_inv_hom, CurvedDuplex.doubleDualIso_inv_f₀]
 
 /-- The odd component of the inverse of the double dual isomorphism is the inverse evaluation
 isomorphism. -/
 theorem doubleDualIso_inv_f₁ (X : MatrixFactorization S w) :
-    (X.doubleDualIso).inv.hom.f₁ = (FGModuleCat.dualEvalIso S X.obj.X₁).inv :=
+    (X.doubleDualIso).inv.hom.f₁ = (FGModuleCat.dualEvalIso X.obj.X₁).inv :=
   by rw [doubleDualIso_inv_hom, CurvedDuplex.doubleDualIso_inv_f₁]
 
 end MatrixFactorization

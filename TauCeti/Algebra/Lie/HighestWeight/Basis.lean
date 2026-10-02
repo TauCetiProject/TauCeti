@@ -57,9 +57,7 @@ theorem isHighestWeightVector_iff_forall_e (b : LieAlgebra.Basis ι H)
     exact h (b.e i) (LieSubalgebra.subset_lieSpan (Set.mem_range_self i))
   · intro h x hx
     have hle : LieSubalgebra.lieSpan K L (Set.range b.e) ≤ TauCeti.lieAnnihilator K L v :=
-      LieSubalgebra.lieSpan_le.mpr fun _ hy => by
-        obtain ⟨i, rfl⟩ := hy
-        exact (TauCeti.mem_lieAnnihilator K L).mpr (h i)
+      TauCeti.lieSpan_le_lieAnnihilator K L (by rintro - ⟨i, rfl⟩; exact h i)
     exact (TauCeti.mem_lieAnnihilator K L).mp (hle hx)
 
 end LieAlgebra.Basis

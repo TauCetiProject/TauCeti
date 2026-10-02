@@ -27,10 +27,10 @@ source pairing to be the dot product too, and every axiom of `RootPairing` then 
 `Pi.algebraMap`, entrywise application of `algebraMap R S`.
 
 The properties a downstream Lie-theoretic consumer needs are transported separately, each under its
-own hypotheses: being crystallographic, being reduced, spanning, and carrying a base with a
-prescribed Cartan matrix. Irreducibility is deliberately absent, because it is *false* over `ℤ`:
-the sublattice `2 • (κ → ℤ)` is invariant under every reflection. It has to be proved over the new
-base ring rather than transported.
+own hypotheses: being crystallographic, being reduced, spanning, carrying a base with a prescribed
+Cartan matrix, and the root-string coefficients. Irreducibility is deliberately absent, because it
+is *false* over `ℤ`: the sublattice `2 • (κ → ℤ)` is invariant under every reflection. It has to be
+proved over the new base ring rather than transported.
 
 ## Main definitions
 
@@ -48,13 +48,13 @@ base ring rather than transported.
   stays spanning.
 * `TauCeti.pairingIn_rootPairingBaseChange`: the integral pairings, hence the Cartan matrix of a
   base, are unchanged.
+* `TauCeti.chainTopCoeff_rootPairingBaseChange` and `TauCeti.chainBotCoeff_rootPairingBaseChange`:
+  the root-string coefficients are unchanged.
 
 ## References
 
 The construction is the standard passage from a root datum over `ℤ` to the root system over `ℚ`
-that it determines; see N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1. It
-supplies the root-system input of the Chevalley basis in Layer 9,
-"pinned Chevalley--Demazure group schemes over `ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md`.
+that it determines; see N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1.
 -/
 
 public section
@@ -69,16 +69,16 @@ open Submodule (span)
 
 section Entrywise
 
-variable {κ R : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+variable {κ R : Type*} (S : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
 
 /-- Entrywise base change of the standard lattice reads off entrywise. -/
 theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
     Pi.algebraMap κ R S x j = algebraMap R S (x j) :=
   rfl
 
-private theorem injective_piAlgebraMap [FaithfulSMul R S] :
-    Injective (Pi.algebraMap κ R S) := fun _ _ h =>
-  funext fun j => algebraMap_injective R S (congrFun h j)
+/-- Entrywise base change along an injective algebra map is injective. -/
+theorem piAlgebraMap_injective [FaithfulSMul R S] : Injective (Pi.algebraMap κ R S) :=
+  fun _ _ h => funext fun j => algebraMap_injective R S (congrFun h j)
 
 /-- Entrywise base change carries the additive closure of a family into the additive closure of the
 base-changed family. -/
@@ -86,39 +86,25 @@ theorem mem_closure_image_piAlgebraMap {ι : Type*} {g : ι → (κ → R)} {s :
     (hx : x ∈ AddSubmonoid.closure (g '' s)) :
     Pi.algebraMap κ R S x ∈
       AddSubmonoid.closure ((fun i => Pi.algebraMap κ R S (g i)) '' s) := by
-  have himage : (fun i => Pi.algebraMap κ R S (g i)) '' s =
-      (Pi.algebraMap κ R S : (κ → R) →ₗ[R] (κ → S)) '' (g '' s) := by
-    rw [← image_comp]
-    rfl
-  rw [himage, ← AddMonoidHom.map_mclosure]
-  exact AddSubmonoid.mem_map_of_mem _ hx
+  have h := AddSubmonoid.mem_map_of_mem (Pi.algebraMap κ R S).toAddMonoidHom hx
+  rwa [AddMonoidHom.map_mclosure, ← image_comp] at h
 
 /-- A family of vectors spanning the standard lattice still spans after entrywise base change. -/
 theorem span_range_piAlgebraMap_eq_top [Finite κ] {ι : Type*} {v : ι → (κ → R)}
     (hv : span R (range v) = ⊤) :
     span S (range fun i => Pi.algebraMap κ R S (v i)) = ⊤ := by
   classical
-  have _i : Fintype κ := Fintype.ofFinite κ
-  set W : Submodule S (κ → S) := span S (range fun i => Pi.algebraMap κ R S (v i))
-  have hmem : ∀ x : κ → R, Pi.algebraMap κ R S x ∈ W := by
-    intro x
-    have hsub : span R (range v) ≤ (W.restrictScalars R).comap (Pi.algebraMap κ R S) := by
-      rw [Submodule.span_le]
-      rintro - ⟨i, rfl⟩
-      exact Submodule.subset_span (mem_range_self i)
-    exact hsub (hv ▸ Submodule.mem_top)
-  have hsingle : ∀ j : κ, Pi.single j (1 : S) ∈ W := by
-    intro j
-    have hj : Pi.algebraMap κ R S (Pi.single j (1 : R)) = Pi.single j (1 : S) := by
-      funext k
-      rw [piAlgebraMap_apply]
-      rcases eq_or_ne k j with rfl | hk
-      · simp
-      · simp [Pi.single_eq_of_ne hk]
-    exact hj ▸ hmem (Pi.single j (1 : R))
-  refine top_le_iff.mp fun x _ => ?_
-  rw [← Module.Basis.sum_repr (Pi.basisFun S κ) x]
-  exact Submodule.sum_mem _ fun j _ => Submodule.smul_mem _ _ (by simpa using hsingle j)
+  have hmem (x : κ → R) :
+      Pi.algebraMap κ R S x ∈ span S (range fun i => Pi.algebraMap κ R S (v i)) := by
+    have h := Submodule.mem_map_of_mem (f := Pi.algebraMap κ R S) (hv ▸ Submodule.mem_top (x := x))
+    rw [Submodule.map_span, ← range_comp] at h
+    exact Submodule.span_le_restrictScalars R S _ h
+  rw [eq_top_iff, ← (Pi.basisFun S κ).span_eq, Submodule.span_le]
+  rintro - ⟨j, rfl⟩
+  have hj : Pi.algebraMap κ R S (Pi.single j 1) = Pi.basisFun S κ j := by
+    ext k
+    rcases eq_or_ne k j with rfl | hk <;> simp [piAlgebraMap_apply, *]
+  exact hj ▸ hmem _
 
 end Entrywise
 
@@ -142,34 +128,18 @@ paired again by the dot product on `κ → S`. -/
 def rootPairingBaseChange : RootPairing ι S (κ → S) (κ → S) where
   toLinearMap := dotProductBilin S S
   root := ⟨fun i => Pi.algebraMap κ R S (P.root i),
-    (injective_piAlgebraMap S).comp P.root.injective⟩
+    (piAlgebraMap_injective S).comp P.root.injective⟩
   coroot := ⟨fun i => Pi.algebraMap κ R S (P.coroot i),
-    (injective_piAlgebraMap S).comp P.coroot.injective⟩
+    (piAlgebraMap_injective S).comp P.coroot.injective⟩
   root_coroot_two i := by
-    have h : Pi.algebraMap κ R S (P.root i) ⬝ᵥ Pi.algebraMap κ R S (P.coroot i) = (2 : S) := by
-      rw [dotProduct_piAlgebraMap, ← hP, P.root_coroot_two i, map_ofNat]
-    exact h
+    simp [dotProduct_piAlgebraMap, ← hP, map_ofNat]
   reflectionPerm := P.reflectionPerm
   reflectionPerm_root i j := by
-    have h := congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_root i j)
-    rw [map_sub, map_smul, hP] at h
-    have key : Pi.algebraMap κ R S (P.root j) -
-        (Pi.algebraMap κ R S (P.root j) ⬝ᵥ Pi.algebraMap κ R S (P.coroot i)) •
-          Pi.algebraMap κ R S (P.root i) =
-        Pi.algebraMap κ R S (P.root (P.reflectionPerm i j)) := by
-      rw [dotProduct_piAlgebraMap, algebraMap_smul]
-      exact h
-    exact key
+    simpa [dotProduct_piAlgebraMap, hP] using
+      congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_root i j)
   reflectionPerm_coroot i j := by
-    have h := congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_coroot i j)
-    rw [map_sub, map_smul, hP] at h
-    have key : Pi.algebraMap κ R S (P.coroot j) -
-        (Pi.algebraMap κ R S (P.root i) ⬝ᵥ Pi.algebraMap κ R S (P.coroot j)) •
-          Pi.algebraMap κ R S (P.coroot i) =
-        Pi.algebraMap κ R S (P.coroot (P.reflectionPerm i j)) := by
-      rw [dotProduct_piAlgebraMap, algebraMap_smul]
-      exact h
-    exact key
+    simpa [dotProduct_piAlgebraMap, hP] using
+      congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_coroot i j)
 
 @[simp] theorem root_rootPairingBaseChange (i : ι) :
     (rootPairingBaseChange S P hP).root i = Pi.algebraMap κ R S (P.root i) :=
@@ -189,9 +159,24 @@ def rootPairingBaseChange : RootPairing ι S (κ → S) (κ → S) where
 
 @[simp] theorem pairing_rootPairingBaseChange (i j : ι) :
     (rootPairingBaseChange S P hP).pairing i j = algebraMap R S (P.pairing i j) := by
-  rw [← RootPairing.root_coroot_eq_pairing, ← RootPairing.root_coroot_eq_pairing,
-    root_rootPairingBaseChange, coroot_rootPairingBaseChange, toLinearMap_rootPairingBaseChange,
-    dotProduct_piAlgebraMap, hP]
+  simp [← RootPairing.root_coroot_eq_pairing, dotProduct_piAlgebraMap, hP]
+
+/-- An entrywise base-changed vector is a root of the base change exactly when the vector is a
+root of the original pairing. -/
+theorem piAlgebraMap_mem_range_root_rootPairingBaseChange_iff (x : κ → R) :
+    Pi.algebraMap κ R S x ∈ range (rootPairingBaseChange S P hP).root ↔ x ∈ range P.root := by
+  simp only [mem_range, root_rootPairingBaseChange, (piAlgebraMap_injective S).eq_iff]
+
+/-- Two roots of the base change into a domain are linearly independent exactly when the
+corresponding roots of the original pairing are. -/
+theorem linearIndependent_pair_root_rootPairingBaseChange_iff [IsDomain S] (i j : ι) :
+    LinearIndependent S
+        ![(rootPairingBaseChange S P hP).root i, (rootPairingBaseChange S P hP).root j] ↔
+      LinearIndependent R ![P.root i, P.root j] := by
+  refine Iff.trans ?_ (linearIndependent_algebraMap_comp_iff (R := R) (S := S))
+  congr! 1
+  ext k : 1
+  fin_cases k <;> rfl
 
 end Defs
 
@@ -224,16 +209,8 @@ ring of characteristic zero. Hence so is the Cartan matrix of any base. -/
 theorem isReduced_rootPairingBaseChange [IsDomain S] [P.IsReduced] :
     (rootPairingBaseChange S P hP).IsReduced where
   eq_or_eq_neg i j h := by
-    have hv : (fun k => algebraMap R S ∘ ![P.root i, P.root j] k) =
-        ![(rootPairingBaseChange S P hP).root i, (rootPairingBaseChange S P hP).root j] := by
-      funext k
-      fin_cases k <;> rfl
-    replace h : ¬ LinearIndependent R ![P.root i, P.root j] := by
-      rw [← linearIndependent_algebraMap_comp_iff (S := S), hv]
-      exact h
-    rcases RootPairing.IsReduced.eq_or_eq_neg (P := P) i j h with h | h
-    · exact Or.inl <| by rw [root_rootPairingBaseChange, root_rootPairingBaseChange, h]
-    · exact Or.inr <| by rw [root_rootPairingBaseChange, root_rootPairingBaseChange, h, map_neg]
+    rw [linearIndependent_pair_root_rootPairingBaseChange_iff] at h
+    rcases RootPairing.IsReduced.eq_or_eq_neg (P := P) i j h with h | h <;> simp [h]
 
 /-- Base change preserves spanning by the roots. -/
 theorem span_range_root_rootPairingBaseChange_eq_top (h : span R (range P.root) = ⊤) :
@@ -256,25 +233,17 @@ variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S] [A
   [FaithfulSMul R S] [IsDomain S] (b : P.Base)
 
 /-- **The base change of a base.** A base of `P` is a base of the base-changed pairing, supported
-on the same indices. Linear independence survives because `S` is a domain in which `R` embeds. -/
+on the same indices. -/
 def rootPairingBaseChangeBase : (rootPairingBaseChange S P hP).Base where
   support := b.support
   linearIndepOn_root :=
     linearIndependent_algebraMap_comp_iff (S := S) |>.mpr b.linearIndepOn_root
   linearIndepOn_coroot :=
     linearIndependent_algebraMap_comp_iff (S := S) |>.mpr b.linearIndepOn_coroot
-  root_mem_or_neg_mem i := by
-    rcases b.root_mem_or_neg_mem i with h | h
-    · exact Or.inl <| mem_closure_image_piAlgebraMap S h
-    · refine Or.inr ?_
-      have hmem := mem_closure_image_piAlgebraMap (S := S) (g := P.root) (s := b.support) h
-      rwa [map_neg] at hmem
-  coroot_mem_or_neg_mem i := by
-    rcases b.coroot_mem_or_neg_mem i with h | h
-    · exact Or.inl <| mem_closure_image_piAlgebraMap S h
-    · refine Or.inr ?_
-      have hmem := mem_closure_image_piAlgebraMap (S := S) (g := P.coroot) (s := b.support) h
-      rwa [map_neg] at hmem
+  root_mem_or_neg_mem i := (b.root_mem_or_neg_mem i).imp (mem_closure_image_piAlgebraMap S)
+    fun h => by simpa using mem_closure_image_piAlgebraMap S h
+  coroot_mem_or_neg_mem i := (b.coroot_mem_or_neg_mem i).imp (mem_closure_image_piAlgebraMap S)
+    fun h => by simpa using mem_closure_image_piAlgebraMap S h
 
 @[simp] theorem support_rootPairingBaseChangeBase :
     (rootPairingBaseChangeBase S P hP b).support = b.support :=
@@ -304,104 +273,30 @@ end Base
 
 section Chain
 
-variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S]
-  [Algebra R S] (P : RootPairing ι R (κ → R) (κ → R))
-  (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y)
-  [FaithfulSMul R S]
+variable {ι κ R : Type*} (S : Type*) [Finite ι] [Fintype κ] [CommRing R] [CommRing S]
+  [Algebra R S] [IsDomain R] [CharZero R] [IsDomain S] [CharZero S] [FaithfulSMul R S]
+  (P : RootPairing ι R (κ → R) (κ → R)) (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y)
+  [P.IsCrystallographic]
 
-private theorem root_add_nsmul_mem_range_baseChange_iff (i j : ι) (n : ℕ) :
-    (rootPairingBaseChange S P hP).root j + n • (rootPairingBaseChange S P hP).root i ∈
-        range (rootPairingBaseChange S P hP).root ↔
-      P.root j + n • P.root i ∈ range P.root := by
-  constructor
-  · rintro ⟨k, hk⟩
-    refine ⟨k, funext fun x ↦ FaithfulSMul.algebraMap_injective R S ?_⟩
-    simpa [piAlgebraMap_apply] using congrFun hk x
-  · rintro ⟨k, hk⟩
-    refine ⟨k, ?_⟩
-    simpa only [root_rootPairingBaseChange, map_add, map_nsmul] using
-      congrArg (Pi.algebraMap κ R S) hk
-
-private theorem root_sub_nsmul_mem_range_baseChange_iff (i j : ι) (n : ℕ) :
-    (rootPairingBaseChange S P hP).root j - n • (rootPairingBaseChange S P hP).root i ∈
-        range (rootPairingBaseChange S P hP).root ↔
-      P.root j - n • P.root i ∈ range P.root := by
-  constructor
-  · rintro ⟨k, hk⟩
-    refine ⟨k, funext fun x ↦ FaithfulSMul.algebraMap_injective R S ?_⟩
-    simpa [piAlgebraMap_apply] using congrFun hk x
-  · rintro ⟨k, hk⟩
-    refine ⟨k, ?_⟩
-    simpa only [root_rootPairingBaseChange, map_sub, map_nsmul] using
-      congrArg (Pi.algebraMap κ R S) hk
-
-variable [Finite ι] [IsDomain S] [CharZero R] [P.IsCrystallographic]
-
-private theorem chainTopCoeff_rootPairingBaseChange_aux [IsDomain R] [hS : CharZero S] (i j : ι) :
+/-- Base change preserves the upper root-string coefficient. -/
+@[simp] theorem chainTopCoeff_rootPairingBaseChange (i j : ι) :
     (rootPairingBaseChange S P hP).chainTopCoeff i j = P.chainTopCoeff i j := by
-  let P' := rootPairingBaseChange S P hP
-  have hv : (fun k ↦ algebraMap R S ∘ ![P.root i, P.root j] k) =
-      ![P'.root i, P'.root j] := by
-    funext k
-    fin_cases k <;> rfl
   by_cases h : LinearIndependent R ![P.root i, P.root j]
-  · have h' : LinearIndependent S ![P'.root i, P'.root j] := by
-      rw [← hv, linearIndependent_algebraMap_comp_iff]
-      exact h
-    apply le_antisymm
-    · rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h,
-        ← root_add_nsmul_mem_range_baseChange_iff S P hP,
-        P'.root_add_nsmul_mem_range_iff_le_chainTopCoeff h']
-    · rw [← P'.root_add_nsmul_mem_range_iff_le_chainTopCoeff h',
-        root_add_nsmul_mem_range_baseChange_iff S P hP,
-        P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h]
-  · have h' : ¬LinearIndependent S ![P'.root i, P'.root j] := by
-      rwa [← hv, linearIndependent_algebraMap_comp_iff]
-    rw [P.chainTopCoeff_of_not_linearIndependent h,
-      P'.chainTopCoeff_of_not_linearIndependent h']
+  · have h' := (linearIndependent_pair_root_rootPairingBaseChange_iff S P hP i j).mpr h
+    refine eq_of_forall_le_iff fun n => ?_
+    rw [← RootPairing.root_add_nsmul_mem_range_iff_le_chainTopCoeff h',
+      ← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h,
+      ← piAlgebraMap_mem_range_root_rootPairingBaseChange_iff S P hP, map_add, map_nsmul,
+      root_rootPairingBaseChange, root_rootPairingBaseChange]
+  · rw [P.chainTopCoeff_of_not_linearIndependent h,
+      RootPairing.chainTopCoeff_of_not_linearIndependent]
+    rwa [linearIndependent_pair_root_rootPairingBaseChange_iff]
 
-/-- Extending scalars along an injective map preserves the upper root-string coefficient. -/
-@[simp]
-theorem chainTopCoeff_rootPairingBaseChange (i j : ι) :
-    let _ : IsDomain R := IsDomain.of_faithfulSMul R S
-    letI : CharZero S := Algebra.charZero_of_charZero R S
-    (rootPairingBaseChange S P hP).chainTopCoeff i j = P.chainTopCoeff i j := by
-  let _ : IsDomain R := IsDomain.of_faithfulSMul R S
-  exact chainTopCoeff_rootPairingBaseChange_aux S P hP
-    (hS := Algebra.charZero_of_charZero R S) i j
-
-private theorem chainBotCoeff_rootPairingBaseChange_aux [IsDomain R] [hS : CharZero S] (i j : ι) :
+/-- Base change preserves the lower root-string coefficient. -/
+@[simp] theorem chainBotCoeff_rootPairingBaseChange (i j : ι) :
     (rootPairingBaseChange S P hP).chainBotCoeff i j = P.chainBotCoeff i j := by
-  let P' := rootPairingBaseChange S P hP
-  have hv : (fun k ↦ algebraMap R S ∘ ![P.root i, P.root j] k) =
-      ![P'.root i, P'.root j] := by
-    funext k
-    fin_cases k <;> rfl
-  by_cases h : LinearIndependent R ![P.root i, P.root j]
-  · have h' : LinearIndependent S ![P'.root i, P'.root j] := by
-      rw [← hv, linearIndependent_algebraMap_comp_iff]
-      exact h
-    apply le_antisymm
-    · rw [← P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff h,
-        ← root_sub_nsmul_mem_range_baseChange_iff S P hP,
-        P'.root_sub_nsmul_mem_range_iff_le_chainBotCoeff h']
-    · rw [← P'.root_sub_nsmul_mem_range_iff_le_chainBotCoeff h',
-        root_sub_nsmul_mem_range_baseChange_iff S P hP,
-        P.root_sub_nsmul_mem_range_iff_le_chainBotCoeff h]
-  · have h' : ¬LinearIndependent S ![P'.root i, P'.root j] := by
-      rwa [← hv, linearIndependent_algebraMap_comp_iff]
-    rw [P.chainBotCoeff_of_not_linearIndependent h,
-      P'.chainBotCoeff_of_not_linearIndependent h']
-
-/-- Extending scalars along an injective map preserves the lower root-string coefficient. -/
-@[simp]
-theorem chainBotCoeff_rootPairingBaseChange (i j : ι) :
-    let _ : IsDomain R := IsDomain.of_faithfulSMul R S
-    letI : CharZero S := Algebra.charZero_of_charZero R S
-    (rootPairingBaseChange S P hP).chainBotCoeff i j = P.chainBotCoeff i j := by
-  let _ : IsDomain R := IsDomain.of_faithfulSMul R S
-  exact chainBotCoeff_rootPairingBaseChange_aux S P hP
-    (hS := Algebra.charZero_of_charZero R S) i j
+  rw [← RootPairing.chainTopCoeff_reflectionPerm_left, chainTopCoeff_rootPairingBaseChange,
+    reflectionPerm_rootPairingBaseChange, RootPairing.chainTopCoeff_reflectionPerm_left]
 
 end Chain
 

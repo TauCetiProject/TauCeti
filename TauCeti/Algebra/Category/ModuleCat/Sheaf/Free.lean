@@ -49,6 +49,14 @@ def freePUnitIsoUnit (S : Sheaf J RingCat.{u}) :
   coproductUniqueIso (fun _ : PUnit.{u + 1} ↦
     _root_.SheafOfModules.unit.{v₁, u₁, u} S)
 
+/-- The inverse of `freePUnitIsoUnit` is the unique basis inclusion. -/
+@[simp]
+lemma freePUnitIsoUnit_inv (S : Sheaf J RingCat.{u}) :
+    (freePUnitIsoUnit S).inv =
+      _root_.SheafOfModules.ιFree (R := S) PUnit.unit := by
+  exact coproductUniqueIso_inv (fun _ : PUnit.{u + 1} ↦
+    _root_.SheafOfModules.unit.{v₁, u₁, u} S)
+
 /-- The free sheaf of modules on an empty type is a zero object: it is the coproduct of the empty
 family. -/
 theorem isZero_free {S : Sheaf J RingCat.{u}} (I : Type u) [IsEmpty I] :

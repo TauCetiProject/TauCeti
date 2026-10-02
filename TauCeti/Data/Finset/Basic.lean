@@ -10,6 +10,7 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Set.PowersetCard
 public import Mathlib.Data.Fintype.Card
@@ -34,6 +35,14 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
+* `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
+  cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
+  modulo two.
+* `Finset.map_swap_pair`, `Finset.map_swap_pair_right` and `Finset.map_swap_eq_self_iff`
+  describe how a transposition moves a finset around, and
+  `Finset.mem_map_swap_symmDiff_pair_iff`, `Finset.involutive_map_swap_symmDiff_pair` and
+  `Finset.map_swap_symmDiff_pair_eq_self_iff` do the same for a transposition composed with the
+  toggle of the two transposed points.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -151,6 +160,100 @@ theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
 end TauCeti
 
 namespace Finset
+
+open scoped symmDiff
+
+/-- **The symmetric difference and the intersection account for both cardinalities.** The
+symmetric difference is the union minus the intersection, and the union and the intersection
+together have the two cardinalities as their total. -/
+theorem card_symmDiff_add_two_mul_card_inter {α : Type*} [DecidableEq α] (s t : Finset α) :
+    (s ∆ t).card + 2 * (s ∩ t).card = s.card + t.card := by
+  have hsub : s ∩ t ⊆ s ∪ t := inter_subset_left.trans subset_union_left
+  have hcard : (s ∆ t).card = (s ∪ t).card - (s ∩ t).card := by
+    rw [symmDiff_eq_sup_sdiff_inf, sup_eq_union, inf_eq_inter, card_sdiff,
+      inter_eq_left.2 hsub]
+  have hunion := card_union_add_card_inter s t
+  have hle : (s ∩ t).card ≤ (s ∪ t).card := card_le_card hsub
+  omega
+
+/-- **A symmetric difference has even cardinality exactly when its two arguments have the same
+cardinality parity.** -/
+@[simp]
+theorem even_card_symmDiff_iff {α : Type*} [DecidableEq α] (s t : Finset α) :
+    Even (s ∆ t).card ↔ (Even s.card ↔ Even t.card) := by
+  have h := card_symmDiff_add_two_mul_card_inter s t
+  simp only [Nat.even_iff]
+  omega
+
+/-- A transposition fixes the pair it transposes. -/
+theorem map_swap_pair {α : Type*} [DecidableEq α] (a b : α) :
+    ({a, b} : Finset α).map (Equiv.swap a b).toEmbedding = {a, b} := by
+  simp [Finset.pair_comm]
+
+/-- A transposition moves a pair along its first index, provided the second index is fixed. -/
+theorem map_swap_pair_right {α : Type*} [DecidableEq α] {a b c : α} (hca : c ≠ a) (hcb : c ≠ b) :
+    ({b, c} : Finset α).map (Equiv.swap a b).toEmbedding = {a, c} := by
+  simp [Equiv.swap_apply_of_ne_of_ne hca hcb]
+
+/-- **A transposition fixes a finset exactly when the two transposed points have the same
+membership.** -/
+theorem map_swap_eq_self_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α) :
+    s.map (Equiv.swap a b).toEmbedding = s ↔ (a ∈ s ↔ b ∈ s) := by
+  constructor
+  · intro h
+    have ha := Finset.ext_iff.1 h a
+    rw [mem_map_equiv, Equiv.symm_swap, Equiv.swap_apply_left] at ha
+    exact ha.symm
+  · intro h
+    ext x
+    rw [mem_map_equiv, Equiv.symm_swap]
+    rcases eq_or_ne x a with rfl | hx
+    · rw [Equiv.swap_apply_left]
+      exact h.symm
+    · rcases eq_or_ne x b with rfl | hx'
+      · rw [Equiv.swap_apply_right]
+        exact h
+      · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
+
+/-- Membership in a transposed finset with the two transposed points toggled. -/
+theorem mem_map_swap_symmDiff_pair_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α)
+    (x : α) :
+    x ∈ s.map (Equiv.swap a b).toEmbedding ∆ ({a, b} : Finset α) ↔
+      (Equiv.swap a b x ∈ s ↔ x ≠ a ∧ x ≠ b) := by
+  simp only [mem_symmDiff, mem_map_equiv, Equiv.symm_swap, mem_insert, mem_singleton]
+  grind
+
+/-- **Transposing two points of a finset and toggling both is an involution.** -/
+theorem involutive_map_swap_symmDiff_pair {α : Type*} [DecidableEq α] (a b : α) :
+    Function.Involutive fun s : Finset α => s.map (Equiv.swap a b).toEmbedding ∆ {a, b} := by
+  intro s
+  ext x
+  simp only [mem_map_swap_symmDiff_pair_iff, Equiv.swap_apply_self]
+  grind
+
+/-- **Transposing two points of a finset and toggling both fixes it exactly when the two points
+have opposite membership.** -/
+theorem map_swap_symmDiff_pair_eq_self_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α) :
+    s.map (Equiv.swap a b).toEmbedding ∆ ({a, b} : Finset α) = s ↔ (a ∈ s ↔ b ∉ s) := by
+  constructor
+  · intro h
+    have hb := (mem_map_swap_symmDiff_pair_iff a b s b).symm.trans (Finset.ext_iff.1 h b)
+    rw [Equiv.swap_apply_right] at hb
+    have hbb : ¬(b ≠ a ∧ b ≠ b) := fun hc => hc.2 rfl
+    tauto
+  · intro h
+    ext x
+    rw [mem_map_swap_symmDiff_pair_iff]
+    rcases eq_or_ne x a with rfl | hx
+    · rw [Equiv.swap_apply_left]
+      have hxx : ¬(x ≠ x ∧ x ≠ b) := fun hc => hc.1 rfl
+      tauto
+    · rcases eq_or_ne x b with rfl | hx'
+      · rw [Equiv.swap_apply_right]
+        have hxx : ¬(x ≠ a ∧ x ≠ x) := fun hc => hc.2 rfl
+        tauto
+      · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
+        tauto
 
 /-- The two coordinates of every element of a finite set of natural-number pairs lie below a
 common bound. -/

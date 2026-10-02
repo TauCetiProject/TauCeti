@@ -132,6 +132,14 @@ theorem splice_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b p d
     · exact h (j.1 + d - 1) (by omega)
   · rw [splice, splice, dite_eq_right (by tauto), dite_eq_right (by tauto)]
 
+/-- Splicing in the zero letter gives the zero word. -/
+@[simp]
+theorem splice_zero {n : ℕ} (x : Fin n → M) (a b p d : ℕ) : splice R x a b p d (0 : M) = 0 := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [splice_eq_of_tprod R x 0 h.1 h.2.1 h.2.2,
+      (PiTensorProduct.tprod R).map_coord_zero ⟨p, by simp only; omega⟩ (by simp), map_zero]
+  · exact splice_eq_zero R x 0 h
+
 /-- Mapping a spliced tensor word applies the map to the untouched letters and the replacement
 letter. -/
 theorem map_splice {N : Type uN} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)

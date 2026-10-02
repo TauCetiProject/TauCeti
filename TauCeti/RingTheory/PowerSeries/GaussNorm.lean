@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Trunc
+public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Topology.Order.LiminfLimsup
+import Mathlib.RingTheory.Polynomial.GaussNorm
 
 /-!
 # The Gauss norm of restricted power series
@@ -26,13 +28,20 @@ The distinguished degree is the datum Weierstrass division and preparation for T
 organised around. No completeness hypothesis is needed for the norm identities here. The radius is
 any positive real number, including the unit radius of the usual Tate algebra.
 
-Completeness enters only at the end of the file, where a family of restricted series with
+Completeness enters only in the summation section, where a family of restricted series with
 summable Gauss norms is summed coefficientwise. This is the convergence statement that
 successive-approximation arguments over a complete nonarchimedean ring run on, and it takes the
 place of completeness of the Tate algebra for the Gauss norm.
 
+Multiplicativity and the ultrametric inequality together make the Gauss norm a valuation with
+values in `ℝ≥0` on the ring of restricted series, `gaussValuation`, whose support is trivial.
+Pulled back to the Tate algebra at radii at most one, these valuations give the Gauss points of the
+closed unit disc.
+
 ## Main definitions
 
+* `TauCeti.PowerSeries.gaussValuation`: at a positive radius, the Gauss norm as a valuation with
+  values in `ℝ≥0` on the ring of restricted series.
 * `TauCeti.PowerSeries.IsDistinguished`: the Gauss norm is attained in degree `s` and every later
   coefficient is strictly smaller.
 
@@ -51,6 +60,7 @@ place of completeness of the Tate algebra for the Gauss norm.
 * `TauCeti.PowerSeries.IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul`: the dominant
   coefficient of a product of distinguished series.
 * `TauCeti.PowerSeries.gaussNorm_mul_of_isRestricted`: multiplicativity of the Gauss norm.
+* `TauCeti.PowerSeries.gaussValuation_eq_zero_iff`: the Gauss valuation vanishes only at zero.
 * `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
   `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: over a complete ring, a family of restricted
   series with summable Gauss norms has summable coefficients, and its coefficientwise sum is
@@ -483,5 +493,82 @@ theorem IsDistinguished.mul (hf : IsDistinguished c i f) (hg : IsDistinguished c
               (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le _))).trans_lt
           (mul_lt_mul_of_pos_left (hg.norm_coeff_mul_pow_lt _ hpj) hfp)
     _ = (f * g).gaussNorm norm c := hmul.symm
+
+/-! ### The Gauss valuation -/
+
+section Valuation
+
+open scoped NNReal
+
+variable [NormOneClass R]
+
+/-- **The Gauss valuation** at a positive radius `c`: the Gauss norm `f ↦ sup ‖aₙ‖ cⁿ`, as a
+valuation with values in `ℝ≥0` on the ring of power series restricted at `c`. -/
+noncomputable def gaussValuation (hc : 0 < c) :
+    Valuation (PowerSeries.IsRestricted.subring (R := R) c) ℝ≥0 where
+  toFun f := ⟨(f : PowerSeries R).gaussNorm norm c,
+    PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg⟩
+  map_zero' := NNReal.eq <| PowerSeries.gaussNorm_zero norm c norm_zero
+  map_one' := NNReal.eq <| by
+    -- The subring's one coerces to `PowerSeries.one`; `NNReal.eq` exposes the real Gauss norm.
+    change (1 : PowerSeries R).gaussNorm norm c = 1
+    rw [← map_one (PowerSeries.C : R →+* PowerSeries R)]
+    exact (PowerSeries.gaussNorm_C
+      (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+      (hc := hc.le) (r := (1 : R))).trans norm_one
+  map_mul' f g := NNReal.eq <| gaussNorm_mul_of_isRestricted hc f.2 g.2
+  map_add_le_max' f g :=
+    PowerSeries.gaussNorm_add_le_max norm c _ _ hc.le norm_nonneg
+      IsUltrametricDist.isNonarchimedean_norm
+      (hasGaussNorm_of_isRestricted f.2) (hasGaussNorm_of_isRestricted g.2)
+
+/-- The Gauss valuation is the Gauss norm, read in `ℝ`. -/
+@[simp]
+theorem coe_gaussValuation (hc : 0 < c) (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    (gaussValuation hc f : ℝ) = (f : PowerSeries R).gaussNorm norm c := (rfl)
+
+/-- The Gauss valuation of a constant series is the norm of its coefficient. -/
+@[simp]
+theorem gaussValuation_C (hc : 0 < c) (a : R) :
+    gaussValuation hc
+      (⟨PowerSeries.C a, PowerSeries.isRestricted_C c a⟩ :
+        PowerSeries.IsRestricted.subring (R := R) c) = ‖a‖₊ := by
+  apply NNReal.eq
+  rw [coe_gaussValuation]
+  exact PowerSeries.gaussNorm_C
+    (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+    (hc := hc.le) (r := a)
+
+/-- The Gauss valuation of the variable is the radius. -/
+@[simp]
+theorem gaussValuation_X (hc : 0 < c) :
+    gaussValuation hc
+      (⟨(PowerSeries.X : PowerSeries R), by
+          rw [PowerSeries.X_eq]
+          exact PowerSeries.isRestricted_monomial c 1 (1 : R)⟩ :
+        PowerSeries.IsRestricted.subring (R := R) c) = ⟨c, hc.le⟩ := by
+  apply NNReal.eq
+  rw [coe_gaussValuation]
+  -- The coercion to reals exposes the Gauss norm and the real radius.
+  change (PowerSeries.X : PowerSeries R).gaussNorm norm c = c
+  rw [PowerSeries.X_eq]
+  have h := PowerSeries.gaussNorm_monomial
+      (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+      (hc := hc.le) (n := 1) (r := (1 : R))
+  have hv : (⇑(NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue : R → ℝ) =
+      norm := rfl
+  rw [hv] at h
+  simpa only [norm_one, one_mul, pow_one] using h
+
+/-- The Gauss valuation vanishes only at zero: its support is trivial. -/
+@[simp]
+theorem gaussValuation_eq_zero_iff (hc : 0 < c)
+    {f : PowerSeries.IsRestricted.subring (R := R) c} :
+    gaussValuation hc f = 0 ↔ f = 0 := by
+  rw [← NNReal.coe_eq_zero, coe_gaussValuation, PowerSeries.gaussNorm_eq_zero_iff norm c _
+    norm_zero norm_nonneg (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted f.2),
+    ZeroMemClass.coe_eq_zero]
+
+end Valuation
 
 end TauCeti.PowerSeries

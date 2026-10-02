@@ -79,6 +79,9 @@ private theorem inversionHomeomorph_kernelPoint (g : WithConv (H →ₐ[k] k)) :
   rw [inversionHomeomorph_apply, AlgEquiv.toRingEquiv_toRingHom,
     antipodeAlgEquiv_toRingHom, AlgHom.comap_kernelPoint]
   congr 1
+  ext h
+  simp only [AlgHom.comp_apply, _root_.HopfAlgebra.antipodeAlgHom_apply,
+    WithConv.convInv_def, ofConv_toConv, AlgHom.antipodeComp_apply]
 
 omit [IsAlgClosed k] [Algebra.FiniteType k H] in
 /-- Left translation, expressed as inversion followed by right translation and inversion. -/

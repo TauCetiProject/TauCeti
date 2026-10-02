@@ -50,8 +50,8 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
   action is `IsCoveringMap.monodromyPerm`.
 * `IsCoveringMap.monodromy_eq_self_iff_mem_range`: a loop class of the base fixes the
   chosen lift under monodromy exactly when it is the image of a loop class of the cover.
-* `IsCoveringMap.stabilizer_eq_range`: the same statement for the monodromy
-  `MulAction`.
+* `IsCoveringMap.stabilizer_eq_range`, `IsCoveringMap.comap_stabilizer_monodromyPerm`: the same
+  statement for the monodromy `MulAction` and for the monodromy homomorphism.
 * `IsCoveringMap.exists_monodromy_eq_of_joined`,
   `IsCoveringMap.exists_monodromy_eq` and
   `IsCoveringMap.monodromy_isPretransitive`: monodromy carries a lift to any lift joined
@@ -156,6 +156,16 @@ theorem _root_.IsCoveringMap.stabilizer_eq_range (hp : IsCoveringMap p) (e : p �
   let := hp.fundamentalGroupMulAction x
   ext γ
   exact IsCoveringMap.monodromy_eq_self_iff_mem_range hp e γ
+
+/-- The preimage under the monodromy homomorphism `IsCoveringMap.monodromyPerm` of the stabiliser
+of a chosen lift `e` of the basepoint is the image of `π₁(E, e)` under the covering map. -/
+theorem _root_.IsCoveringMap.comap_stabilizer_monodromyPerm (hp : IsCoveringMap p)
+    (e : p ⁻¹' {x}) :
+    (MulAction.stabilizer (Equiv.Perm (p ⁻¹' {x})) e).comap (hp.monodromyPerm x) =
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
+  ext γ
+  rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, Equiv.Perm.smul_def,
+    IsCoveringMap.coe_monodromyPerm, IsCoveringMap.monodromy_eq_self_iff_mem_range]
 
 /-! ### Transitivity on a fibre -/
 

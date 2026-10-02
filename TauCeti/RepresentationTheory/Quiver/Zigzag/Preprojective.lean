@@ -231,6 +231,38 @@ theorem orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk
   rw [signlessPreprojectiveMk_apply, signlessPreprojectiveMk_apply,
     orientationSignlessPreprojectiveAlgebraEquiv, Ideal.quotientEquivAlg_mk]
 
+/-- Vanishing of a path in the signless algebra of a doubled graph transfers to the
+preprojective algebra of any orientation when the graph is bipartite. -/
+theorem preprojectiveMk_ofPath_eq_zero_of_signless
+    {c : OrientedQuiver G o → Bool}
+    (hc : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → c i ≠ c j)
+    (x : Quiver.TotalPath (Symmetrify (OrientedQuiver G o)))
+    (hx : signlessPreprojectiveMk k _
+      (ofPath ((symmetrifyMap G o).mapTotalPath x)) = 0) :
+    preprojectiveMk k (OrientedQuiver G o) (ofPath x) = 0 := by
+  let e := (orientationSignlessPreprojectiveAlgebraEquiv o k).trans
+    (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)
+  have hpath :
+      (orientationSignlessPreprojectiveAlgebraEquiv o k).symm
+        (signlessPreprojectiveMk k _ (ofPath x)) =
+      signlessPreprojectiveMk k _
+        (ofPath ((symmetrifyMap G o).mapTotalPath x)) := by
+    apply (orientationSignlessPreprojectiveAlgebraEquiv o k).injective
+    rw [AlgEquiv.apply_symm_apply,
+      orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+      ← orientationPathAlgebraEquiv_symm_ofPath, AlgEquiv.apply_symm_apply]
+  have htransport :
+      e.symm (preprojectiveMk k (OrientedQuiver G o) (ofPath x)) =
+        _root_.Quiver.Path.weight
+          (fun {_ _} f => doubledLabelling k (fun _ j _ => if c j then (1 : k) else -1) f)
+          x.2.2 • signlessPreprojectiveMk k _
+            (ofPath ((symmetrifyMap G o).mapTotalPath x)) := by
+    rw [AlgEquiv.symm_trans_apply]
+    rw [symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
+      rescale_ofPath, map_smul, map_smul, hpath]
+  apply e.symm.injective
+  simp only [htransport, hx, smul_zero, map_zero]
+
 end Quotient
 
 end DoubledQuiver

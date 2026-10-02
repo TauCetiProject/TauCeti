@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Acyclic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 /-!
 # The diagram of a finite-type Cartan matrix is a forest
@@ -35,6 +36,8 @@ the root-system case is irreducibility, which Mathlib packages as
 
 * `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
   diagram along the reindexing.
+* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A`: the type `Aₙ` diagram is the path graph on
+  `n` nodes.
 * `TauCeti.IsFiniteType.isAcyclic_diagramGraph`: **the diagram of a finite-type matrix is a
   forest**. The affine diagrams `Ãₙ` for `n ≥ 2`, the ones whose diagrams are cycles, are excluded
   here in one theorem.
@@ -95,6 +98,21 @@ theorem diagramGraph_submatrix {C : Type*} {f : C → B} (hf : Function.Injectiv
   ext i j
   rw [diagramGraph_adj, SimpleGraph.comap_adj, diagramGraph_adj, Matrix.submatrix_apply,
     Matrix.submatrix_apply, hf.ne_iff]
+
+namespace DynkinType
+
+/-- **The diagram of type `Aₙ` is the path graph**: in Bourbaki's numbering, the nodes `i` and `j`
+are joined exactly when they are consecutive. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_A (n : ℕ) :
+    (diagramGraph (CartanMatrix.A n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  ext i j
+  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
+  simp [CartanMatrix.A, Fin.ext_iff]
+  omega
+
+end DynkinType
 
 namespace IsFiniteType
 

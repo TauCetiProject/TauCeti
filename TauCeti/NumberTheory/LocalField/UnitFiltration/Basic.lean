@@ -378,6 +378,19 @@ theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 
   exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
     (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
 
+-- Not a `simp` lemma: `unitFiltrationGradedZeroEquivResidueFieldUnits_mk` rewrites its left-hand
+-- side first.
+/-- On a class represented by `x ∈ U(K,0)`, the depth-zero graded equivalence is the residue of
+`x`, read as an element of `𝒪[K]`. -/
+theorem coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 0) :
+    (unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk x) : 𝓀[K]) =
+      residue 𝒪[K] (unitFiltrationToIntegerUnits 0 x : 𝒪[K]) := by
+  rw [unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
+    ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
+  -- The valuation subring of `K` is built on `𝒪[K]`, and both residue maps are the quotient by
+  -- the same maximal ideal, so the two sides agree by unfolding.
+  rfl
+
 section Topology
 
 /-- Each step of the unit filtration is a neighbourhood of `1` in `Kˣ`. -/

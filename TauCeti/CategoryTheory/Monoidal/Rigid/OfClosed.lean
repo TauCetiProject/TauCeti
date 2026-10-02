@@ -183,6 +183,20 @@ noncomputable def exactPairingOfIsIsoDualTensorIhom [IsIso ((dualTensorIhom Y).a
     ExactPairing (Y ⟶[C] 𝟙_ C) Y :=
   exactPairingOfDualTensorIhom (MonoidalClosed.id Y ≫ inv ((dualTensorIhom Y).app Y)) (by simp)
 
+/-- The evaluation of the pairing of an object with invertible dual-tensor comparison is the
+evaluation of the internal hom into the unit. -/
+theorem exactPairingOfIsIsoDualTensorIhom_evaluation [IsIso ((dualTensorIhom Y).app Y)] :
+    @ExactPairing.evaluation C _ _ (Y ⟶[C] 𝟙_ C) Y exactPairingOfIsIsoDualTensorIhom =
+      (ihom.ev Y).app (𝟙_ C) :=
+  (rfl)
+
+/-- The coevaluation of the pairing of an object with invertible dual-tensor comparison is the
+preimage of the identity of `Y` under the comparison. -/
+theorem exactPairingOfIsIsoDualTensorIhom_coevaluation [IsIso ((dualTensorIhom Y).app Y)] :
+    @ExactPairing.coevaluation C _ _ (Y ⟶[C] 𝟙_ C) Y exactPairingOfIsIsoDualTensorIhom =
+      MonoidalClosed.id Y ≫ inv ((dualTensorIhom Y).app Y) :=
+  (rfl)
+
 section HasLeftDual
 
 /-- For a left dual `D` of `Y`, the dual-tensor comparison factors through the identification

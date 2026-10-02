@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
-public import TauCeti.Geometry.Lie.Exponential.Matrix.Compatibility
 public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialOrthogonal
-public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
+public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 
 /-!
@@ -57,17 +56,10 @@ theorem forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordFor
       MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
         (realCliffordForm n 0))) ↔
       A ∈ LieAlgebra.Orthogonal.so (Fin n) ℝ := by
-  rw [← Matrix.forall_exp_smul_mem_specialOrthogonalGroup_iff_mem_so]
-  constructor
-  · intro h t
-    have ht := h t
-    rw [QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff] at ht
-    simpa only [unitsLieAlgebraLieEquiv_symm_apply,
-      lieExp_generalLinearGroup_coe] using ht
-  · intro h t
-    rw [QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff]
-    simpa only [unitsLieAlgebraLieEquiv_symm_apply,
-      lieExp_generalLinearGroup_coe] using h t
+  rw [forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff,
+    ← Matrix.forall_exp_smul_mem_specialOrthogonalGroup_iff_mem_so]
+  simp only [QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff,
+    TauCeti.expUnit_coe]
 
 /-- A matrix belongs to the real orthogonal Lie algebra exactly when its inverse image under the
 canonical units Lie equivalence belongs to the Lie subalgebra of the positive-definite
@@ -91,8 +83,9 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_realCliffordForm_lieSubalgebra_iff_mem_
         Set (Matrix (Fin n) (Fin n) ℝ)ˣ) := by
     rw [MonoidHom.coe_range]
     exact QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm n
-  rw [mem_lieSubalgebraOfSubgroup hclosed]
-  simpa only [map_smul] using
-    forall_lieExp_mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff_mem_so n A
+  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hclosed,
+    ← Matrix.forall_exp_smul_mem_specialOrthogonalGroup_iff_mem_so]
+  simp only [QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff,
+    TauCeti.expUnit_coe]
 
 end TauCeti.Lie

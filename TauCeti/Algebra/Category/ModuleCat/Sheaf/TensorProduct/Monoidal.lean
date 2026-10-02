@@ -39,6 +39,13 @@ the localization functor, for which sheafification is a braided monoidal functor
   the sectionwise tensor product of the underlying presheaves of modules, natural in `M` and `N`
   (`SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
   the unitors.
+* `SheafOfModules.sheafificationForgetAdjunction` and `SheafOfModules.forgetLaxMonoidal`:
+  sheafification is left adjoint to the inclusion of sheaves of modules into presheaves of
+  modules, which is therefore lax monoidal, with unit map the identity
+  (`SheafOfModules.forget_ε`) and tensor map the unit of sheafification
+  (`SheafOfModules.forget_μ`);
+* `SheafOfModules.tensor_hom_ext`: morphisms out of `M ⊗ N` are determined by their restriction
+  along that tensor map to the sectionwise tensor product.
 
 The tensor object `M ⊗ N` and the sheaf `SheafOfModules.tensorProduct R M N` are both
 sheafifications of `M.val ⊗ N.val`, through `tensorUnderlyingIso` and `tensorProductIso`
@@ -80,6 +87,14 @@ def sheafificationUnitIso :
       (𝟙_ (PresheafOfModules.{u} (ringCatSheaf R).obj)) ≅
         _root_.SheafOfModules.unit (ringCatSheaf R) :=
   sheafificationIso (ringCatSheaf R) (_root_.SheafOfModules.unit _)
+
+/-- The forward map of `sheafificationUnitIso` is the counit of the sheafification adjunction at
+the sheaf of modules `R`. -/
+theorem sheafificationUnitIso_hom :
+    (sheafificationUnitIso R).hom =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).counit.app
+        (_root_.SheafOfModules.unit (ringCatSheaf R)) :=
+  sheafificationIso_hom _ _
 
 /-- The monoidal category structure on sheaves of `R`-modules: the tensor product is the
 sheafification of the sectionwise tensor product, and the unit is `R`. It is the localized
@@ -146,6 +161,24 @@ def _root_.SheafOfModules.tensorUnderlyingIso (M N : SheafOfModules.{u} (ringCat
   ((sheafificationIso _ M).symm ⊗ᵢ (sheafificationIso _ N).symm) ≪≫
     Functor.Monoidal.μIso _ M.val N.val
 
+/-- The forward map of `tensorUnderlyingIso`: the inverses of `sheafificationIso` on both
+factors, followed by the tensor map of sheafification. -/
+theorem _root_.SheafOfModules.tensorUnderlyingIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (M.tensorUnderlyingIso N).hom =
+      ((sheafificationIso _ M).inv ⊗ₘ (sheafificationIso _ N).inv) ≫
+        Functor.LaxMonoidal.μ (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj))
+          M.val N.val := by
+  simp [SheafOfModules.tensorUnderlyingIso]
+
+/-- The inverse map of `tensorUnderlyingIso`: the inverse tensor map of sheafification, followed
+by `sheafificationIso` on both factors. -/
+theorem _root_.SheafOfModules.tensorUnderlyingIso_inv (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (M.tensorUnderlyingIso N).inv =
+      Functor.OplaxMonoidal.δ (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj))
+          M.val N.val ≫
+        ((sheafificationIso _ M).hom ⊗ₘ (sheafificationIso _ N).hom) := by
+  simp [SheafOfModules.tensorUnderlyingIso]
+
 /-- `tensorUnderlyingIso` is natural: under it, the tensor product of two morphisms of sheaves of
 modules is the sheafification of the sectionwise tensor product of their underlying morphisms. -/
 @[reassoc]
@@ -200,6 +233,83 @@ theorem _root_.SheafOfModules.rightUnitor_hom_eq (M : SheafOfModules.{u} (ringCa
     Iso.inv_hom_id, whiskerLeft_id]
   -- The unit `SheafOfModules.unit` produced by the unit comparison is `𝟙_` by `tensorUnit_eq`.
   exact ((rightUnitor_naturality_assoc _ _).trans (by rw [Iso.inv_hom_id, comp_id])).symm
+
+section Forget
+
+variable (R)
+
+/-- Sheafification of presheaves of modules is left adjoint to the inclusion
+`SheafOfModules.forget` of sheaves of modules. This is Mathlib's
+`PresheafOfModules.sheafificationAdjunction` along the identity of the sheaf of rings, whose
+right adjoint `forget ⋙ restrictScalars (𝟙 _)` is definitionally `forget`. -/
+def sheafificationForgetAdjunction :
+    PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj) ⊣
+      _root_.SheafOfModules.forget (ringCatSheaf R) :=
+  PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
+
+/-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
+identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
+lemma sheafificationForgetAdjunction_counit_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (sheafificationForgetAdjunction R).counit.app M = (sheafificationIso _ M).hom :=
+  (sheafificationIso_hom _ M).symm
+
+/-- The inclusion of sheaves of modules into presheaves of modules is lax monoidal, as the right
+adjoint of the monoidal functor sheafification. Its tensor map `M.val ⊗ N.val ⟶ (M ⊗ N).val` is
+the unit of sheafification (`SheafOfModules.forget_μ`), and its unit map is the identity
+(`SheafOfModules.forget_ε`). -/
+instance forgetLaxMonoidal : (_root_.SheafOfModules.forget (ringCatSheaf R)).LaxMonoidal :=
+  (sheafificationForgetAdjunction R).rightAdjointLaxMonoidal
+
+/-- The unit map of the inclusion of sheaves of modules into presheaves of modules is the
+identity. -/
+@[simp]
+lemma forget_ε : Functor.LaxMonoidal.ε (_root_.SheafOfModules.forget (ringCatSheaf R)) = 𝟙 _ := by
+  have h : (sheafificationUnitIso R).hom =
+      (sheafificationForgetAdjunction R).counit.app (𝟙_ _) :=
+    sheafificationUnitIso_hom R
+  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε, sheafification_η, h]
+  exact ((sheafificationForgetAdjunction R).homEquiv_unit _ _ _).trans
+    ((sheafificationForgetAdjunction R).right_triangle_components (𝟙_ _))
+
+/-- The tensor map `M.val ⊗ N.val ⟶ (M ⊗ N).val` of the inclusion of sheaves of modules into
+presheaves of modules is the unit of sheafification, followed by the identification
+`tensorUnderlyingIso` of `M ⊗ N` with the sheafification of `M.val ⊗ N.val`. -/
+lemma forget_μ (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N =
+      (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).inv := by
+  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_μ, Adjunction.homEquiv_unit,
+    SheafOfModules.tensorUnderlyingIso_inv, ← sheafificationForgetAdjunction_counit_app,
+    ← sheafificationForgetAdjunction_counit_app]
+  rfl
+
+variable {R}
+
+/-- A morphism out of `M ⊗ N`, precomposed on underlying presheaves with the tensor map
+`M.val ⊗ N.val ⟶ (M ⊗ N).val` of `forget`, is the transpose along sheafification of the morphism
+read through `tensorUnderlyingIso`. -/
+lemma forget_μ_comp_map {M N P : _root_.SheafOfModules.{u} (ringCatSheaf R)} (p : M ⊗ N ⟶ P) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map p =
+      (sheafificationForgetAdjunction R).homEquiv _ _ ((M.tensorUnderlyingIso N).inv ≫ p) := by
+  rw [Adjunction.homEquiv_unit, Functor.map_comp, ← assoc, forget_μ]
+  -- The two sides differ only in how the source of the unit is written: as `M.val ⊗ N.val`, or
+  -- as the tensor product of the images of `M` and `N` under `forget`.
+  rfl
+
+/-- Two morphisms out of a tensor product `M ⊗ N` of sheaves of modules agree as soon as they
+agree on the sectionwise tensor product `M.val ⊗ N.val` of the underlying presheaves of modules,
+that is, after precomposition with the tensor map of `forget`. -/
+lemma tensor_hom_ext {M N P : _root_.SheafOfModules.{u} (ringCatSheaf R)} {p q : M ⊗ N ⟶ P}
+    (h : Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map p =
+      Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map q) :
+    p = q := by
+  rw [forget_μ_comp_map, forget_μ_comp_map] at h
+  exact (cancel_epi _).mp (((sheafificationForgetAdjunction R).homEquiv _ _).injective h)
+
+end Forget
 
 end SheafOfModules
 

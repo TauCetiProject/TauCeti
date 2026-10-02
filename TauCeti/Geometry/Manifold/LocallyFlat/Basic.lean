@@ -82,6 +82,8 @@ discs (topological sliceness) and for stating the annulus conjecture.
   `TauCeti.IsLocallyFlat.of_compatible_isSliceChart`, the form of it that assumes only the
   compatible pair of charts.
 * `TauCeti.IsLocallyFlat.prodMap`: a product of locally flat embeddings is locally flat.
+* `TauCeti.IsLocallyFlat.prodMap_of_isOpenEmbedding`: the product of a locally flat embedding with
+  an open embedding is locally flat, with the same complementary model.
 * `TauCeti.isLocallyFlat_iff_isOpenEmbedding`: in codimension zero, locally flat means open.
 * `TauCeti.IsLocallyFlat.isLocallyClosed_range`: a locally flat image is locally closed, as soon as
   the origin of the complementary model is closed.
@@ -697,6 +699,26 @@ theorem prodMap {G G' : Type*} [TopologicalSpace G] [TopologicalSpace G'] [Zero 
     simp [Homeomorph.prodProdProdComm, Prod.ext_iff]
   have hprod := (IsSliceEmbedding.prodMap h h').transHomeomorph
     (Homeomorph.prodProdProdComm F F' G G')
+  rw [himage] at hprod
+  exact hprod
+
+/-- The product of a locally flat embedding with an open embedding into a space charted on `G` is
+locally flat, with the same complementary model: the product of a flattening chart with a chart of
+the open image is a flattening chart, once the new factor is moved into the tangential model. -/
+theorem prodMap_of_isOpenEmbedding {G P : Type*} [TopologicalSpace G] [TopologicalSpace P]
+    [ChartedSpace G P] {g : N' → P} (h : IsLocallyFlat F F' f) (hg : IsOpenEmbedding g) :
+    IsLocallyFlat (F × G) F' (Prod.map f g) := by
+  let e : (F × F') × G ≃ₜ (F × G) × F' :=
+    (Homeomorph.prodAssoc F F' G).trans
+      (((Homeomorph.refl F).prodCongr (Homeomorph.prodComm F' G)).trans
+        (Homeomorph.prodAssoc F G F').symm)
+  have himage : e '' (((univ : Set F) ×ˢ ({0} : Set F')) ×ˢ (univ : Set G)) =
+      (univ : Set (F × G)) ×ˢ ({0} : Set F') := by
+    rw [Homeomorph.image_eq_preimage_symm]
+    ext ⟨⟨a, c⟩, b⟩
+    simp [e, Homeomorph.prodAssoc, Homeomorph.prodComm, Homeomorph.prodCongr]
+  have hprod := (IsSliceEmbedding.prodMap h
+    (isSliceEmbedding_univ_of_isOpenEmbedding hg)).transHomeomorph e
   rw [himage] at hprod
   exact hprod
 

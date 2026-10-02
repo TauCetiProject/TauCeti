@@ -94,6 +94,8 @@ continuous.
 * `TauCeti.ContCohomology.transgression_injective_iff` and
   `TauCeti.ContCohomology.transgression_surjective_iff`: the transgression is injective exactly
   when restriction to `N` vanishes, and surjective exactly when inflation to `H²(G, M)` vanishes.
+* `TauCeti.ContCohomology.explicitInfl2_injective_of_subsingleton`: inflation into `H²(G, M)` is
+  injective when `H¹(N, M)^{G ⧸ N}` vanishes.
 * `TauCeti.ContCohomology.natCard_H1_mul_natCard_H2_quotient`: the order count of the five-term
   sequence,
   `|H¹(G, M)| · |H²(G ⧸ N, M ^ N)| = |H¹(G ⧸ N, M ^ N)| · |H¹(N, M)^{G ⧸ N}| · |im infl₂|`, and
@@ -538,8 +540,9 @@ private theorem smul_conj_sub_mul {c : N → M} (hc : groupCohomology.IsCocycle�
   have hsmul : t • c (inverseConjugationHom N t n) = c n + ((n : G) • A - A) := by
     rw [← hA']
     abel
-  rw [hconj, mul_smul, ← Subgroup.smul_def, smul_apply_inv_mul_mul_of_isCocycle₁ hc, smul_add,
-    smul_sub, hk, hsmul, d0_apply, Subgroup.smul_def, smul_add]
+  rw [hconj, mul_smul, ← Subgroup.smul_def,
+    groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ hc, smul_add, smul_sub, hk, hsmul,
+    d0_apply, Subgroup.smul_def, smul_add]
   abel
 
 variable (s : G ⧸ N → G) (hs : ∀ q, (s q : G ⧸ N) = q)
@@ -875,6 +878,15 @@ theorem transgression_injective_iff (hN : IsClosed (N : Set G)) :
 theorem transgression_surjective_iff (hN : IsClosed (N : Set G)) :
     Function.Surjective (transgression G M N hN) ↔ explicitInfl2 G M N = 0 := by
   rw [← AddMonoidHom.range_eq_top, fiveTerm_exact_H2Q, AddMonoidHom.ker_eq_top_iff]
+
+/-- **Injectivity of inflation in degree two.** When `H¹(N, M)^{G ⧸ N}` vanishes, for instance when
+`H¹(N, M)` does, the transgression is zero, so by exactness of the five-term sequence at
+`H²(G ⧸ N, M ^ N)` inflation `H²(G ⧸ N, M ^ N) → H²(G, M)` is injective. -/
+theorem explicitInfl2_injective_of_subsingleton (hN : IsClosed (N : Set G))
+    [Subsingleton (H1ConjInvariants G M N)] :
+    Function.Injective (explicitInfl2 G M N) := by
+  rw [← AddMonoidHom.ker_eq_bot_iff, ← fiveTerm_exact_H2Q G M N hN, AddMonoidHom.range_eq_bot_iff]
+  exact AddMonoidHom.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, AddMonoidHom.zero_apply]
 
 /-- **The order count of the five-term sequence.** The sequence
 

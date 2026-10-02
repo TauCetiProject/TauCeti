@@ -44,6 +44,8 @@ to the normal form of its own signature.
   `QuadraticForm.nondegenerate_realSignatureForm`: every signature is realized by a regular form.
 * `QuadraticForm.equivalent_realSignatureForm`: a regular real quadratic form is isometric to the
   normal form of its signature.
+* `QuadraticForm.exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq`: every signature `(p, n - p)` is
+  realized by a regular form on the coordinate space `ℝⁿ`.
 * `QuadraticForm.equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq`: a regular real form is
   isometric to a prescribed normal form exactly when it has the prescribed signature.
 * `QuadraticForm.equivalent_realSignatureForm_iff`: distinct signatures give non-isometric normal
@@ -233,5 +235,21 @@ theorem equivalent_realSignatureForm_iff (p q p' q' : ℕ) :
 theorem equivalent_realSignatureForm (Q : _root_.QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
     Q.Equivalent (realSignatureForm (sigPos Q) (sigNeg Q)) :=
   (equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq hQ _ _).mpr ⟨rfl, rfl⟩
+
+/-- Every signature `(p, n - p)` with `p ≤ n` is the signature of a regular quadratic form on the
+coordinate space `ℝⁿ`: the normal form `realSignatureForm p (n - p)` transported along a bijection
+of its index type with `Fin n`. -/
+theorem exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq {n p : ℕ} (h : p ≤ n) :
+    ∃ Q : _root_.QuadraticForm ℝ (Fin n → ℝ),
+      Q.Nondegenerate ∧ sigPos Q = p ∧ sigNeg Q = n - p := by
+  let e : Fin n ≃ Fin p ⊕ Fin (n - p) :=
+    (finCongr (Nat.add_sub_cancel' h)).symm.trans finSumFinEquiv.symm
+  obtain ⟨f⟩ : (weightedSumSquares ℝ ((Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) ∘ e)).Equivalent
+      (realSignatureForm p (n - p)) := by
+    rw [realSignatureForm_def]
+    exact equivalent_weightedSumSquares_of_comp_eq e rfl
+  exact ⟨_, f.nondegenerate_iff.mpr (nondegenerate_realSignatureForm p (n - p)),
+    by rw [Equivalent.sigPos_eq ⟨f⟩, sigPos_realSignatureForm],
+    by rw [Equivalent.sigNeg_eq ⟨f⟩, sigNeg_realSignatureForm]⟩
 
 end QuadraticForm

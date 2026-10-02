@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomologi
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FixedPoints
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup

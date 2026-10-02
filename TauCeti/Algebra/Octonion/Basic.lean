@@ -71,9 +71,10 @@ nothing more.
   `x * x = trace x • x - norm x • 1`.
 * `TauCeti.Octonion.finrank_imaginary`: the imaginary octonions, the trace-zero subspace, are
   `7`-dimensional. The derivation algebra `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`
-  (`TauCeti/Algebra/Lie/Derivation/Basic.lean`); identifying the imaginary octonions with the
-  fundamental representation of `G₂ = Der 𝕆` still waits on the count `finrank (Der 𝕆) = 14` and the
-  isomorphism with `LieAlgebra.g₂`, neither of which is proved here.
+  (`TauCeti/Algebra/Lie/Derivation/Basic.lean`), of rank `14` by
+  `TauCeti.Octonion.finrank_derivationLieAlgebra`; identifying the imaginary octonions with the
+  fundamental representation of `G₂ = Der 𝕆` still waits on the isomorphism with
+  `LieAlgebra.g₂`.
 
 ## Implementation notes
 
@@ -578,9 +579,9 @@ example :
 
 /-- **The imaginary octonions**, the trace-zero subspace of `𝕆`. It is `7`-dimensional
 (`TauCeti.Octonion.finrank_imaginary`); identifying it with the fundamental representation of
-`G₂ = Der 𝕆` -- where `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)` -- waits on the
-count `finrank (Der 𝕆) = 14` and the isomorphism with `LieAlgebra.g₂`, neither of which is proved
-here. -/
+`G₂ = Der 𝕆` -- where `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`, of rank `14` by
+`TauCeti.Octonion.finrank_derivationLieAlgebra` -- waits on the isomorphism with `LieAlgebra.g₂`.
+-/
 def imaginary (R : Type*) [CommRing R] : Submodule R (Octonion R) := LinearMap.ker trace
 
 @[simp] theorem mem_imaginary {x : Octonion R} : x ∈ imaginary R ↔ trace x = 0 :=

@@ -27,7 +27,8 @@ trivial while the even unitary carrier is `μ₂`. Dimensions one and two are al
 nondegeneracy, by `TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/One.lean` and
 `TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Two.lean`. The bound four is where the
 reversal argument stops: in dimension five the odd part also contains the volume element, which
-reversal fixes, and the identification needs a further argument; in dimension six the even
+reversal fixes, and the identification needs a further argument
+(`TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Five.lean`); in dimension six the even
 unitary group is strictly larger than the Spin group.
 
 ## Main results

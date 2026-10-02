@@ -28,7 +28,7 @@ This file defines `WeierstrassCurve.nodePolynomial` over a commutative ring and 
 These criteria apply to any ring homomorphism to a field. Their relation to
 `WeierstrassCurve.HasSplitMultiplicativeReduction` is developed in `MinimalModel/Basic.lean` and
 `LocalPolynomial.lean`. The constant-coefficient formula also describes the effect of quadratic
-twisting in `QuadraticTwist.lean`.
+twisting in `QuadraticTwist/Basic.lean`.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`, commit `bc2fe8ff7396`, FLT PR #1088,
 Apache 2.0): the node-polynomial block of
@@ -70,6 +70,20 @@ non-normal-form. -/
 lemma nodePolynomial_coeff_zero (W : WeierstrassCurve A) :
     W.nodePolynomial.coeff 0 = -(54 * W.b₆ - 3 * W.b₂ * W.b₄ + W.a₂ * W.c₄) := by
   simp [nodePolynomial_def]
+
+/-- **The node polynomial as `c₄` times a monic quadratic.** If `c₄ n` is the constant coefficient
+of the node polynomial, the node polynomial is `c₄ · (T² + a₁ T + n)`. When `c₄` is a unit such an
+`n` exists and is unique. This is a purely algebraic factorization; when the reduction of a
+minimal model is multiplicative, the roots of the reduced quadratic `T² + a₁ T + n` are the slopes
+of the two tangent directions at the node of the reduced curve. -/
+theorem nodePolynomial_eq_C_mul (W : WeierstrassCurve A) {n : A}
+    (hn : W.c₄ * n = W.nodePolynomial.coeff 0) :
+    W.nodePolynomial = .C W.c₄ * (.X ^ 2 + .C W.a₁ * .X + .C n) := by
+  rw [nodePolynomial_coeff_zero] at hn
+  have hC := congrArg Polynomial.C hn
+  rw [nodePolynomial_def]
+  simp only [map_mul, map_sub, map_add, map_neg, map_ofNat] at hC ⊢
+  linear_combination -hC
 
 /-- The discriminant of the node polynomial is `-c₄ c₆`. Hence — away from residue characteristic
 two, and provided `c₄` survives the reduction — the tangent directions at the node are rational

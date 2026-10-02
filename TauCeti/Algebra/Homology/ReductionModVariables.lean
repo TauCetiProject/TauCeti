@@ -43,12 +43,19 @@ Without the grading the statement fails: on `S = R[V]`, multiplication by `1 + V
 from `S` to itself, both with zero differential, which becomes the identity after setting `V = 0`
 but is not surjective.
 
+## Main definitions
+
+* `LinearMap.constantCoeffReduction`: the reduction of a map between free modules over a
+  polynomial ring modulo the variables.
+
 ## Main results
 
 * `LinearMap.ker_le_range_of_mapRange_constantCoeff`: a graded square-zero endomorphism of a free
   module over a polynomial ring is exact if its reduction modulo the variables is.
 * `LinearMap.homologyMap_bijective_of_mapRange_constantCoeff`: a graded chain map between such
   complexes induces a bijection on homology if its reduction modulo the variables does.
+* `LinearMap.constantCoeffReduction_mapRange_constantCoeff`: `constantCoeffReduction f` is a
+  reduction of `f` modulo the variables in the sense of the two results above.
 
 ## References
 
@@ -325,45 +332,118 @@ theorem eq_of_mapRange_constantCoeff (f₀ f₀' : (ι →₀ R) →ₗ[R] (κ �
     (fun c ↦ ⟨C c, constantCoeff_C σ c⟩) x
   rw [hf₀, hf₀', h]
 
+/-- The reduction of an `S`-linear map `f : (ι →₀ S) → (κ →₀ S)` modulo the variables, for
+`S = R[V_v : v ∈ σ]`: the `R`-linear map `(ι →₀ R) → (κ →₀ R)` whose matrix coefficients are the
+constant coefficients of those of `f`. It is the reduction in the sense of this file
+(`LinearMap.constantCoeffReduction_mapRange_constantCoeff`). -/
+noncomputable def constantCoeffReduction
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) :
+    (ι →₀ R) →ₗ[R] (κ →₀ R) :=
+  Finsupp.linearCombination R fun i ↦
+    (f (Finsupp.single i 1)).mapRange constantCoeff (map_zero _)
+
+/-- The matrix coefficients of the reduction of `f` modulo the variables are the constant
+coefficients of those of `f`. -/
+@[simp]
+theorem constantCoeffReduction_single_apply
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) (i : ι) (c : R)
+    (j : κ) :
+    f.constantCoeffReduction (Finsupp.single i c) j =
+      c * constantCoeff (f (Finsupp.single i 1) j) := by
+  simp [constantCoeffReduction]
+
+/-- **The reduction commutes with setting the variables to zero.** Applying
+`constantCoeffReduction f` to the constant coefficients of `x` gives the constant coefficients of
+`f x`. -/
+@[simp]
+theorem constantCoeffReduction_mapRange_constantCoeff
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R))
+    (x : ι →₀ MvPolynomial σ R) :
+    f.constantCoeffReduction (x.mapRange constantCoeff (map_zero _)) =
+      (f x).mapRange constantCoeff (map_zero _) := by
+  induction x using Finsupp.induction_linear with
+  | zero => simp
+  | add x y hx hy =>
+    rw [Finsupp.mapRange_add (map_add _), map_add, hx, hy, map_add,
+      Finsupp.mapRange_add (map_add _)]
+  | single i p =>
+    ext j
+    rw [Finsupp.mapRange_single, constantCoeffReduction_single_apply, Finsupp.mapRange_apply,
+      ← Finsupp.smul_single_one i p, map_smul, Finsupp.smul_apply, smul_eq_mul, map_mul]
+
+/-- The reduction of a composite is the composite of the reductions. -/
+@[simp]
+theorem constantCoeffReduction_comp
+    (g : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (μ →₀ MvPolynomial σ R))
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) :
+    (g ∘ₗ f).constantCoeffReduction = g.constantCoeffReduction ∘ₗ f.constantCoeffReduction :=
+  eq_of_mapRange_constantCoeff _ _ (constantCoeffReduction_mapRange_constantCoeff _)
+    (comp_apply_mapRange_constantCoeff g f (constantCoeffReduction_mapRange_constantCoeff f)
+      (constantCoeffReduction_mapRange_constantCoeff g)) rfl
+
+/-- The identity map reduces to the identity map. -/
+@[simp]
+theorem constantCoeffReduction_id :
+    (LinearMap.id : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (ι →₀ MvPolynomial σ R)).constantCoeffReduction = LinearMap.id := by
+  exact eq_of_mapRange_constantCoeff _ _
+    (constantCoeffReduction_mapRange_constantCoeff _) (fun _ ↦ rfl) rfl
+
+/-- Reduction commutes with addition of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_add
+    (f g : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (f + g).constantCoeffReduction = f.constantCoeffReduction + g.constantCoeffReduction := by
+  ext i c
+  simp [mul_add]
+
+/-- Reduction commutes with scalar multiplication of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_smul (p : MvPolynomial σ R)
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (p • f).constantCoeffReduction = constantCoeff p • f.constantCoeffReduction := by
+  ext i c
+  simp [constantCoeffReduction_single_apply]
+
+/-- The reduction of the zero map is zero. -/
+@[simp]
+theorem constantCoeffReduction_zero :
+    constantCoeffReduction
+      (0 : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) = 0 := by
+  ext i c
+  simp
+
 end Reduction
+
+section ReductionRing
+
+variable [CommRing R]
+
+/-- Reduction commutes with negation of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_neg
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (-f).constantCoeffReduction = -f.constantCoeffReduction := by
+  ext i c
+  simp
+
+/-- Reduction commutes with subtraction of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_sub
+    (f g : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (f - g).constantCoeffReduction = f.constantCoeffReduction - g.constantCoeffReduction := by
+  ext i c
+  simp [mul_sub]
+
+end ReductionRing
 
 section QuasiIso
 
-variable [CommRing R] {S : Type*} [CommRing S]
-
-/-- The mapping cone of `f` on `(ι ⊕ κ) →₀ S`, transported from `(ι →₀ S) × (κ →₀ S)`. -/
-private noncomputable abbrev sumMappingCone (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
-    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) :
-    ((ι ⊕ κ) →₀ S) →ₗ[S] ((ι ⊕ κ) →₀ S) :=
-  (sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
-    (sumFinsuppLEquivProdFinsupp S).toLinearMap
-
-/-- The transported mapping cone is computed by applying the product mapping cone between the
-forward and inverse `Finsupp` sum-product equivalences. -/
-private theorem sumMappingCone_apply (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
-    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S))
-    (x : (ι ⊕ κ) →₀ S) :
-    sumMappingCone d e f x =
-      (sumFinsuppLEquivProdFinsupp S).symm
-        (mappingCone d e f (sumFinsuppLEquivProdFinsupp S x)) :=
-  rfl
-
-private theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
-    {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
-    ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
-      ker (mappingCone d e f) ≤ range (mappingCone d e f) := by
-  rw [sumMappingCone, LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
-    Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
-  exact Submodule.comap_le_comap_iff_of_surjective (LinearEquiv.surjective _)
-
-private theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
-    {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0)
-    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
-    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
-  refine LinearMap.ext fun x ↦ ?_
-  rw [comp_apply, sumMappingCone_apply, sumMappingCone_apply, LinearEquiv.apply_symm_apply,
-    ← comp_apply (mappingCone d e f), mappingCone_comp_self f hd he hf, zero_apply, map_zero,
-    zero_apply]
+variable [CommRing R]
 
 variable {d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R)}
   {e : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
@@ -431,13 +511,11 @@ theorem homologyMap_bijective_of_mapRange_constantCoeff
             (map_zero _)) := by
       ext <;> simp
     ext (j | j)
-    · simp only [sumMappingCone, coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-        sumFinsuppLEquivProdFinsupp_symm_inl, mappingCone_apply, Finsupp.coe_neg,
-        Pi.neg_apply, Finsupp.mapRange_apply, map_neg, hε]
+    · simp only [sumMappingCone_apply, sumFinsuppLEquivProdFinsupp_symm_inl, mappingCone_apply,
+        Finsupp.coe_neg, Pi.neg_apply, Finsupp.mapRange_apply, map_neg, hε]
       exact congr(-$(hdd₀ _) j)
-    · simp only [sumMappingCone, coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-        sumFinsuppLEquivProdFinsupp_symm_inr, mappingCone_apply, Finsupp.coe_add,
-        Pi.add_apply, Finsupp.mapRange_apply, map_add, hε]
+    · simp only [sumMappingCone_apply, sumFinsuppLEquivProdFinsupp_symm_inr, mappingCone_apply,
+        Finsupp.coe_add, Pi.add_apply, Finsupp.mapRange_apply, map_add, hε]
       exact congr($(hff₀ _) j + $(hee₀ _) j)
   · rintro _ ⟨i | i, rfl⟩
     · have := hG ⟨i, rfl⟩

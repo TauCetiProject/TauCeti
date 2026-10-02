@@ -61,6 +61,14 @@ noncomputable def freeYonedaSheafFunctor :
   yoneda ⋙ (Functor.whiskeringRight _ _ _).obj AddCommGrpCat.free ⋙
     presheafToSheaf J AddCommGrpCat.{v}
 
+/-- Mathlib's cohomology presheaf is the Ext bifunctor from free abelian representable
+sheaves. -/
+lemma cohomologyPresheafFunctor_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+    (n : ℕ) :
+    _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n =
+      Functor.flip ((freeYonedaSheafFunctor J).op ⋙ Abelian.extFunctor n) :=
+  (rfl)
+
 /-- Mathlib's sheaf cohomology over an object of a site is `Ext` from the corresponding free
 abelian sheaf. -/
 lemma sheafH'_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]

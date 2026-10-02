@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.ExponentialDichotomy
-public import TauCeti.Analysis.InnerProductSpace.EuclideanClosedBall
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.ClosedBall
 public import TauCeti.Analysis.ODE.LyapunovPerron.Embedding
 import Mathlib.Analysis.ODE.Transform
 

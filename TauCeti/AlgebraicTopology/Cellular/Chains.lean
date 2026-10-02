@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.AlgebraicTopology.Singular.Triple
-public import TauCeti.Topology.CWComplex.Classical.Skeleton
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # The cellular chain complex of a relative CW complex

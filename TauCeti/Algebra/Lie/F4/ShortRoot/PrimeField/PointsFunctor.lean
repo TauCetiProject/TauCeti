@@ -353,6 +353,7 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
   apply Subtype.ext
   rw [coe_coordinatePointsEquiv, coe_pointsMap, coe_coordinatePointsEquiv]
   simp only [AlgHom.comp_assoc]
+  rw [← AlgHom.mapValue_apply]
   exact GeneralLinear.pointsMulEquiv_mapValue 26 f _
 
 end PrimeField

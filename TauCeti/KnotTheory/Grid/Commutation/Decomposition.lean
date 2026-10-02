@@ -48,6 +48,10 @@ geometric pairing makes the exact target of the juxtaposition argument explicit.
 * `TauCeti.GridDiagram.pentagonMap_unblockedDifferential_single_apply` and
   `TauCeti.GridDiagram.unblockedDifferential_pentagonMap_single_apply` identify those sums with
   the two sides of the chain-map equation on a grid-state generator.
+* `TauCeti.GridDiagram.pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq`
+  and `TauCeti.GridDiagram.rectanglePentagonWeight_eq_of_val_add_val_eq`: two composite domains
+  covering the same squares with the same multiplicities, a rectangle of the commuted diagram read
+  with its two commuted columns exchanged, have the same weight.
 
 ## References
 
@@ -441,6 +445,72 @@ theorem pentagonRectangleWeight_def {x z : GridState n}
       G.pentagonWeight R C D.pentagon *
         (G.swapColumns C.column b).OMonomial R D.rectangle.toGridRectangle :=
   (rfl)
+
+/-- The weight of a square in a column commutation of the columns `i` and `j`: the variable of
+the commuted column of its `O`-marking, and `1` on unmarked squares. -/
+private noncomputable def swapSquareWeight (i j : Fin n) (p : Fin n × Fin n) :
+    MvPolynomial (Fin n) R :=
+  if p ∈ G.OSet then MvPolynomial.X (Equiv.swap i j p.1) else 1
+
+/-- The renamed `O`-monomial of a rectangle of the original diagram, square by square. -/
+private theorem rename_OMonomial_eq_prod_swapSquareWeight (i j : Fin n) (r : GridRectangle n) :
+    MvPolynomial.rename (Equiv.swap i j) (G.OMonomial R r) =
+      ∏ p ∈ r.coveredSquares, G.swapSquareWeight R i j p := by
+  rw [G.OMonomial_eq_prod_coveredSquares R, map_prod]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  unfold swapSquareWeight
+  split_ifs <;> simp
+
+/-- The `O`-monomial of a rectangle of the commuted diagram, square by square: a square of the
+commuted diagram carries the marking of the square of the original diagram in the swapped
+column. -/
+private theorem OMonomial_swapColumns_eq_prod_swapSquareWeight (i j : Fin n)
+    (r : GridRectangle n) :
+    (G.swapColumns i j).OMonomial R r =
+      ∏ p ∈ r.coveredSquares.map
+        ((Equiv.swap i j).prodCongr (Equiv.refl (Fin n))).toEmbedding,
+        G.swapSquareWeight R i j p := by
+  rw [(G.swapColumns i j).OMonomial_eq_prod_coveredSquares R, Finset.prod_map]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  obtain ⟨c, t⟩ := p
+  simp only [swapSquareWeight, mem_OSet_swapColumns, Equiv.coe_toEmbedding,
+    Equiv.prodCongr_apply, Prod.map, Equiv.refl_apply, Equiv.swap_apply_self]
+
+/-- The weight of a pentagon, square by square. -/
+private theorem pentagonWeight_eq_prod_swapSquareWeight {x y : GridState n}
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    G.pentagonWeight R C P =
+      ∏ p ∈ P.coveredSquares, G.swapSquareWeight R C.column (finRotate n C.column) p :=
+  G.pentagonWeight_eq_prod_coveredSquares R C P
+
+/-- A pentagon followed by a rectangle of the commuted diagram has the weight of a rectangle
+followed by a pentagon when the two composite domains cover the same squares with the same
+multiplicities, the squares of the rectangle of the commuted diagram being read in the
+original diagram, that is with the two commuted columns exchanged. -/
+theorem pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq
+    {x z : GridState n} (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
+    (E : GridPentagonRectangleDecomposition C.column C.turnRow x z)
+    (h : E.pentagon.coveredSquares.val +
+        (E.rectangle.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
+      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    G.pentagonRectangleWeight C R E = G.rectanglePentagonWeight C R D := by
+  rw [pentagonRectangleWeight_def, rectanglePentagonWeight_def,
+    pentagonWeight_eq_prod_swapSquareWeight, pentagonWeight_eq_prod_swapSquareWeight,
+    OMonomial_swapColumns_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight]
+  simp only [Finset.prod_eq_multiset_prod, ← Multiset.prod_add, ← Multiset.map_add, h]
+
+/-- Two rectangle--pentagon decompositions have the same weight when they cover the same squares
+with the same multiplicities. -/
+theorem rectanglePentagonWeight_eq_of_val_add_val_eq
+    {x z : GridState n} (D D' : GridRectanglePentagonDecomposition C.column C.turnRow x z)
+    (h : D'.rectangle.toGridRectangle.coveredSquares.val + D'.pentagon.coveredSquares.val =
+      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    G.rectanglePentagonWeight C R D' = G.rectanglePentagonWeight C R D := by
+  rw [rectanglePentagonWeight_def, rectanglePentagonWeight_def,
+    pentagonWeight_eq_prod_swapSquareWeight, pentagonWeight_eq_prod_swapSquareWeight,
+    rename_OMonomial_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight]
+  simp only [Finset.prod_eq_multiset_prod, ← Multiset.prod_add, ← Multiset.map_add, h]
 
 /-- The matrix product for the pentagon map after the original differential is the sum of the
 weights of the counted rectangle--pentagon decompositions. -/

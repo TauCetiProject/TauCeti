@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.List.Chain
 public import Mathlib.GroupTheory.Coxeter.Inversion
 public import TauCeti.GroupTheory.Coxeter.Basic
 
@@ -28,8 +29,15 @@ two lists agree.
 The **exchange condition** (the case of a simple reflection) and the **deletion condition** (a word
 that is not reduced can be shortened by deleting two of its letters) follow.
 
+Two elementary facts about reduced words are recorded first, both read off the length equation that
+reducedness is: a reduced word repeats no letter adjacently, and prefixing a reduced word for
+`s_i * w` by a left descent `i` of `w` gives a reduced word for `w`.
+
 ## Main results
 
+* `CoxeterSystem.IsReduced.isChain_ne`: **a reduced word has no two adjacent equal letters.**
+* `CoxeterSystem.isReduced_cons_of_isLeftDescent`: a left descent `i` of `w` turns a reduced word
+  for `s_i * w` into a reduced word for `w`.
 * `CoxeterSystem.mem_rightInvSeq_of_isRightInversion` and
   `CoxeterSystem.mem_leftInvSeq_of_isLeftInversion`: **every inversion occurs in the inversion
   sequence** of any word spelling the element.
@@ -73,6 +81,45 @@ local prefix:100 "ℓ " => cs.length
 local prefix:100 "π " => cs.wordProd
 local prefix:100 "ris " => cs.rightInvSeq
 local prefix:100 "lis " => cs.leftInvSeq
+
+/-! ### Reduced words and left descents -/
+
+section Reduced
+
+variable {cs}
+
+/-- **A reduced word has no two adjacent equal letters.** Deleting such a pair leaves the product
+unchanged and the word shorter, so the original word was not of minimal length. -/
+theorem IsReduced.isChain_ne {ω : List B} (hω : cs.IsReduced ω) : ω.IsChain (· ≠ ·) := by
+  revert hω
+  induction ω with
+  | nil => intro _; simp
+  | cons a ρ ih =>
+      cases ρ with
+      | nil => intro _; simp
+      | cons b τ =>
+          intro hω
+          have hρ : cs.IsReduced (b :: τ) := by simpa using hω.drop 1
+          refine List.isChain_cons_cons.mpr ⟨?_, ih hρ⟩
+          rintro rfl
+          have hprod : π (a :: a :: τ) = π τ := by
+            rw [cs.wordProd_cons, cs.wordProd_cons, cs.simple_mul_simple_cancel_left]
+          have hle := cs.length_wordProd_le τ
+          have heq := hω.eq
+          rw [hprod] at heq
+          simp only [List.length_cons] at heq
+          omega
+
+end Reduced
+
+/-- A left descent `i` of `w` turns a reduced word for `cs.simple i * w` into a reduced word for
+`w`: the length equation it must satisfy is exactly the defining property of a left descent. -/
+theorem isReduced_cons_of_isLeftDescent {i : B} {w : W} (hd : cs.IsLeftDescent w i) {ω : List B}
+    (hω : cs.IsReduced ω) (hprod : π ω = cs.simple i * w) : cs.IsReduced (i :: ω) := by
+  have hw : π (i :: ω) = w := by
+    rw [cs.wordProd_cons, hprod, cs.simple_mul_simple_cancel_left]
+  have hlen : ℓ (cs.simple i * w) + 1 = ℓ w := cs.isLeftDescent_iff.mp hd
+  rw [IsReduced, hw, List.length_cons, ← hω.eq, hprod, hlen]
 
 /-! ### The reflection cocycle -/
 

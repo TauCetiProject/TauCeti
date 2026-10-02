@@ -59,10 +59,11 @@ theorem hilbertSymbol_oddResidue_formula (h2 : IsUnit (2 : 𝒪[K]))
   let i : 𝒪[K]ˣ → Kˣ := Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
   have huv : hilbertSymbol (i u) (i v) = 1 :=
     hilbertSymbol_units_map_eq_one h2 u v
-  rw [hilbertSymbol_mul_left h2, hilbertSymbol_mul_right h2,
-    hilbertSymbol_mul_right h2, hilbertSymbol_zpow_left h2,
-    hilbertSymbol_zpow_right h2, hilbertSymbol_zpow_right h2,
-    hilbertSymbol_zpow_left h2, huv]
+  have h2' : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
+  rw [hilbertSymbol_mul_left h2', hilbertSymbol_mul_right h2',
+    hilbertSymbol_mul_right h2', hilbertSymbol_zpow_left h2',
+    hilbertSymbol_zpow_right h2', hilbertSymbol_zpow_right h2',
+    hilbertSymbol_zpow_left h2', huv]
   rw [← zpow_mul, hilbertSymbol_uniformizer_self h2 hπ,
     oddResidueSign_neg_one h2]
   have hpu : hilbertSymbol (i u) π = oddResidueSign u :=

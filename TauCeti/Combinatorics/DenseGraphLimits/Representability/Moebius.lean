@@ -109,9 +109,8 @@ theorem sum_graphParamMobius_filter_le (f : GraphParam) {n : ℕ} (F : SimpleGra
   have hcancel (H : SimpleGraph (Fin n)) :
       ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G ∧ G ≤ H),
         (-1 : ℝ) ^ (Nat.card H.edgeSet - Nat.card G.edgeSet) = if F = H then 1 else 0 := by
-    let _ : DecidableEq (Fin n) := Classical.decEq _
-    refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_right (R := ℝ) F H)
-    exact sum_congr (by ext G; simp) fun _ _ ↦ rfl
+    simpa only [Nat.card_coe_set_eq] using
+      SimpleGraph.sum_neg_one_pow_ncard_edgeSet_sub_right (R := ℝ) F H
   simp_rw [← sum_mul, hcancel, ite_mul, one_mul,
     zero_mul, sum_ite_eq, mem_univ, ite_true]
 
@@ -128,9 +127,8 @@ theorem eq_graphParamMobius_iff (f : GraphParam) {n : ℕ} (g : SimpleGraph (Fin
   have hcancel (H : SimpleGraph (Fin n)) :
       ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G ∧ G ≤ H),
         (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
-    let _ : DecidableEq (Fin n) := Classical.decEq _
-    refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_left (R := ℝ) F H)
-    exact sum_congr (by ext G; simp) fun _ _ ↦ rfl
+    simpa only [Nat.card_coe_set_eq] using
+      SimpleGraph.sum_neg_one_pow_ncard_edgeSet_sub_left (R := ℝ) F H
   simp_rw [← sum_mul, hcancel, ite_mul, one_mul,
     zero_mul, sum_ite_eq, mem_univ, ite_true]
 
@@ -217,9 +215,8 @@ theorem graphParamMobius_nonneg (f : GraphParam) (hiso : IsIsoInvariant f)
     have hcancel :
         ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G ∧ G ≤ H),
           (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
-      let _ : DecidableEq (Fin n) := Classical.decEq _
-      refine Eq.trans ?_ (SimpleGraph.sum_neg_one_pow_card_edgeSet_sub_left (R := ℝ) F H)
-      exact sum_congr (by ext G; simp) fun _ _ ↦ rfl
+      simpa only [Nat.card_coe_set_eq] using
+        SimpleGraph.sum_neg_one_pow_ncard_edgeSet_sub_left (R := ℝ) F H
     rw [← hcancel, sum_filter]
     refine sum_congr rfl fun G _ ↦ ?_
     by_cases hF : F ≤ G <;> by_cases hH : G ≤ H <;> simp [x, z, hF, hH]

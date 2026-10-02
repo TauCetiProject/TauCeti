@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import Mathlib.Geometry.Manifold.VectorField.Pullback
 
 /-!
 # Differentials of diffeomorphisms
 
-The differentials of a diffeomorphism and its inverse undo each other.
+The differentials of a diffeomorphism and its inverse undo each other, and the differential of a
+diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by postcomposition with a diffeomorphism.
 These facts support inverse isometries and transport of curve differentiability through
 diffeomorphisms.
@@ -54,6 +56,13 @@ theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
   have hh := mfderiv_apply_mfderiv_symm_apply h.symm hn (h x) v
   rw [hss, h.symm_apply_apply] at hh
   exact hh
+
+/-- The differential of a diffeomorphism maps the pullback of a vector field at `x` to the value
+of the field at `h x`. -/
+@[simp]
+theorem mfderiv_apply_mpullback (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (V : Π y : N, TangentSpace J y)
+    (x : M) : mfderiv I J h x (VectorField.mpullback I J h V x) = V (h x) :=
+  (h.isInvertible_mfderiv hn).self_apply_inverse _
 
 /-- Applying the tangent map of a diffeomorphism and then that of its inverse returns the
 original tangent vector. -/

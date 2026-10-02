@@ -18,7 +18,9 @@ families of one-relator pro-`p` groups presented by Labute's normal-form words,
 * `⟨x₁, …, x_n ∣ x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩` for `p = 2`, `a` even,
   `f ≥ 1` and `n ≥ 2` even,
 
-are Demushkin groups of rank `n`. Labute's classification lists the dyadic normal forms only for
+together with the odd form at level `f = ∞`,
+`⟨x₁, …, x_n ∣ x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)⟩` for `p = 2` and `n` odd, are Demushkin groups of
+rank `n`. Labute's classification lists the dyadic normal forms only for
 `f ≥ 2` and `4 ∣ a`; the groups presented by the words with `f = 1` or `a ≡ 2 mod 4` are Demushkin
 groups all the same (they are isomorphic to groups of the list), and the theorems here need only
 the hypotheses that put the relator in the Frattini subgroup. This is the realization step of the
@@ -31,6 +33,7 @@ form of the class of `r` in `gr_1(F)` is nondegenerate, and the degree-one forms
 normal-form words are nondegenerate by direct computation
 (`TauCeti.freeProP.nondegenerate_degreeOneForm_demushkinWordNeTwo`,
 `TauCeti.freeProP.nondegenerate_degreeOneForm_demushkinWordTwoOdd`,
+`TauCeti.freeProP.nondegenerate_degreeOneForm_demushkinWordTwoOddTop`,
 `TauCeti.freeProP.nondegenerate_degreeOneForm_demushkinWordTwoEven`). The rank is `n` because the
 normal-form presentations are minimal.
 
@@ -38,12 +41,17 @@ normal-form presentations are minimal.
 
 * `TauCeti.isDemushkin_presentedProP_demushkinWordNeTwo`,
   `TauCeti.isDemushkin_presentedProP_demushkinWordTwoOdd`,
-  `TauCeti.isDemushkin_presentedProP_demushkinWordTwoEven`: **the normal-form presented groups
-  are Demushkin groups**.
+  `TauCeti.isDemushkin_presentedProP_demushkinWordTwoOddTop`,
+  `TauCeti.isDemushkin_presentedProP_demushkinWordTwoEven`,
+  `TauCeti.isDemushkin_presentedProP_demushkinWordTwoRankTwo`: **the normal-form presented groups
+  are Demushkin groups**, the third one being the odd form at level `f = ∞` and the last one the
+  rank-two even form `x₁^{2+a} (x₁, x₂)`.
 * `TauCeti.demushkinRank_presentedProP_demushkinWordNeTwo`,
   `TauCeti.demushkinRank_presentedProP_demushkinWordTwoOdd`,
-  `TauCeti.demushkinRank_presentedProP_demushkinWordTwoEven`: the rank of any of these Demushkin
-  groups is the number `n` of generators.
+  `TauCeti.demushkinRank_presentedProP_demushkinWordTwoOddTop`,
+  `TauCeti.demushkinRank_presentedProP_demushkinWordTwoEven`,
+  `TauCeti.demushkinRank_presentedProP_demushkinWordTwoRankTwo`: the rank of any of these
+  Demushkin groups is the number `n` of generators.
 
 ## References
 
@@ -100,6 +108,24 @@ theorem demushkinRank_presentedProP_demushkinWordTwoOdd {f : ℕ} (hf : 0 < f)
   rw [demushkinRank_def]
   exact topologicalGeneratorRankNat_presentedProP_demushkinWordTwoOdd hf n
 
+/-- **The dyadic odd-rank normal form at level `f = ∞` defines a Demushkin group.** For `n` odd,
+the pro-`2` group presented on `n` generators by `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` is a Demushkin
+group. At `n = 1` the word is `x₁²` and the group is `ℤ/2`. -/
+theorem isDemushkin_presentedProP_demushkinWordTwoOddTop (hn : Odd n) :
+    IsDemushkin 2 (presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)}) :=
+  haveI : Nonempty (Fin n) := ⟨⟨0, hn.pos⟩⟩
+  isDemushkin_of_nondegenerate_degreeOneForm (demushkinWordTwoOddTop_mem_proPFrattini n _)
+    (ContinuousMulEquiv.refl _) (nondegenerate_degreeOneForm_demushkinWordTwoOddTop hn)
+
+/-- **The dyadic odd-rank normal form at level `f = ∞` on `n` generators has rank `n`**, whenever
+it is a Demushkin group. -/
+@[simp]
+theorem demushkinRank_presentedProP_demushkinWordTwoOddTop
+    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)})) :
+    demushkinRank hG = n := by
+  rw [demushkinRank_def]
+  exact topologicalGeneratorRankNat_presentedProP_demushkinWordTwoOddTop n
+
 /-- **The dyadic even-rank normal form defines a Demushkin group.** For `a` even, `f ≥ 1` and
 `n ≥ 2` even, the pro-`2` group presented on `n` generators by
 `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` is a Demushkin group. -/
@@ -119,5 +145,22 @@ theorem demushkinRank_presentedProP_demushkinWordTwoEven {a f : ℕ} (ha : 2 ∣
     demushkinRank hG = n := by
   rw [demushkinRank_def]
   exact topologicalGeneratorRankNat_presentedProP_demushkinWordTwoEven ha hf n
+
+/-- **The rank-two dyadic normal form defines a Demushkin group.** For `a` even, the pro-`2`
+group presented on two generators by `x₁^{2+a} (x₁, x₂)` is a Demushkin group: it is the even
+form on two generators, where the factor `x₃^{2^f}` is absent. -/
+theorem isDemushkin_presentedProP_demushkinWordTwoRankTwo {a : ℕ} (ha : 2 ∣ a) :
+    IsDemushkin 2 (presentedProP 2 (Fin 2) {demushkinWordTwoRankTwo a (freeProPGen 2 2)}) := by
+  rw [← demushkinWordTwoEven_two a 1 _ (freeProPGen_eq_one_of_le 2 le_rfl)]
+  exact isDemushkin_presentedProP_demushkinWordTwoEven even_two two_ne_zero ha one_pos
+
+/-- **The rank-two dyadic normal form has rank `2`**, for `a` even, whenever it is a Demushkin
+group. -/
+@[simp]
+theorem demushkinRank_presentedProP_demushkinWordTwoRankTwo {a : ℕ} (ha : 2 ∣ a)
+    (hG : IsDemushkin 2 (presentedProP 2 (Fin 2) {demushkinWordTwoRankTwo a (freeProPGen 2 2)})) :
+    demushkinRank hG = 2 := by
+  rw [demushkinRank_def]
+  exact topologicalGeneratorRankNat_presentedProP_demushkinWordTwoRankTwo ha
 
 end TauCeti

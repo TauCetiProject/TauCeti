@@ -94,9 +94,7 @@ public section
 
 namespace TauCeti
 
--- `_root_.Matrix`, because importing `TauCeti.LinearAlgebra.Determinant` puts a `TauCeti.Matrix`
--- namespace in scope as well.
-open Finset _root_.Matrix Polynomial
+open Finset Matrix Polynomial
 
 /-! ### The discrete antiderivative of a falling factorial -/
 

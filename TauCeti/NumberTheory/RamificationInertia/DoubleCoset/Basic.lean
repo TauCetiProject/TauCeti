@@ -46,6 +46,8 @@ bijection is the dictionary that supplies one.
 * `Ideal.exists_smul_under_fixedField_eq`: every prime of `𝓞 E` above `p` is such a contraction.
 * `Ideal.doubleCosetQuotientEquivPrimesOver_mk`: the bijection sends the class of `σ` to
   `σ Q ∩ 𝓞 E`.
+* `Ideal.doubleCosetQuotientEquivPrimesOver_smul_mk`: replacing `Q` by `τ Q` sends the class
+  of `σ` to the prime indexed through `Q` by the class of `σ τ`.
 * `Ideal.card_doubleCosetQuotient_eq_card_primesOver`: the resulting count.
 
 ## References
@@ -160,6 +162,16 @@ theorem doubleCosetQuotientEquivPrimesOver_mk [IsGalois K M] (p : Ideal (𝓞 K)
         Ideal (𝓞 ↥(fixedField H)))
       = (σ • Q).under (𝓞 ↥(fixedField H)) :=
   (rfl)
+
+/-- **The double coset law is compatible with the action of `G`.** Indexing the primes of
+`𝓞 (M ^ H)` above `p` through the translate `τ Q` instead of `Q` sends the class of `σ` to the
+prime that the indexing through `Q` attaches to the class of `σ τ`. -/
+theorem doubleCosetQuotientEquivPrimesOver_smul_mk [IsGalois K M] (p : Ideal (𝓞 K))
+    (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p] (H : Subgroup (M ≃ₐ[K] M))
+    (τ σ : M ≃ₐ[K] M) :
+    doubleCosetQuotientEquivPrimesOver p (τ • Q) H (DoubleCoset.mk H _ σ) =
+      doubleCosetQuotientEquivPrimesOver p Q H (DoubleCoset.mk H _ (σ * τ)) :=
+  Subtype.ext <| by simp only [doubleCosetQuotientEquivPrimesOver_mk, mul_smul]
 
 /-- **The number of primes above `p` in a subfield is a number of double cosets.** -/
 theorem card_doubleCosetQuotient_eq_card_primesOver [IsGalois K M] (p : Ideal (𝓞 K))

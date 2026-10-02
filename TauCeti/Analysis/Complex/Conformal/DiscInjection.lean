@@ -5,26 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.BranchLogRoot
+public import TauCeti.Analysis.Complex.Conformal.SquareRoots
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Moebius
-import Mathlib.Analysis.Convex.Contractible
+import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
-# A simply connected proper domain injects holomorphically into the unit disc
+# A proper domain with holomorphic square roots injects holomorphically into the unit disc
 
-The first step of the Riemann mapping theorem: the competing family is nonempty. Every nonempty,
-simply connected, open, *proper* subset of `ℂ` admits an injective holomorphic map into the open
-unit disc.
+The first step of the Riemann mapping theorem: the competing family is nonempty. Every open,
+*proper* subset of `ℂ` with holomorphic square roots (`TauCeti.HasHolomorphicSquareRoots`) — in
+particular every simply connected one — admits an injective holomorphic map into the open unit
+disc.
 
-This is the classical square-root construction. Pick `a ∉ U`. On the simply connected `U` the
-nonvanishing function `z - a` has a holomorphic square root `h`
-(`TauCeti.exists_differentiableOn_pow_eq` at `n = 2`, constructed as `exp (L / 2)` from the upgraded
-holomorphic logarithm branch `L`, not from Mathlib's continuous root branch). Then:
+This is the classical square-root construction. Pick `a ∉ U`. On `U` the nonvanishing function
+`z - a` has a holomorphic square root `h`; when `U` is simply connected this is
+`TauCeti.exists_differentiableOn_pow_eq` at `n = 2`, constructed as `exp (L / 2)` from the upgraded
+holomorphic logarithm branch `L`, not from Mathlib's continuous root branch. Then:
 
 * `h` is injective, since `h z₁ = h z₂` forces `z₁ - a = z₂ - a` after squaring;
-* `h '' U` is open (open mapping theorem: `h` is injective, hence nonconstant, on the connected
-  `U`), so it contains a ball `ball w₀ r`;
+* `h '' U` is open (open mapping theorem: `h` is injective, hence nonconstant near each point of
+  the open `U`), so it contains a ball `ball w₀ r`;
 * `-h z` **avoids** that ball for every `z ∈ U`: otherwise `-h z = h z'`, and squaring gives
   `z' = z`, hence `h z = -h z` and so `h z = 0`, which is impossible;
 * therefore `r ≤ ‖h z + w₀‖` throughout `U`.
@@ -70,12 +71,12 @@ namespace TauCeti
 
 open Complex Set Metric
 
-/-- **A holomorphic square root of `z - a`.** On a simply connected open `U` avoiding `a` the
-function `z - a` is nonvanishing, so it has a holomorphic square root. Squaring such a root
-recovers `z - a`, which pins down `z` because `a` is fixed, so `z ↦ h z ^ 2` is injective on `U`;
-and `h` is nonvanishing, because its square is. -/
-private lemma exists_sq_eq_sub_injOn_ne_zero {U : Set ℂ} (hUc : IsSimplyConnected U)
-    (hUo : IsOpen U) {a : ℂ} (ha : a ∉ U) :
+/-- **A holomorphic square root of `z - a`.** On a set `U` with holomorphic square roots and
+avoiding `a` the function `z - a` is nonvanishing, so it has a holomorphic square root. Squaring
+such a root recovers `z - a`, which pins down `z` because `a` is fixed, so `z ↦ h z ^ 2` is
+injective on `U`; and `h` is nonvanishing, because its square is. -/
+private lemma exists_sq_eq_sub_injOn_ne_zero {U : Set ℂ} (hUs : HasHolomorphicSquareRoots U)
+    {a : ℂ} (ha : a ∉ U) :
     ∃ h : ℂ → ℂ, DifferentiableOn ℂ h U ∧ (∀ z ∈ U, h z ^ 2 = z - a) ∧
       InjOn (fun z => h z ^ 2) U ∧ ∀ z ∈ U, h z ≠ 0 := by
   have hsub : DifferentiableOn ℂ (fun z : ℂ => z - a) U :=
@@ -84,8 +85,7 @@ private lemma exists_sq_eq_sub_injOn_ne_zero {U : Set ℂ} (hUc : IsSimplyConnec
     rintro ⟨z, hz, hza⟩
     have hza' : z - a = 0 := hza
     exact ha (sub_eq_zero.mp hza' ▸ hz)
-  obtain ⟨h, hhd, hheq⟩ :=
-    exists_differentiableOn_pow_eq hUc hUo hsub hzero (n := 2) two_ne_zero
+  obtain ⟨h, hhd, hheq⟩ := hUs.exists_differentiableOn_sq_eq hsub hzero
   have hsq : ∀ z ∈ U, h z ^ 2 = z - a := fun z hz => hheq hz
   refine ⟨h, hhd, hsq, fun z₁ hz₁ z₂ hz₂ hEq => ?_, fun z hz hz0 => ?_⟩
   · have hdiff : z₁ - a = z₂ - a := by rw [← hsq z₁ hz₁, ← hsq z₂ hz₂]; exact hEq
@@ -113,20 +113,24 @@ private lemma le_norm_add_of_ball_subset_image {U : Set ℂ} {h : ℂ → ℂ} {
   rw [hzz] at hz'eq
   exact hne z hz (by linear_combination hz'eq / 2)
 
-/-- **A simply connected proper domain injects into the unit disc.** The Riemann mapping theorem's
-competing family — injective holomorphic maps `U → 𝔻` — is nonempty. -/
-theorem exists_differentiableOn_injOn_mapsTo_unitBall {U : Set ℂ} (hUc : IsSimplyConnected U)
-    (hUo : IsOpen U) (hUne : U ≠ univ) :
+/-- **A proper open set with holomorphic square roots injects into the unit disc.** The Riemann
+mapping theorem's competing family — injective holomorphic maps `U → 𝔻` — is nonempty. A simply
+connected open set has holomorphic square roots
+(`IsSimplyConnected.hasHolomorphicSquareRoots`). -/
+theorem exists_differentiableOn_injOn_mapsTo_unitBall {U : Set ℂ}
+    (hUs : HasHolomorphicSquareRoots U) (hUo : IsOpen U) (hUne : U ≠ univ) :
     ∃ f : ℂ → ℂ, DifferentiableOn ℂ f U ∧ InjOn f U ∧ MapsTo f U (ball (0 : ℂ) 1) := by
   obtain ⟨a, ha⟩ : ∃ a, a ∉ U := by
     by_contra hcon
     exact hUne (eq_univ_of_forall (by simpa using hcon))
   -- `z - a` is nonvanishing on `U`, so it has a holomorphic square root there, injective and
   -- itself nonvanishing.
-  obtain ⟨h, hhd, hsq, hsq_inj, hne⟩ := exists_sq_eq_sub_injOn_ne_zero hUc hUo ha
+  obtain ⟨h, hhd, hsq, hsq_inj, hne⟩ := exists_sq_eq_sub_injOn_ne_zero hUs ha
   have hinj : InjOn h U := fun z₁ hz₁ z₂ hz₂ he => hsq_inj hz₁ hz₂ (by simp only; rw [he])
+  -- On the empty set every map will do.
+  rcases U.eq_empty_or_nonempty with rfl | ⟨z₀, hz₀⟩
+  · exact ⟨0, differentiableOn_empty, injOn_empty _, mapsTo_empty _ _⟩
   -- `h '' U` is open, `h` being injective and holomorphic on the open `U`.
-  obtain ⟨z₀, hz₀⟩ := hUc.nonempty
   have hopen : IsOpen (h '' U) := isOpen_image_of_differentiableOn_of_injOn hUo hhd hinj
   -- The image contains a ball around `h z₀`, and `-h` avoids it.
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp hopen (h z₀) ⟨z₀, hz₀, rfl⟩
@@ -176,9 +180,10 @@ passage through the bundled `Complex.UnitDisc` is needed. The Moebius factor is 
 uniqueness half of the Riemann mapping theorem will need; the *nonempty normalized family*
 obligation proved here uses only the three properties above. -/
 theorem exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero {U : Set ℂ}
-    (hUc : IsSimplyConnected U) (hUo : IsOpen U) (hUne : U ≠ univ) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
+    (hUs : HasHolomorphicSquareRoots U) (hUo : IsOpen U) (hUne : U ≠ univ) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ U) :
     ∃ f : ℂ → ℂ, DifferentiableOn ℂ f U ∧ InjOn f U ∧ MapsTo f U (ball (0 : ℂ) 1) ∧ f z₀ = 0 := by
-  obtain ⟨f, hfd, hfi, hfm⟩ := exists_differentiableOn_injOn_mapsTo_unitBall hUc hUo hUne
+  obtain ⟨f, hfd, hfi, hfm⟩ := exists_differentiableOn_injOn_mapsTo_unitBall hUs hUo hUne
   -- The centre of the normalizing automorphism is the base point's image, which lies in `𝔻`.
   have hc : ‖f z₀‖ < 1 := by simpa [mem_ball, dist_zero_right] using hfm hz₀
   set m : ℂ → ℂ := fun w => (w - f z₀) / (1 - (starRingEnd ℂ) (f z₀) * w) with hm
@@ -192,17 +197,17 @@ theorem exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero {U : Set ℂ
   simp [hm]
 
 /- **Non-vacuity** (documentation, not public API). The hypotheses above are satisfiable: the open
-unit ball is simply connected (being convex, hence contractible), open, and proper. Without this the
-theorem could be true merely because nothing meets its hypotheses.  Kept as an `example` — it is a
-one-off sanity check on `ball 0 1`, with no downstream consumer, so it should not sit in the public
-namespace. -/
+unit ball has holomorphic square roots (being convex, hence contractible and so simply connected),
+and is open and proper. Without this the theorem could be true merely because nothing meets its
+hypotheses.  Kept as an `example` — it is a one-off sanity check on `ball 0 1`, with no downstream
+consumer, so it should not sit in the public namespace. -/
 example :
-    IsSimplyConnected (ball (0 : ℂ) 1) ∧ IsOpen (ball (0 : ℂ) 1)
+    HasHolomorphicSquareRoots (ball (0 : ℂ) 1) ∧ IsOpen (ball (0 : ℂ) 1)
       ∧ (ball (0 : ℂ) 1) ≠ univ := by
   refine ⟨?_, isOpen_ball, ?_⟩
-  · have : ContractibleSpace (ball (0 : ℂ) 1) :=
-      Convex.contractibleSpace (convex_ball (0 : ℂ) 1) (nonempty_ball.2 one_pos)
-    exact SimplyConnectedSpace.ofContractible _
+  · have : ContractibleSpace (ball (0 : ℂ) 1) := contractibleSpace_ball one_pos
+    exact IsSimplyConnected.hasHolomorphicSquareRoots (SimplyConnectedSpace.ofContractible _)
+      isOpen_ball
   · intro hcon
     have h2 : (2 : ℂ) ∈ ball (0 : ℂ) 1 := hcon ▸ mem_univ _
     rw [mem_ball, dist_zero_right] at h2

@@ -142,6 +142,16 @@ lemma hasDerivAt_unitDiscMoebiusFormula (a p : ℂ)
   rw [hval]
   exact hq
 
+/-- The scalar unit-disc Moebius factor `z ↦ (z - a) / (1 - conj a * z)` has the difference
+quotient `(1 - conj a * a) / ((1 - conj a * s) * (1 - conj a * t))`. -/
+lemma unitDiscMoebiusFormula_sub_unitDiscMoebiusFormula (a : ℂ) {s t : ℂ}
+    (hs : 1 - (starRingEnd ℂ) a * s ≠ 0) (ht : 1 - (starRingEnd ℂ) a * t ≠ 0) :
+    (s - a) / (1 - (starRingEnd ℂ) a * s) - (t - a) / (1 - (starRingEnd ℂ) a * t) =
+      (1 - (starRingEnd ℂ) a * a) * (s - t) /
+        ((1 - (starRingEnd ℂ) a * s) * (1 - (starRingEnd ℂ) a * t)) := by
+  rw [div_sub_div _ _ hs ht]
+  ring
+
 /-- The scalar formula of the unit-disc Moebius factor is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscMoebiusFormula (a : Complex.UnitDisc) :
     DifferentiableOn ℂ

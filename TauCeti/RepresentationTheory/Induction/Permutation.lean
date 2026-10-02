@@ -47,9 +47,8 @@ Mathlib's left-coset quotient `G ⧸ H` with its left action.
 
 ## References
 
-This is the "permutation character" item of Layer 2 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, whose `Suggested.lean`
-records the isomorphism as `indTrivialIso`.
+* J.-P. Serre, *Linear Representations of Finite Groups*, §2.1 (the permutation character) and
+  §3.3 (inducing the unit representation, and the projection formula).
 -/
 
 public section
@@ -71,16 +70,6 @@ private noncomputable abbrev indTrivialSource : Representation k H (k[G] ⊗[k] 
   Representation.tprod ((Representation.leftRegular k G).comp H.subtype)
     (Representation.trivial k H k)
 
-/-- Sending `x : G` to the coset `⟦x⁻¹⟧` turns left translation by `H` into the identity. -/
-private theorem mapDomain_inv_comp_leftRegular (s : H) :
-    MonoidAlgebra.mapDomainLinearMap k k (fun x : G ↦ (QuotientGroup.mk x⁻¹ : G ⧸ H)) ∘ₗ
-        Representation.leftRegular k G (s : G) =
-      MonoidAlgebra.mapDomainLinearMap k k (fun x : G ↦ (QuotientGroup.mk x⁻¹ : G ⧸ H)) := by
-  refine MonoidAlgebra.lhom_ext' fun x ↦ LinearMap.ext_ring ?_
-  simp only [LinearMap.coe_comp, Function.comp_apply, MonoidAlgebra.lsingle_apply,
-    leftRegular, ofMulAction_single, smul_eq_mul, MonoidAlgebra.mapDomainLinearMap_single]
-  exact congrArg (MonoidAlgebra.single · (1 : k)) (QuotientGroup.eq.2 (by simp))
-
 /-- The linear map `k[G] ⊗[k] k →ₗ[k] k[G ⧸ H]` sending `single x r ⊗ₜ a` to
 `single ⟦x⁻¹⟧ (a • r)`. -/
 private noncomputable def indTrivialLift : (k[G] ⊗[k] k) →ₗ[k] k[G ⧸ H] :=
@@ -94,10 +83,8 @@ private theorem indTrivialLift_tmul (x : G) (r a : k) :
 
 private theorem indTrivialLift_comp (s : H) :
     indTrivialLift k H ∘ₗ indTrivialSource k H s = indTrivialLift k H := by
-  refine TensorProduct.ext' fun y a ↦ ?_
-  have h := LinearMap.congr_fun (mapDomain_inv_comp_leftRegular k H s) y
-  simp only [LinearMap.coe_comp, Function.comp_apply] at h
-  simp [indTrivialLift, h]
+  ext x
+  simp [indTrivialLift]
 
 /-- The forward map of `TauCeti.indTrivialEquiv`, from `Ind_H^G (trivial)` to `k[G ⧸ H]`. -/
 private noncomputable def indTrivialToQuotient :
@@ -123,13 +110,8 @@ private noncomputable def indTrivialMk (q : G ⧸ H) :
     IndV H.subtype (Representation.trivial k H k) :=
   Quotient.liftOn' q
     (fun x : G ↦ IndV.mk H.subtype (Representation.trivial k H k) x⁻¹ (1 : k))
-    fun a b hab ↦ by
-      have hs : b⁻¹ * a ∈ H := by
-        simpa using H.inv_mem (QuotientGroup.leftRel_apply.1 hab)
-      have h := indV_mk_smul k H ⟨b⁻¹ * a, hs⟩ a⁻¹ (1 : k)
-      have hb : ((⟨b⁻¹ * a, hs⟩ : H) : G) * a⁻¹ = b⁻¹ := by simp
-      rw [hb] at h
-      exact h.symm
+    fun _ b hab ↦ by
+      simpa using indV_mk_smul k H ⟨_, QuotientGroup.leftRel_apply.1 hab⟩ b⁻¹ 1
 
 private theorem indTrivialMk_mk (x : G) :
     indTrivialMk k H (QuotientGroup.mk x) =
@@ -164,14 +146,15 @@ noncomputable def indTrivialEquiv : ((Representation.trivial k H k).ind H.subtyp
     refine IndV.hom_ext _ _ fun x ↦ LinearMap.ext_ring ?_
     simp [indTrivialToQuotient, indTrivialLift_tmul, ofMulAction_single, mul_inv_rev]
 
-/-- The generator computation rule for `indTrivialEquiv`. Not a `simp` lemma: `simp` unfolds the
-reducible `Representation.IndV.mk`, so the left-hand side is not in `simp`-normal form. -/
+-- Not a `simp` lemma: `simp` unfolds the reducible `Representation.IndV.mk`, so the left-hand
+-- side is not in `simp`-normal form.
+/-- The generator computation rule for `TauCeti.indTrivialEquiv`. -/
 theorem indTrivialEquiv_apply_mk (x : G) (a : k) :
     indTrivialEquiv k H (IndV.mk H.subtype (Representation.trivial k H k) x a) =
       MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a :=
   indTrivialToQuotient_mk k H x a
 
-/-- The generator computation rule for the inverse of `indTrivialEquiv`. -/
+/-- The generator computation rule for the inverse of `TauCeti.indTrivialEquiv`. -/
 @[simp]
 theorem indTrivialEquiv_symm_apply_single (x : G) (r : k) :
     (indTrivialEquiv k H).symm (MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r) =
@@ -184,11 +167,10 @@ noncomputable def indTrivialIso :
     Rep.ind H.subtype (Rep.trivial k H k) ≅ Rep.ofMulAction k G (G ⧸ H) :=
   Rep.mkIso (indTrivialEquiv k H)
 
-/-- The generator computation rule for `TauCeti.indTrivialIso`. This is the characterizing
-statement for the bundled isomorphism in `Rep k G`, which downstream files use instead of its
-construction; the underlying rule for the bare equivalence is
-`TauCeti.indTrivialEquiv_apply_mk`. Not a `simp` lemma: `simp` unfolds the reducible
-`Representation.IndV.mk`, so the left-hand side is not in `simp`-normal form. -/
+-- Not a `simp` lemma: `simp` unfolds the reducible `Representation.IndV.mk`, so the left-hand
+-- side is not in `simp`-normal form.
+/-- The generator computation rule for `TauCeti.indTrivialIso`: it sends `⟦single x 1 ⊗ₜ a⟧` to
+`single ⟦x⁻¹⟧ a`. -/
 theorem indTrivialIso_hom_hom_apply_mk (x : G) (a : k) :
     (indTrivialIso k H).hom.hom (IndV.mk H.subtype (Representation.trivial k H k) x a) =
       MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a := by
@@ -199,8 +181,7 @@ theorem indTrivialIso_hom_hom_apply_mk (x : G) (a : k) :
 -- in implicit type arguments before it looks a term up, so the left-hand side is stated through
 -- `dsimp% only`, as in #8315.
 /-- The computation rule for the inverse of `TauCeti.indTrivialIso` on the standard basis of
-`k[G ⧸ H]`; the underlying rule for the bare equivalence is
-`TauCeti.indTrivialEquiv_symm_apply_single`. -/
+`k[G ⧸ H]`. -/
 @[simp]
 theorem indTrivialIso_inv_hom_apply_single (x : G) (r : k) :
     (dsimp% only
@@ -209,9 +190,7 @@ theorem indTrivialIso_inv_hom_apply_single (x : G) (r : k) :
   rw [indTrivialIso, Rep.mkIso_inv_hom_apply]
   exact indTrivialEquiv_symm_apply_single k H x r
 
-/-- `Ind_H^G (trivial)` is a finite module whenever `H` has finite index, by transport along
-`TauCeti.indTrivialEquiv`; over a field this is the `FiniteDimensional` instance that lets one
-even state its character. -/
+/-- `Ind_H^G (trivial)` is a finite module whenever `H` has finite index. -/
 instance instFiniteIndTrivial [Finite (G ⧸ H)] :
     Module.Finite k (IndV H.subtype (Representation.trivial k H k)) :=
   Module.Finite.equiv (indTrivialEquiv k H).toLinearEquiv.symm
@@ -248,20 +227,6 @@ section PermutationCharacter
 
 variable (k : Type u) [Field k] {G : Type v} [Monoid G]
 
-/-- A permutation representation permutes the standard basis of `k[X]`. -/
-theorem ofMulAction_basis (X : Type w) [MulAction G X] (g : G) (x : X) :
-    Representation.ofMulAction k G X g (MonoidAlgebra.basis X k x) =
-      MonoidAlgebra.basis X k (g • x) := by
-  simp [ofMulAction_single]
-
-/-- The diagonal entries of a permutation representation record which points are fixed. -/
-private theorem toMatrix_ofMulAction_diag (X : Type w) [MulAction G X] [Fintype X]
-    [DecidableEq X] (g : G) (x : X) :
-    LinearMap.toMatrix (MonoidAlgebra.basis X k) (MonoidAlgebra.basis X k)
-      (Representation.ofMulAction k G X g) x x = if g • x = x then 1 else 0 := by
-  simp only [LinearMap.toMatrix_apply, ofMulAction_basis, Module.Basis.repr_self,
-    Finsupp.single_apply]
-
 /-- **The permutation character.** The character of the permutation representation `k[X]` at `g`
 is the number of points of `X` fixed by `g`, cast into `k`. -/
 @[simp]
@@ -271,7 +236,8 @@ theorem char_ofMulAction (X : Type w) [MulAction G X] [Finite X] (g : G) :
   have := Fintype.ofFinite X
   rw [Representation.character,
     LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis X k), Matrix.trace]
-  simp [toMatrix_ofMulAction_diag, Fintype.card_subtype]
+  simp [LinearMap.toMatrix_apply, MonoidAlgebra.basis, Finsupp.single_apply,
+    Fintype.card_subtype]
 
 end PermutationCharacter
 

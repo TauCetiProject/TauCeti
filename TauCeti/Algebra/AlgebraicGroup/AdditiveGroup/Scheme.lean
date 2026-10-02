@@ -43,6 +43,9 @@ affine-space APIs.
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebra`: the symmetric Hopf algebra representing `G_a`.
 * `TauCeti.AdditiveGroup.coordinateAlgEquiv`: its rank-one polynomial presentation.
+* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: its prime spectrum
+  is connected over a domain.
+* `TauCeti.AdditiveGroup.isReduced_coordinateHopfAlgebra`: it is reduced over a reduced ring.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
   one-space over the base.
@@ -71,8 +74,7 @@ the spectrum-transport pattern in `TauCetiProject/TauCeti`, revision
 `90f7e09cf472553c4d268db39fcae6b84bd91e04`,
 `TauCeti/Algebra/AlgebraicGroup/GeneralLinear/Scheme.lean` (Apache 2.0), specialized to Mathlib's
 rank-one symmetric-algebra and affine-space equivalences. The scheme-valued-points interface follows
-the “Functor of points is the notion of points” design note in
-`TauCetiRoadmap/ReductiveGroups/README.md` and its cited Lean Zulip discussion
+the Lean Zulip discussion
 [#Is there code for X? > Algebraic groups](https://leanprover.zulipchat.com/#narrow/channel/217875-Is%20there%20code%20for%20X%3F/topic/Algebraic%20groups).
 -/
 
@@ -142,6 +144,17 @@ instance instSmoothSymmetricAlgebra : Algebra.Smooth R (SymmetricAlgebra R R) :=
   letI : Algebra.Smooth R (MvPolynomial (CoordinateIndex.{u}) R) :=
     ⟨inferInstance, inferInstance⟩
   Algebra.Smooth.of_equiv (coordinateAlgEquiv R).symm
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
+theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra [IsDomain R] :
+    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra R)) :=
+  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra R R)))
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
+algebra on the single generator `x`. -/
+theorem isReduced_coordinateHopfAlgebra [IsReduced R] :
+    IsReduced (coordinateHopfAlgebra R) :=
+  isReduced_of_injective (coordinateAlgEquiv R).toRingHom (coordinateAlgEquiv R).injective
 
 /-- The additive group scheme obtained by applying relative spectrum to the symmetric Hopf
 algebra on one generator.

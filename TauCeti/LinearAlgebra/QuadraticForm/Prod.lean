@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Projection
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Prod
 
 /-!
@@ -61,6 +61,22 @@ so the embedding restricts to the special orthogonal groups.
 public section
 
 namespace QuadraticMap
+
+section Smul
+
+variable {R S M₁ M₂ P : Type*} [CommSemiring R] [Monoid S]
+  [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
+  [Module R M₁] [Module R M₂] [Module R P]
+  [DistribMulAction S P] [SMulCommClass S R P]
+
+/-- Scaling an orthogonal product scales both of its factors. -/
+@[simp]
+theorem smul_prod (c : S) (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P) :
+    c • Q₁.prod Q₂ = (c • Q₁).prod (c • Q₂) := by
+  ext x
+  simp [smul_add]
+
+end Smul
 
 variable {R M₁ M₂ M₃ P : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
   [AddCommMonoid M₃] [AddCommMonoid P] [Module R M₁] [Module R M₂] [Module R M₃] [Module R P]

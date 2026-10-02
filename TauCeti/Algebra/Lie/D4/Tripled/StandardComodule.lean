@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
+public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.Algebra.Lie.D4.Tripled.BaseChange
 import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
+import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
+import TauCeti.Algebra.Lie.D4.Tripled.Levi
+import TauCeti.Data.List.Involutive
 
 /-!
 # The standard representation of the tripled type-D4 carrier
@@ -21,8 +25,16 @@ commutative ring `R`, its standard representation is the corestriction of the st
 This file proves that the resulting representation is faithful over every commutative ring. It
 also identifies the action of an algebra-valued point with multiplication by its ambient
 `24 × 24` matrix and deduces that subcomodules are stable under the concrete carrier points.
-No irreducibility assertion is made: the tripled representation is designed to have three
-eight-dimensional constituents.
+
+The tripled representation is designed to have three eight-dimensional constituents, and it is
+not simple. Instead, every union of the summands `V(ϖ₁)`, `V(ϖ₃)` and `V(ϖ₄)` spans a subcomodule
+over every commutative ring, because the carrier lies in the block-diagonal subgroup of the
+summands. Over a field the representation is completely reducible. Restriction to the weight
+torus separates the twenty-four distinct weight lines, so a subcomodule is spanned by the
+coordinate vectors it contains. The positive and negative simple-root points move a coordinate
+vector to that of each reflected weight, and the simple reflections act transitively on each
+summand. Hence every subcomodule is the span of a union of summands, and the remaining summands
+span a complement.
 
 ## Main declarations
 
@@ -32,6 +44,10 @@ eight-dimensional constituents.
   ambient matrices.
 * `TauCeti.D4Tripled.points_mulVec_mem`: invariant submodules are stable under concrete carrier
   points.
+* `TauCeti.D4Tripled.summandSubcomodule`: the subcomodule spanned by a union of summands.
+* `TauCeti.D4Tripled.torusCorestrict_eq_ofWeights`: the weight decomposition under the weight
+  torus, over every commutative ring.
+* `TauCeti.D4Tripled.isCompletelyReducible_standardComodule`: complete reducibility over a field.
 
 ## References
 
@@ -41,12 +57,15 @@ eight-dimensional constituents.
 
 The corestriction and point-action interface follows
 `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule`; the organization is adapted from
-`TauCeti.Algebra.Lie.E7.Minuscule.StandardComodule`.
+`TauCeti.Algebra.Lie.E7.Minuscule.StandardComodule`. The weight-line and reflection steps follow
+the simplicity proof in `TauCeti.Algebra.Lie.E6.Minuscule.StandardComodule`, and the complement
+construction follows `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.StandardComodule`.
 -/
 
 public section
 
 open CategoryTheory Module WithConv
+open TauCeti.DynkinType
 open scoped Matrix TensorProduct
 
 namespace TauCeti.D4Tripled
@@ -59,17 +78,16 @@ variable (R : Type u) [CommRing R]
 @[instance_reducible]
 noncomputable def standardComodule :
     Comodule R (coordinateHopfAlgebra R) (Fin 24 → R) :=
-  let _ := GeneralLinear.standardComodule R 24
-  Comodule.Corestrict (coordinateMap R).hom.toCoalgHom
+  GeneralLinear.corestrictStandardComodule R 24 (coordinateMap R).hom
 
 attribute [local instance] GeneralLinear.standardComodule standardComodule
 
 /-- **The standard comodule of the specialized tripled type-`D₄` carrier is faithful.** -/
 theorem isFaithful_standardComodule :
-    Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R) (V := Fin 24 → R) := by
-  exact Comodule.isFaithful_corestrict_of_surjective (coordinateMap R).hom
-    (coordinateMap_surjective R)
-    (GeneralLinear.isFaithful_standardComodule R 24)
+    Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R)
+      (V := Fin 24 → R) :=
+  GeneralLinear.isFaithful_corestrictStandardComodule R 24
+    (coordinateMap R).hom (coordinateMap_surjective R)
 
 section PointAction
 
@@ -110,17 +128,11 @@ theorem mulVec_mem
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 24) (baseChangeDefiningIdeal R)
           (CommAlgCat.of R R) g) : Matrix (Fin 24) (Fin 24) R) *ᵥ w ∈ N := by
-  have h := Comodule.basePointsRepresentation_mem N g hw
-  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R).hom g,
-    GeneralLinear.basePointsRepresentation_eq_mulVec] at h
-  have hpoint :
-      AlgHom.mapDomain (coordinateMap R).hom g =
-        CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra R 24) (baseChangeDefiningIdeal R)
-          (CommAlgCat.of R R) g := by
-    exact mapPointsFunctor_coordinateMap_app R g
-  rw [hpoint] at h
-  exact h
+  have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 24
+    (coordinateMap R).hom N g hw
+  have hpoint : AlgHom.mapDomain (coordinateMap R).hom g = _ :=
+    mapPointsFunctor_coordinateMap_app R g
+  rwa [hpoint] at h
 
 /-- A subcomodule of the standard carrier comodule is stable under every concrete tripled
 type-`D₄` carrier point. -/
@@ -133,5 +145,187 @@ theorem points_mulVec_mem
   rw [quotientPointsHom_baseChangePointsMulEquiv_symm,
     ← GeneralLinear.pointsMulEquiv_apply, MulEquiv.apply_symm_apply] at h
   exact h
+
+/-! ## The summand subcomodules -/
+
+/-- **A union of summands spans a subcomodule of the standard carrier comodule**, over every
+commutative ring: the carrier preserves each of `V(ϖ₁)`, `V(ϖ₃)` and `V(ϖ₄)`. -/
+noncomputable def summandSubcomodule (s : Set (Fin 24))
+    (hs : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ s → a ∈ s) :
+    Subcomodule R (coordinateHopfAlgebra R) (Fin 24 → R) :=
+  (Pi.basisFun R (Fin 24)).coordinateSpanSubcomodule s <|
+    ((Pi.basisFun R (Fin 24)).coordinateSpanIsStable_iff
+      (C := coordinateHopfAlgebra R) s).2 <| by
+    intro a ha b hb
+    have hab : d4TripledSummand a ≠ d4TripledSummand b := fun h ↦ ha (hs a b h hb)
+    rw [Comodule.coefficientMatrix_corestrict, Matrix.map_apply,
+      GeneralLinear.coefficientMatrix_basisFun, BialgHom.toCoalgHom_apply,
+      GeneralLinear.genericMatrix_apply]
+    exact coordinateMap_X_eq_zero R hab
+
+/-- A summand subcomodule is the span of the coordinate vectors of its summands. -/
+@[simp]
+theorem summandSubcomodule_toSubmodule (s : Set (Fin 24))
+    (hs : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ s → a ∈ s) :
+    (summandSubcomodule R s hs).toSubmodule = Submodule.span R ((Pi.basisFun R (Fin 24)) '' s) :=
+  Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
+
+/-- Membership in a summand subcomodule means vanishing outside the chosen summands. -/
+@[simp]
+theorem mem_summandSubcomodule (s : Set (Fin 24))
+    (hs : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ s → a ∈ s) (v : Fin 24 → R) :
+    v ∈ summandSubcomodule R s hs ↔ ∀ a ∉ s, v a = 0 := by
+  classical
+  rw [← Subcomodule.mem_toSubmodule, summandSubcomodule_toSubmodule,
+    (Pi.basisFun R (Fin 24)).mem_span_image]
+  simp only [Set.subset_def, Finset.mem_coe, Finsupp.mem_support_iff, Pi.basisFun_repr]
+  exact forall_congr' fun a ↦ not_imp_comm
+
+/-! ## The weight decomposition under the weight torus -/
+
+/-- The character of the weight torus on the coordinate vector at a tripled weight index. -/
+noncomputable abbrev tripledCharacter (a : Fin 24) : Multiplicative (Fin 4 →₀ ℤ) :=
+  Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (d4TripledWeight a))
+
+/-- **Restricting the standard carrier comodule to the rank-four weight torus gives the direct sum
+of the twenty-four distinct tripled weight comodules.** The coordinate vector at `a` spans the
+weight line of the torus character `tripledCharacter a`, over every commutative ring. -/
+theorem torusCorestrict_eq_ofWeights :
+    let _ := standardComodule R
+    Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap R).hom.toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun R (Fin 24)) tripledCharacter := by
+  let _ := GeneralLinear.standardComodule R 24
+  let _ := standardComodule R
+  apply Comodule.ext
+  rw [Comodule.corestrict_coact,
+    ← Comodule.corestrictCoact_comp (coordinateMap R).hom.toCoalgHom
+      (weightTorusToBaseChangeCoordinateMap R).hom.toCoalgHom]
+  have hcomp :
+      _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap R).hom.toCoalgHom)
+          ((coordinateMap R).hom.toCoalgHom) =
+        (GeneralLinear.weightTorusCoordinateBialgHom (S := R) d4TripledWeight).toCoalgHom := by
+    have hb :
+        (weightTorusToBaseChangeCoordinateMap R).hom.comp (coordinateMap R).hom =
+          GeneralLinear.weightTorusCoordinateBialgHom (S := R) d4TripledWeight := by
+      rw [← _root_.CommHopfAlgCat.hom_comp,
+        coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
+        GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
+    apply DFunLike.ext _ _
+    intro x
+    exact DFunLike.congr_fun hb x
+  rw [hcomp]
+  simpa only [Comodule.corestrict_coact] using
+    congrArg (fun c : Comodule R _ (Fin 24 → R) ↦ c.coact)
+      (GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
+        d4TripledWeight)
+
+/-! ## Complete reducibility over a field -/
+
+section CompletelyReducible
+
+variable (k : Type u) [Field k]
+
+private theorem tripledCharacter_injective : Function.Injective tripledCharacter := by
+  intro a b h
+  apply d4TripledWeight_injective
+  apply Finsupp.equivFunOnFinite.symm.injective
+  exact Multiplicative.ofAdd.injective h
+
+/-- Every subcomodule of the standard carrier comodule over a field is spanned by the coordinate
+vectors it contains: the weight torus separates the twenty-four distinct weight lines. -/
+private theorem toSubmodule_eq_span (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 24 → k)) :
+    N.toSubmodule = Submodule.span k ((Pi.basisFun k (Fin 24)) ''
+      {a | Pi.single a (1 : k) ∈ N}) := by
+  classical
+  apply le_antisymm
+  · intro v hv
+    rw [← Finset.univ_sum_single v]
+    apply Submodule.sum_mem
+    intro a _
+    by_cases ha : v a = 0
+    · simp [ha]
+    · have hsingle := Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights
+        (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom tripledCharacter
+        tripledCharacter_injective (torusCorestrict_eq_ofWeights k) N hv a
+      have hone : Pi.single a (1 : k) ∈ N := by
+        rw [← Subcomodule.mem_toSubmodule]
+        simpa only [smul_smul, inv_mul_cancel₀ ha, one_smul] using
+          N.toSubmodule.smul_mem (v a)⁻¹ hsingle
+      have hmem := Submodule.subset_span (R := k)
+        (s := (Pi.basisFun k (Fin 24)) '' {a | Pi.single a (1 : k) ∈ N})
+        ⟨a, by simpa only [Set.mem_ofPred_eq] using hone, rfl⟩
+      simpa [Pi.basisFun_apply, ← Pi.single_smul] using Submodule.smul_mem _ (v a) hmem
+  · apply Submodule.span_le.mpr
+    rintro _ ⟨a, ha, rfl⟩
+    apply Subcomodule.mem_toSubmodule.mpr
+    simpa only [Pi.basisFun_apply, Set.mem_ofPred_eq] using ha
+
+private theorem positiveRoot_mulVec_single_sub (i : Fin 4) (a : Fin 24)
+    (ha : d4TripledWeight a i = -1) :
+    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 24) k) : Matrix (Fin 24) (Fin 24) k) *ᵥ
+          Pi.single a 1) - Pi.single a 1 =
+      Pi.single (d4TripledReflection i a) 1 := by
+  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
+  simp only [toAdd_ofAdd, one_smul]
+  rw [Matrix.mulVec_single_one, raisingMatrix_def, weightTable.raisingMatrix_map_col]
+  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
+
+private theorem negativeRoot_mulVec_single_sub (i : Fin 4) (a : Fin 24)
+    (ha : d4TripledWeight a i = 1) :
+    (((rootSubgroupPoints (.inr i) k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 24) k) : Matrix (Fin 24) (Fin 24) k) *ᵥ
+          Pi.single a 1) - Pi.single a 1 =
+      Pi.single (d4TripledReflection i a) 1 := by
+  rw [coe_rootSubgroupPoints_inr, Matrix.add_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
+  simp only [toAdd_ofAdd, one_smul]
+  rw [Matrix.mulVec_single_one, loweringMatrix_def, weightTable.loweringMatrix_map_col]
+  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
+
+/-- Invariance under the two simple-root points makes membership of coordinate vectors stable
+under every simple reflection. -/
+private theorem single_reflection_mem
+    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 24 → k))
+    (a : Fin 24) (i : Fin 4) (ha : Pi.single a 1 ∈ N) :
+    Pi.single (d4TripledReflection i a) 1 ∈ N := by
+  rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with hneg | hzero | hpos
+  · have hact := points_mulVec_mem k N (rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1)) ha
+    have hsub := N.toSubmodule.sub_mem hact ha
+    rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
+  · have hfix : d4TripledReflection i a = a := by
+      apply d4TripledWeight_injective
+      rw [d4TripledWeight_reflection, hzero, zero_smul, sub_zero]
+    rw [hfix]
+    exact ha
+  · have hact := points_mulVec_mem k N (rootSubgroupPoints (.inr i) k (Multiplicative.ofAdd 1)) ha
+    have hsub := N.toSubmodule.sub_mem hact ha
+    rwa [negativeRoot_mulVec_single_sub k i a hpos] at hsub
+
+/-- **The standard comodule of the specialized tripled type-`D₄` carrier is completely reducible
+over every field.** Every subcomodule is the span of a union of the three summands, and the
+remaining summands span a complementary subcomodule. -/
+theorem isCompletelyReducible_standardComodule :
+    Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k) (Fin 24 → k) := by
+  classical
+  apply Comodule.IsCompletelyReducible.of_exists_isCompl
+  intro N
+  let s : Set (Fin 24) := {a | Pi.single a (1 : k) ∈ N}
+  have hs : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ s → a ∈ s := by
+    intro a b hab hb
+    obtain ⟨l, hl⟩ := (exists_foldl_d4TripledReflection_eq_iff b a).2 hab.symm
+    have hb' : Pi.single b (1 : k) ∈ N := hb
+    have h := (predicate_foldl_iff_of_involutive (fun c ↦ Pi.single c (1 : k) ∈ N)
+      (fun i ↦ d4TripledReflection i) (fun i ↦ d4TripledReflection_apply_apply i)
+      (fun c i hc ↦ single_reflection_mem k N c i hc) l b).2 hb'
+    rw [hl] at h
+    exact h
+  have hsc : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ sᶜ → a ∈ sᶜ :=
+    fun a b hab hb ha ↦ hb (hs b a hab.symm ha)
+  refine ⟨summandSubcomodule k sᶜ hsc, ?_⟩
+  rw [summandSubcomodule_toSubmodule, toSubmodule_eq_span k N]
+  exact (Pi.basisFun k (Fin 24)).linearIndependent.isCompl_span_image
+    (Pi.basisFun k (Fin 24)).span_eq isCompl_compl
+
+end CompletelyReducible
 
 end TauCeti.D4Tripled

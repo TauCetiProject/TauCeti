@@ -58,6 +58,7 @@ extension.
 * `TauCeti.Divisor.conorm_zeros` and `TauCeti.Divisor.conorm_poles`: the conorm of the zero and
   pole divisors of `z` are those of the image of `z`.
 * `TauCeti.Divisor.conorm_injective`: the conorm is injective.
+* `TauCeti.Divisor.exists_le_conorm`: every divisor of `F' / k'` is bounded above by a conorm.
 * `TauCeti.Divisor.finrank_mul_degree_conorm`: **the degree of a conorm**,
   `[k' : k] · deg (Con D) = [F' : F] · deg D` for an algebraic function field, without a
   separability hypothesis (Stichtenoth, Corollary 3.1.14).
@@ -188,6 +189,33 @@ theorem isEffective_conorm {D : Divisor k F} (hD : D.IsEffective) :
     (conorm k' F' D).IsEffective :=
   WeilDivisor.isEffective_iff_zero_le.mpr <| by
     simpa using conorm_mono k' F' (WeilDivisor.isEffective_iff_zero_le.mp hD)
+
+/-- **Every divisor of `F' / k'` is bounded above by a conorm**: for every divisor `D'` of
+`F' / k'` there is a divisor `D` of `F / k` with `D' ≤ Con D`.  This transports estimates on the
+divisors of `F / k` to all divisors of `F' / k'`. -/
+theorem exists_le_conorm (D' : Divisor k' F') : ∃ D : Divisor k F, D' ≤ conorm k' F' D := by
+  classical
+  induction D' using Finsupp.induction_linear with
+  | zero => exact ⟨0, by simp⟩
+  | add D₁ D₂ h₁ h₂ =>
+    obtain ⟨A₁, hA₁⟩ := h₁
+    obtain ⟨A₂, hA₂⟩ := h₂
+    exact ⟨A₁ + A₂, by rw [map_add]; exact add_le_add hA₁ hA₂⟩
+  | single P' n =>
+    refine ⟨(n ⊔ 0) • WeilDivisor.ofPoint (P'.restrict k F), WeilDivisor.le_iff.mpr fun Q' ↦ ?_⟩
+    have he : (1 : ℤ) ≤ Place.ramificationIdx F Q' := by
+      exact_mod_cast Place.ramificationIdx_pos F Q'
+    rw [coeff_conorm, WeilDivisor.single_eq_zsmul_ofPoint, WeilDivisor.coeff_zsmul,
+      WeilDivisor.coeff_zsmul]
+    rcases eq_or_ne Q' P' with rfl | hne
+    · rw [WeilDivisor.coeff_ofPoint_self, WeilDivisor.coeff_ofPoint_self, mul_one, mul_one]
+      calc n ≤ n ⊔ 0 := le_sup_left
+        _ ≤ Place.ramificationIdx F Q' * (n ⊔ 0) := le_mul_of_one_le_left le_sup_right he
+    · rw [WeilDivisor.coeff_ofPoint_of_ne hne, mul_zero]
+      rcases eq_or_ne (Q'.restrict k F) (P'.restrict k F) with hQ | hQ
+      · rw [hQ, WeilDivisor.coeff_ofPoint_self, mul_one]
+        exact mul_nonneg (by positivity) le_sup_right
+      · rw [WeilDivisor.coeff_ofPoint_of_ne hQ, mul_zero, mul_zero]
 
 /-- **The conorm is injective**: every place of `F / k` is the restriction of a place of `F' / k'`,
 and the ramification indices are nonzero. -/

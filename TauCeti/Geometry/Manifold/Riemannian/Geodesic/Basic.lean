@@ -210,6 +210,18 @@ theorem isGeodesicCurveOn_iff_chart (hs : UniqueDiffOn ℝ s) :
     exact ⟨hs, hc, fun r hr ↦ (alongCurveWithin_curveVelocityWithin_eq_zero_iff
       (leviCivitaConnection I M) γ hs (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
 
+/-- Being a geodesic on a parameter set depends only on the values of the curve on that set. -/
+theorem IsGeodesicCurveOn.congr {γ' : ℝ → M} (h : IsGeodesicCurveOn I γ s) (hγ : EqOn γ' γ s) :
+    IsGeodesicCurveOn I γ' s := by
+  have hs := h.uniqueDiffOn
+  rw [isGeodesicCurveOn_iff_chart hs] at h ⊢
+  refine ⟨h.1.congr hγ, fun r hr ↦ ?_⟩
+  have hfirst : EqOn (derivWithin (extChartAt I (γ r) ∘ γ') s)
+      (derivWithin (extChartAt I (γ r) ∘ γ) s) s := fun u hu ↦
+    derivWithin_congr (fun w hw ↦ congrArg _ (hγ hw)) (congrArg _ (hγ hu))
+  rw [hγ hr, derivWithin_congr hfirst (hfirst hr), hfirst hr]
+  exact h.2 r hr
+
 /-! ### Open parameter sets -/
 
 /-- On an open parameter set, the geodesic equation is the unrestricted one. -/

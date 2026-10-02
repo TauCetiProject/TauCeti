@@ -31,6 +31,8 @@ This file supplies general constructions for Lie modules that are missing from M
 
 * `TauCeti.LieModuleHom.instFiniteDimensional`: the morphism space of two finite-dimensional Lie
   modules is finite-dimensional.
+* `TauCeti.lieSpan_le_lieAnnihilator`: a vector annihilated by a generating set is annihilated by
+  the Lie subalgebra it generates.
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
   of the Lie action on `v`.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
@@ -206,6 +208,13 @@ def lieAnnihilator (v : M) : LieSubalgebra R L where
 theorem mem_lieAnnihilator {v : M} {x : L} :
     x ∈ lieAnnihilator R L v ↔ ⁅x, v⁆ = 0 :=
   Iff.rfl
+
+/-- **A vector annihilated by a set of Lie elements is annihilated by the Lie subalgebra that set
+generates.** The annihilator is a Lie subalgebra, so the universal property of `lieSpan` promotes
+vanishing on a generating set to vanishing on the whole span. -/
+theorem lieSpan_le_lieAnnihilator {s : Set L} {v : M} (hs : ∀ x ∈ s, ⁅x, v⁆ = 0) :
+    LieSubalgebra.lieSpan R L s ≤ lieAnnihilator R L v :=
+  LieSubalgebra.lieSpan_le.mpr fun x hx => (mem_lieAnnihilator R L).mpr (hs x hx)
 
 end Annihilator
 

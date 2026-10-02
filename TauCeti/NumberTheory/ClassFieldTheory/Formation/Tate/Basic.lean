@@ -5,7 +5,9 @@ Authors: Codex, Claude
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!
@@ -18,18 +20,26 @@ Tate cohomology of the smaller layer along that identification, both with format
 (`LayerRestriction.trivialTateRangeIso`). These comparisons are shared by Tate restriction and
 Tate corestriction between finite layers.
 
+For a subgroup `H` of the Galois group of a finite normal layer `L`, the layer `L.subgroupLayer H`
+of `H` has Galois group `H` and the coefficient module of `L`; its Tate cohomology is Tate
+cohomology of `H` with coefficients in the restricted module (`NormalLayer.subgroupLayerTateIso`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso`: Tate cohomology of the smaller layer
   as Tate cohomology of the image subgroup.
 * `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateRangeIso`: the same comparison with
   trivial integral coefficients.
+* `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayerTateIso`: Tate cohomology of the layer of a
+  subgroup, as Tate cohomology of that subgroup.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso_hom` and
   `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateRangeIso_hom`: each range comparison is
   the Tate map of its compatible pair, in every degree.
+* `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayerTateIso_hom`: the subgroup-layer comparison
+  is the Tate map of its compatible pair `isIntertwiningMap_repIso_subgroupLayer`.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso_inv_H0π`: in degree zero, the inverse
   comparison sends the class of an invariant element to the class of the same element.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRangeIso_inv_HNegOneπ`: in degree minus one, the
@@ -197,6 +207,11 @@ theorem trivialRangeRepHom_apply (T : LayerRestriction small big) (x : ℤ) :
     (dsimp% only (T.trivialRangeRepHom x)) = x :=
   (rfl)
 
+/-- The coefficient map in the trivial range comparison is the identity linear map. -/
+theorem trivialRangeRepHom_hom_toLinearMap (T : LayerRestriction small big) :
+    T.trivialRangeRepHom.hom.toLinearMap = LinearMap.id :=
+  (rfl)
+
 /-- Below degree minus one, the trivial-coefficient range comparison agrees with the
 group-homology change-of-group isomorphism. -/
 @[simp, reassoc]
@@ -216,4 +231,117 @@ theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom
   ext
   simp [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, trivialRangeRepHom]
 
+/-- In degree `-2`, the trivial-coefficient range comparison agrees with change of group on first
+homology. -/
+@[simp, reassoc, elementwise]
+theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two
+    (T : LayerRestriction small big) :
+    (T.trivialTateRangeIso (-2)).hom ≫
+        (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) =
+      (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+          (Rep.trivial ℤ small.Gal ℤ) ≫
+        groupHomology.map (MonoidHom.ofInjective T.galHom_injective)
+          T.trivialRangeRepHom 1 :=
+  T.trivialTateRangeIso_hom_comp_isoGroupHomology_hom 0
+
+/-- Tensoring with the coefficient map for the trivial range comparison is right tensoring by
+the induced map on abelianizations. -/
+theorem tensorProduct_map_trivialRangeRepHom (T : LayerRestriction small big) :
+    TensorProduct.map
+        (AddMonoidHom.toIntLinearMap
+          (Abelianization.map
+            (MonoidHom.ofInjective T.galHom_injective :
+              small.Gal →* T.galHom.range)).toAdditive)
+        T.trivialRangeRepHom.hom.toLinearMap =
+      LinearMap.rTensor ℤ (AddMonoidHom.toIntLinearMap
+        (Abelianization.map
+          (MonoidHom.ofInjective T.galHom_injective :
+            small.Gal →* T.galHom.range)).toAdditive) := by
+  rw [T.trivialRangeRepHom_hom_toLinearMap, LinearMap.rTensor_def]
+
+/-- In degree `-2`, the trivial range comparison becomes the map induced on abelianizations
+under the low-degree identifications. -/
+@[simp]
+theorem tateHMinusTwoEquivAbelianization_trivialTateRangeIso_hom_neg_two
+    (T : LayerRestriction small big) (x : small.TrivialTateH (-2)) :
+    TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
+        (TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+          ((T.trivialTateRangeIso (-2)).hom x)) =
+      (Abelianization.map (MonoidHom.ofInjective T.galHom_injective)).toAdditive
+        (small.tateHMinusTwoEquivAbelianization x) := by
+  rw [TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_apply,
+    T.trivialTateRangeIso_hom_comp_isoGroupHomology_hom_neg_two_apply]
+  let y : groupHomology.H1 (Rep.trivial ℤ small.Gal ℤ) :=
+    (TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+      (Rep.trivial ℤ small.Gal ℤ) x
+  -- The homology functor's object and `groupHomology.H1` are definitionally equal aliases, so
+  -- the bundled composition must be realigned before its naturality theorem can rewrite.
+  change TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
+    (groupHomology.H1AddEquivOfIsTrivial _
+      (groupHomology.map _ T.trivialRangeRepHom 1 y)) = _
+  rw [TauCeti.groupHomology.H1AddEquivOfIsTrivial_map,
+    NormalLayer.tateHMinusTwoEquivAbelianization_apply,
+    TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_apply,
+    TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_apply]
+  -- Realign the coercions inserted by the generic homology naturality theorem with the concrete
+  -- integral linear maps used by the tensor comparison lemma.
+  change TensorProduct.rid ℤ (Additive (Abelianization T.galHom.range))
+      (TensorProduct.map
+        (AddMonoidHom.toIntLinearMap
+          (Abelianization.map (MonoidHom.ofInjective T.galHom_injective :
+            small.Gal →* T.galHom.range)).toAdditive)
+        T.trivialRangeRepHom.hom.toLinearMap
+        (groupHomology.H1AddEquivOfIsTrivial (Rep.trivial ℤ small.Gal ℤ) y)) =
+    (Abelianization.map (MonoidHom.ofInjective T.galHom_injective)).toAdditive
+      (TensorProduct.rid ℤ (Additive (Abelianization small.Gal))
+        (groupHomology.H1AddEquivOfIsTrivial (Rep.trivial ℤ small.Gal ℤ) y))
+  rw [T.tensorProduct_map_trivialRangeRepHom, TauCeti.tensorProduct_rid_rTensor_apply,
+    AddMonoidHom.coe_toIntLinearMap]
+
 end TauCeti.ClassFieldTheory.LayerRestriction
+
+namespace TauCeti.ClassFieldTheory.NormalLayer
+
+variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G] (L : NormalLayer G) (F : Formation G) (H : Subgroup L.Gal)
+
+/-- The identification of the coefficient module of the layer of `H` with the coefficient module
+of `L` intertwines the action of the Galois group of the layer of `H` with the action of `H` on
+the restricted module. This is the compatible pair along which `subgroupLayerTateIso` transports
+Tate cohomology. -/
+theorem isIntertwiningMap_repIso_subgroupLayer :
+    ((L.subgroupLayer H).rep F).ρ.IsIntertwiningMap
+      ((Rep.res H.subtype (L.rep F)).ρ.comp
+        (L.subgroupGalEquiv H : (L.subgroupLayer H).Gal →* H))
+      (Representation.equivOfIso ((L.subgroupRestriction H).repIso F)).toLinearEquiv := by
+  -- The action of `H` on the restricted module, read through `subgroupGalEquiv`, is the action
+  -- along `galHom`, since `galHom` is the inclusion of `H` after `subgroupGalEquiv`.
+  have hσ : (Rep.res H.subtype (L.rep F)).ρ.comp
+        (L.subgroupGalEquiv H : (L.subgroupLayer H).Gal →* H) =
+      (Rep.res (L.subgroupRestriction H).galHom (L.rep F)).ρ := by
+    rw [galHom_subgroupRestriction]
+    exact MonoidHom.comp_assoc _ _ _
+  rw [hσ]
+  exact ⟨fun g x ↦ Rep.hom_comm_apply ((L.subgroupRestriction H).repIso F).hom g x⟩
+
+variable [Fintype H]
+
+/-- **Tate cohomology of the layer of `H` is Tate cohomology of `H`** with coefficients in the
+restriction of the coefficient module of `L`. -/
+def subgroupLayerTateIso (r : ℤ) :
+    (L.subgroupLayer H).TateH F r ≅ tateCohomology (Rep.res H.subtype (L.rep F)) r :=
+  TauCeti.TateCohomology.mapIso (e := L.subgroupGalEquiv H)
+    (e' := (Representation.equivOfIso ((L.subgroupRestriction H).repIso F)).toLinearEquiv)
+    (L.isIntertwiningMap_repIso_subgroupLayer F H) r
+
+/-- The comparison `subgroupLayerTateIso` is the Tate map attached to the compatible pair
+`isIntertwiningMap_repIso_subgroupLayer`. -/
+@[simp]
+theorem subgroupLayerTateIso_hom (r : ℤ) :
+    (L.subgroupLayerTateIso F H r).hom =
+      TauCeti.TateCohomology.map (L.isIntertwiningMap_repIso_subgroupLayer F H) r := by
+  rw [subgroupLayerTateIso, TauCeti.TateCohomology.mapIso_hom]
+
+end TauCeti.ClassFieldTheory.NormalLayer

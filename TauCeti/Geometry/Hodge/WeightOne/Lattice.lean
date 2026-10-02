@@ -39,6 +39,8 @@ lattice span, and the two descriptions agree.
   degree-zero pieces.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure_weilOperator`: the Weil operator recovers
   the transported complex structure.
+* `TauCeti.AlmostComplexStructure.two_mul_latticeHodgeStructure_hodgeNumber`: on a finite free
+  lattice, `h^{1,0} = h^{0,1}` is half the rank and all other Hodge numbers vanish.
 * `TauCeti.Hodge.HodgeStructureOn.latticeAlmostComplexStructure`: conversely, the complex structure
   on `Vℝ` induced by an integral Hodge structure of odd weight on `V`, which complexifies to its
   Weil operator (`latticeComplexification_latticeAlmostComplexStructure`).
@@ -192,6 +194,28 @@ theorem latticeHodgeStructure_weilOperator
   rw [J.latticeHodgeStructure_piece_eq_bot hℂ hpzero hpone, Submodule.mem_bot] at hx
   subst x
   simp
+
+/-- **The Hodge numbers of the structure associated with a complex structure**: `h^{1,0}` and
+`h^{0,1}` are both half the rank of `V`, and all other Hodge numbers vanish. -/
+theorem two_mul_latticeHodgeStructure_hodgeNumber [Module.Free ℤ V] [Module.Finite ℤ V]
+    (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) (p : ℤ) :
+    2 * (J.latticeHodgeStructure hℂ).hodgeNumber p =
+      if p = 0 ∨ p = 1 then Module.finrank ℤ V else 0 := by
+  set hs := J.latticeHodgeStructure hℂ
+  have hzero : ∀ p, p ≠ 0 → p ≠ 1 → hs.hodgeNumber p = 0 := fun p h₀ h₁ ↦ by
+    rw [Hodge.HodgeStructureOn.hodgeNumber_def, J.latticeHodgeStructure_piece_eq_bot hℂ h₀ h₁,
+      finrank_bot]
+  have hsymm : hs.hodgeNumber 1 = hs.hodgeNumber 0 := hs.hodgeNumber_symm 1
+  have hsum : hs.hodgeNumber 0 + hs.hodgeNumber 1 = Module.finrank ℤ V := by
+    have h := Hodge.finsum_hodgeNumber_eq_finrank_lattice hs
+    rwa [finsum_eq_sum_of_support_subset (s := {0, 1}) _ fun p hp ↦ by
+      by_contra hp'
+      simp only [Finset.coe_insert, Finset.coe_singleton, Set.mem_insert_iff,
+        Set.mem_singleton_iff, not_or] at hp'
+      exact hp (hzero p hp'.1 hp'.2), Finset.sum_pair (by decide)] at h
+  split_ifs with hp
+  · rcases hp with rfl | rfl <;> omega
+  · rw [hzero p (not_or.mp hp).1 (not_or.mp hp).2]
 
 end TauCeti.AlmostComplexStructure
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.BoundedArcInjective
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.NonconvexSeparation
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Nonconvex.Separation
 
 /-!
 # A vertex separation criterion for a Schwarz--Christoffel boundary arc

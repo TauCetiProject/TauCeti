@@ -181,9 +181,7 @@ theorem bijective_lift_of_not_isOfFinOrder (hP : IsProP p P) {a : P}
     obtain ⟨l', rfl⟩ := (isProP_freeProP p X).mem_topologicalClosure_closure_singleton_iff.1
       (hgen ▸ Subgroup.mem_top y)
     rw [key, key] at hxy
-    have := hP.padicPowHom_injective_of_not_isOfFinOrder hfin
-      (a₁ := Multiplicative.ofAdd l) (a₂ := Multiplicative.ofAdd l') (by simpa using hxy)
-    rw [Multiplicative.ofAdd.injective this]
+    rw [hP.padicPow_right_injective_of_not_isOfFinOrder hfin hxy]
   · rw [Set.range_const]
     exact Subgroup.dense_iff_topologicalClosure_eq_top.2 ha
 

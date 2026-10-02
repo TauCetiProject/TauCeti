@@ -609,8 +609,9 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
   rw [hcomp_alg]
   rw [← AlgHom.mapValue_apply]
   have hid_pt : AlgHom.mapValue f.ofConv id_pt = f := by
-    apply WithConv.ext
-    exact AlgHom.comp_id f.ofConv
+    rw [AlgHom.mapValue_apply]
+    dsimp only [id_pt]
+    rw [ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
   have hcoe_ring (x : AdditiveGroup.coordinateHopfAlgebra R) :
       (f.ofConv : _ →+* _) x = f.ofConv x :=
     congrFun (AlgHom.coe_toRingHom f.ofConv) x

@@ -15,11 +15,14 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 
 This file records general-purpose facts about permutations: a transposition preserves the
 complement of a set containing neither of its swapped points, an identity between transpositions,
+a permutation transporting two points outside a fixed set to another such pair,
+the values of the three-cycle written as a product of two transpositions sharing a point,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, the fact that a permutation
-is a single cycle on each of its own orbits, and the factorization of an invariant function
+is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
+types, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`).
@@ -133,6 +136,19 @@ theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
   refine ⟨fun h ↦ ?_, fun h ↦ h.map fun z ↦ by simp⟩
   simpa using h.map (g := e.symm) fun z ↦ by simp
 
+/-- Transporting a permutation along an equivalence transports its cycles on a set: the analogue of
+`Equiv.Perm.IsCycleOn.conj` for an equivalence between two types. -/
+theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set α}
+    (h : σ.IsCycleOn s) : (e.permCongr σ).IsCycleOn (e '' s) := by
+  refine ⟨⟨?_, (e.permCongr σ).injective.injOn, ?_⟩, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨σ x, h.1.mapsTo hx, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
+    exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
+
 end Equiv.Perm
 
 namespace TauCeti
@@ -177,6 +193,34 @@ theorem card_filter_comp_perm {ι : Type*} [Fintype α] [DecidableEq ι]
 theorem swap_apply_notMem {α : Type*} [DecidableEq α] {s : Finset α} {a b z : α}
     (ha : a ∉ s) (hb : b ∉ s) (hz : z ∉ s) : Equiv.swap a b z ∉ s := by
   rw [Equiv.swap_apply_def]; split_ifs <;> assumption
+
+/-- Any ordered pair of distinct points outside `s` can be carried to another such pair by a
+permutation fixing `s` pointwise. -/
+theorem exists_pair_perm_fixed {α : Type*} {s : Set α}
+    {i j i' j' : α} (hij : i ≠ j) (hi'j' : i' ≠ j')
+    (hi : i ∉ s) (hj : j ∉ s) (hi' : i' ∉ s) (hj' : j' ∉ s) :
+    ∃ perm : Equiv.Perm α, (∀ a ∈ s, perm a = a) ∧ perm i = i' ∧ perm j = j' := by
+  classical
+  let τ := Equiv.swap i i'
+  let υ := Equiv.swap (τ j) j'
+  have hτs (a : α) (ha : a ∈ s) : τ a = a :=
+    Equiv.swap_apply_of_ne_of_ne (fun h => hi (h ▸ ha)) (fun h => hi' (h ▸ ha))
+  have hτj : τ j ∉ s := by
+    by_cases hji' : j = i'
+    · simpa [τ, hji'] using hi
+    · simpa [τ, Equiv.swap_apply_of_ne_of_ne hij.symm hji'] using hj
+  have hτji' : τ j ≠ i' := by
+    intro h
+    exact hij (τ.injective ((Equiv.swap_apply_left i i').trans h.symm))
+  refine ⟨τ.trans υ, ?_, ?_, ?_⟩
+  · intro a ha
+    simp only [Equiv.trans_apply]
+    rw [hτs a ha]
+    exact Equiv.swap_apply_of_ne_of_ne
+      (fun h => hτj (h ▸ ha)) (fun h => hj' (h ▸ ha))
+  · rw [Equiv.trans_apply, Equiv.swap_apply_left]
+    exact Equiv.swap_apply_of_ne_of_ne hτji'.symm hi'j'
+  · rw [Equiv.trans_apply, Equiv.swap_apply_left]
 
 /-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
 image of the other. -/
@@ -223,6 +267,29 @@ theorem swap_braid {α : Type*} [DecidableEq α] {a b c : α} (hab : a ≠ b) (h
       _ = Equiv.swap c a := Equiv.swap_comm a c
       _ = Equiv.swap b c * Equiv.swap a b * Equiv.swap b c :=
           (Equiv.swap_mul_swap_mul_swap hab hac).symm
+
+/-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
+carries `a` to `b`. Together with `TauCeti.swap_mul_swap_apply_middle` and
+`TauCeti.swap_mul_swap_apply_right` this evaluates that product, which for three distinct points
+is the three-cycle `a ↦ b ↦ c ↦ a`, at each of the three points it moves. -/
+@[simp]
+theorem swap_mul_swap_apply_left {α : Type*} [DecidableEq α] {a b c : α} (hab : a ≠ b)
+    (hca : c ≠ a) : (Equiv.swap a b * Equiv.swap b c) a = b := by
+  rw [Equiv.Perm.mul_apply, Equiv.swap_apply_of_ne_of_ne hab hca.symm, Equiv.swap_apply_left]
+
+/-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
+carries `b` to `c`, the point the second transposition moves it to. -/
+@[simp]
+theorem swap_mul_swap_apply_middle {α : Type*} [DecidableEq α] {a b c : α} (hca : c ≠ a)
+    (hcb : c ≠ b) : (Equiv.swap a b * Equiv.swap b c) b = c := by
+  rw [Equiv.Perm.mul_apply, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hca hcb]
+
+/-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
+carries `c` to `a`, through the shared point `b`; no distinctness is needed for this value. -/
+@[simp]
+theorem swap_mul_swap_apply_right {α : Type*} [DecidableEq α] (a b c : α) :
+    (Equiv.swap a b * Equiv.swap b c) c = a := by
+  rw [Equiv.Perm.mul_apply, Equiv.swap_apply_right, Equiv.swap_apply_right]
 
 /-- **A permutation along an injection extends to a permutation of the ambient type.** Given an
 injection `e : α → γ`, every permutation `σ` of `α` is realized along `e` by some

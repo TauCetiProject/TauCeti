@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -26,12 +26,17 @@ unfolded by hand.
 * `UpperHalfPlane.σ_eq_refl_of_det_pos`: `σ g = ContinuousAlgEquiv.refl ℝ ℂ` for `0 < det g`.
 * `UpperHalfPlane.ofReal_mul_add_eq_zero_iff`: `m z + n = 0` for real `m`, `n` and `z ∈ ℍ` only
   when `m = n = 0`, the `iff` form of Mathlib's `UpperHalfPlane.linear_ne_zero`.
+* `UpperHalfPlane.num_sub_smul_mul_denom`: the difference formula
+  `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))` for `det g > 0`, with the denominator of
+  `g • z` cleared.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
   alike on `ℍ`.
 * `Matrix.SpecialLinearGroup.toGL_smul`: the `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action
   of the underlying matrix, the `SL(2, ℝ)` counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
+  part up to a `normSq` factor, and is an involution of `ℍ`.
 
 ## Provenance
 
@@ -83,6 +88,20 @@ theorem ofReal_mul_add_eq_zero_iff (z : ℍ) {m n : ℝ} : (m : ℂ) * z + n = 0
   obtain rfl : m = 0 := by simpa [z.im_ne_zero] using congrArg Complex.im h
   simpa using h
 
+/-- For `g = !![a, b; c, d]` of positive determinant,
+`(az + b) - (g • τ)(cz + d) = det g · (z - τ) / (cτ + d)`: dividing by `cz + d` gives the
+difference formula `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))`, in the form that
+clears the denominator of `g • z`. -/
+theorem num_sub_smul_mul_denom {g : GL (Fin 2) ℝ} (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
+    (τ z : ℍ) :
+    num g z - (g • τ : ℍ) * denom g z =
+      ((g : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) * ((z : ℂ) - τ) / denom g τ := by
+  rw [coe_smul_of_det_pos (by rwa [Matrix.GeneralLinearGroup.val_det_apply]),
+    eq_div_iff (denom_ne_zero g τ)]
+  field_simp [denom_ne_zero g τ]
+  simp only [num, denom, Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
+  ring
+
 end UpperHalfPlane
 
 namespace ModularGroup
@@ -99,5 +118,21 @@ Mathlib's classification `ModularGroup.cases_of_mem_fd_smul_mem_fd`. -/
 theorem smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} {z : ℍ} (hg : g = k ∨ g = -k) :
     g • z = k • z :=
   hg.elim (· ▸ rfl) (· ▸ SL_neg_smul _ _)
+
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp lemma
+-- `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted action, which is not how call sites state
+-- the `S`-action.
+/-- The inversion `S` negates the real part of every point and divides by its norm-square. -/
+lemma re_S_smul (p : ℍ) : (S • p).re = -p.re / Complex.normSq (p : ℂ) := by
+  rw [modular_S_smul]
+  simp [Complex.inv_re]
+  ring
+
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp
+-- lemma `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted double action, the same reason
+-- `re_S_smul` above is not tagged.
+/-- The inversion `S` is an involution of `ℍ`. -/
+lemma S_smul_S_smul (p : ℍ) : S • (S • p) = p := by
+  rw [← SL_neg_smul, ← S_inv, inv_smul_smul]
 
 end ModularGroup

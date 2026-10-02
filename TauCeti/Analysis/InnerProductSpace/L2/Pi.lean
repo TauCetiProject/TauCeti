@@ -17,23 +17,8 @@ public import TauCeti.MeasureTheory.Integral.PiSystem
 For a finite family of σ-finite measures `μ i` and `L²(μ i)` functions `f i`, the pointwise product
 `x ↦ ∏ i, f i (x i)` belongs to `L²(Measure.pi μ)`, the assignment factors the inner product as a
 tensor, and coordinatewise Hilbert bases multiply to a Hilbert basis `TauCeti.piHilbertBasis` of
-`L²(Measure.pi μ)`. This is Part B3/D of the `OrthogonalL2Bases` roadmap, and the `Fintype`-indexed
-analogue of the binary product basis.
-
-Mathlib has the two Fubini inputs at this arity already — `Integrable.fintype_prod_dep` and
-`integral_fintype_prod_eq_prod` (the latter with no integrability side conditions) — so the
-orthonormality half is short. The completeness half runs in three moves:
-
-1. `TauCeti.inner_L2piMul_eq_zero_of_forall_basis` — orthogonality to the *basis* tensors upgrades
-   to orthogonality to *every* elementary tensor. The coordinates are generalized one at a time by
-   `Finset` induction: at each step a single slot is expanded along its basis and the sum is pushed
-   through the continuous linear map `TauCeti.L2piMulSlot`. No countability is assumed of any `κ i`.
-2. `TauCeti.setIntegral_pi_eq_zero_of_forall_inner` — testing against indicators, since a tensor of
-   indicators is the indicator of the box.
-3. `TauCeti.setIntegral_eq_zero_of_isPiSystem` — the Dynkin (π-λ) step, stated for a *general*
-   π-system generating the σ-algebra (the Bochner analogue of Mathlib's
-   `lintegral_eq_lintegral_of_isPiSystem`), applied here to `isPiSystem_pi` inside a finite box,
-   followed by a monotone exhaustion along `∏ i, spanningSets (μ i) n`.
+`L²(Measure.pi μ)`. This is the `Fintype`-indexed analogue of the binary product basis
+`TauCeti.prodHilbertBasis`.
 
 ## Main definitions
 
@@ -48,8 +33,26 @@ orthonormality half is short. The completeness half runs in three moves:
 * `TauCeti.inner_L2piMul` — the inner product of two tensors factors coordinatewise.
 * `TauCeti.orthonormal_L2piMul` — coordinatewise orthonormal families multiply to an orthonormal
   family.
-* `TauCeti.orthogonal_span_range_L2piMul_eq_bot` — the completeness half.
-* `TauCeti.coeFn_piHilbertBasis` — the `k`-th basis vector is a.e. `∏ i, b i (k i)`.
+* `TauCeti.orthogonal_span_range_L2piMul_eq_bot` — the basis tensors have trivial orthogonal
+  complement.
+* `TauCeti.piHilbertBasis_apply`, `TauCeti.coeFn_piHilbertBasis` — the `k`-th basis vector is the
+  tensor of the `k i`-th coordinate basis vectors, a.e. equal to `∏ i, b i (k i)`.
+* `TauCeti.piHilbertBasis_repr_L2piMul` — the coordinates of a tensor are the products of its
+  coordinatewise coordinates.
+
+## Implementation notes
+
+Orthonormality follows from Mathlib's Fubini theorem `integral_fintype_prod_eq_prod`.
+Completeness assumes no countability of the index types `κ i` and runs in three steps:
+
+1. `TauCeti.inner_L2piMul_eq_zero_of_forall_basis` — orthogonality to the *basis* tensors upgrades
+   to orthogonality to *every* elementary tensor, by `Finset` induction on the coordinates, pushing
+   a basis expansion of one slot through the continuous linear map `TauCeti.L2piMulSlot`.
+2. `TauCeti.setIntegral_pi_eq_zero_of_forall_inner` — testing against indicators, since a tensor of
+   indicators is the indicator of the box.
+3. `TauCeti.setIntegral_eq_zero_of_forall_inner_pi` — the Dynkin (π-λ) step
+   `TauCeti.setIntegral_eq_zero_of_isPiSystem` applied to `isPiSystem_pi` inside a finite box,
+   followed by a monotone exhaustion along `∏ i, spanningSets (μ i) n`.
 -/
 
 public section
@@ -73,26 +76,18 @@ theorem memLp_pi_prod {f : ∀ i, α i → 𝕜} (hf : ∀ i, MemLp (f i) 2 (μ 
       (hf i).aestronglyMeasurable.comp_quasiMeasurePreserving
         (Measure.quasiMeasurePreserving_eval μ i)
   rw [memLp_two_iff_integrable_sq_norm hmeas]
-  -- Only the submultiplicative bound `‖∏ aᵢ‖ ≤ ∏ ‖aᵢ‖` is needed, so a normed commutative
-  -- ring suffices; the norm need not be multiplicative.
   rcases isEmpty_or_nonempty ι with hι | hι
-  · -- With no coordinates the product is the empty product `1`, so the integrand is constant
-    -- and the product measure is a Dirac mass.
-    have : IsProbabilityMeasure (Measure.pi μ) :=
-      ⟨by rw [Measure.pi_of_empty]; exact measure_univ⟩
-    simp_rw [Finset.univ_eq_empty, Finset.prod_empty]
-    exact integrable_const _
-  refine (Integrable.fintype_prod_dep
-    (fun i => (memLp_two_iff_integrable_sq_norm (hf i).aestronglyMeasurable).1 (hf i))).mono
-    (hmeas.norm.pow 2) (Filter.Eventually.of_forall fun x => ?_)
-  -- `Finset.norm_prod_le'` needs a nonempty index but, unlike `Finset.norm_prod_le`, no
-  -- normalization `‖1‖ = 1`.
-  have hle : ‖∏ i, f i (x i)‖ ≤ ∏ i, ‖f i (x i)‖ :=
-    Finset.norm_prod_le' _ Finset.univ_nonempty _
-  have hnn : (0 : ℝ) ≤ ∏ i, ‖f i (x i)‖ := Finset.prod_nonneg fun i _ => norm_nonneg _
-  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    Finset.prod_pow]
+  · -- With no coordinates the integrand is constant and the product measure is a Dirac mass.
+    have : IsProbabilityMeasure (Measure.pi μ) := by rw [Measure.pi_of_empty]; infer_instance
+    simp
+  -- Only the submultiplicative bound `‖∏ aᵢ‖ ≤ ∏ ‖aᵢ‖` is needed, so the norm need not be
+  -- multiplicative; `Finset.norm_prod_le'` gives it for a nonempty index without `‖1‖ = 1`.
+  refine (Integrable.fintype_prod_dep fun i =>
+    (memLp_two_iff_integrable_sq_norm (hf i).aestronglyMeasurable).1 (hf i)).mono'
+    (hmeas.norm.pow 2) (.of_forall fun x => ?_)
+  rw [Real.norm_of_nonneg (by positivity), Finset.prod_pow]
   gcongr
+  exact Finset.norm_prod_le' _ Finset.univ_nonempty _
 
 /-- The pointwise product `x ↦ ∏ i, F i (x i)` of a family of `L²(μ i)` vectors, as a vector of
 `L²(Measure.pi μ)`. -/
@@ -110,56 +105,6 @@ theorem integrable_L2piMul_mul (F : ∀ i, Lp 𝕜 2 (μ i)) (f : Lp 𝕜 2 (Mea
     Integrable (fun x : ∀ i, α i => (∏ i, F i (x i)) * f x) (Measure.pi μ) :=
   (memLp_pi_prod fun i => Lp.memLp (F i)).integrable_mul (Lp.memLp f)
 
-end NormedCommRing
-
-variable [RCLike 𝕜]
-
-/-- **The tensor inner-product identity, `Fintype`-indexed.** The inner product of two pointwise
-products factors as the product of the coordinatewise inner products. -/
-@[simp]
-theorem inner_L2piMul (F G : ∀ i, Lp 𝕜 2 (μ i)) :
-    inner 𝕜 (L2piMul F) (L2piMul G) = ∏ i, inner 𝕜 (F i) (G i) := by
-  rw [L2.inner_def]
-  calc
-    ∫ x, inner 𝕜 (L2piMul F x) (L2piMul G x) ∂(Measure.pi μ)
-        = ∫ x : ∀ i, α i, ∏ i, inner 𝕜 (F i (x i)) (G i (x i)) ∂(Measure.pi μ) := by
-          refine integral_congr_ae ?_
-          filter_upwards [coeFn_L2piMul F, coeFn_L2piMul G] with x hF hG
-          rw [hF, hG]
-          simp only [RCLike.inner_apply', map_prod, Finset.prod_mul_distrib]
-    _ = ∏ i, ∫ x, inner 𝕜 (F i x) (G i x) ∂(μ i) :=
-          integral_fintype_prod_eq_prod (fun i x => inner 𝕜 (F i x) (G i x))
-    _ = ∏ i, inner 𝕜 (F i) (G i) :=
-          Finset.prod_congr rfl fun i _ => (L2.inner_def _ _).symm
-
-/-- **Orthonormality of the tensor family, `Fintype`-indexed.** Coordinatewise orthonormal families
-multiply to an orthonormal family of `L²(Measure.pi μ)`, indexed by the dependent function type. -/
-theorem orthonormal_L2piMul {κ : ι → Type*} {b : ∀ i, κ i → Lp 𝕜 2 (μ i)}
-    (hb : ∀ i, Orthonormal 𝕜 (b i)) :
-    Orthonormal 𝕜 (fun k : ∀ i, κ i => L2piMul (fun i => b i (k i))) := by
-  classical
-  simp_rw [orthonormal_iff_ite] at hb ⊢
-  intro k l
-  rw [inner_L2piMul]
-  simp_rw [hb]
-  by_cases hkl : k = l
-  · subst hkl
-    simp
-  · obtain ⟨i, hi⟩ := Function.ne_iff.1 hkl
-    rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hi]), ite_eq_right hkl]
-
-/-- The tensor construction is norm-multiplicative. -/
-@[simp]
-theorem norm_L2piMul (F : ∀ i, Lp 𝕜 2 (μ i)) : ‖L2piMul F‖ = ∏ i, ‖F i‖ := by
-  have h : ((‖L2piMul F‖ : ℝ) : 𝕜) ^ 2 = ∏ i, ((‖F i‖ : ℝ) : 𝕜) ^ 2 := by
-    simpa only [inner_self_eq_norm_sq_to_K] using inner_L2piMul F F
-  have h3 : ‖L2piMul F‖ ^ 2 = (∏ i, ‖F i‖) ^ 2 := by
-    have hc : ((‖L2piMul F‖ ^ 2 : ℝ) : 𝕜) = (((∏ i, ‖F i‖) ^ 2 : ℝ) : 𝕜) := by
-      push_cast
-      rw [h, ← Finset.prod_pow]
-    exact_mod_cast hc
-  exact (sq_eq_sq₀ (norm_nonneg _) (Finset.prod_nonneg fun i _ => norm_nonneg _)).1 h3
-
 section Slot
 
 variable [DecidableEq ι]
@@ -170,9 +115,7 @@ theorem coeFn_L2piMul_update (j : ι) (F : ∀ i, Lp 𝕜 2 (μ i)) (v : Lp 𝕜
       fun x : ∀ i, α i => v (x j) * ∏ i ∈ Finset.univ.erase j, F i (x i) := by
   filter_upwards [coeFn_L2piMul (Function.update F j v)] with x hx
   rw [hx, ← Finset.mul_prod_erase _ _ (Finset.mem_univ j), Function.update_self]
-  congr 1
-  refine Finset.prod_congr rfl fun i hi => ?_
-  rw [Function.update_of_ne (Finset.ne_of_mem_erase hi)]
+  simp +contextual [Finset.prod_congr rfl, Function.update_of_ne]
 
 /-- The tensor is additive in the `j`-th coordinate. -/
 @[simp]
@@ -204,13 +147,55 @@ theorem L2piMul_update_zero (j : ι) (F : ∀ i, Lp 𝕜 2 (μ i)) :
     L2piMul (Function.update F j 0) = 0 := by
   simpa using L2piMul_update_smul j F 0 0
 
+end Slot
+
+end NormedCommRing
+
+variable [RCLike 𝕜]
+
+/-- **The tensor inner-product identity, `Fintype`-indexed.** The inner product of two pointwise
+products factors as the product of the coordinatewise inner products. -/
+@[simp]
+theorem inner_L2piMul (F G : ∀ i, Lp 𝕜 2 (μ i)) :
+    inner 𝕜 (L2piMul F) (L2piMul G) = ∏ i, inner 𝕜 (F i) (G i) := by
+  rw [L2.inner_def]
+  calc
+    ∫ x, inner 𝕜 (L2piMul F x) (L2piMul G x) ∂(Measure.pi μ)
+        = ∫ x : ∀ i, α i, ∏ i, inner 𝕜 (F i (x i)) (G i (x i)) ∂(Measure.pi μ) := by
+          refine integral_congr_ae ?_
+          filter_upwards [coeFn_L2piMul F, coeFn_L2piMul G] with x hF hG
+          rw [hF, hG]
+          simp only [RCLike.inner_apply', map_prod, Finset.prod_mul_distrib]
+    _ = ∏ i, ∫ x, inner 𝕜 (F i x) (G i x) ∂(μ i) :=
+          integral_fintype_prod_eq_prod (fun i x => inner 𝕜 (F i x) (G i x))
+    _ = ∏ i, inner 𝕜 (F i) (G i) :=
+          Finset.prod_congr rfl fun i _ => (L2.inner_def _ _).symm
+
+/-- **Orthonormality of the tensor family, `Fintype`-indexed.** Coordinatewise orthonormal families
+multiply to an orthonormal family of `L²(Measure.pi μ)`, indexed by the dependent function type. -/
+theorem orthonormal_L2piMul {κ : ι → Type*} {b : ∀ i, κ i → Lp 𝕜 2 (μ i)}
+    (hb : ∀ i, Orthonormal 𝕜 (b i)) :
+    Orthonormal 𝕜 (fun k : ∀ i, κ i => L2piMul (fun i => b i (k i))) := by
+  classical
+  simp_rw [orthonormal_iff_ite] at hb ⊢
+  simp [hb, Fintype.prod_boole, funext_iff]
+
+/-- The tensor construction is norm-multiplicative. -/
+@[simp]
+theorem norm_L2piMul (F : ∀ i, Lp 𝕜 2 (μ i)) : ‖L2piMul F‖ = ∏ i, ‖F i‖ := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), ← Finset.prod_pow]
+  exact_mod_cast (by simpa only [inner_self_eq_norm_sq_to_K] using inner_L2piMul F F :
+    ((‖L2piMul F‖ : ℝ) : 𝕜) ^ 2 = ∏ i, ((‖F i‖ : ℝ) : 𝕜) ^ 2)
+
+section Slot
+
+variable [DecidableEq ι]
+
 /-- The norm of a tensor with its `j`-th coordinate replaced. -/
 theorem norm_L2piMul_update (j : ι) (F : ∀ i, Lp 𝕜 2 (μ i)) (v : Lp 𝕜 2 (μ j)) :
     ‖L2piMul (Function.update F j v)‖ = (∏ i ∈ Finset.univ.erase j, ‖F i‖) * ‖v‖ := by
   rw [norm_L2piMul, ← Finset.mul_prod_erase _ _ (Finset.mem_univ j), Function.update_self, mul_comm]
-  congr 1
-  refine Finset.prod_congr rfl fun i hi => ?_
-  rw [Function.update_of_ne (Finset.ne_of_mem_erase hi)]
+  simp +contextual [Finset.prod_congr rfl, Function.update_of_ne]
 
 /-- Tensoring with all coordinates but `j` held fixed, as a continuous linear map. -/
 noncomputable def L2piMulSlot (j : ι) (F : ∀ i, Lp 𝕜 2 (μ i)) :
@@ -236,39 +221,32 @@ theorem inner_L2piMul_eq_zero_of_forall_basis {κ : ι → Type*}
     (hz : ∀ k : ∀ i, κ i, inner 𝕜 h (L2piMul (fun i => b i (k i))) = 0)
     (F : ∀ i, Lp 𝕜 2 (μ i)) : inner 𝕜 h (L2piMul F) = 0 := by
   classical
-  have key : ∀ S : Finset ι, ∀ F : ∀ i, Lp 𝕜 2 (μ i),
-      (∀ i, i ∉ S → ∃ c, F i = b i c) → inner 𝕜 h (L2piMul F) = 0 := by
-    intro S
-    induction S using Finset.induction with
-    | empty =>
-        intro F hF
-        choose k hk using fun i => hF i (by simp)
-        have hFk : F = fun i => b i (k i) := funext hk
-        rw [hFk]
-        exact hz k
-    | @insert j S hj ih =>
-        intro F hF
-        have hsum := ((b j).hasSum_repr (F j)).mapL ((innerSL 𝕜 h).comp (L2piMulSlot j F))
-        have hzero : HasSum (fun _ : κ j => (0 : 𝕜))
-            ((innerSL 𝕜 h).comp (L2piMulSlot j F) (F j)) := by
-          refine hsum.congr_fun fun c => ?_
-          have hupd : inner 𝕜 h (L2piMul (Function.update F j (b j c))) = 0 := by
-            refine ih _ fun i hi => ?_
-            by_cases hij : i = j
-            · subst hij
-              exact ⟨c, by rw [Function.update_self]⟩
-            · rw [Function.update_of_ne hij]
-              exact hF i fun hmem => (Finset.mem_insert.1 hmem).elim hij hi
-          simp only [ContinuousLinearMap.comp_apply, map_smul, L2piMulSlot_apply,
-            innerSL_apply_apply, hupd, smul_zero]
-        have hfin := (hasSum_zero.unique hzero).symm
-        rw [ContinuousLinearMap.comp_apply, L2piMulSlot_apply, Function.update_eq_self,
-          innerSL_apply_apply] at hfin
-        exact hfin
-  exact key Finset.univ F fun i hi => absurd (Finset.mem_univ i) hi
+  -- Induct on the set `S` of coordinates allowed to be arbitrary; the rest are basis vectors.
+  suffices key : ∀ S : Finset ι, ∀ F : ∀ i, Lp 𝕜 2 (μ i),
+      (∀ i ∉ S, ∃ c, F i = b i c) → inner 𝕜 h (L2piMul F) = 0 from
+    key Finset.univ F (by simp)
+  intro S
+  induction S using Finset.induction with
+  | empty =>
+      intro F hF
+      choose k hk using fun i => hF i (Finset.notMem_empty i)
+      simpa [← funext hk] using hz k
+  | @insert j S hj ih =>
+      intro F hF
+      -- Expand the `j`-th coordinate along `b j` and push the sum through a continuous linear map.
+      have hzero : HasSum (fun _ : κ j => (0 : 𝕜))
+          ((innerSL 𝕜 h).comp (L2piMulSlot j F) (F j)) := by
+        refine (((b j).hasSum_repr (F j)).mapL _).congr_fun fun c => ?_
+        have hupd : inner 𝕜 h (L2piMul (Function.update F j (b j c))) = 0 := by
+          refine ih _ fun i hi => ?_
+          rcases eq_or_ne i j with rfl | hij
+          · exact ⟨c, Function.update_self ..⟩
+          · simpa [hij] using hF i (by simp [hij, hi])
+        simp [hupd]
+      simpa using (hasSum_zero.unique hzero).symm
 
-/-- The tensor of indicators is the indicator of the box, so orthogonality to every elementary
-tensor makes the integral over every finite-measure box vanish. -/
+/-- A vector orthogonal to every elementary tensor has vanishing integral over every box whose
+sides are measurable sets of finite measure. -/
 theorem setIntegral_pi_eq_zero_of_forall_inner {h : Lp 𝕜 2 (Measure.pi μ)}
     (hz : ∀ F : ∀ i, Lp 𝕜 2 (μ i), inner 𝕜 (L2piMul F) h = 0)
     (s : ∀ i, Set (α i)) (hs : ∀ i, MeasurableSet (s i)) (hfin : ∀ i, μ i (s i) ≠ ⊤) :
@@ -277,22 +255,16 @@ theorem setIntegral_pi_eq_zero_of_forall_inner {h : Lp 𝕜 2 (Measure.pi μ)}
   have hFc : ∀ᵐ x : ∀ i, α i ∂(Measure.pi μ),
       ∀ i, F i (x i) = (s i).indicator (fun _ => (1 : 𝕜)) (x i) := by
     rw [ae_all_iff]
-    intro i
-    exact (Measure.quasiMeasurePreserving_eval μ i).tendsto_ae.eventually
-      (indicatorConstLp_coeFn (s := s i) (hμs := hfin i) (c := (1 : 𝕜)))
+    exact fun i => (Measure.quasiMeasurePreserving_eval μ i).tendsto_ae.eventually
+      indicatorConstLp_coeFn
   calc ∫ x in Set.univ.pi s, h x ∂(Measure.pi μ)
       = ∫ x, (Set.univ.pi s).indicator (fun y => h y) x ∂(Measure.pi μ) :=
         (integral_indicator (MeasurableSet.univ_pi hs)).symm
     _ = ∫ x, inner 𝕜 ((L2piMul F) x) (h x) ∂(Measure.pi μ) := by
         refine integral_congr_ae ?_
         filter_upwards [coeFn_L2piMul F, hFc] with x hx hF
-        rw [hx]
-        simp_rw [hF]
-        by_cases hmem : ∀ i, x i ∈ s i
-        · simp [hmem]
-        · obtain ⟨i, hi⟩ := not_forall.1 hmem
-          rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hi])]
-          simp [hmem]
+        classical
+        simp [hx, hF, Set.indicator_apply, Fintype.prod_boole]
     _ = inner 𝕜 (L2piMul F) h := (L2.inner_def _ _).symm
     _ = 0 := hz F
 
