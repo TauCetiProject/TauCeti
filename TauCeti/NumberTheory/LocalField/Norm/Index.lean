@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Norm.Graded
+public import TauCeti.NumberTheory.LocalField.Norm.AfterBreak
 import TauCeti.GroupTheory.QuotientGroup.Index
 import TauCeti.NumberTheory.LocalField.TamelyRamified
 
 /-!
-# Norm indices before and at a ramification break
+# Norm indices around a prime-degree ramification break
 
 For a finite Galois extension `L/K`, the cokernel of the graded norm at depth `v` measures the
 relative index
@@ -19,7 +19,7 @@ relative index
 
 This file identifies these two indices, using the image of the norm in the successive unit
 quotient. For an extension of prime degree `ℓ` with an upper break at a natural number `t`,
-the relative index is `1` at every depth `v < t`, and is `ℓ` at depth `t`, including the tame
+the relative index is `1` at every depth `v ≠ t`, and is `ℓ` at depth `t`, including the tame
 break at zero. These are the finite-step norm indices used in conductor computations.
 
 The product of the two subgroups is written as their join: the unit group is commutative.
@@ -33,6 +33,7 @@ norm onto an entire step of the unit filtration.
 * `TauCeti.relIndex_normUnits_unitFiltration_sup_before_break`: the index is `1` before a
   prime-degree break.
 * `TauCeti.relIndex_normUnits_unitFiltration_sup_at_break`: the index at the break is the degree.
+* `TauCeti.relIndex_normUnits_unitFiltration_sup_after_break`: the index is `1` above the break.
 
 ## References
 
@@ -113,5 +114,16 @@ theorem relIndex_normUnits_unitFiltration_sup_at_break (hℓ : (Module.finrank K
         (by simpa using lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump K L hℓ ht)
     exact (normGradedMap_tame_break_zero htotal htame).2
   · exact (normGradedMap_at_break hℓ t.succ_pos ht).2
+
+/-- In prime degree, above an upper break at `t`, every unit of depth `v > t` is congruent,
+modulo `U(K,v+1)`, to a norm from depth `ψℕ(v)`. Equivalently, the relative norm index is `1`. -/
+theorem relIndex_normUnits_unitFiltration_sup_after_break (hℓ : (Module.finrank K L).Prime)
+    {v t : ℕ} (hvt : t < v)
+    (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
+    (((unitFiltration L (psiNat K L v)).map (Algebra.normUnits K)) ⊔
+      unitFiltration K (v + 1)).relIndex (unitFiltration K v) = 1 := by
+  rw [relIndex_normUnits_unitFiltration_sup_eq_index_range_normGradedMap,
+    MonoidHom.range_eq_top.2 (normGradedMap_after_break hℓ hvt ht).surjective,
+    Subgroup.index_top]
 
 end TauCeti

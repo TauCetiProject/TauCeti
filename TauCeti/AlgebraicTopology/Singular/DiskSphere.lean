@@ -216,6 +216,27 @@ lemma singularHomologyDiskBoundaryPairIso_succ_hom (m : ℕ) :
         (reducedSingularHomologyTopCatSphereIso R m).hom := by
   rfl
 
+/-- The ordinary connecting morphism sends the disk generator to the boundary-sphere generator,
+viewed in unreduced homology.  In dimension one this is the reduced class of the two endpoints. -/
+@[reassoc]
+lemma singularHomologyDiskBoundaryPairIso_inv_comp_singularHomologyδ (m : ℕ) :
+    (singularHomologyDiskBoundaryPairIso R (m + 1)).inv ≫
+        (diskBoundaryPair.{w} (m + 1)).singularHomologyδ R (m + 1) m =
+      (reducedSingularHomologyTopCatSphereIso R m).inv ≫
+        (reducedSingularHomologyι R m).app (TopCat.diskBoundary.{w} (m + 1)) := by
+  have h : (singularHomologyDiskBoundaryPairIso R (m + 1)).inv ≫
+      (diskBoundaryPair.{w} (m + 1)).reducedSingularHomologyδ R m =
+        (reducedSingularHomologyTopCatSphereIso R m).inv := by
+    apply (cancel_mono (reducedSingularHomologyTopCatSphereIso R m).hom).1
+    -- `TopCat.sphere m` is the boundary of the `(m + 1)`-disk; these object presentations
+    -- occur under the reduced homology functor on opposite sides of the associativity rewrite.
+    erw [Category.assoc, ← singularHomologyDiskBoundaryPairIso_succ_hom,
+      Iso.inv_hom_id, Iso.inv_hom_id]
+  -- The ordinary singular homology target is also presented through the singular simplicial
+  -- set of the boundary; `erw` identifies the two functor presentations.
+  erw [← TopPair.reducedSingularHomologyδ_comp_ι, ← Category.assoc, h]
+  rfl
+
 /-- In dimension zero, the identification `H₀(D⁰, ∅) ≅ R` is the inverse of the quotient map from
 the ordinary homology of the point followed by the augmentation. -/
 @[simp]

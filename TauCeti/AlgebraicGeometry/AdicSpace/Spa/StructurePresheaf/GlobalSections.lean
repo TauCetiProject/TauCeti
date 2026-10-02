@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 
 /-!

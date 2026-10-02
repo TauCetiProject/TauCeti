@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.Ideal
 public import Mathlib.Algebra.Lie.SemiDirect
+public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.Algebra.Lie.Solvable.Basic
 
 /-!
 # Recognising a semidirect sum from an ideal and a complementary subalgebra
@@ -28,6 +30,11 @@ In the converse direction, an external semidirect sum `K ⋊⁅ψ⁆ L` carries 
 tautologically: the kernel of the projection to `L` is an ideal, the range of the inclusion of `L`
 is a Lie subalgebra, and the two are complementary.  So neither presentation is more general than
 the other, and a theorem may be stated against the external form without loss.
+
+The file also records two closure properties of the external semidirect sum. It is
+module-finite when both factors are, by transport along the linear equivalence `toProdl` with the
+product, and solvable when both factors are, because it is an extension of `L` by `K`: the range of
+`inl` is the kernel of the surjection `projr`.
 
 ## Main definitions
 
@@ -51,6 +58,8 @@ the other, and a theorem may be stated against the external form without loss.
   sum is internally presented by the kernel of `projr` and the range of `inr`, with
   `LieAlgebra.SemiDirectSum.exists_lieEquiv_semiDirectSum_ker_projr` the resulting
   reconstruction.
+* Instances `Module.Finite R (K ⋊⁅ψ⁆ L)` and `IsSolvable (K ⋊⁅ψ⁆ L)`: an external semidirect
+  sum of module-finite, resp. solvable, Lie algebras is module-finite, resp. solvable.
 
 ## References
 
@@ -239,6 +248,17 @@ namespace LieAlgebra.SemiDirectSum
 
 variable {R K L : Type*} [CommRing R] [LieRing K] [LieAlgebra R K] [LieRing L] [LieAlgebra R L]
 variable (ψ : L →ₗ⁅R⁆ LieDerivation R K K)
+
+/-- A semidirect sum of module-finite Lie algebras is module-finite. -/
+instance [Module.Finite R K] [Module.Finite R L] : Module.Finite R (K ⋊⁅ψ⁆ L) :=
+  Module.Finite.equiv (toProdl ψ).symm
+
+/-- A semidirect sum of solvable Lie algebras is solvable. -/
+instance [IsSolvable K] [IsSolvable L] : IsSolvable (K ⋊⁅ψ⁆ L) := by
+  have hker : IsSolvable (projr ψ).ker := by
+    have h : IsSolvable (inl ψ).range := inferInstance
+    rwa [IsExtension.exact (i := inl ψ) (p := projr ψ)] at h
+  exact isSolvable_of_isSolvable_ker_of_surjective (projr_surjective ψ) hker inferInstance
 
 /-- The range of the inclusion of the right factor consists of the elements whose left component
 vanishes.  This is not a `simp` lemma: Mathlib's `LieHom.mem_range` is already `@[simp]` and
