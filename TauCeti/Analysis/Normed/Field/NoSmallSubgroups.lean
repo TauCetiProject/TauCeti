@@ -29,6 +29,8 @@ a nonarchimedean local field, is seen to be trivial on one of them.
 
 ## Main results
 
+* `TauCeti.three_div_two_mul_norm_sub_one_le_norm_sq_sub_one`: if `‖w - 1‖ ≤ 1 / 2`, then squaring
+  multiplies the distance to `1` by at least `3 / 2`.
 * `TauCeti.eq_one_of_forall_norm_pow_sub_one_le`: an element all of whose powers lie within
   `1 / 2` of `1` is `1`.
 * `ContinuousMonoidHom.exists_mem_nhds_one_forall_le_ker`: a continuous homomorphism into `𝕜ˣ` is
@@ -46,7 +48,7 @@ variable {𝕜 : Type*} [NormedDivisionRing 𝕜] [NormedAlgebra ℝ 𝕜]
 /-- **Squaring pushes an element near `1` away from `1`.** If `‖w - 1‖ ≤ 1 / 2`, then
 `‖w ^ 2 - 1‖ ≥ 3 / 2 * ‖w - 1‖`, because `w ^ 2 - 1 = (w - 1) * (w + 1)` and
 `‖w + 1‖ ≥ ‖2‖ - ‖w - 1‖ ≥ 3 / 2`. -/
-private theorem norm_sq_sub_one_ge {w : 𝕜} (hw : ‖w - 1‖ ≤ 1 / 2) :
+theorem three_div_two_mul_norm_sub_one_le_norm_sq_sub_one {w : 𝕜} (hw : ‖w - 1‖ ≤ 1 / 2) :
     3 / 2 * ‖w - 1‖ ≤ ‖w ^ 2 - 1‖ := by
   have htwo : ‖(2 : 𝕜)‖ = 2 := by
     rw [← map_ofNat (algebraMap ℝ 𝕜) 2, norm_algebraMap', Real.norm_ofNat]
@@ -73,7 +75,8 @@ theorem eq_one_of_forall_norm_pow_sub_one_le {z : 𝕜} (h : ∀ n : ℕ, ‖z ^
     | succ k ih =>
       calc (3 / 2 : ℝ) ^ (k + 1) * ‖z - 1‖ = 3 / 2 * ((3 / 2) ^ k * ‖z - 1‖) := by ring
         _ ≤ 3 / 2 * ‖z ^ 2 ^ k - 1‖ := by gcongr
-        _ ≤ ‖(z ^ 2 ^ k) ^ 2 - 1‖ := norm_sq_sub_one_ge (h _)
+        _ ≤ ‖(z ^ 2 ^ k) ^ 2 - 1‖ :=
+          three_div_two_mul_norm_sub_one_le_norm_sq_sub_one (h _)
         _ = ‖z ^ 2 ^ (k + 1) - 1‖ := by rw [← pow_mul, ← pow_succ]
   obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (1 / 2 / ‖z - 1‖) (by norm_num : (1 : ℝ) < 3 / 2)
   have h1 : 1 / 2 < (3 / 2 : ℝ) ^ k * ‖z - 1‖ := (div_lt_iff₀ hr).mp hk

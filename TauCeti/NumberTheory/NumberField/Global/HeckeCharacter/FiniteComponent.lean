@@ -32,8 +32,8 @@ single modulus `𝔪` bounds every conductor exponent, `a_v(χ) ≤ 𝔪.exponen
 whose `v`-adic exponent is `a_v(χ)`. It is defined for every Hecke character, including the ones
 of infinite order, and the primes dividing it are exactly the finite places at which `χ` is
 ramified. For a character of finite order it is the finite part of the conductor, the least modulus
-from which the character comes: the conductor is determined place by place by the finite
-components.
+from which the character comes: the finite part of the conductor is determined place by place by
+the finite components.
 
 ## Main definitions
 
