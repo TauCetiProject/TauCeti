@@ -39,10 +39,11 @@ at most one with nonzero determinant.
 
 `algEquivOfAdjoinEqTop` composes Mathlib's `RatFunc.algEquivOfTranscendental`, which identifies
 `k(X)` with `k⟮f⟯` for a transcendental `f`, with the identification of `k⟮f⟯ = ⊤` with `k(X)`.
-Mathlib's `RatFunc.Luroth.algEquiv` composes the same two steps for an arbitrary nontrivial
-intermediate field of `k(X)`, where no element plays the role of `X`; what is added here is the
-evaluation `algEquivOfAdjoinEqTop_X` at `X`, which is what makes the correspondence with the
-generators a bijection.
+Mathlib's `RatFunc.Luroth.algEquiv` composes those same two steps for an arbitrary nontrivial
+intermediate field `E`, and `RatFunc.Luroth.algEquiv_X` evaluates it: it sends `X` to the generator
+of `E` that Lüroth's theorem produces. What is specific here is that the generator is an arbitrary
+given one and the intermediate field is all of `k(X)`, so the result is an automorphism, and that
+the correspondence is packaged as the bijection `autEquivGenerator`.
 
 ## References
 
