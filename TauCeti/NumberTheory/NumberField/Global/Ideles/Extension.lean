@@ -105,6 +105,19 @@ theorem ideleInfiniteCoord_ideleExtension (w : InfinitePlace L) (x : IdeleGroup 
     NumberField.adeleExtension_fst, NumberField.infiniteAdeleExtension_apply, Units.coe_map,
     RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
+/-- The finite coordinate of an extended idele is the image of the source coordinate at the
+place below under the adic completion extension. -/
+@[simp]
+theorem ideleFiniteCoord_ideleExtension (w : HeightOneSpectrum (𝓞 L))
+    (x : IdeleGroup (𝓞 K) K) :
+    w.ideleFiniteCoord (ideleExtension K L x) =
+      Units.map (HeightOneSpectrum.adicCompletionExtension K L (w.under (𝓞 K)) w).toMonoidHom
+        ((w.under (𝓞 K)).ideleFiniteCoord x) := by
+  apply Units.ext
+  simp only [HeightOneSpectrum.coe_ideleFiniteCoord, coe_ideleExtension,
+    NumberField.adeleExtension_snd, finiteAdeleExtension_apply, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+
 variable {K L}
 
 private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
@@ -161,7 +174,7 @@ private theorem prod_finiteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
     rintro ⟨w, hw⟩
     have hw' : w.under (𝓞 K) = v := hw
     subst v
-    simp [e, HeightOneSpectrum.coe_ideleFiniteCoord, coe_ideleExtension]
+    simp [e, HeightOneSpectrum.coe_ideleFiniteCoord]
   simp_rw [h]
   exact (finprod_pow (hasFiniteMulSupport_norm_ideleFiniteCoord x) _).symm
 
