@@ -390,7 +390,8 @@ theorem shorten_singleton_eq_top_iff [DecidableEq ι] {C : LinearCode F ι} {i :
   · intro h
     refine eq_top_iff.mpr fun y _ ↦
       mem_shorten.mpr ⟨y ⟨i, rfl⟩ • Pi.single i 1, C.smul_mem _ h, fun j hj ↦ ?_, fun j ↦ ?_⟩
-    · simp [show j ≠ i from hj]
+    · rw [Set.mem_singleton_iff] at hj
+      simp [hj]
     · obtain rfl : j = ⟨i, rfl⟩ := Subsingleton.elim _ _
       simp
 
