@@ -426,6 +426,15 @@ theorem mem_pentagonOColumns {x y : GridState n} {C : ColumnCommutationData G}
     c ∈ G.pentagonOColumns C P ↔ (c, G.O c) ∈ P.coveredSquares := by
   simp [pentagonOColumns]
 
+/-- The number of columns whose `O`-marking a pentagon carries is the number of `O`-markings among
+the squares it covers. -/
+theorem card_pentagonOColumns {x y : GridState n} (C : ColumnCommutationData G)
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    (G.pentagonOColumns C P).card = (G.OSet ∩ P.coveredSquares).card := by
+  rw [OSet_inter_eq_image_OColumnsOfSquares, Finset.card_image_of_injective _
+    fun a b hab => congrArg Prod.fst hab]
+  rfl
+
 variable (R : Type*) [CommSemiring R]
 
 /-- The weight of a pentagon in the pentagon map: the product of the variables that the commuted
