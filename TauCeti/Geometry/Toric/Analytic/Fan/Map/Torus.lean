@@ -72,16 +72,17 @@ theorem analyticMap_smul (t : ComplexTorus N) (x : Φ.analyticRealization hΦ) :
     analyticChartMap_smul]
 
 /-- On the canonical dense torus inclusion, the analytic toric map is the homomorphism of tori
-induced by the underlying lattice map. -/
+induced by the underlying lattice map. The fan morphism supplies target nonemptiness from
+source nonemptiness. -/
 @[simp]
-theorem analyticMap_analyticTorusι (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
-    (t : ComplexTorus N) :
+theorem analyticMap_analyticTorusι (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus N) :
     f.analyticMap hΦ hΨ (Φ.analyticTorusι hΦ hΦ0 t) =
-      Ψ.analyticTorusι hΨ hΨ0 (complexTorusMap f.latticeMap t) := by
+      Ψ.analyticTorusι hΨ ⟨⟨f.leastCone hΦ0.some.2, f.leastCone_mem hΦ0.some.2⟩⟩
+        (complexTorusMap f.latticeMap t) := by
   let σ := hΦ0.some
   let τ : Ψ.cones := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
   rw [Φ.analyticTorusι_eq_analyticAffineChartι hΦ hΦ0 σ,
-    Ψ.analyticTorusι_eq_analyticAffineChartι hΨ hΨ0 τ]
+    Ψ.analyticTorusι_eq_analyticAffineChartι hΨ ⟨τ⟩ τ]
   -- The chart formula uses the bundled `TopCat` carrier, whereas the torus formula uses its
   -- underlying affine complex points. Full transparency identifies these carriers and actions.
   erw [f.analyticMap_analyticAffineChartι_of_mapsTo hΦ hΨ (υ := τ)
@@ -90,17 +91,19 @@ theorem analyticMap_analyticTorusι (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty 
   erw [analyticChartMap_apply, AffineSemigroupComplexPoint.comap_default]
 
 /-- A continuous map is the analytic toric map exactly when it extends the lattice-induced map
-of dense tori. Nonemptiness is needed to define the canonical torus inclusions. -/
-theorem eq_analyticMap_iff (hΦ0 : Nonempty Φ.cones) (hΨ0 : Nonempty Ψ.cones)
+of dense tori. Source nonemptiness is needed to define the canonical torus inclusions;
+the fan morphism supplies target nonemptiness. -/
+theorem eq_analyticMap_iff (hΦ0 : Nonempty Φ.cones)
     {g : Φ.analyticRealization hΦ ⟶ Ψ.analyticRealization hΨ} :
     g = f.analyticMap hΦ hΨ ↔ ∀ t, g (Φ.analyticTorusι hΦ hΦ0 t) =
-      Ψ.analyticTorusι hΨ hΨ0 (complexTorusMap f.latticeMap t) := by
+      Ψ.analyticTorusι hΨ ⟨⟨f.leastCone hΦ0.some.2, f.leastCone_mem hΦ0.some.2⟩⟩
+        (complexTorusMap f.latticeMap t) := by
   constructor
   · rintro rfl t
-    exact f.analyticMap_analyticTorusι hΦ hΨ hΦ0 hΨ0 t
+    exact f.analyticMap_analyticTorusι hΦ hΨ hΦ0 t
   · intro h
     apply Φ.analyticRealization_hom_ext_torus hΦ hΦ0
     intro t
-    rw [h, f.analyticMap_analyticTorusι hΦ hΨ hΦ0 hΨ0]
+    rw [h, f.analyticMap_analyticTorusι hΦ hΨ hΦ0]
 
 end TauCeti.Toric.FanHom
