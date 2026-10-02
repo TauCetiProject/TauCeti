@@ -92,7 +92,7 @@ when the punctured code collapses to zero. The set `s` consists of the retained 
 theorem hammingMinDist_le_hammingMinDist_puncture_add_card_compl :
     hammingMinDist (C : Set (ι → F)) ≤
       hammingMinDist (puncture C s : Set (s → F)) + Fintype.card ↥sᶜ := by
-  simpa only [← LinearCode.toAddSubgroup_puncture, Submodule.coe_toAddSubgroup] using
+  simpa only [← LinearCode.puncture_toAddSubgroup, Submodule.coe_toAddSubgroup] using
     AdditiveCode.hammingMinDist_le_hammingMinDist_puncture_add_card_compl C.toAddSubgroup s
 
 /-- Shortening cannot decrease minimum distance if the resulting code is nonzero. -/
@@ -100,9 +100,9 @@ theorem hammingMinDist_le_hammingMinDist_shorten (hS : shorten C s ≠ ⊥) :
     hammingMinDist (C : Set (ι → F)) ≤
       hammingMinDist (shorten C s : Set (s → F)) := by
   have hS' : AdditiveCode.shorten C.toAddSubgroup s ≠ ⊥ := by
-    rw [← LinearCode.toAddSubgroup_shorten]
+    rw [← LinearCode.shorten_toAddSubgroup]
     exact fun h ↦ hS (Submodule.toAddSubgroup_injective h)
-  simpa only [← LinearCode.toAddSubgroup_shorten, Submodule.coe_toAddSubgroup] using
+  simpa only [← LinearCode.shorten_toAddSubgroup, Submodule.coe_toAddSubgroup] using
     AdditiveCode.hammingMinDist_le_hammingMinDist_shorten C.toAddSubgroup s hS'
 
 /-- Deleting one coordinate reduces minimum distance by at most one. -/

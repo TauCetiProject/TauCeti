@@ -87,14 +87,13 @@ theorem mem_shorten {C : AdditiveCode A ι} {s : Set ι} {y : s → A} :
   constructor
   · intro h
     refine ⟨_, h, fun i hi ↦ ?_, fun j ↦ Subtype.val_injective.extend_apply y 0 j⟩
-    rw [Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2), Pi.zero_apply]
+    rw [Function.extend_val_apply' hi, Pi.zero_apply]
   · rintro ⟨x, hx, hx0, hxy⟩
     convert hx using 1
     funext i
     by_cases hi : i ∈ s
     · exact (Subtype.val_injective.extend_apply y 0 ⟨i, hi⟩).trans (hxy ⟨i, hi⟩).symm
-    · rw [hx0 i hi, Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2),
-        Pi.zero_apply]
+    · rw [hx0 i hi, Function.extend_val_apply' hi, Pi.zero_apply]
 
 /-- Every shortened word is a punctured word. -/
 theorem shorten_le_puncture (C : AdditiveCode A ι) (s : Set ι) :
@@ -128,7 +127,9 @@ theorem shorten_bot (s : Set ι) : shorten (⊥ : AdditiveCode A ι) s = ⊥ := 
 /-- Puncturing the whole word space gives the whole retained word space. -/
 @[simp]
 theorem puncture_top (s : Set ι) : puncture (⊤ : AdditiveCode A ι) s = ⊤ :=
-  AddSubgroup.map_top_of_surjective _ (Subtype.val_injective.surjective_comp_right' 0)
+  AddSubgroup.map_top_of_surjective _ fun y ↦
+    ⟨Subtype.val.extend y 0, funext fun i ↦ by
+      simp [AddMonoidHom.pi_apply]⟩
 
 /-- Shortening the whole word space gives the whole retained word space. -/
 @[simp]
@@ -160,15 +161,16 @@ theorem shorten_def (C : LinearCode F ι) (s : Set ι) :
 
 /-- Forgetting scalar closure commutes with puncturing a linear code. -/
 @[simp]
-theorem LinearCode.toAddSubgroup_puncture (C : LinearCode F ι) (s : Set ι) :
+theorem LinearCode.puncture_toAddSubgroup (C : LinearCode F ι) (s : Set ι) :
     (puncture C s).toAddSubgroup = AdditiveCode.puncture C.toAddSubgroup s := by
   rw [puncture_def, Submodule.map_toAddSubgroup, AdditiveCode.puncture_def]
-  -- Both bundled homomorphisms restrict a word along `Subtype.val`.
-  congr 1
+  apply congrArg C.toAddSubgroup.map
+  ext x i
+  simp [LinearMap.funLeft_apply]
 
 /-- Forgetting scalar closure commutes with shortening a linear code. -/
 @[simp]
-theorem LinearCode.toAddSubgroup_shorten (C : LinearCode F ι) (s : Set ι) :
+theorem LinearCode.shorten_toAddSubgroup (C : LinearCode F ι) (s : Set ι) :
     (shorten C s).toAddSubgroup = AdditiveCode.shorten C.toAddSubgroup s := by
   ext y
   simp only [Submodule.mem_toAddSubgroup, shorten_def, Submodule.mem_map,
@@ -179,7 +181,7 @@ theorem LinearCode.toAddSubgroup_shorten (C : LinearCode F ι) (s : Set ι) :
 @[simp]
 theorem mem_puncture {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ puncture C s ↔ ∃ x ∈ C, ∀ j : s, x j = y j := by
-  rw [← Submodule.mem_toAddSubgroup, LinearCode.toAddSubgroup_puncture]
+  rw [← Submodule.mem_toAddSubgroup, LinearCode.puncture_toAddSubgroup]
   simp only [AdditiveCode.mem_puncture, Submodule.mem_toAddSubgroup]
 
 /-- A word belongs to the shortened code exactly when its extension by zero is a codeword:
@@ -188,14 +190,14 @@ equivalently, it is the restriction of a codeword which vanishes off the retaine
 theorem mem_shorten {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ shorten C s ↔
       ∃ x ∈ C, (∀ i ∉ s, x i = 0) ∧ ∀ j : s, x j = y j := by
-  rw [← Submodule.mem_toAddSubgroup, LinearCode.toAddSubgroup_shorten]
+  rw [← Submodule.mem_toAddSubgroup, LinearCode.shorten_toAddSubgroup]
   simp only [AdditiveCode.mem_shorten, Submodule.mem_toAddSubgroup]
 
 /-- A word on the retained coordinates belongs to the shortened code exactly when its extension
 by zero belongs to the original code. -/
 theorem mem_shorten_iff_extend_mem {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ shorten C s ↔ Subtype.val.extend y 0 ∈ C := by
-  rw [← Submodule.mem_toAddSubgroup, LinearCode.toAddSubgroup_shorten,
+  rw [← Submodule.mem_toAddSubgroup, LinearCode.shorten_toAddSubgroup,
     AdditiveCode.mem_shorten_iff_extend_mem, Submodule.mem_toAddSubgroup]
 
 /-- Membership in a puncture retaining one coordinate is determined by that coordinate. -/
@@ -375,49 +377,49 @@ theorem shorten_shorten (C : LinearCode F ι) (s : Set ι) (t : Set s) :
 /-- Every shortened word is a punctured word. -/
 theorem shorten_le_puncture (C : LinearCode F ι) (s : Set ι) : shorten C s ≤ puncture C s := by
   apply (Submodule.toAddSubgroup_le _ _).mp
-  simpa only [LinearCode.toAddSubgroup_shorten, LinearCode.toAddSubgroup_puncture] using
+  simpa only [LinearCode.shorten_toAddSubgroup, LinearCode.puncture_toAddSubgroup] using
     AdditiveCode.shorten_le_puncture C.toAddSubgroup s
 
 /-- Puncturing is monotone in the code. -/
 theorem puncture_mono {C D : LinearCode F ι} (h : C ≤ D) (s : Set ι) :
     puncture C s ≤ puncture D s := by
   apply (Submodule.toAddSubgroup_le _ _).mp
-  simpa only [LinearCode.toAddSubgroup_puncture] using
+  simpa only [LinearCode.puncture_toAddSubgroup] using
     AdditiveCode.puncture_mono ((Submodule.toAddSubgroup_le _ _).mpr h) s
 
 /-- Shortening is monotone in the code. -/
 theorem shorten_mono {C D : LinearCode F ι} (h : C ≤ D) (s : Set ι) :
     shorten C s ≤ shorten D s := by
   apply (Submodule.toAddSubgroup_le _ _).mp
-  simpa only [LinearCode.toAddSubgroup_shorten] using
+  simpa only [LinearCode.shorten_toAddSubgroup] using
     AdditiveCode.shorten_mono ((Submodule.toAddSubgroup_le _ _).mpr h) s
 
 /-- Puncturing sends the zero code to the zero code. -/
 @[simp]
 theorem puncture_bot (s : Set ι) : puncture (⊥ : LinearCode F ι) s = ⊥ := by
   apply Submodule.toAddSubgroup_injective
-  simp only [LinearCode.toAddSubgroup_puncture, Submodule.bot_toAddSubgroup,
+  simp only [LinearCode.puncture_toAddSubgroup, Submodule.bot_toAddSubgroup,
     AdditiveCode.puncture_bot]
 
 /-- Shortening sends the zero code to the zero code. -/
 @[simp]
 theorem shorten_bot (s : Set ι) : shorten (⊥ : LinearCode F ι) s = ⊥ := by
   apply Submodule.toAddSubgroup_injective
-  simp only [LinearCode.toAddSubgroup_shorten, Submodule.bot_toAddSubgroup,
+  simp only [LinearCode.shorten_toAddSubgroup, Submodule.bot_toAddSubgroup,
     AdditiveCode.shorten_bot]
 
 /-- Puncturing the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
 theorem puncture_top (s : Set ι) : puncture (⊤ : LinearCode F ι) s = ⊤ := by
   apply Submodule.toAddSubgroup_injective
-  simp only [LinearCode.toAddSubgroup_puncture, Submodule.top_toAddSubgroup,
+  simp only [LinearCode.puncture_toAddSubgroup, Submodule.top_toAddSubgroup,
     AdditiveCode.puncture_top]
 
 /-- Shortening the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
 theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode F ι) s = ⊤ := by
   apply Submodule.toAddSubgroup_injective
-  simp only [LinearCode.toAddSubgroup_shorten, Submodule.top_toAddSubgroup,
+  simp only [LinearCode.shorten_toAddSubgroup, Submodule.top_toAddSubgroup,
     AdditiveCode.shorten_top]
 
 /-- Puncturing commutes with sums of codes. -/
