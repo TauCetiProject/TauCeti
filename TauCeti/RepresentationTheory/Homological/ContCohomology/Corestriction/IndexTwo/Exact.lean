@@ -135,10 +135,12 @@ theorem exact_trivialF2ResMap_trivialF2CorMap_of_index_two (hU2 : U.index = 2) (
     rw [map_nsmul, map_zero, two_nsmul, CharTwo.add_self_eq_zero])
   -- Generalize the coefficient object over `G`, so that its identification with
   -- `ofDiscreteModule ℤ G (trivialF2 G).V` can be substituted away; the claim is then
-  -- `exact_res_corestriction_of_index_two`.
+  -- `exact_res_corestriction_of_index_two`. After restriction, `res_ofDiscreteModule` lands the
+  -- transport in `continuousCohomology n (ofDiscreteModule ℤ U _)`, the domain of corestriction.
   have key : ∀ (X : TopRep ℤ G) (hX : ofDiscreteModule ℤ G (trivialF2 G).V = X),
       Function.Exact (ContinuousCohomology.res U X n ≫
-          eqToHom (congrArg (fun Z => continuousCohomology n (TopRep.res U.subtype Z)) hX.symm))
+          eqToHom ((congrArg (fun Z => continuousCohomology n (TopRep.res U.subtype Z))
+            hX.symm).trans (congrArg (continuousCohomology n) (res_ofDiscreteModule (R := ℤ) U))))
         (ContinuousCohomology.corestriction U (trivialF2 G).V hU n ≫
           eqToHom (congrArg (continuousCohomology n) hX)) := by
     rintro X rfl
@@ -149,18 +151,15 @@ theorem exact_trivialF2ResMap_trivialF2CorMap_of_index_two (hU2 : U.index = 2) (
   have h := (LinearEquiv.conj_exact_iff_exact _ _ (eqToIso (congrArg (continuousCohomology n)
     (ofDiscreteModule_subgroup_trivialF2 G U))).toContinuousLinearEquiv.toLinearEquiv).2
     (key _ (ofDiscreteModule_trivialF2 G))
-  -- The two `eqToHom`s after restriction compose to the one in `trivialF2ResMap`. Stated as a term
-  -- rather than by `rw [Category.assoc, eqToHom_trans]`: the middle objects
-  -- `continuousCohomology n (TopRep.res U.subtype (ofDiscreteModule ℤ G _))` and
-  -- `continuousCohomology n (ofDiscreteModule ℤ U _)` agree only by unfolding
-  -- (`res_ofDiscreteModule`), which stops both lemmas from matching as rewrite rules.
+  -- The two `eqToHom`s after restriction meet at `continuousCohomology n (ofDiscreteModule ℤ U _)`
+  -- and compose to the one in `trivialF2ResMap`.
   have hres : (ContinuousCohomology.res U (trivialF2 G) n ≫
-        eqToHom (congrArg (fun Z => continuousCohomology n (TopRep.res U.subtype Z))
-          (ofDiscreteModule_trivialF2 G).symm)) ≫
+        eqToHom ((congrArg (fun Z => continuousCohomology n (TopRep.res U.subtype Z))
+          (ofDiscreteModule_trivialF2 G).symm).trans
+            (congrArg (continuousCohomology n) (res_ofDiscreteModule (R := ℤ) U)))) ≫
       eqToHom (congrArg (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U)) =
-        trivialF2ResMap G U n :=
-    ((Category.assoc _ _ _).trans (congrArg (ContinuousCohomology.res U (trivialF2 G) n ≫ ·)
-      (eqToHom_trans _ _))).trans (trivialF2ResMap_def G U n).symm
+        trivialF2ResMap G U n := by
+    rw [Category.assoc, eqToHom_trans, trivialF2ResMap_def]
   rw [← hres, trivialF2CorMap_def]
   exact h
 
