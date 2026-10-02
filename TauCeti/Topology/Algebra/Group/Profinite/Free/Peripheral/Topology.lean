@@ -36,7 +36,7 @@ so it is continuous by the closed graph theorem for maps into a compact space.
 * `TauCeti.Peripheral.isClosed_peripheralAut`: `peripheralAut hF x` is closed in `ContinuousAut F`.
 * `TauCeti.Peripheral.compactSpace_peripheralAut`,
   `TauCeti.Peripheral.totallyDisconnectedSpace_peripheralAut`: `peripheralAut hF x` is a
-  profinite group.
+  profinite group; for the basis of a marked free pro-`p` group these are instances.
 * `TauCeti.Peripheral.graph_exponent`: the graph of the exponent character is the peripheral
   graph of the basis.
 * `TauCeti.Peripheral.continuous_exponent`: the exponent character is continuous.
@@ -104,6 +104,24 @@ theorem totallyDisconnectedSpace_peripheralAut (hfg : IsTopologicallyFinitelyGen
   inferInstance
 
 end Closed
+
+section Basis
+
+variable (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r))
+
+/-- The peripheral automorphism group of a marked free pro-`p` group of finite rank is compact. -/
+instance compactSpace_peripheralAut_basis : CompactSpace (peripheralAut hF (basis e)) :=
+  compactSpace_peripheralAut hF (basis e)
+    ((isTopologicallyFinitelyGenerated_congr e).mpr (isTopologicallyFinitelyGenerated_freeProP p _))
+
+/-- The peripheral automorphism group of a marked free pro-`p` group of finite rank is totally
+disconnected. -/
+instance totallyDisconnectedSpace_peripheralAut_basis :
+    TotallyDisconnectedSpace (peripheralAut hF (basis e)) :=
+  totallyDisconnectedSpace_peripheralAut hF (basis e)
+    ((isTopologicallyFinitelyGenerated_congr e).mpr (isTopologicallyFinitelyGenerated_freeProP p _))
+
+end Basis
 
 section Exponent
 

@@ -88,7 +88,10 @@ Hilbert spaces, their subspaces, their isometries and their bounded operators, a
 enters them. The blocks are called *isotypic* because the `π`-block is spanned by
 the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and
 that the decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
-translation, are statements about group actions and are **not** proved here. What *is* proved
+translation, are statements about group actions and are **not** proved here. (For a *finite* `G` the
+first of them is
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Finite.lean`, where the obstruction recorded
+below disappears.) What *is* proved
 about the action, in the section `Stability under translation` and nowhere else, is that each
 block is stable under the biregular representation
 (`TauCeti.biRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
@@ -106,10 +109,11 @@ averaging operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
 representation then only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`). Both
-obstructions disappear for a finite `G`, where `L²(G)` has dimension `|G|`; but nothing here
-assumes `G` finite, so the general route is the one taken. The averaging is carried out instead by
-`TauCeti.convolutionOperator`, which needs no continuity of the action on `L²(G)`, and the
-integrated operator is used only on the finite-dimensional carrier of a model, where it is
+obstructions disappear for a finite `G`, where `L²(G)` has dimension `|G|`, and
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Finite.lean` identifies the two operators there;
+but nothing here assumes `G` finite, so the general route is the one taken. The averaging is carried
+out instead by `TauCeti.convolutionOperator`, which needs no continuity of the action on `L²(G)`,
+and the integrated operator is used only on the finite-dimensional carrier of a model, where it is
 available.
 
 ## Main definitions

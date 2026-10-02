@@ -29,6 +29,8 @@ directions before taking products.
 
 * `TauCeti.Grid.cIco`: the clockwise half-open arc, the one-dimensional shape of the squares a
   toroidal rectangle covers.
+* `TauCeti.Grid.cyclicPosition`: the position of a point on the cycle read clockwise from the
+  successor of a basepoint.
 
 ## Main results
 
@@ -86,6 +88,8 @@ directions before taking products.
   ending at its own cyclic successor.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
+* `TauCeti.Grid.cyclicPosition_lt_of_notMem_cIco`: two distinct points whose half-open arc
+  avoids the basepoint come in increasing order of cyclic position.
 
 ## References
 
@@ -882,6 +886,46 @@ theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
   rcases Finset.mem_union.mp hmem with h | h
   · exact h₁ h
   · exact h₂ h
+
+/-! ### Positions on the cycle -/
+
+/-- The position of `r` on the cycle `Fin n` read clockwise from the cyclic successor of `p`: the
+length of the half-open arc from `finRotate n p` to `r`. The successor of `p` has position `0`
+and `p` itself comes last. -/
+noncomputable def cyclicPosition (p r : Fin n) : ℕ :=
+  (cIco (finRotate n p) r).card
+
+/-- The cyclic successor `p + 1` of `p` (that is, `finRotate n p`) comes first, in position
+`0`. -/
+@[simp]
+theorem cyclicPosition_add_one_self (p : Fin n) :
+    haveI := p.neZero; cyclicPosition p (p + 1) = 0 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n => simp [cyclicPosition, cIco_self]
+
+/-- The point `p` itself comes last, in position `n - 1`. -/
+@[simp]
+theorem cyclicPosition_self (p : Fin n) : cyclicPosition p p = n - 1 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n =>
+    have := p.isLt
+    simp only [cyclicPosition, card_cIco, ← Fin.val_inj, coe_finRotate, Fin.val_last]
+    split_ifs <;> omega
+
+/-- Two distinct points whose half-open arc avoids `p` come in strictly increasing order of
+position read from the cyclic successor of `p`. -/
+theorem cyclicPosition_lt_of_notMem_cIco {p a b : Fin n} (hab : a ≠ b) (h : p ∉ cIco a b) :
+    cyclicPosition p a < cyclicPosition p b := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n =>
+    have := p.isLt; have := a.isLt; have := b.isLt
+    have hab' : a.val ≠ b.val := fun e ↦ hab (Fin.ext e)
+    simp only [cyclicPosition, card_cIco, mem_cIco, ne_eq, ← Fin.val_inj, coe_finRotate,
+      Fin.val_last] at h ⊢
+    split_ifs at h ⊢ <;> omega
 
 end Grid
 

@@ -41,6 +41,8 @@ choosing a preferred presentation.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.exists_presentationIndex_mem`: the rational opens presented by the
+  indices of an open cover it.
 * `TauCeti.ValuationSpectrum.exists_presentationToRationalSubsetIndex_obj_eq`: every rational
   subset index is exactly represented by an admissible presentation.
 * `CategoryTheory.Functor.Final
@@ -116,6 +118,16 @@ theorem exists_presentationToRationalSubsetIndex_obj_eq
       le_open := hU.ge.trans U.2.2 }
   exact ⟨i, OrderDual.ofDual.injective <|
     Subtype.ext <| (presentationToRationalSubsetIndex_obj_open Aplus V i).trans hU.symm⟩
+
+/-- **Every point of an open lies in the rational open of one of its indices**: the rational opens
+`R(i)`, for `i` ranging over the indices of `V`, cover `V`. -/
+theorem exists_presentationIndex_mem {v : ↥(spa Aplus)} (hv : v ∈ V) :
+    ∃ i : PresentationIndex (P := P) Aplus V, v ∈ spaBasicOpen Aplus i.pres.num i.pres.den := by
+  -- `P` makes `A` a Huber ring, so the rational opens form a basis
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  obtain ⟨W, hW, hvW, hWV⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hv
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
+  exact ⟨⟨⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩, hT, hWV⟩, hvW⟩
 
 /-- The functor from presentations to rational subsets is final: every rational subset is in its
 image, and the presentation index is filtered by common refinement. This is the categorical

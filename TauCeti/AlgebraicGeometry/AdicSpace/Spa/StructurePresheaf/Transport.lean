@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.Homeomorph
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChange
 
 import TauCeti.Topology.Sheaves.Functors
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
 import TauCeti.RingTheory.Huber.OpenIdeal
 
 /-!
@@ -31,8 +30,9 @@ subrings need not be rings of integral elements:
   (`spaCompletionHomeomorph`), and `Â⟨T/s⟩` with `A⟨T/s⟩`.
 
 In both cases the presentation-limit presheaf of `(A, A⁺)` is isomorphic to the pushforward of the
-other along the homeomorphism of adic spectra; its components are built from the maps between
-completed rational localisations given by their universal property.
+other along the homeomorphism of adic spectra; its components are built from the base-change maps
+between completed rational localisations of
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChange`.
 
 The consequences for `TauCeti.Huber.IsSheafyForEveryPresentation` are in
 `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation`.
@@ -57,129 +57,6 @@ public section
 
 universe v
 
-namespace TauCeti.Huber.PairOfDefinition
-
-variable {A B : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] {P : PairOfDefinition A}
-  {P' : PairOfDefinition B}
-
-/-! ### The structure map, and maps out of `A⟨p⟩` -/
-
-/-- The structure map `A → A⟨p⟩`, as a morphism of `TopCommRingCat`. -/
-private noncomputable def Presentation.toCompletionLocTopHom (p : Presentation P) :
-    TopCommRingCat.of A ⟶ p.completionLocObj.obj := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  exact (⟨toCompletionLoc P p.num p.den _ p.hasDenominatorPower,
-      continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩ :
-      TopCommRingCat.of A ⟶
-        TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) ≫
-    eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm
-
-/-- Morphisms out of `A⟨p⟩` are determined by their composites with the structure map. -/
-private theorem Presentation.hom_ext (p : Presentation P) {X : CompleteSeparatedTopCommRingCat.{v}}
-    {f g : p.completionLocObj ⟶ X}
-    (h : p.toCompletionLocTopHom ≫ f.hom = p.toCompletionLocTopHom ≫ g.hom) : f = g := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  apply InducedCategory.hom_ext
-  -- as maps out of the completion itself, `f` and `g` agree by extensionality for `A⟨p⟩`
-  rw [← cancel_epi (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm)]
-  refine Subtype.ext <| completion_locTopology_ringHom_ext_of_continuous P p.num p.den _
-    p.hasDenominatorPower _ _ (_ ≫ f.hom).2 (_ ≫ g.hom).2 ?_
-  simp only [Presentation.toCompletionLocTopHom, Category.assoc] at h
-  exact congrArg Subtype.val h
-
-/-- Restriction morphisms commute with the structure maps. -/
-@[reassoc]
-private theorem Presentation.toCompletionLocTopHom_comp_restrictionHom {p q : Presentation P}
-    (h : p ≤ q) :
-    p.toCompletionLocTopHom ≫ (Presentation.restrictionHom h).hom = q.toCompletionLocTopHom := by
-  obtain ⟨r, hr, hT⟩ := Presentation.le_def.mp h
-  rw [Presentation.restrictionHom_eq h r hr hT, restrictionObjHom_eq_completionLocObjHom,
-    completionLocObjHom_hom]
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  simp only [Presentation.toCompletionLocTopHom, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp]
-  simp only [← Category.assoc]
-  apply eq_whisker
-  exact Subtype.ext (restrictionRingHom_comp_toCompletionLoc P _ _ _ _ _ _ _ _ r hr hT)
-
-/-- **Base change of `A⟨T/s⟩`.** A continuous ring homomorphism `φ : A →+* B` extends uniquely to
-a continuous map `A⟨p⟩ → B⟨q⟩` compatible with the structure maps, when `q` has denominator
-`φ p.den` and contains the images of the numerators of `p`. -/
-private theorem existsUnique_continuous_ringHom_comp_eq (φ : A →+* B) (hφ : Continuous φ)
-    (p : Presentation P) (q : Presentation P') (hden : q.den = φ p.den)
-    (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    ∃! g : UniformSpace.Completion (Localization.Away p.den) →+*
-        UniformSpace.Completion (Localization.Away q.den),
-      Continuous g ∧ g.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
-        (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp φ := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isHuberRing_completion_locTopology P' q.num q.den _ q.hasDenominatorPower
-  have hq : q.den = φ p.den * 1 := by rw [hden, mul_one]
-  have hu := isUnit_toCompletionLoc_of_dvd P' q.num q.den _ q.hasDenominatorPower ⟨1, hq⟩
-  exact existsUnique_continuous_ringHom_completion_locTopology P p.num p.den _
-    p.hasDenominatorPower ((continuous_toCompletionLoc P' _ _ _ _).comp hφ).continuousAt hu
-    fun t ht ↦ isPowerBounded_toCompletionLoc_mul_unit_inv P' _ _ _ _ hq hu
-      ((mul_one (φ t)).symm ▸ hnum t ht)
-
-/-- The morphism `A⟨p⟩ ⟶ B⟨q⟩` of `existsUnique_continuous_ringHom_comp_eq`. -/
-private noncomputable def Presentation.mapHom (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)
-    (q : Presentation P') (hden : q.den = φ p.den) (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
-    p.completionLocObj ⟶ q.completionLocObj := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  let _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  let _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have hg := existsUnique_continuous_ringHom_comp_eq φ hφ p q hden hnum
-  exact InducedCategory.homMk (eqToHom (completionLocObj_obj P p.num p.den _ _) ≫
-    (⟨hg.choose, hg.choose_spec.1.1⟩ :
-      TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) ⟶
-        TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den))) ≫
-      eqToHom (completionLocObj_obj P' q.num q.den _ _).symm)
-
-/-- `Presentation.mapHom` carries the structure map of `p` to that of `q` after `φ`. -/
-@[reassoc]
-private theorem Presentation.toCompletionLocTopHom_comp_mapHom (φ : A →+* B) (hφ : Continuous φ)
-    (p : Presentation P) (q : Presentation P') (hden : q.den = φ p.den)
-    (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
-    p.toCompletionLocTopHom ≫ (p.mapHom φ hφ q hden hnum).hom =
-      (⟨φ, hφ⟩ : TopCommRingCat.of A ⟶ TopCommRingCat.of B) ≫ q.toCompletionLocTopHom := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  simp only [Presentation.toCompletionLocTopHom, Presentation.mapHom, InducedCategory.homMk_hom,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  simp only [← Category.assoc]
-  apply eq_whisker
-  exact Subtype.ext (existsUnique_continuous_ringHom_comp_eq φ hφ p q hden hnum).choose_spec.1.2
-
-end TauCeti.Huber.PairOfDefinition
-
 namespace TauCeti.ValuationSpectrum
 
 open CategoryTheory.Limits TauCeti.Huber TauCeti.Huber.PairOfDefinition
@@ -188,114 +65,13 @@ variable {A B : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] {P : PairOfDefinition A}
   {P' : PairOfDefinition B} {Aplus : Subring A} {Bplus : Subring B}
 
-/-! ### Transporting presentations -/
+/-! ### The comparison maps of presentation limits along an isomorphism -/
 
 variable (φ : A →+* B) (hφ : Continuous φ)
   (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
 
-include hopen in
-open scoped Classical in
-/-- The image under `φ` of an index of `U`, as an index of any `V` containing the preimage of `U`
-under the induced map of adic spectra. -/
-private noncomputable def PresentationIndex.map (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
-    {U : Opens ↥(spa Aplus)} {V : Opens ↥(spa Bplus)}
-    (hUV : ∀ w, spaComap φ hφ Aplus Bplus hplus w ∈ U → w ∈ V)
-    (i : PresentationIndex (P := P) Aplus U) : PresentationIndex (P := P') Bplus V where
-  pres := ⟨i.pres.num.image φ, φ i.pres.den, hasDenominatorPower_of_isOpen_span P' _ _ _ (by
-    rw [Finset.coe_image, ← Ideal.map_span]
-    exact hopen i.isOpen_span)⟩
-  isOpen_span := by
-    rw [Finset.coe_image, ← Ideal.map_span]
-    exact hopen i.isOpen_span
-  le_open w hw := hUV w <| i.le_open <| mem_spaBasicOpen.mpr <|
-    (Set.ext_iff.mp (spaComap_preimage_rationalSubset φ hφ Aplus Bplus hplus
-      i.pres.num i.pres.den) w).mpr (mem_spaBasicOpen.mp hw)
-
 variable (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) {U : Opens ↥(spa Aplus)} {V : Opens ↥(spa Bplus)}
   (hUV : ∀ w, spaComap φ hφ Aplus Bplus hplus w ∈ U → w ∈ V)
-
-omit [IsTopologicalRing A] in
-open scoped Classical in
-private theorem PresentationIndex.map_pres_num (i : PresentationIndex (P := P) Aplus U) :
-    (i.map (P' := P') φ hφ hopen hplus hUV).pres.num = i.pres.num.image φ := rfl
-
-omit [IsTopologicalRing A] in
-private theorem PresentationIndex.map_pres_den (i : PresentationIndex (P := P) Aplus U) :
-    (i.map (P' := P') φ hφ hopen hplus hUV).pres.den = φ i.pres.den := rfl
-
-omit [IsTopologicalRing A] in
-/-- `PresentationIndex.map` preserves refinement. -/
-private theorem PresentationIndex.map_mono {i j : PresentationIndex (P := P) Aplus U} (h : i ≤ j) :
-    i.map (P' := P') φ hφ hopen hplus hUV ≤ j.map φ hφ hopen hplus hUV := by
-  classical
-  obtain ⟨r, hr, hT⟩ := Presentation.le_def.mp h
-  refine Presentation.le_def.mpr ⟨φ r, ?_, fun t ht ↦ ?_⟩
-  · rw [map_pres_den, map_pres_den, hr, map_mul]
-  · rw [map_pres_num] at ht ⊢
-    obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp ht
-    exact Finset.mem_image.mpr ⟨a * r, hT a ha, map_mul φ a r⟩
-
-/-! ### The comparison maps of presentation limits -/
-
-/-- Two projections of `presentationLimit` followed by maps agreeing on `A` agree, when the first
-index is refined by the second. -/
-private theorem presentationLimitπToPresentation_comp_eq {W : Opens ↥(spa Aplus)}
-    {X : CompleteSeparatedTopCommRingCat.{v}} {k₁ k₂ : PresentationIndex (P := P) Aplus W}
-    (hk : k₁ ≤ k₂) {f₁ : k₁.pres.completionLocObj ⟶ X} {f₂ : k₂.pres.completionLocObj ⟶ X}
-    (hf : k₁.pres.toCompletionLocTopHom ≫ f₁.hom = k₂.pres.toCompletionLocTopHom ≫ f₂.hom) :
-    presentationLimitπToPresentation Aplus W k₁ ≫ f₁ =
-      presentationLimitπToPresentation Aplus W k₂ ≫ f₂ := by
-  rw [← presentationLimitπ_comp_restriction hk, Category.assoc]
-  refine congrArg _ (k₁.pres.hom_ext ?_)
-  rw [ObjectProperty.FullSubcategory.comp_hom,
-    Presentation.toCompletionLocTopHom_comp_restrictionHom_assoc, hf]
-
-/-- The comparison morphism of a containment of rational subsets commutes with the structure
-maps. -/
-@[reassoc]
-private theorem toCompletionLocTopHom_comp_homOfRationalSubsetSubset
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p q : Presentation P}
-    (h : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den) :
-    p.toCompletionLocTopHom ≫ (homOfRationalSubsetSubset Aplus hAplus h).hom =
-      q.toCompletionLocTopHom := by
-  -- through the common refinement `k` of `p` and `q`, which presents `R(q)`: the comparison
-  -- morphism is restriction to `k` followed by the inverse of the restriction from `q` to `k`
-  have hpk := p.le_commonRefinement_left q
-  have hqk := p.le_commonRefinement_right q
-  have hqR : rationalSubset Aplus q.num q.den ⊆
-      rationalSubset Aplus (p.commonRefinement q).num (p.commonRefinement q).den := by
-    rw [rationalSubset_commonRefinement]
-    exact Set.subset_inter h subset_rfl
-  have e₁ : homOfRationalSubsetSubset Aplus hAplus h =
-      Presentation.restrictionHom hpk ≫ homOfRationalSubsetSubset Aplus hAplus hqR := by
-    rw [restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus hpk,
-      homOfRationalSubsetSubset_comp]
-  have e₂ : Presentation.restrictionHom hqk ≫ homOfRationalSubsetSubset Aplus hAplus hqR = 𝟙 _ := by
-    rw [restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus hqk,
-      homOfRationalSubsetSubset_comp,
-      homOfRationalSubsetSubset_self]
-  rw [e₁, ObjectProperty.FullSubcategory.comp_hom,
-    Presentation.toCompletionLocTopHom_comp_restrictionHom_assoc,
-    ← Presentation.toCompletionLocTopHom_comp_restrictionHom hqk, Category.assoc,
-    ← ObjectProperty.FullSubcategory.comp_hom, e₂, ObjectProperty.FullSubcategory.id_hom,
-    Category.comp_id]
-
-/-- Two projections of `presentationLimit` followed by maps agreeing on `A` agree, when the
-rational subset of the first index lies in that of the second and `A⁺` consists of power-bounded
-elements. -/
-private theorem presentationLimitπToPresentation_comp_eq_of_subset
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
-    {X : CompleteSeparatedTopCommRingCat.{v}} {k₁ k₂ : PresentationIndex (P := P) Aplus W}
-    (hk : rationalSubset Aplus k₁.pres.num k₁.pres.den ⊆
-      rationalSubset Aplus k₂.pres.num k₂.pres.den)
-    {f₁ : k₁.pres.completionLocObj ⟶ X} {f₂ : k₂.pres.completionLocObj ⟶ X}
-    (hf : k₁.pres.toCompletionLocTopHom ≫ f₁.hom = k₂.pres.toCompletionLocTopHom ≫ f₂.hom) :
-    presentationLimitπToPresentation Aplus W k₁ ≫ f₁ =
-      presentationLimitπToPresentation Aplus W k₂ ≫ f₂ := by
-  rw [presentationLimitπ_eq_π_comp hAplus k₂ k₁ hk, Category.assoc]
-  refine congrArg _ (k₂.pres.hom_ext ?_)
-  rw [ObjectProperty.FullSubcategory.comp_hom,
-    toCompletionLocTopHom_comp_homOfRationalSubsetSubset_assoc, hf]
 
 -- The comparison along an isomorphism is built from two mutually inverse continuous ring
 -- homomorphisms `φ` and `ψ` rather than from a ring isomorphism `e`: swapping the two gives the
@@ -410,10 +186,6 @@ private theorem spaComap_spaComap (w : ↥(spa Aplus)) :
   rw [spaComap_val, spaComap_val, ← Function.comp_apply (f := comap φ), ← comap_comp, hcomp,
     comap_id, id]
 
-/-- The map of adic spectra induced by `φ`, as a morphism of `TopCat`. -/
-private noncomputable abbrev spaComapTopHom : TopCat.of ↥(spa Bplus) ⟶ TopCat.of ↥(spa Aplus) :=
-  TopCat.ofHom ⟨spaComap φ hφ Aplus Bplus hplus, continuous_spaComap φ hφ Aplus Bplus hplus⟩
-
 omit [IsTopologicalRing A] [IsTopologicalRing B] in
 include hψφ in
 /-- The preimage of `W` under the map of adic spectra induced by `φ` is contained in the image of
@@ -511,7 +283,7 @@ private theorem Presentation.coeRingHom_comp_completionExtendTopHom (p : Present
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  simp only [Presentation.completionExtendTopHom, Presentation.toCompletionLocTopHom]
+  simp only [Presentation.completionExtendTopHom, Presentation.toCompletionLocTopHom_eq]
   simp only [← Category.assoc]
   apply eq_whisker
   exact Subtype.ext <| RingHom.ext <|
@@ -582,7 +354,7 @@ private theorem Presentation.toCompletionLocTopHom_comp_completionHom (p : Prese
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  simp only [Presentation.toCompletionLocTopHom, Presentation.completionHom,
+  simp only [Presentation.toCompletionLocTopHom_eq, Presentation.completionHom,
     Presentation.completionExtendTopHom, InducedCategory.homMk_hom, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   simp only [← Category.assoc]
@@ -694,8 +466,9 @@ private theorem PresentationIndex.rationalSubset_descend
       ((Opens.map (spaCompletionTopHom Aplus)).obj U)) :
     rationalSubset (completionPlus Aplus) j.pres.num j.pres.den =
       rationalSubset (completionPlus Aplus) ((j.descend (P := P)).completion (P' := P')).pres.num
-        ((j.descend (P := P)).completion (P' := P')).pres.den :=
-  (exists_presentationIndex_rationalSubset_eq j).choose_spec
+        ((j.descend (P := P)).completion (P' := P')).pres.den := by
+  rw [PresentationIndex.map_pres_num, PresentationIndex.map_pres_den]
+  exact (exists_presentationIndex_rationalSubset_eq j).choose_spec
 
 /-- The component at an index `i` of `U` of the comparison map from the completed side: project to
 the induced index, then descend from `Â⟨T/s⟩` to `A⟨T/s⟩`. -/
@@ -706,6 +479,7 @@ private noncomputable def presentationLimitCompletionLeg (i : PresentationIndex 
     Presentation.completionHom i.pres (i.completion (P' := P')).pres
       (by rw [PresentationIndex.map_pres_den]; rfl) fun t ht ↦ by
       classical
+      rw [PresentationIndex.map_pres_num] at ht
       obtain ⟨t₀, ht₀, rfl⟩ := Finset.mem_image.mp ht
       exact ⟨t₀, ht₀, rfl⟩
 
@@ -764,7 +538,7 @@ private theorem presentationLimitDescendLeg_comp_restrictionHom
     (rationalSubset_subset_of_image_subset ?_) ?_).symm
   · have hsub := rationalSubset_subset_rationalSubset_of_le (completionPlus Aplus) h.le
     rw [j₁.rationalSubset_descend (P := P), j₂.rationalSubset_descend (P := P)] at hsub
-    exact hsub
+    simpa only [PresentationIndex.map_pres_num, PresentationIndex.map_pres_den] using hsub
   · simp only [ObjectProperty.FullSubcategory.comp_hom,
       Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
       toCompletionLocTopHom_comp_homOfRationalSubsetSubset_assoc,
@@ -829,7 +603,8 @@ private theorem presentationLimitDescendHom_comp_presentationLimitCompletionHom
     ← Category.comp_id (presentationLimitπToPresentation Aplus U i)]
   refine (presentationLimitπToPresentation_comp_eq_of_subset hAplus
     (rationalSubset_subset_of_image_subset ?_) ?_).symm
-  · exact ((i.completion (P' := P')).rationalSubset_descend (P := P)).le
+  · simpa only [PresentationIndex.map_pres_num, PresentationIndex.map_pres_den] using
+      ((i.completion (P' := P')).rationalSubset_descend (P := P)).le
   · simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.id_hom,
       Category.comp_id, Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
       toCompletionLocTopHom_comp_homOfRationalSubsetSubset_assoc,
@@ -886,7 +661,8 @@ private theorem presentationLimitMap_comp_presentationLimitDescendHom
   · have e₁ := ((presentationIndexRestrict ((Opens.map (spaCompletionTopHom Aplus)).monotone
       hU)).obj j).rationalSubset_descend (P := P)
     simp only [presentationIndexRestrict_obj_pres] at e₁ ⊢
-    exact ((j.rationalSubset_descend (P := P)).symm.trans e₁).le
+    simpa only [PresentationIndex.map_pres_num, PresentationIndex.map_pres_den] using
+      ((j.rationalSubset_descend (P := P)).symm.trans e₁).le
   · simp [Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
       toCompletionLocTopHom_comp_homOfRationalSubsetSubset_assoc,
       toCompletionLocTopHom_comp_homOfRationalSubsetSubset]

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Datum
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 import Mathlib.LinearAlgebra.Finsupp.Pi
+import TauCeti.Algebra.Group.Submonoid.Telescoping
 
 /-!
 # A base of the diagonal root datum of the general linear group
