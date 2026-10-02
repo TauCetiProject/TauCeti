@@ -53,38 +53,6 @@ section Rescale
 
 variable {n : ℕ} {A : Type w} [CommRing A]
 
-/-- Rescale the first column of an invertible matrix by the inverse of its determinant. The
-result has determinant one, and the operation is the identity on determinant-one matrices.
-
-Unlike `TauCeti.exists_det_mul_diagGL_eq_one`, the rescaling is an explicit formula, so it
-commutes with entrywise ring homomorphisms; that is what makes it a morphism of schemes here. -/
-private def detOneRescale (g : GL (Fin n) A) : GL (Fin n) A :=
-  g * diagGL fun i : Fin n ↦ if (i : ℕ) = 0 then (Matrix.GeneralLinearGroup.det g)⁻¹ else 1
-
-private theorem det_detOneRescale (g : GL (Fin n) A) :
-    Matrix.GeneralLinearGroup.det (detOneRescale g) = 1 := by
-  rw [detOneRescale, map_mul, det_diagGL]
-  cases n with
-  | zero =>
-    rw [Fin.prod_univ_zero, mul_one]
-    exact Units.ext (by simp [Matrix.GeneralLinearGroup.val_det_apply])
-  | succ m =>
-    rw [Fin.prod_univ_succ]
-    simp
-
-private theorem detOneRescale_of_det_eq_one {g : GL (Fin n) A}
-    (hg : Matrix.GeneralLinearGroup.det g = 1) : detOneRescale g = g := by
-  rw [detOneRescale, hg, inv_one]
-  simp
-
-private theorem map_detOneRescale {B : Type*} [CommRing B] (f : A →+* B) (g : GL (Fin n) A) :
-    Matrix.GeneralLinearGroup.map f (detOneRescale g) =
-      detOneRescale (Matrix.GeneralLinearGroup.map f g) := by
-  rw [detOneRescale, detOneRescale, map_mul, map_diagGL, Matrix.GeneralLinearGroup.map_det]
-  congr 2
-  funext i
-  split_ifs <;> simp
-
 private theorem detOneRescale_mem {g : GL (Fin n) A} (hg : g ∈ upperTriangularGroup (Fin n) A) :
     detOneRescale g ∈ upperTriangularGroup (Fin n) A := by
   refine (upperTriangularGroup (Fin n) A).mul_mem hg ?_
