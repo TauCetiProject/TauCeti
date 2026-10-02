@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.Algebra.Module.Injective.Noetherian
+public import TauCeti.Algebra.Module.LocalizedModule.Away
 
 /-!
 # The sheaf of an injective module over a Noetherian ring is flasque
@@ -70,17 +71,6 @@ local notation "Γₘ(" U ")" =>
 local notation "res[" h "]" =>
   Prefunctor.map (CategoryTheory.Functor.toPrefunctor 𝓕) (Quiver.Hom.op (homOfLE h))
 
-/-- Clearing denominators in a localization `φ : N → N_f`: if `fᵏ σ = φ x` and `(f g)ⁿ` kills `x`,
-then `gⁿ` kills `σ`. -/
-private theorem pow_smul_eq_zero_of_pow_smul_eq {A N N' : Type*} [CommRing A] [AddCommGroup N]
-    [Module A N] [AddCommGroup N'] [Module A N'] {f g : A} (φ : N →ₗ[A] N')
-    [IsLocalizedModule (.powers f) φ] {x : N} {σ : N'} {k n : ℕ} (hk : f ^ k • σ = φ x)
-    (hn : (f * g) ^ n • x = 0) : g ^ n • σ = 0 := by
-  refine IsLocalizedModule.smul_injective φ ⟨f ^ (n + k), pow_mem (Submonoid.mem_powers f) _⟩ ?_
-  simp only [Submonoid.mk_smul, smul_zero]
-  have h : f ^ (n + k) • g ^ n • σ = (f * g) ^ n • f ^ k • σ := by module
-  rw [h, hk, ← map_smul, hn, map_zero]
-
 /-- A section of `M^~` over `D(f) ∪ D(g₁) ∪ ⋯ ∪ D(gₙ)` that vanishes on every `D(gᵢ)` is the
 restriction of a global section. -/
 private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
@@ -116,7 +106,8 @@ private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
       rfl
     obtain ⟨⟨_, N, rfl⟩, hN⟩ := (IsLocalizedModule.eq_zero_iff (.powers (f * g))
       (tilde.toOpen M (basicOpen (f * g))).hom).mp hx
-    exact ⟨N, pow_smul_eq_zero_of_pow_smul_eq (tilde.toOpen M (basicOpen f)).hom hk hN⟩
+    exact ⟨N, IsLocalizedModule.Away.pow_smul_eq_zero_of_pow_smul_eq
+      (tilde.toOpen M (basicOpen f)).hom hk hN⟩
   -- Lift `σ` to an element `u` of `M` killed by a power of every `g ∈ G`.
   obtain ⟨⟨u, hu⟩, hu'⟩ := Ideal.primaryComponent_map_surjective
     (Submodule.span R (G : Set R)) (.powers f) (tilde.toOpen M (basicOpen f)).hom ⟨σ, hσ⟩
