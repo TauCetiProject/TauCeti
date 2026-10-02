@@ -62,12 +62,11 @@ theorem exists_typeDSpinRep_serreE_exteriorBasis (i : Fin n) (s : Finset (Fin n)
       simp only [Finset.mem_insert, Finset.mem_erase]
       by_cases hxi : x = i <;> by_cases hxq : x = q <;>
         simp_all [Equiv.swap_apply_def, q]
-    rw [P.typeDSpinRep_serreE_eq_spinAction b hn, P.typeDSimpleRootBivector_def b,
-      dite_eq_left hi, map_mul, Module.End.mul_apply, TauCeti.spinAction_ι_contract,
-      P.pairingEquiv_dualVector, TauCeti.spinAction_ι_wedge,
-      TauCeti.ExteriorAlgebra.contractLeft_coord_basis, ite_eq_left hmem.2, mul_smul_comm,
-      TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_right (by simp [hmem.1]), smul_smul, hrefl]
-    exact ⟨_, rfl⟩
+    rw [P.typeDSpinRep_serreE_eq_spinAction b hn, hrefl]
+    simp only [P.typeDSimpleRootBivector_def b, dite_eq_left hi, map_mul, Module.End.mul_apply,
+      TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
+    exact ⟨_, TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem
+      b i q s hmem.1 hmem.2⟩
   · let p : Fin n := ⟨n - 2, by omega⟩
     let q : Fin n := ⟨n - 1, by omega⟩
     have hiq : i = q := Fin.ext (by have := i.isLt; dsimp [q]; omega)
@@ -83,13 +82,14 @@ theorem exists_typeDSpinRep_serreE_exteriorBasis (i : Fin n) (s : Finset (Fin n)
       simp only [Finset.mem_insert]
       by_cases hxp : x = p <;> by_cases hxq : x = q <;>
         simp_all [Equiv.swap_apply_def]
-    rw [P.typeDSpinRep_serreE_eq_spinAction b hn, P.typeDSimpleRootBivector_def b,
-      dite_eq_right hi, map_mul, Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
-      TauCeti.spinAction_ι_wedge, TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_right hmem.2,
-      mul_smul_comm, TauCeti.ExteriorAlgebra.ι_mul_basis,
-      ite_eq_right (by
-        rw [Finset.mem_insert]; exact not_or.mpr ⟨hpq, hmem.1⟩), smul_smul, hrefl]
-    exact ⟨_, rfl⟩
+    rw [P.typeDSpinRep_serreE_eq_spinAction b hn, hrefl]
+    simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hi, map_mul, Module.End.mul_apply,
+      TauCeti.spinAction_ι_wedge]
+    refine ⟨TauCeti.ExteriorAlgebra.basisEraseSign q (insert q s) *
+      TauCeti.ExteriorAlgebra.basisEraseSign p (insert p (insert q s)), ?_⟩
+    simp [p, q] at hmem hpq
+    simp [p, q, TauCeti.ExteriorAlgebra.ι_mul_basis, hmem.1, hmem.2, hpq,
+      mul_smul_comm, smul_smul]
 
 /-- A negative simple-root operator carries every spin basis vector of simple-coroot weight
 `1` to its simple reflection, with coefficient an integral unit. -/
@@ -110,13 +110,12 @@ theorem exists_typeDSpinRep_serreF_exteriorBasis (i : Fin n) (s : Finset (Fin n)
       simp only [Finset.mem_insert, Finset.mem_erase]
       by_cases hxi : x = i <;> by_cases hxq : x = q <;>
         simp_all [Equiv.swap_apply_def, q]
-    rw [P.typeDSpinRep_serreF_eq_spinAction b hn, P.typeDSimpleNegativeRootBivector_def b,
-      dite_eq_left hi, map_mul, Module.End.mul_apply, TauCeti.spinAction_ι_contract,
-      P.pairingEquiv_dualVector, TauCeti.spinAction_ι_wedge,
-      TauCeti.ExteriorAlgebra.contractLeft_coord_basis, ite_eq_left hmem.1, mul_smul_comm,
-      TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_right (by
-        rw [Finset.mem_erase]; exact fun h => hmem.2 h.2), smul_smul, hrefl]
-    exact ⟨_, rfl⟩
+    rw [P.typeDSpinRep_serreF_eq_spinAction b hn, hrefl]
+    simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_left hi, map_mul,
+      Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
+      P.pairingEquiv_dualVector]
+    exact ⟨_, TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem
+      b q i s hmem.2 hmem.1⟩
   · let p : Fin n := ⟨n - 2, by omega⟩
     let q : Fin n := ⟨n - 1, by omega⟩
     have hiq : i = q := Fin.ext (by have := i.isLt; dsimp [q]; omega)
@@ -132,17 +131,14 @@ theorem exists_typeDSpinRep_serreF_exteriorBasis (i : Fin n) (s : Finset (Fin n)
       simp only [Finset.mem_erase]
       by_cases hxp : x = p <;> by_cases hxq : x = q <;>
         simp_all [Equiv.swap_apply_def]
-    rw [P.typeDSpinRep_serreF_eq_spinAction b hn, P.typeDSimpleNegativeRootBivector_def b,
-      dite_eq_right hi, map_mul, Module.End.mul_apply, TauCeti.spinAction_ι_contract,
-      P.pairingEquiv_dualVector, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
-      TauCeti.ExteriorAlgebra.contractLeft_coord_basis, ite_eq_left hmem.1]
-    simp only [Units.smul_def, map_zsmul]
-    rw [TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
-      ite_eq_left (Finset.mem_erase.mpr ⟨hpq.symm, hmem.2⟩),
-      hrefl]
+    rw [P.typeDSpinRep_serreF_eq_spinAction b hn, hrefl]
+    simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_right hi, map_mul,
+      Module.End.mul_apply, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
     refine ⟨TauCeti.ExteriorAlgebra.basisEraseSign p s *
       TauCeti.ExteriorAlgebra.basisEraseSign q (s.erase p), ?_⟩
-    simp only [Units.smul_def, smul_smul, Units.val_mul]
-    rfl
+    simp [p, q] at hmem hpq
+    simp only [p, q, TauCeti.ExteriorAlgebra.contractLeft_coord_basis, hmem.1,
+      ite_true, Units.smul_def, map_zsmul]
+    simp [hmem.2, Ne.symm hpq, mul_assoc]
 
 end TauCeti.SpinPolarizationData
