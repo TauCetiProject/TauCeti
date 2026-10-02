@@ -40,11 +40,10 @@ equivalence
 
 `End(V_π) ≃ (π-block of L²(G))`
 
-of representations of `G × G`. Only this block-by-block identification is built here: assembling
-the blocks into an equivariant equivalence `L²(G) ≅ ⨁̂_π End(V_π)` over a skeleton of the
-irreducibles is not provided, and would have to combine these maps with the Hilbert-sum
-decomposition `TauCeti.isHilbertSum_peterWeylBlock` of
-`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Basic.lean`.
+of representations of `G × G`. The isometric normalization and assembly over a skeleton of
+irreducibles are in `TauCeti/RepresentationTheory/Compact/TraceCoefficient/Isometry.lean` and
+`TauCeti/RepresentationTheory/Compact/TraceCoefficient/HilbertSum.lean`. They combine the
+normalized trace maps with the Hilbert-sum decomposition of Peter-Weyl blocks.
 
 ## Main definitions
 
