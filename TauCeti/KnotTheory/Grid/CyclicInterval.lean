@@ -86,6 +86,9 @@ directions before taking products.
   its own cyclic successor.
 * `TauCeti.Grid.self_mem_cIco_finRotate`: a point always lies in a nondegenerate half-open arc
   ending at its own cyclic successor.
+* `TauCeti.Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate`: moving from `p` to `q` enters
+  the arc from `finRotate n α` to `finRotate n β` when passing `α` and leaves it when passing
+  `β`.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
 * `TauCeti.Grid.cyclicPosition_lt_of_notMem_cIco`: two distinct points whose half-open arc
@@ -707,6 +710,37 @@ theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
         coe_finRotate_of_ne_last hlast
       rw [hrot] at haVal hbVal ⊢
       split_ifs <;> omega
+
+/-- The value of the cyclic successor, split into the wrapping and the non-wrapping case. -/
+theorem val_finRotate_cases {m : ℕ} (i : Fin (m + 1)) :
+    (i.val = m ∧ (finRotate (m + 1) i).val = 0) ∨
+      (i.val < m ∧ (finRotate (m + 1) i).val = i.val + 1) := by
+  rw [coe_finRotate]
+  have := i.isLt
+  split_ifs with h
+  · exact Or.inl ⟨by simpa [Fin.ext_iff] using h, rfl⟩
+  · exact Or.inr ⟨by rw [Fin.ext_iff, Fin.val_last] at h; omega, rfl⟩
+
+/-- **Crossing count for a shifted arc.** For distinct `α` and `β`, going from `p` to `q` enters
+the half-open arc from `finRotate n α` to `finRotate n β` once if the arc from `p` to `q` passes
+`α`, and leaves it once if it passes `β`. On a grid, with `α` and `β` naming rows of squares and
+`p`, `q` horizontal grid lines, the shifted arc is the band of lines `α + 1, …, β` strictly above
+the centre of square row `α` and below the centre of square row `β`. -/
+theorem ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate {p q α β : Fin n}
+    (hpq : p ≠ q) (hαβ : α ≠ β) :
+    ((if q ∈ cIco (finRotate n α) (finRotate n β) then 1 else 0 : ℤ) -
+        if p ∈ cIco (finRotate n α) (finRotate n β) then 1 else 0) =
+      (if α ∈ cIco p q then 1 else 0 : ℤ) - if β ∈ cIco p q then 1 else 0 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ m =>
+    have hα := val_finRotate_cases α
+    have hβ := val_finRotate_cases β
+    simp only [mem_cIco, ne_eq, Fin.ext_iff, ite_prop_iff_or]
+    simp only [ne_eq, Fin.ext_iff] at hpq hαβ
+    have := p.isLt
+    have := q.isLt
+    split_ifs <;> omega
 
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by

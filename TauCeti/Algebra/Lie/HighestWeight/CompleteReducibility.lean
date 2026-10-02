@@ -19,6 +19,7 @@ import TauCeti.Algebra.Lie.HighestWeight.Separation
 import TauCeti.Algebra.Lie.HighestWeight.Trivial
 import TauCeti.Algebra.Lie.Killing.Perfect
 import TauCeti.Algebra.Lie.Submodule.Decomposition
+import TauCeti.Algebra.Lie.Quotient
 
 /-!
 # Weyl's complete reducibility theorem
@@ -86,6 +87,8 @@ invariants of `A ⊗[K] M` are the extension of the invariants of `M`
 * `TauCeti.complementedLattice_lieSubmodule_of_isKilling`: the lattice restatement.
 * `TauCeti.exists_isInternal_isIrreducible_of_isKilling`: the decomposition restatement, a
   finite-dimensional module as an internal direct sum of irreducibles.
+* `LieSubmodule.exists_isCompl_of_le_ker`: Weyl's theorem for a module on which an ideal `I` acts
+  trivially, when only the quotient `L ⧸ I` has nondegenerate Killing form.
 
 ## References
 
@@ -275,5 +278,40 @@ theorem exists_isInternal_isIrreducible_of_isKilling [FiniteDimensional K M] :
         ∀ i, LieModule.IsIrreducible K L (N i) :=
   have _i := complementedLattice_lieSubmodule_of_isKilling K L M
   exists_isInternal_isIrreducible K L M
+
+section Quotient
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+omit [IsKilling K L] in
+/-- **Weyl's theorem for an action through a quotient.** If an ideal `I` of `L` acts trivially on
+a finite-dimensional module `M` and the quotient `L ⧸ I` has nondegenerate Killing form, then every
+Lie submodule of `M` has a complement. This applies when `L` itself is not semisimple, for
+instance to a module of `L` on which its solvable radical acts trivially. -/
+theorem _root_.LieSubmodule.exists_isCompl_of_le_ker [FiniteDimensional K M]
+    (N : LieSubmodule K L M) {I : LieIdeal K L} [IsKilling K (L ⧸ I)]
+    (hI : I ≤ LieModule.ker K L M) : ∃ N' : LieSubmodule K L M, IsCompl N N' := by
+  -- `L ⧸ I` acts on `M` through the induced representation, with the same submodules as `L`.
+  let ρ : L ⧸ I →ₗ⁅K⁆ Module.End K M := I.liftQ (toEnd K L M) hI
+  let _ : LieRingModule (L ⧸ I) M := LieRingModule.compLieHom M ρ
+  have : LieModule K (L ⧸ I) M := LieModule.compLieHom M ρ
+  have hlie (x : L) (m : M) : ⁅I.mkQ x, m⁆ = ⁅x, m⁆ := by
+    simp only [ρ, LieRingModule.compLieHom_apply, LieIdeal.mkQ_apply, Module.End.lie_apply]
+    rw [LieIdeal.liftQ_apply I (toEnd K L M) hI x, toEnd_apply_apply]
+  let N₀ : LieSubmodule K (L ⧸ I) M :=
+    { N.toSubmodule with
+      lie_mem := fun {y m} hm ↦ by
+        obtain ⟨x, rfl⟩ := I.mkQ_surjective y
+        rw [hlie]
+        exact N.lie_mem hm }
+  obtain ⟨N₀', h⟩ := exists_isCompl_of_isKilling N₀
+  refine ⟨{ N₀'.toSubmodule with
+    lie_mem := fun {x m} hm ↦ by
+      rw [← hlie]
+      exact N₀'.lie_mem hm }, ?_⟩
+  rw [← LieSubmodule.isCompl_toSubmodule] at h ⊢
+  exact h
+
+end Quotient
 
 end TauCeti

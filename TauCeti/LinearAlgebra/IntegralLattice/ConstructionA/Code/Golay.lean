@@ -16,9 +16,10 @@ The extended binary Golay code is a quadratic-isotropic subgroup of the discrimi
 the zero-code lattice `2 ℤ²⁴`. Gluing that subgroup gives the same integral lattice, in the same
 rational ambient space, as Construction A applied directly to the code. Its self-duality makes
 the code Lagrangian in the coordinate discriminant module, hence also in the discriminant group
-of `2 ℤ²⁴`, so its orthogonal quotient is trivial. The general criterion
-`TauCeti.IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian` applies to this
-Lagrangian glue: gluing `2 ℤ²⁴` along the Golay code gives a unimodular lattice.
+of `2 ℤ²⁴`, so its orthogonal quotient is trivial. The glued lattice is even because its glue is
+quadratic-isotropic, by `TauCeti.IntegralLattice.isEven_ofIsotropicSubgroup`, and unimodular
+because its glue is Lagrangian, by
+`TauCeti.IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian`.
 
 This identifies the code and lattice descriptions of the Golay construction through the actual
 discriminant subgroup, with no choice of an abstract lattice isomorphism. The final discriminant
@@ -92,6 +93,25 @@ theorem isIsotropic_code :
     ((FiniteQuadraticModule.zmodStandard 2 even_two).coordinatePower (Fin 24)).IsIsotropic
       code.toAddSubgroup :=
   (isIsotropic_coordinatePower_zmodStandard_two_iff_isDoublyEven code).mpr isDoublyEven_code
+
+/-- **Gluing `2 ℤ²⁴` along the Golay code gives an even lattice**, because the glue is
+quadratic-isotropic. -/
+theorem isEven_ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup :
+    ((ConstructionA.zeroLattice 2 (Fin 24)).ofIsotropicSubgroup
+      (ConstructionA.isEven_zeroLattice 2 (Fin 24) even_two)
+      (ConstructionA.codeInZeroLatticeDiscriminantGroup 2 (Fin 24) code.toAddSubgroup)
+      isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule).IsEven :=
+  IntegralLattice.isEven_ofIsotropicSubgroup _ _ _ _
+
+/-- **Gluing `2 ℤ²⁴` along the Golay code gives a unimodular lattice**, because the glue is
+Lagrangian. -/
+theorem isUnimodular_ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup :
+    ((ConstructionA.zeroLattice 2 (Fin 24)).ofIsotropicSubgroup
+      (ConstructionA.isEven_zeroLattice 2 (Fin 24) even_two)
+      (ConstructionA.codeInZeroLatticeDiscriminantGroup 2 (Fin 24) code.toAddSubgroup)
+      isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule).IsUnimodular :=
+  (ConstructionA.isUnimodular_ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_iff 2
+    (Fin 24) even_two code.toAddSubgroup isIsotropic_code).mpr isLagrangian_code
 
 /-- The discriminant bilinear module of the Golay Construction A lattice is the actual orthogonal
 quotient of its code. -/
