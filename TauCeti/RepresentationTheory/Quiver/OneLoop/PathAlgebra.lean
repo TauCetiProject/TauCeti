@@ -19,7 +19,6 @@ semiring; over a division ring, it is infinite-dimensional.
 
 ## Main declarations
 
-* `TauCeti.Quiver.OneLoop.totalPathEquivNat`: paths are classified by their length.
 * `TauCeti.PathAlgebra.oneLoopRingEquiv`: over any semiring, its path algebra is
   `AddMonoidAlgebra k ℕ`.
 * `TauCeti.PathAlgebra.oneLoopAlgEquiv`: over a commutative semiring, this is an algebra
@@ -37,49 +36,6 @@ open _root_.Quiver
 
 universe w
 
-namespace Quiver
-
-namespace OneLoop
-
-private def pathOfLength : ℕ → _root_.Quiver.Path (vertex : OneLoop) vertex
-  | 0 => .nil
-  | n + 1 => (pathOfLength n).cons loop
-
-@[simp]
-private theorem length_pathOfLength (n : ℕ) : (pathOfLength n).length = n := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [pathOfLength, ih]
-
-/-- Paths in the one-loop quiver are classified by their length. -/
-def totalPathEquivNat : Quiver.TotalPath OneLoop ≃ ℕ where
-  toFun x := x.2.2.length
-  invFun n := ⟨vertex, vertex, pathOfLength n⟩
-  left_inv := by
-    rintro ⟨a, b, p⟩
-    induction p with
-    | nil => cases a; rfl
-    | @cons b c p e ih =>
-      cases a; cases b; cases c
-      simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at ih
-      simp [pathOfLength, ih, eq_iff_true_of_subsingleton]
-  right_inv := length_pathOfLength
-
-/-- The path classification sends each path to its length. -/
-@[simp]
-theorem totalPathEquivNat_apply (x : Quiver.TotalPath OneLoop) :
-    totalPathEquivNat x = x.2.2.length := (rfl)
-
-/-- The canonical path associated with `n` has length `n`. -/
-@[simp]
-theorem length_totalPathEquivNat_symm (n : ℕ) :
-    (totalPathEquivNat.symm n).2.2.length = n :=
-  totalPathEquivNat.apply_symm_apply n
-
-end OneLoop
-
-end Quiver
-
 namespace PathAlgebra
 
 section Semiring
@@ -94,7 +50,7 @@ private noncomputable def oneLoopLinearEquiv :
 
 private theorem oneLoopLinearEquiv_single (x : Quiver.TotalPath Quiver.OneLoop) (c : k) :
     oneLoopLinearEquiv k (single x c) = AddMonoidAlgebra.single x.2.2.length c := by
-  simp [oneLoopLinearEquiv, Quiver.OneLoop.totalPathEquivNat]
+  simp [oneLoopLinearEquiv]
 
 private theorem oneLoopLinearEquiv_map_mul (f g : pathAlgebra k Quiver.OneLoop) :
     oneLoopLinearEquiv k (f * g) = oneLoopLinearEquiv k f * oneLoopLinearEquiv k g := by
