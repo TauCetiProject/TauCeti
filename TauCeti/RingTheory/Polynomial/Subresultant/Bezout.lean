@@ -56,7 +56,7 @@ private theorem subresultantCoeff_eq_coeff_adjugate [DecidableEq R]
   have hrow := subresultantCoeffMatrix_mulVec hm hn j k
     (fun l => (subresultantMatrix p q m n j).adjugate l i₀) i₀
   simp only [hi₀, ↓reduceIte] at hrow
-  rw [subresultantCoeff_def, subresultantCoeffMatrix_eq_updateRow p q m n j k i₀ hi₀,
+  rw [subresultantCoeff_def, Polynomial.subresultantCoeffMatrix_eq_updateRow p q m n j k i₀ hi₀,
     ← Matrix.cramer_transpose_apply, Matrix.cramer_eq_adjugate_mulVec,
     ← Matrix.adjugate_transpose, ← hrow]
   exact dotProduct_comm _ _
@@ -85,6 +85,7 @@ theorem exists_mul_add_mul_eq_subresultant {p q : R[X]} {m n j : ℕ}
     have hMv (i : Fin ((m - j) + (n - j))) :
         M.mulVec v i = if i = i₀ then M.det else 0 := by
       have h : M.mulVec v = M.det • Pi.single i₀ 1 := by
+        -- `v` is definitionally this adjugate column; expose it for `Matrix.mulVec_single_one`.
         change M.mulVec (M.adjugate.col i₀) = _
         rw [← Matrix.mulVec_single_one, Matrix.mulVec_mulVec, Matrix.mul_adjugate,
           Matrix.smul_mulVec, Matrix.one_mulVec]

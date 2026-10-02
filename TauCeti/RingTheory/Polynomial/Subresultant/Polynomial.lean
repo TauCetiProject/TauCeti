@@ -24,7 +24,7 @@ that controls the subresultant gcd criterion.
 
 ## Main results
 
-* `TauCeti.subresultantCoeffMatrix_eq_updateRow`: the coefficient matrix replaces the first row
+* `Polynomial.subresultantCoeffMatrix_eq_updateRow`: the coefficient matrix replaces the first row
   of the principal matrix.
 * `TauCeti.subresultantCoeffMatrix_mulVec`: the coefficient matrix reads the coefficients of
   `A * q + B * p`, with degree `k` in the first row.
@@ -88,7 +88,8 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_natAdd [Semiring R]
 
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
 matrix by the row of degree `k`. -/
-theorem subresultantCoeffMatrix_eq_updateRow [Semiring R] (p q : R[X]) (m n j k : ℕ)
+theorem _root_.Polynomial.subresultantCoeffMatrix_eq_updateRow [Semiring R]
+    (p q : R[X]) (m n j k : ℕ)
     (i₀ : Fin ((m - j) + (n - j))) (hi₀ : i₀.val = 0) :
     subresultantCoeffMatrix p q m n j k =
       (subresultantMatrix p q m n j).updateRow i₀
