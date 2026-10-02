@@ -25,8 +25,10 @@ namespace TauCeti
 instance instIsQuadraticExtensionRealComplex : Algebra.IsQuadraticExtension ℝ ℂ :=
   ⟨Complex.finrank_real_complex⟩
 
-/-- Every real algebra automorphism of `ℂ` is a power of complex conjugation. -/
-theorem mem_zpowers_conjAe (σ : ℂ ≃ₐ[ℝ] ℂ) : σ ∈ Subgroup.zpowers Complex.conjAe := by
+/-- Complex conjugation generates the full group of real algebra automorphisms of `ℂ`. -/
+@[simp] theorem zpowers_conjAe_eq_top : Subgroup.zpowers Complex.conjAe = ⊤ := by
+  apply (Subgroup.eq_top_iff' _).2
+  intro σ
   rcases Complex.real_algHom_eq_id_or_conj σ.toAlgHom with h | h
   · have hσ : σ = 1 := AlgEquiv.coe_toAlgHom_injective h
     rw [hσ]

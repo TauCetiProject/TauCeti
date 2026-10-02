@@ -94,29 +94,34 @@ def realBrEquivRelative :
 
 /-- The cyclic class of a real unit, at complex conjugation, in the cohomological Brauer group. -/
 def realClass : Additive ℝˣ →+ Br ℝ :=
-  realBrEquivRelative.symm.toAddMonoidHom.comp (cyclicClass mem_zpowers_conjAe)
+  realBrEquivRelative.symm.toAddMonoidHom.comp
+    (cyclicClass ((Subgroup.eq_top_iff' _).mp zpowers_conjAe_eq_top))
 
 /-- The relative comparison sends a real cyclic class to the class at complex conjugation. -/
 @[simp] theorem realBrEquivRelative_realClass (a : Additive ℝˣ) :
-    realBrEquivRelative (realClass a) = cyclicClass mem_zpowers_conjAe a := by
+    realBrEquivRelative (realClass a) =
+      cyclicClass ((Subgroup.eq_top_iff' _).mp zpowers_conjAe_eq_top) a := by
   simp [realClass]
 
 /-- Every real Brauer class is represented by a real unit. -/
 theorem realClass_surjective : Function.Surjective realClass :=
-  realBrEquivRelative.symm.surjective.comp (cyclicClass_surjective mem_zpowers_conjAe)
+  realBrEquivRelative.symm.surjective.comp
+    (cyclicClass_surjective ((Subgroup.eq_top_iff' _).mp zpowers_conjAe_eq_top))
 
 /-- A real cyclic class vanishes exactly when its representing unit is positive. -/
 @[simp] theorem realClass_eq_zero_iff (a : ℝˣ) :
     realClass (Additive.ofMul a) = 0 ↔ 0 < (a : ℝ) := by
   -- Unbundle the additive homomorphism composition defining `realClass`.
-  change realBrEquivRelative.symm (cyclicClass mem_zpowers_conjAe (Additive.ofMul a)) = 0 ↔ _
+  change realBrEquivRelative.symm
+    (cyclicClass ((Subgroup.eq_top_iff' _).mp zpowers_conjAe_eq_top) (Additive.ofMul a)) = 0 ↔ _
   rw [map_eq_zero_iff _ realBrEquivRelative.symm.injective, cyclicClass_eq_zero_iff,
     normGroup_real_complex, Units.mem_posSubgroup]
 
 /-- The real cohomological Brauer group is the two-element sign group. -/
 def realInvEquiv : Br ℝ ≃+ ZMod 2 :=
   realBrEquivRelative.trans
-    ((cyclicNormQuotientEquiv mem_zpowers_conjAe).symm.trans realNormQuotientEquiv)
+    ((cyclicNormQuotientEquiv ((Subgroup.eq_top_iff' _).mp zpowers_conjAe_eq_top)).symm.trans
+      realNormQuotientEquiv)
 
 /-- The real Brauer invariant, normalized to send the nonzero class to `1/2`. -/
 def realInv : Br ℝ →+ AddCircle (1 : ℚ) :=
