@@ -426,6 +426,7 @@ theorem gaussSign_prod {B : FiniteQuadraticModule} (hA : A.IsNondegenerate)
   ring
 
 /-- Negating the quadratic form negates the Gauss-sum invariant. -/
+@[simp]
 theorem gaussSign_neg : A.neg.gaussSign = -A.gaussSign := by
   -- `A.neg` has the carrier of `A`, so the two Gauss sums are normalized by the same `√#A`.
   have hcard : Nat.card A.neg = Nat.card A := rfl
@@ -456,6 +457,7 @@ theorem gaussSign_eq_zero_of_isMetabolic (hA : A.IsNondegenerate) (h : A.IsMetab
 
 /-- The discriminant form of `A₁`, the quadratic form `q(x) = x² / 4` on `ℤ/2`, has Gauss-sum
 invariant `1`, since `1 + i = √2 · e^{2πi/8}`. -/
+@[simp]
 theorem gaussSign_zmodStandard_two : (zmodStandard 2 even_two).gaussSign = 1 := by
   refine gaussSign_eq_of_gaussSum_eq _ ?_
   rw [gaussSum_zmodStandard_two, toRatAddCircle_eight_one, expCircle_coe, Nat.card_zmod]
