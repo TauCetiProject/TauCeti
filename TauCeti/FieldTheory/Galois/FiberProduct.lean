@@ -23,13 +23,18 @@ For two finite Galois intermediate fields `K` and `L`, Mathlib's
 `K ⊓ L`, so `Gal(K ⊔ L / F)` is the fibre product `Gal(K/F) ×_{Gal(K ⊓ L / F)} Gal(L/F)`.
 
 Those restriction maps to `K ⊓ L` are named with `AlgHom.restrictNormalHom` from
-`TauCeti.FieldTheory.Galois.Restriction`.
+`TauCeti.FieldTheory.Galois.Restriction`. For abstract `K₁` and `K₂` the intersection lies in `E`
+rather than in either of them, and the restriction maps to it are
+`AlgHom.restrictNormalHomOfLE`.
 
 ## Main definitions and results
 
 * `AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff`: a pair of automorphisms of
   two normal subextensions of a finite Galois extension extends to the whole extension iff it
   agrees on common elements.
+* `AlgEquiv.mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq`: equivalently, the
+  pair has equal restrictions to the intersection of the two subextensions, so the image is the
+  fibre product over the Galois group of that intersection.
 * `AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff`: the joint restriction map is
   surjective iff the two subextensions meet in `F`.
 * `IntermediateField.mem_range_restrictNormalHomSupProd_iff`: the Galois group of a compositum of
@@ -127,6 +132,37 @@ theorem _root_.AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff
       (algebraMap K₂ E).injective (by rw [← hx, ← hc, IsScalarTower.algebraMap_apply F K₂ E])
     rw [h₁, h₂, AlgEquiv.commutes, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply,
       ← IsScalarTower.algebraMap_apply]
+
+/-- **Galois groups of composita as fibre products over the common part.** In a finite Galois
+extension `E/F` with normal subextensions `K₁` and `K₂`, a pair `(σ₁, σ₂)` of automorphisms is
+the restriction of a single automorphism of `E` if and only if `σ₁` and `σ₂` have the same
+restriction to the intersection of `K₁` and `K₂` inside `E`. So the image of `Gal(E/F)` in
+`Gal(K₁/F) × Gal(K₂/F)` is the fibre product over `Gal((K₁ ∩ K₂)/F)` of the two restriction maps
+`AlgHom.restrictNormalHomOfLE`. -/
+theorem _root_.AlgEquiv.mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq
+    [FiniteDimensional F E] [IsGalois F E] (σ₁ : Gal(K₁/F)) (σ₂ : Gal(K₂/F)) :
+    (σ₁, σ₂) ∈ ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
+        (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
+      (IsScalarTower.toAlgHom F K₁ E).restrictNormalHomOfLE
+          (inf_le_left : _ ⊓ (IsScalarTower.toAlgHom F K₂ E).fieldRange ≤ _) σ₁ =
+        (IsScalarTower.toAlgHom F K₂ E).restrictNormalHomOfLE
+          (inf_le_right : (IsScalarTower.toAlgHom F K₁ E).fieldRange ⊓ _ ≤ _) σ₂ := by
+  rw [AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff]
+  constructor
+  · intro h
+    ext z
+    obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩⟩ := z.2
+    rw [AlgHom.coe_restrictNormalHomOfLE_apply _ _ _ hx₁,
+      AlgHom.coe_restrictNormalHomOfLE_apply _ _ _ hx₂]
+    exact h x₁ x₂ (hx₁.trans hx₂.symm)
+  · intro h x₁ x₂ hx
+    let z : ↥((IsScalarTower.toAlgHom F K₁ E).fieldRange ⊓
+        (IsScalarTower.toAlgHom F K₂ E).fieldRange) :=
+      ⟨algebraMap K₁ E x₁, ⟨x₁, rfl⟩, ⟨x₂, hx.symm⟩⟩
+    have h₁ := AlgHom.coe_restrictNormalHomOfLE_apply _ inf_le_left σ₁ (y := z) rfl
+    have h₂ := AlgHom.coe_restrictNormalHomOfLE_apply _ inf_le_right σ₂ (y := z) hx.symm
+    rw [h] at h₁
+    exact h₁.symm.trans h₂
 
 end FiberProduct
 

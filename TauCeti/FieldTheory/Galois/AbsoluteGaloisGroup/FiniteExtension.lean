@@ -193,10 +193,6 @@ omit [FiniteDimensional K L]
 
 variable [Normal K L]
 
-/-- The image of a normal extension under a `K`-embedding is normal over `K`. -/
-instance normal_fieldRange : Normal K σ.fieldRange :=
-  Normal.of_algEquiv σ.equivFieldRange
-
 /-- **The Galois group of a normal extension `L` embedded by `σ` is the quotient of `G_K` by the
 subgroup fixing `σ(L)`**: `TauCeti.quotientFixingSubgroupEquiv` for the intermediate field `σ(L)`,
 read on `L` through `σ`. It sends the class of `g` to its restriction `σ.restrictNormalHom g`

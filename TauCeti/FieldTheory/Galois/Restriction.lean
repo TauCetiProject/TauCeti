@@ -36,6 +36,10 @@ of restriction of scalars.
   embeddings of a normal extension all have the same image and differ by automorphisms.
 * `AlgHom.restrictNormalHom_surjective` and `AlgHom.ker_restrictNormalHom`: for a normal `K/F`
   restriction is surjective, and its kernel is the subgroup fixing the image of `f`.
+* `AlgHom.normal_fieldRange`: the image of a normal extension is normal.
+* `AlgHom.restrictNormalHomOfLE`: in the other direction, restriction `Gal(M/F) →* Gal(N/F)` to a
+  normal intermediate field `N` of `K` lying in the image of `f`, with
+  `AlgHom.coe_restrictNormalHomOfLE_apply` and `AlgHom.restrictNormalHomOfLE_surjective`.
 * `AlgEquiv.restrictNormal_eq_one_iff_algebraMap`: restriction is trivial precisely when the
   automorphism fixes the intermediate field pointwise.
 * `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one` and
@@ -52,6 +56,10 @@ namespace TauCeti
 section RestrictAlong
 
 variable {F K M : Type*} [Field F] [Field K] [Field M] [Algebra F K] [Algebra F M]
+
+/-- The image of a normal extension `M/F` under an `F`-embedding is normal over `F`. -/
+instance _root_.AlgHom.normal_fieldRange (f : M →ₐ[F] K) [Normal F M] : Normal F f.fieldRange :=
+  Normal.of_algEquiv f.equivFieldRange
 
 /-- Restriction of automorphisms along an embedding `f : M →ₐ[F] K` of a normal extension `M/F`.
 Every `σ : Gal(K/F)` maps the image of `f` to itself, and `f.restrictNormalHom σ` is the
@@ -133,7 +141,6 @@ extension `M/F` into `K` has image the normal closure of `M` in `K`, so all of t
 same image. -/
 theorem _root_.IntermediateField.normalClosure_eq_fieldRange (f : M →ₐ[F] K)
     [Normal F M] : IntermediateField.normalClosure F M K = f.fieldRange := by
-  have : Normal F f.fieldRange := Normal.of_algEquiv f.equivFieldRange
   refine le_antisymm (iSup_le fun g y hy ↦ ?_) f.fieldRange_le_normalClosure
   -- `g` factors through the image of `f`, whose `F`-embeddings into `K` all have that image.
   obtain ⟨x, rfl⟩ := AlgHom.mem_fieldRange.1 hy
@@ -153,6 +160,33 @@ theorem _root_.AlgHom.exists_comp_eq_of_normal (f g : M →ₐ[F] K) [Normal F M
   rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
     ← AlgHom.equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply,
     IntermediateField.equivOfEq_apply, AlgHom.equivFieldRange_apply_coe]
+
+/-- Restriction of automorphisms of `M/F` to a normal intermediate field `N` of `K` lying in the
+image of an embedding `f : M →ₐ[F] K`. Through `f`, the field `N` is a
+subextension of `M`, and `f.restrictNormalHomOfLE h σ` is the automorphism of `N` induced by `σ`:
+it sends `f x` to `f (σ x)` (`AlgHom.coe_restrictNormalHomOfLE_apply`). -/
+noncomputable def _root_.AlgHom.restrictNormalHomOfLE (f : M →ₐ[F] K)
+    {N : IntermediateField F K} [Normal F N] (h : N ≤ f.fieldRange) : Gal(M/F) →* Gal(N/F) :=
+  ((f.equivFieldRange.symm : f.fieldRange →ₐ[F] M).comp
+    (IntermediateField.inclusion h)).restrictNormalHom
+
+/-- `f.restrictNormalHomOfLE h σ` sends `f x` to `f (σ x)`. -/
+theorem _root_.AlgHom.coe_restrictNormalHomOfLE_apply (f : M →ₐ[F] K)
+    {N : IntermediateField F K} [Normal F N] (h : N ≤ f.fieldRange) (σ : Gal(M/F)) {x : M}
+    {y : N} (hxy : f x = y) : (f.restrictNormalHomOfLE h σ y : K) = f (σ x) := by
+  set g := (f.equivFieldRange.symm : f.fieldRange →ₐ[F] M).comp (IntermediateField.inclusion h)
+  -- `g` is the inverse of `f` on `N`.
+  have hg (z : N) : f (g z) = z := by
+    simpa [g] using (AlgHom.equivFieldRange_apply_coe f
+      (f.equivFieldRange.symm (IntermediateField.inclusion h z))).symm
+  have hgy : g y = x := f.injective ((hg y).trans hxy.symm)
+  rw [← hg, AlgHom.restrictNormalHomOfLE, AlgHom.restrictNormalHom_commutes, hgy]
+
+/-- Restriction to a normal intermediate field in the image of `f` is surjective. -/
+theorem _root_.AlgHom.restrictNormalHomOfLE_surjective (f : M →ₐ[F] K) [Normal F M]
+    {N : IntermediateField F K} [Normal F N] (h : N ≤ f.fieldRange) :
+    Function.Surjective (f.restrictNormalHomOfLE h) :=
+  AlgHom.restrictNormalHom_surjective _
 
 end RestrictAlong
 
