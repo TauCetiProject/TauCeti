@@ -233,6 +233,25 @@ theorem IsDemushkin.card_pos_presentedProP {X : Type v} [Finite X] {rels : Set (
   rw [demushkinRank_def] at h
   exact h.trans_le (presentedProP.topologicalGeneratorRankNat_le_card rels)
 
+/-- **A relator presenting a Demushkin group lies in the Frattini subgroup**: a one-relator
+presentation `⟨X ∣ r⟩` of a Demushkin group on a finite type `X` is minimal. In the count
+`#X + dim H²(G, 𝔽_p) = d(G) + d(R ⧸ Rᵖ[R, F])` of the presentation, `H²(G, 𝔽_p)` is
+one-dimensional and the single relator normally generates `R`, so `d(G) ≥ #X`, and `d(G) ≤ #X`
+always. -/
+theorem IsDemushkin.mem_proPFrattini_of_presentedProP_singleton {X : Type v} [Finite X]
+    {r : freeProP p X} (hG : IsDemushkin p (presentedProP p X {r})) :
+    r ∈ proPFrattini p (freeProP p X) := by
+  have hfin := presentedProP.isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_of_finite
+    (p := p) (Set.finite_singleton r)
+  have h1 := presentedProP.card_add_finrank_cohomFp_two (ContinuousMulEquiv.refl _) hfin
+  have h2 := presentedProP.topologicalGeneratorRankNat_quotient_pLowerCentralStep_le_card
+    (p := p) (Set.finite_singleton r)
+  have h3 := presentedProP.topologicalGeneratorRankNat_le_card (p := p) {r}
+  rw [hG.finrank_cohomFp_two] at h1
+  rw [Nat.card_unique] at h2
+  exact Set.singleton_subset_iff.1
+    ((presentedProP.topologicalGeneratorRankNat_eq_card_iff {r}).1 (by omega))
+
 /-- **A free pro-`p` group is not Demushkin**: its `H²(F, 𝔽_p)` vanishes, so it is not
 one-dimensional. This covers the trivial group and `ℤ_p`. -/
 theorem not_isDemushkin_freeProP (X : Type u) : ¬ IsDemushkin p (freeProP p X) := fun h ↦ by

@@ -81,6 +81,7 @@ jobs:
           ORG: ${{ github.repository_owner }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '16' }}
           QUEUED_LIMIT: "5"
+          RECENT_HOURS: "6"
         run: |
           set -uo pipefail
           decide() {
@@ -110,9 +111,15 @@ jobs:
           # one of the 60 or more active runs; pickers doing it for every build drained the App's
           # hourly API budget, which it shares with the review and merge automation. One call per
           # repository answers it instead.
+          # Only queued runs created in the last RECENT_HOURS count, here and in the full count below.
+          # GitHub orphans the odd run in `queued` indefinitely (32 runs from 2026-09-13 still sat
+          # there on 2026-10-01, and GitHub refuses to cancel or delete them), and counting them made
+          # every answer Namespace for days. A real wait for a hosted runner is minutes, not hours;
+          # a re-run of an older run that is genuinely queued is the rare case this misses.
           export ORG
+          export SINCE=$(date -u -d "-${RECENT_HOURS} hours" +%Y-%m-%dT%H:%M:%SZ)
           queued=$(printf '%s\n' $repos | xargs -r -P 8 -n 1 bash -c '
-                     timeout 30 gh api "repos/$ORG/$0/actions/runs?status=queued&per_page=100" \
+                     timeout 30 gh api "repos/$ORG/$0/actions/runs?status=queued&created=>=$SINCE&per_page=100" \
                        --jq "if .total_count > 100 then 101
                              else [.workflow_runs[] | select(.event != \"merge_group\")] | length end"' \
                    | awk '{ s += $1 } END { print s + 0 }') \
@@ -129,7 +136,11 @@ jobs:
           runs=$(printf '%s\n' $repos | xargs -r -P 8 -n 1 bash -c '
                    set -o pipefail
                    for status in in_progress queued; do
-                     timeout 30 gh api "repos/$ORG/$0/actions/runs?status=$status&per_page=100" \
+                     # Only the queued listing is age-limited: a genuinely running run can be older than
+                     # the cutoff (a re-run keeps its creation time; a run of several jobs can outlast
+                     # any one job).
+                     age=""; [ "$status" = queued ] && age="&created=>=$SINCE"
+                     timeout 30 gh api "repos/$ORG/$0/actions/runs?status=$status$age&per_page=100" \
                        --jq "if .total_count > 100 then error(\"over 100 runs\") else .workflow_runs[].id | \"$0 \(.)\" end" || exit 1
                    done' | sort -u) \
             || decide false "Could not list the active runs in $ORG: using Namespace."
