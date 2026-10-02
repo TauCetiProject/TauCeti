@@ -204,6 +204,7 @@ theorem sw1_append {m : ℕ} (v : Fin m → Kˣ) (w : Fin n → Kˣ) :
 /-- **The orthogonal-sum formula for `w₂`**: `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)` for the
 diagonal forms `q = ⟨a₁, …, aₘ⟩` and `r = ⟨b₁, …, bₙ⟩`. The cross term collects the cups
 `(aᵢ) ∪ (bⱼ)` of the pairs with one coefficient in each form. -/
+@[simp]
 theorem sw2_append {m : ℕ} (v : Fin m → Kˣ) (w : Fin n → Kˣ) :
     sw2 (Fin.append v w) = sw2 v + sw2 w +
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1 v) (sw1 w) := by

@@ -141,15 +141,13 @@ theorem sw1Class_add (x y : RegularFormClass K) : sw1Class (x + y) = sw1Class x 
 
 /-- `w₁` as an additive homomorphism for the orthogonal sum. -/
 def sw1ClassHom :
-    RegularFormClass K →+ continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) where
-  toFun := sw1Class
-  map_zero' := sw1Class_zero
-  map_add' := sw1Class_add
+    RegularFormClass K →+ continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
+  (kummerSquareClassEquiv K).toAddMonoidHom.comp RegularFormClass.discrHom
 
 /-- The additive homomorphism `TauCeti.sw1ClassHom` is `TauCeti.sw1Class`. -/
 @[simp]
-theorem sw1ClassHom_apply (x : RegularFormClass K) : sw1ClassHom x = sw1Class x :=
-  (rfl)
+theorem sw1ClassHom_apply (x : RegularFormClass K) : sw1ClassHom x = sw1Class x := by
+  simp [sw1ClassHom, sw1Class_eq_kummerSquareClassEquiv_discr]
 
 /-- `w₁⟨a⟩ = (a)`. -/
 theorem sw1Class_mk_rankOne (a : Kˣ) :
@@ -224,6 +222,7 @@ theorem sw2Class_formClass_congr {V W : Type*} [AddCommGroup V] [Module K V]
 /-- **The orthogonal-sum formula for `w₂`**: `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`. The
 second Stiefel–Whitney class is not additive, and the defect is the cup product of the first
 classes. -/
+@[simp]
 theorem sw2Class_add (x y : RegularFormClass K) :
     sw2Class (x + y) = sw2Class x + sw2Class y +
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class x) (sw1Class y) := by
