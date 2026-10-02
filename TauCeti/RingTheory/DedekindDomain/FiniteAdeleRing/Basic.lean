@@ -78,6 +78,9 @@ variable {R K}
 /-- The value of `1 : 𝔸ᶠ[R, K]` at a finite place is `1`. -/
 @[simp] theorem one_apply (v : HeightOneSpectrum R) : (1 : FiniteAdeleRing R K) v = 1 := rfl
 
+/-- The value of the zero finite adele at every finite place is zero. -/
+@[simp] theorem zero_apply (v : HeightOneSpectrum R) : (0 : FiniteAdeleRing R K) v = 0 := rfl
+
 /-- Subtraction of finite adeles is computed place by place. -/
 @[simp] theorem sub_apply (a b : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
     (a - b) v = a v - b v := rfl

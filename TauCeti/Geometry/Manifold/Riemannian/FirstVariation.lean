@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
+public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import TauCeti.Geometry.Manifold.Riemannian.VariationField
@@ -29,7 +30,8 @@ curves near `s = 0` share the endpoints of `γ`, the boundary terms vanish.
 The formula holds for a family which is `C²` at the points of `{0} × [a, b]`, for the tangent
 bundle of a `C²` manifold carrying a `C¹` Riemannian metric; its integrand is then continuous on
 `[a, b]`.  It is the tool for studying the critical points of the energy, the `C²` curves for which
-this derivative vanishes for every variation with fixed endpoints.  On a boundaryless manifold,
+this derivative vanishes for every variation with fixed endpoints
+(`TauCeti.Manifold.IsFixedEndpointVariation`).  On a boundaryless manifold,
 for curves with this `C²` regularity, criticality is equivalent to being a geodesic on `uIoo a b`
 (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
 
@@ -37,9 +39,9 @@ for curves with this `C²` regularity, criticality is equivalent to being a geod
 
 * `TauCeti.Manifold.hasDerivAt_energy`: **the first variation formula** for the energy, with
   boundary terms.
-* `TauCeti.Manifold.hasDerivAt_energy_of_fixed_endpoints`: the first variation formula for a
-  variation fixing the endpoints near `s = 0`.
-* `TauCeti.Manifold.continuousAt_inner_variationField_alongCurve`: the integrand
+* `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_energy`: the first variation formula for a
+  `C²` variation with fixed endpoints.
+* `TauCeti.Manifold.continuousAt_inner_variationField_acceleration`: the integrand
   `⟪V(t), D_t γ'(t)⟫` of the first variation formula is continuous where the family is `C²`.
 * `TauCeti.Manifold.IsEnergyCritical`: critical points of the energy among variations with fixed
   endpoints, which are `C²` curves by definition; for a `C²` curve, criticality is characterized
@@ -120,7 +122,7 @@ private theorem fderiv_inner_mfderiv_fst_eq {t : ℝ}
         inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, r) ((1 : ℝ), (0 : ℝ)))
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, r) ((0 : ℝ), (1 : ℝ)))) t -
       inner ℝ (variationField I F t)
-        (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t) := by
+        (acceleration (leviCivitaConnection I M) (F 0) t) := by
   -- the family is `C²` on the open set `W` of points where it is `C²`, which contains a product
   -- neighbourhood `U ×ˢ V` of `(0, t)`
   have hWo : IsOpen {z : ℝ × ℝ | ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) z} :=
@@ -170,10 +172,10 @@ private theorem fderiv_inner_mfderiv_fst_eq {t : ℝ}
 /-- **Continuity of the first-variation integrand.** At a parameter `t` where the family is `C²`,
 the integrand `r ↦ ⟪V(r), D_r γ'(r)⟫` of the first variation formula is continuous, where `V` is
 the variation field and `D_r γ'` is the covariant acceleration of `γ = F 0`. -/
-theorem continuousAt_inner_variationField_alongCurve {t : ℝ}
+theorem continuousAt_inner_variationField_acceleration {t : ℝ}
     (hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
     ContinuousAt (fun r ↦ inner ℝ (variationField I F r)
-      (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) r)) t := by
+      (acceleration (leviCivitaConnection I M) (F 0) r)) t := by
   -- the family is `C²` on an open product neighbourhood `U ×ˢ V` of `(0, t)`
   have hWo : IsOpen {z : ℝ × ℝ | ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) z} :=
     TauCeti.isOpen_setOfPred_contMDiffAt (by simp)
@@ -194,7 +196,7 @@ theorem continuousAt_inner_variationField_alongCurve {t : ℝ}
   -- on `V`, the integrand is `d/dr K (0, r) - ½ ∂_s G (0, r)`, which is continuous there
   have hpt : ∀ r ∈ V, fderiv ℝ G (0, r) (1, 0) / 2 =
       deriv (fun r ↦ K (0, r)) r - inner ℝ (variationField I F r)
-        (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) r) :=
+        (acceleration (leviCivitaConnection I M) (F 0) r) :=
     fun r hr ↦ fderiv_inner_mfderiv_fst_eq (hUV ⟨h0U, hr⟩)
   have hGcont : ContinuousAt (fun r ↦ fderiv ℝ G (0, r) (1, 0)) t :=
     (((hG.continuousOn_fderiv_of_isOpen hUVo le_rfl).continuousAt
@@ -219,7 +221,7 @@ theorem hasDerivAt_energy {a b : ℝ}
       (inner ℝ (variationField I F b) (curveVelocity I (F 0) b) -
         inner ℝ (variationField I F a) (curveVelocity I (F 0) a) -
         ∫ t in a..b, inner ℝ (variationField I F t)
-          (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t)) 0 := by
+          (acceleration (leviCivitaConnection I M) (F 0) t)) 0 := by
   obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV⟩ :=
     TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
   have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
@@ -260,16 +262,16 @@ theorem hasDerivAt_energy {a b : ℝ}
   -- endpoints.
   have hpt : ∀ t ∈ V, fderiv ℝ G (0, t) (1, 0) / 2 =
       deriv (fun r ↦ K (0, r)) t - inner ℝ (variationField I F t)
-        (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t) :=
+        (acceleration (leviCivitaConnection I M) (F 0) t) :=
     fun t ht ↦ fderiv_inner_mfderiv_fst_eq (hsurf h0U ht)
   have hK0cont : ContinuousOn (deriv fun r ↦ K (0, r)) V :=
     hK0.continuousOn_deriv_of_isOpen hVo le_rfl
   have hK'int : IntervalIntegrable (deriv fun r ↦ K (0, r)) volume a b :=
     (hK0cont.mono hV).intervalIntegrable
   have hVAint : IntervalIntegrable (fun t ↦ inner ℝ (variationField I F t)
-      (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t)) volume a b :=
+      (acceleration (leviCivitaConnection I M) (F 0) t)) volume a b :=
     ContinuousOn.intervalIntegrable fun t ht ↦
-      (continuousAt_inner_variationField_alongCurve (hF t ht)).continuousWithinAt
+      (continuousAt_inner_variationField_acceleration (hF t ht)).continuousWithinAt
   have hFTC : ∫ t in a..b, deriv (fun r ↦ K (0, r)) t = K (0, b) - K (0, a) :=
     intervalIntegral.integral_eq_sub_of_hasDerivAt
       (fun t ht ↦ ((hK0.differentiableOn one_ne_zero t (hV ht)).differentiableAt
@@ -278,25 +280,25 @@ theorem hasDerivAt_energy {a b : ℝ}
   calc (∫ t in a..b, fderiv ℝ G (0, t) (1, 0)) / 2
       = ∫ t in a..b, fderiv ℝ G (0, t) (1, 0) / 2 := (intervalIntegral.integral_div 2 _).symm
     _ = ∫ t in a..b, (deriv (fun r ↦ K (0, r)) t - inner ℝ (variationField I F t)
-          (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t)) :=
+          (acceleration (leviCivitaConnection I M) (F 0) t)) :=
         intervalIntegral.integral_congr fun t ht ↦ hpt t (hV ht)
     _ = (∫ t in a..b, deriv (fun r ↦ K (0, r)) t) -
           ∫ t in a..b, inner ℝ (variationField I F t)
-            (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t) :=
+            (acceleration (leviCivitaConnection I M) (F 0) t) :=
         intervalIntegral.integral_sub hK'int hVAint
     _ = _ := by rw [hFTC, hKeq b (hV right_mem_uIcc), hKeq a (hV left_mem_uIcc)]
 
-/-- **The first variation of energy for a variation with fixed endpoints.** If moreover the
-curves of the family near `s = 0` have the same endpoints as `γ = F 0`, the derivative at `s = 0`
-of the energy is `-∫_a^b ⟪V(t), D_t γ'(t)⟫ dt`. -/
-theorem hasDerivAt_energy_of_fixed_endpoints {a b : ℝ}
-    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
-    (ha : ∀ᶠ s in 𝓝 0, F s a = F 0 a) (hb : ∀ᶠ s in 𝓝 0, F s b = F 0 b) :
+/-- **The first variation of energy for a variation with fixed endpoints.** For a `C²` variation
+`F` of `γ = F 0` with fixed endpoints between `a` and `b`, the derivative at `s = 0` of the energy
+is `-∫_a^b ⟪V(t), D_t γ'(t)⟫ dt`. -/
+theorem IsFixedEndpointVariation.hasDerivAt_energy {a b : ℝ}
+    (hF : IsFixedEndpointVariation I 2 F a b) :
     HasDerivAt (fun s ↦ energy I (F s) a b)
       (-∫ t in a..b, inner ℝ (variationField I F t)
-        (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t)) 0 := by
-  refine (hasDerivAt_energy hF).congr_deriv ?_
-  rw [variationField_eq_zero ha, variationField_eq_zero hb, inner_zero_left, inner_zero_left]
+        (acceleration (leviCivitaConnection I M) (F 0) t)) 0 := by
+  refine (TauCeti.Manifold.hasDerivAt_energy hF.contMDiffAt).congr_deriv ?_
+  rw [hF.variationField_left_eq_zero, hF.variationField_right_eq_zero, inner_zero_left,
+    inner_zero_left]
   ring
 
 end FirstVariation
@@ -308,9 +310,9 @@ section Critical
 variable (I) in
 /-- A curve `γ` is a **critical point of the energy** between the parameters `a` and `b` when it
 is `C²` at every point of `[a, b]` and every variation of `γ` with fixed endpoints leaves the
-energy stationary to first order: for every two-parameter family `F` with `F 0 = γ` which is `C²`
-at every point of `{0} × [a, b]` and whose curves near `s = 0` share the endpoints of `γ`, the
-energy of `F s` between `a` and `b` has derivative `0` at `s = 0`.  The regularity of `γ` is part
+energy stationary to first order: for every `C²` fixed-endpoint variation `F` between `a` and `b`
+(`TauCeti.Manifold.IsFixedEndpointVariation`) with `F 0 = γ`, the energy of `F s` between `a` and
+`b` has derivative `0` at `s = 0`.  The regularity of `γ` is part
 of the definition: a curve which is not `C²` on `[a, b]` admits no such variation, and is not
 critical.  The criticality of geodesics and its converse are in
 `TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`. -/
@@ -319,31 +321,23 @@ structure IsEnergyCritical (γ : ℝ → M) (a b : ℝ) : Prop where
   contMDiffAt : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t
   /-- The energy of a fixed-endpoint variation of a critical point has derivative `0` at
   `s = 0`. -/
-  hasDerivAt : ∀ {F : ℝ → ℝ → M}, F 0 = γ →
-    (∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) →
-    (∀ᶠ s in 𝓝 0, F s a = γ a) → (∀ᶠ s in 𝓝 0, F s b = γ b) →
+  hasDerivAt : ∀ {F : ℝ → ℝ → M}, F 0 = γ → IsFixedEndpointVariation I 2 F a b →
     HasDerivAt (fun s ↦ energy I (F s) a b) 0 0
 
 variable {γ : ℝ → M} {a b : ℝ}
 
 /-- **Criticality through the first variation formula.** A curve `γ` which is `C²` at every point
 of `[a, b]` is a critical point of the energy between `a` and `b` exactly when
-`∫_a^b ⟪V(t), D_t γ'(t)⟫ dt = 0` for the variation field `V` of every variation `F` of `γ = F 0`
-with fixed endpoints which is `C²` at every point of `{0} × [a, b]`. -/
+`∫_a^b ⟪V(t), D_t γ'(t)⟫ dt = 0` for the variation field `V` of every `C²` variation `F` of
+`γ = F 0` with fixed endpoints between `a` and `b`. -/
 theorem isEnergyCritical_iff_integral_inner_eq_zero
     (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
-    IsEnergyCritical I γ a b ↔ ∀ F : ℝ → ℝ → M, F 0 = γ →
-      (∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) →
-      (∀ᶠ s in 𝓝 0, F s a = γ a) → (∀ᶠ s in 𝓝 0, F s b = γ b) →
+    IsEnergyCritical I γ a b ↔ ∀ F : ℝ → ℝ → M, F 0 = γ → IsFixedEndpointVariation I 2 F a b →
       ∫ t in a..b, inner ℝ (variationField I F t)
-        (alongCurve (leviCivitaConnection I M) (F 0) (curveVelocity I (F 0)) t) = 0 := by
-  refine ⟨fun h F hF0 hF ha hb ↦ ?_, fun h ↦ ⟨hγ, fun {F} hF0 hF ha hb ↦ ?_⟩⟩
-  · subst hF0
-    exact neg_eq_zero.mp ((hasDerivAt_energy_of_fixed_endpoints hF ha hb).unique
-      (h.hasDerivAt rfl hF ha hb))
-  · subst hF0
-    have hvar := hasDerivAt_energy_of_fixed_endpoints hF ha hb
-    rwa [h _ rfl hF ha hb, neg_zero] at hvar
+        (acceleration (leviCivitaConnection I M) (F 0) t) = 0 := by
+  refine ⟨fun h F hF0 hF ↦ ?_, fun h ↦ ⟨hγ, fun {F} hF0 hF ↦ ?_⟩⟩
+  · exact neg_eq_zero.mp (hF.hasDerivAt_energy.unique (h.hasDerivAt hF0 hF))
+  · simpa only [h F hF0 hF, neg_zero] using hF.hasDerivAt_energy
 
 end Critical
 

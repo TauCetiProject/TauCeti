@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.ResiduallyP
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
+import TauCeti.GroupTheory.FreeGroup.LowerCentralSeries
 
 /-!
 # The discrete free group embeds in the free pro-`p` group
@@ -18,10 +20,21 @@ read through the universal property of `freeProP p X`: a finite `p`-group quotie
 In particular the generators of the free pro-`p` group satisfy no relation of the discrete free
 group.
 
+Through this embedding, the free pro-`p` group inherits the non-nilpotency of free groups of rank
+at least two (`FreeGroup.lowerCentralSeries_ne_bot`): in rank at least two no term `γ_n` of the
+lower central series of `freeProP p X` is trivial, and neither is any term of its closed lower
+central series, which contains it. So although the closed lower central series of a pro-`p` group
+has trivial intersection (`TauCeti.IsProP.iInf_closedLowerCentralSeries_eq_bot`), for a free
+pro-`p` group of rank at least two it never reaches `⊥` at a finite stage.
+
 ## Main results
 
 * `TauCeti.freeProP.fromFreeGroup_injective`: the discrete free group injects into the free
   pro-`p` group.
+* `TauCeti.freeProP.lowerCentralSeries_ne_bot`, `TauCeti.freeProP.closedLowerCentralSeries_ne_bot`:
+  in rank at least two, no term of the lower central series or of the closed lower central series
+  of the free pro-`p` group is trivial.
+* `TauCeti.freeProP.not_isNilpotent`: a free pro-`p` group of rank at least two is not nilpotent.
 -/
 
 public section
@@ -49,6 +62,33 @@ theorem fromFreeGroup_injective : Function.Injective (fromFreeGroup p X) := by
   apply hwN
   rw [← QuotientGroup.eq_one_iff (N := N), ← QuotientGroup.mk'_apply, ← hφ, MonoidHom.comp_apply,
     hw, map_one]
+
+/-- **The lower central series of a free pro-`p` group of rank at least two never vanishes.** The
+discrete free group embeds in `freeProP p X`, and the image of each term of its lower central
+series, which is never trivial, lies in the corresponding term for `freeProP p X`. -/
+theorem lowerCentralSeries_ne_bot [Nontrivial X] (n : ℕ) :
+    (⊤ : Subgroup (freeProP p X)).lowerCentralSeries n ≠ ⊥ := by
+  intro h
+  refine FreeGroup.lowerCentralSeries_ne_bot (X := X) n ?_
+  rw [← Subgroup.map_eq_bot_iff_of_injective _ (fromFreeGroup_injective (p := p)), eq_bot_iff,
+    ← h, Subgroup.map_lowerCentralSeries]
+  exact Subgroup.lowerCentralSeries_mono n le_top
+
+/-- **Free pro-`p` groups of rank at least two are not nilpotent.** -/
+theorem not_isNilpotent [Nontrivial X] : ¬ Group.IsNilpotent (freeProP p X) := by
+  rw [Subgroup.nilpotent_iff_lowerCentralSeries]
+  rintro ⟨n, hn⟩
+  exact lowerCentralSeries_ne_bot (p := p) n hn
+
+/-- **The closed lower central series of a free pro-`p` group of rank at least two never
+vanishes.** Each term `γ_n` contains the corresponding term of the lower central series of the
+underlying abstract group, which is nontrivial by `TauCeti.freeProP.lowerCentralSeries_ne_bot`. -/
+theorem closedLowerCentralSeries_ne_bot [Nontrivial X] (n : ℕ) :
+    closedLowerCentralSeries (freeProP p X) n ≠ ⊥ := by
+  intro h
+  refine lowerCentralSeries_ne_bot (p := p) (X := X) n ?_
+  rw [eq_bot_iff, ← h, closedLowerCentralSeries_eq_topologicalClosure]
+  exact Subgroup.le_topologicalClosure _
 
 end freeProP
 

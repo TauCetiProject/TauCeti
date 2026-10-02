@@ -15,7 +15,7 @@ public import TauCeti.KnotTheory.Grid.Stabilization.XHomotopy
 Let `G` be a grid diagram of size `n`, let `s` be a column, and let
 `G' = G.stabilizeX s.castSucc (G.X s).castSucc s` be the stabilization splitting the `X`-marking
 of column `s`. Write `S = R[V₀, …, V_n]` for the coefficient ring of `GC⁻(G')`. By
-`TauCeti.KnotTheory.Grid.Stabilization.Map`, the comparison map `GC⁻(G') ⟶ GC⁻(G)` is a
+`TauCeti.KnotTheory.Grid.Stabilization.Map.Basic`, the comparison map `GC⁻(G') ⟶ GC⁻(G)` is a
 quasi-isomorphism as soon as the component `H_I^N : N ⟶ I` of the `X₂`-homotopy, from the
 off-center complex `N` to the center complex `I`, is one. This file reduces that remaining
 hypothesis to a statement in which every variable is set to zero.

@@ -28,7 +28,9 @@ of the square classes of the coefficients.
 This file defines both classes on tuples of units and computes them in low rank and on squares.
 Both classes are unchanged by permuting the coefficients, `w₂` because the cup pairing is symmetric
 (`TauCeti.kummerCup_comm`). The class `w₁` is the Kummer class of the plain discriminant
-`a₁ ⋯ aₙ`, so it is an invariant of the isometry class of the diagonal form.
+`a₁ ⋯ aₙ`, so it is an invariant of the isometry class of the diagonal form. The invariance of `w₂`
+under isometry, which needs the cup-norm theorem, and the descent of both classes to isometry
+classes of regular forms are in `TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Class`.
 
 ## Main definitions
 
@@ -42,6 +44,7 @@ Both classes are unchanged by permuting the coefficients, `w₂` because the cup
 * `TauCeti.sw1_eq_of_equivalent`: isometric diagonal forms have the same `w₁`.
 * `TauCeti.sw1_comp_perm`, `TauCeti.sw2_comp_perm`, `TauCeti.PermutationStep.sw1_eq` and
   `TauCeti.PermutationStep.sw2_eq`: both classes are invariant under permuting the coefficients.
+* `TauCeti.BinaryStep.sw1_eq`: `w₁` is invariant under a binary step of a diagonal chain.
 * `TauCeti.sw1_fin_zero`, `TauCeti.sw1_fin_one`, `TauCeti.sw2_eq_zero_of_le_one`,
   `TauCeti.sw1_fin_two` and `TauCeti.sw2_fin_two`: both classes vanish in rank `0`,
   `w₁⟨a⟩ = (a)`, `w₂` vanishes in rank `1`, `w₁⟨a, b⟩ = (a) + (b)` and `w₂⟨a, b⟩ = (a) ∪ (b)`.
@@ -137,6 +140,11 @@ theorem PermutationStep.sw2_eq {w w' : Fin n → Kˣ} (h : PermutationStep w w')
   obtain ⟨σ, hσ⟩ := h.exists_perm
   rw [funext hσ]
   exact (sw2_comp_perm w σ).symm
+
+/-- A binary step of a diagonal chain does not change `w₁`, since its endpoints are isometric. -/
+theorem BinaryStep.sw1_eq {w w' : Fin n → Kˣ} (h : BinaryStep w w') : sw1 w = sw1 w' :=
+  sw1_eq_of_equivalent (p := ⟨n, w⟩) (q := ⟨n, w'⟩) (by
+    simpa only [presentedForm_eq_weightedSumSquares_coe] using h.equivalent)
 
 /-! ### Low rank -/
 

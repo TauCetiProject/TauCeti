@@ -93,7 +93,7 @@ theorem IsGeodesicCurveOn.inner_curveVelocityWithin_self_eq
     have hderiv : HasDerivWithinAt (fun r ↦
         inner ℝ (curveVelocityWithin I γ s r) (curveVelocityWithin I γ s r)) 0 s t :=
       hprod.congr_deriv (by
-        rw [h.alongCurveWithin_curveVelocityWithin_eq_zero t ht]
+        rw [← accelerationWithin_def, h.accelerationWithin_eq_zero t ht]
         simp)
     simpa using hderiv.hasFDerivWithinAt.fderivWithin (h.uniqueDiffOn t ht)
   · exact ha

@@ -17,7 +17,8 @@ the subgroup is Mathlib's `Subgroup.square G`, by `TauCeti.square_eq_range_powMo
 ## Main definitions
 
 * `TauCeti.powerSubgroup`: the subgroup `Gⁿ ≤ G`, whose elements are characterised as the `n`th
-  powers by `TauCeti.mem_powerSubgroup_iff`.
+  powers by `TauCeti.mem_powerSubgroup_iff`, and which is the range of `powMonoidHom n` by
+  `TauCeti.powerSubgroup_eq_range_powMonoidHom`.
 * `TauCeti.powerClassQuotient`, `TauCeti.powerClassHom`: the quotient `G ⧸ Gⁿ` and the map taking
   an element to its power class. It is surjective (`TauCeti.powerClassHom_surjective`) with kernel
   `Gⁿ` (`TauCeti.ker_powerClassHom`), so it presents `G ⧸ Gⁿ` as the quotient of `G` by the `n`th
@@ -37,6 +38,11 @@ variable (G : Type*) [CommGroup G] (n : ℕ)
 /-- **The subgroup of `n`th powers** `Gⁿ ≤ G`. -/
 def powerSubgroup : Subgroup G :=
   (powMonoidHom n : G →* G).range
+
+/-- The subgroup `Gⁿ` is the range of the `n`th power homomorphism. -/
+theorem powerSubgroup_eq_range_powMonoidHom :
+    powerSubgroup G n = (powMonoidHom n : G →* G).range :=
+  (rfl)
 
 /-- **The group of `n`th power classes** `G ⧸ Gⁿ`. -/
 abbrev powerClassQuotient : Type _ :=

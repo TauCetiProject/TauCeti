@@ -19,9 +19,10 @@ The residue degree is `2 ^ b`, where `b = 1` precisely when the squarefree part 
 product is five modulo eight, and `b = 0` otherwise.
 
 Thus the number of primes above two is `[K : ℚ] / 2 ^ (a + b)`. Under square-class independence,
-it is `2 ^ (n - (a + b))`. The companion `dyadic_exponents_add_le_card` exposes the bound
-`a + b ≤ n`, so subtraction cannot conceal an impossible decomposition type. Independence is
-unnecessary for the formula in terms of the field degree.
+the imported `ncard_primesOver_two_eq_two_pow_sub` gives `2 ^ (n - (a + b))`, using the
+equivalent rational square-class test for `b`. The companion `dyadic_exponents_add_le_card`
+exposes the bound `a + b ≤ n`, so subtraction cannot conceal an impossible decomposition type.
+Independence is unnecessary for the formula in terms of the field degree.
 
 ## References
 
@@ -111,8 +112,8 @@ theorem ncard_primesOver_two_eq_finrank_div
 
 open Classical in
 /-- **The dyadic exponents fit within the number of independent radicands.** The displayed
-ramification and residue-degree exponents satisfy `a + b ≤ Nat.card ι`, ensuring that the
-subtraction in `ncard_primesOver_two_eq_two_pow_sub` does not truncate. -/
+ramification and residue-degree exponents satisfy `a + b ≤ Nat.card ι`, ensuring that natural
+subtraction of their sum from the number of radicands does not truncate. -/
 theorem dyadic_exponents_add_le_card
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
@@ -125,25 +126,6 @@ theorem dyadic_exponents_add_le_card
     a + b ≤ Nat.card ι := by
   classical
   exact le_card_of_mul_two_pow_eq_finrank hr htop hindep
-    (ncard_primesOver_two_mul_two_pow_eq_finrank hr htop hd)
-
-open Classical in
-/-- **The number of primes above two for independent radicands.** For `n` square-class
-independent radicands not divisible by four, the dyadic decomposition type has
-`g = 2 ^ (n - (a + b))`, with `a` and `b` determined by the displayed arithmetic tests.
-This covers all six possibilities `(e, f) ∈ {1, 2, 4} × {1, 2}`. -/
-theorem ncard_primesOver_two_eq_two_pow_sub
-    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
-    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
-    (hd : ∀ i, ¬ (4 : ℤ) ∣ d i)
-    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ))) :
-    let a : ℕ := if ((∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨
-      ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6) then 2 else if ∀ i, d i % 4 = 1 then 0 else 1
-    let b : ℕ := if (∃ (T : Finset ι) (s t : ℤ),
-      Squarefree s ∧ t ≠ 0 ∧ ∏ i ∈ T, d i = s * t ^ 2 ∧ s % 8 = 5) then 1 else 0
-    (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - (a + b)) := by
-  classical
-  exact eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep
     (ncard_primesOver_two_mul_two_pow_eq_finrank hr htop hd)
 
 end TauCeti.Multiquadratic

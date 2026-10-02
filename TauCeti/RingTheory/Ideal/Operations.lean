@@ -140,17 +140,20 @@ end LinearMap
 
 universe u
 
+/-- A supremum of two two-sided ideals is two-sided. -/
+instance (priority := low) Ideal.isTwoSided_sup {R : Type u} [Semiring R] (I J : Ideal R)
+    [I.IsTwoSided] [J.IsTwoSided] : (I ⊔ J).IsTwoSided where
+  mul_mem_of_left b ha := by
+    obtain ⟨i, hi, j, hj, rfl⟩ := Submodule.mem_sup.mp ha
+    rw [add_mul]
+    exact Submodule.add_mem _ (Ideal.mem_sup_left (I.mul_mem_right b hi))
+      (Ideal.mem_sup_right (J.mul_mem_right b hj))
+
 /-- For two-sided ideals, the `n`-th power of a supremum is contained in the first ideal
 plus the `n`-th power of the second. -/
 theorem Ideal.sup_pow_le_sup_pow_right {R : Type u} [Semiring R] (I J : Ideal R)
     [I.IsTwoSided] [J.IsTwoSided] (n : ℕ) :
     (I ⊔ J) ^ n ≤ I ⊔ J ^ n := by
-  let : (I ⊔ J).IsTwoSided :=
-    ⟨fun b ha ↦ by
-      obtain ⟨i, hi, j, hj, rfl⟩ := Submodule.mem_sup.mp ha
-      rw [add_mul]
-      exact Submodule.add_mem _ (Ideal.mem_sup_left (I.mul_mem_right b hi))
-        (Ideal.mem_sup_right (J.mul_mem_right b hj))⟩
   induction n with
   | zero =>
       rw [Submodule.pow_zero, Submodule.pow_zero]
