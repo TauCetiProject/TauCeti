@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
 public import TauCeti.Analysis.Normed.Algebra.Exponential
 
@@ -12,9 +13,8 @@ public import TauCeti.Analysis.Normed.Algebra.Exponential
 # The first-order term of the local Baker--Campbell--Hausdorff germ
 
 The local Baker--Campbell--Hausdorff germ of `TauCeti/Analysis/Normed/Algebra/BCH/Local.lean` is
-represented by `fun p ↦ logOneAdd (exp p.1 * exp p.2 - 1)`.  Its endpoint laws, its exponential
-law and its uniqueness are proved there; what is still missing, and is proved here, is the law
-that fixes its expansion at the origin:
+represented by `fun p ↦ logOneAdd (exp p.1 * exp p.2 - 1)`.  This file proves the law that fixes
+its expansion at the origin:
 
 `logOneAdd (exp x * exp y - 1) = x + y + 2⁻¹ • (x * y - y * x) + O(‖(x, y)‖ ^ 3)`.
 
@@ -46,12 +46,6 @@ Only the germ at the origin is involved, so the statement transfers to any repre
   `x + y + 2⁻¹ • (x * y - y * x)` up to `O(‖(x, y)‖ ^ 3)`.
 * `NormedSpace.isBigO_sub_firstOrder_of_coe_eq_localBCH`: the same for an arbitrary representative
   of `NormedSpace.localBCH`.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 3, "Baker--Campbell--Hausdorff", whose first-order law
-  `bch x y - (x + y) - 2⁻¹ • ⁅x, y⁆ = O(‖(x, y)‖ ^ 3)` this file supplies.
 -/
 
 public section
@@ -62,43 +56,7 @@ noncomputable section
 
 namespace NormedSpace
 
-variable (A : Type*) [NormedRing A]
-
-/-! ### Elementary estimates at the origin of `A × A` -/
-
-private theorem eventually_norm_le_one : ∀ᶠ p in 𝓝 ((0, 0) : A × A), ‖p‖ ≤ 1 := by
-  filter_upwards [Metric.closedBall_mem_nhds ((0, 0) : A × A) one_pos] with p hp
-  simpa [Metric.mem_closedBall, dist_eq_norm, Prod.mk_zero_zero] using hp
-
-private theorem isBigO_norm_pow_le {m n : ℕ} (h : n ≤ m) :
-    (fun p : A × A ↦ ‖p‖ ^ m) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ n := by
-  refine isBigO_iff.2 ⟨1, ?_⟩
-  filter_upwards [eventually_norm_le_one A] with p hp
-  simp only [one_mul, norm_pow, norm_norm]
-  exact pow_le_pow_of_le_one (norm_nonneg p) hp h
-
-private theorem isBigO_norm_pow_le_one {m : ℕ} (h : 1 ≤ m) :
-    (fun p : A × A ↦ ‖p‖ ^ m) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
-  (isBigO_norm_pow_le A h).congr' EventuallyEq.rfl (.of_forall fun _ ↦ pow_one _)
-
-private theorem isBigO_fst : (fun p : A × A ↦ p.1) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
-  isBigO_of_le _ fun p ↦ by simpa using norm_fst_le p
-
-private theorem isBigO_snd : (fun p : A × A ↦ p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
-  isBigO_of_le _ fun p ↦ by simpa using norm_snd_le p
-
-private theorem tendsto_fst_zero :
-    Tendsto (fun p : A × A ↦ p.1) (𝓝 ((0, 0) : A × A)) (𝓝 (0 : A)) :=
-  continuous_fst.tendsto' _ _ rfl
-
-private theorem tendsto_snd_zero :
-    Tendsto (fun p : A × A ↦ p.2) (𝓝 ((0, 0) : A × A)) (𝓝 (0 : A)) :=
-  continuous_snd.tendsto' _ _ rfl
-
-variable [NormedAlgebra ℝ A] [CompleteSpace A]
-
-private theorem tendsto_exp_zero : Tendsto (exp : A → A) (𝓝 (0 : A)) (𝓝 (1 : A)) := by
-  simpa only [exp_zero] using (exp_analytic (𝕂 := ℝ) (0 : A)).continuousAt.tendsto
+variable (A : Type*) [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
 
 /-! ### The quadratic Taylor estimate for a product of two exponentials -/
 
@@ -108,6 +66,14 @@ theorem isBigO_exp_mul_exp_sub_one_sub_quadratic :
     (fun p : A × A ↦ exp p.1 * exp p.2 - 1 - (p.1 + p.2) -
         ((2⁻¹ : ℝ) • p.1 ^ 2 + p.1 * p.2 + (2⁻¹ : ℝ) • p.2 ^ 2))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
+  have hfst : (fun p : A × A ↦ p.1) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
+    isBigO_of_le _ fun p ↦ by simpa using norm_fst_le p
+  have hsnd : (fun p : A × A ↦ p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
+    isBigO_of_le _ fun p ↦ by simpa using norm_snd_le p
+  have htfst : Tendsto (fun p : A × A ↦ p.1) (𝓝 ((0, 0) : A × A)) (𝓝 (0 : A)) :=
+    continuous_fst.tendsto' _ _ rfl
+  have htsnd : Tendsto (fun p : A × A ↦ p.2) (𝓝 ((0, 0) : A × A)) (𝓝 (0 : A)) :=
+    continuous_snd.tendsto' _ _ rfl
   -- Splitting off the two quadratic truncations, and then expanding their product.
   have hcancel : ∀ a b c d : A, (a - c) * b + c * (b - d) = a * b - c * d := by
     intro a b c d
@@ -136,32 +102,32 @@ theorem isBigO_exp_mul_exp_sub_one_sub_quadratic :
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
     have h : (fun p : A × A ↦ exp p.1 - (1 + p.1 + (2⁻¹ : ℝ) • p.1 ^ 2))
         =O[𝓝 ((0, 0) : A × A)] fun p : A × A ↦ ‖p.1‖ ^ 3 :=
-      (isBigO_exp_sub_quadratic ℝ (A := A)).comp_tendsto (tendsto_fst_zero A)
-    exact h.trans ((isBigO_fst A).norm_left.pow 3)
+      (isBigO_exp_sub_quadratic ℝ (A := A)).comp_tendsto htfst
+    exact h.trans (hfst.norm_left.pow 3)
   have hexpSnd : (fun p : A × A ↦ exp p.2 - (1 + p.2 + (2⁻¹ : ℝ) • p.2 ^ 2))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
     have h : (fun p : A × A ↦ exp p.2 - (1 + p.2 + (2⁻¹ : ℝ) • p.2 ^ 2))
         =O[𝓝 ((0, 0) : A × A)] fun p : A × A ↦ ‖p.2‖ ^ 3 :=
-      (isBigO_exp_sub_quadratic ℝ (A := A)).comp_tendsto (tendsto_snd_zero A)
-    exact h.trans ((isBigO_snd A).norm_left.pow 3)
+      (isBigO_exp_sub_quadratic ℝ (A := A)).comp_tendsto htsnd
+    exact h.trans (hsnd.norm_left.pow 3)
+  have hexp : Tendsto (exp : A → A) (𝓝 (0 : A)) (𝓝 (1 : A)) := by
+    simpa only [exp_zero] using (exp_analytic (𝕂 := ℝ) (0 : A)).continuousAt.tendsto
   have hbddExp : (fun p : A × A ↦ exp p.2) =O[𝓝 ((0, 0) : A × A)] fun _ ↦ (1 : ℝ) :=
-    ((tendsto_exp_zero A).comp (tendsto_snd_zero A)).isBigO_one ℝ
+    (hexp.comp htsnd).isBigO_one ℝ
   have hbddTrunc : (fun p : A × A ↦ 1 + p.1 + (2⁻¹ : ℝ) • p.1 ^ 2)
       =O[𝓝 ((0, 0) : A × A)] fun _ ↦ (1 : ℝ) := by
     refine Tendsto.isBigO_one ℝ (c := (1 : A)) ?_
     have hc : Continuous fun p : A × A ↦ 1 + p.1 + (2⁻¹ : ℝ) • p.1 ^ 2 := by fun_prop
     simpa using hc.tendsto' ((0, 0) : A × A) 1 (by simp)
-  have hfst2 : (fun p : A × A ↦ p.1 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 :=
-    (isBigO_fst A).pow 2
-  have hsnd2 : (fun p : A × A ↦ p.2 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 :=
-    (isBigO_snd A).pow 2
+  have hfst2 : (fun p : A × A ↦ p.1 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := hfst.pow 2
+  have hsnd2 : (fun p : A × A ↦ p.2 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := hsnd.pow 2
   have hcube₁ : (fun p : A × A ↦ p.1 * p.2 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 :=
-    ((isBigO_fst A).mul hsnd2).congr' EventuallyEq.rfl (.of_forall fun p ↦ by ring)
+    (hfst.mul hsnd2).congr' EventuallyEq.rfl (.of_forall fun p ↦ by ring)
   have hcube₂ : (fun p : A × A ↦ p.1 ^ 2 * p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 :=
-    (hfst2.mul (isBigO_snd A)).congr' EventuallyEq.rfl (.of_forall fun p ↦ by ring)
+    (hfst2.mul hsnd).congr' EventuallyEq.rfl (.of_forall fun p ↦ by ring)
   have hcube₃ : (fun p : A × A ↦ p.1 ^ 2 * p.2 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 :=
     ((hfst2.mul hsnd2).congr' EventuallyEq.rfl (.of_forall fun p ↦ by ring)).trans
-      (isBigO_norm_pow_le A (show 3 ≤ 4 by norm_num))
+      (isBigO_norm_pow_norm_pow_nhds_zero_of_le (E := A × A) (show 3 ≤ 4 by norm_num))
   have hleft : (fun p : A × A ↦ (exp p.1 - (1 + p.1 + (2⁻¹ : ℝ) • p.1 ^ 2)) * exp p.2)
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
     simpa using hexpFst.mul hbddExp
@@ -186,14 +152,15 @@ theorem isBigO_logOneAdd_exp_mul_exp_sub_one_sub_firstOrder :
     (fun p : A × A ↦ logOneAdd ℝ A (exp p.1 * exp p.2 - 1) -
         (p.1 + p.2 + (2⁻¹ : ℝ) • (p.1 * p.2 - p.2 * p.1)))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
-  have hsum : (fun p : A × A ↦ p.1 + p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
-    (isBigO_fst A).add (isBigO_snd A)
-  have hfst2 : (fun p : A × A ↦ p.1 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 :=
-    (isBigO_fst A).pow 2
-  have hsnd2 : (fun p : A × A ↦ p.2 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 :=
-    (isBigO_snd A).pow 2
+  have hfst : (fun p : A × A ↦ p.1) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
+    isBigO_of_le _ fun p ↦ by simpa using norm_fst_le p
+  have hsnd : (fun p : A × A ↦ p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
+    isBigO_of_le _ fun p ↦ by simpa using norm_snd_le p
+  have hsum : (fun p : A × A ↦ p.1 + p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ := hfst.add hsnd
+  have hfst2 : (fun p : A × A ↦ p.1 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := hfst.pow 2
+  have hsnd2 : (fun p : A × A ↦ p.2 ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := hsnd.pow 2
   have hmix : (fun p : A × A ↦ p.1 * p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 :=
-    ((isBigO_fst A).mul (isBigO_snd A)).congr' EventuallyEq.rfl (.of_forall fun p ↦ by ring)
+    (hfst.mul hsnd).congr' EventuallyEq.rfl (.of_forall fun p ↦ by ring)
   have hquadTerm : (fun p : A × A ↦ (2⁻¹ : ℝ) • p.1 ^ 2 + p.1 * p.2 + (2⁻¹ : ℝ) • p.2 ^ 2)
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := by
     have h := ((hfst2.const_smul_left (2⁻¹ : ℝ)).add hmix).add (hsnd2.const_smul_left (2⁻¹ : ℝ))
@@ -202,13 +169,16 @@ theorem isBigO_logOneAdd_exp_mul_exp_sub_one_sub_firstOrder :
   have hord2 : (fun p : A × A ↦ exp p.1 * exp p.2 - 1 - (p.1 + p.2))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := by
     refine (((isBigO_exp_mul_exp_sub_one_sub_quadratic A).trans
-      (isBigO_norm_pow_le A (show 2 ≤ 3 by norm_num))).add hquadTerm).congr'
+      (isBigO_norm_pow_norm_pow_nhds_zero_of_le (E := A × A)
+        (show 2 ≤ 3 by norm_num))).add hquadTerm).congr'
       (.of_forall fun p ↦ ?_) EventuallyEq.rfl
     abel_nf
+  have hnorm2 : (fun p : A × A ↦ ‖p‖ ^ 2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
+    (isBigO_norm_pow_norm_pow_nhds_zero_of_le (E := A × A) (show 1 ≤ 2 by norm_num)).congr'
+      EventuallyEq.rfl (.of_forall fun _ ↦ pow_one _)
   have hord1 : (fun p : A × A ↦ exp p.1 * exp p.2 - 1)
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ := by
-    refine ((hord2.trans (isBigO_norm_pow_le_one A (show 1 ≤ 2 by norm_num))).add hsum).congr'
-      (.of_forall fun p ↦ ?_) EventuallyEq.rfl
+    refine ((hord2.trans hnorm2).add hsum).congr' (.of_forall fun p ↦ ?_) EventuallyEq.rfl
     abel_nf
   -- Hence the squares of the two agree to third order.
   have hsquares : (fun p : A × A ↦ (exp p.1 * exp p.2 - 1) ^ 2 - (p.1 + p.2) ^ 2)
@@ -225,8 +195,10 @@ theorem isBigO_logOneAdd_exp_mul_exp_sub_one_sub_firstOrder :
   -- The logarithm contributes its own quadratic estimate.
   have htendsto : Tendsto (fun p : A × A ↦ exp p.1 * exp p.2 - 1)
       (𝓝 ((0, 0) : A × A)) (𝓝 (0 : A)) := by
-    have h := (((tendsto_exp_zero A).comp (tendsto_fst_zero A)).mul
-      ((tendsto_exp_zero A).comp (tendsto_snd_zero A))).sub_const 1
+    have hexp : Tendsto (exp : A → A) (𝓝 (0 : A)) (𝓝 (1 : A)) := by
+      simpa only [exp_zero] using (exp_analytic (𝕂 := ℝ) (0 : A)).continuousAt.tendsto
+    have h := ((hexp.comp (continuous_fst.tendsto' ((0, 0) : A × A) 0 rfl)).mul
+      (hexp.comp (continuous_snd.tendsto' ((0, 0) : A × A) 0 rfl))).sub_const 1
     simpa using h
   have hlog : (fun p : A × A ↦ logOneAdd ℝ A (exp p.1 * exp p.2 - 1) -
         ((exp p.1 * exp p.2 - 1) - (2⁻¹ : ℝ) • (exp p.1 * exp p.2 - 1) ^ 2))

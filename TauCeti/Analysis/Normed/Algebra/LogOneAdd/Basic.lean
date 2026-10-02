@@ -62,6 +62,7 @@ theorem logOneAddSeries_apply {n : ℕ} (v : Fin n → A) :
 
 /-- The third partial sum of the series for `log (1 + u)` is the quadratic truncation
 `u - 2⁻¹ • u ^ 2`. -/
+@[simp]
 theorem logOneAddSeries_partialSum_three (u : A) :
     (logOneAddSeries 𝕂 A).partialSum 3 u = u - (2⁻¹ : 𝕂) • u ^ 2 := by
   simp only [FormalMultilinearSeries.partialSum, Finset.sum_range_succ, Finset.range_zero,
