@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Monad
 public import TauCeti.InformationTheory.Coding.Elementary.WeightEnumerator
 
 /-!
@@ -63,8 +62,8 @@ variable (F ι : Type*) [Field F] [Finite F] [DecidableEq F] [Fintype ι]
 /-- The MacWilliams substitution of the single-parity-check enumerator is its cardinality
 times the repetition enumerator. -/
 @[simp]
-theorem bind₁_weightEnumerator_singleParityCheckCode :
-    bind₁ ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
+theorem aeval_weightEnumerator_singleParityCheckCode :
+    aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
         (singleParityCheckCode F ι : Set (ι → F)).weightEnumerator =
       (Nat.card (singleParityCheckCode F ι) : MvPolynomial (Fin 2) ℤ) *
         (repetitionCode F ι : Set (ι → F)).weightEnumerator := by
