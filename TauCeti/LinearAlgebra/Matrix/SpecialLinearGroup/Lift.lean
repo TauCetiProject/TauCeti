@@ -85,7 +85,7 @@ theorem exists_map_eq_of_map_eq_of_isNilpotent (I : Ideal R) (hI : IsNilpotent I
       · apply Subtype.ext
         exact (Matrix.SpecialLinearGroup.map_apply_coe (Ideal.Quotient.mk I) ⟨N, hNdet⟩).trans
           (by simpa only [RingHom.mapMatrix_apply] using hN_map)
-      · change N i j = 0
+      · rw [coe_mk]
         dsimp only [N]
         by_cases hi : i = i₀
         · subst i
@@ -122,6 +122,9 @@ theorem exists_isUpperTriangular_map_eq_of_isNilpotent [LinearOrder n] (I : Idea
     · simp only [M, Matrix.map_apply, Matrix.of_apply, ite_eq_right hji]
       exact hm i j
   obtain ⟨N, hN, hzero⟩ := exists_map_eq_of_map_eq_of_isNilpotent I hI A M hM
-  exact ⟨N, fun i j hji ↦ hzero i j (by simp [M, show j < i from hji]), hN⟩
+  refine ⟨N, fun i j hji ↦ hzero i j ?_, hN⟩
+  simp only [M, Matrix.of_apply]
+  -- `IsUpperTriangular` supplies `hji : id j < id i`, which is `j < i` by definition.
+  exact ite_eq_left hji
 
 end Matrix.SpecialLinearGroup
