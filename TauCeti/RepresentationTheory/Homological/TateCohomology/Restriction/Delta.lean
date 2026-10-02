@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Boundary
 
 /-!

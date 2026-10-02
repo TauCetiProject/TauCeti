@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.LowDegree
 
 /-!
