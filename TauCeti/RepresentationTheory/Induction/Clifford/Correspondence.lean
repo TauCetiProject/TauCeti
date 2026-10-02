@@ -71,23 +71,6 @@ section Inertia
 
 variable {k G : Type u} [Field k] [Group G] {N : Subgroup G} [N.Normal]
 
-/-- An element `t` of the inertia group of `V` gives a linear automorphism of `V` carrying the
-action of `n` to the action of `t⁻¹ n t`: the isomorphism `{}^t V ≅ V`, read on the common
-underlying space. -/
-private theorem exists_linearEquiv_of_mem_inertia {V : FDRep k N} {t : G} (ht : t ∈ inertia V) :
-    ∃ ε : V ≃ₗ[k] V, ∀ (n : N) (v : V),
-      ε (V.ρ n v) = V.ρ (MulAut.conjNormal t⁻¹ n) (ε v) := by
-  obtain ⟨e⟩ := mem_inertia_iff.1 ht
-  -- `{}^t V` has the same underlying space as `V` (`conjNormalFDRep_V`), so `e⁻¹` is itself a
-  -- linear automorphism of `V`.
-  let ε : V ≃ₗ[k] conjNormalFDRep t V := isoToLinearEquiv e.symm
-  refine ⟨ε, fun n v => ?_⟩
-  have h := DFunLike.congr_fun (FDRep.Iso.conj_ρ e.symm n) (isoToLinearEquiv e.symm v)
-  have hv := congrArg (fun w => isoToLinearEquiv e.symm (V.ρ n w))
-    ((isoToLinearEquiv e.symm).symm_apply_apply v)
-  rw [← conjNormalFDRep_ρ]
-  exact (h.trans hv).symm
-
 /-- **The images of intertwiners from `V` span a representation of the inertia group lying over
 `V`.**  If `U` is an irreducible representation of the inertia group of `V` and some intertwiner
 `V → Res_N U` is nonzero, then the images of all such intertwiners span `U`. -/
@@ -102,7 +85,7 @@ theorem iSup_range_intertwiningMap_inertia_eq_top (V : FDRep k N) (U : FDRep k (
   -- `J` is stable under the inertia group: translating the image of `g` by `t` gives the image of
   -- `ρ t ∘ g ∘ ε`, where `ε` is the automorphism of `V` witnessing `{}^t V ≅ V`.
   have hstable (t : inertia V) {x : U} (hx : x ∈ J) : U.ρ t x ∈ J := by
-    obtain ⟨ε, hε⟩ := exists_linearEquiv_of_mem_inertia t.2
+    obtain ⟨ε, hε⟩ := mem_inertia_iff_exists_linearEquiv.mp (inv_mem t.2)
     let g' (g : IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V)))) :
         IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V))) :=
       LinearMap.intertwiningMap_of_isIntertwiningMap _ _

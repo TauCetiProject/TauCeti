@@ -64,6 +64,10 @@ irreducible by.
   representation has an atom.
 * `Representation.exists_isIrreducible_subrepresentation`: consequently every nonzero
   finite-dimensional representation contains an irreducible subrepresentation.
+* `Representation.IsIrreducible.exists_forall_apply_eq_smul`: Schur's lemma over an
+  algebraically closed field, for an unbundled equivariant endomorphism.
+* `Representation.IsIrreducible.exists_unit_smul_of_intertwines`: two equivariant isomorphisms
+  out of an irreducible representation differ by a unit scalar.
 -/
 
 public section
@@ -294,6 +298,37 @@ theorem exists_isAtom [FiniteDimensional k V] [Nontrivial V] (ρ : Representatio
   ⟨σ, hσ⟩
 
 end DivisionRing
+
+/-- **Schur's lemma, scalar form.** Over an algebraically closed field, a linear endomorphism of a
+finite-dimensional irreducible representation commuting with the action is multiplication by a
+scalar.  This is `Representation.IsIrreducible.algebraMap_intertwiningMap_bijective_of_isAlgClosed`
+read pointwise on an unbundled endomorphism. -/
+theorem IsIrreducible.exists_forall_apply_eq_smul [IsAlgClosed k] [FiniteDimensional k V]
+    {ρ : Representation k G V} [ρ.IsIrreducible] (f : V →ₗ[k] V)
+    (hf : ∀ g v, f (ρ g v) = ρ g (f v)) : ∃ c : k, ∀ v, f v = c • v := by
+  obtain ⟨c, hc⟩ := (IsIrreducible.algebraMap_intertwiningMap_bijective_of_isAlgClosed
+    (ρ := ρ)).surjective (f.intertwiningMap_of_isIntertwiningMap ρ ρ hf)
+  refine ⟨c, fun v ↦ ?_⟩
+  simpa [IntertwiningMap.algebraMap_apply] using (DFunLike.congr_fun hc v).symm
+
+/-- **Two equivariant isomorphisms out of an irreducible representation differ by a unit
+scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, then `b⁻¹ ∘ a` is an
+equivariant automorphism of `V`, hence a nonzero scalar by Schur's lemma
+(`Representation.IsIrreducible.exists_forall_apply_eq_smul`). -/
+theorem IsIrreducible.exists_unit_smul_of_intertwines [IsAlgClosed k] [FiniteDimensional k V]
+    {W : Type*} [AddCommGroup W] [Module k W] {ρ : Representation k G V} [hρ : ρ.IsIrreducible]
+    {σ : Representation k G W} (a b : V ≃ₗ[k] W)
+    (ha : ∀ g v, a (ρ g v) = σ g (a v)) (hb : ∀ g v, b (ρ g v) = σ g (b v)) :
+    ∃ c : kˣ, ∀ v, a v = (c : k) • b v := by
+  have : Nontrivial V := hρ.nontrivial
+  obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) (a.trans b.symm).toLinearMap
+    fun g v ↦ b.injective (by simp [ha, hb])
+  have hne : c ≠ 0 := by
+    rintro rfl
+    obtain ⟨v, hv⟩ := exists_ne (0 : V)
+    exact hv ((a.trans b.symm).injective (by simpa using hc v))
+  refine ⟨Units.mk0 c hne, fun v ↦ ?_⟩
+  simpa using congrArg b (hc v)
 
 /-- **Every nonzero finite-dimensional representation contains an irreducible subrepresentation.**
 Finite-dimensionality alone suffices; no semisimplicity is assumed.  This produces a single
