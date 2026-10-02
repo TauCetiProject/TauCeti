@@ -31,7 +31,7 @@ the arrows of `Reflect V i`, by `TauCeti.Quiver.hom_reflectAt_eq_hom_reflect` �
   structure it started from.
 * `TauCeti.Quiver.reflectList_reverse_reflectList`: reflecting along a list and then along its
   reverse returns the original quiver structure.
-* `TauCeti.Quiver.nonempty_reflectList_sum_hom_equiv`: reflecting along any list keeps the arrows
+* `Quiver.nonempty_reflectList_sum_hom_equiv`: reflecting along any list keeps the arrows
   joining two vertices in either direction, so it changes the orientation of a quiver but not its
   underlying multigraph.
 * `TauCeti.Quiver.hom_reflectList` and `TauCeti.Quiver.hom_reflectList_of_not_iff`: reflecting
@@ -167,7 +167,7 @@ noncomputable def fintypeHomReflectList :
 /-- **Reflection at a vertex keeps the arrows joining two vertices**, only redistributing them
 between the two directions: the arrows running from `a` to `b` or from `b` to `a` are the same
 before and after the reflection. -/
-theorem nonempty_reflectAt_sum_hom_equiv (q : _root_.Quiver.{v} V) (i a b : V) :
+theorem _root_.Quiver.nonempty_reflectAt_sum_hom_equiv (q : _root_.Quiver.{v} V) (i a b : V) :
     Nonempty ((@_root_.Quiver.Hom V (reflectAt q i) a b ⊕ @_root_.Quiver.Hom V (reflectAt q i) b a)
       ≃ (@_root_.Quiver.Hom V q a b ⊕ @_root_.Quiver.Hom V q b a)) := by
   rw [hom_reflectAt, hom_reflectAt]
@@ -188,7 +188,7 @@ theorem nonempty_reflectAt_sum_hom_equiv (q : _root_.Quiver.{v} V) (i a b : V) :
 
 /-- **Reflection along any list keeps the underlying multigraph**: the arrows joining two vertices,
 in either direction, are the same before and after the reflections. -/
-theorem nonempty_reflectList_sum_hom_equiv :
+theorem _root_.Quiver.nonempty_reflectList_sum_hom_equiv :
     ∀ (q : _root_.Quiver.{v} V) (l : List V) (a b : V),
       Nonempty ((@_root_.Quiver.Hom V (reflectList q l) a b ⊕
           @_root_.Quiver.Hom V (reflectList q l) b a) ≃

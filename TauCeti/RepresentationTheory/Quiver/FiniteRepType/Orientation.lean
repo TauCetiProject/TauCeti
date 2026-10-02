@@ -15,7 +15,7 @@ public import TauCeti.RepresentationTheory.Quiver.Reflection.Forest
 
 Whether a quiver has finite representation type is unchanged by reflecting it at a sink
 (`TauCeti.isFiniteRepType_reflectList_iff`), and any two orientations of a finite forest are
-related by such reflections (`TauCeti.Quiver.exists_isSinkAdmissible_reflectList_equiv`). So for a
+related by such reflections (`Quiver.exists_isSinkAdmissible_reflectList_equiv`). So for a
 quiver whose underlying graph is a forest, with at most one arrow between any two vertices, finite
 representation type is a property of the underlying graph alone: every quiver with the same
 underlying multigraph has finite representation type exactly when the original one does
@@ -63,7 +63,7 @@ theorem isFiniteRepType_iff_of_isAcyclic_underlyingGraph {V : Type v} [Finite V]
       (@_root_.Quiver.Hom V q' a b ⊕ @_root_.Quiver.Hom V q' b a))) :
     @IsFiniteRepType.{u, v, w, max v w x} k V _ q' ↔
       @IsFiniteRepType.{u, v, w, max v w x} k V _ q := by
-  obtain ⟨l, hl, he⟩ := exists_isSinkAdmissible_reflectList_equiv q q' hsub hG h
+  obtain ⟨l, hl, he⟩ := q.exists_isSinkAdmissible_reflectList_equiv q' hsub hG h
   have hfin (a b : V) : Finite (@_root_.Quiver.Hom V q a b) :=
     have : Subsingleton (@_root_.Quiver.Hom V q a b) :=
       ⟨fun y z ↦ Sum.inl_injective ((hsub a b).elim (Sum.inl y) (Sum.inl z))⟩

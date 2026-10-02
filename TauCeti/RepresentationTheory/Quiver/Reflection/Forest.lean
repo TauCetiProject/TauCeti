@@ -12,11 +12,11 @@ public import TauCeti.RepresentationTheory.Quiver.Reflection.Admissible
 # Any two orientations of a forest are related by reflections at sinks
 
 Reflecting a quiver at a sink reverses the arrows meeting that vertex and keeps its underlying
-multigraph (`TauCeti.Quiver.nonempty_reflectList_sum_hom_equiv`). This file proves the converse
+multigraph (`Quiver.nonempty_reflectList_sum_hom_equiv`). This file proves the converse
 for a forest: if a quiver `q` on a finite vertex type has at most one arrow between any two
 vertices and an acyclic underlying graph, then every quiver `q'` with the same underlying
 multigraph is reached from `q` by reflecting along a sink-admissible list of vertices
-(`TauCeti.Quiver.exists_isSinkAdmissible_reflectList_equiv`).
+(`Quiver.exists_isSinkAdmissible_reflectList_equiv`).
 
 The arrows are turned around one at a time. Removing an arrow `u ⟶ w` from a forest disconnects
 `w` from `u`; let `B` be the set of vertices still connected to `w`. The arrow `u ⟶ w` is the only
@@ -28,7 +28,7 @@ arrow `u ⟶ w`. The orientation of a forest is acyclic
 
 ## Main results
 
-* `TauCeti.Quiver.exists_isSinkAdmissible_reflectList_equiv`: two orientations of the same finite
+* `Quiver.exists_isSinkAdmissible_reflectList_equiv`: two orientations of the same finite
   forest are related by a sequence of reflections at sinks.
 
 ## References
@@ -108,12 +108,13 @@ private theorem exists_isSinkAdmissible_flip [Finite V] [q : _root_.Quiver.{v} V
 
 /-- The arrows of `q` which `q'` turns around: the ordered pairs of vertices joined by an arrow of
 `q` but not by an arrow of `q'`. -/
-private noncomputable def flipSet [Fintype V] (q q' : _root_.Quiver.{v} V) : Finset (V × V) := by
+private noncomputable def _root_.Quiver.flipSet [Fintype V] (q q' : _root_.Quiver.{v} V) :
+    Finset (V × V) := by
   classical
   exact Finset.univ.filter fun p ↦
     Nonempty (@_root_.Quiver.Hom V q p.1 p.2) ∧ IsEmpty (@_root_.Quiver.Hom V q' p.1 p.2)
 
-private theorem mem_flipSet [Fintype V] {q q' : _root_.Quiver.{v} V} {a b : V} :
+private theorem _root_.Quiver.mem_flipSet [Fintype V] {q q' : _root_.Quiver.{v} V} {a b : V} :
     (a, b) ∈ flipSet q q' ↔
       Nonempty (@_root_.Quiver.Hom V q a b) ∧ IsEmpty (@_root_.Quiver.Hom V q' a b) := by
   classical
@@ -158,7 +159,8 @@ quiver on a finite vertex type with at most one arrow between any two vertices, 
 directions, whose underlying graph is acyclic. If a second quiver `q'` has the same arrows joining
 any two vertices, in either direction, then reflecting `q` along some sink-admissible list of
 vertices produces a quiver whose arrows are those of `q'`. -/
-theorem exists_isSinkAdmissible_reflectList_equiv [Finite V] (q q' : _root_.Quiver.{v} V)
+theorem _root_.Quiver.exists_isSinkAdmissible_reflectList_equiv [Finite V]
+    (q q' : _root_.Quiver.{v} V)
     (hsub : ∀ a b : V,
       Subsingleton (@_root_.Quiver.Hom V q a b ⊕ @_root_.Quiver.Hom V q b a))
     (hG : (@underlyingGraph V q).IsAcyclic)
