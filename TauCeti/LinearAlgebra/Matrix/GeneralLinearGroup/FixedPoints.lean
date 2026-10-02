@@ -1,0 +1,171 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+-- `OnePoint K` with the Möbius action of `GL (Fin 2) K` is the model of the projective line used
+-- here, and `Matrix.GeneralLinearGroup.fixpointPolynomial_aeval_eq_zero_iff` is what reads the
+-- affine fixed points off a polynomial.
+public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
+-- `Matrix.ProjGenLinGroup.mk` occurs in the statements below.
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
+-- `Set.ncard` occurs in the statements below.
+public import Mathlib.Data.Set.Card
+-- Non-public: the degree bounds are proved by `compute_degree`, in the proofs only.
+import Mathlib.Tactic.ComputeDegree
+
+/-!
+# Fixed points of the Möbius action on the projective line
+
+An invertible `2 × 2` matrix acts on the projective line `ℙ¹(K)`, modelled by `OnePoint K`, by the
+Möbius transformation `t ↦ (a t + b) / (c t + d)`. Its fixed points in the affine part are the
+roots of Mathlib's `Matrix.GeneralLinearGroup.fixpointPolynomial`, the quadratic
+`c X² + (d − a) X − b`, and `∞` is fixed exactly when `c = 0`. The polynomial vanishes identically
+exactly for a scalar matrix, which fixes everything.
+
+So a matrix that is not scalar fixes **at most two** points of `ℙ¹(K)`: if it fixes `∞` the
+quadratic is linear and contributes at most one more, and otherwise all its fixed points are among
+its at most two roots. Contrapositively, a matrix fixing three distinct points of `ℙ¹(K)` is
+scalar, so a class in `PGL₂(K)` fixing three distinct points is trivial, and two matrices agreeing
+on three distinct points agree in `PGL₂(K)`. This **three-point rigidity** is what makes a group
+acting on `ℙ¹(K)` through `PGL₂(K)` embed into the permutations of any invariant set of at least
+three points.
+
+## Main results
+
+* `Matrix.GeneralLinearGroup.natDegree_fixpointPolynomial_le_two` and
+  `Matrix.GeneralLinearGroup.natDegree_fixpointPolynomial_le_one`: the fixed-point polynomial is
+  quadratic, and linear once the lower-left entry vanishes.
+* `Matrix.GeneralLinearGroup.ncard_fixedBy_le_two`: a matrix that is not scalar fixes at most two
+  points of the projective line.
+* `Matrix.GeneralLinearGroup.mem_center_of_forall_smul_eq`: a matrix fixing at least three points
+  of the projective line is scalar, hence central.
+* `Matrix.ProjGenLinGroup.mk_eq_one_of_forall_smul_eq` and
+  `Matrix.ProjGenLinGroup.mk_eq_mk_of_forall_smul_eq`: three-point rigidity in `PGL₂(K)`, and the
+  uniqueness form — two matrices acting the same way on at least three points of the projective
+  line are equal in `PGL₂(K)`.
+
+## References
+
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Exercise 1.2.
+-/
+
+public section
+
+open OnePoint Polynomial
+
+namespace Matrix.GeneralLinearGroup
+
+section CommRing
+
+variable {R : Type*} [CommRing R] (g : GL (Fin 2) R)
+
+/-- The fixed-point polynomial `c X² + (d − a) X − b` of a `2 × 2` matrix is quadratic. -/
+theorem natDegree_fixpointPolynomial_le_two : g.fixpointPolynomial.natDegree ≤ 2 := by
+  rw [fixpointPolynomial]
+  compute_degree
+
+/-- The fixed-point polynomial of a `2 × 2` matrix whose lower-left entry vanishes, which is the
+matrix fixing `∞`, is linear. -/
+theorem natDegree_fixpointPolynomial_le_one (h : g 1 0 = 0) :
+    g.fixpointPolynomial.natDegree ≤ 1 := by
+  rw [fixpointPolynomial, h, map_zero, zero_mul, zero_add]
+  compute_degree
+
+end CommRing
+
+section Field
+
+variable {K : Type*} [Field K] [DecidableEq K] {g : GL (Fin 2) K}
+
+/-- The fixed points of a matrix that is not scalar are contained in a set of at most two points
+of the projective line: the roots of its fixed-point polynomial, together with `∞` when that is
+fixed. -/
+private theorem exists_finset_fixedBy_subset (hg : g ∉ Subgroup.center (GL (Fin 2) K)) :
+    ∃ s : Finset (OnePoint K), s.card ≤ 2 ∧ MulAction.fixedBy (OnePoint K) g ⊆ ↑s := by
+  classical
+  have hzero : g.fixpointPolynomial ≠ 0 := fun h ↦
+    hg (mem_center_iff_val_mem_range_scalar.mpr (fixpointPolynomial_eq_zero_iff.mp h))
+  have hroot : ∀ t : K, g • (t : OnePoint K) = t → t ∈ g.fixpointPolynomial.roots := fun t ht ↦ by
+    rw [mem_roots hzero, IsRoot]
+    simpa using fixpointPolynomial_aeval_eq_zero_iff.mpr ht
+  set s : Finset (OnePoint K) :=
+    g.fixpointPolynomial.roots.toFinset.image (fun t : K ↦ (t : OnePoint K))
+  have hcard : s.card ≤ g.fixpointPolynomial.natDegree :=
+    Finset.card_image_le.trans ((Multiset.toFinset_card_le _).trans (card_roots' _))
+  by_cases hinfty : g 1 0 = 0
+  · refine ⟨insert ∞ s, ?_, ?_⟩
+    · have := natDegree_fixpointPolynomial_le_one g hinfty
+      exact (Finset.card_insert_le _ _).trans (by omega)
+    · intro c hc
+      cases c with
+      | infty => exact Finset.mem_insert_self _ _
+      | coe t =>
+        refine Finset.mem_insert_of_mem ?_
+        exact Finset.mem_image_of_mem _ (Multiset.mem_toFinset.mpr (hroot t hc))
+  · refine ⟨s, hcard.trans (natDegree_fixpointPolynomial_le_two g), ?_⟩
+    intro c hc
+    cases c with
+    | infty => exact absurd (smul_infty_eq_self_iff.mp hc) hinfty
+    | coe t => exact Finset.mem_image_of_mem _ (Multiset.mem_toFinset.mpr (hroot t hc))
+
+/-- The fixed points of a matrix that is not scalar form a finite subset of the projective
+line. -/
+theorem finite_fixedBy_of_notMem_center (hg : g ∉ Subgroup.center (GL (Fin 2) K)) :
+    (MulAction.fixedBy (OnePoint K) g).Finite := by
+  obtain ⟨s, -, hsub⟩ := exists_finset_fixedBy_subset hg
+  exact s.finite_toSet.subset hsub
+
+/-- **A matrix that is not scalar fixes at most two points of the projective line**: its fixed
+points are among the at most two roots of its fixed-point polynomial, and `∞` is fixed only when
+that polynomial is linear. -/
+theorem ncard_fixedBy_le_two (hg : g ∉ Subgroup.center (GL (Fin 2) K)) :
+    (MulAction.fixedBy (OnePoint K) g).ncard ≤ 2 := by
+  obtain ⟨s, hcard, hsub⟩ := exists_finset_fixedBy_subset hg
+  refine (Set.ncard_le_ncard hsub s.finite_toSet).trans ?_
+  rwa [Set.ncard_coe_finset]
+
+/-- A matrix fixing at least three points of the projective line is central. -/
+theorem mem_center_of_three_le_ncard_fixedBy
+    (h : 3 ≤ (MulAction.fixedBy (OnePoint K) g).ncard) : g ∈ Subgroup.center (GL (Fin 2) K) := by
+  by_contra hg
+  exact absurd (ncard_fixedBy_le_two hg) (by omega)
+
+/-- **Three-point rigidity**: a matrix fixing at least three points of the projective line is
+scalar, hence central in `GL₂(K)`. -/
+theorem mem_center_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = c)
+    (hcard : 3 ≤ S.ncard) : g ∈ Subgroup.center (GL (Fin 2) K) := by
+  by_contra hg
+  have hsub : S ⊆ MulAction.fixedBy (OnePoint K) g := fun c hc ↦ hS c hc
+  have hle := Set.ncard_le_ncard hsub (finite_fixedBy_of_notMem_center hg)
+  have := ncard_fixedBy_le_two hg
+  omega
+
+end Field
+
+end Matrix.GeneralLinearGroup
+
+namespace Matrix.ProjGenLinGroup
+
+variable {K : Type*} [Field K] [DecidableEq K] {g h : GL (Fin 2) K}
+
+/-- **Three-point rigidity in `PGL₂(K)`**: a matrix fixing at least three points of the
+projective line is trivial in `PGL₂(K)`. -/
+theorem mk_eq_one_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = c)
+    (hcard : 3 ≤ S.ncard) : mk g = 1 :=
+  mk_eq_one.mpr (GeneralLinearGroup.mem_center_of_forall_smul_eq hS hcard)
+
+/-- **A Möbius transformation is determined by three points**: two matrices acting the same way on
+at least three points of the projective line are equal in `PGL₂(K)`. -/
+theorem mk_eq_mk_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = h • c)
+    (hcard : 3 ≤ S.ncard) : mk g = mk h := by
+  have key : ∀ c ∈ S, (h⁻¹ * g) • c = c := fun c hc ↦ by
+    rw [mul_smul, hS c hc, ← mul_smul, inv_mul_cancel, one_smul]
+  have hone := mk_eq_one_of_forall_smul_eq key hcard
+  rw [map_mul, map_inv, inv_mul_eq_one] at hone
+  exact hone.symm
+
+end Matrix.ProjGenLinGroup
