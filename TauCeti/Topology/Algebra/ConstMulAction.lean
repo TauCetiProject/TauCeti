@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Submonoid.MulAction
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
-public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.LocallyFinite
 
 /-!
