@@ -54,14 +54,33 @@ variable (G : Type u) [Group G] [Finite G]
 
 /-- The disjoint union of the positive terms of Artin's permutation identity. A point records
 a subgroup, a copy index, and a left coset of that subgroup. -/
-abbrev ArtinPositiveSet :=
+def ArtinPositiveSet :=
   Σ C : Subgroup G, Σ _ : Fin (C.artinCoeff * (Nat.card C : ℤ)).toNat, G ⧸ C
+
+instance : Finite (ArtinPositiveSet G) := by
+  unfold ArtinPositiveSet
+  infer_instance
+
+-- Hide the inherited action too; code generation cannot unfold the hidden carrier.
+@[no_expose]
+noncomputable instance : MulAction G (ArtinPositiveSet G) := by
+  unfold ArtinPositiveSet
+  infer_instance
 
 /-- The disjoint union of the negative terms of Artin's permutation identity, together with
 `|G|` fixed points. The fixed points are copies of the singleton coset space `G/⊤`. -/
-abbrev ArtinNegativeSet :=
+def ArtinNegativeSet :=
   (Σ _ : Fin (Nat.card G), G ⧸ (⊤ : Subgroup G)) ⊕
     (Σ C : Subgroup G, Σ _ : Fin (-(C.artinCoeff * (Nat.card C : ℤ))).toNat, G ⧸ C)
+
+instance : Finite (ArtinNegativeSet G) := by
+  unfold ArtinNegativeSet
+  infer_instance
+
+@[no_expose]
+noncomputable instance : MulAction G (ArtinNegativeSet G) := by
+  unfold ArtinNegativeSet
+  infer_instance
 
 variable {G}
 
@@ -72,7 +91,7 @@ theorem card_fixedBy_artinPositiveSet (g : G) :
         (C.artinCoeff * (Nat.card C : ℤ)).toNat * Nat.card (fixedBy (G ⧸ C) g) := by
   classical
   let := Fintype.ofFinite (Subgroup G)
-  dsimp only [ArtinPositiveSet]
+  delta ArtinPositiveSet instMulActionArtinPositiveSet
   rw [card_fixedBy_sigma]
   simp only [card_fixedBy_sigma, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, Nat.cast_id, finsum_eq_sum_of_fintype]
@@ -96,15 +115,14 @@ theorem card_fixedBy_artinNegativeSet (g : G) :
   have htop : fixedBy (G ⧸ (⊤ : Subgroup G)) g = Set.univ := by
     ext x
     simp [mem_fixedBy, Subsingleton.elim (g • x) x]
-  dsimp only [ArtinNegativeSet]
+  delta ArtinNegativeSet instMulActionArtinNegativeSet
   rw [card_fixedBy_sum]
   simp only [card_fixedBy_sigma, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, Nat.cast_id, htop, Nat.card_congr (Equiv.Set.univ (G ⧸ (⊤ : Subgroup G))),
     Nat.card_unique, mul_one, finsum_eq_sum_of_fintype]
 
 /-- The negative Artin fixed-point count including the fixed points, in simp normal form. -/
--- Prefer this formula over unfolding the abbreviation with `ncard_fixedBy_sum`.
-@[simp high]
+@[simp]
 theorem ncard_fixedBy_artinNegativeSet (g : G) :
     (fixedBy (ArtinNegativeSet G) g).ncard = Nat.card G +
       ∑ᶠ C : Subgroup G,
