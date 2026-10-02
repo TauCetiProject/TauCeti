@@ -77,12 +77,16 @@ than with a tensor product of submodules: `Submodule.map₂` is the image of the
 is what the statements need, and it comes with the distributivity over suprema that the spanning
 proof runs on.
 
-The determinant twists are instead stated as a `Submodule.comap` along `W ⊗[k] k ≃ₗ[k] W` and
-`k ⊗[k] W ≃ₗ[k] W`, in that one form only: `Submodule.mem_comap` then reads membership in the
-twisted weight space off membership in the untwisted one, and the image form is
-`Submodule.map_comap_eq_of_surjective` away. Both run on the same private lemma, which asks only
-that some equivalence carry the action of the twisted representation to the action of `ρ`
-rescaled by `det ^ m`; the two sides differ merely in that computation.
+The two tensor orientations of the determinant twist are instead stated as a `Submodule.comap`
+along `W ⊗[k] k ≃ₗ[k] W` and `k ⊗[k] W ≃ₗ[k] W`, in that one form only: `Submodule.mem_comap`
+then reads membership in the twisted weight space off membership in the untwisted one, and the
+image form is `Submodule.map_comap_eq_of_surjective` away. The twist
+`Representation.charTwist (det ^ m) ρ` carries no identification at all, its carrier being that
+of `ρ`, so there the translation is a bare equality of submodules of the one carrier. All three
+run on the same private lemma, which asks only that some equivalence carry the action of the
+twisted representation to the action of `ρ` rescaled by `det ^ m` — `TensorProduct.rid`,
+`TensorProduct.lid` and `LinearEquiv.refl` respectively; the three cases differ merely in that
+computation.
 
 ## References
 
@@ -194,16 +198,14 @@ private theorem mem_weightSpace_iff_of_detPow_smul {V : Type*} [AddCommGroup V] 
   exact (Units.isUnit _).smul_left_cancel
 
 /-- The identification `W ⊗[k] k ≃ₗ[k] W` carries the action of `ρ ⊗ det ^ m` to the action of `ρ`
-rescaled by `det ^ m`. -/
+rescaled by `det ^ m`.  This is `Representation.rid_tprod_ofLinearCharacter_apply` at the linear
+character `det ^ m`, read through `TauCeti.detPowerRep_def`. -/
 private theorem rid_tprod_detPowerRep_apply (ρ : Representation k (GL (Fin n) k) W) (m : ℤ)
     (g : GL (Fin n) k) (x : W ⊗[k] k) :
     TensorProduct.rid k W ((ρ.tprod (detPowerRep k n m)) g x)
       = (↑(GeneralLinearGroup.det g ^ m) : k) • ρ g (TensorProduct.rid k W x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul w c =>
-    simp only [Representation.tprod_apply, TensorProduct.map_tmul, detPowerRep_apply,
-      TensorProduct.rid_tmul, map_smul, smul_smul]
-  | add x y hx hy => simp only [map_add, hx, hy, smul_add]
+  rw [detPowerRep_def]
+  exact Representation.rid_tprod_ofLinearCharacter_apply _ ρ g x
 
 /-- The identification `k ⊗[k] W ≃ₗ[k] W` carries the action of `det ^ m ⊗ ρ` to the action of `ρ`
 rescaled by `det ^ m`.  This is `Representation.lid_ofLinearCharacter_tprod_apply` at the linear

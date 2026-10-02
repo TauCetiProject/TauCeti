@@ -30,14 +30,14 @@ This file performs that twist.  For `λ : DominantWeight n`,
 `rationalWeylRep k n λ := det ^ λₙ ⊗ 𝕊^{μ}(kⁿ)`, `μ = λ.detShiftShape`,
 
 realized on the Weyl module of `μ` itself rather than on `k ⊗ 𝕊^{μ}(kⁿ)`, the line being absorbed
-by `Representation.charTwist` (and `TauCeti.tprodEquivRationalWeylRep` identifies the two).  It is
-**irreducible for every dominant weight, with no row condition**: the polynomial part of a weight
-for `GL n` automatically has at most `n` rows
+by `Representation.charTwist` (and `TauCeti.tprodEquivRationalWeylRep` identifies the two).  Over
+a field of characteristic zero it is **irreducible for every dominant weight, with no row
+condition**: the polynomial part of a weight for `GL n` automatically has at most `n` rows
 (`TauCeti.DominantWeight.colLen_zero_detShiftShape_le`), which is exactly the hypothesis the
 irreducibility of a Weyl module needs, and a determinant twist does not change the lattice of
 subrepresentations.  So the dominant weights index a family of irreducible rational
-representations without a side condition, the shapes they are twists of being the ones with at
-most `n - 1` rows.
+representations without a side condition, each of them a twist of the Weyl module of a shape with
+at most `n - 1` rows.
 
 What is *not* done here is to identify `rationalWeylRep k n λ` as the irreducible representation of
 highest weight `λ`, nor to show that these exhaust the irreducible rational representations, nor
@@ -55,15 +55,16 @@ classification will be stated about.
 
 ## Main results
 
-* `TauCeti.isIrreducible_rationalWeylRep` and `TauCeti.simple_rationalWeylFDRep`: **the rational
-  Weyl module of a dominant weight is irreducible**, for every dominant weight.
+* `TauCeti.isIrreducible_rationalWeylRep` and `TauCeti.simple_rationalWeylFDRep`: over a field of
+  characteristic zero, **the rational Weyl module of a dominant weight is irreducible**, for every
+  dominant weight.
 * `TauCeti.rationalWeylRep_eq_weylRepOfShape_of_detShift_eq_zero`: a weight with vanishing last
-  entry is untwisted, so the Weyl modules of the shapes with at most `n - 1` rows are the case
-  `λₙ = 0` of the construction.
+  entry is untwisted, so the Weyl modules of shapes with at most `n - 1` rows occur as the
+  untwisted case of the construction.
 * `TauCeti.weightSpace_rationalWeylRep`: the twist translates the weights of the Weyl module of
   the polynomial part by the constant sequence `λₙ`.
-* `TauCeti.char_rationalWeylRep`: its character is `det ^ λₙ` times the character of the Weyl
-  module of the polynomial part.
+* `TauCeti.char_rationalWeylRep`: over a field of characteristic zero, its character is `det ^ λₙ`
+  times the character of the Weyl module of the polynomial part.
 
 ## References
 
@@ -114,8 +115,8 @@ theorem rationalWeylRep_apply (l : DominantWeight n) (g : GL (Fin n) k)
   Representation.charTwist_apply_apply _ _ g x
 
 /-- A dominant weight whose last entry vanishes carries no twist: its rational Weyl module is the
-Weyl module of its polynomial part.  Since a polynomial part has at most `n - 1` rows, the case
-`λₙ = 0` is exactly the Weyl modules of the shapes with at most `n - 1` rows. -/
+Weyl module of its polynomial part.  Since a polynomial part has at most `n - 1` rows, the Weyl
+modules occurring in the case `λₙ = 0` are those of shapes with at most `n - 1` rows. -/
 theorem rationalWeylRep_eq_weylRepOfShape_of_detShift_eq_zero {l : DominantWeight n}
     (hl : l.detShift = 0) :
     rationalWeylRep k n l = weylRepOfShape k n l.detShiftShape := by

@@ -40,8 +40,10 @@ representation by consumers that need neither.
 * `Representation.charTwist`: the representation `g ↦ χ g • ρ g`.
 * `Representation.subrepresentationCharTwistOrderIso`: the twist has the same lattice of
   subrepresentations as `ρ`, by the identity on carriers.
-* `Representation.tprodEquivCharTwist`: the tensor product `(ofLinearCharacter χ) ⊗ ρ` **is** the
-  twist, along `TensorProduct.lid`.
+* `Representation.tprodEquivCharTwist` and
+  `Representation.tprodOfLinearCharacterEquivCharTwist`: the tensor product of `ρ` with
+  `ofLinearCharacter χ` **is** the twist, on either side, along `TensorProduct.lid` and
+  `TensorProduct.rid`.
 
 ## Main results
 
@@ -49,8 +51,10 @@ representation by consumers that need neither.
   the character group `G →* kˣ`.
 * `Representation.charTwist_trivial`: twisting the trivial representation of the line gives the
   one-dimensional representation of the character.
-* `Representation.lid_ofLinearCharacter_tprod_apply`: `TensorProduct.lid` carries the action of
-  `(ofLinearCharacter χ) ⊗ ρ` to the action of `ρ` rescaled by `χ`.
+* `Representation.lid_ofLinearCharacter_tprod_apply` and
+  `Representation.rid_tprod_ofLinearCharacter_apply`: `TensorProduct.lid` and `TensorProduct.rid`
+  carry the action of `(ofLinearCharacter χ) ⊗ ρ` and of `ρ ⊗ (ofLinearCharacter χ)` to the action
+  of `ρ` rescaled by `χ`.
 * `Representation.isIrreducible_charTwist_iff`: **the twist of an irreducible representation is
   irreducible**, and conversely.
 * `Representation.char_charTwist`: the trace character of the twist is `χ` times the character
@@ -110,6 +114,7 @@ theorem charTwist_charTwist (χ ψ : G →* kˣ) (ρ : Representation k G V) :
 /-- Twisting the trivial representation of the coefficient line by `χ` gives the one-dimensional
 representation of `χ`.  So the one-dimensional representations are the twists of the trivial one,
 and `Representation.charTwist` extends `Representation.ofLinearCharacter`. -/
+@[simp]
 theorem charTwist_trivial (χ : G →* kˣ) :
     charTwist χ (trivial k G k) = ofLinearCharacter χ :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by
@@ -182,6 +187,39 @@ theorem toLinearMap_tprodEquivCharTwist :
 @[simp]
 theorem tprodEquivCharTwist_tmul (x : k) (v : V) :
     tprodEquivCharTwist χ ρ (x ⊗ₜ[k] v) = x • v :=
+  (rfl)
+
+/-- **`TensorProduct.rid` carries the action of `ρ ⊗ (ofLinearCharacter χ)` to the action of `ρ`
+rescaled by `χ`.**  This is the mirror of `Representation.lid_ofLinearCharacter_tprod_apply` for a
+line on the right, and the equivariance datum behind
+`Representation.tprodOfLinearCharacterEquivCharTwist`. -/
+theorem rid_tprod_ofLinearCharacter_apply (g : G) (x : V ⊗[k] k) :
+    _root_.TensorProduct.rid k V ((ρ.tprod (ofLinearCharacter χ)) g x)
+      = (χ g : k) • ρ g (_root_.TensorProduct.rid k V x) := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | tmul v c =>
+    simp only [tprod_apply, _root_.TensorProduct.map_tmul, ofLinearCharacter_apply,
+      _root_.TensorProduct.rid_tmul, map_smul, smul_smul]
+  | add x y hx hy => simp only [map_add, hx, hy, smul_add]
+
+/-- **The tensor product with the one-dimensional representation of a character on the right is
+also the twist by that character**, along `TensorProduct.rid`: the mirror of
+`Representation.tprodEquivCharTwist`, so that a consumer holding `ρ ⊗ χ` reaches the twist theory
+without flipping the factors first. -/
+noncomputable def tprodOfLinearCharacterEquivCharTwist :
+    (ρ.tprod (ofLinearCharacter χ)).Equiv (charTwist χ ρ) :=
+  .mk (_root_.TensorProduct.rid k V) fun g =>
+    LinearMap.ext fun x => rid_tprod_ofLinearCharacter_apply χ ρ g x
+
+@[simp]
+theorem toLinearMap_tprodOfLinearCharacterEquivCharTwist :
+    (tprodOfLinearCharacterEquivCharTwist χ ρ).toLinearMap
+      = (_root_.TensorProduct.rid k V).toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem tprodOfLinearCharacterEquivCharTwist_tmul (v : V) (x : k) :
+    tprodOfLinearCharacterEquivCharTwist χ ρ (v ⊗ₜ[k] x) = x • v :=
   (rfl)
 
 end CommSemiring
