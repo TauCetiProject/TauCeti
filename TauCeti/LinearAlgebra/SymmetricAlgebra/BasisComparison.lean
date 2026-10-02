@@ -13,11 +13,14 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 # Homogeneous symmetric polynomials in a basis
 
 A basis identifies a symmetric algebra with a multivariate polynomial ring. This file records that
-the equivalence carries each homogeneous submodule of the symmetric algebra to the corresponding
-total-degree submodule of the polynomial ring.
+the equivalence sends a generator to the linear form with the same coordinates, and that it carries
+each homogeneous submodule of the symmetric algebra to the corresponding total-degree submodule of
+the polynomial ring.
 
 ## Main results
 
+* `SymmetricAlgebra.equivMvPolynomial_ι`: the basis-induced equivalence sends the generator of `x`
+  to the linear form `∑ᵢ (b.repr x i) Xᵢ`.
 * `map_homogeneousSubmodule_equivMvPolynomial`: the basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
@@ -32,6 +35,17 @@ open Module
 universe u v w
 
 variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+variable {R M} in
+/-- The algebra equivalence induced by a basis sends the generator of `x` to the linear form with
+the coordinates of `x`. -/
+@[simp]
+theorem _root_.SymmetricAlgebra.equivMvPolynomial_ι {ι : Type w} (b : Basis ι R M) (x : M) :
+    SymmetricAlgebra.equivMvPolynomial b (SymmetricAlgebra.ι R M x) =
+      b.constr R MvPolynomial.X x := by
+  have : (SymmetricAlgebra.equivMvPolynomial b).toLinearMap ∘ₗ SymmetricAlgebra.ι R M =
+      b.constr R MvPolynomial.X := b.ext fun i ↦ by simp
+  exact LinearMap.congr_fun this x
 
 /-- The algebra equivalence induced by a basis preserves homogeneous degree. -/
 @[simp]

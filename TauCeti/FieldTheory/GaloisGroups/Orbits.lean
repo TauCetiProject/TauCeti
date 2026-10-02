@@ -59,6 +59,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   orbit for the intrinsic action on the roots in the splitting field.
 * `Polynomial.Gal.galActionAux_isPretransitive`: inside the splitting field, an irreducible
   polynomial has a transitive root action.
+* `Polynomial.Gal.galActionAux_isPretransitive_of_dvd_pow`: the same for every divisor of a
+  power of an irreducible polynomial, separable or not.
 * `Polynomial.Gal.smul_eq_apply`: the action on the splitting field is evaluation.
 * `TauCeti.galIsGaloisGroup`: `Polynomial.Gal p` is a Galois group for its splitting field.
 * `TauCeti.orbitQuotientEquivFactors`: the orbit quotient is in bijection with the
@@ -203,7 +205,8 @@ theorem natCard_orbit_eq_natDegree_minpoly (x : p.rootSet E)
 extension is transitive exactly when the polynomial is irreducible.
 
 Separability cannot be dropped: over `ℚ` the polynomial `(X ^ 2 - 2) ^ 2` is reducible, yet its
-Galois group acts transitively on its two distinct roots. Without separability the forward
+Galois group acts transitively on its two distinct roots
+(`TauCeti.isPretransitive_gal_X_sq_sub_two_sq`). Without separability the forward
 implication only says that `p` is a unit times a power of one irreducible polynomial. -/
 theorem isPretransitive_iff_irreducible (hsep : p.Separable) (hdeg : 0 < p.natDegree) :
     MulAction.IsPretransitive p.Gal (p.rootSet E) ↔ Irreducible p := by
@@ -368,18 +371,33 @@ theorem natCard_orbit_eq_natDegree_minpoly_splittingField (x : p.rootSet p.Split
     card_rootSet_eq_natDegree hsep
       (Normal.splits (SplittingField.instNormal p) (x : p.SplittingField))]
 
+/-- **The root action of a divisor of a power of an irreducible polynomial is transitive.** If
+`p ∣ q ^ n` with `q` irreducible, every root of `p` in its splitting field is a root of `q`, so all
+of them have the same minimal polynomial and lie in one Galois orbit.
+
+Without separability, transitivity therefore does not force irreducibility: `(X ^ 2 - 2) ^ 2` is
+the witness over `ℚ` (`TauCeti.isPretransitive_gal_X_sq_sub_two_sq`). -/
+theorem _root_.Polynomial.Gal.galActionAux_isPretransitive_of_dvd_pow {q : F[X]}
+    (hq : Irreducible q) {n : ℕ} (hpq : p ∣ q ^ n) :
+    MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) := by
+  have hroot (x : p.rootSet p.SplittingField) : aeval (x : p.SplittingField) q = 0 :=
+    eq_zero_of_pow_eq_zero (n := n) <| by
+      rw [← map_pow]
+      exact aeval_eq_zero_of_dvd_aeval_eq_zero hpq (aeval_eq_zero_of_mem_rootSet x.2)
+  refine ⟨fun x y => ?_⟩
+  have hx := minpoly.eq_of_irreducible hq (hroot x)
+  have hy := minpoly.eq_of_irreducible hq (hroot y)
+  obtain ⟨g, hg⟩ := (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp (hy.symm.trans hx)
+  exact ⟨g, Subtype.ext hg⟩
+
 /-- **The root action of an irreducible polynomial is transitive.**
 
 This is `Polynomial.Gal.galAction_isPretransitive` for the intrinsic action on the roots in the
 splitting field; see the note above for why that instance is not the one Mathlib's statement
 carries. -/
 theorem _root_.Polynomial.Gal.galActionAux_isPretransitive (hp : Irreducible p) :
-    MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) := by
-  refine ⟨fun x y => ?_⟩
-  have hx := minpoly.eq_of_irreducible hp (aeval_eq_zero_of_mem_rootSet x.2)
-  have hy := minpoly.eq_of_irreducible hp (aeval_eq_zero_of_mem_rootSet y.2)
-  obtain ⟨g, hg⟩ := (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp (hy.symm.trans hx)
-  exact ⟨g, Subtype.ext hg⟩
+    MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
+  Gal.galActionAux_isPretransitive_of_dvd_pow hp (n := 1) (by rw [pow_one])
 
 /-! ## Orbits and monic irreducible factors -/
 

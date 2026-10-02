@@ -26,6 +26,8 @@ pointed cone.
 * `TauCeti.Toric.ToricRay.exists_mem_ne_zero`: every ray contains a nonzero point.
 * `TauCeti.Toric.ToricRay.eq_hull_singleton`: every nonzero point of a salient ray generates
   that ray.
+* `TauCeti.Toric.ToricRay.toPointedCone_le_toPointedCone_iff`: in a salient cone, a ray
+  contained in another ray equals it.
 * `TauCeti.Toric.ToricRay.instIsEmptyBot`: the zero cone has no rays.
 * `TauCeti.Toric.ToricRay.faceEmbedding` and `TauCeti.Toric.ToricRay.range_faceEmbedding`: the
   rays of a face of a cone are exactly the rays of the cone contained in that face.
@@ -183,6 +185,20 @@ theorem eq_hullSingleton {x : V} (hx : x ≠ 0) (ρ : ToricRay (PointedCone.hull
 theorem toPointedCone_injective :
     Function.Injective (toPointedCone : ToricRay σ → PointedCone ℝ V) := fun _ _ h ↦
   SetLike.coe_injective (congrArg (fun C : PointedCone ℝ V ↦ (C : Set V)) h)
+
+/-- In a salient cone, a ray contained in another ray is equal to it: both are spanned by any
+nonzero point of the smaller one. -/
+theorem eq_of_toPointedCone_le (hσ : (σ : ConvexCone ℝ V).Salient) {ν ρ : ToricRay σ}
+    (h : ν.toPointedCone ≤ ρ.toPointedCone) : ν = ρ := by
+  obtain ⟨x, hx, hx0⟩ := ν.exists_mem_ne_zero
+  apply toPointedCone_injective
+  rw [ν.eq_hull_singleton (hσ.anti ν.1.isFaceOf.le) hx hx0,
+    ρ.eq_hull_singleton (hσ.anti ρ.1.isFaceOf.le) (h hx) hx0]
+
+/-- In a salient cone, containment of rays is equality. -/
+theorem toPointedCone_le_toPointedCone_iff (hσ : (σ : ConvexCone ℝ V).Salient)
+    {ν ρ : ToricRay σ} : ν.toPointedCone ≤ ρ.toPointedCone ↔ ν = ρ :=
+  ⟨eq_of_toPointedCone_le hσ, fun h ↦ h ▸ le_rfl⟩
 
 /-! ### Rays of a product -/
 

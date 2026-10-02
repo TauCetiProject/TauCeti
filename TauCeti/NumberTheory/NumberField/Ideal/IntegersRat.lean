@@ -13,26 +13,23 @@ public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.RamificationInertia.Bijective
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
 /-!
 # Local invariants over `ℤ` and over `𝓞 ℚ`
 
 The ring of integers of `ℚ` is `ℤ` (`Rat.ringOfIntegersEquiv`), but the two are different
-types, and the local invariants of a prime `P` of a number field `E` can be taken relative to
-either base ring: the different ideal, the residue degree `P.inertiaDeg ℤ` or
-`P.inertiaDeg (𝓞 ℚ)`, the ramification index `P.ramificationIdx ℤ` or
-`P.ramificationIdx (𝓞 ℚ)`, and the arithmetic Frobenius condition
-`IsArithFrobAt ℤ σ P` or `IsArithFrobAt (𝓞 ℚ) σ P`. Statements about number fields over `ℚ` as
-a base *field* naturally produce the `𝓞 ℚ` versions, while statements about rational primes
-produce the `ℤ` versions. This file proves that they agree.
-
-The different ideals agree because the trace conditions use the same subring of `ℚ`.
-The residue degrees are compared through the absolute norm, `absNorm (P.under R) ^ f = absNorm P`
-for both base rings, since the ideal of `𝓞 ℚ` below `P` is the image of the ideal of `ℤ` below
-`P` under the structure map. The ramification indices are compared as multiplicities of `P` in
-the extension of the prime below, and the Frobenius conditions only involve the size of the
-residue field below `P`. The comparison lemmas are `simp` lemmas oriented towards the `ℤ` forms.
+types, and the local invariants of an ideal `P` of an `𝓞 ℚ`-algebra `S`, such as the ring of
+integers of a number field, can be taken relative to either base ring: the residue degree
+`P.inertiaDeg ℤ` or `P.inertiaDeg (𝓞 ℚ)`, the ramification index `P.ramificationIdx ℤ` or
+`P.ramificationIdx (𝓞 ℚ)`, and the arithmetic Frobenius condition `IsArithFrobAt ℤ σ P` or
+`IsArithFrobAt (𝓞 ℚ) σ P`; likewise the different of a number field. Statements about number
+fields over `ℚ` as a base *field* naturally produce the `𝓞 ℚ` versions, while statements about
+rational primes produce the `ℤ` versions. This file proves that they agree; the comparison lemmas
+are `simp` lemmas oriented towards the `ℤ` forms. It then states the Frobenius order and
+prime-count formulas of Galois number fields over `ℤ`, and records the absolute norms of the
+ideals of `𝓞 ℚ`.
 
 ## Main results
 
@@ -52,8 +49,8 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
 * `Ideal.inertiaDeg_dvd_orderOf` and `Ideal.inertiaDeg_eq_one_iff_mem_inertia`: at a possibly
   ramified prime, the residue degree over `ℤ` divides the order of a Frobenius, and is `1`
   exactly when that Frobenius lies in the inertia subgroup.
-* `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for a prime `Q` above the rational prime `p`,
-  the primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`.
+* `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for an ideal `Q` lying over an ideal `p` of
+  `ℤ`, the primes above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 * `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
   the rational prime it corresponds to, and `Rat.HeightOneSpectrum.exists_absNorm_eq` shows
   every rational prime arises this way.
@@ -83,99 +80,75 @@ theorem differentIdeal_ringOfIntegers_rat_eq_int {K : Type*} [Field K] [NumberFi
 
 end TauCeti
 
+/-- The structure map `ℤ → 𝓞 ℚ` is the inverse of `Rat.ringOfIntegersEquiv`. -/
+theorem Rat.algebraMap_int_ringOfIntegers_eq :
+    algebraMap ℤ (𝓞 ℚ) = (Rat.ringOfIntegersEquiv.symm : ℤ →+* 𝓞 ℚ) :=
+  Subsingleton.elim _ _
+
+/-- The structure map `ℤ → 𝓞 ℚ` is bijective. -/
+theorem Rat.algebraMap_int_ringOfIntegers_bijective : Function.Bijective (algebraMap ℤ (𝓞 ℚ)) :=
+  Rat.algebraMap_int_ringOfIntegers_eq ▸ Rat.ringOfIntegersEquiv.symm.bijective
+
 namespace Ideal
 
-variable {E : Type*} [Field E] [NumberField E]
+variable {S : Type*} [CommRing S] [Algebra (𝓞 ℚ) S]
 
-/-- The structure map `ℤ → 𝓞 ℚ` is the inverse of `Rat.ringOfIntegersEquiv`. -/
-theorem _root_.Rat.algebraMap_int_ringOfIntegers_eq :
-    algebraMap ℤ (𝓞 ℚ) = (Rat.ringOfIntegersEquiv.symm : ℤ →+* 𝓞 ℚ) :=
-  (RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm
-
-/-- The ideal of `𝓞 ℚ` below an ideal `P` of `𝓞 E` is the image of the ideal of `ℤ` below `P`. -/
+/-- The ideal of `𝓞 ℚ` below an ideal `P` is the image of the ideal of `ℤ` below `P`. -/
 -- Not a `simp` lemma: it would rewrite the left-hand sides of `absNorm_under_ringOfIntegers_rat`
 -- and `card_quot_under_ringOfIntegers_rat` out of simp normal form (`simpNF`).
-theorem under_ringOfIntegers_rat_eq_map (P : Ideal (𝓞 E)) :
+theorem under_ringOfIntegers_rat_eq_map (P : Ideal S) :
     P.under (𝓞 ℚ) = (P.under ℤ).map (algebraMap ℤ (𝓞 ℚ)) := by
-  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
-    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
   rw [← under_under (A := ℤ) (B := 𝓞 ℚ) P]
-  exact (map_comap_of_surjective _
-    (Rat.algebraMap_int_ringOfIntegers_eq ▸ Rat.ringOfIntegersEquiv.symm.surjective) _).symm
+  exact (map_comap_of_surjective _ Rat.algebraMap_int_ringOfIntegers_bijective.surjective _).symm
 
 /-- The absolute norm of the ideal of `𝓞 ℚ` below `P` is that of the ideal of `ℤ` below `P`. -/
 @[simp]
-theorem absNorm_under_ringOfIntegers_rat (P : Ideal (𝓞 E)) :
+theorem absNorm_under_ringOfIntegers_rat (P : Ideal S) :
     absNorm (P.under (𝓞 ℚ)) = absNorm (P.under ℤ) := by
   rw [under_ringOfIntegers_rat_eq_map, Rat.algebraMap_int_ringOfIntegers_eq]
   exact absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv.symm _
 
 /-- The residue rings of `𝓞 ℚ` and of `ℤ` below `P` have the same number of elements. -/
 @[simp]
-theorem card_quot_under_ringOfIntegers_rat (P : Ideal (𝓞 E)) :
+theorem card_quot_under_ringOfIntegers_rat (P : Ideal S) :
     Nat.card (𝓞 ℚ ⧸ P.under (𝓞 ℚ)) = Nat.card (ℤ ⧸ P.under ℤ) := by
   rw [← Submodule.cardQuot_apply, ← Submodule.cardQuot_apply, ← absNorm_apply, ← absNorm_apply,
     absNorm_under_ringOfIntegers_rat]
 
 /-- **Frobenius elements over `𝓞 ℚ` and over `ℤ` are the same.** An element `σ` is an arithmetic
-Frobenius at `Q` relative to the base ring `𝓞 ℚ` exactly when it is one relative to `ℤ`: the
-defining congruence only involves the size of the residue field below `Q`, which is the same
-for both base rings. -/
+Frobenius at `Q` relative to the base ring `𝓞 ℚ` exactly when it is one relative to `ℤ`. -/
 @[simp]
-theorem isArithFrobAt_ringOfIntegers_rat_iff {G : Type*} [Group G] [MulSemiringAction G (𝓞 E)]
-    [SMulCommClass G ℤ (𝓞 E)] [SMulCommClass G (𝓞 ℚ) (𝓞 E)] (σ : G) (Q : Ideal (𝓞 E)) :
+theorem isArithFrobAt_ringOfIntegers_rat_iff {G : Type*} [Monoid G] [MulSemiringAction G S]
+    [SMulCommClass G ℤ S] [SMulCommClass G (𝓞 ℚ) S] (σ : G) (Q : Ideal S) :
     IsArithFrobAt (𝓞 ℚ) σ Q ↔ IsArithFrobAt ℤ σ Q := by
   simp only [IsArithFrobAt, AlgHom.IsArithFrobAt, MulSemiringAction.toAlgHom_apply,
     card_quot_under_ringOfIntegers_rat]
 
 /-- **The residue degree over `ℤ` is the residue degree over `𝓞 ℚ`.** -/
 @[simp]
-theorem inertiaDeg_ringOfIntegers_rat_eq_int (P : Ideal (𝓞 E)) [P.IsPrime] (hP : P ≠ ⊥) :
-    P.inertiaDeg (𝓞 ℚ) = P.inertiaDeg ℤ := by
-  have h1 := absNorm_pow_inertiaDeg (P.under ℤ) P
-  have h2 := absNorm_pow_inertiaDeg (P.under (𝓞 ℚ)) P
-  rw [absNorm_under_ringOfIntegers_rat] at h2
-  have hne : P.under ℤ ≠ ⊥ := under_ne_bot ℤ hP
-  have htop : P.under ℤ ≠ ⊤ := (IsPrime.under ℤ P).ne_top
-  have h2le : 2 ≤ absNorm (P.under ℤ) := by
-    by_contra h
-    interval_cases hn : absNorm (P.under ℤ)
-    · exact hne (absNorm_eq_zero_iff.mp hn)
-    · exact htop (absNorm_eq_one_iff.mp hn)
-  exact Nat.pow_right_injective h2le (h2.trans h1.symm)
+theorem inertiaDeg_ringOfIntegers_rat_eq_int (P : Ideal S) :
+    P.inertiaDeg (𝓞 ℚ) = P.inertiaDeg ℤ :=
+  inertiaDeg_eq_of_bijective Rat.algebraMap_int_ringOfIntegers_bijective P
 
 /-- **The ramification index over `ℤ` is the ramification index over `𝓞 ℚ`.** -/
 @[simp]
-theorem ramificationIdx_ringOfIntegers_rat_eq_int (P : Ideal (𝓞 E)) [P.IsPrime] (hP : P ≠ ⊥) :
-    P.ramificationIdx (𝓞 ℚ) = P.ramificationIdx ℤ := by
-  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
-    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
-  have hne : P.under ℤ ≠ ⊥ := under_ne_bot ℤ hP
-  have hne' : P.under (𝓞 ℚ) ≠ ⊥ := under_ne_bot (𝓞 ℚ) hP
-  rw [IsDedekindDomain.ramificationIdx_eq_multiplicity (p := P.under (𝓞 ℚ)) (q := P)
-      (map_ne_bot_of_ne_bot hne'),
-    IsDedekindDomain.ramificationIdx_eq_multiplicity (p := P.under ℤ) (q := P)
-      (map_ne_bot_of_ne_bot hne),
-    under_ringOfIntegers_rat_eq_map, map_map, ← IsScalarTower.algebraMap_eq]
+theorem ramificationIdx_ringOfIntegers_rat_eq_int [Module.Flat (𝓞 ℚ) S] (P : Ideal S) :
+    P.ramificationIdx (𝓞 ℚ) = P.ramificationIdx ℤ :=
+  ramificationIdx_eq_of_bijective Rat.algebraMap_int_ringOfIntegers_bijective P
 
-/-- The primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`, when `Q` lies over the
-rational prime `p`. -/
+/-- The primes of `S` above `Q ∩ 𝓞 ℚ` are the primes above `p`, when `Q` lies over the ideal `p`
+of `ℤ`. -/
 -- Not a `simp` lemma: `p` occurs only in the `LiesOver` instance and on the right-hand side, so
 -- the `simpNF` linter reports that `simp` could never infer it.
-theorem primesOver_under_ringOfIntegers_rat_eq {M : Type*} [Field M] [NumberField M] {p : ℕ}
-    (Q : Ideal (𝓞 M)) [Q.LiesOver (Ideal.span {(p : ℤ)})] (E : IntermediateField ℚ M) :
-    (Q.under (𝓞 ℚ)).primesOver (𝓞 E) = (Ideal.span {(p : ℤ)}).primesOver (𝓞 E) := by
-  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 E) :=
-    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
-  have : IsScalarTower ℤ (𝓞 ℚ) (𝓞 M) :=
-    IsScalarTower.of_algebraMap_eq' ((RingHom.eq_intCast' _).trans (RingHom.eq_intCast' _).symm)
+theorem primesOver_under_ringOfIntegers_rat_eq {T : Type*} [CommRing T] [Algebra (𝓞 ℚ) T]
+    {p : Ideal ℤ} (Q : Ideal T) [Q.LiesOver p] :
+    (Q.under (𝓞 ℚ)).primesOver S = p.primesOver S := by
   ext 𝔮
   simp only [Ideal.primesOver, Set.mem_ofPred_eq]
   refine and_congr_right fun _ => ⟨fun h => ⟨?_⟩, fun h => ⟨?_⟩⟩
-  · rw [Ideal.over_def (P := Q) (p := Ideal.span {(p : ℤ)}),
-      ← Ideal.under_under (A := ℤ) (B := 𝓞 ℚ) Q, h.over, Ideal.under_under]
+  · rw [Ideal.over_def Q p, ← Ideal.under_under (A := ℤ) (B := 𝓞 ℚ) Q, h.over, Ideal.under_under]
   · rw [under_ringOfIntegers_rat_eq_map, under_ringOfIntegers_rat_eq_map, ← h.over,
-      ← Ideal.over_def (P := Q) (p := Ideal.span {(p : ℤ)})]
+      ← Ideal.over_def Q p]
 
 end Ideal
 
@@ -196,9 +169,8 @@ theorem absNorm_asIdeal (v : HeightOneSpectrum (𝓞 ℚ)) :
 @[simp]
 theorem natCast_mem_iff_absNorm_asIdeal_dvd (v : HeightOneSpectrum (𝓞 ℚ)) {n : ℕ} :
     (n : 𝓞 ℚ) ∈ v.asIdeal ↔ Ideal.absNorm v.asIdeal ∣ n := by
-  symm
-  rw [absNorm_asIdeal, natGenerator_dvd_iff]
-  rw [← map_natCast (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)), ← Ideal.mem_comap,
+  rw [absNorm_asIdeal, natGenerator_dvd_iff, ← map_natCast (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)),
+    ← Ideal.mem_comap,
     Ideal.comap_map_of_bijective _ (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ)).bijective]
 
 /-- Every rational prime is the absolute norm of a height-one prime of `𝓞 ℚ`. -/
@@ -224,6 +196,7 @@ theorem ideal_span_absNorm_eq_self (J : Ideal (𝓞 ℚ)) :
 
 /-- **Divisibility of natural numbers in `𝓞 ℚ` is divisibility in `ℕ`**, transported along
 `Rat.ringOfIntegersEquiv : 𝓞 ℚ ≃+* ℤ`. -/
+@[simp, norm_cast]
 theorem natCast_dvd_natCast {m n : ℕ} : (m : 𝓞 ℚ) ∣ (n : 𝓞 ℚ) ↔ m ∣ n := by
   rw [← map_dvd_iff Rat.ringOfIntegersEquiv, map_natCast, map_natCast, Int.natCast_dvd_natCast]
 
@@ -232,56 +205,49 @@ end Rat.RingOfIntegers
 namespace Ideal
 
 open Module MulAction
-open scoped NumberField Pointwise
+open scoped Pointwise
 
-variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- At an unramified prime of a Galois number field, the residue degree over `ℤ` is the order of
-a Frobenius. The decomposition-group API computes it over `𝓞 ℚ`; the comparison lemmas of
-`TauCeti.NumberTheory.NumberField.Ideal.IntegersRat` transport it to `ℤ`. -/
+a Frobenius. -/
 theorem inertiaDeg_eq_orderOf [IsGalois ℚ K] (Q : Ideal (𝓞 K)) [Q.IsPrime]
-    [Q.LiesOver (span {(p : ℤ)})] [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] {σ : K ≃ₐ[ℚ] K}
-    (hσ : IsArithFrobAt ℤ σ Q) : Q.inertiaDeg ℤ = orderOf σ := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
-  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
-  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
-    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ
-      ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
+    [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
+    Q.inertiaDeg ℤ = orderOf σ := by
+  rw [← inertiaDeg_ringOfIntegers_rat_eq_int, orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ.ne_bot
+    ((isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
 
 /-- At any prime of a number field, ramified or not, the residue degree over `ℤ` divides the order
 of a Frobenius. This is `Ideal.inertiaDeg_dvd_orderOf_of_isArithFrobAt` with base ring `ℤ`. -/
 theorem inertiaDeg_dvd_orderOf (Q : Ideal (𝓞 K)) [Q.IsPrime] {σ : K ≃ₐ[ℚ] K}
     (hσ : IsArithFrobAt ℤ σ Q) : Q.inertiaDeg ℤ ∣ orderOf σ := by
-  have hσ' := (Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ
-  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hσ.ne_bot]
-  exact Ideal.inertiaDeg_dvd_orderOf_of_isArithFrobAt Q hσ'
+  rw [← inertiaDeg_ringOfIntegers_rat_eq_int]
+  exact inertiaDeg_dvd_orderOf_of_isArithFrobAt Q
+    ((isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)
 
 /-- At any prime of a number field, ramified or not, the residue degree over `ℤ` is `1` exactly
 when a Frobenius lies in the inertia subgroup. This is
 `Ideal.inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt` with base ring `ℤ`. -/
 theorem inertiaDeg_eq_one_iff_mem_inertia (Q : Ideal (𝓞 K)) [Q.IsPrime] {σ : K ≃ₐ[ℚ] K}
     (hσ : IsArithFrobAt ℤ σ Q) : Q.inertiaDeg ℤ = 1 ↔ σ ∈ Q.inertia (K ≃ₐ[ℚ] K) := by
-  have hσ' := (Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ
-  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hσ.ne_bot]
-  exact Ideal.inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt Q hσ'
+  rw [← inertiaDeg_ringOfIntegers_rat_eq_int]
+  exact inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt Q
+    ((isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)
 
 /-- At an unramified prime of a Galois number field, the number of primes above `p` times the
 residue degree is `[K : ℚ]`. -/
-theorem ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt [IsGalois ℚ K]
-    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+theorem ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt [IsGalois ℚ K] {p : ℕ}
+    [NeZero p] (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
     [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ = finrank ℚ K := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
-  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hp0 Q
+  have hQ : Q ≠ ⊥ :=
+    ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) (by simpa using NeZero.ne p) Q
   -- Orbit–stabilizer: the primes above `p` form one orbit, and the stabilizer of the unramified
   -- prime `Q` has order its residue degree.
-  have horbit : orbit (K ≃ₐ[ℚ] K) Q = (span {(p : ℤ)}).primesOver (𝓞 K) :=
-    Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 K) (K ≃ₐ[ℚ] K) (span {(p : ℤ)}) Q
-  rw [← Ideal.inertiaDeg_ringOfIntegers_rat_eq_int Q hQ,
-    ← Ideal.card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ, ← Nat.card_coe_set_eq,
-    ← horbit, ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
+  rw [← inertiaDeg_ringOfIntegers_rat_eq_int,
+    ← card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ, ← Nat.card_coe_set_eq,
+    ← Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 K) (K ≃ₐ[ℚ] K) (span {(p : ℤ)}) Q,
+    ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
     IsGalois.card_aut_eq_finrank]
 
 end Ideal

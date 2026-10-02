@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
 
 /-!
 # The period integral of a cusp form against a binary form
@@ -66,6 +67,8 @@ law, stated through `TauCeti.binaryFormRep`, needs `R` to be a ring.
   `i∞` uniformly on vertical strips.
 * `TauCeti.ModularSymbols.cuspIntegral_periodIntegrand_add_adjacent`: **additivity** of the
   periods, `∫_α^β f(z) P(z, 1) dz + ∫_β^γ f(z) P(z, 1) dz = ∫_α^γ f(z) P(z, 1) dz`.
+* `TauCeti.ModularSymbols.cuspIntegral_mul_sub_pow`: the period `∫_α^β f(z) (z - τ)ʷ dz` is a
+  polynomial in `τ` whose coefficients are the periods `∫_α^β f(z) zʲ dz`.
 * `TauCeti.ModularSymbols.periodIntegrand_slash_mapGL`: for `γ ∈ SL(2, ℤ)`, slashing the
   integrand of `f` against `P` by `γ` gives the integrand of `f ∣[k] γ` against `P ∣ γ`.
 * `TauCeti.ModularSymbols.geodesicIntegral_mapGL_mul_periodIntegrand`: the transformation law
@@ -358,6 +361,44 @@ theorem cuspIntegral_periodIntegrand_add_adjacent [Γ.IsArithmetic] [CuspFormCla
   cuspIntegral_add_adjacent (mdifferentiable_periodIntegrand (ModularFormClass.holo f) P)
     (fun _ hg ↦ integrableOn_resToImagAxis_periodIntegrand_slash_Ici f hk P hg)
     (fun _ hg ↦ tendsto_periodIntegrand_slash f hk P hg) α β γ
+
+/-- **The period polynomial is a polynomial in `τ` with periods as coefficients.** For a cusp form
+`f` of weight `w + 2` on an arithmetic subgroup, `τ ∈ ℂ` and cusps `α`, `β`, the binomial
+expansion of `(z - τ)ʷ` gives
+
+`∫_α^β f(z) (z - τ)ʷ dz = ∑_{j ≤ w} (w choose j) (-τ)ʷ⁻ʲ ∫_α^β f(z) zʲ dz`,
+
+where `f(z) zʲ` is the period integrand of `f` against the monomial `X₀ʲ X₁ʷ⁻ʲ`. -/
+theorem cuspIntegral_mul_sub_pow [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F)
+    (hk : k = w + 2) (τ : ℂ) (α β : OnePoint ℚ) :
+    cuspIntegral (fun z ↦ f z * ((z : ℂ) - τ) ^ w) α β =
+      ∑ j ∈ Finset.range (w + 1),
+        (w.choose j : ℂ) * (-τ) ^ (w - j) * cuspIntegral (fun z ↦ f z * (z : ℂ) ^ j) α β := by
+  rcases eq_or_ne α β with rfl | hαβ
+  · simp
+  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hαβ
+  set c : ℕ → ℂ := fun j ↦ (w.choose j : ℂ) * (-τ) ^ (w - j) with hc
+  -- each term is the period integrand of a multiple of the monomial `X₀ʲ X₁ʷ⁻ʲ`
+  have hint (j : ℕ) (hj : j ∈ Finset.range (w + 1)) :
+      IntegrableOn (resToImagAxis ((c j • fun z : ℍ ↦ f z * (z : ℂ) ^ j) ∣[(2 : ℤ)] g))
+        (Ioi 0) := by
+    let P : homogeneousSubmodule (Fin 2) ℂ w := ⟨X 0 ^ j * X 1 ^ (w - j), by
+      simpa [Nat.add_sub_cancel' (Finset.mem_range_succ_iff.mp hj)] using
+        (isHomogeneous_X_pow (R := ℂ) (0 : Fin 2) j).mul (isHomogeneous_X_pow 1 (w - j))⟩
+    have hP : periodIntegrand f (c j • P) = c j • fun z : ℍ ↦ f z * (z : ℂ) ^ j := by
+      rw [periodIntegrand_smul_right]
+      congr 1
+      funext z
+      simp [P]
+    simpa only [hP] using integrableOn_resToImagAxis_periodIntegrand_slash f hk (c j • P) hg
+  have hsum : (fun z : ℍ ↦ f z * ((z : ℂ) - τ) ^ w) =
+      ∑ j ∈ Finset.range (w + 1), c j • fun z : ℍ ↦ f z * (z : ℂ) ^ j := by
+    funext z
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, hc, sub_eq_add_neg, add_pow,
+      Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [hsum, cuspIntegral_sum _ hg hint]
+  exact Finset.sum_congr rfl fun j _ ↦ cuspIntegral_smul _ _ _ _
 
 end CommSemiring
 

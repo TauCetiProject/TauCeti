@@ -93,6 +93,12 @@ theorem isQuasiFullyFaithful_id :
   change QuasiIso (𝟙 _)
   exact quasiIso_of_isIso _
 
+/-- A DG functor which is an isomorphism on every Hom complex is quasi-fully faithful. -/
+theorem isQuasiFullyFaithful_of_isIso_map
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : ∀ X Y : C, IsIso (F.map X Y)) : EnrichedFunctor.IsQuasiFullyFaithful F :=
+  fun X Y ↦ have := hF X Y; quasiIso_of_isIso _
+
 /-- Composition preserves quasi-full faithfulness. -/
 theorem IsQuasiFullyFaithful.comp
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}

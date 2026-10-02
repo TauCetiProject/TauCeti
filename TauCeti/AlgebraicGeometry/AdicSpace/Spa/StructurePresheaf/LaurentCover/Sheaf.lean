@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Sie
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Restrict
 public import TauCeti.CategoryTheory.Sites.IsSheafForTrans
 
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
+
 /-!
 # The sheaf condition for Laurent covers
 
@@ -58,27 +60,6 @@ universe v
 namespace TauCeti.ValuationSpectrum
 
 /-! ### The sheaf condition -/
-
-section Transport
-
-variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  (P : PairOfDefinition A) {Aplus : Subring A}
-
--- Read through the transports along `presentationLimitPresheaf_obj`, the restriction maps of the
--- presentation-limit presheaf of sets are those of `presentationLimit`.
-private theorem eqToHom_apply_presentationLimitPresheaf_map_apply {V W : Opens ↥(spa Aplus)}
-    (h : W ≤ V) (x : (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-      forget _root_.TopCommRingCat).obj (Opposite.op V)) :
-    (eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op W))).hom.1
-      ((presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget _root_.TopCommRingCat).map (homOfLE h).op x) =
-      (presentationLimitMap (P := P) h).hom.1
-        ((eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op V))).hom.1 x) := by
-  rw [Functor.comp_map, Functor.comp_map, presentationLimitPresheaf_map]
-  exact Iso.hom_inv_id_apply
-    (eqToIso (presentationLimitPresheaf_obj P Aplus (Opposite.op W)).symm) _
-
-end Transport
 
 section Sheaf
 
