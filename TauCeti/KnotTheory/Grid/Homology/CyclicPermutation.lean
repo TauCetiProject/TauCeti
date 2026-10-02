@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.KnotTheory.Grid.Differential.CyclicPermutation
 public import TauCeti.KnotTheory.Grid.Grading.CyclicPermutation
 public import TauCeti.KnotTheory.Grid.Homology.Tau
@@ -22,13 +21,16 @@ The chain-level input is that relabeling every grid state by the cyclic permutat
 the two unblocked differentials, after renaming the variables `V_c` along the same permutation
 in the case of the columns (`Differential/CyclicPermutation.lean`). Any semilinear equivalence of
 chain modules that intertwines two unblocked differentials induces a semilinear equivalence of
-their homologies (`GridDiagram.unblockedHomologyEquivOfIntertwining`). For a cyclic permutation
+their homologies (`GridDiagram.unblockedHomologyEquivOfIntertwining`, in
+`Homology/Unblocked.lean`). For a cyclic permutation
 of the rows this is an isomorphism of modules over `R[V₀, …, V_{n-1}]`
 (`GridDiagram.unblockedHomologyRelabelRowsFinRotateEquiv`); for the columns it is semilinear along
 the renaming of the variables (`GridDiagram.unblockedHomologyRelabelColumnsFinRotateEquiv`).
 
 Both moves preserve the Alexander grading of grid states (`Grading/CyclicPermutation.lean`), so
-both equivalences preserve the Alexander grading of `GH⁻`. On a knot grid every variable acts as
+both equivalences preserve the Alexander grading of `GH⁻`
+(`OddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece`, in
+`Homology/Alexander.lean`). On a knot grid every variable acts as
 `U`, and renaming the variables does not change the evaluation `V_c ↦ U`, so both equivalences
 are graded `R[U]`-isomorphisms of degree zero and the invariants `τ` agree
 (`GridDiagram.IsKnot.tau_relabelRows_finRotate`, `GridDiagram.IsKnot.tau_relabelColumns_finRotate`).
@@ -36,19 +38,12 @@ The corresponding statements for fully blocked grid homology are in `Homology/Sy
 
 ## Main definitions
 
-* `TauCeti.GridDiagram.unblockedHomologyEquivOfIntertwining`: the equivalence of unblocked grid
-  homologies induced by a semilinear equivalence intertwining the differentials.
 * `TauCeti.GridDiagram.unblockedHomologyRelabelRowsFinRotateEquiv`,
   `TauCeti.GridDiagram.unblockedHomologyRelabelColumnsFinRotateEquiv`: the equivalences induced by
   the cyclic permutations of the rows and of the columns.
 
 ## Main results
 
-* `TauCeti.GridDiagram.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass`: the
-  induced equivalence sends the class of a cycle `z` to the class of its image.
-* `TauCeti.OddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece`: if the
-  intertwining equivalence preserves the Alexander grading of chains, the induced equivalence
-  preserves the Alexander grading of `GH⁻`.
 * `TauCeti.GridDiagram.IsKnot.tau_relabelRows_finRotate`,
   `TauCeti.GridDiagram.IsKnot.tau_relabelColumns_finRotate`: `τ` is invariant under the cyclic
   permutation moves.
@@ -70,90 +65,6 @@ namespace GridDiagram
 
 variable {n : ℕ}
 
-/-! ### The equivalence induced by an intertwining map -/
-
-section Intertwining
-
-variable (G G' : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
-  {σ σ' : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R} [RingHomInvPair σ σ']
-  [RingHomInvPair σ' σ] (e : GridChainMinus R n ≃ₛₗ[σ] GridChainMinus R n)
-  (he : ∀ c, G'.unblockedDifferential R (e c) = e (G.unblockedDifferential R c))
-
-include he
-
-omit [CharP R 2] in
-/-- A map intertwining two unblocked differentials sends cycles to cycles. -/
-theorem map_mem_ker_unblockedDifferential_of_intertwining {c : GridChainMinus R n}
-    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
-    e c ∈ LinearMap.ker (G'.unblockedDifferential R) := by
-  rw [LinearMap.mem_ker] at hc ⊢
-  rw [he, hc, map_zero]
-
-/-- The semilinear equivalence of cycle submodules induced by an equivalence intertwining two
-unblocked differentials. -/
-private noncomputable def unblockedCyclesEquivOfIntertwining :
-    LinearMap.ker (G.unblockedDifferential R) ≃ₛₗ[σ] LinearMap.ker (G'.unblockedDifferential R) :=
-  e.ofSubmodules _ _ (e.map_ker_of_intertwine _ _ he)
-
-omit [CharP R 2] in
-/-- The cycle equivalence acts on underlying chains by `e`. -/
-@[simp]
-private theorem coe_unblockedCyclesEquivOfIntertwining_apply
-    (z : LinearMap.ker (G.unblockedDifferential R)) :
-    (G.unblockedCyclesEquivOfIntertwining G' R e he z : GridChainMinus R n) = e z :=
-  e.ofSubmodules_apply _ z
-
-/-- The cycle equivalence carries boundaries onto boundaries. -/
-private theorem map_boundariesInKer_unblockedCyclesEquivOfIntertwining :
-    (G.unblockedDifferential R).boundariesInKer.map
-        (G.unblockedCyclesEquivOfIntertwining G' R e he :
-          LinearMap.ker (G.unblockedDifferential R) →ₛₗ[σ]
-            LinearMap.ker (G'.unblockedDifferential R)) =
-      (G'.unblockedDifferential R).boundariesInKer := by
-  have hrange := e.map_range_of_intertwine _ _ he
-  ext z
-  simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨w, hw, rfl⟩
-    rw [coe_unblockedCyclesEquivOfIntertwining_apply, ← hrange]
-    exact Submodule.mem_map_of_mem hw
-  · intro hz
-    rw [← hrange] at hz
-    obtain ⟨w, ⟨v, rfl⟩, hwz⟩ := hz
-    refine ⟨⟨G.unblockedDifferential R v, ?_⟩, ⟨v, rfl⟩, Subtype.ext ?_⟩
-    · rw [LinearMap.mem_ker, ← LinearMap.comp_apply, unblockedDifferential_comp_self_eq_zero,
-        LinearMap.zero_apply]
-    · rw [coe_unblockedCyclesEquivOfIntertwining_apply]
-      exact hwz
-
-/-- **The equivalence of unblocked grid homologies induced by an intertwining map.** A
-semilinear equivalence `e` of chain modules with `∂⁻' ∘ e = e ∘ ∂⁻` induces a semilinear
-equivalence `GH⁻(G) ≃ GH⁻(G')`, sending the class of a cycle `z` to the class of `e z`. -/
-noncomputable def unblockedHomologyEquivOfIntertwining :
-    G.unblockedHomology R ≃ₛₗ[σ] G'.unblockedHomology R :=
-  (G.unblockedHomologyIso R).toLinearEquiv.trans <|
-    (Submodule.Quotient.equiv _ _ (G.unblockedCyclesEquivOfIntertwining G' R e he)
-      (G.map_boundariesInKer_unblockedCyclesEquivOfIntertwining G' R e he)).trans
-        (G'.unblockedHomologyIso R).toLinearEquiv.symm
-
-/-- `unblockedHomologyEquivOfIntertwining` sends the class of a cycle `z` to the class of its
-image. -/
-@[simp]
-theorem unblockedHomologyEquivOfIntertwining_unblockedHomologyClass
-    (z : LinearMap.ker (G.unblockedDifferential R)) :
-    G.unblockedHomologyEquivOfIntertwining G' R e he (G.unblockedHomologyClass R z) =
-      G'.unblockedHomologyClass R
-        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining G' R e he z.2⟩ := by
-  simp only [unblockedHomologyEquivOfIntertwining, LinearEquiv.trans_apply,
-    LinearEquiv.symm_apply_eq]
-  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
-    unblockedHomologyIso_hom_unblockedHomologyClass,
-    unblockedHomologyIso_hom_unblockedHomologyClass]
-  simp only [LinearMap.homologyπ_apply, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
-  exact congrArg _ (Subtype.ext (G.coe_unblockedCyclesEquivOfIntertwining_apply G' R e he z))
-
-end Intertwining
-
 /-! ### Cyclic permutations -/
 
 variable (G : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
@@ -164,7 +75,7 @@ unblocked homology of the row-permuted diagram. -/
 noncomputable def unblockedHomologyRelabelRowsFinRotateEquiv :
     G.unblockedHomology R ≃ₗ[MvPolynomial (Fin n) R]
       (G.relabelRows (finRotate n)).unblockedHomology R :=
-  G.unblockedHomologyEquivOfIntertwining _ R (GridChain.relabelRowsEquiv (finRotate n))
+  G.unblockedHomologyEquivOfIntertwining R _ (GridChain.relabelRowsEquiv (finRotate n))
     (G.unblockedDifferential_relabelRows_finRotate_apply R)
 
 /-- The row equivalence sends the class of a cycle `z` to the class of its relabeling. -/
@@ -174,9 +85,9 @@ theorem unblockedHomologyRelabelRowsFinRotateEquiv_unblockedHomologyClass
     G.unblockedHomologyRelabelRowsFinRotateEquiv R (G.unblockedHomologyClass R z) =
       (G.relabelRows (finRotate n)).unblockedHomologyClass R
         ⟨GridChain.relabelRowsEquiv (finRotate n) z,
-          G.map_mem_ker_unblockedDifferential_of_intertwining _ R _
+          G.map_mem_ker_unblockedDifferential_of_intertwining R _ _
             (G.unblockedDifferential_relabelRows_finRotate_apply R) z.2⟩ :=
-  G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass _ R _ _ z
+  G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 /-- **Invariance of `GH⁻` under cyclic permutation of the columns.** Relabeling the grid states
 along `finRotate n` and renaming the variables along the same permutation induces an equivalence
@@ -186,7 +97,7 @@ noncomputable def unblockedHomologyRelabelColumnsFinRotateEquiv :
     G.unblockedHomology R ≃ₛₗ[((renameEquiv R (finRotate n)).toRingEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)]
       (G.relabelColumns (finRotate n)).unblockedHomology R :=
-  G.unblockedHomologyEquivOfIntertwining _ R (GridChain.relabelColumnsRenameEquiv R (finRotate n))
+  G.unblockedHomologyEquivOfIntertwining R _ (GridChain.relabelColumnsRenameEquiv R (finRotate n))
     (G.unblockedDifferential_relabelColumns_finRotate_apply R)
 
 /-- The column equivalence sends the class of a cycle `z` to the class of its relabeling with
@@ -197,9 +108,9 @@ theorem unblockedHomologyRelabelColumnsFinRotateEquiv_unblockedHomologyClass
     G.unblockedHomologyRelabelColumnsFinRotateEquiv R (G.unblockedHomologyClass R z) =
       (G.relabelColumns (finRotate n)).unblockedHomologyClass R
         ⟨GridChain.relabelColumnsRenameEquiv R (finRotate n) z,
-          G.map_mem_ker_unblockedDifferential_of_intertwining _ R _
+          G.map_mem_ker_unblockedDifferential_of_intertwining R _ _
             (G.unblockedDifferential_relabelColumns_finRotate_apply R) z.2⟩ :=
-  G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass _ R _ _ z
+  G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 end GridDiagram
 
@@ -208,34 +119,6 @@ namespace OddComponentGridDiagram
 variable {n : ℕ}
 
 /-! ### The Alexander grading -/
-
-section Intertwining
-
-variable (G G' : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
-  {σ σ' : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R} [RingHomInvPair σ σ']
-  [RingHomInvPair σ' σ] (e : GridChainMinus R n ≃ₛₗ[σ] GridChainMinus R n)
-  (he : ∀ c, G'.1.unblockedDifferential R (e c) = e (G.1.unblockedDifferential R c))
-
-/-- If an equivalence intertwining two unblocked differentials preserves the Alexander grading of
-chains, the induced equivalence of unblocked homologies preserves the Alexander grading. -/
-theorem unblockedHomologyEquivOfIntertwining_mem_piece
-    (hA : ∀ a c, c ∈ G.alexanderChainMinusPiece R a → e c ∈ G'.alexanderChainMinusPiece R a)
-    {a : ℤ} {y : G.1.unblockedHomology R}
-    (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.1.unblockedHomologyEquivOfIntertwining G'.1 R e he y ∈
-      (G'.alexanderUnblockedHomologyGrading R).piece a := by
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff, mem_alexanderHomologyGrading_piece_iff]
-    at hy ⊢
-  obtain ⟨z, hz, hzy⟩ := hy
-  obtain rfl : y = G.1.unblockedHomologyClass R z := by
-    apply (ModuleCat.mono_iff_injective (G.1.unblockedHomologyIso R).hom).mp inferInstance
-    rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, hzy]
-  refine ⟨⟨e z, G.1.map_mem_ker_unblockedDifferential_of_intertwining G'.1 R e he z.2⟩,
-    hA a _ hz, ?_⟩
-  rw [GridDiagram.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass,
-    GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass]
-
-end Intertwining
 
 variable (G : OddComponentGridDiagram n) (R : Type*) [CommRing R]
 
@@ -292,7 +175,7 @@ theorem tau_relabelRows_finRotate :
     Subtype.ext (hG.toOddComponentGridDiagram.val_relabelRows _)
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
     ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
-  exact hG.toOddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece _ K _ _
+  exact hG.toOddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece K _ _ _
     (fun _ _ hc ↦ hG' ▸
       hG.toOddComponentGridDiagram.relabelRowsEquiv_mem_alexanderChainMinusPiece K hc) hy
 
@@ -308,7 +191,7 @@ theorem tau_relabelColumns_finRotate :
       Subtype.ext (hG.toOddComponentGridDiagram.val_relabelColumns _)
     rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
       ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
-    exact hG.toOddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece _ K _ _
+    exact hG.toOddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece K _ _ _
       (fun _ _ hc ↦ hG' ▸
         hG.toOddComponentGridDiagram.relabelColumnsRenameEquiv_mem_alexanderChainMinusPiece K hc) hy
 

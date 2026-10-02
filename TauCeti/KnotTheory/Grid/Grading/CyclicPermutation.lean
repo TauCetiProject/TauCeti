@@ -9,7 +9,6 @@ import Mathlib.Tactic.Linarith
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.Rectangle.Relabeling
-public import TauCeti.KnotTheory.Grid.Diagram.Components
 
 /-!
 # The gradings under cyclic permutation
@@ -29,11 +28,6 @@ with the state and the markings, so it preserves this change. Since any two grid
 joined by rectangles (`GridState.rectangle_induction_on`), the two gradings differ by a constant,
 and that constant is zero because the marking state `𝕆` has grading `1 - n` in every diagram
 (`GridDiagram.maslovOℤ_O`).
-
-## Main definitions
-
-* `TauCeti.OddComponentGridDiagram.relabelRows`, `TauCeti.OddComponentGridDiagram.relabelColumns`:
-  relabeling keeps the number of link components odd.
 
 ## Main results
 
@@ -160,25 +154,6 @@ end GridDiagram
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n)
-
-/-- Relabeling the rows of a grid diagram with an odd number of components. -/
-def relabelRows (ρ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
-  ⟨G.1.relabelRows ρ, by rw [GridDiagram.componentCount_relabelRows]; exact G.2⟩
-
-/-- The underlying grid diagram of `G.relabelRows ρ` is the row-relabeled diagram. -/
-@[simp]
-theorem val_relabelRows (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).1 = G.1.relabelRows ρ :=
-  (rfl)
-
-/-- Relabeling the columns of a grid diagram with an odd number of components. -/
-def relabelColumns (κ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
-  ⟨G.1.relabelColumns κ, by rw [GridDiagram.componentCount_relabelColumns]; exact G.2⟩
-
-/-- The underlying grid diagram of `G.relabelColumns κ` is the column-relabeled diagram. -/
-@[simp]
-theorem val_relabelColumns (κ : Equiv.Perm (Fin n)) :
-    (G.relabelColumns κ).1 = G.1.relabelColumns κ :=
-  (rfl)
 
 /-- The integer Alexander grading is invariant under a cyclic permutation of the rows. -/
 @[simp]
