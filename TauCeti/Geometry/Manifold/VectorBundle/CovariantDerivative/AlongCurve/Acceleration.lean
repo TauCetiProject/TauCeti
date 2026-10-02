@@ -15,8 +15,8 @@ covariant derivative of its velocity field along `γ`, `D_t γ'`.  It is the alo
 `CovariantDerivative.alongCurveWithin` of `AlongCurve/Basic.lean` specialised to the velocity
 field `TauCeti.Manifold.curveVelocityWithin`, both taken within a parameter set `s`; the
 unrestricted acceleration is the `s = Set.univ` case.  Geodesics are the curves whose covariant
-acceleration for the Levi-Civita connection vanishes, and the acceleration is the integrand of the
-first variation formula for the energy.
+acceleration for the Levi-Civita connection vanishes, and the first variation formula for the
+energy integrates the inner product of the acceleration with the variation field.
 
 In a chart the acceleration is the classical second-order expression `u'' + Γ (u', u')`, where
 `u` is the curve read in the extended chart and `Γ` is the Christoffel map of the connection.  For
