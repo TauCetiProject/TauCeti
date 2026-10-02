@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Submonoid.Finiteness
+import TauCeti.Algebra.Group.Submonoid.Finiteness
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Cone
 import Mathlib.LinearAlgebra.Dual.Basis
