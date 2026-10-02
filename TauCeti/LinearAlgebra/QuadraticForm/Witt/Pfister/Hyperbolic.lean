@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 public import TauCeti.LinearAlgebra.QuadraticForm.Quaternary.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister.Basic
+public import TauCeti.NumberTheory.HilbertSymbol.Basic
 
 /-!
 # Isotropic two-fold Pfister forms are hyperbolic
@@ -33,6 +34,8 @@ first case of the theorem that isotropic Pfister forms are hyperbolic. The equiv
   individual equivalences `TauCeti.not_anisotropic_pfisterFormClass_two_iff`,
   `TauCeti.pfisterFormClass_two_eq_two_nsmul_hyperbolicClass_iff` and
   `TauCeti.pfisterClass_two_eq_zero_iff`.
+* `TauCeti.anisotropic_pfisterFormClass_two_iff_hilbertSymbol_eq_neg_one`: `<<a, b>>` is
+  anisotropic exactly when the Hilbert symbol `(a, b)` is `-1`.
 
 ## References
 
@@ -127,5 +130,15 @@ theorem pfisterClass_two_eq_zero_iff (a b : Kˣ) :
     pfisterClass ![a, b] = 0 ↔
       Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] Matrix (Fin 2) (Fin 2) K) :=
   (pfisterFormClass_two_tfae a b).out 4 1
+
+/-- **Anisotropy of `<<a, b>>` is read off the Hilbert symbol**: the two-fold Pfister form
+`<<a, b>>` is anisotropic exactly when `b = x² - a y²` has no solution in `K`, that is when
+`(a, b) = -1`. -/
+theorem anisotropic_pfisterFormClass_two_iff_hilbertSymbol_eq_neg_one (a b : Kˣ) :
+    (pfisterFormClass ![a, b]).Anisotropic ↔ hilbertSymbol a b = -1 := by
+  have h : hilbertSymbol a b = 1 ↔ ¬ (pfisterFormClass ![a, b]).Anisotropic :=
+    (hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix a b).trans
+      ((pfisterFormClass_two_tfae a b).out 1 2)
+  rw [← not_iff_not, ← h, ← ne_eq, Int.units_ne_iff_eq_neg, neg_neg]
 
 end TauCeti
