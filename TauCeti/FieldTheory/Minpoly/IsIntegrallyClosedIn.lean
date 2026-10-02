@@ -286,7 +286,7 @@ theorem relfinrank_sup_adjoin_simple_eq_relfinrank_adjoin_simple_of_isIntegrally
   have hCB : C ≤ B := IntermediateField.adjoin_simple_le_iff.mpr hx
   have hld : A.LinearDisjoint B :=
     linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hexB A
-  have hdegree := relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint A B C hCB hld
+  have hdegree := A.relfinrank_sup_sup_eq_relfinrank_of_linearDisjoint B C hCB hld
   -- Fold the local abbreviations `f` and `B` into the compositum hypothesis.
   change A ⊔ B = ⊤ at h
   rw [h] at hdegree
