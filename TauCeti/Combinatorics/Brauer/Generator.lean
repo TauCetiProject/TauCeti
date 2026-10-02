@@ -329,9 +329,8 @@ namespace BrauerDiagram
 
 /-- **A cap-cup diagram is its own reflection**: its cap and its cup are the same pair `{a, b}`,
 so turning the diagram upside down exchanges them and changes nothing. With
-`TauCeti.flip_composeDiagram` and `TauCeti.middleLoopCount_flip` this is what makes the mirror of
-a Brauer relation on cap-cup diagrams a consequence of the relation itself, as the mirrors in
-`TauCeti/Combinatorics/Brauer/Relations.lean` are. -/
+`TauCeti.flip_composeDiagram` and `TauCeti.middleLoopCount_flip`, reflection therefore carries
+each Brauer relation on cap-cup diagrams to its mirror, the same stack read upside down. -/
 @[simp]
 theorem flip_capCup (a b : Fin k) : (capCup a b).flip = capCup a b := by
   rcases eq_or_ne a b with rfl | hab

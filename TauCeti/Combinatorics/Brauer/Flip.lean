@@ -23,12 +23,12 @@ its middle alone, so `D ↦ flip D` reverses the loop-weighted stacking
 `D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of diagrams.  That is the
 diagram-level operation an anti-automorphism `(x y)* = y* x*` of the Brauer algebra `B_k(δ)` is
 read off from; the algebra itself is not built here, and nothing below is a map of algebras.
-Reflection also halves the work in the relations of that stacking: each relation between diagrams
-has a mirror, read off the same stack turned upside down, and the mirrors in
-`TauCeti/Combinatorics/Brauer/Relations.lean` are deduced from their companions through this
-reflection rather than proved again.  The fixed point that makes those deductions work, a cap-cup
-diagram, is `TauCeti.BrauerDiagram.flip_capCup` in
-`TauCeti/Combinatorics/Brauer/Generator.lean`, where `TauCeti.capCup` is defined.
+Reflection is therefore a symmetry of the relations of that stacking: each relation between
+diagrams has a mirror, the same stack turned upside down, and reflection carries one to the other.
+A cap-cup diagram is its own reflection (`TauCeti.BrauerDiagram.flip_capCup`, stated beside
+`TauCeti.capCup` in `TauCeti/Combinatorics/Brauer/Generator.lean`), so the relations between
+cap-cup and permutation diagrams in `TauCeti/Combinatorics/Brauer/Relations.lean` come in mirror
+pairs.
 
 Reflection is an involution, exchanges caps with cups, inverts a permutation diagram, and on a
 relabelled diagram exchanges the two renamings.

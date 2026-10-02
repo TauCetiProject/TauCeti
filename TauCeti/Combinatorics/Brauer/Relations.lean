@@ -51,11 +51,12 @@ genuinely new one, the diagram with two caps and two cups;
 `TauCeti.composeDiagram_capCup_capCup_comm` says that this diagram does not depend on the order
 the two copies are stacked in.
 
-Each relation here has a **mirror**, read off the same stack turned upside down, and the mirror is
-not proved again: `TauCeti.flip_composeDiagram` and `TauCeti.middleLoopCount_flip` say that the
-reflection of `TauCeti/Combinatorics/Brauer/Flip.lean` reverses the stacking and preserves the
-loop count, and `TauCeti.BrauerDiagram.flip_capCup` says that it fixes a cap-cup diagram, so each
-`_right` statement below follows from its `_left` companion by reflecting both sides.
+Each relation here has a **mirror**, the same stack turned upside down. Reflection in a
+horizontal line carries one to the other: it reverses the stacking
+(`TauCeti.flip_composeDiagram`), leaves the number of loops closing up in the middle alone
+(`TauCeti.middleLoopCount_flip`) and fixes a cap-cup diagram
+(`TauCeti.BrauerDiagram.flip_capCup`), so the `_right` statements below are the reflections of
+their `_left` companions.
 
 Each relation comes with the middle-loop count of every stack it names, so that it is a relation
 for the loop-weighted multiplication `D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂`
@@ -148,8 +149,7 @@ theorem composeDiagram_capCup_capCup_eq_relabel_left (hab : a ≠ b) (c : Fin k)
 round: with `e_{b,c}` as the right, lower factor, so that `e_{a,b}` is stacked above `e_{b,c}`,
 it is the **bottom** boundary of `e_{a,b}` that is renamed, by the same three-cycle
 `a ↦ b ↦ c ↦ a` that `TauCeti.composeDiagram_capCup_capCup_eq_relabel_left` renames the top
-boundary by.  Reflecting the stack of that statement exchanges its two factors and the two
-boundaries of the relabelling, which is exactly this one.
+boundary by.
 
 Not a `simp` lemma, for the reason given for
 `TauCeti.composeDiagram_capCup_capCup_eq_relabel_left`. -/
@@ -199,8 +199,9 @@ theorem composeDiagram_permToBrauer_swap_capCup_capCup (hab : a ≠ b) (c : Fin 
     Equiv.swap_mul_self, one_mul]
 
 /-- **The mixed relation `(e * e') * s = e * s'`**, the mirror of
-`TauCeti.composeDiagram_permToBrauer_swap_capCup_capCup`, obtained by reflecting its stack: the
-reflection inverts a transposition diagram, which leaves it unchanged. For consecutive pairs this
+`TauCeti.composeDiagram_permToBrauer_swap_capCup_capCup`: stacking the diagram of the
+transposition of a pair below the stack of a cap-cup diagram on that pair and one on an
+overlapping pair replaces it by the transposition of the other pair. For consecutive pairs this
 is Brauer's relation `eᵢ eᵢ₊₁ sᵢ = eᵢ sᵢ₊₁`. Once the two pairs are genuinely different, that is
 once `a ≠ c`, no loop closes up in any of the three middles, by
 `TauCeti.middleLoopCount_capCup_capCup_right_of_ne` and
@@ -251,8 +252,11 @@ theorem middleLoopCount_capCup_capCup_left_of_ne (hac : a ≠ c) (b : Fin k) :
 
 /-- **Overlapping pairs close up no loop**, the other way round: with `e_{b,c}` as the right, lower
 factor, so that `e_{a,b}` is stacked above `e_{b,c}`, no loop closes up in the middle either. The
-stack is the reflection of the stack of `TauCeti.middleLoopCount_capCup_capCup_left_of_ne`, whose
-middle has the same loops. -/
+only middle point keeping both of its arcs in the middle is the shared point `b`, whose cup in the
+lower copy runs to `c`, where the arc of the upper copy leaves for the boundary.
+
+The hypothesis is again exactly the one that makes the two pairs different as unordered pairs: on
+`a = c` the two copies are equal and `TauCeti.middleLoopCount_capCup_capCup` counts one loop. -/
 @[simp]
 theorem middleLoopCount_capCup_capCup_right_of_ne (hac : a ≠ c) (b : Fin k) :
     middleLoopCount (capCup a b) (capCup b c) = 0 := by
@@ -298,8 +302,13 @@ theorem middleLoopCount_capCup_composeDiagram_capCup_capCup (hcb : c ≠ b) (hca
     (hx.reflTransGen (.single ((middleAdj_def _ _ _ _).mpr (Or.inr hval))))
 
 /-- **The outer middle of `(e * e') * e` closes up no loop**, the statement
-`TauCeti.middleLoopCount_capCup_composeDiagram_capCup_capCup` makes about the other bracketing.
-The stack is the reflection of that one, whose middle has the same loops. -/
+`TauCeti.middleLoopCount_capCup_composeDiagram_capCup_capCup` makes about the other bracketing. By
+`TauCeti.composeDiagram_capCup_capCup_eq_relabel_right` the upper factor is `e_{a,b}` with its
+bottom boundary renamed by the three-cycle `a ↦ b ↦ c ↦ a`, so it caps the pair `{b, c}`; the only
+middle point that the lower copy also cups is the shared point `b`, and the cap there runs to `c`,
+which the lower copy sends through to the boundary. On the degenerate pair `a = b` there is no cup
+at all: the lower copy is the identity diagram (`TauCeti.capCup_self`), which closes up no loop
+either, so no hypothesis on the pair `{a, b}` is needed. -/
 @[simp]
 theorem middleLoopCount_composeDiagram_capCup_capCup_capCup (hcb : c ≠ b) (hca : c ≠ a) :
     middleLoopCount (composeDiagram (capCup a b) (capCup b c)) (capCup a b) = 0 := by
