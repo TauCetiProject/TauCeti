@@ -89,7 +89,7 @@ For integer nodes `x₀, …, xₙ₋₁`, the Vandermonde determinant of the sq
 is divisible by `1! · 3! ⋯ (2n - 1)!`.  The proof is the odd analogue of Mathlib's
 `Matrix.superFactorial_dvd_vandermonde_det`: the falling-factorial basis is replaced by the monic
 odd polynomials `x (x² - 1²) ⋯ (x² - k²)`, each of which is the falling factorial of degree
-`2k + 1` at `x + k` (`TauCeti.mul_prod_sq_sub_eq_descPochhammer_eval`), hence takes values
+`2k + 1` at `x + k` (`TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`), hence takes values
 divisible by `(2k + 1)!` at the integers.
 
 ## Main results
@@ -100,8 +100,9 @@ divisible by `(2k + 1)!` at the integers.
 * `TauCeti.sum_mul_det_vandermonde_update_sub_one` and `TauCeti.sum_mul_prod_sub_update_sub_one`:
   **the lowering identity for Vandermonde determinants.**
 * `TauCeti.prod_factorial_dvd_prod_mul_det_vandermonde_sq` and
-  `TauCeti.prod_factorial_dvd_prod_mul_prod_sq_sub`: **integrality for the odd Vandermonde
-  product** `∏ᵢ xᵢ · ∏_{i < j} (xⱼ² - xᵢ²)`, which is divisible by `1! · 3! ⋯ (2n - 1)!`.
+  `TauCeti.prod_factorial_dvd_prod_mul_prod_sq_sub_sq`: **integrality for the odd Vandermonde
+  product** `∏ᵢ xᵢ · ∏_{i < j} (xⱼ² - xᵢ²)`, which is divisible by `1! · 3! ⋯ (2n - 1)!`, a
+  positive integer (`TauCeti.prod_factorial_two_mul_add_one_pos`).
 -/
 
 public section
@@ -485,44 +486,11 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
 
 /-! ### Products of squared differences, weighted by the nodes -/
 
-/-- **An odd polynomial as a falling factorial.**  The product
-`x · (x² - 1²) (x² - 2²) ⋯ (x² - k²)` is the product `(x + k) (x + k - 1) ⋯ (x - k)` of the
-`2k + 1` consecutive values centred at `x`, that is, the falling factorial of degree `2k + 1`
-evaluated at `x + k`. -/
-theorem mul_prod_sq_sub_eq_descPochhammer_eval {R : Type*} [CommRing R] (k : ℕ) (x : R) :
-    x * ∏ m ∈ Finset.range k, (x ^ 2 - ((m : R) + 1) ^ 2)
-      = (descPochhammer R (2 * k + 1)).eval (x + k) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have h1 : (descPochhammer R (2 * k + 1 + 1 + 1)).eval (x + k + 1)
-        = (x + k + 1) * (descPochhammer R (2 * k + 1 + 1)).eval (x + k) :=
-      descPochhammer_succ_eval_add_one _ _
-    have h2 : (descPochhammer R (2 * k + 1 + 1)).eval (x + k)
-        = (descPochhammer R (2 * k + 1)).eval (x + k) * (x + k - ((2 * k + 1 : ℕ) : R)) :=
-      descPochhammer_succ_eval _ _
-    rw [Finset.prod_range_succ, ← mul_assoc, ih, show 2 * (k + 1) + 1 = 2 * k + 1 + 1 + 1 by ring,
-      Nat.cast_succ, ← add_assoc, h1, h2]
-    push_cast
-    ring
-
-/-- The product `x · (x² - 1²) ⋯ (x² - k²)` is divisible by `(2k + 1)!` at every integer `x`,
-being a product of `2k + 1` consecutive integers.  It is an odd function of `x`, so it suffices to
-treat `x ≥ 0`, where it is a descending factorial of a natural number. -/
-theorem factorial_dvd_mul_prod_sq_sub (k : ℕ) (x : ℤ) :
-    ((2 * k + 1).factorial : ℤ) ∣ x * ∏ m ∈ Finset.range k, (x ^ 2 - ((m : ℤ) + 1) ^ 2) := by
-  have key : ∀ y : ℕ,
-      ((2 * k + 1).factorial : ℤ)
-        ∣ y * ∏ m ∈ Finset.range k, ((y : ℤ) ^ 2 - ((m : ℤ) + 1) ^ 2) := by
-    intro y
-    rw [mul_prod_sq_sub_eq_descPochhammer_eval, ← Nat.cast_add,
-      descPochhammer_eval_eq_descFactorial]
-    exact_mod_cast Nat.factorial_dvd_descFactorial _ _
-  rcases Int.natAbs_eq x with hx | hx
-  · rw [hx]
-    exact key _
-  · rw [hx, neg_sq, neg_mul]
-    exact (key _).neg_right
+/-- The divisor `1! · 3! ⋯ (2n - 1)!` of the odd Vandermonde product is positive, so it may be
+cancelled. -/
+theorem prod_factorial_two_mul_add_one_pos (n : ℕ) :
+    0 < ∏ k ∈ Finset.range n, ((2 * k + 1).factorial : ℤ) := by
+  exact_mod_cast Nat.prod_factorial_pos (Finset.range n) fun k => 2 * k + 1
 
 /-- **Integrality for the odd Vandermonde product.**  For integer nodes `xᵢ`, the product
 `∏ᵢ xᵢ · det (vandermonde (xᵢ²)) = ∏ᵢ xᵢ · ∏_{i < j} (xⱼ² - xᵢ²)` is divisible by
@@ -543,7 +511,7 @@ theorem prod_factorial_dvd_prod_mul_det_vandermonde_sq {n : ℕ} (x : Fin n → 
     simp only [natDegree_X_sub_C, Finset.sum_const, Finset.card_range, smul_eq_mul, mul_one]
   have hent : ∀ (i : Fin n) (j : Fin n), ((2 * (j : ℕ) + 1).factorial : ℤ)
       ∣ x i * (p j).eval (x i ^ 2) := fun i j => by
-    simpa [p, eval_prod] using factorial_dvd_mul_prod_sq_sub j (x i)
+    simpa [p, eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (x i)
   rw [Matrix.det_eval_matrixOfPolynomials_eq_det_vandermonde _ p hdeg hmonic,
     ← Matrix.det_mul_column]
   have hmat : (Matrix.of fun i j : Fin n =>
@@ -564,7 +532,7 @@ theorem prod_factorial_dvd_prod_mul_det_vandermonde_sq {n : ℕ} (x : Fin n → 
 product `∏_{k < m} bₖ · ∏_{k < l < m} (bₖ² - bₗ²)` is divisible by `1! · 3! ⋯ (2m - 1)!`.  This is
 `TauCeti.prod_factorial_dvd_prod_mul_det_vandermonde_sq` with the determinant expanded; the sign
 relating the two orders of the differences does not affect divisibility. -/
-theorem prod_factorial_dvd_prod_mul_prod_sq_sub (m : ℕ) (b : ℕ → ℤ) :
+theorem prod_factorial_dvd_prod_mul_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
     (∏ k ∈ Finset.range m, ((2 * k + 1).factorial : ℤ))
       ∣ ∏ k ∈ Finset.range m, b k * ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2) := by
   have hdet := det_vandermonde_eq_prod_range m fun k => b k ^ 2
