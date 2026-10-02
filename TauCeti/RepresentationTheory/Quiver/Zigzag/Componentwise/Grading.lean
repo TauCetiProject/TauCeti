@@ -232,52 +232,29 @@ noncomputable def zigzagAlgebraGradedAlgebra : GradedAlgebra (zigzagAlgebraGrade
 `TauCeti.zigzagIntegerGrade` extends that of the relation quotient. This signed indexing is
 needed to state internal grading shifts. -/
 noncomputable def zigzagAlgebraIntegerGrade (d : ℤ) : Submodule k (zigzagAlgebra k G) :=
-  if 0 ≤ d then zigzagAlgebraGrade k G d.toNat else ⊥
+  Graded.extendByZero (zigzagAlgebraGrade k G) d
 
 @[simp]
 theorem zigzagAlgebraIntegerGrade_ofNat (d : ℕ) :
-    zigzagAlgebraIntegerGrade k G d = zigzagAlgebraGrade k G d := by
-  simp [zigzagAlgebraIntegerGrade]
+    zigzagAlgebraIntegerGrade k G d = zigzagAlgebraGrade k G d :=
+  Graded.extendByZero_natCast _ d
 
 /-- The integer extension of the componentwise grading vanishes in negative degrees. -/
 theorem zigzagAlgebraIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
-    zigzagAlgebraIntegerGrade k G d = ⊥ := by
-  simp [zigzagAlgebraIntegerGrade, (not_le_of_gt hd)]
+    zigzagAlgebraIntegerGrade k G d = ⊥ :=
+  Graded.extendByZero_of_neg _ hd
 
 /-- **The integer extension of the componentwise grading is an internal direct sum**: the pieces
 in nonnegative degrees are those of `TauCeti.zigzagAlgebraGrade`, and those in negative degrees
 vanish. -/
 theorem isInternal_zigzagAlgebraIntegerGrade :
-    DirectSum.IsInternal (zigzagAlgebraIntegerGrade k G) := by
-  have hN := isInternal_zigzagAlgebraGrade k G
-  rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at hN ⊢
-  obtain ⟨hind, htop⟩ := hN
-  refine ⟨fun d ↦ ?_, ?_⟩
-  · rcases lt_or_ge d 0 with hd | hd
-    · simp [zigzagAlgebraIntegerGrade_eq_bot_of_neg k G hd]
-    · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
-      rw [zigzagAlgebraIntegerGrade_ofNat]
-      refine (hind n).mono_right (iSup₂_le fun j hj ↦ ?_)
-      rcases lt_or_ge j 0 with hj0 | hj0
-      · simp [zigzagAlgebraIntegerGrade_eq_bot_of_neg k G hj0]
-      · obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hj0
-        rw [zigzagAlgebraIntegerGrade_ofNat]
-        exact le_iSup₂_of_le m (fun h ↦ hj (by rw [h])) le_rfl
-  · rw [eq_top_iff, ← htop]
-    exact iSup_le fun n ↦ (zigzagAlgebraIntegerGrade_ofNat k G n).symm.le.trans
-      (le_iSup (zigzagAlgebraIntegerGrade k G) (n : ℤ))
+    DirectSum.IsInternal (zigzagAlgebraIntegerGrade k G) :=
+  Graded.isInternal_extendByZero (isInternal_zigzagAlgebraGrade k G)
 
 /-- Multiplication adds signed degrees in the integer extension of the componentwise grading. -/
 theorem mul_mem_zigzagAlgebraIntegerGrade {m n : ℤ} {x y : zigzagAlgebra k G}
     (hx : x ∈ zigzagAlgebraIntegerGrade k G m) (hy : y ∈ zigzagAlgebraIntegerGrade k G n) :
-    x * y ∈ zigzagAlgebraIntegerGrade k G (m + n) := by
-  by_cases hm : 0 ≤ m
-  · by_cases hn : 0 ≤ n
-    · simp only [zigzagAlgebraIntegerGrade, hm, hn, add_nonneg hm hn, ↓reduceIte] at hx hy ⊢
-      simpa [Int.toNat_add hm hn] using SetLike.mul_mem_graded hx hy
-    · simp only [zigzagAlgebraIntegerGrade, hn, ↓reduceIte, Submodule.mem_bot] at hy
-      simp [hy]
-  · simp only [zigzagAlgebraIntegerGrade, hm, ↓reduceIte, Submodule.mem_bot] at hx
-    simp [hx]
+    x * y ∈ zigzagAlgebraIntegerGrade k G (m + n) :=
+  Graded.mul_mem_extendByZero (fun hx hy ↦ SetLike.mul_mem_graded hx hy) hx hy
 
 end TauCeti
