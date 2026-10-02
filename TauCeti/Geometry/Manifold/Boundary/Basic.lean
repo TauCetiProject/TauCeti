@@ -63,7 +63,11 @@ theorem mem_interior_extend_target_of_mem_maximalAtlas (hk : k ≠ 0)
   rw [← ContinuousLinearMap.coe_restrictScalars' (R := ℝ),
     (hφ.differentiableOn hk _ (by simp [φ, hex, hex'])).restrictScalars_fderivWithin (𝕜 := ℝ)
       (uniqueDiffWithinAt_of_mem_nhds hφx), fderivWithin_of_mem_nhds hφx] at hφx'
-  rw [show e'.extend I x = φ (e.extend I x) by simp [φ, hex]]
+  -- The transition map `φ` sends the reading of `x` in `e` to its reading in `e'`.
+  have hφe : φ (e.extend I x) = e'.extend I x := by
+    simp only [φ, ModelWithCorners.extendCoordChange, PartialEquiv.coe_trans, Function.comp_apply,
+      e.extend_left_inv hex]
+  rw [← hφe]
   replace hφ := ((hφ.restrict_scalars ℝ).differentiableOn hk).differentiableAt hφx
   exact hφ.mem_interior_convex_of_surjective_fderiv hφx I.convex_range I.isClosed_range
     I.nonempty_interior (φ.mapsTo.mono_right <| by simp [φ, inter_assoc]) hφx'

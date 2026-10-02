@@ -276,6 +276,34 @@ variable {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
 theorem isTopologicallySlice (h : IsTopologicalSliceDisc K Φ) : IsTopologicallySlice K :=
   ⟨Φ, h⟩
 
+/-- A locally flat slice disc is continuous. -/
+theorem continuous (h : IsTopologicalSliceDisc K Φ) : Continuous Φ :=
+  h.isLocallyFlat.continuous
+
+/-- A locally flat slice disc is a topological embedding. -/
+theorem isEmbedding (h : IsTopologicalSliceDisc K Φ) : Topology.IsEmbedding Φ :=
+  h.isLocallyFlat.isEmbedding
+
+/-- A locally flat slice disc is injective. -/
+theorem injective (h : IsTopologicalSliceDisc K Φ) : Function.Injective Φ :=
+  h.isLocallyFlat.injective
+
+/-- A locally flat slice disc is properly embedded: the preimage of the manifold boundary of the
+ball, the unit sphere, is the manifold boundary of the disc, the unit circle. -/
+theorem preimage_boundary (h : IsTopologicalSliceDisc K Φ) :
+    Φ ⁻¹' (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) =
+      (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1) := by
+  ext x
+  simp [boundary_closedBall, h.norm_eq_one_iff]
+
+/-- The image of the boundary circle under a locally flat slice disc for `K` is the image of
+`K`. -/
+theorem image_range_inclusion (h : IsTopologicalSliceDisc K Φ) :
+    (Subtype.val ∘ Φ) '' range (fun z : Circle ↦ Set.inclusion sphere_subset_closedBall z) =
+      Subtype.val '' range K := by
+  ext y
+  simp only [mem_image, mem_range, exists_exists_eq_and, Function.comp_apply, h.apply_inclusion]
+
 /-- Reparametrizing a locally flat slice disc for `K` by a linear isometry `e` of the plane gives a
 locally flat slice disc for the reparametrization of `K` along the circle: if `σ : Circle → Circle`
 is `e` on the circle and `K' = K ∘ σ`, then `Φ ∘ e` is a locally flat slice disc for `K'`. -/

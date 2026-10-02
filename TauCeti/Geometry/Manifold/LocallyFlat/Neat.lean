@@ -265,10 +265,12 @@ private theorem exists_straightening_of_eq_mul_apply_zero {F : Type*} [NormedAdd
   · rw [ContinuousLinearEquiv.trans_apply, L.symm_apply_apply, hS, map_zero, add_zero]
   -- The boundary coordinate of `v` is `c` times that of its straightened image.
   have hsplit : v 0 = c * (S (L.symm v)).1 0 := by
-    have hv : L ((L.symm v).1, 0) + L (0, (L.symm v).2) = v := by
-      rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.eta, L.apply_symm_apply]
-    rw [hS, PiLp.add_apply, hg, mul_add, ← mul_assoc, mul_inv_cancel₀ hc.ne', one_mul, ← hL,
-      ← PiLp.add_apply, hv]
+    -- Split `v` through `L` into its tangential and complementary parts.
+    calc v 0 = (L ((L.symm v).1, 0) + L (0, (L.symm v).2)) 0 := by
+          rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.eta, L.apply_symm_apply]
+      _ = c * (S (L.symm v)).1 0 := by
+          simp only [hS, PiLp.add_apply, hL, hg]
+          field_simp
   simp only [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq,
     ContinuousLinearEquiv.trans_apply, hsplit]
   exact mul_nonneg_iff_of_pos_left hc
