@@ -24,6 +24,8 @@ joining two sign sets whose cardinalities have different parities.
 ## Main declarations
 
 * `TauCeti.TypeDSpinCarrier.rootIntMatrix`: the integral matrix of a numbered root generator.
+* `TauCeti.TypeDSpinCarrier.rootIntMatrix_apply_of_eq`: a signed root step determines its
+  integral matrix column.
 * `TauCeti.TypeDSpinCarrier.coe_rootSubgroupPoints_eq_one_add_smul`: a numbered root-subgroup
   point is `1 + u X`.
 * `TauCeti.TypeDSpinCarrier.rootIntMatrix_eq_zero_of_card_ne`: the integral matrix does not join
@@ -65,6 +67,16 @@ theorem rep_rootGenerator_latticeBasis_eq_sum (k : Fin n ⊕ Fin n) (s : Fin (di
       ∑ r, rootIntMatrix n hn k r s •
         (latticeBasis n r : ExteriorAlgebra ℚ (polarization n).W) :=
   rep_rootGenerator_basis_eq_sum _ _ _ _ _ _ _ _
+
+/-- A signed root-generator step gives the corresponding signed integral matrix column. -/
+theorem rootIntMatrix_apply_of_eq (j : Fin n ⊕ Fin n)
+    {a a' : Fin (dimension n)} {c : ℤˣ}
+    (h : rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.D n) j))
+        (latticeBasis n a : ExteriorAlgebra ℚ (polarization n).W) =
+      c • (latticeBasis n a' : ExteriorAlgebra ℚ (polarization n).W)) (r : Fin (dimension n)) :
+    rootIntMatrix n hn j r a = if r = a' then (c : ℤ) else 0 :=
+  kostantRootGeneratorIntMatrix_apply_of_eq _ _ _ _ _ _ _ h r
 
 /-- A numbered root subgroup point is `1 + u X` for the integral matrix of its generator. -/
 theorem coe_rootSubgroupPoints_eq_one_add_smul (k : Fin n ⊕ Fin n)
