@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 
 /-!
 # Base change of completed rational localisations along a ring homomorphism
