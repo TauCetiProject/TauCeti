@@ -20,9 +20,13 @@ The lifting statement is stronger than stable fullness: it realizes an actual mo
 between transposes, before passing to the projective stable quotient. Neither minimality
 nor a Noetherian hypothesis is needed, and the coefficient ring may be noncommutative.
 
-The proof uses the opposite-dual evaluation equivalence from
-`TauCeti.LinearAlgebra.Dual.Opposite` to recover a presentation square from a square between
-its duals, and the existing presentation-lifting theorem to produce the latter square.
+Use `AuslanderReitenTranspose.exists_map_eq` to realize a map between transposes by a
+presentation square, and `AuslanderReitenTranspose.exists_lift_map_eq` to obtain a map between
+the presented modules. `AuslanderReitenTranspose.stableMap_surjective` gives preimages on
+stable Hom groups for fixed presentations. The `Full` instances for `stableTransposeFunctor`
+and `stableTranspose` make `CategoryTheory.Functor.preimage` available for stable morphisms
+between their images, with `CategoryTheory.Functor.map_preimage` identifying their transposes
+with the given morphisms.
 
 ## References
 
