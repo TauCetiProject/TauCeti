@@ -5,31 +5,47 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Cycle.FiniteRepType
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Embedding
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.FiniteRepType
 public import TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType
+import Mathlib.Tactic.FinCases
 
 /-!
-# Loops and parallel arrows obstruct finite representation type
+# Oriented cycles and parallel arrows obstruct finite representation type
 
 The loop quiver has infinitely many nilpotent Jordan block representations
-(`TauCeti.not_isFiniteRepType_oneLoop`), and the Kronecker quiver `• ⇉ •` has infinitely many
-indecomposable representations (`TauCeti.not_isFiniteRepType_kronecker`). Finite representation
-type passes to subquivers (`TauCeti.IsFiniteRepType.of_quiverEmbedding`), so these two families
-show that a quiver of finite representation type has no loops and at most one arrow from any
-vertex to any other. These are the two smallest extended Dynkin obstructions, `Ã₀` and `Ã₁`,
+(`TauCeti.not_isFiniteRepType_oneLoop`), the Kronecker quiver `• ⇉ •` has infinitely many
+indecomposable representations (`TauCeti.not_isFiniteRepType_kronecker`), and so does the cycle
+quiver on `n + 2` vertices (`TauCeti.not_isFiniteRepType_cycle`). Finite representation type passes
+to subquivers (`TauCeti.IsFiniteRepType.of_quiverEmbedding`), so these three families show that a
+quiver of finite representation type has no loops, at most one arrow from any vertex to any other,
+and no oriented cycle at all. These are the extended Dynkin obstructions `Ã₀`, `Ã₁` and `Ã_{n+1}`
 in the non-Dynkin half of Gabriel's theorem.
+
+An oriented cycle is presented as an injective family `x : Fin (n + 2) → Q` of vertices together
+with an arrow `x i ⟶ x (i + 1)` for every `i`, the addition being cyclic in `Fin (n + 2)`; the
+injectivity is what makes the family a subquiver rather than a closed walk, and the loop quiver
+covers the degenerate case of a single vertex. Its smallest instance is a pair of vertices joined
+in both directions, which is the `Ã₁` graph in the orientation the Kronecker quiver does not
+provide, and which `TauCeti.IsFiniteRepType.isEmpty_hom_of_hom` rules out; together with the two
+statements above, no arrow of a quiver of finite representation type admits a reverse arrow, so the
+underlying graph of such a quiver is *simple*.
 
 ## Main results
 
 * `TauCeti.IsFiniteRepType.isEmpty_hom_self`: a quiver of finite representation type has no loops.
 * `TauCeti.IsFiniteRepType.subsingleton_hom`: a quiver of finite representation type has no two
   parallel arrows.
+* `TauCeti.not_isFiniteRepType_of_injective_of_nonempty_hom_succ`: a quiver carrying an oriented
+  cycle through distinct vertices has infinite representation type.
+* `TauCeti.IsFiniteRepType.isEmpty_hom_of_hom`: in a quiver of finite representation type an arrow
+  admits no reverse arrow.
 
 ## Implementation notes
 
 The consequences are stated for representations with vertex spaces in the universe of the base
-field, the universe in which the loop-quiver and Kronecker families are built.
+field, the universe in which the loop-quiver, Kronecker and cycle families are built.
 
 ## References
 
@@ -97,5 +113,42 @@ theorem IsFiniteRepType.subsingleton_hom (h : IsFiniteRepType.{u, v, w, u} k Q) 
   · subst hij
     exact (h.isEmpty_hom_self i).false α
   · exact not_isFiniteRepType_kronecker k Bool (h.of_quiverEmbedding (kroneckerEmbedding hij hαβ))
+
+/-- The embedding of the cycle quiver onto an oriented cycle of `Q` through distinct vertices. -/
+private def cycleEmbedding {n : ℕ} {x : Fin (n + 2) → Q} (hx : Function.Injective x)
+    (α : ∀ i : Fin (n + 2), x i ⟶ x (i + 1)) : QuiverEmbedding (Quiver.Cycle n) Q where
+  obj c := x c.index
+  map {a b} e := cast (by rw [e.down, Quiver.Cycle.index_succ]) (α a.index)
+  obj_injective _ _ hab := Quiver.Cycle.ext (hx hab)
+  map_injective _ := Subsingleton.elim _ _
+
+/-- **A quiver carrying an oriented cycle through distinct vertices has infinite representation
+type**: the cycle embeds the cycle quiver, whose nilpotent representations are infinitely many
+pairwise non-isomorphic indecomposables. The cycle is given by an injective family of `n + 2`
+vertices and an arrow from each of them to the next, cyclically. -/
+theorem not_isFiniteRepType_of_injective_of_nonempty_hom_succ {n : ℕ} (x : Fin (n + 2) → Q)
+    (hx : Function.Injective x) (hα : ∀ i : Fin (n + 2), Nonempty (x i ⟶ x (i + 1))) :
+    ¬ IsFiniteRepType.{u, v, w, u} k Q :=
+  fun h ↦ not_isFiniteRepType_cycle k n
+    (h.of_quiverEmbedding (cycleEmbedding hx fun i ↦ (hα i).some))
+
+/-- **In a quiver of finite representation type an arrow admits no reverse arrow**: between
+distinct vertices a pair of opposite arrows is an oriented cycle through two vertices, and at a
+single vertex it is a loop. This is the `Ã₁` obstruction in the orientation the Kronecker quiver
+does not provide, so with `TauCeti.IsFiniteRepType.isEmpty_hom_self` and
+`TauCeti.IsFiniteRepType.subsingleton_hom` it says that the underlying graph of such a quiver is
+simple. -/
+theorem IsFiniteRepType.isEmpty_hom_of_hom (h : IsFiniteRepType.{u, v, w, u} k Q) {i j : Q}
+    (α : i ⟶ j) : IsEmpty (j ⟶ i) := by
+  by_cases hij : i = j
+  · subst hij
+    exact h.isEmpty_hom_self i
+  refine ⟨fun β ↦ not_isFiniteRepType_of_injective_of_nonempty_hom_succ (n := 0) ![i, j] ?_ ?_ h⟩
+  · intro a b hab
+    fin_cases a <;> fin_cases b <;> simp_all
+  · intro c
+    fin_cases c
+    · simpa using ⟨α⟩
+    · simpa using ⟨β⟩
 
 end TauCeti
