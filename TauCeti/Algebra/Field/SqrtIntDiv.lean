@@ -42,7 +42,7 @@ theorem mul_div_intCast_sq_eq {K : Type*} [Field K] {x y : K} {a b c : ℤ}
   rw [div_mul_div_comm, sq]
 
 /-- In characteristic zero, a square root of a nonzero integer is nonzero. -/
-theorem ne_zero_of_sq_eq_intCast {K : Type*} [Field K] [CharZero K] {x : K} {c : ℤ}
+theorem ne_zero_of_sq_eq_intCast {K : Type*} [Ring K] [CharZero K] {x : K} {c : ℤ}
     (hx : x ^ 2 = algebraMap ℤ K c) (hc : c ≠ 0) : x ≠ 0 := by
   rintro rfl
   apply hc

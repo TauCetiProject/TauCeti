@@ -284,7 +284,7 @@ theorem apply_eq_self_of_mem_inertia_of_mod_four_eq_one {x : K} {c : ℤ}
     (hx : x ^ 2 = algebraMap ℤ K c) (hc : c % 4 = 1) (Q : Ideal (𝓞 K))
     [Q.LiesOver (span {(2 : ℤ)})] {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) :
     τ x = x := by
-  refine (apply_eq_or_eq_neg_of_sq_eq τ hx).resolve_right fun hneg => ?_
+  refine (TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq τ hx).resolve_right fun hneg => ?_
   -- The half-generator `w = (1 + x) / 2` is integral, and `τ • w - w = -x`.
   let w : 𝓞 K := ⟨(1 + x) / 2, isIntegral_one_add_div_two_of_sq_eq hx hc⟩
   have hw : algebraMap (𝓞 K) K w = (1 + x) / 2 := RingOfIntegers.map_mk _ _

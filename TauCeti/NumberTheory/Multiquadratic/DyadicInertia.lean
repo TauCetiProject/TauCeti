@@ -55,6 +55,7 @@ below do not use `ℚ₂`, and work with the action of inertia on square roots i
   `TauCeti.Multiquadratic.ramificationIdx_le_four`: the inertia group above `2` has at most four
   elements.
 * `TauCeti.Multiquadratic.ramificationIdx_eq_four_iff`: the criterion for `e = 4` above.
+* `TauCeti.Multiquadratic.inertia_eq_bot_iff_forall_mod_four_eq_one`: the criterion for `e = 1`.
 * `TauCeti.Multiquadratic.ramificationIdx_eq_two_iff_of_liesOver_two`: the criterion for `e = 2`
   above.
 
@@ -74,12 +75,6 @@ namespace TauCeti.Multiquadratic
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} {d : ι → ℤ} {r : ι → K}
 
 /-! ### Inertia elements negating a ramified square root -/
-
-/-- An automorphism negating `x / e` negates `x` when it fixes the nonzero element `e`. -/
-private theorem apply_eq_neg_of_apply_div_eq_neg {τ : K ≃ₐ[ℚ] K} {x e : K} (he : e ≠ 0)
-    (hτe : τ e = e) (h : τ (x / e) = -(x / e)) : τ x = -x := by
-  rw [map_div₀, hτe, div_eq_iff he] at h
-  rw [h, neg_mul, div_mul_cancel₀ _ he]
 
 /-- **Inertia above `2` negates the square roots of integers that are `2` or `3` modulo `4`.** Let
 `K / ℚ` be Galois, let `x ∈ K` square to an integer `c ≡ 2` or `3 (mod 4)`, and let `Q` be a prime
@@ -114,7 +109,8 @@ theorem exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three [IsGalois �
   have : Q.LiesOver (span {((2 : ℕ) : ℤ)}) := by rwa [Nat.cast_ofNat]
   obtain ⟨τ, hτ, hτx⟩ :=
     TauCeti.NumberField.exists_mem_inertia_apply_eq_neg (c := s) (by rw [hx']; simp) h2 Q
-  exact ⟨τ, hτ, apply_eq_neg_of_apply_div_eq_neg he' (map_intCast τ e) hτx⟩
+  exact ⟨τ, hτ, TauCeti.AlgEquiv.apply_eq_neg_of_apply_div_eq_neg τ he'
+    (map_intCast τ e) hτx⟩
 
 /-! ### Inertia elements fixing products of roots -/
 
@@ -169,52 +165,9 @@ omit hτ in
 private theorem root_ne_zero (i : ι) : r i ≠ 0 :=
   ne_zero_of_sq_eq_intCast (hr i) fun h => hd i (h ▸ dvd_zero 4)
 
-omit hr hd hτ [Q.LiesOver (span {(2 : ℤ)})] in
-/-- Cancel a fixed nonzero factor. -/
-private theorem apply_eq_self_of_apply_mul_eq_mul {x y : K} (hx : x ≠ 0) (hτx : τ x = x)
-    (h : τ (x * y) = x * y) : τ y = y := by
-  rw [map_mul, hτx] at h
-  exact mul_left_cancel₀ hx h
-
 end Fixing
 
 /-! ### Counting inertia elements -/
-
-/-- A subgroup of `Gal(K/ℚ)` of exponent `2` with at most four elements, containing elements that
-negate `y`, `z` and `y z` for nonzero `y`, `z`, has exactly four elements: it is nontrivial, has no
-element of order `3`, and a group of order `2` would have a single nonidentity element, which
-cannot negate all three. -/
-private theorem card_eq_four_of_exists_apply_eq_neg (H : Subgroup (K ≃ₐ[ℚ] K))
-    (hexp : ∀ σ : K ≃ₐ[ℚ] K, σ ^ 2 = 1) (hle : Nat.card H ≤ 4) {y z : K} (hy : y ≠ 0)
-    (hz : z ≠ 0) (h₁ : ∃ τ ∈ H, τ y = -y) (h₂ : ∃ τ ∈ H, τ z = -z)
-    (h₃ : ∃ τ ∈ H, τ (y * z) = -(y * z)) : Nat.card H = 4 := by
-  obtain ⟨τ₁, hτ₁, hτ₁y⟩ := h₁
-  obtain ⟨τ₂, hτ₂, hτ₂z⟩ := h₂
-  obtain ⟨τ₃, hτ₃, hτ₃yz⟩ := h₃
-  have hne {τ : K ≃ₐ[ℚ] K} {w : K} (hw : w ≠ 0) (h : τ w = -w) : τ ≠ 1 := by
-    rintro rfl
-    exact hw (CharZero.eq_neg_self_iff.mp h)
-  have hpos : 0 < Nat.card H := Nat.card_pos
-  interval_cases hc : Nat.card H
-  · have : Subsingleton H := (Nat.card_eq_one_iff_unique.mp hc).1
-    exact absurd (congrArg Subtype.val (Subsingleton.elim (⟨τ₁, hτ₁⟩ : H) 1)) (hne hy hτ₁y)
-  · obtain ⟨u, -, hu⟩ := (Nat.card_eq_two_iff' (1 : H)).mp hc
-    have heq {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ H) (hτ1 : τ ≠ 1) : τ = u :=
-      congrArg Subtype.val (hu ⟨τ, hτ⟩ fun h => hτ1 (congrArg Subtype.val h))
-    have h12 : τ₃ = τ₁ := (heq hτ₃ (hne (mul_ne_zero hy hz) hτ₃yz)).trans
-      (heq hτ₁ (hne hy hτ₁y)).symm
-    have h22 : τ₃ = τ₂ := (heq hτ₃ (hne (mul_ne_zero hy hz) hτ₃yz)).trans
-      (heq hτ₂ (hne hz hτ₂z)).symm
-    rw [h12, map_mul, hτ₁y, h12.symm.trans h22, hτ₂z, neg_mul_neg,
-      CharZero.eq_neg_self_iff] at hτ₃yz
-    exact absurd hτ₃yz (mul_ne_zero hy hz)
-  · obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' (G := H) 3 (hp := ⟨Nat.prime_three⟩)
-      (by simp [hc])
-    have h2 : g ^ 2 = 1 := Subtype.ext (hexp g)
-    have := orderOf_dvd_of_pow_eq_one h2
-    rw [hg] at this
-    norm_num at this
-  · rfl
 
 /-! ### The ramification index above `2` -/
 
@@ -248,12 +201,12 @@ private theorem card_inertia_le_four_of_mod_four_eq_three {b c : ι} (hb : d b %
   have hτb : τ (r b) = r b := hfix 0
   have hτc : τ (r c) = r c := hfix 1
   refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => ?_) fun i hi => ?_
-  · exact apply_eq_self_of_apply_mul_eq_mul (root_ne_zero hr hd b) hτb
+  · exact TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ (root_ne_zero hr hd b) hτb
       (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi)
   · by_cases hci : d c % 8 = d i % 8
-    · exact apply_eq_self_of_apply_mul_eq_mul (root_ne_zero hr hd c) hτc
+    · exact TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ (root_ne_zero hr hd c) hτc
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hc hi hci)
-    · exact apply_eq_self_of_apply_mul_eq_mul
+    · exact TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
         (mul_ne_zero (root_ne_zero hr hd b) (root_ne_zero hr hd c)) (by rw [map_mul, hτb, hτc])
         (apply_mul_mul_eq_mul_mul hr hd Q hτ hb hc hi hci)
 
@@ -271,14 +224,14 @@ private theorem card_inertia_le_four_of_mod_eight {c₂ c₆ : ι} (h₂ : d c�
   refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => ?_) fun i hi => ?_
   · have h := apply_mul_mul_eq_mul_mul hr hd Q hτ hi hd₂ hd₆ (by omega)
     rw [show r i * r c₂ * r c₆ = r c₂ * r c₆ * r i by ring] at h
-    exact apply_eq_self_of_apply_mul_eq_mul
+    exact TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
       (mul_ne_zero (root_ne_zero hr hd c₂) (root_ne_zero hr hd c₆))
       (by rw [map_mul, hτ₂, hτ₆]) h
   · have h4 := hd i
     by_cases hi₂ : d i % 8 = 2
-    · exact apply_eq_self_of_apply_mul_eq_mul (root_ne_zero hr hd c₂) hτ₂
+    · exact TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ (root_ne_zero hr hd c₂) hτ₂
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hd₂ hi (by omega))
-    · exact apply_eq_self_of_apply_mul_eq_mul (root_ne_zero hr hd c₆) hτ₆
+    · exact TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ (root_ne_zero hr hd c₆) hτ₆
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hd₆ hi (by omega))
 
 omit [Q.IsPrime] in
@@ -293,7 +246,8 @@ private theorem card_inertia_le_two
       (fun k => by fin_cases k; simp [hr]) _ fun τ hτ hfix => ?_).trans (by norm_num)
     have hτb : τ (r b) = r b := hfix 0
     exact eq_one_of_mem_inertia hr htop hd Q hτ
-      (fun i hi => apply_eq_self_of_apply_mul_eq_mul (root_ne_zero hr hd b) hτb
+      (fun i hi => TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
+        (root_ne_zero hr hd b) hτb
         (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi))
       fun i hi => absurd (Or.inl ⟨b, i, hb, hi⟩) hcond
   by_cases hC : ∃ c, 2 ∣ d c
@@ -302,7 +256,7 @@ private theorem card_inertia_le_two
       (fun k => by fin_cases k; simp [hr]) _ fun τ hτ hfix => ?_).trans (by norm_num)
     have hτc : τ (r c) = r c := hfix 0
     refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => absurd ⟨i, hi⟩ hB) fun i hi => ?_
-    refine apply_eq_self_of_apply_mul_eq_mul (root_ne_zero hr hd c) hτc
+    refine TauCeti.AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ (root_ne_zero hr hd c) hτc
       (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hc hi ?_)
     have hc4 := hd c
     have hi4 := hd i
@@ -329,7 +283,7 @@ private theorem card_inertia_eq_four [Finite ι]
       (fun i => by rw [hr i]; simp) htop σ
   rcases hcond with ⟨b, c, hb, hc⟩ | ⟨c₂, c₆, h₂, h₆⟩
   · have hc4 := hd c
-    refine card_eq_four_of_exists_apply_eq_neg _ hexp
+    refine card_eq_four_of_exists_apply_eq_neg _ (fun σ _ => hexp σ)
       (card_inertia_le_four_of_mod_four_eq_three hr htop hd Q hb hc) (root_ne_zero hr hd b)
       (root_ne_zero hr hd c)
       (exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three (hr b) (Or.inr hb) Q)
@@ -346,7 +300,7 @@ private theorem card_inertia_eq_four [Finite ι]
     omega
   · have hd₂ : 2 ∣ d c₂ := by omega
     have hd₆ : 2 ∣ d c₆ := by omega
-    refine card_eq_four_of_exists_apply_eq_neg _ hexp
+    refine card_eq_four_of_exists_apply_eq_neg _ (fun σ _ => hexp σ)
       (card_inertia_le_four_of_mod_eight hr htop hd Q h₂ h₆) (root_ne_zero hr hd c₂)
       (root_ne_zero hr hd c₆)
       (exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three (hr c₂) (Or.inl (by omega)) Q)
@@ -358,7 +312,8 @@ private theorem card_inertia_eq_four [Finite ι]
       (Or.inr (by
         rw [Int.mul_emod, (by omega : d c₂ / 2 % 4 = 1), (by omega : d c₆ / 2 % 4 = 3)]
         norm_num)) Q
-    exact ⟨τ, hτ, apply_eq_neg_of_apply_div_eq_neg two_ne_zero (map_ofNat τ 2) hτx⟩
+    exact ⟨τ, hτ, TauCeti.AlgEquiv.apply_eq_neg_of_apply_div_eq_neg τ two_ne_zero
+      (map_ofNat τ 2) hτx⟩
 
 omit [Q.IsPrime] in
 /-- **The inertia group above `2` has at most four elements.** Let `K` be generated over `ℚ` by
@@ -394,6 +349,23 @@ theorem ramificationIdx_eq_four_iff [Finite ι] :
   have := card_inertia_le_two hr htop hd Q hcond
   omega
 
+/-- **Trivial inertia above `2`.** Let `K` be generated over `ℚ` by square roots of integers
+`d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the inertia group of
+`Q` is trivial exactly when every `d i` is `1` modulo `4`. -/
+theorem inertia_eq_bot_iff_forall_mod_four_eq_one [Finite ι] :
+    Q.inertia (K ≃ₐ[ℚ] K) = ⊥ ↔ ∀ i, d i % 4 = 1 := by
+  have := isGalois_rat hr htop
+  constructor
+  · intro hbot i
+    by_contra hi
+    have h4 := hd i
+    obtain ⟨τ, hτ, hτi⟩ :=
+      exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three (hr i) (by omega) Q
+    exact TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ (root_ne_zero hr hd i) hτi
+      ((Subgroup.eq_bot_iff_forall _).mp hbot τ hτ)
+  · intro hall
+    exact inertia_eq_bot_of_forall_mod_four_eq_one hr htop hall Q
+
 /-- **Ramification index `2` above `2`.** Let `K` be generated over `ℚ` by square roots of
 integers `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the
 ramification index of `Q` over `2` is `2` exactly when some `d i` is not `1` modulo `4` (so
@@ -409,17 +381,12 @@ theorem ramificationIdx_eq_two_iff_of_liesOver_two [Finite ι] :
     refine ⟨?_, fun hcond => by have := card_inertia_eq_four hr htop hd Q hcond; omega⟩
     by_contra hall
     push Not at hall
-    rw [inertia_eq_bot_of_forall_mod_four_eq_one hr htop hall Q, Subgroup.card_bot] at h
+    rw [(inertia_eq_bot_iff_forall_mod_four_eq_one hr htop hd Q).mpr hall,
+      Subgroup.card_bot] at h
     exact absurd h (by decide)
   · rintro ⟨⟨i, hi⟩, hcond⟩
-    have h4 := hd i
-    obtain ⟨τ, hτ, hτi⟩ :=
-      exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three (hr i) (by omega) Q
-    have hτ1 : τ ≠ 1 := by
-      rintro rfl
-      exact root_ne_zero hr hd i (CharZero.eq_neg_self_iff.mp hτi)
-    have hne : Q.inertia (K ≃ₐ[ℚ] K) ≠ ⊥ := fun h =>
-      hτ1 ((Subgroup.eq_bot_iff_forall _).mp h τ hτ)
+    have hne : Q.inertia (K ≃ₐ[ℚ] K) ≠ ⊥ := fun hbot =>
+      hi ((inertia_eq_bot_iff_forall_mod_four_eq_one hr htop hd Q).mp hbot i)
     have := (Subgroup.one_lt_card_iff_ne_bot _).mpr hne
     have := card_inertia_le_two hr htop hd Q hcond
     omega

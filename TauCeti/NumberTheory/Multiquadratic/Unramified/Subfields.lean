@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 public import TauCeti.NumberTheory.NumberField.Inertia
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Galois.SquareRoot
 
 /-!
@@ -154,37 +155,33 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
   have : P.LiesOver (Ideal.span {(p : ℤ)}) := hPp
   have hdisj := disjoint_inertia (adjoin ℚ {y}) hunr hp P hP hPp
   obtain ⟨τ, hτI, hτneg⟩ := TauCeti.NumberField.exists_mem_inertia_apply_eq_neg hx hpx P
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    rw [IntermediateField.adjoin_zero, (IntermediateField.botEquiv ℚ M).ramifiedPrimes_eq,
+      NumberField.ramifiedPrimes_rat] at hpx
+    exact hpx
   intro σ hσ
-  rw [_root_.mem_fixingSubgroup_iff]
-  -- Expose the scalar-action form required by the fixed-on-adjoin criterion.
-  change ∀ z ∈ adjoin ℚ {algebraMap ℚ M r * (x * y)}, σ • z = z
-  rw [IntermediateField.forall_mem_adjoin_smul_eq_self_iff]
-  simp only [Set.mem_singleton_iff, forall_eq]
-  -- Continue with ordinary `AlgEquiv` application to rewrite by `map_mul` below.
-  change σ (algebraMap ℚ M r * (x * y)) = algebraMap ℚ M r * (x * y)
+  change σ ∈ (adjoin ℚ {algebraMap ℚ M r * (x * y)}).fixingSubgroup
+  rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+    AlgEquiv.smul_def]
   by_cases hσF : σ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
   · rw [Subgroup.disjoint_def.mp hdisj hσ hσF]
     rfl
   by_cases hτF : τ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
-  · -- Then `τ = 1`, so `x = -x` forces `x = 0`.
-    rw [Subgroup.disjoint_def.mp hdisj hτI hτF, AlgEquiv.one_apply,
-      CharZero.eq_neg_self_iff] at hτneg
-    simp [hτneg]
+  · exact False.elim ((TauCeti.AlgEquiv.ne_one_of_apply_eq_neg τ hx0 hτneg)
+      (Subgroup.disjoint_def.mp hdisj hτI hτF))
   have hone : σ * τ = 1 := Subgroup.disjoint_def.mp hdisj (mul_mem hσ hτI)
     ((Subgroup.mul_mem_iff_of_index_two hindex).mpr (by simp only [hσF, hτF]))
   have hσx : σ x = -x := by
     have h1 : (σ * τ) x = x := by rw [hone]; rfl
     rw [AlgEquiv.mul_apply, hτneg, map_neg] at h1
     exact neg_eq_iff_eq_neg.mp h1
-  have hσy : σ y = -y := (apply_eq_or_eq_neg_of_sq_eq σ hy).resolve_left fun hfix =>
+  have hσy : σ y = -y :=
+    (TauCeti.AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hy).resolve_left fun hfix =>
     hσF (by
-      rw [_root_.mem_fixingSubgroup_iff]
-      -- The fixed-on-adjoin criterion is phrased using the definitionally equal scalar action.
-      change ∀ z ∈ adjoin ℚ {y}, σ • z = z
-      rw [IntermediateField.forall_mem_adjoin_smul_eq_self_iff]
-      simp only [Set.mem_singleton_iff, forall_eq]
-      -- Its singleton conclusion is definitionally the desired `AlgEquiv` application.
-      change σ y = y
+      change σ ∈ (adjoin ℚ {y}).fixingSubgroup
+      rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+        AlgEquiv.smul_def]
       exact hfix)
   rw [map_mul, map_mul, AlgEquiv.commutes, hσx, hσy, neg_mul_neg]
 
