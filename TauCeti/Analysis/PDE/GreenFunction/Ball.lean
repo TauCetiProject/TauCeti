@@ -34,7 +34,10 @@ kernel** of the ball,
 
 where `ωₙ` is the volume of the unit ball.  This is the boundary term of Green's representation
 formula on the ball, and the kernel of the Poisson integral solving the Dirichlet problem for the
-Laplacian there.
+Laplacian there.  For a boundary point `y`, the identity `1 - ‖x‖² = -(2 ⟪y, x - y⟫ + ‖x - y‖²)`
+writes `K(·, y)` as a combination of the dipole `⟪y, x - y⟫ ‖x - y‖⁻ⁿ` and the radial power
+`‖x - y‖^(2 - n)`, both harmonic away from `y`; so `K(·, y)` is harmonic in its pole away from
+`y`, in every dimension.
 
 The kernel is normalized for the negative Laplacian, as `TauCeti.newtonianKernel` is.  In
 dimension two that kernel vanishes identically, so the planar case is instead
@@ -52,6 +55,8 @@ dimension two that kernel vanishes identically, so the planar case is instead
   the unit sphere.
 * `TauCeti.ballGreenKernel_pos`: positivity inside the ball outside dimension two.
 * `TauCeti.ballPoissonKernel`: the Poisson kernel of the unit ball.
+* `TauCeti.harmonicAt_ballPoissonKernel_left`, `TauCeti.harmonicOnNhd_ballPoissonKernel_left`:
+  for a boundary point `y`, the Poisson kernel is harmonic in its pole away from `y`.
 * `TauCeti.fderiv_ballGreenKernel_normal`: the outward normal derivative of the Green kernel on
   the unit sphere is the negative Poisson kernel.
 
@@ -433,6 +438,48 @@ theorem integrableOn_ballPoissonKernel
       (continuous_ballPoissonKernel_on_sphere x hx).continuousOn.integrableOn_compact
         isCompact_univ
   exact hint.integrableOn
+
+/-- For a boundary point `y`, the Poisson kernel splits, away from `y`, into a dipole and a
+radial power centred at `y`, using `1 - ‖x‖² = -(2 ⟪y, x - y⟫ + ‖x - y‖²)` on the unit sphere. -/
+private theorem ballPoissonKernel_eq_of_norm_eq_one {x y : EuclideanSpace ℝ (Fin n)}
+    (hy : ‖y‖ = 1) (hxy : x ≠ y) :
+    ballPoissonKernel n x y =
+      -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        (⟪(2 : ℝ) • y, x - y⟫_ℝ * ‖x - y‖ ^ (-(n : ℝ)) + ‖x - y‖ ^ (2 - n : ℝ)) := by
+  have hpos : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
+  have hnum : 1 - ‖x‖ ^ 2 = -(2 * ⟪y, x - y⟫_ℝ + ‖x - y‖ ^ 2) := by
+    rw [norm_sub_sq_real, inner_sub_right, real_inner_self_eq_norm_sq, hy, real_inner_comm]
+    ring
+  have hsplit : ‖x - y‖ ^ (2 - n : ℝ) = ‖x - y‖ ^ 2 * ‖x - y‖ ^ (-(n : ℝ)) := by
+    rw [show (2 - n : ℝ) = 2 + -n by ring, Real.rpow_add hpos, Real.rpow_two]
+  rw [ballPoissonKernel_def, hnum, hsplit, real_inner_smul_left, Real.rpow_neg hpos.le,
+    Real.rpow_natCast, div_eq_mul_inv, mul_inv]
+  ring
+
+/-- For a point `y` of the unit sphere, the Poisson kernel `x ↦ K(x, y)` is harmonic in its pole
+`x` away from `y`, in particular throughout the open unit ball. -/
+theorem harmonicAt_ballPoissonKernel_left {x y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ = 1)
+    (hxy : x ≠ y) :
+    HarmonicAt (fun z ↦ ballPoissonKernel n z y) x := by
+  set c := -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
+  have hG : HarmonicAt (fun w : EuclideanSpace ℝ (Fin n) ↦
+      c * (⟪(2 : ℝ) • y, w⟫_ℝ * ‖w‖ ^ (-(n : ℝ)) + ‖w‖ ^ (2 - n : ℝ))) (x + -y) := by
+    have hw : x + -y ≠ 0 := by rwa [← sub_eq_add_neg, sub_ne_zero]
+    have h := ((harmonicAt_inner_mul_norm_rpow_neg_finrank ((2 : ℝ) • y) hw).add
+      (harmonicAt_norm_rpow_two_sub_finrank hw)).const_smul (c := c)
+    simp only [finrank_euclideanSpace_fin] at h
+    exact h
+  have heq : (fun z ↦ ballPoissonKernel n z y) =ᶠ[nhds x] fun z ↦
+      c * (⟪(2 : ℝ) • y, z + -y⟫_ℝ * ‖z + -y‖ ^ (-(n : ℝ)) + ‖z + -y‖ ^ (2 - n : ℝ)) := by
+    filter_upwards [eventually_ne_nhds hxy] with z hz
+    rw [← sub_eq_add_neg, ballPoissonKernel_eq_of_norm_eq_one hy hz]
+  exact (harmonicAt_congr_nhds heq).2 (harmonicAt_comp_add_right_iff.2 hG)
+
+/-- For a point `y` of the unit sphere, the Poisson kernel `x ↦ K(x, y)` is harmonic on the
+complement of `{y}`. -/
+theorem harmonicOnNhd_ballPoissonKernel_left {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ = 1) :
+    HarmonicOnNhd (fun z ↦ ballPoissonKernel n z y) {y}ᶜ :=
+  fun _ hx ↦ harmonicAt_ballPoissonKernel_left hy hx
 
 /-- **The Poisson kernel is the normal derivative of the Green kernel.**  On the unit sphere, the
 derivative of the Green kernel with pole `x` off the sphere, taken in the direction of the outward
