@@ -15,7 +15,6 @@ public import Mathlib.Tactic.Field
 public import Mathlib.Tactic.LinearCombination
 public import TauCeti.Algebra.Group.MapMulMulEqOne
 public import TauCeti.Algebra.Polynomial.LinearFactor
-public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
@@ -535,8 +534,7 @@ end
 abbrev M : Type _ := W.Aˣ ⧸ (powMonoidHom 2 : W.Aˣ →* W.Aˣ).range
 
 /-- **The square classes of `W.A` form a commutative group.** This is the target of the descent
-map: `μ` lands in `W.M`, and `QuotientGroup.pow_eq_one_quotient_range_powMonoidHom` says
-every element squares to `1` (equivalently
+map: `μ` lands in `W.M`, and `M.sq_eq_one` says every element squares to `1` (equivalently
 `M.inv_eq_self`: every element is its own inverse), so `W.M` is an elementary abelian `2`-group.
 
 The instance is stated rather than left to `inferInstance`: the latter succeeds on the spot, but
@@ -554,8 +552,12 @@ lemma M.mk_mul_mk_mul_mk_eq_one_iff {a b c : W.A} (ha : IsUnit a) (hb : IsUnit b
   simpa only [IsUnit.unit_spec] using
     TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow 2 ((ha.mul hb).mul hc).unit
 
-@[simp] lemma M.mul_self (m : W.M) : m * m = 1 := by
-  rw [← sq, QuotientGroup.pow_eq_one_quotient_range_powMonoidHom]
+lemma M.sq_eq_one (m : W.M) : m ^ 2 = 1 := by
+  obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective m
+  rw [← QuotientGroup.mk_pow]
+  exact (QuotientGroup.eq_one_iff _).mpr ⟨u, rfl⟩
+
+@[simp] lemma M.mul_self (m : W.M) : m * m = 1 := by rw [← sq, sq_eq_one]
 
 @[simp] lemma M.inv_eq_self (m : W.M) : m⁻¹ = m := inv_eq_of_mul_eq_one_right (M.mul_self m)
 
@@ -828,7 +830,7 @@ lemma μ_apply (P : W.Point) : μ (.ofAdd P) = μ₀ P := by
 detect a point up to adding `2 • Q`. -/
 @[simp]
 lemma μ₀_two_nsmul (P : W.Point) : W.μ₀ (2 • P) = 1 := by
-  rw [← μ_apply, ofAdd_nsmul, map_pow, QuotientGroup.pow_eq_one_quotient_range_powMonoidHom]
+  rw [← μ_apply, ofAdd_nsmul, map_pow, M.sq_eq_one]
 
 /-!
 ### The divisibility criterion
