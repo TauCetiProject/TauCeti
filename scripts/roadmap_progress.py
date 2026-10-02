@@ -287,6 +287,9 @@ def _check_ids(by_id: dict, ids: list[str]) -> str | None:
 
 
 DIFFERENT_README = "marker assessed a different README than the one the layers were read from"
+# What a marker's `readme_sha` must be: a prefix of at least twelve characters of a SHA-256 hex
+# digest. Anything else names no README, so it can never count as an earlier one.
+_README_SHA_RE = re.compile(r"[0-9a-f]{12,64}")
 
 
 def states_from_marker(marker, name: str, layers: list[str], to_sha: str,
@@ -294,8 +297,8 @@ def states_from_marker(marker, name: str, layers: list[str], to_sha: str,
     """Per-layer states from a `tauceti-coverage:v1` marker, or (None, reason).
 
     It fits when it names this roadmap, this library commit and the README it assessed (a
-    `readme_sha` matching, as a prefix of at least twelve characters, the hash of the README the
-    layers were read from), and lists every layer id exactly once with a legal state; anything
+    `readme_sha` of 12 to 64 lowercase hex digits matching, as a prefix, the hash of the README
+    the layers were read from), and lists every layer id exactly once with a legal state; anything
     else is refused whole, with a reason, rather than half-applied. Layer ids alone are not a
     specification identity: a layer's requirements can change under an unchanged heading, which
     is exactly what the README hash detects, so a marker for another README is refused here with
@@ -313,7 +316,7 @@ def states_from_marker(marker, name: str, layers: list[str], to_sha: str,
     named = marker.get("readme_sha")
     if named is None:
         return None, "marker does not name the README it assessed (no readme_sha)"
-    if not isinstance(named, str) or len(named) < 12:
+    if not isinstance(named, str) or _README_SHA_RE.fullmatch(named) is None:
         return None, "marker's readme_sha is not a README hash"
     if not _prefix_ok(named, readme_sha, 12):
         return None, DIFFERENT_README

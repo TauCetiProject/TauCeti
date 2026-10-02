@@ -97,6 +97,10 @@
 
   // ---- URL state ----
   var state = { group: "topic", sort: "activity", show: "all", q: "", open: [], kids: [], closed: [] };
+  // Whether a sub-roadmap list opens by itself when some of its rows match: under a search, and
+  // under "update due", where an umbrella can be due for its sub-roadmaps alone and its own row
+  // does not say which. A list closed by hand stays closed until the query or filter changes.
+  function autoOpens() { return !!state.q || state.show === "due"; }
   function readUrl() {
     try {
       var q = new URLSearchParams(location.search);
@@ -118,7 +122,7 @@
       if (state.q) q.set("q", state.q);
       if (state.open.length) q.set("open", state.open.join(","));
       if (state.kids.length) q.set("kids", state.kids.join(","));
-      if (state.closed.length && state.q) q.set("closed", state.closed.join(","));
+      if (state.closed.length && autoOpens()) q.set("closed", state.closed.join(","));
       var s = q.toString();
       var url = location.pathname + (s ? "?" + s : "");
       if (push) history.pushState(null, "", url); else history.replaceState(null, "", url);
@@ -141,11 +145,20 @@
       return { c: c, n: n, subs: ch.length };
     }
     function prsDue(r) { return !r.completed && r.status && r.activity && r.activity.since_report !== null && r.activity.since_report >= data.update_due_prs; }
-    // The report's states assess an earlier README with the same layers (absent in older snapshots).
+    // The row's own states assess an earlier README with the same layers (absent in older snapshots).
     function readmeChanged(r) { return r.assessment.reason === "ok" && r.assessment.readme_changed === true; }
-    function due(r) { return prsDue(r) || readmeChanged(r); }
+    // The sub-roadmaps whose states, counted in this row's totals, assess an earlier README.
+    function staleKids(r) { return kids(r).filter(readmeChanged); }
+    // The row's own report needs rewriting: enough pull requests since it, its own README changed,
+    // or so did the README of a sub-roadmap that has no report but this one. A sub-roadmap with a
+    // report of its own makes that report due, not this one.
+    function reportDue(r) { return ownReport(r) && !!(prsDue(r) || readmeChanged(r) || staleKids(r).some(inheritsReport)); }
+    // What "update due" selects and sorts by: the row's own report is due, or its own states are
+    // stale, which for a sub-roadmap without a report means its umbrella's report is due for it.
+    function due(r) { return reportDue(r) || readmeChanged(r); }
     function hasReport(r) { return !!r.status; }
     function ownReport(r) { return !!r.status && !r.status.inherited; }
+    function inheritsReport(r) { return !!r.status && r.status.inherited === true; }
     function reportAge(r) { return r.status && r.status.ts ? daysBetween(r.status.ts, cutoff) : null; }
     function beforeText(ts) {
       var n = daysBetween(ts, cutoff);
@@ -198,7 +211,9 @@
       var g = data.global;
       var reported = tops.filter(ownReport);
       var ages = reported.map(reportAge).filter(function (a) { return a !== null; }).sort(function (a, b) { return a - b; });
-      var dueN = tops.filter(due).length;
+      // Reports, not rows: an umbrella's report is counted once however many of its sub-roadmaps it
+      // must reassess, and a sub-roadmap with a report of its own is counted for that report.
+      var dueN = rows.filter(reportDue).length;
       var un = g.unattributed, unN = un.no_label + un.several_labels + un.unknown_area;
       var gmax = Math.max.apply(null, g.weekly.concat([1]));
       return '<div class="pb-tiles">' +
@@ -280,7 +295,7 @@
       if (!r.status) return '<div class="pb-age"><span class="pb-none">none</span></div>';
       var s = r.status, since = r.activity && r.activity.since_report !== null ? r.activity.since_report : null;
       if (s.inherited) return '<div class="pb-age"><span class="pb-sub">via ' + esc(r.parent) + "</span></div>";
-      return '<div class="pb-age' + (due(r) ? " stale" : "") + '">' + (s.ts ? esc(s.ts.slice(0, 10)) : '<span class="pb-none">undated</span>') + '<span class="pb-sub">library <span class="pb-sha">' + esc(s.to_sha.slice(0, 7)) + "</span></span>" +
+      return '<div class="pb-age' + (reportDue(r) ? " stale" : "") + '">' + (s.ts ? esc(s.ts.slice(0, 10)) : '<span class="pb-none">undated</span>') + '<span class="pb-sub">library <span class="pb-sha">' + esc(s.to_sha.slice(0, 7)) + "</span></span>" +
         (since !== null ? '<span class="pb-sub">' + plural(since, "PR") + " merged since</span>" : "") + "</div>";
     }
     function chips(r) {
@@ -288,7 +303,18 @@
       if (r.completed) out += '<a class="pb-chip complete" href="' + ROADMAP_REPO + '/blob/main/Completed/README.md" title="The maintainers archived this roadmap as complete against its README; a human decision, separate from the report’s layer states.">declared complete</a>';
       if (prsDue(r)) out += '<span class="pb-chip behind" title="' + r.activity.since_report + ' pull requests merged since the report; TauCetiProgress opens a new window at ' + data.update_due_prs + '">update due</span>';
       if (readmeChanged(r)) out += '<span class="pb-chip behind" title="The README changed after the report. The layer states shown assess it as it was then; the next report assesses it as it now stands.">README changed</span>';
+      var sk = staleKids(r);
+      if (sk.length) out += '<span class="pb-chip behind" title="' + esc(staleKidsText(sk)) + '">sub-roadmap README changed</span>';
       return out;
+    }
+    // Which sub-roadmaps' states in an umbrella's totals are stale, and which report is due for them.
+    function staleKidsText(sk) {
+      function names(ks) { return ks.map(function (k) { return k.name; }).join(", "); }
+      var shared = sk.filter(inheritsReport), own = sk.filter(function (k) { return !inheritsReport(k); });
+      return (sk.length === 1 ? "The README of " + names(sk) + " changed after it was last assessed, so the totals in this row count its states as assessed then."
+        : "The READMEs of " + names(sk) + " changed after they were last assessed, so the totals in this row count their states as assessed then.") +
+        (shared.length ? " This roadmap’s report covers " + names(shared) + ", so it is due an update." : "") +
+        (own.length ? " " + names(own) + (own.length === 1 ? " has its own report, which is due an update." : " have their own reports, which are due an update.") : "");
     }
     function rowHtml(r, ctx, shownKids, totalKids) {
       var open = state.open.indexOf(r.id) >= 0;
@@ -336,6 +362,7 @@
       var evid = "Topic: " + esc(r.topic) + " (a hand assignment). ";
       if (a.reason === "ok") evid += "Layer states come from " + (a.source === "marker" ? "the coverage marker in the report" : "a hand transcription of the report’s prose, bound to that exact report and README") + "; they are the report’s assessment at library commit " + esc(s.to_sha.slice(0, 7)) + ", not a certificate that each layer’s specification is fully met. ";
       else evid += "Layer states are unassessed: " + esc(REASON_TEXT[a.reason] || a.reason) + (typeof a.detail === "string" && a.detail ? " (" + esc(a.detail) + ")" : "") + ". ";
+      if (staleKids(r).length) evid += esc(staleKidsText(staleKids(r))) + " ";
       evid += "Pull-request counts come from labels. ";
       if (r.completed) evid += "“Declared complete” is the maintainers’ decision, recorded in the archive; it is independent of the layer states above.";
       left += '<div class="pb-evid">' + evid + "</div>";
@@ -378,7 +405,7 @@
     var sorters = {
       activity: function (a, b) { return (act(b, "recent") - act(a, "recent")) || (act(b, "total") - act(a, "total")) || a.name.localeCompare(b.name); },
       done: function (a, b) { return (doneKey(b) - doneKey(a)) || a.name.localeCompare(b.name); },
-      due: function (a, b) { function s(r) { return r.activity && r.status && r.activity.since_report !== null ? r.activity.since_report : -1; } return (s(b) - s(a)) || a.name.localeCompare(b.name); },
+      due: function (a, b) { function s(r) { return r.activity && r.status && r.activity.since_report !== null ? r.activity.since_report : -1; } return (due(b) - due(a)) || (s(b) - s(a)) || a.name.localeCompare(b.name); },
       name: function (a, b) { return a.name.localeCompare(b.name); }
     };
 
@@ -388,7 +415,7 @@
       function emit(r) {
         var ch = kids(r), chVisible = ch.filter(visible), self = visible(r);
         if (!self && !chVisible.length) return;
-        var expand = ch.length && (state.kids.indexOf(r.id) >= 0 || (!!state.q && chVisible.length > 0 && state.closed.indexOf(r.id) < 0));
+        var expand = ch.length && (state.kids.indexOf(r.id) >= 0 || (autoOpens() && chVisible.length > 0 && state.closed.indexOf(r.id) < 0));
         out.push(rowHtml(r, !self, expand ? chVisible.length : null, ch.length));
         if (self) shown++;
         if (expand) chVisible.sort(state.sort === "name" ? sorters.name : s).forEach(function (c) { out.push(rowHtml(c, false, null, 0)); shown++; });
@@ -440,7 +467,7 @@
       var t = e.target;
       if (t.hasAttribute("data-group")) state.group = t.value;
       else if (t.hasAttribute("data-sort")) state.sort = t.value;
-      else if (t.hasAttribute("data-show")) state.show = t.value;
+      else if (t.hasAttribute("data-show")) { if (t.value !== state.show) state.closed = []; state.show = t.value; }
       else return;
       writeUrl(true); renderRows();
     });
@@ -461,11 +488,12 @@
         if (i >= 0) state.open.splice(i, 1); else state.open.push(id);
         writeUrl(false); renderRows(); refocus('[data-open="' + CSS.escape(id) + '"]');
       } else if (b.hasAttribute("data-kids")) {
-        // Expanded either explicitly (kids) or by a matching search; collapsing an auto-expanded
-        // list is recorded as an explicit close, which the next query change forgets.
+        // Expanded either explicitly (kids) or by a matching search or "update due" filter;
+        // collapsing an auto-expanded list is recorded as an explicit close, which the next change
+        // of query or filter forgets.
         var p = b.getAttribute("data-kids"), j = state.kids.indexOf(p), k = state.closed.indexOf(p);
         var expanded = b.getAttribute("aria-expanded") === "true";
-        // Both forms of expansion can hold at once (opened by hand, then a matching search), so a
+        // Both forms of expansion can hold at once (opened by hand, then a matching filter), so a
         // collapse drops the explicit open and records the explicit close.
         if (expanded) { if (j >= 0) state.kids.splice(j, 1); if (k < 0) state.closed.push(p); }
         else { if (k >= 0) state.closed.splice(k, 1); if (j < 0) state.kids.push(p); }
