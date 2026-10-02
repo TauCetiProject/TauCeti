@@ -62,9 +62,10 @@ theorem subfan_analyticAffineChartDiagram_obj_str (σ : (Φ.subfan S hS hface).c
       ((Φ.analyticAffineChartDiagram hΦ).obj
         ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩).str := by
   let g := Φ.analyticChartGenerators ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩
-    ((isRegular_iff.mp hΦ) σ.1 (hS (by simpa only [subfan_cones] using σ.2)))
-  exact ((Φ.subfan S hS hface).analyticAffineChart_str_eq σ _ g.2).trans
-    (Φ.analyticAffineChart_str_eq _ _ g.2).symm
+  exact ((Φ.subfan S hS hface).analyticAffineChart_str_eq σ
+    ((isRegular_iff.mp (hΦ.subfan S hS hface)) σ.1 σ.2) g.2).trans
+    (Φ.analyticAffineChart_str_eq _
+      ((isRegular_iff.mp hΦ) σ.1 (hS (by simpa only [subfan_cones] using σ.2))) g.2).symm
 
 /-- The identity-on-points homeomorphism from the chart of a cone of a subfan to the chart of the
 same cone in the ambient fan. -/

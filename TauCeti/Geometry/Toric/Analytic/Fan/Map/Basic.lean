@@ -65,9 +65,9 @@ noncomputable def analyticChartMap {σ : Φ.cones} {υ : Ψ.cones}
     (h : Set.MapsTo f.realMap (σ.1 : Set V) (υ.1 : Set V')) :
     (Φ.analyticAffineChartDiagram hΦ).obj σ ⟶ (Ψ.analyticAffineChartDiagram hΨ).obj υ :=
   letI := affinePointTopology
-    (Φ.analyticChartGenerators σ ((Fan.isRegular_iff.mp hΦ) σ.1 σ.2)).2
+    (Φ.analyticChartGenerators σ).2
   letI := affinePointTopology
-    (Ψ.analyticChartGenerators υ ((Fan.isRegular_iff.mp hΨ) υ.1 υ.2)).2
+    (Ψ.analyticChartGenerators υ).2
   TopCat.ofHom ⟨AffineSemigroupComplexPoint.comap
     (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice h),
     AffineSemigroupComplexPoint.continuous_comap _ _ _⟩

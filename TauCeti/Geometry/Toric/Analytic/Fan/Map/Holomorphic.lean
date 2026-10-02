@@ -66,8 +66,8 @@ theorem contMDiff_analyticMap (n : ℕ∞ω) :
   have : Finite (ToricRay υ.1) := ToricRay.finite_of_fg hυ.fg
   let κ := Finite.equivFin (ToricRay σ.1)
   let κ' := Finite.equivFin (ToricRay υ.1)
-  let g := (Φ.analyticChartGenerators σ hσ).2
-  let g' := (Ψ.analyticChartGenerators υ hυ).2
+  let g := (Φ.analyticChartGenerators σ).2
+  let g' := (Ψ.analyticChartGenerators υ).2
   let _ := affinePointTopology g
   let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
   let _ := affinePointTopology g'

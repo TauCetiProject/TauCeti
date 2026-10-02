@@ -65,7 +65,7 @@ theorem isLocalDiffeomorph_subfanAnalyticMap (n : ℕ∞ω) :
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
   have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
   let κ := Finite.equivFin (ToricRay σ.1)
-  let g := (analyticChartGenerators (Φ.subfan S hS hface) σ hσ).2
+  let g := (analyticChartGenerators (Φ.subfan S hS hface) σ).2
   -- Both chart inclusions of `σ` carry the complex structure of the same extending basis and
   -- generating family on its complex points; the subfan has the lattice of the ambient fan.
   let _ := affinePointTopology g

@@ -287,7 +287,7 @@ theorem mem_closure_analyticConeOrbit_iff {σ τ : Φ.cones} {x : Φ.analyticRea
   · rw [Φ.preimage_analyticAffineChartι_analyticConeOrbit hΦ h]
     refine iff_of_true ?_ h
     exact (mem_closure_affineConeOrbit_iff_le Φ.lattice hσ _ ⊤
-      (Φ.analyticChartGenerators σ hσ).2 hy).2 le_top
+      (Φ.analyticChartGenerators σ).2 hy).2 le_top
   · rw [Φ.preimage_analyticAffineChartι_analyticConeOrbit_of_not_le hΦ h, closure_empty]
     exact iff_of_false (notMem_empty y) h
 

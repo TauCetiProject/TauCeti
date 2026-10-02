@@ -102,8 +102,7 @@ noncomputable instance : MulAction (ComplexTorus N) (Φ.analyticRealization hΦ)
 /-- The coordinate-free torus acts jointly continuously on each analytic affine chart. -/
 instance (σ : Φ.cones) :
     ContinuousSMul (ComplexTorus N) ((Φ.analyticAffineChartDiagram hΦ).obj σ) := by
-  let hreg := (isRegular_iff.mp hΦ) σ.1 σ.2
-  let g := Φ.analyticChartGenerators σ hreg
+  let g := Φ.analyticChartGenerators σ
   -- The chart topology is definitionally its chosen monomial-embedding topology.
   change letI := affinePointTopology g.2
     ContinuousSMul (ComplexTorus N)
