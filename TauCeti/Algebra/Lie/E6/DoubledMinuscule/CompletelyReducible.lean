@@ -159,33 +159,10 @@ theorem isCompletelyReducible_standardComodule :
   have hM : M.toSubmodule = Submodule.span k ((Pi.basisFun k (Fin 54)) '' sᶜ) :=
     Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
   refine ⟨M, ?_⟩
-  rw [isCompl_iff, Submodule.disjoint_def, codisjoint_iff]
-  constructor
-  · -- A vector in both subcomodules has every coordinate zero.
-    intro v hv hvM
-    rw [hM] at hvM
-    have hsupport := (Pi.basisFun k (Fin 54)).mem_span_image.mp hvM
-    ext a
-    by_contra ha
-    have hscaled := Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights
-      (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom minusculeCharacter
-      minusculeCharacter_injective (torusCorestrict_eq_ofWeights k) N hv a
-    have hone : Pi.single a (1 : k) ∈ N := by
-      rw [← Subcomodule.mem_toSubmodule]
-      simpa only [inv_smul_smul₀ ha] using N.toSubmodule.smul_mem (v a)⁻¹ hscaled
-    exact hsupport (by simpa using ha) hone
-  · -- Every coordinate basis vector lies in N or its proposed complement.
-    apply top_unique
-    rw [← (Pi.basisFun k (Fin 54)).span_eq]
-    apply Submodule.span_le.mpr
-    rintro _ ⟨a, rfl⟩
-    by_cases ha : a ∈ s
-    · have haN : Pi.single a (1 : k) ∈ N := ha
-      apply Submodule.mem_sup_left
-      rw [Pi.basisFun_apply]
-      exact Subcomodule.mem_toSubmodule.mpr haN
-    · apply Submodule.mem_sup_right
-      rw [hM]
-      exact Submodule.subset_span ⟨a, ha, rfl⟩
+  rw [hM, Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights
+    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom minusculeCharacter
+    minusculeCharacter_injective (torusCorestrict_eq_ofWeights k) N]
+  exact (Pi.basisFun k (Fin 54)).linearIndependent.isCompl_span_image
+    (Pi.basisFun k (Fin 54)).span_eq isCompl_compl
 
 end TauCeti.E6DoubledMinuscule

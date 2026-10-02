@@ -388,6 +388,7 @@ theorem mapPointsFunctor_coordinateMap_app
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 54) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
+  rw [coordinateMap, CommHopfAlgCat.quotientPointsHom]
   apply WithConv.ext
   rfl
 

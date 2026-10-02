@@ -231,35 +231,6 @@ private theorem tripledCharacter_injective : Function.Injective tripledCharacter
   apply Finsupp.equivFunOnFinite.symm.injective
   exact Multiplicative.ofAdd.injective h
 
-/-- Every subcomodule of the standard carrier comodule over a field is spanned by the coordinate
-vectors it contains: the weight torus separates the twenty-four distinct weight lines. -/
-private theorem toSubmodule_eq_span (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 24 → k)) :
-    N.toSubmodule = Submodule.span k ((Pi.basisFun k (Fin 24)) ''
-      {a | Pi.single a (1 : k) ∈ N}) := by
-  classical
-  apply le_antisymm
-  · intro v hv
-    rw [← Finset.univ_sum_single v]
-    apply Submodule.sum_mem
-    intro a _
-    by_cases ha : v a = 0
-    · simp [ha]
-    · have hsingle := Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights
-        (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom tripledCharacter
-        tripledCharacter_injective (torusCorestrict_eq_ofWeights k) N hv a
-      have hone : Pi.single a (1 : k) ∈ N := by
-        rw [← Subcomodule.mem_toSubmodule]
-        simpa only [smul_smul, inv_mul_cancel₀ ha, one_smul] using
-          N.toSubmodule.smul_mem (v a)⁻¹ hsingle
-      have hmem := Submodule.subset_span (R := k)
-        (s := (Pi.basisFun k (Fin 24)) '' {a | Pi.single a (1 : k) ∈ N})
-        ⟨a, by simpa only [Set.mem_ofPred_eq] using hone, rfl⟩
-      simpa [Pi.basisFun_apply, ← Pi.single_smul] using Submodule.smul_mem _ (v a) hmem
-  · apply Submodule.span_le.mpr
-    rintro _ ⟨a, ha, rfl⟩
-    apply Subcomodule.mem_toSubmodule.mpr
-    simpa only [Pi.basisFun_apply, Set.mem_ofPred_eq] using ha
-
 private theorem positiveRoot_mulVec_single_sub (i : Fin 4) (a : Fin 24)
     (ha : d4TripledWeight a i = -1) :
     (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
@@ -322,7 +293,10 @@ theorem isCompletelyReducible_standardComodule :
   have hsc : ∀ a b, d4TripledSummand a = d4TripledSummand b → b ∈ sᶜ → a ∈ sᶜ :=
     fun a b hab hb ha ↦ hb (hs b a hab.symm ha)
   refine ⟨summandSubcomodule k sᶜ hsc, ?_⟩
-  rw [summandSubcomodule_toSubmodule, toSubmodule_eq_span k N]
+  rw [summandSubcomodule_toSubmodule,
+    Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights
+      (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom tripledCharacter
+      tripledCharacter_injective (torusCorestrict_eq_ofWeights k) N]
   exact (Pi.basisFun k (Fin 24)).linearIndependent.isCompl_span_image
     (Pi.basisFun k (Fin 24)).span_eq isCompl_compl
 
