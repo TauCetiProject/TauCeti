@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Resolution.Basic
-public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.Additive
 
 /-!
 # The chain complex of a finite resolution
@@ -29,6 +29,11 @@ augmented by the deflation `Q₀ ↠ X`: the differential `Qₖ₊₁ ⟶ Qₖ` 
 recursive data, so that the comparison theory of resolutions can be phrased with Mathlib's chain
 maps and chain homotopies.
 
+The construction commutes with conflation-exact functors: the complex of the image of a
+resolution under such a functor `F` is the image under `F` of its complex. This is what makes the
+comparison theory functorial, and in particular compatible with the grading shift of a graded
+exact category.
+
 ## Main definitions
 
 * `TauCeti.ExactStructure.FiniteResolution.term`: the `n`-th term `Qₙ` of the complex, with
@@ -37,6 +42,10 @@ maps and chain homotopies.
 * `TauCeti.ExactStructure.FiniteResolution.d`: the differential `Qₙ₊₁ ⟶ Qₙ`.
 * `TauCeti.ExactStructure.FiniteResolution.toChainComplex`: the `ℕ`-indexed chain complex of the
   terms and differentials.
+* `TauCeti.ExactStructure.FiniteResolution.termMapIso` and
+  `TauCeti.ExactStructure.FiniteResolution.toChainComplexMapIso`: the terms and the complex of
+  the image of a resolution under a conflation-exact functor are the images of the terms and of
+  the complex.
 
 ## Main results
 
@@ -47,6 +56,9 @@ maps and chain homotopies.
 * `TauCeti.ExactStructure.FiniteResolution.prop_term_of_le_length` and
   `TauCeti.ExactStructure.FiniteResolution.isZero_term_of_length_lt`: the terms up to the length
   satisfy `P`, and the terms beyond it are zero.
+* `TauCeti.ExactStructure.FiniteResolution.aug_map` and
+  `TauCeti.ExactStructure.FiniteResolution.d_map`: the augmentation and the differentials of an
+  image resolution are the images of the augmentation and the differentials.
 
 ## Implementation notes
 
@@ -76,7 +88,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 
@@ -198,6 +210,58 @@ see `ChainComplex.of.d` through the abbreviation, and unifies with offset degree
 theorem toChainComplex_d {X : C} (r : FiniteResolution E P X) (n : ℕ) :
     r.toChainComplex.d (n + 1) n = r.d n :=
   ChainComplex.of_d _ _ n
+
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+  {E' : ExactStructure D} {P' : ObjectProperty D} {F : C ⥤ D} [F.Additive]
+  (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F)
+
+/-- The terms of the image of a resolution under a conflation-exact functor `F` are the images of
+its terms: the identity in degrees up to the length, and the isomorphism `0 ≅ F 0` beyond it. -/
+noncomputable def termMapIso : ∀ {X : C} (r : FiniteResolution E P X) (n : ℕ),
+    (r.map hF hPP').term n ≅ F.obj (r.term n)
+  | X, .base _, 0 => Iso.refl (F.obj X)
+  | _, .base _, _ + 1 => F.mapZeroObject.symm
+  | _, .step (Q := Q) _ _ _ _ _ _, 0 => Iso.refl (F.obj Q)
+  | _, .step _ _ _ _ _ r, n + 1 => termMapIso r n
+
+/-- The augmentation of the image of a resolution is the image of its augmentation. -/
+theorem aug_map {X : C} (r : FiniteResolution E P X) :
+    (r.map hF hPP').aug = (termMapIso hF hPP' r 0).hom ≫ F.map r.aug := by
+  -- `dsimp only [map]` unfolds the image of a constructor, which `simp [map_base]` cannot do
+  -- here: the type of the augmentation depends on the resolution.
+  cases r <;> dsimp only [map] <;> simp [termMapIso]
+
+/-- The differentials of the image of a resolution are the images of its differentials. -/
+theorem d_map {X : C} (r : FiniteResolution E P X) (n : ℕ) :
+    (r.map hF hPP').d n =
+      (termMapIso hF hPP' r (n + 1)).hom ≫ F.map (r.d n) ≫ (termMapIso hF hPP' r n).inv := by
+  induction r generalizing n with
+  | base hX => dsimp only [map]; simp
+  | step hQ i p zero hp r ih =>
+      dsimp only [map]
+      cases n with
+      | zero => simp [termMapIso, aug_map]
+      | succ n => simpa [termMapIso] using ih n
+
+/-- The complex of the image of a resolution under a conflation-exact functor `F` is the image
+of its complex under `F`. -/
+noncomputable def toChainComplexMapIso {X : C} (r : FiniteResolution E P X) :
+    (r.map hF hPP').toChainComplex ≅ (F.mapHomologicalComplex _).obj r.toChainComplex :=
+  HomologicalComplex.Hom.isoOfComponents (termMapIso hF hPP' r) (by
+    rintro _ n rfl
+    simp [d_map])
+
+@[simp]
+theorem toChainComplexMapIso_hom_f {X : C} (r : FiniteResolution E P X) (n : ℕ) :
+    (toChainComplexMapIso hF hPP' r).hom.f n = (termMapIso hF hPP' r n).hom := (rfl)
+
+@[simp]
+theorem toChainComplexMapIso_inv_f {X : C} (r : FiniteResolution E P X) (n : ℕ) :
+    (toChainComplexMapIso hF hPP' r).inv.f n = (termMapIso hF hPP' r n).inv := (rfl)
+
+end Map
 
 end FiniteResolution
 
