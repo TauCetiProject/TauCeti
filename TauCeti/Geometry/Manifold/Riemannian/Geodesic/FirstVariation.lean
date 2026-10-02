@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 /-!
 # Geodesics are the critical points of the energy
 
-The first variation formula `TauCeti.Manifold.hasDerivAt_energy_of_fixed_endpoints` of
+The first variation formula `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_energy` of
 `TauCeti.Geometry.Manifold.Riemannian.FirstVariation` expresses the derivative at `s = 0` of the
 energy of a fixed-endpoint variation `F` of `γ = F 0` as `-∫_a^b ⟪V(t), D_t γ'(t)⟫ dt`.  This file
 proves the variational characterization of geodesics: on a boundaryless manifold, a curve which
@@ -73,7 +73,7 @@ and `b` which is `C²` at every point of `[a, b]` is a critical point of the ene
 `b` among variations with fixed endpoints. -/
 theorem IsGeodesicCurveOn.isEnergyCritical (h : IsGeodesicCurveOn I γ (uIoo a b))
     (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) : IsEnergyCritical I γ a b := by
-  refine (isEnergyCritical_iff_integral_inner_eq_zero hγ).mpr fun F hF0 _ _ _ ↦ ?_
+  refine (isEnergyCritical_iff_integral_inner_eq_zero hγ).mpr fun F hF0 _ ↦ ?_
   subst hF0
   refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
     intervalIntegral.integral_zero
@@ -156,6 +156,23 @@ private theorem contMDiffAt_chartVariation (hJo : IsOpen J)
 omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+/-- The chart variation of a curve which is `C²` on `[a, b]`, for a `C²` profile supported in an
+open set `J ⊆ uIoo a b`, is a `C²` variation with fixed endpoints between `a` and `b`. -/
+private theorem isFixedEndpointVariation_chartVariation (hJo : IsOpen J) (hJab : J ⊆ uIoo a b)
+    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
+    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
+    IsFixedEndpointVariation I 2 (chartVariation I γ x₀ J φ e) a b := by
+  have hend : ∀ c ∉ uIoo a b, ∀ᶠ s in 𝓝 (0 : ℝ),
+      chartVariation I γ x₀ J φ e s c = chartVariation I γ x₀ J φ e 0 c :=
+    fun c hc ↦ .of_forall fun s ↦ by
+      rw [chartVariation_of_notMem (fun hcJ ↦ hc (hJab hcJ)),
+        chartVariation_of_notMem (fun hcJ ↦ hc (hJab hcJ))]
+  exact ⟨fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (hγ t ht),
+    hend a left_notMem_uIoo, hend b right_notMem_uIoo⟩
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- At a parameter of `J`, the variation field of the chart variation is `φ t` times the tangent
 vector at `γ t` with coordinates `e` in the tangent-bundle trivialization at `x₀`. -/
 private theorem variationField_chartVariation (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
@@ -217,17 +234,14 @@ private theorem IsEnergyCritical.integral_mul_inner_eq_zero (h : IsEnergyCritica
       ∀ t ∈ uIcc a b, ContinuousAt (fun t ↦ φ t * inner ℝ
         ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
         (alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t)) t := by
-  have hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun z : ℝ × ℝ ↦ chartVariation I γ x₀ J φ e z.1 z.2) (0, t) :=
-    fun t ht ↦ contMDiffAt_chartVariation hJo hJ hφ hφJ (h.contMDiffAt t ht)
+  have hF : IsFixedEndpointVariation I 2 (chartVariation I γ x₀ J φ e) a b :=
+    isFixedEndpointVariation_chartVariation hJo hJab hJ hφ hφJ h.contMDiffAt
   have hpt := inner_variationField_chartVariation (e := e) hJ
     ((subset_tsupport φ).trans hφJ)
-  have hend : ∀ c ∉ uIoo a b, ∀ᶠ s in 𝓝 (0 : ℝ), chartVariation I γ x₀ J φ e s c = γ c :=
-    fun c hc ↦ Eventually.of_forall (chartVariation_of_notMem fun hcJ ↦ hc (hJab hcJ))
   refine ⟨?_, fun t ht ↦ ?_⟩
   · simpa only [hpt] using (isEnergyCritical_iff_integral_inner_eq_zero h.contMDiffAt).mp h _
-      (chartVariation_zero hJ) hF (hend a left_notMem_uIoo) (hend b right_notMem_uIoo)
-  · simpa only [hpt] using continuousAt_inner_variationField_alongCurve (hF t ht)
+      (chartVariation_zero hJ) hF
+  · simpa only [hpt] using continuousAt_inner_variationField_alongCurve (hF.contMDiffAt t ht)
 
 /-- **Critical points of the energy are geodesics.** On a boundaryless manifold, a critical point
 of the energy between `a` and `b` among variations with fixed endpoints is a geodesic on the open
