@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.IsSheafFor
 public import Mathlib.Topology.Category.TopCat.Opens
+import TauCeti.CategoryTheory.Sites.IsSheafFor
 
 /-!
 # Transitivity of the sheaf condition along a cover of an open set
@@ -60,24 +61,16 @@ theorem isSheafFor_trans {W : Opens X} {ι : Type*} (Y : ι → Opens X) (hY : �
   choose t ht ht' using fun i ↦ hS i (x.pullback (homOfLE (hY i))) (hx.pullback _)
   -- the glued sections restrict to amalgamations of `x` on `Y i ⊓ Y j`, so they agree there
   have hcompat : Presieve.Arrows.Compatible F (fun i ↦ homOfLE (hY i)) t := by
-    intro i j Z gi gj _
-    have hij : F.map (homOfLE inf_le_left : Y i ⊓ Y j ⟶ Y i).op (t i) =
-        F.map (homOfLE inf_le_right : Y i ⊓ Y j ⟶ Y j).op (t j) := by
-      -- Arrows between opens encode proofs of inclusion, so proof irrelevance identifies
-      -- the composite arrows indexing `x` with those in `x.pullback`.
-      refine hS₂ i j (x.pullback _) _ _ (fun V g hg ↦ ?_) (fun V g hg ↦ ?_)
-      · rw [← Functor.map_comp_apply, ← op_comp,
-          ht i (g ≫ homOfLE inf_le_left) (by simpa using hg)]
-        rfl
-      · rw [← Functor.map_comp_apply, ← op_comp,
-          ht j (g ≫ homOfLE inf_le_right) (by simpa using hg)]
-        rfl
-    have hZ : Z ≤ Y i ⊓ Y j := le_inf gi.le gj.le
-    -- Factor both arrows from `Z` through the meet's canonical inclusions; uniqueness of
-    -- morphisms between opens then lets `hij` identify their restrictions.
-    rw [show gi = homOfLE hZ ≫ homOfLE inf_le_left from Subsingleton.elim _ _,
-      show gj = homOfLE hZ ≫ homOfLE inf_le_right from Subsingleton.elim _ _, op_comp, op_comp,
-      Functor.map_comp_apply, Functor.map_comp_apply, hij]
+    refine (Presieve.Arrows.compatible_homOfLE_iff hY t).2 fun i j ↦ ?_
+    -- Arrows between opens encode proofs of inclusion, so proof irrelevance identifies
+    -- the composite arrows indexing `x` with those in `x.pullback`.
+    refine hS₂ i j (x.pullback _) _ _ (fun V g hg ↦ ?_) (fun V g hg ↦ ?_)
+    · rw [← Functor.map_comp_apply, ← op_comp,
+        ht i (g ≫ homOfLE inf_le_left) (by simpa using hg)]
+      rfl
+    · rw [← Functor.map_comp_apply, ← op_comp,
+        ht j (g ≫ homOfLE inf_le_right) (by simpa using hg)]
+      rfl
   obtain ⟨s, hs, hs'⟩ := (Presieve.isSheafFor_arrows_iff _ _).1 hR t hcompat
   refine ⟨s, fun V f hf ↦ ?_, fun s' hs'' ↦ hs' s' fun i ↦ ht' i _ fun V g hg ↦ ?_⟩
   · -- `s` restricts to `x` on every member of `S`, through the `Y i` containing it

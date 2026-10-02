@@ -29,6 +29,9 @@ admissible presentations, when `A⁺` consists of power-bounded elements.
 
 * `TauCeti.ValuationSpectrum.presentationLimitMap_comp_presentationLimitLocIso_hom` : these
   isomorphisms commute with the restriction maps.
+* `TauCeti.ValuationSpectrum.presentationLimitLocIso_hom_presentationLimitMap_apply` and
+  `TauCeti.ValuationSpectrum.bijective_presentationLimitLocIso_hom` : the same, and bijectivity,
+  read on sections.
 * `TauCeti.ValuationSpectrum.comap_presentationLimitLocIso_rationalLocalizationPoint` : read on
   rational coordinate rings, these isomorphisms match the points determined by `y` and by `j(y)`.
   This is what makes the stalk valuations compatible with Remark 8.4.
@@ -349,6 +352,38 @@ theorem presentationLimitMap_comp_presentationLimitLocIso_hom
         presentationLimitMap (P := completionLocalization P T s S hden)
           (locOpensComap_mono P Aplus T s S hden h) :=
   presentationLimitMap_comp_presentationLimitLocIsoAux_hom P Aplus T s S hden hAplus _ _ h
+
+/-- **Wedhorn's Remark 8.4 is natural in `V`, on sections.** This is
+`presentationLimitMap_comp_presentationLimitLocIso_hom` evaluated at a section `x` over `V`. -/
+theorem presentationLimitLocIso_hom_presentationLimitMap_apply
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
+    (hV' : V' ∈ spaRationalOpens Aplus) (hVW : V ≤ spaBasicOpen Aplus T s) (h : V' ≤ V)
+    (x : presentationLimit (P := P) Aplus V) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' (h.trans hVW)).hom.hom.1
+        ((presentationLimitMap (P := P) h).hom.1 x) =
+      (presentationLimitMap (P := completionLocalization P T s S hden)
+        (locOpensComap_mono P Aplus T s S hden h)).hom.1
+          ((presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 x) :=
+  ConcreteCategory.congr_hom (presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S
+    hden hAplus hT hV hV' hVW h) x
+
+/-- **Wedhorn's Remark 8.4 is a bijection on sections**: `presentationLimitLocIso` at a rational
+open `V ⊆ R(T/s)`, applied to sections. -/
+theorem bijective_presentationLimitLocIso_hom (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) {V : Opens ↥(spa Aplus)}
+    (hV : V ∈ spaRationalOpens Aplus) (hVW : V ≤ spaBasicOpen Aplus T s) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    Function.Bijective (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 :=
+  ⟨Function.LeftInverse.injective
+      (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom_inv_id_apply,
+    Function.RightInverse.surjective
+      (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).inv_hom_id_apply⟩
 
 /-! ### The points of the rational coordinate rings -/
 
