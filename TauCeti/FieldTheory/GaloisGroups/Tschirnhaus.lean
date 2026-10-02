@@ -43,6 +43,8 @@ substitution — is a constraint on the Galois image of `f`.
 * `Polynomial.TschirnhausAdmissible.nonempty_mulEquiv_gal`: the Galois groups are isomorphic.
 * `Polynomial.TschirnhausAdmissible.range_galActionHom_eq_map_rootSetEquiv`: the two Galois
   images are conjugate along the canonical bijection `α ↦ T(α)` of root sets.
+* `Polynomial.TschirnhausAdmissible.map_range_galActionHom_tschirnhausPolynomial`: numbering the
+  roots of the transform through that bijection, the two Galois images are the same subgroup.
 
 ## References
 
@@ -194,6 +196,24 @@ theorem TschirnhausAdmissible.range_galActionHom_eq_map_rootSetEquiv
       ← MonoidHom.range_eq_map]
   rw [hg, hcomp, MonoidHom.range_comp, MonoidHom.range_comp,
     MonoidHom.range_eq_top.mpr (Gal.restrict_surjective f E), ← MonoidHom.range_eq_map]
+
+/-- **The Galois images agree once the roots are numbered compatibly.** Number the roots of `f`
+by `e`, and the roots of an admissible transform by `T(α) ↦ e α`. Read through these numberings,
+the Galois images of `f` and of the transform are the same subgroup of `Equiv.Perm ι`. A
+statement about the image of the transform read through some numbering, such as the subgroup bound
+that a resolvent of the transform provides, is therefore a statement about the image of `f`. -/
+theorem TschirnhausAdmissible.map_range_galActionHom_tschirnhausPolynomial
+    [Normal F E] (h : TschirnhausAdmissible f T) (hf : f ≠ 0)
+    [hfsp : Fact ((f.map (algebraMap F E)).Splits)]
+    [Fact (((f.tschirnhausPolynomial T).map (algebraMap F E)).Splits)]
+    {ι : Type*} (e : f.rootSet E ≃ ι) :
+    (Gal.galActionHom (f.tschirnhausPolynomial T) E).range.map
+        (((h.rootSetEquiv hf hfsp.out).symm.trans e).permCongrHom : _ →* Equiv.Perm ι) =
+      (Gal.galActionHom f E).range.map (e.permCongrHom : _ →* Equiv.Perm ι) := by
+  rw [h.range_galActionHom_eq_map_rootSetEquiv hf, Subgroup.map_map]
+  congr 1
+  ext σ x
+  simp
 
 end GaloisImage
 
