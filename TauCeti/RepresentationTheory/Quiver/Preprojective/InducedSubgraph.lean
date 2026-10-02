@@ -64,12 +64,7 @@ private abbrev InducedAlgebra :=
 omit [Finite V] in
 private theorem inducedAdj {i j : V} (hi : i ∈ S) (hj : j ∈ S) (h : G.Adj i j) :
     (G.induce S).Adj ⟨i, hi⟩ ⟨j, hj⟩ :=
-  h
-
-private theorem proof_heq {p q : Prop} (hp : p) (hq : q) : HEq hp hq := by
-  have hpq : p = q := propext ⟨fun _ ↦ hq, fun _ ↦ hp⟩
-  cases hpq
-  exact heq_of_eq (Subsingleton.elim _ _)
+  SimpleGraph.induce_adj.mpr h
 
 /-- The image of a vertex idempotent under restriction to an induced subgraph. -/
 private noncomputable def inducedSubgraphVertex
@@ -243,7 +238,7 @@ private theorem inducedSubgraphPathAlgebraHom_ofArrow {i j : V} (h : G.Adj i j) 
       have hvi := congrArg (vertex (G.induce S)) hi'
       have hvj := congrArg (vertex (G.induce S)) hj'
       congr 3
-      apply proof_heq
+      apply proof_irrel_heq
     · simp [hj]
   · simp [hi]
 
@@ -265,15 +260,6 @@ private theorem inducedSubgraphPathAlgebraHom_backtrackElem {i j : V} (h : G.Adj
   split_ifs with hi hj
   · rw [← map_mul, ofArrow_symm_mul_ofArrow]
   all_goals simp
-
-/-- Neighbours retained by an induced subgraph are its neighbours in the original graph which
-belong to the inducing set. -/
-private def inducedNeighborEquiv (v : V) (hv : v ∈ S) :
-    {w : G.neighborSet v // (w : V) ∈ S} ≃ (G.induce S).neighborSet ⟨v, hv⟩ where
-  toFun w := ⟨⟨w.1, w.2⟩, w.1.2⟩
-  invFun w := ⟨⟨w.1.1, w.2⟩, w.1.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
 
 /-- The path-algebra restriction kills every signless relation. -/
 private theorem inducedSubgraphPathAlgebraHom_signlessPreprojectiveRelator
@@ -311,7 +297,11 @@ private theorem inducedSubgraphPathAlgebraHom_signlessPreprojectiveRelator
         simp [hv, w.property]
       _ = ∑ w : (G.induce S).neighborSet ⟨v, hv⟩,
             signlessPreprojectiveMk k _ (backtrackElem (G.induce S) k w.2) := by
-        apply Fintype.sum_equiv (inducedNeighborEquiv G S v hv)
+        let e : {w : G.neighborSet v // (w : V) ∈ S} ≃ (G.induce S).neighborSet ⟨v, hv⟩ :=
+          (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ G.neighborSet v) (· ∈ S)).trans
+            ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
+              (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S) (G.Adj v ·)).symm)
+        apply Fintype.sum_equiv e
         intro w
         rfl
       _ = 0 := by
@@ -409,7 +399,8 @@ theorem signlessPreprojectiveInducedSubgraphHom_ofArrow {i j : V} (h : G.Adj i j
       if hi : i ∈ S then
         if hj : j ∈ S then
           signlessPreprojectiveMk k _
-            (ofArrow (arrow (G.induce S) (show (G.induce S).Adj ⟨i, hi⟩ ⟨j, hj⟩ from h)))
+            (ofArrow (arrow (G.induce S) (i := ⟨i, hi⟩) (j := ⟨j, hj⟩)
+              (SimpleGraph.induce_adj.mpr h)))
         else 0
       else 0 := by
   rw [signlessPreprojectiveInducedSubgraphHom,
