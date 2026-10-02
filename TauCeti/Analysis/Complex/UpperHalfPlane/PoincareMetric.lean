@@ -106,7 +106,8 @@ def poincareRiemannianMetric :
 
 /-- The Poincaré tensor in the tangent coordinates of the inclusion chart. -/
 @[simp]
-theorem poincareRiemannianMetric_inner (z : ℍ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+theorem _root_.UpperHalfPlane.poincareRiemannianMetric_inner (z : ℍ)
+    (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
     poincareRiemannianMetric.inner z v w =
       inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
         (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) / z.im ^ 2 := by
