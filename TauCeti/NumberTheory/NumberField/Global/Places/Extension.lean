@@ -17,6 +17,13 @@ real place doubles the normalization exponent. Multiplying over all places above
 the global degree `[L : K]`. These are the archimedean factors in the degree formula for
 extension of ideles.
 
+The formulas are in `TauCeti.GlobalNumberFields`, alongside
+`infiniteCompletionNormalizedAbsValue`. Use
+`infiniteCompletionNormalizedAbsValue_completionMap (w := w) x` for a completion element,
+and `prod_infiniteCompletionNormalizedAbsValue_completionMap (L := L) v x` for the product
+over places above `v`. Both are pre-simplification rules: `simp` applies them before
+expanding the normalized absolute value into a power of the norm.
+
 The degree and multiplicity identities are Mathlib's
 `NumberField.InfinitePlace.mult_mul_finrank` and
 `NumberField.InfinitePlace.sum_inertiaDeg_eq_finrank`.
