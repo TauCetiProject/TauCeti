@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
+public import TauCeti.NumberTheory.NumberField.Global.Orders.Conductor
 public import TauCeti.RingTheory.Ideal.Conductor
 
 /-!
@@ -41,21 +41,22 @@ def primesAwayConductorEquiv :
       p ⊔ O.conductor.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) = ⊤} ≃
     {P : Ideal (𝓞 K) // P.IsPrime ∧ P ⊔ O.conductor = ⊤} where
   toFun p := ⟨p.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K),
-    (isPrime_map_iff_of_coprime_conductor (S := O.toRingOfIntegers.toSubring)
+    (isPrime_map_iff_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers p.2.2).mpr p.2.1,
-    map_sup_conductor_eq_top (S := O.toRingOfIntegers.toSubring) p.2.2⟩
+    map_sup_eq_top_of_coprime_comap (S := O.toRingOfIntegers.toSubring) p.2.2⟩
   invFun P := ⟨P.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     have := P.2.1
     exact Ideal.comap_isPrime _ _,
-    comap_sup_conductor_eq_top (S := O.toRingOfIntegers.toSubring)
+    comap_sup_eq_top_of_le (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers P.2.2⟩
   left_inv p := Subtype.ext <|
-    comap_map_of_coprime_conductor (S := O.toRingOfIntegers.toSubring)
+    comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers p.2.2
   right_inv P := Subtype.ext <|
-    map_comap_of_coprime_conductor (S := O.toRingOfIntegers.toSubring)
+    map_comap_of_coprime (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers P.2.2
 
+/-- The prime correspondence sends a prime of the order to its extension in the maximal order. -/
 @[simp]
 theorem primesAwayConductorEquiv_apply
     (p : {p : Ideal O.toRingOfIntegers // p.IsPrime ∧
@@ -64,6 +65,7 @@ theorem primesAwayConductorEquiv_apply
       p.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) :=
   (rfl)
 
+/-- The inverse prime correspondence sends a prime of the maximal order to its contraction. -/
 @[simp]
 theorem primesAwayConductorEquiv_symm_apply
     (P : {P : Ideal (𝓞 K) // P.IsPrime ∧ P ⊔ O.conductor = ⊤}) :
