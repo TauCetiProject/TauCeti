@@ -157,7 +157,8 @@ theorem normedBumpLp_ae_eq_convolution (hp_ne_top : p ≠ ∞) (phi : ContDiffBu
       apply integral_congr_ae
       filter_upwards with t
       rw [map_smul, Set.setIntegralLp_apply (𝕜 := ℝ),
-        Set.setIntegral_translateLp_toLp s hfLp t]
+        integral_congr_ae (ae_restrict_of_ae (hfLp.coeFn_translateLp_toLp (-t)))]
+      simp only [sub_eq_add_neg]
     _ = ∫ x in s, conv x ∂mu := by
       exact setIntegral_normedConvolution_of_isCompact phi hf_loc hs
 
