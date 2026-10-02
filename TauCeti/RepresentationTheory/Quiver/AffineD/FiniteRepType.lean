@@ -31,6 +31,7 @@ finite-dimensional indecomposables of the four subspace quiver, up to isomorphis
 
 ## Main definitions
 
+* `TauCeti.affineDCollapseFunctor`: the functor collapsing the spine to the four subspace centre.
 * `TauCeti.affineDStretchRep`: a representation of the four subspace quiver, stretched along the
   spine of `TauCeti.Quiver.AffineD m`.
 * `TauCeti.affineDStretchFunctor`: stretching, as a functor.
@@ -45,10 +46,10 @@ finite-dimensional indecomposables of the four subspace quiver, up to isomorphis
 
 ## Implementation notes
 
-`TauCeti.affineDStretchRep` carries `@[expose]` for the reason recorded on
-`TauCeti.subspaceJordanRep`: a functor built by `CategoryTheory.Paths.lift` reveals its vertex
-spaces only through its definition, and the components of the stretching functor on morphisms
-are typed by them.
+`TauCeti.affineDCollapseFunctor` and `TauCeti.affineDStretchRep` carry `@[expose]` for the reason
+recorded on `TauCeti.subspaceJordanRep`: the vertex spaces are needed definitionally to state
+the homogeneous arrow equations. Stretching is precomposition with the functor collapsing the
+spine to the centre of the four subspace quiver, using `CategoryTheory.Functor.whiskeringLeft`.
 
 ## References
 
@@ -67,6 +68,48 @@ universe u t
 
 variable {k : Type u} [Field k] {m : ℕ}
 
+/-- Collapse the spine to the centre of the four subspace quiver, sending spine arrows to
+identity paths and leaf arrows to the corresponding outer-to-centre paths. -/
+@[expose]
+def affineDCollapseFunctor (m : ℕ) :
+    Paths (Quiver.AffineD m) ⥤ Paths (Quiver.Subspace (Fin 4)) :=
+  Paths.lift
+    { obj := fun v ↦ match v with
+        | .leaf i => Quiver.Subspace.outer i
+        | .spine _ => Quiver.Subspace.center
+      map := fun {a b} e ↦ match a, b, e with
+        | .leaf i, .spine _, _ => (Quiver.Subspace.arrow i).toPath
+        | .spine _, .spine _, _ => 𝟙 _
+        | .leaf _, .leaf _, e => isEmptyElim e
+        | .spine _, .leaf _, e => isEmptyElim e }
+
+/-- The collapse sends each leaf to the corresponding outer vertex. -/
+@[simp]
+theorem affineDCollapseFunctor_obj_leaf (i : Fin 4) :
+    (affineDCollapseFunctor m).obj (Quiver.AffineD.leaf i : Paths (Quiver.AffineD m)) =
+      (Quiver.Subspace.outer i : Paths (Quiver.Subspace (Fin 4))) := (rfl)
+
+/-- The collapse sends every spine vertex to the centre. -/
+@[simp]
+theorem affineDCollapseFunctor_obj_spine (j : Fin (m + 1)) :
+    (affineDCollapseFunctor m).obj (Quiver.AffineD.spine j : Paths (Quiver.AffineD m)) =
+      (Quiver.Subspace.center : Paths (Quiver.Subspace (Fin 4))) := (rfl)
+
+/-- The collapse sends each leaf arrow to its corresponding outer-to-centre path. -/
+@[simp]
+theorem affineDCollapseFunctor_map_leafArrow (i : Fin 4) :
+    (affineDCollapseFunctor m).map (Quiver.AffineD.leafArrow m i).toPath =
+      (Quiver.Subspace.arrow i).toPath :=
+  Paths.lift_toPath _ _
+
+/-- The collapse sends every spine arrow to the identity path at the centre. -/
+@[simp]
+theorem affineDCollapseFunctor_map_spineArrow (j : Fin m) :
+    (affineDCollapseFunctor m).map (Quiver.AffineD.spineArrow j).toPath =
+      @CategoryStruct.id (Paths (Quiver.Subspace (Fin 4))) inferInstance
+        Quiver.Subspace.center :=
+  Paths.lift_toPath _ _
+
 /-- **A representation of the four subspace quiver, stretched along the spine of
 `TauCeti.Quiver.AffineD m`**: the centre space of `M` sits at every spine vertex, with the identity
 on every spine arrow, and the outer space indexed by `i` at the leaf indexed by `i`, whose arrow
@@ -75,15 +118,7 @@ acts as the arrow of `M` from that outer vertex. -/
 noncomputable def affineDStretchRep (m : ℕ)
     (M : QuiverRep.{u, 0, 1, t} k (Quiver.Subspace (Fin 4))) :
     QuiverRep.{u, 0, 0, t} k (Quiver.AffineD m) :=
-  Paths.lift
-    { obj := fun v ↦ match v with
-        | .leaf i => M.obj (Quiver.Subspace.outer i : Paths (Quiver.Subspace (Fin 4)))
-        | .spine _ => M.obj (Quiver.Subspace.center : Paths (Quiver.Subspace (Fin 4)))
-      map := fun {a b} e ↦ match a, b, e with
-        | .leaf i, .spine _, _ => M.map (Quiver.Subspace.arrow i).toPath
-        | .spine _, .spine _, _ => 𝟙 _
-        | .leaf _, .leaf _, e => isEmptyElim e
-        | .spine _, .leaf _, e => isEmptyElim e }
+  affineDCollapseFunctor m ⋙ M
 
 variable {M N : QuiverRep.{u, 0, 1, t} k (Quiver.Subspace (Fin 4))}
 
@@ -108,14 +143,14 @@ outer vertex indexed by `i`. -/
 theorem affineDStretchRep_map_leafArrow (i : Fin 4) :
     (affineDStretchRep m M).map (Quiver.AffineD.leafArrow m i).toPath =
       M.map (Quiver.Subspace.arrow i).toPath :=
-  Paths.lift_toPath _ _
+  congrArg M.map (affineDCollapseFunctor_map_leafArrow i)
 
 /-- Every spine arrow acts on a stretched representation as the identity. -/
 @[simp]
 theorem affineDStretchRep_map_spineArrow (j : Fin m) :
     (affineDStretchRep m M).map (Quiver.AffineD.spineArrow j).toPath =
       𝟙 (M.obj (Quiver.Subspace.center : Paths (Quiver.Subspace (Fin 4)))) :=
-  Paths.lift_toPath _ _
+  (congrArg M.map (affineDCollapseFunctor_map_spineArrow j)).trans (M.map_id _)
 
 /-- **A stretched representation of a finite-dimensional representation is finite-dimensional**:
 its vertex spaces are vertex spaces of `M`. -/
@@ -126,45 +161,13 @@ theorem isFinDim_affineDStretchRep (hM : IsFinDim k (Quiver.Subspace (Fin 4)) M)
   | leaf i => exact isFinDim_iff.mp hM (Quiver.Subspace.outer i : Paths (Quiver.Subspace (Fin 4)))
   | spine _ => exact isFinDim_iff.mp hM (Quiver.Subspace.center : Paths (Quiver.Subspace (Fin 4)))
 
-/-- The components of the stretch of a morphism: the centre component at every spine vertex, and
-the outer component indexed by `i` at the leaf indexed by `i`. -/
-private noncomputable def stretchApp (f : M ⟶ N) :
-    ∀ v : Quiver.AffineD m, (affineDStretchRep m M).obj v ⟶ (affineDStretchRep m N).obj v
-  | .leaf i => f.app (Quiver.Subspace.outer i : Paths (Quiver.Subspace (Fin 4)))
-  | .spine _ => f.app (Quiver.Subspace.center : Paths (Quiver.Subspace (Fin 4)))
-
-/-- The components `stretchApp` commute with the action of every arrow of
-`TauCeti.Quiver.AffineD m`: along a leaf arrow by naturality of `f`, and along a spine arrow
-because it acts by the identity. -/
-private theorem stretchApp_naturality (f : M ⟶ N) {a b : Quiver.AffineD m} (e : a ⟶ b) :
-    (affineDStretchRep m M).map e.toPath ≫ stretchApp f b =
-      stretchApp f a ≫ (affineDStretchRep m N).map e.toPath := by
-  match a, b, e with
-  | .leaf i, .spine j, e =>
-    obtain rfl : j = Quiver.AffineD.leafTarget m i := e.down
-    obtain rfl : e = Quiver.AffineD.leafArrow m i := Subsingleton.elim _ _
-    rw [affineDStretchRep_map_leafArrow, affineDStretchRep_map_leafArrow]
-    exact f.naturality (Quiver.Subspace.arrow i).toPath
-  | .spine _, .spine _, _ =>
-    -- Both spine maps are identities, so the square commutes trivially.
-    exact (Category.id_comp _).trans (Category.comp_id _).symm
-  | .leaf _, .leaf _, e => exact isEmptyElim e
-  | .spine _, .leaf _, e => exact isEmptyElim e
-
 variable (k m) in
 /-- **Stretching along the spine of `TauCeti.Quiver.AffineD m`, as a functor**: on a morphism it
 acts by its centre component at every spine vertex and by its outer components at the leaves. -/
 noncomputable def affineDStretchFunctor :
     QuiverRep.{u, 0, 1, t} k (Quiver.Subspace (Fin 4)) ⥤
-      QuiverRep.{u, 0, 0, t} k (Quiver.AffineD m) where
-  obj M := affineDStretchRep m M
-  map f := Paths.liftNatTrans (stretchApp f) (stretchApp_naturality f)
-  map_id M := by
-    refine NatTrans.ext (funext fun v ↦ ?_)
-    cases v <;> rfl
-  map_comp f g := by
-    refine NatTrans.ext (funext fun v ↦ ?_)
-    cases v <;> rfl
+      QuiverRep.{u, 0, 0, t} k (Quiver.AffineD m) :=
+  (Functor.whiskeringLeft _ _ (ModuleCat.{t} k)).obj (affineDCollapseFunctor m)
 
 /-- The stretching functor sends a representation to its stretch. -/
 @[simp]
