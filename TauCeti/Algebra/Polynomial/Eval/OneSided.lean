@@ -268,6 +268,34 @@ theorem _root_.Polynomial.exists_signLeft_signRight (p : R[X]) (a : R) :
     rw [hf, sign_pos (sub_pos.mpr hx.1), one_pow, one_mul,
       hlu ⟨hla.trans hx.1, hx.2⟩, hs]
 
+/-- A uniform interval immediately to the right of `a` on which every polynomial of a list
+has its right-hand sign at `a`. -/
+theorem _root_.List.exists_signs_right (cs : List R[X]) (a : R) :
+    ∃ u, a < u ∧ ∀ p ∈ cs, ∀ x ∈ Ioo a u, sign (p.eval x) = p.signRight a := by
+  induction cs with
+  | nil => exact ⟨a + 1, lt_add_one a, by simp⟩
+  | cons q cs ih =>
+    obtain ⟨u, hau, hu⟩ := ih
+    obtain ⟨-, v, -, hav, -, hv⟩ := q.exists_signLeft_signRight a
+    refine ⟨min u v, lt_min hau hav, fun p hp x hx => ?_⟩
+    rcases List.mem_cons.mp hp with rfl | hp
+    · exact hv x ⟨hx.1, hx.2.trans_le (min_le_right _ _)⟩
+    · exact hu p hp x ⟨hx.1, hx.2.trans_le (min_le_left _ _)⟩
+
+/-- A uniform interval immediately to the left of `a` on which every polynomial of a list
+has its left-hand sign at `a`. -/
+theorem _root_.List.exists_signs_left (cs : List R[X]) (a : R) :
+    ∃ l, l < a ∧ ∀ p ∈ cs, ∀ x ∈ Ioo l a, sign (p.eval x) = p.signLeft a := by
+  induction cs with
+  | nil => exact ⟨a - 1, sub_one_lt a, by simp⟩
+  | cons q cs ih =>
+    obtain ⟨l, hla, hl⟩ := ih
+    obtain ⟨v, -, hva, -, hv, -⟩ := q.exists_signLeft_signRight a
+    refine ⟨max l v, max_lt hla hva, fun p hp x hx => ?_⟩
+    rcases List.mem_cons.mp hp with rfl | hp
+    · exact hv x ⟨(le_max_right _ _).trans_lt hx.1, hx.2⟩
+    · exact hl p hp x ⟨(le_max_left _ _).trans_lt hx.1, hx.2⟩
+
 end OrderedField
 
 end TauCeti
