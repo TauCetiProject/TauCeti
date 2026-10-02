@@ -37,43 +37,6 @@ namespace QuiverRep
 
 variable {S : ShortComplex (QuiverRep.{u, v, w, t} k Q)}
 
-/-- The inclusion of a short complex, retyped as maps of vertex spaces. -/
-noncomputable def shortComplexInclusion (S : ShortComplex (QuiverRep.{u, v, w, t} k Q)) :
-    HomVertex S.X₁ S.X₂ := fun i ↦ (S.f.app ((Paths.of Q).obj i)).hom
-
-/-- The quotient map of a short complex, retyped as maps of vertex spaces. -/
-noncomputable def shortComplexProjection (S : ShortComplex (QuiverRep.{u, v, w, t} k Q)) :
-    HomVertex S.X₂ S.X₃ := fun i ↦ (S.g.app ((Paths.of Q).obj i)).hom
-
--- Keep the typed vertex families in simp normal form rather than reverting to path objects.
-/-- The inclusion's vertex family is its family of components. -/
-theorem shortComplexInclusion_apply (i : Q) (x : vertexSpace k Q S.X₁ i) :
-    shortComplexInclusion S i x = (S.f.app ((Paths.of Q).obj i)).hom x := (rfl)
-
-/-- The projection's vertex family is its family of components. -/
-theorem shortComplexProjection_apply (i : Q) (x : vertexSpace k Q S.X₂ i) :
-    shortComplexProjection S i x = (S.g.app ((Paths.of Q).obj i)).hom x := (rfl)
-
-/-- The inclusion commutes with each arrow action. -/
-theorem shortComplexInclusion_naturality (i j : Q) (a : i ⟶ j)
-    (x : vertexSpace k Q S.X₁ i) :
-    shortComplexInclusion S j (mapₗ k Q S.X₁ a.toPath x) =
-      mapₗ k Q S.X₂ a.toPath (shortComplexInclusion S i x) :=
-  congrArg (fun p ↦ p x) (S.f.naturality ((Paths.of Q).map a))
-
-/-- The projection commutes with each arrow action. -/
-theorem shortComplexProjection_naturality (i j : Q) (a : i ⟶ j)
-    (x : vertexSpace k Q S.X₂ i) :
-    shortComplexProjection S j (mapₗ k Q S.X₂ a.toPath x) =
-      mapₗ k Q S.X₃ a.toPath (shortComplexProjection S i x) :=
-  congrArg (fun p ↦ p x) (S.g.naturality ((Paths.of Q).map a))
-
-/-- The inclusion followed by the projection vanishes at every vertex. -/
-@[simp]
-theorem shortComplexProjection_inclusion (i : Q) (x : vertexSpace k Q S.X₁ i) :
-    shortComplexProjection S i (shortComplexInclusion S i x) = 0 :=
-  congrArg (fun p ↦ (p.app ((Paths.of Q).obj i)).hom x) S.zero
-
 /-- A short exact sequence of representations admits a splitting at each vertex. -/
 noncomputable def vertexSplitting (hS : S.ShortExact) (i : Q) :
     (S.map ((evaluation (Paths Q) (ModuleCat k)).obj ((Paths.of Q).obj i))).Splitting :=
@@ -102,14 +65,16 @@ theorem vertexSplittingRetraction_apply (i : Q) (x : vertexSpace k Q S.X₂ i) :
 /-- The vertex section is a right inverse to the quotient map. -/
 @[simp]
 theorem vertexSplittingSection_comp_g (i : Q) (x : vertexSpace k Q S.X₃ i) :
-    shortComplexProjection S i (vertexSplittingSection sp i x) = x :=
-  congrArg (fun p ↦ p x) (sp i).s_g
+    homVertex S.X₂ S.X₃ S.g i (vertexSplittingSection sp i x) = x := by
+  erw [homVertex_apply]
+  exact congrArg (fun p ↦ p x) (sp i).s_g
 
 /-- The vertex retraction and section give the direct-sum decomposition. -/
 theorem vertexSplitting_decomposition (i : Q) (x : vertexSpace k Q S.X₂ i) :
-    shortComplexInclusion S i (vertexSplittingRetraction sp i x) +
-      vertexSplittingSection sp i (shortComplexProjection S i x) = x :=
-  congrArg (fun p ↦ p x) (sp i).id
+    homVertex S.X₁ S.X₂ S.f i (vertexSplittingRetraction sp i x) +
+      vertexSplittingSection sp i (homVertex S.X₂ S.X₃ S.g i x) = x := by
+  erw [homVertex_apply, homVertex_apply]
+  exact congrArg (fun p ↦ p x) (sp i).id
 
 /-- The upper right arrow block determined by a family of vertex splittings. -/
 noncomputable def vertexSplittingArrow : HomArrow S.X₃ S.X₁ := fun i j a ↦
@@ -125,15 +90,15 @@ theorem vertexSplittingArrow_apply (i j : Q) (a : i ⟶ j)
 /-- The upper right block measures the failure of the sections to commute with arrows. -/
 theorem vertexSplittingArrow_defect (i j : Q) (a : i ⟶ j)
     (x : vertexSpace k Q S.X₃ i) :
-    shortComplexInclusion S j (vertexSplittingArrow sp i j a x) +
+    homVertex S.X₁ S.X₂ S.f j (vertexSplittingArrow sp i j a x) +
         vertexSplittingSection sp j (mapₗ k Q S.X₃ a.toPath x) =
       mapₗ k Q S.X₂ a.toPath (vertexSplittingSection sp i x) := by
-  have hn : shortComplexProjection S j (mapₗ k Q S.X₂ a.toPath (vertexSplittingSection sp i x)) =
+  have hn : homVertex S.X₂ S.X₃ S.g j (mapₗ k Q S.X₂ a.toPath (vertexSplittingSection sp i x)) =
       mapₗ k Q S.X₃ a.toPath x := by
     calc
       _ = mapₗ k Q S.X₃ a.toPath
-          (shortComplexProjection S i (vertexSplittingSection sp i x)) :=
-        shortComplexProjection_naturality i j a _
+          (homVertex S.X₂ S.X₃ S.g i (vertexSplittingSection sp i x)) :=
+        homVertex_naturality _ _ _ i j a _
       _ = _ := by rw [vertexSplittingSection_comp_g]
   rw [vertexSplittingArrow_apply, ← hn]
   exact vertexSplitting_decomposition sp j _

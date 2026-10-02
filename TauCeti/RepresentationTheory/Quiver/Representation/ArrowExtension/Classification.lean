@@ -121,22 +121,22 @@ variable (sp : ∀ i : Q,
 noncomputable def vertexSplittingHom :
     arrowExtension S.X₃ S.X₁ (vertexSplittingArrow sp) ⟶ S.X₂ :=
   Paths.liftNatTrans (fun i ↦ ModuleCat.ofHom
-    ((shortComplexInclusion S i).coprod (vertexSplittingSection sp i))) (by
+    ((homVertex S.X₁ S.X₂ S.f i).coprod (vertexSplittingSection sp i))) (by
     intro i j a
     apply ModuleCat.hom_ext
     apply LinearMap.ext
     intro x
-    have hn : shortComplexInclusion S j (mapₗ k Q S.X₁ a.toPath x.1) =
-        mapₗ k Q S.X₂ a.toPath (shortComplexInclusion S i x.1) :=
-      shortComplexInclusion_naturality i j a x.1
+    have hn : homVertex S.X₁ S.X₂ S.f j (mapₗ k Q S.X₁ a.toPath x.1) =
+        mapₗ k Q S.X₂ a.toPath (homVertex S.X₁ S.X₂ S.f i x.1) :=
+      homVertex_naturality _ _ _ i j a x.1
     -- Retype the path objects as vertices before applying the arrow-action API.
     change vertexSpace k Q S.X₁ i × vertexSpace k Q S.X₃ i at x
-    change shortComplexInclusion S j
+    change homVertex S.X₁ S.X₂ S.f j
         ((arrowExtension S.X₃ S.X₁ (vertexSplittingArrow sp)).map a.toPath x).1 +
         vertexSplittingSection sp j
           ((arrowExtension S.X₃ S.X₁ (vertexSplittingArrow sp)).map a.toPath x).2 =
       mapₗ k Q S.X₂ a.toPath
-        (shortComplexInclusion S i x.1 + vertexSplittingSection sp i x.2)
+        (homVertex S.X₁ S.X₂ S.f i x.1 + vertexSplittingSection sp i x.2)
     simp only [arrowExtension_map_toPath, map_add, hn]
     rw [add_assoc, vertexSplittingArrow_defect])
 
@@ -145,7 +145,7 @@ noncomputable def vertexSplittingHom :
 theorem vertexSplittingHom_app_apply (i : Q)
     (x : vertexSpace k Q S.X₁ i × vertexSpace k Q S.X₃ i) :
     ((vertexSplittingHom sp).app ((Paths.of Q).obj i)).hom x =
-      shortComplexInclusion S i x.1 + vertexSplittingSection sp i x.2 := (rfl)
+      homVertex S.X₁ S.X₂ S.f i x.1 + vertexSplittingSection sp i x.2 := (rfl)
 
 /-- The presentation morphism fixes the inclusion of the subrepresentation. -/
 @[reassoc (attr := simp)]
@@ -159,7 +159,7 @@ theorem arrowExtensionInl_vertexSplittingHom :
       (((arrowExtensionInl S.X₃ S.X₁ (vertexSplittingArrow sp)).app
         ((Paths.of Q).obj i)).hom x) = (S.f.app ((Paths.of Q).obj i)).hom x
   rw [arrowExtensionInl_app_apply, vertexSplittingHom_app_apply,
-    ← shortComplexInclusion_apply]
+    ← homVertex_apply]
   simp only [map_zero, add_zero]
   rfl
 
@@ -179,9 +179,12 @@ theorem vertexSplittingHom_comp_g :
     ((arrowExtensionSnd S.X₃ S.X₁ (vertexSplittingArrow sp)).app ((Paths.of Q).obj i)).hom x
   rw [arrowExtensionSnd_app_apply]
   -- `erw` sees the product vertex spaces across the path-object retyping.
-  erw [← shortComplexProjection_apply]
-  rw [vertexSplittingHom_app_apply, map_add, shortComplexProjection_inclusion,
-    vertexSplittingSection_comp_g, zero_add]
+  erw [← homVertex_apply]
+  rw [vertexSplittingHom_app_apply, map_add, vertexSplittingSection_comp_g]
+  have hzero : homVertex S.X₂ S.X₃ S.g i (homVertex S.X₁ S.X₂ S.f i x.1) = 0 := by
+    erw [homVertex_apply, homVertex_apply]
+    exact congrArg (fun p ↦ (p.app ((Paths.of Q).obj i)).hom x.1) S.zero
+  rw [hzero, zero_add]
 
 /-- Every short exact sequence has an upper triangular arrow-matrix presentation,
 with the subrepresentation and quotient fixed. -/
