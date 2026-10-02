@@ -161,6 +161,26 @@ def evaluationIso {V : P} (h : V ≤ U) :
     rw [mapApp, dite_eq_left h]
     exact (Category.assoc _ _ _).trans (by simp))
 
+private lemma evaluationIso_hom_app (F : (Over U)ᵒᵖ ⥤ D) {V : P} (h : V ≤ U) :
+    (evaluationIso U h).hom.app F = (objIso U F h).hom :=
+  rfl
+
+/-- The identification `evaluationIso` is compatible with restriction maps below `U`. -/
+@[reassoc]
+theorem map_comp_evaluationIso_hom_app (F : (Over U)ᵒᵖ ⥤ D) {V W : P} (hWV : W ≤ V)
+    (hV : V ≤ U) :
+    ((functor U).obj F).map (homOfLE hWV).op ≫ (evaluationIso U (hWV.trans hV)).hom.app F =
+      (evaluationIso U hV).hom.app F ≫
+        F.map (Over.homMk (U := Over.mk (homOfLE (hWV.trans hV)))
+          (V := Over.mk (homOfLE hV)) (homOfLE hWV)).op := by
+  classical
+  rw [evaluationIso_hom_app, evaluationIso_hom_app]
+  dsimp only [functor, presheaf]
+  rw [map, dite_eq_left hV]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  -- The two sides differ only in how their hom types are written, through `evaluation`.
+  rfl
+
 /-- Extension by zero vanishes outside the lower interval. -/
 theorem isZero_obj_of_not_le (F : (Over U)ᵒᵖ ⥤ D) {V : P}
     (h : ¬ V ≤ U) : IsZero ((functor (D := D) U).obj F |>.obj (op V)) := by
@@ -207,13 +227,7 @@ private def restrictHom {F : (Over U)ᵒᵖ ⥤ D} {G : Pᵒᵖ ⥤ D}
     rw [map, dite_eq_left (leOfHom V.unop.hom)] at h
     dsimp only [restrictObjIso, Functor.comp_map, Functor.op_map, Over.forget_map]
     simp only [Category.assoc] at h ⊢
-    have h' := congrArg ((restrictObjIso U F V).inv ≫ ·) h
-    change (restrictObjIso U F V).inv ≫ (restrictObjIso U F V).hom ≫
-      F.map f ≫ (restrictObjIso U F W).inv ≫ α.app (op W.unop.left) =
-      (restrictObjIso U F V).inv ≫ α.app (op V.unop.left) ≫
-        G.map ((Over.forget U).op.map f) at h'
-    simp only [Iso.inv_hom_id_assoc] at h'
-    exact h'.trans (Category.assoc _ _ _).symm
+    exact ((Iso.eq_inv_comp _).mpr h).trans (Category.assoc _ _ _).symm
 
 private def extendApp {F : (Over U)ᵒᵖ ⥤ D} {G : Pᵒᵖ ⥤ D}
     (α : F ⟶ (Over.forget U).op ⋙ G) (V : Pᵒᵖ) : obj U F V ⟶ G.obj V := by
@@ -262,6 +276,8 @@ def adjunction : functor (D := D) U ⊣
               (α.app V) }
       homEquiv_naturality_left_symm := by
         intro F F' G α β
+        -- Unfold the `Equiv.mk` above and read `presheaf U F` as `(functor U).obj F`. The two
+        -- agree only by unfolding `functor`, so `simp` cannot rewrite the application.
         change extendHom U (α ≫ β) = (functor (D := D) U).map α ≫ extendHom U β
         apply NatTrans.ext
         funext V
@@ -271,13 +287,8 @@ def adjunction : functor (D := D) U ⊣
         · exact (isZero_obj_of_not_le U F h).eq_of_src _ _
       homEquiv_naturality_right := by
         intro F G G' α β
-        change restrictHom U (α ≫ β) = restrictHom U α ≫
-          ((Functor.whiskeringLeft (Over U)ᵒᵖ Pᵒᵖ D).obj
-            (Over.forget U).op).map β
         apply NatTrans.ext
         funext V
-        change (restrictObjIso U F V).inv ≫ (α.app _ ≫ β.app _) =
-          ((restrictObjIso U F V).inv ≫ α.app _) ≫ β.app _
         exact (Category.assoc _ _ _).symm }
 
 end PresheafExtensionByZero

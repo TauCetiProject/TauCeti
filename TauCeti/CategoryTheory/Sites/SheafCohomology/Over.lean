@@ -28,10 +28,8 @@ representable sheaves, and Mathlib's comparison of Ext groups along exact adjunc
   natural in the coefficient sheaf.
 * `TauCeti.CategoryTheory.cohomologyPresheafObjIsoOverH`: `Hⁿ(U, F) ≅ Hⁿ(F.over U)`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "Coherent sheaves and
-cohomology": it supplies the restriction comparison needed to turn affine acyclicity into
-vanishing hypotheses for `Scheme.Modules.subsingleton_cohomology_of_two_le`. No formalization
-is vendored.
+This comparison transports acyclicity of the restricted sheaf to vanishing of cohomology on
+the corresponding object, for instance from affine acyclicity to local vanishing hypotheses.
 -/
 
 public section
