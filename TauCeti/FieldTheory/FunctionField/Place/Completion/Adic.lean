@@ -110,14 +110,6 @@ theorem isUniformizer_completionAdicEquiv_iff (x : (adic k F p).Completion) :
       (adic k F p).completionPlace.valuation_surjective,
     valuation_completionAdicEquiv]
 
-/-- The comparison identifies a filtration step with its valuation bound in the adic field.
-The multiplicative bound also handles zero and negative filtration indices. -/
--- `mem_filtration_iff` and `valuation_completionAdicEquiv` already give simp automation.
-theorem mem_filtration_iff_valuation_completionAdicEquiv_le (a : ℤ) (x : (adic k F p).Completion) :
-    x ∈ (adic k F p).completionPlace.filtration a ↔
-      Valued.v (completionAdicEquiv k F p x) ≤ WithZero.exp (-a) := by
-  rw [valuation_completionAdicEquiv, mem_filtration_iff]
-
 /-- The field comparison identifies the two rings of integers. -/
 @[simp]
 theorem completionAdicEquiv_mem_integers_iff (x : (adic k F p).Completion) :
@@ -165,14 +157,6 @@ theorem completionIntegersAdicEquiv_completionIntegersEmbedding (r : R) :
     ← ValuationSubring.algebraMap_apply, ← IsScalarTower.algebraMap_apply R _ F,
     completionAdicEquiv_completionEmbedding]
   exact p.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (K := F) r
-
-/-- The comparison identifies the maximal ideals of the completed valuation rings. -/
--- `IsLocalRing.mem_maximalIdeal` and `map_mem_nonunits_iff` already give simp automation.
-theorem completionIntegersAdicEquiv_mem_maximalIdeal_iff
-    (x : (adic k F p).completionPlace.integers) :
-    completionIntegersAdicEquiv k F p x ∈ IsLocalRing.maximalIdeal (p.adicCompletionIntegers F) ↔
-      x ∈ IsLocalRing.maximalIdeal (adic k F p).completionPlace.integers := by
-  simp only [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, isUnit_map_iff]
 
 /-- The completed residue fields agree under the valuation-ring comparison. -/
 def completionResidueFieldAdicEquiv :
