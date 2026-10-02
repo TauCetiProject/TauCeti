@@ -34,6 +34,8 @@ in the quiver obtained after all the reflections.
 
 * `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`: a finite acyclic quiver has a
   repetition-free sink-admissible ordering of all of its vertices.
+* `TauCeti.Quiver.IsAcyclic.exists_pairwise_isEmpty_hom`: every finite set of vertices of an
+  acyclic quiver has a topological ordering, along which no arrow runs forwards.
 * `TauCeti.Quiver.isSinkAdmissible_of_pairwise`: a repetition-free list along which no arrow runs
   forwards, whose entries carry no loop and emit no arrow off the list, is sink-admissible, with
   `TauCeti.Quiver.isSinkAdmissible_of_pairwise_of_forall_mem` the case of a list of all the
@@ -327,9 +329,10 @@ private theorem exists_isEmpty_hom_mem (h : IsAcyclic V) {s : Finset V} (hs : s.
   obtain rfl : i = b := h.eq_of_paths e.toPath p
   exact (h.isEmpty_hom_self i).elim e
 
-/-- Every finite set of vertices of an acyclic quiver can be listed so that no arrow runs from an
-earlier entry to a later one: peel off a vertex emitting no arrow inside the set, and recurse. -/
-private theorem exists_pairwise_isEmpty_hom (h : IsAcyclic V) (s : Finset V) :
+/-- **Topological sorting.** Every finite set of vertices of an acyclic quiver can be listed without
+repetition so that no arrow runs from an earlier entry to a later one: peel off a vertex emitting
+no arrow inside the set, and recurse. -/
+theorem IsAcyclic.exists_pairwise_isEmpty_hom (h : IsAcyclic V) (s : Finset V) :
     ∃ l : List V, l.Nodup ∧ (∀ v : V, v ∈ l ↔ v ∈ s) ∧
       l.Pairwise fun x y ↦ IsEmpty (x ⟶ y) := by
   classical
@@ -361,7 +364,7 @@ original quiver. -/
 theorem IsAcyclic.exists_isSinkAdmissible [Finite V] (h : IsAcyclic V) :
     ∃ l : List V, l.Nodup ∧ (∀ v : V, v ∈ l) ∧ IsSinkAdmissible q l := by
   let : Fintype V := Fintype.ofFinite V
-  obtain ⟨l, hnd, hmem, hp⟩ := exists_pairwise_isEmpty_hom h Finset.univ
+  obtain ⟨l, hnd, hmem, hp⟩ := h.exists_pairwise_isEmpty_hom Finset.univ
   have hall : ∀ v : V, v ∈ l := fun v ↦ (hmem v).mpr (Finset.mem_univ v)
   exact ⟨l, hnd, hall,
     isSinkAdmissible_of_pairwise_of_forall_mem q hnd hall (fun v ↦ h.isEmpty_hom_self v) hp⟩
