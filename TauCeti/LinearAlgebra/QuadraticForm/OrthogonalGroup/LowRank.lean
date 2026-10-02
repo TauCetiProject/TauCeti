@@ -11,9 +11,10 @@ public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 # Orthogonal groups in dimension one
 
 On a free module of rank one over an integral domain every linear endomorphism is a scalar `c`,
-and `c` preserves a nonzero quadratic map exactly when `c * c = 1`, that is when `c = 1` or
-`c = -1`. So the orthogonal group of a nonzero quadratic map on a line is `{1, -1}`, of order two
-when `2 ≠ 0`, and the reflection in any vector of invertible norm is `-1`.
+and `c` preserves a nonzero quadratic map valued in a torsion-free module exactly when
+`c * c = 1`, that is when `c = 1` or `c = -1`. So the orthogonal group of such a quadratic map on
+a line is `{1, -1}`, of order two when `2 ≠ 0`, and the reflection in any vector of invertible
+norm is `-1`.
 
 Together with the triviality of the special orthogonal group in rank at most one
 (`QuadraticMap.specialOrthogonalGroup_eq_bot_of_finrank_le_one`), this is the dimension-one
@@ -25,13 +26,13 @@ The last fact is what computes the spinor norm of `-1` as the square class of `a
 ## Main results
 
 * `TauCeti.QuadraticMap.mem_orthogonalGroup_iff_of_finrank_eq_one`: in rank one, the isometries of
-  a nonzero quadratic map are exactly `1` and `-1`.
+  a nonzero quadratic map valued in a torsion-free module are exactly `1` and `-1`.
 * `TauCeti.QuadraticMap.eq_one_or_eq_negOrthogonal_of_finrank_eq_one`: the same dichotomy for
   elements of the orthogonal group.
 * `TauCeti.QuadraticMap.card_orthogonalGroup_of_finrank_eq_one`: if moreover `2 ≠ 0`, the
   orthogonal group has exactly two elements.
-* `TauCeti.QuadraticMap.reflection_eq_neg_of_finrank_eq_one` and
-  `TauCeti.QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`: in rank one, the
+* `QuadraticMap.reflection_eq_neg_of_finrank_eq_one` and
+  `QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`: in rank one, the
   reflection in any vector of invertible norm is `-1`.
 -/
 
@@ -42,19 +43,15 @@ namespace TauCeti.QuadraticMap
 variable {R M N : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
   [Module.Free R M] [AddCommGroup N] [Module R N]
 
-/-- On a free module of rank one, a linear automorphism acts as a scalar. -/
-private theorem exists_apply_eq_smul_of_finrank_eq_one (hM : Module.finrank R M = 1)
-    (f : M ≃ₗ[R] M) : ∃ c : R, ∀ m, f m = c • m := by
-  obtain ⟨c, hc⟩ := (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hM f.toLinearMap).exists
-  exact ⟨c, fun m ↦ by simpa using LinearMap.congr_fun hc m⟩
-
 /-- **The orthogonal group of a line.** On a free module of rank one over a domain, the isometries
 of a nonzero quadratic map valued in a torsion-free module are exactly `1` and `-1`. -/
 theorem mem_orthogonalGroup_iff_of_finrank_eq_one [Module.IsTorsionFree R N]
     {Q : QuadraticMap R M N} (hQ : Q ≠ 0) (hM : Module.finrank R M = 1) {f : M ≃ₗ[R] M} :
     f ∈ orthogonalGroup Q ↔ f = 1 ∨ f = LinearEquiv.neg R := by
   refine ⟨fun hf ↦ ?_, ?_⟩
-  · obtain ⟨c, hc⟩ := exists_apply_eq_smul_of_finrank_eq_one hM f
+  · obtain ⟨c, hc⟩ :=
+      (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hM f.toLinearMap).exists
+    replace hc (m : M) : f m = c • m := by simpa using LinearMap.congr_fun hc m
     obtain ⟨m, hm⟩ : ∃ m, Q m ≠ 0 := by
       by_contra! h
       exact hQ (QuadraticMap.ext h)
@@ -105,9 +102,11 @@ variable (Q : QuadraticForm R M) (v : M) [Invertible (Q v)]
 
 /-- **In rank one, every reflection is `-1`.** The reflection in a vector of invertible norm on a
 free module of rank one over a domain is negation. -/
-theorem reflection_eq_neg_of_finrank_eq_one (hM : Module.finrank R M = 1) :
+theorem _root_.QuadraticMap.reflection_eq_neg_of_finrank_eq_one (hM : Module.finrank R M = 1) :
     reflection Q v = LinearEquiv.neg R := by
-  obtain ⟨c, hc⟩ := exists_apply_eq_smul_of_finrank_eq_one hM (reflection Q v)
+  obtain ⟨c, hc⟩ :=
+    (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hM (reflection Q v).toLinearMap).exists
+  replace hc (m : M) : reflection Q v m = c • m := by simpa using LinearMap.congr_fun hc m
   have hv : v ≠ 0 := by
     rintro rfl
     exact Invertible.ne_zero (Q 0) (QuadraticMap.map_zero Q)
@@ -119,11 +118,12 @@ theorem reflection_eq_neg_of_finrank_eq_one (hM : Module.finrank R M = 1) :
   exact LinearEquiv.ext fun m ↦ by simp [hc, hc']
 
 /-- In rank one, the bundled reflection in a vector of invertible norm is `Q.negOrthogonal`. -/
-theorem reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one (hM : Module.finrank R M = 1) :
+theorem _root_.QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one
+    (hM : Module.finrank R M = 1) :
     reflectionOrthogonal Q v = Q.negOrthogonal :=
   Subtype.ext <| by
     rw [coe_reflectionOrthogonal, QuadraticMap.coe_negOrthogonal,
-      reflection_eq_neg_of_finrank_eq_one Q v hM]
+      Q.reflection_eq_neg_of_finrank_eq_one v hM]
 
 end Reflection
 

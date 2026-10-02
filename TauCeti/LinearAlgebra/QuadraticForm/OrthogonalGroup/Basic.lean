@@ -406,9 +406,11 @@ variable {R : Type u} {M : Type v} {N : Type w} [CommRing R] [AddCommGroup M] [M
 theorem neg_mem_orthogonalGroup : LinearEquiv.neg R ∈ TauCeti.QuadraticMap.orthogonalGroup Q :=
   fun m ↦ Q.map_neg m
 
-/-- The isometry `x ↦ -x`, as an element of the orthogonal group. In dimension one it is the only
-nontrivial isometry of a nonzero form, and it is the reflection in every anisotropic vector
-(`TauCeti.QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`). -/
+/-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a free module of rank one
+over a domain, it and `1` are the only isometries of a nonzero quadratic map valued in a
+torsion-free module (`TauCeti.QuadraticMap.eq_one_or_eq_negOrthogonal_of_finrank_eq_one`), and
+it differs from `1` when `2 ≠ 0`. There it is also the reflection in every vector of invertible
+norm (`QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`). -/
 def negOrthogonal : TauCeti.QuadraticMap.orthogonalGroup Q :=
   ⟨LinearEquiv.neg R, neg_mem_orthogonalGroup Q⟩
 
