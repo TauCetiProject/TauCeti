@@ -601,11 +601,15 @@ private theorem charP_residueField_of_lowerRamificationGroup_one_eq_top
 `TauCeti.algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk`. -/
 private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {t : ℕ}
     (hG : lowerRamificationGroup K L (t + 1) = ⊤) (hψ : psiNat K L (t + 1) = t + 1)
-    {π : 𝒪[L]} (hπ : Irreducible π) (hπK : Irreducible (Algebra.norm 𝒪[K] π))
+    {π : 𝒪[L]} (hπ : Irreducible π)
     {σ : L ≃ₐ[K] L} (hσ : σ ∉ lowerRamificationGroup K L (t + 2)) {γ : 𝒪[L]}
     (hγ : σ • π - π = γ * π ^ (t + 2)) :
     Nat.card (normGradedMap K L (t + 1)).ker = Nat.card {y : 𝓀[L] //
       y ^ finrank K L - residue 𝒪[L] γ ^ (finrank K L - 1) * y = 0} := by
+  have hπK : Irreducible (Algebra.norm 𝒪[K] π) :=
+    (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2
+      ((lowerRamificationGroup_zero_eq_top_iff K L).1 <|
+        top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))).inertiaDegree_eq_one
   let E : UnitFiltrationGraded L (psiNat K L (t + 1)) ≃ 𝓀[L] :=
     (unitFiltrationGradedCongr hψ).toEquiv.trans
       (Additive.ofMul.trans (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer t π hπ).toEquiv)
@@ -671,15 +675,13 @@ theorem normGradedMap_at_break (hℓ : (finrank K L).Prime) {t : ℕ} (ht0 : 0 <
       Ideal.mem_span_singleton'] at hmem
     obtain ⟨γ, hγ⟩ := hmem
     exact ⟨γ, hγ.symm⟩
-  have hπK : Irreducible (Algebra.norm 𝒪[K] π) :=
-    (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
   have hc0 : residue 𝒪[L] γ ≠ 0 :=
     residue_ne_zero_of_smul_sub_eq hπ (hGi 0 (by omega) ▸ Subgroup.mem_top σ) hσ hγ
   -- The kernel is `{y | y ^ ℓ = c ^ (ℓ - 1) y}`; writing `y = c z`, this is the line
   -- `{c z | z ^ ℓ = z} = 𝔽_ℓ c`, of order `ℓ`.
   have hcard_ker : Nat.card (normGradedMap K L (s + 1)).ker = finrank K L := by
-    rw [natCard_ker_normGradedMap_succ_eq hℓ (by exact_mod_cast hG) hψ hπ hπK
-      (by exact_mod_cast hσ) hγ]
+    rw [natCard_ker_normGradedMap_succ_eq hℓ (by exact_mod_cast hG) hψ hπ (by exact_mod_cast hσ)
+      hγ]
     refine (Nat.card_congr ((Equiv.mulLeft₀ _ hc0).subtypeEquiv fun z ↦ ?_)).symm.trans
       (Subfield.card_bot 𝓀[L] (finrank K L))
     set c := residue 𝒪[L] γ

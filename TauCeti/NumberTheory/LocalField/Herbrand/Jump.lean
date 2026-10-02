@@ -91,9 +91,10 @@ theorem lowerRamificationGroup_natCast_eq_top_of_upperJump (hℓ : (Module.finra
   have htψ : (t : ℤ) ≤ psiNat K L t := by exact_mod_cast self_le_psiNat K L t
   exact top_le_iff.1 <| hψ ▸ lowerRamificationGroup_antitone K L htψ
 
-/-- In prime degree, an upper break at a natural number `t` has `G_{t+1} = 1`: otherwise
-`G_{t+1}` is the whole Galois group, so `ψ(t + 1) = t + 1` and `G^{t+1} = G_{t+1}` is not
-strictly smaller than `G^t`. -/
+/-- In prime degree, an upper break at a natural number `t` has `G_{t+1} = 1`. Together with
+`G_t = Gal(L/K)` (`lowerRamificationGroup_natCast_eq_top_of_upperJump`), this says that the lower
+filtration drops from the whole Galois group to the trivial group exactly between `t` and `t + 1`.
+-/
 theorem lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump
     (hℓ : (Module.finrank K L).Prime) {t : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
