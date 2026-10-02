@@ -33,12 +33,11 @@ In the namespace `TauCeti.G2ShortRoot.PrimeField`:
   scalar-extended generator coordinate maps, and the resulting quotient of `O(GL₇/k)`.
 * `generatedCoordinateMap`: the quotient coordinate morphism, with kernel `generatedDefiningIdeal`
   (`generatedCoordinateMap_ker`).
-* `generatedCoordinateDesc`: the factorization through the generated subgroup of any coordinate
-  morphism killing its defining ideal, unique by `generatedCoordinateDesc_unique`.
 * `baseChangeGeneratorLift`: each scalar-extended generator factored through the generated
-  subgroup, unique by `baseChangeGeneratorLift_unique`.
+  subgroup, as `TauCeti.CommHopfAlgCat.commonKernelLift`; unique by
+  `baseChangeGeneratorLift_unique`.
 * `finiteTypeGeneratedCoordinateHopfAlgebra`: the generated subgroup as a finite-type commutative
-  Hopf algebra.
+  Hopf algebra, using the `Algebra.FiniteType` instance on `generatedCoordinateHopfAlgebra`.
 
 ## References
 
@@ -179,42 +178,18 @@ theorem generatedCoordinateMap_ker :
   CommHopfAlgCat.mkQuotient_ker
     (GeneralLinear.coordinateHopfAlgebra k 7) (generatedDefiningIdeal k)
 
-/-- A coordinate morphism out of `O(GL₇/k)` killing the generated subgroup's defining ideal,
-factored through the generated subgroup. -/
-noncomputable def generatedCoordinateDesc {B : CommHopfAlgCat k}
-    (f : GeneralLinear.coordinateHopfAlgebra k 7 ⟶ B)
-    (hf : (generatedDefiningIdeal k).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
-    generatedCoordinateHopfAlgebra k ⟶ B :=
-  CommHopfAlgCat.liftQuotient (generatedDefiningIdeal k) f hf
-
-/-- Composing the quotient coordinate morphism with the descent morphism of `f` recovers `f`. -/
-@[reassoc (attr := simp)]
-theorem generatedCoordinateMap_comp_generatedCoordinateDesc {B : CommHopfAlgCat k}
-    (f : GeneralLinear.coordinateHopfAlgebra k 7 ⟶ B)
-    (hf : (generatedDefiningIdeal k).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
-    generatedCoordinateMap k ≫ generatedCoordinateDesc k f hf = f :=
-  CommHopfAlgCat.mkQuotient_comp_liftQuotient (generatedDefiningIdeal k) f hf
-
-/-- The descent morphism is the unique factorization of `f` through the generated subgroup. -/
-theorem generatedCoordinateDesc_unique {B : CommHopfAlgCat k}
-    (f : GeneralLinear.coordinateHopfAlgebra k 7 ⟶ B)
-    (hf : (generatedDefiningIdeal k).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom)
-    (g : generatedCoordinateHopfAlgebra k ⟶ B) (hg : generatedCoordinateMap k ≫ g = f) :
-    g = generatedCoordinateDesc k f hf :=
-  CommHopfAlgCat.liftQuotient_unique (generatedDefiningIdeal k) f hf g hg
-
 /-- A scalar-extended root-subgroup or weight-torus coordinate map, factored through the
-generated subgroup. -/
+generated subgroup. This is `CommHopfAlgCat.commonKernelLift`, with its source identified with
+`generatedCoordinateHopfAlgebra k`. -/
 noncomputable def baseChangeGeneratorLift (j : (Fin 2 ⊕ Fin 2) ⊕ Unit) :
     generatedCoordinateHopfAlgebra k ⟶ baseChangeGeneratorCodomain k j :=
-  generatedCoordinateDesc k (baseChangeGenerator k j)
-    ((le_generatedDefiningIdeal_iff k _).1 le_rfl j)
+  CommHopfAlgCat.commonKernelLift (baseChangeGenerator k) j
 
 /-- Each scalar-extended generator factors through the generated subgroup. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_baseChangeGeneratorLift (j : (Fin 2 ⊕ Fin 2) ⊕ Unit) :
     generatedCoordinateMap k ≫ baseChangeGeneratorLift k j = baseChangeGenerator k j :=
-  generatedCoordinateMap_comp_generatedCoordinateDesc k _ _
+  CommHopfAlgCat.mkQuotient_comp_commonKernelLift (baseChangeGenerator k) j
 
 /-- The lift is the unique factorization of a scalar-extended generator through the generated
 subgroup. -/
@@ -222,14 +197,18 @@ theorem baseChangeGeneratorLift_unique (j : (Fin 2 ⊕ Fin 2) ⊕ Unit)
     (g : generatedCoordinateHopfAlgebra k ⟶ baseChangeGeneratorCodomain k j)
     (hg : generatedCoordinateMap k ≫ g = baseChangeGenerator k j) :
     g = baseChangeGeneratorLift k j :=
-  generatedCoordinateDesc_unique k _ _ g hg
+  CommHopfAlgCat.commonKernelLift_unique (baseChangeGenerator k) j g hg
 
-/-- The generated subgroup as a finite-type commutative Hopf algebra: it is a quotient of
+/-- The generated coordinate Hopf algebra is a finite-type `k`-algebra: it is a quotient of
 `O(GL₇/k)`. -/
+instance : Algebra.FiniteType k (generatedCoordinateHopfAlgebra k) :=
+  Algebra.FiniteType.of_surjective (generatedCoordinateMap k).hom.toAlgHom
+    (generatedCoordinateMap_surjective k)
+
+/-- The generated subgroup as a finite-type commutative Hopf algebra. -/
 noncomputable abbrev finiteTypeGeneratedCoordinateHopfAlgebra :
     FiniteTypeCommHopfAlgCat.{u, u} k :=
   ⟨generatedCoordinateHopfAlgebra k,
-    Algebra.FiniteType.of_surjective (generatedCoordinateMap k).hom.toAlgHom
-      (generatedCoordinateMap_surjective k)⟩
+    (inferInstance : Algebra.FiniteType k (generatedCoordinateHopfAlgebra k))⟩
 
 end TauCeti.G2ShortRoot.PrimeField
