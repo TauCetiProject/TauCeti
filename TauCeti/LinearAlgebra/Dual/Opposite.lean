@@ -24,6 +24,9 @@ to `Aᵐᵒᵖ`, semilinearly along `A ≃+* Aᵐᵒᵖᵐᵒᵖ`. It commutes w
 carries its range onto the range computed using the opposite codomain. This compares
 evaluation with constructions that use the opposite ring itself as the second dual's codomain.
 
+`unopDualEvalEquiv` gives the right-module version with both duals taking values in `A`,
+so that its scalars stay in `Aᵐᵒᵖ` rather than passing to a triple opposite.
+
 This is the reflexivity used when dualizing a projective presentation twice in the
 Auslander--Bridger transpose construction. Unlike `Module.evalEquiv`, the evaluation here
 changes sides and does not require commutativity of the coefficient ring.
@@ -185,5 +188,49 @@ theorem map_range_opDualEval [Module.Finite A P] [Module.Projective A P]
     simp
   rw [hsquare, LinearMap.range_comp]
   simp [LinearMap.range_eq_top.mpr (opDualEval_bijective A P).surjective]
+
+section RightEvaluation
+
+variable (A N : Type*) [Semiring A] [AddCommMonoid N] [Module Aᵐᵒᵖ N]
+  [Module.Finite Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N]
+
+/-- Evaluation identifies a finite projective right module with the left dual of its
+right-linear dual taking values in `A`. Both sides have their original right `A`-action. -/
+noncomputable def unopDualEvalEquiv :
+    N ≃ₗ[Aᵐᵒᵖ] Module.Dual A (N →ₗ[Aᵐᵒᵖ] A) := by
+  let e := (opDualCodomainEquiv A N).symm
+  let c : Aᵐᵒᵖ ≃ₛₗ[RingHomClass.toRingHom (RingEquiv.opOp A).symm] A :=
+    { __ := MulOpposite.opAddEquiv.symm, map_smul' := fun _ _ => rfl }
+  let t : (Module.Dual Aᵐᵒᵖ N →ₗ[Aᵐᵒᵖᵐᵒᵖ] Aᵐᵒᵖ) ≃ₗ[Aᵐᵒᵖ]
+      Module.Dual A (N →ₗ[Aᵐᵒᵖ] A) :=
+    { __ := e.arrowCongrAddEquiv c,
+      map_smul' := by intros; ext; simp [LinearEquiv.arrowCongrAddEquiv, c] }
+  exact (opDualEvalEquiv Aᵐᵒᵖ N).trans t
+
+/-- Right-module bidual evaluation applies a functional to the vector. -/
+@[simp]
+theorem unopDualEvalEquiv_apply (x : N) (φ : N →ₗ[Aᵐᵒᵖ] A) :
+    unopDualEvalEquiv A N x φ = φ x := by
+  simp [unopDualEvalEquiv, LinearEquiv.arrowCongrAddEquiv, opDualEvalEquiv]
+
+/-- A functional applied to inverse right-module bidual evaluation recovers its value. -/
+@[simp]
+theorem apply_unopDualEvalEquiv_symm
+    (F : Module.Dual A (N →ₗ[Aᵐᵒᵖ] A)) (φ : N →ₗ[Aᵐᵒᵖ] A) :
+    φ ((unopDualEvalEquiv A N).symm F) = F φ := by
+  simpa only [unopDualEvalEquiv_apply] using
+    LinearMap.congr_fun ((unopDualEvalEquiv A N).apply_symm_apply F) φ
+
+variable {N} {N' : Type*} [AddCommMonoid N'] [Module Aᵐᵒᵖ N']
+  [Module.Finite Aᵐᵒᵖ N'] [Module.Projective Aᵐᵒᵖ N']
+
+/-- Right-module bidual evaluation commutes with a linear map and its double dual. -/
+theorem unopDualEvalEquiv_naturality (f : N →ₗ[Aᵐᵒᵖ] N') (x : N) :
+    unopDualEvalEquiv A N' (f x) =
+      (f.lcomp A A).lcomp Aᵐᵒᵖ A (unopDualEvalEquiv A N x) := by
+  ext φ
+  simp
+
+end RightEvaluation
 
 end TauCeti
