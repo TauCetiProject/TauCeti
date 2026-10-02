@@ -84,6 +84,7 @@ variable {W ℓ}
 
 /-- The representation applies the induced map of Tate modules of the coordinatewise action on
 points. -/
+@[simp]
 theorem tateModuleGaloisRepresentation_apply (σ : K ≃ₐ[F] K)
     (x : TateModule ℓ (W⁄K).toAffine.Point) :
     W.tateModuleGaloisRepresentation ℓ σ x = TateModule.map (Affine.Point.map σ.toAlgHom) x :=
@@ -91,7 +92,6 @@ theorem tateModuleGaloisRepresentation_apply (σ : K ≃ₐ[F] K)
 
 /-- **The representation on the level `E[ℓ ^ n]`**: the `n`-th component of `σ x` is the
 induced image of the `n`-th component of `x` in the torsion subgroup. -/
-@[simp]
 theorem proj_tateModuleGaloisRepresentation (σ : K ≃ₐ[F] K)
     (x : TateModule ℓ (W⁄K).toAffine.Point) (n : ℕ) :
     TateModule.proj n (W.tateModuleGaloisRepresentation ℓ σ x) =
