@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
@@ -83,7 +82,8 @@ theorem coe_referenceSubgroupZeroMulEquivZMod_symm_apply_ofAdd_intCast {n : ℕ}
     (h : 0 < numTransitiveGroups n) (k : ℤ) :
     ((referenceSubgroupZeroMulEquivZMod h).symm (Multiplicative.ofAdd (k : ZMod n)) :
       Perm (Fin n)) = finRotate n ^ k := by
-  simp [referenceSubgroupZeroMulEquivZMod]
+  rw [referenceSubgroupZeroMulEquivZMod, MulEquiv.symm_symm,
+    zmodMulEquivOfGenerator_apply_ofAdd_intCast, Subgroup.coe_zpow]
 
 /-- The isomorphism `referenceSubgroupZeroMulEquivZMod` sends the rotation to
 `Multiplicative.ofAdd 1`. -/
@@ -92,7 +92,7 @@ theorem referenceSubgroupZeroMulEquivZMod_apply_finRotate {n : ℕ}
     (h : 0 < numTransitiveGroups n) :
     referenceSubgroupZeroMulEquivZMod h ⟨finRotate n, finRotate_mem_referenceSubgroup_zero h⟩ =
       Multiplicative.ofAdd 1 := by
-  simp [referenceSubgroupZeroMulEquivZMod]
+  rw [referenceSubgroupZeroMulEquivZMod, zmodMulEquivOfGenerator_symm_apply_generator]
 
 /-- Every permutation group with label `nT1` is abstractly the cyclic group of order `n`. The
 isomorphism depends on the conjugating permutation used to read the label. -/
