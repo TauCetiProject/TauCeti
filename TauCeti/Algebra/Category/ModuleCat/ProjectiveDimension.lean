@@ -20,6 +20,10 @@ successive extensions.
 The argument uses Mathlib's extension-closure theorem
 `ShortComplex.ShortExact.hasProjectiveDimensionLT_X₂` and the simple-quotient induction
 principle of `IsFiniteLength`.
+
+The finite-length induction adapts the formal proof pattern of
+`TauCeti.isEulerAdmissible_of_isFiniteLength` in
+`TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.FiniteLength`.
 -/
 
 public section
