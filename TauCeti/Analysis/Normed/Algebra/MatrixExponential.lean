@@ -73,8 +73,8 @@ theorem det_exp (A : Matrix n n 𝕂) : det (exp A) = exp (trace A) := by
   set g : 𝕂 → 𝕂 := fun t => f t * exp (t • -trace A) with hg_def
   have hg (t : 𝕂) : HasDerivAt g 0 t := by
     have h := (hf t).mul (hasDerivAt_exp_smul_const (𝕂 := 𝕂) (-trace A) t)
-    rwa [show f t * trace A * exp (t • -trace A) + f t * (exp (t • -trace A) * -trace A) = 0 by
-      ring] at h
+    convert h using 1
+    ring
   have hconst := is_const_of_deriv_eq_zero (fun t => (hg t).differentiableAt)
     (fun t => (hg t).deriv) 1 0
   simp only [hg_def, hf_def, one_smul, zero_smul, exp_zero, det_one, mul_one] at hconst
