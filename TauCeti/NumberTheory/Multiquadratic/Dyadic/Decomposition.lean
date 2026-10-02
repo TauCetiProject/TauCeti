@@ -44,7 +44,11 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Finite ι]
   {d : ι → ℤ} {r : ι → K}
 
 open Classical in
-private theorem ncard_primesOver_two_mul_two_pow_eq_finrank
+/-- **The dyadic decomposition identity, without square-class independence.** The number of
+primes above two multiplied by `2 ^ (a + b)` equals `[K : ℚ]`, where the displayed arithmetic
+tests determine the ramification index `e = 2 ^ a` and residue degree `f = 2 ^ b`.
+In particular, `2 ^ (a + b)` divides the field degree, including when two ramifies. -/
+theorem ncard_primesOver_two_mul_two_pow_eq_finrank
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     (hd : ∀ i, ¬ (4 : ℤ) ∣ d i) :
