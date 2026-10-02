@@ -23,6 +23,10 @@ values, used in the topological proof of the Riemann--Hurwitz formula. The restr
 Mathlib's `Set.restrictPreimage`, so the ordinary covering-map API applies without a new
 carrier or notion of covering.
 
+The covering and its sheet count use local multiplicity, finite fibres, and the analytic
+fibre-sum degree. Euler characteristic and topological genus are needed for the subsequent
+Riemann--Hurwitz application, rather than for these covering results.
+
 ## Main declarations
 
 * `FiniteHolomorphicMap.branchValues`: the set of branch values.
