@@ -94,6 +94,15 @@ noncomputable def coneChartedSpace (g : AddGeneratingFamily (dualSemigroup hi σ
   let h := isOpenEmbedding_coneChartAmbient hi hσ hB κ g
   exact h.singletonChartedSpace
 
+/-- Every chart in the cone charted-space structure is the ambient mixed-coordinate chart. -/
+theorem coe_coneChartedSpace_chartAt
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
+    ⇑(@chartAt ((Fin k → ℂ) × (Fin l → ℂ)) inferInstance
+      (AffineSemigroupComplexPoint (dualSemigroup hi σ)) (affinePointTopology g)
+      (coneChartedSpace hi hσ hB κ g) x) = coneChartAmbient hi hσ hB κ :=
+  (rfl)
+
 /-- The target of every chart in the cone charted-space structure is the mixed-coordinate locus. -/
 theorem coneChartedSpace_chartAt_target
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)

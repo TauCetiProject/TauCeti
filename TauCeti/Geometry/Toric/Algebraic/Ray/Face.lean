@@ -33,7 +33,8 @@ exhaust the sixteen subsets of its rays.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso`: the face lattice of a regular cone is the lattice
   of subsets of its rays.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso_apply`: the subset attached to a face is the set of
-  rays of that face.
+  rays of that face; for a ray, `TauCeti.Toric.IsRegularCone.faceOrderIso_toricRay`, it is that
+  ray alone.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso_symm_apply_toPointedCone`: the face attached to a
   subset of rays is the cone spanned by the corresponding primitive ray generators.
 
@@ -161,6 +162,13 @@ theorem faceOrderIso_apply (F : σ.Face) :
     (primitiveGenerator_mem hi hσ.toIsToricCone ρ)
     (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ.toIsToricCone ρ))]
   exact Submodule.span_le.2 (Set.singleton_subset_iff.2 h)
+
+/-- A ray of a regular cone, viewed as a face, contains no other ray. This is not a `simp` lemma:
+`faceOrderIso_apply` rewrites its left-hand side. -/
+theorem faceOrderIso_toricRay (ρ : ToricRay σ) : faceOrderIso hi hσ ρ.1 = {ρ} := by
+  ext ν
+  rw [faceOrderIso_apply, ToricRay.range_faceEmbedding, Set.mem_ofPred_eq, Set.mem_singleton_iff]
+  exact ToricRay.toPointedCone_le_toPointedCone_iff hσ.salient
 
 /-- The real dimension of a face of a regular cone is the number of rays it contains. -/
 theorem finrank_span_face_eq_card_rays (F : σ.Face) :
