@@ -61,6 +61,8 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
   independence of `n` radicands, `g · 2ᵏ = [K : ℚ]` forces `g = 2ⁿ⁻ᵏ`.
 * `TauCeti.Multiquadratic.ncard_primesOver_eq_two_pow_sub_one`: under square-class
   independence of `n` radicands, that number is `2ⁿ⁻¹`.
+* `TauCeti.Multiquadratic.apply_eq_self_of_mem_inertia_of_mod_four_eq_one`: inertia above `2`
+  fixes every square root of an integer that is `1` modulo `4`.
 * `TauCeti.Multiquadratic.inertia_eq_bot_of_forall_mod_four_eq_one` and
   `TauCeti.Multiquadratic.isUnramifiedAt_of_forall_mod_four_eq_one`: `2` has trivial inertia and
   is unramified when every radicand is `1` modulo `4`.
@@ -273,6 +275,31 @@ When every radicand is `1` modulo `4`, the prime `2` is unramified as well, and 
 Frobenius calculation `isArithFrobAt_eq_one_iff_mod_eight` plays the role of the Legendre symbols:
 the residue degree above `2` is `1` if every `dᵢ` is `1` modulo `8` and `2` otherwise. -/
 
+/-- **Inertia above `2` fixes the square roots of integers that are `1` modulo `4`.** Let `Q` be a
+prime of `𝓞 K` above `2`, and let `x ∈ K` square to an integer `c ≡ 1 (mod 4)`. Then every element
+of the inertia group of `Q` in `Gal(K/ℚ)` fixes `x`. Indeed `τ x = ± x`, and `τ x = -x` would move
+the integral half-generator `(1 + x) / 2` by `-x`, putting `c = x ^ 2` in `Q`, hence `2 ∣ c`. -/
+theorem apply_eq_self_of_mem_inertia_of_mod_four_eq_one {x : K} {c : ℤ}
+    (hx : x ^ 2 = algebraMap ℤ K c) (hc : c % 4 = 1) (Q : Ideal (𝓞 K))
+    [Q.LiesOver (span {(2 : ℤ)})] {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) :
+    τ x = x := by
+  have hsq : τ x ^ 2 = x ^ 2 := by rw [← map_pow, hx]; simp
+  refine (eq_or_eq_neg_of_sq_eq_sq _ _ hsq).resolve_right fun hneg => ?_
+  -- The half-generator `w = (1 + x) / 2` is integral, and `τ • w - w = -x`.
+  let w : 𝓞 K := ⟨(1 + x) / 2, isIntegral_one_add_div_two_of_sq_eq hx hc⟩
+  have hw : algebraMap (𝓞 K) K w = (1 + x) / 2 := RingOfIntegers.map_mk _ _
+  have hwsq : (τ • w - w) ^ 2 = algebraMap ℤ (𝓞 K) c := by
+    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+    rw [map_pow, map_sub, algebraMap_smul_eq_apply, hw,
+      ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K, ← hx]
+    simp only [map_div₀, map_add, map_one, map_ofNat, hneg]
+    ring
+  -- `τ` acts trivially modulo `Q`, so `c = (τ • w - w) ^ 2` lies in `Q`, and `2 ∣ c`.
+  have hmem : algebraMap ℤ (𝓞 K) c ∈ Q :=
+    hwsq ▸ Q.pow_mem_of_mem ((Ideal.mem_inertia.mp hτ) w) 2 two_pos
+  have h2 : (2 : ℤ) ∣ c := (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
+  omega
+
 /-- **`2` has trivial inertia when every radicand is `1` modulo `4`.** Let `K` be generated over
 `ℚ` by square roots `r i` of integers `d i ≡ 1 (mod 4)`, and let `Q` be a prime of `𝓞 K` above
 `2`. Then the inertia group of `Q` in `Gal(K/ℚ)` is trivial. No squarefreeness of the `d i` is
@@ -284,24 +311,7 @@ theorem inertia_eq_bot_of_forall_mod_four_eq_one (hr : ∀ i, r i ^ 2 = algebraM
   refine (Subgroup.eq_bot_iff_forall _).mpr fun τ hτ => ?_
   refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
   rintro _ ⟨i, rfl⟩
-  -- `τ (r i)` is a square root of `d i`, hence `± r i`; rule out the minus sign.
-  have hsq : τ (r i) ^ 2 = r i ^ 2 := by rw [← map_pow, hr i]; simp
-  refine (eq_or_eq_neg_of_sq_eq_sq _ _ hsq).resolve_right fun hneg => ?_
-  -- The half-generator `w = (1 + r i) / 2` is integral, and `τ • w - w = -r i`.
-  let w : 𝓞 K := ⟨(1 + r i) / 2, isIntegral_one_add_div_two_of_sq_eq (hr i) (hd i)⟩
-  have hw : algebraMap (𝓞 K) K w = (1 + r i) / 2 := RingOfIntegers.map_mk _ _
-  have hwsq : (τ • w - w) ^ 2 = algebraMap ℤ (𝓞 K) (d i) := by
-    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-    rw [map_pow, map_sub, algebraMap_smul_eq_apply, hw,
-      ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K, ← hr i]
-    simp only [map_div₀, map_add, map_one, map_ofNat, hneg]
-    ring
-  -- `τ` acts trivially modulo `Q`, so `d i = (τ • w - w) ^ 2` lies in `Q`, and `2 ∣ d i`.
-  have hmem : algebraMap ℤ (𝓞 K) (d i) ∈ Q :=
-    hwsq ▸ Q.pow_mem_of_mem ((Ideal.mem_inertia.mp hτ) w) 2 two_pos
-  have h2 : (2 : ℤ) ∣ d i := (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
-  have := hd i
-  omega
+  exact apply_eq_self_of_mem_inertia_of_mod_four_eq_one (hr i) (hd i) Q hτ
 
 /-- `2` is unramified in the multiquadratic field when every radicand is `1` modulo `4`. -/
 theorem isUnramifiedAt_of_forall_mod_four_eq_one [Finite ι]
