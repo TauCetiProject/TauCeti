@@ -14,10 +14,17 @@ public import Mathlib.MeasureTheory.Measure.OpenPos
 
 Let `f i` be a net of `L¹` classes of unit integral, `∫ f i = 1`, with uniformly bounded `L¹` norms,
 which concentrate at a point `x₀`: for every neighbourhood `U` of `x₀`, eventually each `f i`
-vanishes almost everywhere outside `U`. Then `∫ x, f i x • φ x ∂μ` tends to `a` for every almost
-everywhere strongly measurable `φ` with limit `a` at `x₀`. This is the approximate-identity
-argument in its pointwise form: since `∫ f i = 1`, the difference is `∫ x, f i x • (φ x - a) ∂μ`,
-and `φ x` stays close to `a` on the set where `f i` lives.
+vanishes almost everywhere outside `U`. Then `∫ x, f i x • φ x ∂μ` tends to `a` for every `φ`
+with limit `a` at `x₀` whose products `f i • φ` with the weights are almost everywhere strongly
+measurable. This is the approximate-identity argument in its pointwise form: since `∫ f i = 1`,
+the difference is `∫ x, f i x • (φ x - a) ∂μ`, and `φ x` stays close to `a` on the set where
+`f i` lives.
+
+Only the integrands `f i • φ` are asked to be almost everywhere strongly measurable, not `φ`
+itself. This holds when `φ` is, but also for a continuous `φ` and a measure that is inner regular
+for compact sets but not σ-finite, such as the Haar measure `MeasureTheory.Measure.addHaar` of a
+locally compact group that is not σ-compact
+(`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`).
 
 On a measure that charges every open set and is finite on some neighbourhood of each point, such
 peak functions exist inside every neighbourhood of every point (normalized indicators), so the
@@ -60,9 +67,11 @@ variable {α 𝕜 E : Type*} [MeasurableSpace α] [RCLike 𝕜]
 
 /-- **The approximate-identity estimate.** If an `L¹` class `f` has unit integral and vanishes
 almost everywhere outside `U`, and `φ` stays within `ε` of `y` on `U`, then the integral of `φ`
-against `f` is within `ε * ‖f‖` of `y`. -/
+against `f` is within `ε * ‖f‖` of `y`. The integrand `f • φ` is assumed almost everywhere
+strongly measurable. -/
 theorem norm_integral_smul_sub_le {f : α →₁[μ] 𝕜} (hf : ∫ x, f x ∂μ = 1) {U : Set α}
-    (hfU : ∀ᵐ x ∂μ, x ∉ U → f x = 0) {φ : α → E} (hφ : AEStronglyMeasurable φ μ) {y : E}
+    (hfU : ∀ᵐ x ∂μ, x ∉ U → f x = 0) {φ : α → E}
+    (hφ : AEStronglyMeasurable (fun x ↦ f x • φ x) μ) {y : E}
     {ε : ℝ} (hφU : ∀ x ∈ U, ‖φ x - y‖ ≤ ε) :
     ‖(∫ x, f x • φ x ∂μ) - y‖ ≤ ε * ‖f‖ := by
   have hfi : Integrable (fun x ↦ f x) μ := L1.integrable_coeFn f
@@ -75,7 +84,8 @@ theorem norm_integral_smul_sub_le {f : α →₁[μ] 𝕜} (hf : ∫ x, f x ∂�
     · simp [hx hxU]
   have hint : Integrable (fun x ↦ f x • (φ x - y)) μ :=
     (hfi.norm.mul_const ε).mono'
-      (hfi.aestronglyMeasurable.smul (hφ.sub aestronglyMeasurable_const)) hbound
+      ((hφ.sub (hfi.aestronglyMeasurable.smul_const y)).congr
+        (.of_forall fun x ↦ (smul_sub _ _ _).symm)) hbound
   -- Since `∫ f = 1`, subtracting `y` is integrating `f • (φ - y)`.
   have hsplit : ∫ x, f x • φ x ∂μ = (∫ x, f x • (φ x - y) ∂μ) + ∫ x, f x • y ∂μ := by
     rw [← integral_add hint (hfi.smul_const y)]
@@ -87,12 +97,13 @@ theorem norm_integral_smul_sub_le {f : α →₁[μ] 𝕜} (hf : ∫ x, f x ∂�
 /-- **`L¹` peak functions integrate a function to its limit at the peak.** Let `f i` be `L¹`
 classes which eventually have unit integral and `L¹` norm at most `C`, and which concentrate at
 `x₀`: for every neighbourhood `U` of `x₀`, eventually `f i` vanishes almost everywhere outside `U`.
-Then `∫ x, f i x • φ x ∂μ` tends to `a` for every almost everywhere strongly measurable `φ`
-tending to `a` at `x₀`. -/
+Then `∫ x, f i x • φ x ∂μ` tends to `a` for every `φ` tending to `a` at `x₀` whose products
+`f i • φ` are eventually almost everywhere strongly measurable. -/
 theorem tendsto_integral_smul_of_tendsto {ι : Type*} {l : Filter ι} {f : ι → α →₁[μ] 𝕜}
     {C : ℝ} {x₀ : α} [TopologicalSpace α] (hf : ∀ᶠ i in l, ∫ x, f i x ∂μ = 1)
     (hfC : ∀ᶠ i in l, ‖f i‖ ≤ C) (hfx₀ : ∀ U ∈ 𝓝 x₀, ∀ᶠ i in l, ∀ᵐ x ∂μ, x ∉ U → f i x = 0)
-    {φ : α → E} (hφ : AEStronglyMeasurable φ μ) {a : E} (hφa : Tendsto φ (𝓝 x₀) (𝓝 a)) :
+    {φ : α → E} (hφ : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ f i x • φ x) μ) {a : E}
+    (hφa : Tendsto φ (𝓝 x₀) (𝓝 a)) :
     Tendsto (fun i ↦ ∫ x, f i x • φ x ∂μ) l (𝓝 a) := by
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
   -- Ask `φ` to stay within `δ` of `a`, where `δ * |C| < ε`.
@@ -101,10 +112,10 @@ theorem tendsto_integral_smul_of_tendsto {ι : Type*} {l : Filter ι} {f : ι �
   have hδC : δ * |C| < ε := by
     rw [hδ, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
     exact mul_lt_mul_of_pos_left (lt_add_one _) hε
-  filter_upwards [hf, hfC, hfx₀ _ (hφa (closedBall_mem_nhds a hδpos))] with i hi hiC hiU
+  filter_upwards [hf, hfC, hfx₀ _ (hφa (closedBall_mem_nhds a hδpos)), hφ] with i hi hiC hiU hiφ
   rw [dist_eq_norm]
   calc ‖(∫ x, f i x • φ x ∂μ) - a‖ ≤ δ * ‖f i‖ :=
-        norm_integral_smul_sub_le hi hiU hφ fun x hx ↦ by simpa [dist_eq_norm] using hx
+        norm_integral_smul_sub_le hi hiU hiφ fun x hx ↦ by simpa [dist_eq_norm] using hx
     _ ≤ δ * |C| := mul_le_mul_of_nonneg_left (hiC.trans (le_abs_self C)) hδpos.le
     _ < ε := hδC
 

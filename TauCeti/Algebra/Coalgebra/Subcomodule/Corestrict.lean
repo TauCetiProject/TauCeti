@@ -31,6 +31,8 @@ coalgebras must preserve the invariant subspaces of their comodules.
   by a coalgebra equivalence.
 * `TauCeti.Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights`: distinct one-dimensional
   weights connected by subcomodule-preserving involutions give a simple comodule.
+* `TauCeti.Subcomodule.weightComponent_mem_of_corestrict_eq_ofWeights`: restriction to a
+  diagonal comodule extracts entire weight components, including repeated weights.
 * `TauCeti.Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights`: restriction to distinct
   one-dimensional weights extracts each scaled coordinate vector of a subcomodule vector.
 * `TauCeti.Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights`: distinct
@@ -199,6 +201,62 @@ theorem corestrictOrderIso_symm_apply (e : C ≃ₗc[R] D)
     let _ : Comodule R D M := Comodule.Corestrict e.toCoalgHom
     ext m
     rfl
+
+section WeightComponent
+
+variable {G : Type w} {I : Type x} [Finite I] [DecidableEq G]
+variable [Comodule R C (I → R)]
+
+/-- Restriction to a diagonal weight comodule extracts the entire component of each weight,
+without requiring the weights to be distinct. -/
+theorem weightComponent_mem_of_corestrict_eq_ofWeights
+    (f : C →ₗc[R] MonoidAlgebra R G) (wt : I → G)
+    (hcomodule : Comodule.Corestrict f = Comodule.ofWeights (Pi.basisFun R I) wt)
+    (N : Subcomodule R C (I → R)) {v : I → R} (hv : v ∈ N) (g : G) :
+    (fun a ↦ if wt a = g then v a else 0) ∈ N := by
+  classical
+  let _ := Fintype.ofFinite I
+  let _ : Comodule R (MonoidAlgebra R G) (I → R) := Comodule.Corestrict f
+  have hp := Comodule.weightProj_mem_subcomodule (N.corestrict f) g
+    ((mem_corestrict f N v).2 hv)
+  -- Projection is indexed by the comodule instance; transport it before using the weight basis.
+  have hproj := congrArg (fun c : Comodule R (MonoidAlgebra R G) (I → R) ↦
+    let _ := c
+    Comodule.weightProj R G (I → R) g v) hcomodule
+  rw [hproj] at hp
+  have heq :
+      (let _ := Comodule.ofWeights (Pi.basisFun R I) wt
+       Comodule.weightProj R G (I → R) g v) =
+      (fun a ↦ if wt a = g then v a else 0) := by
+    let _ := Comodule.ofWeights (Pi.basisFun R I) wt
+    conv_lhs => rw [← Finset.univ_sum_single v]
+    rw [map_sum]
+    have hterm (b : I) : Comodule.weightProj R G (I → R) g (Pi.single b (v b)) =
+        if wt b = g then Pi.single b (v b) else 0 := by
+      have hsingle : Pi.single b (v b) = v b • Pi.single b (1 : R) := by
+        simp [← Pi.single_smul]
+      rw [hsingle, map_smul]
+      by_cases hb : wt b = g
+      · rw [ite_eq_left hb, Comodule.weightProj_of_mem]
+        rw [← hb, ← Pi.basisFun_apply]
+        exact Comodule.basis_mem_weightSpace_ofWeights _ _ b
+      · rw [ite_eq_right hb, Comodule.weightProj_of_mem_of_ne]
+        · simp
+        · exact Ne.symm hb
+        · rw [← Pi.basisFun_apply]
+          exact Comodule.basis_mem_weightSpace_ofWeights _ _ b
+    simp_rw [hterm]
+    ext a
+    simp only [Finset.sum_apply, Pi.zero_apply, ite_apply, Pi.single_apply]
+    rw [Finset.sum_eq_single a]
+    · simp
+    · intro b _ hba
+      simp [Ne.symm hba]
+    · simp
+  rw [heq] at hp
+  exact (mem_corestrict f N _).1 hp
+
+end WeightComponent
 
 section WeightGraph
 

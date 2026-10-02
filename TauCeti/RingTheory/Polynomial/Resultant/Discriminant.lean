@@ -57,7 +57,8 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
   `X ^ 5 - C a` over `ℚ` with `a ≠ 0` is not a square.
 * `TauCeti.discr_C_mul`, `TauCeti.isSquare_discr_iff_mem_range`: the scaling law and
-  square-root criterion for a not-necessarily-monic polynomial over a field.
+  square-root criterion for a not-necessarily-monic polynomial. Scaling holds over an integral
+  domain; the square-root criterion uses a base field and a domain containing the roots.
 * `Polynomial.discr_map_of_natDegree_eq`, `Polynomial.Monic.discr_map`: base change whenever the
   degree is preserved, with monicity as a convenient sufficient condition.
 * `Polynomial.Monic.isUnit_discr_iff`, `Polynomial.Monic.discr_ne_zero_iff`,
@@ -159,38 +160,15 @@ theorem not_isSquare_discr_X_pow_five_sub_C {a : ℚ} (ha : a ≠ 0) :
     linear_combination hr⟩
   exact absurd h5 (by norm_num)
 
-private noncomputable def Polynomial.sylvesterDerivIndexEquiv {f : R[X]} (φ : R →+* S)
-    (hdeg : (f.map φ).natDegree = f.natDegree) :
-    Fin ((f.map φ).natDegree - 1 + (f.map φ).natDegree) ≃
-      Fin (f.natDegree - 1 + f.natDegree) :=
-  finCongr (by rw [hdeg])
+section Reindex
 
-@[simp]
-private theorem Polynomial.sylvesterDerivIndexEquiv_symm_val {f : R[X]} (φ : R →+* S)
-    (hdeg : (f.map φ).natDegree = f.natDegree)
-    (i : Fin (f.natDegree - 1 + f.natDegree)) :
-    ((sylvesterDerivIndexEquiv φ hdeg).symm i : ℕ) = i := rfl
-
-private theorem Polynomial.sylvesterDerivIndexEquiv_symm_castAdd {f : R[X]} (φ : R →+* S)
-    (hdeg : (f.map φ).natDegree = f.natDegree) (j : Fin (f.natDegree - 1)) :
-    (sylvesterDerivIndexEquiv φ hdeg).symm (Fin.castAdd f.natDegree j) =
-      Fin.castAdd (f.map φ).natDegree (Fin.cast (congrArg (· - 1) hdeg.symm) j) := by
-  apply Fin.ext
-  rfl
-
-private theorem Polynomial.sylvesterDerivIndexEquiv_symm_natAdd {f : R[X]} (φ : R →+* S)
-    (hdeg : (f.map φ).natDegree = f.natDegree) (j : Fin f.natDegree) :
-    (sylvesterDerivIndexEquiv φ hdeg).symm (Fin.natAdd (f.natDegree - 1) j) =
-      Fin.natAdd ((f.map φ).natDegree - 1) (Fin.cast hdeg.symm j) := by
-  apply Fin.ext
-  simp [sylvesterDerivIndexEquiv, hdeg]
+variable {R S : Type*} [Semiring R] [Semiring S]
 
 /-- Mapping coefficients preserves `sylvesterDeriv` after transporting its degree-dependent
-indices. The definition must be unfolded here because Mathlib supplies `sylvester_map_map`, but
-no corresponding map lemma for the modified bottom row of `sylvesterDeriv`. -/
-private theorem Polynomial.sylvesterDeriv_map_reindex {f : R[X]} (φ : R →+* S)
+indices. -/
+theorem _root_.Polynomial.sylvesterDeriv_map {f : R[X]} (φ : R →+* S)
     (hdeg : (f.map φ).natDegree = f.natDegree) :
-    Matrix.reindex (sylvesterDerivIndexEquiv φ hdeg) (sylvesterDerivIndexEquiv φ hdeg)
+    Matrix.reindex (finCongr (by rw [hdeg])) (finCongr (by rw [hdeg]))
       (f.map φ).sylvesterDeriv = φ.mapMatrix f.sylvesterDeriv := by
   classical
   ext i j
@@ -198,24 +176,10 @@ private theorem Polynomial.sylvesterDeriv_map_reindex {f : R[X]} (φ : R →+* S
     Matrix.map_apply, sylvesterDeriv, hdeg]
   by_cases hzero : f.natDegree = 0
   · simp [hzero]
-  · simp only [hzero, ↓reduceDIte]
-    by_cases hi : (i : ℕ) = 2 * f.natDegree - 2
-    · by_cases hj₁ : (j : ℕ) = f.natDegree - 2
-      · simp [Matrix.updateRow_apply, Fin.ext_iff, hi, hj₁]
-      · by_cases hj₂ : (j : ℕ) = 2 * f.natDegree - 2
-        · simp [Matrix.updateRow_apply, Fin.ext_iff, hi, hj₂]
-          split_ifs <;> simp
-        · simp [Matrix.updateRow_apply, Fin.ext_iff, hi, hj₁, hj₂]
-    · simp only [Matrix.updateRow_apply, Fin.ext_iff, hi, ite_false]
-      induction j using Fin.addCases with
-      | left j =>
-          rw [sylvesterDerivIndexEquiv_symm_castAdd φ hdeg j]
-          simp [sylvesterDerivIndexEquiv, hdeg, hi, sylvester, derivative_map]
-          split_ifs <;> simp
-      | right j =>
-          rw [sylvesterDerivIndexEquiv_symm_natAdd φ hdeg j]
-          simp [sylvesterDerivIndexEquiv, hdeg, hi, sylvester, derivative_map]
-          split_ifs <;> simp
+  · simp [hzero, hdeg, Matrix.updateRow_apply, Fin.ext_iff, sylvester, derivative_map,
+      Fin.addCases, apply_ite φ]
+
+end Reindex
 
 /-- Base change of the discriminant along a ring morphism that preserves the degree. -/
 theorem _root_.Polynomial.discr_map_of_natDegree_eq {f : R[X]} (φ : R →+* S)
@@ -225,10 +189,11 @@ theorem _root_.Polynomial.discr_map_of_natDegree_eq {f : R[X]} (φ : R →+* S)
   simp only [discr, hdeg, map_mul, map_pow, map_neg, map_one]
   congr 1
   rw [RingHom.map_det]
-  let e := Polynomial.sylvesterDerivIndexEquiv φ hdeg
+  let e : Fin ((f.map φ).natDegree - 1 + (f.map φ).natDegree) ≃
+      Fin (f.natDegree - 1 + f.natDegree) := finCongr (by rw [hdeg])
   rw [← Matrix.det_reindex_self e]
   congr 1
-  exact Polynomial.sylvesterDeriv_map_reindex φ hdeg
+  exact Polynomial.sylvesterDeriv_map φ hdeg
 
 /-- Base change of the discriminant along a ring morphism, for a monic polynomial. Monicity
 ensures that the degree is preserved. -/
@@ -509,10 +474,10 @@ end Field
 
 section Nonmonic
 
-variable {F : Type*} [Field F] {f : F[X]}
+variable {F : Type*} [CommRing F] [IsDomain F] {f : F[X]}
 
-/-- Scaling a polynomial of degree `n` by a nonzero constant `a` scales its discriminant by
-`a ^ (2 * n - 2)`. -/
+/-- Over an integral domain, scaling a polynomial of degree `n` by a nonzero constant `a`
+scales its discriminant by `a ^ (2 * n - 2)`. -/
 theorem discr_C_mul (a : F) (ha : a ≠ 0) :
     (C a * f).discr = a ^ (2 * f.natDegree - 2) * f.discr := by
   by_cases hdeg : f.natDegree = 0
@@ -548,10 +513,16 @@ theorem discr_C_mul (a : F) (ha : a ≠ 0) :
           rw [hn, pow_add, pow_one]
           ring
 
+end Nonmonic
+
+section NonmonicField
+
+variable {F : Type*} [Field F] {f : F[X]}
+
 /-- For a separable polynomial, the discriminant is a square in the base field exactly when the
-product of the root differences comes from the base field. This is the nonmonic analogue of
-`Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
-theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
+product of the root differences in an extension domain comes from the base field. This is the
+nonmonic analogue of `Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
+theorem isSquare_discr_iff_mem_range {E : Type*} [CommRing E] [IsDomain E] [Algebra F E]
     (hsep : f.Separable) (e : Fin f.natDegree ≃ f.rootSet E) :
     IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
   have hf0 : f ≠ 0 := hsep.ne_zero
@@ -595,13 +566,15 @@ theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
     have hs : discrSqrt e * discrSqrt e =
         algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) *
           algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) := by
-      have h := hdiscr
-      rw [hc, map_mul] at h
-      simp only [map_inv₀, map_pow, map_mul]
-      rw [inv_pow, ← hd_def]
-      field_simp [hd] at h ⊢
-      ring_nf at h ⊢
-      exact h.symm
+      apply mul_left_cancel₀ (a := d * d) (mul_ne_zero hd hd)
+      calc
+        d * d * (discrSqrt e * discrSqrt e) = algebraMap F E (c * c) := by
+          rw [← hc, hdiscr]
+        _ = _ := by
+          simp only [hd_def, ← map_pow, ← map_mul]
+          congr 1
+          rw [inv_pow]
+          field_simp
     rcases mul_self_eq_mul_self_iff.mp hs with hs | hs
     · exact ⟨_, hs.symm⟩
     · exact ⟨-_, by rw [map_neg, ← hs]⟩
@@ -612,7 +585,7 @@ theorem isSquare_discr_iff_mem_range {E : Type*} [Field E] [Algebra F E]
     rw [hc, hdiscr]
     ring
 
-end Nonmonic
+end NonmonicField
 
 end DiscrSqrt
 

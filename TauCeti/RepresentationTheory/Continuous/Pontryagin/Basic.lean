@@ -39,7 +39,6 @@ namespace TauCeti
 variable {G H : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  [SecondCountableTopologyEither G H]
   {μ : Measure G} [μ.IsAddLeftInvariant] [μ.InnerRegularCompactLTTop]
   [IsLocallyFiniteMeasure μ]
 
