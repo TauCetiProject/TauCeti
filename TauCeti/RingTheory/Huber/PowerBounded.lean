@@ -83,7 +83,8 @@ a prior formalisation of this theory; its proofs were not used.
 
 `topologicallyNilpotentIdeal` is an ideal of `A°`, not of `A`, and is distinct from Mathlib's
 `topologicalNilradical`, which is an ideal of the ring itself under `[IsLinearTopology R R]`. The
-present ideal is available whenever `A` is nonarchimedean, and
+present ideal requires a nonarchimedean additive group (`NonarchimedeanAddGroup A`) and
+jointly continuous multiplication (`ContinuousMul A`). The theorem
 `coe_topologicallyNilpotentIdeal` records that cutting down to `A°` loses no topologically
 nilpotent element.
 
