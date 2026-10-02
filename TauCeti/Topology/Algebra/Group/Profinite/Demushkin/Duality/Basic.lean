@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Cup
 public import TauCeti.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupForm
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.FiniteCoefficients
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.TateDuality
 public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 
