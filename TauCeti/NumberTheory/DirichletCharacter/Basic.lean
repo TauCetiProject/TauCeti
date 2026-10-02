@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import Mathlib.Algebra.Ring.Subring.Basic
 
 /-!
 # Factoring a Dirichlet character through a divisor
@@ -63,6 +64,20 @@ divides `gcd (N, L N / p) = N / p` — stated once for characters valued in any
 -/
 
 public section
+
+namespace MulChar
+
+/-- The zero extension of a unit character belongs to a subring whenever all its unit values do. -/
+theorem ofUnitHom_mem {R R' S : Type*} [CommMonoidWithZero R] [CommRing R']
+    [SetLike S R'] [SubringClass S R'] (χ : Rˣ →* R'ˣ) (s : S)
+    (hχ : ∀ u : Rˣ, (χ u : R') ∈ s) (a : R) : MulChar.ofUnitHom χ a ∈ s := by
+  by_cases ha : IsUnit a
+  · rw [← ha.unit_spec, MulChar.ofUnitHom_coe]
+    exact hχ _
+  · rw [MulChar.map_nonunit _ ha]
+    exact zero_mem s
+
+end MulChar
 
 namespace DirichletCharacter
 

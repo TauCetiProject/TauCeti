@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Coefficient
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.ModularForms.Newforms.FullEigenform
 import Mathlib.Data.Nat.Factorization.Induction
 
@@ -21,7 +22,7 @@ This inclusion supplies the base field
 for studying Galois conjugates within a fixed nebentypus space. Conversely, the Hecke
 recurrences generate every coefficient from those at the primes and the character values, so a
 subfield of `ℂ` contains the coefficient field exactly when it contains these
-(`CoefficientField_le_iff_forall_prime`).
+(`CoefficientField_le_iff_forall_prime_and_char`).
 
 Use `TauCeti.CharacterField χ` for the character field, or `CharacterField χ` after
 `open TauCeti`. Its defining equation, generator membership, and containment criterion are
@@ -162,24 +163,23 @@ theorem CharacterField_le_CoefficientField [NeZero N] (f : HeckeRing.GL2.Newform
 /-- A field contains `CoefficientField f` exactly when it contains the Fourier coefficients of
 `f` at the primes and the values of its nebentypus. The coefficients at the remaining indices
 follow from the Hecke recurrences. -/
-theorem CoefficientField_le_iff_forall_prime [NeZero N] (f : HeckeRing.GL2.Newform N k)
+theorem CoefficientField_le_iff_forall_prime_and_char [NeZero N]
+    (f : HeckeRing.GL2.Newform N k)
     (K : IntermediateField ℚ ℂ) :
     CoefficientField f ≤ K ↔
       (∀ p : ℕ, p.Prime → (qExpansion 1 f.toCuspForm).coeff p ∈ K) ∧
         ∀ u : (ZMod N)ˣ, (f.χ u : ℂ) ∈ K := by
   refine ⟨fun h ↦ ⟨fun p hp ↦ h (coeff_mem_CoefficientField f ⟨p, hp.pos⟩),
     fun u ↦ h (char_mem_CoefficientField f u)⟩, fun ⟨ha, hχ⟩ ↦ ?_⟩
-  have h₁ : (qExpansion 1 f.toEigenform.toCuspForm).coeff 1 = 1 := by
-    rw [HeckeRing.GL2.Newform.toEigenform_toCuspForm]
-    exact f.isNorm
   refine (CoefficientField_le_iff f K).mpr fun n ↦ ?_
-  have hn := f.toEigenform.qExpansion_coeff_mem_of_forall_prime h₁ K (by simpa using ha)
-    (fun p _ ↦ mul_mem ?_ (zpow_mem (natCast_mem K p) _)) n
-  · simpa using hn
-  by_cases hu : IsUnit (p : ZMod N)
-  · rw [HeckeRing.GL2.Newform.toEigenform_χ, ← hu.unit_spec, MulChar.ofUnitHom_coe]
-    exact hχ _
-  · rw [MulChar.map_nonunit _ hu]
-    exact zero_mem K
+  have hχ' : ∀ p : ℕ,
+      (MulChar.ofUnitHom f.toEigenform.χ : DirichletCharacter ℂ N) p ∈ K := by
+    intro p
+    simpa only [HeckeRing.GL2.Newform.toEigenform_χ] using
+      MulChar.ofUnitHom_mem f.χ K hχ (p : ZMod N)
+  have hn := f.toEigenform.qExpansion_coeff_mem_of_forall_prime
+    f.toEigenform_qExpansion_coeff_one K (by simpa using ha)
+    (fun p _ ↦ mul_mem (hχ' p) (zpow_mem (natCast_mem K p) _)) n
+  simpa using hn
 
 end TauCeti

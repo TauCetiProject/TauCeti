@@ -299,16 +299,12 @@ theorem qExpansion_coeff_mem_of_forall_prime {S : Type*} [SetLike S ℂ] [Subrin
         (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
       exact zero_mem s
   | prime_pow p r hp =>
-      have hpow : ∀ r : ℕ, (qExpansion 1 f.toCuspForm).coeff (p ^ r) ∈ s ∧
-          (qExpansion 1 f.toCuspForm).coeff (p ^ (r + 1)) ∈ s := by
-        intro r
-        induction r with
-        | zero => exact ⟨by simp [h₁], by simpa using ha p hp⟩
-        | succ r ih =>
-            refine ⟨ih.2, ?_⟩
-            rw [f.qExpansion_coeff_prime_pow_add_two h₁ hp r]
-            exact sub_mem (mul_mem (ha p hp) ih.2) (mul_mem (hχ p hp) ih.1)
-      exact (hpow r).1
+      induction r using Nat.twoStepInduction with
+      | zero => simp [h₁]
+      | one => simpa using ha p hp
+      | more r ih₁ ih₂ =>
+          rw [f.qExpansion_coeff_prime_pow_add_two h₁ hp r]
+          exact sub_mem (mul_mem (ha p hp) ih₂) (mul_mem (hχ p hp) ih₁)
   | coprime a b _ _ hab ha' hb' =>
       rw [f.qExpansion_coeff_mul h₁ hab]
       exact mul_mem ha' hb'

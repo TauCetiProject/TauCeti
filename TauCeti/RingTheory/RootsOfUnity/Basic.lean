@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
 /-!
 # Basic results on roots of unity
@@ -29,6 +29,10 @@ noncomputable section
 namespace TauCeti
 
 variable {R : Type*} [CommRing R]
+
+/-- Every finite-order element of a commutative ring is integral over `ℤ`. -/
+theorem _root_.IsOfFinOrder.isIntegral {x : R} (hx : IsOfFinOrder x) : IsIntegral ℤ x :=
+  (IsPrimitiveRoot.orderOf x).isIntegral hx.orderOf_pos
 
 /-- In a commutative ring without zero divisors, a root of unity that is congruent to `1` modulo an
 ideal not containing its order is equal to `1`. -/
