@@ -22,11 +22,12 @@ inside `I`, has module-finite quotient, and is stable under every lifted derivat
 on `L` lie in `N`. Moreover, every element nilpotent modulo `I` remains nilpotent modulo the
 refinement, and conversely.
 
-For a solvable Lie algebra in characteristic zero, every derivation takes values in its
-nilradical. `Ideal.exists_cofinite_refinement_stableDerivations_of_isSolvable` therefore supplies
-a refinement stable under all lifted derivations, when the nilradical acts nilpotently modulo
-the original ideal. The general refinement also works over commutative coefficient rings when
-the original quotient is Noetherian, and does not require a free Lie algebra.
+For a finite-dimensional solvable Lie algebra in characteristic zero, every derivation takes
+values in its nilradical. `Ideal.exists_cofinite_refinement_stableDerivations_of_isSolvable`
+therefore supplies a refinement stable under all lifted derivations, when the nilradical acts
+nilpotently modulo the original ideal. The general refinement also works over commutative
+coefficient rings when the original quotient is Noetherian, and does not require a free Lie
+algebra.
 
 ## References
 
@@ -92,10 +93,11 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
 local notation "U" => UniversalEnvelopingAlgebra K L
 
-/-- A cofinite two-sided enveloping ideal of a solvable Lie algebra in characteristic zero,
-on whose quotient the nilradical acts nilpotently, admits a cofinite refinement stable under
-every lifted derivation. The refinement has exactly the same nilpotent elements modulo it
-as the original ideal. -/
+/-- A cofinite two-sided enveloping ideal `I` of a finite-dimensional solvable Lie algebra in
+characteristic zero, on whose quotient the nilradical acts nilpotently, admits a cofinite
+refinement stable under every lifted derivation. The refinement is a power of
+`I ⊔ (nilradical K L).envelopingIdeal` lying inside `I`, and it has exactly the same nilpotent
+elements modulo it as `I`. -/
 theorem _root_.Ideal.exists_cofinite_refinement_stableDerivations_of_isSolvable
     (I : Ideal U) [I.IsTwoSided] [Module.Finite K (U ⧸ I)]
     (hnil : ∀ x : L, x ∈ LieAlgebra.nilradical K L →

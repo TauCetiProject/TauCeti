@@ -12,13 +12,13 @@ public import TauCeti.Algebra.Lie.Solvable.Derived
 # Derivations of solvable Lie algebras take values in the nilradical
 
 Over a field of characteristic zero, every derivation of a finite-dimensional solvable Lie
-algebra has image in the nilradical. In particular, its nilradical is preserved by all derivations.
-This supplies the range containment needed to refine a cofinite enveloping ideal into one stable
-under all lifted derivations, without assuming that the original ideal is stable.
+algebra has image in the nilradical. This supplies the hypothesis on derivation values needed to
+refine a cofinite enveloping ideal into one stable under all lifted derivations, without assuming
+that the original ideal is stable.
 
 Adjoining a derivation as a one-dimensional abelian complement gives a solvable semidirect sum.
 The value of the derivation on an element is a bracket in that sum. The derived ideal is
-nilpotent by `TauCeti.derivedSeries_le_nilradical_of_isSolvable`; its preimage in the original
+nilpotent by `TauCeti.isNilpotent_derivedSeries_of_isSolvable`; its preimage in the original
 algebra is therefore a nilpotent ideal containing every value of the derivation.
 
 ## References
@@ -48,13 +48,12 @@ theorem _root_.LieDerivation.apply_mem_nilradical_of_isSolvable
     { toLinearMap := LinearMap.toSpanSingleton K _ D
       map_lie' := fun {a b} ↦ by
         simp [Ring.lie_def, mul_comm, smul_lie, lie_smul] }
-  have hψ (a : K) : ψ a = a • D := rfl
+  have hψ (a : K) : ψ a = a • D := LinearMap.toSpanSingleton_apply K _ D a
   let E := L ⋊⁅ψ⁆ K
   let i : L →ₗ⁅K⁆ E := SemiDirectSum.inl ψ
   let J : LieIdeal K E := derivedSeries K E 1
-  have hJ : LieRing.IsNilpotent J :=
-    LieIdeal.isNilpotent_of_le (derivedSeries_le_nilradical_of_isSolvable (K := K) (L := E))
-      inferInstance
+  have hJ : LieRing.IsNilpotent J := (LieIdeal.isNilpotent_iff_isNilpotent_ambient _).mpr
+    (isNilpotent_derivedSeries_of_isSolvable (K := K) (L := E) E)
   have hpre : LieRing.IsNilpotent (J.comap i) :=
     J.isNilpotent_comap_of_injective i (SemiDirectSum.inl_injective ψ)
   apply LieIdeal.le_nilradical K L (J.comap i) hpre
@@ -65,14 +64,6 @@ theorem _root_.LieDerivation.apply_mem_nilradical_of_isSolvable
       SemiDirectSum.lie_eq_mk]
     ext <;> simp [hψ, Ring.lie_def]
   rw [LieIdeal.mem_comap, ← hbracket]
-  exact LieSubmodule.lie_mem_lie Submodule.mem_top Submodule.mem_top
-
-/-- The range of a derivation of a finite-dimensional solvable Lie algebra in characteristic
-zero is contained in the underlying submodule of its nilradical. -/
-theorem _root_.LieDerivation.range_le_nilradical_of_isSolvable
-    (D : LieDerivation K L L) :
-    LinearMap.range D.toLinearMap ≤ (LieAlgebra.nilradical K L).toSubmodule := by
-  rintro _ ⟨x, rfl⟩
-  exact D.apply_mem_nilradical_of_isSolvable x
+  exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _)
 
 end TauCeti

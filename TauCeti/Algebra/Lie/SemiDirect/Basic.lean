@@ -31,6 +31,11 @@ tautologically: the kernel of the projection to `L` is an ideal, the range of th
 is a Lie subalgebra, and the two are complementary.  So neither presentation is more general than
 the other, and a theorem may be stated against the external form without loss.
 
+The file also records two closure properties of the external semidirect sum. It is
+module-finite when both factors are, by transport along the linear equivalence `toProdl` with the
+product, and solvable when both factors are, because it is an extension of `L` by `K`: the range of
+`inl` is the kernel of the surjection `projr`.
+
 ## Main definitions
 
 * `LieIdeal.ad`: the adjoint action of `L` on an ideal `S`, as a Lie homomorphism
@@ -53,6 +58,8 @@ the other, and a theorem may be stated against the external form without loss.
   sum is internally presented by the kernel of `projr` and the range of `inr`, with
   `LieAlgebra.SemiDirectSum.exists_lieEquiv_semiDirectSum_ker_projr` the resulting
   reconstruction.
+* Instances `Module.Finite R (K ⋊⁅ψ⁆ L)` and `IsSolvable (K ⋊⁅ψ⁆ L)`: an external semidirect
+  sum of module-finite, resp. solvable, Lie algebras is module-finite, resp. solvable.
 
 ## References
 
