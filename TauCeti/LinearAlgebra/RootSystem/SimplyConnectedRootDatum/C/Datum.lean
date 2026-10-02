@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Model
+import TauCeti.Algebra.Group.Submonoid.Telescoping
 
 /-!
 # The simply connected root datum of type `Cₙ`
