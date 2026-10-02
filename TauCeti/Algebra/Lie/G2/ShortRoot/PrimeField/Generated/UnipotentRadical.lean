@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Smooth
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
 
@@ -35,8 +36,8 @@ The generated subgroup is also smooth and geometrically connected, by
 
 In the namespace `TauCeti.G2ShortRoot.PrimeField`:
 
-* `eq_augmentation_generatedCoordinateHopfAlgebra_of_isNormal_of_smoothUnipotent`: every normal
-  smooth unipotent closed subgroup of `G` is trivial.
+* `eq_augmentation_of_isNormal_of_smoothUnipotent`: every normal smooth unipotent closed subgroup
+  of `G` is trivial.
 * `unipotentRadicalDefiningIdeal_eq_augmentation`: the unipotent radical of `G` is trivial.
 
 ## References
@@ -66,7 +67,7 @@ subgroup is trivial**, over an algebraically closed field of characteristic thre
 
 The conclusion is stated contravariantly: the subgroup's defining Hopf ideal is the augmentation
 ideal of the generated subgroup's coordinate algebra. -/
-theorem eq_augmentation_generatedCoordinateHopfAlgebra_of_isNormal_of_smoothUnipotent
+theorem eq_augmentation_of_isNormal_of_smoothUnipotent
     (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) (hI : I.IsNormal)
     (hU : smoothUnipotentCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient (finiteTypeGeneratedCoordinateHopfAlgebra k) I)) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Smooth
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Basic
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PreservesTensors
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 
