@@ -34,6 +34,10 @@ For a bialgebra homomorphism `f : K →ₐc[R] H` with `hf : ∀ x, f x ∈ A`,
 `hA.codRestrict f hf` is the corestriction to `A`; `hA.coe_codRestrict_apply f hf x`
 identifies its value in `H` with `f x`.
 
+Install the restricted structure locally with `letI : HopfAlgebra R A := hA.hopfAlgebra`.
+Then `hA.comul_apply x`, `hA.counit_apply x`, and `hA.coe_antipode_apply x` identify its
+operations with the restricted comultiplication, ambient counit, and ambient antipode.
+
 ## Main declarations
 
 * `TauCeti.IsHopfSubalgebra`: a subalgebra stable under comultiplication and the
