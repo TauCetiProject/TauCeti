@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.Category
 public import TauCeti.Algebra.Homology.DG.Module.Right.Cohomology
-public import TauCeti.Algebra.Homology.DG.Module.Right.HomComplex
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
 
 /-!
 # Functorial cohomology of differential graded right modules

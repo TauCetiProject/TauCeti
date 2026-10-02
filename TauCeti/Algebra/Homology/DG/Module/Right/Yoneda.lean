@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.GradedCochainComplex
 public import TauCeti.Algebra.Homology.DG.Module.Right.Cohomology
-public import TauCeti.Algebra.Homology.DG.Module.Right.HomComplex
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
 
 /-!
 # The free rank-one right module and the differential graded Yoneda lemma

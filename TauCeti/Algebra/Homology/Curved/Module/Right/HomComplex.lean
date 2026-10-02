@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Defs
-public import TauCeti.Algebra.Homology.DG.Module.Right.HomComplex
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
 
 /-!
 # The Hom complex of curved differential graded right modules
