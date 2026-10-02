@@ -28,10 +28,6 @@ finite projectives, as required when forming the Auslander–Bridger transpose.
 ## References
 
 * M. Auslander, M. Bridger, *Stable module theory*, Mem. Amer. Math. Soc. 94 (1969), Section 2.1.
-
-The constructions use Mathlib's `Module.Basis.constr` and
-`Module.Finite.exists_comp_eq_id_of_projective`, following the retract argument of
-`Module.dual_projective` and `Module.dual_finite` for commutative scalars.
 -/
 
 public section
@@ -39,6 +35,10 @@ public section
 namespace TauCeti
 
 variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Module.Finite R M]
+
+-- The constructions use Mathlib's `Module.Basis.constr` and
+-- `Module.Finite.exists_comp_eq_id_of_projective`, following the retract argument of
+-- `Module.dual_projective` and `Module.dual_finite` for commutative scalars.
 
 /-- The dual of a finite free left module is free over the opposite semiring. -/
 noncomputable instance oppositeDual_free [Module.Free R M] :
