@@ -130,7 +130,8 @@ theorem upperDerivation_upperDerivation_apply (u : Fin 3 → R) (x : Octonion R)
   · simp [cross_self]
 
 /-- Applying `TauCeti.Octonion.lowerDerivation t` twice kills every entry but the lower vector one,
-where it leaves `-2 ⟨t, v⟩ · t`, the mirror image of
+where it leaves `-2 ⟨t, v⟩ · t`: the two cross-product terms vanish because `t ⨯₃ t = 0` and
+`t ⬝ᵥ (t ⨯₃ w) = 0`. This statement is the mirror image of
 `TauCeti.Octonion.upperDerivation_upperDerivation_apply`. -/
 theorem lowerDerivation_lowerDerivation_apply (t : Fin 3 → R) (x : Octonion R) :
     (lowerDerivation t : Module.End R (Octonion R))
@@ -159,8 +160,11 @@ theorem lowerDerivation_upperDerivation_upperDerivation_apply (t u : Fin 3 → R
   · simp
   · simp
 
-/-- **Two lower vector derivations and one upper one land on the diagonal imaginary line**, the
-mirror image of `TauCeti.Octonion.lowerDerivation_upperDerivation_upperDerivation_apply`. -/
+/-- **Two lower vector derivations and one upper one land on the diagonal imaginary line.** The
+double lower derivation of `TauCeti.Octonion.lowerDerivation_lowerDerivation_apply` leaves a pure
+lower vector, which an upper derivation turns into the multiple `2 ⟨t, v⟩ ⟨u, t⟩` of
+`ε = ⟨1, -1, 0, 0⟩`; these statements are the mirror images of
+`TauCeti.Octonion.lowerDerivation_upperDerivation_upperDerivation_apply` and its inputs. -/
 theorem upperDerivation_lowerDerivation_lowerDerivation_apply (u t : Fin 3 → R) (x : Octonion R) :
     (upperDerivation u : Module.End R (Octonion R))
         ((lowerDerivation t : Module.End R (Octonion R))
@@ -186,8 +190,8 @@ theorem upperDerivation_apply_diagonal (u : Fin 3 → R) :
     ring
   · simp
 
-/-- The mirror image of `TauCeti.Octonion.upperDerivation_apply_diagonal`: a lower vector
-derivation moves `ε = ⟨1, -1, 0, 0⟩` onto the lower vector `2 t`. -/
+/-- A lower vector derivation moves `ε = ⟨1, -1, 0, 0⟩` onto the lower vector `2 t`, the mirror
+image of the statement `TauCeti.Octonion.upperDerivation_apply_diagonal`. -/
 theorem lowerDerivation_apply_diagonal (t : Fin 3 → R) :
     (lowerDerivation t : Module.End R (Octonion R)) ⟨1, -1, 0, 0⟩ =
       ⟨0, 0, 0, (2 : R) • t⟩ := by
