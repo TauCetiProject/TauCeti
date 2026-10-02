@@ -81,15 +81,6 @@ theorem meromorphicOrderAt_jCompactified_ofCusp (C : psl2zToPSL2R.range.CuspOrbi
     cuspExtension_cuspDatumInfty]
   exact meromorphicOrderAt_cuspFunction_j
 
-/-- At points of the original quotient, compactification preserves the local multiplicity of
-the descended modular invariant. -/
-@[simp]
-theorem localMultiplicity_jCompactified_ofQuotient
-    (p : orbitRel.Quotient psl2zToPSL2R.range ℍ) :
-    localMultiplicity jCompactified (ofQuotient p) = localMultiplicity jQuotient p := by
-  rw [TauCeti.Subgroup.CompactifiedQuotient.localMultiplicity_ofQuotient,
-    jCompactified_comp_ofQuotient]
-
 /-- The unique cusp is the only pole of the modular invariant on the compactified surface. -/
 @[simp]
 theorem meromorphicOrderAt_jCompactified_nonneg_iff
