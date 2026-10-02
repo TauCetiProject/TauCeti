@@ -72,38 +72,12 @@ local instance : MonoidalCategory (_root_.SheafOfModules.{u}
 local instance : (targetSheafification).Monoidal :=
   sheafificationMonoidal (pushforwardCommRing (J := J) (K := K) F R)
 
-/-- Restriction of the sheafification is naturally isomorphic to sheafification of the
-restricted presheaf. -/
-def pushforwardSheafificationNatIso :
-    sourceSheafification ⋙ pushforwardModule (J := J) (K := K) F R ≅
-      restrictionSheafification := by
-  symm
-  exact NatIso.ofComponents
-    (fun M ↦ (pushforwardSheafificationIso (J := J) (K := K) F (ringCatSheaf R) M).symm)
-    (fun f ↦ pushforwardSheafificationIso_inv_naturality F (ringCatSheaf R) f)
-
-/-- The components are the existing sheafification comparison. -/
-@[simp]
-theorem pushforwardSheafificationNatIso_hom_app
-    (M : PresheafOfModules.{u} (ringCatSheaf R).obj) :
-    (pushforwardSheafificationNatIso (J := J) (K := K) F R).hom.app M =
-      (pushforwardSheafificationIso (J := J) (K := K) F (ringCatSheaf R) M).hom :=
-  (rfl)
-
-/-- The inverse components are the inverse sheafification comparison. -/
-@[simp]
-theorem pushforwardSheafificationNatIso_inv_app
-    (M : PresheafOfModules.{u} (ringCatSheaf R).obj) :
-    (pushforwardSheafificationNatIso (J := J) (K := K) F R).inv.app M =
-      (pushforwardSheafificationIso (J := J) (K := K) F (ringCatSheaf R) M).inv :=
-  (rfl)
-
 /-- Sheaf restriction lifts presheaf restriction followed by sheafification through the
 source sheafification localization. -/
 local instance restrictionLifting : CategoryTheory.Localization.Lifting
     sourceSheafification sourceW restrictionSheafification
       (pushforwardModule (J := J) (K := K) F R) where
-  iso := pushforwardSheafificationNatIso F R
+  iso := pushforwardSheafificationNatIso F (ringCatSheaf R)
 
 /-- Presheaf restriction is strong monoidal because its coefficient comparison is the identity. -/
 local instance presheafRestrictionMonoidal : (presheafRestriction).Monoidal := by
@@ -130,7 +104,9 @@ instance pushforwardModuleMonoidal :
 monoidal structure with precomposition and sheafification of presheaves. -/
 instance pushforwardSheafificationNatIso_isMonoidal :
     @NatTrans.IsMonoidal _ _ _ _ _ _ _ _
-      (pushforwardSheafificationNatIso (J := J) (K := K) F R).hom inferInstance
+      (pushforwardSheafificationNatIso (J := J) (K := K) F (ringCatSheaf R)).hom
+      (inferInstanceAs (sourceSheafification ⋙
+        pushforwardModule (J := J) (K := K) F R).LaxMonoidal)
       (restrictionSheafificationMonoidal F R).toLaxMonoidal :=
   @CategoryTheory.Localization.Monoidal.lifting_isMonoidal
     _ _ _ _ _ _ _ _ _ sourceSheafification sourceW _ _
