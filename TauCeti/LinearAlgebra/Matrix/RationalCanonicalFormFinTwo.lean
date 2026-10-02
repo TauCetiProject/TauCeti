@@ -14,9 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
 -- `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`, Cayley-Hamilton in size two.
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
--- The entry identities below are polynomial, and are solved by `ring` and `linear_combination`.
+-- `linear_combination` solves the entry identities that make a matrix scalar.
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
 
 /-!
 # Rational canonical form in size two
@@ -132,22 +131,20 @@ theorem exists_det_ne_zero_mul_eq_mul_companionFinTwo
     (hM : M ∉ Set.range (Matrix.scalar (Fin 2))) :
     ∃ P : Matrix (Fin 2) (Fin 2) R,
       P.det ≠ 0 ∧ M * P = P * companionFinTwo M.trace M.det := by
-  suffices ∃ v : Fin 2 → R, !![v 0, (M *ᵥ v) 0; v 1, (M *ᵥ v) 1].det ≠ 0 by
+  suffices ∃ v : Fin 2 → R, (of ![v, M *ᵥ v])ᵀ.det ≠ 0 by
     obtain ⟨v, hv⟩ := this
-    refine ⟨_, hv, ?_⟩
     have hCH : M *ᵥ (M *ᵥ v) = M.trace • (M *ᵥ v) - M.det • v := by
       rw [mulVec_mulVec, ← sq, sq_eq_trace_smul_sub_det_smul_one_fin_two, sub_mulVec,
         smul_mulVec, smul_mulVec, one_mulVec]
-    ext i j
-    have hCHi := congrFun hCH i
-    fin_cases i <;> fin_cases j <;>
-      simp [companionFinTwo, mul_apply, Fin.sum_univ_two, mulVec, dotProduct] at hCHi ⊢ <;>
-      linear_combination hCHi
+    refine ⟨_, hv, ext_col fun j => ?_⟩
+    rw [col_mul_eq_mulVec_col, col_mul_eq_mulVec_col, mulVec_transpose]
+    fin_cases j <;> simp [companionFinTwo, col_apply', hCH, sub_eq_neg_add]
   by_contra! h
-  have h10 : M 1 0 = 0 := by simpa [det_fin_two_of, mulVec, dotProduct] using h ![1, 0]
-  have h01 : M 0 1 = 0 := by simpa [det_fin_two_of, mulVec, dotProduct] using h ![0, 1]
+  simp only [det_transpose, det_fin_two, of_apply, cons_val_zero, cons_val_one] at h
+  have h10 : M 1 0 = 0 := by simpa [mulVec, dotProduct] using h ![1, 0]
+  have h01 : M 0 1 = 0 := by simpa [mulVec, dotProduct] using h ![0, 1]
   have h11 : M 1 0 + M 1 1 - (M 0 0 + M 0 1) = 0 := by
-    simpa [det_fin_two_of, mulVec, dotProduct] using h ![1, 1]
+    simpa [mulVec, dotProduct] using h ![1, 1]
   exact hM (mem_range_scalar_fin_two_iff.2 ⟨h01, h10, by linear_combination h10 - h01 - h11⟩)
 
 end CommRing
