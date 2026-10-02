@@ -38,6 +38,7 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- Under extension of archimedean completions the normalized absolute value is raised to the
 local degree. This includes the real-to-complex case and the value at zero. -/
+@[simp↓]
 theorem infiniteCompletionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
     infiniteCompletionNormalizedAbsValue w (LiesOver.completionMap x) =
@@ -61,6 +62,7 @@ variable [NumberField K] [NumberField L]
 open Classical in
 /-- The product of normalized absolute values over the infinite places above `v` is the
 normalized absolute value at `v` raised to the global degree. -/
+@[simp↓]
 theorem prod_infiniteCompletionNormalizedAbsValue_completionMap
     (v : InfinitePlace K) (x : v.Completion) :
     ∏ w : {w : InfinitePlace L // w.LiesOver v}, infiniteCompletionNormalizedAbsValue w.1

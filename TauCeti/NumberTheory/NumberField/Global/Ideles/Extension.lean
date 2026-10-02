@@ -93,6 +93,18 @@ theorem ideleExtension_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
   simpa only [MonoidHom.comp_apply, coe_ideleExtension, RingHom.comp_apply] using
     RingHom.congr_fun (NumberField.adeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M) x
 
+/-- The infinite coordinate of an extended idele is the image of the source coordinate at the
+place below under the completion map. -/
+@[simp]
+theorem ideleInfiniteCoord_ideleExtension (w : InfinitePlace L) (x : IdeleGroup (𝓞 K) K) :
+    w.ideleInfiniteCoord (ideleExtension K L x) =
+      Units.map (LiesOver.completionMap (v := w.comap (algebraMap K L)) (w := w)).toMonoidHom
+        ((w.comap (algebraMap K L)).ideleInfiniteCoord x) := by
+  apply Units.ext
+  simp only [InfinitePlace.coe_ideleInfiniteCoord, coe_ideleExtension,
+    NumberField.adeleExtension_fst, NumberField.infiniteAdeleExtension_apply, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+
 variable {K L}
 
 private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
@@ -113,10 +125,12 @@ private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) 
     rw [← prod_infiniteCompletionNormalizedAbsValue_completionMap v (v.ideleInfiniteCoord x)]
     apply Fintype.prod_equiv e
     rintro ⟨w, hw⟩
+    simp only [e, Equiv.subtypeEquivRight_apply]
     have hw' : w.comap (algebraMap K L) = v := hw
     subst v
-    simp only [e, Equiv.subtypeEquivRight_apply, InfinitePlace.coe_ideleInfiniteCoord,
-      coe_ideleExtension, NumberField.adeleExtension_fst, NumberField.infiniteAdeleExtension_apply]
+    rw [ideleInfiniteCoord_ideleExtension, Units.coe_map,
+      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+    -- The subtype equivalence preserves the place; its lies-over witnesses are proof-irrelevant.
     rfl
   simp_rw [h]
   exact Finset.prod_pow _ _ _
