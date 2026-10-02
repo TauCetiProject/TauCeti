@@ -26,8 +26,10 @@ quasi-coherent module of finite type to glue to a quasi-coherent ideal sheaf; fo
 relative differentials, this compatibility is used in constructing the intended singular-locus
 ideal.
 
-Base change to the residue field `κ(p)` of a prime `p` identifies the zero locus of `Fitt_k(M)`:
-`Fitt_k(M) ⊆ p` exactly when the fibre `κ(p) ⊗[R] M` has dimension greater than `k`.
+Base change to a field `K` detects the rank of the fibre: `Fitt_k(M)` extends to the zero ideal
+of `K` exactly when `K ⊗[R] M` has dimension greater than `k`. For the residue field `κ(p)` of a
+prime `p`, this identifies the zero locus of `Fitt_k(M)`: `Fitt_k(M) ⊆ p` exactly when the fibre
+`κ(p) ⊗[R] M` has dimension greater than `k`.
 
 ## Main results
 
@@ -38,6 +40,8 @@ Base change to the residue field `κ(p)` of a prime `p` identifies the zero locu
 * `TauCeti.fittingIdeal_baseChange`: `Fitt_k(S ⊗[R] M) = Fitt_k(M) S`.
 * `IsBaseChange.fittingIdeal_eq_map`: the same for any base change of `M`, in particular for a
   localization of `M`.
+* `TauCeti.fittingIdeal_map_eq_bot_iff_lt_finrank`: `Fitt_k(M) K = 0` for a field `K` exactly
+  when `k < dim_K K ⊗[R] M`.
 * `TauCeti.fittingIdeal_le_iff_lt_finrank`: `Fitt_k(M) ⊆ p` exactly when
   `k < dim_{κ(p)} κ(p) ⊗[R] M`.
 
@@ -165,17 +169,20 @@ namespace TauCeti
 variable {R F M : Type*} [CommRing R] [AddCommGroup F] [Module R F] [AddCommGroup M]
   [Module R M] [Module.Finite R M]
 
+/-- The extension of `Fitt_k(M)` to a field `K` vanishes exactly when the fibre `K ⊗[R] M` has
+dimension greater than `k`. -/
+theorem fittingIdeal_map_eq_bot_iff_lt_finrank (K : Type*) [Field K] [Algebra R K] (k : ℕ) :
+    (fittingIdeal R M k).map (algebraMap R K) = ⊥ ↔ k < finrank K (K ⊗[R] M) := by
+  rw [← not_le, ← fittingIdeal_eq_top_iff_finrank_le, fittingIdeal_baseChange]
+  -- An ideal of the field `K` is `⊥` or `⊤`.
+  rcases Ideal.eq_bot_or_top ((fittingIdeal R M k).map (algebraMap R K)) with h | h <;> simp [h]
+
 /-- The zero locus of the `k`-th Fitting ideal of a finite module `M` is the set of primes `p` at
 which the fibre `κ(p) ⊗[R] M` has dimension greater than `k`. -/
 @[simp]
 theorem fittingIdeal_le_iff_lt_finrank (p : Ideal R) [p.IsPrime] (k : ℕ) :
     fittingIdeal R M k ≤ p ↔ k < finrank p.ResidueField (p.ResidueField ⊗[R] M) := by
-  have hle : fittingIdeal R M k ≤ p ↔
-      (fittingIdeal R M k).map (algebraMap R p.ResidueField) = ⊥ := by
-    rw [Ideal.map_eq_bot_iff_le_ker, Ideal.ker_algebraMap_residueField]
-  rw [hle, ← not_le, ← fittingIdeal_eq_top_iff_finrank_le, fittingIdeal_baseChange]
-  -- An ideal of the field `κ(p)` is `⊥` or `⊤`.
-  rcases Ideal.eq_bot_or_top ((fittingIdeal R M k).map (algebraMap R p.ResidueField)) with
-    h | h <;> simp [h]
+  rw [← fittingIdeal_map_eq_bot_iff_lt_finrank, Ideal.map_eq_bot_iff_le_ker,
+    Ideal.ker_algebraMap_residueField]
 
 end TauCeti
