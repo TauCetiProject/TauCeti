@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Dual.Opposite
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import Mathlib.Algebra.Exact.Basic
-public import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Double dualization of a projective presentation
@@ -86,6 +85,16 @@ theorem doubleDualPresentationEquiv_mk (f : P₁ →ₗ[A] P₀) (g : P₀ →�
   rw [doubleDualPresentationEquiv, LinearEquiv.trans_apply, doubleDualCokernelEquiv_mk,
     ← Function.Exact.linearEquivOfSurjective_symm_apply hexact hsurj,
     LinearEquiv.apply_symm_apply]
+
+/-- Inverse double-dual presentation transport sends the image of a presenting vector to its
+evaluation functional. -/
+@[simp]
+theorem doubleDualPresentationEquiv_symm_apply (f : P₁ →ₗ[A] P₀) (g : P₀ →ₗ[A] M)
+    (hexact : Function.Exact f g) (hsurj : Function.Surjective g) (x : P₀) :
+    (doubleDualPresentationEquiv A f g hexact hsurj).symm (g x) =
+      Submodule.Quotient.mk (opDualEval A P₀ x) := by
+  rw [doubleDualPresentationEquiv, LinearEquiv.symm_trans_apply,
+    Function.Exact.linearEquivOfSurjective_symm_apply, doubleDualCokernelEquiv_symm_mk]
 
 /-- Transposing the dual of a finite-projective presenting map recovers its cokernel,
 with the double opposite identified with the original ring. -/
