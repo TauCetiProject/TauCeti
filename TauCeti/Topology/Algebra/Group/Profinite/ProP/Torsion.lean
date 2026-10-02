@@ -205,24 +205,16 @@ theorem exists_continuousLinearEquiv_pi_padicInt_prod_torsion (hA : IsProP p A)
   -- A linear section of the projection, which exists because `ℤ_p ^ r` is free.
   obtain ⟨s, hs⟩ := Module.projective_lifting_property (g : Additive A →ₗ[ℤ_[p]] (Fin r → ℤ_[p]))
     LinearMap.id hsurj
-  have hgs : ∀ a, g (s a) = a := fun a ↦ LinearMap.congr_fun hs a
-  -- The map `(a, t) ↦ s a + t` is a continuous linear bijection from a compact space to a
-  -- Hausdorff one, hence a continuous linear equivalence.
-  let Φ : ((Fin r → ℤ_[p]) × T) →ₗ[ℤ_[p]] Additive A := s.coprod T.subtype
-  have hΦ : ∀ y, Φ y = s y.1 + y.2 := fun _ ↦ rfl
-  have hbij : Function.Bijective Φ := by
-    refine ⟨fun y z hyz ↦ ?_, fun x ↦ ⟨(g x, ⟨x - s (g x), (hker _).1 (by simp [hgs])⟩), ?_⟩⟩
-    · rw [hΦ, hΦ] at hyz
-      have h₁ : y.1 = z.1 := by
-        simpa [hgs, (hker _).2 y.2.2, (hker _).2 z.2.2] using congrArg g hyz
-      refine Prod.ext h₁ (Subtype.ext ?_)
-      rwa [h₁, add_right_inj] at hyz
-    · simp [hΦ]
-  have hcont : Continuous Φ :=
-    ((LinearMap.continuous_on_pi s).comp continuous_fst).add
-      (continuous_subtype_val.comp continuous_snd)
+  -- The section splits `0 → T → A → ℤ_p ^ r → 0`, so `(a, t) ↦ t + s a` is a linear
+  -- equivalence; it is continuous from a compact space to a Hausdorff one, hence a continuous
+  -- linear equivalence.
+  have hex : Function.Exact T.subtype g := fun x ↦ by simp [hker]
+  let e : ((Fin r → ℤ_[p]) × T) ≃ₗ[ℤ_[p]] Additive A := (LinearEquiv.prodComm ℤ_[p] _ _).trans
+    (hex.splitSurjectiveEquiv T.injective_subtype ⟨s, hs⟩).1.symm
+  have he : ⇑e = fun y ↦ y.2 + s y.1 := rfl
+  have hcont : Continuous e := he ▸ (continuous_subtype_val.comp continuous_snd).add
+    ((LinearMap.continuous_on_pi s).comp continuous_fst)
   have : Finite T := hA.finite_torsion_module hfg
-  let e := LinearEquiv.ofBijective Φ hbij
   exact ⟨r, ⟨({ e with
       continuous_toFun := hcont
       continuous_invFun := hcont.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv) } :
