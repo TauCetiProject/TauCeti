@@ -32,7 +32,9 @@ the sheafification of the presheaf internal Hom.
 * `TauCeti.SheafOfModules.monoidalClosed` gives the closed structure on sheaves of modules;
 * `TauCeti.SheafOfModules.monoidalPreadditive` makes tensoring additive in each variable;
 * `SheafOfModules.ihom_obj` identifies its internal Hom object with the sheafification of the
-  presheaf internal Hom.
+  presheaf internal Hom;
+* `SheafOfModules.dual` and `SheafOfModules.dualIso` give the internal-Hom dual and its action on
+  isomorphisms.
 
 The use of the special adjoint functor theorem and Day reflection follows the construction of
 closed monoidal structures on sheaf categories in Mathlib's
@@ -97,6 +99,20 @@ theorem _root_.SheafOfModules.ihom_map
     (ihom M).map f =
       (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
         ((ihom M.val).map f.val) := rfl
+
+/-- The internal-Hom dual of a sheaf of modules. -/
+abbrev _root_.SheafOfModules.dual
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    _root_.SheafOfModules.{u} (ringCatSheaf R) :=
+  (ihom M).obj (_root_.SheafOfModules.unit (ringCatSheaf R))
+
+/-- An isomorphism of sheaves induces an isomorphism of their duals. -/
+def _root_.SheafOfModules.dualIso {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    (e : M ≅ N) : M.dual ≅ N.dual := by
+  have hpre : IsIso (pre e.inv) := by
+    unfold pre
+    infer_instance
+  exact asIso ((pre e.inv).app (_root_.SheafOfModules.unit (ringCatSheaf R)))
 
 end SheafOfModules
 

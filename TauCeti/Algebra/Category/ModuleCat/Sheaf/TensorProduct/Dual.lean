@@ -49,8 +49,6 @@ basis sections of `free I` they give `δᵢⱼ`.
 * `TauCeti.SheafOfModules.dualFreeι`: the basis sections of the dual sheaf;
 * `TauCeti.SheafOfModules.ιFree_tensorHom_dualFreeι_comp_ev` and its `_of_ne` variant: the
   dual basis;
-* `SheafOfModules.dual` and `SheafOfModules.dualIso`: the internal-Hom dual and its action on
-  isomorphisms;
 * `SheafOfModules.isIso_evaluation_dual_of_iso_freePUnit`: evaluation against the dual is an
   isomorphism for a sheaf isomorphic to the standard free rank-one sheaf.
 -/
@@ -245,20 +243,6 @@ theorem ιFree_tensorHom_dualFreeι_comp_ev_of_ne {i j : I} (h : i ≠ j) :
   simpa only [dualFreeι, dualFreeIso, tensorUnit_eq, SheafOfModules.ihom_obj] using
     (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree j)).trans
       (ιFree_tensorHom_ιFree_evaluation_of_ne (R := R) h)
-
-/-- The internal-Hom dual of a sheaf of modules. -/
-abbrev _root_.SheafOfModules.dual
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
-    _root_.SheafOfModules.{u} (ringCatSheaf R) :=
-  (ihom M).obj (unit (ringCatSheaf R))
-
-/-- An isomorphism of sheaves induces an isomorphism of their duals. -/
-def _root_.SheafOfModules.dualIso {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
-    (e : M ≅ N) : M.dual ≅ N.dual := by
-  have hpre : IsIso (pre e.inv) := by
-    unfold pre
-    infer_instance
-  exact asIso ((pre e.inv).app (unit (ringCatSheaf R)))
 
 private lemma ιFree_pUnit_eq_sigma_ι :
     ιFree (R := ringCatSheaf R) PUnit.unit =
