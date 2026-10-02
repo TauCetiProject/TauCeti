@@ -12,10 +12,11 @@ public import TauCeti.Analysis.Calculus.ContDiff.TaylorInverse
 /-!
 # Continuity of inversion in the weak Whitney topology
 
-The inverse of a diffeomorphism of a compact manifold depends continuously on the
-diffeomorphism in the weak Whitney topology. Together with continuity of composition, this
-makes the self-diffeomorphisms a topological group. The result includes manifolds with boundary
-and corners and arbitrary differentiability order, including smooth maps.
+For compact manifolds with a locally compact source model space, the inverse of a
+diffeomorphism depends continuously on the diffeomorphism in the weak Whitney topology.
+Together with continuity of composition, this makes the self-diffeomorphisms a topological
+group. The result includes manifolds with boundary and corners and arbitrary differentiability
+order, including smooth maps.
 
 Higher inverse derivatives are recovered recursively from the Faà di Bruno formula for
 `f.symm ∘ f = id`. The singleton-partition term is invertible; every remaining term uses a
@@ -177,11 +178,11 @@ theorem tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
         fderivWithin_diffeomorph_chart_symm_comp f.symm hn' (ψ.map_target hw) hf
     -- Recover the next inverse coefficient from the lower ones and the identity composite.
     apply Filter.Tendsto.of_taylorComp (q := q) (p := p) (q₀ := q₀) (p₀ := p₀)
-      (A := A) (A₀ := A₀)
-    · intro k hk
+      (A := A) (A₀ := A₀) (Nat.zero_lt_succ m)
+    · intro k _ hk
       have hk' : (k : ℕ∞ω) ≤ m + 1 := by exact_mod_cast Nat.le_of_lt hk
       exact ih k hk (hk'.trans hm)
-    · intro k hk
+    · intro k _ hk
       have hk' : (k : ℕ∞ω) ≤ m + 1 := by exact_mod_cast hk
       simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk, Function.comp_def,
         ftaylorSeriesWithin, p, p₀, φ, ψ] using
@@ -210,7 +211,7 @@ variable [CompactSpace M] [CompactSpace N] [T2Space N] [LocallyCompactSpace E]
   [IsManifold I n M] [IsManifold J n N]
 
 /-- Inversion of diffeomorphisms is continuous for the weak Whitney topology on compact
-manifolds, at every differentiability order. -/
+manifolds whose source model space is locally compact, at every differentiability order. -/
 theorem continuous_symm : Continuous (Diffeomorph.symm : (M ≃ₘ^n⟮I, J⟯ N) → N ≃ₘ^n⟮J, I⟯ M) := by
   refine continuous_weakWhitney_iff.mpr ?_
   refine continuous_iff_continuousAt.mpr fun f₀ ↦ ?_
@@ -229,13 +230,14 @@ theorem continuous_symm : Continuous (Diffeomorph.symm : (M ≃ₘ^n⟮I, J⟯ N
   have hD := (TauCeti.tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
     w.2 (h₀ w hw).1 hm).eventually (hV.mem_nhds (h₀ w hw).2)
   rw [nhds_prod_eq] at hsrc ⊢
-  convert hsrc.and ((tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually hD) using 1
-  rfl
+  simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk, Function.comp_def,
+    Prod.map_fst, Prod.map_snd, id_eq, Membership.mem, Set.Mem] using
+    hsrc.and ((tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually hD)
 
 variable [T2Space M]
 
-/-- Self-diffeomorphisms of a compact Hausdorff manifold form a topological group for the
-weak Whitney topology. -/
+/-- Self-diffeomorphisms of a compact Hausdorff manifold with a locally compact model space
+form a topological group for the weak Whitney topology. -/
 theorem isTopologicalGroup : IsTopologicalGroup (M ≃ₘ^n⟮I, I⟯ M) where
   continuous_mul := continuousMul.continuous_mul
   continuous_inv := continuous_symm

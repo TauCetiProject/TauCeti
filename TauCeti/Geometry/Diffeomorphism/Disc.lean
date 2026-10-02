@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Basic
-public import TauCeti.Geometry.Diffeomorphism.Topology
+public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Topology
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.HomotopyGroup
