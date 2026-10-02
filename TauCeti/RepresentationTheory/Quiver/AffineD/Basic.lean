@@ -10,15 +10,15 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Order.Fin.Basic
 
 /-!
-# The extended Dynkin quiver of type `D̃`
+# The extended Dynkin quiver of type `D~`
 
 For `m : ℕ`, the quiver `TauCeti.Quiver.AffineD m` has a *spine* of `m + 1` vertices
 `spine 0 → spine 1 → ⋯ → spine m`, joined by one arrow from each spine vertex to the next, and
 four *leaves*: the leaves `0` and `1` each carry one arrow into the first spine vertex `spine 0`,
 and the leaves `2` and `3` each carry one arrow into the last spine vertex `spine m`. Its
-underlying graph is the extended Dynkin diagram `D̃ₘ₊₄`, on `m + 5` vertices, in one fixed
+underlying graph is the extended Dynkin diagram `D~ₘ₊₄`, on `m + 5` vertices, in one fixed
 orientation. For `m = 0` the spine is a single vertex receiving all four arrows, and the quiver is
-the four subspace quiver `TauCeti.Quiver.Subspace (Fin 4)` of the extended Dynkin diagram `D̃₄`.
+the four subspace quiver `TauCeti.Quiver.Subspace (Fin 4)` of the extended Dynkin diagram `D~₄`.
 
 This file carries the vertex and arrow data alone; the representation theory, that the quiver has
 infinite representation type, is in `TauCeti.RepresentationTheory.Quiver.AffineD.FiniteRepType`.
@@ -46,7 +46,7 @@ namespace TauCeti
 
 namespace Quiver
 
-/-- The extended Dynkin quiver `D̃ₘ₊₄`: a spine of `m + 1` vertices with an arrow from each to the
+/-- The extended Dynkin quiver `D~ₘ₊₄`: a spine of `m + 1` vertices with an arrow from each to the
 next, and four leaves, two attached by an arrow into each end of the spine. -/
 inductive AffineD (m : ℕ) : Type
   | /-- The leaf indexed by `i`, the tail of a single arrow into an end of the spine. -/
@@ -76,7 +76,7 @@ def vertexEquiv : AffineD m ≃ Fin 4 ⊕ Fin (m + 1) where
 
 instance : Fintype (AffineD m) := Fintype.ofEquiv _ (vertexEquiv m).symm
 
-/-- `TauCeti.Quiver.AffineD m` has `m + 5` vertices, as the extended Dynkin diagram `D̃ₘ₊₄`
+/-- `TauCeti.Quiver.AffineD m` has `m + 5` vertices, as the extended Dynkin diagram `D~ₘ₊₄`
 should. -/
 @[simp]
 theorem card_eq : Fintype.card (AffineD m) = m + 5 := by

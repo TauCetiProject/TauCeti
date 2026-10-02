@@ -9,10 +9,10 @@ public import TauCeti.RepresentationTheory.Quiver.AffineD.Basic
 public import TauCeti.RepresentationTheory.Quiver.Subspace.FiniteRepType
 
 /-!
-# The extended Dynkin quiver `D̃ₙ` has infinite representation type
+# The extended Dynkin quiver `D~ₙ` has infinite representation type
 
 The quiver `TauCeti.Quiver.AffineD m`, whose underlying graph is the extended Dynkin diagram
-`D̃ₘ₊₄`, has infinitely many finite-dimensional indecomposable representations over every field
+`D~ₘ₊₄`, has infinitely many finite-dimensional indecomposable representations over every field
 (`TauCeti.not_isFiniteRepType_affineD`).
 
 The proof reduces to the four subspace quiver, the case `m = 0`, which is already known to have
@@ -261,7 +261,7 @@ theorem IsFiniteRepType.subspace_fin_four_of_affineD
     (fun _ hM hM' _ ↦ ⟨isFinDim_affineDStretchRep hM, indecomposable_affineDStretchRep hM'⟩)
     (fun _ _ _ _ _ _ ↦ nonempty_affineDStretchRep_iso_iff.mp) (fun _ _ _ _ h _ ↦ h.elim) h
 
-/-- **The extended Dynkin quiver `D̃ₘ₊₄` has infinite representation type over every field.** The
+/-- **The extended Dynkin quiver `D~ₘ₊₄` has infinite representation type over every field.** The
 stretches along its spine of the Jordan block configurations of four subspaces
 (`TauCeti.subspaceJordanRep`) are infinitely many pairwise non-isomorphic finite-dimensional
 indecomposables. -/
