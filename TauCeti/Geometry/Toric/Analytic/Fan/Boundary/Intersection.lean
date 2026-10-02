@@ -95,7 +95,7 @@ theorem existsUnique_iInter_analyticBoundaryComponent_eq_closure (S : Set Phi.Ra
           closure (Phi.analyticConeOrbit hPhi sigma) := by
   obtain ⟨tau, hTau⟩ := (Phi.nonempty_iInter_analyticBoundaryComponent_iff hPhi S).mp hS
   obtain ⟨sigma, -, hSigma⟩ :=
-    Phi.exists_cone_rays_eq ((isRegular_iff.mp hPhi) tau.1 tau.2) hTau
+    Phi.exists_cone_rays_eq (((isRegular_iff.mp hPhi) tau.1 tau.2).isSimplicial Phi.lattice) hTau
   have hEq : (⋂ rho ∈ S, Phi.analyticBoundaryComponent hPhi rho) =
       closure (Phi.analyticConeOrbit hPhi sigma) := by
     rw [← Phi.iInter_analyticBoundaryComponent_eq_closure_analyticConeOrbit hPhi sigma]

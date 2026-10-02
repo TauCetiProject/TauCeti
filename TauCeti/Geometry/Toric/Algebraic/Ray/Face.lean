@@ -23,6 +23,7 @@ cone index the coordinates of the mixed chart, a face is cut out by demanding th
 coordinates of its rays vanish, and the face lattice must match the lattice of such coordinate
 conditions.
 
+The subset-of-rays existence theorem is also provided directly for simplicial cones.
 Regularity is used only through simpliciality, and simpliciality cannot be dropped: the cone over
 a square in `ℝ³`, spanned by `(1, 0, 1)`, `(0, 1, 1)`, `(-1, 0, 1)` and `(0, -1, 1)`, is salient
 with four rays, but the cone spanned by two opposite rays is not a face, so its ten faces do not
@@ -30,6 +31,8 @@ exhaust the sixteen subsets of its rays.
 
 ## Main declarations
 
+* `TauCeti.Toric.exists_face_rays_eq_of_isSimplicial`: any subset of the rays of a simplicial
+  cone is exactly the set of rays contained in one of its faces.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso`: the face lattice of a regular cone is the lattice
   of subsets of its rays.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso_apply`: the subset attached to a face is the set of
@@ -120,6 +123,41 @@ theorem finrank_span_face_eq_card_rays_of_isSimplicial (hσ : σ.IsSimplicial) (
     exact PointedCone.subset_hull ⟨a, rfl⟩
   rw [he]
   simpa using (Nat.card_congr (toricRayEquivOfLinearIndependent v hv hcone)).symm
+
+/-- Any subset of the rays of a simplicial cone is exactly the set of rays contained in a face.
+The empty subset gives the zero face. -/
+theorem exists_face_rays_eq_of_isSimplicial (hσ : σ.IsSimplicial) (A : Set (ToricRay σ)) :
+    ∃ F : σ.Face, ∀ ρ : ToricRay σ, ρ.toPointedCone ≤ F.toPointedCone ↔ ρ ∈ A := by
+  classical
+  obtain ⟨s, hs, hli, hsσ⟩ := hσ
+  let _ : Fintype s := hs.fintype
+  let v : s → V := Subtype.val
+  have hv : LinearIndependent ℝ v := linearIndependent_subtype_iff.mpr hli
+  have hcone : σ = PointedCone.hull ℝ (Set.range v) := by
+    have hrange : Set.range v = s := by ext x; simp [v]
+    rw [hrange]
+    exact hsσ.symm
+  let e := PointedCone.faceOrderIsoSet hv hcone
+  -- One-dimensional faces correspond to singleton subsets of the independent generators.
+  have hsingle (ρ : ToricRay σ) : ∃ a : s, e ρ.1 = {a} := by
+    apply Set.ncard_eq_one.mp
+    simpa only [← Nat.card_coe_set_eq] using
+      (finrank_span_face_eq_card_faceOrderIsoSet v hv hcone ρ.1).symm.trans ρ.2
+  choose a ha using hsingle
+  have hinj : Function.Injective a := by
+    intro ρ ν h
+    apply Subtype.ext
+    apply e.injective
+    rw [ha ρ, ha ν, h]
+  refine ⟨e.symm (a '' A), fun ρ ↦ ?_⟩
+  -- The face order is the order of its underlying pointed cones.
+  change ρ.1 ≤ e.symm (a '' A) ↔ ρ ∈ A
+  rw [← e.le_iff_le, e.apply_symm_apply, ha, Set.singleton_subset_iff]
+  constructor
+  · rintro ⟨ν, hν, h⟩
+    exact hinj h ▸ hν
+  · intro hρ
+    exact ⟨ρ, hρ, rfl⟩
 
 namespace IsRegularCone
 
