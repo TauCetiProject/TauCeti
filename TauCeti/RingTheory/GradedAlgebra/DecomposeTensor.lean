@@ -12,9 +12,9 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 /-!
 # Graded pieces of an algebra tensored on the right with an algebra
 
-For a family of submodules `𝒜 i` of an `R`-algebra `A` and an `R`-module `H`, Mathlib's
+For a family of submodules `𝒜 i` of an `R`-module `A` and an `R`-module `H`, Mathlib's
 `DirectSum.decomposeTensor 𝒜 H i` is the image of `𝒜 i ⊗[R] H` in `A ⊗[R] H`; it is a
-decomposition of `A ⊗[R] H` when `𝒜` is one of `A`. When `H` is itself an `R`-algebra and `𝒜`
+decomposition of `A ⊗[R] H` when `𝒜` is one of `A`. When `A` and `H` are `R`-algebras and `𝒜`
 is a graded monoid, these pieces multiply according to the grading of `A`: `A ⊗[R] H` is graded
 with `H` in degree zero.
 
@@ -25,9 +25,9 @@ generators of degree one into the degree-one piece preserves every degree.
 
 ## Main results
 
-* `DirectSum.tmul_mem_decomposeTensor`: a pure tensor with homogeneous left factor is
+* `TauCeti.DirectSum.tmul_mem_decomposeTensor`: a pure tensor with homogeneous left factor is
   homogeneous of the same degree.
-* `DirectSum.decomposeTensor.gradedMonoid`: the pieces `decomposeTensor 𝒜 H i` form a graded
+* `TauCeti.DirectSum.decomposeTensor.gradedMonoid`: the pieces `decomposeTensor 𝒜 H i` form a graded
   monoid.
 -/
 
@@ -35,13 +35,15 @@ public section
 
 open scoped TensorProduct
 
-namespace DirectSum
+open DirectSum
 
-variable {ι R A H : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+namespace TauCeti.DirectSum
+
+variable {ι R A H : Type*} [CommSemiring R]
 
 section Module
 
-variable [AddCommMonoid H] [Module R H] {𝒜 : ι → Submodule R A}
+variable [AddCommMonoid A] [Module R A] [AddCommMonoid H] [Module R H] {𝒜 : ι → Submodule R A}
 
 /-- A pure tensor whose left factor lies in `𝒜 i` lies in the `i`-th piece of `A ⊗[R] H`. -/
 theorem tmul_mem_decomposeTensor {i : ι} {a : A} (ha : a ∈ 𝒜 i) (h : H) :
@@ -51,7 +53,7 @@ theorem tmul_mem_decomposeTensor {i : ι} {a : A} (ha : a ∈ 𝒜 i) (h : H) :
 
 end Module
 
-variable [AddMonoid ι] [Semiring H] [Algebra R H] (𝒜 : ι → Submodule R A)
+variable [Semiring A] [Algebra R A] [AddMonoid ι] [Semiring H] [Algebra R H] (𝒜 : ι → Submodule R A)
   [SetLike.GradedMonoid 𝒜]
 
 /-- A pure tensor with homogeneous left factor multiplies a homogeneous element by adding the
@@ -82,4 +84,4 @@ instance decomposeTensor.gradedMonoid : SetLike.GradedMonoid (decomposeTensor �
       rw [map_add, add_mul]
       exact add_mem h₁ h₂
 
-end DirectSum
+end TauCeti.DirectSum

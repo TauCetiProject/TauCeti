@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.TensorProduct
 public import TauCeti.RingTheory.GradedAlgebra.DecomposeTensor
 public import TauCeti.RingTheory.TensorProduct.SquareZero
 
@@ -60,6 +61,10 @@ namespace TauCeti
 
 namespace Comodule
 
+-- Normalize the algebra-tensor maps to the ordinary linear tensor maps used by comodules.
+attribute [local simp] TensorProduct.AlgebraTensorModule.map_eq
+  TensorProduct.AlgebraTensorModule.assoc_eq
+
 variable {R H M N P : Type*} [CommRing R] [CommSemiring H] [Bialgebra R H]
   [AddCommGroup M] [Module R M] [Comodule R H M]
   [AddCommGroup N] [Module R N] [Comodule R H N]
@@ -72,24 +77,13 @@ noncomputable def exteriorAlgebraCoact :
     ExteriorAlgebra R M →ₐ[R] ExteriorAlgebra R M ⊗[R] H :=
   ExteriorAlgebra.lift R
     ⟨(ExteriorAlgebra.ι R).rTensor H ∘ₗ coact (R := R) (C := H) (M := M), fun _ ↦
-      (ExteriorAlgebra.ι R).rTensor_mul_self_eq_zero (fun m ↦ ExteriorAlgebra.ι_sq_zero m) _⟩
+      rTensor_mul_self_eq_zero (fun m ↦ ExteriorAlgebra.ι_sq_zero m) _⟩
 
 @[simp]
 theorem exteriorAlgebraCoact_ι (m : M) :
     exteriorAlgebraCoact R H M (ExteriorAlgebra.ι R m) =
       (ExteriorAlgebra.ι R).rTensor H (coact (R := R) (C := H) m) :=
   ExteriorAlgebra.lift_ι_apply _ _ _ _
-
-omit [Comodule R H M] in
-/-- An algebra homomorphism on `H` commutes with the inclusion of generators. -/
-private theorem map_id_rTensor_ι {K : Type*} [Semiring K] [Algebra R K] (φ : H →ₐ[R] K)
-    (z : M ⊗[R] H) :
-    Algebra.TensorProduct.map (AlgHom.id R (ExteriorAlgebra R M)) φ
-        ((ExteriorAlgebra.ι R).rTensor H z) =
-      (ExteriorAlgebra.ι R).rTensor K (φ.toLinearMap.lTensor M z) := by
-  induction z using TensorProduct.inductionOn with
-  | tmul m h => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Coassociativity of `exteriorAlgebraCoact`, as an equality of algebra homomorphisms. -/
 private theorem exteriorAlgebraCoact_coassoc_algHom :
@@ -116,7 +110,7 @@ private theorem exteriorAlgebraCoact_coassoc_algHom :
     | add x y hx hy => simp only [map_add, hx, hy]
   simp only [AlgHom.comp_toLinearMap, LinearMap.coe_comp, Function.comp_apply,
     AlgHom.toLinearMap_apply, AlgEquiv.coe_toAlgHom, exteriorAlgebraCoact_ι, hassoc, coassoc_apply,
-    map_id_rTensor_ι, Bialgebra.toLinearMap_comulAlgHom]
+    ExteriorAlgebra.map_id_rTensor_ι, Bialgebra.toLinearMap_comulAlgHom]
 
 /-- Coassociativity of the coaction of the exterior algebra. -/
 theorem exteriorAlgebraCoact_coassoc :
@@ -125,15 +119,10 @@ theorem exteriorAlgebraCoact_coassoc :
           (exteriorAlgebraCoact R H M).toLinearMap =
       Coalgebra.comul.lTensor (ExteriorAlgebra R M) ∘ₗ
         (exteriorAlgebraCoact R H M).toLinearMap := by
-  have h := congrArg AlgHom.toLinearMap (exteriorAlgebraCoact_coassoc_algHom (R := R) (H := H)
-    (M := M))
-  rw [AlgHom.comp_toLinearMap, AlgHom.comp_toLinearMap, AlgHom.comp_toLinearMap,
-    Algebra.TensorProduct.toLinearMap_map, Algebra.TensorProduct.toLinearMap_map,
-    TensorProduct.AlgebraTensorModule.map_eq, TensorProduct.AlgebraTensorModule.map_eq,
-    AlgHom.toLinearMap_id, AlgHom.toLinearMap_id, ← LinearMap.rTensor_def, ← LinearMap.lTensor_def,
-    Bialgebra.toLinearMap_comulAlgHom, AlgEquiv.toAlgHom_toLinearMap,
-    Algebra.TensorProduct.assoc_toLinearEquiv, TensorProduct.AlgebraTensorModule.assoc_eq] at h
-  exact h
+  simpa [LinearMap.rTensor_def, LinearMap.lTensor_def,
+    Algebra.TensorProduct.assoc_toLinearEquiv] using
+    congrArg AlgHom.toLinearMap (exteriorAlgebraCoact_coassoc_algHom (R := R) (H := H)
+      (M := M))
 
 /-- The counit law for the coaction of the exterior algebra. -/
 theorem exteriorAlgebraCoact_counit :
@@ -145,13 +134,14 @@ theorem exteriorAlgebraCoact_counit :
     apply ExteriorAlgebra.hom_ext
     ext m
     simp only [AlgHom.comp_toLinearMap, LinearMap.coe_comp, Function.comp_apply,
-      AlgHom.toLinearMap_apply, exteriorAlgebraCoact_ι, map_id_rTensor_ι,
+      AlgHom.toLinearMap_apply, exteriorAlgebraCoact_ι, ExteriorAlgebra.map_id_rTensor_ι,
       Bialgebra.toLinearMap_counitAlgHom, lTensor_counit_coact, LinearMap.rTensor_tmul,
       Algebra.TensorProduct.includeLeft_apply]
-  have h' := congrArg AlgHom.toLinearMap h
-  rw [AlgHom.comp_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
-    TensorProduct.AlgebraTensorModule.map_eq, AlgHom.toLinearMap_id, ← LinearMap.lTensor_def,
-    Bialgebra.toLinearMap_counitAlgHom] at h'
+  have h' : Coalgebra.counit.lTensor (ExteriorAlgebra R M) ∘ₗ
+      (exteriorAlgebraCoact R H M).toLinearMap =
+      (Algebra.TensorProduct.includeLeft (R := R) (A := ExteriorAlgebra R M)
+        (B := R)).toLinearMap := by
+    simpa [LinearMap.lTensor_def] using congrArg AlgHom.toLinearMap h
   rw [h']
   ext x
   simp
@@ -221,11 +211,7 @@ noncomputable def exteriorAlgebraMap (f : Hom R H M N) :
     Hom R H (ExteriorAlgebra R M) (ExteriorAlgebra R N) where
   toLinearMap := (ExteriorAlgebra.map f.toLinearMap).toLinearMap
   map_coact := by
-    have h := congrArg AlgHom.toLinearMap (exteriorAlgebraCoact_comp_map f)
-    rw [AlgHom.comp_toLinearMap, AlgHom.comp_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
-      TensorProduct.AlgebraTensorModule.map_eq, AlgHom.toLinearMap_id] at h
-    rw [exteriorAlgebra_coact, exteriorAlgebra_coact]
-    exact h
+    simpa using congrArg AlgHom.toLinearMap (exteriorAlgebraCoact_comp_map f)
 
 @[simp]
 theorem exteriorAlgebraMap_toLinearMap (f : Hom R H M N) :
@@ -239,17 +225,15 @@ theorem exteriorAlgebraMap_apply (f : Hom R H M N) (x : ExteriorAlgebra R M) :
 
 /-- The exterior-algebra functor on comodules preserves identities. -/
 theorem exteriorAlgebraMap_id : exteriorAlgebraMap (id R H M) = id R H (ExteriorAlgebra R M) := by
-  apply toLinearMap_injective
-  rw [exteriorAlgebraMap_toLinearMap, id_toLinearMap, id_toLinearMap, ExteriorAlgebra.map_id,
-    AlgHom.toLinearMap_id]
+  ext x
+  simp only [exteriorAlgebraMap_apply, id_toLinearMap, ExteriorAlgebra.map_id,
+    AlgHom.id_apply, Hom.id_apply]
 
 /-- The exterior-algebra functor on comodules preserves composition. -/
 theorem exteriorAlgebraMap_comp (g : Hom R H N P) (f : Hom R H M N) :
     exteriorAlgebraMap (g.comp f) = (exteriorAlgebraMap g).comp (exteriorAlgebraMap f) := by
-  apply toLinearMap_injective
-  rw [comp_toLinearMap, exteriorAlgebraMap_toLinearMap, exteriorAlgebraMap_toLinearMap,
-    exteriorAlgebraMap_toLinearMap, comp_toLinearMap, ← ExteriorAlgebra.map_comp_map,
-    AlgHom.comp_toLinearMap]
+  ext x
+  simp [← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map]
 
 /-- The exterior-algebra functor is compatible with the inclusion of generators. -/
 @[simp]

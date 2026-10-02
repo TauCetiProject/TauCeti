@@ -23,7 +23,8 @@ the exterior algebra of a comodule over a commutative bialgebra is built this wa
 
 ## Main results
 
-* `LinearMap.rTensor_mul_self_eq_zero`: square-zero values persist after tensoring with a
+* `TauCeti.rTensor_mul_add_mul_swap_eq_zero`: tensor-extended values anticommute.
+* `TauCeti.rTensor_mul_self_eq_zero`: square-zero values persist after tensoring with a
   commutative algebra on the right.
 -/
 
@@ -31,13 +32,13 @@ public section
 
 open scoped TensorProduct
 
-namespace LinearMap
+namespace TauCeti
 
 variable {R M B H : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [Semiring B] [Algebra R B] [CommSemiring H] [Algebra R H]
 
 /-- The cross terms of the square of a sum vanish: values of `f.rTensor H` anticommute. -/
-private theorem rTensor_mul_add_mul_swap_eq_zero (f : M →ₗ[R] B) (hf : ∀ m, f m * f m = 0)
+theorem rTensor_mul_add_mul_swap_eq_zero {f : M →ₗ[R] B} (hf : ∀ m, f m * f m = 0)
     (x y : M ⊗[R] H) :
     f.rTensor H x * f.rTensor H y + f.rTensor H y * f.rTensor H x = 0 := by
   have hanti (m n : M) : f m * f n + f n * f m = 0 := by
@@ -51,17 +52,17 @@ private theorem rTensor_mul_add_mul_swap_eq_zero (f : M →ₗ[R] B) (hf : ∀ m
     | add y₁ y₂ h₁ h₂ =>
       rw [map_add, mul_add, add_mul, add_add_add_comm, h₁, h₂, add_zero]
     | tmul n k =>
-      simp only [rTensor_tmul, Algebra.TensorProduct.tmul_mul_tmul]
+      simp only [LinearMap.rTensor_tmul, Algebra.TensorProduct.tmul_mul_tmul]
       rw [mul_comm k h, ← TensorProduct.add_tmul, hanti, TensorProduct.zero_tmul]
 
 /-- If every value of `f` squares to zero, so does every value of `f.rTensor H` for a
 commutative algebra `H`. -/
-theorem rTensor_mul_self_eq_zero (f : M →ₗ[R] B) (hf : ∀ m, f m * f m = 0) (x : M ⊗[R] H) :
+theorem rTensor_mul_self_eq_zero {f : M →ₗ[R] B} (hf : ∀ m, f m * f m = 0) (x : M ⊗[R] H) :
     f.rTensor H x * f.rTensor H x = 0 := by
   induction x using TensorProduct.inductionOn with
   | tmul m h => simp [Algebra.TensorProduct.tmul_mul_tmul, hf]
   | add x y hx hy =>
     rw [map_add, add_mul, mul_add, mul_add, hx, hy, zero_add, add_zero,
-      rTensor_mul_add_mul_swap_eq_zero f hf]
+      rTensor_mul_add_mul_swap_eq_zero hf]
 
-end LinearMap
+end TauCeti
