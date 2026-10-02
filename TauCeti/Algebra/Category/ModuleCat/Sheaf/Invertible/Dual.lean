@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Dualizable
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Closed
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # Duals of invertible sheaves
