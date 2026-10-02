@@ -79,7 +79,7 @@ theorem cohomologicalDimensionLE_iff_forall_subsingleton_succ (n : ℕ) :
   | base => exact h
   | succ i hi ih =>
     intro M _ _ _ _ _ hM
-    have := ih (DimensionShiftQuotient G M) (isPPrimaryTorsion_dimensionShiftQuotient G M hM)
+    have := ih (DimensionShiftQuotient G ⊥ M) (isPPrimaryTorsion_dimensionShiftQuotient G ⊥ M hM)
     exact (dimensionShiftIso G M i (by omega)).toContinuousLinearEquiv.toEquiv.subsingleton
 
 /-- **The finite single-degree test.** For a compact group `G` and `p ≠ 0`, the predicate

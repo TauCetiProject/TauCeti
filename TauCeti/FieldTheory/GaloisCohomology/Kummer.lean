@@ -92,8 +92,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
 * `TauCeti.finite_H1_kummerCoeff`: `H¹(G_K, μₙ)` is finite when `Kˣ ⧸ (Kˣ)ⁿ` is.
-* `TauCeti.finite_H1_of_isPrimitiveRoot`: the same for every cyclic trivial module of order `n`
-  over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
+* `TauCeti.finite_H1_of_isPrimitiveRoot_of_natCard_eq`: the same for every cyclic trivial module of
+  order `n` over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
 * `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
@@ -404,10 +404,11 @@ field containing a primitive `n`th root of unity and with `Kˣ ⧸ (Kˣ)ⁿ` fin
 topological group isomorphic to `G_K`. Then `H¹(H, M)` is finite for every cyclic discrete
 `H`-module `M` of order `n` with trivial action: such a module is `μₙ(Kˢ)`
 (`TauCeti.finite_H1_kummerCoeff`). -/
-theorem finite_H1_of_isPrimitiveRoot [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
-    [Finite (powerClassQuotient Kˣ n)] {H : Type*} [Group H] [TopologicalSpace H]
-    (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M] [TopologicalSpace M]
-    [DiscreteTopology M] [DistribMulAction H M] [ContinuousSMul H M] [IsAddCyclic M]
+theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
+    (hζ : IsPrimitiveRoot ζ n) [Finite (powerClassQuotient Kˣ n)] {H : Type*} [Group H]
+    [TopologicalSpace H] (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M]
+    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [ContinuousSMul H M]
+    [IsAddCyclic M]
     (hM : Nat.card M = n) (htriv : ∀ (h : H) (m : M), h • m = m) :
     Finite (H1 H M) := by
   have := hζ.neZero'

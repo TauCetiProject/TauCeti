@@ -116,11 +116,11 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
   refine finite_continuousCohomology_of_isOpen_of_normal_of_prime V
     (e.symm.isOpenMap _ (galoisSubgroup F L L.val).isOpen) 1 (N := n) ?_ A.V (fun a ↦ ?_)
     fun v hv a ↦ ?_
-  · intro j hj M _ _ _ _ _ _ hM hMn hMtriv
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hj with rfl | rfl
-    · exact finite_continuousCohomology_zero M
+  · intro j hj₀ hj M _ _ _ _ _ _ hM hMn hMtriv
+    obtain rfl : j = 1 := by omega
+    have := isAddCyclic_of_prime_card rfl (hp := ⟨hM⟩)
     have := finite_H1_of_isPrimitiveRoot_of_natCard_dvd L hζ'
-      ((galoisSubgroupEquiv F L L.val).trans ψ) M hM hMn hMtriv
+      ((galoisSubgroupEquiv F L L.val).trans ψ) M hMn hMtriv
     exact Finite.of_equiv _ (explicitH1AddEquivContinuousCohomology V M).toEquiv
   · -- `A` is killed by `n`, being a `ZMod n`-module
     rw [← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul]

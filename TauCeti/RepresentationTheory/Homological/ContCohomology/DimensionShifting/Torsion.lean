@@ -11,7 +11,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.
 /-!
 # Primary torsion under dimension shifting
 
-For a compact group, the dimension-shifting quotient `Coind_1^G M ⧸ M` preserves `p`-primary
+For a compact group and a subgroup `U`, the quotient `Coind_U^G M ⧸ M` by the image of the unit of
+coinduction, in particular the dimension-shifting quotient `Coind_1^G M ⧸ M`, preserves `p`-primary
 torsion. This lets the dimension-shifting sequence stay within the coefficient class used to
 define `p`-cohomological dimension.
 
@@ -29,14 +30,14 @@ public section
 namespace TauCeti.ContCohomology
 
 variable {p : ℕ} (G : Type*) [Group G] [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
-  (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
-/-- The dimension-shifting quotient `Coind_1^G M ⧸ M` remains `p`-primary torsion whenever
-`M` is `p`-primary torsion. -/
+/-- The quotient `Coind_U^G M ⧸ M` remains `p`-primary torsion whenever `M` is `p`-primary
+torsion. -/
 theorem isPPrimaryTorsion_dimensionShiftQuotient (hM : IsPPrimaryTorsion p M) :
-    IsPPrimaryTorsion p (DimensionShiftQuotient G M) :=
-  (isPPrimaryTorsion_discreteCoind G ⊥ M hM).of_surjective
-    (DimensionShiftQuotient.mk G M) DimensionShiftQuotient.mk_surjective
+    IsPPrimaryTorsion p (DimensionShiftQuotient G U M) :=
+  (isPPrimaryTorsion_discreteCoind G U M hM).of_surjective
+    (DimensionShiftQuotient.mk G U M) DimensionShiftQuotient.mk_surjective
 
 end TauCeti.ContCohomology

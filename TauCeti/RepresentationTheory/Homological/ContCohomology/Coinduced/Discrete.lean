@@ -44,6 +44,8 @@ and the one Shapiro's lemma is stated against.
 
 * `TauCeti.DiscreteCoind.instContinuousSMul`: for compact `G` the right-translation action on the
   discrete carrier is continuous, so `Coind_U^G A` is a discrete `G`-module;
+* `TauCeti.DiscreteCoind.smul_eq_self_of_normal`: a normal subgroup `U` acting trivially on `A`
+  acts trivially on `Coind_U^G A`;
 * `TauCeti.DiscreteCoind.instContinuousSMulScalar`: for compact `G` and discrete coefficients,
   scalar multiplication is continuous;
 * `TauCeti.DiscreteCoind.unit_injective` and `TauCeti.DiscreteCoind.map_unit`: the unit is
@@ -242,6 +244,14 @@ theorem stabilizer_eq (f : DiscreteCoind G U A) :
     MulAction.stabilizer G f = rightTranslationStabilizer ⇑f := by
   ext g
   simp [MulAction.mem_stabilizer_iff, DFunLike.ext_iff]
+
+/-- **A normal subgroup acting trivially on `A` acts trivially on `Coind_U^G A`**: for `u ∈ U` and
+`x : G`, `(u • f) x = f ((x u x⁻¹) x) = (x u x⁻¹) • f x = f x`, since `x u x⁻¹ ∈ U`. -/
+theorem smul_eq_self_of_normal [U.Normal] (htriv : ∀ (u : U) (a : A), u • a = a) {g : G}
+    (hg : g ∈ U) (f : DiscreteCoind G U A) : g • f = f :=
+  ext fun x ↦ by
+    have hx : x * g = ((⟨x * g * x⁻¹, ‹U.Normal›.conj_mem g hg x⟩ : U) : G) * x := by simp
+    rw [coe_smul, hx, apply_mul, htriv]
 
 end Action
 
