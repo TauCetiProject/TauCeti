@@ -39,10 +39,12 @@ that Mathlib does not provide directly, used across the multiquadratic developme
 * `TauCeti.Int.not_four_dvd_of_squarefree` and
   `TauCeti.Int.emod_four_eq_two_or_three_of_squarefree`: the modulo-four restrictions on
   squarefree integers.
-* `TauCeti.Int.emod_eight_eq_five_iff_exists_eq_mul_sq` and
-  `TauCeti.Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mul_sq`: membership in
-  the rational square class of an integer congruent to five modulo eight can be tested on an
-  integer squarefree part.
+* `TauCeti.Int.emod_eight_eq_of_eq_mul_sq_of_not_four_dvd`: removing a square factor
+  preserves residues modulo eight when the original integer is not divisible by four.
+* `TauCeti.Int.emod_eight_eq_five_iff_exists_eq_mod_eight_eq_five_mul_sq` and
+  `TauCeti.Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mod_eight_eq_five_mul_sq`:
+  membership in the rational square class of an integer congruent to five modulo eight can be
+  tested on an integer squarefree part.
 * `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree`: squarefreeness of *every* prime
   divisor of an `n > 2`, read in any ring, yields the single branch that Mathlib's
   `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt` splits into. This is the bridge from a
@@ -126,9 +128,25 @@ theorem Rat.exists_squarefree_int_mul_sq {q : ℚ} (hq : q ≠ 0) :
 
 namespace TauCeti.Int
 
+/-- Removing an integer square factor preserves the residue modulo eight when the original
+integer is not divisible by four. -/
+theorem emod_eight_eq_of_eq_mul_sq_of_not_four_dvd {n s b : ℤ} (h : n = s * b ^ 2)
+    (hn : ¬ (4 : ℤ) ∣ n) : n % 8 = s % 8 := by
+  have hb : ¬ (2 : ℤ) ∣ b := by
+    rintro ⟨k, rfl⟩
+    apply hn
+    refine ⟨s * k ^ 2, ?_⟩
+    rw [h]
+    ring
+  have hsq : b ^ 2 % 8 = 1 := by
+    have hodd : Odd b := Int.not_even_iff_odd.mp (fun h => hb h.two_dvd)
+    have := Int.dvd_iff_emod_eq_zero.mp (Int.eight_dvd_sq_sub_one_of_odd hodd)
+    omega
+  rw [h, Int.mul_emod, hsq, mul_one, Int.emod_emod]
+
 /-- For a squarefree integer, being in the rational square class of an integer congruent to
 five modulo eight is equivalent to being congruent to five modulo eight itself. -/
-theorem emod_eight_eq_five_iff_exists_eq_mul_sq {n : ℤ} (hn : Squarefree n) :
+theorem emod_eight_eq_five_iff_exists_eq_mod_eight_eq_five_mul_sq {n : ℤ} (hn : Squarefree n) :
     n % 8 = 5 ↔ ∃ (c : ℤ) (q : ℚ), c % 8 = 5 ∧ q ≠ 0 ∧ (n : ℚ) = c * q ^ 2 := by
   refine ⟨fun h => ⟨n, 1, h, one_ne_zero, by simp⟩, ?_⟩
   rintro ⟨c, q, hc, -, h⟩
@@ -154,7 +172,8 @@ theorem emod_eight_eq_five_iff_exists_eq_mul_sq {n : ℤ} (hn : Squarefree n) :
 /-- An integer lies in the rational square class of an integer congruent to five modulo eight
 exactly when its squarefree part is congruent to five modulo eight. The nonzero integer square
 factor excludes zero, which has no squarefree part. -/
-theorem exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mul_sq {n : ℤ} :
+theorem exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mod_eight_eq_five_mul_sq
+    {n : ℤ} :
     (∃ (c : ℤ) (q : ℚ), c % 8 = 5 ∧ q ≠ 0 ∧ (n : ℚ) = c * q ^ 2) ↔
       ∃ s b : ℤ, Squarefree s ∧ b ≠ 0 ∧ n = s * b ^ 2 ∧ s % 8 = 5 := by
   constructor
@@ -165,7 +184,7 @@ theorem exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mul_sq {n : ℤ
       exact mul_ne_zero hc0 (pow_ne_zero 2 hq) (h.symm.trans (by simp [hn]))
     obtain ⟨s, b, hs, hb, hn⟩ := Int.exists_squarefree_mul_sq hn
     have hbQ : (b : ℚ) ≠ 0 := by exact_mod_cast hb
-    refine ⟨s, b, hs, hb, hn, (emod_eight_eq_five_iff_exists_eq_mul_sq hs).mpr
+    refine ⟨s, b, hs, hb, hn, (emod_eight_eq_five_iff_exists_eq_mod_eight_eq_five_mul_sq hs).mpr
       ⟨c, q / b, hc, div_ne_zero hq hbQ, ?_⟩⟩
     have hnQ : (n : ℚ) = s * (b : ℚ) ^ 2 := by exact_mod_cast hn
     field_simp

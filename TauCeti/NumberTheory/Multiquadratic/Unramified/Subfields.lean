@@ -164,7 +164,8 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
   -- The inertia criterion uses the carrier-set fixing subgroup; expose its definitionally equal
   -- intermediate-field wrapper so that the adjoin API applies.
   change σ ∈ (adjoin ℚ {algebraMap ℚ M r * (x * y)}).fixingSubgroup
-  rw [← TauCeti.apply_eq_self_iff_mem_fixingSubgroup_adjoin_simple]
+  rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+    AlgEquiv.smul_def]
   by_cases hσF : σ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
   · rw [Subgroup.disjoint_def.mp hdisj hσ hσF]
     rfl
@@ -183,7 +184,8 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
       -- Convert the carrier-set fixing subgroup to the definitionally equal intermediate-field
       -- wrapper before applying the adjoin API.
       change σ ∈ (adjoin ℚ {y}).fixingSubgroup
-      rw [← TauCeti.apply_eq_self_iff_mem_fixingSubgroup_adjoin_simple]
+      rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+        AlgEquiv.smul_def]
       exact hfix)
   rw [map_mul, map_mul, AlgEquiv.commutes, hσx, hσy, neg_mul_neg]
 

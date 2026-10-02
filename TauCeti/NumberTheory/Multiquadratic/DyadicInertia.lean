@@ -79,9 +79,9 @@ and work with the action of inertia and Frobenius on square roots in `K` instead
   the criteria for `f = 2` and `f = 1` above, in terms of the radicands.
 * `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_squarefree_prod_eq_mod_eight_eq_five_mul_sq`:
   the criterion in terms of integer squarefree parts of subset products.
-* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_squarefree` and
-  `inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_squarefree`: for squarefree, pairwise
-  coprime radicands, finite tests on the subset products modulo eight.
+* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_not_four_dvd_prod`
+  and `inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_not_four_dvd_prod`:
+  when no subset product is divisible by four, finite tests on the subset products modulo eight.
 
 ## References
 
@@ -540,27 +540,33 @@ theorem inertiaDeg_eq_two_iff_exists_squarefree_prod_eq_mod_eight_eq_five_mul_sq
       Squarefree s ∧ b ≠ 0 ∧ ∏ i ∈ T, d i = s * b ^ 2 ∧ s % 8 = 5 := by
   rw [inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq hr htop Q]
   simp_rw [← Int.cast_prod,
-    TauCeti.Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mul_sq]
+    TauCeti.Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mod_eight_eq_five_mul_sq]
 
-/-- For squarefree, pairwise coprime integer radicands, the residue degree above two is two
-exactly when one of the finitely many subset products is congruent to five modulo eight. -/
-theorem inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_squarefree [Finite ι]
-    (hsf : ∀ i, Squarefree (d i)) (hcop : Pairwise (fun i j => IsRelPrime (d i) (d j))) :
+/-- When no subset product of the integer radicands is divisible by four, the residue degree
+above two is two exactly when one of the finitely many subset products is congruent to five
+modulo eight. -/
+theorem inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_not_four_dvd_prod [Finite ι]
+    (hd : ∀ T : Finset ι, ¬ (4 : ℤ) ∣ ∏ i ∈ T, d i) :
     Q.inertiaDeg ℤ = 2 ↔ ∃ T : Finset ι, (∏ i ∈ T, d i) % 8 = 5 := by
-  rw [inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq hr htop Q]
+  rw [inertiaDeg_eq_two_iff_exists_squarefree_prod_eq_mod_eight_eq_five_mul_sq hr htop Q]
   apply exists_congr
   intro T
-  rw [← Int.cast_prod, ← TauCeti.Int.emod_eight_eq_five_iff_exists_eq_mul_sq
-    (Finset.squarefree_prod_of_pairwise_isCoprime
-      (fun i _ j _ hij => hcop hij) (fun i _ => hsf i))]
+  constructor
+  · rintro ⟨s, b, -, -, hprod, hs⟩
+    exact (TauCeti.Int.emod_eight_eq_of_eq_mul_sq_of_not_four_dvd hprod (hd T)).trans hs
+  · intro hmod
+    obtain ⟨s, b, hs, hb, hprod⟩ := Int.exists_squarefree_mul_sq
+      (n := ∏ i ∈ T, d i) (fun hzero => hd T (hzero ▸ dvd_zero 4))
+    exact ⟨s, b, hs, hb, hprod,
+      (TauCeti.Int.emod_eight_eq_of_eq_mul_sq_of_not_four_dvd hprod (hd T)).symm.trans hmod⟩
 
-/-- For squarefree, pairwise coprime integer radicands, the residue degree above two is one
-exactly when every subset product is not congruent to five modulo eight. -/
-theorem inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_squarefree [Finite ι]
-    (hsf : ∀ i, Squarefree (d i)) (hcop : Pairwise (fun i j => IsRelPrime (d i) (d j))) :
+/-- When no subset product of the integer radicands is divisible by four, the residue degree
+above two is one exactly when every subset product is not congruent to five modulo eight. -/
+theorem inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_not_four_dvd_prod [Finite ι]
+    (hd : ∀ T : Finset ι, ¬ (4 : ℤ) ∣ ∏ i ∈ T, d i) :
     Q.inertiaDeg ℤ = 1 ↔ ∀ T : Finset ι, (∏ i ∈ T, d i) % 8 ≠ 5 := by
-  rw [← not_exists, ← inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_squarefree
-    hr htop Q hsf hcop]
+  rw [← not_exists, ← inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_not_four_dvd_prod
+    hr htop Q hd]
   rcases (Nat.dvd_prime Nat.prime_two).mp (inertiaDeg_dvd_two (p := 2) hr htop Q) with h | h <;>
     simp [h]
 
