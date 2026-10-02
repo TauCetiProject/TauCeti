@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Lattice
 
 /-!
@@ -58,6 +59,12 @@ subgroups, since an idele can be split placewise into two factors.
   of the congruence subgroup is a unit at every finite place.
 * `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup_antitone`: the congruence subgroups
   decrease as the modulus grows.
+* `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration`: the
+  coordinate at `v` of an idele of the congruence subgroup lies in the step `U(K_v, 𝔪.exponent v)`
+  of the unit filtration.
+* `TauCeti.GlobalNumberFields.ofAdicCompletion_mem_ideleCongruenceSubgroup_iff`: an idele
+  concentrated at a finite place `v` lies in the congruence subgroup exactly when its component
+  lies in `U(K_v, 𝔪.exponent v)`.
 * `TauCeti.GlobalNumberFields.isOpen_ideleCongruenceSubgroup`: the congruence subgroup is open.
 * `TauCeti.GlobalNumberFields.unitEmbedding_mem_ideleCongruenceSubgroup_iff`: the principal
   ideles lying in the congruence subgroup are the images of the units of `𝓞 K` congruent to one
@@ -271,6 +278,47 @@ theorem ideleCongruenceSubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ �
 /-- **The idele congruence subgroup lies in the ideles congruent to one.** -/
 theorem ideleCongruenceSubgroup_le_ideleCongrOneSubgroup (𝔪 : Modulus K) :
     ideleCongruenceSubgroup 𝔪 ≤ ideleCongrOneSubgroup 𝔪 := fun _ hx ↦ hx.2
+
+/-- **The finite coordinates of a congruence idele lie in the prescribed steps of the unit
+filtration**: at every finite place `v`, the coordinate of an idele of
+`ideleCongruenceSubgroup 𝔪` lies in `U(K_v, 𝔪.exponent v)`. -/
+theorem ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration {𝔪 : Modulus K}
+    {x : IdeleGroup (𝓞 K) K} (hx : x ∈ ideleCongruenceSubgroup 𝔪) (v : HeightOneSpectrum (𝓞 K)) :
+    v.ideleFiniteCoord x ∈ TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v) := by
+  have hunit := ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v
+  rw [HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff]
+  refine ⟨hunit, ?_⟩
+  by_cases hv : v.asIdeal ∣ 𝔪.finitePart
+  · exact ideleCongruenceSubgroup.valued_ideleFiniteCoord_sub_one_le hx hv
+  · have he : 𝔪.exponent v = 0 := by
+      by_contra he
+      exact hv ((Modulus.mem_support_iff 𝔪 v).mp
+        ((Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).mpr he))
+    rw [he, Nat.cast_zero, neg_zero, WithZero.exp_zero]
+    exact (Valuation.map_sub _ _ _).trans (max_le hunit.le (Valuation.map_one _).le)
+
+/-- **An idele concentrated at one finite place lies in the congruence subgroup exactly when its
+component lies in the prescribed step of the unit filtration.**  For `u ∈ K_vˣ`, the idele with
+component `u` at `v` and `1` elsewhere lies in `ideleCongruenceSubgroup 𝔪` exactly when
+`u ∈ U(K_v, 𝔪.exponent v)`: a unit of `𝓞_v` when `v` does not divide `𝔪`, and a principal unit of
+level `𝔪.exponent v` when it does. -/
+theorem ofAdicCompletion_mem_ideleCongruenceSubgroup_iff {𝔪 : Modulus K}
+    {v : HeightOneSpectrum (𝓞 K)} {u : (v.adicCompletion K)ˣ} :
+    IdeleGroup.ofAdicCompletion (𝓞 K) K v u ∈ ideleCongruenceSubgroup 𝔪 ↔
+      u ∈ TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v) := by
+  refine ⟨fun h ↦ ?_, fun hu ↦ ?_⟩
+  · simpa using ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration h v
+  · rw [HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff] at hu
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v' _ ↦ ?_, fun v' _ ↦ ?_, fun w _ ↦ ?_⟩
+    · rcases eq_or_ne v' v with rfl | hv'
+      · rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
+        exact hu.1
+      · simp [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv']
+    · rcases eq_or_ne v' v with rfl | hv'
+      · rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
+        exact hu.2
+      · simp [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv']
+    · simp
 
 /-! ### Openness -/
 
