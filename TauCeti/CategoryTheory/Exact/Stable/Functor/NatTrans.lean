@@ -15,7 +15,7 @@ A natural transformation between exact functors preserving projective-injective 
 descends to the stable categories of Frobenius exact categories. Its components commute with
 the canonical suspension comparisons and hence every integral shift. Thus shift compatibility
 is natural in the original exact functor, not just in the objects of the stable category.
-Install `stableNatTransCommShift` locally after installing the stable shifts and the two
+Install `stableNatTrans_commShift` locally after installing the stable shifts and the two
 `stableFunctorCommShift` structures. It supplies Mathlib's `NatTrans.CommShift` interface,
 including its natural-isomorphism and composition APIs.
 
@@ -136,7 +136,7 @@ theorem stableNatTrans_suspension :
 
 /-- A descended natural transformation is compatible with all integral shifts of the stable
 categories, for the canonical shift comparisons of the two stable functors. -/
-theorem stableNatTransCommShift :
+theorem stableNatTrans_commShift :
     letI := hE.stableHasShift
     letI := hE'.stableHasShift
     letI := hF.stableFunctorCommShift hE hE'
