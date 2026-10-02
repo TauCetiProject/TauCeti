@@ -37,6 +37,8 @@ the orthogonal group of an isotropic nondegenerate form is not compact.
   `TauCeti.QuadraticMap.hyperbolicPairTorus_apply_right`: the torus scales `u` by `t` and `v`
   by `t⁻¹`.
 * `TauCeti.QuadraticMap.hyperbolicPairTorus_injective`: the torus is injective.
+* `TauCeti.QuadraticMap.hyperbolicPairTorus_eq_reflection_mul_reflection`: the torus element `t`
+  is the product of the reflections in `u + v` and in `u + t • v`.
 * `TauCeti.QuadraticMap.hyperbolicPairTorus_mem_specialOrthogonalGroup`: on a finite free
   module, the torus lies in the special orthogonal group.
 -/
@@ -166,7 +168,7 @@ theorem hyperbolicPairTorus_injective (hu : Q u = 0) (hv : Q v = 0) (huv : polar
 
 /-- The torus element `t` of a hyperbolic pair is the product of the reflections in `u + v` and
 in `u + t • v`, whose norms are `1` and `t`. -/
-private theorem hyperbolicPairTorus_eq_reflection_mul_reflection (hu : Q u = 0) (hv : Q v = 0)
+theorem hyperbolicPairTorus_eq_reflection_mul_reflection (hu : Q u = 0) (hv : Q v = 0)
     (huv : polar Q u v = 1) (t : Rˣ) [Invertible (Q (u + v))]
     [Invertible (Q (u + (t : R) • v))] :
     (hyperbolicPairTorus Q hu hv huv t : M ≃ₗ[R] M) =

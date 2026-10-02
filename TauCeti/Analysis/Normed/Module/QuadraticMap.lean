@@ -98,8 +98,8 @@ end Normed
 
 section ModuleTopology
 
-variable {K V : Type*} [NontriviallyNormedField K] [LocallyCompactSpace K] [Invertible (2 : K)]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [TopologicalSpace V]
+variable {K V : Type*} [NontriviallyNormedField K] [WeaklyLocallyCompactSpace K]
+  [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V] [TopologicalSpace V]
   [IsModuleTopology K V]
 
 /-- The sublevel sets `{x | ‖Q x‖ ≤ r}` of an anisotropic quadratic form on a finite-dimensional

@@ -97,8 +97,8 @@ end Noncompact
 
 section Compact
 
-variable {K V : Type*} [NontriviallyNormedField K] [LocallyCompactSpace K] [Invertible (2 : K)]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V)
+variable {K V : Type*} [NontriviallyNormedField K] [WeaklyLocallyCompactSpace K]
+  [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V)
 
 /-- **The orthogonal group of an anisotropic form is compact.** For an anisotropic quadratic form
 on a finite-dimensional space over a locally compact nontrivially normed field in which `2` is
