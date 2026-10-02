@@ -119,31 +119,49 @@ private theorem subspaceJordanRep_map_arrow (i : Fin 4) :
         LinearMap.id.prod (LinearMap.mulLeft k (AdjoinRoot.root ((X : k[X]) ^ (n + 1))))] i) :=
   Paths.lift_toPath _ _
 
+-- Specify the source and target of `Hom.hom` in simp-normal form: otherwise the object
+-- lemmas above simplify its implicit arguments before the arrow application lemmas can fire.
 /-- The first arrow embeds `k[X]/(Xⁿ⁺¹)` as the first coordinate axis. -/
 @[simp]
 theorem subspaceJordanRep_map_arrow_zero_apply (x : AdjoinRoot ((X : k[X]) ^ (n + 1))) :
-    ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 0).toPath).hom x = (x, 0) := by
+    ModuleCat.Hom.hom
+      (A := ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      (B := ModuleCat.of k
+        (AdjoinRoot ((X : k[X]) ^ (n + 1)) × AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 0).toPath) x = (x, 0) := by
   rw [subspaceJordanRep_map_arrow]
   rfl
 
 /-- The second arrow embeds `k[X]/(Xⁿ⁺¹)` as the second coordinate axis. -/
 @[simp]
 theorem subspaceJordanRep_map_arrow_one_apply (x : AdjoinRoot ((X : k[X]) ^ (n + 1))) :
-    ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 1).toPath).hom x = (0, x) := by
+    ModuleCat.Hom.hom
+      (A := ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      (B := ModuleCat.of k
+        (AdjoinRoot ((X : k[X]) ^ (n + 1)) × AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 1).toPath) x = (0, x) := by
   rw [subspaceJordanRep_map_arrow]
   rfl
 
 /-- The third arrow embeds `k[X]/(Xⁿ⁺¹)` as the diagonal. -/
 @[simp]
 theorem subspaceJordanRep_map_arrow_two_apply (x : AdjoinRoot ((X : k[X]) ^ (n + 1))) :
-    ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 2).toPath).hom x = (x, x) := by
+    ModuleCat.Hom.hom
+      (A := ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      (B := ModuleCat.of k
+        (AdjoinRoot ((X : k[X]) ^ (n + 1)) × AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 2).toPath) x = (x, x) := by
   rw [subspaceJordanRep_map_arrow]
   rfl
 
 /-- The fourth arrow embeds `k[X]/(Xⁿ⁺¹)` as the graph of multiplication by `X`. -/
 @[simp]
 theorem subspaceJordanRep_map_arrow_three_apply (x : AdjoinRoot ((X : k[X]) ^ (n + 1))) :
-    ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 3).toPath).hom x =
+    ModuleCat.Hom.hom
+      (A := ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      (B := ModuleCat.of k
+        (AdjoinRoot ((X : k[X]) ^ (n + 1)) × AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      ((subspaceJordanRep k n).map (Quiver.Subspace.arrow 3).toPath) x =
       (x, AdjoinRoot.root ((X : k[X]) ^ (n + 1)) * x) := by
   rw [subspaceJordanRep_map_arrow]
   rfl
@@ -203,8 +221,16 @@ private noncomputable def centerApp (e : subspaceJordanRep k n ⟶ subspaceJorda
 /-- Naturality along the arrow indexed by `i`, read on an element. -/
 private theorem centerApp_map_arrow (e : subspaceJordanRep k n ⟶ subspaceJordanRep k n)
     (i : Fin 4) (x : AdjoinRoot ((X : k[X]) ^ (n + 1))) :
-    centerApp e (((subspaceJordanRep k n).map (Quiver.Subspace.arrow i).toPath).hom x) =
-      ((subspaceJordanRep k n).map (Quiver.Subspace.arrow i).toPath).hom (outerApp e i x) :=
+    centerApp e (ModuleCat.Hom.hom
+      (A := ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      (B := ModuleCat.of k
+        (AdjoinRoot ((X : k[X]) ^ (n + 1)) × AdjoinRoot ((X : k[X]) ^ (n + 1))))
+      ((subspaceJordanRep k n).map (Quiver.Subspace.arrow i).toPath) x) =
+      ModuleCat.Hom.hom
+        (A := ModuleCat.of k (AdjoinRoot ((X : k[X]) ^ (n + 1))))
+        (B := ModuleCat.of k
+          (AdjoinRoot ((X : k[X]) ^ (n + 1)) × AdjoinRoot ((X : k[X]) ^ (n + 1))))
+        ((subspaceJordanRep k n).map (Quiver.Subspace.arrow i).toPath) (outerApp e i x) :=
   congrArg (fun g ↦ (ModuleCat.Hom.hom g) x) (e.naturality (Quiver.Subspace.arrow i).toPath)
 
 /-- Naturality along the two coordinate axes: the centre component of an endomorphism acts
