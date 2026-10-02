@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 
 The upper half-plane is an open subset of `ℂ`, and its complex-manifold structure has the single
 chart given by the inclusion, with inverse `UpperHalfPlane.ofComplex`
-(`TauCeti.UpperHalfPlane.chartAt_eq_ofComplex_symm`). So the local multiplicity of a function
+(`UpperHalfPlane.chartAt_eq_ofComplex_symm`). So the local multiplicity of a function
 `f : ℍ → ℂ` at `z` is the order of vanishing of `f ∘ ofComplex - f z` at `z`
 (`TauCeti.UpperHalfPlane.localMultiplicity_eq_analyticOrderNatAt_comp_ofComplex_sub`). This is the
 form in which orders of modular forms and modular functions are computed, and the form in which
@@ -31,7 +31,7 @@ namespace TauCeti.UpperHalfPlane
 
 /-- The chart of the upper half-plane at every point is the inclusion into `ℂ`, the inverse of
 `UpperHalfPlane.ofComplex`. -/
-theorem chartAt_eq_ofComplex_symm (z : ℍ) : chartAt ℂ z = ofComplex.symm := by
+theorem _root_.UpperHalfPlane.chartAt_eq_ofComplex_symm (z : ℍ) : chartAt ℂ z = ofComplex.symm := by
   -- Mathlib has no lemma identifying `chartAt ℂ z` on `ℍ` with `ofComplex.symm`, so this
   -- unfolds the `ChartedSpace ℂ ℍ` instance (the singleton charted space of the open embedding
   -- `(↑)`) and the definition of `ofComplex` as the inverse of that open embedding's partial
