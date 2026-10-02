@@ -26,12 +26,16 @@ tensor product.  Such a tensor-product identification is a separate result and i
 module.
 
 The relation is preserved because the global preprojective relator is a sum of differences of
-paths with coefficients `1` and `-1`.  The same argument works for loops and parallel arrows,
+paths with coefficients `1` and `-1`. The same argument works for loops and parallel arrows,
 which are retained by `Quiver.Symmetrify`.
 
-This is the base-change clause of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  The conventions follow the presentation and
-later-factor-first multiplication fixed in `Preprojective.Basic`.
+The conventions follow the presentation and later-factor-first multiplication fixed in
+`Preprojective.Basic`.
+
+## References
+
+See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+problem*, Section 1.
 -/
 
 public section
