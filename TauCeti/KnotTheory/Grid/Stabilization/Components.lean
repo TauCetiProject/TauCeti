@@ -65,7 +65,6 @@ variable {n : ℕ} (G : GridDiagram n) (newColumn newRow : Fin (n + 1)) (splitCo
 
 /-- In an `X`-stabilization, the component through the new column continues to the embedded split
 column: the new `O`-marking shares its row with the `X`-marking moved into the split column. -/
-@[simp]
 theorem componentPerm_stabilizeX_newColumn :
     (G.stabilizeX newColumn newRow splitColumn).componentPerm newColumn =
       newColumn.succAbove splitColumn := by
@@ -75,7 +74,6 @@ theorem componentPerm_stabilizeX_newColumn :
 /-- In an `X`-stabilization, an embedded old column continues to the embedded image of its old
 successor along the component, except that the column whose old successor is the split column
 now continues to the new column. -/
-@[simp]
 theorem componentPerm_stabilizeX_succAbove (c : Fin n) :
     (G.stabilizeX newColumn newRow splitColumn).componentPerm (newColumn.succAbove c) =
       if G.componentPerm c = splitColumn then newColumn
