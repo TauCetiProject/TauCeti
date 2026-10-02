@@ -38,6 +38,8 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
 
 ## Main results
 
+* `TauCeti.serreEps_eq_one_iff`, `TauCeti.serreOmega_eq_one_iff` (and the `_eq_zero_iff`
+  variants): the values of `ε` and `ω` in terms of `u mod 8`.
 * `TauCeti.serreEps_mul`, `TauCeti.serreOmega_mul`: `ε` and `ω` are homomorphisms to the
   additive group `ZMod 2`.
 * `TauCeti.coe_neg_one_uzpow_serreEps`, `TauCeti.coe_neg_one_uzpow_serreOmega`: `(-1) ^ ε(u)` is
@@ -90,6 +92,49 @@ theorem serreOmega_mul (u v : ℤ_[2]ˣ) : serreOmega (u * v) = serreOmega u + s
     decide
   simpa only [serreOmega, Units.val_mul, map_mul] using
     key _ _ (exists_toZModPow_three_mul_eq_one u) (exists_toZModPow_three_mul_eq_one v)
+
+/-- `ε(u) = 1` exactly when `u` is `3` or `7` modulo `8`. -/
+theorem serreEps_eq_one_iff (u : ℤ_[2]ˣ) :
+    serreEps u = 1 ↔
+      PadicInt.toZModPow 3 (u : ℤ_[2]) = 3 ∨ PadicInt.toZModPow 3 (u : ℤ_[2]) = 7 := by
+  unfold serreEps
+  split_ifs with h <;> simp [h]
+
+/-- `ε(u) = 0` exactly when `u` is `1` or `5` modulo `8`. -/
+theorem serreEps_eq_zero_iff (u : ℤ_[2]ˣ) :
+    serreEps u = 0 ↔
+      PadicInt.toZModPow 3 (u : ℤ_[2]) = 1 ∨ PadicInt.toZModPow 3 (u : ℤ_[2]) = 5 := by
+  have key : ∀ x : ZMod (2 ^ 3), (∃ y, x * y = 1) →
+      ((if x = 3 ∨ x = 7 then (1 : ZMod 2) else 0) = 0 ↔ x = 1 ∨ x = 5) := by
+    decide
+  exact key _ (exists_toZModPow_three_mul_eq_one u)
+
+/-- `ω(u) = 1` exactly when `u` is `3` or `5` modulo `8`. -/
+theorem serreOmega_eq_one_iff (u : ℤ_[2]ˣ) :
+    serreOmega u = 1 ↔
+      PadicInt.toZModPow 3 (u : ℤ_[2]) = 3 ∨ PadicInt.toZModPow 3 (u : ℤ_[2]) = 5 := by
+  unfold serreOmega
+  split_ifs with h <;> simp [h]
+
+/-- `ω(u) = 0` exactly when `u` is `1` or `7` modulo `8`. -/
+theorem serreOmega_eq_zero_iff (u : ℤ_[2]ˣ) :
+    serreOmega u = 0 ↔
+      PadicInt.toZModPow 3 (u : ℤ_[2]) = 1 ∨ PadicInt.toZModPow 3 (u : ℤ_[2]) = 7 := by
+  have key : ∀ x : ZMod (2 ^ 3), (∃ y, x * y = 1) →
+      ((if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0) = 0 ↔ x = 1 ∨ x = 7) := by
+    decide
+  exact key _ (exists_toZModPow_three_mul_eq_one u)
+
+/-- `ε(5) = 0`, for the unit `5` of `ℤ_2`. -/
+theorem serreEps_eq_zero_of_coe_eq_five {u : ℤ_[2]ˣ} (hu : (u : ℤ_[2]) = 5) :
+    serreEps u = 0 := by
+  have h : ¬((5 : ZMod (2 ^ 3)) = 3 ∨ (5 : ZMod (2 ^ 3)) = 7) := by decide
+  simp [serreEps, hu, map_ofNat, h]
+
+/-- `ω(5) = 1`, for the unit `5` of `ℤ_2`. -/
+theorem serreOmega_eq_one_of_coe_eq_five {u : ℤ_[2]ˣ} (hu : (u : ℤ_[2]) = 5) :
+    serreOmega u = 1 := by
+  simp [serreOmega, hu, map_ofNat]
 
 /-- `ε(1) = 0`. -/
 @[simp]

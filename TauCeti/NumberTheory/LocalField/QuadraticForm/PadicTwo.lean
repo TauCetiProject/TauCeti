@@ -27,15 +27,12 @@ where `ε(u) = (u − 1)/2` and `ω(u) = (u² − 1)/8` modulo `2` are the sign 
 formula, and it pins down the sign convention of the local Hilbert symbol in residue
 characteristic `2`.
 
-The proof computes the symbol on the classes of `-1`, `2` and `5`, which generate
-`ℚ_2ˣ/(ℚ_2ˣ)²` because every unit of `ℤ_2` is `(-1) ^ ε(u) 5 ^ ω(u)` times a square
-(`TauCeti.exists_eq_neg_one_pow_mul_five_pow_mul_sq`), and then expands by bimultiplicativity
-(`TauCeti.hilbertSymbol_mul_right`). On these generators,
+The classes of `-1`, `2` and `5` generate `ℚ_2ˣ/(ℚ_2ˣ)²`, since every unit of `ℤ_2` is
+`(-1) ^ ε(u) 5 ^ ω(u)` times a square (`TauCeti.exists_eq_neg_one_pow_mul_five_pow_mul_sq`). On
+these generators the symbol takes the values
 
-* `(-1, 2) = (-1, 5) = (2, 2) = (5, 5) = +1`, from explicit solutions of `b = x² − a y²`;
-* `(-1, -1) = (2, 5) = −1`. Since `-1` and `5` are not squares, nondegeneracy of the symbol
-  gives some `b` with `(-1, b) = −1`, respectively `(5, b) = −1`. Expanding `b` in the
-  generators, the values already known force the remaining one to be `−1`.
+* `(-1, 2) = (-1, 5) = (2, 2) = (5, 5) = +1`, and
+* `(-1, -1) = (2, 5) = −1`.
 
 ## Main results
 
@@ -74,8 +71,7 @@ private theorem exists_eq_neg_one_zpow_mul_unitFive_zpow_mul_sq {a : ℚ_[2]ˣ} 
   rw [ha, hw]
   simp only [Units.val_mul, zpow_natCast, Units.val_pow_eq_pow_val,
     Units.val_neg, Units.val_one, Units.val_mk0]
-  push_cast [show ((5 : ℤ_[2]) : ℚ_[2]) = 5 by norm_cast]
-  ring
+  norm_cast
 
 /-- Expansion of the symbol in its second argument along the generators `2`, `-1`, `5`. -/
 private theorem hilbertSymbol_eq_of_eq_two_zpow_mul (c b : ℚ_[2]ˣ) {β : ℤ} {v : ℤ_[2]ˣ}
@@ -108,25 +104,26 @@ private theorem not_isSquare_of_toZModPow_ne_one {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
 private theorem not_hilbertSymbol_generators_eq_one {c : ℚ_[2]ˣ} (hc : ¬IsSquare c)
     (ht : hilbertSymbol c unitTwo = 1) (hm : hilbertSymbol c (-1) = 1)
     (hf : hilbertSymbol c unitFive = 1) : False := by
+  -- Nondegeneracy gives `b` with `(c, b) = −1`; expanding `b` in the generators by
+  -- bimultiplicativity, the three trivial values give `(c, b) = +1`.
   obtain ⟨b, hb⟩ := exists_hilbertSymbol_eq_neg_one two_ne_zero_padicTwo hc
   obtain ⟨β, v, hv⟩ := exists_eq_two_zpow_mul b
   rw [hilbertSymbol_eq_of_eq_two_zpow_mul c b hv, ht, hm, hf] at hb
   simp at hb
 
+-- The `+1` values on the generators, from explicit solutions of `b = x² − a y²`.
 private theorem hilbertSymbol_neg_one_unitTwo : hilbertSymbol (-1) unitTwo = 1 :=
   (hilbertSymbol_eq_one_iff _ _).mpr ⟨1, 1, by norm_num⟩
 
 private theorem hilbertSymbol_neg_one_unitFive : hilbertSymbol (-1) unitFive = 1 :=
   (hilbertSymbol_eq_one_iff _ _).mpr ⟨1, 2, by norm_num⟩
 
-private theorem hilbertSymbol_unitTwo_unitTwo : hilbertSymbol unitTwo unitTwo = 1 :=
-  (hilbertSymbol_eq_one_iff _ _).mpr ⟨2, 1, by norm_num⟩
-
 private theorem hilbertSymbol_unitFive_unitFive : hilbertSymbol unitFive unitFive = 1 :=
   (hilbertSymbol_eq_one_iff _ _).mpr ⟨5, 2, by norm_num⟩
 
 /-- `(-1, -1) = −1` over `ℚ_2`: `-1` is not of the form `x² + y²` with `x, y ∈ ℚ_2`. -/
 theorem hilbertSymbol_neg_one_neg_one_padicTwo : hilbertSymbol (-1 : ℚ_[2]ˣ) (-1) = -1 := by
+  -- `-1` is a nonsquare, and `(-1, 2) = (-1, 5) = +1`, so `(-1, -1)` must be `−1`.
   have hc : ¬IsSquare (-1 : ℚ_[2]ˣ) :=
     not_isSquare_of_toZModPow_ne_one (u := -1) (by simp)
       (by rw [Units.val_neg, Units.val_one, map_neg, map_one]; decide)
@@ -136,6 +133,7 @@ theorem hilbertSymbol_neg_one_neg_one_padicTwo : hilbertSymbol (-1 : ℚ_[2]ˣ) 
 /-- `(2, 5) = −1` over `ℚ_2`: `5` is not of the form `x² − 2 y²` with `x, y ∈ ℚ_2`. -/
 theorem hilbertSymbol_two_five_padicTwo :
     hilbertSymbol (Units.mk0 (2 : ℚ_[2]) two_ne_zero) (Units.mk0 5 (by norm_num)) = -1 := by
+  -- `5` is a nonsquare, and `(5, -1) = (5, 5) = +1`, so `(5, 2)` must be `−1`.
   have hc : ¬IsSquare unitFive := by
     rw [← isSquare_units_val_iff]
     exact Padic.not_isSquare_five
@@ -165,15 +163,12 @@ theorem hilbertSymbol_padicTwo {a b : ℚ_[2]ˣ} {α β : ℤ} {u v : ℤ_[2]ˣ}
     exact hilbertSymbol_two_five_padicTwo
   -- The symbol of each generator `2`, `-1`, `5` against `a`.
   have hta : hilbertSymbol unitTwo a = (-1) ^ ((serreOmega u).val : ℤ) := by
-    rw [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, hilbertSymbol_unitTwo_unitTwo, h2m,
-      hilbertSymbol_two_five_padicTwo, one_zpow, one_zpow, one_mul, one_mul]
+    simp [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, h2m, hilbertSymbol_two_five_padicTwo]
   have hma : hilbertSymbol (-1) a = (-1) ^ ((serreEps u).val : ℤ) := by
-    rw [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, hilbertSymbol_neg_one_unitTwo,
-      hilbertSymbol_neg_one_neg_one_padicTwo, hilbertSymbol_neg_one_unitFive, one_zpow,
-      one_zpow, one_mul, mul_one]
+    simp [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, hilbertSymbol_neg_one_unitTwo,
+      hilbertSymbol_neg_one_neg_one_padicTwo, hilbertSymbol_neg_one_unitFive]
   have hfa : hilbertSymbol unitFive a = (-1) ^ α := by
-    rw [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, h52, h5m, hilbertSymbol_unitFive_unitFive,
-      one_zpow, one_zpow, mul_one, mul_one]
+    simp [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, h52, h5m]
   rw [hilbertSymbol_eq_of_eq_two_zpow_mul a b hb, hilbertSymbol_comm a, hilbertSymbol_comm a,
     hilbertSymbol_comm a, hta, hma, hfa]
   simp only [← uzpow_intCast (R := ZMod 2), ← uzpow_mul, ← uzpow_add]
