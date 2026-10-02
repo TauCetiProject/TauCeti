@@ -42,6 +42,9 @@ automatically.
 * Instances: `NormedRing`, `NormedCommRing`, `IsUltrametricDist`, `NormOneClass`,
   `NormMulClass` and `CompleteSpace` on `PowerSeries.IsRestricted.subring c`.
 
+Apply the norm lemmas by qualified name, for example `TauCeti.PowerSeries.norm_eq_gaussNorm f`.
+Elements of the restricted subring have type `Subtype`, rather than a new Tate algebra type.
+
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.1 and §5.2.1.
