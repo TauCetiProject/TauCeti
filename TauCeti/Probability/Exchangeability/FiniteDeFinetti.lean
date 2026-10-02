@@ -134,8 +134,8 @@ theorem sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype [Fintype ι] 
     sampleWithReplacement ρ =
       ρ.bind fun x =>
         (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure := by
-  simp_rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_eq_bind,
-    pi_empiricalMeasureOfFintype_eq_map_uniformOn]
+  simp_rw [sampleWithReplacement_eq_samplePopulation_uniformOn,
+    samplePopulation_eq_bind_population, pi_empiricalMeasureOfFintype_eq_map_uniformOn]
 
 section Bounds
 

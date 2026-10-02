@@ -27,8 +27,8 @@ the cases where `σ` is uniform on all index maps, respectively on the injective
 * `samplePopulation` — sample a random population along an independent random selection;
 * `samplePopulation_apply`, `samplePopulation_apply_population` — its evaluation by
   conditioning on the selection or on the population;
-* `samplePopulation_eq_bind` — its form as a mixture, over the population law, of sampling each
-  fixed population.
+* `samplePopulation_eq_bind`, `samplePopulation_eq_bind_population` — its form as a mixture,
+  over the selection law or over the population law, of the samples with that input fixed.
 -/
 
 public section
@@ -117,10 +117,24 @@ theorem samplePopulation_apply_population {σ : Measure (ι → κ)} [SFinite σ
   -- The section of the joint preimage at `x` is, by definition, the reindexed preimage.
   rfl
 
+/-- Sampling a random population is the mixture, over the selection law, of reading each fixed
+selection off the random population. -/
+theorem samplePopulation_eq_bind (σ : Measure (ι → κ)) (ρ : Measure (κ → α)) [SFinite ρ] :
+    samplePopulation σ ρ = σ.bind fun k => ρ.map fun x i => x (k i) := by
+  have hsample (k : ι → κ) : Measurable fun x : κ → α => fun i => x (k i) :=
+    measurable_reindexPopulation.comp measurable_prodMk_left
+  have hmix : Measurable fun k : ι → κ => ρ.map fun x : κ → α => fun i => x (k i) := by
+    refine Measure.measurable_of_measurable_coe _ fun A hA => ?_
+    simp_rw [Measure.map_apply (hsample _) hA]
+    exact measurable_measure_prodMk_left (measurable_reindexPopulation hA)
+  ext A hA
+  rw [samplePopulation_apply hA, Measure.bind_apply hA hmix.aemeasurable]
+  exact lintegral_congr fun k => (Measure.map_apply (hsample k) hA).symm
+
 /-- Sampling a random population is the mixture, over the population law, of sampling each fixed
 population along the selection law. -/
-theorem samplePopulation_eq_bind (σ : Measure (ι → κ)) [SFinite σ] (ρ : Measure (κ → α))
-    [SFinite ρ] :
+theorem samplePopulation_eq_bind_population (σ : Measure (ι → κ)) [SFinite σ]
+    (ρ : Measure (κ → α)) [SFinite ρ] :
     samplePopulation σ ρ = ρ.bind fun x => σ.map fun k i => x (k i) := by
   have hsample (x : κ → α) : Measurable fun k : ι → κ => fun i => x (k i) :=
     measurable_reindexPopulation.comp measurable_prodMk_right
