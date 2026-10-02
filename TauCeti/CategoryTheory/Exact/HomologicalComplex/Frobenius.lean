@@ -22,20 +22,13 @@ injective objects are exactly the contractible complexes, those `K` with a homot
 relation. This holds for cochain and chain complexes indexed by `ℤ` and for the `n`-periodic
 complexes indexed by `ComplexShape.up (ZMod n)`.
 
-The proof has three ingredients.
-
-* A contractible complex `K` is relatively injective and projective for every shape. If `i` is
-  an inflation, choose retractions `r` of its components, which need not commute with the
-  differentials. A map `g` to `K` then extends along `i` by the null-homotopic map built from
-  the components `r ≫ g ≫ h` of a contraction `h` of `K`. Dually for projectivity.
-* The inclusion `homotopyCofiber.inr` of a complex into the mapping cone of any morphism is a
-  componentwise split inflation, and the cone of an identity is contractible. This gives enough
-  injectives.
-* For enough projectives, the same construction is applied to the opposite complex in `Cᵒᵖ`.
-  Unopposing it gives a contractible complex with a componentwise split deflation onto `K`.
-
-A relatively injective complex is then a retract of the cone of its identity, hence contractible,
-and dually for projective complexes.
+These results are what the stable-category machinery needs to apply to complexes. The
+projective stable category `((split C).homologicalComplex c).ProjectiveStableCategory` kills the
+morphisms factoring through a contractible complex, which are the null-homotopic ones, so it is a
+model of the homotopy category of complexes of shape `c`. Being Frobenius, it is triangulated by
+Happel's theorem `TauCeti.ExactStructure.IsFrobenius.stableIsTriangulated`. In particular this
+covers the homotopy categories of `ℤ`-indexed and of `n`-periodic complexes. The comparison with
+Mathlib's `HomotopyCategory C c` is not part of this file.
 
 The hypotheses on the shape are needed: for `ℕ`-indexed chain complexes, a nonzero object
 placed in degree `0` is relatively projective but not relatively injective.
@@ -87,6 +80,8 @@ theorem homologicalComplex_split_isInjective_of_homotopy {K : HomologicalComplex
   have r n : SplitMono (i.f n) :=
     (isSplitMono_of_split_isInflation
       ((homologicalComplex_isInflation_iff _ _ i).1 hi n)).exists_splitMono.some
+  -- `g` extends along `i` by the null-homotopic map built from the components of a
+  -- contraction of `K`, precomposed with these retractions.
   refine ⟨Homotopy.nullHomotopicMap fun p q => (r p).retraction ≫ g.f p ≫ h.hom p q, ?_⟩
   rw [Homotopy.comp_nullHomotopicMap]
   simp_rw [SplitMono.id_assoc]
@@ -101,6 +96,8 @@ theorem homologicalComplex_split_isProjective_of_homotopy {K : HomologicalComple
   have s n : SplitEpi (p.f n) :=
     (isSplitEpi_of_split_isDeflation
       ((homologicalComplex_isDeflation_iff _ _ p).1 hp n)).exists_splitEpi.some
+  -- `g` lifts along `p` by the null-homotopic map built from the components of a
+  -- contraction of `K`, postcomposed with these sections.
   refine ⟨Homotopy.nullHomotopicMap fun i j => h.hom i j ≫ g.f j ≫ (s j).section_, ?_⟩
   rw [Homotopy.nullHomotopicMap_comp]
   simp_rw [Category.assoc, SplitEpi.id, Category.comp_id]
@@ -190,6 +187,7 @@ theorem homologicalComplex_split_isProjective_iff (hc : ∀ i, ∃ j, c.Rel i j)
     (K : HomologicalComplex C c) :
     ((split C).homologicalComplex c).isProjective K ↔ Nonempty (Homotopy (𝟙 K) 0) := by
   refine ⟨fun hK => ?_, fun ⟨h⟩ => homologicalComplex_split_isProjective_of_homotopy h⟩
+  -- `K` is a retract of a contractible complex covering it.
   obtain ⟨P, p, hp, ⟨h⟩⟩ := exists_homologicalComplex_split_isDeflation hc K
   obtain ⟨s, hs⟩ := isProjective_iff.1 hK hp (𝟙 K)
   exact ⟨(Homotopy.ofEq (by simp [hs])).trans
