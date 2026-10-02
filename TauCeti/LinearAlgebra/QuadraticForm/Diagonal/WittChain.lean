@@ -30,6 +30,8 @@ determines their square classes. That boundary is recorded there by
   into the first coefficient of a diagonal form of rank at least two.
 * `TauCeti.diagonalChain_iff_equivalent`: Witt's chain theorem in rank at least two.
 * `TauCeti.diagonalChain_iff_equivalent_of_two_le`: the same statement in inequality form.
+* `TauCeti.RegularFormClass.exists_eq_mk_rankOne_add_of_mem_unitValueSet`: a represented unit
+  splits off the class of a diagonal form of rank at least two as a rank-one summand.
 
 ## References
 
@@ -210,5 +212,19 @@ theorem diagonalChain_iff_equivalent_of_two_le {n : ℕ} (hn : 2 ≤ n)
         (weightedSumSquares K fun i ↦ (w' i : K)) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
   exact diagonalChain_iff_equivalent
+
+omit [Invertible (2 : K)] in
+/-- A unit represented by a diagonal form of rank at least two splits off as a line: the class
+of the form is the rank-one class `⟨a⟩` plus a class of rank one less. -/
+theorem RegularFormClass.exists_eq_mk_rankOne_add_of_mem_unitValueSet {n : ℕ}
+    (w : Fin (n + 2) → Kˣ) (a : Kˣ) (ha : a ∈ unitValueSet (presentedForm ⟨n + 2, w⟩)) :
+    ∃ y : RegularFormClass K, y.rank = n + 1 ∧
+      Quotient.mk (regularFormSetoid K) ⟨n + 2, w⟩ =
+        Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + y := by
+  rw [presentedForm_eq_weightedSumSquares_coe] at ha
+  obtain ⟨w', hw', rfl⟩ := exists_diagonalChain_first_eq_of_mem_unitValueSet w a ha
+  refine ⟨Quotient.mk _ ⟨n + 1, fun i => w' i.succ⟩, RegularFormClass.rank_mk _, ?_⟩
+  rw [← RegularFormClass.mk_succ_eq_mk_rankOne_add, RegularFormClass.mk_eq_mk_iff]
+  simpa only [presentedForm_eq_weightedSumSquares_coe] using hw'.equivalent
 
 end TauCeti

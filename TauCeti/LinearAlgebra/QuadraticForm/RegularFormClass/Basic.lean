@@ -57,6 +57,8 @@ rank is additive.
 * `TauCeti.presentedForm_tail_isRepresentedBy`: the tail of a diagonal presentation is
   represented by the full form.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
+* `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
+  rank is the rank-one class of its first weight plus the class of the remaining weights.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 
 ## References
@@ -559,6 +561,19 @@ private theorem RegularFormClass.mk_succ {n : ℕ} (w : Fin (n + 1) → Kˣ) :
     (Fin.append_right_eq_snoc _ _).trans (Fin.snoc_init_self w)
   rw [RegularFormClass.mk_add_mk]
   exact congrArg (Quotient.mk (regularFormSetoid K)) (congrArg (Sigma.mk (n + 1)) hw.symm)
+
+/-- Peeling the first weight off a presentation of positive rank splits its class as the
+rank-one class `⟨w 0⟩` plus the class of the remaining weights. -/
+theorem RegularFormClass.mk_succ_eq_mk_rankOne_add {n : ℕ} (w : Fin (n + 1) → Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨n + 1, w⟩ =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => w 0⟩ +
+        Quotient.mk (regularFormSetoid K) ⟨n, fun i => w i.succ⟩ := by
+  rw [RegularFormClass.mk_add_mk]
+  refine congrArg (Quotient.mk (regularFormSetoid K))
+    (RegularFormPresentation.ext (Nat.add_comm n 1) fun i => ?_)
+  simp only [RegularFormPresentation.append, Fin.append_left_eq_cons, Function.comp_apply,
+    Fin.cast_cast, Fin.cast_eq_self]
+  exact (congrFun (Fin.cons_self_tail w) i).symm
 
 /-- Every isometry class of regular forms is built from the zero class by adjoining rank-one
 classes one at a time. This is the induction principle behind every statement proved by
