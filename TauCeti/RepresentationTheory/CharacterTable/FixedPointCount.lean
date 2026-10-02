@@ -7,9 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Determined
 public import TauCeti.RepresentationTheory.Induction.Permutation
--- Non-public: Burnside's lemma is what turns an equality of fixed-point counts into an equality of
--- orbit counts.
-import Mathlib.GroupTheory.GroupAction.Quotient
 
 /-!
 # Permutation representations in characteristic zero are classified by fixed-point counts
@@ -37,12 +34,10 @@ of Gassmann, satisfied by non-conjugate subgroups, so that `G ⧸ H` and `G ⧸ 
 isomorphic `G`-sets. Nothing about Gassmann's examples is proved here; what is proved is the
 criterion they are examples for.
 
-Numerical consequences are recorded along the way. That equivalent permutation representations come
-from `G`-sets of the same size needs no assumption on the characteristic — an equivalence of
-representations is in particular a linear equivalence, and `k[X]` has dimension `#X` over any field
-— and in the subgroup form this is the equality of the two indices. In characteristic zero the
-criterion gives more: summing it over `G` and applying Burnside's lemma, the numbers of orbits agree
-as well.
+One numerical consequence is recorded along the way, and it needs no assumption on the
+characteristic: equivalent permutation representations come from `G`-sets of the same size, because
+an equivalence of representations is in particular a linear equivalence and `k[X]` has dimension
+`#X` over any field. In the subgroup form this is the equality of the two indices.
 
 ## Main statements
 
@@ -51,9 +46,7 @@ as well.
 * `TauCeti.nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq`: **the classification** —
   over a field of characteristic zero, two permutation representations of a finite group are
   equivalent exactly when the fixed-point counts of the underlying `G`-sets agree.
-* `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction`: the cardinalities agree, over any field, and
-  `TauCeti.natCard_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction`: in characteristic zero the
-  orbit counts agree too.
+* `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction`: the cardinalities agree, over any field.
 * `TauCeti.nonempty_iso_repOfMulAction_iff_forall_natCard_fixedBy_eq`: the same classification,
   read on the objects of `Rep k G`.
 * `TauCeti.nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq`: the subgroup form, for the
@@ -126,28 +119,6 @@ theorem natCard_eq_of_nonempty_equiv_ofMulAction
     (MonoidAlgebra.coeffLinearEquiv k (S := k) (M := Y)).finrank_eq, Module.finrank_finsupp_self,
     Module.finrank_finsupp_self] at hrank
   rwa [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-
-/-- **Equivalent permutation representations come from `G`-sets with the same number of orbits.**
-Summing the fixed-point counts over `G` and applying Burnside's lemma expresses `|G|` times the
-number of orbits in terms of data the classification equates; `|G|` is nonzero, so the orbit counts
-agree. -/
-theorem natCard_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction [CharZero k]
-    (h : Nonempty ((ofMulAction k G X).Equiv (ofMulAction k G Y))) :
-    Nat.card (orbitRel.Quotient G X) = Nat.card (orbitRel.Quotient G Y) := by
-  classical
-  have _ : Fintype G := Fintype.ofFinite G
-  have _ : Fintype X := Fintype.ofFinite X
-  have _ : Fintype Y := Fintype.ofFinite Y
-  have _ : Fintype (orbitRel.Quotient G X) := Fintype.ofFinite _
-  have _ : Fintype (orbitRel.Quotient G Y) := Fintype.ofFinite _
-  have hsum : ∑ g : G, Fintype.card (fixedBy X g) = ∑ g : G, Fintype.card (fixedBy Y g) :=
-    Finset.sum_congr rfl fun g _ ↦ by
-      rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card]
-      exact natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction k h g
-  rw [sum_card_fixedBy_eq_card_orbits_mul_card_group,
-    sum_card_fixedBy_eq_card_orbits_mul_card_group] at hsum
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-  exact Nat.eq_of_mul_eq_mul_right Fintype.card_pos hsum
 
 /-- **The classification in `Rep k G`.** The permutation representations of two finite `G`-sets are
 isomorphic as objects of `Rep k G`, over a field of characteristic zero, exactly when the
