@@ -131,10 +131,10 @@ theorem biUnion_passportClasses (G : Finset (Perm (Fin n)))
     (passportClasses G lam0 lam1 laminf).biUnion id =
       passportTriples G lam0 lam1 laminf := by
   classical
-  ext t
-  simp only [Finset.mem_biUnion, mem_passportClasses, id_eq]
-  constructor
-  · rintro ⟨s, ⟨t', ht', rfl⟩, ht⟩
+  have horbit (t' : ConnectedTriple n) (ht' : t' ∈ passportTriples G lam0 lam1 laminf) :
+      (ConnectedIsoClass.mk t').orbitFinset =
+        (passportTriples G lam0 lam1 laminf).filter
+          (fun t => ConnectedIsoClass.mk t = ConnectedIsoClass.mk t') := by
     -- A member certifies the input finset as a conjugate subgroup, so the existing passport
     -- invariance applies without assuming that arbitrary inputs present a subgroup.
     obtain ⟨τ, hτ⟩ := (mem_passportTriples.mp ht').1
@@ -145,13 +145,24 @@ theorem biUnion_passportClasses (G : Finset (Perm (Fin n)))
       rw [← hτ, Finset.coe_image, PermutationTriple.coe_monodromyFinset]
     have hc := (ConnectedIsoClass.hasPassport_mk t' P).mpr
       ((mem_passportTriples_iff_hasPassport P G hG t').mp ht')
-    rw [← ConnectedIsoClass.mem_orbitFinset.mp ht] at hc
-    exact (mem_passportTriples_iff_hasPassport P G hG t).mpr
-      ((ConnectedIsoClass.hasPassport_mk t P).mp hc)
-  · intro ht
-    exact ⟨(ConnectedIsoClass.mk t).orbitFinset,
-      ⟨t, ht, rfl⟩,
-      ConnectedIsoClass.mem_orbitFinset.mpr rfl⟩
+    ext t
+    simp only [ConnectedIsoClass.mem_orbitFinset, Finset.mem_filter]
+    constructor
+    · intro ht
+      rw [← ht] at hc
+      exact ⟨(mem_passportTriples_iff_hasPassport P G hG t).mpr
+        ((ConnectedIsoClass.hasPassport_mk t P).mp hc), ht⟩
+    · exact fun ht => ht.2
+  rw [passportClasses, Finset.image_biUnion]
+  calc
+    _ = (passportTriples G lam0 lam1 laminf).biUnion
+        (fun t' => (passportTriples G lam0 lam1 laminf).filter
+          (fun t => ConnectedIsoClass.mk t = ConnectedIsoClass.mk t')) :=
+      Finset.biUnion_congr rfl horbit
+    _ = passportTriples G lam0 lam1 laminf := by
+      simpa only [Finset.image_biUnion] using
+        Finset.image_biUnion_filter_eq (passportTriples G lam0 lam1 laminf)
+          ConnectedIsoClass.mk
 
 /-- The computed class fiber has cardinality equal to the passport size. -/
 theorem card_passportClasses (P : PassportSpec n) (G : Finset (Perm (Fin n)))
