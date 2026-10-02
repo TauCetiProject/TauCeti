@@ -37,7 +37,7 @@ Section 3.3.
 
 * `TopCat.ιChainComplex_capChain_alexanderWhitneyDiagonal`: the cap product of a singular simplex
   and a singular cochain.
-* `TopCat.singularCap`: the cap product `Hᵖ(X; M) ⟶ (Hₙ(X; T) ⟶ H_q(X; P))`, with
+* `TopCat.singularCap`: the cap product `Hᵖ(X; R, M) ⟶ (Hₙ(X; T) ⟶ H_q(X; P))`, with
   `TopCat.singularCap_homologyπ` computing it on classes of cycles and cocycles and
   `TopCat.singularCap_naturality` its naturality.
 

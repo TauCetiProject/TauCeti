@@ -22,8 +22,8 @@ two projections (`CartesianMonoidalCategory.prodComparison`).  It is natural in 
 For a single space `X` and a coefficient morphism `u : T ⟶ R ⊗ S`, the Alexander–Whitney diagonal
 `X.alexanderWhitneyDiagonal u : C(X; T) ⟶ C(X; R) ⊗ C(X; S)` is `u`, followed by the chain map
 induced by the diagonal `X ⟶ X × X` and by `TopCat.alexanderWhitney X X R S`.  It sends a singular
-simplex `σ` to `∑_{p + q = n} σ|[0, …, p] ⊗ σ|[p, …, n]`, and is natural in `X`.  Cup and cap
-products of singular cochains are taken along it.
+simplex `σ` to `∑_{p + q = n} σ|[0, …, p] ⊗ σ|[p, …, n]`, and is natural in `X`.  Cup products
+of singular cochains and cap products of singular chains with singular cochains are taken along it.
 
 ## Main definitions and results
 

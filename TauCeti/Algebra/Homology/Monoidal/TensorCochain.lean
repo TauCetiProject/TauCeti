@@ -239,8 +239,8 @@ lemma tensorCochain_comp {P' : C} (g : P ⟶ P') {p q : ℕ} (φ : A.X p ⟶ M) 
   rw [ιTensorObj_tensorCochain_extend_assoc,
     ιTensorObj_tensorCochain_extend]
 
-/-- The tensor product of cochains along the pairing `(M ◁ g) ≫ μ` is the tensor product along
-`μ` with the second cochain postcomposed with `g`. -/
+/-- The tensor product of cochains along the pairing `(M ◁ g) ≫ μ'` is the tensor product along
+`μ'` with the second cochain postcomposed with `g`. -/
 lemma tensorCochain_whiskerLeft_comp {N' : C} (g : N ⟶ N') (μ' : M ⊗ N' ⟶ P) {p q : ℕ}
     (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
     tensorCochain ((M ◁ g) ≫ μ') φ ψ n = tensorCochain μ' φ (ψ ≫ g) n := by
