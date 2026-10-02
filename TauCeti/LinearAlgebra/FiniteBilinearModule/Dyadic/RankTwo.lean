@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Metabolic
 
 /-!
 # The rank-two dyadic generators `u^{(2)}(2^k)` and `v^{(2)}(2^k)`
@@ -28,6 +28,8 @@ coincide. For `A = !![2,1;1,2]` they differ, but `A⁻¹` is congruent to `A` ov
 Together with the cyclic generators `q_θ^{(p)}(p^k)` they generate every nondegenerate finite
 quadratic module under orthogonal sum; at `p = 2` the two rank-two forms are needed because a
 `2`-adic lattice of type II need not be diagonalizable.
+
+The first coordinate axis of `u` is a quadratic Lagrangian, so `u` is metabolic.
 
 Both forms are presented as compositions of a `ℤ/2^k`-valued quadratic map with the injection
 `ZMod.toRatAddCircle` of `ℤ/2^k` into `ℚ/ℤ`, so their values are honest residues and no lifting
@@ -102,6 +104,32 @@ theorem isNondegenerate_dyadicU : (dyadicU k).IsNondegenerate := by
     exact Prod.ext h₂ h₁
   exact (FiniteBilinearModule.isNondegenerate_iff_injective _).2
     ((injective_iff_map_eq_zero _).2 key)
+
+/-- The first coordinate axis of `u^{(2)}(2^k)` is a quadratic Lagrangian. -/
+@[simp]
+theorem isLagrangian_dyadicU_top_prod_bot :
+    (dyadicU k).IsLagrangian
+      ((⊤ : AddSubgroup (ZMod (2 ^ k))).prod (⊥ : AddSubgroup (ZMod (2 ^ k)))) := by
+  -- Compute on the concrete coordinate group, then transport to the bundled module.
+  have hi : ∀ x ∈ ((⊤ : AddSubgroup (ZMod (2 ^ k))).prod (⊥ : AddSubgroup (ZMod (2 ^ k)))),
+      (dyadicU k).quadratic x = 0 := by
+    intro x hx
+    have hx₂ : x.2 = 0 := (AddSubgroup.mem_prod.mp hx).2
+    simp [dyadicU_quadratic, hx₂]
+  have hc : Nat.card ((⊤ : AddSubgroup (ZMod (2 ^ k))).prod (⊥ : AddSubgroup (ZMod (2 ^ k)))) ^ 2 =
+      Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) := by
+    rw [Nat.card_congr (AddSubgroup.prodEquiv (⊤ : AddSubgroup (ZMod (2 ^ k)))
+      (⊥ : AddSubgroup (ZMod (2 ^ k)))).toEquiv]
+    simp [pow_two]
+  exact IsIsotropic.isLagrangian_of_card_sq_eq _ ((isIsotropic_def _).2 hi)
+    (isNondegenerate_dyadicU k) hc
+
+/-- **The dyadic hyperbolic generators are metabolic**, including the trivial module at
+`k = 0`. -/
+@[simp high] -- Apply before `isMetabolic_def` unfolds the predicate.
+theorem isMetabolic_dyadicU : (dyadicU k).IsMetabolic := by
+  rw [isMetabolic_def]
+  exact ⟨_, isLagrangian_dyadicU_top_prod_bot k⟩
 
 /-! ## `v^{(2)}(2^k)` -/
 

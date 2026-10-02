@@ -24,6 +24,8 @@ totalized coordinate by coordinate.
   covariance when the measure has a finite second moment.
 * `TauCeti.posSemidef_covMatrix` proves that covariance matrices are positive semidefinite under
   the same moment hypotheses.
+* `TauCeti.integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix` decomposes the second
+  moment into the squared norm of the mean and the trace of the covariance matrix.
 
 ## References
 
@@ -102,5 +104,31 @@ theorem posSemidef_covMatrix [Fintype ι]
   have hnonneg := covarianceBilin_self_nonneg (μ := μ) x
   rw [covarianceBilin_eq_covMatrix μ hμ x x] at hnonneg
   simpa only [RCLike.re_to_real, real_inner_comm] using hnonneg
+
+/-- The second moment of a Euclidean-valued probability measure is the squared norm of its mean
+plus the trace of its covariance matrix. -/
+theorem integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix [Fintype ι]
+    (μ : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure μ] (hμ : MemLp id 2 μ) :
+    ∫ x, ‖x‖ ^ 2 ∂μ = ‖∫ x, x ∂μ‖ ^ 2 + Matrix.trace (covMatrix μ) := by
+  classical
+  have hcoord (i : ι) : MemLp (fun x : EuclideanSpace ℝ ι => x i) 2 μ := by
+    simpa only [id_eq, EuclideanSpace.coe_proj] using
+      hμ.continuousLinearMap_comp (𝕜 := ℝ) (EuclideanSpace.proj i)
+  have hsq (i : ι) : Integrable (fun x : EuclideanSpace ℝ ι => (x i) ^ 2) μ := by
+    have h := (memLp_two_iff_integrable_sq_norm (hcoord i).aestronglyMeasurable).mp (hcoord i)
+    simpa only [Real.norm_eq_abs, sq_abs] using h
+  have hmean (i : ι) : (∫ x, x ∂μ) i = ∫ x, x i ∂μ := by
+    exact eval_integral_piLp (q := 2) (fun j => (hcoord j).integrable one_le_two) i
+  have hnorm : (fun x : EuclideanSpace ℝ ι => ‖x‖ ^ 2) = fun x => ∑ i, (x i) ^ 2 :=
+    funext EuclideanSpace.real_norm_sq_eq
+  rw [hnorm, integral_finsetSum Finset.univ (fun i _ => hsq i),
+    EuclideanSpace.real_norm_sq_eq, Matrix.trace]
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [Matrix.diag_apply, covMatrix_apply,
+    covariance_self (hcoord i).aemeasurable, variance_eq_sub (hcoord i), hmean]
+  ring_nf
+  rfl
 
 end TauCeti

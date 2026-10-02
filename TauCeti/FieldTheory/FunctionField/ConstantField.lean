@@ -264,4 +264,12 @@ theorem algebraicClosure_ratFunc (K : Type*) [Field K] :
 instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
   algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure_ratFunc k)
 
+/-- **Exactness passes to intermediate fields**: if `k` is integrally closed in `F`, it is
+integrally closed in every intermediate field of `F / k`. -/
+theorem isIntegrallyClosedIn_intermediateField (hex : IsIntegrallyClosedIn k F)
+    (E : IntermediateField k F) : IsIntegrallyClosedIn k E :=
+  isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k E).injective, fun {z} hz ↦ by
+    obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff.mp hex).2 (hz.map E.val)
+    exact ⟨c, Subtype.ext (by simpa using hc)⟩⟩
+
 end TauCeti

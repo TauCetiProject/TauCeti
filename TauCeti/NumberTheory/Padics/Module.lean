@@ -9,19 +9,21 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
+public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 import Mathlib.Algebra.Group.Equiv.TypeTags
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
-# Continuous additive maps between `ℤ_[p]`-modules are `ℤ_[p]`-linear
+# Topological `ℤ_[p]`-modules and their additive groups
 
 A continuous additive map `f : E →+ F` between topological `ℤ_[p]`-modules with `F` Hausdorff is
 automatically `ℤ_[p]`-linear: for fixed `x`, the continuous maps `c ↦ f (c • x)` and `c ↦ c • f x`
 agree on the dense subset `ℕ` of `ℤ_[p]`, and two continuous maps into a Hausdorff space that agree
 on a dense set are equal. So the `ℤ_[p]`-module structure of a Hausdorff topological
 `ℤ_[p]`-module is determined by its topological group structure, and continuous additive maps and
-isomorphisms between such modules can be treated as continuous `ℤ_[p]`-linear ones. Throughout,
-the codomain `F` is assumed Hausdorff.
+isomorphisms between such modules can be treated as continuous `ℤ_[p]`-linear ones. In the
+automatic-linearity and rank results, the codomain `F` is assumed Hausdorff.
 
 This file adapts `Mathlib/Topology/Instances/RealVectorSpace.lean` (Yury Kudryashov) from `ℝ` to
 `ℤ_[p]`: `TauCeti.map_padicInt_smul`, `AddMonoidHom.toPadicIntLinearMap`, and
@@ -34,6 +36,9 @@ additive isomorphism between two such modules preserves `Module.finrank`, and `�
 
 ## Main results
 
+* `TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso`: closed additive subgroups are precisely
+  closed submodules. This correspondence needs neither compactness nor separation: closedness
+  and density of the natural-number scalars give stability under all `ℤ_[p]`-scalars.
 * `TauCeti.map_padicInt_smul`: a continuous additive map between topological `ℤ_[p]`-modules
   with Hausdorff codomain commutes with scalar multiplication by `ℤ_[p]`.
 * `AddMonoidHom.toPadicIntLinearMap`, `AddEquiv.toPadicIntLinearEquiv`: the resulting continuous
@@ -78,6 +83,72 @@ theorem TauCeti.eq_of_continuousMulEquiv_pi_padicInt {r r' : ℕ}
     (AddEquiv.toMultiplicative.symm e.toMulEquiv).finrank_padicInt_eq (p := p) hf
 
 end
+
+section ClosedSubgroups
+
+variable (p : ℕ) [Fact p.Prime] {M : Type*} [AddCommGroup M] [TopologicalSpace M]
+  [Module ℤ_[p] M] [ContinuousSMul ℤ_[p] M]
+
+/-- A closed additive subgroup of a topological `ℤ_[p]`-module is stable under `ℤ_[p]`-scalars.
+No separation or compactness hypothesis is needed. -/
+theorem ClosedAddSubgroup.padicInt_smul_mem (H : ClosedAddSubgroup M) {x : M}
+    (hx : x ∈ H) (c : ℤ_[p]) : c • x ∈ H := by
+  refine PadicInt.denseRange_natCast.induction_on c ?_ fun n ↦ ?_
+  · exact H.isClosed'.preimage (continuous_id.smul continuous_const)
+  · rw [Nat.cast_smul_eq_nsmul]
+    exact H.toAddSubgroup.nsmul_mem hx n
+
+/-- The closed `ℤ_[p]`-submodule with the same carrier as a closed additive subgroup. -/
+def ClosedAddSubgroup.toPadicIntSubmodule (H : ClosedAddSubgroup M) :
+    ClosedSubmodule ℤ_[p] M where
+  toSubmodule :=
+    { H.toAddSubgroup with smul_mem' := fun c _ hx ↦ H.padicInt_smul_mem p hx c }
+  isClosed' := H.isClosed'
+
+@[simp]
+theorem ClosedAddSubgroup.coe_toPadicIntSubmodule (H : ClosedAddSubgroup M) :
+    (H.toPadicIntSubmodule p : Set M) = H :=
+  (rfl)
+
+@[simp]
+theorem ClosedAddSubgroup.mem_toPadicIntSubmodule (H : ClosedAddSubgroup M) {x : M} :
+    x ∈ H.toPadicIntSubmodule p ↔ x ∈ H :=
+  Iff.rfl
+
+@[simp]
+theorem ClosedAddSubgroup.toAddSubgroup_toPadicIntSubmodule (H : ClosedAddSubgroup M) :
+    (H.toPadicIntSubmodule p).toSubmodule.toAddSubgroup = H.toAddSubgroup :=
+  (rfl)
+
+/-- Closed additive subgroups and closed `ℤ_[p]`-submodules of a topological `ℤ_[p]`-module
+are the same ordered collection of subsets. -/
+noncomputable def TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso :
+    ClosedAddSubgroup M ≃o ClosedSubmodule ℤ_[p] M where
+  toFun H := H.toPadicIntSubmodule p
+  invFun S := ⟨S.toSubmodule.toAddSubgroup, S.isClosed⟩
+  left_inv H := by ext; rfl
+  right_inv S := by ext; rfl
+  map_rel_iff' := Iff.rfl
+
+@[simp]
+theorem TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso_apply (H : ClosedAddSubgroup M) :
+    closedAddSubgroupPadicIntSubmoduleOrderIso p H = H.toPadicIntSubmodule p :=
+  (rfl)
+
+@[simp]
+theorem TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso_symm_toAddSubgroup
+    (S : ClosedSubmodule ℤ_[p] M) :
+    ((closedAddSubgroupPadicIntSubmoduleOrderIso p).symm S).toAddSubgroup =
+      S.toSubmodule.toAddSubgroup :=
+  (rfl)
+
+@[simp]
+theorem TauCeti.mem_closedAddSubgroupPadicIntSubmoduleOrderIso_symm
+    (S : ClosedSubmodule ℤ_[p] M) {x : M} :
+    x ∈ (closedAddSubgroupPadicIntSubmoduleOrderIso p).symm S ↔ x ∈ S :=
+  Iff.rfl
+
+end ClosedSubgroups
 
 section
 
