@@ -475,6 +475,7 @@ variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 profinite group is all of `N`. Equivalently, `N` has no nontrivial continuous `p`-group quotient
 (`TauCeti.proPKernel_eq_top_iff`), so every continuous homomorphism from `N` to a profinite
 pro-`p` group is trivial (`TauCeti.eq_one_of_proPKernel_eq_top`). -/
+@[simp]
 theorem proPKernel_proPKernel_eq_top : proPKernel p (proPKernel p G) = ⊤ := by
   set N := proPKernel p G
   have : CompactSpace N := isCompact_iff_compactSpace.mp (isClosed_proPKernel (G := G)).isCompact
