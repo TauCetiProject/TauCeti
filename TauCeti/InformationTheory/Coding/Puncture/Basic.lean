@@ -23,8 +23,11 @@ vanish outside `s`, and then forgets those zero coordinates.
 
 Neither the field nor the coordinate type is assumed finite; finiteness enters only in the
 dimension bounds. The API records membership, order preservation, the zero and whole-space cases,
-the comparison between shortening and puncturing, and the exact dimension of a shortened code
-before coordinates are discarded.
+the comparison between shortening and puncturing, and dimension control. Restriction to the deleted
+coordinates has the shortened code as its kernel, so `dim shorten C s + dim puncture C sᶜ = dim C`.
+For a single deleted coordinate `i` this gives the exact dimensions: shortening at `i` drops the
+dimension by one precisely when some codeword is nonzero at `i`, and puncturing at `i` drops it by
+one precisely when the unit word at `i` is a codeword.
 
 ## Main declarations
 
@@ -33,6 +36,9 @@ before coordinates are discarded.
 * `punctureAt` and `shortenAt`: the corresponding operations deleting one coordinate.
 * `mem_puncture` and `mem_shorten`: membership characterizations.
 * `finrank_puncture_le`, `finrank_puncture_eq`, and `finrank_shorten_eq`: dimension control.
+* `finrank_shorten_add_finrank_puncture_compl`: rank–nullity for shortening and puncturing.
+* `finrank_shortenAt_add_one_of_exists_ne_zero` and `finrank_punctureAt_add_one_of_single_mem`:
+  the exact dimension drop when deleting one coordinate.
 
 ## References
 
@@ -318,6 +324,47 @@ theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode F ι) s = ⊤ := by
   simp only [LinearCode.shorten_toAddSubgroup, Submodule.top_toAddSubgroup,
     AdditiveCode.shorten_top]
 
+/-- Puncturing to a single retained coordinate `i` gives the whole word space on `{i}` exactly when
+some codeword is nonzero at `i`. -/
+theorem puncture_singleton_eq_top_iff {C : LinearCode F ι} {i : ι} :
+    puncture C {i} = ⊤ ↔ ∃ x ∈ C, x i ≠ 0 := by
+  constructor
+  · intro h
+    have h1 : (1 : ({i} : Set ι) → F) ∈ puncture C {i} := by
+      rw [h]
+      exact Submodule.mem_top
+    obtain ⟨x, hxC, hx⟩ := mem_puncture.mp h1
+    exact ⟨x, hxC, by simp [hx ⟨i, rfl⟩]⟩
+  · rintro ⟨x, hxC, hxi⟩
+    refine eq_top_iff.mpr fun y _ ↦
+      mem_puncture.mpr ⟨(y ⟨i, rfl⟩ / x i) • x, C.smul_mem _ hxC, fun j ↦ ?_⟩
+    obtain rfl : j = ⟨i, rfl⟩ := Subsingleton.elim _ _
+    simp [hxi]
+
+/-- Shortening to a single retained coordinate `i` gives the whole word space on `{i}` exactly when
+the unit word at `i` is a codeword. -/
+theorem shorten_singleton_eq_top_iff [DecidableEq ι] {C : LinearCode F ι} {i : ι} :
+    shorten C {i} = ⊤ ↔ Pi.single i 1 ∈ C := by
+  constructor
+  · intro h
+    have h1 : (1 : ({i} : Set ι) → F) ∈ shorten C {i} := by
+      rw [h]
+      exact Submodule.mem_top
+    obtain ⟨x, hxC, hx0, hx⟩ := mem_shorten.mp h1
+    convert hxC using 1
+    ext j
+    by_cases hj : j = i
+    · subst hj
+      simpa using (hx ⟨j, rfl⟩).symm
+    · simp [hj, hx0 j hj]
+  · intro h
+    refine eq_top_iff.mpr fun y _ ↦
+      mem_shorten.mpr ⟨y ⟨i, rfl⟩ • Pi.single i 1, C.smul_mem _ h, fun j hj ↦ ?_, fun j ↦ ?_⟩
+    · rw [Set.mem_singleton_iff] at hj
+      simp [hj]
+    · obtain rfl : j = ⟨i, rfl⟩ := Subsingleton.elim _ _
+      simp
+
 /-- Puncturing commutes with sums of codes. -/
 @[simp]
 theorem puncture_sup (C D : LinearCode F ι) (s : Set ι) :
@@ -383,6 +430,34 @@ theorem finrank_shorten_le (C : LinearCode F ι) [FiniteDimensional F C] (s : Se
   apply Submodule.finrank_mono
   exact inf_le_left
 
+/-- **Rank–nullity for shortening and puncturing.** Restricting a code to the deleted coordinates
+`sᶜ` has kernel the words vanishing off `s`, which is the shortened code; so the dimensions of
+`shorten C s` and `puncture C sᶜ` add up to the dimension of `C`. -/
+theorem finrank_shorten_add_finrank_puncture_compl (C : LinearCode F ι) [FiniteDimensional F C]
+    (s : Set ι) :
+    Module.finrank F (shorten C s) + Module.finrank F (puncture C sᶜ) = Module.finrank F C := by
+  let f := LinearMap.funLeft F F (Subtype.val : ↥sᶜ → ι)
+  have hker : LinearMap.ker f = Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F) := by
+    ext x
+    simp [f, Submodule.mem_pi, funext_iff, LinearMap.funLeft_apply]
+  have hrange : LinearMap.range (f.domRestrict C) = puncture C sᶜ := by
+    rw [LinearMap.range_domRestrict, puncture_def]
+  have hkerdim : Module.finrank F (LinearMap.ker (f.domRestrict C)) =
+      Module.finrank F (shorten C s) := by
+    rw [finrank_shorten_eq, LinearMap.ker_domRestrict, ← Submodule.finrank_map_subtype_eq,
+      Submodule.map_comap_subtype, hker]
+  have hrn := (f.domRestrict C).finrank_range_add_finrank_ker
+  rw [hrange, hkerdim] at hrn
+  exact (add_comm _ _).trans hrn
+
+/-- The dimensions of `puncture C s` and `shorten C sᶜ` add up to the dimension of `C`. -/
+theorem finrank_puncture_add_finrank_shorten_compl (C : LinearCode F ι) [FiniteDimensional F C]
+    (s : Set ι) :
+    Module.finrank F (puncture C s) + Module.finrank F (shorten C sᶜ) = Module.finrank F C := by
+  have h := finrank_shorten_add_finrank_puncture_compl C sᶜ
+  rw [compl_compl] at h
+  omega
+
 /-- The dimension lost by shortening is at most the number of deleted coordinates. -/
 theorem finrank_le_finrank_shorten_add_ncard_compl [Finite ι]
     (C : LinearCode F ι) (s : Set ι) :
@@ -419,5 +494,52 @@ theorem finrank_le_finrank_puncture_add_ncard_compl [Finite ι]
     Module.finrank F C ≤ Module.finrank F (puncture C s) + sᶜ.ncard := by
   refine (finrank_le_finrank_shorten_add_ncard_compl C s).trans ?_
   exact Nat.add_le_add_right (Submodule.finrank_mono (shorten_le_puncture C s)) _
+
+/-! ### Deleting one coordinate -/
+
+/-- Shortening at `i` lowers the dimension by exactly one when some codeword is nonzero at `i`. -/
+theorem finrank_shortenAt_add_one_of_exists_ne_zero (C : LinearCode F ι) [FiniteDimensional F C]
+    {i : ι} (h : ∃ x ∈ C, x i ≠ 0) :
+    Module.finrank F (shortenAt C i) + 1 = Module.finrank F C := by
+  have hdim := finrank_shorten_add_finrank_puncture_compl C {i}ᶜ
+  rwa [compl_compl, puncture_singleton_eq_top_iff.mpr h, finrank_top,
+    Module.finrank_fintype_fun_eq_card, Fintype.card_unique] at hdim
+
+/-- Shortening at `i` preserves the dimension when every codeword vanishes at `i`. -/
+theorem finrank_shortenAt_of_forall_eq_zero (C : LinearCode F ι) {i : ι}
+    (h : ∀ x ∈ C, x i = 0) :
+    Module.finrank F (shortenAt C i) = Module.finrank F C := by
+  rw [shortenAt_def, finrank_shorten_eq, inf_eq_left.mpr]
+  intro x hx
+  refine Submodule.mem_pi.mpr fun j hj ↦ ?_
+  obtain rfl : j = i := by simpa using hj
+  exact h x hx
+
+/-- Puncturing at `i` lowers the dimension by exactly one when the unit word at `i` is a
+codeword. -/
+theorem finrank_punctureAt_add_one_of_single_mem [DecidableEq ι] (C : LinearCode F ι)
+    [FiniteDimensional F C] {i : ι} (h : Pi.single i 1 ∈ C) :
+    Module.finrank F (punctureAt C i) + 1 = Module.finrank F C := by
+  have hdim := finrank_puncture_add_finrank_shorten_compl C {i}ᶜ
+  rwa [compl_compl, shorten_singleton_eq_top_iff.mpr h, finrank_top,
+    Module.finrank_fintype_fun_eq_card, Fintype.card_unique] at hdim
+
+/-- Puncturing at `i` preserves the dimension when the unit word at `i` is not a codeword. -/
+theorem finrank_punctureAt_of_single_notMem [DecidableEq ι] (C : LinearCode F ι) {i : ι}
+    (h : Pi.single i 1 ∉ C) :
+    Module.finrank F (punctureAt C i) = Module.finrank F C := by
+  refine finrank_puncture_eq C _ fun x hx hx0 ↦ ?_
+  by_contra hne
+  have hxi : x i ≠ 0 := fun hxi ↦ hne <| funext fun j ↦ by
+    by_cases hj : j = i
+    · exact hj ▸ hxi
+    · exact hx0 ⟨j, hj⟩
+  refine h ?_
+  convert C.smul_mem (x i)⁻¹ hx using 1
+  ext j
+  by_cases hj : j = i
+  · subst hj
+    simp [hxi]
+  · simp [hj, hx0 ⟨j, hj⟩]
 
 end TauCeti

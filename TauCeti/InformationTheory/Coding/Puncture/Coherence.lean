@@ -146,6 +146,35 @@ theorem shorten_reindex {κ : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (s : 
     LinearCode.shorten_toAddSubgroup, LinearEquiv.funCongrLeft_toAddMonoidHom, Equiv.symm_symm]
     using AdditiveCode.shorten_map_arrowCongr C.toAddSubgroup e s
 
+/-- Puncturing at one coordinate commutes with a change of coordinates: the deleted coordinate is
+carried along the coordinate equivalence. -/
+@[simp]
+theorem punctureAt_reindex {κ : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (k : κ) :
+    punctureAt (reindex C e) k =
+      reindex (punctureAt C (e k)) (e.subtypeEquiv fun _ ↦ by simp) := by
+  ext y
+  simp only [mem_punctureAt, mem_reindex]
+  constructor
+  · rintro ⟨z, ⟨x, hxC, hxz⟩, hzy⟩
+    exact ⟨fun j ↦ x j, ⟨x, hxC, fun _ ↦ rfl⟩, fun j ↦ (hxz j).trans (hzy j)⟩
+  · rintro ⟨u, ⟨x, hxC, hxu⟩, huy⟩
+    exact ⟨fun j ↦ x (e j), ⟨x, hxC, fun _ ↦ rfl⟩, fun j ↦ (hxu _).trans (huy j)⟩
+
+/-- Shortening at one coordinate commutes with a change of coordinates: the deleted coordinate is
+carried along the coordinate equivalence. -/
+@[simp]
+theorem shortenAt_reindex {κ : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (k : κ) :
+    shortenAt (reindex C e) k =
+      reindex (shortenAt C (e k)) (e.subtypeEquiv fun _ ↦ by simp) := by
+  ext y
+  simp only [mem_shortenAt, mem_reindex]
+  constructor
+  · rintro ⟨z, ⟨x, hxC, hxz⟩, hzk, hzy⟩
+    exact ⟨fun j ↦ x j, ⟨x, hxC, (hxz k).trans hzk, fun _ ↦ rfl⟩,
+      fun j ↦ (hxz j).trans (hzy j)⟩
+  · rintro ⟨u, ⟨x, hxC, hxk, hxu⟩, huy⟩
+    exact ⟨fun j ↦ x (e j), ⟨x, hxC, fun _ ↦ rfl⟩, hxk, fun j ↦ (hxu _).trans (huy j)⟩
+
 /-- Puncturing twice is puncturing once to the flattened set of retained coordinates, up to the
 canonical equivalence between a subtype of a subtype and the corresponding subtype. -/
 @[simp]
