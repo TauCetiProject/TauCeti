@@ -85,9 +85,6 @@ which completes the decomposition law above `2`.
 * `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_not_four_dvd_prod`
   and `inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_not_four_dvd_prod`:
   when no subset product is divisible by four, finite tests on the subset products modulo eight.
-* `TauCeti.Multiquadratic.ncard_primesOver_two_mul_inertiaDeg_mul_four_eq_finrank` and
-  `TauCeti.Multiquadratic.ncard_primesOver_two_mul_inertiaDeg_mul_two_eq_finrank`: the prime-count
-  formulas `g · f · 4 = [K : ℚ]` and `g · f · 2 = [K : ℚ]` above a ramified `2`.
 * `TauCeti.Multiquadratic.ncard_primesOver_two_eq_two_pow_sub`: under square-class independence
   of `n` radicands, the number of primes above `2` is `2 ^ (n - a - b)`, where `e = 2 ^ a` and
   `f = 2 ^ b` are given by the criteria above.
@@ -594,43 +591,6 @@ section PrimeCount
 variable (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
   (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hd : ∀ i, ¬ (4 : ℤ) ∣ d i)
 include hr htop hd
-
-/-- **The prime-count formula above `2` at ramification index `4`.** Let `K` be generated over `ℚ`
-by square roots of integers `d i` not divisible by `4`, some `d i` being `3` modulo `4` and some
-`d j` even, or some `d i` being `2` and some `d j` being `6` modulo `8`. Let `Q` be a prime of
-`𝓞 K` above `2`. Then the number `g` of primes above `2` and their common residue degree `f`
-satisfy `g · f · 4 = [K : ℚ]`. -/
-theorem ncard_primesOver_two_mul_inertiaDeg_mul_four_eq_finrank [Finite ι]
-    (hcond : (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6)
-    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(2 : ℤ)})] :
-    (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ * 4 = finrank ℚ K := by
-  have := isGalois_rat hr htop
-  have : (span {(2 : ℤ)}).IsPrime := (Int.ideal_span_isMaximal_of_prime 2).isPrime
-  have h := Ideal.ncard_primesOver_mul_card_inertia_mul_finrank (G := K ≃ₐ[ℚ] K)
-    (span {(2 : ℤ)}) Q
-  rw [card_inertia_eq_four hr htop hd Q hcond, IsGalois.card_aut_eq_finrank] at h
-  rw [← h]
-  ring
-
-/-- **The prime-count formula above `2` at ramification index `2`.** Let `K` be generated over `ℚ`
-by square roots of integers `d i` not divisible by `4`, some `d i` not being `1` modulo `4`, but
-with the criterion of `TauCeti.Multiquadratic.ramificationIdx_eq_four_iff` failing. Let `Q` be a
-prime of `𝓞 K` above `2`. Then the number `g` of primes above `2` and their common residue degree
-`f` satisfy `g · f · 2 = [K : ℚ]`. -/
-theorem ncard_primesOver_two_mul_inertiaDeg_mul_two_eq_finrank [Finite ι]
-    (hram : ∃ i, d i % 4 ≠ 1)
-    (hcond : ¬ ((∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6))
-    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(2 : ℤ)})] :
-    (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ * 2 = finrank ℚ K := by
-  have := isGalois_rat hr htop
-  have : (span {(2 : ℤ)}).IsPrime := (Int.ideal_span_isMaximal_of_prime 2).isPrime
-  have h := Ideal.ncard_primesOver_mul_card_inertia_mul_finrank (G := K ≃ₐ[ℚ] K)
-    (span {(2 : ℤ)}) Q
-  rw [Ideal.card_inertia_eq_ramificationIdx ℤ (K ≃ₐ[ℚ] K) Q,
-    (ramificationIdx_eq_two_iff_of_liesOver_two hr htop hd Q).mpr ⟨hram, hcond⟩,
-    IsGalois.card_aut_eq_finrank] at h
-  rw [← h]
-  ring
 
 open scoped Classical in
 /-- **The number of primes above `2`.** Let `K` be generated over `ℚ` by square roots of `n`
