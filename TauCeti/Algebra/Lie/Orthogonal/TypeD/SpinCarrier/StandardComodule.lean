@@ -28,6 +28,8 @@ scheme-theoretically, `TauCeti.TypeDSpinCarrier.coordinateMap_X_eq_zero`.
 
 * `TauCeti.TypeDSpinCarrier.standardComodule`: the standard comodule on `R^(2^n)`.
 * `TauCeti.TypeDSpinCarrier.isFaithful_standardComodule`: faithfulness of the standard comodule.
+* `TauCeti.TypeDSpinCarrier.coefficientMatrix_basisFun`: its matrix coefficients.
+* `TauCeti.TypeDSpinCarrier.points_mulVec_mem`: stability of subcomodules under carrier points.
 * `TauCeti.TypeDSpinCarrier.torusCorestrict_eq_ofWeights`: restriction to the distinct spin
   weight lines of the weight torus.
 * `TauCeti.TypeDSpinCarrier.halfSpinSubcomodule`: the half-spin summand of a given parity, as a
@@ -52,6 +54,7 @@ follow those of the tripled type-`D₄` carrier in
 public section
 
 open CategoryTheory
+open scoped Matrix
 
 namespace TauCeti.TypeDSpinCarrier
 
@@ -73,6 +76,33 @@ theorem isFaithful_standardComodule :
       (V := Fin (dimension n) → R) :=
   GeneralLinear.isFaithful_corestrictStandardComodule R (dimension n)
     (coordinateMap n hn R).hom (coordinateMap_surjective n hn R)
+
+/-- The standard coefficient matrix is the image of the ambient matrix coordinates in the
+carrier coordinate algebra. -/
+theorem coefficientMatrix_basisFun (a b : Fin (dimension n)) :
+    Comodule.coefficientMatrix (C := coordinateHopfAlgebra n hn R)
+        (Pi.basisFun R (Fin (dimension n))) a b =
+      (coordinateMap n hn R).hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv R (dimension n)
+        (GeneralLinear.coordinateRingMap R (dimension n) (MvPolynomial.X (a, b)))) := by
+  rw [Comodule.coefficientMatrix_corestrict, Matrix.map_apply,
+    GeneralLinear.coefficientMatrix_basisFun, BialgHom.toCoalgHom_apply,
+    GeneralLinear.genericMatrix_apply]
+
+/-- A subcomodule of the standard spin representation is stable under every concrete carrier
+point, over any commutative ring. -/
+theorem points_mulVec_mem
+    (N : Subcomodule R (coordinateHopfAlgebra n hn R) (Fin (dimension n) → R))
+    (g : points n hn R) {w : Fin (dimension n) → R} (hw : w ∈ N) :
+    ((g : Matrix.GeneralLinearGroup (Fin (dimension n)) R) :
+        Matrix (Fin (dimension n)) (Fin (dimension n)) R) *ᵥ w ∈ N := by
+  have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R (dimension n)
+    (coordinateMap n hn R).hom N ((baseChangePointsMulEquiv n hn R (CommAlgCat.of R R)).symm g) hw
+  have hpoint : AlgHom.mapDomain (coordinateMap n hn R).hom
+      ((baseChangePointsMulEquiv n hn R (CommAlgCat.of R R)).symm g) = _ :=
+    mapPointsFunctor_coordinateMap_app n hn R _
+  rw [hpoint, quotientPointsHom_baseChangePointsMulEquiv_symm,
+    ← GeneralLinear.pointsMulEquiv_apply, MulEquiv.apply_symm_apply] at h
+  exact h
 
 /-! ## The weight torus -/
 

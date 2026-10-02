@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.HopfAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 
 /-!
 # Base change of the general linear coordinate Hopf algebra
@@ -43,6 +44,8 @@ Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
   isomorphism of finite-type commutative Hopf algebras.
 * `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X`: the value on a generic matrix
   entry after transporting the base change of any coordinate morphism.
+* `TauCeti.GeneralLinear.pointToGeneralLinear_baseChangeMap`: scalar extension of a coordinate
+  morphism preserves the matrix read from a point.
 
 ## References
 
@@ -429,6 +432,29 @@ theorem coordinateHopfAlgebraBaseChangeMap_X
   rw [_root_.CommHopfAlgCat.hom_comp, _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp,
     Function.comp_apply, BialgHom.coe_comp, Function.comp_apply,
     coordinateHopfAlgebraBaseChangeIso_inv_X, CommHopfAlgCat.baseChangeMap_apply_tmul]
+
+/-- Transporting a scalar-extended coordinate morphism to `O(GLₙ/K)` and reading its matrix
+agrees with reading the matrix of the original morphism on the restricted point. -/
+theorem pointToGeneralLinear_baseChangeMap
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (n : ℕ) (H : CommHopfAlgCat.{u} R)
+    (f : coordinateHopfAlgebra R n ⟶ H)
+    {A : Type*} [CommRing A] [Algebra K A] [Algebra R A] [IsScalarTower R K A]
+    (q : WithConv (CommHopfAlgCat.baseChange (K := K) H →ₐ[K] A)) :
+    pointToGeneralLinear n
+        (WithConv.toConv (q.ofConv.comp
+          ((coordinateHopfAlgebraBaseChangeIso R K n).inv ≫
+            CommHopfAlgCat.baseChangeMap f).hom.toAlgHom)) =
+      pointToGeneralLinear n
+        (WithConv.toConv
+          (((AlgHom.baseChangePointsMulEquiv (k := R) (K := K) (A := H)
+            (R := A)).symm q).ofConv.comp f.hom.toAlgHom)) := by
+  apply Matrix.GeneralLinearGroup.ext
+  intro i j
+  simp only [pointToGeneralLinear_apply, BialgHom.coe_toAlgHom, BialgHom.comp_toAlgHom,
+    AlgHom.comp_apply,
+    AlgHom.baseChangePointsMulEquiv_symm_apply, _root_.CommHopfAlgCat.hom_comp]
+  rw [coordinateHopfAlgebraBaseChangeIso_inv_X, CommHopfAlgCat.baseChangeMap_apply_tmul]
 
 /-- The canonical isomorphism
 `baseChange K (finiteTypeCoordinateHopfAlgebra R n) ≅ finiteTypeCoordinateHopfAlgebra K n`

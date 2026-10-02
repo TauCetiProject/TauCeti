@@ -66,18 +66,7 @@ theorem tendsto_mul_schwarzChristoffelIntegrand_div_cpow_sub_one_atInfinity (a e
     Tendsto (fun z : ℂ => z *
       (schwarzChristoffelIntegrand a e z / z ^ ((∑ i, e i : ℝ) : ℂ) - 1))
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-∑ i, (e i : ℂ) * (a i : ℂ))) := by
-  classical
-  -- Every reciprocal-coordinate factor has base one at zero, away from the branch cut.
-  have hfactor (i : ι) : HasDerivAt
-      (fun w : ℂ => (1 - (a i : ℂ) * w) ^ (e i : ℂ))
-      (-(e i : ℂ) * (a i : ℂ)) 0 := by
-    have h := (((hasDerivAt_id (0 : ℂ)).const_mul (a i : ℂ)).const_sub 1).cpow_const
-      (c := (e i : ℂ)) (by simp [Complex.slitPlane])
-    simpa using h
-  have hprod : HasDerivAt (fun w : ℂ => ∏ i, (1 - (a i : ℂ) * w) ^ (e i : ℂ))
-      (-∑ i, (e i : ℂ) * (a i : ℂ)) 0 := by
-    simpa [Finset.sum_neg_distrib] using HasDerivAt.fun_finsetProd
-      (u := Finset.univ) (fun i _ => hfactor i)
+  have hprod := hasDerivAt_prod_one_sub_mul_cpow (fun i => (a i : ℂ)) (fun i => (e i : ℂ))
   have h := hprod.tendsto_slope_zero.comp
     (tendsto_inv₀_cobounded'.mono_left
       (inf_le_left : cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet ≤ cobounded ℂ))

@@ -48,6 +48,8 @@ structure.
 * `TauCeti.ExactStructure.split_isInflation_iff` and
   `TauCeti.ExactStructure.split_isDeflation_iff`: the characteristic API of
   `TauCeti.ExactStructure.split`.
+* `TauCeti.ExactStructure.split_isInflation_iff_isDeflation_unop`: split inflations of `Cᵒᵖ`
+  are the opposites of split deflations of `C`.
 
 ## References
 
@@ -346,10 +348,30 @@ theorem split_isDeflation_iff {Y Z : C} (p : Y ⟶ Z) :
     (ExactStructure.split C).IsDeflation p ↔ ∃ (X : C) (e : Y ≅ X ⊞ Z), e.inv ≫ p = biprod.snd :=
   ConflationClass.split_isDeflation_iff p
 
+/-- Every inflation of the split exact structure is a split monomorphism. -/
+theorem isSplitMono_of_split_isInflation {X Y : C} {i : X ⟶ Y}
+    (hi : (ExactStructure.split C).IsInflation i) : IsSplitMono i :=
+  ConflationClass.isSplitMono_of_split_isInflation hi
+
 /-- Every deflation of the split exact structure is a split epimorphism. -/
 theorem isSplitEpi_of_split_isDeflation {Y Z : C} {p : Y ⟶ Z}
     (hp : (ExactStructure.split C).IsDeflation p) : IsSplitEpi p :=
   ConflationClass.isSplitEpi_of_split_isDeflation hp
+
+/-- A morphism of `Cᵒᵖ` is a split inflation exactly when its unopposite is a split deflation
+of `C`: splittings of short complexes correspond under `ShortComplex.Splitting.op` and
+`ShortComplex.Splitting.unop`. -/
+theorem split_isInflation_iff_isDeflation_unop {X Y : Cᵒᵖ} (f : X ⟶ Y) :
+    (ExactStructure.split Cᵒᵖ).IsInflation f ↔ (ExactStructure.split C).IsDeflation f.unop := by
+  constructor
+  · intro hf
+    obtain ⟨Z, p, zero, hS⟩ := (ConflationClass.isInflation_iff _ f).1 hf
+    obtain ⟨s⟩ := (split_conflation _).1 hS
+    exact (ExactStructure.split C).isDeflation_g ((split_conflation _).2 ⟨s.unop⟩)
+  · intro hf
+    obtain ⟨Z, i, zero, hS⟩ := (ConflationClass.isDeflation_iff _ f.unop).1 hf
+    obtain ⟨s⟩ := (split_conflation _).1 hS
+    exact (ExactStructure.split Cᵒᵖ).isInflation_f ((split_conflation _).2 ⟨s.op⟩)
 
 /-- In every exact structure the biproduct short complex `X ⟶ X ⊞ Z ⟶ Z` is a conflation.
 
