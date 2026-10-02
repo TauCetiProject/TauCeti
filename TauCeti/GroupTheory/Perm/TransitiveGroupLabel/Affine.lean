@@ -106,7 +106,6 @@ theorem referenceSubgroupFiveTwoMulEquivAffineGroup_apply_finRotate :
   fin_cases i <;> rfl
 
 /-- The four-cycle of `5T3` is the affine map `x ↦ 2 x + 1`. -/
-@[simp]
 theorem referenceSubgroupFiveTwoMulEquivAffineGroup_apply_formPerm :
     referenceSubgroupFiveTwoMulEquivAffineGroup
         ⟨[0, 1, 3, 2].formPerm, by
