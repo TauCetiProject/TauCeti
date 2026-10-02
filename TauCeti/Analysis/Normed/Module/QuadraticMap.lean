@@ -17,9 +17,10 @@ import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 Let `Q` be a continuous anisotropic quadratic map on a proper normed space `V` over a nontrivially
 normed field. Then `Q` is bounded below by a multiple of the squared norm: there is `c > 0` with
 `c * ‖x‖ ^ 2 ≤ ‖Q x‖` for every `x`. The constant is the minimum of `‖Q‖` on a compact shell
-`‖k‖⁻¹ ≤ ‖x‖ ≤ 1`, where `‖k‖ > 1`, into which every nonzero vector rescales. Over a
-nonarchimedean field the norm of `V` takes discretely many values near `1`, which is why a shell
-is used rather than a sphere.
+`‖k‖⁻¹ ≤ ‖x‖ ≤ 1`, where `‖k‖ > 1`, into which every nonzero vector rescales. A shell is used
+rather than the unit sphere because over a general nontrivially normed field (for instance a
+nonarchimedean one) a nonzero vector need not have a scalar multiple of norm exactly `1`, whereas
+`rescale_to_shell` always rescales it into the shell.
 
 Consequently the sublevel sets `{x | ‖Q x‖ ≤ r}` of `Q` are compact. In particular, for an
 anisotropic quadratic form on a finite-dimensional space over a locally compact nontrivially normed
