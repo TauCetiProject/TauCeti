@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Finiteness.Projective
+public import Mathlib.Algebra.Module.Equiv.Opposite
+public import TauCeti.Algebra.Ring.Opposite
 import Mathlib.LinearAlgebra.StdBasis
 
 /-!
@@ -17,6 +19,11 @@ is a right `A`-module. Dualizing on that side, with values in the right regular 
 returns a left module. Evaluation identifies a finitely generated projective module with
 this double dual.
 
+`opDualCodomainEquiv` transports right-linear functionals from the regular codomain `A`
+to `Aᵐᵒᵖ`, semilinearly along `A ≃+* Aᵐᵒᵖᵐᵒᵖ`. It commutes with precomposition and
+carries its range onto the range computed using the opposite codomain. This compares
+evaluation with constructions that use the opposite ring itself as the second dual's codomain.
+
 This is the reflexivity used when dualizing a projective presentation twice in the
 Auslander--Bridger transpose construction. Unlike `Module.evalEquiv`, the evaluation here
 changes sides and does not require commutativity of the coefficient ring.
@@ -25,6 +32,49 @@ changes sides and does not require commutativity of the coefficient ring.
 public section
 
 namespace TauCeti
+
+section Codomain
+
+variable (A N : Type*) [Semiring A] [AddCommMonoid N] [Module Aᵐᵒᵖ N]
+
+/-- Changing the codomain of a right-linear functional from `A` to `Aᵐᵒᵖ` identifies
+the two dual conventions. Scalars change from `A` to its double opposite. -/
+def opDualCodomainEquiv :
+    (N →ₗ[Aᵐᵒᵖ] A) ≃ₛₗ[RingHomClass.toRingHom (RingEquiv.opOp A)] Module.Dual Aᵐᵒᵖ N where
+  __ := (LinearEquiv.refl Aᵐᵒᵖ N).arrowCongrAddEquiv (MulOpposite.opLinearEquiv Aᵐᵒᵖ)
+  map_smul' _ _ := by ext; rfl
+
+/-- Codomain transport applies `op` to the value of a functional. -/
+@[simp]
+theorem opDualCodomainEquiv_apply (F : N →ₗ[Aᵐᵒᵖ] A) (x : N) :
+    opDualCodomainEquiv A N F x = MulOpposite.op (F x) := (rfl)
+
+/-- Inverse codomain transport applies `unop` to the value of a functional. -/
+@[simp]
+theorem opDualCodomainEquiv_symm_apply (F : Module.Dual Aᵐᵒᵖ N) (x : N) :
+    (opDualCodomainEquiv A N).symm F x = MulOpposite.unop (F x) := (rfl)
+
+variable {N} {N' : Type*} [AddCommMonoid N'] [Module Aᵐᵒᵖ N']
+
+/-- Codomain transport commutes with precomposition. -/
+@[simp]
+theorem opDualCodomainEquiv_lcomp (f : N →ₗ[Aᵐᵒᵖ] N') (F : N' →ₗ[Aᵐᵒᵖ] A) :
+    opDualCodomainEquiv A N (f.lcomp A A F) =
+      f.lcomp Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ (opDualCodomainEquiv A N' F) := by
+  ext x
+  simp
+
+/-- Codomain transport carries the image of precomposition onto the image of precomposition
+with the opposite regular codomain. -/
+theorem map_range_opDualCodomainEquiv (f : N →ₗ[Aᵐᵒᵖ] N') :
+    (LinearMap.range (f.lcomp A A)).map (opDualCodomainEquiv A N).toLinearMap =
+      LinearMap.range (f.lcomp Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ) := by
+  have hsquare : (opDualCodomainEquiv A N).toLinearMap ∘ₛₗ f.lcomp A A =
+      f.lcomp Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ ∘ₛₗ (opDualCodomainEquiv A N').toLinearMap :=
+    LinearMap.ext (opDualCodomainEquiv_lcomp A f)
+  rw [← LinearMap.range_comp, hsquare, LinearEquiv.range_comp]
+
+end Codomain
 
 variable (A P : Type*) [Semiring A] [AddCommMonoid P] [Module A P]
 

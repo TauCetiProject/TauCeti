@@ -35,11 +35,14 @@ coefficient systems `ℤ/pⁱ` of a pro-`p` group are the case `n = pⁱ`.
 
 ## Main results
 
-* `TauCeti.InternalHom.natCard_zmod`: `Nat.card (InternalHom G M (ZMod n)) = Nat.card M` for
-  finite `M` killed by `n ≠ 0`.
-* `TauCeti.InternalHom.eval_injective` and `TauCeti.InternalHom.eval_bijective`: evaluation into the
-  double dual with values in `ZMod n` is injective on a module killed by `n ≠ 0`, and bijective
-  when that module is finite.
+* `TauCeti.InternalHom.natCard_of_addEquiv_zmod`: `Nat.card (InternalHom G M N) = Nat.card M` for
+  finite `M` killed by `n ≠ 0` and values in any additive group `N ≃+ ZMod n`.
+* `TauCeti.InternalHom.eval_injective_of_addEquiv_zmod` and
+  `TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`: evaluation into the double dual with
+  values in any additive group `N ≃+ ZMod n`, whatever the action of `G` on `N`, is injective on a
+  module killed by `n ≠ 0`, and bijective when that module is finite. The untwisted coefficients
+  `ZMod n` are the case `e = AddEquiv.refl _`, and the twisted coefficients `ℤ/pⁱ` of a character
+  are the case in use.
 -/
 
 public section
@@ -93,32 +96,44 @@ section ZMod
 
 variable {G : Type*} {M : Type*} [AddCommGroup M] {n : ℕ} [NeZero n]
 
-/-- **The internal dual of a finite module killed by `n` has the same order.** -/
-theorem natCard_zmod [Finite M] (hM : ∀ x : M, n • x = 0) :
-    Nat.card (InternalHom G M (ZMod n)) = Nat.card M := by
-  rw [← natCard_addMonoidHom_zmod hM]
+section AddEquivZMod
+
+variable {N : Type*} [AddCommGroup N] (e : N ≃+ ZMod n)
+include e
+
+/-- **The internal dual of a finite module killed by `n` has the same order**, for values in any
+additive group `N ≃+ ZMod n`. -/
+theorem natCard_of_addEquiv_zmod [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Nat.card (InternalHom G M N) = Nat.card M := by
+  rw [← natCard_addMonoidHom_of_addEquiv_zmod e hM]
   exact Nat.card_congr ⟨toAddMonoidHom, of G, fun _ => rfl, fun _ => rfl⟩
 
-variable [Group G] [DistribMulAction G M] [DistribMulAction G (ZMod n)]
+variable [Group G] [DistribMulAction G M] [DistribMulAction G N]
 
-/-- For a module `M` killed by `n ≠ 0`, evaluation into the double dual with values in `ZMod n` is
-injective: the homomorphisms `M →+ ZMod n` separate the points of `M`. -/
-theorem eval_injective (hM : ∀ x : M, n • x = 0) : Function.Injective (eval G M (ZMod n)) := by
+/-- For a module `M` killed by `n ≠ 0`, evaluation into the double dual with values in any additive
+group `N ≃+ ZMod n` is injective: the homomorphisms `M →+ N` separate the points of `M`. -/
+theorem eval_injective_of_addEquiv_zmod (hM : ∀ x : M, n • x = 0) :
+    Function.Injective (eval G M N) := by
   refine (injective_iff_map_eq_zero _).2 fun m hm => by_contra fun hne => ?_
   obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hM hne
-  refine hf ?_
-  have := congrArg (fun χ : InternalHom G (InternalHom G M (ZMod n)) (ZMod n) =>
-    evalPairing G χ (of G f)) hm
+  refine hf ((AddEquiv.map_eq_zero_iff e.symm).1 ?_)
+  have := congrArg (fun χ : InternalHom G (InternalHom G M N) N =>
+    evalPairing G χ (of G (e.symm.toAddMonoidHom.comp f))) hm
   simpa only [evalPairing_apply, toAddMonoidHom_eval, AddMonoidHom.flip_apply, map_zero,
-    AddMonoidHom.zero_apply] using this
+    AddMonoidHom.zero_apply, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom] using this
 
 /-- **Double duality.** For a finite module `M` killed by `n ≠ 0`, evaluation into the double dual
-with values in `ZMod n` is bijective: `M` is equivariantly its own double dual. -/
-theorem eval_bijective [Finite M] (hM : ∀ x : M, n • x = 0) :
-    Function.Bijective (eval G M (ZMod n)) := by
-  refine (eval_injective hM).bijective_of_nat_card_le ?_
-  rw [natCard_zmod (nsmul_eq_zero fun x : ZMod n => by
-    rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]), natCard_zmod hM]
+with values in any additive group `N ≃+ ZMod n` is bijective: `M` is equivariantly its own double
+dual. -/
+theorem eval_bijective_of_addEquiv_zmod [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Function.Bijective (eval G M N) := by
+  have : Finite N := Finite.of_equiv _ e.symm.toEquiv
+  have hN : ∀ y : N, n • y = 0 := fun y => by
+    rw [← e.map_eq_zero_iff, map_nsmul, nsmul_eq_mul, ZMod.natCast_self, zero_mul]
+  refine (eval_injective_of_addEquiv_zmod e hM).bijective_of_nat_card_le ?_
+  rw [natCard_of_addEquiv_zmod e (nsmul_eq_zero hN), natCard_of_addEquiv_zmod e hM]
+
+end AddEquivZMod
 
 end ZMod
 

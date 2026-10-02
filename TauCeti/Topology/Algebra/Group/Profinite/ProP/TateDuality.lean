@@ -22,7 +22,9 @@ dévissage argument: if `α₀` is surjective and `α₁` injective on every dis
 `p` with trivial action killed by `n`, then the same holds on every finite `p`-primary discrete
 `G`-module killed by `n` (`TauCeti.IsProP.dualityMap0_surjective_dualityMap1_injective`), and
 likewise for `α₁` surjective and `α₂` injective
-(`TauCeti.IsProP.dualityMap1_surjective_dualityMap2_injective`). The induction is
+(`TauCeti.IsProP.dualityMap1_surjective_dualityMap2_injective`); the two dévissages run side by
+side in `TauCeti.IsProP.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective`, from
+a base case stating all three properties at once. The induction is
 `TauCeti.IsProP.finite_pPrimary_induction` along the trivial filtration, and the inductive step
 is the four lemmas along a short exact sequence `0 → A → B → C → 0` killed by `n`
 (`TauCeti.ContCohomology.DiscreteShortExact.dualityMap0_surjective` and its companions), whose
@@ -36,7 +38,9 @@ For an infinite profinite pro-`p` group, `α₀` is moreover injective
 along a deep enough open subgroup vanishing on invariants
 (`TauCeti.IsProP.exists_isOpen_trace_eq_zero_of_mem_H0`), and `α₁` is injective on the kernel of
 the trace by the dévissage of `α₀` surjective and `α₁` injective, so only those two base cases are
-needed.
+needed. Together with the dévissage this gives all three maps at once
+(`TauCeti.IsProP.dualityMap0_bijective_dualityMap1_bijective_dualityMap2_injective`): `α₀` and `α₁`
+bijective, `α₂` injective.
 
 The two instances of this argument are the coefficient system of a Demushkin group: `N = 𝔽_p`
 with `n = p`, where `H²(G, 𝔽_p)` is an `𝔽_p`-vector space, and the twisted coefficients
@@ -51,8 +55,12 @@ not part of this file.
   `TauCeti.IsProP.dualityMap1_surjective_dualityMap2_injective`: the two dévissages of Tate's
   duality maps, from the trivial modules of order `p` to every finite `p`-primary module killed
   by `n`.
+* `TauCeti.IsProP.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective`: the two
+  dévissages combined, from a base case stating the three properties at once.
 * `TauCeti.IsProP.dualityMap0_injective`: for an infinite profinite pro-`p` group, `α₀` is injective
-  on every such module.
+  on every such module; and
+  `TauCeti.IsProP.dualityMap0_bijective_dualityMap1_bijective_dualityMap2_injective`, the combined
+  dévissage for such a group, where `α₀` is bijective.
 
 ## References
 
@@ -170,5 +178,48 @@ theorem IsProP.dualityMap1_surjective_dualityMap2_injective :
       S.dualityMap2_injective hsurj hB hH2 h₁C h₂A h₂C⟩
 
 end InjectiveSurjective
+
+section Combined
+
+variable (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A] [Finite A], Nat.card A = p →
+    (∀ (g : G) (a : A), g • a = a) → (∀ a : A, n • a = 0) →
+    Function.Surjective (dualityMap0 G A N) ∧ Function.Bijective (dualityMap1 G A N) ∧
+      Function.Injective (dualityMap2 G A N))
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
+  [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) (hMn : ∀ m : M, n • m = 0)
+
+include h hM hMn
+
+/-- **The two dévissages of Tate's duality maps, side by side.** Under the hypotheses of the
+dévissage, if on every discrete `G`-module of order `p` with trivial action killed by `n` Tate's
+duality maps `α₀`, `α₁`, `α₂` into `H²(G, N)` are respectively surjective, bijective and injective,
+then they are so on every finite `p`-primary discrete `G`-module `M` killed by `n`. -/
+theorem IsProP.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective :
+    Function.Surjective (dualityMap0 G M N) ∧ Function.Bijective (dualityMap1 G M N) ∧
+      Function.Injective (dualityMap2 G M N) :=
+  have ⟨h₀, h₁⟩ := hG.dualityMap0_surjective_dualityMap1_injective N hN hH2
+    (fun A _ _ _ _ _ _ hA htrivA hAn ↦ (h A hA htrivA hAn).imp_right fun h ↦ h.1.1) M hM hMn
+  have ⟨h₁', h₂⟩ := hG.dualityMap1_surjective_dualityMap2_injective N hN hH2
+    (fun A _ _ _ _ _ _ hA htrivA hAn ↦ (h A hA htrivA hAn).2.imp_left fun h ↦ h.2) M hM hMn
+  ⟨h₀, ⟨h₁, h₁'⟩, h₂⟩
+
+variable [CompactSpace G] [TotallyDisconnectedSpace G] [Infinite G]
+
+/-- **The dévissage of Tate's duality maps for an infinite pro-`p` group.** Under the hypotheses of
+`IsProP.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective`, if `G` is an infinite
+profinite pro-`p` group, then on every finite `p`-primary discrete `G`-module `M` killed by `n`,
+`α₀` and `α₁` are bijective and `α₂` is injective: `α₀` is moreover injective by
+`IsProP.dualityMap0_injective`. -/
+theorem IsProP.dualityMap0_bijective_dualityMap1_bijective_dualityMap2_injective :
+    Function.Bijective (dualityMap0 G M N) ∧ Function.Bijective (dualityMap1 G M N) ∧
+      Function.Injective (dualityMap2 G M N) :=
+  have hd := hG.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective N hN hH2 h M
+    hM hMn
+  ⟨⟨hG.dualityMap0_injective N hN hH2
+    (fun A _ _ _ _ _ _ hA htrivA hAn ↦ (h A hA htrivA hAn).imp_right fun h ↦ h.1.1) M hM hMn,
+    hd.1⟩, hd.2⟩
+
+end Combined
 
 end TauCeti

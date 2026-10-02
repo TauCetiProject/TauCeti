@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.OpenSubgroup
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Duality.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Duality.Twisted
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Finite
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomologicalDimension
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.ThreeTerm
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Duality
 
 /-!
 # Open subgroups of Demushkin groups
 
-An open subgroup `U` of an infinite Demushkin group `G` is again a Demushkin group, and its rank is
-`n(U) = 2 + [G : U] (n(G) - 2)` (Serre's exposé, §9.2). Both statements are read off Tate's perfect
+An open subgroup `U` of an infinite Demushkin group `G` is again a Demushkin group, its rank is
+`n(U) = 2 + [G : U] (n(G) - 2)`, and its canonical character is the restriction of the canonical
+character of `G` (Serre's exposé, §9.2). The first two statements are read off Tate's perfect
 duality on the finite `𝔽_p[G]`-modules of `G`
 (`TauCeti/Topology/Algebra/Group/Profinite/Demushkin/Duality/Basic.lean`), applied to the
 permutation module `Coind_U^G 𝔽_p`, whose cohomology is that of `U` by Shapiro's lemma.
@@ -32,6 +34,15 @@ permutation module `Coind_U^G 𝔽_p`, whose cohomology is that of `U` by Shapir
   `TauCeti/Topology/Algebra/Group/Profinite/ProP/EulerCharacteristic/ThreeTerm.lean`, which
   applies because `cd_p G ≤ 2`, itself a consequence of the duality, with both `H²` terms equal
   to `1`.
+* The canonical character of `U` is the restriction `χ|_U` of the canonical character `χ` of `G`,
+  because `χ|_U` has the prescription property on `U`. That property follows from the injectivity
+  of Tate's duality map `α₂` of `U` with values in `H²(U, I(χ|_U)/pⁱ⁺¹)` on the twists
+  `I(χ|_U)/pⁱ` (`TauCeti.hasPrescriptionProperty_of_forall_injective_dualityMap2`); and `α₂` of
+  `U` is injective because `α₂` of `G` is injective with values in `H²(G, I(χ)/pⁱ⁺¹)`, by Tate's
+  duality at level `pⁱ⁺¹`
+  (`TauCeti/Topology/Algebra/Group/Profinite/Demushkin/Duality/Twisted.lean`), and injectivity
+  descends from `G` to `U` through the coinduced module `Coind_U^G I(χ|_U)/pⁱ` by Shapiro's lemma
+  (`TauCeti.ContCohomology.dualityMap2_injective_of_injective_discreteCoind`).
 
 The hypothesis that `G` is infinite is used: `ℤ/2` is a finite Demushkin group whose trivial
 subgroup is open and not Demushkin.
@@ -45,6 +56,9 @@ subgroup is open and not Demushkin.
 * `TauCeti.IsDemushkin.demushkinRank_openSubgroup_sub_two`: `n(U) - 2 = [G : U] (n(G) - 2)` in
   `ℤ`.
 * `TauCeti.IsDemushkin.demushkinRank_openSubgroup`: `n(U) = 2 + [G : U] (n(G) - 2)` in `ℕ`.
+* `TauCeti.IsDemushkin.demushkinCharacter_openSubgroup`: **the canonical character of an open
+  subgroup is the restriction of the canonical character**; its image is `χ(U)`
+  (`TauCeti.IsDemushkin.range_demushkinCharacter_openSubgroup`).
 
 ## References
 
@@ -219,6 +233,33 @@ theorem demushkinRank_openSubgroup :
   have h := hG.demushkinRank_openSubgroup_sub_two U
   zify [h2]
   linarith
+
+/-- **The canonical character of an open subgroup of an infinite Demushkin group is the restriction
+of the canonical character** (Serre's exposé, §9.2): the restriction `χ|_U` has the prescription
+property on `U`, since Tate's duality map `α₂` of `U` with values in `H²(U, I(χ|_U)/pⁱ⁺¹)` is
+injective on `I(χ|_U)/pⁱ`, as it is for `G` by Tate's duality at level `pⁱ⁺¹`. -/
+theorem demushkinCharacter_openSubgroup :
+    demushkinCharacter (hG.openSubgroup U) =
+      (demushkinCharacter hG).comp (ContinuousMonoidHom.subgroupSubtype U.toSubgroup) := by
+  refine ((hasPrescriptionProperty_of_forall_injective_dualityMap2 _
+    fun i ↦ ?_).eq_demushkinCharacter (hG.openSubgroup U)).symm
+  -- transport the value module `I(χ|_U)/pⁱ⁺¹` to `I(χ)/pⁱ⁺¹` restricted to `U`, then descend the
+  -- injectivity of `α₂` of `G` on `Coind_U^G I(χ|_U)/pⁱ` through Shapiro's lemma
+  rw [← dualityMap2_injective_iff_of_bijective
+    (ZModTwist.subgroupSubtypeHom_bijective U.toSubgroup (demushkinCharacter hG) (i + 1))]
+  refine dualityMap2_injective_of_injective_discreteCoind G U.toSubgroup U.isOpen _ _ ?_
+  exact (hG.dualityMap2_zModTwist_bijective (i + 1) _ (DiscreteCoind.nsmul_eq_zero fun a ↦ by
+    rw [pow_succ, mul_nsmul, ZModTwist.pow_nsmul_eq_zero, nsmul_zero])).1
+
+/-- **The image of the canonical character of an open subgroup `U` is the image of `U` under the
+canonical character**: `Im(χ|_U) = χ(U)`. Together with the rank formula, this is the invariant
+form of the open-subgroup theorem that the classification reads. -/
+theorem range_demushkinCharacter_openSubgroup :
+    (demushkinCharacter (hG.openSubgroup U)).toMonoidHom.range =
+      U.toSubgroup.map (demushkinCharacter hG).toMonoidHom := by
+  rw [hG.demushkinCharacter_openSubgroup U]
+  ext x
+  simp [MonoidHom.mem_range, Subgroup.mem_map]
 
 end IsDemushkin
 

@@ -370,6 +370,17 @@ theorem presentationLimitπToPresentation_eq (Aplus : Subring A) (V : Opens ↥(
     presentationLimitπToPresentation Aplus V i =
       presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i) := (rfl)
 
+/-- **Projections at equal indices agree**, after transporting their codomains to a common
+object. -/
+theorem presentationLimitπToPresentation_comp_eqToHom_congr
+    {i j : PresentationIndex (P := P) Aplus V} (h : i = j) {X : CompleteSeparatedTopCommRingCat.{v}}
+    (e : i.pres.completionLocObj = X)
+    (e' : j.pres.completionLocObj = X) :
+    presentationLimitπToPresentation Aplus V i ≫ eqToHom e =
+      presentationLimitπToPresentation Aplus V j ≫ eqToHom e' := by
+  subst h
+  rfl
+
 /-- **Projections are compatible with refinement**: projecting then restricting along a refinement
 is projecting at the finer index. -/
 -- These three are not restatements of Mathlib's limit API for their own sake: `presentationLimit`
