@@ -60,7 +60,7 @@ Right `A`-modules are left `Aᵐᵒᵖ`-modules. The regular right module `A` is
 * Dieter Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
   Algebras*, Chapter I, Section 2, for the loop functor on a stable category.
 * Ragnar-Olaf Buchweitz, *Maximal Cohen–Macaulay Modules and Tate Cohomology*, Section 4.
-* Andrew Henriques and Liana M. Şega, *Free resolutions over short Gorenstein local rings*,
+* I. B. Henriques and L. M. Sega, *Free resolutions over short Gorenstein local rings*,
   Mathematische Zeitschrift **267** (2011), 645–663, for exact pairs of zero-divisors and their
   periodic resolutions.
 -/
