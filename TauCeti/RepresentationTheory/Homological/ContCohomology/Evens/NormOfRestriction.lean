@@ -82,10 +82,7 @@ private theorem evensGraphCochain_comp_subtype_sub {U : Subgroup G} (hU : U.inde
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-/-- `G` acts continuously on the trivial coefficients `𝔽₂`, which are smooth discrete. -/
-local instance : ContinuousSMul G (trivialF2 G).V :=
-  (isSmoothDiscrete_trivialF2 G).continuousSMul
+  instContinuousSMulVIntTrivialF2
 
 /-- **Restriction of the class of a homomorphism** `y : G → 𝔽₂` to a subgroup `U` is the class of
 the restricted homomorphism `y|_U`, in explicit `H¹(U, 𝔽₂)`. -/
