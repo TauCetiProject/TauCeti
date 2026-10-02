@@ -90,7 +90,10 @@ diffeomorphisms of the circle is not proved here.
   `TauCeti.IsSmoothlySlice.isTopologicallySlice`: smoothly slice knots are topologically slice.
 * `TauCeti.isTopologicallySlice_rotate_iff`, `TauCeti.isTopologicallySlice_reverse_iff`: topological
   sliceness is invariant under rotation and reversal of the parametrization.
-* `TauCeti.isTopologicallySlice_unknot`: the unknot is topologically slice.
+* `TauCeti.isTopologicalSliceDisc_greatCircle_unitClosedBallMap`: the flat disc `ι D²` is a
+  locally flat slice disc for the great circle `ι S¹`.
+* `TauCeti.isTopologicallySlice_greatCircle`, `TauCeti.isTopologicallySlice_unknot`: great circles,
+  and in particular the unknot, are topologically slice.
 
 ## References
 
@@ -381,6 +384,16 @@ theorem IsTopologicallySlice.reverse (h : IsTopologicallySlice K) :
 theorem isTopologicallySlice_reverse_iff :
     IsTopologicallySlice K.reverse ↔ IsTopologicallySlice K :=
   ⟨fun h ↦ by simpa using h.reverse, fun h ↦ h.reverse⟩
+
+/-- The flat disc `ι D²` is a locally flat slice disc for the great circle `ι S¹`. -/
+theorem isTopologicalSliceDisc_greatCircle_unitClosedBallMap (ι : ℂ →ₗᵢ[ℝ] E) :
+    IsTopologicalSliceDisc (SmoothCircleEmbedding.greatCircle (n := n) ι) ι.unitClosedBallMap :=
+  (isSmoothSliceDisc_greatCircle_unitClosedBallMap ι).isTopologicalSliceDisc
+
+/-- **Great circles are topologically slice**: they bound locally flat discs. -/
+theorem isTopologicallySlice_greatCircle (ι : ℂ →ₗᵢ[ℝ] E) :
+    IsTopologicallySlice (SmoothCircleEmbedding.greatCircle (n := n) ι) :=
+  (isSmoothlySlice_greatCircle ι).isTopologicallySlice
 
 /-- **The unknot is topologically slice**: the flat disc bounding it is locally flat. -/
 theorem isTopologicallySlice_unknot : IsTopologicallySlice unknot :=
