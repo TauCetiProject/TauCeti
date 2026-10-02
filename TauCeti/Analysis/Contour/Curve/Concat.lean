@@ -32,6 +32,8 @@ path-independence argument needs: running a curve backwards, and following one c
 * `TauCeti.Contour.intervalIntegral_deriv_smul_comp_const_sub` — the contour integral of the
   reversed curve.
 * `TauCeti.Contour.IsPiecewiseC1On.if_le` — concatenation preserves piecewise `C¹` regularity.
+* `TauCeti.Contour.eqOn_deriv_smul_comp_of_eqOn` — the contour integrand depends on the curve on
+  an open parameter interval only through its values there.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_congr` — the contour integral depends on the curve
   only through its values on the open parameter interval.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_eq_add_of_eqOn` — the contour integral along a
@@ -75,8 +77,9 @@ theorem IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a b) (c : ℝ) :
       fun t ht => ⟨by linarith [ht.2], by linarith [ht.1]⟩
 
 /-- **The contour integral along a reversed curve.** The contour integral of `t ↦ γ (c - t)` over
-`a..b` is the contour integral of `γ` over `c - a..c - b`; in particular, when `c - a` and `c - b`
-are the endpoints of `γ` in their usual order, it is the negative of the integral of `γ`. -/
+`a..b` is the contour integral of `γ` over `c - a..c - b`. In particular, for `c = a + b` the
+transformed endpoints are `b` and `a`, in reverse order, so it is
+`∫ t in b..a, deriv γ t • f (γ t)`, the negative of the contour integral of `γ` over `a..b`. -/
 theorem intervalIntegral_deriv_smul_comp_const_sub {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] (γ : ℝ → ℂ) (f : ℂ → E) (a b c : ℝ) :
     ∫ t in a..b, deriv (fun t => γ (c - t)) t • f (γ (c - t)) =
@@ -128,9 +131,10 @@ theorem IsPiecewiseC1On.if_le (h₁ : IsPiecewiseC1On γ a b) (h₂ : IsPiecewis
       refine (hC₂ d e (uIcc_of_le hbc ▸ hsub) (Set.disjoint_left.2 fun x hx hxde =>
         hnot x (by simp [Finset.mem_coe.1 hx]) hxde)).congr fun t ht => hη₂ (hsub ht)
 
-/-- Two curves that agree on the open interval between `a` and `b` have contour integrands that
-agree there too, an open set being a neighbourhood of each of its points. -/
-private theorem eqOn_deriv_smul_comp_of_eqOn {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+/-- **The contour integrand sees only the open parameter interval.** Two curves that agree on the
+open interval between `a` and `b` have contour integrands that agree there too, an open set being a
+neighbourhood of each of its points. -/
+theorem eqOn_deriv_smul_comp_of_eqOn {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {f : ℂ → E} (h : EqOn γ δ (uIoo a b)) :
     EqOn (fun t => deriv γ t • f (γ t)) (fun t => deriv δ t • f (δ t)) (uIoo a b) := fun t ht => by
   simp only [h ht, h.deriv isOpen_Ioo ht]

@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Topology.FilledHull
-import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
+public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Contour.Curve.Approximation
@@ -45,6 +45,8 @@ set without holes has holomorphic square roots.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero` — if the
   contour integrals of `f` along closed curves in `U` vanish, its contour integral along a curve in
   `U` depends only on the endpoints.
+* `TauCeti.Contour.intervalIntegral_deriv_smul_segment_eq_curveIntegral` — the contour integral
+  along an affinely parametrized segment is Mathlib's curve integral along `Path.segment`.
 * `TauCeti.Contour.isExactOn_of_forall_closed_integral_eq_zero` — the converse of Cauchy's theorem:
   such an `f` has a primitive on `U`.
 * `TauCeti.Contour.isExactOn_of_forall_isNullHomologous` — a holomorphic function has a primitive
@@ -118,14 +120,15 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     intervalIntegral.integral_symm c d, ← sub_eq_add_neg, sub_eq_zero] at hzero
   exact hzero
 
-/-- The contour integral along the segment from `z` to `w`, parametrized on `[1, 2]`, is Mathlib's
-curve integral of the `1`-form `v ↦ v • f x` along `Path.segment z w`. -/
-private theorem intervalIntegral_deriv_smul_segment_eq_curveIntegral (f : ℂ → E) (z w : ℂ) :
-    ∫ t in (1 : ℝ)..2, deriv (fun t : ℝ => (t - 1) • (w - z) + z) t •
-        f ((t - 1) • (w - z) + z) =
+/-- **Segments as contour integrals.** The contour integral along the segment from `z` to `w`,
+parametrized affinely on `[s, s + 1]`, is Mathlib's curve integral of the `1`-form `v ↦ v • f x`
+along `Path.segment z w`. -/
+theorem intervalIntegral_deriv_smul_segment_eq_curveIntegral (f : ℂ → E) (z w : ℂ) (s : ℝ) :
+    ∫ t in s..s + 1, deriv (fun t : ℝ => (t - s) • (w - z) + z) t •
+        f ((t - s) • (w - z) + z) =
       ∫ᶜ x in Path.segment z w, ContinuousLinearMap.toSpanSingleton ℂ (f x) := by
-  have hderiv : ∀ t : ℝ, deriv (fun t : ℝ => (t - 1) • (w - z) + z) t = w - z := fun t => by
-    simpa using ((((hasDerivAt_id t).sub_const 1).smul_const (w - z)).add_const z).deriv
+  have hderiv : ∀ t : ℝ, deriv (fun t : ℝ => (t - s) • (w - z) + z) t = w - z := fun t => by
+    simpa using ((((hasDerivAt_id t).sub_const s).smul_const (w - z)).add_const z).deriv
   simp only [hderiv, curveIntegral_segment, ContinuousLinearMap.toSpanSingleton_apply,
     AffineMap.lineMap_apply_module']
   rw [intervalIntegral.integral_comp_sub_right (fun t : ℝ => (w - z) • f (t • (w - z) + z))]
@@ -163,12 +166,14 @@ private theorem exists_intervalIntegral_deriv_smul_eq_add_curveIntegral_segment
       exact hσU (by rw [uIcc_of_le one_le_two]; exact ⟨ht1, ht.2⟩)
   refine ⟨η, hηpc, hηU, hηγ ⟨le_rfl, zero_le_one⟩, by rw [hησ ⟨one_le_two, le_rfl⟩]; norm_num [σ],
     ?_⟩
+  have hseg' := intervalIntegral_deriv_smul_segment_eq_curveIntegral f z w 1
+  rw [one_add_one_eq_two] at hseg'
   rw [intervalIntegral_deriv_smul_eq_add_of_eqOn (b := 1) (δ := σ)
       (fun t ht => hηγ (Ioo_subset_Icc_self (by rwa [uIoo_of_le zero_le_one] at ht)))
       (fun t ht => hησ (Ioo_subset_Icc_self (by rwa [uIoo_of_le one_le_two] at ht)))
       (hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
       (hσpc.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hσU),
-    hσ, intervalIntegral_deriv_smul_segment_eq_curveIntegral]
+    hσ, hseg']
 
 /-- **The converse of Cauchy's theorem.** A continuous function on an open set `U` whose contour
 integral vanishes along every closed piecewise-`C¹` curve in `U` has a primitive on `U`. -/
