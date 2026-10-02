@@ -48,6 +48,10 @@ range, so the value is a `dite` rather than a plain application.
   summands split off.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
+* `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
+  read off the value, below and at the top element.  Mathlib's `Fin.orderSucc_castSucc` and
+  `Fin.orderSucc_last` state the same thing in the `castSucc`/`last` normal form; these are the
+  versions keyed on the inequality `i + 1 < n`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
@@ -211,6 +215,18 @@ theorem sum_univ_eq_zero_add_last_add_sum_erase {n : ℕ} {M : Type*} [AddCommMo
   rw [add_assoc, Finset.add_sum_erase _ _
     (Finset.mem_erase.2 ⟨mt last_eq_zero_iff.1 hn, Finset.mem_univ _⟩),
     Finset.add_sum_erase _ _ (Finset.mem_univ 0)]
+
+/-- Below the top element of `Fin n`, the order successor increments the value. -/
+theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j : Fin m, i = j.castSucc := ⟨⟨(i : ℕ), by omega⟩, by ext; simp⟩
+  simp
+
+/-- At the top element of `Fin n` the order successor is that element itself. -/
+theorem orderSucc_eq_self_of_not_lt {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n) :
+    (Order.succ i : Fin n) = i :=
+  IsMax.succ_eq fun b _ => Fin.le_def.2 (by have := b.isLt; have := i.isLt; omega)
 
 end Fin
 

@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.GroupTheory.Index
 
@@ -21,6 +24,9 @@ This is the instance that lets a sum be taken over `H \ G / K`; the Mackey decom
 (`TauCeti.RepresentationTheory.Induction.Mackey.Basic`) is its first consumer, where the index of
 the subgroup being induced from is the only finiteness available.
 
+The double cosets partition `G`, so for finite `G` their sizes add up to the order of `G`
+(`Subgroup.sum_card_quotToDoubleCoset`).
+
 A sum over `H \ G / K` of values at chosen representatives often comes with a proof that it does
 not depend on the choice; `TauCeti.eq_of_sum_doubleCoset_rep_eq` extracts from this that each
 value depends only on its double coset.
@@ -28,11 +34,16 @@ value depends only on its double coset.
 ## Main statements
 
 * `TauCeti.finite_doubleCosetQuotient`: `H \ G / K` is finite when `K` has finite index in `G`.
+* `Subgroup.sum_card_quotToDoubleCoset`: the sizes of the double cosets add up to `|G|`.
+* `Subgroup.sum_card_quotToDoubleCoset_div_card_eq_index`: the numbers `|HgK| / |H|` add up
+  to the index of `H`.
 * `TauCeti.eq_of_sum_doubleCoset_rep_eq`: a value whose sum over double-coset representatives is
   independent of the representatives is itself constant on double cosets.
 -/
 
 public section
+
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -83,3 +94,34 @@ theorem eq_of_sum_doubleCoset_rep_eq {A : Type*} [AddCancelCommMonoid A] (H K : 
   exact add_right_cancel ((key s rfl).trans (key s' h.symm).symm)
 
 end TauCeti
+
+namespace Subgroup
+
+variable {G : Type*} [Group G]
+
+/-- **The double cosets partition the group**: for finite `G`, the sizes of the double cosets
+`HgK` add up to the order of `G`. -/
+theorem sum_card_quotToDoubleCoset [Finite G] (H K : Subgroup G)
+    [Fintype (DoubleCoset.Quotient (H : Set G) (K : Set G))] :
+    ∑ q, Nat.card (DoubleCoset.quotToDoubleCoset H K q) = Nat.card G := by
+  rw [← Nat.card_congr (Equiv.sigmaFiberEquiv (DoubleCoset.mk H K)), Nat.card_sigma]
+  exact Fintype.sum_congr _ _ fun q =>
+    Nat.card_congr (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
+
+/-- **The double cosets count the right cosets**: each double coset `HsK` of a finite group is a
+union of `|HsK| / |H|` right cosets of `H`, and these numbers add up, over `H \ G / K`, to the
+index of `H`. -/
+theorem sum_card_quotToDoubleCoset_div_card_eq_index [Finite G] (H K : Subgroup G)
+    [Fintype (DoubleCoset.Quotient (H : Set G) (K : Set G))] :
+    ∑ q, Nat.card (DoubleCoset.quotToDoubleCoset H K q) / Nat.card H = H.index := by
+  refine Nat.eq_of_mul_eq_mul_right (Nat.card_pos (α := H)) ?_
+  rw [Finset.sum_mul, Subgroup.index_mul_card, ← sum_card_quotToDoubleCoset H K]
+  refine Finset.sum_congr rfl fun q _ => Nat.div_mul_cancel ?_
+  -- Inversion turns right cosets of `H` into left cosets, counted by Mathlib's formula.
+  rw [DoubleCoset.quotToDoubleCoset, DoubleCoset.doubleCoset,
+    ← Nat.card_image_of_injective inv_injective, Set.image_inv_eq_inv]
+  simp only [mul_inv_rev, inv_coe_set, ← mul_assoc]
+  rw [Subgroup.card_mul_eq_card_subgroup_mul_card_quotient]
+  exact dvd_mul_right _ _
+
+end Subgroup

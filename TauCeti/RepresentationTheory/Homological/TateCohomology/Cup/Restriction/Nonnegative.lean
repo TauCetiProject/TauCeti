@@ -66,8 +66,8 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   -- On the left, `x ∪ δ y' = (-1)^p δ (x ∪ y')`, and restriction commutes with `δ` and, by
   -- hypothesis, with `x ∪ y'`.
   rw [cup_dimensionShiftUpIso_hom M N hq h rfl, map_zsmul_unit, tensorDimensionShiftUpIso_hom]
-  have hL := congr($(δ_comp_res hMD H (by omega : 0 ≤ r)) (cup M (dimensionShiftUp N) p q r h x y))
-  have hR := congr($(δ_comp_res hD H hq) y)
+  have hL := congr($(δ_comp_res hMD H (by omega : -1 ≤ r)) (cup M (dimensionShiftUp N) p q r h x y))
+  have hR := congr($(δ_comp_res hD H (by omega : -1 ≤ q)) y)
   simp only [ModuleCat.comp_apply] at hL hR
   refine (congrArg (p.negOnePow • ·) (hL.trans (congrArg _ (ih y)))).trans ?_
   -- On the right, restriction commutes with `δ`.

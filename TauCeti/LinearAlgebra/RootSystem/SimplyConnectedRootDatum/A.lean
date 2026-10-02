@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
+import TauCeti.Algebra.Group.Submonoid.Telescoping
 import TauCeti.Data.Fin.DistinctPairs
 import TauCeti.LinearAlgebra.RootSystem.Swap
 

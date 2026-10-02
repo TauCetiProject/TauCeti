@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.LabuteModule.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CharacterKernelTwoGenerators
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationModule
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Module
 
 /-!
 # Labute's module of the even-rank dyadic normal form with image `{±1} × U^(f)`

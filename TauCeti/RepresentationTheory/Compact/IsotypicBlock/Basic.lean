@@ -88,27 +88,32 @@ Hilbert spaces, their subspaces, their isometries and their bounded operators, a
 enters them. The blocks are called *isotypic* because the `π`-block is spanned by
 the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and
 that the decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
-translation, are statements about group actions and are **not** proved here. What *is* proved
+translation, are statements about group actions and are **not** proved here. (For a *finite* `G` the
+first of them is
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Finite.lean`, where the obstruction recorded
+below disappears.) What *is* proved
 about the action, in the section `Stability under translation` and nowhere else, is that each
 block is stable under the biregular representation
 (`TauCeti.biRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
 model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
 `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
-block with `End(V_π)` is not proved either. The library now supplies bi-translation
-`((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)` as `TauCeti.biRegularLp`, but not the action
-`(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_π)` or the proof that the identification intertwines
-them. `TauCeti.endEquivPeterWeylBlock` is built from the canonical basis of the model, so nothing is
-claimed here about its equivariance. The character averaging operator
-`TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
+block with `End(V_π)` is not proved here either: `TauCeti.endEquivPeterWeylBlock` is built from the
+canonical basis of the model, so nothing is claimed below about its equivariance. The equivariant
+comparison is the basis-free trace pairing `T ↦ (x ↦ trace (T ∘ π x⁻¹))` of
+`TauCeti/RepresentationTheory/Compact/TraceCoefficient.lean`, which intertwines bi-translation with
+the action `(g, h) · A = π g ∘ A ∘ π h⁻¹` and differs from the comparison below by a transposition
+(`TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`). The character
+averaging operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
 `TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
 representation then only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`). Both
-obstructions disappear for a finite `G`, where `L²(G)` has dimension `|G|`; but nothing here
-assumes `G` finite, so the general route is the one taken. The averaging is carried out instead by
-`TauCeti.convolutionOperator`, which needs no continuity of the action on `L²(G)`, and the
-integrated operator is used only on the finite-dimensional carrier of a model, where it is
+obstructions disappear for a finite `G`, where `L²(G)` has dimension `|G|`, and
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Finite.lean` identifies the two operators there;
+but nothing here assumes `G` finite, so the general route is the one taken. The averaging is carried
+out instead by `TauCeti.convolutionOperator`, which needs no continuity of the action on `L²(G)`,
+and the integrated operator is used only on the finite-dimensional carrier of a model, where it is
 available.
 
 ## Main definitions

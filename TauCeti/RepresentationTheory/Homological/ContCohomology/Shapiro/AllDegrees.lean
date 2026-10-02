@@ -21,7 +21,11 @@ Hⁿ(G, Coind_U^G A) ⟶ Hⁿ(U, A),
 ```
 
 is an isomorphism in every degree `n`. This is **Shapiro's lemma** for Mathlib's canonical
-continuous cohomology; the isomorphism is `TauCeti.ContinuousCohomology.shapiroIso`.
+continuous cohomology; the isomorphism is `TauCeti.ContinuousCohomology.shapiroIso`. On the level
+of complexes, it says that the Shapiro cochain map `TauCeti.ContinuousCohomology.shapiroCochainMap`,
+of which `shapiroMap` is the map on homology, is a quasi-isomorphism. In general the two complexes
+are not isomorphic at all (already their degree-`0` terms differ in size for the discrete group
+`G` of order `2`, `U = ⊥` and `A = ZMod 2`); only the maps induced on cohomology are isomorphisms.
 
 The degrees `0` and `1` are the base cases, where the canonical map agrees with the explicit
 low-degree Shapiro isomorphisms (`TauCeti.ContinuousCohomology.bijective_shapiroMap_of_le_two`).
@@ -63,9 +67,10 @@ isomorphism.
 * `TauCeti.ContinuousCohomology.shapiroIso`: **Shapiro's lemma in every degree**,
   `Hⁿ(G, Coind_U^G A) ≅ Hⁿ(U, A)` for a closed subgroup `U` of a profinite group `G`, with forward
   map the canonical Shapiro map (`shapiroIso_hom`).
-* `TauCeti.ContinuousCohomology.shapiroMapTopRep`,
-  `TauCeti.ContinuousCohomology.shapiroIsoTopRep`: the Shapiro map and Shapiro's isomorphism for a
-  smooth discrete representation over an arbitrary ring.
+* `TauCeti.ContinuousCohomology.shapiroCochainMapTopRep`,
+  `TauCeti.ContinuousCohomology.shapiroMapTopRep`,
+  `TauCeti.ContinuousCohomology.shapiroIsoTopRep`: the Shapiro cochain map, the Shapiro map and
+  Shapiro's isomorphism for a smooth discrete representation over an arbitrary ring.
 
 ## Main results
 
@@ -74,6 +79,8 @@ isomorphism.
 * `TauCeti.ContinuousCohomology.isIso_shapiroMap`,
   `TauCeti.ContinuousCohomology.bijective_shapiroMap`: the canonical Shapiro map is an isomorphism,
   resp. bijective, in every degree.
+* `TauCeti.ContinuousCohomology.quasiIso_shapiroCochainMap`: equivalently, the Shapiro cochain map
+  is a quasi-isomorphism of homogeneous cochain complexes.
 * `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_discreteCoind_iff`: `Hⁿ(U, A)`
   vanishes exactly when `Hⁿ(G, Coind_U^G A)` does.
 * `TauCeti.ContinuousCohomology.coeffMap_unit_comp_shapiroMap`,
@@ -81,8 +88,10 @@ isomorphism.
   restriction to `U` is the coefficient map of the unit `M → Coind_U^G M` of coinduction followed
   by the Shapiro map, so restriction followed by the inverse of Shapiro's isomorphism is the
   coefficient map of the unit.
-* `TauCeti.ContinuousCohomology.isIso_shapiroMapTopRep`: the generic Shapiro map is an isomorphism
-  in every degree, for a closed subgroup of a profinite group and an arbitrary coefficient ring.
+* `TauCeti.ContinuousCohomology.isIso_shapiroMapTopRep`,
+  `TauCeti.ContinuousCohomology.quasiIso_shapiroCochainMapTopRep`: the generic Shapiro map is an
+  isomorphism in every degree, and the generic Shapiro cochain map a quasi-isomorphism, for a closed
+  subgroup of a profinite group and an arbitrary coefficient ring.
 
 ## References
 
@@ -219,6 +228,15 @@ theorem bijective_shapiroMap (n : ℕ) : Function.Bijective (shapiroMap U A n) :
   haveI := isIso_shapiroMap U hU A n
   ConcreteCategory.bijective_of_isIso _
 
+/-- **Shapiro's lemma in every degree, on cochains**: for a closed subgroup `U` of a profinite group
+`G` and a discrete `U`-module `A`, the Shapiro cochain map `σ ↦ ev₁ ∘ σ ∘ ι` from the homogeneous
+cochains of `G` with coefficients `Coind_U^G A` to those of `U` with coefficients `A` is a
+quasi-isomorphism. -/
+theorem quasiIso_shapiroCochainMap : QuasiIso (shapiroCochainMap U A) :=
+  (quasiIso_iff _).2 fun n => (quasiIsoAt_iff_isIso_homologyMap _ n).2 <| by
+    rw [homologyMap_shapiroCochainMap]
+    exact isIso_shapiroMap U hU A n
+
 /-- **The Shapiro isomorphism** `Hⁿ(G, Coind_U^G A) ≅ Hⁿ(U, A)` in every degree, for a closed
 subgroup `U` of a profinite group `G` and a discrete `U`-module `A`. Its forward map is the
 canonical Shapiro map, restriction to `U` followed by evaluation at `1` on the coefficients
@@ -289,12 +307,33 @@ local instance instContinuousSMulTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U)
 local instance instDiscreteTopologyTopRepAmbient (A : SmoothDiscreteTopRep.{v, u, u} R G) :
     DiscreteTopology A.obj.V := A.property.discreteTopology
 
+/-- The Shapiro cochain map for a smooth discrete topological representation over any ring: the
+cochain map `σ ↦ ev₁ ∘ σ ∘ ι` of the compatible pair of the inclusion `ι : U ↪ G` and the
+coinduction counit `ev₁` (evaluation at `1`). -/
+noncomputable def shapiroCochainMapTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) :
+    TopRep.homogeneousCochains (coindTopRep R G U A).obj ⟶ TopRep.homogeneousCochains A.obj :=
+  _root_.ContinuousCohomology.cochainsMap (ContinuousMonoidHom.subgroupSubtype U)
+    (TopRep.ofHom (coindCounit R G U A))
+
+/-- The defining equation of `shapiroCochainMapTopRep`: Mathlib's cochain map of the inclusion
+`U → G` and the coinduction counit. -/
+theorem shapiroCochainMapTopRep_def (A : SmoothDiscreteTopRep.{v, u, u} R U) :
+    shapiroCochainMapTopRep U A =
+      _root_.ContinuousCohomology.cochainsMap (ContinuousMonoidHom.subgroupSubtype U)
+        (TopRep.ofHom (coindCounit R G U A)) := (rfl)
+
 /-- The canonical Shapiro map for a smooth discrete topological representation over any ring:
-restriction from `G` to `U` together with the coinduction counit (evaluation at `1`). -/
+restriction from `G` to `U` together with the coinduction counit (evaluation at `1`), that is, the
+map `shapiroCochainMapTopRep` induces on homology. -/
 noncomputable def shapiroMapTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
     continuousCohomology n (coindTopRep R G U A).obj ⟶ continuousCohomology n A.obj :=
-  _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U)
-    (TopRep.ofHom (coindCounit R G U A)) n
+  HomologicalComplex.homologyMap (shapiroCochainMapTopRep U A) n
+
+/-- The generic Shapiro map is the map induced on homology by the generic Shapiro cochain map. -/
+@[simp]
+theorem homologyMap_shapiroCochainMapTopRep (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) :
+    HomologicalComplex.homologyMap (shapiroCochainMapTopRep U A) n = shapiroMapTopRep U A n :=
+  (rfl)
 
 -- Not `@[simp]`: `shapiroMapTopRep` is the intended normal form, and this lemma unfolds it.
 /-- The defining equation of `shapiroMapTopRep`: the compatible-pair map of the inclusion
@@ -401,6 +440,15 @@ theorem isIso_shapiroMapTopRep [TotallyDisconnectedSpace G]
     eA.toContinuousLinearEquiv.toHomeomorph.symm.isEmbedding.discreteTopology
   let : DiscreteTopology (continuousCohomology n A.obj) := hdisc
   exact TopModuleCat.isIso_of_bijective _ hbij
+
+/-- **Shapiro's lemma on cochains for smooth discrete representations over any ring**: for a closed
+subgroup `U` of a profinite group `G`, the generic Shapiro cochain map is a quasi-isomorphism. -/
+theorem quasiIso_shapiroCochainMapTopRep [TotallyDisconnectedSpace G]
+    (hU : IsClosed (U : Set G)) (A : SmoothDiscreteTopRep.{v, u, u} R U) :
+    QuasiIso (shapiroCochainMapTopRep U A) :=
+  (quasiIso_iff _).2 fun n => (quasiIsoAt_iff_isIso_homologyMap _ n).2 <| by
+    rw [homologyMap_shapiroCochainMapTopRep]
+    exact isIso_shapiroMapTopRep U hU A n
 
 /-- Shapiro's lemma for smooth discrete topological representations over any ring. -/
 noncomputable def shapiroIsoTopRep [TotallyDisconnectedSpace G]

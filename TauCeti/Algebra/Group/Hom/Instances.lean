@@ -33,6 +33,8 @@ whose image is the `n`-torsion induces bijections on duals.
   `AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero`: postcomposition with an injective
   homomorphism onto the `n`-th roots of unity is bijective on homomorphisms out of a monoid killed
   by `n`.
+* `MonoidHom.compHom_bijective`, `AddMonoidHom.compHom_bijective`: postcomposition with a bijective
+  homomorphism is bijective on homomorphisms out of any monoid.
 -/
 
 public section
@@ -78,5 +80,19 @@ theorem _root_.MonoidHom.compHom_bijective_of_forall_pow_eq_one {M N P : Type*} 
     · rw [hφ, map_mul, map_mul, hφ, hφ]
     · simpa only [MonoidHom.compHom_apply_apply, MonoidHom.comp_apply, MonoidHom.coe_mk,
         OneHom.coe_mk] using hφ a
+
+/-- Postcomposition with a bijective homomorphism `f : N →* P` is bijective on homomorphisms out of
+any monoid: `Hom(M, -)` takes isomorphisms to isomorphisms. This is the case `n = 0` of
+`MonoidHom.compHom_bijective_of_forall_pow_eq_one`; the bundled form is Mathlib's
+`MulEquiv.monoidHomCongrRightEquiv`. -/
+@[to_additive /-- Postcomposition with a bijective homomorphism `f : N →+ P` is bijective on
+homomorphisms out of any additive monoid: `Hom(M, -)` takes isomorphisms to isomorphisms. This is
+the case `n = 0` of `AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero`; the bundled form is
+Mathlib's `AddEquiv.addMonoidHomCongrRightEquiv`. -/]
+theorem _root_.MonoidHom.compHom_bijective {M N P : Type*} [Monoid M] [CommMonoid N]
+    [CommMonoid P] {f : N →* P} (hf : Function.Bijective f) :
+    Function.Bijective (MonoidHom.compHom f : (M →* N) →* M →* P) :=
+  MonoidHom.compHom_bijective_of_forall_pow_eq_one hf.1 (n := 0) (fun a => pow_zero a)
+    fun y _ => hf.2 y
 
 end TauCeti

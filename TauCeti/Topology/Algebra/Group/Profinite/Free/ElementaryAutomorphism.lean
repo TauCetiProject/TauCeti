@@ -27,6 +27,11 @@ normalise the exponent vector of an arbitrary element of `F`:
   `p`-adic power `u` and fixes the other generators; its inverse is the dilation by `u⁻¹`, and it
   multiplies the coordinate at `x₀` of the exponent vector by `u`.
 
+It also defines the composite `TauCeti.freeProP.symplecticTransvection hn3 c` of two transvections
+of the free pro-`p` group on `n ≥ 4` generators, `x₂ ↦ x₂ x₄^c` and `x₃ ↦ x₃ x₁^{-c}`, which fixes
+the other generators; this is the change of basis of Labute's classification of the dyadic
+Demushkin groups of even rank, where it preserves the class of the relator modulo `λ_2`.
+
 The normalisation is the elimination step of Labute's classification of Demushkin groups: if the
 exponent vector of `r ∈ F` is `q • w` with `w x₀ = 1`, then some automorphism `e` of `F` has
 `exponentSum (e r) = q e_{x₀}`, that is `e r ∈ x₀ ^ q · [F, F]` by
@@ -46,6 +51,8 @@ abelianization structure theorem reads off.
 
 * `TauCeti.freeProP.transvection`: the automorphism `x₀ ↦ x₀ · x ^ a` of `freeProP p X`.
 * `TauCeti.freeProP.dilation`: the automorphism `x₀ ↦ x₀ ^ u` of `freeProP p X`, for a unit `u`.
+* `TauCeti.freeProP.symplecticTransvection`: the automorphism `x₂ ↦ x₂ x₄^c`, `x₃ ↦ x₃ x₁^{-c}` of
+  `freeProP p (Fin n)`, for `n ≥ 4`.
 
 ## Main results
 
@@ -58,6 +65,10 @@ abelianization structure theorem reads off.
 * `TauCeti.freeProP.toAdd_exponentSum_congr`, `TauCeti.freeProP.toAdd_exponentSum_transvection`,
   `TauCeti.freeProP.toAdd_exponentSum_dilation`: the exponent vectors of the images under the
   three elementary automorphisms.
+* `TauCeti.freeProP.symplecticTransvection_freeProPGen_one`,
+  `TauCeti.freeProP.symplecticTransvection_freeProPGen_two`,
+  `TauCeti.freeProP.symplecticTransvection_freeProPGen_of_ne`: the values of the symplectic
+  transvection pair on the generators.
 * `TauCeti.freeProP.exists_continuousMulEquiv_toAdd_exponentSum_eq_single_of_eq_smul`: if the
   exponent vector of `r` is `q • w` with `w x₀ = 1`, an automorphism of `freeProP p X` carries `r`
   to an element with exponent vector `q e_{x₀}`.
@@ -383,6 +394,67 @@ theorem toAdd_exponentSum_dilation [Finite X] [DecidableEq X] (y : freeProP p X)
   · rw [Function.update_of_ne hk, ite_eq_right hk, mul_one]
 
 end Dilation
+
+/-! ### The symplectic transvection pair -/
+
+section SymplecticTransvection
+
+variable {n : ℕ} (hn3 : 3 < n) (c : ℤ_[p])
+
+/-- **The symplectic transvection pair** `x₂ ↦ x₂ x₄^c`, `x₃ ↦ x₃ x₁^{-c}` of the free pro-`p`
+group on `n ≥ 4` generators, for a `p`-adic exponent `c`: the composite of the transvection at `x₂`
+along `x₄` with exponent `c` and the transvection at `x₃` along `x₁` with exponent `-c`
+(`TauCeti.freeProP.transvection`); it fixes the other generators. It is the change of basis of
+Labute's classification of the dyadic Demushkin groups of even rank: it preserves the class in
+`gr_1(F)` of the normal-form words `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`
+(`TauCeti.freeProP.gradedMap_symplecticTransvection_gradedMk_demushkinWordNeTwo`). -/
+noncomputable def symplecticTransvection : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n) :=
+  (transvection (⟨1, by omega⟩ : Fin n) ⟨3, hn3⟩ (Fin.ne_of_val_ne (by norm_num)) c).trans
+    (transvection (⟨2, by omega⟩ : Fin n) ⟨0, by omega⟩ (Fin.ne_of_val_ne (by norm_num)) (-c))
+
+/-- The defining equation of `TauCeti.freeProP.symplecticTransvection`. -/
+theorem symplecticTransvection_def :
+    symplecticTransvection hn3 c =
+      (transvection (⟨1, by omega⟩ : Fin n) ⟨3, hn3⟩ (Fin.ne_of_val_ne (by norm_num)) c).trans
+        (transvection (⟨2, by omega⟩ : Fin n) ⟨0, by omega⟩ (Fin.ne_of_val_ne (by norm_num))
+          (-c)) :=
+  (rfl)
+
+/-- The symplectic transvection pair fixes the generators other than `x₂` and `x₃`. -/
+theorem symplecticTransvection_freeProPGen_of_ne (m : ℕ) (hm₁ : m ≠ 1) (hm₂ : m ≠ 2) :
+    symplecticTransvection hn3 c (freeProPGen p n m) = freeProPGen p n m := by
+  by_cases hm : m < n
+  · rw [freeProPGen_of_lt p hm, symplecticTransvection_def, ContinuousMulEquiv.trans_apply,
+      transvection_of_of_ne _ _ (Fin.ne_of_val_ne hm₁),
+      transvection_of_of_ne _ _ (Fin.ne_of_val_ne hm₂)]
+  · rw [freeProPGen_eq_one_of_le p (not_lt.1 hm), map_one]
+
+/-- The symplectic transvection pair sends `x₂` to `x₂ x₄^c`. -/
+theorem symplecticTransvection_freeProPGen_one :
+    symplecticTransvection hn3 c (freeProPGen p n 1) =
+      freeProPGen p n 1 * (isProP_freeProP p (Fin n)).padicPow (freeProPGen p n 3) c := by
+  rw [freeProPGen_of_lt p (by omega : 1 < n), freeProPGen_of_lt p hn3, symplecticTransvection_def,
+    ContinuousMulEquiv.trans_apply, transvection_of_self, map_mul,
+    transvection_of_of_ne _ _ (Fin.ne_of_val_ne (by norm_num))]
+  congr 1
+  set T₂ := transvection (⟨2, by omega⟩ : Fin n) ⟨0, by omega⟩ (Fin.ne_of_val_ne (by norm_num))
+    (-c) with hT₂
+  have e : T₂ ((isProP_freeProP p (Fin n)).padicPow (of ⟨3, hn3⟩) c) =
+      (isProP_freeProP p (Fin n)).padicPow (T₂ (of ⟨3, hn3⟩)) c :=
+    (isProP_freeProP p (Fin n)).map_padicPow (isProP_freeProP p (Fin n))
+      (T₂ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
+      (by exact (T₂ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous) (of ⟨3, hn3⟩) c
+  rw [e, hT₂, transvection_of_of_ne _ _ (Fin.ne_of_val_ne (by norm_num))]
+
+/-- The symplectic transvection pair sends `x₃` to `x₃ x₁^{-c}`. -/
+theorem symplecticTransvection_freeProPGen_two :
+    symplecticTransvection hn3 c (freeProPGen p n 2) =
+      freeProPGen p n 2 * (isProP_freeProP p (Fin n)).padicPow (freeProPGen p n 0) (-c) := by
+  rw [freeProPGen_of_lt p (by omega : 2 < n), freeProPGen_of_lt p (by omega : 0 < n),
+    symplecticTransvection_def, ContinuousMulEquiv.trans_apply,
+    transvection_of_of_ne _ _ (Fin.ne_of_val_ne (by norm_num)), transvection_of_self]
+
+end SymplecticTransvection
 
 /-! ### Normalising the exponent vector -/
 

@@ -11,7 +11,9 @@ public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 
+import Mathlib.Data.FunLike.Fintype
 import TauCeti.Algebra.Group.Hom.Instances
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
 
@@ -60,6 +62,14 @@ bijective `f` the square formed by `αᵢ` on `M`, `αᵢ` on `M'`, `f_*` on coh
 targets commutes, and bijectivity of each `αᵢ` transports from `M'` to `M`. This is how a base case
 stated for `ZMod p` applies to every trivial module of order `p`.
 
+Finally, when `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, injectivity of `α₂` on a finite module `M`
+killed by `n` upgrades to bijectivity by counting
+(`TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`), once `α₀` is known
+to be bijective on the dual `InternalHom G M N`: `|H²(G, M)| = |H⁰(G, InternalHom G M N)|`, since
+`Hom(-, H²(G, N))` preserves the order of a finite group killed by `n` and `M` is its own double
+dual with values in `N` (`TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`). This is the
+last step of Tate's duality for the coefficient systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
+
 ## Main statements
 
 * `TauCeti.ContCohomology.explicitDualityPairing02`, `explicitDualityPairing11` and
@@ -79,7 +89,8 @@ stated for `ZMod p` applies to every trivial module of order `p`.
   `dualityMap1_eq_neg_explicitDualityPairing11` and `dualityMap2_eq_explicitDualityPairing02`.
 * `TauCeti.ContCohomology.dualityMap0_explicitCoeff0`, `dualityMap1_explicitCoeff1` and
   `dualityMap2_explicitCoeff2`: **naturality of the duality maps in the module**,
-  `αᵢ (f_* x) b = αᵢ x (f^* b)`.
+  `αᵢ (f_* x) b = αᵢ x (f^* b)`; and `explicitCoeff2_injective_of_dualityMap2_injective`: when `α₂`
+  is injective on `M` and `f^*` is surjective on the invariants, `f_*` is injective on `H²`.
 * `TauCeti.ContCohomology.dualityMap0_bijective_of_bijective`, `dualityMap1_bijective_of_bijective`
   and `dualityMap2_bijective_of_bijective`: bijectivity of each duality map transports along an
   isomorphism of modules.
@@ -91,6 +102,13 @@ stated for `ZMod p` applies to every trivial module of order `p`.
   `dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero`: on a module killed by `n`,
   bijectivity of each duality map transports along an injection of coefficients `N →+[G] N'` whose
   range is the `n`-torsion, on the modules and on `H²`.
+* `TauCeti.ContCohomology.dualityMap0_injective_iff_of_bijective`,
+  `dualityMap0_surjective_iff_of_bijective`, `dualityMap0_bijective_iff_of_bijective` and their
+  analogues in degrees `1` and `2`: injectivity, surjectivity and bijectivity of each duality map
+  transport along an isomorphism of coefficients `N →+[G] N'`.
+* `TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`: for `N ≃+ ZMod n`
+  and `H²(G, N) ≃+ ZMod n`, if `α₂` is injective on `M` and `α₀` is bijective on its dual, then `α₂`
+  is bijective on `M`, by counting.
 * `TauCeti.ContCohomology.dualityMap2_zmod_bijective` and
   `dualityMap0_zmod_bijective_of_finrank_eq_one`: bijectivity of `α₂` and of `α₀` for a trivial
   action on `ZMod n`.
@@ -565,6 +583,19 @@ theorem dualityMap2_explicitCoeff2 (x : H2 G M) (b : H0 G (InternalHom G M' N)) 
   rw [dualityMap2_eq_explicitDualityPairing02, dualityMap2_eq_explicitDualityPairing02,
     explicitDualityPairing02_explicitCoeff2]
 
+/-- **Injectivity of `f_*` on `H²` from injectivity of `α₂`.** If `α₂` is injective at `M` and every
+invariant homomorphism `M → N` is the restriction along `f : M →+[G] M'` of an invariant
+homomorphism `M' → N`, then `f_* : H²(G, M) → H²(G, M')` is injective: a class `x` with `f_* x = 0`
+pairs to zero with every `f^* b`, hence with every invariant of `Hom(M, N)`, so `α₂ x = 0`. -/
+theorem explicitCoeff2_injective_of_dualityMap2_injective
+    (h : Function.Injective (dualityMap2 G M N))
+    (hf : Function.Surjective
+      (explicitCoeff0 G (InternalHom G M' N) (InternalHom.precomp G f (N := N)))) :
+    Function.Injective (explicitCoeff2 G M f continuous_of_discreteTopology) := fun x y hxy ↦ by
+  refine h (AddMonoidHom.ext fun b ↦ ?_)
+  obtain ⟨b, rfl⟩ := hf b
+  rw [← dualityMap2_explicitCoeff2, ← dualityMap2_explicitCoeff2, hxy]
+
 end DualityMapTwoNaturality
 
 /-! ### Transport along an isomorphism of modules
@@ -817,6 +848,211 @@ theorem dualityMap1_bijective_of_injective_of_forall_nsmul_eq_zero {n : ℕ}
   exact hΨ.comp h
 
 end NaturalityInCoefficients
+
+/-! ### Transport of the duality maps along an isomorphism of the coefficients
+
+For a bijective `f : N →+[G] N'`, naturality in the coefficients makes the square formed by `αᵢ` at
+the coefficients `N` and `N'`, postcomposition with `f_*` on `H²(G, -)` and precomposition with
+`(f ∘ -)_*` on the sources commute, and the two latter maps are bijections. Hence `αᵢ` is injective,
+surjective or bijective at `N` exactly when it is at `N'`. This is how a duality statement for a
+`G`-module `N`, read on a subgroup `U ≤ G` through the restricted action, is carried to the
+`U`-module canonically attached to `U`: for a character `χ` of `G`, from the twisted coefficients
+`I(χ)/pⁱ` restricted to `U` to the twisted coefficients `I(χ|_U)/pⁱ` of the restricted character. -/
+
+section TransportInCoefficients
+
+variable {G : Type uG} [Group G] [TopologicalSpace G]
+  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N]
+  {N' : Type uN'} [AddCommGroup N'] [TopologicalSpace N'] [DiscreteTopology N']
+    [DistribMulAction G N'] [ContinuousSMul G N']
+  {f : N →+[G] N'}
+
+section DegreeTwo
+
+variable [ContinuousMul G]
+
+variable (f) in
+/-- **The transport square of `α₂`**: postcomposing `α₂` at the coefficients `N` with `f_*` is
+precomposing `α₂` at the coefficients `N'` with `(f ∘ -)_*`, the function form of
+`explicitCoeff2_dualityMap2`. -/
+theorem compHom_explicitCoeff2_comp_dualityMap2 :
+    ⇑(AddMonoidHom.compHom (explicitCoeff2 G N f continuous_of_discreteTopology) :
+        (H0 G (InternalHom G M N) →+ H2 G N) →+ H0 G (InternalHom G M N) →+ H2 G N') ∘
+      ⇑(dualityMap2 G M N) =
+    ⇑(AddMonoidHom.compHom' (explicitCoeff0 G (InternalHom G M N) (InternalHom.postcomp G f)) :
+        (H0 G (InternalHom G M N') →+ H2 G N') →+ H0 G (InternalHom G M N) →+ H2 G N') ∘
+      ⇑(dualityMap2 G M N') :=
+  funext fun x => AddMonoidHom.ext fun b => by
+    simp only [Function.comp_apply, AddMonoidHom.compHom_apply_apply, AddMonoidHom.comp_apply,
+      AddMonoidHom.compHom'_apply_apply]
+    exact explicitCoeff2_dualityMap2 f x b
+
+variable (hf : Function.Bijective f)
+include hf
+
+/-- **Injectivity of `α₂` transports along an isomorphism of coefficients.** -/
+theorem dualityMap2_injective_iff_of_bijective :
+    Function.Injective (dualityMap2 G M N) ↔ Function.Injective (dualityMap2 G M N') := by
+  have hv := AddMonoidHom.compHom_bijective (M := H0 G (InternalHom G M N))
+    (explicitCoeff2_bijective G N hf)
+  have hu := AddMonoidHom.compHom'_bijective (P := H2 G N')
+    (explicitCoeff0_bijective G (InternalHom G M N) (InternalHom.postcomp_bijective (M := M) hf))
+  rw [← hv.1.of_comp_iff (dualityMap2 G M N), compHom_explicitCoeff2_comp_dualityMap2 f,
+    hu.1.of_comp_iff (dualityMap2 G M N')]
+
+/-- **Surjectivity of `α₂` transports along an isomorphism of coefficients.** -/
+theorem dualityMap2_surjective_iff_of_bijective :
+    Function.Surjective (dualityMap2 G M N) ↔ Function.Surjective (dualityMap2 G M N') := by
+  have hv := AddMonoidHom.compHom_bijective (M := H0 G (InternalHom G M N))
+    (explicitCoeff2_bijective G N hf)
+  have hu := AddMonoidHom.compHom'_bijective (P := H2 G N')
+    (explicitCoeff0_bijective G (InternalHom G M N) (InternalHom.postcomp_bijective (M := M) hf))
+  rw [← Function.Surjective.of_comp_iff' hv (dualityMap2 G M N),
+    compHom_explicitCoeff2_comp_dualityMap2 f,
+    Function.Surjective.of_comp_iff' hu (dualityMap2 G M N')]
+
+/-- **Bijectivity of `α₂` transports along an isomorphism of coefficients.** -/
+theorem dualityMap2_bijective_iff_of_bijective :
+    Function.Bijective (dualityMap2 G M N) ↔ Function.Bijective (dualityMap2 G M N') :=
+  and_congr (dualityMap2_injective_iff_of_bijective hf) (dualityMap2_surjective_iff_of_bijective hf)
+
+end DegreeTwo
+
+section DegreeZeroOne
+
+variable [IsTopologicalGroup G] [Finite M]
+
+variable (f) in
+/-- **The transport square of `α₀`**: postcomposing `α₀` at the coefficients `N` with `f_*` is
+precomposing `α₀` at the coefficients `N'` with `(f ∘ -)_*`, the function form of
+`explicitCoeff2_dualityMap0`. -/
+theorem compHom_explicitCoeff2_comp_dualityMap0 :
+    ⇑(AddMonoidHom.compHom (explicitCoeff2 G N f continuous_of_discreteTopology) :
+        (H2 G (InternalHom G M N) →+ H2 G N) →+ H2 G (InternalHom G M N) →+ H2 G N') ∘
+      ⇑(dualityMap0 G M N) =
+    ⇑(AddMonoidHom.compHom' (explicitCoeff2 G (InternalHom G M N) (InternalHom.postcomp G f)
+        continuous_of_discreteTopology) :
+        (H2 G (InternalHom G M N') →+ H2 G N') →+ H2 G (InternalHom G M N) →+ H2 G N') ∘
+      ⇑(dualityMap0 G M N') :=
+  funext fun x => AddMonoidHom.ext fun b => by
+    simp only [Function.comp_apply, AddMonoidHom.compHom_apply_apply, AddMonoidHom.comp_apply,
+      AddMonoidHom.compHom'_apply_apply]
+    exact explicitCoeff2_dualityMap0 f x b
+
+variable (f) in
+/-- **The transport square of `α₁`**: postcomposing `α₁` at the coefficients `N` with `f_*` is
+precomposing `α₁` at the coefficients `N'` with `(f ∘ -)_*`, the function form of
+`explicitCoeff2_dualityMap1`. -/
+theorem compHom_explicitCoeff2_comp_dualityMap1 :
+    ⇑(AddMonoidHom.compHom (explicitCoeff2 G N f continuous_of_discreteTopology) :
+        (H1 G (InternalHom G M N) →+ H2 G N) →+ H1 G (InternalHom G M N) →+ H2 G N') ∘
+      ⇑(dualityMap1 G M N) =
+    ⇑(AddMonoidHom.compHom' (explicitCoeff1 G (InternalHom G M N) (InternalHom.postcomp G f)
+        continuous_of_discreteTopology) :
+        (H1 G (InternalHom G M N') →+ H2 G N') →+ H1 G (InternalHom G M N) →+ H2 G N') ∘
+      ⇑(dualityMap1 G M N') :=
+  funext fun x => AddMonoidHom.ext fun b => by
+    simp only [Function.comp_apply, AddMonoidHom.compHom_apply_apply, AddMonoidHom.comp_apply,
+      AddMonoidHom.compHom'_apply_apply]
+    exact explicitCoeff2_dualityMap1 f x b
+
+variable (hf : Function.Bijective f)
+include hf
+
+/-- **Injectivity of `α₀` transports along an isomorphism of coefficients.** -/
+theorem dualityMap0_injective_iff_of_bijective :
+    Function.Injective (dualityMap0 G M N) ↔ Function.Injective (dualityMap0 G M N') := by
+  have hv := AddMonoidHom.compHom_bijective (M := H2 G (InternalHom G M N))
+    (explicitCoeff2_bijective G N hf)
+  have hu := AddMonoidHom.compHom'_bijective (P := H2 G N')
+    (explicitCoeff2_bijective G (InternalHom G M N) (InternalHom.postcomp_bijective (M := M) hf))
+  rw [← hv.1.of_comp_iff (dualityMap0 G M N), compHom_explicitCoeff2_comp_dualityMap0 f,
+    hu.1.of_comp_iff (dualityMap0 G M N')]
+
+/-- **Surjectivity of `α₀` transports along an isomorphism of coefficients.** -/
+theorem dualityMap0_surjective_iff_of_bijective :
+    Function.Surjective (dualityMap0 G M N) ↔ Function.Surjective (dualityMap0 G M N') := by
+  have hv := AddMonoidHom.compHom_bijective (M := H2 G (InternalHom G M N))
+    (explicitCoeff2_bijective G N hf)
+  have hu := AddMonoidHom.compHom'_bijective (P := H2 G N')
+    (explicitCoeff2_bijective G (InternalHom G M N) (InternalHom.postcomp_bijective (M := M) hf))
+  rw [← Function.Surjective.of_comp_iff' hv (dualityMap0 G M N),
+    compHom_explicitCoeff2_comp_dualityMap0 f,
+    Function.Surjective.of_comp_iff' hu (dualityMap0 G M N')]
+
+/-- **Bijectivity of `α₀` transports along an isomorphism of coefficients.** -/
+theorem dualityMap0_bijective_iff_of_bijective :
+    Function.Bijective (dualityMap0 G M N) ↔ Function.Bijective (dualityMap0 G M N') :=
+  and_congr (dualityMap0_injective_iff_of_bijective hf) (dualityMap0_surjective_iff_of_bijective hf)
+
+/-- **Injectivity of `α₁` transports along an isomorphism of coefficients.** -/
+theorem dualityMap1_injective_iff_of_bijective :
+    Function.Injective (dualityMap1 G M N) ↔ Function.Injective (dualityMap1 G M N') := by
+  have hv := AddMonoidHom.compHom_bijective (M := H1 G (InternalHom G M N))
+    (explicitCoeff2_bijective G N hf)
+  have hu := AddMonoidHom.compHom'_bijective (P := H2 G N')
+    (explicitCoeff1_bijective G (InternalHom G M N) (InternalHom.postcomp_bijective (M := M) hf))
+  rw [← hv.1.of_comp_iff (dualityMap1 G M N), compHom_explicitCoeff2_comp_dualityMap1 f,
+    hu.1.of_comp_iff (dualityMap1 G M N')]
+
+/-- **Surjectivity of `α₁` transports along an isomorphism of coefficients.** -/
+theorem dualityMap1_surjective_iff_of_bijective :
+    Function.Surjective (dualityMap1 G M N) ↔ Function.Surjective (dualityMap1 G M N') := by
+  have hv := AddMonoidHom.compHom_bijective (M := H1 G (InternalHom G M N))
+    (explicitCoeff2_bijective G N hf)
+  have hu := AddMonoidHom.compHom'_bijective (P := H2 G N')
+    (explicitCoeff1_bijective G (InternalHom G M N) (InternalHom.postcomp_bijective (M := M) hf))
+  rw [← Function.Surjective.of_comp_iff' hv (dualityMap1 G M N),
+    compHom_explicitCoeff2_comp_dualityMap1 f,
+    Function.Surjective.of_comp_iff' hu (dualityMap1 G M N')]
+
+/-- **Bijectivity of `α₁` transports along an isomorphism of coefficients.** -/
+theorem dualityMap1_bijective_iff_of_bijective :
+    Function.Bijective (dualityMap1 G M N) ↔ Function.Bijective (dualityMap1 G M N') :=
+  and_congr (dualityMap1_injective_iff_of_bijective hf) (dualityMap1_surjective_iff_of_bijective hf)
+
+end DegreeZeroOne
+
+end TransportInCoefficients
+
+section Counting
+
+variable {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
+  [ContinuousSMul G M] [Finite M]
+  {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
+  [ContinuousSMul G N] [Finite N] {n : ℕ} [NeZero n]
+
+/-- **Bijectivity of `α₂` by counting.** Let `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, and let `M` be
+a finite discrete `G`-module killed by `n` with `H²(G, M'')` finite, where `M' = InternalHom G M N`
+and `M'' = InternalHom G M' N`. If `α₂` is injective on `M` and `α₀` is
+bijective on `M'`, then `α₂ : H²(G, M) → Hom(H⁰(G, M'), H²(G, N))` is bijective: its target has the
+order of `H⁰(G, M')`, which `α₀` identifies with `Hom(H²(G, M''), H²(G, N))`, of the order of
+`H²(G, M'')`, and `M'' ≅ M` by double duality. The hypothesis `H²(G, N) ≃+ ZMod n` is what makes
+`Hom(-, H²(G, N))` preserve the order of every finite group killed by `n`. -/
+theorem dualityMap2_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
+    (e₂ : H2 G N ≃+ ZMod n) (hM : ∀ x : M, n • x = 0)
+    [Finite (H2 G (InternalHom G (InternalHom G M N) N))]
+    (h₀ : Function.Bijective (dualityMap0 G (InternalHom G M N) N))
+    (h₂ : Function.Injective (dualityMap2 G M N)) : Function.Bijective (dualityMap2 G M N) := by
+  have hM' : ∀ φ : InternalHom G M N, n • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
+  have : Finite (H2 G N) := Finite.of_equiv _ e₂.symm.toEquiv
+  have : Finite (H0 G (InternalHom G M N) →+ H2 G N) := DFunLike.finite _
+  refine h₂.bijective_of_nat_card_le (le_of_eq ?_)
+  -- `|Hom(H⁰(M'), H²(N))| = |H⁰(M')| = |Hom(H²(M''), H²(N))| = |H²(M'')| = |H²(M)|`
+  have h₁ : Nat.card (H0 G (InternalHom G M N) →+ H2 G N) = Nat.card (H0 G (InternalHom G M N)) :=
+    natCard_addMonoidHom_of_addEquiv_zmod e₂ fun v ↦ Subtype.ext (by simpa using hM' v)
+  have h₂₃ := (Nat.card_congr (Equiv.ofBijective _ h₀)).trans
+    (natCard_addMonoidHom_of_addEquiv_zmod e₂
+      (nsmul_H2_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM')))
+  have h₂₃₄ := h₂₃.trans (Nat.card_congr (Equiv.ofBijective _ (explicitCoeff2_bijective G M
+    (InternalHom.eval_bijective_of_addEquiv_zmod e hM))).symm)
+  exact h₁.trans h₂₃₄
+
+end Counting
 
 section TrivialZMod
 
