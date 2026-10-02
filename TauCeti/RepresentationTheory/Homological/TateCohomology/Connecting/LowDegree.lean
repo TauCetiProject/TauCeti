@@ -21,6 +21,9 @@ maps on the norm kernel and the invariants to be compared across the boundary of
 
 * K. S. Brown, *Cohomology of Groups*, Chapter VI, §5.
 * E. Artin and J. Tate, *Class Field Theory*, Chapter IV, §6.
+* Mathlib's `CategoryTheory.ShortComplex.ShortExact.δ_apply` in
+  `Mathlib.Algebra.Homology.ConcreteCategory`: `δ_neg_one_HNegOneπ` specializes this formula
+  through the norm-kernel and invariant cycle identifications.
 -/
 
 public noncomputable section
@@ -106,11 +109,9 @@ theorem δ_neg_one_HNegOneπ {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
     apply (ModuleCat.mono_iff_injective ((tateComplex S.X₁).iCycles 0)).mp inferInstance
     simpa using! HomologicalComplex.i_cyclesMk (tateComplex S.X₁) (i := 0)
       ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) 1 (by simp) hzero
-  change _root_.TateCohomology.δ hS (-1)
-      ((tateComplex S.X₃).homologyπ (-1) ((tateComplex S.X₃).cyclesMk (i := (-1))
-        ((tateComplex S.X₃).iCycles (-1) ((HNegOneCyclesIso S.X₃).inv z)) 0 (by simp) hz)) =
-      (tateComplex S.X₁).homologyπ 0 ((tateComplex S.X₁).cyclesMk (i := 0)
-        ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) 1 (by simp) _) at h
+  -- Identify the mapped complexes explicitly, then replace the constructed cycles by the
+  -- norm-kernel and invariant representatives. Forgetting a module morphism retains its action.
+  dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, tateComplexFunctor_obj] at h
   erw [hc₃', hc₁'] at h
   rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ]
   exact h
