@@ -63,6 +63,7 @@ Herbrand shift instead.
   inertia degree.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
+* `TauCeti.continuous_normUnits`: the norm on unit groups is continuous.
 * `TauCeti.coe_norm_integerRing` and `TauCeti.coe_trace_integerRing`: the norm and trace of
   `𝒪[L]` over `𝒪[K]` restrict the norm and trace of `L/K`.
 * `TauCeti.algebraMap_norm_integerRing_eq_prod_automorphisms` and
@@ -329,6 +330,18 @@ theorem map_normUnits_unitFiltration_le (i : ℕ) :
     (unitFiltration L (ramificationIndex K L * i)).map (Algebra.normUnits K) ≤
       unitFiltration K i :=
   Subgroup.map_le_iff_le_comap.mpr fun _ hy ↦ normUnits_mem_unitFiltration_of_mem L hy
+
+omit [FiniteDimensional K L] in
+variable (K L) in
+/-- The norm on unit groups of compatible local-field extensions is continuous. -/
+theorem continuous_normUnits : Continuous (Algebra.normUnits K : Lˣ → Kˣ) := by
+  apply continuous_of_continuousAt_one
+  rw [ContinuousAt, map_one]
+  refine ((hasBasis_nhds_one_unitFiltration (K := L)).tendsto_iff
+    (hasBasis_nhds_one_unitFiltration (K := K))).2 ?_
+  intro i _
+  exact ⟨ramificationIndex K L * i, trivial, fun _ hy ↦
+    normUnits_mem_unitFiltration_of_mem L hy⟩
 
 /-- The norm of a uniformizer of `L` is a uniformizer of `K` exactly when the residue degree is
 `1`, that is when `L/K` is totally ramified. -/

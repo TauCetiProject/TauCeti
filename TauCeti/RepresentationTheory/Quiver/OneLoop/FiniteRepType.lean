@@ -73,7 +73,7 @@ representation is the same criterion read in the base field.
 
 The quiver `•↺` itself -- `TauCeti.Quiver.OneLoop`, with its `Quiver` instance and its loop
 `TauCeti.Quiver.OneLoop.loop` -- is defined in
-`TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`, which carries the vertex and arrow data alone;
+`TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`, which carries the vertex, arrow, and path data;
 the path-algebra results cited under "References" are not imported here.
 
 `TauCeti.oneLoopRep` and `TauCeti.oneLoopNilpotentRep` carry `@[expose]` because the vertex space of

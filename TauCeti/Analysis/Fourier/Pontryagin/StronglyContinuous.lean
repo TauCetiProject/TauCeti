@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 # Matrix coefficients of strongly continuous unitary representations
 
 Let `π` be a strongly continuous unitary representation of a locally compact abelian group `G`
-on a complex Hilbert space `H`, where `G` or `H` is second countable, and let `ξ ∈ H`. The
+on a complex Hilbert space `H`, and let `ξ ∈ H`. The
 diagonal matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes transform of a finite
 positive measure on the Pontryagin dual of `G`. This is the cyclic form of the
 Stone–Naimark–Ambrose–Godement spectral theorem.
@@ -31,15 +31,14 @@ characters, and the image of `ν` under it is the required measure. The characte
 every integrated operator do not contribute: since `π(f) ξ` approximates `ξ`, the identity
 `∫ |ω(π(f)) - 1|² dν = ‖π(f) ξ - ξ‖²` forces `ω(π(f)) ≈ 1` in `L²(ν)`.
 
-Second countability of `G` or of `H` is the hypothesis under which the integrated form is
-defined, as a Bochner integral of the continuous orbits `g ↦ π(g) v`.
+No second countability of `G` and no separability of `H` is needed: the integrated form is defined
+for the Haar measure through its inner regularity for compact sets.
 
 ## Main declarations
 
 * `ContRepresentation.exists_pontryaginMeasureTransform_eq_inner`: a diagonal matrix coefficient
-  of a strongly continuous unitary representation of a locally compact abelian group, on a
-  Hilbert space where the group or the space is second countable, is the Fourier–Stieltjes
-  transform of a finite measure on the dual group.
+  of a strongly continuous unitary representation of a locally compact abelian group is the
+  Fourier–Stieltjes transform of a finite measure on the dual group.
 
 ## References
 
@@ -58,7 +57,7 @@ namespace TauCeti.StronglyContinuousSpectral
 
 variable {G : Type*} [AddCommGroup G] {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [TopologicalSpace G] [IsTopologicalAddGroup G] [LocallyCompactSpace G]
-  [SecondCountableTopologyEither G H] [MeasurableSpace G] [BorelSpace G] [CompleteSpace H]
+  [MeasurableSpace G] [BorelSpace G] [CompleteSpace H]
   (π : ContRepresentation ℂ (Multiplicative G) H)
   (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
   (hπ : ContRepresentation.IsUnitary π)
@@ -281,13 +280,11 @@ variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGrou
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [BorelSpace (PontryaginDual (Multiplicative G))]
   {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  [SecondCountableTopologyEither G H]
 
 /-- **Spectral theorem for strongly continuous unitary representations**, cyclic form. For a
 strongly continuous unitary representation `π` of a locally compact abelian group `G` on a
-Hilbert space `H`, where `G` or `H` is second countable, and a vector `ξ`, the matrix
-coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes transform of a finite measure on the
-Pontryagin dual of `G`. -/
+Hilbert space `H` and a vector `ξ`, the matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the
+Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of `G`. -/
 theorem ContRepresentation.exists_pontryaginMeasureTransform_eq_inner
     (π : ContRepresentation ℂ (Multiplicative G) H)
     (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)

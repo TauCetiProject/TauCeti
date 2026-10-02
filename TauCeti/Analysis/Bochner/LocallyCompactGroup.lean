@@ -12,9 +12,9 @@ import TauCeti.Analysis.PositiveDefinite.Function.GNS
 /-!
 # Bochner's theorem on locally compact abelian groups
 
-A positive-definite function `φ` on a second-countable locally compact abelian group `G` that is
-continuous at `0` is the Fourier–Stieltjes transform `φ(g) = ∫ χ(g) dμ(χ)` of a finite positive
-measure `μ` on the Pontryagin dual of `G`.
+A positive-definite function `φ` on a locally compact abelian group `G` that is continuous at `0`
+is the Fourier–Stieltjes transform `φ(g) = ∫ χ(g) dμ(χ)` of a finite positive measure `μ` on the
+Pontryagin dual of `G`.
 
 The measure comes from the GNS construction. The function `φ` is a matrix coefficient
 `φ(g) = ⟪v, U(-g) v⟫` of the unitary translation representation `U` on its GNS Hilbert space,
@@ -23,17 +23,14 @@ strongly continuous unitary representations,
 `ContRepresentation.exists_pontryaginMeasureTransform_eq_inner`, writes such a matrix coefficient
 as a Fourier–Stieltjes transform.
 
-Second countability of `G` is assumed because that spectral theorem rests on the integrated form
-of a strongly continuous representation, which is constructed only when the group or the
-Hilbert space is second countable; the GNS space carries no such hypothesis, so it is imposed on
-`G`. Discrete groups of any cardinality are covered separately in
-`TauCeti.Analysis.Bochner.DiscreteGroup`.
+No second countability of `G` is assumed, and the GNS space need not be separable: the integrated
+form behind the spectral theorem is defined through the inner regularity of the Haar measure.
 
 ## Main declarations
 
 * `TauCeti.IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuousAt`: a
-  positive-definite function, continuous at `0`, on a second-countable locally compact abelian
-  group is the Fourier–Stieltjes transform of a finite measure on the dual group.
+  positive-definite function, continuous at `0`, on a locally compact abelian group is the
+  Fourier–Stieltjes transform of a finite measure on the dual group.
 
 ## References
 
@@ -48,11 +45,11 @@ open MeasureTheory
 namespace TauCeti
 
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [LocallyCompactSpace G] [SecondCountableTopology G]
+  [LocallyCompactSpace G]
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [BorelSpace (PontryaginDual (Multiplicative G))]
 
-/-- **Bochner's theorem on a second-countable locally compact abelian group**, existence half.
+/-- **Bochner's theorem on a locally compact abelian group**, existence half.
 A positive-definite function that is continuous at `0` is the Fourier–Stieltjes transform of a
 finite measure on the Pontryagin dual. -/
 theorem IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuousAt {φ : G → ℂ}

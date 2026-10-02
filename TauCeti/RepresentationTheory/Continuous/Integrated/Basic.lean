@@ -11,6 +11,8 @@ public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreser
 public import TauCeti.MeasureTheory.Integral.PeakFunction
 public import TauCeti.Order.Filter.SmallSets
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 
 /-!
 # The integrated form of a strongly continuous representation
@@ -76,7 +78,13 @@ written as a Bochner integral in `E →L E`. This is also why
 of a compact group against a continuous weight, does not apply here. The strong continuity and the
 uniform bound are hypotheses of the definition: they are exactly what makes the integrand
 integrable, and they hold for the unitary representations that are the main application.
-Measurability of the orbits is read off from their continuity, which needs
+Measurability of the integrands `g ↦ f g • π g v` is read off from the continuity of the orbits and
+the inner regularity of `μ` for compact sets
+(`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`): an integrable weight lives on a
+σ-finite set, which up to a null set is a countable union of compact sets with separable images.
+The Haar measure `MeasureTheory.Measure.addHaar` of a locally compact group is regular, hence has
+this property, so no second countability of `G` or separability of `E` is needed. Only the
+convolution identity, which integrates over `G × G`, still asks for
 `SecondCountableTopologyEither G E`.
 
 ## References
@@ -94,10 +102,9 @@ namespace TauCeti
 section Normed
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
-  [OpensMeasurableSpace G]
+  [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [SecondCountableTopologyEither G E]
-  {μ : Measure G} {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
 
 omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
 /-- The integrand of the integrated form is integrable. -/
@@ -105,13 +112,13 @@ private theorem integrable_smul_apply (hcont : ∀ v, Continuous fun g : G ↦ �
     {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C) {f : G → 𝕜} (hf : Integrable f μ) (v : E) :
     Integrable (fun g ↦ f g • π (.ofAdd g) v) μ := by
   refine (hf.norm.mul_const (C * ‖v‖)).mono'
-    (hf.aestronglyMeasurable.smul (hcont v).aestronglyMeasurable) (.of_forall fun g ↦ ?_)
+    (hf.aefinStronglyMeasurable.aestronglyMeasurable_smul (hcont v)) (.of_forall fun g ↦ ?_)
   rw [norm_smul]
   gcongr
   exact (π _).le_of_opNorm_le (hC _) v
 
-omit [TopologicalSpace G] [OpensMeasurableSpace G] [SMulCommClass ℝ 𝕜 E]
-  [SecondCountableTopologyEither G E] in
+omit [TopologicalSpace G] [R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]
+  [SMulCommClass ℝ 𝕜 E] in
 /-- The integral of the integrand of the integrated form is bounded by the `L¹` norm of the
 weight. -/
 private theorem norm_integral_smul_apply_le {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C) {f : G → 𝕜}
@@ -131,7 +138,8 @@ additive group `G` (written multiplicatively as `Multiplicative G`): the bounded
 integral `π(f) v = ∫ g, f g • π g v ∂μ` of the continuous orbit `g ↦ π g v`. -/
 noncomputable def _root_.ContRepresentation.integratedOperatorL1
     (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
-    (hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C) (μ : Measure G) : (G →₁[μ] 𝕜) →L[𝕜] E →L[𝕜] E :=
+    (hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C) (μ : Measure G) [μ.InnerRegularCompactLTTop] :
+    (G →₁[μ] 𝕜) →L[𝕜] E →L[𝕜] E :=
   LinearMap.mkContinuous₂
     (LinearMap.mk₂ 𝕜 (fun (f : G →₁[μ] 𝕜) v ↦ ∫ g, f g • π (.ofAdd g) v ∂μ)
       (fun f₁ f₂ v ↦ by
@@ -209,8 +217,8 @@ theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [M
 by `comp_integratedOperatorL1` it is the integrated form of the left translates of `f`, which
 depend continuously on `h` in `L¹`. -/
 theorem _root_.ContRepresentation.continuous_comp_integratedOperatorL1 [CompleteSpace E]
-    [IsTopologicalAddGroup G] [BorelSpace G] [MeasurableAdd G] [μ.IsAddLeftInvariant]
-    [μ.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure μ] (f : G →₁[μ] 𝕜) :
+    [IsTopologicalAddGroup G] [MeasurableAdd G] [μ.IsAddLeftInvariant] [IsLocallyFiniteMeasure μ]
+    (f : G →₁[μ] 𝕜) :
     Continuous fun h : G ↦ π (.ofAdd h) ∘L π.integratedOperatorL1 hcont hbdd μ f := by
   simp_rw [ContRepresentation.comp_integratedOperatorL1]
   exact (π.integratedOperatorL1 hcont hbdd μ).continuous.comp
@@ -223,10 +231,10 @@ end Normed
 section Commute
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
-  [MeasurableSpace G] [OpensMeasurableSpace G]
+  [MeasurableSpace G] [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [CompleteSpace E] [SecondCountableTopologyEither G E]
-  {μ : Measure G} {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  [CompleteSpace E]
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
 /-- Every action operator of a representation of an abelian group commutes with its
@@ -269,10 +277,10 @@ end Commute
 section Convolution
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G] [MeasurableSpace G]
-  [OpensMeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+  [R1Space G] [BorelSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   [CompleteSpace E] [SecondCountableTopologyEither G E]
-  {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] [SFinite μ] [μ.IsAddRightInvariant]
   {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
@@ -320,10 +328,10 @@ end Convolution
 section InnerProduct
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
-  [OpensMeasurableSpace G]
+  [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [CompleteSpace E] [SecondCountableTopologyEither G E]
-  {μ : Measure G} {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  [CompleteSpace E]
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
 /-- Matrix coefficients of the integrated form are the integrals of the matrix coefficients of the
@@ -357,10 +365,10 @@ end InnerProduct
 section Unitary
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
-  [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableNeg G]
+  [MeasurableSpace G] [R1Space G] [BorelSpace G] [MeasurableNeg G]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [CompleteSpace E] [SecondCountableTopologyEither G E]
-  {μ : Measure G} [μ.IsNegInvariant]
+  [CompleteSpace E]
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] [μ.IsNegInvariant]
   {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v}
   {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
@@ -380,10 +388,10 @@ end Unitary
 section ApproximateIdentity
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
-  [OpensMeasurableSpace G]
+  [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [CompleteSpace E] [SecondCountableTopologyEither G E]
-  {μ : Measure G} {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  [CompleteSpace E]
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
 /-- **Approximate identities for the integrated form.** If the weights `f i` eventually have unit
@@ -396,7 +404,8 @@ theorem _root_.ContRepresentation.tendsto_integratedOperatorL1_apply {ι : Type*
     (hf₀ : ∀ U ∈ 𝓝 (0 : G), ∀ᶠ i in l, ∀ᵐ g ∂μ, g ∉ U → f i g = 0) (v : E) :
     Tendsto (fun i ↦ π.integratedOperatorL1 hcont hbdd μ (f i) v) l (𝓝 v) := by
   simp_rw [ContRepresentation.integratedOperatorL1_apply]
-  refine tendsto_integral_smul_of_tendsto hf hfC hf₀ (hcont v).aestronglyMeasurable ?_
+  refine tendsto_integral_smul_of_tendsto hf hfC hf₀ (.of_forall fun i ↦
+    (L1.integrable_coeFn (f i)).aefinStronglyMeasurable.aestronglyMeasurable_smul (hcont v)) ?_
   simpa using (hcont v).tendsto 0
 
 /-- **The integrated form is nondegenerate.** For a measure positive on nonempty open sets and

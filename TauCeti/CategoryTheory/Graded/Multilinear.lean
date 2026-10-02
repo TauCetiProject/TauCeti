@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Graded.Basic
-public import TauCeti.Algebra.Module.GradedModule.Multilinear
+public import TauCeti.Algebra.Module.GradedModule.Multilinear.Basic
 
 /-!
 # Multilinear operations on composable graded morphisms

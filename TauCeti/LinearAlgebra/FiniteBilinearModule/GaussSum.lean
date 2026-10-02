@@ -29,6 +29,9 @@ classification is available:
 
 * it is an isometry invariant, it is multiplicative over orthogonal sums, and negating `q`
   conjugates it;
+* restricting to the orthogonal complement of a quadratic-isotropic subgroup leaves `G(q)`
+  unchanged;
+* quotienting by a subgroup `K` in the quadratic radical gives `G(q) = #K · G(q/K)`;
 * for nondegenerate `q`, `G(q) · conj G(q) = #A`, so `|G(q)| = √#A`. Expanding the product and
   substituting `a = b + c` turns it into `∑_c e(q(c)) ∑_b e(b(c, b))`, and nondegeneracy kills
   every inner sum except the one at `c = 0`;
@@ -185,31 +188,38 @@ theorem IsNondegenerate.norm_gaussSum (hA : A.IsNondegenerate) :
   rw [← Real.sqrt_sq (norm_nonneg A.gaussSum)]
   exact congrArg Real.sqrt (by exact_mod_cast h)
 
-variable {A} in
-/-- **The Gauss sum of a module with a Lagrangian subgroup `H` is `#H`.** -/
-theorem gaussSum_eq_natCard_of_isLagrangian {H : AddSubgroup A} (hH : A.IsLagrangian H) :
-    A.gaussSum = Nat.card H := by
+noncomputable section
+
+/-- Restricting to the orthogonal complement of a quadratic-isotropic subgroup leaves the
+Gauss sum unchanged, even when the ambient quadratic module is degenerate. -/
+@[simp]
+theorem gaussSum_restrict_orthogonalComplement {H : AddSubgroup A} (hH : A.IsIsotropic H) :
+    (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)).gaussSum = A.gaussSum := by
   classical
   obtain ⟨_⟩ := nonempty_fintype A
-  have hq : ∀ x ∈ H, A.quadratic x = 0 := (isIsotropic_def A).1 (IsLagrangian.isIsotropic A hH)
-  have hcard : (Nat.card H : ℂ) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
-  refine mul_left_cancel₀ hcard ?_
-  -- The inner character sum over `H`, with the character `b(a, ·)` restricted to `H`.
-  have hinner : ∀ a, ∑ h : H, expCircle (A.toFiniteBilinearModule.pairing a h) =
-      if a ∈ H then (Nat.card H : ℂ) else 0 := fun a ↦ by
+  -- Use the subgroup enumeration on the restricted carrier.
+  let : Fintype (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)) :=
+    inferInstanceAs (Fintype (A.toFiniteBilinearModule.orthogonalComplement H))
+  have hq := (A.isIsotropic_def).mp hH
+  have hcard : (Nat.card H : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  -- The character sum over H detects membership in its orthogonal complement.
+  have hinner (a : A) :
+      ∑ h : H, expCircle (A.toFiniteBilinearModule.pairing a h) =
+        if a ∈ A.toFiniteBilinearModule.orthogonalComplement H then (Nat.card H : ℂ) else 0 := by
     have h := CharacterModule.sum_expCircle (A.toFiniteBilinearModule.pairingRestrict H a)
     simp only [FiniteBilinearModule.pairingRestrict_apply] at h
     rw [h, Nat.card_eq_fintype_card]
     refine if_congr ?_ rfl rfl
-    rw [← AddMonoidHom.mem_ker, FiniteBilinearModule.pairingRestrict_ker,
-      ← IsLagrangian.eq_orthogonalComplement A hH]
-  have hshift : ∀ h : H, ∑ a, expCircle (A.quadratic (a + h)) = A.gaussSum := fun h ↦ by
+    rw [← AddMonoidHom.mem_ker, FiniteBilinearModule.pairingRestrict_ker]
+  have hshift (h : H) : ∑ a, expCircle (A.quadratic (a + h)) = A.gaussSum := by
     rw [gaussSum_eq_sum]
-    exact Equiv.sum_comp (Equiv.addRight (h : A)) fun a ↦ expCircle (A.quadratic a)
+    exact Equiv.sum_comp (Equiv.addRight (h : A)) (fun a ↦ expCircle (A.quadratic a))
+  -- Average all translates by H, then sum over the surviving subgroup.
+  apply mul_left_cancel₀ hcard
+  symm
   calc (Nat.card H : ℂ) * A.gaussSum
       = ∑ h : H, ∑ a, expCircle (A.quadratic (a + h)) := by
-        simp only [hshift, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-          Nat.card_eq_fintype_card]
+        simp [hshift, Nat.card_eq_fintype_card]
     _ = ∑ a, expCircle (A.quadratic a) *
           ∑ h : H, expCircle (A.toFiniteBilinearModule.pairing a h) := by
         rw [Finset.sum_comm]
@@ -219,15 +229,42 @@ theorem gaussSum_eq_natCard_of_isLagrangian {H : AddSubgroup A} (hH : A.IsLagran
         rw [← AddChar.map_add_eq_mul, ← polar_eq_pairing, QuadraticMap.polar, hq h h.2]
         congr 1
         abel
-    _ = ∑ a, if a ∈ H then (Nat.card H : ℂ) else 0 := by
-        refine Finset.sum_congr rfl fun a _ ↦ ?_
-        rw [hinner]
-        split_ifs with ha
-        · rw [hq a ha, AddChar.map_zero_eq_one, one_mul]
-        · rw [mul_zero]
-    _ = (Nat.card H : ℂ) * Nat.card H := by
-        rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul, mul_comm,
-          Nat.card_eq_fintype_card, Fintype.card_subtype]
+    _ = (Nat.card H : ℂ) * (A.restrict
+          (A.toFiniteBilinearModule.orthogonalComplement H)).gaussSum := by
+        have hs : (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)).gaussSum =
+            ∑ x : A.toFiniteBilinearModule.orthogonalComplement H,
+              expCircle (A.quadratic x) := by
+          rw [gaussSum_eq_sum]
+          exact Fintype.sum_equiv (Equiv.refl _) _ _
+            (fun x ↦ congrArg expCircle (A.restrict_quadratic _ x))
+        simp_rw [hinner]
+        rw [hs, Finset.mul_sum]
+        have ht := Finset.sum_subtype
+          (F := inferInstanceAs (Fintype (A.toFiniteBilinearModule.orthogonalComplement H)))
+          (p := fun a : A ↦ a ∈ A.toFiniteBilinearModule.orthogonalComplement H)
+          (Finset.univ.filter (fun a : A ↦ a ∈ A.toFiniteBilinearModule.orthogonalComplement H))
+          (by simp) (fun a : A ↦ (Nat.card H : ℂ) * expCircle (A.quadratic a))
+        rw [← ht, Finset.sum_filter]
+        apply Finset.sum_congr rfl
+        intro a _
+        split_ifs <;> simp [mul_comm]
+
+variable {A} in
+/-- **The Gauss sum of a module with a Lagrangian subgroup `H` is `#H`.** -/
+theorem gaussSum_eq_natCard_of_isLagrangian {H : AddSubgroup A} (hH : A.IsLagrangian H) :
+    A.gaussSum = Nat.card H := by
+  classical
+  obtain ⟨_⟩ := nonempty_fintype A
+  let : Fintype (A.restrict H) := inferInstanceAs (Fintype H)
+  rw [← A.gaussSum_restrict_orthogonalComplement (IsLagrangian.isIsotropic A hH),
+    ← IsLagrangian.eq_orthogonalComplement A hH, gaussSum_eq_sum]
+  have hq := (A.isIsotropic_def).mp (IsLagrangian.isIsotropic A hH)
+  calc ∑ x : A.restrict H, expCircle ((A.restrict H).quadratic x)
+      = ∑ _ : H, (1 : ℂ) := Fintype.sum_equiv (Equiv.refl _) _ _ fun x ↦ by
+        rw [A.restrict_quadratic H x, hq x.1 x.2, AddChar.map_zero_eq_one]
+    _ = Nat.card H := by simp [Nat.card_eq_fintype_card]
+
+end
 
 variable {A} in
 /-- **The Gauss sum of a nondegenerate metabolic module is `√#A`**, the value that makes the
@@ -239,6 +276,34 @@ theorem gaussSum_eq_sqrt_natCard_of_isMetabolic (hA : A.IsNondegenerate) (h : A.
     ← FiniteBilinearModule.IsLagrangian.card_sq A.toFiniteBilinearModule
       (IsLagrangian.toFiniteBilinearModule A hH) hA, Nat.cast_pow,
     Real.sqrt_sq (Nat.cast_nonneg _), ofReal_natCast]
+
+/-- Dividing by a subgroup in the quadratic radical divides the Gauss sum by its order.
+Every quotient class contributes the same value on all of its representatives. -/
+theorem gaussSum_eq_card_mul_gaussSum_quotientOfLeQuadraticRadical
+    (K : AddSubgroup A) (hK : K.toIntSubmodule ≤ A.quadratic.radical) :
+    A.gaussSum = Nat.card K * (A.quotientOfLeQuadraticRadical K hK).gaussSum := by
+  classical
+  let := Fintype.ofFinite A
+  let Q := A.quotientOfLeQuadraticRadical K hK
+  let := Fintype.ofFinite Q
+  let f := A.quotientOfLeQuadraticRadicalMk K hK
+  have hf := A.quotientOfLeQuadraticRadicalMk_surjective K hK
+  have hker : f.ker = K := by
+    ext x
+    exact A.quotientOfLeQuadraticRadicalMk_eq_zero_iff K hK x
+  have hcard (q : Q) : Nat.card {x : A // f x = q} = Nat.card K := by
+    have hc : Nat.card {x : A // f x = q} = Nat.card f.ker :=
+      Nat.card_congr (AddMonoidHom.fiberEquivKerOfSurjective (f := f) hf q)
+    simpa only [hker] using hc
+  rw [gaussSum_eq_sum, gaussSum_eq_sum, ← Fintype.sum_fiberwise f, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  have hvalue (x : {x : A // f x = q}) : expCircle (A.quadratic x) =
+      expCircle (Q.quadratic q) := by
+    exact congrArg expCircle ((A.quotientOfLeQuadraticRadical_quadratic_mk K hK x).symm.trans
+      (congrArg Q.quadratic x.2))
+  simp only [hvalue, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    ← Nat.card_eq_fintype_card, hcard]
+  rfl
 
 /-! ## The discriminant forms of `A₁` and `A₁ ⊕ A₁` -/
 

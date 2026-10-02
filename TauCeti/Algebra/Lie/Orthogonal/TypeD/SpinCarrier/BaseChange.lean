@@ -217,6 +217,27 @@ theorem coordinateMap_ker :
   exact CommHopfAlgCat.mkQuotient_ker
     (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n hn A)
 
+/-- Precomposition with the carrier coordinate morphism is the ambient quotient-points map. -/
+theorem mapPointsFunctor_coordinateMap_app {B : Type w} [CommRing B] [Algebra A B]
+    (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra n hn A)
+      (CommAlgCat.of A B)) :
+    (CommHopfAlgCat.mapPointsFunctor (coordinateMap n hn A)).app (CommAlgCat.of A B) g =
+      CommHopfAlgCat.quotientPointsHom
+        (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n hn A)
+        (CommAlgCat.of A B) g := by
+  unfold coordinateMap CommHopfAlgCat.quotientPointsHom
+  rfl
+
+/-- The specialized type-`Dₙ` spin carrier as a finite-type commutative Hopf algebra. -/
+abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat.{v, v} A :=
+  FiniteTypeCommHopfAlgCat.of A (coordinateHopfAlgebra n hn A)
+
+/-- The underlying Hopf algebra of the finite-type carrier is its coordinate Hopf algebra. -/
+@[simp]
+theorem finiteTypeCoordinateHopfAlgebra_obj :
+    (finiteTypeCoordinateHopfAlgebra n hn A).obj = coordinateHopfAlgebra n hn A :=
+  (rfl)
+
 /-! ## Points of the base-changed carrier -/
 
 /-- The points of the base-changed type-`Dₙ` carrier over a commutative `A`-algebra are its
