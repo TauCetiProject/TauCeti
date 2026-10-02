@@ -49,28 +49,31 @@ theorem minimalPeriod_dvd (h : Semiconj f fa fb) (x : α) :
 
 variable {σ : Perm α} {τ : Perm β}
 
-/-- If `f` intertwines the permutations `σ` and `τ` of finite types, the points of the cycle of
-`x` that `f` sends to `f x` form a single cycle of `σ ^ k`, where `k` is the length of the cycle
-of `f x`. -/
-theorem setOf_sameCycle_and_eq [Finite α] (h : Semiconj f σ τ) (x : α) :
+/-- If `f` intertwines the permutations `σ` and `τ`, the points of the cycle of `x` that `f`
+sends to `f x` form a single cycle of `σ ^ k`, where `k` is the length of the cycle of `f x`. -/
+theorem setOf_sameCycle_and_eq (h : Semiconj f σ τ) (x : α) :
     {y | σ.SameCycle x y ∧ f y = f x} = {y | (σ ^ minimalPeriod τ (f x)).SameCycle x y} := by
-  have hσ : ∀ i : ℕ, f ((σ ^ i) x) = (τ ^ i) (f x) := fun i ↦ by
-    rw [coe_pow, coe_pow]
-    exact h.iterate_right i x
+  have hσ : ∀ i : ℤ, f ((σ ^ i) x) = (τ ^ i) (f x) := fun i ↦ by
+    have hinv : Semiconj f ⇑(σ⁻¹) ⇑(τ⁻¹) := fun y ↦ by
+      rw [Perm.eq_inv_iff_eq, ← h, ← Perm.mul_apply, mul_inv_cancel, Perm.one_apply]
+    rcases i with i | i
+    · rw [Int.ofNat_eq_natCast, zpow_natCast, zpow_natCast, coe_pow, coe_pow]
+      exact h.iterate_right i x
+    · rw [zpow_negSucc, zpow_negSucc, ← inv_pow, ← inv_pow, coe_pow, coe_pow]
+      exact hinv.iterate_right _ x
+  have hk : ∀ i : ℤ, (τ ^ i) (f x) = f x ↔ (minimalPeriod τ (f x) : ℤ) ∣ i := fun i ↦
+    zpow_smul_eq_iff_minimalPeriod_dvd (a := τ) (b := f x)
   ext y
   simp only [Set.mem_ofPred_eq]
   constructor
-  · rintro ⟨hxy, hfy⟩
-    obtain ⟨i, -, rfl⟩ := hxy.exists_pow_eq'
-    have hper : IsPeriodicPt τ i (f x) := by
-      rw [IsPeriodicPt, IsFixedPt, ← coe_pow, ← hσ, hfy]
-    obtain ⟨j, rfl⟩ := hper.minimalPeriod_dvd
-    exact ⟨j, by rw [zpow_natCast, ← pow_mul]⟩
-  · intro hxy
-    obtain ⟨j, -, rfl⟩ := hxy.exists_pow_eq'
-    refine ⟨hxy.of_pow, ?_⟩
-    rw [← pow_mul, hσ, coe_pow]
-    exact ((isPeriodicPt_minimalPeriod τ (f x)).mul_const j).eq
+  · rintro ⟨⟨i, rfl⟩, hfy⟩
+    obtain ⟨j, rfl⟩ := (hk i).1 (by rw [← hσ, hfy])
+    exact ⟨j, by rw [← zpow_natCast, ← zpow_mul]⟩
+  · rintro ⟨j, rfl⟩
+    rw [← zpow_natCast, ← zpow_mul]
+    refine ⟨⟨_, rfl⟩, ?_⟩
+    rw [hσ]
+    exact (hk _).2 (dvd_mul_right _ _)
 
 /-- **The cycle of a point wraps round the cycle of its image.** If `f` intertwines the
 permutations `σ` and `τ` of finite types, the length of the cycle of `x` is the length of the
