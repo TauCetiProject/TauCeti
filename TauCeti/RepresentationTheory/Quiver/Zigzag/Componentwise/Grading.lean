@@ -19,7 +19,8 @@ vertex–arrow–volume basis is homogeneous in degrees zero, one and two, respe
 
 The graded pieces are submodules of the public algebra itself. Their internal direct-sum
 property and multiplicativity supply a `GradedAlgebra`, including for disconnected graphs
-and graphs with isolated vertices.
+and graphs with isolated vertices. As for the relation quotient, the grading is also extended by
+zero to integer degrees, in which internal grading shifts are stated.
 
 See Huerfano–Khovanov, *A category for the adjoint representation*, Section 3, for the
 path grading and singleton convention.
@@ -224,5 +225,31 @@ algebra equivalence. -/
 @[instance_reducible]
 noncomputable def zigzagAlgebraGradedAlgebra : GradedAlgebra (zigzagAlgebraGrade k G) :=
   DirectSum.IsInternal.gradedAlgebra (isInternal_zigzagAlgebraGrade k G)
+
+/-! ### Integer-indexed grading -/
+
+/-- The componentwise grading of the public zigzag algebra, extended by zero from `ℕ` to `ℤ`, as
+`TauCeti.zigzagIntegerGrade` extends that of the relation quotient. This signed indexing is
+needed to state internal grading shifts. -/
+noncomputable def zigzagAlgebraIntegerGrade (d : ℤ) : Submodule k (zigzagAlgebra k G) :=
+  if 0 ≤ d then zigzagAlgebraGrade k G d.toNat else ⊥
+
+@[simp]
+theorem zigzagAlgebraIntegerGrade_ofNat (d : ℕ) :
+    zigzagAlgebraIntegerGrade k G d = zigzagAlgebraGrade k G d := by
+  simp [zigzagAlgebraIntegerGrade]
+
+/-- Multiplication adds signed degrees in the integer extension of the componentwise grading. -/
+theorem mul_mem_zigzagAlgebraIntegerGrade {m n : ℤ} {x y : zigzagAlgebra k G}
+    (hx : x ∈ zigzagAlgebraIntegerGrade k G m) (hy : y ∈ zigzagAlgebraIntegerGrade k G n) :
+    x * y ∈ zigzagAlgebraIntegerGrade k G (m + n) := by
+  by_cases hm : 0 ≤ m
+  · by_cases hn : 0 ≤ n
+    · simp only [zigzagAlgebraIntegerGrade, hm, hn, add_nonneg hm hn, ↓reduceIte] at hx hy ⊢
+      simpa [Int.toNat_add hm hn] using SetLike.mul_mem_graded hx hy
+    · simp only [zigzagAlgebraIntegerGrade, hn, ↓reduceIte, Submodule.mem_bot] at hy
+      simp [hy]
+  · simp only [zigzagAlgebraIntegerGrade, hm, ↓reduceIte, Submodule.mem_bot] at hx
+    simp [hx]
 
 end TauCeti
