@@ -75,6 +75,10 @@ def toRingOfIntegers : Subalgebra ℤ (𝓞 K) :=
 theorem mem_toRingOfIntegers {x : 𝓞 K} : x ∈ O.toRingOfIntegers ↔ (x : K) ∈ O.toSubalgebra :=
   Iff.rfl
 
+/-- The conductor, as a set of algebraic integers, is contained in the order. -/
+theorem conductor_le_toRingOfIntegers : (O.conductor : Set (𝓞 K)) ⊆ O.toRingOfIntegers :=
+  fun _ hx ↦ O.mem_toRingOfIntegers.mpr (O.conductor_le_order hx)
+
 /-- The index `[𝓞 K : O]` of an order in the maximal order. -/
 def index : ℕ :=
   (Subalgebra.toSubmodule O.toRingOfIntegers).cardQuot
