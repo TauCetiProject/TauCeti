@@ -14,7 +14,7 @@ public import Mathlib.RingTheory.Filtration
 # Injective modules over a Noetherian ring
 
 Let `R` be a Noetherian commutative ring and `I` an injective `R`-module. This file proves the
-algebraic facts about `I` on which the flasqueness of the associated quasi-coherent sheaf `Ĩ` on
+algebraic facts about `I` on which the flasqueness of the associated quasi-coherent sheaf `I^~` on
 `Spec R` rests.
 
 * For every ideal `𝔞`, the `𝔞`-primary component
@@ -29,7 +29,7 @@ algebraic facts about `I` on which the flasqueness of the associated quasi-coher
   preimage of `x / s`.
 * Combining the two, the localization map `I → S⁻¹I` is also surjective on `𝔞`-primary
   components: an element of `S⁻¹I` killed by a power of `𝔞` comes from an element of `I` killed
-  by a power of `𝔞`. On `Spec R` this says that a section of `Ĩ` over `D(f)` supported on `V(𝔞)`
+  by a power of `𝔞`. On `Spec R` this says that a section of `I^~` over `D(f)` supported on `V(𝔞)`
   extends to a global section supported on `V(𝔞)`.
 
 ## Main declarations

@@ -14,11 +14,11 @@ public import TauCeti.Algebra.Module.Injective.Noetherian
 # The sheaf of an injective module over a Noetherian ring is flasque
 
 Let `R` be a Noetherian ring and `I` an injective `R`-module. This file proves that the
-quasi-coherent sheaf `Ĩ` on `Spec R` is flasque: every section of `Ĩ` over an open subset extends
-to a global section (Hartshorne, *Algebraic Geometry*, Proposition III.3.4).
+quasi-coherent sheaf `I^~` on `Spec R` is flasque: every section of `I^~` over an open subset
+extends to a global section (Hartshorne, *Algebraic Geometry*, Proposition III.3.4).
 
 Flasque sheaves have no higher cohomology, and every `R`-module embeds into an injective one, so
-this is the input for Serre's vanishing theorem `Hⁱ(Spec R, M̃) = 0` for `i > 0` on a Noetherian
+this is the input for Serre's vanishing theorem `Hⁱ(Spec R, M^~) = 0` for `i > 0` on a Noetherian
 affine scheme.
 
 ## Implementation notes
@@ -32,12 +32,12 @@ that `s` vanishes on `W`. Then `σ = s|_{D(f)}` is an element of `I_f` that vani
 image of some `u ∈ Γ_𝔞(I)`, which is Hartshorne's Lemma III.3.2 and Proposition III.3.3 combined.
 The global section `u` restricts to `σ` on `D(f)` and to zero on each `D(gᵢ)`, so it extends `s`.
 
-This induction on basic open subsets replaces the Noetherian induction on the support of `Ĩ` in
+This induction on basic open subsets replaces the Noetherian induction on the support of `I^~` in
 Hartshorne's proof.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.isFlasque_tilde_of_injective`: `Ĩ` is flasque.
+* `TauCeti.AlgebraicGeometry.isFlasque_tilde_of_injective`: `I^~` is flasque.
 
 ## References
 
@@ -58,19 +58,19 @@ universe u
 
 variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R) [IsNoetherianRing R] [Module.Injective R M]
 
-/-- `M̃` as a presheaf of `R`-modules. Its sections over `D(f)` are the localization `M_f`,
+/-- `M^~` as a presheaf of `R`-modules. Its sections over `D(f)` are the localization `M_f`,
 through `tilde.toOpen`. -/
 local notation "𝓕" => TopCat.Sheaf.presheaf (modulesSpecToSheaf.obj (tilde M))
 
-/-- The `R`-module of sections of `M̃` over `U`. -/
+/-- The `R`-module of sections of `M^~` over `U`. -/
 local notation "Γₘ(" U ")" =>
   (Prefunctor.obj (CategoryTheory.Functor.toPrefunctor 𝓕) (op U) : ModuleCat R)
 
-/-- Restriction of sections of `M̃` along an inclusion `h : V ≤ U`. -/
+/-- Restriction of sections of `M^~` along an inclusion `h : V ≤ U`. -/
 local notation "res[" h "]" =>
   Prefunctor.map (CategoryTheory.Functor.toPrefunctor 𝓕) (Quiver.Hom.op (homOfLE h))
 
-/-- A section of `M̃` over `D(f) ∪ D(g₁) ∪ ⋯ ∪ D(gₙ)` that vanishes on every `D(gᵢ)` is the
+/-- A section of `M^~` over `D(f) ∪ D(g₁) ∪ ⋯ ∪ D(gₙ)` that vanishes on every `D(gᵢ)` is the
 restriction of a global section. -/
 private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
     {U : (Spec R).Opens} (hU : U = basicOpen f ⊔ ⨆ g ∈ G, basicOpen g) (s : Γₘ(U))
@@ -139,7 +139,7 @@ private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
     exact (IsLocalizedModule.eq_zero_iff (.powers g) (tilde.toOpen M (basicOpen g)).hom).mpr
       ⟨⟨_, N, rfl⟩, hN⟩
 
-/-- A section of `M̃` over a finite union of basic open subsets is the restriction of a global
+/-- A section of `M^~` over a finite union of basic open subsets is the restriction of a global
 section. -/
 private theorem exists_restrict_eq_of_eq_iSup (G : Finset R) :
     ∀ {U : (Spec R).Opens}, U = ⨆ g ∈ G, basicOpen g → ∀ s : Γₘ(U),
@@ -171,12 +171,12 @@ private theorem exists_restrict_eq_of_eq_iSup (G : Finset R) :
 
 /-- **The sheaf of an injective module over a Noetherian ring is flasque** (Hartshorne,
 *Algebraic Geometry*, Proposition III.3.4): if `R` is Noetherian and `M` is an injective
-`R`-module, then every section of `M̃` over an open subset of `Spec R` extends to a larger open
+`R`-module, then every section of `M^~` over an open subset of `Spec R` extends to a larger open
 subset. -/
 instance isFlasque_tilde_of_injective : (tilde M).presheaf.IsFlasque where
   epi {U V} i := by
     rw [AddCommGrpCat.epi_iff_surjective]
-    -- The abelian presheaf of `M̃` and its presheaf of `R`-modules `𝓕` have the same restriction
+    -- The abelian presheaf of `M^~` and its presheaf of `R`-modules `𝓕` have the same restriction
     -- maps on underlying sections, so surjectivity can be checked on the latter.
     change Function.Surjective (Prefunctor.map (CategoryTheory.Functor.toPrefunctor 𝓕) i)
     intro s
