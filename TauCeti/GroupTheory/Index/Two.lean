@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.Defs
 public import TauCeti.Data.ZMod.IntUnitsPower
 public import TauCeti.GroupTheory.Index.Indicator
 public import TauCeti.GroupTheory.QuotientGroup.Basic
@@ -223,6 +222,7 @@ theorem toAdd_indexTwoCharacter_of_notMem (hN : N.index = 2) {γ : G} (h : γ �
   simp [indexTwoCharacter, h]
 
 /-- The character of a subgroup of index two is trivial exactly on the subgroup. -/
+@[simp]
 theorem indexTwoCharacter_eq_one_iff (hN : N.index = 2) {γ : G} :
     N.indexTwoCharacter hN γ = 1 ↔ γ ∈ N := by
   rw [indexTwoCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.map_eq_one_iff,

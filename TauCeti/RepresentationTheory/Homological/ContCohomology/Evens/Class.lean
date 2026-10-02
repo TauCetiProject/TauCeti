@@ -124,18 +124,20 @@ theorem coe_evensHomCocycleAmbient (U : Subgroup G)
 subgroup `U` is `evensHomCocycleAmbient U (y.comp U.subtype)`. -/
 noncomputable def evensHomCocycle (y : G →* Multiplicative (ZMod 2)) (hy : Continuous y) :
     Z1 G (trivialF2 G).V :=
-  ⟨fun g => (trivialF2Equiv G).symm (Multiplicative.toAdd (y g)),
-    mem_Z1_of_smul_eq_self_of_continuousMonoidHom (trivialF2_ρ_apply_apply (G := G))
+  (Z1EquivOfSmulEqSelf (fun g x => by
+    rw [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply])).symm
+    (Additive.ofMul
       ⟨(trivialF2Equiv G).symm.toAddMonoidHom.toMultiplicative.comp y,
         (continuous_of_discreteTopology : Continuous (trivialF2Equiv G).symm).comp
-          (continuous_toAdd.comp hy)⟩⟩
+          (continuous_toAdd.comp hy)⟩)
 
 /-- The underlying cochain of `evensHomCocycle`. -/
 @[simp]
 theorem coe_evensHomCocycle (y : G →* Multiplicative (ZMod 2)) (hy : Continuous y) :
     (evensHomCocycle y hy : G → (trivialF2 G).V) =
-      fun g => (trivialF2Equiv G).symm (Multiplicative.toAdd (y g)) :=
-  (rfl)
+      fun g => (trivialF2Equiv G).symm (Multiplicative.toAdd (y g)) := by
+  funext g
+  simp [evensHomCocycle]
 
 end HomCocycle
 

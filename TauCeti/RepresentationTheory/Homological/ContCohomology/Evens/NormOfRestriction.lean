@@ -79,10 +79,17 @@ private theorem evensGraphCochain_comp_subtype_sub {U : Subgroup G} (hU : U.inde
   revert a b b' x x'
   decide
 
-variable [TopologicalSpace G] [IsTopologicalGroup G]
+variable [TopologicalSpace G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-  instContinuousSMulVIntTrivialF2
+
+section Restriction
+
+/-- The trivial coefficient action is continuous for any topology on the group. -/
+local instance continuousSMul_trivialF2_normOfRestriction : ContinuousSMul G (trivialF2 G).V where
+  continuous_smul := by
+    simpa only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply] using
+      (continuous_snd : Continuous (fun p : G × (trivialF2 G).V => p.2))
 
 /-- **Restriction of the class of a homomorphism** `y : G → 𝔽₂` to a subgroup `U` is the class of
 the restricted homomorphism `y|_U`, in explicit `H¹(U, 𝔽₂)`. -/
@@ -94,6 +101,12 @@ theorem explicitRes1_evensHomCocycle (U : Subgroup G) (y : G →* Multiplicative
   rw [explicitRes1_mk]
   exact congrArg (fun z : Z1 U (trivialF2 G).V => (z : H1 U (trivialF2 G).V))
     (Subtype.ext (funext fun h => by simp [cocyclesMap1_apply]))
+
+end Restriction
+
+variable [IsTopologicalGroup G]
+
+attribute [local instance] instContinuousSMulVIntTrivialF2
 
 /-- **The graph-cocycle class of a restricted homomorphism.** For an open subgroup `U` of index
 two, an element `s ∉ U` and a continuous homomorphism `y : G → 𝔽₂`, the class of the graph cocycle

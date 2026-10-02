@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.Piecewise
