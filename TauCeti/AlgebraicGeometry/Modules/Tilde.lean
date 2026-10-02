@@ -168,7 +168,7 @@ private def overBasicOpenIsoFree (r : R) {ι : Type u}
     (Scheme.Modules.pullbackCongr (basicOpenIsoSpecAway_hom_SpecMap r).symm).app N ≪≫
     ((Scheme.Modules.pullbackComp e.hom (Spec.map φ)).app N).symm ≪≫
     P.mapIso ((tildeFunctorCompPullbackIso φ).app M ≪≫
-      (tilde.functor _).mapIso (TauCeti.ModuleCat.extendScalarsLocalizationIso M _ ≪≫
+      (tilde.functor _).mapIso (M.extendScalarsLocalizationIso _ ≪≫
         b.repr.toModuleIso) ≪≫ tildeFinsupp ι) ≪≫
     (SheafOfModules.mapFreeIso P ι (Scheme.Modules.pullbackObjUnitIso e.hom).symm).symm) ≪≫
   (SheafOfModules.mapFreeIso F ι (E.unitIso.app _)).symm

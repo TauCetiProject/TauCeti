@@ -19,13 +19,9 @@ This file records two facts about Mathlib's extension of scalars `ModuleCat.exte
   factorization has the image potential.
 * Extension of scalars to a localization `T⁻¹R` is localization: for an `R`-module `M`,
   `T⁻¹R ⊗_R M` is isomorphic to the localized module `T⁻¹M` as a `T⁻¹R`-module, by
-  `s ⊗ m ↦ s • m / 1` (`TauCeti.ModuleCat.extendScalarsLocalizationIso`). This identifies the
+  `s ⊗ m ↦ s • m / 1` (`ModuleCat.extendScalarsLocalizationIso`). This identifies the
   restriction of the quasi-coherent sheaf `M~` on `Spec R` to a basic open `D(r)` with the sheaf
   associated with `M_r` on `Spec R_r`.
-
-Use `TauCeti.ModuleCat.extendScalarsLocalizationIso M T` explicitly. These declarations belong
-to `TauCeti.ModuleCat`, while `M` has Mathlib's `_root_.ModuleCat R` type, so dot notation on `M`
-does not resolve them.
 -/
 
 public section
@@ -54,6 +50,13 @@ variable {S : Type u} {T : Type v} [CommRing S] [CommRing T] {w : S}
 
 end SMul
 
+end TauCeti.ModuleCat
+
+namespace TauCeti
+
+open CategoryTheory
+open scoped ChangeOfRings
+
 section Localization
 
 variable {R : Type u} [CommRing R] (M : _root_.ModuleCat.{u} R) (T : Submonoid R)
@@ -63,7 +66,7 @@ to the localized module `T⁻¹M`, by `s ⊗ m ↦ s • m / 1`.
 
 This transports `LocalizedModule.equivTensorProduct` across the `Module.compHom` structure
 used by `ModuleCat.extendScalars`. -/
-noncomputable def extendScalarsLocalizationIso :
+noncomputable def _root_.ModuleCat.extendScalarsLocalizationIso :
     (_root_.ModuleCat.extendScalars (algebraMap R (Localization T))).obj M ≅
       _root_.ModuleCat.of (Localization T) (LocalizedModule T M) := by
   let φ := algebraMap R (Localization T)
@@ -89,8 +92,8 @@ noncomputable def extendScalarsLocalizationIso :
 
 /-- `extendScalarsLocalizationIso` sends `1 ⊗ m` to `m / 1`. -/
 @[simp]
-theorem extendScalarsLocalizationIso_hom_one_tmul (m : M) :
-    (extendScalarsLocalizationIso M T).hom
+theorem _root_.ModuleCat.extendScalarsLocalizationIso_hom_one_tmul (m : M) :
+    (M.extendScalarsLocalizationIso T).hom
       ((1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m) = LocalizedModule.mk m 1 :=
   by
     -- `ModuleCat.extendScalars` uses `Module.compHom`; the tensor-product equivalence uses
@@ -103,14 +106,14 @@ theorem extendScalarsLocalizationIso_hom_one_tmul (m : M) :
 
 /-- The inverse of `extendScalarsLocalizationIso` sends `m / 1` to `1 ⊗ m`. -/
 @[simp]
-theorem extendScalarsLocalizationIso_inv_mk_one (m : M) :
-    (extendScalarsLocalizationIso M T).inv (LocalizedModule.mk m 1) =
+theorem _root_.ModuleCat.extendScalarsLocalizationIso_inv_mk_one (m : M) :
+    (M.extendScalarsLocalizationIso T).inv (LocalizedModule.mk m 1) =
       (1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m :=
   by
-    let i := extendScalarsLocalizationIso M T
+    let i := M.extendScalarsLocalizationIso T
     -- Name the isomorphism to apply its categorical inverse identity.
     change i.inv (LocalizedModule.mk m 1) = _
-    rw [← extendScalarsLocalizationIso_hom_one_tmul]
+    rw [← _root_.ModuleCat.extendScalarsLocalizationIso_hom_one_tmul]
     -- Evaluation of a `ModuleCat` composite is evaluation of its underlying maps.
     change (i.hom ≫ i.inv)
       ((1 : Localization T) ⊗ₜ[R,algebraMap R (Localization T)] m) = _
@@ -119,29 +122,29 @@ theorem extendScalarsLocalizationIso_inv_mk_one (m : M) :
 
 /-- `extendScalarsLocalizationIso` sends a pure tensor to the scalar multiple of `m / 1`. -/
 @[simp]
-theorem extendScalarsLocalizationIso_hom_tmul (s : Localization T) (m : M) :
-    (extendScalarsLocalizationIso M T).hom
+theorem _root_.ModuleCat.extendScalarsLocalizationIso_hom_tmul (s : Localization T) (m : M) :
+    (M.extendScalarsLocalizationIso T).hom
       (s ⊗ₜ[R,algebraMap R (Localization T)] m) =
       s • LocalizedModule.mk m 1 := by
   have ht := (_root_.ModuleCat.ExtendScalars.smul_tmul
     (algebraMap R (Localization T)) (M := M) s 1 m)
   rw [mul_one] at ht
   -- `erw` identifies the scalar actions through `extendScalars`'s `Module.compHom` presentation.
-  exact (congrArg (fun x ↦ (extendScalarsLocalizationIso M T).hom x) ht.symm).trans
-    (by erw [map_smul, extendScalarsLocalizationIso_hom_one_tmul])
+  exact (congrArg (fun x ↦ (M.extendScalarsLocalizationIso T).hom x) ht.symm).trans
+    (by erw [map_smul, _root_.ModuleCat.extendScalarsLocalizationIso_hom_one_tmul])
 
 /-- The inverse of `extendScalarsLocalizationIso` sends `m / t` to `t⁻¹ ⊗ m`. -/
 @[simp]
-theorem extendScalarsLocalizationIso_inv_mk (m : M) (t : T) :
-    (extendScalarsLocalizationIso M T).inv (LocalizedModule.mk m t) =
+theorem _root_.ModuleCat.extendScalarsLocalizationIso_inv_mk (m : M) (t : T) :
+    (M.extendScalarsLocalizationIso T).inv (LocalizedModule.mk m t) =
       Localization.mk 1 t ⊗ₜ[R,algebraMap R (Localization T)] m := by
   have h : Localization.mk 1 t • LocalizedModule.mk m 1 = LocalizedModule.mk m t := by
     simpa using LocalizedModule.mk_smul_mk 1 m t 1
-  rw [← h, map_smul, extendScalarsLocalizationIso_inv_mk_one]
+  rw [← h, map_smul, _root_.ModuleCat.extendScalarsLocalizationIso_inv_mk_one]
   exact (_root_.ModuleCat.ExtendScalars.smul_tmul
     (algebraMap R (Localization T)) (M := M) (Localization.mk 1 t) 1 m).trans
       (by rw [mul_one])
 
 end Localization
 
-end TauCeti.ModuleCat
+end TauCeti
