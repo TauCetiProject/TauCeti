@@ -54,9 +54,8 @@ exponential map, normal domains, and the logarithm can be checked.
 * `TauCeti.Manifold.riemannianExp_model_space`: the exponential map at `p` is translation by `p`.
 * `TauCeti.Manifold.mfderiv_riemannianExp_apply_model_space` and
   `TauCeti.Manifold.fderiv_riemannianExp_apply_model_space`: its differential is the identity.
-* `TauCeti.Manifold.inner_mfderiv_riemannianExp_model_space` and
-  `TauCeti.Manifold.norm_mfderiv_riemannianExp_model_space`: hence its differential preserves
-  inner products and norms; in particular it satisfies the radial identity of the Gauss lemma.
+* `TauCeti.Manifold.inner_mfderiv_riemannianExp_model_space`: hence its differential preserves
+  inner products; in particular it satisfies the radial identity of the Gauss lemma.
 * `TauCeti.Manifold.isNormalDomain_model_space` and
   `TauCeti.Manifold.isNormalDomain_ball_model_space`: open star-shaped neighbourhoods of the
   origin, in particular tangent balls, are normal domains.
@@ -369,13 +368,6 @@ theorem inner_mfderiv_riemannianExp_model_space (p : F) (v w₁ w₂ : TangentSp
   -- The left side is the standard metric at `exp_p v` evaluated on two vectors of `F`; like the
   -- metric at `p` (`inner_tangentSpace_vectorSpace`), it is the inner product of `F`.
   exact (inner_tangentSpace_vectorSpace w₁ w₂).symm
-
-/-- The differential of the exponential map of a finite-dimensional inner-product space at every
-tangent vector preserves norms. -/
-@[simp]
-theorem norm_mfderiv_riemannianExp_model_space (p : F) (v w : TangentSpace 𝓘(ℝ, F) p) :
-    ‖mfderiv 𝓘(ℝ, TangentSpace 𝓘(ℝ, F) p) 𝓘(ℝ, F) (riemannianExp 𝓘(ℝ, F) F p) v w‖ = ‖w‖ := by
-  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, inner_mfderiv_riemannianExp_model_space]
 
 /-- The exponential map of a finite-dimensional inner-product space at `p` maps the tangent ball of
 radius `r` onto the ball of radius `r` about `p`. -/
