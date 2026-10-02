@@ -65,18 +65,22 @@ variable
 variable (hb : ∀ z : ↥{y | s y = 0}, ContinuousAt b z.1)
   (he : ∀ z, b z.1 ∈ (e z).baseSet)
 
-variable {m : ℕ∞ω} (hm : 1 ≤ m)
+variable {m : ℕ∞ω}
   (hs : ∀ z w : ↥{y | s y = 0}, b w.1 ∈ (e z).baseSet →
     w.1 ∈ (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z))
       (hFred z).closedComplemented_ker →
     ContDiffAt 𝕜 m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1)
 
-include hm hs in
+include hs in
 /-- The inverse preferred chart, included into the ambient parameter space, is smooth on its
 whole target, not merely at the origin. -/
 theorem contDiffOn_coe_sectionZeroChartAt_symm (z : ↥{y | s y = 0}) :
     ContDiffOn 𝕜 m (fun k ↦ ((sectionZeroChartAt hf hFred hsurj hindex z).symm k : X))
       (sectionZeroChartAt hf hFred hsurj hindex z).target := by
+  by_cases hm : m = 0
+  · subst m
+    exact contDiffOn_zero.2 (continuous_subtype_val.comp_continuousOn
+      (sectionZeroChartAt hf hFred hsurj hindex z).continuousOn_symm)
   let K := (D z).kerModelEquiv (hFred z).finite_ker
     ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2 (hindex z))
   let ψ := sectionZeroChart (hf z) (LinearMap.range_eq_top.2 (hsurj z))
@@ -98,11 +102,11 @@ theorem contDiffOn_coe_sectionZeroChartAt_symm (z : ↥{y | s y = 0}) :
   have hcoord : ContDiffAt 𝕜 m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 := hs z w hbase hmem
   have hinner : ContDiffAt 𝕜 m (fun j ↦ (ψ.symm j : X)) (K.symm k) :=
     contDiffAt_coe_sectionZeroChart_symm_of_mem (hf z) _ _ z.2 hk'.1 hmem
-      (hcoord.differentiableAt (ne_of_gt (lt_of_lt_of_le zero_lt_one hm))).hasFDerivAt hcoord
+      (hcoord.differentiableAt hm).hasFDerivAt hcoord
   have hcomp := hinner.comp k K.symm.contDiff.contDiffAt
   exact hcomp.contDiffWithinAt.congr (fun j _ ↦ hval j) (hval k)
 
-include hm hs in
+include hs in
 /-- Transitions between the preferred charts of the zero set are smooth. -/
 theorem contDiffOn_sectionZeroChartAt_trans (z w : ↥{y | s y = 0}) :
     ContDiffOn 𝕜 m
@@ -116,14 +120,14 @@ theorem contDiffOn_sectionZeroChartAt_trans (z w : ↥{y | s y = 0}) :
     ((D w).kerModelEquiv (hFred w).finite_ker
       ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D w) (hsurj w)).2 (hindex w)) :
         (D w).ker →L[𝕜] (Fin n → 𝕜)).comp (Classical.choose (hFred w).closedComplemented_ker)
-  have hbase := (contDiffOn_coe_sectionZeroChartAt_symm hf hFred hsurj hindex hm hs z).mono
+  have hbase := (contDiffOn_coe_sectionZeroChartAt_symm hf hFred hsurj hindex hs z).mono
     (t := (χ.symm.trans χ').source) (fun _ hk ↦ hk.1)
   have hcomp := Ψ.contDiff.comp_contDiffOn (hbase.sub (contDiffOn_const (c := w.1)))
   refine hcomp.congr fun k _ ↦ ?_
   simp only [Function.comp_def, OpenPartialHomeomorph.coe_trans,
     sectionZeroChartAt_apply, Ψ, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
 
-include hm hs in
+include hs in
 /-- The actual zero set of a regular Fredholm section of constant index is a smooth manifold
 of dimension that index, with the preferred section-zero atlas. -/
 theorem isManifold_sectionZero :
@@ -136,6 +140,6 @@ theorem isManifold_sectionZero :
   obtain ⟨w, rfl⟩ := hχ'
   simpa only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Set.range_id,
     Set.inter_univ, Set.preimage_id, Function.comp_id, Function.id_comp] using
-    contDiffOn_sectionZeroChartAt_trans hf hFred hsurj hindex hm hs z w
+    contDiffOn_sectionZeroChartAt_trans hf hFred hsurj hindex hs z w
 
 end TauCeti
