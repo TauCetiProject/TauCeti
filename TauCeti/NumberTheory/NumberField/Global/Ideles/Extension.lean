@@ -87,11 +87,10 @@ theorem ideleExtension_self : ideleExtension K K = MonoidHom.id _ := by
 theorem ideleExtension_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
     [Algebra K M] [IsScalarTower K L M] :
     (ideleExtension L M).comp (ideleExtension K L) = ideleExtension K M := by
-  apply MonoidHom.ext
-  intro x
-  apply Units.ext
-  simpa only [MonoidHom.comp_apply, coe_ideleExtension, RingHom.comp_apply] using
-    RingHom.congr_fun (NumberField.adeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M) x
+  unfold ideleExtension
+  rw [← Units.map_comp]
+  exact congrArg (fun f ↦ Units.map f.toMonoidHom)
+    (NumberField.adeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M)
 
 /-- The infinite coordinate of an extended idele is the image of the source coordinate at the
 place below under the completion map. -/
@@ -216,23 +215,21 @@ theorem continuous_ideleClassExtension : Continuous (ideleClassExtension K L) :=
 /-- Extension of idele classes along the identity extension is the identity. -/
 @[simp]
 theorem ideleClassExtension_self : ideleClassExtension K K = MonoidHom.id _ := by
-  apply MonoidHom.ext
-  intro x
-  induction x using Quotient.inductionOn with
-  | h x => simp
+  unfold ideleClassExtension
+  simp only [ideleExtension_self, QuotientGroup.map_id]
 
 /-- Extension of idele classes composes in a tower. -/
 @[simp]
 theorem ideleClassExtension_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
     [Algebra K M] [IsScalarTower K L M] :
     (ideleClassExtension L M).comp (ideleClassExtension K L) = ideleClassExtension K M := by
-  apply MonoidHom.ext
-  intro x
-  induction x using Quotient.inductionOn with
-  | h x =>
-    simp only [MonoidHom.comp_apply, ideleClassExtension_mk]
-    exact congrArg (fun y : IdeleGroup (𝓞 M) M ↦ (y : IdeleClassGroup (𝓞 M) M))
-      (DFunLike.congr_fun (ideleExtension_comp K L M) x)
+  unfold ideleClassExtension
+  simpa only [ideleExtension_comp] using
+    QuotientGroup.map_comp_map (IdeleGroup.principalSubgroup (𝓞 K) K)
+      (IdeleGroup.principalSubgroup (𝓞 L) L) (IdeleGroup.principalSubgroup (𝓞 M) M)
+      (ideleExtension K L) (ideleExtension L M)
+      (principalSubgroup_le_comap_ideleExtension K L)
+      (principalSubgroup_le_comap_ideleExtension L M)
 
 variable {K L}
 
