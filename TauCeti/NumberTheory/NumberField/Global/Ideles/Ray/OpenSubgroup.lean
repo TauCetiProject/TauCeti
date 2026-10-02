@@ -73,11 +73,12 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFraction
 
 /-- **The archimedean identity component of the idele group**: every idele concentrated at a
 complex place, and every positive idele concentrated at a real place, lies in the identity
-component of the idele group.  Such ideles form the image of a preconnected set of units through
-`1`: the whole unit group at a complex place and the positive half-line at a real place. -/
+component of the idele group. -/
 theorem ofCompletion_mem_connectedComponentOfOne (w : InfinitePlace K) (u : w.Completionˣ)
     (hu : ∀ hw : w.IsReal, 0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal hw u) :
     IdeleGroup.ofCompletion R K w u ∈ Subgroup.connectedComponentOfOne (IdeleGroup R K) := by
+  -- These ideles form the image of a preconnected set of units through `1`: the whole unit
+  -- group at a complex place and the positive half-line at a real place.
   have hP : IsPreconnected {u : w.Completionˣ |
       ∀ hw : w.IsReal, 0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal hw u} := by
     rcases w.isReal_or_isComplex with hw | hw

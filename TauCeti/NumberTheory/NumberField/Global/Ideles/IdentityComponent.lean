@@ -56,17 +56,16 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **The identity component of the idele class group lies in every ray subgroup**: a ray
-subgroup is open, hence also closed. -/
+/-- The identity component of the idele class group lies in every ray subgroup. -/
 theorem connectedComponentOfOne_le_raySubgroup (𝔪 : Modulus K) :
     Subgroup.connectedComponentOfOne (IdeleClassGroup (𝓞 K) K) ≤ raySubgroup 𝔪 :=
+  -- A ray subgroup is open, hence also closed.
   Subgroup.connectedComponentOfOne_le_of_isOpen (isOpen_raySubgroup 𝔪)
 
 namespace IdeleClassGroup
 
 /-- **The idele class norm is surjective on the identity component**: every positive real number
-is the idele class norm of an element of the identity component of the idele class group, namely
-of an idele concentrated at one infinite place with positive real component. -/
+is the idele class norm of an element of the identity component of the idele class group. -/
 theorem exists_mem_connectedComponentOfOne_ideleClassNorm_eq (t : ℝ≥0ˣ) :
     ∃ d ∈ Subgroup.connectedComponentOfOne (IdeleClassGroup (𝓞 K) K), ideleClassNorm d = t := by
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
@@ -90,16 +89,16 @@ theorem exists_mem_connectedComponentOfOne_ideleClassNorm_eq (t : ℝ≥0ˣ) :
 
 variable (K)
 
-/-- **The quotient of the idele class group by its identity component is compact**: every class
-is represented by an idele class of norm one, after dividing by an element of the identity
-component of the same norm, so the quotient is the image of the compact norm-one idele class
-group.  With the instances `QuotientGroup.instT3Space` and
+/-- **The quotient of the idele class group by its identity component is compact.**
+With the instances `QuotientGroup.instT3Space` and
 `QuotientGroup.totallyDisconnectedSpace_connectedComponentOfOne`, this makes the quotient a
 profinite group. -/
 instance compactSpace_quotient_connectedComponentOfOne :
     CompactSpace (IdeleClassGroup (𝓞 K) K ⧸
       Subgroup.connectedComponentOfOne (IdeleClassGroup (𝓞 K) K)) := by
   set D := Subgroup.connectedComponentOfOne (IdeleClassGroup (𝓞 K) K)
+  -- Divide each idele class by an element of the identity component with the same norm.
+  -- Thus the quotient is the image of the compact norm-one idele class group.
   have himage : QuotientGroup.mk' D '' (normOne K : Set (IdeleClassGroup (𝓞 K) K)) =
       Set.univ := by
     refine Set.eq_univ_of_forall fun q ↦ ?_
@@ -117,16 +116,16 @@ instance compactSpace_quotient_connectedComponentOfOne :
 
 end IdeleClassGroup
 
-/-- **The identity component of the idele class group is the intersection of the ray
-subgroups.**  An idele class outside the identity component is separated from it by an open
-subgroup of the profinite group `C_K / D_K`, whose preimage is an open subgroup of `C_K` and so
-contains a ray subgroup. -/
+/-- The identity component of the idele class group is the intersection of all ray subgroups. -/
 theorem iInf_raySubgroup :
     ⨅ 𝔪 : Modulus K, raySubgroup 𝔪 =
       Subgroup.connectedComponentOfOne (IdeleClassGroup (𝓞 K) K) := by
   set D := Subgroup.connectedComponentOfOne (IdeleClassGroup (𝓞 K) K)
   refine le_antisymm (fun c hc ↦ ?_) (le_iInf connectedComponentOfOne_le_raySubgroup)
   by_contra hcD
+  -- An idele class outside `D` is separated from it by an open subgroup of the profinite
+  -- quotient. Its preimage is an open subgroup of the idele class group and contains a ray
+  -- subgroup.
   have hne : (1 : IdeleClassGroup (𝓞 K) K ⧸ D) ∈ ({(c : IdeleClassGroup (𝓞 K) K ⧸ D)}ᶜ) :=
     Set.mem_compl_singleton_iff.mpr fun h ↦ hcD ((QuotientGroup.eq_one_iff c).mp h.symm)
   obtain ⟨H, hH⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one

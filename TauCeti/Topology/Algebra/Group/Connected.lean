@@ -97,18 +97,18 @@ instance _root_.Subgroup.isClosed_connectedComponentOfOne :
     IsClosed (Subgroup.connectedComponentOfOne G : Set G) :=
   isClosed_connectedComponent
 
-/-- The identity component of a topological group is normal: conjugation is a homeomorphism
-fixing `1`, so it preserves the connected component of `1`. -/
+/-- The identity component of a topological group is normal. -/
 instance _root_.Subgroup.normal_connectedComponentOfOne :
     (Subgroup.connectedComponentOfOne G).Normal where
   conj_mem n hn g := by
+    -- Conjugation is a homeomorphism fixing `1`, so it preserves its connected component.
     have h := (IsTopologicalGroup.continuous_conj g).mapsTo_connectedComponent 1 hn
     rwa [mul_one, mul_inv_cancel] at h
 
-/-- **An open subgroup contains the identity component**: it is also closed, so the connected
-component of `1` cannot leave it. -/
+/-- An open subgroup of a topological group contains the identity component. -/
 theorem _root_.Subgroup.connectedComponentOfOne_le_of_isOpen {H : Subgroup G}
     (hH : IsOpen (H : Set G)) : Subgroup.connectedComponentOfOne G ≤ H :=
+  -- An open subgroup is also closed, so the connected component of `1` cannot leave it.
   fun _ hg ↦ IsClopen.connectedComponent_subset ⟨H.isClosed_of_isOpen hH, hH⟩ H.one_mem hg
 
 /-- A continuous homomorphism maps the identity component into the identity component. -/
@@ -120,10 +120,7 @@ theorem _root_.Subgroup.map_connectedComponentOfOne_le {G' : Type*} [Group G']
   rwa [map_one] at h
 
 open scoped Pointwise in
-/-- **The quotient of a topological group by its identity component is totally disconnected.**
-The fibres of the quotient map are the translates of the identity component, which are connected,
-so the preimage of the connected component of `1` in the quotient is connected and hence lies in
-the identity component. -/
+/-- The quotient of a topological group by its identity component is totally disconnected. -/
 instance _root_.QuotientGroup.totallyDisconnectedSpace_connectedComponentOfOne :
     TotallyDisconnectedSpace (G ⧸ Subgroup.connectedComponentOfOne G) := by
   set N := Subgroup.connectedComponentOfOne G
@@ -137,6 +134,8 @@ instance _root_.QuotientGroup.totallyDisconnectedSpace_connectedComponentOfOne :
     ext x
     rw [Set.mem_preimage, Set.mem_singleton_iff, eq_comm, QuotientGroup.eq, ← hg,
       Set.mem_smul_set_iff_inv_smul_mem, smul_eq_mul, Subgroup.mem_connectedComponentOfOne_iff]
+  -- Connected fibres make the preimage of the identity component in the quotient connected,
+  -- so it lies in the identity component of `G`.
   have hpre := (QuotientGroup.isQuotientMap_mk N).isCoinducing.preimage_connectedComponent hfib 1
   refine Set.eq_singleton_iff_unique_mem.mpr ⟨mem_connectedComponent, fun y hy ↦ ?_⟩
   induction y using QuotientGroup.induction_on with | H g => ?_
