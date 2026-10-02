@@ -267,6 +267,7 @@ instance isIso_arrowExtensionHom (c c' : HomArrow M N) (h : HomVertex M N)
     (arrowExtensionHom_arrowExtensionSnd M N c c' h hh)
 
 /-- Composing changes of vertex splittings adds their vertex families. -/
+@[simp]
 theorem arrowExtensionHom_comp (c c' c'' : HomArrow M N) (h h' : HomVertex M N)
     (hh : homDifferential M N h = c - c')
     (hh' : homDifferential M N h' = c' - c'') :

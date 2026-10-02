@@ -77,6 +77,7 @@ theorem exists_homVertex_of_arrowExtension_hom_fixing_ends (c c' : HomArrow M N)
 
 /-- Two arrow extensions are equivalent with fixed end terms if and only if their
 arrow families have the same class in the Hom cokernel. -/
+@[simp]
 theorem exists_arrowExtension_hom_fixing_ends_iff (c c' : HomArrow M N) :
     (∃ e : arrowExtension M N c ⟶ arrowExtension M N c',
       arrowExtensionInl M N c ≫ e = arrowExtensionInl M N c' ∧
