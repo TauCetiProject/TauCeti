@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.NarrowPic
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Surjective
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The kernel of the narrow-to-wide Picard map of an order
@@ -52,6 +53,8 @@ signatures, a power of `2` not exceeding `2 ^ r₁`.
 * G. S. Kopp and J. C. Lagarias, *Class Field Theory for Orders of Number Fields*, §2.
 * `TauCeti/NumberTheory/NumberField/Global/RayClass/Narrow/Kernel.lean`, for the same exact
   sequence for the maximal order, stated through ray class groups.
+* `TauCeti/NumberTheory/NumberField/NarrowClassGroup/Finite.lean`, whose cardinality corollaries
+  `card_narrowPic` and `exists_card_narrowPic_eq_card_pic_mul_two_pow` follow.
 -/
 
 public section
@@ -184,8 +187,10 @@ def narrowSignQuotientEquivKerNarrowToPic :
 @[simp]
 theorem coe_narrowSignQuotientEquivKerNarrowToPic_mk
     (s : {w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :
-    (O.narrowSignQuotientEquivKerNarrowToPic s : NarrowPic O) = O.narrowSignBoundary s :=
-  (rfl)
+    (O.narrowSignQuotientEquivKerNarrowToPic s : NarrowPic O) = O.narrowSignBoundary s := by
+  simp only [narrowSignQuotientEquivKerNarrowToPic, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, MulEquiv.subgroupCongr_apply,
+    TauCeti.QuotientGroup.quotientKerEquivRange_apply_mk]
 
 /-- **The narrow Picard number is the wide Picard number times the index of the unit
 signatures.** Both sides are read with the `Nat.card` convention, so the identity also holds
