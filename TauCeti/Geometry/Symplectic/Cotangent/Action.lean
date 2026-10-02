@@ -31,9 +31,10 @@ The main result is that the symplectic area of such a strip over `[a, b] × [0, 
 the action between the two ends
 (`TauCeti.integral_strongDualCotangentSymplecticForm_eq_cotangentAction_sub`), with the
 convention `ω = -dλ` of `TauCeti.strongDualCotangentSymplecticForm`. This is Green's formula
-(`TauCeti.integral_bilinear_fderiv_sub_prod_Icc`) for `u^*λ`: the boundary integrals along the two
-vertical sides are the action integrals, and those along the horizontal sides integrate the exact
-restrictions of `λ` to `L₀` and `L₁` (`TauCeti.integral_cotangentLiouvilleForm_differential_graph`).
+(`ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc`) for `u^*λ`: the boundary integrals
+along the two vertical sides are the action integrals, and those along the horizontal sides
+integrate the exact restrictions of `λ` to `L₀` and `L₁`
+(`TauCeti.integral_cotangentLiouvilleForm_differential_graph`).
 
 For a strip that is holomorphic for an almost complex structure `J` tamed by `ω`, the normalized
 energy density is the area density, so the energy of the strip over `[a, b] × [0, 1]` equals the
@@ -176,7 +177,7 @@ theorem integral_strongDualCotangentSymplecticForm_eq_cotangentAction_sub (hab :
     · exact ((((hu _ ⟨hab' ▸ hs, hc⟩).continuousAt_fderiv (by norm_num)).comp
         (continuous_id.prodMk continuous_const).continuousAt).clm_apply
           continuousAt_const).continuousWithinAt
-  have hgreen := integral_bilinear_fderiv_sub_prod_Icc B (a := (a, 0)) (b := (b, 1))
+  have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc (a := (a, 0)) (b := (b, 1))
     ⟨hab, zero_le_one⟩ (by rw [← Icc_prod_Icc]; exact hu)
   rw [← Icc_prod_Icc, hre, him] at hgreen
   have hω : ∀ z, strongDualCotangentSymplecticForm (fderiv ℝ u z stdComplexLineReal)

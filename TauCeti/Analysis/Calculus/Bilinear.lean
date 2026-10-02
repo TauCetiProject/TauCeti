@@ -32,8 +32,8 @@ direction `w`; its derivative involves the second derivative of `u`.
   `ContinuousLinearMap.fderiv_apply_self`.
 * `ContinuousLinearMap.fderiv_fderiv_apply_self`: the second derivative of `z ↦ B z z` is
   the constant `B.flip + B`.
-* `TauCeti.hasFDerivAt_bilinear_fderiv_apply`: the derivative of `y ↦ B (u y) (∂_w u y)` at a
-  point where `u` is `C²`.
+* `ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply`: the derivative of
+  `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 -/
 
 public section
@@ -91,8 +91,8 @@ theorem _root_.ContinuousLinearMap.fderiv_fderiv_apply_self (B : E →L[𝕜] E 
 
 /-- The derivative of `y ↦ B (u y) (∂_w u y)` in the direction `v`, at a point where `u` is `C²`,
 is `B (u) (∂_v ∂_w u) + B (∂_v u) (∂_w u)`. -/
-theorem hasFDerivAt_bilinear_fderiv_apply (B : F →L[𝕜] F →L[𝕜] G) {u : E → F} {z : E}
-    (hu : ContDiffAt 𝕜 2 u z) (w : E) :
+theorem _root_.ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply (B : F →L[𝕜] F →L[𝕜] G)
+    {u : E → F} {z : E} (hu : ContDiffAt 𝕜 2 u z) (w : E) :
     HasFDerivAt (fun y ↦ B (u y) (fderiv 𝕜 u y w))
       (B.precompR E (u z) ((fderiv 𝕜 (fderiv 𝕜 u) z).flip w) +
         B.precompL E (fderiv 𝕜 u z) (fderiv 𝕜 u z w)) z := by

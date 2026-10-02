@@ -25,7 +25,7 @@ obtained from Mathlib's divergence theorem on a rectangle
 (`MeasureTheory.integral_divergence_prod_Icc_of_hasFDerivAt_of_le`) applied to the vector field
 `(B u (∂t u), -B u (∂s u))`, whose divergence is the integrand above once the mixed second
 derivatives of `u` cancel by symmetry; the derivatives of the two components are
-`TauCeti.hasFDerivAt_bilinear_fderiv_apply`.
+`ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply`.
 
 For a compactly supported map on the whole plane the boundary terms are absent and the integral
 vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is the formula that
@@ -34,8 +34,8 @@ integrals of a primitive along its four sides.
 
 ## Main results
 
-* `TauCeti.integral_bilinear_fderiv_sub_prod_Icc`: Green's formula above, over `Set.Icc a b` for
-  points `a ≤ b` of `ℝ × ℝ`.
+* `ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc`: Green's formula above, over
+  `Set.Icc a b` for points `a ≤ b` of `ℝ × ℝ`.
 -/
 
 public section
@@ -52,8 +52,9 @@ point of the rectangle `Icc a b ⊆ ℝ × ℝ` and `B` is a continuous bilinear
 the rectangle of `B (∂s u) (∂t u) - B (∂t u) (∂s u)` is the integral of the one-form `B u (du)`
 over the positively oriented boundary: the right side minus the left side of
 `t ↦ B u (∂t u)`, minus the top side minus the bottom side of `s ↦ B u (∂s u)`. -/
-theorem integral_bilinear_fderiv_sub_prod_Icc (B : V →L[ℝ] V →L[ℝ] W)
-    {u : ℝ × ℝ → V} {a b : ℝ × ℝ} (hle : a ≤ b) (hu : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 u z) :
+theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc
+    (B : V →L[ℝ] V →L[ℝ] W) {u : ℝ × ℝ → V} {a b : ℝ × ℝ} (hle : a ≤ b)
+    (hu : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 u z) :
     ∫ z in Icc a b, (B (fderiv ℝ u z (1, 0)) (fderiv ℝ u z (0, 1)) -
         B (fderiv ℝ u z (0, 1)) (fderiv ℝ u z (1, 0))) =
       ((∫ t in a.2..b.2, B (u (b.1, t)) (fderiv ℝ u (b.1, t) (0, 1))) -
@@ -62,10 +63,10 @@ theorem integral_bilinear_fderiv_sub_prod_Icc (B : V →L[ℝ] V →L[ℝ] W)
           ∫ s in a.1..b.1, B (u (s, a.2)) (fderiv ℝ u (s, a.2) (1, 0))) := by
   have hfd : ∀ z ∈ Icc a b, HasFDerivAt (fun y ↦ B (u y) (fderiv ℝ u y (0, 1)))
       (fderiv ℝ (fun y ↦ B (u y) (fderiv ℝ u y (0, 1))) z) z := fun z hz ↦
-    (hasFDerivAt_bilinear_fderiv_apply B (hu z hz) _).differentiableAt.hasFDerivAt
+    (B.hasFDerivAt_bilinear_fderiv_apply (hu z hz) _).differentiableAt.hasFDerivAt
   have hgd : ∀ z ∈ Icc a b, HasFDerivAt (fun y ↦ -B (u y) (fderiv ℝ u y (1, 0)))
       (fderiv ℝ (fun y ↦ -B (u y) (fderiv ℝ u y (1, 0))) z) z := fun z hz ↦
-    (hasFDerivAt_bilinear_fderiv_apply B (hu z hz) _).neg.differentiableAt.hasFDerivAt
+    (B.hasFDerivAt_bilinear_fderiv_apply (hu z hz) _).neg.differentiableAt.hasFDerivAt
   have hIoo : Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 ⊆ Icc a b := by
     rw [Icc_prod_eq]
     exact prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
@@ -79,8 +80,8 @@ theorem integral_bilinear_fderiv_sub_prod_Icc (B : V →L[ℝ] V →L[ℝ] W)
     have hg : fderiv ℝ (fun y ↦ -B (u y) (fderiv ℝ u y (1, 0))) z =
         -(B.precompR (ℝ × ℝ) (u z) ((fderiv ℝ (fderiv ℝ u) z).flip (1, 0)) +
           B.precompL (ℝ × ℝ) (fderiv ℝ u z) (fderiv ℝ u z (1, 0))) :=
-      (hasFDerivAt_bilinear_fderiv_apply B (hu z hz) _).neg.fderiv
-    simp only [(hasFDerivAt_bilinear_fderiv_apply B (hu z hz) _).fderiv, hg]
+      (B.hasFDerivAt_bilinear_fderiv_apply (hu z hz) _).neg.fderiv
+    simp only [(B.hasFDerivAt_bilinear_fderiv_apply (hu z hz) _).fderiv, hg]
     simp [hsymm]
     abel
   have hcont : ContinuousOn (fun z ↦ B (fderiv ℝ u z (1, 0)) (fderiv ℝ u z (0, 1)) -
