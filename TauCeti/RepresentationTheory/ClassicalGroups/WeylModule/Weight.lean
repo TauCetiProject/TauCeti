@@ -23,7 +23,8 @@ The Weyl module of a `μ`-tableau `t` is the image of the Young symmetrizer `c_t
 tensor power `(kⁿ)^{⊗|μ|}` of the standard representation of `GL n k`.  The tensor power is the
 internal direct sum of its weight spaces, which are the coordinate subspaces spanned by the
 monomial basis vectors of a given content, and `c_t` preserves each of them, so the Weyl module
-inherits a weight decomposition.  This file determines which weights survive.
+inherits a weight decomposition. This file bounds the surviving weights from above and shows
+that the shape weight attains the bound.
 
 The answer is the **dominance bound**: writing `r` for the row filling of `t`
 (`TauCeti.YoungTableau.rowFilling`, the filling of the labels by their row indices), every weight
@@ -125,7 +126,8 @@ theorem weightOfMultiset_ofFn_rowFilling (t : YoungTableau μ) (hn : μ.colLen 0
 /-- **The symmetrizer annihilates a monomial basis vector whose filling takes small values too
 often.**  If more labels satisfy `p x < m` than lie in the first `m` rows of `t`, then `p` is not
 injective on the columns of `t`, so two labels of one column carry the same basis index. -/
-theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero_of_card_filter_lt
+private theorem
+    permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero_of_card_filter_lt
     (t : YoungTableau μ) {p : Fin μ.card → Fin n} {m : ℕ}
     (h : (Finset.univ.filter fun x => rowIndex t x < m).card <
       (Finset.univ.filter fun x => (p x : ℕ) < m).card) :
@@ -265,7 +267,7 @@ section CommRing
 variable [CommRing k] [Algebra ℚ k]
 
 /-- The monomial basis vector of the row filling has the weight of the shape. -/
-theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
+private theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
     (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     tensorPowerBasis R n μ.card (rowFilling t hn) ∈
       weightSpace (tensorPowerRep R n μ.card) (weightOfShape n μ).1 := by
