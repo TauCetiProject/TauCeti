@@ -495,12 +495,12 @@ theorem prod_factorial_two_mul_add_one_pos (n : ℕ) :
 /-- **Integrality for the odd Vandermonde product.**  For integer nodes `xᵢ`, the product
 `∏ᵢ xᵢ · det (vandermonde (xᵢ²)) = ∏ᵢ xᵢ · ∏_{i < j} (xⱼ² - xᵢ²)` is divisible by
 `1! · 3! ⋯ (2n - 1)!`.  This is the analogue, for the odd powers `x, x³, …, x^{2n-1}`, of
-Mathlib's `Matrix.superFactorial_dvd_vandermonde_det` for the powers `1, x, …, x^{n-1}`: the
-column of `x^{2k+1}` may be replaced by the column of the monic odd polynomial
-`x (x² - 1²) ⋯ (x² - k²)`, whose values are multiples of `(2k + 1)!`. -/
+Mathlib's `Matrix.superFactorial_dvd_vandermonde_det` for the powers `1, x, …, x^{n-1}`. -/
 theorem prod_factorial_dvd_prod_mul_det_vandermonde_sq {n : ℕ} (x : Fin n → ℤ) :
     (∏ k ∈ Finset.range n, ((2 * k + 1).factorial : ℤ))
       ∣ (∏ i, x i) * (Matrix.vandermonde fun i => x i ^ 2).det := by
+  -- Replace the column of `x^{2k+1}` by the column of the monic odd polynomial
+  -- `x (x² - 1²) ⋯ (x² - k²)`, whose values are multiples of `(2k + 1)!`.
   let p : Fin n → ℤ[X] := fun j => ∏ m ∈ Finset.range j, (X - C (((m : ℤ) + 1) ^ 2))
   have hmonic : ∀ j, (p j).Monic := fun j =>
     monic_prod_of_monic (Finset.range j) (fun m => X - C (((m : ℤ) + 1) ^ 2))

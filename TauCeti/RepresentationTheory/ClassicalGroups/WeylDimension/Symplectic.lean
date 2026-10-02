@@ -260,11 +260,11 @@ theorem symplecticWeylDimensionNumerator_congr {ν : YoungDiagram}
 
 variable {n μ} in
 /-- **The symplectic Weyl dimension reads only the first `n` rows**: two diagrams whose rows
-`0, …, n - 1` have the same lengths have the same dimension.  Cancelling `1! · 3! ⋯ (2n - 1)!` in
-`TauCeti.symplecticWeylDimension_mul_prod_factorial` reduces this to the numerator. -/
+`0, …, n - 1` have the same lengths have the same dimension. -/
 theorem symplecticWeylDimension_congr {ν : YoungDiagram}
     (h : ∀ i < n, μ.rowLen i = ν.rowLen i) :
     symplecticWeylDimension n μ = symplecticWeylDimension n ν := by
+  -- Cancel `1! · 3! ⋯ (2n - 1)!` to reduce to the numerator.
   have h1 : (symplecticWeylDimension n μ : ℤ) * ∏ k ∈ range n, ((2 * k + 1).factorial : ℤ) =
       (symplecticWeylDimension n ν : ℤ) * ∏ k ∈ range n, ((2 * k + 1).factorial : ℤ) :=
     (symplecticWeylDimension_mul_prod_factorial n μ).trans
