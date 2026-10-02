@@ -128,10 +128,12 @@ transformation of the lax monoidal right adjoints is compatible with the units o
 monoidal structures. -/
 theorem app_tensorUnit_comp_η_of_conjugateEquiv (h : conjugateEquiv adj₁ adj₂ σ = τ) :
     σ.app (𝟙_ C) ≫ η F₁ = η F₂ := by
+  -- The transpose of `σ` along the units is `τ`.
+  have hσ : adj₂.unit.app (𝟙_ C) ≫ G₂.map (σ.app _) = adj₁.unit.app _ ≫ τ.app _ := by
+    rw [← unit_conjugateEquiv, h]
   apply (adj₂.homEquiv _ _).injective
-  rw [homEquiv_unit, homEquiv_unit, Functor.map_comp, ← Category.assoc,
-    ← unit_conjugateEquiv, h, Category.assoc, ← τ.naturality, ← Category.assoc,
-    unit_app_unit_comp_map_η, NatTrans.IsMonoidal.unit, unit_app_unit_comp_map_η]
+  simp only [homEquiv_unit, Functor.map_comp, reassoc_of% hσ, ← τ.naturality,
+    unit_app_unit_comp_map_η_assoc, NatTrans.IsMonoidal.unit, unit_app_unit_comp_map_η]
 
 /-- A natural transformation between left adjoints whose conjugate is a monoidal natural
 transformation of the lax monoidal right adjoints is compatible with the tensor comparison maps of
@@ -139,13 +141,12 @@ the oplax monoidal structures. -/
 @[reassoc]
 theorem app_tensor_comp_δ_of_conjugateEquiv (h : conjugateEquiv adj₁ adj₂ σ = τ) (X Y : C) :
     σ.app (X ⊗ Y) ≫ δ F₁ X Y = δ F₂ X Y ≫ (σ.app X ⊗ₘ σ.app Y) := by
-  apply (adj₂.homEquiv _ _).injective
+  -- The transpose of `σ` along the units is `τ`.
   have hσ (Z : C) : adj₂.unit.app Z ≫ G₂.map (σ.app Z) = adj₁.unit.app Z ≫ τ.app _ := by
     rw [← unit_conjugateEquiv, h]
-  rw [homEquiv_unit, homEquiv_unit, Functor.map_comp, ← Category.assoc, hσ, Category.assoc,
-    ← τ.naturality, ← Category.assoc, unit_app_tensor_comp_map_δ, Category.assoc,
-    NatTrans.IsMonoidal.tensor, Functor.map_comp, ← Category.assoc (adj₂.unit.app _),
-    unit_app_tensor_comp_map_δ, Category.assoc, ← μ_natural]
-  simp only [tensorHom_comp_tensorHom_assoc, hσ]
+  apply (adj₂.homEquiv _ _).injective
+  simp only [homEquiv_unit, Functor.map_comp, reassoc_of% hσ, ← τ.naturality,
+    unit_app_tensor_comp_map_δ_assoc, NatTrans.IsMonoidal.tensor, ← μ_natural,
+    tensorHom_comp_tensorHom_assoc, hσ]
 
 end CategoryTheory.Adjunction
