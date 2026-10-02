@@ -61,12 +61,11 @@ variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G
   [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X] {S : Set X}
 
 /-- **Local finiteness of the translates of a nonempty set forces the acting group to be
-discrete.** Indeed, a neighbourhood of a point of the set meets only finitely many translates.
-The orbit map pulls it back to a finite neighbourhood of the identity, so the identity is an
-isolated point of the topological group.
+discrete.**
 
-The set need not be open, closed, or compact, and the action need not be faithful: local
-finiteness itself forces the kernel to be finite near the identity. -/
+The set need not be open, closed, or compact, and the action need not be faithful. This is the
+discreteness criterion for a group whose translates of a fundamental polygon form a locally
+finite tessellation. -/
 @[to_additive
 /-- **Local finiteness of the translates of a nonempty set forces the acting additive group to be
 discrete.** -/]

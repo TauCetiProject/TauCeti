@@ -56,9 +56,8 @@ namespace CompactConvexPolygon
 variable {n : ℕ} [NeZero n] (Γ : Subgroup PSL(2, ℝ)) (P : CompactConvexPolygon n)
 
 /-- **A subgroup whose translates of a compact convex polygon are locally finite is discrete.**
-The polygon is nonempty because it contains each of its vertices, so this is the specialization
-of `TauCeti.discreteTopology_of_locallyFinite_smul` used for locally finite polygon
-tessellations. -/
+This is the specialization of `TauCeti.discreteTopology_of_locallyFinite_smul` used for locally
+finite polygon tessellations. -/
 theorem discreteTopology_of_locallyFinite_smul_carrier
     (hlocal : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) :
     DiscreteTopology Γ :=
