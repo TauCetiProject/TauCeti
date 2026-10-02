@@ -18,7 +18,8 @@ the global degree `[L : K]`. These are the archimedean factors in the degree for
 extension of ideles.
 
 The formulas are in `TauCeti.GlobalNumberFields`, alongside
-`infiniteCompletionNormalizedAbsValue`. Use
+`infiniteCompletionNormalizedAbsValue`. For the ordinary norm, use
+`TauCeti.GlobalNumberFields.norm_completionMap (w := w) x`. For the normalized value, use
 `infiniteCompletionNormalizedAbsValue_completionMap (w := w) x` for a completion element,
 and `prod_infiniteCompletionNormalizedAbsValue_completionMap (L := L) v x` for the product
 over places above `v`. Both are pre-simplification rules: `simp` applies them before
