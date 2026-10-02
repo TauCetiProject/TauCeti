@@ -27,9 +27,11 @@ corresponding quotient after localization.
 
 * `TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow`: simultaneous approximation of
   finitely many classes in localized prime-power quotients.
-* `TauCeti.DedekindDomain.exists_sub_mem_span_singleton`: one element of `R` agrees with a
-  prescribed element of every localization `R_v` modulo a fixed nonzero `d`. Only the finitely
-  many `v` containing `d` impose a condition.
+* `TauCeti.DedekindDomain.exists_forall_sub_mem_map_localizationAtPrime`: one element of `R`
+  agrees with a prescribed element of every localization `R_v` modulo a fixed nonzero ideal.
+  Only the finitely many primes containing the ideal impose a condition.
+* `TauCeti.DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime`: the
+  specialization to a nonzero principal modulus.
 
 This is the finite approximation input for the local-to-global patching arguments in
 Silverman, *The Arithmetic of Elliptic Curves*, Chapter VIII, Section 8.
@@ -71,30 +73,29 @@ theorem exists_eq_mod_localized_prime_pow
     (Localization.AtPrime (v i).asIdeal) (n i) a, ha i]
   exact Equiv.apply_symm_apply _ (x i)
 
-/-- **Approximation modulo a nonzero element at every height-one prime.**
+/-- **Approximation modulo a nonzero ideal at every height-one prime.**
 
 Given an element `x v` of every localization `R_v`, a single `a ∈ R` is congruent to each `x v`
-modulo `d`. The family is indexed by all height-one primes; only the finitely many containing `d`
-constrain `a`, since at every other prime `d` is a unit of `R_v`. -/
-theorem exists_sub_mem_span_singleton {d : R} (hd : d ≠ 0)
+modulo the extension of `I` to `R_v`. The family is indexed by all height-one primes; only the
+finitely many containing `I` constrain `a`, since at every other prime the extension is the
+unit ideal. -/
+theorem exists_forall_sub_mem_map_localizationAtPrime {I : Ideal R} (hI : I ≠ ⊥)
     (x : (v : HeightOneSpectrum R) → Localization.AtPrime v.asIdeal) :
     ∃ a : R, ∀ v : HeightOneSpectrum R,
       algebraMap R (Localization.AtPrime v.asIdeal) a - x v ∈
-        Ideal.span {algebraMap R (Localization.AtPrime v.asIdeal) d} := by
-  let T := {v : HeightOneSpectrum R | v.asIdeal ∣ Ideal.span {d}}
-  have : Finite T := (Ideal.finite_factors (by simpa using hd)).to_subtype
-  -- At each prime, a power of the maximal ideal of the discrete valuation ring `R_v` lies in `(d)`.
+        I.map (algebraMap R (Localization.AtPrime v.asIdeal)) := by
+  let T := {v : HeightOneSpectrum R | v.asIdeal ∣ I}
+  have : Finite T := (Ideal.finite_factors hI).to_subtype
+  -- At each prime, a power of the maximal ideal of the discrete valuation ring `R_v` lies in `I`.
   have hpow (v : HeightOneSpectrum R) : ∃ n : ℕ,
       IsLocalRing.maximalIdeal (Localization.AtPrime v.asIdeal) ^ n ≤
-        Ideal.span {algebraMap R (Localization.AtPrime v.asIdeal) d} := by
+        I.map (algebraMap R (Localization.AtPrime v.asIdeal)) := by
     have := IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain R v.ne_bot
       (Localization.AtPrime v.asIdeal)
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (Localization.AtPrime v.asIdeal)
-    have hd' : Ideal.span {algebraMap R (Localization.AtPrime v.asIdeal) d} ≠ ⊥ := by
-      rw [Ne, Ideal.span_singleton_eq_bot]
-      exact IsLocalization.to_map_ne_zero_of_mem_nonZeroDivisors _
-        v.asIdeal.primeCompl_le_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hd)
-    obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hd' hϖ
+    have hI' : I.map (algebraMap R (Localization.AtPrime v.asIdeal)) ≠ ⊥ :=
+      Ideal.map_ne_bot_of_ne_bot hI
+    obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI' hϖ
     exact ⟨n, by rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, hn]⟩
   choose n hn using hpow
   obtain ⟨a, ha⟩ := exists_eq_mod_localized_prime_pow (fun v : T ↦ v.1) Subtype.val_injective
@@ -102,12 +103,22 @@ theorem exists_sub_mem_span_singleton {d : R} (hd : d ≠ 0)
   refine ⟨a, fun v ↦ ?_⟩
   by_cases hv : v ∈ T
   · exact hn v (Ideal.Quotient.eq.1 (ha ⟨v, hv⟩))
-  · -- Away from the primes containing `d`, `d` is a unit of `R_v` and there is nothing to prove.
-    have hdv : d ∉ v.asIdeal := fun h ↦
-      hv (Ideal.dvd_iff_le.2 (Ideal.span_singleton_le_iff_mem _ |>.2 h))
-    rw [Ideal.span_singleton_eq_top.2
-      ((IsLocalization.AtPrime.isUnit_to_map_iff _ v.asIdeal d).2 hdv)]
+  · -- Away from the primes containing `I`, its extension is the unit ideal.
+    rw [IsLocalization.AtPrime.map_eq_top_of_not_le (Localization.AtPrime v.asIdeal)
+      (fun h ↦ hv (Ideal.dvd_iff_le.2 h))]
     exact Submodule.mem_top
+
+/-- **Approximation modulo a nonzero element at every height-one prime.**
+
+Given an element `x v` of every localization `R_v`, a single `a ∈ R` is congruent to each `x v`
+modulo `d`. Only the finitely many primes containing `d` constrain `a`. -/
+theorem exists_forall_sub_mem_span_singleton_localizationAtPrime {d : R} (hd : d ≠ 0)
+    (x : (v : HeightOneSpectrum R) → Localization.AtPrime v.asIdeal) :
+    ∃ a : R, ∀ v : HeightOneSpectrum R,
+      algebraMap R (Localization.AtPrime v.asIdeal) a - x v ∈
+        Ideal.span {algebraMap R (Localization.AtPrime v.asIdeal) d} := by
+  simpa only [Ideal.map_span, Set.image_singleton] using
+    exists_forall_sub_mem_map_localizationAtPrime (I := Ideal.span {d}) (by simpa using hd) x
 
 end TauCeti.DedekindDomain
 

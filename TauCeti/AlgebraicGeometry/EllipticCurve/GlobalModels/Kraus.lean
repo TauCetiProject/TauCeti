@@ -75,7 +75,8 @@ variables between the two transforms is then `((b - B)/12, (a - A)/2, (g - G - A
 which has coefficients in the local ring. A single modulus therefore serves the primes above `2`
 and above `3` alike, and at the remaining primes `12` is a unit. Approximating the local
 `A`, `B` and the corrected `G` modulo `12` by elements of `O`
-(`TauCeti.DedekindDomain.exists_sub_mem_span_singleton`) produces one global change of variables.
+(`TauCeti.DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime`) produces
+one global change of variables.
 
 ## Provenance
 
@@ -286,28 +287,24 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
 
 /-! ### Kraus's global criterion -/
 
-omit [Invertible (2 : K)] [Invertible (3 : K)] in
 /-- **Every local witness is a change of variables `(B/12, A/2, G/2)`.** Under Kraus's local
-condition some such triple, with `A`, `B`, `G` in `R`, carries the canonical equation to an
-integral one: a two-witness `(a₁, a₃)` is `(a₁, a₁², a₃)`, a three-witness `b₂` is `(0, b₂, 0)`,
-and where `6` is a unit the zero triple will do. -/
-private theorem KrausLocalCondition.exists_isIntegral_smul (h : KrausLocalCondition R c₄ c₆) :
+condition over a local ring, some such triple, with `A`, `B`, `G` in `R`, carries the canonical
+equation to an integral one. These entries can be taken to be the coefficients `a₁`, `b₂`,
+`a₃` of an integral model supplied by the local criterion. -/
+private theorem KrausLocalCondition.exists_isIntegral_smul [IsLocalRing R]
+    (h : KrausLocalCondition R c₄ c₆) :
     ∃ A B G : R, ((⟨1, algebraMap R K B / 12, algebraMap R K A / 2, algebraMap R K G / 2⟩ :
       VariableChange K) • ofCInvariants c₄ c₆).IsIntegral R := by
-  by_cases h2 : IsUnit (2 : R)
-  · by_cases h3 : IsUnit (3 : R)
-    · refine ⟨0, 0, 0, ?_⟩
-      have h6 : IsUnit (6 : R) :=
-        isUnit_of_eq_two_pow_mul_three_pow h2 h3 (m := 1) (n := 1) (by norm_num)
-      simpa [← VariableChange.one_def] using isIntegral_ofCInvariants h6 h.exists_c₄ h.exists_c₆
-    · obtain ⟨b₂, hb₂⟩ := h.hasKrausThreeWitness h3
-      exact ⟨0, b₂, 0, by simpa using hb₂⟩
-  · obtain ⟨a₁, a₃, ha⟩ := h.hasKrausTwoWitness h2
-    exact ⟨a₁, a₁ ^ 2, a₃, by simpa using ha⟩
+  obtain ⟨W, hW, h₄, h₆, _⟩ := krausLocalCondition_iff_exists_integralModel.mp h
+  obtain ⟨V, rfl⟩ := hW.integral
+  refine ⟨V.a₁, V.b₂, V.a₃, ?_⟩
+  rw [← h₄, ← h₆, ← map_b₂, ← map_a₁, ← map_a₃, ← baseChange, smul_ofCInvariants]
+  exact ⟨V, rfl⟩
 
 /-- `12 = 2² · 3` is nonzero where `2` and `3` are invertible. -/
 private theorem twelve_ne_zero : (12 : K) ≠ 0 := by
-  rw [show (12 : K) = 2 * 2 * 3 by norm_num]
+  have h12 : (12 : K) = 2 * 2 * 3 := by norm_num
+  rw [h12]
   exact mul_ne_zero (mul_ne_zero (Invertible.ne_zero 2) (Invertible.ne_zero 2))
     (Invertible.ne_zero 3)
 
@@ -352,11 +349,14 @@ theorem krausGlobalCondition_iff_exists_integralModel [Nonempty (HeightOneSpectr
     -- Local witnesses `(A v, B v, G v)`, then `a₁`, `b₂` approximating `A`, `B` modulo `12`,
     -- and `a₃` approximating `G v + A v · (b₂ - B v)/12` modulo `12`.
     choose A B G hABG using fun v : HeightOneSpectrum O ↦ (h v).exists_isIntegral_smul
-    obtain ⟨a₁, ha₁⟩ := DedekindDomain.exists_sub_mem_span_singleton h12 A
-    obtain ⟨b₂, hb₂⟩ := DedekindDomain.exists_sub_mem_span_singleton h12 B
+    obtain ⟨a₁, ha₁⟩ :=
+      DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime h12 A
+    obtain ⟨b₂, hb₂⟩ :=
+      DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime h12 B
     choose y hy using fun v ↦ Ideal.mem_span_singleton'.1 (hb₂ v)
     obtain ⟨a₃, ha₃⟩ :=
-      DedekindDomain.exists_sub_mem_span_singleton h12 fun v ↦ G v + A v * y v
+      DedekindDomain.exists_forall_sub_mem_span_singleton_localizationAtPrime h12
+        fun v ↦ G v + A v * y v
     refine exists_integralModel_of_isIntegral_smul (r := algebraMap O K b₂ / 12)
       (s := algebraMap O K a₁ / 2) (t := algebraMap O K a₃ / 2) ?_ hΔ
     refine isIntegral_of_forall_isIntegral_localizationAtPrime fun v ↦ ?_
