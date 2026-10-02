@@ -96,11 +96,9 @@ theorem coordinateMap_comp_generatorCoordinateMap (j : (Fin 4 ⊕ Fin 4) ⊕ Uni
     coordinateMap k ≫ generatorCoordinateMap k j =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26).inv ≫
         CommHopfAlgCat.baseChangeMap (K := k) (generator j) := by
-  rw [coordinateMap_def, generatorCoordinateMap, Category.assoc,
-    ← CommHopfAlgCat.baseChangeFunctor_map,
-    ← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.map_comp,
-    CommHopfAlgCat.mkQuotient_comp_liftQuotient,
-    CommHopfAlgCat.baseChangeFunctor_map]
+  rw [coordinateMap_def, generatorCoordinateMap, Category.assoc]
+  simp only [← (CommHopfAlgCat.baseChangeFunctor (K := k)).map_comp,
+    CommHopfAlgCat.mkQuotient_comp_liftQuotient]
 
 /-- Restriction of functions on the carrier to its scalar-extended weight torus. -/
 def weightTorusCoordinateMap : coordinateHopfAlgebra k ⟶
@@ -114,10 +112,10 @@ def weightTorusCoordinateMap : coordinateHopfAlgebra k ⟶
 theorem coordinateMap_comp_weightTorusCoordinateMap :
     coordinateMap k ≫ weightTorusCoordinateMap k =
       GeneralLinear.weightTorusBaseChangeCoordinateMap (ZMod 2) k f4ShortRootWeight := by
-  rw [weightTorusCoordinateMap, ← Category.assoc,
-    coordinateMap_comp_generatorCoordinateMap, generator_inr,
+  simp only [weightTorusCoordinateMap,
+    coordinateMap_comp_generatorCoordinateMap_assoc, generator_inr,
     GeneralLinear.weightTorusBaseChangeCoordinateMap_eq ℤ (ZMod 2),
-    GeneralLinear.weightTorusBaseChangeCoordinateMap_def, Category.assoc]
+    GeneralLinear.weightTorusBaseChangeCoordinateMap_def]
 
 /-- The standard right comodule of the scalar-extended short-root carrier on `k²⁶`. -/
 @[instance_reducible]
@@ -138,7 +136,7 @@ theorem coefficientMatrix_basisFun (a b : Fin 26) :
     Comodule.coefficientMatrix (C := coordinateHopfAlgebra k) (Pi.basisFun k (Fin 26)) a b =
       (coordinateMap k).hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv k 26
         (GeneralLinear.coordinateRingMap k 26 (MvPolynomial.X (a, b)))) := by
-  rw [Comodule.coefficientMatrix_corestrict, Matrix.map_apply,
+  simp only [Comodule.coefficientMatrix_corestrict, Matrix.map_apply,
     GeneralLinear.coefficientMatrix_basisFun, BialgHom.toCoalgHom_apply,
     GeneralLinear.genericMatrix_apply]
 
@@ -162,18 +160,11 @@ theorem pointToGeneralLinear_specializedPointsMulEquiv
     GeneralLinear.pointToGeneralLinear 26
         (toConv (q.ofConv.comp (coordinateMap k).hom.toAlgHom)) =
       (specializedPointsMulEquiv k q : Matrix.GeneralLinearGroup (Fin 26) k) := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro a b
-  rw [coordinateMap_def, specializedPointsMulEquiv, MulEquiv.trans_apply,
-    MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
-    GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply,
+  rw [coordinateMap_def, GeneralLinear.pointToGeneralLinear_baseChangeMap]
+  simp only [specializedPointsMulEquiv, MulEquiv.trans_apply,
+    MulEquiv.subgroupCongr_apply]
+  rw [GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply,
     CommHopfAlgCat.quotientPointsHom_apply, GeneralLinear.pointsMulEquiv_apply]
-  simp only [GeneralLinear.pointToGeneralLinear_apply,
-    _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_apply,
-    BialgHom.coe_toAlgHom]
-  rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-    CommHopfAlgCat.baseChangeMap_apply_tmul,
-    AlgHom.baseChangePointsMulEquiv_symm_apply]
 
 /-- Every subcomodule of the standard representation is stable under the carrier's concrete
 matrix-valued points, in particular under its positive and negative simple root subgroups. -/
