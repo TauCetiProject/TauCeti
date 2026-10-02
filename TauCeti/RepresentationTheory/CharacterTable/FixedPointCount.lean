@@ -37,10 +37,12 @@ of Gassmann, satisfied by non-conjugate subgroups, so that `G ⧸ H` and `G ⧸ 
 isomorphic `G`-sets. Nothing about Gassmann's examples is proved here; what is proved is the
 criterion they are examples for.
 
-Numerical consequences are recorded along the way. Equivalent permutation representations come from
-`G`-sets of the same size (read the criterion at `g = 1`) and with the same number of orbits (sum
-the criterion over `G` and apply Burnside's lemma); in the subgroup form the first of these is the
-equality of the two indices.
+Numerical consequences are recorded along the way. That equivalent permutation representations come
+from `G`-sets of the same size needs no assumption on the characteristic — an equivalence of
+representations is in particular a linear equivalence, and `k[X]` has dimension `#X` over any field
+— and in the subgroup form this is the equality of the two indices. In characteristic zero the
+criterion gives more: summing it over `G` and applying Burnside's lemma, the numbers of orbits agree
+as well.
 
 ## Main statements
 
@@ -49,9 +51,9 @@ equality of the two indices.
 * `TauCeti.nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq`: **the classification** —
   over a field of characteristic zero, two permutation representations of a finite group are
   equivalent exactly when the fixed-point counts of the underlying `G`-sets agree.
-* `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction` and
-  `TauCeti.natCard_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction`: the cardinalities and the
-  orbit counts agree.
+* `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction`: the cardinalities agree, over any field, and
+  `TauCeti.natCard_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction`: in characteristic zero the
+  orbit counts agree too.
 * `TauCeti.nonempty_iso_repOfMulAction_iff_forall_natCard_fixedBy_eq`: the same classification,
   read on the objects of `Rep k G`.
 * `TauCeti.nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq`: the subgroup form, for the
@@ -64,11 +66,6 @@ equality of the two indices.
   (characters determine representations) and §3.3 (permutation representations).
 * F. Gassmann, *Bemerkungen zur vorstehenden Arbeit von Hurwitz*, Math. Z. **25** (1926), 665–675,
   for the subgroup condition the last statement characterizes.
-
-This supplies the rational half of Step 2 in Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/ModularInduction/README.md`, whose `Suggested.lean` pins it as
-`nonempty_equiv_ofMulAction_rat`; the proof uses nothing about `ℚ` beyond its characteristic, so it
-is stated over an arbitrary field of characteristic zero and `ℚ` is the instance that layer takes.
 -/
 
 public section
@@ -114,13 +111,21 @@ theorem nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq [CharZero k] :
   exact congrArg Nat.cast (h g)
 
 omit [Finite G] in
-/-- **Equivalent permutation representations come from `G`-sets of the same size**: the
-classification read at `g = 1`, where every point is fixed. -/
-theorem natCard_eq_of_nonempty_equiv_ofMulAction [CharZero k]
+/-- **Equivalent permutation representations come from `G`-sets of the same size.** This needs no
+assumption on the characteristic: an equivalence of representations is in particular a linear
+equivalence, and `k[X]` has dimension `#X` over any field. -/
+theorem natCard_eq_of_nonempty_equiv_ofMulAction
     (h : Nonempty ((ofMulAction k G X).Equiv (ofMulAction k G Y))) :
     Nat.card X = Nat.card Y := by
-  have hone := natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction k h 1
-  rwa [fixedBy_one_eq_univ, fixedBy_one_eq_univ, Nat.card_univ, Nat.card_univ] at hone
+  obtain ⟨φ⟩ := h
+  have _ : Fintype X := Fintype.ofFinite X
+  have _ : Fintype Y := Fintype.ofFinite Y
+  have hrank : Module.finrank k (MonoidAlgebra k X) = Module.finrank k (MonoidAlgebra k Y) :=
+    φ.toLinearEquiv.finrank_eq
+  rw [(MonoidAlgebra.coeffLinearEquiv k (S := k) (M := X)).finrank_eq,
+    (MonoidAlgebra.coeffLinearEquiv k (S := k) (M := Y)).finrank_eq, Module.finrank_finsupp_self,
+    Module.finrank_finsupp_self] at hrank
+  rwa [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
 
 /-- **Equivalent permutation representations come from `G`-sets with the same number of orbits.**
 Summing the fixed-point counts over `G` and applying Burnside's lemma expresses `|G|` times the
@@ -162,7 +167,7 @@ end Classification
 
 section Subgroup
 
-variable [CharZero k] (H K : Subgroup G)
+variable (H K : Subgroup G)
 
 /-- **The subgroup form of the classification.** The trivial representations of two subgroups `H`
 and `K` of a finite group induce to equivalent representations of `G`, over a field of
@@ -172,7 +177,7 @@ The induced representations are the permutation representations on the coset spa
 (`TauCeti.indTrivialEquiv`), so this is
 `TauCeti.nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq` at `X = G ⧸ H` and
 `Y = G ⧸ K`. -/
-theorem nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq :
+theorem nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq [CharZero k] :
     Nonempty (((Representation.trivial k H k).ind H.subtype).Equiv
         ((Representation.trivial k K k).ind K.subtype)) ↔
       ∀ g : G, Nat.card (fixedBy (G ⧸ H) g) = Nat.card (fixedBy (G ⧸ K) g) := by
@@ -185,7 +190,7 @@ theorem nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq :
 has cardinality `H.index`, so this is
 `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction` on the coset spaces, read through
 `Subgroup.index = Nat.card (G ⧸ ·)`. It is the one numerical condition on `H` and `K` that is
-visible without any character computation. -/
+visible without any character computation, and so holds over every field. -/
 theorem index_eq_of_nonempty_equiv_ind_trivial
     (h : Nonempty (((Representation.trivial k H k).ind H.subtype).Equiv
       ((Representation.trivial k K k).ind K.subtype))) :
