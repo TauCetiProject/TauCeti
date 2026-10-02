@@ -81,6 +81,17 @@ nontrivial ring without zero divisors, which the lowering identity does not; it 
 which holds over any nontrivial ring.  The trivial ring is handled separately, where the identity is
 vacuous.
 
+## The odd Vandermonde product
+
+For integer nodes `x₀, …, xₙ₋₁`, the Vandermonde determinant of the squares weighted by the nodes,
+`∏ᵢ xᵢ · det (vandermonde (xᵢ²))`, is the determinant of the matrix of odd powers
+`xᵢ^{2k+1}`.  It is the numerator of the Weyl dimension formula for the symplectic groups, and it
+is divisible by `1! · 3! ⋯ (2n - 1)!`.  The proof is the odd analogue of Mathlib's
+`Matrix.superFactorial_dvd_vandermonde_det`: the falling-factorial basis is replaced by the monic
+odd polynomials `x (x² - 1²) ⋯ (x² - k²)`, each of which is the falling factorial of degree
+`2k + 1` at `x + k` (`TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`), hence takes values
+divisible by `(2k + 1)!` at the integers.
+
 ## Main results
 
 * `TauCeti.sum_Icc_descPochhammer_eval`: the discrete antiderivative of a falling factorial.
@@ -88,6 +99,10 @@ vacuous.
   determinants.**
 * `TauCeti.sum_mul_det_vandermonde_update_sub_one` and `TauCeti.sum_mul_prod_sub_update_sub_one`:
   **the lowering identity for Vandermonde determinants.**
+* `TauCeti.prod_factorial_dvd_prod_mul_det_vandermonde_sq` and
+  `TauCeti.prod_factorial_dvd_prod_mul_prod_sq_sub_sq`: **integrality for the odd Vandermonde
+  product** `∏ᵢ xᵢ · ∏_{i < j} (xⱼ² - xᵢ²)`, which is divisible by `1! · 3! ⋯ (2n - 1)!`, a
+  positive integer (`TauCeti.prod_factorial_two_mul_add_one_pos`).
 -/
 
 public section
@@ -468,5 +483,65 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
     Fin.sum_univ_eq_sum_range b m,
     Fin.sum_univ_eq_sum_range (fun i : ℕ => (i : R)) m] at hcancel
   exact hcancel
+
+/-! ### Products of squared differences, weighted by the nodes -/
+
+/-- The divisor `1! · 3! ⋯ (2n - 1)!` of the odd Vandermonde product is positive, so it may be
+cancelled. -/
+theorem prod_factorial_two_mul_add_one_pos (n : ℕ) :
+    0 < ∏ k ∈ Finset.range n, ((2 * k + 1).factorial : ℤ) := by
+  exact_mod_cast Nat.prod_factorial_pos (Finset.range n) fun k => 2 * k + 1
+
+/-- **Integrality for the odd Vandermonde product.**  For integer nodes `xᵢ`, the product
+`∏ᵢ xᵢ · det (vandermonde (xᵢ²)) = ∏ᵢ xᵢ · ∏_{i < j} (xⱼ² - xᵢ²)` is divisible by
+`1! · 3! ⋯ (2n - 1)!`.  This is the analogue, for the odd powers `x, x³, …, x^{2n-1}`, of
+Mathlib's `Matrix.superFactorial_dvd_vandermonde_det` for the powers `1, x, …, x^{n-1}`. -/
+theorem prod_factorial_dvd_prod_mul_det_vandermonde_sq {n : ℕ} (x : Fin n → ℤ) :
+    (∏ k ∈ Finset.range n, ((2 * k + 1).factorial : ℤ))
+      ∣ (∏ i, x i) * (Matrix.vandermonde fun i => x i ^ 2).det := by
+  -- Replace the column of `x^{2k+1}` by the column of the monic odd polynomial
+  -- `x (x² - 1²) ⋯ (x² - k²)`, whose values are multiples of `(2k + 1)!`.
+  let p : Fin n → ℤ[X] := fun j => ∏ m ∈ Finset.range j, (X - C (((m : ℤ) + 1) ^ 2))
+  have hmonic : ∀ j, (p j).Monic := fun j =>
+    monic_prod_of_monic (Finset.range j) (fun m => X - C (((m : ℤ) + 1) ^ 2))
+      fun m _ => monic_X_sub_C _
+  have hdeg : ∀ j, (p j).natDegree = j := fun j => by
+    rw [natDegree_prod_of_monic (s := Finset.range j) (f := fun m => X - C (((m : ℤ) + 1) ^ 2))
+      (h := fun m _ => monic_X_sub_C _)]
+    simp only [natDegree_X_sub_C, Finset.sum_const, Finset.card_range, smul_eq_mul, mul_one]
+  have hent : ∀ (i : Fin n) (j : Fin n), ((2 * (j : ℕ) + 1).factorial : ℤ)
+      ∣ x i * (p j).eval (x i ^ 2) := fun i j => by
+    simpa [p, eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (x i)
+  rw [Matrix.det_eval_matrixOfPolynomials_eq_det_vandermonde _ p hdeg hmonic,
+    ← Matrix.det_mul_column]
+  have hmat : (Matrix.of fun i j : Fin n =>
+        x i * Matrix.of (fun i j : Fin n => (p j).eval (x i ^ 2)) i j)
+      = Matrix.of fun i j : Fin n => ((2 * (j : ℕ) + 1).factorial : ℤ)
+          * (x i * (p j).eval (x i ^ 2) / ((2 * (j : ℕ) + 1).factorial : ℤ)) := by
+    ext i j
+    simp only [Matrix.of_apply]
+    rw [Int.mul_ediv_cancel' (hent i j)]
+  have hrow := Matrix.det_mul_row (fun j : Fin n => ((2 * (j : ℕ) + 1).factorial : ℤ))
+    (Matrix.of fun i j : Fin n =>
+      x i * (p j).eval (x i ^ 2) / ((2 * (j : ℕ) + 1).factorial : ℤ))
+  simp only [Matrix.of_apply] at hrow
+  rw [hmat, hrow, Fin.prod_univ_eq_prod_range (fun k => ((2 * k + 1).factorial : ℤ)) n]
+  exact dvd_mul_right _ _
+
+/-- **Integrality for the odd Vandermonde product, unwound.**  For a sequence of integers, the
+product `∏_{k < m} bₖ · ∏_{k < l < m} (bₖ² - bₗ²)` is divisible by `1! · 3! ⋯ (2m - 1)!`.  This is
+`TauCeti.prod_factorial_dvd_prod_mul_det_vandermonde_sq` with the determinant expanded; the sign
+relating the two orders of the differences does not affect divisibility. -/
+theorem prod_factorial_dvd_prod_mul_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
+    (∏ k ∈ Finset.range m, ((2 * k + 1).factorial : ℤ))
+      ∣ ∏ k ∈ Finset.range m, b k * ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2) := by
+  have hdet := det_vandermonde_eq_prod_range m fun k => b k ^ 2
+  set s : ℤ := (-1) ^ (∑ i : Fin m, (Finset.Ioi i).card)
+  have hs : s * s = 1 := by rw [← mul_pow]; norm_num
+  have hprod : ∏ k ∈ Finset.range m, ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2)
+      = s * (Matrix.vandermonde fun i : Fin m => b i ^ 2).det := by
+    rw [hdet, ← mul_assoc, hs, one_mul]
+  rw [Finset.prod_mul_distrib, hprod, ← Fin.prod_univ_eq_prod_range b m, mul_left_comm]
+  exact (prod_factorial_dvd_prod_mul_det_vandermonde_sq fun i : Fin m => b i).mul_left _
 
 end TauCeti

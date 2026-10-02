@@ -560,12 +560,10 @@ noncomputable def weightTorusToBaseChangeCoordinateMap :
 /-- The factored weight-torus map recovers its ambient transported coordinate map, and so
 determines it. -/
 @[simp]
-theorem mkQuotient_comp_weightTorusToBaseChangeCoordinateMap :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
-          (baseChangeDefiningIdeal n hn A) ≫
-        weightTorusToBaseChangeCoordinateMap n hn A =
+theorem coordinateMap_comp_weightTorusToBaseChangeCoordinateMap :
+    coordinateMap n hn A ≫ weightTorusToBaseChangeCoordinateMap n hn A =
       GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (basisWeight n) := by
-  unfold baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
+  unfold coordinateMap baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator (CartanMatrix.D n))
     (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
