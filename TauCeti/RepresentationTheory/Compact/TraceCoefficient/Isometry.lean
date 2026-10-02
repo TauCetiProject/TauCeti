@@ -18,7 +18,7 @@ Thus multiplying it by `√d` identifies the Hilbert-Schmidt space isometrically
 Peter-Weyl block. We use `EuclideanSpace 𝕜 (Fin d × Fin d)` for the Hilbert-Schmidt
 space: the coordinate `(i, j)` is the matrix entry in row `i`, column `j`.
 
-The normalized trace identification intertwines two-sided conjugation of operators with
+The normalized trace identification intertwines the two-sided action on operators with
 bi-translation on `L²(G)`. Over a skeleton of the unitary dual its images form a Hilbert
 sum, providing the isometric block maps for the equivariant Peter-Weyl decomposition.
 

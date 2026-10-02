@@ -58,6 +58,21 @@ noncomputable def peterWeylTraceEquiv (h : IsIrrepSkeleton models) :
       lp (fun i => EuclideanSpace 𝕜 (Fin (models i).dim × Fin (models i).dim)) 2 :=
   (isHilbertSum_traceCoeffBlock h).linearIsometryEquiv
 
+/-- Each row-column coordinate is the inner product with the corresponding transposed
+Peter-Weyl block basis vector, viewed in `L²(G)`. -/
+@[simp]
+theorem peterWeylTraceEquiv_apply (h : IsIrrepSkeleton models)
+    (f : Lp 𝕜 2 (haarProb G)) (i : ι) (j k : Fin (models i).dim) :
+    peterWeylTraceEquiv h f i (j, k) =
+      ⟪(peterWeylBlockOrthonormalBasis (models i) (k, j) : Lp 𝕜 2 (haarProb G)), f⟫_𝕜 := by
+  classical
+  have hs : (peterWeylTraceEquiv h).symm
+      (lp.single 2 i (EuclideanSpace.single (j, k) 1)) =
+        (peterWeylBlockOrthonormalBasis (models i) (k, j) : Lp 𝕜 2 (haarProb G)) := by
+    simp [peterWeylTraceEquiv]
+  rw [← hs, LinearIsometryEquiv.inner_map_eq_flip, LinearIsometryEquiv.symm_symm,
+    lp.inner_single_left, EuclideanSpace.inner_single_left, map_one, one_mul]
+
 /-- Reconstruct an `L²` function as the sum of its normalized trace coefficients. -/
 theorem peterWeylTraceEquiv_symm_apply (h : IsIrrepSkeleton models)
     (a : lp (fun i => EuclideanSpace 𝕜 (Fin (models i).dim × Fin (models i).dim)) 2) :
