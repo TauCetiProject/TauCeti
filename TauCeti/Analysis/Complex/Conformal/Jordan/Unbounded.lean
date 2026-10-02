@@ -50,26 +50,14 @@ namespace TauCeti
 
 variable {U : Set ℂ} {q : ℂ}
 
-/-- The inversion `z ↦ (z - q)⁻¹` is injective on all of `ℂ`, the centre `q` going to `0`. -/
-private theorem injective_inv_sub (q : ℂ) : Injective fun z : ℂ => (z - q)⁻¹ :=
-  inv_injective.comp (sub_left_injective (b := q))
-
-/-- The inversion `z ↦ (z - q)⁻¹` is inverted by `w ↦ q + w⁻¹`. -/
-private theorem image_inv_sub_eq_preimage (q : ℂ) (S : Set ℂ) :
-    (fun z : ℂ => (z - q)⁻¹) '' S = (fun w : ℂ => q + w⁻¹) ⁻¹' S := by
-  ext w
-  constructor
-  · rintro ⟨z, hz, rfl⟩
-    simpa using hz
-  · intro hw
-    exact ⟨q + w⁻¹, hw, by simp⟩
-
 /-- The inversion `z ↦ (z - q)⁻¹` maps an open set not containing `q` to an open set. -/
 theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
     IsOpen ((fun z : ℂ => (z - q)⁻¹) '' U) := by
   -- the image is the preimage of `U` under `w ↦ q + w⁻¹`, which is continuous away from `0`
   have : (fun z : ℂ => (z - q)⁻¹) '' U = {0}ᶜ ∩ (fun w : ℂ => q + w⁻¹) ⁻¹' U := by
-    rw [image_inv_sub_eq_preimage]
+    rw [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
+      (g := fun w : ℂ => q + w⁻¹)
+      (by intro z; simp) (by intro w; simp)]
     exact (inter_eq_right.mpr fun w hw (hw0 : w = 0) => hqU (by simpa [hw0] using hw)).symm
   rw [this]
   exact (continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hUo
@@ -119,10 +107,15 @@ theorem closure_image_inv_sub (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
   · rcases eq_or_ne w 0 with rfl | hw0
     · exact mem_insert _ _
     refine mem_insert_of_mem _ ?_
-    rw [image_inv_sub_eq_preimage]
+    rw [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
+      (g := fun w : ℂ => q + w⁻¹)
+      (by intro z; simp) (by intro w; simp)]
     have hκ : ContinuousAt (fun w : ℂ => q + w⁻¹) w := by fun_prop (disch := exact hw0)
     have h := mem_closure_image hκ hw
-    rwa [image_inv_sub_eq_preimage, image_preimage_eq _ fun z => ⟨(z - q)⁻¹, by simp⟩] at h
+    rwa [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
+      (g := fun w : ℂ => q + w⁻¹)
+      (by intro z; simp) (by intro w; simp),
+      image_preimage_eq _ fun z => ⟨(z - q)⁻¹, by simp⟩] at h
   · -- `U` reaches infinity, where the inversion tends to `0`
     have : NeBot (cobounded ℂ ⊓ 𝓟 U) := by
       rw [neBot_iff, Ne, inf_principal_eq_bot, ← isBounded_def]
@@ -146,7 +139,8 @@ theorem frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬
     exact hq (subset_closure (hz0 ▸ hz))
   have hV := isOpen_image_inv_sub hUo fun h => hq (subset_closure h)
   rw [hV.frontier_eq, closure_image_inv_sub hq hUb, insert_sdiff_of_notMem _ hU0,
-    hUo.frontier_eq, image_sdiff (injective_inv_sub q)]
+    hUo.frontier_eq, image_sdiff (f := fun z : ℂ => (z - q)⁻¹)
+      (inv_injective.comp (sub_left_injective (b := q)))]
 
 /-- **Inverting an unbounded Jordan domain gives a bounded Jordan domain.**  If the frontier of an
 open unbounded set `U`, together with the point at infinity, is a Jordan curve of the Riemann sphere
@@ -174,7 +168,7 @@ theorem isJordanCurve_frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closur
       exact OnePoint.continuousAt_coe.mpr (ContinuousAt.inv₀ (by fun_prop)
         (sub_ne_zero.mpr fun h => hq (frontier_subset_closure (h ▸ hz))))
   · refine (injOn_insert OnePoint.infty_notMem_image_coe).mpr
-      ⟨InjOn.image_of_comp (injective_inv_sub q).injOn, ?_⟩
+      ⟨InjOn.image_of_comp (inv_injective.comp (sub_left_injective (b := q))).injOn, ?_⟩
     rintro ⟨_, ⟨z, hz, rfl⟩, hz0⟩
     have hzq : z = q := by simpa [g, sub_eq_zero] using hz0
     exact hq (frontier_subset_closure (hzq ▸ hz))
@@ -204,7 +198,7 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
     isSimplyConnected_image_of_differentiableOn_of_injOn hUo hUc
       (DifferentiableOn.inv (h := fun z : ℂ => z - q) (by fun_prop) fun z hz =>
         sub_ne_zero.mpr fun (h : z = q) => hqU (h ▸ hz))
-      (injective_inv_sub q).injOn
+      (inv_injective.comp (sub_left_injective (b := q))).injOn
   have hVfr := frontier_image_inv_sub hUo hq hUb
   obtain ⟨g, hgc, hgd, hgV, hgcl, hgR, hg0⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hVo hVc
@@ -247,7 +241,7 @@ theorem exists_prevertices_of_isJordanCurve_insert_infty {ι : Type*} (hUo : IsO
       Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ) := by
   obtain ⟨f, hfc, hfd, hfH, hfcl, hfR, hfinf⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty hUo hUc hq hUJ
-  obtain ⟨a, ha, hfa⟩ := exists_injective_forall_eq_of_bijOn_im_eq_zero hfR hv hvU
+  obtain ⟨a, ha, hfa⟩ := exists_injective_forall_eq_of_surjOn_im_eq_zero hfR.surjOn hv hvU
   exact ⟨f, a, ha, hfd, hfc, hfcl.injOn, hfH, hfa, hfinf⟩
 
 end TauCeti
