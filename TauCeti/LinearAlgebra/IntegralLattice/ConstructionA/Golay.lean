@@ -60,11 +60,11 @@ theorem isPosDef_constructionALattice : constructionALattice.IsPosDef :=
 /-- **The Golay Construction A lattice is even.** -/
 theorem isEven_constructionALattice : constructionALattice.IsEven := by
   rw [constructionALattice_eq_integralLattice]
-  exact ConstructionA.isEven_integralLattice_two_of_isTypeII isTypeII_code
+  exact ConstructionA.isEven_integralLattice_two_of_isDoublyEven isDoublyEven_code
 
 /-- **The Golay Construction A lattice is unimodular.** -/
 theorem isUnimodular_constructionALattice : constructionALattice.IsUnimodular := by
   rw [constructionALattice_eq_integralLattice]
-  exact ConstructionA.isUnimodular_integralLattice_two_of_isTypeII isTypeII_code
+  exact ConstructionA.isUnimodular_integralLattice_toAddSubgroup_of_isSelfDual 2 isSelfDual_code
 
 end TauCeti.BinaryGolay

@@ -288,4 +288,12 @@ theorem isUnimodular_integralLattice_toAddSubgroup_iff (C : Submodule (ZMod m) (
   rw [isUnimodular_integralLattice_iff, Submodule.toAddSubgroup_toZModSubmodule,
     Submodule.isSelfDual_iff]
 
+/-- The Construction A lattice of a self-dual linear code over `ZMod m` is unimodular. -/
+theorem isUnimodular_integralLattice_toAddSubgroup_of_isSelfDual
+    {C : Submodule (ZMod m) (ι → ZMod m)} (hC : C.IsSelfDual) :
+    (integralLattice m C.toAddSubgroup
+      ((toZModSubmodule_toAddSubgroup_le_euclideanDual_iff m C).mpr
+        hC.isSelfOrthogonal)).IsUnimodular :=
+  (isUnimodular_integralLattice_toAddSubgroup_iff m C hC.isSelfOrthogonal).mpr hC
+
 end TauCeti.ConstructionA
