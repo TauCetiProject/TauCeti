@@ -71,6 +71,31 @@ def vertexEquiv : AffineE6 ≃ Unit ⊕ Fin 3 ⊕ Fin 3 where
   left_inv v := by cases v <;> rfl
   right_inv s := by rcases s with _ | _ | _ <;> rfl
 
+@[simp]
+theorem vertexEquiv_center : vertexEquiv center = Sum.inl () :=
+  -- Parentheses keep the proof from exporting definitional equality, so the body stays hidden.
+  (rfl)
+
+@[simp]
+theorem vertexEquiv_inner (i : Fin 3) : vertexEquiv (inner i) = Sum.inr (Sum.inl i) :=
+  (rfl)
+
+@[simp]
+theorem vertexEquiv_outer (i : Fin 3) : vertexEquiv (outer i) = Sum.inr (Sum.inr i) :=
+  (rfl)
+
+@[simp]
+theorem vertexEquiv_symm_inl (u : Unit) : vertexEquiv.symm (Sum.inl u) = center :=
+  (rfl)
+
+@[simp]
+theorem vertexEquiv_symm_inr_inl (i : Fin 3) :
+    vertexEquiv.symm (Sum.inr (Sum.inl i)) = inner i := (rfl)
+
+@[simp]
+theorem vertexEquiv_symm_inr_inr (i : Fin 3) :
+    vertexEquiv.symm (Sum.inr (Sum.inr i)) = outer i := (rfl)
+
 instance : Fintype AffineE6 := Fintype.ofEquiv _ vertexEquiv.symm
 
 /-- `TauCeti.Quiver.AffineE6` has seven vertices, as the extended Dynkin diagram `E₆~` should. -/
