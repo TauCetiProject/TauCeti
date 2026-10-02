@@ -151,8 +151,9 @@ theorem wreathWitness_eq_one_iff (g : WreathC2) :
 
 /-- **The universal identity:** the graph cochain of the tautological character of `C₂ ≀ C₂`, at
 every element `t = (a, 0, 1)` outside the base group, is the `D₁₆` extension cocycle plus the
-coboundary of the witness, `ν_taut = c_{D₁₆} + δ w`. So the index-two Evens norm of the
-tautological character is the class of the extension `D₁₆ → C₂ ≀ C₂`. -/
+coboundary of the witness, `ν_taut = c_{D₁₆} + δ w`. This is an identity of cochains; the
+consequence that the index-two Evens norm of the tautological character is the class of the
+extension `D₁₆ → C₂ ≀ C₂` needs passing from cochains to classes and is not formalised here. -/
 theorem evensGraphCochain_wreath (hB : coordB t = 0) (hC : coordC t = 1) (g h : WreathC2) :
     evensGraphCochain wreathBase t wreathTautological (g, h) =
       wreathD16Cocycle (g, h) + (wreathWitness h - wreathWitness (g * h) + wreathWitness g) := by
