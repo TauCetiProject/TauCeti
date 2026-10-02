@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Basic
 public import TauCeti.Topology.Algebra.ConstMulAction
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
 import TauCeti.Topology.LocallyFinite
 
 /-!
