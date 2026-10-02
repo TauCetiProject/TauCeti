@@ -161,12 +161,16 @@ private theorem exists_h2MuToUnits_cup_kummerClass {a b : Kˣ} {α β : (Separab
         explicitH2AddEquivContinuousCohomology _ _ (W : H2 _ _) ∧
       ∀ g k, (W : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) (g, k) =
         Additive.ofMul (if g • α = α ∨ k • β = β then 1 else -1) := by
+  -- transport the cup product to explicit cocycles
   rw [kummerClass_eq_kummerCocycleModTwoClass_of_sq_eq K a α hα,
     kummerClass_eq_kummerCocycleModTwoClass_of_sq_eq K b β hβ,
-    trivialF2TopPairing_cup_one_one_explicitH1, h2MuToUnits_explicitH2,
-    kummerCocycleModTwoClass_def, kummerCocycleModTwoClass_def, explicitCup11_mk, explicitCoeff2_mk,
-    explicitCoeff2_mk]
+    trivialF2TopPairing_cup_one_one_explicitH1, h2MuToUnits_explicitH2]
+  -- unfold the explicit classes to their representing cocycles
+  rw [kummerCocycleModTwoClass_def, kummerCocycleModTwoClass_def, explicitCup11_mk,
+    explicitCoeff2_mk, explicitCoeff2_mk]
   refine ⟨_, rfl, fun g k ↦ Additive.toMul.injective ?_⟩
+  -- evaluate the two coefficient pullbacks at `(g, k)`; `rw [cocyclesMap2_apply]` cannot reach
+  -- them, since the equivariance proof argument is not type-correct at reducible transparency
   refine (congrArg Additive.toMul (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g k)).trans ?_
   refine (congrArg (fun x ↦ Additive.toMul
     ((kummerShortExact K 2 (isUnit_of_invertible _)).inclDistribMulActionHom x))
@@ -175,10 +179,11 @@ private theorem exists_h2MuToUnits_cup_kummerClass {a b : Kˣ} {α β : (Separab
   -- `cocyclesMap2_apply` leaves the coefficient map as the coerced additive homomorphism of
   -- `trivialF2ToMu2 K`, evaluated at the identity of `G_K`; `change` exposes the equivariant map
   -- and the cocycle values that the value lemmas below are stated for.
-  change Additive.toMul (kummerCoeffIncl K 2 (trivialF2ToMu2 K (trivialF2Pairing _
-    ((kummerCocycleModTwo K hα : _ → _) g) (g • (kummerCocycleModTwo K hβ : _ → _) k)))) = _
-  rw [toMul_kummerCoeffIncl_trivialF2ToMu2, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
-    trivialF2Pairing_apply, AddEquiv.apply_symm_apply, kummerCocycleModTwo_apply,
+  change (kummerCoeffIncl K 2 (trivialF2ToMu2 K (trivialF2Pairing _
+    ((kummerCocycleModTwo K hα : _ → _) g) (g • (kummerCocycleModTwo K hβ : _ → _) k)))).toMul = _
+  -- evaluate the coefficient values
+  simp only [toMul_kummerCoeffIncl_trivialF2ToMu2, TopRep.distribMulAction_smul,
+    trivialF2_ρ_apply_apply, trivialF2Pairing_apply, AddEquiv.apply_symm_apply,
     kummerCocycleModTwo_apply, toMul_ofMul]
   by_cases h₁ : g • α = α <;> by_cases h₂ : k • β = β <;>
     simp only [h₁, h₂, ↓reduceIte, mul_zero, mul_one, one_ne_zero, true_or, or_true, or_self]

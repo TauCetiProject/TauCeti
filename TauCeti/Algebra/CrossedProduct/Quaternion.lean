@@ -82,15 +82,16 @@ private noncomputable def quadraticQuaternionBasis (hα : α ^ 2 = algebraMap K 
   j := basis _ σ
   k := inc _ α * basis _ σ
   i_mul_i := by
-    rw [← map_mul, ← sq, hα, AlgHom.commutes, Algebra.algebraMap_eq_smul_one, zero_smul, add_zero]
+    rw [← map_mul, ← sq, hα]
+    simp [Algebra.algebraMap_eq_smul_one]
   j_mul_j := by
-    rw [basis_mul_basis, TwoCocycle.quadratic_toFun_of_ne_one_of_ne_one h b hσ hσ,
-      mul_self_eq_one h, basis_one, TwoCocycle.toFun_one_left, TwoCocycle.quadratic_toFun_one_right,
-      Units.val_one, map_one, mul_one, Units.coe_map, MonoidHom.coe_ofClass, AlgHom.commutes,
-      Algebra.algebraMap_eq_smul_one]
+    rw [basis_mul_basis, mul_self_eq_one h, basis_one,
+      TwoCocycle.quadratic_toFun_of_ne_one_of_ne_one h b hσ hσ]
+    simp [Algebra.algebraMap_eq_smul_one]
   i_mul_j := rfl
   j_mul_i := by
-    rw [basis_mul_inc, apply_eq_neg h hα hαK hσ, map_neg, neg_mul, zero_smul, zero_sub]
+    rw [basis_mul_inc, apply_eq_neg h hα hαK hσ]
+    simp
 
 /-- **The quaternion algebra `(a, b)` is the crossed product of the quadratic cocycle of `b` over
 `K(√a)`.** If `L/K` is Galois with automorphism group of order two and `α ∈ L ∖ K` has
