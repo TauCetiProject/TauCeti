@@ -108,12 +108,8 @@ variable [Module.Flat R H] [Module.Flat R (H ⧸ Subalgebra.toSubmodule I.coinva
 theorem IsNormal.isHopfSubalgebra_coinvariants (hI : I.IsNormal) :
     IsHopfSubalgebra I.coinvariants where
   comul_mem _ hx := by
-    have hcarrier : hI.coinvariantsSubcoalgebra.carrier =
-        Subalgebra.toSubmodule I.coinvariants :=
-      Submodule.ext fun _ ↦ hI.mem_coinvariantsSubcoalgebra
-    rw [← hcarrier]
-    exact (hI.coinvariantsSubcoalgebra).comul_mem
-      ((hI.mem_coinvariantsSubcoalgebra).2 hx)
+    rw [← hI.coinvariantsSubcoalgebra_carrier]
+    exact hI.coinvariantsSubcoalgebra.comul_mem ((hI.mem_coinvariantsSubcoalgebra).2 hx)
   antipode_mem _ hx := hI.antipode_mem_coinvariants hx
 
 end HopfIdeal
