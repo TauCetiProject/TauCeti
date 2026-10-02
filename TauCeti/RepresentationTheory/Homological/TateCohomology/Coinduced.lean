@@ -40,11 +40,11 @@ representation. This is the form in which the graded pieces `A ⧸ ϖ • A` of 
 * `TauCeti.TateCohomology.isZero_leftRegular`: for a finite group `G`, `Ĥⁿ(G, k[G]) = 0`.
 * `TauCeti.TateCohomology.isZero_res_coindBot`, `TauCeti.TateCohomology.isZero_res_indBot`,
   `TauCeti.TateCohomology.isZero_res_leftRegular`: for a finite subgroup `S` of any group `G`,
-  `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
+  `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
 * `TauCeti.TateCohomology.isZero_of_forall_eq_sum`: if the identity of `C` is a norm
-  `x ↦ ∑ g, g φ(g⁻¹ x)`, then `Ĥⁿ(G, C) = 0` for all `n : ℤ`.
+  `x ↦ ∑ g, g φ(g⁻¹ x)`, then `Ĥⁿ(G, C) = 0` for all `n : ℤ`.
 * `TauCeti.TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular`: if `V` is
-  free of rank one over `k[G]`, then `Ĥⁿ(G, V ⧸ r • V) = 0` over `ℤ` for every `r : k`.
+  free of rank one over `k[G]`, then `Ĥⁿ(G, V ⧸ r • V) = 0` over `ℤ` for every `r : k`.
 
 ## References
 
