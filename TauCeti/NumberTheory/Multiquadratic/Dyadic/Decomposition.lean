@@ -78,11 +78,11 @@ theorem ncard_primesOver_two_mul_two_pow_eq_finrank
     split_ifs with hfive
     · exact (inertiaDeg_eq_two_iff_exists_squarefree_prod_eq_mod_eight_eq_five_mul_sq
         hr htop Q).mpr hfive
-    · have hne : Q.inertiaDeg ℤ ≠ 2 := fun h => hfive
-        ((inertiaDeg_eq_two_iff_exists_squarefree_prod_eq_mod_eight_eq_five_mul_sq
-          hr htop Q).mp h)
-      simpa using ((Nat.dvd_prime Nat.prime_two).mp
-        (inertiaDeg_dvd_two (p := 2) hr htop Q)).resolve_right hne
+    · rw [pow_zero, inertiaDeg_eq_one_iff_not_exists_prod_eq_mod_eight_eq_five_mul_sq
+        hr htop Q]
+      simpa only [← Int.cast_prod,
+        Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mod_eight_eq_five_mul_sq]
+        using hfive
   -- Substitute these values in the Galois fundamental identity.
   have h := Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
     (span {(2 : ℤ)}) (𝓞 K) (K ≃ₐ[ℚ] K)
