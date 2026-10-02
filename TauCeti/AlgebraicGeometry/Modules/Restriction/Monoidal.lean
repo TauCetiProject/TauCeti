@@ -20,6 +20,16 @@ The monoidal structure descends precomposition of presheaves through sheafificat
 inclusion of an open subscheme, the coefficient map of `Scheme.Modules.restrictFunctor` is the
 identity. Its comparison with pullback transports the restricted pairing to the actual
 pullback objects, without choosing a new monoidal structure on pullback.
+
+## Main declarations
+
+* `TauCeti.restrictFunctorMonoidal`: the monoidal structure on restriction;
+* `TauCeti.pullbackInclusionExactPairing`: an exact pairing on the pullback objects;
+* `TauCeti.nonempty_hasLeftDual_pullback_inclusion` and
+  `TauCeti.nonempty_hasRightDual_pullback_inclusion`: preservation of module duals;
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_pullback_inclusion` and
+  `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasRightDual_pullback_inclusion`:
+  preservation of quasicoherent-sheaf duals.
 -/
 
 public section
