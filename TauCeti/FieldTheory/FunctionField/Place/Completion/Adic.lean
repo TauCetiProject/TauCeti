@@ -126,10 +126,11 @@ theorem completionAdicEquiv_mem_integers_iff (x : (adic k F p).Completion) :
   rw [HeightOneSpectrum.mem_adicCompletionIntegers, valuation_completionAdicEquiv,
     mem_integers_iff]
 
-/-- The restriction of the completion comparison to the two valuation rings, over the constants. -/
+/-- The continuous restriction of the completion comparison to the two valuation rings,
+over the constants. -/
 def completionIntegersAdicEquiv :
-    (adic k F p).completionPlace.integers ≃ₐ[k] p.adicCompletionIntegers F :=
-  AlgEquiv.ofRingEquiv
+    (adic k F p).completionPlace.integers ≃A[k] p.adicCompletionIntegers F where
+  toAlgEquiv := AlgEquiv.ofRingEquiv
     (f := (completionAdicEquiv k F p).toAlgEquiv.toRingEquiv.restrict
       (adic k F p).completionPlace.integers (p.adicCompletionIntegers F)
       fun x ↦ (completionAdicEquiv_mem_integers_iff k F p x).symm) fun c ↦ by
@@ -141,6 +142,10 @@ def completionIntegersAdicEquiv :
       HeightOneSpectrum.algebraMap_adicCompletionIntegers_apply]
     simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
       ← IsScalarTower.algebraMap_apply k R F]
+  continuous_toFun :=
+    ((completionAdicEquiv k F p).continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun :=
+    ((completionAdicEquiv k F p).symm.continuous.comp continuous_subtype_val).subtype_mk _
 
 /-- The valuation-ring comparison is the restriction of the field comparison. -/
 @[simp]
@@ -173,7 +178,7 @@ theorem completionIntegersAdicEquiv_mem_maximalIdeal_iff
 def completionResidueFieldAdicEquiv :
     (adic k F p).completionPlace.ResidueField ≃ₐ[k]
       IsLocalRing.ResidueField (p.adicCompletionIntegers F) :=
-  IsLocalRing.ResidueField.mapAlgEquiv (completionIntegersAdicEquiv k F p)
+  IsLocalRing.ResidueField.mapAlgEquiv (completionIntegersAdicEquiv k F p).toAlgEquiv
 
 /-- The residue-field comparison commutes with reduction from the completed valuation rings. -/
 @[simp]
@@ -182,7 +187,7 @@ theorem completionResidueFieldAdicEquiv_apply_residue
     completionResidueFieldAdicEquiv k F p
         (IsLocalRing.residue (adic k F p).completionPlace.integers x) =
       IsLocalRing.residue (p.adicCompletionIntegers F) (completionIntegersAdicEquiv k F p x) :=
-  IsLocalRing.ResidueField.mapAlgEquiv_residue (completionIntegersAdicEquiv k F p) x
+  IsLocalRing.ResidueField.mapAlgEquiv_residue (completionIntegersAdicEquiv k F p).toAlgEquiv x
 
 /-- Composing `adicResidueFieldEquiv`, `residueFieldEquivCompletion`, and
 `completionResidueFieldAdicEquiv` gives `residueFieldEquivAdicCompletionIntegers`,
