@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Carrier
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.FiniteField
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.PerfectField
 import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
 
@@ -46,7 +47,7 @@ instance algebraSmooth_quotient :
     | inr _ => exact inferInstance
   rw [definingIdeal_def]
   exact (smoothCommHopfAlgProperty_iff _).mp
-    (CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_finiteField
+    (CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_perfectField
       generator)
 
 /-- The structural morphism of the prime-field short-root type-`F₄` carrier is smooth. -/

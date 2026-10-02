@@ -5,27 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 public import Mathlib.RingTheory.TensorProduct.Maps
+import Mathlib.RingTheory.Etale.Field
+import TauCeti.RingTheory.FiniteType.Tensor.Product
+import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
-# Reduced tensor products over finite fields
+# Reduced tensor products over perfect fields
 
-The tensor product of two reduced algebras over a finite field is reduced, with no
-finite-generation hypothesis on either factor. The cardinality-power Frobenius is linear
-over the ground field. Its injectivity on the two factors therefore gives injectivity on
-the tensor product. In particular every reduced algebra over a finite field is geometrically
-reduced. This supplies the reduced tensor square needed to form reductions of affine groups.
+Every reduced algebra over a perfect field is geometrically reduced: finite subextensions
+of the algebraic closure are étale, so their scalar extensions preserve reducedness.
+The tensor product of two reduced algebras over a perfect field is therefore reduced, with
+no finite-generation hypothesis on either factor. Extend scalars to the algebraic closure
+and apply the reduced tensor-product result there to finitely generated subalgebras.
+This supplies the reduced tensor square needed to form reductions of affine groups.
 
 ## References
 
 * The Stacks Project, [Tag 030U](https://stacks.math.columbia.edu/tag/030U),
   reduced algebras after separable field extension.
 
-The proof uses Mathlib's `FiniteField.frobeniusAlgHom` and
-`TensorProduct.map_injective_of_flat_flat`.
+The proof uses Mathlib's `IsReduced.tensorProduct_of_flat_of_forall_fg` and
+`Algebra.FormallyEtale.of_isSeparable`, together with `TauCeti.isReduced_of_smooth` and
+`TauCeti.instIsReducedTensorProductOfIsAlgClosed`.
 -/
 
 public section
@@ -34,42 +39,51 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-variable (k : Type*) [Field k] [Finite k]
+variable (k : Type*) [Field k] [PerfectField k]
 
-/-- The tensor product of reduced algebras over a finite field is reduced. Neither factor
-needs to be finitely generated. -/
-instance instIsReducedTensorProductOfFiniteField
-    (A B : Type*) [CommRing A] [Algebra k A] [IsReduced A]
-    [CommRing B] [Algebra k B] [IsReduced B] : IsReduced (A ⊗[k] B) := by
-  classical
-  let := Fintype.ofFinite k
-  let fA := (FiniteField.frobeniusAlgHom k A).toLinearMap
-  let fB := (FiniteField.frobeniusAlgHom k B).toLinearMap
-  have hA : Function.Injective fA := by
-    apply (injective_iff_map_eq_zero _).mpr
-    intro x hx
-    exact IsReduced.eq_zero x ⟨Fintype.card k, hx⟩
-  have hB : Function.Injective fB := by
-    apply (injective_iff_map_eq_zero _).mpr
-    intro x hx
-    exact IsReduced.eq_zero x ⟨Fintype.card k, hx⟩
-  have hinj := TensorProduct.map_injective_of_flat_flat fA fB hA hB
-  have hmap (x : A ⊗[k] B) :
-      TensorProduct.map fA fB x = FiniteField.frobeniusAlgHom k (A ⊗[k] B) x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul a b => simp [fA, fB, Algebra.TensorProduct.tmul_pow]
-    | add x y hx hy => simp only [map_add, hx, hy]
-  apply (isReduced_iff_pow_one_lt (Fintype.card k) (Fintype.one_lt_card)).mpr
-  intro x hx
-  apply hinj
-  simpa only [hmap, map_zero, FiniteField.coe_frobeniusAlgHom] using hx
-
-/-- A reduced algebra over a finite field is geometrically reduced, without a
+/-- A reduced algebra over a perfect field is geometrically reduced, without a
 finite-generation hypothesis. -/
-instance instIsGeometricallyReducedOfFiniteField
+instance instIsGeometricallyReducedOfPerfectField
     (A : Type*) [CommRing A] [Algebra k A] [IsReduced A] :
     Algebra.IsGeometricallyReduced k A := by
   rw [Algebra.isGeometricallyReduced_field_iff]
-  infer_instance
+  have : IsReduced (A ⊗[k] AlgebraicClosure k) := by
+    apply IsReduced.tensorProduct_of_flat_of_forall_fg
+    intro B hB
+    let : Field B := (Subalgebra.isField_of_algebraic B).toField
+    have : Algebra.FiniteType k B := ⟨B.fg_top.mpr hB⟩
+    have : Algebra.IsAlgebraic k B :=
+      Algebra.IsAlgebraic.of_injective B.val Subtype.val_injective
+    have : Algebra.FormallyEtale k B := Algebra.FormallyEtale.of_isSeparable k B
+    have : Algebra.Etale k B := ⟨inferInstance,
+      Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
+    exact isReduced_of_smooth A (A ⊗[k] B)
+  exact isReduced_of_injective (Algebra.TensorProduct.comm k (AlgebraicClosure k) A)
+    (Algebra.TensorProduct.comm k (AlgebraicClosure k) A).injective
+
+/-- The tensor product of reduced algebras over a perfect field is reduced. Neither factor
+needs to be finitely generated. -/
+instance instIsReducedTensorProductOfPerfectField
+    (A B : Type*) [CommRing A] [Algebra k A] [IsReduced A]
+    [CommRing B] [Algebra k B] [IsReduced B] : IsReduced (A ⊗[k] B) := by
+  apply IsReduced.tensorProduct_of_flat_of_forall_fg
+  intro C hC
+  have : Algebra.FiniteType k C := ⟨C.fg_top.mpr hC⟩
+  have : IsReduced C := isReduced_of_injective C.val Subtype.val_injective
+  let L := AlgebraicClosure k
+  have : IsReduced ((L ⊗[k] C) ⊗[L] (L ⊗[k] A)) := inferInstance
+  have : IsReduced ((L ⊗[k] C) ⊗[k] A) :=
+    isReduced_of_injective
+      (Algebra.TensorProduct.cancelBaseChange k L L (L ⊗[k] C) A).symm
+      (Algebra.TensorProduct.cancelBaseChange k L L (L ⊗[k] C) A).symm.injective
+  have : IsReduced (L ⊗[k] (C ⊗[k] A)) :=
+    isReduced_of_injective (Algebra.TensorProduct.assoc k k L L C A).symm
+      (Algebra.TensorProduct.assoc k k L L C A).symm.injective
+  have : IsReduced (C ⊗[k] A) :=
+    isReduced_of_injective
+      (Algebra.TensorProduct.includeRight : C ⊗[k] A →ₐ[k] L ⊗[k] (C ⊗[k] A))
+      (Algebra.TensorProduct.includeRight_injective (algebraMap k L).injective)
+  exact isReduced_of_injective (Algebra.TensorProduct.comm k A C)
+    (Algebra.TensorProduct.comm k A C).injective
 
 end TauCeti
