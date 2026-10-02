@@ -59,7 +59,7 @@ field in `TauCeti.NumberTheory.HilbertSymbol.NormSubgroup`, as
   nonsquare, the characters `(·, a)_K` and `(·, b)_K` take every pair of values.
 * `TauCeti.exists_not_isSquare_hilbertSymbol_eq_one`: the norm group of `K(√a)` contains a
   nonsquare, for every `a`.
-* `TauCeti.surjective_uncurry_hilbertSymbol`: the Hilbert symbol takes both values `±1`.
+* `TauCeti.uncurry_hilbertSymbol_surjective`: the Hilbert symbol takes both values `±1`.
 
 ## References
 
@@ -207,7 +207,7 @@ theorem exists_not_isSquare_hilbertSymbol_eq_one (h2 : (2 : K) ≠ 0) (a : Kˣ) 
 /-- **The local Hilbert symbol takes both values.** If `2 ≠ 0` in `K`, then every sign `±1` is
 `(a, b)_K` for some `a, b ∈ Kˣ`; in particular some quaternion algebra `ℍ[K,a,b]` is a division
 algebra. -/
-theorem surjective_uncurry_hilbertSymbol (h2 : (2 : K) ≠ 0) :
+theorem uncurry_hilbertSymbol_surjective (h2 : (2 : K) ≠ 0) :
     Function.Surjective (Function.uncurry (hilbertSymbol (K := K))) := by
   have : Invertible (2 : K) := invertibleOfNonzero h2
   intro s

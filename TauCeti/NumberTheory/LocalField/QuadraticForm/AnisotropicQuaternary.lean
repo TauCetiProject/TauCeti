@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.BrauerClass
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister.Hyperbolic
+public import TauCeti.NumberTheory.HilbertSymbol.Pfister
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Classification
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
@@ -28,7 +28,7 @@ Hasse invariants `[(a, b)] · [(-1, -1)]` and `[(c, d)] · [(-1, -1)]` agree. So
 `ℍ[K,c,d]` have the same Brauer class and are isomorphic. Since the split quaternion algebras are
 all isomorphic to `M₂(K)`, the Hilbert symbol `(a, b)_K` is a complete invariant of `ℍ[K,a,b]`, and
 there are exactly two quaternion algebras over `K` up to isomorphism; both occur, because the
-Hilbert symbol takes both values (`TauCeti.surjective_uncurry_hilbertSymbol`).
+Hilbert symbol takes both values (`TauCeti.uncurry_hilbertSymbol_surjective`).
 
 Over `ℚ_2`, where `(-1, -1) = -1`, the anisotropic quaternary form is the sum of four squares
 `<1, 1, 1, 1>`, the norm form of Hamilton's quaternions.
@@ -103,12 +103,13 @@ end RegularFormClass
 
 namespace BrauerGroup
 
-/-- Two quaternion division algebras over `K` have the same Brauer class: Witt cancellation of
-`<1>` from their isometric norm forms leaves isometric pure norm forms `<-a, -b, ab>` and
-`<-c, -d, cd>`, whose Hasse invariants are `[(a, b)] · [(-1, -1)]` and `[(c, d)] · [(-1, -1)]`. -/
+/-- Two quaternion symbols over `K` with Hilbert symbol `-1` have the same Brauer class. -/
 private theorem quaternionClass_eq_of_hilbertSymbol_eq_neg_one {a b c d : Kˣ}
     (hab : hilbertSymbol a b = -1) (hcd : hilbertSymbol c d = -1) :
     quaternionClass a b = quaternionClass c d := by
+  -- Witt cancellation of `<1>` from the isometric norm forms leaves isometric pure norm forms
+  -- `<-a, -b, ab>` and `<-c, -d, cd>`, whose Hasse invariants are `[(a, b)] · [(-1, -1)]` and
+  -- `[(c, d)] · [(-1, -1)]`.
   -- `<<a, b>>` is `<1>` plus the pure norm form `<-a, -b, ab>`.
   have hsplit (a b : Kˣ) : pfisterFormClass ![a, b] =
       Quotient.mk (regularFormSetoid K) ⟨1, fun _ => 1⟩ +
@@ -140,7 +141,7 @@ namespace QuaternionAlgebra
 
 /-- **Quaternion algebras over a local field are classified by the Hilbert symbol**: `ℍ[K,a,b]` and
 `ℍ[K,c,d]` are isomorphic exactly when `(a, b)_K = (c, d)_K`. Since the symbol takes both values
-(`TauCeti.surjective_uncurry_hilbertSymbol`), there are exactly two quaternion algebras over `K` up
+(`TauCeti.uncurry_hilbertSymbol_surjective`), there are exactly two quaternion algebras over `K` up
 to isomorphism: `M₂(K)` and the quaternion division algebra. -/
 theorem nonempty_algEquiv_iff_hilbertSymbol_eq (a b c d : Kˣ) :
     Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] ℍ[K,(c : K),(d : K)]) ↔
