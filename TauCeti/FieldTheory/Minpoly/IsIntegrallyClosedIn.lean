@@ -267,7 +267,11 @@ theorem mem_range_algebraMap_of_mem_adjoin_of_isSeparable_of_isIntegrallyClosedI
 /-- For `k` relatively algebraically closed in `F`, `A/k` finite separable, and `E = A · F`
 (inside `E`), the degrees satisfy `[E : A(x)] = [F : k(x)]` for every `x ∈ F`.
 This is the finite separable case of Stichtenoth, *Algebraic Function Fields and Codes*, second
-edition, Proposition 3.6.1(c). -/
+edition, Proposition 3.6.1(c).
+
+For the scalar-tower formulation with `constantCompositum`, see
+`TauCeti.finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top` in
+`TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree`. -/
 theorem relfinrank_sup_adjoin_simple_eq_relfinrank_adjoin_simple_of_isIntegrallyClosedIn
     (hex : IsIntegrallyClosedIn k F) (A : IntermediateField k E)
     [FiniteDimensional k A] [Algebra.IsSeparable k A]
