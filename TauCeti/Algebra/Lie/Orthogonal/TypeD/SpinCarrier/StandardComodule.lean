@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Levi
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 
 /-!
