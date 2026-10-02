@@ -130,6 +130,16 @@ theorem homCokernelEquivExt_homCokernelEquiv (hT : T.ShortExact)
       (Ext.mk₀ e.inv).comp (homCokernelEquivExt R hS Y x) (zero_add 1) := by
   simp [homCokernelEquiv]
 
+variable {Y} in
+/-- Presentation comparisons are natural in the target object. -/
+@[simp]
+theorem homCokernelEquiv_naturality (hT : T.ShortExact) [Projective S.X₂] [Projective T.X₂]
+    (e : S.X₃ ≅ T.X₃) {Z : C} (g : Y ⟶ Z) (x : HomCokernel R S.f Y) :
+    homCokernelEquiv R hS Z hT e (HomCokernel.map R S.f g x) =
+      HomCokernel.map R T.f g (homCokernelEquiv R hS Y hT e x) := by
+  apply (homCokernelEquivExt R hT Z).injective
+  simp
+
 /-- Comparing a presentation with itself induces the identity on its Hom cokernel. -/
 @[simp]
 theorem homCokernelEquiv_refl [Projective S.X₂] :
