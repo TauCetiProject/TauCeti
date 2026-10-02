@@ -21,9 +21,10 @@ Two entropy-based transport problems share the coupling constraint of Kantorovic
   `∫⁻ c dπ + ε * klDiv π (μ.prod ν)` over the same couplings. Its value is
   `TauCeti.entropicTransportCost c ε μ ν`.
 
-The two are the same problem. For probability measures `μ`, `ν` and a cost that is finite
-`μ.prod ν`-almost everywhere, let `Z = ∫ e^{-c/ε} d(μ ⊗ ν)` be the partition function and
-`R = Z⁻¹ e^{-c/ε} (μ ⊗ ν)` the Gibbs measure, which is Mathlib's tilted measure
+The two are the same problem. For probability measures `μ`, `ν`, a cost that is finite
+`μ.prod ν`-almost everywhere, and a positive temperature `ε`, let
+`Z = ∫ e^{-c/ε} d(μ ⊗ ν)` be the partition function and `R = Z⁻¹ e^{-c/ε} (μ ⊗ ν)` the Gibbs
+measure, which is Mathlib's tilted measure
 `(μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)`. Then for every probability measure `π` on
 `X × Y`
 `∫ c dπ + ε * klDiv π (μ ⊗ ν) = ε * klDiv π R - ε * log Z`,
@@ -44,8 +45,8 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
 * `TauCeti.entropicTransportCost_zero` and `TauCeti.transportCost_le_entropicTransportCost`: at
   zero temperature the regularised value is the transport cost, which it always dominates.
 * `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
-  constant; with `Mathlib`'s `InformationTheory.klDiv_eq_zero_iff`, the product coupling is then
-  the unique optimal plan at positive temperature.
+  constant; when it is finite, with `Mathlib`'s `InformationTheory.klDiv_eq_zero_iff`, the product
+  coupling is then the unique optimal plan at positive temperature.
 * `TauCeti.lintegral_add_mul_klDiv_eq_mul_klDiv_tilted`: the Gibbs identity above, plan by plan.
 * `TauCeti.entropicTransportCost_eq_mul_schroedingerValue_add`: the same identity for the
   optimal values.
