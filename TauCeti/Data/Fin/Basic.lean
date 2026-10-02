@@ -39,6 +39,9 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
+* `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.card_filter_prod_succAbove`: a count of pairs in `Fin (n + 1)` split at a point in each
+  coordinate.
 * `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
   read off the value, below and at the top element.  Mathlib's `Fin.orderSucc_castSucc` and
   `Fin.orderSucc_last` state the same thing in the `castSucc`/`last` normal form; these are the
@@ -158,6 +161,28 @@ theorem predAbove_succ_succAbove {n : ℕ} (p i : Fin n) : p.predAbove (p.succ.s
   rcases le_or_gt i p with h | h
   · rw [succAbove_succ_of_le _ _ h, predAbove_castSucc_of_le _ _ h]
   · rw [succAbove_succ_of_lt _ _ h, predAbove_succ_of_le _ _ h.le]
+
+/-- The value of `p.succAbove i`: the value of `i` below `p`, and one more from `p` on. -/
+theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
+    (p.succAbove i : ℕ) = if (i : ℕ) < p then (i : ℕ) else (i : ℕ) + 1 := by
+  unfold succAbove
+  split_ifs <;> simp_all [lt_def]
+
+/-- A count of pairs in `Fin (n + 1)`, split at `a` in the first coordinate and at `b` in the
+second: the pair `(a, b)`, the pairs with exactly one coordinate at its split point, and the pairs
+embedded by `a.succAbove` and `b.succAbove`. -/
+theorem card_filter_prod_succAbove {n : ℕ} (P : Fin (n + 1) × Fin (n + 1) → Prop)
+    [DecidablePred P] (a b : Fin (n + 1)) :
+    (Finset.univ.filter P).card =
+      (if P (a, b) then 1 else 0) +
+        (Finset.univ.filter fun j : Fin n => P (a, b.succAbove j)).card +
+        (Finset.univ.filter fun i : Fin n => P (a.succAbove i, b)).card +
+        (Finset.univ.filter fun p : Fin n × Fin n =>
+          P (a.succAbove p.1, b.succAbove p.2)).card := by
+  simp only [Finset.card_filter, Fintype.sum_prod_type]
+  rw [sum_univ_succAbove _ a]
+  simp_rw [sum_univ_succAbove _ b]
+  rw [Finset.sum_add_distrib, ← add_assoc]
 
 /-- Below the top element of `Fin n`, the order successor increments the value. -/
 theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
