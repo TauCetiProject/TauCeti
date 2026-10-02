@@ -36,6 +36,8 @@ is trivial. The general argument is
   `TauCeti.IsDemushkin.isAddCyclic_H2_zModTwist_demushkinCharacter`,
   `TauCeti.IsDemushkin.nonempty_addEquiv_H2_zModTwist_demushkinCharacter_zmod`: for an infinite
   Demushkin group, `H²(G, I(χ)/pⁱ)` is cyclic of order `pⁱ`, isomorphic to `ℤ/pⁱ`.
+* `TauCeti.IsDemushkin.moduleBaer_H2_zModTwist_demushkinCharacter`: for an infinite Demushkin
+  group, `H²(G, I(χ)/pⁱ)` satisfies Baer's criterion over `ℤ/pⁱ`.
 * `TauCeti.IsDemushkin.exists_explicitCoeff2_mulPow_eq_of_nsmul_eq_zero`: for an infinite Demushkin
   group, the `pⁱ`-torsion of `H²(G, I(χ)/pⁱ⁺ʲ)` is the image of `H²(G, I(χ)/pⁱ)` under
   multiplication by `pʲ`.
@@ -102,6 +104,7 @@ theorem natCard_H2_zModTwist_demushkinCharacter (i : ℕ) :
     (fun _ ↦ hG.surjective_explicitCoeff2_reduce_demushkinCharacter _)
     hG.natCard_H2_zModTwist_demushkinCharacter_one i
 
+
 /-- **`H²(G, I(χ)/pⁱ)` is cyclic** for an infinite Demushkin group `G` with canonical character
 `χ`. -/
 theorem isAddCyclic_H2_zModTwist_demushkinCharacter (i : ℕ) :
@@ -110,11 +113,22 @@ theorem isAddCyclic_H2_zModTwist_demushkinCharacter (i : ℕ) :
     (fun _ ↦ hG.surjective_explicitCoeff2_reduce_demushkinCharacter _)
     hG.natCard_H2_zModTwist_demushkinCharacter_one i
 
+
 /-- **`H²(G, I(χ)/pⁱ) ≅ ℤ/pⁱ`** for an infinite Demushkin group `G` with canonical character `χ`:
 the top cohomology of the twisted coefficients at level `i` is cyclic of order `pⁱ`. -/
 theorem nonempty_addEquiv_H2_zModTwist_demushkinCharacter_zmod (i : ℕ) :
     Nonempty (H2 G (ZModTwist (demushkinCharacter hG) i) ≃+ ZMod (p ^ i)) :=
   (hasPrescriptionProperty_demushkinCharacter hG).nonempty_addEquiv_H2_zModTwist_zmod
+    (fun _ ↦ hG.surjective_explicitCoeff2_reduce_demushkinCharacter _)
+    hG.natCard_H2_zModTwist_demushkinCharacter_one i
+
+
+/-- **`H²(G, I(χ)/pⁱ)` is self-injective over `ℤ/pⁱ`** for an infinite Demushkin group `G` with
+canonical character `χ`: being `ℤ/pⁱ`, it satisfies Baer's criterion over `ℤ/pⁱ`, so that
+`Hom(-, H²(G, I(χ)/pⁱ))` is exact on the groups killed by `pⁱ`. -/
+theorem moduleBaer_H2_zModTwist_demushkinCharacter (i : ℕ) :
+    Module.Baer (ZMod (p ^ i)) (H2 G (ZModTwist (demushkinCharacter hG) i)) :=
+  (hasPrescriptionProperty_demushkinCharacter hG).moduleBaer_H2_zModTwist
     (fun _ ↦ hG.surjective_explicitCoeff2_reduce_demushkinCharacter _)
     hG.natCard_H2_zModTwist_demushkinCharacter_one i
 

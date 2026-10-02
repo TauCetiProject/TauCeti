@@ -194,12 +194,12 @@ theorem val_zmod_smul (c : ZMod (p ^ i)) (x : ZModTwist χ i) : (c • x).val = 
   rw [← equiv_apply, ZMod.map_smul, equiv_apply, smul_eq_mul]
 
 /-- **`I(χ)/pⁱ` is an injective `ℤ/pⁱ`-module**, in the form of Baer's criterion: it is `ℤ/pⁱ` as
-a `ℤ/pⁱ`-module, which is self-injective (`Module.Baer.zmod_self`). Hence `Hom(-, I(χ)/pⁱ)` is exact
-on the modules killed by `pⁱ`, which is what makes the twisted dual `M ↦ Hom(M, I(χ)/pⁱ)` exact on
-short exact sequences of such modules (`TauCeti.InternalHom.precomp_surjective_of_baer`). -/
+a `ℤ/pⁱ`-module, which is self-injective (`Module.Baer.of_addEquiv_zmod`). Hence
+`Hom(-, I(χ)/pⁱ)` is exact on the modules killed by `pⁱ`, which is what makes the twisted dual
+`M ↦ Hom(M, I(χ)/pⁱ)` exact on short exact sequences of such modules
+(`TauCeti.InternalHom.precomp_surjective_of_baer`). -/
 theorem moduleBaer : Module.Baer (ZMod (p ^ i)) (ZModTwist χ i) :=
-  Module.Baer.of_equiv ((equiv χ i).symm.toLinearEquiv fun c x => ZMod.map_smul _ c x)
-    (Module.Baer.zmod_self _)
+  Module.Baer.of_addEquiv_zmod (equiv χ i)
 
 /-- `G` acts on `I(χ)/pⁱ` through the scalar `charScalar χ i`. -/
 noncomputable instance : SMul G (ZModTwist χ i) where
