@@ -144,13 +144,10 @@ theorem envelopingQuotientRep_mk_zero (s : S) :
 @[simp]
 theorem envelopingQuotientRep_zero_mk (h : H) :
     envelopingQuotientRep R S ψ J hJ ⟨0, h⟩ =
-      (derivationQuotientHom R J ⟨envelopingDerivation R S (ψ h), hJ h⟩ :
-        Module.End R (U ⧸ J)) := by
+      (envelopingQuotientDerivation R S ψ J hJ h : Module.End R (U ⧸ J)) := by
   apply LinearMap.ext
-  intro q
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp only [envelopingQuotientRep_apply, map_zero, zero_mul, zero_add,
-    envelopingQuotientDerivation_apply_mk, derivationQuotientHom_apply_mk]
+  intro a
+  simp only [envelopingQuotientRep_apply, map_zero, zero_mul, zero_add]
 
 /-- Refining the enveloping kernel of a representation preserves all directions it detects:
 the kernel of the new action restricted to `S` lies in the starting representation's kernel. -/
@@ -172,6 +169,14 @@ theorem isNilpotent_envelopingQuotientRep_inr [Module.Finite R (U ⧸ J)] (h : H
     (hψ : ∀ s : S, ∃ n : ℕ, ((ψ h).toLinearMap ^ n) s = 0) :
     IsNilpotent (envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ h)) := by
   rw [SemiDirectSum.inr_eq_mk, envelopingQuotientRep_zero_mk]
+  have hδ : (envelopingQuotientDerivation R S ψ J hJ h : Module.End R (U ⧸ J)) =
+      (derivationQuotientHom R J ⟨envelopingDerivation R S (ψ h), hJ h⟩ :
+        Module.End R (U ⧸ J)) := by
+    apply LinearMap.ext
+    intro q
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+    simp only [envelopingQuotientDerivation_apply_mk, derivationQuotientHom_apply_mk]
+  rw [hδ]
   exact isNilpotent_envelopingDerivation_quotient R S (ψ h) hψ J (hJ h)
 
 end TauCeti
