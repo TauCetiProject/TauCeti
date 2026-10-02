@@ -97,8 +97,7 @@ theorem geckWeylRootSubgroupPoints_mem_fixedSubgroup_geckFrobenius_iff
     (i : Fin t.rank) (u : Multiplicative A) :
     t.geckWeylRootSubgroupPoints ht l i A u ∈ fixedSubgroup (t.geckFrobenius ht p k A) ↔
       Multiplicative.toAdd u ∈ frobeniusFixedSubring A p k := by
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply,
-    t.geckFrobenius_geckWeylRootSubgroupPoints ht p k A]
+  rw [TauCeti.mem_fixedSubgroup, t.geckFrobenius_geckWeylRootSubgroupPoints ht p k A]
   rw [(t.geckWeylRootSubgroupPoints_injective ht l i A).eq_iff,
     ← Multiplicative.toAdd.injective.eq_iff, toAdd_ofAdd, mem_frobeniusFixedSubring]
 

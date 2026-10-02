@@ -258,7 +258,7 @@ theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
         Matrix (Fin 24) (Fin 24) d.1.Closure) r c ∈ d.1.fixedField := by
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, frobenius_def, D4Tripled.frobenius_eq_self_iff]
+  rw [mem_fixedSubgroup, frobenius_def, D4Tripled.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
     d.1.fieldOrder_eq_characteristic_pow]
 

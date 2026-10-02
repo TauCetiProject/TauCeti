@@ -65,7 +65,7 @@ theorem mem_fixedSubgroup_steinberg_iff (g : d.toRankTwoBLieIndex.AmbientGroup) 
       RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_eq_map] at hsq
     exact (SpStd.pointsPresentation 1 d.1.Closure).map_injective
       (SpStd.pointsPresentation 1 d.1.Closure) (RingHom.injective _) hsq
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, ← hinj.eq_iff, halfFrobenius_steinberg]
+  rw [mem_fixedSubgroup, ← hinj.eq_iff, halfFrobenius_steinberg]
   constructor
   · intro h i j
     have hij := congrArg
@@ -111,7 +111,7 @@ theorem coe_mem_fixedField_of_mem_fixedSubgroup_steinberg
     (i j : Fin 4) :
     ((g : GL (Fin 4) d.1.Closure) : Matrix (Fin 4) (Fin 4) d.1.Closure) i j ∈ d.1.fixedField := by
   apply (d.toRankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff g).mp _ i j
-  simpa only [MonoidHom.mem_eqLocus, MonoidHom.id_apply, MonoidHom.mem_eqLocus.mp hg] using
+  simpa only [mem_fixedSubgroup, mem_fixedSubgroup.mp hg] using
     (d.steinberg_steinberg g).symm
 
 end TauCeti.SuzukiLieIndex

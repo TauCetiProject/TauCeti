@@ -180,7 +180,7 @@ generate. -/
 theorem simpleRootSubgroup_mem_fixedSubgroup_steinberg (i : Fin d.1.rank)
     (u : Multiplicative d.1.Closure) (hu : Multiplicative.toAdd u ∈ d.1.fixedField) :
     d.simpleRootSubgroup i u ∈ fixedSubgroup d.steinberg := by
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, steinberg_simpleRootSubgroup,
+  rw [mem_fixedSubgroup, steinberg_simpleRootSubgroup,
     ValidLieTypeIndex.mem_fixedField.mp hu, ofAdd_toAdd]
 
 /-- **The fixed subgroup contains the weight-torus points with `𝔽_q` coordinates.** A torus point
@@ -189,7 +189,7 @@ definition. -/
 theorem weightTorusPoints_mem_fixedSubgroup_steinberg (s : Fin 7 → d.1.Closureˣ)
     (hs : ∀ k, ((s k : d.1.Closure)) ∈ d.1.fixedField) :
     E7Minuscule.weightTorusPoints d.1.Closure s ∈ fixedSubgroup d.steinberg := by
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, steinberg_weightTorusPoints]
+  rw [mem_fixedSubgroup, steinberg_weightTorusPoints]
   congr 1
   funext k
   apply Units.ext
@@ -207,7 +207,7 @@ theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
         Matrix (Fin 56) (Fin 56) d.1.Closure) r c ∈ d.1.fixedField := by
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, steinberg_def, E7Minuscule.frobenius_eq_self_iff]
+  rw [mem_fixedSubgroup, steinberg_def, E7Minuscule.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
     d.1.fieldOrder_eq_characteristic_pow]
 

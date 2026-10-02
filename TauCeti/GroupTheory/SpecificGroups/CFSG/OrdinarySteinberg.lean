@@ -291,7 +291,7 @@ instead the coordinates that the permutation exchanges. -/
 theorem geckWeightTorus_mem_fixedSubgroup_geckSteinberg (s : Fin d.1.rank → d.1.Closureˣ)
     (hs : ∀ k, s (d.diagramPerm⁻¹ k) ^ d.1.fieldOrder = s k) :
     d.1.geckWeightTorus s ∈ fixedSubgroup d.geckSteinberg := by
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, geckSteinberg_geckWeightTorus]
+  rw [mem_fixedSubgroup, geckSteinberg_geckWeightTorus]
   exact congrArg _ (funext hs)
 
 /-- **On a family whose diagram permutation is trivial the Steinberg map is the plain Frobenius.**

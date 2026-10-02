@@ -271,7 +271,7 @@ theorem map_hopfIdealPointsSubgroup_frobeniusFixedSubring :
   · rintro _ ⟨g, hg, rfl⟩
     refine Subgroup.mem_inf.mpr
       ⟨mapRingHom_mem_hopfIdealPointsSubgroup n I (frobeniusFixedSubring A p k).subtype hg, ?_⟩
-    refine MonoidHom.mem_eqLocus.mpr
+    refine mem_fixedSubgroup.mpr
       ((Matrix.GeneralLinearGroup.map_iterateFrobenius_eq_self_iff p k _).mpr fun i j => ?_)
     rw [Matrix.GeneralLinearGroup.map_apply, Subring.coe_subtype]
     exact SetLike.coe_mem _
@@ -352,7 +352,7 @@ theorem range_frobeniusFixedHopfIdealPointsInclusion :
       fixedSubgroup (iterateFrobeniusHopfIdealPoints n p k I A) := by
   refine le_antisymm ?_ ?_
   · rintro _ ⟨g, rfl⟩
-    refine MonoidHom.mem_eqLocus.mpr
+    refine mem_fixedSubgroup.mpr
       ((iterateFrobeniusHopfIdealPoints_eq_self_iff n p k I _).mpr fun i j => ?_)
     rw [coe_frobeniusFixedHopfIdealPointsInclusion_apply]
     exact SetLike.coe_mem _

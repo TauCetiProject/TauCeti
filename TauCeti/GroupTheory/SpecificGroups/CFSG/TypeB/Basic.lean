@@ -339,8 +339,7 @@ theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
           (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
         Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
           (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ∈ d.1.fixedField := by
-  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, frobenius_def,
-    TypeBSpinCarrier.frobenius_eq_self_iff]
+  rw [mem_fixedSubgroup, frobenius_def, TypeBSpinCarrier.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
     d.1.fieldOrder_eq_characteristic_pow]
 
