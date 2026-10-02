@@ -7,6 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.FieldTheory.RatFunc.Automorphism
+-- Non-public: `Matrix.GeneralLinearGroup.mem_center_iff_entries` identifies the kernel of the
+-- action below with the centre of `GL₂(k)`, in the proofs only.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
 
 /-!
 # Linear fractional transformations of the rational function field
@@ -27,6 +30,8 @@ over `k` has nonzero determinant, so the construction applies to `GL₂(k)`.
 * `RatFunc.mobius` (with `mobius_def`) and `RatFunc.mobiusAut`: the same for an invertible
   matrix.
 * `RatFunc.mobiusAutHom`: the group homomorphism `GL₂(k) →* Aut(k(X)/k)`.
+* `RatFunc.pglEquivAlgEquiv`: the isomorphism `PGL₂(k) ≃* Aut(k(X)/k)`, evaluated on a class of
+  matrices by `RatFunc.pglEquivAlgEquiv_mk`.
 * `RatFunc.translationAut`: the translation `X ↦ X + c`.
 
 ## Main results
@@ -296,27 +301,9 @@ noncomputable def mobiusAutHom : GL (Fin 2) K →* (RatFunc K ≃ₐ[K] RatFunc 
 theorem mobiusAutHom_apply_X : mobiusAutHom A X = mobius A⁻¹ :=
   mobiusAut_X _
 
-/-- **An invertible `2 × 2` matrix is central exactly when it is scalar**, read off its entries. -/
-theorem mem_center_iff_entries :
-    A ∈ Subgroup.center (GL (Fin 2) K) ↔
-      (A : Matrix (Fin 2) (Fin 2) K) 0 1 = 0 ∧ (A : Matrix (Fin 2) (Fin 2) K) 1 0 = 0 ∧
-        (A : Matrix (Fin 2) (Fin 2) K) 0 0 = (A : Matrix (Fin 2) (Fin 2) K) 1 1 := by
-  rw [Matrix.GeneralLinearGroup.mem_center_iff_val_mem_range_scalar]
-  constructor
-  · rintro ⟨e, he⟩
-    rw [← he, Matrix.scalar_apply]
-    exact ⟨Matrix.diagonal_apply_ne _ (by decide), Matrix.diagonal_apply_ne _ (by decide),
-      by rw [Matrix.diagonal_apply_eq, Matrix.diagonal_apply_eq]⟩
-  · rintro ⟨h01, h10, h00⟩
-    refine ⟨(A : Matrix (Fin 2) (Fin 2) K) 0 0, ?_⟩
-    rw [Matrix.scalar_apply]
-    refine Matrix.ext fun i j ↦ ?_
-    fin_cases i <;> fin_cases j <;>
-      simp_all [Matrix.diagonal_apply_eq, Matrix.diagonal_apply_ne]
-
 /-- **The identity automorphism comes exactly from the central matrices.** -/
 theorem mobiusAut_eq_one_iff : mobiusAut A = 1 ↔ A ∈ Subgroup.center (GL (Fin 2) K) := by
-  rw [mobiusAut, mobiusAutOf_eq_one_iff, mem_center_iff_entries]
+  rw [mobiusAut, mobiusAutOf_eq_one_iff, Matrix.GeneralLinearGroup.mem_center_iff_entries]
 
 /-- **The kernel of the linear fractional action is the centre of `GL₂(k)`**: the scalar matrices.
 So `PGL₂(k)` acts faithfully on `k(X)`. -/
@@ -408,6 +395,12 @@ and two matrices give the same automorphism exactly when they differ by a scalar
 noncomputable def pglEquivAlgEquiv : PGL(2, K) ≃* (RatFunc K ≃ₐ[K] RatFunc K) :=
   (QuotientGroup.quotientMulEquivOfEq ker_mobiusAutHom.symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective _ mobiusAutHom_surjective)
+
+/-- The isomorphism `PGL₂(k) ≃* Aut(k(X)/k)` sends the class of a matrix to its linear fractional
+transformation; with `RatFunc.mobiusAutHom_apply_X` this evaluates it at `X`. -/
+@[simp]
+theorem pglEquivAlgEquiv_mk (A : GL (Fin 2) K) :
+    pglEquivAlgEquiv (Matrix.ProjGenLinGroup.mk A) = mobiusAutHom A := by rfl
 
 end GeneralLinear
 
