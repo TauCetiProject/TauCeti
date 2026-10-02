@@ -15,19 +15,22 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 
 Let `K` be a field in which `2` is invertible. The Stiefel–Whitney classes `w₁ = ∑ᵢ (aᵢ)` and
 `w₂ = ∑_{i<j} (aᵢ) ∪ (aⱼ)` of a diagonal form `⟨a₁, …, aₙ⟩` (`TauCeti.sw1`, `TauCeti.sw2`) depend
-only on the isometry class of the form. By Witt's chain theorem it suffices to check invariance
-under the two elementary steps of a diagonal chain. Both classes are unchanged by permuting the
-coefficients. A binary step replaces two coefficients `a, b` by the coefficients `c, d` of an
-isometric binary form `⟨c, d⟩ ≅ ⟨a, b⟩`; it leaves `w₁` unchanged because the discriminants agree
-modulo squares, and it leaves `w₂` unchanged because of the binary cup identity
-`(a) ∪ (b) = (c) ∪ (d)` (`TauCeti.cup_kummerClass_congr`): under the comparison of `H²(G_K, 𝔽₂)`
-with the Brauer group both sides are quaternion symbols, and isometric binary forms have equal
-quaternion symbols.
+only on the isometry class of the form. In rank at least two, Witt's chain theorem reduces this to
+invariance under the two elementary steps of a diagonal chain; in rank one, where there is no
+binary step, it instead requires invariance when the single coefficient is multiplied by a square.
+The latter holds for `w₁` because the Kummer class only depends on the square class, and for `w₂`
+because it vanishes in rank one. Both classes are unchanged by permuting the coefficients. A
+binary step replaces two coefficients `a, b` by the coefficients `c, d` of an isometric binary form
+`⟨c, d⟩ ≅ ⟨a, b⟩`; it leaves `w₁` unchanged because the discriminants agree modulo squares, and it
+leaves `w₂` unchanged because of the binary cup identity `(a) ∪ (b) = (c) ∪ (d)`
+(`TauCeti.cup_kummerClass_congr`): under the comparison of `H²(G_K, 𝔽₂)` with the Brauer group
+both sides are quaternion symbols, and isometric binary forms have equal quaternion symbols.
 
-The descent principle `TauCeti.RegularFormClass.liftDiagonal` therefore produces functions
-`TauCeti.sw1Class` and `TauCeti.sw2Class` on `TauCeti.RegularFormClass K`, which agree with the
-tuple-level classes on every diagonal presentation. Composed with `TauCeti.formClass`, they are the
-Stiefel–Whitney classes `w₁(q)` and `w₂(q)` of a regular quadratic form `q`, and isometric regular
+From these three invariance properties, the descent principle
+`TauCeti.RegularFormClass.liftDiagonal` produces functions `TauCeti.sw1Class` and
+`TauCeti.sw2Class` on `TauCeti.RegularFormClass K`, which agree with the tuple-level classes on
+every diagonal presentation. Composed with `TauCeti.formClass`, they are the Stiefel–Whitney classes
+`w₁(q)` and `w₂(q)` of a regular quadratic form `q`, and isometric regular
 forms have the same classes.
 
 The binary cup identity rests on the comparison of the Brauer group with Galois cohomology, which
