@@ -10,6 +10,9 @@ public import TauCeti.Algebra.Lie.CompleteReducibility
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Casimir
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import Mathlib.Algebra.Lie.CartanExists
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.Algebra.Lie.BaseChange.MaxTrivSubmodule
+import TauCeti.Algebra.Lie.Killing.BaseChange
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.Algebra.Lie.HighestWeight.Existence
 import TauCeti.Algebra.Lie.HighestWeight.Separation
@@ -20,20 +23,21 @@ import TauCeti.Algebra.Lie.Submodule.Decomposition
 /-!
 # Weyl's complete reducibility theorem
 
-Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over an algebraically
-closed field of characteristic zero. **Every Lie submodule of a finite-dimensional `L`-module is a
-direct summand** (`TauCeti.exists_isCompl_of_isKilling`), so the lattice of Lie submodules is
-complemented and a finite-dimensional module is a direct sum of irreducibles.
+Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a field of
+characteristic zero. **Every Lie submodule of a finite-dimensional `L`-module is a direct summand**
+(`TauCeti.exists_isCompl_of_isKilling`), so the lattice of Lie submodules is complemented and a
+finite-dimensional module is a direct sum of irreducibles.
 
 All the formal content of the proof is already in
 `TauCeti/Algebra/Lie/CompleteReducibility.lean`, which derives complete reducibility from the
 single representation-theoretic input `TauCeti.HasInvariantOutsideIrreducible`: whenever `L`
 carries a finite-dimensional module `M` into a proper *irreducible* submodule `N` and acts
-nontrivially somewhere on `M`, the module `M` has a nonzero invariant vector outside `N`. This
-file supplies that input from the Casimir element of `U(L)`, which is what makes the argument work
-for a general semisimple `L` rather than only for `sl₂`
+nontrivially somewhere on `M`, the module `M` has a nonzero invariant vector outside `N`. Over an
+algebraically closed field this file supplies that input from the Casimir element of `U(L)`, which
+is what makes the argument work for a general semisimple `L` rather than only for `sl₂`
 (`TauCeti/Algebra/Lie/Sl2/CompleteReducibility.lean`, the rank-one instance of the same
-reduction).
+reduction). Over an arbitrary field of characteristic zero it is then obtained by descent from an
+algebraic closure.
 
 ## The Casimir step
 
@@ -59,14 +63,24 @@ composes to zero, and a Lie algebra with nondegenerate Killing form is perfect
 (`TauCeti.derivedSeries_one_eq_top_of_isKilling`), so the action is already zero, contradicting the
 hypothesis that `L` acts nontrivially somewhere on `M`.
 
+## Descent from an algebraic closure
+
+Over a field `K` of characteristic zero, let `A = AlgebraicClosure K`. The Killing form of
+`A ⊗[K] L` is the extension of that of `L`, so it is again nondegenerate
+(`TauCeti.isKilling_baseChange_iff`). If `L` carries `M` into a proper Lie submodule `N`, then
+`A ⊗[K] L` carries `A ⊗[K] M` into the proper Lie submodule `N.baseChange A`, and the
+algebraically closed case gives an invariant vector of `A ⊗[K] M` outside `N.baseChange A`. The
+invariants of `A ⊗[K] M` are the extension of the invariants of `M`
+(`LieModule.maxTrivSubmodule_baseChange`), so the invariants of `M` are not all contained in `N`.
+
 ## Main results
 
 * `TauCeti.representation_casimirElement_injective_of_isIrreducible_of_not_isTrivial`: the Casimir
   element acts injectively on a finite-dimensional irreducible module with a nontrivial action.
-* `TauCeti.hasInvariantOutsideIrreducible_of_isKilling`: the Casimir element supplies the input of
-  the formal complete-reducibility argument.
 * `TauCeti.exists_invariant_notMem_of_isKilling`: a module carried into a proper Lie submodule has
   an invariant vector outside it.
+* `TauCeti.hasInvariantOutsideIrreducible_of_isKilling`: hence the input of the formal
+  complete-reducibility argument holds over every field of characteristic zero.
 * `TauCeti.exists_isCompl_of_isKilling`: **Weyl's complete reducibility theorem.** Every Lie
   submodule of a finite-dimensional module is a direct summand.
 * `TauCeti.complementedLattice_lieSubmodule_of_isKilling`: the lattice restatement.
@@ -75,12 +89,11 @@ hypothesis that `L` acts nontrivially somewhere on `M`.
 
 ## References
 
-This is the summit of Layer 5, "complete reducibility (Weyl's theorem)", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §6.3, for the
   Casimir proof of Weyl's theorem; the reduction to the case of a codimension-one submodule is the
   formal part carried out in `TauCeti/Algebra/Lie/CompleteReducibility.lean`.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 1--3*, Ch. I, §6, no. 2, for Weyl's theorem
+  over an arbitrary field of characteristic zero.
 -/
 
 public section
@@ -91,8 +104,12 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
+
+section AlgClosed
+
+variable [IsAlgClosed K]
 
 /-! ### The Casimir element is injective on a nontrivial irreducible -/
 
@@ -121,18 +138,16 @@ theorem representation_casimirElement_injective_of_isIrreducible_of_not_isTrivia
 
 end Injective
 
-/-! ### Complete reducibility -/
+/-! ### The Casimir step over an algebraically closed field -/
 
 variable (K L) in
 /-- **The Casimir element supplies an invariant vector outside an irreducible submodule.** If `L`
 carries `M` into a proper irreducible `N` and acts nontrivially somewhere on `M`, then `L` acts
 nontrivially on `N`, so the Casimir element is injective on `N`. Its image lies in `N`, so it is
 not surjective on `M`, hence — `M` being finite-dimensional — not injective, and any nonzero
-kernel vector is invariant and outside `N`.
-
-This is the single input of `TauCeti/Algebra/Lie/CompleteReducibility.lean`; everything else in
-the proof of complete reducibility is formal. -/
-theorem hasInvariantOutsideIrreducible_of_isKilling :
+kernel vector is invariant and outside `N`. Over an arbitrary field of characteristic zero this is
+`TauCeti.hasInvariantOutsideIrreducible_of_isKilling`, by descent. -/
+private theorem hasInvariantOutsideIrreducible_of_isKilling_of_isAlgClosed :
     HasInvariantOutsideIrreducible.{w} K L := by
   unfold HasInvariantOutsideIrreducible
   intro M _ _ _ _ _ N hN htriv hact hirr
@@ -175,19 +190,66 @@ theorem hasInvariantOutsideIrreducible_of_isKilling :
   refine hinj _ (htriv x v) ?_
   rw [representation_casimirElement_lie, hv, lie_zero]
 
+end AlgClosed
+
+/-! ### Complete reducibility over a field of characteristic zero -/
+
 variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
 
+open TensorProduct in
 /-- **An invariant vector outside a proper submodule.** If `L` carries a finite-dimensional module
 `M` into a proper Lie submodule `N`, then `M` has a nonzero invariant vector outside `N`. -/
 theorem exists_invariant_notMem_of_isKilling [FiniteDimensional K M]
     (N : LieSubmodule K L M) (hN : N ≠ ⊤) (htriv : ∀ (x : L) (m : M), ⁅x, m⁆ ∈ N) :
-    ∃ v : M, v ∉ N ∧ ∀ x : L, ⁅x, v⁆ = 0 :=
-  HasInvariantOutsideIrreducible.exists_invariant_notMem
-    (hasInvariantOutsideIrreducible_of_isKilling K L) N hN htriv
+    ∃ v : M, v ∉ N ∧ ∀ x : L, ⁅x, v⁆ = 0 := by
+  -- Extend scalars to an algebraic closure, where the Casimir argument applies.
+  have : IsKilling (AlgebraicClosure K) (AlgebraicClosure K ⊗[K] L) :=
+    (isKilling_baseChange_iff K (AlgebraicClosure K) L).2 inferInstance
+  have hN' : N.baseChange (AlgebraicClosure K) ≠ ⊤ := by
+    rw [← LieSubmodule.baseChange_top, Ne, ← LieSubmodule.toSubmodule_inj,
+      LieSubmodule.coe_baseChange, LieSubmodule.coe_baseChange, Submodule.baseChange_inj,
+      LieSubmodule.toSubmodule_inj]
+    exact hN
+  have htriv' : ∀ (x : AlgebraicClosure K ⊗[K] L) (m : AlgebraicClosure K ⊗[K] M),
+      ⁅x, m⁆ ∈ N.baseChange (AlgebraicClosure K) := by
+    -- `L` carries `M` into `N` exactly when `⁅⊤, ⊤⁆ ≤ N`, and that survives extension of scalars.
+    have hle : ⁅(⊤ : LieIdeal K L), (⊤ : LieSubmodule K L M)⁆ ≤ N :=
+      (LieSubmodule.lie_le_iff _ _ _).2 fun x _ m _ ↦ htriv x m
+    have hle' := Submodule.baseChange_mono (AlgebraicClosure K)
+      ((LieSubmodule.toSubmodule_le_toSubmodule _ _).2 hle)
+    rw [← LieSubmodule.coe_baseChange, ← LieSubmodule.coe_baseChange,
+      LieSubmodule.toSubmodule_le_toSubmodule, LieSubmodule.lie_baseChange,
+      LieSubmodule.baseChange_top, LieSubmodule.baseChange_top] at hle'
+    exact fun x m ↦ hle' (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x)
+      (LieSubmodule.mem_top m))
+  obtain ⟨m₀, hm₀N, hm₀⟩ := HasInvariantOutsideIrreducible.exists_invariant_notMem
+    (hasInvariantOutsideIrreducible_of_isKilling_of_isAlgClosed.{u, max u v, max u w}
+      (AlgebraicClosure K) (AlgebraicClosure K ⊗[K] L))
+    (N.baseChange (AlgebraicClosure K)) hN' htriv'
+  -- The invariant vector `m₀` lies in the extension of the invariants of `M`, so these are not
+  -- all contained in `N`.
+  have hm₀mem : m₀ ∈ (maxTrivSubmodule K L M).baseChange (AlgebraicClosure K) := by
+    rw [← maxTrivSubmodule_baseChange]
+    exact (mem_maxTrivSubmodule _ _ _ m₀).2 hm₀
+  by_contra hcon
+  have hle : maxTrivSubmodule K L M ≤ N := fun v hv ↦ by
+    by_contra hvN
+    exact hcon ⟨v, hvN, (mem_maxTrivSubmodule K L M v).1 hv⟩
+  refine hm₀N ?_
+  rw [← LieSubmodule.mem_toSubmodule, LieSubmodule.coe_baseChange] at hm₀mem ⊢
+  exact Submodule.baseChange_mono _ ((LieSubmodule.toSubmodule_le_toSubmodule _ _).2 hle) hm₀mem
 
-/-- **Weyl's complete reducibility theorem.** Over an algebraically closed field of characteristic
-zero, every Lie submodule of a finite-dimensional module over a Lie algebra with nondegenerate
-Killing form has a complement, so the module is a direct sum of irreducibles.
+variable (K L) in
+/-- **The input of the formal complete-reducibility argument holds in characteristic zero**: if
+`L` carries a finite-dimensional module into a proper irreducible Lie submodule `N` and acts
+nontrivially somewhere, the module has an invariant vector outside `N`. -/
+theorem hasInvariantOutsideIrreducible_of_isKilling :
+    HasInvariantOutsideIrreducible.{w} K L :=
+  fun N hN htriv _ _ ↦ exists_invariant_notMem_of_isKilling N hN htriv
+
+/-- **Weyl's complete reducibility theorem.** Over a field of characteristic zero, every Lie
+submodule of a finite-dimensional module over a Lie algebra with nondegenerate Killing form has a
+complement, so the module is a direct sum of irreducibles.
 
 The `sl₂` case, `TauCeti.exists_isCompl_of_toLieSubalgebra_eq_top`, is the rank-one instance of
 the same argument, run with the concrete Casimir operator of an `sl₂` triple. -/
@@ -205,8 +267,8 @@ theorem complementedLattice_lieSubmodule_of_isKilling [FiniteDimensional K M] :
 
 variable (K L M) in
 /-- **Weyl's theorem as a decomposition.** A finite-dimensional module over a Lie algebra with
-nondegenerate Killing form, over an algebraically closed field of characteristic zero, is the
-internal direct sum of a finite family of irreducible Lie submodules. -/
+nondegenerate Killing form, over a field of characteristic zero, is the internal direct sum of a
+finite family of irreducible Lie submodules. -/
 theorem exists_isInternal_isIrreducible_of_isKilling [FiniteDimensional K M] :
     ∃ (k : ℕ) (N : Fin k → LieSubmodule K L M),
       DirectSum.IsInternal (fun i ↦ (N i).toSubmodule) ∧

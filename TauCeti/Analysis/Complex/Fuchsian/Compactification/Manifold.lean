@@ -43,7 +43,9 @@ because a transition map is continuous.
 * `Subgroup.CompactifiedQuotient.instIsManifold`: the atlas is analytic, so the compactified
   quotient is a Riemann surface.
 * `Subgroup.CompactifiedQuotient.mdifferentiable_ofQuotient`: the inclusion of the coarse quotient
-  is holomorphic.
+  is holomorphic, and `Subgroup.CompactifiedQuotient.mdifferentiableAt_comp_ofQuotient_iff`: a map
+  out of the compactified quotient is holomorphic along the coarse quotient exactly when its
+  restriction is.
 
 ## References
 
@@ -274,5 +276,27 @@ theorem mdifferentiable_ofQuotient :
     funext (ofQuotientChart_ofQuotient _)
   rw [this]
   exact mdifferentiableAt_atlas (chart_mem_atlas ℂ p) (mem_chart_source ℂ p)
+
+/-- A map out of the compactified quotient is holomorphic at a point of the coarse quotient exactly
+when its restriction to the coarse quotient is: the transported charts of the coarse quotient are
+charts of the compactified quotient. -/
+theorem mdifferentiableAt_comp_ofQuotient_iff {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℂ E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {F : Γ.CompactifiedQuotient → M'}
+    {p : orbitRel.Quotient Γ ℍ} :
+    MDifferentiableAt 𝓘(ℂ) I' (F ∘ ofQuotient) p ↔ MDifferentiableAt 𝓘(ℂ) I' F (ofQuotient p) := by
+  refine ⟨fun hF ↦ ?_, fun hF ↦ hF.comp p (mdifferentiable_ofQuotient p)⟩
+  set e := chartAt ℂ p
+  have hc : ofQuotientChart e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 Γ.CompactifiedQuotient :=
+    IsManifold.subset_maximalAtlas (ofQuotientChart_mem_atlas (chart_mem_atlas ℂ p))
+  have hx : ofQuotient p ∈ (ofQuotientChart e).source :=
+    (ofQuotient_mem_ofQuotientChart_source_iff e).2 (mem_chart_source ℂ p)
+  rw [← mdifferentiableWithinAt_univ, mdifferentiableWithinAt_iff_source_of_mem_maximalAtlas hc hx]
+  simp only [mfld_simps, mdifferentiableWithinAt_univ]
+  have hcomp : F ∘ (ofQuotientChart e).symm = (F ∘ ofQuotient) ∘ e.symm :=
+    funext fun u ↦ by simp
+  rw [hcomp, ofQuotientChart_ofQuotient]
+  exact hF.comp_of_eq (e p) (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ p)
+    (e.map_source (mem_chart_source ℂ p))) (e.left_inv (mem_chart_source ℂ p))
 
 end Subgroup.CompactifiedQuotient
