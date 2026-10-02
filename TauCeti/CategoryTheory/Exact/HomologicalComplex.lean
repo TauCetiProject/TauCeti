@@ -36,11 +36,13 @@ stable category; that comparison is not part of this file.
 
 ## Main results
 
-* `TauCeti.isKernelCokernelPair_of_eval`: a short complex of complexes which is a
+* `TauCeti.IsKernelCokernelPair.of_eval`: a short complex of complexes which is a
   kernel–cokernel pair in every degree is a kernel–cokernel pair.
-* `TauCeti.hasColimit_span_comp_eval` and `TauCeti.hasLimit_cospan_comp_eval`: degreewise
-  pushouts and pullbacks assemble into pushouts and pullbacks of complexes, which the evaluation
-  functors then preserve.
+* `TauCeti.hasColimit_span_comp_eval` and `TauCeti.hasLimit_cospan_comp_eval`: if a span
+  (resp. cospan) of complexes has a pushout (resp. pullback) in every degree, then each
+  evaluated diagram `span f g ⋙ eval C c i` (resp. `cospan f g ⋙ eval C c i`) has a colimit
+  (resp. limit). Mathlib's degreewise instances then provide the pushout (resp. pullback) in
+  complexes, preserved by the evaluation functors.
 * `TauCeti.ExactStructure.homologicalComplex_conflation_iff`,
   `TauCeti.ExactStructure.homologicalComplex_isInflation_iff` and
   `TauCeti.ExactStructure.homologicalComplex_isDeflation_iff`: conflations, inflations and
@@ -77,7 +79,7 @@ instance [Preadditive C] [HasBinaryBiproducts C] : HasBinaryBiproducts (Homologi
 /-- A short complex of homological complexes which is a kernel–cokernel pair in every degree is
 a kernel–cokernel pair: kernels and cokernels in `HomologicalComplex C c` may be computed
 degreewise. -/
-theorem isKernelCokernelPair_of_eval [HasZeroMorphisms C]
+theorem IsKernelCokernelPair.of_eval [HasZeroMorphisms C]
     (S : ShortComplex (HomologicalComplex C c))
     (h : ∀ i, IsKernelCokernelPair (S.map (HomologicalComplex.eval C c i))) :
     IsKernelCokernelPair S where
@@ -87,16 +89,17 @@ theorem isKernelCokernelPair_of_eval [HasZeroMorphisms C]
     (isColimitMapCoconeCoforkEquiv' (HomologicalComplex.eval C c i) S.zero).symm
       (h i).gIsCokernel⟩
 
-/-- A span of complexes having a pushout in every degree has a pushout in complexes, computed
-degreewise. -/
+/-- If a span of complexes has a pushout in every degree, then its composite with each evaluation
+functor has a colimit. Mathlib's degreewise instances then supply its pushout in complexes. -/
 theorem hasColimit_span_comp_eval [HasZeroMorphisms C] {K L M : HomologicalComplex C c}
     {f : K ⟶ L} {g : K ⟶ M} (h : ∀ i, HasPushout (f.f i) (g.f i)) (i : ι) :
     HasColimit (span f g ⋙ HomologicalComplex.eval C c i) :=
   have := h i
   hasColimit_of_iso (F := span (f.f i) (g.f i)) (spanCompIso (HomologicalComplex.eval C c i) f g)
 
-/-- A cospan of complexes having a pullback in every degree has a pullback in complexes, computed
-degreewise. -/
+/-- If a cospan of complexes has a pullback in every degree, then its composite with each
+evaluation functor has a limit. Mathlib's degreewise instances then supply its pullback in
+complexes. -/
 theorem hasLimit_cospan_comp_eval [HasZeroMorphisms C] {K L M : HomologicalComplex C c}
     {f : K ⟶ M} {g : L ⟶ M} (h : ∀ i, HasPullback (f.f i) (g.f i)) (i : ι) :
     HasLimit (cospan f g ⋙ HomologicalComplex.eval C c i) :=
@@ -113,7 +116,7 @@ variable [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] (E : ExactStr
 private def homologicalComplexConflationClass : ConflationClass (HomologicalComplex C c) where
   Conflation S := ∀ i, E.Conflation (S.map (HomologicalComplex.eval C c i))
   isKernelCokernelPair S hS :=
-    isKernelCokernelPair_of_eval S fun i => E.isKernelCokernelPair _ (hS i)
+    IsKernelCokernelPair.of_eval S fun i => E.isKernelCokernelPair _ (hS i)
   isClosedUnderIsomorphisms :=
     { of_iso := fun e hS i =>
         E.conflation_of_iso ((HomologicalComplex.eval C c i).mapShortComplex.mapIso e) (hS i) }
