@@ -23,9 +23,10 @@ denominator, and hence the roots. With this convention the index of `p' / p` cou
 roots, and the index of `p' * q / p` on the whole line is the Tarski query `TaQ(q, p)`.
 
 The index depends only on the rational function `q / p`: cancelling a common factor does not
-change it, and neither does reducing `q` modulo `p`. Over a real closed field, the indices of
-`q / p` and `p / q` on an interval `(a, b)` sum to half the change of sign of `p * q`. With the
-reduction modulo `p` this gives the Euclidean recurrence for the index.
+change it, and neither does reducing `q` modulo `p`. Over a real closed field, if `a < b` and
+neither `a` nor `b` is a root of `p * q`, the indices of `q / p` and `p / q` on `(a, b)` sum to
+half the change of sign of `p * q` from `a` to `b`. With the reduction modulo `p` this gives the
+Euclidean recurrence for the index, under the same endpoint hypotheses.
 
 ## Main declarations
 
@@ -36,8 +37,9 @@ reduction modulo `p` this gives the Euclidean recurrence for the index.
 * `Polynomial.cauchyIndex_derivative`: the index of `p' / p` counts distinct roots.
 * `Polynomial.cauchyIndex_derivative_mul_univ`: the whole-line index of `p' * q / p` is
   `tarskiQuery p q`.
-* `Polynomial.two_mul_cauchyIndex_add_cauchyIndex_Ioo`: the inversion formula on an interval.
-* `Polynomial.two_mul_cauchyIndex_Ioo`: the Euclidean recurrence.
+* `Polynomial.two_mul_cauchyIndex_add_cauchyIndex_Ioo`: the inversion formula on an interval
+  `(a, b)` with `a < b` whose endpoints are not roots of `p * q`.
+* `Polynomial.two_mul_cauchyIndex_Ioo`: the Euclidean recurrence, under the same hypotheses.
 
 ## References
 
