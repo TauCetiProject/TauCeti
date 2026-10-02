@@ -40,6 +40,8 @@ that does not vanish at the root.
 * `Polynomial.derivative_root_factors`: factor the derivative of a polynomial with two root powers.
 * `Polynomial.IsRoot.exists_eq_pow_succ_mul`: factor out a positive power of `X - C x`, leaving a
   cofactor nonzero at `x`.
+* `Polynomial.rootMultiplicity_add_eq_left_of_dvd`: adding a multiple of a higher power of
+  `X - C x` leaves the root multiplicity at `x` unchanged.
 
 ## Provenance
 
@@ -83,6 +85,24 @@ theorem IsRoot.exists_eq_pow_succ_mul {A : Type*} [CommRing A] {p : A[X]} {a : A
   obtain ⟨q, hq, hn⟩ := p.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hp a
   obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero ((rootMultiplicity_pos hp).mpr ha).ne'
   exact ⟨m, q, by simpa only [hm] using hq, fun h => hn (dvd_iff_isRoot.mpr h)⟩
+
+/-- Adding a multiple of a higher power of `X - C a` does not change the root multiplicity
+at `a` of a nonzero polynomial. -/
+theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [CommRing A] {p q : A[X]} {a : A}
+    (hp : p ≠ 0) (hq : (X - C a) ^ (p.rootMultiplicity a + 1) ∣ q) :
+    (p + q).rootMultiplicity a = p.rootMultiplicity a := by
+  by_cases hq0 : q = 0
+  · simp [hq0]
+  have hpq : p + q ≠ 0 := by
+    intro h
+    rw [eq_neg_of_add_eq_zero_right h, dvd_neg] at hq
+    exact pow_rootMultiplicity_not_dvd hp a hq
+  refine le_antisymm ?_ ?_
+  · rw [rootMultiplicity_le_iff hpq]
+    intro h
+    exact pow_rootMultiplicity_not_dvd hp a (by simpa using dvd_sub h hq)
+  · exact (le_min le_rfl ((Nat.le_succ _).trans ((le_rootMultiplicity_iff hq0).mpr hq))).trans
+      (rootMultiplicity_add a hpq)
 
 /-- A linear polynomial has constant nonzero sign on an interval without a root. -/
 theorem linear_eval_mul_pos_of_no_roots {R : Type*} [Field R] [LinearOrder R]
