@@ -45,12 +45,6 @@ homology; unlike Mathlib's `CategoryTheory.ShortComplex.descHomology` it produce
 into an arbitrary module rather than a morphism of `TopModuleCat R`, which is what a bilinear
 operation on homology, such as a cup product, needs in its first variable. Both have degreewise
 forms for a homological complex.
-
-Exactness of a composable pair in `TopModuleCat R` is `Function.Exact` of the underlying maps.
-`TopModuleCat.exact_of_forget₂_map_eq` transports it from `ModuleCat R`, and
-`TopModuleCat.exact_comp_hom_inv_comp_iff`, `TopModuleCat.exact_hom_comp_iff` and
-`TopModuleCat.exact_comp_hom_iff` say that it is unchanged when the middle object, or an end
-object, is replaced along an isomorphism.
 -/
 
 public section
@@ -75,30 +69,6 @@ theorem exact_of_forget₂_map_eq {X₁ X₂ X₃ : TopModuleCat R} {f : X₁ �
     (e₃ := e₃.toLinearEquiv) (g₁₂ := f.hom.toLinearMap) (g₂₃ := g.hom.toLinearMap)
     (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₁).1 hf.symm).symm)
     (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₂).1 hg.symm).symm) h
-
-/-- Exactness of a pair of composable maps of topological modules is unchanged by replacing their
-middle object along an isomorphism. -/
-theorem exact_comp_hom_inv_comp_iff {X₁ X₂ X₂' X₃ : TopModuleCat R} {f : X₁ ⟶ X₂}
-    {g : X₂ ⟶ X₃} (e : X₂ ≅ X₂') :
-    Function.Exact (f ≫ e.hom) (e.inv ≫ g) ↔ Function.Exact f g :=
-  LinearEquiv.conj_exact_iff_exact (f := f.hom.toLinearMap) (g := g.hom.toLinearMap)
-    e.toContinuousLinearEquiv.toLinearEquiv
-
-/-- Exactness of a pair of composable maps of topological modules is unchanged by precomposing the
-first map with an isomorphism. -/
-theorem exact_hom_comp_iff {X₀ X₁ X₂ X₃ : TopModuleCat R} {f : X₁ ⟶ X₂}
-    {g : X₂ ⟶ X₃} (e : X₀ ≅ X₁) :
-    Function.Exact (e.hom ≫ f) g ↔ Function.Exact f g :=
-  LinearEquiv.precomp_exact_iff_exact (f := f.hom.toLinearMap) (g := g.hom.toLinearMap)
-    (e := e.toContinuousLinearEquiv.toLinearEquiv)
-
-/-- Exactness of a pair of composable maps of topological modules is unchanged by postcomposing the
-second map with an isomorphism. -/
-theorem exact_comp_hom_iff {X₁ X₂ X₃ X₄ : TopModuleCat R} {f : X₁ ⟶ X₂}
-    {g : X₂ ⟶ X₃} (e : X₃ ≅ X₄) :
-    Function.Exact f (g ≫ e.hom) ↔ Function.Exact f g :=
-  LinearEquiv.postcomp_exact_iff_exact (f := f.hom.toLinearMap) (g := g.hom.toLinearMap)
-    (e := e.toContinuousLinearEquiv.toLinearEquiv)
 
 /-- The continuous linear equivalence underlying an isomorphism of topological modules acts as the
 forward morphism of the isomorphism. -/

@@ -77,9 +77,10 @@ theorem exact_res_corestriction_of_index_two (hU2 : U.index = 2) (hM : ∀ m : M
     Function.Exact (res U (ofDiscreteModule ℤ G M) n) (corestriction U M hU n) := by
   rw [← coeffMap_unit_comp_shapiroMap, corestriction_def,
     ← shapiroIso_hom U (U.isClosed_of_isOpen hU)]
-  refine (TopModuleCat.exact_comp_hom_inv_comp_iff _).2 ?_
-  simpa only [DiscreteCoind.indexTwoShortExact_incl, DiscreteCoind.indexTwoShortExact_proj] using
-    (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₂ n
+  have h := (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₂ n
+  simp only [DiscreteCoind.indexTwoShortExact_incl, DiscreteCoind.indexTwoShortExact_proj] at h
+  exact (LinearEquiv.conj_exact_iff_exact _ _
+    (shapiroIso U (U.isClosed_of_isOpen hU) M n).toContinuousLinearEquiv.toLinearEquiv).2 h
 
 /-- **Exactness at `Hⁿ(G, M)`** for an open subgroup `U` of index two and a discrete `G`-module
 `M` killed by two: a class of `Hⁿ(G, M)` is a corestriction exactly when the connecting map `δ`
@@ -88,9 +89,11 @@ theorem exact_corestriction_delta_of_index_two (hU2 : U.index = 2) (hM : ∀ m :
     (n : ℕ) :
     Function.Exact (corestriction U M hU n)
       ((DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).delta n) := by
-  rw [corestriction_def, ← Iso.symm_hom, TopModuleCat.exact_hom_comp_iff]
-  simpa only [DiscreteCoind.indexTwoShortExact_proj] using
-    (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₃ n
+  rw [corestriction_def]
+  have h := (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₃ n
+  simp only [DiscreteCoind.indexTwoShortExact_proj] at h
+  exact (LinearEquiv.precomp_exact_iff_exact (e := (shapiroIso U (U.isClosed_of_isOpen hU) M
+    n).symm.toContinuousLinearEquiv.toLinearEquiv)).2 h
 
 /-- **Exactness at `Hⁿ⁺¹(G, M)`** for an open subgroup `U` of index two and a discrete `G`-module
 `M` killed by two: a class of `Hⁿ⁺¹(G, M)` restricts to zero on `U` exactly when it is in the
@@ -99,9 +102,10 @@ theorem exact_delta_res_of_index_two (hU2 : U.index = 2) (hM : ∀ m : M, 2 • 
     Function.Exact ((DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).delta n)
       (res U (ofDiscreteModule ℤ G M) (n + 1)) := by
   rw [← coeffMap_unit_comp_shapiroMap, ← shapiroIso_hom U (U.isClosed_of_isOpen hU)]
-  refine (TopModuleCat.exact_comp_hom_iff _).2 ?_
-  simpa only [DiscreteCoind.indexTwoShortExact_incl] using
-    (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₁ n
+  have h := (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₁ n
+  simp only [DiscreteCoind.indexTwoShortExact_incl] at h
+  exact (LinearEquiv.postcomp_exact_iff_exact (e := (shapiroIso U (U.isClosed_of_isOpen hU) M
+    (n + 1)).toContinuousLinearEquiv.toLinearEquiv)).2 h
 
 end TauCeti.ContinuousCohomology
 
@@ -134,9 +138,9 @@ theorem exact_trivialF2ResMap_trivialF2CorMap_of_index_two (hU2 : U.index = 2) (
     exact ContinuousCohomology.exact_res_corestriction_of_index_two U hU _ hU2 hM n
   -- Over `U`, the identification of `ofDiscreteModule ℤ U (trivialF2 G).V` with `trivialF2 U`
   -- replaces the middle object.
-  have h := (TopModuleCat.exact_comp_hom_inv_comp_iff (eqToIso (congrArg (continuousCohomology n)
-    (ofDiscreteModule_subgroup_trivialF2 G U)))).2 (key _ (ofDiscreteModule_trivialF2 G))
-  simp only [eqToIso.hom, eqToIso.inv] at h
+  have h := (LinearEquiv.conj_exact_iff_exact _ _ (eqToIso (congrArg (continuousCohomology n)
+    (ofDiscreteModule_subgroup_trivialF2 G U))).toContinuousLinearEquiv.toLinearEquiv).2
+    (key _ (ofDiscreteModule_trivialF2 G))
   -- The two `eqToHom`s after restriction compose to the one in `trivialF2ResMap`. Stated as a term
   -- rather than by `rw [Category.assoc, eqToHom_trans]`: the middle objects
   -- `continuousCohomology n (TopRep.res U.subtype (ofDiscreteModule ℤ G _))` and
