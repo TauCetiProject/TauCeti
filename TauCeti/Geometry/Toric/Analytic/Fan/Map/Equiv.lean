@@ -34,7 +34,7 @@ affine chart of the corresponding cone `e.coneEquiv σ`.
 
 ## References
 
-* W. Fulton, *Introduction to Toric Varieties*, §1.4.
+* W. Fulton, *Introduction to Toric Varieties*, §§1.4 and 2.4.
 * D. Cox, J. Little and H. Schenck, *Toric Varieties*, §3.3.
 -/
 
