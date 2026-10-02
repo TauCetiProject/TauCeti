@@ -114,7 +114,6 @@ variable (R : Type*) [CommRing R] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMo
 
 /-- A character belongs to the character group of a cyclic fixed field exactly when it is
 trivial on the chosen generator. -/
-@[simp]
 theorem mem_intermediateFieldEquivSubgroupChar_fixedField_zpowers_iff
     (σ : Gal(K/ℚ)) (χ : DirichletCharacter R n) :
     χ ∈ intermediateFieldEquivSubgroupChar n K R (fixedField (Subgroup.zpowers σ)) ↔
@@ -139,7 +138,7 @@ theorem toSubfield_intermediateFieldEquivSubgroupChar_symm_evenSubgroup :
     rw [← this, OrderIso.symm_apply_apply]
   ext χ
   simp only [mem_intermediateFieldEquivSubgroupChar_fixedField_zpowers_iff,
-    MulEquiv.apply_symm_apply, Units.val_neg, Units.val_one, mem_evenSubgroup_iff,
-    _root_.DirichletCharacter.Even]
+    MulEquiv.apply_symm_apply, Units.val_neg, Units.val_one,
+    _root_.DirichletCharacter.mem_evenSubgroup_iff, _root_.DirichletCharacter.Even]
 
 end TauCeti.IsCyclotomicExtension.Rat

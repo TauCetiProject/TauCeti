@@ -18,6 +18,10 @@ the `n`-th cyclotomic field it is the subgroup attached to the maximal real subf
 ## Main definitions
 
 * `TauCeti.DirichletCharacter.evenSubgroup`: the subgroup of even Dirichlet characters of level `n`.
+
+## Main statements
+
+* `DirichletCharacter.mem_evenSubgroup_iff`: membership in `evenSubgroup` is evenness.
 -/
 
 public section
@@ -36,11 +40,15 @@ def evenSubgroup : Subgroup (DirichletCharacter R n) where
     rw [Set.mem_ofPred_eq, DirichletCharacter.Even, MulChar.inv_apply_eq_inv, hχ,
       Ring.inverse_one]
 
-variable {R n}
+end TauCeti.DirichletCharacter
+
+namespace DirichletCharacter
+
+variable {R : Type*} [CommRing R] {n : ℕ}
 
 @[simp]
 theorem mem_evenSubgroup_iff (χ : DirichletCharacter R n) :
-    χ ∈ evenSubgroup R n ↔ χ.Even :=
+    χ ∈ TauCeti.DirichletCharacter.evenSubgroup R n ↔ χ.Even :=
   Iff.rfl
 
-end TauCeti.DirichletCharacter
+end DirichletCharacter
