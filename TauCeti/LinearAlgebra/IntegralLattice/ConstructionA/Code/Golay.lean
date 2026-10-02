@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Golay
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.OrthogonalQuotient
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Metabolic
 
 /-!
 # The Golay code as discriminant glue for Construction A
@@ -15,12 +16,16 @@ public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Quadratic
 The extended binary Golay code is a quadratic-isotropic subgroup of the discriminant group of
 the zero-code lattice `2 ℤ²⁴`. Gluing that subgroup gives the same integral lattice, in the same
 rational ambient space, as Construction A applied directly to the code. Its self-duality makes
-the code Lagrangian in the coordinate discriminant module, so its orthogonal quotient is trivial.
+the code Lagrangian in the coordinate discriminant module, hence also in the discriminant group
+of `2 ℤ²⁴`, so its orthogonal quotient is trivial. The general gluing API then gives the glued
+lattice its properties: it is even because the glue is quadratic-isotropic, and unimodular
+because the glue is Lagrangian.
 
 This identifies the code and lattice descriptions of the Golay construction through the actual
 discriminant subgroup, with no choice of an abstract lattice isomorphism. The final discriminant
 modules of the named lattice are also compared, by both bilinear and quadratic isometries, with
-the actual orthogonal quotients of the Golay code; those quotients are trivial.
+the actual orthogonal quotients of the Golay code; those quotients are trivial because the code
+is Lagrangian, so both discriminant modules are trivial.
 
 ## References
 
@@ -64,6 +69,23 @@ theorem isLagrangian_code :
       code.toAddSubgroup :=
   (isLagrangian_coordinatePower_zmodStandard_iff 2 code.toAddSubgroup).mpr
     (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).eq_euclideanDual
+
+/-- The Golay code is Lagrangian in the discriminant group of the zero-code lattice `2 ℤ²⁴`. -/
+theorem isLagrangian_codeInZeroLatticeDiscriminantGroup :
+    (ConstructionA.zeroLattice 2 (Fin 24)).discriminantBilinearModule.IsLagrangian
+      (ConstructionA.codeInZeroLatticeDiscriminantGroup 2 (Fin 24) code.toAddSubgroup) :=
+  (ConstructionA.isLagrangian_codeInZeroLatticeDiscriminantGroup_iff 2 (Fin 24)
+    code.toAddSubgroup).mpr isLagrangian_code
+
+/-- **Gluing `2 ℤ²⁴` along the Golay code gives a unimodular lattice**, because the glue is
+Lagrangian in the discriminant group of `2 ℤ²⁴`. -/
+theorem isUnimodular_ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup :
+    ((ConstructionA.zeroLattice 2 (Fin 24)).ofIsotropicSubgroup
+      (ConstructionA.isEven_zeroLattice 2 (Fin 24) even_two)
+      (ConstructionA.codeInZeroLatticeDiscriminantGroup 2 (Fin 24) code.toAddSubgroup)
+      isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule).IsUnimodular :=
+  (IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian _ _ _ _).mpr
+    isLagrangian_codeInZeroLatticeDiscriminantGroup
 
 /-- The orthogonal quotient of the Golay code in the binary coordinate discriminant module has
 one element: the code is its own Euclidean dual. -/
@@ -121,39 +143,27 @@ noncomputable def discriminantQuadraticOrthogonalQuotientIsometry :
     (ConstructionA.discriminantOrthogonalQuotientIsometry 2 (Fin 24) even_two
       code.toAddSubgroup isIsotropic_code)
 
-/-- The discriminant bilinear group of the Golay lattice is trivial. -/
+/-- The discriminant bilinear group of the Golay lattice is trivial, because the orthogonal
+quotient of the Lagrangian Golay code is. -/
 instance subsingleton_discriminantBilinearModule :
-    Subsingleton constructionALattice.discriminantBilinearModule := by
-  let hC := (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual
-  have hU : (ConstructionA.integralLattice 2 code.toAddSubgroup hC).IsUnimodular := by
-    rw [← constructionALattice_eq_integralLattice]
-    exact isUnimodular_constructionALattice
-  have hq : Subsingleton
-      (((FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)).orthogonalQuotient
-        code.toAddSubgroup) :=
-    (ConstructionA.subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimodular
-      2 (Fin 24) code.toAddSubgroup hC).mpr hU
-  exact (Equiv.subsingleton_congr
-    discriminantBilinearOrthogonalQuotientIsometry.toAddEquiv.toEquiv).mpr hq
+    Subsingleton constructionALattice.discriminantBilinearModule :=
+  (Equiv.subsingleton_congr discriminantBilinearOrthogonalQuotientIsometry.toAddEquiv.toEquiv).mpr
+    (Nat.card_eq_one_iff_unique.mp natCard_orthogonalQuotient_code_eq_one).1
 
 /-- The discriminant bilinear group of the Golay lattice has one element. -/
 theorem natCard_discriminantBilinearModule_eq_one :
     Nat.card constructionALattice.discriminantBilinearModule = 1 :=
   Nat.card_unique
 
-/-- The discriminant quadratic group of the Golay lattice is also trivial. -/
+/-- The discriminant quadratic group of the Golay lattice is also trivial, because the
+quadratic orthogonal quotient of the Golay code has the same underlying group as the bilinear one.
+-/
 instance subsingleton_discriminantQuadraticModule :
     Subsingleton
       (constructionALattice.discriminantQuadraticModule isEven_constructionALattice) := by
-  let hC := (isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual 2
-    code.toAddSubgroup).mp isIsotropic_code.toFiniteBilinearModule
-  have hU : (ConstructionA.integralLattice 2 code.toAddSubgroup hC).IsUnimodular := by
-    rw [← constructionALattice_eq_integralLattice]
-    exact isUnimodular_constructionALattice
   let A := (FiniteQuadraticModule.zmodStandard 2 even_two).coordinatePower (Fin 24)
   have hbilin : Subsingleton (A.toFiniteBilinearModule.orthogonalQuotient code.toAddSubgroup) :=
-    (ConstructionA.subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimodular
-      2 (Fin 24) code.toAddSubgroup hC).mpr hU
+    (Nat.card_eq_one_iff_unique.mp natCard_orthogonalQuotient_code_eq_one).1
   have hq : Subsingleton (A.orthogonalQuotient code.toAddSubgroup isIsotropic_code) :=
     (Equiv.subsingleton_congr
       (A.orthogonalQuotientUnderlyingEquiv code.toAddSubgroup isIsotropic_code)).mpr hbilin

@@ -12,12 +12,28 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 /-!
 # Metabolic discriminant forms and unimodular overlattices
 
-For an even nondegenerate integral lattice, an intermediate carrier is even precisely when
-its discriminant subgroup is quadratic-isotropic. It is unimodular precisely when that
-subgroup equals its orthogonal complement. Together these identify metabolic discriminant
-forms with lattices admitting an even unimodular overlattice.
+For a nondegenerate integral lattice `L`, the lattice carried by an integral intermediate carrier
+`L ≤ M ≤ Lᵛ` is unimodular precisely when its discriminant subgroup `M / L` equals its
+orthogonal complement, that is, when it is Lagrangian. In particular, the even overlattice
+`L_H` glued along a quadratic-isotropic subgroup `H` of the discriminant group of an even
+lattice is unimodular exactly when `H = H⊥`. These are the unimodularity criteria of the gluing
+construction, stated for the bundled lattices.
 
-See Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4.
+For an even lattice, an intermediate carrier is moreover even precisely when its discriminant
+subgroup is quadratic-isotropic. Together these identify metabolic discriminant forms with
+lattices admitting an even unimodular overlattice.
+
+## Main declarations
+
+* `IntermediateCarrier.IsIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian`: an integral
+  overlattice is unimodular exactly when its discriminant subgroup is Lagrangian.
+* `TauCeti.IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian`: the glued even
+  overlattice `L_H` is unimodular exactly when `H` is Lagrangian.
+* `TauCeti.IntegralLattice.isMetabolic_discriminantQuadraticModule_iff`: the discriminant form
+  of an even lattice is metabolic exactly when the lattice has an even unimodular overlattice.
+
+See Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4,
+Proposition 1.4.1.
 -/
 
 public section
@@ -29,7 +45,43 @@ namespace IntegralLattice
 universe u
 
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
-variable (L : IntegralLattice V) [L.IsNondegenerate]
+variable {L : IntegralLattice V} [L.IsNondegenerate]
+
+namespace IntermediateCarrier
+
+/-- The lattice carried by an integral intermediate carrier is unimodular exactly when the
+carrier is its own dual. -/
+theorem IsIntegral.isUnimodular_toIntegralLattice_iff_dual_eq_self {M : L.IntermediateCarrier}
+    (hM : IsIntegral M) : hM.toIntegralLattice.IsUnimodular ↔ dual M = M := by
+  rw [isUnimodular_def, hM.toIntegralLattice_carrier, hM.toIntegralLattice_dualCarrier, eq_comm,
+    Subtype.ext_iff]
+
+/-- **An integral overlattice is unimodular exactly when its discriminant subgroup is
+Lagrangian.** For an integral intermediate carrier `L ≤ M ≤ Lᵛ`, the lattice `M` is unimodular
+exactly when `M / L` equals its orthogonal complement in the discriminant group of `L`. -/
+theorem IsIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian {M : L.IntermediateCarrier}
+    (hM : IsIntegral M) :
+    hM.toIntegralLattice.IsUnimodular ↔
+      L.discriminantBilinearModule.IsLagrangian (L.discriminantSubgroup M) :=
+  hM.isUnimodular_toIntegralLattice_iff_dual_eq_self.trans (dual_eq_self_iff_isLagrangian M)
+
+end IntermediateCarrier
+
+open IntermediateCarrier
+
+variable (L)
+
+/-- **The glued overlattice is unimodular exactly when the glue is Lagrangian.** For an even
+lattice `L` and a quadratic-isotropic subgroup `H` of its discriminant group, the even
+overlattice `L_H` is unimodular exactly when `H = H⊥` for the discriminant pairing. -/
+theorem isUnimodular_ofIsotropicSubgroup_iff_isLagrangian (hL : L.IsEven)
+    (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    (L.ofIsotropicSubgroup hL H hH).IsUnimodular ↔ L.discriminantBilinearModule.IsLagrangian H := by
+  rw [L.ofIsotropicSubgroup_eq_toIntegralLattice hL ⟨H, hH⟩,
+    IsIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian,
+    evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe,
+    discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup]
 
 /-- The discriminant form of an even lattice is metabolic exactly when the lattice has an
 even unimodular intermediate overlattice. -/
@@ -45,29 +97,17 @@ theorem isMetabolic_discriminantQuadraticModule_iff (hL : L.IsEven) :
         (L.intermediateCarrierOfDiscriminantSubgroup H) :=
       (L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).2 hH'.1
     refine ⟨⟨L.intermediateCarrierOfDiscriminantSubgroup H, hEven⟩, ?_⟩
-    apply (hEven.isIntegral.toIntegralLattice.isUnimodular_def).2
-    rw [hEven.isIntegral.toIntegralLattice_carrier,
-      hEven.isIntegral.toIntegralLattice_dualCarrier]
     have hLag : L.discriminantBilinearModule.IsLagrangian H := by
       simpa only [L.discriminantQuadraticModule_toFiniteBilinearModule hL] using hH'.2
-    exact congrArg Subtype.val
-      ((L.dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff H).2
-        hLag).symm
+    exact hEven.isIntegral.isUnimodular_toIntegralLattice_iff_dual_eq_self.mpr
+      ((L.dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff H).mpr hLag)
   · rintro ⟨M, hM⟩
-    have hDual : IntermediateCarrier.dual M.1 = M.1 := by
-      apply Subtype.ext
-      have h := (M.2.isIntegral.toIntegralLattice.isUnimodular_def).1 hM
-      rw [M.2.isIntegral.toIntegralLattice_carrier,
-        M.2.isIntegral.toIntegralLattice_dualCarrier] at h
-      exact h.symm
     apply (L.discriminantQuadraticModule hL).isMetabolic_def.mpr
     refine ⟨L.discriminantSubgroup M.1,
       ((L.discriminantQuadraticModule hL).isLagrangian_def _).mpr ⟨?_, ?_⟩⟩
     · exact (IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hL M.1).1 M.2
-    · have hLag : L.discriminantBilinearModule.IsLagrangian
-          (L.discriminantSubgroup M.1) :=
-        (IntermediateCarrier.dual_eq_self_iff_isLagrangian M.1).1 hDual
-      simpa only [L.discriminantQuadraticModule_toFiniteBilinearModule hL] using hLag
+    · simpa only [L.discriminantQuadraticModule_toFiniteBilinearModule hL] using
+        M.2.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp hM
 
 end IntegralLattice
 

@@ -43,6 +43,8 @@ of `L₀` glued along that subgroup is literally `P_m(C)`, and the general compa
   `C⊥ / C` is the discriminant of `P_m(C)`.
 * `subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimodular`:
   `C⊥ / C` is trivial exactly when `P_m(C)` is unimodular.
+* `TauCeti.ConstructionA.isUnimodular_integralLattice_iff_isLagrangian`: hence `P_m(C)` is
+  unimodular exactly when `C` is Lagrangian, `C = C⊥`.
 
 ## References
 
@@ -133,6 +135,18 @@ theorem subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimo
   rw [(integralLattice m C hC).isUnimodular_iff_subsingleton_discriminantGroup]
   exact Equiv.subsingleton_congr
     (discriminantBilinearOrthogonalQuotientIsometry m ι C hC).toAddEquiv.toEquiv.symm
+
+/-- **A self-orthogonal code has a unimodular Construction A lattice exactly when it is
+Lagrangian.** The lattice `P_m(C)` is unimodular exactly when `C` equals its orthogonal
+complement in the coordinate alphabet `(ℤ/m)^ι`, that is, when `C⊥ / C` is trivial. -/
+theorem isUnimodular_integralLattice_iff_isLagrangian (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
+    (integralLattice m C hC).IsUnimodular ↔
+      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).IsLagrangian C := by
+  rw [← subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimodular m ι C hC,
+    ← FiniteBilinearModule.card_orthogonalQuotient_eq_one_iff_isLagrangian _
+      ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual (m : ℕ) C).mpr hC),
+    Nat.card_eq_one_iff_unique, and_iff_left ⟨0⟩]
 
 /-! ## The quadratic isometry for an even modulus -/
 
