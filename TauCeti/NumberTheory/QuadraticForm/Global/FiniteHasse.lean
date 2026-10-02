@@ -46,6 +46,9 @@ classify regular quadratic forms over a nonarchimedean local field (O'Meara, §6
 * `QuadraticForm.finiteHasse_eq_of_equivalent_atFinitePlace`,
   `QuadraticMap.Equivalent.finiteHasse_eq`: forms isometric at `v`, in particular isometric forms,
   have the same finite Hasse sign.
+* `QuadraticForm.finiteHasse_eq_one_of_finrank_le_one`,
+  `QuadraticForm.finiteHasse_eq_one_of_finrank_eq_two`: the finite Hasse sign is trivial in rank at
+  most one, and in rank two wherever the discriminant is the class of `-1`.
 * `QuadraticForm.finiteHasse_prod`, `QuadraticForm.finiteHasse_smul`,
   `QuadraticForm.finiteHasse_neg`: the orthogonal-sum, scaling and negation formulas.
 
@@ -140,6 +143,21 @@ theorem finiteHasse_eq_one_of_finrank_le_one (Q : _root_.QuadraticForm K V)
   rw [finiteHasse_eq_localHasse_baseChange]
   exact RegularFormClass.localHasse_eq_one_of_rank_le_one
     (by rwa [RegularFormClass.rank_baseChange, rank_formClass])
+
+/-- The finite Hasse sign of a binary form is trivial at every finite place `v` at which the image
+of its global discriminant in `K_vˣ/(K_vˣ)²` is the class of `-1`: there the localization is a
+hyperbolic plane. -/
+theorem finiteHasse_eq_one_of_finrank_eq_two (Q : _root_.QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hV : Module.finrank K V = 2) {v : HeightOneSpectrum (𝓞 K)}
+    (hd : letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+      (algebraMap K (v.adicCompletion K)).squareClassMap (RegularFormClass.discr (formClass Q hQ)) =
+        squareClass (-1)) :
+    Q.finiteHasse hQ v = 1 := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  rw [finiteHasse_eq_localHasse_baseChange]
+  exact RegularFormClass.localHasse_eq_one_of_rank_eq_two_of_discr_eq_neg_one
+    (by rwa [RegularFormClass.rank_baseChange, rank_formClass])
+    (by rwa [RegularFormClass.discr_baseChange])
 
 /-- **The orthogonal-sum formula** `s_v(Q ⊥ R) = s_v(Q) · s_v(R) · (d_v(Q), d_v(R))_v`, where
 `d_v` is the image in `K_vˣ/(K_vˣ)²` of the global discriminant. -/

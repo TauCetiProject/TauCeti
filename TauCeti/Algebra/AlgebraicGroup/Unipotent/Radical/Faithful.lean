@@ -48,7 +48,7 @@ nor connectedness of `H` itself is needed; reducedness of `H` is.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§19 and 26.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2 and II.2.
 * The argument is the one already formalized for `SLₙ` in
-  `TauCeti/Algebra/AlgebraicGroup/SpecialLinear/Reductive.lean`.
+  `TauCeti/Algebra/AlgebraicGroup/SpecialLinear/Reductive/Basic.lean`.
 -/
 
 public section

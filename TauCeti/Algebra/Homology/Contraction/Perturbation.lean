@@ -54,6 +54,10 @@ Crainic's `1 - δ h` and `+ h X i`.
   `dM X + X dM + X i p X = 0`.
 * `TauCeti.LinearSpecialContraction.perturbedDifferential_comp_perturbedDifferential`: the
   perturbed differential of the retract squares to the square of `dN`.
+* `TauCeti.LinearSpecialContraction.perturb_proj_comp_one_add_mul`: the perturbed projection
+  satisfies `p' (1 + δ h) = p`; with `TauCeti.LinearSpecialContraction.perturb_proj_comp_homotopy`
+  and `TauCeti.LinearSpecialContraction.perturb_proj_comp_incl`, these are the identities making
+  `p'` a coalgebra morphism in the tensor trick.
 
 ## References
 
@@ -277,6 +281,25 @@ theorem perturb_proj :
 theorem perturb_homotopy :
     (c.perturb δ hδ hU).homotopy =
       c.homotopy - c.homotopy ∘ₗ c.perturbationSeries δ ∘ₗ c.homotopy := (rfl)
+
+/-- The perturbed projection annihilates the unperturbed homotopy, `p' h = 0`. -/
+theorem perturb_proj_comp_homotopy : (c.perturb δ hδ hU).proj ∘ₗ c.homotopy = 0 := by
+  simp [LinearMap.sub_comp, LinearMap.comp_assoc]
+
+/-- The perturbed projection is a left inverse of the unperturbed inclusion, `p' i = 1`. -/
+theorem perturb_proj_comp_incl : (c.perturb δ hδ hU).proj ∘ₗ c.incl = LinearMap.id := by
+  simp [LinearMap.sub_comp, LinearMap.comp_assoc]
+
+/-- The perturbed projection solves the fixed-point equation `p' (1 + δ h) = p`. -/
+theorem perturb_proj_comp_one_add_mul :
+    (c.perturb δ hδ hU).proj ∘ₗ (1 + δ * c.homotopy) = c.proj := by
+  have h := congrArg (fun f ↦ c.proj ∘ₗ f ∘ₗ c.homotopy)
+    (c.perturbationSeries_comp_homotopy_comp δ hU)
+  simp only [LinearMap.comp_assoc, LinearMap.comp_sub, LinearMap.sub_comp] at h
+  rw [perturb_proj, Module.End.mul_eq_comp, LinearMap.comp_add, Module.End.one_eq_id,
+    LinearMap.comp_id]
+  simp only [LinearMap.sub_comp, LinearMap.comp_assoc, h]
+  abel
 
 end Perturb
 
