@@ -372,6 +372,30 @@ def muNRepH1EquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
   exact (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete.symm.trans
     (h1.trans (trivialFp n _).explicitH1AddEquivContinuousCohomologyOfDiscrete)
 
+/-- The degree-one coefficient transport applies the inverse of the chosen primitive root's
+`ℤ/n ≃ μₙ` identification to cohomology classes. -/
+theorem muNRepH1EquivTrivialFp_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (x : continuousCohomology 1 (muNRep n F)) :
+    let ζu := Units.mk0 ζ (hζ.ne_zero (NeZero.ne n))
+    let hζu : IsPrimitiveRoot
+        (Units.map (algebraMap F (SeparableClosure F)).toMonoidHom ζu) n :=
+      (IsPrimitiveRoot.coe_units_iff.mp hζ).map_of_injective
+        (Units.map_injective (algebraMap F (SeparableClosure F)).injective)
+    let e := (kummerCoeffEquivMuNRep n F).symm.trans hζu.zmodEquivRootsOfUnity.symm
+    muNRepH1EquivTrivialFp n F hζ x =
+      (trivialFp n (Field.absoluteGaloisGroup F)).explicitH1AddEquivContinuousCohomologyOfDiscrete
+        (explicitMap1 (Field.absoluteGaloisGroup F) (muNRep n F).V
+          (Field.absoluteGaloisGroup F) (trivialFp n (Field.absoluteGaloisGroup F)).V
+          (ContinuousMulEquiv.refl (Field.absoluteGaloisGroup F) :
+            Field.absoluteGaloisGroup F →ₜ* Field.absoluteGaloisGroup F)
+          (e.trans (trivialFpEquiv n _).symm.toAddEquiv).toAddMonoidHom
+          continuous_of_discreteTopology (fun g y ↦ by
+            rw [TopRep.distribMulAction_smul, muNRep_ρ_apply_eq_self hζ, smul_trivialFp_V])
+          ((muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete.symm x)) := by
+  dsimp only
+  rw [muNRepH1EquivTrivialFp, AddEquiv.trans_apply, AddEquiv.trans_apply,
+    explicitMap1Equiv_apply]
+
 /-- Given a primitive `n`th root of unity in `F`, the Kummer isomorphism identifies the
 `n`th-power classes with `H¹(G_F, ℤ/n)` for the trivial action. The coefficient identification
 sends the chosen root to `1 : ZMod n`. No finiteness assumption is required. -/
