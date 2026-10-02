@@ -109,7 +109,7 @@ theorem IsNondegenerate.card_mul_card_orthogonalComplement (hA : A.IsNondegenera
   have hs := IsNondegenerate.pairingRestrict_surjective A hA H
   have hindex : (A.pairingRestrict H).ker.index = Nat.card H := by
     rw [AddSubgroup.index_ker, AddMonoidHom.range_eq_top.mpr hs]
-    simp [natCard_characterModule]
+    simp
   rw [mul_comm, ← A.pairingRestrict_ker H, ← hindex]
   exact (A.pairingRestrict H).ker.card_mul_index
 
