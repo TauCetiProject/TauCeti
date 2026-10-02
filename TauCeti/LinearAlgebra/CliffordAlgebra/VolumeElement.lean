@@ -45,8 +45,13 @@ these hypotheses the volume element may well be a scalar already, and is `0` as 
 factors is. That it is a *further* central element, and that the centre is then exactly a rank-two
 algebra rather than the scalars, is *not* proved here and needs hypotheses this file does not make
 — a nondegenerate form over a field away from characteristic two, with the list an orthogonal
-basis. For `Q = 0` on `R ^ 3` the Clifford algebra is the exterior algebra and its centre is much
-larger instead. The odd-dimensional splitting does run on the volume element:
+basis. `TauCeti/RepresentationTheory/Spin/Center.lean` makes exactly those: for a nondegenerate
+form of odd dimension over a field of characteristic not two, the volume element of an anisotropic
+orthogonal basis spans the centre together with `1`
+(`CliffordAlgebra.center_toSubmodule_eq_span_prod_map_ι`), which is therefore two-dimensional
+(`CliffordAlgebra.finrank_center_eq_two_of_odd_finrank`). For `Q = 0` on
+`R ^ 3` the Clifford algebra is the exterior algebra and its centre is much larger instead. The
+odd-dimensional splitting does run on the volume element:
 `TauCeti/LinearAlgebra/CliffordAlgebra/OddSplitting.lean` splits the Clifford algebra as two copies
 of its even subalgebra along a central odd square root of one, and
 `CliffordAlgebra.equivEvenProdOfOddLength` feeds it the volume element of an orthogonal spanning

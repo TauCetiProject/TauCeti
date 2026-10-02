@@ -30,6 +30,14 @@ indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basi
 and the two graded pieces meet only in `0` — that degree is the *only* one it has. This statement
 belongs to the grading API independently of any spin representation.
 
+The grading also cuts the centre in two. Multiplying by a generator `ι Q m` shifts the degree by
+one, so the two halves of the equation `x * ι Q m = ι Q m * x` live in the two different graded
+pieces, and the pieces meet only in `0` (`CliffordAlgebra.evenOdd_isCompl`). Each graded part of a
+central element is therefore central on the generators, hence central
+(`CliffordAlgebra.mem_center_of_mem_evenOdd_of_add_mem_center`). This is what lets a description of
+the centre be assembled one parity at a time, and it needs no field, no finiteness and not even
+`2` invertible.
+
 ## Main results
 
 * `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero`: in the even base case the
@@ -44,6 +52,8 @@ belongs to the grading API independently of any spin representation.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
+* `CliffordAlgebra.mem_center_of_mem_evenOdd_of_add_mem_center`: the even and odd parts of a
+  central element are themselves central.
 -/
 
 public section
@@ -96,6 +106,59 @@ theorem prod_map_ι_mem_evenOdd_one_of_odd_length {l : List M} (hlen : Odd l.len
   have h : (l.length : ZMod 2) = 1 := by
     rw [← ZMod.natCast_mod l.length 2, Nat.odd_iff.mp hlen, Nat.cast_one]
   exact h ▸ prod_map_ι_mem_evenOdd l
+
+/-- **A generator commutes with each graded part of a central element.** The commutator of a
+generator with the even part is odd and the commutator with the odd part is even, while the two sum
+to zero, so both vanish. -/
+private theorem commute_ι_of_mem_evenOdd_of_add_mem_center {x₀ x₁ : CliffordAlgebra Q}
+    (h₀ : x₀ ∈ evenOdd Q 0) (h₁ : x₁ ∈ evenOdd Q 1)
+    (hx : x₀ + x₁ ∈ Subalgebra.center R (CliffordAlgebra Q)) (m : M) :
+    Commute x₀ (ι Q m) ∧ Commute x₁ (ι Q m) := by
+  have hmι : ι Q m ∈ evenOdd Q 1 := ι_mem_evenOdd_one Q m
+  -- The two commutators, one odd and one even.
+  have hd₀ : x₀ * ι Q m - ι Q m * x₀ ∈ evenOdd Q 1 := by
+    refine Submodule.sub_mem _ ?_ ?_
+    · simpa using SetLike.mul_mem_graded h₀ hmι
+    · simpa using SetLike.mul_mem_graded hmι h₀
+  have hd₁ : x₁ * ι Q m - ι Q m * x₁ ∈ evenOdd Q 0 := by
+    refine Submodule.sub_mem _ ?_ ?_
+    · have h := SetLike.mul_mem_graded h₁ hmι
+      rwa [CharTwo.add_self_eq_zero] at h
+    · have h := SetLike.mul_mem_graded hmι h₁
+      rwa [CharTwo.add_self_eq_zero] at h
+  -- Centrality makes them negatives of one another, so each lies in both graded pieces.
+  have hsum : (x₀ * ι Q m - ι Q m * x₀) + (x₁ * ι Q m - ι Q m * x₁) = 0 := by
+    have h := Subalgebra.mem_center_iff.mp hx (ι Q m)
+    rw [mul_add, add_mul] at h
+    rw [sub_add_sub_comm, h, sub_self]
+  have hzero : x₀ * ι Q m - ι Q m * x₀ = 0 := by
+    have hboth : x₀ * ι Q m - ι Q m * x₀ ∈ evenOdd Q 0 ⊓ evenOdd Q 1 :=
+      ⟨by rw [eq_neg_of_add_eq_zero_left hsum]; exact Submodule.neg_mem _ hd₁, hd₀⟩
+    rwa [(evenOdd_isCompl (Q := Q)).inf_eq_bot, Submodule.mem_bot] at hboth
+  rw [hzero, zero_add, sub_eq_zero] at hsum
+  exact ⟨sub_eq_zero.mp hzero, hsum⟩
+
+/-- **The even and odd parts of a central element are central.** The `ℤ/2`-grading of a Clifford
+algebra therefore induces a grading of its centre.
+
+Nothing beyond the grading is used: no field, no finiteness, and no invertibility of `2`. -/
+theorem mem_center_of_mem_evenOdd_of_add_mem_center {x₀ x₁ : CliffordAlgebra Q}
+    (h₀ : x₀ ∈ evenOdd Q 0) (h₁ : x₁ ∈ evenOdd Q 1)
+    (hx : x₀ + x₁ ∈ Subalgebra.center R (CliffordAlgebra Q)) :
+    x₀ ∈ Subalgebra.center R (CliffordAlgebra Q) ∧
+      x₁ ∈ Subalgebra.center R (CliffordAlgebra Q) := by
+  have key := commute_ι_of_mem_evenOdd_of_add_mem_center h₀ h₁ hx
+  constructor
+  · rw [Subalgebra.mem_center_iff]
+    intro y
+    exact (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (s := Set.range (ι Q))
+      ((adjoin_range_ι (Q := Q)).ge Algebra.mem_top)
+      (by rintro _ ⟨m, rfl⟩; exact (key m).1)).symm.eq
+  · rw [Subalgebra.mem_center_iff]
+    intro y
+    exact (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (s := Set.range (ι Q))
+      ((adjoin_range_ι (Q := Q)).ge Algebra.mem_top)
+      (by rintro _ ⟨m, rfl⟩; exact (key m).2)).symm.eq
 
 end CliffordAlgebra
 
