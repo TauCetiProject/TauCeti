@@ -21,7 +21,7 @@ show that a quiver of finite representation type has no loops and at most one ar
 vertex to any other. These are the two smallest extended Dynkin obstructions, `Ã₀` and `Ã₁`,
 in the non-Dynkin half of Gabriel's theorem.
 
-The four subspace quiver, whose underlying graph is the extended Dynkin diagram `D̃₄`, has
+The four subspace quiver, whose underlying graph is the extended Dynkin diagram `D4~`, has
 infinite representation type as well (`TauCeti.not_isFiniteRepType_subspace_fin_four`), so a
 quiver of finite representation type has no vertex receiving arrows from four distinct other
 vertices.
@@ -130,7 +130,7 @@ private def subspaceEmbedding {c : Q} (x : Fin 4 ↪ Q) (hc : c ∉ Set.range x)
 
 /-- **Four arrows into one vertex from four other distinct vertices obstruct finite representation
 type**: they embed the four subspace quiver, whose underlying graph is the extended Dynkin diagram
-`D̃₄` and whose Jordan block configurations are infinitely many pairwise non-isomorphic
+`D4~` and whose Jordan block configurations are infinitely many pairwise non-isomorphic
 indecomposables. -/
 theorem not_isFiniteRepType_of_forall_nonempty_hom {c : Q} (x : Fin 4 ↪ Q) (hc : c ∉ Set.range x)
     (hα : ∀ i, Nonempty (x i ⟶ c)) : ¬ IsFiniteRepType.{u, v, w, u} k Q := fun h ↦

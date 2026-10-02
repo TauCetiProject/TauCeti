@@ -17,7 +17,7 @@ is where the name comes from.
 
 Its underlying graph is the star with `|ι|` leaves. With three leaves this is the Dynkin diagram
 `D₄`, and the quiver is the same as `TauCeti.Quiver.D4`; with four leaves it is the extended
-Dynkin diagram `D̃₄`, the graph of the classical four subspace problem, and the quiver has
+Dynkin diagram `D4~`, the graph of the classical four subspace problem, and the quiver has
 infinite representation type (`TauCeti.RepresentationTheory.Quiver.Subspace.FiniteRepType`).
 
 This file carries the vertex and arrow data alone.

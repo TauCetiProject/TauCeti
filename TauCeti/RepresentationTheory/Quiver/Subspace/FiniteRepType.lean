@@ -17,7 +17,7 @@ public import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 # The four subspace quiver has infinite representation type
 
 The subspace quiver with four outer vertices, whose underlying graph is the extended Dynkin
-diagram `D̃₄`, has infinitely many finite-dimensional indecomposable representations over every
+diagram `D4~`, has infinitely many finite-dimensional indecomposable representations over every
 field. The family exhibited here is the nilpotent Jordan block in the guise of four subspaces:
 writing `A = k[X]/(Xⁿ⁺¹)`, the representation `TauCeti.subspaceJordanRep k n` places `A × A` at
 the centre and `A` at each outer vertex, and the four arrows embed `A` in `A × A` as
@@ -331,7 +331,7 @@ theorem nonempty_subspaceJordanRep_iso_iff {m n : ℕ} :
   ⟨eq_of_nonempty_subspaceJordanRep_iso, by rintro rfl; exact ⟨Iso.refl _⟩⟩
 
 /-- **The four subspace quiver has infinite representation type over every field.** Its underlying
-graph is the extended Dynkin diagram `D̃₄`. The representations `TauCeti.subspaceJordanRep k n` are
+graph is the extended Dynkin diagram `D4~`. The representations `TauCeti.subspaceJordanRep k n` are
 finite-dimensional, indecomposable and pairwise non-isomorphic, so `ℕ` indexes an infinite family
 of them. -/
 theorem not_isFiniteRepType_subspace_fin_four (k : Type u) [Field k] :
