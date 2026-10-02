@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.CharacterTwist
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 
 /-!
@@ -37,7 +38,10 @@ eigen-relation. So tensoring with `det ^ m` **translates** the weights of an *ar
 representation by the constant sequence `m` (`TauCeti.weightSpace_tprod_detPowerRep`), over a
 commutative ring, with no separation of weights and no assumption that `ρ` is weight-decomposed.
 The same holds on the left, through `k ⊗[k] W ≃ₗ[k] W` (`TauCeti.weightSpace_detPowerRep_tprod`),
-and that is the orientation in which the rational representations of `GL n` are written. What is
+and that is the orientation in which the rational representations of `GL n` are written — and so
+it does for the twist `Representation.charTwist (det ^ m) ρ`, which is that tensor product with
+the line already absorbed, where the translation becomes an equality of submodules of the one
+carrier (`TauCeti.weightSpace_charTwist_detPow`). What is
 proved here is exactly that translation of weight spaces; it is the step that the classification
 of the irreducible rational representations of `GL n` as `det`-twists of the polynomial ones runs
 on, but that classification needs the highest-weight theory and is not proved here.
@@ -58,6 +62,9 @@ on, but that classification needs the highest-weight theory and is not proved he
   with `det ^ m` translates weights by the constant sequence `m`**, for an arbitrary
   representation, on either side, the translation being read through `W ⊗[k] k ≃ₗ[k] W` and
   `k ⊗[k] W ≃ₗ[k] W`.
+* `TauCeti.weightSpace_charTwist_detPow`: the same translation for the twist
+  `Representation.charTwist (det ^ m) ρ`, where it is an equality of submodules of the one
+  carrier, no identification intervening.
 
 ## Implementation notes
 
@@ -199,16 +206,14 @@ private theorem rid_tprod_detPowerRep_apply (ρ : Representation k (GL (Fin n) k
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
 
 /-- The identification `k ⊗[k] W ≃ₗ[k] W` carries the action of `det ^ m ⊗ ρ` to the action of `ρ`
-rescaled by `det ^ m`. -/
+rescaled by `det ^ m`.  This is `Representation.lid_ofLinearCharacter_tprod_apply` at the linear
+character `det ^ m`, read through `TauCeti.detPowerRep_def`. -/
 private theorem lid_detPowerRep_tprod_apply (ρ : Representation k (GL (Fin n) k) W) (m : ℤ)
     (g : GL (Fin n) k) (x : k ⊗[k] W) :
     TensorProduct.lid k W (((detPowerRep k n m).tprod ρ) g x)
       = (↑(GeneralLinearGroup.det g ^ m) : k) • ρ g (TensorProduct.lid k W x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul c w =>
-    simp only [Representation.tprod_apply, TensorProduct.map_tmul, detPowerRep_apply,
-      TensorProduct.lid_tmul, map_smul, smul_smul]
-  | add x y hx hy => simp only [map_add, hx, hy, smul_add]
+  rw [detPowerRep_def]
+  exact Representation.lid_ofLinearCharacter_tprod_apply _ ρ g x
 
 /-- **Tensoring with `det ^ m` on the right translates weights by the constant sequence `m`**:
 read through `W ⊗[k] k ≃ₗ[k] W`, the weight-`l` space of `ρ ⊗ det ^ m` is the weight-`(l - m)`
@@ -239,6 +244,22 @@ theorem weightSpace_detPowerRep_tprod (ρ : Representation k (GL (Fin n) k) W) (
   Submodule.ext fun x ↦ by
     rw [Submodule.mem_comap, LinearEquiv.coe_coe]
     exact mem_weightSpace_iff_of_detPow_smul _ (lid_detPowerRep_tprod_apply ρ m) l x
+
+/-- **Twisting by the linear character `det ^ m` translates weights by the constant sequence
+`m`**: the twist `Representation.charTwist (det ^ m) ρ` has the same carrier as `ρ`, so no
+identification intervenes and the weight-`l` space of the twist is the weight-`(l - m)` space of
+`ρ` on the nose.  This is the orientation in which a rational representation of `GL n` is realized
+on a polynomial one, `TauCeti.weightSpace_detPowerRep_tprod` being the same translation read
+through `k ⊗[k] W ≃ₗ[k] W`. -/
+@[simp]
+theorem weightSpace_charTwist_detPow (ρ : Representation k (GL (Fin n) k) W) (m : ℤ)
+    (l : Fin n → ℤ) :
+    weightSpace (Representation.charTwist
+        ((GeneralLinearGroup.det : GL (Fin n) k →* kˣ) ^ m) ρ) l
+      = weightSpace ρ (l - fun _ ↦ m) :=
+  Submodule.ext fun x ↦
+    mem_weightSpace_iff_of_detPow_smul (LinearEquiv.refl k W)
+      (fun g y ↦ Representation.charTwist_apply_apply _ ρ g y) l x
 
 end CommRing
 

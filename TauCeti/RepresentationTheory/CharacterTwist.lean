@@ -17,7 +17,7 @@ the line can be absorbed by `TensorProduct.lid`, leaving the same module with th
 by the character.  This file records that rescaled action directly as
 `Representation.charTwist χ ρ`, `g ↦ χ g • ρ g` for a linear character `χ : G →* kˣ`, and proves
 that it is the tensor product with `Representation.ofLinearCharacter χ`
-(`Representation.charTwistTprodEquiv`).
+(`Representation.tprodEquivCharTwist`).
 
 Working with the twist rather than with the tensor product is what makes its basic theory
 transparent.  Because every value of `χ` is a *unit*, a submodule is stable under `χ g • ρ g`
@@ -40,8 +40,8 @@ representation by consumers that need neither.
 * `Representation.charTwist`: the representation `g ↦ χ g • ρ g`.
 * `Representation.subrepresentationCharTwistOrderIso`: the twist has the same lattice of
   subrepresentations as `ρ`, by the identity on carriers.
-* `Representation.charTwistTprodEquiv`: the twist **is** the tensor product
-  `(ofLinearCharacter χ) ⊗ ρ`, along `TensorProduct.lid`.
+* `Representation.tprodEquivCharTwist`: the tensor product `(ofLinearCharacter χ) ⊗ ρ` **is** the
+  twist, along `TensorProduct.lid`.
 
 ## Main results
 
@@ -49,6 +49,8 @@ representation by consumers that need neither.
   the character group `G →* kˣ`.
 * `Representation.charTwist_trivial`: twisting the trivial representation of the line gives the
   one-dimensional representation of the character.
+* `Representation.lid_ofLinearCharacter_tprod_apply`: `TensorProduct.lid` carries the action of
+  `(ofLinearCharacter χ) ⊗ ρ` to the action of `ρ` rescaled by `χ`.
 * `Representation.isIrreducible_charTwist_iff`: **the twist of an irreducible representation is
   irreducible**, and conversely.
 * `Representation.char_charTwist`: the trace character of the twist is `χ` times the character
@@ -58,11 +60,11 @@ representation by consumers that need neither.
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15, where the
   rational representations of `GL n` are the determinant twists of the polynomial ones.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, whose determinant twists `det ^ λₙ ⊗ V_μ` this supplies the general mechanism for.
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace Representation
 
@@ -76,7 +78,7 @@ variable [CommSemiring k] [Monoid G] [AddCommMonoid V] [Module k V]
 
 /-- **The twist of a representation by a linear character**: the same carrier, with `ρ g` rescaled
 by the unit `χ g`.  It is the tensor product with the one-dimensional representation of `χ`
-(`Representation.charTwistTprodEquiv`), with the line absorbed. -/
+(`Representation.tprodEquivCharTwist`), with the line absorbed. -/
 def charTwist (χ : G →* kˣ) (ρ : Representation k G V) : Representation k G V where
   toFun g := (χ g : k) • ρ g
   map_one' := by simp
@@ -114,8 +116,8 @@ theorem charTwist_trivial (χ : G →* kˣ) :
     simp [ofLinearCharacter_apply, smul_eq_mul]
 
 /-- A submodule stable under `ρ` is stable under any twist of `ρ`. -/
-theorem charTwist_apply_mem {χ : G →* kˣ} {ρ : Representation k G V} {p : Submodule k V}
-    (hp : ∀ (g : G) ⦃v : V⦄, v ∈ p → ρ g v ∈ p) (g : G) ⦃v : V⦄ (hv : v ∈ p) :
+theorem charTwist_apply_mem_of_apply_mem {χ : G →* kˣ} {ρ : Representation k G V}
+    {p : Submodule k V} (hp : ∀ (g : G) ⦃v : V⦄, v ∈ p → ρ g v ∈ p) (g : G) ⦃v : V⦄ (hv : v ∈ p) :
     charTwist χ ρ g v ∈ p :=
   p.smul_mem _ (hp g hv)
 
@@ -135,7 +137,7 @@ carriers: the character values are units, so they scale a stable submodule into 
 def subrepresentationCharTwistOrderIso : Subrepresentation (charTwist χ ρ) ≃o Subrepresentation ρ
     where
   toFun p := ⟨p.toSubmodule, apply_mem_of_charTwist_apply_mem p.apply_mem_toSubmodule⟩
-  invFun p := ⟨p.toSubmodule, charTwist_apply_mem p.apply_mem_toSubmodule⟩
+  invFun p := ⟨p.toSubmodule, charTwist_apply_mem_of_apply_mem p.apply_mem_toSubmodule⟩
   left_inv _ := Subrepresentation.toSubmodule_injective rfl
   right_inv _ := Subrepresentation.toSubmodule_injective rfl
   map_rel_iff' := Iff.rfl
@@ -150,24 +152,36 @@ theorem toSubmodule_subrepresentationCharTwistOrderIso_symm (p : Subrepresentati
     ((subrepresentationCharTwistOrderIso χ ρ).symm p).toSubmodule = p.toSubmodule :=
   (rfl)
 
-/-- **The twist is the tensor product with the one-dimensional representation of the character**,
-along `TensorProduct.lid`.  This is the identification that lets the twist be read as the
-roadmap's `χ ⊗ ρ` and conversely lets a tensor product with a line be computed on the original
-carrier. -/
-noncomputable def charTwistTprodEquiv :
+/-- **`TensorProduct.lid` carries the action of `(ofLinearCharacter χ) ⊗ ρ` to the action of `ρ`
+rescaled by `χ`.**  This is the equivariance datum behind
+`Representation.tprodEquivCharTwist`, recorded on elements so that it can be used without
+unfolding that equivalence. -/
+theorem lid_ofLinearCharacter_tprod_apply (g : G) (x : k ⊗[k] V) :
+    _root_.TensorProduct.lid k V (((ofLinearCharacter χ).tprod ρ) g x)
+      = (χ g : k) • ρ g (_root_.TensorProduct.lid k V x) := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | tmul c v =>
+    simp only [tprod_apply, _root_.TensorProduct.map_tmul, ofLinearCharacter_apply,
+      _root_.TensorProduct.lid_tmul, map_smul, smul_smul]
+  | add x y hx hy => simp only [map_add, hx, hy, smul_add]
+
+/-- **The tensor product with the one-dimensional representation of a character is the twist by
+that character**, along `TensorProduct.lid`.  This is the identification that lets the twist be
+read as the usual tensor product `χ ⊗ ρ`, and conversely lets a tensor product with a line be
+computed on the original carrier. -/
+noncomputable def tprodEquivCharTwist :
     ((ofLinearCharacter χ).tprod ρ).Equiv (charTwist χ ρ) :=
-  .mk (_root_.TensorProduct.lid k V) fun g => by
-    ext
-    simp [ofLinearCharacter_apply]
+  .mk (_root_.TensorProduct.lid k V) fun g =>
+    LinearMap.ext fun x => lid_ofLinearCharacter_tprod_apply χ ρ g x
 
 @[simp]
-theorem toLinearMap_charTwistTprodEquiv :
-    (charTwistTprodEquiv χ ρ).toLinearMap = (_root_.TensorProduct.lid k V).toLinearMap :=
+theorem toLinearMap_tprodEquivCharTwist :
+    (tprodEquivCharTwist χ ρ).toLinearMap = (_root_.TensorProduct.lid k V).toLinearMap :=
   (rfl)
 
 @[simp]
-theorem charTwistTprodEquiv_tmul (x : k) (v : V) :
-    charTwistTprodEquiv χ ρ (x ⊗ₜ[k] v) = x • v :=
+theorem tprodEquivCharTwist_tmul (x : k) (v : V) :
+    tprodEquivCharTwist χ ρ (x ⊗ₜ[k] v) = x • v :=
   (rfl)
 
 end CommSemiring
@@ -182,6 +196,11 @@ one is: twisting by a character does not change the lattice of subrepresentation
 @[simp]
 theorem isIrreducible_charTwist_iff : (charTwist χ ρ).IsIrreducible ↔ ρ.IsIrreducible :=
   OrderIso.isSimpleOrder_iff (subrepresentationCharTwistOrderIso χ ρ)
+
+/-- The instance form of `Representation.isIrreducible_charTwist_iff`: a twist of an irreducible
+representation is irreducible. -/
+instance isIrreducible_charTwist [ρ.IsIrreducible] : (charTwist χ ρ).IsIrreducible :=
+  (isIrreducible_charTwist_iff χ ρ).mpr ‹_›
 
 /-- **The character of a twist is the pointwise product** of the twisting character with the
 character of the representation. -/
