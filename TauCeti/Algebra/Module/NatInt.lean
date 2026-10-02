@@ -13,18 +13,18 @@ public import Mathlib.Algebra.Ring.Units
 # Integer unit signs acting on modules
 
 The sign action of an integer unit agrees with the action of its image in the scalar ring.
-This lets powers of `-1` in the scalar ring combine with integer unit actions.
+This lets integer signs in the scalar ring, such as powers of `-1`, combine with integer unit
+actions.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- Acting by `(-1) ^ m` in the scalar ring and then by an integer unit is the action of
-their product as integer units. -/
-theorem neg_one_pow_smul_units_smul {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
-    (m : ℕ) (u : ℤˣ) (v : V) : (-1 : R) ^ m • u • v = ((-1) ^ m * u) • v := by
-  rw [mul_smul, Units.smul_def ((-1) ^ m), ← Int.cast_smul_eq_zsmul R]
-  simp
+/-- Acting by the image of an integer unit in the scalar ring and then by a second integer unit
+is the action of their product as integer units. -/
+theorem intCast_smul_units_smul {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
+    (u' u : ℤˣ) (v : V) : ((u' : ℤ) : R) • u • v = (u' * u) • v := by
+  rw [mul_smul, Units.smul_def u', ← Int.cast_smul_eq_zsmul R]
 
 end TauCeti

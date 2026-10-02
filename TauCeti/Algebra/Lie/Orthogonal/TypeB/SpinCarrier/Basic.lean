@@ -268,7 +268,7 @@ theorem exists_rep_rootGenerator_inl_exteriorBasis (i : Fin (n + 1))
     have hrefl := DynkinType.typeBSpinReflection_eq_insert_of_not_mem_last hlt hlast
     rw [rep_rootGenerator_inl_last, TauCeti.ExteriorAlgebra.involute_basis, mul_smul_comm,
       TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_right hlast, hrefl]
-    exact ⟨_, neg_one_pow_smul_units_smul _ _ _⟩
+    exact ⟨_, by simpa using intCast_smul_units_smul (R := ℚ) ((-1) ^ s.card) _ _⟩
   · intro hs
     have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_neg_one_iff_of_lt hlt s).1 hs
@@ -300,7 +300,8 @@ theorem exists_rep_rootGenerator_inr_exteriorBasis (i : Fin (n + 1))
     rw [rep_rootGenerator_inr_last, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
       ite_eq_left hlast, Units.smul_def, map_zsmul, TauCeti.ExteriorAlgebra.involute_basis,
       smul_comm, ← Units.smul_def, hrefl]
-    exact ⟨_, neg_one_pow_smul_units_smul _ _ _⟩
+    exact ⟨_, by
+      simpa using intCast_smul_units_smul (R := ℚ) ((-1) ^ (s.erase (Fin.last n)).card) _ _⟩
   · intro hs
     have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_one_iff_of_lt hlt s).1 hs
