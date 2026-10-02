@@ -33,6 +33,8 @@ In the namespace `TauCeti.G2ShortRoot.PrimeField`:
   scalar-extended generator coordinate maps, and the resulting quotient of `O(GL₇/k)`.
 * `generatedCoordinateMap`: the quotient coordinate morphism, with kernel `generatedDefiningIdeal`
   (`generatedCoordinateMap_ker`).
+* `generatedCoordinateDesc`: the factorization through the generated subgroup of any coordinate
+  morphism killing its defining ideal, unique by `generatedCoordinateDesc_unique`.
 * `baseChangeGeneratorLift`: each scalar-extended generator factored through the generated
   subgroup, as `TauCeti.CommHopfAlgCat.commonKernelLift`; unique by
   `baseChangeGeneratorLift_unique`.
@@ -177,6 +179,32 @@ theorem generatedCoordinateMap_ker :
     RingHom.ker (generatedCoordinateMap k).hom = (generatedDefiningIdeal k).toIdeal :=
   CommHopfAlgCat.mkQuotient_ker
     (GeneralLinear.coordinateHopfAlgebra k 7) (generatedDefiningIdeal k)
+
+/-- A coordinate morphism out of `O(GL₇/k)` killing the generated subgroup's defining ideal,
+factored through the generated subgroup. This is `CommHopfAlgCat.liftQuotient`, with its source
+identified with `generatedCoordinateHopfAlgebra k`; that identification is not visible outside
+this module. -/
+noncomputable def generatedCoordinateDesc {B : CommHopfAlgCat k}
+    (f : GeneralLinear.coordinateHopfAlgebra k 7 ⟶ B)
+    (hf : (generatedDefiningIdeal k).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
+    generatedCoordinateHopfAlgebra k ⟶ B :=
+  CommHopfAlgCat.liftQuotient (generatedDefiningIdeal k) f hf
+
+/-- Composing the quotient coordinate morphism with the descent morphism of `f` recovers `f`. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_generatedCoordinateDesc {B : CommHopfAlgCat k}
+    (f : GeneralLinear.coordinateHopfAlgebra k 7 ⟶ B)
+    (hf : (generatedDefiningIdeal k).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
+    generatedCoordinateMap k ≫ generatedCoordinateDesc k f hf = f :=
+  CommHopfAlgCat.mkQuotient_comp_liftQuotient (generatedDefiningIdeal k) f hf
+
+/-- The descent morphism is the unique factorization of `f` through the generated subgroup. -/
+theorem generatedCoordinateDesc_unique {B : CommHopfAlgCat k}
+    (f : GeneralLinear.coordinateHopfAlgebra k 7 ⟶ B)
+    (hf : (generatedDefiningIdeal k).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom)
+    (g : generatedCoordinateHopfAlgebra k ⟶ B) (hg : generatedCoordinateMap k ≫ g = f) :
+    g = generatedCoordinateDesc k f hf :=
+  CommHopfAlgCat.liftQuotient_unique (generatedDefiningIdeal k) f hf g hg
 
 /-- A scalar-extended root-subgroup or weight-torus coordinate map, factored through the
 generated subgroup. This is `CommHopfAlgCat.commonKernelLift`, with its source identified with
