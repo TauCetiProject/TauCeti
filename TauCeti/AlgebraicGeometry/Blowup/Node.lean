@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 public import TauCeti.AlgebraicGeometry.Curves.Node
 public import TauCeti.RingTheory.Node.Blowup
+public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+public import TauCeti.RingTheory.RegularLocalRing.Node
 
 /-!
 # The blowup of the node `xy = πⁿ⁺²` at its origin
@@ -21,6 +23,10 @@ This file describes the blowup `Proj A[It]` of `Spec A` along `V(I)` as a scheme
   coordinate, the chart `Spec R[x, t] ⧸ (xt - π)`;
 * consequently it is flat, locally of finite presentation and of pure relative dimension one over
   `Spec R`, like `Spec A` itself.
+
+When `R` is a discrete valuation ring with uniformizer `π`, the coordinate charts are regular and
+the `π`-chart is regular exactly when `n ≤ 1`. So a single blowup of the origin turns the nodes
+`xy = π²` and `xy = π³` into regular schemes, while for `n ≥ 2` the blowup is still singular.
 
 Over a discrete valuation ring, this says that blowing up the singular point of the local model
 `xy = πⁿ⁺²` of a node yields again a flat, finitely presented relative curve, whose only possibly
@@ -46,6 +52,8 @@ nodes of thickness one, regular at their origin
 * `TauCeti.NodeAlgebra.flat_blowup`, `TauCeti.NodeAlgebra.locallyOfFinitePresentation_blowup`,
   `TauCeti.NodeAlgebra.pureRelativeDimension_blowup`: the blowup is flat, locally of finite
   presentation and of pure relative dimension one over `Spec R`.
+* `TauCeti.NodeAlgebra.isRegularLocalRing_stalk_blowup_iff`: over a discrete valuation ring,
+  every local ring of the blowup is regular exactly when `n ≤ 1`.
 
 ## References
 
@@ -241,5 +249,33 @@ theorem pureRelativeDimension_blowup (hπ : π ∈ nonZeroDivisors R) :
   intro j
   rw [blowupOpenCover_f_blowupToSpec n hπ j]
   exact pureRelativeDimension_spec _
+
+/-! ### Regularity of the blowup over a discrete valuation ring -/
+
+/-- **One blowup resolves a node of thickness two or three.** For a uniformizer `π` of a discrete
+valuation ring `R`, every local ring of the blowup of `R[x, y] ⧸ (xy - πⁿ⁺²)` along `(π, x, y)` is
+regular exactly when `n ≤ 1`. -/
+theorem isRegularLocalRing_stalk_blowup_iff [IsDomain R] [IsDiscreteValuationRing R]
+    (hπ : Irreducible π) :
+    (∀ x : Proj (grade (originIdeal π (π ^ (n + 2)))),
+      IsRegularLocalRing ((Proj (grade (originIdeal π (π ^ (n + 2))))).presheaf.stalk x)) ↔
+      n ≤ 1 := by
+  have hπ0 : π ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hπ.ne_zero
+  have : IsNoetherianRing (NodeAlgebra R (π ^ n)) := Algebra.FiniteType.isNoetherianRing R _
+  rw [← isRegularRing_pow_iff hπ n,
+    isRegularRing_iff_isRegularLocalRing_stalk_Spec (.of (NodeAlgebra R (π ^ n)))]
+  refine ⟨fun h y ↦ (isRegularLocalRing_stalk_iff_of_isOpenImmersion
+    (blowupBaseChartι n hπ0) y).mp (h _), fun h x ↦ ?_⟩
+  have hx : x ∈ (blowupBaseChartι n hπ0).opensRange ⊔
+      ⨆ i, (blowupCoordChartι n i hπ0).opensRange := by
+    rw [opensRange_blowupBaseChartι_sup_iSup_opensRange_blowupCoordChartι]
+    trivial
+  rcases TopologicalSpace.Opens.mem_sup.mp hx with ⟨y, rfl⟩ | hx
+  · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ y).mpr (h y)
+  · obtain ⟨i, y, rfl⟩ := TopologicalSpace.Opens.mem_iSup.mp hx
+    have : IsRegularRing (NodeAlgebra R π) := by
+      have h1 := (isRegularRing_pow_iff hπ 1).mpr le_rfl
+      rwa [pow_one] at h1
+    exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ y).mpr inferInstance
 
 end TauCeti.NodeAlgebra
