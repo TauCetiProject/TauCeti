@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Additive.DirectSum
-public import TauCeti.InformationTheory.Coding.Puncture
+public import TauCeti.InformationTheory.Coding.Puncture.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 
 /-!

@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Puncture
+public import TauCeti.InformationTheory.Coding.Puncture.Basic
 
 /-!
 # Deleting one coordinate of an additive code

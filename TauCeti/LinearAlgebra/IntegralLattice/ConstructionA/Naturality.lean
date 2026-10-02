@@ -89,7 +89,7 @@ theorem map_signedEquiv_le_euclideanDual (C : AdditiveCode (ZMod m) ι)
         (C.map (signedEquiv (R := ZMod m) u e).toAddEquiv.toAddMonoidHom) ≤
       (AddSubgroup.toZModSubmodule m
         (C.map (signedEquiv (R := ZMod m) u e).toAddEquiv.toAddMonoidHom)).euclideanDual := by
-  rw [Submodule.le_euclideanDual_self_iff] at hC ⊢
+  rw [← Submodule.isSelfOrthogonal_iff_le, Submodule.isSelfOrthogonal_iff] at hC ⊢
   rintro x hx y hy
   -- The orthogonality characterization exposes the `ZMod` submodule; map membership is carried
   -- by the original additive code, where its witnesses have the desired form.

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Puncture
+public import Mathlib.GroupTheory.Index
+public import TauCeti.InformationTheory.Coding.Puncture.Basic
 
 /-!
 # Cardinalities under additive coordinate deletion

@@ -37,8 +37,8 @@ variable {ι ρ : Type*} [Fintype ι]
 namespace BinaryCode
 
 /-- In a self-orthogonal binary code, double evenness can be checked on any spanning set. -/
-theorem isDoublyEven_span_iff_of_le_euclideanDual {s : Set (ι → ZMod 2)}
-    (hs : Submodule.span (ZMod 2) s ≤ (Submodule.span (ZMod 2) s).euclideanDual) :
+theorem isDoublyEven_span_iff_of_isSelfOrthogonal {s : Set (ι → ZMod 2)}
+    (hs : (Submodule.span (ZMod 2) s).IsSelfOrthogonal) :
     IsDoublyEven (Submodule.span (ZMod 2) s) ↔ ∀ x ∈ s, 4 ∣ hammingNorm x := by
   constructor
   · intro h x hx
@@ -51,7 +51,7 @@ theorem isDoublyEven_span_iff_of_le_euclideanDual {s : Set (ι → ZMod 2)}
     | zero => simp
     | add x y hx hy ihx ihy =>
       exact (four_dvd_hammingNorm_add_iff ihx ihy).mpr
-        (Submodule.mem_euclideanDual.mp (hs hy) x hx)
+        (Submodule.isSelfOrthogonal_iff.mp hs x hx y hy)
     | smul a x hx ih =>
       by_cases ha : a = 0
       · simp [ha]
@@ -66,11 +66,11 @@ theorem isDoublyEven_span_iff {s : Set (ι → ZMod 2)} :
   constructor
   · intro h
     refine ⟨fun x hx => isDoublyEven_iff.mp h x (Submodule.subset_span hx), fun x hx y hy => ?_⟩
-    exact Submodule.mem_euclideanDual.mp (h.le_euclideanDual (Submodule.subset_span hy))
-      x (Submodule.subset_span hx)
+    exact Submodule.isSelfOrthogonal_iff.mp h.isSelfOrthogonal x (Submodule.subset_span hx)
+      y (Submodule.subset_span hy)
   · rintro ⟨hwt, horth⟩
-    apply (isDoublyEven_span_iff_of_le_euclideanDual ?_).mpr hwt
-    rw [Submodule.span_le]
+    apply (isDoublyEven_span_iff_of_isSelfOrthogonal ?_).mpr hwt
+    rw [Submodule.isSelfOrthogonal_iff_le, Submodule.span_le]
     intro y hy
     exact Submodule.mem_euclideanDual_span.mpr fun x hx => horth x hx y hy
 
@@ -84,13 +84,14 @@ theorem isDoublyEven_generatedBy_iff [Fintype ρ] {G : Matrix ρ ι (ZMod 2)} :
   · intro h
     refine ⟨fun r => isDoublyEven_iff.mp h _ (G.row_mem_generatedBy r), ?_⟩
     rw [← Matrix.generatedBy_le_checkedBy_iff, Matrix.checkedBy_eq_euclideanDual_generatedBy]
-    exact h.le_euclideanDual
+    exact h.isSelfOrthogonal.le_euclideanDual
   · rintro ⟨hwt, hgram⟩
-    have horth : G.generatedBy ≤ G.generatedBy.euclideanDual := by
-      rw [← Matrix.checkedBy_eq_euclideanDual_generatedBy, Matrix.generatedBy_le_checkedBy_iff]
+    have horth : G.generatedBy.IsSelfOrthogonal := by
+      rw [Submodule.isSelfOrthogonal_iff_le, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
+        Matrix.generatedBy_le_checkedBy_iff]
       exact hgram
     rw [Matrix.generatedBy_eq_span_rows] at horth ⊢
-    apply (isDoublyEven_span_iff_of_le_euclideanDual horth).mpr
+    apply (isDoublyEven_span_iff_of_isSelfOrthogonal horth).mpr
     simpa only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff] using hwt
 
 end BinaryCode

@@ -39,8 +39,13 @@ For a Hodge structure carried on a lattice, `dim_ℂ V_ℂ` is in turn the rank 
   dimension.
 * `TauCeti.Hodge.finsum_hodgeNumber_eq_finrank_lattice`: the Hodge numbers of a Hodge structure
   carried on a lattice sum to the rank of that lattice.
+* `TauCeti.Hodge.HodgeStructureOn.isEffective_iff_hodgeNumber_ne_zero`: a Hodge structure of
+  weight `n` is effective exactly when its Hodge numbers are supported in `[0, n]`.
 * `TauCeti.Hodge.HodgeType`: a weight and a symmetric, finitely supported family of Hodge numbers.
-* `TauCeti.Hodge.HodgeStructureOn.hodgeType`: the Hodge type of a Hodge structure.
+* `TauCeti.Hodge.HodgeType.IsEffective`: a Hodge type whose Hodge numbers are supported in
+  `[0, weight]`.
+* `TauCeti.Hodge.HodgeStructureOn.hodgeType`: the Hodge type of a Hodge structure, effective
+  exactly when the structure is (`TauCeti.Hodge.HodgeStructureOn.hodgeType_isEffective_iff`).
 
 Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §6, and Peters–Steenbrink, *Mixed Hodge
 Structures*, §2. This is the numerical layer of Layer L3 of
@@ -93,6 +98,20 @@ theorem finsum_hodgeNumber_eq_finrank (hs : HodgeStructureOn W ω n) [FiniteDime
     ∑ᶠ p, hs.hodgeNumber p = Module.finrank ℂ W :=
   finsum_finrank_eq_finrank_of_isInternal hs.isInternal_piece hs.finite_setOf_piece_ne_bot
 
+/-- On a finite-dimensional space, a Hodge number vanishes exactly when its Hodge component is
+zero. -/
+theorem hodgeNumber_eq_zero_iff [FiniteDimensional ℂ W] (hs : HodgeStructureOn W ω n) (p : ℤ) :
+    hs.hodgeNumber p = 0 ↔ hs.piece p = ⊥ :=
+  Submodule.finrank_eq_zero
+
+/-- **Effectivity in terms of Hodge numbers.** A pure Hodge structure of weight `n` on a
+finite-dimensional space is effective exactly when its Hodge numbers `h^{p,n-p}` are supported in
+`0 ≤ p ≤ n`. -/
+theorem isEffective_iff_hodgeNumber_ne_zero [FiniteDimensional ℂ W]
+    (hs : HodgeStructureOn W ω n) :
+    hs.IsEffective ↔ ∀ p, hs.hodgeNumber p ≠ 0 → p ∈ Set.Icc 0 n := by
+  simp only [isEffective_iff_piece_ne_bot, ne_eq, hodgeNumber_eq_zero_iff]
+
 end HodgeStructureOn
 
 /-- The numerical type of a pure Hodge structure: a weight, Hodge numbers `h` of finite support,
@@ -111,6 +130,12 @@ structure HodgeType where
   finite_support : {p | h p ≠ 0}.Finite
   /-- Hodge symmetry: `h^{p,q} = h^{q,p}`. -/
   symm : ∀ p, h p = h (weight - p)
+
+/-- A Hodge type is **effective** when its Hodge numbers `h p` are supported in
+`0 ≤ p ≤ weight`. These are the Hodge types of effective Hodge structures
+(`TauCeti.Hodge.HodgeStructureOn.hodgeType_isEffective_iff`). -/
+def HodgeType.IsEffective (t : HodgeType) : Prop :=
+  ∀ p, t.h p ≠ 0 → p ∈ Set.Icc 0 t.weight
 
 namespace HodgeStructureOn
 
@@ -137,6 +162,12 @@ theorem hodgeType_weight (hs : HodgeStructureOn W ω n) : hs.hodgeType.weight = 
 @[simp]
 theorem hodgeType_h (hs : HodgeStructureOn W ω n) : hs.hodgeType.h = hs.hodgeNumber :=
   (rfl)
+
+/-- A Hodge structure on a finite-dimensional space is effective exactly when its Hodge type is. -/
+@[simp]
+theorem hodgeType_isEffective_iff [FiniteDimensional ℂ W] (hs : HodgeStructureOn W ω n) :
+    hs.hodgeType.IsEffective ↔ hs.IsEffective := by
+  rw [isEffective_iff_hodgeNumber_ne_zero, HodgeType.IsEffective, hodgeType_h, hodgeType_weight]
 
 end HodgeStructureOn
 
