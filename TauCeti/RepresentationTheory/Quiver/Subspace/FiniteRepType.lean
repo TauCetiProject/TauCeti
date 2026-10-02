@@ -177,24 +177,23 @@ theorem isFinDim_subspaceJordanRep :
       (FiniteDimensional k (AdjoinRoot ((X : k[X]) ^ (n + 1)) × AdjoinRoot ((X : k[X]) ^ (n + 1))))
   · exact inferInstanceAs (FiniteDimensional k (AdjoinRoot ((X : k[X]) ^ (n + 1))))
 
-/-- The dimension of `k[X]/(Xⁿ⁺¹)`. -/
-private theorem finrank_adjoinRoot_X_pow :
-    Module.finrank k (AdjoinRoot ((X : k[X]) ^ (n + 1))) = n + 1 :=
-  -- `AdjoinRoot f` *is* `k[X] ⧸ (f)`, so Mathlib's dimension formula for such a quotient applies.
-  finrank_quotient_span_eq_natDegree.trans (natDegree_X_pow (n + 1))
-
 /-- The dimension vector of `TauCeti.subspaceJordanRep k n` is `2 (n + 1)` at the centre. -/
 theorem dimVector_subspaceJordanRep_center :
     dimVector (subspaceJordanRep k n) Quiver.Subspace.center = 2 * (n + 1) := by
   have := (monic_X_pow (R := k) (n + 1)).finite_adjoinRoot
+  -- `AdjoinRoot f` *is* `k[X] ⧸ (f)`, so Mathlib's dimension formula for such a quotient applies.
+  have h : Module.finrank k (AdjoinRoot ((X : k[X]) ^ (n + 1))) = n + 1 :=
+    finrank_quotient_span_eq_natDegree.trans (natDegree_X_pow (n + 1))
   rw [dimVector_apply]
   -- The centre carries `(k[X]/(Xⁿ⁺¹))²` by definition, so the dimension of a product applies.
-  exact Module.finrank_prod.trans (by rw [finrank_adjoinRoot_X_pow]; ring)
+  exact Module.finrank_prod.trans (by rw [h]; ring)
 
 /-- The dimension vector of `TauCeti.subspaceJordanRep k n` is `n + 1` at each outer vertex. -/
 theorem dimVector_subspaceJordanRep_outer (i : Fin 4) :
     dimVector (subspaceJordanRep k n) (Quiver.Subspace.outer i) = n + 1 :=
-  (dimVector_apply _ _).trans finrank_adjoinRoot_X_pow
+  -- `AdjoinRoot f` *is* `k[X] ⧸ (f)`, so Mathlib's dimension formula for such a quotient applies.
+  (dimVector_apply _ _).trans
+    (finrank_quotient_span_eq_natDegree.trans (natDegree_X_pow (n + 1)))
 
 /-- `TauCeti.subspaceJordanRep k n` is nonzero: its outer vertex spaces are the nontrivial ring
 `k[X]/(Xⁿ⁺¹)`. -/
@@ -211,6 +210,11 @@ theorem not_isZero_subspaceJordanRep : ¬ IsZero (subspaceJordanRep k n) := by
 private noncomputable def outerApp (e : subspaceJordanRep k n ⟶ subspaceJordanRep k n)
     (i : Fin 4) : AdjoinRoot ((X : k[X]) ^ (n + 1)) →ₗ[k] AdjoinRoot ((X : k[X]) ^ (n + 1)) :=
   (e.app (Quiver.Subspace.outer i : Paths (Quiver.Subspace (Fin 4)))).hom
+
+/-- The component of a composite at an outer vertex is the composite of the components. -/
+private theorem outerApp_comp (e e' : subspaceJordanRep k n ⟶ subspaceJordanRep k n) (i : Fin 4) :
+    outerApp (e ≫ e') i = outerApp e' i ∘ₗ outerApp e i :=
+  rfl
 
 /-- The component of an endomorphism at the centre. -/
 private noncomputable def centerApp (e : subspaceJordanRep k n ⟶ subspaceJordanRep k n) :
@@ -310,8 +314,7 @@ theorem indecomposable_subspaceJordanRep : Indecomposable (subspaceJordanRep k n
   · refine hom_ext_of_outerApp ?_
     rw [outerApp_eq_mulRight e, outerApp_eq_mulRight e']
     exact congrArg (LinearMap.mulRight k) h
-  · change outerApp e 0 (outerApp e 0 1) = _
-    rw [outerApp_eq_mulRight e]
+  · rw [outerApp_comp, LinearMap.comp_apply, outerApp_eq_mulRight e]
     simp
 
 /-- **Jordan blocks of different sizes give non-isomorphic configurations**: their dimension
