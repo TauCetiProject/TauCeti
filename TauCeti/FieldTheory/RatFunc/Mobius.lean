@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
@@ -21,9 +21,11 @@ over `k` has nonzero determinant, so the construction applies to `GL₂(k)`.
 
 ## Main definitions
 
-* `RatFunc.mobiusOf`: the linear fractional transformation of four coefficients.
+* `RatFunc.mobiusOf`: the linear fractional transformation of four coefficients, with its defining
+  equation `mobiusOf_def`.
 * `RatFunc.mobiusAutOf`: the automorphism of `k(X)` sending `X` to it.
-* `RatFunc.mobius` and `RatFunc.mobiusAut`: the same for an invertible matrix.
+* `RatFunc.mobius` (with `mobius_def`) and `RatFunc.mobiusAut`: the same for an invertible
+  matrix.
 * `RatFunc.mobiusAutHom`: the group homomorphism `GL₂(k) →* Aut(k(X)/k)`.
 * `RatFunc.translationAut`: the translation `X ↦ X + c`.
 
@@ -65,15 +67,15 @@ theorem mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C 
   · exact h h1
   · exact h h0'
 
+/-- **A constant lies in every intermediate field** of `k(X) / k`. -/
+theorem C_mem (S : IntermediateField K (RatFunc K)) (x : K) : C x ∈ S := by
+  rw [← algebraMap_eq_C]
+  exact IntermediateField.algebraMap_mem _ x
+
 /-- A constant of `k(X)` is nonzero when the scalar is. -/
 theorem C_ne_zero {x : K} (hx : x ≠ 0) : (C x : RatFunc K) ≠ 0 := by
   rw [← algebraMap_eq_C, Ne, map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective K (RatFunc K))]
   exact hx
-
-private theorem C_mem_adjoin (x : K) (f : RatFunc K) :
-    C x ∈ IntermediateField.adjoin K {f} := by
-  rw [← algebraMap_eq_C]
-  exact IntermediateField.algebraMap_mem _ x
 
 /-- An automorphism of `k(X)` over `k` fixes the constants. -/
 @[simp]
@@ -87,6 +89,9 @@ variable (a b c d : K)
 
 /-- The **linear fractional transformation** `(a X + b) / (c X + d)` of `k(X)`. -/
 noncomputable def mobiusOf : RatFunc K := (C a * X + C b) / (C c * X + C d)
+
+/-- The defining equation of `mobiusOf`. -/
+theorem mobiusOf_def : mobiusOf a b c d = (C a * X + C b) / (C c * X + C d) := (rfl)
 
 variable {a b c d} (hdet : a * d - b * c ≠ 0)
 include hdet
@@ -138,10 +143,10 @@ theorem adjoin_mobiusOf_eq_top : IntermediateField.adjoin K {mobiusOf a b c d} =
   refine IntermediateField.adjoin_simple_le_iff.mpr ?_
   rw [X_eq_div_mobiusOf hdet]
   exact div_mem
-    (sub_mem (mul_mem (C_mem_adjoin _ _) (IntermediateField.mem_adjoin_simple_self _ _))
-      (C_mem_adjoin _ _))
-    (sub_mem (C_mem_adjoin _ _)
-      (mul_mem (C_mem_adjoin _ _) (IntermediateField.mem_adjoin_simple_self _ _)))
+    (sub_mem (mul_mem (C_mem _ _) (IntermediateField.mem_adjoin_simple_self _ _))
+      (C_mem _ _))
+    (sub_mem (C_mem _ _)
+      (mul_mem (C_mem _ _) (IntermediateField.mem_adjoin_simple_self _ _)))
 
 /-- **A linear fractional transformation is transcendental**, being a generator of `k(X)`. -/
 theorem transcendental_mobiusOf : Transcendental K (mobiusOf a b c d) :=
@@ -221,6 +226,11 @@ noncomputable def mobius : RatFunc K :=
   mobiusOf ((A : Matrix (Fin 2) (Fin 2) K) 0 0) ((A : Matrix (Fin 2) (Fin 2) K) 0 1)
     ((A : Matrix (Fin 2) (Fin 2) K) 1 0) ((A : Matrix (Fin 2) (Fin 2) K) 1 1)
 
+/-- The defining equation of `mobius`. -/
+theorem mobius_def : mobius A =
+    mobiusOf ((A : Matrix (Fin 2) (Fin 2) K) 0 0) ((A : Matrix (Fin 2) (Fin 2) K) 0 1)
+      ((A : Matrix (Fin 2) (Fin 2) K) 1 0) ((A : Matrix (Fin 2) (Fin 2) K) 1 1) := (rfl)
+
 /-- The automorphism of `k(X)` given by an invertible matrix. -/
 noncomputable def mobiusAut : RatFunc K ≃ₐ[K] RatFunc K :=
   mobiusAutOf (det_entries_ne_zero A)
@@ -229,19 +239,12 @@ noncomputable def mobiusAut : RatFunc K ≃ₐ[K] RatFunc K :=
 theorem mobiusAut_X : mobiusAut A X = mobius A :=
   mobiusAutOf_X _
 
-/-- The entries of a product of invertible matrices. -/
-private theorem coe_mul_apply (B : GL (Fin 2) K) (i j : Fin 2) :
-    ((B * A : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) i j =
-      (B : Matrix (Fin 2) (Fin 2) K) i 0 * (A : Matrix (Fin 2) (Fin 2) K) 0 j +
-        (B : Matrix (Fin 2) (Fin 2) K) i 1 * (A : Matrix (Fin 2) (Fin 2) K) 1 j := by
-  rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
-
 /-- **Substituting one linear fractional transformation into another multiplies the matrices in
 the opposite order.** -/
 theorem mobiusAut_mobius (B : GL (Fin 2) K) : mobiusAut A (mobius B) = mobius (B * A) := by
-  rw [mobiusAut, mobius, mobius,
-    mobiusAutOf_mobiusOf (det_entries_ne_zero A) (det_entries_ne_zero B),
-    coe_mul_apply A B 0 0, coe_mul_apply A B 0 1, coe_mul_apply A B 1 0, coe_mul_apply A B 1 1]
+  rw [mobiusAut, mobius_def, mobius_def,
+    mobiusAutOf_mobiusOf (det_entries_ne_zero A) (det_entries_ne_zero B)]
+  simp only [Matrix.GeneralLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- The identity matrix gives the identity transformation. -/
 @[simp]
