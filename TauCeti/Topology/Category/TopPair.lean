@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Category.TopPair
 
 /-!
@@ -21,6 +22,14 @@ special case `t = X`; the general form is the one a filtration of a space, such 
 filtration of a CW complex, produces.  A continuous map `t → t'` carrying `s` into `s'` induces a
 map of such pairs `TopPair.ofInclusionMap`, and a homotopy that keeps `s` inside `s'` at every
 time induces a homotopy of maps of pairs `TopPair.ofInclusionHomotopy`.
+
+A map of pairs which is an isomorphism of the ambient spaces and is surjective on the subspaces is
+an isomorphism of pairs (`TopPair.isIso_of_isIso_fst_of_surjective_snd`): the inverse on the
+subspaces is continuous because subspaces are embedded.
+
+The disjoint union `TopPair.sigma P = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of pairs `P i = (Xᵢ, Aᵢ)`,
+with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of the family in
+`TopPair` (`TopPair.sigmaCofanIsColimit`).  Relative singular homology is additive along it.
 -/
 
 public section
@@ -123,5 +132,83 @@ def ofInclusionHomotopy {g₀ g₁ : C(t, t')} (F : g₀.Homotopy g₁)
       map_one_left x := Subtype.ext (congrArg Subtype.val (F.apply_one ⟨x.1, hst x.2⟩) :) }
 
 end ofInclusion
+
+section isIso
+
+variable {P Q : TopPair.{u}} (f : P ⟶ Q)
+
+/-- A map of topological pairs which is an isomorphism of the ambient spaces and is surjective
+on the subspaces is an isomorphism of pairs.  The inverse on the subspaces is continuous because
+the subspace of the source is embedded in its ambient space. -/
+lemma isIso_of_isIso_fst_of_surjective_snd [IsIso (Hom.fst f)]
+    (hf : Function.Surjective (Hom.snd f)) : IsIso f := by
+  let e := TopCat.homeoOfIso (asIso (Hom.fst f))
+  let g : Q.snd → P.snd := Function.surjInv hf
+  have hg (b : Q.snd) : Hom.snd f (g b) = b := Function.surjInv_eq hf b
+  have hmap (b : Q.snd) : P.map (g b) = e.symm (Q.map b) :=
+    (e.symm_apply_eq.2 ((congrArg Q.map (hg b)).symm.trans (Hom.w_apply f (g b)))).symm
+  have hgc : Continuous g := by
+    rw [P.isEmbedding_map.isInducing.continuous_iff, show P.map ∘ g = e.symm ∘ Q.map from
+      funext hmap]
+    fun_prop
+  refine ⟨TopPair.ofHom (inv (Hom.fst f)) (TopCat.ofHom ⟨g, hgc⟩)
+    (by ext b; exact hmap b), ?_, ?_⟩
+  · ext a : 2
+    · refine P.isEmbedding_map.injective ?_
+      -- The subspace component of the composite sends `a` to `g (Hom.snd f a)`.
+      change P.map (g (Hom.snd f a)) = P.map a
+      rw [hmap, Hom.w_apply]
+      exact e.symm_apply_apply _
+    · exact e.symm_apply_apply a
+  · ext b : 2
+    · exact hg b
+    · exact e.apply_symm_apply b
+
+end isIso
+
+section sigma
+
+open Limits
+
+variable {ι : Type u}
+
+/-- The disjoint union `∐ᵢ (Xᵢ, Aᵢ) = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of topological pairs, the
+coproduct of the family in `TopPair` (`TopPair.sigmaCofanIsColimit`). -/
+abbrev sigma (P : ι → TopPair.{u}) : TopPair.{u} :=
+  TopPair.of (A := TopCat.of (Σ i, (P i).snd)) (X := TopCat.of (Σ i, (P i).fst))
+    (TopCat.ofHom ⟨Sigma.map id fun i ↦ (P i).map,
+      continuous_sigma_map.2 fun i ↦ (P i).map.hom.continuous⟩)
+    ((Topology.isEmbedding_sigmaMap Function.injective_id).2 fun i ↦ (P i).isEmbedding_map :
+      Topology.IsEmbedding (Sigma.map id fun i ↦ ⇑(P i).map : (Σ i, (P i).snd) → Σ i, (P i).fst))
+
+variable (P : ι → TopPair.{u})
+
+/-- The inclusion `(Xᵢ, Aᵢ) ⟶ ∐ᵢ (Xᵢ, Aᵢ)` of a summand into the disjoint union of a family of
+topological pairs. -/
+abbrev sigmaι (i : ι) : P i ⟶ sigma P :=
+  TopPair.ofHom (TopCat.sigmaι (fun i ↦ (P i).fst) i) (TopCat.sigmaι (fun i ↦ (P i).snd) i)
+
+/-- The cofan of a family of topological pairs given by their disjoint union. -/
+abbrev sigmaCofan : Cofan P :=
+  Cofan.mk (sigma P) (sigmaι P)
+
+/-- The disjoint union of a family of topological pairs is their coproduct in `TopPair`. -/
+def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
+  Cofan.IsColimit.mk _
+    (fun s ↦ TopPair.ofHom
+      (TopCat.ofHom ⟨fun x ↦ Hom.fst (s.inj x.1) x.2,
+        continuous_sigma fun i ↦ (Hom.fst (s.inj i)).hom.continuous⟩)
+      (TopCat.ofHom ⟨fun x ↦ Hom.snd (s.inj x.1) x.2,
+        continuous_sigma fun i ↦ (Hom.snd (s.inj i)).hom.continuous⟩)
+      (by
+        ext ⟨i, x⟩
+        exact Hom.w_apply (s.inj i) x))
+    (fun s i ↦ by ext : 2 <;> rfl)
+    (fun s m hm ↦ by
+      ext ⟨i, x⟩ : 2
+      · exact ConcreteCategory.congr_hom (congrArg Hom.snd (hm i)) x
+      · exact ConcreteCategory.congr_hom (congrArg Hom.fst (hm i)) x)
+
+end sigma
 
 end TopPair

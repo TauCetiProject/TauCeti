@@ -259,7 +259,7 @@ theorem _root_.ContRepresentation.isMulCommutative_integratedAlgebra
       (StarAlgebra.adjoin ℂ (Set.range (π.integratedOperatorL1 hcont hbdd μ))) :=
     CStarAlgebra.isMulCommutative_adjoin
       (by rintro _ ⟨f, rfl⟩; exact π.isStarNormal_integratedOperatorL1 hπ f)
-      (by rintro _ ⟨f₁, rfl⟩ _ ⟨f₂, rfl⟩ _; exact π.commute_integratedOperatorL1 f₁ f₂)
+      (by rintro _ ⟨f₁, rfl⟩ _ ⟨f₂, rfl⟩ _; exact π.integratedOperatorL1_commute f₁ f₂)
   rw [ContRepresentation.integratedAlgebra_def]
   exact StarSubalgebra.isMulCommutative_topologicalClosure _
 

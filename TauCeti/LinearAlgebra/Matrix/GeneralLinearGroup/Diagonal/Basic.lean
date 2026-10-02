@@ -55,6 +55,8 @@ element (`TauCeti.diagGL_const`).
 * `TauCeti.diagGL` embeds a family of units as an invertible diagonal matrix.
 * `TauCeti.diagonalTorus`: the subgroup of invertible diagonal matrices in `GL n k`.
 * `TauCeti.diagonalTorusEquiv`: the identification `(Fin n → kˣ) ≃* diagonalTorus k n`.
+* `TauCeti.detOneRescale`: the explicit rescaling of the first column of an invertible matrix
+  that makes its determinant one.
 
 ## Main statements
 
@@ -322,6 +324,52 @@ theorem exists_det_mul_diagGL_eq_one (P : GL ι k) :
   · exact ⟨1, Units.ext <| by simp [Matrix.GeneralLinearGroup.val_det_apply]⟩
   refine ⟨Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹, ?_⟩
   rw [map_mul, det_diagGL, Fintype.prod_pi_mulSingle' i, mul_inv_cancel]
+
+/-- Rescale the first column of an invertible matrix by the inverse of its determinant. The
+result has determinant one (`TauCeti.det_detOneRescale`), and the operation is the identity on
+determinant-one matrices (`TauCeti.detOneRescale_of_det_eq_one`).
+
+Unlike `TauCeti.exists_det_mul_diagGL_eq_one`, the rescaling is an explicit formula, so it
+commutes with entrywise ring homomorphisms (`TauCeti.map_detOneRescale`): it is a morphism of
+schemes `GLₙ → SLₙ`. In rank zero it is the identity. -/
+def detOneRescale (g : GL (Fin n) k) : GL (Fin n) k :=
+  g * diagGL fun i : Fin n ↦ if (i : ℕ) = 0 then (Matrix.GeneralLinearGroup.det g)⁻¹ else 1
+
+/-- The determinant-one rescaling multiplies on the right by the diagonal matrix
+`diag((det g)⁻¹, 1, …, 1)`. -/
+theorem detOneRescale_def (g : GL (Fin n) k) :
+    detOneRescale g =
+      g * diagGL fun i : Fin n ↦ if (i : ℕ) = 0 then (Matrix.GeneralLinearGroup.det g)⁻¹ else 1 :=
+  (rfl)
+
+/-- The determinant-one rescaling has determinant one. -/
+@[simp]
+theorem det_detOneRescale (g : GL (Fin n) k) :
+    Matrix.GeneralLinearGroup.det (detOneRescale g) = 1 := by
+  rw [detOneRescale, map_mul, det_diagGL]
+  cases n with
+  | zero =>
+    rw [Fin.prod_univ_zero, mul_one]
+    exact Units.ext (by simp [Matrix.GeneralLinearGroup.val_det_apply])
+  | succ m =>
+    rw [Fin.prod_univ_succ]
+    simp
+
+/-- The determinant-one rescaling fixes matrices of determinant one. -/
+theorem detOneRescale_of_det_eq_one {g : GL (Fin n) k}
+    (hg : Matrix.GeneralLinearGroup.det g = 1) : detOneRescale g = g := by
+  rw [detOneRescale, hg, inv_one]
+  simp
+
+/-- The determinant-one rescaling commutes with mapping the entries along a ring
+homomorphism. -/
+theorem map_detOneRescale {S : Type*} [CommRing S] (f : k →+* S) (g : GL (Fin n) k) :
+    Matrix.GeneralLinearGroup.map f (detOneRescale g) =
+      detOneRescale (Matrix.GeneralLinearGroup.map f g) := by
+  rw [detOneRescale, detOneRescale, map_mul, map_diagGL, Matrix.GeneralLinearGroup.map_det]
+  congr 2
+  funext i
+  split_ifs <;> simp
 
 /-- If `P` intertwines `M` with a diagonal matrix, there is an intertwining matrix of determinant
 one, obtained in the nonempty case by rescaling one of the columns of `P`. -/

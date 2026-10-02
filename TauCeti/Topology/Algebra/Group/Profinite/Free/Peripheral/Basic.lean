@@ -133,6 +133,11 @@ theorem inv_cusp (x : Fin r → G) : (cusp x)⁻¹ = (List.ofFn x).prod :=
 theorem prod_mul_cusp (x : Fin r → G) : (List.ofFn x).prod * cusp x = 1 :=
   mul_inv_cancel _
 
+/-- The cusp of a one-element family is the inverse of its element. -/
+@[simp]
+theorem cusp_fin_one (x : Fin 1 → G) : cusp x = (x 0)⁻¹ := by
+  simp [cusp_def]
+
 /-- Homomorphisms carry the cusp of a family to the cusp of its image. -/
 @[simp]
 theorem map_cusp {M : Type*} [FunLike M G H] [MonoidHomClass M G H] (f : M) (x : Fin r → G) :

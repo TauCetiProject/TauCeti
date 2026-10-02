@@ -49,6 +49,8 @@ two rectangles form a thin annulus through `X_k`, are computed in
   matrix coefficient of `H_k` counts the empty rectangles whose only marking is `X_k`.
 * `TauCeti.GridDiagram.alexander_sub_card_OColumns_eq_alexander_sub_one`: `H_k` lowers the
   Alexander grading by one.
+* `TauCeti.GridDiagram.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient`: every
+  monomial of a matrix coefficient of `H_k` is the weight of a contributing rectangle.
 
 ## References
 
@@ -128,6 +130,15 @@ theorem XHomotopyCoefficient_def (k : Fin n) (x y : GridState n) :
     G.XHomotopyCoefficient R k x y =
       ∑ r ∈ G.XHomotopyRectangles k x y, G.OMonomial R r.toGridRectangle := by
   rw [XHomotopyCoefficient]
+
+/-- Every monomial of a matrix coefficient of `H_k` is the weight `V^{O(r)}` of a contributing
+rectangle. -/
+theorem exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient {k : Fin n}
+    {x y : GridState n} {d : Fin n →₀ ℕ} (hd : d ∈ (G.XHomotopyCoefficient R k x y).support) :
+    ∃ r ∈ G.XHomotopyRectangles k x y,
+      d = ∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1 := by
+  rw [XHomotopyCoefficient_def] at hd
+  exact G.exists_mem_of_mem_support_sum_OMonomial R hd
 
 /-- The constant term of a matrix coefficient of `H_k` counts the contributing rectangles that
 carry no `O`-marking either: setting every variable to zero leaves the count of the empty

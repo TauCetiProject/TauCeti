@@ -27,6 +27,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 
 * `MvPolynomial.finSuccEquiv'_X_self`, `MvPolynomial.finSuccEquiv'_rename_succAbove`: the
   singled-out variable goes to the polynomial variable, and the others are constants.
+* `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
+  substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
 -/
 
@@ -76,6 +78,21 @@ theorem finSuccEquiv'_symm_X (p : Fin (n + 1)) :
 theorem finSuccEquiv'_symm_C (p : Fin (n + 1)) (f : MvPolynomial (Fin n) R) :
     (finSuccEquiv' R p).symm (Polynomial.C f) = rename p.succAbove f :=
   (finSuccEquiv' R p).symm_apply_eq.mpr (finSuccEquiv'_rename_succAbove p f).symm
+
+/-- Evaluating the singled-out variable at `a` is substituting `a` for `X p` and keeping the
+other variables. -/
+theorem polynomial_eval_finSuccEquiv' (p : Fin (n + 1)) (a : MvPolynomial (Fin n) R)
+    (f : MvPolynomial (Fin (n + 1)) R) :
+    Polynomial.eval a (finSuccEquiv' R p f) = aeval (Fin.insertNth p a X) f := by
+  induction f using MvPolynomial.induction_on with
+  | C r =>
+    rw [← algebraMap_eq, AlgEquiv.commutes, AlgHom.commutes, Polynomial.algebraMap_apply,
+      Polynomial.eval_C]
+  | add f g hf hg => rw [map_add, Polynomial.eval_add, hf, hg, map_add]
+  | mul_X f i hf =>
+    rw [map_mul, Polynomial.eval_mul, hf, map_mul, aeval_X]
+    congr 1
+    obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;> simp
 
 /-- Singling out the variable `X 0` is `MvPolynomial.finSuccEquiv`. -/
 theorem finSuccEquiv'_zero : finSuccEquiv' R (0 : Fin (n + 1)) = finSuccEquiv R n := by

@@ -37,9 +37,10 @@ strengthening, which for this construction holds at every stage of the filtratio
 Injectivity of `ι` therefore turns the representation below into a faithful one, which is the
 Ado--Iwasawa theorem in prime characteristic; over a field that injectivity is a corollary of the
 Poincaré--Birkhoff--Witt theorem, which also supplies the absence of zero divisors in `U(L)`
-through the symmetric associated graded algebra. Both properties hold for an abelian `L`, where
-`U(L)` is a polynomial algebra (`TauCeti.UniversalEnvelopingAlgebra.instIsDomain` and
-`TauCeti.UniversalEnvelopingAlgebra.ι_injective`).
+through the symmetric associated graded algebra. Both properties hold for every Lie algebra
+over a field, by
+`TauCeti.UniversalEnvelopingAlgebra.instIsDomain` and
+`TauCeti.UniversalEnvelopingAlgebra.ι_injective` in the PBW development.
 
 ## Main results
 

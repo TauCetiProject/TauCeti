@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.PolynomialRep
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Evaluation
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 
 /-!
@@ -71,20 +71,6 @@ section Basis
 
 variable {R L} {ι : Type w} [LinearOrder ι] (b : Module.Basis ι R L)
 
-/-- Evaluation at `1` of the action of `U(L)` on the polynomial algebra through the PBW
-representation. -/
-private noncomputable def pbwEval : U →ₗ[R] MvPolynomial ι R :=
-  LinearMap.applyₗ (1 : MvPolynomial ι R) ∘ₗ
-    (_root_.UniversalEnvelopingAlgebra.lift R b.pbwPolynomialRep).toLinearMap
-
-private theorem pbwEval_one : pbwEval b (1 : U) = 1 := by
-  simp [pbwEval]
-
-private theorem pbwEval_ι_mul (x : L) (a : U) :
-    pbwEval b (_root_.UniversalEnvelopingAlgebra.ι R x * a) =
-      b.pbwPolynomialRep x (pbwEval b a) := by
-  simp [pbwEval]
-
 /-- Multiplying by a linear form raises total degree by at most one. -/
 private theorem constr_X_mul_mem {d : ℕ} (x : L) {p : MvPolynomial ι R}
     (hp : p ∈ restrictTotalDegree ι R d) :
@@ -95,19 +81,20 @@ private theorem constr_X_mul_mem {d : ℕ} (x : L) {p : MvPolynomial ι R}
   rwa [sub_sub_cancel] at h
 
 private theorem pbwEval_prod_mem (l : List L) :
-    pbwEval b (l.map (_root_.UniversalEnvelopingAlgebra.ι R)).prod ∈
+    b.pbwEval (l.map (_root_.UniversalEnvelopingAlgebra.ι R)).prod ∈
       restrictTotalDegree ι R l.length := by
   induction l with
   | nil =>
-      rw [List.map_nil, List.prod_nil, pbwEval_one, mem_restrictTotalDegree, totalDegree_one]
+      rw [List.map_nil, List.prod_nil, Module.Basis.pbwEval_one, mem_restrictTotalDegree,
+        totalDegree_one]
       exact Nat.zero_le _
   | cons x l ih =>
-      rw [List.map_cons, List.prod_cons, pbwEval_ι_mul, List.length_cons]
+      rw [List.map_cons, List.prod_cons, Module.Basis.pbwEval_ι_mul, List.length_cons]
       exact b.pbwPolynomialRep_mem_restrictTotalDegree x ih
 
 private theorem pbwEval_mem {n : ℕ} {a : U} (ha : a ∈ pbwFiltration R L n) :
-    pbwEval b a ∈ restrictTotalDegree ι R n := by
-  have : pbwFiltration R L n ≤ (restrictTotalDegree ι R n).comap (pbwEval b) :=
+    b.pbwEval a ∈ restrictTotalDegree ι R n := by
+  have : pbwFiltration R L n ≤ (restrictTotalDegree ι R n).comap (b.pbwEval) :=
     (pbwFiltration_le_iff R L).2 fun l hl ↦
       restrictTotalDegree_mono ι R hl (pbwEval_prod_mem b l)
   exact this ha
@@ -115,16 +102,17 @@ private theorem pbwEval_mem {n : ℕ} {a : U} (ha : a ∈ pbwFiltration R L n) :
 /-- A word of length `n + 1` evaluates to the product of its linear forms, up to total degree at
 most `n`. -/
 private theorem pbwEval_prod_sub_mem (x : L) (l : List L) :
-    pbwEval b ((x :: l).map (_root_.UniversalEnvelopingAlgebra.ι R)).prod -
+    b.pbwEval ((x :: l).map (_root_.UniversalEnvelopingAlgebra.ι R)).prod -
         ((x :: l).map (b.constr R X)).prod ∈ restrictTotalDegree ι R l.length := by
   induction l generalizing x with
   | nil =>
-      simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, pbwEval_ι_mul,
-        pbwEval_one, List.length_nil] using
+      simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+        Module.Basis.pbwEval_ι_mul,
+        Module.Basis.pbwEval_one, List.length_nil] using
         b.pbwPolynomialRep_sub_mul_mem_restrictTotalDegree x
           ((mem_restrictTotalDegree ι 0 (1 : MvPolynomial ι R)).2 totalDegree_one.le)
   | cons y l ih =>
-      rw [List.map_cons, List.prod_cons, pbwEval_ι_mul, List.map_cons, List.prod_cons,
+      rw [List.map_cons, List.prod_cons, Module.Basis.pbwEval_ι_mul, List.map_cons, List.prod_cons,
         List.length_cons]
       have h := Submodule.add_mem _
         (b.pbwPolynomialRep_sub_mul_mem_restrictTotalDegree x (pbwEval_prod_mem b (y :: l)))
@@ -136,7 +124,7 @@ graded piece. It kills the preceding filtration step because the evaluation send
 degree less than `n`. -/
 private noncomputable def pbwSymbol (n : ℕ) : PBWGradedPiece R L n →ₗ[R] MvPolynomial ι R :=
   (previousRestricted (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap n).liftQ
-    (homogeneousComponent n ∘ₗ pbwEval b ∘ₗ
+    (homogeneousComponent n ∘ₗ b.pbwEval ∘ₗ
       (wordFiltration (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap n).subtype)
     (by
       intro a ha
@@ -170,10 +158,10 @@ private theorem pbwSymbol_mk_prod (l : List L) :
   rw [pbwSymbol, Submodule.liftQ_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     Submodule.subtype_apply, Submodule.coe_mk]
   cases l with
-  | nil => simp [pbwEval_one]
+  | nil => simp [Module.Basis.pbwEval_one]
   | cons x l =>
       rw [List.length_cons] at hhom ⊢
-      rw [← sub_add_cancel (pbwEval b _) ((x :: l).map (b.constr R X)).prod, map_add,
+      rw [← sub_add_cancel (b.pbwEval _) ((x :: l).map (b.constr R X)).prod, map_add,
         homogeneousComponent_eq_zero _ _ (Nat.lt_succ_of_le ((mem_restrictTotalDegree ι _ _).1
           (pbwEval_prod_sub_mem b x l))), zero_add, ← hprod,
         homogeneousComponent_of_mem hhom, ite_eq_left rfl]

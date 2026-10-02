@@ -14,7 +14,7 @@ import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 /-!
 # The Schwarz--Christoffel theorem for polygonal Jordan domains
 
-Let `U` be a bounded, simply connected domain whose frontier is a Jordan curve, and which is
+Let `U` be a bounded domain whose frontier is a Jordan curve, and which is
 polygonal: near each boundary point that is not one of the finitely many vertices `v i` it
 coincides with an open half-plane, and near `v i` with the open sector of opening `(e i + 1) * π`
 at `v i`, where `e i ∈ (-1, 1)`.  Then there are distinct real prevertices `a i` and complex
@@ -98,7 +98,7 @@ private theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn {
     (eventually_nhdsWithin_of_forall hform)
 
 /-- **The Schwarz--Christoffel theorem for a bounded polygonal Jordan domain.**  Let `U` be a
-bounded, simply connected open set whose frontier is a Jordan curve.  Suppose that `U` coincides
+bounded, connected open set whose frontier is a Jordan curve.  Suppose that `U` coincides
 near each frontier point other than the distinct vertices `v i` with an open half-plane, and near
 the vertex `v i` with the open sector of opening `(e i + 1) * π` at `v i`, where `e i ∈ (-1, 1)`.
 Then there are distinct real prevertices `a i` and constants `A ≠ 0` and `B` such that
@@ -107,7 +107,7 @@ Schwarz--Christoffel primitive for the prevertices `a` and the turning exponents
 the Schwarz--Christoffel vertex at `a i`, the limit of `F` at `a i`, is sent to `v i`. -/
 theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane)
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
@@ -130,7 +130,7 @@ turning exponents sum to `-2`: the interior angles `(e i + 1) * π` at the `n` v
 closing condition `∑ i, e i = -2`. -/
 theorem exponent_sum_eq_neg_two_of_isJordanCurve_frontier
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
@@ -149,7 +149,7 @@ infinity to infinity, with real prevertices of the vertices.  The exterior point
 infinity. -/
 private theorem exists_prevertices_of_unbounded_polygon {ι : Type*} (e : ι → ℝ)
     (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2) {U : Set ℂ}
-    (hUo : IsOpen U) (hUc : IsSimplyConnected U)
+    (hUo : IsOpen U) (hUc : IsConnected U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
     (hv : Injective v)
     (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
@@ -167,7 +167,7 @@ private theorem exists_prevertices_of_unbounded_polygon {ι : Type*} (e : ι →
     (vertex_mem_frontier_of_corner e he hcorner)
 
 /-- **The Schwarz--Christoffel theorem for an unbounded polygonal Jordan domain.**  Let `U` be a
-simply connected open set whose frontier, together with the point at infinity, is a Jordan curve
+connected open set whose frontier, together with the point at infinity, is a Jordan curve
 of the Riemann sphere.  Suppose that `U` coincides near each frontier point other than the
 distinct vertices `v i` with an open half-plane, near the vertex `v i` with the open sector of
 opening `(e i + 1) * π` at `v i`, where `e i ∈ (-1, 1)`, and far from a point `c` with the open
@@ -179,7 +179,7 @@ the normalized Schwarz--Christoffel primitive for the prevertices `a` and the tu
 `v i`.  The prevertex of the vertex at infinity is the point at infinity of the half-plane. -/
 theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_insert_infty
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane)
-    {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2) {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U)
+    {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2) {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
     (hv : Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
@@ -203,7 +203,7 @@ the turning exponents of the finite vertices sum to `β - 1`, where `β * π` is
 sector at infinity. -/
 theorem exponent_sum_eq_sub_one_of_isJordanCurve_insert_infty
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
-    {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2) {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U)
+    {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2) {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
     (hv : Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧

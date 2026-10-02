@@ -53,7 +53,7 @@ theorem (Folland, Chapter 4).
   operator norm.
 * `ContRepresentation.integratedOperatorL1_convolution`: `π(f₁ ⋆ f₂) = π(f₁) ∘L π(f₂)` on an
   abelian group with a right-invariant measure.
-* `ContRepresentation.commute_integratedOperatorL1`: integrated operators commute on an abelian
+* `ContRepresentation.integratedOperatorL1_commute`: integrated operators commute on an abelian
   group with an s-finite, left-invariant, inversion-invariant measure.
 * `ContRepresentation.inner_integratedOperatorL1_apply`: the matrix coefficients
   `⟪w, π(f) v⟫ = ∫ g, f g * ⟪w, π g v⟫ ∂μ`.
@@ -220,6 +220,34 @@ theorem _root_.ContRepresentation.continuous_comp_integratedOperatorL1 [Complete
 
 end Normed
 
+section Commute
+
+variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
+  [MeasurableSpace G] [OpensMeasurableSpace G]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
+  [CompleteSpace E] [SecondCountableTopologyEither G E]
+  {μ : Measure G} {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
+
+/-- Every action operator of a representation of an abelian group commutes with its
+integrated operators. No invariance hypothesis on the measure is needed. -/
+theorem _root_.ContRepresentation.commute_integratedOperatorL1
+    (g : Multiplicative G) (f : G →₁[μ] 𝕜) :
+    Commute (π g) (π.integratedOperatorL1 hcont hbdd μ f) := by
+  apply ContinuousLinearMap.ext
+  intro v
+  simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
+  rw [← (π g).integral_comp_comm
+    (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)]
+  apply integral_congr_ae
+  filter_upwards [] with t
+  rw [map_smul]
+  exact congrArg (fun w => f t • w)
+    (congrArg (fun T : E →L[𝕜] E => T v)
+      ((Commute.all g (.ofAdd t)).map π.toMonoidHom).eq)
+
+end Commute
+
 section Convolution
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G] [MeasurableSpace G]
@@ -283,7 +311,7 @@ variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
   {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
 /-- Integrated operators of an abelian-group representation commute. -/
-theorem _root_.ContRepresentation.commute_integratedOperatorL1 (f₁ f₂ : G →₁[μ] 𝕜) :
+theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G →₁[μ] 𝕜) :
     Commute (π.integratedOperatorL1 hcont hbdd μ f₁)
       (π.integratedOperatorL1 hcont hbdd μ f₂) := by
   have hconv := convolution_symm (f := (f₁ : G → 𝕜)) (f' := (f₂ : G → 𝕜))
@@ -365,7 +393,7 @@ theorem _root_.ContRepresentation.isStarNormal_integratedOperatorL1
   constructor
   rw [ContinuousLinearMap.star_eq_adjoint,
     ContRepresentation.adjoint_integratedOperatorL1 hπ]
-  exact π.commute_integratedOperatorL1
+  exact π.integratedOperatorL1_commute
     (star (Lp.compMeasurePreserving Neg.neg (Measure.measurePreserving_neg μ) f)) f
 
 end Unitary

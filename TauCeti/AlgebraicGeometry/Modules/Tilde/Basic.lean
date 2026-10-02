@@ -35,6 +35,9 @@ is a finite free `R_r`-module. Since `D(r) ≅ Spec R_r`, the restriction of `M~
 pullback of `M~` to `Spec R_r`, which is the sheaf associated with `R_r ⊗_R M ≅ M_r`, hence
 free of finite rank.
 
+Since `M~` is left adjoint to taking global sections, with unit the map `M → Γ(M~)`, a morphism
+out of `M~` is determined by where it sends the global sections coming from `M`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.tilde_map_app_injective`: an injective linear map `M ⟶ N` induces
@@ -46,7 +49,9 @@ free of finite rank.
 * `TauCeti.AlgebraicGeometry.unit_tildeFunctorCompPullbackIso_hom_app`: its characterization
   on global sections;
 * `TauCeti.AlgebraicGeometry.isFiniteLocallyFree_tilde`: `M~` is finite locally free when `M`
-  is finitely generated and projective.
+  is finitely generated and projective;
+* `TauCeti.AlgebraicGeometry.tilde_hom_ext`: a morphism out of `M~` is determined by its values
+  on the global sections coming from `M`.
 
 ## References
 
@@ -258,6 +263,24 @@ theorem isFiniteLocallyFree_tilde [Module.Finite R M] [Module.Projective R M] :
     SheafOfModules.IsFinitePresentation.of_coversTop (tilde M) U hU⟩
 
 end FiniteLocallyFree
+
+section Extensionality
+
+variable {R : CommRingCat.{u}}
+
+/-- Two morphisms out of `M~` agree as soon as they agree on the global sections coming from
+`M`. -/
+theorem tilde_hom_ext {M : ModuleCat.{u} R} {N : (Spec R).Modules}
+    {f g : (tilde.functor R).obj M ⟶ N}
+    (h : ∀ m : M, f.val.app (.op ⊤) (tilde.toOpen M ⊤ m) = g.val.app (.op ⊤) (tilde.toOpen M ⊤ m)) :
+    f = g := by
+  -- A morphism `M~ ⟶ N` is determined by its adjoint `M → Γ(N)`, its composite with `M → Γ(M~)`.
+  apply ((tilde.adjunction (R := R)).homEquiv _ _).injective
+  ext m
+  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit]
+  exact h m
+
+end Extensionality
 
 end
 

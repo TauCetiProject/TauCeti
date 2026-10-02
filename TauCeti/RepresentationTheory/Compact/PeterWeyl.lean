@@ -168,6 +168,11 @@ noncomputable def basis (m : IrrepModel 𝕜 G) :
     OrthonormalBasis (Fin m.dim) 𝕜 (EuclideanSpace 𝕜 (Fin m.dim)) :=
   EuclideanSpace.basisFun (Fin m.dim) 𝕜
 
+/-- The canonical basis of an irreducible model is the standard Euclidean basis. -/
+theorem basis_def (m : IrrepModel 𝕜 G) :
+    m.basis = EuclideanSpace.basisFun (Fin m.dim) 𝕜 :=
+  (rfl)
+
 /-- **A model of an irreducible representation has positive dimension.** Equivalently, its carrier
 `EuclideanSpace 𝕜 (Fin dim)` is nonzero, so its index type `Fin dim` is nonempty. -/
 theorem dim_pos (m : IrrepModel 𝕜 G) : 0 < m.dim := by

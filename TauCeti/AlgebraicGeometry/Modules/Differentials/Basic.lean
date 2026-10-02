@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
 public import TauCeti.Algebra.Category.ModuleCat.Differentials.Presheaf
-public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
 /-!
 # The sheaf of relative differentials of a scheme over a ring
@@ -41,6 +41,9 @@ scheme `S` the constant presheaf `R` would be replaced by the inverse image of `
 * `AlgebraicGeometry.Scheme.relativeDifferentialsHomEquiv R X M`: the universal property
   `(Ω_{X/R} ⟶ M) ≃ M.Derivation R`, with `AlgebraicGeometry.Scheme.relativeDifferentials_hom_ext`
   the corresponding uniqueness statement.
+
+* `TauCeti.AlgebraicGeometry.globalDerivation R A`: the global
+  component of a derivation on `Spec A`, viewed as an `R`-derivation of `A`.
 
 ## References
 
@@ -148,6 +151,36 @@ lemma _root_.AlgebraicGeometry.Scheme.relativeDifferentials_hom_ext {M : X.Modul
   rw [Scheme.relativeDifferentialsHomEquiv_apply, Scheme.relativeDifferentialsHomEquiv_apply]
   ext U a
   exact h U a
+
+section Affine
+
+variable (A : CommRingCat.{u}) [Algebra R A]
+
+/-- The `R`-derivation `A → Γ(M, ⊤)` given by the global component of a derivation of
+`𝒪_{Spec A}`. -/
+def globalDerivation {M : (Spec A).Modules} (d : M.Derivation R) :
+    Derivation R A Γ(M, ⊤) :=
+  Derivation.mk'
+    { toFun a := d.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) a)
+      map_add' a b := (congrArg d.d (map_add _ a b)).trans (map_add _ _ _)
+      map_smul' r a := by
+        have h₀ : d.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) (algebraMap R A r)) = 0 := by
+          rw [← Scheme.baseRingToStructurePresheaf_Spec_app_apply]
+          exact d.d_app r
+        rw [Algebra.smul_def, map_mul, d.d_mul, h₀, smul_zero, add_zero, RingHom.id_apply]
+        exact algebraMap_smul (A := A) (M := Γ(M, ⊤)) r _ }
+    fun a b ↦ (congrArg d.d (map_mul _ a b)).trans (d.d_mul _ _)
+
+/-- Evaluating the global component of a sheaf derivation at `a : A` amounts to evaluating
+that derivation on the corresponding global function. -/
+@[simp]
+lemma globalDerivation_apply {M : (Spec A).Modules}
+    (d : M.Derivation R) (a : A) :
+    globalDerivation R A d a =
+      d.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) a) :=
+  (rfl)
+
+end Affine
 
 end
 

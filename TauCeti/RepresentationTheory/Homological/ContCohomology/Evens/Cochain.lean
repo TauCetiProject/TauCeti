@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.Piecewise
+public import TauCeti.GroupTheory.Index.Two
 
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
@@ -64,6 +64,10 @@ element `s` chosen outside `U`.
   `γ ↦ α (s⁻¹ s') * evensExtend U α γ`, so the class of `ν` depends on `U` and `α` alone.
 * `TauCeti.ContCohomology.evensGraphCochain_apply_of_mem_of_mem`: on `U × U` the graph cochain is
   the cup-product cochain of `α` with its conjugate `η ↦ α (s⁻¹ η s)`.
+* `TauCeti.ContCohomology.evensB1_comp_subtype`, `evensBs_comp_subtype` and
+  `evensGraphCochain_comp_subtype`: for the restriction `y|_U` of a homomorphism `y` on `G`, both
+  Shapiro components are the homomorphism `b = y + y(s) · χ_U`, with `χ_U` the character of `U`,
+  and `ν (γ, η) = b γ · b η + χ_U γ · b η`.
 
 ## Implementation notes
 
@@ -589,6 +593,66 @@ theorem evensGraphCochain_sub_evensGraphCochain (hU : U.index = 2) (hs : s ∉ U
         CharTwo.two_eq_zero (R := ZMod 2)
 
 end ChangeOfElement
+
+section RestrictedHom
+
+/-! ### The graph cochain of a restricted homomorphism
+
+For the restriction `y|_U` of a homomorphism `y : G → 𝔽₂`, both Shapiro components are one and the
+same homomorphism `b = y + y(s) · χ_U` of `G`, where `χ_U = Subgroup.indexTwoCharacter` is the
+character with kernel `U`. The graph cochain is then `b ⌣ b + χ_U ⌣ b` on cochains, which is the
+cochain form of the identity `N^{Ev}(res_U y) = y ⌣ y + χ_U ⌣ y`. -/
+
+variable {U : Subgroup G} {s : G}
+
+/-- **The first Shapiro component of a restricted homomorphism** is the homomorphism
+`y + y(s) · χ_U` of `G`, with `χ_U` the character of `U`. -/
+theorem evensB1_comp_subtype (hU : U.index = 2) (hs : s ∉ U) (y : G →* Multiplicative (ZMod 2))
+    (γ : G) :
+    evensB1 U s (y.comp U.subtype) γ =
+      (y γ).toAdd + (y s).toAdd * (U.indexTwoCharacter hU γ).toAdd := by
+  by_cases hγ : γ ∈ U
+  · rw [evensB1_of_mem hγ, evensExtend_of_mem hγ, Subgroup.toAdd_indexTwoCharacter_of_mem hU hγ,
+      mul_zero, add_zero, MonoidHom.comp_apply, Subgroup.subtype_apply]
+  · have hγs : γ * s ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hγ, hs]
+    rw [evensB1_of_notMem hγ, evensExtend_of_mem hγs,
+      Subgroup.toAdd_indexTwoCharacter_of_notMem hU hγ, mul_one, MonoidHom.comp_apply,
+      Subgroup.subtype_apply, MonoidHom.map_mul, toAdd_mul]
+
+/-- **The two Shapiro components of a restricted homomorphism agree.** -/
+theorem evensBs_comp_subtype (hU : U.index = 2) (hs : s ∉ U) (y : G →* Multiplicative (ZMod 2)) :
+    evensBs U s (y.comp U.subtype) = evensB1 U s (y.comp U.subtype) := by
+  funext γ
+  have hs' : (U.indexTwoCharacter hU s).toAdd = 1 :=
+    Subgroup.toAdd_indexTwoCharacter_of_notMem hU hs
+  rw [evensBs_apply, evensB1_comp_subtype hU hs, evensB1_comp_subtype hU hs]
+  simp only [MonoidHom.map_mul, MonoidHom.map_inv, toAdd_mul, toAdd_inv, hs']
+  generalize (y s).toAdd = a
+  generalize (y γ).toAdd = c
+  generalize (U.indexTwoCharacter hU γ).toAdd = x
+  revert a c x
+  decide
+
+/-- **The graph cochain of a restricted homomorphism.** With `b` the common Shapiro component of
+`y|_U` (`TauCeti.ContCohomology.evensB1_comp_subtype`) and `χ_U` the character of `U`, the graph
+cochain is `ν (γ, η) = b γ · b η + χ_U γ · b η`. -/
+theorem evensGraphCochain_comp_subtype (hU : U.index = 2) (hs : s ∉ U)
+    (y : G →* Multiplicative (ZMod 2)) (γ η : G) :
+    evensGraphCochain U s (y.comp U.subtype) (γ, η) =
+      evensB1 U s (y.comp U.subtype) γ * evensB1 U s (y.comp U.subtype) η +
+        (U.indexTwoCharacter hU γ).toAdd * evensB1 U s (y.comp U.subtype) η := by
+  by_cases hγ : γ ∈ U
+  · rw [evensGraphCochain_of_mem hγ, evensBs_comp_subtype hU hs,
+      Subgroup.toAdd_indexTwoCharacter_of_mem hU hγ, zero_mul, add_zero]
+  · rw [evensGraphCochain_of_notMem hγ, evensBs_comp_subtype hU hs,
+      Subgroup.toAdd_indexTwoCharacter_of_notMem hU hγ, one_mul]
+    -- every element of `𝔽₂` is idempotent
+    generalize evensB1 U s (y.comp U.subtype) η = b
+    generalize evensB1 U s (y.comp U.subtype) γ = c
+    revert b c
+    decide
+
+end RestrictedHom
 
 section AcceptanceCheck
 

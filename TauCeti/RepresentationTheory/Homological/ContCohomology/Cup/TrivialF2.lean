@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Comparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 
@@ -26,6 +28,8 @@ continuous cohomology are formed from. It is the `ℤ`-coefficient counterpart o
 * `TauCeti.trivialF2TopPairing_bil_apply`: the pairing multiplies the underlying values in
   `ZMod 2`.
 * `TauCeti.trivialF2TopPairing_flip`: the opposite of the multiplication pairing is itself.
+* `TauCeti.trivialF2TopPairing_cup_one_one_explicitH1`: on explicit cocycles, the cup product of
+  two classes of `H¹(G, 𝔽₂)` is the class of the product cocycle `(g, h) ↦ a g * b h`.
 -/
 
 public section
@@ -74,5 +78,64 @@ theorem trivialF2TopPairing_flip : (trivialF2TopPairing G).flip = trivialF2TopPa
   -- structure on the carrier as `AddCommGroup.toIntModule`, not the coefficient object's own.
   TopPairing.ext (DFunLike.ext _ _ fun x ↦ DFunLike.ext _ _ fun y ↦ by
     rw [TopPairing.flip_bil, trivialF2TopPairing_bil_comm])
+
+end TauCeti
+
+/-! ### The cup product on explicit cocycles -/
+
+namespace TauCeti
+
+open CategoryTheory ContCohomology _root_.ContinuousCohomology
+
+universe u
+
+attribute [local instance] TopRep.distribMulAction
+
+variable (G : Type u) [Group G]
+
+/-- The transport along `ofDiscreteModule_trivialF2` intertwines multiplication on the discrete
+module `𝔽₂` with the coefficient pairing `trivialF2TopPairing`. -/
+private theorem eqToHom_ofDiscreteModulePairing_bil (x y : (trivialF2 G).V) :
+    eqToHom (ofDiscreteModule_trivialF2 G)
+        ((ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)).bil x y) =
+      (trivialF2TopPairing G).bil (eqToHom (ofDiscreteModule_trivialF2 G) x)
+        (eqToHom (ofDiscreteModule_trivialF2 G) y) := by
+  rw [ofDiscreteModulePairing_bil_apply, eqToHom_ofDiscreteModule_trivialF2_apply,
+    eqToHom_ofDiscreteModule_trivialF2_apply, eqToHom_ofDiscreteModule_trivialF2_apply,
+    trivialF2TopPairing_bil_apply, trivialF2Pairing_apply]
+
+variable [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
+
+/-- The trivial `𝔽₂` coefficients are a discrete module. -/
+local instance : ContinuousSMul G (trivialF2 G).V :=
+  (isSmoothDiscrete_trivialF2 G).continuousSMul
+
+/-- **The cup product of two classes of `H¹(G, 𝔽₂)` on explicit cocycles.** For explicit classes
+`x` and `y`, read in `H¹(G, 𝔽₂)` through the comparison with continuous cohomology and the
+transport `ofDiscreteModule_trivialF2`, their cup product along `trivialF2TopPairing` is the
+explicit `(1, 1)` cup product of multiplication in `𝔽₂`, `(a ⌣ b) (g, h) = a g * b h`, read in
+`H²(G, 𝔽₂)` the same way. -/
+theorem trivialF2TopPairing_cup_one_one_explicitH1 (x y : H1 G (trivialF2 G).V) :
+    (trivialF2TopPairing G).cup 1 1
+      ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH1AddEquivContinuousCohomology G _ x))
+      ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH1AddEquivContinuousCohomology G _ y)) =
+    (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom
+      (explicitH2AddEquivContinuousCohomology G _
+        (explicitCup11 G _ _ _ (trivialF2Pairing G) continuous_of_discreteTopology
+          (trivialF2Pairing_smul_smul G) x y)) := by
+  -- naturality of the cup product along the transport `ofDiscreteModule_trivialF2`, read on the
+  -- explicit cup product through `explicitAddEquiv_cup11`
+  have key := (ofDiscreteModulePairing (trivialF2Pairing G)
+    (trivialF2Pairing_smul_smul G)).cup_coeffMap (trivialF2TopPairing G)
+    (eqToHom (ofDiscreteModule_trivialF2 G)) (eqToHom (ofDiscreteModule_trivialF2 G))
+    (eqToHom (ofDiscreteModule_trivialF2 G)) (eqToHom_ofDiscreteModulePairing_bil G) 1 1
+    (explicitH1AddEquivContinuousCohomology G _ x) (explicitH1AddEquivContinuousCohomology G _ y)
+  rw [explicitAddEquiv_cup11, TauCeti.ContinuousCohomology.coeffMap_eqToHom,
+    TauCeti.ContinuousCohomology.coeffMap_eqToHom] at key
+  -- `key` is the statement up to the spelling of the degree, `1 + 1` rather than `2`, and of the
+  -- application of morphisms of topological modules
+  convert key.symm using 2
 
 end TauCeti

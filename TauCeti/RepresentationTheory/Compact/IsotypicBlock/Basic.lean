@@ -101,7 +101,8 @@ model to matrix coefficients of the same model
 block with `End(V_π)` is not proved here either: `TauCeti.endEquivPeterWeylBlock` is built from the
 canonical basis of the model, so nothing is claimed below about its equivariance. The equivariant
 comparison is the basis-free trace pairing `T ↦ (x ↦ trace (T ∘ π x⁻¹))` of
-`TauCeti/RepresentationTheory/Compact/TraceCoefficient.lean`, which intertwines bi-translation with
+`TauCeti/RepresentationTheory/Compact/TraceCoefficient/Basic.lean`, which intertwines
+bi-translation with
 the action `(g, h) · A = π g ∘ A ∘ π h⁻¹` and differs from the comparison below by a transposition
 (`TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`). The character
 averaging operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of

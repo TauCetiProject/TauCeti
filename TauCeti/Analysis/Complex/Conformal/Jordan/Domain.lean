@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.Analysis.Complex.Conformal.BoundaryCorrespondence
 public import TauCeti.Topology.FilledHull
 public import TauCeti.Topology.JordanCurve.Basic
 public import TauCeti.Topology.UniformlyLocallyConnected
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
+import TauCeti.Analysis.Complex.Conformal.SimplyConnected
 import TauCeti.Analysis.Complex.PlaneSeparation.LocalSeparation
 
 /-!
@@ -57,6 +59,8 @@ are.
 * `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff_of_locally_eq_line` — the inside of a
   Jordan curve that is straight near one of its points, such as a simple polygon, is a Jordan
   domain.
+* `TauCeti.IsJordanDomain.isSimplyConnected` — a Jordan domain is simply connected, its frontier
+  being connected; so it satisfies the hypotheses of the Riemann mapping theorem.
 * `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` — the boundary of a Jordan domain is
   locally connected, which is the hypothesis the *hard* direction of the L5 milestone runs on:
   Carathéodory's continuity theorem produces a continuous extension of the Riemann map exactly for
@@ -175,8 +179,8 @@ theorem IsJordanDomain.isCompact_closure (h : IsJordanDomain U) : IsCompact (clo
   h.isBounded.isCompact_closure
 
 /-- The frontier of a Jordan domain is nonempty; in particular a Jordan domain is a *proper* open
-subset of `ℂ`, so that — once it is also simply connected — it satisfies the hypotheses of the
-Riemann mapping theorem. -/
+subset of `ℂ`, so that, being also simply connected (`TauCeti.IsJordanDomain.isSimplyConnected`), it
+satisfies the hypotheses of the Riemann mapping theorem. -/
 theorem IsJordanDomain.frontier_nonempty (h : IsJordanDomain U) : (frontier U).Nonempty :=
   h.isJordanCurve_frontier.nonempty
 
@@ -213,6 +217,16 @@ theorem IsJordanDomain.ne_univ (h : IsJordanDomain U) : U ≠ univ := by
   obtain ⟨w, hw⟩ := h.frontier_nonempty
   rw [hU, frontier_univ] at hw
   exact hw
+
+/-- **A Jordan domain is simply connected.** Its frontier is a Jordan curve, hence connected, and
+its complement is unbounded because the domain is bounded, so it has no holes
+(`TauCeti.isSimplyConnected_of_isPreconnected_frontier`). Together with
+`TauCeti.IsJordanDomain.ne_univ`, this says that a Jordan domain satisfies the hypotheses of the
+Riemann mapping theorem. -/
+theorem IsJordanDomain.isSimplyConnected (h : IsJordanDomain U) : IsSimplyConnected U :=
+  isSimplyConnected_of_isPreconnected_frontier h.isOpen h.isConnected
+    h.isJordanCurve_frontier.isConnected.isPreconnected fun hc =>
+      NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.isBounded.union hc)
 
 /-! ## The converse half of the Carathéodory correspondence -/
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.CategoryTheory.Skeletal
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.FDRep
@@ -30,6 +31,8 @@ theory counts, while the objects being classified are representations.
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
   identifications Mathlib leaves definitional, the one of `ρ.asModule` with `V` and the one between
   intertwining maps and `k[G]`-linear maps, in both directions.
+* `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
+  scalars preserves the dimension of the representation.
 * `TauCeti.Representation.equivOfAsModuleLinearEquiv`: a `k[G]`-linear isomorphism
   `ρ.asModule ≃ₗ σ.asModule` is an equivalence of representations.
 * `TauCeti.Representation.asModuleLinearEquivOfEquiv`: the converse.
@@ -50,6 +53,29 @@ namespace TauCeti
 
 open CategoryTheory
 open scoped MonoidAlgebra
+
+/-- Bundling the group-algebra module of a representation and restricting scalars to the
+coefficient field preserves its dimension. The scalar structure supplied by `ModuleCat` is
+restriction along `algebraMap`, rather than the original structure on `ρ.asModule`. -/
+@[simp]
+theorem _root_.Representation.finrank_moduleCat_asModule
+    {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
+    (ρ : Representation k G V) :
+    letI := ModuleCat.moduleOfAlgebraModule (k := k) (ModuleCat.of k[G] ρ.asModule)
+    Module.finrank k (ModuleCat.of k[G] ρ.asModule) = Module.finrank k V := by
+  let := ModuleCat.moduleOfAlgebraModule (k := k) (ModuleCat.of k[G] ρ.asModule)
+  let e : (ModuleCat.of k[G] ρ.asModule) ≃ₗ[k] V :=
+    { toFun := fun x ↦ ρ.asModuleEquiv x
+      invFun := fun x ↦ ρ.asModuleEquiv.symm x
+      left_inv := fun x ↦ by exact ρ.asModuleEquiv.toEquiv.left_inv x
+      right_inv := fun x ↦ by exact ρ.asModuleEquiv.toEquiv.right_inv x
+      map_add' := fun x y ↦ by exact ρ.asModuleEquiv.map_add x y
+      map_smul' := fun r x ↦ by
+        -- The bundled scalar action is definitionally the action of `algebraMap r`.
+        change ρ.asModuleEquiv (algebraMap k k[G] r • x) = r • ρ.asModuleEquiv x
+        rw [Representation.asModuleEquiv_map_smul, ρ.asAlgebraHom.commutes]
+        rfl }
+  exact e.finrank_eq
 
 namespace Representation
 
