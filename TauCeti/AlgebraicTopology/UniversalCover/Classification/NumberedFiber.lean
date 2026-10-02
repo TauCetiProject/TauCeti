@@ -737,9 +737,7 @@ variable {x₀ x₁ : X}
 /-- Moving the basepoint of a numbered cover along a path `γ` from `x₀` to `x₁`: the same cover,
 with the fibre over `x₁` numbered by transporting it back to the fibre over `x₀` along `γ`. The
 numbering depends on `γ`, through the monodromy of loops at `x₀`. -/
--- The type of `ν` depends on the projected cover, so the statement of `basepointChange_ν`
--- typechecks only when this definition is exposed.
-@[expose] noncomputable def ConnectedFiberNumberedCover.basepointChange
+noncomputable def ConnectedFiberNumberedCover.basepointChange
     (c : ConnectedFiberNumberedCover x₀ n) (γ : Path x₀ x₁) : ConnectedFiberNumberedCover x₁ n where
   cover := c.cover
   ν := (coveringFiberEquiv c.cover.isCoveringMap_proj (.mk γ)).symm.trans c.ν
@@ -752,11 +750,13 @@ variable (c : ConnectedFiberNumberedCover x₀ n) (γ : Path x₀ x₁)
 theorem basepointChange_cover : (c.basepointChange γ).cover = c.cover :=
   (rfl)
 
-@[simp]
+/-- The numbering of the moved cover transports the fibre over `x₁` back to the fibre over `x₀`
+along `γ` and numbers it there. The two fibres live over the same cover only up to
+`basepointChange_cover`, so the equality is heterogeneous. -/
 theorem basepointChange_ν :
-    (c.basepointChange γ).ν =
+    (c.basepointChange γ).ν ≍
       (coveringFiberEquiv c.cover.isCoveringMap_proj (.mk γ)).symm.trans c.ν :=
-  (rfl)
+  HEq.rfl
 
 /-- **Moving the basepoint along `γ` conjugates the numbered monodromy by `γ`.** The numbered
 monodromy representation of `π₁(X, x₁)` of the moved cover is that of `π₁(X, x₀)` precomposed with

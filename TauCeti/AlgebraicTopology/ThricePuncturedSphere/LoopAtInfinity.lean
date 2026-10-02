@@ -37,12 +37,8 @@ around `1`. The map moves the basepoint `1/2` to `−1`; transporting back along
 
   `mob1InfMulAut periph0 = periph0`,  `mob1InfMulAut periph1 = periphInf`.
 
-Both are proved like the main theorem. The map reverses the sign of the imaginary part, so it
-exchanges the closed upper and lower half-planes of `ℂ ∖ {0, 1}`, which are simply connected; the
-images of the upper and lower halves of `γ0` and `γ1` are therefore homotopic, inside a half-plane,
-to paths assembled from halves of `γ0` and `γ1` and segments of the real axis. These values are
-what identify pulling covers back along `z ↦ z / (z − 1)` with the exchange of the branch points
-`1` and `∞` on permutation triples.
+These values are what identify pulling covers back along `z ↦ z / (z − 1)` with the exchange of
+the branch points `1` and `∞` on permutation triples.
 
 ## Main declarations
 
@@ -506,25 +502,22 @@ private theorem im_coe_mob1Inf_nonneg {z : ThricePuncturedSphere} (hz : (z : ℂ
   rw [im_coe_mob1Inf]
   exact div_nonneg (neg_nonneg.2 hz) (normSq_nonneg _)
 
-/-- A convex combination of two real numbers of the same sign is not zero. -/
-private theorem convex_combination_ne_zero {a b t : ℝ} (hab : 0 < a * b) (ht₀ : 0 ≤ t)
-    (ht₁ : t ≤ 1) : (1 - t) * a + t * b ≠ 0 := by
-  intro h
-  rcases ht₀.eq_or_lt with rfl | ht
-  · simp only [sub_zero, one_mul, zero_mul, add_zero] at h
-    simp [h] at hab
-  · have h' : (1 - t) * a ^ 2 + t * (a * b) = 0 := by linear_combination a * h
-    nlinarith [mul_nonneg (sub_nonneg.2 ht₁) (sq_nonneg a), mul_pos ht hab]
-
 /-- The segment of the real axis between two real points `z = a` and `w = b` of `ℂ ∖ {0, 1}`
 lying on the same side of `0` and on the same side of `1`. -/
 private noncomputable def realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
     (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) : Path z w where
-  toFun t := ⟨((1 - t) * a + t * b : ℝ), fun h ↦
-    convex_combination_ne_zero h₀ t.2.1 t.2.2 (by exact_mod_cast h), fun h ↦
-    convex_combination_ne_zero h₁ t.2.1 t.2.2 (by
+  toFun t := ⟨((1 - t) * a + t * b : ℝ),
+    -- a convex combination of two reals of the same sign is not zero
+    have hne {a b : ℝ} (hab : 0 < a * b) : (1 - t) * a + t * b ≠ 0 := by
+      intro h
+      rcases t.2.1.eq_or_lt with ht | ht
+      · simp only [← ht, sub_zero, one_mul, zero_mul, add_zero] at h
+        simp [h] at hab
+      · have h' : (1 - t) * a ^ 2 + t * (a * b) = 0 := by linear_combination a * h
+        nlinarith [mul_nonneg (sub_nonneg.2 t.2.2) (sq_nonneg a), mul_pos ht hab]
+    ⟨fun h ↦ hne h₀ (by exact_mod_cast h), fun h ↦ hne h₁ (by
       have : ((1 - t) * a + t * b : ℝ) = 1 := by exact_mod_cast h
-      linear_combination this)⟩
+      linear_combination this)⟩⟩
   continuous_toFun := by fun_prop
   source' := Subtype.ext (by simp [hz])
   target' := Subtype.ext (by simp [hw])

@@ -100,12 +100,9 @@ induced by `z ↦ z / (z − 1)` exchanges the roles of `1` and `∞` in its per
 theorem permutationTriple_comp_mob1InfMulAut_symm
     (ρ : FundamentalGroup ThricePuncturedSphere basePt →* Perm (Fin n)) :
     permutationTriple (ρ.comp mob1InfMulAut.symm.toMonoidHom) = (permutationTriple ρ).swap1Inf :=
-  PermutationTriple.ext_of_two
-    (by rw [PermutationTriple.swap1Inf_σ0, permutationTriple_σ0, permutationTriple_σ0,
-      MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, mob1InfMulAut_symm_periph0])
-    (by rw [PermutationTriple.swap1Inf_σ1, permutationTriple_σ1, permutationTriple_σ1,
-      permutationTriple_σinf, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      mob1InfMulAut_symm_periph1, map_mul, map_mul, map_inv])
+  PermutationTriple.ext_of_two (by simp [mob1InfMulAut_symm_periph0])
+    (by simp only [PermutationTriple.swap1Inf_σ1, permutationTriple_σ1, permutationTriple_σinf,
+      MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, mob1InfMulAut_symm_periph1, map_mul, map_inv])
 
 /-- Pulling back along `z ↦ z / (z − 1)` from `1/2` to `−1` and changing the basepoint back along
 `α₋₁` induces the inverse of `mob1InfMulAut` on `π₁(ℂ ∖ {0, 1}, 1/2)`. -/
@@ -114,9 +111,9 @@ private theorem homeomorphMulEquivOfEq_mob1Inf_comp_fundamentalGroupMulEquivOfPa
         (FundamentalGroup.fundamentalGroupMulEquivOfPath αMob1Inf).symm.toMonoidHom =
       mob1InfMulAut.symm.toMonoidHom := by
   refine MonoidHom.ext fun g => ?_
-  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
-    MulEquiv.coe_toMonoidHom, mob1InfMulAut_def, MulEquiv.symm_trans_apply,
-    FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.homeomorphMulEquiv_symm_apply]
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, mob1InfMulAut_def,
+    MulEquiv.symm_trans_apply, FundamentalGroup.homeomorphMulEquivOfEq_apply,
+    FundamentalGroup.homeomorphMulEquiv_symm_apply]
   -- `mob1Inf` is an involution, so it is its own inverse as a continuous map
   exact FundamentalGroup.mapOfEq_congr (by ext; simp) _ _ _
 
@@ -173,12 +170,12 @@ theorem ConnectedFiberNumberedCover.connectedTriple_basepointChange_pullback_mob
     ((c.pullback mob1Inf (mob1Inf_mob1Inf basePt)).basepointChange αMob1Inf).connectedTriple =
       c.connectedTriple.reindexBranchPoints (Equiv.swap 1 2) := by
   apply Subtype.ext
-  rw [ConnectedTriple.coe_reindexBranchPoints, PermutationTriple.reindexBranchPoints_swap_one_two,
-    coe_connectedTriple, coe_connectedTriple, IsCoveringMap.monodromyTriple_def,
-    IsCoveringMap.monodromyTriple_def, permCongrHom_comp_monodromyPerm_basepointChange,
-    permCongrHom_comp_monodromyPerm_pullback, MonoidHom.comp_assoc,
-    homeomorphMulEquivOfEq_mob1Inf_comp_fundamentalGroupMulEquivOfPath_symm]
-  exact permutationTriple_comp_mob1InfMulAut_symm _
+  simp only [ConnectedTriple.coe_reindexBranchPoints,
+    PermutationTriple.reindexBranchPoints_swap_one_two, coe_connectedTriple,
+    IsCoveringMap.monodromyTriple_def]
+  rw [permCongrHom_comp_monodromyPerm_basepointChange, permCongrHom_comp_monodromyPerm_pullback,
+    MonoidHom.comp_assoc, homeomorphMulEquivOfEq_mob1Inf_comp_fundamentalGroupMulEquivOfPath_symm,
+    permutationTriple_comp_mob1InfMulAut_symm]
 
 /-- **Pulling a cover of `ℂ ∖ {0, 1}` back along `z ↦ z / (z − 1)` acts on the isomorphism class
 of its triple by exchanging the branch points `1` and `∞`.** The pulled-back cover is a cover at
@@ -194,15 +191,10 @@ theorem ConnectedCoverClass.isoClass_basepointChange_pullback_mob1Inf
       MulOpposite.op (Equiv.swap (1 : Fin 3) 2) • C.isoClass := by
   obtain ⟨N, rfl⟩ := ConnectedFiberNumberedCoverClass.forgetNumbering_surjective C
   induction N using ConnectedFiberNumberedCoverClass.ind with | h c => ?_
+  -- the moved pulled-back bare cover is the image of the moved pulled-back numbered cover
   rw [ConnectedFiberNumberedCoverClass.forgetNumbering_mk, ConnectedCoverClass.pullback_mk,
     ConnectedCoverClass.basepointChange_mk, ← ConnectedFiberNumberedCover.forgetNumbering_pullback,
-    ← ConnectedFiberNumberedCover.forgetNumbering_basepointChange _ αMob1Inf,
-    ← ConnectedFiberNumberedCoverClass.forgetNumbering_mk,
-    ← ConnectedFiberNumberedCoverClass.forgetNumbering_mk,
-    ConnectedFiberNumberedCoverClass.isoClass_forgetNumbering,
-    ConnectedFiberNumberedCoverClass.isoClass_forgetNumbering,
-    ConnectedFiberNumberedCoverClass.triple_mk, ConnectedFiberNumberedCoverClass.triple_mk,
-    ConnectedFiberNumberedCover.connectedTriple_basepointChange_pullback_mob1Inf,
-    ConnectedIsoClass.op_smul_mk]
+    ← ConnectedFiberNumberedCover.forgetNumbering_basepointChange _ αMob1Inf]
+  simp [← ConnectedFiberNumberedCoverClass.forgetNumbering_mk, ConnectedIsoClass.op_smul_mk]
 
 end TauCeti
