@@ -174,8 +174,7 @@ theorem IsSimpleModule.isIndecomposableModule [IsSimpleModule A M] :
     have hdisj : Disjoint (⊤ : Submodule A M) P := hN ▸ hNP.disjoint
     simpa using hdisj
 
-/-- An indecomposable semisimple module is simple: every submodule has a complement, and
-indecomposability forces one of the two summands to vanish. -/
+/-- An indecomposable semisimple module is simple. -/
 theorem IsIndecomposableModule.isSimpleModule [IsSemisimpleModule A M]
     (h : IsIndecomposableModule A M) : IsSimpleModule A M := by
   have := h.nontrivial
