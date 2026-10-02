@@ -44,7 +44,8 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 /-- **Gordan's lemma.** The dual semigroup of a lattice-rational cone in an integral lattice is
 finitely generated. Salience is not required. -/
 theorem IsLatticeRational.fg_dualSemigroup (hσ : IsLatticeRational i σ)
-    (hi : IsIntegralLattice i) : (dualSemigroup hi σ).FG := by
+    (hi : IsIntegralLattice i) : AddMonoid.FG (dualSemigroup hi σ) := by
+  apply (AddMonoid.fg_iff_addSubmonoid_fg _).mpr
   classical
   have := hi.free
   have := hi.finite
@@ -73,7 +74,7 @@ theorem IsLatticeRational.fg_dualSemigroup (hσ : IsLatticeRational i σ)
 
 /-- The dual semigroup of every toric cone in an integral lattice is finitely generated. -/
 theorem IsToricCone.fg_dualSemigroup (hσ : IsToricCone i σ) (hi : IsIntegralLattice i) :
-    (dualSemigroup hi σ).FG :=
+    AddMonoid.FG (dualSemigroup hi σ) :=
   hσ.rational.fg_dualSemigroup hi
 
 end TauCeti.Toric

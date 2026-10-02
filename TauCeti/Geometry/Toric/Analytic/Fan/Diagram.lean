@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Analytic.Cone.FaceLocalization
 public import TauCeti.Geometry.Toric.Algebraic.Regular
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness
+import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness
 public import Mathlib.CategoryTheory.LocallyDirected
 import Mathlib.Topology.Category.TopCat.Basic
 
@@ -43,7 +43,7 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 noncomputable def analyticChartGenerators (σ : Φ.cones) (hσ : IsRegularCone i σ.1) :
     Σ r, AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) r := by
   letI : AddMonoid.FG (dualSemigroup Φ.lattice σ.1) :=
-    (AddMonoid.fg_iff_addSubmonoid_fg _).mpr (hσ.toIsToricCone.fg_dualSemigroup Φ.lattice)
+    hσ.toIsToricCone.fg_dualSemigroup Φ.lattice
   let r := Classical.choose (exists_addGeneratingFamily (dualSemigroup Φ.lattice σ.1))
   exact ⟨r, Classical.choice (Classical.choose_spec
     (exists_addGeneratingFamily (dualSemigroup Φ.lattice σ.1)))⟩
