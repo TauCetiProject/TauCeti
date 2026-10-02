@@ -22,6 +22,8 @@ Tate complex is the identity in every nonnegative degree.
 
 ## Main results
 
+* `Rep.cochainsExtToTate_app_f_ofNat`: the comparison is the identity on nonnegative cochains.
+* `Rep.cochainsExtToTate_app_f_negSucc`: the comparison is zero in negative degrees.
 * `Rep.fromGroupCohomology`: the comparison from ordinary cohomology to
   Tate cohomology in every nonnegative degree.
 * `Rep.fromGroupCohomology_zero`: the degree-zero comparison is the
@@ -61,8 +63,9 @@ theorem _root_.Rep.cochainsConnectData_d₀ (M : Rep R G) : (cochainsConnectData
 
 variable (R G) in
 /-- The complex of inhomogeneous cochains extended by zero to negative degrees, as a functor. -/
--- Consumers construct maps with the original cochain carriers in each nonnegative degree.
-@[expose, implicit_reducible]
+-- The object must remain exposed: public comparisons use the connected complex as their
+-- source, and consumers construct maps with the same cochain carriers.
+@[expose]
 def cochainsExtFunctor : Rep R G ⥤ CochainComplex (ModuleCat R) ℤ where
   obj M := (cochainsConnectData M).cochainComplex
   map f := CochainComplex.ConnectData.map _ _ (𝟙 _) (cochainsMap (.id G) f) (by simp)
@@ -70,6 +73,33 @@ def cochainsExtFunctor : Rep R G ⥤ CochainComplex (ModuleCat R) ℤ where
     simpa only [cochainsMap_id] using CochainComplex.ConnectData.map_id (cochainsConnectData M)
   map_comp f g := by
     simp only [cochainsMap_id_comp, CochainComplex.ConnectData.map_comp_map, Category.comp_id]
+
+attribute [local implicit_reducible] cochainsExtFunctor
+
+/-- The zero extension has the original cochain carrier in each nonnegative degree. -/
+@[simp]
+theorem _root_.Rep.cochainsExtFunctor_obj_X_ofNat (M : Rep R G) (n : ℕ) :
+    ((cochainsExtFunctor R G).obj M).X (n : ℤ) = (inhomogeneousCochains M).X n := by
+  rfl
+
+/-- The zero extension has zero carrier in each negative degree. -/
+@[simp]
+theorem _root_.Rep.cochainsExtFunctor_obj_X_negSucc (M : Rep R G) (n : ℕ) :
+    ((cochainsExtFunctor R G).obj M).X (Int.negSucc n) =
+      (HomologicalComplex.zero : ChainComplex (ModuleCat R) ℕ).X n := by
+  rfl
+
+/-- The extended coefficient map agrees with the cochain map in nonnegative degrees. -/
+@[simp]
+theorem cochainsExtFunctor_map_f_ofNat {M N : Rep R G} (f : M ⟶ N) (n : ℕ) :
+    ((cochainsExtFunctor R G).map f).f (n : ℤ) = (cochainsMap (.id G) f).f n := by
+  rfl
+
+/-- The extended coefficient map is zero in negative degrees. -/
+@[simp]
+theorem cochainsExtFunctor_map_f_negSucc {M N : Rep R G} (f : M ⟶ N) (n : ℕ) :
+    ((cochainsExtFunctor R G).map f).f (Int.negSucc n) = 0 := by
+  exact (isZero_zero _).eq_of_src _ _
 
 instance : (cochainsExtFunctor R G).PreservesZeroMorphisms where
   map_zero M N := by
@@ -207,8 +237,6 @@ variable [Fintype G]
 variable (R G) in
 /-- The identity in nonnegative degrees, from the extended complex of cochains to the Tate
 complex. -/
--- Consumers comparing degree-zero cycles compute the component of this transformation.
-@[expose, implicit_reducible]
 def cochainsExtToTate : cochainsExtFunctor R G ⟶ tateComplexFunctor R G where
   app M := CochainComplex.ConnectData.map _ _ 0 (𝟙 _)
     (by rw [HomologicalComplex.zero_f, zero_comp, cochainsConnectData_d₀, zero_comp])
@@ -217,6 +245,18 @@ def cochainsExtToTate : cochainsExtFunctor R G ⟶ tateComplexFunctor R G where
     -- In nonnegative degrees both composites are `cochainsMap (.id G) f`.
     · rfl
     · exact (isZero_zero _).eq_of_src _ _
+
+/-- The comparison with the Tate complex is the identity on every nonnegative cochain. -/
+@[simp]
+theorem _root_.Rep.cochainsExtToTate_app_f_ofNat (M : Rep R G) (n : ℕ) :
+    ((cochainsExtToTate R G).app M).f (n : ℤ) = 𝟙 ((inhomogeneousCochains M).X n) := by
+  rfl
+
+/-- The comparison with the Tate complex is zero in every negative degree. -/
+@[simp]
+theorem _root_.Rep.cochainsExtToTate_app_f_negSucc (M : Rep R G) (n : ℕ) :
+    ((cochainsExtToTate R G).app M).f (Int.negSucc n) = 0 := by
+  rfl
 
 /-- In positive degrees, the identity of cochains induces on cohomology the composite of the two
 comparisons with the cohomology of the complex of inhomogeneous cochains. -/

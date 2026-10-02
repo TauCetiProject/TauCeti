@@ -121,9 +121,9 @@ private theorem cyclesMap_cochainsExtToTate_zero_comp_inclusion (M : Rep R G) (H
         -- The inclusion `Mᴳ ⊆ Mᴴ` followed by the embedding of `Mᴴ` is the embedding of `Mᴳ`.
         simp only [Category.assoc]; rfl
     _ = HomologicalComplex.iCycles ((cochainsExtFunctor R G).obj M) 0 ≫ (cochainsIso₀ M).hom :=
-        -- The identity of cochains is the identity in degree zero.
-        (congrArg (_ ≫ ·) (H0CyclesIso_hom_comp_subtype M)).trans
-          ((reassoc_of% HomologicalComplex.cyclesMap_i ((cochainsExtToTate R G).app M) 0) _)
+        by
+          erw [H0CyclesIso_hom_comp_subtype, HomologicalComplex.cyclesMap_i_assoc,
+            cochainsExtToTate_app_f_ofNat, Category.id_comp]
     _ = HomologicalComplex.iCycles ((cochainsExtFunctor R G).obj M) 0 ≫
         ((cochainsExtToTateRes H).app M).f 0 ≫ (cochainsIso₀ (Rep.res H.subtype M)).hom :=
         congrArg (_ ≫ ·) (cochainsMap_f_0_comp_cochainsIso₀ H.subtype (𝟙 _)).symm
