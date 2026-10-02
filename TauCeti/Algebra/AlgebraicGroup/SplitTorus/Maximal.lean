@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 
 /-!
@@ -18,6 +19,21 @@ ideal and its quotient presentation are recovered from that morphism.
 Maximality on geometric fibers is essential: maximality merely among tori over the base
 does not imply this condition. A chosen split maximal torus does not include a pinning or
 trivializations of the root spaces over the base.
+
+Chosen split maximal tori are transported along isomorphisms of coordinate Hopf algebras
+(`SplitMaximalTorus.comapOfIso`) and base-changed along ring maps `R → S`
+(`SplitMaximalTorus.baseChange`). The base-changed torus is cut out by the base change of the
+original defining ideal, and its geometric fibers are geometric fibers of the original torus, so
+a torus chosen over `ℤ` specializes to every commutative ring.
+
+## Main declarations
+
+* `TauCeti.SplitMaximalTorus`: a chosen split maximal torus of an affine group over a ring.
+* `TauCeti.SplitMaximalTorus.comapOfIso`: transport along an isomorphism of coordinate Hopf
+  algebras.
+* `TauCeti.SplitMaximalTorus.baseChange`: base change along `R → S`.
+* `TauCeti.SplitMaximalTorus.definingIdeal_baseChange`: the base-changed torus is cut out by the
+  base change of the defining ideal.
 
 ## References
 
@@ -99,6 +115,107 @@ theorem isMaximalTorus_geometricFiber (T : SplitMaximalTorus R H r)
     HopfIdeal.IsMaximalTorus k (CommHopfAlgCat.baseChange (K := k) H)
       (CommHopfAlgCat.baseChangeHopfIdeal (K := k) T.definingIdeal) :=
   T.maximal k
+
+section ComapOfIso
+
+variable {L : CommHopfAlgCat.{u} R} [Algebra.FiniteType R L]
+
+/-- Transport of a chosen split maximal torus across an isomorphism `e : H ≅ L` of coordinate
+Hopf algebras: the torus of `L` becomes a torus of `H` by restricting functions along `e`. -/
+noncomputable def comapOfIso (T : SplitMaximalTorus R L r) (e : H ≅ L) :
+    SplitMaximalTorus R H r where
+  coordinateMap := e.hom ≫ T.coordinateMap
+  surjective := by
+    rw [CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact T.surjective.comp (ConcreteCategory.bijective_of_isIso e.hom).2
+  maximal := by
+    intro k _ _ _
+    have hker (hs : Function.Surjective (e.hom ≫ T.coordinateMap).hom) :
+        HopfIdeal.kerOfSurjective _ hs = T.definingIdeal.comapOfSurjective e.hom.hom
+          (ConcreteCategory.bijective_of_isIso e.hom).2 := by
+      ext x
+      simp [definingIdeal]
+    let ek : FiniteTypeCommHopfAlgCat.of k (CommHopfAlgCat.baseChange (K := k) H) ≅
+        FiniteTypeCommHopfAlgCat.of k (CommHopfAlgCat.baseChange (K := k) L) :=
+      ObjectProperty.isoMk _ ((CommHopfAlgCat.baseChangeFunctor (K := k)).mapIso e)
+    rw [hker, CommHopfAlgCat.baseChangeHopfIdeal_comapOfIso]
+    exact (T.isMaximalTorus_geometricFiber k).comapOfIso ek
+
+/-- The transported torus has coordinate map `e.hom ≫ T.coordinateMap`. -/
+@[simp]
+theorem comapOfIso_coordinateMap (T : SplitMaximalTorus R L r) (e : H ≅ L) :
+    (T.comapOfIso e).coordinateMap = e.hom ≫ T.coordinateMap :=
+  (rfl)
+
+/-- The defining ideal of the transported torus is the pullback of the original defining ideal
+along `e`. -/
+@[simp]
+theorem definingIdeal_comapOfIso (T : SplitMaximalTorus R L r) (e : H ≅ L) :
+    (T.comapOfIso e).definingIdeal =
+      T.definingIdeal.comapOfSurjective e.hom.hom
+        (ConcreteCategory.bijective_of_isIso e.hom).2 := by
+  ext x
+  simp
+
+end ComapOfIso
+
+section BaseChange
+
+variable (S : Type u) [CommRing S] [Algebra R S]
+
+/-- The coordinate map of the base-changed torus cuts out the base change of the defining
+ideal. -/
+private theorem kerOfSurjective_baseChangeMap_comp (T : SplitMaximalTorus R H r)
+    (hT : Function.Surjective (CommHopfAlgCat.baseChangeMap (K := S) T.coordinateMap ≫
+      (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R S
+        (SplitTorus.characterGroup (ULift.{u} (Fin r)))).hom).hom) :
+    HopfIdeal.kerOfSurjective _ hT = CommHopfAlgCat.baseChangeHopfIdeal (K := S) T.definingIdeal :=
+  ((HopfIdeal.map_id _).symm.trans
+    (CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective (Iso.refl _)
+      (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R S
+        (SplitTorus.characterGroup (ULift.{u} (Fin r)))) T.surjective hT
+      (by rw [Iso.refl_inv, Category.id_comp]))).symm
+
+/-- **Base change of a chosen split maximal torus** along `R → S`. Its coordinate map is the
+base change of the original one, read in the standard split-torus coordinates over `S`; its
+geometric fibers are geometric fibers of the original torus. -/
+noncomputable def baseChange (T : SplitMaximalTorus R H r) :
+    SplitMaximalTorus S (CommHopfAlgCat.baseChange (K := S) H) r where
+  coordinateMap := CommHopfAlgCat.baseChangeMap (K := S) T.coordinateMap ≫
+    (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R S
+      (SplitTorus.characterGroup (ULift.{u} (Fin r)))).hom
+  surjective := by
+    rw [CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (ConcreteCategory.bijective_of_isIso _).2.comp
+      (CommHopfAlgCat.baseChangeMap_surjective _ T.surjective)
+  maximal := by
+    intro k _ _ _
+    let _ : Algebra R k := ((algebraMap S k).comp (algebraMap R S)).toAlgebra
+    let _ : IsScalarTower R S k := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+    let e : FiniteTypeCommHopfAlgCat.of k
+          (CommHopfAlgCat.baseChange (K := k) (CommHopfAlgCat.baseChange (K := S) H)) ≅
+        FiniteTypeCommHopfAlgCat.of k (CommHopfAlgCat.baseChange (K := k) H) :=
+      ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso R k H)
+    rw [kerOfSurjective_baseChangeMap_comp, CommHopfAlgCat.baseChangeHopfIdeal_baseChangeHopfIdeal]
+    exact (T.isMaximalTorus_geometricFiber k).comapOfIso e
+
+/-- The base-changed torus has the base-changed coordinate map. -/
+@[simp]
+theorem baseChange_coordinateMap (T : SplitMaximalTorus R H r) :
+    (T.baseChange S).coordinateMap =
+      CommHopfAlgCat.baseChangeMap (K := S) T.coordinateMap ≫
+        (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R S
+          (SplitTorus.characterGroup (ULift.{u} (Fin r)))).hom :=
+  (rfl)
+
+/-- The defining ideal of the base-changed torus is the base change of the defining ideal. -/
+@[simp]
+theorem definingIdeal_baseChange (T : SplitMaximalTorus R H r) :
+    (T.baseChange S).definingIdeal =
+      CommHopfAlgCat.baseChangeHopfIdeal (K := S) T.definingIdeal :=
+  kerOfSurjective_baseChangeMap_comp S T (T.baseChange S).surjective
+
+end BaseChange
 
 end SplitMaximalTorus
 

@@ -24,6 +24,10 @@ diagonal-torus coordinate morphism, its surjectivity, and its maximality over fi
 the torus data. In particular these give an integral example over `ℤ` together with all its
 geometric fibers.
 
+The chosen torus is compatible with base change: base-changing the torus over `R` to an
+`R`-algebra `S` and transporting it along the base-change isomorphism of coordinate Hopf algebras
+gives the chosen torus over `S` (`splitMaximalTorus_baseChange_comapOfIso`).
+
 ## References
 
 * B. Conrad, *Reductive Group Schemes* (2014), Definitions 3.1.1 and 3.2.1.
@@ -87,5 +91,18 @@ theorem splitMaximalTorus_definingIdeal (r : ℕ) :
   ext x
   rw [SplitMaximalTorus.mem_definingIdeal, splitMaximalTorus_coordinateMap,
     mem_diagonalTorusDefiningIdeal]
+
+/-- The chosen split maximal torus of `SL_{r+1}` is compatible with base change: base-changing
+the torus over `R` to `S` and transporting it along the base-change isomorphism of
+special-linear coordinate Hopf algebras gives the chosen torus over `S`. -/
+theorem splitMaximalTorus_baseChange_comapOfIso (S : Type u) [CommRing S] [Algebra R S]
+    (r : ℕ) :
+    ((splitMaximalTorus R r).baseChange S).comapOfIso
+        (coordinateHopfAlgebraBaseChangeIso R S (r + 1)).symm =
+      splitMaximalTorus S r := by
+  ext1
+  rw [SplitMaximalTorus.comapOfIso_coordinateMap, SplitMaximalTorus.baseChange_coordinateMap,
+    splitMaximalTorus_coordinateMap, splitMaximalTorus_coordinateMap, Iso.symm_hom]
+  exact diagonalTorusCoordinateMap_baseChange r R S
 
 end TauCeti.SpecialLinear
