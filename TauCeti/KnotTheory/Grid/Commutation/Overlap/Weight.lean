@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Counted
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Right
 
 /-!
 # Weights of the overlap recuts for grid commutation
@@ -19,13 +19,14 @@ exactly one side, their union is recut the other way (`Overlap/Basic.lean`, `Ove
 and `Overlap/Counted.lean` shows that the recuts landing in the other sum are counted there. This
 file shows that each of these recuts of a rectangle followed by a pentagon has the weight of the
 domain it came from: a recut into the other sum contributes the same monomial there, and the recut
-that stays in the same sum pairs two terms of equal weight, which cancel in characteristic two.
+that stays in the same sum has the weight of the term it came from. That is the equal-weight step a
+future pairing of such terms within the same sum needs; the pairing itself is not established
+here.
 
-Both weights depend only on the composite domain, its squares counted with multiplicity: a
-square carrying the `O`-marking of column `c` of `G` contributes the variable of column
-`Equiv.swap a b c`, the column of that marking in `G'`. A rectangle of `G'` is read in `G` with
-its two commuted columns exchanged, since the `O`-marking of column `c` of `G'` is the `O`-marking
-of column `Equiv.swap a b c` of `G`. This gives the two weight criteria below.
+Both weights depend only on the composite domain, its squares counted with multiplicity, with a
+rectangle of `G'` read in `G` with its two commuted columns exchanged
+(`GridDiagram.pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq` and
+`GridDiagram.rectanglePentagonWeight_eq_of_val_add_val_eq` in `Commutation/Decomposition.lean`).
 
 The recuts preserve the squares covered by the *underlying* rectangles, but a pentagon covers
 only part of its underlying rectangle in the two columns next to the replaced grid line: the rows
@@ -36,15 +37,12 @@ emptiness forces (`GridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_
 
 ## Main results
 
-* `TauCeti.GridDiagram.pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq`
-  and `TauCeti.GridDiagram.rectanglePentagonWeight_eq_of_val_add_val_eq`: two composite domains
-  covering the same squares with the same multiplicities have the same weight.
 * `TauCeti.GridDiagram.pentagonRectangleWeight_recutLeftEqLeft`: the recut along a common initial
   side preserves the weight.
 * `TauCeti.GridDiagram.pentagonRectangleWeight_recutRightEqRightFirst`: so does the recut along a
   common terminal side when the first new rectangle inherits the replaced grid line.
 * `TauCeti.GridDiagram.rectanglePentagonWeight_recutRightEqRightSecond`: so does the recut along a
-  common terminal side when the second new rectangle inherits it, which pairs two terms of the
+  common terminal side when the second new rectangle inherits it, a recut that stays in the
   same sum.
 
 ## References
@@ -58,30 +56,6 @@ Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, S
 public section
 
 namespace TauCeti
-
-namespace Grid
-
-variable {n : ℕ}
-
-/-- A point `v` strictly inside the arc from `u` to `w` cuts every arc from `u` to a point `s` of
-the arc from `v` to `w`, counted. -/
-private theorem ite_mem_cIco_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
-    (hs : s ∈ cIco v w) (t : Fin n) :
-    (if t ∈ cIco u s then 1 else 0 : ℕ) =
-      (if t ∈ cIco u v then 1 else 0) + if t ∈ cIco v s then 1 else 0 := by
-  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
-  split_ifs at hv hs ⊢ <;> omega
-
-/-- A point `s` of the arc from `u` to `w` cuts it into the arc before `s`, the point `s` and the
-open arc after `s`, counted. -/
-private theorem ite_mem_cIco_eq_add_add {u w s : Fin n} (hs : s ∈ cIco u w) (t : Fin n) :
-    (if t ∈ cIco u w then 1 else 0 : ℕ) =
-      (if t ∈ cIco u s then 1 else 0) + (if t = s then 1 else 0) +
-        if t ∈ cIoo s w then 1 else 0 := by
-  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs ⊢
-  split_ifs at hs ⊢ <;> omega
-
-end Grid
 
 namespace GridPentagonBetween
 
@@ -131,24 +105,6 @@ private theorem turn_mem_cIco_bottom_top (P : GridPentagonBetween a s x y) :
   exact P.turn_mem
 
 end GridPentagonBetween
-
-namespace GridRectangleDecomposition
-
-variable {n : ℕ} {x z : GridState n}
-
-/-- A repartition covers the same squares with the same multiplicities on both sides. -/
-private theorem IsRepartition.val_add_val_eq {D E : GridRectangleDecomposition x z}
-    (h : D.IsRepartition E) :
-    E.first.toGridRectangle.coveredSquares.val + E.second.toGridRectangle.coveredSquares.val =
-      D.first.toGridRectangle.coveredSquares.val +
-        D.second.toGridRectangle.coveredSquares.val := by
-  rw [Multiset.add_eq_union_iff_disjoint.mpr
-      (Finset.disjoint_val.mpr h.disjoint_coveredSquares_right),
-    Multiset.add_eq_union_iff_disjoint.mpr
-      (Finset.disjoint_val.mpr h.disjoint_coveredSquares_left),
-    ← Finset.union_val, ← Finset.union_val, h.coveredSquares_union_eq]
-
-end GridRectangleDecomposition
 
 namespace GridRectanglePentagonDecomposition
 
@@ -253,81 +209,7 @@ namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
-section SquareWeight
-
-variable (R : Type*) [CommSemiring R]
-
-/-- The weight of a square in a column commutation of the columns `a` and `b`: the variable of
-the commuted column of its `O`-marking, and `1` on unmarked squares. -/
-private noncomputable def swapSquareWeight (a b : Fin n) (p : Fin n × Fin n) :
-    MvPolynomial (Fin n) R :=
-  if p ∈ G.OSet then MvPolynomial.X (Equiv.swap a b p.1) else 1
-
-/-- The renamed `O`-monomial of a rectangle of the original diagram, square by square. -/
-private theorem rename_OMonomial_eq_prod_swapSquareWeight (a b : Fin n) (r : GridRectangle n) :
-    MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) =
-      ∏ p ∈ r.coveredSquares, G.swapSquareWeight R a b p := by
-  rw [G.OMonomial_eq_prod_coveredSquares R, map_prod]
-  refine Finset.prod_congr rfl fun p _ => ?_
-  unfold swapSquareWeight
-  split_ifs <;> simp
-
-/-- The `O`-monomial of a rectangle of the commuted diagram, square by square: a square of the
-commuted diagram carries the marking of the square of the original diagram in the swapped
-column. -/
-private theorem OMonomial_swapColumns_eq_prod_swapSquareWeight (a b : Fin n)
-    (r : GridRectangle n) :
-    (G.swapColumns a b).OMonomial R r =
-      ∏ p ∈ r.coveredSquares.map
-        ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding,
-        G.swapSquareWeight R a b p := by
-  rw [(G.swapColumns a b).OMonomial_eq_prod_coveredSquares R, Finset.prod_map]
-  refine Finset.prod_congr rfl fun p _ => ?_
-  obtain ⟨c, t⟩ := p
-  simp only [swapSquareWeight, mem_OSet_swapColumns, Equiv.coe_toEmbedding,
-    Equiv.prodCongr_apply, Prod.map, Equiv.refl_apply, Equiv.swap_apply_self]
-
-/-- The weight of a pentagon, square by square. -/
-private theorem pentagonWeight_eq_prod_swapSquareWeight (C : ColumnCommutationData G)
-    {x y : GridState n} (P : GridPentagonBetween C.column C.turnRow x y) :
-    G.pentagonWeight R C P =
-      ∏ p ∈ P.coveredSquares, G.swapSquareWeight R C.column (finRotate n C.column) p :=
-  G.pentagonWeight_eq_prod_coveredSquares R C P
-
-end SquareWeight
-
 variable (C : ColumnCommutationData G) (R : Type*) [CommSemiring R] {x z : GridState n}
-
-local notation "b" => finRotate n C.column
-
-/-- A pentagon followed by a rectangle of the commuted diagram has the weight of a rectangle
-followed by a pentagon when the two composite domains cover the same squares with the same
-multiplicities, the squares of the rectangle of the commuted diagram being read in the
-original diagram, that is with the two commuted columns exchanged. -/
-theorem pentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq
-    (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (E : GridPentagonRectangleDecomposition C.column C.turnRow x z)
-    (h : E.pentagon.coveredSquares.val +
-        (E.rectangle.toGridRectangle.coveredSquares.map
-          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
-      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
-    G.pentagonRectangleWeight C R E = G.rectanglePentagonWeight C R D := by
-  rw [pentagonRectangleWeight_def, rectanglePentagonWeight_def,
-    pentagonWeight_eq_prod_swapSquareWeight, pentagonWeight_eq_prod_swapSquareWeight,
-    OMonomial_swapColumns_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight]
-  simp only [Finset.prod_eq_multiset_prod, ← Multiset.prod_add, ← Multiset.map_add, h]
-
-/-- Two rectangle--pentagon decompositions have the same weight when they cover the same squares
-with the same multiplicities. -/
-theorem rectanglePentagonWeight_eq_of_val_add_val_eq
-    (D D' : GridRectanglePentagonDecomposition C.column C.turnRow x z)
-    (h : D'.rectangle.toGridRectangle.coveredSquares.val + D'.pentagon.coveredSquares.val =
-      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
-    G.rectanglePentagonWeight C R D' = G.rectanglePentagonWeight C R D := by
-  rw [rectanglePentagonWeight_def, rectanglePentagonWeight_def,
-    pentagonWeight_eq_prod_swapSquareWeight, pentagonWeight_eq_prod_swapSquareWeight,
-    rename_OMonomial_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight]
-  simp only [Finset.prod_eq_multiset_prod, ← Multiset.prod_add, ← Multiset.map_add, h]
 
 /-- Recutting a rectangle followed by a pentagon along their common initial side preserves the
 weight: the promoted pentagon followed by the remaining rectangle of the commuted diagram has
