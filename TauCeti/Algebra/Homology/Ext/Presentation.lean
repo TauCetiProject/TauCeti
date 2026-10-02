@@ -21,8 +21,9 @@ The comparison is natural in `Y` and identifies the quotients obtained from any
 two projective presentations of `M`. No projectivity of `P₁` is needed to compute
 degree one.
 
-The comparison uses Mathlib's extension class and contravariant long exact Ext
-sequence, followed by `LinearMap.quotKerEquivOfSurjective`.
+Mathlib's extension class defines the connecting morphism in the contravariant
+long exact Ext sequence. For a projective middle term, this morphism is surjective
+with kernel the maps extending to that term, giving the quotient identification.
 
 ## References
 
@@ -104,6 +105,7 @@ theorem homCokernelEquivExt_symm_comp_mk₀ [Projective S.X₂] (f : S.X₁ ⟶ 
 variable {Y}
 
 /-- The Hom-cokernel computation of `Ext¹` is natural in the target object. -/
+@[simp]
 theorem homCokernelEquivExt_naturality [Projective S.X₂] {Z : C} (g : Y ⟶ Z)
     (x : HomCokernel R S.f Y) :
     homCokernelEquivExt R hS Z (HomCokernel.map R S.f g x) =
@@ -111,11 +113,7 @@ theorem homCokernelEquivExt_naturality [Projective S.X₂] {Z : C} (g : Y ⟶ Z)
   induction x using Submodule.Quotient.induction_on with
   | _ f => simp
 
-end Ring
-
-section CommRing
-
-variable (R : Type t) [CommRing R] [Linear R C] (hS : S.ShortExact) (Y : C)
+variable (Y)
 
 /-- Projective presentations of isomorphic objects give canonically equivalent Hom cokernels.
 The comparison identifies the extension classes represented in the two presentations. -/
@@ -155,6 +153,7 @@ theorem homCokernelEquiv_symm (hT : T.ShortExact) [Projective S.X₂] [Projectiv
   simp
 
 /-- Presentation comparisons compose according to the isomorphisms of resolved objects. -/
+@[simp]
 theorem homCokernelEquiv_trans {U : ShortComplex C} (hT : T.ShortExact) (hU : U.ShortExact)
     [Projective S.X₂] [Projective T.X₂] [Projective U.X₂]
     (e : S.X₃ ≅ T.X₃) (f : T.X₃ ≅ U.X₃) :
@@ -165,6 +164,6 @@ theorem homCokernelEquiv_trans {U : ShortComplex C} (hT : T.ShortExact) (hU : U.
   apply (homCokernelEquivExt R hU Y).injective
   simp
 
-end CommRing
+end Ring
 
 end TauCeti

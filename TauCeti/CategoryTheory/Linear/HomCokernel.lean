@@ -37,6 +37,7 @@ abbrev HomCokernel (f : X ⟶ P) (Y : C) :=
   (X ⟶ Y) ⧸ (Linear.leftComp R Y f).range
 
 /-- A map represents zero in the Hom cokernel exactly when it extends across `f`. -/
+@[simp]
 theorem homCokernel_mk_eq_zero_iff (f : X ⟶ P) (g : X ⟶ Y) :
     (Submodule.Quotient.mk g : HomCokernel R f Y) = 0 ↔ ∃ h : P ⟶ Y, f ≫ h = g := by
   simp [Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
@@ -53,8 +54,8 @@ def map (f : X ⟶ P) (g : Y ⟶ Z) : HomCokernel R f Y →ₗ[R] HomCokernel R 
 /-- Postcomposition sends the class of `h` to the class of `h ≫ g`. -/
 @[simp]
 theorem map_mk (f : X ⟶ P) (g : Y ⟶ Z) (h : X ⟶ Y) :
-    map R f g (Submodule.Quotient.mk h) = Submodule.Quotient.mk (h ≫ g) :=
-  (rfl)
+    map R f g (Submodule.Quotient.mk h) = Submodule.Quotient.mk (h ≫ g) := by
+  simp [map]
 
 /-- Postcomposition with an identity acts as the identity. -/
 @[simp]
@@ -65,6 +66,7 @@ theorem map_id (f : X ⟶ P) : map R f (𝟙 Y) = LinearMap.id := by
   | _ h => simp
 
 /-- Postcomposition respects composition of morphisms. -/
+@[simp]
 theorem map_comp (f : X ⟶ P) (g : Y ⟶ Z) (h : Z ⟶ W) :
     map R f (g ≫ h) = (map R f h).comp (map R f g) := by
   apply LinearMap.ext
