@@ -47,7 +47,7 @@ private theorem idealSummatory_restrict_galoisCharacterUnitaryWeight (χ : (F �
   classical
   set 𝔪 := cyclotomicModulus K m
   have hmem (J : Ideal (𝓞 K)) : J ∈ integralIdealsPrimeTo 𝔪 ↔ J.IsPrimeTo 𝔪.support :=
-    NumberFieldArithmetic.mem_integralIdealsAway_iff.trans Ideal.isPrimeTo_iff.symm
+    NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo
   let e : integralIdealsPrimeTo 𝔪 → (Ideal (𝓞 K))⁰ := fun I ↦
     ⟨I, mem_nonZeroDivisors_of_ne_zero ((hmem I).mp I.2).ne_bot⟩
   have hsum : rayClassCharacterPartialSum 𝔪 (χ.comp (cyclotomicArtin K F m)) x =
