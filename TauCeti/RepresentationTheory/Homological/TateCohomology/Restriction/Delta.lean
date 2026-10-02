@@ -20,7 +20,7 @@ Tate restriction commutes with the connecting maps of the two long exact sequenc
 
 for `r ≥ -1` (`TauCeti.TateCohomology.δ_comp_res`). This is what lets a statement about restriction
 be moved up in degree by dimension shifting, as in the proof that restriction is compatible with
-the Tate cup product. The boundary case `r = -1` uses the norm formula from
+the Tate cup product. The boundary case `r = -1` is supplied by
 `TauCeti.TateCohomology.δ_comp_res_neg_one`.
 
 In nonnegative degrees the Tate complex is the complex of inhomogeneous cochains. Restriction of
