@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StandardCover
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Empty
 
 import Mathlib.CategoryTheory.Sites.Coverage
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.OpenEmbedding
@@ -115,44 +116,51 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top [IsUniformAd
 /-- **Wedhorn's Lemma 8.34 in degree zero: rational covers of rational subsets.** Let `A` be a
 strongly noetherian Tate ring, `P` a pair of definition whose ring of definition lies in `A⁺`, `A⁺`
 a subring of power-bounded elements and `W` a rational subset of `Spa(A, A⁺)`. Let `(U i)` be a
-nonempty family of rational subsets of `W` whose union is `W`. The presentation-limit presheaf, as
+family of rational subsets of `W` whose union is `W`. The presentation-limit presheaf, as
 a presheaf of sets, satisfies the sheaf condition for this cover: sections over the `U i` that
 agree on the pairwise overlaps glue uniquely to a section over `W`.
 
-`A` itself need not be complete, and the family may be infinite. It must be nonempty: an empty
-family covers only the empty open, where the sheaf condition asks that there be exactly one
-section. -/
+`A` itself need not be complete, and the family may be infinite or empty. An empty family covers
+the empty open, whose sections form a singleton. -/
 theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq (hP : P.ringOfDefinition ≤ Aplus)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
-    (hW : W ∈ spaRationalOpens Aplus) {ι : Type*} [Nonempty ι] {U : ι → Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) {ι : Type*} {U : ι → Opens ↥(spa Aplus)}
     (hU : ∀ i, U i ∈ spaRationalOpens Aplus) (hcov : ⨆ i, U i = W) :
     (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat) := by
-  have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  obtain ⟨T, s, hT, hWT⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hW)
-  obtain rfl : W = spaBasicOpen Aplus T s :=
-    Opens.ext (hWT.trans (Set.ext fun _ ↦ mem_spaBasicOpen.symm))
-  -- `B = A⟨T/s⟩` is a complete Hausdorff strongly noetherian Tate ring, and `A_U⁺` is a ring of
-  -- integral elements of `B`
-  have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
-  let _ := locUniformSpace P T s _ hden
-  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-  have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have _ := isHuberRing_completion_locTopology P T s _ hden
-  have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
-  have _ := isStronglyNoetherian_completion P T s _ hden
-    (eq_top_mono (Ideal.span_mono (Set.subset_insert _ _)) (IsTateRing.eq_top_of_isOpen hT))
-  -- transport to the pullbacks along `Spa(B, A_U⁺) → Spa(A, A⁺)` (Wedhorn's Remark 8.4), which
-  -- cover `Spa(B, A_U⁺)`
-  rw [isSheafFor_ofArrows_iff_locOpensComap P Aplus T s _ hden hAplus hT hW le_rfl hU
-    fun i ↦ (le_iSup U i).trans_eq hcov]
-  refine isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (completionLocalization P T s _ hden)
-    (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
-    (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden)
-    (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
-    (fun i ↦ locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)) ?_
-  rw [← hcov]
-  exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
+  cases isEmpty_or_nonempty ι with
+  | inl hempty =>
+    have hbot : W = ⊥ := by simpa using hcov.symm
+    subst hbot
+    have := subsingleton_presentationLimit_bot P hAplus
+    rw [isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap]
+    exact fun _ _ ↦ ⟨0, fun i ↦ isEmptyElim i, fun _ _ ↦ Subsingleton.elim _ _⟩
+  | inr hnonempty =>
+    have _ : IsHuberRing A := ⟨⟨P⟩⟩
+    obtain ⟨T, s, hT, hWT⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hW)
+    obtain rfl : W = spaBasicOpen Aplus T s :=
+      Opens.ext (hWT.trans (Set.ext fun _ ↦ mem_spaBasicOpen.symm))
+    -- `B = A⟨T/s⟩` is a complete Hausdorff strongly noetherian Tate ring, and `A_U⁺` is a ring of
+    -- integral elements of `B`
+    have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+    let _ := locUniformSpace P T s _ hden
+    have _ := isUniformAddGroup_locUniformSpace P T s _ hden
+    have _ := isTopologicalRing_locUniformSpace P T s _ hden
+    have _ := isHuberRing_completion_locTopology P T s _ hden
+    have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
+    have _ := isStronglyNoetherian_completion P T s _ hden
+      (eq_top_mono (Ideal.span_mono (Set.subset_insert _ _)) (IsTateRing.eq_top_of_isOpen hT))
+    -- transport to the pullbacks along `Spa(B, A_U⁺) → Spa(A, A⁺)` (Wedhorn's Remark 8.4), which
+    -- cover `Spa(B, A_U⁺)`
+    rw [isSheafFor_ofArrows_iff_locOpensComap P Aplus T s _ hden hAplus hT hW le_rfl hU
+      fun i ↦ (le_iSup U i).trans_eq hcov]
+    refine isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (completionLocalization P T s _ hden)
+      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
+      (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden)
+      (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
+      (fun i ↦ locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)) ?_
+    rw [← hcov]
+    exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
 
 end TauCeti.ValuationSpectrum
