@@ -51,8 +51,7 @@ theorem _root_.ContRepresentation.existsUnique_pontryaginDual_of_integratedOpera
     {hcont : ∀ v, Continuous fun g : G => π (.ofAdd g) v}
     (hπ : ContRepresentation.IsUnitary π)
     (A : StarSubalgebra ℂ (H →L[ℂ] H)) [CompleteSpace A] :
-    let hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C :=
-      ⟨1, fun g => (π g).opNorm_le_bound zero_le_one (fun v => by simp [hπ.norm_map])⟩
+    let hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C := hπ.exists_norm_le
     ∀ (hA : ∀ f : G →₁[μ] ℂ, π.integratedOperatorL1 hcont hbdd μ f ∈ A)
     (ω : characterSpace ℂ A),
     (∃ f : G →₁[μ] ℂ, ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0) →
