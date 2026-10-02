@@ -424,6 +424,15 @@ theorem ncard_primesOver_two_eq_two_pow_sub_one [Finite ι]
 At any rational prime, ramified or not, the residue degree divides the order of a Frobenius, which
 is an involution. -/
 
+/-- In an exponent-two Galois number field, the residue degree at any rational prime divides
+two, without choosing square-root generators. -/
+theorem inertiaDeg_dvd_two_of_exponent_dvd_two [IsGalois ℚ K] {p : ℕ} [Fact p.Prime]
+    (hexp : Monoid.exponent (K ≃ₐ[ℚ] K) ∣ 2) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] : Q.inertiaDeg ℤ ∣ 2 := by
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
+  exact (Ideal.inertiaDeg_dvd_orderOf Q hσ).trans
+    (orderOf_dvd_of_pow_eq_one (Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp σ))
+
 /-- **Residue degrees in a multiquadratic field divide `2`.** Let `K` be generated over `ℚ` by
 square roots of integers. Then every prime of `𝓞 K`, ramified or not and above any rational prime
 `p`, including `p = 2`, has residue degree `1` or `2` over `p`. -/
@@ -431,9 +440,9 @@ theorem inertiaDeg_dvd_two [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] : Q.inertiaDeg ℤ ∣ 2 := by
   have := isGalois_rat hr htop
-  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
-  exact (Ideal.inertiaDeg_dvd_orderOf Q hσ).trans (orderOf_dvd_of_pow_eq_one
-    (aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
-      (fun i => by rw [hr i]; simp) htop σ))
+  exact inertiaDeg_dvd_two_of_exponent_dvd_two (p := p)
+    (Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr
+      (aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
+        (fun i => by rw [hr i]; simp) htop)) Q
 
 end TauCeti.Multiquadratic

@@ -14,6 +14,7 @@ import Mathlib.Data.Nat.Squarefree
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -35,6 +36,13 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   square. Mathlib's `exists_sq_mul_squarefree` proves the underlying factorization in a unique
   factorization monoid; the integer statement here records a nonzero square factor and puts the
   factors in the orientation used by the rational square-class argument.
+* `TauCeti.Int.not_four_dvd_of_squarefree` and
+  `TauCeti.Int.emod_four_eq_two_or_three_of_squarefree`: the modulo-four restrictions on
+  squarefree integers.
+* `TauCeti.Int.emod_eight_eq_five_iff_exists_eq_mul_sq` and
+  `TauCeti.Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mul_sq`: membership in
+  the rational square class of an integer congruent to five modulo eight can be tested on an
+  integer squarefree part.
 * `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree`: squarefreeness of *every* prime
   divisor of an `n > 2`, read in any ring, yields the single branch that Mathlib's
   `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt` splits into. This is the bridge from a
@@ -43,6 +51,20 @@ that Mathlib does not provide directly, used across the multiquadratic developme
 -/
 
 public section
+
+namespace TauCeti.Int
+
+/-- A squarefree integer is not divisible by four. -/
+theorem not_four_dvd_of_squarefree {n : ℤ} (hn : Squarefree n) : ¬ (4 : ℤ) ∣ n :=
+  fun h => (Int.isUnit_iff.not.mpr (by decide)) (hn 2 (by simpa using h))
+
+/-- A squarefree integer not congruent to one modulo four is congruent to two or three. -/
+theorem emod_four_eq_two_or_three_of_squarefree {n : ℤ} (hn : Squarefree n)
+    (h : n % 4 ≠ 1) : n % 4 = 2 ∨ n % 4 = 3 := by
+  have := not_four_dvd_of_squarefree hn
+  omega
+
+end TauCeti.Int
 
 /-- A squarefree non-unit of a monoid is not a square. -/
 theorem Squarefree.not_isSquare {R : Type*} [Monoid R] {a : R}
@@ -101,6 +123,57 @@ theorem Rat.exists_squarefree_int_mul_sq {q : ℚ} (hq : q ≠ 0) :
   rw [hnum] at habQ
   field_simp
   linear_combination habQ
+
+namespace TauCeti.Int
+
+/-- For a squarefree integer, being in the rational square class of an integer congruent to
+five modulo eight is equivalent to being congruent to five modulo eight itself. -/
+theorem emod_eight_eq_five_iff_exists_eq_mul_sq {n : ℤ} (hn : Squarefree n) :
+    n % 8 = 5 ↔ ∃ (c : ℤ) (q : ℚ), c % 8 = 5 ∧ q ≠ 0 ∧ (n : ℚ) = c * q ^ 2 := by
+  refine ⟨fun h => ⟨n, 1, h, one_ne_zero, by simp⟩, ?_⟩
+  rintro ⟨c, q, hc, -, h⟩
+  have hsq : IsSquare (n * c) := Rat.isSquare_intCast_iff.mp (by
+    refine ⟨(c : ℚ) * q, ?_⟩
+    push_cast
+    rw [h]
+    ring)
+  obtain ⟨z, hz⟩ := hsq
+  obtain ⟨e, he⟩ : n ∣ z := (hn.dvd_pow_iff_dvd two_ne_zero).mp ⟨c, by
+    simpa [sq] using hz.symm⟩
+  have hce : c = n * e ^ 2 := by
+    rw [he] at hz
+    apply mul_left_cancel₀ hn.ne_zero
+    linear_combination hz
+  have hmod : c % 8 = (n % 8 * ((e % 8) ^ 2 % 8)) % 8 := by
+    simp only [sq]
+    rw [hce, sq, Int.mul_emod, Int.mul_emod e e]
+  have hemod := Int.emod_nonneg e (by decide : (8 : ℤ) ≠ 0)
+  have helt := Int.emod_lt_of_pos e (by decide : (0 : ℤ) < 8)
+  interval_cases e % 8 <;> norm_num at hmod <;> omega
+
+/-- An integer lies in the rational square class of an integer congruent to five modulo eight
+exactly when its squarefree part is congruent to five modulo eight. The nonzero integer square
+factor excludes zero, which has no squarefree part. -/
+theorem exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mul_sq {n : ℤ} :
+    (∃ (c : ℤ) (q : ℚ), c % 8 = 5 ∧ q ≠ 0 ∧ (n : ℚ) = c * q ^ 2) ↔
+      ∃ s b : ℤ, Squarefree s ∧ b ≠ 0 ∧ n = s * b ^ 2 ∧ s % 8 = 5 := by
+  constructor
+  · rintro ⟨c, q, hc, hq, h⟩
+    have hn : n ≠ 0 := by
+      intro hn
+      have hc0 : (c : ℚ) ≠ 0 := by exact_mod_cast (by omega : c ≠ 0)
+      exact mul_ne_zero hc0 (pow_ne_zero 2 hq) (h.symm.trans (by simp [hn]))
+    obtain ⟨s, b, hs, hb, hn⟩ := Int.exists_squarefree_mul_sq hn
+    have hbQ : (b : ℚ) ≠ 0 := by exact_mod_cast hb
+    refine ⟨s, b, hs, hb, hn, (emod_eight_eq_five_iff_exists_eq_mul_sq hs).mpr
+      ⟨c, q / b, hc, div_ne_zero hq hbQ, ?_⟩⟩
+    have hnQ : (n : ℚ) = s * (b : ℚ) ^ 2 := by exact_mod_cast hn
+    field_simp
+    linear_combination h - hnQ
+  · rintro ⟨s, b, -, hb, hn, hs⟩
+    exact ⟨s, b, hs, by exact_mod_cast hb, by exact_mod_cast hn⟩
+
+end TauCeti.Int
 
 namespace Nat
 

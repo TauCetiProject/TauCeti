@@ -488,6 +488,13 @@ end AlgEquiv
 
 namespace TauCeti
 
+/-- An automorphism fixes a generator exactly when it fixes the simple intermediate field. -/
+theorem apply_eq_self_iff_mem_fixingSubgroup_adjoin_simple
+    {K L : Type*} [Field K] [Field L] [Algebra K L] (σ : L ≃ₐ[K] L) (x : L) :
+    σ x = x ↔ σ ∈ (IntermediateField.adjoin K {x}).fixingSubgroup := by
+  rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+    AlgEquiv.smul_def]
+
 /-- The order of the automorphism group of a finite field extension divides its degree. -/
 theorem natCard_algEquiv_dvd_finrank (F E : Type*) [Field F] [Field E] [Algebra F E]
     [FiniteDimensional F E] : Nat.card (E ≃ₐ[F] E) ∣ Module.finrank F E := by

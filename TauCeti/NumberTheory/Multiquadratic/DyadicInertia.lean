@@ -12,7 +12,6 @@ import TauCeti.Algebra.Squarefree
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.GroupTheory.ExponentPrime
 import TauCeti.NumberTheory.Multiquadratic.SquareClass.Rational
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.Inertia
@@ -71,12 +70,18 @@ and work with the action of inertia and Frobenius on square roots in `K` instead
 * `TauCeti.Multiquadratic.inertia_eq_bot_iff_forall_mod_four_eq_one`: the criterion for `e = 1`.
 * `TauCeti.Multiquadratic.ramificationIdx_eq_two_iff_of_liesOver_two`: the criterion for `e = 2`
   above.
-* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_sq_eq_mod_eight_eq_five`: for any Galois
+* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_sq_eq_mod_eight_eq_five` and its
+  `inertiaDeg_eq_one_iff_not_exists_sq_eq_mod_eight_eq_five` companion: for any Galois
   `K / ℚ` of exponent two, a prime above `2` has residue degree `2` exactly when `K` contains a
   square root of an integer that is `5` modulo `8`.
-* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_prod_eq_mul_sq` and
-  `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_not_exists_prod_eq_mul_sq`: the criteria for
-  `f = 2` and `f = 1` above, in terms of the radicands.
+* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq` and
+  `TauCeti.Multiquadratic.inertiaDeg_eq_one_iff_not_exists_prod_eq_mod_eight_eq_five_mul_sq`:
+  the criteria for `f = 2` and `f = 1` above, in terms of the radicands.
+* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_squarefree_prod_eq_mod_eight_eq_five_mul_sq`:
+  the criterion in terms of integer squarefree parts of subset products.
+* `TauCeti.Multiquadratic.inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_squarefree` and
+  `inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_squarefree`: for squarefree, pairwise
+  coprime radicands, finite tests on the subset products modulo eight.
 
 ## References
 
@@ -434,56 +439,52 @@ theorem inertiaDeg_eq_two_iff_exists_sq_eq_mod_eight_eq_five [IsGalois ℚ K]
   obtain ⟨φ, hφ⟩ := exists_isArithFrobAt_int_of_liesOver (p := 2) Q
   -- The residue degree divides the order of `φ`, which divides `2`, so it is `2` exactly when it
   -- is not `1`, that is when `φ` lies outside the inertia group.
-  have hf : Q.inertiaDeg ℤ ∣ 2 := (Ideal.inertiaDeg_dvd_orderOf Q hφ).trans
-    (orderOf_dvd_of_pow_eq_one (Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp φ))
+  have hf := inertiaDeg_dvd_two_of_exponent_dvd_two (p := 2) hexp Q
   have hkey : Q.inertiaDeg ℤ = 2 ↔ φ ∉ Q.inertia (K ≃ₐ[ℚ] K) := by
     rw [← Ideal.inertiaDeg_eq_one_iff_mem_inertia Q hφ]
     rcases (Nat.dvd_prime Nat.prime_two).mp hf with h | h <;> simp [h]
   rw [hkey]
   constructor
   · intro hφI
-    obtain ⟨H, hIH, hH, hφH⟩ := exists_le_index_eq_two_notMem_of_exponent_dvd_two hexp hφI
-    have hE : finrank ℚ (IntermediateField.fixedField H) = 2 := by
-      rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-        IntermediateField.fixingSubgroup_fixedField, hH]
-    obtain ⟨x, -, -, ⟨a, hxa⟩, hxadj⟩ :=
-      TauCeti.IntermediateField.exists_sq_mem_range_adjoin_simple_eq_of_finrank_eq_two hE
-    -- `H` is the stabilizer of `x`.
-    have hstab : ∀ σ : K ≃ₐ[ℚ] K, σ x = x ↔ σ ∈ H := by
-      intro σ
-      rw [← IntermediateField.fixingSubgroup_fixedField H, ← hxadj,
-        IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
-        AlgEquiv.smul_def]
-    have ha : a ≠ 0 := by
-      rintro rfl
-      have hx0 : x = 0 := by simpa using hxa
-      exact hφH ((hstab φ).mp (by rw [hx0, map_zero]))
-    -- Rescale `x` to a square root `y` of a squarefree integer `s`; `H` is its stabilizer too.
+    obtain ⟨x, a, hx0, hxa, hfix, hφx⟩ :=
+      exists_sq_mem_range_apply_eq_neg_of_notMem hexp hφI
+    have ha : a ≠ 0 := fun h => hx0 ((pow_eq_zero_iff two_ne_zero).mp (by
+      rw [hxa, h, map_zero]))
+    -- Rescale `x` to a square root `y` of a squarefree integer `s`.
     obtain ⟨s, q, hs, hq, hasq⟩ := Rat.exists_squarefree_int_mul_sq ha
     set y := algebraMap ℚ K q⁻¹ * x with hydef
     have hy : y ^ 2 = algebraMap ℤ K s := sq_algebraMap_inv_mul_eq_of_eq_mul_sq hq hasq hxa
-    have hstab' : ∀ σ : K ≃ₐ[ℚ] K, σ y = y ↔ σ ∈ H := by
-      intro σ
-      rw [← hstab, hydef, map_mul, AlgEquiv.commutes,
-        mul_right_inj' ((map_ne_zero _).mpr (inv_ne_zero hq))]
+    have hfix' (σ : K ≃ₐ[ℚ] K) (hσ : σ ∈ Q.inertia (K ≃ₐ[ℚ] K)) : σ y = y := by
+      rw [hydef, map_mul, AlgEquiv.commutes, hfix σ hσ]
+    have hφy : φ y = -y := by
+      rw [hydef, map_mul, AlgEquiv.commutes, hφx, mul_neg]
     have hy0 : y ≠ 0 := ne_zero_of_sq_eq_intCast hy hs.ne_zero
-    -- Inertia lies in `H`, so it fixes `y`; hence `s ≡ 1 (mod 4)`.
+    -- Inertia fixes `y`; hence `s ≡ 1 (mod 4)`.
     have hs4 : s % 4 = 1 := by
-      have h4 : ¬ (4 : ℤ) ∣ s := fun h =>
-        (Int.isUnit_iff.not.mpr (by decide)) (hs 2 (by simpa using h))
+      have h4 := TauCeti.Int.not_four_dvd_of_squarefree hs
       by_contra hne
       obtain ⟨τ, hτ, hτy⟩ :=
         exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three hy (by omega) Q
-      have hτy' : τ y = y := (hstab' τ).mpr (hIH hτ)
+      have hτy' : τ y = y := hfix' τ hτ
       exact hy0 (by linear_combination (hτy'.symm.trans hτy) / 2)
-    -- `φ ∉ H` moves `y`; hence `s ≢ 1 (mod 8)`.
+    -- `φ` negates the nonzero `y`; hence `s ≢ 1 (mod 8)`.
     have hs8 := (isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight hy hs4 Q hφ).not.mp
-      (fun h => hφH ((hstab' φ).mp h))
+      (fun h => hy0 (by linear_combination (h.symm.trans hφy) / 2))
     exact ⟨y, s, hy, by omega⟩
   · rintro ⟨x, c, hx, hc⟩ hφI
     have h1 := apply_eq_self_of_mem_inertia_of_mod_four_eq_one hx (by omega) Q hφI
     have := (isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight hx (by omega) Q hφ).mp h1
     omega
+
+/-- In an exponent-two Galois number field, a prime above two has residue degree one exactly
+when the field contains no square root of an integer congruent to five modulo eight. -/
+theorem inertiaDeg_eq_one_iff_not_exists_sq_eq_mod_eight_eq_five [IsGalois ℚ K]
+    (hexp : Monoid.exponent (K ≃ₐ[ℚ] K) ∣ 2) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(2 : ℤ)})] :
+    Q.inertiaDeg ℤ = 1 ↔ ¬ ∃ (x : K) (c : ℤ), x ^ 2 = algebraMap ℤ K c ∧ c % 8 = 5 := by
+  rw [← inertiaDeg_eq_two_iff_exists_sq_eq_mod_eight_eq_five hexp Q]
+  rcases (Nat.dvd_prime Nat.prime_two).mp
+    (inertiaDeg_dvd_two_of_exponent_dvd_two (p := 2) hexp Q) with h | h <;> simp [h]
 
 variable (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
   (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
@@ -494,7 +495,7 @@ include hr htop
 integers `d i`, and let `Q` be a prime of `𝓞 K` above `2`, ramified or not. Then `Q` has residue
 degree `2` exactly when some subset product `∏_{i ∈ T} dᵢ` lies in the rational square class of an
 integer that is `5` modulo `8`. -/
-theorem inertiaDeg_eq_two_iff_exists_prod_eq_mul_sq [Finite ι] :
+theorem inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq [Finite ι] :
     Q.inertiaDeg ℤ = 2 ↔ ∃ (T : Finset ι) (c : ℤ) (q : ℚ),
       c % 8 = 5 ∧ q ≠ 0 ∧ ∏ i ∈ T, (d i : ℚ) = c * q ^ 2 := by
   have := isGalois_rat hr htop
@@ -525,10 +526,41 @@ theorem inertiaDeg_eq_two_iff_exists_prod_eq_mul_sq [Finite ι] :
 integers `d i`, and let `Q` be a prime of `𝓞 K` above `2`, ramified or not. Then `Q` has residue
 degree `1` exactly when no subset product `∏_{i ∈ T} dᵢ` lies in the rational square class of an
 integer that is `5` modulo `8`. -/
-theorem inertiaDeg_eq_one_iff_not_exists_prod_eq_mul_sq [Finite ι] :
+theorem inertiaDeg_eq_one_iff_not_exists_prod_eq_mod_eight_eq_five_mul_sq [Finite ι] :
     Q.inertiaDeg ℤ = 1 ↔ ¬ ∃ (T : Finset ι) (c : ℤ) (q : ℚ),
       c % 8 = 5 ∧ q ≠ 0 ∧ ∏ i ∈ T, (d i : ℚ) = c * q ^ 2 := by
-  rw [← inertiaDeg_eq_two_iff_exists_prod_eq_mul_sq hr htop Q]
+  rw [← inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq hr htop Q]
+  rcases (Nat.dvd_prime Nat.prime_two).mp (inertiaDeg_dvd_two (p := 2) hr htop Q) with h | h <;>
+    simp [h]
+
+/-- The residue degree above two is two exactly when the squarefree part of some subset
+product is congruent to five modulo eight. All factors in this criterion are integers. -/
+theorem inertiaDeg_eq_two_iff_exists_squarefree_prod_eq_mod_eight_eq_five_mul_sq [Finite ι] :
+    Q.inertiaDeg ℤ = 2 ↔ ∃ (T : Finset ι) (s b : ℤ),
+      Squarefree s ∧ b ≠ 0 ∧ ∏ i ∈ T, d i = s * b ^ 2 ∧ s % 8 = 5 := by
+  rw [inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq hr htop Q]
+  simp_rw [← Int.cast_prod,
+    TauCeti.Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mul_sq]
+
+/-- For squarefree, pairwise coprime integer radicands, the residue degree above two is two
+exactly when one of the finitely many subset products is congruent to five modulo eight. -/
+theorem inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_squarefree [Finite ι]
+    (hsf : ∀ i, Squarefree (d i)) (hcop : Pairwise (fun i j => IsRelPrime (d i) (d j))) :
+    Q.inertiaDeg ℤ = 2 ↔ ∃ T : Finset ι, (∏ i ∈ T, d i) % 8 = 5 := by
+  rw [inertiaDeg_eq_two_iff_exists_prod_eq_mod_eight_eq_five_mul_sq hr htop Q]
+  apply exists_congr
+  intro T
+  rw [← Int.cast_prod, ← TauCeti.Int.emod_eight_eq_five_iff_exists_eq_mul_sq
+    (Finset.squarefree_prod_of_pairwise_isCoprime
+      (fun i _ j _ hij => hcop hij) (fun i _ => hsf i))]
+
+/-- For squarefree, pairwise coprime integer radicands, the residue degree above two is one
+exactly when every subset product is not congruent to five modulo eight. -/
+theorem inertiaDeg_eq_one_iff_forall_prod_mod_eight_ne_five_of_squarefree [Finite ι]
+    (hsf : ∀ i, Squarefree (d i)) (hcop : Pairwise (fun i j => IsRelPrime (d i) (d j))) :
+    Q.inertiaDeg ℤ = 1 ↔ ∀ T : Finset ι, (∏ i ∈ T, d i) % 8 ≠ 5 := by
+  rw [← not_exists, ← inertiaDeg_eq_two_iff_exists_prod_mod_eight_eq_five_of_squarefree
+    hr htop Q hsf hcop]
   rcases (Nat.dvd_prime Nat.prime_two).mp (inertiaDeg_dvd_two (p := 2) hr htop Q) with h | h <;>
     simp [h]
 
