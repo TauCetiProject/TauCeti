@@ -13,16 +13,19 @@ public import Mathlib.Algebra.Lie.Quotient
 Mathlib equips the quotient of a Lie algebra by a Lie ideal with its Lie algebra structure and
 provides the quotient map as a morphism of Lie modules. This file records that map as a
 homomorphism of Lie algebras and gives its universal property: a homomorphism killing the ideal
-factors uniquely through the quotient.
+factors uniquely through the quotient. For a surjective homomorphism, the induced map from the
+quotient by its kernel is an isomorphism, which is the first isomorphism theorem.
 
-These declarations live in the root `LieIdeal` namespace, extending Mathlib's API and supporting
-receiver notation on the ideal.
+These declarations live in the root `LieIdeal` and `LieHom` namespaces, extending Mathlib's API
+and supporting receiver notation on the ideal and the homomorphism.
 
 ## Main definitions
 
 * `LieIdeal.mkQ`: the quotient map `L →ₗ⁅R⁆ L ⧸ I`.
 * `LieIdeal.liftQ`: the homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism
   `L →ₗ⁅R⁆ L'` whose kernel contains `I`.
+* `LieHom.quotKerEquivOfSurjective`: the first isomorphism theorem, identifying the quotient of
+  `L` by the kernel of a surjective homomorphism with its target.
 
 ## Main results
 
@@ -36,6 +39,9 @@ receiver notation on the ideal.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
   quotient map.
 * `LieIdeal.eq_liftQ`: the lifted homomorphism is the unique such factorization.
+* `LieIdeal.ker_liftQ_mkQ`: for ideals `J ≤ I`, the kernel of `L ⧸ J → L ⧸ I` is the image of `I`.
+* `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
+* `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
 -/
 
 public section
@@ -128,4 +134,61 @@ theorem eq_liftQ {f : L →ₗ⁅R⁆ L'} {h : I ≤ f.ker} {g : L ⧸ I →ₗ�
     (hg : ∀ x : L, g (I.mkQ x) = f x) : g = I.liftQ f h :=
   I.lieHom_qext fun x => by rw [hg]; simp
 
+/-- For ideals `J ≤ I`, the kernel of the induced map `L ⧸ J → L ⧸ I` is the image of `I` in
+`L ⧸ J`. -/
+theorem ker_liftQ_mkQ {J : LieIdeal R L} (h : J ≤ I.mkQ.ker) :
+    (J.liftQ I.mkQ h).ker = I.map J.mkQ := by
+  rw [ker_mkQ] at h
+  ext z
+  obtain ⟨x, rfl⟩ := J.mkQ_surjective z
+  rw [LieHom.mem_ker, ← LieHom.comp_apply, liftQ_mkQ, ← LieHom.mem_ker, ker_mkQ]
+  refine ⟨fun hx ↦ mem_map hx, fun hx ↦ ?_⟩
+  obtain ⟨⟨y, hy⟩, hyx⟩ := mem_map_of_surjective J.mkQ_surjective hx
+  rw [← sub_add_cancel x y]
+  refine I.add_mem (h ?_) hy
+  rw [← ker_mkQ J, LieHom.mem_ker, map_sub, hyx, sub_self]
+
+section Supplement
+
+variable {P : LieSubalgebra R L}
+
+/-- A Lie subalgebra `P` supplementing an ideal `I`, in the sense that `I + P = L`, maps onto the
+quotient `L ⧸ I`. -/
+theorem mkQ_comp_incl_surjective (hIP : Codisjoint I.toSubmodule P.toSubmodule) :
+    Function.Surjective (I.mkQ.comp P.incl) := by
+  intro y
+  obtain ⟨x, rfl⟩ := I.mkQ_surjective y
+  obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
+  refine ⟨⟨s, hs⟩, ?_⟩
+  rw [LieHom.comp_apply, LieSubalgebra.coe_incl, ← sub_eq_zero, ← map_sub, ← LieHom.mem_ker,
+    ker_mkQ, Subtype.coe_mk, sub_add_cancel_right]
+  exact I.neg_mem hi
+
+/-- The kernel of the map `P → L ⧸ I` induced by a Lie subalgebra `P` is the ideal `I ∩ P` of
+`P`. -/
+@[simp]
+theorem ker_mkQ_comp_incl : (I.mkQ.comp P.incl).ker = I.comap P.incl := by
+  ext x
+  rw [LieHom.mem_ker, mem_comap, LieHom.comp_apply, mkQ_apply, LieSubmodule.Quotient.mk_eq_zero']
+
+end Supplement
+
 end LieIdeal
+
+namespace LieHom
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- **The first isomorphism theorem** for a surjective homomorphism of Lie algebras: the quotient
+by its kernel is isomorphic to the target. -/
+noncomputable def quotKerEquivOfSurjective (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) :
+    (L ⧸ f.ker) ≃ₗ⁅R⁆ L' :=
+  LieEquiv.ofBijective (f.ker.liftQ f le_rfl)
+    ⟨f.ker.liftQ_injective f le_rfl le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
+
+/-- The first isomorphism theorem sends the class of `x` to `f x`. -/
+@[simp]
+theorem quotKerEquivOfSurjective_apply_mk (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) (x : L) :
+    f.quotKerEquivOfSurjective hf (LieSubmodule.Quotient.mk x) = f x := (rfl)
+
+end LieHom
