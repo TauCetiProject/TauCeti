@@ -14,6 +14,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 The Pin group is the subgroup of the Lipschitz group whose elements have unit Clifford norm.
 This file packages its inclusion into the Lipschitz group, the vector generators with norm `-1`,
 and the Spin inclusion used when transporting norms and actions along those maps.
+
+`TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz` identifies the inverse unit coordinate of a
+Pin element's image in the Lipschitz group with its Clifford star.
 -/
 
 public section
