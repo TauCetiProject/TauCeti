@@ -7,10 +7,14 @@ module
 
 public import TauCeti.Algebra.Homology.GradedCochainComplex
 public import TauCeti.Algebra.Homology.DG.Module.Right.Cohomology
+public import TauCeti.Algebra.Homology.DG.Module.Right.DGCategory
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
+public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.QuasiEquivalence
+public import TauCeti.CategoryTheory.DG.SingleObj
 
 /-!
-# The free rank-one right module and the differential graded Yoneda lemma
+# The free rank-one right module, the differential graded Yoneda lemma and embedding
 
 A differential graded algebra `A` is a differential graded right module over itself — this is
 `TauCeti.IsDGAlgebra.isDGRightModule`, the **free rank-one** right module, the module represented
@@ -24,6 +28,15 @@ the second term of the graded commutator `d_M ∘ f - (-1)^p f ∘ d_A`.  So the
 the free rank-one module *is* the underlying cochain complex of `M`, and in particular a morphism
 of differential graded right modules `A ⟶ M` is the same thing as a degree-zero cycle of `M`.
 
+Taking `M = A`, the inverse of evaluation at `1` sends `a` to left multiplication by `a`, and
+these maps assemble into the **differential graded Yoneda embedding** of the one-object
+differential graded category `TauCeti.DGSingleObj h` into the differential graded category of
+right modules: its unique object goes to the free rank-one module, and a morphism `a` goes to
+the right-module cochain `x ↦ a * x`.  Left multiplication commutes with the differentials by
+the Leibniz rule, and it preserves composition because both categories put the same Koszul sign
+`(-1) ^ (p * q)` between Mathlib's enriched factor order and Keller's composition order.  The
+embedding is an isomorphism on every Hom complex, so in particular it is quasi-fully faithful.
+
 ## Main definitions
 
 * `TauCeti.dgYonedaCochainEquiv`: evaluation at `1`, as a linear equivalence between the
@@ -32,6 +45,17 @@ of differential graded right modules `A ⟶ M` is the same thing as a degree-zer
 * `TauCeti.dgYonedaHomEquiv`: morphisms of differential graded right modules out of the free
   rank-one module are the degree-zero cycles of `M`.
 * `TauCeti.dgYonedaIso`: the degreewise identification as an isomorphism of cochain complexes.
+* `TauCeti.dgYonedaEmbedding`: the differential graded Yoneda embedding of the one-object
+  differential graded category of `A` into differential graded right modules.
+* `TauCeti.dgYonedaEmbeddingHomEquiv`: its action on morphisms of a fixed degree, a linear
+  equivalence.
+
+## Main results
+
+* `TauCeti.dgYonedaEmbeddingHomEquiv_apply`: a morphism `a` acts on the free rank-one module by
+  left multiplication.
+* `TauCeti.isIso_map_dgYonedaEmbedding`: the Yoneda embedding is an isomorphism on Hom complexes.
+* `TauCeti.isQuasiFullyFaithful_dgYonedaEmbedding`: the Yoneda embedding is quasi-fully faithful.
 
 ## Implementation notes
 
@@ -44,7 +68,7 @@ degreewise statements carry no universe constraint at all.
 
 ## References
 
-* B. Keller, *Deriving DG categories*, Section 2.
+* B. Keller, *Deriving DG categories*, Sections 1 and 2.
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.1 and 4.1.
 -/
 
@@ -54,7 +78,7 @@ open CategoryTheory MulOpposite
 
 namespace TauCeti
 
-universe uR uA uM
+universe u uR uA uM
 
 section Degreewise
 
@@ -75,7 +99,7 @@ def dgYonedaCochainEquiv (p : ℤ) :
     simpa using dgRightModuleCochains.map_mem f (SetLike.one_mem_graded 𝒜)⟩
   invFun x :=
     ⟨{ toFun := fun a ↦ op a • (x : M)
-       map_add' := fun a b ↦ by rw [op_add, add_smul]
+       map_add' := fun a b ↦ by rw [MulOpposite.op_add, add_smul]
        map_smul' := fun c a ↦ by
          simp only [RingHom.id_apply]
          rw [← op_unop c, op_smul_eq_mul, op_mul, op_unop, mul_smul] }, by
@@ -203,5 +227,104 @@ theorem dgYonedaIso_inv_f (hM : IsDGRightModule h ℳ dM) (p : ℤ) :
   (rfl)
 
 end Complex
+
+section Embedding
+
+variable {R : Type u} {A : Type u} [CommRing R] [Ring A] [Algebra R A]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} (h : IsDGAlgebra 𝒜 d)
+
+/-- The action of the differential graded Yoneda embedding on morphisms of degree `n`: a
+morphism of the one-object category, an element `a` of degree `n` of the algebra, goes to the
+degree-`n` endomorphism `x ↦ a * x` of the free rank-one right module.  It is the inverse of the
+degreewise Yoneda lemma `TauCeti.dgYonedaCochainEquiv` for the free rank-one module. -/
+noncomputable def dgYonedaEmbeddingHomEquiv (X Y : DGSingleObj h) (n : ℤ) :
+    DGHom R n X Y ≃ₗ[R]
+      DGHom R n (DGRightModuleCat.of h.isDGRightModule) (DGRightModuleCat.of h.isDGRightModule) :=
+  (DGSingleObj.dgHomEquiv X Y n).trans ((dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := 𝒜) n).symm.trans
+    (DGRightModuleCat.dgHomLinearEquivCochains (DGRightModuleCat.of h.isDGRightModule)
+      (DGRightModuleCat.of h.isDGRightModule) n).symm)
+
+variable {h}
+
+/-- The Yoneda embedding sends a morphism `a` of the one-object category to left multiplication
+by `a`. -/
+-- Not tagged `simp`: its key would contain the projections of the reducible bundling
+-- `DGRightModuleCat.of`, which `simp` reduces in the goal, so the lemma could never fire.
+theorem dgYonedaEmbeddingHomEquiv_apply {X Y : DGSingleObj h} {n : ℤ} (f : DGHom R n X Y)
+    (x : A) :
+    (DGRightModuleCat.dgHomLinearEquivCochains _ _ n (dgYonedaEmbeddingHomEquiv h X Y n f)).1 x =
+      (DGSingleObj.dgHomEquiv X Y n f : A) * x := by
+  simp [dgYonedaEmbeddingHomEquiv]
+
+variable (h)
+
+/-- **The differential graded Yoneda embedding** of a differential graded algebra: the DG functor
+from the one-object differential graded category of `A` to differential graded right modules over
+`A` which sends the unique object to the free rank-one module and a morphism `a` to left
+multiplication by `a`. -/
+-- The body is exposed so that the objects `(dgYonedaEmbedding h).obj X` are definitionally the
+-- free rank-one module, which the statement of `dgMap_dgYonedaEmbedding` needs to typecheck.
+@[expose]
+noncomputable def dgYonedaEmbedding :
+    EnrichedFunctor (CochainComplex (ModuleCat.{u} R) ℤ) (DGSingleObj h)
+      (DGRightModuleCat.{u, u, u} h) :=
+  EnrichedFunctor.ofDGMap (fun _ ↦ DGRightModuleCat.of h.isDGRightModule)
+    (fun {X Y} n ↦ (dgYonedaEmbeddingHomEquiv h X Y n).toLinearMap)
+    (fun {X Y} n f ↦ by
+      -- Left multiplication by `d a` is the graded commutator of `d` with left multiplication by
+      -- `a`: this is the Leibniz rule.
+      apply (DGRightModuleCat.dgHomLinearEquivCochains _ _ (n + 1)).injective
+      rw [DGRightModuleCat.dgDifferential_eq]
+      refine Subtype.ext (LinearMap.ext fun x ↦ ?_)
+      rw [dgRightModuleCochains.differential_apply]
+      simp only [LinearEquiv.coe_coe]
+      rw [dgYonedaEmbeddingHomEquiv_apply, dgYonedaEmbeddingHomEquiv_apply,
+        dgYonedaEmbeddingHomEquiv_apply, DGSingleObj.dgHomEquiv_dgDifferential,
+        h.leibniz (DGSingleObj.dgHomEquiv X Y n f).2 x, add_sub_cancel_right])
+    (fun X ↦ by
+      apply (DGRightModuleCat.dgHomLinearEquivCochains _ _ 0).injective
+      rw [DGRightModuleCat.dgId_eq]
+      refine Subtype.ext (LinearMap.ext fun x ↦ ?_)
+      simp only [LinearEquiv.coe_coe]
+      rw [dgYonedaEmbeddingHomEquiv_apply, DGSingleObj.dgHomEquiv_dgId, one_mul,
+        dgRightModuleCochains.id_apply])
+    (fun {X Y Z p q n} f g hpq ↦ by
+      -- Both compositions carry the Koszul sign `(-1) ^ (p * q)`; what remains is associativity.
+      apply (DGRightModuleCat.dgHomLinearEquivCochains _ _ n).injective
+      rw [DGRightModuleCat.dgComp_eq]
+      refine Subtype.ext (LinearMap.ext fun x ↦ ?_)
+      simp only [LinearEquiv.coe_coe]
+      rw [dgYonedaEmbeddingHomEquiv_apply, DGSingleObj.dgHomEquiv_dgComp, Units.smul_def,
+        Units.smul_def, Submodule.coe_smul_of_tower, LinearMap.smul_apply,
+        dgRightModuleCochains.comp_apply, dgYonedaEmbeddingHomEquiv_apply,
+        dgYonedaEmbeddingHomEquiv_apply, smul_mul_assoc, mul_assoc])
+
+/-- The Yoneda embedding sends the unique object to the free rank-one right module. -/
+@[simp]
+theorem dgYonedaEmbedding_obj (X : DGSingleObj h) :
+    (dgYonedaEmbedding h).obj X = DGRightModuleCat.of h.isDGRightModule :=
+  (rfl)
+
+variable {h} in
+/-- The Yoneda embedding acts on morphisms of degree `n` by `TauCeti.dgYonedaEmbeddingHomEquiv`,
+that is, by left multiplication. -/
+@[simp]
+theorem dgMap_dgYonedaEmbedding {X Y : DGSingleObj h} {n : ℤ} (f : DGHom R n X Y) :
+    (dgYonedaEmbedding h).dgMap n f = dgYonedaEmbeddingHomEquiv h X Y n f :=
+  EnrichedFunctor.dgMap_ofDGMap _ _ _ _ _ n f
+
+/-- **The differential graded Yoneda embedding is fully faithful**: its map on each Hom complex is
+an isomorphism of cochain complexes. -/
+theorem isIso_map_dgYonedaEmbedding (X Y : DGSingleObj h) :
+    IsIso ((dgYonedaEmbedding h).map X Y) :=
+  have (n : ℤ) : IsIso (((dgYonedaEmbedding h).map X Y).f n) :=
+    (dgYonedaEmbeddingHomEquiv h X Y n).toModuleIso.isIso_hom
+  HomologicalComplex.Hom.isIso_of_components _
+
+/-- The differential graded Yoneda embedding is quasi-fully faithful. -/
+theorem isQuasiFullyFaithful_dgYonedaEmbedding : (dgYonedaEmbedding h).IsQuasiFullyFaithful :=
+  EnrichedFunctor.isQuasiFullyFaithful_of_isIso_map (isIso_map_dgYonedaEmbedding h)
+
+end Embedding
 
 end TauCeti

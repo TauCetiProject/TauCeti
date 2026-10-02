@@ -15,7 +15,8 @@ A DG functor between differential graded categories is an enriched functor
 `Hom(X, Y) ⟶ Hom(F X, F Y)` for every pair of objects, compatible with the enriched identities and
 compositions.  This file unpacks that data into the calculus of homogeneous morphisms used
 throughout `TauCeti.CategoryTheory.DG.Basic`: a DG functor acts on morphisms of each degree, and
-this action commutes with the differential and preserves identities and composition.
+this action commutes with the differential and preserves identities and composition.  Conversely,
+such an action on homogeneous morphisms determines a DG functor.
 
 Consequently a DG functor sends closed degree-zero morphisms to closed ones and boundaries to
 boundaries, and it induces a linear functor `H⁰(F) : H⁰(C) ⥤ H⁰(D)` between homotopy categories.
@@ -26,6 +27,8 @@ statements about `H⁰(F)`.
 ## Main definitions
 
 * `CategoryTheory.EnrichedFunctor.dgMap`: the action of a DG functor on morphisms of degree `n`.
+* `CategoryTheory.EnrichedFunctor.ofDGMap`: the DG functor with a prescribed action on homogeneous
+  morphisms commuting with the differential, identities, and composition.
 * `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategory`: the functor `H⁰(F)` induced on homotopy
   categories.
 * `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategoryIdIso` and
@@ -116,6 +119,72 @@ theorem id_dgMap {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
 theorem comp_dgMap {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     (F.comp (CochainComplex (ModuleCat.{v} R) ℤ) G).dgMap n f = G.dgMap n (F.dgMap n f) :=
   (rfl)
+
+/-! ### DG functors from their action on homogeneous morphisms -/
+
+section OfDGMap
+
+variable (obj : C → D)
+  (map : ∀ {X Y : C} (n : ℤ), DGHom R n X Y →ₗ[R] DGHom R n (obj X) (obj Y))
+  (map_dgDifferential : ∀ {X Y : C} (n : ℤ) (f : DGHom R n X Y),
+    map (n + 1) (dgDifferential R n f) = dgDifferential R n (map n f))
+  (map_dgId : ∀ X : C, map 0 (dgId R X) = dgId R (obj X))
+  (map_dgComp : ∀ {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y) (g : DGHom R q Y Z)
+    (h : p + q = n), map n (dgComp R f g h) = dgComp R (map p f) (map q g) h)
+
+/-- The DG functor with a prescribed action on homogeneous morphisms: linear maps on the
+morphisms of each degree which commute with the differential and preserve identities and
+composition.  This is the converse of `CategoryTheory.EnrichedFunctor.dgMap_dgDifferential`,
+`CategoryTheory.EnrichedFunctor.dgMap_dgId` and `CategoryTheory.EnrichedFunctor.dgMap_dgComp`:
+the chain maps on Hom complexes and the enriched functor axioms are assembled from these
+elementwise laws. -/
+-- The body is exposed so that `(ofDGMap obj map …).obj X` is definitionally `obj X`; otherwise
+-- the homogeneous morphisms of the two sides of `dgMap_ofDGMap` would have different types.
+@[expose]
+def ofDGMap : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D where
+  obj := obj
+  map X Y :=
+    { f n := ModuleCat.ofHom (map n)
+      comm' n m hnm := by
+        obtain rfl : n + 1 = m := hnm
+        ext f
+        simpa using (map_dgDifferential n f).symm }
+  map_id X := by
+    -- A map out of the tensor unit is determined by its degree-zero component, evaluated at `1`.
+    apply HomologicalComplex.from_single_hom_ext
+    rw [← cancel_epi (singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv]
+    ext
+    have key := map_dgId X
+    rw [dgId_def, dgId_def] at key
+    simpa using key
+  map_comp X Y Z := by
+    -- Both chain maps out of the tensor product are compared on each bidegree summand and on
+    -- pure tensors, where they are the two sides of `map_dgComp`.
+    ext n : 1
+    apply HomologicalComplex.mapBifunctor.hom_ext
+    intro p q h
+    rw [comp_f, comp_f, tensorHom_eq_mapBifunctorMap, ι_mapBifunctorMap_assoc]
+    apply ModuleCat.MonoidalCategory.tensor_ext
+    intro f g
+    have key := map_dgComp f g h
+    rw [← dgCompMap_tmul, ← dgCompMap_tmul, dgCompMap_def, dgCompMap_def] at key
+    simpa using key
+
+/-- The DG functor with a prescribed action on homogeneous morphisms acts on objects by the
+prescribed map. -/
+@[simp]
+theorem ofDGMap_obj (X : C) :
+    (ofDGMap obj map map_dgDifferential map_dgId map_dgComp).obj X = obj X :=
+  (rfl)
+
+/-- The DG functor with a prescribed action on homogeneous morphisms acts on them by that
+action. -/
+@[simp]
+theorem dgMap_ofDGMap {X Y : C} (n : ℤ) (f : DGHom R n X Y) :
+    (ofDGMap obj map map_dgDifferential map_dgId map_dgComp).dgMap n f = map n f :=
+  (rfl)
+
+end OfDGMap
 
 /-- A DG functor sends closed degree-zero morphisms to closed degree-zero morphisms. -/
 theorem dgMap_mem_dgCycles {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R X Y) :
