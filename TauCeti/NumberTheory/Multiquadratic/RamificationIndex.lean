@@ -165,12 +165,7 @@ theorem apply_eq_neg_of_mem_inertia_of_ne_one {τ : K ≃ₐ[ℚ] K}
     (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) (hτ1 : τ ≠ 1) {i : ι} (hi : (p : ℤ) ∣ d i) :
     τ (r i) = -r i := by
   have hr' (j : ι) : r j ^ 2 = algebraMap ℚ K (d j : ℚ) := by rw [hr j]; simp
-  have hri : r i ≠ 0 := by
-    intro h0
-    have h := hr i
-    rw [h0, zero_pow two_ne_zero, eq_comm,
-      map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective ℤ K)] at h
-    exact hd i (h ▸ dvd_zero _)
+  have hri : r i ≠ 0 := ne_zero_of_sq_eq_intCast (hr i) fun h0 => hd i (h0 ▸ dvd_zero _)
   have hsq : τ (r i) ^ 2 = r i ^ 2 := by rw [← map_pow, hr' i, AlgEquiv.commutes]
   refine (eq_or_eq_neg_of_sq_eq_sq _ _ hsq).resolve_left fun hfix => hτ1 ?_
   -- If `τ` fixes `r i`, it fixes every generator, so it is the identity.
