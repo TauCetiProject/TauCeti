@@ -142,10 +142,9 @@ theorem analyticDiffeomorph_symm (n : ℕ∞ω) :
     (e.analyticDiffeomorph hΦ hΨ n).symm = e.symm.analyticDiffeomorph hΨ hΦ n :=
   letI := Φ.analyticChartedSpace hΦ
   letI := Ψ.analyticChartedSpace hΨ
-  -- Both sides are right inverses of the injective map `e.analyticDiffeomorph hΦ hΨ n`.
-  Diffeomorph.ext fun y ↦ (e.analyticDiffeomorph hΦ hΨ n).injective <| by
-    rw [Diffeomorph.coe_toEquiv, Diffeomorph.apply_symm_apply, coe_analyticDiffeomorph,
-      coe_analyticDiffeomorph, ← analyticIso_hom, ← analyticIso_inv, Iso.inv_hom_id_apply]
+  -- The right-hand side is a right inverse of `e.analyticDiffeomorph hΦ hΨ n`, by `inv_hom_id`.
+  Diffeomorph.ext fun y ↦ (e.analyticDiffeomorph hΦ hΨ n).symm_apply_eq.2 <| by
+    simpa using ((e.analyticIso hΦ hΨ).inv_hom_id_apply y).symm
 
 /-- The identity fan equivalence induces the identity biholomorphism. -/
 @[simp]
