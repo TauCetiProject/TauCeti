@@ -90,7 +90,7 @@ namespace Place
 
 /-- The place of `F / k` attached to a height-one prime `p` of a Dedekind `k`-algebra `R` with
 fraction field `F`: the normalized `p`-adic valuation. -/
-@[expose] def adic (p : HeightOneSpectrum R) : Place k F where
+def adic (p : HeightOneSpectrum R) : Place k F where
   valuation := p.valuation F
   valuation_surjective := p.valuation_surjective F
   isTrivialOn := inferInstance
