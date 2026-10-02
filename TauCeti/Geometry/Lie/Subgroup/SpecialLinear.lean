@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialLinear
 public import TauCeti.Geometry.Lie.Subgroup.Units
-public import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 /-!
 # The Lie algebra of the real special linear group
@@ -23,7 +23,8 @@ Two inputs meet here: the matrix-level characterization of the exponential lines
 the special linear group, `Matrix.forall_det_exp_smul_eq_one_iff_mem_sl`, which rests on
 `det (exp A) = exp (trace A)`, and the algebra-coordinate form of the Lie algebra of a closed
 subgroup of units, `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff`,
-whose closedness hypothesis is supplied by `Matrix.SpecialLinearGroup.isClosed_range_toGL`.
+whose closedness hypothesis is supplied by Mathlib's
+`Matrix.SpecialLinearGroup.isClosedEmbedding_toGL`.
 
 ## Main results
 
@@ -80,7 +81,8 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl
             Subgroup (Matrix n n ℝ)ˣ) ↔
       A ∈ LieAlgebra.SpecialLinear.sl n ℝ := by
   rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
-      (Matrix.SpecialLinearGroup.isClosed_range_toGL n ℝ),
+      (MonoidHom.coe_range (Matrix.SpecialLinearGroup.toGL (n := n) (R := ℝ)) ▸
+        Matrix.SpecialLinearGroup.isClosedEmbedding_toGL.isClosed_range),
     ← Matrix.forall_det_exp_smul_eq_one_iff_mem_sl]
   simp only [Matrix.SpecialLinearGroup.range_toGL_eq_ker_det, MonoidHom.mem_ker, Units.ext_iff,
     Matrix.GeneralLinearGroup.val_det_apply, TauCeti.expUnit_coe, Units.val_one]
