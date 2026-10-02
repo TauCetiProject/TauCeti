@@ -16,7 +16,7 @@ For a finite-dimensional quadratic space over a topological field with `2` inver
 Pin representation into the orthogonal group is continuous. The domain has the subtype topology
 from the Clifford algebra, and the codomain has the subgroup topology from the linear
 automorphism group. The result restricts the continuous Lipschitz representation along the
-continuous Pin inclusion and supplies continuity of its further restriction to Spin.
+continuous Pin inclusion and enables the later restriction to Spin.
 
 ## References
 
