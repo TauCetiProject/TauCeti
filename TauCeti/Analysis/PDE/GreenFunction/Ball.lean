@@ -451,7 +451,7 @@ private theorem ballPoissonKernel_eq_of_norm_eq_one {x y : EuclideanSpace ℝ (F
     rw [norm_sub_sq_real, inner_sub_right, real_inner_self_eq_norm_sq, hy, real_inner_comm]
     ring
   have hsplit : ‖x - y‖ ^ (2 - n : ℝ) = ‖x - y‖ ^ 2 * ‖x - y‖ ^ (-(n : ℝ)) := by
-    rw [show (2 - n : ℝ) = 2 + -n by ring, Real.rpow_add hpos, Real.rpow_two]
+    rw [sub_eq_add_neg (2 : ℝ), Real.rpow_add hpos, Real.rpow_two]
   rw [ballPoissonKernel_def, hnum, hsplit, real_inner_smul_left, Real.rpow_neg hpos.le,
     Real.rpow_natCast, div_eq_mul_inv, mul_inv]
   ring
