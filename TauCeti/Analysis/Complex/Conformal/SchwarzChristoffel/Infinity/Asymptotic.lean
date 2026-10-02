@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Integrand
 public import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.Complex.AtInfinity
 
 /-!
 # Complex asymptotics of the Schwarz--Christoffel integrand at infinity
@@ -58,23 +59,6 @@ theorem schwarzChristoffelIntegrand_div_cpow_eq_prod (a e : ι → ℝ) {z : ℂ
   congr 1
   field_simp
 
-/-- **Complex leading term at infinity.** The Schwarz--Christoffel integrand divided by
-`z ^ (∑ i, e i)` tends to one through the entire upper half-plane. -/
-theorem tendsto_schwarzChristoffelIntegrand_div_cpow_atInfinity (a e : ι → ℝ) :
-    Tendsto (fun z : ℂ => schwarzChristoffelIntegrand a e z / z ^ ((∑ i, e i : ℝ) : ℂ))
-      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 1) := by
-  have hcont : ContinuousAt (fun w : ℂ => ∏ i, (1 - (a i : ℂ) * w) ^ (e i : ℂ)) 0 := by
-    exact tendsto_finsetProd Finset.univ fun i _ =>
-      ((continuousAt_const.sub (continuousAt_const.mul continuousAt_id)).cpow
-        continuousAt_const (by simp [Complex.slitPlane])).tendsto
-  have h := hcont.tendsto.comp
-    (tendsto_inv₀_cobounded.mono_left
-      (inf_le_left : cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet ≤ cobounded ℂ))
-  simp only [mul_zero, sub_zero, one_cpow, prod_const_one] at h
-  refine h.congr' ?_
-  filter_upwards [mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz
-  exact (schwarzChristoffelIntegrand_div_cpow_eq_prod a e hz).symm
-
 /-- **First correction at infinity.** The coefficient of `1 / z` in the normalized
 Schwarz--Christoffel integrand is the negative weighted sum of the real prevertices. The limit
 holds uniformly over all directions in the upper half-plane. -/
@@ -102,6 +86,15 @@ theorem tendsto_mul_schwarzChristoffelIntegrand_div_cpow_sub_one_atInfinity (a e
   filter_upwards [mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz
   rw [schwarzChristoffelIntegrand_div_cpow_eq_prod a e hz]
   simp only [Function.comp_apply, inv_inv]
+
+/-- **Complex leading term at infinity.** The Schwarz--Christoffel integrand divided by
+`z ^ (∑ i, e i)` tends to one through the entire upper half-plane. -/
+theorem tendsto_schwarzChristoffelIntegrand_div_cpow_atInfinity (a e : ι → ℝ) :
+    Tendsto (fun z : ℂ => schwarzChristoffelIntegrand a e z / z ^ ((∑ i, e i : ℝ) : ℂ))
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 1) := by
+  have h := tendsto_zero_of_tendsto_mul_cobounded inf_le_left
+    (tendsto_mul_schwarzChristoffelIntegrand_div_cpow_sub_one_atInfinity a e)
+  simpa only [sub_add_cancel, zero_add] using h.add (tendsto_const_nhds (x := (1 : ℂ)))
 
 /-- The relative error of the leading power of the Schwarz--Christoffel integrand is
 `O(1 / z)` throughout the upper half-plane at infinity. -/
