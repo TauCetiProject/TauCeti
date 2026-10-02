@@ -39,8 +39,9 @@ The unit values of a binary diagonal form `⟨a, b⟩` are the coset `a N` of th
 of its discriminant algebra `R[√(-a b)]`
 (`TauCeti.mem_unitValueSet_binary_iff_mul_mem_quadraticNormSubgroup`); this is how the norm
 subgroup computes the spinor norms of binary forms. In particular the unit values of the norm form
-`⟨1, -b⟩` of `K(√b)` are the units `c` with `(b, c) = 1`
-(`TauCeti.mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one`).
+`⟨1, -b⟩` of the quadratic algebra `K[√b]` are the units `c` with `(b, c) = 1`
+(`TauCeti.mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one`); this algebra is the field
+`K(√b)` only when `b` is not a square.
 -/
 
 public section
@@ -209,8 +210,8 @@ theorem hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (a b : Kˣ) :
     hilbertSymbol a b = 1 ↔ b ∈ quadraticNormSubgroup (a : K) := by
   rw [mem_quadraticNormSubgroup_iff, hilbertSymbol_eq_one_iff_exists_unit_norm_eq]
 
-/-- **The values of the norm form.** The binary form `⟨1, -b⟩`, the norm form of `K(√b)`,
-represents a unit `c` exactly when the Hilbert symbol `(b, c)` is `1`. -/
+/-- **The values of the norm form.** The binary form `⟨1, -b⟩`, the norm form of the quadratic
+algebra `K[√b]`, represents a unit `c` exactly when the Hilbert symbol `(b, c)` is `1`. -/
 theorem mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one (b c : Kˣ) :
     c ∈ QuadraticMap.unitValueSet (QuadraticMap.weightedSumSquares K ![1, -(b : K)]) ↔
       hilbertSymbol b c = 1 := by

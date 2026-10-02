@@ -19,11 +19,12 @@ and hence for defining the local Hasse invariant on isometry classes. That asser
 any field in which two is invertible.
 
 Over an arbitrary field, the norm-equation symbol also describes the scalar multiples of the
-binary form `⟨1, -b⟩`, the norm form of `K(√b)`: the multiple `⟨a, -ab⟩` is isometric to it exactly
-when `(b, a) = 1`, that is, when `a` is a value of `⟨1, -b⟩`. Since the two planes always have
-the same dimension and discriminant, this makes the substitution of `⟨a, -ab⟩` for `⟨1, -b⟩` a
-controlled change of isometry class: read over the completions of a global field, it changes the
-local class exactly at the places where the symbol `(b, a)` is `-1`.
+binary form `⟨1, -b⟩`, the norm form of the quadratic algebra `K[√b] = QuadraticAlgebra K b 0`
+(the field `K(√b)` only when `b` is not a square): the multiple `⟨a, -ab⟩` is isometric to it
+exactly when `(b, a) = 1`, that is, when `a` is a value of `⟨1, -b⟩`. Since the two planes always
+have the same dimension and discriminant, this makes the substitution of `⟨a, -ab⟩` for `⟨1, -b⟩`
+a controlled change of isometry class: read over the completions of a global field, it changes
+the local class exactly at the places where the symbol `(b, a)` is `-1`.
 
 ## Main results
 
