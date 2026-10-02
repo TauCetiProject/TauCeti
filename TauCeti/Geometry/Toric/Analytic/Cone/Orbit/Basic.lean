@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Face
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Separation
 public import TauCeti.Geometry.Toric.Analytic.Cone.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Basic
 public import TauCeti.Topology.ZeroPattern
@@ -730,7 +730,7 @@ theorem mem_stabilizer_distinguishedPoint_iff (hi : IsIntegralLattice i) (hσ : 
       simp only [ambient_smul_apply_single, distinguishedPoint_apply_single, ite_eq_left hs,
         mul_one] at h
       exact Units.ext h
-    obtain ⟨u, hu, hFu⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi F.isFaceOf
+    obtain ⟨u, hu, hFu⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi F.isFaceOf
     have huF (y : V) (hy : y ∈ F) : hi.realCharacter u y = 0 := by
       have hy' : y ∈ σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter u)) := by
         rw [hFu]

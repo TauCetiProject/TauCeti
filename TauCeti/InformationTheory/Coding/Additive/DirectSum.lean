@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.InformationTheory.Coding.DirectSum
+public import TauCeti.InformationTheory.Coding.Additive.Equivalence
 
 /-!
 # Direct sums of additive codes
@@ -18,7 +19,7 @@ calculations.
 
 Hamming weight and distance split as sums over the two coordinate blocks. Canonical reindexings
 by the commutativity and associativity equivalences for `Sum` give the corresponding code
-identities, using Mathlib's `AddEquiv.arrowCongr`.
+identities, using `TauCeti.AdditiveCode.reindex`.
 
 The alphabet is an arbitrary additive group, with no finiteness or field assumption.
 The construction transports Mathlib's `AddSubgroup.prod` along `Equiv.sumArrowEquivProdArrow`,
@@ -145,25 +146,22 @@ theorem _root_.AddSubgroup.directSum_inj {C C' : AddSubgroup (ι → A)}
 
 /-- Reindexing an additive direct sum by swapping the coordinate summands swaps the two codes. -/
 @[simp↓]
-theorem _root_.AddSubgroup.map_directSum_sumComm (C : AddSubgroup (ι → A))
+theorem AdditiveCode.reindex_directSum_sumComm (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) :
-    (C.directSum D).map
-        (AddEquiv.arrowCongr (Equiv.sumComm ι κ) (AddEquiv.refl A)).toAddMonoidHom =
-      D.directSum C := by
+    AdditiveCode.reindex (C.directSum D) (Equiv.sumComm κ ι) = D.directSum C := by
   ext x
-  rw [mem_map_equiv, mem_directSum_iff, mem_directSum_iff]
+  rw [AdditiveCode.mem_reindex, mem_directSum_iff, mem_directSum_iff]
   exact and_comm
 
 /-- Reindexing an iterated additive direct sum by associating its coordinate summands associates
 the three codes in the same way. -/
 @[simp↓]
-theorem _root_.AddSubgroup.map_directSum_sumAssoc (C : AddSubgroup (ι → A))
+theorem AdditiveCode.reindex_directSum_sumAssoc (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (E : AddSubgroup (ν → A)) :
-    ((C.directSum D).directSum E).map
-        (AddEquiv.arrowCongr (Equiv.sumAssoc ι κ ν) (AddEquiv.refl A)).toAddMonoidHom =
+    AdditiveCode.reindex ((C.directSum D).directSum E) (Equiv.sumAssoc ι κ ν).symm =
       C.directSum (D.directSum E) := by
   ext x
-  simp only [mem_map_equiv, mem_directSum_iff]
+  simp only [AdditiveCode.mem_reindex, mem_directSum_iff]
   exact and_assoc
 
 /-- The direct sum of two zero codes is zero. -/

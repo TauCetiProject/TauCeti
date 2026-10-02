@@ -9,17 +9,16 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.Representation
 public import TauCeti.AlgebraicGeometry.CartierDivisor.TensorProduct
 
 /-!
-# The Picard group of an integral scheme
+# Cartier divisors and the Picard group
 
-The Cartier divisor tensor-product isomorphism makes the class map additive. Since every
-line-bundle class on an integral scheme is represented by a Cartier divisor, the class of
-`𝒪_X(-D)` provides its inverse.
+The Cartier divisor tensor-product isomorphism makes the class map additive. Negation of Cartier
+divisors corresponds to inversion in the Picard group.
 
 ## Main declarations
 
 * `Scheme.CartierDivisor.toLineBundleClass_add` and `toLineBundleClassHom`: the additive
   comparison from Cartier divisors to line-bundle classes;
-* `LineBundleClass.isUnit` and its `CommGroup` instance: the Picard group of an integral scheme.
+* `Scheme.CartierDivisor.toLineBundleClass_neg`: negation corresponds to the inverse class.
 -/
 
 public section
@@ -55,32 +54,11 @@ theorem toLineBundleClass_add :
   simp only [toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj]
   exact (tensorProductSheafIso D E).symm
 
-/-- The line-bundle class of `-D` inverts the class of `D`. -/
-theorem isUnit_toLineBundleClass : IsUnit D.toLineBundleClass :=
-  ⟨⟨D.toLineBundleClass, (-D).toLineBundleClass,
-    by rw [← toLineBundleClass_add, add_neg_cancel, toLineBundleClass_zero],
-    by rw [← toLineBundleClass_add, neg_add_cancel, toLineBundleClass_zero]⟩, rfl⟩
-
 end TensorProduct
 
 end
 end CartierDivisor
 end Scheme
-
-namespace LineBundleClass
-
-variable {X : Scheme.{u}} [IsIntegral X]
-
-/-- Every line-bundle class on an integral scheme is invertible under tensor product. -/
-theorem isUnit (a : LineBundleClass X) : IsUnit a := by
-  obtain ⟨D, rfl⟩ := Scheme.CartierDivisor.toLineBundleClass_surjective a
-  exact Scheme.CartierDivisor.isUnit_toLineBundleClass D
-
-/-- Tensor product gives the Picard group of any integral scheme. -/
-noncomputable instance : CommGroup (LineBundleClass X) :=
-  commGroupOfIsUnit isUnit
-
-end LineBundleClass
 
 namespace Scheme.CartierDivisor
 

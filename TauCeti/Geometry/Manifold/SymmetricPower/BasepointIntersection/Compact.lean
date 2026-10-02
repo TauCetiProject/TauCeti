@@ -17,8 +17,9 @@ Nevertheless, local analytic equations suffice to show that its intersections wi
 basepoint divisor in a compact parameter set are finite, provided the curve is not locally
 contained in the divisor at any intersection. Each intersection then has a finite positive
 analytic order in a local equation. This is the finiteness and local positivity needed to form
-the basepoint count of a holomorphic disk; identifying the orders in overlapping charts is a
-separate step.
+the basepoint count of a holomorphic disk. The orders agree in overlapping charts, which makes
+them the chart-independent `TauCeti.basepointIntersectionOrder` of
+`TauCeti.Geometry.Manifold.SymmetricPower.BasepointIntersection.Order`.
 
 The divisor and its local analytic equation are from
 `TauCeti.Geometry.Manifold.SymmetricPower.BasepointIntersection.Basic`. The geometric

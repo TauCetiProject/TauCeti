@@ -129,14 +129,14 @@ theorem isEven_iff_le_singleParityCheckCode :
   simp only [hsum, ZMod.natCast_eq_zero_iff_even]
 
 /-- Every self-orthogonal binary code is even. -/
-theorem isEven_of_le_euclideanDual (hC : C ≤ C.euclideanDual) : IsEven C := by
+theorem isEven_of_isSelfOrthogonal (hC : C.IsSelfOrthogonal) : IsEven C := by
   intro x hx
-  have h := Submodule.mem_euclideanDual.mp (hC hx) x hx
+  have h := Submodule.isSelfOrthogonal_iff.mp hC x hx x hx
   simpa [ZMod.natCast_eq_zero_iff_even] using h
 
 /-- A doubly-even binary linear code is self-orthogonal. -/
-theorem IsDoublyEven.le_euclideanDual (hC : IsDoublyEven C) : C ≤ C.euclideanDual := by
-  rw [Submodule.le_euclideanDual_self_iff]
+theorem IsDoublyEven.isSelfOrthogonal (hC : IsDoublyEven C) : C.IsSelfOrthogonal := by
+  rw [Submodule.isSelfOrthogonal_iff]
   intro x hx y hy
   rw [dotProduct_eq_card_support_inter, ZMod.natCast_eq_zero_iff]
   have hxy := hammingNorm_add_add_two_mul_card_support_inter x y
@@ -146,10 +146,9 @@ theorem IsDoublyEven.le_euclideanDual (hC : IsDoublyEven C) : C ≤ C.euclideanD
   omega
 
 /-- A self-dual binary code contains the all-ones word. -/
-theorem one_mem_of_eq_euclideanDual (hC : C = C.euclideanDual) :
-    (1 : ι → ZMod 2) ∈ C := by
-  rw [hC]
-  exact isEven_iff_one_mem_euclideanDual.mp (isEven_of_le_euclideanDual hC.le)
+theorem one_mem_of_isSelfDual (hC : C.IsSelfDual) : (1 : ι → ZMod 2) ∈ C := by
+  rw [← hC.euclideanDual_eq]
+  exact isEven_iff_one_mem_euclideanDual.mp (isEven_of_isSelfOrthogonal hC.isSelfOrthogonal)
 
 end BinaryCode
 

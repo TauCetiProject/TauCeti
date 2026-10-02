@@ -5,19 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
+public import TauCeti.AlgebraicGeometry.LineBundle.Dual
 public import TauCeti.CategoryTheory.Skeletal
 
 /-!
 # Isomorphism classes of line bundles
 
 The Picard group of a scheme consists of line bundles up to isomorphism, with tensor product as
-its operation. This file constructs the underlying type of isomorphism classes and descends the
-tensor product and the trivial line bundle to it. Tensor symmetry and the unit isomorphisms give
-the corresponding laws on classes, while the tensor associator gives associativity.
-
-Inverses are deliberately not asserted here: they require the dual of an invertible sheaf. Once
-those are available, the operations defined here are the operations of the Picard group.
+its operation. This file constructs the type of isomorphism classes and descends tensor product,
+the trivial line bundle, and duality to it. Tensor symmetry, associativity, the unit isomorphisms,
+and evaluation against the dual give the commutative group laws.
 
 ## Main declarations
 
@@ -30,7 +27,8 @@ those are available, the operations defined here are the operations of the Picar
 * multiplication is induced by `InvertibleSheaf.tensorProduct`, and `1` is the class of the
   trivial line bundle, so that `LineBundleClass.mk_eq_one_iff` characterizes the classes of
   line bundles isomorphic to the structure sheaf;
-* tensor product makes `LineBundleClass X` a commutative monoid.
+* inversion is induced by `InvertibleSheaf.dual`;
+* tensor product makes `LineBundleClass X` a commutative group.
 
 The construction uses Mathlib's `CategoryTheory.Skeleton`, its standard implementation of the
 isomorphism classes of objects of a category.
@@ -84,6 +82,30 @@ lemma mk_eq_mk_iff {L K : InvertibleSheaf X} :
 theorem mk_surjective : Function.Surjective (mk : InvertibleSheaf X → LineBundleClass X) :=
   fun a ↦ Quotient.inductionOn a fun L ↦ ⟨L, rfl⟩
 
+/-- Duality of line bundles descends to their isomorphism classes. -/
+noncomputable def dual (a : LineBundleClass X) : LineBundleClass X :=
+  lift (fun L ↦ mk (InvertibleSheaf.dual L))
+    (fun L K h ↦ by
+      rw [mk_eq_mk_iff]
+      obtain ⟨e⟩ := h
+      exact ⟨(SheafOfModules.isInvertible X).ι.mapIso
+        (InvertibleSheaf.dualCongr
+          (ObjectProperty.isoMk (SheafOfModules.isInvertible X) e))⟩) a
+
+noncomputable instance : Inv (LineBundleClass X) where
+  inv := dual
+
+/-- Inversion of line-bundle classes is induced by duality. -/
+lemma inv_eq_dual (a : LineBundleClass X) : a⁻¹ = dual a :=
+  rfl
+
+/-- The inverse of the class of a line bundle is the class of its dual. -/
+@[simp]
+lemma inv_mk (L : InvertibleSheaf X) :
+    (mk L)⁻¹ = mk (InvertibleSheaf.dual L) := by
+  rw [inv_eq_dual]
+  exact lift_mk L
+
 /-- Tensor product of line bundles descends to their isomorphism classes. -/
 noncomputable def tensorProduct (a b : LineBundleClass X) : LineBundleClass X :=
   Quotient.map₂ InvertibleSheaf.tensorProduct
@@ -116,8 +138,8 @@ lemma mk_eq_one_iff {L : InvertibleSheaf X} :
   exact ⟨fun ⟨e⟩ ↦ ⟨e ≪≫ InvertibleSheaf.trivialObjIsoUnit X⟩,
     fun ⟨e⟩ ↦ ⟨e ≪≫ (InvertibleSheaf.trivialObjIsoUnit X).symm⟩⟩
 
-/-- Tensor product makes line-bundle classes a commutative monoid. -/
-noncomputable instance : CommMonoid (LineBundleClass X) := by
+/-- Tensor product and duality make line-bundle classes a commutative group. -/
+noncomputable instance : CommGroup (LineBundleClass X) := by
   let mulComm : ∀ a b : LineBundleClass X, a * b = b * a := by
     intro a b
     induction a using Quotient.inductionOn with
@@ -140,10 +162,18 @@ noncomputable instance : CommMonoid (LineBundleClass X) := by
     intro a
     induction a using Quotient.inductionOn with
     | _ L => exact congr_toSkeleton_of_iso (InvertibleSheaf.tensorTrivialRightIso L)
+  let invMulCancel : ∀ a : LineBundleClass X, a⁻¹ * a = 1 := by
+    intro a
+    obtain ⟨L, rfl⟩ := mk_surjective a
+    rw [inv_mk, ← mk_tensorProduct, ← mk_trivial]
+    exact congr_toSkeleton_of_iso
+      (InvertibleSheaf.tensorProductComm (InvertibleSheaf.dual L) L ≪≫
+        InvertibleSheaf.tensorDualIso L)
   exact
     { mul_assoc := mulAssoc
       one_mul := oneMul
       mul_one := mulOne
+      inv_mul_cancel := invMulCancel
       mul_comm := mulComm }
 
 end LineBundleClass

@@ -25,8 +25,13 @@ letter component is the Taylor map of an `A∞` structure on `H`: the *transferr
 `X = (1 + δ K)⁻¹ δ`, the perturbed inclusion `i' = i - K X i` is a coalgebra morphism intertwining
 `D'` with the bar differential of `𝒜`, hence an `A∞` morphism
 `TauCeti.AInfinityAlgebra.transferInclusion` from the transferred structure to `𝒜`.  Its linear
-part is `i`, so it is a quasi-isomorphism.  In low arity the transferred structure has
-`m₁ = d_H`, `m₂ = p ∘ m₂ ∘ (i ⊗ i)` and the Kontsevich--Soibelman/Merkulov ternary operation
+part is `i`, so it is a quasi-isomorphism.  Dually, the perturbed projection `p' = p - p X K` is
+a coalgebra morphism intertwining the bar differential of `𝒜` with `D'`, hence an `A∞` morphism
+`TauCeti.AInfinityAlgebra.transferProjection` from `𝒜` to the transferred structure.  Its linear
+part is `p`, it is a left inverse of the extending morphism, and so it is a quasi-isomorphism too.
+
+In low arity the transferred structure has `m₁ = d_H`, `m₂ = p ∘ m₂ ∘ (i ⊗ i)` and the
+Kontsevich--Soibelman/Merkulov ternary operation
 `m₃ = p m₃ (i ⊗ i ⊗ i) + p m₂ (h m₂ (i ⊗ i) ⊗ i) - p m₂ (i ⊗ h m₂ (i ⊗ i))`, the last term with
 the Koszul sign of moving `h` past the first input; in particular it is minimal when `d_H = 0`.
 The extending morphism has quadratic component `f₂ = -h m₂ (i ⊗ i)`.
@@ -37,6 +42,7 @@ The extending morphism has quadratic component `f₂ = -h m₂ (i ⊗ i)`.
   constructions.
 * `TauCeti.AInfinityAlgebra.transfer`: the transferred `A∞` structure on `H`.
 * `TauCeti.AInfinityAlgebra.transferInclusion`: the `A∞` morphism extending `i`.
+* `TauCeti.AInfinityAlgebra.transferProjection`: the `A∞` morphism extending `p`.
 
 ## Main results
 
@@ -46,6 +52,10 @@ The extending morphism has quadratic component `f₂ = -h m₂ (i ⊗ i)`.
   morphism is the inclusion of the contraction.
 * `TauCeti.AInfinityAlgebra.isQuasiIso_transferInclusion`: the extending morphism is a
   quasi-isomorphism.
+* `TauCeti.AInfinityAlgebra.linearPart_transferProjection`,
+  `TauCeti.AInfinityAlgebra.transferProjection_comp_transferInclusion` and
+  `TauCeti.AInfinityAlgebra.isQuasiIso_transferProjection`: the projection morphism has linear part
+  `p`, is a left inverse of the extending morphism, and is a quasi-isomorphism.
 * `TauCeti.AInfinityAlgebra.differential_transfer` and `TauCeti.AInfinityAlgebra.mul_transfer`:
   the transferred `m₁` is `d_H` and the transferred `m₂` is `p m₂ (i ⊗ i)`.
 * `TauCeti.AInfinityAlgebra.m_three_transfer`: the transferred `m₃` is the
@@ -635,5 +645,74 @@ theorem isQuasiIso_transferInclusion : (𝒜.transferInclusion c hh hincl hproj)
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply,
       LinearMap.id_apply, differential_apply, hz', map_zero, add_zero] at hc
     rw [← differential_apply, map_neg, differential_apply, hc, neg_sub]
+
+/-! ### The projection onto the transferred structure -/
+
+/-- The **projection `A∞` morphism** from `𝒜` to the transferred structure: its bar map is the
+perturbed projection `p' = p - p X K` of the bar constructions, where `K` is the tensor-trick
+homotopy and `X = (1 + δ K)⁻¹ δ`. -/
+noncomputable def transferProjection : AInfinityHom 𝒜 (𝒜.transfer c hh hincl hproj) where
+  barMap := ((𝒜.barTensorTrick c hh hincl hproj).perturb 𝒜.higherBarDifferential
+    𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self
+    (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj)).proj
+  isCoalgHom_barMap :=
+    c.isCoalgHom_reducedTensorWords_perturb_proj _ _ _ _
+      𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self
+      (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj)
+      𝒜.isGradedCoderivation_higherBarDifferential
+  isHomogeneous_barMap := by
+    have hp := isHomogeneous_map (R := R) _ _ (𝒜.isHomogeneous_proj_shift c hproj)
+    have hH := c.isHomogeneous_reducedTensorWordsHomotopy (𝒜.grading.shift 1)
+      (𝒜.isHomogeneous_homotopy_shift c hh) (𝒜.isHomogeneous_incl_shift c hincl)
+      (𝒜.isHomogeneous_proj_shift c hproj)
+    have hpXH := hp.comp ((𝒜.isHomogeneous_perturbationSeries c hh hincl hproj).comp hH)
+    rw [LinearSpecialContraction.perturb_proj, barTensorTrick_proj, barTensorTrick_homotopy,
+      transfer_grading]
+    exact hp.sub (by simpa only [zero_add, add_zero, neg_add_cancel] using hpXH)
+  barDifferential_comp_barMap := by
+    rw [barDifferential_transfer, barDifferential_eq_unary_add_higher,
+      unaryBarDifferential_eq_gradedCoderiv]
+    exact (LinearSpecialContraction.proj_comp_dM _).symm
+
+/-- The bar map of the projection morphism is the perturbed projection `p - p X K`. -/
+theorem barMap_transferProjection :
+    (𝒜.transferProjection c hh hincl hproj).barMap =
+      ReducedTensorWords.map (R := R) c.proj -
+        ReducedTensorWords.map (R := R) c.proj ∘ₗ
+          (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential ∘ₗ
+          c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) :=
+  calc (𝒜.transferProjection c hh hincl hproj).barMap
+      _ = ((𝒜.barTensorTrick c hh hincl hproj).perturb 𝒜.higherBarDifferential
+          𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self
+          (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl
+            hproj)).proj := rfl
+      _ = _ := by
+        rw [LinearSpecialContraction.perturb_proj, barTensorTrick_proj, barTensorTrick_homotopy]
+
+/-- The linear part of the projection morphism is the projection of the contraction. -/
+@[simp]
+theorem linearPart_transferProjection :
+    (𝒜.transferProjection c hh hincl hproj).linearPart = c.proj := by
+  ext a
+  rw [AInfinityHom.linearPart_apply, AInfinityHom.taylor_def, LinearMap.comp_apply,
+    barMap_transferProjection, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+    c.reducedTensorWordsHomotopy_ofLetter, perturbationSeries_ofLetter, map_zero, sub_zero,
+    map_ofLetter, letter_ofLetter]
+
+/-- The projection morphism is a left inverse of the extending morphism. -/
+@[simp]
+theorem transferProjection_comp_transferInclusion :
+    (𝒜.transferProjection c hh hincl hproj).comp (𝒜.transferInclusion c hh hincl hproj) =
+      AInfinityHom.id (𝒜.transfer c hh hincl hproj) :=
+  AInfinityHom.barMap_injective <| by
+    rw [AInfinityHom.barMap_comp, AInfinityHom.barMap_id]
+    exact LinearSpecialContraction.proj_comp_incl _
+
+/-- The projection morphism is a quasi-isomorphism, by two out of three: composed with the
+extending quasi-isomorphism it is the identity. -/
+theorem isQuasiIso_transferProjection : (𝒜.transferProjection c hh hincl hproj).IsQuasiIso :=
+  (𝒜.isQuasiIso_transferInclusion c hh hincl hproj).of_precomp <| by
+    rw [transferProjection_comp_transferInclusion]
+    exact AInfinityHom.isQuasiIso_id _
 
 end TauCeti.AInfinityAlgebra

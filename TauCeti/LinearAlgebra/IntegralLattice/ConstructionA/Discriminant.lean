@@ -193,8 +193,7 @@ theorem integralLattice_discriminant_of_prime {p : ℕ} [hp : Fact p.Prime]
     (C : Submodule (ZMod p) (ι → ZMod p)) (hC : C ≤ C.euclideanDual) :
     (integralLattice ⟨p, hp.out.pos⟩ C.toAddSubgroup hC).discriminant =
       p ^ (Fintype.card ι - 2 * Module.finrank (ZMod p) C) := by
-  have hdim := Submodule.two_mul_finrank_le_card_of_le_euclideanDual
-    (K := ZMod p) (ι := ι) (C := C) hC
+  have hdim := (Submodule.isSelfOrthogonal_iff_le.mpr hC).two_mul_finrank_le_card
   apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.out.pos (2 * Module.finrank (ZMod p) C))
   have hdisc := integralLattice_discriminant_mul_natCard_sq ⟨p, hp.out.pos⟩ C.toAddSubgroup hC
   calc

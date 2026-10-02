@@ -43,7 +43,9 @@ the localization functor, for which sheafification is a braided monoidal functor
   sheafification is left adjoint to the inclusion of sheaves of modules into presheaves of
   modules, which is therefore lax monoidal, with unit map the identity
   (`SheafOfModules.forget_ε`) and tensor map the unit of sheafification
-  (`SheafOfModules.forget_μ`).
+  (`SheafOfModules.forget_μ`);
+* `SheafOfModules.tensor_hom_ext`: morphisms out of `M ⊗ N` are determined by their restriction
+  along that tensor map to the sectionwise tensor product.
 
 The tensor object `M ⊗ N` and the sheaf `SheafOfModules.tensorProduct R M N` are both
 sheafifications of `M.val ⊗ N.val`, through `tensorUnderlyingIso` and `tensorProductIso`
@@ -280,6 +282,32 @@ lemma forget_μ (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     SheafOfModules.tensorUnderlyingIso_inv, ← sheafificationForgetAdjunction_counit_app,
     ← sheafificationForgetAdjunction_counit_app]
   rfl
+
+variable {R}
+
+/-- A morphism out of `M ⊗ N`, precomposed on underlying presheaves with the tensor map
+`M.val ⊗ N.val ⟶ (M ⊗ N).val` of `forget`, is the transpose along sheafification of the morphism
+read through `tensorUnderlyingIso`. -/
+lemma forget_μ_comp_map {M N P : _root_.SheafOfModules.{u} (ringCatSheaf R)} (p : M ⊗ N ⟶ P) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map p =
+      (sheafificationForgetAdjunction R).homEquiv _ _ ((M.tensorUnderlyingIso N).inv ≫ p) := by
+  rw [Adjunction.homEquiv_unit, Functor.map_comp, ← assoc, forget_μ]
+  -- The two sides differ only in how the source of the unit is written: as `M.val ⊗ N.val`, or
+  -- as the tensor product of the images of `M` and `N` under `forget`.
+  rfl
+
+/-- Two morphisms out of a tensor product `M ⊗ N` of sheaves of modules agree as soon as they
+agree on the sectionwise tensor product `M.val ⊗ N.val` of the underlying presheaves of modules,
+that is, after precomposition with the tensor map of `forget`. -/
+lemma tensor_hom_ext {M N P : _root_.SheafOfModules.{u} (ringCatSheaf R)} {p q : M ⊗ N ⟶ P}
+    (h : Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map p =
+      Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map q) :
+    p = q := by
+  rw [forget_μ_comp_map, forget_μ_comp_map] at h
+  exact (cancel_epi _).mp (((sheafificationForgetAdjunction R).homEquiv _ _).injective h)
 
 end Forget
 

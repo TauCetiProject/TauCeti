@@ -38,13 +38,15 @@ theorem im_div_eq_zero_of_mem_frontier {w q b z : ℂ} {ρ : ℝ}
     exact ⟨hzU, hz⟩
   exact (frontier_lt_subset_eq continuous_const (by fun_prop) h.1).symm
 
-/-- Near a vertex where `U` coincides with the open sector `{|arg ((z - v) / b)| < α}`, the
-frontier of `U` away from the vertex lies on the two bounding rays `|arg ((z - v) / b)| = α`. -/
-theorem abs_arg_div_eq_of_mem_frontier {v b z : ℂ} {ρ α : ℝ} (hb : b ≠ 0)
-    (hU : ∀ y ∈ ball v ρ, y ≠ v → (y ∈ U ↔ |((y - v) / b).arg| < α)) (hz : z ∈ ball v ρ)
+/-- On an open set `V` where `U` coincides, away from the vertex `v`, with the open sector
+`{|arg ((z - v) / b)| < α}`, the frontier of `U` away from the vertex lies on the two bounding rays
+`|arg ((z - v) / b)| = α`.  Typically `V` is a ball about the vertex, or the exterior of a ball when
+`U` is a sector near infinity. -/
+theorem abs_arg_div_eq_of_mem_frontier {V : Set ℂ} {v b z : ℂ} {α : ℝ} (hb : b ≠ 0)
+    (hV : IsOpen V) (hU : ∀ y ∈ V, y ≠ v → (y ∈ U ↔ |((y - v) / b).arg| < α)) (hz : z ∈ V)
     (hzv : z ≠ v) (hzU : z ∈ frontier U) : |((z - v) / b).arg| = α := by
-  set O := ball v ρ \ {v}
-  have hO : IsOpen O := isOpen_ball.sdiff isClosed_singleton
+  set O := V \ {v}
+  have hO : IsOpen O := hV.sdiff isClosed_singleton
   -- `|arg|` is the unoriented angle with `1`, which is continuous away from `0`
   have hφ : ContinuousOn (fun y : ℂ => |((y - v) / b).arg|) O := fun y hy => by
     have hy0 : (y - v) / b ≠ 0 := div_ne_zero (sub_ne_zero.mpr hy.2) hb
@@ -54,7 +56,7 @@ theorem abs_arg_div_eq_of_mem_frontier {v b z : ℂ} {ρ α : ℝ} (hb : b ≠ 0
     refine (hangle.congr ?_).continuousWithinAt
     filter_upwards [isOpen_ne.mem_nhds hy.2] with y hy
     exact angle_one_right (div_ne_zero (sub_ne_zero.mpr hy) hb)
-  -- on the punctured ball `U` is the strict sublevel set of `|arg|`
+  -- on `V` minus the vertex, `U` is the strict sublevel set of `|arg|`
   have hfr : (⟨z, hz, hzv⟩ : O) ∈ frontier {y : O | |((y - v : ℂ) / b).arg| < α} := by
     have hpreimage : ((↑) : O → ℂ) ⁻¹' U =
         {y : O | |((y - v : ℂ) / b).arg| < α} :=

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
-public import TauCeti.Algebra.Homology.DG.Module.Right.Hom
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Basic
 
 /-!
 # The Hom complex of differential graded right modules

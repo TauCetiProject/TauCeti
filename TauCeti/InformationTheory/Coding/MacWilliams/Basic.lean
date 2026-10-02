@@ -49,11 +49,11 @@ homogeneous of degree `n`, this says that `W_C` is invariant under the normalize
   field.
 * `TauCeti.aeval_macWilliams_identity`: evaluation of a division-free MacWilliams identity
   in any commutative ring.
-* `Submodule.natCard_mul_weightEnumerator_of_eq_euclideanDual`: the division-free MacWilliams
+* `Submodule.natCard_mul_weightEnumerator_of_isSelfDual`: the division-free MacWilliams
   identity for a self-dual code.
 * `Submodule.map_weightEnumerator_euclideanDual`: the normalized MacWilliams identity, with
   coefficients in a field of characteristic zero.
-* `Submodule.aeval_weightEnumerator_of_eq_euclideanDual`: the integral MacWilliams symmetry
+* `Submodule.aeval_weightEnumerator_of_isSelfDual`: the integral MacWilliams symmetry
   `W_C(X + (q - 1) Y, X - Y) = q^(n/2) W_C(X, Y)` of a self-dual code.
 
 The normalized forms of both identities live in
@@ -166,14 +166,14 @@ theorem map_weightEnumerator_euclideanDual (K : Type*) [Field K] [CharZero K]
 /-- The weight enumerator of a Euclidean self-dual code over a field with `q` elements is fixed by
 the MacWilliams substitution up to the factor `q^(n/2)`, where `n` is the length:
 `W_C(X + (q - 1) Y, X - Y) = q^(n/2) W_C(X, Y)` in `ℤ[X, Y]`. -/
-theorem aeval_weightEnumerator_of_eq_euclideanDual {C : Submodule F (ι → F)}
-    (hC : C = euclideanDual C) :
+theorem aeval_weightEnumerator_of_isSelfDual {C : Submodule F (ι → F)}
+    (hC : C.IsSelfDual) :
     aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
         (C : Set (ι → F)).weightEnumerator =
       (Nat.card F : MvPolynomial (Fin 2) ℤ) ^ (Fintype.card ι / 2) *
         (C : Set (ι → F)).weightEnumerator := by
   have h := natCard_mul_weightEnumerator_euclideanDual C
-  rw [← hC, natCard_of_eq_euclideanDual hC, Nat.cast_pow] at h
+  rw [hC.euclideanDual_eq, hC.natCard_eq, Nat.cast_pow] at h
   exact h.symm
 
 end Normalized
@@ -204,24 +204,25 @@ namespace Submodule
 
 /-- A self-dual code over a finite commutative ring carrying a primitive additive character
 satisfies the division-free MacWilliams identity in `ℤ[X, Y]`. -/
-theorem natCard_mul_weightEnumerator_of_eq_euclideanDual_of_isPrimitive
+theorem natCard_mul_weightEnumerator_of_isSelfDual_of_isPrimitive
     {ι R S : Type*} [Fintype ι] [CommRing R] [Finite R] [DecidableEq R]
     [CommRing S] [IsDomain S] [CharZero S] {ψ : AddChar R S}
-    (C : Submodule R (ι → R)) (hψ : ψ.IsPrimitive) (hC : C = Submodule.euclideanDual C) :
+    (C : Submodule R (ι → R)) (hψ : ψ.IsPrimitive) (hC : C.IsSelfDual) :
     (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → R)).weightEnumerator =
       aeval ![X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
         (C : Set (ι → R)).weightEnumerator := by
-  simpa only [← hC] using natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive hψ C
+  simpa only [hC.euclideanDual_eq] using
+    natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive hψ C
 
 /-- A self-dual code over a finite field satisfies the division-free MacWilliams identity
 in `ℤ[X, Y]`. -/
-theorem natCard_mul_weightEnumerator_of_eq_euclideanDual
+theorem natCard_mul_weightEnumerator_of_isSelfDual
     {ι F : Type*} [Fintype ι] [Field F] [Finite F] [DecidableEq F]
-    (C : Submodule F (ι → F)) (hC : C = Submodule.euclideanDual C) :
+    (C : Submodule F (ι → F)) (hC : C.IsSelfDual) :
     (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → F)).weightEnumerator =
       aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
         (C : Set (ι → F)).weightEnumerator :=
-  natCard_mul_weightEnumerator_of_eq_euclideanDual_of_isPrimitive C
+  natCard_mul_weightEnumerator_of_isSelfDual_of_isPrimitive C
     (AddChar.FiniteField.primitiveChar F ℚ
       (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim hC
 

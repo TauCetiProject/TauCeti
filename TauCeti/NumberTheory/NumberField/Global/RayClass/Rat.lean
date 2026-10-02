@@ -42,6 +42,8 @@ and a class with positive sign is determined by its residue.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff`: a height-one
+  prime is prime to `(n)·∞` exactly when it does not contain `n`.
 * `TauCeti.GlobalNumberFields.ratModulusEquivZMod_symm_apply`: a unit `u` modulo `n` corresponds to
   the principal ray class of a positive rational number with residue `u`.
 * `TauCeti.GlobalNumberFields.coe_ratModulusEquivZMod_idealClass`: the ray class of a nonzero
@@ -82,6 +84,20 @@ variable (n : ℕ) (hn : n ≠ 0)
 
 @[simp] theorem ratModulus_infinitePart :
     (ratModulus n hn).infinitePart = {⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩} := (rfl)
+
+variable {n hn} in
+/-- A prime lies in the support of `ratModulus n hn` exactly when it contains `n`. -/
+theorem mem_ratModulus_support_iff {v : HeightOneSpectrum (𝓞 ℚ)} :
+    v ∈ (ratModulus n hn).support ↔ (n : 𝓞 ℚ) ∈ v.asIdeal := by
+  rw [Modulus.mem_support_iff, ratModulus_finitePart, Ideal.dvd_span_singleton]
+
+variable {n hn} in
+/-- A height-one prime is prime to `ratModulus n hn` exactly when it does not contain `n`. -/
+theorem asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff {v : HeightOneSpectrum (𝓞 ℚ)} :
+    v.asIdeal ∈ integralIdealsPrimeTo (ratModulus n hn) ↔ (n : 𝓞 ℚ) ∉ v.asIdeal :=
+  Modulus.mem_integralIdealsPrimeTo.trans <|
+    (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans <|
+      Ideal.isPrimeTo_asIdeal_iff.trans mem_ratModulus_support_iff.not
 
 /-- **Reduction modulo the finite part of `ratModulus n hn` is reduction modulo `n`**, transported
 along `Rat.ringOfIntegersEquiv : 𝓞 ℚ ≃+* ℤ`. -/

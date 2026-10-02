@@ -57,6 +57,8 @@ or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
   `TauCeti.not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus`: `V^(f)` is not.
 * `TauCeti.map_powMonoidHom_two_unitsPlusMinus`: `(V^(f))² = U^(f+1)`;
   `TauCeti.relIndex_map_powMonoidHom_two_unitsPlusMinus`: `(V^(f) : (V^(f))²) = 4`.
+* `TauCeti.unitsPrincipal_three_eq_range_powMonoidHom_two`: the squares of `ℤ_2ˣ` are
+  `U^(3) = 1 + 8ℤ_2`.
 * `TauCeti.relIndex_map_powMonoidHom_two_eq_one_or_two_or_four`: `(A : A²) ∈ {1, 2, 4}` for
   closed `A`;
   `TauCeti.relIndex_map_powMonoidHom_two_eq_four_iff` and
@@ -412,6 +414,11 @@ theorem relIndex_map_powMonoidHom_two_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
     ((unitsPlusMinus f).map (powMonoidHom 2)).relIndex (unitsPlusMinus f) = 4 := by
   rw [map_powMonoidHom_two_unitsPlusMinus hf]
   exact relIndex_unitsPrincipal_succ_unitsPlusMinus hf
+
+/-- The squares of `ℤ_2ˣ` are the units `U^(3)` that are `1 mod 8`. -/
+theorem unitsPrincipal_three_eq_range_powMonoidHom_two :
+    unitsPrincipal 2 3 = (powMonoidHom 2 : ℤ_[2]ˣ →* ℤ_[2]ˣ).range := by
+  rw [← map_powMonoidHom_two_unitsPlusMinus le_rfl, unitsPlusMinus_two, ← MonoidHom.range_eq_map]
 
 /-- **The table of `(A : A²)`.** A nontrivial closed subgroup `A ≤ ℤ_2ˣ` has `(A : A²) = 2`
 unless it is some `V^(f)` with `f ≥ 2`: the three procyclic families `U^(f)`, `{±1}` and `U^[f]`
