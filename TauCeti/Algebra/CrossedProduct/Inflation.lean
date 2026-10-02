@@ -22,9 +22,10 @@ values in `Additive (Kˢ)ˣ`. This file constructs its class in continuous `H²`
 with the corresponding leg of the finite-quotient description of continuous cohomology.
 
 The multiplicative-to-additive conversion is `TwoCocycle.toCocycles₂`. Continuity follows because
-restriction has finite discrete target. Thus cohomologous finite cocycles determine the same
-continuous class, and passing to a larger finite Galois subextension, along any compatible pair
-agreeing with the inclusions into `Kˢ`, does not change the class.
+restriction has finite discrete target. Inflation turns products of cocycles into sums of
+classes, cohomologous finite cocycles determine the same continuous class, and passing to a larger
+finite Galois subextension, along any compatible pair agreeing with the inclusions into `Kˢ`, does
+not change the class.
 
 Conversely, strict finite-quotient descent of continuous `2`-cocycles, followed by the infinite
 Galois correspondence, realizes every continuous cocycle as the inflation of a cocycle on a finite
@@ -119,6 +120,32 @@ theorem inflateClass_def (c : TwoCocycle K L) :
       explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)
         (H2pi _ _ (c.inflateZ2 L)) :=
   (rfl)
+
+/-- Inflation turns the pointwise product of cocycles into the sum of continuous cocycles. -/
+@[simp]
+theorem inflateZ2_mul (z w : TwoCocycle K L) :
+    (z * w).inflateZ2 L = z.inflateZ2 L + w.inflateZ2 L :=
+  Subtype.ext <| funext fun p ↦ by
+    simp only [coe_inflateZ2, coe_toCocycles₂, inflate_toFun, toFun_mul, map_mul, ofMul_mul,
+      AddSubgroup.coe_add, Pi.add_apply]
+
+/-- **Inflation is additive**: the pointwise product of cocycles inflates to the sum of their
+continuous classes. -/
+@[simp]
+theorem inflateClass_mul (z w : TwoCocycle K L) :
+    (z * w).inflateClass L = z.inflateClass L + w.inflateClass L := by
+  rw [inflateClass, inflateClass, inflateClass, inflateZ2_mul, map_add, map_add]
+
+/-- The trivial cocycle inflates to the zero class. -/
+@[simp]
+theorem inflateClass_one : (1 : TwoCocycle K L).inflateClass L = 0 :=
+  left_eq_add.1 <| by rw [← inflateClass_mul, one_mul]
+
+/-- Inflation turns the pointwise quotient of cocycles into the difference of their classes. -/
+@[simp]
+theorem inflateClass_div (z w : TwoCocycle K L) :
+    (z / w).inflateClass L = z.inflateClass L - w.inflateClass L :=
+  eq_sub_of_add_eq <| by rw [← inflateClass_mul, div_mul_cancel]
 
 /-- The difference of inflated cohomologous cocycles is the inflation of their finite
 coboundary, hence is a continuous coboundary. -/
