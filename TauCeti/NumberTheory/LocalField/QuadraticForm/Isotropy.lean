@@ -53,6 +53,8 @@ square classes, and a ternary form, which represents every unit outside one squa
   `QuadraticForm.not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_finrank_eq_four`,
   `QuadraticForm.not_anisotropic_of_five_le_finrank`: the same criteria for regular forms on
   finite-dimensional spaces.
+* `QuadraticForm.exists_mem_unitValueSet_and_mem_of_five_le_finrank_add`: two regular spaces of
+  positive dimension whose dimensions sum to at least five represent a common nonzero value.
 * `QuadraticForm.exists_nondegenerate_and_anisotropic_fin_four`: an anisotropic regular form on
   `Fin 4 → K`.
 
@@ -311,7 +313,8 @@ open TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
-variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {V W : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup W] [Module K W] [FiniteDimensional K W]
 
 /-- **Ternary isotropy** (Serre IV Thm 6 (ii)). A regular quadratic form on a space of dimension
 three over `K` is isotropic exactly when its local Hasse invariant is `(-1, -d)_K`, where `d` is
@@ -342,6 +345,30 @@ theorem not_anisotropic_of_five_le_finrank (Q : QuadraticForm K V) (hQ : Q.Nonde
     (hV : 5 ≤ Module.finrank K V) : ¬Q.Anisotropic := by
   rw [← anisotropic_formClass Q hQ]
   exact RegularFormClass.not_anisotropic_of_five_le_rank (by rwa [rank_formClass])
+
+/-- Two regular local quadratic spaces of positive dimension whose dimensions sum to at least
+five represent a common nonzero value: their difference is isotropic by the bound in dimension
+at least five. -/
+theorem exists_mem_unitValueSet_and_mem_of_five_le_finrank_add
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (R : QuadraticForm K W)
+    (hR : R.Nondegenerate) (hV : 0 < Module.finrank K V) (hW : 0 < Module.finrank K W)
+    (hVW : 5 ≤ Module.finrank K V + Module.finrank K W) :
+    ∃ a : Kˣ, a ∈ Q.unitValueSet ∧ a ∈ R.unitValueSet := by
+  classical
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos hV
+  have : Nontrivial W := Module.nontrivial_of_finrank_pos hW
+  have hnonempty : Q.unitValueSet.Nonempty := by
+    obtain ⟨y, a, ha⟩ := hQ.exists_isUnit
+    exact ⟨a, mem_unitValueSet.mpr ((represents_iff _ _).mpr ⟨y, ha.symm⟩)⟩
+  have hneg : (-R).Nondegenerate := (QuadraticMap.nondegenerate_neg R).mpr hR
+  have hiso : ¬(Q.prod (-R)).Anisotropic :=
+    not_anisotropic_of_five_le_finrank _ (hQ.prod hneg) (by simpa using hVW)
+  obtain ⟨a, ha, hb⟩ :=
+    (not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem hQ.radical_eq_bot
+      hneg.radical_eq_bot hnonempty).mp hiso
+  refine ⟨a, ha, ?_⟩
+  obtain ⟨y, hy⟩ := (represents_iff _ _).mp (mem_unitValueSet.mp hb)
+  exact mem_unitValueSet.mpr ((represents_iff _ _).mpr ⟨y, by simpa using hy⟩)
 
 /-- **`u(K) = 4`** (O'Meara 63:19). There is an anisotropic regular quadratic form on the
 four-dimensional space `Fin 4 → K`. -/

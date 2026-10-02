@@ -9,6 +9,8 @@ public import Mathlib.RepresentationTheory.Homological.TateCohomology.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Coinduced
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Induced
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
+public import TauCeti.RepresentationTheory.QuotSMulTop
+public import TauCeti.RepresentationTheory.RestrictScalars
 
 /-!
 # Tate cohomology of modules induced and coinduced from the trivial subgroup
@@ -19,10 +21,17 @@ is Shapiro's lemma for cohomology, in degrees below `-1` Shapiro's lemma for hom
 coinduction from the trivial subgroup agree for a finite group), and degrees `0` and `-1` are
 checked by hand. The same holds for `Ind_⊥^G X`. For a finite subgroup `S` of an arbitrary
 group `G`, the Tate cohomology of `S` with coefficients in the restrictions of `Coind_⊥^G X`,
-`Ind_⊥^G X` and `k[G]` vanishes as well.
+`Ind_⊥^G X` and `k[G]` vanishes as well. These statements follow
+`ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.lean` in `kbuzzard/ClassFieldTheory`,
+commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
 
-The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.lean` in
-`kbuzzard/ClassFieldTheory`, commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
+More generally, Tate cohomology vanishes for every representation whose identity is a norm
+`x ↦ ∑ g, g φ(g⁻¹ x)` of a linear map `φ`, since such an identity factors through
+`Coind_⊥^G`. This criterion is stable under reduction modulo a scalar `r : k`. Hence a
+representation free of rank one over `k[G]` remains Tate-trivial modulo `r`, read as an integral
+representation. This is the form in which the graded pieces `A ⧸ ϖ • A` of a Galois-stable lattice
+`A` in a local field enter Serre's computation of the Herbrand quotient of its local units
+(Serre, *Local class field theory*, VI §1.4).
 
 ## Main statements
 
@@ -32,10 +41,18 @@ The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.le
 * `TauCeti.TateCohomology.isZero_res_coindBot`, `TauCeti.TateCohomology.isZero_res_indBot`,
   `TauCeti.TateCohomology.isZero_res_leftRegular`: for a finite subgroup `S` of any group `G`,
   `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
+* `TauCeti.TateCohomology.isZero_of_forall_eq_sum`: if the identity of `C` is a norm
+  `x ↦ ∑ g, g φ(g⁻¹ x)`, then `Ĥⁿ(G, C) = 0` for all `n : ℤ`.
+* `TauCeti.TateCohomology.isZero_restrictScalarsInt_of_equiv_leftRegular`: if `V` is free of rank
+  one over `k[G]`, then `Ĥⁿ(G, V) = 0` over `ℤ`.
+* `TauCeti.TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular`: if `V` is
+  free of rank one over `k[G]`, then `Ĥⁿ(G, V ⧸ r • V) = 0` over `ℤ` for every `r : k`.
 
 ## References
 
 * J. S. Milne, *Class Field Theory*, Chapter II, §3.
+* J.-P. Serre, *Local class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.),
+  *Algebraic Number Theory*, Chapter VI, §1.4.
 -/
 
 public section
@@ -185,19 +202,28 @@ theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V 
 
 omit X in
 /-- If the identity of `C` is the norm `x ↦ ∑ g, C.ρ g (φ (C.ρ g⁻¹ x))` of a `k`-linear map `φ`,
+then all Tate cohomology of `C` vanishes: the identity of `C` factors through the coinduced
+representation `Coind_⊥^G C`. -/
+theorem isZero_of_forall_eq_sum {C : Rep k G} (φ : C.V →ₗ[k] C.V)
+    (hφ : ∀ x, x = ∑ g : G, C.ρ g (φ (C.ρ g⁻¹ x))) (n : ℤ) : IsZero (tateCohomology C n) := by
+  rw [IsZero.iff_id_eq_zero, ← (tateCohomologyFunctor n).map_id]
+  exact map_eq_zero_of_hom_apply_eq_sum (𝟙 C) φ hφ n
+
+omit X in
+/-- If the identity of `C` is the norm `x ↦ ∑ g, C.ρ g (φ (C.ρ g⁻¹ x))` of a `k`-linear map `φ`,
 then for every representation `M` all Tate cohomology of `M ⊗ C` vanishes: the identity of `M ⊗ C`
 is the norm of `M ⊗ φ`. -/
 theorem isZero_tensor_of_forall_eq_sum {C : Rep k G} (φ : C.V →ₗ[k] C.V)
     (hφ : ∀ x, x = ∑ g : G, C.ρ g (φ (C.ρ g⁻¹ x))) (M : Rep k G) (n : ℤ) :
     IsZero (tateCohomology (M ⊗ C) n) := by
-  rw [IsZero.iff_id_eq_zero, ← (tateCohomologyFunctor n).map_id]
-  refine map_eq_zero_of_hom_apply_eq_sum (𝟙 (M ⊗ C)) (LinearMap.lTensor M.V φ) (fun x ↦ ?_) n
+  refine isZero_of_forall_eq_sum (LinearMap.lTensor M.V φ) (fun x ↦ ?_) n
   induction x using TensorProduct.inductionOn with
   | tmul m c =>
-    rw [Rep.hom_id, Representation.IntertwiningMap.coe_id, id_eq]
     conv_lhs => rw [hφ c]
     simp [TensorProduct.tmul_sum, Representation.tprod_apply, ← Module.End.mul_apply, ← map_mul]
-  | add x y hx hy => simp only [map_add, hx, hy, Finset.sum_add_distrib]
+  | add x y hx hy =>
+    conv_lhs => rw [hx, hy]
+    simp only [map_add, Finset.sum_add_distrib]
 
 /-- For a finite group and any representation `M`, all Tate cohomology of
 `M ⊗ Coind_⊥^G X` vanishes: the identity of `Coind_⊥^G X` is the norm of the projection onto the
@@ -257,5 +283,72 @@ theorem isZero_res_leftRegular : IsZero (tateCohomology (res S.subtype (leftRegu
     ((tateCohomologyFunctor n).mapIso ((resFunctor S.subtype).mapIso indBotIsoLeftRegular.symm))
 
 end Restriction
+
+section QuotSMulTop
+
+/-! ### Free representations modulo a scalar
+
+This is the graded-piece step of Serre's computation of the Herbrand quotient of the units of a
+local field (Serre, *Local class field theory*, VI §1.4). -/
+
+variable {k : Type*} {G V : Type} [Group G] [Fintype G] [AddCommGroup V]
+
+/-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
+all Tate cohomology of `ρ`, read as an integral representation, vanishes. -/
+theorem isZero_restrictScalarsInt_of_forall_eq_sum [Semiring k] [Module k V]
+    {ρ : Representation k G V} (φ : V →ₗ[k] V) (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)))
+    (n : ℤ) : IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+  isZero_of_forall_eq_sum (C := Rep.of _) (φ.restrictScalars ℤ) (fun x ↦ by simpa using hφ x) n
+
+/-- If `ρ` is free of rank one over the group ring `k[G]`, then the identity of `ρ` is the norm
+`x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`: the projection onto the coefficient of
+`1 ∈ G`. -/
+theorem exists_forall_eq_sum_of_equiv_leftRegular [Semiring k] [Module k V]
+    {ρ : Representation k G V} (e : (Representation.leftRegular k G).Equiv ρ) :
+    ∃ φ : V →ₗ[k] V, ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)) := by
+  classical
+  refine ⟨e.toLinearMap ∘ₗ MonoidAlgebra.lsingle 1 ∘ₗ Finsupp.lapply 1 ∘ₗ
+    (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ e.symm.toLinearMap, fun x ↦ ?_⟩
+  have he (g : G) (f : MonoidAlgebra k G) : e (Representation.leftRegular k G g f) = ρ g (e f) :=
+    e.toIntertwiningMap.isIntertwining _ _ g f
+  -- Writing `x = e f`, the `g`-th summand is `e (single g (f.coeff g))`.
+  obtain ⟨f, rfl⟩ := e.surjective x
+  have hf : f = ∑ g : G, MonoidAlgebra.single g (f.coeff g) := by
+    ext h
+    simp [MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_single]
+  conv_lhs => rw [hf, map_sum]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  simp [← he]
+
+/-- If `ρ` is free of rank one over the group ring `k[G]`, then all Tate cohomology of `ρ`, read
+as an integral representation, vanishes. -/
+theorem isZero_restrictScalarsInt_of_equiv_leftRegular [Semiring k] [Module k V]
+    {ρ : Representation k G V} (e : (Representation.leftRegular k G).Equiv ρ) (n : ℤ) :
+    IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+  let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
+  isZero_restrictScalarsInt_of_forall_eq_sum φ hφ n
+
+variable [CommRing k] [Module k V] {ρ : Representation k G V}
+
+/-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
+for every `r : k` all Tate cohomology of the reduction `V ⧸ r • V`, as an integral representation,
+vanishes: its identity is the norm of the reduction of `φ`. -/
+theorem isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k] V)
+    (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x))) (r : k) (n : ℤ) :
+    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
+  isZero_restrictScalarsInt_of_forall_eq_sum _ (ρ.quotSMulTop_forall_eq_sum φ hφ r) n
+
+/-- **A free representation modulo a scalar has trivial Tate cohomology.** If `ρ` is free of rank
+one over the group ring `k[G]`, then for every `r : k` all Tate cohomology of the reduction
+`V ⧸ r • V`, a free module of rank one over `(k ⧸ (r))[G]`, read as an integral representation,
+vanishes. Its identity is the norm of the reduction of the projection onto the coefficient of
+`1 ∈ G`. -/
+theorem isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular
+    (e : (Representation.leftRegular k G).Equiv ρ) (r : k) (n : ℤ) :
+    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
+  let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
+  isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum φ hφ r n
+
+end QuotSMulTop
 
 end TauCeti.TateCohomology
