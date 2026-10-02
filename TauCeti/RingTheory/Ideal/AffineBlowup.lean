@@ -216,15 +216,17 @@ variable (I a S) in
 /-- **The universal property of `A[I/a]`.** If `B` is a commutative `A`-semialgebra with
 `I B ⊆ a B` and multiplication by `a` injective in `B`, this is the `A`-algebra map
 `A[I/a] → B`. For rings, the injectivity hypothesis is equivalent to `a` being a nonzerodivisor
-by `isRegular_iff_mem_nonZeroDivisors`. It sends `i/a` to the element
+by `isLeftRegular_iff_mem_nonZeroDivisorsLeft`. It sends `i/a` to the element
 `b ∈ B` with `a b = i` (`Ideal.algebraMap_mul_algHom_divBy`), and it is the only `A`-algebra map
 `A[I/a] → B` (`Ideal.affineBlowup_algHom_ext`). -/
 noncomputable def affineBlowupLift (hI : I.map (algebraMap A B) ≤ span {algebraMap A B a})
-    (ha : IsRegular (algebraMap A B a)) : I.affineBlowup a S →ₐ[A] B :=
+    (ha : IsLeftRegular (algebraMap A B a)) : I.affineBlowup a S →ₐ[A] B :=
   -- Embed `B` into its localization `B_a`, through which `S → B_a` factors on `A[I/a]`.
   (AlgEquiv.ofInjective _ (IsLocalization.injectiveₛ (M := Submonoid.powers (algebraMap A B a))
     (Localization.Away (algebraMap A B a))
-    (by rintro _ ⟨n, rfl⟩; exact ha.pow n))).symm.toAlgHom.comp
+    (by
+      rintro _ ⟨n, rfl⟩
+      exact ((Commute.isRegular_iff (Commute.all _)).mpr ha).pow n))).symm.toAlgHom.comp
     (((IsLocalization.Away.mapₐ S (Localization.Away (algebraMap A B a)) (Algebra.ofId A B) a).comp
       (I.affineBlowup a S).val).codRestrict _
       fun z ↦ map_affineBlowup_le_range (S := S) hI ⟨z.1, z.2, rfl⟩)
