@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.GuitartExact.KanExtension
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
+public import TauCeti.CategoryTheory.Sites.DenseSubsite
 public import TauCeti.CategoryTheory.Sites.TopologicalBasis
 public import TauCeti.CategoryTheory.Thin
 public import TauCeti.Topology.Category.TopCat.Opens
@@ -24,7 +25,10 @@ opens by limits, is determined by its values on the rational opens.
 When `B` is a basis of the topology, an adapted presheaf is a sheaf exactly when its restriction
 to `B` is a sheaf for the topology restricted to `B`; this is what makes sheaf conditions checkable
 on a basis for presheaves defined by such limits. Only the direction from `B` to `X` uses
-adaptedness; the other direction holds for every sheaf.
+adaptedness; the other direction holds for every sheaf. Conversely, when the target category has
+limits, every sheaf is adapted to every basis: a sheaf is determined on an open `V` by its values
+on the basic opens contained in `V`. So, for a basis, being a sheaf is the same as being adapted
+and a sheaf on the basis.
 
 ## Main definitions
 
@@ -38,6 +42,10 @@ adaptedness; the other direction holds for every sheaf.
   sheaf for the restricted topology.
 * `TopCat.Presheaf.isSheaf_iff_of_isAdapted`: for a presheaf adapted to a basis, the two sheaf
   conditions are equivalent.
+* `TopCat.Presheaf.IsSheaf.isAdapted`: a sheaf with values in a category with limits is adapted
+  to every basis.
+* `TopCat.Presheaf.isSheaf_iff_isAdapted_and_isSheaf_restrictedTopology`: for a basis, a presheaf
+  is a sheaf exactly when it is adapted to the basis and a sheaf on the basis.
 * `TopCat.Presheaf.IsAdapted.mono`: a presheaf adapted to `B` is adapted to every `B' ⊇ B`. This
   is how adaptedness to the rational opens of an adic spectrum yields adaptedness to its open
   affinoid subspaces.
@@ -276,6 +284,36 @@ theorem isSheaf_iff_of_isAdapted (hB : Opens.IsBasis B) (hF : F.IsAdapted B) :
       ((inducedFunctor (Subtype.val : B → Opens X)).op ⋙ F) :=
   ⟨fun h ↦ h.isSheaf_restrictedTopology hB,
     isSheaf_of_isAdapted_of_isSheaf_restrictedTopology F B hB hF⟩
+
+/-! ### Sheaves are adapted to every basis -/
+
+section HasLimits
+
+variable [HasLimitsOfSize.{w, w} C]
+
+/-- **A sheaf is adapted to every basis.** If `F` takes values in a category with limits and is a
+sheaf, then for every basis `B` and every open `V`, the restriction maps exhibit `F(V)` as the
+limit of the `F(U)` over the members `U ∈ B` below `V`: a basis is a dense subsite of the opens,
+and a sheaf is the pointwise right Kan extension of its restriction to a dense subsite. -/
+theorem IsSheaf.isAdapted {B : Set (Opens X)} (hB : Opens.IsBasis B) {F : X.Presheaf C}
+    (hF : F.IsSheaf) : F.IsAdapted B :=
+  have := TauCeti.TopologicalSpace.Opens.coverDense_inducedFunctor_subtypeVal hB
+  ⟨Functor.IsDenseSubsite.isPointwiseRightKanExtension (inducedFunctor (Subtype.val : B → Opens X))
+    ((inducedFunctor (Subtype.val : B → Opens X)).restrictedTopology
+      (Opens.grothendieckTopology X))
+    (Opens.grothendieckTopology X) ⟨F, hF⟩⟩
+
+/-- **For a basis `B`, a presheaf is a sheaf exactly when it is adapted to `B` and a sheaf on
+`B`**, for the topology restricted to `B`. -/
+theorem isSheaf_iff_isAdapted_and_isSheaf_restrictedTopology (hB : Opens.IsBasis B) :
+    F.IsSheaf ↔ F.IsAdapted B ∧ CategoryTheory.Presheaf.IsSheaf
+      ((inducedFunctor (Subtype.val : B → Opens X)).restrictedTopology
+        (Opens.grothendieckTopology X))
+      ((inducedFunctor (Subtype.val : B → Opens X)).op ⋙ F) :=
+  ⟨fun h ↦ ⟨h.isAdapted hB, h.isSheaf_restrictedTopology hB⟩,
+    fun h ↦ isSheaf_of_isAdapted_of_isSheaf_restrictedTopology F B hB h.1 h.2⟩
+
+end HasLimits
 
 end TopCat.Presheaf
 

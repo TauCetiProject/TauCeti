@@ -29,6 +29,10 @@ basis is not proved here, so the basis is a hypothesis of
 adapted by definition, this is the mechanism behind Wedhorn's Remark 8.27, which produces adic
 spaces from pre-adic spaces covered by sheafy affinoids.
 
+Conversely, a sheaf is adapted to every basis, so a sheafy object of `𝒱^pre` whose open affinoid
+subspaces form a basis is pre-adic. This is the remark following Wedhorn's Definition 8.22 that
+every adic space is a pre-adic space: adic spaces are the sheafy pre-adic spaces.
+
 Affinoid pre-adic spaces are locally affinoid, and being locally affinoid is invariant under
 isomorphism in `𝒱^pre`, since an isomorphism carries the restriction to an open isomorphically
 onto the restriction to its image (`TauCeti.PreAdicSpace.restrictIso`).
@@ -48,6 +52,8 @@ onto the restriction to its image (`TauCeti.PreAdicSpace.restrictIso`).
 * `TauCeti.PreAdicSpace.isSheafy_of_isAdapted_of_isSheaf_affinoidOpens`: an object of `𝒱^pre`
   whose open affinoid subspaces form a basis and whose presheaf is adapted to them and a sheaf on
   them is sheafy.
+* `TauCeti.PreAdicSpace.isPreAdic_of_isSheafy`: a sheafy object of `𝒱^pre` whose open affinoid
+  subspaces form a basis is pre-adic.
 * `TauCeti.PreAdicSpace.isLocallyAffinoid.instIsClosedUnderIsomorphisms`,
   `TauCeti.PreAdicSpace.isPreAdic.instIsClosedUnderIsomorphisms`: being locally affinoid, and being
   pre-adic, are invariant under isomorphism.
@@ -55,7 +61,7 @@ onto the restriction to its image (`TauCeti.PreAdicSpace.restrictIso`).
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Remark and Definition 8.9, Remark and
-  Definition 8.10, and Remark 8.27.
+  Definition 8.10, Definition 8.22, and Remark 8.27.
 -/
 
 public section
@@ -111,6 +117,12 @@ theorem isLocallyAffinoid_iff_sSup_eq_top : isLocallyAffinoid X ↔ sSup X.affin
 theorem isLocallyAffinoid_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
     isLocallyAffinoid X :=
   fun _ ↦ ⟨⊤, (top_mem_affinoidOpens_iff X).mpr hX, trivial⟩
+
+/-- An object of `𝒱^pre` whose open affinoid subspaces form a basis is locally affinoid. -/
+theorem isLocallyAffinoid_of_isBasis_affinoidOpens {X : PreAdicSpace.{u}}
+    (hB : Opens.IsBasis X.affinoidOpens) : isLocallyAffinoid X := fun x ↦
+  let ⟨U, hU, hx, _⟩ := Opens.isBasis_iff_nbhd.mp hB (Opens.mem_top x)
+  ⟨U, hU, hx⟩
 
 /-- Being locally affinoid is invariant under isomorphism in `𝒱^pre`. -/
 instance isLocallyAffinoid.instIsClosedUnderIsomorphisms :
@@ -174,6 +186,29 @@ theorem isSheafy_of_isAdapted_of_isSheaf_affinoidOpens {X : PreAdicSpace.{u}}
         X.toPresheafedSpace.presheaf)) :
     isSheafy X :=
   TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology _ _ hB hA hs
+
+/-- **A sheafy object whose open affinoid subspaces form a basis is pre-adic.** Its structure
+presheaf is a sheaf of complete separated topological rings, a category with all small limits, so
+it is adapted to the basis of open affinoid subspaces. This is the remark following Wedhorn's
+Definition 8.22: an adic space, being a sheafy object covered by affinoid adic spaces, is a
+pre-adic space. -/
+theorem isPreAdic_of_isSheafy {X : PreAdicSpace.{u}} (hB : Opens.IsBasis X.affinoidOpens)
+    (hX : isSheafy X) : isPreAdic X :=
+  ⟨isLocallyAffinoid_of_isBasis_affinoidOpens hB, hX.isAdapted hB⟩
+
+/-- **For an object of `𝒱^pre` whose open affinoid subspaces form a basis, being sheafy is being
+pre-adic with a structure presheaf that is a sheaf on the open affinoid subspaces**, for the
+topology restricted to them. Together with `isSheafy_of_isAdapted_of_isSheaf_affinoidOpens`, this
+is how the sheaf condition on an adic space is checked affinoid-locally. -/
+theorem isSheafy_iff_isPreAdic_and_isSheaf_affinoidOpens {X : PreAdicSpace.{u}}
+    (hB : Opens.IsBasis X.affinoidOpens) :
+    isSheafy X ↔ isPreAdic X ∧ Presheaf.IsSheaf
+      ((inducedFunctor (Subtype.val : X.affinoidOpens → Opens X)).restrictedTopology
+        (Opens.grothendieckTopology X))
+      ((inducedFunctor (Subtype.val : X.affinoidOpens → Opens X)).op ⋙
+        X.toPresheafedSpace.presheaf) :=
+  ⟨fun h ↦ ⟨isPreAdic_of_isSheafy hB h, h.isSheaf_restrictedTopology hB⟩,
+    fun h ↦ isSheafy_of_isAdapted_of_isSheaf_affinoidOpens hB h.1.isAdapted h.2⟩
 
 end PreAdicSpace
 
