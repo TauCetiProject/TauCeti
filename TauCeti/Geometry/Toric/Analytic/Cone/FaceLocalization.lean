@@ -390,14 +390,9 @@ theorem contMDiff_faceAffinePointMap (hτσ : τ.IsFaceOf σ) (hσ : IsToricCone
     let _ := coneChartedSpace hi (hσ.of_isFaceOf hτσ) hB' κ' h
     ContMDiff 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
       (faceAffinePointMap hi hτσ) := by
-  let _ := affinePointTopology g
-  let _ := affinePointTopology h
-  let hτ := hσ.of_isFaceOf hτσ
-  let _ := coneChartedSpace hi hσ hB κ g
-  let _ := coneChartedSpace hi hτ hB' κ' h
-  refine (contMDiff_iff_forall_contMDiff_apply_single hi hσ hB κ g).2 fun m ↦ ?_
-  simpa only [faceAffinePointMap_apply_single] using
-    contMDiff_apply_single hi hτ hB' κ' h ⟨m, dualSemigroup_anti hi hτσ.le m.2⟩ n
+  rw [faceAffinePointMap_def]
+  exact AffineSemigroupComplexPoint.contMDiff_comap hi (hσ.of_isFaceOf hτσ) hB' κ' hi hσ hB κ h g
+    _ n
 
 /-- For a face `τ` cut out by a character `m` of the dual semigroup of `σ`, a map into the chart of
 `τ` is holomorphic on a set exactly when its composite with the face map into the chart of `σ`
