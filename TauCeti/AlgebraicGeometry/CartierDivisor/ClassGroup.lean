@@ -23,6 +23,7 @@ No Noetherian, regularity, dimension, or properness hypothesis is needed.
 
 * `Scheme.CartierDivisor.ClassGroup`: Cartier divisors modulo principal divisors;
 * `Scheme.CartierDivisor.divisorClass`: the additive quotient map;
+* `Scheme.CartierDivisor.ClassGroup.lift`: descent of homomorphisms vanishing on principal divisors;
 * `Scheme.CartierDivisor.classGroupAddEquivLineBundleClass`: the Cartier–Picard dictionary;
 * `Scheme.CartierDivisor.nonempty_iso_sheaf_iff`: isomorphic divisor sheaves are characterized
   by a principal difference.
@@ -99,6 +100,23 @@ lemma divisorClass_eq_zero_iff {D : CartierDivisor X} :
 lemma divisorClass_principalCartierDivisor (f : X.functionFieldˣ) :
     divisorClass (principalCartierDivisor X f) = 0 :=
   divisorClass_eq_zero_iff.mpr ⟨f, rfl⟩
+
+/-- The universal property of the Cartier class group: an additive homomorphism that vanishes
+on principal Cartier divisors descends to the class group. -/
+def ClassGroup.lift {H : Type*} [AddMonoid H] (φ : CartierDivisor X →+ H)
+    (hφ : ∀ f : X.functionFieldˣ, φ (principalCartierDivisor X f) = 0) : ClassGroup X →+ H :=
+  QuotientAddGroup.lift (principalSubgroup X) φ (by
+    intro D hD
+    obtain ⟨f, rfl⟩ := mem_principalSubgroup.mp hD
+    exact AddMonoidHom.mem_ker.mpr (hφ f))
+
+/-- The descended homomorphism evaluates on the class of a divisor as the original map. -/
+@[simp]
+lemma ClassGroup.lift_divisorClass {H : Type*} [AddMonoid H] (φ : CartierDivisor X →+ H)
+    (hφ : ∀ f : X.functionFieldˣ, φ (principalCartierDivisor X f) = 0) (D : CartierDivisor X) :
+    ClassGroup.lift φ hφ (divisorClass D) = φ D := by
+  rw [ClassGroup.lift, divisorClass_eq_mk']
+  exact QuotientAddGroup.lift_mk' (principalSubgroup X) _ D
 
 /-- **The Cartier–Picard dictionary.** On any integral scheme, Cartier divisors modulo
 principal divisors form the Picard group of line-bundle classes under tensor product. -/
