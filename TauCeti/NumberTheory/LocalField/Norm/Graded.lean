@@ -197,36 +197,66 @@ private theorem targetEquiv_comp_normGradedMap_zero (h : IsTotallyRamified K L) 
   refine congrArg (fun z : 𝒪[L] ↦ residue 𝒪[L] z ^ finrank K L) (Subtype.ext ?_)
   simp only [coe_unitFiltrationToIntegerUnits]
 
+/-- Transporting along the residue-unit identifications, the kernel of the depth-zero graded norm
+has the order of the kernel of the `[L : K]`-th power map on `𝓀[L]ˣ`. -/
+private theorem natCard_ker_normGradedMap_zero_eq (h : IsTotallyRamified K L) :
+    Nat.card (normGradedMap K L 0).ker =
+      Nat.card (powMonoidHom (finrank K L) : 𝓀[L]ˣ →* 𝓀[L]ˣ).ker := by
+  rw [← MonoidHom.ker_mulEquiv_comp _ (targetEquiv h), targetEquiv_comp_normGradedMap_zero h,
+    MonoidHom.ker_comp_mulEquiv]
+  exact Subgroup.card_map_of_injective (MulEquiv.injective _)
+
+/-- Transporting along the residue-unit identifications, the image of the depth-zero graded norm
+has the index of the image of the `[L : K]`-th power map on `𝓀[L]ˣ`. -/
+private theorem index_range_normGradedMap_zero_eq (h : IsTotallyRamified K L) :
+    (normGradedMap K L 0).range.index =
+      (powMonoidHom (finrank K L) : 𝓀[L]ˣ →* 𝓀[L]ˣ).range.index := by
+  have hrange :
+      (normGradedMap K L 0).range.map (targetEquiv h : UnitFiltrationGraded K 0 →* 𝓀[L]ˣ) =
+      (powMonoidHom (finrank K L) : 𝓀[L]ˣ →* 𝓀[L]ˣ).range := by
+    rw [← MonoidHom.range_comp, targetEquiv_comp_normGradedMap_zero h, MonoidHom.range_comp,
+      MonoidHom.range_eq_top.2 (MulEquiv.surjective _), ← MonoidHom.range_eq_map]
+  rw [← hrange, Subgroup.index_map_equiv]
+
+omit [Module.Finite K L] [IsGalois K L] in
+/-- The residue units of a totally ramified extension have `q - 1` elements, where `q` is the
+cardinality of the residue field of the base. -/
+private theorem natCard_residueField_units (h : IsTotallyRamified K L) :
+    Nat.card 𝓀[L]ˣ = Nat.card 𝓀[K] - 1 := by
+  simp [Nat.card_units, natCard_residueField K L, h.inertiaDegree_eq_one]
+
 /-- **The kernel of the graded norm at depth zero.** For a totally ramified Galois extension `L/K`
 of nonarchimedean local fields, with residue field of cardinality `q`, the kernel of
 `normGradedMap K L 0` has order `gcd(q - 1, [L : K])`. -/
 theorem natCard_ker_normGradedMap_zero (h : IsTotallyRamified K L) :
     Nat.card (normGradedMap K L 0).ker = (Nat.card 𝓀[K] - 1).gcd (finrank K L) := by
-  rw [← MonoidHom.ker_mulEquiv_comp _ (targetEquiv h), targetEquiv_comp_normGradedMap_zero h]
-  rw [MonoidHom.ker_comp_mulEquiv, Subgroup.card_map_of_injective (MulEquiv.injective _),
-    IsCyclic.card_powMonoidHom_ker]
-  simp only [Nat.card_units, natCard_residueField K L,
-    h.inertiaDegree_eq_one, pow_one]
+  rw [natCard_ker_normGradedMap_zero_eq h, IsCyclic.card_powMonoidHom_ker,
+    natCard_residueField_units h]
 
 /-- **The cokernel of the graded norm at depth zero.** For a totally ramified Galois extension
 `L/K` of nonarchimedean local fields, with residue field of cardinality `q`, the image of
 `normGradedMap K L 0` has index `gcd(q - 1, [L : K])`. -/
 theorem index_range_normGradedMap_zero (h : IsTotallyRamified K L) :
     (normGradedMap K L 0).range.index = (Nat.card 𝓀[K] - 1).gcd (finrank K L) := by
-  rw [← Subgroup.index_map_equiv _ (targetEquiv h), MonoidHom.map_range,
-    targetEquiv_comp_normGradedMap_zero h]
-  rw [MonoidHom.range_comp, MonoidHom.range_eq_top.2 (MulEquiv.surjective _),
-    ← MonoidHom.range_eq_map, IsCyclic.index_powMonoidHom_range]
-  simp only [Nat.card_units, natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
+  rw [index_range_normGradedMap_zero_eq h, IsCyclic.index_powMonoidHom_range,
+    natCard_residueField_units h]
 
 /-- **The graded norm at depth zero is bijective exactly in the coprime case.** For a totally
 ramified Galois extension `L/K` of nonarchimedean local fields, with residue field of cardinality
 `q`, the map `normGradedMap K L 0` is bijective if and only if `[L : K]` is prime to `q - 1`. -/
 theorem normGradedMap_zero_bijective_iff (h : IsTotallyRamified K L) :
     Function.Bijective (normGradedMap K L 0) ↔ (finrank K L).Coprime (Nat.card 𝓀[K] - 1) := by
-  rw [Function.Bijective, ← MonoidHom.ker_eq_bot_iff, ← Subgroup.card_eq_one,
-    natCard_ker_normGradedMap_zero h, ← MonoidHom.range_eq_top, ← Subgroup.index_eq_one,
-    index_range_normGradedMap_zero h, and_self, Nat.gcd_comm]
+  have hcop : (finrank K L).Coprime (Nat.card 𝓀[K] - 1) ↔
+      (Nat.card 𝓀[K] - 1).gcd (finrank K L) = 1 := by
+    rw [Nat.coprime_comm, Nat.coprime_iff_gcd_eq_one]
+  have hinj : Function.Injective (normGradedMap K L 0) ↔
+      Nat.card (normGradedMap K L 0).ker = 1 := by
+    rw [← MonoidHom.ker_eq_bot_iff, Subgroup.card_eq_one]
+  have hsurj : Function.Surjective (normGradedMap K L 0) ↔
+      (normGradedMap K L 0).range.index = 1 := by
+    rw [← MonoidHom.range_eq_top, Subgroup.index_eq_one]
+  rw [Function.Bijective, hinj, hsurj, natCard_ker_normGradedMap_zero h,
+    index_range_normGradedMap_zero h, hcop, and_self]
 
 /-! ### The tame case -/
 
