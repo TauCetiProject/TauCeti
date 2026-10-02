@@ -29,6 +29,7 @@ classification is available:
 
 * it is an isometry invariant, it is multiplicative over orthogonal sums, and negating `q`
   conjugates it;
+* quotienting by a subgroup `K` in the quadratic radical gives `G(q) = #K · G(q/K)`;
 * for nondegenerate `q`, `G(q) · conj G(q) = #A`, so `|G(q)| = √#A`. Expanding the product and
   substituting `a = b + c` turns it into `∑_c e(q(c)) ∑_b e(b(c, b))`, and nondegeneracy kills
   every inner sum except the one at `c = 0`;
@@ -239,6 +240,34 @@ theorem gaussSum_eq_sqrt_natCard_of_isMetabolic (hA : A.IsNondegenerate) (h : A.
     ← FiniteBilinearModule.IsLagrangian.card_sq A.toFiniteBilinearModule
       (IsLagrangian.toFiniteBilinearModule A hH) hA, Nat.cast_pow,
     Real.sqrt_sq (Nat.cast_nonneg _), ofReal_natCast]
+
+/-- Dividing by a subgroup in the quadratic radical divides the Gauss sum by its order.
+Every quotient class contributes the same value on all of its representatives. -/
+theorem gaussSum_eq_card_mul_gaussSum_quotientOfLeQuadraticRadical
+    (K : AddSubgroup A) (hK : K.toIntSubmodule ≤ A.quadratic.radical) :
+    A.gaussSum = Nat.card K * (A.quotientOfLeQuadraticRadical K hK).gaussSum := by
+  classical
+  let := Fintype.ofFinite A
+  let Q := A.quotientOfLeQuadraticRadical K hK
+  let := Fintype.ofFinite Q
+  let f := A.quotientOfLeQuadraticRadicalMk K hK
+  have hf := A.quotientOfLeQuadraticRadicalMk_surjective K hK
+  have hker : f.ker = K := by
+    ext x
+    exact A.quotientOfLeQuadraticRadicalMk_eq_zero_iff K hK x
+  have hcard (q : Q) : Nat.card {x : A // f x = q} = Nat.card K := by
+    have hc : Nat.card {x : A // f x = q} = Nat.card f.ker :=
+      Nat.card_congr (AddMonoidHom.fiberEquivKerOfSurjective (f := f) hf q)
+    simpa only [hker] using hc
+  rw [gaussSum_eq_sum, gaussSum_eq_sum, ← Fintype.sum_fiberwise f, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  have hvalue (x : {x : A // f x = q}) : expCircle (A.quadratic x) =
+      expCircle (Q.quadratic q) := by
+    exact congrArg expCircle ((A.quotientOfLeQuadraticRadical_quadratic_mk K hK x).symm.trans
+      (congrArg Q.quadratic x.2))
+  simp only [hvalue, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    ← Nat.card_eq_fintype_card, hcard]
+  rfl
 
 /-! ## The discriminant forms of `A₁` and `A₁ ⊕ A₁` -/
 
