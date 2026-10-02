@@ -25,8 +25,8 @@ vertices, whatever their direction (`TauCeti.Quiver.underlyingGraph_congr`).
 
 * `TauCeti.Quiver.underlyingGraph_adj`: two vertices are adjacent when they are distinct and
   joined by an arrow in one direction or the other.
-* `TauCeti.Quiver.underlyingGraph_congr`: two quiver structures with the same arrows between any
-  two vertices, in either direction, have the same underlying graph.
+* `TauCeti.Quiver.underlyingGraph_congr`: two quiver structures joining the same pairs of
+  vertices by an arrow, in either direction, have the same underlying graph.
 -/
 
 public section
@@ -64,16 +64,16 @@ theorem underlyingGraph_adj_of_hom {a b : V} (e : a ⟶ b) (hab : a ≠ b) :
 
 end UnderlyingGraph
 
-/-- **The underlying graph depends only on the underlying multigraph**: two quiver structures with
-the same arrows joining any two vertices, in either direction, have the same underlying graph. -/
+/-- **The underlying graph depends only on which vertices are joined**: two quiver structures
+which join the same pairs of vertices by an arrow, in one direction or the other, have the same
+underlying graph. -/
 theorem underlyingGraph_congr {q q' : _root_.Quiver.{v} V}
-    (h : ∀ a b : V, Nonempty ((@_root_.Quiver.Hom V q a b ⊕ @_root_.Quiver.Hom V q b a) ≃
-      (@_root_.Quiver.Hom V q' a b ⊕ @_root_.Quiver.Hom V q' b a))) :
+    (h : ∀ a b : V, Nonempty (@_root_.Quiver.Hom V q a b ⊕ @_root_.Quiver.Hom V q b a) ↔
+      Nonempty (@_root_.Quiver.Hom V q' a b ⊕ @_root_.Quiver.Hom V q' b a)) :
     @underlyingGraph V q = @underlyingGraph V q' := by
   ext a b
-  obtain ⟨e⟩ := h a b
   rw [@underlyingGraph_adj V q, @underlyingGraph_adj V q', ← nonempty_sum, ← nonempty_sum]
-  exact and_congr_right fun _ ↦ ⟨fun ⟨x⟩ ↦ ⟨e x⟩, fun ⟨y⟩ ↦ ⟨e.symm y⟩⟩
+  exact and_congr_right fun _ ↦ h a b
 
 end Quiver
 
