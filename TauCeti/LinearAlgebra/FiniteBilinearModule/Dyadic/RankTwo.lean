@@ -19,13 +19,15 @@ v:  q(x) = (x₁² + x₁x₂ + x₂²) / 2^k,  b(x, y) = (2x₁y₁ + x₁y₂ 
 ```
 
 For `k ≥ 1` these are **Nikulin's rank-two dyadic generators** `u^{(2)}(2^k)` and `v^{(2)}(2^k)`.
-In the half-norm convention they are the discriminant forms of the `2`-adic lattices with Gram
-matrices `2^k·!![0,1;1,0]` and `2^k·!![2,1;1,2]`: the pairing matrix of each is the inverse Gram
-matrix of the unscaled lattice divided by `2^k`, and the inverse of `!![2,1;1,2]` is congruent to
-`!![2,1;1,2]` over `ℤ₂`, because its determinant `3` is a `2`-adic unit. Together with the cyclic
-generators `q_θ^{(p)}(p^k)` they generate every nondegenerate finite quadratic module under
-orthogonal sum; at `p = 2` the two rank-two forms are needed because a `2`-adic lattice of
-type II need not be diagonalizable.
+In the half-norm convention they are, up to isometry, the discriminant forms of the `2`-adic
+lattices with Gram matrices `2^k·A` for `A = !![0,1;1,0]` and `A = !![2,1;1,2]`. The modules
+constructed here have pairing matrix `A / 2^k` in the coordinate basis, whereas the discriminant
+form of `2^k·A` has pairing matrix `A⁻¹ / 2^k` in the dual basis. For `A = !![0,1;1,0]` these
+coincide. For `A = !![2,1;1,2]` they differ, but `A⁻¹` is congruent to `A` over `ℤ₂` (since
+`det A = 3` is a `2`-adic unit), so a change of basis is an isometry between them.
+Together with the cyclic generators `q_θ^{(p)}(p^k)` they generate every nondegenerate finite
+quadratic module under orthogonal sum; at `p = 2` the two rank-two forms are needed because a
+`2`-adic lattice of type II need not be diagonalizable.
 
 Both forms are presented as compositions of a `ℤ/2^k`-valued quadratic map with the injection
 `ZMod.toRatAddCircle` of `ℤ/2^k` into `ℚ/ℤ`, so their values are honest residues and no lifting
@@ -86,6 +88,7 @@ theorem dyadicU_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
 
 /-- **`u^{(2)}(2^k)` is nondegenerate**: pairing with the two coordinate vectors recovers the
 two coordinates. -/
+@[simp]
 theorem isNondegenerate_dyadicU : (dyadicU k).IsNondegenerate := by
   -- The carrier of `dyadicU k` is `(ℤ/2^k)²` only after unfolding, so the radical is computed on
   -- elements of `(ℤ/2^k)²` and transported by definitional unfolding at the end.
@@ -142,6 +145,7 @@ theorem dyadicV_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
 
 /-- **`v^{(2)}(2^k)` is nondegenerate**: pairing with the two coordinate vectors recovers
 `2x₁ + x₂` and `x₁ + 2x₂`, which determine `x` because `3` is a unit modulo `2^k`. -/
+@[simp]
 theorem isNondegenerate_dyadicV : (dyadicV k).IsNondegenerate := by
   -- The carrier of `dyadicV k` is `(ℤ/2^k)²` only after unfolding, so the radical is computed on
   -- elements of `(ℤ/2^k)²` and transported by definitional unfolding at the end.
