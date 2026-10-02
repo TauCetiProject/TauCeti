@@ -16,8 +16,7 @@ For a subgroup `H` of a finite group `G`, the separate constructions of restrict
 corestriction in positive, zero, minus one, and lower negative degrees assemble into maps in
 every integer degree. Their composite is multiplication by the index `[G : H]`. These uniform
 maps are the group-change operations used in the restriction law for the Tate cup product.
-In negative degrees, restriction is natural in the coefficient representation
-(`res_natural_of_neg`).
+Restriction is natural in the coefficient representation in every degree (`res_natural`).
 Tower composition for class-field-theory layers is provided by
 `ClassFieldTheory.LayerRestriction.tateRes_trans` and
 `ClassFieldTheory.LayerRestriction.tateCor_trans`.
@@ -82,6 +81,29 @@ theorem res_natural_of_neg {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) {r
   · simp at hr
   · exact HNegOneRes_natural M H f
   · exact negSuccRes_natural M H f (n + 1)
+
+/-- Tate restriction is natural in the coefficient representation, in every integer degree. -/
+@[reassoc]
+theorem res_natural {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) (r : ℤ) :
+    (tateCohomologyFunctor r).map f ≫ res N H r =
+      res M H r ≫ (tateCohomologyFunctor r).map (Rep.resMap H.subtype f) := by
+  rcases r with n | n
+  · cases n with
+    | zero =>
+      have h0 : (tateCohomologyFunctor 0).map f ≫ H0Res N H =
+          H0Res M H ≫ (tateCohomologyFunctor 0).map (Rep.resMap H.subtype f) := by
+        ext x
+        induction x using H0_induction_on with
+        | h x =>
+          rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
+            H0π_comp_tateCohomologyFunctor_map_apply, H0π_comp_H0Res_apply,
+            H0π_comp_H0Res_apply, H0π_comp_tateCohomologyFunctor_map_apply]
+          congr 1
+      exact h0
+    | succ n =>
+      simp only [Int.ofNat_eq_natCast, Int.natCast_add, Int.cast_ofNat_Int, res_ofNat_succ]
+      exact posRes_natural M H f n
+  · exact res_natural_of_neg f H (Int.negSucc_lt_zero n)
 
 /-- Corestriction of Tate cohomology from a subgroup of a finite group, in every integer
 degree. -/
