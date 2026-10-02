@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionShifting.Torsion
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Torsion
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionShifting.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCoefficients
 
 /-!
