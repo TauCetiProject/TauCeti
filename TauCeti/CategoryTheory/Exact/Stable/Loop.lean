@@ -30,6 +30,8 @@ It exposes the chosen presentation and its commuting squares for subsequent comp
 * `TauCeti.ExactStructure.EnoughProjectives.loopObj`: the kernel of the chosen presentation.
 * `TauCeti.ExactStructure.EnoughProjectives.loopMap`: the induced map on kernels.
 * `TauCeti.ExactStructure.EnoughProjectives.stableLoop`: the additive stable loop functor.
+* `TauCeti.ExactStructure.EnoughProjectives.projectiveStableIsoLoopObj`: the kernel term of any
+  relative projective presentation of `X` is isomorphic to `ΩX` in the stable category.
 
 ## References
 
@@ -188,6 +190,27 @@ theorem stableLoop_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
     (hE.stableLoop_obj_projectiveStableFunctor_obj Y)).2
       ((conj_eqToHom_iff_heq _ _ (hE.loopToStable_obj X) (hE.loopToStable_obj Y)).1
         (hE.loopToStable_map f))
+
+/-- The kernel term of an arbitrary relative projective presentation of `X` represents the loop
+object `ΩX` in the projective stable category: the chosen presentation enjoys no privilege
+there. -/
+noncomputable def projectiveStableIsoLoopObj {X : C} (P : E.ProjectivePresentation X) :
+    E.projectiveStableFunctor.obj P.K ≅ E.projectiveStableFunctor.obj (hE.loopObj X) :=
+  P.projectiveStableIso (hE.projectivePresentation X)
+
+/-- The comparison with the loop object is induced by the identity of the presented object. -/
+@[simp]
+theorem projectiveStableIsoLoopObj_hom {X : C} (P : E.ProjectivePresentation X) :
+    (hE.projectiveStableIsoLoopObj P).hom =
+      E.projectiveStableFunctor.map (P.kernelMap (hE.projectivePresentation X) (𝟙 X)) :=
+  P.projectiveStableIso_hom (hE.projectivePresentation X)
+
+/-- The inverse comparison with the loop object is the one induced in the other direction. -/
+@[simp]
+theorem projectiveStableIsoLoopObj_inv {X : C} (P : E.ProjectivePresentation X) :
+    (hE.projectiveStableIsoLoopObj P).inv =
+      E.projectiveStableFunctor.map ((hE.projectivePresentation X).kernelMap P (𝟙 X)) :=
+  P.projectiveStableIso_inv (hE.projectivePresentation X)
 
 end ExactStructure.EnoughProjectives
 

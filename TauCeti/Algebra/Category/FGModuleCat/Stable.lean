@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Frobenius
-public import TauCeti.CategoryTheory.Exact.Stable.Basic
+public import TauCeti.CategoryTheory.Exact.Stable.Loop
 
 /-!
 # Stable categories of finitely generated modules
@@ -28,6 +28,8 @@ module and hypersurface comparison theorems.
 * `FGModuleCat.stableModuleCategory A` is the stable category of finitely generated
   right `A`-modules.
 * `FGModuleCat.stableModuleFunctor A` is the quotient functor.
+* `FGModuleCat.stableModuleLoop A` is the loop (syzygy) endofunctor `Ω` of the stable module
+  category.
 
 ## References
 
@@ -57,6 +59,14 @@ noncomputable abbrev stableModuleCategory : Type (u + 1) :=
 /-- The quotient functor from finitely generated right `A`-modules to their stable category. -/
 noncomputable abbrev stableModuleFunctor : FGModuleCat.{u} Aᵐᵒᵖ ⥤ stableModuleCategory A :=
   (ExactStructure.abelian (FGModuleCat.{u} Aᵐᵒᵖ)).projectiveStableFunctor
+
+/-- The **loop functor** `Ω` on the stable module category of finitely generated right `A`-modules.
+It sends the class of `M` to the class of the kernel of a surjection onto `M` from a finitely
+generated projective module. This kernel is well defined up to canonical isomorphism in the stable
+category, and any choice of such a surjection represents it
+(`ExactStructure.EnoughProjectives.projectiveStableIsoLoopObj`). -/
+noncomputable abbrev stableModuleLoop : stableModuleCategory A ⥤ stableModuleCategory A :=
+  (ExactStructure.abelian_enoughProjectives (A := FGModuleCat.{u} Aᵐᵒᵖ)).stableLoop
 
 variable {A}
 
