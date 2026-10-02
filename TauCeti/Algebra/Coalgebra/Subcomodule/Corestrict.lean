@@ -33,6 +33,8 @@ coalgebras must preserve the invariant subspaces of their comodules.
   weights connected by subcomodule-preserving involutions give a simple comodule.
 * `TauCeti.Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights`: restriction to distinct
   one-dimensional weights extracts each scaled coordinate vector of a subcomodule vector.
+* `TauCeti.Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights`: distinct
+  one-dimensional weights make each subcomodule the span of its contained coordinate vectors.
 * `TauCeti.Subcomodule.ofCorestrictOfSplit` and `corestrictOrderIsoOfSplit`: recovery and
   order correspondence given a linear retraction over a commutative semiring.
 * `TauCeti.Subcomodule.map_id_coact_coe_eq_tmul_one`: a vector of a subcomodule fixed by the
@@ -244,6 +246,37 @@ section Field
 
 variable {k : Type u} [Field k] [Module k H] [Coalgebra k H]
 variable [Comodule k H (I → k)]
+
+/-- If corestriction separates distinct one-dimensional weights, every subcomodule is spanned
+by the coordinate vectors it contains. -/
+theorem toSubmodule_eq_span_of_corestrict_eq_ofWeights
+    (f : H →ₗc[k] MonoidAlgebra k G) (wt : I → G) (hwt : Function.Injective wt)
+    (hcomodule : Comodule.Corestrict f = Comodule.ofWeights (Pi.basisFun k I) wt)
+    (N : Subcomodule k H (I → k)) :
+    N.toSubmodule = Submodule.span k ((Pi.basisFun k I) ''
+      {a | Pi.single a (1 : k) ∈ N}) := by
+  classical
+  let _ := Fintype.ofFinite I
+  apply le_antisymm
+  · intro v hv
+    rw [← Finset.univ_sum_single v]
+    apply Submodule.sum_mem
+    intro a _
+    by_cases ha : v a = 0
+    · simp [ha]
+    · have hsingle := single_smul_mem_of_corestrict_eq_ofWeights f wt hwt hcomodule N hv a
+      have hone : Pi.single a (1 : k) ∈ N := by
+        rw [← Subcomodule.mem_toSubmodule]
+        simpa only [smul_smul, inv_mul_cancel₀ ha, one_smul] using
+          N.toSubmodule.smul_mem (v a)⁻¹ hsingle
+      have hmem := Submodule.subset_span (R := k)
+        (s := (Pi.basisFun k I) '' {a | Pi.single a (1 : k) ∈ N})
+        ⟨a, by simpa only [Set.mem_ofPred_eq] using hone, rfl⟩
+      simpa [Pi.basisFun_apply, ← Pi.single_smul] using Submodule.smul_mem _ (v a) hmem
+  · apply Submodule.span_le.mpr
+    rintro _ ⟨a, ha, rfl⟩
+    apply Subcomodule.mem_toSubmodule.mpr
+    simpa only [Pi.basisFun_apply, Set.mem_ofPred_eq] using ha
 
 /-- **A comodule with distinct one-dimensional weights and a connected weight graph is
 simple.** The graph edges are supplied as involutions of the basis indices which preserve

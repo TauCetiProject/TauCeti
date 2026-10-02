@@ -174,6 +174,16 @@ theorem IsSimpleModule.isIndecomposableModule [IsSimpleModule A M] :
     have hdisj : Disjoint (⊤ : Submodule A M) P := hN ▸ hNP.disjoint
     simpa using hdisj
 
+/-- An indecomposable semisimple module is simple. -/
+theorem IsIndecomposableModule.isSimpleModule [IsSemisimpleModule A M]
+    (h : IsIndecomposableModule A M) : IsSimpleModule A M := by
+  have := h.nontrivial
+  refine (isSimpleModule_iff A M).mpr ⟨fun N ↦ ?_⟩
+  obtain ⟨P, hNP⟩ := exists_isCompl N
+  rcases h.eq_bot_or_eq_bot hNP with hN | hP
+  · exact Or.inl hN
+  · exact Or.inr (by simpa [hP] using hNP.sup_eq_top)
+
 /-! ### Splitting off an indecomposable module -/
 
 /-- **A split injection into an indecomposable module is an isomorphism.** If `g ∘ₗ f` is bijective

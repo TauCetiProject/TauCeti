@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Combinatorics.Young.YoungDiagram
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.List.GetD
@@ -22,10 +23,13 @@ lying in the first `k` rows, whether those lengths are summed as
 the rows exhaust the cells, the row lengths also determine the diagram
 (`YoungDiagram.rowLen_injective`).  Cutting the same count column by column,
 `YoungDiagram.card_filter_fst_lt_filter_snd_eq` counts the cells of the first `k` rows
-lying in a fixed column.  The same row-by-row reading applies to any property of the cells, not
-only to counting them all: `YoungDiagram.card_filter_cells` counts the cells satisfying a
-predicate one row at a time, and `YoungDiagram.prod_cells_eq_prod_range` reads a product over the
-cells the same way.
+lying in a fixed column; summing that count over the columns gives the counting core
+`YoungDiagram.card_filter_le_sum_take_rowLens`, which bounds the elements of row less than `k` in
+a finite type labelled by a row and injected into the cells, no two of them sharing both a row and
+a column, by the cells of the first `k` rows.  The same row-by-row reading applies to any property
+of the cells, not only to counting them all: `YoungDiagram.card_filter_cells` counts the cells
+satisfying a predicate one row at a time, and `YoungDiagram.prod_cells_eq_prod_range` reads a
+product over the cells the same way.
 
 The partial sums are the shape of every dominance statement about partitions, since dominance
 compares partial sums of decreasingly sorted parts, and the sorted parts of a partition are the
@@ -206,6 +210,47 @@ theorem card_filter_fst_lt_filter_snd_eq (lam : YoungDiagram) (k j : ℕ) :
     · rintro ⟨i, ⟨hik, hicol⟩, rfl⟩
       exact ⟨⟨_root_.YoungDiagram.mem_iff_lt_colLen.mpr hicol, hik⟩, rfl⟩
   rw [himg, Finset.card_image_of_injective _ fun _ _ h => congrArg Prod.fst h, Finset.card_range]
+
+/-- **The counting core of the dominance lemma.** Let the elements of a finite type `α` be
+labelled by a *row* `r a : ℕ` and placed in the cells of a Young diagram `lam` by an injection
+`f`, in such a way that the row of an element together with the column of its cell determines
+the element.  Then the elements of row less than `k` are no more numerous than the cells of `lam`
+in its first `k` rows.
+
+The hypothesis `hcol` is the condition that elements sharing a row occupy pairwise distinct
+columns; it is what bounds by `k` the number of elements landing in any one column. -/
+theorem card_filter_le_sum_take_rowLens {α : Type*} [Fintype α] (lam : YoungDiagram)
+    (r : α → ℕ) (f : α → ℕ × ℕ) (hmem : ∀ a, f a ∈ lam.cells) (hinj : Function.Injective f)
+    (hcol : ∀ a b, r a = r b → (f a).2 = (f b).2 → a = b) (k : ℕ) :
+    (Finset.univ.filter fun a => r a < k).card ≤ (lam.rowLens.take k).sum := by
+  classical
+  rw [sum_take_rowLens_eq_card_filter_fst]
+  -- Every column index in sight is smaller than the length of the top row.
+  have hlt : ∀ c ∈ lam.cells, c.2 ∈ Finset.range (lam.rowLen 0) := by
+    intro c hc
+    refine Finset.mem_range.mpr (lt_of_lt_of_le ?_ (lam.rowLen_anti 0 c.1 c.1.zero_le))
+    exact _root_.YoungDiagram.mem_iff_lt_rowLen.mp ((_root_.YoungDiagram.mem_cells c).mp hc)
+  -- Split both sides into their columns.
+  rw [Finset.card_eq_sum_card_fiberwise (f := fun a => (f a).2)
+      (t := Finset.range (lam.rowLen 0)) fun a _ => hlt _ (hmem a),
+    Finset.card_eq_sum_card_fiberwise (f := fun c : ℕ × ℕ => c.2)
+      (t := Finset.range (lam.rowLen 0)) fun c hc =>
+      hlt c (Finset.mem_filter.mp hc).1]
+  refine Finset.sum_le_sum fun j _ => ?_
+  rw [card_filter_fst_lt_filter_snd_eq lam k j]
+  have hfib : ∀ a ∈ ((Finset.univ.filter fun a => r a < k).filter fun a => (f a).2 = j : Finset α),
+      r a < k ∧ (f a).2 = j := by
+    intro a ha
+    simpa only [Finset.mem_filter, Finset.mem_univ, true_and] using ha
+  -- In a fixed column, the elements are separated by their rows, and they fit in the column.
+  refine le_min (le_of_le_of_eq ?_ (Finset.card_range k))
+    (le_of_le_of_eq ?_ lam.colLen_eq_card.symm)
+  · refine Finset.card_le_card_of_injOn r (fun a ha => ?_) fun a ha b hb hab => ?_
+    · exact Finset.mem_range.mpr (hfib a ha).1
+    · exact hcol a b hab (((hfib a ha).2).trans (hfib b hb).2.symm)
+  · refine Finset.card_le_card_of_injOn f (fun a ha => ?_) hinj.injOn
+    exact _root_.YoungDiagram.mem_col_iff.mpr
+      ⟨(_root_.YoungDiagram.mem_cells _).mp (hmem a), (hfib a ha).2⟩
 
 /-- A row of a sub-diagram is no longer than the corresponding row. -/
 theorem rowLen_le_of_le {μ ν : YoungDiagram} (h : ν ≤ μ) (i : ℕ) : ν.rowLen i ≤ μ.rowLen i := by

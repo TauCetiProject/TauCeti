@@ -69,6 +69,10 @@ def zigzagD4Graph : SimpleGraph (Fin 4) :=
 def zigzagE8Graph : SimpleGraph (Fin 8) :=
   diagramGraph DynkinType.E8.cartanMatrix
 
+/-- The named `E₈` graph is the diagram of the standard Bourbaki-labelled Cartan matrix. -/
+theorem zigzagE8Graph_eq_diagramGraph :
+    zigzagE8Graph = diagramGraph DynkinType.E8.cartanMatrix := (rfl)
+
 /-- The affine `E₈` graph `T_{2,3,6}`, with node `0` trivalent and each arm numbered outwards. -/
 def zigzagAffineE8Graph : SimpleGraph (Fin 9) :=
   AffineDynkinType.E8.graph

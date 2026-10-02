@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.InformationTheory.KullbackLeibler.Convex
 public import TauCeti.InformationTheory.KullbackLeibler.Tilted
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 
@@ -42,6 +43,8 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
 
 * `TauCeti.schroedingerValue_prod`: with the product of the marginals as reference, the
   Schrödinger value is `0`, attained by the product coupling.
+* `TauCeti.IsCoupling.eq_of_klDiv_eq_schroedingerValue`: a finite Schrödinger value has at most
+  one minimizing coupling for a finite reference measure.
 * `TauCeti.entropicTransportCost_zero` and `TauCeti.transportCost_le_entropicTransportCost`: at
   zero temperature the regularised value is the transport cost, which it always dominates.
 * `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
@@ -126,6 +129,28 @@ theorem schroedingerValue_prod [IsProbabilityMeasure μ] [IsProbabilityMeasure �
     schroedingerValue (μ.prod ν) μ ν = 0 :=
   nonpos_iff_eq_zero.1 <| (schroedingerValue_le_klDiv (isCoupling_prod μ ν) _).trans_eq
     (klDiv_self _)
+
+/-- **Uniqueness of a finite-entropy Schrödinger minimizer.** For a finite reference and finite
+source measure, any two couplings attaining a finite Schrödinger value agree. This does not
+assert existence, and applies on arbitrary measurable spaces. -/
+theorem IsCoupling.eq_of_klDiv_eq_schroedingerValue [IsFiniteMeasure μ] [IsFiniteMeasure R]
+    (hπ : IsCoupling π μ ν) {σ : Measure (X × Y)} (hσ : IsCoupling σ μ ν)
+    (hπval : klDiv π R = schroedingerValue R μ ν)
+    (hσval : klDiv σ R = schroedingerValue R μ ν)
+    (hfin : schroedingerValue R μ ν ≠ ∞) : π = σ := by
+  let := hπ.isFiniteMeasure
+  let := hσ.isFiniteMeasure
+  by_contra hne
+  have hmix := (hπ.smul ((1 / 2 : ℝ≥0) : ℝ≥0∞)).add
+    (hσ.smul ((1 / 2 : ℝ≥0) : ℝ≥0∞))
+  simp only [Measure.coe_nnreal_smul, ← add_smul] at hmix
+  norm_num at hmix
+  have hlt := klDiv_smul_add_smul_lt
+    (a := (1 / 2 : ℝ≥0)) (b := (1 / 2 : ℝ≥0)) (by norm_num) (by norm_num) (by norm_num)
+    (hπval ▸ hfin) (hσval ▸ hfin) hne
+  rw [hπval, hσval, ← add_mul, ← ENNReal.coe_add] at hlt
+  norm_num at hlt
+  exact (not_lt_of_ge (schroedingerValue_le_klDiv hmix R)) hlt
 
 /-! ### Entropically regularised transport -/
 

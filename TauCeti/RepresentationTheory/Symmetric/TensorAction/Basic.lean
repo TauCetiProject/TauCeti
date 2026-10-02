@@ -155,6 +155,13 @@ noncomputable def tensorPowerBasis :
     Module.Basis (Fin d → Fin n) R (⨂[R] _ : Fin d, Fin n → R) :=
   Basis.piTensorProduct fun _ => Pi.basisFun R (Fin n)
 
+/-- The monomial basis is the tensor product of the standard bases.  The definition is not
+exposed, so this is its defining equation, used to compare it with the `Basis.piTensorProduct`
+spelling of the weight theory. -/
+theorem tensorPowerBasis_def :
+    tensorPowerBasis R n d = Basis.piTensorProduct fun _ : Fin d => Pi.basisFun R (Fin n) :=
+  (rfl)
+
 @[simp]
 theorem tensorPowerBasis_apply (f : Fin d → Fin n) :
     tensorPowerBasis R n d f = PiTensorProduct.tprod R fun i => Pi.single (f i) (1 : R) := by
