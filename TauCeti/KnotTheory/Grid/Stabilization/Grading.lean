@@ -40,6 +40,16 @@ grading change across such a rectangle
 `GridDiagram.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles`). These are the grading facts
 from which the stabilization map preserves the bigrading.
 
+Since a center state has doubled Alexander grading two below that of the state it comes from,
+the parity criterion `GridDiagram.even_alexanderTwoℤ_iff` shows that the stabilization of a
+diagram with an odd number of components again has an odd number of components
+(`OddComponentGridDiagram.stabilizeX`).
+
+## Main definitions
+
+* `TauCeti.OddComponentGridDiagram.stabilizeX`: the stabilization splitting the `X`-marking of a
+  column, as a grid diagram with an odd number of components.
+
 ## Main results
 
 * `TauCeti.GridDiagram.maslovOℤ_stabilizeX_insertPoint`,
@@ -274,5 +284,28 @@ theorem alexander_stabilizeX_eq_of_mem_XHomotopyRectangles {k : Fin (n + 1)}
   linarith
 
 end GridDiagram
+
+namespace OddComponentGridDiagram
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
+
+/-- The stabilization of a grid diagram with an odd number of components that splits the
+`X`-marking of column `s`, as a grid diagram with an odd number of components. A center state
+has doubled Alexander grading two below that of the state it comes from, so the parity of the
+number of components, which is that of the doubled Alexander grading of any state, is
+unchanged. -/
+def stabilizeX : OddComponentGridDiagram (n + 1) :=
+  ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s, by
+    rw [← GridDiagram.even_alexanderTwoℤ_iff _ (G.1.O.insertPoint s.succ (G.1.X s).succ),
+      GridDiagram.alexanderTwoℤ_stabilizeX_insertPoint]
+    exact ((G.1.even_alexanderTwoℤ_iff G.1.O).mpr G.2).sub even_two⟩
+
+/-- The underlying grid diagram of `G.stabilizeX s` is the stabilization splitting the
+`X`-marking of column `s`. -/
+@[simp]
+theorem val_stabilizeX : (G.stabilizeX s).1 = G.1.stabilizeX s.castSucc (G.1.X s).castSucc s :=
+  (rfl)
+
+end OddComponentGridDiagram
 
 end TauCeti

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
 public import TauCeti.KnotTheory.Grid.Stabilization.Grading
 public import TauCeti.KnotTheory.Grid.Stabilization.Map
 
@@ -17,8 +16,9 @@ and let `G' = G.stabilizeX s.castSucc (G.X s).castSucc s` be the stabilization s
 `X`-marking of column `s`. Adding the center of the new block to a state of `G` lowers its
 doubled Alexander grading by two (`GridDiagram.alexanderTwoℤ_stabilizeX_insertPoint`), so the
 parity criterion `GridDiagram.even_alexanderTwoℤ_iff` shows that `G'` again has an odd number of
-components (`OddComponentGridDiagram.stabilizeX`). Both unblocked complexes `GC⁻(G')` and
-`GC⁻(G)` therefore carry the (`O`-Maslov, Alexander) bigrading of `Grading/UnblockedChain.lean`.
+components (`OddComponentGridDiagram.stabilizeX`, in `Stabilization/Grading.lean`). Both
+unblocked complexes `GC⁻(G')` and `GC⁻(G)` therefore carry the (`O`-Maslov, Alexander) bigrading
+of `Grading/UnblockedChain.lean`.
 
 This file proves that the stabilization chain map `GC⁻(G') ⟶ GC⁻(G)`
 (`GridDiagram.stabilizeXMap`) has bidegree `(0, 0)`. On a chain `c` it is `H_I^N` applied to the
@@ -33,11 +33,6 @@ such term has the bigrading of `V^e · y` (`GridDiagram.maslovOℤ_stabilizeX_eq
 Since `stabilizeXMap` is a quasi-isomorphism (`GridDiagram.quasiIso_stabilizeXMap`), this is the
 chain-level input for identifying the bigraded homologies `GH⁻(G')` and `GH⁻(G)`, and so the
 invariants `τ` of a knot grid and of this stabilization.
-
-## Main definitions
-
-* `TauCeti.OddComponentGridDiagram.stabilizeX`: the stabilization splitting the `X`-marking of a
-  column, as a grid diagram with an odd number of components.
 
 ## Main results
 
@@ -63,23 +58,6 @@ namespace TauCeti
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
-
-/-- The stabilization of a grid diagram with an odd number of components that splits the
-`X`-marking of column `s`, as a grid diagram with an odd number of components. A center state
-has doubled Alexander grading two below that of the state it comes from, so the parity of the
-number of components, which is that of the doubled Alexander grading of any state, is
-unchanged. -/
-def stabilizeX : OddComponentGridDiagram (n + 1) :=
-  ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s, by
-    rw [← GridDiagram.even_alexanderTwoℤ_iff _ (G.1.O.insertPoint s.succ (G.1.X s).succ),
-      GridDiagram.alexanderTwoℤ_stabilizeX_insertPoint]
-    exact ((G.1.even_alexanderTwoℤ_iff G.1.O).mpr G.2).sub even_two⟩
-
-/-- The underlying grid diagram of `G.stabilizeX s` is the stabilization splitting the
-`X`-marking of column `s`. -/
-@[simp]
-theorem val_stabilizeX : (G.stabilizeX s).1 = G.1.stabilizeX s.castSucc (G.1.X s).castSucc s :=
-  (rfl)
 
 variable (R : Type*) [CommRing R] [CharP R 2]
 
@@ -119,8 +97,9 @@ private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R 
   have hA := G.1.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
   rw [← val_stabilizeX, alexander_eq_intCast, G.alexander_eq_intCast] at hA
   have hA' : (G.stabilizeX s).alexanderℤ y.1 = G.alexanderℤ x -
-      ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).OColumns r.toGridRectangle).card := by
+      ((G.stabilizeX s).1.OColumns r.toGridRectangle).card := by
     exact_mod_cast hA
+  rw [val_stabilizeX] at hA'
   refine Prod.ext ?_ ?_ <;>
     simp only [monomialBidegree_fst, monomialBidegree_snd, Finsupp.degree_mapDomain, map_add,
       map_sum, Finsupp.degree_single, Finset.sum_const, smul_eq_mul, mul_one, val_stabilizeX] <;>
