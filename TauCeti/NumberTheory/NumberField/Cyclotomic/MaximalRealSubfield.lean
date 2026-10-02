@@ -46,7 +46,7 @@ All results are in the namespace `TauCeti.IsCyclotomicExtension.Rat`.
 public section
 
 open NumberField ComplexConjugate IntermediateField _root_.IsCyclotomicExtension.Rat
-  TauCeti.DirichletCharacter
+  DirichletCharacter
 
 namespace TauCeti.IsCyclotomicExtension.Rat
 
