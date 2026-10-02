@@ -95,22 +95,6 @@ end Dimension
 
 /-! ### The rational decomposition -/
 
-/-- The group algebra acts on the class of a unit fixed by every automorphism through the
-augmentation. -/
-private theorem smul_ofMul_padicCompletionUnitsOf_of_forall_eq {L : Type*} [Field L] {K : Type*}
-    [Field K] [Algebra K L] [Finite (L ≃ₐ[K] L)] (x : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) {u : Lˣ}
-    (hu : ∀ σ : L ≃ₐ[K] L, Units.map σ.toRingEquiv.toMonoidHom u = u) :
-    x • Additive.ofMul (padicCompletionUnitsOf p L u) =
-      MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L) x •
-        Additive.ofMul (padicCompletionUnitsOf p L u) := by
-  have := Fintype.ofFinite (L ≃ₐ[K] L)
-  rw [smul_ofMul_padicCompletionUnitsOf]
-  simp only [hu, ← Finset.sum_smul]
-  congr 1
-  conv_rhs => rw [← x.sum_coeff_single]
-  rw [Finsupp.sum_fintype _ _ fun σ ↦ by simp, map_sum]
-  simp
-
 section Decomposition
 
 variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -167,7 +151,7 @@ private theorem exists_injective_linearMap_padicCompletionUnits :
   set y : Additive ↑(padicCompletionUnits p L) := Additive.ofMul (padicCompletionUnitsOf p L ϖ)
   have hy (r : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) :
       r • y = MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L) r • y :=
-    smul_ofMul_padicCompletionUnitsOf_of_forall_eq p r fun σ ↦ Units.ext (by simp [ϖ])
+    r.smul_padicCompletionUnitsOf_of_forall_eq p fun σ ↦ Units.ext (by simp [ϖ])
   have hI : RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L)) ≤
       LinearMap.ker (LinearMap.toSpanSingleton _ _ y) := fun r hr ↦ by
     rw [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, hy, RingHom.mem_ker.mp hr, zero_smul]
@@ -181,7 +165,7 @@ private theorem exists_injective_linearMap_padicCompletionUnits :
   obtain ⟨r, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   simp only [LinearMap.coprod_apply, LinearMap.sum_apply, LinearMap.comp_apply,
     LinearMap.proj_apply, LinearMap.toSpanSingleton_apply, Submodule.liftQ_apply, hy] at h
-  rw [Finset.sum_congr rfl fun k _ ↦ smul_ofMul_padicCompletionUnitsOf p (a k) (u k)] at h
+  rw [Finset.sum_congr rfl fun k _ ↦ (a k).smul_padicCompletionUnitsOf p (u k)] at h
   -- Read off the coefficients of the relation against the independent classes.
   have h0 := Fintype.linearIndependent_iff.mp hlin
     (Option.elim · (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L) r) fun j ↦ (a j.1).coeff j.2)

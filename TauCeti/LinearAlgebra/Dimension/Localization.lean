@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.Flat.Localization
 
 /-!
@@ -22,11 +23,11 @@ on which `R` acts through `A`, its `R`-rank is also its `A`-rank; for `A` a fiel
 dimension of the vector space `M ⊗[R] A`.
 
 Conversely, over a domain the rank detects isomorphisms after passing to the field of fractions:
-an injective linear map between finite modules of the same rank has torsion cokernel, so it
-becomes an isomorphism after tensoring with the field of fractions. This is how an integral
-lattice of full rank in a module computes its rationalization. The map may be linear over any
-`R`-algebra `A`, and its rationalization is then `A`-linear for the module structure of
-`TensorProduct.AlgebraTensorModule` on the left factor.
+an injective linear map between finite modules of the same rank becomes an injective map between
+vector spaces of the same finite dimension after tensoring with the field of fractions, hence an
+isomorphism. This is how an integral lattice of full rank in a module computes its
+rationalization. The map may be linear over any `R`-algebra `A`, and its rationalization is then
+`A`-linear for the module structure of `TensorProduct.AlgebraTensorModule` on the left factor.
 
 ## Main results
 
@@ -67,37 +68,30 @@ variable {R : Type*} [CommRing R] [IsDomain R] (Q : Type*) [CommRing Q] [Algebra
 /-- **Full-rank injections become isomorphisms over the field of fractions.** Let `R` be a domain
 with field of fractions `Q`, and `f : M → N` an injective `A`-linear map, for an `R`-algebra `A`,
 where `N` is finite over `R` and `M` has the same rank as `N`. Then `f ⊗ 𝟙 Q` is bijective: it is
-injective because `Q` is flat over `R`, and surjective because the cokernel of `f` has rank zero,
-so it is torsion, and the nonzero elements of `R` are invertible in `Q`. -/
+injective because `Q` is flat over `R`, and it is an injective map between `Q`-vector spaces of
+the same finite dimension. -/
 theorem rTensor_bijective_of_injective_of_finrank_eq (f : M →ₗ[A] N)
     (hf : Function.Injective f) (h : Module.finrank R M = Module.finrank R N) :
     Function.Bijective (TensorProduct.AlgebraTensorModule.rTensor R Q f) := by
   have := _root_.IsLocalization.flat Q (nonZeroDivisors R)
-  refine ⟨Module.Flat.rTensor_preserves_injective_linearMap (M := Q) (f.restrictScalars R) hf,
-    fun x ↦ ?_⟩
-  -- The cokernel of `f` has rank zero, hence every element of `N` has a nonzero multiple in the
-  -- range of `f`.
-  let g := f.restrictScalars R
-  have hrank : Module.finrank R (N ⧸ LinearMap.range g) = 0 := by
-    have := Submodule.finrank_quotient_add_finrank (LinearMap.range g)
-    rw [LinearMap.finrank_range_of_inj (f := g) hf, h] at this
-    omega
-  have htors (n : N) : ∃ a : R, a ≠ 0 ∧ a • n ∈ LinearMap.range g := by
-    obtain ⟨a, ha, han⟩ := Module.finrank_eq_zero_iff.mp hrank (Submodule.Quotient.mk n)
-    exact ⟨a, ha, (Submodule.Quotient.mk_eq_zero _).mp (by rwa [Submodule.Quotient.mk_smul])⟩
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    obtain ⟨x', rfl⟩ := hx
-    obtain ⟨y', rfl⟩ := hy
-    exact ⟨x' + y', map_add _ _ _⟩
-  | tmul n q =>
-    -- With `a • n = f m`, the element `n ⊗ q` is the image of `m ⊗ (a⁻¹ q)`.
-    obtain ⟨a, ha, m, hm⟩ := htors n
-    obtain ⟨u, hu⟩ := _root_.IsLocalization.map_units Q
-      (⟨a, mem_nonZeroDivisors_of_ne_zero ha⟩ : nonZeroDivisors R)
-    refine ⟨m ⊗ₜ (↑u⁻¹ * q), ?_⟩
-    rw [TensorProduct.AlgebraTensorModule.rTensor_tmul, ← LinearMap.restrictScalars_apply (R := R),
-      hm, TensorProduct.smul_tmul, Algebra.smul_def, ← mul_assoc, ← hu]
-    simp
+  let := IsFractionRing.toField R (K := Q)
+  -- The base change `g` of `f` to `Q` is an injective `Q`-linear map between `Q`-vector spaces
+  -- of the same finite dimension, hence bijective.
+  set g := (f.restrictScalars R).baseChange Q
+  have hg : Function.Injective g := by
+    rw [LinearMap.baseChange_eq_ltensor]
+    exact Module.Flat.lTensor_preserves_injective_linearMap _ hf
+  have := FiniteDimensional.of_injective g hg
+  have hg' := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by
+    rw [(TensorProduct.isBaseChange R M Q).finrank_eq,
+      (TensorProduct.isBaseChange R N Q).finrank_eq, h])).mp hg
+  -- `f ⊗ 𝟙 Q` is `g` up to the commutativity of the tensor product.
+  have : ⇑(TensorProduct.AlgebraTensorModule.rTensor R Q f) =
+      TensorProduct.comm R Q N ∘ g ∘ TensorProduct.comm R M Q := by
+    ext x
+    simp [g, LinearMap.baseChange_eq_ltensor, LinearMap.lTensor_comm]
+  rw [this]
+  exact ((TensorProduct.comm R Q N).bijective.comp ⟨hg, hg'⟩).comp
+    (TensorProduct.comm R M Q).bijective
 
 end TauCeti.IsFractionRing

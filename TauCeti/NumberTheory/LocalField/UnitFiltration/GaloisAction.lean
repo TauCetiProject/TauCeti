@@ -119,8 +119,8 @@ theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFilt
 automorphism of `L/K` commutes with the logarithm of a principal unit: `σ (log u) = log (σ u)`.
 The logarithm series of `u` converges on `U(L,1)`, and `σ` is continuous and maps it termwise to
 the logarithm series of `σ u`. -/
-theorem map_log_of_mem_unitFiltration_one (p : ℕ) [Fact p.Prime] [FinitePadicExtension L p]
-    (σ : L ≃ₐ[K] L) {u : Lˣ} (hu : u ∈ unitFiltration L 1) :
+theorem map_log_of_mem_unitFiltration_one (σ : L ≃ₐ[K] L) (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension L p] {u : Lˣ} (hu : u ∈ unitFiltration L 1) :
     σ (NormedSpace.log (u : L)) = NormedSpace.log (σ (u : L)) := by
   have h := (hasSum_log_of_mem_unitFiltration_one p hu).map σ.toAddMonoidHom
     σ.continuous_of_valuativeExtension
