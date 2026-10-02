@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
+public import TauCeti.CategoryTheory.Abelian.Images
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 /-!
@@ -440,12 +441,6 @@ private noncomputable def cokernelBoundariesToCyclesIso (i j k : ℤ) (hij : i +
     (K.homologyIsoSc' i j k ((ComplexShape.up ℤ).prev_eq' hij)
       ((ComplexShape.up ℤ).next_eq' hjk)).symm
 
-/-- The kernel of the projection of `Kⁱ` onto the boundaries `im dⁱ` is the cocycles
-`ker dⁱ`. -/
-private noncomputable def kernelFactorThruImageIso (i j : ℤ) :
-    kernel (K.d i j) ≅ kernel (Abelian.factorThruImage (K.d i j)) :=
-  kernelIsoOfEq (Abelian.image.fac (K.d i j)).symm ≪≫ kernelCompMono _ _
-
 end BoundariesCycles
 
 namespace ExactStructure.IsExtensionClosed
@@ -480,7 +475,8 @@ theorem prop_X (hB : ∀ n, P (Abelian.image (K.d n (n + 1))))
     (hH : ∀ n, P (K.homology n)) (n : ℤ) : P (K.X n) :=
   have := hP.isClosedUnderIsomorphisms
   hP.prop_X₂ (ExactStructure.abelian_conflation_of_epi (Abelian.factorThruImage (K.d n (n + 1))))
-    (P.prop_of_iso (kernelFactorThruImageIso K n (n + 1)) (hP.prop_kernel_d hB hH n)) (hB n)
+    (P.prop_of_iso (Abelian.kernelFactorThruImageIso (K.d n (n + 1)))
+      (hP.prop_kernel_d hB hH n)) (hB n)
 
 end ExactStructure.IsExtensionClosed
 
@@ -551,10 +547,10 @@ private lemma extend_kernel_d_add_extend_kernel_d (hB : ∀ n, P (Abelian.image 
   have h₂ := extend_X₂ v
     ((ExactStructure.abelian_conflation _).mp
       (ExactStructure.abelian_conflation_of_epi (Abelian.factorThruImage (K.d i (i + 1)))))
-    (P.prop_of_iso (kernelFactorThruImageIso K i (i + 1)) hZ) (hB i)
+    (P.prop_of_iso (Abelian.kernelFactorThruImageIso (K.d i (i + 1))) hZ) (hB i)
   dsimp only at h₁ h₂
   rw [h₁, h₂, extend_congr v (cokernelBoundariesToCyclesIso K _ _ _ rfl rfl) hC,
-    ← extend_congr v (kernelFactorThruImageIso K i (i + 1)) hZ]
+    ← extend_congr v (Abelian.kernelFactorThruImageIso (K.d i (i + 1))) hZ]
   abel
 
 /-- **The Euler–Poincaré theorem in an extension-closed subcategory.** Let `P` be an
