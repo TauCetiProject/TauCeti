@@ -64,9 +64,6 @@ block file leaves open, for the groups where the general construction is availab
 ## References
 
 * Daniel Bump, *Lie Groups*, second edition, Chapter 2.
-* [Compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-  Layer 5, "The isotypic decomposition": "State the block projections (averaging against
-  `dim V_π · conj χ_π`, from Layer 6) and that they are the isotypic projectors."
 
 ## Tags
 
