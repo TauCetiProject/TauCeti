@@ -235,6 +235,34 @@ theorem hasStrictFDerivAt_coe_sectionZeroChart_symm
   exact (hasStrictFDerivAt_coe_levelSetChart_symm hf hT hker hcoord).congr_of_eventuallyEq
     (coe_sectionZeroChart_symm_eventuallyEq hb he hf hT hker hz hcoord).symm
 
+/-- Away from the origin, the inverse section-zero chart is smooth wherever its image lies
+in the neighbourhood on which the implicit coordinate derivative remains invertible. -/
+theorem contDiffAt_coe_sectionZeroChart_symm_of_mem {m : ℕ∞ω}
+    (hf : HasStrictFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) T x)
+    (hT : T.range = ⊤) (hker : T.ker.ClosedComplemented) (hz : s x = 0)
+    {k : ↥T.ker} (hk : k ∈ (sectionZeroChart hf hT hker hz).target)
+    (hmem : ((sectionZeroChart hf hT hker hz).symm k : X) ∈
+      hf.implicitCoordSource hT hker)
+    {A : X →L[𝕜] F}
+    (hA : HasFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) A
+      ((sectionZeroChart hf hT hker hz).symm k : X))
+    (hs : ContDiffAt 𝕜 m (fun y ↦ (e ⟨b y, s y⟩).2)
+      ((sectionZeroChart hf hT hker hz).symm k : X)) :
+    ContDiffAt 𝕜 m (fun j ↦ ((sectionZeroChart hf hT hker hz).symm j : X)) k := by
+  have ht := hk
+  rw [sectionZeroChart_target] at ht
+  have hval := coe_sectionZeroChart_symm_apply hf hT hker hz hk
+  have hinverse := hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem
+    hT hker ht.1 (hval ▸ hmem) (hval ▸ hA) (hval ▸ hs)
+  have hslice : ContDiffAt 𝕜 m
+      (fun j : T.ker ↦ (hf.implicitToOpenPartialHomeomorphOfComplemented _ _ hT hker).symm
+        (0, j)) k := by
+    simpa only [Function.comp_def] using
+      hinverse.comp k (contDiffAt_const.prodMk contDiffAt_id)
+  apply hslice.congr_of_eventuallyEq
+  filter_upwards [(sectionZeroChart hf hT hker hz).open_target.mem_nhds hk] with j hj
+  exact coe_sectionZeroChart_symm_apply hf hT hker hz hj
+
 section Fredholm
 
 variable [CompleteSpace 𝕜]
