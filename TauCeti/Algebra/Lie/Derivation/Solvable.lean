@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Killing.Perfect
+import TauCeti.Algebra.Lie.Killing.Perfect
 public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.Lie.SemiDirect.Basic
 public import TauCeti.Algebra.Lie.Solvable.Derived
@@ -23,23 +23,6 @@ of `I` lying in the nilradical of `L`.
 These are the facts on derivation values used to refine a cofinite enveloping ideal into one
 stable under all lifted derivations, without assuming that the original ideal is stable, and to
 compare nilradicals along a flag of ideals between the nilradical and the radical.
-
-The proofs run in three steps.
-
-* *Solvable algebras.* Adjoining a derivation `D` as a one-dimensional abelian complement gives
-  the semidirect sum `L ⋊ K`, solvable when `L` is. The value `D x` is the bracket of the
-  adjoined generator with `x`, so it lies in the derived ideal, which is nilpotent by
-  `TauCeti.isNilpotent_derivedSeries_of_isSolvable`; its preimage in `L` is therefore a nilpotent
-  ideal containing every value of `D`.
-* *Brackets with the radical.* By the solvable case, applied to the radical `R` of `L` and to the
-  derivations of `R` induced by `ad x`, the nilradical of `R` is an ideal of `L`. It is nilpotent,
-  so it lies in the nilradical of `L`, and it contains every bracket `⁅x, r⁆` with `r ∈ R`.
-* *Arbitrary derivations.* Form the semidirect sum `E = L ⋊ K` again. The quotient of `E` by its
-  radical has nondegenerate Killing form by Cartan's criterion, so it is perfect
-  (`TauCeti.derivedSeries_one_eq_top_of_isKilling`). Since `L` contains the derived algebra of
-  `E`, it surjects onto that quotient, which carries the radical of `L` to a solvable ideal,
-  hence to zero: the radical of `L` lies in the radical of `E`. Now `D x` is a bracket in `E`
-  with an element of the radical of `E`, so the previous step for `E` applies.
 
 ## Main results
 
@@ -122,7 +105,10 @@ private theorem nilradical_le_restrict_of_forall (I : LieIdeal K L)
     { toFun := fun z ↦ ⟨(z : I), z, z.2, rfl⟩
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl
-      map_lie' := rfl }
+      map_lie' := fun {y z} ↦ Subtype.ext <|
+        (congrArg _ ((LieAlgebra.nilradical K I : LieSubalgebra K I).coe_bracket y z)).trans <|
+          ((I : LieSubalgebra K L).coe_bracket _ _).trans
+            ((N : LieSubalgebra K L).coe_bracket (⟨_, y, y.2, rfl⟩ : N) ⟨_, z, z.2, rfl⟩).symm }
   have hf : Function.Surjective f := by
     rintro ⟨_, z, hz, rfl⟩
     exact ⟨⟨z, hz⟩, rfl⟩
