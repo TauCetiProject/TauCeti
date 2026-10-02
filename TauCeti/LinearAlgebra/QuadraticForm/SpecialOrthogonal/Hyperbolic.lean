@@ -12,13 +12,15 @@ public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 # The special orthogonal group of the hyperbolic plane
 
 The hyperbolic plane `hyperbolicPlane R`, the form `x₀² - x₁²` on `Fin 2 → R`, factors as
-`(x₀ + x₁) (x₀ - x₁)`, so `![1, 1]` and `![1, -1]` span its two isotropic lines. For a unit `t`,
-the linear automorphism scaling `![1, 1]` by `t` and `![1, -1]` by `t⁻¹` is a proper isometry: it
-is the diagonal torus `diag(t, t⁻¹)` of the `xy`-model written in the diagonal coordinates.
+`(x₀ + x₁) (x₀ - x₁)`, so `![1, 1]` and `![1, -1]` span two distinguished isotropic rank-one
+submodules (over a field, these are its only two isotropic lines). For a unit `t`, the linear
+automorphism scaling `![1, 1]` by `t` and `![1, -1]` by `t⁻¹` is a proper isometry: it is the
+diagonal torus `diag(t, t⁻¹)` of the `xy`-model written in the diagonal coordinates.
 
 These are all the proper isometries, so the torus is an isomorphism `Rˣ ≃* SO(H)` over any
-commutative ring in which two is invertible: an isometry sends the isotropic vectors to isotropic
-vectors with polar pairing `4`, and determinant `1` then forces it to preserve both isotropic lines.
+commutative ring in which two is invertible: an isometry sends `![1, 1]` and `![1, -1]` to isotropic
+vectors with polar pairing `4`, and determinant `1` then forces it to preserve both of these
+distinguished submodules.
 
 ## Main definitions
 
