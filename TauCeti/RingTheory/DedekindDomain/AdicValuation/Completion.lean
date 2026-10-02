@@ -17,6 +17,7 @@ The ring of integers `𝒪_v` of the completion `K_v` of the fraction field of a
 at a height-one prime `v` is a local ring, and this file collects what it is: its maximal ideal
 contracts to `v` itself, its ideal filtration is the valuation filtration `K_v` induces on it, and
 in the subspace topology it is a complete `𝔪`-adic — hence Henselian — local ring.
+An algebra action on `R` restricts to this valuation ring through its canonical `R`-algebra action.
 
 Everything here concerns one completion. The comparison of two completions along an extension
 `w ∣ v` is `TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension`.
@@ -84,6 +85,25 @@ The source states the contraction with `Ideal.comap` of an `algebraMap`; Mathlib
 public section
 
 open WithZero
+
+namespace TauCeti
+
+variable {R K S : Type*} [CommRing R] [IsDedekindDomain R] [Field K]
+  [Algebra R K] [IsFractionRing R K] [CommSemiring S] [Algebra S R]
+  (v : IsDedekindDomain.HeightOneSpectrum R)
+
+/-- An algebra action on the affine model acts on the integers of its adic completion. -/
+-- Keep the canonical natural- and integer-algebra actions ahead of this inherited action.
+noncomputable instance (priority := 50) instAlgebraAdicCompletionIntegers :
+    Algebra S (v.adicCompletionIntegers K) :=
+  Algebra.compHom _ (algebraMap S R)
+
+/-- The inherited algebra action on the adic valuation ring factors through the affine model. -/
+instance instIsScalarTowerAdicCompletionIntegers :
+    IsScalarTower S R (v.adicCompletionIntegers K) :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
+end TauCeti
 
 namespace IsDedekindDomain.HeightOneSpectrum
 

@@ -21,7 +21,7 @@ in the adic completions appearing in finite adeles.
 
 The field comparison uses Mathlib's `HeightOneSpectrum.adicCompletion.equiv` and
 `adicCompletion.uniformEquiv`; the residue comparison uses
-`IsLocalRing.ResidueField.mapEquiv`. No finiteness assumption on the residue fields is needed.
+`IsLocalRing.ResidueField.mapAlgEquiv`. No finiteness assumption on the residue fields is needed.
 
 ## References
 
@@ -51,16 +51,23 @@ private theorem completionAdicRingEquiv_embedding (x : F) :
     completionAdicRingEquiv k F p ((adic k F p).completionEmbedding x) =
       algebraMap F (p.adicCompletion F) x := by
   rw [completionEmbedding_apply]
+  -- The completion carrier depends on the valuation, so rewriting `valuation_adic`
+  -- would also transport its embedding and ring structure. Both wrappers reduce to
+  -- the same valuation completion; `change` makes that dependent reduction explicit.
   change (HeightOneSpectrum.adicCompletion.equiv F p).symm
     (WithVal.toVal (p.valuation F) x : (p.valuation F).Completion) = _
   rw [RingEquiv.symm_apply_eq]
   simp [HeightOneSpectrum.algebraMap_adicCompletion]
 
 /-- The completion of the adic place is the affine-model adic completion, over the constants. -/
-def completionAdicEquiv : (adic k F p).Completion ≃ₐ[k] p.adicCompletion F :=
-  AlgEquiv.ofRingEquiv (f := completionAdicRingEquiv k F p) fun c ↦ by
+def completionAdicEquiv : (adic k F p).Completion ≃A[k] p.adicCompletion F where
+  toAlgEquiv := AlgEquiv.ofRingEquiv (f := completionAdicRingEquiv k F p) fun c ↦ by
     rw [← (adic k F p).completionEmbedding.commutes,
       completionAdicRingEquiv_embedding, ← IsScalarTower.algebraMap_apply k F _]
+  continuous_toFun :=
+    (HeightOneSpectrum.adicCompletion.uniformEquiv F p).symm.uniformContinuous.continuous
+  continuous_invFun :=
+    (HeightOneSpectrum.adicCompletion.uniformEquiv F p).uniformContinuous.continuous
 
 /-- The comparison carries the intrinsic field embedding to the adic field embedding. -/
 @[simp]
@@ -68,16 +75,6 @@ theorem completionAdicEquiv_completionEmbedding (x : F) :
     completionAdicEquiv k F p ((adic k F p).completionEmbedding x) =
       algebraMap F (p.adicCompletion F) x :=
   completionAdicRingEquiv_embedding k F p x
-
-/-- The comparison is uniformly continuous for the valuation uniformities. -/
-theorem uniformContinuous_completionAdicEquiv :
-    UniformContinuous (completionAdicEquiv k F p) :=
-  (HeightOneSpectrum.adicCompletion.uniformEquiv F p).symm.uniformContinuous
-
-/-- The inverse comparison is uniformly continuous for the valuation uniformities. -/
-theorem uniformContinuous_completionAdicEquiv_symm :
-    UniformContinuous (completionAdicEquiv k F p).symm :=
-  (HeightOneSpectrum.adicCompletion.uniformEquiv F p).uniformContinuous
 
 /-- The comparison preserves the normalized valuation on completed functions. -/
 @[simp]
@@ -90,15 +87,28 @@ theorem valuation_completionAdicEquiv (x : (adic k F p).Completion) :
       (adic k F p).completionPlace.valuation_surjective)
   rw [completionPlace_valuation]
   exact congrFun ((adic k F p).denseRange_completionEmbedding.equalizer
-    (h₁.comp (uniformContinuous_completionAdicEquiv k F p).continuous) h₂
+    (h₁.comp (completionAdicEquiv k F p).continuous) h₂
     (funext fun y ↦ by
       simp [HeightOneSpectrum.algebraMap_adicCompletion])) x
 
+/-- The comparison preserves uniformizers for the normalized completed valuations. -/
+@[simp]
+theorem isUniformizer_completionAdicEquiv_iff (x : (adic k F p).Completion) :
+    (Valued.v : Valuation (p.adicCompletion F) ℤᵐ⁰).IsUniformizer
+        (completionAdicEquiv k F p x) ↔
+      (adic k F p).completionPlace.valuation.IsUniformizer x := by
+  simp only [Valuation.IsUniformizer.iff,
+    Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
+      (p.valuedAdicCompletion_surjective F),
+    Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
+      (adic k F p).completionPlace.valuation_surjective,
+    valuation_completionAdicEquiv]
+
 /-- The comparison identifies a filtration step with its valuation bound in the adic field.
 The multiplicative bound also handles zero and negative filtration indices. -/
-theorem completionAdicEquiv_mem_filtration_iff (a : ℤ) (x : (adic k F p).Completion) :
-    Valued.v (completionAdicEquiv k F p x) ≤ WithZero.exp (-a) ↔
-      x ∈ (adic k F p).completionPlace.filtration a := by
+theorem mem_filtration_iff_valuation_completionAdicEquiv_le (a : ℤ) (x : (adic k F p).Completion) :
+    x ∈ (adic k F p).completionPlace.filtration a ↔
+      Valued.v (completionAdicEquiv k F p x) ≤ WithZero.exp (-a) := by
   rw [valuation_completionAdicEquiv, mem_filtration_iff]
 
 /-- The field comparison identifies the two rings of integers. -/
@@ -108,18 +118,21 @@ theorem completionAdicEquiv_mem_integers_iff (x : (adic k F p).Completion) :
   rw [HeightOneSpectrum.mem_adicCompletionIntegers, valuation_completionAdicEquiv,
     mem_integers_iff]
 
-/-- The restriction of the completion comparison to the two valuation rings. -/
+/-- The restriction of the completion comparison to the two valuation rings, over the constants. -/
 def completionIntegersAdicEquiv :
-    (adic k F p).completionPlace.integers ≃+* p.adicCompletionIntegers F where
-  toFun x := ⟨completionAdicEquiv k F p x,
-    (completionAdicEquiv_mem_integers_iff k F p x).mpr x.2⟩
-  invFun y := ⟨(completionAdicEquiv k F p).symm y, by
-    apply (completionAdicEquiv_mem_integers_iff k F p _).mp
-    simp⟩
-  left_inv x := Subtype.ext (by simp)
-  right_inv y := Subtype.ext (by simp)
-  map_mul' x y := Subtype.ext (map_mul (completionAdicEquiv k F p) _ _)
-  map_add' x y := Subtype.ext (map_add (completionAdicEquiv k F p) _ _)
+    (adic k F p).completionPlace.integers ≃ₐ[k] p.adicCompletionIntegers F :=
+  AlgEquiv.ofRingEquiv
+    (f := (completionAdicEquiv k F p).toAlgEquiv.toRingEquiv.restrict
+      (adic k F p).completionPlace.integers (p.adicCompletionIntegers F)
+      fun x ↦ (completionAdicEquiv_mem_integers_iff k F p x).symm) fun c ↦ by
+    apply Subtype.ext
+    simp only [RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv,
+      coe_algebraMap_constants]
+    rw [(completionAdicEquiv k F p).toAlgEquiv.commutes,
+      IsScalarTower.algebraMap_apply k R (p.adicCompletionIntegers F),
+      HeightOneSpectrum.algebraMap_adicCompletionIntegers_apply]
+    simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      ← IsScalarTower.algebraMap_apply k R F]
 
 /-- The valuation-ring comparison is the restriction of the field comparison. -/
 @[simp]
@@ -137,11 +150,8 @@ theorem completionIntegersAdicEquiv_completionIntegersEmbedding (r : R) :
   apply Subtype.ext
   rw [completionIntegersAdicEquiv_apply, completionIntegersEmbedding_apply,
     ← ValuationSubring.algebraMap_apply, ← IsScalarTower.algebraMap_apply R _ F,
-    completionAdicEquiv_completionEmbedding,
-    ← IsScalarTower.algebraMap_apply R F (p.adicCompletion F),
-    HeightOneSpectrum.algebraMap_adicCompletionIntegers_apply,
-    HeightOneSpectrum.algebraMap_adicCompletion]
-  rfl
+    completionAdicEquiv_completionEmbedding]
+  exact p.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (K := F) r
 
 /-- The comparison identifies the maximal ideals of the completed valuation rings. -/
 theorem completionIntegersAdicEquiv_mem_maximalIdeal_iff
@@ -152,9 +162,9 @@ theorem completionIntegersAdicEquiv_mem_maximalIdeal_iff
 
 /-- The completed residue fields agree under the valuation-ring comparison. -/
 def completionResidueFieldAdicEquiv :
-    (adic k F p).completionPlace.ResidueField ≃+*
+    (adic k F p).completionPlace.ResidueField ≃ₐ[k]
       IsLocalRing.ResidueField (p.adicCompletionIntegers F) :=
-  IsLocalRing.ResidueField.mapEquiv (completionIntegersAdicEquiv k F p)
+  IsLocalRing.ResidueField.mapAlgEquiv (completionIntegersAdicEquiv k F p)
 
 /-- The residue-field comparison commutes with reduction in the completed valuation rings. -/
 @[simp]
@@ -164,18 +174,21 @@ theorem completionResidueFieldAdicEquiv_apply_residue
         (IsLocalRing.residue (adic k F p).completionPlace.integers x) =
       IsLocalRing.residue (p.adicCompletionIntegers F)
         (completionIntegersAdicEquiv k F p x) :=
-  IsLocalRing.ResidueField.map_residue _ _
+  IsLocalRing.ResidueField.mapAlgEquiv_residue _ _
 
-/-- The intrinsic residue comparisons agree with the affine-model residue comparison.
-In particular the comparison preserves the constants coming from `R ⧸ p`. -/
-theorem completionResidueFieldAdicEquiv_comp_adicResidueFieldEquiv :
-    ((adicResidueFieldEquiv k F p).toRingEquiv.trans
-      ((adic k F p).residueFieldEquivCompletion.toRingEquiv.trans
+/-- Composing `adicResidueFieldEquiv`, `residueFieldEquivCompletion`, and
+`completionResidueFieldAdicEquiv` gives `residueFieldEquivAdicCompletionIntegers`,
+viewed as an equivalence over the constants. -/
+theorem adicResidueFieldEquiv_trans_trans_eq_residueFieldEquivAdicCompletionIntegers :
+    ((adicResidueFieldEquiv k F p).trans
+      ((adic k F p).residueFieldEquivCompletion.trans
         (completionResidueFieldAdicEquiv k F p))) =
-      p.residueFieldEquivAdicCompletionIntegers (K := F) := by
+      AlgEquiv.ofRingEquiv (f := p.residueFieldEquivAdicCompletionIntegers (K := F))
+        (fun c ↦ p.residueFieldEquivAdicCompletionIntegers_apply_mk (K := F)
+          (algebraMap k R c)) := by
   ext x
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp only [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
+  simp only [AlgEquiv.trans_apply,
     adicResidueFieldEquiv_mk, adicResidueHom_apply,
     residueFieldEquivCompletion_apply_residue, completionResidueFieldAdicEquiv_apply_residue,
     completionIntegersAdicEquiv_completionIntegersEmbedding]
