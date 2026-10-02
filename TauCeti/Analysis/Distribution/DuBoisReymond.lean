@@ -191,12 +191,16 @@ theorem _root_.ContinuousOn.exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero
 /-- For a nonnegative bump `β` of integral one vanishing outside `(-r, r)` and `x ≤ y`, the
 difference `ψ t = B (t - x) - B (t - y)` of translates of the primitive `B` of `β` is a
 nonnegative smooth function supported in `[x - r, y + r]` with `ψ' t = β (t - x) - β (t - y)`. -/
-private lemma exists_nonneg_deriv_eq_sub_bump {β : ℝ → ℝ} {r : ℝ} (hr : 0 < r)
+private lemma exists_nonneg_deriv_eq_sub_bump {β : ℝ → ℝ} {r : ℝ}
     (hβ : ContDiff ℝ ∞ β)
     (hβnn : ∀ t, 0 ≤ β t) (hβ0 : ∀ t, r ≤ |t| → β t = 0) (hβ1 : ∫ t, β t = 1) {x y : ℝ}
     (hxy : x ≤ y) :
     ∃ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ ∧ (∀ t, 0 ≤ ψ t) ∧ tsupport ψ ⊆ Icc (x - r) (y + r) ∧
       ∀ t, deriv ψ t = β (t - x) - β (t - y) := by
+  -- `0 < r`, since otherwise `β` vanishes identically, contradicting `∫ β = 1`.
+  have hr : 0 < r := by
+    by_contra! hr
+    simp [fun t ↦ hβ0 t (hr.trans (abs_nonneg t))] at hβ1
   -- The primitive `B` of `β`: monotone, `0` on `(-∞, -r]` and `1` on `[r, ∞)`.
   set B : ℝ → ℝ := fun t ↦ ∫ s in (-r)..t, β s with hB_def
   have hBderiv : ∀ t, HasDerivAt B (β t) t := fun t ↦
@@ -237,11 +241,15 @@ private lemma exists_nonneg_deriv_eq_sub_bump {β : ℝ → ℝ} {r : ℝ} (hr :
 /-- For a nonnegative bump `β` of integral one vanishing outside `(-r, r)`, and `f` continuous on
 an open set containing `[z - r, z + r]` and within `η` of `f z` on `(z - r, z + r)`, the average
 `∫ t, β (t - z) * f t` is within `η` of `f z`. -/
-private lemma integral_bump_mul_mem_Icc {β f : ℝ → ℝ} {r z η : ℝ} {U : Set ℝ} (hr : 0 < r)
+private lemma integral_bump_mul_mem_Icc {β f : ℝ → ℝ} {r z η : ℝ} {U : Set ℝ}
     (hβ : Continuous β) (hβnn : ∀ t, 0 ≤ β t) (hβ0 : ∀ t, r ≤ |t| → β t = 0)
     (hβ1 : ∫ t, β t = 1) (hf : ContinuousOn f U) (hU : IsOpen U) (hzU : Icc (z - r) (z + r) ⊆ U)
     (hfz : ∀ t, |t - z| < r → |f t - f z| < η) :
     Integrable (fun t ↦ β (t - z) * f t) ∧ ∫ t, β (t - z) * f t ∈ Icc (f z - η) (f z + η) := by
+  -- `0 < r`, since otherwise `β` vanishes identically, contradicting `∫ β = 1`.
+  have hr : 0 < r := by
+    by_contra! hr
+    simp [fun t ↦ hβ0 t (hr.trans (abs_nonneg t))] at hβ1
   have hts : tsupport (fun t ↦ β (t - z)) ⊆ Icc (z - r) (z + r) := by
     refine closure_minimal (fun t ht ↦ ?_) isClosed_Icc
     by_contra h'
@@ -316,12 +324,12 @@ theorem _root_.ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos {a b : ℝ} 
     have : t ∈ Function.support β := hne
     rw [hβ_def, β₀.support_normed_eq, Metric.mem_ball, Real.dist_eq, sub_zero] at this
     exact (this.trans_le ht).false
-  obtain ⟨ψ, hψ, hψnn, hψs, hψd⟩ := exists_nonneg_deriv_eq_sub_bump hr β₀.contDiff_normed
+  obtain ⟨ψ, hψ, hψnn, hψs, hψd⟩ := exists_nonneg_deriv_eq_sub_bump β₀.contDiff_normed
     (β₀.nonneg_normed) hβ0 β₀.integral_normed hxy
-  obtain ⟨hIx, hx1, -⟩ := integral_bump_mul_mem_Icc hr β₀.continuous_normed β₀.nonneg_normed hβ0
+  obtain ⟨hIx, hx1, -⟩ := integral_bump_mul_mem_Icc β₀.continuous_normed β₀.nonneg_normed hβ0
     β₀.integral_normed hf isOpen_Ioo
     ((Icc_subset_Icc (by linarith) (by linarith)).trans hxsub) fun t ht ↦ hfx t (by linarith)
-  obtain ⟨hIy, -, hy2⟩ := integral_bump_mul_mem_Icc hr β₀.continuous_normed β₀.nonneg_normed hβ0
+  obtain ⟨hIy, -, hy2⟩ := integral_bump_mul_mem_Icc β₀.continuous_normed β₀.nonneg_normed hβ0
     β₀.integral_normed hf isOpen_Ioo
     ((Icc_subset_Icc (by linarith) (by linarith)).trans hysub) fun t ht ↦ hfy t (by linarith)
   have h0 := h ψ hψ (hψs.trans (Icc_subset_Ioo
