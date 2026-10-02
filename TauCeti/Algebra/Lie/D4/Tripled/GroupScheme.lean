@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.D4.Tripled.AdmissibleLattice
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.RootGenerator
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
@@ -54,6 +55,9 @@ transfer to that pinned group only along such an identification.
 * `TauCeti.D4Tripled.points`: its matrix-valued points over a commutative ring.
 * `TauCeti.D4Tripled.rootSubgroupPoints` and `TauCeti.D4Tripled.weightTorusPoints`: its
   numbered root subgroups and weight torus on matrix-valued points.
+* `TauCeti.D4Tripled.coe_rootSubgroupPoints_inl` and
+  `TauCeti.D4Tripled.coe_rootSubgroupPoints_inr`: a simple-root point of parameter `u` is the
+  matrix `1 + uEᵢ` or `1 + uFᵢ`.
 * `TauCeti.D4Tripled.weightTorus_conj_rootSubgroup` and
   `TauCeti.D4Tripled.weightTorusPoints_conj_rootSubgroupPoints`: the pinning equation on scheme
   points and on matrix-valued points.
@@ -269,6 +273,40 @@ theorem coe_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Type v) [CommRing A]
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) :=
   TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints
     _ _ _ _ _ _ _ _ k A u
+
+/-- A positive simple-root point has matrix `1 + uEᵢ` in the tripled weight basis. -/
+theorem coe_rootSubgroupPoints_inl (i : Fin 4) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inl i) A u : _root_.Matrix.GeneralLinearGroup (Fin 24) A) :
+        _root_.Matrix (Fin 24) (Fin 24) A) =
+      1 + Multiplicative.toAdd u • (raisingMatrix i).map (Int.cast : ℤ → A) := by
+  rw [coe_rootSubgroupPoints]
+  simpa only [MulEquiv.apply_symm_apply] using
+    kostantRootSubgroupMatrix_eq_one_add_smul
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice (.inl i) (isNilpotent_rep_serreRootGenerator (.inl i))
+      latticeBasis (raisingMatrix i)
+      (rep_def ▸ weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inl i))
+      (rep_serreRootGenerator_inl_latticeBasis_eq_sum i)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
+
+/-- A negative simple-root point has matrix `1 + uFᵢ` in the tripled weight basis. -/
+theorem coe_rootSubgroupPoints_inr (i : Fin 4) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inr i) A u : _root_.Matrix.GeneralLinearGroup (Fin 24) A) :
+        _root_.Matrix (Fin 24) (Fin 24) A) =
+      1 + Multiplicative.toAdd u • (loweringMatrix i).map (Int.cast : ℤ → A) := by
+  rw [coe_rootSubgroupPoints]
+  simpa only [MulEquiv.apply_symm_apply] using
+    kostantRootSubgroupMatrix_eq_one_add_smul
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice (.inr i) (isNilpotent_rep_serreRootGenerator (.inr i))
+      latticeBasis (loweringMatrix i)
+      (rep_def ▸ weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inr i))
+      (rep_serreRootGenerator_inr_latticeBasis_eq_sum i)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
 
 /-- The split weight torus on matrix-valued points of the tripled type-`D₄` carrier. -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] :
