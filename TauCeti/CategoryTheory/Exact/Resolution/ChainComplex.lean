@@ -226,7 +226,24 @@ noncomputable def termMapIso : ∀ {X : C} (r : FiniteResolution E P X) (n : ℕ
   | _, .step (Q := Q) _ _ _ _ _ _, 0 => Iso.refl (F.obj Q)
   | _, .step _ _ _ _ _ r, n + 1 => termMapIso r n
 
+@[simp] theorem termMapIso_base_zero {X : C} (hX : P X) :
+    termMapIso hF hPP' (base (E := E) hX) 0 = Iso.refl (F.obj X) := (rfl)
+
+@[simp] theorem termMapIso_base_succ {X : C} (hX : P X) (n : ℕ) :
+    termMapIso hF hPP' (base (E := E) hX) (n + 1) = F.mapZeroObject.symm := (rfl)
+
+@[simp] theorem termMapIso_step_zero {K Q X : C} (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X)
+    (zero : i ≫ p = 0) (hp : E.Conflation (ShortComplex.mk i p zero))
+    (r : FiniteResolution E P K) :
+    termMapIso hF hPP' (step hQ i p zero hp r) 0 = Iso.refl (F.obj Q) := (rfl)
+
+@[simp] theorem termMapIso_step_succ {K Q X : C} (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X)
+    (zero : i ≫ p = 0) (hp : E.Conflation (ShortComplex.mk i p zero))
+    (r : FiniteResolution E P K) (n : ℕ) :
+    termMapIso hF hPP' (step hQ i p zero hp r) (n + 1) = termMapIso hF hPP' r n := (rfl)
+
 /-- The augmentation of the image of a resolution is the image of its augmentation. -/
+@[simp]
 theorem aug_map {X : C} (r : FiniteResolution E P X) :
     (r.map hF hPP').aug = (termMapIso hF hPP' r 0).hom ≫ F.map r.aug := by
   -- `dsimp only [map]` unfolds the image of a constructor, which `simp [map_base]` cannot do
@@ -234,6 +251,7 @@ theorem aug_map {X : C} (r : FiniteResolution E P X) :
   cases r <;> dsimp only [map] <;> simp [termMapIso]
 
 /-- The differentials of the image of a resolution are the images of its differentials. -/
+@[simp]
 theorem d_map {X : C} (r : FiniteResolution E P X) (n : ℕ) :
     (r.map hF hPP').d n =
       (termMapIso hF hPP' r (n + 1)).hom ≫ F.map (r.d n) ≫ (termMapIso hF hPP' r n).inv := by
