@@ -41,7 +41,7 @@ of a finite-dimensional real normed algebra it is the germ of the Banach-algebra
 * `TauCeti.contDiffAt_lieLocalBCH_representative`: its representative is smooth at the origin.
 * `TauCeti.hasFDerivAt_lieLocalBCH_representative`: the first-order law
   `bch X Y = X + Y + o(‖(X, Y)‖)`.
-* `TauCeti.lieLocalBCH_map_lieMap`: naturality under smooth homomorphisms.
+* `TauCeti.map_lieLocalBCH`: naturality under smooth homomorphisms.
 
 ## References
 
@@ -201,12 +201,9 @@ theorem hasFDerivAt_lieLocalBCH_representative :
       (hasFDerivAt_prodMk_right (0 : 𝔤) (0 : 𝔤))).unique
       ((hasFDerivAt_id (0 : 𝔤)).congr_of_eventuallyEq hslice)
   convert hf using 1
-  refine ContinuousLinearMap.ext fun p ↦ ?_
-  have h1 := congrArg (fun L : 𝔤 →L[ℝ] 𝔤 ↦ L p.1) hleft
-  have h2 := congrArg (fun L : 𝔤 →L[ℝ] 𝔤 ↦ L p.2) hright
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
-    ContinuousLinearMap.inr_apply, ContinuousLinearMap.id_apply] at h1 h2
-  simpa [← map_add] using congrArg₂ (· + ·) h1.symm h2.symm
+  refine ContinuousLinearMap.prod_ext ?_ ?_
+  · rw [hleft]; ext1 X; simp [𝔤]
+  · rw [hright]; ext1 Y; simp [𝔤]
 
 end Group
 
@@ -217,22 +214,18 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
   [FiniteDimensional ℝ E'] [LieGroup I' ∞ G'] [T2Space G'] [BoundarylessManifold I' G']
 
-/-- The Lie map of a smooth homomorphism, applied in both coordinates, tends to the origin at the
-origin. -/
-theorem tendsto_prodMap_lieMap (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
-    Tendsto (Prod.map (lieMap φ) (lieMap φ))
-      (𝓝 ((0, 0) : LeftInvariantDerivation I G × LeftInvariantDerivation I G))
-      (𝓝 ((0, 0) : LeftInvariantDerivation I' G' × LeftInvariantDerivation I' G')) := by
-  have h := continuous_lieMap φ
-  simpa using (h.prodMap h).tendsto (0, 0)
-
 /-- **Naturality of the local Baker--Campbell--Hausdorff germ.** A smooth homomorphism carries
 the local BCH germ of its source to that of its target through its Lie map:
 `lieMap φ (bch X Y) = bch (lieMap φ X) (lieMap φ Y)` near the origin. -/
-theorem lieLocalBCH_map_lieMap (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+@[simp high]
+theorem map_lieLocalBCH (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
     (lieLocalBCH I G).map (lieMap φ) =
       (lieLocalBCH I' G').compTendsto (Prod.map (lieMap φ) (lieMap φ))
-        (tendsto_prodMap_lieMap φ) := by
+        (((continuous_lieMap φ).prodMap (continuous_lieMap φ)).tendsto' (0, 0) (0, 0)
+          (by simp)) := by
+  have hφ : Tendsto (Prod.map (lieMap φ) (lieMap φ))
+      (𝓝 ((0, 0) : LeftInvariantDerivation I G × LeftInvariantDerivation I G)) (𝓝 (0, 0)) :=
+    ((continuous_lieMap φ).prodMap (continuous_lieMap φ)).tendsto' (0, 0) (0, 0) (by simp)
   have hBCH := lieLocalBCH_tendsto (I := I) (G := G)
   have hBCH' := lieLocalBCH_tendsto (I := I') (G := G')
   have hexp := lieLocalBCH_map_lieExp (I := I) (G := G)
@@ -241,9 +234,9 @@ theorem lieLocalBCH_map_lieMap (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
   rw [lieLocalBCH_def, Germ.map_coe, Germ.coe_eq] at hexp hexp'
   rw [lieLocalBCH_def, lieLocalBCH_def, Germ.map_coe, Germ.coe_compTendsto, Germ.coe_eq]
   refine eventuallyEq_of_tendsto_of_lieExp_eventuallyEq ?_
-    (hBCH'.comp (tendsto_prodMap_lieMap φ)) ?_
+    (hBCH'.comp hφ) ?_
   · simpa using ((continuous_lieMap φ).tendsto 0).comp hBCH
-  · filter_upwards [hexp, (tendsto_prodMap_lieMap φ).eventually hexp'] with p hp hp'
+  · filter_upwards [hexp, hφ.eventually hexp'] with p hp hp'
     simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd] at hp hp' ⊢
     rw [← map_lieExp φ, hp, map_mul, map_lieExp, map_lieExp, hp']
 
