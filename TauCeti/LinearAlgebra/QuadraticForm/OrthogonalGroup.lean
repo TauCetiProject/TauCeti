@@ -415,7 +415,7 @@ theorem orthogonalDet_apply (g : TauCeti.QuadraticMap.orthogonalGroup Q) :
 of `orthogonalDet Q`. By contrast `specialOrthogonalGroup Q` is a subgroup of `M ≃ₗ[R] M`; the
 two are identified by `specialOrthogonalWithin_eq_subgroupOf` and
 `specialOrthogonalWithinEquiv`. -/
-noncomputable def specialOrthogonalWithin (Q : QuadraticMap R M N) :
+@[expose] public noncomputable def specialOrthogonalWithin (Q : QuadraticMap R M N) :
     Subgroup (TauCeti.QuadraticMap.orthogonalGroup Q) :=
   (orthogonalDet Q).ker
 
