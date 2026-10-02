@@ -42,7 +42,7 @@ scheme `S` the constant presheaf `R` would be replaced by the inverse image of `
   `(Ω_{X/R} ⟶ M) ≃ M.Derivation R`, with `AlgebraicGeometry.Scheme.relativeDifferentials_hom_ext`
   the corresponding uniqueness statement.
 
-* `TauCeti.AlgebraicGeometry.Scheme.Modules.Derivation.globalDerivation R A`: the global
+* `TauCeti.AlgebraicGeometry.globalDerivation R A`: the global
   component of a derivation on `Spec A`, viewed as an `R`-derivation of `A`.
 
 ## References
@@ -158,7 +158,7 @@ variable (A : CommRingCat.{u}) [Algebra R A]
 
 /-- The `R`-derivation `A → Γ(M, ⊤)` given by the global component of a derivation of
 `𝒪_{Spec A}`. -/
-def Scheme.Modules.Derivation.globalDerivation {M : (Spec A).Modules} (d : M.Derivation R) :
+def globalDerivation {M : (Spec A).Modules} (d : M.Derivation R) :
     Derivation R A Γ(M, ⊤) :=
   Derivation.mk'
     { toFun a := d.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) a)
@@ -174,9 +174,9 @@ def Scheme.Modules.Derivation.globalDerivation {M : (Spec A).Modules} (d : M.Der
 /-- Evaluating the global component of a sheaf derivation at `a : A` amounts to evaluating
 that derivation on the corresponding global function. -/
 @[simp]
-lemma Scheme.Modules.Derivation.globalDerivation_apply {M : (Spec A).Modules}
+lemma globalDerivation_apply {M : (Spec A).Modules}
     (d : M.Derivation R) (a : A) :
-    Scheme.Modules.Derivation.globalDerivation R A d a =
+    globalDerivation R A d a =
       d.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) a) :=
   (rfl)
 

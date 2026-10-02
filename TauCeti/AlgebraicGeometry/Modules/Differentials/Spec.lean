@@ -61,7 +61,6 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
-open Scheme.Modules.Derivation
 
 universe u
 
