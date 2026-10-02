@@ -107,12 +107,34 @@ abbrev _root_.SheafOfModules.dual
   (ihom M).obj (_root_.SheafOfModules.unit (ringCatSheaf R))
 
 /-- An isomorphism of sheaves induces an isomorphism of their duals. -/
+@[expose]
 def _root_.SheafOfModules.dualIso {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
     (e : M ≅ N) : M.dual ≅ N.dual := by
   have hpre : IsIso (pre e.inv) := by
     unfold pre
     infer_instance
   exact asIso ((pre e.inv).app (_root_.SheafOfModules.unit (ringCatSheaf R)))
+
+/-- The forward map on duals induced by an isomorphism is precomposition with its inverse. -/
+@[simp]
+theorem _root_.SheafOfModules.dualIso_hom
+    {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ N) :
+    (_root_.SheafOfModules.dualIso e).hom =
+      (pre e.inv).app (_root_.SheafOfModules.unit (ringCatSheaf R)) := by
+  simp only [_root_.SheafOfModules.dualIso, asIso_hom]
+
+/-- The inverse map on duals induced by an isomorphism is precomposition with its forward map. -/
+@[simp]
+theorem _root_.SheafOfModules.dualIso_inv
+    {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ N) :
+    (_root_.SheafOfModules.dualIso e).inv =
+      (pre e.hom).app (_root_.SheafOfModules.unit (ringCatSheaf R)) := by
+  have hpre : IsIso (pre e.inv) := by
+    unfold pre
+    infer_instance
+  rw [_root_.SheafOfModules.dualIso, asIso_inv]
+  apply IsIso.inv_eq_of_hom_inv_id
+  rw [← NatTrans.comp_app, ← pre_map, e.hom_inv_id, pre_id, NatTrans.id_app]
 
 end SheafOfModules
 
