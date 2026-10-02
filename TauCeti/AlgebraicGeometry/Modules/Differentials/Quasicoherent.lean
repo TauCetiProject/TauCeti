@@ -7,15 +7,20 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Spec
+public import TauCeti.AlgebraicGeometry.Modules.Tilde.FinitePresentation
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import Mathlib.RingTheory.Extension.Cotangent.Basic
 public import Mathlib.CategoryTheory.Sites.Spaces
 
 /-!
-# Quasi-coherence of relative differentials
+# Quasi-coherence and finite presentation of relative differentials
 
 The relative differentials of any scheme over a commutative ring are quasi-coherent. On an
 affine open, the restriction comparison identifies them with the sheaf associated to the module
 of Kähler differentials of its coordinate ring. The resulting local presentations give
-quasi-coherence on the whole scheme.
+quasi-coherence on the whole scheme. If the structure morphism is locally of finite
+presentation, the same comparisons give finite presentation of the differential sheaf. No
+Noetherian, properness, or smoothness assumption is needed.
 
 ## References
 
@@ -35,7 +40,10 @@ noncomputable section
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
 
-private def affinePresentation (U : X.affineOpens) :
+private def affinePresentation (U : X.affineOpens)
+    (P : letI : Algebra R Γ(X, U) :=
+      ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+      (tilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R])).Presentation) :
     ((X.relativeDifferentials R).over U.val).Presentation := by
   letI : Algebra R Γ(X, U) :=
     ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
@@ -44,8 +52,6 @@ private def affinePresentation (U : X.affineOpens) :
     IsAffineOpen.isOpenImmersion_fromSpec U.property
   let e := relativeDifferentialsRestrictIso R U.property.fromSpec ≪≫
     relativeDifferentialsSpecIso R Γ(X, U)
-  let P := presentationTilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R])
-    .univ (by simp) _ (Submodule.span_eq _)
   -- Supplying the isomorphism witnesses explicitly avoids instance search across the two
   -- presentations of the scheme's sheaf of rings (`TopCat.Sheaf` and `Sheaf`).
   let Q := @SheafOfModules.Presentation.ofIsIso.{u, u, u}
@@ -74,7 +80,65 @@ instance isQuasicoherent_relativeDifferentials : (X.relativeDifferentials R).IsQ
       X := fun U ↦ U.val
       coversTop := (Opens.coversTop_iff X (fun U : X.affineOpens ↦ U.val)).mpr
         (iSup_affineOpens_eq_top X)
-      presentation := affinePresentation R X }
+      presentation U :=
+        letI : Algebra R Γ(X, U) :=
+          ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+        affinePresentation R X U (presentationTilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R])
+          .univ (by simp) _ (Submodule.span_eq _)) }
+
+private theorem isFinite_affinePresentation (U : X.affineOpens)
+    (P : letI : Algebra R Γ(X, U) :=
+      ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+      (tilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R])).Presentation) [P.IsFinite] :
+    (affinePresentation R X U P).IsFinite := by
+  dsimp only [affinePresentation]
+  apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
+  apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
+  apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
+  unfold Scheme.Modules.presentationRestrict
+  apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
+  apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
+
+private theorem exists_finiteAffinePresentation
+    [LocallyOfFinitePresentation (X ↘ Spec (.of R))] (U : X.affineOpens) :
+    ∃ P : ((X.relativeDifferentials R).over U.val).Presentation, P.IsFinite := by
+  let : Algebra R Γ(X, U) :=
+    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+  let : U.property.fromSpec.IsOver (Spec (.of R)) := isOver_fromSpec R X U
+  let : IsOpenImmersion U.property.fromSpec :=
+    IsAffineOpen.isOpenImmersion_fromSpec U.property
+  have hfp : LocallyOfFinitePresentation
+      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U)))) := by
+    have hc : LocallyOfFinitePresentation (U.property.fromSpec ≫ X ↘ Spec (.of R)) :=
+      inferInstance
+    rw [HomIsOver.comp_over (f := U.property.fromSpec) (S := Spec (.of R))] at hc
+    exact hc
+  have : Algebra.FinitePresentation R Γ(X, U) :=
+    RingHom.finitePresentation_algebraMap.mp
+      ((LocallyOfFinitePresentation.SpecMap_iff _).mp hfp)
+  obtain ⟨s, hs, t, ht⟩ := Module.FinitePresentation.out
+    (R := Γ(X, U)) (M := Ω[Γ(X, U)⁄R])
+  let P := presentationTilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R]) s hs t ht
+  have : P.IsFinite := isFinite_presentationTilde _ _ hs _ ht
+  exact ⟨affinePresentation R X U P, isFinite_affinePresentation R X U P⟩
+
+/-- Relative differentials of a scheme locally of finite presentation over `Spec R` are
+finitely presented as a sheaf of modules. -/
+instance isFinitePresentation_relativeDifferentials
+    [LocallyOfFinitePresentation (X ↘ Spec (.of R))] :
+    (X.relativeDifferentials R).IsFinitePresentation := by
+  let q : (X.relativeDifferentials R).QuasicoherentData :=
+    { I := X.affineOpens
+      X := fun U ↦ U.val
+      coversTop := (Opens.coversTop_iff X (fun U : X.affineOpens ↦ U.val)).mpr
+        (iSup_affineOpens_eq_top X)
+      presentation U := (exists_finiteAffinePresentation R X U).choose }
+  have : q.IsFinitePresentation := by
+    refine { isFinite_presentation := ?_ }
+    intro U
+    exact (exists_finiteAffinePresentation R X U).choose_spec
+  exact SheafOfModules.IsFinitePresentation.mk (M := X.relativeDifferentials R)
+    ⟨q, inferInstance⟩
 
 end
 
