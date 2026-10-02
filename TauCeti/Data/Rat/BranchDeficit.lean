@@ -43,9 +43,9 @@ comes closer, and there the deficit `1 - 1/a - 1/b - 1/c` is the hyperbolic trip
 
 * `TauCeti.one_div_forty_two_le_hyperbolic_deficit`: a positive deficit is at least `1/42`.
 * `TauCeti.hyperbolic_deficit_two_three_seven`: the genus-zero data `(2, 3, 7)` attains it.
-* `TauCeti.half_le_one_sub_one_div` and `TauCeti.one_sub_one_div_le_one`: the contribution of one
+* `TauCeti.half_le_one_sub_one_div` and `Nat.one_sub_one_div_le_one`: the contribution of one
   branch point, with the sums `TauCeti.card_div_two_le_sum_one_sub_one_div`,
-  `TauCeti.sum_one_sub_one_div_le_card` and `TauCeti.sum_one_sub_one_div_eq_card_div_two`.
+  `Multiset.sum_one_sub_one_div_le_card` and `TauCeti.sum_one_sub_one_div_eq_card_div_two`.
 
 ## Reference
 
@@ -53,6 +53,22 @@ H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Exercise 
 -/
 
 public section
+
+/-- The contribution `1 - 1/n` of a branch point is at most `1`. -/
+theorem Nat.one_sub_one_div_le_one (n : ℕ) : 1 - 1 / (n : ℚ) ≤ 1 := by
+  have hnonneg : (0 : ℚ) ≤ 1 / n := by positivity
+  linarith
+
+/-- The total contribution of the branch points is at most their number. -/
+theorem Multiset.sum_one_sub_one_div_le_card (e : Multiset ℕ) :
+    (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum ≤ e.card := by
+  have hcard : (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).card = e.card := Multiset.card_map _ _
+  have hhigh : ∀ x ∈ e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ), x ≤ 1 := by
+    intro x hx
+    obtain ⟨n, hn, rfl⟩ := Multiset.mem_map.mp hx
+    exact Nat.one_sub_one_div_le_one n
+  have := Multiset.sum_le_card_nsmul _ 1 hhigh
+  rwa [hcard, nsmul_eq_mul, mul_one] at this
 
 namespace TauCeti
 
@@ -63,11 +79,6 @@ theorem half_le_one_sub_one_div {n : ℕ} (hn : 2 ≤ n) : (1 : ℚ) / 2 ≤ 1 -
   have hn2 : (2 : ℚ) ≤ n := by exact_mod_cast hn
   have hle : (1 : ℚ) / n ≤ 1 / 2 := by
     apply one_div_le_one_div_of_le <;> linarith
-  linarith
-
-/-- The contribution `1 - 1/n` of a branch point is at most `1`. -/
-theorem one_sub_one_div_le_one (n : ℕ) : 1 - 1 / (n : ℚ) ≤ 1 := by
-  have hnonneg : (0 : ℚ) ≤ 1 / n := by positivity
   linarith
 
 /-- Half the number of branch points is at most their total contribution. -/
@@ -81,17 +92,6 @@ theorem card_div_two_le_sum_one_sub_one_div (he : ∀ n ∈ e, 2 ≤ n) :
   have := Multiset.card_nsmul_le_sum hlow
   rw [hcard, nsmul_eq_mul] at this
   linarith
-
-/-- The total contribution of the branch points is at most their number. -/
-theorem sum_one_sub_one_div_le_card (e : Multiset ℕ) :
-    (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum ≤ e.card := by
-  have hcard : (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).card = e.card := Multiset.card_map _ _
-  have hhigh : ∀ x ∈ e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ), x ≤ 1 := by
-    intro x hx
-    obtain ⟨n, hn, rfl⟩ := Multiset.mem_map.mp hx
-    exact one_sub_one_div_le_one n
-  have := Multiset.sum_le_card_nsmul _ 1 hhigh
-  rwa [hcard, nsmul_eq_mul, mul_one] at this
 
 /-- If every index is two, the total contribution of the branch points is half their number: this
 is the boundary case, where four branch points in genus zero give deficit zero. -/
@@ -117,7 +117,7 @@ theorem one_div_forty_two_le_hyperbolic_deficit {γ : ℕ} (he : ∀ n ∈ e, 2 
     (hpos : 0 < 2 * (γ : ℚ) - 2 + (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum) :
     (1 : ℚ) / 42 ≤ 2 * (γ : ℚ) - 2 + (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum := by
   have hlow := card_div_two_le_sum_one_sub_one_div he
-  have hhigh := sum_one_sub_one_div_le_card e
+  have hhigh := Multiset.sum_one_sub_one_div_le_card e
   have hcard0 : (0 : ℚ) ≤ e.card := by positivity
   rcases Nat.lt_or_ge γ 2 with hγ | hγ
   · rcases Nat.lt_or_ge γ 1 with hγ0 | hγ1
