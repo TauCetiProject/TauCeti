@@ -171,6 +171,22 @@ noncomputable def affineDStretchFunctor :
 theorem affineDStretchFunctor_obj : (affineDStretchFunctor k m).obj M = affineDStretchRep m M :=
   (rfl)
 
+/-- Stretching a morphism uses its outer component at each leaf. -/
+@[simp]
+theorem affineDStretchFunctor_map_app_leaf (f : M ⟶ N) (i : Fin 4) :
+    HEq (((affineDStretchFunctor k m).map f).app
+        (Quiver.AffineD.leaf i : Paths (Quiver.AffineD m)))
+      (f.app (Quiver.Subspace.outer i : Paths (Quiver.Subspace (Fin 4)))) :=
+  (HEq.rfl)
+
+/-- Stretching a morphism uses its centre component at every spine vertex. -/
+@[simp]
+theorem affineDStretchFunctor_map_app_spine (f : M ⟶ N) (j : Fin (m + 1)) :
+    HEq (((affineDStretchFunctor k m).map f).app
+        (Quiver.AffineD.spine j : Paths (Quiver.AffineD m)))
+      (f.app (Quiver.Subspace.center : Paths (Quiver.Subspace (Fin 4)))) :=
+  (HEq.rfl)
+
 /-! ### Full faithfulness -/
 
 /-- The component at the spine vertex indexed by `j` of a morphism of stretched representations,

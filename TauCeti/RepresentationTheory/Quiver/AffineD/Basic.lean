@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Data.Fintype.Sum
-public import Mathlib.Order.Fin.Basic
 
 /-!
 # The extended Dynkin quiver of type `D~`
@@ -91,6 +90,8 @@ for the leaves `2` and `3`. -/
 def leafTarget (i : Fin 4) : Fin (m + 1) :=
   if (i : ℕ) < 2 then 0 else Fin.last m
 
+/-- The arrows are from each leaf to its endpoint `leafTarget m i`, and from each spine vertex
+to the next. All other hom types are empty. -/
 instance : _root_.Quiver.{0} (AffineD m) where
   Hom a b :=
     match a, b with
@@ -110,6 +111,23 @@ instance (i i' : Fin 4) : IsEmpty ((leaf i : AffineD m) ⟶ leaf i') :=
 
 instance (j : Fin (m + 1)) (i : Fin 4) : IsEmpty ((spine j : AffineD m) ⟶ leaf i) :=
   inferInstanceAs (IsEmpty PEmpty)
+
+/-- No arrow has a leaf as its target. -/
+@[simp]
+theorem not_nonempty_hom_leaf (a : AffineD m) (i : Fin 4) : ¬ Nonempty (a ⟶ leaf i) := by
+  cases a <;> exact fun ⟨e⟩ ↦ isEmptyElim e
+
+/-- A leaf has an arrow precisely to its designated spine endpoint. -/
+@[simp]
+theorem nonempty_leaf_spine_iff (i : Fin 4) (j : Fin (m + 1)) :
+    Nonempty ((leaf i : AffineD m) ⟶ spine j) ↔ j = leafTarget m i :=
+  ⟨fun ⟨e⟩ ↦ e.down, fun h ↦ ⟨PLift.up h⟩⟩
+
+/-- Spine arrows join precisely consecutive vertices, in increasing order. -/
+@[simp]
+theorem nonempty_spine_spine_iff (j j' : Fin (m + 1)) :
+    Nonempty ((spine j : AffineD m) ⟶ spine j') ↔ (j' : ℕ) = j + 1 :=
+  ⟨fun ⟨e⟩ ↦ e.down, fun h ↦ ⟨PLift.up h⟩⟩
 
 /-- Between any two vertices of `TauCeti.Quiver.AffineD m` there is at most one arrow. -/
 instance instSubsingletonHom : ∀ a b : AffineD m, Subsingleton (a ⟶ b)
