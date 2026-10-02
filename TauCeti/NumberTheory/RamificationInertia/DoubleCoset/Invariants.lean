@@ -39,10 +39,6 @@ Only the product `e · f` and the ramification index `e` are read here as subgro
 residue degree is not obtained by the same recipe with `D/I` in place of `D`: the image of
 `H ∩ σDσ⁻¹` in `D/I` need not be the intersection of the image of `H` with `σ(D/I)σ⁻¹`.
 
-Finally the bijection is compatible with the action of `G` on the primes above `p`: replacing `Q`
-by `τ Q` replaces the class of `σ` by the class of `σ τ`
-(`Ideal.doubleCosetQuotientEquivPrimesOver_smul_mk`).
-
 ## Main results
 
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_smul_eq_relIndex`:
@@ -53,7 +49,6 @@ by `τ Q` replaces the class of `σ` by the class of `σ τ`
 * `Ideal.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_mul_card` and
   `Ideal.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_eq_card_div`: the same
   formula for the prime attached to a double coset, read on the double coset itself.
-* `Ideal.doubleCosetQuotientEquivPrimesOver_smul_mk`: compatibility with the action of `G`.
 
 ## References
 
@@ -132,13 +127,5 @@ theorem ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_eq_car
       Nat.card (DoubleCoset.quotToDoubleCoset H (stabilizer (M ≃ₐ[K] M) Q) q) / Nat.card H := by
   rw [← ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_mul_card p Q H q,
     Nat.mul_div_cancel _ Nat.card_pos]
-
-/-- **The double coset law is compatible with the action of `G`.** Indexing the primes of
-`𝓞 (M ^ H)` above `p` through the translate `τ Q` instead of `Q` sends the class of `σ` to the
-prime that the indexing through `Q` attaches to the class of `σ τ`. -/
-theorem doubleCosetQuotientEquivPrimesOver_smul_mk (τ σ : M ≃ₐ[K] M) :
-    doubleCosetQuotientEquivPrimesOver p (τ • Q) H (DoubleCoset.mk H _ σ) =
-      doubleCosetQuotientEquivPrimesOver p Q H (DoubleCoset.mk H _ (σ * τ)) :=
-  Subtype.ext <| by simp only [doubleCosetQuotientEquivPrimesOver_mk, mul_smul]
 
 end Ideal
