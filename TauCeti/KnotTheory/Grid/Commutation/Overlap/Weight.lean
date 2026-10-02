@@ -214,6 +214,7 @@ variable (C : ColumnCommutationData G) (R : Type*) [CommSemiring R] {x z : GridS
 /-- Recutting a rectangle followed by a pentagon along their common initial side preserves the
 weight: the promoted pentagon followed by the remaining rectangle of the commuted diagram has
 the weight of the original rectangle followed by the original pentagon. -/
+@[simp]
 theorem pentagonRectangleWeight_recutLeftEqLeft
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
@@ -297,6 +298,7 @@ theorem pentagonRectangleWeight_recutLeftEqLeft
 weight when the first new rectangle inherits the replaced grid line: the promoted pentagon
 followed by the remaining rectangle of the commuted diagram has the weight of the original
 rectangle followed by the original pentagon. -/
+@[simp]
 theorem pentagonRectangleWeight_recutRightEqRightFirst
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
     (hcommon : D.rectangle.right = D.pentagon.right)
@@ -336,6 +338,7 @@ theorem pentagonRectangleWeight_recutRightEqRightFirst
 weight when the second new rectangle inherits the replaced grid line: the new rectangle followed
 by the promoted pentagon has the weight of the original rectangle followed by the original
 pentagon. -/
+@[simp]
 theorem rectanglePentagonWeight_recutRightEqRightSecond
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)
     (hcommon : D.rectangle.right = D.pentagon.right)
