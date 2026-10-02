@@ -37,7 +37,6 @@ abbrev HomCokernel (f : X ⟶ P) (Y : C) :=
   (X ⟶ Y) ⧸ (Linear.leftComp R Y f).range
 
 /-- A map represents zero in the Hom cokernel exactly when it extends across `f`. -/
-@[simp]
 theorem homCokernel_mk_eq_zero_iff (f : X ⟶ P) (g : X ⟶ Y) :
     (Submodule.Quotient.mk g : HomCokernel R f Y) = 0 ↔ ∃ h : P ⟶ Y, f ≫ h = g := by
   simp [Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
