@@ -14,6 +14,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Weyl
 -- `TauCeti.weightOfShape`, the dominant weight read off the row lengths of a shape.
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # The highest weight of a Weyl module
@@ -148,7 +149,7 @@ variable [Field k] [Algebra ℚ k]
 number of labels in the first `m` rows of `t`.** The weight space is spanned by the monomial basis
 vectors of content `l`, and the partial sums of a content count the places at which the filling
 takes a small value. -/
-theorem weightSpace_tensorPowerRep_le_ker_of_card_filter_lt (t : YoungTableau μ)
+private theorem weightSpace_tensorPowerRep_le_ker_of_card_filter_lt (t : YoungTableau μ)
     {l : Fin n → ℤ} {m : ℕ}
     (h : ((Finset.univ.filter fun x => rowIndex t x < m).card : ℤ) <
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j) :
@@ -158,13 +159,14 @@ theorem weightSpace_tensorPowerRep_le_ker_of_card_filter_lt (t : YoungTableau μ
   rw [weightSpace_tensorPowerRep_eq_span_image (weightChar_injective_of_algebraRat k) l]
   refine Submodule.span_le.mpr ?_
   rintro x ⟨p, hp, rfl⟩
-  rw [SetLike.mem_coe, LinearMap.mem_ker, ← tensorPowerBasis_def]
+  rw [SetLike.mem_coe, LinearMap.mem_ker]
   refine permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero_of_card_filter_lt
     t (m := m) ?_
   have hl : ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j =
       ((Finset.univ.filter fun x => (p x : ℕ) < m).card : ℤ) := by
     rw [← hp, sum_weightOfMultiset_ofFn_filter_val_lt]
-  exact Nat.cast_lt.mp (hl ▸ h)
+  rw [hl] at h
+  exact Nat.cast_lt.mp h
 
 /-- **The Weyl module meets a weight space trivially when its partial sum `∑_{j < m} l j`
 exceeds the number of labels in the first `m` rows of `t`.** The tensor power is spanned by its
@@ -226,10 +228,11 @@ theorem sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (t : YoungTableau
       rw [← weightOfMultiset_ofFn_rowFilling t hn, sum_weightOfMultiset_ofFn_filter_val_lt]
       simp only [val_rowFilling]
     by_contra hcon
-    exact hl (weightSpace_weylRep_eq_bot_of_card_filter_lt t (hsum ▸ not_le.mp hcon))
+    rw [hsum] at hcon
+    exact hl (weightSpace_weylRep_eq_bot_of_card_filter_lt t (not_le.mp hcon))
   · exact (hl (by
-      rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, weylModule_eq_bot t hn]
-      exact bot_inf_eq _)).elim
+      rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, weylModule_eq_bot t hn,
+        Subrepresentation.toSubmodule_bot, bot_inf_eq])).elim
 
 /-- **The dominant representative of every Weyl-module weight is dominated by the shape weight**:
 permuting the coordinates preserves occurrence, so the partial-sum bound applies after sorting. -/
@@ -266,7 +269,7 @@ theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
     (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     tensorPowerBasis R n μ.card (rowFilling t hn) ∈
       weightSpace (tensorPowerRep R n μ.card) (weightOfShape n μ).1 := by
-  rw [← weightOfMultiset_ofFn_rowFilling t hn, tensorPowerBasis_def]
+  rw [← weightOfMultiset_ofFn_rowFilling t hn]
   exact basis_mem_weightSpace_tensorPowerRep _
 
 /-- **When `μ.colLen 0 ≤ n`, the weight of the shape occurs in the Weyl module**: the image under
@@ -350,8 +353,9 @@ since it is a subrepresentation of that tensor power of the standard representat
 theorem nonneg_and_sum_eq_of_weightSpace_weylRepOfShape_ne_bot {μ : YoungDiagram} {l : Fin n → ℤ}
     (hl : weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l ≠ ⊥) :
     (∀ i, 0 ≤ l i) ∧ ∑ i, l i = μ.card := by
-  exact nonneg_and_sum_eq_of_weightSpace_tensorPowerRep_subrepresentation_ne_bot
-    (weightChar_injective_of_algebraRat k) (weylModuleOfShape k n μ) hl
+  exact YoungTableau.nonneg_and_sum_eq_of_weightSpace_weylRep_ne_bot (k := k)
+    (StandardYoungTableau.rowSuperstandard μ).toTableau
+    (fun hbot => hl ((weightSpace_weylRepOfShape_eq_bot_iff μ l).mpr hbot))
 
 end Field
 

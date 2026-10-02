@@ -12,6 +12,7 @@ public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
 public import TauCeti.RepresentationTheory.Symmetric.Relabel
 public import TauCeti.RepresentationTheory.Tensor.PermRange
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # The Weyl construction: a Young symmetrizer cuts out a `GL n k`-subrepresentation
@@ -303,7 +304,8 @@ zero and the module it generates is not `⊥`. -/
 theorem weylModule_ne_bot [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     weylModule k n t ≠ ⊥ := by
   intro hbot
-  have hbot' : (weylModule k n t).toSubmodule = ⊥ := by rw [hbot]; rfl
+  have hbot' : (weylModule k n t).toSubmodule = ⊥ := by
+    rw [hbot, Subrepresentation.toSubmodule_bot]
   have hmem := permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule
     (k := k) t (rowFilling t hn)
   rw [hbot', Submodule.mem_bot] at hmem
@@ -366,7 +368,8 @@ private theorem permTensorActionAlgHom_youngSymmetrizerOver_eq_zero (t : YoungTa
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) = 0 := by
   refine (tensorPowerBasis k n μ.card).ext fun p => ?_
   rw [LinearMap.zero_apply]
-  obtain ⟨a, b, ha, hb, hab, hpab⟩ := exists_ne_and_apply_eq_of_lt_colLen t hn p
+  obtain ⟨a, b, ha, hb, hab, hpab⟩ :=
+    exists_ne_and_apply_eq_of_lt_colLen t (by simpa only [Fintype.card_fin] using hn) p
   exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero t
     (ha.trans hb.symm) hab hpab
 

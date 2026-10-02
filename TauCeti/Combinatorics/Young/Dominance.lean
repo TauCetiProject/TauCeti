@@ -68,11 +68,23 @@ theorem sum_take_rowLens_le_of_injective (t : YoungTableau lam) (s : YoungTablea
     (h : ∀ x y, rowIndex s x = rowIndex s y → colIndex t (σ x) = colIndex t (σ y) → x = y)
     (k : ℕ) : (m.rowLens.take k).sum ≤ (lam.rowLens.take k).sum := by
   classical
-  rw [← card_filter_rowIndex_lt s k]
-  refine YoungDiagram.card_filter_le_sum_take_rowLens lam (rowIndex s)
-    (fun x => ((t.symm (σ x) : ↥lam.cells) : ℕ × ℕ)) (fun x => (t.symm (σ x)).2)
-    (fun x y hxy => σ.injective (t.symm.injective (Subtype.ext hxy))) (fun x y hr hc => ?_) k
-  exact h x y hr (by simpa only [colIndex_def] using hc)
+  have hp : Function.Injective fun y => (rowIndex s (σ.symm y), colIndex t y) := by
+    intro x y hxy
+    have h := h (σ.symm x) (σ.symm y) (congrArg Prod.fst hxy)
+      (by simpa only [Equiv.apply_symm_apply] using congrArg Prod.snd hxy)
+    exact σ.symm.injective h
+  have hcount : (Finset.univ.filter fun y => rowIndex s (σ.symm y) < k).card =
+      (Finset.univ.filter fun x => rowIndex s x < k).card := by
+    refine Finset.card_bij (fun y _ => σ.symm y) ?_ ?_ ?_
+    · intro y hy
+      simpa only [Finset.mem_filter, Finset.mem_univ, true_and] using hy
+    · intro x _ y _ hxy
+      exact σ.symm.injective hxy
+    · intro x hx
+      exact ⟨σ x, by simpa only [Finset.mem_filter, Finset.mem_univ, true_and,
+        Equiv.symm_apply_apply] using hx, σ.symm_apply_apply x⟩
+  simpa only [hcount, card_filter_rowIndex_lt] using
+    card_filter_lt_le_card_filter_rowIndex_lt t hp k
 
 end YoungTableau
 

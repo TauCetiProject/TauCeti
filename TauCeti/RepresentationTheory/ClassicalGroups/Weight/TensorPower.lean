@@ -116,10 +116,9 @@ This is deliberately not a `simp` lemma: `Representation.tensorPower_apply` alre
 left-hand side to `PiTensorProduct.map (fun _ => stdRep k n (diagGL t))`, so it is not in `simp`
 normal form. -/
 theorem tensorPowerRep_diagGL_apply_basis (t : Fin n → kˣ) (f : Fin d → Fin n) :
-    tensorPowerRep k n d (diagGL t)
-        (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n)) f) =
-      (∏ j, (t (f j) : k)) •
-        Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n)) f := by
+    tensorPowerRep k n d (diagGL t) (tensorPowerBasis k n d f) =
+      (∏ j, (t (f j) : k)) • tensorPowerBasis k n d f := by
+  rw [tensorPowerBasis_def]
   simp only [Basis.piTensorProduct_apply, Representation.tensorPower_apply,
     PiTensorProduct.map_tprod, stdRep_diagGL_apply_basisFun]
   exact (PiTensorProduct.tprod k).map_smul_univ (fun j => (t (f j) : k)) _
@@ -127,7 +126,7 @@ theorem tensorPowerRep_diagGL_apply_basis (t : Fin n → kˣ) (f : Fin d → Fin
 /-- The pure tensor of the standard basis vectors listed by `f` has weight the multiplicity vector
 of the unordered tuple of values of `f`. -/
 theorem basis_mem_weightSpace_tensorPowerRep (f : Fin d → Fin n) :
-    Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n)) f ∈
+    tensorPowerBasis k n d f ∈
       weightSpace (tensorPowerRep k n d)
         (weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n))) := by
   rw [mem_weightSpace_iff]
@@ -140,7 +139,7 @@ theorem basis_mem_weightSpace_tensorPowerRep (f : Fin d → Fin n) :
 basis consists of weight vectors. -/
 theorem iSup_weightSpace_tensorPowerRep_eq_top :
     ⨆ l : Fin n → ℤ, weightSpace (tensorPowerRep k n d) l = ⊤ :=
-  (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n))).iSup_weightSpace_eq_top
+  (tensorPowerBasis k n d).iSup_weightSpace_eq_top
     basis_mem_weightSpace_tensorPowerRep
 
 /-- **The group algebra of the symmetric group preserves every weight space** of a tensor power of
@@ -176,10 +175,9 @@ and a content is in general realised by more than one tuple. -/
 theorem weightSpace_tensorPowerRep_eq_span_image
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (tensorPowerRep k n d) l =
-      Submodule.span k (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n)) ''
+      Submodule.span k (tensorPowerBasis k n d ''
         {f | weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n)) = l}) :=
-  (Basis.piTensorProduct
-      (fun _ : Fin d => Pi.basisFun k (Fin n))).weightSpace_eq_span_image
+  (tensorPowerBasis k n d).weightSpace_eq_span_image
     basis_mem_weightSpace_tensorPowerRep hchar l
 
 /-- **Only the contents of tuples are weights** of a tensor power of the standard
@@ -188,7 +186,7 @@ theorem weightSpace_tensorPowerRep_eq_bot
     (hchar : Function.Injective (weightChar k (κ := Fin n))) {l : Fin n → ℤ}
     (hl : ∀ f : Fin d → Fin n, l ≠ weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n))) :
     weightSpace (tensorPowerRep k n d) l = ⊥ :=
-  (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n))).weightSpace_eq_bot
+  (tensorPowerBasis k n d).weightSpace_eq_bot
     basis_mem_weightSpace_tensorPowerRep hchar hl
 
 /-- **The weights of `(kⁿ)^{⊗d}` are exactly the multiplicity vectors of the unordered tuples of
@@ -197,7 +195,7 @@ theorem weightSpace_tensorPowerRep_ne_bot_iff [Nontrivial k]
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (tensorPowerRep k n d) l ≠ ⊥ ↔
       ∃ f : Fin d → Fin n, l = weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n)) :=
-  (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n))).weightSpace_ne_bot_iff
+  (tensorPowerBasis k n d).weightSpace_ne_bot_iff
     basis_mem_weightSpace_tensorPowerRep hchar l
 
 /-- **The weights of `(kⁿ)^{⊗d}` are the exponent vectors of the degree-`d` monomials in `n`
@@ -234,7 +232,7 @@ spaces.** -/
 theorem isInternal_weightSpace_tensorPowerRep
     (hchar : Function.Injective (weightChar k (κ := Fin n))) :
     DirectSum.IsInternal fun l : Fin n → ℤ => weightSpace (tensorPowerRep k n d) l :=
-  (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n))).isInternal_weightSpace
+  (tensorPowerBasis k n d).isInternal_weightSpace
     basis_mem_weightSpace_tensorPowerRep hchar
 
 /-- **The multiplicity of a weight of `(kⁿ)^{⊗d}` is the number of tuples of that content**: the
@@ -244,7 +242,7 @@ theorem finrank_weightSpace_tensorPowerRep
     Module.finrank k (weightSpace (tensorPowerRep k n d) l) =
       Nat.card {f : Fin d → Fin n //
         weightOfMultiset (TauCeti.Sym.ofFn f : Multiset (Fin n)) = l} :=
-  (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n))).finrank_weightSpace_eq_card
+  (tensorPowerBasis k n d).finrank_weightSpace_eq_card
     basis_mem_weightSpace_tensorPowerRep hchar l
 
 end Field
