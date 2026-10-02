@@ -12,7 +12,8 @@ public import Mathlib.Topology.Category.TopPair
 
 A continuous map `g : X ⟶ Y` carrying a subset `B ⊆ X` into a subset `B' ⊆ Y` induces a map of
 topological pairs `TopPair.ofSubsetMap g hB : (X, B) ⟶ (Y, B')`, where the pairs are
-`TopPair.ofSubset B` and `TopPair.ofSubset B'`.
+`TopPair.ofSubset B` and `TopPair.ofSubset B'`, and a homotopy that keeps `B` inside `B'` at every
+time induces a homotopy of maps of pairs `TopPair.ofSubsetHomotopy`.
 
 Nested subsets `s ⊆ t` of a topological space form the topological pair
 `TopPair.ofInclusion : (t, s)`, whose embedding is `Set.inclusion`.  `TopPair.ofSubset` is the
@@ -59,6 +60,19 @@ lemma ofSubsetMap_id (h : Set.MapsTo (𝟙 X) B B) : ofSubsetMap (𝟙 X) h = �
 lemma ofSubsetMap_comp (h : Set.MapsTo (g ≫ g') B B'') :
     ofSubsetMap (g ≫ g') h = ofSubsetMap g hB ≫ ofSubsetMap g' hB' := by
   ext : 2 <;> rfl
+
+/-- A homotopy between maps `X ⟶ Y` which keeps `B` inside `B'` at every time induces a homotopy
+between the induced maps of pairs `(X, B) ⟶ (Y, B')`. -/
+def ofSubsetHomotopy {g₀ g₁ : X ⟶ Y} (F : g₀.hom.Homotopy g₁.hom)
+    (hF : ∀ (τ : unitInterval) (x : X), x ∈ B → F (τ, x) ∈ B') :
+    Homotopy (ofSubsetMap g₀ fun x hx ↦ F.apply_zero x ▸ hF 0 x hx)
+      (ofSubsetMap g₁ fun x hx ↦ F.apply_one x ▸ hF 1 x hx) where
+  fst := F
+  snd :=
+    { toFun (p : unitInterval × B) := ⟨F (p.1, p.2), hF p.1 _ p.2.2⟩
+      continuous_toFun := by fun_prop
+      map_zero_left x := Subtype.ext (F.apply_zero x.1)
+      map_one_left x := Subtype.ext (F.apply_one x.1) }
 
 section ofInclusion
 

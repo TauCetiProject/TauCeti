@@ -325,6 +325,17 @@ def IsOStabilization (G : GridDiagram n) (G' : GridDiagram (n + 1)) : Prop :=
       finRotate (n + 1) (newRow.succAbove (G.O splitColumn)) = newRow) ∧
     G' = G.stabilizeO newColumn newRow splitColumn
 
+/-- An elementary `O`-stabilization is the `O`-stabilization construction at a new row and column
+cyclically adjacent to the split marking. -/
+theorem isOStabilization_iff (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsOStabilization G G' ↔ ∃ newColumn newRow splitColumn,
+      (finRotate (n + 1) newColumn = newColumn.succAbove splitColumn ∨
+        finRotate (n + 1) (newColumn.succAbove splitColumn) = newColumn) ∧
+      (finRotate (n + 1) newRow = newRow.succAbove (G.O splitColumn) ∨
+        finRotate (n + 1) (newRow.succAbove (G.O splitColumn)) = newRow) ∧
+      G' = G.stabilizeO newColumn newRow splitColumn :=
+  Iff.rfl
+
 /-- A local `O`-stabilization construction is an elementary `O`-stabilization. -/
 theorem isOStabilization_stabilizeO (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n)
     (hColumn : finRotate (n + 1) newColumn = newColumn.succAbove splitColumn ∨
@@ -357,6 +368,17 @@ def IsXStabilization (G : GridDiagram n) (G' : GridDiagram (n + 1)) : Prop :=
     (finRotate (n + 1) newRow = newRow.succAbove (G.X splitColumn) ∨
       finRotate (n + 1) (newRow.succAbove (G.X splitColumn)) = newRow) ∧
     G' = G.stabilizeX newColumn newRow splitColumn
+
+/-- An elementary `X`-stabilization is the `X`-stabilization construction at a new row and column
+cyclically adjacent to the split marking. -/
+theorem isXStabilization_iff (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsXStabilization G G' ↔ ∃ newColumn newRow splitColumn,
+      (finRotate (n + 1) newColumn = newColumn.succAbove splitColumn ∨
+        finRotate (n + 1) (newColumn.succAbove splitColumn) = newColumn) ∧
+      (finRotate (n + 1) newRow = newRow.succAbove (G.X splitColumn) ∨
+        finRotate (n + 1) (newRow.succAbove (G.X splitColumn)) = newRow) ∧
+      G' = G.stabilizeX newColumn newRow splitColumn :=
+  Iff.rfl
 
 /-- A local `X`-stabilization construction is an elementary `X`-stabilization. -/
 theorem isXStabilization_stabilizeX (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n)
@@ -404,6 +426,11 @@ theorem isXStabilization_swapMarkings (G : GridDiagram n) (G' : GridDiagram (n +
 /-- One elementary grid stabilization, splitting either an `O`- or an `X`-marking. -/
 def IsStabilization (G : GridDiagram n) (G' : GridDiagram (n + 1)) : Prop :=
   IsOStabilization G G' ∨ IsXStabilization G G'
+
+/-- An elementary stabilization splits either an `O`-marking or an `X`-marking. -/
+theorem isStabilization_iff (G : GridDiagram n) (G' : GridDiagram (n + 1)) :
+    IsStabilization G G' ↔ IsOStabilization G G' ∨ IsXStabilization G G' :=
+  Iff.rfl
 
 /-- Exchanging the marking types preserves the elementary stabilization relation. -/
 @[simp]

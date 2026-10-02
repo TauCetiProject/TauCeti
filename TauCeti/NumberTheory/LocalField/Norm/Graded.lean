@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
 public import TauCeti.NumberTheory.LocalField.Norm.Herbrand
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
 import TauCeti.NumberTheory.LocalField.TamelyRamified
@@ -24,7 +25,8 @@ a homomorphism of graded pieces
 
 For a Galois extension of prime degree these maps compare the unit filtrations of `L` and `K`
 step by step, and the orders of their kernels and cokernels are what the conductor and the
-Hasse–Arf theorem are computed from. This file computes them away from the break.
+Hasse–Arf theorem are computed from. This file computes them away from the break and at a
+positive break.
 
 *Depth zero.* For a totally ramified Galois extension of degree `n`, `ψℕ_{L/K}(0) = 0`, both
 graded pieces are the multiplicative groups of the residue fields, and these residue fields
@@ -43,6 +45,17 @@ carries `𝓂[L] ^ v` into `𝓂[K] ^ (v + 1)`. In the expansion
 only `N(z)` survives modulo `𝓂[K] ^ (v + 1)`, and the norm preserves valuations in a totally
 ramified extension. So `normGradedMap K L v` is injective, and it is bijective because both graded
 pieces have `q` elements.
+
+*At the break.* Let `L/K` have prime degree `ℓ`, let `t > 0` satisfy `G_t = Gal(L/K)`, and let
+`σ ∉ G_{t+1}`, so that `σ π - π = γ π ^ (t + 1)` for a uniformizer `π` of `L` and an integer `γ`
+whose residue `c` is nonzero. Coordinatize `U(L, t) / U(L, t + 1)` by `π` and
+`U(K, t) / U(K, t + 1)` by `N(π)`. Here `ψℕ_{L/K}(t) = t`, and the trace carries `𝓂[L] ^ (t + 1)`
+into `𝓂[K] ^ (t + 1)`, so the expansion of `N(1 + a π ^ t)` gives the class of
+`a ^ ℓ + β a` for a constant `β`, the residue of `Tr(π ^ t) / N(π) ^ t`. The unit `σ π / π` has
+coordinate `c` and norm `1`, so `c ^ ℓ + β c = 0`, which forces `β = -c ^ (ℓ - 1)`: the graded norm
+is `y ↦ y ^ ℓ - c ^ (ℓ - 1) y`. When `t` is the break of the filtration, the Galois group is
+`G_1`, a `p`-group of order `ℓ`, so `ℓ = p`, and the kernel of this map is the line `𝔽_ℓ c`. Hence
+the kernel and the cokernel of `normGradedMap K L t` both have order `ℓ`.
 
 ## Main definitions
 
@@ -65,6 +78,12 @@ pieces have `q` elements.
 * `TauCeti.normGradedMap_zero_before_break` and `TauCeti.normGradedMap_positive_before_break`: in
   prime degree with an upper break at a natural number `t`, the graded norm is bijective at every
   depth `v < t`.
+* `TauCeti.algebraMap_residue_eq_of_norm_one_add_mul_pow_eq` and
+  `TauCeti.algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk`: in
+  prime degree, at a positive depth `t` with `G_t = Gal(L/K)` and for `σ ∉ G_{t+1}`, the graded
+  norm is `y ↦ y ^ ℓ - c ^ (ℓ - 1) y`, where `c` is the coordinate of `σ π / π`.
+* `TauCeti.normGradedMap_at_break`: in prime degree `ℓ` with an upper break at a natural number
+  `t > 0`, the kernel and the cokernel of the graded norm at depth `t` both have order `ℓ`.
 
 ## References
 
@@ -381,5 +400,311 @@ theorem normGradedMap_positive_before_break (hℓ : (finrank K L).Prime) {v t : 
   normGradedMap_bijective_of_lowerRamificationGroup_eq_top hℓ <| top_le_iff.1 <|
     lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht ▸
       lowerRamificationGroup_antitone K L (by exact_mod_cast hvt)
+
+/-! ### At a positive break, in prime degree -/
+
+/-- If `G_t = Gal(L/K)`, the trace carries `𝓂[L] ^ m` into `𝓂[K] ^ m` for every `m ≤ t + 1`:
+`ψℕ_{L/K}(n) = n` for `n ≤ t`. -/
+private theorem trace_mem_maximalIdeal_pow_of_le {t : ℕ} (hG : lowerRamificationGroup K L t = ⊤)
+    {m : ℕ} (hm : m ≤ t + 1) {w : 𝒪[L]} (hw : w ∈ 𝓂[L] ^ m) :
+    Algebra.trace 𝒪[K] 𝒪[L] w ∈ 𝓂[K] ^ m := by
+  rcases m with _ | n
+  · simp
+  have hGi (i : ℕ) (hi : i ≤ t) : lowerRamificationGroup K L i = ⊤ :=
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by exact_mod_cast hi))
+  have hψ : psiNat K L n = n := (psiNat_eq_self_iff K L).2 <| by
+    rw [hGi n (by omega), ← Nat.cast_zero, hGi 0 (by omega)]
+  rw [← Algebra.intTrace_eq_trace]
+  exact intTrace_mem_maximalIdeal_pow_succ_of_mem_psiNat (by rwa [hψ])
+
+/-- **The norm at a positive depth with `G_t = Gal(L/K)`.** In prime degree `ℓ`, for a uniformizer
+`π` of `L`, there is a constant `β` with `N(1 + a π ^ t) ≡ 1 + (a ^ ℓ + β a) N(π) ^ t` modulo
+`𝓂[K] ^ (t + 1)`, read on residues. -/
+private theorem exists_algebraMap_residue_eq_of_norm_one_add_mul_pow_eq
+    (hℓ : (finrank K L).Prime) {t : ℕ} (ht0 : 0 < t) (hG : lowerRamificationGroup K L t = ⊤)
+    {π : 𝒪[L]} (hπ : Irreducible π) :
+    ∃ β : 𝓀[L], ∀ (a : 𝒪[L]) (b : 𝒪[K]),
+      Algebra.norm 𝒪[K] (1 + a * π ^ t) = 1 + b * Algebra.norm 𝒪[K] π ^ t →
+      algebraMap 𝓀[K] 𝓀[L] (residue 𝒪[K] b) =
+        residue 𝒪[L] a ^ finrank K L + β * residue 𝒪[L] a := by
+  have h : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))
+  have hπK : Irreducible (Algebra.norm 𝒪[K] π) :=
+    (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
+  have hspan (n : ℕ) : 𝓂[K] ^ n = Ideal.span {Algebra.norm 𝒪[K] π ^ n} := by
+    rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK, Ideal.span_singleton_pow]
+  have hπt : π ^ t ∈ 𝓂[L] ^ t :=
+    Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) t
+  -- `Tr(π ^ t) = β₀ N(π) ^ t`; the constant is the residue of `β₀`.
+  obtain ⟨β₀, hβ₀⟩ := Ideal.mem_span_singleton'.1 <|
+    hspan t ▸ trace_mem_maximalIdeal_pow_of_le hG (by omega) hπt
+  refine ⟨algebraMap 𝓀[K] 𝓀[L] (residue 𝒪[K] β₀), fun a b hab ↦ ?_⟩
+  -- The residue fields coincide, so `a ≡ a₀` modulo `𝓂[L]` for some `a₀ ∈ 𝒪[K]`.
+  obtain ⟨a₀, ha₀⟩ : ∃ a₀ : 𝒪[K], algebraMap 𝓀[K] 𝓀[L] (residue 𝒪[K] a₀) = residue 𝒪[L] a := by
+    obtain ⟨y, hy⟩ := (isTotallyRamified_iff_surjective_algebraMap_residueField K L).1 h
+      (residue 𝒪[L] a)
+    obtain ⟨a₀, rfl⟩ := residue_surjective y
+    exact ⟨a₀, hy⟩
+  obtain ⟨w, hw, hN⟩ :=
+    exists_norm_one_add_eq_of_mem_maximalIdeal_pow hℓ (Ideal.mul_mem_left _ a hπt)
+  have hd : (a - algebraMap 𝒪[K] 𝒪[L] a₀) * π ^ t ∈ 𝓂[L] ^ (t + 1) := by
+    rw [pow_succ']
+    refine Ideal.mul_mem_mul ?_ hπt
+    rw [← residue_eq_zero_iff, map_sub, ← ResidueField.algebraMap_residue, ha₀, sub_self]
+  have hsplit : Algebra.trace 𝒪[K] 𝒪[L] (a * π ^ t) =
+      a₀ * β₀ * Algebra.norm 𝒪[K] π ^ t +
+        Algebra.trace 𝒪[K] 𝒪[L] ((a - algebraMap 𝒪[K] 𝒪[L] a₀) * π ^ t) := by
+    rw [sub_mul, map_sub, ← Algebra.smul_def, map_smul, ← hβ₀, smul_eq_mul]
+    ring
+  -- In `N(1 + a π ^ t) = 1 + Tr(a π ^ t) + Tr(w) + N(a) N(π) ^ t`, both `Tr(w)` and
+  -- `Tr((a - a₀) π ^ t)` lie in `𝓂[K] ^ (t + 1)`.
+  have hrem : (b - a₀ * β₀ - Algebra.norm 𝒪[K] a) * Algebra.norm 𝒪[K] π ^ t ∈
+      𝓂[K] ^ (t + 1) := by
+    have heq : (b - a₀ * β₀ - Algebra.norm 𝒪[K] a) * Algebra.norm 𝒪[K] π ^ t =
+        Algebra.trace 𝒪[K] 𝒪[L] ((a - algebraMap 𝒪[K] 𝒪[L] a₀) * π ^ t) +
+          Algebra.trace 𝒪[K] 𝒪[L] w := by
+      have := hab.symm.trans hN
+      rw [hsplit, map_mul (Algebra.norm 𝒪[K]) a, map_pow (Algebra.norm 𝒪[K])] at this
+      linear_combination this
+    rw [heq]
+    exact add_mem (trace_mem_maximalIdeal_pow_of_le hG le_rfl hd)
+      (trace_mem_maximalIdeal_pow_of_le hG le_rfl
+        (Ideal.pow_le_pow_right (show t + 1 ≤ 2 * t by omega) hw))
+  have hmem : b - a₀ * β₀ - Algebra.norm 𝒪[K] a ∈ 𝓂[K] := by
+    rw [hspan, Ideal.mem_span_singleton'] at hrem
+    obtain ⟨d, hd⟩ := hrem
+    have hdiv : b - a₀ * β₀ - Algebra.norm 𝒪[K] a = d * Algebra.norm 𝒪[K] π := by
+      apply mul_right_cancel₀ (pow_ne_zero t hπK.ne_zero)
+      rw [← hd]
+      ring
+    rw [hdiv]
+    exact Ideal.mul_mem_left _ _ ((mem_maximalIdeal _).2 hπK.not_isUnit)
+  rw [← residue_eq_zero_iff, map_sub, map_sub, sub_sub, sub_eq_zero] at hmem
+  rw [hmem, map_add, map_mul, map_mul, ha₀, algebraMap_residue_norm_of_isTotallyRamified h]
+  ring
+
+omit [IsGalois K L] in
+/-- If `σ ∈ G_0` lies outside `G_{t+1}` and `σ π - π = γ π ^ (t + 1)` for a uniformizer `π`, then
+the residue of `γ` is nonzero. -/
+private theorem residue_ne_zero_of_smul_sub_eq {t : ℕ} {π : 𝒪[L]} (hπ : Irreducible π)
+    {σ : L ≃ₐ[K] L} (hσ0 : σ ∈ lowerRamificationGroup K L 0)
+    (hσ : σ ∉ lowerRamificationGroup K L (t + 1)) {γ : 𝒪[L]}
+    (hγ : σ • π - π = γ * π ^ (t + 1)) : residue 𝒪[L] γ ≠ 0 := by
+  intro h0
+  apply hσ
+  rw [lowerRamificationGroup_def] at hσ0 ⊢
+  have := (mem_ramificationGroup_natCast_iff_smul_sub_mem hπ hσ0 (n := t + 1)).2 <| by
+    rw [hγ, pow_succ' _ (t + 1)]
+    exact Ideal.mul_mem_mul ((residue_eq_zero_iff γ).1 h0)
+      (Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) _)
+  exact_mod_cast this
+
+/-- **The norm at the break.** Let `L/K` be a Galois extension of nonarchimedean local fields of
+prime degree `ℓ`, let `t > 0` satisfy `G_t = Gal(L/K)`, and let `σ ∉ G_{t+1}`, so that
+`σ π - π = γ π ^ (t + 1)` for a uniformizer `π` of `L`. If `N(1 + a π ^ t) = 1 + b N(π) ^ t`, then
+the residue of `b` is `y ^ ℓ - c ^ (ℓ - 1) y`, where `y` and `c` are the residues of `a` and `γ`.
+-/
+theorem algebraMap_residue_eq_of_norm_one_add_mul_pow_eq (hℓ : (finrank K L).Prime) {t : ℕ}
+    (ht0 : 0 < t) (hG : lowerRamificationGroup K L t = ⊤) {π : 𝒪[L]} (hπ : Irreducible π)
+    {σ : L ≃ₐ[K] L} (hσ : σ ∉ lowerRamificationGroup K L (t + 1)) {γ : 𝒪[L]}
+    (hγ : σ • π - π = γ * π ^ (t + 1)) {a : 𝒪[L]} {b : 𝒪[K]}
+    (hab : Algebra.norm 𝒪[K] (1 + a * π ^ t) = 1 + b * Algebra.norm 𝒪[K] π ^ t) :
+    algebraMap 𝓀[K] 𝓀[L] (residue 𝒪[K] b) =
+      residue 𝒪[L] a ^ finrank K L - residue 𝒪[L] γ ^ (finrank K L - 1) * residue 𝒪[L] a := by
+  obtain ⟨β, hβ⟩ := exists_algebraMap_residue_eq_of_norm_one_add_mul_pow_eq hℓ ht0 hG hπ
+  have hπK : Algebra.norm 𝒪[K] π ≠ 0 := by
+    intro h0
+    have := congrArg (fun x : 𝒪[K] ↦ (x : K)) h0
+    simp only [coe_norm_integerRing, ZeroMemClass.coe_zero, Algebra.norm_eq_zero_iff] at this
+    exact hπ.ne_zero (Subtype.ext this)
+  -- The unit `σ π / π = 1 + γ π ^ t` has norm `1`.
+  have hnorm : Algebra.norm 𝒪[K] (1 + γ * π ^ t) = 1 + 0 * Algebra.norm 𝒪[K] π ^ t := by
+    rw [zero_mul, add_zero]
+    apply mul_left_cancel₀ hπK
+    rw [← map_mul, mul_one, show π * (1 + γ * π ^ t) = σ • π by linear_combination -hγ]
+    apply Subtype.ext
+    rw [coe_norm_integerRing, coe_norm_integerRing, AlgEquiv.coe_smul_integerRing,
+      Algebra.norm_eq_of_algEquiv]
+  have hc := hβ γ 0 hnorm
+  rw [map_zero, map_zero] at hc
+  have hG0 : lowerRamificationGroup K L 0 = ⊤ :=
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg t))
+  have hγ0 := residue_ne_zero_of_smul_sub_eq hπ (hG0 ▸ Subgroup.mem_top σ) hσ hγ
+  -- So `c ^ ℓ + β c = 0` with `c ≠ 0`, that is `β = -c ^ (ℓ - 1)`.
+  have hβeq : β = -residue 𝒪[L] γ ^ (finrank K L - 1) := by
+    have hpow : residue 𝒪[L] γ ^ finrank K L =
+        residue 𝒪[L] γ ^ (finrank K L - 1) * residue 𝒪[L] γ := by
+      rw [← pow_succ, Nat.sub_add_cancel hℓ.one_lt.le]
+    apply mul_right_cancel₀ hγ0
+    linear_combination -hc - hpow
+  rw [hβ a b hab, hβeq]
+  ring
+
+/-- **The graded norm at the break, in coordinates.** Let `L/K` be a Galois extension of
+nonarchimedean local fields of prime degree `ℓ` with `G_{t+1} = Gal(L/K)`, and let
+`σ ∉ G_{t+2}`, so that `σ π - π = γ π ^ (t + 2)` for a uniformizer `π` of `L`. Coordinatize
+`U(L, t + 1) / U(L, t + 2)` by `π` and `U(K, t + 1) / U(K, t + 2)` by the uniformizer `N(π)` of
+`K`. Then `normGradedMap K L (t + 1)` is `y ↦ y ^ ℓ - c ^ (ℓ - 1) y`, where `c` is the residue of
+`γ`, the coordinate of `σ π / π`. -/
+theorem algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk
+    (hℓ : (finrank K L).Prime) {t : ℕ} (hG : lowerRamificationGroup K L (t + 1) = ⊤)
+    {π : 𝒪[L]} (hπ : Irreducible π) (hπK : Irreducible (Algebra.norm 𝒪[K] π))
+    {σ : L ≃ₐ[K] L} (hσ : σ ∉ lowerRamificationGroup K L (t + 2)) {γ : 𝒪[L]}
+    (hγ : σ • π - π = γ * π ^ (t + 2)) (x : unitFiltration L (psiNat K L (t + 1))) {a : 𝒪[L]}
+    (hxa : ((x : Lˣ) : L) = 1 + a * π ^ (t + 1)) :
+    algebraMap 𝓀[K] 𝓀[L] (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer t
+        (Algebra.norm 𝒪[K] π) hπK
+        (Additive.ofMul (normGradedMap K L (t + 1) (QuotientGroup.mk x)))) =
+      residue 𝒪[L] a ^ finrank K L - residue 𝒪[L] γ ^ (finrank K L - 1) * residue 𝒪[L] a := by
+  rw [normGradedMap_mk]
+  set y : unitFiltration K (t + 1) := ⟨Algebra.normUnits K (x : Lˣ),
+    map_normUnits_unitFiltration_psiNat_le K L (t + 1) (Subgroup.mem_map_of_mem _ x.2)⟩
+  obtain ⟨b, hb⟩ : ∃ b : 𝒪[K], b * Algebra.norm 𝒪[K] π ^ (t + 1) =
+      (unitFiltrationDifference t y : 𝒪[K]) := by
+    have hspan : 𝓂[K] ^ (t + 1) = Ideal.span {Algebra.norm 𝒪[K] π ^ (t + 1)} := by
+      rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK, Ideal.span_singleton_pow]
+    exact Ideal.mem_span_singleton'.1 (hspan ▸ (unitFiltrationDifference t y).2)
+  rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue t _ hπK y b
+    hb.symm]
+  refine algebraMap_residue_eq_of_norm_one_add_mul_pow_eq hℓ (by omega : 0 < t + 1) hG hπ
+    (by exact_mod_cast hσ) hγ ?_
+  apply Subtype.ext
+  have hb' := congrArg (fun z : 𝒪[K] ↦ (z : K)) hb
+  simp only [coe_coe_unitFiltrationDifference, y, Algebra.coe_normUnits] at hb'
+  have hx : ((1 + a * π ^ (t + 1) : 𝒪[L]) : L) = ((x : Lˣ) : L) := by
+    rw [hxa]
+    simp
+  push_cast
+  rw [coe_norm_integerRing, coe_norm_integerRing, hx]
+  push_cast at hb'
+  rw [coe_norm_integerRing] at hb'
+  linear_combination -hb'
+
+/-- If `G_1 = Gal(L/K)` and `[L : K]` is prime, the residue field of `L` has characteristic
+`[L : K]`: the Galois group is then a `p`-group of prime order, for `p` the residue
+characteristic. -/
+private theorem charP_residueField_of_lowerRamificationGroup_one_eq_top
+    (hℓ : (finrank K L).Prime) (hG1 : lowerRamificationGroup K L 1 = ⊤) :
+    CharP 𝓀[L] (finrank K L) := by
+  let _ := Fintype.ofFinite 𝓀[L]
+  set p := ringChar 𝓀[L]
+  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  have hpG := isPGroup_ramificationGroup (L := L) (L ≃ₐ[K] L) p (i := 1) one_pos
+  rw [← lowerRamificationGroup_def, hG1] at hpG
+  obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 hpG
+  rw [Subgroup.card_top, IsGalois.card_aut_eq_finrank] at hk
+  rw [← ((Nat.Prime.pow_eq_iff hℓ).1 hk.symm).1]
+  infer_instance
+
+/-- Read in the coordinate attached to a uniformizer `π`, the kernel of the graded norm at a depth
+`t + 1` with `G_{t+1} = Gal(L/K)` is the set of roots of `y ^ ℓ - c ^ (ℓ - 1) y`, by
+`TauCeti.algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk`. -/
+private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {t : ℕ}
+    (hG : lowerRamificationGroup K L (t + 1) = ⊤) (hψ : psiNat K L (t + 1) = t + 1)
+    {π : 𝒪[L]} (hπ : Irreducible π)
+    {σ : L ≃ₐ[K] L} (hσ : σ ∉ lowerRamificationGroup K L (t + 2)) {γ : 𝒪[L]}
+    (hγ : σ • π - π = γ * π ^ (t + 2)) :
+    Nat.card (normGradedMap K L (t + 1)).ker = Nat.card {y : 𝓀[L] //
+      y ^ finrank K L - residue 𝒪[L] γ ^ (finrank K L - 1) * y = 0} := by
+  have hπK : Irreducible (Algebra.norm 𝒪[K] π) :=
+    (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2
+      ((lowerRamificationGroup_zero_eq_top_iff K L).1 <|
+        top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))).inertiaDegree_eq_one
+  let E : UnitFiltrationGraded L (psiNat K L (t + 1)) ≃ 𝓀[L] :=
+    (unitFiltrationGradedCongr hψ).toEquiv.trans
+      (Additive.ofMul.trans (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer t π hπ).toEquiv)
+  refine Nat.card_congr (E.subtypeEquiv fun g ↦ ?_)
+  induction g using QuotientGroup.induction_on with | H x => ?_
+  -- Write `x = 1 + a π ^ (t + 1)`; its coordinate is the residue of `a`.
+  obtain ⟨u, hu, hux⟩ :=
+    mem_unitFiltration_iff_exists.1 ((congrArg (unitFiltration L) hψ).le x.2)
+  rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπ, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton'] at hu
+  obtain ⟨a, ha⟩ := hu
+  have hxa : ((x : Lˣ) : L) = 1 + a * π ^ (t + 1) := by
+    rw [← hux, ← sub_add_cancel (u : 𝒪[L]) 1, ← ha]
+    push_cast
+    ring
+  have hE : E (QuotientGroup.mk x) = residue 𝒪[L] a := by
+    simp only [E, Equiv.trans_apply, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
+      unitFiltrationGradedCongr_mk, AddEquiv.toEquiv_eq_coe, AddEquiv.coe_toEquiv]
+    refine unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue t π hπ _ a
+      (Subtype.ext ?_)
+    rw [coe_coe_unitFiltrationDifference, hxa]
+    push_cast
+    ring
+  rw [hE, MonoidHom.mem_ker,
+    ← algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk hℓ hG hπ
+      hπK hσ hγ x hxa, map_eq_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective,
+    EmbeddingLike.map_eq_zero_iff, ofMul_eq_zero]
+
+/-- **The graded norm at a positive break.** Let `L/K` be a Galois extension of nonarchimedean
+local fields of prime degree `ℓ` whose upper ramification filtration breaks at a natural number
+`t > 0`. Then the kernel of the graded norm `normGradedMap K L t` has order `ℓ`, and its image has
+index `ℓ`. This is the regime `v = t > 0`, in which `L/K` is totally ramified and `ℓ` is the
+residue characteristic. -/
+theorem normGradedMap_at_break (hℓ : (finrank K L).Prime) {t : ℕ} (ht0 : 0 < t)
+    (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
+    Nat.card (normGradedMap K L t).ker = finrank K L ∧
+      (normGradedMap K L t).range.index = finrank K L := by
+  obtain ⟨s, rfl⟩ : ∃ s, t = s + 1 := ⟨t - 1, by omega⟩
+  have hG : lowerRamificationGroup K L ((s + 1 : ℕ) : ℤ) = ⊤ :=
+    lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht
+  have hGi (i : ℤ) (hi : i ≤ s + 1) : lowerRamificationGroup K L i = ⊤ :=
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by push_cast; exact hi))
+  have h : IsTotallyRamified K L :=
+    (lowerRamificationGroup_zero_eq_top_iff K L).1 (hGi 0 (by omega))
+  have hψ : psiNat K L (s + 1) = s + 1 :=
+    (psiNat_eq_self_iff K L).2 (by rw [hG, hGi 0 (by omega)])
+  have : Fact (finrank K L).Prime := ⟨hℓ⟩
+  have := charP_residueField_of_lowerRamificationGroup_one_eq_top hℓ (hGi 1 (by omega))
+  -- An element `σ ≠ 1` of the Galois group lies outside `G_{s+2} = 1`; write
+  -- `σ π - π = γ π ^ (s + 2)`, so that the residue `c` of `γ` is nonzero.
+  have : Nontrivial (L ≃ₐ[K] L) := by
+    rw [← Finite.one_lt_card_iff_nontrivial, IsGalois.card_aut_eq_finrank]
+    exact hℓ.one_lt
+  obtain ⟨σ, hσ1⟩ := exists_ne (1 : L ≃ₐ[K] L)
+  have hσ : σ ∉ lowerRamificationGroup K L (((s + 1 : ℕ) : ℤ) + 1) := by
+    rw [lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump K L hℓ ht]
+    exact hσ1
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  obtain ⟨γ, hγ⟩ : ∃ γ : 𝒪[L], σ • π - π = γ * π ^ (s + 2) := by
+    have hmem := mem_lowerRamificationGroup_iff.1 (hG ▸ Subgroup.mem_top σ) π
+    rw [show ((((s + 1 : ℕ) : ℤ) + 1).toNat) = s + 2 by omega,
+      (IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπ, Ideal.span_singleton_pow,
+      Ideal.mem_span_singleton'] at hmem
+    obtain ⟨γ, hγ⟩ := hmem
+    exact ⟨γ, hγ.symm⟩
+  have hc0 : residue 𝒪[L] γ ≠ 0 :=
+    residue_ne_zero_of_smul_sub_eq hπ (hGi 0 (by omega) ▸ Subgroup.mem_top σ) hσ hγ
+  -- The kernel is `{y | y ^ ℓ = c ^ (ℓ - 1) y}`; writing `y = c z`, this is the line
+  -- `{c z | z ^ ℓ = z} = 𝔽_ℓ c`, of order `ℓ`.
+  have hcard_ker : Nat.card (normGradedMap K L (s + 1)).ker = finrank K L := by
+    rw [natCard_ker_normGradedMap_succ_eq hℓ (by exact_mod_cast hG) hψ hπ (by exact_mod_cast hσ)
+      hγ]
+    refine (Nat.card_congr ((Equiv.mulLeft₀ _ hc0).subtypeEquiv fun z ↦ ?_)).symm.trans
+      (Subfield.card_bot 𝓀[L] (finrank K L))
+    set c := residue 𝒪[L] γ
+    have hpow : (c * z) ^ finrank K L - c ^ (finrank K L - 1) * (c * z) =
+        c ^ finrank K L * (z ^ finrank K L - z) := by
+      rw [mul_pow, ← mul_assoc, ← pow_succ, Nat.sub_add_cancel hℓ.one_lt.le]
+      ring
+    rw [Subfield.mem_bot_iff_pow_eq_self 𝓀[L] (finrank K L), Equiv.mulLeft₀_apply, hpow,
+      mul_eq_zero, sub_eq_zero, or_iff_right (pow_ne_zero _ hc0)]
+  refine ⟨hcard_ker, ?_⟩
+  -- Both graded pieces have `q` elements, so the cokernel has the order of the kernel.
+  have hT : Nat.card (UnitFiltrationGraded K (s + 1)) ≠ 0 := by
+    rw [natCard_unitFiltrationGraded_succ]
+    exact Nat.card_pos.ne'
+  have : Finite (UnitFiltrationGraded K (s + 1)) := Nat.finite_of_card_ne_zero hT
+  have hST : Nat.card (UnitFiltrationGraded L (psiNat K L (s + 1))) =
+      Nat.card (UnitFiltrationGraded K (s + 1)) := by
+    rw [hψ, natCard_unitFiltrationGraded_succ, natCard_unitFiltrationGraded_succ,
+      natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
+  have h₁ := Subgroup.card_ker_mul_card_range (normGradedMap K L (s + 1))
+  have h₂ := Subgroup.card_mul_index (normGradedMap K L (s + 1)).range
+  have hpos : 0 < Nat.card (normGradedMap K L (s + 1)).range := Nat.card_pos
+  rw [← hcard_ker]
+  nlinarith
 
 end TauCeti

@@ -26,6 +26,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   checked on the fibers of a countable-valued observation.
 - `condExp_ae_eq_of_le_of_le`: if conditioning on a σ-algebra agrees a.e. with conditioning on a
   coarser one, then so does conditioning on every σ-algebra between them.
+- `condExp_ae_eq_of_forall_exists_ae_eq`: conditioning on two nested σ-algebras gives a.e. the
+  same result when every set of the finer one agrees a.e. with a set of the coarser one.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -206,6 +208,27 @@ theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedS
   _ =ᵐ[μ] μ[μ[f | m₁] | m₂] := condExp_congr_ae h
   _ = μ[f | m₁] := condExp_of_stronglyMeasurable (h₂₃.trans h₃)
     (stronglyMeasurable_condExp.mono h₁₂) integrable_condExp
+
+/-- **Conditioning on σ-algebras that agree up to null sets.** If `m₁ ≤ m₂` and every
+`m₂`-measurable set agrees `μ`-almost everywhere with an `m₁`-measurable set, then conditioning on
+`m₂` gives a.e. the same result as conditioning on `m₁`: σ-algebras that differ only by `μ`-null
+sets cannot be told apart by conditional expectations. -/
+theorem condExp_ae_eq_of_forall_exists_ae_eq {Ω E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {m₁ m₂ m₀ : MeasurableSpace Ω} {μ : Measure Ω}
+    {f : Ω → E} (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ m₀) [SigmaFinite (μ.trim (h₁₂.trans h₂))]
+    (h : ∀ s, MeasurableSet[m₂] s → ∃ t, MeasurableSet[m₁] t ∧ s =ᵐ[μ] t) :
+    μ[f | m₂] =ᵐ[μ] μ[f | m₁] := by
+  have : SigmaFinite (μ.trim h₂) := sigmaFiniteTrim_mono h₂ h₁₂
+  by_cases hf : Integrable f μ
+  case neg => rw [condExp_of_not_integrable hf, condExp_of_not_integrable hf]
+  -- `μ[f | m₁]` is `m₂`-measurable, and its integral over an `m₂`-set `s` is its integral over an
+  -- a.e. equal `m₁`-set `t`, which is the integral of `f` over `t`, hence over `s`.
+  refine (ae_eq_condExp_of_forall_setIntegral_eq h₂ hf
+    (fun _ _ _ => integrable_condExp.integrableOn) (fun s hs _ => ?_)
+    (stronglyMeasurable_condExp.mono h₁₂).aestronglyMeasurable).symm
+  obtain ⟨t, ht, hst⟩ := h s hs
+  rw [setIntegral_congr_set hst, setIntegral_congr_set hst,
+    setIntegral_condExp (h₁₂.trans h₂) hf ht]
 
 end MeasureTheory
 

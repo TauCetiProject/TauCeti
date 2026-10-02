@@ -189,6 +189,12 @@ theorem valuation_decompositionSubgroup_apply (x : F') :
       = ((g : F' ≃ₐ[F] F') • P).valuation ((g : F' ≃ₐ[F] F') x) := by rw [h]
     _ = P.valuation x := valuation_smul_apply _ _ _
 
+/-- An automorphism fixing `P` leaves the order at `P` unchanged. -/
+@[simp]
+theorem ord_decompositionSubgroup_apply (x : F') :
+    P.ord ((g : F' ≃ₐ[F] F') x) = P.ord x := by
+  rw [ord_def, ord_def, valuation_decompositionSubgroup_apply]
+
 /-- An automorphism fixing `P` preserves the valuation ring of `P`. -/
 theorem mem_integers_decompositionSubgroup_apply {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
