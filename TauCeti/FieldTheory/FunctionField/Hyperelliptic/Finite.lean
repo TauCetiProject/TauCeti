@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.Automorphism.Finite
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.BranchPlaces
--- Proof-only: rigidity of automorphisms, and the order of the fixing subgroup of `k(x)`.
-import TauCeti.FieldTheory.FunctionField.Automorphism.Rigidity
 
 /-!
 # Finiteness of the automorphism group of a hyperelliptic function field
@@ -23,9 +22,9 @@ function field of genus at least two.
 ## Main results
 
 * `TauCeti.branchPermHom`: the action of `Aut(F / k)` on the branch places of `k(x)`.
-* `TauCeti.ker_branchPermHom_le_fixingSubgroup`: an automorphism acting trivially on the branch
-  places fixes `k(x)` pointwise.
-* `TauCeti.finite_algEquiv_of_finrank_adjoin_eq_two`: **`Aut(F / k)` is finite.**
+* `TauCeti.ker_branchPermHom`: its kernel is the group of automorphisms over `k(x)`.
+* `TauCeti.finite_algEquiv_of_finrank_adjoin_eq_two`: **`Aut(F / k)` is finite**, and
+  `TauCeti.card_algEquiv_le_of_finrank_adjoin_eq_two`: of order at most `2 · (2g + 2)!`.
 
 ## References
 
@@ -46,56 +45,63 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- **The action of `Aut(F / k)` on the branch places of `k(x)`**, through the restriction of
 automorphisms to `k(x)`. -/
-noncomputable def branchPermHom : (F ≃ₐ[k] F) →* Equiv.Perm (branchPlaces hx) where
-  toFun σ :=
-    { toFun P := ⟨restrictAdjoinHom hF hex hg hx hdeg σ • P,
-        smul_mem_branchPlaces hF hex hx hdeg hg σ P.2⟩
-      invFun P := ⟨restrictAdjoinHom hF hex hg hx hdeg σ⁻¹ • P,
-        smul_mem_branchPlaces hF hex hx hdeg hg σ⁻¹ P.2⟩
-      left_inv P := Subtype.ext (by simp [map_inv, inv_smul_smul])
-      right_inv P := Subtype.ext (by simp [map_inv, smul_inv_smul]) }
-  map_one' := Equiv.ext fun P ↦ Subtype.ext (by simp)
-  map_mul' σ τ := Equiv.ext fun P ↦ Subtype.ext (by simp [mul_smul])
+noncomputable def branchPermHom : (F ≃ₐ[k] F) →* Equiv.Perm (branchPlaces hx) :=
+  placePermHomOfInvariant (restrictAdjoinHom hF hex hg hx hdeg)
+    fun σ _ hP ↦ smul_mem_branchPlaces hF hex hx hdeg hg σ hP
 
-@[simp]
-theorem coe_branchPermHom_apply (σ : F ≃ₐ[k] F) (P : branchPlaces hx) :
-    ((branchPermHom hF hex hg hx hdeg σ P : Place k k⟮x⟯)) =
-      restrictAdjoinHom hF hex hg hx hdeg σ • (P : Place k k⟮x⟯) := by rfl
-
-/-- **An automorphism acting trivially on the branch places fixes `k(x)` pointwise**, when `k` is
-algebraically closed: its restriction fixes `2g + 2 ≥ 3` rational places of the genus-zero field
-`k(x)`, so it is the identity by rigidity. -/
-theorem ker_branchPermHom_le_fixingSubgroup [IsAlgClosed k] :
-    (branchPermHom hF hex hg hx hdeg).ker ≤ k⟮x⟯.fixingSubgroup := by
-  intro σ hσ
-  rw [← ker_restrictAdjoinHom hF hex hg hx hdeg, MonoidHom.mem_ker]
-  refine eq_one_of_two_mul_genus_add_three_le_card hx.isFunctionField_adjoin
-    (isIntegrallyClosedIn_intermediateField hex k⟮x⟯) (S := branchPlaces hx) (fun P hP ↦ ⟨?_, ?_⟩)
-    ?_
-  · have : FiniteDimensional k P.ResidueField :=
-      Place.finiteDimensional_residueField P hx.isFunctionField_adjoin
-    exact Place.degree_eq_one_of_isAlgClosed_of_isIntegral P
-  · have h := congrArg (fun e : Equiv.Perm (branchPlaces hx) ↦ (e ⟨P, hP⟩ : Place k k⟮x⟯))
-      (MonoidHom.mem_ker.mp hσ)
-    simpa using h
-  · rw [genus_adjoin_simple_eq_zero hx, card_branchPlaces hF hex hx hdeg]
+/-- **The kernel of the action on the branch places is the group of automorphisms over `k(x)`**,
+when `k` is algebraically closed: an automorphism acting trivially on the branch places restricts
+to an automorphism of the genus-zero field `k(x)` fixing `2g + 2 ≥ 3` of its rational places, so it
+fixes `k(x)` pointwise by rigidity; conversely an automorphism fixing `k(x)` pointwise restricts to
+the identity. -/
+theorem ker_branchPermHom [IsAlgClosed k] :
+    (branchPermHom hF hex hg hx hdeg).ker = k⟮x⟯.fixingSubgroup := by
+  rw [← ker_restrictAdjoinHom hF hex hg hx hdeg]
+  refine le_antisymm ?_ (fun σ hσ ↦ ?_)
+  · refine ker_placePermHomOfInvariant_le _ hx.isFunctionField_adjoin
+      (isIntegrallyClosedIn_intermediateField hex k⟮x⟯) (branchPlaces hx) _
+      (fun P hP ↦ P.degree_eq_one_of_isAlgClosed_of_isFunctionField hx.isFunctionField_adjoin) ?_
+    rw [genus_adjoin_simple_eq_zero hx, card_branchPlaces hF hex hx hdeg]
     omega
+  · rw [MonoidHom.mem_ker] at hσ ⊢
+    refine Equiv.ext fun P ↦ Subtype.ext ?_
+    rw [branchPermHom, placePermHomOfInvariant_apply, hσ, one_smul]
+    rfl
 
 include hF hex hg hx hdeg in
 /-- **The automorphism group of a hyperelliptic function field is finite** over an algebraically
 closed field of characteristic other than two: the action on the branch places has finite image,
-and its kernel lies in the fixing subgroup of `k(x)`, of order two. -/
+and its kernel is the group of automorphisms over `k(x)`, of order two. -/
 theorem finite_algEquiv_of_finrank_adjoin_eq_two [IsAlgClosed k] : Finite (F ≃ₐ[k] F) := by
   set φ := branchPermHom hF hex hg hx hdeg with hφ
   have hfix : Finite k⟮x⟯.fixingSubgroup :=
     Nat.finite_of_card_ne_zero (by
       rw [IntermediateField.natCard_fixingSubgroup_of_finrank_eq_two k⟮x⟯ hdeg]
       exact two_ne_zero)
-  have hker : Finite φ.ker :=
-    Finite.of_injective _
-      (Subgroup.inclusion_injective (ker_branchPermHom_le_fixingSubgroup hF hex hg hx hdeg))
+  have hker : Finite φ.ker := by
+    rw [hφ, ker_branchPermHom hF hex hg hx hdeg]
+    exact hfix
   have hquot : Finite ((F ≃ₐ[k] F) ⧸ φ.ker) :=
     Finite.of_injective _ (QuotientGroup.kerLift_injective φ)
   exact Finite.of_equiv _ (Subgroup.groupEquivQuotientProdSubgroup (s := φ.ker)).symm
+
+include hF hex hg hx hdeg in
+/-- **The order of the automorphism group is at most `2 · (2g + 2)!`**: the quotient by the
+hyperelliptic involution embeds in the symmetric group of the `2g + 2` branch places. -/
+theorem card_algEquiv_le_of_finrank_adjoin_eq_two [IsAlgClosed k] :
+    Nat.card (F ≃ₐ[k] F) ≤ 2 * (2 * genus k F + 2).factorial := by
+  have hfin := finite_algEquiv_of_finrank_adjoin_eq_two hF hex hg hx hdeg
+  set φ := branchPermHom hF hex hg hx hdeg with hφ
+  have hcard := Subgroup.card_eq_card_quotient_mul_card_subgroup φ.ker
+  have hquot : Nat.card ((F ≃ₐ[k] F) ⧸ φ.ker) ≤ (2 * genus k F + 2).factorial := by
+    classical
+    refine (Nat.card_le_card_of_injective _ (QuotientGroup.kerLift_injective φ)).trans ?_
+    rw [Nat.card_eq_fintype_card (α := Equiv.Perm (branchPlaces hx)), Fintype.card_perm,
+      Fintype.card_coe, card_branchPlaces hF hex hx hdeg]
+  have hsub : Nat.card φ.ker = 2 := by
+    rw [hφ, ker_branchPermHom hF hex hg hx hdeg,
+      IntermediateField.natCard_fixingSubgroup_of_finrank_eq_two k⟮x⟯ hdeg]
+  rw [hcard, hsub, mul_comm]
+  exact Nat.mul_le_mul_left 2 hquot
 
 end TauCeti
