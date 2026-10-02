@@ -95,6 +95,16 @@ theorem integralFormBaseChange_unique (h : IsBaseChange A ι) (Q : LinearMap.Bil
   refine h.algHom_ext _ _ fun x ↦ h.algHom_ext _ _ fun y ↦ ?_
   simp [hB x y]
 
+/-- Complexifying a form pulled back along integral linear maps gives the complexified form
+pulled back along their complexifications. -/
+theorem integralFormBaseChange_comp {V' V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ]
+    [Module ℂ V'ℂ] {ι'ℂ : V' →ₗ[ℤ] V'ℂ} (h'ℂ : IsBaseChange ℂ ι'ℂ) (hℂ : IsBaseChange ℂ ιℂ)
+    (Q : LinearMap.BilinForm ℤ V) (l r : V' →ₗ[ℤ] V) :
+    integralFormBaseChange h'ℂ (Q.comp l r) =
+      (integralFormBaseChange hℂ Q).comp (integralMapToComplex h'ℂ ιℂ l)
+        (integralMapToComplex h'ℂ ιℂ r) :=
+  (integralFormBaseChange_unique h'ℂ _ _ fun x y ↦ by simp).symm
+
 /-- Scalar extension turns the flip of an integral form into the flip of the extended form. -/
 @[simp]
 theorem integralFormBaseChange_flip (h : IsBaseChange A ι) (Q : LinearMap.BilinForm ℤ V) :

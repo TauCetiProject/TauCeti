@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 import TauCeti.Algebra.Module.Torsion.FreeQuotient
 import TauCeti.NumberTheory.LocalField.DeepUnits
@@ -43,6 +44,7 @@ valuations and logarithms forces the coefficients to be divisible by arbitrarily
 * `TauCeti.padicCompletionUnits_quotient_torsion_linearEquiv`: for a finite extension `L` of
   `ℚ_[p]`, `A(L)` modulo its `ℤ_p`-torsion is `ℤ_p`-linearly isomorphic to
   `ℤ_p ^ ([L : ℚ_p] + 1)`.
+* `TauCeti.finrank_padicCompletionUnits`: consequently `A(L)` has `ℤ_p`-rank `[L : ℚ_p] + 1`.
 
 ## References
 
@@ -358,5 +360,15 @@ public theorem padicCompletionUnits_quotient_torsion_linearEquiv (L : Type*) [Fi
   have := finiteExtension_valuativeExtension ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
   exact nonempty_quotient_torsion_linearEquiv_of_finitePadicExtension p L
+
+variable (p) in
+/-- **The rank of `A(L)`.** For a finite extension `L` of `ℚ_[p]`, the completed multiplicative
+module `A(L)` has `ℤ_p`-rank `[L : ℚ_p] + 1`: its torsion does not contribute to the rank, and
+its free quotient has that rank. -/
+public theorem finrank_padicCompletionUnits (L : Type*) [Field L] [Algebra ℚ_[p] L]
+    [Module.Finite ℚ_[p] L] :
+    Module.finrank ℤ_[p] (Additive ↑(padicCompletionUnits p L)) = Module.finrank ℚ_[p] L + 1 := by
+  obtain ⟨e⟩ := padicCompletionUnits_quotient_torsion_linearEquiv p L
+  rw [← finrank_quotient_eq_of_le_torsion le_rfl, e.finrank_eq, Module.finrank_fin_fun]
 
 end TauCeti
