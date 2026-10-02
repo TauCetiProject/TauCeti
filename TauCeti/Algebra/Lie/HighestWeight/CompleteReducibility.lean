@@ -297,8 +297,7 @@ theorem _root_.LieSubmodule.exists_isCompl_of_le_ker [FiniteDimensional K M]
   have : LieModule K (L ⧸ I) M := LieModule.compLieHom M ρ
   have hlie (x : L) (m : M) : ⁅I.mkQ x, m⁆ = ⁅x, m⁆ := by
     simp only [ρ, LieRingModule.compLieHom_apply, LieIdeal.mkQ_apply, Module.End.lie_apply]
-    rw [show I.liftQ (toEnd K L M) hI (LieSubmodule.Quotient.mk x) = toEnd K L M x from
-      LieIdeal.liftQ_apply I _ hI x, toEnd_apply_apply]
+    rw [LieIdeal.liftQ_apply I (toEnd K L M) hI x, toEnd_apply_apply]
   let N₀ : LieSubmodule K (L ⧸ I) M :=
     { N.toSubmodule with
       lie_mem := fun {y m} hm ↦ by
