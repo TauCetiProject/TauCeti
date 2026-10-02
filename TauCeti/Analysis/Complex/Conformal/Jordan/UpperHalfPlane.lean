@@ -40,14 +40,14 @@ open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-/-- Carathéodory's theorem on the closed upper half-plane. Let Ω be a bounded, simply connected
+/-- Carathéodory's theorem on the closed upper half-plane. Let Ω be a bounded, connected
 open subset of ℂ whose frontier is a Jordan curve, and let p be a point of that frontier. Then
 there is a map which is continuous on the closed upper half-plane, holomorphic on the open upper
 half-plane, a bijection from the open upper half-plane onto Ω, from the closed upper half-plane
 onto closure Ω with p removed and from the real line onto frontier Ω with p removed, and which
 tends to p at infinity within the closed half-plane. -/
 theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier {Ω : Set ℂ}
-    (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
     (hΩJ : IsJordanCurve (frontier Ω)) {p : ℂ} (hp : p ∈ frontier Ω) :
     ∃ f : ℂ → ℂ, ContinuousOn f {z | 0 ≤ z.im} ∧
       DifferentiableOn ℂ f UpperHalfPlane.upperHalfPlaneSet ∧
@@ -79,7 +79,7 @@ to a frontier point `p` distinct from the specified points `v i`, together with 
 `a i` mapping to those frontier points. -/
 theorem exists_prevertices_of_isJordanCurve_frontier
     {ι : Type*} [Finite ι]
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
     (hvU : ∀ i, v i ∈ frontier U) :
     ∃ f : ℂ → ℂ, ∃ a : ι → ℝ, ∃ p : ℂ, Injective a ∧

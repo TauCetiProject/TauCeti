@@ -13,9 +13,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 /-!
 # Splitting extensions of quiver representations
 
-Surjectivity of the vertex-and-arrow Hom differential implies that every extension of
-its source representation by its target splits. Vertexwise linear sections always exist
-over a field; the differential corrects their failure to commute with the arrows.
+Short exact sequences split at each vertex over a field. Their vertexwise linear sections
+define an arrow family measuring the failure to commute with arrows.
 
 ## References
 
@@ -34,79 +33,76 @@ universe u v w t
 
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 
-/-- An extension splits if its vertex-and-arrow Hom differential is surjective. No
-finiteness or acyclicity hypothesis is needed. -/
-theorem nonempty_splitting_of_surjective_homDifferential
-    {S : ShortComplex (QuiverRep.{u, v, w, t} k Q)} (hS : S.ShortExact)
-    (hsurj : Function.Surjective (homDifferential S.X₃ S.X₁)) : Nonempty S.Splitting := by
-  classical
-  let E (i : Q) := (evaluation (Paths Q) (ModuleCat k)).obj ((Paths.of Q).obj i)
-  have (i : Q) : (E i).PreservesZeroMorphisms := inferInstanceAs
-    (((evaluation (Paths Q) (ModuleCat k)).obj ((Paths.of Q).obj i)).PreservesZeroMorphisms)
-  have (i : Q) : PreservesFiniteLimits (E i) := inferInstanceAs
-    (PreservesFiniteLimits ((evaluation (Paths Q) (ModuleCat k)).obj ((Paths.of Q).obj i)))
-  have (i : Q) : PreservesFiniteColimits (E i) := inferInstanceAs
-    (PreservesFiniteColimits ((evaluation (Paths Q) (ModuleCat k)).obj ((Paths.of Q).obj i)))
-  let sp (i : Q) : (S.map (E i)).Splitting :=
-    (hS.map_of_exact (E i)).splittingOfProjective
-  -- Choose vertexwise sections; their arrow defects land in the kernel of `g`.
-  let s : HomVertex S.X₃ S.X₂ := fun i ↦ (sp i).s.hom
-  let f : HomVertex S.X₁ S.X₂ := fun i ↦ (S.f.app i).hom
-  let g : HomVertex S.X₂ S.X₃ := fun i ↦ (S.g.app i).hom
-  have hsg (i : Q) (x : vertexSpace k Q S.X₃ i) : g i (s i x) = x :=
-    congrArg (fun p ↦ p x) (sp i).s_g
-  have hid (i : Q) (y : vertexSpace k Q S.X₂ i) :
-      f i ((sp i).r.hom y) + s i (g i y) = y :=
-    congrArg (fun p ↦ p y) (sp i).id
-  let d := homDifferential S.X₃ S.X₂ s
-  let c : HomArrow S.X₃ S.X₁ := fun i j a ↦ (sp j).r.hom.comp (d i j a)
-  obtain ⟨h, hh⟩ := hsurj c
-  have hdef (i j : Q) (a : i ⟶ j) : (f j).comp (c i j a) = d i j a := by
-    have hg : (g j).comp (d i j a) = 0 := by
-      ext x
-      have hn : g j (mapₗ k Q S.X₂ a.toPath (s i x)) =
-          mapₗ k Q S.X₃ a.toPath (g i (s i x)) :=
-        congrArg (fun p ↦ p (s i x)) (S.g.naturality ((Paths.of Q).map a))
-      simp only [d, homDifferential_apply, LinearMap.comp_apply, LinearMap.sub_apply,
-        LinearMap.zero_apply, map_sub, hn, hsg, sub_self]
-    ext x
-    have hz : g j (d i j a x) = 0 := congrArg (fun p ↦ p x) hg
-    have hi := hid j (d i j a x)
-    simp only [hz, map_zero, add_zero] at hi
-    exact hi
-  -- Correct the sections by a solution of the arrow defect equation.
-  let s' : HomVertex S.X₃ S.X₂ := fun i ↦ s i - (f i).comp (h i)
-  have hs' : s' ∈ (homDifferential S.X₃ S.X₂).ker := by
-    rw [LinearMap.mem_ker, homDifferential_eq_zero_iff]
-    intro i j a
-    have hc := congrArg (fun p ↦ (f j).comp (p i j a)) hh
-    rw [hdef i j a] at hc
-    ext x
-    have hx := congrArg (fun p ↦ p x) hc
-    have hn : f j (mapₗ k Q S.X₁ a.toPath (h i x)) =
-        mapₗ k Q S.X₂ a.toPath (f i (h i x)) :=
-      congrArg (fun p ↦ p (h i x)) (S.f.naturality ((Paths.of Q).map a))
-    simp only [s', d, homDifferential_apply, LinearMap.comp_apply, LinearMap.sub_apply,
-      map_sub] at hx ⊢
-    rw [hn] at hx
-    exact (sub_eq_sub_iff_sub_eq_sub).mp hx.symm
-  -- Arrow-compatible vertex maps extend uniquely to a representation morphism.
-  let sectionMap := (homEquivKerDifferential S.X₃ S.X₂).symm ⟨s', hs'⟩
-  have hcalc (i : Q) (x : vertexSpace k Q S.X₃ i) : g i (s' i x) = x := by
-    have hz : g i (f i (h i x)) = 0 :=
-      congrArg (fun p ↦ p (h i x)) (congrArg (fun p ↦ p.app i) S.zero)
-    simp only [s', LinearMap.sub_apply, LinearMap.comp_apply, map_sub, hsg, hz, sub_zero]
-  have hsectionVertex (i : Q) : sectionMap.app i ≫ S.g.app i = 𝟙 _ := by
-    apply ModuleCat.hom_ext
-    ext x
-    have ha := homEquivKerDifferential_symm_apply S.X₃ S.X₂ ⟨s', hs'⟩ i
-    have hv : g i ((sectionMap.app i).hom x) = g i (s' i x) :=
-      congrArg (fun p ↦ g i (p.hom x)) ha
-    exact hv.trans (hcalc i x)
-  have hsection : sectionMap ≫ S.g = 𝟙 _ := by
-    apply NatTrans.ext
-    funext i
-    exact hsectionVertex i
-  exact ⟨ShortComplex.Splitting.ofExactOfSection S hS.exact sectionMap hsection hS.mono_f⟩
+namespace QuiverRep
+
+variable {S : ShortComplex (QuiverRep.{u, v, w, t} k Q)}
+
+/-- A short exact sequence of representations admits a splitting at each vertex. -/
+noncomputable def vertexSplitting (hS : S.ShortExact) (i : Q) :
+    (S.map ((evaluation (Paths Q) (ModuleCat k)).obj ((Paths.of Q).obj i))).Splitting :=
+  (hS.map_of_exact ((evaluation (Paths Q) (ModuleCat k)).obj
+    ((Paths.of Q).obj i))).splittingOfProjective
+
+variable (sp : ∀ i : Q,
+  (S.map ((evaluation (Paths Q) (ModuleCat k)).obj ((Paths.of Q).obj i))).Splitting)
+
+/-- The linear sections supplied by a family of vertex splittings. -/
+noncomputable def vertexSplittingSection : HomVertex S.X₃ S.X₂ := fun i ↦ (sp i).s.hom
+
+/-- The linear retractions supplied by a family of vertex splittings. -/
+noncomputable def vertexSplittingRetraction : HomVertex S.X₂ S.X₁ := fun i ↦ (sp i).r.hom
+
+-- These accessor formulas are not simp lemmas: keep the typed vertex families in
+-- normal form so the section and decomposition identities can apply.
+/-- The section family evaluates to the section of the chosen vertex splitting. -/
+theorem vertexSplittingSection_apply (i : Q) (x : vertexSpace k Q S.X₃ i) :
+    vertexSplittingSection sp i x = (sp i).s.hom x := (rfl)
+
+/-- The retraction family evaluates to the retraction of the chosen vertex splitting. -/
+theorem vertexSplittingRetraction_apply (i : Q) (x : vertexSpace k Q S.X₂ i) :
+    vertexSplittingRetraction sp i x = (sp i).r.hom x := (rfl)
+
+/-- The vertex section is a right inverse to the quotient map. -/
+@[simp]
+theorem vertexSplittingSection_comp_g (i : Q) (x : vertexSpace k Q S.X₃ i) :
+    homVertex S.X₂ S.X₃ S.g i (vertexSplittingSection sp i x) = x := by
+  erw [homVertex_apply]
+  exact congrArg (fun p ↦ p x) (sp i).s_g
+
+/-- The vertex retraction and section give the direct-sum decomposition. -/
+theorem vertexSplitting_decomposition (i : Q) (x : vertexSpace k Q S.X₂ i) :
+    homVertex S.X₁ S.X₂ S.f i (vertexSplittingRetraction sp i x) +
+      vertexSplittingSection sp i (homVertex S.X₂ S.X₃ S.g i x) = x := by
+  erw [homVertex_apply, homVertex_apply]
+  exact congrArg (fun p ↦ p x) (sp i).id
+
+/-- The upper right arrow block determined by a family of vertex splittings. -/
+noncomputable def vertexSplittingArrow : HomArrow S.X₃ S.X₁ := fun i j a ↦
+  (vertexSplittingRetraction sp j).comp
+    ((mapₗ k Q S.X₂ a.toPath).comp (vertexSplittingSection sp i))
+
+/-- The arrow family is computed by projecting the arrow action on the vertex section. -/
+theorem vertexSplittingArrow_apply (i j : Q) (a : i ⟶ j)
+    (x : vertexSpace k Q S.X₃ i) :
+    vertexSplittingArrow sp i j a x = vertexSplittingRetraction sp j
+      (mapₗ k Q S.X₂ a.toPath (vertexSplittingSection sp i x)) := (rfl)
+
+/-- The upper right block measures the failure of the sections to commute with arrows. -/
+theorem vertexSplittingArrow_defect (i j : Q) (a : i ⟶ j)
+    (x : vertexSpace k Q S.X₃ i) :
+    homVertex S.X₁ S.X₂ S.f j (vertexSplittingArrow sp i j a x) +
+        vertexSplittingSection sp j (mapₗ k Q S.X₃ a.toPath x) =
+      mapₗ k Q S.X₂ a.toPath (vertexSplittingSection sp i x) := by
+  have hn : homVertex S.X₂ S.X₃ S.g j (mapₗ k Q S.X₂ a.toPath (vertexSplittingSection sp i x)) =
+      mapₗ k Q S.X₃ a.toPath x := by
+    calc
+      _ = mapₗ k Q S.X₃ a.toPath
+          (homVertex S.X₂ S.X₃ S.g i (vertexSplittingSection sp i x)) :=
+        homVertex_naturality _ _ _ i j a _
+      _ = _ := by rw [vertexSplittingSection_comp_g]
+  rw [vertexSplittingArrow_apply, ← hn]
+  exact vertexSplitting_decomposition sp j _
+
+end QuiverRep
 
 end TauCeti

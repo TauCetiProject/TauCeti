@@ -32,9 +32,10 @@ Noetherian ring, hence Noetherian, and the transfer carries that down to `U(L)`.
 The hypotheses are therefore `R` Noetherian and `L` finite as an `R`-module, with no field, no
 freeness and no abelianness. Over a field this specializes to the Poincaré--Birkhoff--Witt
 corollary that the enveloping algebra of a finite-dimensional Lie algebra is Noetherian
-(`TauCeti.UniversalEnvelopingAlgebra.isNoetherianRing_universalEnvelopingAlgebra`). Only left ideals
-are treated, matching Mathlib's `IsNoetherianRing`; the right-handed statement is the same theorem
-read in the opposite algebra and is not proved here.
+(`TauCeti.UniversalEnvelopingAlgebra.isNoetherianRing_universalEnvelopingAlgebra`). This file treats
+left ideals, matching Mathlib's `IsNoetherianRing`. The companion
+`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Noetherian/Opposite.lean` transfers this result
+through the antipode to obtain the right Noetherian statement.
 
 ## Main results
 

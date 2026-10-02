@@ -16,8 +16,7 @@ For a subgroup `H` of a finite group `G`, the separate constructions of restrict
 corestriction in positive, zero, minus one, and lower negative degrees assemble into maps in
 every integer degree. Their composite is multiplication by the index `[G : H]`. These uniform
 maps are the group-change operations used in the restriction law for the Tate cup product.
-In negative degrees, restriction is natural in the coefficient representation
-(`res_natural_of_neg`).
+Restriction is natural in the coefficient representation in every degree (`res_natural`).
 Tower composition for class-field-theory layers is provided by
 `ClassFieldTheory.LayerRestriction.tateRes_trans` and
 `ClassFieldTheory.LayerRestriction.tateCor_trans`.
@@ -71,17 +70,30 @@ theorem res_neg_one (M : Rep.{u} R G) (H : Subgroup G) :
 theorem res_negSucc_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
     res M H (Int.negSucc (n + 1)) = negSuccRes M H (n + 1) := by rfl
 
-/-- **Tate restriction in negative degrees is natural in the coefficient representation.** -/
+/-- Tate restriction is natural in the coefficient representation, in every integer degree. -/
 @[reassoc]
-theorem res_natural_of_neg {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) {r : ℤ}
-    (hr : r < 0) :
+theorem res_natural {M N : Rep.{u} R G} (f : M ⟶ N) (H : Subgroup G) (r : ℤ) :
     (tateCohomologyFunctor r).map f ≫ res N H r =
-      res M H r ≫ (tateCohomologyFunctor r).map ((Rep.resFunctor H.subtype).map f) := by
-  obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat hr.le
-  rcases n with _ | _ | n
-  · simp at hr
-  · exact HNegOneRes_natural M H f
-  · exact negSuccRes_natural M H f (n + 1)
+      res M H r ≫ (tateCohomologyFunctor r).map (Rep.resMap H.subtype f) := by
+  rcases r with n | n
+  · cases n with
+    | zero =>
+      have h0 : (tateCohomologyFunctor 0).map f ≫ H0Res N H =
+          H0Res M H ≫ (tateCohomologyFunctor 0).map (Rep.resMap H.subtype f) := by
+        ext x
+        induction x using H0_induction_on with
+        | h x =>
+          rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
+            H0π_comp_tateCohomologyFunctor_map_apply, H0π_comp_H0Res_apply,
+            H0π_comp_H0Res_apply, H0π_comp_tateCohomologyFunctor_map_apply]
+          congr 1
+      exact h0
+    | succ n =>
+      simp only [Int.ofNat_eq_natCast, Int.natCast_add, Int.cast_ofNat_Int, res_ofNat_succ]
+      exact posRes_natural M H f n
+  · cases n with
+    | zero => exact HNegOneRes_natural M H f
+    | succ n => exact negSuccRes_natural M H f (n + 1)
 
 /-- Corestriction of Tate cohomology from a subgroup of a finite group, in every integer
 degree. -/

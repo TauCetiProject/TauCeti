@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Operations
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
 public import TauCeti.Algebra.Module.GradedModule.Shift
 
@@ -35,6 +36,16 @@ is shifted, and linear maps out of the module are determined by the indicated ho
   degree exactly when every summand is generated in that degree.
 * `TauCeti.InternalGrading.linearMap_ext_of_isGeneratedInDegree`: two linear maps out of a module
   generated in degree `d` agree when they agree on its degree-`d` piece.
+* `TauCeti.InternalGrading.IsGeneratedInDegree.piece_add_eq_smul`: over a graded algebra `𝒜`, a
+  graded module generated in degree `d` has degree-`m + d` piece `𝒜 m • M_d`.
+* `TauCeti.InternalGrading.IsGeneratedInDegree.piece_eq_bot_of_lt`: over a nonnegatively graded
+  algebra, a graded module generated in degree `d` vanishes in every degree below `d`.
+* `TauCeti.InternalGrading.IsGeneratedInDegree.piece_le_smul_top`: a graded module generated in
+  degree `d` has all of its pieces of degree above `d` inside `A₊ M`, where `A₊` is the sum of the
+  pieces of positive degree.
+* `TauCeti.InternalGrading.apply_mem_smul_top_of_isGeneratedInDegree`: over a nonnegatively graded
+  algebra, a degree-zero map from a module generated in degree `d'` to a module generated in a
+  lower degree lands in `A₊ M`.
 
 ## References
 
@@ -204,6 +215,64 @@ theorem isGeneratedInDegree_directSum_iff (G : ∀ i, InternalGrading R (M i)) (
   ⟨fun h i ↦ h.of_directSum G d i, isGeneratedInDegree_directSum G d⟩
 
 end DirectSum
+
+end InternalGrading
+
+/-! ### Generation over a graded algebra -/
+
+namespace InternalGrading
+
+variable {k : Type u} {A : Type u'} {M : Type v}
+variable [CommSemiring k] [Semiring A] [Algebra k A]
+variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
+variable {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece] {d : ℤ}
+
+/-- Over a graded algebra `𝒜`, a graded module generated in degree `d` has degree-`m + d` piece
+`𝒜 m • M_d`: its homogeneous elements of degree `m + d` are exactly the sums of products of
+degree-`m` elements of the algebra with degree-`d` elements of the module. -/
+theorem IsGeneratedInDegree.piece_add_eq_smul (hG : G.IsGeneratedInDegree A d) (m : ℤ) :
+    G.piece (m + d) = 𝒜 m • G.piece d := by
+  refine le_antisymm (fun x hx ↦ ?_) (Submodule.smul_le.2 fun a ha y hy ↦
+    SetLike.GradedSMul.smul_mem ha hy)
+  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.1 ((G.isGeneratedInDegree_iff d).1 hG x)
+  rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
+    DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  rw [DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2]
+  exact Submodule.smul_mem_smul (DirectSum.decompose 𝒜 (c i) m).2 (g i).2
+
+/-- Over a nonnegatively graded algebra, a graded module generated in degree `d` has no nonzero
+homogeneous elements of degree below `d`. -/
+theorem IsGeneratedInDegree.piece_eq_bot_of_lt (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
+    (hG : G.IsGeneratedInDegree A d) {p : ℤ} (hp : p < d) : G.piece p = ⊥ := by
+  rw [← sub_add_cancel p d, hG.piece_add_eq_smul 𝒜, h𝒜 _ (by omega), Submodule.bot_smul]
+
+/-- A graded module generated in degree `d` has every homogeneous piece of degree above `d`
+inside `A₊ M`, the products of elements of positive degree with elements of the module. -/
+theorem IsGeneratedInDegree.piece_le_smul_top (hG : G.IsGeneratedInDegree A d) {p : ℤ}
+    (hp : d < p) : G.piece p ≤ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • ⊤ := by
+  rw [← sub_add_cancel p d, hG.piece_add_eq_smul 𝒜]
+  exact Submodule.smul_mono (le_iSup₂_of_le (p - d) (by omega) le_rfl) le_top
+
+/-- Over a nonnegatively graded algebra, a degree-zero homogeneous map from a graded module
+generated in degree `d'` to a graded module generated in a lower degree `d` takes values in
+`A₊ M`. The source has no homogeneous elements below degree `d'`, and the target has all of its
+homogeneous elements of degree at least `d'` in `A₊ M`. -/
+theorem apply_mem_smul_top_of_isGeneratedInDegree (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
+    {M' : Type w} [AddCommMonoid M'] [Module k M'] [Module A M'] [IsScalarTower k A M']
+    {G' : InternalGrading k M'} [SetLike.GradedSMul 𝒜 G'.piece] {d' : ℤ}
+    (hG' : G'.IsGeneratedInDegree A d') (hG : G.IsGeneratedInDegree A d) (hd : d < d')
+    {f : M' →ₗ[A] M} (hf : LinearMap.IsHomogeneous f G'.piece G.piece 0) (x : M') :
+    f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
+  classical
+  rw [← DirectSum.sum_support_decompose G'.piece x, map_sum]
+  refine Submodule.sum_mem _ fun p _ ↦ ?_
+  have hx : (DirectSum.decompose G'.piece x p : M') ∈ G'.piece p := (DirectSum.decompose _ x p).2
+  rcases lt_or_ge p d' with hp | hp
+  · rw [(Submodule.eq_bot_iff _).1 (hG'.piece_eq_bot_of_lt 𝒜 h𝒜 hp) _ hx, map_zero]
+    exact Submodule.zero_mem _
+  · exact hG.piece_le_smul_top 𝒜 (p := p) (by omega) (by simpa using hf.map_mem hx)
 
 end InternalGrading
 

@@ -123,8 +123,9 @@ theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
       Φ.toDiffeomorph.differentiableWithinAt_sectionCoord_mfderiv hγ hV
   -- Test both sides against pullbacks of differentiable fields `Y` on the target: the
   -- metric-compatible product rules on source and target differentiate the same inner product.
-  refine TauCeti.eq_of_forall_inner_section_eq (I := J)
-    (V := fun y : N ↦ TangentSpace J y) F fun Y hY ↦ ?_
+  refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (Φ (γ t)) ?_
+  ext Y hY
+  dsimp only
   let X : ∀ x : M, TangentSpace I x := mpullback I J Φ Y
   have hX : MDiffAt (T% X) (γ t) :=
     hY.mpullback_vectorField (Φ.toDiffeomorph.contMDiff.contMDiffAt)

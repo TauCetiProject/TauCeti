@@ -56,6 +56,8 @@ underlying subgroup the fixing subgroup of `σ(L)` by definition, which is what 
 * `TauCeti.ClassFieldTheory.unitsRep F`: the units `(Fˢ)ˣ` as a coefficient object for `G_F`.
 * `TauCeti.ClassFieldTheory.Br F`: the Brauer group `H²(G_F, (Fˢ)ˣ)`.
 * `TauCeti.ClassFieldTheory.unitsRepH2Equiv`: `H²(Gal(Fˢ/F), (Fˢ)ˣ) ≃+ Br F`.
+* `TauCeti.ClassFieldTheory.subsingleton_Br_of_isSepClosed`: the Brauer group of a separably
+  closed field is trivial.
 * `TauCeti.ClassFieldTheory.brLevelInfl`: inflation from the level of an open normal subgroup.
 * `TauCeti.ClassFieldTheory.relBrLevelEquiv`: `H²(Gal(L/K), Lˣ)` as the level of the subgroup
   fixing `σ(L)`.
@@ -148,6 +150,10 @@ def unitsRepH2Equiv : H2 (AbsoluteGaloisGroup F) (UnitsCoeff F) ≃+ Br F :=
       fun g x => (unitsCoeffEquivUnitsRep_smul F g x).trans
         (TopRep.distribMulAction_smul _ g _).symm).trans <|
     (unitsRep F).explicitH2AddEquivContinuousCohomologyOfDiscrete
+
+/-- A separably closed field has trivial cohomological Brauer group. -/
+instance subsingleton_Br_of_isSepClosed [IsSepClosed F] : Subsingleton (Br F) :=
+  (unitsRepH2Equiv F).symm.injective.subsingleton
 
 /-- `unitsRepH2Equiv` is the pullback along the restriction isomorphism and the coefficient
 dictionary, followed by the degree-two comparison for the discrete object `unitsRep F`. -/

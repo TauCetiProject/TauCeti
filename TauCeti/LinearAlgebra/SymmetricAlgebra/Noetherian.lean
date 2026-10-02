@@ -22,7 +22,7 @@ in finitely many variables.
 The hypotheses are therefore the same two that make `MonoidAlgebra`-style constructions Noetherian:
 `R` Noetherian and `M` module-finite, with no freeness and no field. The symmetric algebra is the
 commutative model of an enveloping algebra, and this instance is consumed in that role by
-`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Noetherian.lean`: the symmetric algebra of a Lie
+`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Noetherian/Basic.lean`: the symmetric algebra of a Lie
 algebra surjects onto the associated graded of its PBW filtration, which is thereby Noetherian
 under the same two hypotheses.
 

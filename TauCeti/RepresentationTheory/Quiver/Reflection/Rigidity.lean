@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Brick
-public import TauCeti.RepresentationTheory.Quiver.Representation.Splitting
+public import TauCeti.RepresentationTheory.Quiver.Representation.ArrowExtension.Classification
 
 /-!
 # Rigidity of indecomposables for positive definite quivers

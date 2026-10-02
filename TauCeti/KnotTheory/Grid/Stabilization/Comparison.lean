@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Stabilization.Map
+public import TauCeti.KnotTheory.Grid.Stabilization.Map.Basic
 public import TauCeti.KnotTheory.Grid.Stabilization.Matching
 public import TauCeti.KnotTheory.Grid.Stabilization.Reduction
 import TauCeti.Algebra.Homology.SquareZero.Contraction

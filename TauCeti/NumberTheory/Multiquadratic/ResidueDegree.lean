@@ -104,6 +104,19 @@ theorem isGalois_rat [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) : IsGalois ℚ K :=
   isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) (fun i => by rw [hr i]; simp) htop
 
+/-- **Bounding a decomposition exponent by the number of radicands.** Under square-class
+independence, an identity `g * 2 ^ k = [K : ℚ]` forces `k ≤ Nat.card ι`. -/
+theorem le_card_of_mul_two_pow_eq_finrank [Finite ι]
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
+    {g k : ℕ} (h : g * 2 ^ k = finrank ℚ K) : k ≤ Nat.card ι := by
+  have hr' (i : ι) : r i ^ 2 = algebraMap ℚ K (d i : ℚ) := by rw [hr i]; simp
+  have hdeg := finrank_adjoin_range (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr' hindep
+  rw [htop, IntermediateField.finrank_top'] at hdeg
+  rw [hdeg] at h
+  exact (Nat.pow_dvd_pow_iff_le_right one_lt_two).mp ⟨g, by simpa [mul_comm] using h.symm⟩
+
 /-- **Reading a prime count off the degree.** Under square-class independence of `n` radicands,
 `[K : ℚ] = 2 ^ n`, so a number `g` with `g * 2 ^ k = [K : ℚ]` is `2 ^ (n - k)`; the equation itself
 forces `k ≤ n`. This is how the decomposition formulas `g · f · e = [K : ℚ]` are solved for the
@@ -113,17 +126,11 @@ theorem eq_two_pow_sub_of_mul_two_pow_eq_finrank [Finite ι]
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     {g k : ℕ} (h : g * 2 ^ k = finrank ℚ K) : g = 2 ^ (Nat.card ι - k) := by
+  have hk := le_card_of_mul_two_pow_eq_finrank hr htop hindep h
   have hr' (i : ι) : r i ^ 2 = algebraMap ℚ K (d i : ℚ) := by rw [hr i]; simp
   have hdeg := finrank_adjoin_range (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr' hindep
   rw [htop, IntermediateField.finrank_top'] at hdeg
   rw [hdeg] at h
-  -- `g ≠ 0`, so `2 ^ k ≤ 2 ^ n` and `k ≤ n`; then cancel `2 ^ k`.
-  have hg : g ≠ 0 := by rintro rfl; exact (pow_pos two_pos _).ne (by simpa using h)
-  have hk : k ≤ Nat.card ι := by
-    by_contra hlt
-    have h1 : 2 ^ Nat.card ι < 2 ^ k := Nat.pow_lt_pow_right one_lt_two (not_le.mp hlt)
-    have h2 : 2 ^ k ≤ g * 2 ^ k := Nat.le_mul_of_pos_left _ (Nat.pos_of_ne_zero hg)
-    omega
   rw [← Nat.sub_add_cancel hk, pow_add] at h
   exact Nat.eq_of_mul_eq_mul_right (pow_pos two_pos k) h
 

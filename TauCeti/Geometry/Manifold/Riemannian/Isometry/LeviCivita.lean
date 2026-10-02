@@ -119,8 +119,9 @@ theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (Φ : RiemannianIsomet
   have hXx : mpullback I J Φ X x = v := by
     rw [mpullback_apply, hXv]
     exact (Φ.toDiffeomorph.isInvertible_mfderiv (by simp)).inverse_apply_self v
-  refine TauCeti.eq_of_forall_inner_section_eq (I := J) (V := fun y : N ↦ TangentSpace J y) F
-    fun Z hZ ↦ ?_
+  refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (Φ x) ?_
+  ext Z hZ
+  dsimp only
   have hMk := hM.two_inner_eq_koszul (hpull hX) (hpull hY) (hpull hZ)
   have hNk := hN.two_inner_eq_koszul hX hY hZ
   rw [Φ.koszul_mpullback hX hY hZ, hXx] at hMk

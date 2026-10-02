@@ -38,6 +38,10 @@ the same condition as the sign `+1`.
   `TauCeti.cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one`: the vanishing of `(a) ∪ (b)` is
   equivalent to the triviality of the quaternion symbol, to the splitting of `ℍ[K, a, b]`, to `b`
   being a norm from `K[√a]`, to the isotropy of `⟨1, -a, -b⟩`, and to `(a, b) = +1`.
+* `TauCeti.cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq`: two cup products of
+  Kummer classes agree exactly when the corresponding quaternion symbols agree.
+* `TauCeti.cup_kummerClass_congr`: the binary cup identity `(a) ∪ (b) = (c) ∪ (d)` for isometric
+  binary forms `⟨a, b⟩ ≅ ⟨c, d⟩`.
 * `TauCeti.cup_kummerClass_neg_self` and `TauCeti.cup_kummerClass_eq_zero_of_add_eq_one`: the
   relations `(a) ∪ (-a) = 0` and, for `a + b = 1`, `(a) ∪ (b) = 0`.
 
@@ -68,6 +72,27 @@ theorem cup_kummerClass_eq_zero_iff_quaternionClass_eq_one (a b : Kˣ) :
       BrauerGroup.quaternionClass a b = 1 := by
   rw [← map_eq_zero_iff _ (h2MuToUnits_injective K), ← brauerCohomologyEquiv_quaternionClass,
     AddEquiv.map_eq_zero_iff, ofMul_eq_zero]
+
+/-- **Two cup products of Kummer classes agree exactly when the quaternion symbols do**:
+`(a) ∪ (b) = (c) ∪ (d)` in `H²(G_K, 𝔽₂)` if and only if `[(a, b)] = [(c, d)]` in `Br(K)`. -/
+theorem cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq (a b c d : Kˣ) :
+    (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) =
+        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c) (kummerClass d) ↔
+      BrauerGroup.quaternionClass a b = BrauerGroup.quaternionClass c d := by
+  rw [← (h2MuToUnits_injective K).eq_iff, ← brauerCohomologyEquiv_quaternionClass,
+    ← brauerCohomologyEquiv_quaternionClass, (brauerCohomologyEquiv K).injective.eq_iff,
+    EmbeddingLike.apply_eq_iff_eq]
+
+/-- **The binary cup identity**: `(a) ∪ (b) = (c) ∪ (d)` whenever the binary forms `⟨a, b⟩` and
+`⟨c, d⟩` are isometric. This is what makes the second Stiefel–Whitney class of a diagonal form an
+invariant of its isometry class. -/
+theorem cup_kummerClass_congr {a b c d : Kˣ}
+    (h : (QuadraticMap.weightedSumSquares K ![(a : K), b]).Equivalent
+      (QuadraticMap.weightedSumSquares K ![(c : K), d])) :
+    (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) =
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c) (kummerClass d) :=
+  (cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq a b c d).2
+    (BrauerGroup.quaternionClass_congr h)
 
 /-- **The cup-norm theorem.** For units `a` and `b` of a field in which `2` is invertible, the cup
 product `(a) ∪ (b) ∈ H²(G_K, 𝔽₂)` of their Kummer classes vanishes if and only if the norm

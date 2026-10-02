@@ -42,6 +42,22 @@ variable (M N : QuiverRep.{u, v, w, t} k Q)
 /-- Families of linear maps between corresponding vertex spaces. -/
 abbrev HomVertex := ∀ i : Q, vertexSpace k Q M i →ₗ[k] vertexSpace k Q N i
 
+/-- The vertex components of a morphism of representations, retyped between vertex spaces. -/
+noncomputable def homVertex (f : M ⟶ N) : HomVertex M N :=
+  fun i ↦ (f.app ((Paths.of Q).obj i)).hom
+
+-- Keep the typed vertex family in normal form rather than reverting to path objects.
+/-- The vertex family of a morphism evaluates to its components. -/
+theorem homVertex_apply (f : M ⟶ N) (i : Q) (x : vertexSpace k Q M i) :
+    homVertex M N f i x = (f.app ((Paths.of Q).obj i)).hom x := (rfl)
+
+/-- The vertex components of a morphism commute with each arrow action. -/
+theorem homVertex_naturality (f : M ⟶ N) (i j : Q) (a : i ⟶ j)
+    (x : vertexSpace k Q M i) :
+    homVertex M N f j (mapₗ k Q M a.toPath x) =
+      mapₗ k Q N a.toPath (homVertex M N f i x) :=
+  congrArg (fun p ↦ p x) (f.naturality ((Paths.of Q).map a))
+
 /-- Families of linear maps from the source space of each arrow to its target space. -/
 abbrev HomArrow := ∀ i j : Q, (i ⟶ j) → (vertexSpace k Q M i →ₗ[k] vertexSpace k Q N j)
 
@@ -75,7 +91,7 @@ theorem homDifferential_eq_zero_iff (f : HomVertex M N) :
 
 /-- The kernel of the Hom differential is the space of representation morphisms. -/
 noncomputable def homEquivKerDifferential : (M ⟶ N) ≃ₗ[k] (homDifferential M N).ker where
-  toFun f := ⟨fun i ↦ (f.app i).hom, LinearMap.mem_ker.mpr <|
+  toFun f := ⟨homVertex M N f, LinearMap.mem_ker.mpr <|
     (homDifferential_eq_zero_iff M N _).mpr fun i j a ↦ by
     exact congrArg ModuleCat.Hom.hom (f.naturality ((Paths.of Q).map a)).symm⟩
   invFun f :=

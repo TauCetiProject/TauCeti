@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ClosedSubg
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.AllDegrees
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
-public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 
 /-!
 # Right exactness of `Hⁿ` on finite discrete `G`-modules killed by `p` kills `Hⁿ⁺¹`
@@ -81,72 +80,31 @@ theorem subsingleton_continuousCohomology_succ_of_forall_coeffMap_proj_surjectiv
   refine subsingleton_of_forall_eq 0 fun x => ?_
   -- `x` restricts to zero on some open subgroup `V`
   obtain ⟨V, hV⟩ := exists_openSubgroup_res_eq_zero (ofDiscreteModule_isSmoothDiscrete ℤ G M) x
-  -- the unit `ι : M → Coind_V^G M`, its image `N ≅ M`, and the short exact sequence
-  -- `0 → N → Coind_V^G M → Coind_V^G M ⧸ N → 0`
+  -- the short exact sequence `0 → M → Coind_V^G M → Coind_V^G M ⧸ M → 0` of the unit
+  -- `ι : M → Coind_V^G M` of coinduction
+  set S := coindShortExact G V.toSubgroup M
   let ι : M →+ DiscreteCoind G V.toSubgroup M :=
     (DiscreteCoind.unit G V.toSubgroup M).toAddMonoidHom
   have hι : ∀ (g : G) (m : M), ι (g • m) = g • ι m := fun g m =>
     _root_.map_smul (DiscreteCoind.unit G V.toSubgroup M) g m
-  let N : AddSubgroup (DiscreteCoind G V.toSubgroup M) := ι.range
-  have hN : ∀ g : G, ∀ f ∈ N, g • f ∈ N := by
-    rintro g _ ⟨m, rfl⟩
-    exact ⟨g • m, hι g m⟩
-  let := N.restrictDistribMulAction hN
-  let := N.quotientDistribMulAction hN
-  have : ContinuousSMul G N := N.restrictDistribMulAction_continuousSMul hN
-  have : ContinuousAdd (DiscreteCoind G V.toSubgroup M) := ⟨continuous_of_discreteTopology⟩
-  have : ContinuousSMul G (DiscreteCoind G V.toSubgroup M ⧸ N) :=
-    N.quotientDistribMulAction_continuousSMul hN
-  let S := DiscreteShortExact.ofAddSubgroup N hN
-  -- the three modules of the sequence are finite and killed by `p`
-  have hBp : ∀ f : DiscreteCoind G V.toSubgroup M, p • f = 0 := fun f =>
-    DiscreteCoind.ext fun y => by
-      rw [FunLike.coe_smul, Pi.smul_apply, hM, DiscreteCoind.coe_zero, Pi.zero_apply]
-  have hNp : ∀ a : N, p • a = 0 := fun a =>
-    Subtype.ext ((AddSubmonoidClass.coe_nsmul a p).trans (hBp a))
-  have hQp : ∀ c : DiscreteCoind G V.toSubgroup M ⧸ N, p • c = 0 := fun c =>
-    QuotientAddGroup.induction_on c fun f => by
-      rw [← QuotientAddGroup.mk_nsmul, hBp, QuotientAddGroup.mk_zero]
-  -- the equivariant isomorphism `M ≃ N`
-  have hinj : Function.Injective ι :=
-    DiscreteCoind.unit_injective (G := G) (U := V.toSubgroup) (M := M)
-  let e : M ≃ₗ[ℤ] N := (AddMonoidHom.ofInjective hinj).toIntLinearEquiv
-  -- `e` followed by the inclusion of `N` is `ι`; equivariance and the factorization below both
-  -- reduce to this pointwise identity
-  have he_coe : ∀ m : M, S.incl (e m) = ι m := fun m => by
-    simp only [S, DiscreteShortExact.ofAddSubgroup_incl]
-    exact AddMonoidHom.ofInjective_apply hinj
-  have he : ∀ (g : G) (m : M), e (g • m) = g • e m := fun g m =>
-    S.incl_injective <| by rw [S.incl_equivariant, he_coe, he_coe, hι]
-  -- the coefficient map of `ι` is the isomorphism `M ≅ N` followed by the inclusion `N → B`
-  have hfac : (ofDiscreteModuleIso e he).hom ≫
-      ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant =
-        ofDiscreteModuleMap ι.toIntLinearMap hι := by
-    rw [ofDiscreteModuleIso_hom]
-    exact TopRep.hom_ext (DFunLike.ext _ _ he_coe)
+  -- `Coind_V^G M` is killed by `p`, hence so is its quotient
+  have hBp : ∀ f : DiscreteCoind G V.toSubgroup M, p • f = 0 := DiscreteCoind.nsmul_eq_zero hM
   -- the image of `x` in `Hⁿ⁺¹(G, Coind_V^G M)` is zero, being its restriction to `V` under
   -- Shapiro's lemma
   have hιx : coeffMap (ofDiscreteModuleMap ι.toIntLinearMap hι) (n + 1) x = 0 := by
     refine (bijective_shapiroMap V.toSubgroup V.isClosed M (n + 1)).1 ?_
     rw [_root_.map_zero, ← ConcreteCategory.comp_apply, coeffMap_unit_comp_shapiroMap]
     exact hV
-  -- so the transport `y` of `x` to `Hⁿ⁺¹(G, N)` dies in `Hⁿ⁺¹(G, Coind_V^G M)`, hence is a
-  -- connecting image of a class of `Hⁿ(G, Coind_V^G M ⧸ N)`
-  have hy : coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)
-      (coeffMap (ofDiscreteModuleIso e he).hom (n + 1) x) = 0 := by
-    rw [← ConcreteCategory.comp_apply, ← coeffMap_comp, hfac, hιx]
-  obtain ⟨w, hw⟩ := (S.longExact_exact₁ n _).1 hy
+  -- so `x` is a connecting image of a class of `Hⁿ(G, Coind_V^G M ⧸ M)`
+  have hS : ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant =
+      ofDiscreteModuleMap ι.toIntLinearMap hι :=
+    TopRep.hom_ext <| DFunLike.ext _ _ fun m =>
+      DFunLike.congr_fun (coindShortExact_incl G V.toSubgroup M) m
+  obtain ⟨w, hw⟩ := (S.longExact_exact₁ n _).1 (hS ▸ hιx)
   -- right exactness lifts that class to `Hⁿ(G, Coind_V^G M)`, where the connecting map kills it
-  obtain ⟨v, hv⟩ := h N (DiscreteCoind G V.toSubgroup M) (DiscreteCoind G V.toSubgroup M ⧸ N) S
-    hNp hBp hQp w
-  have hy0 : coeffMap (ofDiscreteModuleIso e he).hom (n + 1) x = 0 := by
-    rw [← hw, ← hv, ← ConcreteCategory.comp_apply, S.coeffMap_proj_comp_delta]
-    exact rfl
-  -- and the transport is injective
-  have : IsIso (coeffMap (ofDiscreteModuleIso e he).hom (n + 1)) :=
-    (continuousCohomologyFunctor ℤ G (n + 1)).map_isIso _
-  exact (ConcreteCategory.bijective_of_isIso (coeffMap (ofDiscreteModuleIso e he).hom (n + 1))).1
-    (hy0.trans (_root_.map_zero
-      (ConcreteCategory.hom (coeffMap (ofDiscreteModuleIso e he).hom (n + 1)))).symm)
+  obtain ⟨v, hv⟩ := h M (DiscreteCoind G V.toSubgroup M) (CoindQuotient G V.toSubgroup M)
+    S hM hBp (S.nsmul_eq_zero_right hBp) w
+  rw [← hw, ← hv, ← ConcreteCategory.comp_apply, S.coeffMap_proj_comp_delta]
+  exact rfl
 
 end TauCeti

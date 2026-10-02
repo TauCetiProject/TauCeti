@@ -25,6 +25,10 @@ For a scheme morphism `f : X ⟶ Y` and an open `V ⊆ Y`, restricting the pullb
 `f⁻¹ V` agrees with pulling back the restriction `M|_V` along `f ∣_ V`. This compatibility lets
 local properties of modules, expressed on open covers, be transported along scheme morphisms.
 
+Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
+pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
+module by free modules can be moved between slices, open subschemes and open immersions.
+
 Pushforward of modules along a scheme morphism is lax monoidal, so pullback, its left adjoint, is
 oplax monoidal, with unit map the identification `f^* 𝒪_Y ≅ 𝒪_X`. These structures are compatible
 with composition: the composition isomorphism of pullbacks carries the comparison maps of
@@ -57,6 +61,13 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
   `f⁻¹ V`, with `pullbackOverUnitIso` and `pullbackOverObjIso` comparing it with the structure
   sheaves and with the pullback of `𝒪_Y`-modules;
+* `AlgebraicGeometry.Scheme.Modules.overEquivFunctorObjFreeIso`: the identification of modules on
+  the slice at an open `U` with modules on the open subscheme `U` preserves free modules, so
+  trivializations of a module pass between the slice and the open subscheme
+  (`AlgebraicGeometry.Scheme.Modules.restrictIsoFreeOfOverIsoFree`,
+  `AlgebraicGeometry.Scheme.Modules.overIsoFreeOfRestrictIsoFree`), and a trivialization of the
+  pullback along an open immersion `f` is one of the restriction to `f.opensRange`
+  (`AlgebraicGeometry.Scheme.Modules.restrictOpensRangeIsoFree`);
 * `SheafOfModules.LocalGeneratorsData.pullback` and `SheafOfModules.QuasicoherentData.pullback`:
   local generators and quasi-coherent data carried along `f`;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pullback`,
@@ -380,6 +391,49 @@ def pullbackOverObjIso (M : Y.Modules) :
     ((overEquiv (f ⁻¹ᵁ V)).unitIso.app _).symm
 
 end Over
+
+section Free
+
+/-- The identification of modules on the slice site over an open `U` with modules on the open
+subscheme `U` preserves free modules. -/
+def overEquivFunctorObjFreeIso (U : X.Opens) (I : Type u) :
+    (overEquiv U).functor.obj (SheafOfModules.free I) ≅ SheafOfModules.free I :=
+  -- The functor is rebound with its type as a functor between categories of sheaves of modules,
+  -- where `SheafOfModules.mapFreeIso` seeks its colimit-preservation instance.
+  let F : SheafOfModules (X.ringCatSheaf.over U) ⥤ SheafOfModules (U : Scheme).ringCatSheaf :=
+    (overEquiv U).functor
+  have : PreservesColimitsOfShape (Discrete I) F :=
+    (overEquiv U).toAdjunction.leftAdjoint_preservesColimits.preservesColimitsOfShape
+  (SheafOfModules.mapFreeIso F I (U.sheafOfModulesEquivOverUnit X.ringCatSheaf).symm).symm
+
+/-- A trivialization of `M` on the slice site over an open `U` gives a trivialization of the
+restriction of `M` to the open subscheme `U`. -/
+def restrictIsoFreeOfOverIsoFree (M : X.Modules) (U : X.Opens) {I : Type u}
+    (e : M.over U ≅ SheafOfModules.free I) : M.restrict U.ι ≅ SheafOfModules.free I :=
+  ((overFunctorEquiv U).app M).symm ≪≫ (overEquiv U).functor.mapIso e ≪≫
+    overEquivFunctorObjFreeIso U I
+
+/-- A trivialization of the restriction of `M` to the open subscheme `U` gives a trivialization
+of `M` on the slice site over `U`. -/
+def overIsoFreeOfRestrictIsoFree (M : X.Modules) (U : X.Opens) {I : Type u}
+    (e : M.restrict U.ι ≅ SheafOfModules.free I) : M.over U ≅ SheafOfModules.free I :=
+  (overEquiv U).fullyFaithfulFunctor.preimageIso ((overFunctorEquiv U).app M ≪≫ e ≪≫
+    (overEquivFunctorObjFreeIso U I).symm)
+
+/-- A trivialization of the pullback of `M` along an open immersion `f` gives a trivialization of
+the restriction of `M` to the open image of `f`. -/
+def restrictOpensRangeIsoFree (M : Y.Modules) (f : X ⟶ Y) [IsOpenImmersion f] {I : Type u}
+    (e : (pullback f).obj M ≅ SheafOfModules.free I) :
+    M.restrict f.opensRange.ι ≅ SheafOfModules.free I :=
+  letI : (SheafOfModules.pushforward.{u} f.isoOpensRange.inv.toRingCatSheafHom).IsRightAdjoint :=
+    inferInstanceAs (pushforward f.isoOpensRange.inv).IsRightAdjoint
+  (restrictFunctorIsoPullback f.opensRange.ι).app M ≪≫
+    (pullbackCongr f.isoOpensRange_inv_comp).symm.app M ≪≫
+    ((pullbackComp f.isoOpensRange.inv f).app M).symm ≪≫
+    (pullback f.isoOpensRange.inv).mapIso e ≪≫
+    SheafOfModules.pullbackObjFreeIso f.isoOpensRange.inv.toRingCatSheafHom I
+
+end Free
 
 /-- Local generators of an `𝒪_Y`-module `M` on a cover `V i` of `Y`, carried along `f` to local
 generators of `f^* M` on the cover `f⁻¹ (V i)` of `X`. -/
