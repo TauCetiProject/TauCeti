@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 
 /-!
-# Split maps between coproducts
+# Split maps between coproducts, and cokernels of maps between coproducts
 
 ## Reindexing a coproduct along an injection is split
 
@@ -40,6 +40,15 @@ of the codiagonal with `∐_{i ≠ i₀} R` (`TauCeti.kernelSigmaDescIdIso`).
 
 Reduced homology in degree zero is the kernel of an augmentation of this form, so this identifies
 it with a coproduct indexed by the path components other than that of a chosen basepoint.
+
+## Cokernels commute with coproducts
+
+In a category with zero morphisms, let `f i : X i ⟶ Y i` be a family of morphisms with cokernels
+`c i`, and let `g : ∐ X ⟶ ∐ Y` be the morphism between coproducts induced by the `f i`.  A cokernel
+of `g` is then a coproduct of the cokernels `c i`, with legs induced by the coproduct inclusions
+(`TauCeti.isColimitCofanMkCokernelCofork`).  The relative chains of a pair are the cokernel of the
+map from the chains of the subspace to those of the ambient space, so this is how additivity
+passes from absolute to relative chains.
 -/
 
 public section
@@ -154,5 +163,37 @@ lemma kernelSigmaDescIdIso_inv_ι [HasKernel (Sigma.desc fun _ : ι ↦ 𝟙 R)]
   IsLimit.conePointUniqueUpToIso_inv_comp _ _ WalkingParallelPair.zero
 
 end Codiagonal
+
+section Cokernel
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {X Y : ι → C}
+  {f : ∀ i, X i ⟶ Y i} {c : ∀ i, CokernelCofork (f i)} (hc : ∀ i, IsColimit (c i))
+  {cX : Cofan X} (hX : IsColimit cX) {cY : Cofan Y} (hY : IsColimit cY) {g : cX.pt ⟶ cY.pt}
+  (hg : ∀ i, cX.inj i ≫ g = f i ≫ cY.inj i) {c' : CokernelCofork g} (hc' : IsColimit c')
+  (φ : ∀ i, (c i).pt ⟶ c'.pt) (hφ : ∀ i, (c i).π ≫ φ i = cY.inj i ≫ c'.π)
+
+include hX hg in
+private lemma comp_cofanDesc_eq_zero (s : Cofan fun i ↦ (c i).pt) :
+    g ≫ Cofan.IsColimit.desc hY (fun i ↦ (c i).π ≫ s.inj i) = 0 :=
+  Cofan.IsColimit.hom_ext hX _ _ fun i ↦ by
+    rw [reassoc_of% (hg i), Cofan.IsColimit.fac, CokernelCofork.condition_assoc, zero_comp,
+      comp_zero]
+
+include hX hg hφ in
+/-- **Cokernels commute with coproducts.**  Let `f i : X i ⟶ Y i` be a family of morphisms with
+cokernels `c i`, and let `g : ∐ X ⟶ ∐ Y` be the morphism between coproducts induced by the `f i`.
+Then a cokernel `c'` of `g` is the coproduct of the cokernels `c i`, with legs the maps
+`φ i : (c i).pt ⟶ c'.pt` induced by the coproduct inclusions `Y i ⟶ ∐ Y`. -/
+def isColimitCofanMkCokernelCofork : IsColimit (Cofan.mk c'.pt φ) :=
+  Cofan.IsColimit.mk _
+    (fun s ↦ hc'.desc (CokernelCofork.ofπ _ (comp_cofanDesc_eq_zero hX hY hg s)))
+    (fun s i ↦ Cofork.IsColimit.hom_ext (hc i) <| by
+      rw [cofan_mk_inj, reassoc_of% (hφ i), Cofork.IsColimit.π_desc, Cofork.π_ofπ,
+        Cofan.IsColimit.fac])
+    (fun s m hm ↦ Cofork.IsColimit.hom_ext hc' <| Cofan.IsColimit.hom_ext hY _ _ fun i ↦ by
+      rw [Cofork.IsColimit.π_desc, Cofork.π_ofπ, Cofan.IsColimit.fac, ← reassoc_of% (hφ i), ← hm,
+        cofan_mk_inj])
+
+end Cokernel
 
 end TauCeti
