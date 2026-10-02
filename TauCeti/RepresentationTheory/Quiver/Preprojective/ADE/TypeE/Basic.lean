@@ -530,12 +530,6 @@ end Field
 
 /-! ### The `E₈` diagram -/
 
-/-- The named `E₈` graph is the Bourbaki-labelled `Eₙ` diagram for `n = 8`. -/
-private theorem zigzagE8Graph_eq : zigzagE8Graph = diagramGraph (CartanMatrix.E 8) := by
-  ext i j
-  rw [zigzagE8Graph_adj, diagramGraph_E_adj]
-  fin_cases i <;> fin_cases j <;> simp only [EAdj] <;> decide
-
 /-- **Every product of fifteen backtracks at the branch node of `E₈` vanishes.** -/
 private theorem eSpan_eight_pow_fifteen (k : Type*) [CommRing k] : eSpan k 8 ^ 15 = ⊥ := by
   have hsum : eTurn k 8 0 + eTurn k 8 1 = -eTurn k 8 2 :=
@@ -560,7 +554,7 @@ theorem signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le
     rintro G rfl x hx
     exact signlessPreprojectiveMk_ofPath_eq_zero_of_eSpan_pow k (n := 8) (by norm_num)
       (eSpan_eight_pow_fifteen k) x hx
-  exact key _ zigzagE8Graph_eq x hx
+  exact key _ (by rw [zigzagE8Graph_eq_diagramGraph, DynkinType.cartanMatrix_E8]; rfl) x hx
 
 variable (o : Orientation zigzagE8Graph)
 
