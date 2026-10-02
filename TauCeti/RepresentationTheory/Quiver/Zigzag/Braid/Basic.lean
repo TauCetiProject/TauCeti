@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Double
 public import TauCeti.Algebra.Algebra.Frobenius.Casimir
+public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.CentralSimple.Bimodule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Opposite
-public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct
-public import TauCeti.LinearAlgebra.Graded.Shift
 public import TauCeti.RingTheory.PrimitiveIdempotent
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Trace
@@ -38,11 +36,11 @@ B_i' = [Z ⟶ P_i ⊗_k e_i Z],         1 ↦ e_i ⊗ x_i + x_i ⊗ e_i + ∑_{d
 The first is in cohomological degrees `-1, 0` and its differential is multiplication, of internal
 degree `0`. The second is in cohomological degrees `0, 1`; its differential, the
 coevaluation, raises internal degree by `2`, so with internal grading it is the map
-`Z → (P_i ⊗_k e_i Z){-2}`. As for the shifted projectives `TauCeti.zigzagProjectiveShiftGrade`, a
-graded bimodule is recorded as its underlying bimodule together with a `ℤ`-indexed family of
-`k`-submodules forming an internal direct sum, the shift `M{d}_p = M_{p-d}` regrades the same
-bimodule through `TauCeti.Graded.shift`, and a degree-`0` map of graded bimodules is a bimodule map
-which is `TauCeti.LinearMap.IsHomogeneous` of degree `0`. Tensoring with these complexes is how
+`Z → (P_i ⊗_k e_i Z){-2}`. Both complexes live in the category
+`TauCeti.GradedModuleCat` of graded modules over the enveloping algebra, graded by
+`TauCeti.zigzagEnvelopingGrading`: their terms are graded bimodules, the shift `M{d}_p = M_{p-d}`
+is `TauCeti.GradedModuleCat.shiftFunctor`, and their differentials are morphisms of graded
+bimodules, that is, bimodule maps of internal degree `0`. Tensoring with these complexes is how
 Khovanov--Seidel and Huerfano--Khovanov let the braid group of the graph act on the homotopy
 category of graded `Z`-modules; this file constructs the complexes and their gradings, not the braid
 relations.
@@ -64,27 +62,32 @@ dual basis, and the Casimir element of a trace commutes with the algebra
 * `TauCeti.zigzagBraidEvaluation`: the multiplication map `P_i ⊗_k e_i Z → Z`.
 * `TauCeti.zigzagCasimir`: the Casimir element `∑_b b ⊗ b^∨` of the trace pairing.
 * `TauCeti.zigzagBraidCoevaluation`: the coevaluation `Z → P_i ⊗_k e_i Z`.
-* `TauCeti.zigzagBraidComplex`, `TauCeti.zigzagBraidInverseComplex`: the complexes `B_i` and
-  `B_i'`, in `ModuleCat (Z ⊗[k] Zᵐᵒᵖ)`.
 * `TauCeti.zigzagEnvelopingGrading`: the internal grading of `Z ⊗[k] Zᵐᵒᵖ`.
 * `TauCeti.zigzagBimoduleGrade`, `TauCeti.zigzagBraidBimoduleGrade`: the internal gradings of the
   bimodules `Z` and `P_i ⊗_k e_i Z`.
-* `TauCeti.zigzagBraidBimoduleShiftGrade`: the grading of the shifted bimodule
-  `(P_i ⊗_k e_i Z){d}`.
+* `TauCeti.zigzagGradedBimodule`, `TauCeti.zigzagGradedBraidBimodule`: `Z` and `P_i ⊗_k e_i Z` as
+  graded bimodules, objects of `TauCeti.GradedModuleCat`.
+* `TauCeti.zigzagBraidEvaluationHom`, `TauCeti.zigzagBraidCoevaluationHom`: the evaluation
+  `P_i ⊗_k e_i Z ⟶ Z` and the coevaluation `Z ⟶ (P_i ⊗_k e_i Z){-2}` as morphisms of graded
+  bimodules.
+* `TauCeti.zigzagBraidComplex`, `TauCeti.zigzagBraidInverseComplex`: the complexes `B_i` and
+  `B_i'` of graded bimodules.
 
 ## Main results
 
 * `TauCeti.tmul_one_mul_zigzagCasimir`: the Casimir element commutes with `Z`.
 * `TauCeti.zigzagBraidComplex_d`, `TauCeti.zigzagBraidInverseComplex_d`: the differentials of `B_i`
   and `B_i'` are the evaluation and the coevaluation.
-* `TauCeti.isInternal_zigzagBimoduleGrade`, `TauCeti.isInternal_zigzagBraidBimoduleGrade`,
-  `TauCeti.isInternal_zigzagBraidBimoduleShiftGrade`: the gradings of `Z`, of `P_i ⊗_k e_i Z` and
-  of its shifts are internal direct sums.
+* `TauCeti.isInternal_zigzagBimoduleGrade`, `TauCeti.isInternal_zigzagBraidBimoduleGrade`: the
+  gradings of `Z` and of `P_i ⊗_k e_i Z` are internal direct sums.
+* `TauCeti.mul_mem_zigzagEnvelopingGrading`, `TauCeti.smul_mem_zigzagBimoduleGrade`,
+  `TauCeti.smul_mem_zigzagBraidBimoduleGrade`: the enveloping algebra is graded, and acts on both
+  bimodules compatibly with the gradings.
 * `TauCeti.coe_zigzagBraidCoevaluation_of`: the explicit formula for the coevaluation.
 * `TauCeti.isHomogeneous_zigzagBraidEvaluation`: the evaluation is a degree-`0` map
   `P_i ⊗_k e_i Z → Z`.
-* `TauCeti.isHomogeneous_zigzagBraidCoevaluation`: the coevaluation is a degree-`0` map
-  `Z → (P_i ⊗_k e_i Z){-2}`, that is, it has internal degree `2`.
+* `TauCeti.isHomogeneous_zigzagBraidCoevaluation`: the coevaluation has internal degree `2`, so
+  it is a degree-`0` map `Z → (P_i ⊗_k e_i Z){-2}`.
 
 ## References
 
@@ -322,111 +325,6 @@ end Formula
 
 end Coevaluation
 
-/-! ### The two braid complexes -/
-
-section Complexes
-
-open CategoryTheory
-
-variable [Finite V]
-
--- The `AddCommGroup` structure of `P_i ⊗_k e_i Z` is passed to `ModuleCat.of` and
--- `ModuleCat.ofHom` explicitly: unification would have to discover it through the semiring of the
--- tensor product algebra, which exceeds the default instance-synthesis budget.
-
-/-- **The braid complex `B_i = [P_i ⊗_k e_i Z ⟶ Z]`** of `Z`-bimodules, in cohomological degrees
-`-1` and `0`, with the evaluation as differential. Its terms and differential are described by
-`TauCeti.zigzagBraidComplexXIso₀`, `TauCeti.zigzagBraidComplexXIso₁`,
-`TauCeti.zigzagBraidComplex_d` and `TauCeti.isZero_zigzagBraidComplex_X`. -/
-noncomputable def zigzagBraidComplex (i : V) :
-    HomologicalComplex (ModuleCat.{max u w} (𝒵ᵉ)) (ComplexShape.up ℤ) :=
-  HomologicalComplex.double
-    (@ModuleCat.ofHom (𝒵ᵉ) _ (zigzagBraidBimodule k G i) (Bimodule (AlgHom.id k 𝒵))
-      (Submodule.addCommGroup _) _ _ _ (zigzagBraidEvaluation k G i))
-    (i₀ := -1) (i₁ := 0) (by simp)
-
-/-- **The inverse braid complex `B_i' = [Z ⟶ P_i ⊗_k e_i Z]`** of `Z`-bimodules, in cohomological
-degrees `0` and `1`, with the coevaluation as differential. Its terms and differential are
-described by `TauCeti.zigzagBraidInverseComplexXIso₀`, `TauCeti.zigzagBraidInverseComplexXIso₁`,
-`TauCeti.zigzagBraidInverseComplex_d` and `TauCeti.isZero_zigzagBraidInverseComplex_X`. With the
-internal gradings `TauCeti.zigzagBimoduleGrade` and `TauCeti.zigzagBraidBimoduleShiftGrade` at
-shift `-2`, its differential is the degree-`0` map `Z → (P_i ⊗_k e_i Z){-2}`
-(`TauCeti.isHomogeneous_zigzagBraidCoevaluation`). -/
-noncomputable def zigzagBraidInverseComplex (i : V) :
-    HomologicalComplex (ModuleCat.{max u w} (𝒵ᵉ)) (ComplexShape.up ℤ) :=
-  HomologicalComplex.double
-    (@ModuleCat.ofHom (𝒵ᵉ) _ (Bimodule (AlgHom.id k 𝒵)) (zigzagBraidBimodule k G i)
-      _ _ (Submodule.addCommGroup _) _ (zigzagBraidCoevaluation k G i))
-    (i₀ := 0) (i₁ := 1) (by simp)
-
-/-- The term of `B_i` in cohomological degree `-1` is `P_i ⊗_k e_i Z`. -/
-noncomputable def zigzagBraidComplexXIso₀ (i : V) :
-    (zigzagBraidComplex k G i).X (-1) ≅
-      @ModuleCat.of (𝒵ᵉ) _ (zigzagBraidBimodule k G i) (Submodule.addCommGroup _) _ :=
-  HomologicalComplex.doubleXIso₀ _ _
-
-/-- The term of `B_i` in cohomological degree `0` is `Z`. -/
-noncomputable def zigzagBraidComplexXIso₁ (i : V) :
-    (zigzagBraidComplex k G i).X 0 ≅ ModuleCat.of (𝒵ᵉ) (Bimodule (AlgHom.id k 𝒵)) :=
-  HomologicalComplex.doubleXIso₁ _ _ (by decide)
-
-/-- The term of `B_i'` in cohomological degree `0` is `Z`. -/
-noncomputable def zigzagBraidInverseComplexXIso₀ (i : V) :
-    (zigzagBraidInverseComplex k G i).X 0 ≅ ModuleCat.of (𝒵ᵉ) (Bimodule (AlgHom.id k 𝒵)) :=
-  HomologicalComplex.doubleXIso₀ _ _
-
-/-- The term of `B_i'` in cohomological degree `1` is `P_i ⊗_k e_i Z`. -/
-noncomputable def zigzagBraidInverseComplexXIso₁ (i : V) :
-    (zigzagBraidInverseComplex k G i).X 1 ≅
-      @ModuleCat.of (𝒵ᵉ) _ (zigzagBraidBimodule k G i) (Submodule.addCommGroup _) _ :=
-  HomologicalComplex.doubleXIso₁ _ _ (by decide)
-
-variable {k G}
-
-/-- The differential of `B_i` is the evaluation. -/
-@[simp]
-theorem zigzagBraidComplex_d (i : V) :
-    (zigzagBraidComplex k G i).d (-1) 0 =
-      (zigzagBraidComplexXIso₀ k G i).hom ≫
-        @ModuleCat.ofHom (𝒵ᵉ) _ (zigzagBraidBimodule k G i) (Bimodule (AlgHom.id k 𝒵))
-          (Submodule.addCommGroup _) _ _ _ (zigzagBraidEvaluation k G i) ≫
-        (zigzagBraidComplexXIso₁ k G i).inv :=
-  HomologicalComplex.double_d _ _ _
-
-/-- The differential of `B_i` vanishes out of every degree other than `-1`. -/
-@[simp]
-theorem zigzagBraidComplex_d_eq_zero (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ -1) :
-    (zigzagBraidComplex k G i).d a b = 0 :=
-  HomologicalComplex.double_d_eq_zero₀ _ _ _ _ ha
-
-/-- `B_i` vanishes outside cohomological degrees `-1` and `0`. -/
-theorem isZero_zigzagBraidComplex_X (i : V) {j : ℤ} (h₀ : j ≠ -1) (h₁ : j ≠ 0) :
-    Limits.IsZero ((zigzagBraidComplex k G i).X j) :=
-  HomologicalComplex.isZero_double_X _ _ _ h₀ h₁
-
-/-- The differential of `B_i'` is the coevaluation. -/
-@[simp]
-theorem zigzagBraidInverseComplex_d (i : V) :
-    (zigzagBraidInverseComplex k G i).d 0 1 =
-      (zigzagBraidInverseComplexXIso₀ k G i).hom ≫
-        @ModuleCat.ofHom (𝒵ᵉ) _ (Bimodule (AlgHom.id k 𝒵)) (zigzagBraidBimodule k G i)
-          _ _ (Submodule.addCommGroup _) _ (zigzagBraidCoevaluation k G i) ≫
-        (zigzagBraidInverseComplexXIso₁ k G i).inv :=
-  HomologicalComplex.double_d _ _ _
-
-/-- The differential of `B_i'` vanishes out of every degree other than `0`. -/
-@[simp]
-theorem zigzagBraidInverseComplex_d_eq_zero (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ 0) :
-    (zigzagBraidInverseComplex k G i).d a b = 0 :=
-  HomologicalComplex.double_d_eq_zero₀ _ _ _ _ ha
-
-/-- `B_i'` vanishes outside cohomological degrees `0` and `1`. -/
-theorem isZero_zigzagBraidInverseComplex_X (i : V) {j : ℤ} (h₀ : j ≠ 0) (h₁ : j ≠ 1) :
-    Limits.IsZero ((zigzagBraidInverseComplex k G i).X j) :=
-  HomologicalComplex.isZero_double_X _ _ _ h₀ h₁
-
-end Complexes
-
 /-! ### Internal degrees -/
 
 section Grading
@@ -453,12 +351,6 @@ noncomputable def zigzagBraidBimoduleGrade (i : V) (d : ℤ) :
   ((zigzagEnvelopingGrading k G).piece d).comap
     ((zigzagBraidBimodule k G i).restrictScalars k).subtype
 
-/-- The grading of the shifted bimodule `(P_i ⊗_k e_i Z){d}`, with the convention
-`M{d}_p = M_{p-d}` of `TauCeti.zigzagProjectiveShiftGrade`. -/
-noncomputable def zigzagBraidBimoduleShiftGrade (i : V) (d : ℤ) :
-    ℤ → Submodule k (zigzagBraidBimodule k G i) :=
-  Graded.shift (zigzagBraidBimoduleGrade k G i) (-d)
-
 variable {k G}
 
 @[simp]
@@ -471,17 +363,77 @@ theorem mem_zigzagBraidBimoduleGrade_iff {i : V} {d : ℤ} {u : zigzagBraidBimod
     u ∈ zigzagBraidBimoduleGrade k G i d ↔ (u : 𝒵ᵉ) ∈ (zigzagEnvelopingGrading k G).piece d :=
   Iff.rfl
 
-@[simp]
-theorem zigzagBraidBimoduleShiftGrade_apply (i : V) (d p : ℤ) :
-    zigzagBraidBimoduleShiftGrade k G i d p = zigzagBraidBimoduleGrade k G i (p - d) := by
-  simp [zigzagBraidBimoduleShiftGrade, sub_eq_add_neg]
-
 /-- A pure tensor of homogeneous elements is homogeneous of the total degree. -/
 theorem tmul_mem_zigzagEnvelopingGrading {p q : ℤ} {x y : 𝒵}
     (hx : x ∈ zigzagAlgebraIntegerGrade k G p) (hy : y ∈ zigzagAlgebraIntegerGrade k G q) :
     x ⊗ₜ[k] op y ∈ (zigzagEnvelopingGrading k G).piece (p + q) :=
   InternalGrading.tmul_mem_tensorProduct _ _ hx
     ((InternalGrading.op_mem_opposite_piece_iff _ _ _).2 hy)
+
+/-- **Multiplication adds degrees in the enveloping algebra**: left multiplication by an element
+of degree `m` is the image of tensor products of left multiplications, each homogeneous. -/
+theorem mul_mem_zigzagEnvelopingGrading {m n : ℤ} {u v : 𝒵ᵉ}
+    (hu : u ∈ (zigzagEnvelopingGrading k G).piece m)
+    (hv : v ∈ (zigzagEnvelopingGrading k G).piece n) :
+    u * v ∈ (zigzagEnvelopingGrading k G).piece (m + n) := by
+  let Γ : InternalGrading k 𝒵 :=
+    ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
+  have hle : (zigzagEnvelopingGrading k G).piece m ≤
+      (LinearMap.homogeneousSubmodule (S := k) (zigzagEnvelopingGrading k G).piece
+        (zigzagEnvelopingGrading k G).piece m).comap (LinearMap.mul k (𝒵ᵉ)) := by
+    refine (InternalGrading.tensorProduct_piece_eq_iSup Γ Γ.opposite m).le.trans <|
+      iSup_le fun p ↦ Submodule.map₂_le.mpr fun x hx y hy ↦ ?_
+    -- Left multiplication by `x ⊗ y` is the tensor product of left multiplications.
+    have hmul : LinearMap.mul k (𝒵ᵉ) (x ⊗ₜ[k] y) =
+        TensorProduct.map (LinearMap.mulLeft k x) (LinearMap.mulLeft k y) :=
+      TensorProduct.ext' fun _ _ ↦ by simp
+    have hleft : LinearMap.IsHomogeneous (LinearMap.mulLeft k x) Γ.piece Γ.piece p := by
+      refine LinearMap.isHomogeneous_def.2 fun q z hz ↦ ?_
+      rw [add_comm]
+      exact mul_mem_zigzagAlgebraIntegerGrade k G hx hz
+    have hright : LinearMap.IsHomogeneous (LinearMap.mulLeft k y) Γ.opposite.piece
+        Γ.opposite.piece (m - p) := by
+      refine LinearMap.isHomogeneous_def.2 fun q z hz ↦ ?_
+      rw [InternalGrading.mem_opposite_piece_iff] at hy hz ⊢
+      simpa using mul_mem_zigzagAlgebraIntegerGrade k G hz hy
+    have h := hleft.tensorProduct hright
+    rw [add_sub_cancel] at h
+    rw [Submodule.mem_comap, TensorProduct.mk_apply, hmul, LinearMap.mem_homogeneousSubmodule]
+    exact h
+  have h := LinearMap.mem_homogeneousSubmodule.1 (Submodule.mem_comap.1 (hle hu))
+  rw [add_comm]
+  simpa using h.map_mem hv
+
+/-- **The enveloping algebra acts on the bimodule `Z` compatibly with the gradings**:
+`x ⊗ op y` sends `z` to `x z y`, whose degree is the sum of the three. -/
+theorem smul_mem_zigzagBimoduleGrade {m n : ℤ} {u : 𝒵ᵉ} {z : Bimodule (AlgHom.id k 𝒵)}
+    (hu : u ∈ (zigzagEnvelopingGrading k G).piece m) (hz : z ∈ zigzagBimoduleGrade k G n) :
+    u • z ∈ zigzagBimoduleGrade k G (m + n) := by
+  obtain ⟨z, rfl⟩ := (Bimodule.of (AlgHom.id k 𝒵)).surjective z
+  rw [mem_zigzagBimoduleGrade_iff, LinearEquiv.symm_apply_apply] at hz
+  -- The action on `z` is a `k`-linear map on the whole enveloping algebra.
+  let μ := LinearMap.applyₗ (R := k) z ∘ₗ (Bimodule.toEnd (AlgHom.id k 𝒵)).toLinearMap
+  have hle : (zigzagEnvelopingGrading k G).piece m ≤
+      (zigzagAlgebraIntegerGrade k G (m + n)).comap μ := by
+    rw [zigzagEnvelopingGrading, InternalGrading.tensorProduct_piece_eq_iSup]
+    simp_rw [InternalGrading.opposite_piece]
+    refine iSup_le fun p => Submodule.map₂_le.mpr fun x hx y' hy' => ?_
+    obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.mp hy'
+    simp only [Submodule.mem_comap, TensorProduct.mk_apply, LinearMap.coe_comp,
+      Function.comp_apply, LinearEquiv.coe_coe, coe_opLinearEquiv, μ, AlgHom.toLinearMap_apply,
+      LinearMap.applyₗ_apply_apply, Bimodule.toEnd_tmul_apply, AlgHom.id_apply, unop_op]
+    have hdeg : m + n = p + n + (m - p) := by abel
+    rw [hdeg]
+    exact mul_mem_zigzagAlgebraIntegerGrade k G (mul_mem_zigzagAlgebraIntegerGrade k G hx hz) hy
+  rw [mem_zigzagBimoduleGrade_iff, Bimodule.smul_def, LinearEquiv.symm_apply_apply]
+  exact hle hu
+
+/-- The enveloping algebra acts on `P_i ⊗_k e_i Z` compatibly with the gradings. -/
+theorem smul_mem_zigzagBraidBimoduleGrade {i : V} {m n : ℤ} {u : 𝒵ᵉ}
+    {v : zigzagBraidBimodule k G i} (hu : u ∈ (zigzagEnvelopingGrading k G).piece m)
+    (hv : v ∈ zigzagBraidBimoduleGrade k G i n) :
+    u • v ∈ zigzagBraidBimoduleGrade k G i (m + n) :=
+  mul_mem_zigzagEnvelopingGrading hu hv
 
 /-- **The internal grading of the bimodule `Z` is an internal direct sum**: it is the transport of
 the grading of `Z` along `TauCeti.Bimodule.of`. -/
@@ -532,48 +484,23 @@ theorem isInternal_zigzagBraidBimoduleGrade (i : V) :
     ((zigzagBraidBimodule k G i).subtype.restrictScalars k) Subtype.val_injective
     (fun _ _ ↦ Iff.rfl) fun p u ↦ ⟨⟨_, isHomogeneous_zigzagBraidBimodule i p u.2⟩, rfl⟩
 
-/-- The grading of the shifted bimodule `(P_i ⊗_k e_i Z){d}` is an internal direct sum. -/
-theorem isInternal_zigzagBraidBimoduleShiftGrade (i : V) (d : ℤ) :
-    DirectSum.IsInternal (zigzagBraidBimoduleShiftGrade k G i d) := by
-  convert (InternalGrading.shift ⟨_, isInternal_zigzagBraidBimoduleGrade i⟩ (-d)).isInternal
-    using 1
-  funext p
-  simp [zigzagBraidBimoduleShiftGrade]
-
 /-- **The evaluation has internal degree `0`**: it is a degree-`0` map `P_i ⊗_k e_i Z → Z` of
 graded bimodules. -/
 theorem isHomogeneous_zigzagBraidEvaluation (i : V) :
-    LinearMap.IsHomogeneous ((zigzagBraidEvaluation k G i).restrictScalars k)
+    LinearMap.IsHomogeneous (zigzagBraidEvaluation k G i)
       (zigzagBraidBimoduleGrade k G i) (zigzagBimoduleGrade k G) 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro n u hu
-  rw [add_zero, mem_zigzagBraidBimoduleGrade_iff] at *
-  -- The evaluation is `u ↦ u • 1`, a `k`-linear map on the whole enveloping algebra.
-  let μ := LinearMap.applyₗ (R := k) (1 : 𝒵) ∘ₗ (Bimodule.toEnd (AlgHom.id k 𝒵)).toLinearMap
-  have hμ : (Bimodule.of _).symm (zigzagBraidEvaluation k G i u) = μ u := by
-    rw [zigzagBraidEvaluation_apply, Bimodule.smul_def, LinearEquiv.symm_apply_apply]
-    simp [μ]
-  have hle : (zigzagEnvelopingGrading k G).piece n ≤
-      (zigzagAlgebraIntegerGrade k G n).comap μ := by
-    rw [zigzagEnvelopingGrading, InternalGrading.tensorProduct_piece_eq_iSup]
-    simp_rw [InternalGrading.opposite_piece]
-    refine iSup_le fun p => Submodule.map₂_le.mpr fun x hx y' hy' => ?_
-    obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.mp hy'
-    simp only [Submodule.mem_comap, TensorProduct.mk_apply, LinearMap.coe_comp,
-      Function.comp_apply, LinearEquiv.coe_coe, coe_opLinearEquiv, μ, AlgHom.toLinearMap_apply,
-      LinearMap.applyₗ_apply_apply, Bimodule.toEnd_tmul_apply, AlgHom.id_apply, unop_op, mul_one]
-    simpa using mul_mem_zigzagAlgebraIntegerGrade k G hx hy
-  rw [mem_zigzagBimoduleGrade_iff, LinearMap.restrictScalars_apply, hμ]
-  exact hle hu
+  refine LinearMap.isHomogeneous_def.2 fun n u hu ↦ ?_
+  rw [zigzagBraidEvaluation_apply]
+  refine smul_mem_zigzagBimoduleGrade hu ?_
+  rw [mem_zigzagBimoduleGrade_iff, LinearEquiv.symm_apply_apply]
+  exact (zigzagAlgebraIntegerGrade_ofNat k G 0).ge SetLike.GradedOne.one_mem
 
-/-- **The coevaluation has internal degree `2`**: it raises the internal degree by `2`, so it is a
-degree-`0` map `Z → (P_i ⊗_k e_i Z){-2}` of graded bimodules. -/
+/-- **The coevaluation has internal degree `2`**: it raises the internal degree by `2`. -/
 theorem isHomogeneous_zigzagBraidCoevaluation (i : V) :
-    LinearMap.IsHomogeneous ((zigzagBraidCoevaluation k G i).restrictScalars k)
-      (zigzagBimoduleGrade k G) (zigzagBraidBimoduleShiftGrade k G i (-2)) 0 := by
+    LinearMap.IsHomogeneous (zigzagBraidCoevaluation k G i)
+      (zigzagBimoduleGrade k G) (zigzagBraidBimoduleGrade k G i) 2 := by
   classical
   cases nonempty_fintype V
-  rw [zigzagBraidBimoduleShiftGrade, neg_neg, LinearMap.isHomogeneous_shift_target_iff, zero_add]
   rw [LinearMap.isHomogeneous_def]
   intro n x' hx'
   obtain ⟨x, rfl⟩ := (Bimodule.of (AlgHom.id k 𝒵)).surjective x'
@@ -585,8 +512,7 @@ theorem isHomogeneous_zigzagBraidCoevaluation (i : V) :
   have harrow (d : G.Dart) :
       zigzagAlgebraBasis k G (.inr (.inl d)) ∈ zigzagAlgebraIntegerGrade k G 1 :=
     (zigzagAlgebraIntegerGrade_ofNat k G 1).ge (zigzagAlgebraBasis_inr_inl_mem_grade_one k G d)
-  rw [mem_zigzagBraidBimoduleGrade_iff, LinearMap.restrictScalars_apply,
-    coe_zigzagBraidCoevaluation_of]
+  rw [mem_zigzagBraidBimoduleGrade_iff, coe_zigzagBraidCoevaluation_of]
   refine add_mem (add_mem ?_ ?_) (sum_mem fun d _ => ?_)
   · simpa using tmul_mem_zigzagEnvelopingGrading (mul_mem_zigzagAlgebraIntegerGrade k G hx' he) hvol
   · simpa using tmul_mem_zigzagEnvelopingGrading (mul_mem_zigzagAlgebraIntegerGrade k G hx' hvol) he
@@ -594,5 +520,150 @@ theorem isHomogeneous_zigzagBraidCoevaluation (i : V) :
       (mul_mem_zigzagAlgebraIntegerGrade k G hx' (harrow d)) (harrow d.symm)
 
 end Grading
+
+/-! ### The graded bimodules and the two braid complexes -/
+
+section Complexes
+
+open CategoryTheory
+
+variable [Finite V]
+
+/-- **The graded bimodule `Z`**: the bimodule `Z` with its signed path-length grading, a graded
+module over the enveloping algebra. -/
+@[expose]
+noncomputable def zigzagGradedBimodule :
+    GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece where
+  carrier := Bimodule (AlgHom.id k 𝒵)
+  grading := ⟨zigzagBimoduleGrade k G, isInternal_zigzagBimoduleGrade⟩
+  gradedSMul := ⟨fun _ _ _ _ hu hz ↦ smul_mem_zigzagBimoduleGrade hu hz⟩
+
+-- The `AddCommGroup` structure of `P_i ⊗_k e_i Z` is given explicitly: unification would have to
+-- discover it through the semiring of the tensor product algebra, which exceeds the default
+-- instance-synthesis budget.
+
+/-- **The graded bimodule `P_i ⊗_k e_i Z`**, with the grading induced from the enveloping algebra,
+with no internal shift. -/
+@[expose]
+noncomputable def zigzagGradedBraidBimodule (i : V) :
+    GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece where
+  carrier := zigzagBraidBimodule k G i
+  isAddCommGroup := Submodule.addCommGroup _
+  grading := ⟨zigzagBraidBimoduleGrade k G i, isInternal_zigzagBraidBimoduleGrade i⟩
+  gradedSMul := ⟨fun _ _ _ _ hu hv ↦ smul_mem_zigzagBraidBimoduleGrade hu hv⟩
+
+/-- **The evaluation as a degree-`0` morphism** `P_i ⊗_k e_i Z ⟶ Z` of graded bimodules. -/
+@[expose]
+noncomputable def zigzagBraidEvaluationHom (i : V) :
+    zigzagGradedBraidBimodule k G i ⟶ zigzagGradedBimodule k G :=
+  GradedModuleCat.ofHom (zigzagBraidEvaluation k G i) (isHomogeneous_zigzagBraidEvaluation i)
+
+/-- **The coevaluation as a degree-`0` morphism** `Z ⟶ (P_i ⊗_k e_i Z){-2}` of graded bimodules,
+`M{d}` being the shift `GradedModuleCat.shiftFunctor d` with `M{d}_p = M_{p-d}`. -/
+@[expose]
+noncomputable def zigzagBraidCoevaluationHom (i : V) :
+    zigzagGradedBimodule k G ⟶
+      (GradedModuleCat.shiftFunctor (-2)).obj (zigzagGradedBraidBimodule k G i) :=
+  GradedModuleCat.ofHom (zigzagBraidCoevaluation k G i) <|
+    LinearMap.isHomogeneous_def.2 fun p _ hx ↦
+      (GradedModuleCat.mem_shiftObj_piece_iff _ _ _ _).2 <| by
+        rw [add_zero, sub_neg_eq_add]
+        exact (isHomogeneous_zigzagBraidCoevaluation i).map_mem hx
+
+variable {k G}
+
+@[simp]
+theorem hom_zigzagBraidEvaluationHom (i : V) :
+    (zigzagBraidEvaluationHom k G i).hom = zigzagBraidEvaluation k G i :=
+  rfl
+
+@[simp]
+theorem hom_zigzagBraidCoevaluationHom (i : V) :
+    (zigzagBraidCoevaluationHom k G i).hom = zigzagBraidCoevaluation k G i :=
+  rfl
+
+variable (k G)
+
+/-- **The braid complex `B_i = [P_i ⊗_k e_i Z ⟶ Z]`** of graded `Z`-bimodules, in cohomological
+degrees `-1` and `0`, with the degree-`0` evaluation as differential. Its terms and differential
+are described by `TauCeti.zigzagBraidComplexXIso₀`, `TauCeti.zigzagBraidComplexXIso₁`,
+`TauCeti.zigzagBraidComplex_d` and `TauCeti.isZero_zigzagBraidComplex_X`. -/
+noncomputable def zigzagBraidComplex (i : V) :
+    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
+      (ComplexShape.up ℤ) :=
+  HomologicalComplex.double (zigzagBraidEvaluationHom k G i) (i₀ := -1) (i₁ := 0) (by simp)
+
+/-- **The inverse braid complex `B_i' = [Z ⟶ (P_i ⊗_k e_i Z){-2}]`** of graded `Z`-bimodules, in
+cohomological degrees `0` and `1`, with the degree-`0` coevaluation as differential. Its terms and
+differential are described by `TauCeti.zigzagBraidInverseComplexXIso₀`,
+`TauCeti.zigzagBraidInverseComplexXIso₁`, `TauCeti.zigzagBraidInverseComplex_d` and
+`TauCeti.isZero_zigzagBraidInverseComplex_X`. -/
+noncomputable def zigzagBraidInverseComplex (i : V) :
+    HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
+      (ComplexShape.up ℤ) :=
+  HomologicalComplex.double (zigzagBraidCoevaluationHom k G i) (i₀ := 0) (i₁ := 1) (by simp)
+
+/-- The term of `B_i` in cohomological degree `-1` is `P_i ⊗_k e_i Z`. -/
+noncomputable def zigzagBraidComplexXIso₀ (i : V) :
+    (zigzagBraidComplex k G i).X (-1) ≅ zigzagGradedBraidBimodule k G i :=
+  HomologicalComplex.doubleXIso₀ _ _
+
+/-- The term of `B_i` in cohomological degree `0` is `Z`. -/
+noncomputable def zigzagBraidComplexXIso₁ (i : V) :
+    (zigzagBraidComplex k G i).X 0 ≅ zigzagGradedBimodule k G :=
+  HomologicalComplex.doubleXIso₁ _ _ (by decide)
+
+/-- The term of `B_i'` in cohomological degree `0` is `Z`. -/
+noncomputable def zigzagBraidInverseComplexXIso₀ (i : V) :
+    (zigzagBraidInverseComplex k G i).X 0 ≅ zigzagGradedBimodule k G :=
+  HomologicalComplex.doubleXIso₀ _ _
+
+/-- The term of `B_i'` in cohomological degree `1` is `(P_i ⊗_k e_i Z){-2}`. -/
+noncomputable def zigzagBraidInverseComplexXIso₁ (i : V) :
+    (zigzagBraidInverseComplex k G i).X 1 ≅
+      (GradedModuleCat.shiftFunctor (-2)).obj (zigzagGradedBraidBimodule k G i) :=
+  HomologicalComplex.doubleXIso₁ _ _ (by decide)
+
+variable {k G}
+
+/-- The differential of `B_i` is the evaluation. -/
+@[simp]
+theorem zigzagBraidComplex_d (i : V) :
+    (zigzagBraidComplex k G i).d (-1) 0 =
+      (zigzagBraidComplexXIso₀ k G i).hom ≫ zigzagBraidEvaluationHom k G i ≫
+        (zigzagBraidComplexXIso₁ k G i).inv :=
+  HomologicalComplex.double_d _ _ _
+
+/-- The differential of `B_i` vanishes out of every degree other than `-1`. -/
+@[simp]
+theorem zigzagBraidComplex_d_eq_zero (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ -1) :
+    (zigzagBraidComplex k G i).d a b = 0 :=
+  HomologicalComplex.double_d_eq_zero₀ _ _ _ _ ha
+
+/-- `B_i` vanishes outside cohomological degrees `-1` and `0`. -/
+theorem isZero_zigzagBraidComplex_X (i : V) {j : ℤ} (h₀ : j ≠ -1) (h₁ : j ≠ 0) :
+    Limits.IsZero ((zigzagBraidComplex k G i).X j) :=
+  HomologicalComplex.isZero_double_X _ _ _ h₀ h₁
+
+/-- The differential of `B_i'` is the coevaluation. -/
+@[simp]
+theorem zigzagBraidInverseComplex_d (i : V) :
+    (zigzagBraidInverseComplex k G i).d 0 1 =
+      (zigzagBraidInverseComplexXIso₀ k G i).hom ≫ zigzagBraidCoevaluationHom k G i ≫
+        (zigzagBraidInverseComplexXIso₁ k G i).inv :=
+  HomologicalComplex.double_d _ _ _
+
+/-- The differential of `B_i'` vanishes out of every degree other than `0`. -/
+@[simp]
+theorem zigzagBraidInverseComplex_d_eq_zero (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ 0) :
+    (zigzagBraidInverseComplex k G i).d a b = 0 :=
+  HomologicalComplex.double_d_eq_zero₀ _ _ _ _ ha
+
+/-- `B_i'` vanishes outside cohomological degrees `0` and `1`. -/
+theorem isZero_zigzagBraidInverseComplex_X (i : V) {j : ℤ} (h₀ : j ≠ 0) (h₁ : j ≠ 1) :
+    Limits.IsZero ((zigzagBraidInverseComplex k G i).X j) :=
+  HomologicalComplex.isZero_double_X _ _ _ h₀ h₁
+
+end Complexes
 
 end TauCeti

@@ -29,6 +29,8 @@ module enters the signed-degree API.
 
 public section
 
+open scoped DirectSum
+
 namespace TauCeti
 
 namespace Graded
@@ -50,25 +52,41 @@ theorem extendByZero_of_neg (𝒜 : ℕ → α) {d : ℤ} (hd : d < 0) : extendB
 
 /-- **The extension by zero of an internal direct sum is an internal direct sum**: its pieces in
 nonnegative degrees are those of `𝒜`, and those in negative degrees vanish. -/
-theorem isInternal_extendByZero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+theorem isInternal_extendByZero {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     {𝒜 : ℕ → Submodule R M} (h : DirectSum.IsInternal 𝒜) :
     DirectSum.IsInternal (extendByZero 𝒜) := by
-  rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at h ⊢
-  obtain ⟨hind, htop⟩ := h
-  refine ⟨fun d ↦ ?_, ?_⟩
-  · rcases lt_or_ge d 0 with hd | hd
-    · simp [extendByZero_of_neg 𝒜 hd]
-    · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
-      rw [extendByZero_natCast]
-      refine (hind n).mono_right (iSup₂_le fun j hj ↦ ?_)
-      rcases lt_or_ge j 0 with hj0 | hj0
-      · simp [extendByZero_of_neg 𝒜 hj0]
-      · obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hj0
-        rw [extendByZero_natCast]
-        exact le_iSup₂_of_le m (fun h ↦ hj (by rw [h])) le_rfl
-  · rw [eq_top_iff, ← htop]
-    exact iSup_le fun n ↦ (extendByZero_natCast 𝒜 n).symm.le.trans
-      (le_iSup (extendByZero 𝒜) (n : ℤ))
+  -- Reindexing `⨁ n, 𝒜 n` along `ℕ → ℤ` reaches every element, as the negative pieces vanish.
+  let φ : (⨁ n, 𝒜 n) →+ ⨁ d : ℤ, ↥(extendByZero 𝒜 d) := DirectSum.toAddMonoid fun n ↦
+    (DirectSum.of (fun d : ℤ ↦ ↥(extendByZero 𝒜 d)) n).comp
+      (Submodule.inclusion (extendByZero_natCast 𝒜 n).ge).toAddMonoidHom
+  have hφ (x : ⨁ n, 𝒜 n) :
+      DirectSum.coeAddMonoidHom (extendByZero 𝒜) (φ x) = DirectSum.coeAddMonoidHom 𝒜 x := by
+    induction x using DirectSum.induction_on with
+    | zero => simp
+    | of n x => simp [φ]
+    | add x y hx hy => simp [hx, hy]
+  have hsurj : Function.Surjective φ := by
+    intro x
+    induction x using DirectSum.induction_on with
+    | zero => exact ⟨0, map_zero φ⟩
+    | of d m =>
+      rcases lt_or_ge d 0 with hd | hd
+      · obtain rfl : m = 0 := Subtype.ext <| by
+          simpa [extendByZero_of_neg 𝒜 hd] using m.2
+        exact ⟨0, by simp⟩
+      · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
+        exact ⟨DirectSum.of (fun n ↦ 𝒜 n) n ⟨m, (extendByZero_natCast 𝒜 n).le m.2⟩,
+          DirectSum.toAddMonoid_of _ _ _⟩
+    | add x y hx hy =>
+      obtain ⟨x, rfl⟩ := hx
+      obtain ⟨y, rfl⟩ := hy
+      exact ⟨x + y, map_add φ x y⟩
+  refine ⟨fun x y hxy ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨x, rfl⟩ := hsurj x
+    obtain ⟨y, rfl⟩ := hsurj y
+    rw [h.injective ((hφ x).symm.trans (hxy.trans (hφ y)))]
+  · obtain ⟨y, rfl⟩ := h.surjective x
+    exact ⟨φ y, hφ y⟩
 
 /-- **Multiplication adds signed degrees in the extension by zero** of an `ℕ`-indexed family in
 which it adds degrees. -/
