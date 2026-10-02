@@ -22,15 +22,15 @@ symmetric nor range-bounded everywhere. Averaging and clamping repairs it: the o
 `1`, and the rest of the zero row and column become `0`. The repair preserves the class, every
 homomorphism density, and the graphon-space point. In particular, a repaired constant graphon
 need not be the same strict graphon. Constant and finite-graph examples also exercise the
-existential representative constructor and its return to the quotient.
+existence of representatives and their return to the quotient.
 
 On a uniform two-point space, an asymmetric function cannot be represented by a graphon;
 neither can the constant function `2` on a point mass. These checks distinguish almost-everywhere
 constraints from constraints that could accidentally ignore positive-mass exceptional sets.
 
 The examples use the strict-representative construction `Graphon.clampSymm` and the bridge
-`exists_graphon_repr`. The auxiliary functions are private; the exported theorem
-`Graphon.not_injective_toAEEqFun_unitInterval` records why strict equality cannot be recovered.
+`exists_graphon_repr_iff`. The auxiliary functions are private; the exported theorem
+`Graphon.toAEEqFun_unitInterval_not_injective` records why strict equality cannot be recovered.
 
 ## References
 
@@ -111,7 +111,7 @@ example (W : Graphon I (volume : Measure I)) :
 /-- Passing to the almost-everywhere class loses strict equality, already on the unit interval.
 A null-set modification of the constant graphon `1/2` gives a different strict graphon with the
 same class. -/
-theorem Graphon.not_injective_toAEEqFun_unitInterval :
+theorem Graphon.toAEEqFun_unitInterval_not_injective :
     ¬ Function.Injective (Graphon.toAEEqFun (Ω := I) (μ := (volume : Measure I))) := by
   intro hinj
   let W := Graphon.const (volume : Measure I) ⟨1 / 2, by norm_num, by norm_num⟩
@@ -126,20 +126,14 @@ example : homDensity (⊤ : SimpleGraph (Fin 3))
     SimpleGraph.card_edgeFinset_top_eq_card_choose_two]
   norm_num
 
--- Exercise the existential bridge, rather than only the explicit repair. Its output must
--- return to the same quotient point even when the input function fails pointwise constraints.
+-- The corrupted class has a strict representative at the original quotient point,
+-- even though the input function fails pointwise constraints.
 example (W : Graphon I (volume : Measure I)) :
     ∃ V : Graphon I (volume : Measure I),
       Graphon.toAEEqFun V = AEEqFun.mk (Function.uncurry (corrupted W))
         (measurable_corrupted W).aestronglyMeasurable ∧
       (⟦V⟧ : GraphonSpaceI) = ⟦W⟧ := by
-  let f : (I × I) →ₘ[volume.prod volume] ℝ :=
-    AEEqFun.mk (Function.uncurry (corrupted W)) (measurable_corrupted W).aestronglyMeasurable
-  have hf : Graphon.toAEEqFun W = f := corrupted_class W
-  obtain ⟨V, hV⟩ := exists_graphon_repr f
-    (hf ▸ W.toAEEqFun_mem_Icc_ae) (hf ▸ W.toAEEqFun_symm_ae)
-  refine ⟨V, hV, (graphonSpace_mk_eq_mk_iff _ _).2 ?_⟩
-  exact cutDist_eq_zero_of_aeEq (Graphon.toAEEqFun_eq_iff.1 (hV.trans hf.symm))
+  exact ⟨W, corrupted_class W, rfl⟩
 
 -- A nonconstant finite-graph example on an atomic carrier: the round trip recovers all
 -- four entries of the two-point adjacency matrix, not just the off-diagonal ones.
@@ -147,31 +141,22 @@ example : ∃ V : Graphon (Fin 2) (uniformOn Set.univ),
     Graphon.toAEEqFun V =
       Graphon.toAEEqFun (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) ∧
     V 0 0 = 0 ∧ V 0 1 = 1 ∧ V 1 0 = 1 ∧ V 1 1 = 0 := by
-  let W := finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))
-  obtain ⟨V, hV⟩ := exists_graphon_repr W.toAEEqFun
-    W.toAEEqFun_mem_Icc_ae W.toAEEqFun_symm_ae
-  have hpoint := ae_iff_of_countable.1 (Graphon.toAEEqFun_eq_iff.1 hV)
-  have heq (i j : Fin 2) : V i j = W i j := by
-    apply hpoint (i, j)
-    rw [← Set.singleton_prod_singleton, Measure.prod_prod]
-    simp [uniformOn_univ]
-  refine ⟨V, hV, ?_⟩
-  simp [heq, W, finiteGraphGraphonOnFin_apply]
+  refine ⟨finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)), rfl, ?_⟩
+  simp [finiteGraphGraphonOnFin_apply]
 
 -- Range violations at an atom cannot be removed by changing representatives.
 example : ¬ ∃ W : Graphon I (Measure.dirac 0),
     Graphon.toAEEqFun W = AEEqFun.mk (fun _ : I × I ↦ (2 : ℝ))
       measurable_const.aestronglyMeasurable := by
-  rintro ⟨W, hW⟩
-  have h : (fun p : I × I ↦ W p.1 p.2) =ᵐ[(Measure.dirac 0).prod (Measure.dirac 0)]
-      fun _ ↦ (2 : ℝ) := by
-    have hcoe := W.coeFn_toAEEqFun.symm
-    rw [hW] at hcoe
-    exact hcoe.trans (AEEqFun.coeFn_mk _ _)
-  rw [Measure.dirac_prod_dirac, ae_dirac_eq] at h
-  have hval : W 0 0 = 2 := Filter.eventually_pure.1 h
-  have := W.le_one 0 0
-  linarith
+  rw [exists_graphon_repr_iff]
+  rintro ⟨hbdd, _⟩
+  have hmk := AEEqFun.coeFn_mk
+    (μ := (Measure.dirac (0 : I)).prod (Measure.dirac 0)) (fun _ : I × I ↦ (2 : ℝ))
+    measurable_const.aestronglyMeasurable
+  rw [Measure.dirac_prod_dirac, ae_dirac_eq] at hbdd hmk
+  have hval := Filter.eventually_pure.1 hbdd
+  rw [Filter.eventually_pure.1 hmk] at hval
+  norm_num at hval
 
 /-- A range-bounded but asymmetric function on two positive-mass atoms. -/
 private def asymmetric (p : Fin 2 × Fin 2) : ℝ := if p.1 = 0 then 0 else 1
@@ -180,19 +165,21 @@ private def asymmetric (p : Fin 2 × Fin 2) : ℝ := if p.1 = 0 then 0 else 1
 example : ¬ ∃ W : Graphon (Fin 2) (uniformOn Set.univ),
     Graphon.toAEEqFun W = AEEqFun.mk asymmetric
       (measurable_of_finite asymmetric).aestronglyMeasurable := by
-  rintro ⟨W, hW⟩
-  have h : (fun p : Fin 2 × Fin 2 ↦ W p.1 p.2) =ᵐ[
-      (uniformOn Set.univ).prod (uniformOn Set.univ)] asymmetric := by
-    have hcoe := W.coeFn_toAEEqFun.symm
-    rw [hW] at hcoe
-    exact hcoe.trans (AEEqFun.coeFn_mk _ _)
-  have hpoint := ae_iff_of_countable.1 h
-  have heq (i j : Fin 2) : W i j = asymmetric (i, j) := by
-    apply hpoint (i, j)
+  rw [exists_graphon_repr_iff]
+  rintro ⟨_, hsymm⟩
+  have hmk := AEEqFun.coeFn_mk
+    (μ := (uniformOn (Set.univ : Set (Fin 2))).prod (uniformOn Set.univ)) asymmetric
+    (measurable_of_finite asymmetric).aestronglyMeasurable
+  have hswap := (Measure.measurePreserving_swap (μ := uniformOn (Set.univ : Set (Fin 2)))
+    (ν := uniformOn Set.univ)).quasiMeasurePreserving.ae hmk
+  have h : ∀ᵐ p ∂(uniformOn (Set.univ : Set (Fin 2))).prod (uniformOn Set.univ),
+      asymmetric p = asymmetric p.swap := by
+    filter_upwards [hsymm, hmk, hswap] with p hp hmp hmps
+    rwa [hmp, hmps] at hp
+  have hval : asymmetric (0, 1) = asymmetric (1, 0) := by
+    apply ae_iff_of_countable.1 h (0, 1)
     rw [← Set.singleton_prod_singleton, Measure.prod_prod]
     simp [uniformOn_univ]
-  have hsymm := W.symm 0 1
-  rw [heq, heq] at hsymm
-  norm_num [asymmetric] at hsymm
+  norm_num [asymmetric] at hval
 
 end TauCeti.DenseGraphLimits
