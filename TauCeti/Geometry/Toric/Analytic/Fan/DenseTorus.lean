@@ -85,8 +85,7 @@ theorem isOpen_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
   rw [Phi.isOpen_iff_forall_preimage_analyticAffineChartι hPhi]
   intro sigma
   have hbot : (⟨⊥, Phi.bot_mem hPhi0.some.2⟩ : Phi.cones) ≤ sigma := by
-    change (⊥ : PointedCone ℝ V) ≤ sigma.1
-    exact bot_le
+    exact Subtype.coe_le_coe.1 (bot_le : (⊥ : PointedCone ℝ V) ≤ sigma.1)
   rw [analyticDenseTorus_def,
     Phi.preimage_analyticAffineChartι_analyticConeOrbit hPhi hbot]
   let hσ := (isRegular_iff.mp hPhi) sigma.1 sigma.2
@@ -95,15 +94,18 @@ theorem isOpen_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
     ⟨botCone.1, Phi.isFaceOf_of_le sigma.2 botCone.2 hbot⟩
   have hF : F = ⊥ := by
     apply le_antisymm
-    · change (⊥ : PointedCone ℝ V) ≤ ((⊥ : sigma.1.Face) : PointedCone ℝ V)
+    · rw [← PointedCone.Face.toPointedCone_le_toPointedCone]
       exact bot_le
     · exact bot_le
   obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
-  change @IsOpen _
-    (affinePointTopology (Phi.analyticChartGenerators sigma hσ).2)
-    (affineConeOrbit Phi.lattice F)
-  rw [hF, affineConeOrbit_eq_orbit Phi.lattice hσ, distinguishedPoint_bot]
-  exact isOpen_orbit_complexTorus_default Phi.lattice hσ.toIsToricCone hb
-    (Phi.analyticChartGenerators sigma hσ).2
+  have hopen : @IsOpen _
+      (affinePointTopology (Phi.analyticChartGenerators sigma hσ).2)
+      (affineConeOrbit Phi.lattice F) := by
+    rw [hF, affineConeOrbit_eq_orbit Phi.lattice hσ, distinguishedPoint_bot]
+    exact isOpen_orbit_complexTorus_default Phi.lattice hσ.toIsToricCone hb
+      (Phi.analyticChartGenerators sigma hσ).2
+  rw [← Phi.analyticAffineChart_str_eq sigma hσ
+    (Phi.analyticChartGenerators sigma hσ).2] at hopen
+  exact hopen
 
 end TauCeti.Toric.Fan
