@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.HyperbolicPair
 
 /-!
 # The special orthogonal group of the hyperbolic plane
@@ -15,7 +15,9 @@ The hyperbolic plane `hyperbolicPlane R`, the form `x₀² - x₁²` on `Fin 2 �
 `(x₀ + x₁) (x₀ - x₁)`, so `![1, 1]` and `![1, -1]` span two distinguished isotropic rank-one
 submodules (over a field, these are its only two isotropic lines). For a unit `t`, the linear
 automorphism scaling `![1, 1]` by `t` and `![1, -1]` by `t⁻¹` is a proper isometry: it is the
-diagonal torus `diag(t, t⁻¹)` of the `xy`-model written in the diagonal coordinates.
+diagonal torus `diag(t, t⁻¹)` of the `xy`-model written in the diagonal coordinates, and we
+construct it as the torus `TauCeti.QuadraticMap.hyperbolicPairTorus` of the hyperbolic pair
+`![1, 1]`, `⅟4 • ![1, -1]`.
 
 These are all the proper isometries, so the torus is an isomorphism `Rˣ ≃* SO(H)` over any
 commutative ring in which two is invertible: an isometry sends `![1, 1]` and `![1, -1]` to isotropic
@@ -41,105 +43,84 @@ public section
 namespace TauCeti
 
 open _root_.TauCeti.QuadraticMap
+open _root_.QuadraticMap (polar)
 
 variable (R : Type*) [CommRing R] [Invertible (2 : R)]
 
-/-- The matrix of `diag(t, t⁻¹)` in the diagonal coordinates of the hyperbolic plane. -/
-private noncomputable def hyperbolicTorusMatrix (t : Rˣ) : Matrix (Fin 2) (Fin 2) R :=
-  !![⅟2 * (t + ↑t⁻¹), ⅟2 * (t - ↑t⁻¹); ⅟2 * (t - ↑t⁻¹), ⅟2 * (t + ↑t⁻¹)]
+/-- `![1, 1]` is isotropic for the hyperbolic plane. -/
+private theorem hyperbolicPlane_one_one : hyperbolicPlane R ![1, 1] = 0 := by
+  simp [hyperbolicPlane_apply]
 
-private theorem hyperbolicTorusMatrix_mul (s t : Rˣ) :
-    hyperbolicTorusMatrix R s * hyperbolicTorusMatrix R t = hyperbolicTorusMatrix R (s * t) := by
+/-- `⅟4 • ![1, -1]` is isotropic for the hyperbolic plane. -/
+private theorem hyperbolicPlane_smul_one_neg_one :
+    hyperbolicPlane R ((⅟2 * ⅟2 : R) • ![1, -1]) = 0 := by
+  simp [hyperbolicPlane_apply]
+
+/-- `![1, 1]` and `⅟4 • ![1, -1]` form a hyperbolic pair in the hyperbolic plane. -/
+private theorem polar_hyperbolicPlane_one_one_smul_one_neg_one :
+    polar (hyperbolicPlane R) ![1, 1] ((⅟2 * ⅟2 : R) • ![1, -1]) = 1 := by
   have h2 : ⅟2 * (2 : R) = 1 := invOf_mul_self 2
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [hyperbolicTorusMatrix, Matrix.mul_apply, Fin.sum_univ_two]
-  · linear_combination (⅟2 * (s * t + ↑t⁻¹ * ↑s⁻¹ : R)) * h2
-  · linear_combination (⅟2 * (s * t - ↑t⁻¹ * ↑s⁻¹ : R)) * h2
-  · linear_combination (⅟2 * (s * t - ↑t⁻¹ * ↑s⁻¹ : R)) * h2
-  · linear_combination (⅟2 * (s * t + ↑t⁻¹ * ↑s⁻¹ : R)) * h2
-
-private theorem hyperbolicTorusMatrix_one : hyperbolicTorusMatrix R 1 = 1 := by
-  have h2 : ⅟2 * (2 : R) = 1 := invOf_mul_self 2
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [hyperbolicTorusMatrix, ← two_mul, h2]
-
-/-- `diag(t, t⁻¹)` in the isotropic basis, as a linear automorphism of the hyperbolic plane. -/
-private noncomputable def hyperbolicTorusLinearEquiv (t : Rˣ) : (Fin 2 → R) ≃ₗ[R] (Fin 2 → R) :=
-  LinearEquiv.ofLinearMap (Matrix.toLin' (hyperbolicTorusMatrix R t))
-    (Matrix.toLin' (hyperbolicTorusMatrix R t⁻¹))
-    (by rw [← Matrix.toLin'_mul, hyperbolicTorusMatrix_mul, mul_inv_cancel,
-      hyperbolicTorusMatrix_one, Matrix.toLin'_one])
-    (by rw [← Matrix.toLin'_mul, hyperbolicTorusMatrix_mul, inv_mul_cancel,
-      hyperbolicTorusMatrix_one, Matrix.toLin'_one])
-
-private theorem hyperbolicTorusLinearEquiv_apply (t : Rˣ) (x : Fin 2 → R) :
-    hyperbolicTorusLinearEquiv R t x =
-      ![⅟2 * ((t + ↑t⁻¹) * x 0 + (t - ↑t⁻¹) * x 1),
-        ⅟2 * ((t - ↑t⁻¹) * x 0 + (t + ↑t⁻¹) * x 1)] := by
-  ext i
-  fin_cases i <;>
-    simp [hyperbolicTorusLinearEquiv, hyperbolicTorusMatrix, Matrix.mulVec, dotProduct] <;> ring
-
-private theorem hyperbolicTorusLinearEquiv_mem (t : Rˣ) :
-    hyperbolicTorusLinearEquiv R t ∈ specialOrthogonalGroup (hyperbolicPlane R) := by
-  have h2 : ⅟2 * (2 : R) = 1 := invOf_mul_self 2
-  have ht : (t : R) * ↑t⁻¹ = 1 := t.mul_inv
-  refine mem_specialOrthogonalGroup_iff.mpr ⟨mem_orthogonalGroup_iff.mpr fun x ↦ ?_, Units.ext ?_⟩
-  · rw [hyperbolicTorusLinearEquiv_apply, hyperbolicPlane_apply, hyperbolicPlane_apply]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-    linear_combination (x 0 ^ 2 - x 1 ^ 2) * ((t * ↑t⁻¹ * (⅟2 * 2 + 1) : R) * h2 + ht)
-  · rw [LinearEquiv.coe_det, Units.val_one, hyperbolicTorusLinearEquiv,
-      LinearEquiv.toLinearMap_ofLinearMap, LinearMap.det_toLin', hyperbolicTorusMatrix,
-      Matrix.det_fin_two_of]
-    linear_combination (t * ↑t⁻¹ * (⅟2 * 2 + 1) : R) * h2 + ht
+  simp [polar_hyperbolicPlane]
+  linear_combination (1 + 2 * ⅟2 : R) * h2
 
 /-- The diagonal torus of the hyperbolic plane: the proper isometry `diag(t, t⁻¹)` in the
 isotropic basis `![1, 1]`, `![1, -1]`, which scales `![1, 1]` by `t` and `![1, -1]` by `t⁻¹`
-(`hyperbolicTorus_apply_one_one`, `hyperbolicTorus_apply_one_neg_one`). -/
-noncomputable def hyperbolicTorus : Rˣ →* specialOrthogonalGroup (hyperbolicPlane R) where
-  toFun t := ⟨hyperbolicTorusLinearEquiv R t, hyperbolicTorusLinearEquiv_mem R t⟩
-  map_one' := Subtype.ext <| LinearEquiv.toLinearMap_injective <| by
-    simp [hyperbolicTorusLinearEquiv, hyperbolicTorusMatrix_one]
-  map_mul' s t := Subtype.ext <| LinearEquiv.toLinearMap_injective <| by
-    simp [hyperbolicTorusLinearEquiv, ← hyperbolicTorusMatrix_mul, Matrix.toLin'_mul,
-      Module.End.mul_eq_comp]
+(`hyperbolicTorus_apply_one_one`, `hyperbolicTorus_apply_one_neg_one`). It is the torus
+`hyperbolicPairTorus` of the hyperbolic pair `![1, 1]`, `⅟4 • ![1, -1]`. -/
+noncomputable def hyperbolicTorus : Rˣ →* specialOrthogonalGroup (hyperbolicPlane R) :=
+  ((orthogonalGroup (hyperbolicPlane R)).subtype.comp
+      (hyperbolicPairTorus (hyperbolicPlane R) (hyperbolicPlane_one_one R)
+        (hyperbolicPlane_smul_one_neg_one R)
+        (polar_hyperbolicPlane_one_one_smul_one_neg_one R))).codRestrict _
+    fun t ↦ hyperbolicPairTorus_mem_specialOrthogonalGroup _ _ _ t
 
 variable {R}
+
+/-- The diagonal torus of the hyperbolic plane is the torus of the hyperbolic pair `![1, 1]`,
+`⅟4 • ![1, -1]`. -/
+private theorem coe_hyperbolicTorus (t : Rˣ) :
+    (hyperbolicTorus R t : (Fin 2 → R) ≃ₗ[R] (Fin 2 → R)) =
+      hyperbolicPairTorus (hyperbolicPlane R) (hyperbolicPlane_one_one R)
+        (hyperbolicPlane_smul_one_neg_one R)
+        (polar_hyperbolicPlane_one_one_smul_one_neg_one R) t :=
+  rfl
 
 /-- The diagonal torus in the coordinates of the hyperbolic plane. -/
 theorem hyperbolicTorus_apply (t : Rˣ) (x : Fin 2 → R) :
     (hyperbolicTorus R t : (Fin 2 → R) ≃ₗ[R] (Fin 2 → R)) x =
       ![⅟2 * ((t + ↑t⁻¹) * x 0 + (t - ↑t⁻¹) * x 1),
-        ⅟2 * ((t - ↑t⁻¹) * x 0 + (t + ↑t⁻¹) * x 1)] :=
-  hyperbolicTorusLinearEquiv_apply R t x
+        ⅟2 * ((t - ↑t⁻¹) * x 0 + (t + ↑t⁻¹) * x 1)] := by
+  have h2 : ⅟2 * (2 : R) = 1 := invOf_mul_self 2
+  rw [coe_hyperbolicTorus, hyperbolicPairTorus_apply]
+  ext i
+  fin_cases i <;> simp [polar_hyperbolicPlane, Matrix.vecHead, Matrix.vecTail]
+  · linear_combination (⅟2 * (t * (x 0 + x 1) + ↑t⁻¹ * (x 0 - x 1)) - x 0 * (2 * ⅟2 + 1) : R) * h2
+  · linear_combination (⅟2 * (t * (x 0 + x 1) - ↑t⁻¹ * (x 0 - x 1)) - x 1 * (2 * ⅟2 + 1) : R) * h2
 
 /-- The diagonal torus scales the isotropic vector `![1, 1]` by `t`. -/
 @[simp]
 theorem hyperbolicTorus_apply_one_one (t : Rˣ) :
     (hyperbolicTorus R t : (Fin 2 → R) ≃ₗ[R] (Fin 2 → R)) ![1, 1] = (t : R) • ![1, 1] := by
-  have h2 : ⅟2 * (2 : R) = 1 := invOf_mul_self 2
-  rw [hyperbolicTorus_apply]
-  ext i
-  fin_cases i <;> simp <;> linear_combination (t : R) * h2
+  rw [coe_hyperbolicTorus, hyperbolicPairTorus_apply_left]
 
 /-- The diagonal torus scales the isotropic vector `![1, -1]` by `t⁻¹`. -/
 @[simp]
 theorem hyperbolicTorus_apply_one_neg_one (t : Rˣ) :
     (hyperbolicTorus R t : (Fin 2 → R) ≃ₗ[R] (Fin 2 → R)) ![1, -1] = (↑t⁻¹ : R) • ![1, -1] := by
-  have h2 : ⅟2 * (2 : R) = 1 := invOf_mul_self 2
-  rw [hyperbolicTorus_apply]
-  ext i
-  fin_cases i <;> simp
-  · linear_combination (↑t⁻¹ : R) * h2
-  · linear_combination -(↑t⁻¹ : R) * h2
+  have h4 : (2 * 2 : R) * (⅟2 * ⅟2) = 1 := by rw [mul_mul_mul_comm, mul_invOf_self, one_mul]
+  have h := congrArg ((2 * 2 : R) • ·) (hyperbolicPairTorus_apply_right
+    (hyperbolicPlane_one_one R) (hyperbolicPlane_smul_one_neg_one R)
+    (polar_hyperbolicPlane_one_one_smul_one_neg_one R) t)
+  simp only [map_smul, smul_smul, smul_comm (↑t⁻¹ : R), h4, one_smul] at h
+  rw [← mul_assoc, h4, one_mul] at h
+  rw [coe_hyperbolicTorus, h]
 
 /-- The diagonal torus of the hyperbolic plane is injective. -/
 theorem hyperbolicTorus_injective : Function.Injective (hyperbolicTorus R) := by
   intro s t h
-  have h0 := congr_arg
-    (fun g : specialOrthogonalGroup (hyperbolicPlane R) ↦
-      (g : (Fin 2 → R) ≃ₗ[R] (Fin 2 → R)) ![1, 1] 0) h
-  exact Units.ext (by simpa using h0)
+  refine hyperbolicPairTorus_injective (hyperbolicPlane_one_one R)
+    (hyperbolicPlane_smul_one_neg_one R) (polar_hyperbolicPlane_one_one_smul_one_neg_one R) ?_
+  rw [Subtype.ext_iff, ← coe_hyperbolicTorus, ← coe_hyperbolicTorus, h]
 
 /-- Every vector of the hyperbolic plane in the isotropic basis `![1, 1]`, `![1, -1]`. -/
 private theorem eq_smul_add_smul_isotropic (x : Fin 2 → R) :

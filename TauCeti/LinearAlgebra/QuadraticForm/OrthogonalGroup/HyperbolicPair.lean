@@ -150,6 +150,7 @@ theorem hyperbolicPairTorus_apply_right (hu : Q u = 0) (hv : Q v = 0) (huv : pol
   module
 
 /-- The torus of a hyperbolic pair fixes every vector orthogonal to both vectors of the pair. -/
+@[simp]
 theorem hyperbolicPairTorus_apply_of_polar_eq_zero (hu : Q u = 0) (hv : Q v = 0)
     (huv : polar Q u v = 1) (t : Rˣ) {x : M} (hxu : polar Q x u = 0) (hxv : polar Q x v = 0) :
     (hyperbolicPairTorus Q hu hv huv t : M ≃ₗ[R] M) x = x := by
