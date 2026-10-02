@@ -65,12 +65,12 @@ hypothesis that `L` acts nontrivially somewhere on `M`.
 
 ## Descent from an algebraic closure
 
-Over a field `K` of characteristic zero, let `K̄` be an algebraic closure. The Killing form of
-`K̄ ⊗[K] L` is the extension of that of `L`, so it is again nondegenerate
+Over a field `K` of characteristic zero, let `A = AlgebraicClosure K`. The Killing form of
+`A ⊗[K] L` is the extension of that of `L`, so it is again nondegenerate
 (`TauCeti.isKilling_baseChange_iff`). If `L` carries `M` into a proper Lie submodule `N`, then
-`K̄ ⊗[K] L` carries `K̄ ⊗[K] M` into the proper Lie submodule `N.baseChange K̄`, and the
-algebraically closed case gives an invariant vector of `K̄ ⊗[K] M` outside `N.baseChange K̄`. The
-invariants of `K̄ ⊗[K] M` are the extension of the invariants of `M`
+`A ⊗[K] L` carries `A ⊗[K] M` into the proper Lie submodule `N.baseChange A`, and the
+algebraically closed case gives an invariant vector of `A ⊗[K] M` outside `N.baseChange A`. The
+invariants of `A ⊗[K] M` are the extension of the invariants of `M`
 (`LieModule.maxTrivSubmodule_baseChange`), so the invariants of `M` are not all contained in `N`.
 
 ## Main results
