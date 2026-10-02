@@ -85,8 +85,9 @@ private theorem mem_levelIdeal_iff (L : IntegralLattice V) (N : ℤ) :
     N ∈ L.levelIdeal ↔ ∀ x ∈ L.dualCarrier, ∃ k : ℤ, (N : ℚ) * L.norm x = 2 * k :=
   Iff.rfl
 
-/-- The **level** of an integral lattice: the least `N ≥ 0` such that `N · B(x, x)` is an even
-integer for every vector `x` of the dual lattice `Lᵛ`.
+/-- The **level** of an integral lattice: the nonnegative generator of the ideal of integers `N`
+such that `N · B(x, x)` is an even integer for every vector `x` of the dual lattice `Lᵛ`
+(`level_dvd_iff`). It is positive when `L` is nondegenerate (`level_pos`).
 
 For a nondegenerate lattice this is the least positive `N` for which `N • G⁻¹` is an integral
 matrix with even diagonal, `G` being a Gram matrix of `L` (`isLeast_level`). -/

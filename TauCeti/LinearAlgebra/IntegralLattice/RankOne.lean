@@ -391,6 +391,7 @@ theorem polar_discriminantQuadraticMap_zsmul_rankOneClass (k l : ℤ) :
 
 /-- **The level of `⟨2m⟩` is `4|m|`.** The dual vector `e / (2m)` has norm `1 / (2m)`, and `N`
 times it is an even integer exactly when `4m ∣ N`. -/
+@[simp]
 theorem rankOne_level : (rankOne m).level = 4 * m.natAbs := by
   have hm := rankOne_cast_ne_zero m
   have key (N : ℤ) : ((rankOne m).level : ℤ) ∣ N ↔ 4 * m ∣ N := by
