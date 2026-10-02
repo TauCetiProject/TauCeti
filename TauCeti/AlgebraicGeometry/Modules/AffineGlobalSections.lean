@@ -116,6 +116,33 @@ instance (M : (Spec A).Modules) : IsScalarTower R A Γ(M, ⊤) :=
 
 end Base
 
+/-- The canonical affine chart is a morphism over `Spec R` when its coordinate ring carries
+the algebra structure obtained by restricting the base-ring map. -/
+lemma isOver_fromSpec (X : Scheme.{u}) [X.Over (Spec (.of R))] (U : X.affineOpens) :
+    letI : Algebra R Γ(X, U) :=
+      ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+    U.property.fromSpec.IsOver (Spec (.of R)) := by
+  let : Algebra R Γ(X, U) :=
+    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+  rw [Scheme.Hom.isOver_iff, specOverSpec_over]
+  have h := IsAffineOpen.SpecMap_appLE_fromSpec (X ↘ Spec (.of R))
+    (isAffineOpen_top _) U.property (by simp)
+  rw [IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp] at h
+  refine h.symm.trans ?_
+  congr 1
+  ext r
+  -- The displayed `letI` chooses exactly the local base-ring homomorphism.
+  change ((Scheme.ΓSpecIso (.of R)).inv ≫
+      (X ↘ Spec (.of R)).appLE ⊤ U.val _).hom r =
+    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom r
+  rw [Scheme.baseRingToStructurePresheaf_app]
+  -- The algebra structure is the base-ring map on `U`; identify its bundled map with the
+  -- restriction of the global base-ring map.
+  change (X ↘ Spec (.of R)).appLE ⊤ U.val _ ((Scheme.ΓSpecIso (.of R)).inv r) =
+    X.presheaf.map U.val.leTop.op (Scheme.Modules.baseRingToGlobalSections R X r)
+  rw [Scheme.Modules.baseRingToGlobalSections_apply]
+  rfl
+
 end
 
 variable {A : CommRingCat.{u}}
