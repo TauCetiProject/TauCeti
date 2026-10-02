@@ -225,10 +225,8 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit
         (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ (D ∘ₗ D) = 0 :=
   h.square_eq_zero_iff_counit_of_negOnePow_eq_neg_one G b D hD (by norm_num) hb
 
-/-- Two coderivations over the same coalgebra operator on a cofree comodule agree as soon as
-their counit components agree.  Their difference is an ordinary comodule morphism, since the
-inhomogeneous terms involving the coalgebra operator cancel, and the cofree universal property
-then determines that difference from its counit component. -/
+/-- Two coderivations over the same coalgebra operator on a cofree comodule are equal when their
+counit components agree. -/
 theorem IsGradedCoderivationOver.eq_of_counit_comp_eq
     (G : InternalGrading R (N ⊗[R] C))
     (b : C →ₗ[R] C) (D E : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)

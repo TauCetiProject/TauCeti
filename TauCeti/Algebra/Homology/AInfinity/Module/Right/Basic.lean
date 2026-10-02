@@ -125,22 +125,23 @@ theorem taylor_apply (MM : AInfinityRightModule AA M)
         (MM.barDifferential x)) :=
   (rfl)
 
-/-- Applying the tensor-coalgebra counit to the bar-comodule factor preserves total degree: only
-the degree-zero part of the tensor word survives. -/
-theorem isHomogeneous_counitComponent (G : InternalGrading R M) :
+/-- Applying the tensor-coalgebra counit to the tensor-word factor preserves total degree for
+the tensor-product grading of `M ⊗ Tᶜ(A)`: only the degree-zero part of the tensor word
+survives. -/
+theorem isHomogeneous_counitComponent (G : InternalGrading R M) (H : InternalGrading R A) :
     LinearMap.IsHomogeneous
       ((TensorProduct.rid R M).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M)
-      (barGrading AA G).piece (G.shift 1).piece 0 := by
+      (G.tensorProduct (TensorWords.grading H)).piece G.piece 0 := by
   rw [LinearMap.isHomogeneous_def]
   intro p z hz
-  rw [barGrading, InternalGrading.tensorProduct_piece_eq_iSup] at hz
+  rw [InternalGrading.tensorProduct_piece_eq_iSup] at hz
   let K := (TensorProduct.rid R M).toLinearMap ∘ₗ
     (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M
   have hle :
       (⨆ r, Submodule.map₂ (TensorProduct.mk R M (TensorWords R A))
-        ((G.shift 1).piece r) ((TensorWords.grading (AA.grading.shift 1)).piece (p - r))) ≤
-        ((G.shift 1).piece p).comap K := by
+        (G.piece r) ((TensorWords.grading H).piece (p - r))) ≤
+        (G.piece p).comap K := by
     refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun x hx y hy ↦ ?_
     rw [Submodule.mem_comap]
     dsimp only [K]
@@ -150,10 +151,10 @@ theorem isHomogeneous_counitComponent (G : InternalGrading R M) :
     · have hpr : p = r := sub_eq_zero.mp hzero
       rw [hpr]
       exact Submodule.smul_mem _ _ hx
-    · have hy' : y ∈ TensorWords.gradedPiece (AA.grading.shift 1) (p - r) := by
+    · have hy' : y ∈ TensorWords.gradedPiece H (p - r) := by
         simpa only [TensorWords.grading_piece] using hy
       rw [TensorWords.counit_eq_counit,
-        TensorWords.counit_eq_zero_of_mem_gradedPiece (AA.grading.shift 1) hy' hzero, zero_smul]
+        TensorWords.counit_eq_zero_of_mem_gradedPiece H hy' hzero, zero_smul]
       exact zero_mem _
   simpa only [add_zero, Submodule.mem_comap] using hle hz
 
@@ -163,7 +164,7 @@ theorem isHomogeneous_taylor (MM : AInfinityRightModule AA M) :
     LinearMap.IsHomogeneous MM.taylor (barGrading AA MM.grading).piece
       (MM.grading.shift 1).piece 1 := by
   rw [taylor_def]
-  exact (isHomogeneous_counitComponent (AA := AA) MM.grading).comp
+  exact (isHomogeneous_counitComponent (MM.grading.shift 1) (AA.grading.shift 1)).comp
     MM.isHomogeneous_barDifferential
 
 /-- The stored module bar differential squares to zero. -/
