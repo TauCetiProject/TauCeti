@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.SingularLocus
+public import TauCeti.AlgebraicGeometry.Curves.SingularLocus
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
 public import TauCeti.RingTheory.Node.Basic
 import Mathlib.AlgebraicGeometry.Fiber
