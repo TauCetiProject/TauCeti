@@ -53,6 +53,11 @@ a complete intersection, is not standard syntomic of relative dimension zero.
 * The Stacks Project, Commutative Algebra, Section *Syntomic morphisms*: the definitions of
   relative global complete intersections and of standard syntomic ring maps, and the
   characterization of syntomic ring maps as those that are standard syntomic locally on the source.
+* The shape of the definition, a class asserting the existence of a presentation with a prescribed
+  number of generators and relations, and its basic API (`mvPolynomial`, `mvPolynomial_fin`,
+  `baseChange`) are modelled on Mathlib's `Algebra.IsStandardSmoothOfRelativeDimension` in
+  `Mathlib/RingTheory/Smooth/StandardSmooth.lean`, by Jung Tao Cheng, Christian Merten and
+  Andrew Yang.
 -/
 
 public section
