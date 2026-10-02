@@ -17,6 +17,9 @@ so the vertex projectives of a bound quiver are obtained from the path-algebra p
 imposing the relations on them. The comparison is `A`-linear, with the target acted on through
 the quotient map.
 
+Use `TauCeti.spanSingletonQuotientMap I e` for the restriction and
+`TauCeti.spanSingletonRelationMap I e` for right multiplication of the relations by `e`.
+
 See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
 Chapter III, Section 2, for vertex projectives of bound quivers.
 -/
