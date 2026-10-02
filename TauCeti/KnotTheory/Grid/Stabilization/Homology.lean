@@ -216,11 +216,12 @@ theorem stabilizeXHomologyMap_unblockedHomologyClass
         ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomologyClass R z) =
       G.unblockedHomologyClass R
         ⟨G.stabilizeXChainMap s R z, G.stabilizeXChainMap_mem_ker s R z.2⟩ := by
-  rw [stabilizeXHomologyMap, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq, Iso.toLinearEquiv_apply,
-    Iso.toLinearEquiv_apply, unblockedHomologyIso_hom_unblockedHomologyClass,
-    unblockedHomologyIso_hom_unblockedHomologyClass, LinearMap.homologyπ_apply,
-    LinearMap.homologyπ_apply, Submodule.mapQ_apply, LinearMap.restrict_apply]
+  simp only [stabilizeXHomologyMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_eq]
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    unblockedHomologyIso_hom_unblockedHomologyClass,
+    unblockedHomologyIso_hom_unblockedHomologyClass]
+  simp [LinearMap.restrict_apply]
 
 /-- **Stabilization invariance of `GH⁻`.** The map `GH⁻(G') → GH⁻(G)` induced by the
 stabilization chain map is bijective. -/
