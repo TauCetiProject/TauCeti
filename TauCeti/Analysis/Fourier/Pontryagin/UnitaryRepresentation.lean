@@ -139,20 +139,8 @@ theorem MonoidHom.exists_pontryaginMeasureTransform_eq_inner
       ∀ g, μ.pontryaginMeasureTransform g =
         ⟪ξ, (ρ (Multiplicative.ofAdd g) : H →L[ℂ] H) ξ⟫_ℂ := by
   set B := generatedAlgebra ρ
-  -- The positive vector functional of `ξ` on the generated algebra.
-  let f : B →ₗ[ℂ] ℂ :=
-    { toFun a := ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ
-      map_add' a b := by simp [inner_add_right]
-      map_smul' c a := by simp [inner_smul_right] }
-  have hf (a : B) : 0 ≤ f (star a * a) := by
-    -- `f (star a * a) = ⟪ξ, a† (a ξ)⟫ = ‖a ξ‖ ^ 2`.
-    simp only [f, LinearMap.coe_mk, AddHom.coe_mk, MulMemClass.coe_mul, StarMemClass.coe_star,
-      ContinuousLinearMap.star_eq_adjoint, mul_apply_eq_comp,
-      ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-    rw [← RCLike.ofReal_pow]
-    exact RCLike.ofReal_nonneg.mpr (sq_nonneg _)
   borelize ↥(characterSpace ℂ B)
-  obtain ⟨μ, hμ, hrep⟩ := f.exists_isFiniteMeasure_integral_characterSpace_eq hf
+  obtain ⟨μ, hμ, hrep⟩ := B.exists_isFiniteMeasure_integral_characterSpace_eq_inner ξ
   -- Each character of `B` restricts to a continuous character of `G`, continuously in `ω`.
   let θ : characterSpace ℂ B → PontryaginDual (Multiplicative G) := fun ω ↦
     ⟨dualOfCharacter ρ ω, continuous_of_discreteTopology⟩
@@ -168,9 +156,6 @@ theorem MonoidHom.exists_pontryaginMeasureTransform_eq_inner
   have hθg (ω : characterSpace ℂ B) :
       (θ ω (Multiplicative.ofAdd g) : ℂ) = ω (generator ρ (Multiplicative.ofAdd g)) :=
     coe_dualOfCharacter_apply ρ ω _
-  have hfg : f (generator ρ (Multiplicative.ofAdd g)) =
-      ⟪ξ, (ρ (Multiplicative.ofAdd g) : H →L[ℂ] H) ξ⟫_ℂ := by
-    simp only [f, LinearMap.coe_mk, AddHom.coe_mk, generator]
   simp_rw [hθg]
   simp only [μf, FiniteMeasure.toMeasure_mk]
-  rw [← hrep, hfg]
+  exact (hrep _).symm

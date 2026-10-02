@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
@@ -17,7 +18,8 @@ Let `R` be a Dedekind domain with fraction field `K` and let `v` be a height-one
 completion `K_v` already carries the adic valuation `Valued.v`, with values in `ℤᵐ⁰`. This file
 equips `K_v` with the valuative relation that valuation induces, checks that its existing topology
 is the valuative topology and that the relation is nontrivial, and identifies the ring of integers
-and the residue field of the valuative relation with the ones `K_v` already has.
+and the residue field of the valuative relation with the ones `K_v` already has. When `K_v` is a
+nonarchimedean local field, the steps of its unit filtration are read off from `Valued.v`.
 
 ## Main results
 
@@ -44,6 +46,8 @@ and the residue field of the valuative relation with the ones `K_v` already has.
   zero-preserving normalized valuation of such a completion is the inverse of its adic valuation.
 * `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
   of an adic completion carrying a nonarchimedean local-field structure is compact.
+* `IsDedekindDomain.HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff`: the unit filtration
+  `U(K_v, n)` consists of the units `u` of `𝒪_v` with `Valued.v (u - 1) ≤ exp (-n)`.
 
 ## Implementation notes
 
@@ -250,6 +254,30 @@ instance compactSpace_adicCompletionIntegers
       continuous_subtype_val.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
   exact f.compactSpace
+
+/-- **The unit filtration of `K_v` in terms of the adic valuation.** A unit `u` of `K_v` lies in
+the `n`-th step `U(K_v, n)` of the unit filtration exactly when it is a unit of `𝒪_v` and
+`u ≡ 1` to level `n`, that is, `Valued.v u = 1` and `Valued.v (u - 1) ≤ exp (-n)`. -/
+theorem mem_unitFiltration_adicCompletion_iff [IsNonarchimedeanLocalField (v.adicCompletion K)]
+    {n : ℕ} {u : (v.adicCompletion K)ˣ} :
+    u ∈ TauCeti.unitFiltration (v.adicCompletion K) n ↔
+      Valued.v (u : v.adicCompletion K) = 1 ∧
+        Valued.v ((u : v.adicCompletion K) - 1) ≤ WithZero.exp (-(n : ℤ)) := by
+  have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
+    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
+  rw [TauCeti.mem_unitFiltration_iff_exists]
+  constructor
+  · rintro ⟨w, hw, hwu⟩
+    rw [← hwu]
+    refine ⟨hequiv.eq_one_iff_eq_one.mp
+      ((Valuation.integer.integers (ValuativeRel.valuation _)).valuation_unit w), ?_⟩
+    simpa using (mem_maximalIdeal_integer_pow_iff v).mp hw
+  · rintro ⟨h1, h2⟩
+    have h1' := hequiv.eq_one_iff_eq_one.mpr h1
+    have hu : IsUnit (⟨u, (Valuation.mem_integer_iff _ _).mpr h1'.le⟩ : 𝒪[v.adicCompletion K]) :=
+      (Valuation.integer.integers (ValuativeRel.valuation _)).isUnit_of_one' h1'
+    refine ⟨hu.unit, (mem_maximalIdeal_integer_pow_iff v).mpr ?_, by rw [hu.unit_spec]⟩
+    simpa [hu.unit_spec] using h2
 
 /-- **An element of odd order of vanishing at `v` is a nonsquare in the completion `K_v`.**
 

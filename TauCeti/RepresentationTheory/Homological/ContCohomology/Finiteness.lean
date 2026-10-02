@@ -29,7 +29,7 @@ There are two steps.
   `Hʲ(G, Coind_V^G A) ≅ Hʲ(V, A)` by Shapiro's lemma, and the cokernel `C` of the short exact
   sequence `TauCeti.ContCohomology.coindShortExact` is again a finite module killed by `N` on which
   `V` acts trivially, because `V` is normal
-  (`TauCeti.DiscreteCoind.smul_eq_self_of_forall_smul_eq_self`).
+  (`TauCeti.ContCohomology.CoindQuotient.smul_eq_self_of_forall_smul_eq_self`).
   Exactness of `Hⁱ(G, C) → Hⁱ⁺¹(G, A) → Hⁱ⁺¹(G, Coind_V^G A)` then gives finiteness of
   `Hⁱ⁺¹(G, A)` by induction on the degree, starting from `H⁰(G, A) ⊆ A`
   (`TauCeti.ContCohomology.finite_continuousCohomology_zero`,
@@ -136,12 +136,10 @@ theorem finite_continuousCohomology_of_isOpen_of_normal {V : Subgroup G} [V.Norm
   set S := coindShortExact G V A
   -- `C` is killed by `N`, and `V` acts trivially on it, because it acts trivially on
   -- `Coind_V^G A` by normality
-  have : Finite (continuousCohomology i (ofDiscreteModule ℤ G (CoindQuotient G V A))) := by
-    refine ih (fun j hj₀ hj ↦ h j hj₀ (hj.trans i.le_succ)) (CoindQuotient G V A)
-      (S.nsmul_eq_zero_right (DiscreteCoind.nsmul_eq_zero hN)) (fun v hv c ↦ ?_)
-    induction c using CoindQuotient.induction_on with
-    | h f => rw [← CoindQuotient.mk_smul,
-        DiscreteCoind.smul_eq_self_of_forall_smul_eq_self (fun u a ↦ htriv u u.2 a) hv f]
+  have : Finite (continuousCohomology i (ofDiscreteModule ℤ G (CoindQuotient G V A))) :=
+    ih (fun j hj₀ hj ↦ h j hj₀ (hj.trans i.le_succ)) (CoindQuotient G V A)
+      (S.nsmul_eq_zero_right (DiscreteCoind.nsmul_eq_zero hN))
+      fun v hv ↦ CoindQuotient.smul_eq_self_of_forall_smul_eq_self (fun u a ↦ htriv u u.2 a) hv
   -- Shapiro's lemma: `Hⁱ⁺¹(G, Coind_V^G A) ≅ Hⁱ⁺¹(V, A)`
   have := h (i + 1) i.succ_pos le_rfl A hN fun v a ↦ htriv v v.2 a
   have : Finite (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (DiscreteCoind G V A))) :=
