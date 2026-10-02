@@ -24,7 +24,8 @@ trivialization is needed. Atlas assembly follows `levelSetChartedSpace` and
 `isManifold_levelSet` for ordinary maps.
 
 Smoothness is stated in fiber coordinates at zeros in the chosen trivializations and regular
-implicit-coordinate neighbourhoods. Only the base map needs to be continuous at the zeros;
+implicit-coordinate neighbourhoods, and is required only for nonzero differentiability order.
+At order zero, chart continuity suffices. Only the base map needs to be continuous at the zeros;
 no differentiability of that map or smooth bundle structure is needed once these coordinate
 hypotheses are supplied. The parameter space is a Banach space, not an arbitrary manifold. No
 second-countability hypothesis is imposed: `IsManifold`
@@ -66,7 +67,7 @@ variable (hb : ∀ z : ↥{y | s y = 0}, ContinuousAt b z.1)
   (he : ∀ z, b z.1 ∈ (e z).baseSet)
 
 variable {m : ℕ∞ω}
-  (hs : ∀ z w : ↥{y | s y = 0}, b w.1 ∈ (e z).baseSet →
+  (hs : m ≠ 0 → ∀ z w : ↥{y | s y = 0}, b w.1 ∈ (e z).baseSet →
     w.1 ∈ (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z))
       (hFred z).closedComplemented_ker →
     ContDiffAt 𝕜 m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1)
@@ -99,7 +100,7 @@ theorem contDiffOn_coe_sectionZeroChartAt_symm (z : ↥{y | s y = 0}) :
   have hmem : w.1 ∈ (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z))
       (hFred z).closedComplemented_ker := by
     simpa only [Set.mem_preimage, hval] using hk'.2
-  have hcoord : ContDiffAt 𝕜 m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 := hs z w hbase hmem
+  have hcoord : ContDiffAt 𝕜 m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 := hs hm z w hbase hmem
   have hinner : ContDiffAt 𝕜 m (fun j ↦ (ψ.symm j : X)) (K.symm k) :=
     contDiffAt_coe_sectionZeroChart_symm_of_mem (hf z) _ _ z.2 hk'.1 hmem
       (hcoord.differentiableAt hm).hasFDerivAt hcoord
