@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.Matrix.Commute
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 -- `Matrix.trace` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.Trace
+-- `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`, Cayley-Hamilton in size two.
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 -- The entry identities below are polynomial, and are solved by `ring` and `linear_combination`.
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -122,9 +124,10 @@ ring is intertwined, by a matrix of nonzero determinant, with the companion matr
 characteristic polynomial `X² - (trace M) X + det M`. Over a field the intertwiner is invertible,
 so `M` is similar to that companion matrix.
 
-The conjugating matrix is produced together with its determinant rather than as an element of
-`GL₂`, so that the statement also covers a matrix that is not itself invertible;
-`TauCeti.isConj_companionGL` is the group-level form. -/
+The statement is an intertwining identity of matrices rather than a conjugacy in `GL₂`: it holds
+over any commutative ring, where a nonzero determinant need not make the intertwiner invertible,
+and for an `M` that is not itself invertible. For an element of `GL₂` over a field, the conjugacy
+form is `TauCeti.isConj_companionGL`. -/
 theorem exists_det_ne_zero_mul_eq_mul_companionFinTwo
     (hM : M ∉ Set.range (Matrix.scalar (Fin 2))) :
     ∃ P : Matrix (Fin 2) (Fin 2) R,
@@ -132,10 +135,14 @@ theorem exists_det_ne_zero_mul_eq_mul_companionFinTwo
   suffices ∃ v : Fin 2 → R, !![v 0, (M *ᵥ v) 0; v 1, (M *ᵥ v) 1].det ≠ 0 by
     obtain ⟨v, hv⟩ := this
     refine ⟨_, hv, ?_⟩
+    have hCH : M *ᵥ (M *ᵥ v) = M.trace • (M *ᵥ v) - M.det • v := by
+      rw [mulVec_mulVec, ← sq, sq_eq_trace_smul_sub_det_smul_one_fin_two, sub_mulVec,
+        smul_mulVec, smul_mulVec, one_mulVec]
     ext i j
+    have hCHi := congrFun hCH i
     fin_cases i <;> fin_cases j <;>
-      simp [companionFinTwo, mul_apply, Fin.sum_univ_two, mulVec, dotProduct, det_fin_two,
-        trace_fin_two] <;> ring
+      simp [companionFinTwo, mul_apply, Fin.sum_univ_two, mulVec, dotProduct] at hCHi ⊢ <;>
+      linear_combination hCHi
   by_contra! h
   have h10 : M 1 0 = 0 := by simpa [det_fin_two_of, mulVec, dotProduct] using h ![1, 0]
   have h01 : M 0 1 = 0 := by simpa [det_fin_two_of, mulVec, dotProduct] using h ![0, 1]
