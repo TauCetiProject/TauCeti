@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Theorem
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.TrivialRestrictionTrans
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Functoriality
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.Nonnegative
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.AllDegrees
 
 /-!
 # Restriction of the Tate isomorphism of a class formation
@@ -89,8 +89,8 @@ theorem cupClass_res (T : LayerRestriction small big) (F : Formation G) (u : big
     Iso.inv_hom_id_apply]
   rw [cupClass_apply]
   have hnat := TauCeti.TateCohomology.res_natural (λ_ (big.rep F)).hom T.galHom.range (r + 2)
-  have hcup := TauCeti.TateCohomology.cup_res_of_nonneg_right
-    (Rep.trivial ℤ big.Gal ℤ) (big.rep F) T.galHom.range (by omega) rfl x
+  have hcup := TauCeti.TateCohomology.cup_res
+    (Rep.trivial ℤ big.Gal ℤ) (big.rep F) T.galHom.range rfl x
       ((big.tateHIsoH F 2).inv u)
   exact (ConcreteCategory.congr_hom hnat _).trans (congrArg _ hcup)
 
