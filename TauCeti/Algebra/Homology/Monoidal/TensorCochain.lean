@@ -31,8 +31,8 @@ This is the common chain-level ingredient of the cup product of cochains
   `A_p ⊗ B_q` by `φ ⊗ ψ` and `μ`.
 * `TauCeti.ChainComplex.d_comp_tensorCochain`: its Leibniz rule.
 * `TauCeti.ChainComplex.tensorHom_f_comp_tensorCochain`: its naturality in the complexes.
-* `TauCeti.ChainComplex.tensorCochain_comp` and
-  `TauCeti.ChainComplex.tensorCochain_whiskerLeft_comp`: changing the pairing.
+* `TauCeti.ChainComplex.tensorCochain_comp`, `TauCeti.ChainComplex.tensorCochain_whiskerLeft_comp`
+  and `TauCeti.ChainComplex.tensorCochain_whiskerRight_comp`: changing the pairing.
 -/
 
 public section
@@ -247,6 +247,15 @@ lemma tensorCochain_whiskerLeft_comp {N' : C} (g : N ⟶ N') (μ' : M ⊗ N' ⟶
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
   rw [ιTensorObj_tensorCochain_extend,
     ιTensorObj_tensorCochain_extend, extendCochain_comp_right, tensorHom_comp_whiskerLeft_assoc]
+
+/-- The tensor product of cochains along the pairing `(g ▷ N) ≫ μ'` is the tensor product along
+`μ'` with the first cochain postcomposed with `g`. -/
+lemma tensorCochain_whiskerRight_comp {M' : C} (g : M ⟶ M') (μ' : M' ⊗ N ⟶ P) {p q : ℕ}
+    (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
+    tensorCochain ((g ▷ N) ≫ μ') φ ψ n = tensorCochain μ' (φ ≫ g) ψ n := by
+  refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
+  rw [ιTensorObj_tensorCochain_extend,
+    ιTensorObj_tensorCochain_extend, extendCochain_comp_right, tensorHom_comp_whiskerRight_assoc]
 
 variable {k : Type*} [Semiring k] [Linear k C] [MonoidalLinear k C]
 

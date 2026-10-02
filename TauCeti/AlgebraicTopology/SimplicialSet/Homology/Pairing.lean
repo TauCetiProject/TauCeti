@@ -33,9 +33,9 @@ with coefficients in `P`.
 * `SSet.chainComplexPairing`: the chain map `M ⊗ C(X; S) ⟶ C(X; P)` induced by `μ`.
 * `SSet.whiskerLeft_ιChainComplex_chainComplexPairing_f`: its value on the summand of a simplex.
 * `SSet.chainComplexPairing_naturality`: it is natural in the simplicial set.
-* `SSet.chainComplexPairing_comp_chainComplexFunctor_map_app` and
-  `SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing`: it is natural in the
-  coefficient objects.
+* `SSet.chainComplexPairing_comp_chainComplexFunctor_map_app`,
+  `SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing` and
+  `SSet.whiskerRight_comp_chainComplexPairing`: it is natural in the coefficient objects.
 -/
 
 public section
@@ -128,5 +128,22 @@ lemma whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing (X : SSet
   ext x
   simp [ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f_assoc X (tensorLeft M),
     ← MonoidalCategory.whiskerLeft_comp_assoc]
+
+/-- Precomposing the chain map induced by a coefficient pairing `μ'` with the chain map
+`g ▷ C(X; S) : M ⊗ C(X; S) ⟶ M' ⊗ C(X; S)` induced by a coefficient morphism `g : M ⟶ M'` is the
+chain map induced by the pairing `(g ▷ S) ≫ μ'`. -/
+@[reassoc (attr := simp)]
+lemma whiskerRight_comp_chainComplexPairing (X : SSet.{w}) {M' : C}
+    [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M')] (g : M ⟶ M')
+    (μ' : M' ⊗ S ⟶ P) :
+    (NatTrans.mapHomologicalComplex ((tensoringLeft C).map g) _).app (X.chainComplex S) ≫
+        X.chainComplexPairing μ' =
+      X.chainComplexPairing ((g ▷ S) ≫ μ') := by
+  ext n : 1
+  -- morphisms out of `M ⊗ Cₙ(X; S) ≅ Cₙ(X; M ⊗ S)` are determined on the simplices of `X`
+  rw [← cancel_epi (((chainComplexFunctorObjCompMapIso (tensorLeft M) S).inv.app X).f n)]
+  ext x
+  simp [ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f_assoc X (tensorLeft M),
+    whisker_exchange_assoc]
 
 end SSet
