@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
-public import Mathlib.Algebra.GradedMulAction
-public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
 public import TauCeti.Algebra.Module.GradedModule.Shift
 
@@ -38,8 +36,6 @@ is shifted, and linear maps out of the module are determined by the indicated ho
   degree exactly when every summand is generated in that degree.
 * `TauCeti.InternalGrading.linearMap_ext_of_isGeneratedInDegree`: two linear maps out of a module
   generated in degree `d` agree when they agree on its degree-`d` piece.
-* `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem`: the components of `a • x`, for `x`
-  homogeneous in a graded module, are the products of the components of `a` with `x`.
 * `TauCeti.InternalGrading.IsGeneratedInDegree.piece_add_eq_smul`: over a graded algebra `𝒜`, a
   graded module generated in degree `d` has degree-`m + d` piece `𝒜 m • M_d`.
 * `TauCeti.InternalGrading.IsGeneratedInDegree.piece_eq_bot_of_lt`: over a nonnegatively graded
@@ -223,34 +219,6 @@ end DirectSum
 end InternalGrading
 
 /-! ### Generation over a graded algebra -/
-
-namespace DirectSum
-
-open _root_.DirectSum
-
-variable {ι A M σA σM : Type*} [DecidableEq ι] [AddRightCancelMonoid ι]
-  [Semiring A] [AddCommMonoid M] [Module A M]
-  [SetLike σA A] [AddSubmonoidClass σA A] (𝒜 : ι → σA) [GradedRing 𝒜]
-  [SetLike σM M] [AddSubmonoidClass σM M] (ℳ : ι → σM) [Decomposition ℳ]
-  [SetLike.GradedSMul 𝒜 ℳ]
-
-/-- In a graded module over a graded ring, the degree-`i + j` component of `a • x`, for `x`
-homogeneous of degree `j`, is the degree-`i` component of `a` acting on `x`. This is the module
-analogue of `DirectSum.coe_decompose_mul_add_of_right_mem`. -/
-theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x ∈ ℳ j) :
-    (decompose ℳ (a • x) (i + j) : M) = (decompose 𝒜 a i : A) • x := by
-  classical
-  have hmem (l : ι) : (decompose 𝒜 a l : A) • x ∈ ℳ (l + j) :=
-    SetLike.GradedSMul.smul_mem (decompose 𝒜 a l).2 hx
-  conv_lhs => rw [← sum_support_decompose 𝒜 a, Finset.sum_smul, decompose_sum]
-  rw [DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum, Finset.sum_eq_single i]
-  · exact decompose_of_mem_same ℳ (hmem i)
-  · exact fun l _ hl ↦ decompose_of_mem_ne ℳ (hmem l) fun h ↦ hl (add_right_cancel h)
-  · intro hi
-    rw [DFinsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, zero_smul, decompose_zero,
-      zero_apply, ZeroMemClass.coe_zero]
-
-end DirectSum
 
 namespace InternalGrading
 

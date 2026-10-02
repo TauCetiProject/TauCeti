@@ -130,6 +130,18 @@ def IsMinimal (r : GradedProjectiveResolution 𝒜 G) : Prop :=
 
 variable {r : GradedProjectiveResolution 𝒜 G}
 
+omit [GradedAlgebra 𝒜] in
+/-- Linearity of a resolution, unfolded: each term is generated in its homological degree. -/
+theorem isLinear_iff : r.IsLinear ↔ ∀ n : ℕ, (r.grading n).IsGeneratedInDegree A n :=
+  Iff.rfl
+
+omit [GradedAlgebra 𝒜] in
+/-- Minimality of a resolution, unfolded: each differential takes values in `A₊ (X n)`. -/
+theorem isMinimal_iff : r.IsMinimal ↔
+    ∀ (n : ℕ) (x : r.X (n + 1)),
+      r.d n x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.X n)) :=
+  Iff.rfl
+
 /-- Over a nonnegatively graded algebra, the term in homological degree `n` of a linear
 resolution has no nonzero homogeneous elements of internal degree below `n`. -/
 theorem IsLinear.piece_eq_bot_of_lt (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) (hr : r.IsLinear) {n : ℕ} {p : ℤ}
