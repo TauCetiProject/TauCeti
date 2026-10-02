@@ -65,7 +65,7 @@ lemma principalSubgroup_eq_ker :
     ofMul_eq_zero, toLineBundleClass_eq_one_iff]
 
 /-- The Cartier class group `CaCl(X)`, namely Cartier divisors modulo principal divisors. -/
-abbrev ClassGroup (X : Scheme.{u}) [IsIntegral X] :=
+abbrev ClassGroup (X : Scheme.{u}) [IsIntegral X] : Type u :=
   CartierDivisor X ⧸ principalSubgroup X
 
 /-- The additive quotient map from Cartier divisors to the Cartier class group. -/
