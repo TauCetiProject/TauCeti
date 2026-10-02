@@ -1,0 +1,210 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.GroupTheory.Index.Exact
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.FiniteIndex
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ContinuousCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.AllDegrees
+public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
+
+/-!
+# Finiteness of continuous cohomology with finite coefficients, from an open normal subgroup
+
+Let `G` be a profinite group, `V` an open normal subgroup of `G` and `N` a natural number. This
+file reduces the finiteness of the continuous cohomology `Hⁱ(G, A)` of the finite discrete
+`G`-modules `A` killed by `N` on which `V` acts trivially to the finiteness of `Hʲ(V, M)`, for
+`j ≤ i`, on the trivial `V`-modules `M` of prime order dividing `N`. Over a field this is the
+step from an absolute Galois group to that of a finite Galois extension over which the
+coefficients become constant and which contains the relevant roots of unity; this is how the
+finiteness of the local Galois cohomology of a finite module is proved.
+
+There are two steps.
+
+* **Coinduction.** The unit `A ↪ Coind_V^G A` of coinduction embeds `A` into a finite module with
+  `Hʲ(G, Coind_V^G A) ≅ Hʲ(V, A)` by Shapiro's lemma, and the cokernel `C` is again a finite
+  module killed by `N` on which `V` acts trivially, because `V` is normal. Exactness of
+  `Hⁱ(G, C) → Hⁱ⁺¹(G, A) → Hⁱ⁺¹(G, Coind_V^G A)` then gives finiteness of `Hⁱ⁺¹(G, A)` by
+  induction on the degree, starting from `H⁰(G, A) ⊆ A`
+  (`TauCeti.ContinuousCohomology.finite_continuousCohomology_of_isOpen_of_normal`).
+* **Dévissage of trivial modules.** A finite trivial module killed by `N` is an iterated extension
+  of trivial modules of prime order dividing `N`, by Cauchy's theorem; exactness of
+  `Hʲ(V, P) → Hʲ(V, M) → Hʲ(V, M ⧸ P)` passes finiteness along each extension
+  (`TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_smul_eq_self`).
+
+## Main results
+
+* `TauCeti.ContinuousCohomology.finite_continuousCohomology_zero`: `H⁰(G, A)` is finite for a
+  finite discrete `A`.
+* `TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_smul_eq_self`: finiteness of
+  `Hⁿ` on the trivial modules of prime order dividing `N` gives finiteness on every finite trivial
+  module killed by `N`.
+* `TauCeti.ContinuousCohomology.finite_continuousCohomology_of_isOpen_of_normal`: finiteness of
+  `Hʲ(V, -)`, `j ≤ i`, on the finite trivial modules killed by `N` gives finiteness of `Hⁱ(G, A)`
+  for every finite discrete `A` killed by `N` on which `V` acts trivially.
+* `TauCeti.ContinuousCohomology.finite_continuousCohomology_of_isOpen_of_normal_of_prime`: the
+  same, with the trivial modules of prime order dividing `N` as test class.
+
+## References
+
+* J.-P. Serre, *Galois Cohomology*, Ch. II, §5.2, proof of Proposition 14.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.6.4) for
+  Shapiro's lemma and Ch. VII, §1 for the local finiteness theorem.
+-/
+
+public section
+
+open CategoryTheory
+
+namespace TauCeti.ContinuousCohomology
+
+open TauCeti.ContCohomology
+
+universe u
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- **`H⁰` of a finite discrete module is finite**: it is the subgroup of invariants. -/
+theorem finite_continuousCohomology_zero (A : Type u) [AddCommGroup A] [TopologicalSpace A]
+    [DiscreteTopology A] [DistribMulAction G A] [Finite A] :
+    Finite (continuousCohomology 0 (ofDiscreteModule ℤ G A)) :=
+  Finite.of_equiv _ (explicitH0IsoContinuousCohomology G A).toContinuousLinearEquiv.toEquiv
+
+variable [CompactSpace G]
+
+/-- **Dévissage of finite trivial coefficients.** Let `G` be a compact group, `n` a degree and `N`
+a natural number. If `Hⁿ(G, A)` is finite for every discrete `G`-module `A` of prime order dividing
+`N` on which `G` acts trivially, then `Hⁿ(G, M)` is finite for every finite discrete `G`-module `M`
+killed by `N` on which `G` acts trivially. -/
+theorem finite_continuousCohomology_of_forall_smul_eq_self {N n : ℕ}
+    (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+      [DistribMulAction G A] [ContinuousSMul G A] [Finite A], (Nat.card A).Prime →
+      Nat.card A ∣ N → (∀ (g : G) (a : A), g • a = a) →
+      Finite (continuousCohomology n (ofDiscreteModule ℤ G A)))
+    (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hN : ∀ m : M, N • m = 0)
+    (htriv : ∀ (g : G) (m : M), g • m = m) :
+    Finite (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
+  -- strong induction on the order of the coefficient module
+  suffices H : ∀ (k : ℕ) (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], (∀ m : M, N • m = 0) →
+      (∀ (g : G) (m : M), g • m = m) → Nat.card M = k →
+      Finite (continuousCohomology n (ofDiscreteModule ℤ G M)) from
+    H _ M hN htriv rfl
+  intro k
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+  intro M _ _ _ _ _ _ hN htriv hk
+  rcases subsingleton_or_nontrivial M with hM₀ | _
+  · have := subsingleton_continuousCohomology_ofDiscreteModule_of_subsingleton (R := ℤ) (G := G) M n
+    exact Finite.of_subsingleton
+  -- an element `x` of prime order `ℓ`, which divides `N`, and the subgroup `P` it generates
+  obtain ⟨ℓ, hℓ, hℓM⟩ := Nat.exists_prime_and_dvd (Finite.one_lt_card (α := M)).ne'
+  have := Fact.mk hℓ
+  obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card' ℓ hℓM
+  set P := AddSubgroup.zmultiples x
+  have hP : ∀ g : G, ∀ y ∈ P, g • y ∈ P := fun g y hy ↦ (htriv g y).symm ▸ hy
+  let := P.restrictDistribMulAction hP
+  let := P.quotientDistribMulAction hP
+  have : ContinuousSMul G P := P.restrictDistribMulAction_continuousSMul hP
+  have : ContinuousAdd M := ⟨continuous_of_discreteTopology⟩
+  have : ContinuousSMul G (M ⧸ P) := P.quotientDistribMulAction_continuousSMul hP
+  have hPcard : Nat.card P = ℓ := by rw [Nat.card_zmultiples, hx]
+  -- the trivial module `P` of prime order `ℓ ∣ N`
+  have := h P (hPcard ▸ hℓ) (hPcard ▸ hx ▸ addOrderOf_dvd_of_nsmul_eq_zero (hN x))
+    fun g y ↦ Subtype.ext ((P.restrictDistribMulAction_coe_smul hP g y).trans (htriv g y))
+  -- the quotient `M ⧸ P` is again trivial and killed by `N`, of smaller order
+  have : Finite (continuousCohomology n (ofDiscreteModule ℤ G (M ⧸ P))) := by
+    refine ih _ ?_ (M ⧸ P) (fun m ↦ ?_) (fun g m ↦ ?_) rfl
+    · rw [← hk, AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup P, hPcard]
+      exact lt_mul_of_one_lt_right Nat.card_pos hℓ.one_lt
+    · induction m using QuotientAddGroup.induction_on with
+      | H m => rw [← QuotientAddGroup.mk_nsmul, hN m, QuotientAddGroup.mk_zero]
+    · induction m using QuotientAddGroup.induction_on with
+      | H m => rw [P.quotientDistribMulAction_smul_mk hP, htriv g m]
+  exact (DiscreteShortExact.ofAddSubgroup P hP |>.longExact_exact₂ n).finite
+
+variable [TotallyDisconnectedSpace G]
+
+/-- **Finiteness through an open normal subgroup.** Let `G` be a profinite group, `V` an open
+normal subgroup, `N` a natural number and `i` a degree. Suppose that for every `j ≤ i`, `Hʲ(V, M)`
+is finite for every finite discrete `V`-module `M` killed by `N` on which `V` acts trivially. Then
+`Hⁱ(G, A)` is finite for every finite discrete `G`-module `A` killed by `N` on which `V` acts
+trivially. -/
+theorem finite_continuousCohomology_of_isOpen_of_normal (V : Subgroup G) [V.Normal]
+    (hV : IsOpen (V : Set G)) {N : ℕ} (i : ℕ)
+    (h : ∀ j ≤ i, ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+      [DistribMulAction V M] [ContinuousSMul V M] [Finite M], (∀ m : M, N • m = 0) →
+      (∀ (v : V) (m : M), v • m = m) → Finite (continuousCohomology j (ofDiscreteModule ℤ V M)))
+    (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A] [Finite A] (hN : ∀ a : A, N • a = 0)
+    (htriv : ∀ v ∈ V, ∀ a : A, v • a = a) :
+    Finite (continuousCohomology i (ofDiscreteModule ℤ G A)) := by
+  have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
+  have : V.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  induction i generalizing A with
+  | zero => exact finite_continuousCohomology_zero A
+  | succ i ih =>
+  -- the unit `A ↪ Coind_V^G A` of coinduction and its cokernel `C`
+  set R := (DiscreteCoind.unit G V A).toAddMonoidHom.range
+  have hR : ∀ g : G, ∀ f ∈ R, g • f ∈ R := by
+    rintro g _ ⟨a, rfl⟩
+    exact ⟨g • a, _root_.map_smul (DiscreteCoind.unit G V A) g a⟩
+  let := R.quotientDistribMulAction hR
+  have : ContinuousAdd (DiscreteCoind G V A) := ⟨continuous_of_discreteTopology⟩
+  have : ContinuousSMul G (DiscreteCoind G V A ⧸ R) := R.quotientDistribMulAction_continuousSMul hR
+  let S : DiscreteShortExact G A (DiscreteCoind G V A) (DiscreteCoind G V A ⧸ R) :=
+    { incl := (DiscreteCoind.unit G V A).toAddMonoidHom
+      proj := QuotientAddGroup.mk' R
+      incl_equivariant := _root_.map_smul (DiscreteCoind.unit G V A)
+      proj_equivariant := fun g f ↦ (R.quotientDistribMulAction_smul_mk hR g f).symm
+      incl_injective := DiscreteCoind.unit_injective
+      proj_surjective := QuotientAddGroup.mk'_surjective R
+      exact := fun f ↦ by rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]; rfl }
+  -- `V` acts trivially on `Coind_V^G A`, because it is normal, hence on the cokernel
+  have hcoind : ∀ v ∈ V, ∀ f : DiscreteCoind G V A, v • f = f := fun v hv f ↦
+    DiscreteCoind.ext fun g ↦ by
+      have hg : g * v = ((⟨g * v * g⁻¹, ‹V.Normal›.conj_mem v hv g⟩ : V) : G) * g := by
+        simp
+      rw [DiscreteCoind.coe_smul, hg, DiscreteCoind.apply_mul, Subgroup.smul_def,
+        htriv _ (‹V.Normal›.conj_mem v hv g)]
+  have : Finite (continuousCohomology i (ofDiscreteModule ℤ G (DiscreteCoind G V A ⧸ R))) := by
+    refine ih (fun j hj ↦ h j (hj.trans i.le_succ)) (DiscreteCoind G V A ⧸ R) (fun c ↦ ?_)
+      (fun v hv c ↦ ?_)
+    · induction c using QuotientAddGroup.induction_on with
+      | H f => rw [← QuotientAddGroup.mk_nsmul, DiscreteCoind.nsmul_eq_zero hN f,
+          QuotientAddGroup.mk_zero]
+    · induction c using QuotientAddGroup.induction_on with
+      | H f => rw [R.quotientDistribMulAction_smul_mk hR, hcoind v hv f]
+  -- Shapiro's lemma: `Hⁱ⁺¹(G, Coind_V^G A) ≅ Hⁱ⁺¹(V, A)`
+  have := h (i + 1) le_rfl A hN fun v a ↦ htriv v v.2 a
+  have : Finite (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (DiscreteCoind G V A))) :=
+    Finite.of_equiv _
+      (shapiroIso V (V.isClosed_of_isOpen hV) A (i + 1)).symm.toContinuousLinearEquiv.toEquiv
+  exact (S.longExact_exact₁ i).finite
+
+/-- **Finiteness through an open normal subgroup, prime test class.** Let `G` be a profinite
+group, `V` an open normal subgroup, `N` a natural number and `i` a degree. Suppose that for every
+`j ≤ i`, `Hʲ(V, M)` is finite for every discrete `V`-module `M` of prime order dividing `N` on which
+`V` acts trivially. Then `Hⁱ(G, A)` is finite for every finite discrete `G`-module `A` killed by `N`
+on which `V` acts trivially. -/
+theorem finite_continuousCohomology_of_isOpen_of_normal_of_prime (V : Subgroup G) [V.Normal]
+    (hV : IsOpen (V : Set G)) {N : ℕ} (i : ℕ)
+    (h : ∀ j ≤ i, ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+      [DistribMulAction V M] [ContinuousSMul V M] [Finite M], (Nat.card M).Prime →
+      Nat.card M ∣ N → (∀ (v : V) (m : M), v • m = m) →
+      Finite (continuousCohomology j (ofDiscreteModule ℤ V M)))
+    (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A] [Finite A] (hN : ∀ a : A, N • a = 0)
+    (htriv : ∀ v ∈ V, ∀ a : A, v • a = a) :
+    Finite (continuousCohomology i (ofDiscreteModule ℤ G A)) :=
+  have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
+  finite_continuousCohomology_of_isOpen_of_normal V hV i
+    (fun j hj M _ _ _ _ _ _ hM hMtriv ↦
+      finite_continuousCohomology_of_forall_smul_eq_self (h j hj) M hM hMtriv) A hN htriv
+
+end TauCeti.ContinuousCohomology
