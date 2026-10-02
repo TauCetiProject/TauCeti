@@ -54,7 +54,9 @@ Euclidean coordinates. -/
 @[simp]
 lemma coe_characteristicCellPairMap_fst_apply {n : ℕ} (j : cell C n)
     (x : TopCat.disk.{w} n) :
-    (TopPair.Hom.fst (characteristicCellPairMap C j) x).1 =
+    (ConcreteCategory.hom (X := TopCat.disk.{w} n)
+      (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
+      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).1 =
       map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph x.down) := by
   -- Pair components use the skeletal subspace object, while the evaluation lemmas use its
   -- explicit `TopCat.of` presentation; `erw` identifies these before evaluating composites.
@@ -84,7 +86,7 @@ Euclidean coordinates. -/
 @[simp]
 lemma coe_cellAttachingMap_apply {n : ℕ} (j : cell C n)
     (x : TopCat.diskBoundary.{w} n) :
-    (cellAttachingMap C j x).1 =
+    (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C n)) (cellAttachingMap C j) x).1 =
       map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph x.down) := by
   have h := ConcreteCategory.congr_hom (cellAttachingMap_comp_inclusion C j) x
   have hval := congrArg Subtype.val h
