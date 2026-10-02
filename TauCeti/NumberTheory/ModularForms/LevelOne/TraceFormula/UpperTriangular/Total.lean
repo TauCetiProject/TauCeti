@@ -25,6 +25,8 @@ level-one trace formula, in which the conjugacy-type contributions are combined 
 
 ## Main result
 
+* `TauCeti.PopaZagier.sum_upperTriangularCoeff`: the coefficient sum for one positive factor
+  pair.
 * `TauCeti.TraceFormulaMatrixModule.sum_trace_popaZagierElement_single_upperTriangularRep`:
   the sum over all canonical upper-triangular representatives as an explicit sum over the
   positive factor pairs of `n`.
@@ -39,12 +41,14 @@ public section
 
 open Matrix MvPolynomial MulOpposite MonoidAlgebra
 
-namespace TauCeti.TraceFormulaMatrixModule
+namespace TauCeti
+
+namespace PopaZagier
 
 /-- For a fixed positive factor pair `(a, d)`, summing the Popa--Zagier coefficients over
 `0 ≤ b < d` gives `d - a`, except that the scalar pair `a = d` has weight `1/6`. -/
-private theorem sum_upperTriangularCoeff (a d : ℕ) (ha : 0 < a) :
-    ∑ b ∈ Finset.range d, PopaZagier.upperTriangularCoeff a b d =
+theorem sum_upperTriangularCoeff (a d : ℕ) (ha : 0 < a) :
+    ∑ b ∈ Finset.range d, upperTriangularCoeff a b d =
       if a < d then ((d - a : ℕ) : ℚ) else if a = d then 1 / 6 else 0 := by
   rcases lt_trichotomy a d with had | rfl | hda
   · simp only [had, ↓reduceIte]
@@ -56,14 +60,14 @@ private theorem sum_upperTriangularCoeff (a d : ℕ) (ha : 0 < a) :
     rw [← Finset.sum_subset hsub]
     · -- the two endpoints `b = 0` and `b = d - a` have coefficient `1/2`, the interior `1`
       have hmiddle : ∀ b ∈ Finset.range r,
-          PopaZagier.upperTriangularCoeff a ((b + 1 : ℕ) : ℤ) d = 1 := by
+          upperTriangularCoeff a ((b + 1 : ℕ) : ℤ) d = 1 := by
         intro b hb
         rw [Finset.mem_range] at hb
-        grind [PopaZagier.upperTriangularCoeff]
-      have hfirst : PopaZagier.upperTriangularCoeff a ((0 : ℕ) : ℤ) d = 1 / 2 := by
-        grind [PopaZagier.upperTriangularCoeff]
-      have hlast : PopaZagier.upperTriangularCoeff a ((r + 1 : ℕ) : ℤ) d = 1 / 2 := by
-        grind [PopaZagier.upperTriangularCoeff]
+        grind [upperTriangularCoeff_def]
+      have hfirst : upperTriangularCoeff a ((0 : ℕ) : ℤ) d = 1 / 2 := by
+        grind [upperTriangularCoeff_def]
+      have hlast : upperTriangularCoeff a ((r + 1 : ℕ) : ℤ) d = 1 / 2 := by
+        grind [upperTriangularCoeff_def]
       have hda : d - a = r + 1 := by omega
       rw [Finset.sum_range_succ, Finset.sum_range_succ', Finset.sum_congr rfl hmiddle,
         hfirst, hlast, hda]
@@ -72,17 +76,21 @@ private theorem sum_upperTriangularCoeff (a d : ℕ) (ha : 0 < a) :
       ring
     · intro b hbd hbr
       simp only [Finset.mem_range] at hbd hbr
-      grind [PopaZagier.upperTriangularCoeff]
+      grind [upperTriangularCoeff_def]
   · simp only [lt_irrefl, ↓reduceIte]
     rw [Finset.sum_eq_single 0]
-    · grind [PopaZagier.upperTriangularCoeff]
+    · grind [upperTriangularCoeff_def]
     · intro b _ hb0
-      grind [PopaZagier.upperTriangularCoeff]
+      grind [upperTriangularCoeff_def]
     · intro h
       exact absurd (Finset.mem_range.mpr ha) h
   · simp only [hda.not_gt, hda.ne', ↓reduceIte]
     refine Finset.sum_eq_zero fun b _ ↦ ?_
-    grind [PopaZagier.upperTriangularCoeff]
+    grind [upperTriangularCoeff_def]
+
+end PopaZagier
+
+namespace TraceFormulaMatrixModule
 
 /-- **The summed upper-triangular contribution.** Let `n > 0` and let `w` be even. Summing the
 trace contributions of Popa--Zagier's explicit element over the canonical representatives
@@ -148,11 +156,13 @@ theorem sum_trace_popaZagierElement_single_upperTriangularRep (n w : ℕ) (hn : 
             PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
               (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ)) p.1.2
         _ = _ := by
-          rw [← Finset.sum_mul, sum_upperTriangularCoeff p.1.1 p.1.2 ha]
+          rw [← Finset.sum_mul, PopaZagier.sum_upperTriangularCoeff p.1.1 p.1.2 ha]
     _ = _ := by
       simpa using n.divisorsAntidiagonal.sum_coe_sort (fun p ↦
         (if p.1 < p.2 then ((p.2 - p.1 : ℕ) : ℚ)
           else if p.1 = p.2 then 1 / 6 else 0) *
             (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1 + p.2 : ℕ) : ℚ))
 
-end TauCeti.TraceFormulaMatrixModule
+end TraceFormulaMatrixModule
+
+end TauCeti

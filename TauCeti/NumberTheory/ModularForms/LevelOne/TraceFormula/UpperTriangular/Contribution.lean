@@ -127,12 +127,19 @@ theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) (hd : 0 < d) :
 /-- The coefficient of the positive-diagonal upper-triangular matrix `(a b; 0 d)` in
 Popa--Zagier's explicit Hecke element: `1` in the interior of the interval `0 ≤ b ≤ d - a`,
 `1/6` at a scalar matrix, `1/2` at a non-scalar endpoint, and `0` outside the interval. -/
-@[expose]
 def upperTriangularCoeff (a b d : ℤ) : ℚ :=
   if 0 < b ∧ b < d - a then 1
   else if a = d ∧ b = 0 then 1 / 6
   else if 0 ≤ b ∧ b ≤ d - a then 1 / 2
   else 0
+
+/-- The defining equation for `upperTriangularCoeff`. -/
+theorem upperTriangularCoeff_def (a b d : ℤ) :
+    upperTriangularCoeff a b d =
+      if 0 < b ∧ b < d - a then 1
+      else if a = d ∧ b = 0 then 1 / 6
+      else if 0 ≤ b ∧ b ≤ d - a then 1 / 2
+      else 0 := (rfl)
 
 end PopaZagier
 
@@ -179,7 +186,7 @@ theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatri
     fin_cases i <;> fin_cases j <;> simp [hc]
   conv_lhs =>
     rw [hm, PopaZagier.weight_upperTriangular _ _ _ ha hd]
-  rw [PopaZagier.upperTriangularCoeff]
+  rw [PopaZagier.upperTriangularCoeff_def]
   split_ifs <;> norm_num
 
 /-- The contribution of one canonical upper-triangular representative to the trace of
