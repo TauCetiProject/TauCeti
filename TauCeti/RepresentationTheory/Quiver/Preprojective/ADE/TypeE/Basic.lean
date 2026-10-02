@@ -308,13 +308,13 @@ private theorem eNormalForm_cons_valley {i₀ j j' L : ℕ}
     obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
     have harr : signlessArrow k G (eArm n a (m + 1 + r)) (eArm n a (m + 1 + r - 1)) =
         eDown k n a (m + r) := by
-      rw [eDown, show m + 1 + r - 1 = m + r by omega, show m + 1 + r = m + r + 1 by omega]
+      rw [eDown, Nat.add_right_comm m 1 r, Nat.add_sub_cancel]
     have hz : signlessArrow k G (eArm n a (m + 1 + r)) (eArm n a (m + 1 + r - 1)) *
         (ε • (ladderValley (eUp k n a) (eDown k n a) (m + 1) s r * E)) =
         (ε * (-1) ^ r) • (ladderValley (eUp k n a) (eDown k n a) m (s + 1) r * E) := by
       rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (eDown_mul_eUp_add k hn a),
         mul_assoc, neg_one_pow_mul_eq_zsmul, mul_smul]
-    rw [hz, show m + 1 + r - 1 = m + r by omega]
+    rw [hz, Nat.add_right_comm m 1 r, Nat.add_sub_cancel]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
     · -- The valley reaches the branch node: a climb out of it after a descent into it.
       refine .inr ⟨a, r, 0, s + 1, 1, (ε * (-1) ^ r) • (ladderValley (eUp k n a) (eDown k n a) 0

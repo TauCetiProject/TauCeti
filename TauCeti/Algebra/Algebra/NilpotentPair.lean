@@ -80,8 +80,7 @@ theorem span_pair_pow_six_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y
     rw [hR]
   rw [span_pow, span_eq_bot]
   intro w hw
-  rw [show (6 : ℕ) = 0 + 1 + 1 + 1 + 1 + 1 + 1 from rfl, pow_succ', pow_succ', pow_succ',
-    pow_succ', pow_succ', pow_succ', pow_zero, mul_one] at hw
+  rw [pow_succ', pow_succ', pow_succ', pow_succ', pow_succ', pow_succ', pow_zero, mul_one] at hw
   simp only [Set.mem_mul] at hw
   obtain ⟨a₀, ha₀, _, ⟨a₁, ha₁, _, ⟨a₂, ha₂, _, ⟨a₃, ha₃, _, ⟨a₄, ha₄, a₅, ha₅, rfl⟩, rfl⟩, rfl⟩,
     rfl⟩, rfl⟩ := hw
