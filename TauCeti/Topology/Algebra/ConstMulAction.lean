@@ -9,6 +9,9 @@ public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Submonoid.MulAction
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
 
 /-!
@@ -18,7 +21,10 @@ This file records generic instances for actions on a topological space that type
 cannot otherwise reach. A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
-countable, and that the translates of a compact set under it form a locally finite family.
+countable, and that the translates of a compact set under it form a locally finite family. In the
+converse direction needed for fundamental-set constructions, a nonempty open set disjoint from
+all of its nontrivial translates forces the acting topological group to be discrete. On such a set,
+the orbit projection is an open embedding.
 
 ## Main results
 
@@ -34,11 +40,125 @@ countable, and that the translates of a compact set under it form a locally fini
   locally compact space, the translates of a compact set form a locally finite family.
 * `TauCeti.isClosed_iUnion_smul_of_isCompact`: the union of the translates of a closed compact set
   under such an action of a group is closed.
+* `TauCeti.isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul`: the orbit projection is an
+  open embedding on an open set disjoint from its nontrivial translates.
+* `TauCeti.discreteTopology_of_disjoint_smul`: the existence of a nonempty such open set makes the
+  acting topological group discrete.
 -/
 
 public section
 
 namespace TauCeti
+
+open Topology
+open scoped Pointwise
+
+section DisjointTranslates
+
+open Set
+
+variable {G X : Type*} [Group G] [MulAction G X] {U : Set X}
+
+/-- The orbit projection is injective on a set disjoint from each of its nontrivial translates. -/
+theorem injOn_quotientMk_of_disjoint_smul
+    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
+    Set.InjOn (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X) U := by
+  intro x hx y hy hxy
+  obtain ⟨g, hg⟩ := Quotient.exact hxy
+  have hg_one : g = 1 := by
+    by_contra hg_ne
+    refine Set.disjoint_left.mp (hU g hg_ne) (Set.smul_mem_smul_set hy) ?_
+    change (fun m : G ↦ m • y) g ∈ U
+    rw [hg]
+    exact hx
+  simpa [hg_one] using hg.symm
+
+variable [TopologicalSpace X] [ContinuousConstSMul G X]
+
+/-- On an open set disjoint from each of its nontrivial translates, the orbit projection is an
+open embedding. Thus this set is an honest open chart in the orbit space, not merely a set of
+orbit representatives. -/
+theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul (hU_open : IsOpen U)
+    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
+    IsOpenEmbedding
+      (U.domRestrict (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X)) := by
+  refine .of_continuous_injective_isOpenMap
+    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (MulAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
+  intro x y hxy
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.2 y.2 hxy)
+
+end DisjointTranslates
+
+section DisjointTranslatesAdd
+
+open Set
+
+variable {A X : Type*} [AddGroup A] [AddAction A X] {U : Set X}
+
+/-- The additive orbit projection is injective on a set disjoint from each of its nontrivial
+translates. -/
+theorem injOn_quotientMk_of_disjoint_vadd
+    (hU : ∀ a : A, a ≠ 0 → Disjoint (a +ᵥ U) U) :
+    Set.InjOn (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X) U := by
+  intro x hx y hy hxy
+  obtain ⟨a, ha⟩ := Quotient.exact hxy
+  have ha_zero : a = 0 := by
+    by_contra ha_ne
+    refine Set.disjoint_left.mp (hU a ha_ne) (Set.vadd_mem_vadd_set hy) ?_
+    change (fun b : A ↦ b +ᵥ y) a ∈ U
+    rw [ha]
+    exact hx
+  simpa [ha_zero] using ha.symm
+
+variable [TopologicalSpace X] [ContinuousConstVAdd A X]
+
+/-- On an open set disjoint from each of its nontrivial additive translates, the additive orbit
+projection is an open embedding. -/
+theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_vadd (hU_open : IsOpen U)
+    (hU : ∀ a : A, a ≠ 0 → Disjoint (a +ᵥ U) U) :
+    IsOpenEmbedding
+      (U.domRestrict (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X)) := by
+  refine .of_continuous_injective_isOpenMap
+    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (AddAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
+  intro x y hxy
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.2 y.2 hxy)
+
+end DisjointTranslatesAdd
+
+section DiscreteTopology
+
+open Set
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X] {U : Set X}
+
+/-- **Discreteness from a disjoint open translate.** If a topological group acts continuously and
+some nonempty open set is disjoint from all of its translates by nonidentity elements, then the
+group is discrete. Indeed, the elements carrying one chosen point back into that open set form an
+open neighbourhood consisting only of the identity. -/
+@[to_additive
+/-- **Discreteness from a disjoint open translate.** If a topological additive group acts
+continuously and some nonempty open set is disjoint from all of its translates by nonzero
+elements, then the group is discrete. -/]
+theorem discreteTopology_of_disjoint_smul (hU_open : IsOpen U) (hU_nonempty : U.Nonempty)
+    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) : DiscreteTopology G := by
+  apply discreteTopology_of_isOpen_singleton_one
+  obtain ⟨x, hx⟩ := hU_nonempty
+  have hopen : IsOpen ((fun g : G ↦ g • x) ⁻¹' U) := hU_open.preimage (by fun_prop)
+  have heq : (fun g : G ↦ g • x) ⁻¹' U = {1} := by
+    ext g
+    simp only [Set.mem_preimage, Set.mem_singleton_iff]
+    constructor
+    · intro hgx
+      by_contra hg_ne
+      exact Set.disjoint_left.mp (hU g hg_ne) (Set.smul_mem_smul_set hx) hgx
+    · rintro rfl
+      simpa using hx
+  rwa [heq] at hopen
+
+end DiscreteTopology
 
 /-- A submonoid inherits continuity in the point from an ambient continuous action. -/
 @[to_additive
