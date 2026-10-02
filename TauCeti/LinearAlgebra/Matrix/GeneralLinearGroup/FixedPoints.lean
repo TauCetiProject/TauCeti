@@ -15,8 +15,9 @@ public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 -- `Set.ncard` occurs in the statements below.
 public import Mathlib.Data.Set.Card
--- Non-public: the degree bounds are proved by `compute_degree`, in the proofs only.
-import Mathlib.Tactic.ComputeDegree
+-- Non-public: `Polynomial.natDegree_linear_le` and `Polynomial.natDegree_quadratic_le` bound the
+-- degree of the fixed-point polynomial, in the proof only.
+import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 
 /-!
 # Fixed points of the Möbius action on the projective line
@@ -37,9 +38,6 @@ of at least three points.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.natDegree_fixpointPolynomial_le_two` and
-  `Matrix.GeneralLinearGroup.natDegree_fixpointPolynomial_le_one`: the fixed-point polynomial has
-  degree at most two, and at most one once the lower-left entry vanishes.
 * `Matrix.GeneralLinearGroup.encard_fixedBy_le_two`, with the `Set.ncard` form
   `Matrix.GeneralLinearGroup.ncard_fixedBy_le_two`: a matrix that is not scalar fixes at most two
   points of the projective line.
@@ -67,25 +65,6 @@ open scoped MatrixGroups
 
 namespace Matrix.GeneralLinearGroup
 
-section CommRing
-
-variable {R : Type*} [CommRing R] (g : GL (Fin 2) R)
-
-/-- The fixed-point polynomial `c X² + (d − a) X − b` of a `2 × 2` matrix has degree at most
-two. -/
-theorem natDegree_fixpointPolynomial_le_two : g.fixpointPolynomial.natDegree ≤ 2 := by
-  rw [fixpointPolynomial]
-  compute_degree
-
-/-- The fixed-point polynomial of a `2 × 2` matrix whose lower-left entry vanishes, which is the
-matrix fixing `∞`, has degree at most one. -/
-theorem natDegree_fixpointPolynomial_le_one (h : g 1 0 = 0) :
-    g.fixpointPolynomial.natDegree ≤ 1 := by
-  rw [fixpointPolynomial, h, map_zero, zero_mul, zero_add]
-  compute_degree
-
-end CommRing
-
 section Field
 
 variable {K : Type*} [Field K] [DecidableEq K] {g : GL (Fin 2) K}
@@ -107,7 +86,10 @@ private theorem exists_finset_fixedBy_subset (hg : g ∉ Subgroup.center (GL (Fi
     Finset.card_image_le.trans ((Multiset.toFinset_card_le _).trans (card_roots' _))
   by_cases hinfty : g 1 0 = 0
   · refine ⟨insert ∞ s, ?_, ?_⟩
-    · have := natDegree_fixpointPolynomial_le_one g hinfty
+    · -- With `∞` fixed the fixed-point polynomial is linear, so it has at most one root.
+      have hdeg : g.fixpointPolynomial.natDegree ≤ 1 := by
+        rw [fixpointPolynomial, hinfty, map_zero, zero_mul, zero_add, sub_eq_add_neg, ← C_neg]
+        exact natDegree_linear_le
       exact (Finset.card_insert_le _ _).trans (by omega)
     · intro c hc
       cases c with
@@ -115,7 +97,11 @@ private theorem exists_finset_fixedBy_subset (hg : g ∉ Subgroup.center (GL (Fi
       | coe t =>
         refine Finset.mem_insert_of_mem ?_
         exact Finset.mem_image_of_mem _ (Multiset.mem_toFinset.mpr (hroot t hc))
-  · refine ⟨s, hcard.trans (natDegree_fixpointPolynomial_le_two g), ?_⟩
+  · -- Otherwise every fixed point is a root of the quadratic fixed-point polynomial.
+    have hdeg : g.fixpointPolynomial.natDegree ≤ 2 := by
+      rw [fixpointPolynomial, sub_eq_add_neg, ← C_neg]
+      exact natDegree_quadratic_le
+    refine ⟨s, hcard.trans hdeg, ?_⟩
     intro c hc
     cases c with
     | infty => exact absurd (smul_infty_eq_self_iff.mp hc) hinfty
@@ -189,15 +175,11 @@ theorem eq_of_forall_smul_eq {x y : PGL(2, K)} {S : Set (OnePoint K)} (hS : ∀ 
 /-- Three-point rigidity in `PGL₂(K)` for a matrix representative. -/
 theorem mk_eq_one_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = c)
     (hcard : 3 ≤ S.encard) : mk g = 1 :=
-  mk_eq_one.mpr (GeneralLinearGroup.mem_center_of_forall_smul_eq hS hcard)
+  eq_one_of_forall_smul_eq (fun c hc ↦ by simpa using hS c hc) hcard
 
 /-- Determination by three points for matrix representatives. -/
 theorem mk_eq_mk_of_forall_smul_eq_smul {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = h • c)
-    (hcard : 3 ≤ S.encard) : mk g = mk h := by
-  have key : ∀ c ∈ S, (h⁻¹ * g) • c = c := fun c hc ↦ by
-    rw [mul_smul, hS c hc, ← mul_smul, inv_mul_cancel, one_smul]
-  have hone := mk_eq_one_of_forall_smul_eq key hcard
-  rw [map_mul, map_inv, inv_mul_eq_one] at hone
-  exact hone.symm
+    (hcard : 3 ≤ S.encard) : mk g = mk h :=
+  eq_of_forall_smul_eq (fun c hc ↦ by simpa using hS c hc) hcard
 
 end Matrix.ProjGenLinGroup
