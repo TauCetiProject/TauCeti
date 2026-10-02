@@ -7,7 +7,7 @@ module
 
 public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
 public import TauCeti.InformationTheory.Coding.Puncture
-public import TauCeti.InformationTheory.Coding.DirectSum
+public import TauCeti.InformationTheory.Coding.Additive.DirectSum
 
 /-!
 # Minimum distance under coordinate operations
@@ -19,7 +19,8 @@ direct sum of two nonzero codes is the minimum of their distances; a zero summan
 the distance unchanged. The zero-code cases matter because minimum distance is defined as
 zero for the zero code.
 
-These formulas connect the coordinate operations on linear codes to their distance parameters.
+The direct-sum formulas apply both to submodules with a module alphabet and to additive subgroups
+with a commutative additive group alphabet. Neither alphabet needs to be finite.
 They follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §§1.5–1.6.
 -/
 
@@ -165,18 +166,19 @@ end CoordinateSets
 
 section DirectSum
 
-variable {R ι κ : Type*} [Semiring R] [DecidableEq R] [Fintype ι] [Fintype κ]
-  (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+variable {R A ι κ : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+  [DecidableEq A] [Fintype ι] [Fintype κ]
+  (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
 
 /-- The minimum distance of a direct sum of two nonzero codes is the minimum of their
 minimum distances. -/
 @[simp]
 theorem hammingMinDist_directSum (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
-    hammingMinDist (C.directSum D : Set (ι ⊕ κ → R)) =
-      min (hammingMinDist (C : Set (ι → R))) (hammingMinDist (D : Set (κ → R))) := by
-  have hC' : (C : Set (ι → R)).Nontrivial :=
+    hammingMinDist (C.directSum D : Set (ι ⊕ κ → A)) =
+      min (hammingMinDist (C : Set (ι → A))) (hammingMinDist (D : Set (κ → A))) := by
+  have hC' : (C : Set (ι → A)).Nontrivial :=
     Set.nontrivial_coe_sort.mp (Submodule.nontrivial_iff_ne_bot.mpr hC)
-  have hD' : (D : Set (κ → R)).Nontrivial :=
+  have hD' : (D : Set (κ → A)).Nontrivial :=
     Set.nontrivial_coe_sort.mp (Submodule.nontrivial_iff_ne_bot.mpr hD)
   obtain ⟨x, hx, x', hx', hxx', hxd⟩ := exists_hammingDist_eq_hammingMinDist hC'
   obtain ⟨y, hy, y', hy', hyy', hyd⟩ := exists_hammingDist_eq_hammingMinDist hD'
@@ -184,7 +186,7 @@ theorem hammingMinDist_directSum (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
     Submodule.sumElim_zero_right_mem_directSum D hx
   have hxmem' : Sum.elim x' 0 ∈ C.directSum D :=
     Submodule.sumElim_zero_right_mem_directSum D hx'
-  have hxne : Sum.elim x (0 : κ → R) ≠ Sum.elim x' 0 := by
+  have hxne : Sum.elim x (0 : κ → A) ≠ Sum.elim x' 0 := by
     intro h
     exact hxx' (funext fun i ↦ congrFun h (.inl i))
   -- Embed a pair attaining minimum distance in either summand for both upper bounds.
@@ -192,11 +194,11 @@ theorem hammingMinDist_directSum (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
   · apply le_min
     · simpa only [hammingDist_sumElim, hammingDist_self, add_zero, hxd] using
         hammingMinDist_le hxmem hxmem' hxne
-    · have hymem : Sum.elim (0 : ι → R) y ∈ C.directSum D :=
+    · have hymem : Sum.elim (0 : ι → A) y ∈ C.directSum D :=
         Submodule.sumElim_zero_left_mem_directSum C hy
-      have hymem' : Sum.elim (0 : ι → R) y' ∈ C.directSum D :=
+      have hymem' : Sum.elim (0 : ι → A) y' ∈ C.directSum D :=
         Submodule.sumElim_zero_left_mem_directSum C hy'
-      have hyne : Sum.elim (0 : ι → R) y ≠ Sum.elim (0 : ι → R) y' := by
+      have hyne : Sum.elim (0 : ι → A) y ≠ Sum.elim (0 : ι → A) y' := by
         intro h
         exact hyy' (funext fun i ↦ congrFun h (.inr i))
       simpa only [hammingDist_sumElim, hammingDist_self, zero_add, hyd] using
@@ -229,17 +231,18 @@ end DirectSum
 
 section ZeroSummand
 
-variable {R ι κ : Type*} [Semiring R] [DecidableEq R] [Fintype ι] [Fintype κ]
-  (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+variable {R A ι κ : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+  [DecidableEq A] [Fintype ι] [Fintype κ]
+  (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
 
 /-- Adding a zero code on the right leaves minimum distance unchanged, including for the
 zero code on the left. -/
 @[simp]
 theorem hammingMinDist_directSum_bot :
-    hammingMinDist (C.directSum (⊥ : Submodule R (κ → R)) : Set (ι ⊕ κ → R)) =
-      hammingMinDist (C : Set (ι → R)) := by
-  have hset : (C.directSum (⊥ : Submodule R (κ → R)) : Set (ι ⊕ κ → R)) =
-      (fun x : ι → R ↦ Sum.elim x (0 : κ → R)) '' (C : Set (ι → R)) := by
+    hammingMinDist (C.directSum (⊥ : Submodule R (κ → A)) : Set (ι ⊕ κ → A)) =
+      hammingMinDist (C : Set (ι → A)) := by
+  have hset : (C.directSum (⊥ : Submodule R (κ → A)) : Set (ι ⊕ κ → A)) =
+      (fun x : ι → A ↦ Sum.elim x (0 : κ → A)) '' (C : Set (ι → A)) := by
     ext z
     constructor
     · intro hz
@@ -260,19 +263,57 @@ theorem hammingMinDist_directSum_bot :
 /-- Adding a zero code on the left leaves minimum distance unchanged. -/
 @[simp]
 theorem hammingMinDist_bot_directSum :
-    hammingMinDist ((⊥ : Submodule R (ι → R)).directSum D : Set (ι ⊕ κ → R)) =
-      hammingMinDist (D : Set (κ → R)) := by
-  have hmap := congrArg (fun E : Submodule R (κ ⊕ ι → R) ↦ (E : Set (κ ⊕ ι → R)))
-    (Submodule.map_directSum_sumComm (⊥ : Submodule R (ι → R)) D)
+    hammingMinDist ((⊥ : Submodule R (ι → A)).directSum D : Set (ι ⊕ κ → A)) =
+      hammingMinDist (D : Set (κ → A)) := by
+  have hmap := congrArg (fun E : Submodule R (κ ⊕ ι → A) ↦ (E : Set (κ ⊕ ι → A)))
+    (Submodule.map_directSum_sumComm (⊥ : Submodule R (ι → A)) D)
   rw [Submodule.map_coe] at hmap
   -- The linear equivalence reindexes words by swapping the two coordinate blocks.
   have hdist := hammingMinDist_image
-    (C := ((⊥ : Submodule R (ι → R)).directSum D : Set (ι ⊕ κ → R)))
-    (LinearEquiv.funCongrLeft R R (Equiv.sumComm κ ι)).toLinearMap
+    (C := ((⊥ : Submodule R (ι → A)).directSum D : Set (ι ⊕ κ → A)))
+    (LinearEquiv.funCongrLeft R A (Equiv.sumComm κ ι)).toLinearMap
     (fun x _ y _ _ ↦ (Equiv.sumComm κ ι).hammingDist_comp x y)
   rw [hmap, hammingMinDist_directSum_bot] at hdist
   exact hdist.symm
 
 end ZeroSummand
+
+section AdditiveDirectSum
+
+open AddSubgroup
+
+variable {A ι κ : Type*} [AddCommGroup A] [DecidableEq A] [Fintype ι] [Fintype κ]
+
+/-- The minimum distance of an additive direct sum of two nonzero codes is the smaller of their
+minimum distances. -/
+@[simp]
+theorem _root_.AddSubgroup.hammingMinDist_directSum (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
+    Set.hammingMinDist (C.directSum D : Set (ι ⊕ κ → A)) =
+      min (Set.hammingMinDist (C : Set (ι → A))) (Set.hammingMinDist (D : Set (κ → A))) := by
+  have hC' : C.toIntSubmodule ≠ ⊥ := by simpa using hC
+  have hD' : D.toIntSubmodule ≠ ⊥ := by simpa using hD
+  simpa only [directSum_def, Submodule.coe_toAddSubgroup, AddSubgroup.coe_toIntSubmodule] using
+    TauCeti.hammingMinDist_directSum C.toIntSubmodule D.toIntSubmodule hC' hD'
+
+/-- Adding a zero code on the right preserves minimum distance, including for a zero left code. -/
+@[simp]
+theorem _root_.AddSubgroup.hammingMinDist_directSum_bot (C : AddSubgroup (ι → A)) :
+    Set.hammingMinDist (C.directSum (⊥ : AddSubgroup (κ → A)) : Set (ι ⊕ κ → A)) =
+      Set.hammingMinDist (C : Set (ι → A)) := by
+  simpa only [directSum_def, Submodule.coe_toAddSubgroup, AddSubgroup.coe_toIntSubmodule,
+    OrderIso.map_bot] using
+    TauCeti.hammingMinDist_directSum_bot C.toIntSubmodule (κ := κ)
+
+/-- Adding a zero code on the left preserves minimum distance. -/
+@[simp]
+theorem _root_.AddSubgroup.hammingMinDist_bot_directSum (D : AddSubgroup (κ → A)) :
+    Set.hammingMinDist ((⊥ : AddSubgroup (ι → A)).directSum D : Set (ι ⊕ κ → A)) =
+      Set.hammingMinDist (D : Set (κ → A)) := by
+  simpa only [directSum_def, Submodule.coe_toAddSubgroup, AddSubgroup.coe_toIntSubmodule,
+    OrderIso.map_bot] using
+    TauCeti.hammingMinDist_bot_directSum (ι := ι) D.toIntSubmodule
+
+end AdditiveDirectSum
 
 end TauCeti
