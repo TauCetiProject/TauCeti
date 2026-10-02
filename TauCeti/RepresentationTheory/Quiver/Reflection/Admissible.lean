@@ -330,12 +330,12 @@ private theorem exists_isEmpty_hom_mem (h : IsAcyclic V) {s : Finset V} (hs : s.
   exact (h.isEmpty_hom_self i).elim e
 
 /-- **Topological sorting.** Every finite set of vertices of an acyclic quiver can be listed without
-repetition so that no arrow runs from an earlier entry to a later one: peel off a vertex emitting
-no arrow inside the set, and recurse. -/
+repetition so that no arrow runs from an earlier entry to a later one. -/
 theorem IsAcyclic.exists_pairwise_isEmpty_hom (h : IsAcyclic V) (s : Finset V) :
     ∃ l : List V, l.Nodup ∧ (∀ v : V, v ∈ l ↔ v ∈ s) ∧
       l.Pairwise fun x y ↦ IsEmpty (x ⟶ y) := by
   classical
+  -- Peel off a vertex emitting no arrow inside the set, and recurse on the rest.
   induction s using Finset.strongInduction with
   | _ s ih =>
     rcases s.eq_empty_or_nonempty with rfl | hs
