@@ -26,7 +26,8 @@ square. So linear independence of the classes is the **Finset form** of square-c
 * `TauCeti.SquareClassGroup`: the square-class group `Kˣ ⧸ (Kˣ)²`, an `𝔽₂`-vector space.
 * `TauCeti.squareClass`, `TauCeti.squareClassHom`: the class of a unit, as a function and a
   multiplicative homomorphism, with `squareClass_eq_zero_iff` characterising the trivial class as
-  the squares and `squareClass_mul`, `squareClass_prod`, `squareClass_pow` computing it on
+  the squares, `ker_squareClassHom` identifying the kernel of the quotient map with the subgroup
+  of squares, and `squareClass_mul`, `squareClass_prod`, `squareClass_pow` computing it on
   products and powers.
 * `TauCeti.squareClass_eq_iff_isSquare_mul`: equality of square classes read as a square product.
 * `TauCeti.SquareClassGroup.two_nsmul_eq_zero`: the square-class group is killed by two.
@@ -83,6 +84,12 @@ theorem squareClassHom_apply (u : Kˣ) :
   rw [squareClass, QuotientAddGroup.eq_zero_iff, Additive.mem_toAddSubgroup,
     Subgroup.mem_square]
   simp
+
+/-- The kernel of the square-class quotient map is the subgroup of squares. -/
+@[simp]
+theorem ker_squareClassHom : (squareClassHom (K := K)).ker = Subgroup.square Kˣ := by
+  ext u
+  simp [squareClassHom_apply]
 
 /-- The square class of a product of two units is the sum of their square classes. -/
 @[simp]
