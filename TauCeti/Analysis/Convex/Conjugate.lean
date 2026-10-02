@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Instances.EReal.Lemmas
 public import Mathlib.Topology.Semicontinuity.Basic
@@ -49,7 +50,8 @@ keep `⊥ + ⊤` from arising, and those hypotheses are recorded exactly rather 
 blanket properness assumption.
 
 For a self-paired real inner product space, `B` is `innerₗ E`, whose transpose is itself, so the
-two Galois-connection maps coincide.
+two Galois-connection maps coincide, and every conjugate is lower semicontinuous for the norm
+topology, the inner product being continuous in each variable.
 
 ## Main definitions
 
@@ -72,7 +74,8 @@ two Galois-connection maps coincide.
 * `TauCeti.convex_epigraph_fenchelConjugate` — the real epigraph of a conjugate is convex, and
   `TauCeti.lowerSemicontinuous_fenchelConjugate` — a conjugate is lower semicontinuous for any
   topology on `F` making every functional `B x` continuous, such as the weak topology of the
-  pairing.
+  pairing, and `TauCeti.lowerSemicontinuous_fenchelConjugate_innerₗ` — for the inner product
+  pairing of a real inner product space, every conjugate is lower semicontinuous.
 
 ## Implementation notes
 
@@ -82,7 +85,8 @@ exchanged. Up to the sign change `c (x, y) = -B x y` and the negation of both po
 transforms agree, but the sup-based normal form is the one used throughout convex analysis and
 by the differentiability theory of convex functions, so it is developed on its own terms here.
 The bridge between the two is a statement about the quadratic transport cost `‖x - y‖ ^ 2 / 2`,
-whose `c`-concave potentials are exactly `‖x‖ ^ 2 / 2 - u x` for `u` a conjugate.
+whose `c`-concave potentials are exactly `‖x‖ ^ 2 / 2 - u x` for `u` a conjugate
+(`TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic`).
 
 Convexity of a conjugate is stated as convexity of the real epigraph
 `{p : F × ℝ | f⋆ p.1 ≤ p.2}` rather than through `ConvexOn`, whose scalar action would have to
@@ -266,6 +270,21 @@ theorem lowerSemicontinuous_fenchelConjugate [TopologicalSpace F] (hB : ∀ x, C
   | top =>
     simp only [EReal.sub_top]
     exact lowerSemicontinuous_const
+
+/-! ### The inner product pairing -/
+
+section InnerProduct
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+
+/-- The Legendre–Fenchel conjugate for the inner product pairing is lower semicontinuous, the
+inner product being continuous in each variable. -/
+theorem lowerSemicontinuous_fenchelConjugate_innerₗ (f : G → EReal) :
+    LowerSemicontinuous (fenchelConjugate (innerₗ G) f) :=
+  lowerSemicontinuous_fenchelConjugate (innerₗ G)
+    (fun x => (continuous_const.inner continuous_id).congr fun y => (innerₗ_apply_apply x y).symm) f
+
+end InnerProduct
 
 end TauCeti
 

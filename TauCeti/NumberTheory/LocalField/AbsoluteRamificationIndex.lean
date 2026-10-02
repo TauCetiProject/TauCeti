@@ -40,6 +40,7 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 * `TauCeti.valuation_natCast_eq_pow_mul_padicValNat`: the same valuation, as a power of the
   valuation of a uniformizer.
 * `TauCeti.absoluteRamificationIndex_padic`: the absolute ramification index of `ℚ_[p]` is one.
+* `TauCeti.residuePrime_mem_maximalIdeal`: the residue prime lies in the maximal ideal of `𝒪[K]`.
 * `TauCeti.absoluteRamificationIndex_tower`: the absolute index is multiplicative in a tower.
 
 ## References
@@ -116,22 +117,8 @@ theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
           have := FinitePadicExtension.charZero K p
           exact Nat.cast_ne_zero.mpr hn) =
       absoluteRamificationIndex K p * padicValNat p n := by
-  let hnQ : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have := FinitePadicExtension.charZero K p
-  let hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hmap : Units.map (algebraMap ℚ_[p] K : ℚ_[p] →* K)
-      (Units.mk0 (n : ℚ_[p]) hnQ) = Units.mk0 (n : K) hnK := by
-    ext
-    simp
-  have h := toAdd_normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
-    (Units.mk0 (n : ℚ_[p]) hnQ)
-  rw [hmap, toAdd_normalizedValuation_natCast K n hnK,
-    toAdd_normalizedValuation_natCast ℚ_[p] n hnQ,
-    Padic.natCastValuation_eq_padicValNat] at h
-  have hnval : natCastValuation K n hnK =
-      ramificationIndex ℚ_[p] K * padicValNat p n := by
-    exact_mod_cast h
-  simpa only [absoluteRamificationIndex] using hnval
+  rw [natCastValuation_eq_ramificationIndex_mul (K := ℚ_[p]) n (Nat.cast_ne_zero.mpr hn),
+    Padic.natCastValuation_eq_padicValNat, absoluteRamificationIndex]
 
 variable {K} in
 /-- In a finite extension `K/ℚ_[p]`, the valuation of a nonzero natural number `n` is
@@ -163,6 +150,15 @@ theorem absoluteRamificationIndex_eq_natCastValuation :
 -- statement, so `simpNF` rejects the redundant attribute.
 theorem absoluteRamificationIndex_padic : absoluteRamificationIndex ℚ_[p] p = 1 := by
   rw [absoluteRamificationIndex_eq_natCastValuation, Padic.natCastValuation_self]
+
+/-- The residue prime `p` lies in the maximal ideal of `𝒪[K]`. -/
+theorem residuePrime_mem_maximalIdeal : (p : 𝒪[K]) ∈ 𝓂[K] := by
+  have := FinitePadicExtension.charZero K p
+  have h := absoluteRamificationIndex_pos K p
+  rw [absoluteRamificationIndex_eq_natCastValuation] at h
+  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, ← natCastValuation_eq_zero_iff K p
+    (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)]
+  exact h.ne'
 
 /-- In a tower `L/K/ℚ_[p]`, the absolute ramification index of `L` is the product of the
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/

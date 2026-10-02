@@ -40,6 +40,8 @@ along it.
 * `TauCeti.Huber.isSheafyForEveryPresentation_iff_of_ringEquiv` and
   `TauCeti.Huber.IsSheafyForEveryPresentation.map` : the condition is invariant under
   isomorphisms of topological rings carrying one plus ring onto the other.
+* `TauCeti.Huber.forall_isSheafyForEveryPresentation_iff_of_ringEquiv` : the same condition for
+  every ring of integral elements at once is invariant under isomorphisms of topological rings.
 * `TauCeti.Huber.isSheafyForEveryPresentation_completionPlus_iff` : for a ring of integral elements
   `A⁺`, the condition holds for `A⁺` exactly when it holds for the closure `Â⁺` of its image in the
   completion `Â`.
@@ -128,6 +130,19 @@ theorem isSheafyForEveryPresentation_iff_of_ringEquiv (e : A ≃+* B) (he : Cont
   subst hplus
   refine ⟨fun h ↦ h.map e he he', fun h ↦ ?_⟩
   simpa only [Subring.map_map, RingEquiv.symm_comp, Subring.map_id] using h.map e.symm he' he
+
+/-- **The sheaf condition for every plus ring is invariant under isomorphism**: along an
+isomorphism of topological rings `e : A ≃+* B`, every ring of integral elements of `A` satisfies
+`IsSheafyForEveryPresentation` exactly when every ring of integral elements of `B` does. -/
+theorem forall_isSheafyForEveryPresentation_iff_of_ringEquiv (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) :
+    (∀ Aplus : Subring A, IsRingOfIntegralElements Aplus → IsSheafyForEveryPresentation Aplus) ↔
+      ∀ Bplus : Subring B, IsRingOfIntegralElements Bplus → IsSheafyForEveryPresentation Bplus :=
+  -- `e` carries the rings of integral elements of `A` and of `B` onto each other
+  ⟨fun h _ hB ↦ (isSheafyForEveryPresentation_iff_of_ringEquiv e.symm he' he rfl).mpr
+      (h _ (hB.map _ he' he)),
+    fun h _ hA ↦ (isSheafyForEveryPresentation_iff_of_ringEquiv e he he' rfl).mpr
+      (h _ (hA.map _ he he'))⟩
 
 end RingEquiv
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
+import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # Coinduction along a subgroup of finite index
@@ -28,8 +29,22 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
 
 * `TauCeti.DiscreteCoind.instFinite`: `Coind_U^G A` is finite for finite `A` and finite-index
   `U`, since restriction to a right transversal is injective.
+* `TauCeti.DiscreteCoind.sum_single`: for an open finite-index `U`, a coinduced function is the
+  sum of its singles `TauCeti.DiscreteCoind.single` over a right transversal, so `Coind_U^G A` is
+  the direct sum of `[G : U]` copies of `A`.
 * `TauCeti.DiscreteCoind.natCard_of_isOpen`: `|Coind_U^G A| = |A| ^ [G : U]` for an open
   finite-index `U` acting trivially on `A`.
+* `TauCeti.DiscreteCoind.trace_eq_inv_smul_apply`: the trace of a coinduced function supported
+  on the single right coset `U * g` is `g⁻¹ • f g`.
+* `TauCeti.DiscreteCoind.trace_single` and `TauCeti.DiscreteCoind.trace_surjective`: for an open
+  finite-index `U` and a discrete `G`-module `M`, the trace of `single g m` is `g⁻¹ • m`, so the
+  trace `Coind_U^G M → M` is surjective.
+* `TauCeti.DiscreteCoind.trace_eq_relIndex_nsmul_of_forall_smul_eq`,
+  `TauCeti.DiscreteCoind.trace_eq_zero_of_forall_smul_eq`: on the `G`-invariants of `Coind_V^G M`,
+  for `V ≤ U` with `U` acting trivially on `M`, the trace is `[U : V]` times the norm along `G ⧸ U`;
+  in particular it vanishes when `[U : V]` kills `M`. This is the co-effaceability of `H⁰` that
+  Tate's duality argument for the cohomological dimension of a Demushkin group uses (Serre,
+  *Structure de certains pro-p-groupes*, §9.1).
 -/
 
 public section
@@ -63,7 +78,43 @@ private theorem apply_out_inv_injective :
 instance instFinite [Finite A] [U.FiniteIndex] : Finite (DiscreteCoind G U A) :=
   Finite.of_injective _ apply_out_inv_injective
 
+omit [TopologicalSpace G] in
+/-- A coset `x : G ⧸ U` is the class of `h⁻¹` exactly when `h * x.out ∈ U`: the right coset
+`U * x.out⁻¹` of the transversal element `x.out⁻¹` contains `h` exactly when `x = h⁻¹ U`. -/
+private theorem mk_inv_eq_iff (h : G) (x : G ⧸ U) :
+    (QuotientGroup.mk h⁻¹ : G ⧸ U) = x ↔ h * x.out ∈ U := by
+  conv_lhs => rw [← QuotientGroup.out_eq' x]
+  rw [QuotientGroup.eq, inv_inv]
+
 end Transversal
+
+section Single
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+  [U.FiniteIndex] {A : Type v} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction U A] [ContinuousSMul U A] (hU : IsOpen (U : Set G))
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **A coinduced function is the sum of its singles over a right transversal.** For an open
+subgroup `U` of finite index, `f = ∑_{x : G ⧸ U} single x.out⁻¹ (f x.out⁻¹)`: the right cosets
+`U * x.out⁻¹` partition `G`, and on each of them `f` agrees with the single of its value at the
+representative. -/
+theorem sum_single (f : DiscreteCoind G U A) :
+    ∑ x : G ⧸ U, single G U A hU x.out⁻¹ (f x.out⁻¹) = f := by
+  ext h
+  rw [sum_apply, Finset.sum_eq_single (QuotientGroup.mk h⁻¹)]
+  · set x : G ⧸ U := QuotientGroup.mk h⁻¹
+    have hx : h * x.out ∈ U := (mk_inv_eq_iff h x).1 rfl
+    have hh : h = ((⟨h * x.out, hx⟩ : U) : G) * x.out⁻¹ := by simp
+    rw [hh, single_apply_mul, ← apply_mul]
+  · intro x _ hx
+    refine single_apply_of_notMem hU _ fun hmem => hx ?_
+    rw [inv_inv] at hmem
+    exact ((mk_inv_eq_iff h x).2 hmem).symm
+  · exact fun h => (h (Finset.mem_univ _)).elim
+
+end Single
 
 section Trivial
 
@@ -131,6 +182,77 @@ theorem natCard_of_isOpen [U.FiniteIndex] :
   rw [Nat.card_congr (quotientPiAddEquiv G U A hU htriv).toEquiv, Nat.card_fun, U.index_eq_card]
 
 end Trivial
+
+section Trace
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+  [U.FiniteIndex] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace of a function supported on one right coset**: if `f` vanishes off `U * g`, then
+`tr f = g⁻¹ • f g`. In the trace `∑_{x : G ⧸ U} x.out • f x.out⁻¹` only the coset `x = g⁻¹ U`
+contributes, and there `x.out⁻¹ = u * g` with `u = x.out⁻¹ * g⁻¹`, so the term is
+`x.out • u • f g = g⁻¹ • f g`. -/
+theorem trace_eq_inv_smul_apply (f : DiscreteCoind G U M) (g : G)
+    (hf : ∀ x, x * g⁻¹ ∉ U → f x = 0) : trace G U M f = g⁻¹ • f g := by
+  rw [trace_apply, Finset.sum_eq_single (QuotientGroup.mk g⁻¹)]
+  · set x : G ⧸ U := QuotientGroup.mk g⁻¹
+    have hx : g * x.out ∈ U := (mk_inv_eq_iff g x).1 rfl
+    have hout : x.out⁻¹ = ((⟨(g * x.out)⁻¹, U.inv_mem hx⟩ : U) : G) * g := by
+      simp [mul_inv_rev]
+    rw [hout, apply_mul, Subgroup.smul_def, ← mul_smul]
+    congr 1
+    simp [mul_inv_rev]
+  · intro x _ hx
+    have hmem : x.out⁻¹ * g⁻¹ ∉ U := fun hmem =>
+      hx ((mk_inv_eq_iff g x).2 (by simpa [mul_inv_rev] using U.inv_mem hmem)).symm
+    rw [hf _ hmem, smul_zero]
+  · exact fun h => (h (Finset.mem_univ _)).elim
+
+variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
+
+/-- **The trace of a single**: `tr (single g m) = g⁻¹ • m`, since `single g m` is supported on
+the right coset `U * g` with value `m` at `g`. Not a `simp` lemma, because
+`TauCeti.DiscreteCoind.trace_apply` already takes its left-hand side apart. -/
+theorem trace_single (hU : IsOpen (U : Set G)) (g : G) (m : M) :
+    trace G U M (single G U M hU g m) = g⁻¹ • m := by
+  rw [trace_eq_inv_smul_apply _ g fun _ hx => single_apply_of_notMem hU m hx, single_apply_self]
+
+/-- **The trace `Coind_U^G M → M` of an open subgroup is surjective**: `m` is the trace of
+`single 1 m`, the function that is `g ↦ g • m` on `U` and `0` off `U`. -/
+theorem trace_surjective (hU : IsOpen (U : Set G)) : Function.Surjective (trace G U M) :=
+  fun m => ⟨single G U M hU 1 m, by rw [trace_single, inv_one, one_smul]⟩
+
+end Trace
+
+section TraceInvariants
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {V U : Subgroup G}
+  [V.FiniteIndex] [U.FiniteIndex] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **The trace on invariants is a multiple of the norm.** For finite-index subgroups `V ≤ U` with
+`U` acting trivially on `M`, the trace of a `G`-invariant element `f` of `Coind_V^G M` is
+`[U : V]` times the norm `∑_{q ∈ G ⧸ U} q.out • f 1` of its constant value. -/
+theorem trace_eq_relIndex_nsmul_of_forall_smul_eq (hVU : V ≤ U)
+    (htriv : ∀ u ∈ U, ∀ m : M, u • m = m) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+    trace G V M f = V.relIndex U • ∑ q : G ⧸ U, q.out • f 1 := by
+  rw [trace_apply]
+  simp only [apply_eq_apply_one_of_forall_smul_eq hf]
+  exact Subgroup.sum_out_smul_eq_relIndex_nsmul hVU fun u hu ↦ htriv u hu _
+
+/-- **The trace kills the invariants once the relative index kills the module.** For finite-index
+subgroups `V ≤ U` with `U` acting trivially on `M` and `[U : V] • m = 0` for every `m`, the trace
+`Coind_V^G M → M` vanishes on the `G`-invariants: the map `H⁰(G, Coind_V^G M) → H⁰(G, M)` induced
+by `trace` is zero. -/
+theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) (htriv : ∀ u ∈ U, ∀ m : M, u • m = m)
+    (hkill : ∀ m : M, V.relIndex U • m = 0) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+    trace G V M f = 0 := by
+  rw [trace_eq_relIndex_nsmul_of_forall_smul_eq hVU htriv hf, hkill]
+
+end TraceInvariants
 
 end DiscreteCoind
 

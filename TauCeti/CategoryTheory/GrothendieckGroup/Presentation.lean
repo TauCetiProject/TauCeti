@@ -285,6 +285,14 @@ theorem hom_ext {f g : PresentedK0 rels →+ G} (h : ∀ X : C, f (of X) = g (of
 
 end HomExt
 
+/-- A homomorphism into a presented Grothendieck group whose range contains the class of every
+object of `C` is surjective, since those classes generate. -/
+theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ PresentedK0 rels}
+    (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f := by
+  rw [← AddMonoidHom.range_eq_top, eq_top_iff, ← closure_range_of, AddSubgroup.closure_le]
+  rintro _ ⟨X, rfl⟩
+  exact h X
+
 variable {G : Type*} [AddCommGroup G]
 
 /-- The additive homomorphism induced by an additive invariant. -/

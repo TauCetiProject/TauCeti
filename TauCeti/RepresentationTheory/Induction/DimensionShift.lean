@@ -139,12 +139,9 @@ any representation `M`: the embedding into the coinduced module has the `k`-line
 `f ↦ f 1`. -/
 theorem dimensionShiftUpSES_tensorLeft_shortExact (A M : Rep k G) :
     ((dimensionShiftUpSES A).map (tensorLeft M)).ShortExact := by
-  have hr : Function.LeftInverse (LinearMap.proj 1 ∘ₗ (coindBotEquivPi k G A.V).toLinearMap)
-      (coindBotUnit A).hom := fun a ↦ by
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
-      coindBotUnit_hom_apply_coe, map_one, Module.End.one_apply]
   have : Epi (dimensionShiftUpSES A).g := (dimensionShiftUpSES_shortExact A).epi_g
-  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A).exact M _ hr
+  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A).exact M
+    (leftInverse_coindBotUnit A)
 
 /-! ### The downward dimension shift -/
 
@@ -216,11 +213,9 @@ with any representation `M`: the projection from the induced module has the `k`-
 `a ↦ ⟦1 ⊗ₜ a⟧`. -/
 theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
     ((dimensionShiftDownSES A).map (tensorLeft M)).ShortExact := by
-  have hs : Function.RightInverse (Representation.IndV.mk (⊥ : Subgroup G).subtype
-      (Representation.trivial k (⊥ : Subgroup G) A.V) 1) (indBotCounit A).hom := fun a ↦ by
-    rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
   have : Mono (dimensionShiftDownSES A).f := (dimensionShiftDownSES_shortExact A).mono_f
-  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M _ hs
+  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M
+    (rightInverse_indBotCounit A)
 
 /-! ### Functoriality of the dimension-shifting sequences -/
 

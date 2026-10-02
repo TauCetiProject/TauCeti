@@ -9,6 +9,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 public import TauCeti.Probability.Independence.DisjointBlocks
 -- Non-public: the zero-one law for a self-independent event is used only inside a proof.
 import Mathlib.Probability.Independence.ZeroOne
+import TauCeti.Probability.Independence.Map
 
 /-!
 # Dissociated arrays
@@ -43,7 +44,9 @@ of `arrayBlock X e f` reads a square block of `X` on the union of its selected r
 indices. Thus joint dissociation of `X` makes this block separately dissociated
 (`JointlyDissociated.separatelyDissociated_arrayBlock`), including the pair-valued version that
 retains both orientations. This is the bridge from the ergodic jointly exchangeable branch to the
-separate Aldous--Hoover branch.
+separate Aldous--Hoover branch. For a separately exchangeable array law the block has the law of the
+array itself, so there joint and separate dissociation coincide
+(`SeparatelyExchangeable.separatelyDissociated_iff_jointlyDissociated`).
 
 Dissociation is a restriction on the array and not a consequence of any exchangeability: an array
 all of whose entries are one common random variable is separately exchangeable, but dissociating it
@@ -73,6 +76,8 @@ These results advance the exchangeable-arrays milestone of
 * `TauCeti.Probability.JointlyDissociated.separatelyDissociated_arrayBlock` and
   `TauCeti.Probability.JointlyDissociated.separatelyDissociated_arrayBlockPair` — a block along two
   injections with disjoint ranges converts joint dissociation to separate dissociation;
+* `TauCeti.Probability.SeparatelyExchangeable.separatelyDissociated_iff_jointlyDissociated` — for a
+  separately exchangeable array law the two notions coincide;
 * `TauCeti.Probability.SeparatelyDissociated.map_values` and
   `TauCeti.Probability.JointlyDissociated.map_values` — dissociation is preserved by a measurable
   coordinatewise pushforward;
@@ -461,6 +466,31 @@ theorem JointlyDissociated.separatelyDissociated_arrayBlockPair_evenOdd
       simp [Set.disjoint_left])
 
 end Stability
+
+section SeparatelyExchangeable
+
+/-- **Under separate exchangeability, joint and separate dissociation coincide.** A separately
+exchangeable finite measure on arrays is separately dissociated if and only if it is jointly
+dissociated. -/
+theorem SeparatelyExchangeable.separatelyDissociated_iff_jointlyDissociated
+    {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ] (hρ : SeparatelyExchangeable ρ fun p x => x p) :
+    SeparatelyDissociated ρ (fun p x => x p) ↔ JointlyDissociated ρ fun p x => x p := by
+  refine ⟨SeparatelyDissociated.jointlyDissociated, fun hd => ?_⟩
+  -- the even-row, odd-column block is separately dissociated and has the law of the array
+  have he : Function.Injective fun i : ℕ => 2 * i := mul_right_injective₀ two_ne_zero
+  have hf : Function.Injective fun j : ℕ => 2 * j + 1 := (add_left_injective 1).comp he
+  have hB : Measurable fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x (2 * p.1, 2 * p.2 + 1) :=
+    Measurable.of_eval fun p => measurable_pi_apply _
+  have hlaw : ρ.map (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x (2 * p.1, 2 * p.2 + 1)) = ρ := by
+    simpa using hρ.map_arrayBlock_eq (fun p => (measurable_pi_apply p).aemeasurable) he hf
+  have hsep := hd.separatelyDissociated_arrayBlock_evenOdd
+  rw [← hlaw]
+  refine separatelyDissociated_iff.mpr fun e f e' f' hee' hff' => ?_
+  rw [indepFun_map_iff_comp hB (by fun_prop) (by fun_prop)]
+  simpa only [arrayBlock_apply, Function.comp_def] using
+    separatelyDissociated_iff.mp hsep e f e' f' hee' hff'
+
+end SeparatelyExchangeable
 
 section IID
 

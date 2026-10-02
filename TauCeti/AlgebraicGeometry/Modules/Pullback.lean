@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import TauCeti.CategoryTheory.Adjunction.Mates
 
@@ -24,6 +25,11 @@ For a scheme morphism `f : X ⟶ Y` and an open `V ⊆ Y`, restricting the pullb
 `f⁻¹ V` agrees with pulling back the restriction `M|_V` along `f ∣_ V`. This compatibility lets
 local properties of modules, expressed on open covers, be transported along scheme morphisms.
 
+Pushforward of modules along a scheme morphism is lax monoidal, so pullback, its left adjoint, is
+oplax monoidal, with unit map the identification `f^* 𝒪_Y ≅ 𝒪_X`. These structures are compatible
+with composition: the composition isomorphism of pullbacks carries the comparison maps of
+`(f ≫ g)^*` to the composites of those of `g^*` and `f^*`.
+
 Pullback along any scheme morphism preserves quasi-coherence, finite type, finite presentation
 and local freeness of modules. Local generators and presentations on an open cover pull back to
 local data on the preimage cover.
@@ -37,6 +43,15 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp`, and `pullbackObjUnitIso_congr` comparing it
   with identity, composition, and equality of scheme morphisms;
+* `AlgebraicGeometry.Scheme.Modules.pushforwardLaxMonoidal` and
+  `AlgebraicGeometry.Scheme.Modules.pullbackOplaxMonoidal`: the lax monoidal structure of
+  pushforward and the oplax monoidal structure of pullback, with unit maps computed by
+  `AlgebraicGeometry.Scheme.Modules.pushforward_ε` and
+  `AlgebraicGeometry.Scheme.Modules.pullback_η`, and the tensor map of pullback by
+  `AlgebraicGeometry.Scheme.Modules.pullback_δ`;
+* `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
+  `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
+  and pullback respect the lax and oplax monoidal structures;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
   pullbacks;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
@@ -236,6 +251,90 @@ lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
     Category.id_comp]
 
 end Unit
+
+section Monoidal
+
+variable (f : X ⟶ Y)
+
+/-- Pushforward of modules along a morphism of schemes is lax monoidal
+(`TauCeti.SheafOfModules.pushforwardLaxMonoidal`): its tensor map `f_* M ⊗ f_* N ⟶ f_* (M ⊗ N)`
+is induced by `m ⊗ n ↦ m ⊗ n` on sections, and its unit map `𝒪_Y ⟶ f_* 𝒪_X` is given by `f` on
+sections (`pushforward_ε`). -/
+instance pushforwardLaxMonoidal : (pushforward f).LaxMonoidal :=
+  TauCeti.SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
+
+/-- The unit map `𝒪_Y ⟶ f_* 𝒪_X` of the pushforward of modules is given by `f` on sections. -/
+@[simp]
+lemma pushforward_ε :
+    Functor.LaxMonoidal.ε (pushforward f) =
+      SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
+  TauCeti.SheafOfModules.pushforward_ε f.toRingCatSheafHom
+
+/-- Pullback of modules along a morphism of schemes is oplax monoidal, as the left adjoint of the
+lax monoidal pushforward: it carries comparison maps `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`, and its unit
+map is `pullbackObjUnitIso f` (`pullback_η`). The comparison maps are the mates of the tensor
+map of pushforward (`pullback_δ`). -/
+instance pullbackOplaxMonoidal : (pullback f).OplaxMonoidal :=
+  (pullbackPushforwardAdjunction f).leftAdjointOplaxMonoidal
+
+/-- The pullback--pushforward adjunction of modules along a morphism of schemes is compatible with
+the oplax monoidal structure of pullback and the lax monoidal structure of pushforward. -/
+instance isMonoidal_pullbackPushforwardAdjunction :
+    (pullbackPushforwardAdjunction f).IsMonoidal :=
+  inferInstanceAs (letI := (pullbackPushforwardAdjunction f).leftAdjointOplaxMonoidal
+    (pullbackPushforwardAdjunction f).IsMonoidal)
+
+/-- The unit map `f^* 𝒪_Y ⟶ 𝒪_X` of the pullback of modules is the isomorphism
+`pullbackObjUnitIso f`. -/
+@[simp]
+lemma pullback_η : Functor.OplaxMonoidal.η (pullback f) = (pullbackObjUnitIso f).hom := by
+  rw [pullbackOplaxMonoidal, Adjunction.leftAdjointOplaxMonoidal_η, pushforward_ε]
+  exact (Equiv.symm_apply_eq _).mpr
+    (pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom f).symm
+
+/-- The tensor map `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N` of the pullback of modules is the mate, under the
+pullback--pushforward adjunction, of the composite of the units `M ⟶ f_* f^* M` and
+`N ⟶ f_* f^* N` with the tensor map `f_* f^* M ⊗ f_* f^* N ⟶ f_* (f^* M ⊗ f^* N)` of
+pushforward. -/
+lemma pullback_δ (M N : Y.Modules) :
+    Functor.OplaxMonoidal.δ (pullback f) M N =
+      ((pullbackPushforwardAdjunction f).homEquiv _ _).symm
+        (((pullbackPushforwardAdjunction f).unit.app M ⊗ₘ
+            (pullbackPushforwardAdjunction f).unit.app N) ≫
+          Functor.LaxMonoidal.μ (pushforward f) _ _) :=
+  Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
+
+instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
+  rw [pullback_η]
+  infer_instance
+
+variable {Z : Scheme.{u}} (g : Y ⟶ Z)
+
+/-- The identification `pushforward f ⋙ pushforward g ≅ pushforward (f ≫ g)` is an isomorphism of
+lax monoidal functors (`TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom`). -/
+instance isMonoidal_pushforwardComp_hom : NatTrans.IsMonoidal (pushforwardComp f g).hom :=
+  TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
+
+/-- The tensor map `(f ≫ g)^* (M ⊗ N) ⟶ (f ≫ g)^* M ⊗ (f ≫ g)^* N` of the pullback along a
+composite is, through the composition isomorphism `pullbackComp f g`, the composite
+`f^* g^* (M ⊗ N) ⟶ f^* (g^* M ⊗ g^* N) ⟶ f^* g^* M ⊗ f^* g^* N` of the tensor maps of the two
+pullbacks. With `pullbackObjUnitIso_comp` for the unit maps, this says that `pullbackComp f g` is
+an isomorphism of oplax monoidal functors. -/
+lemma pullback_comp_δ (M N : Z.Modules) :
+    Functor.OplaxMonoidal.δ (pullback (f ≫ g)) M N =
+      (pullbackComp f g).inv.app (M ⊗ N) ≫
+        (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
+        Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
+        ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
+  -- The site-level statement asks for the right adjoints by instance; for schemes they are
+  -- recorded on `Scheme.Modules.pushforward`.
+  have : (SheafOfModules.pushforward g.toRingCatSheafHom).IsRightAdjoint :=
+    inferInstanceAs (pushforward g).IsRightAdjoint
+  have : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
+    inferInstanceAs (pushforward f).IsRightAdjoint
+  TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
+
+end Monoidal
 
 section Over
 

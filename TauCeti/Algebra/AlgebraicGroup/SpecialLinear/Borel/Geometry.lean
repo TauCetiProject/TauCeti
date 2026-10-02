@@ -26,8 +26,9 @@ where `T` is the upper-left diagonal entry and `X` is the upper-right entry. Thi
 also makes geometric connectedness transparent: after extending a field, the coordinate ring
 remains a polynomial ring over a Laurent polynomial domain.
 
-Smoothness follows from the infinitesimal lifting property for upper-triangular determinant-one
-matrices across nilpotent quotients.
+Smoothness is the rank-two case of smoothness of the upper-triangular subgroup of `SLₙ`, which
+follows from the infinitesimal lifting property for upper-triangular determinant-one matrices
+across nilpotent quotients.
 
 These geometric properties combine with maximality among solvable closed subgroups to identify
 the standard subgroup as a Borel subgroup.
@@ -360,32 +361,13 @@ theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
   exact (PrimeSpectrum.homeomorphOfRingEquiv
     (coordinateRingBaseChangeEquiv k K)).connectedSpace_iff.mpr inferInstance
 
-private instance instFormallySmoothCoordinateHopfAlgebra :
-    Algebra.FormallySmooth R (coordinateHopfAlgebra R) := by
-  apply Algebra.FormallySmooth.of_comp_surjective
-  intro A _ _ I hI f
-  obtain ⟨g, hg⟩ := SL2Borel.map_quotient_mk_surjective_of_isNilpotent I ⟨2, hI⟩
-    ((pointsMulEquiv (R := R) (A := A ⧸ I)) (toConv f))
-  let lift : WithConv (coordinateHopfAlgebra R →ₐ[R] A) :=
-    (pointsMulEquiv (R := R) (A := A)).symm g
-  refine ⟨lift.ofConv, ?_⟩
-  apply toConv_injective
-  apply (pointsMulEquiv (R := R) (A := A ⧸ I)).injective
-  rw [pointsMulEquiv_mapValue (R := R) (A := A) (B := A ⧸ I)]
-  have hq : (Ideal.Quotient.mkₐ R I).toRingHom = Ideal.Quotient.mk I :=
-    Ideal.Quotient.mkₐ_toRingHom (R₁ := R) I
-  rw [hq]
-  simpa only [lift, MulEquiv.apply_symm_apply] using hg
-
-/-- The coordinate algebra of the upper-triangular determinant-one subgroup is smooth over every
-commutative base ring. -/
+/-- The coordinate algebra of the upper-triangular determinant-one subgroup of `SL₂` is smooth
+over every commutative base ring, as the rank-two case of the upper-triangular subgroup of
+`SLₙ`. -/
 instance instSmoothCoordinateHopfAlgebra : Algebra.Smooth R (coordinateHopfAlgebra R) := by
-  have hfg : (definingHopfIdeal R).toIdeal.FG := by
-    rw [definingHopfIdeal_toIdeal]
-    exact Submodule.fg_span_singleton _
-  let _ : Algebra.FinitePresentation R (coordinateHopfAlgebra R) :=
-    Algebra.FinitePresentation.quotient hfg
-  exact ⟨inferInstance, inferInstance⟩
+  unfold coordinateHopfAlgebra
+  rw [definingHopfIdeal_eq_upperTriangular_definingHopfIdeal]
+  infer_instance
 
 /-- The standard Borel coordinate algebra is smooth over a field. -/
 theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra

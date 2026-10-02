@@ -8,6 +8,8 @@ module
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
+import TauCeti.Algebra.Group.Submonoid.Telescoping
+import TauCeti.Data.Fin.DistinctPairs
 import TauCeti.LinearAlgebra.RootSystem.Swap
 
 /-!
@@ -261,64 +263,11 @@ private lemma typeAPairReflection_coroot (p q : TypeAIndex n) :
 
 /-! ## The Bourbaki enumeration of the roots -/
 
-private lemma one_le_val_sub (p : TypeAIndex n) : 1 ≤ ((p.val.2 - p.val.1 : Fin (n + 1)) : ℕ) := by
-  have h : (p.val.2 - p.val.1 : Fin (n + 1)) ≠ 0 := fun h => p.2 (sub_eq_zero.mp h).symm
-  have : ((p.val.2 - p.val.1 : Fin (n + 1)) : ℕ) ≠ 0 := by
-    simpa [Fin.val_eq_zero_iff] using h
-  omega
-
-/-- The nonzero difference `b - a` of an ordered pair of distinct elements, shifted down to an
-index of `Fin n`. -/
-private def typeADiff (p : TypeAIndex n) : Fin n :=
-  ⟨((p.val.2 - p.val.1 : Fin (n + 1)) : ℕ) - 1, by
-    have h1 := one_le_val_sub p
-    have h2 : ((p.val.2 - p.val.1 : Fin (n + 1)) : ℕ) < n + 1 := Fin.isLt _
-    omega⟩
-
-private lemma typeADiff_val (p : TypeAIndex n) :
-    (typeADiff p : ℕ) = ((p.val.2 - p.val.1 : Fin (n + 1)) : ℕ) - 1 := rfl
-
-/-- The shift of a `Fin n` index to the nonzero elements of `Fin (n + 1)`, inverse to
-`TauCeti.DynkinType.typeADiff`. -/
-private def typeASucc (i : Fin n) : Fin (n + 1) := ⟨(i : ℕ) + 1, by omega⟩
-
-private lemma typeASucc_val (i : Fin n) : (typeASucc i : ℕ) = (i : ℕ) + 1 := rfl
-
-private lemma typeASucc_ne_zero (i : Fin n) : typeASucc i ≠ 0 := by
-  intro h
-  have h' := congrArg Fin.val h
-  rw [typeASucc_val] at h'
-  simp at h'
-
-/-- The enumeration of the ordered pairs of distinct elements of `Fin (n + 1)` by the difference
-`b - a ≠ 0` first and the source `a` second. Composed with `finProdFinEquiv` it puts the simple
-roots at the first `n` indices. -/
-private def typeAPairEquiv (n : ℕ) : TypeAIndex n ≃ Fin n × Fin (n + 1) where
-  toFun p := (typeADiff p, p.val.1)
-  invFun q := ⟨(q.2, q.2 + typeASucc q.1), by
-    intro h
-    refine typeASucc_ne_zero q.1 ?_
-    have h0 : q.2 + 0 = q.2 + typeASucc q.1 := by simpa using h
-    exact (add_left_cancel h0).symm⟩
-  left_inv p := by
-    have h1 := one_le_val_sub p
-    have hx : typeASucc (typeADiff p) = p.val.2 - p.val.1 :=
-      Fin.ext (by rw [typeASucc_val, typeADiff_val]; omega)
-    refine Subtype.ext (Prod.ext rfl ?_)
-    -- Unfold the subtype equivalence to compare its second `Fin (n + 1)` coordinate.
-    change p.val.1 + typeASucc (typeADiff p) = p.val.2
-    rw [hx]
-    abel
-  right_inv q := by
-    refine Prod.ext (Fin.ext ?_) rfl
-    -- Unfold the first coordinate of the product equivalence to compare its natural values.
-    change ((q.2 + typeASucc q.1 - q.2 : Fin (n + 1)) : ℕ) - 1 = (q.1 : ℕ)
-    rw [add_sub_cancel_left, typeASucc_val]
-    omega
-
-/-- The pinned enumeration of the roots of type `Aₙ` by `Fin (n * (n + 1))`. -/
+/-- The pinned enumeration of the roots of type `Aₙ` by `Fin (n * (n + 1))`: by the difference
+`b - a ≠ 0` first and the source `a` second (`finDistinctPairsEquiv`), which puts the simple roots
+at the first `n` indices. -/
 def typeAIndexEquiv (n : ℕ) : TypeAIndex n ≃ Fin (n * (n + 1)) :=
-  (typeAPairEquiv n).trans finProdFinEquiv
+  (finDistinctPairsEquiv (n + 1)).trans finProdFinEquiv
 
 /-- Reflection in the root indexed by `k`, transported to the pinned enumeration. -/
 private def typeAReflectionPerm (n : ℕ) (k : Fin (n * (n + 1))) :
@@ -456,10 +405,11 @@ lemma typeASimpleIndex_injective : Injective (typeASimpleIndex n) :=
       ⟨(⟨i, by omega⟩, ⟨(i : ℕ) + 1, by omega⟩), by simp [Fin.ext_iff]⟩ := by
   have hlt : (i : ℕ) < n + 1 := by omega
   have hlt' : (i : ℕ) + 1 < n + 1 := by omega
-  refine Subtype.ext (Prod.ext ?_ ?_) <;>
+  refine Subtype.ext ?_
+  rw [typeAIndexEquiv, Equiv.symm_trans_apply, finDistinctPairsEquiv_symm_apply_coe]
+  refine Prod.ext ?_ ?_ <;>
     · apply Fin.ext
-      simp [typeAIndexEquiv, typeAPairEquiv, finProdFinEquiv, Fin.divNat, Fin.modNat,
-        typeASimpleIndex, typeASucc_val, Nat.div_eq_of_lt hlt,
+      simp [finProdFinEquiv, Fin.divNat, Fin.modNat, typeASimpleIndex, Nat.div_eq_of_lt hlt,
         Nat.mod_eq_of_lt hlt, Fin.add_def, Nat.mod_eq_of_lt hlt']
 
 private lemma root_typeASimpleIndex_eq (i : Fin n) :

@@ -295,4 +295,34 @@ theorem gradedMk_demushkinWordTwoEven {a f : ℕ} (ha : 2 ∣ a) (hf : 0 < f) (n
   rw [this, gradedMk_mul, gradedMk_mul, gradedMk_mul, gradedMk_pow_mul, gradedMk_pow_mul,
     gradedMk_labuteComm, gradedMk_list_prod_labuteComm, Nat.mul_div_cancel_left b two_pos]
 
+/-- **For `f ≥ 2` the even-rank dyadic word has the class of the `q ≠ 2` word with `q = 2 + a`**:
+the factor `x₃^{2^f}` is a fourth power, hence lies in `λ_2`, so for `n ≥ 2` and `a` even the
+classes in `gr_1` of `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` and of
+`x₁^{2+a} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` agree. -/
+theorem gradedMk_demushkinWordTwoEven_eq_gradedMk_demushkinWordNeTwo {a f : ℕ} (ha : 2 ∣ a)
+    (hf : 2 ≤ f) {n : ℕ} (hn : 2 ≤ n) (x : ℕ → H) :
+    gradedMk 2 H 1 ⟨demushkinWordTwoEven a f n x,
+        demushkinWordTwoEven_mem_pLowerCentralSeries_one ha (by omega) n x⟩ =
+      gradedMk 2 H 1 ⟨demushkinWordNeTwo (2 + a) n x,
+        demushkinWordNeTwo_mem_pLowerCentralSeries_one ((Nat.dvd_add_right dvd_rfl).2 ha) n x⟩ := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  obtain ⟨N, hN⟩ : ∃ N, n / 2 = N + 1 := ⟨n / 2 - 1, by omega⟩
+  -- The factor `x₃^{2^f}` contributes `2^{f-1} • π ξ₃ = 0`.
+  have h2 : (2 ^ (f - 1)) • gradedPow 2 H 0 (gradedMkZero 2 H (x 2)) = 0 := by
+    rw [← Nat.cast_smul_eq_nsmul (ZMod 2), Nat.cast_pow, ZMod.natCast_self, zero_pow (by omega),
+      zero_smul]
+  -- The first commutator of the `q ≠ 2` word is `(x₁, x₂)`, the others are those of the even word.
+  have hsum : ∑ i ∈ Finset.range (n / 2), gradedBracket 2 H 0 0 (gradedMkZero 2 H (x (2 * i)))
+      (gradedMkZero 2 H (x (2 * i + 1))) =
+      gradedBracket 2 H 0 0 (gradedMkZero 2 H (x 0)) (gradedMkZero 2 H (x 1)) +
+        ∑ i ∈ Finset.range (n / 2 - 1), gradedBracket 2 H 0 0 (gradedMkZero 2 H (x (2 * i + 2)))
+          (gradedMkZero 2 H (x (2 * i + 3))) := by
+    rw [hN, Nat.add_sub_cancel, Finset.sum_range_succ']
+    exact (add_comm _ _).trans (congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun i _ ↦ by
+      rw [Nat.mul_add_one, Nat.add_assoc (2 * i) 2 1]))
+  rw [gradedMk_demushkinWordTwoEven ha (by omega),
+    gradedMk_demushkinWordNeTwo ((Nat.dvd_add_right dvd_rfl).2 ha), hsum, h2,
+    Nat.add_div_left a two_pos, add_comm (a / 2) 1]
+  abel
+
 end TauCeti

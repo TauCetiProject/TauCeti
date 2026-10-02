@@ -39,9 +39,12 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction and truncation, as divisibility statements.
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
+* `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
 * `PadicInt.appr_modEq`, `PadicInt.appr_add_modEq`, `PadicInt.appr_mul_modEq`,
   `PadicInt.appr_natCast_modEq`: the truncations are compatible with each other and with the
   ring operations, modulo `p ^ n`.
+* `PadicInt.appr_natCast_pow_of_le`: the truncation of `p ^ m` modulo `p ^ n` is `0` for
+  `n ≤ m`.
 * `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
   exponent is independent of the truncation level, once that level is large enough.
 * `PadicInt.quotientSpanPowEquivZMod`: `toZModPow n` identifies `ℤ_[p] ⧸ (p ^ n)` with
@@ -133,6 +136,12 @@ theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
   rw [map_sub, sub_eq_zero] at h
   rw [h, toZModPow_eq_natCast_appr x n, ZMod.cast_natCast (dvd_pow_self p hn), map_natCast]
 
+/-- The truncation `appr x n` agrees with `x` modulo `p ^ n`: the divisibility form of
+`PadicInt.appr_spec`. -/
+@[simp]
+theorem dvd_sub_appr (x : ℤ_[p]) (n : ℕ) : (p : ℤ_[p]) ^ n ∣ x - x.appr n :=
+  Ideal.mem_span_singleton.mp (appr_spec n x)
+
 /-- A coarser truncation of `x` is a finer truncation of `x` read modulo the coarser
 modulus. -/
 theorem appr_modEq (x : ℤ_[p]) {m n : ℕ} (h : m ≤ n) : x.appr n ≡ x.appr m [MOD p ^ m] := by
@@ -158,6 +167,15 @@ theorem appr_mul_modEq (x y : ℤ_[p]) (n : ℕ) :
 /-- Truncation fixes a natural number modulo `p ^ n`. -/
 theorem appr_natCast_modEq (k n : ℕ) : ((k : ℤ_[p])).appr n ≡ k [MOD p ^ n] := by
   rw [← ZMod.natCast_eq_natCast_iff, ← toZModPow_eq_natCast_appr, map_natCast]
+
+/-- The truncation of `p ^ m` modulo `p ^ n` vanishes when `n ≤ m`. -/
+@[simp]
+theorem appr_natCast_pow_of_le {m n : ℕ} (h : n ≤ m) : ((p : ℤ_[p]) ^ m).appr n = 0 := by
+  have hm := appr_natCast_modEq (p := p) (p ^ m) n
+  rw [Nat.cast_pow] at hm
+  exact Nat.eq_zero_of_dvd_of_lt
+    (Nat.modEq_zero_iff_dvd.mp (hm.trans (Nat.modEq_zero_iff_dvd.mpr (pow_dvd_pow p h))))
+    (appr_lt _ n)
 
 /-- The truncation `toZModPow n` identifies the quotient of `ℤ_[p]` by the ideal `(p ^ n)` with
 `ZMod (p ^ n)`. This is the `p ^ n` analogue of `PadicInt.residueField`. -/

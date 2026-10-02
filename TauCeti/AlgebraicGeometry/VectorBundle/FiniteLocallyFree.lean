@@ -113,6 +113,13 @@ instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsLocallyFree :=
 instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsFinitePresentation :=
   E.property.2
 
+/-- A finite locally free sheaf is of finite type. -/
+instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsFiniteType :=
+  -- Finite presentation implies finite type for sheaves of modules, and instance search does not
+  -- unfold `X.Modules`, so the underlying object is rebound with the type of sheaves of modules.
+  let F : _root_.SheafOfModules X.ringCatSheaf := E.obj
+  inferInstanceAs F.IsFiniteType
+
 /-- A finite locally free sheaf is quasi-coherent. -/
 instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsQuasicoherent :=
   -- Mathlib's instance deriving quasi-coherence from local freeness is stated for sheaves of

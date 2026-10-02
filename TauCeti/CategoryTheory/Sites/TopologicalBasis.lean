@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Coverage
 public import Mathlib.CategoryTheory.Sites.Spaces
+public import Mathlib.Topology.Sheaves.SheafCondition.Sites
 
 /-!
 # The coverage a topological basis induces on `Opens X`
@@ -41,6 +42,9 @@ Mathlib names this construction as an open project in the module docstring of
 * `TauCeti.TopologicalSpace.Opens.isSheaf_iff_isSheafFor_basisCoverage_comp` : the same
   criterion for a presheaf valued in an arbitrary category, which is the form
   `TopCat.Presheaf.IsSheaf` is stated in.
+* `TauCeti.TopologicalSpace.Opens.coverDense_inducedFunctor_subtypeVal` : the inclusion of a
+  basis into `Opens X` is cover-dense, Mathlib's `TopCat.Opens.coverDense_inducedFunctor` for a
+  basis given as a set of opens.
 
 ## Why a coverage and not a pretopology
 
@@ -153,6 +157,13 @@ theorem isSheaf_iff_isSheafFor_basisCoverage_comp (hB : Opens.IsBasis B) {C : Ty
   constructor
   · exact fun h E _ R hR ↦ (isSheaf_iff_isSheafFor_basisCoverage hB _).mp (h E) R hR
   · exact fun h E ↦ (isSheaf_iff_isSheafFor_basisCoverage hB _).mpr fun _ R hR ↦ h E R hR
+
+/-- The inclusion of a basis `B`, given as a set of opens, into `Opens X` is cover-dense for the
+Grothendieck topology of `X`: every open is covered by the members of `B` it contains. This is
+Mathlib's `TopCat.Opens.coverDense_inducedFunctor` for a `Set`-indexed basis. -/
+theorem coverDense_inducedFunctor_subtypeVal (hB : Opens.IsBasis B) :
+    (inducedFunctor (Subtype.val : B → Opens X)).IsCoverDense (Opens.grothendieckTopology X) :=
+  TopCat.Opens.coverDense_inducedFunctor (X := TopCat.of X) (Subtype.range_val ▸ hB)
 
 end TopologicalSpace.Opens
 

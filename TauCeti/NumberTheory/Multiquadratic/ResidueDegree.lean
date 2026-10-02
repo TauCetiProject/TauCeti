@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Frobenius
 import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
+import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
@@ -44,6 +45,8 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
 
 ## Main results
 
+* `TauCeti.Multiquadratic.apply_eq_self_of_mem_inertia`: inertia at an odd prime `p` fixes every
+  square root of an integer prime to `p`.
 * `TauCeti.Multiquadratic.inertia_eq_bot_of_forall_not_dvd` and
   `TauCeti.Multiquadratic.isUnramifiedAt_of_forall_not_dvd`: an odd prime dividing no radicand
   has trivial inertia and is unramified.
@@ -55,8 +58,12 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
   above `p` times their residue degree is `[K : ℚ]`.
 * `TauCeti.Multiquadratic.ncard_primesOver_mul_two_eq_finrank`: when some `dᵢ` is a non-residue,
   there are `[K : ℚ] / 2` primes above `p`.
+* `TauCeti.Multiquadratic.eq_two_pow_sub_of_mul_two_pow_eq_finrank`: under square-class
+  independence of `n` radicands, `g · 2ᵏ = [K : ℚ]` forces `g = 2ⁿ⁻ᵏ`.
 * `TauCeti.Multiquadratic.ncard_primesOver_eq_two_pow_sub_one`: under square-class
   independence of `n` radicands, that number is `2ⁿ⁻¹`.
+* `TauCeti.Multiquadratic.apply_eq_self_of_mem_inertia_of_mod_four_eq_one`: inertia above `2`
+  fixes every square root of an integer that is `1` modulo `4`.
 * `TauCeti.Multiquadratic.inertia_eq_bot_of_forall_mod_four_eq_one` and
   `TauCeti.Multiquadratic.isUnramifiedAt_of_forall_mod_four_eq_one`: `2` has trivial inertia and
   is unramified when every radicand is `1` modulo `4`.
@@ -71,6 +78,8 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
   `TauCeti.Multiquadratic.ncard_primesOver_two_eq_two_pow_sub_one`: when some `dᵢ` is `5`
   modulo `8`, there are `[K : ℚ] / 2` primes above `2`, which is `2ⁿ⁻¹` under square-class
   independence.
+* `TauCeti.Multiquadratic.inertiaDeg_dvd_two`: at every rational prime, ramified or not, the
+  residue degree divides `2`.
 
 ## References
 
@@ -91,42 +100,48 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} {d : ι → ℤ} {r 
 /-! ### Shared unramified-prime facts -/
 
 /-- A number field generated over `ℚ` by square roots of integers is Galois over `ℚ`. -/
-private theorem isGalois_rat [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+theorem isGalois_rat [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) : IsGalois ℚ K :=
   isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) (fun i => by rw [hr i]; simp) htop
 
-/-- Under square-class independence of the radicands, a number `g` with `g * 2 = [K : ℚ]` is
-`2 ^ (n - 1)`, since `[K : ℚ] = 2 ^ n`. -/
-private theorem eq_two_pow_sub_one_of_mul_two_eq_finrank [Finite ι] [Nonempty ι]
+/-- **Reading a prime count off the degree.** Under square-class independence of `n` radicands,
+`[K : ℚ] = 2 ^ n`, so a number `g` with `g * 2 ^ k = [K : ℚ]` is `2 ^ (n - k)`; the equation itself
+forces `k ≤ n`. This is how the decomposition formulas `g · f · e = [K : ℚ]` are solved for the
+number `g` of primes above a rational prime. -/
+theorem eq_two_pow_sub_of_mul_two_pow_eq_finrank [Finite ι]
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
-    {g : ℕ} (h : g * 2 = finrank ℚ K) : g = 2 ^ (Nat.card ι - 1) := by
+    {g k : ℕ} (h : g * 2 ^ k = finrank ℚ K) : g = 2 ^ (Nat.card ι - k) := by
   have hr' (i : ι) : r i ^ 2 = algebraMap ℚ K (d i : ℚ) := by rw [hr i]; simp
   have hdeg := finrank_adjoin_range (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr' hindep
   rw [htop, IntermediateField.finrank_top'] at hdeg
-  rw [hdeg, ← Nat.sub_add_cancel Nat.card_pos, pow_succ] at h
-  exact Nat.eq_of_mul_eq_mul_right two_pos h
+  rw [hdeg] at h
+  -- `g ≠ 0`, so `2 ^ k ≤ 2 ^ n` and `k ≤ n`; then cancel `2 ^ k`.
+  have hg : g ≠ 0 := by rintro rfl; exact (pow_pos two_pos _).ne (by simpa using h)
+  have hk : k ≤ Nat.card ι := by
+    by_contra hlt
+    have h1 : 2 ^ Nat.card ι < 2 ^ k := Nat.pow_lt_pow_right one_lt_two (not_le.mp hlt)
+    have h2 : 2 ^ k ≤ g * 2 ^ k := Nat.le_mul_of_pos_left _ (Nat.pos_of_ne_zero hg)
+    omega
+  rw [← Nat.sub_add_cancel hk, pow_add] at h
+  exact Nat.eq_of_mul_eq_mul_right (pow_pos two_pos k) h
 
 /-! ### The decomposition law at an odd prime -/
 
-/-- **An odd prime dividing no radicand has trivial inertia.** Let `K` be generated over `ℚ` by
-square roots `r i` of integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p` with
-`p ∤ d i` for all `i`. Then the inertia group of `Q` in `Gal(K/ℚ)` is trivial, so `p` is
-unramified in `K`. No squarefreeness of the `d i` is needed. -/
-theorem inertia_eq_bot_of_forall_not_dvd (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
-    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
-    (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.IsPrime]
-    [Q.LiesOver (span {(p : ℤ)})] :
-    Q.inertia (K ≃ₐ[ℚ] K) = ⊥ := by
-  refine (Subgroup.eq_bot_iff_forall _).mpr fun τ hτ => ?_
-  refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
-  rintro _ ⟨i, rfl⟩
-  -- `τ (r i)` is a square root of `d i`, hence `± r i`; rule out the minus sign.
-  have hr' : r i ^ 2 = algebraMap ℚ K (d i : ℚ) := by rw [hr i]; simp
-  have hsq : τ (r i) ^ 2 = r i ^ 2 := by rw [← map_pow, hr', AlgEquiv.commutes]
+/-- **Inertia at an odd prime fixes the square roots of integers prime to it.** Let `Q` be a
+prime of `𝓞 K` above an odd prime `p`, and let `x ∈ K` square to an integer `c` with `p ∤ c`. Then
+every element of the inertia group of `Q` in `Gal(K/ℚ)` fixes `x`. Indeed `τ x = ± x`, and
+`τ x = -x` would put `2 x` in `Q`, hence `p ∣ 2 c`. -/
+theorem apply_eq_self_of_mem_inertia {x : K} {c : ℤ} (hx : x ^ 2 = algebraMap ℤ K c)
+    (hodd : p ≠ 2) (hc : ¬ (p : ℤ) ∣ c) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) :
+    τ x = x := by
+  -- `τ x` is a square root of `c`, hence `± x`; rule out the minus sign.
+  have hx' : x ^ 2 = algebraMap ℚ K (c : ℚ) := by rw [hx]; simp
+  have hsq : τ x ^ 2 = x ^ 2 := by rw [← map_pow, hx', AlgEquiv.commutes]
   refine (eq_or_eq_neg_of_sq_eq_sq _ _ hsq).resolve_right fun hneg => ?_
-  let R : 𝓞 K := integralSqrt (hr i)
+  let R : 𝓞 K := integralSqrt hx
   have hR : τ • R = -R := by
     apply FaithfulSMul.algebraMap_injective (𝓞 K) K
     rw [algebraMap_smul_eq_apply τ R, map_neg, algebraMap_integralSqrt, hneg]
@@ -140,11 +155,25 @@ theorem inertia_eq_bot_of_forall_not_dvd (hr : ∀ i, r i ^ 2 = algebraMap ℤ K
     have h2' : algebraMap ℤ (𝓞 K) 2 ∈ Q := by simpa using h2
     have hdvd : (p : ℤ) ∣ 2 := (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2'
     exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast hdvd))
-  · -- `R ∈ Q` would put `d i = R ^ 2` in `Q`, so `p ∣ d i`.
-    have hd : algebraMap ℤ (𝓞 K) (d i) ∈ Q := by
-      rw [← integralSqrt_sq (hr i), pow_two]
+  · -- `R ∈ Q` would put `c = R ^ 2` in `Q`, so `p ∣ c`.
+    have hc' : algebraMap ℤ (𝓞 K) c ∈ Q := by
+      rw [← integralSqrt_sq hx, pow_two]
       exact Q.mul_mem_left _ hRQ
-    exact hcop i ((Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hd)
+    exact hc ((Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hc')
+
+/-- **An odd prime dividing no radicand has trivial inertia.** Let `K` be generated over `ℚ` by
+square roots `r i` of integers `d i`, and let `Q` be a prime of `𝓞 K` above an odd prime `p` with
+`p ∤ d i` for all `i`. Then the inertia group of `Q` in `Gal(K/ℚ)` is trivial, so `p` is
+unramified in `K`. No squarefreeness of the `d i` is needed. -/
+theorem inertia_eq_bot_of_forall_not_dvd (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
+    (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] :
+    Q.inertia (K ≃ₐ[ℚ] K) = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun τ hτ => ?_
+  refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
+  rintro _ ⟨i, rfl⟩
+  exact apply_eq_self_of_mem_inertia (hr i) hodd (hcop i) Q hτ
 
 /-- An odd prime dividing no radicand is unramified in the multiquadratic field. -/
 theorem isUnramifiedAt_of_forall_not_dvd [Finite ι]
@@ -238,15 +267,38 @@ theorem ncard_primesOver_eq_two_pow_sub_one [Finite ι]
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) (hnr : ∃ i, legendreSym p (d i) = -1) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - 1) := by
-  have : Nonempty ι := let ⟨i, _⟩ := hnr; ⟨i⟩
-  exact eq_two_pow_sub_one_of_mul_two_eq_finrank hr htop hindep
-    (ncard_primesOver_mul_two_eq_finrank hr htop hodd hcop hnr)
+  exact eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep (k := 1)
+    (by rw [pow_one]; exact ncard_primesOver_mul_two_eq_finrank hr htop hodd hcop hnr)
 
 /-! ### The decomposition law at `2`
 
 When every radicand is `1` modulo `4`, the prime `2` is unramified as well, and the dyadic
 Frobenius calculation `isArithFrobAt_eq_one_iff_mod_eight` plays the role of the Legendre symbols:
 the residue degree above `2` is `1` if every `dᵢ` is `1` modulo `8` and `2` otherwise. -/
+
+/-- **Inertia above `2` fixes the square roots of integers that are `1` modulo `4`.** Let `Q` be a
+prime of `𝓞 K` above `2`, and let `x ∈ K` square to an integer `c ≡ 1 (mod 4)`. Then every element
+of the inertia group of `Q` in `Gal(K/ℚ)` fixes `x`. -/
+theorem apply_eq_self_of_mem_inertia_of_mod_four_eq_one {x : K} {c : ℤ}
+    (hx : x ^ 2 = algebraMap ℤ K c) (hc : c % 4 = 1) (Q : Ideal (𝓞 K))
+    [Q.LiesOver (span {(2 : ℤ)})] {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) :
+    τ x = x := by
+  -- `τ x = ± x`; we rule out `τ x = -x`.
+  refine (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq τ hx).resolve_right fun hneg => ?_
+  -- The half-generator `w = (1 + x) / 2` is integral, and `τ • w - w = -x`.
+  let w : 𝓞 K := ⟨(1 + x) / 2, isIntegral_one_add_div_two_of_sq_eq hx hc⟩
+  have hw : algebraMap (𝓞 K) K w = (1 + x) / 2 := RingOfIntegers.map_mk _ _
+  have hwsq : (τ • w - w) ^ 2 = algebraMap ℤ (𝓞 K) c := by
+    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+    rw [map_pow, map_sub, algebraMap_smul_eq_apply, hw,
+      ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K, ← hx]
+    simp only [map_div₀, map_add, map_one, map_ofNat, hneg]
+    ring
+  -- `τ` acts trivially modulo `Q`, so `c = (τ • w - w) ^ 2` lies in `Q`, and `2 ∣ c`.
+  have hmem : algebraMap ℤ (𝓞 K) c ∈ Q :=
+    hwsq ▸ Q.pow_mem_of_mem ((Ideal.mem_inertia.mp hτ) w) 2 two_pos
+  have h2 : (2 : ℤ) ∣ c := (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
+  omega
 
 /-- **`2` has trivial inertia when every radicand is `1` modulo `4`.** Let `K` be generated over
 `ℚ` by square roots `r i` of integers `d i ≡ 1 (mod 4)`, and let `Q` be a prime of `𝓞 K` above
@@ -259,24 +311,7 @@ theorem inertia_eq_bot_of_forall_mod_four_eq_one (hr : ∀ i, r i ^ 2 = algebraM
   refine (Subgroup.eq_bot_iff_forall _).mpr fun τ hτ => ?_
   refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
   rintro _ ⟨i, rfl⟩
-  -- `τ (r i)` is a square root of `d i`, hence `± r i`; rule out the minus sign.
-  have hsq : τ (r i) ^ 2 = r i ^ 2 := by rw [← map_pow, hr i]; simp
-  refine (eq_or_eq_neg_of_sq_eq_sq _ _ hsq).resolve_right fun hneg => ?_
-  -- The half-generator `w = (1 + r i) / 2` is integral, and `τ • w - w = -r i`.
-  let w : 𝓞 K := ⟨(1 + r i) / 2, isIntegral_one_add_div_two_of_sq_eq (hr i) (hd i)⟩
-  have hw : algebraMap (𝓞 K) K w = (1 + r i) / 2 := RingOfIntegers.map_mk _ _
-  have hwsq : (τ • w - w) ^ 2 = algebraMap ℤ (𝓞 K) (d i) := by
-    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-    rw [map_pow, map_sub, algebraMap_smul_eq_apply, hw,
-      ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K, ← hr i]
-    simp only [map_div₀, map_add, map_one, map_ofNat, hneg]
-    ring
-  -- `τ` acts trivially modulo `Q`, so `d i = (τ • w - w) ^ 2` lies in `Q`, and `2 ∣ d i`.
-  have hmem : algebraMap ℤ (𝓞 K) (d i) ∈ Q :=
-    hwsq ▸ Q.pow_mem_of_mem ((Ideal.mem_inertia.mp hτ) w) 2 two_pos
-  have h2 : (2 : ℤ) ∣ d i := (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
-  have := hd i
-  omega
+  exact apply_eq_self_of_mem_inertia_of_mod_four_eq_one (hr i) (hd i) Q hτ
 
 /-- `2` is unramified in the multiquadratic field when every radicand is `1` modulo `4`. -/
 theorem isUnramifiedAt_of_forall_mod_four_eq_one [Finite ι]
@@ -381,8 +416,24 @@ theorem ncard_primesOver_two_eq_two_pow_sub_one [Finite ι]
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (hd : ∀ i, d i % 4 = 1) (h5 : ∃ i, d i % 8 = 5) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = 2 ^ (Nat.card ι - 1) := by
-  have : Nonempty ι := let ⟨i, _⟩ := h5; ⟨i⟩
-  exact eq_two_pow_sub_one_of_mul_two_eq_finrank hr htop hindep
-    (ncard_primesOver_two_mul_two_eq_finrank hr htop hd h5)
+  exact eq_two_pow_sub_of_mul_two_pow_eq_finrank hr htop hindep (k := 1)
+    (by rw [pow_one]; exact ncard_primesOver_two_mul_two_eq_finrank hr htop hd h5)
+
+/-! ### Residue degrees divide two
+
+At any rational prime, ramified or not, the residue degree divides the order of a Frobenius, which
+is an involution. -/
+
+/-- **Residue degrees in a multiquadratic field divide `2`.** Let `K` be generated over `ℚ` by
+square roots of integers. Then every prime of `𝓞 K`, ramified or not and above any rational prime
+`p`, including `p = 2`, has residue degree `1` or `2` over `p`. -/
+theorem inertiaDeg_dvd_two [Finite ι] (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
+    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (Q : Ideal (𝓞 K)) [Q.IsPrime]
+    [Q.LiesOver (span {(p : ℤ)})] : Q.inertiaDeg ℤ ∣ 2 := by
+  have := isGalois_rat hr htop
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
+  exact (Ideal.inertiaDeg_dvd_orderOf Q hσ).trans (orderOf_dvd_of_pow_eq_one
+    (aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
+      (fun i => by rw [hr i]; simp) htop σ))
 
 end TauCeti.Multiquadratic

@@ -13,8 +13,10 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Completion
 The **profinite integers** `ℤ̂`, written `zHat`, form the profinite completion of the additive
 group of `ℤ`, written multiplicatively. The defining copy of `ℤ` is universe-lifted so that
 `zHat.{u}` can live in any universe; this does not change the completed group. This file records
-the group-theoretic facts about `ℤ̂` that the pro-`p` theory uses; the ring structure on `ℤ̂` is
-not treated here.
+the group-theoretic facts about `ℤ̂` that the pro-`p` theory uses, together with the calculus of
+`zHat.lift` (naturality, joint continuity, and its behaviour in the first argument) on which the
+ring structure rests; that ring structure lives on `Additive zHat` in
+`TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring`.
 
 The generator `1 ∈ ℤ` gives the topological generator `zHat.gen`, and the universal property of
 the profinite completion becomes: continuous homomorphisms from `ℤ̂` to a profinite group `P`
@@ -38,6 +40,11 @@ dense, `ℤ̂` is commutative. The identification of the maximal pro-`p` quotien
 * `TauCeti.zHat.hom_ext`, `TauCeti.zHat.existsUnique_lift`: the universal property of `ℤ̂`.
 * `TauCeti.zHat.denseRange_ofInt`, and the `IsMulCommutative zHat` instance: the image of `ℤ`
   is dense, so `ℤ̂` is commutative.
+* `TauCeti.zHat.comp_lift`, `TauCeti.zHat.continuous_lift`: the lift is natural in the target
+  and jointly continuous in the element and the exponent.
+* `TauCeti.zHat.lift_mul_apply`, `TauCeti.zHat.lift_zpow_apply`, `TauCeti.zHat.lift_comm`: the
+  lift is multiplicative on commuting base elements and compatible with powers, and on `ℤ̂`
+  itself it is symmetric.
 
 ## References
 
@@ -50,11 +57,12 @@ namespace TauCeti
 
 open CategoryTheory
 
-universe u v
+universe u v w
 
 /-- The **profinite integers** `ℤ̂`: the profinite completion of a universe lift of the additive
 group of `ℤ`, written multiplicatively. The lift only places the completion in universe `u`.
-This is the profinite group only; its ring structure is not treated here. -/
+This is the profinite group; its ring structure is put on `Additive zHat` in
+`TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring`. -/
 noncomputable abbrev zHat : ProfiniteGrp.{u} :=
   ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (ULift.{u} (Multiplicative ℤ)))
 
@@ -174,6 +182,95 @@ theorem liftEquiv_apply (a : P) : liftEquiv.{u} P a = lift a :=
 @[simp]
 theorem liftEquiv_symm_apply (φ : zHat.{u} →ₜ* P) : (liftEquiv P).symm φ = φ gen :=
   (rfl)
+
+/-- The lift of the generator is the identity of the profinite integers. -/
+theorem lift_gen_eq_id : (lift gen : zHat.{u} →ₜ* zHat.{u}) = ContinuousMonoidHom.id zHat.{u} :=
+  (lift_unique gen _ rfl).symm
+
+/-- The lift of the generator fixes every element. -/
+@[simp]
+theorem lift_gen_apply (x : zHat.{u}) : (lift gen : zHat.{u} →ₜ* zHat.{u}) x = x := by
+  rw [lift_gen_eq_id, ContinuousMonoidHom.coe_id, id]
+
+/-- The lift of `1` is the trivial homomorphism. -/
+theorem lift_one : (lift (1 : P) : zHat.{u} →ₜ* P) = 1 :=
+  (lift_unique 1 1 rfl).symm
+
+/-- The lift of `1` is constant equal to `1`. -/
+@[simp]
+theorem lift_one_apply (x : zHat.{u}) : (lift (1 : P) : zHat.{u} →ₜ* P) x = 1 := by
+  rw [lift_one, ContinuousMonoidHom.coe_one, Pi.one_apply]
+
+section Naturality
+
+variable {Q : Type w} [Group Q] [TopologicalSpace Q] [IsTopologicalGroup Q] [CompactSpace Q]
+  [TotallyDisconnectedSpace Q]
+
+/-- **Naturality of the lift.** A continuous homomorphism `f` between profinite groups carries
+the lift of `a` to the lift of `f a`. -/
+theorem comp_lift (f : P →ₜ* Q) (a : P) : f.comp (lift a : zHat.{u} →ₜ* P) = lift (f a) :=
+  lift_unique (f a) _ (by simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_gen])
+
+/-- A continuous homomorphism between profinite groups commutes with the lift: it carries
+`lift a x` to `lift (f a) x`. -/
+@[simp]
+theorem map_lift (f : P →ₜ* Q) (a : P) (x : zHat.{u}) : f (lift a x) = lift (f a) x := by
+  rw [← comp_lift f a, ContinuousMonoidHom.coe_comp, Function.comp_apply]
+
+end Naturality
+
+/-- **Joint continuity of the lift**: `(a, x) ↦ lift a x` is continuous on `P × ℤ̂`. -/
+theorem continuous_lift : Continuous fun q : P × zHat.{u} ↦ (lift q.1 : zHat.{u} →ₜ* P) q.2 := by
+  refine continuous_iff_forall_continuous_mk.mpr fun U ↦ ?_
+  -- Modulo an open normal subgroup `U` the lift of `a` only depends on the class of `a`, by
+  -- naturality along the quotient map, and the finite quotient `P ⧸ U` is discrete.
+  let π : P →ₜ* P ⧸ U.toSubgroup := ⟨QuotientGroup.mk' U.toSubgroup, QuotientGroup.continuous_mk⟩
+  have h : (fun q : P × zHat.{u} ↦ ((lift q.1 : zHat.{u} →ₜ* P) q.2 : P ⧸ U.toSubgroup)) =
+      (fun r : (P ⧸ U.toSubgroup) × zHat.{u} ↦ (lift r.1 : zHat.{u} →ₜ* P ⧸ U.toSubgroup) r.2) ∘
+        Prod.map π id :=
+    funext fun q ↦ map_lift π q.1 q.2
+  rw [h]
+  exact (continuous_prod_of_discrete_left.mpr fun c ↦ (lift c).continuous).comp
+    (π.continuous.prodMap continuous_id)
+
+/-- The lift is multiplicative on commuting base elements. -/
+@[simp]
+theorem lift_mul_apply (a b : P) (hab : Commute a b) (x : zHat.{u}) :
+    (lift (a * b) : zHat.{u} →ₜ* P) x = lift a x * lift b x :=
+  congrFun (denseRange_ofInt.equalizer (lift (a * b)).continuous
+    ((lift a).continuous.mul (lift b).continuous)
+    (funext fun z ↦ by simp [Function.comp, hab.mul_zpow])) x
+
+/-- The lift of a power of the generator is that power. -/
+theorem lift_gen_zpow_apply (n : ℤ) (x : zHat.{u}) :
+    (lift (gen ^ n) : zHat.{u} →ₜ* zHat.{u}) x = x ^ n := by
+  -- Both sides are continuous in `x` and agree on the integers, where both are `gen ^ (n * m)`.
+  have h (z : Multiplicative ℤ) :
+      (lift (gen ^ n) : zHat.{u} →ₜ* zHat.{u}) (ofInt z) = ofInt z ^ n := by
+    rw [lift_ofInt, ← ofAdd_toAdd z, ofInt_ofAdd, toAdd_ofAdd, ← zpow_mul, ← zpow_mul, mul_comm]
+  exact congrFun (denseRange_ofInt.equalizer (lift (gen ^ n)).continuous (continuous_zpow n)
+    (funext h)) x
+
+/-- The lift of a power is the power of the lift. -/
+@[simp]
+theorem lift_zpow_apply (a : P) (n : ℤ) (x : zHat.{u}) :
+    (lift (a ^ n) : zHat.{u} →ₜ* P) x = lift a x ^ n := by
+  -- Write `a ^ n` as the lift of `a` at `gen ^ n` and move the lift through by naturality.
+  have h : a ^ n = lift a (gen ^ n) := by rw [map_zpow, lift_gen]
+  rw [h, ← map_lift, lift_gen_zpow_apply, map_zpow]
+
+/-- The lift on the profinite integers themselves is symmetric: `lift a b = lift b a`. This is
+the commutativity of the ring product of `Additive zHat`. -/
+theorem lift_comm (a b : zHat.{u}) :
+    (lift a : zHat.{u} →ₜ* zHat.{u}) b = (lift b : zHat.{u} →ₜ* zHat.{u}) a := by
+  -- Both sides are continuous in `a`, the left one by joint continuity, so it suffices to
+  -- compare them at the integers, where both are the power `b ^ n`.
+  have h (z : Multiplicative ℤ) :
+      (lift (ofInt z) : zHat.{u} →ₜ* zHat.{u}) b = (lift b : zHat.{u} →ₜ* zHat.{u}) (ofInt z) := by
+    rw [lift_ofInt, ← ofAdd_toAdd z, ofInt_ofAdd, lift_gen_zpow_apply, toAdd_ofAdd]
+  exact congrFun (denseRange_ofInt.equalizer
+    (continuous_lift.comp (continuous_id.prodMk continuous_const)) (lift b).continuous
+    (funext h)) a
 
 /-- The lift of a topological generator of a profinite group is surjective. -/
 theorem lift_surjective (a : P) (ha : (Subgroup.zpowers a).topologicalClosure = ⊤) :

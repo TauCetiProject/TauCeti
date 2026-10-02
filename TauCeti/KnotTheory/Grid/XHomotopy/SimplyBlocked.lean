@@ -140,7 +140,7 @@ theorem simplyBlockedDifferential_comp_simplyBlockedXHomotopy_add_simplyBlockedX
     G.simplyBlockedDifferential R i ∘ₗ G.simplyBlockedXHomotopy R i k +
         G.simplyBlockedXHomotopy R i k ∘ₗ G.simplyBlockedDifferential R i =
       MvPolynomial.killCompl (σ := {c : Fin n // c ≠ i}) Subtype.val_injective
-          (MvPolynomial.X k + MvPolynomial.X (G.O.columnOfRow (G.X k)) :
+          (MvPolynomial.X k + MvPolynomial.X (G.O.transpose (G.X k)) :
             MvPolynomial (Fin n) R) • LinearMap.id := by
   refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring ?_
   have hx : (Finsupp.single x 1 : GridChainHat R n i) =
@@ -172,7 +172,7 @@ noncomputable def simplyBlockedComplexXHomotopy (i k : Fin n) :
       (MvPolynomial.killCompl (σ := {c : Fin n // c ≠ i}) Subtype.val_injective
           (MvPolynomial.X k : MvPolynomial (Fin n) R) • 𝟙 (G.simplyBlockedComplex R i))
       (MvPolynomial.killCompl (σ := {c : Fin n // c ≠ i}) Subtype.val_injective
-          (MvPolynomial.X (G.O.columnOfRow (G.X k)) : MvPolynomial (Fin n) R) •
+          (MvPolynomial.X (G.O.transpose (G.X k)) : MvPolynomial (Fin n) R) •
         𝟙 (G.simplyBlockedComplex R i)) where
   hom _ _ := eqToHom (G.simplyBlockedComplex_X R i ()) ≫
     ModuleCat.ofHom (G.simplyBlockedXHomotopy R i k) ≫
@@ -215,7 +215,7 @@ theorem nonempty_homotopy_killCompl_X_smul_of_pow_componentPerm_apply (i : Fin n
     obtain ⟨h⟩ := ih
     rw [pow_succ', Equiv.Perm.mul_apply]
     refine ⟨h.trans ((G.simplyBlockedComplexXHomotopy R i _).trans (Homotopy.ofEq ?_)).symm⟩
-    rw [columnOfRow_X_componentPerm]
+    rw [O_transpose_X_componentPerm]
 
 /-- The variables of the columns on the link component of the blocked `O`-marking act by zero on
 the homology of the simply blocked complex. -/

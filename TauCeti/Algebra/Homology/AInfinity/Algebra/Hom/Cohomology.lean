@@ -49,6 +49,8 @@ solely through the boundary it produces.
   `TauCeti.AInfinityHom.cohomologyStrictHom_comp`: the same laws for strict cohomology morphisms.
 * `TauCeti.AInfinityHom.isQuasiIso_id` and `TauCeti.AInfinityHom.IsQuasiIso.comp`: identities are
   quasi-isomorphisms and quasi-isomorphisms compose.
+* `TauCeti.AInfinityHom.IsQuasiIso.of_precomp` and `TauCeti.AInfinityHom.IsQuasiIso.of_postcomp`:
+  quasi-isomorphisms satisfy two out of three.
 * `TauCeti.AInfinityHom.IsQuasiIso.cohomologyStrictHomInv`: a quasi-isomorphism induces an inverse
   strict quasi-isomorphism between its cohomology `A∞` algebras.
 * `TauCeti.AInfinityHom.IsQuasiIso.isQuasiIso_cohomologyStrictHom`: the forward strict
@@ -390,6 +392,18 @@ theorem IsQuasiIso.comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB} (hg : 
     (hf : f.IsQuasiIso) : (g.comp f).IsQuasiIso := by
   rw [IsQuasiIso, cohomologyMap_comp, NonUnitalAlgHom.coe_comp]
   exact Function.Bijective.comp hg hf
+
+/-- Two out of three: if `f` and `g ∘ f` are quasi-isomorphisms, then so is `g`. -/
+theorem IsQuasiIso.of_precomp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
+    (hf : f.IsQuasiIso) (hgf : (g.comp f).IsQuasiIso) : g.IsQuasiIso := by
+  rw [IsQuasiIso, cohomologyMap_comp, NonUnitalAlgHom.coe_comp] at hgf
+  exact (Function.Bijective.of_comp_iff _ hf).1 hgf
+
+/-- Two out of three: if `g` and `g ∘ f` are quasi-isomorphisms, then so is `f`. -/
+theorem IsQuasiIso.of_postcomp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
+    (hg : g.IsQuasiIso) (hgf : (g.comp f).IsQuasiIso) : f.IsQuasiIso := by
+  rw [IsQuasiIso, cohomologyMap_comp, NonUnitalAlgHom.coe_comp] at hgf
+  exact (Function.Bijective.of_comp_iff' hg _).1 hgf
 
 namespace IsQuasiIso
 

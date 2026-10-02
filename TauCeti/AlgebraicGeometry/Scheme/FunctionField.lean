@@ -31,7 +31,9 @@ Weil differentials, the Riemann–Roch theorem of function fields) be applied to
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_toNat_trdeg_functionField`:
   `dim X = trdeg_k k(X)`;
 * `TauCeti.AlgebraicGeometry.isFunctionField_functionField_iff`: `k(X)` is an algebraic
-  function field over `k` if and only if `X` has dimension one.
+  function field over `k` if and only if `X` has dimension one;
+  `isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one` reads the
+  dimension off the codimensions of the points.
 
 ## References
 
@@ -64,7 +66,7 @@ private lemma exists_finiteType_isFractionRing_functionField :
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
   have : Nonempty U := ⟨⟨x, hxU⟩⟩
-  have : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
+  have : Nonempty {x : X // x ∈ (U : Set X)} := ⟨⟨x, hxU⟩⟩
   -- The base ring maps to `Γ(X, U)` through `Γ(Spec k, ⊤)`.
   let φ : k →+* Γ(X, U) :=
     ((X ↘ Spec (.of k)).appLE ⊤ U le_top).hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom
@@ -75,28 +77,16 @@ private lemma exists_finiteType_isFractionRing_functionField :
         ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ le_top) ?_
     exact RingHom.FiniteType.of_surjective _
       (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective
-  have htower : IsScalarTower k Γ(X, U) X.functionField := by
-    apply IsScalarTower.of_algebraMap_eq'
-    ext c
-    have h : (X ↘ Spec (.of k)).appLE ⊤ U le_top ≫ X.germToFunctionField U =
-        (X ↘ Spec (.of k)).appTop ≫ X.germToFunctionField ⊤ := by
-      simp only [Scheme.Hom.appLE, Category.assoc, TopCat.Presheaf.germ_res]
-      -- What remains compares germs on `(X ↘ Spec k) ⁻¹ᵁ ⊤` and on `⊤`, which are the same open
-      -- by definition; rewriting along `Scheme.Hom.preimage_top` would need to transport the
-      -- membership proof inside `germ`.
-      rfl
-    have := congrArg (fun f ↦ f ((Scheme.ΓSpecIso (.of k)).inv c)) h
-    simpa [φ, RingHom.algebraMap_toAlgebra] using this.symm
+  have htower : IsScalarTower k Γ(X, U) X.functionField :=
+    .of_algebraMap_eq' (Scheme.baseRingToFunctionField_eq_comp_appLE k X U)
   refine ⟨Γ(X, U), inferInstance, inferInstance, inferInstance, inferInstance, htower, hft,
     functionField_isFractionRing_of_isAffineOpen X U hU, ?_⟩
   -- The nonempty open `U` of the irreducible space `X` has the dimension of `X`, and `U` is
   -- homeomorphic to `Spec Γ(X, U)`.
-  have hdim := topologicalKrullDim_inter_eq_of_locallyOfFiniteType (X ↘ Spec (.of k))
-    (IrreducibleSpace.isIrreducible_univ X) isClosed_univ U.isOpen ⟨x, trivial, hxU⟩
-  rw [Set.univ_inter] at hdim
-  rw [(Homeomorph.Set.univ X).symm.isHomeomorph.topologicalKrullDim_eq, ← hdim]
-  exact (IsAffineOpen.isoSpec hU).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq.trans
-    (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _)
+  exact (topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
+    (X ↘ Spec (.of k)) U.isOpen.isOpenEmbedding_subtypeVal).symm.trans
+    ((IsAffineOpen.isoSpec hU).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq.trans
+      (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _))
 
 /-- The function field of an integral scheme locally of finite type over a field `k` is
 essentially of finite type over `k`: it is a localization of a finitely generated `k`-algebra. -/
@@ -124,6 +114,19 @@ theorem isFunctionField_functionField_iff :
     IsFunctionField k X.functionField ↔ topologicalKrullDim X = 1 := by
   rw [isFunctionField_iff_trdeg_eq_one, topologicalKrullDim_eq_toNat_trdeg_functionField k,
     Nat.cast_eq_one, Cardinal.toNat_eq_one]
+
+/-- An integral scheme locally of finite type over `k` all of whose points have codimension at
+most one, one of them exactly one, is a curve: its function field is an algebraic function field
+of one variable over `k`. -/
+theorem isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
+    (hX : ∀ y : X, Order.coheight y ≤ 1) {x₀ : X} (hx₀ : Order.coheight x₀ = 1) :
+    IsFunctionField k X.functionField := by
+  refine (isFunctionField_functionField_iff k).mpr (le_antisymm ?_ ?_)
+  · rw [topologicalKrullDim_eq_iSup_coheight]
+    exact iSup_le fun y ↦ by exact_mod_cast hX y
+  · have h := coheight_le_topologicalKrullDim x₀
+    rw [hx₀] at h
+    exact_mod_cast h
 
 end AlgebraicGeometry
 

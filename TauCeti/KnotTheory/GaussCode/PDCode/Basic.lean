@@ -111,10 +111,7 @@ private theorem slotEquiv_fst (sign : ℤˣ) (slot : Fin 4) :
 
 private theorem slotEquiv_snd_opposite (sign : ℤˣ) (slot : Fin 4) :
     (slotEquiv sign (PDCode.oppositeCrossingSlot slot)).2 = !(slotEquiv sign slot).2 := by
-  have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
-    apply Fin.ext
-    exact PDCode.oppositeCrossingSlot_apply slot
-  rw [hopposite]
+  rw [PDCode.oppositeCrossingSlot_apply]
   rcases Int.units_eq_one_or sign with rfl | rfl
   · fin_cases slot <;> simp [slotEquiv, positiveSlotEquiv]
   · have hne : (-1 : ℤˣ) ≠ 1 := by decide
@@ -173,10 +170,7 @@ theorem crossingVisit_oppositeCrossingSlot (D : BasedOrientedGaussCode n) (c : F
   apply D.visitDataEquiv.injective
   simp only [visitDataEquiv_apply, visit_crossingVisit, over_crossingVisit]
   congr 1
-  have hopposite : PDCode.oppositeCrossingSlot slot = slot + 2 := by
-    apply Fin.ext
-    exact PDCode.oppositeCrossingSlot_apply slot
-  rw [hopposite]
+  rw [PDCode.oppositeCrossingSlot_apply]
   fin_cases slot <;> decide
 
 /-- Opposite slots at a crossing have opposite incoming/outgoing directions. -/
@@ -303,15 +297,8 @@ theorem toOrientedPDCode_crossinglessComponents (D : BasedOrientedGaussCode n) :
 not to the empty link. -/
 @[simp]
 theorem toOrientedPDCode_empty :
-    (empty : BasedOrientedGaussCode 0).toOrientedPDCode = orientedPDCodeUnknot true := by
-  calc
-    _ = orientedPDCodeUnlink
-        (empty : BasedOrientedGaussCode 0).toOrientedPDCode.crossinglessComponents :=
-      orientedPDCode_eq_unlink _
-    _ = orientedPDCodeUnlink {true} := by simp
-    _ = orientedPDCodeUnknot true := by
-      simpa only [orientedPDCodeUnknot_crossinglessComponents] using
-        (orientedPDCode_eq_unlink (orientedPDCodeUnknot true)).symm
+    (empty : BasedOrientedGaussCode 0).toOrientedPDCode = OrientedPDCode.unknot true :=
+  OrientedPDCode.unlinkEquiv.symm.injective (by simp)
 
 private theorem toOrientedPDCode_edgePair_outgoing_aux (D : BasedOrientedGaussCode n)
     (i : Fin (2 * n)) :

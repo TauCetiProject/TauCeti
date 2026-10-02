@@ -30,11 +30,11 @@ recovered from its restriction because every character nonnegative on `τ` becom
 are the monomial-embedding topologies of arbitrary finite generating families, so the statement
 involves no choice of coordinates.
 
-Every face of a regular cone is cut out in this way. For a regular cone the image of the face map
-is therefore described intrinsically, as the locus where every monomial of a character vanishing
-on the face is nonzero, and the image of the intersection of two faces is the intersection of
-their images. These open embeddings and their overlaps are the topological input for gluing the
-affine charts of a fan.
+Every face of a lattice-rational cone is cut out in this way. Its face-map image is therefore
+described intrinsically, as the locus where every monomial of a character vanishing on the face
+is nonzero, and the image of the intersection of two faces is the intersection of their images.
+These open embeddings and their overlaps are the topological input for gluing the affine charts
+of a fan.
 
 The same recovery formula makes the face map holomorphic in both directions. Give the charts of
 `σ` and of `τ` the complex structures of extending bases. Every monomial of `σ` pulls back to a
@@ -59,10 +59,11 @@ identifies the chart of the face biholomorphically with an open subset of the ch
   `TauCeti.Toric.isOpenEmbedding_faceAffinePointMap_of_inf_ker_eq`: for a face cut out by a
   character `m` of a finitely generated cone, the face map is an open embedding onto the locus
   where the monomial of `m` does not vanish.
-* `TauCeti.Toric.IsRegularCone.range_faceAffinePointMap`,
-  `TauCeti.Toric.IsRegularCone.isOpenEmbedding_faceAffinePointMap` and
-  `TauCeti.Toric.IsRegularCone.range_faceAffinePointMap_inf`: the same for every face of a regular
-  cone, with an intrinsic description of the image and its behaviour on intersections of faces.
+* `TauCeti.Toric.IsLatticeRational.range_faceAffinePointMap`,
+  `TauCeti.Toric.IsLatticeRational.isOpenEmbedding_faceAffinePointMap` and
+  `TauCeti.Toric.IsLatticeRational.range_faceAffinePointMap_inf`: the same for every face of a
+  lattice-rational cone, with an intrinsic description of the image and its behaviour on
+  intersections of faces.
 * `TauCeti.Toric.contMDiff_faceAffinePointMap`: the face map is holomorphic for the complex
   structures of regular cone coordinates.
 * `TauCeti.Toric.contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq` and
@@ -330,26 +331,26 @@ theorem range_faceAffinePointMap_inf_of_inf_ker_eq (hi : IsIntegralLattice i) (h
   rw [range_faceAffinePointMap_of_inf_ker_eq hi hσ hυσ m₂ h₂] at hxυ
   exact mul_ne_zero hxτ hxυ
 
-/-! ### Faces of regular cones -/
+/-! ### Faces of lattice-rational cones -/
 
-namespace IsRegularCone
+namespace IsLatticeRational
 
 variable (hi : IsIntegralLattice i)
 
-/-- For a face `τ` of a regular cone `σ`, the image of the chart of `τ` in the chart of `σ` is the
-locus where the monomial of every character of the dual semigroup of `σ` vanishing on `τ` is
+/-- For a face `τ` of a lattice-rational cone `σ`, the image of its chart in the chart of `σ` is
+the locus where the monomial of every character of the dual semigroup of `σ` vanishing on `τ` is
 nonzero. -/
-theorem range_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf σ) :
+theorem range_faceAffinePointMap (hσ : IsLatticeRational i σ) (hτσ : τ.IsFaceOf σ) :
     Set.range (faceAffinePointMap hi hτσ) =
       {x | ∀ m : dualSemigroup hi σ, (∀ v ∈ τ, hi.realCharacter m v = 0) →
         x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0} := by
   obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
   exact range_faceAffinePointMap_of_exists_inf_ker_eq hi hσ.fg hτσ ⟨⟨m, hm⟩, hmτ⟩
 
-/-- For a face `τ` of a regular cone `σ`, the face map is an open embedding of the chart of `τ`
-into the chart of `σ`, for the monomial-embedding topologies of arbitrary finite generating
+/-- For a face `τ` of a lattice-rational cone `σ`, the face map is an open embedding of the chart
+of `τ` into the chart of `σ`, for the monomial-embedding topologies of arbitrary finite generating
 families. -/
-theorem isOpenEmbedding_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf σ)
+theorem isOpenEmbedding_faceAffinePointMap (hσ : IsLatticeRational i σ) (hτσ : τ.IsFaceOf σ)
     (g : AddGeneratingFamily (dualSemigroup hi σ) r)
     (h : AddGeneratingFamily (dualSemigroup hi τ) r') :
     @IsOpenEmbedding _ _ (affinePointTopology h) (affinePointTopology g)
@@ -357,9 +358,9 @@ theorem isOpenEmbedding_faceAffinePointMap (hσ : IsRegularCone i σ) (hτσ : �
   obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
   exact isOpenEmbedding_faceAffinePointMap_of_inf_ker_eq hi hσ.fg hτσ ⟨m, hm⟩ hmτ g h
 
-/-- For two faces `τ` and `υ` of a regular cone `σ`, the image of the chart of `τ ⊓ υ` in the
-chart of `σ` is the intersection of the images of the charts of `τ` and of `υ`. -/
-theorem range_faceAffinePointMap_inf (hσ : IsRegularCone i σ) (hτσ : τ.IsFaceOf σ)
+/-- For two faces `τ` and `υ` of a lattice-rational cone `σ`, the image of the chart of `τ ⊓ υ`
+in the chart of `σ` is the intersection of the images of the charts of `τ` and of `υ`. -/
+theorem range_faceAffinePointMap_inf (hσ : IsLatticeRational i σ) (hτσ : τ.IsFaceOf σ)
     (hυσ : υ.IsFaceOf σ) :
     Set.range (faceAffinePointMap hi (hτσ.inf_left hυσ)) =
       Set.range (faceAffinePointMap hi hτσ) ∩ Set.range (faceAffinePointMap hi hυσ) := by
@@ -367,7 +368,7 @@ theorem range_faceAffinePointMap_inf (hσ : IsRegularCone i σ) (hτσ : τ.IsFa
   obtain ⟨m₂, hm₂, h₂⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hυσ
   exact range_faceAffinePointMap_inf_of_inf_ker_eq hi hσ.fg hτσ hυσ ⟨m₁, hm₁⟩ h₁ ⟨m₂, hm₂⟩ h₂
 
-end IsRegularCone
+end IsLatticeRational
 
 /-! ### Holomorphy -/
 
@@ -452,7 +453,7 @@ theorem contMDiffOn_faceAffinePointMap_comp_iff (hσ : IsRegularCone i σ) (hτ�
     let _ := coneChartedSpace hi (hσ.toIsToricCone.of_isFaceOf hτσ) hB' κ' h
     ContMDiffOn I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (faceAffinePointMap hi hτσ ∘ f) t ↔
       ContMDiffOn I 𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)) n f t := by
-  obtain ⟨m, hm, hmτ⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
+  obtain ⟨m, hm, hmτ⟩ := hσ.rational.exists_mem_dualSemigroup_inf_ker_eq hi hτσ
   exact contMDiffOn_faceAffinePointMap_comp_iff_of_inf_ker_eq hi hτσ hσ.toIsToricCone hB κ g
     hB' κ' h ⟨m, hm⟩ hmτ
 
@@ -477,7 +478,7 @@ noncomputable def faceAffinePointPartialDiffeomorph (hσ : IsRegularCone i σ)
   let hτ := hσ.toIsToricCone.of_isFaceOf hτσ
   let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
   let _ := coneChartedSpace hi hτ hB' κ' h
-  let e := (hσ.isOpenEmbedding_faceAffinePointMap hi hτσ g h).toOpenPartialHomeomorph
+  let e := (hσ.rational.isOpenEmbedding_faceAffinePointMap hi hτσ g h).toOpenPartialHomeomorph
     (faceAffinePointMap hi hτσ)
   exact
     { toPartialEquiv := e.toPartialEquiv

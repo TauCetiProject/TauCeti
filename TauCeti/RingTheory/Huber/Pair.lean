@@ -263,8 +263,7 @@ noncomputable def quotient (S : Pair A) (J : Ideal A) : Pair (A ⧸ J) where
       rintro x hx
       obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
       exact mem_powerBoundedSubring.mpr <|
-        (S.isRingOfIntegralElements.isPowerBounded_of_mem ha).map_of_isOpenMap
-          continuous_quotient_mk'.continuousAt (QuotientRing.isOpenMap_coe J)
+        (S.isRingOfIntegralElements.isPowerBounded_of_mem ha).quotientMk J
     exact isRingOfIntegralElements_integralClosure hR_open hR_power
 
 /-- The plus ring of the quotient pair is the integral closure of the image plus ring. -/

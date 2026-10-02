@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 import Mathlib.Data.Nat.Choose.Dvd
+import TauCeti.Topology.Algebra.Group.Heisenberg
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
 
 /-!
@@ -123,10 +124,6 @@ section Heisenberg
 /-- The Heisenberg group over `𝔽_p` in the universe of the generating type. -/
 private abbrev HeisenbergLift (p : ℕ) : Type u := ULift.{u} (HeisenbergGroup (ZMod p))
 
-private instance : TopologicalSpace (HeisenbergLift.{u} p) := ⊥
-
-private instance : DiscreteTopology (HeisenbergLift.{u} p) := ⟨rfl⟩
-
 private theorem isProP_heisenbergLift : IsProP p (HeisenbergLift.{u} p) :=
   ((HeisenbergGroup.isPGroup_zmod p).of_equiv MulEquiv.ulift.symm).isProP
 
@@ -167,8 +164,6 @@ private theorem heisenbergHom_y (g : freeProP p X) :
 /-- On the lifted Heisenberg group, `λ_1` lies on the `z`-axis. -/
 private theorem down_x_eq_zero_of_mem_pLowerCentralSeries_one {a : HeisenbergLift.{u} p}
     (ha : a ∈ pLowerCentralSeries p (HeisenbergLift.{u} p) 1) : a.down.x = 0 ∧ a.down.y = 0 := by
-  let : TopologicalSpace (HeisenbergGroup (ZMod p)) := ⊥
-  have : DiscreteTopology (HeisenbergGroup (ZMod p)) := ⟨rfl⟩
   let e : HeisenbergLift.{u} p ≃* HeisenbergGroup (ZMod p) := MulEquiv.ulift
   have h : e a ∈ (⊤ : Subgroup (HeisenbergGroup (ZMod p))).pLowerCentralSeries p 1 := by
     rw [← pLowerCentralSeries_eq_of_discreteTopology,
@@ -616,6 +611,21 @@ theorem degreeOneForm_injective_of_two (hp : p = 2) :
     rw [Nat.choose_self, one_nsmul] at h₁ h₂
     exact h₁.symm.trans h₂
   · rw [← degreeOneForm_dualBasis_of_lt ρ₁ hij, ← degreeOneForm_dualBasis_of_lt ρ₂ hij, h]
+
+/-- **The degree-one form of a class without `p`-power part is alternating**, for every `p`
+including `p = 2`: such a class is a combination of bracket classes `[⟦x_i⟧, ⟦x_j⟧]`, on which
+`B(χ, χ) = χ x_i · χ x_j - χ x_j · χ x_i = 0`. -/
+theorem isAlt_degreeOneForm_of_repr_inl_eq_zero (ρ : gradedPiece p (freeProP p X) 1)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) : (degreeOneForm ρ).IsAlt := by
+  classical
+  cases nonempty_fintype X
+  intro χ
+  rw [← (degreeOneBasis p X).sum_repr ρ, map_sum, LinearMap.sum_apply, LinearMap.sum_apply]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  rcases k with i | ⟨⟨i, j⟩, hij⟩
+  · rw [hc, zero_smul, map_zero, LinearMap.zero_apply, LinearMap.zero_apply]
+  · rw [map_smul, LinearMap.smul_apply, LinearMap.smul_apply, degreeOneBasis_apply,
+      degreeOneFamily_inr, degreeOneForm_gradedBracket_gradedMkZero, mul_comm, sub_self, smul_zero]
 
 end Coordinates
 

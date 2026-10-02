@@ -11,9 +11,9 @@ public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Normal.Basic
 # Finiteness of the normal-subgroup joint-weight action
 
 In a finite-dimensional representation, the characters of a normal subgroup with nonzero joint
-weight space form a finite type by `finite_nonzeroJointWeights`. The ambient group therefore acts
-on a finite set of nonzero joint weights, so the kernel of this permutation action has finite
-index. Each element of that kernel preserves every nonzero joint weight space by
+weight space form a finite type by `MonoidHom.finite_nonzeroJointWeights`. The ambient group
+therefore acts on a finite set of nonzero joint weights, so the kernel of this permutation action
+has finite index. Each element of that kernel preserves every nonzero joint weight space by
 `map_iInf_eigenspace_unitHom_eq_self_of_mem_ker_nonzeroJointWeightAction`.
 
 This is the finite-action bridge in the Lie--Kolchin argument. The remaining connectedness step is
@@ -46,7 +46,7 @@ abbrev NonzeroJointWeight (N : Subgroup G) (ρ : G →* Module.End K V) :=
 /-- A finite-dimensional representation has only finitely many nonzero joint weights. -/
 instance instFiniteNonzeroJointWeight [FiniteDimensional K V]
     (N : Subgroup G) (ρ : G →* Module.End K V) : Finite (NonzeroJointWeight N ρ) :=
-  finite_nonzeroJointWeights (ρ.comp N.subtype)
+  (ρ.comp N.subtype).finite_nonzeroJointWeights
 
 /-- The kernel of the permutation action on nonzero normal-subgroup weights has finite index in
 the ambient group. -/

@@ -30,6 +30,7 @@ monoid is arbitrary.
 
 ## Main results
 
+* `TauCeti.apply_div_pow_eq_one`: if `σ` fixes `αⁿ`, then `σ α / α` is an `n`-th root of unity.
 * `MonoidHom.algebraMap_kummerCharacter`: its value at `σ`, read in `L`, is `σ α / α`.
 * `MonoidHom.apply_eq_algebraMap_kummerCharacter_mul`: `σ` moves `α` by its value.
 * `MonoidHom.kummerCharacter_mul`: it is multiplicative in `α`.
@@ -44,6 +45,16 @@ monoid is arbitrary.
 
 public section
 
+namespace TauCeti
+
+/-- If `σ` fixes `α ^ n` for a nonzero `α`, then `σ α / α` is an `n`-th root of unity. -/
+theorem apply_div_pow_eq_one {M S : Type*} [CommGroupWithZero M] [FunLike S M M]
+    [MonoidHomClass S M M] {σ : S} {α : M} {n : ℕ} (hα : α ≠ 0) (h : σ (α ^ n) = α ^ n) :
+    (σ α / α) ^ n = 1 := by
+  rw [div_pow, ← map_pow, h, div_self (pow_ne_zero _ hα)]
+
+end TauCeti
+
 namespace MonoidHom
 
 variable {F L G : Type*} [Field F] [Field L] [Algebra F L] [IsIntegrallyClosedIn F L] [Monoid G]
@@ -52,8 +63,7 @@ variable {F L G : Type*} [Field F] [Field L] [Algebra F L] [IsIntegrallyClosedIn
 -- `σ α / α` as an `n`-th root of unity of `L`.
 private noncomputable def ratio {α : Lˣ} (hα : ∀ σ, ρ σ ((α : L) ^ n) = (α : L) ^ n) (σ : G) :
     rootsOfUnity n L :=
-  rootsOfUnity.mkOfPowEq (ρ σ α / α) <| by
-    rw [div_pow, ← map_pow, hα, div_self (pow_ne_zero _ α.ne_zero)]
+  rootsOfUnity.mkOfPowEq (ρ σ α / α) (TauCeti.apply_div_pow_eq_one α.ne_zero (hα σ))
 
 omit [IsIntegrallyClosedIn F L] in
 @[simp]

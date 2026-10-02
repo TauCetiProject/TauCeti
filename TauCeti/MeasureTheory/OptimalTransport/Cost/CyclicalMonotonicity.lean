@@ -31,6 +31,8 @@ require additional hypotheses.
 ## Main statements
 
 * `TauCeti.IsCyclicallyMonotone` — finite `c`-cyclical monotonicity of a set of pairs;
+* `TauCeti.isCyclicallyMonotone_add_add_iff` — adding a split cost `a x + b y` does not change
+  the cyclically monotone sets;
 * `TauCeti.isCyclicallyMonotone_ofReal_iff` — for a nonnegative real cost, the property is the
   same for the cost and for its image in `ℝ≥0∞`;
 * `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support` — the support of an optimal coupling
@@ -121,6 +123,25 @@ theorem isCyclicallyMonotone_empty [Preorder M] (c : X × Y → M) :
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp
     · exact absurd (hmem ⟨0, hn⟩) (Set.notMem_empty _)
+
+section Split
+
+variable [LE M] [AddRightMono M] [AddRightReflectLE M]
+
+/-- **Cyclical monotonicity is insensitive to split costs.** Adding a function of the source
+alone and a function of the target alone to the cost does not change which sets are cyclically
+monotone: both extra terms contribute the same total to the diagonal and to any rearrangement of
+the targets. -/
+@[simp]
+theorem isCyclicallyMonotone_add_add_iff (c : X × Y → M) (a : X → M) (b : Y → M)
+    {S : Set (X × Y)} :
+    IsCyclicallyMonotone (fun p => c p + a p.1 + b p.2) S ↔ IsCyclicallyMonotone c S := by
+  simp only [isCyclicallyMonotone_iff]
+  refine forall₃_congr fun n x y => forall_congr' fun _ => forall_congr' fun σ => ?_
+  simp only [Finset.sum_add_distrib, Equiv.sum_comp σ fun i => b (y i)]
+  rw [add_le_add_iff_right, add_le_add_iff_right]
+
+end Split
 
 /-- For a nonnegative real cost, cyclical monotonicity is the same condition for the cost and for
 its image in `ℝ≥0∞`, since `ENNReal.ofReal` is additive and order-reflecting on nonnegative

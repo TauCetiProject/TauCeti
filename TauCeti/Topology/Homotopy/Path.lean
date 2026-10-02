@@ -46,6 +46,14 @@ subdivision; `IsPathHomotopyTrivial`, the property of a set that paths in it wit
 are homotopic in the ambient space; and the pasting lemma
 `Path.Homotopic.trans_of_subpath_trans`, which assembles homotopies over the segments of a
 partition into a homotopy of the whole paths.
+
+`Path.trans_apply_of_le` and `Path.trans_apply_of_ge` express a value of a concatenation as a
+value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
+values of the path on an interval containing its endpoints. They are used by the gluing
+construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
+
+The path-homotopy quotient API also records that reversing twice is the identity and that the
+reverse of the constant class is constant.
 -/
 
 public section
@@ -84,6 +92,33 @@ theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val) (hmem : �
 theorem map_refl {Y : Type*} [TopologicalSpace Y] {f : X → Y} (hf : Continuous f) (a : X) :
     (Path.refl a).map hf = Path.refl (f a) :=
   rfl
+
+/-- The value of `γ.trans δ` at a parameter in the first half is a value of `γ`. -/
+theorem trans_apply_of_le {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
+    (hu : (u : ℝ) ≤ 1 / 2) (v : I) (hv : (v : ℝ) = 2 * u) : γ.trans δ u = γ v := by
+  rw [trans_apply]
+  split_ifs
+  exact congrArg γ (Subtype.ext hv.symm)
+
+/-- The value of `γ.trans δ` at a parameter in the second half is a value of `δ`. -/
+theorem trans_apply_of_ge {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
+    (hu : 1 / 2 ≤ (u : ℝ)) (v : I) (hv : (v : ℝ) = 2 * u - 1) : γ.trans δ u = δ v := by
+  rw [trans_apply]
+  split_ifs with h
+  · have hu' : (u : ℝ) = 1 / 2 := le_antisymm h hu
+    have hv_zero : v = 0 := Subtype.ext (by rw [hv, hu']; norm_num)
+    rw [hv_zero, δ.source]
+    convert γ.target using 2
+    exact Subtype.ext (by norm_num [hu'])
+  · exact congrArg δ (Subtype.ext hv.symm)
+
+/-- A subpath of `γ` between two parameters of an interval that `γ` maps into `V` lies in `V`. -/
+theorem subpath_apply_mem {x y : X} {γ : Path x y} {V : Set X} {lo hi : I}
+    (hγ : ∀ t ∈ Icc lo hi, γ t ∈ V) {a b : I} (ha : a ∈ Icc lo hi) (hb : b ∈ Icc lo hi) (t : I) :
+    γ.subpath a b t ∈ V := by
+  obtain ⟨s, hs, hst⟩ : γ.subpath a b t ∈ γ '' uIcc a b :=
+    range_subpath γ a b ▸ mem_range_self t
+  exact hst ▸ hγ s (uIcc_subset_Icc ha hb hs)
 
 /-- If the extended path stays inside `U` throughout `[t₀, t₁]`, then the truncated subpath has
 range in `U`. -/
@@ -253,6 +288,17 @@ namespace Path
 variable {X : Type*} [TopologicalSpace X] {x y : X}
 
 namespace Homotopic.Quotient
+
+/-- Reversing a path-homotopy class twice recovers the original class. -/
+@[simp]
+theorem symm_symm {x₀ x₁ : X} (γ : Homotopic.Quotient x₀ x₁) : γ.symm.symm = γ := by
+  induction γ using Quotient.ind with
+  | mk γ => exact congrArg mk (Path.symm_symm γ)
+
+/-- The reverse of the constant path-homotopy class is the constant class. -/
+@[simp]
+theorem symm_refl (x : X) : (refl x).symm = refl x := by
+  rw [← mk_refl, ← mk_symm, Path.refl_symm, mk_refl]
 
 /-- The quotient topology on path-homotopy classes. This instance is load-bearing:
 `Path.Homotopic.Quotient` is a `def` over `Quotient`, and instance search does not unfold it to

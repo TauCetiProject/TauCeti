@@ -47,9 +47,9 @@ central simple algebras is not made here.
 `relBrLevelEquiv` compares with Mathlib's `groupCohomology`, whose comparison with the explicit
 model, `TauCeti.ContCohomology.explicitH2IsoGroupCohomology`, asks for the group and the module in
 `Type`; the fields `K` and `L` of the relative statements therefore live in `Type`, as do those of
-`TauCeti.ClassFieldTheory.unramifiedInv`. The level `galoisOpenNormalSubgroup K L σ` is defined in
-this file so that its underlying subgroup is the fixing subgroup of `σ(L)` by definition, which is
-what lets `relBrLevelEquiv` pass between the two descriptions of the same quotient and invariants.
+`TauCeti.ClassFieldTheory.unramifiedInv`. The level `TauCeti.galoisOpenNormalSubgroup K L σ` has
+underlying subgroup the fixing subgroup of `σ(L)` by definition, which is what lets
+`relBrLevelEquiv` pass between the two descriptions of the same quotient and invariants.
 
 ## Main definitions
 
@@ -215,19 +215,6 @@ section Relative
 variable (K : Type) [Field K] (L : Type) [Field L] [Algebra K L] [FiniteDimensional K L]
   [Normal K L] (σ : L →ₐ[K] SeparableClosure K)
 
-/-- **The level of a finite normal extension**: the subgroup `Gal(Kˢ/σ(L))` of automorphisms of
-`Kˢ` fixing `σ(L)`, an open normal subgroup of `Gal(Kˢ/K)` because `L/K` is finite and normal. -/
-def galoisOpenNormalSubgroup : OpenNormalSubgroup (AbsoluteGaloisGroup K) where
-  toSubgroup := σ.fieldRange.fixingSubgroup
-  isOpen' := isOpen_fixingSubgroup_fieldRange K L σ
-  isNormal' := inferInstance
-
-/-- The subgroup underlying `galoisOpenNormalSubgroup K L σ` is the fixing subgroup of `σ(L)`. -/
-@[simp]
-theorem galoisOpenNormalSubgroup_toSubgroup :
-    (galoisOpenNormalSubgroup K L σ).toSubgroup = σ.fieldRange.fixingSubgroup :=
-  (rfl)
-
 /-- **The relative Brauer group `H²(Gal(L/K), Lˣ)` is the level of `Gal(Kˢ/σ(L))`**: Mathlib's
 group cohomology of `Lˣ` is carried by `quotientFixingSubgroupFieldRangeEquiv` and
 `TauCeti.embeddedUnitsEquivInvariants` to that of `((Kˢ)ˣ)^U` over `Gal(Kˢ/K) ⧸ U`, for
@@ -284,21 +271,7 @@ theorem exists_relBrInfl_eq (x : Br K) :
       (y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2),
       relBrInfl K E E.val y = x := by
   obtain ⟨U, y, rfl⟩ := exists_brLevelInfl_eq x
-  -- The fixed field `E` of `U` is finite Galois over `K`, and `U` is the subgroup fixing it.
-  obtain ⟨E, hE⟩ : ∃ E : IntermediateField K (SeparableClosure K),
-      E.fixingSubgroup = U.toSubgroup :=
-    ⟨_, InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩⟩
-  have : FiniteDimensional K E := by
-    rw [← InfiniteGalois.isOpen_iff_finite, hE]
-    exact U.isOpen
-  have : IsGalois K E := by
-    rw [← InfiniteGalois.normal_iff_isGalois, hE]
-    infer_instance
-  have hU : galoisOpenNormalSubgroup K E E.val = U := by
-    refine OpenNormalSubgroup.toSubgroup_injective ?_
-    dsimp only
-    rw [galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val, hE]
-  subst hU
+  obtain ⟨E, _, _, rfl⟩ := exists_galoisOpenNormalSubgroup_eq U
   exact ⟨E, inferInstance, inferInstance, _, relBrInfl_relBrLevelEquiv_symm K E E.val y⟩
 
 end Relative
