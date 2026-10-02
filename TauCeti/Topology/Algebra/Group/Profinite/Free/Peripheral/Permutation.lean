@@ -44,6 +44,7 @@ so it is peripheral for the transposition of the first two classes, with exponen
 
 ## Main results
 
+* `TauCeti.Peripheral.isPeripheralPermAut_iff`: the predicate on the basis elements and the cusp.
 * `TauCeti.Peripheral.IsPeripheralPermAut.mul`, `TauCeti.Peripheral.IsPeripheralPermAut.inv`: the
   data of a composite and of an inverse.
 * `TauCeti.Peripheral.IsPeripheralPermAut.unique`: in rank at least two the permutation and the
@@ -52,7 +53,8 @@ so it is peripheral for the transposition of the first two classes, with exponen
   characterized by the predicate, and its kernel is the exponent-one peripheral part.
 * `TauCeti.Peripheral.exists_isPeripheralPermAut_swap_rank_one`: the data are not determined in
   rank one.
-* `TauCeti.Peripheral.exists_rotation`: the rotation of the peripheral tuple.
+* `TauCeti.Peripheral.exists_rotation`, `TauCeti.Peripheral.exists_rotation_two`: the rotation of
+  the peripheral tuple, and its rank-two case `x_0 ↦ x_1 ↦ z ↦ x_0`.
 * `TauCeti.Peripheral.exists_swap_two`: the rank-two swap.
 
 ## References
@@ -82,11 +84,21 @@ def IsPeripheralPermAut (hF : IsProP p F) (x : Fin r → F) (σ : Equiv.Perm (Fi
     (u : ℤ_[p]ˣ) (φ : ContinuousAut F) : Prop :=
   ∀ i : Fin (r + 1), IsConj (hF.padicPow (peripheralTuple x (σ i)) u) (φ (peripheralTuple x i))
 
+/-- An automorphism is peripheral for `σ` with exponent `u` exactly when it carries each `x_i`
+to a conjugate of `t_{σ i} ^ u` and the cusp to a conjugate of `t_{σ r} ^ u`. -/
+theorem isPeripheralPermAut_iff (hF : IsProP p F) (x : Fin r → F) (σ : Equiv.Perm (Fin (r + 1)))
+    (u : ℤ_[p]ˣ) (φ : ContinuousAut F) :
+    IsPeripheralPermAut hF x σ u φ ↔
+      (∀ i, IsConj (hF.padicPow (peripheralTuple x (σ i.castSucc)) u) (φ (x i))) ∧
+        IsConj (hF.padicPow (peripheralTuple x (σ (Fin.last r))) u) (φ (cusp x)) := by
+  rw [IsPeripheralPermAut, Fin.forall_fin_succ']
+  simp only [peripheralTuple_castSucc, peripheralTuple_last]
+
 /-- For the trivial permutation, the predicate is peripherality of exponent `u`. -/
 @[simp]
 theorem isPeripheralPermAut_one_iff (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ)
     (φ : ContinuousAut F) : IsPeripheralPermAut hF x 1 u φ ↔ IsPeripheralAut hF x u φ := by
-  rw [isPeripheralAut_iff, IsPeripheralPermAut, Fin.forall_fin_succ']
+  rw [isPeripheralAut_iff, isPeripheralPermAut_iff]
   simp only [Equiv.Perm.one_apply, peripheralTuple_castSucc, peripheralTuple_last]
 
 /-- An automorphism permuting the peripheral tuple exactly, `t_i ↦ t_{σ i}`, is peripheral for
@@ -315,6 +327,21 @@ theorem exists_rotation (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :
   | cast j =>
     rw [peripheralTuple_castSucc, ← Function.comp_apply (f := φ), hx, finRotate_apply,
       Fin.coeSucc_eq_succ]
+
+/-- **The rank-two rotation.** In rank two some continuous automorphism cycles the peripheral
+tuple `x_0 ↦ x_1 ↦ z ↦ x_0`, where `z = (x_0 x_1)⁻¹` is the cusp, so it is peripheral for the
+three-cycle `finRotate 3` with exponent one. -/
+theorem exists_rotation_two (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin 2)) :
+    ∃ φ : ContinuousAut F, φ (basis e 0) = basis e 1 ∧ φ (basis e 1) = cusp (basis e) ∧
+      φ (cusp (basis e)) = basis e 0 ∧ IsPeripheralPermAut hF (basis e) (finRotate 3) 1 φ := by
+  obtain ⟨φ, h, hφ⟩ := exists_rotation hF e
+  have ht0 : peripheralTuple (basis e) 0 = basis e 0 := peripheralTuple_castSucc _ 0
+  have ht1 : peripheralTuple (basis e) 1 = basis e 1 := peripheralTuple_castSucc _ 1
+  have ht2 : peripheralTuple (basis e) 2 = cusp (basis e) := peripheralTuple_last _
+  refine ⟨φ, ?_, ?_, ?_, hφ⟩
+  · simpa only [ht0, ht1, show finRotate (2 + 1) 0 = 1 from rfl] using h 0
+  · simpa only [ht1, ht2, show finRotate (2 + 1) 1 = 2 from rfl] using h 1
+  · simpa only [ht0, ht2, show finRotate (2 + 1) 2 = 0 from rfl] using h 2
 
 /-- **The rank-two swap.** In rank two some continuous automorphism exchanges the two basis
 elements. It sends the cusp `z = (x_0 x_1)⁻¹` to `(x_1 x_0)⁻¹ = x_0⁻¹ * z * x_0`, so it is
