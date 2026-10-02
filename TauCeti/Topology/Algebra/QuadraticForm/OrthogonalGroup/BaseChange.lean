@@ -39,7 +39,7 @@ universe u v w
 variable {K : Type u} {L : Type v} {V : Type w}
   [CommRing K] [CommRing L] [Algebra K L]
   [TopologicalSpace K] [TopologicalSpace L]
-  [AddCommGroup V] [Module K V] [ContinuousMul (Module.End K V)]
+  [AddCommGroup V] [Module K V]
   [Invertible (2 : K)]
 
 /-- Extension of scalars is continuous on orthogonal groups when the scalar homomorphism is

@@ -61,7 +61,7 @@ universe u v w
 variable {K : Type u} {L : Type v} {V : Type w}
   [CommSemiring K] [CommSemiring L] [Algebra K L]
   [TopologicalSpace K] [TopologicalSpace L]
-  [AddCommMonoid V] [Module K V] [ContinuousMul (Module.End K V)]
+  [AddCommMonoid V] [Module K V]
 
 /-- Extension of scalars is continuous on general linear groups in their forward-and-inverse
 topologies, provided the scalar homomorphism is continuous. -/
@@ -74,7 +74,7 @@ theorem continuous_baseChange (hKL : Continuous (algebraMap K L)) :
         TauCeti.continuous_linearEquiv_toLinearMap).congr fun e =>
           (LinearEquiv.coe_baseChange K L V V e).symm
   · have h := (LinearMap.continuous_baseChange (V := V) hKL).comp
-        (TauCeti.continuous_linearEquiv_toLinearMap.comp continuous_inv)
+        (TauCeti.continuous_linearEquiv_iff.mp continuous_id).2
     refine h.congr fun e => ?_
     exact congrArg LinearEquiv.toLinearMap (LinearEquiv.baseChange_inv K L V e).symm
 
