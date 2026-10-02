@@ -44,8 +44,8 @@ attribute [local instance] Subgroup.fintypeOfFinite
 
 /-- The inductive step: restriction preserves the cup product in bidegree `(p, q + 1)` if it does
 in bidegree `(p, q)` for the upward dimension shift of the second factor. -/
-private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hp : 0 ≤ p)
-    (hq : 0 ≤ q) (h : p + q = r) (x : tateCohomology M p)
+private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hq : 0 ≤ q)
+    (h : p + q = r) (x : tateCohomology M p)
     (ih : ∀ y : tateCohomology (dimensionShiftUp N) q,
       res (M ⊗ dimensionShiftUp N) H r (cup M (dimensionShiftUp N) p q r h x y) =
         cup (Rep.res H.subtype M) (Rep.res H.subtype (dimensionShiftUp N)) p q r h
@@ -66,8 +66,8 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   -- On the left, `x ∪ δ y' = (-1)^p δ (x ∪ y')`, and restriction commutes with `δ` and, by
   -- hypothesis, with `x ∪ y'`.
   rw [cup_dimensionShiftUpIso_hom M N hq h rfl, map_zsmul_unit, tensorDimensionShiftUpIso_hom]
-  have hL := congr($(δ_comp_res hMD H (by omega : -1 ≤ r)) (cup M (dimensionShiftUp N) p q r h x y))
-  have hR := congr($(δ_comp_res hD H (by omega : -1 ≤ q)) y)
+  have hL := congr($(δ_comp_res hMD H r) (cup M (dimensionShiftUp N) p q r h x y))
+  have hR := congr($(δ_comp_res hD H q) y)
   simp only [ModuleCat.comp_apply] at hL hR
   refine (congrArg (p.negOnePow • ·) (hL.trans (congrArg _ (ih y)))).trans ?_
   -- On the right, restriction commutes with `δ`.
@@ -97,6 +97,6 @@ theorem cup_res_of_nonneg (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hp : 0
       exact cup_posRes_zero_right M N H n x y
   | succ q hq ih =>
     obtain rfl : r = p + q + 1 := by omega
-    exact cup_res_add_one M N H hp hq rfl x (ih (dimensionShiftUp N) rfl) y
+    exact cup_res_add_one M N H hq rfl x (ih (dimensionShiftUp N) rfl) y
 
 end TauCeti.TateCohomology
