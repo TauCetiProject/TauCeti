@@ -352,6 +352,27 @@ theorem exists_ne_zero_span_eq_top_of_forall_subsingleton
   · -- the projection onto the line through `y` does not vanish
     exact absurd (Submodule.span_singleton_eq_bot.mp (hproj.submodule_eq_bot_iff.mpr hz)) hy
 
+/-- An indecomposable representation concentrated at a vertex with no nontrivial closed path
+has a one-dimensional endomorphism space. -/
+theorem finrank_end_eq_one_of_forall_subsingleton
+    (hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
+    (hM : Indecomposable M) (h : ∀ a : Q, a ≠ i → Subsingleton (M.obj a)) :
+    Module.finrank k (End M) = 1 := by
+  obtain ⟨y, -, hspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM h
+  have hid : (𝟙 M : End M) ≠ 0 := fun hzero ↦
+    hM.1 ((Limits.IsZero.iff_id_eq_zero M).mpr hzero)
+  refine (finrank_eq_one_iff_of_nonzero' (𝟙 M) hid).mpr fun f ↦ ?_
+  have hfy : (f.app i) y ∈ Submodule.span k {y} := by rw [hspan]; trivial
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hfy
+  refine ⟨c, NatTrans.ext (funext fun a ↦ ?_)⟩
+  rcases eq_or_ne a i with rfl | ha
+  · refine ModuleCat.hom_ext (LinearMap.ext fun z ↦ ?_)
+    have hz : z ∈ Submodule.span k {y} := by rw [hspan]; trivial
+    obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.mp hz
+    simp [hc]
+  · have : Subsingleton (M.obj a) := h a ha
+    exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)
+
 /-- **An indecomposable representation concentrated at a vertex carrying no nontrivial closed path
 has the corresponding simple dimension vector.** -/
 theorem dimVector_eq_single_of_forall_subsingleton [DecidableEq Q]
