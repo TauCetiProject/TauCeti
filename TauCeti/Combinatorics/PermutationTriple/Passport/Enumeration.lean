@@ -16,9 +16,10 @@ itself has no decidable equality, so executable enumeration takes its elements a
 three ordered cycle partitions. `TauCeti.passportClasses` lists the resulting relabeling
 orbits as finsets of connected triples, without choosing representatives.
 
-Whenever the input finset presents the reference subgroup of a `TauCeti.PassportSpec`, these
-computations give exactly its triples and classes. In particular, `TauCeti.card_passportClasses`
-identifies the computed cardinality with `TauCeti.PassportSpec.passportSize`.
+Whenever the input finset presents a conjugate of the reference subgroup of a
+`TauCeti.PassportSpec`, these computations give exactly its triples and classes. In particular,
+`TauCeti.card_passportClasses` identifies the computed cardinality with
+`TauCeti.PassportSpec.passportSize`.
 
 The input need not be certified as a subgroup to run the computation. If it is not the element
 set of a subgroup, the fiber is empty: no conjugate of a monodromy group can equal it.
@@ -56,27 +57,31 @@ agreement of the ordered full cycle partitions. -/
           t.1.σinf.partition.parts = laminf := by
   simp [passportTriples]
 
-/-- A finset presentation of the reference subgroup turns the computed membership test into
-passport membership. -/
+/-- A finset presentation of any conjugate of the reference subgroup turns the computed
+membership test into passport membership. -/
 theorem mem_passportTriples_iff_hasPassport (P : PassportSpec n)
-    (G : Finset (Perm (Fin n))) (hG : (G : Set (Perm (Fin n))) = P.G)
+    (G : Finset (Perm (Fin n)))
+    (hG : ∃ ρ, (G : Set (Perm (Fin n))) = (P.conjugate ρ).G)
     (t : ConnectedTriple n) :
     t ∈ passportTriples G P.lam0 P.lam1 P.laminf ↔ PassportSpec.HasPassport t P := by
-  rw [mem_passportTriples, PassportSpec.hasPassport_iff]
+  obtain ⟨ρ, hG⟩ := hG
+  rw [← PassportSpec.hasPassport_conjugate_iff t P ρ,
+    mem_passportTriples, PassportSpec.hasPassport_iff]
   simp only [PermutationTriple.cycleData_σ0, PermutationTriple.cycleData_σ1,
-    PermutationTriple.cycleData_σinf]
+    PermutationTriple.cycleData_σinf, PassportSpec.conjugate_lam0,
+    PassportSpec.conjugate_lam1, PassportSpec.conjugate_laminf]
   refine and_congr ?_ Iff.rfl
   apply exists_congr
   intro τ
   rw [← Finset.coe_inj, Finset.coe_image, PermutationTriple.coe_monodromyFinset, hG]
   simpa only [Subgroup.coe_map, MulEquiv.coe_toMonoidHom] using
     (SetLike.coe_injective.eq_iff (a := t.1.monodromyGroup.map (MulAut.conj τ).toMonoidHom)
-      (b := P.G))
+      (b := (P.conjugate ρ).G))
 
 open scoped Classical in
 /-- The computed triple fiber is exactly the filter by the canonical passport predicate. -/
 theorem passportTriples_eq_filter (P : PassportSpec n) (G : Finset (Perm (Fin n)))
-    (hG : (G : Set (Perm (Fin n))) = P.G) :
+    (hG : ∃ ρ, (G : Set (Perm (Fin n))) = (P.conjugate ρ).G) :
     passportTriples G P.lam0 P.lam1 P.laminf =
       Finset.univ.filter (fun t : ConnectedTriple n => PassportSpec.HasPassport t P) := by
   ext t
@@ -99,7 +104,8 @@ computed triple fiber. -/
 /-- The computed class fiber consists exactly of the orbit finsets of the canonical passport
 class set. This equality supplies both soundness and completeness of the enumeration. -/
 theorem passportClasses_eq_image_classSet (P : PassportSpec n)
-    (G : Finset (Perm (Fin n))) (hG : (G : Set (Perm (Fin n))) = P.G) :
+    (G : Finset (Perm (Fin n)))
+    (hG : ∃ ρ, (G : Set (Perm (Fin n))) = (P.conjugate ρ).G) :
     passportClasses G P.lam0 P.lam1 P.laminf =
       P.classSet.image ConnectedIsoClass.orbitFinset := by
   classical
@@ -117,7 +123,8 @@ theorem passportClasses_eq_image_classSet (P : PassportSpec n)
 
 /-- A relabeling orbit belongs to the computed fiber exactly when its class has the passport. -/
 theorem orbitFinset_mem_passportClasses_iff (P : PassportSpec n)
-    (G : Finset (Perm (Fin n))) (hG : (G : Set (Perm (Fin n))) = P.G)
+    (G : Finset (Perm (Fin n)))
+    (hG : ∃ ρ, (G : Set (Perm (Fin n))) = (P.conjugate ρ).G)
     (c : ConnectedIsoClass n) :
     c.orbitFinset ∈ passportClasses G P.lam0 P.lam1 P.laminf ↔ c.HasPassport P := by
   classical
@@ -143,6 +150,8 @@ theorem biUnion_passportClasses (G : Finset (Perm (Fin n)))
     have hG : (G : Set (Perm (Fin n))) = P.G := by
       dsimp [P]
       rw [← hτ, Finset.coe_image, PermutationTriple.coe_monodromyFinset]
+    have hG : ∃ ρ, (G : Set (Perm (Fin n))) = (P.conjugate ρ).G :=
+      ⟨1, by simpa using hG⟩
     have hc := (ConnectedIsoClass.hasPassport_mk t' P).mpr
       ((mem_passportTriples_iff_hasPassport P G hG t').mp ht')
     ext t
@@ -166,7 +175,7 @@ theorem biUnion_passportClasses (G : Finset (Perm (Fin n)))
 
 /-- The computed class fiber has cardinality equal to the passport size. -/
 theorem card_passportClasses (P : PassportSpec n) (G : Finset (Perm (Fin n)))
-    (hG : (G : Set (Perm (Fin n))) = P.G) :
+    (hG : ∃ ρ, (G : Set (Perm (Fin n))) = (P.conjugate ρ).G) :
     (passportClasses G P.lam0 P.lam1 P.laminf).card = P.passportSize := by
   rw [passportClasses_eq_image_classSet P G hG,
     Finset.card_image_of_injective _ ConnectedIsoClass.orbitFinset_injective,

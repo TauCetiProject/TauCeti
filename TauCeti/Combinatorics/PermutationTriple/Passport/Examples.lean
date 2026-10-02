@@ -50,7 +50,8 @@ theorem passportSize_passportOf_s3Triple :
   let t : ConnectedTriple 3 := ⟨s3Triple, isConnected_s3Triple⟩
   have hG : ((Finset.univ : Finset (Perm (Fin 3))) : Set (Perm (Fin 3))) = t.passportOf.G := by
     simp [ConnectedTriple.passportOf_G, t, monodromyGroup_s3Triple]
-  rw [← card_passportClasses t.passportOf Finset.univ hG]
+  rw [← card_passportClasses t.passportOf Finset.univ
+    ⟨1, by simpa using hG⟩]
   simpa only [ConnectedTriple.passportOf_lam0, ConnectedTriple.passportOf_lam1,
     ConnectedTriple.passportOf_laminf, t, cycleData_s3Triple] using
     card_passportClasses_symmetric_three
