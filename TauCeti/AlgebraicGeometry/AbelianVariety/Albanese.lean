@@ -19,14 +19,15 @@ homomorphism* `φ : J ⟶ A` of abelian varieties. This is the universal propert
 Jacobian `Jac X = Pic⁰ X` of a smooth proper geometrically connected curve together with its
 Abel–Jacobi morphism `aj : X ⟶ Jac X`, `x₀ ↦ 0`: for curves the Jacobian is the Albanese variety.
 
-The universal property makes any two solutions canonically isomorphic (`IsAlbanese.uniqueIso`), so
-independently built Jacobians are compared through it rather than through their constructions.
-Every abelian variety `A`, pointed at its identity, is its own Albanese variety via the identity
-morphism (`isAlbanese_id`), because pointed morphisms between abelian varieties are homomorphisms
-(`AbelianVariety.Hom.equivPointed`, a consequence of the rigidity lemma). Combined with
-`IsAlbanese.uniqueIso`, any Albanese morphism `a : A ⟶ J` for `(A, 0)` therefore identifies `J`
-with `A`; this is the form of the genus-one comparison `Jac (E, O) ≅ E` once an elliptic curve is
-known to be an abelian variety.
+The universal property makes any two solutions canonically isomorphic
+(`IsAlbanese.uniqueUpToIso`), so independently built Jacobians are compared through it rather than
+through their constructions. A pointed isomorphism onto an abelian variety has the Albanese property
+(`isAlbanese_of_isIso`), because pointed morphisms between abelian varieties are homomorphisms
+(`AbelianVariety.Hom.equivPointed`, a consequence of the rigidity lemma); in particular every
+abelian variety `A`, pointed at its identity, is its own Albanese variety via the identity
+morphism (`isAlbanese_id`). Combined with `IsAlbanese.uniqueUpToIso`, any Albanese morphism
+`a : A ⟶ J` for `(A, 0)` therefore identifies `J` with `A`; this is the form of the genus-one
+comparison `Jac (E, O) ≅ E` once an elliptic curve is known to be an abelian variety.
 
 ## Main declarations
 
@@ -37,10 +38,12 @@ known to be an abelian variety.
 * `AbelianVariety.IsAlbanese.lift`, `AbelianVariety.IsAlbanese.fac`,
   `AbelianVariety.IsAlbanese.hom_ext`: the factorization of a pointed morphism through `a` and its
   uniqueness;
-* `AbelianVariety.IsAlbanese.uniqueIso`: two Albanese morphisms from the same pointed scheme have
-  isomorphic targets, compatibly with the morphisms;
+* `AbelianVariety.IsAlbanese.uniqueUpToIso`: two Albanese morphisms from the same pointed scheme
+  have isomorphic targets, compatibly with the morphisms;
 * `AbelianVariety.IsAlbanese.of_iso`: the Albanese property is transported along isomorphisms of
   the target;
+* `AbelianVariety.isAlbanese_of_isIso`: a pointed isomorphism onto an abelian variety has the
+  Albanese property;
 * `AbelianVariety.isAlbanese_id`: an abelian variety pointed at its identity is its own Albanese
   variety;
 * `AbelianVariety.isAlbanese_trivial`: the Albanese variety of `Spec K` is the trivial abelian
@@ -167,30 +170,31 @@ lemma lift_comp {A B : AbelianVariety K} (f : X ⟶ A.toOver) (hf : x₀ ≫ f =
 /-- The Albanese variety is unique up to unique isomorphism: if `a : X ⟶ J` and `a' : X ⟶ J'`
 both have the Albanese property for the base point `x₀`, then `J ≅ J'` by the isomorphism
 carrying `a` to `a'`. -/
-noncomputable def uniqueIso {J' : AbelianVariety K} {a' : X ⟶ J'.toOver}
+noncomputable def uniqueUpToIso {J' : AbelianVariety K} {a' : X ⟶ J'.toOver}
     (h' : IsAlbanese x₀ a') : J ≅ J' where
   hom := h.lift a' h'.comp_eq_one
   inv := h'.lift a h.comp_eq_one
-  hom_inv_id := h.hom_ext (by rw [toOverHom_comp, fac_assoc, fac, toOverHom_id, Category.comp_id])
-  inv_hom_id :=
-    h'.hom_ext (by rw [toOverHom_comp, fac_assoc, fac, toOverHom_id, Category.comp_id])
+  hom_inv_id := by simp [h.lift_comp]
+  inv_hom_id := by simp [h'.lift_comp]
 
-/-- The isomorphism `uniqueIso` carries the first Albanese morphism to the second. -/
+/-- The isomorphism `uniqueUpToIso` carries the first Albanese morphism to the second. -/
 @[reassoc (attr := simp)]
-lemma fac_uniqueIso_hom {J' : AbelianVariety K} {a' : X ⟶ J'.toOver} (h' : IsAlbanese x₀ a') :
-    a ≫ toOverHom (h.uniqueIso h').hom = a' :=
+lemma comp_uniqueUpToIso_hom {J' : AbelianVariety K} {a' : X ⟶ J'.toOver}
+    (h' : IsAlbanese x₀ a') :
+    a ≫ toOverHom (h.uniqueUpToIso h').hom = a' :=
   h.fac a' h'.comp_eq_one
 
-/-- The inverse of `uniqueIso` carries the second Albanese morphism to the first. -/
+/-- The inverse of `uniqueUpToIso` carries the second Albanese morphism to the first. -/
 @[reassoc (attr := simp)]
-lemma fac_uniqueIso_inv {J' : AbelianVariety K} {a' : X ⟶ J'.toOver} (h' : IsAlbanese x₀ a') :
-    a' ≫ toOverHom (h.uniqueIso h').inv = a :=
+lemma comp_uniqueUpToIso_inv {J' : AbelianVariety K} {a' : X ⟶ J'.toOver}
+    (h' : IsAlbanese x₀ a') :
+    a' ≫ toOverHom (h.uniqueUpToIso h').inv = a :=
   h'.fac a h.comp_eq_one
 
-/-- The isomorphism `uniqueIso` is the only homomorphism carrying the first Albanese morphism to
+/-- The isomorphism `uniqueUpToIso` is the only homomorphism carrying the first Albanese morphism to
 the second. -/
-lemma eq_uniqueIso_hom {J' : AbelianVariety K} {a' : X ⟶ J'.toOver} (h' : IsAlbanese x₀ a')
-    {φ : J ⟶ J'} (e : a ≫ toOverHom φ = a') : φ = (h.uniqueIso h').hom :=
+lemma eq_uniqueUpToIso_hom {J' : AbelianVariety K} {a' : X ⟶ J'.toOver} (h' : IsAlbanese x₀ a')
+    {φ : J ⟶ J'} (e : a ≫ toOverHom φ = a') : φ = (h.uniqueUpToIso h').hom :=
   (h.eq_lift_iff h'.comp_eq_one).2 e
 
 /-- The Albanese property is transported along an isomorphism of the target abelian variety. -/
@@ -198,32 +202,39 @@ lemma of_iso {J' : AbelianVariety K} (e : J ≅ J') : IsAlbanese x₀ (a ≫ toO
   comp_eq_one := comp_toOverHom_eq_one h.comp_eq_one e.hom
   existsUnique_fac A f hf := by
     refine ⟨e.inv ≫ h.lift f hf, ?_, fun ψ (hψ : _ = f) ↦ ?_⟩
-    · dsimp only
+    · beta_reduce
       rw [Category.assoc, ← toOverHom_comp, e.hom_inv_id_assoc, fac]
     · rw [Category.assoc, ← toOverHom_comp] at hψ
       rw [← (h.eq_lift_iff hf).2 hψ, e.inv_hom_id_assoc]
 
 end IsAlbanese
 
+/-- A pointed isomorphism `a : X ⟶ A.toOver` onto an abelian variety has the Albanese property:
+for a pointed morphism `f : X ⟶ B.toOver`, the composite `inv a ≫ f` is a pointed morphism of
+abelian varieties, hence a homomorphism by rigidity. -/
+theorem isAlbanese_of_isIso {A : AbelianVariety K} (a : X ⟶ A.toOver) [IsIso a]
+    (ha : x₀ ≫ a = η[A.toOver]) : IsAlbanese x₀ a where
+  comp_eq_one := ha
+  existsUnique_fac B f hf := by
+    have hf' : η[A.toOver] ≫ inv a ≫ f = η[B.toOver] := by
+      rw [← ha, Category.assoc, IsIso.hom_inv_id_assoc, hf]
+    refine ⟨(equivPointed A B).symm ⟨inv a ≫ f, hf'⟩, by simp,
+      fun φ (hφ : _ = f) ↦ (equivPointed A B).eq_symm_apply.2 (Subtype.ext ?_)⟩
+    rw [coe_equivPointed_apply, ← IsIso.inv_hom_id_assoc a (toOverHom φ), hφ]
+
 /-- An abelian variety, pointed at its identity, is its own Albanese variety via the identity
 morphism: by rigidity, every pointed morphism `A ⟶ B` to an abelian variety is a homomorphism. -/
-theorem isAlbanese_id (A : AbelianVariety K) : IsAlbanese η[A.toOver] (𝟙 A.toOver) where
-  comp_eq_one := Category.comp_id _
-  existsUnique_fac B f hf := by
-    refine ⟨(equivPointed A B).symm ⟨f, hf⟩, by simp, fun φ (hφ : _ = f) ↦ ?_⟩
-    rw [Category.id_comp] at hφ
-    exact ((equivPointed A B).symm_apply_eq.2
-      (Subtype.ext ((coe_equivPointed_apply φ).trans hφ).symm)).symm
+theorem isAlbanese_id (A : AbelianVariety K) : IsAlbanese η[A.toOver] (𝟙 A.toOver) :=
+  isAlbanese_of_isIso _ (Category.comp_id _)
 
 /-- The Albanese variety of `Spec K`, pointed by the identity, is the trivial abelian variety:
-the only pointed morphism out of `Spec K` is the identity section, and the trivial abelian
-variety is initial. -/
+the unit section of the trivial abelian variety is an isomorphism, both its source and target
+being terminal. -/
 theorem isAlbanese_trivial :
-    IsAlbanese (𝟙 (𝟙_ (Over (Spec (.of K))))) η[(trivial K).toOver] where
-  comp_eq_one := Category.id_comp _
-  existsUnique_fac A f hf := by
-    rw [Category.id_comp] at hf
-    exact ⟨fromTrivial A, (one_hom _).trans hf.symm, fun _ _ ↦ (isInitialTrivial K).hom_ext _ _⟩
+    IsAlbanese (𝟙 (𝟙_ (Over (Spec (.of K))))) η[(trivial K).toOver] :=
+  have := Limits.isIso_of_isTerminal CartesianMonoidalCategory.isTerminalTensorUnit
+    (isTerminalTrivialToOver K) η[(trivial K).toOver]
+  isAlbanese_of_isIso _ (Category.id_comp _)
 
 end AbelianVariety
 
