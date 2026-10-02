@@ -74,10 +74,9 @@ noncomputable def ofFinitePresentation {M : ModuleCat.{v} A}
     ModuleCat.of A (Shrink.{v} (Fin m → A)),
     e₀.symm.toLinearMap ∘ₗ g ∘ₗ e₁.toLinearMap, f ∘ₗ e₀.toLinearMap, ?_,
     hf.comp e₀.surjective⟩⟩
-  rw [LinearMap.exact_iff, ← LinearMap.comp_assoc, LinearEquiv.range_comp,
-    LinearMap.range_comp,
-    LinearMap.ker_comp, ← LinearMap.exact_iff.mp hg]
-  exact Submodule.comap_equiv_eq_map_symm _ _
+  simpa only [LinearMap.comp_assoc] using
+    (LinearEquiv.conj_symm_exact_iff_exact (g ∘ₗ e₁.toLinearMap) f e₀).mpr
+      (LinearEquiv.precomp_exact_iff_exact.mpr hg)
 
 end FiniteProjectivePresentation
 
