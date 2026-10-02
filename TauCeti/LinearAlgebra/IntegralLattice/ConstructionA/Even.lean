@@ -156,11 +156,13 @@ theorem isEven_integralLattice_two_iff_isDoublyEven (C : LinearCode (ZMod 2) ι)
 /-- **A self-orthogonal binary linear code has an even unimodular Construction A lattice exactly
 when it is a Type II code**, doubly even and Euclidean self-dual. -/
 theorem isEven_and_isUnimodular_integralLattice_two_iff_isTypeII (C : LinearCode (ZMod 2) ι)
-    (hC : AddSubgroup.toZModSubmodule 2 C.toAddSubgroup ≤
-      (AddSubgroup.toZModSubmodule 2 C.toAddSubgroup).euclideanDual) :
-    (integralLattice 2 C.toAddSubgroup hC).IsEven ∧
-        (integralLattice 2 C.toAddSubgroup hC).IsUnimodular ↔ BinaryCode.IsTypeII C :=
-  ((isEven_integralLattice_two_iff_isDoublyEven C hC).and
+    (hC : C.IsSelfOrthogonal) :
+    (integralLattice 2 C.toAddSubgroup
+        ((toZModSubmodule_toAddSubgroup_le_euclideanDual_iff 2 C).mpr hC)).IsEven ∧
+      (integralLattice 2 C.toAddSubgroup
+        ((toZModSubmodule_toAddSubgroup_le_euclideanDual_iff 2 C).mpr hC)).IsUnimodular ↔
+        BinaryCode.IsTypeII C :=
+  ((isEven_integralLattice_two_iff_isDoublyEven C _).and
     (isUnimodular_integralLattice_toAddSubgroup_iff 2 C hC)).trans
     ⟨fun h ↦ h.1.isTypeII h.2, fun h ↦ ⟨h.isDoublyEven, h.isSelfDual⟩⟩
 
@@ -171,7 +173,8 @@ theorem isEven_integralLattice_two_of_isTypeII {C : LinearCode (ZMod 2) ι}
     (integralLattice 2 C.toAddSubgroup
       ((toZModSubmodule_toAddSubgroup_le_euclideanDual_iff 2 C).mpr
         hC.isSelfDual.isSelfOrthogonal)).IsEven :=
-  ((isEven_and_isUnimodular_integralLattice_two_iff_isTypeII C _).mpr hC).1
+  ((isEven_and_isUnimodular_integralLattice_two_iff_isTypeII C
+    hC.isSelfDual.isSelfOrthogonal).mpr hC).1
 
 /-- The Construction A lattice of a binary Type II code is unimodular. -/
 theorem isUnimodular_integralLattice_two_of_isTypeII {C : LinearCode (ZMod 2) ι}
@@ -179,7 +182,8 @@ theorem isUnimodular_integralLattice_two_of_isTypeII {C : LinearCode (ZMod 2) ι
     (integralLattice 2 C.toAddSubgroup
       ((toZModSubmodule_toAddSubgroup_le_euclideanDual_iff 2 C).mpr
         hC.isSelfDual.isSelfOrthogonal)).IsUnimodular :=
-  (isUnimodular_integralLattice_toAddSubgroup_iff 2 C _).mpr hC.isSelfDual
+  (isUnimodular_integralLattice_toAddSubgroup_iff 2 C hC.isSelfDual.isSelfOrthogonal).mpr
+    hC.isSelfDual
 
 /-! ## Type II codes over `ℤ/2^r` -/
 
