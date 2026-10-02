@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GrothendieckGroup.Finrank
-public import TauCeti.RepresentationTheory.Irreducible
-public import TauCeti.RepresentationTheory.PGroupInvariants
-import TauCeti.RepresentationTheory.OfModule
-import TauCeti.RepresentationTheory.AsModule
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.PowerOrder
 
 /-!
 # The Grothendieck group of a finite `p`-group in characteristic `p`
@@ -55,23 +51,10 @@ theorem nonempty_linearEquiv_trivial_of_isPGroup (hG : IsPGroup p G)
     (M : Type*) [AddCommGroup M] [Module k M] [Module k[G] M] [IsScalarTower k k[G] M]
     [IsSimpleModule k[G] M] :
     Nonempty (M ≃ₗ[k[G]] (Representation.trivial k G k).asModule) := by
-  let ρ := Representation.ofModule' (k := k) (G := G) M
-  have hρ : ρ.IsIrreducible := Representation.isIrreducible_ofModule'_iff M |>.mpr inferInstance
-  have hpow : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1 := by
-    intro g
-    obtain ⟨n, hn⟩ := hG g
-    exact ⟨n, by rw [← map_pow, hn, map_one]⟩
-  have htriv := hρ.eq_trivial_of_forall_pow_eq_one p hpow
-  have hdim := hρ.finrank_eq_one_of_forall_pow_eq_one p hpow
-  have := hρ.finiteDimensional
-  let e := LinearEquiv.ofFinrankEq M k (hdim.trans (Module.finrank_self k).symm)
-  have he : ρ.Equiv (Representation.trivial k G k) := Representation.Equiv.mk e (by
-    intro g
-    rw [htriv]
-    ext x
-    simp)
-  exact ⟨(Representation.ofModule'AsModuleEquiv M).symm.trans
-    (Representation.asModuleLinearEquivOfEquiv he)⟩
+  apply nonempty_linearEquiv_trivial_of_forall_pow_eq_one p M
+  intro g
+  obtain ⟨n, hn⟩ := hG g
+  exact ⟨n, fun x ↦ by simp [hn, ← MonoidAlgebra.one_def]⟩
 
 /-- A simple module over a finite `p`-group algebra in characteristic `p` has dimension one. -/
 theorem finrank_eq_one_of_isSimpleModule_of_isPGroup (hG : IsPGroup p G)
