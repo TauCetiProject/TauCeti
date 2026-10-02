@@ -38,6 +38,8 @@ determinant one.
 * `TauCeti.Lie.forall_lieExp_mem_range_toGL_iff_mem_sl`: in canonical matrix coordinates, the
   abstract exponential line of `A` stays inside the special linear subgroup exactly when `A` has
   trace zero.
+* `TauCeti.Lie.isClosed_range_toGL`: the special linear subgroup of the units is closed, the
+  hypothesis every closed-subgroup statement about it needs.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl`: **the Lie
   algebra of the special linear group is `sl`.**
 -/
@@ -57,6 +59,16 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕂 : Type*} [RCLike 𝕂]
+
+/-- **The special linear subgroup of the units is closed.**  Its carrier is the range of the
+closed embedding `Matrix.SpecialLinearGroup.toGL`.  This is the form in which the closed-subgroup
+theorem, and every statement resting on it, consumes the special linear group. -/
+theorem isClosed_range_toGL :
+    IsClosed (((Matrix.SpecialLinearGroup.toGL :
+        Matrix.SpecialLinearGroup n 𝕂 →* GL n 𝕂).range : Subgroup (Matrix n n 𝕂)ˣ) :
+      Set (Matrix n n 𝕂)ˣ) :=
+  MonoidHom.coe_range (Matrix.SpecialLinearGroup.toGL (n := n) (R := 𝕂)) ▸
+    Matrix.SpecialLinearGroup.isClosedEmbedding_toGL.isClosed_range
 
 /-- In the canonical matrix coordinates of the general linear Lie algebra, an element generates a
 one-parameter subgroup inside the special linear group exactly when it has trace zero. -/
@@ -87,9 +99,7 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl
           ((Matrix.SpecialLinearGroup.toGL : Matrix.SpecialLinearGroup n 𝕂 →* GL n 𝕂).range :
             Subgroup (Matrix n n 𝕂)ˣ) ↔
       A ∈ LieAlgebra.SpecialLinear.sl n 𝕂 := by
-  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
-      (MonoidHom.coe_range (Matrix.SpecialLinearGroup.toGL (n := n) (R := 𝕂)) ▸
-        Matrix.SpecialLinearGroup.isClosedEmbedding_toGL.isClosed_range),
+  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff isClosed_range_toGL,
     ← Matrix.forall_det_exp_smul_eq_one_iff_mem_sl]
   simp only [Matrix.SpecialLinearGroup.range_toGL_eq_ker_det, MonoidHom.mem_ker, Units.ext_iff,
     Matrix.GeneralLinearGroup.val_det_apply, TauCeti.expUnit_coe, Units.val_one]

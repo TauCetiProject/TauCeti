@@ -53,11 +53,6 @@ recorded below.
   `ℝ` it is Mathlib's orthogonal Lie algebra, the trace condition being automatic there.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_GLSpecialUnitary`: **the special unitary group is an embedded
   Lie subgroup** of the general linear group, hence a Lie group in its own right.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "Consequences".
 -/
 
 public section
@@ -76,15 +71,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
-
-/-- Closedness of the determinant-one subgroup of the units, in the form the intersection
-decomposition below consumes it. -/
-private theorem isClosed_range_toGL :
-    IsClosed (((Matrix.SpecialLinearGroup.toGL :
-        Matrix.SpecialLinearGroup n 𝕜 →* GL n 𝕜).range : Subgroup (Matrix n n 𝕜)ˣ) :
-      Set (Matrix n n 𝕜)ˣ) :=
-  MonoidHom.coe_range (Matrix.SpecialLinearGroup.toGL (n := n) (R := 𝕜)) ▸
-    Matrix.SpecialLinearGroup.isClosedEmbedding_toGL.isClosed_range
 
 /-- **The Lie algebra of the special unitary group splits.**  It is the intersection of the Lie
 algebra of the unitary group with the Lie algebra of the special linear group, because the special

@@ -37,11 +37,6 @@ This mirrors `TauCeti.GLSymplectic`, the units-level avatar of `Matrix.symplecti
   unitary and a determinant condition.
 * `TauCeti.GLSpecialUnitary.mem_iff`: its elements are the units whose matrix is special unitary.
 * `TauCeti.GLSpecialUnitary.le_unitarySubgroup`: it is contained in the unitary subgroup.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "Consequences".
 -/
 
 public section
@@ -73,10 +68,10 @@ lies in Mathlib's `Matrix.specialUnitaryGroup`. -/
 @[simp]
 theorem mem_iff {M : GL n 𝕜} :
     M ∈ GLSpecialUnitary n 𝕜 ↔ (M : Matrix n n 𝕜) ∈ Matrix.specialUnitaryGroup n 𝕜 := by
-  rw [eq_unitarySubgroup_inf_ker_det, Subgroup.mem_inf, mem_unitarySubgroup_iff, Units.unitary_eq,
-    Submonoid.mem_comap, Units.coeHom_apply, MonoidHom.mem_ker,
-    Matrix.mem_specialUnitaryGroup_iff, Units.ext_iff, Matrix.GeneralLinearGroup.val_det_apply,
-    Units.val_one]
+  rw [eq_unitarySubgroup_inf_ker_det, Matrix.mem_specialUnitaryGroup_iff]
+  -- Both sides are now a conjunction of a unitary and a determinant condition; what remains is
+  -- transporting each across the coercion of units.
+  simp [Units.unitary_eq, Units.ext_iff]
 
 /-- The special unitary subgroup is contained in the unitary subgroup. -/
 theorem le_unitarySubgroup : GLSpecialUnitary n 𝕜 ≤ unitarySubgroup (GL n 𝕜) :=
