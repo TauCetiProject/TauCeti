@@ -15,10 +15,9 @@ is simple. Every simple `R`-module is isomorphic to such an ideal. Thus primitiv
 represent all simple-module isomorphism classes; distinct primitive idempotents can represent
 the same class.
 
-The characterization uses the primitive-idempotent/indecomposable-ideal correspondence from
-`TauCeti.RingTheory.PrimitiveIdempotent`. The existence statement combines Mathlib's
-`IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule` with
-`IsSemisimpleRing.ideal_eq_span_idempotent`. No finite-dimensionality or base field is needed.
+This identifies the minimal left ideals of `R` as concrete representatives of its simple
+modules, relating module simplicity to primitivity of idempotents in the ring.
+No finite-dimensionality or base field is needed.
 
 ## Main results
 
@@ -29,6 +28,11 @@ The characterization uses the primitive-idempotent/indecomposable-ideal correspo
 
 ## References
 
+* `TauCeti.RingTheory.PrimitiveIdempotent`: the primitive-idempotent/indecomposable-ideal
+  correspondence.
+* Mathlib's `IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule` and
+  `IsSemisimpleRing.ideal_eq_span_idempotent`: simple-module representatives and idempotent
+  generators of left ideals.
 * T. Y. Lam, *A First Course in Noncommutative Rings*, 2nd ed., Section 3 (semisimple rings).
 -/
 
