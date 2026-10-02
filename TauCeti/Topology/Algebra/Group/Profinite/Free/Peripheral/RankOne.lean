@@ -150,8 +150,10 @@ noncomputable def continuousAutEquivUnits : ContinuousAut F ≃ₜ* ℤ_[p]ˣ :=
 /-- On peripheral automorphisms, the isomorphism with `ℤ_[p]ˣ` is the exponent character. -/
 @[simp]
 theorem continuousAutEquivUnits_coe (φ : peripheralAut hF (basis e)) :
-    continuousAutEquivUnits hF e φ = exponent hF e one_pos φ :=
-  (rfl)
+    continuousAutEquivUnits hF e φ = exponent hF e one_pos φ := by
+  -- Both equivalence constructors preserve the forward map of the composite homomorphism.
+  exact MonoidHom.comp_apply (exponent hF e one_pos)
+    ((MonoidHom.id _).codRestrict _ (mem_peripheralAut_rank_one hF e)) φ
 
 /-- The image of `φ` in `ℤ_[p]ˣ` is `u` exactly when `φ` sends the basis element `x` to `x ^ u`. -/
 theorem continuousAutEquivUnits_eq_iff (φ : ContinuousAut F) (u : ℤ_[p]ˣ) :
@@ -161,6 +163,8 @@ theorem continuousAutEquivUnits_eq_iff (φ : ContinuousAut F) (u : ℤ_[p]ˣ) :
 
 /-- The automorphism `φ` sends the basis element `x` to `x ^ u`, where `u` is its image in
 `ℤ_[p]ˣ`. -/
+-- Let the more specific inverse computation rule simplify first.
+@[simp low]
 theorem apply_basis_continuousAutEquivUnits (φ : ContinuousAut F) :
     φ (basis e 0) = hF.padicPow (basis e 0) (continuousAutEquivUnits hF e φ) :=
   (continuousAutEquivUnits_eq_iff hF e φ _).mp rfl
