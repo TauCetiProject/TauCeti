@@ -167,7 +167,7 @@ variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)
 variable {η : Type*} (b : Module.Basis η ℤ M)
 
 /-- The integral matrix of a represented root generator in an invariant lattice basis. -/
-@[expose] noncomputable def kostantRootGeneratorIntMatrix [Fintype η] (i : ι)
+@[expose] noncomputable def kostantRootGeneratorIntMatrix (i : ι)
     (b : Module.Basis η ℤ M) : Matrix η η ℤ :=
   b.toMatrix fun s ↦
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
@@ -185,7 +185,7 @@ theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis �
 
 /-- A root generator taking one lattice basis vector to a scalar multiple of another has a
 single nonzero entry in the corresponding integral matrix column. -/
-theorem kostantRootGeneratorIntMatrix_apply_of_eq [Fintype η] [DecidableEq η]
+theorem kostantRootGeneratorIntMatrix_apply_of_eq [DecidableEq η]
     (i : ι) (b : Module.Basis η ℤ M) {a a' : η} {c : ℤ}
     (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b a : V) = c • (b a' : V))
     (r : η) :
