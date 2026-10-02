@@ -20,7 +20,8 @@ is tested against complex Schwartz functions. Both notions therefore give the sa
 without a smoothness or compact-support assumption on the `Lᵖ` functions.
 
 This is the derivative bridge between domain Sobolev spaces and the Fourier description of
-whole-space Sobolev spaces. The measure may be any additive Haar measure.
+whole-space Sobolev spaces. The measure may be any locally finite measure of temperate growth;
+the forward implication only requires temperate growth.
 
 ## References
 
@@ -43,11 +44,11 @@ open scoped ENNReal SchwartzMap LineDeriv ContDiff
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-  {μ : Measure E} [μ.IsAddHaarMeasure] {p q : ENNReal} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+  {μ : Measure E} [μ.HasTemperateGrowth] {p q : ENNReal} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
 /-- Differentiating an `Lᵖ` function as a tempered distribution gives its weak directional
 derivative whenever that derivative is represented by an `L^q` function, `q ≥ 1`. -/
-theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution
+theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution_eq
     {u : Lp F p μ} {u' : Lp F q μ} {v : E} (h : HasWeakLineDerivOn μ ⊤ u u' v) :
     ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
   apply temperedDistribution_ext_real
@@ -64,10 +65,13 @@ theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution
     neg_smul, integral_neg, Complex.coe_smul]
   exact neg_eq_iff_eq_neg.mpr hweak
 
+variable [IsLocallyFiniteMeasure μ]
+
+omit [FiniteDimensional ℝ E] in
 /-- If the tempered derivative of an `Lᵖ` function is represented by another `Lᵖ` function,
 possibly with a different exponent, then the latter is its weak directional derivative on the
 whole space. -/
-theorem hasWeakLineDerivOn_of_lineDerivOp_toTemperedDistribution
+theorem hasWeakLineDerivOn_of_lineDerivOp_toTemperedDistribution_eq
     {u : Lp F p μ} {u' : Lp F q μ} {v : E}
     (h : ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u') :
     HasWeakLineDerivOn μ ⊤ u u' v := by
@@ -92,22 +96,22 @@ theorem hasWeakLineDerivOn_of_lineDerivOp_toTemperedDistribution
 /-- For an `Lᵖ` function and an `L^q` candidate derivative, `1 ≤ p, q ≤ ∞`, weak differentiation
 on the whole space is exactly
 differentiation of the associated tempered distributions. -/
-theorem hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution
+theorem hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_eq
     (u : Lp F p μ) (u' : Lp F q μ) (v : E) :
     HasWeakLineDerivOn μ ⊤ u u' v ↔
       ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' :=
-  ⟨HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution,
-    hasWeakLineDerivOn_of_lineDerivOp_toTemperedDistribution⟩
+  ⟨HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution_eq,
+    hasWeakLineDerivOn_of_lineDerivOp_toTemperedDistribution_eq⟩
 
 /-- A real-valued `Lᵖ` function has weak derivative `u'` exactly when the complexified
 tempered distributions satisfy the derivative equation. This form applies to real Sobolev
 functions using Mathlib's complex Fourier transform. -/
-theorem hasWeakLineDerivOn_iff_lineDerivOp_ofReal
+theorem hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq
     (u : Lp ℝ p μ) (u' : Lp ℝ q μ) (v : E) :
     HasWeakLineDerivOn μ ⊤ u u' v ↔
       ∂_{v} (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) =
         Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u') := by
-  rw [← hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution]
+  rw [← hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_eq]
   have hu : (Complex.ofRealCLM.compLp u : E → ℂ) =ᵐ[μ.restrict (⊤ : Opens E)]
       fun x => Complex.ofRealCLM (u x) := by
     rw [Opens.coe_top, Measure.restrict_univ]

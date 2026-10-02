@@ -26,6 +26,7 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Directional differentiation commutes with a continuous real-linear map on the values
 of a Schwartz function. -/
+@[simp]
 theorem lineDerivOp_postcompCLM (v : E) (L : F →L[ℝ] G) (φ : 𝓢(E, F)) :
     ∂_{v} (φ.postcompCLM L) = (∂_{v} φ).postcompCLM L := by
   have hfun : ⇑(φ.postcompCLM L) = L ∘ φ :=
