@@ -11,8 +11,8 @@ import Mathlib.Algebra.Homology.ConcreteCategory
 /-!
 # The connecting map across the Tate norm
 
-For a short exact sequence `0 → M₁ → M₂ → M₃ → 0`, the connecting map
-`Ĥ⁻¹(G, M₃) → Ĥ⁰(G, M₁)` has a concrete description: lift a norm-zero element of `M₃` to
+For a short exact sequence `0 → M₁ → M₂ → M₃ → 0`, the Tate connecting map from degree `-1`
+of `M₃` to degree zero of `M₁` has a concrete description: lift a norm-zero element of `M₃` to
 `M₂`, take its norm, and lift that norm to an invariant element of `M₁`. The class of this
 invariant is the image under the connecting map. This description allows the change-of-group
 maps on the norm kernel and the invariants to be compared across the boundary of the Tate complex.
