@@ -29,7 +29,7 @@ This is the smooth-dependence input for smoothness of the exponential map on its
   jointly smooth family, and their base projections have the prescribed geodesic initial data.
 * `TauCeti.Manifold.maximalIntegralCurveFlowDomain_geodesicSpray`: the domain of the
   geodesic flow consists of the pairs `(z, t)` with `t` in the maximal geodesic interval of `z`.
-* `TauCeti.Manifold.isOpen_setOf_mem_geodesicInterval`: this domain is open in `TM × ℝ`.
+* `TauCeti.Manifold.isOpen_setOfPred_mem_geodesicInterval`: this domain is open in `TM × ℝ`.
 * `TauCeti.Manifold.contMDiffOn_maximalIntegralCurve_geodesicSpray`: the maximal geodesic flow is
   smooth on its domain.
 * `TauCeti.Manifold.contMDiffOn_maximalGeodesic`: maximal geodesics depend smoothly on their
@@ -70,13 +70,9 @@ theorem exists_contMDiffAt_localGeodesicFlow (z : TangentBundle I M) :
             IsMIntegralCurveOn (Φ w) (geodesicSpray I M) s ∧
             (∀ t ∈ s, ∀ u, Φ w (t + u) = Φ (Φ w t) u) ∧
             IsGeodesicCurveOnFrom I (fun t ↦ (Φ w t).proj) s w.proj w.2 := by
-  have hspray : CMDiff ∞ (fun w : TangentBundle I M ↦
-      (⟨w, geodesicSpray I M w⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
-    contMDiff_geodesicSpray (I := I) (M := M) (n := ∞) (m := ∞) (k := ∞)
-      (by simp) (by simp)
   obtain ⟨U, hU, s, hs, hsopen, Φ, hΦsmooth, hΦ⟩ :=
     exists_contMDiffAt_localFlow (I := I.tangent) (V := univ)
-      (v := geodesicSpray I M) z hspray.contMDiffOn univ_mem
+      (v := geodesicSpray I M) z contMDiff_infty_geodesicSpray.contMDiffOn univ_mem
   refine ⟨U, hU, s, hs, hsopen, Φ, hΦsmooth, ?_⟩
   intro w hw
   obtain ⟨hΦ0, hΦcurve, hΦadd⟩ := hΦ w hw
@@ -98,13 +94,10 @@ variable [T2Space M]
 
 /-- **The domain of the geodesic flow is open**: the pairs `(z, t)` of a tangent vector and a
 time of its maximal geodesic interval form an open subset of `TM × ℝ`. -/
-theorem isOpen_setOf_mem_geodesicInterval :
+theorem isOpen_setOfPred_mem_geodesicInterval :
     IsOpen {q : TangentBundle I M × ℝ | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} := by
-  have hspray : CMDiff 1 (fun z : TangentBundle I M ↦
-      (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
-    contMDiff_one_geodesicSpray
   rw [← maximalIntegralCurveFlowDomain_geodesicSpray]
-  exact isOpen_maximalIntegralCurveFlowDomain hspray
+  exact isOpen_maximalIntegralCurveFlowDomain contMDiff_one_geodesicSpray
 
 /-- **The maximal geodesic flow is smooth.**  The maximal integral curves of the geodesic spray
 depend smoothly, jointly in the initial tangent vector and in time, on the domain of the
@@ -113,11 +106,9 @@ theorem contMDiffOn_maximalIntegralCurve_geodesicSpray :
     ContMDiffOn (I.tangent.prod 𝓘(ℝ, ℝ)) I.tangent ∞
       (fun q : TangentBundle I M × ℝ ↦ maximalIntegralCurve (geodesicSpray I M) q.1 q.2)
       {q | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} := by
-  have hspray : CMDiff ∞ (fun z : TangentBundle I M ↦
-      (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
-    contMDiff_geodesicSpray (I := I) (M := M) (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
   rw [← maximalIntegralCurveFlowDomain_geodesicSpray]
-  exact contMDiffOn_maximalIntegralCurve (I := I.tangent) (n := (⊤ : ℕ∞)) (by simp) hspray
+  exact contMDiffOn_maximalIntegralCurve (I := I.tangent) (n := (⊤ : ℕ∞)) (by simp)
+    contMDiff_infty_geodesicSpray
 
 /-- **Smooth dependence of maximal geodesics on initial data.**  The maximal geodesic with initial
 point `z.proj` and initial velocity `z.2`, evaluated at time `t`, is a smooth function of

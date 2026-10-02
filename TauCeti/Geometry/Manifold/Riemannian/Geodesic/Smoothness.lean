@@ -25,7 +25,7 @@ geodesic equation.
 * `TauCeti.Manifold.contMDiff_geodesicSpray`: the geodesic spray is `C^n` when the manifold is
   `C^(n + 2)` and its Riemannian metric is `C^(n + 1)`, with
   `TauCeti.Manifold.contMDiff_one_geodesicSpray` the `C^1` case consumed by the integral-curve
-  API.
+  API and `TauCeti.Manifold.contMDiff_infty_geodesicSpray` the smooth case used for geodesic flows.
 * `IsMIntegralCurveOn.isGeodesicCurveOnFrom_proj`: a spray integral curve on an open set projects
   to a geodesic with the initial data encoded by its value at zero.
 
@@ -152,6 +152,14 @@ theorem contMDiff_one_geodesicSpray [IsManifold I 3 M]
       (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
   contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω)) (m := 3) (k := 2)
     (by norm_num) (by norm_num)
+
+/-- **The geodesic spray is a smooth vector field** on the tangent bundle of a smooth manifold
+with a smooth Riemannian metric. -/
+theorem contMDiff_infty_geodesicSpray [IsManifold I ∞ M]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] :
+    CMDiff ∞ (fun z : TangentBundle I M ↦
+      (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
+  contMDiff_geodesicSpray (I := I) (M := M) (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
 
 end TauCeti.Manifold
 
