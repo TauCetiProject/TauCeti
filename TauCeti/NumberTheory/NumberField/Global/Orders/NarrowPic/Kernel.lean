@@ -1,0 +1,211 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.NumberField.Global.Orders.NarrowPic
+public import TauCeti.NumberTheory.NumberField.Units.Signature.Surjective
+
+/-!
+# The kernel of the narrow-to-wide Picard map of an order
+
+For an order `O` in a number field `K`, the forgetful map `NarrowPic O → Pic O` is surjective,
+and its kernel consists of the narrow classes of principal ideals. This file identifies that
+kernel with real sign patterns modulo the signatures of units of `O`, giving the exact sequence
+
+```text
+Oˣ → {±1}ʳ¹ → NarrowPic O → Pic O → 1.
+```
+
+The boundary map sends a sign pattern to the narrow class of the principal ideal of any element
+of `Kˣ` with those signs. Such an element exists by weak approximation at the real places, and
+two choices differ by a totally positive element, so the class does not depend on the choice.
+The signatures realized by units of `O` form a subgroup that can be strictly smaller than the
+signatures of units of the maximal order, which is why the order, and not only `K`, enters.
+
+As a consequence, the narrow Picard number is the wide one times the index of the unit
+signatures, a power of `2` not exceeding `2 ^ r₁`.
+
+## Main definitions
+
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.unitSignature`: the signature of a unit of an
+  order at the real places.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.narrowSignBoundary`: the boundary from real sign
+  patterns to the narrow Picard group.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.narrowSignQuotientEquivKerNarrowToPic`: sign
+  patterns modulo unit signatures are the kernel of `narrowToPic`.
+
+## Main results
+
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.ker_narrowSignBoundary`: exactness at the sign
+  group.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.range_narrowSignBoundary`: exactness at the narrow
+  Picard group.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_narrowPic`,
+  `TauCeti.GlobalNumberFields.NumberFieldOrder.exists_card_narrowPic_eq_card_pic_mul_two_pow`:
+  the narrow Picard number is the wide one times a power of `2`.
+
+## References
+
+* G. S. Kopp and J. C. Lagarias, *Class Field Theory for Orders of Number Fields*, §2.
+* `TauCeti/NumberTheory/NumberField/Global/RayClass/Narrow/Kernel.lean`, for the same exact
+  sequence for the maximal order, stated through ray class groups.
+-/
+
+public section
+noncomputable section
+
+open NumberField
+
+namespace TauCeti.GlobalNumberFields
+
+variable {K : Type*} [Field K] [NumberField K]
+
+namespace NumberFieldOrder
+
+variable (O : NumberFieldOrder K)
+
+/-- The **signature** of a unit of an order: the class, at each real place of `K`, of the sign of
+its image in `K`. -/
+def unitSignature :
+    O.toSubalgebraˣ →* ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :=
+  fieldUnitSignature.comp (Units.map (algebraMap O.toSubalgebra K).toMonoidHom)
+
+/-- The signature of a unit of an order is the signature of its image in `Kˣ`. -/
+@[simp]
+theorem unitSignature_apply (u : O.toSubalgebraˣ) :
+    O.unitSignature u =
+      fieldUnitSignature (Units.map (algebraMap O.toSubalgebra K).toMonoidHom u) :=
+  (rfl)
+
+/-- A unit of an order has trivial signature exactly when it is totally positive. -/
+theorem unitSignature_eq_one_iff {u : O.toSubalgebraˣ} :
+    O.unitSignature u = 1 ↔ IsTotallyPositive ((u : O.toSubalgebra) : K) := by
+  simp
+
+/-- The subgroup of real sign patterns realized by units of the order. -/
+def unitSignatures : Subgroup ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :=
+  -- The group structure on the sign patterns is supplied explicitly: elaborating `range` against
+  -- the `Pi.mulOneClass` structure carried by `unitSignature` does not find it by unification.
+  @MonoidHom.range O.toSubalgebraˣ _ _ Pi.group O.unitSignature
+
+/-- A sign pattern belongs to `unitSignatures` exactly when a unit of the order realizes it. -/
+@[simp]
+theorem mem_unitSignatures_iff
+    {s : {w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ} :
+    s ∈ O.unitSignatures ↔ ∃ u : O.toSubalgebraˣ, O.unitSignature u = s := by
+  rw [unitSignatures, MonoidHom.mem_range]
+
+/-- The subgroup of unit signatures is normal because the sign group is abelian. -/
+instance : O.unitSignatures.Normal := by
+  let _ : IsMulCommutative ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :=
+    IsMulCommutative.of_comm fun a b ↦ by
+      ext w
+      exact mul_comm (a w) (b w)
+  exact Subgroup.normal_of_isMulCommutative _
+
+private theorem totallyPositiveUnits_le_ker_mkPrincipal :
+    totallyPositiveUnits (K := K) ≤ MonoidHom.ker (NarrowPic.mkPrincipal O) := fun _ hx =>
+  NarrowPic.mkPrincipal_eq_one_of_isTotallyPositive O (mem_totallyPositiveUnits.mp hx)
+
+/-- The **sign boundary** of an order: a real sign pattern goes to the narrow Picard class of the
+principal ideal generated by any element of `Kˣ` with that signature. The class does not depend
+on the element, since two choices differ by a totally positive element. -/
+def narrowSignBoundary :
+    ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) →* NarrowPic O :=
+  (QuotientGroup.lift _ (NarrowPic.mkPrincipal O)
+    O.totallyPositiveUnits_le_ker_mkPrincipal).comp
+      (quotientTotallyPositiveUnitsEquiv (K := K)).symm.toMonoidHom
+
+/-- The sign boundary of the signature of `x` is the narrow class of the principal ideal `(x)`. -/
+@[simp]
+theorem narrowSignBoundary_fieldUnitSignature (x : Kˣ) :
+    O.narrowSignBoundary (fieldUnitSignature x) = NarrowPic.mkPrincipal O x := by
+  rw [narrowSignBoundary, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    ← quotientTotallyPositiveUnitsEquiv_mk, MulEquiv.symm_apply_apply, QuotientGroup.lift_mk]
+
+/-- **Exactness at the sign group**: a sign pattern has trivial boundary exactly when it is the
+signature of a unit of the order. -/
+theorem ker_narrowSignBoundary :
+    MonoidHom.ker O.narrowSignBoundary = O.unitSignatures := by
+  ext s
+  obtain ⟨x, rfl⟩ := fieldUnitSignature_surjective s
+  rw [MonoidHom.mem_ker, narrowSignBoundary_fieldUnitSignature, NarrowPic.mkPrincipal_eq_one_iff,
+    mem_unitSignatures_iff]
+  constructor
+  · rintro ⟨w, hw⟩
+    -- `w • x` is totally positive, so the signature of `x` is that of `w⁻¹`.
+    have h : O.unitSignature w * fieldUnitSignature x = 1 := by
+      rw [unitSignature_apply, ← map_mul, fieldUnitSignature_eq_one_iff]
+      simpa [Units.smul_def, Algebra.smul_def] using hw
+    exact ⟨w⁻¹, by rw [map_inv]; exact inv_eq_of_mul_eq_one_right h⟩
+  · rintro ⟨w, hw⟩
+    -- The signature of `w⁻¹ • x` is trivial.
+    have h : fieldUnitSignature
+        (Units.map (algebraMap O.toSubalgebra K).toMonoidHom w⁻¹ * x) = 1 := by
+      rw [map_mul, ← unitSignature_apply, ← hw, ← map_mul, inv_mul_cancel, map_one]
+    rw [fieldUnitSignature_eq_one_iff] at h
+    exact ⟨w⁻¹, by simpa [Units.smul_def, Algebra.smul_def] using h⟩
+
+/-- **Exactness at the narrow Picard group**: the boundaries of sign patterns are exactly the
+narrow classes with trivial wide Picard class. -/
+theorem range_narrowSignBoundary :
+    @MonoidHom.range _ Pi.group _ _ O.narrowSignBoundary = MonoidHom.ker O.narrowToPic := by
+  rw [narrowToPic_ker]
+  ext c
+  simp only [MonoidHom.mem_range]
+  constructor
+  · rintro ⟨s, rfl⟩
+    obtain ⟨x, rfl⟩ := fieldUnitSignature_surjective s
+    exact ⟨x, (O.narrowSignBoundary_fieldUnitSignature x).symm⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨fieldUnitSignature x, O.narrowSignBoundary_fieldUnitSignature x⟩
+
+/-- The sign boundary lands in the kernel of the forgetful map to the wide Picard group. -/
+@[simp]
+theorem narrowToPic_narrowSignBoundary
+    (s : {w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :
+    O.narrowToPic (O.narrowSignBoundary s) = 1 := by
+  rw [← MonoidHom.mem_ker, ← range_narrowSignBoundary]
+  exact ⟨s, rfl⟩
+
+/-- **The kernel of the narrow-to-wide Picard map is the quotient of real sign patterns by the
+signatures of units of the order.** -/
+def narrowSignQuotientEquivKerNarrowToPic :
+    ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) ⧸ O.unitSignatures ≃*
+      MonoidHom.ker O.narrowToPic :=
+  (QuotientGroup.quotientMulEquivOfEq O.ker_narrowSignBoundary.symm).trans
+    ((@QuotientGroup.quotientKerEquivRange _ Pi.group _ _ O.narrowSignBoundary).trans
+      (MulEquiv.subgroupCongr O.range_narrowSignBoundary))
+
+/-- The kernel equivalence sends the class of a sign pattern to its sign boundary. -/
+@[simp]
+theorem coe_narrowSignQuotientEquivKerNarrowToPic_mk
+    (s : {w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :
+    (O.narrowSignQuotientEquivKerNarrowToPic s : NarrowPic O) = O.narrowSignBoundary s :=
+  (rfl)
+
+/-- **The narrow Picard number is the wide Picard number times the index of the unit
+signatures.** Both sides are read with the `Nat.card` convention, so the identity also holds
+when the Picard groups are infinite. -/
+theorem card_narrowPic :
+    Nat.card (NarrowPic O) = Nat.card (Pic O) * O.unitSignatures.index := by
+  rw [Subgroup.card_eq_card_quotient_mul_card_subgroup (MonoidHom.ker O.narrowToPic),
+    Nat.card_congr (QuotientGroup.quotientKerEquivOfSurjective _
+      O.narrowToPic_surjective).toEquiv,
+    ← Nat.card_congr O.narrowSignQuotientEquivKerNarrowToPic.toEquiv, Subgroup.index_eq_card]
+
+/-- **The narrow Picard number is the wide Picard number times `2 ^ k` for some `k ≤ r₁`**, where
+`r₁` is the number of real places of `K`. -/
+theorem exists_card_narrowPic_eq_card_pic_mul_two_pow :
+    ∃ k ≤ InfinitePlace.nrRealPlaces K, Nat.card (NarrowPic O) = Nat.card (Pic O) * 2 ^ k := by
+  have h : O.unitSignatures.index ∣ 2 ^ InfinitePlace.nrRealPlaces K :=
+    card_realSignPatterns (K := K) ▸ Subgroup.index_dvd_card _
+  obtain ⟨k, hk, hindex⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp h
+  exact ⟨k, hk, by rw [card_narrowPic, hindex]⟩
+
+end NumberFieldOrder
+
+end TauCeti.GlobalNumberFields
