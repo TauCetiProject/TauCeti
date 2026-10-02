@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
-public import TauCeti.MeasureTheory.Function.PreciseRepresentative
+public import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 
 /-!
 # Hölder continuity of weak solutions (De Giorgi)
@@ -30,8 +30,6 @@ turns them into a Hölder bound for the precise representative, with constant
 
 ## Main declarations
 
-* `TauCeti.W1p.ae_eq_preciseRepresentative`: a Sobolev function agrees almost everywhere with its
-  precise representative.
 * `TauCeti.PDE.exists_holderOnWith_preciseRepresentative`: **De Giorgi's theorem**; the precise
   representative of a weak solution is Hölder continuous on every set at positive distance from
   `∂Ω`, with an explicit constant and a uniform exponent.
@@ -57,13 +55,6 @@ open Filter MeasureTheory Matrix Metric Set TopologicalSpace TauCeti.MeasureTheo
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
-
-/-- A Sobolev function agrees almost everywhere on its domain with its precise representative. -/
-theorem W1p.ae_eq_preciseRepresentative {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E}
-    [mu.IsAddHaarMeasure] {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : W1p mu Omega p) :
-    W1p.value u =ᵐ[mu.restrict Omega] preciseRepresentative mu (W1p.value u) :=
-  ae_eq_restrict_preciseRepresentative Omega.isOpen (W1p.hasWeakFDerivOn u).locallyIntegrableOn
 
 namespace PDE
 
