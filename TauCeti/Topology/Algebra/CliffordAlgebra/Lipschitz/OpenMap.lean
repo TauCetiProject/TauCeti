@@ -18,8 +18,10 @@ import Mathlib.Topology.Baire.LocallyCompactRegular
 
 For a nondegenerate quadratic form on a finite-dimensional space over a Hausdorff topological
 field in which `2` is invertible, Mathlib's Lipschitz group is closed in the units of the Clifford
-algebra: it is the classical Clifford group of units whose twisted conjugation preserves the
-vectors, and each of these conditions is closed. Over a locally compact σ-compact field, such as
+algebra. When `V` is nontrivial it is the classical Clifford group of units whose twisted
+conjugation preserves the vectors, and each of these conditions is closed; when `V` is trivial it
+is the trivial subgroup (although then every unit preserves the zero vector space), which is
+closed as a point. Over a locally compact σ-compact field, such as
 `ℝ` or `ℚ_p`, the Lipschitz group is therefore σ-compact, while the orthogonal group is locally
 compact and Hausdorff. The open mapping theorem for topological groups then shows that the
 surjective continuous vector representation `lipschitzToOrthogonal` is an open map.
