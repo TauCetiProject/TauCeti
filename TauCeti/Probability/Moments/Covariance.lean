@@ -119,9 +119,9 @@ theorem integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix [Fintype ι]
     simpa only [Real.norm_eq_abs, sq_abs] using h
   have hmean (i : ι) : (∫ x, x ∂μ) i = ∫ x, x i ∂μ := by
     exact eval_integral_piLp (q := 2) (fun j => (hcoord j).integrable one_le_two) i
-  rw [show (fun x : EuclideanSpace ℝ ι => ‖x‖ ^ 2) =
-      fun x => ∑ i, (x i) ^ 2 by funext x; exact EuclideanSpace.real_norm_sq_eq x]
-  rw [integral_finsetSum Finset.univ (fun i _ => hsq i),
+  have hnorm : (fun x : EuclideanSpace ℝ ι => ‖x‖ ^ 2) = fun x => ∑ i, (x i) ^ 2 :=
+    funext EuclideanSpace.real_norm_sq_eq
+  rw [hnorm, integral_finsetSum Finset.univ (fun i _ => hsq i),
     EuclideanSpace.real_norm_sq_eq, Matrix.trace]
   rw [← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl

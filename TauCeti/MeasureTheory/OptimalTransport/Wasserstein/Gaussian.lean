@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.Probability.Distributions.Gaussian.PosDefMap
-public import TauCeti.Probability.Moments.Covariance
 
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 
@@ -45,10 +43,21 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The squared quadratic Wasserstein distance between Gaussian parameters. -/
+/-- The closed-form Gaussian (Bures) expression
+`‖m₁ - m₂‖² + tr S₁ + tr S₂ - 2 tr (S₁^(1/2) S₂ S₁^(1/2))^(1/2)` in the means and covariances.
+For arbitrary matrices it is only an algebraic expression; when `S₁` is positive definite and `S₂`
+is positive semidefinite it is the squared quadratic Wasserstein distance between the Gaussian
+laws with these parameters (`wassersteinEDist_two_multivariateGaussian_rpow_two`). -/
 def gaussianWassersteinSq (m₁ m₂ : EuclideanSpace ℝ ι) (S₁ S₂ : Matrix ι ι ℝ) : ℝ :=
   ‖m₁ - m₂‖ ^ 2 + Matrix.trace S₁ + Matrix.trace S₂ -
     2 * Matrix.trace (CFC.sqrt (CFC.sqrt S₁ * S₂ * CFC.sqrt S₁))
+
+/-- Unfolds `gaussianWassersteinSq` to its defining Bures expression. -/
+theorem gaussianWassersteinSq_def (m₁ m₂ : EuclideanSpace ℝ ι) (S₁ S₂ : Matrix ι ι ℝ) :
+    gaussianWassersteinSq m₁ m₂ S₁ S₂ =
+      ‖m₁ - m₂‖ ^ 2 + Matrix.trace S₁ + Matrix.trace S₂ -
+        2 * Matrix.trace (CFC.sqrt (CFC.sqrt S₁ * S₂ * CFC.sqrt S₁)) :=
+  (rfl)
 
 /-- The standard positive affine map is optimal for quadratic transport from a nondegenerate
 Gaussian law to an arbitrary Gaussian law. -/
@@ -105,21 +114,13 @@ theorem Probability.integral_norm_sub_affineGeometricMean_sq
   let B : Matrix ι ι ℝ := 1 - A
   let c : EuclideanSpace ℝ ι := A.toEuclideanLin m₁ - m₂
   let C : Matrix ι ι ℝ := B * S₁ * B.transpose
-  have hone (x : EuclideanSpace ℝ ι) :
-      (1 : Matrix ι ι ℝ).toEuclideanLin x = x := by
-    ext i
-    change (Matrix.toLpLin 2 2 (1 : Matrix ι ι ℝ) x).ofLp i = x.ofLp i
-    rw [Matrix.ofLp_toLpLin]
-    simp only [Matrix.toLin'_apply, Matrix.one_mulVec]
+  have hB (x : EuclideanSpace ℝ ι) : B.toEuclideanLin x = x - A.toEuclideanLin x := by
+    rw [map_sub, LinearMap.sub_apply, Matrix.toLpLin_one, LinearMap.id_apply]
   have hfun : (fun x => x - Probability.affineGeometricMean S₁ S₂ m₁ m₂ x) =
       fun x => B.toEuclideanLin x + c := by
     funext x
-    rw [Probability.affineGeometricMean_sub]
-    dsimp only [A, B, c]
-    rw [show (1 - geometricMean S₁⁻¹ʳ S₂).toEuclideanLin =
-      (1 : Matrix ι ι ℝ).toEuclideanLin -
-        (geometricMean S₁⁻¹ʳ S₂).toEuclideanLin from
-      map_sub Matrix.toEuclideanLin 1 (geometricMean S₁⁻¹ʳ S₂), LinearMap.sub_apply, hone]
+    rw [Probability.affineGeometricMean_sub, hB]
+    dsimp only [A, c]
     rw [map_sub]
     module
   have hC : C.PosSemidef := by
@@ -131,11 +132,8 @@ theorem Probability.integral_norm_sub_affineGeometricMean_sq
       multivariateGaussian (m₁ - m₂) C := by
     rw [hfun, Probability.map_affine_multivariateGaussian m₁ hS₁.posSemidef B c]
     congr 1
-    dsimp only [B, c]
-    rw [show (1 - geometricMean S₁⁻¹ʳ S₂).toEuclideanLin =
-      (1 : Matrix ι ι ℝ).toEuclideanLin -
-        (geometricMean S₁⁻¹ʳ S₂).toEuclideanLin from
-      map_sub Matrix.toEuclideanLin 1 (geometricMean S₁⁻¹ʳ S₂), LinearMap.sub_apply, hone]
+    rw [hB]
+    dsimp only [c]
     module
   have hmeas : AEMeasurable
       (fun x => x - Probability.affineGeometricMean S₁ S₂ m₁ m₂ x)
@@ -149,9 +147,9 @@ theorem Probability.integral_norm_sub_affineGeometricMean_sq
   rw [← integral_map hmeas hint.aestronglyMeasurable, hmap,
     integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix _ IsGaussian.memLp_two_id,
     integral_id_multivariateGaussian, Probability.covMatrix_multivariateGaussian _ hC]
-  dsimp only [gaussianWassersteinSq, C, B, A]
-  rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
-    hS₁.trace_one_sub_geometricMean_mul_mul_conjTranspose hS₂]
+  dsimp only [C, B, A]
+  rw [gaussianWassersteinSq_def, ← Matrix.conjTranspose_eq_transpose_of_trivial,
+    hS₁.trace_one_sub_geometricMean_ringInverse_mul_mul_conjTranspose hS₂]
   ring
 
 /-- The Gaussian Wasserstein square is nonnegative when the source covariance is positive
@@ -190,9 +188,7 @@ theorem wassersteinEDist_two_multivariateGaussian_rpow_two
     IsGaussian.memLp_two_id.sub (hopt.toHasLaw.memLp IsGaussian.memLp_two_id)
   have hint : Integrable (fun x ↦ ‖x - T x‖ ^ 2) (multivariateGaussian m₁ S₁) :=
     (memLp_two_iff_integrable_sq_norm hmem.aestronglyMeasurable).mp hmem
-  change wassersteinEDist 2 (multivariateGaussian m₁ S₁) (multivariateGaussian m₂ S₂) ^
-    (2 : ℝ≥0∞).toReal = _
-  rw [wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
+  rw [← ENNReal.toReal_ofNat 2, wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
     ENNReal.ofNat_ne_top, hcost, transportCost_const_mul (by norm_num) ENNReal.ofNat_ne_top,
     ← hopt.transportMapCost_eq, transportMapCost_def,
     ← lintegral_const_mul' 2 (fun x ↦ cHalf (x, T x)) ENNReal.ofNat_ne_top]
