@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: √2
+Authors: √2, Codex
 -/
 module
 
@@ -10,21 +10,27 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupHomology
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.LongExactSequence
 
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupCohomology
+
 /-!
-# Corestriction and connecting maps in negative Tate degrees
+# Corestriction and connecting maps in every Tate degree
 
 For a subgroup `H` of a finite group `G`, Tate corestriction commutes with the connecting map
 of every short exact sequence of representations, from degree `r` to degree `r + 1` for
-`r < 0`. This includes the norm boundary from degree minus one to degree zero. When both
+every integer `r`. This includes the norm boundary from degree minus one to degree zero. When both
 degrees are at most `-2`, the compatibility holds along any homomorphism of finite groups.
 
 In negative degrees, the canonical comparison with group homology intertwines corestriction
 with the map induced by subgroup inclusion. At the norm boundary, the compatibility relates
 the norm-kernel inclusion in degree minus one to the relative norm on invariants in degree zero.
 
-These squares allow dimension shifting across the negative half of the Tate complex and
-its norm boundary, in particular when proving the projection formula for cup products
-whose total degree is zero. No nonnegative-degree compatibility is asserted here.
+In nonnegative degrees, the canonical map from ordinary cohomology to Tate cohomology
+intertwines corestriction: in degree zero this is the relative norm on invariants, and in
+positive degrees it is ordinary cohomological corestriction. Since this comparison is
+surjective, the compatibility with ordinary connecting maps determines the Tate square.
+
+These squares allow dimension shifting across the entire Tate complex and its norm boundary,
+in particular when proving the projection formula for cup products.
 
 ## Main results
 
@@ -34,8 +40,10 @@ whose total degree is zero. No nonnegative-degree compatibility is asserted here
   groups commutes with connecting maps whose source and target degrees are at most `-2`.
 * `TauCeti.TateCohomology.δ_comp_cor_neg_one`: corestriction commutes with the norm-boundary
   connecting map.
-* `TauCeti.TateCohomology.δ_comp_cor_of_neg`: corestriction commutes with connecting maps
-  starting in any negative degree.
+* `Rep.fromGroupCohomology_comp_cor`: the comparison from ordinary
+  cohomology intertwines corestriction in every nonnegative degree.
+* `TauCeti.TateCohomology.δ_comp_cor`: corestriction commutes with connecting maps in every
+  integer degree.
 
 ## References
 
@@ -182,8 +190,7 @@ private theorem δ_comp_cor_negSucc {S : ShortComplex (Rep R G)} (hS : S.ShortEx
 
 /-- Tate corestriction commutes with the connecting map from degree `r` to `r + 1` for
 every negative degree `r`, including the boundary from minus one to zero. -/
-@[reassoc (attr := simp)]
-theorem δ_comp_cor_of_neg {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
+private theorem δ_comp_cor_of_neg {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
     (H : Subgroup G) {r : ℤ} (hr : r < 0) :
     _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) r ≫ cor S.X₁ H (r + 1) =
       cor S.X₃ H r ≫ _root_.TateCohomology.δ hS r := by
@@ -195,5 +202,79 @@ theorem δ_comp_cor_of_neg {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
     rw [cor_zero, cor_neg_one]
     exact δ_comp_cor_neg_one hS H
   · exact δ_comp_cor_negSucc hS H n
+
+/-- The canonical comparison from ordinary cohomology to Tate cohomology intertwines
+corestriction in every nonnegative degree, including the relative norm in degree zero.
+
+As in `cor`, the subgroup Tate carrier uses `Subgroup.fintypeOfFinite H`; callers with
+another `Fintype H` should select this instance when forming the square. The generic
+`Rep.fromGroupCohomology` comparison itself preserves the ambient group instance. -/
+@[reassoc]
+theorem _root_.Rep.fromGroupCohomology_comp_cor (M : Rep R G) (H : Subgroup G) (n : ℕ) :
+    fromGroupCohomology (Rep.res H.subtype M) n ≫ cor M H n =
+      groupCohomology.corestriction H M n ≫ fromGroupCohomology M n := by
+  cases n with
+  | zero =>
+    -- Degree zero is the same index written through the natural-number inclusion.
+    erw [fromGroupCohomology_zero, fromGroupCohomology_zero, cor_zero,
+      Category.assoc, H0π_comp_H0Cor]
+    have hNorm := Rep.H0Iso_inv_comp_corestriction_comp_H0Iso_hom M H
+    rw [Iso.inv_comp_eq] at hNorm
+    exact (Category.assoc _ _ _).symm.trans (congrArg (· ≫ H0π M) hNorm.symm)
+  | succ n =>
+    rw [← cancel_mono ((_root_.TateCohomology.isoGroupCohomology (n + 1)).app M).hom]
+    have hCor := cor_pos_comp_isoGroupCohomology_hom M H n
+    simp only [Int.natCast_add, Int.cast_ofNat_Int, Iso.app_hom] at hCor ⊢
+    rw [Category.assoc, hCor, fromGroupCohomology_succ,
+      Category.assoc, fromGroupCohomology_succ]
+    have hH := Iso.inv_hom_id
+      ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app
+        (Rep.res H.subtype M))
+    have hG := Iso.inv_hom_id
+      ((_root_.TateCohomology.isoGroupCohomology (n + 1)).app M)
+    simp only [Iso.app_inv, Iso.app_hom] at hH hG ⊢
+    exact ((Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ groupCohomology.corestriction H M (n + 1)) hH).trans
+        (Category.id_comp _))).trans
+      ((congrArg (groupCohomology.corestriction H M (n + 1) ≫ ·) hG).trans
+        (Category.comp_id _)).symm
+
+private theorem δ_comp_cor_of_nonneg {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
+    (H : Subgroup G) (n : ℕ) :
+    _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) n ≫
+        cor S.X₁ H (n + 1) =
+      cor S.X₃ H n ≫ _root_.TateCohomology.δ hS n := by
+  let hRes := (shortExact_res H.subtype).2 hS
+  have hδ := δ_comp_fromGroupCohomology hRes n
+  dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
+  have hC₁ := fromGroupCohomology_comp_cor S.X₁ H (n + 1)
+  have hC₃ := fromGroupCohomology_comp_cor S.X₃ H n
+  simp only [Int.natCast_add, Int.cast_ofNat_Int] at hC₁
+  rw [← cancel_epi (fromGroupCohomology (Rep.res H.subtype S.X₃) n),
+    ← reassoc_of% hδ]
+  calc
+    _ = groupCohomology.δ hRes n (n + 1) rfl ≫
+        groupCohomology.corestriction H S.X₁ (n + 1) ≫
+          fromGroupCohomology S.X₁ (n + 1) := congrArg (_ ≫ ·) hC₁
+    _ = groupCohomology.corestriction H S.X₃ n ≫
+        fromGroupCohomology S.X₃ n ≫ _root_.TateCohomology.δ hS n := by
+      rw [← Category.assoc, groupCohomology.δ_comp_corestriction H hS n (n + 1) rfl,
+        Category.assoc, δ_comp_fromGroupCohomology]
+    _ = _ := ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hC₃.symm)).trans
+      (Category.assoc _ _ _)
+
+/-- Tate corestriction commutes with the connecting map from degree `r` to degree `r + 1`
+for every integer degree, including both sides of the norm boundary.
+
+The subgroup Tate carrier uses the `Subgroup.fintypeOfFinite H` instance fixed by `cor`. -/
+@[reassoc (attr := simp)]
+theorem δ_comp_cor {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
+    (H : Subgroup G) (r : ℤ) :
+    _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) r ≫ cor S.X₁ H (r + 1) =
+      cor S.X₃ H r ≫ _root_.TateCohomology.δ hS r := by
+  by_cases hr : r < 0
+  · exact δ_comp_cor_of_neg hS H hr
+  · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ r)
+    exact δ_comp_cor_of_nonneg hS H n
 
 end TauCeti.TateCohomology
