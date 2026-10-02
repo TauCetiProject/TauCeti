@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Fields
+import TauCeti.LinearAlgebra.End.Adjoin
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Finite
@@ -72,30 +73,15 @@ private theorem qExpansion_coeff_one_smul (f : Eigenform N k)
   rw [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos
     (one_mem_strictPeriods_Gamma1_map N), PowerSeries.coeff_smul, h₁, smul_eq_mul, mul_one]
 
-/-- A normalised full eigenform is a joint eigenvector of the prime-index Hecke algebra, the
-eigenvalue of an operator being the first Fourier coefficient of its image. -/
 private theorem apply_eq_qExpansion_coeff_one_smul (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (T : heckeTCuspPrimeAlgebra N k) :
     T.1 f.toCuspForm = (qExpansion 1 (T.1 f.toCuspForm)).coeff 1 • f.toCuspForm := by
   obtain ⟨T, hT⟩ := T
-  suffices ∃ c : ℂ, T f.toCuspForm = c • f.toCuspForm by
-    obtain ⟨c, hc⟩ := this
-    simp only [hc, qExpansion_coeff_one_smul f h₁]
   rw [heckeTCuspPrimeAlgebra_def] at hT
-  induction hT using Algebra.adjoin_induction with
-  | mem T hT =>
-      obtain ⟨⟨p, hp⟩, rfl⟩ := hT
-      exact ⟨_, f.heckeTCuspNat_eq_eigenvalue_smul hp⟩
-  | algebraMap n =>
-      exact ⟨n, by simpa using (Int.cast_smul_eq_zsmul ℂ n f.toCuspForm).symm⟩
-  | add T S _ _ hT hS =>
-      obtain ⟨c, hc⟩ := hT
-      obtain ⟨d, hd⟩ := hS
-      exact ⟨c + d, by rw [LinearMap.add_apply, hc, hd, add_smul]⟩
-  | mul T S _ _ hT hS =>
-      obtain ⟨c, hc⟩ := hT
-      obtain ⟨d, hd⟩ := hS
-      exact ⟨c * d, by rw [Module.End.mul_apply, hd, map_smul, hc, smul_smul, mul_comm]⟩
+  obtain ⟨c, hc⟩ := exists_smul_eq_of_mem_adjoin (v := f.toCuspForm) (by
+    rintro _ ⟨⟨p, hp⟩, rfl⟩
+    exact ⟨_, f.heckeTCuspNat_eq_eigenvalue_smul hp⟩) hT
+  rw [hc, qExpansion_coeff_one_smul f h₁]
 
 /-- The eigenvalue homomorphism of a normalised full eigenform on the prime-index Hecke
 algebra. -/
@@ -105,35 +91,54 @@ def _root_.HeckeRing.GL2.Eigenform.eigenvalueHom (f : Eigenform N k)
     (fun T ↦ (qExpansion 1 (T.1 f.toCuspForm)).coeff 1) f.toCuspForm f.ne_zero fun T ↦
       Module.End.mem_eigenspace_iff.mpr (apply_eq_qExpansion_coeff_one_smul f h₁ T)
 
+/-- The eigenvalue of an operator in the prime-index Hecke algebra on a normalised full
+eigenform is the first Fourier coefficient of its image. -/
+@[simp]
+theorem _root_.HeckeRing.GL2.Eigenform.eigenvalueHom_apply (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (T : heckeTCuspPrimeAlgebra N k) :
+    f.eigenvalueHom h₁ T = (qExpansion 1 (T.1 f.toCuspForm)).coeff 1 := by
+  rw [Eigenform.eigenvalueHom, AlgHom.eigenvalueHomOfJointEigenvector_apply]
+
+/-- A normalised full eigenform is an eigenvector of every operator in the prime-index Hecke
+algebra, with eigenvalue given by its eigenvalue homomorphism. -/
+theorem _root_.HeckeRing.GL2.Eigenform.heckeTCuspPrimeAlgebra_apply_eq_eigenvalueHom_smul
+    (f : Eigenform N k) (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1)
+    (T : heckeTCuspPrimeAlgebra N k) :
+    T.1 f.toCuspForm = f.eigenvalueHom h₁ T • f.toCuspForm := by
+  rw [Eigenform.eigenvalueHom_apply]
+  exact apply_eq_qExpansion_coeff_one_smul f h₁ T
+
 /-- On a prime-index Hecke operator, the eigenvalue homomorphism of a normalised full eigenform
 is its corresponding Fourier coefficient. -/
 theorem _root_.HeckeRing.GL2.Eigenform.eigenvalueHom_heckeTCuspNat (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {p : ℕ} (hp : p.Prime) :
     f.eigenvalueHom h₁ ⟨_, heckeTCuspNat_mem_heckeTCuspPrimeAlgebra N k hp⟩ =
       (qExpansion 1 f.toCuspForm).coeff p := by
-  simp only [Eigenform.eigenvalueHom, AlgHom.eigenvalueHomOfJointEigenvector_apply]
-  rw [f.heckeTCuspNat_eq_eigenvalue_smul hp, qExpansion_coeff_one_smul f h₁]
+  rw [Eigenform.eigenvalueHom_apply, f.heckeTCuspNat_eq_eigenvalue_smul hp,
+    qExpansion_coeff_one_smul f h₁]
   exact (f.qExpansion_coeff_eq_eigenvalue h₁ ⟨p, hp.pos⟩).symm
+
+/-- In weight at least two, the eigenvalues of a normalised full eigenform on the prime-index
+Hecke algebra are algebraic integers. -/
+theorem _root_.HeckeRing.GL2.Eigenform.isIntegral_eigenvalueHom (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (hk : 2 ≤ k)
+    (T : heckeTCuspPrimeAlgebra N k) : IsIntegral ℤ (f.eigenvalueHom h₁ T) :=
+  have := heckeTCuspPrimeAlgebra_finite N k hk
+  (IsIntegral.of_finite ℤ T).map (f.eigenvalueHom h₁)
 
 /-- **The Fourier coefficients of a normalised full eigenform of weight at least two are
 algebraic integers.** -/
 theorem _root_.HeckeRing.GL2.Eigenform.isIntegral_qExpansion_coeff (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (hk : 2 ≤ k) (n : ℕ) :
     IsIntegral ℤ ((qExpansion 1 f.toCuspForm).coeff n) := by
-  have := heckeTCuspPrimeAlgebra_finite N k hk
   let O := integralClosure ℤ ℂ
   have ha : ∀ p : ℕ, p.Prime → (qExpansion 1 f.toCuspForm).coeff p ∈ O := by
     intro p hp
     rw [mem_integralClosure_iff, ← f.eigenvalueHom_heckeTCuspNat h₁ hp]
-    exact (IsIntegral.of_finite ℤ _).map (f.eigenvalueHom h₁)
-  have hχ : ∀ p : ℕ, (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p ∈ O := by
-    intro p
-    apply MulChar.ofUnitHom_mem f.χ O (a := (p : ZMod N))
-    intro u
-    rw [mem_integralClosure_iff]
-    have hfin : IsOfFinOrder ((f.χ u : ℂˣ) : ℂ) :=
-      ((Units.coeHom ℂ).comp f.χ).isOfFinOrder (isOfFinOrder_of_finite u)
-    exact hfin.isIntegral
+    exact f.isIntegral_eigenvalueHom h₁ hk _
+  have hχ : ∀ p : ℕ, (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p ∈ O := fun p ↦
+    MulChar.apply_mem_of_forall_unit _ O
+      (fun u ↦ by rw [MulChar.ofUnitHom_coe]; exact f.χ.isIntegral_coe_apply u) _
   have hpow : ∀ p : ℕ, (p : ℂ) ^ (k - 1) ∈ O := by
     intro p
     obtain ⟨m, hm⟩ : ∃ m : ℕ, k - 1 = m := ⟨(k - 1).toNat, by omega⟩
@@ -159,10 +164,8 @@ theorem numberField_CoefficientField (f : Newform N k) (hk : 2 ≤ k) :
   have : Finite S := ((s.finite_toSet.image _).union (Set.finite_range _)).to_subtype
   have hS : ∀ x ∈ S, IsIntegral ℚ x := by
     rintro x (⟨T, -, rfl⟩ | ⟨u, rfl⟩)
-    · exact ((IsIntegral.of_finite ℤ T).map (f.toEigenform.eigenvalueHom h₁)).tower_top
-    · have hfin : IsOfFinOrder ((f.χ u : ℂˣ) : ℂ) :=
-        ((Units.coeHom ℂ).comp f.χ).isOfFinOrder (isOfFinOrder_of_finite u)
-      exact hfin.isIntegral.tower_top
+    · exact (f.toEigenform.isIntegral_eigenvalueHom h₁ hk T).tower_top
+    · exact (f.χ.isIntegral_coe_apply u).tower_top
   have hle : CoefficientField f ≤ IntermediateField.adjoin ℚ S := by
     refine (CoefficientField_le_iff_forall_prime_and_char f _).mpr
       ⟨fun p hp ↦ ?_, fun u ↦ IntermediateField.subset_adjoin ℚ S (Or.inr ⟨u, rfl⟩)⟩
@@ -174,9 +177,9 @@ theorem numberField_CoefficientField (f : Newform N k) (hk : 2 ≤ k) :
     intro T hT
     induction hT using Submodule.span_induction with
     | mem T hT => exact IntermediateField.subset_adjoin ℚ S (Or.inl ⟨T, hT, rfl⟩)
-    | zero => simp
-    | add T T' _ _ hT hT' => simpa using add_mem hT hT'
-    | smul n T _ hT => simpa using zsmul_mem hT n
+    | zero => rw [map_zero]; exact zero_mem _
+    | add T T' _ _ hT hT' => rw [map_add]; exact add_mem hT hT'
+    | smul n T _ hT => rw [map_zsmul]; exact zsmul_mem hT n
   have := IntermediateField.finiteDimensional_adjoin hS
   have := FiniteDimensional.of_injective (IntermediateField.inclusion hle).toLinearMap
     (IntermediateField.inclusion_injective hle)

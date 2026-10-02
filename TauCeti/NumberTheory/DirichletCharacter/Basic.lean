@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import Mathlib.Algebra.Ring.Subring.Basic
 
 /-!
 # Factoring a Dirichlet character through a divisor
@@ -67,12 +66,13 @@ public section
 
 namespace MulChar
 
-/-- The zero extension of a unit character belongs to a subring whenever all its unit values do. -/
-theorem ofUnitHom_mem {R R' S : Type*} [CommMonoidWithZero R] [CommRing R']
-    [SetLike S R'] [SubringClass S R'] (χ : Rˣ →* R'ˣ) (s : S)
-    (hχ : ∀ u : Rˣ, (χ u : R') ∈ s) (a : R) : MulChar.ofUnitHom χ a ∈ s := by
+/-- A multiplicative character takes values in a subset closed under `0` whenever all its values
+on units lie there. -/
+theorem apply_mem_of_forall_unit {R R' S : Type*} [CommMonoidWithZero R]
+    [CommMonoidWithZero R'] [SetLike S R'] [ZeroMemClass S R'] (χ : MulChar R R') (s : S)
+    (hχ : ∀ u : Rˣ, χ (u : R) ∈ s) (a : R) : χ a ∈ s := by
   by_cases ha : IsUnit a
-  · rw [← ha.unit_spec, MulChar.ofUnitHom_coe]
+  · rw [← ha.unit_spec]
     exact hχ _
   · rw [MulChar.map_nonunit _ ha]
     exact zero_mem s

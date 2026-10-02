@@ -176,7 +176,8 @@ theorem CoefficientField_le_iff_forall_prime_and_char [NeZero N]
       (MulChar.ofUnitHom f.toEigenform.χ : DirichletCharacter ℂ N) p ∈ K := by
     intro p
     simpa only [HeckeRing.GL2.Newform.toEigenform_χ] using
-      MulChar.ofUnitHom_mem f.χ K hχ (p : ZMod N)
+      MulChar.apply_mem_of_forall_unit (MulChar.ofUnitHom f.χ) K
+        (fun u ↦ by simpa only [MulChar.ofUnitHom_coe] using hχ u) (p : ZMod N)
   have hn := f.toEigenform.qExpansion_coeff_mem_of_forall_prime
     f.toEigenform_qExpansion_coeff_one K (by simpa using ha)
     (fun p _ ↦ mul_mem (hχ' p) (zpow_mem (natCast_mem K p) _)) n
