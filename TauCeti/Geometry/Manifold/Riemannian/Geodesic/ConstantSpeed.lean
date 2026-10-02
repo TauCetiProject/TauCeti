@@ -30,11 +30,13 @@ directly with `curveVelocity`.
   on an arbitrary parameter set, squared speed and speed are constant on each connected
   component.
 * `TauCeti.Manifold.IsGeodesicCurveOn.energy_eq`: the energy of a geodesic segment is
-  `(b - a) ‖γ'(a)‖² / 2`, on any parameter set containing the segment.
+  `(b - a) ‖curveVelocityWithin I γ s a‖² / 2`, on any parameter set `s` containing the segment.
 * `TauCeti.Manifold.IsGeodesicCurve.inner_curveVelocity_self_eq`: an all-time geodesic has the
   same squared speed at any two parameters.
 * `TauCeti.Manifold.IsGeodesicCurve.norm_curveVelocity_eq`: an all-time geodesic has the same
   speed at any two parameters.
+* `TauCeti.Manifold.IsGeodesicCurve.energy_eq`: the energy of an all-time geodesic between `a`
+  and `b` is `(b - a) ‖curveVelocity I γ a‖² / 2`.
 * `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: the squared speed of a maximal
   geodesic is that of its initial velocity.
 * `TauCeti.Manifold.energy_maximalGeodesic`: hence its energy between two parameters of its
@@ -145,9 +147,9 @@ theorem IsGeodesicCurveOn.norm_curveVelocityWithin_eq_of_mem_connectedComponentI
     h.inner_curveVelocityWithin_self_eq_of_mem_connectedComponentIn hb]
 
 /-- **The energy of a geodesic segment.** A geodesic has constant speed, so its energy between
-`a` and `b` is `(b - a) ‖γ'(a)‖² / 2` whenever the parameter set `s` contains the interval between
-them. The speed is that of the within-set velocity, so `s` need not be open: this applies to
-geodesic segments on closed intervals. -/
+`a` and `b` is `(b - a) ‖curveVelocityWithin I γ s a‖² / 2` whenever the parameter set `s`
+contains the interval between them. The speed is that of the within-set velocity, so `s` need not
+be open: this applies to geodesic segments on closed intervals. -/
 theorem IsGeodesicCurveOn.energy_eq (h : IsGeodesicCurveOn I γ s) {a b : ℝ}
     (hsub : uIcc a b ⊆ s) :
     energy I γ a b = (b - a) * ‖curveVelocityWithin I γ s a‖ ^ 2 / 2 := by
@@ -178,6 +180,13 @@ theorem IsGeodesicCurve.norm_curveVelocity_eq
     IsGeodesicCurveOn.norm_curveVelocityWithin_eq
       ((isGeodesicCurveOn_univ (I := I) (γ := γ)).mpr h) isPreconnected_univ
       (Set.mem_univ a) (Set.mem_univ b)
+
+/-- The energy of an all-time geodesic between `a` and `b` is `(b - a) ‖γ'(a)‖² / 2`, expressed
+using the unrestricted `curveVelocity`. -/
+theorem IsGeodesicCurve.energy_eq (h : IsGeodesicCurve I γ) (a b : ℝ) :
+    energy I γ a b = (b - a) * ‖curveVelocity I γ a‖ ^ 2 / 2 := by
+  simpa only [curveVelocityWithin_univ] using
+    ((isGeodesicCurveOn_univ (I := I) (γ := γ)).mpr h).energy_eq (subset_univ _)
 
 end TauCeti.Manifold
 
