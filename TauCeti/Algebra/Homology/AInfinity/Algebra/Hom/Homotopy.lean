@@ -233,6 +233,8 @@ theorem linearHomotopy_mem (h : Homotopy f g) {p : ℤ} {a : A}
     rwa [InternalGrading.shift_piece, sub_add_cancel]
   have hh := h.isHomogeneous_taylor.map_mem
     (ReducedTensorWords.ofLetter_mem_gradedPiece (AA.grading.shift 1) ha')
+  -- Homogeneity gives suspended degree `(p - 1) + -1`; `shift_piece` adds 1 back.
+  -- This index is not definitionally equal to `p - 1`, so normalize it explicitly with `ring`.
   rwa [InternalGrading.shift_piece, show p - 1 + -1 + 1 = p - 1 by ring] at hh
 
 /-- **The arity-one component is a chain homotopy between the linear parts**:
