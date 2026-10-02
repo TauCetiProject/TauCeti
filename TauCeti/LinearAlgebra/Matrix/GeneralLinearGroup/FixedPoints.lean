@@ -45,8 +45,8 @@ three points.
   points of the projective line is scalar, hence central.  The hypothesis is on `Set.encard`, which
   measures an infinite set of fixed points correctly.
 * `Matrix.ProjGenLinGroup.mk_eq_one_of_forall_smul_eq` and
-  `Matrix.ProjGenLinGroup.mk_eq_mk_of_forall_smul_eq`: three-point rigidity in `PGL₂(K)`, and the
-  uniqueness form — two matrices acting the same way on a set of at least three points of the
+  `Matrix.ProjGenLinGroup.mk_eq_mk_of_forall_smul_eq_smul`: three-point rigidity in `PGL₂(K)`, and
+  the uniqueness form — two matrices acting the same way on a set of at least three points of the
   projective line are equal in `PGL₂(K)`.
 
 ## References
@@ -169,7 +169,7 @@ theorem mk_eq_one_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g 
 
 /-- **A Möbius transformation is determined by three points**: two matrices acting the same way on
 a set of at least three points of the projective line are equal in `PGL₂(K)`. -/
-theorem mk_eq_mk_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = h • c)
+theorem mk_eq_mk_of_forall_smul_eq_smul {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = h • c)
     (hcard : 3 ≤ S.encard) : mk g = mk h := by
   have key : ∀ c ∈ S, (h⁻¹ * g) • c = c := fun c hc ↦ by
     rw [mul_smul, hS c hc, ← mul_smul, inv_mul_cancel, one_smul]
