@@ -44,6 +44,9 @@ solution of the Dirichlet problem on the ball by the Poisson integral; the other
 
 ## References
 
+The boundary argument and operator API are adapted from the planar formalization in
+`TauCeti/Analysis/Complex/Poisson/Integral.lean`.
+
 * L. C. Evans, *Partial Differential Equations*, Section 2.2.4, Theorem 15.
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Section 2.5, Theorem 2.6.
@@ -100,15 +103,17 @@ theorem integral_ballPoissonKernel (hn : n ≠ 0) {x : EuclideanSpace ℝ (Fin n
   field_simp
   norm_num
 
-/-- The Poisson kernel with a pole off the unit sphere times integrable boundary data is
-integrable on the sphere. -/
+/-- The Poisson kernel with any pole times integrable boundary data is integrable on the
+sphere. -/
 theorem integrable_ballPoissonKernel_mul {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ}
-    (hg : Integrable g volume.toSphere) {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≠ 1) :
+    (hg : Integrable g volume.toSphere) {x : EuclideanSpace ℝ (Fin n)} :
     Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 ↦ ballPoissonKernel n x y * g y)
       volume.toSphere := by
-  have hK := continuous_ballPoissonKernel_on_sphere x hx
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hK.continuousOn
-  exact hg.bdd_mul hK.aestronglyMeasurable (ae_of_all _ fun y ↦ hC y (mem_univ y))
+  by_cases hx : ‖x‖ = 1
+  · simp [ballPoissonKernel_def, hx]
+  · have hK := continuous_ballPoissonKernel_on_sphere x hx
+    obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hK.continuousOn
+    exact hg.bdd_mul hK.aestronglyMeasurable (ae_of_all _ fun y ↦ hC y (mem_univ y))
 
 /-- The Poisson integral of boundary data `g` on the unit sphere of `ℝⁿ`,
 
@@ -134,14 +139,14 @@ theorem ballPoissonIntegral_def (g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 �
     ballPoissonIntegral (fun _ : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 ↦ 0) x = 0 := by
   simp [ballPoissonIntegral_def]
 
-/-- The Poisson integral is additive in integrable boundary data off the unit sphere. -/
+/-- The Poisson integral is additive in integrable boundary data at every pole. -/
 theorem ballPoissonIntegral_add {g₁ g₂ : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ}
     (hg₁ : Integrable g₁ volume.toSphere) (hg₂ : Integrable g₂ volume.toSphere)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≠ 1) :
+    {x : EuclideanSpace ℝ (Fin n)} :
     ballPoissonIntegral (g₁ + g₂) x = ballPoissonIntegral g₁ x + ballPoissonIntegral g₂ x := by
   simp only [ballPoissonIntegral_def, Pi.add_apply, mul_add]
-  exact integral_add (integrable_ballPoissonKernel_mul hg₁ hx)
-    (integrable_ballPoissonKernel_mul hg₂ hx)
+  exact integral_add (integrable_ballPoissonKernel_mul hg₁)
+    (integrable_ballPoissonKernel_mul hg₂)
 
 /-- The Poisson integral commutes with real scalar multiplication of the boundary data. -/
 @[simp] theorem ballPoissonIntegral_smul (a : ℝ) (g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ)
@@ -167,8 +172,8 @@ theorem ballPoissonIntegral_sub_const (hn : n ≠ 0)
         ∂volume.toSphere := by
   conv_lhs => rw [← ballPoissonIntegral_const hn hx a]
   simp only [ballPoissonIntegral_def, mul_sub]
-  exact (integral_sub (integrable_ballPoissonKernel_mul hg hx.ne)
-    (integrable_ballPoissonKernel_mul (integrable_const a) hx.ne)).symm
+  exact (integral_sub (integrable_ballPoissonKernel_mul hg)
+    (integrable_ballPoissonKernel_mul (integrable_const a))).symm
 
 /-- The Poisson integral preserves order between integrable boundary data in the open unit
 ball. -/
@@ -176,8 +181,8 @@ theorem ballPoissonIntegral_mono {g₁ g₂ : sphere (0 : EuclideanSpace ℝ (Fi
     (hg₁ : Integrable g₁ volume.toSphere) (hg₂ : Integrable g₂ volume.toSphere)
     (hle : g₁ ≤ g₂) {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) :
     ballPoissonIntegral g₁ x ≤ ballPoissonIntegral g₂ x :=
-  integral_mono (integrable_ballPoissonKernel_mul hg₁ hx.ne)
-    (integrable_ballPoissonKernel_mul hg₂ hx.ne) fun y ↦
+  integral_mono (integrable_ballPoissonKernel_mul hg₁)
+    (integrable_ballPoissonKernel_mul hg₂) fun y ↦
       mul_le_mul_of_nonneg_left (hle y) (ballPoissonKernel_pos_on_sphere x hx y).le
 
 /-- Nonnegative boundary data have a nonnegative Poisson integral in the open unit ball. -/
@@ -259,7 +264,7 @@ theorem tendsto_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (Fin n))
       ≤ ∫ y, |ballPoissonKernel n x y * (g y - g z)| ∂volume.toSphere :=
         abs_integral_le_integral_abs
     _ ≤ ∫ y, (ε / 2 * ballPoissonKernel n x y + B x * C) ∂volume.toSphere :=
-        integral_mono (integrable_ballPoissonKernel_mul (hgi.sub (integrable_const _)) hx.ne).abs
+        integral_mono (integrable_ballPoissonKernel_mul (hgi.sub (integrable_const _))).abs
           ((hKi.const_mul _).add (integrable_const _)) fun y ↦
           abs_ballPoissonKernel_mul_sub_le hδ (half_pos hε).le hx hxnear (by simpa using hC y)
             fun hyz ↦ by simpa [Real.dist_eq] using hδg hyz
