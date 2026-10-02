@@ -226,7 +226,8 @@ theorem _root_.AddSubgroup.toIntSubmodule_directSum (C : AddSubgroup (ι → A))
     (C.directSum D).toIntSubmodule = C.toIntSubmodule.directSum D.toIntSubmodule := by
   rw [directSum_def, Submodule.toAddSubgroup_toIntSubmodule]
 
-/-- Forgetting scalar closure commutes with the direct sum of linear codes. -/
+/-- Forgetting scalar closure commutes with the direct sum of linear codes.
+The ring and additive-group assumptions ensure the underlying codes are closed under negation. -/
 @[simp]
 theorem _root_.Submodule.toAddSubgroup_directSum {R : Type*} [Ring R] [Module R A]
     (C : Submodule R (ι → A)) (D : Submodule R (κ → A)) :
