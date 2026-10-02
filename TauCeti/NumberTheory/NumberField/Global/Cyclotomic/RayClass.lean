@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 
 /-!
 # The ray class group of `ℚ` modulo `(n)·∞` and the Galois group of `ℚ(ζ_n)`
@@ -132,21 +133,32 @@ theorem restrictNormal_ratModulusEquivGal {d : ℕ} [NeZero d] (F' : Type*) [Fie
 
 /-! ### The Artin map -/
 
-variable [IsGalois ℚ F] (hab : ∀ σ τ : Gal(F/ℚ), Commute σ τ)
-  (hur : ∀ v : HeightOneSpectrum (𝓞 ℚ), v ∉ (ratModulus n (NeZero.ne n)).support →
-    ∀ (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 ℚ) Q)
+/-- Every prime of `𝓞 F` above a prime of `𝓞 ℚ` outside the support of `(n)·∞`, that is, not
+dividing `n`, is unramified in `F = ℚ(ζ_n)`. This is the unramifiedness hypothesis of the Artin
+map of `F/ℚ` away from `n`. -/
+theorem isUnramifiedAt_of_notMem_ratModulus_support {v : HeightOneSpectrum (𝓞 ℚ)}
+    (hv : v ∉ (ratModulus n (NeZero.ne n)).support) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    [Q.LiesOver v.asIdeal] : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
+  IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem F n
+    (mem_ratModulus_support_iff.not.mp hv) Q
+
+variable [IsGalois ℚ F]
 
 /-- **The Artin map of `ℚ(ζ_n)/ℚ` factors through the ray class group of `(n)·∞`, and the
 induced map is `ratModulusEquivGal`.** On the fractional ideals of `ℚ` prime to `n`, the
 ideal-theoretic Artin map `artinHomAway` is the ray class map `rayClassMk` followed by
 `ratModulusEquivGal`. Thus the Artin map is trivial on the ray of `(n)·∞` and induces an
-isomorphism of the ray class group with `Gal(F/ℚ)`. -/
+isomorphism of the ray class group with `Gal(F/ℚ)`. The commutativity and unramifiedness inputs
+of the Artin map are supplied by `IsCyclotomicExtension.isMulCommutative` and
+`isUnramifiedAt_of_notMem_ratModulus_support`. -/
 theorem ratModulusEquivGal_comp_rayClassMk :
     (ratModulusEquivGal n F : RayClassGroup (ratModulus n (NeZero.ne n)) →* Gal(F/ℚ)).comp
         (rayClassMk (ratModulus n (NeZero.ne n))) =
-      artinHomAway hab (ratModulus n (NeZero.ne n)).support hur := by
+      artinHomAway (IsCyclotomicExtension.isMulCommutative {n} ℚ F).is_comm.comm
+        (ratModulus n (NeZero.ne n)).support
+        fun _ hv Q _ _ ↦ isUnramifiedAt_of_notMem_ratModulus_support n F hv Q := by
   -- Both sides take the Frobenius value at every prime not dividing `n`.
-  refine artinHomAway_eq_of_apply_prime hab _ hur _ fun I v hv hI Q _ _ σ hσ ↦ ?_
+  refine artinHomAway_eq_of_apply_prime _ _ _ _ fun I v hv hI Q _ _ σ hσ ↦ ?_
   have hmem : v.asIdeal ∈ integralIdealsPrimeTo (ratModulus n (NeZero.ne n)) :=
     asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff.mpr (mem_ratModulus_support_iff.not.mp hv)
   have hIv : I = integralIdealsAwayHom _ ⟨v.asIdeal, hmem⟩ :=
@@ -158,8 +170,11 @@ theorem ratModulusEquivGal_comp_rayClassMk :
 This is `ratModulusEquivGal_comp_rayClassMk` read on the integral ideals prime to `n`. -/
 theorem ratModulusEquivGal_idealClass (I : integralIdealsPrimeTo (ratModulus n (NeZero.ne n))) :
     ratModulusEquivGal n F (idealClass _ I) =
-      artinHomAwayIntegral hab (ratModulus n (NeZero.ne n)).support hur I := by
-  rw [artinHomAwayIntegral_apply, ← ratModulusEquivGal_comp_rayClassMk n F hab hur,
-    MonoidHom.comp_apply, idealClass_apply, MonoidHom.coe_ofClass]
+      artinHomAwayIntegral (IsCyclotomicExtension.isMulCommutative {n} ℚ F).is_comm.comm
+        (ratModulus n (NeZero.ne n)).support
+        (fun _ hv Q _ _ ↦ isUnramifiedAt_of_notMem_ratModulus_support n F hv Q) I := by
+  refine Eq.trans ?_ (artinHomAwayIntegral_apply _ _ _ I).symm
+  rw [← ratModulusEquivGal_comp_rayClassMk n F, MonoidHom.comp_apply, idealClass_apply,
+    MonoidHom.coe_ofClass]
 
 end TauCeti.GlobalNumberFields
