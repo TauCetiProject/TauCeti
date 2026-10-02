@@ -29,23 +29,23 @@ Atkin–Li pseudo-eigenvalue.
 
 ## Main definitions
 
-* `TauCeti.ModularForm.conj`, `TauCeti.CuspForm.conj`: the conjugate form `f_ρ`, with the
-  antilinear maps `TauCeti.ModularForm.conjₗ` and `TauCeti.CuspForm.conjₗ`.
-* `TauCeti.CuspForm.conjCharSpace`: the conjugate form as an antilinear map
+* `ModularForm.conj`, `CuspForm.conj`: the conjugate form `f_ρ`, with the
+  antilinear maps `ModularForm.conjₗ` and `CuspForm.conjₗ`.
+* `CuspForm.conjCharSpace`: the conjugate form as an antilinear map
   `S_k(N, χ) → S_k(N, χ⁻¹)`.
 
 ## Main results
 
 * `TauCeti.qExpansion_slash_J`: slashing a modular form by `J` conjugates its `q`-expansion
-  coefficients; `TauCeti.ModularForm.qExpansion_conj` and `TauCeti.CuspForm.qExpansion_conj`
+  coefficients; `ModularForm.qExpansion_conj` and `CuspForm.qExpansion_conj`
   are its forms for `f_ρ`.
-* `TauCeti.ModularForm.conj_conj`: `f ↦ f_ρ` is an involution.
+* `ModularForm.conj_conj`: `f ↦ f_ρ` is an involution.
 * `TauCeti.Gamma0_map_le_conjAct_inv_J`, `TauCeti.Gamma1_map_le_conjAct_inv_J`: conjugation by
   `J` preserves `Γ₀(N)` and `Γ₁(N)`.
-* `TauCeti.ModularForm.conj_mem_modFormCharSpace`, `TauCeti.CuspForm.conj_mem_cuspFormCharSpace`:
+* `ModularForm.conj_mem_modFormCharSpace`, `CuspForm.conj_mem_cuspFormCharSpace`:
   `f ∈ M_k(N, χ)` gives `f_ρ ∈ M_k(N, χ⁻¹)`, and likewise for cusp forms.
-* `TauCeti.CuspForm.heckeRingHomCuspCharSpace_conjCharSpace`: `Tₙ (f_ρ) = (Tₙ f)_ρ` on
-  `S_k(N, χ)`, and `TauCeti.CuspForm.heckeRingHomCuspCharSpace_conjCharSpace_eq_smul`: the
+* `CuspForm.heckeRingHomCuspCharSpace_conjCharSpace`: `Tₙ (f_ρ) = (Tₙ f)_ρ` on
+  `S_k(N, χ)`, and `CuspForm.heckeRingHomCuspCharSpace_conjCharSpace_eq_smul`: the
   conjugate of a `Tₙ`-eigenform is a `Tₙ`-eigenform with the conjugate eigenvalue.
 
 ## References
@@ -61,9 +61,9 @@ open UpperHalfPlane Matrix.SpecialLinearGroup CongruenceSubgroup
 
 open scoped ModularForm MatrixGroups Pointwise
 
-namespace TauCeti
-
 variable {𝒢 𝒢' : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
+
+namespace TauCeti
 
 namespace UpperHalfPlane
 
@@ -118,12 +118,90 @@ theorem qExpansion_slash_J {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F �
   simpa [conj_qParam_J_smul] using
     (Complex.hasSum_conj'.mpr (_root_.ModularForm.hasSum_qExpansion (f := f) hh hΓ (J • τ)))
 
+/-! ### The congruence subgroups -/
+
+section Congruence
+
+/-- The `J`-conjugate `!![a, -b; -c, d]` of `!![a, b; c, d] ∈ SL(2, ℤ)`. -/
+def conjJ (γ : SL(2, ℤ)) : SL(2, ℤ) :=
+  ⟨!![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1], by
+    rw [Matrix.det_fin_two_of]
+    linarith [Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ]⟩
+
+@[simp]
+lemma coe_conjJ (γ : SL(2, ℤ)) :
+    ((conjJ γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1] := by
+  rw [conjJ]
+
+/-- Conjugation by `J` realizes `conjJ`. -/
+lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) : J * mapGL ℝ γ * J = mapGL ℝ (conjJ γ) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [J, Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct]
+
+lemma conjJ_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) : conjJ γ ∈ Gamma0 N := by
+  simpa [Gamma0_mem] using hγ
+
+lemma conjJ_mem_Gamma1 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) : conjJ γ ∈ Gamma1 N := by
+  simpa [Gamma1_mem] using hγ
+
+/-- `conjJ` leaves the lower-right entry, hence the diamond label, alone. -/
+lemma Gamma0Map_conjJ {N : ℕ} (γ : ↥(Gamma0 N)) :
+    (Gamma0Map N).toHomUnits ⟨conjJ γ, conjJ_mem_Gamma0 γ.2⟩ = (Gamma0Map N).toHomUnits γ := by
+  ext
+  simp [Gamma0Map_apply]
+
+/-- Conjugation by `J` preserves `Γ₀(N)`, so the conjugate of a form on `Γ₀(N)` is again a
+form on `Γ₀(N)`. -/
+theorem Gamma0_map_le_conjAct_inv_J (N : ℕ) :
+    ((Gamma0 N).map (mapGL ℝ) : Subgroup (GL (Fin 2) ℝ)) ≤
+      ConjAct.toConjAct J⁻¹ • (Gamma0 N).map (mapGL ℝ) := by
+  rintro _ ⟨γ, hγ, rfl⟩
+  rw [mem_conjAct_inv_J_iff, J_mul_mapGL_mul_J]
+  exact ⟨_, conjJ_mem_Gamma0 hγ, rfl⟩
+
+/-- Conjugation by `J` preserves `Γ₁(N)`, so the conjugate of a form on `Γ₁(N)` is again a
+form on `Γ₁(N)`. -/
+theorem Gamma1_map_le_conjAct_inv_J (N : ℕ) :
+    ((Gamma1 N).map (mapGL ℝ) : Subgroup (GL (Fin 2) ℝ)) ≤
+      ConjAct.toConjAct J⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
+  rintro _ ⟨γ, hγ, rfl⟩
+  rw [mem_conjAct_inv_J_iff, J_mul_mapGL_mul_J]
+  exact ⟨_, conjJ_mem_Gamma1 hγ, rfl⟩
+
+end Congruence
+
+/-! ### Nebentypus -/
+
+section Nebentypus
+
+variable {N : ℕ} {χ : (ZMod N)ˣ →* ℂˣ}
+
+private lemma slash_conj_eq {f : ℍ → ℂ}
+    (hf : ∀ g : ↥(Gamma0 N), f ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
+      (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f) (g : ↥(Gamma0 N)) :
+    (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
+      (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
+  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ g) * J := by
+    rw [← J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
+  rw [← SlashAction.slash_mul, hJg, SlashAction.slash_mul,
+    hf ⟨conjJ g, conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash, Gamma0Map_conjJ, sigma_J]
+  congr 1
+  rw [Complex.conjCAE_apply, ← MulChar.ofUnitHom_coe, ← MulChar.ofUnitHom_coe,
+    MulChar.ofUnitHom_inv_eq_star, MulChar.star_apply, RCLike.star_def]
+
+end Nebentypus
+
+end TauCeti
+
+open TauCeti TauCeti.UpperHalfPlane
+
 namespace ModularForm
 
 /-- **The conjugate form** `f_ρ(τ) = conj (f (-conj τ))` of a modular form `f` for `𝒢`, as a
 modular form for any `𝒢'` conjugated into `𝒢` by `J = !![-1, 0; 0, 1]`. It is the slash of `f`
 by the determinant `-1` matrix `J`, so its `q`-expansion has the complex-conjugate
-coefficients (`TauCeti.ModularForm.qExpansion_conj`). -/
+coefficients (`ModularForm.qExpansion_conj`). -/
 def conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularForm 𝒢 k) : ModularForm 𝒢' k :=
   _root_.ModularForm.ofLe hJ (_root_.ModularForm.translate f J)
 
@@ -183,12 +261,27 @@ theorem qExpansion_conj {h : ℝ} (hh : 0 < h) (hΓ : h ∈ 𝒢.strictPeriods)
     qExpansion h (conj hJ f) = PowerSeries.map (starRingEnd ℂ) (qExpansion h f) := by
   rw [coe_conj, qExpansion_slash_J f hh hΓ]
 
+section Nebentypus
+
+variable {N : ℕ} {χ : (ZMod N)ˣ →* ℂˣ}
+
+/-- **The conjugate of a form of nebentypus `χ` has nebentypus `χ⁻¹`**: `f_ρ ∈ M_k(N, χ̄)`. -/
+theorem conj_mem_modFormCharSpace
+    {f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
+    ModularForm.conj (Gamma1_map_le_conjAct_inv_J N) f ∈ modFormCharSpace k χ⁻¹ := by
+  rw [mem_modFormCharSpace_iff_nebentypus] at hf ⊢
+  intro g
+  rw [ModularForm.coe_conj]
+  exact slash_conj_eq hf g
+
+end Nebentypus
+
 end ModularForm
 
 namespace CuspForm
 
 /-- **The conjugate cusp form** `f_ρ(τ) = conj (f (-conj τ))`, the cusp-form counterpart of
-`TauCeti.ModularForm.conj`. -/
+`ModularForm.conj`. -/
 def conj (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) : CuspForm 𝒢' k :=
   _root_.CuspForm.ofLe hJ (_root_.CuspForm.translate f J)
 
@@ -254,93 +347,15 @@ theorem qExpansion_conj {h : ℝ} (hh : 0 < h) (hΓ : h ∈ 𝒢.strictPeriods)
     qExpansion h (conj hJ f) = PowerSeries.map (starRingEnd ℂ) (qExpansion h f) := by
   rw [coe_conj, qExpansion_slash_J f hh hΓ]
 
-end CuspForm
-
-/-! ### The congruence subgroups -/
-
-section Congruence
-
-/-- The `J`-conjugate `!![a, -b; -c, d]` of `!![a, b; c, d] ∈ SL(2, ℤ)`. -/
-def conjJ (γ : SL(2, ℤ)) : SL(2, ℤ) :=
-  ⟨!![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1], by
-    rw [Matrix.det_fin_two_of]
-    linarith [Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ]⟩
-
-@[simp]
-lemma coe_conjJ (γ : SL(2, ℤ)) :
-    ((conjJ γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1] := by
-  rw [conjJ]
-
-/-- Conjugation by `J` realizes `conjJ`. -/
-lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) : J * mapGL ℝ γ * J = mapGL ℝ (conjJ γ) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [J, Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct]
-
-lemma conjJ_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) : conjJ γ ∈ Gamma0 N := by
-  simpa [Gamma0_mem] using hγ
-
-lemma conjJ_mem_Gamma1 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) : conjJ γ ∈ Gamma1 N := by
-  simpa [Gamma1_mem] using hγ
-
-/-- `conjJ` leaves the lower-right entry, hence the diamond label, alone. -/
-lemma Gamma0Map_conjJ {N : ℕ} (γ : ↥(Gamma0 N)) :
-    (Gamma0Map N).toHomUnits ⟨conjJ γ, conjJ_mem_Gamma0 γ.2⟩ = (Gamma0Map N).toHomUnits γ := by
-  ext
-  simp [Gamma0Map_apply]
-
-/-- Conjugation by `J` preserves `Γ₀(N)`, so the conjugate of a form on `Γ₀(N)` is again a
-form on `Γ₀(N)`. -/
-theorem Gamma0_map_le_conjAct_inv_J (N : ℕ) :
-    ((Gamma0 N).map (mapGL ℝ) : Subgroup (GL (Fin 2) ℝ)) ≤
-      ConjAct.toConjAct J⁻¹ • (Gamma0 N).map (mapGL ℝ) := by
-  rintro _ ⟨γ, hγ, rfl⟩
-  rw [mem_conjAct_inv_J_iff, J_mul_mapGL_mul_J]
-  exact ⟨_, conjJ_mem_Gamma0 hγ, rfl⟩
-
-/-- Conjugation by `J` preserves `Γ₁(N)`, so the conjugate of a form on `Γ₁(N)` is again a
-form on `Γ₁(N)`. -/
-theorem Gamma1_map_le_conjAct_inv_J (N : ℕ) :
-    ((Gamma1 N).map (mapGL ℝ) : Subgroup (GL (Fin 2) ℝ)) ≤
-      ConjAct.toConjAct J⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
-  rintro _ ⟨γ, hγ, rfl⟩
-  rw [mem_conjAct_inv_J_iff, J_mul_mapGL_mul_J]
-  exact ⟨_, conjJ_mem_Gamma1 hγ, rfl⟩
-
-end Congruence
-
 /-! ### Nebentypus and Hecke operators -/
 
 section Nebentypus
 
 variable {N : ℕ} {χ : (ZMod N)ˣ →* ℂˣ}
 
-/-- The conjugate of a form of nebentypus `χ` on `Γ₀(N)` transforms by `conj (χ d)`. -/
-private lemma slash_conj_eq {f : ℍ → ℂ}
-    (hf : ∀ g : ↥(Gamma0 N), f ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
-      (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f) (g : ↥(Gamma0 N)) :
-    (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
-      (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
-  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ g) * J := by
-    rw [← J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
-  rw [← SlashAction.slash_mul, hJg, SlashAction.slash_mul,
-    hf ⟨conjJ g, conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash, Gamma0Map_conjJ, sigma_J]
-  congr 1
-  rw [Complex.conjCAE_apply, ← MulChar.ofUnitHom_coe, ← MulChar.ofUnitHom_coe,
-    MulChar.ofUnitHom_inv_eq_star, MulChar.star_apply, RCLike.star_def]
-
-/-- **The conjugate of a form of nebentypus `χ` has nebentypus `χ⁻¹`**: `f_ρ ∈ M_k(N, χ̄)`. -/
-theorem ModularForm.conj_mem_modFormCharSpace
-    {f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
-    ModularForm.conj (Gamma1_map_le_conjAct_inv_J N) f ∈ modFormCharSpace k χ⁻¹ := by
-  rw [mem_modFormCharSpace_iff_nebentypus] at hf ⊢
-  intro g
-  rw [ModularForm.coe_conj]
-  exact slash_conj_eq hf g
-
 /-- **The conjugate of a cusp form of nebentypus `χ` has nebentypus `χ⁻¹`**:
 `f_ρ ∈ S_k(N, χ̄)`. -/
-theorem CuspForm.conj_mem_cuspFormCharSpace
+theorem conj_mem_cuspFormCharSpace
     {f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f ∈ cuspFormCharSpace k χ⁻¹ := by
   rw [mem_cuspFormCharSpace_iff_nebentypus] at hf ⊢
@@ -350,13 +365,13 @@ theorem CuspForm.conj_mem_cuspFormCharSpace
 
 variable (k χ) in
 /-- The conjugate cusp form as an antilinear map `S_k(N, χ) → S_k(N, χ⁻¹)`. -/
-def CuspForm.conjCharSpace : cuspFormCharSpace k χ →ₗ⋆[ℂ] cuspFormCharSpace k χ⁻¹ :=
+def conjCharSpace : cuspFormCharSpace k χ →ₗ⋆[ℂ] cuspFormCharSpace k χ⁻¹ :=
   LinearMap.codRestrict _
     ((CuspForm.conjₗ (Gamma1_map_le_conjAct_inv_J N)).comp (cuspFormCharSpace k χ).subtype)
     fun f ↦ conj_mem_cuspFormCharSpace f.2
 
 @[simp]
-lemma CuspForm.coe_conjCharSpace_apply (f : cuspFormCharSpace k χ) :
+lemma coe_conjCharSpace_apply (f : cuspFormCharSpace k χ) :
     (CuspForm.conjCharSpace k χ f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) (f : _root_.CuspForm _ k) :=
   (rfl)
@@ -366,7 +381,7 @@ open HeckeRing.GL2 in
 `T_n (f_ρ) = (T_n f)_ρ`, where on the left `T_n` acts on `S_k(N, χ⁻¹)`. Since the conjugation is
 antilinear, the conjugate of a `T_n`-eigenform with eigenvalue `λ` is a `T_n`-eigenform with
 eigenvalue `conj λ`. -/
-theorem CuspForm.heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠ 0)
+theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠ 0)
     (f : cuspFormCharSpace k χ) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       CuspForm.conjCharSpace k χ (heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f) := by
@@ -381,7 +396,7 @@ theorem CuspForm.heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (h
 open HeckeRing.GL2 in
 /-- **The conjugate of a Hecke eigenform is an eigenform with the conjugate eigenvalue**: if
 `Tₙ f = λ f` on `S_k(N, χ)`, then `Tₙ f_ρ = conj λ • f_ρ` on `S_k(N, χ⁻¹)`. -/
-theorem CuspForm.heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] {n : ℕ}
+theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] {n : ℕ}
     (hn : n ≠ 0)
     {f : cuspFormCharSpace k χ} {c : ℂ}
     (hf : heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f = c • f) :
@@ -391,4 +406,4 @@ theorem CuspForm.heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] {n :
 
 end Nebentypus
 
-end TauCeti
+end CuspForm
