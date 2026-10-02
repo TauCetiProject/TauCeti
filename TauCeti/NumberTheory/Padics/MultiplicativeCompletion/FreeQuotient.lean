@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 import TauCeti.Algebra.Module.Torsion.FreeQuotient
-import TauCeti.NumberTheory.LocalField.DeepUnits
+import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-import TauCeti.NumberTheory.LocalField.IntegerRing
+import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite
