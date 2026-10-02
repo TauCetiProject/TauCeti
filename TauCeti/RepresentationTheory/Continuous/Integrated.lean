@@ -214,6 +214,34 @@ theorem _root_.ContRepresentation.continuous_comp_integratedOperatorL1 [Complete
 
 end Normed
 
+section Commute
+
+variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
+  [MeasurableSpace G] [OpensMeasurableSpace G]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
+  [CompleteSpace E] [SecondCountableTopologyEither G E]
+  {μ : Measure G} {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
+
+/-- Every action operator of a representation of an abelian group commutes with its
+integrated operators. No invariance hypothesis on the measure is needed. -/
+theorem _root_.ContRepresentation.commute_integratedOperatorL1
+    (g : Multiplicative G) (f : G →₁[μ] 𝕜) :
+    Commute (π g) (π.integratedOperatorL1 hcont hbdd μ f) := by
+  apply ContinuousLinearMap.ext
+  intro v
+  simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
+  rw [← (π g).integral_comp_comm
+    (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)]
+  apply integral_congr_ae
+  filter_upwards [] with t
+  rw [map_smul]
+  exact congrArg (fun w => f t • w)
+    (congrArg (fun T : E →L[𝕜] E => T v)
+      ((Commute.all g (.ofAdd t)).map π.toMonoidHom).eq)
+
+end Commute
+
 section Convolution
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G] [MeasurableSpace G]
