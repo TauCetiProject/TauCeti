@@ -22,11 +22,11 @@ exactly what surjectivity needs. Injectivity is not topological at all and is Ma
 ## Implementation notes
 
 Surjectivity goes through the Mathlib criterion rather than through elements of the localisations:
-`IsLocalization.Away.map_surjective_iff` reduces it to "every `a : A` is `sᵐ` times the image of
-something in `B`", which is `exists_mul_pow_mem_of_isTopologicallyNilpotent` verbatim, up to
-commuting the product.
+`IsLocalization.Away.map_surjective_iff` reduces it to "for every `a : A`, some `sᵐ * a` is the
+image of an element of `B`", which is `exists_mul_pow_mem_of_isTopologicallyNilpotent` verbatim,
+up to commuting the product.
 
-Only `ContinuousMul` is assumed, matching the absorption lemma: continuity of addition, a
+Only `SeparatelyContinuousMul` is assumed, matching the absorption lemma: continuity of addition, a
 nonarchimedean neighbourhood basis and any Huber structure are all irrelevant here.
 
 Injectivity is not proved here at all: it is Mathlib's `IsLocalization.map_injective_of_injective`
@@ -52,7 +52,7 @@ public section
 
 namespace TauCeti.Localization
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [ContinuousMul A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
 variable {B : Subring A} {s : B}
 
 -- Neither half needs subtraction in the localisations: `IsLocalization.Away.map_surjective_iff` and
