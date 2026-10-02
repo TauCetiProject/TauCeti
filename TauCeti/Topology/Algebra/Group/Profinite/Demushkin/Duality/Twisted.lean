@@ -230,12 +230,9 @@ theorem dualityMap2_zModTwist_bijective :
   have : NeZero (p ^ i) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
   have hM' : ∀ φ : InternalHom G M (ZModTwist (demushkinCharacter hG) i), p ^ i • φ = 0 :=
     InternalHom.nsmul_eq_zero_of_domain hM
-  have := hG.finite_H2 (InternalHom G (InternalHom G M (ZModTwist (demushkinCharacter hG) i))
-    (ZModTwist (demushkinCharacter hG) i))
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨i, InternalHom.nsmul_eq_zero_of_domain hM' m⟩)
   obtain ⟨e₂⟩ := hG.nonempty_addEquiv_H2_zModTwist_demushkinCharacter_zmod i
   exact dualityMap2_bijective_of_injective_of_addEquiv_zmod (ZModTwist.equiv _ i) e₂ hM
-    (hG.dualityMap0_zModTwist_bijective i _ hM') (hG.dualityMap_zModTwist_devissage i M hM).2.2
+    (hG.dualityMap0_zModTwist_bijective i _ hM').1 (hG.dualityMap_zModTwist_devissage i M hM).2.2
 
 end Devissage
 

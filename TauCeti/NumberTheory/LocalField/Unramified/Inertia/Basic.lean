@@ -70,6 +70,8 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   left coset of `I_K`.
 * `TauCeti.IsArithFrobeniusLift.apply_of_pow_eq_one`: a Frobenius lift acts on the roots of unity
   of order prime to the residue characteristic by `ζ ↦ ζ ^ q`.
+* `TauCeti.IsArithFrobeniusLift.restrictNormal_smul_residueField_eq_pow`: on a finite normal
+  subextension `L`, a Frobenius lift acts on the residue field of `L` by `x ↦ x ^ q`.
 * `TauCeti.IsArithFrobeniusLift.topologicalClosure_zpowers_sup_inertiaSubgroup`: a Frobenius lift
   and `I_K` generate `G_K` topologically.
 
@@ -368,6 +370,27 @@ theorem apply_of_pow_eq_one (hσ : IsArithFrobeniusLift K σ) {m : ℕ}
   exact isArithFrobeniusLift_iff.1 hσ ζ m.totient
     (Nat.totient_pos.2 (Nat.pos_of_ne_zero (ne_zero_of_coprime_ringChar hm))).ne'
     (pow_pow_totient_eq_self hq hζ)
+
+/-- **A Frobenius lift acts on finite residue fields as the `q`-th power map.** The restriction of
+an arithmetic Frobenius lift to a finite normal subextension `L` of `K^{alg}/K` acts on the residue
+field of `L` by `x ↦ x ^ q`, where `q` is the cardinality of the residue field of `K`. -/
+theorem restrictNormal_smul_residueField_eq_pow {σ : Gal(AlgebraicClosure K/K)}
+    (hσ : IsArithFrobeniusLift K σ)
+    (L : IntermediateField K (AlgebraicClosure K)) [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [ValuativeExtension K L] [FiniteDimensional K L] [Normal K L]
+    (x : 𝓀[L]) :
+    AlgEquiv.restrictNormal σ L • x = x ^ Nat.card 𝓀[K] := by
+  -- The Teichmüller representative `ω` of `x` is a root of `X^{q^f} − X`, so `σ ω = ω ^ q`.
+  set ω := teichmullerLift L x
+  have hω : AlgEquiv.restrictNormal σ L • ω = ω ^ Nat.card 𝓀[K] := by
+    refine Subtype.ext (Subtype.ext ?_)
+    rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.restrictNormal_apply]
+    refine (isArithFrobeniusLift_iff.1 hσ _ (inertiaDegree K L) inertiaDegree_pos.ne' ?_).trans
+      (by simp)
+    rw [← natCard_residueField]
+    exact_mod_cast congrArg (fun y : 𝒪[L] ↦ ((y : L) : AlgebraicClosure K))
+      (teichmullerLift_pow_natCard L x)
+  rw [← residue_teichmullerLift L x, ← IsLocalRing.ResidueField.residue_smul, hω, map_pow]
 
 /-- **The arithmetic Frobenius lifts form a left coset of the inertia subgroup**: they are the
 elements of `σ I_K`, for any one of them `σ`. -/

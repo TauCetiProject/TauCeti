@@ -48,10 +48,13 @@ the dévissage steps of Tate's duality
 argument (Serre's exposé, §9.1): from `α₀` surjective, `α₁` bijective and `α₂` injective on `A`
 and on `C`, the same follows on `B`
 (`DiscreteShortExact.dualityMap0_surjective`, `DiscreteShortExact.dualityMap1_injective`,
-`DiscreteShortExact.dualityMap1_surjective`, `DiscreteShortExact.dualityMap2_injective`), and the
-injectivity of `α₀` on `C` follows from that of `α₁` on `A` when `H⁰(G, B) → H⁰(G, C)` vanishes
-(`DiscreteShortExact.dualityMap0_injective_of_explicitCoeff0_eq_zero`), with no hypothesis on
-`H²(G, N)` beyond the extension hypothesis of the dual sequence.
+`DiscreteShortExact.dualityMap1_surjective`, `DiscreteShortExact.dualityMap2_injective`). Read the
+other way, they are the steps of dimension shifting: for `i = 0, 1`, if `αᵢ` is surjective on `B`
+and `αᵢ₊₁` is injective on `B`, injectivity of `αᵢ` on `C` gives injectivity of `αᵢ₊₁` on `A`
+(`DiscreteShortExact.dualityMap1_injective_left`, `DiscreteShortExact.dualityMap2_injective_left`).
+Finally, the injectivity of `α₀` on `C` follows from that of `α₁` on `A` when `H⁰(G, B) → H⁰(G, C)`
+vanishes (`DiscreteShortExact.dualityMap0_injective_of_explicitCoeff0_eq_zero`), with no hypothesis
+on `H²(G, N)` beyond the extension hypothesis of the dual sequence.
 
 ## Main results
 
@@ -62,6 +65,9 @@ injectivity of `α₀` on `C` follows from that of `α₁` on `A` when `H⁰(G, 
   `DiscreteShortExact.dualityMap1_injective`, `DiscreteShortExact.dualityMap1_surjective`,
   `DiscreteShortExact.dualityMap2_injective`: the four lemmas along a short exact sequence killed
   by `n`, for `H²(G, N)` a Baer `ℤ/nℤ`-module.
+* `TauCeti.ContCohomology.DiscreteShortExact.dualityMap1_injective_left`,
+  `DiscreteShortExact.dualityMap2_injective_left`: the four lemmas concluding injectivity on the
+  submodule `A`, the steps of dimension shifting.
 * `TauCeti.ContCohomology.DiscreteShortExact.dualityMap0_injective_of_explicitCoeff0_eq_zero`:
   injectivity of `α₀` from a sequence whose map on invariants vanishes.
 
@@ -251,6 +257,69 @@ theorem DiscreteShortExact.dualityMap2_injective (h₁C : Function.Surjective (d
   · refine AddMonoidHom.ext fun x => AddMonoidHom.ext fun b => ?_
     simp only [AddMonoidHom.comp_apply, AddMonoidHom.compHom'_apply_apply]
     rw [dualityMap2_explicitCoeff2, DiscreteShortExact.dual_inclDistribMulActionHom]
+
+/-- **The four lemma for `α₁` on the submodule.** If `α₀(B)` is surjective and `α₀(C)`, `α₁(B)` are
+injective, then `α₁(A)` is injective. This is the step of dimension shifting that reads the duality
+of `A` off that of a module `B` containing it. -/
+theorem DiscreteShortExact.dualityMap1_injective_left
+    (h₀B : Function.Surjective (dualityMap0 G B N)) (h₀C : Function.Injective (dualityMap0 G C N))
+    (h₁B : Function.Injective (dualityMap1 G B N)) : Function.Injective (dualityMap1 G A N) := by
+  refine AddMonoidHom.injective_of_surjective_of_injective_of_injective
+    (explicitCoeff0 G B S.projDistribMulActionHom) S.explicitDelta0
+    (explicitCoeff1 G A S.inclDistribMulActionHom continuous_of_discreteTopology)
+    (explicitCoeff2 G (InternalHom G C N) (S.dual N hsurj).inclDistribMulActionHom
+      continuous_of_discreteTopology).compHom'
+    (S.dual N hsurj).explicitDelta1.compHom'
+    (explicitCoeff1 G (InternalHom G B N) (S.dual N hsurj).projDistribMulActionHom
+      continuous_of_discreteTopology).compHom'
+    (-dualityMap0 G B N) (-dualityMap0 G C N) (dualityMap1 G A N) (dualityMap1 G B N) ?_ ?_ ?_
+    (AddMonoidHom.exact_iff.2 S.explicitLongExact_H0C.symm)
+    (AddMonoidHom.exact_iff.2 S.explicitLongExact_H1A.symm)
+    ((AddMonoidHom.exact_iff.2 (S.dual N hsurj).explicitLongExact_H2A.symm).compHom'_of_baer hH2
+      (nsmul_H2_eq_zero (InternalHom.nsmul_eq_zero_of_domain hB)))
+    (fun y => by
+      obtain ⟨x, hx⟩ := h₀B (-y)
+      exact ⟨x, by rw [AddMonoidHom.neg_apply, hx]; exact neg_neg y⟩)
+    (fun a a' h => h₀C (neg_inj.1 h)) h₁B
+  · refine AddMonoidHom.ext fun x => AddMonoidHom.ext fun b => ?_
+    simp only [AddMonoidHom.comp_apply, AddMonoidHom.neg_apply, AddMonoidHom.compHom'_apply_apply]
+    rw [dualityMap0_explicitCoeff0, DiscreteShortExact.dual_inclDistribMulActionHom]
+  · refine AddMonoidHom.ext fun x => AddMonoidHom.ext fun b => ?_
+    simp only [AddMonoidHom.comp_apply, AddMonoidHom.neg_apply, AddMonoidHom.compHom'_apply_apply]
+    rw [S.dualityMap1_explicitDelta0 hsurj]
+  · refine AddMonoidHom.ext fun x => AddMonoidHom.ext fun b => ?_
+    simp only [AddMonoidHom.comp_apply, AddMonoidHom.compHom'_apply_apply]
+    rw [dualityMap1_explicitCoeff1, DiscreteShortExact.dual_projDistribMulActionHom]
+
+omit [Finite A] in
+/-- **The four lemma for `α₂` on the submodule.** If `α₁(B)` is surjective and `α₁(C)`, `α₂(B)` are
+injective, then `α₂(A)` is injective. This is the step of dimension shifting that reads the duality
+of `A` off that of a module `B` containing it. -/
+theorem DiscreteShortExact.dualityMap2_injective_left
+    (h₁B : Function.Surjective (dualityMap1 G B N)) (h₁C : Function.Injective (dualityMap1 G C N))
+    (h₂B : Function.Injective (dualityMap2 G B N)) : Function.Injective (dualityMap2 G A N) := by
+  refine AddMonoidHom.injective_of_surjective_of_injective_of_injective
+    (explicitCoeff1 G B S.projDistribMulActionHom continuous_of_discreteTopology)
+    S.explicitDelta1
+    (explicitCoeff2 G A S.inclDistribMulActionHom continuous_of_discreteTopology)
+    (explicitCoeff1 G (InternalHom G C N) (S.dual N hsurj).inclDistribMulActionHom
+      continuous_of_discreteTopology).compHom'
+    (S.dual N hsurj).explicitDelta0.compHom'
+    (explicitCoeff0 G (InternalHom G B N) (S.dual N hsurj).projDistribMulActionHom).compHom'
+    (dualityMap1 G B N) (dualityMap1 G C N) (dualityMap2 G A N) (dualityMap2 G B N) ?_ ?_ ?_
+    (AddMonoidHom.exact_iff.2 S.explicitLongExact_H1C.symm)
+    (AddMonoidHom.exact_iff.2 S.explicitLongExact_H2A.symm)
+    ((AddMonoidHom.exact_iff.2 (S.dual N hsurj).explicitLongExact_H1A.symm).compHom'_of_baer hH2
+      (nsmul_H1_eq_zero (InternalHom.nsmul_eq_zero_of_domain hB))) h₁B h₁C h₂B
+  · refine AddMonoidHom.ext fun x => AddMonoidHom.ext fun b => ?_
+    simp only [AddMonoidHom.comp_apply, AddMonoidHom.compHom'_apply_apply]
+    rw [dualityMap1_explicitCoeff1, DiscreteShortExact.dual_inclDistribMulActionHom]
+  · refine AddMonoidHom.ext fun x => AddMonoidHom.ext fun b => ?_
+    simp only [AddMonoidHom.comp_apply, AddMonoidHom.compHom'_apply_apply]
+    rw [S.dualityMap2_explicitDelta1 hsurj]
+  · refine AddMonoidHom.ext fun x => AddMonoidHom.ext fun b => ?_
+    simp only [AddMonoidHom.comp_apply, AddMonoidHom.compHom'_apply_apply]
+    rw [dualityMap2_explicitCoeff2, DiscreteShortExact.dual_projDistribMulActionHom]
 
 omit hB hH2 in
 /-- **Injectivity of `α₀` from a co-effacing sequence.** If `H⁰(G, B) → H⁰(G, C)` is zero and

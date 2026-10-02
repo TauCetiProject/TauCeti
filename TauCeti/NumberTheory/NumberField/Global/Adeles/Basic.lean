@@ -20,7 +20,8 @@ discrete subgroups and separation of quotients apply to the adele ring.  For the
 product of adeles is the product of the infinite components (`NumberField.AdeleRing.fst_mul`),
 and that the embeddings of a completion at an infinite place into the infinite adele ring and into
 the adele ring are continuous (`NumberField.InfiniteAdeleRing.continuous_ofCompletion`,
-`NumberField.AdeleRing.continuous_ofCompletion`).
+`NumberField.AdeleRing.continuous_ofCompletion`), as is the embedding of a completion at a finite
+place into the adele ring (`NumberField.AdeleRing.continuous_ofAdicCompletion`).
 
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
 mixed space to a homeomorphism.  Each local factor is isometric to `ℝ` or `ℂ`, so the product
@@ -183,5 +184,13 @@ theorem AdeleRing.continuous_ofCompletion (w : InfinitePlace K) :
     Continuous (AdeleRing.ofCompletion R K w) :=
   ((InfiniteAdeleRing.continuous_ofCompletion K w).prodMk continuous_const).congr fun x ↦
     (AdeleRing.ofCompletion_apply R K w x).symm
+
+/-- The embedding of the completion at a finite place into the adele ring is continuous. -/
+@[continuity, fun_prop]
+theorem AdeleRing.continuous_ofAdicCompletion (v : IsDedekindDomain.HeightOneSpectrum R) :
+    Continuous (AdeleRing.ofAdicCompletion R K v) :=
+  (continuous_const.prodMk
+    (IsDedekindDomain.FiniteAdeleRing.continuous_ofAdicCompletion K v)).congr fun x ↦
+    (AdeleRing.ofAdicCompletion_apply R K v x).symm
 
 end NumberField

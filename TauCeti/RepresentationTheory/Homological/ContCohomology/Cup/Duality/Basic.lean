@@ -62,13 +62,16 @@ bijective `f` the square formed by `αᵢ` on `M`, `αᵢ` on `M'`, `f_*` on coh
 targets commutes, and bijectivity of each `αᵢ` transports from `M'` to `M`. This is how a base case
 stated for `ZMod p` applies to every trivial module of order `p`.
 
-Finally, when `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, injectivity of `α₂` on a finite module `M`
+Finally, when `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, injectivity of `αᵢ` on a finite module `M`
 killed by `n` upgrades to bijectivity by counting
-(`TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`), once `α₀` is known
-to be bijective on the dual `InternalHom G M N`: `|H²(G, M)| = |H⁰(G, InternalHom G M N)|`, since
-`Hom(-, H²(G, N))` preserves the order of a finite group killed by `n` and `M` is its own double
-dual with values in `N` (`TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`). This is the
-last step of Tate's duality for the coefficient systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
+(`TauCeti.ContCohomology.dualityMap0_bijective_of_injective_of_addEquiv_zmod` and its companions in
+degrees `1` and `2`), once `α₂₋ᵢ` is known to be injective on the dual `M' = InternalHom G M N`,
+and, in degree `1`, `H¹(G, M')` is known to be finite:
+`Hom(-, H²(G, N))` preserves the order of a finite group killed by `n`, and `M` is its own double
+dual with values in `N` (`TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`), so the two
+injections `Hⁱ(G, M) ↪ Hom(H²⁻ⁱ(G, M'), H²(G, N))` and `H²⁻ⁱ(G, M') ↪ Hom(Hⁱ(G, M''), H²(G, N))`
+force `|Hⁱ(G, M)| = |H²⁻ⁱ(G, M')|`. This is the last step of Tate's duality for the coefficient
+systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
 
 ## Main statements
 
@@ -89,8 +92,9 @@ last step of Tate's duality for the coefficient systems `𝔽_p` and `ℤ/pⁱ` 
   `dualityMap1_eq_neg_explicitDualityPairing11` and `dualityMap2_eq_explicitDualityPairing02`.
 * `TauCeti.ContCohomology.dualityMap0_explicitCoeff0`, `dualityMap1_explicitCoeff1` and
   `dualityMap2_explicitCoeff2`: **naturality of the duality maps in the module**,
-  `αᵢ (f_* x) b = αᵢ x (f^* b)`; and `explicitCoeff2_injective_of_dualityMap2_injective`: when `α₂`
-  is injective on `M` and `f^*` is surjective on the invariants, `f_*` is injective on `H²`.
+  `αᵢ (f_* x) b = αᵢ x (f^* b)`; `explicitCoeff2_injective_of_dualityMap2_injective`: when `α₂`
+  is injective on `M` and `f^*` is surjective on the invariants, `f_*` is injective on `H²`; and
+  `dualityMap0_injective_of_injective`: injectivity of `α₀` descends along an injection of modules.
 * `TauCeti.ContCohomology.dualityMap0_bijective_of_bijective`, `dualityMap1_bijective_of_bijective`
   and `dualityMap2_bijective_of_bijective`: bijectivity of each duality map transports along an
   isomorphism of modules.
@@ -106,9 +110,11 @@ last step of Tate's duality for the coefficient systems `𝔽_p` and `ℤ/pⁱ` 
   `dualityMap0_surjective_iff_of_bijective`, `dualityMap0_bijective_iff_of_bijective` and their
   analogues in degrees `1` and `2`: injectivity, surjectivity and bijectivity of each duality map
   transport along an isomorphism of coefficients `N →+[G] N'`.
-* `TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`: for `N ≃+ ZMod n`
-  and `H²(G, N) ≃+ ZMod n`, if `α₂` is injective on `M` and `α₀` is bijective on its dual, then `α₂`
-  is bijective on `M`, by counting.
+* `TauCeti.ContCohomology.dualityMap0_bijective_of_injective_of_addEquiv_zmod`,
+  `dualityMap1_bijective_of_injective_of_addEquiv_zmod` and
+  `dualityMap2_bijective_of_injective_of_addEquiv_zmod`: for `N ≃+ ZMod n` and
+  `H²(G, N) ≃+ ZMod n`, if `αᵢ` is injective on `M` and `α₂₋ᵢ` is injective on its dual `M'`
+  (and, for `i = 1`, `H¹(G, M')` is finite), then `αᵢ` is bijective on `M`, by counting.
 * `TauCeti.ContCohomology.dualityMap2_zmod_bijective` and
   `dualityMap0_zmod_bijective_of_finrank_eq_one`: bijectivity of `α₂` and of `α₀` for a trivial
   action on `ZMod n`.
@@ -562,6 +568,17 @@ theorem dualityMap1_explicitCoeff1 (x : H1 G M) (b : H1 G (InternalHom G M' N)) 
         continuous_of_discreteTopology b) := by
   rw [dualityMap1_eq_neg_explicitDualityPairing11, dualityMap1_eq_neg_explicitDualityPairing11,
     explicitDualityPairing11_explicitCoeff1]
+
+variable {f} in
+/-- **Injectivity of `α₀` descends along an injection of modules**: if `f : M →+[G] M'` is injective
+and `α₀` is injective at `M'`, then `α₀` is injective at `M`. An invariant `x` with `α₀ x = 0` has
+`α₀ (f_* x) = α₀ x ∘ f^* = 0`, so `f x = 0`. -/
+theorem dualityMap0_injective_of_injective (hf : Function.Injective f)
+    (h : Function.Injective (dualityMap0 G M' N)) : Function.Injective (dualityMap0 G M N) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx => Subtype.ext (hf ?_)
+  have hfx : explicitCoeff0 G M f x = 0 := h <| AddMonoidHom.ext fun b => by
+    rw [dualityMap0_explicitCoeff0, hx, map_zero, AddMonoidHom.zero_apply, AddMonoidHom.zero_apply]
+  simpa using congrArg Subtype.val hfx
 
 end DualityMapNaturality
 
@@ -1024,33 +1041,87 @@ variable {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
   [ContinuousSMul G M] [Finite M]
   {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
-  [ContinuousSMul G N] [Finite N] {n : ℕ} [NeZero n]
+  [ContinuousSMul G N] {n : ℕ} [NeZero n]
 
-/-- **Bijectivity of `α₂` by counting.** Let `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, and let `M` be
-a finite discrete `G`-module killed by `n` with `H²(G, M'')` finite, where `M' = InternalHom G M N`
-and `M'' = InternalHom G M' N`. If `α₂` is injective on `M` and `α₀` is
-bijective on `M'`, then `α₂ : H²(G, M) → Hom(H⁰(G, M'), H²(G, N))` is bijective: its target has the
-order of `H⁰(G, M')`, which `α₀` identifies with `Hom(H²(G, M''), H²(G, N))`, of the order of
-`H²(G, M'')`, and `M'' ≅ M` by double duality. The hypothesis `H²(G, N) ≃+ ZMod n` is what makes
-`Hom(-, H²(G, N))` preserve the order of every finite group killed by `n`. -/
-theorem dualityMap2_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
+/-- **Bijectivity of `α₀` by counting.** Let `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, and let `M` be
+a finite discrete `G`-module killed by `n`, with dual `M' = InternalHom G M N`. If `α₀` is injective
+on `M` and `α₂` is injective on `M'`, then `α₀ : H⁰(G, M) → Hom(H²(G, M'), H²(G, N))` is bijective:
+its target has the order of `H²(G, M')`, which `α₂` embeds into `Hom(H⁰(G, M''), H²(G, N))`, of the
+order of `H⁰(G, M'')`, and `M'' ≅ M` by double duality. -/
+theorem dualityMap0_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
     (e₂ : H2 G N ≃+ ZMod n) (hM : ∀ x : M, n • x = 0)
-    [Finite (H2 G (InternalHom G (InternalHom G M N) N))]
-    (h₀ : Function.Bijective (dualityMap0 G (InternalHom G M N) N))
-    (h₂ : Function.Injective (dualityMap2 G M N)) : Function.Bijective (dualityMap2 G M N) := by
+    (h₂ : Function.Injective (dualityMap2 G (InternalHom G M N) N))
+    (h₀ : Function.Injective (dualityMap0 G M N)) : Function.Bijective (dualityMap0 G M N) := by
+  have : Finite N := Finite.of_equiv _ e.symm.toEquiv
   have hM' : ∀ φ : InternalHom G M N, n • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H2 G N) := Finite.of_equiv _ e₂.symm.toEquiv
+  have : Finite (H0 G (InternalHom G (InternalHom G M N) N) →+ H2 G N) := DFunLike.finite _
+  have : Finite (H2 G (InternalHom G M N)) := Finite.of_injective _ h₂
+  have : Finite (H2 G (InternalHom G M N) →+ H2 G N) := DFunLike.finite _
+  refine h₀.bijective_of_nat_card_le ?_
+  -- `|Hom(H²(M'), H²(N))| = |H²(M')| ≤ |Hom(H⁰(M''), H²(N))| = |H⁰(M'')| = |H⁰(M)|`
+  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ (nsmul_H2_eq_zero (G := G) hM')]
+  refine (Nat.card_le_card_of_injective _ h₂).trans_eq ?_
+  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ fun v ↦ Subtype.ext (by
+    simpa using InternalHom.nsmul_eq_zero_of_domain hM' v.1)]
+  exact Nat.card_congr (Equiv.ofBijective _ (explicitCoeff0_bijective G M
+    (InternalHom.eval_bijective_of_addEquiv_zmod e hM))).symm
+
+/-- **Bijectivity of `α₁` by counting.** Let `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, and let `M` be
+a finite discrete `G`-module killed by `n` whose dual `M' = InternalHom G M N` has finite
+`H¹(G, M')`. If `α₁` is injective on `M` and on `M'`, then
+`α₁ : H¹(G, M) → Hom(H¹(G, M'), H²(G, N))` is bijective: its target has the order of `H¹(G, M')`,
+which `α₁` embeds into `Hom(H¹(G, M''), H²(G, N))`, of the order of `H¹(G, M'')`, and `M'' ≅ M` by
+double duality. -/
+theorem dualityMap1_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
+    (e₂ : H2 G N ≃+ ZMod n) (hM : ∀ x : M, n • x = 0) [Finite (H1 G (InternalHom G M N))]
+    (h₁' : haveI : Finite N := Finite.of_equiv _ e.symm.toEquiv
+      Function.Injective (dualityMap1 G (InternalHom G M N) N))
+    (h₁ : Function.Injective (dualityMap1 G M N)) : Function.Bijective (dualityMap1 G M N) := by
+  have : Finite N := Finite.of_equiv _ e.symm.toEquiv
+  have hM' : ∀ φ : InternalHom G M N, n • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
+  have hev := explicitCoeff1_bijective G M (InternalHom.eval_bijective_of_addEquiv_zmod e hM)
+  have : Finite (H2 G N) := Finite.of_equiv _ e₂.symm.toEquiv
+  have : Finite (H1 G (InternalHom G M N) →+ H2 G N) := DFunLike.finite _
+  have : Finite (H1 G M) := Finite.of_injective _ h₁
+  have : Finite (H1 G (InternalHom G (InternalHom G M N) N)) :=
+    Finite.of_surjective _ hev.2
+  have : Finite (H1 G (InternalHom G (InternalHom G M N) N) →+ H2 G N) := DFunLike.finite _
+  refine h₁.bijective_of_nat_card_le ?_
+  -- `|Hom(H¹(M'), H²(N))| = |H¹(M')| ≤ |Hom(H¹(M''), H²(N))| = |H¹(M'')| = |H¹(M)|`
+  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ (nsmul_H1_eq_zero (G := G) hM')]
+  refine (Nat.card_le_card_of_injective _ h₁').trans_eq ?_
+  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂
+    (nsmul_H1_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM'))]
+  exact (Nat.card_congr (Equiv.ofBijective _ hev)).symm
+
+/-- **Bijectivity of `α₂` by counting.** Let `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, and let `M` be
+a finite discrete `G`-module killed by `n`, with dual `M' = InternalHom G M N`. If `α₂` is injective
+on `M` and `α₀` is injective on `M'`, then `α₂ : H²(G, M) → Hom(H⁰(G, M'), H²(G, N))` is bijective:
+its target has the order of `H⁰(G, M')`, which `α₀` embeds into `Hom(H²(G, M''), H²(G, N))`, of the
+order of `H²(G, M'')`, and `M'' ≅ M` by double duality. The hypothesis `H²(G, N) ≃+ ZMod n` is what
+makes `Hom(-, H²(G, N))` preserve the order of every finite group killed by `n`. -/
+theorem dualityMap2_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
+    (e₂ : H2 G N ≃+ ZMod n) (hM : ∀ x : M, n • x = 0)
+    (h₀ : haveI : Finite N := Finite.of_equiv _ e.symm.toEquiv
+      Function.Injective (dualityMap0 G (InternalHom G M N) N))
+    (h₂ : Function.Injective (dualityMap2 G M N)) : Function.Bijective (dualityMap2 G M N) := by
+  have : Finite N := Finite.of_equiv _ e.symm.toEquiv
+  have hM' : ∀ φ : InternalHom G M N, n • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
+  have hev := explicitCoeff2_bijective G M (InternalHom.eval_bijective_of_addEquiv_zmod e hM)
+  have : Finite (H2 G N) := Finite.of_equiv _ e₂.symm.toEquiv
   have : Finite (H0 G (InternalHom G M N) →+ H2 G N) := DFunLike.finite _
-  refine h₂.bijective_of_nat_card_le (le_of_eq ?_)
-  -- `|Hom(H⁰(M'), H²(N))| = |H⁰(M')| = |Hom(H²(M''), H²(N))| = |H²(M'')| = |H²(M)|`
-  have h₁ : Nat.card (H0 G (InternalHom G M N) →+ H2 G N) = Nat.card (H0 G (InternalHom G M N)) :=
-    natCard_addMonoidHom_of_addEquiv_zmod e₂ fun v ↦ Subtype.ext (by simpa using hM' v)
-  have h₂₃ := (Nat.card_congr (Equiv.ofBijective _ h₀)).trans
-    (natCard_addMonoidHom_of_addEquiv_zmod e₂
-      (nsmul_H2_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM')))
-  have h₂₃₄ := h₂₃.trans (Nat.card_congr (Equiv.ofBijective _ (explicitCoeff2_bijective G M
-    (InternalHom.eval_bijective_of_addEquiv_zmod e hM))).symm)
-  exact h₁.trans h₂₃₄
+  have : Finite (H2 G M) := Finite.of_injective _ h₂
+  have : Finite (H2 G (InternalHom G (InternalHom G M N) N)) :=
+    Finite.of_surjective _ hev.2
+  have : Finite (H2 G (InternalHom G (InternalHom G M N) N) →+ H2 G N) := DFunLike.finite _
+  refine h₂.bijective_of_nat_card_le ?_
+  -- `|Hom(H⁰(M'), H²(N))| = |H⁰(M')| ≤ |Hom(H²(M''), H²(N))| = |H²(M'')| = |H²(M)|`
+  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ fun v ↦ Subtype.ext (by simpa using hM' v)]
+  refine (Nat.card_le_card_of_injective _ h₀).trans_eq ?_
+  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂
+    (nsmul_H2_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM'))]
+  exact (Nat.card_congr (Equiv.ofBijective _ hev)).symm
 
 end Counting
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Compactness
+public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Cusp
 import Mathlib.NumberTheory.Modular
 import Mathlib.NumberTheory.ModularForms.Cusps
 
@@ -100,6 +101,10 @@ instance instUniqueCuspOrbit : Unique psl2zToPSL2R.range.CuspOrbit where
     obtain ⟨c, rfl⟩ := Subgroup.cuspOrbitMk_surjective C
     apply (Subgroup.cuspOrbitMk_eq_iff _ _).mpr
     exact cuspPoint_mem_orbit_infty (Subgroup.mem_cuspPoints.mp c.property)
+
+@[simp]
+theorem cuspDatumInfty_cuspOrbit : cuspDatumInfty.cuspOrbit = cuspOrbitInfty :=
+  Subsingleton.elim _ _
 
 /-- The level-one modular orbit space becomes compact after its unique cusp orbit is adjoined.
 The compact sets used here are Mathlib's truncated closed modular fundamental domains. -/

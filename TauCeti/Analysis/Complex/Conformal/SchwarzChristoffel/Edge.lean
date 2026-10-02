@@ -375,23 +375,10 @@ theorem exists_hasDerivAt_schwarzChristoffelPrimitive_continuation
       (hUre z hz)).differentiableAt
         ((isOpen_Ioo.preimage Complex.continuous_re).mem_nhds (hUre z hz))).const_mul C
         |>.differentiableWithinAt
-  obtain ⟨P, hP⟩ := hgdiff.isExactOn_ball
-  set V := Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2) ∩ upperHalfPlaneSet
-  have hVopen : IsOpen V := Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
-  have hVpre : IsPreconnected V :=
-    ((convex_ball _ _).inter (convex_halfSpace_im_gt 0)).isPreconnected
-  have hFd : ∀ z ∈ V, HasDerivAt (schwarzChristoffelPrimitive a e z₀) (g z) z := by
-    intro z hz
-    have h := hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz.2
-    rwa [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
-  have hPd : ∀ z ∈ V, HasDerivAt P (g z) z := fun z hz => hP z hz.1
-  obtain ⟨k, hk⟩ := hVopen.exists_eq_add_of_deriv_eq hVpre
-    (fun z hz => (hFd z hz).differentiableAt.differentiableWithinAt)
-    (fun z hz => (hPd z hz).differentiableAt.differentiableWithinAt)
-    fun z hz => by rw [(hFd z hz).deriv, (hPd z hz).deriv]
-  refine ⟨fun z => P z + k, fun z hz => ?_, fun z hz => ?_⟩
-  · exact (hP z hz).add_const k
-  · exact (hk hz).symm
+  apply exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hgdiff
+  intro z hz
+  have h := hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz.2
+  rwa [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
 
 /-- **The Schwarz--Christoffel map has straight image edges.**  Let every prevertex `a i` with
 nonzero exponent avoid the real interval `Ioo p q`; a prevertex with zero exponent contributes the

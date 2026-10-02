@@ -74,14 +74,14 @@ theorem extAddEquivOfIso_apply (e : X ≅ X') (f : Y ≅ Y') (n : ℕ) (x : Ext.
 
 /-- The `R`-linear refinement of `TauCeti.extAddEquivOfIso`: in an `R`-linear abelian category,
 isomorphisms `X ≅ X'` and `Y ≅ Y'` identify `Extⁿ(X, Y)` and `Extⁿ(X', Y')` as `R`-modules. -/
-noncomputable def extLinearEquivOfIso (R : Type t) [CommRing R] [Linear R C] (e : X ≅ X')
+noncomputable def extLinearEquivOfIso (R : Type t) [Ring R] [Linear R C] (e : X ≅ X')
     (f : Y ≅ Y') (n : ℕ) : Ext.{w} X Y n ≃ₗ[R] Ext.{w} X' Y' n where
   __ := extAddEquivOfIso e f n
   map_smul' r x := by simp [extAddEquivOfIso_apply]
 
 /-- `TauCeti.extLinearEquivOfIso` composes with `e.inv` and `f.hom`. -/
 @[simp]
-theorem extLinearEquivOfIso_apply (R : Type t) [CommRing R] [Linear R C] (e : X ≅ X')
+theorem extLinearEquivOfIso_apply (R : Type t) [Ring R] [Linear R C] (e : X ≅ X')
     (f : Y ≅ Y') (n : ℕ) (x : Ext.{w} X Y n) :
     extLinearEquivOfIso R e f n x =
       (Ext.mk₀ e.inv).comp (x.comp (Ext.mk₀ f.hom) (add_zero n)) (zero_add n) :=

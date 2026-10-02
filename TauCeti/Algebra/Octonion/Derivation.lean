@@ -39,9 +39,10 @@ element whose existence is exactly the splitness of `𝕆` — its two diagonal 
 So `D` maps all of `𝕆` into the imaginary octonions, commutes with conjugation, and lies in the
 orthogonal Lie algebra of the norm: `Der 𝕆 ≤ 𝔰𝔬(N)`
 (`TauCeti.Octonion.derivationLieAlgebra_le_skewAdjointLieSubalgebra`). In particular the imaginary
-octonions are a Lie submodule (`TauCeti.Octonion.imaginaryLieSubmodule`) — this is the candidate
-`7`-dimensional fundamental representation — and, when scalar multiplication by `2` on `𝕆` is
-regular, `Der 𝕆` acts faithfully on it, since `𝕆 = R · 1 ⊕ Im 𝕆` and a derivation kills `1`.
+octonions are a Lie submodule (`TauCeti.Octonion.imaginaryLieSubmodule`) — over a field in which
+`2` is nonzero this is the `7`-dimensional fundamental representation — and, when scalar
+multiplication by `2` on `𝕆` is regular, `Der 𝕆` acts faithfully on it, since `𝕆 = R · 1 ⊕ Im 𝕆`
+and a derivation kills `1`.
 
 The derivations exhibited here come from the action of `SL₃` on a Zorn vector matrix,
 `⟨a, b, v, w⟩ ↦ ⟨a, b, A v, (Aᵀ)⁻¹ w⟩`, differentiated at the identity: a trace-zero matrix `M`
@@ -332,9 +333,11 @@ theorem derivationLieAlgebra_le_skewAdjointLieSubalgebra (R : Type*) [CommRing R
 
 /-- **The imaginary octonions as a Lie submodule of `𝕆` over `Der 𝕆`.** A derivation takes
 imaginary values on all of `𝕆`, so in particular it preserves the imaginary octonions. This is the
-carrier of the candidate `7`-dimensional fundamental representation of `G₂`; its dimension is
+carrier of the `7`-dimensional fundamental representation of `G₂`; its dimension is
 `TauCeti.Octonion.finrank_imaginary`, reached through
-`TauCeti.Octonion.toSubmodule_imaginaryLieSubmodule`. -/
+`TauCeti.Octonion.toSubmodule_imaginaryLieSubmodule`, and its irreducibility over a field in which
+`2` is nonzero is `TauCeti.Octonion.isIrreducible_imaginaryLieSubmodule` in
+`TauCeti/Algebra/Octonion/Fundamental.lean`. -/
 def imaginaryLieSubmodule (R : Type*) [CommRing R] :
     LieSubmodule R (derivationLieAlgebra R (Octonion R)) (Octonion R) where
   __ := imaginary R

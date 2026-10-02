@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.RatFunc.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 
@@ -78,6 +79,7 @@ public section
 open Polynomial
 
 open scoped Polynomial.Bivariate
+open scoped RatFunc nonZeroDivisors
 
 namespace WeierstrassCurve.Affine
 
@@ -137,6 +139,28 @@ theorem map_genericX : map W f W.genericX = (W.map f).genericX := by
 theorem map_genericY : map W f W.genericY = (W.map f).genericY := by
   rw [genericY_def, genericY_def, map_algebraMap_coordinateRing]
   exact congr_arg _ (CoordinateRing.map_root W f)
+
+/-- Changing the coefficient field of a Weierstrass function field commutes with the embedding
+of its rational-function subfield. -/
+@[simp]
+theorem map_algebraMap_ratFunc (z : RatFunc F) :
+    map W f (algebraMap (RatFunc F) W.FunctionField z) =
+      algebraMap (RatFunc K) (W.map f).FunctionField
+        (RatFunc.mapRingHom (Polynomial.mapRingHom f)
+          (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
+            (Polynomial.map_injective _ f.injective)) z) := by
+  have hpoly (p : F[X]) : map W f (algebraMap F[X] W.FunctionField p) =
+      algebraMap K[X] (W.map f).FunctionField (p.map f) := by
+    have hcoord := CoordinateRing.map_smul f p (1 : W.CoordinateRing)
+    simp only [Algebra.smul_def, mul_one, map_one] at hcoord
+    rw [IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
+      map_algebraMap_coordinateRing,
+      IsScalarTower.algebraMap_apply K[X] (W.map f).CoordinateRing (W.map f).FunctionField]
+    exact congrArg (algebraMap (W.map f).CoordinateRing (W.map f).FunctionField) hcoord
+  induction z using RatFunc.induction_on with
+  | f p q hq =>
+    rw [RatFunc.coe_mapRingHom_eq_coe_map, RatFunc.map_apply_div]
+    simp only [map_div₀, ← IsScalarTower.algebraMap_apply, hpoly, Polynomial.coe_mapRingHom]
 
 /-- **`FunctionField.map` along the identity is the identity.** -/
 @[simp]

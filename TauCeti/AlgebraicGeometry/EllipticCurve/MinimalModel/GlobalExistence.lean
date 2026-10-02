@@ -112,7 +112,7 @@ private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
     (hs : v.valuation K (C.s - D.s) ≤ v.valuation K D.u)
     (ht : v.valuation K (C.t - D.t - D.s * (C.r - D.r)) ≤ v.valuation K D.u ^ 3) :
     IsMinimal (Localization.AtPrime v.asIdeal) (C • W) := by
-  have hv := v.integers_valuation_localizationAtPrime (K := K)
+  have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
   have hD : 0 < v.valuation K D.u :=
     zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBu : ((C * D⁻¹).u : K) = C.u / D.u := by
@@ -145,7 +145,7 @@ private theorem isIntegral_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
     (hs : v.valuation K (C.s - D.s) ≤ v.valuation K D.u)
     (ht : v.valuation K (C.t - D.t - D.s * (C.r - D.r)) ≤ v.valuation K D.u ^ 3) :
     IsIntegral (Localization.AtPrime v.asIdeal) (C • W) := by
-  have hv := v.integers_valuation_localizationAtPrime (K := K)
+  have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
   have hBu : (↑(C * D⁻¹).u⁻¹ : K) = (C.u : K)⁻¹ * D.u := by
     rw [VariableChange.mul_inv_u, mul_inv, inv_inv, Units.val_mul, Units.val_inv_eq_inv_val]
   obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
@@ -166,7 +166,7 @@ private theorem exists_isMinimal_smul_valuation (v : HeightOneSpectrum O)
     ∃ D : VariableChange K, IsMinimal (Localization.AtPrime v.asIdeal) (D • W) ∧
       v.valuation K D.u = WithZero.exp (-obstructionExponentAt O v W) ∧
       v.valuation K D.r ≤ 1 ∧ v.valuation K D.s ≤ 1 ∧ v.valuation K D.t ≤ 1 := by
-  have hv := v.integers_valuation_localizationAtPrime (K := K)
+  have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
   have : IsIntegral (Localization.AtPrime v.asIdeal) W := IsIntegral.of_isScalarTower (R := O) W
   obtain ⟨D, hD⟩ := exists_isMinimal (Localization.AtPrime v.asIdeal) W
   -- Comparing obstruction exponents: `fᵥ(D • W) = 0` and `fᵥ(D • W) = fᵥ(W) - ord_v(D.u)`.

@@ -27,7 +27,7 @@ public section
 
 namespace Subgroup
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] {N : Subgroup G}
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {N : Subgroup G}
 
 /-- **The character of an open subgroup of index two is continuous**: its kernel is the open
 subgroup itself (`Subgroup.ker_indexTwoCharacter`). -/
