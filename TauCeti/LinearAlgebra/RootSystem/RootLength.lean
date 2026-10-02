@@ -93,11 +93,9 @@ transposed matrix instead would make that identity false.
 
 ## References
 
-This file implements the "pin the node numbering" item of Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signature
-`DynkinType.IsLongSimpleRoot` in that roadmap's `Suggested.lean`. See Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, plates I-IX, for the numbering and the root lengths, and Kac, *Infinite
-Dimensional Lie Algebras*, Chapter 2, for symmetrisable Cartan matrices.
+See Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, plates I-IX, for the numbering and the
+root lengths, and Kac, *Infinite Dimensional Lie Algebras*, Chapter 2, for symmetrisable Cartan
+matrices.
 -/
 
 public section
@@ -120,9 +118,8 @@ normalisation fixes that factor.
 Validity is what the normalisation needs, and among the types of positive rank `C 1` is the one
 that lacks it (the rank-zero types have no node to normalise against): its sole node is
 the last node of the `Cₙ` family, hence of length `2`, with no shorter node beside it, so every
-length there is twice what the normalisation would ask. Fixing that by hand would cost a
-special case in `rootLength` and in every proof reading it, to normalise a type that
-`TauCeti.DynkinType.Valid` excludes anyway; the family-wise reading is kept instead. -/
+length there is twice what the normalisation would ask. That type is excluded by
+`TauCeti.DynkinType.Valid`, and `rootLength` keeps the family-wise reading on it. -/
 def rootLength : (t : DynkinType) → Fin t.rank → ℤ
   | .A _, _ | .D _, _ | .E6, _ | .E7, _ | .E8, _ => 1
   | .B n, i => if (i : ℕ) + 1 = n then 1 else 2
@@ -168,35 +165,24 @@ root at all to exhibit; and the sole node of `C 1` is the last node of the `Cₙ
 family calls long and gives length `2`. -/
 theorem exists_rootLength_eq_one_iff (t : DynkinType) :
     (∃ i, t.rootLength i = 1) ↔ 0 < t.rank ∧ t ≠ C 1 := by
-  refine ⟨fun ⟨i, hi⟩ ↦ ⟨(Nat.zero_le _).trans_lt i.isLt, ?_⟩, fun ⟨hr, hne⟩ ↦ ?_⟩
+  refine ⟨fun ⟨i, hi⟩ ↦ ⟨i.pos, ?_⟩, fun ⟨hr, hne⟩ ↦ ?_⟩
   · -- The sole node of `C 1` is the long last node of the `Cₙ` family.
     rintro rfl
     have h1 : (i : ℕ) < 1 := i.isLt
     simp only [rootLength_C] at hi
     split_ifs at hi <;> omega
   · cases t with
-    | A n => exact ⟨⟨0, hr⟩, by simp⟩
-    | D n => exact ⟨⟨0, hr⟩, by simp⟩
-    | E6 => exact ⟨⟨0, by simp⟩, by simp⟩
-    | E7 => exact ⟨⟨0, by simp⟩, by simp⟩
-    | E8 => exact ⟨⟨0, by simp⟩, by simp⟩
+    | A n | D n | E6 | E7 | E8 => exact ⟨⟨0, hr⟩, by simp⟩
     | B n =>
         -- The last node of `Bₙ` is its short one.
-        have hn : 0 < n := hr
-        obtain ⟨j₀, hj₀⟩ : ∃ j₀ : Fin n, (j₀ : ℕ) = n - 1 := ⟨⟨n - 1, by omega⟩, rfl⟩
-        exact ⟨j₀, by simp only [rootLength_B]; split_ifs <;> omega⟩
+        simp only [rank_B] at hr
+        exact ⟨⟨n - 1, by simp; omega⟩, by simp; omega⟩
     | C n =>
         -- Every node of `Cₙ` but the last is short, and `n ≠ 1` gives a node before the last.
-        have hn : 0 < n := hr
         have hn1 : n ≠ 1 := by rintro rfl; exact hne rfl
-        obtain ⟨j₀, hj₀⟩ : ∃ j₀ : Fin n, (j₀ : ℕ) = 0 := ⟨⟨0, by omega⟩, rfl⟩
-        exact ⟨j₀, by simp only [rootLength_C]; split_ifs <;> omega⟩
-    | F4 =>
-        obtain ⟨j₀, hj₀⟩ : ∃ j₀ : Fin 4, (j₀ : ℕ) = 2 := ⟨⟨2, by omega⟩, rfl⟩
-        exact ⟨j₀, by simp only [rootLength_F4]; split_ifs <;> omega⟩
-    | G2 =>
-        obtain ⟨j₀, hj₀⟩ : ∃ j₀ : Fin 2, (j₀ : ℕ) = 0 := ⟨⟨0, by omega⟩, rfl⟩
-        exact ⟨j₀, by simp only [rootLength_G2]; split_ifs <;> omega⟩
+        exact ⟨⟨0, hr⟩, by simp; omega⟩
+    | F4 => exact ⟨⟨2, by simp⟩, by simp⟩
+    | G2 => exact ⟨⟨0, by simp⟩, by simp⟩
 
 /-- **A valid Dynkin type has a simple root of length `1`.** This is
 `TauCeti.DynkinType.exists_rootLength_eq_one_iff` for a valid type, which excludes both of its
@@ -207,12 +193,7 @@ theorem exists_rootLength_eq_one {t : DynkinType} (ht : t.Valid) : ∃ i, t.root
 /-- A simply-laced type has all its simple roots of length `1`. -/
 lemma rootLength_eq_one_of_isSimplyLaced {t : DynkinType} (ht : t.IsSimplyLaced)
     (i : Fin t.rank) : t.rootLength i = 1 := by
-  cases t
-  case B n => exact absurd ht (not_isSimplyLaced_B n)
-  case C n => exact absurd ht (not_isSimplyLaced_C n)
-  case F4 => exact absurd ht not_isSimplyLaced_F4
-  case G2 => exact absurd ht not_isSimplyLaced_G2
-  all_goals simp
+  cases t <;> simp_all
 
 /-- **The standard Cartan matrix of a Dynkin type is symmetrised on the right by `rootLength`.**
 Writing `A = t.cartanMatrix` and `ℓ = t.rootLength`, the products `A i j * ℓ j` are symmetric in
@@ -233,30 +214,17 @@ theorem cartanMatrix_mul_rootLength (t : DynkinType) (i j : Fin t.rank) :
   | E6 => simpa using (CartanMatrix.E_isSymm 6).apply j i
   | E7 => simpa using (CartanMatrix.E_isSymm 7).apply j i
   | E8 => simpa using (CartanMatrix.E_isSymm 8).apply j i
-  | F4 =>
-      simp only [cartanMatrix_F4, rootLength_F4]
+  | F4 | G2 =>
+      simp only [cartanMatrix_F4, cartanMatrix_G2, rootLength_F4, rootLength_G2]
       fin_cases i <;> fin_cases j <;> decide
-  | G2 =>
-      simp only [cartanMatrix_G2, rootLength_G2]
-      fin_cases i <;> fin_cases j <;> decide
-  | B n =>
+  | B n | C n =>
       -- Splitting on `t` leaves dependent indices that elaborate as `Fin t.rank`; expose their
       -- definitional reduction to `Fin n` before unfolding the non-symmetric matrix.
       change Fin n at i j
       have hi : (i : ℕ) < n := i.isLt
       have hj : (j : ℕ) < n := j.isLt
-      simp only [cartanMatrix_B, rootLength_B]
-      unfold CartanMatrix.B
-      simp only [Matrix.of_apply, Fin.ext_iff]
-      split_ifs <;> omega
-  | C n =>
-      -- As in the `B` branch, make the reduced dependent index explicit.
-      change Fin n at i j
-      have hi : (i : ℕ) < n := i.isLt
-      have hj : (j : ℕ) < n := j.isLt
-      simp only [cartanMatrix_C, rootLength_C]
-      unfold CartanMatrix.C
-      simp only [Matrix.of_apply, Fin.ext_iff]
+      simp only [cartanMatrix_B, cartanMatrix_C, rootLength_B, rootLength_C, CartanMatrix.B,
+        CartanMatrix.C, Matrix.of_apply, Fin.ext_iff]
       split_ifs <;> omega
 
 /-- A simple root of a Dynkin type is **long** when its type's family calls that node long, in the
@@ -318,8 +286,9 @@ theorem isLongSimpleRoot_iff {t : DynkinType} (ht : t ≠ B 1) (i : Fin t.rank) 
     t.IsLongSimpleRoot i ↔ ∀ j, t.rootLength j ≤ t.rootLength i := by
   cases t with
   | A n | D n | E6 | E7 | E8 => simp
-  | F4 => simp only [isLongSimpleRoot_F4, rootLength_F4]; revert i; decide
-  | G2 => simp only [isLongSimpleRoot_G2, rootLength_G2]; revert i; decide
+  | F4 | G2 =>
+      simp only [isLongSimpleRoot_F4, isLongSimpleRoot_G2, rootLength_F4, rootLength_G2]
+      fin_cases i <;> decide
   | B n =>
       -- As in `cartanMatrix_mul_rootLength`, the case split leaves `i` elaborated at the
       -- unreduced type `Fin (B n).rank`; expose its definitional reduction to `Fin n` so that
@@ -327,9 +296,7 @@ theorem isLongSimpleRoot_iff {t : DynkinType} (ht : t ≠ B 1) (i : Fin t.rank) 
       change Fin n at i
       have hi : (i : ℕ) < n := i.isLt
       -- The node `i` bounds `n` below by `1`, and `B 1` is the excluded type.
-      have hn : 2 ≤ n := by
-        have hn1 : n ≠ 1 := by rintro rfl; exact ht rfl
-        omega
+      have hn : n ≠ 1 := by rintro rfl; exact ht rfl
       simp only [isLongSimpleRoot_B, rootLength_B]
       refine ⟨fun h j ↦ ?_, fun h ↦ ?_⟩
       · split_ifs <;> omega
@@ -359,12 +326,7 @@ theorem isLongSimpleRoot_iff_of_valid {t : DynkinType} (ht : t.Valid) (i : Fin t
 /-- Every simple root of a simply-laced type is long: all its simple roots have the same length. -/
 lemma isLongSimpleRoot_of_isSimplyLaced {t : DynkinType} (ht : t.IsSimplyLaced) (i : Fin t.rank) :
     t.IsLongSimpleRoot i := by
-  cases t
-  case B n => exact absurd ht (not_isSimplyLaced_B n)
-  case C n => exact absurd ht (not_isSimplyLaced_C n)
-  case F4 => exact absurd ht not_isSimplyLaced_F4
-  case G2 => exact absurd ht not_isSimplyLaced_G2
-  all_goals simp
+  cases t <;> simp_all
 
 /-- **A Dynkin type has all its simple roots long exactly when it is simply laced, has no node at
 all, or is `C 1`.** The multiply-laced types `Bₙ`, `Cₙ`, `F₄` and `G₂` each have a short simple
@@ -426,7 +388,7 @@ Both exceptions are degenerate: the rank-zero types have no node to be long, and
 `B 1` is the short last node of the `Bₙ` family. -/
 theorem exists_isLongSimpleRoot_iff (t : DynkinType) :
     (∃ i, t.IsLongSimpleRoot i) ↔ 0 < t.rank ∧ t ≠ B 1 := by
-  refine ⟨fun ⟨i, hi⟩ ↦ ⟨(Nat.zero_le _).trans_lt i.isLt, ?_⟩, fun ⟨hr, hne⟩ ↦ ?_⟩
+  refine ⟨fun ⟨i, hi⟩ ↦ ⟨i.pos, ?_⟩, fun ⟨hr, hne⟩ ↦ ?_⟩
   · -- The sole node of `B 1` is the short last node of the `Bₙ` family.
     rintro rfl
     have h1 : (i : ℕ) < 1 := i.isLt
@@ -455,21 +417,6 @@ theorem isLongSimpleRoot_C_iff_not_isLongSimpleRoot_B (n : ℕ) (i : Fin n) :
 
 end DynkinType
 
-/-- Comparing two positive quantities tied together by a strictly negative multiplier. If
-`a * y = c * x` with `x` positive and `a` strictly negative, then `x ≤ y` exactly when `c ≤ a`.
-
-This is the shared arithmetic behind the two length comparisons below: a transposed pair of Cartan
-entries and a pair of root lengths always satisfy such a symmetrised relation, whether the lengths
-are those of `TauCeti.DynkinType.rootLength` or those measured by a root-positive form. -/
-private lemma le_iff_le_of_mul_eq_mul {S : Type*} [CommRing S] [LinearOrder S]
-    [IsStrictOrderedRing S] {a c x y : S} (hx : 0 < x) (ha : a < 0) (h : a * y = c * x) :
-    x ≤ y ↔ c ≤ a := by
-  refine ⟨fun hxy ↦ ?_, fun hca ↦ ?_⟩
-  · have h1 : c * x ≤ a * x := h ▸ mul_le_mul_of_nonpos_left hxy ha.le
-    exact le_of_mul_le_mul_right h1 hx
-  · have h1 : a * y ≤ a * x := h ▸ mul_le_mul_of_nonneg_right hca hx.le
-    exact (mul_le_mul_left_of_neg ha).mp h1
-
 section
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -491,9 +438,9 @@ pairings the comparison is reversed. -/
 theorem _root_.RootPairing.RootPositiveForm.rootLength_le_iff_pairingIn_le
     (B : P.RootPositiveForm S) {i j : ι}
     (h : P.pairingIn S i j < 0) :
-    B.rootLength i ≤ B.rootLength j ↔ P.pairingIn S j i ≤ P.pairingIn S i j :=
-  le_iff_le_of_mul_eq_mul (B.rootLength_pos i) h
-    (B.pairingIn_mul_eq_pairingIn_mul_swap i j).symm
+    B.rootLength i ≤ B.rootLength j ↔ P.pairingIn S j i ≤ P.pairingIn S i j := by
+  rw [← mul_le_mul_left_of_neg h, ← B.pairingIn_mul_eq_pairingIn_mul_swap,
+    mul_le_mul_iff_left₀ (B.rootLength_pos i)]
 
 end IsValuedIn
 
@@ -519,10 +466,9 @@ theorem _root_.RootPairing.RootPositiveForm.rootLength_le_iff_dynkinRootLength_l
   -- entries of a base are those pairings definitionally (`RootPairing.Base.cartanMatrixIn_def`).
   have key : B.rootLength i ≤ B.rootLength j ↔ b.cartanMatrix j i ≤ b.cartanMatrix i j :=
     RootPairing.RootPositiveForm.rootLength_le_iff_pairingIn_le B h
-  rw [key, he i j, he j i]
-  refine (le_iff_le_of_mul_eq_mul (t.rootLength_pos (e i)) ?_
-    (t.cartanMatrix_mul_rootLength (e i) (e j))).symm
-  rwa [he i j] at h
+  rw [he i j] at h
+  rw [key, he i j, he j i, ← mul_le_mul_left_of_neg (b := t.rootLength (e i)) h,
+    t.cartanMatrix_mul_rootLength, mul_le_mul_iff_left₀ (t.rootLength_pos (e i))]
 
 end IsCrystallographic
 
