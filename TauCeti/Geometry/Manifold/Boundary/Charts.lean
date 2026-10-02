@@ -53,6 +53,8 @@ step and are not proved here.
 
 * `TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas`: boundary points are
   detected by the vanishing zeroth coordinate in any ambient atlas chart.
+* `TauCeti.ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas`: interior
+  points are detected by the positive zeroth coordinate in any ambient maximal-atlas chart.
 * `TauCeti.boundaryChartedSpace_atlas`: the boundary atlas is the range of its preferred charts.
 * `TauCeti.boundaryChartedSpace_chartAt_source` and its companions characterize the preferred
   boundary charts induced by the ambient preferred charts.
@@ -74,6 +76,24 @@ open Function Set Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+section Interior
+
+variable {d : ℕ} [NeZero d] {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace (EuclideanHalfSpace d) M] [IsManifold (𝓡∂ d) k M]
+
+/-- A point of a `C^k` manifold modeled on the `d`-dimensional Euclidean half-space is an interior
+point exactly when any chart of the maximal atlas around it reads it with positive zeroth
+coordinate. -/
+theorem ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas (hk : k ≠ 0)
+    {e : OpenPartialHomeomorph M (EuclideanHalfSpace d)}
+    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ d) k M) {x : M} (hx : x ∈ e.source) :
+    (𝓡∂ d).IsInteriorPoint x ↔ 0 < (e x).1 0 := by
+  rw [ModelWithCorners.isInteriorPoint_iff_mem_interior_range hk he hx,
+    interior_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
+  exact Iff.rfl
+
+end Interior
 
 section Boundary
 

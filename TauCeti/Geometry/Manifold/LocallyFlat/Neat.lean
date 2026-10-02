@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
-public import TauCeti.Geometry.Manifold.Boundary.Basic
+public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
 
 /-!
@@ -44,7 +44,9 @@ For the half-space models a straightening always exists at a point of a neat emb
 
 Both cases use that interior and boundary points can be detected in the charts of the immersion,
 which only lie in the maximal atlas: this is
-`TauCeti.ModelWithCorners.isInteriorPoint_iff_mem_interior_range`.
+`TauCeti.ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas`. The
+multiple of the boundary coordinate is supplied by
+`TauCeti.ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg`.
 
 ## Main results
 
@@ -192,52 +194,6 @@ end Straightening
 
 section HalfSpace
 
-/-- A linear functional on `ℝᵏ` which is nonnegative near a point `p` of the boundary hyperplane
-of the half-space, within the half-space, vanishes at `p`, and is positive at points of that
-neighbourhood off the hyperplane, is a positive multiple of the boundary coordinate `u ↦ u 0`. -/
-private theorem exists_pos_eq_mul_apply_zero {k : ℕ} [NeZero k]
-    (ν : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) {p : EuclideanSpace ℝ (Fin k)} (hp : p 0 = 0)
-    (hνp : ν p = 0) {T : Set (EuclideanSpace ℝ (Fin k))} (hT : T ∈ 𝓝[{y | 0 ≤ y 0}] p)
-    (hnonneg : ∀ u ∈ T, 0 ≤ ν u) (hpos : ∀ u ∈ T, 0 < u 0 → 0 < ν u) :
-    ∃ c : ℝ, 0 < c ∧ ∀ u, ν u = c * u 0 := by
-  -- Every direction into the half-space is followed for a short positive time inside `T`.
-  have key : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → ∃ t : ℝ, 0 < t ∧ p + t • v ∈ T := by
-    intro v hv
-    have hlim : Tendsto (fun t : ℝ => p + t • v) (𝓝[>] 0) (𝓝[{y | 0 ≤ y 0}] p) := by
-      refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-      · have hc : Continuous fun t : ℝ => p + t • v := by fun_prop
-        simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-      · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-        simp only [PiLp.add_apply, PiLp.smul_apply, hp, smul_eq_mul, zero_add]
-        positivity
-    obtain ⟨t, htT, ht⟩ := ((hlim.eventually hT).and self_mem_nhdsWithin).exists
-    exact ⟨t, ht, htT⟩
-  have hshift : ∀ (t : ℝ) (v : EuclideanSpace ℝ (Fin k)), ν (p + t • v) = t * ν v := by
-    intro t v
-    rw [map_add, map_smul, hνp, zero_add, smul_eq_mul]
-  have hν_nonneg : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → 0 ≤ ν v := by
-    intro v hv
-    obtain ⟨t, ht, htT⟩ := key v hv
-    have := hnonneg _ htT
-    rw [hshift] at this
-    exact (mul_nonneg_iff_of_pos_left ht).1 this
-  have hker : ∀ v : EuclideanSpace ℝ (Fin k), v 0 = 0 → ν v = 0 := by
-    intro v hv
-    refine le_antisymm ?_ (hν_nonneg v hv.ge)
-    have := hν_nonneg (-v) (by simp [hv])
-    rwa [map_neg, neg_nonneg] at this
-  set e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
-  have he₀ : e₀ 0 = 1 := by simp [e₀]
-  refine ⟨ν e₀, ?_, fun u => ?_⟩
-  · obtain ⟨t, ht, htT⟩ := key e₀ (by rw [he₀]; exact zero_le_one)
-    have := hpos _ htT (by simp [hp, he₀, ht])
-    rw [hshift] at this
-    exact pos_of_mul_pos_right this ht.le
-  · have hdec : u = u 0 • e₀ + (u - u 0 • e₀) := by abel
-    have hrest : (u - u 0 • e₀) 0 = 0 := by simp [he₀]
-    calc ν u = ν (u 0 • e₀ + (u - u 0 • e₀)) := congrArg ν hdec
-      _ = ν e₀ * u 0 := by rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
-
 /-- **The shear straightening the half-spaces.** If the linear equivalence
 `L : ℝᵏ × F ≃L ℝᵐ` reads the boundary coordinate of `ℝᵐ` on `ℝᵏ × {0}` as a positive multiple
 `c • u 0` of the boundary coordinate of `ℝᵏ`, then `L⁻¹` followed by the shear
@@ -275,17 +231,6 @@ private theorem exists_straightening_of_eq_mul_apply_zero {F : Type*} [NormedAdd
     ContinuousLinearEquiv.trans_apply, hsplit]
   exact mul_nonneg_iff_of_pos_left hc
 
-/-- In a chart of the maximal atlas of a half-space manifold, a point is an interior point exactly
-when its boundary coordinate is positive. -/
-private theorem isInteriorPoint_iff_zero_lt_extend {k : ℕ} [NeZero k] {M : Type*}
-    [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace k) M] {n : ℕ∞ω} [IsManifold (𝓡∂ k) n M]
-    (hn : n ≠ 0) {e : OpenPartialHomeomorph M (EuclideanHalfSpace k)}
-    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ k) n M) {y : M} (hy : y ∈ e.source) :
-    (𝓡∂ k).IsInteriorPoint y ↔ 0 < e.extend (𝓡∂ k) y 0 := by
-  rw [ModelWithCorners.isInteriorPoint_iff_mem_interior_range hn he hy,
-    interior_range_modelWithCornersEuclideanHalfSpace, OpenPartialHomeomorph.extend_coe]
-  exact Iff.rfl
-
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k m : ℕ} [NeZero k] [NeZero m]
   {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace k) M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace (EuclideanHalfSpace m) N]
@@ -320,10 +265,14 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (h
   have hiff : ∀ u ∈ T, (0 < u 0 ↔ 0 < L (u, 0) 0) := by
     intro u hu
     have hy := hsymm u hu
-    rw [← hcoord u hu, ← isInteriorPoint_iff_zero_lt_extend hn h.codChart_mem_maximalAtlas
-      (h.source_subset_preimage_source hy), hint,
-      isInteriorPoint_iff_zero_lt_extend hn h.domChart_mem_maximalAtlas hy,
-      (h.domChart.extend (𝓡∂ k)).right_inv hu]
+    have hu0 : h.domChart.extend (𝓡∂ k) ((h.domChart.extend (𝓡∂ k)).symm u) 0 = u 0 := by
+      rw [(h.domChart.extend (𝓡∂ k)).right_inv hu]
+    -- The chart extensions read the half-space boundary coordinate of the charts, definitionally.
+    rw [← hcoord u hu, ← hu0]
+    exact (ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas hn
+      h.domChart_mem_maximalAtlas hy).symm.trans <| (hint _).symm.trans <|
+      ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas hn
+        h.codChart_mem_maximalAtlas (h.source_subset_preimage_source hy)
   have hnonneg : ∀ u ∈ T, 0 ≤ L (u, 0) 0 := by
     intro u hu
     have hmem : L (u, 0) ∈ range (𝓡∂ m) := by
@@ -363,8 +312,8 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (h
     have hT : T ∈ 𝓝[{y | 0 ≤ y 0}] p := by
       rw [← range_modelWithCornersEuclideanHalfSpace]
       exact h.domChart.extend_target_mem_nhdsWithin hx
-    obtain ⟨c, hc, hνc⟩ := exists_pos_eq_mul_apply_zero ν hp0 hνp hT
-      (fun u hu => hnonneg u hu) (fun u hu hu' => (hiff u hu).1 hu')
+    obtain ⟨c, hc, hνc⟩ := ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg
+      ν hp0 hνp (eventually_of_mem hT hnonneg) (eventually_of_mem hT fun u hu => (hiff u hu).1)
     replace hνc : ∀ u, L (u, 0) 0 = c * u 0 := fun u => (hν u).symm.trans (hνc u)
     obtain ⟨A, hAL, hA⟩ := exists_straightening_of_eq_mul_apply_zero L hc hνc
     exact exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening hf h A hAL
