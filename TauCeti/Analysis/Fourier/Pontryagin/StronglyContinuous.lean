@@ -10,16 +10,15 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import TauCeti.Analysis.CStarAlgebra.CharacterSpaceMeasure
 import TauCeti.RepresentationTheory.Continuous.Integrated.Algebra
 import TauCeti.RepresentationTheory.Continuous.Pontryagin
-import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Matrix coefficients of strongly continuous unitary representations
 
-Let `π` be a strongly continuous unitary representation of a second-countable locally compact
-abelian group `G` on a complex Hilbert space `H`, and let `ξ ∈ H`. The diagonal matrix
-coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes transform of a finite positive measure
-on the Pontryagin dual of `G`. This is the cyclic form of the
+Let `π` be a strongly continuous unitary representation of a locally compact abelian group `G`
+on a complex Hilbert space `H`, where `G` or `H` is second countable, and let `ξ ∈ H`. The
+diagonal matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes transform of a finite
+positive measure on the Pontryagin dual of `G`. This is the cyclic form of the
 Stone–Naimark–Ambrose–Godement spectral theorem.
 
 The operators `π(g)` are only strongly continuous, so the spectral measure is built from the
@@ -32,14 +31,15 @@ characters, and the image of `ν` under it is the required measure. The characte
 every integrated operator do not contribute: since `π(f) ξ` approximates `ξ`, the identity
 `∫ |ω(π(f)) - 1|² dν = ‖π(f) ξ - ξ‖²` forces `ω(π(f)) ≈ 1` in `L²(ν)`.
 
-Second countability of `G` is the hypothesis under which the integrated form is defined, as a
-Bochner integral of the continuous orbits `g ↦ π(g) v`.
+Second countability of `G` or of `H` is the hypothesis under which the integrated form is
+defined, as a Bochner integral of the continuous orbits `g ↦ π(g) v`.
 
 ## Main declarations
 
 * `ContRepresentation.exists_pontryaginMeasureTransform_eq_inner`: a diagonal matrix coefficient
-  of a strongly continuous unitary representation of a second-countable locally compact abelian
-  group is the Fourier–Stieltjes transform of a finite measure on the dual group.
+  of a strongly continuous unitary representation of a locally compact abelian group, on a
+  Hilbert space where the group or the space is second countable, is the Fourier–Stieltjes
+  transform of a finite measure on the dual group.
 
 ## References
 
@@ -64,7 +64,7 @@ private lemma exists_norm_le (π : ContRepresentation ℂ (Multiplicative G) H)
   ⟨1, fun g ↦ (π g).opNorm_le_bound zero_le_one fun v ↦ by simp [hπ.norm_map]⟩
 
 variable [TopologicalSpace G] [IsTopologicalAddGroup G] [LocallyCompactSpace G]
-  [SecondCountableTopology G] [MeasurableSpace G] [BorelSpace G] [CompleteSpace H]
+  [SecondCountableTopologyEither G H] [MeasurableSpace G] [BorelSpace G] [CompleteSpace H]
   (π : ContRepresentation ℂ (Multiplicative G) H)
   (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
   (hπ : ContRepresentation.IsUnitary π)
@@ -282,15 +282,17 @@ end TauCeti.StronglyContinuousSpectral
 open TauCeti.StronglyContinuousSpectral
 
 variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [LocallyCompactSpace G] [SecondCountableTopology G]
+  [LocallyCompactSpace G]
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [BorelSpace (PontryaginDual (Multiplicative G))]
   {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  [SecondCountableTopologyEither G H]
 
 /-- **Spectral theorem for strongly continuous unitary representations**, cyclic form. For a
-strongly continuous unitary representation `π` of a second-countable locally compact abelian
-group `G` and a vector `ξ`, the matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes
-transform of a finite measure on the Pontryagin dual of `G`. -/
+strongly continuous unitary representation `π` of a locally compact abelian group `G` on a
+Hilbert space `H`, where `G` or `H` is second countable, and a vector `ξ`, the matrix
+coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes transform of a finite measure on the
+Pontryagin dual of `G`. -/
 theorem ContRepresentation.exists_pontryaginMeasureTransform_eq_inner
     (π : ContRepresentation ℂ (Multiplicative G) H)
     (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)

@@ -23,9 +23,11 @@ strongly continuous unitary representations,
 `ContRepresentation.exists_pontryaginMeasureTransform_eq_inner`, writes such a matrix coefficient
 as a Fourier–Stieltjes transform.
 
-Second countability is inherited from the integrated form of a strongly continuous
-representation, on which that spectral theorem rests. Discrete groups of any cardinality are
-covered separately in `TauCeti.Analysis.Bochner.DiscreteGroup`.
+Second countability of `G` is assumed because that spectral theorem rests on the integrated form
+of a strongly continuous representation, which is constructed only when the group or the
+Hilbert space is second countable; the GNS space carries no such hypothesis, so it is imposed on
+`G`. Discrete groups of any cardinality are covered separately in
+`TauCeti.Analysis.Bochner.DiscreteGroup`.
 
 ## Main declarations
 
