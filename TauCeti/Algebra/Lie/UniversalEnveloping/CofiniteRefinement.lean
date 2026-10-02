@@ -45,8 +45,9 @@ variable {R : Type u} {L : Type v} [CommRing R]
 
 local notation "U" => UniversalEnvelopingAlgebra R L
 
-/-- A cofinite two-sided ideal admits a cofinite refinement stable under every lifted derivation
-taking values in a Lie ideal `N` that acts nilpotently modulo the original ideal. The refinement
+/-- A two-sided ideal whose quotient is module-finite and Noetherian over the coefficient ring
+admits a cofinite refinement stable under every lifted derivation taking values in a Lie ideal `N`
+that acts nilpotently modulo the original ideal. The refinement
 is a power of `I ⊔ N.envelopingIdeal`, and it has exactly the same nilpotent elements in its
 quotient as the original ideal. No stability of `I` is assumed. -/
 theorem _root_.LieIdeal.exists_cofinite_refinement_stableDerivations (N : LieIdeal R L)
