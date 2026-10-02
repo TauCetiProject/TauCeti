@@ -18,8 +18,7 @@ orbits as finsets of connected triples, without choosing representatives.
 
 Whenever the input finset presents the reference subgroup of a `TauCeti.PassportSpec`, these
 computations give exactly its triples and classes. In particular, `TauCeti.card_passportClasses`
-identifies the computed cardinality with `TauCeti.PassportSpec.passportSize`. Both computation
-definitions expose their bodies so downstream kernel checks can reduce them.
+identifies the computed cardinality with `TauCeti.PassportSpec.passportSize`.
 
 The input need not be certified as a subgroup to run the computation. If it is not the element
 set of a subgroup, the fiber is empty: no conjugate of a monodromy group can equal it.
