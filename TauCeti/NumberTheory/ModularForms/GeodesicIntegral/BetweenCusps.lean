@@ -37,6 +37,13 @@ the values of `Φ` at its endpoints, and additivity follows.
 Additivity is what makes the periods of a cusp form a function of degree-zero divisors on the
 cusps, the first step of the period pairing between cusp forms and modular symbols.
 
+The same primitive also computes integrals from a point `τ ∈ ℍ` to `i∞` along the vertical ray
+`z = τ + i t`, as its limit at `i∞` minus its value at `τ`. Comparing this with its values at the
+cusps gives the substitution `z ↦ g • z` in such an integral: the image of the vertical ray from
+`τ` ends at the cusp `g • ∞`, and is replaced by the vertical ray from `g • τ` followed by the
+geodesic from `i∞` to `g • ∞`. This is how the Eichler integral `∫_τ^{i∞} f(z) (z - τ)ⁿ dz` of a
+cusp form transforms under `SL(2, ℤ)` up to periods.
+
 ## Main definitions
 
 * `TauCeti.cuspIntegral F a b`: the integral `∫_a^b F(z) dz` along the geodesic from the cusp `a`
@@ -53,6 +60,9 @@ cusps, the first step of the period pairing between cusp forms and modular symbo
 * `TauCeti.cuspIntegral_add`, `TauCeti.cuspIntegral_sum`: additivity in the integrand, for
   integrands that are integrable along the geodesic.
 * `TauCeti.cuspIntegral_add_adjacent`: additivity, `∫_a^b + ∫_b^c = ∫_a^c`.
+* `TauCeti.integral_Ioi_slash_eq_add_cuspIntegral`: the substitution `z ↦ g • z` in an integral
+  from a point of `ℍ` to `i∞`,
+  `∫_τ^{i∞} (F ∣[2] g)(z) dz = ∫_{g • τ}^{i∞} F(z) dz + ∫_{i∞}^{g • ∞} F(z) dz`.
 
 ## References
 
@@ -400,6 +410,33 @@ theorem cuspIntegral_sum {ι : Type*} (s : Finset ι) {F : ι → ℍ → ℂ} {
   simp only [cuspIntegral_smul_zero_smul_infty _ hg, geodesicIntegral_def, hres, Finset.sum_apply]
   rw [integral_finsetSum s hF, Finset.mul_sum]
 
+/-- **The values of a primitive at the cusps.** Under the hypotheses of
+`TauCeti.cuspIntegral_add_adjacent`, a primitive `Φ` of `F` has a value `V x` at each cusp `x`,
+its limit along any geodesic ending at `x`, and every integral between cusps is the difference of
+these values at its endpoints. -/
+private theorem exists_cuspValue {F : ℍ → ℂ} {Φ : ℂ → ℂ} (hΦ : ∀ τ : ℍ, HasDerivAt Φ (F τ) τ)
+    (hF : MDiff F)
+    (hint : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det →
+      IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ici 1))
+    (hdecay : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det → ∀ a b : ℝ,
+      Tendsto (F ∣[(2 : ℤ)] g) (atImInfty ⊓ 𝓟 {τ | τ.re ∈ Icc a b}) (𝓝 0)) :
+    ∃ V : OnePoint ℚ → ℂ,
+      (∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det → axisLimit Φ g = V (g • ∞)) ∧
+        ∀ x y : OnePoint ℚ, cuspIntegral F x y = V y - V x := by
+  -- the value `V x` of the primitive at a cusp `x`, read along any geodesic ending at `x`
+  set V : OnePoint ℚ → ℂ := fun x ↦ axisLimit Φ (mapGL ℚ (OnePoint.exists_mem_SL2 ℤ x).choose)
+  have hV (g : GL (Fin 2) ℚ) (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) :
+      axisLimit Φ g = V (g • ∞) :=
+    (axisLimit_eq_of_smul_infty_eq hΦ hF hint hdecay hg
+      (by rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]; exact one_pos)
+      (OnePoint.exists_mem_SL2 ℤ (g • ∞)).choose_spec.symm).symm
+  refine ⟨V, hV, fun x y ↦ ?_⟩
+  rcases eq_or_ne x y with rfl | hxy
+  · simp
+  obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hxy
+  rw [cuspIntegral_smul_zero_smul_infty F hg, geodesicIntegral_eq_axisLimit_sub hΦ hint hg,
+    hV g hg, hV _ (det_mul_mapGL_S_pos hg), mul_smul, mapGL_S_smul_infty]
+
 /-- **Additivity of integrals between cusps**: `∫_a^b F(z) dz + ∫_b^c F(z) dz = ∫_a^c F(z) dz`
 for a holomorphic `F` whose weight-`2` slashes by rational matrices of positive determinant are
 integrable near `i∞` along the imaginary axis and tend to `0` at `i∞` uniformly on vertical
@@ -415,20 +452,79 @@ theorem cuspIntegral_add_adjacent {F : ℍ → ℂ} (hF : MDiff F)
     (a b c : OnePoint ℚ) :
     cuspIntegral F a b + cuspIntegral F b c = cuspIntegral F a c := by
   obtain ⟨Φ, hΦ⟩ := exists_primitive hF
-  -- the value `V x` of the primitive at a cusp `x`, read along any geodesic ending at `x`
-  set V : OnePoint ℚ → ℂ := fun x ↦ axisLimit Φ (mapGL ℚ (OnePoint.exists_mem_SL2 ℤ x).choose)
-  have hV (g : GL (Fin 2) ℚ) (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) :
-      axisLimit Φ g = V (g • ∞) :=
-    (axisLimit_eq_of_smul_infty_eq hΦ hF hint hdecay hg
-      (by rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]; exact one_pos)
-      (OnePoint.exists_mem_SL2 ℤ (g • ∞)).choose_spec.symm).symm
-  have key (x y : OnePoint ℚ) : cuspIntegral F x y = V y - V x := by
-    rcases eq_or_ne x y with rfl | hxy
-    · simp
-    obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hxy
-    rw [cuspIntegral_smul_zero_smul_infty F hg, geodesicIntegral_eq_axisLimit_sub hΦ hint hg,
-      hV g hg, hV _ (det_mul_mapGL_S_pos hg), mul_smul, mapGL_S_smul_infty]
+  obtain ⟨V, -, key⟩ := exists_cuspValue hΦ hF hint hdecay
   rw [key, key, key]
+  ring
+
+/-! ### Integrals from a point of `ℍ` to `i∞` -/
+
+/-- The integral of `G(z) dz` along the vertical ray from `τ` to `i∞` is the difference of the
+limit `L` of a primitive `Ψ` at `i∞` and its value at `τ`, when `G` is integrable along the ray
+and tends to `0` at `i∞` uniformly on vertical strips, so that the limit of `Ψ` along the ray is
+its limit `L` along the imaginary axis. -/
+private theorem integral_Ioi_eq_sub {Ψ : ℂ → ℂ} {G : ℍ → ℂ}
+    (hΨ : ∀ τ : ℍ, HasDerivAt Ψ (G τ) τ) (hGc : Continuous G)
+    (hdecay : ∀ a b : ℝ, Tendsto G (atImInfty ⊓ 𝓟 {τ | τ.re ∈ Icc a b}) (𝓝 0)) {L : ℂ}
+    (hL : Tendsto (fun t : ℝ ↦ Ψ (I * t)) atTop (𝓝 L)) (τ : ℍ)
+    (hray : IntegrableOn (fun t : ℝ ↦ G (ofComplex (τ + t * I))) (Ioi 0)) :
+    ∫ t in Ioi (0 : ℝ), G (ofComplex (τ + t * I)) * I = L - Ψ τ := by
+  have hpos (t : ℝ) (ht : 0 ≤ t) : 0 < ((τ : ℂ) + I * t).im := by
+    simpa using add_pos_of_pos_of_nonneg τ.im_pos ht
+  -- along the ray, `Ψ` tends to its limit along the imaginary axis
+  have hlim : Tendsto (fun s : ℝ ↦ Ψ (τ + I * s)) atTop (𝓝 L) := by
+    have hshift := (tendsto_sub_vertical hΨ hGc hdecay τ.re).comp
+      (tendsto_atTop_add_const_left atTop τ.im tendsto_id)
+    refine (by simpa using hshift.add (hL.comp
+      (tendsto_atTop_add_const_left atTop τ.im tendsto_id)) :
+        Tendsto (fun s : ℝ ↦ Ψ (τ.re + I * (τ.im + s : ℝ))) atTop (𝓝 L)).congr fun s ↦ ?_
+    congr 1
+    apply Complex.ext <;> simp
+  have h := integral_Ioi_of_hasDerivAt_of_tendsto' (a := 0)
+    (f := fun s : ℝ ↦ Ψ (τ + I * s)) (f' := fun t : ℝ ↦ G (ofComplex (τ + t * I)) * I)
+    (fun t ht ↦ by simpa [mul_comm I] using hasDerivAt_line hΨ τ I (hpos t ht))
+    (hray.mul_const I) hlim
+  simpa using h
+
+/-- **The substitution `z ↦ g • z` in an integral from a point of `ℍ` to `i∞`.** For `g` a
+rational matrix of positive determinant and `τ ∈ ℍ`,
+
+`∫_τ^{i∞} (F ∣[2] g)(z) dz = ∫_{g • τ}^{i∞} F(z) dz + ∫_{i∞}^{g • ∞} F(z) dz`,
+
+the integrals from `τ` and from `g • τ` taken along the vertical rays `z = τ + i t` and
+`z = g • τ + i t`, `t > 0`, and the last along the geodesic between the two cusps. The left side
+is the integral of `F(z) dz` along the image under `g` of the vertical ray from `τ`, which ends at
+the cusp `g • ∞`, and the identity is Cauchy's theorem for the triangle with vertices `g • τ`,
+`g • ∞` and `i∞`. The hypotheses on `F` are those of `TauCeti.cuspIntegral_add_adjacent`, and
+the two vertical integrands are assumed integrable. -/
+theorem integral_Ioi_slash_eq_add_cuspIntegral {F : ℍ → ℂ} (hF : MDiff F)
+    (hint : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det →
+      IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ici 1))
+    (hdecay : ∀ g : GL (Fin 2) ℚ, 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det → ∀ a b : ℝ,
+      Tendsto (F ∣[(2 : ℤ)] g) (atImInfty ⊓ 𝓟 {τ | τ.re ∈ Icc a b}) (𝓝 0))
+    {g : GL (Fin 2) ℚ} (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) (τ : ℍ)
+    (hτ : IntegrableOn (fun t : ℝ ↦ (F ∣[(2 : ℤ)] g) (ofComplex (τ + t * I))) (Ioi 0))
+    (hgτ : IntegrableOn (fun t : ℝ ↦
+      F (ofComplex ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g • τ : ℍ) + t * I))) (Ioi 0)) :
+    ∫ t in Ioi (0 : ℝ), (F ∣[(2 : ℤ)] g) (ofComplex (τ + t * I)) * I =
+      (∫ t in Ioi (0 : ℝ),
+        F (ofComplex ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g • τ : ℍ) + t * I)) * I) +
+        cuspIntegral F ∞ (g • ∞) := by
+  obtain ⟨Φ, hΦ⟩ := exists_primitive hF
+  obtain ⟨V, hV, key⟩ := exists_cuspValue hΦ hF hint hdecay
+  have h1 : 0 < ((1 : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by simp
+  -- the vertical ray from `g • τ`, through the primitive `Φ` of `F`
+  have hlim₁ : Tendsto (fun t : ℝ ↦ Φ (I * t)) atTop (𝓝 (axisLimit Φ 1)) := by
+    refine (tendsto_axisLimit hΦ h1 (hint 1 h1)).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    rw [map_one, one_smul, ofComplex_apply_of_im_pos (by simpa using ht)]
+  have hF₁ := integral_Ioi_eq_sub hΦ hF.continuous
+    (by simpa only [SlashAction.slash_one] using hdecay 1 h1) hlim₁ _ hgτ
+  -- the vertical ray from `τ`, through the primitive `Φ ∘ g` of `F ∣[2] g`
+  have hFg := integral_Ioi_eq_sub (G := F ∣[(2 : ℤ)] g)
+    (hasDerivAt_comp_smul hΦ (ModularForm.det_map_ratCast_pos hg))
+    (hF.slash 2 _).continuous (hdecay g hg) (tendsto_axisLimit hΦ hg (hint g hg)) τ hτ
+  rw [ofComplex_apply] at hFg
+  rw [hFg, hF₁, key, ← hV g hg, ← one_smul (GL (Fin 2) ℚ) (∞ : OnePoint ℚ), ← hV 1 h1]
   ring
 
 end TauCeti
