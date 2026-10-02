@@ -23,7 +23,7 @@ nonzero width `h` factors through its cusp function along the parameter.
 
 * `TauCeti.Periodic.qParam_sub`: `𝕢 h (z - j) = 𝕢 h z * exp (-2 π I j / h)`.
 * `TauCeti.Periodic.qParam_add_mul_I_pow`: along the vertical ray from `z`, the powers of the
-  local parameter decay exponentially, `𝕢 h (z + t I) ^ m = 𝕢 h z ^ m * e^{-2πmt/h}`.
+  local parameter acquire the factor `e^{-2πmt/h}`; this decays when `h > 0` and `m > 0`.
 * `TauCeti.Periodic.qParam_nat_mul_pow`: `𝕢 (m * h) z ^ m = 𝕢 h z` for `m ≠ 0`.
 * `TauCeti.Periodic.sum_qParam_natCast_pow`: the roots-of-unity orthogonality relation
   `∑_{b < p} 𝕢 p b ^ m = if p ∣ m then p else 0`.
@@ -58,8 +58,9 @@ theorem qParam_sub (z j : ℂ) : 𝕢 h (z - j) = 𝕢 h z * exp (-2 * π * I * 
   simp only [qParam, ← Complex.exp_add]
   ring_nf
 
-/-- Along the vertical ray from `z`, the powers of the local parameter decay exponentially:
-`𝕢 h (z + t I) ^ m = 𝕢 h z ^ m * e^{-2πmt/h}`. -/
+/-- Along the vertical ray from `z`, the powers of the local parameter acquire an exponential
+factor: `𝕢 h (z + t I) ^ m = 𝕢 h z ^ m * e^{-2πmt/h}`. When `h > 0` and `m > 0`, this factor
+decays exponentially as `t` increases. -/
 theorem qParam_add_mul_I_pow (z : ℂ) (t : ℝ) (m : ℕ) :
     𝕢 h (z + t * I) ^ m = 𝕢 h z ^ m * (Real.exp (-(2 * π * m / h * t)) : ℂ) := by
   rw [← sub_neg_eq_add, qParam_sub, mul_pow, ← Complex.exp_nat_mul, ofReal_exp]
