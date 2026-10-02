@@ -34,6 +34,8 @@ and a vector in their intersection represents the element exactly.
 
 * `TauCeti.module_finite_padicCompletionUnits_of_finiteIndex`: `A(L)` is a finitely generated
   `ℤ_p`-module when `(Lˣ)^p` has finite index in `Lˣ`.
+* `TauCeti.span_range_padicCompletionUnitsOf_eq_top`: under the same hypothesis, the classes of
+  the units of `L` span `A(L)` over `ℤ_p`.
 * `TauCeti.module_finite_padicCompletionUnits_padicInt`: `A(L)` is a finitely generated
   `ℤ_p`-module for a nonarchimedean local field `L` with `(p : L) ≠ 0`.
 * `TauCeti.module_finite_padicCompletionUnits_monoidAlgebra_of_finiteIndex`: `A(L)` is a
@@ -51,19 +53,6 @@ public section
 namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime] (L : Type*) [Field L]
-
-/-- Adding a `p ^ m`-multiple in `A(L)` does not change the level-`m` coordinate. -/
-private theorem padicCompletionUnits_add_pow_smul_apply (m : ℕ)
-    (y z : Additive ↑(padicCompletionUnits p L)) :
-    (y + (p : ℤ_[p]) ^ m • z).toMul.1 m = y.toMul.1 m := by
-  have h : (y + (p : ℤ_[p]) ^ m • z).toMul.1 m =
-      (y.toMul.1 m : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) * z.toMul.1 m ^ p ^ m := by
-    simp only [← Nat.cast_pow, padicCompletionUnits_natCast_smul, toMul_add, toMul_nsmul,
-      Subgroup.coe_mul, Subgroup.coe_pow, Pi.mul_apply, Pi.pow_apply]
-  rw [h, QuotientGroup.pow_eq_one_quotient_range_powMonoidHom]
-  -- `rw [mul_one]` fails here: the type of the coordinate is the beta-redex
-  -- `(fun m ↦ Lˣ ⧸ _) m`, so `mul_one` needs its argument at the reduced type.
-  exact mul_one (y.toMul.1 m : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range)
 
 /-- Modulo `p ^ m`-multiples, the class in `A(L)` of every unit is a `ℤ_p`-combination of the
 classes of representatives of `Lˣ/(Lˣ)^p`. -/
@@ -115,19 +104,18 @@ private theorem isLocallyConstant_linearCombination_apply {ι : Type*} [Fintype 
   rw [hc'd, map_add, map_smul]
   exact padicCompletionUnits_add_pow_smul_apply p L m _ _
 
-/-- **Finite generation of `A(L)`.** If the subgroup `(Lˣ)^p` of `p`-th powers has finite index
-in `Lˣ`, then the `p`-adic completion `A(L) = lim_m Lˣ/(Lˣ)^(p^m)` is a finitely generated
-`ℤ_p`-module. -/
-theorem module_finite_padicCompletionUnits_of_finiteIndex
-    [(powMonoidHom p : Lˣ →* Lˣ).range.FiniteIndex] :
-    Module.Finite ℤ_[p] (Additive ↑(padicCompletionUnits p L)) := by
-  classical
+/-- If `Lˣ/(Lˣ)^p` is finite, every element of `A(L)` is a `ℤ_p`-combination of the classes of
+representatives of `Lˣ/(Lˣ)^p`. -/
+private theorem surjective_linearCombination_padicCompletionUnitsOf_out
+    [Fintype (Lˣ ⧸ (powMonoidHom p : Lˣ →* Lˣ).range)] :
+    Function.Surjective (Fintype.linearCombination ℤ_[p]
+      fun c : Lˣ ⧸ (powMonoidHom p : Lˣ →* Lˣ).range ↦
+        Additive.ofMul (padicCompletionUnitsOf p L c.out)) := by
   let Q := Lˣ ⧸ (powMonoidHom p : Lˣ →* Lˣ).range
-  let _ : Fintype Q := Fintype.ofFinite Q
   let x : Q → Additive ↑(padicCompletionUnits p L) := fun c ↦
     Additive.ofMul (padicCompletionUnitsOf p L c.out)
   let f := Fintype.linearCombination ℤ_[p] x
-  refine Module.Finite.of_surjective f fun a ↦ ?_
+  intro a
   -- The coefficient vectors that represent `a` at level `m`.
   let C : ℕ → Set (Q → ℤ_[p]) := fun m ↦ {c | (f c).toMul.1 m = a.toMul.1 m}
   have hanti (m : ℕ) : C (m + 1) ⊆ C m := by
@@ -152,6 +140,26 @@ theorem module_finite_padicCompletionUnits_of_finiteIndex
     hne (hclosed 0).isCompact hclosed
   refine ⟨c, Additive.toMul.injective (Subtype.ext (funext fun m ↦ ?_))⟩
   exact Set.mem_iInter.1 hc m
+
+/-- **Finite generation of `A(L)`.** If the subgroup `(Lˣ)^p` of `p`-th powers has finite index
+in `Lˣ`, then the `p`-adic completion `A(L) = lim_m Lˣ/(Lˣ)^(p^m)` is a finitely generated
+`ℤ_p`-module. -/
+theorem module_finite_padicCompletionUnits_of_finiteIndex
+    [(powMonoidHom p : Lˣ →* Lˣ).range.FiniteIndex] :
+    Module.Finite ℤ_[p] (Additive ↑(padicCompletionUnits p L)) :=
+  let _ : Fintype (Lˣ ⧸ (powMonoidHom p : Lˣ →* Lˣ).range) := Fintype.ofFinite _
+  .of_surjective _ (surjective_linearCombination_padicCompletionUnitsOf_out p L)
+
+/-- If `(Lˣ)^p` has finite index in `Lˣ`, the classes of the units of `L` span `A(L)` as a
+`ℤ_p`-module. -/
+theorem span_range_padicCompletionUnitsOf_eq_top
+    [(powMonoidHom p : Lˣ →* Lˣ).range.FiniteIndex] :
+    Submodule.span ℤ_[p] (Set.range fun u : Lˣ ↦ Additive.ofMul (padicCompletionUnitsOf p L u)) =
+      ⊤ := by
+  let _ : Fintype (Lˣ ⧸ (powMonoidHom p : Lˣ →* Lˣ).range) := Fintype.ofFinite _
+  rw [eq_top_iff, ← LinearMap.range_eq_top.2
+    (surjective_linearCombination_padicCompletionUnitsOf_out p L), Fintype.range_linearCombination]
+  exact Submodule.span_mono (Set.range_subset_iff.2 fun c ↦ ⟨c.out, rfl⟩)
 
 /-- When `(Lˣ)^p` has finite index, `A(L)` is finite over the group algebra of any field
 automorphism group `Gal(L/K)`. -/

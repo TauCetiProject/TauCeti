@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.AlgEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
+public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 
 /-!
 # Regular quadratic forms of rank at most three
@@ -22,6 +22,9 @@ The class-level theorem is stated for `RegularFormClass K`; its form-level count
 regular forms on finite-dimensional spaces of the same dimension. Use either theorem after proving
 equality of the rank, discriminant, and Hasse invariant, together with the bound `n ≤ 3`.
 
+The file also records isotropy in rank two: a regular binary form is isotropic exactly when its
+discriminant is the class of `-1`, that is, exactly when it is a hyperbolic plane.
+
 ## Main results
 
 * `TauCeti.RegularFormClass.hasseInvariant_mk_neg_neg_mul`: the Hasse invariant of
@@ -32,6 +35,9 @@ equality of the rank, discriminant, and Hasse invariant, together with the bound
   most three are equal exactly when their discriminants and Hasse invariants agree.
 * `QuadraticForm.equivalent_iff_discr_eq_and_hasseInvariant_eq`: the same statement for regular
   forms on finite-dimensional spaces of the same dimension at most three.
+* `TauCeti.RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two`,
+  `QuadraticForm.not_anisotropic_iff_discr_eq_neg_one_of_finrank_eq_two`: a regular binary form
+  is isotropic exactly when its discriminant is the class of `-1`.
 
 ## References
 
@@ -122,6 +128,18 @@ theorem eq_iff_discr_eq_and_hasseInvariant_eq {x y : RegularFormClass K}
     x = y ↔ discr x = discr y ∧ hasseInvariant x = hasseInvariant y :=
   ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨hd, hs⟩ => eq_of_discr_eq_of_hasseInvariant_eq hrank h3 hd hs⟩
 
+/-! ### Isotropy in rank two -/
+
+/-- **Isotropy in rank two.** A regular-form class of rank two is isotropic exactly when its
+discriminant is the class of `-1`, that is, exactly when it is the hyperbolic class. -/
+theorem not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two {x : RegularFormClass K}
+    (hx : x.rank = 2) : ¬x.Anisotropic ↔ discr x = squareClass (-1 : Kˣ) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [eq_hyperbolicClass_of_rank_eq_two_of_not_anisotropic hx h]
+    exact discr_hyperbolicClass
+  · rw [eq_hyperbolicClass_of_rank_eq_two_of_discr_eq_neg_one hx h]
+    simpa using not_anisotropic_hyperbolicClass_add (0 : RegularFormClass K)
+
 end RegularFormClass
 
 end TauCeti
@@ -149,5 +167,15 @@ theorem equivalent_iff_discr_eq_and_hasseInvariant_eq {V W : Type*} [AddCommGrou
   rw [← formClass_eq_iff Q hQ R hR]
   exact RegularFormClass.eq_iff_discr_eq_and_hasseInvariant_eq (by simpa using hdim)
     (by simpa using h3)
+
+/-- **Isotropy in dimension two.** A regular quadratic form on a space of dimension two is
+isotropic exactly when its discriminant is the class of `-1`. -/
+theorem not_anisotropic_iff_discr_eq_neg_one_of_finrank_eq_two {V : Type*} [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hV : Module.finrank K V = 2) :
+    ¬Q.Anisotropic ↔ RegularFormClass.discr (formClass Q hQ) = squareClass (-1 : Kˣ) := by
+  rw [← anisotropic_formClass Q hQ]
+  exact RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two
+    (by rwa [rank_formClass])
 
 end QuadraticForm

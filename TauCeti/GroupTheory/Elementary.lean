@@ -329,9 +329,9 @@ private theorem exists_mem_comap_mul_mem_comap_eq {C P : Subgroup G}
   have hym : f (y ^ m) ∈ P := by
     rw [map_pow, ← hab, (hcomm a a.2 b b.2).mul_pow, ha, one_mul]
     exact pow_mem b.2 _
-  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime hcop y
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := H) hcop
   exact ⟨(y ^ n) ^ i, zpow_mem (mem_comap.mpr hyn) _,
-    (y ^ m) ^ j, zpow_mem (mem_comap.mpr hym) _, hij⟩
+    (y ^ m) ^ j, zpow_mem (mem_comap.mpr hym) _, hij y⟩
 
 /-- `p`-elementarity passes to subgroups, in the form of an injective homomorphism into the group.
 

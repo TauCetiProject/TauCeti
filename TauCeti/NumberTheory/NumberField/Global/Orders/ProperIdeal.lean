@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Basic
 public import Mathlib.RingTheory.FractionalIdeal.Inverse
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # Proper fractional ideals of a number-field order
@@ -87,13 +88,37 @@ theorem multiplierRing_mul_isUnit
 theorem multiplierRing_mul_spanSingleton
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
     O.multiplierRing (I * FractionalIdeal.spanSingleton _ x) = O.multiplierRing I := by
-  apply O.multiplierRing_mul_isUnit I
-  exact (FractionalIdeal.mul_inv_cancel_iff_isUnit K).mp
-    (FractionalIdeal.spanSingleton_mul_inv K hx)
+  exact O.multiplierRing_mul_isUnit I _
+    (FractionalIdeal.isUnit_spanSingleton (isUnit_iff_ne_zero.mpr hx))
 
 /-- A fractional ideal is proper when its multiplier ring equals the order. -/
 def IsProperFractionalIdeal (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) : Prop :=
   O.multiplierRing I = O.toSubalgebra.toSubring
+
+/-- Properness is equality of the multiplier ring with the order. -/
+theorem isProperFractionalIdeal_def (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
+    O.IsProperFractionalIdeal I ↔ O.multiplierRing I = O.toSubalgebra.toSubring :=
+  Iff.rfl
+
+/-- Every field element preserves the zero ideal, so its multiplier ring is the whole field. -/
+@[simp]
+theorem multiplierRing_zero : O.multiplierRing 0 = ⊤ := by
+  ext x
+  simp
+
+section
+
+variable {O}
+
+/-- A proper fractional ideal is nonzero, so proper ideals enter the monoid of nonzero fractional
+ideals without a separate nonvanishing hypothesis. -/
+theorem IsProperFractionalIdeal.ne_zero {I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K}
+    (hI : O.IsProperFractionalIdeal I) : I ≠ 0 := by
+  rintro rfl
+  rw [O.isProperFractionalIdeal_def, multiplierRing_zero] at hI
+  exact O.toSubalgebra_ne_top (Algebra.toSubring_eq_top.mp hI.symm)
+
+end
 
 /-- Properness says exactly that any field element stabilizing the ideal belongs to the order. -/
 theorem isProperFractionalIdeal_iff (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
@@ -153,6 +178,12 @@ theorem isProperFractionalIdeal_of_isUnit
 ideals, by `NumberFieldOrder.isProperFractionalIdeal_of_isUnit`. -/
 abbrev invertibleProperFractionalIdeals (O : NumberFieldOrder K) :=
   (FractionalIdeal (nonZeroDivisors O.toSubalgebra) K)ˣ
+
+/-- The proper fractional ideals of an order. Every invertible fractional ideal is proper, but for
+a non-Gorenstein order some proper fractional ideals are not invertible, so this carrier is larger
+than `NumberFieldOrder.invertibleProperFractionalIdeals`. -/
+abbrev properFractionalIdeals (O : NumberFieldOrder K) :=
+  {I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K // O.IsProperFractionalIdeal I}
 
 /-- Every invertible fractional ideal of an order is proper. -/
 theorem invertible_isProper (I : O.invertibleProperFractionalIdeals) :

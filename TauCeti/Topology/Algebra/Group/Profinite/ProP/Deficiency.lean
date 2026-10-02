@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank
 
 /-!
 # The deficiency of a pro-`p` group

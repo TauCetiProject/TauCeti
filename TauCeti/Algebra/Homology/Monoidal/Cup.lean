@@ -15,8 +15,9 @@ public import TauCeti.CategoryTheory.Monoidal.Preadditive
 /-!
 # Cup products of cochains along a diagonal
 
-Let `C` be a `k`-linear preadditive monoidal category with finite biproducts, let `A`, `B` and `E`
-be chain complexes in `C` indexed by `ℕ`, and let `D : E ⟶ A ⊗ B` be a chain map, a *diagonal*.
+Let `C` be a `k`-linear preadditive monoidal category, let `A`, `B` and `E` be chain complexes in
+`C` indexed by `ℕ` such that the tensor product `A ⊗ B` exists, and let `D : E ⟶ A ⊗ B` be a chain
+map, a *diagonal*.
 Given a pairing `μ : M ⊗ N ⟶ P` of coefficient objects, a cochain `φ : A_p ⟶ M` and a cochain
 `ψ : B_q ⟶ N` have the cup product `φ ⌣ ψ : E_n ⟶ P`, for `p + q = n`: the degree-`n` component
 of `D`, followed by the projection of `(A ⊗ B)_n` onto its summand `A_p ⊗ B_q`, by `φ ⊗ ψ` and by
@@ -39,6 +40,7 @@ diagonal of a space; there `φ ⌣ ψ` evaluates a singular simplex on its front
 * `TauCeti.ChainComplex.cupCochain`: the cup product of cochains.
 * `TauCeti.ChainComplex.d_comp_cupCochain`: the Leibniz rule.
 * `TauCeti.ChainComplex.cupCochain_naturality`: naturality along a map of diagonals.
+* `TauCeti.ChainComplex.cupCycles`: the cup product of cocycles.
 * `TauCeti.ChainComplex.cup`: the cup product on cohomology, with
   `TauCeti.ChainComplex.cup_homologyπ` computing it on classes of cocycles and
   `TauCeti.ChainComplex.cup_naturality` its naturality.
@@ -61,7 +63,9 @@ variable {C : Type*} [Category* C]
 
 section Extend
 
-variable [Preadditive C] {A : ChainComplex C ℕ} {M : C}
+section ZeroMorphisms
+
+variable [HasZeroMorphisms C] {A : ChainComplex C ℕ} {M : C}
 
 /-- A morphism `A_p ⟶ M` as a family of morphisms `A_i ⟶ M` in all degrees, zero away from `p`. -/
 private def extendCochain {p : ℕ} (φ : A.X p ⟶ M) (i : ℕ) : A.X i ⟶ M :=
@@ -86,6 +90,19 @@ private lemma extendCochain_d_comp_zero {p : ℕ} (φ : A.X p ⟶ M) :
     extendCochain (A.d (p + 1) p ≫ φ) 0 = 0 :=
   extendCochain_of_ne _ (by omega)
 
+private lemma extendCochain_comp {A' : ChainComplex C ℕ} (g : A' ⟶ A) {p : ℕ} (φ : A.X p ⟶ M)
+    (i : ℕ) : extendCochain (g.f p ≫ φ) i = g.f i ≫ extendCochain φ i := by
+  by_cases h : i = p
+  · subst h
+    simp [extendCochain_self]
+  · simp [extendCochain_of_ne _ h]
+
+end ZeroMorphisms
+
+section Preadditive
+
+variable [Preadditive C] {A : ChainComplex C ℕ} {M : C}
+
 /-- The sign `(-1)^i` on the extension of a cochain of degree `p` is `(-1)^p`. -/
 private lemma zsmul_extendCochain {p : ℕ} (φ : A.X p ⟶ M) (i : ℕ) :
     ((-1 : ℤ) ^ i) • extendCochain φ i = ((-1 : ℤ) ^ p) • extendCochain φ i := by
@@ -108,34 +125,24 @@ private lemma extendCochain_smul {k : Type*} [Semiring k] [Linear k C] {p : ℕ}
     simp [extendCochain_self]
   · simp [extendCochain_of_ne _ h]
 
-private lemma extendCochain_comp {A' : ChainComplex C ℕ} (g : A' ⟶ A) {p : ℕ} (φ : A.X p ⟶ M)
-    (i : ℕ) : extendCochain (g.f p ≫ φ) i = g.f i ≫ extendCochain φ i := by
-  by_cases h : i = p
-  · subst h
-    simp [extendCochain_self]
-  · simp [extendCochain_of_ne _ h]
+end Preadditive
 
 end Extend
 
 section Tensor
 
-variable [Preadditive C] [HasFiniteBiproducts C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {A B : ChainComplex C ℕ} {M N P : C} (μ : M ⊗ N ⟶ P)
+variable [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C] {A B : ChainComplex C ℕ}
+  [A.HasTensor B] {M N P : C} (μ : M ⊗ N ⟶ P)
 
 /-- **The tensor product of cochains**: for cochains `φ : A_p ⟶ M` and `ψ : B_q ⟶ N`, the morphism
 `(A ⊗ B)_n ⟶ P` which on the summand `A_p ⊗ B_q` is `φ ⊗ ψ` followed by the pairing `μ`
 (`TauCeti.ChainComplex.ιTensorObj_tensorCochain`) and vanishes on every other summand
-(`TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne` and
+(`TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_left` and
 `TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_right`). -/
-def tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) : (A ⊗ B).X n ⟶ P :=
+def tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
+    (HomologicalComplex.tensorObj A B).X n ⟶ P :=
   mapBifunctorDesc fun i j _ ↦ (extendCochain φ i ⊗ₘ extendCochain ψ j) ≫ μ
 
-private lemma ιMapBifunctor_eq_ιTensorObj (i j n : ℕ) (h : i + j = n) :
-    ιMapBifunctor A B (curriedTensor C) (ComplexShape.down ℕ) i j n h =
-      ιTensorObj A B i j n h :=
-  rfl
-
-@[reassoc]
 private lemma ιTensorObj_tensorCochain_extend {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     (i j n : ℕ) (h : i + j = n) :
     ιTensorObj A B i j n h ≫ tensorCochain μ φ ψ n =
@@ -152,8 +159,8 @@ lemma ιTensorObj_tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N
 
 /-- The tensor product of cochains `φ : A_p ⟶ M` and `ψ : B_q ⟶ N` vanishes on the summands
 `A_i ⊗ B_j` with `i ≠ p`. -/
-@[reassoc (attr := simp), simp]
-lemma ιTensorObj_tensorCochain_of_ne {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) {i j n : ℕ}
+@[reassoc (attr := simp)]
+lemma ιTensorObj_tensorCochain_of_ne_left {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) {i j n : ℕ}
     (h : i + j = n) (hi : i ≠ p) :
     ιTensorObj A B i j n h ≫ tensorCochain μ φ ψ n = 0 := by
   rw [ιTensorObj_tensorCochain_extend, extendCochain_of_ne _ hi, MonoidalPreadditive.zero_tensor,
@@ -161,7 +168,7 @@ lemma ιTensorObj_tensorCochain_of_ne {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q
 
 /-- The tensor product of cochains `φ : A_p ⟶ M` and `ψ : B_q ⟶ N` vanishes on the summands
 `A_i ⊗ B_j` with `j ≠ q`. -/
-@[reassoc (attr := simp), simp]
+@[reassoc (attr := simp)]
 lemma ιTensorObj_tensorCochain_of_ne_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     {i j n : ℕ} (h : i + j = n) (hj : j ≠ q) :
     ιTensorObj A B i j n h ≫ tensorCochain μ φ ψ n = 0 := by
@@ -172,12 +179,11 @@ lemma ιTensorObj_tensorCochain_of_ne_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ :
 `A ⊗ B`, the tensor product of `φ` and `ψ` is the tensor product of `φ ∘ d` and `ψ` plus `(-1)^p`
 times the tensor product of `φ` and `ψ ∘ d`. -/
 lemma d_comp_tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
-    (A ⊗ B).d (n + 1) n ≫ tensorCochain μ φ ψ n =
+    (HomologicalComplex.tensorObj A B).d (n + 1) n ≫ tensorCochain μ φ ψ n =
       tensorCochain μ (A.d (p + 1) p ≫ φ) ψ (n + 1) +
         ((-1 : ℤ) ^ p) • tensorCochain μ φ (B.d (q + 1) q ≫ ψ) (n + 1) := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n + 1) ↦ ?_
-  rw [ιMapBifunctor_eq_ιTensorObj]
-  have hd : (A ⊗ B).d (n + 1) n =
+  have hd : (HomologicalComplex.tensorObj A B).d (n + 1) n =
       mapBifunctor.D₁ A B (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n +
         mapBifunctor.D₂ A B (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n :=
     mapBifunctor.d_eq _ _ _ _ _ _
@@ -210,20 +216,18 @@ lemma d_comp_tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n 
 /-- The tensor product of cochains is natural: precomposing it with the tensor product of chain
 maps `f : A' ⟶ A` and `g : B' ⟶ B` is the tensor product of the precomposed cochains. -/
 @[reassoc]
-lemma tensorHom_f_comp_tensorCochain {A' B' : ChainComplex C ℕ} (f : A' ⟶ A) (g : B' ⟶ B)
-    {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
-    (f ⊗ₘ g).f n ≫ tensorCochain μ φ ψ n = tensorCochain μ (f.f p ≫ φ) (g.f q ≫ ψ) n := by
+lemma tensorHom_f_comp_tensorCochain {A' B' : ChainComplex C ℕ} [A'.HasTensor B'] (f : A' ⟶ A)
+    (g : B' ⟶ B) {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
+    (HomologicalComplex.tensorHom f g).f n ≫ tensorCochain μ φ ψ n =
+      tensorCochain μ (f.f p ≫ φ) (g.f q ≫ ψ) n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  rw [ιMapBifunctor_eq_ιTensorObj]
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom_assoc, ιTensorObj_tensorCochain_extend,
-    ιTensorObj_tensorCochain_extend, extendCochain_comp, extendCochain_comp,
-    tensorHom_comp_tensorHom_assoc]
+  rw [ι_tensorHom_assoc, ιTensorObj_tensorCochain_extend, ιTensorObj_tensorCochain_extend,
+    extendCochain_comp, extendCochain_comp, tensorHom_comp_tensorHom_assoc]
 
 /-- The tensor product of cochains is additive in the first cochain. -/
 lemma tensorCochain_add_left {p q : ℕ} (φ φ' : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
     tensorCochain μ (φ + φ') ψ n = tensorCochain μ φ ψ n + tensorCochain μ φ' ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.add_tensor, Preadditive.add_comp]
 
@@ -231,7 +235,6 @@ lemma tensorCochain_add_left {p q : ℕ} (φ φ' : A.X p ⟶ M) (ψ : B.X q ⟶ 
 lemma tensorCochain_add_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ ψ' : B.X q ⟶ N) (n : ℕ) :
     tensorCochain μ φ (ψ + ψ') n = tensorCochain μ φ ψ n + tensorCochain μ φ ψ' n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.tensor_add, Preadditive.add_comp]
 
@@ -241,7 +244,6 @@ variable {k : Type*} [Semiring k] [Linear k C] [MonoidalLinear k C]
 lemma tensorCochain_smul_left {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     (n : ℕ) : tensorCochain μ (r • φ) ψ n = r • tensorCochain μ φ ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Linear.comp_smul, ιTensorObj_tensorCochain_extend, extendCochain_smul,
     smul_tensorHom, Linear.smul_comp]
 
@@ -249,7 +251,6 @@ lemma tensorCochain_smul_left {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q
 lemma tensorCochain_smul_right {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     (n : ℕ) : tensorCochain μ φ (r • ψ) n = r • tensorCochain μ φ ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Linear.comp_smul, ιTensorObj_tensorCochain_extend, extendCochain_smul,
     tensorHom_smul, Linear.smul_comp]
 
@@ -257,9 +258,9 @@ end Tensor
 
 section Cochain
 
-variable [Preadditive C] [HasFiniteBiproducts C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {A B E : ChainComplex C ℕ} {M N P : C} {k : Type*} [CommSemiring k] [Linear k C]
-  [MonoidalLinear k C] (D : E ⟶ A ⊗ B) (μ : M ⊗ N ⟶ P)
+variable [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ}
+  [A.HasTensor B] {M N P : C} {k : Type*} [CommSemiring k] [Linear k C] [MonoidalLinear k C]
+  (D : E ⟶ HomologicalComplex.tensorObj A B) (μ : M ⊗ N ⟶ P)
 
 variable (k) in
 /-- **The cup product of cochains** along the diagonal `D : E ⟶ A ⊗ B`: for `p + q = n`, the
@@ -269,14 +270,10 @@ variable (k) in
 def cupCochain (p q n : ℕ) (_ : p + q = n) :
     (A.X p ⟶ M) →ₗ[k] (B.X q ⟶ N) →ₗ[k] (E.X n ⟶ P) :=
   LinearMap.mk₂ k (fun (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) ↦ D.f n ≫ tensorCochain μ φ ψ n)
-    (fun φ φ' ψ ↦ (congrArg (D.f n ≫ ·) (tensorCochain_add_left μ φ φ' ψ n)).trans
-      (Preadditive.comp_add _ _ _ _ _ _))
-    (fun r φ ψ ↦ (congrArg (D.f n ≫ ·) (tensorCochain_smul_left μ r φ ψ n)).trans
-      (Linear.comp_smul _ _ _ _ _ _))
-    (fun φ ψ ψ' ↦ (congrArg (D.f n ≫ ·) (tensorCochain_add_right μ φ ψ ψ' n)).trans
-      (Preadditive.comp_add _ _ _ _ _ _))
-    (fun r φ ψ ↦ (congrArg (D.f n ≫ ·) (tensorCochain_smul_right μ r φ ψ n)).trans
-      (Linear.comp_smul _ _ _ _ _ _))
+    (fun φ φ' ψ ↦ by rw [tensorCochain_add_left, Preadditive.comp_add])
+    (fun r φ ψ ↦ by rw [tensorCochain_smul_left, Linear.comp_smul])
+    (fun φ ψ ψ' ↦ by rw [tensorCochain_add_right, Preadditive.comp_add])
+    (fun r φ ψ ↦ by rw [tensorCochain_smul_right, Linear.comp_smul])
 
 /-- The cup product of cochains is the component of the diagonal followed by the tensor product of
 cochains. -/
@@ -297,8 +294,9 @@ lemma d_comp_cupCochain (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B
 /-- **Naturality of the cup product of cochains** along a map of diagonals: if chain maps
 `e : E' ⟶ E`, `f : A' ⟶ A` and `g : B' ⟶ B` satisfy `e ≫ D = D' ≫ (f ⊗ g)`, then cupping the
 pulled-back cochains along `D'` is pulling back their cup product along `D`. -/
-lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗ B') (e : E' ⟶ E)
-    (f : A' ⟶ A) (g : B' ⟶ B) (hD : e ≫ D = D' ≫ (f ⊗ₘ g)) (p q n : ℕ) (h : p + q = n)
+lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
+    (D' : E' ⟶ HomologicalComplex.tensorObj A' B') (e : E' ⟶ E) (f : A' ⟶ A) (g : B' ⟶ B)
+    (hD : e ≫ D = D' ≫ HomologicalComplex.tensorHom f g) (p q n : ℕ) (h : p + q = n)
     (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) :
     cupCochain k D' μ p q n h (f.f p ≫ φ) (g.f q ≫ ψ) = e.f n ≫ cupCochain k D μ p q n h φ ψ := by
   rw [cupCochain_apply, cupCochain_apply, ← tensorHom_f_comp_tensorCochain, ← Category.assoc,
@@ -308,11 +306,9 @@ end Cochain
 
 section Cohomology
 
-attribute [local instance] Abelian.hasFiniteBiproducts
-
 variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ}
-  {M N P : C} {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
-  (μ : M ⊗ N ⟶ P)
+  [A.HasTensor B] {M N P : C} {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
+  (D : E ⟶ HomologicalComplex.tensorObj A B) (μ : M ⊗ N ⟶ P)
 
 variable (k) in
 /-- The cup product of cochains `TauCeti.ChainComplex.cupCochain`, as a bilinear map of the
@@ -498,14 +494,14 @@ lemma cup_homologyπ (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k M).
     ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl) (cupCyclesHomology k D μ p q n h)
     (toCycles_comp_cupCyclesHomology D μ p q n h)).2 a
   rw [cup, ← cupHomologyLeft_homologyπ]
-  exact congrArg (fun F : (B.linearYonedaObj k N).homology q →ₗ[k]
-    (E.linearYonedaObj k P).homology n ↦ F ((B.linearYonedaObj k N).homologyπ q b)) hfac
+  exact LinearMap.congr_fun hfac _
 
 /-- **Naturality of the cup product on cohomology** along a map of diagonals: if chain maps
 `e : E' ⟶ E`, `f : A' ⟶ A` and `g : B' ⟶ B` satisfy `e ≫ D = D' ≫ (f ⊗ g)`, then the cup product
 along `D'` of the pulled-back classes is the pull-back of the cup product along `D`. -/
-lemma cup_naturality {A' B' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗ B') (e : E' ⟶ E)
-    (f : A' ⟶ A) (g : B' ⟶ B) (hD : e ≫ D = D' ≫ (f ⊗ₘ g)) (p q n : ℕ) (h : p + q = n)
+lemma cup_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
+    (D' : E' ⟶ HomologicalComplex.tensorObj A' B') (e : E' ⟶ E) (f : A' ⟶ A) (g : B' ⟶ B)
+    (hD : e ≫ D = D' ≫ HomologicalComplex.tensorHom f g) (p q n : ℕ) (h : p + q = n)
     (α : (A.linearYonedaObj k M).homology p) (β : (B.linearYonedaObj k N).homology q) :
     cup k D' μ p q n h
         (homologyMap (K := A.linearYonedaObj k M) (L := A'.linearYonedaObj k M)

@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Tactic
+import Mathlib.Algebra.Ring.Opposite
+import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Vanishing products for three indexed arms
 
-In an associative semiring, suppose each `d a * u a` vanishes and the sum of the opposite
-products `u a * d a` vanishes. When there are at most three indices, every length-five product
-through three such arms vanishes. The opposite-ring version gives the reversed product.
+In an associative non-unital semiring, suppose each `d a * u a` vanishes and the sum of the
+opposite products `u a * d a` vanishes. When there are at most three indices, every length-five
+product through three such arms vanishes. The opposite-ring version gives the reversed product.
 -/
 
 public section
@@ -22,55 +23,40 @@ namespace TauCeti
 
 /-! ### A vanishing identity for three arms -/
 
-/-- In a semiring, let `u a` and `d a` be indexed by a type with at most three elements, with
-`d a * u a = 0` for every `a` and `∑ a, u a * d a = 0`. Then every product
+/-- In a non-unital semiring, let `u a` and `d a` be indexed by a type with at most three
+elements, with `d a * u a = 0` for every `a` and `∑ a, u a * d a = 0`. Then every product
 `(u a * d a) * (u b * d b) * u c` vanishes. -/
-theorem mul_mul_eq_zero_of_card_le_three {A L : Type*} [Semiring A] [Fintype L]
+theorem mul_mul_eq_zero_of_card_le_three {A L : Type*} [NonUnitalSemiring A] [Fintype L]
     (hL : Fintype.card L ≤ 3) (u d : L → A) (hdu : ∀ a, d a * u a = 0)
     (hsum : ∑ a, u a * d a = 0) (a b c : L) :
     u a * d a * (u b * d b) * u c = 0 := by
   classical
-  have hdiag (a : L) : u a * d a * (u a * d a) * u c = 0 := by
-    rw [mul_assoc (u a), ← mul_assoc (d a), hdu, zero_mul, mul_zero, zero_mul]
-  have hlast (a : L) : u a * d a * (u c * d c) * u c = 0 := by
-    rw [mul_assoc, mul_assoc (u c), hdu, mul_zero, mul_zero]
+  have hdu' (a : L) (x : A) : d a * (u a * x) = 0 := by rw [← mul_assoc, hdu, zero_mul]
+  have hdiag (a : L) : u a * d a * (u a * d a) * u c = 0 := by simp [mul_assoc, hdu']
+  have hlast (a : L) : u a * d a * (u c * d c) * u c = 0 := by simp [mul_assoc, hdu]
   have hrow (a : L) : ∑ b, u a * d a * (u b * d b) * u c = 0 := by
-    rw [← Finset.sum_mul, ← Finset.mul_sum, hsum, mul_zero, zero_mul]
+    simp only [← Finset.sum_mul, ← Finset.mul_sum, hsum, mul_zero, zero_mul]
   have hcol (b : L) : ∑ a, u a * d a * (u b * d b) * u c = 0 := by
-    rw [← Finset.sum_mul, ← Finset.sum_mul, hsum, zero_mul, zero_mul]
+    simp only [← Finset.sum_mul, hsum, zero_mul]
   -- For three distinct indices, the row sum at `a` has only the term at `b` left.
   have hdist (a b : L) (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c) :
       u a * d a * (u b * d b) * u c = 0 := by
-    rw [← hrow a, Finset.sum_eq_single b]
-    · intro b' _ hb'
-      by_cases hb'a : b' = a
-      · rw [hb'a, hdiag]
-      by_cases hb'c : b' = c
-      · rw [hb'c, hlast]
-      have hcard : ({a, b, c, b'} : Finset L).card = 4 := by
-        rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem,
-          Finset.card_pair (Ne.symm hb'c)] <;>
-          simp [hab, hac, hbc, Ne.symm hb', Ne.symm hb'a]
-      have := Finset.card_le_univ ({a, b, c, b'} : Finset L)
-      omega
-    · exact fun h => absurd (Finset.mem_univ b) h
-  by_cases hbc : b = c
-  · rw [hbc, hlast]
-  by_cases hab : a = b
-  · rw [hab, hdiag]
-  by_cases hac : a = c
-  · -- The column sum at `b` has only the term at `c` left.
-    rw [hac, ← hcol b, Finset.sum_eq_single c]
-    · intro a' _ ha'
-      by_cases ha'b : a' = b
-      · rw [ha'b, hdiag]
-      exact hdist a' b ha'b ha' hbc
-    · exact fun h => absurd (Finset.mem_univ c) h
+    refine (Fintype.sum_eq_single b fun b' hb' => ?_).symm.trans (hrow a)
+    have := Finset.card_le_univ ({a, b, c, b'} : Finset L)
+    grind
+  rcases eq_or_ne b c with rfl | hbc
+  · exact hlast a
+  rcases eq_or_ne a b with rfl | hab
+  · exact hdiag a
+  rcases eq_or_ne a c with rfl | hac
+  · -- The column sum at `b` has only the term at `a` left.
+    refine (Fintype.sum_eq_single a fun a' ha' => ?_).symm.trans (hcol b)
+    grind
   exact hdist a b hab hac hbc
 
 /-- The dual form of `mul_mul_eq_zero_of_card_le_three`, read in the opposite ring: every product
 `d c * (u b * d b) * (u a * d a)` vanishes. -/
-theorem mul_mul_eq_zero_of_card_le_three' {A L : Type*} [Semiring A] [Fintype L]
+theorem mul_mul_eq_zero_of_card_le_three' {A L : Type*} [NonUnitalSemiring A] [Fintype L]
     (hL : Fintype.card L ≤ 3) (u d : L → A) (hdu : ∀ a, d a * u a = 0)
     (hsum : ∑ a, u a * d a = 0) (a b c : L) :
     d c * (u b * d b) * (u a * d a) = 0 := by
