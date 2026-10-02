@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Derivation
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Derivation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.LieIdeal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Cofinite
 public import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
