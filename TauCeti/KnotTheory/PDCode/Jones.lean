@@ -154,20 +154,6 @@ end Evaluation
 
 section Injectivity
 
-private theorem val_unitT_inv_sq :
-    (((isUnit_T (R := ℤ) 1).unit⁻¹ ^ 2 : ℤ[T;T⁻¹]ˣ) : ℤ[T;T⁻¹]) = T (-2) := by
-  rw [Units.val_pow_eq_pow_val, Units.inv_eq_of_mul_eq_one_right (a := T (-1))
-    (by rw [IsUnit.unit_spec, ← T_add]; simp), T_pow]
-  simp
-
-/-- A Laurent polynomial in `t^(1/2)` is determined by its value at `t^(1/2) = A⁻²` in
-`ℤ[A, A⁻¹]`. -/
-private theorem eq_of_eval₂_eq {f g : ℤ[T;T⁻¹]}
-    (h : eval₂ (Int.castRingHom _) ((isUnit_T (R := ℤ) 1).unit⁻¹ ^ 2) f =
-      eval₂ (Int.castRingHom _) ((isUnit_T (R := ℤ) 1).unit⁻¹ ^ 2) g) : f = g := by
-  rw [Subsingleton.elim (Int.castRingHom ℤ[T;T⁻¹]) C] at h
-  exact eval₂_C_injective_of_val_eq_T val_unitT_inv_sq (by decide) h
-
 /-- **The Jones polynomial carries exactly the information of the normalized bracket**: two
 oriented PD-codes have the same Jones polynomial exactly when they have the same writhe-normalized
 Kauffman bracket over `ℤ[A, A⁻¹]`. Every invariance statement for the normalized bracket is
@@ -177,9 +163,10 @@ theorem jonesPolynomial_eq_jonesPolynomial_iff {m : ℕ} (D : OrientedPDCode n)
     D.jonesPolynomial = D'.jonesPolynomial ↔
       D.normalizedKauffmanBracket (isUnit_T (R := ℤ) 1).unit =
         D'.normalizedKauffmanBracket (isUnit_T (R := ℤ) 1).unit := by
-  refine ⟨fun h ↦ ?_, fun h ↦ eq_of_eval₂_eq ?_⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ eval₂_C_inv_pow_injective two_ne_zero ?_⟩
   · rw [← eval₂_jonesPolynomial, ← eval₂_jonesPolynomial, h]
-  · rw [eval₂_jonesPolynomial, eval₂_jonesPolynomial, h]
+  · rw [← Subsingleton.elim (Int.castRingHom ℤ[T;T⁻¹]) C, eval₂_jonesPolynomial,
+      eval₂_jonesPolynomial, h]
 
 /-- **The first Reidemeister move leaves the Jones polynomial unchanged.** -/
 @[simp]
@@ -204,9 +191,9 @@ theorem jonesPolynomial_adjoinCircle (D : OrientedPDCode n) (orientation : Bool)
     (h : 0 < D.toPDCode.componentCount) :
     (OrientedPDCode.adjoinCircle D orientation).jonesPolynomial =
       -(T 1 + T (-1)) * D.jonesPolynomial := by
-  refine eq_of_eval₂_eq ?_
-  rw [map_mul, eval₂_jonesPolynomial, eval₂_jonesPolynomial, eval₂_jonesLoop,
-    normalizedKauffmanBracket_adjoinCircle D orientation h]
+  refine eval₂_C_inv_pow_injective two_ne_zero ?_
+  rw [← Subsingleton.elim (Int.castRingHom ℤ[T;T⁻¹]) C, map_mul, eval₂_jonesPolynomial,
+    eval₂_jonesPolynomial, eval₂_jonesLoop, normalizedKauffmanBracket_adjoinCircle D orientation h]
 
 end Injectivity
 
@@ -264,8 +251,9 @@ end OrientedPDCode
 @[simp]
 theorem jonesPolynomial_rightHandedTrefoilPDCode :
     rightHandedTrefoilPDCode.jonesPolynomial = T 2 + T 6 - T 8 := by
-  refine OrientedPDCode.eq_of_eval₂_eq ?_
-  rw [OrientedPDCode.eval₂_jonesPolynomial, normalizedKauffmanBracket_rightHandedTrefoilPDCode]
+  refine eval₂_C_inv_pow_injective two_ne_zero ?_
+  rw [← Subsingleton.elim (Int.castRingHom ℤ[T;T⁻¹]) C, OrientedPDCode.eval₂_jonesPolynomial,
+    normalizedKauffmanBracket_rightHandedTrefoilPDCode]
   simp only [map_add, map_sub, eval₂_T, zpow_ofNat, ← pow_mul, Units.val_pow_eq_pow_val]
 
 end TauCeti

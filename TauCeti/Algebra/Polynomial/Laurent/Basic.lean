@@ -41,6 +41,7 @@ monoid, and that automorphism is what a shift-compatible invariant is compared a
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
   `LaurentPolynomial.eval₂`.
 * `TauCeti.eval₂_C_injective_of_val_eq_T`: the substitution `T ↦ Tᵏ` is injective for `k ≠ 0`.
+* `TauCeti.eval₂_C_inv_pow_injective`: in particular `T ↦ T⁻ᵏ` is injective for `k ≠ 0`.
 * `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
   multiplication.
 * `TauCeti.map_smul_eq_laurentEval_smul`: a linear map turning `T` into a unit turns every
@@ -145,6 +146,20 @@ theorem eval₂_C_injective_of_val_eq_T {u : R[T;T⁻¹]ˣ} {k : ℤ} (hu : (u :
     rw [laurentEval_eq_eval₂, ← RingHom.ext C_eq_algebraMap]
   rw [h]
   exact AddMonoidAlgebra.mapDomain_injective (mul_right_injective₀ hk)
+
+/-- The `k`-th power of the inverse of the unit `T n` is the monomial `T (-(n * k))`. -/
+theorem val_isUnit_T_unit_inv_pow (n : ℤ) (k : ℕ) :
+    (((isUnit_T (R := R) n).unit⁻¹ ^ k : R[T;T⁻¹]ˣ) : R[T;T⁻¹]) = T (-(n * k)) := by
+  rw [Units.val_pow_eq_pow_val, Units.inv_eq_of_mul_eq_one_right (a := T (-n))
+    (by rw [IsUnit.unit_spec, ← T_add]; simp), T_pow]
+  congr 1
+  ring
+
+/-- **Substituting `T⁻ᵏ` for `T` is injective** for `k ≠ 0`: a Laurent polynomial is determined by
+its evaluation at the `k`-th power of the inverse of the generator. -/
+theorem eval₂_C_inv_pow_injective {k : ℕ} (hk : k ≠ 0) :
+    Function.Injective (eval₂ C ((isUnit_T (R := R) 1).unit⁻¹ ^ k)) :=
+  eval₂_C_injective_of_val_eq_T (val_isUnit_T_unit_inv_pow 1 k) (by simpa using hk)
 
 end Eval
 
