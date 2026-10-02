@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Index
-import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
 # Norm surjectivity above a ramification break
@@ -27,8 +26,7 @@ Herbrand values, so the result includes wild extensions without removing the Her
 public section
 noncomputable section
 
-open Filter TauCeti.LocalFieldsRamification
-open scoped Pointwise
+open TauCeti.LocalFieldsRamification
 
 namespace TauCeti
 
@@ -53,18 +51,8 @@ theorem map_normUnits_unitFiltration_eq_of_surjective_normGradedMap (v : ℕ)
         MonoidHom.range_eq_top.2 (h n hn), Subgroup.index_top]
     exact (Subgroup.relIndex_eq_one.1 hindex).trans <| sup_le_sup_right
       (Subgroup.map_mono (unitFiltration_antitone ((psiNat_strictMono K L).monotone hn))) _
-  have happrox (n : ℕ) : unitFiltration K v ≤ S ⊔ unitFiltration K (v + n) := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      exact ih.trans <| sup_le le_sup_left (by simpa [Nat.add_assoc] using hstep (v + n) (by omega))
-  refine le_antisymm (map_normUnits_unitFiltration_psiNat_le K L v) fun x hx ↦ ?_
-  -- A neighbourhood basis recovers the closure from all finite-depth approximations.
-  rw [← SetLike.mem_coe, ← hclosed.closure_eq,
-    ← hasBasis_nhds_one_unitFiltration.iInter_mul_right_eq_closure, Set.mem_iInter₂]
-  intro n _
-  rw [← Subgroup.mul_normal]
-  exact sup_le_sup_left (unitFiltration_antitone (Nat.le_add_left n v)) _ (happrox n hx)
+  exact le_antisymm (map_normUnits_unitFiltration_psiNat_le K L v)
+    (unitFiltration_le_of_isClosed_of_le_sup hclosed hstep)
 
 /-- **The norm is surjective on every unit step above a prime-degree break.** For a Galois
 extension of prime degree with an upper break at a natural number `t`, the norm maps
