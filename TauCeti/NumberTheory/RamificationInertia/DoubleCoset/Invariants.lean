@@ -31,7 +31,7 @@ prime attached to a double coset depends on the double coset alone, not on a rep
 (`Ideal.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_mul_card`).
 
 The numbers `|HσD| / |H|` add up, over `H \ G / D`, to the index `[G : H] = [E : K]`
-(`TauCeti.sum_card_quotToDoubleCoset_div_card_eq_index`). Read through the formulas here, that
+(`Subgroup.sum_card_quotToDoubleCoset_div_card_eq_index`). Read through the formulas here, that
 count is the fundamental identity `Σ e f = [E : K]` over the primes of `𝓞 E` above `p`, which
 Mathlib proves directly as `Ideal.sum_ramification_inertia`.
 
