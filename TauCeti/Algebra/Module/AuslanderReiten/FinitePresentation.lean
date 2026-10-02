@@ -39,6 +39,8 @@ variable {A P₀ P₁ : Type*} [Ring A]
 /-- The transpose is finitely generated when the source of its presenting arrow is
 finite projective. -/
 instance finite (f : P₁ →ₗ[A] P₀) : Module.Finite Aᵐᵒᵖ (AuslanderReitenTranspose f) :=
+  -- The transpose definition is not exposed across module boundaries, so the generic quotient
+  -- instance cannot be found by typeclass inference without this bridge.
   Module.Finite.of_surjective (mk f) (mk_surjective f)
 
 /-- The transpose of an arrow between finite projective modules is finitely presented over the
