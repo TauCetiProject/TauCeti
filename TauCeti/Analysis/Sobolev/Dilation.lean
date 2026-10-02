@@ -23,7 +23,7 @@ measure `μ`, and dilate the variable of a function by `r > 0`, i.e. replace `u`
 derivative, the second of the two quantities a first-order Sobolev estimate compares; the first,
 the `Lᵖ` seminorm of the function itself, is `TauCeti.eLpNorm_comp_inv_smul`.
 
-For `0 < p < ∞` the two scaling laws are
+For every exponent `p` the two scaling laws are
 
 `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p` and `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`,
 
@@ -52,14 +52,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
 /-- **Dilation scaling of the `Lᵖ` seminorm of the derivative:**
 `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`. The exponent drops by one relative to
 `TauCeti.eLpNorm_comp_inv_smul` because the chain rule contributes a factor `r⁻¹`. -/
-theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : 0 < r)
-    {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞) :
+theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
     eLpNorm (fderiv ℝ fun y => u (r⁻¹ • y)) p μ =
       ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal - 1)) * eLpNorm (fderiv ℝ u) p μ := by
   have hfderiv : (fderiv ℝ fun y => u (r⁻¹ • y)) = r⁻¹ • fun x => fderiv ℝ u (r⁻¹ • x) :=
     funext fun x => fderiv_comp_smul (f := u) (x := x) r⁻¹
   rw [hfderiv, eLpNorm_const_smul r⁻¹ (fun x => fderiv ℝ u (r⁻¹ • x)) p μ,
-    eLpNorm_comp_inv_smul μ (fderiv ℝ u) hr hp₀ hp, ← mul_assoc]
+    eLpNorm_comp_inv_smul μ (fderiv ℝ u) hr p, ← mul_assoc]
   congr 1
   rw [Real.enorm_eq_ofReal_abs, abs_of_pos (by positivity : (0 : ℝ) < r⁻¹),
     ← ENNReal.ofReal_mul (by positivity), Real.rpow_sub hr, Real.rpow_one]
