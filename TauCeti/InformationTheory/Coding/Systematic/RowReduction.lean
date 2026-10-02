@@ -20,7 +20,8 @@ information set and a matrix inverse.
 
 Row labels need not be coordinate labels: an equivalence identifies the row type with the
 information set before taking the inverse. The information-set criterion and generator
-normalization need only finitely many rows, whereas the check matrix requires finite length.
+normalization need only finitely many rows. The explicit check-matrix formula does not require
+finite length; only kernel recovery does.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*,
 Sections 1.2–1.4 (systematic generators and parity checks).
