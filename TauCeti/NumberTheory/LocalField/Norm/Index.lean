@@ -10,7 +10,7 @@ import TauCeti.GroupTheory.QuotientGroup.Index
 import TauCeti.NumberTheory.LocalField.TamelyRamified
 
 /-!
-# Norm indices at a prime-degree ramification break
+# Norm indices around a prime-degree ramification break
 
 For a finite Galois extension `L/K`, the cokernel of the graded norm at depth `v` measures the
 relative index

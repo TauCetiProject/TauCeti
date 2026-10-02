@@ -53,7 +53,9 @@ private theorem trace_depth_after_break {t v : ℕ} (hvt : t < v)
   have hψ : psiNat K L v = t + finrank K L * (v - t) := by
     rw [psiNat_eq_add_card_mul_sub K L (hG.trans hG0.symm) hG' hvt.le,
       hG0, Subgroup.card_top, IsGalois.card_aut_eq_finrank]
-  have hd := differentExponent_eq_of_lowerRamificationGroup_eq_top_eq_bot K L hG hG'
+  have hd := differentExponent_eq_of_lowerRamificationGroup_eq_at_zero_eq_bot K L
+    (hG.trans hG0.symm) hG'
+  rw [hG0, Subgroup.card_top, IsGalois.card_aut_eq_finrank] at hd
   have hsum : psiNat K L v + differentExponent K L =
       finrank K L * v + (finrank K L - 1) := by
     rw [hψ, hd]

@@ -35,6 +35,8 @@ group. Hence `d(L/K) = ∑_{σ ≠ 1} v_L(σ x - x)`, and `σ` lies in `G_i` exa
 * `TauCeti.differentExponent_eq_finsum_lowerRamificationGroup`: Hilbert's formula.
 * `TauCeti.sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent`: its truncations
   bound the different exponent from below.
+* `TauCeti.differentExponent_eq_of_lowerRamificationGroup_eq_at_zero_eq_bot`: the single-break
+  specialization of Hilbert's formula, `d(L/K) = (t + 1)(#G₀ - 1)`.
 
 ## References
 
@@ -115,17 +117,22 @@ theorem sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent (m : 
     finsum_eq_sum_of_support_subset _ hsupp]
   exact Finset.sum_le_sum_of_subset (Finset.range_subset_range.2 (le_max_left _ _))
 
-/-- If the lower ramification filtration is the full Galois group through depth `t` and
-trivial at depth `t + 1`, the different exponent is `(t + 1)([L : K] - 1)`. -/
-theorem differentExponent_eq_of_lowerRamificationGroup_eq_top_eq_bot {t : ℕ}
-    (ht : LocalFieldsRamification.lowerRamificationGroup K L t = ⊤)
+/-- If the lower ramification filtration is constant through depth `t` and trivial at
+depth `t + 1`, the different exponent is `(t + 1)(#G₀ - 1)`. -/
+theorem differentExponent_eq_of_lowerRamificationGroup_eq_at_zero_eq_bot {t : ℕ}
+    (ht : LocalFieldsRamification.lowerRamificationGroup K L t =
+      LocalFieldsRamification.lowerRamificationGroup K L 0)
     (ht' : LocalFieldsRamification.lowerRamificationGroup K L (t + 1 : ℕ) = ⊥) :
-    differentExponent K L = (t + 1) * (Module.finrank K L - 1) := by
+    differentExponent K L =
+      (t + 1) * (Nat.card (LocalFieldsRamification.lowerRamificationGroup K L 0) - 1) := by
   classical
-  have htop (i : ℕ) (hi : i ≤ t) :
-      LocalFieldsRamification.lowerRamificationGroup K L i = ⊤ :=
-    top_le_iff.1 (ht ▸ LocalFieldsRamification.lowerRamificationGroup_antitone K L
-      (by exact_mod_cast hi))
+  have hconst (i : ℕ) (hi : i ≤ t) :
+      LocalFieldsRamification.lowerRamificationGroup K L i =
+        LocalFieldsRamification.lowerRamificationGroup K L 0 :=
+    le_antisymm
+      (LocalFieldsRamification.lowerRamificationGroup_antitone K L (Int.natCast_nonneg i))
+      (ht.symm.le.trans (LocalFieldsRamification.lowerRamificationGroup_antitone K L
+        (by exact_mod_cast hi)))
   have hbot (i : ℕ) (hi : t < i) :
       LocalFieldsRamification.lowerRamificationGroup K L i = ⊥ :=
     le_bot_iff.1 ((LocalFieldsRamification.lowerRamificationGroup_antitone K L
@@ -143,10 +150,10 @@ theorem differentExponent_eq_of_lowerRamificationGroup_eq_top_eq_bot {t : ℕ}
   calc
     ∑ i ∈ Finset.range (t + 1),
         (Nat.card (LocalFieldsRamification.lowerRamificationGroup K L i) - 1) =
-        ∑ _i ∈ Finset.range (t + 1), (Module.finrank K L - 1) := by
+        ∑ _i ∈ Finset.range (t + 1),
+          (Nat.card (LocalFieldsRamification.lowerRamificationGroup K L 0) - 1) := by
       refine Finset.sum_congr rfl fun i hi ↦ ?_
-      rw [htop i (by simp only [Finset.mem_range] at hi; omega), Subgroup.card_top,
-        IsGalois.card_aut_eq_finrank]
+      rw [hconst i (by simp only [Finset.mem_range] at hi; omega)]
     _ = _ := by simp
 
 end TauCeti
