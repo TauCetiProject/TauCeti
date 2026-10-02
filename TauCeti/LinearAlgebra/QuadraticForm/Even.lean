@@ -52,7 +52,7 @@ def _root_.LinearMap.BilinForm.halfNormQuadratic
     have hx := Int.two_mul_ediv_two_of_even (heven x)
     have hy := Int.two_mul_ediv_two_of_even (heven y)
     have hxy := Int.two_mul_ediv_two_of_even (heven (x + y))
-    have hsum := bilinForm_apply_add_self hB x y
+    have hsum := hB.apply_add_self x y
     rw [hsum] at hxy
     omega⟩
 
@@ -85,7 +85,7 @@ theorem _root_.LinearMap.BilinForm.polarBilin_halfNormQuadratic
   have hx := B.two_mul_halfNormQuadratic hB heven x
   have hy := B.two_mul_halfNormQuadratic hB heven y
   simp only [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar]
-  rw [bilinForm_apply_add_self hB x y] at hxy
+  rw [hB.apply_add_self x y] at hxy
   omega
 
 /-- The diagonal of the polar form of an integer quadratic form is twice its value. -/

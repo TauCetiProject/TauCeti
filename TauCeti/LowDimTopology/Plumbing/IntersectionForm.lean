@@ -191,7 +191,7 @@ twice because the form is symmetric. -/
 theorem intersectionForm_self_add (x y : V → ℤ) :
     P.intersectionForm (x + y) (x + y) =
       P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y := by
-  rw [bilinForm_apply_add_self P.intersectionForm_isSymm]
+  rw [P.intersectionForm_isSymm.apply_add_self]
   ring
 
 /-- The self-pairing of a rescaled lattice point scales by the square of the multiplier: the
