@@ -400,6 +400,11 @@ theorem map_le_leastCone (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) :
     σ.map f.realMap ≤ f.leastCone hσ :=
   (f.isLeast_leastCone hσ).1.2
 
+/-- The real map of a fan morphism carries a source cone into its least target cone. -/
+theorem mapsTo_leastCone (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) :
+    Set.MapsTo f.realMap σ (f.leastCone hσ) :=
+  fun v hv ↦ f.map_le_leastCone hσ ⟨v, hv, rfl⟩
+
 /-- The least target cone of a source cone lies in every target cone containing its image. -/
 theorem leastCone_le (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) {υ : PointedCone ℝ V'}
     (hυ : υ ∈ Ψ.cones) (h : σ.map f.realMap ≤ υ) : f.leastCone hσ ≤ υ :=
