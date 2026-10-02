@@ -17,8 +17,8 @@ an affine hyperplane `ℓ = b` with `ℓ ≠ 0`
 (`TauCeti.exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`). The *intersection order* of a
 curve `f : ℂ → Sym α n` with `V_z` at a parameter `w`
 (`TauCeti.basepointIntersectionOrder`) is the order of vanishing at `w` of `ℓ ∘ C ∘ f - b`, for
-the chosen chart `C` at `f w`. It is `0` exactly when `f w ∉ V_z`, and `⊤` exactly when `f` stays
-in `V_z` near `w`.
+the chosen chart `C` at `f w`. It is `0` whenever `f w ∉ V_z`, and exactly then if `C ∘ f` is
+analytic at `w`. For `f` continuous at `w`, it is `⊤` exactly when `f` stays in `V_z` near `w`.
 
 For a curve that is holomorphic near `w`, the intersection order is independent of the
 coordinates used to compute it: it is the order of vanishing of `H ∘ C ∘ f` for any chosen chart
@@ -45,8 +45,9 @@ of the homotopy class of `u` with `V_z`, are not part of this file.
 * `TauCeti.basepointIntersectionOrder_eq_analyticOrderAt_sub`: the special case of an affine
   equation of `V_z` in such a chart.
 * `TauCeti.basepointIntersectionOrder_eq_zero_iff` and
-  `TauCeti.basepointIntersectionOrder_eq_top_iff`: the order vanishes exactly off `V_z`, and is
-  infinite exactly when the curve lies in `V_z` near `w`.
+  `TauCeti.basepointIntersectionOrder_eq_top_iff`: for a curve analytic in the chosen chart at
+  `f w`, the order vanishes exactly off `V_z`; for a curve continuous at `w`, it is infinite
+  exactly when the curve lies in `V_z` near `w`.
 -/
 
 public section

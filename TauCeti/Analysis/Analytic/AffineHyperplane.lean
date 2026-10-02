@@ -106,8 +106,7 @@ theorem _root_.AnalyticAt.analyticOrderAt_comp_eq_analyticOrderAt_sub {H : E →
     simp [ht, hD, hv, mul_comm]
   have hΘ : (fun t => H (γ t)) =Θ[𝓝 w] g := by
     have h := hsmall.add_isTheta ((isTheta_const_mul_left hc).2 (isTheta_refl g (𝓝 w)))
-    rwa [show ((fun t => H (γ t) - c * g t) + fun t => c * g t) = fun t => H (γ t) from
-      funext fun t => sub_add_cancel _ _] at h
+    simpa only [Pi.add_def, sub_add_cancel] using h
   exact (hH.comp hγ).analyticOrderAt_eq_of_isTheta
     (((ℓ.analyticAt _).comp hγ).sub analyticAt_const) hΘ
 
