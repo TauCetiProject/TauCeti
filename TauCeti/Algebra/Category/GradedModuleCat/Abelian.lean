@@ -23,9 +23,12 @@ homogeneous image.
 
 The forgetful functor to `ModuleCat A` therefore preserves kernels and cokernels, and it reflects
 isomorphisms, because the inverse of a bijective map of degree zero again has degree zero. Since
-`ModuleCat A` is abelian, so is `GradedModuleCat 𝒜`. Together with the grading shift
-`TauCeti.GradedModuleCat.shift 𝒜`, this makes graded modules a graded abelian category, whose
-canonical exact structure is `TauCeti.GradedExactStructure.abelian`.
+`ModuleCat A` is abelian, so is `GradedModuleCat 𝒜`. This transfer argument, which builds the
+`Abelian` instance from `Abelian.PreservesCoimage.hom_coimageImageComparison`, follows Mathlib's
+proof that `FGModuleCat` is abelian (`Mathlib.Algebra.Category.FGModuleCat.Abelian`).
+Together with the grading shift `TauCeti.GradedModuleCat.shift 𝒜`, this makes graded modules a
+graded abelian category, whose canonical exact structure is
+`TauCeti.GradedExactStructure.abelian`.
 
 ## Main definitions
 
@@ -88,6 +91,7 @@ theorem hom_kernelCone_ι : (kernelCone f).ι.hom = (LinearMap.ker f.hom).subtyp
   rfl
 
 /-- An element of the kernel of `f` has degree `p` exactly when it has degree `p` in the source. -/
+@[simp]
 theorem mem_kernelCone_pt_piece_iff {p : ℤ} {z : (kernelCone f).pt} :
     z ∈ (kernelCone f).pt.grading.piece p ↔ (kernelCone f).ι.hom z ∈ M.grading.piece p :=
   InternalGrading.mem_ker_piece _ _
@@ -126,6 +130,7 @@ noncomputable def cokernelGrading : InternalGrading k (N ⧸ LinearMap.range f.h
 
 /-- An element of the quotient of `N` by the image of `f` has degree `p` exactly when it is the
 class of an element of degree `p`. -/
+@[simp]
 theorem mem_cokernelGrading_piece_iff {p : ℤ} {y : N ⧸ LinearMap.range f.hom} :
     y ∈ (cokernelGrading f).piece p ↔
       ∃ x ∈ N.grading.piece p, Submodule.Quotient.mk x = y := by
@@ -165,6 +170,7 @@ theorem hom_cokernelCocone_π : (cokernelCocone f).π.hom = (LinearMap.range f.h
 
 /-- An element of the cokernel of `f` has degree `p` exactly when it is the class of an element
 of degree `p`. -/
+@[simp]
 theorem mem_cokernelCocone_pt_piece_iff {p : ℤ} {y : (cokernelCocone f).pt} :
     y ∈ (cokernelCocone f).pt.grading.piece p ↔
       ∃ x ∈ N.grading.piece p, (cokernelCocone f).π.hom x = y :=
@@ -221,6 +227,7 @@ theorem hom_productFan_proj (j : J) (x : directSumObj M) :
   rfl
 
 /-- An element of the direct sum has degree `p` exactly when each of its components does. -/
+@[simp]
 theorem mem_productFan_pt_piece_iff {p : ℤ} {x : (productFan M).pt} :
     x ∈ (productFan M).pt.grading.piece p ↔
       ∀ j, ((productFan M).proj j).hom x ∈ (M j).grading.piece p := by
