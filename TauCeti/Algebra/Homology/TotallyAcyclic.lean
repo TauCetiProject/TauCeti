@@ -300,6 +300,7 @@ noncomputable abbrev alternatingMulRightComplex (hab : a * b = 0) (hba : b * a =
 variable {a b} (hab : a * b = 0) (hba : b * a = 0)
 
 /-- Every term of `TauCeti.alternatingMulRightComplex a b` is `A`. -/
+@[simp]
 lemma alternatingMulRightComplex_X (n : ℤ) :
     (alternatingMulRightComplex a b hab hba).X n = ModuleCat.of A A :=
   rfl

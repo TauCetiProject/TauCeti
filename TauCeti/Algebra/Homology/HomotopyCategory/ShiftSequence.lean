@@ -38,6 +38,7 @@ lemma exactAt_shift_iff (n i i' : ℤ) (hi : n + i = i') :
   ShortComplex.exact_iff_of_iso ((shiftShortComplexFunctorIso C n i i' hi).app K)
 
 /-- A shift of a cochain complex is acyclic exactly when the complex is. -/
+@[simp]
 lemma acyclic_shift_iff (n : ℤ) : (K⟦n⟧).Acyclic ↔ K.Acyclic :=
   ⟨fun h i ↦ (K.exactAt_shift_iff n (i - n) i (by lia)).1 (h _),
     fun h i ↦ (K.exactAt_shift_iff n i (n + i) rfl).2 (h _)⟩
