@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Hodge.PeriodDomain
 public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 
@@ -49,6 +50,7 @@ Geometry I*, §6 and §7, and Peters–Steenbrink, *Mixed Hodge Structures*, §2
   structure on `ℤ^{l ⊕ l}`.
 * `TauCeti.Hodge.StandardWeightOne.hodgeStructure_hodgeNumber`: its Hodge numbers.
 * `TauCeti.Hodge.StandardWeightOne.polarization`: its polarization by the symplectic form.
+* `TauCeti.Hodge.StandardWeightOne.isPerfPair_riemannForm`: the polarization is principal.
 * `TauCeti.Hodge.StandardWeightOne.point`: the corresponding point of the period domain.
 -/
 
@@ -168,12 +170,6 @@ private theorem J_mulVec_comp_cast {R : Type*} [CommRing R] (x : Lattice l) :
   rw [map_J] at h
   exact h.symm
 
-omit [DecidableEq l] in
-/-- Casting integer vectors commutes with the dot product. -/
-private theorem cast_dotProduct {R : Type*} [CommRing R] (x y : Lattice l) :
-    ((x ⬝ᵥ y : ℤ) : R) = (fun i ↦ (x i : R)) ⬝ᵥ fun i ↦ (y i : R) :=
-  RingHom.map_dotProduct (Int.castRingHom R) x y
-
 /-- The standard complex structure on the realification `ℝ ⊗[ℤ] ℤ^{l ⊕ l}`: in coordinates it is
 the matrix `J = !![0, -1; 1, 0]`, sending `(x, y)` to `(-y, x)`. -/
 noncomputable def almostComplexStructure : AlmostComplexStructure (Realification (Lattice l)) where
@@ -221,8 +217,8 @@ private theorem baseChange_riemannForm_apply (x y : Realification (Lattice l)) :
     rw [this]
     rfl
   refine h.algHom_ext _ _ fun x ↦ h.algHom_ext _ _ fun y ↦ ?_
-  simp [riemannForm, LinearMap.BilinForm.baseChange_tmul, realCoord_one_tmul, toBilin'_apply',
-    J_mulVec_comp_cast, cast_dotProduct]
+  simpa [riemannForm, LinearMap.BilinForm.baseChange_tmul, realCoord_one_tmul, toBilin'_apply',
+    J_mulVec_comp_cast, Function.comp_def] using RingHom.map_dotProduct (Int.castRingHom ℝ) x _
 
 /-- **The standard symplectic form is a Riemann form for the standard complex structure**: the
 two Riemann bilinear relations are the matrix identities `Jᵀ J J = J` and `Jᵀ J = 1`. -/
@@ -307,25 +303,13 @@ theorem hodgeStructure_weilOperator : (hodgeStructure l).weilOperator = toLin' (
 
 /-- **The Hodge numbers of the standard structure**: `h^{1,0} = h^{0,1} = g`, where `g` is the
 cardinality of `l`, and all other Hodge numbers vanish. -/
+@[simp]
 theorem hodgeStructure_hodgeNumber (p : ℤ) :
     (hodgeStructure l).hodgeNumber p = if p = 0 ∨ p = 1 then Fintype.card l else 0 := by
-  have hzero : ∀ p, p ≠ 0 → p ≠ 1 → (hodgeStructure l).hodgeNumber p = 0 := fun p h₀ h₁ ↦ by
-    rw [HodgeStructureOn.hodgeNumber_def, hodgeStructure_piece_eq_bot l h₀ h₁, finrank_bot]
-  have hsymm : (hodgeStructure l).hodgeNumber 1 = (hodgeStructure l).hodgeNumber 0 :=
-    (hodgeStructure l).hodgeNumber_symm 1
-  have hsum : (hodgeStructure l).hodgeNumber 0 + (hodgeStructure l).hodgeNumber 1 =
-      2 * Fintype.card l := by
-    have h := finsum_hodgeNumber_eq_finrank_lattice (hodgeStructure l)
-    rw [finsum_eq_sum_of_support_subset (s := {0, 1}) _ fun p hp ↦ by
-      by_contra hp'
-      simp only [Finset.coe_insert, Finset.coe_singleton, Set.mem_insert_iff,
-        Set.mem_singleton_iff, not_or] at hp'
-      exact hp (hzero p hp'.1 hp'.2)] at h
-    rw [Finset.sum_pair (by decide), Module.finrank_fintype_fun_eq_card, Fintype.card_sum] at h
-    omega
-  split_ifs with hp
-  · rcases hp with rfl | rfl <;> omega
-  · exact hzero p (not_or.mp hp).1 (not_or.mp hp).2
+  have h := (almostComplexStructure l).two_mul_latticeHodgeStructure_hodgeNumber
+    (isBaseChange_latticeToComplex l) p
+  rw [Module.finrank_fintype_fun_eq_card, Fintype.card_sum, ← hodgeStructure] at h
+  split_ifs at h ⊢ <;> omega
 
 /-! ### The standard polarization -/
 
@@ -346,8 +330,26 @@ theorem polarization_Q : (polarization l).Q = toBilin' (J l ℂ) := by
   rw [Polarization.Q_def, polarization_Qint]
   symm
   refine integralFormBaseChange_unique _ _ _ fun x y ↦ ?_
-  rw [riemannForm, toBilin'_apply', toBilin'_apply', cast_dotProduct]
+  rw [riemannForm, toBilin'_apply', toBilin'_apply', ← eq_intCast (Int.castRingHom ℂ),
+    RingHom.map_dotProduct]
   exact congrArg _ (J_mulVec_comp_cast l y)
+
+/-- **The standard polarization is principal**: the symplectic form `Matrix.J l ℤ` identifies
+`ℤ^{l ⊕ l}` with its dual, since `J` is invertible over `ℤ`. -/
+theorem isPerfPair_riemannForm : (riemannForm l).IsPerfPair := by
+  refine .of_bijective _ ?_
+  have hJ : Function.Bijective fun x : Lattice l ↦ x ᵥ* J l ℤ :=
+    Function.bijective_iff_has_inverse.mpr ⟨fun x ↦ -(x ᵥ* J l ℤ), fun x ↦ by
+      simp only [vecMul_vecMul, J_squared, vecMul_neg, vecMul_one, neg_neg], fun x ↦ by
+      simp only [neg_vecMul, vecMul_vecMul, J_squared, vecMul_neg, vecMul_one, neg_neg]⟩
+  have h : ⇑(riemannForm l) = (Pi.basisFun ℤ (l ⊕ l)).toDualEquiv ∘ fun x ↦ x ᵥ* J l ℤ := by
+    ext x : 1
+    refine (Pi.basisFun ℤ (l ⊕ l)).ext fun i ↦ ?_
+    rw [riemannForm_def, toBilin'_apply', Function.comp_apply, Module.Basis.toDualEquiv_apply,
+      Module.Basis.toDual_apply_left, Pi.basisFun_repr, dotProduct_mulVec, Pi.basisFun_apply,
+      dotProduct_single, mul_one]
+  rw [h]
+  exact (Pi.basisFun ℤ _).toDualEquiv.bijective.comp hJ
 
 /-- The standard polarized weight-one Hodge structure as a point of the period domain of
 `(ℤ^{l ⊕ l}, Matrix.J)` at its own Hodge type. -/
