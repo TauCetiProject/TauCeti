@@ -68,6 +68,8 @@ element `s` chosen outside `U`.
   `evensGraphCochain_comp_subtype`: for the restriction `y|_U` of a homomorphism `y` on `G`, both
   Shapiro components are the homomorphism `b = y + y(s) · χ_U`, with `χ_U` the character of `U`,
   and `ν (γ, η) = b γ · b η + χ_U γ · b η`.
+* `TauCeti.ContCohomology.evensExtend_comap`, `evensB1_comap`, `evensBs_comap` and
+  `evensGraphCochain_comap`: naturality under pullback along a homomorphism `φ : G' →* G`.
 
 ## Implementation notes
 
@@ -653,6 +655,51 @@ theorem evensGraphCochain_comp_subtype (hU : U.index = 2) (hs : s ∉ U)
     decide
 
 end RestrictedHom
+
+section Comap
+
+/-! ### Naturality under pullback along a homomorphism
+
+Pulling `U` and `α` back along a homomorphism `φ : G' →* G` and taking the cochains at `s ∈ G'`
+gives the cochains of `U` and `α` at `φ s`, composed with `φ`. No hypothesis on `U`, `α` or `φ`
+is needed: membership in `U.comap φ` is membership of the image in `U`. -/
+
+variable {G' : Type*} [Group G'] (φ : G' →* G) (U : Subgroup G) (s : G')
+  (α : U →* Multiplicative (ZMod 2))
+
+/-- The extension by zero commutes with pullback along a homomorphism. -/
+theorem evensExtend_comap (γ : G') :
+    evensExtend (U.comap φ) (α.comp (φ.subgroupComap U)) γ = evensExtend U α (φ γ) := by
+  by_cases h : γ ∈ U.comap φ
+  · rw [evensExtend_of_mem h, evensExtend_of_mem (Subgroup.mem_comap.1 h)]
+    rfl
+  · rw [evensExtend_of_notMem h, evensExtend_of_notMem (mt Subgroup.mem_comap.2 h)]
+
+/-- The first Shapiro component commutes with pullback along a homomorphism. -/
+theorem evensB1_comap (γ : G') :
+    evensB1 (U.comap φ) s (α.comp (φ.subgroupComap U)) γ = evensB1 U (φ s) α (φ γ) := by
+  by_cases h : γ ∈ U.comap φ
+  · rw [evensB1_of_mem h, evensB1_of_mem (Subgroup.mem_comap.1 h), evensExtend_comap]
+  · rw [evensB1_of_notMem h, evensB1_of_notMem (mt Subgroup.mem_comap.2 h), evensExtend_comap,
+      map_mul]
+
+/-- The second Shapiro component commutes with pullback along a homomorphism. -/
+theorem evensBs_comap (γ : G') :
+    evensBs (U.comap φ) s (α.comp (φ.subgroupComap U)) γ = evensBs U (φ s) α (φ γ) := by
+  rw [evensBs_apply, evensBs_apply, evensB1_comap, map_mul, map_inv]
+
+/-- **Naturality of the graph cochain:** the graph cochain of the pullback of `U` and `α` along
+`φ : G' →* G`, at `s`, is the graph cochain of `U` and `α` at `φ s`, composed with `φ × φ`. -/
+theorem evensGraphCochain_comap (γ η : G') :
+    evensGraphCochain (U.comap φ) s (α.comp (φ.subgroupComap U)) (γ, η) =
+      evensGraphCochain U (φ s) α (φ γ, φ η) := by
+  by_cases h : γ ∈ U.comap φ
+  · rw [evensGraphCochain_of_mem h, evensGraphCochain_of_mem (Subgroup.mem_comap.1 h),
+      evensB1_comap, evensBs_comap]
+  · rw [evensGraphCochain_of_notMem h, evensGraphCochain_of_notMem (mt Subgroup.mem_comap.2 h),
+      evensB1_comap, evensB1_comap, evensBs_comap]
+
+end Comap
 
 section AcceptanceCheck
 

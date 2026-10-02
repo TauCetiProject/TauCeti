@@ -60,8 +60,8 @@ reading is not formalised here.
 * `TauCeti.ContCohomology.evensGraphCochain_wreath`: the universal identity
   `ν_taut = c_{D₁₆} + δ w` on `C₂ ≀ C₂`.
 * `TauCeti.ContCohomology.comap_indexTwoInd_wreathBase` and
-  `TauCeti.ContCohomology.coordA_indexTwoInd_coe`: `Ind α` pulls the base group back to `U` and
-  the tautological character back to `α`.
+  `TauCeti.ContCohomology.wreathTautological_indexTwoInd`: `Ind α` pulls the base group back to
+  `U` and the tautological character back to `α`.
 * `TauCeti.ContCohomology.evensGraphCochain_indexTwoInd`: `ν_α` is the pullback of `ν_taut` along
   `Ind α`.
 * `TauCeti.ContCohomology.evensGraphCochain_eq_indexTwoInd_pullback`:
@@ -242,6 +242,16 @@ base group, the first coordinate of `Ind α` is `α`. -/
 theorem coordA_indexTwoInd_coe (γ : U) : coordA (indexTwoInd U hU s hs α γ) = toAdd (α γ) := by
   rw [coordA_indexTwoInd, evensB1_of_mem γ.2, evensExtend_of_mem γ.2]
 
+/-- **`Ind α` pulls the tautological character back to `α`**, as homomorphisms on
+`wreathBase.comap (Ind α)`, which is identified with `U` by
+`TauCeti.ContCohomology.comap_indexTwoInd_wreathBase`. -/
+theorem wreathTautological_indexTwoInd :
+    wreathTautological.comp ((indexTwoInd U hU s hs α).subgroupComap wreathBase) =
+      α.comp (MulEquiv.subgroupCongr (comap_indexTwoInd_wreathBase U hU s hs α)).toMonoidHom :=
+  MonoidHom.ext fun γ => toAdd.injective <| by
+    rw [MonoidHom.comp_apply, toAdd_wreathTautological]
+    exact coordA_indexTwoInd_coe U hU s hs α (MulEquiv.subgroupCongr _ γ)
+
 /-- The second coordinate of `Ind α (s)` vanishes: `b_s (s) = b₁ (1) = 0`. -/
 theorem coordB_indexTwoInd_self : coordB (indexTwoInd U hU s hs α s) = 0 := by
   rw [coordB_indexTwoInd, evensBs_apply, inv_mul_cancel, evensB1_of_mem U.one_mem,
@@ -284,7 +294,7 @@ theorem evensGraphCochain_eq_indexTwoInd_pullback (g h : G) :
 
 /-- **`Ind α` is locally constant** when `U` is open and `α` is continuous: its three coordinates
 are continuous maps to the discrete `ZMod 2`. -/
-theorem isLocallyConstant_indexTwoInd [TopologicalSpace G] [ContinuousMul G]
+theorem isLocallyConstant_indexTwoInd [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) :
     IsLocallyConstant (indexTwoInd U hU s hs α) := by
   have hcoord : IsLocallyConstant fun γ =>
@@ -297,7 +307,7 @@ theorem isLocallyConstant_indexTwoInd [TopologicalSpace G] [ContinuousMul G]
 
 /-- **The pulled-back `D₁₆` extension cocycle is continuous** when `U` is open and `α` is
 continuous. -/
-theorem continuous_wreathD16Cocycle_indexTwoInd [TopologicalSpace G] [ContinuousMul G]
+theorem continuous_wreathD16Cocycle_indexTwoInd [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) :
     Continuous fun q : G × G =>
       wreathD16Cocycle (indexTwoInd U hU s hs α q.1, indexTwoInd U hU s hs α q.2) := by
@@ -306,7 +316,7 @@ theorem continuous_wreathD16Cocycle_indexTwoInd [TopologicalSpace G] [Continuous
     wreathD16Cocycle).continuous
 
 /-- **The pulled-back coboundary witness is continuous** when `U` is open and `α` is continuous. -/
-theorem continuous_wreathWitness_indexTwoInd [TopologicalSpace G] [ContinuousMul G]
+theorem continuous_wreathWitness_indexTwoInd [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) :
     Continuous fun γ : G => wreathWitness (indexTwoInd U hU s hs α γ) :=
   ((isLocallyConstant_indexTwoInd U hU s hs α hopen hα).comp wreathWitness).continuous

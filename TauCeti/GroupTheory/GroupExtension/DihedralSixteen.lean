@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.RegularWreathProduct
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
+public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
 
 /-!
@@ -42,6 +43,7 @@ of the tautological character of the base group differs from it by an explicit c
 * `TauCeti.WreathC2`: the regular wreath product `C₂ ≀ C₂`, with the constructor
   `TauCeti.WreathC2.mk` and the coordinates `TauCeti.WreathC2.coordA`, `TauCeti.WreathC2.coordB`,
   `TauCeti.WreathC2.coordC`.
+* `TauCeti.wreathSwap`: the swap `s = (0, 0, 1)`, the generator of the top factor.
 * `TauCeti.dihedralToWreath`: the quotient map `D₁₆ → C₂ ≀ C₂`.
 * `TauCeti.wreathD16Extension`: `D₁₆` as an extension of `C₂ ≀ C₂` by `C₂`.
 * `TauCeti.wreathSection`: the section `(u s)ⁱ sʲ ↦ rⁱ fʲ` of that extension.
@@ -218,6 +220,26 @@ theorem notMem_wreathBase_iff {g : WreathC2} : g ∉ wreathBase ↔ coordC g = 1
   revert c
   decide
 
+/-- **The swap `s = (0, 0, 1)` of `C₂ ≀ C₂`**, the generator of the top factor. It lies outside the
+base group, and multiplying by it on the left exchanges the two base coordinates. -/
+def wreathSwap : WreathC2 := mk 0 0 1
+
+/-- The first coordinate of the swap is `0`. -/
+@[simp]
+theorem coordA_wreathSwap : coordA wreathSwap = 0 := coordA_mk 0 0 1
+
+/-- The second coordinate of the swap is `0`. -/
+@[simp]
+theorem coordB_wreathSwap : coordB wreathSwap = 0 := coordB_mk 0 0 1
+
+/-- The third coordinate of the swap is `1`. -/
+@[simp]
+theorem coordC_wreathSwap : coordC wreathSwap = 1 := coordC_mk 0 0 1
+
+/-- The swap lies outside the base group. -/
+theorem wreathSwap_notMem_wreathBase : wreathSwap ∉ wreathBase :=
+  notMem_wreathBase_iff.2 coordC_wreathSwap
+
 /-- The base group of `C₂ ≀ C₂` has index two. -/
 theorem index_wreathBase : wreathBase.index = 2 := by
   rw [wreathBase, Subgroup.index_ker, MonoidHom.range_eq_top_of_surjective _
@@ -256,8 +278,8 @@ def dihedralToWreath : DihedralGroup 8 →* WreathC2 where
 theorem dihedralToWreath_r_one : dihedralToWreath (r 1) = mk 1 0 1 := by
   ext <;> decide +kernel
 
-/-- The reflection `f = sr 0` of `D₁₆` maps to `s = (0, 0, 1)`. -/
-theorem dihedralToWreath_sr_zero : dihedralToWreath (sr 0) = mk 0 0 1 := by
+/-- The reflection `f = sr 0` of `D₁₆` maps to the swap `s = (0, 0, 1)`. -/
+theorem dihedralToWreath_sr_zero : dihedralToWreath (sr 0) = wreathSwap := by
   ext <;> decide +kernel
 
 /-- **The kernel of `D₁₆ → C₂ ≀ C₂` is the centre `{1, r⁴}`.** -/
@@ -368,11 +390,16 @@ theorem wreathD16Cocycle_apply (g h : WreathC2) :
 theorem wreathD16Cocycle_isCocycle (g h j : WreathC2) :
     wreathD16Cocycle (g * h, j) + wreathD16Cocycle (g, h) =
       wreathD16Cocycle (h, j) + wreathD16Cocycle (g, h * j) := by
-  simp only [wreathD16Cocycle_apply, coordA_mul, coordB_mul, coordC_mul]
-  generalize coordA g = a₁; generalize coordB g = b₁; generalize coordC g = c₁
-  generalize coordA h = a₂; generalize coordB h = b₂; generalize coordC h = c₂
-  generalize coordA j = a₃; generalize coordB j = b₃
-  revert a₁ b₁ c₁ a₂ b₂ c₂ a₃ b₃
-  decide
+  let := trivialMulDistribMulAction WreathC2 (Multiplicative (ZMod 2))
+  have hcentre : wreathD16Extension.inl.range ≤ Subgroup.center (DihedralGroup 8) := by
+    rintro _ ⟨x, rfl⟩
+    rw [Subgroup.mem_center_iff]
+    revert x
+    decide
+  have hact := (GroupExtension.inducesAction_iff_smul_eq_self hcentre).2 fun _ _ =>
+    trivialMulDistribMulAction_smul _ _
+  have key := GroupExtension.isMulCocycle₂_factorSetFun wreathSection hact g h j
+  rw [trivialMulDistribMulAction_smul] at key
+  exact congrArg toAdd key
 
 end TauCeti
