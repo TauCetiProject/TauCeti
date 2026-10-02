@@ -9,8 +9,10 @@ module
 -- here, and `Matrix.GeneralLinearGroup.fixpointPolynomial_aeval_eq_zero_iff` is what reads the
 -- affine fixed points off a polynomial.
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
--- `Matrix.ProjGenLinGroup.mk` occurs in the statements below.
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
+-- `Matrix.ProjGenLinGroup.mk` occurs in the statements below, and `OnePoint.instMulActionPGL` is
+-- the action of `PGL(2, K)` on the projective line that the statements about an element of
+-- `PGL(2, K)` use.
+public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 -- `Set.ncard` occurs in the statements below.
 public import Mathlib.Data.Set.Card
 -- Non-public: the degree bounds are proved by `compute_degree`, in the proofs only.
@@ -44,9 +46,6 @@ of at least three points.
 * `Matrix.GeneralLinearGroup.mem_center_of_forall_smul_eq`: a matrix fixing a set of at least three
   points of the projective line is scalar, hence central.  The hypothesis is on `Set.encard`, which
   measures an infinite set of fixed points correctly.
-* `Matrix.GeneralLinearGroup.scalar_smul_eq` and `Matrix.ProjGenLinGroup.instMulActionOnePoint`:
-  the scalar matrices act trivially, so the action descends to `PGL₂(K)`, with
-  `Matrix.ProjGenLinGroup.mk_smul_onePoint` evaluating it on a matrix.
 * `Matrix.ProjGenLinGroup.eq_one_of_forall_smul_eq` and
   `Matrix.ProjGenLinGroup.eq_of_forall_smul_eq`: **three-point rigidity in `PGL₂(K)`**, and the
   uniqueness form — two elements acting the same way on a set of at least three points of the
@@ -165,36 +164,9 @@ end Field
 
 end Matrix.GeneralLinearGroup
 
-namespace Matrix.GeneralLinearGroup
-
-variable {K : Type*} [Field K] [DecidableEq K]
-
-/-- **A scalar matrix acts trivially on the projective line**: it is the identity Möbius
-transformation, so the action of `GL₂(K)` descends to `PGL₂(K)`. -/
-theorem scalar_smul_eq (u : Kˣ) (c : OnePoint K) : scalar (Fin 2) u • c = c := by
-  have hu : (u : K) ≠ 0 := u.ne_zero
-  cases c with
-  | infty =>
-    rw [OnePoint.smul_infty_eq_self_iff]
-    simp [coe_scalar, Matrix.scalar_apply]
-  | coe t =>
-    rw [OnePoint.smul_some_eq_ite]
-    simp [coe_scalar, Matrix.scalar_apply, hu, mul_comm]
-
-end Matrix.GeneralLinearGroup
-
 namespace Matrix.ProjGenLinGroup
 
 variable {K : Type*} [Field K] [DecidableEq K] {g h : GL (Fin 2) K}
-
-/-- **`PGL₂(K)` acts on the projective line**: the Möbius action of `GL₂(K)` is trivial on the
-scalar matrices, so it descends to the quotient. -/
-instance instMulActionOnePoint : MulAction (PGL(2, K)) (OnePoint K) :=
-  mulActionOfGL GeneralLinearGroup.scalar_smul_eq
-
-@[simp]
-theorem mk_smul_onePoint (g : GL (Fin 2) K) (c : OnePoint K) : mk g • c = g • c :=
-  mk_smul GeneralLinearGroup.scalar_smul_eq g c
 
 /-- **Three-point rigidity in `PGL₂(K)`**: an element of `PGL₂(K)` fixing a set of at least three
 points of the projective line is the identity. -/
