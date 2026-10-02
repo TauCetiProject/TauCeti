@@ -305,6 +305,13 @@ theorem AdditiveInvariant.map_iso (a : AdditiveInvariant E G) ⦃X Y : C⦄ (e :
     (ShortComplex.Splitting.ofIsIsoOfIsZero _ inferInstance (isZero_zero C)))
   simpa [h0] using hY.symm
 
+omit [EssentiallySmall.{w} C] in
+/-- An additive invariant vanishes on zero objects. -/
+theorem AdditiveInvariant.obj_eq_zero_of_isZero (a : AdditiveInvariant E G) {X : C}
+    (hX : IsZero X) : a.obj X = 0 := by
+  rw [a.map_iso (hX.iso (isZero_zero C))]
+  simpa using a.map_conflation (E.conflation_id_zero (0 : C))
+
 private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant E G) :
     PresentedK0.AdditiveInvariant (exactRelations E) G where
   obj := a.obj

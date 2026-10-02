@@ -11,7 +11,9 @@ public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 
+import Mathlib.Data.FunLike.Fintype
 import TauCeti.Algebra.Group.Hom.Instances
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
 
@@ -60,6 +62,14 @@ bijective `f` the square formed by `αᵢ` on `M`, `αᵢ` on `M'`, `f_*` on coh
 targets commutes, and bijectivity of each `αᵢ` transports from `M'` to `M`. This is how a base case
 stated for `ZMod p` applies to every trivial module of order `p`.
 
+Finally, when `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, injectivity of `α₂` on a finite module `M`
+killed by `n` upgrades to bijectivity by counting
+(`TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`), once `α₀` is known
+to be bijective on the dual `InternalHom G M N`: `|H²(G, M)| = |H⁰(G, InternalHom G M N)|`, since
+`Hom(-, H²(G, N))` preserves the order of a finite group killed by `n` and `M` is its own double
+dual with values in `N` (`TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`). This is the
+last step of Tate's duality for the coefficient systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
+
 ## Main statements
 
 * `TauCeti.ContCohomology.explicitDualityPairing02`, `explicitDualityPairing11` and
@@ -96,6 +106,9 @@ stated for `ZMod p` applies to every trivial module of order `p`.
   `dualityMap0_surjective_iff_of_bijective`, `dualityMap0_bijective_iff_of_bijective` and their
   analogues in degrees `1` and `2`: injectivity, surjectivity and bijectivity of each duality map
   transport along an isomorphism of coefficients `N →+[G] N'`.
+* `TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`: for `N ≃+ ZMod n`
+  and `H²(G, N) ≃+ ZMod n`, if `α₂` is injective on `M` and `α₀` is bijective on its dual, then `α₂`
+  is bijective on `M`, by counting.
 * `TauCeti.ContCohomology.dualityMap2_zmod_bijective` and
   `dualityMap0_zmod_bijective_of_finrank_eq_one`: bijectivity of `α₂` and of `α₀` for a trivial
   action on `ZMod n`.
@@ -1004,6 +1017,42 @@ theorem dualityMap1_bijective_iff_of_bijective :
 end DegreeZeroOne
 
 end TransportInCoefficients
+
+section Counting
+
+variable {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
+  [ContinuousSMul G M] [Finite M]
+  {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
+  [ContinuousSMul G N] [Finite N] {n : ℕ} [NeZero n]
+
+/-- **Bijectivity of `α₂` by counting.** Let `N ≃+ ZMod n` and `H²(G, N) ≃+ ZMod n`, and let `M` be
+a finite discrete `G`-module killed by `n` with `H²(G, M'')` finite, where `M' = InternalHom G M N`
+and `M'' = InternalHom G M' N`. If `α₂` is injective on `M` and `α₀` is
+bijective on `M'`, then `α₂ : H²(G, M) → Hom(H⁰(G, M'), H²(G, N))` is bijective: its target has the
+order of `H⁰(G, M')`, which `α₀` identifies with `Hom(H²(G, M''), H²(G, N))`, of the order of
+`H²(G, M'')`, and `M'' ≅ M` by double duality. The hypothesis `H²(G, N) ≃+ ZMod n` is what makes
+`Hom(-, H²(G, N))` preserve the order of every finite group killed by `n`. -/
+theorem dualityMap2_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
+    (e₂ : H2 G N ≃+ ZMod n) (hM : ∀ x : M, n • x = 0)
+    [Finite (H2 G (InternalHom G (InternalHom G M N) N))]
+    (h₀ : Function.Bijective (dualityMap0 G (InternalHom G M N) N))
+    (h₂ : Function.Injective (dualityMap2 G M N)) : Function.Bijective (dualityMap2 G M N) := by
+  have hM' : ∀ φ : InternalHom G M N, n • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
+  have : Finite (H2 G N) := Finite.of_equiv _ e₂.symm.toEquiv
+  have : Finite (H0 G (InternalHom G M N) →+ H2 G N) := DFunLike.finite _
+  refine h₂.bijective_of_nat_card_le (le_of_eq ?_)
+  -- `|Hom(H⁰(M'), H²(N))| = |H⁰(M')| = |Hom(H²(M''), H²(N))| = |H²(M'')| = |H²(M)|`
+  have h₁ : Nat.card (H0 G (InternalHom G M N) →+ H2 G N) = Nat.card (H0 G (InternalHom G M N)) :=
+    natCard_addMonoidHom_of_addEquiv_zmod e₂ fun v ↦ Subtype.ext (by simpa using hM' v)
+  have h₂₃ := (Nat.card_congr (Equiv.ofBijective _ h₀)).trans
+    (natCard_addMonoidHom_of_addEquiv_zmod e₂
+      (nsmul_H2_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM')))
+  have h₂₃₄ := h₂₃.trans (Nat.card_congr (Equiv.ofBijective _ (explicitCoeff2_bijective G M
+    (InternalHom.eval_bijective_of_addEquiv_zmod e hM))).symm)
+  exact h₁.trans h₂₃₄
+
+end Counting
 
 section TrivialZMod
 

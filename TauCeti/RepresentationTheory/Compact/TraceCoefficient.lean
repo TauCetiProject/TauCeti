@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Compact.IsotypicBlock
+public import TauCeti.RepresentationTheory.Compact.IsotypicBlock.Basic
 public import TauCeti.RepresentationTheory.Continuous.TraceCoefficient
 -- Private: `Module.finrank_linearMap` is used only inside a proof.
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
@@ -17,9 +17,10 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 For a compact group `G`, the `π`-block `TauCeti.peterWeylBlock` of `L²(G)` is the span of the matrix
 coefficients of an irreducible model `π`, and
-`TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean` identifies it with the endomorphisms of
-the model's carrier by matching a matrix position with a matrix unit. That identification is built
-from a basis, so it says nothing about group actions. This file supplies the equivariant form.
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Basic.lean` identifies it with the
+endomorphisms of the model's carrier by matching a matrix position with a matrix unit. That
+identification is built from a basis, so it says nothing about group actions. This file supplies
+the equivariant form.
 
 The `L²` trace coefficient `ContRepresentation.traceCoeffLp` sends an operator `T` on the carrier to
 the class of `x ↦ trace (T ∘ π x⁻¹)`. It is basis-free, it carries the rank-one operator
@@ -43,7 +44,7 @@ of representations of `G × G`. Only this block-by-block identification is built
 the blocks into an equivariant equivalence `L²(G) ≅ ⨁̂_π End(V_π)` over a skeleton of the
 irreducibles is not provided, and would have to combine these maps with the Hilbert-sum
 decomposition `TauCeti.isHilbertSum_peterWeylBlock` of
-`TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean`.
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Basic.lean`.
 
 ## Main definitions
 
@@ -70,7 +71,7 @@ decomposition `TauCeti.isHilbertSum_peterWeylBlock` of
   unitary `G × G`-representation, with a continuous operator-valued action.
 * `TauCeti.coe_endEquivPeterWeylBlock_basis_end_eq_smul_traceCoeffLp_rankOne`: at a matrix unit of
   the canonical basis, the comparison of
-  `TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean` is the trace coefficient of the
+  `TauCeti/RepresentationTheory/Compact/IsotypicBlock/Basic.lean` is the trace coefficient of the
   transposed rank-one operator, scaled by `√(dim V_π)`.
 
 ## Implementation notes
@@ -179,8 +180,8 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
 
 This is the equivariance that the basis-built comparison
 `TauCeti.endEquivPeterWeylBlock` of
-`TauCeti/RepresentationTheory/Compact/IsotypicBlock.lean` does not provide. No unitarity is needed:
-it is the cyclicity of the trace. -/
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Basic.lean` does not provide. No unitarity is
+needed: it is the cyclicity of the trace. -/
 theorem biRegularLp_traceCoeffLp (p : G × G) (T : V →L[𝕜] V) :
     biRegularLp 𝕜 G p (traceCoeffLp π hπ T) = traceCoeffLp π hπ (biLinHom π π p T) := by
   simp only [traceCoeffLp_def, biRegularLp_toLp, traceCoeff_biLinHom]
