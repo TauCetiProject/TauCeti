@@ -60,6 +60,7 @@ variable {Q}
 
 omit [Invertible (2 : R)] in
 /-- The inverse unit coordinate of a Pin element in the Lipschitz group is its Clifford star. -/
+@[simp]
 theorem coe_inv_pinToLipschitz (x : pinGroup Q) :
     (((pinToLipschitz Q x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = star (x : CliffordAlgebra Q) :=
