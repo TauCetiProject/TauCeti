@@ -21,7 +21,8 @@ by the commutativity and associativity equivalences for `Sum` give the correspon
 identities, using Mathlib's `AddEquiv.arrowCongr`.
 
 The alphabet is an arbitrary additive group, with no finiteness or field assumption.
-The product equivalence restricts Mathlib's `Equiv.sumArrowEquivProdArrow`. For commutative
+The construction transports Mathlib's `AddSubgroup.prod` along `Equiv.sumArrowEquivProdArrow`,
+and its product equivalence uses `AddSubgroup.prodEquiv`. For commutative
 alphabets, the construction agrees with the direct sum of the corresponding integer submodules.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.6.
@@ -41,11 +42,10 @@ variable [AddGroup A]
 
 /-- The direct sum of additive codes on the disjoint union of their coordinate types. -/
 def _root_.AddSubgroup.directSum (C : AddSubgroup (ι → A)) (D : AddSubgroup (κ → A)) :
-    AddSubgroup (ι ⊕ κ → A) where
-  carrier := {x | (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D}
-  zero_mem' := ⟨C.zero_mem, D.zero_mem⟩
-  add_mem' hx hy := ⟨C.add_mem hx.1 hy.1, D.add_mem hx.2 hy.2⟩
-  neg_mem' hx := ⟨C.neg_mem hx.1, D.neg_mem hx.2⟩
+    AddSubgroup (ι ⊕ κ → A) :=
+  let e : (ι ⊕ κ → A) ≃+ (ι → A) × (κ → A) :=
+    { Equiv.sumArrowEquivProdArrow ι κ A with map_add' := fun _ _ ↦ rfl }
+  (C.prod D).comap e.toAddMonoidHom
 
 /-- A word belongs to an additive direct sum exactly when its restrictions belong to the two
 constituent codes. -/
@@ -69,16 +69,17 @@ theorem _root_.AddSubgroup.sumElim_zero_left_mem_directSum (C : AddSubgroup (ι 
 /-- An additive direct sum is additively equivalent to the product of its constituent codes. -/
 def _root_.AddSubgroup.directSumEquivProd (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) : C.directSum D ≃+ C × D :=
-  { ((Equiv.sumArrowEquivProdArrow ι κ A).subtypeEquiv
-      (fun _ ↦ mem_directSum_iff)).trans (Equiv.Set.prod (C : Set (ι → A)) (D : Set (κ → A)))
-    with map_add' := fun _ _ ↦ rfl }
+  ({ (Equiv.sumArrowEquivProdArrow ι κ A).subtypeEquiv
+      (fun _ ↦ mem_directSum_iff) with map_add' := fun _ _ ↦ rfl } :
+      C.directSum D ≃+ C.prod D).trans (C.prodEquiv D)
 
 private theorem directSumEquivProd_apply_eq (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C.directSum D) :
     C.directSumEquivProd D x =
       (⟨fun i ↦ x.1 (.inl i), (mem_directSum_iff.mp x.2).1⟩,
         ⟨fun j ↦ x.1 (.inr j), (mem_directSum_iff.mp x.2).2⟩) := by
-  simp only [directSumEquivProd, Equiv.Set.prod, Equiv.sumArrowEquivProdArrow]
+  simp only [directSumEquivProd, AddSubgroup.prodEquiv, Equiv.Set.prod,
+    Equiv.sumArrowEquivProdArrow]
   rfl
 
 @[simp]
