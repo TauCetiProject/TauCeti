@@ -114,8 +114,9 @@ theorem image_analyticMap_range_analyticAffineChartι (σ : Φ.cones) :
 /-! ### The biholomorphism of analytic realizations -/
 
 /-- The biholomorphism between the analytic realizations of two regular fans induced by a fan
-equivalence, for their complex manifold structures modelled on `ℂ ^ n` and `ℂ ^ n'`, where `n` and
-`n'` are the ranks of the two lattices. -/
+equivalence, for their complex manifold structures modelled on `ℂ ^ r` and `ℂ ^ r'`, where
+`r = Module.finrank ℤ N` and `r' = Module.finrank ℤ N'` are the ranks of the two lattices. The
+argument `n` is the differentiability order: the map and its inverse are both `C^n`. -/
 noncomputable def analyticDiffeomorph (n : ℕ∞ω) :
     letI := Φ.analyticChartedSpace hΦ
     letI := Ψ.analyticChartedSpace hΨ
