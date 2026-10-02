@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Cohomology
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Perturbation
-public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Perturbation
+public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Perturbation.Basic
 
 /-!
 # Homological transfer of A-infinity structures

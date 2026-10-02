@@ -94,6 +94,7 @@ noncomputable def transferHomotopy :
       ← unaryBarDifferential_eq_gradedCoderiv, ← barDifferential_eq_unary_add_higher] using hc.symm
 
 /-- The bar homotopy of transfer is the perturbed tensor-trick homotopy `K - K X K`. -/
+@[simp]
 theorem barHomotopy_transferHomotopy :
     (𝒜.transferHomotopy c hh hincl hproj).barHomotopy =
       c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) -
@@ -101,6 +102,17 @@ theorem barHomotopy_transferHomotopy :
           (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential ∘ₗ
             c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) := by
   simp only [transferHomotopy, barTensorTrick_homotopy]
+
+/-- The Taylor components of the transfer homotopy are the letter projection of the perturbed
+tensor-trick homotopy `K - K X K`. -/
+@[simp]
+theorem taylor_transferHomotopy :
+    (𝒜.transferHomotopy c hh hincl hproj).taylor =
+      letter R A ∘ₗ (c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) -
+        c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) ∘ₗ
+          (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential ∘ₗ
+            c.reducedTensorWordsHomotopy (𝒜.grading.shift 1)) := by
+  simp only [AInfinityHom.Homotopy.taylor_def, barHomotopy_transferHomotopy]
 
 /-- The linear component of the transfer homotopy is the original contraction homotopy. -/
 @[simp]

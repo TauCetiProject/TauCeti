@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Perturbation
+public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Perturbation.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoalgHom
 import Mathlib.Tactic.LinearCombination
 
