@@ -27,8 +27,8 @@ a bounded operator with `‖π(f)‖ ≤ C * ‖f‖₁` when `‖π g‖ ≤ C`
 representation of the convolution algebra `L¹(G)`: translating the weight composes with `π`,
 convolution of weights becomes composition of operators, and, for a unitary `π` and an
 inversion-invariant `μ`, adjoints correspond to the involution `f^*(g) = conj (f (-g))`.
-For abelian `G` and an s-finite, left-invariant, inversion-invariant `μ`, the integrated
-operators commute; they are also normal when `π` is unitary.
+For abelian `G`, the integrated operators commute for any measure; they are also normal
+when `π` is unitary and `μ` is inversion-invariant.
 
 The integrated form is how a strongly continuous representation is handled by operator algebra:
 the operators `π g` themselves depend on `g` only strongly continuously, but the left translates
@@ -54,12 +54,12 @@ theorem (Folland, Chapter 4).
 * `ContRepresentation.integratedOperatorL1_convolution`: `π(f₁ ⋆ f₂) = π(f₁) ∘L π(f₂)` on an
   abelian group with a right-invariant measure.
 * `ContRepresentation.integratedOperatorL1_commute`: integrated operators commute on an abelian
-  group with an s-finite, left-invariant, inversion-invariant measure.
+  group with any measure.
 * `ContRepresentation.inner_integratedOperatorL1_apply`: the matrix coefficients
   `⟪w, π(f) v⟫ = ∫ g, f g * ⟪w, π g v⟫ ∂μ`.
 * `ContRepresentation.adjoint_integratedOperatorL1`: `π(f)† = π(f^*)` for a unitary `π`.
 * `ContRepresentation.isStarNormal_integratedOperatorL1`: integrated operators of a unitary
-  abelian-group representation are normal under the same measure hypotheses as commutation.
+  abelian-group representation are normal for an inversion-invariant measure.
 * `ContRepresentation.tendsto_integratedOperatorL1_apply`: weights of unit integral and bounded
   `L¹` norm concentrating at `0` form an approximate identity, `π(f i) v → v`.
 * `ContRepresentation.mem_closure_range_integratedOperatorL1_apply`: the integrated form is
@@ -246,6 +246,24 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
     (congrArg (fun T : E →L[𝕜] E => T v)
       ((Commute.all g (.ofAdd t)).map π.toMonoidHom).eq)
 
+/-- Integrated operators of an abelian-group representation commute for any measure. -/
+theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G →₁[μ] 𝕜) :
+    Commute (π.integratedOperatorL1 hcont hbdd μ f₁)
+      (π.integratedOperatorL1 hcont hbdd μ f₂) := by
+  apply ContinuousLinearMap.ext
+  intro v
+  simp only [mul_apply_eq_comp]
+  rw [π.integratedOperatorL1_apply f₂ v]
+  rw [← (π.integratedOperatorL1 hcont hbdd μ f₁).integral_comp_comm
+    (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)]
+  rw [π.integratedOperatorL1_apply f₂]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [map_smul]
+  exact congrArg (fun w ↦ f₂ t • w)
+    (congrArg (fun T : E →L[𝕜] E ↦ T v)
+      (π.commute_integratedOperatorL1 (.ofAdd t) f₁).symm.eq)
+
 end Commute
 
 section Convolution
@@ -299,45 +317,6 @@ theorem _root_.ContRepresentation.integratedOperatorL1_convolution {f₁ f₂ : 
 
 end Convolution
 
-section Normed
-
-variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
-  [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [CompleteSpace E] [SecondCountableTopologyEither G E]
-  {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
-  {π : ContRepresentation 𝕜 (Multiplicative G) E}
-  {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v}
-  {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
-
-/-- Integrated operators of an abelian-group representation commute. -/
-theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G →₁[μ] 𝕜) :
-    Commute (π.integratedOperatorL1 hcont hbdd μ f₁)
-      (π.integratedOperatorL1 hcont hbdd μ f₂) := by
-  have hconv := convolution_symm (f := (f₁ : G → 𝕜)) (f' := (f₂ : G → 𝕜))
-    (μ := μ) (ContinuousLinearMap.mul 𝕜 𝕜) ContinuousLinearMap.flip_mul
-  have h₁ := L1.integrable_coeFn f₁
-  have h₂ := L1.integrable_coeFn f₂
-  have hL1 := (Integrable.toL1_eq_toL1_iff _ _
-    (h₁.integrable_convolution (ContinuousLinearMap.mul 𝕜 𝕜) h₂)
-    (h₂.integrable_convolution (ContinuousLinearMap.mul 𝕜 𝕜) h₁)).2
-      (Filter.Eventually.of_forall (congrFun hconv))
-  rw [commute_iff_eq]
-  simp only [ContinuousLinearMap.mul_def]
-  calc
-    _ = π.integratedOperatorL1 hcont hbdd μ
-        ((h₁.integrable_convolution (ContinuousLinearMap.mul 𝕜 𝕜) h₂).toL1 _) := by
-      simpa only [Integrable.toL1_coeFn] using
-        (π.integratedOperatorL1_convolution (hcont := hcont) (hbdd := hbdd) h₁ h₂).symm
-    _ = π.integratedOperatorL1 hcont hbdd μ
-        ((h₂.integrable_convolution (ContinuousLinearMap.mul 𝕜 𝕜) h₁).toL1 _) :=
-      congrArg (π.integratedOperatorL1 hcont hbdd μ) hL1
-    _ = _ := by
-      simpa only [Integrable.toL1_coeFn] using
-        π.integratedOperatorL1_convolution (hcont := hcont) (hbdd := hbdd) h₂ h₁
-
-end Normed
-
 section InnerProduct
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
@@ -378,10 +357,10 @@ end InnerProduct
 section Unitary
 
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
-  [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+  [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableNeg G]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   [CompleteSpace E] [SecondCountableTopologyEither G E]
-  {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  {μ : Measure G} [μ.IsNegInvariant]
   {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v}
   {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}

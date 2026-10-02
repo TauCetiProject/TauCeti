@@ -20,7 +20,7 @@ require unitarity or commutativity of `G`. For a left-invariant measure, the tra
 `π(g) π(f)` belong to this algebra; under the regularity hypotheses of
 `ContRepresentation.continuous_translatedIntegratedOperatorL1`, they vary continuously in norm.
 
-If `G` is abelian, `π` is unitary, and `μ` is s-finite, left-invariant and inversion-invariant,
+If `G` is abelian, `π` is unitary, and `μ` is inversion-invariant,
 the integrated operators are commuting normal operators, so the algebra is commutative.
 The construction follows the discrete-group case in
 `TauCeti.Analysis.Fourier.Pontryagin.UnitaryRepresentation`, replacing the operators `ρ(g)`
@@ -192,11 +192,10 @@ theorem _root_.ContRepresentation.continuous_translatedIntegratedOperatorL1
     [IsTopologicalAddGroup G] [BorelSpace G] [μ.InnerRegularCompactLTTop]
     [IsLocallyFiniteMeasure μ] (f : G →₁[μ] ℂ) :
     Continuous (π.translatedIntegratedOperatorL1 hcont hbdd μ f) := by
-  apply (continuous_congr (π.translatedIntegratedOperatorL1_eq hcont hbdd μ f)).2
-  exact (π.integratedOperatorL1ToAlgebra hcont hbdd μ).continuous.comp
-    (continuous_const.compMeasurePreservingLp
-      (ContinuousMap.curry ⟨fun p : G × G ↦ -p.1 + p.2, by fun_prop⟩).continuous
-      (fun g ↦ measurePreserving_add_left μ (-g)) ENNReal.one_ne_top)
+  -- The star subalgebra carries the topology induced by its operator coercion.
+  apply continuous_induced_rng.mpr
+  simpa only [Function.comp_def, ContRepresentation.coe_translatedIntegratedOperatorL1] using
+    π.continuous_comp_integratedOperatorL1 f
 
 end Translation
 
@@ -247,8 +246,7 @@ variable {G H : Type*} [AddCommGroup G] [TopologicalSpace G] [MeasurableSpace G]
   {π : ContRepresentation ℂ (Multiplicative G) H}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v}
   {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C} {μ : Measure G}
-  [MeasurableAdd₂ G] [MeasurableNeg G] [SFinite μ]
-  [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  [MeasurableNeg G] [μ.IsNegInvariant]
 
 /-- For a unitary abelian-group representation, the closed algebra of integrated operators is
 commutative. -/
