@@ -163,20 +163,6 @@ section Unique
 
 variable {hF : IsProP p F} {e : F ≃ₜ* freeProP p (Fin r)}
 
-omit [IsTopologicalGroup F] [CompactSpace F] [TotallyDisconnectedSpace F] in
-/-- The exponent vectors of the peripheral tuple of the basis are the coordinate vectors and
-minus their sum. -/
-private theorem toAdd_exponentSum_peripheralTuple (e : F ≃ₜ* freeProP p (Fin r))
-    (i : Fin (r + 1)) :
-    (freeProP.exponentSum p (Fin r) (e (peripheralTuple (basis e) i))).toAdd =
-      Fin.lastCases (motive := fun _ ↦ Fin r → ℤ_[p]) (-1) (fun j ↦ Pi.single j 1) i := by
-  induction i using Fin.lastCases with
-  | last =>
-    rw [Fin.lastCases_last, peripheralTuple_last, map_cusp, map_cusp, cusp_def, toAdd_inv,
-      List.prod_ofFn, toAdd_prod]
-    simp [Finset.univ_sum_single (fun _ : Fin r ↦ (1 : ℤ_[p])), Pi.one_def]
-  | cast j => simp
-
 /-- **Unit multiples of distinct peripheral classes differ in rank at least two.** If a unit
 multiple of the exponent vector of `t_a` is a unit multiple of that of `t_b`, then `a = b` and
 the units agree. -/
@@ -226,13 +212,10 @@ theorem IsPeripheralPermAut.unique (hr : 2 ≤ r) {σ σ' : Equiv.Perm (Fin (r +
     have hc := (h i).trans (h' i).symm
     let f : F →ₜ* Multiplicative (Fin r → ℤ_[p]) :=
       (freeProP.exponentSum p (Fin r)).comp (e : F →ₜ* freeProP p (Fin r))
-    -- in `ℤ_p ^ r` the `p`-adic power by `l` is the scalar action of `l`
-    have hpow (y : F) (l : ℤ_[p]) : f (hF.padicPow y l) = ofAdd (l • (f y).toAdd) := by
-      have hy := hF.map_padicPow (isProP_multiplicative_pi_padicInt p (Fin r)) (f : F →* _)
-        f.continuous y l
-      rwa [MonoidHom.coe_ofClass, ← ofAdd_toAdd (f y), IsProP.padicPow_ofAdd_pi] at hy
     have hf := isConj_iff_eq.mp ((f : F →* Multiplicative (Fin r → ℤ_[p])).map_isConj hc)
-    rw [MonoidHom.coe_ofClass, hpow, hpow, ofAdd.injective.eq_iff] at hf
+    -- in `ℤ_p ^ r` the `p`-adic power by `l` is the scalar action of `l`
+    rw [MonoidHom.coe_ofClass, hF.map_padicPow_pi, hF.map_padicPow_pi,
+      ofAdd.injective.eq_iff] at hf
     simp only [f, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_coe,
       toAdd_exponentSum_peripheralTuple] at hf
     exact eq_and_eq_of_smul_eq_smul hr hf
@@ -340,14 +323,11 @@ theorem exists_swap_two (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin 2)) :
     ∃ φ : ContinuousAut F, φ (basis e 0) = basis e 1 ∧ φ (basis e 1) = basis e 0 ∧
       φ (cusp (basis e)) = (basis e 0)⁻¹ * cusp (basis e) * basis e 0 ∧
       IsPeripheralPermAut hF (basis e) (Equiv.swap 0 1) 1 φ := by
-  obtain ⟨φ, hφ⟩ := freeProP.exists_continuousAut_of_topologicallyGenerates e
-    (y := basis e ∘ Equiv.swap 0 1)
-    (by rw [(Equiv.swap (0 : Fin 2) 1).surjective.range_comp]
-        exact topologicalClosure_closure_range_basis e)
+  let φ : ContinuousAut F := e.trans ((freeProP.congr (Equiv.swap 0 1)).trans e.symm)
   have h0 : φ (basis e 0) = basis e 1 := by
-    rw [basis_apply, hφ, Function.comp_apply, Equiv.swap_apply_left]
+    simp [φ, basis_apply, freeProP.congr_of]
   have h1 : φ (basis e 1) = basis e 0 := by
-    rw [basis_apply, hφ, Function.comp_apply, Equiv.swap_apply_right]
+    simp [φ, basis_apply, freeProP.congr_of]
   have hz : φ (cusp (basis e)) = (basis e 0)⁻¹ * cusp (basis e) * basis e 0 := by
     rw [map_cusp, cusp_def, cusp_def]
     simp only [List.ofFn_succ, List.ofFn_zero, Function.comp_apply, h0, h1, List.prod_cons,
