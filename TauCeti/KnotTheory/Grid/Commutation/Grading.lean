@@ -22,25 +22,18 @@ state `x` to the sum, over the empty pentagons `P` from `x` carrying no `X`-mark
 the (`O`-Maslov, Alexander) bigrading of `Grading/UnblockedChain.lean`; this is the grading half of
 the commutation-invariance argument, independent of the chain-map identity for `Φ`.
 
-The grid states of `G` and `G'` are the same permutations, so the comparison has two parts.
+The grid states of `G` and `G'` are the same permutations, and the comparison rests on two
+grading formulas.
 
 * **Changing the diagram.** Exchanging the two markings of the adjacent columns `a` and `b`
   changes the `O`-Maslov grading of a fixed state `x` by `±1`
   (`GridDiagram.maslovOℤ_swapColumns_finRotate`). It rises by one exactly when the point of `x`
   on the grid line between the two columns lies on one of the lines `G.O a + 1, …, G.O b`, which
-  the two `O`-markings pass when they trade columns. The proof checks the formula at the
-  `O`-marking state, where it reads `M_O' = M_O + 1`, and transports it along column swaps: the
-  general rectangle formula `M_O(x) - M_O(z) = 2 #(x ∩ r) - 1 - 2 #(𝕆 ∩ r)` of
-  `Grading/MarkingCount.lean`, read in both diagrams, shows that both sides change by the same
-  amount across every rectangle.
-* **Following a pentagon.** A pentagon from `x` to `y` has an underlying empty rectangle, which
-  is a rectangle of `G'` from `x` to `y`, so `M_O'(x) - M_O'(y) = 1 - 2 #(𝕆' ∩ r)`. The pentagon
-  covers the same squares as the rectangle away from the columns `a` and `b`, and the position of
-  the `O`-markings of those two columns in the bigons on either side of the turn row
-  (`GridDiagram.ColumnCommutationData`) accounts for the rest. The result is
-  `M_O'(y) = M_O(x) + 2 #(𝕆 ∩ P)` for every empty pentagon
-  (`GridDiagram.maslovOℤ_swapColumns_of_isEmpty`), and likewise for the `X`-markings
-  (`GridDiagram.maslovXℤ_swapColumns_of_isEmpty`).
+  the two `O`-markings pass when they trade columns.
+* **Following a pentagon.** For every empty pentagon `P` from `x` to `y`,
+  `M_O'(y) = M_O(x) + 2 #(𝕆 ∩ P)` (`GridDiagram.maslovOℤ_swapColumns_of_isEmpty`), and likewise
+  `M_X'(y) = M_X(x) + 2 #(𝕏 ∩ P)` (`GridDiagram.maslovXℤ_swapColumns_of_isEmpty`), counting the
+  markings of `G` that `P` carries and writing `M_O'`, `M_X'` for the gradings of `G'`.
 
 A counted pentagon carries no `X`-marking, so it preserves `M_X` and raises the Alexander grading
 by the number of `O`-markings it carries (`GridDiagram.alexanderTwoℤ_swapColumns_of_mem_pentagons`
@@ -288,8 +281,11 @@ theorem maslovOℤ_swapColumns_finRotate (G : GridDiagram n) {a : Fin n} (ha : a
       (if p then 1 else -1 : ℤ) = 2 * (if p then 1 else 0) - 1 := by
     intro p _
     split_ifs <;> norm_num
-  -- The claim holds at the `O`-marking state, and every state is reached from there by column
-  -- swaps, across each of which both sides change by the same amount.
+  -- The claim holds at the `O`-marking state, where it reads `M_O' = M_O + 1` because `M_O` rises
+  -- by one across a thin rectangle of the commuted diagram. Every state is reached from there by
+  -- column swaps, and the rectangle formula `M_O(x) - M_O(z) = 2 #(x ∩ r) - 1 - 2 #(𝕆 ∩ r)` of
+  -- `Grading/MarkingCount.lean`, read in both diagrams, shows that both sides change by the same
+  -- amount across each swap.
   have key : ∀ σ : Equiv.Perm (Fin n),
       (G.swapColumns a (finRotate n a)).maslovOℤ ⟨G.O.toPerm * σ⟩ =
         G.maslovOℤ ⟨G.O.toPerm * σ⟩ +
@@ -331,7 +327,8 @@ private theorem maslovOℤ_swapColumns_of_isEmpty_of_mem (G : GridDiagram n) {a 
     exact P.left_ne (Fin.ext (by have := P.left.isLt; have := (finRotate n a).isLt; omega))
   have hab : a ≠ b := (Grid.finRotate_ne_self hn a).symm
   have hOab : G.O a ≠ G.O b := G.O.toPerm.injective.ne hab
-  -- Across the underlying rectangle, read in the commuted diagram.
+  -- The underlying empty rectangle of `P` is a rectangle of the commuted diagram from `x` to `y`,
+  -- so `M_O'(x) - M_O'(y) = 1 - 2 #(𝕆' ∩ r)`.
   have hR := (G.swapColumns a b).maslovO_sub_maslovO_eq_one_sub_two_mul_card
     P.toGridRectangleBetween hP
   rw [maslovO_eq_intCast, maslovO_eq_intCast] at hR
@@ -358,6 +355,9 @@ private theorem maslovOℤ_swapColumns_of_isEmpty_of_mem (G : GridDiagram n) {a 
       have hcb' : c ≠ finRotate n a := hcb
       simp [P.mem_coveredSquares_iff_of_ne (p := (c, G.O c)) hca hcb',
         GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hca hcb]
+  -- The pentagon covers the same squares as the rectangle away from the columns `a` and `b`; the
+  -- position of the `O`-markings of those two columns in the bigons on either side of the turn
+  -- row accounts for the rest, together with the change of diagram at the state `x`.
   have hD := G.maslovOℤ_swapColumns_finRotate hab x
   have hid := pentagon_ite_identity (B := x P.left) (T := x b) P.turn_mem_cIco hOa hOb hOab
   linarith
