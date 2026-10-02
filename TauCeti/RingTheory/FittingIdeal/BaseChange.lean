@@ -171,6 +171,7 @@ variable {R F M : Type*} [CommRing R] [AddCommGroup F] [Module R F] [AddCommGrou
 
 /-- The extension of `Fitt_k(M)` to a field `K` vanishes exactly when the fibre `K ⊗[R] M` has
 dimension greater than `k`. -/
+@[simp]
 theorem fittingIdeal_map_eq_bot_iff_lt_finrank (K : Type*) [Field K] [Algebra R K] (k : ℕ) :
     (fittingIdeal R M k).map (algebraMap R K) = ⊥ ↔ k < finrank K (K ⊗[R] M) := by
   rw [← not_le, ← fittingIdeal_eq_top_iff_finrank_le, fittingIdeal_baseChange]
