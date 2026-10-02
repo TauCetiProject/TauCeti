@@ -40,6 +40,7 @@ monoid, and that automorphism is what a shift-compatible invariant is compared a
 * `TauCeti.laurentEval_unique`: an algebra map out of `R[T;T⁻¹]` is determined by its value at `T`.
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
   `LaurentPolynomial.eval₂`.
+* `TauCeti.eval₂_C_injective_of_val_eq_T`: the substitution `T ↦ Tᵏ` is injective for `k ≠ 0`.
 * `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
   multiplication.
 * `TauCeti.map_smul_eq_laurentEval_smul`: a linear map turning `T` into a unit turns every
@@ -130,6 +131,20 @@ theorem laurentEval_eq_eval₂ {S : Type*} [CommSemiring S] [Algebra R S] (u : S
   induction p using LaurentPolynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | C_mul_T n a => simp
+
+/-- **Substituting a nonzero power of `T` is injective.**  Evaluating a Laurent polynomial at a
+unit of `R[T;T⁻¹]` whose value is `T k` substitutes `Tᵏ` for `T`; for `k ≠ 0` this sends distinct
+monomials to distinct monomials, so it loses no information. -/
+theorem eval₂_C_injective_of_val_eq_T {u : R[T;T⁻¹]ˣ} {k : ℤ} (hu : (u : R[T;T⁻¹]) = T k)
+    (hk : k ≠ 0) : Function.Injective (eval₂ C u) := by
+  have h : ⇑(eval₂ C u) = ⇑(AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulLeft k)) := by
+    rw [laurentEval_unique u (AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulLeft k))
+      (by rw [AddMonoidAlgebra.mapDomainAlgHom_apply, hu, T, T, AddMonoidAlgebra.mapDomain_single,
+        AddMonoidHom.coe_mulLeft, mul_one])]
+    funext p
+    rw [laurentEval_eq_eval₂, ← RingHom.ext C_eq_algebraMap]
+  rw [h]
+  exact AddMonoidAlgebra.mapDomain_injective (mul_right_injective₀ hk)
 
 end Eval
 
