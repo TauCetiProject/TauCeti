@@ -296,9 +296,7 @@ theorem localMultiplicity_eq_one_iff (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt
     exact c.symm.injOn hz₁.1.1 hz₂.1.1 (hinj hz₁.1.2 hz₂.1.2 (c'.injOn hz₁.2 hz₂.2 h))
 
 /-- **Ramification points are isolated.** A map holomorphic and not constant near `x` has local
-multiplicity `1` at every point of a punctured neighbourhood of `x`: the derivative of its chart
-representative is analytic and not identically zero, so its zeros near the coordinate of `x` are
-isolated. -/
+multiplicity `1` at every point of a punctured neighbourhood of `x`. -/
 theorem eventually_localMultiplicity_eq_one
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) (hne : ¬ EventuallyConst f (𝓝 x)) :
     ∀ᶠ y in 𝓝[≠] x, localMultiplicity f y = 1 := by
@@ -308,8 +306,9 @@ theorem eventually_localMultiplicity_eq_one
   have hc'fx : f x ∈ c'.source := mem_chart_source ℂ (f x)
   have hFa : AnalyticAt ℂ (fun z ↦ c' (f (c.symm z))) (c x) :=
     analyticAt_chartAt_comp_comp_chartAt_symm hf
-  -- The recentred representative has finite order at `c x`, so its derivative does too, and the
-  -- derivative therefore vanishes nowhere on a punctured neighbourhood of `c x`.
+  -- The recentred representative has finite order at `c x`, so its analytic derivative does too:
+  -- it is not identically zero, so its zeros are isolated and it vanishes nowhere on a punctured
+  -- neighbourhood of `c x`.
   have htop : analyticOrderAt (fun z ↦ c' (f (c.symm z)) - c' (f (c.symm (c x)))) (c x) ≠ ⊤ := by
     rw [c.left_inv hcx, ← natCast_localMultiplicity hf hne]
     exact ENat.natCast_ne_top _
