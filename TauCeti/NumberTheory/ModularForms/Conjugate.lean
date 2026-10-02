@@ -19,10 +19,10 @@ reflection `J = !![-1, 0; 0, 1]` (`UpperHalfPlane.J`), and Mathlib's `ModularFor
 `f_ρ` a modular form for `J⁻¹ 𝒢 J`. Conjugation by `J` changes the signs of the off-diagonal
 entries, so it preserves `Γ₀(N)` and `Γ₁(N)`.
 
-On `Γ₁(N)` the conjugate form carries the nebentypus `χ` to `χ⁻¹ = χ̄`, since the diamond
-eigenvalues are roots of unity, and it intertwines the Hecke operators `Tₙ`: their coefficient
-formula has real coefficients apart from the values of `χ`. So the conjugate of a Hecke
-eigenform of nebentypus `χ` is a Hecke eigenform of nebentypus `χ̄` with the complex-conjugate
+On `Γ₁(N)` the conjugate form carries the nebentypus `χ` to its complex conjugate `χ⁻¹`, since
+the diamond eigenvalues are roots of unity, and it intertwines the Hecke operators `Tₙ`: their
+coefficient formula has real coefficients apart from the values of `χ`. So the conjugate of a Hecke
+eigenform of nebentypus `χ` is a Hecke eigenform of nebentypus `χ⁻¹` with the complex-conjugate
 eigenvalues. This is the form that the Fricke involution relates a newform to: for a newform `f`
 of level `N`, `f ∣ W_N` is a multiple of `f_ρ` (Miyake, Theorem 4.6.15), the multiple being the
 Atkin–Li pseudo-eigenvalue.
@@ -265,7 +265,7 @@ section Nebentypus
 
 variable {N : ℕ} {χ : (ZMod N)ˣ →* ℂˣ}
 
-/-- **The conjugate of a form of nebentypus `χ` has nebentypus `χ⁻¹`**: `f_ρ ∈ M_k(N, χ̄)`. -/
+/-- **The conjugate of a form of nebentypus `χ` has nebentypus `χ⁻¹`**: `f_ρ ∈ M_k(N, χ⁻¹)`. -/
 theorem conj_mem_modFormCharSpace
     {f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
     ModularForm.conj (Gamma1_map_le_conjAct_inv_J N) f ∈ modFormCharSpace k χ⁻¹ := by
@@ -354,7 +354,7 @@ section Nebentypus
 variable {N : ℕ} {χ : (ZMod N)ˣ →* ℂˣ}
 
 /-- **The conjugate of a cusp form of nebentypus `χ` has nebentypus `χ⁻¹`**:
-`f_ρ ∈ S_k(N, χ̄)`. -/
+`f_ρ ∈ S_k(N, χ⁻¹)`. -/
 theorem conj_mem_cuspFormCharSpace
     {f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f ∈ cuspFormCharSpace k χ⁻¹ := by
