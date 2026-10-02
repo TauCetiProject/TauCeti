@@ -34,6 +34,8 @@ carrier or notion of covering.
   obtained by deleting the branch values and their preimages.
 * `FiniteHolomorphicMap.card_fiber_eq_degree_iff`: a fibre has as many points as the degree
   exactly when its value is not a branch value.
+* `FiniteHolomorphicMap.ncard_fiber_restrictPreimage_branchValues_compl`: every fibre of
+  the restricted covering has cardinality equal to the analytic degree.
 
 ## References
 
@@ -71,6 +73,8 @@ theorem mem_branchValues_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
 
 /-- Away from branch values, every point of the fibre has local multiplicity one. -/
+-- Simplify nonmembership before `mem_branchValues_iff` rewrites the inner membership.
+@[simp↓]
 theorem notMem_branchValues_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
     y ∉ f.branchValues ↔ ∀ x, f x = y → localMultiplicity f x = 1 := by
   rw [mem_branchValues_iff]
@@ -156,6 +160,16 @@ theorem card_fiber_eq_degree_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
       intro x hx
       rw [h x ((f.finite_fiber y).mem_toFinset.1 hx), Nat.sub_self]
     omega
+
+/-- Every fibre of the covering obtained by deleting branch values has cardinality equal to
+the analytic degree of the original map. -/
+theorem ncard_fiber_restrictPreimage_branchValues_compl (f : FiniteHolomorphicMap X Y)
+    (y : ↥(f.branchValuesᶜ)) :
+    ((f.branchValuesᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f := by
+  rw [← Set.ncard_image_of_injective _ Subtype.val_injective,
+    Set.image_val_preimage_restrictPreimage, Set.image_singleton,
+    Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
+  exact (f.card_fiber_eq_degree_iff y).2 y.property
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
 
