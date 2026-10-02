@@ -46,7 +46,7 @@ Both cases use that interior and boundary points can be detected in the charts o
 which only lie in the maximal atlas: this is
 `TauCeti.ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas`. The
 multiple of the boundary coordinate is supplied by
-`TauCeti.ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg`.
+`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg`.
 
 ## Main results
 
