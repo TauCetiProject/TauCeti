@@ -121,8 +121,9 @@ private theorem step_zero : hA.step hσ 0 = ⊤ :=
   eq_top_iff.2 fun x _ ↦ (hA.mem_step hσ).2 (hA.toUnits_mem hσ x)
 
 private theorem step_le_comap (n : ℕ) (σ : L ≃ₐ[K] L) :
-    hA.step hσ n ≤ (hA.step hσ n).comap ((hA.rep hσ).ρ σ) := fun _ hx ↦
-  hA.unitsMap_mem_filtration σ (fun _ ha ↦ hσ σ ha) hx
+    hA.step hσ n ≤ (hA.step hσ n).comap ((hA.rep hσ).ρ σ) := fun _ hx ↦ by
+  rw [Submodule.mem_comap, mem_step, toUnits_ρ, AlgEquiv.smul_units_def]
+  exact hA.unitsMap_mem_filtration σ (fun _ ha ↦ hσ σ ha) ((hA.mem_step hσ).1 hx)
 
 /-- The filtration by the steps is separated. -/
 private theorem eq_zero_of_forall_mem_step (x : hA.rep hσ) (hx : ∀ n, x ∈ hA.step hσ n) :
@@ -152,13 +153,21 @@ private abbrev latticeRep : Representation 𝒪[K] (L ≃ₐ[K] L) A :=
 `A ⧸ ϖ • A`, additively. -/
 private def gradedMap (n : ℕ) : hA.step hσ n →+ QuotSMulTop ϖ A :=
   (hA.filtrationToQuotient n).toAdditive.comp
-    (AddMonoidHom.mk' (fun x ↦ Additive.ofMul (⟨hA.toUnits hσ x, x.2⟩ : hA.filtration n))
+    (AddMonoidHom.mk'
+      (fun x ↦ Additive.ofMul (⟨hA.toUnits hσ x, (hA.mem_step hσ).1 x.2⟩ : hA.filtration n))
       fun _ _ ↦ rfl)
+
+/-- `gradedMap` is `filtrationToQuotient` applied to the underlying unit of `1 + ϖ ^ n • A`. -/
+private theorem gradedMap_eq_toAdd_filtrationToQuotient {n : ℕ} (x : hA.step hσ n) :
+    hA.gradedMap hσ n x = Multiplicative.toAdd
+      (hA.filtrationToQuotient n ⟨hA.toUnits hσ x, (hA.mem_step hσ).1 x.2⟩) :=
+  rfl
 
 private theorem gradedMap_apply {n : ℕ} (x : hA.step hσ n) {a : 𝒪[L]} (ha : a ∈ A)
     (hx : (hA.toUnits hσ x : L) = ((1 + ϖ ^ n • a : 𝒪[L]) : L)) :
     hA.gradedMap hσ n x = Submodule.Quotient.mk ⟨a, ha⟩ :=
-  congrArg Multiplicative.toAdd (hA.filtrationToQuotient_apply _ ha hx)
+  (hA.gradedMap_eq_toAdd_filtrationToQuotient hσ x).trans
+    (congrArg Multiplicative.toAdd (hA.filtrationToQuotient_apply _ ha hx))
 
 private theorem gradedMap_ρ {n : ℕ} (σ : L ≃ₐ[K] L) (x : hA.step hσ n) :
     hA.gradedMap hσ n ⟨(hA.rep hσ).ρ σ x, hA.step_le_comap hσ n σ x.2⟩ =
@@ -182,6 +191,10 @@ private def gradedHom (n : ℕ) :
       map_smul' := map_zsmul _
       isIntertwining' σ := LinearMap.ext fun x ↦ hA.gradedMap_ρ hσ σ x }
 
+private theorem gradedHom_hom_apply (n : ℕ) (x : hA.step hσ n) :
+    (hA.gradedHom hσ n).hom x = hA.gradedMap hσ n x := by
+  simp [gradedHom]
+
 private theorem gradedHom_surjective (n : ℕ) : Function.Surjective (hA.gradedHom hσ n).hom := by
   intro q
   obtain ⟨y, hy⟩ := hA.filtrationToQuotient_surjective n (Multiplicative.ofAdd q)
@@ -189,8 +202,9 @@ private theorem gradedHom_surjective (n : ℕ) : Function.Surjective (hA.gradedH
     congrArg Multiplicative.toAdd hy⟩
 
 private theorem mem_step_succ_of_gradedHom_eq_zero (n : ℕ) (x : hA.step hσ n)
-    (hx : (hA.gradedHom hσ n).hom x = 0) : (x : hA.rep hσ) ∈ hA.step hσ (n + 1) :=
-  (hA.ker_filtrationToQuotient n).le (x := ⟨_, x.2⟩) hx
+    (hx : (hA.gradedHom hσ n).hom x = 0) : (x : hA.rep hσ) ∈ hA.step hσ (n + 1) := by
+  rw [gradedHom_hom_apply, gradedMap_eq_toAdd_filtrationToQuotient, toAdd_eq_zero] at hx
+  exact (hA.mem_step hσ).2 (Subgroup.mem_subgroupOf.1 ((hA.ker_filtrationToQuotient n).le hx))
 
 /-- **The Herbrand quotient of `1 + A` is `1`** when `A` is free of rank one over `𝒪[K][G]`: the
 filtration `1 + ϖ ^ n • A` is separated and complete, and its graded pieces have vanishing Tate
