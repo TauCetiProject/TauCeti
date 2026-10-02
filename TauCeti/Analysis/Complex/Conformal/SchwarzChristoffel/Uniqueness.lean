@@ -20,8 +20,10 @@ derivative `∑ i, e i / (z - a i)`, whose coefficients are determined by the fu
 
 Combined with `TauCeti.eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive`, this gives the
 uniqueness theorem for the Schwarz--Christoffel representation of a bounded polygonal Jordan
-domain: two representations with the same vertices that share three prevertices have the same
-prevertices, the same exponents and the same affine constants.
+domain: two representations `A * F + B` and `A' * F' + B'` with the same vertices that share
+three prevertices have the same prevertices, the same exponents and `A' = A`, while
+`B' = A * F z₀' + B` accounts for the base points `z₀` and `z₀'`; so `B' = B` when the base points
+coincide.
 
 ## Main results
 
@@ -33,7 +35,8 @@ prevertices, the same exponents and the same affine constants.
   base point.
 * `TauCeti.param_eq_of_bijOn_schwarzChristoffelPrimitive` -- two Schwarz--Christoffel
   representations of a bounded Jordan domain with the same vertices that share three distinct
-  prevertices have the same prevertices, exponents and constants.
+  prevertices satisfy `a' = a`, `e' = e`, `A' = A` and `B' = A * F z₀' + B`, so `B' = B` for a
+  common base point.
 
 ## References
 
