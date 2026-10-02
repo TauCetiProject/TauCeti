@@ -14,8 +14,8 @@ public import TauCeti.RingTheory.Ideal.Operations
 /-!
 # Cofinite refinements stable under lifted derivations
 
-Let `L` be a module-finite Lie algebra, `I` a two-sided ideal of `U(L)` with module-finite,
-Noetherian quotient over the coefficient ring, and `N` a Lie ideal whose canonical images are
+Let `L` be a module-finite Lie algebra, `I` a two-sided ideal of `U(L)` with Noetherian
+quotient over the coefficient ring, and `N` a Lie ideal whose canonical images are
 nilpotent modulo `I`. A power of `B = I ⊔ N.envelopingIdeal` lies
 inside `I`, has module-finite quotient, and is stable under every lifted derivation whose values
 on `L` lie in `N`. Moreover, every element nilpotent modulo `I` remains nilpotent modulo the
@@ -25,7 +25,7 @@ For a solvable Lie algebra in characteristic zero, taking `N` to be its nilradic
 construction of a derivation-stable cofinite representation kernel to the structural statement
 that derivations take values in the nilradical. The refinement below applies independently of
 that structural statement, to any Lie ideal with the stated nilpotent action. It also works over
-commutative coefficient rings when the original quotient is module-finite and Noetherian, and
+commutative coefficient rings when the original quotient is Noetherian, and
 does not require a free Lie algebra.
 
 ## References
@@ -45,13 +45,13 @@ variable {R : Type u} {L : Type v} [CommRing R]
 
 local notation "U" => UniversalEnvelopingAlgebra R L
 
-/-- A two-sided ideal whose quotient is module-finite and Noetherian over the coefficient ring
+/-- A two-sided ideal whose quotient is Noetherian over the coefficient ring
 admits a cofinite refinement stable under every lifted derivation taking values in a Lie ideal `N`
 that acts nilpotently modulo the original ideal. The refinement
 is a power of `I ⊔ N.envelopingIdeal`, and it has exactly the same nilpotent elements in its
 quotient as the original ideal. No stability of `I` is assumed. -/
 theorem _root_.LieIdeal.exists_cofinite_refinement_stableDerivations (N : LieIdeal R L)
-    (I : Ideal U) [I.IsTwoSided] [Module.Finite R (U ⧸ I)] [IsNoetherian R (U ⧸ I)]
+    (I : Ideal U) [I.IsTwoSided] [IsNoetherian R (U ⧸ I)]
     (hnil : ∀ x : L, x ∈ N → IsNilpotent (Ideal.Quotient.mk I
       (UniversalEnvelopingAlgebra.ι R x))) :
     ∃ n : ℕ,
