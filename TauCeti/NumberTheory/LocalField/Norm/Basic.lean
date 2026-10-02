@@ -55,6 +55,8 @@ Herbrand shift instead.
   `TauCeti.toAdd_normalizedValuation_norm`.
 * `TauCeti.normalizedValuationWithZero_norm`: the same formula for arbitrary field elements,
   including zero.
+* `TauCeti.norm_mem_maximalIdeal_pow_of_mem`: the norm carries `𝓂[L] ^ m` into
+  `𝓂[K] ^ (f(L/K) m)`.
 * `TauCeti.irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
   integer is irreducible exactly when the residue degree is one.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
@@ -278,6 +280,13 @@ theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
     _ = (Ideal.span {↑π} : Ideal 𝒪[K]) ^ inertiaDegree K L :=
         (Ideal.span_singleton_pow (π : 𝒪[K]) (inertiaDegree K L)).symm
     _ = 𝓂[K] ^ inertiaDegree K L := by rw [hπ.maximalIdeal_eq]
+
+variable (K) in
+/-- The norm of an element of `𝓂[L] ^ m` lies in `𝓂[K] ^ (f(L/K) m)`. -/
+theorem norm_mem_maximalIdeal_pow_of_mem {m : ℕ} {x : 𝒪[L]} (hx : x ∈ 𝓂[L] ^ m) :
+    Algebra.norm 𝒪[K] x ∈ 𝓂[K] ^ (inertiaDegree K L * m) := by
+  rw [pow_mul, ← relNorm_maximalIdeal_eq_maximalIdeal_pow, ← map_pow]
+  exact Ideal.norm_mem_relNorm 𝒪[K] _ hx
 
 end IdealNorm
 
