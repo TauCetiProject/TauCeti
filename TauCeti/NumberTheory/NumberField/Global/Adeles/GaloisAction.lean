@@ -314,6 +314,7 @@ scoped[AdeleGaloisAction] attribute [instance]
 open scoped AdeleGaloisAction
 
 /-- The scoped Galois action is evaluation of `adeleGaloisAction`. -/
+@[simp]
 theorem adele_smul_def (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 L) L) :
     σ • a = adeleGaloisAction K L σ a :=
   (rfl)
