@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Rat
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Fractions of nonnegative rationals
@@ -40,8 +41,12 @@ namespace NNRat
 theorem eq_div_den_mul_den (q q' : ℚ≥0) :
     q = ((q.num * q'.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) ∧
       q' = ((q'.num * q.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) := by
-  rw [Nat.cast_mul, Nat.cast_mul, Nat.cast_mul, mul_div_mul_right _ _ (by simp),
-    mul_comm (q.den : ℚ≥0), mul_div_mul_right _ _ (by simp), NNRat.num_div_den, NNRat.num_div_den]
-  exact ⟨rfl, rfl⟩
+  constructor
+  · conv_lhs => rw [← NNRat.num_div_den q]
+    push_cast
+    field_simp
+  · conv_lhs => rw [← NNRat.num_div_den q']
+    push_cast
+    field_simp
 
 end NNRat
