@@ -119,7 +119,7 @@ theorem nonempty_hasRightDual_pullback_inclusion (U : X.Opens) (M : X.Modules)
 namespace AlgebraicGeometry.QuasicoherentSheaf
 
 /-- A dualizable quasicoherent sheaf remains dualizable after pullback to an open subscheme. -/
-theorem nonempty_hasLeftDual_pullback_inclusion (U : X.Opens) (E : QuasicoherentSheaf X)
+theorem nonempty_hasLeftDual_pullback_inclusion (E : QuasicoherentSheaf X) (U : X.Opens)
     (hE : Nonempty (HasLeftDual E)) :
     Nonempty (HasLeftDual ((pullback U.ι).obj E)) := by
   obtain ⟨hE⟩ := hE
@@ -140,7 +140,7 @@ theorem nonempty_hasLeftDual_pullback_inclusion (U : X.Opens) (E : Quasicoherent
 
 /-- A quasicoherent sheaf with a right dual still has a right dual after pullback to an open
 subscheme. -/
-theorem nonempty_hasRightDual_pullback_inclusion (U : X.Opens) (E : QuasicoherentSheaf X)
+theorem nonempty_hasRightDual_pullback_inclusion (E : QuasicoherentSheaf X) (U : X.Opens)
     (hE : Nonempty (HasRightDual E)) :
     Nonempty (HasRightDual ((pullback U.ι).obj E)) := by
   obtain ⟨hE⟩ := hE
