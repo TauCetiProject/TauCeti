@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.RingTheory.Derivation.Localization
@@ -44,8 +43,8 @@ open `D(f)` every section is a fraction `a / fⁿ`, whose derivative is forced b
   `relativeDifferentialsSpecIso_inv_app_toOpen`;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_relativeDifferentials_Spec`: `Ω_{Spec A/R}` is
   quasi-coherent;
-* `AlgebraicGeometry.Scheme.Modules.Derivation.Spec_ext`: an `R`-derivation of `𝒪_{Spec A}` is
-  determined by its values on the global sections coming from `A`.
+* `TauCeti.AlgebraicGeometry.Scheme.Modules.Derivation.Spec_ext`: an `R`-derivation of
+  `𝒪_{Spec A}` is determined by its values on the global sections coming from `A`.
 
 ## References
 
@@ -62,6 +61,7 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
+open Scheme.Modules.Derivation
 
 universe u
 
@@ -69,34 +69,6 @@ noncomputable section
 
 variable (R : Type u) [CommRing R] (A : CommRingCat.{u}) [Algebra R A]
 
-section Base
-
-/-- On `Spec A` over `Spec R`, the base ring maps to global functions through `A`. -/
-lemma _root_.AlgebraicGeometry.Scheme.Modules.baseRingToGlobalSections_Spec_apply (r : R) :
-    Scheme.Modules.baseRingToGlobalSections R (Spec A) r =
-      algebraMap A Γ(Spec A, ⊤) (algebraMap R A r) := by
-  rw [Scheme.Modules.baseRingToGlobalSections_apply, specOverSpec_over]
-  exact (ConcreteCategory.congr_hom
-    (Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap R A))) r).symm
-
-/-- On `Spec A` over `Spec R`, the base ring maps to the functions on an open `U` through `A`. -/
-lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_Spec_app_apply
-    (U : (Spec A).Opensᵒᵖ) (r : R) :
-    (Scheme.baseRingToStructurePresheaf R (Spec A)).app U r =
-      algebraMap A Γ(Spec A, U.unop) (algebraMap R A r) := by
-  rw [Scheme.baseRingToStructurePresheaf_app, CommRingCat.comp_apply, CommRingCat.ofHom_apply,
-    Scheme.Modules.baseRingToGlobalSections_Spec_apply]
-  -- Restricting the image of `A` in the global sections gives its image in the sections over `U`.
-  rfl
-
-/-- The base ring `R` acts on the global sections of a sheaf of modules on `Spec A` through `A`. -/
-instance (M : (Spec A).Modules) : IsScalarTower R A Γ(M, ⊤) :=
-  .of_algebraMap_smul fun r x ↦ by
-    rw [Scheme.Modules.base_smul_globalSections, Scheme.Modules.baseRingToGlobalSections_Spec_apply]
-    -- `A` acts on `Γ(M, ⊤)` through its image in the global functions.
-    rfl
-
-end Base
 
 /-- The basic open `D(f)`, as an open of the scheme `Spec A`. -/
 private abbrev basicOpen (f : A) : (Spec A).Opens := PrimeSpectrum.basicOpen f
@@ -106,21 +78,10 @@ private instance (f : A) : IsLocalization.Away f Γ(Spec A, basicOpen A f) := by
   unfold basicOpen
   infer_instance
 
-variable {A} in
-/-- Two sections over `U` of a sheaf of modules on `Spec A` agree if their restrictions to every
-basic open `D(f) ⊆ U` agree. -/
-private lemma section_ext_basicOpen {M : (Spec A).Modules} {U : (Spec A).Opens} {s t : Γ(M, U)}
-    (h : ∀ (f : A) (hf : basicOpen A f ≤ U),
-      M.presheaf.map (homOfLE hf).op s = M.presheaf.map (homOfLE hf).op t) : s = t := by
-  refine TopCat.Presheaf.IsSheaf.section_ext M.isSheaf fun x hx ↦ ?_
-  obtain ⟨_, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU : PrimeSpectrum.basicOpen f ≤ U⟩ :=
-    PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.2
-  exact ⟨_, hfU, hxf, h f hfU⟩
-
 variable {R A} in
 /-- An `R`-derivation of `𝒪_{Spec A}` is determined by its values on the global sections coming
 from `A`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.Derivation.Spec_ext {M : (Spec A).Modules}
+theorem Scheme.Modules.Derivation.Spec_ext {M : (Spec A).Modules}
     {d₁ d₂ : M.Derivation R}
     (h : ∀ a : A, d₁.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) a) =
       d₂.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) a)) :
@@ -128,10 +89,11 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Derivation.Spec_ext {M : (Spec A
   -- It suffices to compare the derivations on each basic open `D(f)`, where every section is a
   -- fraction `a / fⁿ` whose derivative the Leibniz rule determines from those of `a` and `f`.
   ext U s
-  refine section_ext_basicOpen (U := U.unop) fun f hf ↦ ?_
+  refine Scheme.Modules.section_ext_basicOpen (U := U.unop) fun f hf ↦ ?_
   -- `d_map` is stated with the restriction maps of the underlying presheaves of the derivations.
   erw [← d₁.d_map, ← d₂.d_map]
-  refine congrFun (IsLocalization.eq_of_leibniz (.powers f) (δ₁ := fun t ↦ d₁.d t)
+  refine congrFun (IsLocalization.eq_of_leibniz (.powers f)
+    (T := Γ(Spec A, basicOpen A f)) (δ₁ := fun t ↦ d₁.d t)
     (δ₂ := fun t ↦ d₂.d t) (fun x y ↦ d₁.d_mul x y) (fun x y ↦ d₂.d_mul x y) fun a ↦ ?_) _
   -- The image of `a` in the sections over `D(f)` is the restriction of its global image.
   erw [d₁.d_map (homOfLE le_top).op (algebraMap A Γ(Spec A, ⊤) a),
@@ -215,14 +177,16 @@ private lemma gluedHom_restrict {U : (Spec A).Opensᵒᵖ} (f : A) (hf : basicOp
 private lemma gluedHom_mul (U : (Spec A).Opens) (a b : Γ(Spec A, U)) :
     (gluedHom R A).app (op U) (a * b) =
       a • (gluedHom R A).app (op U) b + b • (gluedHom R A).app (op U) a := by
-  refine section_ext_basicOpen fun f hf ↦ ?_
-  rw [gluedHom_restrict, map_add, Scheme.Modules.map_smul, Scheme.Modules.map_smul,
+  refine Scheme.Modules.section_ext_basicOpen fun f hf ↦ ?_
+  -- The basis lemma uses spectrum opens; `erw` identifies them with scheme opens.
+  erw [gluedHom_restrict, map_add, Scheme.Modules.map_smul, Scheme.Modules.map_smul,
     gluedHom_restrict, gluedHom_restrict, map_mul, Derivation.leibniz]
 
 private lemma gluedHom_baseRing (U : (Spec A).Opensᵒᵖ) (r : R) :
     (gluedHom R A).app U ((Scheme.baseRingToStructurePresheaf R (Spec A)).app U r) = 0 := by
-  refine section_ext_basicOpen fun f hf ↦ ?_
-  rw [gluedHom_restrict, Scheme.baseRingToStructurePresheaf_Spec_app_apply]
+  refine Scheme.Modules.section_ext_basicOpen fun f hf ↦ ?_
+  -- The basis lemma uses spectrum opens; `erw` identifies them with scheme opens.
+  erw [gluedHom_restrict, Scheme.baseRingToStructurePresheaf_Spec_app_apply]
   -- Restriction carries the image of `algebraMap R A r` to its image over `D(f)`.
   change localDerivation R A _ _ (algebraMap A _ _) = _
   rw [localDerivation_algebraMap]
@@ -240,7 +204,7 @@ private def tildeDerivation : (tilde (.of A Ω[A⁄R])).Derivation R :=
 private lemma tildeDerivation_d_algebraMap (U : (Spec A).Opens) (a : A) :
     (tildeDerivation R A).d (X := op U) (algebraMap A Γ(Spec A, U) a) =
       tilde.toOpen (ModuleCat.of A Ω[A⁄R]) U (KaehlerDifferential.D R A a) := by
-  refine section_ext_basicOpen fun f hf ↦ ?_
+  refine Scheme.Modules.section_ext_basicOpen fun f hf ↦ ?_
   -- The derivation `tildeDerivation` is `gluedHom` on sections.
   erw [gluedHom_restrict]
   -- Restriction carries the image of `a` in `Γ(U)` to its image in `Γ(D(f))`.
@@ -250,21 +214,6 @@ private lemma tildeDerivation_d_algebraMap (U : (Spec A).Opens) (a : A) :
     (KaehlerDifferential.D R A a))).symm
 
 /-! ### The comparison isomorphism -/
-
-/-- The `R`-derivation `A → Γ(M, ⊤)` given by the global component of a derivation of
-`𝒪_{Spec A}`. -/
-private def globalDerivation {M : (Spec A).Modules} (d : M.Derivation R) :
-    Derivation R A Γ(M, ⊤) :=
-  Derivation.mk'
-    { toFun a := d.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) a)
-      map_add' a b := (congrArg d.d (map_add _ a b)).trans (map_add _ _ _)
-      map_smul' r a := by
-        have h₀ : d.d (X := op ⊤) (algebraMap A Γ(Spec A, ⊤) (algebraMap R A r)) = 0 := by
-          rw [← Scheme.baseRingToStructurePresheaf_Spec_app_apply]
-          exact d.d_app r
-        rw [Algebra.smul_def, map_mul, d.d_mul, h₀, smul_zero, add_zero, RingHom.id_apply]
-        exact algebraMap_smul (A := A) (M := Γ(M, ⊤)) r _ }
-    fun a b ↦ (congrArg d.d (map_mul _ a b)).trans (d.d_mul _ _)
 
 /-- The morphism `Ω[A⁄R]~ ⟶ Ω_{Spec A/R}` adjoint to the `A`-linear map
 `Ω[A⁄R] → Γ(Spec A, Ω_{Spec A/R})` classifying the global component of the universal
@@ -302,7 +251,7 @@ private lemma toTilde_liftKaehlerDifferential (ω : Ω[A⁄R]) :
   induction hω using Submodule.span_induction with
   | mem _ h =>
     obtain ⟨a, rfl⟩ := h
-    rw [Derivation.liftKaehlerDifferential_comp_D]
+    rw [Derivation.liftKaehlerDifferential_comp_D, globalDerivation_apply]
     exact (toTilde_universalDerivation R A _ _).trans (tildeDerivation_d_algebraMap R A ⊤ a)
   | zero =>
     rw [map_zero, map_zero]
@@ -326,9 +275,11 @@ def relativeDifferentialsSpecIso :
     rw [Scheme.relativeDifferentialsHomEquiv_comp, toTilde, Equiv.apply_symm_apply,
       Scheme.relativeDifferentialsHomEquiv_apply]
     refine Scheme.Modules.Derivation.Spec_ext fun a ↦ ?_
+    have hD := Derivation.liftKaehlerDifferential_comp_D
+      (globalDerivation R A ((Spec A).universalDerivation R)) a
+    rw [globalDerivation_apply] at hD
     exact (congrArg _ (tildeDerivation_d_algebraMap R A ⊤ a)).trans
-      ((fromTilde_toOpen R A _).trans
-        ((globalDerivation R A ((Spec A).universalDerivation R)).liftKaehlerDifferential_comp_D a))
+      ((fromTilde_toOpen R A _).trans hD)
   inv_hom_id := tilde_hom_ext fun ω ↦
     (congrArg _ (fromTilde_toOpen R A ω)).trans (toTilde_liftKaehlerDifferential R A ω)
 
@@ -340,7 +291,7 @@ lemma relativeDifferentialsSpecIso_hom_app_d (U : (Spec A).Opens) (a : A) :
         (((Spec A).universalDerivation R).d
           (((Spec A).presheaf.map (homOfLE le_top).op).hom ((Scheme.ΓSpecIso A).inv.hom a))) =
       tilde.toOpen (ModuleCat.of A Ω[A⁄R]) U (KaehlerDifferential.D R A a) := by
-  change (toTilde R A).val.app (op U) _ = _
+  dsimp only [relativeDifferentialsSpecIso]
   simpa only [IsAffineOpen.algebraMap_Spec_obj, CommRingCat.hom_comp, RingHom.coe_comp,
     Function.comp_apply] using
     (toTilde_universalDerivation R A _ _).trans (tildeDerivation_d_algebraMap R A U a)
