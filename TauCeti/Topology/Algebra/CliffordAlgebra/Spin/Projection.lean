@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.Action
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Pin.Action
 
 /-!
 # Continuity of the Spin projection
@@ -43,21 +43,11 @@ variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
 Clifford-algebra and linear-automorphism topologies. -/
 @[fun_prop]
 theorem continuous_spinToOrthogonal : Continuous (spinToOrthogonal Q) := by
-  let _ : TopologicalSpace V := moduleTopology K V
-  have hinc : Continuous (fun x : spinGroup Q => pinToLipschitz Q (spinToPin Q x)) := by
+  have hinc : Continuous (spinToPin Q) := by
     apply continuous_induced_rng.mpr
-    apply Units.continuous_iff.mpr
-    constructor
-    · exact continuous_subtype_val.congr fun x => by simp
-    · have hinv (x : spinGroup Q) :
-          (((pinToLipschitz Q (spinToPin Q x) : (CliffordAlgebra Q)ˣ)⁻¹ :
-            (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = star (x : CliffordAlgebra Q) := by
-        simpa only [coe_spinToPin_apply] using coe_inv_pinToLipschitz (spinToPin Q x)
-      exact continuous_subtype_val.star.congr fun x => (hinv x).symm
-  have h := (_root_.CliffordAlgebra.continuous_lipschitzToOrthogonal Q).comp hinc
-  exact h.congr fun x =>
-    (pinToOrthogonal_eq_lipschitzToOrthogonal (spinToPin Q x)).symm.trans
-      (pinToOrthogonal_spinToPin x)
+    exact continuous_subtype_val.congr fun x => (coe_spinToPin_apply x).symm
+  exact ((continuous_pinToOrthogonal Q).comp hinc).congr fun x =>
+    pinToOrthogonal_spinToPin x
 
 /-- The Spin projection into the special orthogonal group is continuous for its subgroup
 topology in the linear automorphism group. -/
