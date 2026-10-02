@@ -49,6 +49,12 @@ uniformly in `i` and `i'`, with `0` read as `∞`
 time: a simple reflection is never the identity, it has order exactly two, and distinct indices
 give distinct simple reflections.
 
+Exactness, not just divisibility, is what a braid move needs. The braid move at `(i, i')` rewrites
+the alternating word `s i s i' s i ⋯` of length `M i i'` into the alternating word of the same
+length that starts with `s i'`, and the induction step of **Matsumoto's theorem** needs those words
+to be reduced. Were `orderOf (s i * s i')` a proper divisor `d` of `M i i'`, the alternating word of
+length `2 * d` would already be trivial and the length-`M i i'` one would not be reduced.
+
 ## The route
 
 Everything rests on one two-dimensional computation. In the
@@ -97,15 +103,6 @@ none of the results above needs it: the exact order of a product of two simple r
 needs the representation to be nontrivial on a single rank-two plane.
 
 ## References
-
-This file supplies the exactness `orderOf (s i * s i') = M i i'` that
-`TauCeti/GroupTheory/Coxeter/Dihedral.lean` identifies, in its section "The order of the rotation
-against the Coxeter-matrix entry", as the one input separating its rank-two Tits lemma from the
-induction step of **Matsumoto's theorem**, the Layer 3 target of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The corresponding exactness for the
-Weyl group of a root system is already available by a different route, through the root-level
-computation of `TauCeti/LinearAlgebra/RootSystem/BraidRelation.lean`; what is new here is the
-root-system-free statement, for an arbitrary Coxeter system.
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Springer (2002), Ch. V, Section 4.3.
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Section 5.3.
@@ -388,17 +385,6 @@ private theorem pow_geometricReflection_mul_apply_single_of_eq_zero (h : M i i' 
     push_cast
     module
 
-/-- Two vectors in the plane spanned by two distinct simple roots agree exactly when their
-coordinates do. -/
-private theorem eq_of_smul_single_add_smul_single_eq {i i' : B} (h : i ≠ i') {x y x' y' : ℝ}
-    (he : x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ) =
-      x' • Finsupp.single i (1 : ℝ) + y' • Finsupp.single i' (1 : ℝ)) : x = x' ∧ y = y' := by
-  refine ⟨?_, ?_⟩
-  · have := congrArg (fun f : B →₀ ℝ ↦ f i) he
-    simpa [Finsupp.single_apply, h, Ne.symm h] using this
-  · have := congrArg (fun f : B →₀ ℝ ↦ f i') he
-    simpa [Finsupp.single_apply, h, Ne.symm h] using this
-
 /-- **The Coxeter-matrix entry is the exact order of the rotation** in the geometric
 representation: the composite of two simple reflections is killed by an exponent exactly when
 that exponent is a multiple of the corresponding entry. The divisibility that the defining
@@ -409,15 +395,16 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
   · rcases eq_or_ne i i' with rfl | hne
     · rw [M.diagonal i]
       exact one_dvd n
+    -- distinct simple roots are linearly independent, so coordinates can be read off
+    have hpair := (LinearIndepOn.pair_iff (fun b : B ↦ Finsupp.single b (1 : ℝ)) hne).1
+      ((Finsupp.linearIndependent_single_one (ι := B) (R := ℝ)).linearIndepOn {i, i'})
     rcases Nat.lt_or_ge (M i i') 2 with hlt | hge
     · have hzero : M i i' = 0 := by
         have := M.off_diagonal i i' hne
         omega
       have key := M.pow_geometricReflection_mul_apply_single_of_eq_zero i i' hzero n
       rw [hR, Module.End.one_apply] at key
-      have hone : Finsupp.single i (1 : ℝ) =
-          (1 : ℝ) • Finsupp.single i (1 : ℝ) + (0 : ℝ) • Finsupp.single i' (1 : ℝ) := by module
-      obtain ⟨-, h2⟩ := eq_of_smul_single_add_smul_single_eq hne (key.symm.trans hone)
+      obtain ⟨-, h2⟩ := hpair (2 * n) (2 * n) (by linear_combination (norm := module) -key)
       have : (n : ℝ) = 0 := by linarith
       have : n = 0 := by exact_mod_cast this
       simp [hzero, this]
@@ -432,9 +419,11 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
       have hs : sin (π / M i i') ≠ 0 := ne_of_gt (Real.sin_pos_of_pos_of_lt_pi hpos hlt')
       have key := M.pow_geometricReflection_mul_apply_single i i' hs n
       rw [hR, Module.End.one_apply] at key
-      have hone : Finsupp.single i (1 : ℝ) =
-          (1 : ℝ) • Finsupp.single i (1 : ℝ) + (0 : ℝ) • Finsupp.single i' (1 : ℝ) := by module
-      obtain ⟨hc, hsi⟩ := eq_of_smul_single_add_smul_single_eq hne (key.symm.trans hone)
+      obtain ⟨hc, hsi⟩ := hpair
+        (cos (2 * (n : ℝ) * (π / M i i')) +
+            cos (π / M i i') * (sin (2 * (n : ℝ) * (π / M i i')) / sin (π / M i i')) - 1)
+        (sin (2 * (n : ℝ) * (π / M i i')) / sin (π / M i i'))
+        (by linear_combination (norm := module) -key)
       have hsin : sin (2 * (n : ℝ) * (π / M i i')) = 0 := by
         rcases div_eq_zero_iff.1 hsi with h | h
         · exact h
@@ -478,12 +467,20 @@ variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
 /-- **The standard geometric representation of a Coxeter system**: the representation of `W` on
 the free real vector space on the index set in which the `i`-th simple reflection acts as the
 reflection `v ↦ v - 2 B(αᵢ, v) αᵢ` in the hyperplane orthogonal to the `i`-th simple root, for
-the canonical bilinear form `B = CoxeterMatrix.geometricForm M`. The Coxeter relations hold
-because the plane spanned by two simple roots is a Euclidean plane in which the two reflections
-compose to the rotation through `2 π / M i i'`. -/
+the canonical bilinear form `B = CoxeterMatrix.geometricForm M`.
+
+The Coxeter relations hold, but for three different reasons. At `i = i'` the entry is `1` and the
+relation says that a reflection is an involution. For `i ≠ i'` with `M i i'` nonzero, hence at least
+two (an off-diagonal entry is never `1`), the plane spanned by the two simple roots is Euclidean and
+the two reflections compose to the rotation through `2 π / M i i'`, whose `M i i'`-th power is the
+identity. For `i ≠ i'` with
+`M i i' = 0`, read as `∞`, that plane is instead degenerate and the composite is a shear, of
+infinite order; there the relation to be checked is the vacuous `(σᵢ σᵢ')^0 = 1`. -/
 noncomputable def geometricRepresentation : Representation ℝ W (B →₀ ℝ) :=
   cs.lift ⟨M.geometricReflection, M.isLiftable_geometricReflection⟩
 
+/-- **Each simple reflection of a Coxeter system acts by its geometric reflection**, the
+reflection in the hyperplane orthogonal to the corresponding simple root. -/
 @[simp]
 theorem geometricRepresentation_simple (i : B) :
     cs.geometricRepresentation (cs.simple i) = M.geometricReflection i :=
