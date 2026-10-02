@@ -612,7 +612,9 @@ theorem map_wildInertiaSubgroup_restrictNormalHom :
     exact restrictNormal_mem_lowerRamificationGroup_one L hσ
   refine le_antisymm (Subgroup.map_le_iff_le_comap.2 fun σ hσ ↦
     restrictNormal_mem_lowerRamificationGroup_one L hσ) fun τ hτ ↦ ?_
-  obtain ⟨σ, hσ, hστ⟩ := (hS.eq_of_le hG1 hle).ge (show ⟨τ, h1A hτ⟩ ∈ _ from hτ)
+  have hτA : (⟨τ, h1A hτ⟩ : A) ∈ (lowerRamificationGroup K L 1).subgroupOf A :=
+    Subgroup.mem_subgroupOf.2 hτ
+  obtain ⟨σ, hσ, hστ⟩ := (hS.eq_of_le hG1 hle).ge hτA
   exact ⟨σ.1, Subgroup.mem_subgroupOf.1 hσ, congrArg Subtype.val hστ⟩
 
 /-- Every element of finite wild inertia lifts to an element of absolute wild inertia. -/
