@@ -66,6 +66,11 @@ theorem rowLen_eq_zero_of_colLen_le {μ : YoungDiagram} {i : ℕ} (hi : μ.colLe
   exact absurd (_root_.YoungDiagram.mem_iff_lt_colLen.mp
     (_root_.YoungDiagram.mem_iff_lt_rowLen.mpr (Nat.pos_of_ne_zero h))) (Nat.not_lt.mpr hi)
 
+/-- The empty Young diagram has no cells, so every row of it is empty. -/
+@[simp]
+theorem rowLen_bot (i : ℕ) : (⊥ : YoungDiagram).rowLen i = 0 := by
+  simp [_root_.YoungDiagram.rowLen]
+
 /-- A Young diagram is determined by its row lengths. -/
 theorem rowLen_injective : Function.Injective _root_.YoungDiagram.rowLen := by
   intro μ ν h
