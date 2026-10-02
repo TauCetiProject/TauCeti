@@ -112,6 +112,7 @@ theorem isUniformizer_completionAdicEquiv_iff (x : (adic k F p).Completion) :
 
 /-- The comparison identifies a filtration step with its valuation bound in the adic field.
 The multiplicative bound also handles zero and negative filtration indices. -/
+-- `mem_filtration_iff` and `valuation_completionAdicEquiv` already give simp automation.
 theorem mem_filtration_iff_valuation_completionAdicEquiv_le (a : ℤ) (x : (adic k F p).Completion) :
     x ∈ (adic k F p).completionPlace.filtration a ↔
       Valued.v (completionAdicEquiv k F p x) ≤ WithZero.exp (-a) := by
@@ -161,6 +162,7 @@ theorem completionIntegersAdicEquiv_completionIntegersEmbedding (r : R) :
   exact p.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (K := F) r
 
 /-- The comparison identifies the maximal ideals of the completed valuation rings. -/
+-- `IsLocalRing.mem_maximalIdeal` and `map_mem_nonunits_iff` already give simp automation.
 theorem completionIntegersAdicEquiv_mem_maximalIdeal_iff
     (x : (adic k F p).completionPlace.integers) :
     completionIntegersAdicEquiv k F p x ∈ IsLocalRing.maximalIdeal (p.adicCompletionIntegers F) ↔
