@@ -348,6 +348,11 @@ private theorem wreathSection_apply (g : WreathC2) :
     wreathSection g = wreathSectionFun (coordA g) (coordB g) (coordC g) :=
   (rfl)
 
+/-- The section is a right inverse of `D₁₆ → C₂ ≀ C₂`. -/
+@[simp]
+theorem dihedralToWreath_wreathSection (g : WreathC2) : dihedralToWreath (wreathSection g) = g :=
+  wreathSection.rightInverse_rightHom g
+
 /-- The section is normalized: it sends the identity to the identity. -/
 theorem wreathSection_one : wreathSection 1 = 1 := by
   rw [wreathSection_apply, coordA_one, coordB_one, coordC_one]

@@ -262,22 +262,21 @@ theorem coordB_indexTwoInd_self : coordB (indexTwoInd U hU s hs α s) = 0 := by
 theorem coordC_indexTwoInd_self : coordC (indexTwoInd U hU s hs α s) = 1 := by
   rw [coordC_indexTwoInd, Subgroup.toAdd_indexTwoCharacter_of_notMem hU hs]
 
+/-- The graph cochain is unchanged by transporting `α` along an equality of subgroups. -/
+private theorem evensGraphCochain_subgroupCongr {V W : Subgroup G} (e : V = W) (t : G)
+    (β : W →* Multiplicative (ZMod 2)) (q : G × G) :
+    evensGraphCochain V t (β.comp (MulEquiv.subgroupCongr e).toMonoidHom) q =
+      evensGraphCochain W t β q := by
+  subst e
+  rfl
+
 /-- **The graph cochain of `α` is the pullback along `Ind α` of the graph cochain of the
 tautological character,** taken at `Ind α (s)`. -/
 theorem evensGraphCochain_indexTwoInd (g h : G) :
     evensGraphCochain U s α (g, h) =
       evensGraphCochain wreathBase (indexTwoInd U hU s hs α s) wreathTautological
         (indexTwoInd U hU s hs α g, indexTwoInd U hU s hs α h) := by
-  have hB := coordB_indexTwoInd_self U hU s hs α
-  have hC := coordC_indexTwoInd_self U hU s hs α
-  by_cases hg : g ∈ U
-  · rw [evensGraphCochain_of_mem hg,
-      evensGraphCochain_of_mem (indexTwoInd_mem_wreathBase_iff.2 hg), evensB1_wreath hB hC,
-      evensBs_wreath hB hC, coordA_indexTwoInd, coordB_indexTwoInd]
-  · rw [evensGraphCochain_of_notMem hg,
-      evensGraphCochain_of_notMem (mt indexTwoInd_mem_wreathBase_iff.1 hg), evensB1_wreath hB hC,
-      evensB1_wreath hB hC, evensBs_wreath hB hC, coordA_indexTwoInd, coordA_indexTwoInd,
-      coordB_indexTwoInd]
+  rw [← evensGraphCochain_comap, wreathTautological_indexTwoInd, evensGraphCochain_subgroupCongr]
 
 /-- **The index-two graph cochain is the pulled-back `D₁₆` extension cocycle plus a pulled-back
 coboundary,** on the nose: `ν_α = c_{D₁₆} ∘ (Ind α × Ind α) + δ (w ∘ Ind α)`, with `w` the witness
