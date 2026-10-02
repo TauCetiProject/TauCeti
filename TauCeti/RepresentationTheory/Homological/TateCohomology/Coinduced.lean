@@ -43,6 +43,8 @@ representation. This is the form in which the graded pieces `A ⧸ ϖ • A` of 
   `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
 * `TauCeti.TateCohomology.isZero_of_forall_eq_sum`: if the identity of `C` is a norm
   `x ↦ ∑ g, g φ(g⁻¹ x)`, then `Ĥⁿ(G, C) = 0` for all `n : ℤ`.
+* `TauCeti.TateCohomology.isZero_restrictScalarsInt_of_equiv_leftRegular`: if `V` is free of rank
+  one over `k[G]`, then `Ĥⁿ(G, V) = 0` over `ℤ`.
 * `TauCeti.TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular`: if `V` is
   free of rank one over `k[G]`, then `Ĥⁿ(G, V ⧸ r • V) = 0` over `ℤ` for every `r : k`.
 
@@ -298,6 +300,34 @@ theorem isZero_restrictScalarsInt_of_forall_eq_sum [Semiring k] [Module k V]
     (n : ℤ) : IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
   isZero_of_forall_eq_sum (C := Rep.of _) (φ.restrictScalars ℤ) (fun x ↦ by simpa using hφ x) n
 
+/-- If `ρ` is free of rank one over the group ring `k[G]`, then the identity of `ρ` is the norm
+`x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`: the projection onto the coefficient of
+`1 ∈ G`. -/
+theorem exists_forall_eq_sum_of_equiv_leftRegular [Semiring k] [Module k V]
+    {ρ : Representation k G V} (e : (Representation.leftRegular k G).Equiv ρ) :
+    ∃ φ : V →ₗ[k] V, ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)) := by
+  classical
+  refine ⟨e.toLinearMap ∘ₗ MonoidAlgebra.lsingle 1 ∘ₗ Finsupp.lapply 1 ∘ₗ
+    (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ e.symm.toLinearMap, fun x ↦ ?_⟩
+  have he (g : G) (f : MonoidAlgebra k G) : e (Representation.leftRegular k G g f) = ρ g (e f) :=
+    e.toIntertwiningMap.isIntertwining _ _ g f
+  -- Writing `x = e f`, the `g`-th summand is `e (single g (f.coeff g))`.
+  obtain ⟨f, rfl⟩ := e.surjective x
+  have hf : f = ∑ g : G, MonoidAlgebra.single g (f.coeff g) := by
+    ext h
+    simp [MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_single]
+  conv_lhs => rw [hf, map_sum]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  simp [← he]
+
+/-- If `ρ` is free of rank one over the group ring `k[G]`, then all Tate cohomology of `ρ`, read
+as an integral representation, vanishes. -/
+theorem isZero_restrictScalarsInt_of_equiv_leftRegular [Semiring k] [Module k V]
+    {ρ : Representation k G V} (e : (Representation.leftRegular k G).Equiv ρ) (n : ℤ) :
+    IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+  let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
+  isZero_restrictScalarsInt_of_forall_eq_sum φ hφ n
+
 variable [CommRing k] [Module k V] {ρ : Representation k G V}
 
 /-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
@@ -311,24 +341,13 @@ theorem isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k]
 /-- **A free representation modulo a scalar has trivial Tate cohomology.** If `ρ` is free of rank
 one over the group ring `k[G]`, then for every `r : k` all Tate cohomology of the reduction
 `V ⧸ r • V`, a free module of rank one over `(k ⧸ (r))[G]`, read as an integral representation,
-vanishes. Its identity is the norm of the projection onto the coefficient of `1 ∈ G`. -/
+vanishes. Its identity is the norm of the reduction of the projection onto the coefficient of
+`1 ∈ G`. -/
 theorem isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular
     (e : (Representation.leftRegular k G).Equiv ρ) (r : k) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) := by
-  classical
-  refine isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum (e.toLinearMap ∘ₗ
-    MonoidAlgebra.lsingle 1 ∘ₗ Finsupp.lapply 1 ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ
-    e.symm.toLinearMap) (fun x ↦ ?_) r n
-  have he (g : G) (f : MonoidAlgebra k G) : e (Representation.leftRegular k G g f) = ρ g (e f) :=
-    e.toIntertwiningMap.isIntertwining _ _ g f
-  -- Writing `x = e f`, the `g`-th summand is `e (single g (f.coeff g))`.
-  obtain ⟨f, rfl⟩ := e.surjective x
-  have hf : f = ∑ g : G, MonoidAlgebra.single g (f.coeff g) := by
-    ext h
-    simp [MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_single]
-  conv_lhs => rw [hf, map_sum]
-  refine Finset.sum_congr rfl fun g _ ↦ ?_
-  simp [← he]
+    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
+  let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
+  isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum φ hφ r n
 
 end QuotSMulTop
 

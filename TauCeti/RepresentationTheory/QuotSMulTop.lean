@@ -40,18 +40,14 @@ namespace Representation
 
 variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
 
-/-- Every operator of `ρ` preserves `r • V`, so `r • ⊤` is a `G`-stable submodule. -/
-theorem smul_top_le_comap (ρ : Representation k G V) (r : k) (g : G) :
-    r • (⊤ : Submodule k V) ≤ (r • ⊤ : Submodule k V).comap (ρ g) :=
-  Submodule.map_le_iff_le_comap.mp <|
-    (Submodule.map_pointwise_smul r ⊤ (ρ g)).trans_le (smul_mono_right r le_top)
-
 /-- The representation induced by `ρ` on the reduction `V ⧸ r • V` of `V` modulo `r`: Mathlib's
 quotient representation `Representation.quotient` by the `G`-stable submodule `r • ⊤`. Its
 operators are `QuotSMulTop.map r (ρ g)` (`Representation.quotSMulTop_apply`). -/
 noncomputable def quotSMulTop (ρ : Representation k G V) (r : k) :
     Representation k G (QuotSMulTop r V) :=
-  ρ.quotient (r • ⊤) (ρ.smul_top_le_comap r)
+  ρ.quotient (r • ⊤) fun g ↦ by
+    simpa only [Submodule.ideal_span_singleton_smul] using
+      Submodule.smul_top_le_comap_smul_top (Ideal.span {r}) (ρ g)
 
 /-- The operators of `ρ.quotSMulTop r` are the reductions `QuotSMulTop.map r (ρ g)`. -/
 @[simp]
