@@ -66,6 +66,7 @@ theorem quotientConjHomeomorph_mk (h : ConjAct.toConjAct g • Γ = Γ') (z : �
 
 /-- The inverse of the homeomorphism of coarse quotients induced by `g` is the one induced by
 `g⁻¹`. -/
+@[simp]
 theorem quotientConjHomeomorph_symm (h : ConjAct.toConjAct g • Γ = Γ') :
     (quotientConjHomeomorph h).symm =
       quotientConjHomeomorph (by rw [← h, map_inv, inv_smul_smul] :

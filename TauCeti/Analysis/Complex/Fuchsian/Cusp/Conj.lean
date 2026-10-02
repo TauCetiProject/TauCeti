@@ -91,6 +91,7 @@ theorem cuspOrbitConjEquiv_cuspOrbitMk (h : ConjAct.toConjAct g • Γ = Γ') (c
   Subtype.ext (by simp only [cuspOrbitConjEquiv, Equiv.subtypeEquiv_apply, cuspOrbitMk_val]; rfl)
 
 /-- The inverse of the bijection of cusp orbits induced by `g` is the one induced by `g⁻¹`. -/
+@[simp]
 theorem cuspOrbitConjEquiv_symm (h : ConjAct.toConjAct g • Γ = Γ') :
     (cuspOrbitConjEquiv h).symm =
       cuspOrbitConjEquiv (by rw [← h, map_inv, inv_smul_smul] :

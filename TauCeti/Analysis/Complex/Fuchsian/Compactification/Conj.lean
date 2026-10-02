@@ -89,8 +89,12 @@ theorem compactifiedQuotientConj_compactifiedQuotientConj (h : ConjAct.toConjAct
     compactifiedQuotientConj (by rw [← h, map_inv, inv_smul_smul] :
       ConjAct.toConjAct g⁻¹ • Γ' = Γ) (compactifiedQuotientConj h x) = x := by
   cases x with
-  | ofQuotient p => simp [← quotientConjHomeomorph_symm h]
-  | ofCusp C => simp [← cuspOrbitConjEquiv_symm h]
+  | ofQuotient p =>
+    rw [compactifiedQuotientConj_ofQuotient, compactifiedQuotientConj_ofQuotient,
+      ← quotientConjHomeomorph_symm h, Homeomorph.symm_apply_apply]
+  | ofCusp C =>
+    rw [compactifiedQuotientConj_ofCusp, compactifiedQuotientConj_ofCusp,
+      ← cuspOrbitConjEquiv_symm h, Equiv.symm_apply_apply]
 
 /-- Conjugation by `1` induces the identity of the compactified quotient. -/
 @[simp]
@@ -225,8 +229,12 @@ def conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
     left_inv := compactifiedQuotientConj_compactifiedQuotientConj h
     right_inv x := by
       cases x with
-      | ofQuotient p => simp [← quotientConjHomeomorph_symm h]
-      | ofCusp C => simp [← cuspOrbitConjEquiv_symm h]
+      | ofQuotient p =>
+        rw [compactifiedQuotientConj_ofQuotient, compactifiedQuotientConj_ofQuotient,
+          ← quotientConjHomeomorph_symm h, Homeomorph.apply_symm_apply]
+      | ofCusp C =>
+        rw [compactifiedQuotientConj_ofCusp, compactifiedQuotientConj_ofCusp,
+          ← cuspOrbitConjEquiv_symm h, Equiv.apply_symm_apply]
     contMDiff_toFun := (mdifferentiable_compactifiedQuotientConj h).contMDiff
     contMDiff_invFun := (mdifferentiable_compactifiedQuotientConj h').contMDiff }
 
@@ -237,6 +245,7 @@ theorem coe_conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
   (rfl)
 
 /-- The inverse of the biholomorphism induced by `g` is the one induced by `g⁻¹`. -/
+@[simp]
 theorem conjBiholomorph_symm (h : ConjAct.toConjAct g • Γ = Γ') :
     letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
     (conjBiholomorph h).symm =
