@@ -23,6 +23,9 @@ maps of the two homology sequences correspond under these identifications
 This is what allows a connecting map computed on a complex reindexed along an embedding, such as
 the Tate complex, whose negative part is the complex of inhomogeneous chains reindexed by
 `n ↦ -(n + 1)`, to be compared with the connecting map of the original complex.
+
+This file is adapted from the unmerged
+[TauCetiProject/TauCeti#10141](https://github.com/TauCetiProject/TauCeti/pull/10141).
 -/
 
 public section

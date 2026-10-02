@@ -46,6 +46,11 @@ transfer of group homology in negative degrees, to be compared with the connecti
 
 * K. S. Brown, *Cohomology of Groups*, Chapter VI.
 * J. S. Milne, *Class Field Theory*, v4.03, Chapter II, §1.
+
+## Attribution
+
+This file is adapted from the unmerged
+[TauCetiProject/TauCeti#10141](https://github.com/TauCetiProject/TauCeti/pull/10141).
 -/
 
 public noncomputable section
