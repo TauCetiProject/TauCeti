@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 
 /-!
@@ -21,23 +21,13 @@ holomorphy.
 
 public section
 
-open Filter Topology UpperHalfPlane
+open UpperHalfPlane
 
 open scoped Manifold
 
 namespace TauCeti.UpperHalfPlane
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℍ → E} {τ : ℍ}
-
-/-- The representative of `f` in the chart of `ℍ` at `τ` agrees with `f ∘ ofComplex` near `τ`. -/
-private theorem comp_chartAt_symm_eventuallyEq {α : Type*} (f : ℍ → α) (τ : ℍ) :
-    f ∘ (chartAt ℂ τ).symm =ᶠ[𝓝 (τ : ℂ)] f ∘ ofComplex := by
-  filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds τ.im_pos] with w hw
-  have hwt : w ∈ (chartAt ℂ τ).target := by simpa using hw
-  rw [Function.comp_apply, Function.comp_apply, ofComplex_apply_of_im_pos hw]
-  congr 1
-  ext
-  simpa using (chartAt ℂ τ).right_inv hwt
 
 /-- A function on the upper half-plane is meromorphic at `τ` exactly when its extension by
 `ofComplex` is meromorphic at `τ`. -/
