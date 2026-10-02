@@ -65,7 +65,7 @@ open TauCeti.ContCohomology
 universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
+  [TotallyDisconnectedSpace G] (U : Subgroup G) (hU : IsOpen (U : Set G))
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
@@ -74,7 +74,9 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 restriction. -/
 theorem exact_res_corestriction_of_index_two (hU2 : U.index = 2) (hM : ∀ m : M, 2 • m = 0)
     (n : ℕ) :
+    letI : U.FiniteIndex := ⟨by omega⟩
     Function.Exact (res U (ofDiscreteModule ℤ G M) n) (corestriction U M hU n) := by
+  let _ : U.FiniteIndex := ⟨by omega⟩
   rw [← coeffMap_unit_comp_shapiroMap, corestriction_def,
     ← shapiroIso_hom U (U.isClosed_of_isOpen hU)]
   have h := (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₂ n
@@ -87,8 +89,10 @@ theorem exact_res_corestriction_of_index_two (hU2 : U.index = 2) (hM : ∀ m : M
 of the coefficient sequence `0 → M → Coind_U^G M → M → 0` kills it. -/
 theorem exact_corestriction_delta_of_index_two (hU2 : U.index = 2) (hM : ∀ m : M, 2 • m = 0)
     (n : ℕ) :
+    letI : U.FiniteIndex := ⟨by omega⟩
     Function.Exact (corestriction U M hU n)
       ((DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).delta n) := by
+  let _ : U.FiniteIndex := ⟨by omega⟩
   rw [corestriction_def]
   have h := (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₃ n
   simp only [DiscreteCoind.indexTwoShortExact_proj] at h
@@ -99,8 +103,10 @@ theorem exact_corestriction_delta_of_index_two (hU2 : U.index = 2) (hM : ∀ m :
 `M` killed by two: a class of `Hⁿ⁺¹(G, M)` restricts to zero on `U` exactly when it is in the
 image of the connecting map `δ` of the coefficient sequence `0 → M → Coind_U^G M → M → 0`. -/
 theorem exact_delta_res_of_index_two (hU2 : U.index = 2) (hM : ∀ m : M, 2 • m = 0) (n : ℕ) :
+    letI : U.FiniteIndex := ⟨by omega⟩
     Function.Exact ((DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).delta n)
       (res U (ofDiscreteModule ℤ G M) (n + 1)) := by
+  let _ : U.FiniteIndex := ⟨by omega⟩
   rw [← coeffMap_unit_comp_shapiroMap, ← shapiroIso_hom U (U.isClosed_of_isOpen hU)]
   have h := (DiscreteCoind.indexTwoShortExact G U M hU2 hU hM).longExact_exact₁ n
   simp only [DiscreteCoind.indexTwoShortExact_incl] at h
@@ -115,14 +121,16 @@ universe u
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
-  (U : Subgroup G) (hU : IsOpen (U : Set G)) [U.FiniteIndex]
+  (U : Subgroup G) (hU : IsOpen (U : Set G))
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass continuousSMul_trivialF2
 
 /-- **Exactness at `Hⁿ(U, 𝔽₂)`** for an open subgroup `U` of index two and trivial `𝔽₂`
 coefficients: a class of `Hⁿ(U, 𝔽₂)` has zero corestriction exactly when it is a restriction. -/
 theorem exact_trivialF2ResMap_trivialF2CorMap_of_index_two (hU2 : U.index = 2) (n : ℕ) :
+    letI : U.FiniteIndex := ⟨by omega⟩
     Function.Exact (trivialF2ResMap G U n) (trivialF2CorMap G U hU n) := by
+  let _ : U.FiniteIndex := ⟨by omega⟩
   have hM : ∀ m : (trivialF2 G).V, 2 • m = 0 := fun m => (trivialF2Equiv G).injective (by
     rw [map_nsmul, map_zero, two_nsmul, CharTwo.add_self_eq_zero])
   -- Generalize the coefficient object over `G`, so that its identification with
