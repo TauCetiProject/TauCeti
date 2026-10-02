@@ -91,6 +91,9 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   `TauCeti.kummerMap_eq_one_iff` the pointwise form.
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
+* `TauCeti.finite_H1_kummerCoeff`: `H¹(G_K, μₙ)` is finite when `Kˣ ⧸ (Kˣ)ⁿ` is.
+* `TauCeti.finite_H1_of_isPrimitiveRoot`: the same for every cyclic trivial module of order `n`
+  over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
 * `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
@@ -388,6 +391,35 @@ theorem kummerIso_apply (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
 theorem kummerIso_mk (hn : IsUnit (n : K)) (a : Kˣ) :
     kummerIso K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
   rw [kummerIso_apply, kummerClassMap_mk]
+
+/-- **`H¹(G_K, μₙ)` is finite as soon as `Kˣ ⧸ (Kˣ)ⁿ` is**, for `n` invertible in `K`: the two
+groups are identified by the Kummer isomorphism. -/
+theorem finite_H1_kummerCoeff (hn : IsUnit (n : K)) [Finite (powerClassQuotient Kˣ n)] :
+    Finite (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :=
+  Finite.of_equiv _ ((kummerIso K n hn).toEquiv.trans Multiplicative.toAdd)
+
+variable {K n} in
+/-- **`H¹` of a cyclic trivial module over a field containing the roots of unity.** Let `K` be a
+field containing a primitive `n`th root of unity and with `Kˣ ⧸ (Kˣ)ⁿ` finite, and `H` a
+topological group isomorphic to `G_K`. Then `H¹(H, M)` is finite for every cyclic discrete
+`H`-module `M` of order `n` with trivial action: such a module is `μₙ(Kˢ)`
+(`TauCeti.finite_H1_kummerCoeff`). -/
+theorem finite_H1_of_isPrimitiveRoot [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
+    [Finite (powerClassQuotient Kˣ n)] {H : Type*} [Group H] [TopologicalSpace H]
+    (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction H M] [ContinuousSMul H M] [IsAddCyclic M]
+    (hM : Nat.card M = n) (htriv : ∀ (h : H) (m : M), h • m = m) :
+    Finite (H1 H M) := by
+  have := hζ.neZero'
+  have := finite_H1_kummerCoeff K n (NeZero.ne (n : K)).isUnit
+  have hcard : Nat.card (KummerCoeff K n) = Nat.card M :=
+    (Nat.card_congr Additive.toMul).trans
+      (((hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).card_rootsOfUnity).trans
+        hM.symm)
+  exact Finite.of_equiv _ (explicitMap1Equiv H M (AbsoluteGaloisGroup K) (KummerCoeff K n) φ
+    (addEquivOfAddCyclicCardEq hcard.symm) continuous_of_discreteTopology
+    continuous_of_discreteTopology fun g m ↦ by
+      rw [htriv, smul_kummerCoeff_eq_self hζ]).symm.toEquiv
 
 /-! ### The Kummer map against canonical continuous cohomology -/
 

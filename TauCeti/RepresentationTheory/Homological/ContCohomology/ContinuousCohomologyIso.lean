@@ -51,6 +51,8 @@ the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a g
   invariant element `m` to the class of its homogeneous `0`-cocycle
   `TauCeti.ContCohomology.cocycle0 m`, which is how the cocycle-level comparisons of the higher
   degrees read it.
+* `TauCeti.ContCohomology.finite_continuousCohomology_zero`: `H⁰(G, M)` is finite for a finite
+  discrete `M`.
 * `TauCeti.ContCohomology.explicitH0Iso_map`: the comparison is natural in compatible pairs.
 * `TauCeti.ContCohomology.explicitH0Iso_res`, `TauCeti.ContCohomology.explicitH0Iso_coeffMap`: its
   two named instances, carrying the explicit restriction and coefficient maps of degree zero to
@@ -199,6 +201,12 @@ theorem coe_explicitH0IsoContinuousCohomology_inv_apply
       ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).1 :=
   H0ContinuousLinearEquivInvariants_symm_val G M
     ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)
+
+variable {G} in
+/-- **`H⁰` of a finite discrete module is finite**: it is the subgroup of invariants. -/
+theorem finite_continuousCohomology_zero [Finite M] :
+    Finite (continuousCohomology 0 (ofDiscreteModule ℤ G M)) :=
+  Finite.of_equiv _ (explicitH0IsoContinuousCohomology G M).toContinuousLinearEquiv.toEquiv
 
 end Comparison
 
