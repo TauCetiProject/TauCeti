@@ -55,11 +55,19 @@ The forms are valued in an arbitrary module `N`, not in `R`. Mathlib's
 `AlternatingMap.eq_smul_basis_det` is the `N = R` case of the first result here; the codomain plays
 no part in the argument, only the coordinates do, so the `N`-valued statement is what is proved.
 
-The recovery statements need a cancellation hypothesis, not just `ω ≠ 0`: over `ZMod 4`, with
-`N = R` (which is torsion-free over itself), the form `ω = 2 • b.det` is nonzero and satisfies
-`ω ∘ id = 3 • ω`, while `det id = 1`. `IsCancelMulZero R` and `Module.IsTorsionFree R N` are
-assumed for them, and for nothing else; together they let a nonzero form, an element of a
-torsion-free module of alternating or bilinear maps, cancel from `det φ • ω = d • ω`.
+The recovery statements need cancellation hypotheses, not just `ω ≠ 0`, and neither of the two
+assumed can be dropped:
+
+* without `IsCancelMulZero R`: over `R = ZMod 4`, with `N = R` (which is torsion-free over
+  itself), the form `ω = 2 • b.det` is nonzero and satisfies `ω ∘ id = 3 • ω`, while
+  `det id = 1`;
+* without `Module.IsTorsionFree R N`: over `R = ℤ`, with `M = ℤ²` and `N = ZMod 2`, the
+  determinant form reduced mod `2`, `(x, y) ↦ x₀ y₁ - x₁ y₀`, is nonzero and alternating, and
+  `φ = 3 • id` scales it by `9`, that is by `1`, while `det φ = 9`.
+
+`IsCancelMulZero R` and `Module.IsTorsionFree R N` are assumed for the recovery statements, and
+for nothing else; together they let a nonzero form, an element of a torsion-free module of
+alternating or bilinear maps, cancel from `det φ • ω = d • ω`.
 
 None of the transformation laws stated for a basis is a `simp` lemma: the basis is a hypothesis
 and does not occur in the conclusion, so `simp` could not infer it.
@@ -123,8 +131,9 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 endomorphism which scales `ω` by `d` has `det φ = d`; the scaling identifies the determinant
 without computing it, and only the one endomorphism is involved.
 
-The cancellation hypotheses on `R` and `N` are required, not incidental: `ω ≠ 0` alone leaves the
-multiplier ambiguous, as the `ZMod 4` example in the module docstring shows. -/
+The cancellation hypotheses on `R` and `N` are required, not incidental: dropping either one
+leaves the multiplier of a nonzero `ω` ambiguous, as the two examples in the module docstring show.
+-/
 theorem det_eq_of_compLinearMap_eq_smul [Finite ι] [IsCancelMulZero R] [Module.IsTorsionFree R N]
     (b : Basis ι R M) {ω : M [⋀^ι]→ₗ[R] N} (hω : ω ≠ 0) {φ : M →ₗ[R] M} {d : R}
     (h : ω.compLinearMap φ = d • ω) : LinearMap.det φ = d :=
@@ -145,8 +154,8 @@ theorem IsAlt.compl₁₂_self_eq_det_smul (b : Basis (Fin 2) R M) {ω : M →�
 determinant.** This is the form the additivised Weil pairing supplies: its scaling by an isogeny's
 degree identifies that degree as a determinant.
 
-As above, the cancellation hypotheses on `R` and `N` are required and `ω ≠ 0` alone does not
-suffice. -/
+As above, neither cancellation hypothesis can be dropped; the module docstring's `ZMod 2` example
+is itself an alternating bilinear form on a rank-two module. -/
 theorem det_eq_of_compl₁₂_self_eq_smul [IsCancelMulZero R] [Module.IsTorsionFree R N]
     (b : Basis (Fin 2) R M) {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (hω : ω ≠ 0)
     {φ : M →ₗ[R] M} {d : R} (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d :=
