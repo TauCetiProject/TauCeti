@@ -262,22 +262,6 @@ theorem weightDistribution_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ 
   rw [Set.weightDistribution_def, Set.weightDistribution_def]
   exact (Nat.card_congr (Equiv.subtypeEquiv f fun x ↦ by simp [hf])).symm
 
-/-- A weight-preserving equivalence between word spaces of equal length preserves the enumerator
-of any set of words. -/
-theorem weightEnumerator_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ (∀ j, γ j))
-    (hf : ∀ x, hammingNorm (f x) = hammingNorm x)
-    (hcard : Fintype.card ι = Fintype.card κ) :
-    (f '' C).weightEnumerator = C.weightEnumerator := by
-  simp only [Set.weightEnumerator_def, weightDistribution_image C f hf, hcard]
-
-/-- A weight-preserving equivalence between word spaces of equal length preserves the
-one-variable weight polynomial of any set of words. -/
-theorem weightPolynomial_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ (∀ j, γ j))
-    (hf : ∀ x, hammingNorm (f x) = hammingNorm x)
-    (hcard : Fintype.card ι = Fintype.card κ) :
-    (f '' C).weightPolynomial = C.weightPolynomial := by
-  simp only [Set.weightPolynomial_def, weightDistribution_image C f hf, hcard]
-
 end WeightPreservingEquivalence
 
 /-- A finite set containing zero whose nonzero words all have weight `d ≠ 0` has one word of
@@ -421,7 +405,9 @@ variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → 
 theorem IsMonomialEquivalent.weightDistribution_eq (h : IsMonomialEquivalent C D) (w : ℕ) :
     (C : Set (ι → R)).weightDistribution w = (D : Set (κ → R)).weightDistribution w := by
   obtain ⟨u, e, rfl⟩ := isMonomialEquivalent_iff.mp h
-  exact Nat.card_congr (Equiv.subtypeEquiv (monomialEquiv u e).toEquiv fun x ↦ by simp)
+  rw [Submodule.map_coe]
+  exact (weightDistribution_image (C : Set (ι → R)) (monomialEquiv u e).toEquiv
+    (hammingNorm_monomialEquiv u e) w).symm
 
 /-- Monomially equivalent codes have the same weight enumerator. -/
 theorem IsMonomialEquivalent.weightEnumerator_eq (h : IsMonomialEquivalent C D) :

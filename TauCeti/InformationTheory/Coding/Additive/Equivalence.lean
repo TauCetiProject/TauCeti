@@ -71,10 +71,6 @@ theorem reindex_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) (f : μ ≃
 theorem reindex_reindex_symm (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
     reindex (reindex C e) e.symm = C := by simp
 
-/-- Inverse relabelling followed by relabelling recovers the code. -/
-theorem reindex_symm_reindex (C : AddSubgroup (κ → A)) (e : κ ≃ ι) :
-    reindex (reindex C e.symm) e = C := by simp
-
 /-- Coordinate relabelling reflects and preserves inclusion of additive codes. -/
 @[simp]
 theorem reindex_le_reindex_iff {C D : AddSubgroup (ι → A)} (e : κ ≃ ι) :
@@ -199,7 +195,7 @@ def permutationAut (C : AddSubgroup (ι → A)) : Subgroup (Equiv.Perm ι) where
     have h : reindex C e = C := by
       calc
         reindex C e = reindex (reindex C e.symm) e := by rw [he]
-        _ = C := reindex_symm_reindex C e
+        _ = C := reindex_reindex_symm C e.symm
     simpa [Equiv.Perm.inv_def] using h
 
 /-- Membership in the permutation automorphism group is preservation under relabelling. -/

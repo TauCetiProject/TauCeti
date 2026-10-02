@@ -53,17 +53,7 @@ theorem IsPermutationEquivalent.weightDistribution_eq {C : AddSubgroup (ι → A
 @[simp↓]
 theorem weightEnumerator_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
     (reindex C e : Set (κ → A)).weightEnumerator = (C : Set (ι → A)).weightEnumerator := by
-  rw [coe_reindex]
-  have hcomp : ⇑(Equiv.arrowCongr e.symm (Equiv.refl A)) = (· ∘ e) := by
-    ext x j
-    simp
-  have hf (x : ι → A) :
-      hammingNorm (Equiv.arrowCongr e.symm (Equiv.refl A) x) = hammingNorm x := by
-    rw [hcomp]
-    exact Equiv.hammingNorm_comp e x
-  simpa only [hcomp] using
-    weightEnumerator_image (C : Set (ι → A)) (Equiv.arrowCongr e.symm (Equiv.refl A)) hf
-      (Fintype.card_congr e.symm)
+  simp_rw [Set.weightEnumerator_def, weightDistribution_reindex, Fintype.card_congr e]
 
 /-- Permutation-equivalent additive codes have identical homogeneous weight enumerators. -/
 theorem IsPermutationEquivalent.weightEnumerator_eq {C : AddSubgroup (ι → A)}
@@ -76,17 +66,7 @@ theorem IsPermutationEquivalent.weightEnumerator_eq {C : AddSubgroup (ι → A)}
 @[simp↓]
 theorem weightPolynomial_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
     (reindex C e : Set (κ → A)).weightPolynomial = (C : Set (ι → A)).weightPolynomial := by
-  rw [coe_reindex]
-  have hcomp : ⇑(Equiv.arrowCongr e.symm (Equiv.refl A)) = (· ∘ e) := by
-    ext x j
-    simp
-  have hf (x : ι → A) :
-      hammingNorm (Equiv.arrowCongr e.symm (Equiv.refl A) x) = hammingNorm x := by
-    rw [hcomp]
-    exact Equiv.hammingNorm_comp e x
-  simpa only [hcomp] using
-    weightPolynomial_image (C : Set (ι → A)) (Equiv.arrowCongr e.symm (Equiv.refl A)) hf
-      (Fintype.card_congr e.symm)
+  rw [← Set.aeval_weightEnumerator, ← Set.aeval_weightEnumerator, weightEnumerator_reindex]
 
 /-- Permutation-equivalent additive codes have identical one-variable weight polynomials. -/
 theorem IsPermutationEquivalent.weightPolynomial_eq {C : AddSubgroup (ι → A)}
