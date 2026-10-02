@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Reindex
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.InformationTheory.Coding.Basic
 
 /-!
 # Puncturing and shortening additive and linear codes
@@ -21,9 +23,8 @@ vanish outside `s`, and then forgets those zero coordinates.
 
 Neither the field nor the coordinate type is assumed finite; finiteness enters only in the
 dimension bounds. The API records membership, order preservation, the zero and whole-space cases,
-naturality under a change of coordinates, the canonical identities for repeated operations, the
-comparison between shortening and puncturing, and the exact dimension of a shortened code before
-coordinates are discarded.
+the comparison between shortening and puncturing, and the exact dimension of a shortened code
+before coordinates are discarded.
 
 ## Main declarations
 
@@ -268,111 +269,6 @@ theorem mem_shortenAt {C : LinearCode F ι} {i : ι} {y : ({i}ᶜ : Set ι) → 
       simpa using hne
     subst j
     exact hxi
-
-/-- Puncturing commutes with a change of coordinates. The retained set is pulled back along the
-coordinate equivalence. -/
-@[simp]
-theorem puncture_reindex {κ : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (s : Set ι) :
-    puncture (reindex C e) (e ⁻¹' s) =
-      reindex (puncture C s) (e.subtypeEquiv fun _ ↦ Iff.rfl) := by
-  have hmap :
-      (LinearMap.funLeft F F (Subtype.val : ↥(e ⁻¹' s) → κ)).comp
-          (LinearEquiv.funCongrLeft F F e).toLinearMap =
-        (LinearEquiv.funCongrLeft F F (e.subtypeEquiv fun _ ↦ Iff.rfl)).toLinearMap.comp
-          (LinearMap.funLeft F F (Subtype.val : s → ι)) := by
-    ext x j
-    simp
-  rw [puncture_def, reindex_def, reindex_def, puncture_def, ← Submodule.map_comp,
-    ← Submodule.map_comp, hmap]
-
-/-- Shortening commutes with a change of coordinates. -/
-@[simp]
-theorem shorten_reindex {κ : Type*} (C : LinearCode F ι) (e : κ ≃ ι) (s : Set ι) :
-    shorten (reindex C e) (e ⁻¹' s) =
-      reindex (shorten C s) (e.subtypeEquiv fun _ ↦ Iff.rfl) := by
-  ext y
-  constructor
-  · intro hy
-    obtain ⟨z, hz, hz0, hzy⟩ := mem_shorten.mp hy
-    obtain ⟨x, hxC, hxz⟩ := mem_reindex.mp hz
-    have hx0 : ∀ i ∉ s, x i = 0 := by
-      intro i hi
-      have hk : e.symm i ∉ e ⁻¹' s := by simpa using hi
-      simpa using (hxz (e.symm i)).trans (hz0 (e.symm i) hk)
-    refine mem_reindex.mpr ⟨fun j : s ↦ x j,
-      mem_shorten.mpr ⟨x, hxC, hx0, fun _ ↦ rfl⟩, ?_⟩
-    intro j
-    exact (hxz j).trans (hzy j)
-  · intro hy
-    obtain ⟨u, hu, huy⟩ := mem_reindex.mp hy
-    obtain ⟨x, hxC, hx0, hxu⟩ := mem_shorten.mp hu
-    let z : κ → F := fun j ↦ x (e j)
-    refine mem_shorten.mpr ⟨z, mem_reindex.mpr ⟨x, hxC, fun _ ↦ rfl⟩, ?_, ?_⟩
-    · intro j hj
-      exact hx0 (e j) hj
-    · intro j
-      exact (hxu _).trans (huy j)
-
-/-- Puncturing twice is puncturing once to the flattened set of retained coordinates, up to the
-canonical equivalence between a subtype of a subtype and the corresponding subtype. -/
-@[simp]
-theorem puncture_puncture (C : LinearCode F ι) (s : Set ι) (t : Set s) :
-    reindex (puncture (puncture C s) t)
-        (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm =
-      puncture C {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} := by
-  have hmap :
-      (LinearEquiv.funCongrLeft F F
-            (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm).toLinearMap.comp
-          ((LinearMap.funLeft F F (Subtype.val : t → s)).comp
-            (LinearMap.funLeft F F (Subtype.val : s → ι))) =
-        LinearMap.funLeft F F (Subtype.val : {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} → ι) := by
-    ext x j
-    exact congrArg x
-      (Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe (· ∈ s) (· ∈ t) j)
-  rw [reindex_def, puncture_def, puncture_def, puncture_def, ← Submodule.map_comp,
-    ← Submodule.map_comp, LinearMap.comp_assoc, hmap]
-
-/-- Shortening twice is shortening once to the flattened set of retained coordinates, up to the
-canonical subtype equivalence. -/
-@[simp]
-theorem shorten_shorten (C : LinearCode F ι) (s : Set ι) (t : Set s) :
-    reindex (shorten (shorten C s) t)
-        (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm =
-      shorten C {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} := by
-  ext y
-  constructor
-  · intro hy
-    obtain ⟨v, hv, hvy⟩ := mem_reindex.mp hy
-    obtain ⟨z, hz, hz0, hzv⟩ := mem_shorten.mp hv
-    obtain ⟨x, hxC, hx0, hxz⟩ := mem_shorten.mp hz
-    refine mem_shorten.mpr ⟨x, hxC, ?_, fun j ↦ ?_⟩
-    · intro i hi
-      by_cases his : i ∈ s
-      · have hit : (⟨i, his⟩ : s) ∉ t := by
-          intro hmem
-          exact hi ⟨his, hmem⟩
-        exact (hxz ⟨i, his⟩).trans (hz0 ⟨i, his⟩ hit)
-      · exact hx0 i his
-    · let jt : t := ⟨⟨j, j.2.choose⟩, j.2.choose_spec⟩
-      have hj : (Equiv.subtypeSubtypeEquivSubtypeExists (· ∈ s) (· ∈ t)).symm j = jt :=
-        Subtype.ext <| Subtype.ext <|
-          Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe _ _ j
-      exact (hxz jt).trans ((hzv jt).trans (hj ▸ hvy j))
-  · intro hy
-    obtain ⟨x, hxC, hx0, hxy⟩ := mem_shorten.mp hy
-    let z : s → F := fun j ↦ x j
-    let v : t → F := fun j ↦ z j
-    have hzs : z ∈ shorten C s := by
-      refine mem_shorten.mpr ⟨x, hxC, ?_, fun _ ↦ rfl⟩
-      intro i hi
-      exact hx0 i (fun ⟨his, _⟩ ↦ hi his)
-    have hvt : v ∈ shorten (shorten C s) t := by
-      refine mem_shorten.mpr ⟨z, hzs, ?_, fun _ ↦ rfl⟩
-      intro j hj
-      exact hx0 j (fun ⟨_, hjt⟩ ↦ hj hjt)
-    refine mem_reindex.mpr ⟨v, hvt, ?_⟩
-    intro j
-    exact hxy j
 
 /-- Every shortened word is a punctured word. -/
 theorem shorten_le_puncture (C : LinearCode F ι) (s : Set ι) : shorten C s ≤ puncture C s := by

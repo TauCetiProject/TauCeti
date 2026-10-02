@@ -9,7 +9,8 @@ public import TauCeti.Data.Matrix.DotProduct
 public import TauCeti.InformationTheory.Coding.DirectSum
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Coding.EuclideanDual
-public import TauCeti.InformationTheory.Coding.Puncture
+public import TauCeti.InformationTheory.Coding.Puncture.Basic
+public import TauCeti.InformationTheory.Coding.Reindex
 
 /-!
 # Euclidean duals of derived codes
