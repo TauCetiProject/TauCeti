@@ -11,13 +11,14 @@ public import Mathlib.FieldTheory.RatFunc.IntermediateField
 # Automorphisms of the rational function field are its generators
 
 A `k`-algebra homomorphism out of `k(X)` is determined by the image of `X`, because `k(X)` is the
-fraction field of `k[X]`. For an automorphism that image is a transcendental element generating
-`k(X)` over `k`, and conversely every such element is the image of `X` under an automorphism. So
-the automorphisms of `k(X)` over `k` correspond to the generators of `k(X)` over `k`.
+fraction field of `k[X]`. For an automorphism that image generates `k(X)` over `k`, and conversely
+every generator is the image of `X` under an automorphism; a generator is automatically
+transcendental. So the automorphisms of `k(X)` over `k` correspond to the generators of `k(X)`
+over `k`.
 
 This is the computational form of `Aut(k(x)/k)`, and the starting point for identifying it with
-the group of linear fractional transformations: a generator is a quotient of two linear
-polynomials.
+the group of linear fractional transformations: a generator is a quotient of polynomials of degree
+at most one with nonzero determinant.
 
 ## Main definitions
 
