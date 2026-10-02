@@ -17,7 +17,7 @@ These let a statement phrased through `q.num` and `q.den` be checked on any frac
 ## Main results
 
 * `TauCeti.NNRat.num_mul_eq_of_eq_div`: `q = a / b` gives `q.num * b = a * q.den`.
-* `TauCeti.NNRat.eq_div_den_mul_den`: `q` and `q'` as fractions over `q.den * q'.den`.
+* `NNRat.eq_div_den_mul_den`: `q` and `q'` as fractions over `q.den * q'.den`.
 -/
 
 public section
@@ -31,6 +31,10 @@ theorem num_mul_eq_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0) (hq : q = 
   rw [← NNRat.num_div_den q, div_eq_div_iff (by simp) (by simpa using hb)] at hq
   exact_mod_cast hq
 
+end TauCeti.NNRat
+
+namespace NNRat
+
 /-- **A common denominator**: two nonnegative rationals `q` and `q'` are the fractions
 `(q.num * q'.den) / (q.den * q'.den)` and `(q'.num * q.den) / (q.den * q'.den)`. -/
 theorem eq_div_den_mul_den (q q' : ℚ≥0) :
@@ -40,4 +44,4 @@ theorem eq_div_den_mul_den (q q' : ℚ≥0) :
     mul_comm (q.den : ℚ≥0), mul_div_mul_right _ _ (by simp), NNRat.num_div_den, NNRat.num_div_den]
   exact ⟨rfl, rfl⟩
 
-end TauCeti.NNRat
+end NNRat
