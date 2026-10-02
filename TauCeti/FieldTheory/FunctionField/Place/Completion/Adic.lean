@@ -43,36 +43,18 @@ variable (k F : Type*) {R : Type*} [Field k] [Field F] [CommRing R]
   [IsDedekindDomain R] [Algebra k R] [Algebra R F] [IsFractionRing R F] [Algebra k F]
   [IsScalarTower k R F] (p : HeightOneSpectrum R)
 
-private theorem adicValuation_isEquiv :
-    (adic k F p).valuation.IsEquiv (p.valuation F) := by
-  rw [valuation_adic]
-
-private def withValAdicEquiv :
-    WithVal (adic k F p).valuation ≃+* WithVal (p.valuation F) :=
-  WithVal.congr _ _ (RingEquiv.refl F)
-
-private theorem uniformContinuous_withValAdicEquiv :
-    UniformContinuous (withValAdicEquiv k F p) :=
-  (adicValuation_isEquiv k F p).uniformContinuous_congr
-
-private theorem uniformContinuous_withValAdicEquiv_symm :
-    UniformContinuous (withValAdicEquiv k F p).symm :=
-  (adicValuation_isEquiv k F p).symm.uniformContinuous_congr
-
 private def completionAdicRingEquiv :
     (adic k F p).Completion ≃+* p.adicCompletion F :=
-  (Completion.mapRingEquiv (withValAdicEquiv k F p)
-    (uniformContinuous_withValAdicEquiv k F p).continuous
-    (uniformContinuous_withValAdicEquiv_symm k F p).continuous).trans
-    (HeightOneSpectrum.adicCompletion.equiv F p).symm
+  (HeightOneSpectrum.adicCompletion.equiv F p).symm
 
 private theorem completionAdicRingEquiv_embedding (x : F) :
     completionAdicRingEquiv k F p ((adic k F p).completionEmbedding x) =
       algebraMap F (p.adicCompletion F) x := by
-  rw [completionAdicRingEquiv, RingEquiv.trans_apply, completionEmbedding_apply,
-    RingEquiv.symm_apply_eq, Completion.mapRingEquiv_apply,
-    Completion.map_coe (uniformContinuous_withValAdicEquiv k F p)]
-  simp [withValAdicEquiv, HeightOneSpectrum.algebraMap_adicCompletion]
+  rw [completionEmbedding_apply]
+  change (HeightOneSpectrum.adicCompletion.equiv F p).symm
+    (WithVal.toVal (p.valuation F) x : (p.valuation F).Completion) = _
+  rw [RingEquiv.symm_apply_eq]
+  simp [HeightOneSpectrum.algebraMap_adicCompletion]
 
 /-- The completion of the adic place is the affine-model adic completion, over the constants. -/
 def completionAdicEquiv : (adic k F p).Completion ≃ₐ[k] p.adicCompletion F :=
@@ -90,14 +72,12 @@ theorem completionAdicEquiv_completionEmbedding (x : F) :
 /-- The comparison is uniformly continuous for the valuation uniformities. -/
 theorem uniformContinuous_completionAdicEquiv :
     UniformContinuous (completionAdicEquiv k F p) :=
-  (HeightOneSpectrum.adicCompletion.uniformEquiv F p).symm.uniformContinuous.comp
-    Completion.uniformContinuous_map
+  (HeightOneSpectrum.adicCompletion.uniformEquiv F p).symm.uniformContinuous
 
 /-- The inverse comparison is uniformly continuous for the valuation uniformities. -/
 theorem uniformContinuous_completionAdicEquiv_symm :
     UniformContinuous (completionAdicEquiv k F p).symm :=
-  Completion.uniformContinuous_map.comp
-    (HeightOneSpectrum.adicCompletion.uniformEquiv F p).uniformContinuous
+  (HeightOneSpectrum.adicCompletion.uniformEquiv F p).uniformContinuous
 
 /-- The comparison preserves the normalized valuation on completed functions. -/
 @[simp]
