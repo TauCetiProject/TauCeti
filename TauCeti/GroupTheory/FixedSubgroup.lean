@@ -58,7 +58,8 @@ variable {G : Type*} [Group G]
 abbrev fixedSubgroup (F : G →* G) : Subgroup G := F.eqLocus (MonoidHom.id G)
 
 /-- A point lies in the fixed subgroup of `F` exactly when `F` fixes it. -/
-@[simp]
+-- Prefer the fixed-point specialization to generic `MonoidHom.mem_eqLocus`.
+@[simp high]
 theorem mem_fixedSubgroup {F : G →* G} {x : G} : x ∈ fixedSubgroup F ↔ F x = x := Iff.rfl
 
 /-- Only the identity fixes every point. -/

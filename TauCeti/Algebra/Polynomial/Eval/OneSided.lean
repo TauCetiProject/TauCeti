@@ -93,7 +93,7 @@ variable {R : Type*} [CommRing R] [LinearOrder R]
 
 /-- Strictly monotone ring embeddings preserve right-hand signs. -/
 @[simp]
-theorem _root_.Polynomial.signRight_map {S : Type*} [CommRing S] [IsDomain S] [LinearOrder S]
+theorem _root_.Polynomial.signRight_map {S : Type*} [CommRing S] [LinearOrder S]
     (p : R[X]) (f : R →+* S) (hf : StrictMono f) (a : R) :
     (p.map f).signRight (f a) = p.signRight a := by
   rw [signRight_def, signRight_def, ← eq_rootMultiplicity_map hf.injective,
@@ -102,7 +102,7 @@ theorem _root_.Polynomial.signRight_map {S : Type*} [CommRing S] [IsDomain S] [L
 
 /-- Strictly monotone ring embeddings preserve left-hand signs. -/
 @[simp]
-theorem _root_.Polynomial.signLeft_map {S : Type*} [CommRing S] [IsDomain S] [LinearOrder S]
+theorem _root_.Polynomial.signLeft_map {S : Type*} [CommRing S] [LinearOrder S]
     (p : R[X]) (f : R →+* S) (hf : StrictMono f) (a : R) :
     (p.map f).signLeft (f a) = p.signLeft a := by
   rw [signLeft_def, signLeft_def, ← eq_rootMultiplicity_map hf.injective, signRight_map p f hf]
