@@ -41,6 +41,8 @@ places through its restriction to `k(x)`: this is the invariant finite set of ra
 * `TauCeti.degree_different_adjoin`: `deg Diff(F / k(x)) = 2g + 2`.
 * `TauCeti.card_support_different_adjoin`: over an algebraically closed `k`, exactly `2g + 2`
   places of `F` ramify over `k(x)`.
+* `TauCeti.eq_of_restrict_eq_of_mem_support_different`: restriction to `k(x)` is injective on the
+  ramified places.
 * `TauCeti.card_branchPlaces`: the branch places of `k(x)` number `2g + 2`.
 * `TauCeti.smul_mem_branchPlaces`: for `g ≥ 2` the restriction of an automorphism of `F / k`
   permutes the branch places.
@@ -134,20 +136,23 @@ ramified place has different exponent `1` and degree `1`, so the degree `2g + 2`
 counts them. -/
 theorem card_support_different_adjoin [IsAlgClosed k] :
     (Divisor.different k F hx.isFunctionField_adjoin).support.card = 2 * genus k F + 2 := by
-  have h := degree_different_adjoin hF hex hx hdeg
-  rw [Divisor.degree_apply, Finsupp.sum, Finset.sum_congr rfl
-    (fun Q hQ ↦ (show (Divisor.different k F hx.isFunctionField_adjoin) Q * (Q.degree : ℤ) = 1
-      from ?_)), Finset.sum_const, nsmul_eq_mul, mul_one] at h
-  · exact_mod_cast h
-  · have hd : Place.differentExponent k k⟮x⟯ Q = 1 := by
+  -- each ramified place contributes its different exponent `1` times its degree `1`
+  have hsummand : ∀ Q ∈ (Divisor.different k F hx.isFunctionField_adjoin).support,
+      (Divisor.different k F hx.isFunctionField_adjoin) Q * (Q.degree : ℤ) = 1 := by
+    intro Q hQ
+    have hcoeff : (Divisor.different k F hx.isFunctionField_adjoin) Q =
+        Place.differentExponent k k⟮x⟯ Q := Divisor.coeff_different _ _ _ Q
+    have hd : Place.differentExponent k k⟮x⟯ Q = 1 := by
       have := differentExponent_adjoin_le_one hdeg Q
       have := (Divisor.mem_support_different_iff k F hx.isFunctionField_adjoin).mp hQ
       omega
     have : FiniteDimensional k Q.ResidueField := Place.finiteDimensional_residueField Q hF
-    rw [show (Divisor.different k F hx.isFunctionField_adjoin) Q =
-        Place.differentExponent k k⟮x⟯ Q from Divisor.coeff_different _ _ _ Q, hd,
-      Place.degree_eq_one_of_isAlgClosed_of_isIntegral]
+    rw [hcoeff, hd, Place.degree_eq_one_of_isAlgClosed_of_isIntegral]
     simp
+  have h := degree_different_adjoin hF hex hx hdeg
+  rw [Divisor.degree_apply, Finsupp.sum, Finset.sum_congr rfl hsummand, Finset.sum_const,
+    nsmul_eq_mul, mul_one] at h
+  exact_mod_cast h
 
 end Hurwitz
 
@@ -171,11 +176,11 @@ theorem mem_branchPlaces_iff {P : Place k k⟮x⟯} :
   simp [branchPlaces]
 
 include hdeg in
-/-- **A ramified place is the only place over its restriction**: `e = 2 = [F : k(x)]` leaves no
-room for a second place in the fibre. -/
+/-- **Restriction is injective on the ramified places**: a place `Q` of `F` that ramifies over
+`k(x)` is the only place of `F` over its restriction, because `e(Q ∣ k(x)) = 2 = [F : k(x)]`
+exhausts the fibre. -/
 theorem eq_of_restrict_eq_of_mem_support_different {Q Q' : Place k F}
     (hQ : Q ∈ (Divisor.different k F hx.isFunctionField_adjoin).support)
-    (hQ' : Q' ∈ (Divisor.different k F hx.isFunctionField_adjoin).support)
     (h : Q.restrict k k⟮x⟯ = Q'.restrict k k⟮x⟯) : Q = Q' := by
   classical
   by_contra hne
@@ -188,7 +193,7 @@ theorem eq_of_restrict_eq_of_mem_support_different {Q Q' : Place k F}
       · exact h.symm)
   rw [Finset.sum_pair hne, hdeg] at hle
   have h1 := (mem_support_different_adjoin_iff hdeg hx Q).mp hQ
-  have h2 := (mem_support_different_adjoin_iff hdeg hx Q').mp hQ'
+  have h2 := Place.ramificationIdx_pos k⟮x⟯ Q'
   have := Place.one_le_relativeDegree k k⟮x⟯ Q
   have := Place.one_le_relativeDegree k k⟮x⟯ Q'
   nlinarith
@@ -198,7 +203,7 @@ include hF hex hdeg in
 theorem card_branchPlaces [IsAlgClosed k] : (branchPlaces hx).card = 2 * genus k F + 2 := by
   classical
   rw [branchPlaces, Finset.card_image_of_injOn
-    (fun Q hQ Q' hQ' h ↦ eq_of_restrict_eq_of_mem_support_different hx hdeg hQ hQ' h),
+    (fun Q hQ Q' _ h ↦ eq_of_restrict_eq_of_mem_support_different hx hdeg hQ h),
     card_support_different_adjoin hF hex hx hdeg]
 
 include hF hex hdeg in
