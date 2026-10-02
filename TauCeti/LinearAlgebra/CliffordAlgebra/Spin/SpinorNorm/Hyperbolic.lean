@@ -41,6 +41,7 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 
 /-- The spinor norm of the diagonal torus element `diag(t, t⁻¹)` of the hyperbolic plane is the
 square class of `t`. -/
+@[simp high]
 theorem spinorNorm_hyperbolicTorus (t : Kˣ) :
     spinorNorm (hyperbolicPlane K) nondegenerate_hyperbolicPlane (hyperbolicTorus K t) =
       squareClassHom t := by
@@ -67,8 +68,11 @@ theorem spinorNorm_hyperbolicTorus (t : Kˣ) :
     fin_cases i <;> simp [hw_def, he_def, Matrix.vecHead, Matrix.vecTail] <;> field_simp <;> ring
   rw [spinorNorm_apply, hg, map_mul, orthogonalSpinorNorm_reflectionOrthogonal,
     orthogonalSpinorNorm_reflectionOrthogonal]
-  rw [show unitOfInvertible (hyperbolicPlane K w) = t from Units.ext hw,
-    show unitOfInvertible (hyperbolicPlane K e) = 1 from Units.ext he, map_one]
+  -- The reflection formula records the norms as units `unitOfInvertible (Q v)`; identify them
+  -- with `t` and `1` by comparing underlying values.
+  have hwt : unitOfInvertible (hyperbolicPlane K w) = t := Units.ext hw
+  have he1 : unitOfInvertible (hyperbolicPlane K e) = 1 := Units.ext he
+  rw [hwt, he1, map_one]
   exact mul_one (squareClassHom t)
 
 /-- A diagonal torus element `diag(t, t⁻¹)` of the hyperbolic plane lifts to `Spin` exactly when
