@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Passport.BranchPoints
+public import TauCeti.Combinatorics.PermutationTriple.Passport.Enumeration
 public import TauCeti.Combinatorics.PermutationTriple.Examples
+-- Kernel computation of cycle partitions needs the unexposed cycle-factor implementation.
+import all Mathlib.GroupTheory.Perm.Cycle.Factors
 
 /-!
-# Examples of branch-point orbits of ordered passports
+# Examples of passports and their enumeration
 
 The degree-one cyclic passport has a singleton branch-point orbit. The torus passport changes
 under an exchange of branch points, witnessing that passing to the orbit is strictly coarser
-than equality of ordered passports.
+than equality of ordered passports. The computed passport fibers in degrees one to three
+have size one; the degree-three check uses the nonabelian symmetric monodromy group.
 -/
 
 open Equiv MulAction
@@ -22,7 +26,35 @@ public section
 
 namespace TauCeti
 
+/-- The degree-one passport has one class, computed with its whole symmetric group. -/
+theorem card_passportClasses_one :
+    (passportClasses (Finset.univ : Finset (Perm (Fin 1))) {1} {1} {1}).card = 1 := by
+  decide
+
+/-- The degree-two cyclic passport, ramified over `0` and `∞`, has one class. -/
+theorem card_passportClasses_cyclic_two :
+    (passportClasses (Finset.univ : Finset (Perm (Fin 2))) {2} {1, 1} {2}).card = 1 := by
+  decide
+
+/-- The degree-three passport with symmetric monodromy and ordered partitions
+`([3], [2, 1], [2, 1])` has one class. -/
+theorem card_passportClasses_symmetric_three :
+    (passportClasses (Finset.univ : Finset (Perm (Fin 3))) {3} {2, 1} {2, 1}).card = 1 := by
+  decide +kernel
+
 namespace PermutationTriple
+
+/-- The passport of the degree-three symmetric triple has size one. -/
+theorem passportSize_passportOf_s3Triple :
+    (ConnectedTriple.passportOf ⟨s3Triple, isConnected_s3Triple⟩).passportSize = 1 := by
+  let t : ConnectedTriple 3 := ⟨s3Triple, isConnected_s3Triple⟩
+  have hG : ((Finset.univ : Finset (Perm (Fin 3))) : Set (Perm (Fin 3))) = t.passportOf.G := by
+    simp [ConnectedTriple.passportOf_G, t, monodromyGroup_s3Triple]
+  rw [← card_passportClasses t.passportOf Finset.univ
+    ⟨1, by simpa using hG⟩]
+  simpa only [ConnectedTriple.passportOf_lam0, ConnectedTriple.passportOf_lam1,
+    ConnectedTriple.passportOf_laminf, t, cycleData_s3Triple] using
+    card_passportClasses_symmetric_three
 
 /-- The degree-one cyclic triple has a singleton branch-point orbit of ordered passports. -/
 theorem orbit_orderedPassportOf_cyclicTriple_one :

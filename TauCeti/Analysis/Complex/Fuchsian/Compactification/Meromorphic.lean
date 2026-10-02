@@ -25,16 +25,10 @@ At an adjoined cusp, read in the q-coordinate chart of any normalized cusp datum
 it, `F` is the cusp extension `TauCeti.Subgroup.CuspDatum.cuspExtension D f` on a punctured disc
 around `q = 0` (`Subgroup.CompactifiedQuotient.comp_cuspChart_symm_eventuallyEq`). Hence `F` is
 meromorphic at the cusp exactly when the cusp extension is meromorphic at `0`, with the same
-order. The q-expansion criteria for invariant holomorphic functions then turn exponential growth
-of rate `2πk / w` in the scaling coordinate into meromorphy at the cusp with a pole of order at
+order. The q-expansion criteria for invariant functions holomorphic sufficiently high turn
+exponential growth of rate `2πk / w` in the scaling coordinate into meromorphy at the cusp with
+a pole of order at
 most `k`, and exponential decay of rate `2πn / w` into a zero of order at least `n`.
-
-Combining the two, an invariant holomorphic function on the upper half-plane of at most
-exponential growth at every cusp extends to a function on the compactified quotient that is
-meromorphic at every point (`Subgroup.CompactifiedQuotient.exists_meromorphicAt_comp_ofQuotient`).
-This is the form in which invariant functions with q-expansions bounded below, such as modular
-functions, become meromorphic functions on the compactified quotient, with their orders at the
-cusps read off in the q-coordinate.
 
 ## Main declarations
 
@@ -47,9 +41,6 @@ cusps read off in the q-coordinate.
 * `Subgroup.CompactifiedQuotient.neg_le_meromorphicOrderAt_ofCusp` and
   `Subgroup.CompactifiedQuotient.natCast_le_meromorphicOrderAt_ofCusp`: growth bounds the pole
   order and decay bounds the zero order at a cusp.
-* `Subgroup.CompactifiedQuotient.meromorphicAt_of_forall_isBigO` and
-  `Subgroup.CompactifiedQuotient.exists_meromorphicAt_comp_ofQuotient`: meromorphic extension of
-  invariant holomorphic functions of at most exponential growth at the cusps.
 
 ## References
 
@@ -166,13 +157,15 @@ theorem meromorphicOrderAt_ofCusp (D : Γ.CuspDatum)
 
 section Growth
 
-variable (hF : ∀ z, F (ofQuotient (Quotient.mk _ z)) = f z) (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
-include hF hhol
+variable (hF : ∀ z, F (ofQuotient (Quotient.mk _ z)) = f z)
+include hF
 
 /-- **Meromorphic extension across a cusp.** If the pullback `f` of a function on the compactified
-quotient is holomorphic on the upper half-plane and grows at most like `exp (2πky / w)` in the
-scaling coordinate of a cusp datum of width `w`, then the function is meromorphic at that cusp. -/
+quotient is holomorphic at sufficiently large normalized heights and grows at most like
+`exp (2πky / w)` in the scaling coordinate of a cusp datum of width `w`, then the function is
+meromorphic at that cusp. -/
 theorem meromorphicAt_ofCusp_of_isBigO (D : Γ.CuspDatum) (k : ℤ)
+    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
     (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
       fun z ↦ Real.exp (2 * Real.pi * k * z.im / D.width)) :
     RiemannSurface.MeromorphicAt F (ofCusp D.cuspOrbit) :=
@@ -180,22 +173,26 @@ theorem meromorphicAt_ofCusp_of_isBigO (D : Γ.CuspDatum) (k : ℤ)
     (fun g ↦ apply_smul_of_forall_eq hF g) hhol hbound
 
 /-- **Growth bounds the pole order at a cusp.** If the pullback `f` of a function on the
-compactified quotient is holomorphic and grows at most like `exp (2πky / w)` in the scaling
-coordinate of a cusp datum of width `w`, then the order of the function at that cusp is at
+compactified quotient is holomorphic sufficiently high and grows at most like `exp (2πky / w)`
+in the scaling coordinate of a cusp datum of width `w`, then the order of the function at that
+cusp is at
 least `-k`. -/
 theorem neg_le_meromorphicOrderAt_ofCusp (D : Γ.CuspDatum) (k : ℤ)
+    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
     (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
       fun z ↦ Real.exp (2 * Real.pi * k * z.im / D.width)) :
     ((-k : ℤ) : WithTop ℤ) ≤ RiemannSurface.meromorphicOrderAt F (ofCusp D.cuspOrbit) := by
   rw [meromorphicOrderAt_ofCusp D hF]
-  exact neg_le_meromorphicOrderAt_cuspExtension D k f (fun g ↦ apply_smul_of_forall_eq hF g) hhol
-    hbound
+  exact neg_le_meromorphicOrderAt_cuspExtension D k f (fun g ↦ apply_smul_of_forall_eq hF g)
+    hhol hbound
 
 /-- **Decay bounds the zero order at a cusp.** If the pullback `f` of a function on the
-compactified quotient is holomorphic and decays at least like `exp (-2πny / w)` in the scaling
-coordinate of a cusp datum of width `w`, then the function vanishes to order at least `n` at that
+compactified quotient is holomorphic sufficiently high and decays at least like
+`exp (-2πny / w)` in the scaling coordinate of a cusp datum of width `w`, then the function
+vanishes to order at least `n` at that
 cusp. -/
 theorem natCast_le_meromorphicOrderAt_ofCusp (D : Γ.CuspDatum) (n : ℕ)
+    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
     (hdecay : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
       fun z ↦ Real.exp (-2 * Real.pi * n * z.im / D.width)) :
     ((n : ℤ) : WithTop ℤ) ≤ RiemannSurface.meromorphicOrderAt F (ofCusp D.cuspOrbit) := by
@@ -203,47 +200,6 @@ theorem natCast_le_meromorphicOrderAt_ofCusp (D : Γ.CuspDatum) (n : ℕ)
   exact natCast_le_meromorphicOrderAt_cuspExtension D n f (fun g ↦ apply_smul_of_forall_eq hF g)
     hhol hdecay
 
-/-- **Meromorphy on the whole compactified quotient.** If the pullback `f` of a function on the
-compactified quotient is holomorphic on the upper half-plane and, at every cusp orbit, grows at
-most exponentially in the scaling coordinate of some cusp datum representing it, then the
-function is meromorphic at every point of the compactified quotient. -/
-theorem meromorphicAt_of_forall_isBigO
-    (hgrowth : ∀ C : Γ.CuspOrbit, ∃ (D : Γ.CuspDatum) (k : ℤ), D.cuspOrbit = C ∧
-      (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-        fun z ↦ Real.exp (2 * Real.pi * k * z.im / D.width))
-    (x : Γ.CompactifiedQuotient) : RiemannSurface.MeromorphicAt F x := by
-  cases x with
-  | ofQuotient p =>
-    induction p using Quotient.inductionOn with
-    | h z =>
-      have hf : F ∘ ofQuotient ∘ Quotient.mk _ = f := funext hF
-      rw [meromorphicAt_ofQuotient_mk_iff, hf]
-      exact RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt (.of_forall hhol)
-  | ofCusp C =>
-    obtain ⟨D, k, rfl, hbound⟩ := hgrowth C
-    exact meromorphicAt_ofCusp_of_isBigO hF hhol D k hbound
-
 end Growth
-
-/-- **Meromorphic extension to the compactified quotient.** A `Γ`-invariant holomorphic function on
-the upper half-plane which, at every cusp orbit, grows at most exponentially in the scaling
-coordinate of some cusp datum representing it, is the pullback of a function on the compactified
-quotient that is meromorphic at every point. Its orders at the orbits of points of the upper
-half-plane and at the cusps are computed by
-`Subgroup.CompactifiedQuotient.meromorphicOrderAt_comp_ofQuotient_mk` and
-`Subgroup.CompactifiedQuotient.meromorphicOrderAt_ofCusp`. -/
-theorem exists_meromorphicAt_comp_ofQuotient (hinv : ∀ (g : Γ) (z : ℍ), f (g • z) = f z)
-    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
-    (hgrowth : ∀ C : Γ.CuspOrbit, ∃ (D : Γ.CuspDatum) (k : ℤ), D.cuspOrbit = C ∧
-      (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-        fun z ↦ Real.exp (2 * Real.pi * k * z.im / D.width)) :
-    ∃ F : Γ.CompactifiedQuotient → ℂ,
-      (∀ x, RiemannSurface.MeromorphicAt F x) ∧ F ∘ ofQuotient ∘ Quotient.mk _ = f := by
-  let f' : orbitRel.Quotient Γ ℍ → ℂ := Quotient.lift f fun z w h ↦ by
-    obtain ⟨g, rfl⟩ := mem_orbit_iff.mp (orbitRel_apply.mp h)
-    exact hinv g w
-  let F : Γ.CompactifiedQuotient → ℂ := fun x ↦ Sum.elim f' 0 (equivSum Γ x)
-  have hF : ∀ z, F (ofQuotient (Quotient.mk _ z)) = f z := fun _ ↦ by simp [F, f']
-  exact ⟨F, meromorphicAt_of_forall_isBigO hF hhol hgrowth, funext hF⟩
 
 end Subgroup.CompactifiedQuotient

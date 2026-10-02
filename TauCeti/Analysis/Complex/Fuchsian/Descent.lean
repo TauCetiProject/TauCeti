@@ -20,7 +20,10 @@ holomorphy of the pullback only on the chosen stabilizer ball. The global criter
 `Subgroup.mdifferentiable_iff_comp_quotientMk` and the unique descent theorem
 `Subgroup.existsUnique_mdifferentiable_quotientMk` apply to functions valued in any complex
 Banach space. They use the ordinary orbit quotient, without choosing representatives to
-define the descended function.
+define the descended function. For maps into a complex manifold,
+`Subgroup.mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk` checks holomorphy at
+an orbit, elliptic or not, from holomorphy of the pullback near one of its points, by reading the
+map in a chart of the target.
 
 The elliptic descent argument uses `TauCeti.differentiableOn_descendPow` and follows
 Farkas–Kra, *Riemann Surfaces*, Chapter I §§4–5, and Miranda, *Algebraic Curves and
@@ -88,6 +91,46 @@ half-plane, including at elliptic orbits. -/
   rw [← chartAt_eq] at hd
   exact hd.differentiableAt ((chartAt ℂ q).open_target.mem_nhds
     ((chartAt ℂ q).map_source (mem_chart_source ℂ q)))
+
+variable {Γ} in
+/-- **Holomorphic descent of maps into a manifold.** A map from the coarse quotient to a complex
+manifold is holomorphic at the orbit of `z` as soon as its pullback along the orbit projection is
+holomorphic near `z`. This holds also at elliptic orbits; at a free orbit holomorphy of the
+pullback at `z` alone suffices (`Subgroup.mdifferentiableAt_of_comp_quotientMk`). -/
+theorem mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℂ E'] [CompleteSpace E'] {H' : Type*}
+    [TopologicalSpace H'] {I' : ModelWithCorners ℂ E' H'} {M' : Type*} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] {F : orbitRel.Quotient Γ ℍ → M'} {z : ℍ}
+    (hF : ∀ᶠ w in 𝓝 z, MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) w) :
+    MDifferentiableAt 𝓘(ℂ) I' F (Quotient.mk _ z) := by
+  rw [mdifferentiableAt_iff_target]
+  refine ⟨MulAction.isOpenQuotientMap_quotientMk.continuousAt_comp_iff.mp
+    hF.self_of_nhds.continuousAt, ?_⟩
+  set y := F (Quotient.mk _ z)
+  -- Near `z` the pullback lands in the chart at `y`, so its reading in that chart is holomorphic.
+  have hφ : ∀ᶠ w in 𝓝 z,
+      MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E') ((extChartAt I' y ∘ F) ∘ Quotient.mk _) w := by
+    filter_upwards [hF, hF.self_of_nhds.continuousAt.preimage_mem_nhds
+      ((chartAt H' y).open_source.mem_nhds (mem_chart_source H' y))] with w hw hwy
+    exact (mdifferentiableAt_extChartAt hwy).comp w hw
+  -- A stabilizer-ball chart at the orbit of `z` whose ball lies in that neighbourhood.
+  obtain ⟨ε₀, hε₀, hball⟩ := Metric.eventually_nhds_iff_ball.mp hφ
+  obtain ⟨ε, hε, hopen, hεε₀⟩ := (eventually_mem_nhdsWithin.and
+    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z).and
+      (Ioo_mem_nhdsGT hε₀))).exists
+  let e := stabilizerBallQuotientChart hε hopen
+  have hd := Γ.differentiableOn_comp_stabilizerBallQuotientChart_symm hε hopen
+    (F := extChartAt I' y ∘ F) fun w hw ↦
+      (hball w (ball_subset_ball hεε₀.2.le hw)).mdifferentiableWithinAt
+  have hze : Quotient.mk (orbitRel Γ ℍ) z ∈ e.source := by
+    rw [mem_stabilizerBallQuotientChart_source_iff hε hopen]
+    exact ⟨1, by simpa using hε⟩
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 (orbitRel.Quotient Γ ℍ) :=
+    IsManifold.subset_maximalAtlas (stabilizerBallQuotientChart_mem_atlas Γ hε hopen)
+  rw [← mdifferentiableWithinAt_univ,
+    mdifferentiableWithinAt_iff_source_of_mem_maximalAtlas he hze]
+  simp only [mfld_simps, mdifferentiableWithinAt_univ, mdifferentiableAt_iff_differentiableAt]
+  exact hd.differentiableAt (e.open_target.mem_nhds (e.map_source hze))
 
 /-- Every invariant holomorphic function on the upper half-plane descends uniquely to a
 holomorphic function on the coarse quotient, with no freeness assumption. -/

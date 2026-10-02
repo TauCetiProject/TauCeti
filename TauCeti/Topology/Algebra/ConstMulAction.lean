@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.Group.Submonoid.MulAction
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.LocallyFinite
@@ -26,6 +28,8 @@ countable, and that the translates of a compact set under it form a locally fini
   in the point is inherited by a submonoid, hence by a subgroup.
 * `SubMulAction.properlyDiscontinuousSMul`: proper discontinuity is inherited by every invariant
   subspace.
+* `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
+  properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
@@ -57,6 +61,33 @@ instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul 
   Submonoid.continuousConstSMul S.toSubmonoid
 
 end Subgroup
+
+open scoped Pointwise in
+/-- **Conjugation preserves proper discontinuity**: if `H'` is the conjugate `g H g⁻¹` of a
+subgroup `H` acting properly discontinuously, then `H'` acts properly discontinuously, since
+`g k g⁻¹` moves `K` to meet `L` exactly when `k` moves `g⁻¹ • K` to meet `g⁻¹ • L`. -/
+theorem properlyDiscontinuousSMul_of_conjAct_smul_eq {G X : Type*} [Group G] [TopologicalSpace X]
+    [MulAction G X] [ContinuousConstSMul G X] {H H' : _root_.Subgroup G} {g : G}
+    [ProperlyDiscontinuousSMul H X] (h : ConjAct.toConjAct g • H = H') :
+    ProperlyDiscontinuousSMul H' X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    subst h
+    let φ : H → (ConjAct.toConjAct g • H : _root_.Subgroup G) := fun k ↦
+      ⟨g * k * g⁻¹, by
+        simpa [ConjAct.toConjAct_smul] using
+          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.2⟩
+    refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := H)
+      (hK.image (continuous_const_smul g⁻¹)) (hL.image (continuous_const_smul g⁻¹))).image
+        φ).subset ?_
+    intro k hk
+    have hk' : g⁻¹ * k * g ∈ H := by
+      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.2
+      rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this
+    refine ⟨⟨g⁻¹ * k * g, hk'⟩, ?_, Subtype.ext (by simp [φ, mul_assoc])⟩
+    -- a point `x ∈ K` with `k • x ∈ L` gives `g⁻¹ • x ∈ g⁻¹ • K` moved into `g⁻¹ • L`
+    obtain ⟨_, ⟨x, hx, rfl⟩, hxL⟩ := hk
+    refine ⟨g⁻¹ • ((k : G) • x), ⟨g⁻¹ • x, ⟨x, hx, rfl⟩, ?_⟩, ⟨_, hxL, rfl⟩⟩
+    simp [_root_.Subgroup.smul_def, mul_smul]
 
 end TauCeti
 
