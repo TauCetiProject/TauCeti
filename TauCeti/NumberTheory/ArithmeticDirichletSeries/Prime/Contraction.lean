@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Ne
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree.NaturalDensity
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
+import TauCeti.Data.Set.Restrict
 
 /-!
 # Contracting prime sums, prime counts and densities along a fibre count
@@ -201,17 +202,6 @@ theorem HasDirichletDensity.zero_of_encard_fiber_le (hS : S.HasDirichletDensity 
     exact div_le_div_of_nonneg_right (primeIdealZetaSum_le_mul_of_encard_fiber_le hmaps hnorm
       hfiber (by linarith) (TauCeti.summable_absNorm_rpow_subtype_of_one_lt S hs1)) hs.le
 
-omit [NumberField K] [NumberField E] in
-/-- Removing the primes of `T` over `Z` keeps the fibres of `π` over the primes outside `Z`. -/
-private theorem card_fiber_sdiff_preimage {Z : Set (HeightOneSpectrum (𝓞 K))}
-    (hfiber : ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) :
-    ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T \ π ⁻¹' Z} = c := by
-  intro 𝔭 h𝔭
-  rw [← hfiber 𝔭 h𝔭]
-  refine Nat.card_congr (Equiv.subtypeEquivRight fun 𝔓 ↦ ?_)
-  simp only [Set.mem_sdiff, Set.mem_preimage]
-  exact ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, h.1 ▸ h𝔭.2⟩⟩
-
 /-- **Dirichlet densities along a fibre count off a negligible set.** Let `π` map the part of `T`
 away from the preimage of `Z` into `S \ Z`, preserve absolute norms there, and not increase norms
 over `Z`. Suppose that every prime of `S` outside the density-zero set `Z` has exactly `c ≠ 0`
@@ -227,7 +217,7 @@ theorem hasDirichletDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneS
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
   -- Remove the exceptional primes on both sides; away from them the fibre count is exact.
   have hcore := hasDirichletDensity_iff_of_card_fiber hmaps hnorm hc
-    (card_fiber_sdiff_preimage hfiber) (δ := δ)
+    (fun 𝔭 h𝔭 ↦ (TauCeti.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭)) (δ := δ)
   -- The primes of `T` over `Z` are negligible, since `π` has bounded fibres over `Z`.
   have hTZ : (T \ π ⁻¹' Z) ∆ T = T ∩ π ⁻¹' Z := by
     ext 𝔓
@@ -418,7 +408,8 @@ theorem hasNaturalDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneSpe
       tauto
   -- Away from the exceptional primes the fibre count is exact.
   rw [← hasNaturalDensity_iff_of_symmDiff hT,
-    hasNaturalDensity_iff_of_card_fiber hmaps hnorm hc (card_fiber_sdiff_preimage hfiber),
+    hasNaturalDensity_iff_of_card_fiber hmaps hnorm hc
+      fun 𝔭 h𝔭 ↦ (TauCeti.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭),
     hasNaturalDensity_iff_of_symmDiff hS]
 
 /-- **Natural densities along contraction.** Let `E / K` be an extension of number fields, `T` a
