@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # Meromorphic functions on a Riemann surface and their orders
@@ -96,16 +97,6 @@ theorem meromorphicOrderAt_of_not_meromorphicAt (hf : ¬ MeromorphicAt f x) :
 
 /-! ### Values on a punctured neighbourhood -/
 
-/-- The inverse of the chart at `x` maps punctured neighbourhoods of `chartAt ℂ x x` into
-punctured neighbourhoods of `x`. -/
-private theorem tendsto_chartAt_symm_nhdsNE (x : X) :
-    Tendsto (chartAt ℂ x).symm (𝓝[≠] (chartAt ℂ x x)) (𝓝[≠] x) := by
-  have hx := mem_chart_source ℂ x
-  refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (((chartAt ℂ x).tendsto_symm hx).mono_left nhdsWithin_le_nhds) ?_
-  simpa [(chartAt ℂ x).left_inv hx] using
-    (chartAt ℂ x).symm.eventually_ne_nhdsWithin ((chartAt ℂ x).map_source hx)
-
 /-- Being meromorphic at `x` only depends on the values on a punctured neighbourhood of `x`. -/
 theorem MeromorphicAt.congr (hf : MeromorphicAt f x) (h : f =ᶠ[𝓝[≠] x] g) :
     MeromorphicAt g x :=
@@ -119,27 +110,6 @@ theorem meromorphicAt_congr (h : f =ᶠ[𝓝[≠] x] g) : MeromorphicAt f x ↔ 
 theorem meromorphicOrderAt_congr (h : f =ᶠ[𝓝[≠] x] g) :
     meromorphicOrderAt f x = meromorphicOrderAt g x :=
   _root_.meromorphicOrderAt_congr (h.comp_tendsto (tendsto_chartAt_symm_nhdsNE x))
-
-/-- Near `e x`, the representative of `k` in a chart `e` is its representative in the preferred
-chart at `x`, composed with the transition map from `e` to that chart. -/
-private theorem comp_symm_eventuallyEq_comp_symm_comp {α : Type*} (k : X → α)
-    {e : OpenPartialHomeomorph X ℂ} (hx : x ∈ e.source) :
-    k ∘ e.symm =ᶠ[𝓝 (e x)] (k ∘ (chartAt ℂ x).symm) ∘ (chartAt ℂ x ∘ e.symm) := by
-  filter_upwards [(e.tendsto_symm hx).eventually
-    ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))] with z hz
-  simp [(chartAt ℂ x).left_inv hz]
-
-/-- Near `chartAt ℂ x x`, the representative of `k ∘ φ` is the representative of `k` composed with
-the representative of `φ`. -/
-private theorem comp_comp_chartAt_symm_eventuallyEq {α : Type*} (k : Y → α) {φ : X → Y}
-    (hφ : ContinuousAt φ x) :
-    (k ∘ φ) ∘ (chartAt ℂ x).symm =ᶠ[𝓝 (chartAt ℂ x x)]
-      (k ∘ (chartAt ℂ (φ x)).symm) ∘ fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)) := by
-  have hcont : Tendsto (fun z ↦ φ ((chartAt ℂ x).symm z)) (𝓝 (chartAt ℂ x x)) (𝓝 (φ x)) :=
-    hφ.tendsto.comp ((chartAt ℂ x).tendsto_symm (mem_chart_source ℂ x))
-  filter_upwards [hcont.eventually
-    ((chartAt ℂ (φ x)).open_source.mem_nhds (mem_chart_source ℂ (φ x)))] with z hz
-  simp [(chartAt ℂ (φ x)).left_inv hz]
 
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
@@ -157,7 +127,7 @@ theorem meromorphicAt_iff_of_mem_maximalAtlas :
     MeromorphicAt f x ↔ _root_.MeromorphicAt (f ∘ e.symm) (e x) := by
   have hcx := mem_chart_source ℂ x
   rw [_root_.MeromorphicAt.meromorphicAt_congr
-      ((comp_symm_eventuallyEq_comp_symm_comp f hx).filter_mono nhdsWithin_le_nhds),
+      ((comp_symm_eventuallyEq_comp_chartAt_symm_comp f hx).filter_mono nhdsWithin_le_nhds),
     meromorphicAt_comp_iff_of_deriv_ne_zero
       (analyticAt_symm_trans he (chart_mem_maximalAtlas x) hx hcx)
       (deriv_symm_trans_ne_zero he (chart_mem_maximalAtlas x) hx hcx)]
@@ -169,7 +139,7 @@ theorem meromorphicOrderAt_eq_of_mem_maximalAtlas :
     meromorphicOrderAt f x = _root_.meromorphicOrderAt (f ∘ e.symm) (e x) := by
   have hcx := mem_chart_source ℂ x
   rw [_root_.meromorphicOrderAt_congr
-      ((comp_symm_eventuallyEq_comp_symm_comp f hx).filter_mono nhdsWithin_le_nhds),
+      ((comp_symm_eventuallyEq_comp_chartAt_symm_comp f hx).filter_mono nhdsWithin_le_nhds),
     meromorphicOrderAt_comp_of_deriv_ne_zero
       (analyticAt_symm_trans he (chart_mem_maximalAtlas x) hx hcx)
       (deriv_symm_trans_ne_zero he (chart_mem_maximalAtlas x) hx hcx)]
@@ -224,8 +194,8 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
     rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top]
     simp [(chartAt ℂ x).left_inv hcx, ← hmult]
   rw [meromorphicOrderAt, _root_.meromorphicOrderAt_congr
-      ((comp_comp_chartAt_symm_eventuallyEq F hφ.self_of_nhds.continuousAt).filter_mono
-        nhdsWithin_le_nhds),
+      ((comp_comp_chartAt_symm_eventuallyEq (H := ℂ) (H' := ℂ) F
+        hφ.self_of_nhds.continuousAt).filter_mono nhdsWithin_le_nhds),
     hF'.meromorphicOrderAt_comp (g := fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
       (analyticAt_chartAt_comp_comp_chartAt_symm hφ) hnc']
   simp [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx, ← hmult]
