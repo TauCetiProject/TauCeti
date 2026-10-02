@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
-public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Sym.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Finset.NatAntidiagonal
