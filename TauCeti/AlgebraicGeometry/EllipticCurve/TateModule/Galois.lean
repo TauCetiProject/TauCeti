@@ -39,8 +39,8 @@ so it is stated basis-free, on `T_ℓ E` itself.
   representation is the coordinatewise action on points.
 * `WeierstrassCurve.isLocallyConstant_map_of_zsmul_eq_zero`: the orbit map of a torsion point of
   an elliptic curve is locally constant for the Krull topology.
-* `WeierstrassCurve.continuous_tateModuleGaloisRepresentation`: for an elliptic curve, the action
-  `(σ, x) ↦ σ x` on `T_ℓ E` is jointly continuous.
+* `WeierstrassCurve.continuous_tateModuleGaloisRepresentation_apply`: for an elliptic curve, the
+  action `(σ, x) ↦ σ x` on `T_ℓ E` is jointly continuous.
 
 ## References
 
@@ -89,14 +89,22 @@ theorem tateModuleGaloisRepresentation_apply (σ : K ≃ₐ[F] K)
     W.tateModuleGaloisRepresentation ℓ σ x = TateModule.map (Affine.Point.map σ.toAlgHom) x :=
   TateModule.mapLinearMap_apply _ x
 
+/-- **The representation on the level `E[ℓ ^ n]`**: the `n`-th component of `σ x` is the
+induced image of the `n`-th component of `x` in the torsion subgroup. -/
+@[simp]
+theorem proj_tateModuleGaloisRepresentation (σ : K ≃ₐ[F] K)
+    (x : TateModule ℓ (W⁄K).toAffine.Point) (n : ℕ) :
+    TateModule.proj n (W.tateModuleGaloisRepresentation ℓ σ x) =
+      TateModule.levelMap (Affine.Point.map σ.toAlgHom) n (TateModule.proj n x) := by
+  rw [tateModuleGaloisRepresentation_apply, TateModule.proj_map]
+
 /-- **The representation on the level `E[ℓ ^ n]`**: the `n`-th component of `σ x` is `σ` applied
 to the coordinates of the `n`-th component of `x`. -/
-@[simp]
 theorem coe_proj_tateModuleGaloisRepresentation (σ : K ≃ₐ[F] K)
     (x : TateModule ℓ (W⁄K).toAffine.Point) (n : ℕ) :
     (TateModule.proj n (W.tateModuleGaloisRepresentation ℓ σ x) : (W⁄K).toAffine.Point) =
       Affine.Point.map σ.toAlgHom (TateModule.proj n x : (W⁄K).toAffine.Point) := by
-  rw [tateModuleGaloisRepresentation_apply, TateModule.proj_map, TateModule.levelMap_apply]
+  rw [proj_tateModuleGaloisRepresentation, TateModule.levelMap_apply]
 
 end Representation
 
@@ -113,10 +121,8 @@ theorem isLocallyConstant_map_of_zsmul_eq_zero {n : ℤ} (hn : n ≠ 0) {P : (W�
     (hP : n • P = 0) : IsLocallyConstant fun σ : K ≃ₐ[F] K ↦ Point.map σ.toAlgHom P := by
   rcases P with _ | ⟨x, y, hns⟩
   · exact IsLocallyConstant.const 0
-  have hJac : n • Jacobian.Point.fromAffine (Point.some _ _ hns) = 0 := by
-    have h := congrArg (Jacobian.Point.toAffineAddEquiv (W⁄K)).symm hP
-    rw [map_zsmul, map_zero] at h
-    simpa using h
+  have hJac : n • Jacobian.Point.fromAffine (Point.some _ _ hns) = 0 :=
+    zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr hP
   have hx := W.isIntegral_x_of_zsmul_eq_zero hn hns hJac
   have hy := W.isIntegral_y_of_equation_of_isIntegral_x hns.left hx
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun σ₀ ↦ ?_
@@ -130,7 +136,7 @@ theorem isLocallyConstant_map_of_zsmul_eq_zero {n : ℤ} (hn : n ≠ 0) {P : (W�
 /-- **The `ℓ`-adic Galois representation of an elliptic curve is continuous**: the action
 `(σ, x) ↦ σ x` of `K ≃ₐ[F] K` with its Krull topology on `T_ℓ E` with its inverse-limit topology
 is jointly continuous. -/
-theorem continuous_tateModuleGaloisRepresentation (ℓ : ℕ) [Fact ℓ.Prime] :
+theorem continuous_tateModuleGaloisRepresentation_apply (ℓ : ℕ) [Fact ℓ.Prime] :
     Continuous fun q : (K ≃ₐ[F] K) × TateModule ℓ (W⁄K).toAffine.Point ↦
       W.tateModuleGaloisRepresentation ℓ q.1 q.2 :=
   (TateModule.continuous_map_apply fun n x ↦
