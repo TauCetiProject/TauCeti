@@ -26,7 +26,8 @@ and then proves the classical description in every carrier basis.
 
 For an even lattice, `N · B(x, x) ∈ 2ℤ` says that `N` kills the half-norm `q_L(x) = B(x, x) / 2`
 modulo `ℤ`, so the level is the least `N` with `N • q_L = 0` on the discriminant group. In general
-the level divides `2 · det L`, and it kills the discriminant group `A_L = Lᵛ / L`.
+the level divides `2 · det L`, and for a nondegenerate lattice it kills the discriminant group
+`A_L = Lᵛ / L`.
 
 ## Main definitions and results
 
@@ -41,7 +42,8 @@ the level divides `2 · det L`, and it kills the discriminant group `A_L = Lᵛ 
 * `TauCeti.IntegralLattice.IsEven.level_dvd_iff`: for an even lattice, the level divides `N`
   exactly when `N` kills the discriminant quadratic form.
 * `TauCeti.IntegralLattice.level_nsmul_mem_carrier` and
-  `TauCeti.IntegralLattice.exponent_discriminantGroup_dvd_level`: the level kills `A_L`.
+  `TauCeti.IntegralLattice.exponent_discriminantGroup_dvd_level`: the level of a nondegenerate
+  lattice kills `A_L`.
 * `TauCeti.IntegralLattice.level_dvd_two_mul_determinant`: the level divides `2 · det L`.
 * `TauCeti.IntegralLattice.level_pos`: a nondegenerate lattice has positive level.
 * `TauCeti.IntegralLattice.level_eq_one_iff`: a nondegenerate lattice has level one exactly when
