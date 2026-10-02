@@ -72,9 +72,10 @@ nothing more.
 * `TauCeti.Octonion.finrank_imaginary`: the imaginary octonions, the trace-zero subspace, are
   `7`-dimensional. The derivation algebra `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`
   (`TauCeti/Algebra/Lie/Derivation/Basic.lean`), of rank `14` by
-  `TauCeti.Octonion.finrank_derivationLieAlgebra`. The imaginary octonions are an irreducible
-  representation of `Der 𝕆` by `TauCeti.Octonion.isIrreducible_imaginaryLieSubmodule`
-  (`TauCeti/Algebra/Octonion/Fundamental.lean`), so they are its `7`-dimensional fundamental
+  `TauCeti.Octonion.finrank_derivationLieAlgebra`. Over a field in which `2` is nonzero the
+  imaginary octonions are an irreducible representation of `Der 𝕆`
+  (`TauCeti.Octonion.isIrreducible_imaginaryLieSubmodule`, in
+  `TauCeti/Algebra/Octonion/Fundamental.lean`), so there they are its `7`-dimensional fundamental
   representation; only the isomorphism of `Der 𝕆` with `LieAlgebra.g₂` still waits.
 
 ## Implementation notes

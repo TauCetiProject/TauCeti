@@ -28,8 +28,8 @@ The whole argument runs on two of the three explicit families of derivations of
 the one imaginary direction on the scalar diagonal. The two computations that do the work are
 iterations of a single vector derivation:
 
-* applying `upperDerivation u` twice kills the vector entries and leaves `-2 ⟨u, w⟩ · u` on the
-  upper one, so one more `lowerDerivation t` lands on the line through `ε`
+* applying `upperDerivation u` twice kills every entry but the upper vector one, where it leaves
+  `-2 ⟨u, w⟩ · u`, so one more `lowerDerivation t` lands on the line through `ε`
   (`TauCeti.Octonion.lowerDerivation_upperDerivation_upperDerivation_apply`), with coefficient
   `2 ⟨u, w⟩ ⟨t, u⟩`;
 * symmetrically for `lowerDerivation` twice followed by `upperDerivation`
@@ -87,12 +87,8 @@ submodules of `𝕆` itself, which is where the derivations act; irreducibility 
 
 ## References
 
-This is the Layer 8 milestone "`G₂ = Der(𝕆)`" of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose bullet asks for the
-`7`-dimensional fundamental representation `Im 𝕆` of `Der 𝕆`; that README's `Ordering` paragraph
-names `𝕆`, `G₂ = Der(𝕆)` and "its `7`" as a self-contained unit buildable from scratch. The
-identification of `Der 𝕆` with the split `LieAlgebra.g₂` and its type-`G₂` Killing-simplicity are
-not proved here.
+The identification of `Der 𝕆` with the split `LieAlgebra.g₂` and its type-`G₂` Killing-simplicity
+are not proved here.
 
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §2.
 * J. C. Baez, *The octonions*, Bull. Amer. Math. Soc. 39 (2002), §4.1.

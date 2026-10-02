@@ -39,9 +39,10 @@ element whose existence is exactly the splitness of `𝕆` — its two diagonal 
 So `D` maps all of `𝕆` into the imaginary octonions, commutes with conjugation, and lies in the
 orthogonal Lie algebra of the norm: `Der 𝕆 ≤ 𝔰𝔬(N)`
 (`TauCeti.Octonion.derivationLieAlgebra_le_skewAdjointLieSubalgebra`). In particular the imaginary
-octonions are a Lie submodule (`TauCeti.Octonion.imaginaryLieSubmodule`) — this is the
-`7`-dimensional fundamental representation — and, when scalar multiplication by `2` on `𝕆` is
-regular, `Der 𝕆` acts faithfully on it, since `𝕆 = R · 1 ⊕ Im 𝕆` and a derivation kills `1`.
+octonions are a Lie submodule (`TauCeti.Octonion.imaginaryLieSubmodule`) — over a field in which
+`2` is nonzero this is the `7`-dimensional fundamental representation — and, when scalar
+multiplication by `2` on `𝕆` is regular, `Der 𝕆` acts faithfully on it, since `𝕆 = R · 1 ⊕ Im 𝕆`
+and a derivation kills `1`.
 
 The derivations exhibited here come from the action of `SL₃` on a Zorn vector matrix,
 `⟨a, b, v, w⟩ ↦ ⟨a, b, A v, (Aᵀ)⁻¹ w⟩`, differentiated at the identity: a trace-zero matrix `M`
