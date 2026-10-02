@@ -29,6 +29,8 @@ weights and avoidance of marked squares without requiring the two cuts to be dis
   a repartition preserves the product of any multiplicative weight on squares.
 * `TauCeti.GridRectangleDecomposition.IsRepartition.OMonomial_mul_OMonomial`: a repartition
   preserves the product of the `O`-monomial weights of the unblocked differential.
+* `TauCeti.GridRectangleDecomposition.IsRepartition.val_add_val_eq`: a repartition covers the same
+  squares with the same multiplicities on both sides.
 * `TauCeti.GridRectangleDecomposition.IsRepartition.disjoint_coveredSquares_first`,
   `TauCeti.GridRectangleDecomposition.IsRepartition.disjoint_coveredSquares_second`: avoidance
   of a set of squares transfers across a repartition.
@@ -131,6 +133,17 @@ theorem OMonomial_mul_OMonomial (h : D.IsRepartition E) (G : GridDiagram n) (R :
       G.OMonomial R D.first.toGridRectangle * G.OMonomial R D.second.toGridRectangle := by
   simp only [G.OMonomial_eq_prod_coveredSquares R]
   exact h.prod_coveredSquares_mul_prod_coveredSquares _
+
+/-- A repartition covers the same squares with the same multiplicities on both sides. -/
+theorem val_add_val_eq (h : D.IsRepartition E) :
+    E.first.toGridRectangle.coveredSquares.val + E.second.toGridRectangle.coveredSquares.val =
+      D.first.toGridRectangle.coveredSquares.val +
+        D.second.toGridRectangle.coveredSquares.val := by
+  rw [Multiset.add_eq_union_iff_disjoint.mpr
+      (Finset.disjoint_val.mpr h.disjoint_coveredSquares_right),
+    Multiset.add_eq_union_iff_disjoint.mpr
+      (Finset.disjoint_val.mpr h.disjoint_coveredSquares_left),
+    ← Finset.union_val, ← Finset.union_val, h.coveredSquares_union_eq]
 
 /-- If neither rectangle of the left-hand decomposition meets a set of squares, then the union
 of the right-hand decomposition does not meet it either. -/

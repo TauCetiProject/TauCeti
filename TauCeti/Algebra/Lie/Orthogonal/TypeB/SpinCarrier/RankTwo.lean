@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Frobenius
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.IntegralMatrix
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Conjugation
@@ -192,8 +193,27 @@ noncomputable def rankTwoRootIntMatrix (k : Fin (1 + 1) ⊕ Fin (1 + 1)) :
     Matrix (Fin (dimension 1)) (Fin (dimension 1)) ℤ :=
   (rankTwoRootMatrix k).submatrix (Fintype.equivFin _).symm (Fintype.equivFin _).symm
 
-/-- A numbered simple root generator acts on an enumerated lattice basis vector by the
-corresponding column of `TauCeti.TypeBSpinCarrier.rankTwoRootIntMatrix`. -/
+/-- The general spin-generator matrix specializes to the explicit rank-two matrix. -/
+theorem rootIntMatrix_rankTwo (k : Fin (1 + 1) ⊕ Fin (1 + 1)) :
+    rootIntMatrix 1 k = rankTwoRootIntMatrix k := by
+  ext r s
+  have hvec : (⟨rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (TauCeti.typeBSimpleRootGeneratorFamily k)) (latticeBasis 1 s),
+      rep_kostantForm_mem_lattice 1 _
+        (TauCeti.UniversalEnvelopingAlgebra.rootVector_mem_kostantForm _ _ k) _
+        (latticeBasis 1 s).2⟩ : (lattice 1).toAddSubgroup) =
+      ∑ t, rankTwoRootIntMatrix k t s • latticeBasis 1 t := by
+    apply Subtype.ext
+    simp only [AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_zsmul]
+    rw [coe_latticeBasis, rep_rootGenerator_exteriorBasis_rankTwo,
+      ← (Fintype.equivFin (Finset (Fin (1 + 1)))).symm.sum_comp]
+    refine Finset.sum_congr rfl fun r _ => ?_
+    rw [coe_latticeBasis, rankTwoRootIntMatrix, submatrix_apply, Int.cast_smul_eq_zsmul]
+  have hcoords := congrArg (fun v ↦ (latticeBasis 1).repr v r) hvec
+  exact hcoords.trans (congrFun ((latticeBasis 1).repr_sum_self
+    (fun t ↦ rankTwoRootIntMatrix k t s)) r)
+
+/-- A rank-two root generator acts on an enumerated lattice basis vector by its matrix column. -/
 theorem rep_rootGenerator_latticeBasis_eq_sum_rankTwo (k : Fin (1 + 1) ⊕ Fin (1 + 1))
     (s : Fin (dimension 1)) :
     rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.typeBSimpleRootGeneratorFamily k))
@@ -201,10 +221,8 @@ theorem rep_rootGenerator_latticeBasis_eq_sum_rankTwo (k : Fin (1 + 1) ⊕ Fin (
       ∑ r, rankTwoRootIntMatrix k r s •
         ((latticeBasis 1 r : (lattice 1).toAddSubgroup) :
           ExteriorAlgebra ℚ (polarization 1).W) := by
-  rw [coe_latticeBasis, rep_rootGenerator_exteriorBasis_rankTwo,
-    ← (Fintype.equivFin (Finset (Fin (1 + 1)))).symm.sum_comp]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  rw [coe_latticeBasis, rankTwoRootIntMatrix, submatrix_apply, Int.cast_smul_eq_zsmul]
+  rw [← rootIntMatrix_rankTwo]
+  exact rep_rootGenerator_latticeBasis_eq_sum 1 k s
 
 /-- **Each numbered root subgroup point of the rank-two spin carrier is `1 + u X`** for `X` the
 integral matrix of the corresponding generator. -/
@@ -213,14 +231,7 @@ theorem coe_rootSubgroupPoints_eq_one_add_smul_rankTwo (k : Fin (1 + 1) ⊕ Fin 
     ((rootSubgroupPoints 1 k A u : GL (Fin (dimension 1)) A) :
         Matrix (Fin (dimension 1)) (Fin (dimension 1)) A) =
       1 + Multiplicative.toAdd u • (rankTwoRootIntMatrix k).map (Int.cast : ℤ → A) := by
-  rw [coe_rootSubgroupPoints]
-  simpa only [MulEquiv.apply_symm_apply] using
-    TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul
-      _ _ (rep 1) (lattice 1).toAddSubgroup (rep_kostantForm_mem_lattice 1) k
-      (isNilpotent_rep_rootGenerator 1 k) (latticeBasis 1) (rankTwoRootIntMatrix k)
-      (nilpotencyClass_rep_rootGenerator_le_two 1 k)
-      (rep_rootGenerator_latticeBasis_eq_sum_rankTwo k)
-      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
+  rw [coe_rootSubgroupPoints_eq_one_add_smul, rootIntMatrix_rankTwo]
 
 /-! ## The change of basis to the symplectic carrier -/
 

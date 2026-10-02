@@ -475,6 +475,24 @@ theorem cIoo_subset_cIoo_left_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
   rw [← cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo h]
   exact Finset.subset_union_right.trans' (Finset.subset_insert _ _)
 
+/-- A point `v` strictly inside the arc from `u` to `w` cuts every arc from `u` to a point `s` of
+the arc from `v` to `w`, counted. -/
+theorem ite_mem_cIco_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
+    (hs : s ∈ cIco v w) (t : Fin n) :
+    (if t ∈ cIco u s then 1 else 0 : ℕ) =
+      (if t ∈ cIco u v then 1 else 0) + if t ∈ cIco v s then 1 else 0 := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hv hs ⊢
+  split_ifs at hv hs ⊢ <;> omega
+
+/-- A point `s` of the arc from `u` to `w` cuts it into the arc before `s`, the point `s` and the
+open arc after `s`, counted. -/
+theorem ite_mem_cIco_eq_add_add {u w s : Fin n} (hs : s ∈ cIco u w) (t : Fin n) :
+    (if t ∈ cIco u w then 1 else 0 : ℕ) =
+      (if t ∈ cIco u s then 1 else 0) + (if t = s then 1 else 0) +
+        if t ∈ cIoo s w then 1 else 0 := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs ⊢
+  split_ifs at hs ⊢ <;> omega
+
 /-- A point outside the clockwise interval from `a` to `b` is either an endpoint or lies in
 the opposite clockwise interval. -/
 theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :

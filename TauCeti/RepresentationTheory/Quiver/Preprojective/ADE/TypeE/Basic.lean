@@ -10,11 +10,12 @@ public import TauCeti.Algebra.Algebra.NilpotentPair
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
-# The preprojective algebra of `E₆` is finite-dimensional
+# The preprojective algebras of `E₆` and `E₈` are finite-dimensional
 
 In the Bourbaki labelling of `Eₙ` (`n ≥ 4`, Mathlib's `CartanMatrix.E n`), the node `3` is the
 branch node, and three arms leave it: the leaf `1`; the arm `2, 0`; and the long arm
@@ -44,10 +45,16 @@ factors from `{x, y}` vanishes (`TauCeti.span_pair_pow_six_eq_bot`). Hence **eve
 length at least `24` vanishes** in the signless algebra of `E₆`. The bound `24` is not sharp; the
 sharp bound `h - 1 = 11`, for the Coxeter number `h = 12` of `E₆`, is not proved here.
 
+For `E₈` the long arm has four nodes, so `(x + y) ^ 5 = (-z) ^ 5 = 0`, and every product of
+fifteen factors from `{x, y}` vanishes (`TauCeti.span_pair_pow_fifteen_eq_bot`). Hence **every
+path of length at least `46` vanishes** in the signless algebra of `E₈`. Again the bound is not
+sharp: the sharp bound is `h - 1 = 29`, for the Coxeter number `h = 30` of `E₈`. The `E₈`
+results are stated for the named Bourbaki-labelled graph `TauCeti.zigzagE8Graph`.
+
 The signless algebra of a bipartite graph is the preprojective algebra of each of its
 orientations, by an explicit sign rescaling of the arrows. Thus the same bound holds in the
-preprojective algebra `Π_k(Q)` of every orientation `Q` of `E₆`, over every commutative ring; the
-relation ideal is admissible, and `Π_k(Q)` is finite-dimensional over every field.
+preprojective algebra `Π_k(Q)` of every orientation `Q` of `E₆` or `E₈`, over every commutative
+ring; the relation ideal is admissible, and `Π_k(Q)` is finite-dimensional over every field.
 
 ## Main results
 
@@ -60,6 +67,12 @@ relation ideal is admissible, and `Π_k(Q)` is finite-dimensional over every fie
 * `TauCeti.instFiniteDimensionalPreprojectiveAlgebraE6` and
   `TauCeti.instFiniteDimensionalSignlessPreprojectiveAlgebraE6`: the preprojective algebra of
   every orientation of `E₆`, and the signless algebra of `E₆`, are finite-dimensional.
+* `TauCeti.signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le`,
+  `TauCeti.preprojectiveMk_E8_ofPath_eq_zero_of_le`,
+  `TauCeti.isAdmissibleIdeal_preprojectiveIdeal_E8`,
+  `TauCeti.instFiniteDimensionalPreprojectiveAlgebraE8` and
+  `TauCeti.instFiniteDimensionalSignlessPreprojectiveAlgebraE8`: the same for `E₈`, with the
+  bound `46`.
 
 ## References
 
@@ -512,6 +525,86 @@ instance instFiniteDimensionalSignlessPreprojectiveAlgebraE6 :
     FiniteDimensional k
       (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph DynkinType.E6.cartanMatrix))) :=
   (e6Coloring.sourceSinkSignlessPreprojectiveAlgebraEquiv k).symm.toLinearEquiv.finiteDimensional
+
+end Field
+
+/-! ### The `E₈` diagram -/
+
+/-- The named `E₈` graph is the Bourbaki-labelled `Eₙ` diagram for `n = 8`. -/
+private theorem zigzagE8Graph_eq : zigzagE8Graph = diagramGraph (CartanMatrix.E 8) := by
+  ext i j
+  rw [zigzagE8Graph_adj, diagramGraph_E_adj]
+  fin_cases i <;> fin_cases j <;> simp only [EAdj] <;> decide
+
+/-- **Every product of fifteen backtracks at the branch node of `E₈` vanishes.** -/
+private theorem eSpan_eight_pow_fifteen (k : Type*) [CommRing k] : eSpan k 8 ^ 15 = ⊥ := by
+  have hsum : eTurn k 8 0 + eTurn k 8 1 = -eTurn k 8 2 :=
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k (by norm_num))
+  refine span_pair_pow_fifteen_eq_bot (eTurn_zero_sq k (by norm_num))
+    (eTurn_one_pow_three k (by norm_num)) ?_
+  rw [hsum, neg_pow, eTurn_two_pow k (n := 8) (by norm_num), mul_zero]
+
+section CommRing
+
+variable (k : Type*) [CommRing k]
+
+/-- **Every path of length at least `46` vanishes in the signless algebra of `E₈`.** -/
+@[simp]
+theorem signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le
+    (x : Quiver.TotalPath (DoubledQuiver zigzagE8Graph)) (hx : 46 ≤ x.2.2.length) :
+    signlessPreprojectiveMk k _ (ofPath x) = 0 := by
+  -- The `E₈` graph is the diagram of `CartanMatrix.E 8`, for which the normal forms are proved.
+  have key : ∀ G : SimpleGraph (Fin 8), G = diagramGraph (CartanMatrix.E 8) →
+      ∀ x : Quiver.TotalPath (DoubledQuiver G), 46 ≤ x.2.2.length →
+        signlessPreprojectiveMk k _ (ofPath x) = 0 := by
+    rintro G rfl x hx
+    exact signlessPreprojectiveMk_ofPath_eq_zero_of_eSpan_pow k (n := 8) (by norm_num)
+      (eSpan_eight_pow_fifteen k) x hx
+  exact key _ zigzagE8Graph_eq x hx
+
+variable (o : Orientation zigzagE8Graph)
+
+/-- **Every path of length at least `46` vanishes in the preprojective algebra of `E₈`**, for
+every orientation of the `E₈` graph. -/
+@[simp]
+theorem preprojectiveMk_E8_ofPath_eq_zero_of_le
+    (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagE8Graph o)))
+    (hx : 46 ≤ x.2.2.length) :
+    preprojectiveMk k (OrientedQuiver zigzagE8Graph o) (ofPath x) = 0 := by
+  -- Every orientation of the bipartite `E₈` graph is compared with the signless algebra.
+  have hc : ∀ ⦃i j : OrientedQuiver zigzagE8Graph o⦄, (i ⟶ j) →
+      zigzagE8Coloring ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
+        zigzagE8Coloring ((OrientedQuiver.vertexEquiv _ o).symm j) :=
+    fun _ _ a => zigzagE8Coloring.valid a.1
+  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
+  exact signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le k _
+    (by rwa [Prefunctor.length_mapTotalPath])
+
+/-- **The preprojective relation ideal of every orientation of `E₈` is admissible.** It lies in
+the square of the arrow ideal, and it contains every path of length at least `46`. -/
+theorem isAdmissibleIdeal_preprojectiveIdeal_E8 :
+    IsAdmissibleIdeal (preprojectiveIdeal k (OrientedQuiver zigzagE8Graph o)).asIdeal :=
+  isAdmissibleIdeal_iff.2 ⟨⟨46, fun x hx => by
+    rw [TwoSidedIdeal.mem_asIdeal, ← preprojectiveMk_eq_zero_iff]
+    exact preprojectiveMk_E8_ofPath_eq_zero_of_le k o x hx⟩,
+    preprojectiveIdeal_le_arrowIdeal_sq k⟩
+
+end CommRing
+
+section Field
+
+variable (k : Type*) [Field k]
+
+/-- **The preprojective algebra of `E₈` is finite-dimensional**, for every orientation of the
+`E₈` graph and over every field. -/
+instance instFiniteDimensionalPreprojectiveAlgebraE8 (o : Orientation zigzagE8Graph) :
+    FiniteDimensional k (preprojectiveAlgebra k (OrientedQuiver zigzagE8Graph o)) :=
+  (isAdmissibleIdeal_preprojectiveIdeal_E8 k o).finiteDimensional_quotient
+
+/-- **The signless algebra of `E₈` is finite-dimensional** over every field. -/
+instance instFiniteDimensionalSignlessPreprojectiveAlgebraE8 :
+    FiniteDimensional k (signlessPreprojectiveAlgebra k (DoubledQuiver zigzagE8Graph)) :=
+  (zigzagE8SignlessEquivPreprojective k).symm.toLinearEquiv.finiteDimensional
 
 end Field
 

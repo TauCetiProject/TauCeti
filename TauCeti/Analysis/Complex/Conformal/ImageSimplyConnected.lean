@@ -14,9 +14,10 @@ import Mathlib.Topology.Maps.Basic
 # Images of open simply connected sets under injective holomorphic maps
 
 A holomorphic map that is injective on an open set `Ω ⊆ ℂ` carries `Ω` to an open set, and carries
-a simply connected `Ω` to a simply connected set. Both facts are used by the Riemann mapping
-theorem, where the image of an extremal map has to be recognized as a domain of the same kind as
-the original.
+a simply connected `Ω` to a simply connected set. Openness is used by the Riemann mapping theorem
+(in the Koebe square-root step); the transport of simple connectivity is a standalone topological
+fact, which that proof does not need, since it carries holomorphic square roots across such a map
+instead (`TauCeti.HasHolomorphicSquareRoots.image`).
 
 ## The argument
 

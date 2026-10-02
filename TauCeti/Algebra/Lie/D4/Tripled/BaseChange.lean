@@ -36,6 +36,8 @@ group scheme of type `D₄`.
 * `TauCeti.D4Tripled.baseChangeDefiningIdeal_def`: its unfolding to the generic construction.
 * `TauCeti.D4Tripled.coordinateHopfAlgebra` and `TauCeti.D4Tripled.coordinateMap`: the
   specialized coordinate Hopf algebra and its quotient map from `O(GL₂₄/A)`.
+* `TauCeti.D4Tripled.finiteTypeCoordinateHopfAlgebra`: the same coordinate algebra bundled
+  with its finite-type property.
 * `TauCeti.D4Tripled.baseChangeCoordinateIso`: its quotient is the scalar extension of the
   integral carrier coordinate Hopf algebra.
 * `TauCeti.D4Tripled.baseChangePointsMulEquiv`: the points of that quotient in a commutative
@@ -174,6 +176,18 @@ theorem coordinateMap_ker :
   unfold coordinateMap
   exact CommHopfAlgCat.mkQuotient_ker
     (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
+
+/-- The specialized tripled type-`D₄` carrier as a finite-type commutative Hopf algebra. -/
+public noncomputable abbrev finiteTypeCoordinateHopfAlgebra :
+    FiniteTypeCommHopfAlgCat.{v, v} A :=
+  FiniteTypeCommHopfAlgCat.of A (coordinateHopfAlgebra A)
+
+/-- The finite-type package has the specialized carrier coordinate Hopf algebra as its underlying
+object. -/
+@[simp]
+theorem finiteTypeCoordinateHopfAlgebra_obj :
+    (finiteTypeCoordinateHopfAlgebra A).obj = coordinateHopfAlgebra A :=
+  (rfl)
 
 section Points
 
@@ -533,6 +547,15 @@ theorem mkQuotient_comp_weightTorusToBaseChangeCoordinateMap :
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A
+
+/-- The factored weight-torus map composed with the carrier coordinate morphism recovers its
+ambient transported coordinate map. -/
+@[simp]
+theorem coordinateMap_comp_weightTorusToBaseChangeCoordinateMap :
+    coordinateMap A ≫ weightTorusToBaseChangeCoordinateMap A =
+      GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A d4TripledWeight := by
+  unfold coordinateMap
+  exact mkQuotient_comp_weightTorusToBaseChangeCoordinateMap A
 
 /-- Under the base-change coordinate isomorphism, the factored weight-torus map is the scalar
 extension of its integral coordinate map. -/

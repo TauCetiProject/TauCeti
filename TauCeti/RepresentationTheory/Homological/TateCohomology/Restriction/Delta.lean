@@ -7,21 +7,23 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Boundary
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupHomology
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Delta
 
 /-!
-# Restriction commutes with the connecting maps from Tate degree minus one onward
+# Restriction commutes with the connecting maps of Tate cohomology
 
 Let `H` be a subgroup of a finite group `G` and `S` a short exact sequence of
-`G`-representations. Restricting `S` to `H` keeps it short exact, and from degree minus one onward
-Tate restriction commutes with the connecting maps of the two long exact sequences:
+`G`-representations. Restricting `S` to `H` keeps it short exact, and in every degree Tate
+restriction commutes with the connecting maps of the two long exact sequences:
 
 `H_Tateʳ(G, X₃) ⟶ H_Tateʳ⁺¹(G, X₁)`
 `    ↓               ↓`
 `H_Tateʳ(H, X₃) ⟶ H_Tateʳ⁺¹(H, X₁)`
 
-for `r ≥ -1` (`TauCeti.TateCohomology.δ_comp_res`). This is what lets a statement about restriction
-be moved up in degree by dimension shifting, as in the proof that restriction is compatible with
-the Tate cup product. The boundary case `r = -1` is supplied by
+for every `r : ℤ` (`TauCeti.TateCohomology.δ_comp_res`). This is what lets a statement about
+restriction be moved across degrees by dimension shifting, as in the proof that restriction is
+compatible with the Tate cup product. The boundary case `r = -1` is supplied by
 `TauCeti.TateCohomology.δ_comp_res_neg_one`.
 
 In nonnegative degrees the Tate complex is the complex of inhomogeneous cochains. Restriction of
@@ -35,10 +37,18 @@ cohomology, and the first one induces its composite with Tate restriction. In de
 map induces the epimorphism from the invariants onto `H_Tate⁰`, and the first one again induces its
 composite with Tate restriction, which is induced by the inclusion `Mᴳ ⊆ Mᴴ`.
 
+Below degree `-1` the comparison is made in group homology instead. The injective comparison
+`TauCeti.TateCohomology.toGroupHomology` of `H_Tate^{-(n+1)}` with `Hₙ` commutes with the connecting
+maps, and through it Tate restriction is the transfer of group homology
+(`TauCeti.TateCohomology.res_comp_toGroupHomology`), which commutes with the connecting maps by
+`TauCeti.groupHomology.δ_comp_transfer`.
+
 ## Main results
 
-* `TauCeti.TateCohomology.δ_comp_res`: Tate restriction commutes with the connecting maps in
-  degrees at least minus one.
+* `TauCeti.TateCohomology.res_comp_toGroupHomology`: in negative degrees, Tate restriction is the
+  transfer of group homology through `toGroupHomology`.
+* `TauCeti.TateCohomology.δ_comp_res`: Tate restriction commutes with the connecting maps in every
+  degree.
 
 ## References
 
@@ -252,13 +262,9 @@ variable [Fintype G]
 
 attribute [local instance] Subgroup.fintypeOfFinite
 
-/-- **Tate restriction commutes with the connecting maps from degree minus one onward.** For a short
-exact sequence `S` of `G`-representations and a subgroup `H`, restriction to `H` intertwines the
-connecting map `H_Tateʳ(G, X₃) ⟶ H_Tateʳ⁺¹(G, X₁)` of `S` with the connecting map of its
-restriction to `H`, for every `r ≥ -1`. -/
-@[reassoc (attr := simp)]
-theorem δ_comp_res {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H : Subgroup G) {r : ℤ}
-    (hr : -1 ≤ r) :
+/-- Tate restriction commutes with the connecting maps from degree minus one onward. -/
+private theorem δ_comp_res_of_neg_one_le {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
+    (H : Subgroup G) {r : ℤ} (hr : -1 ≤ r) :
     _root_.TateCohomology.δ hS r ≫ res S.X₁ H (r + 1) =
       res S.X₃ H r ≫ _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) r := by
   by_cases hboundary : r = -1
@@ -288,5 +294,60 @@ theorem δ_comp_res {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H : Subgro
     hρ.trans <|
     (congrArg (· ≫ _) (homologyMap_cochainsExtToTate_comp_res S.X₃ H hr).symm).trans <|
     Category.assoc _ _ _
+
+/-- **In negative degrees Tate restriction is the transfer of group homology**: through the
+comparison `toGroupHomology` of `H_Tate^{-(n+1)}` with `Hₙ`, restriction to `H` is the transfer. -/
+@[reassoc]
+theorem res_comp_toGroupHomology (M : Rep R G) (H : Subgroup G) (n : ℕ) :
+    res M H (Int.negSucc n) ≫ toGroupHomology (Rep.res H.subtype M) n =
+      toGroupHomology M n ≫ TauCeti.groupHomology.transfer M H n := by
+  cases n with
+  | zero =>
+    -- On the class of a norm-zero `z`, both sides are the class of the relative transfer of `z`
+    -- in `H₀(H, M)`. `Int.negSucc 0` is `-1`, where Tate restriction is `HNegOneRes`.
+    change res M H (-1) ≫ _ = _
+    rw [res_neg_one]
+    refine (cancel_epi (HNegOneπ M)).1 ?_
+    have h₁ := HNegOneπ_comp_HNegOneRes_assoc M H (toGroupHomology (Rep.res H.subtype M) 0)
+    rw [HNegOneπ_comp_toGroupHomology] at h₁
+    refine h₁.trans ?_
+    rw [HNegOneπ_comp_toGroupHomology_assoc]
+    ext z
+    simp
+  | succ n =>
+    rw [res_negSucc_succ, toGroupHomology_eq_negSuccIso_hom, toGroupHomology_eq_negSuccIso_hom,
+      negSuccRes_comp_negSuccIso_hom]
+
+/-- Tate restriction commutes with the connecting maps in degrees `-(n+2) ⟶ -(n+1)`: through
+the injective comparison `toGroupHomology`, this is the compatibility of the transfer with the
+connecting maps of group homology. -/
+private theorem δ_comp_res_negSucc {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
+    (H : Subgroup G) (n : ℕ) :
+    _root_.TateCohomology.δ hS (Int.negSucc (n + 1)) ≫ res S.X₁ H (Int.negSucc n) =
+      res S.X₃ H (Int.negSucc (n + 1)) ≫
+        _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) (Int.negSucc (n + 1)) := by
+  refine (cancel_mono (toGroupHomology (Rep.res H.subtype S.X₁) n)).1 ?_
+  calc _ = toGroupHomology S.X₃ (n + 1) ≫ groupHomology.δ hS (n + 1) n rfl ≫
+        TauCeti.groupHomology.transfer S.X₁ H n := by
+        rw [Category.assoc, res_comp_toGroupHomology, δ_comp_toGroupHomology_assoc]
+    _ = toGroupHomology S.X₃ (n + 1) ≫ TauCeti.groupHomology.transfer S.X₃ H (n + 1) ≫
+        groupHomology.δ ((shortExact_res H.subtype).2 hS) (n + 1) n rfl := by
+        rw [TauCeti.groupHomology.δ_comp_transfer]
+    _ = _ := by
+        rw [← res_comp_toGroupHomology_assoc, Category.assoc]
+        exact congrArg (_ ≫ ·) (δ_comp_toGroupHomology ((shortExact_res H.subtype).2 hS) n).symm
+
+/-- **Tate restriction commutes with the connecting maps.** For a short exact sequence `S` of
+`G`-representations and a subgroup `H`, restriction to `H` intertwines the connecting map
+`H_Tateʳ(G, X₃) ⟶ H_Tateʳ⁺¹(G, X₁)` of `S` with the connecting map of its restriction to `H`, in
+every degree `r`. -/
+@[reassoc (attr := simp)]
+theorem δ_comp_res {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H : Subgroup G) (r : ℤ) :
+    _root_.TateCohomology.δ hS r ≫ res S.X₁ H (r + 1) =
+      res S.X₃ H r ≫ _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) r := by
+  rcases le_or_gt (-1) r with hr | hr
+  · exact δ_comp_res_of_neg_one_le hS H hr
+  obtain ⟨n, rfl⟩ : ∃ n, r = Int.negSucc (n + 1) := ⟨(-r - 2).toNat, by omega⟩
+  exact δ_comp_res_negSucc hS H n
 
 end TauCeti.TateCohomology
