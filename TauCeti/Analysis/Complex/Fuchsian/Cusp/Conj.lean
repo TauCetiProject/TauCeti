@@ -34,7 +34,8 @@ construction for `g⁻¹`, and an element of the normalizer of `Γ` acts on the 
 * `Subgroup.cuspOrbitConjEquiv`: the induced bijection of cusp orbits, with the identity and
   composition laws `Subgroup.cuspOrbitConjEquiv_one` and `Subgroup.cuspOrbitConjEquiv_trans`.
 * `Subgroup.CuspDatum.conj`: the transported cusp datum, with
-  `Subgroup.CuspDatum.cuspOrbit_conj`.
+  `Subgroup.CuspDatum.cuspOrbit_conj` and the identity and composition laws
+  `Subgroup.CuspDatum.conj_one` and `Subgroup.CuspDatum.conj_conj`.
 * `TauCeti.Subgroup.CuspDatum.horodisc_conj` and
   `TauCeti.Subgroup.CuspDatum.coordinate_conj_smul`: transport of horodiscs and of the
   q-coordinate.
@@ -90,9 +91,10 @@ theorem cuspOrbitConjEquiv_cuspOrbitMk (h : ConjAct.toConjAct g • Γ = Γ') (c
   Subtype.ext (by simp only [cuspOrbitConjEquiv, Equiv.subtypeEquiv_apply, cuspOrbitMk_val]; rfl)
 
 /-- The inverse of the bijection of cusp orbits induced by `g` is the one induced by `g⁻¹`. -/
-theorem cuspOrbitConjEquiv_symm (h : ConjAct.toConjAct g • Γ = Γ')
-    (h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ) :
-    (cuspOrbitConjEquiv h).symm = cuspOrbitConjEquiv h' := by
+theorem cuspOrbitConjEquiv_symm (h : ConjAct.toConjAct g • Γ = Γ') :
+    (cuspOrbitConjEquiv h).symm =
+      cuspOrbitConjEquiv (by rw [← h, map_inv, inv_smul_smul] :
+        ConjAct.toConjAct g⁻¹ • Γ' = Γ) := by
   refine Equiv.ext fun C ↦ ?_
   obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
   rw [Equiv.symm_apply_eq, cuspOrbitConjEquiv_cuspOrbitMk, cuspOrbitConjEquiv_cuspOrbitMk]
@@ -184,6 +186,20 @@ theorem cuspOrbit_conj : (D.conj h).cuspOrbit = cuspOrbitConjEquiv h D.cuspOrbit
     Subtype.ext (by rw [cuspOrbit_val, cuspOrbitMk_val])
   rw [hD, cuspOrbitConjEquiv_cuspOrbitMk]
   exact Subtype.ext (by rw [cuspOrbit_val, cuspOrbitMk_val, conj_cusp])
+
+/-- Transport of a cusp datum by conjugation by `1` is the identity. -/
+@[simp]
+theorem conj_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ) : D.conj h = D :=
+  CuspDatum.ext (by simp) (by simp)
+
+/-- Transporting a cusp datum by conjugation by `g` and then by `g'` is transporting it by
+conjugation by `g' * g`. -/
+@[simp]
+theorem conj_conj {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
+    (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
+    (D.conj h).conj h' =
+      D.conj (by rw [map_mul, mul_smul, h, h'] : ConjAct.toConjAct (g' * g) • Γ = Γ'') :=
+  CuspDatum.ext (by simp [mul_smul]) (by simp [mul_assoc])
 
 end CuspDatum
 

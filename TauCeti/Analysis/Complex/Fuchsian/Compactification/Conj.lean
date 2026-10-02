@@ -84,11 +84,12 @@ theorem compactifiedQuotientConj_ofCusp (h : ConjAct.toConjAct g • Γ = Γ') (
 
 /-- The map induced by `g⁻¹` is a left inverse of the map induced by `g`. -/
 theorem compactifiedQuotientConj_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ')
-    (h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ) (x : Γ.CompactifiedQuotient) :
-    compactifiedQuotientConj h' (compactifiedQuotientConj h x) = x := by
+    (x : Γ.CompactifiedQuotient) :
+    compactifiedQuotientConj (by rw [← h, map_inv, inv_smul_smul] :
+      ConjAct.toConjAct g⁻¹ • Γ' = Γ) (compactifiedQuotientConj h x) = x := by
   cases x with
-  | ofQuotient p => simp [← quotientConjHomeomorph_symm h h']
-  | ofCusp C => simp [← cuspOrbitConjEquiv_symm h h']
+  | ofQuotient p => simp [← quotientConjHomeomorph_symm h]
+  | ofCusp C => simp [← cuspOrbitConjEquiv_symm h]
 
 /-- Conjugation by `1` induces the identity of the compactified quotient. -/
 @[simp]
@@ -220,11 +221,11 @@ def conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
   have h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ := by rw [← h, map_inv, inv_smul_smul]
   { toFun := compactifiedQuotientConj h
     invFun := compactifiedQuotientConj h'
-    left_inv := compactifiedQuotientConj_compactifiedQuotientConj h h'
+    left_inv := compactifiedQuotientConj_compactifiedQuotientConj h
     right_inv x := by
       cases x with
-      | ofQuotient p => simp [← quotientConjHomeomorph_symm h h']
-      | ofCusp C => simp [← cuspOrbitConjEquiv_symm h h']
+      | ofQuotient p => simp [← quotientConjHomeomorph_symm h]
+      | ofCusp C => simp [← cuspOrbitConjEquiv_symm h]
     contMDiff_toFun := (mdifferentiable_compactifiedQuotientConj h).contMDiff
     contMDiff_invFun := (mdifferentiable_compactifiedQuotientConj h').contMDiff }
 
@@ -235,10 +236,10 @@ theorem coe_conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
   (rfl)
 
 /-- The inverse of the biholomorphism induced by `g` is the one induced by `g⁻¹`. -/
-theorem conjBiholomorph_symm (h : ConjAct.toConjAct g • Γ = Γ')
-    (h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ) :
+theorem conjBiholomorph_symm (h : ConjAct.toConjAct g • Γ = Γ') :
     letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
-    (conjBiholomorph h).symm = conjBiholomorph h' := by
+    (conjBiholomorph h).symm =
+      conjBiholomorph (by rw [← h, map_inv, inv_smul_smul] : ConjAct.toConjAct g⁻¹ • Γ' = Γ) := by
   have := TauCeti.discreteTopology_of_conjAct_smul_eq h
   exact Diffeomorph.ext fun _ ↦ rfl
 
