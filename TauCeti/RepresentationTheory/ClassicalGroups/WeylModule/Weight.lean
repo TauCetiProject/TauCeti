@@ -12,9 +12,6 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.TensorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
 -- Weight spaces are nonzero along the whole Weyl-group orbit.
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Weyl
--- `TauCeti.weightOfShape`, the dominant weight read off the row lengths of a shape.
-public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
-import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # The highest weight of a Weyl module
