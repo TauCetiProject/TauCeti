@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Theorem
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Restriction
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.TrivialRestrictionTrans
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.Nonnegative
 
@@ -102,19 +102,21 @@ variable {F : Formation G} {small big : NormalLayer G}
 
 /-- The Tate isomorphism of a class formation commutes with restriction to an intermediate
 ground field, in every integer degree. -/
+-- Not `@[simp]`: the existing cup-product rules already prove this, so `simpNF` rejects it.
 theorem tateIso_res (cf : ClassFormation F) (T : LayerRestriction small big) (r : ℤ)
     (x : big.TrivialTateH r) :
     T.tateRes F (r + 2) (cf.tateIso big r x) =
       cf.tateIso small r (T.trivialTateRes r x) := by
   simp [tateIso_apply]
 
-/-- The restriction square for the Tate isomorphism composes along a tower of ground fields. -/
+/-- The Tate isomorphism commutes with iterated restriction along a tower of ground fields. -/
 theorem tateIso_res_trans (cf : ClassFormation F) {a b c : NormalLayer G}
     (T : LayerRestriction a b) (T' : LayerRestriction b c) (r : ℤ)
     (x : c.TrivialTateH r) :
-    (T.trans T').tateRes F (r + 2) (cf.tateIso c r x) =
-      cf.tateIso a r ((T.trans T').trivialTateRes r x) := by
-  exact cf.tateIso_res (T.trans T') r x
+    T.tateRes F (r + 2) (T'.tateRes F (r + 2) (cf.tateIso c r x)) =
+      cf.tateIso a r (T.trivialTateRes r (T'.trivialTateRes r x)) := by
+  simpa only [T.tateRes_trans T' F (r + 2), T.trivialTateRes_trans T' r,
+    ModuleCat.comp_apply] using cf.tateIso_res (T.trans T') r x
 
 end ClassFormation
 
