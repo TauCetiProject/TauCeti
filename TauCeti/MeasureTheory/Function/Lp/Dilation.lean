@@ -13,8 +13,10 @@ public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 Dilating the variable of a function on a finite-dimensional real normed space `E` by `r⁻¹`, for
 `r > 0`, multiplies its `Lᵖ` seminorm against an additive Haar measure by `r ^ (n / p)`, where
-`n` is the dimension of `E`; for `p = 0` and `p = ∞` the factor is `1`. This is the `eLpNorm`
-counterpart of the lower Lebesgue integral law `TauCeti.lintegral_comp_inv_smul`.
+`n` is the dimension of `E`. Here `n / p` stands for `n / p.toReal`, which is `0` at `p = 0` and
+`p = ∞` by Lean's conventions `ENNReal.toReal ∞ = 0` and `x / 0 = 0`, so at those two exponents
+the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integral law
+`TauCeti.lintegral_comp_inv_smul`.
 
 ## Main declarations
 
@@ -33,7 +35,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   {G : Type*} [TopologicalSpace G] [ContinuousENorm G]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`, where
-`n` is the dimension of the ambient space. For `p = 0` and `p = ∞` the factor is `1`. -/
+`n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`, which is `0` at
+`p = 0` and `p = ∞`, where the factor is thus `1`. -/
 theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
     eLpNorm (fun x => u (r⁻¹ • x)) p μ =
       ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p μ := by

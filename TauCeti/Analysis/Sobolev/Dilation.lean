@@ -28,7 +28,9 @@ For every exponent `p` the two scaling laws are
 `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p` and `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`,
 
 the extra `r⁻¹` in the second coming from the chain rule, in the shape of Mathlib's
-`fderiv_comp_smul`. The mismatch of the two exponents is the scaling obstruction behind
+`fderiv_comp_smul`. Here `n / p` stands for `n / p.toReal`, which is `0` at `p = 0` and `p = ∞`
+by Lean's conventions `ENNReal.toReal ∞ = 0` and `x / 0 = 0`; at those two exponents the factors
+are therefore `1` and `r⁻¹`. The mismatch of the two exponents is the scaling obstruction behind
 `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`: a
 Poincaré-type inequality cannot hold with one constant for all compactly supported functions on
 the whole space.
@@ -51,7 +53,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
 
 /-- **Dilation scaling of the `Lᵖ` seminorm of the derivative:**
 `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`. The exponent drops by one relative to
-`TauCeti.eLpNorm_comp_inv_smul` because the chain rule contributes a factor `r⁻¹`. -/
+`TauCeti.eLpNorm_comp_inv_smul` because the chain rule contributes a factor `r⁻¹`. The exponent
+`n / p` is `n / p.toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is thus `r⁻¹`. -/
 theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
     eLpNorm (fderiv ℝ fun y => u (r⁻¹ • y)) p μ =
       ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal - 1)) * eLpNorm (fderiv ℝ u) p μ := by
