@@ -90,21 +90,13 @@ theorem tateModuleGaloisRepresentation_apply (σ : K ≃ₐ[F] K)
     W.tateModuleGaloisRepresentation ℓ σ x = TateModule.map (Affine.Point.map σ.toAlgHom) x :=
   TateModule.mapLinearMap_apply _ x
 
-/-- **The representation on the level `E[ℓ ^ n]`**: the `n`-th component of `σ x` is the
-induced image of the `n`-th component of `x` in the torsion subgroup. -/
-theorem proj_tateModuleGaloisRepresentation (σ : K ≃ₐ[F] K)
-    (x : TateModule ℓ (W⁄K).toAffine.Point) (n : ℕ) :
-    TateModule.proj n (W.tateModuleGaloisRepresentation ℓ σ x) =
-      TateModule.levelMap (Affine.Point.map σ.toAlgHom) n (TateModule.proj n x) := by
-  rw [tateModuleGaloisRepresentation_apply, TateModule.proj_map]
-
 /-- **The representation on the level `E[ℓ ^ n]`**: the `n`-th component of `σ x` is `σ` applied
 to the coordinates of the `n`-th component of `x`. -/
 theorem coe_proj_tateModuleGaloisRepresentation (σ : K ≃ₐ[F] K)
     (x : TateModule ℓ (W⁄K).toAffine.Point) (n : ℕ) :
     (TateModule.proj n (W.tateModuleGaloisRepresentation ℓ σ x) : (W⁄K).toAffine.Point) =
       Affine.Point.map σ.toAlgHom (TateModule.proj n x : (W⁄K).toAffine.Point) := by
-  rw [proj_tateModuleGaloisRepresentation, TateModule.levelMap_apply]
+  rw [tateModuleGaloisRepresentation_apply, TateModule.proj_map, TateModule.levelMap_apply]
 
 end Representation
 
