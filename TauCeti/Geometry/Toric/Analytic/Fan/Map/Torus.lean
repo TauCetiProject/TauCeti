@@ -73,7 +73,7 @@ theorem analyticMap_smul (t : ComplexTorus N) (x : Φ.analyticRealization hΦ) :
 
 /-- On the canonical dense torus inclusion, the analytic toric map is the homomorphism of tori
 induced by the underlying lattice map. The fan morphism supplies target nonemptiness from
-source nonemptiness. -/
+source nonemptiness; any other target witness gives a definitionally equal inclusion. -/
 @[simp]
 theorem analyticMap_analyticTorusι (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus N) :
     f.analyticMap hΦ hΨ (Φ.analyticTorusι hΦ hΦ0 t) =
@@ -92,7 +92,8 @@ theorem analyticMap_analyticTorusι (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus
 
 /-- A continuous map is the analytic toric map exactly when it extends the lattice-induced map
 of dense tori. Source nonemptiness is needed to define the canonical torus inclusions;
-the fan morphism supplies target nonemptiness. -/
+the fan morphism supplies target nonemptiness. Any other target witness gives the same
+statement by definitional equality. -/
 theorem eq_analyticMap_iff (hΦ0 : Nonempty Φ.cones)
     {g : Φ.analyticRealization hΦ ⟶ Ψ.analyticRealization hΨ} :
     g = f.analyticMap hΦ hΨ ↔ ∀ t, g (Φ.analyticTorusι hΦ hΦ0 t) =

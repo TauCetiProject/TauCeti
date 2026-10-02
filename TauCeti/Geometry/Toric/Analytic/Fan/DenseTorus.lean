@@ -113,7 +113,8 @@ theorem isOpen_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
   exact hopen
 
 /-- The canonical inclusion of the coordinate-free complex torus into the realization of a
-nonempty regular fan, obtained by translating the distinguished point of the zero cone. -/
+nonempty regular fan, obtained by translating the distinguished point of the zero cone.
+By proof irrelevance, different nonemptiness witnesses give definitionally equal inclusions. -/
 noncomputable def analyticTorusι (hPhi0 : Nonempty Phi.cones) (t : ComplexTorus N) :
     Phi.analyticRealization hPhi :=
   t • Phi.analyticDistinguishedPoint hPhi ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
