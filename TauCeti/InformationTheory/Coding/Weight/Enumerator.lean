@@ -255,6 +255,37 @@ end Set
 
 namespace TauCeti
 
+section WeightPreservingEquivalence
+
+variable {ι κ : Type*} {β : ι → Type*} {γ : κ → Type*} [Fintype ι] [Fintype κ]
+  [∀ i, Zero (β i)] [∀ j, Zero (γ j)]
+  [∀ i, DecidableEq (β i)] [∀ j, DecidableEq (γ j)]
+
+/-- A weight-preserving equivalence preserves the weight distribution of any set of words. -/
+theorem weightDistribution_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ (∀ j, γ j))
+    (hf : ∀ x, hammingNorm (f x) = hammingNorm x) (w : ℕ) :
+    (f '' C).weightDistribution w = C.weightDistribution w := by
+  rw [Set.weightDistribution_def, Set.weightDistribution_def]
+  exact (Nat.card_congr (Equiv.subtypeEquiv f fun x ↦ by simp [hf])).symm
+
+/-- A weight-preserving equivalence between word spaces of equal length preserves the enumerator
+of any set of words. -/
+theorem weightEnumerator_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ (∀ j, γ j))
+    (hf : ∀ x, hammingNorm (f x) = hammingNorm x)
+    (hcard : Fintype.card ι = Fintype.card κ) :
+    (f '' C).weightEnumerator = C.weightEnumerator := by
+  simp only [Set.weightEnumerator_def, weightDistribution_image C f hf, hcard]
+
+/-- A weight-preserving equivalence between word spaces of equal length preserves the
+one-variable weight polynomial of any set of words. -/
+theorem weightPolynomial_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ (∀ j, γ j))
+    (hf : ∀ x, hammingNorm (f x) = hammingNorm x)
+    (hcard : Fintype.card ι = Fintype.card κ) :
+    (f '' C).weightPolynomial = C.weightPolynomial := by
+  simp only [Set.weightPolynomial_def, weightDistribution_image C f hf, hcard]
+
+end WeightPreservingEquivalence
+
 /-- A finite set containing zero whose nonzero words all have weight `d ≠ 0` has one word of
 weight zero, `Nat.card C - 1` words of weight `d`, and no words of any other weight. -/
 theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*} [Fintype ι]
@@ -373,16 +404,10 @@ theorem IsPermutationEquivalent.weightDistribution_eq (h : IsPermutationEquivale
     (w : ℕ) :
     (C : Set (ι → R)).weightDistribution w = (D : Set (κ → R)).weightDistribution w := by
   obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp h
-  refine Nat.card_congr
-    (Equiv.subtypeEquiv (LinearEquiv.funCongrLeft R R e.symm).toEquiv fun x ↦ ?_)
-  simp only [SetLike.mem_coe, LinearEquiv.coe_toEquiv, Submodule.mem_map_equiv,
-    LinearEquiv.funCongrLeft_symm, Equiv.symm_symm, LinearEquiv.funCongrLeft_apply]
-  have hinv : LinearMap.funLeft R R e (LinearMap.funLeft R R e.symm x) = x :=
-    funext fun i ↦ congrArg x (e.symm_apply_apply i)
-  have hx : LinearMap.funLeft R R e.symm x = x ∘ e.symm := by
-    ext i
-    simp
-  rw [hinv, hx, Equiv.hammingNorm_comp]
+  rw [Submodule.map_coe]
+  exact (weightDistribution_image (C : Set (ι → R))
+    (LinearEquiv.funCongrLeft R R e.symm).toEquiv
+    (fun x ↦ Equiv.hammingNorm_funLeft e.symm x) w).symm
 
 /-- Permutation-equivalent codes have the same weight enumerator. -/
 theorem IsPermutationEquivalent.weightEnumerator_eq (h : IsPermutationEquivalent C D) :

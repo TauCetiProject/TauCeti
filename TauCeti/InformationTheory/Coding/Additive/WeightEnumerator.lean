@@ -15,7 +15,9 @@ Relabelling coordinates preserves the weight distribution and both weight enumer
 additive code. These invariants apply to arbitrary group alphabets, including discriminant
 alphabets without a field structure. The enumerators are the existing set-of-words invariants.
 
-The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.7.
+Permutation equivalence follows Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.6.
+For weight enumerators see their §7.2 and MacWilliams and Sloane, *The Theory of Error-Correcting
+Codes*, Chapter 5, §2, as in the set-level enumerator module.
 -/
 
 public section
@@ -25,17 +27,20 @@ namespace TauCeti.AdditiveCode
 variable {A ι κ : Type*} [AddGroup A] [Fintype ι] [Fintype κ] [DecidableEq A]
 
 /-- Relabelling preserves each weight multiplicity. -/
-@[simp]
+@[simp↓]
 theorem weightDistribution_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) (w : ℕ) :
     (reindex C e : Set (κ → A)).weightDistribution w =
       (C : Set (ι → A)).weightDistribution w := by
-  rw [Set.weightDistribution_def, Set.weightDistribution_def]
-  exact Nat.card_congr (Equiv.subtypeEquiv
-    (AddEquiv.arrowCongr e.symm (AddEquiv.refl A)).symm.toEquiv fun x ↦ by
-      simp only [mem_reindex, SetLike.mem_coe]
-      have hx : (AddEquiv.arrowCongr e.symm (AddEquiv.refl A)).symm.toEquiv x =
-          x ∘ e.symm := rfl
-      rw [hx, Equiv.hammingNorm_comp])
+  rw [coe_reindex]
+  have hcomp : ⇑(Equiv.arrowCongr e.symm (Equiv.refl A)) = (· ∘ e) := by
+    ext x j
+    simp
+  have hf (x : ι → A) :
+      hammingNorm (Equiv.arrowCongr e.symm (Equiv.refl A) x) = hammingNorm x := by
+    rw [hcomp]
+    exact Equiv.hammingNorm_comp e x
+  simpa only [hcomp] using
+    weightDistribution_image (C : Set (ι → A)) (Equiv.arrowCongr e.symm (Equiv.refl A)) hf w
 
 /-- Permutation-equivalent additive codes have identical weight distributions. -/
 theorem IsPermutationEquivalent.weightDistribution_eq {C : AddSubgroup (ι → A)}
@@ -45,10 +50,20 @@ theorem IsPermutationEquivalent.weightDistribution_eq {C : AddSubgroup (ι → A
   exact (weightDistribution_reindex C e w).symm
 
 /-- Relabelling preserves the homogeneous weight enumerator. -/
-@[simp]
+@[simp↓]
 theorem weightEnumerator_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
     (reindex C e : Set (κ → A)).weightEnumerator = (C : Set (ι → A)).weightEnumerator := by
-  simp only [Set.weightEnumerator_def, Fintype.card_congr e, weightDistribution_reindex]
+  rw [coe_reindex]
+  have hcomp : ⇑(Equiv.arrowCongr e.symm (Equiv.refl A)) = (· ∘ e) := by
+    ext x j
+    simp
+  have hf (x : ι → A) :
+      hammingNorm (Equiv.arrowCongr e.symm (Equiv.refl A) x) = hammingNorm x := by
+    rw [hcomp]
+    exact Equiv.hammingNorm_comp e x
+  simpa only [hcomp] using
+    weightEnumerator_image (C : Set (ι → A)) (Equiv.arrowCongr e.symm (Equiv.refl A)) hf
+      (Fintype.card_congr e.symm)
 
 /-- Permutation-equivalent additive codes have identical homogeneous weight enumerators. -/
 theorem IsPermutationEquivalent.weightEnumerator_eq {C : AddSubgroup (ι → A)}
@@ -58,10 +73,20 @@ theorem IsPermutationEquivalent.weightEnumerator_eq {C : AddSubgroup (ι → A)}
   exact (weightEnumerator_reindex C e).symm
 
 /-- Relabelling preserves the one-variable weight polynomial. -/
-@[simp]
+@[simp↓]
 theorem weightPolynomial_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
     (reindex C e : Set (κ → A)).weightPolynomial = (C : Set (ι → A)).weightPolynomial := by
-  simp only [Set.weightPolynomial_def, Fintype.card_congr e, weightDistribution_reindex]
+  rw [coe_reindex]
+  have hcomp : ⇑(Equiv.arrowCongr e.symm (Equiv.refl A)) = (· ∘ e) := by
+    ext x j
+    simp
+  have hf (x : ι → A) :
+      hammingNorm (Equiv.arrowCongr e.symm (Equiv.refl A) x) = hammingNorm x := by
+    rw [hcomp]
+    exact Equiv.hammingNorm_comp e x
+  simpa only [hcomp] using
+    weightPolynomial_image (C : Set (ι → A)) (Equiv.arrowCongr e.symm (Equiv.refl A)) hf
+      (Fintype.card_congr e.symm)
 
 /-- Permutation-equivalent additive codes have identical one-variable weight polynomials. -/
 theorem IsPermutationEquivalent.weightPolynomial_eq {C : AddSubgroup (ι → A)}
