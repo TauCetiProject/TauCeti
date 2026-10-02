@@ -259,6 +259,48 @@ theorem le_transportCostBddBelow {d : EReal} (h : IntegrableSplitLowerBound c μ
     d ≤ transportCostBddBelow c μ ν h :=
   le_iInf₂ hd
 
+/-- Subtracting the split lower bound reduces the signed primal problem to the nonnegative
+transport problem. The marginal correction is finite even when the optimum is infinite or the
+feasible set is empty. -/
+theorem transportCostBddBelow_eq_transportCost_residual
+    (h : IntegrableSplitLowerBound c μ ν) :
+    transportCostBddBelow c μ ν h = (transportCost h.residual μ ν : EReal) +
+      (((∫ x, h.fst x ∂μ) + ∫ y, h.snd y ∂ν : ℝ) : EReal) := by
+  let k : ℝ := (∫ x, h.fst x ∂μ) + ∫ y, h.snd y ∂ν
+  have hbase : (k : EReal) ≤ transportCostBddBelow c μ ν h := by
+    apply le_transportCostBddBelow h
+    intro π hπ
+    simpa only [planCostBddBelow_def, k, EReal.coe_add, add_assoc, add_comm, add_left_comm,
+      zero_add, add_zero] using
+      add_le_add_right (EReal.coe_ennreal_nonneg (∫⁻ z, h.residual z ∂π))
+        (((∫ x, h.fst x ∂μ) + ∫ y, h.snd y ∂ν : ℝ) : EReal)
+  have hnonneg : 0 ≤ transportCostBddBelow c μ ν h - (k : EReal) := by
+    exact (EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot k))
+      (.inl (EReal.coe_ne_top k))).2 (by simpa using hbase)
+  apply le_antisymm
+  · have hle : (transportCostBddBelow c μ ν h - (k : EReal)).toENNReal ≤
+        transportCost h.residual μ ν := by
+      apply le_transportCost
+      intro π hπ
+      have hp := transportCostBddBelow_le hπ h
+      have hp' : transportCostBddBelow c μ ν h ≤
+          ((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) + (k : EReal) := by
+        simpa only [planCostBddBelow_def, k, EReal.coe_add, add_assoc] using hp
+      have hs := (EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot k))
+        (.inl (EReal.coe_ne_top k))).2 hp'
+      simpa using EReal.toENNReal_le_toENNReal hs
+    have hc := EReal.coe_ennreal_le_coe_ennreal_iff.2 hle
+    rw [EReal.coe_toENNReal hnonneg] at hc
+    exact (EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot k))
+      (.inl (EReal.coe_ne_top k))).1 hc
+  · apply le_transportCostBddBelow h
+    intro π hπ
+    have hc := EReal.coe_ennreal_le_coe_ennreal_iff.2
+      (transportCost_le_lintegral hπ h.residual)
+    simpa only [planCostBddBelow_def, k, EReal.coe_add, add_assoc, add_comm,
+      add_left_comm] using
+      add_le_add_right hc (k : EReal)
+
 private theorem residual_add_lowerBoundParts
     (h k : IntegrableSplitLowerBound c μ ν) (z : X × Y) :
     h.residual z + ENNReal.ofReal (h.fst z.1 - k.fst z.1) +

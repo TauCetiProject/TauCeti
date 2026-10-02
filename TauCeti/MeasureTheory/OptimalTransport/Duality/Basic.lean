@@ -73,6 +73,11 @@ costs. -/
 def DualFeasible (c : X × Y → ℝ≥0∞) (φ : X → ℝ) (ψ : Y → ℝ) : Prop :=
   ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ (c (x, y) : EReal)
 
+/-- The pointwise characterization of dual feasibility. -/
+theorem dualFeasible_iff : DualFeasible c φ ψ ↔
+    ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ (c (x, y) : EReal) :=
+  Iff.rfl
+
 /-- Dual feasibility in the equivalent extended-nonnegative form used by `lintegral`. Taking
 `ENNReal.ofReal` loses no information because the cost is nonnegative. -/
 theorem dualFeasible_iff_ofReal_add_le : DualFeasible c φ ψ ↔
@@ -148,6 +153,24 @@ theorem kantorovichDualValue_def (μ : Measure X) (ν : Measure Y) (φ : X → �
 theorem kantorovichDualValue_zero :
     kantorovichDualValue μ ν (fun _ ↦ 0) (fun _ ↦ 0) = 0 := by
   simp [kantorovichDualValue_def]
+
+/-- Adding integrable marginal terms to the potentials adds their dual value. -/
+theorem kantorovichDualValue_add {a : X → ℝ} {b : Y → ℝ}
+    (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
+    (ha : Integrable a μ) (hb : Integrable b ν) :
+    kantorovichDualValue μ ν (fun x ↦ φ x + a x) (fun y ↦ ψ y + b y) =
+      kantorovichDualValue μ ν φ ψ + kantorovichDualValue μ ν a b := by
+  simp only [kantorovichDualValue_def, integral_add hφ ha, integral_add hψ hb]
+  ring
+
+/-- Subtracting integrable marginal terms from the potentials subtracts their dual value. -/
+theorem kantorovichDualValue_sub {a : X → ℝ} {b : Y → ℝ}
+    (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
+    (ha : Integrable a μ) (hb : Integrable b ν) :
+    kantorovichDualValue μ ν (fun x ↦ φ x - a x) (fun y ↦ ψ y - b y) =
+      kantorovichDualValue μ ν φ ψ - kantorovichDualValue μ ν a b := by
+  simp only [kantorovichDualValue_def, integral_sub hφ ha, integral_sub hψ hb]
+  ring
 
 /-- Opposite additive shifts do not change the dual value when the first marginal is finite and
 the two marginals have the same mass. -/
