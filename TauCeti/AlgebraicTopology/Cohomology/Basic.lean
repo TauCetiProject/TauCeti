@@ -31,8 +31,8 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
 * `TopCat.singularCohomology` and `TopCat.singularCohomologyMap`: singular cohomology and the
   maps induced on it by continuous maps, with `TauCeti.singularCohomologyFunctor` the resulting
   functor `TopCatᵒᵖ ⥤ ModuleCat k`.
-* `TauCeti.SSet.constCochain`: the constant `0`-cochain with value `e : R ⟶ M` on every
-  vertex of a simplicial set. `TauCeti.TopCat.constSingularCocycle` is the cocycle it defines
+* `SSet.constCochain`: the constant `0`-cochain with value `e : R ⟶ M` on every
+  vertex of a simplicial set. `TopCat.constSingularCocycle` is the cocycle it defines
   for a space `X`. For `e` the unit of a ring of coefficients, its class is the unit of the
   cup product.
 
@@ -133,55 +133,53 @@ def singularCohomologyFunctor (n : ℕ) : TopCat.{w}ᵒᵖ ⥤ ModuleCat.{v} k w
 
 end TauCeti
 
-namespace TauCeti.SSet
+namespace SSet
 
 section ConstCochain
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] {R M : C}
 
 /-- The `0`-cochain of a simplicial set `K` which takes the value `e : R ⟶ M` on every vertex. -/
-def constCochain (K : _root_.SSet.{w}) (e : R ⟶ M) :
+def constCochain (K : SSet.{w}) (e : R ⟶ M) :
     (K.chainComplex R).X 0 ⟶ M :=
   Cofan.IsColimit.desc (K.isColimitChainComplexXCofan R 0) fun _ ↦ e
 
 /-- The constant `0`-cochain with value `e` takes the value `e` on every vertex. -/
 @[reassoc (attr := simp)]
-lemma ιChainComplex_constCochain (K : _root_.SSet.{w}) (e : R ⟶ M)
+lemma ιChainComplex_constCochain (K : SSet.{w}) (e : R ⟶ M)
     (x : K _⦋0⦌) :
-    K.ιChainComplex x ≫ constCochain K e = e :=
+    K.ιChainComplex x ≫ K.constCochain e = e :=
   Cofan.IsColimit.fac _ _ x
 
 /-- The constant `0`-cochain is a cocycle: it takes the same value at both ends of an edge. -/
 @[reassoc (attr := simp)]
-lemma d_comp_constCochain (K : _root_.SSet.{w}) (e : R ⟶ M) :
-    (K.chainComplex R).d 1 0 ≫ constCochain K e = 0 := by
+lemma d_comp_constCochain (K : SSet.{w}) (e : R ⟶ M) :
+    (K.chainComplex R).d 1 0 ≫ K.constCochain e = 0 := by
   ext σ
   simp [Fin.sum_univ_two]
 
 end ConstCochain
 
-end TauCeti.SSet
+end SSet
 
-namespace TauCeti.TopCat
-
-open _root_.TopCat
+namespace TopCat
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R M : C}
-  (k : Type*) [Ring k] [Linear k C]
 
-/-- The constant `0`-cochain `TauCeti.SSet.constCochain (toSSet.obj X) e`, as a cocycle. -/
-def constSingularCocycle (X : TopCat.{w}) (e : R ⟶ M) :
+/-- The constant `0`-cochain `(toSSet.obj X).constCochain e`, as a cocycle. -/
+def constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] (e : R ⟶ M) :
     (X.singularCochainComplex R k M).cycles 0 :=
-  TauCeti.moduleCatCyclesMk (X.singularCochainComplex R k M)
-    (TauCeti.SSet.constCochain (toSSet.obj X) e) 1 (by simp)
+  (X.singularCochainComplex R k M).moduleCatCyclesMk ((toSSet.obj X).constCochain e) 1
+    (by simp)
     ((TauCeti.ChainComplex.linearYonedaObj_d_apply 0 1 _).trans
-      (TauCeti.SSet.d_comp_constCochain (toSSet.obj X) e))
+      ((toSSet.obj X).d_comp_constCochain e))
 
 /-- The constant `0`-cocycle has underlying cochain the constant `0`-cochain. -/
 @[simp]
-lemma iCycles_constSingularCocycle (X : TopCat.{w}) (e : R ⟶ M) :
-    (X.singularCochainComplex R k M).iCycles 0 (constSingularCocycle k X e) =
-      TauCeti.SSet.constCochain (toSSet.obj X) e :=
-  TauCeti.iCycles_moduleCatCyclesMk _ _ _ _ _ _
+lemma iCycles_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (e : R ⟶ M) :
+    (X.singularCochainComplex R k M).iCycles 0 (X.constSingularCocycle k e) =
+      (toSSet.obj X).constCochain e :=
+  HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _
 
-end TauCeti.TopCat
+end TopCat
