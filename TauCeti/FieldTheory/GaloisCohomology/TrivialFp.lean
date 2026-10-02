@@ -17,10 +17,6 @@ dimension one. The canonical coefficient identification is
 `TauCeti.cohomFpZeroLinearEquiv p (Field.absoluteGaloisGroup K)`, and finite generation is
 provided by the corresponding `Module.Finite` instance. At prime `p`, this is the
 finite-dimensional `𝔽_p`-vector space `H⁰(G_K, 𝔽_p)`.
-
-## References
-
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (6.2.1).
 -/
 
 public section
