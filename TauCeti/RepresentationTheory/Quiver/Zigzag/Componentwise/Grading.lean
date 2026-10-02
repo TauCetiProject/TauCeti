@@ -239,6 +239,34 @@ theorem zigzagAlgebraIntegerGrade_ofNat (d : ℕ) :
     zigzagAlgebraIntegerGrade k G d = zigzagAlgebraGrade k G d := by
   simp [zigzagAlgebraIntegerGrade]
 
+/-- The integer extension of the componentwise grading vanishes in negative degrees. -/
+theorem zigzagAlgebraIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
+    zigzagAlgebraIntegerGrade k G d = ⊥ := by
+  simp [zigzagAlgebraIntegerGrade, (not_le_of_gt hd)]
+
+/-- **The integer extension of the componentwise grading is an internal direct sum**: the pieces
+in nonnegative degrees are those of `TauCeti.zigzagAlgebraGrade`, and those in negative degrees
+vanish. -/
+theorem isInternal_zigzagAlgebraIntegerGrade :
+    DirectSum.IsInternal (zigzagAlgebraIntegerGrade k G) := by
+  have hN := isInternal_zigzagAlgebraGrade k G
+  rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at hN ⊢
+  obtain ⟨hind, htop⟩ := hN
+  refine ⟨fun d ↦ ?_, ?_⟩
+  · rcases lt_or_ge d 0 with hd | hd
+    · simp [zigzagAlgebraIntegerGrade_eq_bot_of_neg k G hd]
+    · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
+      rw [zigzagAlgebraIntegerGrade_ofNat]
+      refine (hind n).mono_right (iSup₂_le fun j hj ↦ ?_)
+      rcases lt_or_ge j 0 with hj0 | hj0
+      · simp [zigzagAlgebraIntegerGrade_eq_bot_of_neg k G hj0]
+      · obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hj0
+        rw [zigzagAlgebraIntegerGrade_ofNat]
+        exact le_iSup₂_of_le m (fun h ↦ hj (by rw [h])) le_rfl
+  · rw [eq_top_iff, ← htop]
+    exact iSup_le fun n ↦ (zigzagAlgebraIntegerGrade_ofNat k G n).symm.le.trans
+      (le_iSup (zigzagAlgebraIntegerGrade k G) (n : ℤ))
+
 /-- Multiplication adds signed degrees in the integer extension of the componentwise grading. -/
 theorem mul_mem_zigzagAlgebraIntegerGrade {m n : ℤ} {x y : zigzagAlgebra k G}
     (hx : x ∈ zigzagAlgebraIntegerGrade k G m) (hy : y ∈ zigzagAlgebraIntegerGrade k G n) :

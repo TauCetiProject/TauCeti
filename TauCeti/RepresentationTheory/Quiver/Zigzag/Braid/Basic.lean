@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Double
-public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import TauCeti.Algebra.Algebra.Frobenius.Casimir
 public import TauCeti.Algebra.CentralSimple.Bimodule
+public import TauCeti.Algebra.Module.GradedModule.Opposite
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct
 public import TauCeti.LinearAlgebra.Graded.Shift
 public import TauCeti.RingTheory.PrimitiveIdempotent
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
@@ -63,7 +64,7 @@ dual basis, and the Casimir element of a trace commutes with the algebra
 * `TauCeti.zigzagBraidCoevaluation`: the coevaluation `Z → P_i ⊗_k e_i Z`.
 * `TauCeti.zigzagBraidComplex`, `TauCeti.zigzagBraidInverseComplex`: the complexes `B_i` and
   `B_i'`, in `ModuleCat (Z ⊗[k] Zᵐᵒᵖ)`.
-* `TauCeti.zigzagEnvelopingGrade`: the pieces of the grading of `Z ⊗[k] Zᵐᵒᵖ`.
+* `TauCeti.zigzagEnvelopingGrading`: the internal grading of `Z ⊗[k] Zᵐᵒᵖ`.
 * `TauCeti.zigzagBimoduleGrade`, `TauCeti.zigzagBraidBimoduleGrade`: the internal gradings of the
   bimodules `Z` and `P_i ⊗_k e_i Z`.
 * `TauCeti.zigzagBraidBimoduleShiftGrade`: the grading of the shifted bimodule
@@ -174,20 +175,32 @@ end Evaluation
 
 section Coevaluation
 
-variable [Fintype V] [DecidableRel G.Adj]
+variable [Finite V]
 
 /-- **The Casimir element of the zigzag algebra**, `∑_b b ⊗ b^∨` in `Z ⊗[k] Zᵐᵒᵖ`, with `b` running
 over the vertex, arrow and volume basis and `b^∨` over its dual basis for the trace pairing,
 indexed by `TauCeti.zigzagDualIndex`. -/
-noncomputable def zigzagCasimir : 𝒵ᵉ :=
-  ∑ b, zigzagAlgebraBasis k G b ⊗ₜ[k] op (zigzagAlgebraBasis k G (zigzagDualIndex G b))
+noncomputable def zigzagCasimir : 𝒵ᵉ := by
+  classical
+  let _ : Fintype V := Fintype.ofFinite V
+  exact ∑ b, zigzagAlgebraBasis k G b ⊗ₜ[k] op (zigzagAlgebraBasis k G (zigzagDualIndex G b))
 
 variable {k G}
+
+/-- The Casimir element as a sum over the basis, for any choice of finiteness and decidability
+instances. -/
+theorem zigzagCasimir_eq_sum [Fintype V] [DecidableRel G.Adj] :
+    zigzagCasimir k G =
+      ∑ b, zigzagAlgebraBasis k G b ⊗ₜ[k] op (zigzagAlgebraBasis k G (zigzagDualIndex G b)) := by
+  rw [zigzagCasimir]
+  convert rfl
 
 /-- **The Casimir element commutes with the zigzag algebra**: `(a ⊗ 1) C = (1 ⊗ a) C`, that is,
 `a C = C a` for the bimodule structure of `Z ⊗[k] Zᵐᵒᵖ`. -/
 theorem tmul_one_mul_zigzagCasimir (a : 𝒵) :
     (a ⊗ₜ[k] (1 : 𝒵ᵐᵒᵖ)) * zigzagCasimir k G = ((1 : 𝒵) ⊗ₜ[k] op a) * zigzagCasimir k G := by
+  classical
+  cases nonempty_fintype V
   -- The basis and its dual basis are dual for the trace in the sense of the Casimir lemma.
   have hx (y : 𝒵) : ∑ b, zigzagAlgebraTrace k G
       (y * zigzagAlgebraBasis k G (zigzagDualIndex G b)) • zigzagAlgebraBasis k G b = y := by
@@ -204,7 +217,7 @@ theorem tmul_one_mul_zigzagCasimir (a : 𝒵) :
   have := congrArg (TensorProduct.map LinearMap.id (opLinearEquiv k).toLinearMap) key
   simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_coe, id_eq, LinearEquiv.coe_coe,
     coe_opLinearEquiv] at this
-  rw [zigzagCasimir, Finset.mul_sum, Finset.mul_sum]
+  rw [zigzagCasimir_eq_sum, Finset.mul_sum, Finset.mul_sum]
   simp only [Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← op_mul]
   exact this
 
@@ -225,7 +238,11 @@ noncomputable def zigzagBraidCoevaluation (i : V) :
     simp only [SetLike.val_smul, smul_eq_mul, ← mul_assoc, AlgHom.id_apply,
       tmul_one_mul_zigzagCasimir]
 
-variable {k G} [DecidableEq V]
+variable {k G}
+
+section Formula
+
+variable [Fintype V] [DecidableRel G.Adj] [DecidableEq V]
 
 /-- **The Casimir element cut down at a vertex**:
 `C (e_i ⊗ e_i) = e_i ⊗ x_i + x_i ⊗ e_i + ∑_{d.fst = i} a_d ⊗ a_{d.symm}`. -/
@@ -237,7 +254,7 @@ theorem zigzagCasimir_mul_tmul_zigzagAlgebraBasis_inl (i : V) :
       ∑ d ∈ Finset.univ.filter (fun d : G.Dart => d.fst = i),
         zigzagAlgebraBasis k G (.inr (.inl d)) ⊗ₜ[k]
           op (zigzagAlgebraBasis k G (.inr (.inl d.symm))) := by
-  rw [zigzagCasimir, Finset.sum_mul, Fintype.sum_sum_type, Fintype.sum_sum_type]
+  rw [zigzagCasimir_eq_sum, Finset.sum_mul, Fintype.sum_sum_type, Fintype.sum_sum_type]
   simp only [Algebra.TensorProduct.tmul_mul_tmul, ← op_mul, zigzagDualIndex_inl,
     zigzagDualIndex_inr_inl, zigzagDualIndex_inr_inr]
   -- Only the summands based at `i` survive the idempotent on either side.
@@ -299,13 +316,15 @@ theorem coe_zigzagBraidCoevaluation_of_one (i : V) :
             op (zigzagAlgebraBasis k G (.inr (.inl d.symm))) := by
   simpa only [one_mul] using coe_zigzagBraidCoevaluation_of i 1
 
+end Formula
+
 end Coevaluation
 
 /-! ### The two braid complexes -/
 
 section Complexes
 
-variable [Fintype V] [DecidableRel G.Adj]
+variable [Finite V]
 
 -- The `AddCommGroup` structure of `P_i ⊗_k e_i Z` is passed to `ModuleCat.ofHom` explicitly:
 -- unification would have to discover it through the semiring of the tensor product algebra, which
@@ -318,7 +337,7 @@ noncomputable abbrev zigzagBraidComplex (i : V) :
   HomologicalComplex.double
     (@ModuleCat.ofHom (𝒵ᵉ) _ (zigzagBraidBimodule k G i) (Bimodule (AlgHom.id k 𝒵))
       (Submodule.addCommGroup _) _ _ _ (zigzagBraidEvaluation k G i))
-    (show (ComplexShape.up ℤ).Rel (-1) 0 by simp)
+    (i₀ := -1) (i₁ := 0) (by simp)
 
 /-- **The inverse braid complex `B_i' = [Z ⟶ P_i ⊗_k e_i Z]`** of `Z`-bimodules, in cohomological
 degrees `0` and `1`, with the coevaluation as differential. With the internal gradings
@@ -330,7 +349,7 @@ noncomputable abbrev zigzagBraidInverseComplex (i : V) :
   HomologicalComplex.double
     (@ModuleCat.ofHom (𝒵ᵉ) _ (Bimodule (AlgHom.id k 𝒵)) (zigzagBraidBimodule k G i)
       _ _ (Submodule.addCommGroup _) _ (zigzagBraidCoevaluation k G i))
-    (show (ComplexShape.up ℤ).Rel 0 1 by simp)
+    (i₀ := 0) (i₁ := 1) (by simp)
 
 end Complexes
 
@@ -340,11 +359,13 @@ section Grading
 
 variable [Finite V]
 
-/-- **The degree-`n` piece of the grading of the enveloping algebra** `Z ⊗[k] Zᵐᵒᵖ`: the span of
-the `x ⊗ y` with `x` and `y` homogeneous of signed degrees adding up to `n`. -/
-noncomputable def zigzagEnvelopingGrade (n : ℤ) : Submodule k (𝒵ᵉ) :=
-  ⨆ p : ℤ, Submodule.map₂ (TensorProduct.mk k _ _) (zigzagAlgebraIntegerGrade k G p)
-    ((zigzagAlgebraIntegerGrade k G (n - p)).map (opLinearEquiv k).toLinearMap)
+/-- **The internal grading of the enveloping algebra** `Z ⊗[k] Zᵐᵒᵖ`: the tensor product of the
+signed path-length grading of `Z` with its transport to `Zᵐᵒᵖ`, so that `x ⊗ op y` has degree
+`deg x + deg y`. -/
+noncomputable def zigzagEnvelopingGrading : InternalGrading k (𝒵ᵉ) :=
+  let Γ : InternalGrading k 𝒵 :=
+    ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
+  Γ.tensorProduct Γ.opposite
 
 /-- The internal grading of the bimodule `Z`: its degree-`d` piece is the signed degree-`d` piece
 of `Z`. -/
@@ -355,7 +376,8 @@ noncomputable def zigzagBimoduleGrade (d : ℤ) : Submodule k (Bimodule (AlgHom.
 enveloping algebra. -/
 noncomputable def zigzagBraidBimoduleGrade (i : V) (d : ℤ) :
     Submodule k (zigzagBraidBimodule k G i) :=
-  (zigzagEnvelopingGrade k G d).comap ((zigzagBraidBimodule k G i).restrictScalars k).subtype
+  ((zigzagEnvelopingGrading k G).piece d).comap
+    ((zigzagBraidBimodule k G i).restrictScalars k).subtype
 
 /-- The grading of the shifted bimodule `(P_i ⊗_k e_i Z){d}`, with the convention
 `M{d}_p = M_{p-d}` of `TauCeti.zigzagProjectiveShiftGrade`. -/
@@ -372,7 +394,7 @@ theorem mem_zigzagBimoduleGrade_iff {d : ℤ} {x : Bimodule (AlgHom.id k 𝒵)} 
 
 @[simp]
 theorem mem_zigzagBraidBimoduleGrade_iff {i : V} {d : ℤ} {u : zigzagBraidBimodule k G i} :
-    u ∈ zigzagBraidBimoduleGrade k G i d ↔ (u : 𝒵ᵉ) ∈ zigzagEnvelopingGrade k G d :=
+    u ∈ zigzagBraidBimoduleGrade k G i d ↔ (u : 𝒵ᵉ) ∈ (zigzagEnvelopingGrading k G).piece d :=
   Iff.rfl
 
 @[simp]
@@ -381,12 +403,11 @@ theorem zigzagBraidBimoduleShiftGrade_apply (i : V) (d p : ℤ) :
   simp [zigzagBraidBimoduleShiftGrade, sub_eq_add_neg]
 
 /-- A pure tensor of homogeneous elements is homogeneous of the total degree. -/
-theorem tmul_mem_zigzagEnvelopingGrade {p q : ℤ} {x y : 𝒵}
+theorem tmul_mem_zigzagEnvelopingGrading {p q : ℤ} {x y : 𝒵}
     (hx : x ∈ zigzagAlgebraIntegerGrade k G p) (hy : y ∈ zigzagAlgebraIntegerGrade k G q) :
-    x ⊗ₜ[k] op y ∈ zigzagEnvelopingGrade k G (p + q) := by
-  refine Submodule.mem_iSup_of_mem p (Submodule.apply_mem_map₂ _ hx ?_)
-  rw [add_sub_cancel_left]
-  exact Submodule.mem_map_of_mem hy
+    x ⊗ₜ[k] op y ∈ (zigzagEnvelopingGrading k G).piece (p + q) :=
+  InternalGrading.tmul_mem_tensorProduct _ _ hx
+    ((InternalGrading.op_mem_opposite_piece_iff _ _ _).2 hy)
 
 /-- **The evaluation has internal degree `0`**: it is a degree-`0` map `P_i ⊗_k e_i Z → Z` of
 graded bimodules. -/
@@ -401,7 +422,10 @@ theorem isHomogeneous_zigzagBraidEvaluation (i : V) :
   have hμ : (Bimodule.of _).symm (zigzagBraidEvaluation k G i u) = μ u := by
     rw [zigzagBraidEvaluation_apply, Bimodule.smul_def, LinearEquiv.symm_apply_apply]
     simp [μ]
-  have hle : zigzagEnvelopingGrade k G n ≤ (zigzagAlgebraIntegerGrade k G n).comap μ := by
+  have hle : (zigzagEnvelopingGrading k G).piece n ≤
+      (zigzagAlgebraIntegerGrade k G n).comap μ := by
+    rw [zigzagEnvelopingGrading, InternalGrading.tensorProduct_piece_eq_iSup]
+    simp_rw [InternalGrading.opposite_piece]
     refine iSup_le fun p => Submodule.map₂_le.mpr fun x hx y' hy' => ?_
     obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.mp hy'
     simp only [Submodule.mem_comap, TensorProduct.mk_apply, LinearMap.coe_comp,
@@ -413,31 +437,29 @@ theorem isHomogeneous_zigzagBraidEvaluation (i : V) :
 
 /-- **The coevaluation has internal degree `2`**: it raises the internal degree by `2`, so it is a
 degree-`0` map `Z → (P_i ⊗_k e_i Z){-2}` of graded bimodules. -/
-theorem isHomogeneous_zigzagBraidCoevaluation [Fintype V] [DecidableRel G.Adj] (i : V) :
+theorem isHomogeneous_zigzagBraidCoevaluation (i : V) :
     LinearMap.IsHomogeneous ((zigzagBraidCoevaluation k G i).restrictScalars k)
       (zigzagBimoduleGrade k G) (zigzagBraidBimoduleShiftGrade k G i (-2)) 0 := by
   classical
+  cases nonempty_fintype V
   rw [zigzagBraidBimoduleShiftGrade, neg_neg, LinearMap.isHomogeneous_shift_target_iff, zero_add]
   rw [LinearMap.isHomogeneous_def]
   intro n x' hx'
   obtain ⟨x, rfl⟩ := (Bimodule.of (AlgHom.id k 𝒵)).surjective x'
   rw [mem_zigzagBimoduleGrade_iff, LinearEquiv.symm_apply_apply] at hx'
-  have he : zigzagAlgebraBasis k G (.inl i) ∈ zigzagAlgebraIntegerGrade k G 0 := by
-    rw [show (0 : ℤ) = ((0 : ℕ) : ℤ) from rfl, zigzagAlgebraIntegerGrade_ofNat]
-    exact zigzagAlgebraBasis_inl_mem_grade_zero k G i
-  have hvol : zigzagAlgebraBasis k G (.inr (.inr i)) ∈ zigzagAlgebraIntegerGrade k G 2 := by
-    rw [show (2 : ℤ) = ((2 : ℕ) : ℤ) from rfl, zigzagAlgebraIntegerGrade_ofNat]
-    exact zigzagAlgebraBasis_inr_inr_mem_grade_two k G i
+  have he : zigzagAlgebraBasis k G (.inl i) ∈ zigzagAlgebraIntegerGrade k G 0 :=
+    (zigzagAlgebraIntegerGrade_ofNat k G 0).ge (zigzagAlgebraBasis_inl_mem_grade_zero k G i)
+  have hvol : zigzagAlgebraBasis k G (.inr (.inr i)) ∈ zigzagAlgebraIntegerGrade k G 2 :=
+    (zigzagAlgebraIntegerGrade_ofNat k G 2).ge (zigzagAlgebraBasis_inr_inr_mem_grade_two k G i)
   have harrow (d : G.Dart) :
-      zigzagAlgebraBasis k G (.inr (.inl d)) ∈ zigzagAlgebraIntegerGrade k G 1 := by
-    rw [show (1 : ℤ) = ((1 : ℕ) : ℤ) from rfl, zigzagAlgebraIntegerGrade_ofNat]
-    exact zigzagAlgebraBasis_inr_inl_mem_grade_one k G d
+      zigzagAlgebraBasis k G (.inr (.inl d)) ∈ zigzagAlgebraIntegerGrade k G 1 :=
+    (zigzagAlgebraIntegerGrade_ofNat k G 1).ge (zigzagAlgebraBasis_inr_inl_mem_grade_one k G d)
   rw [mem_zigzagBraidBimoduleGrade_iff, LinearMap.restrictScalars_apply,
     coe_zigzagBraidCoevaluation_of]
   refine add_mem (add_mem ?_ ?_) (sum_mem fun d _ => ?_)
-  · simpa using tmul_mem_zigzagEnvelopingGrade (mul_mem_zigzagAlgebraIntegerGrade k G hx' he) hvol
-  · simpa using tmul_mem_zigzagEnvelopingGrade (mul_mem_zigzagAlgebraIntegerGrade k G hx' hvol) he
-  · simpa [add_assoc, one_add_one_eq_two] using tmul_mem_zigzagEnvelopingGrade
+  · simpa using tmul_mem_zigzagEnvelopingGrading (mul_mem_zigzagAlgebraIntegerGrade k G hx' he) hvol
+  · simpa using tmul_mem_zigzagEnvelopingGrading (mul_mem_zigzagAlgebraIntegerGrade k G hx' hvol) he
+  · simpa [add_assoc, one_add_one_eq_two] using tmul_mem_zigzagEnvelopingGrading
       (mul_mem_zigzagAlgebraIntegerGrade k G hx' (harrow d)) (harrow d.symm)
 
 end Grading
