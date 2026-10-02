@@ -61,18 +61,6 @@ namespace TauCeti
 
 variable {h : ℝ} {f : ℍ → ℂ}
 
-/-- Along the vertical ray from `τ`, the `q`-parameter decays exponentially:
-`𝕢(τ + it)ᵐ = 𝕢(τ)ᵐ e^{-2πmt/h}`. -/
-private lemma qParam_add_mul_I_pow (h : ℝ) (τ : ℂ) (t : ℝ) (m : ℕ) :
-    𝕢 h (τ + t * I) ^ m = 𝕢 h τ ^ m * (Real.exp (-(2 * π * m / h * t)) : ℂ) := by
-  rw [← sub_neg_eq_add, TauCeti.Periodic.qParam_sub, mul_pow,
-    ← Complex.exp_nat_mul, ofReal_exp]
-  congr 2
-  push_cast
-  ring_nf
-  rw [I_sq]
-  ring
-
 /-- The `m`-th term of the `q`-expansion of `f(z) (z - τ)ⁿ dz` along the vertical ray from `τ`,
 with coefficient `A = aₘ 𝕢(τ)ᵐ`, is integrable. Its integral is `n! / (-2πi)ⁿ⁺¹` times the `m`-th
 term `(h / m)ⁿ⁺¹ A` of the Eichler series, and its `L¹`-norm is `n! / (2π)ⁿ⁺¹` times the norm of
@@ -150,7 +138,8 @@ private lemma exists_hasSum_integral_rayTerm (hh : 0 < h) (hfper : Periodic (f �
     ((t * I) ^ n * I)
   rw [← mul_assoc] at hq
   refine (hq.tsum_eq.symm.trans (tsum_congr fun m ↦ ?_))
-  simp only [ofComplex_apply_of_im_pos him, smul_eq_mul, qParam_add_mul_I_pow, F, a]
+  simp only [ofComplex_apply_of_im_pos him, smul_eq_mul, TauCeti.Periodic.qParam_add_mul_I_pow, F,
+    a]
   push_cast
   ring
 
