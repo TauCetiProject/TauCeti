@@ -3,9 +3,11 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
+module
+
 import Mathlib.Algebra.Lie.LieTheorem
 import Mathlib.Algebra.Lie.Character
-import TauCeti.Algebra.Lie.BaseChange.Radical
+public import TauCeti.Algebra.Lie.BaseChange.Radical
 
 /-!
 # The derived algebra of a solvable Lie algebra
@@ -25,6 +27,8 @@ map on endomorphisms, as in Mathlib's
 
 * N. Jacobson, *Lie Algebras*, Interscience (1962), Chapter II, Lie's theorem and its corollaries.
 -/
+
+public section
 
 open LieAlgebra LieModule TensorProduct
 

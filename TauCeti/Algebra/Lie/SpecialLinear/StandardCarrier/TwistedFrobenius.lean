@@ -196,7 +196,7 @@ theorem mem_frobeniusFixedSubring_of_twistedFrobenius_eq_self {g : points r A}
         Matrix (Fin (r + 1)) (Fin (r + 1)) A) i j ∈ frobeniusFixedSubring A p (2 * k) := by
   refine (frobenius_eq_self_iff r p (2 * k) A g).mp ?_ i j
   exact fixedSubgroup_twistedFrobenius_le_fixedSubgroup_frobenius r p k A
-    (mem_fixedSubgroup.mpr hg)
+    (MonoidHom.mem_eqLocus.mpr hg)
 
 /-- **The points fixed by the twisted Frobenius lie among the points of the same carrier over the
 `p ^ (2 * k)`-power Frobenius-fixed subring.** The corresponding statement for the Frobenius itself,

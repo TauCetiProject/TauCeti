@@ -101,7 +101,7 @@ theorem mem_fixedSubgroup_frobenius_iff (g : points r K) :
     g ∈ fixedSubgroup (frobenius r p k K) ↔
       ∀ i j, ((g : Matrix.GeneralLinearGroup (Fin (r + 1)) K) :
         Matrix (Fin (r + 1)) (Fin (r + 1)) K) i j ∈ frobeniusFixedSubfield K p k := by
-  rw [mem_fixedSubgroup, frobenius_eq_self_iff]
+  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, mem_frobeniusFixedSubfield]
 
 /-- **The image of a determinant-one matrix over the Frobenius-fixed subfield is a Frobenius-fixed

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Equiv.Semiconj
+public import TauCeti.Algebra.Group.Subgroup.Ker
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import Mathlib.Dynamics.FixedPoints.Defs
 
@@ -57,10 +58,6 @@ variable {G : Type*} [Group G]
 /-- The subgroup of points fixed by an endomorphism of a group, `F.eqLocus (MonoidHom.id G)`. -/
 abbrev fixedSubgroup (F : G →* G) : Subgroup G := F.eqLocus (MonoidHom.id G)
 
-/-- A point lies in the fixed subgroup of `F` exactly when `F` fixes it. -/
-@[simp]
-theorem mem_fixedSubgroup {F : G →* G} {x : G} : x ∈ fixedSubgroup F ↔ F x = x := Iff.rfl
-
 /-- Only the identity fixes every point. -/
 theorem fixedSubgroup_eq_top_iff {F : G →* G} : fixedSubgroup F = ⊤ ↔ F = MonoidHom.id G := by
   simp [Subgroup.eq_top_iff', MonoidHom.ext_iff]
@@ -72,8 +69,8 @@ Suzuki and Ree groups), the fixed group of the Steinberg endomorphism lies insid
 that Frobenius map. -/
 theorem fixedSubgroup_le_fixedSubgroup_pow (F : Monoid.End G) (n : ℕ) :
     fixedSubgroup (F : G →* G) ≤ fixedSubgroup ((F ^ n : Monoid.End G) : G →* G) := fun x hx =>
-  mem_fixedSubgroup.mpr <| (congrFun (Monoid.End.coe_pow _ F n) x).trans
-    (Function.iterate_fixed (mem_fixedSubgroup.mp hx) n)
+  MonoidHom.mem_eqLocus.mpr <| (congrFun (Monoid.End.coe_pow _ F n) x).trans
+    (Function.iterate_fixed (MonoidHom.mem_eqLocus.mp hx) n)
 
 /-- A point fixed by each of two endomorphisms is fixed by their composite.
 
@@ -84,7 +81,7 @@ This is the subgroup-packaged form of `Function.inter_subset_fixedPoints_comp`. 
 theorem fixedSubgroup_inf_fixedSubgroup_le_fixedSubgroup_comp (F F' : G →* G) :
     fixedSubgroup F ⊓ fixedSubgroup F' ≤ fixedSubgroup (F'.comp F) := fun x hx => by
   obtain ⟨hF, hF'⟩ := Subgroup.mem_inf.mp hx
-  rw [mem_fixedSubgroup] at hF hF' ⊢
+  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply] at hF hF' ⊢
   rw [MonoidHom.coe_comp]
   exact Function.inter_subset_fixedPoints_comp ⟨hF', hF⟩
 
@@ -95,8 +92,8 @@ fixed by the other. -/
 theorem map_fixedSubgroup_le {F : G →* G} {F' : G' →* G'} (ψ : G →* G')
     (hψ : ψ.comp F = F'.comp ψ) : (fixedSubgroup F).map ψ ≤ fixedSubgroup F' := by
   rintro _ ⟨x, hx, rfl⟩
-  rw [mem_fixedSubgroup, ← MonoidHom.comp_apply, ← hψ, MonoidHom.comp_apply,
-    mem_fixedSubgroup.mp hx]
+  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, ← MonoidHom.comp_apply, ← hψ, MonoidHom.comp_apply,
+    MonoidHom.mem_eqLocus.mp hx, MonoidHom.id_apply]
 
 /-- **Fixed points of an endomorphism of a subgroup, read in the ambient group.** If an
 endomorphism `F` of `S ≤ G` is the restriction of an endomorphism `f` of `G`, then the image of

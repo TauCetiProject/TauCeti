@@ -323,7 +323,7 @@ group, or that they form a maximal torus of it, is not claimed. -/
 theorem geckWeightTorus_mem_fixedSubgroup_geckFrobenius (s : Fin d.rank → d.Closureˣ)
     (hs : ∀ k, (s k : d.Closure) ∈ d.fixedField) :
     d.geckWeightTorus s ∈ fixedSubgroup d.geckFrobenius := by
-  rw [mem_fixedSubgroup, geckFrobenius_geckWeightTorus]
+  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, geckFrobenius_geckWeightTorus]
   refine congrArg _ (funext fun k => Units.ext ?_)
   rw [Pi.pow_apply, Units.val_pow_eq_pow_val]
   exact (d.mem_fixedField).1 (hs k)
@@ -343,7 +343,7 @@ theorem mem_fixedSubgroup_geckFrobenius_iff (g : GeckGroup d) :
         Matrix (Fin (d.dynkinType.geckDim d.dynkinType_valid))
           (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) r c ∈
         d.fixedField := by
-  rw [mem_fixedSubgroup, geckFrobenius_def,
+  rw [MonoidHom.mem_eqLocus, MonoidHom.id_apply, geckFrobenius_def,
     d.dynkinType.geckFrobenius_eq_self_iff d.dynkinType_valid _ _ _ g]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
     d.fieldOrder_eq_characteristic_pow]

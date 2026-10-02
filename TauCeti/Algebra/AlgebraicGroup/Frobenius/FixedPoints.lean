@@ -153,7 +153,8 @@ theorem range_frobeniusFixedInclusion :
     (frobeniusFixedInclusion p n (H := H) (A := A)).range =
       fixedSubgroup (iterateFrobeniusPoints p n) := by
   ext f
-  rw [MonoidHom.mem_range, mem_fixedSubgroup, iterateFrobeniusPoints_eq_self_iff]
+  rw [MonoidHom.mem_range, MonoidHom.mem_eqLocus, MonoidHom.id_apply,
+    iterateFrobeniusPoints_eq_self_iff]
   constructor
   · rintro ⟨g, rfl⟩ h
     simpa only [frobeniusFixedInclusion_apply_apply] using

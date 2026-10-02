@@ -130,7 +130,8 @@ theorem range_map_val_equalizer (φ : A →ₐ[R] A) :
       fixedSubgroup (Matrix.GeneralLinearGroup.map (n := ι) (φ : A →+* A)) := by
   ext g
   simp only [MonoidHom.mem_range]
-  rw [mem_range_map_val_iff, mem_fixedSubgroup, map_eq_self_iff_mem_equalizer]
+  rw [mem_range_map_val_iff, MonoidHom.mem_eqLocus, MonoidHom.id_apply,
+    map_eq_self_iff_mem_equalizer]
   refine ⟨fun h => h.1, fun h => ⟨h, (map_eq_self_iff_mem_equalizer φ g⁻¹).mp ?_⟩⟩
   rw [map_inv, (map_eq_self_iff_mem_equalizer φ g).mpr h]
 
@@ -174,8 +175,8 @@ theorem fixedSubgroup_map_iterateFrobenius_le_of_dvd {m l : ℕ} (hml : m ∣ l)
     fixedSubgroup (Matrix.GeneralLinearGroup.map (n := ι) (iterateFrobenius A p m)) ≤
       fixedSubgroup (Matrix.GeneralLinearGroup.map (n := ι) (iterateFrobenius A p l)) :=
   fun g hg =>
-  mem_fixedSubgroup.mpr ((map_iterateFrobenius_eq_self_iff p l g).mpr fun i j =>
+  MonoidHom.mem_eqLocus.mpr ((map_iterateFrobenius_eq_self_iff p l g).mpr fun i j =>
     frobeniusFixedSubring_le_of_dvd hml
-      ((map_iterateFrobenius_eq_self_iff p m g).mp (mem_fixedSubgroup.mp hg) i j))
+      ((map_iterateFrobenius_eq_self_iff p m g).mp (MonoidHom.mem_eqLocus.mp hg) i j))
 
 end Matrix.GeneralLinearGroup
