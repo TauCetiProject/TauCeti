@@ -9,6 +9,9 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
+-- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
+-- function field nonempty, hence its ramification index positive.
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
@@ -62,7 +65,9 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
   `TauCeti.Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank`, the product form
   `r · e · f = [F' : F]` of the fundamental identity (Stichtenoth, Corollary 3.7.2).
 * `TauCeti.Place.ramificationIdxIn`: the common ramification index of the places over a place of
-  `F`, with `TauCeti.Place.ramificationIdxIn_mul_sum_fibre_eq` summing `e - 1` over a fibre:
+  `F`, zero exactly on an empty fibre (`TauCeti.Place.ramificationIdxIn_eq_zero_iff`) and positive
+  for an extension of function fields (`TauCeti.Place.ramificationIdxIn_pos`), with
+  `TauCeti.Place.ramificationIdxIn_mul_sum_fibre_eq` summing `e - 1` over a fibre:
   `∑_{P' ∣ P} (e(P' ∣ P) - 1) · deg P' = [F' : F] · (1 - 1/e) · deg P`, cleared of the division.
 * `TauCeti.Place.stabilizer_eq_decompositionSubgroup`: the stabilizer of a place is the
   decomposition group of its valuation ring, and
@@ -385,6 +390,26 @@ theorem ramificationIdxIn_eq_ramificationIdx {P : Place k F} {P' : Place k F'}
   have hex : ∃ Q : Place k F', Q.restrict k F = P := ⟨P', hP'⟩
   rw [ramificationIdxIn, dite_eq_left hex]
   exact ramificationIdx_eq_of_restrict_eq (by rw [hex.choose_spec, hP'])
+
+/-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
+@[simp]
+theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
+    P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
+  constructor
+  · intro h P' hP'
+    rw [ramificationIdxIn_eq_ramificationIdx hP'] at h
+    exact absurd h (ramificationIdx_pos F P').ne'
+  · intro h
+    rw [ramificationIdxIn, dite_eq_right]
+    exact fun ⟨P', hP'⟩ ↦ h P' hP'
+
+/-- **The ramification index of a place of the base is positive** for an extension of function
+fields: some place of `F'` lies above it. -/
+theorem ramificationIdxIn_pos (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
+    {P : Place k F} : 0 < P.ramificationIdxIn F' := by
+  obtain ⟨P', hP'⟩ := restrict_surjective_of_finiteDimensional (k' := k) hF hF' P
+  rw [ramificationIdxIn_eq_ramificationIdx hP']
+  exact ramificationIdx_pos F P'
 
 /-- **The branch contribution of a Galois fibre**: the places over a place `P` of `F` share one
 ramification index `e` and one relative degree `f`, and there are `[F' : F] / (e f)` of them, so
