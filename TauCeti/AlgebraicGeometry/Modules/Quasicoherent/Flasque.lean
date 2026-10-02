@@ -28,7 +28,7 @@ inducts on the number of them. Suppose that every section over `W = D(g₁) ∪ 
 and let `s` be a section over `D(f) ∪ W`. Subtracting an extension of `s|_W` reduces to the case
 that `s` vanishes on `W`. Then `σ = s|_{D(f)}` is an element of `I_f` that vanishes on each
 `D(f gᵢ)`, so it is killed by a power of every `gᵢ`: it lies in the `𝔞`-primary component
-`Γ_𝔞(I_f)` for `𝔞 = (g₁, …, gₙ)`. By `Module.Injective.primaryComponent_map_surjective` it is the
+`Γ_𝔞(I_f)` for `𝔞 = (g₁, …, gₙ)`. By `Ideal.primaryComponent_map_surjective` it is the
 image of some `u ∈ Γ_𝔞(I)`, which is Hartshorne's Lemma III.3.2 and Proposition III.3.3 combined.
 The global section `u` restricts to `σ` on `D(f)` and to zero on each `D(gᵢ)`, so it extends `s`.
 
@@ -70,6 +70,17 @@ local notation "Γₘ(" U ")" =>
 local notation "res[" h "]" =>
   Prefunctor.map (CategoryTheory.Functor.toPrefunctor 𝓕) (Quiver.Hom.op (homOfLE h))
 
+/-- Clearing denominators in a localization `φ : N → N_f`: if `fᵏ σ = φ x` and `(f g)ⁿ` kills `x`,
+then `gⁿ` kills `σ`. -/
+private theorem pow_smul_eq_zero_of_pow_smul_eq {A N N' : Type*} [CommRing A] [AddCommGroup N]
+    [Module A N] [AddCommGroup N'] [Module A N'] {f g : A} (φ : N →ₗ[A] N')
+    [IsLocalizedModule (.powers f) φ] {x : N} {σ : N'} {k n : ℕ} (hk : f ^ k • σ = φ x)
+    (hn : (f * g) ^ n • x = 0) : g ^ n • σ = 0 := by
+  refine IsLocalizedModule.smul_injective φ ⟨f ^ (n + k), pow_mem (Submonoid.mem_powers f) _⟩ ?_
+  simp only [Submonoid.mk_smul, smul_zero]
+  have h : f ^ (n + k) • g ^ n • σ = (f * g) ^ n • f ^ k • σ := by module
+  rw [h, hk, ← map_smul, hn, map_zero]
+
 /-- A section of `M^~` over `D(f) ∪ D(g₁) ∪ ⋯ ∪ D(gₙ)` that vanishes on every `D(gᵢ)` is the
 restriction of a global section. -/
 private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
@@ -105,19 +116,9 @@ private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
       rfl
     obtain ⟨⟨_, N, rfl⟩, hN⟩ := (IsLocalizedModule.eq_zero_iff (.powers (f * g))
       (tilde.toOpen M (basicOpen (f * g))).hom).mp hx
-    replace hN : (f * g) ^ N • x = 0 := hN
-    -- In any localization `φ : M → M_f`, `fᵏ σ = φ x` and `(f g)ᴺ x = 0` force `gᴺ σ = 0`.
-    have key {M' : Type u} [AddCommGroup M'] [Module R M'] (φ : M →ₗ[R] M')
-        [IsLocalizedModule (.powers f) φ] {σ' : M'} (hk' : f ^ k • σ' = φ x) :
-        g ^ N • σ' = 0 := by
-      refine IsLocalizedModule.smul_injective φ
-        ⟨f ^ (N + k), pow_mem (Submonoid.mem_powers f) (N + k)⟩ ?_
-      simp only [Submonoid.mk_smul, smul_zero]
-      rw [smul_smul, mul_comm, ← smul_smul, pow_add, mul_smul, hk', smul_smul, ← mul_pow,
-        mul_comm g, ← map_smul, hN, map_zero]
-    exact ⟨N, key (tilde.toOpen M (basicOpen f)).hom hk⟩
+    exact ⟨N, pow_smul_eq_zero_of_pow_smul_eq (tilde.toOpen M (basicOpen f)).hom hk hN⟩
   -- Lift `σ` to an element `u` of `M` killed by a power of every `g ∈ G`.
-  obtain ⟨⟨u, hu⟩, hu'⟩ := Module.Injective.primaryComponent_map_surjective
+  obtain ⟨⟨u, hu⟩, hu'⟩ := Ideal.primaryComponent_map_surjective
     (Submodule.span R (G : Set R)) (.powers f) (tilde.toOpen M (basicOpen f)).hom ⟨σ, hσ⟩
   replace hu' : tilde.toOpen M (basicOpen f) u = σ := congr(Subtype.val $hu')
   -- The global section `u` restricts to `σ` on `D(f)` and to zero on each `D(g)`.
