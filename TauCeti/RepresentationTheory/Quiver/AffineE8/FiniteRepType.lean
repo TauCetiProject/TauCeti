@@ -44,11 +44,11 @@ universe u w t
 
 section ArrowMaps
 
-variable {k : Type u} [CommRing k]
+variable {k : Type u} [Semiring k]
 
 /-- The maps of the three standard flags associated to an endomorphism: prefix inclusions on
 the long arm, suffix inclusions on the medium arm, and the map involving `f` on the short arm. -/
-def Quiver.AffineE8.arrowMap {V : Type t} [AddCommGroup V] [Module k V]
+def Quiver.AffineE8.arrowMap {V : Type t} [AddCommMonoid V] [Module k V]
     {a b : Quiver.AffineE8} (e : a ⟶ b) (f : V →ₗ[k] V) :
     (Fin (coordinateCount a) → V) →ₗ[k] (Fin (coordinateCount b) → V) :=
   match e with
@@ -78,7 +78,7 @@ def Quiver.AffineE8.arrowMap {V : Type t} [AddCommGroup V] [Module k V]
     LinearMap.pi ![p 0, p 1, p 2, p 3, p 4, 0]
 
 /-- The flag arrow maps, in coordinates. -/
-@[simp] theorem Quiver.AffineE8.arrowMap_apply {V : Type t} [AddCommGroup V] [Module k V]
+@[simp] theorem Quiver.AffineE8.arrowMap_apply {V : Type t} [AddCommMonoid V] [Module k V]
     {a b : Quiver.AffineE8} (e : a ⟶ b) (f : V →ₗ[k] V)
     (x : Fin (coordinateCount a) → V) :
     arrowMap e f x = match e with
@@ -168,8 +168,8 @@ theorem isFinDim_affineE8LoopRep (hM : IsFinDim k Quiver.OneLoop M) :
 
 private noncomputable def loopApp (φ : M ⟶ N) (v : Quiver.AffineE8) :
     (affineE8LoopRep M).obj v ⟶ (affineE8LoopRep N).obj v :=
-  ModuleCat.ofHom (LinearMap.pi fun i ↦
-    (φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom.comp (LinearMap.proj i))
+  ModuleCat.ofHom
+    ((φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom.compLeft (Fin (coordinateCount v)))
 
 private theorem arrowMap_naturality {V W : Type t}
     [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
@@ -210,8 +210,9 @@ noncomputable def affineE8LoopFunctor (k : Type u) [Field k] :
 @[simp] theorem affineE8LoopFunctor_map_app (φ : M ⟶ N) (v : Quiver.AffineE8) :
     ((affineE8LoopFunctor k).map φ).app (v : Paths Quiver.AffineE8) =
       eqToHom (Functor.congr_obj (affineE8LoopFunctor_obj (M := M)) v) ≫
-      ModuleCat.ofHom (LinearMap.pi fun i : Fin (coordinateCount v) ↦
-        (φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom.comp (LinearMap.proj i)) ≫
+      ModuleCat.ofHom
+        ((φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom.compLeft
+          (Fin (coordinateCount v))) ≫
       eqToHom (Functor.congr_obj (affineE8LoopFunctor_obj (M := N)) v).symm := (rfl)
 
 section Full
