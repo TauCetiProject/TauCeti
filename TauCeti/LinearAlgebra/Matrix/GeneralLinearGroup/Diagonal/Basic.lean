@@ -332,8 +332,15 @@ determinant-one matrices (`TauCeti.detOneRescale_of_det_eq_one`).
 Unlike `TauCeti.exists_det_mul_diagGL_eq_one`, the rescaling is an explicit formula, so it
 commutes with entrywise ring homomorphisms (`TauCeti.map_detOneRescale`): it is a morphism of
 schemes `GLₙ → SLₙ`. In rank zero it is the identity. -/
-@[expose] def detOneRescale (g : GL (Fin n) k) : GL (Fin n) k :=
+def detOneRescale (g : GL (Fin n) k) : GL (Fin n) k :=
   g * diagGL fun i : Fin n ↦ if (i : ℕ) = 0 then (Matrix.GeneralLinearGroup.det g)⁻¹ else 1
+
+/-- The determinant-one rescaling multiplies on the right by the diagonal matrix
+`diag((det g)⁻¹, 1, …, 1)`. -/
+theorem detOneRescale_def (g : GL (Fin n) k) :
+    detOneRescale g =
+      g * diagGL fun i : Fin n ↦ if (i : ℕ) = 0 then (Matrix.GeneralLinearGroup.det g)⁻¹ else 1 :=
+  (rfl)
 
 /-- The determinant-one rescaling has determinant one. -/
 @[simp]

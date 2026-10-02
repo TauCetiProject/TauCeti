@@ -55,6 +55,7 @@ variable {n : ℕ} {A : Type w} [CommRing A]
 
 private theorem detOneRescale_mem {g : GL (Fin n) A} (hg : g ∈ upperTriangularGroup (Fin n) A) :
     detOneRescale g ∈ upperTriangularGroup (Fin n) A := by
+  rw [detOneRescale_def]
   refine (upperTriangularGroup (Fin n) A).mul_mem hg ?_
   rw [← UpperTriangularGroup.coe_diagonalHom]
   exact Subtype.property _
