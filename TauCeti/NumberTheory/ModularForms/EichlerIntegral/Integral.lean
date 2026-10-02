@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.EichlerIntegral.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.Complex.Periodic
 import TauCeti.MeasureTheory.Integral.ExpDecay
 
 /-!
@@ -25,9 +26,11 @@ ray `qᵐ` decays like `e^{-2πmt/h}`, so termwise this is the Gamma integral
 
 For a cusp form `f` of weight `k = n + 2`, the integrand `f(z) (z - τ)ⁿ dz` is the period integrand
 of `f` against the binary form `(X - τY)ⁿ`, so this representation ties the Eichler integral to
-the periods of `f`. Substituting `z ↦ γz` in it shows that `E_{k-1} f` transforms in weight `2 - k`
-up to a polynomial in `τ` of degree at most `k - 2` whose coefficients are periods of `f`; that
-transformation law is not part of this file.
+the periods of `f`. It is one input to the transformation law: `E_{k-1} f` transforms in weight
+`2 - k` up to a polynomial in `τ` of degree at most `k - 2` whose coefficients are periods of `f`.
+Proving that law also needs the substitution `z ↦ γz` in this integral and path independence for
+integrals from a point of `ℍ` to a cusp, since `γ` moves the vertical ray to a path with different
+endpoints. Neither is part of this file.
 
 ## Main results
 
@@ -35,6 +38,8 @@ transformation law is not part of this file.
   function bounded at `i∞` with vanishing constant term.
 * `TauCeti.CuspFormClass.eichlerIntegral_eq_integral`: the integral representation for a cusp
   form.
+* `TauCeti.integrableOn_eichlerIntegrand`, `TauCeti.CuspFormClass.integrableOn_eichlerIntegrand`:
+  the integrand is integrable along the ray, under the same hypotheses.
 
 ## References
 
@@ -60,8 +65,9 @@ variable {h : ℝ} {f : ℍ → ℂ}
 `𝕢(τ + it)ᵐ = 𝕢(τ)ᵐ e^{-2πmt/h}`. -/
 private lemma qParam_add_mul_I_pow (h : ℝ) (τ : ℂ) (t : ℝ) (m : ℕ) :
     𝕢 h (τ + t * I) ^ m = 𝕢 h τ ^ m * (Real.exp (-(2 * π * m / h * t)) : ℂ) := by
-  simp only [Periodic.qParam, ← Complex.exp_nat_mul, ofReal_exp, ← Complex.exp_add]
-  congr 1
+  rw [show τ + t * I = τ - -(t * I) by ring, TauCeti.Periodic.qParam_sub, mul_pow,
+    ← Complex.exp_nat_mul, ofReal_exp]
+  congr 2
   push_cast
   ring_nf
   rw [I_sq]
@@ -110,21 +116,19 @@ private lemma integrable_and_integral_rayTerm (hh : 0 < h) (n : ℕ) {m : ℕ} (
     rw [← hmh, mul_pow]
     field_simp
 
-/-- **The Eichler integral as an integral**: if `f` is holomorphic, `h`-periodic and bounded at
-`i∞` with vanishing constant term `a₀`, then
-
-`E_{n+1} f (τ) = (-2πi)ⁿ⁺¹ / n! · ∫_τ^{i∞} f(z) (z - τ)ⁿ dz`,
-
-the integral taken along the vertical ray `z = τ + i t`, `t > 0`. -/
-theorem eichlerIntegral_eq_integral (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+/-- Along the vertical ray from `τ`, the integrand `f(z) (z - τ)ⁿ dz` is the sum of termwise
+integrable functions whose `L¹`-norms are summable and whose integrals sum to
+`n! / (-2πi)ⁿ⁺¹ · E_{n+1} f (τ)`. -/
+private lemma exists_hasSum_integral_rayTerm (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) (h₀ : (qExpansion h f).coeff 0 = 0)
     (n : ℕ) (τ : ℍ) :
-    eichlerIntegral h (n + 1) f τ = (-2 * π * I) ^ (n + 1) / n ! *
-      ∫ t in Ioi (0 : ℝ), f (ofComplex (τ + t * I)) * (t * I) ^ n * I := by
+    ∃ F : ℕ → ℝ → ℂ, (∀ m, Integrable (F m) (volume.restrict (Ioi 0))) ∧
+      Summable (fun m ↦ ∫ t in Ioi (0 : ℝ), ‖F m t‖) ∧
+      EqOn (fun t : ℝ ↦ f (ofComplex (τ + t * I)) * (t * I) ^ n * I) (fun t ↦ ∑' m, F m t)
+        (Ioi 0) ∧
+      HasSum (fun m ↦ ∫ t in Ioi (0 : ℝ), F m t)
+        (n ! / (-2 * π * I) ^ (n + 1) * eichlerIntegral h (n + 1) f τ) := by
   set a : ℕ → ℂ := fun m ↦ (qExpansion h f).coeff m
-  have hc : (n ! : ℂ) / (-2 * π * I) ^ (n + 1) ≠ 0 :=
-    div_ne_zero (Nat.cast_ne_zero.mpr n.factorial_ne_zero)
-      (pow_ne_zero _ (by simp [Real.pi_ne_zero, I_ne_zero]))
   -- The `m`-th term of the `q`-expansion of the integrand along the ray.
   set F : ℕ → ℝ → ℂ := fun m t ↦ a m * 𝕢 h τ ^ m * I ^ (n + 1) *
     ((t ^ n * Real.exp (-(2 * π * m / h * t)) : ℝ) : ℂ)
@@ -138,22 +142,75 @@ theorem eichlerIntegral_eq_integral (hh : 0 < h) (hfper : Periodic (f ∘ ofComp
     rcases Nat.eq_zero_or_pos m with rfl | hm
     · simp [F, E, a, h₀]
     · exact integrable_and_integral_rayTerm hh n hm _
+  refine ⟨F, fun m ↦ (hF m).1, by simpa only [(hF _).2.2] using hE.summable.norm.mul_left _,
+    fun t ht ↦ ?_, by simpa only [(hF _).2.1] using hE.mul_left _⟩
   -- Along the ray, the integrand is the sum of the `F m`.
-  have hsum : ∀ t ∈ Ioi (0 : ℝ),
-      f (ofComplex (τ + t * I)) * (t * I) ^ n * I = ∑' m, F m t := fun t ht ↦ by
-    have him : 0 < (τ + t * I : ℂ).im := by simpa using add_pos τ.im_pos ht
-    have hq := (hasSum_qExpansion hh hfper hfhol hfbdd (ofComplex (τ + t * I))).mul_right
-      ((t * I) ^ n * I)
-    rw [← mul_assoc] at hq
-    refine (hq.tsum_eq.symm.trans (tsum_congr fun m ↦ ?_))
-    simp only [ofComplex_apply_of_im_pos him, smul_eq_mul, qParam_add_mul_I_pow, F, a]
-    push_cast
-    ring
-  rw [setIntegral_congr_fun measurableSet_Ioi hsum,
-    ← integral_tsum_of_summable_integral_norm (fun m ↦ (hF m).1)
-      (by simpa only [(hF _).2.2] using hE.summable.norm.mul_left _)]
-  simp only [fun m ↦ (hF m).2.1]
-  rw [tsum_mul_left, hE.tsum_eq, ← mul_assoc, ← inv_div, inv_mul_cancel₀ hc, one_mul]
+  have him : 0 < (τ + t * I : ℂ).im := by simpa using add_pos τ.im_pos ht
+  have hq := (hasSum_qExpansion hh hfper hfhol hfbdd (ofComplex (τ + t * I))).mul_right
+    ((t * I) ^ n * I)
+  rw [← mul_assoc] at hq
+  refine (hq.tsum_eq.symm.trans (tsum_congr fun m ↦ ?_))
+  simp only [ofComplex_apply_of_im_pos him, smul_eq_mul, qParam_add_mul_I_pow, F, a]
+  push_cast
+  ring
+
+/-- If `f` is holomorphic, `h`-periodic and bounded at `i∞` with vanishing constant term `a₀`,
+then the period integrand `f(z) (z - τ)ⁿ dz` is integrable along the vertical ray `z = τ + i t`,
+`t > 0`. -/
+theorem integrableOn_eichlerIntegrand (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+    (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) (h₀ : (qExpansion h f).coeff 0 = 0)
+    (n : ℕ) (τ : ℍ) :
+    IntegrableOn (fun t : ℝ ↦ f (ofComplex (τ + t * I)) * (t * I) ^ n * I) (Ioi 0) := by
+  obtain ⟨F, hint, hsum, heq, -⟩ :=
+    exists_hasSum_integral_rayTerm hh hfper hfhol hfbdd h₀ n τ
+  have hcont : ContinuousOn (fun t : ℝ ↦ f (ofComplex (τ + t * I)) * (t * I) ^ n * I) (Ioi 0) := by
+    refine ContinuousOn.mul (ContinuousOn.mul ?_ (by fun_prop)) continuousOn_const
+    exact (UpperHalfPlane.mdifferentiable_iff.mp hfhol).continuousOn.comp (f := fun t : ℝ ↦
+      (τ : ℂ) + t * I) (by fun_prop) fun t ht ↦ by simpa using add_pos τ.im_pos ht
+  refine ⟨hcont.aestronglyMeasurable measurableSet_Ioi, ?_⟩
+  rw [hasFiniteIntegral_iff_enorm]
+  calc ∫⁻ t in Ioi (0 : ℝ), ‖f (ofComplex (τ + t * I)) * (t * I) ^ n * I‖ₑ
+      ≤ ∫⁻ t in Ioi 0, ∑' m, ‖F m t‖ₑ :=
+        setLIntegral_mono' measurableSet_Ioi fun t ht ↦
+          (congrArg enorm (heq ht)).trans_le enorm_tsum_le_tsum_enorm
+    _ = ∑' m, ∫⁻ t in Ioi 0, ‖F m t‖ₑ :=
+        lintegral_tsum fun m ↦ (hint m).aestronglyMeasurable.enorm
+    _ = ENNReal.ofReal (∑' m, ∫ t in Ioi (0 : ℝ), ‖F m t‖) := by
+        rw [ENNReal.ofReal_tsum_of_nonneg (fun m ↦ integral_nonneg fun t ↦ norm_nonneg _) hsum]
+        simp only [ofReal_integral_norm_eq_lintegral_enorm (hint _)]
+    _ < ⊤ := ENNReal.ofReal_lt_top
+
+/-- **The Eichler integral as an integral**: if `f` is holomorphic, `h`-periodic and bounded at
+`i∞` with vanishing constant term `a₀`, then
+
+`E_{n+1} f (τ) = (-2πi)ⁿ⁺¹ / n! · ∫_τ^{i∞} f(z) (z - τ)ⁿ dz`,
+
+the integral taken along the vertical ray `z = τ + i t`, `t > 0`. The integrand is integrable by
+`TauCeti.integrableOn_eichlerIntegrand`. -/
+theorem eichlerIntegral_eq_integral (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+    (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f) (h₀ : (qExpansion h f).coeff 0 = 0)
+    (n : ℕ) (τ : ℍ) :
+    eichlerIntegral h (n + 1) f τ = (-2 * π * I) ^ (n + 1) / n ! *
+      ∫ t in Ioi (0 : ℝ), f (ofComplex (τ + t * I)) * (t * I) ^ n * I := by
+  obtain ⟨F, hint, hsum, heq, hval⟩ :=
+    exists_hasSum_integral_rayTerm hh hfper hfhol hfbdd h₀ n τ
+  have hc : (n ! : ℂ) / (-2 * π * I) ^ (n + 1) ≠ 0 :=
+    div_ne_zero (Nat.cast_ne_zero.mpr n.factorial_ne_zero)
+      (pow_ne_zero _ (by simp [Real.pi_ne_zero, I_ne_zero]))
+  rw [setIntegral_congr_fun measurableSet_Ioi heq,
+    (hasSum_integral_of_summable_integral_norm hint hsum).unique hval, ← mul_assoc, ← inv_div,
+    inv_mul_cancel₀ hc, one_mul]
+
+/-- For a cusp form `f`, the period integrand `f(z) (z - τ)ⁿ dz` is integrable along the vertical
+ray `z = τ + i t`, `t > 0`. -/
+theorem CuspFormClass.integrableOn_eichlerIntegrand {F : Type*} [FunLike F ℍ ℂ]
+    {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} [CuspFormClass F Γ k] (f : F) (hh : 0 < h)
+    (hΓ : h ∈ Γ.strictPeriods) (n : ℕ) (τ : ℍ) :
+    IntegrableOn (fun t : ℝ ↦ f (ofComplex (τ + t * I)) * (t * I) ^ n * I) (Ioi 0) := by
+  have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods hh hΓ⟩
+  exact TauCeti.integrableOn_eichlerIntegrand hh
+    (SlashInvariantFormClass.periodic_comp_ofComplex f hΓ) (ModularFormClass.holo f)
+    (ModularFormClass.bdd_at_infty f) (_root_.CuspFormClass.qExpansion_coeff_zero f hh hΓ) n τ
 
 /-- **The Eichler integral of a cusp form as an integral**: for a cusp form `f`,
 
