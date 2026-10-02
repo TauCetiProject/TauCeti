@@ -8,9 +8,10 @@ module
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Embedding
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.FiniteRepType
 public import TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType
+public import TauCeti.RepresentationTheory.Quiver.Subspace.FiniteRepType
 
 /-!
-# Loops and parallel arrows obstruct finite representation type
+# Extended Dynkin subquivers obstruct finite representation type
 
 The loop quiver has infinitely many nilpotent Jordan block representations
 (`TauCeti.not_isFiniteRepType_oneLoop`), and the Kronecker quiver `• ⇉ •` has infinitely many
@@ -20,16 +21,25 @@ show that a quiver of finite representation type has no loops and at most one ar
 vertex to any other. These are the two smallest extended Dynkin obstructions, `Ã₀` and `Ã₁`,
 in the non-Dynkin half of Gabriel's theorem.
 
+The four subspace quiver, whose underlying graph is the extended Dynkin diagram `D̃₄`, has
+infinite representation type as well (`TauCeti.not_isFiniteRepType_subspace_fin_four`), so a
+quiver of finite representation type has no vertex receiving arrows from four distinct other
+vertices.
+
 ## Main results
 
 * `TauCeti.IsFiniteRepType.isEmpty_hom_self`: a quiver of finite representation type has no loops.
 * `TauCeti.IsFiniteRepType.subsingleton_hom`: a quiver of finite representation type has no two
   parallel arrows.
+* `TauCeti.not_isFiniteRepType_of_forall_nonempty_hom`: a vertex receiving arrows from four distinct
+  other vertices refutes finite representation type.
+* `TauCeti.not_isFiniteRepType_subspace`: a subspace quiver with at least four outer vertices has
+  infinite representation type.
 
 ## Implementation notes
 
 The consequences are stated for representations with vertex spaces in the universe of the base
-field, the universe in which the loop-quiver and Kronecker families are built.
+field, the universe in which the loop-quiver, Kronecker and four subspace families are built.
 
 ## References
 
@@ -97,5 +107,42 @@ theorem IsFiniteRepType.subsingleton_hom (h : IsFiniteRepType.{u, v, w, u} k Q) 
   · subst hij
     exact (h.isEmpty_hom_self i).false α
   · exact not_isFiniteRepType_kronecker k Bool (h.of_quiverEmbedding (kroneckerEmbedding hij hαβ))
+
+/-- The embedding of the four subspace quiver onto four arrows `α i : x i ⟶ c` into a vertex `c`
+from four pairwise distinct vertices other than `c`. -/
+private def subspaceEmbedding {c : Q} (x : Fin 4 ↪ Q) (hc : c ∉ Set.range x)
+    (α : ∀ i, x i ⟶ c) : QuiverEmbedding (Quiver.Subspace (Fin 4)) Q where
+  obj
+    | .center => c
+    | .outer i => x i
+  map {a b} e := match a, b, e with
+    | .outer i, .center, _ => α i
+    | .center, .center, e => isEmptyElim e
+    | .center, .outer _, e => isEmptyElim e
+    | .outer _, .outer _, e => isEmptyElim e
+  obj_injective a b hab := by
+    cases a <;> cases b
+    · rfl
+    · exact absurd ⟨_, hab.symm⟩ hc
+    · exact absurd ⟨_, hab⟩ hc
+    · exact congrArg _ (x.injective hab)
+  map_injective {_ _} _ _ _ := Subsingleton.elim _ _
+
+/-- **Four arrows into one vertex from four other distinct vertices obstruct finite representation
+type**: they embed the four subspace quiver, whose underlying graph is the extended Dynkin diagram
+`D̃₄` and whose Jordan block configurations are infinitely many pairwise non-isomorphic
+indecomposables. -/
+theorem not_isFiniteRepType_of_forall_nonempty_hom {c : Q} (x : Fin 4 ↪ Q) (hc : c ∉ Set.range x)
+    (hα : ∀ i, Nonempty (x i ⟶ c)) : ¬ IsFiniteRepType.{u, v, w, u} k Q := fun h ↦
+  not_isFiniteRepType_subspace_fin_four k
+    (h.of_quiverEmbedding (subspaceEmbedding x hc fun i ↦ (hα i).some))
+
+/-- **A subspace quiver with at least four outer vertices has infinite representation type over
+every field**: four of its arrows already embed the four subspace quiver. -/
+theorem not_isFiniteRepType_subspace {ι : Type v} (f : Fin 4 ↪ ι) :
+    ¬ IsFiniteRepType.{u, v, 1, u} k (Quiver.Subspace ι) :=
+  not_isFiniteRepType_of_forall_nonempty_hom (c := .center)
+    (f.trans ⟨Quiver.Subspace.outer, fun _ _ h ↦ Quiver.Subspace.outer.inj h⟩)
+    (by rintro ⟨i, hi⟩; cases hi) fun i ↦ ⟨Quiver.Subspace.arrow (f i)⟩
 
 end TauCeti
