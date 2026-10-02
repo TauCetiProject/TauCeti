@@ -20,16 +20,6 @@ class of any degree `p` and a class of degree `q ≥ 0`
 the cup product of `\hat{H}^{-2}(G, ℤ) = G^{ab}` with a class of degree two that underlies Tate's
 theorem and the reciprocity map.
 
-The proof is by induction on `q`, starting from the bidegrees `(p, 0)`, where the cup product is
-induced by a morphism of coefficients (`TauCeti.TateCohomology.cup_res_zero_zero`,
-`TauCeti.TateCohomology.cup_posRes_zero_right`, `TauCeti.TateCohomology.cup_res_zero_right_of_neg`).
-A class `y` of degree `q + 1` is the image of a class `y'` of degree `q` of the upward dimension
-shift of `N` under the connecting map of the dimension-shifting sequence, and
-`x ∪ δ y' = (-1)^p δ (x ∪ y')`. Restriction commutes with the connecting maps in every degree
-(`TauCeti.TateCohomology.δ_comp_res`), and after restriction the dimension-shifting sequence is
-still split over `k`, so the same rule holds for the cup product over `H`
-(`TauCeti.TateCohomology.cup_δ_of_leftInverse`).
-
 See Artin and Tate, *Class Field Theory*, Preliminaries, §2, and Brown, *Cohomology of Groups*,
 Chapter VI, §5.
 -/
@@ -82,6 +72,18 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   have hresD := (shortExact_res H.subtype).2 hD
   exact (cup_δ_of_leftInverse (Rep.res H.subtype M) hresD (leftInverse_coindBotUnit N) h _
     _).symm
+
+/-
+The proof is by induction on `q`, starting from the bidegrees `(p, 0)`, where the cup product is
+induced by a morphism of coefficients (`TauCeti.TateCohomology.cup_res_zero_zero`,
+`TauCeti.TateCohomology.cup_posRes_zero_right`, `TauCeti.TateCohomology.cup_res_zero_right_of_neg`).
+A class `y` of degree `q + 1` is the image of a class `y'` of degree `q` of the upward dimension
+shift of `N` under the connecting map of the dimension-shifting sequence, and
+`x ∪ δ y' = (-1)^p δ (x ∪ y')`. Restriction commutes with the connecting maps in every degree
+(`TauCeti.TateCohomology.δ_comp_res`), and after restriction the dimension-shifting sequence is
+still split over `k`, so the same rule holds for the cup product over `H`
+(`TauCeti.TateCohomology.cup_δ_of_leftInverse`).
+-/
 
 /-- **Restriction preserves the Tate cup product when the second factor has nonnegative degree.**
 For a subgroup `H` of a finite group `G`, a class `x` of any degree `p` and a class `y` of degree
