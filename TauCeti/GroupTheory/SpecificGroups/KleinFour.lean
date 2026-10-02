@@ -15,8 +15,7 @@ isomorphism.
 
 ## Main results
 
-* `TauCeti.IsKleinFour.of_mulEquiv`: a group isomorphic to a Klein four-group is a Klein
-  four-group.
+* `MulEquiv.isKleinFour`: a group isomorphic to a Klein four-group is a Klein four-group.
 -/
 
 public section
@@ -26,9 +25,9 @@ namespace TauCeti
 variable {G H : Type*} [Group G] [Group H]
 
 /-- A group isomorphic to a Klein four-group is a Klein four-group. -/
-@[to_additive IsAddKleinFour.of_addEquiv
+@[to_additive _root_.AddEquiv.isAddKleinFour
   /-- An additive group isomorphic to a Klein four-group is a Klein four-group. -/]
-theorem IsKleinFour.of_mulEquiv [IsKleinFour G] (e : G ≃* H) : IsKleinFour H :=
+theorem _root_.MulEquiv.isKleinFour [IsKleinFour G] (e : G ≃* H) : IsKleinFour H :=
   ⟨by rw [← Nat.card_congr e.toEquiv, IsKleinFour.card_four],
     by rw [← Monoid.exponent_eq_of_mulEquiv e, IsKleinFour.exponent_two]⟩
 

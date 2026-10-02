@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
-import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Order
 import TauCeti.GroupTheory.SpecificGroups.KleinFour
 
 /-!
@@ -15,8 +14,9 @@ import TauCeti.GroupTheory.SpecificGroups.KleinFour
 The reference subgroup of `4T2` is Mathlib's `alternatingGroup.kleinFour (Fin 4)`, the normal
 subgroup of `A₄` made of the identity and the three double transpositions, viewed inside
 `Equiv.Perm (Fin 4)`. We record that it is a Klein four-group, so that every permutation group
-with label `4T2` is one, and that a transitive subgroup of `S₄` has label `4T2` exactly when it is
-a Klein four-group.
+with label `4T2` is one. The converse for transitive subgroups of `S₄` is
+`TauCeti.transitiveGroupLabel_four_one_iff_isKleinFour`, in
+`TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Order`.
 
 ## Main declarations
 
@@ -24,13 +24,11 @@ a Klein four-group.
   four-group.
 * `TauCeti.TransitiveGroupLabel.isKleinFour_four_one`: a permutation group with label `4T2` is a
   Klein four-group.
-* `TauCeti.transitiveGroupLabel_four_one_iff_isKleinFour`: a transitive subgroup of `S₄` has label
-  `4T2` exactly when it is a Klein four-group.
 -/
 
 public section
 
-open Equiv Equiv.Perm MulAction
+open Equiv Equiv.Perm
 
 namespace TauCeti
 
@@ -39,21 +37,13 @@ instance isKleinFour_referenceSubgroup_four_one :
     IsKleinFour (referenceSubgroup 4 ⟨1, by simp⟩) := by
   have := alternatingGroup.kleinFour_isKleinFour (α := Fin 4) (by simp)
   rw [referenceSubgroup_four_one]
-  exact IsKleinFour.of_mulEquiv ((alternatingGroup.kleinFour (Fin 4)).equivMapOfInjective
-    (alternatingGroup (Fin 4)).subtype (alternatingGroup (Fin 4)).subtype_injective)
+  exact ((alternatingGroup.kleinFour (Fin 4)).equivMapOfInjective
+    (alternatingGroup (Fin 4)).subtype (alternatingGroup (Fin 4)).subtype_injective).isKleinFour
 
 /-- Every permutation group with label `4T2` is a Klein four-group. -/
 theorem TransitiveGroupLabel.isKleinFour_four_one {G : Subgroup (Perm (Fin 4))}
     (h : TransitiveGroupLabel (⟨1, by simp⟩ : TransitiveGroupIndex 4) G) : IsKleinFour G := by
   obtain ⟨e⟩ := h.nonempty_mulEquiv_referenceSubgroup
-  exact IsKleinFour.of_mulEquiv e.symm
-
-/-- **`4T2` is recognized as the Klein four-group.** A transitive subgroup of `S₄` has label `4T2`
-exactly when it is a Klein four-group. -/
-theorem transitiveGroupLabel_four_one_iff_isKleinFour (G : Subgroup (Perm (Fin 4)))
-    [IsPretransitive G (Fin 4)] :
-    TransitiveGroupLabel (⟨1, by simp⟩ : TransitiveGroupIndex 4) G ↔ IsKleinFour G :=
-  ⟨TransitiveGroupLabel.isKleinFour_four_one, fun _ ↦ (transitiveGroupLabel_four_one_iff G).mpr
-    ⟨IsKleinFour.card_four, IsKleinFour.not_isCyclic⟩⟩
+  exact e.symm.isKleinFour
 
 end TauCeti
