@@ -22,16 +22,14 @@ half-plane onto the closure of `U`, of the real line onto the frontier of `U`, a
 to infinity at infinity.
 
 The inversion `z ↦ (z - p)⁻¹` is a bijection of `ℂ` (it sends `p` to `0` because `0⁻¹ = 0`),
-inverted by `w ↦ w⁻¹ + p`.  It is not continuous at `p`, but on a set whose closure omits `p` it
-behaves as a homeomorphism should, which is what the first results below record.  Its elementary
-properties, and the fact that it turns a frontier homeomorphic to the real line into a Jordan
-curve (`TauCeti.isJordanCurve_insert_zero_image_inv_sub`), are in
+inverted by `w ↦ w⁻¹ + p`.  Its elementary properties, the closure and frontier of an inverted
+unbounded set (`TauCeti.closure_image_inv_sub`, `TauCeti.frontier_image_inv_sub`), and the fact
+that it turns a frontier homeomorphic to the real line into a Jordan curve
+(`TauCeti.isJordanCurve_insert_zero_image_inv_sub`), are in
 `TauCeti.Topology.JordanCurve.Inversion`.
 
 ## Main results
 
-* `TauCeti.closure_image_inv_sub`, `TauCeti.frontier_image_inv_sub`: inverting an unbounded set
-  about a point outside its closure adjoins `0` to the inverted closure and frontier.
 * `TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_frontier_homeomorph_real`:
   Carathéodory's theorem on the closed upper half-plane for a simply connected domain whose
   frontier is homeomorphic to the real line, with infinity sent to infinity.
@@ -50,47 +48,6 @@ public section
 open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
-
-variable {p : ℂ}
-
-/-- **The closure of an inverted set.**  Inverting an unbounded set `U` about a point `p` outside
-its closure, the closure of the image is the image of the closure of `U` together with `0`, the
-image of the point at infinity. -/
-theorem closure_image_inv_sub {U : Set ℂ} (hp : p ∉ closure U) (hU : ¬IsBounded U) :
-    closure ((fun z : ℂ => (z - p)⁻¹) '' U) =
-      insert 0 ((fun z : ℂ => (z - p)⁻¹) '' closure U) := by
-  refine Subset.antisymm (fun w hw => ?_) (insert_subset ?_ (continuousOn_inv_sub hp).image_closure)
-  · rcases eq_or_ne w 0 with rfl | hw0
-    · exact mem_insert _ _
-    -- away from `0` the inverse inversion is continuous and carries the image back onto `U`
-    have hk : ContinuousAt (fun u : ℂ => u⁻¹ + p) w :=
-      (continuousAt_inv₀ hw0).add continuousAt_const
-    have hmem := mem_closure_image hk hw
-    simp only [image_image, inv_inv, sub_add_cancel, image_id'] at hmem
-    exact mem_insert_of_mem _ ⟨_, hmem, by simp⟩
-  · -- `0` is the limit of the inversion along `U` at infinity
-    have hne : NeBot (cobounded ℂ ⊓ 𝓟 U) := by
-      refine inf_principal_neBot_iff.2 fun s hs => not_disjoint_iff_nonempty_inter.1 fun hd => hU ?_
-      exact (isBounded_compl_iff.2 hs).subset hd.subset_compl_left
-    have ht : Tendsto (fun z : ℂ => (z - p)⁻¹) (cobounded ℂ ⊓ 𝓟 U) (𝓝 0) :=
-      (tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded p)).mono_left inf_le_left
-    exact mem_closure_of_tendsto ht
-      (eventually_inf_principal.2 (Eventually.of_forall fun z hz => mem_image_of_mem _ hz))
-
-/-- **The frontier of an inverted open set.**  Inverting an unbounded open set `U` about a point
-`p` outside its closure, the frontier of the image is the image of the frontier of `U` together
-with `0`, the image of the point at infinity. -/
-theorem frontier_image_inv_sub {U : Set ℂ} (hUo : IsOpen U) (hp : p ∉ closure U)
-    (hU : ¬IsBounded U) :
-    frontier ((fun z : ℂ => (z - p)⁻¹) '' U) =
-      insert 0 ((fun z : ℂ => (z - p)⁻¹) '' frontier U) := by
-  have hpU : p ∉ U := fun h => hp (subset_closure h)
-  have hVo : IsOpen ((fun z : ℂ => (z - p)⁻¹) '' U) :=
-    isOpen_image_of_differentiableOn_of_injOn hUo
-      ((differentiableOn_id.sub_const p).inv fun _ hz => sub_ne_zero.2 fun h => hpU (h ▸ hz))
-      injective_inv_sub.injOn
-  rw [hVo.frontier_eq, closure_image_inv_sub hp hU, hUo.frontier_eq,
-    image_sdiff injective_inv_sub, insert_sdiff_of_notMem _ (zero_notMem_image_inv_sub hpU)]
 
 /-- **Carathéodory's theorem for a domain bounded by a line.**  Let `U` be a simply connected open
 subset of `ℂ` whose closure is not the whole plane and whose frontier is homeomorphic to the real

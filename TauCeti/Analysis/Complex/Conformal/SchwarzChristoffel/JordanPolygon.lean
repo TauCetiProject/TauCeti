@@ -144,42 +144,6 @@ theorem exponent_sum_eq_neg_two_of_isJordanCurve_frontier
   exact exponent_sum_eq_neg_two_of_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq hfa hfp
     hpf hside hcorner
 
-/-- A set which far from `c` coincides with the open sector `{|arg ((z - c) / b)| < β * π / 2}` of
-opening less than `2π` misses the far part of the opposite sector, an open set, so its closure is
-not the whole plane. -/
-private theorem closure_ne_univ_of_forall_mem_iff_abs_arg_lt {U : Set ℂ} {β ρ : ℝ}
-    (hβ : β ∈ Ioo (0 : ℝ) 2) {c b : ℂ} (hb : b ≠ 0)
-    (hU : ∀ z : ℂ, ρ < ‖z - c‖ → (z ∈ U ↔ |((z - c) / b).arg| < β * Real.pi / 2)) :
-    closure U ≠ univ := by
-  have hβπ : 0 ≤ β * Real.pi / 2 := by have := hβ.1; positivity
-  have hβπ' : β * Real.pi / 2 < Real.pi := by nlinarith [Real.pi_pos, hβ.2]
-  -- points far out in the opposite direction, where `arg` is close to `π`
-  set W : Set ℂ :=
-    {z | ρ < ‖z - c‖ ∧ ((z - c) / b).re < Real.cos (β * Real.pi / 2) * ‖(z - c) / b‖}
-  have hWo : IsOpen W :=
-    (isOpen_lt (g := fun z : ℂ => ‖z - c‖) continuous_const (by fun_prop)).inter
-      (isOpen_lt (f := fun z : ℂ => ((z - c) / b).re) (by fun_prop) (by fun_prop))
-  have hWU : Disjoint W U := by
-    refine disjoint_left.2 fun z ⟨hz, hzW⟩ hzU => ?_
-    have hx : (z - c) / b ≠ 0 := fun h => by simp [h] at hzW
-    -- in the sector, `cos (arg x) > cos (β * π / 2)`
-    have hcos := Real.cos_lt_cos_of_nonneg_of_le_pi (abs_nonneg _) hβπ'.le ((hU z hz).1 hzU)
-    rw [Real.cos_abs, cos_arg hx, lt_div_iff₀ (norm_pos_iff.2 hx)] at hcos
-    exact hcos.not_gt hzW
-  set t : ℝ := (|ρ| + 1) / ‖b‖
-  have ht : 0 < t := by have := norm_pos_iff.2 hb; positivity
-  have hpW : c - b * t ∈ W := by
-    have hdiv : (c - b * t - c) / b = ((-t : ℝ) : ℂ) := by field_simp; push_cast; ring
-    refine ⟨?_, ?_⟩
-    · rw [sub_sub_cancel_left, norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.le,
-        mul_div_cancel₀ _ (norm_ne_zero_iff.2 hb)]
-      linarith [le_abs_self ρ]
-    · rw [hdiv, Complex.ofReal_re, Complex.norm_real, Real.norm_eq_abs, abs_neg, abs_of_pos ht]
-      have := Real.cos_lt_cos_of_nonneg_of_le_pi hβπ le_rfl hβπ'
-      rw [Real.cos_pi] at this
-      nlinarith
-  exact fun h => (hWU.closure_right hWo).notMem_of_mem_left hpW (h ▸ mem_univ _)
-
 /-- **The Schwarz--Christoffel theorem for an unbounded polygonal domain.**  Let `U` be a simply
 connected open set whose frontier is homeomorphic to the real line.  Suppose that `U` coincides
 near each frontier point other than the distinct vertices `v i` with an open half-plane, near the
@@ -206,7 +170,8 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_frontier_homeo
   obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hf⟩ :=
     exists_prevertices_of_frontier_homeomorph_real hUo hUc
-      (closure_ne_univ_of_forall_mem_iff_abs_arg_lt hβ hb hU) hUJ hv
+      (closure_ne_univ_of_forall_mem_iff_abs_arg_lt hb (by have := hβ.1; positivity)
+        (by nlinarith [Real.pi_pos, hβ.2]) hU) hUJ hv
       (vertex_mem_frontier_of_corner e he hcorner)
   exact ⟨a, ha, exists_bijOn_of_eqOn_const_mul_schwarzChristoffelPrimitive_add ha he z₀ hfd hfc
     hfH hfa (eqOn_const_mul_schwarzChristoffelPrimitive_add_of_unbounded_polygonal_domain a e ha
@@ -230,7 +195,8 @@ theorem exponent_sum_eq_sub_one_of_frontier_homeomorph_real
   obtain ⟨ρ, c, b, hb, hU⟩ := hinfty
   obtain ⟨f, a, ha, hfd, hfc, hfi, hfH, hfa, hf⟩ :=
     exists_prevertices_of_frontier_homeomorph_real hUo hUc
-      (closure_ne_univ_of_forall_mem_iff_abs_arg_lt hβ hb hU) hUJ hv
+      (closure_ne_univ_of_forall_mem_iff_abs_arg_lt hb (by have := hβ.1; positivity)
+        (by nlinarith [Real.pi_pos, hβ.2]) hU) hUJ hv
       (vertex_mem_frontier_of_corner e he hcorner)
   exact exponent_sum_eq_sub_one_of_unbounded_polygonal_domain a e ha he hβ hfd hfc hfi
     hfH.image_eq hfa hf hside hcorner ⟨ρ, c, b, hb, hU⟩

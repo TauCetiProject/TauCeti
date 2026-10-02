@@ -12,8 +12,9 @@ public import Mathlib.Analysis.Complex.Angle
 
 When a domain agrees locally with an open half-plane, its frontier lies on the bounding line.
 When it agrees locally with an open sector, its frontier away from the vertex lies on the
-bounding rays, and the vertex itself lies on the frontier. These facts supply the boundary
-conditions for polygonal conformal maps.
+bounding rays, and the vertex itself lies on the frontier. When it agrees far out with an open
+sector of opening less than `2π`, its closure is not the whole plane. These facts supply the
+boundary conditions for polygonal conformal maps.
 -/
 
 public section
@@ -91,6 +92,41 @@ theorem mem_frontier_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α : ℝ}
     have harg := h.mp htU
     rw [arg_ofReal_of_neg (by linarith), abs_of_pos Real.pi_pos] at harg
     exact harg.not_ge hα
+
+/-! ### A sector near infinity -/
+
+/-- If a set `U` coincides far from `c` with the open sector `{|arg ((z - c) / b)| < α}` of
+half-opening `α ∈ [0, π)`, then `U` misses the far part of the opposite sector, an open set, so the
+closure of `U` is not the whole plane. -/
+theorem closure_ne_univ_of_forall_mem_iff_abs_arg_lt {c b : ℂ} {ρ α : ℝ} (hb : b ≠ 0)
+    (hα₀ : 0 ≤ α) (hα : α < Real.pi)
+    (hU : ∀ z : ℂ, ρ < ‖z - c‖ → (z ∈ U ↔ |((z - c) / b).arg| < α)) :
+    closure U ≠ univ := by
+  -- points far out in the opposite direction, where `arg` is close to `π`
+  set W : Set ℂ := {z | ρ < ‖z - c‖ ∧ ((z - c) / b).re < Real.cos α * ‖(z - c) / b‖}
+  have hWo : IsOpen W :=
+    (isOpen_lt (g := fun z : ℂ => ‖z - c‖) continuous_const (by fun_prop)).inter
+      (isOpen_lt (f := fun z : ℂ => ((z - c) / b).re) (by fun_prop) (by fun_prop))
+  have hWU : Disjoint W U := by
+    refine disjoint_left.2 fun z ⟨hz, hzW⟩ hzU => ?_
+    have hx : (z - c) / b ≠ 0 := fun h => by simp [h] at hzW
+    -- in the sector, `cos (arg x) > cos α`
+    have hcos := Real.cos_lt_cos_of_nonneg_of_le_pi (abs_nonneg _) hα.le ((hU z hz).1 hzU)
+    rw [Real.cos_abs, cos_arg hx, lt_div_iff₀ (norm_pos_iff.2 hx)] at hcos
+    exact hcos.not_gt hzW
+  set t : ℝ := (|ρ| + 1) / ‖b‖
+  have ht : 0 < t := by have := norm_pos_iff.2 hb; positivity
+  have hpW : c - b * t ∈ W := by
+    have hdiv : (c - b * t - c) / b = ((-t : ℝ) : ℂ) := by field_simp; push_cast; ring
+    refine ⟨?_, ?_⟩
+    · rw [sub_sub_cancel_left, norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.le,
+        mul_div_cancel₀ _ (norm_ne_zero_iff.2 hb)]
+      linarith [le_abs_self ρ]
+    · rw [hdiv, Complex.ofReal_re, Complex.norm_real, Real.norm_eq_abs, abs_neg, abs_of_pos ht]
+      have := Real.cos_lt_cos_of_nonneg_of_le_pi hα₀ le_rfl hα
+      rw [Real.cos_pi] at this
+      nlinarith
+  exact fun h => (hWU.closure_right hWo).notMem_of_mem_left hpW (h ▸ mem_univ _)
 
 end TauCeti
 
