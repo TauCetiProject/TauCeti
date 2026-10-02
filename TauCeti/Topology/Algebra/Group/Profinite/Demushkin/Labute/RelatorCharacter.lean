@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Presentation.Basic
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # The character of a Demushkin relator
@@ -57,7 +58,7 @@ theorem demushkinRelatorCharacter_apply (hr : IsDemushkin p (presentedProP p X {
 theorem range_demushkinRelatorCharacter (hr : IsDemushkin p (presentedProP p X {r})) :
     (demushkinRelatorCharacter hr).toMonoidHom.range =
       (demushkinCharacter hr).toMonoidHom.range :=
-  SetLike.coe_injective <| (presentedProP.mk_surjective p {r}).range_comp (demushkinCharacter hr)
+  MonoidHom.range_comp_of_surjective _ _ (presentedProP.mk_surjective p {r})
 
 /-- **The relator lies in the kernel of its character**, so it has a class in Labute's module. -/
 theorem demushkinRelatorCharacter_mem_ker (hr : IsDemushkin p (presentedProP p X {r})) :
