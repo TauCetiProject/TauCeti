@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Finiteness.Projective
 public import Mathlib.Algebra.Module.Equiv.Opposite
+public import TauCeti.Algebra.Ring.Opposite
 import Mathlib.LinearAlgebra.StdBasis
 
 /-!
@@ -31,19 +32,6 @@ changes sides and does not require commutativity of the coefficient ring.
 public section
 
 namespace TauCeti
-
-/-- The canonical double-opposite ring equivalence and its inverse form an inverse pair. -/
-instance opOpRingHomInvPair (A : Type*) [Semiring A] :
-    RingHomInvPair (RingHomClass.toRingHom (RingEquiv.opOp A))
-      (RingHomClass.toRingHom (RingEquiv.opOp A).symm) :=
-  RingHomInvPair.of_ringEquiv (RingEquiv.opOp A)
-
-/-- The inverse double-opposite ring equivalence and the forward equivalence form
-an inverse pair. -/
-instance opOpRingHomInvPairSymm (A : Type*) [Semiring A] :
-    RingHomInvPair (RingHomClass.toRingHom (RingEquiv.opOp A).symm)
-      (RingHomClass.toRingHom (RingEquiv.opOp A)) :=
-  RingHomInvPair.of_ringEquiv_symm (RingEquiv.opOp A)
 
 section Codomain
 

@@ -206,6 +206,14 @@ theorem quotientEquiv_mk (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛₗ[�
     change Submodule.Quotient.equiv _ Q e he (Submodule.Quotient.mk φ) = _
     rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
 
+/-- Inverse quotient transport applies the inverse equivalence to a quotient representative. -/
+@[simp]
+theorem quotientEquiv_symm_mk (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛₗ[σ] N)
+    (he : (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).map e.toLinearMap = Q) (n : N) :
+    (quotientEquiv p₁ Q e he).symm (Submodule.Quotient.mk n) = mk p₁ (e.symm n) := by
+  apply (quotientEquiv p₁ Q e he).injective
+  simp
+
 end QuotientEquiv
 
 section Lift
@@ -421,7 +429,7 @@ def linearEquiv {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q₀)
     (e₁ : P₁ ≃ₗ[A] Q₁)
     (hsquare : e₀.toLinearMap ∘ₗ p₁ = q₁ ∘ₗ e₁.toLinearMap) :
     AuslanderReitenTranspose p₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose q₁ :=
-  Submodule.Quotient.equiv _ _ (e₁.congrLeft A Aᵐᵒᵖ) (map_range_lcomp_eq e₀ e₁ hsquare)
+  quotientEquiv p₁ _ (e₁.congrLeft A Aᵐᵒᵖ) (map_range_lcomp_eq e₀ e₁ hsquare)
 
 /-- The presentation equivalence on transposes, evaluated on a functional representative. -/
 @[simp]
@@ -435,16 +443,8 @@ theorem linearEquiv_mk {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q₀)
       e₁.symm.toLinearMap.lcomp Aᵐᵒᵖ A φ := by
     ext x
     simp [LinearMap.lcomp_apply]
-  -- `linearEquiv`, `mk` and `AuslanderReitenTranspose` itself are not exposed, so neither the
-  -- statement nor Mathlib's quotient lemmas reduce here on their own: an exported theorem may only
-  -- unfold exposed definitions.  `with_unfolding_all` lets this proof see through them, and the
-  -- `change` then presents the goal in the `Submodule.Quotient` form in which
-  -- `Submodule.Quotient.equiv_apply` and `Submodule.mapQ_apply` apply; `hrep` then identifies the
-  -- representative maps through public application lemmas rather than by definitional unfolding.
-  with_unfolding_all
-    change Submodule.Quotient.equiv _ _ _ _ (Submodule.Quotient.mk φ) =
-      Submodule.Quotient.mk _
-    rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, hrep]
+  exact (quotientEquiv_mk p₁ _ (e₁.congrLeft A Aᵐᵒᵖ)
+    (map_range_lcomp_eq e₀ e₁ hsquare) φ).trans (congrArg (mk q₁) hrep)
 
 /-- Transport along the identity presentation equivalences is the identity. -/
 @[simp]

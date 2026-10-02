@@ -74,8 +74,7 @@ noncomputable def doubleDualPresentationEquiv (f : P₁ →ₗ[A] P₀) (g : P�
     ((Module.Dual A P₀ →ₗ[Aᵐᵒᵖ] A) ⧸
       LinearMap.range ((f.lcomp Aᵐᵒᵖ A).lcomp A A)) ≃ₗ[A] M :=
   (doubleDualCokernelEquiv A f).trans
-    ((Submodule.quotEquivOfEq _ _ (LinearMap.exact_iff.mp hexact).symm).trans
-      (g.quotKerEquivOfSurjective hsurj))
+    (hexact.linearEquivOfSurjective hsurj)
 
 /-- Double dualization recovers the image of a vector under the presentation's quotient map. -/
 @[simp]
@@ -84,7 +83,9 @@ theorem doubleDualPresentationEquiv_mk (f : P₁ →ₗ[A] P₀) (g : P₀ →�
     (F : Module.Dual A P₀ →ₗ[Aᵐᵒᵖ] A) :
     doubleDualPresentationEquiv A f g hexact hsurj (Submodule.Quotient.mk F) =
       g ((opDualEvalEquiv A P₀).symm F) := by
-  simp [doubleDualPresentationEquiv]
+  rw [doubleDualPresentationEquiv, LinearEquiv.trans_apply, doubleDualCokernelEquiv_mk,
+    ← Function.Exact.linearEquivOfSurjective_symm_apply hexact hsurj,
+    LinearEquiv.apply_symm_apply]
 
 /-- Transposing the dual of a finite-projective presenting map recovers its cokernel,
 with the double opposite identified with the original ring. -/
@@ -114,10 +115,7 @@ theorem doubleTransposeCokernelEquiv_symm_mk (f : P₁ →ₗ[A] P₀) (x : P₀
     (doubleTransposeCokernelEquiv A f).symm (Submodule.Quotient.mk x) =
       AuslanderReitenTranspose.mk (f.lcomp Aᵐᵒᵖ A)
         (opDualCodomainEquiv A (Module.Dual A P₀) (opDualEval A P₀ x)) := by
-  apply (doubleTransposeCokernelEquiv A f).injective
-  rw [LinearEquiv.apply_symm_apply, doubleTransposeCokernelEquiv_mk,
-    LinearEquiv.symm_apply_apply, ← opDualEvalEquiv_toLinearMap,
-    LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+  simp [doubleTransposeCokernelEquiv]
 
 /-- **Transposing the dual presentation returns the presented module.** No minimality or
 finite-length assumption is required; the two presenting modules must be finite projective. -/
