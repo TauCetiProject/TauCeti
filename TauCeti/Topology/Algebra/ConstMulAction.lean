@@ -33,6 +33,8 @@ countable, and that the translates of a compact set under it form a locally fini
   nonempty σ-compact space is countable.
 * `TauCeti.locallyFinite_smul_of_isCompact`: under a properly discontinuous action on a weakly
   locally compact space, the translates of a compact set form a locally finite family.
+* `TauCeti.isClosed_iUnion_smul_of_isCompact`: the union of the translates of a closed compact set
+  under such an action of a group is closed.
 -/
 
 public section
@@ -126,9 +128,9 @@ variable {Γ T : Type*} [TopologicalSpace T] [SMul Γ T] [ProperlyDiscontinuousS
   {S : Set T}
 
 /-- **The translates of a compact set under a properly discontinuous action are locally
-finite** (Katok, *Fuchsian groups, geodesic flows on surfaces of constant negative curvature and
-symbolic coding of geodesics*, Clay Math. Proc. 10 (2010), Definition 8.2, p. 27): every point
-has a compact neighbourhood meeting only finitely many of them. -/
+finite**, in the sense of Katok (*Fuchsian groups, geodesic flows on surfaces of constant negative
+curvature and symbolic coding of geodesics*, Clay Math. Proc. 10 (2010), Definition 8.2, p. 27):
+every point has a neighbourhood meeting only finitely many of them. -/
 @[to_additive
 /-- **The translates of a compact set under a properly discontinuous additive action are locally
 finite.** -/]
@@ -138,5 +140,23 @@ theorem locallyFinite_smul_of_isCompact [WeaklyLocallyCompactSpace T] (hS : IsCo
   ⟨K, hKx, properlyDiscontinuousSMul_iff.1 ‹_› hS hK⟩
 
 end LocallyFinite
+
+section IsClosedIUnion
+
+open scoped Pointwise
+
+variable {G T : Type*} [TopologicalSpace T] [Group G] [MulAction G T] [ContinuousConstSMul G T]
+  [ProperlyDiscontinuousSMul G T] [WeaklyLocallyCompactSpace T] {S : Set T}
+
+/-- **The union of the translates of a closed compact set under a properly discontinuous action
+is closed.** -/
+@[to_additive
+/-- **The union of the translates of a closed compact set under a properly discontinuous additive
+action is closed.** -/]
+theorem isClosed_iUnion_smul_of_isCompact (hS : IsCompact S) (hS' : IsClosed S) :
+    IsClosed (⋃ g : G, g • S) :=
+  (locallyFinite_smul_of_isCompact hS).isClosed_iUnion fun g ↦ hS'.smul g
+
+end IsClosedIUnion
 
 end TauCeti
