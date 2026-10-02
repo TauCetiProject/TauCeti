@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.Tactic.Ring
