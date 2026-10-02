@@ -48,6 +48,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 universe u w
 
+/-- Neighbor sets in a graph on a finite vertex type are finite. -/
 noncomputable local instance inducedSubgraphNeighborSetFintype
     {V : Type u} [Finite V] (G : SimpleGraph V) (v : V) : Fintype (G.neighborSet v) :=
   Fintype.ofFinite _
@@ -402,7 +403,6 @@ theorem signlessPreprojectiveInducedSubgraphHom_vertexIdempotent (i : V) :
 open scoped Classical in
 /-- The induced-subgraph homomorphism retains an arrow exactly when both endpoints belong to the
 inducing set. -/
-@[simp]
 theorem signlessPreprojectiveInducedSubgraphHom_ofArrow {i j : V} (h : G.Adj i j) :
     signlessPreprojectiveInducedSubgraphHom k G S
         (signlessPreprojectiveMk k _ (ofArrow (arrow G h))) =
