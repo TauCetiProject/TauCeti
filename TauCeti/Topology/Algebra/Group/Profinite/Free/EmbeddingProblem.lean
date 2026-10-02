@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
-import TauCeti.GroupTheory.PGroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Solutions
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
 
@@ -35,10 +34,7 @@ theorem hasPGroupSolutions_freeProP (p : ℕ) (X : Type u) :
   have : DiscreteTopology P.Q := ⟨rfl⟩
   have : DiscreteTopology P.E := ⟨rfl⟩
   have hπ : Continuous P.π := P.π.continuous_iff_isOpen_ker.mpr P.isOpen_ker_π
-  have hQ : IsPGroup p P.Q := isProP_iff_isPGroup.mp
-    ((isProP_freeProP p X).of_surjective P.π hπ P.π_surjective)
-  have hE : IsPGroup p P.E := IsPGroup.of_subgroup_of_quotient hP
-    (hQ.of_equiv (QuotientGroup.quotientKerEquivOfSurjective P.α P.α_surjective).symm)
+  have hE : IsPGroup p P.E := P.isPGroup_E (isProP_freeProP p X) hP
   let t : X → P.E := fun x ↦ (P.α_surjective (P.π (freeProP.of x))).choose
   have hcomp : (⟨P.α, continuous_of_discreteTopology⟩ : P.E →ₜ* P.Q).comp
       (freeProP.lift hE.isProP t) = ⟨P.π, hπ⟩ := by

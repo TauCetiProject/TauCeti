@@ -7,7 +7,6 @@ module
 
 import Mathlib.Algebra.Group.Shrink
 import Mathlib.Topology.Maps.Proper.Basic
-import TauCeti.GroupTheory.PGroup
 
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Lift
@@ -232,14 +231,11 @@ problem given by `SL₂(𝔽₅) ↠ G`, with kernel of order `2` and `π = id`,
 theorem hasPGroupSolutions_of_isProjective {p : ℕ} (hGp : IsProP p G)
     (hG : IsProjective.{u, v, w} p G) : HasPGroupSolutions p G := by
   refine hasPGroupSolutions_iff.mpr fun P hP ↦ ?_
-  -- `Q` is a continuous finite quotient of the pro-`p` group `G`, hence a `p`-group, and so `E`,
-  -- an extension of `Q` by the `p`-group `ker α`, is a `p`-group.
+  -- `E` is a finite `p`-group, so the problem is a lifting problem against `α`.
+  have hE : IsPGroup p P.E := P.isPGroup_E hGp hP
   let _ : TopologicalSpace P.Q := ⊥
   have : DiscreteTopology P.Q := ⟨rfl⟩
   have hπ : Continuous P.π := P.π.continuous_iff_isOpen_ker.mpr P.isOpen_ker_π
-  have hQ : IsPGroup p P.Q := isProP_iff_isPGroup.mp (hGp.of_surjective P.π hπ P.π_surjective)
-  have hE : IsPGroup p P.E := IsPGroup.of_subgroup_of_quotient hP
-    (hQ.of_equiv (QuotientGroup.quotientKerEquivOfSurjective P.α P.α_surjective).symm)
   -- Move `E` and `Q` into the universes `v` and `w`, with the discrete topology, and lift `π`
   -- against `α` there.
   let eE : Shrink.{v} P.E ≃* P.E := Shrink.mulEquiv
@@ -260,7 +256,10 @@ theorem hasPGroupSolutions_of_isProjective {p : ℕ} (hGp : IsProP p G)
   · rw [MonoidHom.ker_comp_of_injective _ _ eE.injective]
     exact (MonoidHom.continuous_iff_isOpen_ker _).mp φ.continuous
   · ext g
-    exact eQ.symm.injective (by simpa [α, f] using DFunLike.congr_fun hφ g)
+    have h := DFunLike.congr_fun hφ g
+    simp only [α, f, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_mk,
+      MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h
+    exact eQ.symm.injective h
 
 /-- **Projectivity of a pro-`p` group is solvability of its finite `p`-embedding problems.** A
 pro-`p` group is projective exactly when it solves every finite embedding problem with `p`-group

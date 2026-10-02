@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.Group.Shrink
+import TauCeti.GroupTheory.PGroup
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.PGroupKernel
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
 # Lifting and finiteness for finite embedding problems
@@ -15,7 +17,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.PGroupKe
 The finite groups in an embedding problem can be moved to the universe of its source.
 Consequently `HasPGroupSolutions` lifts open-kernel maps through finite surjections in
 arbitrary universes. Finiteness of the solution set additionally follows from topological
-finite generation of the source.
+finite generation of the source. Over a pro-`p` source, a problem with `p`-group kernel involves
+only finite `p`-groups.
 -/
 
 public section
@@ -25,6 +28,18 @@ namespace TauCeti
 universe u v w
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- Over a pro-`p` group, a finite embedding problem with `p`-group kernel is an extension of
+finite `p`-groups: the quotient `Q` of `G` is a `p`-group, hence so is the extension `E` of `Q` by
+`ker α`. -/
+theorem FiniteEmbeddingProblem.isPGroup_E (P : FiniteEmbeddingProblem.{u, v, w} G)
+    (hG : IsProP p G) (hP : IsPGroup p P.α.ker) : IsPGroup p P.E := by
+  let _ : TopologicalSpace P.Q := ⊥
+  have : DiscreteTopology P.Q := ⟨rfl⟩
+  have hQ : IsPGroup p P.Q := isProP_iff_isPGroup.mp (hG.of_surjective P.π
+    (P.π.continuous_iff_isOpen_ker.mpr P.isOpen_ker_π) P.π_surjective)
+  exact IsPGroup.of_subgroup_of_quotient hP
+    (hQ.of_equiv (QuotientGroup.quotientKerEquivOfSurjective P.α P.α_surjective).symm)
 
 /-- Solvability with `p`-group kernel applies to finite target groups in any universe. -/
 theorem HasPGroupSolutions.exists_isSolution (hG : HasPGroupSolutions p G)
