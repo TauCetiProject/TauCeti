@@ -37,7 +37,7 @@ namespace TauCeti
 
 open Polynomial
 
-open SignType Set
+open SignType Set Topology
 
 section Definitions
 
@@ -159,6 +159,18 @@ theorem _root_.Polynomial.signLeft_eq_zero_iff (p : R[X]) (a : R) : p.signLeft a
   rw [signLeft_def, mul_eq_zero]
   simp
 
+/-- A nonzero polynomial does not vanish where it has its right-hand sign. -/
+theorem _root_.Polynomial.eval_ne_zero_of_sign_eq_signRight {p : R[X]} (hp : p ≠ 0) {a x : R}
+    (h : sign (p.eval x) = p.signRight a) : p.eval x ≠ 0 := fun h0 => by
+  rw [h0, sign_zero, eq_comm, signRight_eq_zero_iff] at h
+  exact hp h
+
+/-- A nonzero polynomial does not vanish where it has its left-hand sign. -/
+theorem _root_.Polynomial.eval_ne_zero_of_sign_eq_signLeft {p : R[X]} (hp : p ≠ 0) {a x : R}
+    (h : sign (p.eval x) = p.signLeft a) : p.eval x ≠ 0 := fun h0 => by
+  rw [h0, sign_zero, eq_comm, signLeft_eq_zero_iff] at h
+  exact hp h
+
 omit [IsStrictOrderedRing R] in
 /-- An even root multiplicity gives equal signs on the two sides. -/
 theorem _root_.Polynomial.signLeft_eq_signRight_of_even (p : R[X]) (a : R)
@@ -272,29 +284,29 @@ theorem _root_.Polynomial.exists_signLeft_signRight (p : R[X]) (a : R) :
 has its right-hand sign at `a`. -/
 theorem _root_.List.exists_signs_right (cs : List R[X]) (a : R) :
     ∃ u, a < u ∧ ∀ p ∈ cs, ∀ x ∈ Ioo a u, sign (p.eval x) = p.signRight a := by
-  induction cs with
-  | nil => exact ⟨a + 1, lt_add_one a, by simp⟩
-  | cons q cs ih =>
-    obtain ⟨u, hau, hu⟩ := ih
-    obtain ⟨-, v, -, hav, -, hv⟩ := q.exists_signLeft_signRight a
-    refine ⟨min u v, lt_min hau hav, fun p hp x hx => ?_⟩
-    rcases List.mem_cons.mp hp with rfl | hp
-    · exact hv x ⟨hx.1, hx.2.trans_le (min_le_right _ _)⟩
-    · exact hu p hp x ⟨hx.1, hx.2.trans_le (min_le_left _ _)⟩
+  -- Use the order topology only to combine the finitely many right-hand intervals.
+  let : TopologicalSpace R := Preorder.topology R
+  let : OrderTopology R := ⟨rfl⟩
+  have he : ∀ᶠ x in 𝓝[>] a, ∀ p ∈ cs, sign (p.eval x) = p.signRight a := by
+    refine cs.finite_toSet.eventually_all.mpr fun p _ => ?_
+    obtain ⟨-, u, -, hau, -, hu⟩ := p.exists_signLeft_signRight a
+    exact Filter.mem_of_superset (Ioo_mem_nhdsGT hau) hu
+  obtain ⟨u, hau, hu⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp he
+  exact ⟨u, hau, fun p hp x hx => hu hx p hp⟩
 
 /-- A uniform interval immediately to the left of `a` on which every polynomial of a list
 has its left-hand sign at `a`. -/
 theorem _root_.List.exists_signs_left (cs : List R[X]) (a : R) :
     ∃ l, l < a ∧ ∀ p ∈ cs, ∀ x ∈ Ioo l a, sign (p.eval x) = p.signLeft a := by
-  induction cs with
-  | nil => exact ⟨a - 1, sub_one_lt a, by simp⟩
-  | cons q cs ih =>
-    obtain ⟨l, hla, hl⟩ := ih
-    obtain ⟨v, -, hva, -, hv, -⟩ := q.exists_signLeft_signRight a
-    refine ⟨max l v, max_lt hla hva, fun p hp x hx => ?_⟩
-    rcases List.mem_cons.mp hp with rfl | hp
-    · exact hv x ⟨(le_max_right _ _).trans_lt hx.1, hx.2⟩
-    · exact hl p hp x ⟨(le_max_left _ _).trans_lt hx.1, hx.2⟩
+  -- Use the order topology only to combine the finitely many left-hand intervals.
+  let : TopologicalSpace R := Preorder.topology R
+  let : OrderTopology R := ⟨rfl⟩
+  have he : ∀ᶠ x in 𝓝[<] a, ∀ p ∈ cs, sign (p.eval x) = p.signLeft a := by
+    refine cs.finite_toSet.eventually_all.mpr fun p _ => ?_
+    obtain ⟨l, -, hla, -, hl, -⟩ := p.exists_signLeft_signRight a
+    exact Filter.mem_of_superset (Ioo_mem_nhdsLT hla) hl
+  obtain ⟨l, hla, hl⟩ := mem_nhdsLT_iff_exists_Ioo_subset.mp he
+  exact ⟨l, hla, fun p hp x hx => hl hx p hp⟩
 
 end OrderedField
 

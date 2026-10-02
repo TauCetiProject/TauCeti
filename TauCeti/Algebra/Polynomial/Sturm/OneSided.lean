@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.Filter
 public import TauCeti.Algebra.Polynomial.Eval.OneSided
 public import TauCeti.Algebra.Polynomial.Sturm.Tarski
 
@@ -132,30 +133,6 @@ theorem exists_signVariationsLeft (cs : List R[X]) (a : R) :
   obtain ⟨l, hla, hl⟩ := cs.exists_signs_left a
   exact ⟨l, hla, fun x hx => signVariationsAt_eq_left fun p hp => hl p hp x hx⟩
 
-/-- A nonzero polynomial does not vanish where it has its right-hand sign. -/
-private theorem eval_ne_zero_of_sign_eq_signRight {p : R[X]} (hp : p ≠ 0) {a x : R}
-    (h : sign (p.eval x) = p.signRight a) : p.eval x ≠ 0 := fun h0 => by
-  rw [h0, sign_zero, eq_comm, signRight_eq_zero_iff] at h
-  exact hp h
-
-/-- A nonzero polynomial does not vanish where it has its left-hand sign. -/
-private theorem eval_ne_zero_of_sign_eq_signLeft {p : R[X]} (hp : p ≠ 0) {a x : R}
-    (h : sign (p.eval x) = p.signLeft a) : p.eval x ≠ 0 := fun h0 => by
-  rw [h0, sign_zero, eq_comm, signLeft_eq_zero_iff] at h
-  exact hp h
-
-omit [IsStrictOrderedRing R] in
-/-- Adjoining a point `c` to the condition of a sum over the distinct roots of a nonzero `p`
-adds the term at `c` exactly when `c` is a root. -/
-private theorem sum_filter_or_eq_add {p : R[X]} (hp : p ≠ 0) (g : R → ℤ) (P : R → Prop)
-    [DecidablePred P] {c : R} (hc : ¬P c) :
-    ∑ r ∈ p.roots.toFinset with P r ∨ r = c, g r =
-      (∑ r ∈ p.roots.toFinset with P r, g r) + if p.eval c = 0 then g c else 0 := by
-  rw [Finset.filter_or, Finset.sum_union (Finset.disjoint_filter.mpr fun r _ hr (hrc : r = c) =>
-    hc (hrc ▸ hr)), Finset.filter_eq']
-  have hc' : c ∈ p.roots.toFinset ↔ p.eval c = 0 := by simp [mem_roots hp]
-  split_ifs <;> simp_all
-
 variable [IsRealClosed R]
 
 section Chain
@@ -225,8 +202,8 @@ theorem signVariationsLeft_sub_signVariationsRight (h : IsSignedRemainderSeq (p 
   have hs := sum_sign h hseed (hl'a.trans hau') (hpl l' ⟨hll', hl'a⟩) (hpu u' ⟨hau', hu'u⟩)
   rw [signVariationsAt_eq_left fun q hq => hl q hq l' ⟨hll', hl'a⟩,
     signVariationsAt_eq_right fun q hq => hu q hq u' ⟨hau', hu'u⟩, hfilter,
-    sum_filter_or_eq_add hp _ _ not_false] at hs
-  simpa using hs
+    Finset.sum_filter_or_eq_of_not _ _ _ not_false] at hs
+  simpa [mem_roots hp] using hs
 
 /-- **Sturm–Tarski on `(a, b]`.** The contribution of the closed endpoint `b` is added
 explicitly to the open-interval formula. -/
@@ -236,14 +213,12 @@ theorem sum_sign_Ioc (h : IsSignedRemainderSeq (p :: cs))
         (if p.eval b = 0 then (sign (f.eval b) : ℤ) else 0) =
       ∑ r ∈ p.roots.toFinset with a < r ∧ r ≤ b, (sign (f.eval r) : ℤ) := by
   rcases hab.lt_or_eq with hab | rfl
-  · rw [Finset.filter_congr fun r _ => (show a < r ∧ r ≤ b ↔ (a < r ∧ r < b) ∨ r = b by
-        constructor
-        · rintro ⟨h1, h2⟩
-          exact h2.lt_or_eq.imp (⟨h1, ·⟩) id
-        · rintro (⟨h1, h2⟩ | rfl)
-          exacts [⟨h1, h2.le⟩, ⟨hab, le_rfl⟩]),
-      sum_filter_or_eq_add (h.nonzero p (by simp)) _ _ fun h => h.2.false,
+  · have hIoc (r : R) : a < r ∧ r ≤ b ↔ (a < r ∧ r < b) ∨ r = b := by
+      rw [← mem_Ioc, ← Ioo_insert_right hab, mem_insert_iff, mem_Ioo, or_comm]
+    rw [Finset.filter_congr fun r _ => hIoc r,
+      Finset.sum_filter_or_eq_of_not _ _ _ fun h => h.2.false,
       sum_sign_Ioo h hseed hab]
+    simp [mem_roots (h.nonzero p (by simp))]
   · rw [← signVariationsLeft_sub_signVariationsRight h hseed a,
       Finset.filter_false_of_mem fun r _ h => h.1.not_ge h.2]
     simp
@@ -256,14 +231,12 @@ theorem sum_sign_Ico (h : IsSignedRemainderSeq (p :: cs))
         (if p.eval a = 0 then (sign (f.eval a) : ℤ) else 0) =
       ∑ r ∈ p.roots.toFinset with a ≤ r ∧ r < b, (sign (f.eval r) : ℤ) := by
   rcases hab.lt_or_eq with hab | rfl
-  · rw [Finset.filter_congr fun r _ => (show a ≤ r ∧ r < b ↔ (a < r ∧ r < b) ∨ r = a by
-        constructor
-        · rintro ⟨h1, h2⟩
-          exact h1.lt_or_eq.imp (⟨·, h2⟩) Eq.symm
-        · rintro (⟨h1, h2⟩ | rfl)
-          exacts [⟨h1.le, h2⟩, ⟨le_rfl, hab⟩]),
-      sum_filter_or_eq_add (h.nonzero p (by simp)) _ _ fun h => h.1.false,
+  · have hIco (r : R) : a ≤ r ∧ r < b ↔ (a < r ∧ r < b) ∨ r = a := by
+      rw [← mem_Ico, ← Ioo_insert_left hab, mem_insert_iff, mem_Ioo, or_comm]
+    rw [Finset.filter_congr fun r _ => hIco r,
+      Finset.sum_filter_or_eq_of_not _ _ _ fun h => h.1.false,
       sum_sign_Ioo h hseed hab]
+    simp [mem_roots (h.nonzero p (by simp))]
   · rw [← signVariationsLeft_sub_signVariationsRight h hseed a,
       Finset.filter_false_of_mem fun r _ h => h.2.not_ge h.1]
     simp
@@ -276,14 +249,11 @@ theorem sum_sign_Icc (h : IsSignedRemainderSeq (p :: cs))
         (if p.eval a = 0 then (sign (f.eval a) : ℤ) else 0) +
         (if p.eval b = 0 then (sign (f.eval b) : ℤ) else 0) =
       ∑ r ∈ p.roots.toFinset with a ≤ r ∧ r ≤ b, (sign (f.eval r) : ℤ) := by
-  rw [Finset.filter_congr fun r _ => (show a ≤ r ∧ r ≤ b ↔ (a < r ∧ r ≤ b) ∨ r = a by
-      constructor
-      · rintro ⟨h1, h2⟩
-        exact h1.lt_or_eq.imp (⟨·, h2⟩) Eq.symm
-      · rintro (⟨h1, h2⟩ | rfl)
-        exacts [⟨h1.le, h2⟩, ⟨le_rfl, hab⟩]),
-    sum_filter_or_eq_add (h.nonzero p (by simp)) _ _ fun h => h.1.false,
-    ← sum_sign_Ioc h hseed hab]
+  have hIcc (r : R) : a ≤ r ∧ r ≤ b ↔ (a < r ∧ r ≤ b) ∨ r = a := by
+    rw [← mem_Icc, ← Ioc_insert_left hab, mem_insert_iff, mem_Ioc, or_comm]
+  rw [Finset.filter_congr fun r _ => hIcc r,
+    Finset.sum_filter_or_eq_of_not _ _ _ fun h => h.1.false, ← sum_sign_Ioc h hseed hab]
+  simp [mem_roots (h.nonzero p (by simp))]
   ring
 
 end Chain
