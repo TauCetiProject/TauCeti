@@ -21,16 +21,20 @@ Resolvents, discriminants and the elementary symmetric functions of the roots ar
 from such a listing, and two facts are implicit whenever the roots are indexed by a finite set of
 the size of the degree. Both are stated here.
 
-* *Splitting.* If `ι` has at least `f.natDegree` elements, then `f` splits in `L`. The finite
+* *Splitting.* If `ι` has at least as many elements as the degree of the image of `f` in `L`
+  (in particular, if it has at least `f.natDegree` elements), then `f` splits in `L`. The finite
   indexing is not available before this: a listing of all roots of a polynomial that does not
   split in `L` has fewer entries than its degree.
-* *Separability.* When `L` is a field, the enumeration is injective if and only if the image of
-  `f` is separable. Without separability a listing repeats a root, and a permutation of the
-  indices is then no longer determined by the permutation of the roots that it induces.
+* *Separability.* When `L` is a field and the image of `f` in `L` is nonzero, such an enumeration
+  is injective if and only if the image of `f` in `L` is separable; over a base field `K`, for a
+  nonzero `f`, this is the separability of `f` itself. Without separability a listing repeats a
+  root, and a permutation of the indices is then no longer determined by the permutation of the
+  roots that it induces.
 
-Conversely, a polynomial that splits in `L` has a root enumeration indexed by any finite type of
-the size of its degree. Reading Vieta's formulas through an enumeration expresses the elementary
-symmetric polynomials evaluated at `x` through the coefficients of `f`.
+Conversely, a polynomial that splits in `L` has a root enumeration indexed by any finite type
+whose size is the degree of the image of `f` in `L`. Reading Vieta's formulas through an
+enumeration expresses the elementary symmetric polynomials evaluated at `x` through the
+coefficients of `f`.
 
 ## Main definitions
 
@@ -38,13 +42,16 @@ symmetric polynomials evaluated at `x` through the coefficients of `f`.
 
 ## Main results
 
-* `Polynomial.IsRootEnumeration.splits`: an enumeration with at least `f.natDegree` entries
-  makes `f` split in `L`.
+* `Polynomial.IsRootEnumeration.splits`: an enumeration with at least as many entries as the
+  degree of the image of `f` in `L` makes `f` split in `L`.
 * `Polynomial.exists_isRootEnumeration_iff_splits`: a polynomial has an enumeration indexed by a
-  type of the size of its degree in `L` if and only if it splits in `L`.
-* `Polynomial.IsRootEnumeration.injective_iff_separable_map` and
-  `Polynomial.IsRootEnumeration.injective_iff_separable`: an enumeration with `f.natDegree`
-  entries is injective if and only if `f` is separable.
+  type whose size is the degree of its image in `L` if and only if it splits in `L`.
+* `Polynomial.IsRootEnumeration.injective_iff_separable_map`: an enumeration in a field `E` with
+  as many entries as the degree of the nonzero image of `f` in `E` is injective if and only if
+  that image is separable.
+* `Polynomial.IsRootEnumeration.injective_iff_separable`: over a base field, an enumeration of
+  the roots of a nonzero `g` with `g.natDegree` entries is injective if and only if `g` is
+  separable.
 * `Polynomial.IsRootEnumeration.range_eq_rootSet`: the entries of an enumeration are the roots.
 * `Polynomial.IsRootEnumeration.aeval_esymm_eq_coeff`: Vieta's formulas, read through an
   enumeration of the roots of a monic polynomial.
@@ -95,24 +102,27 @@ theorem range_eq_rootSet (hx : IsRootEnumeration f x) : Set.range x = f.rootSet 
   rw [mem_rootSet', ← mem_aroots', aroots_def, isRootEnumeration_iff.mp hx]
   simp
 
-/-- An enumeration with at least `f.natDegree` entries has as many entries as the degree of the
-image of `f` in `L`. Since `natDegree_map_le` and `card_le_natDegree` bound that degree and the
-number of entries by `f.natDegree`, such an enumeration has exactly `f.natDegree` entries and `f`
-keeps its degree in `L`. -/
-theorem natDegree_map_eq_card (hx : IsRootEnumeration f x) (hdeg : f.natDegree ≤ Fintype.card ι) :
+/-- An enumeration with at least as many entries as the degree of the image of `f` in `L` has
+exactly that many entries, since the number of roots never exceeds the degree. This applies in
+particular when the enumeration has at least `f.natDegree` entries, by `natDegree_map_le`. -/
+theorem natDegree_map_eq_card (hx : IsRootEnumeration f x)
+    (hdeg : (f.map (algebraMap R L)).natDegree ≤ Fintype.card ι) :
     (f.map (algebraMap R L)).natDegree = Fintype.card ι :=
-  le_antisymm (natDegree_map_le.trans hdeg) (hx.card_roots ▸ card_roots' _)
+  le_antisymm hdeg (hx.card_roots ▸ card_roots' _)
 
 /-- **An enumeration forces splitting.** If `x` enumerates the roots of `f` in `L` and has at
-least `f.natDegree` entries, then `f` splits in `L`. -/
-theorem splits (hx : IsRootEnumeration f x) (hdeg : f.natDegree ≤ Fintype.card ι) :
+least as many entries as the degree of the image of `f` in `L` (for instance, at least
+`f.natDegree` entries), then `f` splits in `L`. -/
+theorem splits (hx : IsRootEnumeration f x)
+    (hdeg : (f.map (algebraMap R L)).natDegree ≤ Fintype.card ι) :
     (f.map (algebraMap R L)).Splits :=
   splits_iff_card_roots.mpr (hx.card_roots.trans (hx.natDegree_map_eq_card hdeg).symm)
 
-/-- An enumeration with at least `f.natDegree` entries is carried by an injective algebra
-morphism to an enumeration in the target. -/
+/-- An enumeration with at least as many entries as the degree of the image of `f` in `L` is
+carried by an injective algebra morphism to an enumeration in the target. -/
 theorem map [CommRing M] [IsDomain M] [Algebra R M] (hx : IsRootEnumeration f x)
-    (hdeg : f.natDegree ≤ Fintype.card ι) (φ : L →ₐ[R] M) (hφ : Function.Injective φ) :
+    (hdeg : (f.map (algebraMap R L)).natDegree ≤ Fintype.card ι) (φ : L →ₐ[R] M)
+    (hφ : Function.Injective φ) :
     IsRootEnumeration f (φ ∘ x) := by
   rw [isRootEnumeration_iff, ← φ.comp_algebraMap, ← Polynomial.map_map,
     (hx.splits hdeg).roots_map_of_injective (i := (φ : L →+* M)) hφ, isRootEnumeration_iff.mp hx,
@@ -139,15 +149,16 @@ theorem exists_isRootEnumeration_iff_splits
 namespace IsRootEnumeration
 
 /-- **Vieta's formulas, read through a root enumeration.** If `x` enumerates the roots in `L` of
-the monic polynomial `f` of degree `Fintype.card ι`, then the `k`-th elementary symmetric
-polynomial evaluated at `x` is `(-1) ^ k` times the coefficient of `f` in degree
-`Fintype.card ι - k`. -/
+the monic polynomial `f` of degree `Fintype.card ι`, then for every `k ≤ Fintype.card ι` the
+`k`-th elementary symmetric polynomial evaluated at `x` is `(-1) ^ k` times the coefficient of `f`
+in degree `Fintype.card ι - k`. -/
 theorem aeval_esymm_eq_coeff (hx : IsRootEnumeration f x) (hf : f.Monic)
     (hdeg : f.natDegree ≤ Fintype.card ι) {k : ℕ} (hk : k ≤ Fintype.card ι) :
     MvPolynomial.aeval x (MvPolynomial.esymm ι R k) =
       (-1) ^ k * algebraMap R L (f.coeff (Fintype.card ι - k)) := by
   set g := f.map (algebraMap R L)
-  have hdegg : g.natDegree = Fintype.card ι := hx.natDegree_map_eq_card hdeg
+  have hdegg : g.natDegree = Fintype.card ι :=
+    hx.natDegree_map_eq_card (natDegree_map_le.trans hdeg)
   have hvieta := coeff_eq_esymm_roots_of_card (hx.card_roots.trans hdegg.symm)
     (k := Fintype.card ι - k) (hdegg ▸ Nat.sub_le _ _)
   rw [(hf.map (algebraMap R L)).leadingCoeff, one_mul, hdegg, Nat.sub_sub_self hk,
@@ -164,11 +175,12 @@ variable {K E : Type*} [Field K] [Field E] [Algebra R E] [Algebra K E] {y : ι �
 namespace IsRootEnumeration
 
 /-- **An enumeration is injective exactly when the polynomial is separable.** If `y` enumerates
-the roots in the field `E` of a polynomial `f` whose image in `E` is nonzero, and has at least
-`f.natDegree` entries, then `y` is injective if and only if the image of `f` in `E` is
-separable. -/
+the roots in the field `E` of a polynomial `f` whose image in `E` is nonzero, and has at least as
+many entries as the degree of that image, then `y` is injective if and only if the image of `f` in
+`E` is separable. -/
 theorem injective_iff_separable_map (hy : IsRootEnumeration f y)
-    (hdeg : f.natDegree ≤ Fintype.card ι) (hf : f.map (algebraMap R E) ≠ 0) :
+    (hdeg : (f.map (algebraMap R E)).natDegree ≤ Fintype.card ι)
+    (hf : f.map (algebraMap R E) ≠ 0) :
     Function.Injective y ↔ (f.map (algebraMap R E)).Separable := by
   rw [← nodup_roots_iff_of_splits hf (hy.splits hdeg), isRootEnumeration_iff.mp hy,
     Multiset.nodup_map_iff_inj_on univ.nodup]
@@ -180,7 +192,7 @@ entries, then `y` is injective if and only if `g` is separable. -/
 theorem injective_iff_separable {g : K[X]} (hy : IsRootEnumeration g y)
     (hdeg : g.natDegree ≤ Fintype.card ι) (hg : g ≠ 0) :
     Function.Injective y ↔ g.Separable := by
-  rw [hy.injective_iff_separable_map hdeg (map_ne_zero hg), separable_map]
+  rw [hy.injective_iff_separable_map (natDegree_map_le.trans hdeg) (map_ne_zero hg), separable_map]
 
 end IsRootEnumeration
 
