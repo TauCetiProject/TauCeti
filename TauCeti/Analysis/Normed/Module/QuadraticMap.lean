@@ -21,15 +21,18 @@ normed field. Then `Q` is bounded below by a multiple of the squared norm: there
 nonarchimedean field the norm of `V` takes discretely many values near `1`, which is why a shell
 is used rather than a sphere.
 
-Consequently, for an anisotropic quadratic form on a finite-dimensional space over a locally
-compact nontrivially normed field such as `ℝ` or `ℚ_p`, every sublevel set `{x | ‖Q x‖ ≤ r}` is
-compact for the module topology. This is the input that makes the orthogonal group of an
-anisotropic form compact: an isometry carries each vector into a level set of `Q`.
+Consequently the sublevel sets `{x | ‖Q x‖ ≤ r}` of `Q` are compact. In particular, for an
+anisotropic quadratic form on a finite-dimensional space over a locally compact nontrivially normed
+field such as `ℝ` or `ℚ_p`, every sublevel set is compact for the module topology. This is the
+input that makes the orthogonal group of an anisotropic form compact: an isometry carries each
+vector into a level set of `Q`.
 
 ## Main results
 
 * `QuadraticMap.Anisotropic.exists_pos_mul_norm_sq_le`: an anisotropic quadratic map on a proper
   normed space is bounded below by a positive multiple of the squared norm.
+* `QuadraticMap.Anisotropic.isCompact_setOf_norm_apply_le_of_continuous`: the sublevel sets of
+  the norm of a continuous anisotropic quadratic map on a proper normed space are compact.
 * `QuadraticMap.Anisotropic.isCompact_setOf_norm_apply_le`: the sublevel sets of the norm of an
   anisotropic quadratic form on a finite-dimensional space over a locally compact field are
   compact.
@@ -79,6 +82,17 @@ theorem Anisotropic.exists_pos_mul_norm_sq_le {Q : QuadraticMap K V N} (hQ : Q.A
     _ ≤ 1 * ‖Q x‖ := by gcongr; exact pow_le_one₀ (by positivity) hdx
     _ = ‖Q x‖ := one_mul _
 
+/-- The sublevel sets `{x | ‖Q x‖ ≤ r}` of a continuous anisotropic quadratic map on a proper
+normed space over a nontrivially normed field are compact. -/
+theorem Anisotropic.isCompact_setOf_norm_apply_le_of_continuous {Q : QuadraticMap K V N}
+    (hQ : Q.Anisotropic) (hcont : Continuous Q) (r : ℝ) : IsCompact {x | ‖Q x‖ ≤ r} := by
+  obtain ⟨c, hc, hle⟩ := hQ.exists_pos_mul_norm_sq_le hcont
+  refine Metric.isCompact_of_isClosed_isBounded
+    (isClosed_le (continuous_norm.comp hcont) continuous_const)
+    ((Metric.isBounded_closedBall (x := 0) (r := √(r / c))).subset fun y hy => ?_)
+  rw [mem_closedBall_zero_iff, ← abs_of_nonneg (norm_nonneg y)]
+  exact Real.abs_le_sqrt ((le_div_iff₀ hc).mpr (by linarith [hle y, hy.out]))
+
 end Normed
 
 section ModuleTopology
@@ -99,13 +113,7 @@ theorem Anisotropic.isCompact_setOf_norm_apply_le {Q : QuadraticForm K V} (hQ : 
   let Q' : QuadraticForm K (Fin (Module.finrank K V) → K) := Q.comp b.equivFun.symm.toLinearMap
   have hQ' : Q'.Anisotropic := fun y hy => b.equivFun.symm.injective (by
     simpa using hQ _ (by simpa [Q'] using hy))
-  obtain ⟨c, hc, hle⟩ := hQ'.exists_pos_mul_norm_sq_le Q'.continuous
-  have hK : IsCompact {y | ‖Q' y‖ ≤ r} := by
-    refine Metric.isCompact_of_isClosed_isBounded
-      (isClosed_le (continuous_norm.comp Q'.continuous) continuous_const)
-      ((Metric.isBounded_closedBall (x := 0) (r := √(r / c))).subset fun y hy => ?_)
-    rw [mem_closedBall_zero_iff, ← abs_of_nonneg (norm_nonneg y)]
-    exact Real.abs_le_sqrt ((le_div_iff₀ hc).mpr (by linarith [hle y, hy.out]))
+  have hK := hQ'.isCompact_setOf_norm_apply_le_of_continuous Q'.continuous r
   have hpre : {x | ‖Q x‖ ≤ r} = e ⁻¹' {y | ‖Q' y‖ ≤ r} := by
     ext x
     simp [Q', e]

@@ -58,13 +58,13 @@ variable {K V : Type*} [NontriviallyNormedField K] [AddCommGroup V] [Module K V]
 compact: `g ↦ polar Q (g u) v` is continuous and takes the value `t` at the torus element `t`. -/
 private theorem not_isCompact_of_hyperbolicPairTorus_mem {u v : V} (hu : Q u = 0) (hv : Q v = 0)
     (huv : polar Q u v = 1) {S : Set (V ≃ₗ[K] V)}
-    (hS : ∀ t : Kˣ, (Q.hyperbolicPairTorus hu hv huv t : V ≃ₗ[K] V) ∈ S) : ¬IsCompact S := by
+    (hS : ∀ t : Kˣ, (hyperbolicPairTorus Q hu hv huv t : V ≃ₗ[K] V) ∈ S) : ¬IsCompact S := by
   intro hcpt
   let φ : Module.End K V →ₗ[K] K := (Q.polarBilin.flip v).comp (LinearMap.applyₗ u)
   have hφ (g : V ≃ₗ[K] V) : φ g = polar Q (g u) v := by simp [φ]
   have hF : Continuous fun g : V ≃ₗ[K] V => φ g :=
     (IsModuleTopology.continuous_of_linearMap φ).comp continuous_linearEquiv_toLinearMap
-  have htorus (t : Kˣ) : φ (Q.hyperbolicPairTorus hu hv huv t : V ≃ₗ[K] V) = t := by
+  have htorus (t : Kˣ) : φ (hyperbolicPairTorus Q hu hv huv t : V ≃ₗ[K] V) = t := by
     simp [hφ, polar_smul_left, huv]
   obtain ⟨r, hr⟩ := isBounded_iff_forall_norm_le.mp (hcpt.image hF).isBounded
   have hr0 : 0 ≤ r := (norm_nonneg _).trans (hr _ ⟨_, hS 1, rfl⟩)
@@ -82,7 +82,7 @@ theorem not_isCompact_specialOrthogonalGroup [FiniteDimensional K V] (hQ : Q.Non
     ¬IsCompact (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
   exact not_isCompact_of_hyperbolicPairTorus_mem Q hu hv huv fun t =>
-    Q.hyperbolicPairTorus_mem_specialOrthogonalGroup hu hv huv t
+    hyperbolicPairTorus_mem_specialOrthogonalGroup hu hv huv t
 
 /-- **The orthogonal group of an isotropic form is not compact.** For an isotropic nondegenerate
 quadratic form over a nontrivially normed field, the orthogonal group is not a compact subset of
@@ -91,7 +91,7 @@ theorem not_isCompact_orthogonalGroup (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotr
     ¬IsCompact (orthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
   exact not_isCompact_of_hyperbolicPairTorus_mem Q hu hv huv fun t =>
-    (Q.hyperbolicPairTorus hu hv huv t).2
+    (hyperbolicPairTorus Q hu hv huv t).2
 
 end Noncompact
 
@@ -147,14 +147,6 @@ theorem isCompact_orthogonalGroup_iff (hQ : Q.Nondegenerate) :
     IsCompact (orthogonalGroup Q : Set (V ≃ₗ[K] V)) ↔ Q.Anisotropic :=
   ⟨fun h => by_contra fun hiso => not_isCompact_orthogonalGroup Q hQ hiso h,
     isCompact_orthogonalGroup Q⟩
-
-/-- For a nondegenerate quadratic form on a finite-dimensional space over a locally compact
-nontrivially normed field in which `2` is invertible, the orthogonal group is a compact space
-exactly when the form is anisotropic. -/
-theorem compactSpace_orthogonalGroup_iff (hQ : Q.Nondegenerate) :
-    CompactSpace (orthogonalGroup Q) ↔ Q.Anisotropic := by
-  rw [← isCompact_orthogonalGroup_iff Q hQ]
-  exact isCompact_iff_compactSpace.symm
 
 end Compact
 

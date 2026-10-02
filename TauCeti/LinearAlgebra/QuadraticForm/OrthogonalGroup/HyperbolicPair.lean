@@ -27,24 +27,28 @@ the orthogonal group of an isotropic nondegenerate form is not compact.
 
 ## Main definitions
 
-* `QuadraticMap.hyperbolicPairTorus Q hu hv huv`: the homomorphism `Rˣ →* O(Q)` attached to a
-  hyperbolic pair `u`, `v`.
+* `TauCeti.QuadraticMap.hyperbolicPairTorus Q hu hv huv`: the homomorphism `Rˣ →* O(Q)`
+  attached to a hyperbolic pair `u`, `v`.
 
 ## Main results
 
-* `QuadraticMap.hyperbolicPairTorus_apply`: the defining formula.
-* `QuadraticMap.hyperbolicPairTorus_apply_left`, `QuadraticMap.hyperbolicPairTorus_apply_right`:
-  the torus scales `u` by `t` and `v` by `t⁻¹`.
-* `QuadraticMap.hyperbolicPairTorus_injective`: the torus is injective.
-* `QuadraticMap.hyperbolicPairTorus_mem_specialOrthogonalGroup`: on a finite free module, the
-  torus lies in the special orthogonal group.
+* `TauCeti.QuadraticMap.hyperbolicPairTorus_apply`: the defining formula.
+* `TauCeti.QuadraticMap.hyperbolicPairTorus_apply_left`,
+  `TauCeti.QuadraticMap.hyperbolicPairTorus_apply_right`: the torus scales `u` by `t` and `v`
+  by `t⁻¹`.
+* `TauCeti.QuadraticMap.hyperbolicPairTorus_injective`: the torus is injective.
+* `TauCeti.QuadraticMap.hyperbolicPairTorus_mem_specialOrthogonalGroup`: on a finite free
+  module, the torus lies in the special orthogonal group.
 -/
 
 public section
 
-open TauCeti.QuadraticMap
+namespace TauCeti
 
 namespace QuadraticMap
+
+open _root_.QuadraticMap (polar polar_add_left polar_add_right polar_sub_right polar_smul_left
+  polar_smul_right polar_comm polar_self)
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 variable (Q : QuadraticForm R M) {u v : M}
@@ -198,3 +202,5 @@ theorem hyperbolicPairTorus_mem_specialOrthogonalGroup [Module.Free R M] [Module
   norm_num
 
 end QuadraticMap
+
+end TauCeti
