@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 public import Mathlib.RepresentationTheory.Basic
-public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.Algebra.Module.Torsion.TateModule
 
 /-!
@@ -19,8 +18,9 @@ Tate module of the unit group:
 
 `PadicTateTwist p K = TateModule p (Additive Kˣ)`.
 
-This file identifies the finite levels with `Additive (rootsOfUnity (p ^ n) K)`.  Over a
-separably closed field in which `p` is nonzero, the twist is a free `ℤ_p`-module of rank one.
+This file identifies the finite levels with `Additive (rootsOfUnity (p ^ n) K)`.  When `K` has
+enough `p`-power roots of unity (for example, a separably closed field in which `p` is nonzero),
+the twist is a free `ℤ_p`-module of rank one.
 Ring automorphisms act on it componentwise; when all `p`-power roots of unity exist, this action
 is scalar multiplication by Mathlib's `p`-adic cyclotomic character.  These are the coefficient
 module and action used by `p`-adic Weil pairings.
@@ -36,7 +36,7 @@ module and action used by `p`-adic Weil pairings.
 
 * `TauCeti.PadicTateTwist.levelAddEquivRootsOfUnity`: the `n`-th level is `μ_{p^n}`.
 * `TauCeti.PadicTateTwist.instCompactSpace`: for nonzero `p`, `ℤ_p(1)` is compact over a domain.
-* `TauCeti.PadicTateTwist.nonempty_linearEquiv`: over a separably closed field with `p ≠ 0`,
+* `TauCeti.PadicTateTwist.nonempty_linearEquiv`: when `K` has enough `p`-power roots of unity,
   `ℤ_p(1)` is noncanonically linearly equivalent to `ℤ_p`.
 * `TauCeti.PadicTateTwist.galoisRepresentation_apply_eq_smul`: the Galois action is scalar
   multiplication by the cyclotomic character.
@@ -93,11 +93,13 @@ theorem coe_proj (x : PadicTateTwist p K) (n : ℕ) :
   (rfl)
 
 /-- Consecutive components of `ℤ_p(1)` are related by the `p`-th power map. -/
-theorem coe_proj_succ_pow (x : PadicTateTwist p K) (n : ℕ) :
-    ((proj (n + 1) x).toMul : Kˣ) ^ p = (proj n x).toMul := by
+@[simp]
+theorem coe_tateModuleProj_succ_pow (x : PadicTateTwist p K) (n : ℕ) :
+    ((TateModule.proj (n + 1) x : Additive Kˣ).toMul : Kˣ) ^ p =
+      (TateModule.proj n x : Additive Kˣ).toMul := by
   have h := congrArg Subtype.val (TateModule.proj_succ x n)
   rw [tateModuleTransition_apply] at h
-  simpa only [coe_proj, toMul_nsmul] using congrArg Additive.toMul h
+  simpa only [toMul_nsmul] using congrArg Additive.toMul h
 
 /-- A point of `ℤ_p(1)` is determined by all of its roots-of-unity components. -/
 @[ext]
@@ -124,38 +126,39 @@ end Compact
 
 section RankOne
 
-variable {p : ℕ} {K : Type*} [Field K] [IsSepClosed K] [Fact p.Prime] (hp : (p : K) ≠ 0)
+variable {p : ℕ} {K : Type*} [CommMonoid K]
 
-include hp
-
-/-- Over a separably closed field in which `p` is nonzero, the `n`-th level of `ℤ_p(1)` has
-`p ^ n` elements. -/
-theorem natCard_level (n : ℕ) :
+/-- If `K` has enough `p ^ n`-th roots of unity, then the `n`-th level of `ℤ_p(1)` has `p ^ n`
+elements. -/
+theorem natCard_tateModuleLevel [NeZero p] (n : ℕ) [HasEnoughRootsOfUnity K (p ^ n)] :
     Nat.card (TateModuleLevel p (Additive Kˣ) n) = p ^ n := by
-  let _ : NeZero (p : K) := ⟨hp⟩
   rw [Nat.card_congr (levelAddEquivRootsOfUnity n).toEquiv,
     Nat.card_congr Additive.toMul,
     HasEnoughRootsOfUnity.natCard_rootsOfUnity K (p ^ n)]
 
-/-- Over a separably closed field in which `p` is nonzero, `ℤ_p(1)` is noncanonically linearly
+variable [Fact p.Prime] [∀ n, HasEnoughRootsOfUnity K (p ^ n)]
+
+variable (p K) in
+/-- If `K` has enough `p`-power roots of unity, then `ℤ_p(1)` is noncanonically linearly
 equivalent to `ℤ_p`. -/
 theorem nonempty_linearEquiv : Nonempty (PadicTateTwist p K ≃ₗ[ℤ_[p]] ℤ_[p]) :=
   ⟨(TateModule.nonempty_linearEquiv_of_natCard (r := 1)
-      (fun n ↦ by simpa using natCard_level hp n)).some.trans
+      (fun n ↦ by simpa using natCard_tateModuleLevel n)).some.trans
     (LinearEquiv.funUnique (Fin 1) ℤ_[p] ℤ_[p])⟩
 
-/-- Over a separably closed field in which `p` is nonzero, `ℤ_p(1)` is a free `ℤ_p`-module. -/
-theorem free : Module.Free ℤ_[p] (PadicTateTwist p K) :=
-  TateModule.free_of_natCard (r := 1) (fun n ↦ by simpa using natCard_level hp n)
+/-- If `K` has enough `p`-power roots of unity, then `ℤ_p(1)` is a free `ℤ_p`-module. -/
+instance free : Module.Free ℤ_[p] (PadicTateTwist p K) :=
+  TateModule.free_of_natCard (r := 1) (fun n ↦ by simpa using natCard_tateModuleLevel n)
 
-/-- Over a separably closed field in which `p` is nonzero, `ℤ_p(1)` is finitely generated over
+/-- If `K` has enough `p`-power roots of unity, then `ℤ_p(1)` is finitely generated over
 `ℤ_p`. -/
-theorem finite : Module.Finite ℤ_[p] (PadicTateTwist p K) :=
-  TateModule.finite_of_natCard (r := 1) (fun n ↦ by simpa using natCard_level hp n)
+instance finite : Module.Finite ℤ_[p] (PadicTateTwist p K) :=
+  TateModule.finite_of_natCard (r := 1) (fun n ↦ by simpa using natCard_tateModuleLevel n)
 
-/-- Over a separably closed field in which `p` is nonzero, `ℤ_p(1)` has rank one over `ℤ_p`. -/
+variable (p K) in
+/-- If `K` has enough `p`-power roots of unity, then `ℤ_p(1)` has rank one over `ℤ_p`. -/
 theorem finrank : Module.finrank ℤ_[p] (PadicTateTwist p K) = 1 :=
-  TateModule.finrank_eq_of_natCard (r := 1) (fun n ↦ by simpa using natCard_level hp n)
+  TateModule.finrank_eq_of_natCard (r := 1) (fun n ↦ by simpa using natCard_tateModuleLevel n)
 
 end RankOne
 
@@ -182,7 +185,7 @@ def galoisRepresentation : Representation ℤ_[p] (K ≃ₐ[F] K) (PadicTateTwis
 
 /-- The Galois representation applies the field automorphism to every roots-of-unity component. -/
 @[simp]
-theorem coe_proj_galoisRepresentation (σ : K ≃ₐ[F] K) (x : PadicTateTwist p K) (n : ℕ) :
+theorem coe_tateModuleProj_galoisRepresentation (σ : K ≃ₐ[F] K) (x : PadicTateTwist p K) (n : ℕ) :
     (((TateModule.proj n (galoisRepresentation (p := p) (F := F) σ x) :
         Additive Kˣ).toMul : Kˣ) : K) =
       σ (((TateModule.proj n x : Additive Kˣ).toMul : Kˣ) : K) := by
@@ -191,6 +194,7 @@ theorem coe_proj_galoisRepresentation (σ : K ≃ₐ[F] K) (x : PadicTateTwist p
 
 /-- When `K` contains all `p`-power roots of unity, the Galois action on `ℤ_p(1)` is scalar
 multiplication by the `p`-adic cyclotomic character. -/
+@[simp]
 theorem galoisRepresentation_apply_eq_smul
     [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (σ : K ≃ₐ[F] K) (x : PadicTateTwist p K) :
     galoisRepresentation (p := p) (F := F) σ x =
@@ -201,7 +205,7 @@ theorem galoisRepresentation_apply_eq_smul
   apply Subtype.ext
   apply Units.ext
   simp only [coe_proj]
-  rw [coe_proj_galoisRepresentation]
+  rw [coe_tateModuleProj_galoisRepresentation]
   rw [TateModule.proj_smul]
   have hsmul := TateModule.coe_zmod_smul (p := p) (A := Additive Kˣ)
     (PadicInt.toZModPow n ((cyclotomicCharacter K p σ.toRingEquiv : ℤ_[p]ˣ) : ℤ_[p]))
