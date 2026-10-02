@@ -78,6 +78,13 @@ theorem hyperbolicPlane_apply [Invertible (2 : R)] (x : Fin 2 → R) :
   simp [hyperbolicPlane, weightedSumSquares_apply, Fin.sum_univ_two, pow_two]
   ring
 
+/-- The polar form of the hyperbolic plane in its diagonal coordinates. -/
+@[simp]
+theorem polar_hyperbolicPlane [Invertible (2 : R)] (x y : Fin 2 → R) :
+    polar (hyperbolicPlane R) x y = 2 * (x 0 * y 0 - x 1 * y 1) := by
+  simp only [QuadraticMap.polar, hyperbolicPlane_apply, Pi.add_apply]
+  ring
+
 /-- The hyperbolic plane is nondegenerate when two is invertible. -/
 theorem nondegenerate_hyperbolicPlane [Invertible (2 : R)] :
     (hyperbolicPlane R).Nondegenerate := by

@@ -102,6 +102,32 @@ theorem typeBSpinWeight_apply {n : ℕ} (s : Finset (Fin n)) (i : Fin n) :
       else 2 * (if i ∈ s then 1 else 0) - 1 :=
   (rfl)
 
+/-- At a nonterminal node, weight `-1` means that only the successor has positive sign. -/
+theorem typeBSpinWeight_eq_neg_one_iff_of_lt {n : ℕ} {i : Fin n}
+    (h : (i : ℕ) + 1 < n) (s : Finset (Fin n)) :
+    typeBSpinWeight s i = -1 ↔ i ∉ s ∧ Order.succ i ∈ s := by
+  by_cases hi : i ∈ s <;> by_cases hj : Order.succ i ∈ s <;>
+    simp [typeBSpinWeight, h, hi, hj]
+
+/-- At a nonterminal node, weight `1` means that only the node has positive sign. -/
+theorem typeBSpinWeight_eq_one_iff_of_lt {n : ℕ} {i : Fin n}
+    (h : (i : ℕ) + 1 < n) (s : Finset (Fin n)) :
+    typeBSpinWeight s i = 1 ↔ i ∈ s ∧ Order.succ i ∉ s := by
+  by_cases hi : i ∈ s <;> by_cases hj : Order.succ i ∈ s <;>
+    simp [typeBSpinWeight, h, hi, hj]
+
+/-- At the terminal node, weight `-1` means that its sign is negative. -/
+theorem typeBSpinWeight_eq_neg_one_iff_of_last {n : ℕ} {i : Fin n}
+    (h : ¬(i : ℕ) + 1 < n) (s : Finset (Fin n)) :
+    typeBSpinWeight s i = -1 ↔ i ∉ s := by
+  by_cases hi : i ∈ s <;> simp [typeBSpinWeight, h, hi]
+
+/-- At the terminal node, weight `1` means that its sign is positive. -/
+theorem typeBSpinWeight_eq_one_iff_of_last {n : ℕ} {i : Fin n}
+    (h : ¬(i : ℕ) + 1 < n) (s : Finset (Fin n)) :
+    typeBSpinWeight s i = 1 ↔ i ∈ s := by
+  by_cases hi : i ∈ s <;> simp [typeBSpinWeight, h, hi]
+
 /-- Mapping a difference of sign indicators gives the difference of the corresponding
 half-integral sign weights. -/
 private theorem algebraMap_indicator_sub_eq_spinWeight_sub {K : Type*} [CommRing K]
@@ -308,6 +334,56 @@ theorem mem_typeBSpinReflection_iff_of_last {n : ℕ} {i : Fin n} (h : ¬(i : �
   · subst hai
     simp [Finset.mem_symmDiff]
   · simp [Finset.mem_symmDiff, hai]
+
+/-- The terminal reflection inserts a missing positive sign. -/
+theorem typeBSpinReflection_eq_insert_of_not_mem_last {n : ℕ} {i : Fin n}
+    (h : ¬(i : ℕ) + 1 < n) {s : Finset (Fin n)} (hi : i ∉ s) :
+    typeBSpinReflection i s = insert i s := by
+  ext a
+  rw [mem_typeBSpinReflection_iff_of_last h]
+  by_cases ha : a = i <;> simp [ha, hi]
+
+/-- The terminal reflection erases an existing positive sign. -/
+theorem typeBSpinReflection_eq_erase_of_mem_last {n : ℕ} {i : Fin n}
+    (h : ¬(i : ℕ) + 1 < n) {s : Finset (Fin n)} (hi : i ∈ s) :
+    typeBSpinReflection i s = s.erase i := by
+  ext a
+  rw [mem_typeBSpinReflection_iff_of_last h]
+  by_cases ha : a = i <;> simp [ha, hi]
+
+/-- An adjacent reflection moves a positive successor sign to the negative node. -/
+theorem typeBSpinReflection_eq_insert_erase_of_not_mem {n : ℕ} {i : Fin n}
+    (h : (i : ℕ) + 1 < n) {s : Finset (Fin n)} (hi : i ∉ s) (hj : Order.succ i ∈ s) :
+    typeBSpinReflection i s = insert i (s.erase (Order.succ i)) := by
+  have hne : i ≠ Order.succ i := by
+    intro heq
+    have hv := congrArg Fin.val heq
+    rw [Fin.val_orderSucc_of_lt h] at hv
+    omega
+  ext a
+  rw [mem_typeBSpinReflection_iff_of_lt h]
+  by_cases ha : a = i
+  · simp [ha, hi, hj]
+  · by_cases hb : a = Order.succ i
+    · simp [hb, hi, hne.symm]
+    · simp [Equiv.swap_apply_of_ne_of_ne ha hb, ha, hb]
+
+/-- An adjacent reflection moves a positive node sign to its negative successor. -/
+theorem typeBSpinReflection_eq_insert_erase_of_mem {n : ℕ} {i : Fin n}
+    (h : (i : ℕ) + 1 < n) {s : Finset (Fin n)} (hi : i ∈ s) (hj : Order.succ i ∉ s) :
+    typeBSpinReflection i s = insert (Order.succ i) (s.erase i) := by
+  have hne : i ≠ Order.succ i := by
+    intro heq
+    have hv := congrArg Fin.val heq
+    rw [Fin.val_orderSucc_of_lt h] at hv
+    omega
+  ext a
+  rw [mem_typeBSpinReflection_iff_of_lt h]
+  by_cases ha : a = i
+  · simp [ha, hj, hne]
+  · by_cases hb : a = Order.succ i
+    · simp [hb, hi]
+    · simp [Equiv.swap_apply_of_ne_of_ne ha hb, ha, hb]
 
 /-! ## The reflection formula -/
 
@@ -591,22 +667,9 @@ private theorem exists_typeBSpinReflections_eq_aux {n : ℕ} (d : ℕ) :
     intro a s hd ha hmax hrec
     have hlt : (a : ℕ) + 1 < n := by have := a.isLt; omega
     have hsucca : ((Order.succ a : Fin n) : ℕ) = (a : ℕ) + 1 := Fin.val_orderSucc_of_lt hlt
-    have hane : a ≠ (Order.succ a : Fin n) := fun hc => by rw [← hc] at hsucca; omega
     have hasucclt : a < (Order.succ a : Fin n) := by rw [Fin.lt_def, hsucca]; omega
     have hsuccnotmem : (Order.succ a : Fin n) ∉ s := hmax _ hasucclt
-    have hrefl : typeBSpinReflection a s = insert (Order.succ a : Fin n) (s.erase a) := by
-      ext b
-      rw [mem_typeBSpinReflection_iff_of_lt hlt, Finset.mem_insert, Finset.mem_erase]
-      by_cases hba : b = a
-      · subst hba
-        rw [Equiv.swap_apply_left]
-        simp [hsuccnotmem, hane]
-      · by_cases hbs : b = (Order.succ a : Fin n)
-        · subst hbs
-          rw [Equiv.swap_apply_right]
-          simp [ha]
-        · rw [Equiv.swap_apply_of_ne_of_ne hba hbs]
-          simp [hba, hbs]
+    have hrefl := typeBSpinReflection_eq_insert_erase_of_mem hlt ha hsuccnotmem
     have hmax' : ∀ b : Fin n, (Order.succ a : Fin n) < b → b ∉ insert
         (Order.succ a : Fin n) (s.erase a) := by
       intro b hb hmem

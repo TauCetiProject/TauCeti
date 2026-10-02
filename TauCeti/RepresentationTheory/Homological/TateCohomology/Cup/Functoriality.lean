@@ -44,8 +44,8 @@ Every compatible pair factors as a morphism of `G`-representations `M ⟶ Res(e)
 pair `Res(e)(N) → N` whose linear part is the identity
 (`TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map_res`), and the cup product is already
 natural in morphisms of coefficients. The main step is therefore the pair `Res(e)(N) → N`. It is
-proved like the restriction law `TauCeti.TateCohomology.cup_res_of_nonneg`, by induction on the
-degree of the second factor: in degree zero both cup products are induced by the morphism
+proved like the restriction law `TauCeti.TateCohomology.cup_res_of_nonneg_right`, by induction on
+the degree of the second factor: in degree zero both cup products are induced by the morphism
 `m ↦ m ⊗ y` for an invariant `y`, and the rule `x ∪ δ y = (-1)^p δ (x ∪ y)` for the `k`-split
 dimension-shifting sequences moves the statement up and down in degree, because these maps commute
 with the connecting maps in every degree (`TauCeti.TateCohomology.δ_comp_map`). Unlike restriction

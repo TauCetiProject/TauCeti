@@ -7,24 +7,18 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.Basic
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.NegativeZero
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.PositiveZero
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Delta
 
 /-!
-# Restriction of the Tate cup product in nonnegative bidegrees
+# Restriction of the Tate cup product with a second factor of nonnegative degree
 
 For a subgroup `H` of a finite group `G`, restriction to `H` preserves the Tate cup product of a
-class of degree `p ≥ 0` and a class of degree `q ≥ 0`
-(`TauCeti.TateCohomology.cup_res_of_nonneg`).
-
-The proof is by induction on `q`, starting from the bidegrees `(p, 0)`, where the cup product is
-induced by a morphism of coefficients (`TauCeti.TateCohomology.cup_res_zero_zero`,
-`TauCeti.TateCohomology.cup_posRes_zero_right`). A class `y` of degree `q + 1` is the image of a
-class `y'` of degree `q` of the upward dimension shift of `N` under the connecting map of the
-dimension-shifting sequence, and `x ∪ δ y' = (-1)^p δ (x ∪ y')`. Restriction commutes with the
-connecting maps in nonnegative degrees (`TauCeti.TateCohomology.δ_comp_res`), and after restriction
-the dimension-shifting sequence is still split over `k`, so the same rule holds for the cup product
-over `H` (`TauCeti.TateCohomology.cup_δ_of_leftInverse`).
+class of any degree `p` and a class of degree `q ≥ 0`
+(`TauCeti.TateCohomology.cup_res_of_nonneg_right`). In particular this covers bidegree `(-2, 2)`,
+the cup product of `\hat{H}^{-2}(G, ℤ) = G^{ab}` with a class of degree two that underlies Tate's
+theorem and the reciprocity map.
 
 See Artin and Tate, *Class Field Theory*, Preliminaries, §2, and Brown, *Cohomology of Groups*,
 Chapter VI, §5.
@@ -44,8 +38,8 @@ attribute [local instance] Subgroup.fintypeOfFinite
 
 /-- The inductive step: restriction preserves the cup product in bidegree `(p, q + 1)` if it does
 in bidegree `(p, q)` for the upward dimension shift of the second factor. -/
-private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hp : 0 ≤ p)
-    (hq : 0 ≤ q) (h : p + q = r) (x : tateCohomology M p)
+private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hq : 0 ≤ q)
+    (h : p + q = r) (x : tateCohomology M p)
     (ih : ∀ y : tateCohomology (dimensionShiftUp N) q,
       res (M ⊗ dimensionShiftUp N) H r (cup M (dimensionShiftUp N) p q r h x y) =
         cup (Rep.res H.subtype M) (Rep.res H.subtype (dimensionShiftUp N)) p q r h
@@ -66,8 +60,8 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   -- On the left, `x ∪ δ y' = (-1)^p δ (x ∪ y')`, and restriction commutes with `δ` and, by
   -- hypothesis, with `x ∪ y'`.
   rw [cup_dimensionShiftUpIso_hom M N hq h rfl, map_zsmul_unit, tensorDimensionShiftUpIso_hom]
-  have hL := congr($(δ_comp_res hMD H (by omega : -1 ≤ r)) (cup M (dimensionShiftUp N) p q r h x y))
-  have hR := congr($(δ_comp_res hD H (by omega : -1 ≤ q)) y)
+  have hL := congr($(δ_comp_res hMD H r) (cup M (dimensionShiftUp N) p q r h x y))
+  have hR := congr($(δ_comp_res hD H q) y)
   simp only [ModuleCat.comp_apply] at hL hR
   refine (congrArg (p.negOnePow • ·) (hL.trans (congrArg _ (ih y)))).trans ?_
   -- On the right, restriction commutes with `δ`.
@@ -79,24 +73,39 @@ private theorem cup_res_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
   exact (cup_δ_of_leftInverse (Rep.res H.subtype M) hresD (leftInverse_coindBotUnit N) h _
     _).symm
 
-/-- **Restriction preserves the Tate cup product in nonnegative bidegrees.** For a subgroup `H` of
-a finite group `G`, a class `x` of degree `p ≥ 0` and a class `y` of degree `q ≥ 0`, the
-restriction of `x ∪ y` to `H` is the cup product of the restrictions of `x` and `y`. -/
+/-
+The proof is by induction on `q`, starting from the bidegrees `(p, 0)`, where the cup product is
+induced by a morphism of coefficients (`TauCeti.TateCohomology.cup_res_zero_zero`,
+`TauCeti.TateCohomology.cup_posRes_zero_right`, `TauCeti.TateCohomology.cup_res_zero_right_of_neg`).
+A class `y` of degree `q + 1` is the image of a class `y'` of degree `q` of the upward dimension
+shift of `N` under the connecting map of the dimension-shifting sequence, and
+`x ∪ δ y' = (-1)^p δ (x ∪ y')`. Restriction commutes with the connecting maps in every degree
+(`TauCeti.TateCohomology.δ_comp_res`), and after restriction the dimension-shifting sequence is
+still split over `k`, so the same rule holds for the cup product over `H`
+(`TauCeti.TateCohomology.cup_δ_of_leftInverse`).
+-/
+
+/-- **Restriction preserves the Tate cup product when the second factor has nonnegative degree.**
+For a subgroup `H` of a finite group `G`, a class `x` of any degree `p` and a class `y` of degree
+`q ≥ 0`, the restriction of `x ∪ y` to `H` is the cup product of the restrictions of `x` and
+`y`. -/
 @[simp]
-theorem cup_res_of_nonneg (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hp : 0 ≤ p) (hq : 0 ≤ q)
+theorem cup_res_of_nonneg_right (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (hq : 0 ≤ q)
     (h : p + q = r) (x : tateCohomology M p) (y : tateCohomology N q) :
     res (M ⊗ N) H r (cup M N p q r h x y) =
       cup (Rep.res H.subtype M) (Rep.res H.subtype N) p q r h (res M H p x) (res N H q y) := by
   induction q, hq using Int.leInduction generalizing N r with
   | base =>
     obtain rfl : p = r := by omega
-    rcases hp.eq_or_lt with rfl | hp
+    rcases lt_trichotomy p 0 with hp | rfl | hp
+    · rw [res_zero]
+      exact cup_res_zero_right_of_neg M N H hp x y
     · exact cup_res_zero_zero M N H x y
     · obtain ⟨n, rfl⟩ : ∃ n : ℕ, p = (n : ℤ) + 1 := ⟨p.toNat - 1, by omega⟩
       simp only [res_ofNat_succ, res_zero]
       exact cup_posRes_zero_right M N H n x y
   | succ q hq ih =>
     obtain rfl : r = p + q + 1 := by omega
-    exact cup_res_add_one M N H hp hq rfl x (ih (dimensionShiftUp N) rfl) y
+    exact cup_res_add_one M N H hq rfl x (ih (dimensionShiftUp N) rfl) y
 
 end TauCeti.TateCohomology

@@ -63,12 +63,8 @@ theorem _root_.GroupExtension.exists_splitting_continuous_freeProP_forall_apply_
     (he : ∀ x, S.rightHom (e x) = of x) :
     ∃ s : S.Splitting, Continuous ⇑s ∧ ∀ x, s (of x) = e x := by
   have hE : IsProP p E := S.isProP hinl hrh hM (isProP_freeProP p X)
-  -- The projection, bundled with its continuity; it evaluates as `S.rightHom` by construction.
-  let π : E →ₜ* freeProP p X := ⟨S.rightHom, hrh⟩
-  have hπ : ∀ z, π z = S.rightHom z := fun _ ↦ rfl
-  have hs : π.comp (lift hE e) = ContinuousMonoidHom.id (freeProP p X) :=
-    hom_ext fun x ↦ by simp [hπ, he]
-  exact ⟨GroupExtension.Splitting.mk (lift hE e).toMonoidHom fun y ↦ by
-    simpa [hπ] using DFunLike.congr_fun hs y, (lift hE e).continuous, fun x ↦ lift_of hE e x⟩
+  obtain ⟨s, hs, hsσ⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh (lift hE e)
+    (hom_ext fun x ↦ (congrArg S.rightHom (lift_of hE e x)).trans (he x))
+  exact ⟨s, hs, fun x ↦ (hsσ _).trans (lift_of hE e x)⟩
 
 end TauCeti

@@ -92,10 +92,14 @@ conflations are stored by their two maps rather than as a `CategoryTheory.ShortC
 the resolved object is a genuine index of the family and `FiniteResolution E P X` never needs an
 equality of objects to be matched on.
 
-Every operation is sealed behind its `@[simp]` equations, with one exception:
+Every operation is sealed behind its `@[simp]` equations, with two exceptions.
 `TauCeti.ExactStructure.FiniteResolution.syzygy` is the type index of
 `TauCeti.ExactStructure.FiniteResolution.truncate`, so the statements of the `truncate` equations
-only typecheck when its body is exposed.
+only typecheck when its body is exposed. `TauCeti.ExactStructure.FiniteResolution.map` is exposed
+so that the terms of an image resolution reduce on constructors: the identification
+`TauCeti.ExactStructure.FiniteResolution.termMapIso` of those terms with the images of the
+original terms is defined by recursion along the resolution, and each of its cases only
+typechecks when the image of a constructor unfolds to a constructor.
 
 The closure hypotheses on `P` are Mathlib's object-property type classes, and are assumed only
 where they are used: repleteness for `ofIso`, `CategoryTheory.ObjectProperty.ContainsZero` for
@@ -475,7 +479,7 @@ variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D] [HasB
 
 /-- The image of a finite `P`-resolution under a conflation-exact functor `F` carrying `P` into
 `P'`: applying `F` to every conflation of the chain gives a finite `P'`-resolution of `F X`. -/
-def map (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+@[expose] def map (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
     ∀ {X : C}, FiniteResolution E P X → FiniteResolution E' P' (F.obj X)
   | _, .base hX => .base ((P'.prop_inverseImage_iff F _).mp (hPP' _ hX))
   | _, .step hQ i p zero hp r =>

@@ -169,6 +169,25 @@ theorem splitPoint_apply_eq_iff (x : GridState n) (newColumn newRow : Fin (n + 1
   · rintro rfl
     simp
 
+/-- Splitting the point of column `s` across a column inserted just before it is inserting the
+point `(s.succ, newRow)`: the old point of column `s` moves to the new column `s.castSucc`, and
+every other column is embedded alike by `s.castSucc.succAbove` and `s.succ.succAbove`. -/
+theorem splitPoint_castSucc_eq_insertPoint (x : GridState n) (s : Fin n)
+    (newRow : Fin (n + 1)) :
+    x.splitPoint s.castSucc newRow s = x.insertPoint s.succ newRow := by
+  refine GridState.ext fun c => ?_
+  induction c using Fin.succAboveCases s.castSucc with
+  | x => rw [splitPoint_apply_newColumn, ← Fin.succAbove_succ_self, insertPoint_apply_succAbove]
+  | p c =>
+    rw [splitPoint_apply_succAbove]
+    split_ifs with hc
+    · rw [hc, Fin.succAbove_castSucc_self, insertPoint_apply_newColumn]
+    · rcases lt_or_gt_of_ne hc with h | h
+      · rw [Fin.succAbove_castSucc_of_lt _ _ h, ← Fin.succAbove_succ_of_le _ _ h.le,
+          insertPoint_apply_succAbove]
+      · rw [Fin.succAbove_castSucc_of_le _ _ h.le, ← Fin.succAbove_succ_of_lt _ _ h,
+          insertPoint_apply_succAbove]
+
 end GridState
 
 namespace GridDiagram

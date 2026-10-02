@@ -59,6 +59,8 @@ Herbrand shift instead.
   `𝓂[K] ^ (f(L/K) m)`.
 * `TauCeti.irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
   integer is irreducible exactly when the residue degree is one.
+* `TauCeti.addVal_norm`: the additive valuation of the norm of an integer is multiplied by the
+  inertia degree.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
 * `TauCeti.coe_norm_integerRing` and `TauCeti.coe_trace_integerRing`: the norm and trace of
@@ -361,6 +363,41 @@ theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
     apply Subtype.ext
     simpa using hπeq
   rwa [← hπnorm]
+
+omit [FiniteDimensional K L] in
+/-- **The valuation of a norm**: `v_K(N_{L/K}(z)) = f(L/K) v_L(z)` for every `z ∈ 𝒪[L]`, read on
+the additive valuations of the discrete valuation rings `𝒪[K]` and `𝒪[L]`. -/
+theorem addVal_norm (z : 𝒪[L]) :
+    IsDiscreteValuationRing.addVal 𝒪[K] (Algebra.norm 𝒪[K] z) =
+      inertiaDegree K L • IsDiscreteValuationRing.addVal 𝒪[L] z := by
+  let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  -- The norm of a uniformizer of `L` generates `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f`.
+  have hN : IsDiscreteValuationRing.addVal 𝒪[K] (Algebra.norm 𝒪[K] ϖ) = inertiaDegree K L := by
+    -- The ideal norm of `𝓂[L] = (ϖ)` is the principal ideal of `N(ϖ)`.
+    have hrel : Ideal.relNorm 𝒪[K] 𝓂[L] = Ideal.span {Algebra.norm 𝒪[K] ϖ} := by
+      rw [hϖ.maximalIdeal_eq, Ideal.relNorm_singleton, Algebra.intNorm_eq_norm]
+    -- On the other hand it is `𝓂[K] ^ f = (π ^ f)`.
+    have hpow : 𝓂[K] ^ inertiaDegree K L = Ideal.span {π ^ inertiaDegree K L} := by
+      rw [hπ.maximalIdeal_eq, Ideal.span_singleton_pow]
+    have hspan : Ideal.span {Algebra.norm 𝒪[K] ϖ} = Ideal.span {π ^ inertiaDegree K L} := by
+      rw [← hrel, ← hpow, relNorm_maximalIdeal_eq_maximalIdeal_pow]
+    rw [(IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2
+      (Ideal.span_singleton_eq_span_singleton.1 hspan)]
+    simp only [IsDiscreteValuationRing.addVal_pow,
+      IsDiscreteValuationRing.addVal_uniformizer hπ, nsmul_one]
+  rcases eq_or_ne z 0 with rfl | hz
+  · have hf : (inertiaDegree K L : ENat) ≠ 0 := by
+      exact_mod_cast (inertiaDegree_pos (K := K) (L := L)).ne'
+    simp [Algebra.norm_zero, nsmul_eq_mul, hf]
+  obtain ⟨k, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hz hϖ
+  have hu := IsDiscreteValuationRing.addVal_eq_zero_of_unit
+    (Units.map (Algebra.norm 𝒪[K] : 𝒪[L] →* 𝒪[K]) u)
+  rw [Units.coe_map] at hu
+  simp only [map_mul, map_pow, IsDiscreteValuationRing.addVal_mul, hu,
+    IsDiscreteValuationRing.addVal_pow, hN, IsDiscreteValuationRing.addVal_def' u hϖ k, zero_add,
+    nsmul_eq_mul, mul_comm]
 
 variable (L) in
 /-- The normalized valuation of an element of the norm group `N_{L/K}(Lˣ)` is divisible by the

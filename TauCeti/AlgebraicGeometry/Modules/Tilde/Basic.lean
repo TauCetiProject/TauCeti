@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
@@ -12,7 +13,12 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePrese
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 
 /-!
-# Base change of the sheaf associated with a module
+# Exactness and base change of the sheaf associated with a module
+
+The functor `M ↦ M~` from `R`-modules to `𝒪_{Spec R}`-modules is exact. It preserves finite
+colimits as a left adjoint of the global-section functor, and it preserves monomorphisms because
+a section of `M~` over an open subset `U` is a family of elements of the localizations `M_p`,
+`p ∈ U`, that is locally a fraction, and localization preserves injectivity.
 
 For a ring map `φ : R ⟶ S` and an `R`-module `M`, the pullback of the quasi-coherent sheaf `M~`
 along `Spec φ : Spec S ⟶ Spec R` is the sheaf associated with the base change `S ⊗_R M`:
@@ -31,6 +37,10 @@ free of finite rank.
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.tilde_map_app_injective`: an injective linear map `M ⟶ N` induces
+  injective maps `M~(U) ⟶ N~(U)` on sections;
+* `TauCeti.AlgebraicGeometry.preservesFiniteLimits_tildeFunctor`: the functor `M ↦ M~` preserves
+  finite limits, hence (with its preservation of colimits) short exact sequences;
 * `TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso`: the isomorphism
   `(Spec φ)^* M~ ≅ (S ⊗_R M)~`, natural in `M`;
 * `TauCeti.AlgebraicGeometry.unit_tildeFunctorCompPullbackIso_hom_app`: its characterization
@@ -40,13 +50,13 @@ free of finite rank.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Proposition II.5.2 (e)
+* R. Hartshorne, *Algebraic Geometry*, Proposition II.5.2 (a) (exactness) and (e) (base change)
 * [The Stacks Project, Tag 00NX](https://stacks.math.columbia.edu/tag/00NX)
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace TauCeti
 
@@ -57,6 +67,48 @@ open _root_.AlgebraicGeometry
 universe u
 
 noncomputable section
+
+section Exactness
+
+variable {R : CommRingCat.{u}}
+
+/-- The map `M~(U) ⟶ N~(U)` on sections induced by an injective linear map `f : M ⟶ N` is
+injective. -/
+theorem tilde_map_app_injective {M N : ModuleCat.{u} R} (f : M ⟶ N)
+    (hf : Function.Injective f.hom) (U : (Spec R).Opensᵒᵖ) :
+    Function.Injective ((tilde.map f).val.app U) := by
+  -- A section of `M~` over `U` is a family of elements of the localizations `M_p`, `p ∈ U`, and
+  -- `tilde.map f` acts on it pointwise through the localized maps `M_p ⟶ N_p`.
+  have hloc (p : PrimeSpectrum R) :
+      Function.Injective (StructureSheaf.Localizations.comapFun f.hom p) := by
+    intro a b hab
+    induction a using LocalizedModule.induction_on with | h a s => ?_
+    induction b using LocalizedModule.induction_on with | h b t => ?_
+    simp only [StructureSheaf.Localizations.comapFun_mk, LocalizedModule.mk_eq,
+      Submonoid.smul_def] at hab ⊢
+    obtain ⟨c, hc⟩ := hab
+    refine ⟨⟨c.1, c.2⟩, hf ?_⟩
+    rw [map_smul, map_smul, map_smul, map_smul]
+    exact hc
+  intro s t hst
+  exact Subtype.ext (funext fun p ↦ hloc p.1 (congr_arg (fun x ↦ x.1 p) hst))
+
+/-- The functor `M ↦ M~` sends monomorphisms of `R`-modules to monomorphisms of
+`𝒪_{Spec R}`-modules. -/
+instance mono_tilde_map {M N : ModuleCat.{u} R} (f : M ⟶ N) [Mono f] : Mono (tilde.map f) :=
+  (SheafOfModules.forget _).mono_of_mono_map <| PresheafOfModules.mono_of_injective fun U ↦
+    tilde_map_app_injective f ((ModuleCat.mono_iff_injective f).mp ‹_›) U
+
+/-- The functor `M ↦ M~` is left exact. Being a left adjoint, it is also right exact, so it sends
+short exact sequences of `R`-modules to short exact sequences of `𝒪_{Spec R}`-modules. -/
+instance preservesFiniteLimits_tildeFunctor : PreservesFiniteLimits (tilde.functor R) := by
+  rw [Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono]
+  intro S hS
+  have := hS.mono_f
+  exact ⟨((Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi _).mp inferInstance
+    S hS).1, inferInstanceAs (Mono (tilde.map S.f))⟩
+
+end Exactness
 
 section BaseChange
 

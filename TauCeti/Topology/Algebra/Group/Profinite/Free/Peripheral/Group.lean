@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Automorphism
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Permutation
 
 /-!
 # The peripheral automorphism group and its exponent character
@@ -26,10 +27,15 @@ as a topological group and splitting their exponent over principal units.
 
 * `IsPeripheralAut.mul`, `IsPeripheralAut.inv`: the laws for peripheral exponents.
 * `mem_peripheralAut_iff`: membership is the existence of a peripheral exponent.
+* `peripheralAut_le_peripheralPermAut`: peripheral automorphisms are peripheral up to the
+  trivial permutation.
 * `exponent_eq_iff`: the exponent character is characterized by the peripheral predicate.
 * `exponent_surjective`: every unit occurs as an exponent.
 * `mem_ker_exponent_iff`: the kernel is the exponent-one part.
 * `exponent_conj`: inner automorphisms have exponent one.
+* `permData_inclusion`, `permData_fst_eq_one_iff`: in rank at least two, a peripheral automorphism
+  has permutation data `(1, exponent φ)`, and the trivial permutation characterizes
+  `peripheralAut` inside `peripheralPermAut`.
 
 ## References
 
@@ -52,36 +58,14 @@ variable {hF : IsProP p F} {x : Fin r → F} {u v : ℤ_[p]ˣ}
 /-- Composition of peripheral automorphisms multiplies their exponents. -/
 theorem IsPeripheralAut.mul (hφ : IsPeripheralAut hF x u φ)
     (hψ : IsPeripheralAut hF x v ψ) : IsPeripheralAut hF x (u * v) (φ * ψ) := by
-  rw [isPeripheralAut_iff] at hφ hψ ⊢
-  have h (y : F) (hφ : IsConj (hF.padicPow y u) (φ y))
-      (hψ : IsConj (hF.padicPow y v) (ψ y)) :
-      IsConj (hF.padicPow y ↑(u * v)) ((φ * ψ) y) := by
-    obtain ⟨g, hg⟩ := isConj_iff.mp hφ
-    have hpow : IsConj (hF.padicPow y ↑(u * v)) (hF.padicPow (φ y) v) := by
-      apply isConj_iff.mpr
-      refine ⟨g, ?_⟩
-      rw [← hg, hF.conj_padicPow, ← hF.padicPow_mul, Units.val_mul]
-    have hmap := (φ : F →* F).map_isConj hψ
-    rw [hF.map_padicPow hF (φ : F →* F) φ.continuous] at hmap
-    exact hpow.trans hmap
-  exact ⟨fun i ↦ h (x i) (hφ.1 i) (hψ.1 i), h (cusp x) hφ.2 hψ.2⟩
+  rw [← isPeripheralPermAut_one_iff] at hφ hψ ⊢
+  simpa only [one_mul] using hφ.mul hψ
 
 /-- The inverse of a peripheral automorphism has inverse exponent. -/
 theorem IsPeripheralAut.inv (hφ : IsPeripheralAut hF x u φ) :
     IsPeripheralAut hF x u⁻¹ φ⁻¹ := by
-  rw [isPeripheralAut_iff] at hφ ⊢
-  have h (y : F) (hφ : IsConj (hF.padicPow y u) (φ y)) :
-      IsConj (hF.padicPow y ↑u⁻¹) (φ⁻¹ y) := by
-    have hmap := (φ.symm : F →* F).map_isConj hφ
-    simp only [MonoidHom.coe_ofClass, ContinuousMulEquiv.symm_apply_apply] at hmap
-    obtain ⟨g, hg⟩ := isConj_iff.mp hmap.symm
-    apply isConj_iff.mpr
-    refine ⟨g, ?_⟩
-    rw [← hF.conj_padicPow, hg, ContinuousAut.inv_apply]
-    simpa only [MonoidHom.coe_ofClass, hF.padicPow_padicPow_inv] using
-      (hF.map_padicPow hF (φ.symm : F →* F) φ.symm.continuous
-        (hF.padicPow y u) ↑u⁻¹).symm
-  exact ⟨fun i ↦ h (x i) (hφ.1 i), h (cusp x) hφ.2⟩
+  rw [← isPeripheralPermAut_one_iff] at hφ ⊢
+  simpa only [inv_one] using hφ.inv
 
 /-- The continuous automorphisms peripheral for `x` with some common unit exponent. -/
 def peripheralAut (hF : IsProP p F) (x : Fin r → F) : Subgroup (ContinuousAut F) where
@@ -105,6 +89,11 @@ theorem range_conj_le_peripheralAut (hF : IsProP p F) (x : Fin r → F) :
     (ContinuousAut.conj : F →* ContinuousAut F).range ≤ peripheralAut hF x := by
   rintro _ ⟨g, rfl⟩
   exact ⟨1, isPeripheralAut_conj hF x g⟩
+
+/-- Peripheral automorphisms are peripheral up to the trivial permutation. -/
+theorem peripheralAut_le_peripheralPermAut (hF : IsProP p F) (x : Fin r → F) :
+    peripheralAut hF x ≤ peripheralPermAut hF x := fun φ ⟨u, hu⟩ ↦
+  (mem_peripheralPermAut_iff hF x φ).mpr ⟨1, u, (isPeripheralPermAut_one_iff hF x u φ).mpr hu⟩
 
 /-- Inner automorphisms viewed as peripheral automorphisms. -/
 def conj (hF : IsProP p F) (x : Fin r → F) : F →* peripheralAut hF x :=
@@ -165,5 +154,29 @@ theorem exponent_conj (g : F) : exponent hF e hr (conj hF (basis e) g) = 1 :=
   (exponent_eq_iff hF e hr _ 1).mpr (isPeripheralAut_conj hF (basis e) g)
 
 end Exponent
+
+section PermData
+
+variable (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) (hr : 2 ≤ r)
+
+/-- A peripheral automorphism has the trivial permutation, and its exponent, as permutation
+data. -/
+@[simp]
+theorem permData_inclusion (φ : peripheralAut hF (basis e)) :
+    permData hF e hr (Subgroup.inclusion (peripheralAut_le_peripheralPermAut hF (basis e)) φ) =
+      (1, exponent hF e (zero_lt_two.trans_le hr) φ) :=
+  (permData_eq_iff hF e hr _ _ _).mpr <| (isPeripheralPermAut_one_iff hF _ _ _).mpr <|
+    isPeripheralAut_exponent hF e _ φ
+
+/-- The permutation of a permutation-peripheral automorphism is trivial exactly when the
+automorphism is peripheral. -/
+theorem permData_fst_eq_one_iff (φ : peripheralPermAut hF (basis e)) :
+    (permData hF e hr φ).1 = 1 ↔ (φ : ContinuousAut F) ∈ peripheralAut hF (basis e) := by
+  refine ⟨fun h ↦ ⟨(permData hF e hr φ).2, ?_⟩, fun ⟨u, hu⟩ ↦ ?_⟩
+  · rw [← isPeripheralPermAut_one_iff, ← h]
+    exact isPeripheralPermAut_permData hF e hr φ
+  · rw [(permData_eq_iff hF e hr φ 1 u).mpr ((isPeripheralPermAut_one_iff hF _ _ _).mpr hu)]
+
+end PermData
 
 end TauCeti.Peripheral

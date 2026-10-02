@@ -98,11 +98,7 @@ theorem toAdd_exponentSum_of_pow_apply [DecidableEq X] (i : X) (n : ℕ) (k : X)
 @[simp]
 theorem exponentSum_padicPow_of [DecidableEq X] (x : X) (a : ℤ_[p]) :
     exponentSum p X ((isProP_freeProP p X).padicPow (of x) a) = ofAdd (Pi.single x a) := by
-  have h := (isProP_freeProP p X).map_padicPow (isProP_multiplicative_pi_padicInt p X)
-    (exponentSum p X : freeProP p X →* Multiplicative (X → ℤ_[p])) (exponentSum p X).continuous
-    (of x) a
-  rw [MonoidHom.coe_ofClass] at h
-  rw [h, exponentSum_of, IsProP.padicPow_ofAdd_pi, ← Pi.single_smul, smul_eq_mul, mul_one]
+  rw [IsProP.map_padicPow_pi, exponentSum_of, toAdd_ofAdd, ← Pi.single_smul, smul_eq_mul, mul_one]
 
 /-- The exponent vector of the `i`-th `ℕ`-indexed generator of `freeProP p (Fin n)` is the
 coordinate vector at `i`; out of range it is `0`. -/

@@ -115,6 +115,8 @@ a profinite group computes with.
   extension has a continuous homomorphic section exactly when its class vanishes.**
 * `TauCeti.ProfiniteGroupExtension.exists_contCohomologyClass_eq`: for profinite `G` and `M`,
   every class of `H²(G, M)` is the class of a profinite extension.
+* `TauCeti.ProfiniteGroupExtension.subsingleton_H2_of_forall_exists_splitting`: for profinite `G`
+  and `M`, if every profinite extension of `G` by `M` splits continuously then `H²(G, M) = 0`.
 * `TauCeti.FactorSet.contCohomologyClass_map` and
   `TauCeti.ProfiniteGroupExtension.contCohomologyClassEquiv_map`: **the classification is natural
   in the coefficient module**: the class of a pushforward is the image of the class under the
@@ -611,6 +613,17 @@ theorem exists_contCohomologyClass_eq (c : H2 G (Additive M)) :
     ∃ X : ProfiniteGroupExtension G M, X.contCohomologyClass = c := by
   obtain ⟨α, hα, h⟩ := FactorSet.exists_contCohomologyClass_eq c
   exact ⟨ofFactorSet α hα, (contCohomologyClass_ofFactorSet α hα).trans h⟩
+
+/-- **`H²(G, M)` vanishes when every profinite extension splits**: every class is the class of a
+profinite extension, and the class of an extension with a continuous homomorphic section is zero. -/
+theorem subsingleton_H2_of_forall_exists_splitting
+    (h : ∀ X : ProfiniteGroupExtension G M, ∃ s : X.toGroupExtension.Splitting, Continuous ⇑s) :
+    Subsingleton (H2 G (Additive M)) := by
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨X, rfl⟩ := exists_contCohomologyClass_eq c
+  rw [contCohomologyClass_def,
+    ← X.toGroupExtension.exists_splitting_continuous_iff_contCohomologyClass_eq_zero]
+  exact h X
 
 variable (G M) in
 /-- **Continuous `H²` classifies profinite extensions**: the class descends to a bijection from the
