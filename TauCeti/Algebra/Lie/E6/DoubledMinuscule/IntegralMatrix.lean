@@ -105,6 +105,22 @@ private theorem rep_rootGenerator_matrixBasis_eq_smul (j : Fin 6 ⊕ Fin 6) (s :
     simp only [matrixWeight_apply, Pi.smul_apply, Pi.single_apply]
     split_ifs <;> simp_all
 
+/-- A numbered root operator moves a coordinate to its simple reflection, with coefficient
+`1` on the minuscule block and `-1` on the dual block, when its weight permits the move. -/
+@[simp]
+theorem rootIntMatrix_apply (j : Fin 6 ⊕ Fin 6) (a b : Fin 54) :
+    rootIntMatrix j a b =
+      if a = matrixIndexEquiv (reflection (Sum.elim id id j) (matrixIndexEquiv.symm b)) then
+        if matrixWeight b (Sum.elim id id j) =
+            (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ)
+        then summandSign (matrixIndexEquiv.symm b) else 0
+      else 0 :=
+  kostantRootGeneratorIntMatrix_apply_of_eq
+    (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+    (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+    rep_kostantForm_mem_lattice j matrixBasis
+    (rep_rootGenerator_matrixBasis_eq_smul j b) a
+
 /-- The root-operator matrices have zero entries between distinct minuscule summands. -/
 theorem rootIntMatrix_eq_zero_of_summand_ne (j : Fin 6 ⊕ Fin 6) {a b : Fin 54}
     (hab : matrixSummand a ≠ matrixSummand b) : rootIntMatrix j a b = 0 := by
