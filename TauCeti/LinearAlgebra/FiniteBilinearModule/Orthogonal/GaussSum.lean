@@ -35,65 +35,6 @@ namespace TauCeti.FiniteQuadraticModule
 
 variable (A : FiniteQuadraticModule) {H : AddSubgroup A}
 
-/-- Restricting to the orthogonal complement of a quadratic-isotropic subgroup leaves the
-Gauss sum unchanged, even when the ambient quadratic module is degenerate. -/
-@[simp]
-theorem gaussSum_restrict_orthogonalComplement (hH : A.IsIsotropic H) :
-    (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)).gaussSum = A.gaussSum := by
-  classical
-  obtain ⟨_⟩ := nonempty_fintype A
-  -- Use the subgroup enumeration on the restricted carrier.
-  let : Fintype (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)) :=
-    inferInstanceAs (Fintype (A.toFiniteBilinearModule.orthogonalComplement H))
-  have hq := (A.isIsotropic_def).mp hH
-  have hcard : (Nat.card H : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  -- The character sum over H detects membership in its orthogonal complement.
-  have hinner (a : A) :
-      ∑ h : H, expCircle (A.toFiniteBilinearModule.pairing a h) =
-        if a ∈ A.toFiniteBilinearModule.orthogonalComplement H then (Nat.card H : ℂ) else 0 := by
-    have h := CharacterModule.sum_expCircle (A.toFiniteBilinearModule.pairingRestrict H a)
-    simp only [FiniteBilinearModule.pairingRestrict_apply] at h
-    rw [h, Nat.card_eq_fintype_card]
-    refine if_congr ?_ rfl rfl
-    rw [← AddMonoidHom.mem_ker, FiniteBilinearModule.pairingRestrict_ker]
-  have hshift (h : H) : ∑ a, expCircle (A.quadratic (a + h)) = A.gaussSum := by
-    rw [gaussSum_eq_sum]
-    exact Equiv.sum_comp (Equiv.addRight (h : A)) (fun a ↦ expCircle (A.quadratic a))
-  -- Average all translates by H, then sum over the surviving subgroup.
-  apply mul_left_cancel₀ hcard
-  symm
-  calc (Nat.card H : ℂ) * A.gaussSum
-      = ∑ h : H, ∑ a, expCircle (A.quadratic (a + h)) := by
-        simp [hshift, Nat.card_eq_fintype_card]
-    _ = ∑ a, expCircle (A.quadratic a) *
-          ∑ h : H, expCircle (A.toFiniteBilinearModule.pairing a h) := by
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun a _ ↦ ?_
-        rw [Finset.mul_sum]
-        refine Finset.sum_congr rfl fun h _ ↦ ?_
-        rw [← AddChar.map_add_eq_mul, ← polar_eq_pairing, QuadraticMap.polar, hq h h.2]
-        congr 1
-        abel
-    _ = (Nat.card H : ℂ) * (A.restrict
-          (A.toFiniteBilinearModule.orthogonalComplement H)).gaussSum := by
-        have hs : (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)).gaussSum =
-            ∑ x : A.toFiniteBilinearModule.orthogonalComplement H,
-              expCircle (A.quadratic x) := by
-          rw [gaussSum_eq_sum]
-          exact Fintype.sum_equiv (Equiv.refl _) _ _
-            (fun x ↦ congrArg expCircle (A.restrict_quadratic _ x))
-        simp_rw [hinner]
-        rw [hs, Finset.mul_sum]
-        have ht := Finset.sum_subtype
-          (F := inferInstanceAs (Fintype (A.toFiniteBilinearModule.orthogonalComplement H)))
-          (p := fun a : A ↦ a ∈ A.toFiniteBilinearModule.orthogonalComplement H)
-          (Finset.univ.filter (fun a : A ↦ a ∈ A.toFiniteBilinearModule.orthogonalComplement H))
-          (by simp) (fun a : A ↦ (Nat.card H : ℂ) * expCircle (A.quadratic a))
-        rw [← ht, Finset.sum_filter]
-        apply Finset.sum_congr rfl
-        intro a _
-        split_ifs <;> simp [mul_comm]
-
 /-- **Gauss sums under isotropic reduction.** For a quadratic-isotropic subgroup `H`,
 `G(A) = |H| G(H⊥ / H)`. Nondegeneracy is unnecessary. -/
 theorem gaussSum_eq_card_mul_gaussSum_orthogonalQuotient (hH : A.IsIsotropic H) :
