@@ -353,12 +353,10 @@ variable (n) [NeZero n]
 
 attribute [local instance] continuousSMul_trivialFp
 
-/-- Given a primitive `n`th root of unity in `F`, the Kummer isomorphism identifies the
-`n`th-power classes with `H¹(G_F, ℤ/n)` for the trivial action. The coefficient identification
-sends the chosen root to `1 : ZMod n`. No finiteness assumption is required. -/
-def kummerEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
-    Additive (powerClassQuotient Fˣ n) ≃+ cohomFp n (Field.absoluteGaloisGroup F) 1 := by
-  have := hζ.neZero'
+/-- The degree-one coefficient transport from `μₙ` to trivial `ℤ/n` coefficients, with
+the chosen primitive root identified with `1 : ZMod n`. -/
+def muNRepH1EquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    continuousCohomology 1 (muNRep n F) ≃+ cohomFp n (Field.absoluteGaloisGroup F) 1 := by
   let ζu := Units.mk0 ζ (hζ.ne_zero (NeZero.ne n))
   have hζu : IsPrimitiveRoot
       (Units.map (algebraMap F (SeparableClosure F)).toMonoidHom ζu) n :=
@@ -371,9 +369,24 @@ def kummerEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
     (ContinuousMulEquiv.refl _) (e.trans (trivialFpEquiv n _).symm.toAddEquiv)
     continuous_of_discreteTopology continuous_of_discreteTopology (fun g x ↦ by
       rw [TopRep.distribMulAction_smul, muNRep_ρ_apply_eq_self hζ, smul_trivialFp_V])
-  exact (kummerEquiv F (NeZero.ne (n : F)).isUnit).trans
-    ((muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete.symm.trans
-      (h1.trans (trivialFp n _).explicitH1AddEquivContinuousCohomologyOfDiscrete))
+  exact (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete.symm.trans
+    (h1.trans (trivialFp n _).explicitH1AddEquivContinuousCohomologyOfDiscrete)
+
+/-- Given a primitive `n`th root of unity in `F`, the Kummer isomorphism identifies the
+`n`th-power classes with `H¹(G_F, ℤ/n)` for the trivial action. The coefficient identification
+sends the chosen root to `1 : ZMod n`. No finiteness assumption is required. -/
+def kummerEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    Additive (powerClassQuotient Fˣ n) ≃+ cohomFp n (Field.absoluteGaloisGroup F) 1 := by
+  have := hζ.neZero'
+  exact (kummerEquiv F (NeZero.ne (n : F)).isUnit).trans (muNRepH1EquivTrivialFp n F hζ)
+
+/-- The trivial-coefficient Kummer equivalence sends the power class of `a` to its `μₙ`
+Kummer class transported by the coefficient identification determined by the chosen root. -/
+@[simp]
+theorem kummerEquivTrivialFp_ofMul_mk {ζ : F} (hζ : IsPrimitiveRoot ζ n) (a : Fˣ) :
+    kummerEquivTrivialFp n F hζ (Additive.ofMul (a : powerClassQuotient Fˣ n)) =
+      muNRepH1EquivTrivialFp n F hζ (kummerClass F hζ.neZero'.out.isUnit a) := by
+  rw [kummerEquivTrivialFp, AddEquiv.trans_apply, kummerEquiv_ofMul_mk]
 
 /-- If `F` contains a primitive `n`th root, the cardinality of `H¹(G_F, ℤ/n)` equals the
 number of `n`th-power classes. This equality of `Nat.card` also holds when both groups are
