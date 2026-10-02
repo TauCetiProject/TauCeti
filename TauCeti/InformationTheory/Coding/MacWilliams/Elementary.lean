@@ -36,7 +36,12 @@ namespace TauCeti
 open MvPolynomial
 
 /-- The MacWilliams substitution of the repetition enumerator is its cardinality times the
-single-parity-check enumerator. -/
+single-parity-check enumerator.
+
+This is a pre-simp lemma (`simp↓`): its left-hand side contains the repetition enumerator, which
+the `simp` lemma `weightEnumerator_repetitionCode` rewrites first whenever `ι` is nonempty, so a
+plain `simp` attribute would not fire at positive length. -/
+@[simp↓]
 theorem aeval_weightEnumerator_repetitionCode (R ι : Type*) [Ring R] [Finite R] [DecidableEq R]
     [Fintype ι] :
     aeval ![X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
