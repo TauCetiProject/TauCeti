@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Bornology.BoundedOperation
-import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 
 /-!
 # Unbounded Jordan domains
@@ -174,7 +173,7 @@ theorem isJordanCurve_frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closur
     exact hq (frontier_subset_closure (hzq ▸ hz))
 
 /-- **Carathéodory's theorem on the closed upper half-plane for an unbounded Jordan domain.**  Let
-`U` be a simply connected open subset of `ℂ` with a point `q` outside its closure, and suppose that
+`U` be a connected open subset of `ℂ` with a point `q` outside its closure, and suppose that
 the frontier of `U` together with the point at infinity is a Jordan curve of the Riemann sphere, so
 that `U` is unbounded.  Then there is a map which is continuous on the closed upper half-plane,
 holomorphic on the open upper half-plane, a bijection from the open upper half-plane onto `U`, from
@@ -184,7 +183,7 @@ tends to infinity at infinity within the closed half-plane.
 The Jordan curve theorem on the sphere would supply the exterior point `q` from the other
 hypotheses; here it is assumed. -/
 theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty (hUo : IsOpen U)
-    (hUc : IsSimplyConnected U) (hq : q ∉ closure U)
+    (hUc : IsConnected U) (hq : q ∉ closure U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) :
     ∃ f : ℂ → ℂ, ContinuousOn f {z | 0 ≤ z.im} ∧ DifferentiableOn ℂ f upperHalfPlaneSet ∧
       BijOn f upperHalfPlaneSet U ∧ BijOn f {z | 0 ≤ z.im} (closure U) ∧
@@ -194,11 +193,9 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
   have hUb := not_isBounded_of_isJordanCurve_frontier hUJ
   -- the inverted domain is a bounded Jordan domain with `0` on its frontier
   have hVo := isOpen_image_inv_sub hUo hqU
-  have hVc : IsSimplyConnected ((fun z : ℂ => (z - q)⁻¹) '' U) :=
-    isSimplyConnected_image_of_differentiableOn_of_injOn hUo hUc
-      (DifferentiableOn.inv (h := fun z : ℂ => z - q) (by fun_prop) fun z hz =>
-        sub_ne_zero.mpr fun (h : z = q) => hqU (h ▸ hz))
-      (inv_injective.comp (sub_left_injective (b := q))).injOn
+  have hVc : IsConnected ((fun z : ℂ => (z - q)⁻¹) '' U) :=
+    hUc.image _ ((continuousOn_id.sub continuousOn_const).inv₀ fun z hz =>
+      sub_ne_zero.mpr fun (h : z = q) => hqU (h ▸ hz))
   have hVfr := frontier_image_inv_sub hUo hq hUb
   obtain ⟨g, hgc, hgd, hgV, hgcl, hgR, hg0⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hVo hVc
@@ -232,7 +229,7 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
 infinity to infinity, together with real prevertices `a i` mapping to prescribed distinct points
 `v i` of the frontier of `U`. -/
 theorem exists_prevertices_of_isJordanCurve_insert_infty {ι : Type*} (hUo : IsOpen U)
-    (hUc : IsSimplyConnected U) (hq : q ∉ closure U)
+    (hUc : IsConnected U) (hq : q ∉ closure U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
     (hv : Injective v) (hvU : ∀ i, v i ∈ frontier U) :
     ∃ f : ℂ → ℂ, ∃ a : ι → ℝ, Injective a ∧

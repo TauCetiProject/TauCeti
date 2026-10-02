@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Bornology.Basic
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.Connected.LocallyConnected
+import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Frontier
 
 /-!
@@ -59,6 +61,8 @@ separation, or any other regularity of `K`.
   `TauCeti.filledHull_mono` its two structural properties.
 * `TauCeti.filledHull_eq_self` — filling a set whose complement is preconnected and unbounded
   changes nothing.
+* `TauCeti.filledHull_eq_self_of_isPreconnected_frontier` — an open set with preconnected frontier
+  and unbounded complement has no holes: filling it changes nothing.
 * `IsPreconnected.subset_filledHull` — a preconnected set disjoint from `K` that meets the
   filled hull lies in it.
 * `TauCeti.subset_filledHull_of_frontier_subset` — a bounded set whose frontier `K` swallows
@@ -103,6 +107,16 @@ theorem filledHull_eq_self (h : IsPreconnected Kᶜ) (hu : ¬ IsBounded Kᶜ) : 
   by_contra hxK
   exact hu ((mem_filledHull_iff.mp hx).subset
     (h.subset_connectedComponentIn (mem_compl hxK) subset_rfl))
+
+/-- **An open set with preconnected frontier has no holes**, in a preconnected, locally connected
+space: if the complement of `K` is unbounded, filling `K` changes nothing. The complement is then
+preconnected (`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`), so this is
+`TauCeti.filledHull_eq_self`. A bounded open set of the plane whose frontier is a Jordan curve is
+the basic example. -/
+theorem filledHull_eq_self_of_isPreconnected_frontier [LocallyConnectedSpace E]
+    [PreconnectedSpace E] (hK : IsOpen K) (hf : IsPreconnected (frontier K))
+    (hu : ¬ IsBounded Kᶜ) : filledHull K = K :=
+  filledHull_eq_self (isPreconnected_compl_of_isPreconnected_frontier hK hf) hu
 
 /-- **A preconnected set that a set cuts off from infinity lies in its filled hull.** If `S` is
 preconnected and disjoint from `K`, then `S` lies in a single connected component of `Kᶜ`; meeting
