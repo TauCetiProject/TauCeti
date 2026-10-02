@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.Data.Set.Card
@@ -88,9 +89,11 @@ theorem ncard_fixedBy_sum {G X Y : Type*} [Monoid G] [MulAction G X] [MulAction 
 
 /-- For the fiberwise action on an indexed disjoint union, fixed-point counts add over the
 indices. The monoid fixes the index of each point. -/
-theorem card_fixedBy_sigma {G ι : Type*} [Monoid G] [Fintype ι] (X : ι → Type*)
+theorem card_fixedBy_sigma {G ι : Type*} [Monoid G] [Finite ι] (X : ι → Type*)
     [∀ i, MulAction G (X i)] [∀ i, Finite (X i)] (g : G) :
-    Nat.card (fixedBy (Σ i, X i) g) = ∑ i, Nat.card (fixedBy (X i) g) := by
+    Nat.card (fixedBy (Σ i, X i) g) = ∑ᶠ i, Nat.card (fixedBy (X i) g) := by
+  have := Fintype.ofFinite ι
+  rw [finsum_eq_sum_of_fintype]
   have hset : fixedBy (Σ i, X i) g = Set.univ.sigma (fun i ↦ fixedBy (X i) g) := by
     ext ⟨i, x⟩
     simp [mem_fixedBy]
@@ -100,9 +103,9 @@ theorem card_fixedBy_sigma {G ι : Type*} [Monoid G] [Fintype ι] (X : ι → Ty
 
 /-- The fixed-point count on a fiberwise indexed disjoint union, in simp normal form. -/
 @[simp]
-theorem ncard_fixedBy_sigma {G ι : Type*} [Monoid G] [Fintype ι] (X : ι → Type*)
+theorem ncard_fixedBy_sigma {G ι : Type*} [Monoid G] [Finite ι] (X : ι → Type*)
     [∀ i, MulAction G (X i)] [∀ i, Finite (X i)] (g : G) :
-    (fixedBy (Σ i, X i) g).ncard = ∑ i, (fixedBy (X i) g).ncard := by
+    (fixedBy (Σ i, X i) g).ncard = ∑ᶠ i, (fixedBy (X i) g).ncard := by
   simpa only [Nat.card_coe_set_eq] using card_fixedBy_sigma X g
 
 variable [Group G] [MulAction G X] [MulAction G Y]
