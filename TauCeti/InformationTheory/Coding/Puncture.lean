@@ -8,7 +8,11 @@ module
 public import TauCeti.InformationTheory.Coding.Reindex
 
 /-!
-# Puncturing and shortening linear codes
+# Puncturing and shortening additive and linear codes
+
+An additive code is an additive subgroup of the word space; its puncture is the image under
+restriction, and its shortening is the inverse image under extension by zero. These operations
+require only an abelian alphabet. Forgetting scalar closure commutes with both operations.
 
 A linear code on coordinates `ι` is a submodule of the word space `ι → F`, as defined in
 `TauCeti/InformationTheory/Coding/Basic.lean`. Given a set `s` of coordinates to retain,
@@ -39,6 +43,100 @@ public section
 
 namespace TauCeti
 
+namespace AdditiveCode
+
+variable {A ι : Type*} [AddCommGroup A]
+
+/-- Puncturing an additive code retains precisely the coordinates in `s`. -/
+def puncture (C : AdditiveCode A ι) (s : Set ι) : AdditiveCode A s :=
+  C.map (AddMonoidHom.pi fun i : s ↦ Pi.evalAddMonoidHom (fun _ : ι ↦ A) i)
+
+/-- Puncturing is the image under the coordinate restriction homomorphism. -/
+theorem puncture_def (C : AdditiveCode A ι) (s : Set ι) :
+    puncture C s =
+      C.map (AddMonoidHom.pi fun i : s ↦ Pi.evalAddMonoidHom (fun _ : ι ↦ A) i) := (rfl)
+
+/-- Shortening retains the words whose extension by zero is a codeword. -/
+noncomputable def shorten (C : AdditiveCode A ι) (s : Set ι) : AdditiveCode A s :=
+  C.comap (Function.ExtendByZero.hom A (Subtype.val : s → ι))
+
+/-- Shortening is the inverse image under extension by zero. -/
+theorem shorten_def (C : AdditiveCode A ι) (s : Set ι) :
+    shorten C s = C.comap (Function.ExtendByZero.hom A (Subtype.val : s → ι)) := (rfl)
+
+/-- A word belongs to the punctured code exactly when it restricts a codeword. -/
+@[simp]
+theorem mem_puncture {C : AdditiveCode A ι} {s : Set ι} {y : s → A} :
+    y ∈ puncture C s ↔ ∃ x ∈ C, ∀ i : s, x i = y i := by
+  simp [puncture_def, AddSubgroup.mem_map, funext_iff]
+
+/-- A word belongs to the shortened code exactly when its extension by zero belongs to
+the original code. -/
+@[simp]
+theorem mem_shorten_iff_extend_mem {C : AdditiveCode A ι} {s : Set ι} {y : s → A} :
+    y ∈ shorten C s ↔ Subtype.val.extend y 0 ∈ C := by
+  rw [shorten_def, AddSubgroup.mem_comap]
+  -- The extension hom coerces definitionally to `fun y ↦ Subtype.val.extend y 0`.
+  rfl
+
+/-- Equivalently, shortening restricts the codewords that vanish outside the retained set. -/
+theorem mem_shorten {C : AdditiveCode A ι} {s : Set ι} {y : s → A} :
+    y ∈ shorten C s ↔
+      ∃ x ∈ C, (∀ i ∉ s, x i = 0) ∧ ∀ j : s, x j = y j := by
+  rw [mem_shorten_iff_extend_mem]
+  constructor
+  · intro h
+    refine ⟨_, h, fun i hi ↦ ?_, fun j ↦ Subtype.val_injective.extend_apply y 0 j⟩
+    rw [Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2), Pi.zero_apply]
+  · rintro ⟨x, hx, hx0, hxy⟩
+    convert hx using 1
+    funext i
+    by_cases hi : i ∈ s
+    · exact (Subtype.val_injective.extend_apply y 0 ⟨i, hi⟩).trans (hxy ⟨i, hi⟩).symm
+    · rw [hx0 i hi, Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2),
+        Pi.zero_apply]
+
+/-- Every shortened word is a punctured word. -/
+theorem shorten_le_puncture (C : AdditiveCode A ι) (s : Set ι) :
+    shorten C s ≤ puncture C s := by
+  intro y hy
+  obtain ⟨x, hx, _, hxy⟩ := mem_shorten.mp hy
+  exact mem_puncture.mpr ⟨x, hx, hxy⟩
+
+/-- Puncturing preserves inclusion of additive codes. -/
+@[gcongr]
+theorem puncture_mono {C D : AdditiveCode A ι} (h : C ≤ D) (s : Set ι) :
+    puncture C s ≤ puncture D s := AddSubgroup.map_mono h
+
+/-- Shortening preserves inclusion of additive codes. -/
+@[gcongr]
+theorem shorten_mono {C D : AdditiveCode A ι} (h : C ≤ D) (s : Set ι) :
+    shorten C s ≤ shorten D s := AddSubgroup.comap_mono h
+
+/-- Puncturing the zero code gives the zero code. -/
+@[simp]
+theorem puncture_bot (s : Set ι) : puncture (⊥ : AdditiveCode A ι) s = ⊥ :=
+  AddSubgroup.map_bot _
+
+/-- Shortening the zero code gives the zero code. -/
+@[simp]
+theorem shorten_bot (s : Set ι) : shorten (⊥ : AdditiveCode A ι) s = ⊥ := by
+  rw [shorten_def, AddMonoidHom.comap_bot, AddMonoidHom.ker_eq_bot_iff]
+  -- The extension hom coerces definitionally to `fun y ↦ Subtype.val.extend y 0`.
+  exact Function.extend_injective Subtype.val_injective _
+
+/-- Puncturing the whole word space gives the whole retained word space. -/
+@[simp]
+theorem puncture_top (s : Set ι) : puncture (⊤ : AdditiveCode A ι) s = ⊤ :=
+  AddSubgroup.map_top_of_surjective _ (Subtype.val_injective.surjective_comp_right' 0)
+
+/-- Shortening the whole word space gives the whole retained word space. -/
+@[simp]
+theorem shorten_top (s : Set ι) : shorten (⊤ : AdditiveCode A ι) s = ⊤ :=
+  AddSubgroup.comap_top _
+
+end AdditiveCode
+
 variable {F : Type*} [Field F] {ι : Type*}
 
 /-- Puncturing a code at `s` retains precisely the coordinates in `s`. -/
@@ -60,11 +158,29 @@ theorem shorten_def (C : LinearCode F ι) (s : Set ι) :
     shorten C s = (C ⊓ Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F)).map
       (LinearMap.funLeft F F (Subtype.val : s → ι)) := (rfl)
 
+/-- Forgetting scalar closure commutes with puncturing a linear code. -/
+@[simp]
+theorem LinearCode.toAddSubgroup_puncture (C : LinearCode F ι) (s : Set ι) :
+    (puncture C s).toAddSubgroup = AdditiveCode.puncture C.toAddSubgroup s := by
+  rw [puncture_def, Submodule.map_toAddSubgroup, AdditiveCode.puncture_def]
+  -- Both bundled homomorphisms restrict a word along `Subtype.val`.
+  congr 1
+
+/-- Forgetting scalar closure commutes with shortening a linear code. -/
+@[simp]
+theorem LinearCode.toAddSubgroup_shorten (C : LinearCode F ι) (s : Set ι) :
+    (shorten C s).toAddSubgroup = AdditiveCode.shorten C.toAddSubgroup s := by
+  ext y
+  simp only [Submodule.mem_toAddSubgroup, shorten_def, Submodule.mem_map,
+    Submodule.mem_inf, Submodule.mem_pi, Submodule.mem_bot, AdditiveCode.mem_shorten,
+    LinearMap.funLeft_apply, funext_iff, Set.mem_compl_iff, and_assoc]
+
 /-- A word belongs to the punctured code exactly when it is the restriction of a codeword. -/
 @[simp]
 theorem mem_puncture {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ puncture C s ↔ ∃ x ∈ C, ∀ j : s, x j = y j := by
-  simp [puncture, Submodule.mem_map, LinearMap.funLeft_apply, funext_iff]
+  rw [← Submodule.mem_toAddSubgroup, LinearCode.toAddSubgroup_puncture]
+  simp only [AdditiveCode.mem_puncture, Submodule.mem_toAddSubgroup]
 
 /-- A word belongs to the shortened code exactly when its extension by zero is a codeword:
 equivalently, it is the restriction of a codeword which vanishes off the retained set. -/
@@ -72,31 +188,15 @@ equivalently, it is the restriction of a codeword which vanishes off the retaine
 theorem mem_shorten {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ shorten C s ↔
       ∃ x ∈ C, (∀ i ∉ s, x i = 0) ∧ ∀ j : s, x j = y j := by
-  rw [shorten, Submodule.mem_map]
-  constructor
-  · rintro ⟨x, ⟨hxC, hxs⟩, hxy⟩
-    refine ⟨x, hxC, Submodule.mem_pi.mp hxs, fun j ↦ ?_⟩
-    simpa [LinearMap.funLeft_apply] using congrFun hxy j
-  · rintro ⟨x, hxC, hxs, hxy⟩
-    refine ⟨x, ⟨hxC, Submodule.mem_pi.mpr hxs⟩, ?_⟩
-    ext j
-    simpa [LinearMap.funLeft_apply] using hxy j
+  rw [← Submodule.mem_toAddSubgroup, LinearCode.toAddSubgroup_shorten]
+  simp only [AdditiveCode.mem_shorten, Submodule.mem_toAddSubgroup]
 
 /-- A word on the retained coordinates belongs to the shortened code exactly when its extension
 by zero belongs to the original code. -/
 theorem mem_shorten_iff_extend_mem {C : LinearCode F ι} {s : Set ι} {y : s → F} :
     y ∈ shorten C s ↔ Subtype.val.extend y 0 ∈ C := by
-  rw [mem_shorten]
-  constructor
-  · rintro ⟨x, hxC, hx0, hxy⟩
-    convert hxC using 1
-    funext i
-    by_cases hi : i ∈ s
-    · exact (Subtype.val_injective.extend_apply y 0 ⟨i, hi⟩).trans (hxy ⟨i, hi⟩).symm
-    · rw [hx0 i hi, Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2), Pi.zero_apply]
-  · intro h
-    refine ⟨_, h, fun i hi ↦ ?_, fun j ↦ Subtype.val_injective.extend_apply y 0 j⟩
-    rw [Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2), Pi.zero_apply]
+  rw [← Submodule.mem_toAddSubgroup, LinearCode.toAddSubgroup_shorten,
+    AdditiveCode.mem_shorten_iff_extend_mem, Submodule.mem_toAddSubgroup]
 
 /-- Membership in a puncture retaining one coordinate is determined by that coordinate. -/
 theorem mem_puncture_singleton {C : LinearCode F ι} {i : ι} {y : ({i} : Set ι) → F} :
@@ -274,49 +374,51 @@ theorem shorten_shorten (C : LinearCode F ι) (s : Set ι) (t : Set s) :
 
 /-- Every shortened word is a punctured word. -/
 theorem shorten_le_puncture (C : LinearCode F ι) (s : Set ι) : shorten C s ≤ puncture C s := by
-  intro y hy
-  obtain ⟨x, hxC, _, hxy⟩ := mem_shorten.mp hy
-  exact mem_puncture.mpr ⟨x, hxC, hxy⟩
+  apply (Submodule.toAddSubgroup_le _ _).mp
+  simpa only [LinearCode.toAddSubgroup_shorten, LinearCode.toAddSubgroup_puncture] using
+    AdditiveCode.shorten_le_puncture C.toAddSubgroup s
 
 /-- Puncturing is monotone in the code. -/
 theorem puncture_mono {C D : LinearCode F ι} (h : C ≤ D) (s : Set ι) :
-    puncture C s ≤ puncture D s :=
-  Submodule.map_mono h
+    puncture C s ≤ puncture D s := by
+  apply (Submodule.toAddSubgroup_le _ _).mp
+  simpa only [LinearCode.toAddSubgroup_puncture] using
+    AdditiveCode.puncture_mono ((Submodule.toAddSubgroup_le _ _).mpr h) s
 
 /-- Shortening is monotone in the code. -/
 theorem shorten_mono {C D : LinearCode F ι} (h : C ≤ D) (s : Set ι) :
-    shorten C s ≤ shorten D s :=
-  Submodule.map_mono (inf_le_inf h le_rfl)
+    shorten C s ≤ shorten D s := by
+  apply (Submodule.toAddSubgroup_le _ _).mp
+  simpa only [LinearCode.toAddSubgroup_shorten] using
+    AdditiveCode.shorten_mono ((Submodule.toAddSubgroup_le _ _).mpr h) s
 
 /-- Puncturing sends the zero code to the zero code. -/
 @[simp]
 theorem puncture_bot (s : Set ι) : puncture (⊥ : LinearCode F ι) s = ⊥ := by
-  simp [puncture]
+  apply Submodule.toAddSubgroup_injective
+  simp only [LinearCode.toAddSubgroup_puncture, Submodule.bot_toAddSubgroup,
+    AdditiveCode.puncture_bot]
 
 /-- Shortening sends the zero code to the zero code. -/
 @[simp]
 theorem shorten_bot (s : Set ι) : shorten (⊥ : LinearCode F ι) s = ⊥ := by
-  simp [shorten]
+  apply Submodule.toAddSubgroup_injective
+  simp only [LinearCode.toAddSubgroup_shorten, Submodule.bot_toAddSubgroup,
+    AdditiveCode.shorten_bot]
 
 /-- Puncturing the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
 theorem puncture_top (s : Set ι) : puncture (⊤ : LinearCode F ι) s = ⊤ := by
-  rw [puncture, Submodule.map_top]
-  exact LinearMap.range_eq_top.mpr <|
-    LinearMap.funLeft_surjective_of_injective F F _ Subtype.val_injective
+  apply Submodule.toAddSubgroup_injective
+  simp only [LinearCode.toAddSubgroup_puncture, Submodule.top_toAddSubgroup,
+    AdditiveCode.puncture_top]
 
 /-- Shortening the whole word space gives the whole word space on the retained coordinates. -/
 @[simp]
 theorem shorten_top (s : Set ι) : shorten (⊤ : LinearCode F ι) s = ⊤ := by
-  ext y
-  simp only [Submodule.mem_top, iff_true]
-  classical
-  let x : ι → F := fun i ↦ if hi : i ∈ s then y ⟨i, hi⟩ else 0
-  refine mem_shorten.mpr ⟨x, Submodule.mem_top, ?_, ?_⟩
-  · intro i hi
-    simp [x, hi]
-  · intro j
-    simp [x, j.2]
+  apply Submodule.toAddSubgroup_injective
+  simp only [LinearCode.toAddSubgroup_shorten, Submodule.top_toAddSubgroup,
+    AdditiveCode.shorten_top]
 
 /-- Puncturing commutes with sums of codes. -/
 @[simp]

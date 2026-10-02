@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Additive.Puncture
+public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
+public import TauCeti.InformationTheory.Coding.Puncture
 public import TauCeti.InformationTheory.Coding.DirectSum
 
 /-!
@@ -18,7 +19,9 @@ direct sum of two nonzero codes is the minimum of their distances; a zero summan
 the distance unchanged. The zero-code cases matter because minimum distance is defined as
 zero for the zero code.
 
-These formulas connect the coordinate operations on linear codes to their distance parameters.
+The puncturing and shortening bounds hold for additive codes over arbitrary abelian alphabets;
+the linear bounds are their specializations. These formulas connect coordinate operations
+to the distance parameters of codes.
 They follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §§1.5–1.6.
 -/
 
@@ -27,6 +30,57 @@ public section
 namespace TauCeti
 
 open Set
+
+namespace AdditiveCode
+
+variable {A ι : Type*} [AddCommGroup A]
+
+variable [DecidableEq A] [Fintype ι] (C : AdditiveCode A ι) (s : Set ι)
+  [DecidablePred (· ∈ s)]
+
+/-- Puncturing reduces minimum distance by at most the number of deleted coordinates,
+including when the punctured code collapses to zero. The set `s` is retained. -/
+theorem hammingMinDist_le_hammingMinDist_puncture_add_card_compl :
+    hammingMinDist (C : Set (ι → A)) ≤
+      hammingMinDist (puncture C s : Set (s → A)) + Fintype.card ↥sᶜ := by
+  by_cases hC : C = ⊥
+  · simp [hC]
+  by_cases hP : puncture C s = ⊥
+  · obtain ⟨x, hx, _, hxd⟩ := exists_hammingNorm_eq_hammingMinDist hC
+    have hxs : s.domRestrict x = 0 := by
+      have hm : s.domRestrict x ∈ puncture C s := mem_puncture.mpr ⟨x, hx, fun _ ↦ rfl⟩
+      simpa [hP] using hm
+    rw [← hxd, hammingNorm_eq_domRestrict_add_domRestrict_compl s, hxs, hammingNorm_zero]
+    simpa [hP] using (hammingNorm_le_card_fintype (x := sᶜ.domRestrict x))
+  · obtain ⟨y, hy, hy0, hyd⟩ := exists_hammingNorm_eq_hammingMinDist hP
+    obtain ⟨x, hx, hxy⟩ := mem_puncture.mp hy
+    have hxs : s.domRestrict x = y := funext hxy
+    have hx0 : x ≠ 0 := fun h ↦ hy0 (by rw [← hxs, h]; rfl)
+    calc
+      hammingMinDist (C : Set (ι → A)) ≤ hammingNorm x :=
+        hammingMinDist_le_hammingNorm hx hx0
+      _ = hammingNorm y + hammingNorm (sᶜ.domRestrict x) := by
+        rw [hammingNorm_eq_domRestrict_add_domRestrict_compl s, hxs]
+      _ ≤ hammingMinDist (puncture C s : Set (s → A)) + Fintype.card ↥sᶜ := by
+        rw [hyd]
+        exact Nat.add_le_add_left hammingNorm_le_card_fintype _
+
+/-- Shortening cannot decrease minimum distance when the shortened additive code is nonzero. -/
+theorem hammingMinDist_le_hammingMinDist_shorten (hS : shorten C s ≠ ⊥) :
+    hammingMinDist (C : Set (ι → A)) ≤
+      hammingMinDist (shorten C s : Set (s → A)) := by
+  obtain ⟨y, hy, hy0, hyd⟩ := exists_hammingNorm_eq_hammingMinDist hS
+  obtain ⟨x, hx, hxoff, hxy⟩ := mem_shorten.mp hy
+  have hxs : s.domRestrict x = y := funext hxy
+  have hxsc : sᶜ.domRestrict x = 0 := funext fun i ↦ hxoff i i.2
+  have hx0 : x ≠ 0 := fun h ↦ hy0 (by rw [← hxs, h]; rfl)
+  calc
+    hammingMinDist (C : Set (ι → A)) ≤ hammingNorm x := hammingMinDist_le_hammingNorm hx hx0
+    _ = hammingMinDist (shorten C s : Set (s → A)) := by
+      rw [hammingNorm_eq_domRestrict_add_domRestrict_compl s, hxs, hxsc, hammingNorm_zero,
+        add_zero, hyd]
+
+end AdditiveCode
 
 section CoordinateSets
 
