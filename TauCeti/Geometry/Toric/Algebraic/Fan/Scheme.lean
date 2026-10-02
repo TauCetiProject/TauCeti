@@ -378,6 +378,7 @@ variable {N'' : Type u} {V'' : Type*} [AddCommGroup N''] [AddCommGroup V''] [Mod
   {i'' : N'' →+ V''} {Ω : Fan i''}
 
 /-- The algebraic map induced by a composite fan morphism is the composite of the induced maps. -/
+@[simp]
 theorem algebraicMap_comp (g : FanHom Ψ Ω) (f : FanHom Φ Ψ) :
     (g.comp f).algebraicMap = f.algebraicMap ≫ g.algebraicMap := by
   apply Fan.algebraicRealization_hom_ext Φ
