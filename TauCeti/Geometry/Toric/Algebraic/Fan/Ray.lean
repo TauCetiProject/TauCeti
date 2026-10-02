@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Generation
 
 /-!

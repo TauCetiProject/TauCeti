@@ -80,13 +80,14 @@ theorem smul_mem_analyticBoundaryComponent_iff (rho : Phi.Ray) (t : ComplexTorus
     (x : Phi.analyticRealization hPhi) :
     t • x ∈ Phi.analyticBoundaryComponent hPhi rho ↔
       x ∈ Phi.analyticBoundaryComponent hPhi rho := by
-  obtain ⟨sigma, hx⟩ := Phi.exists_mem_analyticConeOrbit hPhi x
-  have htx : t • x ∈ Phi.analyticConeOrbit hPhi sigma := by
-    rw [analyticConeOrbit_eq_orbit] at hx ⊢
-    rw [← (MulAction.orbit_eq_iff (G := ComplexTorus N)).2 hx]
-    exact MulAction.mem_orbit x t
-  rw [Phi.mem_analyticBoundaryComponent_iff hPhi htx,
-    Phi.mem_analyticBoundaryComponent_iff hPhi hx]
+  rw [analyticBoundaryComponent_def, analyticConeOrbit_eq_orbit]
+  constructor
+  · intro htx
+    have hx := smul_closure_orbit_subset (t⁻¹)
+      (Phi.analyticDistinguishedPoint hPhi rho.toCone) (Set.smul_mem_smul_set htx)
+    simpa using hx
+  · intro hx
+    exact smul_closure_orbit_subset t _ (Set.smul_mem_smul_set hx)
 
 /-- The component of a ray is the union of the orbits indexed by cones containing that ray. -/
 theorem analyticBoundaryComponent_eq_iUnion (rho : Phi.Ray) :
