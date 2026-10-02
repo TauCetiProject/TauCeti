@@ -176,11 +176,12 @@ theorem exists_rootLength_eq_one_iff (t : DynkinType) :
     | B n =>
         -- The last node of `Bₙ` is its short one.
         simp only [rank_B] at hr
-        exact ⟨⟨n - 1, by simp; omega⟩, by simp; omega⟩
+        exact ⟨⟨n - 1, by simp only [rank_B]; omega⟩,
+          by simp only [rootLength_B]; split_ifs <;> omega⟩
     | C n =>
         -- Every node of `Cₙ` but the last is short, and `n ≠ 1` gives a node before the last.
         have hn1 : n ≠ 1 := by rintro rfl; exact hne rfl
-        exact ⟨⟨0, hr⟩, by simp; omega⟩
+        exact ⟨⟨0, hr⟩, by simp only [rootLength_C]; split_ifs <;> omega⟩
     | F4 => exact ⟨⟨2, by simp⟩, by simp⟩
     | G2 => exact ⟨⟨0, by simp⟩, by simp⟩
 
