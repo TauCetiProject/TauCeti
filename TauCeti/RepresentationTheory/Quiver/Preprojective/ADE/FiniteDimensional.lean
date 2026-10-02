@@ -62,11 +62,8 @@ private noncomputable def e7InducedIso :
 
 private noncomputable def e7Coloring :
     (diagramGraph DynkinType.E7.cartanMatrix).Coloring Bool :=
-  SimpleGraph.Coloring.mk
-    (fun i => zigzagE8Coloring (e7InducedIso i).val) (by
-      intro i j hij
-      apply zigzagE8Coloring.valid
-      exact SimpleGraph.induce_adj.mp (e7InducedIso.map_adj_iff.mpr hij))
+  zigzagE8Coloring.comap
+    ((SimpleGraph.Embedding.induce e7Nodes).toHom.comp e7InducedIso.toHom)
 
 variable (k : Type*) [Field k]
 
