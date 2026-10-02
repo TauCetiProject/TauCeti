@@ -183,8 +183,8 @@ theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis �
   simpa only [kostantRootGeneratorIntMatrix, AddSubmonoidClass.coe_finsetSum,
     AddSubgroupClass.coe_zsmul] using hexp
 
-/-- A root generator taking one lattice basis vector to a scalar multiple of another has a
-single nonzero entry in the corresponding integral matrix column. -/
+/-- If a root generator takes the lattice basis vector `b a` to `c • b a'`, then the `a`-th
+column of its integral matrix is supported at `a'`, with entry `c` there. -/
 theorem kostantRootGeneratorIntMatrix_apply_of_eq [DecidableEq η]
     (i : ι) (b : Module.Basis η ℤ M) {a a' : η} {c : ℤ}
     (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b a : V) = c • (b a' : V))
