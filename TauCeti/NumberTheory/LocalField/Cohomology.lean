@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.GaloisCohomology.TrivialFp
 public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Padic
@@ -18,10 +17,6 @@ cohomology `H¹(G_K, 𝔽_p)` is finite and hence finite-dimensional. If `K` is 
 extension of `ℚ_[p]` containing a primitive `p`th root of unity, its dimension is
 `[K : ℚ_[p]] + 2`.
 
-The dimension count uses the coefficient object `ClassFieldTheory.muNRep`, its Kummer
-isomorphism, and the power-class count `card_powerClasses`. A chosen primitive root identifies
-`μ_p` with the trivial coefficients; no new representation or cohomology carrier is introduced.
-The identity `e · f = [K : ℚ_[p]]` converts the residue-field factor into `p^[K : ℚ_[p]]`.
 These degree-one counts are the arithmetic input to generator ranks of maximal pro-`p`
 Galois quotients.
 
@@ -54,9 +49,8 @@ instance finite_cohomFp_one_absoluteGaloisGroup [NeZero (p : K)] :
     (isSmoothDiscrete_trivialFp p (Field.absoluteGaloisGroup K)) (by omega)
 
 /-- If a finite compatible extension of `ℚ_[p]` contains `μ_p`, then
-`dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 2`. Finiteness is supplied independently by
-`finite_cohomFp_one_absoluteGaloisGroup`, not inferred from the value of `finrank`. -/
-theorem finrank_cohomFp_one_absoluteGaloisGroup_of_mu
+`dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 2`. -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup_of_exists_isPrimitiveRoot
     [Algebra ℚ_[p] K] [ValuativeExtension ℚ_[p] K]
     (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) =
