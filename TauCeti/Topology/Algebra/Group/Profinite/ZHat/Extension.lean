@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.GroupExtension.Cohomology
+public import TauCeti.Topology.Algebra.GroupExtension.Splitting
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Basic
 
 /-!
@@ -21,20 +22,25 @@ kernel: in contrast with the free pro-`p` groups, `ℤ̂` is free on one generat
 group, not only as a pro-`p` group.
 
 Read through the classification of profinite extensions by continuous `H²`
-(`TauCeti.ProfiniteGroupExtension.exists_contCohomologyClass_eq` and
-`GroupExtension.exists_splitting_continuous_iff_contCohomologyClass_eq_zero`), this is the
+(`TauCeti.ProfiniteGroupExtension.subsingleton_H2_of_forall_exists_splitting`), this is the
 vanishing of the explicit second continuous cohomology `H²(ℤ̂, M)` for **every** profinite abelian
 group `M` with a continuous action of `ℤ̂`, with no primary or torsion hypothesis on `M`
 (`TauCeti.zHat.subsingleton_H2`). The finite discrete modules are among these coefficients; the
 consequences for Mathlib's continuous cohomology and for the cohomological dimension of `ℤ̂` are
 drawn in `TauCeti.Topology.Algebra.Group.Profinite.ZHat.CohomologicalDimension`.
 
+The splitting is adapted from the splitting of extensions of free pro-`p` groups,
+`GroupExtension.exists_splitting_continuous_freeProP_forall_apply_of_eq` in
+`TauCeti.Topology.Algebra.Group.Profinite.Free.Extension`, and the vanishing of `H²` follows the
+vanishing for projective pro-`p` groups, `TauCeti.IsProjective.subsingleton_H2` in
+`TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Cohomology`.
+
 ## Main results
 
 * `GroupExtension.exists_splitting_continuous_zHat_apply_gen_eq`: an extension of `ℤ̂` with
   profinite total group and continuous projection has a continuous homomorphic section taking any
   prescribed preimage of the generator as its value at the generator.
-* `TauCeti.zHat.subsingleton_H2_additive`, `TauCeti.zHat.subsingleton_H2`: **`H²(ℤ̂, M) = 0`** for
+* `TauCeti.zHat.subsingleton_H2`, `TauCeti.zHat.subsingleton_H2_additive`: **`H²(ℤ̂, M) = 0`** for
   every profinite abelian group `M` with a continuous action of `ℤ̂`, written multiplicatively and
   additively.
 
@@ -65,13 +71,9 @@ because both composites agree on the generator. -/
 theorem _root_.GroupExtension.exists_splitting_continuous_zHat_apply_gen_eq
     (hrh : Continuous S.rightHom) (e : E) (he : S.rightHom e = zHat.gen) :
     ∃ s : S.Splitting, Continuous ⇑s ∧ s zHat.gen = e := by
-  -- The projection, bundled with its continuity; it evaluates as `S.rightHom` by construction.
-  let π : E →ₜ* zHat.{u} := ⟨S.rightHom, hrh⟩
-  have hπ : ∀ z, π z = S.rightHom z := fun _ ↦ rfl
-  have hs : π.comp (zHat.lift e) = ContinuousMonoidHom.id zHat.{u} :=
-    zHat.hom_ext (by simp [hπ, he])
-  exact ⟨GroupExtension.Splitting.mk (zHat.lift e).toMonoidHom fun y ↦ by
-    simpa [hπ] using DFunLike.congr_fun hs y, (zHat.lift e).continuous, zHat.lift_gen e⟩
+  obtain ⟨s, hs, hsσ⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh (zHat.lift e)
+    (zHat.hom_ext ((congrArg S.rightHom (zHat.lift_gen e)).trans he))
+  exact ⟨s, hs, (hsσ _).trans (zHat.lift_gen e)⟩
 
 end Splitting
 
@@ -89,26 +91,23 @@ variable {M : Type v} [CommGroup M] [TopologicalSpace M] [IsTopologicalGroup M] 
 /-- **`H²(ℤ̂, M)` vanishes**, for `M` a profinite abelian group, written multiplicatively, with a
 continuous action of `ℤ̂`: every class of the explicit second continuous cohomology group is the
 class of a profinite extension of `ℤ̂` by `M`, and every such extension splits. -/
-theorem subsingleton_H2_additive : Subsingleton (H2 zHat.{u} (Additive M)) := by
-  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
-  obtain ⟨Y, rfl⟩ := ProfiniteGroupExtension.exists_contCohomologyClass_eq c
-  rw [ProfiniteGroupExtension.contCohomologyClass_def,
-    ← Y.toGroupExtension.exists_splitting_continuous_iff_contCohomologyClass_eq_zero]
-  obtain ⟨e, he⟩ := Y.toGroupExtension.rightHom_surjective gen
-  obtain ⟨s, hs, -⟩ :=
-    Y.toGroupExtension.exists_splitting_continuous_zHat_apply_gen_eq Y.continuous_rightHom e he
-  exact ⟨s, hs⟩
+instance subsingleton_H2 : Subsingleton (H2 zHat.{u} (Additive M)) :=
+  ProfiniteGroupExtension.subsingleton_H2_of_forall_exists_splitting fun Y ↦
+    have ⟨e, he⟩ := Y.toGroupExtension.rightHom_surjective gen
+    have ⟨s, hs, _⟩ :=
+      Y.toGroupExtension.exists_splitting_continuous_zHat_apply_gen_eq Y.continuous_rightHom e he
+    ⟨s, hs⟩
 
 end Multiplicative
 
 /-- **`H²(ℤ̂, M)` vanishes, additive form**, for `M` a profinite abelian group, written additively,
 with a continuous action of `ℤ̂`. No torsion hypothesis on `M` is needed. -/
-theorem subsingleton_H2 {M : Type v} [AddCommGroup M] [TopologicalSpace M]
+instance subsingleton_H2_additive {M : Type v} [AddCommGroup M] [TopologicalSpace M]
     [IsTopologicalAddGroup M] [CompactSpace M] [TotallyDisconnectedSpace M]
     [DistribMulAction zHat.{u} M] [ContinuousSMul zHat.{u} M] : Subsingleton (H2 zHat.{u} M) :=
   -- `Additive (Multiplicative M)` is `M` with the same instances, so the multiplicative statement
   -- applies as it stands.
-  subsingleton_H2_additive (M := Multiplicative M)
+  subsingleton_H2 (M := Multiplicative M)
 
 end zHat
 

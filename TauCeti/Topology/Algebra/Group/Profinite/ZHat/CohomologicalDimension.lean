@@ -28,11 +28,11 @@ canonical continuous-cohomology carrier shows that `H¹(zHat, 𝔽_p)` is nonzer
 `p`-cohomological dimension of `zHat` is at least one.
 
 In degree two, every profinite extension of `zHat` splits, so the explicit `H²(zHat, M)` vanishes
-for every profinite coefficient module `M` (`TauCeti.zHat.subsingleton_H2`). A finite discrete
-module is profinite, and every class of the canonical `H²(zHat, M)` of a discrete torsion module
-`M` comes from a finite `zHat`-stable subgroup, so the canonical `H²(zHat, M)` vanishes for every
-discrete torsion `M`. Since the `p`-cohomological dimension of a compact group is detected in a
-single degree on finite `p`-primary coefficients, `cd_p(zHat) ≤ 1`, and hence `cd_p(zHat) = 1` for
+for every profinite coefficient module `M` (`TauCeti.zHat.subsingleton_H2_additive`). A finite
+discrete module is profinite, and every class of the canonical `H²(zHat, M)` of a discrete torsion
+module `M` comes from a finite `zHat`-stable subgroup, so the canonical `H²(zHat, M)` vanishes for
+every discrete torsion `M`. Since the `p`-cohomological dimension of a compact group is detected in
+a single degree on finite `p`-primary coefficients, `cd_p(zHat) ≤ 1`, and hence `cd_p(zHat) = 1` for
 every prime `p` and `cd(zHat) = 1`.
 
 ## Main results
@@ -182,7 +182,6 @@ theorem subsingleton_continuousCohomology_two_of_isAddTorsion (M : Type u) [AddC
     fun N hN _ ↦ ?_
   let := N.restrictDistribMulAction hN
   have : ContinuousSMul zHat.{u} N := N.restrictDistribMulAction_continuousSMul hN
-  have := subsingleton_H2 (M := N)
   exact (explicitH2AddEquivContinuousCohomology zHat.{u} N).toEquiv.symm.subsingleton
 
 variable {p : ℕ}
@@ -196,12 +195,14 @@ theorem cohomologicalDimensionAt_le_one (hp : p ≠ 0) :
       (hM.isAddTorsion hp)
 
 /-- **The `p`-cohomological dimension of the profinite integers is one**, for every prime `p`. -/
-theorem cohomologicalDimensionAt_eq_one [Fact p.Prime] :
+@[simp]
+theorem cohomologicalDimensionAt_eq_one (p : ℕ) [Fact p.Prime] :
     cohomologicalDimensionAt.{u} p zHat.{u} = 1 :=
   (cohomologicalDimensionAt_le_one (Fact.out : p.Prime).ne_zero).antisymm
     (one_le_cohomologicalDimensionAt p)
 
 /-- **The cohomological dimension of the profinite integers is one.** -/
+@[simp]
 theorem cohomologicalDimension_eq_one : cohomologicalDimension.{u} zHat.{u} = 1 := by
   refine le_antisymm ?_ ((one_le_cohomologicalDimensionAt 2).trans
     (cohomologicalDimensionAt_le_cohomologicalDimension 2 zHat.{u} Nat.prime_two))
