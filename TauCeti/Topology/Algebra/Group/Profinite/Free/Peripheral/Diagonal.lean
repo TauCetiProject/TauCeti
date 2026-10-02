@@ -28,7 +28,10 @@ The obstruction is the value `x_0 ^ u ⋯ x_{r-1} ^ u` of the diagonal power map
 kills `x_0 ⋯ x_{r-1}`, hence all its powers and their conjugates, but sends
 `x_0 ^ u ⋯ x_{r-1} ^ u` to `a ^ u b ^ u ((a b)⁻¹) ^ u = (0, 0, u choose 2)`, by the power formula
 `TauCeti.HeisenbergGroup.padicPow_eq`, and `u choose 2 = u (u - 1) / 2` is nonzero for
-`u ≠ 0, 1`.
+`u ≠ 0, 1`. This adapts the Heisenberg detection argument of
+`TauCeti.Peripheral.not_isPeripheralAut_of_apply_basis_eq_inv` (in `Peripheral/Reflection.lean`)
+from the Heisenberg group over `𝔽_p` to the one over `ℤ_p`, so that it also detects
+`u ≡ 1 mod p`.
 
 In rank two the analogous statement is false: at `u = -1` the diagonal power map is the inversion
 of `TauCeti.Peripheral.exists_inversion_two`, which is peripheral.
