@@ -13,8 +13,7 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 # Basic Riemannian bundle constructions
 
 This file provides conversions between Mathlib's Riemannian bundle classes and bundled
-Riemannian metrics, identifies the standard Riemannian metric of an inner-product space with its
-inner product, and records that the Riemannian norm of the differential of a `C¹` map, applied
+Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map, applied
 to a fixed vector, depends continuously on the base point.
 
 ## Main definitions
@@ -29,8 +28,6 @@ to a fixed vector, depends continuously on the base point.
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
   Riemannian bundle as a continuous Riemannian bundle.
-* `TauCeti.Manifold.inner_tangentSpace_vectorSpace`: the standard Riemannian metric of an
-  inner-product space is its inner product.
 * `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
@@ -150,21 +147,6 @@ theorem InducesRiemannianDistance.toIsRiemannianManifold
   simpa only [InducesRiemannianDistance] using h
 
 end Bundle.ContMDiffRiemannianMetric
-
-namespace TauCeti.Manifold
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- The standard Riemannian metric of a real inner-product space `F` is the inner product of `F`:
-at every point `x`, the inner product of two tangent vectors is that of their images under the
-canonical identification `NormedSpace.fromTangentSpace x` of `T_x F` with `F`. This is the
-inner-product form of Mathlib's `norm_tangentSpace_vectorSpace`. -/
-theorem inner_tangentSpace_vectorSpace {x : F} (v w : TangentSpace 𝓘(ℝ, F) x) :
-    inner ℝ v w =
-      inner ℝ (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) :=
-  (rfl)
-
-end TauCeti.Manifold
 
 section NormMFDeriv
 

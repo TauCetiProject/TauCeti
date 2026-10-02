@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
@@ -365,9 +364,8 @@ theorem inner_mfderiv_riemannianExp_model_space (p : F) (v w₁ w₂ : TangentSp
         (mfderiv 𝓘(ℝ, TangentSpace 𝓘(ℝ, F) p) 𝓘(ℝ, F) (riemannianExp 𝓘(ℝ, F) F p) v w₂) =
       inner ℝ w₁ w₂ := by
   rw [mfderiv_riemannianExp_apply_model_space, mfderiv_riemannianExp_apply_model_space]
-  -- The left side is the standard metric at `exp_p v` evaluated on two vectors of `F`; like the
-  -- metric at `p` (`inner_tangentSpace_vectorSpace`), it is the inner product of `F`.
-  exact (inner_tangentSpace_vectorSpace w₁ w₂).symm
+  -- Both sides are the inner product of `F`: the standard metric of `F` at every point is it.
+  rfl
 
 /-- The exponential map of a finite-dimensional inner-product space at `p` maps the tangent ball of
 radius `r` onto the ball of radius `r` about `p`. -/
