@@ -24,7 +24,7 @@ carrier: the vectors `z / √m` whose integer coordinates reduce to a codeword.
 The comparison applies to every additive code, without self-orthogonality. When the code is
 self-orthogonal it also identifies the carrier and form of the bundled integral lattice.
 The modulus is positive throughout, and the coordinate type is arbitrary and finite for
-scalar extension and bilinear forms.
+the full-lattice instance, scalar extension, and bilinear forms.
 
 The normalization follows Harada–Munemasa–Venkov, *Classification of ternary extremal
 self-dual codes of length 28*, §2, and Munemasa–Tamura, *The codes and the lattices of
@@ -95,6 +95,28 @@ theorem intCast_div_sqrt_mem_realLattice {C : AddSubgroup (ι → ZMod m)} (z : 
         (by exact_mod_cast m.pos))).mp (congrFun h i))
     simpa [hwz] using hw
   · exact fun hz ↦ ⟨z, hz, rfl⟩
+
+/-- For finite coordinates, the real Construction A carrier is a full, finitely generated
+lattice in `ι → ℝ`. -/
+instance isLattice_realLattice [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
+    (realLattice m C).IsLattice ℝ where
+  fg := (Submodule.IsLattice.fg (A := ℚ) (M := lattice m C)).map _
+  span_eq_top := by
+    classical
+    let := Fintype.ofFinite ι
+    apply top_unique
+    rw [← (Pi.basisFun ℝ ι).span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    have hsqrt : Real.sqrt (m : ℝ) ≠ 0 := Real.sqrt_ne_zero'.mpr (by exact_mod_cast m.pos)
+    have h := (Submodule.span ℝ (realLattice m C : Set (ι → ℝ))).smul_mem
+      (Real.sqrt (m : ℝ) / m) (Submodule.subset_span (Submodule.mem_map_of_mem
+        (f := (realEmbedding m).restrictScalars ℤ) (single_mem_lattice m C i)))
+    convert h using 1
+    congr! 1
+    ext j
+    rcases eq_or_ne j i with rfl | hj
+    · simp [field]
+    · simp [hj]
 
 variable [Fintype ι]
 
