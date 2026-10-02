@@ -45,15 +45,19 @@ computed componentwise on an orthogonal direct sum.
 * `TauCeti.IntegralLattice.dual_intermediateCarrierOfDiscriminantSubgroup`: the
   same statement read as `(L_H)ᵛ = L_{H⊥}`.
 * `TauCeti.IntegralLattice.IntermediateCarrier.dual_dual`: double duality.
-* `TauCeti.IntegralLattice.IntermediateCarrier.dual_eq_self_iff_isLagrangian`: an
-  intermediate carrier is unimodular exactly when its subgroup is Lagrangian.
-* `IntermediateCarrier.IsIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian`:
-  the lattice carried by an integral overlattice is unimodular exactly when its discriminant
-  subgroup is Lagrangian.
+* `TauCeti.IntegralLattice.IntermediateCarrier.dual_eq_self_iff_isLagrangian`: the
+  carrier-level criterion: an intermediate carrier satisfies `Mᵛ = M` exactly when its subgroup
+  is Lagrangian.
+* In the namespace `TauCeti.IntegralLattice.IntermediateCarrier.IsIntegral`, for an integral
+  intermediate carrier `M`:
+  * `isUnimodular_toIntegralLattice_iff_dual_eq_self`: the lattice carried by `M` is
+    `IntegralLattice.IsUnimodular` exactly when `Mᵛ = M`;
+  * `isUnimodular_toIntegralLattice_iff_isLagrangian`: the lattice carried by `M` is
+    `IntegralLattice.IsUnimodular` exactly when its discriminant subgroup is Lagrangian.
 * `TauCeti.IntegralLattice.dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff`: the
-  overlattice `L_H` is unimodular exactly when `H = H⊥`.
+  carrier-level criterion for `L_H`: `(L_H)ᵛ = L_H` exactly when `H = H⊥`.
 * `TauCeti.IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian`: the glued even
-  overlattice `L_H` is unimodular exactly when `H` is Lagrangian.
+  overlattice `L_H` is `IntegralLattice.IsUnimodular` exactly when `H` is Lagrangian.
 * `TauCeti.IntegralLattice.IntermediateCarrier.mem_dualCarrier_orthogonalSum_iff`: a vector is a
   dual vector of an assembled overlattice exactly when both of its components are dual vectors of
   the two factors.
