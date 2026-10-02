@@ -38,14 +38,16 @@ three points.
 * `Matrix.GeneralLinearGroup.natDegree_fixpointPolynomial_le_two` and
   `Matrix.GeneralLinearGroup.natDegree_fixpointPolynomial_le_one`: the fixed-point polynomial is
   quadratic, and linear once the lower-left entry vanishes.
-* `Matrix.GeneralLinearGroup.ncard_fixedBy_le_two`: a matrix that is not scalar fixes at most two
+* `Matrix.GeneralLinearGroup.encard_fixedBy_le_two`, with the `Set.ncard` form
+  `Matrix.GeneralLinearGroup.ncard_fixedBy_le_two`: a matrix that is not scalar fixes at most two
   points of the projective line.
-* `Matrix.GeneralLinearGroup.mem_center_of_forall_smul_eq`: a matrix fixing at least three points
-  of the projective line is scalar, hence central.
+* `Matrix.GeneralLinearGroup.mem_center_of_forall_smul_eq`: a matrix fixing a set of at least three
+  points of the projective line is scalar, hence central.  The hypothesis is on `Set.encard`, which
+  measures an infinite set of fixed points correctly.
 * `Matrix.ProjGenLinGroup.mk_eq_one_of_forall_smul_eq` and
   `Matrix.ProjGenLinGroup.mk_eq_mk_of_forall_smul_eq`: three-point rigidity in `PGL₂(K)`, and the
-  uniqueness form — two matrices acting the same way on at least three points of the projective
-  line are equal in `PGL₂(K)`.
+  uniqueness form — two matrices acting the same way on a set of at least three points of the
+  projective line are equal in `PGL₂(K)`.
 
 ## References
 
@@ -122,27 +124,34 @@ theorem finite_fixedBy_of_notMem_center (hg : g ∉ Subgroup.center (GL (Fin 2) 
 /-- **A matrix that is not scalar fixes at most two points of the projective line**: its fixed
 points are among the at most two roots of its fixed-point polynomial, and `∞` is fixed only when
 that polynomial is linear. -/
+theorem encard_fixedBy_le_two (hg : g ∉ Subgroup.center (GL (Fin 2) K)) :
+    (MulAction.fixedBy (OnePoint K) g).encard ≤ 2 := by
+  obtain ⟨s, hcard, hsub⟩ := exists_finset_fixedBy_subset hg
+  refine (Set.encard_le_encard hsub).trans ?_
+  rw [Set.encard_coe_eq_coe_finsetCard]
+  exact_mod_cast hcard
+
+/-- The `Set.ncard` form of `Matrix.GeneralLinearGroup.encard_fixedBy_le_two`, for counting
+arguments on the finite fixed-point set of a matrix that is not scalar. -/
 theorem ncard_fixedBy_le_two (hg : g ∉ Subgroup.center (GL (Fin 2) K)) :
     (MulAction.fixedBy (OnePoint K) g).ncard ≤ 2 := by
   obtain ⟨s, hcard, hsub⟩ := exists_finset_fixedBy_subset hg
   refine (Set.ncard_le_ncard hsub s.finite_toSet).trans ?_
   rwa [Set.ncard_coe_finset]
 
-/-- A matrix fixing at least three points of the projective line is central. -/
-theorem mem_center_of_three_le_ncard_fixedBy
-    (h : 3 ≤ (MulAction.fixedBy (OnePoint K) g).ncard) : g ∈ Subgroup.center (GL (Fin 2) K) := by
+/-- A matrix fixing at least three points of the projective line is central.  The count is
+`Set.encard`, so an infinite fixed-point set satisfies the hypothesis. -/
+theorem mem_center_of_three_le_encard_fixedBy
+    (h : 3 ≤ (MulAction.fixedBy (OnePoint K) g).encard) : g ∈ Subgroup.center (GL (Fin 2) K) := by
   by_contra hg
-  exact absurd (ncard_fixedBy_le_two hg) (by omega)
+  exact absurd (h.trans (encard_fixedBy_le_two hg)) (by norm_num)
 
-/-- **Three-point rigidity**: a matrix fixing at least three points of the projective line is
-scalar, hence central in `GL₂(K)`. -/
+/-- **Three-point rigidity**: a matrix fixing a set of at least three points of the projective line
+is scalar, hence central in `GL₂(K)`. -/
 theorem mem_center_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = c)
-    (hcard : 3 ≤ S.ncard) : g ∈ Subgroup.center (GL (Fin 2) K) := by
-  by_contra hg
-  have hsub : S ⊆ MulAction.fixedBy (OnePoint K) g := fun c hc ↦ hS c hc
-  have hle := Set.ncard_le_ncard hsub (finite_fixedBy_of_notMem_center hg)
-  have := ncard_fixedBy_le_two hg
-  omega
+    (hcard : 3 ≤ S.encard) : g ∈ Subgroup.center (GL (Fin 2) K) :=
+  mem_center_of_three_le_encard_fixedBy
+    (hcard.trans (Set.encard_le_encard fun c hc ↦ hS c hc))
 
 end Field
 
@@ -152,16 +161,16 @@ namespace Matrix.ProjGenLinGroup
 
 variable {K : Type*} [Field K] [DecidableEq K] {g h : GL (Fin 2) K}
 
-/-- **Three-point rigidity in `PGL₂(K)`**: a matrix fixing at least three points of the
+/-- **Three-point rigidity in `PGL₂(K)`**: a matrix fixing a set of at least three points of the
 projective line is trivial in `PGL₂(K)`. -/
 theorem mk_eq_one_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = c)
-    (hcard : 3 ≤ S.ncard) : mk g = 1 :=
+    (hcard : 3 ≤ S.encard) : mk g = 1 :=
   mk_eq_one.mpr (GeneralLinearGroup.mem_center_of_forall_smul_eq hS hcard)
 
 /-- **A Möbius transformation is determined by three points**: two matrices acting the same way on
-at least three points of the projective line are equal in `PGL₂(K)`. -/
+a set of at least three points of the projective line are equal in `PGL₂(K)`. -/
 theorem mk_eq_mk_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = h • c)
-    (hcard : 3 ≤ S.ncard) : mk g = mk h := by
+    (hcard : 3 ≤ S.encard) : mk g = mk h := by
   have key : ∀ c ∈ S, (h⁻¹ * g) • c = c := fun c hc ↦ by
     rw [mul_smul, hS c hc, ← mul_smul, inv_mul_cancel, one_smul]
   have hone := mk_eq_one_of_forall_smul_eq key hcard
