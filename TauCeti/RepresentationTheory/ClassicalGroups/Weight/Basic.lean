@@ -65,9 +65,8 @@ The definitions themselves need only a commutative ring, and are stated there.
   spaces, a subrepresentation the operator cuts out inherits that decomposition.
 * `Subrepresentation.weightSpace_toRepresentation`: **the weight spaces of a
   subrepresentation are the traces of the ambient ones**, with
-  `Subrepresentation.map_weightSpace_toRepresentation` and
-  `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` reading that trace in the
-  ambient module and as the criterion for a weight not to occur in the subrepresentation.
+  `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` giving the criterion for a weight
+  not to occur in the subrepresentation.
 
 ## Implementation notes
 
@@ -97,6 +96,13 @@ open Matrix
 universe u v
 
 namespace TauCeti
+
+/-- The weight characters of a field that is a `ℚ`-algebra separate weights: such a field has
+characteristic zero, hence infinitely many elements. -/
+theorem weightChar_injective_of_algebraRat (k : Type u) [Field k] [Algebra ℚ k]
+    {κ : Type*} [Fintype κ] : Function.Injective (weightChar k (κ := κ)) := by
+  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
+  exact weightChar_injective
 
 section CommRing
 
@@ -170,24 +176,13 @@ theorem weightSpace_toRepresentation {ρ : Representation k (GL (Fin n) k) W}
   refine forall_congr' fun t => ?_
   rw [Subrepresentation.toRepresentation_apply_coe, Submodule.coe_smul]
 
-/-- The weight-`l` part of a subrepresentation, read in the ambient module, is what the
-subrepresentation shares with the ambient weight space. -/
-theorem map_weightSpace_toRepresentation {ρ : Representation k (GL (Fin n) k) W}
-    (S : Subrepresentation ρ) (l : Fin n → ℤ) :
-    (weightSpace S.toRepresentation l).map S.toSubmodule.subtype =
-      S.toSubmodule ⊓ weightSpace ρ l := by
-  rw [weightSpace_toRepresentation, Submodule.map_comap_subtype]
-
 /-- **A subrepresentation has no vector of weight `l` exactly when it meets the ambient weight
 space trivially.**  This is the form in which a weight is ruled out for a subrepresentation cut out
 of a weight-decomposed module. -/
 theorem weightSpace_toRepresentation_eq_bot_iff {ρ : Representation k (GL (Fin n) k) W}
     (S : Subrepresentation ρ) (l : Fin n → ℤ) :
     weightSpace S.toRepresentation l = ⊥ ↔ S.toSubmodule ⊓ weightSpace ρ l = ⊥ := by
-  rw [← map_weightSpace_toRepresentation]
-  refine ⟨fun h => by rw [h, Submodule.map_bot], fun h => ?_⟩
-  exact Submodule.map_injective_of_injective (Submodule.injective_subtype _)
-    (by rw [h, Submodule.map_bot])
+  rw [weightSpace_toRepresentation, ← Submodule.disjoint_iff_comap_eq_bot, disjoint_iff]
 
 end Subrepresentation
 

@@ -43,9 +43,10 @@ inequality once both counts are read as partial sums of contents.  Conversely, w
 `μ.colLen 0 ≤ n`, `e_r` itself has content the row lengths of `μ` and is not annihilated,
 so the bound is attained.
 
-The field is a `ℚ`-algebra, as everywhere the Young symmetrizer appears; it therefore has
-characteristic zero, so it is infinite and its weight characters separate weights, which is the
-hypothesis under which the weight spaces of the tensor power are its coordinate subspaces.
+The dominance bound is proved over a field that is a `ℚ`-algebra: it has characteristic zero,
+so it is infinite and its weight characters separate weights, which is the hypothesis under which
+the weight spaces of the tensor power are its coordinate subspaces. The occurrence of the shape
+weight only requires a nontrivial commutative `ℚ`-algebra.
 
 ## Main results
 
@@ -88,16 +89,11 @@ namespace TauCeti
 
 namespace YoungTableau
 
-variable {k : Type u} [Field k] [Algebra ℚ k] {n : ℕ} {μ : YoungDiagram}
+variable {k : Type u} {n : ℕ} {μ : YoungDiagram}
 
-/-- The weight characters of a field that is a `ℚ`-algebra separate weights: such a field has
-characteristic zero, hence infinitely many elements.  Everything below needs the field to be a
-`ℚ`-algebra for the Young symmetrizer, so the separation hypothesis of the weight theory never
-has to be carried explicitly. -/
-private theorem weightChar_injective_of_algebraRat (k : Type u) [Field k] [Algebra ℚ k] (n : ℕ) :
-    Function.Injective (weightChar k (κ := Fin n)) := by
-  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
-  exact weightChar_injective
+section CommRing
+
+variable [CommRing k] [Algebra ℚ k]
 
 /-! ## The content of the row filling -/
 
@@ -131,6 +127,12 @@ theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero_of_
     exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero t hfab.2 hab
       (Fin.val_injective hfab.1)
 
+end CommRing
+
+section Field
+
+variable [Field k] [Algebra ℚ k]
+
 /-- **The symmetrizer annihilates the whole weight space of such a weight.**  The weight space is
 spanned by the monomial basis vectors of content `l`, and the partial sums of a content count the
 places at which the filling takes a small value. -/
@@ -141,7 +143,7 @@ theorem weightSpace_tensorPowerRep_le_ker_of_card_filter_lt (t : YoungTableau μ
     weightSpace (tensorPowerRep k n μ.card) l ≤
       LinearMap.ker (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)) := by
   classical
-  rw [weightSpace_tensorPowerRep_eq_span_image (weightChar_injective_of_algebraRat k n) l]
+  rw [weightSpace_tensorPowerRep_eq_span_image (weightChar_injective_of_algebraRat k) l]
   refine Submodule.span_le.mpr ?_
   rintro x ⟨p, hp, rfl⟩
   rw [SetLike.mem_coe, LinearMap.mem_ker, ← tensorPowerBasis_def]
@@ -181,7 +183,7 @@ theorem weylModule_toSubmodule_inf_weightSpace_eq_bot (t : YoungTableau μ)
     _ = ⊥ := by
         rw [inf_comm]
         exact disjoint_iff.mp
-          (iSupIndep_weightSpace (weightChar_injective_of_algebraRat k n) _ l)
+          (iSupIndep_weightSpace (weightChar_injective_of_algebraRat k) _ l)
 
 /-- **A weight whose partial sums exceed those of the row lengths does not occur in the Weyl
 module.** -/
@@ -193,24 +195,28 @@ theorem weightSpace_weylRep_eq_bot_of_card_filter_lt (t : YoungTableau μ)
   ((weylModule k n t).weightSpace_toRepresentation_eq_bot_iff l).mpr
     (weylModule_toSubmodule_inf_weightSpace_eq_bot t h)
 
-/-- **The weights of the Weyl module are dominated by the weight of its shape**: for a shape with
-at most `n` rows, every weight `l` of the Weyl module satisfies the dominance inequalities
+/-- **The weights of the Weyl module are dominated by the weight of its shape**: every weight `l`
+of the Weyl module satisfies the dominance inequalities
 
 `∑_{j < m} l j ≤ ∑_{j < m} μ.rowLen j`,
 
 the right-hand side being the corresponding partial sum of `TauCeti.weightOfShape n μ`. -/
 theorem sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (t : YoungTableau μ)
-    (hn : μ.colLen 0 ≤ n) {l : Fin n → ℤ}
+    {l : Fin n → ℤ}
     (hl : weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t) l ≠ ⊥) (m : ℕ) :
     ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
   classical
-  have hsum : ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j =
-      ((Finset.univ.filter fun x => rowIndex t x < m).card : ℤ) := by
-    rw [← weightOfMultiset_ofFn_rowFilling t hn, sum_weightOfMultiset_ofFn_filter_val_lt]
-    simp only [val_rowFilling]
-  by_contra hcon
-  exact hl (weightSpace_weylRep_eq_bot_of_card_filter_lt t (hsum ▸ not_le.mp hcon))
+  rcases le_or_gt (μ.colLen 0) n with hn | hn
+  · have hsum : ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j =
+        ((Finset.univ.filter fun x => rowIndex t x < m).card : ℤ) := by
+      rw [← weightOfMultiset_ofFn_rowFilling t hn, sum_weightOfMultiset_ofFn_filter_val_lt]
+      simp only [val_rowFilling]
+    by_contra hcon
+    exact hl (weightSpace_weylRep_eq_bot_of_card_filter_lt t (hsum ▸ not_le.mp hcon))
+  · exact (hl (by
+      rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, weylModule_eq_bot t hn]
+      exact bot_inf_eq _)).elim
 
 /-- **The weights of the Weyl module are nonnegative and of total degree `|μ|`**: a weight of a
 subrepresentation is a weight of the ambient tensor power, whose weights are the exponent vectors
@@ -221,10 +227,16 @@ theorem nonneg_and_sum_eq_of_weightSpace_weylRep_ne_bot (t : YoungTableau μ) {l
     (hl : weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t) l ≠ ⊥) :
     (∀ i, 0 ≤ l i) ∧ ∑ i, l i = μ.card := by
   refine (weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq
-    (weightChar_injective_of_algebraRat k n) l).mp fun hbot => hl ?_
+    (weightChar_injective_of_algebraRat k) l).mp fun hbot => hl ?_
   rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, hbot, inf_bot_eq]
 
+end Field
+
 /-! ## The highest weight -/
+
+section CommRing
+
+variable [CommRing k] [Algebra ℚ k]
 
 /-- The monomial basis vector of the row filling has the weight of the shape. -/
 theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
@@ -237,10 +249,12 @@ theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
 /-- **When `μ.colLen 0 ≤ n`, the weight of the shape occurs in the Weyl module**: the image under
 the symmetrizer of the monomial basis vector of the row filling is a nonzero vector of that weight.
 
-Together with `TauCeti.YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot` this
-says that `TauCeti.weightOfShape n μ` is the highest weight, in the dominance order, of the Weyl
-module of any `μ`-tableau whose shape satisfies `μ.colLen 0 ≤ n`. -/
-theorem weightSpace_weylRep_weightOfShape_ne_bot (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
+Over a field, together with
+`TauCeti.YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot`, this says that
+`TauCeti.weightOfShape n μ` is the highest weight, in the dominance order, of the Weyl module of
+any `μ`-tableau whose shape satisfies `μ.colLen 0 ≤ n`. -/
+theorem weightSpace_weylRep_weightOfShape_ne_bot [Nontrivial k] (t : YoungTableau μ)
+    (hn : μ.colLen 0 ≤ n) :
     weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t)
       (weightOfShape n μ).1 ≠ ⊥ := by
   intro hbot
@@ -254,47 +268,63 @@ theorem weightSpace_weylRep_weightOfShape_ne_bot (t : YoungTableau μ) (hn : μ.
         weightSpace (tensorPowerRep k n μ.card) (weightOfShape n μ).1 := by
     refine ⟨?_, map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le _ _
       (Submodule.mem_map_of_mem (tensorPowerBasis_rowFilling_mem_weightSpace t hn))⟩
-    rw [weylModule_toSubmodule]
-    exact LinearMap.mem_range_self _ _
+    exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule t _
   rw [hbot', Submodule.mem_bot] at hmem
   exact hmem
+
+end CommRing
 
 end YoungTableau
 
 /-! ## The Weyl module of a shape -/
 
-variable {k : Type u} [Field k] [Algebra ℚ k] {n : ℕ}
+variable {k : Type u} {n : ℕ}
+
+private theorem weightSpace_weylRepOfShape_eq_bot_iff [CommRing k] [Algebra ℚ k]
+    (μ : YoungDiagram) (l : Fin n → ℤ) :
+    weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l = ⊥ ↔
+      weightSpace
+        (W := (YoungTableau.weylModule k n
+          (StandardYoungTableau.rowSuperstandard μ).toTableau).toSubmodule)
+        (YoungTableau.weylRep k n (StandardYoungTableau.rowSuperstandard μ).toTableau) l = ⊥ := by
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
+    Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
+    weylModuleOfShape_toSubmodule, YoungTableau.weylModule_toSubmodule]
+
+section Field
+
+variable [Field k] [Algebra ℚ k]
 
 /-- **The weights of the Weyl module of a shape are dominated by the weight of that shape**: the
 shape-indexed form of `TauCeti.YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot`
 at the row-superstandard tableau. -/
 theorem sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot {μ : YoungDiagram}
-    (hn : μ.colLen 0 ≤ n) {l : Fin n → ℤ}
+    {l : Fin n → ℤ}
     (hl : weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l ≠ ⊥)
     (m : ℕ) :
     ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
-  refine YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (k := k)
-    (StandardYoungTableau.rowSuperstandard μ).toTableau hn (fun hbot => hl ?_) m
-  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, weylModuleOfShape_toSubmodule]
-  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
-    YoungTableau.weylModule_toSubmodule] at hbot
-  exact hbot
+  exact YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (k := k)
+    (StandardYoungTableau.rowSuperstandard μ).toTableau
+    (fun hbot => hl ((weightSpace_weylRepOfShape_eq_bot_iff μ l).mpr hbot)) m
 
-/-- **When `μ.colLen 0 ≤ n`, the weight of a shape occurs in the Weyl module of that shape**, so it
-is the highest weight of `TauCeti.weylRepOfShape` — and hence, over `ℂ`, of `TauCeti.schurFunctor` —
-in the dominance order. -/
+end Field
+
+section CommRing
+
+variable [CommRing k] [Algebra ℚ k] [Nontrivial k]
+
+/-- **When `μ.colLen 0 ≤ n`, the weight of a shape occurs in the Weyl module of that shape.**
+Over a field it is therefore the highest weight of `TauCeti.weylRepOfShape` — and hence, over `ℂ`,
+of `TauCeti.schurFunctor` — in the dominance order. -/
 theorem weightSpace_weylRepOfShape_weightOfShape_ne_bot {μ : YoungDiagram}
     (hn : μ.colLen 0 ≤ n) :
     weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ)
       (weightOfShape n μ).1 ≠ ⊥ := by
-  intro hbot
-  refine YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot (k := k)
-    (StandardYoungTableau.rowSuperstandard μ).toTableau hn ?_
-  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
-    YoungTableau.weylModule_toSubmodule]
-  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff,
-    weylModuleOfShape_toSubmodule] at hbot
-  exact hbot
+  exact fun hbot => YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot (k := k)
+    (StandardYoungTableau.rowSuperstandard μ).toTableau hn
+    ((weightSpace_weylRepOfShape_eq_bot_iff μ _).mp hbot)
+
+end CommRing
 
 end TauCeti

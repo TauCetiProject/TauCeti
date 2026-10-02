@@ -204,15 +204,6 @@ noncomputable def weylRepEquiv (t t' : YoungTableau μ) :
 
 /-! ### The vanishing criterion -/
 
-/-- **Every label of a `μ`-tableau has row index below `n`** once `μ` has at most `n` rows: the
-row of a label is bounded by the length of the first column. -/
-private theorem rowIndex_lt_of_colLen_le (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n)
-    (ℓ : Fin μ.card) : rowIndex t ℓ < n := by
-  have hmem : ((t.symm ℓ : ℕ × ℕ).1, (t.symm ℓ : ℕ × ℕ).2) ∈ μ := (t.symm ℓ).2
-  have h1 := YoungDiagram.mem_iff_lt_colLen.mp hmem
-  rw [rowIndex_def]
-  exact lt_of_lt_of_le (lt_of_lt_of_le h1 (μ.colLen_anti 0 _ (Nat.zero_le _))) hn
-
 /-- **The symmetrizer's diagonal coefficient is the order of the row group.** Write `r ℓ` for the
 row of the label `ℓ`. The `r`-coordinate of `c_t • e_r` in the monomial basis is the number of
 permutations lying in the row group of `t`. -/
@@ -220,14 +211,13 @@ private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : Young
     (hn : μ.colLen 0 ≤ n) :
     (tensorPowerBasis k n μ.card).repr
         (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-          (tensorPowerBasis k n μ.card fun ℓ =>
-            (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)))
-        (fun ℓ => (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)) =
+          (tensorPowerBasis k n μ.card (rowFilling t hn)))
+        (rowFilling t hn) =
       (Nat.card (rowSubgroup t) : k) := by
   classical
   rcases subsingleton_or_nontrivial k with hk | hk
   · exact Subsingleton.elim _ _
-  set r : Fin μ.card → Fin n := fun ℓ => ⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩
+  set r : Fin μ.card → Fin n := rowFilling t hn
   -- the row group is exactly the set of permutations surviving the evaluation
   set S : Finset (Equiv.Perm (Fin μ.card)) := {σ | σ ∈ rowSubgroup t} with hSdef
   have hmemS : ∀ σ : Equiv.Perm (Fin μ.card), σ ∈ S ↔ σ ∈ rowSubgroup t := by
@@ -236,7 +226,9 @@ private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : Young
       (fun ℓ => r (σ.symm ℓ)) = r ↔ σ ∈ rowSubgroup t := by
     intro σ
     rw [← inv_mem_iff (G := Equiv.Perm (Fin μ.card)), mem_rowSubgroup]
-    exact ⟨fun h ℓ => congrArg Fin.val (congrFun h ℓ), fun h => funext fun ℓ => Fin.ext (h ℓ)⟩
+    dsimp only [r]
+    simp only [funext_iff, Fin.ext_iff, val_rowFilling]
+    rfl
   have hSNat : Nat.card (rowSubgroup t) = S.card := by
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [hSNat, permTensorActionAlgHom_apply_tensorPowerBasis, map_sum, Finset.sum_apply']
@@ -272,14 +264,34 @@ private theorem repr_symmetrizer_tensorPowerBasis_ne_zero [Nontrivial k] (t : Yo
     (hn : μ.colLen 0 ≤ n) :
     (tensorPowerBasis k n μ.card).repr
         (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-          (tensorPowerBasis k n μ.card fun ℓ =>
-            (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)))
-        (fun ℓ => (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)) ≠ 0 := by
+          (tensorPowerBasis k n μ.card (rowFilling t hn)))
+        (rowFilling t hn) ≠ 0 := by
   classical
   -- the coefficient is the order of the row group, and characteristic zero keeps it nonzero
   have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
   rw [repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup t hn]
   exact Nat.cast_ne_zero.mpr (Nat.card_ne_zero.mpr ⟨inferInstance, inferInstance⟩)
+
+/-- **The symmetrizer does not annihilate the monomial basis vector of the row filling**: the
+coordinate of `c_t • e_r` at `r = TauCeti.YoungTableau.rowFilling t hn` is the order of the row
+group of `t`, which is nonzero in characteristic zero.
+
+This nonzero image witnesses `TauCeti.YoungTableau.weylModule_ne_bot`. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
+    [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
+        (tensorPowerBasis k n μ.card (rowFilling t hn)) ≠ 0 := by
+  intro h
+  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [h, map_zero]; rfl)
+
+/-- The image under the Young symmetrizer of any monomial basis vector belongs to the Weyl
+module. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule
+    (t : YoungTableau μ) (p : Fin μ.card → Fin n) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
+        (tensorPowerBasis k n μ.card p) ∈ (weylModule k n t).toSubmodule := by
+  rw [weylModule_toSubmodule]
+  exact LinearMap.mem_range_self _ _
 
 /-- The Weyl module of a `μ`-tableau is nonzero as soon as `μ` has at most `n` rows.
 
@@ -289,33 +301,11 @@ zero and the module it generates is not `⊥`. -/
 theorem weylModule_ne_bot [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     weylModule k n t ≠ ⊥ := by
   intro hbot
-  -- the submodule underlying the zero subrepresentation is `⊥`
   have hbot' : (weylModule k n t).toSubmodule = ⊥ := by rw [hbot]; rfl
-  have hmem : permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-      (tensorPowerBasis k n μ.card fun ℓ =>
-        (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n))
-      ∈ (weylModule k n t).toSubmodule := by
-    rw [weylModule_toSubmodule]
-    exact LinearMap.mem_range_self _ _
-  rw [hbot', Submodule.mem_bot k] at hmem
-  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [hmem, map_zero]; rfl)
-
-/-- **The symmetrizer does not annihilate the monomial basis vector of the row filling**: the
-coordinate of `c_t • e_r` at `r = TauCeti.YoungTableau.rowFilling t hn` is the order of the row
-group of `t`, which is nonzero in characteristic zero.
-
-This is `TauCeti.YoungTableau.weylModule_ne_bot` with the witness named: the image of `e_r` is a
-nonzero vector of the relevant weight. -/
-theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
-    [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
-    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (tensorPowerBasis k n μ.card (rowFilling t hn)) ≠ 0 := by
-  have hfun : rowFilling t hn
-      = fun ℓ => (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n) :=
-    funext fun ℓ => Fin.ext (val_rowFilling t hn ℓ)
-  intro h
-  rw [hfun] at h
-  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [h, map_zero]; rfl)
+  have hmem := permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule
+    (k := k) t (rowFilling t hn)
+  rw [hbot', Submodule.mem_bot] at hmem
+  exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero t hn hmem
 
 /-- When `μ` has more than `n` rows, any index function `p : Fin μ.card → Fin n` repeats a value on
 the first column of `t`: two distinct labels of that column carry the same basis index. -/

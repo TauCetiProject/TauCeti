@@ -24,12 +24,12 @@ the rows exhaust the cells, the row lengths also determine the diagram
 (`YoungDiagram.rowLen_injective`).  Cutting the same count column by column,
 `YoungDiagram.card_filter_fst_lt_filter_snd_eq` counts the cells of the first `k` rows
 lying in a fixed column; summing that count over the columns gives the counting core
-`YoungDiagram.card_filter_le_sum_take_rowLens`, which bounds the elements of a finite type
-labelled by a row and injected into the cells, no two of them sharing both a row and a column, by
-the cells of the first `k` rows.  The same row-by-row reading applies to any property of the
-cells, not only to counting them all: `YoungDiagram.card_filter_cells` counts the cells satisfying a
-predicate one row at a time, and `YoungDiagram.prod_cells_eq_prod_range` reads a product over the
-cells the same way.
+`YoungDiagram.card_filter_le_sum_take_rowLens`, which bounds the elements of row less than `k` in
+a finite type labelled by a row and injected into the cells, no two of them sharing both a row and
+a column, by the cells of the first `k` rows.  The same row-by-row reading applies to any property
+of the cells, not only to counting them all: `YoungDiagram.card_filter_cells` counts the cells
+satisfying a predicate one row at a time, and `YoungDiagram.prod_cells_eq_prod_range` reads a
+product over the cells the same way.
 
 The partial sums are the shape of every dominance statement about partitions, since dominance
 compares partial sums of decreasingly sorted parts, and the sorted parts of a partition are the

@@ -342,7 +342,7 @@ the tableau that of an injection into the cells, so the lemma is the counting co
 For every `m`, at most as many labels of a `μ`-tableau satisfy `p x < m` as lie in one of the
 first `m` rows.
 
-Summed over `m` this is the dominance bound on the content of such a filling: the content is
+As `m` varies, this gives the dominance bound on the content of such a filling: the content is
 dominated by the sequence of row lengths of `μ`, which is the content of the row index itself. -/
 theorem card_filter_lt_le_card_filter_rowIndex_lt (t : YoungTableau μ) {p : Fin μ.card → ℕ}
     (hp : Function.Injective fun x => (p x, colIndex t x)) (m : ℕ) :

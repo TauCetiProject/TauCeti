@@ -12,8 +12,6 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis
 -- The multiplicity vector `TauCeti.weightOfMultiset` of a multiset, and its torus character.
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Combinatorics
--- The unordered tuple `TauCeti.Sym.ofFn f` underlying an ordered one, and its surjectivity.
-public import TauCeti.Data.Sym.Basic
 
 /-!
 # The weights of a tensor power of the standard representation
