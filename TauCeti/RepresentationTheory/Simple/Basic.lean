@@ -121,21 +121,21 @@ private theorem map_subInclusion (X : FDRep k G) (W : Subrepresentation X.ρ) :
 private instance (X : FDRep k G) (W : Subrepresentation X.ρ) : Mono (subInclusion X W) :=
   (forget₂ (FDRep k G) (Rep k G)).mono_of_mono_map (by
     rw [map_subInclusion]
-    exact Rep.mono_ofHom_subtype W)
+    exact W.mono_ofHom_subtype)
 
 /-- The inclusion of a subrepresentation is the zero morphism exactly when the subrepresentation is
 zero. -/
 private theorem subInclusion_eq_zero_iff (X : FDRep k G) (W : Subrepresentation X.ρ) :
     subInclusion X W = 0 ↔ W = ⊥ := by
   rw [← (forget₂ (FDRep k G) (Rep k G)).map_eq_zero_iff, map_subInclusion]
-  exact Rep.ofHom_subtype_eq_zero_iff W
+  exact W.ofHom_subtype_eq_zero_iff
 
 /-- The inclusion of a subrepresentation is an isomorphism exactly when the subrepresentation is
 everything. -/
 private theorem isIso_subInclusion_iff (X : FDRep k G) (W : Subrepresentation X.ρ) :
     IsIso (subInclusion X W) ↔ W = ⊤ := by
   rw [← isIso_iff_of_reflects_iso _ (forget₂ (FDRep k G) (Rep k G)), map_subInclusion]
-  exact Rep.isIso_ofHom_subtype_iff W
+  exact W.isIso_ofHom_subtype_iff
 
 /-- **An object of `FDRep k G` is simple exactly when the representation it carries is
 irreducible.** -/

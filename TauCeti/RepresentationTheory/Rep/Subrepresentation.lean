@@ -20,11 +20,18 @@ representation it carries.
 
 ## Main results
 
-* `Rep.mono_ofHom_subtype`: the inclusion of a subrepresentation is a monomorphism.
-* `Rep.ofHom_subtype_eq_zero_iff`: the inclusion is zero exactly when the subrepresentation is
-  `⊥`.
-* `Rep.isIso_ofHom_subtype_iff`: the inclusion is an isomorphism exactly when the
+* `Subrepresentation.mono_ofHom_subtype`: the inclusion of a subrepresentation is a monomorphism.
+* `Subrepresentation.ofHom_subtype_eq_zero_iff`: the inclusion is zero exactly when the
+  subrepresentation is `⊥`.
+* `Subrepresentation.isIso_ofHom_subtype_iff`: the inclusion is an isomorphism exactly when the
   subrepresentation is `⊤`.
+
+## Implementation notes
+
+Although `Rep k G` is defined over a `Semiring k`, forming `Rep.of W.toRepresentation` requires
+the carrier `↥W.toSubmodule` to carry an `AddCommGroup` instance. For submodules over a general
+semiring, subsets need not be closed under negation (e.g. `ℕ ⊆ ℤ` as an `ℕ`-submodule), so
+`Submodule.addCommGroup` and these inclusion morphisms require `[Ring k]`.
 -/
 
 public section
@@ -33,7 +40,7 @@ open CategoryTheory
 
 universe u v w
 
-namespace Rep
+namespace Subrepresentation
 
 variable {k : Type u} {G : Type v} [Ring k] [Monoid G] {V : Type w} [AddCommGroup V] [Module k V]
   {ρ : Representation k G V} (W : Subrepresentation ρ)
@@ -54,4 +61,5 @@ theorem isIso_ofHom_subtype_iff : IsIso (Rep.ofHom W.subtype) ↔ W = ⊤ := by
   rw [isIso_iff_mono_and_epi, Rep.epi_iff_surjective, Rep.hom_ofHom, W.subtype_surjective_iff]
   exact and_iff_right inferInstance
 
-end Rep
+end Subrepresentation
+
