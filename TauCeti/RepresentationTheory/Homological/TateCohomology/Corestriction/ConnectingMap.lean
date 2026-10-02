@@ -17,11 +17,9 @@ For a subgroup `H` of a finite group `G`, Tate corestriction commutes with the c
 of every short exact sequence of representations, from degree `r` to degree `r + 1` for
 `r < 0`. This includes the norm boundary from degree minus one to degree zero.
 
-Below that boundary, corestriction is the covariant map on group homology. The comparison
-`toGroupHomology` is injective even in degree minus one, so naturality of the homological
-connecting map proves the Tate square. At the boundary, corestriction includes norm kernels
-and applies the relative norm to invariants. The identity `N_{G/H} N_H = N_G` gives the
-required compatibility on representatives.
+In negative degrees, the canonical comparison with group homology intertwines corestriction
+with the map induced by subgroup inclusion. At the norm boundary, the compatibility relates
+the norm-kernel inclusion in degree minus one to the relative norm on invariants in degree zero.
 
 These squares allow dimension shifting across the negative half of the Tate complex and
 its norm boundary, in particular when proving the projection formula for cup products
@@ -40,11 +38,6 @@ whose total degree is zero. No nonnegative-degree compatibility is asserted here
 
 * K. S. Brown, *Cohomology of Groups*, Chapter III, §9 and Chapter VI, §5.
 * E. Artin and J. Tate, *Class Field Theory*, Chapter IV, §6 and Chapter XIV, §4.
-
-The boundary argument uses `δ_neg_one_HNegOneπ`, the specialization of Mathlib's concrete
-connecting-map formula. The homological proof follows the restriction argument in
-`TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Delta`, replacing
-homological transfer by the covariant subgroup map and its existing naturality theorem.
 -/
 
 public noncomputable section
@@ -90,6 +83,8 @@ theorem δ_comp_cor_neg_one {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
     (H : Subgroup G) :
     _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) (-1) ≫ H0Cor S.X₁ H =
       HNegOneCor S.X₃ H ≫ _root_.TateCohomology.δ hS (-1) := by
+  -- Use `δ_neg_one_HNegOneπ`, the specialization of Mathlib's concrete connecting-map
+  -- formula, and the relative-norm identity `N_{G/H} N_H = N_G` on representatives.
   ext z
   induction z using HNegOne_induction_on with
   | h z =>
@@ -120,6 +115,10 @@ private theorem δ_comp_cor_negSucc {S : ShortComplex (Rep R G)} (hS : S.ShortEx
         cor S.X₁ H (Int.negSucc n) =
       cor S.X₃ H (Int.negSucc (n + 1)) ≫
         _root_.TateCohomology.δ hS (Int.negSucc (n + 1)) := by
+  -- Follow the restriction argument in
+  -- `TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Delta`, replacing
+  -- homological transfer by the covariant subgroup map and its naturality theorem.
+  -- The comparison is injective even in degree minus one, so cancel it to prove the Tate square.
   refine (cancel_mono (toGroupHomology S.X₁ n)).1 ?_
   calc
     _ = toGroupHomology (Rep.res H.subtype S.X₃) (n + 1) ≫
