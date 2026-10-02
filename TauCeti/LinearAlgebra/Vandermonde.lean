@@ -515,12 +515,13 @@ theorem prod_dvd_prod_mul_det_vandermonde {R : Type*} [CommRing R] {n : ℕ} (u 
   exact dvd_mul_right _ _
 
 /-- **Integrality for a weighted Vandermonde product.**  For sequences of nodes `uₖ` and weights
-`wₖ`, if `p j` is monic of degree `j` and `d j` divides `wᵢ * (p j).eval (uᵢ)` for `i, j < m`, then
+`wₖ`, if `p j` is monic of degree `j` for `j < m` and `d j` divides `wᵢ * (p j).eval (uᵢ)` for
+`i, j < m`, then
 `∏_{k < m} d k` divides `∏_{k < m} wₖ · ∏_{k < l < m} (uₖ - uₗ)`.  This is
 `TauCeti.prod_dvd_prod_mul_det_vandermonde` with the determinant expanded; the sign relating the two
 orders of the differences does not affect divisibility. -/
 theorem prod_dvd_prod_mul_prod_sub {R : Type*} [CommRing R] (m : ℕ) (u w d : ℕ → R)
-    (p : ℕ → R[X]) (hdeg : ∀ j, (p j).natDegree = j) (hmonic : ∀ j, (p j).Monic)
+    (p : ℕ → R[X]) (hdeg : ∀ j < m, (p j).natDegree = j) (hmonic : ∀ j < m, (p j).Monic)
     (hdvd : ∀ i < m, ∀ j < m, d j ∣ w i * (p j).eval (u i)) :
     (∏ k ∈ Finset.range m, d k)
       ∣ ∏ k ∈ Finset.range m, w k * ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l) := by
@@ -533,7 +534,7 @@ theorem prod_dvd_prod_mul_prod_sub {R : Type*} [CommRing R] (m : ℕ) (u w d : �
   rw [Finset.prod_mul_distrib, hprod, ← Fin.prod_univ_eq_prod_range w m, mul_left_comm,
     ← Fin.prod_univ_eq_prod_range d m]
   exact (prod_dvd_prod_mul_det_vandermonde (fun i : Fin m => u i) (fun i => w i) (fun j => d j)
-    (fun j => p j) (fun j => hdeg j) (fun j => hmonic j)
+    (fun j => p j) (fun j => hdeg j j.2) (fun j => hmonic j j.2)
     fun i j => hdvd i i.2 j j.2).mul_left _
 
 /-! ### Products of squared differences, weighted by the nodes -/
@@ -568,8 +569,8 @@ theorem prod_factorial_dvd_prod_mul_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
       ∣ ∏ k ∈ Finset.range m, b k * ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2) :=
   prod_dvd_prod_mul_prod_sub m (fun k => b k ^ 2) b _
     (fun j => ∏ m ∈ Finset.range j, (X - C (((m : ℤ) + 1) ^ 2)))
-    (fun j => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
-    (fun j => monic_prod_X_sub_C _ _)
+    (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
+    (fun j _ => monic_prod_X_sub_C _ _)
     fun i _ j _ => by simpa [eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (b i)
 
 /-! ### The Vandermonde product of `x (x + 1)`, weighted by `2x + 1` -/
@@ -588,8 +589,8 @@ theorem prod_factorial_dvd_prod_two_mul_add_one_mul_prod_sub_mul_add_add_one (m 
           (2 * b k + 1) * ∏ l ∈ Finset.Ico (k + 1) m, (b k - b l) * (b k + b l + 1) := by
   have h := prod_dvd_prod_mul_prod_sub m (fun k => b k * (b k + 1)) (fun k => 2 * b k + 1) _
     (fun j => ∏ c ∈ Finset.range j, (X - C ((c : ℤ) * (c + 1))))
-    (fun j => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
-    (fun j => monic_prod_X_sub_C _ _)
+    (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
+    (fun j _ => monic_prod_X_sub_C _ _)
     fun i _ j _ => by
       have hrow : ∏ c ∈ Finset.range j, (b i * (b i + 1) - c * (c + 1))
           = ∏ c ∈ Finset.range j, (b i - c) * (b i + c + 1) :=
