@@ -11,6 +11,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.Algebra.Module.NatInt
 
 /-!
 # The standard representation of the type-B spin carrier
@@ -133,13 +134,6 @@ theorem points_mulVec_mem
   exact h
 
 /-! ## The numbered simple root generators on the coordinate basis -/
-
-/-- A unit of `ℤ` acting by `(-1) ^ m` and then by `u` acts by their product. -/
-private theorem neg_one_pow_smul_units_smul {V : Type*} [AddCommGroup V] [Module ℚ V] (m : ℕ)
-    (u : ℤˣ) (v : V) : (-1 : ℚ) ^ m • u • v = ((-1) ^ m * u) • v := by
-  rw [mul_smul, Units.smul_def ((-1) ^ m), ← Int.cast_smul_eq_zsmul ℚ]
-  push_cast
-  rfl
 
 /-- A positive numbered simple root generator moves an exterior basis vector whose spin weight
 pairs to `-1` with the simple coroot to the basis vector of the reflected sign set, up to sign. -/
@@ -312,6 +306,51 @@ private theorem rootSubgroupPoints_mulVec_single_sub (j : Fin (n + 1) ⊕ Fin (n
   funext r
   simp [rootGeneratorMatrix_apply_of_eq n j h, Pi.single_apply]
 
+/-- The character of the spin weight torus attached to a spin-basis index. -/
+noncomputable abbrev basisCharacter (a : Fin (dimension n)) :
+    Multiplicative (Fin (n + 1) →₀ ℤ) :=
+  Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (basisWeight n a))
+
+private theorem basisCharacter_injective : Function.Injective (basisCharacter n) := by
+  intro a b h
+  have hw : basisWeight n a = basisWeight n b :=
+    Finsupp.equivFunOnFinite.symm.injective (Multiplicative.ofAdd.injective h)
+  exact (Fintype.equivFin (Finset (Fin (n + 1)))).symm.injective
+    (DynkinType.typeBSpinWeight_injective hw)
+
+/-- **Restricting the standard carrier comodule to the spin weight torus gives the direct sum of
+the distinct spin weight lines.** Corestricting along `weightTorusToBaseChangeCoordinateMap`
+turns the standard comodule on `Fin (dimension n) → R` into the comodule in which the coordinate
+basis vector at `a` spans the weight line of the torus character `basisCharacter n a`. -/
+theorem torusCorestrict_eq_ofWeights :
+    let _ := standardComodule n R
+    Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap n R).hom.toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun R (Fin (dimension n))) (basisCharacter n) := by
+  let _ := GeneralLinear.standardComodule R (dimension n)
+  let _ := standardComodule n R
+  apply Comodule.ext
+  rw [Comodule.corestrict_coact,
+    ← Comodule.corestrictCoact_comp (coordinateMap n R).hom.toCoalgHom
+      (weightTorusToBaseChangeCoordinateMap n R).hom.toCoalgHom]
+  have hcomp :
+      _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap n R).hom.toCoalgHom)
+          ((coordinateMap n R).hom.toCoalgHom) =
+        (GeneralLinear.weightTorusCoordinateBialgHom (S := R) (basisWeight n)).toCoalgHom := by
+    have hb :
+        (weightTorusToBaseChangeCoordinateMap n R).hom.comp (coordinateMap n R).hom =
+          GeneralLinear.weightTorusCoordinateBialgHom (S := R) (basisWeight n) := by
+      rw [← _root_.CommHopfAlgCat.hom_comp,
+        coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
+        GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
+    apply DFunLike.ext _ _
+    intro x
+    exact DFunLike.congr_fun hb x
+  rw [hcomp]
+  simpa only [Comodule.corestrict_coact] using
+    congrArg (fun c : Comodule R _ (Fin (dimension n) → R) ↦ c.coact)
+      (GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
+        (basisWeight n))
+
 /-! ## Simplicity over a field -/
 
 section Simple
@@ -381,51 +420,6 @@ private theorem single_basisReflection_mem
     refine single_mem_of_rep_rootGenerator_eq n k N (.inr i) (c := c) ?_ ha
     rw [coe_latticeBasis n a, coe_latticeBasis n (basisReflection n i a)]
     exact hc
-
-/-- The character of the spin weight torus attached to a spin-basis index. -/
-noncomputable abbrev basisCharacter (a : Fin (dimension n)) :
-    Multiplicative (Fin (n + 1) →₀ ℤ) :=
-  Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (basisWeight n a))
-
-private theorem basisCharacter_injective : Function.Injective (basisCharacter n) := by
-  intro a b h
-  have hw : basisWeight n a = basisWeight n b :=
-    Finsupp.equivFunOnFinite.symm.injective (Multiplicative.ofAdd.injective h)
-  exact (Fintype.equivFin (Finset (Fin (n + 1)))).symm.injective
-    (DynkinType.typeBSpinWeight_injective hw)
-
-/-- **Restricting the standard carrier comodule to the spin weight torus gives the direct sum of
-the distinct spin weight lines.** Corestricting along `weightTorusToBaseChangeCoordinateMap`
-turns the standard comodule on `Fin (dimension n) → k` into the comodule in which the coordinate
-basis vector at `a` spans the weight line of the torus character `basisCharacter n a`. -/
-theorem torusCorestrict_eq_ofWeights :
-    let _ := standardComodule n k
-    Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap n k).hom.toCoalgHom =
-      Comodule.ofWeights (Pi.basisFun k (Fin (dimension n))) (basisCharacter n) := by
-  let _ := GeneralLinear.standardComodule k (dimension n)
-  let _ := standardComodule n k
-  apply Comodule.ext
-  rw [Comodule.corestrict_coact,
-    ← Comodule.corestrictCoact_comp (coordinateMap n k).hom.toCoalgHom
-      (weightTorusToBaseChangeCoordinateMap n k).hom.toCoalgHom]
-  have hcomp :
-      _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap n k).hom.toCoalgHom)
-          ((coordinateMap n k).hom.toCoalgHom) =
-        (GeneralLinear.weightTorusCoordinateBialgHom (S := k) (basisWeight n)).toCoalgHom := by
-    have hb :
-        (weightTorusToBaseChangeCoordinateMap n k).hom.comp (coordinateMap n k).hom =
-          GeneralLinear.weightTorusCoordinateBialgHom (S := k) (basisWeight n) := by
-      rw [← _root_.CommHopfAlgCat.hom_comp,
-        coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
-        GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-    apply DFunLike.ext _ _
-    intro x
-    exact DFunLike.congr_fun hb x
-  rw [hcomp]
-  simpa only [Comodule.corestrict_coact] using
-    congrArg (fun c : Comodule k _ (Fin (dimension n) → k) ↦ c.coact)
-      (GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
-        (basisWeight n))
 
 /-- **The standard comodule of the specialized type-`Bₙ₊₁` spin carrier is simple over every
 field.** -/
