@@ -83,6 +83,7 @@ theorem compactifiedQuotientConj_ofCusp (h : ConjAct.toConjAct g • Γ = Γ') (
   (rfl)
 
 /-- The map induced by `g⁻¹` is a left inverse of the map induced by `g`. -/
+@[simp]
 theorem compactifiedQuotientConj_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ')
     (x : Γ.CompactifiedQuotient) :
     compactifiedQuotientConj (by rw [← h, map_inv, inv_smul_smul] :
