@@ -26,17 +26,13 @@ p = b - 6s², q = c - 2bs + 8s³, r = d - cs + bs² - 3s⁴,   s = a/4.
 So the label of any quartic is the label of a depressed one, which is the form in which the
 resolvent cubic `TauCeti.resolventCubic` is written.
 
-## Main definitions
-
-* `Polynomial.rootSetCompXAddCEquiv`: the bijection `x ↦ x + t` from the roots of `f(X + t)` to
-  the roots of `f`.
-
 ## Main results
 
 * `Polynomial.isSplittingField_comp_X_add_C_iff`: `f(X + t)` and `f` have the same splitting
   fields.
-* `Polynomial.galActionHom_restrict_rootSetCompXAddCEquiv`: the bijection of root sets is
-  equivariant for every automorphism of a normal extension in which `f` splits.
+* `Polynomial.galActionHom_restrict_rootSetCompXAddCEquiv`: the bijection
+  `Polynomial.rootSetCompXAddCEquiv` of root sets is equivariant for every automorphism of a
+  normal extension in which `f` splits.
 * `Polynomial.map_range_galActionHom_comp_X_add_C`: the Galois images of `f(X + t)` and `f`
   correspond along that bijection.
 * `TauCeti.hasGaloisLabel_comp_X_add_C_iff`: `f(X + t)` and `f` have the same label.
@@ -53,33 +49,6 @@ public section
 open Polynomial
 
 namespace Polynomial
-
-section CommRing
-
-variable {R : Type*} [CommRing R]
-
-/-- The bijection `x ↦ x + t` from the roots of `p(X + t)` to the roots of `p`. -/
-def rootSetCompXAddCEquiv (p : R[X]) (t : R) (S : Type*) [CommRing S] [IsDomain S]
-    [Algebra R S] : (p.comp (X + C t)).rootSet S ≃ p.rootSet S :=
-  (Equiv.addRight (algebraMap R S t)).subtypeEquiv fun x => by
-    rw [rootSet_comp_X_add_C, Set.mem_preimage, Equiv.coe_addRight]
-
-variable {S : Type*} [CommRing S] [IsDomain S] [Algebra R S]
-
-/-- The bijection `Polynomial.rootSetCompXAddCEquiv` adds `t`. -/
-@[simp]
-theorem coe_rootSetCompXAddCEquiv_apply (p : R[X]) (t : R) (x : (p.comp (X + C t)).rootSet S) :
-    (rootSetCompXAddCEquiv p t S x : S) = x + algebraMap R S t :=
-  (rfl)
-
-/-- The inverse of `Polynomial.rootSetCompXAddCEquiv` subtracts `t`. -/
-@[simp]
-theorem coe_rootSetCompXAddCEquiv_symm_apply (p : R[X]) (t : R) (x : p.rootSet S) :
-    ((rootSetCompXAddCEquiv p t S).symm x : S) = x - algebraMap R S t := by
-  obtain ⟨y, rfl⟩ := (rootSetCompXAddCEquiv p t S).surjective x
-  simp
-
-end CommRing
 
 section Field
 
@@ -238,8 +207,9 @@ theorem hasGaloisLabel_quartic_iff_depressed (hchar : ringChar F ≠ 2) (a b c d
         C (d - c * (a / 4) + b * (a / 4) ^ 2 - 3 * (a / 4) ^ 4)) j := by
   have h4 : (4 : F) * (a / 4) = a := by
     have h2 : (2 : F) ≠ 0 := Ring.two_ne_zero hchar
+    have h22 : (4 : F) = 2 * 2 := by norm_num
     have : (4 : F) ≠ 0 := by
-      rw [show (4 : F) = 2 * 2 by norm_num]
+      rw [h22]
       exact mul_ne_zero h2 h2
     field_simp
   rw [← quartic_comp_X_sub_C, h4, sub_eq_add_neg, ← C_neg, hasGaloisLabel_comp_X_add_C_iff]
