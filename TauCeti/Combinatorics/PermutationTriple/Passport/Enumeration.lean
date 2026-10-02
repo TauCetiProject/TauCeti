@@ -125,23 +125,33 @@ theorem orbitFinset_mem_passportClasses_iff (P : PassportSpec n)
   rw [passportClasses_eq_image_classSet P G hG]
   simp [ConnectedIsoClass.orbitFinset_injective.eq_iff]
 
-/-- The union of the listed passport classes is exactly the computed triple fiber. -/
-theorem biUnion_passportClasses (P : PassportSpec n) (G : Finset (Perm (Fin n)))
-    (hG : (G : Set (Perm (Fin n))) = P.G) :
-    (passportClasses G P.lam0 P.lam1 P.laminf).biUnion id =
-      passportTriples G P.lam0 P.lam1 P.laminf := by
+/-- The union of the listed passport classes is exactly the computed triple fiber, for arbitrary
+input finsets and ordered cycle partitions. -/
+theorem biUnion_passportClasses (G : Finset (Perm (Fin n)))
+    (lam0 lam1 laminf : Multiset ℕ) :
+    (passportClasses G lam0 lam1 laminf).biUnion id =
+      passportTriples G lam0 lam1 laminf := by
   classical
-  rw [passportClasses_eq_image_classSet P G hG]
   ext t
-  simp only [Finset.mem_biUnion, Finset.mem_image, PassportSpec.mem_classSet, id_eq,
-    mem_passportTriples_iff_hasPassport P G hG]
+  simp only [Finset.mem_biUnion, mem_passportClasses, id_eq]
   constructor
-  · rintro ⟨s, ⟨c, hc, rfl⟩, ht⟩
+  · rintro ⟨s, ⟨t', ht', rfl⟩, ht⟩
+    -- A member certifies the input finset as a conjugate subgroup, so the existing passport
+    -- invariance applies without assuming that arbitrary inputs present a subgroup.
+    obtain ⟨τ, hτ⟩ := (mem_passportTriples.mp ht').1
+    let P : PassportSpec n :=
+      ⟨t'.1.monodromyGroup.map (MulAut.conj τ).toMonoidHom, lam0, lam1, laminf⟩
+    have hG : (G : Set (Perm (Fin n))) = P.G := by
+      dsimp [P]
+      rw [← hτ, Finset.coe_image, PermutationTriple.coe_monodromyFinset]
+    have hc := (ConnectedIsoClass.hasPassport_mk t' P).mpr
+      ((mem_passportTriples_iff_hasPassport P G hG t').mp ht')
     rw [← ConnectedIsoClass.mem_orbitFinset.mp ht] at hc
-    exact (ConnectedIsoClass.hasPassport_mk t P).mp hc
+    exact (mem_passportTriples_iff_hasPassport P G hG t).mpr
+      ((ConnectedIsoClass.hasPassport_mk t P).mp hc)
   · intro ht
     exact ⟨(ConnectedIsoClass.mk t).orbitFinset,
-      ⟨ConnectedIsoClass.mk t, (ConnectedIsoClass.hasPassport_mk t P).mpr ht, rfl⟩,
+      ⟨t, ht, rfl⟩,
       ConnectedIsoClass.mem_orbitFinset.mpr rfl⟩
 
 /-- The computed class fiber has cardinality equal to the passport size. -/
