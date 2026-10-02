@@ -37,6 +37,8 @@ nonemptiness assumption is made on the set of cones of the subfan.
 
 * W. Fulton, *Introduction to Toric Varieties*, §§1.4 and 2.4.
 * D. Cox, J. Little and H. Schenck, *Toric Varieties*, §3.1.
+* The construction of the glued map and the proofs of injectivity, openness and the range follow
+  Mathlib's `TopCat.GlueData.fromOpenSubsetsGlue` (`Mathlib.Topology.Gluing`).
 -/
 
 public section
