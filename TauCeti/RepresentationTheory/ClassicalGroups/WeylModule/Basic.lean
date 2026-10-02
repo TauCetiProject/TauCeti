@@ -230,8 +230,7 @@ private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : Young
     intro σ
     rw [← inv_mem_iff (G := Equiv.Perm (Fin μ.card)), mem_rowSubgroup]
     dsimp only [r]
-    simp only [funext_iff, Fin.ext_iff, val_rowFilling]
-    rfl
+    simp only [funext_iff, Fin.ext_iff, val_rowFilling, Equiv.Perm.inv_def]
   have hSNat : Nat.card (rowSubgroup t) = S.card := by
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [hSNat, permTensorActionAlgHom_apply_tensorPowerBasis, map_sum, Finset.sum_apply']
@@ -285,7 +284,7 @@ theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_
     permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
         (tensorPowerBasis k n μ.card (rowFilling t hn)) ≠ 0 := by
   intro h
-  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [h, map_zero]; rfl)
+  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [h, map_zero, Finsupp.zero_apply])
 
 /-- The image under the Young symmetrizer of any monomial basis vector belongs to the Weyl
 module. -/

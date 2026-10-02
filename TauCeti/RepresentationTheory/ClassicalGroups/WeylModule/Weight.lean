@@ -238,10 +238,9 @@ theorem sum_dominantWeightOf_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot
     (hl : weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t) l ≠ ⊥) (m : ℕ) :
     ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (dominantWeightOf l).1 j ≤
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
-  rw [coe_dominantWeightOf]
   exact sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot t
-    (fun hbot => hl ((weightSpace_eq_bot_comp_perm_iff
-      (W := (weylModule k n t).toSubmodule) (weylRep k n t) (dominantSort l) l).mp hbot)) m
+    (fun hbot => hl ((weightSpace_eq_bot_dominantWeightOf_iff
+      (W := (weylModule k n t).toSubmodule) (weylRep k n t) l).mp hbot)) m
 
 /-- **The weights of the Weyl module are nonnegative and of total degree `|μ|`**: a weight of a
 subrepresentation is a weight of the ambient tensor power, whose weights are the exponent vectors

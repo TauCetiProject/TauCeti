@@ -133,11 +133,7 @@ theorem weightOfMultiset_ofFn_apply {n d : ℕ} (p : Fin d → Fin n) (j : Fin n
     weightOfMultiset (Sym.ofFn p : Multiset (Fin n)) j =
       ((Finset.univ.filter fun x => p x = j).card : ℤ) := by
   classical
-  have hfilter : (Finset.univ.filter fun a : Fin d => j = p a)
-      = Finset.univ.filter fun x => p x = j :=
-    Finset.filter_congr fun _ _ => eq_comm
-  rw [weightOfMultiset_apply, Sym.coe_ofFn, List.ofFn_eq_map, ← Multiset.map_coe,
-    ← Finset.val_univ_fin d, Multiset.count_map, ← Finset.filter_val, Finset.card_val, hfilter]
+  rw [weightOfMultiset_apply, Sym.count_coe_ofFn]
 
 /-- **The partial sums of the content of an ordered tuple count its small values**: the
 multiplicities of the values below `m` add up to the number of places at which the tuple takes

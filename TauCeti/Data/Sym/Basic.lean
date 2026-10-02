@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Sym.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Finset.NatAntidiagonal
@@ -34,6 +35,8 @@ orbits of the permutation action, by `TauCeti.Sym.ofFn_eq_ofFn_iff`. Nothing her
   `Sym.append`.
 * `TauCeti.Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple
   exactly when one is a reindexing of the other by a permutation.
+* `TauCeti.Sym.count_coe_ofFn`: the multiplicity of a value in an unordered tuple is the number
+  of entries of the ordered tuple taking that value.
 * `TauCeti.Sym.basepointDivisor` is the set of unordered tuples containing a fixed point;
   `TauCeti.Sym.range_cons` identifies it with the range of adjoining that point.
 * `TauCeti.symFinTwoEquiv`: an unordered `d`-tuple over `Fin 2` is determined by how many of its
@@ -75,6 +78,14 @@ def ofFn (f : Fin n → α) : Sym α n :=
 @[simp]
 theorem coe_ofFn (f : Fin n → α) : (ofFn f : Multiset α) = ↑(List.ofFn f) :=
   congrArg _ (List.Vector.toList_ofFn f)
+
+/-- The multiplicity of a value in `ofFn f` is the number of entries of `f` equal to it. -/
+theorem count_coe_ofFn [DecidableEq α] (f : Fin n → α) (a : α) :
+    Multiset.count a (ofFn f : Multiset α) = (Finset.univ.filter fun i => f i = a).card := by
+  have hmap : (ofFn f : Multiset α) = Multiset.map f Finset.univ.val := by
+    simp [List.ofFn_eq_map, Finset.val_univ_fin]
+  rw [hmap, Multiset.count_map, ← Finset.filter_val, Finset.card_val]
+  simp only [eq_comm]
 
 /-- The points of `ofFn f` are exactly the values of `f`. -/
 @[simp]
@@ -145,15 +156,8 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
   classical
   refine ⟨fun h => ?_, ?_⟩
   · -- the two tuples take each value the same number of times, so their fibres are equinumerous
-    have key : ∀ (u : Fin n → α) (c : α),
-        Fintype.card {i // u i = c} = Multiset.count c (↑(List.ofFn u) : Multiset α) := by
-      intro u c
-      have hmap : (↑(List.ofFn u) : Multiset α) = Multiset.map u Finset.univ.val := by
-        rw [List.ofFn_eq_map]; rfl
-      rw [Fintype.card_subtype, hmap, Multiset.count_map, ← Finset.filter_val, Finset.card_def]
-      simp [eq_comm]
     have hcard : ∀ c : α, Fintype.card {i // g i = c} = Fintype.card {i // f i = c} := fun c => by
-      rw [key, key, ← coe_ofFn, ← coe_ofFn, h]
+      rw [Fintype.card_subtype, Fintype.card_subtype, ← count_coe_ofFn g c, ← count_coe_ofFn f c, h]
     exact ⟨Equiv.ofFiberEquiv fun c => Fintype.equivOfCardEq (hcard c),
       funext fun i => Equiv.ofFiberEquiv_map _ i⟩
   · rintro ⟨σ, rfl⟩
