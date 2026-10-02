@@ -13,11 +13,11 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
 
 Liu and Wang (Example 4.7) exhibit a minimal `A∞` structure on the zigzag algebra of the affine
 `D₄` graph whose only higher operation is a quartic operation `m₄` built from one closed walk. In
-the Layer 0 numbering `TauCeti.AffineDynkinType.graph (D 4)`, node `1` is trivalent and `0, 2, 3, 4`
-are leaves. Write `α_l` for the arrow from a leaf `l` to the centre and `β_l` for the arrow from the
-centre to `l`. Liu--Wang's two leaves `1` and `4` are taken to be the nodes `0` and `4`. Up to one
-common scalar `c`, the operation `m₄` is nonzero on arrow quadruples exactly at the four cyclic
-rotations of the closed walk `β₄ α₁ β₁ α₄`:
+the numbering of `TauCeti.AffineDynkinType.graph (D 4)`, node `1` is the centre, of valency four,
+and `0, 2, 3, 4` are leaves. Write `α_l` for the arrow from a leaf `l` to the centre and `β_l` for
+the arrow from the centre to `l`. Liu--Wang's two leaves `1` and `4` are taken to be the nodes `0`
+and `4`. For one common scalar `c`, the operation `m₄` vanishes on every arrow quadruple other than
+the four cyclic rotations of the closed walk `β₄ α₁ β₁ α₄`, and on those it takes the values
 
 ```text
 m₄(β₄, α₁, β₁, α₄) = c β₄ α₄,      m₄(α₄, β₄, α₁, β₁) = c α₁ β₁,

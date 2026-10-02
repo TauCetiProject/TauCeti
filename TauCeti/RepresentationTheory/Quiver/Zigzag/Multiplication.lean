@@ -472,8 +472,7 @@ theorem mul_zigzagVolume (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V)
 theorem zigzagBasis_coord_dart_zigzagVolume (hns : ∀ i : V, ∃ j, G.Adj i j) (d : G.Dart)
     (i : V) : (zigzagBasis k G hns).coord (.inr (.inl d)) (zigzagVolume k G i) = 0 := by
   classical
-  rw [show zigzagVolume k G i = zigzagBasis k G hns (.inr (.inr i)) by simp,
-    zigzagBasis_coord_apply]
+  rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
   simp
 
 end
