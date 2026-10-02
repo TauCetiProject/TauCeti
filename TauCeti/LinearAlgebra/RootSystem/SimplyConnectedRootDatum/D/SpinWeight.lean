@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.Basic
 public import TauCeti.RepresentationTheory.Spin.Weight
 import TauCeti.Data.Finset.Basic
+import TauCeti.Data.List.Involutive
 
 /-!
 # Type `D` spin weights in the simply connected character lattice
@@ -640,13 +641,6 @@ private theorem typeDSpinSign_typeDSpinReflection_of_add_one_lt {n : ℕ} {i : F
       typeDSpinSign s (Equiv.swap i (⟨(i : ℕ) + 1, hi⟩ : Fin n) x) := by
   simp only [typeDSpinSign_apply, mem_typeDSpinReflection_of_add_one_lt hi]
 
-private theorem typeDSpinSign_typeDSpinReflection_of_not_add_one_lt {n : ℕ} {i : Fin n}
-    (hi : ¬(i : ℕ) + 1 < n) (s : Finset (Fin n)) (x : Fin n) :
-    typeDSpinSign (typeDSpinReflection i s) x =
-      if Equiv.swap (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) i x ∈ s ↔
-          x ≠ (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) ∧ x ≠ i then 1 else -1 := by
-  simp only [typeDSpinSign_apply, mem_typeDSpinReflection_of_not_add_one_lt hi]
-
 /-- Transposing two signs and reversing both subtracts, from the sign vector, the sum of the two
 signs times the sum of the two coordinate basis vectors. This is the fork-node shape of the
 reflection formula, stated with the two indices abstract. -/
@@ -895,9 +889,8 @@ theorem typeDSpinReflection_typeDSpinReflection_fork {n : ℕ} {p q : Fin n}
     rw [typeDSpinReflection_of_add_one_lt hplt, hnext]
   have hreflq : typeDSpinReflection q s = typeDSpinReflection p s ∆ {p, q} := by
     rw [typeDSpinReflection_of_not_add_one_lt hqlt, hprev, hmapp s]
-  rw [hreflq, hmapp, Finset.map_eq_image,
-    Finset.image_symmDiff _ _ (Equiv.swap p q).toEmbedding.injective]
-  simp only [← Finset.map_eq_image]
+  rw [hreflq, hmapp]
+  simp only [Finset.symmDiff_def, Finset.map_union, Finset.map_sdiff]
   rw [← hmapp, typeDSpinReflection_apply_apply, Finset.map_swap_pair]
 
 /-- Base case of the toggle construction: the two fork indices themselves. -/
@@ -937,10 +930,8 @@ private theorem exists_toggle_last {n : ℕ} (q : Fin n) (hq : (q : ℕ) + 1 = n
           omega
         refine ⟨c :: (l ++ [c]), fun s => ?_⟩
         simp only [List.foldl_cons, List.foldl_append, List.foldl_nil]
-        rw [hl (typeDSpinReflection c s), typeDSpinReflection_of_add_one_lt hclt,
-          Finset.map_eq_image,
-          Finset.image_symmDiff _ _ (Equiv.swap c ⟨(c : ℕ) + 1, hclt⟩).toEmbedding.injective]
-        simp only [← Finset.map_eq_image]
+        rw [hl (typeDSpinReflection c s), typeDSpinReflection_of_add_one_lt hclt]
+        simp only [Finset.symmDiff_def, Finset.map_union, Finset.map_sdiff]
         rw [← typeDSpinReflection_of_add_one_lt hclt, typeDSpinReflection_apply_apply,
           Finset.map_swap_pair_right hqc hqc']
 
@@ -1014,10 +1005,10 @@ private theorem exists_foldl_typeDSpinReflection_eq {n : ℕ} (hn : 2 ≤ n) :
 
 private theorem even_card_foldl_typeDSpinReflection_iff {n : ℕ} (hn : 2 ≤ n) (l : List (Fin n))
     (s : Finset (Fin n)) :
-    Even (l.foldl (fun u j ↦ typeDSpinReflection j u) s).card ↔ Even s.card := by
-  induction l generalizing s with
-  | nil => rw [List.foldl_nil]
-  | cons j l ih => rw [List.foldl_cons, ih, even_card_typeDSpinReflection_iff hn]
+    Even (l.foldl (fun u j ↦ typeDSpinReflection j u) s).card ↔ Even s.card :=
+  predicate_foldl_iff_of_involutive (fun u => Even u.card) typeDSpinReflection
+    typeDSpinReflection_involutive (fun u j h => (even_card_typeDSpinReflection_iff hn j u).2 h)
+    l s
 
 /-- **The orbits of the simple reflections on the type-`Dₙ` spin basis are exactly the two
 half-spin parity classes.** Each reflection preserves the parity of the sign set, and any two

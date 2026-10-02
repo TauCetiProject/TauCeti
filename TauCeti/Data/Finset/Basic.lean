@@ -188,23 +188,12 @@ theorem even_card_symmDiff_iff {α : Type*} [DecidableEq α] (s t : Finset α) :
 /-- A transposition fixes the pair it transposes. -/
 theorem map_swap_pair {α : Type*} [DecidableEq α] (a b : α) :
     ({a, b} : Finset α).map (Equiv.swap a b).toEmbedding = {a, b} := by
-  have h1 : ∀ x : α, Equiv.swap a b x = a ↔ x = b := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_left]
-  have h2 : ∀ x : α, Equiv.swap a b x = b ↔ x = a := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_right]
-  ext x
-  simp only [mem_map_equiv, Equiv.symm_swap, mem_insert, mem_singleton, h1, h2]
-  grind
+  simp [Finset.pair_comm]
 
 /-- A transposition moves a pair along its first index, provided the second index is fixed. -/
 theorem map_swap_pair_right {α : Type*} [DecidableEq α] {a b c : α} (hca : c ≠ a) (hcb : c ≠ b) :
     ({b, c} : Finset α).map (Equiv.swap a b).toEmbedding = {a, c} := by
-  have h2 : ∀ x : α, Equiv.swap a b x = b ↔ x = a := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_right]
-  have h3 : ∀ x : α, Equiv.swap a b x = c ↔ x = c := fun x => by
-    rw [← Equiv.eq_symm_apply, Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne hca hcb]
-  ext x
-  simp only [mem_map_equiv, Equiv.symm_swap, mem_insert, mem_singleton, h2, h3]
+  simp [Equiv.swap_apply_of_ne_of_ne hca hcb]
 
 /-- **A transposition fixes a finset exactly when the two transposed points have the same
 membership.** -/
