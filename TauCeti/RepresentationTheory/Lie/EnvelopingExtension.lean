@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.SemiDirect
-public import TauCeti.Algebra.Lie.Derivation.Quotient
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Derivation.Nilpotent
 public import TauCeti.Algebra.Lie.OfAssociative
 
@@ -22,9 +21,9 @@ exactly of those `s` with `ι(s) ∈ J`.
 In particular, if `J` is contained in the kernel of the enveloping extension of a starting
 representation `σ` of `S`, the new representation detects every direction detected by `σ`.
 When the quotient is finite dimensional, this is the kernel control needed to extend
-finite-dimensional representations through split ideal extensions. If `ψ(h)` is nilpotent on
-`S` and the quotient is Noetherian over `R`, the element `(0, h)` also acts nilpotently on the
-quotient.
+finite-dimensional representations through split ideal extensions. If `ψ(h)` is locally nilpotent on
+`S` and the quotient is finitely generated over `R`, the element `(0, h)` also acts nilpotently on
+the quotient.
 
 The construction uses `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivationHom` to lift the
 acting derivations and `TauCeti.derivationQuotientHom` to descend them to the quotient.
@@ -162,10 +161,10 @@ theorem ker_envelopingQuotientRep_comp_inl_le {V : Type*} [AddCommGroup V] [Modu
   rw [LieHom.mem_ker]
   simpa only [RingHom.mem_ker, _root_.UniversalEnvelopingAlgebra.lift_ι_apply] using this
 
-/-- A complementary element whose derivation on the ideal is nilpotent acts nilpotently on
-any stable enveloping quotient that is Noetherian over the coefficient ring. -/
-theorem isNilpotent_envelopingQuotientRep_inr [IsNoetherian R (U ⧸ J)] (h : H)
-    (hψ : IsNilpotent (ψ h).toLinearMap) :
+/-- A complementary element whose derivation on the ideal is locally nilpotent acts nilpotently on
+any stable enveloping quotient that is finitely generated over the coefficient ring. -/
+theorem isNilpotent_envelopingQuotientRep_inr [Module.Finite R (U ⧸ J)] (h : H)
+    (hψ : ∀ s : S, ∃ n : ℕ, ((ψ h).toLinearMap ^ n) s = 0) :
     IsNilpotent (envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ h)) := by
   have heq : envelopingQuotientRep R S ψ J hJ (SemiDirectSum.inr ψ h) =
       (derivationQuotientHom R J ⟨envelopingDerivation R S (ψ h), hJ h⟩ :
@@ -177,9 +176,6 @@ theorem isNilpotent_envelopingQuotientRep_inr [IsNoetherian R (U ⧸ J)] (h : H)
       zero_mul, zero_add, envelopingQuotientDerivation_apply_mk,
       derivationQuotientHom_apply_mk]
   rw [heq]
-  apply isNilpotent_envelopingDerivation_quotient
-  obtain ⟨n, hn⟩ := hψ
-  intro s
-  exact ⟨n, by rw [hn, LinearMap.zero_apply]⟩
+  exact isNilpotent_envelopingDerivation_quotient R S (ψ h) hψ J (hJ h)
 
 end TauCeti

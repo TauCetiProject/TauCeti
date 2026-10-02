@@ -8,15 +8,15 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Derivation.Basic
 public import TauCeti.Algebra.Lie.Derivation.LocallyNilpotent
 public import TauCeti.Algebra.Lie.Derivation.Quotient
-public import Mathlib.RingTheory.Noetherian.Defs
+public import Mathlib.RingTheory.Finiteness.Nilpotent
 
 /-!
 # Nilpotent derivations on finite enveloping quotients
 
 A locally nilpotent Lie derivation lifts to a locally nilpotent derivation of the universal
-enveloping algebra. On any stable quotient that is Noetherian as a module over the coefficient
-ring, the induced derivation is nilpotent with a uniform bound. In particular this applies to
-finite-dimensional stable quotients over a field.
+enveloping algebra. On any stable quotient that is finitely generated as a module over the
+coefficient ring, the induced derivation is nilpotent with a uniform bound. In particular this
+applies to finite-dimensional stable quotients over a field.
 
 The enveloping algebra itself need not have a uniform bound: in characteristic zero,
 the lift of `x ↦ y, y ↦ 0` on a two-dimensional abelian Lie algebra is `y ∂/∂x`
@@ -51,6 +51,17 @@ theorem envelopingDerivation_pow_apply_ι (D : LieDerivation R L L) (n : ℕ) (x
       pow_succ', Module.End.mul_apply]
     simp only [LieDerivation.coeFn_coe]
 
+/-- The `simp`-normal form of `envelopingDerivation_pow_apply_ι`, stated for the canonical
+generators as `simp` writes them. -/
+@[simp]
+theorem envelopingDerivation_pow_apply_ι' (D : LieDerivation R L L) (n : ℕ) (x : L) :
+    ((envelopingDerivation R L D : Module.End R U) ^ n)
+        (_root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x)) =
+      _root_.UniversalEnvelopingAlgebra.mkAlgHom R L
+        (TensorAlgebra.ι R ((D.toLinearMap ^ n) x)) := by
+  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using
+    envelopingDerivation_pow_apply_ι R L D n x
+
 /-- A Lie derivation that kills each vector after finitely many iterations has a locally
 nilpotent lift to the enveloping algebra. No finiteness assumption on the Lie algebra is needed. -/
 theorem exists_envelopingDerivation_pow_apply_eq_zero (D : LieDerivation R L L)
@@ -65,10 +76,10 @@ theorem exists_envelopingDerivation_pow_apply_eq_zero (D : LieDerivation R L L)
     exact Algebra.mem_top
 
 /-- A locally nilpotent Lie derivation induces a nilpotent operator on every stable enveloping
-quotient that is Noetherian as a module over the coefficient ring. -/
+quotient that is finitely generated as a module over the coefficient ring. -/
 theorem isNilpotent_envelopingDerivation_quotient (D : LieDerivation R L L)
     (hD : ∀ x : L, ∃ n : ℕ, (D.toLinearMap ^ n) x = 0)
-    (J : Ideal U) [J.IsTwoSided] [IsNoetherian R (U ⧸ J)]
+    (J : Ideal U) [J.IsTwoSided] [Module.Finite R (U ⧸ J)]
     (hJ : envelopingDerivation R L D ∈ stableDerivations R (J.restrictScalars R)) :
     IsNilpotent (derivationQuotientHom R J ⟨envelopingDerivation R L D, hJ⟩ :
       Module.End R (U ⧸ J)) := by
@@ -83,14 +94,6 @@ theorem isNilpotent_envelopingDerivation_quotient (D : LieDerivation R L L)
       fun a ↦ (derivationQuotientHom_apply_mk R J
         ⟨envelopingDerivation R L D, hJ⟩ a).symm
     simpa only [← Module.End.pow_apply, hn, map_zero] using (hcomm.iterate_right n a).symm
-  -- The increasing kernels stabilize on a Noetherian module, providing one bound for all
-  -- quotient classes rather than a bound depending on a chosen representative.
-  obtain ⟨n, hn⟩ := Filter.eventually_atTop.mp δ.eventually_iSup_ker_pow_eq
-  refine ⟨n, LinearMap.ext fun q ↦ ?_⟩
-  obtain ⟨k, hk⟩ := hlocal q
-  have hq : q ∈ ⨆ m, LinearMap.ker (δ ^ m) :=
-    Submodule.mem_iSup_of_mem k (LinearMap.mem_ker.mpr hk)
-  rw [hn n le_rfl] at hq
-  exact LinearMap.mem_ker.mp hq
+  exact Module.End.isNilpotent_iff_of_finite.mpr hlocal
 
 end TauCeti.UniversalEnvelopingAlgebra
