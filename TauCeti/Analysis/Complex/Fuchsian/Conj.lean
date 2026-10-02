@@ -1,0 +1,85 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.Fuchsian.Descent
+public import TauCeti.GroupTheory.GroupAction.ConjAct
+public import TauCeti.Topology.Homeomorph.Quotient
+
+/-!
+# Coarse quotients of conjugate Fuchsian groups
+
+Let `Γ ≤ PSL(2, ℝ)`, `g ∈ PSL(2, ℝ)`, and let `Γ' = g Γ g⁻¹`, written
+`ConjAct.toConjAct g • Γ = Γ'`. The biholomorphism `z ↦ g • z` of the upper half-plane carries
+`Γ`-orbits onto `Γ'`-orbits, so it descends to a homeomorphism
+`Subgroup.quotientConjHomeomorph` of the coarse quotients `Γ \ ℍ ≃ₜ Γ' \ ℍ`, sending the orbit of
+`z` to the orbit of `g • z`. For properly discontinuous (equivalently, discrete) groups it is
+holomorphic, including at elliptic orbits, by holomorphic descent through the orbit projection
+(`Subgroup.mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk`). Its inverse is the
+same construction for `g⁻¹` (`Subgroup.quotientConjHomeomorph_symm`), so it is holomorphic in both
+directions.
+
+The conjugate is passed as a subgroup `Γ'` together with the equation
+`ConjAct.toConjAct g • Γ = Γ'`, so that the inverse is again of this form and an element of the
+normalizer of `Γ` acts on `Γ \ ℍ` itself.
+
+## Main declarations
+
+* `Subgroup.quotientConjHomeomorph`: the homeomorphism `Γ \ ℍ ≃ₜ Γ' \ ℍ`, with
+  `Subgroup.quotientConjHomeomorph_mk` and `Subgroup.quotientConjHomeomorph_symm`.
+* `Subgroup.mdifferentiable_quotientConjHomeomorph`: it is holomorphic.
+
+## References
+
+* Svetlana Katok, *Fuchsian Groups*, Chicago Lectures in Mathematics, University of Chicago
+  Press, 1992, §2.2.
+-/
+
+public noncomputable section
+
+open MulAction UpperHalfPlane
+open scoped ContDiff Manifold MatrixGroups Pointwise
+
+namespace Subgroup
+
+variable {Γ Γ' : Subgroup PSL(2, ℝ)} {g : PSL(2, ℝ)}
+
+/-- **The coarse quotients of conjugate groups are homeomorphic.** If `Γ' = g Γ g⁻¹`, the
+translation `z ↦ g • z` of the upper half-plane descends to a homeomorphism `Γ \ ℍ ≃ₜ Γ' \ ℍ`
+sending the orbit of `z` to the orbit of `g • z`. -/
+def quotientConjHomeomorph (h : ConjAct.toConjAct g • Γ = Γ') :
+    orbitRel.Quotient Γ ℍ ≃ₜ orbitRel.Quotient Γ' ℍ :=
+  Homeomorph.Quotient.congr (Homeomorph.smul g) fun z w ↦
+    (TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq h z w).symm
+
+@[simp]
+theorem quotientConjHomeomorph_mk (h : ConjAct.toConjAct g • Γ = Γ') (z : ℍ) :
+    quotientConjHomeomorph h (Quotient.mk _ z) = Quotient.mk _ (g • z) :=
+  (rfl)
+
+/-- The inverse of the homeomorphism of coarse quotients induced by `g` is the one induced by
+`g⁻¹`. -/
+theorem quotientConjHomeomorph_symm (h : ConjAct.toConjAct g • Γ = Γ')
+    (h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ) :
+    (quotientConjHomeomorph h).symm = quotientConjHomeomorph h' :=
+  Homeomorph.ext fun p ↦ Quotient.inductionOn p fun _ ↦ (rfl)
+
+/-- **The homeomorphism of coarse quotients induced by conjugation is holomorphic**, also at the
+elliptic orbits: its pullback to the upper half-plane is the orbit projection of `Γ'` composed with
+the biholomorphism `z ↦ g • z`. -/
+theorem mdifferentiable_quotientConjHomeomorph [ProperlyDiscontinuousSMul Γ ℍ]
+    [ProperlyDiscontinuousSMul Γ' ℍ] (h : ConjAct.toConjAct g • Γ = Γ') :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (quotientConjHomeomorph h) := fun p ↦ by
+  induction p using Quotient.inductionOn' with | h z => ?_
+  refine mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk
+    (.of_forall fun w ↦ ?_)
+  have hcomp : quotientConjHomeomorph h ∘ Quotient.mk _ = Quotient.mk (orbitRel Γ' ℍ) ∘ (g • ·) :=
+    funext (quotientConjHomeomorph_mk h)
+  rw [hcomp]
+  exact (mdifferentiable_quotientMk Γ' _).comp w
+    ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) (M := ℍ) g).mdifferentiable (by simp) w)
+
+end Subgroup
