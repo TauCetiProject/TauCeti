@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.Ideal
 public import Mathlib.Algebra.Lie.SemiDirect
+public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.Algebra.Lie.Solvable.Basic
 
 /-!
 # Recognising a semidirect sum from an ideal and a complementary subalgebra
@@ -239,6 +241,17 @@ namespace LieAlgebra.SemiDirectSum
 
 variable {R K L : Type*} [CommRing R] [LieRing K] [LieAlgebra R K] [LieRing L] [LieAlgebra R L]
 variable (ψ : L →ₗ⁅R⁆ LieDerivation R K K)
+
+/-- A semidirect sum of module-finite Lie algebras is module-finite. -/
+instance [Module.Finite R K] [Module.Finite R L] : Module.Finite R (K ⋊⁅ψ⁆ L) :=
+  Module.Finite.equiv (toProdl ψ).symm
+
+/-- A semidirect sum of solvable Lie algebras is solvable. -/
+instance [IsSolvable K] [IsSolvable L] : IsSolvable (K ⋊⁅ψ⁆ L) := by
+  have hker : IsSolvable (projr ψ).ker := by
+    have h : IsSolvable (inl ψ).range := inferInstance
+    rwa [IsExtension.exact (i := inl ψ) (p := projr ψ)] at h
+  exact isSolvable_of_isSolvable_ker_of_surjective (projr_surjective ψ) hker inferInstance
 
 /-- The range of the inclusion of the right factor consists of the elements whose left component
 vanishes.  This is not a `simp` lemma: Mathlib's `LieHom.mem_range` is already `@[simp]` and
