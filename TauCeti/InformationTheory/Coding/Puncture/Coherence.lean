@@ -46,7 +46,9 @@ theorem puncture_map_arrowCongr (C : AdditiveCode A ι) (e : κ ≃ ι) (s : Set
         (AddMonoidHom.ofClass (AddEquiv.arrowCongr (e.subtypeEquiv fun _ ↦ Iff.rfl).symm
           (AddEquiv.refl A))) := by
   rw [puncture_def, puncture_def, AddSubgroup.map_map, AddSubgroup.map_map]
-  congr 1
+  apply congrArg C.map
+  ext x i
+  simp [AddEquiv.arrowCongr_apply, Equiv.subtypeEquiv_apply]
 
 /-- Shortening commutes with coordinate transport, with the retained set pulled back along
 the equivalence from the new coordinates to the old ones. -/
@@ -84,7 +86,9 @@ theorem puncture_puncture (C : AdditiveCode A ι) (s : Set ι) (t : Set s) :
             (AddEquiv.refl A))) =
       puncture C {i | ∃ hi : i ∈ s, (⟨i, hi⟩ : s) ∈ t} := by
   rw [puncture_def, puncture_def, puncture_def, AddSubgroup.map_map, AddSubgroup.map_map]
-  congr 1
+  apply congrArg C.map
+  ext x i
+  simp [AddEquiv.arrowCongr_apply, Equiv.subtypeSubtypeEquivSubtypeExists_symm_apply_coe_coe]
 
 /-- Shortening twice is shortening once to the flattened retained subset, after transport
 along the canonical subtype equivalence. -/
