@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Convex.EffectiveDomain
 public import TauCeti.Analysis.Convex.Subdifferential
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Analysis.Convex.Deriv
 
 /-!
 # Differentiability of extended-real convex functions
@@ -32,7 +33,11 @@ every subgradient `y` satisfies `D f (x) v = B v y` for all `v`
 (`TauCeti.hasFDerivAt_apply_eq_of_mem_subdifferential`). This needs neither convexity nor finite
 dimension. On a real inner product space, with the inner product as pairing, the subgradient is
 then the gradient (`TauCeti.hasGradientAt_toReal_of_mem_subdifferential`): this is how the
-gradient of a convex potential becomes a transport map.
+gradient of a convex potential becomes a transport map. Conversely, for a convex `f` the
+derivative at any point of the effective domain where the real representative is differentiable
+is a subgradient (`TauCeti.mem_subdifferential_of_hasFDerivAt`), since a convex function of one
+variable lies above its tangent lines; this is how the gradient of a convex potential is shown to
+be an optimal transport map.
 
 ## Main statements
 
@@ -44,7 +49,10 @@ gradient of a convex potential becomes a transport map.
   domain where `f` is differentiable, every subgradient is the derivative;
 * `TauCeti.hasGradientAt_toReal_of_mem_subdifferential` and
   `TauCeti.gradient_toReal_eq_of_mem_subdifferential` — the same statement for the inner product,
-  where every subgradient is the gradient.
+  where every subgradient is the gradient;
+* `TauCeti.mem_subdifferential_of_hasFDerivAt` and `TauCeti.gradient_toReal_mem_subdifferential`
+  — for a convex function, the derivative, respectively the gradient, at a point of
+  differentiability in the effective domain is a subgradient.
 
 ## References
 
@@ -122,6 +130,36 @@ theorem fderiv_apply_eq_of_mem_subdifferential (hy : y ∈ subdifferential B f x
     (v : E) : fderiv ℝ (fun x' => (f x').toReal) x v = B v y :=
   hasFDerivAt_apply_eq_of_mem_subdifferential B hy hdom hf.hasFDerivAt v
 
+/-- **Derivatives of convex functions are subgradients.** Let `f : E → EReal` have convex real
+epigraph and never take the value `⊥`, and let `x` be a point of the effective domain at which the
+real representative `x' ↦ (f x').toReal` has derivative `f'`. If `y` represents `f'` for the
+pairing `B`, that is `f' v = B v y` for every `v`, then `y` is a subgradient of `f` at `x`. -/
+theorem mem_subdifferential_of_hasFDerivAt (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) (hx : f x ≠ ⊤) {f' : E →L[ℝ] ℝ}
+    (hd : HasFDerivAt (fun x' => (f x').toReal) f' x) (hy : ∀ v, f' v = B v y) :
+    y ∈ subdifferential B f x := by
+  refine (mem_subdifferential_iff B).2 ⟨hbot x, hx, fun x' => ?_⟩
+  rcases eq_or_ne (f x') ⊤ with hx' | hx'
+  · rw [hx']
+    exact le_top
+  -- On the segment from `x` to `x'`, which lies in the effective domain, the real representative
+  -- is a convex function of one variable, with derivative `f' (x' - x)` at `0`.
+  have hconv : ConvexOn ℝ (Icc 0 1) fun t : ℝ => (f (AffineMap.lineMap x x' t)).toReal :=
+    ((convexOn_toReal hf hbot).comp_affineMap (AffineMap.lineMap x x')).subset
+      (fun _ ht => (convex_setOf_ne_top hf).lineMap_mem hx hx' ht) (convex_Icc 0 1)
+  have hderiv : HasDerivAt (fun t : ℝ => (f (AffineMap.lineMap x x' t)).toReal)
+      (f' (x' - x)) 0 := by
+    have hd' : HasFDerivAt (fun x' => (f x').toReal) f' (AffineMap.lineMap x x' (0 : ℝ)) := by
+      rwa [AffineMap.lineMap_apply_zero]
+    exact hd'.comp_hasDerivAt (0 : ℝ) AffineMap.hasDerivAt_lineMap
+  have hslope := hconv.le_slope_of_hasDerivAt (left_mem_Icc.2 zero_le_one)
+    (right_mem_Icc.2 zero_le_one) zero_lt_one hderiv
+  rw [slope_def_field, AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one, sub_zero,
+    div_one, hy] at hslope
+  rw [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x'), ← EReal.coe_add,
+    EReal.coe_le_coe_iff]
+  linarith
+
 end Normed
 
 section InnerProduct
@@ -151,6 +189,17 @@ theorem gradient_toReal_eq_of_mem_subdifferential (hy : y ∈ subdifferential (i
     (hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) (hf : DifferentiableAt ℝ (fun x' => (f x').toReal) x) :
     gradient (fun x' => (f x').toReal) x = y :=
   (hasGradientAt_toReal_of_mem_subdifferential hy hdom hf).gradient
+
+/-- **Gradients of convex functions are subgradients.** If `f : E → EReal` has convex real
+epigraph, never takes the value `⊥`, and is finite at `x`, where its real representative is
+differentiable, then the gradient of the real representative at `x` is a subgradient of `f` at
+`x` for the inner product. -/
+theorem gradient_toReal_mem_subdifferential (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) (hx : f x ≠ ⊤)
+    (hd : DifferentiableAt ℝ (fun x' => (f x').toReal) x) :
+    gradient (fun x' => (f x').toReal) x ∈ subdifferential (innerₗ E) f x :=
+  mem_subdifferential_of_hasFDerivAt (innerₗ E) hf hbot hx hd.hasFDerivAt fun v => by
+    rw [← toDual_gradient, toDual_apply_apply, innerₗ_apply_apply, real_inner_comm]
 
 end InnerProduct
 
