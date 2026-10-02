@@ -109,16 +109,16 @@ theorem stableTransposeInverse_obj
     (stableTransposeInverse P Q).obj N = (Q N.unop).stableRightTransposeObj := (rfl)
 
 /-- Transposing an inverse-transpose object recovers the original stable right module. -/
-noncomputable def stableTransposeInverseRecovery
+noncomputable def stableTransposeInverseRecoveryIso
     (N : (FinitelyPresentedStableModule.{u, max u v} Aᵐᵒᵖ)ᵒᵖ) :
     (stableTransposeFunctor P).obj ((stableTransposeInverse P Q).obj N) ≅ N := by
   rw [stableTransposeInverse_obj]
   exact (Q N.unop).stableTransposeRightIso P
 
 /-- Inverse recovery is the dual-presentation comparison after the inverse's object equation. -/
-theorem stableTransposeInverseRecovery_def
+theorem stableTransposeInverseRecoveryIso_def
     (N : (FinitelyPresentedStableModule.{u, max u v} Aᵐᵒᵖ)ᵒᵖ) :
-    stableTransposeInverseRecovery P Q N =
+    stableTransposeInverseRecoveryIso P Q N =
       eqToIso (congrArg (stableTransposeFunctor P).obj (stableTransposeInverse_obj P Q N)) ≪≫
         (Q N.unop).stableTransposeRightIso P := by
   exact (Iso.refl_trans _).symm
@@ -129,9 +129,9 @@ theorem stableTransposeInverseRecovery_def
 theorem stableTransposeFunctor_map_inverse {N L}
     (f : N ⟶ L) :
     (stableTransposeFunctor P).map ((stableTransposeInverse P Q).map f) =
-      (stableTransposeInverseRecovery P Q N).hom ≫ f ≫
-        (stableTransposeInverseRecovery P Q L).inv := by
-  unfold stableTransposeInverseRecovery stableTransposeInverse
+      (stableTransposeInverseRecoveryIso P Q N).hom ≫ f ≫
+        (stableTransposeInverseRecoveryIso P Q L).inv := by
+  unfold stableTransposeInverseRecoveryIso stableTransposeInverse
   exact (stableTransposeFunctor P).map_preimage _
 
 /-- Inverse transposition preserves addition of stable morphisms. -/
@@ -145,7 +145,7 @@ instance : (stableTransposeInverse P Q).Additive where
 /-- Double-transpose recovery is a natural isomorphism on stable right modules. -/
 noncomputable def stableTransposeCounitIso :
     stableTransposeInverse P Q ⋙ stableTransposeFunctor P ≅ 𝟭 _ :=
-  NatIso.ofComponents (stableTransposeInverseRecovery P Q) fun f ↦ by
+  NatIso.ofComponents (stableTransposeInverseRecoveryIso P Q) fun f ↦ by
     simp only [Functor.comp_map, Functor.id_map, stableTransposeFunctor_map_inverse,
       Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
@@ -153,14 +153,14 @@ noncomputable def stableTransposeCounitIso :
 @[simp]
 theorem stableTransposeCounitIso_app
     (N : (FinitelyPresentedStableModule.{u, max u v} Aᵐᵒᵖ)ᵒᵖ) :
-    (stableTransposeCounitIso P Q).app N = stableTransposeInverseRecovery P Q N := (rfl)
+    (stableTransposeCounitIso P Q).app N = stableTransposeInverseRecoveryIso P Q N := (rfl)
 
 /-- Double transposition is naturally the identity on stable left modules. -/
 noncomputable def stableTransposeUnitIso :
     𝟭 _ ≅ stableTransposeFunctor P ⋙ stableTransposeInverse P Q :=
   NatIso.ofComponents
     (fun M ↦ (stableTransposeFunctor P).preimageIso
-      (stableTransposeInverseRecovery P Q ((stableTransposeFunctor P).obj M)).symm)
+      (stableTransposeInverseRecoveryIso P Q ((stableTransposeFunctor P).obj M)).symm)
     fun f ↦ by
       apply (stableTransposeFunctor P).map_injective
       simp only [Functor.map_comp, Functor.comp_map, Functor.id_map,
@@ -172,7 +172,7 @@ noncomputable def stableTransposeUnitIso :
 theorem stableTransposeUnitIso_app (M : FinitelyPresentedStableModule.{u, max u v} A) :
     (stableTransposeUnitIso P Q).app M =
       (stableTransposeFunctor P).preimageIso
-        (stableTransposeInverseRecovery P Q ((stableTransposeFunctor P).obj M)).symm := (rfl)
+        (stableTransposeInverseRecoveryIso P Q ((stableTransposeFunctor P).obj M)).symm := (rfl)
 
 /-- The Auslander–Bridger equivalence, with left and right transpose functors and their
 canonical double-transpose comparisons. It holds over any ring. -/

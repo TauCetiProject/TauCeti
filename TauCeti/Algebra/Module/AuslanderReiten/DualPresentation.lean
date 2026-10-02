@@ -44,13 +44,9 @@ an actual left `A`-module rather than a module over the double opposite. -/
 noncomputable abbrev rightTranspose (Q : FiniteProjectivePresentation N) : ModuleCat.{max u v} A :=
   ModuleCat.of A ((Q.P₁ →ₗ[Aᵐᵒᵖ] A) ⧸ LinearMap.range (Q.p.lcomp A A))
 
-/-- The underlying module of a right transpose is the cokernel of the dual presenting map. -/
-theorem rightTranspose_def (Q : FiniteProjectivePresentation N) :
-    Q.rightTranspose =
-      ModuleCat.of A ((Q.P₁ →ₗ[Aᵐᵒᵖ] A) ⧸ LinearMap.range (Q.p.lcomp A A)) := (rfl)
-
 /-- The finite projective presentation of a right transpose obtained by dualizing its
-right presentation. -/
+right presentation. The abbreviation keeps the dual modules and their maps definitionally
+identifiable for double-transpose recovery. -/
 noncomputable abbrev rightTransposePresentation (Q : FiniteProjectivePresentation N) :
     FiniteProjectivePresentation Q.rightTranspose := by
   let : Module.Finite A (Q.P₀ →ₗ[Aᵐᵒᵖ] A) :=
@@ -70,11 +66,6 @@ noncomputable abbrev rightTransposePresentation (Q : FiniteProjectivePresentatio
       π := (LinearMap.range (Q.p.lcomp A A)).mkQ
       exact := LinearMap.exact_map_mkQ_range _
       surjective := Submodule.mkQ_surjective _ }
-
-/-- The presenting map of the right transpose is the dual of the original presenting map. -/
-@[simp]
-theorem rightTransposePresentation_p (Q : FiniteProjectivePresentation N) :
-    Q.rightTransposePresentation.p = Q.p.lcomp A A := (rfl)
 
 /-- A right transpose is finitely presented over an arbitrary ring. -/
 instance (Q : FiniteProjectivePresentation N) : Module.FinitePresentation A Q.rightTranspose := by
