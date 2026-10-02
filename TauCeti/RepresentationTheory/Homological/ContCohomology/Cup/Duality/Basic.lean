@@ -79,7 +79,8 @@ stated for `ZMod p` applies to every trivial module of order `p`.
   `dualityMap1_eq_neg_explicitDualityPairing11` and `dualityMap2_eq_explicitDualityPairing02`.
 * `TauCeti.ContCohomology.dualityMap0_explicitCoeff0`, `dualityMap1_explicitCoeff1` and
   `dualityMap2_explicitCoeff2`: **naturality of the duality maps in the module**,
-  `αᵢ (f_* x) b = αᵢ x (f^* b)`.
+  `αᵢ (f_* x) b = αᵢ x (f^* b)`; and `explicitCoeff2_injective_of_dualityMap2_injective`: when `α₂`
+  is injective on `M` and `f^*` is surjective on the invariants, `f_*` is injective on `H²`.
 * `TauCeti.ContCohomology.dualityMap0_bijective_of_bijective`, `dualityMap1_bijective_of_bijective`
   and `dualityMap2_bijective_of_bijective`: bijectivity of each duality map transports along an
   isomorphism of modules.
@@ -568,6 +569,19 @@ theorem dualityMap2_explicitCoeff2 (x : H2 G M) (b : H0 G (InternalHom G M' N)) 
       dualityMap2 G M N x (explicitCoeff0 G (InternalHom G M' N) (InternalHom.precomp G f) b) := by
   rw [dualityMap2_eq_explicitDualityPairing02, dualityMap2_eq_explicitDualityPairing02,
     explicitDualityPairing02_explicitCoeff2]
+
+/-- **Injectivity of `f_*` on `H²` from injectivity of `α₂`.** If `α₂` is injective at `M` and every
+invariant homomorphism `M → N` is the restriction along `f : M →+[G] M'` of an invariant
+homomorphism `M' → N`, then `f_* : H²(G, M) → H²(G, M')` is injective: a class `x` with `f_* x = 0`
+pairs to zero with every `f^* b`, hence with every invariant of `Hom(M, N)`, so `α₂ x = 0`. -/
+theorem explicitCoeff2_injective_of_dualityMap2_injective
+    (h : Function.Injective (dualityMap2 G M N))
+    (hf : Function.Surjective
+      (explicitCoeff0 G (InternalHom G M' N) (InternalHom.precomp G f (N := N)))) :
+    Function.Injective (explicitCoeff2 G M f continuous_of_discreteTopology) := fun x y hxy ↦ by
+  refine h (AddMonoidHom.ext fun b ↦ ?_)
+  obtain ⟨b, rfl⟩ := hf b
+  rw [← dualityMap2_explicitCoeff2, ← dualityMap2_explicitCoeff2, hxy]
 
 end DualityMapTwoNaturality
 

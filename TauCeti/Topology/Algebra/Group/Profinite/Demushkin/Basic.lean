@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Trivia
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Empty
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ULift
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank
 
 /-!
 # Demushkin groups

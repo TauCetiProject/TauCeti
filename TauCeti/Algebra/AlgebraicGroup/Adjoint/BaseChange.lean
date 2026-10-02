@@ -31,10 +31,6 @@ points over either field.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§1.k and 21.4.
 * T. A. Springer, *Linear Algebraic Groups*, §9.6.
-
-This supplies the scalar-extension compatibility needed for adjoint forms in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap. It is the center-theoretic
-input to comparing adjoint forms and their root data over an algebraic closure.
 -/
 
 public section

@@ -33,8 +33,10 @@ For arbitrary `n` the extension property holds for the targets `W` that are inje
 `f`. The case `n = 0` is the extension property of a divisible group, and for `n ≠ 0` the target
 `W = ℤ/nℤ` is covered by `Module.Baer.zmod_self`.
 
-These are the algebraic inputs to the duality statements for the finite `𝔽_p[G]`-modules and the
-finite `ℤ/pⁱ[G]`-modules of a profinite group.
+Both extension statements make `Hom(-, W)` exact on the groups killed by `n`
+(`Function.Exact.compHom'` and `Function.Exact.compHom'_of_baer`, through the common
+`Function.Exact.compHom'_of_forall_exists_comp_eq`). These are the algebraic inputs to the duality
+statements for the finite `𝔽_p[G]`-modules and the finite `ℤ/pⁱ[G]`-modules of a profinite group.
 
 ## Main results
 
@@ -44,8 +46,13 @@ finite `ℤ/pⁱ[G]`-modules of a profinite group.
 * `AddMonoidHom.exists_comp_eq_of_injective_of_baer`: for `B` killed by `n` and `W` satisfying
   Baer's criterion over `ℤ/nℤ`, every additive homomorphism `A →+ W` is the restriction along an
   injective `f : A →+ B` of an additive homomorphism `B →+ W`.
+* `Function.Exact.compHom'_of_forall_exists_comp_eq`: `Hom(-, W)` carries an exact pair
+  `X → Y → Z` to an exact pair `Hom(Z, W) → Hom(Y, W) → Hom(X, W)` as soon as every homomorphism
+  `Y ⧸ ker g →+ W` extends along the embedding `Y ⧸ ker g → Z`.
 * `Function.Exact.compHom'`: `Hom(-, W)` is exact on the groups killed by `p`: an exact pair
   `X → Y → Z` with `Z` killed by `p` dualises to an exact pair `Hom(Z, W) → Hom(Y, W) → Hom(X, W)`.
+* `Function.Exact.compHom'_of_baer`: `Hom(-, W)` is exact on the groups killed by `n` when `W`
+  satisfies Baer's criterion over `ℤ/nℤ`.
 -/
 
 public section
@@ -88,14 +95,16 @@ theorem _root_.AddMonoidHom.exists_comp_eq_of_injective_of_baer {n : ℕ} {W : T
   obtain ⟨ψ, hψ⟩ := hW.extension_property (f.toZModLinearMap n) hf (φ.toZModLinearMap n)
   exact ⟨ψ.toAddMonoidHom, AddMonoidHom.ext fun a => LinearMap.congr_fun hψ a⟩
 
-/-- **`Hom(-, W)` is exact on groups killed by a prime.** If `X → Y → Z` is an exact pair of
-additive homomorphisms with `Z` killed by `p`, then for every additive commutative monoid `W` the
-pair `Hom(Z, W) → Hom(Y, W) → Hom(X, W)` obtained by precomposition is exact. A homomorphism on `Y`
+/-- **Exactness of `Hom(-, W)` from an extension property.** If `X → Y → Z` is an exact pair of
+additive homomorphisms and every additive homomorphism `Y ⧸ ker g →+ W` is the restriction along
+the embedding `Y ⧸ ker g → Z` induced by `g` of a homomorphism `Z →+ W`, then the pair
+`Hom(Z, W) → Hom(Y, W) → Hom(X, W)` obtained by precomposition is exact. A homomorphism on `Y`
 killing the range of `f`, which is the kernel of `g`, descends to `Y ⧸ ker g`, and extends from
 there along the embedding of `Y ⧸ ker g` into `Z`. -/
-theorem _root_.Function.Exact.compHom' {X Y Z W : Type*} [AddCommGroup X] [AddCommGroup Y]
-    [AddCommGroup Z] [AddCommMonoid W] {f : X →+ Y} {g : Y →+ Z} (h : Function.Exact f g)
-    (hZ : ∀ z : Z, p • z = 0) :
+theorem _root_.Function.Exact.compHom'_of_forall_exists_comp_eq {X Y Z W : Type*} [AddCommGroup X]
+    [AddCommGroup Y] [AddCommGroup Z] [AddCommMonoid W] {f : X →+ Y} {g : Y →+ Z}
+    (h : Function.Exact f g)
+    (hext : ∀ φ : Y ⧸ g.ker →+ W, ∃ ψ : Z →+ W, ψ.comp (QuotientAddGroup.kerLift g) = φ) :
     Function.Exact (g.compHom' (P := W)) (f.compHom') := by
   intro ψ
   constructor
@@ -103,12 +112,36 @@ theorem _root_.Function.Exact.compHom' {X Y Z W : Type*} [AddCommGroup X] [AddCo
     have hker : g.ker ≤ ψ.ker := fun y hy => by
       obtain ⟨x, rfl⟩ := (h y).1 hy
       simpa using DFunLike.congr_fun hψ x
-    obtain ⟨χ, hχ⟩ := AddMonoidHom.exists_comp_eq_of_injective hZ
-      (QuotientAddGroup.kerLift_injective g) (QuotientAddGroup.lift g.ker ψ hker)
+    obtain ⟨χ, hχ⟩ := hext (QuotientAddGroup.lift g.ker ψ hker)
     exact ⟨χ, AddMonoidHom.ext fun y => by
       simpa using DFunLike.congr_fun hχ (QuotientAddGroup.mk y)⟩
   · rintro ⟨χ, rfl⟩
     ext x
     simp [h.apply_apply_eq_zero]
+
+/-- **`Hom(-, W)` is exact on groups killed by a prime.** If `X → Y → Z` is an exact pair of
+additive homomorphisms with `Z` killed by `p`, then for every additive commutative monoid `W` the
+pair `Hom(Z, W) → Hom(Y, W) → Hom(X, W)` obtained by precomposition is exact: every homomorphism
+out of `Y ⧸ ker g` extends along its embedding into `Z`, by
+`AddMonoidHom.exists_comp_eq_of_injective`. -/
+theorem _root_.Function.Exact.compHom' {X Y Z W : Type*} [AddCommGroup X] [AddCommGroup Y]
+    [AddCommGroup Z] [AddCommMonoid W] {f : X →+ Y} {g : Y →+ Z} (h : Function.Exact f g)
+    (hZ : ∀ z : Z, p • z = 0) :
+    Function.Exact (g.compHom' (P := W)) (f.compHom') :=
+  h.compHom'_of_forall_exists_comp_eq fun φ =>
+    AddMonoidHom.exists_comp_eq_of_injective hZ (QuotientAddGroup.kerLift_injective g) φ
+
+/-- **`Hom(-, W)` is exact on groups killed by `n`, for a Baer target.** If `X → Y → Z` is an
+exact pair of additive homomorphisms with `Z` killed by `n`, and `W` satisfies Baer's criterion
+over `ℤ/nℤ`, then the pair `Hom(Z, W) → Hom(Y, W) → Hom(X, W)` obtained by precomposition is exact:
+every homomorphism out of `Y ⧸ ker g` extends along its embedding into `Z`, by
+`AddMonoidHom.exists_comp_eq_of_injective_of_baer`. -/
+theorem _root_.Function.Exact.compHom'_of_baer {n : ℕ} {X Y Z W : Type*} [AddCommGroup X]
+    [AddCommGroup Y] [AddCommGroup Z] [AddCommGroup W] [Module (ZMod n) W]
+    (hW : Module.Baer (ZMod n) W) {f : X →+ Y} {g : Y →+ Z} (h : Function.Exact f g)
+    (hZ : ∀ z : Z, n • z = 0) :
+    Function.Exact (g.compHom' (P := W)) (f.compHom') :=
+  h.compHom'_of_forall_exists_comp_eq fun φ =>
+    AddMonoidHom.exists_comp_eq_of_injective_of_baer hW hZ (QuotientAddGroup.kerLift_injective g) φ
 
 end TauCeti

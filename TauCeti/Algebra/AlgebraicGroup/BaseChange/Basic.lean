@@ -18,9 +18,8 @@ bialgebra `K ⊗[k] A` over `K` are the same as `k`-algebra maps `A →ₐ[k] R`
 identification is a monoid isomorphism for convolution. When `A` is a Hopf algebra, these are
 the convolution groups of points.
 
-This is the algebraic-group-facing form of the ReductiveGroups roadmap item "Base change.
-`K ⊗[k] A` as a Hopf algebra over `K`"; it builds on Mathlib's tensor-product bialgebra
-instance, Mathlib's tensor-product Hopf algebra antipode formula, and `AlgHom.liftEquiv`.
+This construction builds on Mathlib's tensor-product bialgebra instance, Mathlib's
+tensor-product Hopf algebra antipode formula, and `AlgHom.liftEquiv`.
 
 ## Main definitions
 
@@ -31,7 +30,7 @@ instance, Mathlib's tensor-product Hopf algebra antipode formula, and `AlgHom.li
   `TauCeti.AlgHom.baseChangePointsMulEquiv_symm_inv_apply`: pointwise formulas for
   convolution inverses of base-changed points.
 
-## References
+## See also
 
 The tensor-product bialgebra and Hopf-algebra structures and algebra base-change adjunction
 used here are from Mathlib, respectively `Mathlib.RingTheory.Bialgebra.TensorProduct`,
