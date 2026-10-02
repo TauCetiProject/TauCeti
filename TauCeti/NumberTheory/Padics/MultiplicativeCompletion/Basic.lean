@@ -36,6 +36,8 @@ only the carrier, its `ℤ_p`-module structure, and its Galois action. Finite ge
 * `padicCompletionUnitsRepresentation`: the `ℤ_p`-linear Galois representation on `A(L)`.
 * `padicCompletionUnitsModule`: the integral `ℤ_p[Gal(L/K)]`-module structure on `A(L)`, namely
   Mathlib's `Representation.asModule` structure of `padicCompletionUnitsRepresentation`.
+* `smul_ofMul_padicCompletionUnitsOf`: a group-algebra element acts on the class of a unit through
+  the classes of its conjugates.
 
 ## References
 
@@ -370,6 +372,18 @@ instance padicCompletionUnits_isScalarTower :
     IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
       (Additive ↑(padicCompletionUnits p L)) :=
   inferInstanceAs (IsScalarTower ℤ_[p] _ (padicCompletionUnitsRepresentation p L K).asModule)
+
+variable {L K} in
+/-- For a finite automorphism group, an element `x = ∑ σ, x_σ σ` of the group algebra acts on the
+class of a unit `u` as the combination `∑ σ, x_σ [σ u]` of the classes of its conjugates. -/
+theorem smul_ofMul_padicCompletionUnitsOf [Fintype (L ≃ₐ[K] L)]
+    (x : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (u : Lˣ) :
+    x • Additive.ofMul (padicCompletionUnitsOf p L u) =
+      ∑ σ, x.coeff σ • Additive.ofMul
+        (padicCompletionUnitsOf p L (Units.map σ.toRingEquiv.toMonoidHom u)) := by
+  conv_lhs => rw [← x.sum_coeff_single]
+  rw [Finsupp.sum_fintype _ _ fun σ ↦ by simp, Finset.sum_smul]
+  simp [padicCompletionUnits_single_smul]
 
 end GaloisAction
 
