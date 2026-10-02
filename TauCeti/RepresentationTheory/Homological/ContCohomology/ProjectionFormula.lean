@@ -123,7 +123,7 @@ section DegreeOne
 Openness of `U` enters exactly as in `TauCeti.ContCohomology.explicitCor1`: it is what makes the
 corestriction of a continuous cochain continuous. -/
 
-variable (G : Type u) [Group G] [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
+variable (G : Type u) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
     [DistribMulAction G M] [ContinuousSMul G M]
   (N : Type w) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
@@ -188,8 +188,8 @@ section DegreeTwo
 /-! ### The degree-two shapes
 
 The `2`-cochains of the subgroup are functions on `U × U`, so the cup products over `U` need `U`
-to be a topological group; that is where `[IsTopologicalGroup G]` replaces the weaker pair of
-hypotheses carried in degree one. -/
+to be a topological group. Degree one needs separately continuous multiplication on `G`;
+degree two uses `[IsTopologicalGroup G]` to obtain the corresponding structure on `U`. -/
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]

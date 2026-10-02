@@ -330,6 +330,15 @@ private theorem isFinDim_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : 
   exact Iff.rfl
 
 omit fV in
+private theorem finrank_end_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
+    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
+    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    Module.finrank k (End ((transportCodomain h F).obj M)) =
+      Module.finrank k (End (F.obj M)) := by
+  subst h
+  rfl
+
+omit fV in
 private theorem dimVector_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
     (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
     (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
@@ -366,6 +375,17 @@ theorem coxeterFunctor_def (q : _root_.Quiver.{w} V)
         (Quiver.reflectList_eq_self q hnd hall)) (reflectionFunctorList k l q hq hl) :=
   transportCodomain_eq_eqMp (Quiver.reflectList_eq_self q hnd hall)
     (reflectionFunctorList k l q hq hl)
+
+/-- Transporting the reflection-functor composite back to the original quiver preserves the
+dimension of its endomorphism space. -/
+theorem finrank_end_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
+    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
+    (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
+    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    Module.finrank k (End ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M)) =
+      Module.finrank k (End ((reflectionFunctorList k l q hq hl).obj M)) :=
+  finrank_end_transportCodomain_obj (Quiver.reflectList_eq_self q hnd hall)
+    (reflectionFunctorList k l q hq hl) M
 
 /-- Transporting the reflection-functor composite back to the original quiver does not change its
 dimension vector. -/

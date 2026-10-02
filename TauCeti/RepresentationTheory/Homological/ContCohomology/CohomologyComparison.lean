@@ -82,6 +82,21 @@ namespace TauCeti.ContCohomology
 
 universe u
 
+/-- An additive equivalence followed by transport between equal `TopModuleCat` objects preserves
+nonzero elements. This applies to the explicit-to-canonical cohomology comparison. -/
+theorem addEquiv_eqToHom_ne_zero {A : Type*} [AddCommGroup A]
+    {B C : TopModuleCat ℤ} (e : B = C) (f : A ≃+ B) (x : A) (hx : x ≠ 0) :
+    (eqToHom e).hom (f x) ≠ 0 := by
+  have hinj : Function.Injective (eqToHom e).hom :=
+    Function.LeftInverse.injective ((eqToIso e).hom_inv_id_apply)
+  have hzero : (eqToHom e).hom (0 : B) = 0 := by
+    cases e
+    rfl
+  intro h
+  apply hx
+  apply f.injective
+  exact (hinj (h.trans hzero.symm)).trans f.map_zero.symm
+
 variable (G M : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]

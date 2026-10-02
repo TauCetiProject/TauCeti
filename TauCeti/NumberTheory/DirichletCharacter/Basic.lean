@@ -34,6 +34,7 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   specialisation, from `L N / p` to `N / p`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
+* `DirichletCharacter.even_changeLevel_iff`: changing the level preserves parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
@@ -167,5 +168,14 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
     MulChar.equivToUnitHom.apply_symm_apply χ
   have h := congrArg MulChar.toUnitHom hfac.eq_changeLevel
   rwa [DirichletCharacter.changeLevel_toUnitHom, hχ] at h
+
+/-- **Changing the level preserves parity**: the value at `-1` of a Dirichlet character is the
+value at `-1` of its lift to any multiple level. -/
+@[simp]
+theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
+  have hneg := changeLevel_eq_cast_of_dvd' χ h (a := -1) (IsCoprime.neg_left isCoprime_one_left)
+  simp only [Int.cast_neg, Int.cast_one] at hneg
+  rw [Even, Even, hneg]
 
 end DirichletCharacter

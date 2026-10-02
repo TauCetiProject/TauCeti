@@ -20,10 +20,9 @@ This file packages the scalar extension `K ⊗[k] H` of a commutative Hopf `k`-a
 commutative Hopf `K`-algebra, functorially in the bundled commutative Hopf algebra. It also
 records the corresponding base-change equivalence on functors of points.
 
-It is the bundled Hopf-algebra base-change layer for the ReductiveGroups roadmap Layer 0
-base-change item: geometric notions are studied after replacing the coordinate Hopf algebra
-`H` by `K ⊗[k] H`, and the functor of points of this base-changed object is identified with
-the original points evaluated on `K`-algebras.
+Geometric notions are studied after replacing the coordinate Hopf algebra `H` by `K ⊗[k] H`,
+and the functor of points of this base-changed object is identified with the original points
+evaluated on `K`-algebras.
 
 ## Main declarations
 
@@ -39,11 +38,10 @@ the original points evaluated on `K`-algebras.
 * `CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPointsFunctor`: point transport through such a
   presentation commutes with a compatible square of coordinate morphisms.
 
-## References
+## See also
 
-This builds on Tau Ceti's unbundled base-change equivalence
-`AlgHom.baseChangePointsMulEquiv` and its naturality lemmas, plus Mathlib's
-`Bialgebra.TensorProduct.map`.
+* `AlgHom.baseChangePointsMulEquiv`: unbundled base-change equivalence and naturality lemmas.
+* `Bialgebra.TensorProduct.map`: tensor product map on bialgebras.
 -/
 
 public section

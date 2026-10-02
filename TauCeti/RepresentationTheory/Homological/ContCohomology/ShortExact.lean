@@ -54,10 +54,11 @@ sequence and has to name the same two coefficient maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.ofAddSubgroup`: the sequence `0 → N → B → B ⧸ N → 0`
   of a `G`-stable additive subgroup `N` of a discrete `G`-module `B`.
 * `TauCeti.ContCohomology.DiscreteShortExact.dual`: the dual sequence
-  `0 → Hom(C, N) → Hom(B, N) → Hom(A, N) → 0` of internal homs with the conjugation action, for a
-  sequence killed by a prime `p`; its maps are precomposition with the projection and the inclusion,
-  which `evalPairing_dual_incl` and `evalPairing_dual_proj` record as compatibilities of the
-  evaluation pairings.
+  `0 → Hom(C, N) → Hom(B, N) → Hom(A, N) → 0` of internal homs with the conjugation action,
+  whenever homomorphisms `A →+ N` extend to `B`, as they do for a sequence killed by a prime `p`
+  and for a sequence killed by `n` when `N` is an injective `ℤ/nℤ`-module; its maps are
+  precomposition with the projection and the inclusion, which `evalPairing_dual_incl` and
+  `evalPairing_dual_proj` record as compatibilities of the evaluation pairings.
 * `TauCeti.ContCohomology.DiscreteShortExact.inclDistribMulActionHom` and
   `TauCeti.ContCohomology.DiscreteShortExact.projDistribMulActionHom`: the inclusion and projection
   bundled as equivariant additive homomorphisms, suitable as inputs to `explicitCoeff0`.
@@ -256,8 +257,27 @@ theorem inclDistribMulActionHom_apply (a : A) : S.inclDistribMulActionHom a = S.
 @[simp]
 theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.proj b := (rfl)
 
+/-- The bundled inclusion is injective, as `incl` is. -/
+theorem inclDistribMulActionHom_injective : Function.Injective S.inclDistribMulActionHom :=
+  S.incl_injective
+
+/-- The bundled projection is surjective, as `proj` is. -/
+theorem projDistribMulActionHom_surjective : Function.Surjective S.projDistribMulActionHom :=
+  S.proj_surjective
+
 /-- An element of `B` killed by the projection comes from `A`. -/
 theorem exists_incl_eq {b : B} (hb : S.proj b = 0) : ∃ a : A, S.incl a = b := S.exact b |>.1 hb
+
+include S in
+/-- A natural number killing the middle term of a short exact sequence kills its sub-object. -/
+theorem nsmul_eq_zero_left {n : ℕ} (hB : ∀ b : B, n • b = 0) (a : A) : n • a = 0 :=
+  S.incl_injective (by rw [map_nsmul, hB, map_zero])
+
+include S in
+/-- A natural number killing the middle term of a short exact sequence kills its quotient. -/
+theorem nsmul_eq_zero_right {n : ℕ} (hB : ∀ b : B, n • b = 0) (c : C) : n • c = 0 := by
+  obtain ⟨b, rfl⟩ := S.proj_surjective c
+  rw [← map_nsmul, hB, map_zero]
 
 end Basic
 
@@ -363,40 +383,61 @@ variable {G : Type u} [Group G]
   {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
   {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
   (S : DiscreteShortExact G A B C)
-  (N : Type vN) [AddCommGroup N] [DistribMulAction G N] {p : ℕ} [Fact p.Prime]
+  (N : Type vN) [AddCommGroup N] [DistribMulAction G N]
 
 /-- **The dual short exact sequence.** For a short exact sequence `0 → A → B → C → 0` of discrete
-`G`-modules killed by a prime `p` and any `G`-module `N`, precomposition with the two maps gives the
-short exact sequence
+`G`-modules and a `G`-module `N` such that every homomorphism `A →+ N` extends to `B`, that is,
+precomposition with the inclusion is surjective on internal homs, precomposition with the two maps
+gives the short exact sequence
 
 ```text
 0 → InternalHom G C N → InternalHom G B N → InternalHom G A N → 0
 ```
 
-of internal homs with their conjugation actions. Exactness is `Hom(-, N)` being exact on the
-modules killed by `p`, which are `𝔽_p`-vector spaces; only `B` need be killed by `p`, since `A`
-embeds in `B` and `C` is a quotient of `B`. Evaluation identifies the two maps:
-`evalPairing_dual_incl` and `evalPairing_dual_proj`. -/
-def dual (hB : ∀ b : B, p • b = 0) :
+of internal homs with their conjugation actions. The extension hypothesis is the only input beyond
+the exactness of `S`: injectivity on the left is `InternalHom.precomp_injective` and exactness in
+the middle is `InternalHom.exact_precomp`, for every `N`. It holds for every `N` when `B` is killed
+by a prime `p`, since `A` embeds in `B` and `Hom(-, N)` is exact on `𝔽_p`-vector spaces
+(`InternalHom.precomp_surjective`), and it holds when `B` is killed by `n` and `N` satisfies Baer's
+criterion over `ℤ/nℤ`, for instance `N = ℤ/nℤ` with any action when `n ≠ 0`
+(`InternalHom.precomp_surjective_of_baer`); `precomp_inclDistribMulActionHom_surjective` and
+`precomp_inclDistribMulActionHom_surjective_of_baer` state the two cases for the inclusion of `S`.
+Evaluation identifies the two maps: `evalPairing_dual_incl` and `evalPairing_dual_proj`. -/
+def dual (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N))) :
     DiscreteShortExact G (InternalHom G C N) (InternalHom G B N) (InternalHom G A N) where
   incl := (InternalHom.precomp G S.projDistribMulActionHom).toAddMonoidHom
   proj := (InternalHom.precomp G S.inclDistribMulActionHom).toAddMonoidHom
   incl_equivariant g φ := map_smul (InternalHom.precomp G S.projDistribMulActionHom) g φ
   proj_equivariant g φ := map_smul (InternalHom.precomp G S.inclDistribMulActionHom) g φ
   incl_injective := InternalHom.precomp_injective S.proj_surjective
-  proj_surjective := InternalHom.precomp_surjective hB S.incl_injective
+  proj_surjective := hsurj
   exact := InternalHom.exact_precomp S.inclDistribMulActionHom S.projDistribMulActionHom
     S.proj_surjective S.exact
 
-variable (hB : ∀ b : B, p • b = 0)
+/-- **The extension hypothesis of `dual` for a sequence killed by a prime.** If `B` is killed by a
+prime `p`, precomposition with the inclusion of `S` is surjective on internal homs into any `N`. -/
+theorem precomp_inclDistribMulActionHom_surjective {p : ℕ} [Fact p.Prime]
+    (hB : ∀ b : B, p • b = 0) :
+    Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)) :=
+  InternalHom.precomp_surjective hB S.inclDistribMulActionHom_injective
+
+/-- **The extension hypothesis of `dual` for a sequence killed by `n` and a Baer target.** If `B` is
+killed by `n` and `N` satisfies Baer's criterion over `ℤ/nℤ`, precomposition with the inclusion of
+`S` is surjective on internal homs into `N`. -/
+theorem precomp_inclDistribMulActionHom_surjective_of_baer {n : ℕ} [Module (ZMod n) N]
+    (hN : Module.Baer (ZMod n) N) (hB : ∀ b : B, n • b = 0) :
+    Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)) :=
+  InternalHom.precomp_surjective_of_baer hN hB S.inclDistribMulActionHom_injective
+
+variable (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)))
 
 @[simp]
-theorem dual_incl : (S.dual N hB).incl =
+theorem dual_incl : (S.dual N hsurj).incl =
     (InternalHom.precomp G S.projDistribMulActionHom (N := N)).toAddMonoidHom :=
   (rfl)
 
 @[simp]
-theorem dual_proj : (S.dual N hB).proj =
+theorem dual_proj : (S.dual N hsurj).proj =
     (InternalHom.precomp G S.inclDistribMulActionHom (N := N)).toAddMonoidHom :=
   (rfl)
 
@@ -404,7 +445,7 @@ theorem dual_proj : (S.dual N hB).proj =
 pairings of `InternalHom G C N` with `C` and of `InternalHom G B N` with `B` are compatible along
 the two maps. -/
 theorem evalPairing_dual_incl (φ : InternalHom G C N) (b : B) :
-    InternalHom.evalPairing G ((S.dual N hB).incl φ) b =
+    InternalHom.evalPairing G ((S.dual N hsurj).incl φ) b =
       InternalHom.evalPairing G φ (S.proj b) := by
   rw [dual_incl]
   exact InternalHom.evalPairing_precomp S.projDistribMulActionHom φ b
@@ -413,7 +454,7 @@ theorem evalPairing_dual_incl (φ : InternalHom G C N) (b : B) :
 pairings of `InternalHom G B N` with `B` and of `InternalHom G A N` with `A` are compatible along
 the two maps. -/
 theorem evalPairing_dual_proj (ψ : InternalHom G B N) (a : A) :
-    InternalHom.evalPairing G ((S.dual N hB).proj ψ) a =
+    InternalHom.evalPairing G ((S.dual N hsurj).proj ψ) a =
       InternalHom.evalPairing G ψ (S.incl a) := by
   rw [dual_proj]
   exact InternalHom.evalPairing_precomp S.inclDistribMulActionHom ψ a
@@ -422,21 +463,23 @@ theorem evalPairing_dual_proj (ψ : InternalHom G B N) (a : A) :
 of the original sequence. -/
 @[simp]
 theorem dual_inclDistribMulActionHom :
-    (S.dual N hB).inclDistribMulActionHom = InternalHom.precomp G S.projDistribMulActionHom :=
+    (S.dual N hsurj).inclDistribMulActionHom = InternalHom.precomp G S.projDistribMulActionHom :=
   DistribMulActionHom.ext fun _ => rfl
 
 /-- The equivariant projection of the dual sequence is precomposition with the equivariant inclusion
 of the original sequence. -/
 @[simp]
 theorem dual_projDistribMulActionHom :
-    (S.dual N hB).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
+    (S.dual N hsurj).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
   DistribMulActionHom.ext fun _ => rfl
 
 /-- **Evaluation is a morphism from a sequence to its double dual, on the inclusions.** The
 inclusion of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
 class of `a : A` to the evaluation class of `S.incl a`. -/
-theorem dual_dual_incl_eval (hB' : ∀ ψ : InternalHom G B N, p • ψ = 0) (a : A) :
-    ((S.dual N hB).dual N hB').incl (InternalHom.eval G A N a) =
+theorem dual_dual_incl_eval
+    (hsurj' : Function.Surjective
+      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (a : A) :
+    ((S.dual N hsurj).dual N hsurj').incl (InternalHom.eval G A N a) =
       InternalHom.eval G B N (S.incl a) := by
   rw [dual_incl, dual_projDistribMulActionHom]
   exact InternalHom.precomp_precomp_eval S.inclDistribMulActionHom a
@@ -444,8 +487,10 @@ theorem dual_dual_incl_eval (hB' : ∀ ψ : InternalHom G B N, p • ψ = 0) (a 
 /-- **Evaluation is a morphism from a sequence to its double dual, on the projections.** The
 projection of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
 class of `b : B` to the evaluation class of `S.proj b`. -/
-theorem dual_dual_proj_eval (hB' : ∀ ψ : InternalHom G B N, p • ψ = 0) (b : B) :
-    ((S.dual N hB).dual N hB').proj (InternalHom.eval G B N b) =
+theorem dual_dual_proj_eval
+    (hsurj' : Function.Surjective
+      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (b : B) :
+    ((S.dual N hsurj).dual N hsurj').proj (InternalHom.eval G B N b) =
       InternalHom.eval G C N (S.proj b) := by
   rw [dual_proj, dual_inclDistribMulActionHom]
   exact InternalHom.precomp_precomp_eval S.projDistribMulActionHom b

@@ -37,6 +37,12 @@ every product of composable steps to a valley word up to sign, or to zero. A val
 `a` to rung `b` has length at most `a + b`, so longer products vanish; this bounds the length of
 the nonzero paths in the preprojective algebra of type `A`.
 
+Without the relation `d 0 * u 0 = 0` at the bottom rung, a descent after a climb from rung `0`
+leaves the turn `d 0 * u 0` (`TauCeti.d_mul_ladderValley_zero_zero`). Its powers are, up to sign,
+the words climbing from rung `0` and descending back, so on a ladder with no climb from some rung
+`N` the turn is nilpotent (`TauCeti.pow_d_mul_u_eq_zero`). This is the situation at the end of an
+arm of a branched graph, read from its branch node.
+
 ## Main definitions
 
 * `TauCeti.ladderValley`: the valley word descending `s` rungs to rung `m` and climbing `r` rungs.
@@ -48,6 +54,10 @@ the nonzero paths in the preprojective algebra of type `A`.
 * `TauCeti.d_mul_ladderValley`: under the ladder relations, a final descent moves the valley one
   rung down.
 * `TauCeti.d_mul_ladderValley_zero_eq_zero`: a final descent after a valley at rung `0` vanishes.
+* `TauCeti.d_mul_ladderValley_zero_zero`: without the bottom relation, a descent after a climb from
+  rung `0` leaves the turn at rung `0`.
+* `TauCeti.pow_d_mul_u_eq_zero`: on a ladder with no climb from rung `N`, the turn at rung `0` has
+  vanishing `N + 1`-st power.
 
 ## References
 
@@ -95,6 +105,16 @@ theorem d_mul_ladderValley_succ_zero (m s : ℕ) :
     d m * ladderValley u d (m + 1) s 0 = ladderValley u d m (s + 1) 0 := by
   simp [ladderValley, List.range_succ_eq_map, Function.comp_def, add_assoc, add_comm 1]
 
+/-- An initial climb from rung `m` extends a climb from rung `m + 1`. -/
+theorem ladderValley_succ_zero_mul_u (m r : ℕ) :
+    ladderValley u d (m + 1) 0 r * u m = ladderValley u d m 0 (r + 1) := by
+  simp [ladderValley, List.range_succ_eq_map, Function.comp_def, add_assoc, add_comm 1]
+
+/-- A valley word is its descent followed by its climb. -/
+theorem ladderValley_zero_mul_ladderValley (m s r : ℕ) :
+    ladderValley u d m 0 r * ladderValley u d m s 0 = ladderValley u d m s r := by
+  simp [ladderValley]
+
 end Monoid
 
 section Ring
@@ -125,6 +145,42 @@ theorem d_mul_ladderValley_zero_eq_zero (hud₀ : d 0 * u 0 = 0)
   | succ r ih =>
     rw [← u_mul_ladderValley, ← mul_assoc, zero_add,
       eq_neg_of_add_eq_zero_left (hud r), neg_mul, mul_assoc, ih, mul_zero, neg_zero]
+
+/-- **A descent after a climb from rung `0` leaves a turn at rung `0`.** If the turns at every
+positive rung cancel, then climbing `r + 1` rungs from rung `0` and descending one rung gives, up
+to the sign `(-1) ^ r`, the turn `d 0 * u 0` at rung `0` followed by a climb of `r` rungs. -/
+theorem d_mul_ladderValley_zero_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) (r : ℕ) :
+    d r * ladderValley u d 0 0 (r + 1) = (-1) ^ r * (ladderValley u d 0 0 r * (d 0 * u 0)) := by
+  have h := d_mul_ladderValley hud 0 0 r
+  rw [zero_add, zero_add, ← ladderValley_mul_d, zero_add] at h
+  rw [← ladderValley_succ_zero_mul_u, ← mul_assoc, h, mul_assoc, mul_assoc]
+
+/-- **The turn at the bottom of a finite ladder is nilpotent.** If the turns at every positive
+rung cancel and there is no climb from rung `N`, then `(d 0 * u 0) ^ (N + 1) = 0`: the power
+`(d 0 * u 0) ^ j` is, up to sign, the word climbing `j` rungs from rung `0` and descending back,
+and no word climbs `N + 1` rungs. -/
+theorem pow_d_mul_u_eq_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) {N : ℕ}
+    (hN : u N = 0) : (d 0 * u 0) ^ (N + 1) = 0 := by
+  -- The climb of `j` rungs from rung `0` and the descent back.
+  let P : ℕ → A := fun j => ladderValley u d 0 j 0 * ladderValley u d 0 0 j
+  have hstep (j : ℕ) : P j * (d 0 * u 0) = (-1) ^ j * P (j + 1) := by
+    have hP : P (j + 1) = (-1) ^ j * (P j * (d 0 * u 0)) := by
+      simp only [P]
+      rw [← ladderValley_mul_d, zero_add, mul_assoc, d_mul_ladderValley_zero_zero hud,
+        ← mul_assoc, ((Commute.neg_one_right _).pow_right j).eq]
+      simp only [mul_assoc]
+    rw [hP, ← mul_assoc ((-1 : A) ^ j), ← (Commute.refl (-1 : A)).mul_pow, neg_one_mul, neg_neg,
+      one_pow, one_mul]
+  have hpow (j : ℕ) : ∃ e : ℕ, (d 0 * u 0) ^ j = (-1) ^ e * P j := by
+    induction j with
+    | zero => exact ⟨0, by simp [P]⟩
+    | succ j ih =>
+      obtain ⟨e, he⟩ := ih
+      exact ⟨e + j, by rw [pow_succ, he, mul_assoc, hstep, ← mul_assoc, ← pow_add]⟩
+  obtain ⟨e, he⟩ := hpow (N + 1)
+  rw [he]
+  simp only [P]
+  rw [← u_mul_ladderValley, zero_add, hN, zero_mul, mul_zero, mul_zero]
 
 end Ring
 
