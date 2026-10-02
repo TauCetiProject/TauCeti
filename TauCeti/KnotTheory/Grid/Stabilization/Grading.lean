@@ -197,9 +197,11 @@ private theorem card_lt_insertPoint_succ_castSucc_succ_succ :
 
 variable (G : GridDiagram n)
 
+-- Prefer the center-state reductions to the grading `*_def` simp lemmas.
+
 /-- **The `O`-Maslov grading of a center state.** Adding the center of the new block to a state
 of `G` gives a state of the stabilization one lower in the `O`-Maslov grading. -/
-theorem maslovOℤ_stabilizeX_insertPoint :
+@[simp 1100] theorem maslovOℤ_stabilizeX_insertPoint :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).maslovOℤ (x.insertPoint s.succ (G.X s).succ) =
       G.maslovOℤ x - 1 := by
   rw [maslovOℤ_eq_card, maslovOℤ_eq_card, stabilizeX_O, card_lt_insertPoint_succ_succ,
@@ -210,7 +212,7 @@ theorem maslovOℤ_stabilizeX_insertPoint :
 
 /-- **The `X`-Maslov grading of a center state.** Adding the center of the new block to a state
 of `G` gives a state of the stabilization with the same `X`-Maslov grading. -/
-theorem maslovXℤ_stabilizeX_insertPoint :
+@[simp 1100] theorem maslovXℤ_stabilizeX_insertPoint :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).maslovXℤ (x.insertPoint s.succ (G.X s).succ) =
       G.maslovXℤ x := by
   rw [maslovXℤ_eq_card, maslovXℤ_eq_card, stabilizeX_X,
@@ -221,7 +223,7 @@ theorem maslovXℤ_stabilizeX_insertPoint :
   ring
 
 /-- **The Alexander grading of a center state**, in its doubled integer form. -/
-theorem alexanderTwoℤ_stabilizeX_insertPoint :
+@[simp 1100] theorem alexanderTwoℤ_stabilizeX_insertPoint :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).alexanderTwoℤ
         (x.insertPoint s.succ (G.X s).succ) =
       G.alexanderTwoℤ x - 2 := by
@@ -232,7 +234,7 @@ theorem alexanderTwoℤ_stabilizeX_insertPoint :
 
 /-- **The Alexander grading of a center state.** Adding the center of the new block to a state
 of `G` gives a state of the stabilization one lower in the Alexander grading. -/
-theorem alexander_stabilizeX_insertPoint :
+@[simp 1100] theorem alexander_stabilizeX_insertPoint :
     (G.stabilizeX s.castSucc (G.X s).castSucc s).alexander (x.insertPoint s.succ (G.X s).succ) =
       G.alexander x - 1 := by
   have h := (G.stabilizeX s.castSucc (G.X s).castSucc s).two_mul_alexander_eq_intCast
