@@ -60,7 +60,7 @@ variable {Q}
 
 omit [Invertible (2 : R)] in
 /-- The inverse unit coordinate of a Pin element in the Lipschitz group is its Clifford star. -/
-theorem pinToLipschitz_inv_coe (x : pinGroup Q) :
+theorem coe_inv_pinToLipschitz (x : pinGroup Q) :
     (((pinToLipschitz Q x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = star (x : CliffordAlgebra Q) :=
   Units.inv_eq_of_mul_eq_one_right (by
@@ -90,7 +90,7 @@ theorem ι_pinToOrthogonal_apply (x : pinGroup Q) (m : M) :
     ι Q (((pinToOrthogonal Q x : QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) m) =
       involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m * star (x : CliffordAlgebra Q) := by
   simp only [coe_pinToOrthogonal_apply, ι_lipschitzVectorAction_apply,
-    coe_pinToLipschitz_apply, pinToLipschitz_inv_coe]
+    coe_pinToLipschitz_apply, coe_inv_pinToLipschitz]
 
 /-- The reflection cut out by a Pin group vector with norm `-1`. -/
 @[simp]
