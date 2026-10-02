@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Field
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Primitive
 
 /-!
 # The transitive-group label of a polynomial
@@ -57,7 +58,9 @@ by the degree alone, and in degree two by separability and irreducibility.
 * `TauCeti.HasGaloisLabel.irreducible_map_discrField_iff`: irreducibility over the discriminant
   field, read on the even part of the reference subgroup.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
-  primitivity of the Galois image, respectively of the Galois group, on the roots.
+  primitivity of the Galois image, respectively of the Galois group, on the roots, and
+  `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le`: the Galois group acts
+  primitively unless the label is `4T1`, `4T2` or `4T3`.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
 * `TauCeti.HasGaloisLabel.eq_one_of_smul_eq_self`: a regular label acts freely on the roots.
 * `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible, and
@@ -361,5 +364,12 @@ theorem HasGaloisLabel.isPreprimitive_gal_iff (h : HasGaloisLabel f j) :
       (Gal.rootsEquivRootsAux f f.SplittingField) fun g x => by
         rw [id, Gal.smul_def, Equiv.symm_apply_apply])
     Function.surjective_id (Gal.rootsEquivRootsAux f f.SplittingField).bijective
+
+/-- **The primitivity of a Galois group with a label.** The Galois group of a polynomial with a
+label acts primitively on the roots in the splitting field exactly when the label is not one of
+`4T1`, `4T2` and `4T3`. -/
+theorem HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le (h : HasGaloisLabel f j) :
+    IsPreprimitive f.Gal (f.rootSet f.SplittingField) ↔ n ≠ 4 ∨ 3 ≤ (j : ℕ) := by
+  rw [h.isPreprimitive_gal_iff, isPreprimitive_referenceSubgroup_iff]
 
 end TauCeti

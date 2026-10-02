@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 
 /-!
@@ -141,9 +142,8 @@ theorem norm_smul (L : IntegralLattice V) (a : ℚ) (x : V) :
 /-- Polarization of the norm using symmetry of the lattice form. -/
 theorem norm_add (L : IntegralLattice V) (x y : V) :
     L.norm (x + y) = L.norm x + L.norm y + 2 * L.form x y := by
-  rw [QuadraticMap.map_add L.norm x y, norm, LinearMap.BilinMap.polar_toQuadraticMap,
-    L.isSymm.eq y x]
-  ring
+  simp only [norm_apply]
+  exact L.isSymm.apply_add_self x y
 
 /-- The subtraction form of the norm polarization identity. -/
 theorem norm_sub (L : IntegralLattice V) (x y : V) :
@@ -170,9 +170,8 @@ theorem integralNorm_zsmul (L : IntegralLattice V) (a : ℤ) (x : L) :
 theorem integralNorm_add (L : IntegralLattice V) (x y : L) :
     L.integralNorm (x + y) =
       L.integralNorm x + L.integralNorm y + 2 * L.integralForm x y := by
-  rw [QuadraticMap.map_add L.integralNorm x y, integralNorm,
-    LinearMap.BilinMap.polar_toQuadraticMap, L.isSymm_integralForm.eq y x]
-  ring
+  simp only [integralNorm_apply]
+  exact L.isSymm_integralForm.apply_add_self x y
 
 /-- The norm modulo two, as an additive character of the carrier. -/
 noncomputable def normParity (L : IntegralLattice V) : L →+ ZMod 2 where

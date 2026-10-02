@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.RootDatum
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
+import TauCeti.Algebra.Group.Submonoid.Telescoping
 
 /-!
 # A base of the root datum of the symplectic group

@@ -31,7 +31,8 @@ algebra of the `𝔽_p`-vector space `M`.
 ## Main results
 
 * `TauCeti.natCard_addMonoidHom_zmod`: `Nat.card (M →+ ZMod n) = Nat.card M` for finite `M` killed
-  by `n`.
+  by `n`, and `TauCeti.natCard_addMonoidHom_of_addEquiv_zmod`: the same count for the homomorphisms
+  into any additive group `N ≃+ ZMod n`.
 * `TauCeti.exists_addMonoidHom_zmod_apply_ne_zero`: for `a ≠ 0` in `M` killed by `n`, some
   `f : M →+ ZMod n` has `f a ≠ 0`.
 -/
@@ -51,6 +52,14 @@ theorem natCard_addMonoidHom_zmod [Finite M] (hM : ∀ x : M, n • x = 0) :
   have := hasEnoughRootsOfUnity_multiplicative_zmod_exponent hM
   rw [Nat.card_congr AddMonoidHom.toMultiplicativeUnits,
     CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, Nat.card_congr Multiplicative.toAdd]
+
+/-- **The `N`-dual of a finite group killed by `n` has the same order, for `N ≃+ ZMod n`.** If
+`n ≠ 0`, `M` is finite and killed by `n`, and `e : N ≃+ ZMod n`, then
+`Nat.card (M →+ N) = Nat.card M`: composing with `e` identifies `M →+ N` with `M →+ ZMod n`. -/
+theorem natCard_addMonoidHom_of_addEquiv_zmod {N : Type*} [AddCommGroup N] (e : N ≃+ ZMod n)
+    [Finite M] (hM : ∀ x : M, n • x = 0) : Nat.card (M →+ N) = Nat.card M := by
+  rw [Nat.card_congr (AddEquiv.addMonoidHomCongrRight (M := M) e).toEquiv,
+    natCard_addMonoidHom_zmod hM]
 
 /-- **Homomorphisms to `ℤ/n` separate the points of a group killed by `n`.** If `n ≠ 0`, `M` is
 killed by `n` and `a ≠ 0` in `M`, then some `f : M →+ ZMod n` has `f a ≠ 0`. No finiteness is
