@@ -64,15 +64,6 @@ section CommRing
 
 variable (R : Type u) [CommRing R]
 
--- The body of `diagonalTorusDefiningIdeal` is not exposed outside its defining module, so the
--- kernel presentation it is given there is recovered here from the public membership lemma.
-private theorem diagonalTorusDefiningIdeal_eq_ker :
-    diagonalTorusDefiningIdeal r R =
-      HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap r R).hom
-        (diagonalTorusCoordinateMap_surjective r R) := by
-  ext x
-  rw [mem_diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
-
 /-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{w} R) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R (r + 1))

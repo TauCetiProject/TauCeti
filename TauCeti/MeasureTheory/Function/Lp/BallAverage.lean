@@ -348,7 +348,7 @@ theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p 
     (continuous_id.sub (continuous_const : Continuous (fun _ : E => x))).tendsto x
   have hsub : Filter.Tendsto (fun y : E => y - x) (nhds x) (nhds 0) := by
     simpa only [sub_self] using hsub0
-  have htrans := (tendsto_eLpNorm_comp_add_sub_of_memLp hp hp' hf).comp hsub
+  have htrans := (hf.tendsto_eLpNorm_comp_add_sub hp hp').comp hsub
   have hfactor : mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos mu 0 hr).ne' measure_ball_lt_top.ne
   have hupper := ENNReal.Tendsto.const_mul htrans (Or.inr hfactor)

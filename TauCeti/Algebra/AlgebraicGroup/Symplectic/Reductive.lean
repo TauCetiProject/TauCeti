@@ -64,7 +64,7 @@ private noncomputable def coordinateHopfAlgebraFiniteTypeObjIso
 
 -- The normal-unipotent elimination below adapts the proof architecture from
 -- `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Reductive` and
--- `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive`.
+-- `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Basic`.
 /-- A normal smooth unipotent closed subgroup of `Sp₂ₘ` over an algebraically closed field is
 trivial. No positivity hypothesis on `m` is needed. -/
 theorem eq_augmentation_of_isNormal_of_smoothUnipotent
