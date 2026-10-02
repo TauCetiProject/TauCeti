@@ -511,7 +511,7 @@ private theorem exists_independent_of_natCard :
   have : Module.Finite (ZMod p) (TateModuleLevel p A 1) := Module.Finite.of_finite
   have hrank : Module.finrank (ZMod p) (TateModuleLevel p A 1) = r := by
     have h := Module.natCard_eq_pow_finrank (K := ZMod p) (V := TateModuleLevel p A 1)
-    rw [hcard, show (p ^ 1) ^ r = p ^ r by rw [pow_one], Nat.card_zmod] at h
+    rw [hcard, ← pow_mul, one_mul, Nat.card_zmod] at h
     exact (Nat.pow_right_injective hp.out.two_le h).symm
   let b := Module.finBasisOfFinrankEq (ZMod p) (TateModuleLevel p A 1) hrank
   have hb (c : Fin r → ℤ) (hc : ∑ i, c i • b i = 0) (i : Fin r) : (p : ℤ) ∣ c i := by
