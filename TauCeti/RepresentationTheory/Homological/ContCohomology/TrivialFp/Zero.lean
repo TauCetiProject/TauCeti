@@ -14,6 +14,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 The canonical identification `cohomFpZeroLinearEquiv` sends zeroth continuous cohomology to
 the underlying coefficient value in `ZMod p`. In particular, the cohomology module is finite
 over `ZMod p`; when `p` is prime, it is a finite-dimensional vector space over `𝔽_p`.
+
+This identification specializes Mathlib's `ContinuousCohomology.zeroIso`, composed with
+`LinearEquiv.ofTop` for the trivial action and `trivialFpEquiv` for the coefficient value.
 -/
 
 public section
