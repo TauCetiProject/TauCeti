@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Manifold
 public import TauCeti.Analysis.Complex.Fuchsian.Conj
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
 public import TauCeti.Geometry.Manifold.Complex.Chart
+public import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Compactified quotients of conjugate Fuchsian groups
@@ -27,16 +28,24 @@ after the map (`Subgroup.CompactifiedQuotient.cuspChart_conj_compactifiedQuotien
 the q-coordinate of `D.conj h` at `g • z` is the q-coordinate of `D` at `z`. So, read in these
 charts, the map is the identity of a disc. In particular conjugate Fuchsian groups have
 biholomorphic compactified quotients, and every element of the normalizer of `Γ` acts on the
-compactified quotient of `Γ` by biholomorphisms.
+compactified quotient of `Γ` by biholomorphisms. The construction is functorial: `g = 1` gives the
+identity (`Subgroup.CompactifiedQuotient.conjBiholomorph_one`), and conjugating by `g` and then by
+`g'` is conjugating by `g' * g` (`Subgroup.CompactifiedQuotient.conjBiholomorph_trans`). Only `Γ`
+is assumed discrete: discreteness of `Γ'` follows
+(`TauCeti.discreteTopology_of_conjAct_smul_eq`).
 
 ## Main declarations
 
-* `Subgroup.compactifiedQuotientConj`: the map of compactified quotients induced by conjugation.
+* `Subgroup.compactifiedQuotientConj`: the map of compactified quotients induced by conjugation,
+  with the identity and composition laws `Subgroup.compactifiedQuotientConj_one` and
+  `Subgroup.compactifiedQuotientConj_comp`.
 * `Subgroup.CompactifiedQuotient.continuous_compactifiedQuotientConj` and
   `Subgroup.CompactifiedQuotient.mdifferentiable_compactifiedQuotientConj`: it is continuous and
   holomorphic.
 * `Subgroup.CompactifiedQuotient.conjBiholomorph`: the biholomorphism of compactified quotients,
-  with `Subgroup.CompactifiedQuotient.conjBiholomorph_symm`.
+  with `Subgroup.CompactifiedQuotient.conjBiholomorph_symm`,
+  `Subgroup.CompactifiedQuotient.conjBiholomorph_one` and
+  `Subgroup.CompactifiedQuotient.conjBiholomorph_trans`.
 
 ## References
 
@@ -81,6 +90,30 @@ theorem compactifiedQuotientConj_compactifiedQuotientConj (h : ConjAct.toConjAct
   | ofQuotient p => simp [← quotientConjHomeomorph_symm h h']
   | ofCusp C => simp [← cuspOrbitConjEquiv_symm h h']
 
+/-- Conjugation by `1` induces the identity of the compactified quotient. -/
+@[simp]
+theorem compactifiedQuotientConj_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ) :
+    compactifiedQuotientConj h = id := by
+  funext x
+  cases x <;> simp
+
+/-- Conjugating by `g` and then by `g'` induces the same map of compactified quotients as
+conjugating by `g' * g`. -/
+@[simp]
+theorem compactifiedQuotientConj_comp {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
+    (h : ConjAct.toConjAct g • Γ = Γ') (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
+    compactifiedQuotientConj h' ∘ compactifiedQuotientConj h =
+      compactifiedQuotientConj (by rw [map_mul, mul_smul, h, h'] :
+        ConjAct.toConjAct (g' * g) • Γ = Γ'') := by
+  funext x
+  cases x with
+  | ofQuotient p =>
+      simp only [comp_apply, compactifiedQuotientConj_ofQuotient]
+      rw [← Homeomorph.trans_apply, quotientConjHomeomorph_trans]
+  | ofCusp C =>
+      simp only [comp_apply, compactifiedQuotientConj_ofCusp]
+      rw [← Equiv.trans_apply, cuspOrbitConjEquiv_trans]
+
 namespace CompactifiedQuotient
 
 /-- The map induced by conjugation sends the cusp neighbourhood of a cusp datum `D` at height `A`
@@ -100,7 +133,7 @@ theorem mapsTo_compactifiedQuotientConj_cuspNhd (h : ConjAct.toConjAct g • Γ 
         ← CuspDatum.cuspOrbit_conj]
       exact ofCusp_mem_cuspNhd _ A
 
-variable [DiscreteTopology Γ] [DiscreteTopology Γ']
+variable [DiscreteTopology Γ]
 
 /-- **The cusp charts are compatible with conjugation**: on the cusp neighbourhood of `D`, the cusp
 chart of the transported datum `D.conj h` after the map induced by conjugation is the cusp chart of
@@ -108,8 +141,10 @@ chart of the transported datum `D.conj h` after the map induced by conjugation i
 theorem cuspChart_conj_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ')
     (D : Γ.CuspDatum) {A : ℝ} (hA : D.width ≤ A) {x : Γ.CompactifiedQuotient}
     (hx : x ∈ cuspNhd D A) :
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
     cuspChart (D.conj h) ((D.conj_width h).trans_le hA) (compactifiedQuotientConj h x) =
       cuspChart D hA x := by
+  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
   cases x with
   | ofQuotient p =>
       obtain ⟨z, hz, rfl⟩ := (ofQuotient_mem_cuspNhd_iff D A).mp hx
@@ -123,7 +158,9 @@ theorem cuspChart_conj_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ 
 /-- The map of compactified quotients induced by conjugation is continuous, including at the
 adjoined cusp points. -/
 theorem continuous_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ') :
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
     Continuous (compactifiedQuotientConj h) := by
+  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
   rw [continuous_iff_continuousAt]
   intro x
   cases x with
@@ -141,7 +178,9 @@ theorem continuous_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ
 quotient this is holomorphic descent; at a cusp, read in the cusp charts of a cusp datum and of
 its transport, the map is the identity. -/
 theorem mdifferentiable_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ') :
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientConj h) := by
+  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
   intro x
   cases x with
   | ofQuotient p =>
@@ -175,7 +214,9 @@ a discrete `Γ`, translation by `g` induces a biholomorphism between the compact
 `Γ` and `Γ'`, sending the orbit of `z` to the orbit of `g • z` and the cusp orbit of `c` to the
 cusp orbit of `g • c`. -/
 def conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
     Γ.CompactifiedQuotient ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ Γ'.CompactifiedQuotient :=
+  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
   have h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ := by rw [← h, map_inv, inv_smul_smul]
   { toFun := compactifiedQuotientConj h
     invFun := compactifiedQuotientConj h'
@@ -189,13 +230,37 @@ def conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
 
 @[simp]
 theorem coe_conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
     ⇑(conjBiholomorph h) = compactifiedQuotientConj h :=
   (rfl)
 
 /-- The inverse of the biholomorphism induced by `g` is the one induced by `g⁻¹`. -/
 theorem conjBiholomorph_symm (h : ConjAct.toConjAct g • Γ = Γ')
-    (h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ) : (conjBiholomorph h).symm = conjBiholomorph h' :=
-  Diffeomorph.ext fun _ ↦ (rfl)
+    (h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ) :
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    (conjBiholomorph h).symm = conjBiholomorph h' := by
+  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
+  exact Diffeomorph.ext fun _ ↦ rfl
+
+/-- Conjugation by `1` induces the identity biholomorphism. -/
+@[simp]
+theorem conjBiholomorph_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ) :
+    conjBiholomorph h = Diffeomorph.refl _ _ _ :=
+  Diffeomorph.ext fun x ↦ congrFun (compactifiedQuotientConj_one h) x
+
+/-- Conjugating by `g` and then by `g'` induces the same biholomorphism as conjugating by
+`g' * g`. -/
+@[simp]
+theorem conjBiholomorph_trans {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
+    (h : ConjAct.toConjAct g • Γ = Γ') (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h'
+    (conjBiholomorph h).trans (conjBiholomorph h') =
+      conjBiholomorph (by rw [map_mul, mul_smul, h, h'] :
+        ConjAct.toConjAct (g' * g) • Γ = Γ'') := by
+  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
+  have := TauCeti.discreteTopology_of_conjAct_smul_eq h'
+  exact Diffeomorph.ext fun x ↦ congrFun (compactifiedQuotientConj_comp h h') x
 
 end CompactifiedQuotient
 

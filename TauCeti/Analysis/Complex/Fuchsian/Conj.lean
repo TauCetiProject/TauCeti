@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Descent
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+public import TauCeti.Topology.Algebra.ConstMulAction
 public import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
@@ -20,7 +21,9 @@ Let `Γ ≤ PSL(2, ℝ)`, `g ∈ PSL(2, ℝ)`, and let `Γ' = g Γ g⁻¹`, writ
 holomorphic, including at elliptic orbits, by holomorphic descent through the orbit projection
 (`Subgroup.mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk`). Its inverse is the
 same construction for `g⁻¹` (`Subgroup.quotientConjHomeomorph_symm`), so it is holomorphic in both
-directions.
+directions. The construction is functorial: `g = 1` gives the identity
+(`Subgroup.quotientConjHomeomorph_one`), and conjugating by `g` and then by `g'` is conjugating by
+`g' * g` (`Subgroup.quotientConjHomeomorph_trans`).
 
 The conjugate is passed as a subgroup `Γ'` together with the equation
 `ConjAct.toConjAct g • Γ = Γ'`, so that the inverse is again of this form and an element of the
@@ -29,7 +32,8 @@ normalizer of `Γ` acts on `Γ \ ℍ` itself.
 ## Main declarations
 
 * `Subgroup.quotientConjHomeomorph`: the homeomorphism `Γ \ ℍ ≃ₜ Γ' \ ℍ`, with
-  `Subgroup.quotientConjHomeomorph_mk` and `Subgroup.quotientConjHomeomorph_symm`.
+  `Subgroup.quotientConjHomeomorph_mk`, `Subgroup.quotientConjHomeomorph_symm`,
+  `Subgroup.quotientConjHomeomorph_one` and `Subgroup.quotientConjHomeomorph_trans`.
 * `Subgroup.mdifferentiable_quotientConjHomeomorph`: it is holomorphic.
 
 ## References
@@ -67,12 +71,33 @@ theorem quotientConjHomeomorph_symm (h : ConjAct.toConjAct g • Γ = Γ')
     (quotientConjHomeomorph h).symm = quotientConjHomeomorph h' :=
   Homeomorph.ext fun p ↦ Quotient.inductionOn p fun _ ↦ (rfl)
 
+/-- Conjugation by `1` induces the identity of the coarse quotient. -/
+@[simp]
+theorem quotientConjHomeomorph_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ) :
+    quotientConjHomeomorph h = Homeomorph.refl _ :=
+  Homeomorph.ext fun p ↦ Quotient.inductionOn p fun z ↦ by
+    rw [quotientConjHomeomorph_mk, one_smul, Homeomorph.refl_apply, id]
+
+/-- Conjugating by `g` and then by `g'` induces the same homeomorphism of coarse quotients as
+conjugating by `g' * g`. -/
+@[simp]
+theorem quotientConjHomeomorph_trans {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
+    (h : ConjAct.toConjAct g • Γ = Γ') (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
+    (quotientConjHomeomorph h).trans (quotientConjHomeomorph h') =
+      quotientConjHomeomorph (by rw [map_mul, mul_smul, h, h'] :
+        ConjAct.toConjAct (g' * g) • Γ = Γ'') :=
+  Homeomorph.ext fun p ↦ Quotient.inductionOn p fun z ↦ by
+    rw [Homeomorph.trans_apply, quotientConjHomeomorph_mk, quotientConjHomeomorph_mk,
+      quotientConjHomeomorph_mk, mul_smul]
+
 /-- **The homeomorphism of coarse quotients induced by conjugation is holomorphic**, also at the
 elliptic orbits: its pullback to the upper half-plane is the orbit projection of `Γ'` composed with
-the biholomorphism `z ↦ g • z`. -/
+the biholomorphism `z ↦ g • z`. Proper discontinuity of `Γ'` follows from that of `Γ`. -/
 theorem mdifferentiable_quotientConjHomeomorph [ProperlyDiscontinuousSMul Γ ℍ]
-    [ProperlyDiscontinuousSMul Γ' ℍ] (h : ConjAct.toConjAct g • Γ = Γ') :
+    (h : ConjAct.toConjAct g • Γ = Γ') :
+    letI := TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq (X := ℍ) h
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (quotientConjHomeomorph h) := fun p ↦ by
+  have := TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq (X := ℍ) h
   induction p using Quotient.inductionOn' with | h z => ?_
   refine mdifferentiableAt_of_eventually_mdifferentiableAt_comp_quotientMk
     (.of_forall fun w ↦ ?_)

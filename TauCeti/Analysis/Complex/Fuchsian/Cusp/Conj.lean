@@ -31,7 +31,8 @@ construction for `g⁻¹`, and an element of the normalizer of `Γ` acts on the 
 
 * `Subgroup.isCuspPoint_smul_iff_of_conjAct_smul_eq`: `g • c` is a cusp point of `g Γ g⁻¹`
   exactly when `c` is a cusp point of `Γ`.
-* `Subgroup.cuspOrbitConjEquiv`: the induced bijection of cusp orbits.
+* `Subgroup.cuspOrbitConjEquiv`: the induced bijection of cusp orbits, with the identity and
+  composition laws `Subgroup.cuspOrbitConjEquiv_one` and `Subgroup.cuspOrbitConjEquiv_trans`.
 * `Subgroup.CuspDatum.conj`: the transported cusp datum, with
   `Subgroup.CuspDatum.cuspOrbit_conj`.
 * `TauCeti.Subgroup.CuspDatum.horodisc_conj` and
@@ -96,6 +97,29 @@ theorem cuspOrbitConjEquiv_symm (h : ConjAct.toConjAct g • Γ = Γ')
   obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
   rw [Equiv.symm_apply_eq, cuspOrbitConjEquiv_cuspOrbitMk, cuspOrbitConjEquiv_cuspOrbitMk]
   simp
+
+/-- Conjugation by `1` induces the identity of the cusp orbits. -/
+@[simp]
+theorem cuspOrbitConjEquiv_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ) :
+    cuspOrbitConjEquiv h = Equiv.refl _ := by
+  refine Equiv.ext fun C ↦ ?_
+  obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
+  rw [cuspOrbitConjEquiv_cuspOrbitMk, Equiv.refl_apply]
+  simp
+
+/-- Conjugating by `g` and then by `g'` induces the same bijection of cusp orbits as conjugating
+by `g' * g`. -/
+@[simp]
+theorem cuspOrbitConjEquiv_trans {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
+    (h : ConjAct.toConjAct g • Γ = Γ') (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
+    (cuspOrbitConjEquiv h).trans (cuspOrbitConjEquiv h') =
+      cuspOrbitConjEquiv (by rw [map_mul, mul_smul, h, h'] :
+        ConjAct.toConjAct (g' * g) • Γ = Γ'') := by
+  refine Equiv.ext fun C ↦ ?_
+  obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
+  rw [Equiv.trans_apply, cuspOrbitConjEquiv_cuspOrbitMk, cuspOrbitConjEquiv_cuspOrbitMk,
+    cuspOrbitConjEquiv_cuspOrbitMk]
+  simp [mul_smul]
 
 /-- **Transport of a normalized cusp datum to a conjugate group.** If `Γ' = g Γ g⁻¹` and `D` is a
 cusp datum of `Γ` with cusp `c`, scaling `σ`, generator `γ` and width `w`, then `Γ'` has the cusp
