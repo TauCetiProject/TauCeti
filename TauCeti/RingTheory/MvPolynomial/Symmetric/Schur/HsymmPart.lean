@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Pieri
 
 /-!
@@ -46,7 +45,8 @@ whose size is fixed by how often the erased letter occurred.
 ## Main results
 
 * `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly`: **the expansion of
-  `h_{c₀} ⋯ h_{c_{k-1}}` in the Schur polynomials**, for an arbitrary sequence of degrees.
+  `h_{c₀} ⋯ h_{c_{k-1}}` in the Schur polynomials**, for an arbitrary sequence of degrees, and
+  `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly`, the same in a finite alphabet.
 * `TauCeti.hsymmPart_eq_sum_kostkaNumber_smul_schurPoly`: **`h_ν = ∑_μ K_{μν} s_μ`** for a partition
   `ν`, in a finite alphabet.
 * `TauCeti.coeff_hsymmPart_partWeight`: the coefficient of `h_ν` at the monomial of a partition `ξ`
@@ -151,6 +151,21 @@ theorem prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly {N k n : ℕ
   rw [← BoundedSSYT.card_weight_eq,
     Nat.card_congr (Equiv.subtypeEquivRight fun T => DFunLike.coe_fn_eq)]
 
+/-- **A product of complete homogeneous symmetric polynomials in the Schur basis**, in a finite
+alphabet `σ`: for a sequence of degrees `d₀, …, d_{k-1}` summing to `n`,
+`h_{d₀} ⋯ h_{d_{k-1}} = ∑_μ K_{μ d} s_μ`, the sum running over the partitions `μ` of `n`.  This is
+`TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly` with the alphabet renamed. -/
+theorem prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly {σ : Type*} [Fintype σ]
+    [DecidableEq σ] {k n : ℕ} (d : Fin k →₀ ℕ) (hd : d.degree = n) :
+    ∏ i, hsymm σ R (d i) = ∑ μ : n.Partition,
+      (diagramKostkaNumber (diagramOf μ) (Finsupp.mapDomain Fin.val d) : R) • schurPoly σ R μ := by
+  have h := prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly (R := R)
+    (N := Fintype.card σ) d hd
+  apply_fun rename (Fintype.equivFin σ).symm at h
+  rw [map_prod, map_sum] at h
+  simp only [rename_hsymm, map_smul, ← schurPoly_eq_rename] at h
+  exact h
+
 /-- **`h_ν = ∑_μ K_{μν} s_μ`.**  In a finite alphabet, the product `h_ν = h_{ν₁} ⋯ h_{ν_k}` of the
 complete homogeneous symmetric polynomials over the parts of a partition `ν` of `n` expands in the
 Schur polynomials of the partitions of `n`, with the Kostka numbers `K_{μν}` as coefficients.  This
@@ -159,8 +174,7 @@ groups. -/
 theorem hsymmPart_eq_sum_kostkaNumber_smul_schurPoly (σ : Type*) [Fintype σ] [DecidableEq σ]
     {n : ℕ} (ν : n.Partition) :
     hsymmPart σ R ν = ∑ μ : n.Partition, (kostkaNumber μ ν : R) • schurPoly σ R μ := by
-  -- Expand in the alphabet `Fin (Fintype.card σ)`, along the row lengths `l` of the shape of `ν`,
-  -- then rename the alphabet to `σ`.
+  -- Expand along the row lengths `l` of the shape of `ν`.
   set l := (diagramOf ν).rowLens with hl
   have hl_apply (i : Fin l.length) : rowLenWeight l.length (diagramOf ν) i = l[i.1] := by
     rw [rowLenWeight_apply, ← YoungDiagram.getD_rowLens]
@@ -170,21 +184,13 @@ theorem hsymmPart_eq_sum_kostkaNumber_smul_schurPoly (σ : Type*) [Fintype σ] [
     simp only [hl_apply]
     refine (Fin.sum_univ_fun_getElem l id).trans ?_
     rw [List.map_id, hl, YoungDiagram.sum_rowLens_eq_card, card_diagramOf]
-  have hfin : hsymmPart (Fin (Fintype.card σ)) R ν = ∑ μ : n.Partition,
-      (kostkaNumber μ ν : R) • diagramSchurPoly (Fintype.card σ) R (diagramOf μ) := by
-    have hprod : hsymmPart (Fin (Fintype.card σ)) R ν =
-        ∏ i, hsymm (Fin (Fintype.card σ)) R (rowLenWeight l.length (diagramOf ν) i) := by
-      simp only [hl_apply]
-      rw [Fin.prod_univ_fun_getElem, hsymmPart, hl, rowLens_diagramOf, ← Multiset.prod_coe,
-        ← Multiset.map_coe, Multiset.sort_eq]
-    rw [hprod, prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly _ hdeg,
-      mapDomain_rowLenWeight (by rw [hl, YoungDiagram.length_rowLens])]
-    simp only [kostkaNumber_def]
-  have hren : rename (Fintype.equivFin σ).symm (hsymmPart (Fin (Fintype.card σ)) R ν) =
-      hsymmPart σ R ν := by
-    simp only [hsymmPart, map_multiset_prod, Multiset.map_map, Function.comp_def, rename_hsymm]
-  rw [← hren, hfin, map_sum]
-  exact sum_congr rfl fun μ _ => by rw [map_smul, ← schurPoly_eq_rename]
+  have hprod : hsymmPart σ R ν = ∏ i, hsymm σ R (rowLenWeight l.length (diagramOf ν) i) := by
+    simp only [hl_apply]
+    rw [Fin.prod_univ_fun_getElem, hsymmPart, hl, rowLens_diagramOf, ← Multiset.prod_coe,
+      ← Multiset.map_coe, Multiset.sort_eq]
+  rw [hprod, prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly _ hdeg,
+    mapDomain_rowLenWeight (by rw [hl, YoungDiagram.length_rowLens])]
+  simp only [kostkaNumber_def]
 
 /-- **The coefficients of `h_ν` are sums of products of Kostka numbers**: the coefficient of the
 monomial recording the parts of `ξ` in `h_ν` is `∑_μ K_{μν} K_{μξ}`.  The row bound is what makes
