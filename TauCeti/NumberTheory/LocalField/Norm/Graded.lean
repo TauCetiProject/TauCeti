@@ -126,8 +126,8 @@ theorem algebraMap_residue_norm_of_isTotallyRamified (h : IsTotallyRamified K L)
       exact Subgroup.mem_top σ
     rw [lowerRamificationGroup_def] at hσ
     exact TauCeti.IsLocalRing.residue_smul_eq_of_mem_ramificationGroup_zero _ _ hσ z
-  rw [ResidueField.algebraMap_residue, algebraMap_norm_integerRing_eq_prod_automorphisms,
-    map_prod, Finset.prod_congr rfl fun σ _ ↦ hσ σ, Finset.prod_const, Finset.card_univ,
+  rw [ResidueField.algebraMap_residue, algebraMap_norm_integerRing_eq_prod_automorphisms]
+  simp only [map_prod, hσ, Finset.prod_const, Finset.card_univ,
     ← Nat.card_eq_fintype_card, IsGalois.card_aut_eq_finrank]
 
 /-! ### The graded norm at depth zero -/
@@ -160,16 +160,18 @@ theorem algebraMap_unitFiltrationGradedZeroEquivResidueFieldUnits_normGradedMap_
     Algebra.coe_normUnits]
 
 /-- The residue fields of a totally ramified extension coincide. -/
-private def residueFieldUnitsEquiv (h : IsTotallyRamified K L) : 𝓀[K]ˣ ≃* 𝓀[L]ˣ :=
-  Units.mapEquiv (RingEquiv.ofBijective (algebraMap 𝓀[K] 𝓀[L])
-    (show Function.Bijective (algebraMap 𝓀[K] 𝓀[L]) from ⟨(algebraMap 𝓀[K] 𝓀[L]).injective,
-      (isTotallyRamified_iff_surjective_algebraMap_residueField K L).1 h⟩)).toMulEquiv
+private def residueFieldUnitsEquiv (h : IsTotallyRamified K L) : 𝓀[K]ˣ ≃* 𝓀[L]ˣ := by
+  have hbij : Function.Bijective (algebraMap 𝓀[K] 𝓀[L]) :=
+    ⟨(algebraMap 𝓀[K] 𝓀[L]).injective,
+      (isTotallyRamified_iff_surjective_algebraMap_residueField K L).1 h⟩
+  exact Units.mapEquiv (RingEquiv.ofBijective (algebraMap 𝓀[K] 𝓀[L]) hbij).toMulEquiv
 
 omit [Module.Finite K L] [IsGalois K L] in
 private theorem coe_residueFieldUnitsEquiv (h : IsTotallyRamified K L) (u : 𝓀[K]ˣ) :
     (residueFieldUnitsEquiv h u : 𝓀[L]) = algebraMap 𝓀[K] 𝓀[L] u := by
-  rw [residueFieldUnitsEquiv, Units.coe_mapEquiv, RingEquiv.toMulEquiv_eq_coe,
-    RingEquiv.coe_toMulEquiv, RingEquiv.ofBijective_apply]
+  simp only [residueFieldUnitsEquiv, Units.coe_mapEquiv, RingEquiv.toMulEquiv_eq_coe,
+    RingEquiv.coe_toMulEquiv]
+  exact RingEquiv.ofBijective_apply _ _ _
 
 /-- The depth-zero graded piece of `L` at the Herbrand depth `ψℕ_{L/K}(0) = 0`, as the residue
 units of `L`. -/
@@ -188,9 +190,9 @@ private theorem targetEquiv_comp_normGradedMap_zero (h : IsTotallyRamified K L) 
   refine QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun x ↦ Units.ext ?_)
   simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, MonoidHom.coe_ofClass,
     powMonoidHom_apply, Units.val_pow_eq_pow_val]
-  rw [targetEquiv, MulEquiv.trans_apply, coe_residueFieldUnitsEquiv,
-    algebraMap_unitFiltrationGradedZeroEquivResidueFieldUnits_normGradedMap_mk h, sourceEquiv,
-    MulEquiv.trans_apply, unitFiltrationGradedCongr_mk,
+  simp only [targetEquiv, MulEquiv.trans_apply, coe_residueFieldUnitsEquiv]
+  rw [algebraMap_unitFiltrationGradedZeroEquivResidueFieldUnits_normGradedMap_mk h]
+  simp only [sourceEquiv, MulEquiv.trans_apply, unitFiltrationGradedCongr_mk,
     coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk]
   refine congrArg (fun z : 𝒪[L] ↦ residue 𝒪[L] z ^ finrank K L) (Subtype.ext ?_)
   simp only [coe_unitFiltrationToIntegerUnits]
@@ -200,9 +202,10 @@ of nonarchimedean local fields, with residue field of cardinality `q`, the kerne
 `normGradedMap K L 0` has order `gcd(q - 1, [L : K])`. -/
 theorem natCard_ker_normGradedMap_zero (h : IsTotallyRamified K L) :
     Nat.card (normGradedMap K L 0).ker = (Nat.card 𝓀[K] - 1).gcd (finrank K L) := by
-  rw [← MonoidHom.ker_mulEquiv_comp _ (targetEquiv h), targetEquiv_comp_normGradedMap_zero h,
-    MonoidHom.ker_comp_mulEquiv, Subgroup.card_map_of_injective (MulEquiv.injective _),
-    IsCyclic.card_powMonoidHom_ker, Nat.card_units, natCard_residueField K L,
+  rw [← MonoidHom.ker_mulEquiv_comp _ (targetEquiv h), targetEquiv_comp_normGradedMap_zero h]
+  rw [MonoidHom.ker_comp_mulEquiv, Subgroup.card_map_of_injective (MulEquiv.injective _),
+    IsCyclic.card_powMonoidHom_ker]
+  simp only [Nat.card_units, natCard_residueField K L,
     h.inertiaDegree_eq_one, pow_one]
 
 /-- **The cokernel of the graded norm at depth zero.** For a totally ramified Galois extension
@@ -211,9 +214,10 @@ theorem natCard_ker_normGradedMap_zero (h : IsTotallyRamified K L) :
 theorem index_range_normGradedMap_zero (h : IsTotallyRamified K L) :
     (normGradedMap K L 0).range.index = (Nat.card 𝓀[K] - 1).gcd (finrank K L) := by
   rw [← Subgroup.index_map_equiv _ (targetEquiv h), MonoidHom.map_range,
-    targetEquiv_comp_normGradedMap_zero h, MonoidHom.range_comp, MonoidHom.range_eq_top.2
-      (MulEquiv.surjective _), ← MonoidHom.range_eq_map, IsCyclic.index_powMonoidHom_range,
-    Nat.card_units, natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
+    targetEquiv_comp_normGradedMap_zero h]
+  rw [MonoidHom.range_comp, MonoidHom.range_eq_top.2 (MulEquiv.surjective _),
+    ← MonoidHom.range_eq_map, IsCyclic.index_powMonoidHom_range]
+  simp only [Nat.card_units, natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
 
 /-- **The graded norm at depth zero is bijective exactly in the coprime case.** For a totally
 ramified Galois extension `L/K` of nonarchimedean local fields, with residue field of cardinality
@@ -269,33 +273,9 @@ theorem normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top
     rw [Nat.card_eq_fintype_card, hd]
     exact dvd_pow_self p d.ne_zero
   rw [hk]
+  have hqpos : 1 ≤ Nat.card 𝓀[L] := Nat.card_pos
   exact Nat.Coprime.pow_left k <| Nat.Coprime.of_dvd_left hq <|
-    (Nat.coprime_self_sub_right (show 1 ≤ Nat.card 𝓀[L] from Nat.card_pos)).2 (by simp)
-
-/-- If `[L : K] ≥ 2` and `G_{v+1} = Gal(L/K)`, the trace carries `𝓂[L] ^ v` into
-`𝓂[K] ^ (v + 1)`: Hilbert's formula, truncated at `v + 1`, gives
-`d(L/K) ≥ (v + 2) ([L : K] - 1)`. -/
-private theorem trace_mem_maximalIdeal_pow_succ (h2 : 2 ≤ finrank K L) {v : ℕ}
-    (hG : lowerRamificationGroup K L (v + 1) = ⊤) {w : 𝒪[L]} (hw : w ∈ 𝓂[L] ^ v) :
-    Algebra.trace 𝒪[K] 𝒪[L] w ∈ 𝓂[K] ^ (v + 1) := by
-  have hGi (i : ℕ) (hi : i ≤ v + 1) : lowerRamificationGroup K L i = ⊤ :=
-    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))
-  have he : ramificationIndex K L = finrank K L :=
-    (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 <|
-      (lowerRamificationGroup_zero_eq_top_iff K L).1 (by simpa using hGi 0 (by omega))
-  have hd : (v + 2) * (finrank K L - 1) ≤ differentExponent K L := by
-    have hsum := sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent K L (v + 2)
-    rwa [Finset.sum_congr rfl fun i hi ↦ by
-        rw [hGi i (by simp only [Finset.mem_range] at hi; omega), Subgroup.card_top,
-          IsGalois.card_aut_eq_finrank],
-      Finset.sum_const, Finset.card_range, smul_eq_mul] at hsum
-  rw [← Algebra.intTrace_eq_trace]
-  refine intTrace_mem_maximalIdeal_pow_of_mem hw ?_
-  obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le h2
-  have hm1 : 2 + m - 1 = m + 1 := by omega
-  rw [he, hm]
-  rw [hm, hm1] at hd
-  nlinarith
+    (Nat.coprime_self_sub_right hqpos).2 (by simp)
 
 /-- **Before the break, the graded norm is bijective.** Let `L/K` be a Galois extension of
 nonarchimedean local fields of prime degree, and let `v : ℕ` lie strictly before the break of its
@@ -349,23 +329,6 @@ theorem normGradedMap_bijective_of_lowerRamificationGroup_eq_top
 
 /-! ### Before a positive break, in prime degree -/
 
-/-- In prime degree, an upper break at a natural number `t` has `G_t = Gal(L/K)`: the group
-`G^t = G_{ψ(t)}` strictly contains every later upper group, so it is nontrivial, hence the whole
-Galois group, and `t ≤ ψ(t)`. -/
-private theorem lowerRamificationGroup_natCast_eq_top_of_upperJump (hℓ : (finrank K L).Prime)
-    {t : ℕ} (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
-    lowerRamificationGroup K L t = ⊤ := by
-  have : Fact (Nat.card (L ≃ₐ[K] L)).Prime := ⟨IsGalois.card_aut_eq_finrank K L ▸ hℓ⟩
-  have hlt := (upperJump_iff K L _).1 ht ⟨(t + 1 : ℕ), Nat.cast_mem_ramificationIndexDomain (t + 1)⟩
-    (Subtype.mk_lt_mk.2 (by push_cast; linarith))
-  have hne := (bot_le.trans_lt hlt).ne'
-  rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
-    lowerRamificationGroupReal_intCast] at hne
-  have hψ : lowerRamificationGroup K L (psiNat K L t) = ⊤ :=
-    ((lowerRamificationGroup K L _).eq_bot_or_eq_top_of_prime_card).resolve_left hne
-  have htψ : (t : ℤ) ≤ psiNat K L t := by exact_mod_cast self_le_psiNat K L t
-  exact top_le_iff.1 <| hψ ▸ lowerRamificationGroup_antitone K L htψ
-
 /-- **Depth zero before a positive break.** Let `L/K` be a Galois extension of nonarchimedean local
 fields of prime degree whose upper ramification filtration breaks at a natural number `t > 0`.
 Then the graded norm `normGradedMap K L 0` is bijective. This is the regime `v = 0 < t`, in which
@@ -374,7 +337,7 @@ theorem normGradedMap_zero_before_break (hℓ : (finrank K L).Prime) {t : ℕ} (
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     Function.Bijective (normGradedMap K L 0) :=
   normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top <| top_le_iff.1 <|
-    lowerRamificationGroup_natCast_eq_top_of_upperJump hℓ ht ▸
+    lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht ▸
       lowerRamificationGroup_antitone K L (by exact_mod_cast ht0)
 
 /-- **Before the break, the graded norm is bijective.** Let `L/K` be a Galois extension of
@@ -386,7 +349,7 @@ theorem normGradedMap_positive_before_break (hℓ : (finrank K L).Prime) {v t : 
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     Function.Bijective (normGradedMap K L v) :=
   normGradedMap_bijective_of_lowerRamificationGroup_eq_top hℓ <| top_le_iff.1 <|
-    lowerRamificationGroup_natCast_eq_top_of_upperJump hℓ ht ▸
+    lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht ▸
       lowerRamificationGroup_antitone K L (by exact_mod_cast hvt)
 
 end TauCeti

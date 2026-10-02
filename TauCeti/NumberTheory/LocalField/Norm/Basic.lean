@@ -380,20 +380,20 @@ theorem addVal_norm (z : 𝒪[L]) :
         ← relNorm_maximalIdeal_eq_maximalIdeal_pow, hϖ.maximalIdeal_eq, Ideal.relNorm_singleton,
         Algebra.intNorm_eq_norm]
     rw [(IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2
-        (Ideal.span_singleton_eq_span_singleton.1 hspan),
-      IsDiscreteValuationRing.addVal_pow, IsDiscreteValuationRing.addVal_uniformizer hπ,
-      nsmul_one]
+      (Ideal.span_singleton_eq_span_singleton.1 hspan)]
+    simp only [IsDiscreteValuationRing.addVal_pow,
+      IsDiscreteValuationRing.addVal_uniformizer hπ, nsmul_one]
   rcases eq_or_ne z 0 with rfl | hz
-  · rw [Algebra.norm_zero, IsDiscreteValuationRing.addVal_zero,
-      IsDiscreteValuationRing.addVal_zero, nsmul_eq_mul, ENat.mul_top]
-    exact_mod_cast (inertiaDegree_pos (K := K) (L := L)).ne'
+  · have hf : (inertiaDegree K L : ENat) ≠ 0 := by
+      exact_mod_cast (inertiaDegree_pos (K := K) (L := L)).ne'
+    simp [Algebra.norm_zero, nsmul_eq_mul, hf]
   obtain ⟨k, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hz hϖ
   have hu := IsDiscreteValuationRing.addVal_eq_zero_of_unit
     (Units.map (Algebra.norm 𝒪[K] : 𝒪[L] →* 𝒪[K]) u)
   rw [Units.coe_map] at hu
-  rw [map_mul, map_pow, IsDiscreteValuationRing.addVal_mul, hu,
+  simp only [map_mul, map_pow, IsDiscreteValuationRing.addVal_mul, hu,
     IsDiscreteValuationRing.addVal_pow, hN, IsDiscreteValuationRing.addVal_def' u hϖ k, zero_add,
-    nsmul_eq_mul, nsmul_eq_mul, mul_comm]
+    nsmul_eq_mul, mul_comm]
 
 variable (L) in
 /-- The normalized valuation of an element of the norm group `N_{L/K}(Lˣ)` is divisible by the
