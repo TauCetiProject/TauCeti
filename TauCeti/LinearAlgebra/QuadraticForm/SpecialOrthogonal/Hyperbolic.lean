@@ -16,22 +16,22 @@ The hyperbolic plane `hyperbolicPlane R`, the form `x₀² - x₁²` on `Fin 2 �
 the linear automorphism scaling `![1, 1]` by `t` and `![1, -1]` by `t⁻¹` is a proper isometry: it
 is the diagonal torus `diag(t, t⁻¹)` of the `xy`-model written in the diagonal coordinates.
 
-Over a domain in which two is invertible these are all the proper isometries, so the torus is an
-isomorphism `Rˣ ≃* SO(H)`. An isometry permutes the two isotropic lines; a proper one cannot
-exchange them, since the exchanging isometries have determinant `-1`.
+These are all the proper isometries, so the torus is an isomorphism `Rˣ ≃* SO(H)` over any
+commutative ring in which two is invertible: an isometry sends the isotropic vectors to isotropic
+vectors with polar pairing `4`, and determinant `1` then forces it to preserve both isotropic lines.
 
 ## Main definitions
 
 * `TauCeti.hyperbolicTorus`: the homomorphism `Rˣ →* SO(H)`, `t ↦ diag(t, t⁻¹)` in the isotropic
   basis `![1, 1]`, `![1, -1]`.
-* `TauCeti.hyperbolicTorusEquiv`: over a domain, the isomorphism `Rˣ ≃* SO(H)` it induces.
+* `TauCeti.hyperbolicTorusEquiv`: the isomorphism `Rˣ ≃* SO(H)` it induces.
 
 ## Main results
 
 * `TauCeti.hyperbolicTorus_apply_one_one`, `TauCeti.hyperbolicTorus_apply_one_neg_one`: the torus
   acts on the isotropic vectors by `t` and `t⁻¹`.
 * `TauCeti.hyperbolicTorus_injective`, `TauCeti.hyperbolicTorus_surjective`: the torus is injective,
-  and over a domain every proper isometry of the hyperbolic plane lies on it.
+  and every proper isometry of the hyperbolic plane lies on it.
 -/
 
 public section
@@ -168,15 +168,11 @@ private theorem det_eq_of_isotropic (f : (Fin 2 → R) →ₗ[R] (Fin 2 → R)) 
   simp
   linear_combination ⅟2 * (f ![1, -1] 0 * f ![1, 1] 1 - f ![1, 1] 0 * f ![1, -1] 1) * h2
 
-variable [IsDomain R]
-
-/-- Over a domain in which two is invertible, every proper isometry of the hyperbolic plane lies on
-the diagonal torus. An isometry permutes the two isotropic lines spanned by `![1, 1]` and
-`![1, -1]`; one that exchanges them has determinant `-1`, and one that preserves them scales the
-two isotropic vectors by `t` and `t⁻¹` for some unit `t`. -/
+/-- Every proper isometry of the hyperbolic plane lies on the diagonal torus. An isometry sends the
+isotropic vectors `![1, 1]` and `![1, -1]` to isotropic vectors with polar pairing `4`; together
+with determinant `1` this forces it to scale `![1, 1]` by a unit `t` and `![1, -1]` by `t⁻¹`. -/
 theorem hyperbolicTorus_surjective : Function.Surjective (hyperbolicTorus R) := by
   have h2 : ⅟2 * (2 : R) = 1 := invOf_mul_self 2
-  have h2' : (2 : R) ≠ 0 := (isUnit_of_invertible (2 : R)).ne_zero
   rintro ⟨g, hg⟩
   obtain ⟨hO, hdet⟩ := mem_specialOrthogonalGroup_iff.mp hg
   obtain ⟨p, hp_def⟩ : ∃ p, g ![1, 1] = p := ⟨_, rfl⟩
@@ -200,37 +196,32 @@ theorem hyperbolicTorus_surjective : Function.Surjective (hyperbolicTorus R) := 
   have hdet' : ⅟2 * (q 0 * p 1 - p 0 * q 1) = 1 := by
     rw [← hp_def, ← hq_def, ← LinearEquiv.coe_coe,
       ← det_eq_of_isotropic, ← LinearEquiv.coe_det, hdet, Units.val_one]
-  -- Each image lies on one of the two isotropic lines; only the line-preserving case survives.
-  rcases mul_eq_zero.mp hp with hp | hp <;> rcases mul_eq_zero.mp hq with hq | hq
-  · -- both images on the line of `![1, 1]`: then `polar` would vanish
-    exact absurd (by linear_combination -hpq + q 0 * hp + p 1 * hq) h2'
-  · -- the torus case: `g ![1, 1] = t • ![1, 1]` and `g ![1, -1] = t⁻¹ • ![1, -1]`
-    have hp1 : p 1 = p 0 := by linear_combination -hp
-    have hq1 : q 1 = -q 0 := by linear_combination hq
-    rw [hp1, hq1] at hpq
-    have ht : p 0 * q 0 = 1 := by linear_combination ⅟2 * hpq - (p 0 * q 0 - 1) * h2
-    refine ⟨⟨p 0, q 0, ht, by rw [mul_comm, ht]⟩,
-      Subtype.ext <| LinearEquiv.toLinearMap_injective <| linearMap_ext_isotropic ?_ ?_⟩
-    · simp only [LinearEquiv.coe_coe, hyperbolicTorus_apply_one_one, hp_def]
-      ext i
-      fin_cases i <;> simp [hp1]
-    · simp only [LinearEquiv.coe_coe, hyperbolicTorus_apply_one_neg_one, hq_def]
-      ext i
-      fin_cases i <;> simp [hq1]
-  · -- the images exchange the two isotropic lines: then the determinant is `-1`
-    have hp1 : p 1 = -p 0 := by linear_combination hp
-    have hq1 : q 1 = q 0 := by linear_combination -hq
-    rw [hp1, hq1] at hpq hdet'
-    exact absurd (by linear_combination -hdet' - ⅟2 * hpq - h2) h2'
-  · -- both images on the line of `![1, -1]`: then `polar` would vanish
-    have hp1 : p 1 = -p 0 := by linear_combination hp
-    have hq1 : q 1 = -q 0 := by linear_combination hq
-    rw [hp1, hq1] at hpq
-    exact absurd (by linear_combination -hpq) h2'
+  -- The pairing and the determinant give `(p 0 + p 1) (q 0 - q 1) = 4`, so both factors are
+  -- units, and isotropy puts `g ![1, 1]` on the line of `![1, 1]` and `g ![1, -1]` on that of
+  -- `![1, -1]`.
+  have h4 : (p 0 + p 1) * (q 0 - q 1) = 4 := by
+    linear_combination hpq + 2 * hdet' - (q 0 * p 1 - p 0 * q 1) * h2
+  have hp1 : p 1 = p 0 := by
+    linear_combination -⅟2 ^ 2 * (q 0 - q 1) * hp + ⅟2 ^ 2 * (p 0 - p 1) * h4 +
+      (p 0 - p 1) * (⅟2 * 2 + 1) * h2
+  have hq1 : q 1 = -q 0 := by
+    linear_combination ⅟2 ^ 2 * (p 0 + p 1) * hq - ⅟2 ^ 2 * (q 0 + q 1) * h4 -
+      (q 0 + q 1) * (⅟2 * 2 + 1) * h2
+  rw [hp1, hq1] at h4
+  have ht : p 0 * q 0 = 1 := by
+    linear_combination ⅟2 ^ 2 * h4 + (1 - p 0 * q 0) * (⅟2 * 2 + 1) * h2
+  refine ⟨⟨p 0, q 0, ht, by rw [mul_comm, ht]⟩,
+    Subtype.ext <| LinearEquiv.toLinearMap_injective <| linearMap_ext_isotropic ?_ ?_⟩
+  · simp only [LinearEquiv.coe_coe, hyperbolicTorus_apply_one_one, hp_def]
+    ext i
+    fin_cases i <;> simp [hp1]
+  · simp only [LinearEquiv.coe_coe, hyperbolicTorus_apply_one_neg_one, hq_def]
+    ext i
+    fin_cases i <;> simp [hq1]
 
 variable (R) in
-/-- Over a domain in which two is invertible, the diagonal torus identifies the units with the
-special orthogonal group of the hyperbolic plane. -/
+/-- The diagonal torus identifies the units with the special orthogonal group of the hyperbolic
+plane. -/
 noncomputable def hyperbolicTorusEquiv : Rˣ ≃* specialOrthogonalGroup (hyperbolicPlane R) :=
   MulEquiv.ofBijective (hyperbolicTorus R) ⟨hyperbolicTorus_injective, hyperbolicTorus_surjective⟩
 
