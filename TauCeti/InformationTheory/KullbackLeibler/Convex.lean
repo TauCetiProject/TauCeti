@@ -21,11 +21,14 @@ its mass correction. Neither normalization nor a topology on the measurable carr
 Infinite values are retained in the convexity inequality; strictness requires both endpoint
 values to be finite. Equality for an interior mixture holds exactly when the measures agree.
 
-The proof consumes Mathlib's Radon–Nikodym formula `klDiv_eq_lintegral_klFun_of_ac` and the
-strict convexity of `InformationTheory.klFun` on `[0, ∞)`.
+For absolutely continuous measures, relative entropy is the integral of
+`InformationTheory.klFun` of the Radon–Nikodym density. Strict convexity of this integrand
+on `[0, ∞)` forces those densities to agree almost everywhere in the equality case.
 
 ## References
 
+* Mathlib, `InformationTheory.klDiv_eq_lintegral_klFun_of_ac` and
+  `InformationTheory.strictConvexOn_klFun`.
 * I. Csiszár, *I-divergence geometry of probability distributions and minimization problems*,
   Ann. Probability 3 (1975), 146–158.
 -/
@@ -148,7 +151,7 @@ theorem klDiv_smul_add_smul_lt (ha : 0 < a) (hb : 0 < b) (hab : a + b = 1)
 
 /-- For positive mixture weights and finite endpoint entropies, equality in the entropy
 convexity inequality holds exactly when the measures are equal. -/
-theorem klDiv_smul_add_smul_eq_iff (ha : 0 < a) (hb : 0 < b) (hab : a + b = 1)
+@[simp] theorem klDiv_smul_add_smul_eq_iff (ha : 0 < a) (hb : 0 < b) (hab : a + b = 1)
     (hμ : klDiv μ ρ ≠ ∞) (hν : klDiv ν ρ ≠ ∞) :
     klDiv (a • μ + b • ν) ρ = a * klDiv μ ρ + b * klDiv ν ρ ↔ μ = ν := by
   refine ⟨fun h ↦ by
