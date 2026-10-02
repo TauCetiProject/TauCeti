@@ -7,6 +7,9 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.RingTheory.DedekindDomain.Different
+-- Non-public: `Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient` supplies the separability
+-- half of tameness over a perfect residue field, in the proof below only.
+import Mathlib.RingTheory.LocalRing.ResidueField.Separable
 
 /-!
 # The different exponent of a tame or wild place
@@ -133,40 +136,35 @@ theorem isWild_iff :
           0 := by
   rw [IsWild, IsTame, not_and_or, not_not]
 
-/-- **In characteristic zero every place is tame**: the residue field of the place below has
-characteristic zero, hence is perfect, so the residue extension of the local model is separable, and
-the ramification index is invertible in it. -/
-theorem isTame_of_charZero [CharZero k] (Q : Place k' F') : IsTame k F Q := by
+/-- **A place is tame over a residue field of characteristic zero.** -/
+theorem isTame_of_residueField_charZero [CharZero (P'.restrict k F).ResidueField] :
+    IsTame k F P' := by
   classical
-  have hmax : (centerIntegralClosure k F Q).asIdeal.IsMaximal :=
-    (centerIntegralClosure k F Q).isPrime.isMaximal (centerIntegralClosure k F Q).ne_bot
-  -- Both residue rings of the local model are fields.
-  let _ : Field (((Q.restrict k F).integers) ⧸
-      IsLocalRing.maximalIdeal ((Q.restrict k F).integers)) :=
+  have _ : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
+    (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
+  -- The residue ring of the maximal ideal of `𝒪_P` is the residue field of `P`, a field of
+  -- characteristic zero, and so is its fraction field, Mathlib's residue field at that ideal.
+  let _ : Field (((P'.restrict k F).integers) ⧸
+      IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) :=
     Ideal.Quotient.field _
-  let _ : Field (integralClosure ((Q.restrict k F).integers) F' ⧸
-      (centerIntegralClosure k F Q).asIdeal) := Ideal.Quotient.field _
-  -- The constants map into the residue field of the place below, so it has characteristic zero.
-  let _ : Algebra k (((Q.restrict k F).integers) ⧸
-      IsLocalRing.maximalIdeal ((Q.restrict k F).integers)) :=
-    ((Ideal.Quotient.mk (IsLocalRing.maximalIdeal ((Q.restrict k F).integers))).comp
-      (algebraMap k ((Q.restrict k F).integers))).toAlgebra
-  have _ : CharZero (((Q.restrict k F).integers) ⧸
-      IsLocalRing.maximalIdeal ((Q.restrict k F).integers)) :=
-    charZero_of_injective_algebraMap (algebraMap k _).injective
-  refine ⟨?_, ?_⟩
-  · -- The residue extension is integral, so algebraic, and a characteristic-zero field is perfect.
-    have _ : Algebra.IsIntegral (((Q.restrict k F).integers) ⧸
-        IsLocalRing.maximalIdeal ((Q.restrict k F).integers))
-        (integralClosure ((Q.restrict k F).integers) F' ⧸
-          (centerIntegralClosure k F Q).asIdeal) :=
-      ⟨fun x ↦ (Algebra.IsIntegral.isIntegral (R := ((Q.restrict k F).integers)) x).tower_top⟩
-    have _ : Algebra.IsAlgebraic (((Q.restrict k F).integers) ⧸
-        IsLocalRing.maximalIdeal ((Q.restrict k F).integers))
-        (integralClosure ((Q.restrict k F).integers) F' ⧸
-          (centerIntegralClosure k F Q).asIdeal) := Algebra.IsIntegral.isAlgebraic
-    infer_instance
-  · exact Nat.cast_ne_zero.mpr (Q.ramificationIdx_pos F).ne'
+  have _ : CharZero (((P'.restrict k F).integers) ⧸
+      IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) :=
+    ‹CharZero (P'.restrict k F).ResidueField›
+  have _ : CharZero (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)).ResidueField :=
+    charZero_of_injective_algebraMap
+      (algebraMap (((P'.restrict k F).integers) ⧸
+        IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) _).injective
+  -- A characteristic-zero field is perfect, so the residue extensions of the local model are
+  -- separable; and a positive natural number is nonzero in a characteristic-zero field.
+  exact ⟨Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient _ _,
+    Nat.cast_ne_zero.mpr (P'.ramificationIdx_pos F).ne'⟩
+
+/-- **In characteristic zero every place is tame**: if the constant field `k` has characteristic
+zero, every place of `F'` is tame over `F`. -/
+theorem isTame_of_charZero [CharZero k] : IsTame k F P' :=
+  have _ : CharZero (P'.restrict k F).ResidueField :=
+    charZero_of_injective_algebraMap (algebraMap k (P'.restrict k F).ResidueField).injective
+  isTame_of_residueField_charZero k F P'
 
 /-- **The different exponent reaches the ramification index exactly at the wild places**
 (Stichtenoth, Corollary 3.5.5): `e(P' ∣ P) ≤ d(P' ∣ P)` if and only if `P'` is wild. -/
