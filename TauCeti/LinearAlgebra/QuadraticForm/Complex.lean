@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.QuadraticForm.AlgClosed
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
+import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
+
 /-!
 # Quadratic forms over algebraically closed fields
 
@@ -67,29 +69,6 @@ theorem _root_.QuadraticForm.not_anisotropic_of_isAlgClosed
   rw [← e.apply_symm_apply x, hQ _ hzero]
   exact map_zero e
 
-/-- Regular quadratic forms over an algebraically closed field on possibly different spaces are
-equivalent when their dimensions agree. -/
-theorem _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed
-    {K W₁ W₂ : Type*} [Field K] [IsAlgClosed K] [Invertible (2 : K)]
-    [AddCommGroup W₁] [Module K W₁] [FiniteDimensional K W₁]
-    [AddCommGroup W₂] [Module K W₂] [FiniteDimensional K W₂]
-    (Q : QuadraticForm K W₁) (R : QuadraticForm K W₂)
-    (hQ : Q.Nondegenerate) (hR : R.Nondegenerate)
-    (h : Module.finrank K W₁ = Module.finrank K W₂) : Q.Equivalent R := by
-  let e : W₁ ≃ₗ[K] W₂ := LinearEquiv.ofFinrankEq W₁ W₂ h
-  have hQ' : (QuadraticMap.associated Q).SeparatingLeft :=
-    (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
-  have hRsep : (QuadraticMap.associated R).SeparatingLeft :=
-    (QuadraticMap.nondegenerate_associated_iff.mpr hR).1
-  have hR' : (QuadraticMap.associated (R.comp (e : W₁ →ₗ[K] W₂))).SeparatingLeft := by
-    rw [QuadraticMap.associated_comp]
-    intro x hx
-    apply e.injective
-    simpa using hRsep (e x) (fun y ↦ by
-      simpa [LinearMap.compl₁₂_apply] using hx (e.symm y))
-  obtain ⟨e'⟩ := Q.equivalent_of_isAlgClosed (R.comp (e : W₁ →ₗ[K] W₂)) hQ' hR'
-  exact ⟨e'.trans (R.isometryEquivOfCompLinearEquiv e).symm⟩
-
 /-- Two regular quadratic forms over an algebraically closed field are equivalent precisely when
 their dimensions agree. -/
 @[simp] theorem _root_.QuadraticForm.equivalent_iff_finrank_eq_of_isAlgClosed
@@ -102,7 +81,7 @@ their dimensions agree. -/
   constructor
   · rintro ⟨e⟩
     exact e.toLinearEquiv.finrank_eq
-  · exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed Q R hQ hR
+  · exact QuadraticForm.equivalent_of_finrank_eq_of_isSepClosed Q R hQ hR
 
 /-- Over an algebraically closed field a regular quadratic form is isometric to the standard sum
 of squares on `Fin n` exactly when its space has dimension `n`. -/
@@ -165,7 +144,7 @@ theorem _root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed
         Module.finrank K W₂ := by
       simp only [Module.finrank_prod, Module.finrank_fin_fun]
       omega
-    obtain ⟨e⟩ := QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed
+    obtain ⟨e⟩ := QuadraticForm.equivalent_of_finrank_eq_of_isSepClosed
       (Q.prod S) R hprod hR hrank
     rw [QuadraticMap.isRepresentedBy_iff]
     exact ⟨(e.toIsometry.comp (QuadraticMap.Isometry.inl Q S)).toLinearMap,
