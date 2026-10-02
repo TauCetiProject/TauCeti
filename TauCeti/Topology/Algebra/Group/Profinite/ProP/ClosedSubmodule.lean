@@ -35,7 +35,7 @@ variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommGroup A] [TopologicalSpace A]
 
 /-- Closed subgroups of an abelian pro-`p` group are precisely the closed submodules of its
 canonical `ℤ_[p]`-module. -/
-noncomputable def closedSubgroupEquivSubmodule (hA : IsProP p A) :
+noncomputable def closedSubgroupSubmoduleOrderIso (hA : IsProP p A) :
     letI := hA.module
     ClosedSubgroup A ≃o ClosedSubmodule ℤ_[p] (Additive A) := by
   letI := hA.module
@@ -53,51 +53,51 @@ noncomputable def closedSubgroupEquivSubmodule (hA : IsProP p A) :
       left_inv := fun H ↦ by ext; rfl
       right_inv := fun S ↦ by ext; rfl
       map_rel_iff' := Iff.rfl }
-  exact e.trans (closedAddSubgroupEquivPadicIntSubmodule p)
+  exact e.trans (closedAddSubgroupPadicIntSubmoduleOrderIso p)
 
 @[simp]
-theorem mem_closedSubgroupEquivSubmodule (hA : IsProP p A) (H : ClosedSubgroup A)
+theorem mem_closedSubgroupSubmoduleOrderIso (hA : IsProP p A) (H : ClosedSubgroup A)
     (x : Additive A) :
     letI := hA.module
-    x ∈ hA.closedSubgroupEquivSubmodule H ↔ x.toMul ∈ H := by
-  simp [closedSubgroupEquivSubmodule]
+    x ∈ hA.closedSubgroupSubmoduleOrderIso H ↔ x.toMul ∈ H := by
+  simp [closedSubgroupSubmoduleOrderIso]
   rfl
 
 @[simp]
-theorem closedSubgroupEquivSubmodule_toAddSubgroup (hA : IsProP p A)
+theorem closedSubgroupSubmoduleOrderIso_toAddSubgroup (hA : IsProP p A)
     (H : ClosedSubgroup A) :
     letI := hA.module
-    (hA.closedSubgroupEquivSubmodule H).toSubmodule.toAddSubgroup =
+    (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule.toAddSubgroup =
       H.toSubgroup.toAddSubgroup := by
-  simp [closedSubgroupEquivSubmodule]
+  simp [closedSubgroupSubmoduleOrderIso]
   rfl
 
 @[simp]
-theorem mem_closedSubgroupEquivSubmodule_symm (hA : IsProP p A)
+theorem mem_closedSubgroupSubmoduleOrderIso_symm (hA : IsProP p A)
     (S : letI := hA.module; ClosedSubmodule ℤ_[p] (Additive A)) (x : A) :
     letI := hA.module
-    x ∈ hA.closedSubgroupEquivSubmodule.symm S ↔ Additive.ofMul x ∈ S := by
+    x ∈ hA.closedSubgroupSubmoduleOrderIso.symm S ↔ Additive.ofMul x ∈ S := by
   let _ := hA.module
   let _ := hA.continuousSMul_module
-  exact mem_closedAddSubgroupEquivPadicIntSubmodule_symm p S
+  exact mem_closedAddSubgroupPadicIntSubmoduleOrderIso_symm p S
 
 /-- The canonical module on a closed subgroup is the corresponding submodule of the
 canonical module on the ambient group. -/
-noncomputable def subgroupEquivModule (hA : IsProP p A) (H : ClosedSubgroup A) :
+noncomputable def subgroupContinuousLinearEquivModule (hA : IsProP p A) (H : ClosedSubgroup A) :
     letI := hA.module
     letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
     letI := (hA.subgroup H.toSubgroup).module
-    Additive H.toSubgroup ≃L[ℤ_[p]] (hA.closedSubgroupEquivSubmodule H).toSubmodule := by
+    Additive H.toSubgroup ≃L[ℤ_[p]] (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule := by
   letI := hA.module
   letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
   letI := (hA.subgroup H.toSubgroup).module
   letI := hA.continuousSMul_module
   letI := (hA.subgroup H.toSubgroup).continuousSMul_module
-  let e : Additive H.toSubgroup ≃+ (hA.closedSubgroupEquivSubmodule H).toSubmodule :=
+  let e : Additive H.toSubgroup ≃+ (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule :=
     { toFun := fun x ↦ ⟨Additive.ofMul x.toMul.val,
-        (hA.mem_closedSubgroupEquivSubmodule H _).mpr x.toMul.property⟩
+        (hA.mem_closedSubgroupSubmoduleOrderIso H _).mpr x.toMul.property⟩
       invFun := fun y ↦ Additive.ofMul ⟨y.val.toMul,
-        (hA.mem_closedSubgroupEquivSubmodule H _).mp y.property⟩
+        (hA.mem_closedSubgroupSubmoduleOrderIso H _).mp y.property⟩
       left_inv := fun x ↦ by rfl
       right_inv := fun y ↦ by rfl
       map_add' := fun x y ↦ by rfl }
@@ -106,21 +106,36 @@ noncomputable def subgroupEquivModule (hA : IsProP p A) (H : ClosedSubgroup A) :
     (continuous_ofMul.comp ((continuous_toMul.comp continuous_subtype_val).subtype_mk _))
 
 @[simp]
-theorem subgroupEquivModule_apply (hA : IsProP p A) (H : ClosedSubgroup A)
+theorem subgroupContinuousLinearEquivModule_apply (hA : IsProP p A) (H : ClosedSubgroup A)
     (x : Additive H.toSubgroup) :
     letI := hA.module
     letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
     letI := (hA.subgroup H.toSubgroup).module
-    (hA.subgroupEquivModule H x : Additive A) = Additive.ofMul x.toMul.val := by
+    (hA.subgroupContinuousLinearEquivModule H x : Additive A) = Additive.ofMul x.toMul.val := by
   let _ := hA.module
   let _ : IsClosed (H.toSubgroup : Set A) := H.isClosed'
   let _ := (hA.subgroup H.toSubgroup).module
   let _ := hA.continuousSMul_module
   let _ := (hA.subgroup H.toSubgroup).continuousSMul_module
-  dsimp only [subgroupEquivModule]
+  dsimp only [subgroupContinuousLinearEquivModule]
   exact congrArg
-    (fun y : (hA.closedSubgroupEquivSubmodule H).toSubmodule ↦ (y : Additive A))
+    (fun y : (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule ↦ (y : Additive A))
     (congrFun (AddEquiv.coe_toPadicIntLinearEquiv p _ _ _) x)
+
+@[simp]
+theorem subgroupContinuousLinearEquivModule_symm_apply (hA : IsProP p A) (H : ClosedSubgroup A)
+    (y : letI := hA.module; (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule) :
+    letI := hA.module
+    letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
+    letI := (hA.subgroup H.toSubgroup).module
+    ((hA.subgroupContinuousLinearEquivModule H).symm y).toMul.val = y.val.toMul := by
+  let _ := hA.module
+  let _ : IsClosed (H.toSubgroup : Set A) := H.isClosed'
+  let _ := (hA.subgroup H.toSubgroup).module
+  have h := hA.subgroupContinuousLinearEquivModule_apply H
+    ((hA.subgroupContinuousLinearEquivModule H).symm y)
+  rw [ContinuousLinearEquiv.apply_symm_apply] at h
+  exact congrArg Additive.toMul h.symm
 
 /-- The group quotient projection, written additively, is a continuous `ℤ_[p]`-linear map
 for the canonical modules on the source and quotient. -/
@@ -132,20 +147,24 @@ noncomputable def quotientMkLinear (hA : IsProP p A) (H : ClosedSubgroup A) :
   letI := hA.module
   letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
   letI := (hA.quotient H.toSubgroup).module
-  exact
-    { toFun := fun x ↦ Additive.ofMul (x.toMul : A ⧸ H.toSubgroup)
-      map_add' := fun x y ↦ congrArg Additive.ofMul ((QuotientGroup.mk' H.toSubgroup).map_mul _ _)
-      map_smul' := fun c x ↦ by
-        simp only [module_smul, toMul_ofMul, mk_padicPow_quotient, RingHom.id_apply]
-      cont := continuous_ofMul.comp (QuotientGroup.continuous_mk.comp continuous_toMul) }
+  letI := hA.continuousSMul_module
+  letI := (hA.quotient H.toSubgroup).continuousSMul_module
+  exact (QuotientGroup.mk' H.toSubgroup).toAdditive.toPadicIntLinearMap p
+    (continuous_ofMul.comp (QuotientGroup.continuous_mk.comp continuous_toMul))
 
 @[simp]
 theorem quotientMkLinear_apply (hA : IsProP p A) (H : ClosedSubgroup A) (x : Additive A) :
     letI := hA.module
     letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
     letI := (hA.quotient H.toSubgroup).module
-    hA.quotientMkLinear H x = Additive.ofMul (x.toMul : A ⧸ H.toSubgroup) :=
-  (rfl)
+    hA.quotientMkLinear H x = Additive.ofMul (x.toMul : A ⧸ H.toSubgroup) := by
+  let _ := hA.module
+  let _ : IsClosed (H.toSubgroup : Set A) := H.isClosed'
+  let _ := (hA.quotient H.toSubgroup).module
+  let _ := hA.continuousSMul_module
+  let _ := (hA.quotient H.toSubgroup).continuousSMul_module
+  dsimp only [quotientMkLinear]
+  exact congrFun (AddMonoidHom.coe_toPadicIntLinearMap p _ _) x
 
 /-- The kernel of the linear quotient projection is the submodule corresponding to the
 closed subgroup. -/
@@ -154,14 +173,14 @@ theorem ker_quotientMkLinear (hA : IsProP p A) (H : ClosedSubgroup A) :
     letI := hA.module
     letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
     letI := (hA.quotient H.toSubgroup).module
-    (hA.quotientMkLinear H).ker = (hA.closedSubgroupEquivSubmodule H).toSubmodule := by
+    (hA.quotientMkLinear H).ker = (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule := by
   let _ := hA.module
   let _ : IsClosed (H.toSubgroup : Set A) := H.isClosed'
   let _ := (hA.quotient H.toSubgroup).module
   ext x
   simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, quotientMkLinear_apply,
     ofMul_eq_zero, QuotientGroup.eq_one_iff,
-    ClosedSubmodule.mem_toSubmodule_iff, mem_closedSubgroupEquivSubmodule]
+    ClosedSubmodule.mem_toSubmodule_iff, mem_closedSubgroupSubmoduleOrderIso]
   rfl
 
 /-- The linear quotient projection is surjective. -/
@@ -178,16 +197,16 @@ theorem quotientMkLinear_surjective (hA : IsProP p A) (H : ClosedSubgroup A) :
 
 /-- The module quotient by a closed subgroup agrees, as a topological `ℤ_[p]`-module, with
 the canonical module on the group quotient. -/
-noncomputable def quotientEquivModule (hA : IsProP p A) (H : ClosedSubgroup A) :
+noncomputable def quotientContinuousLinearEquivModule (hA : IsProP p A) (H : ClosedSubgroup A) :
     letI := hA.module
     letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
     letI := (hA.quotient H.toSubgroup).module
-    (Additive A ⧸ (hA.closedSubgroupEquivSubmodule H).toSubmodule) ≃L[ℤ_[p]]
+    (Additive A ⧸ (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule) ≃L[ℤ_[p]]
       Additive (A ⧸ H.toSubgroup) := by
   letI := hA.module
   letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
   letI := (hA.quotient H.toSubgroup).module
-  let S := (hA.closedSubgroupEquivSubmodule H).toSubmodule
+  let S := (hA.closedSubgroupSubmoduleOrderIso H).toSubmodule
   let f := hA.quotientMkLinear H
   have hf := hA.quotientMkLinear_surjective H
   let e := (Submodule.quotEquivOfEq S f.ker (hA.ker_quotientMkLinear H).symm).trans
@@ -202,13 +221,22 @@ noncomputable def quotientEquivModule (hA : IsProP p A) (H : ClosedSubgroup A) :
       (f := e.toEquiv) he }
 
 @[simp]
-theorem quotientEquivModule_mk (hA : IsProP p A) (H : ClosedSubgroup A) (x : Additive A) :
+theorem quotientContinuousLinearEquivModule_mk (hA : IsProP p A) (H : ClosedSubgroup A)
+    (x : Additive A) :
     letI := hA.module
     letI : IsClosed (H.toSubgroup : Set A) := H.isClosed'
     letI := (hA.quotient H.toSubgroup).module
-    hA.quotientEquivModule H (Submodule.Quotient.mk x) =
+    hA.quotientContinuousLinearEquivModule H (Submodule.Quotient.mk x) =
       Additive.ofMul (x.toMul : A ⧸ H.toSubgroup) := by
-  simp only [quotientEquivModule]
+  let _ := hA.module
+  let _ : IsClosed (H.toSubgroup : Set A) := H.isClosed'
+  let _ := (hA.quotient H.toSubgroup).module
+  -- Pass from the continuous wrapper to the linear equivalence so its application lemmas apply.
+  change ((Submodule.quotEquivOfEq _ _ (hA.ker_quotientMkLinear H).symm).trans
+    ((hA.quotientMkLinear H).toLinearMap.quotKerEquivOfSurjective
+      (hA.quotientMkLinear_surjective H))) (Submodule.Quotient.mk x) = _
+  rw [LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk]
   exact quotientMkLinear_apply hA H x
 
 end TauCeti.IsProP

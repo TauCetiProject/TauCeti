@@ -22,8 +22,8 @@ automatically `ℤ_[p]`-linear: for fixed `x`, the continuous maps `c ↦ f (c �
 agree on the dense subset `ℕ` of `ℤ_[p]`, and two continuous maps into a Hausdorff space that agree
 on a dense set are equal. So the `ℤ_[p]`-module structure of a Hausdorff topological
 `ℤ_[p]`-module is determined by its topological group structure, and continuous additive maps and
-isomorphisms between such modules can be treated as continuous `ℤ_[p]`-linear ones. Throughout,
-the codomain `F` is assumed Hausdorff.
+isomorphisms between such modules can be treated as continuous `ℤ_[p]`-linear ones. In the
+automatic-linearity and rank results, the codomain `F` is assumed Hausdorff.
 
 This file adapts `Mathlib/Topology/Instances/RealVectorSpace.lean` (Yury Kudryashov) from `ℝ` to
 `ℤ_[p]`: `TauCeti.map_padicInt_smul`, `AddMonoidHom.toPadicIntLinearMap`, and
@@ -36,7 +36,7 @@ additive isomorphism between two such modules preserves `Module.finrank`, and `�
 
 ## Main results
 
-* `TauCeti.closedAddSubgroupEquivPadicIntSubmodule`: closed additive subgroups are precisely
+* `TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso`: closed additive subgroups are precisely
   closed submodules. This correspondence needs neither compactness nor separation: closedness
   and density of the natural-number scalars give stability under all `ℤ_[p]`-scalars.
 * `TauCeti.map_padicInt_smul`: a continuous additive map between topological `ℤ_[p]`-modules
@@ -122,7 +122,7 @@ theorem ClosedAddSubgroup.toAddSubgroup_toPadicIntSubmodule (H : ClosedAddSubgro
 
 /-- Closed additive subgroups and closed `ℤ_[p]`-submodules of a topological `ℤ_[p]`-module
 are the same ordered collection of subsets. -/
-noncomputable def TauCeti.closedAddSubgroupEquivPadicIntSubmodule :
+noncomputable def TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso :
     ClosedAddSubgroup M ≃o ClosedSubmodule ℤ_[p] M where
   toFun H := H.toPadicIntSubmodule p
   invFun S := ⟨S.toSubmodule.toAddSubgroup, S.isClosed⟩
@@ -131,21 +131,21 @@ noncomputable def TauCeti.closedAddSubgroupEquivPadicIntSubmodule :
   map_rel_iff' := Iff.rfl
 
 @[simp]
-theorem TauCeti.closedAddSubgroupEquivPadicIntSubmodule_apply (H : ClosedAddSubgroup M) :
-    closedAddSubgroupEquivPadicIntSubmodule p H = H.toPadicIntSubmodule p :=
+theorem TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso_apply (H : ClosedAddSubgroup M) :
+    closedAddSubgroupPadicIntSubmoduleOrderIso p H = H.toPadicIntSubmodule p :=
   (rfl)
 
 @[simp]
-theorem TauCeti.closedAddSubgroupEquivPadicIntSubmodule_symm_toAddSubgroup
+theorem TauCeti.closedAddSubgroupPadicIntSubmoduleOrderIso_symm_toAddSubgroup
     (S : ClosedSubmodule ℤ_[p] M) :
-    ((closedAddSubgroupEquivPadicIntSubmodule p).symm S).toAddSubgroup =
+    ((closedAddSubgroupPadicIntSubmoduleOrderIso p).symm S).toAddSubgroup =
       S.toSubmodule.toAddSubgroup :=
   (rfl)
 
 @[simp]
-theorem TauCeti.mem_closedAddSubgroupEquivPadicIntSubmodule_symm
+theorem TauCeti.mem_closedAddSubgroupPadicIntSubmoduleOrderIso_symm
     (S : ClosedSubmodule ℤ_[p] M) {x : M} :
-    x ∈ (closedAddSubgroupEquivPadicIntSubmodule p).symm S ↔ x ∈ S :=
+    x ∈ (closedAddSubgroupPadicIntSubmoduleOrderIso p).symm S ↔ x ∈ S :=
   Iff.rfl
 
 end ClosedSubgroups
