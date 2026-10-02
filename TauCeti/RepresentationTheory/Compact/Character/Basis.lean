@@ -155,7 +155,7 @@ theorem exists_forall_inner_matrixCoeffLp_eq [IsAlgClosed 𝕜] (hunitary : IsUn
     T.intertwiningMap_of_isIntertwiningMap π.toRepresentation π.toRepresentation hcomm
   let f' : ContIntertwiningMap π π :=
     (_root_.ContRepresentation.intertwiningMapEquiv (π := π) (ρ := π)).symm f
-  obtain ⟨c, hc⟩ := exists_eq_smul_one_of_irreducible π hirr f'
+  obtain ⟨c, hc⟩ := π.exists_eq_smul_one_of_isIrreducible hirr f'
   refine ⟨c, fun v w ↦ ?_⟩
   have hTv : T v = c • v := by
     calc

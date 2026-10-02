@@ -80,7 +80,7 @@ theorem averageOperator_eq_finrank_inv_mul_trace_smul_id
         ContinuousLinearMap.id 𝕜 V := by
   have hdim : (Module.finrank 𝕜 V : 𝕜) ≠ 0 :=
     Representation.IsIrreducible.natCast_finrank_ne_zero hirr
-  have h := π.eq_finrank_inv_mul_trace_smul_id_of_irreducible hdim hirr
+  have h := π.eq_finrank_inv_mul_trace_smul_id_of_isIrreducible hdim hirr
     (averageIntertwiner π hπ π hπ T)
   rwa [toContinuousLinearMap_averageIntertwiner, trace_averageOperator] at h
 
@@ -160,7 +160,7 @@ theorem schur_orthogonality (π : ContRepresentation 𝕜 G V)
     (hne : IsEmpty (_root_.ContRepresentation.Equiv π ρ)) (v w : V) (v' w' : W) :
     ⟪matrixCoeffLp π hπ v w, matrixCoeffLp ρ hρ v' w'⟫_𝕜 = 0 :=
   schur_orthogonality_distinct π hπ ρ hρ hunitary
-    (fun f ↦ by simp [eq_zero_of_isEmpty_equiv hirrπ hirrρ hne f]) v w v' w'
+    (fun f ↦ by simp [ContRepresentation.eq_zero_of_isEmpty_equiv hirrπ hirrρ hne f]) v w v' w'
 
 end Inequivalent
 

@@ -692,7 +692,7 @@ example [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
 the characters of two inequivalent irreducibles have vanishing group average. This is
 `character_orthonormal_distinct_sum` at the transposed pair `(ρ, π)`, whose intertwiner hypothesis
 is discharged by the vanishing half of Schur's lemma,
-`TauCeti.ContRepresentation.eq_zero_of_isEmpty_equiv`, exactly as `orthonormal_characterLp`
+`ContRepresentation.eq_zero_of_isEmpty_equiv`, exactly as `orthonormal_characterLp`
 discharges it in the compact theory. So the substantive vanishing statement is reached, not
 assumed: `character_orthonormal_distinct_sum` keeps the hypothesis of the compact theorem
 `character_orthonormal_distinct` it specializes, and irreducibility enters here.

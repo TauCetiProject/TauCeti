@@ -77,7 +77,7 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
     rw [ContinuousLinearMap.comp_assoc, hT g, ← ContinuousLinearMap.comp_assoc, hadj g,
       ContinuousLinearMap.comp_assoc]
   -- Schur's lemma: the self-intertwiner is a scalar
-  obtain ⟨c, hc⟩ := exists_eq_smul_one_of_irreducible π hirr
+  obtain ⟨c, hc⟩ := π.exists_eq_smul_one_of_isIrreducible hirr
     { toContinuousLinearMap := (ContinuousLinearMap.adjoint T).comp T, isIntertwining' := hS }
   have hcS : ∀ v : V, ContinuousLinearMap.adjoint T (T v) = c • v := fun v ↦ by
     simpa using congrArg (fun f : ContIntertwiningMap π π ↦ f.toContinuousLinearMap v) hc

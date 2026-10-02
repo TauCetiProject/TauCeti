@@ -355,7 +355,7 @@ theorem integratedOperator_eq_smul_id
         ContinuousLinearMap.id 𝕜 V := by
   have hdim : (Module.finrank 𝕜 V : 𝕜) ≠ 0 :=
     Representation.IsIrreducible.natCast_finrank_ne_zero hirr
-  have h := π.eq_finrank_inv_mul_trace_smul_id_of_irreducible hdim hirr
+  have h := π.eq_finrank_inv_mul_trace_smul_id_of_isIrreducible hdim hirr
     (integratedIntertwiner π hπ hf)
   rwa [toContinuousLinearMap_integratedIntertwiner, trace_integratedOperator] at h
 
