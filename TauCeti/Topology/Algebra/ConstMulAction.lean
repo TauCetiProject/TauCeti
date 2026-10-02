@@ -11,7 +11,11 @@ public import Mathlib.Algebra.Group.Submonoid.MulAction
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Algebra.Monoid.Defs
+public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.LocallyFinite
+
+import Mathlib.Topology.Algebra.Group.Basic
 
 /-!
 # Transfer instances for restricted and properly discontinuous actions
@@ -21,6 +25,9 @@ cannot otherwise reach. A submonoid, and hence a subgroup, inherits `ContinuousC
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
 countable, and that the translates of a compact set under it form a locally finite family.
+Conversely, for a jointly continuous action of a `T₁` group with separately continuous
+multiplication, local finiteness of the translates of any nonempty set forces the group topology
+to be discrete.
 
 ## Main results
 
@@ -36,6 +43,8 @@ countable, and that the translates of a compact set under it form a locally fini
   nonempty σ-compact space is countable.
 * `TauCeti.locallyFinite_smul_of_isCompact`: under a properly discontinuous action on a weakly
   locally compact space, the translates of a compact set form a locally finite family.
+* `TauCeti.discreteTopology_of_locallyFinite_smul`: if the translates of a nonempty set under a
+  continuous action are locally finite, then the acting group is discrete.
 * `TauCeti.isClosed_iUnion_smul_of_isCompact`: the union of the translates of a closed compact set
   under such an action of a group is closed.
 -/
@@ -43,6 +52,38 @@ countable, and that the translates of a compact set under it form a locally fini
 public section
 
 namespace TauCeti
+
+section DiscreteTopology
+
+open scoped Pointwise
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] [T1Space G]
+  [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X] {S : Set X}
+
+/-- **Local finiteness of the translates of a nonempty set forces the acting group to be
+discrete.**
+
+The set need not be open, closed, or compact, and the action need not be faithful. This is the
+discreteness criterion for a group whose translates of a fundamental polygon form a locally
+finite tessellation. -/
+@[to_additive
+/-- **Local finiteness of the translates of a nonempty set forces the acting additive group to be
+discrete.** -/]
+theorem discreteTopology_of_locallyFinite_smul (hS : S.Nonempty)
+    (hlocal : LocallyFinite fun g : G ↦ g • S) : DiscreteTopology G := by
+  obtain ⟨x, hx⟩ := hS
+  obtain ⟨U, hU, hfinite⟩ := hlocal x
+  let V : Set G := (fun g ↦ g • x) ⁻¹' U
+  have hV : V ∈ nhds (1 : G) := by
+    exact (continuous_smul.comp (continuous_id.prodMk continuous_const)).continuousAt
+      (by simpa only [Function.comp_apply, id_eq, one_smul] using hU)
+  have hVF : V ⊆ {g : G | (g • S ∩ U).Nonempty} := by
+    intro g hg
+    exact ⟨g • x, ⟨x, hx, rfl⟩, hg⟩
+  exact discreteTopology_of_isOpen_singleton_one <|
+    isOpen_singleton_of_finite_mem_nhds 1 (Filter.mem_of_superset hV hVF) hfinite
+
+end DiscreteTopology
 
 /-- A submonoid inherits continuity in the point from an ambient continuous action. -/
 @[to_additive
