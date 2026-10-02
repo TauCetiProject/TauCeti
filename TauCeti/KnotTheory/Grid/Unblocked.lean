@@ -281,6 +281,17 @@ theorem OMonomial_eq_monomial (r : GridRectangle n) :
   | cons a s ha ih =>
     rw [Finset.prod_cons, Finset.sum_cons, ih, monomial_single_add, pow_one]
 
+/-- Every monomial of a sum of rectangle weights is the weight of one of the summed rectangles. -/
+theorem exists_mem_of_mem_support_sum_OMonomial {x y : GridState n}
+    {s : Finset (GridRectangleBetween x y)} {d : Fin n →₀ ℕ}
+    (hd : d ∈ (∑ r ∈ s, G.OMonomial R r.toGridRectangle).support) :
+    ∃ r ∈ s, d = ∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1 := by
+  classical
+  obtain ⟨r, hr, hdr⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hd)
+  refine ⟨r, hr, Finset.mem_singleton.mp ?_⟩
+  rw [G.OMonomial_eq_monomial R] at hdr
+  exact MvPolynomial.support_monomial_subset hdr
+
 /-- The weight of a rectangle is never zero. -/
 theorem OMonomial_ne_zero [Nontrivial R] (r : GridRectangle n) : G.OMonomial R r ≠ 0 := by
   rw [OMonomial_eq_monomial]
@@ -525,12 +536,8 @@ theorem exists_mem_unblockedRectangles_of_mem_support_unblockedCoefficient {x y 
     {d : Fin n →₀ ℕ} (hd : d ∈ (G.unblockedCoefficient R x y).support) :
     ∃ r ∈ G.unblockedRectangles x y,
       d = ∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1 := by
-  classical
   rw [unblockedCoefficient_def] at hd
-  obtain ⟨r, hr, hdr⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hd)
-  refine ⟨r, hr, Finset.mem_singleton.mp ?_⟩
-  rw [G.OMonomial_eq_monomial R] at hdr
-  exact MvPolynomial.support_monomial_subset hdr
+  exact G.exists_mem_of_mem_support_sum_OMonomial R hd
 
 /-- The value of the unblocked differential on a single grid-state generator. -/
 noncomputable def unblockedDifferentialOnGenerator (x : GridState n) :
