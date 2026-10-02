@@ -85,40 +85,36 @@ abbrev toSubcoalgebra : Subcoalgebra R H where
 
 variable [Module.Flat R H] [Module.Flat R A]
 
-omit [Module.Flat R H] [Module.Flat R A] in
-private theorem comulAlgHom_comp_val_mem_range (x : A) :
-    (Bialgebra.comulAlgHom R H).comp A.val x ∈ (Algebra.TensorProduct.map A.val A.val).range := by
-  have h := hA.comul_mem x.2
-  rw [toSubmodule_subtype] at h
-  obtain ⟨y, hy⟩ := h
-  refine ⟨y, ?_⟩
-  have hy' : Algebra.TensorProduct.map A.val A.val y = Coalgebra.comul (R := R) (x : H) := by
-    rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
-      TensorProduct.AlgebraTensorModule.map_eq]
-    exact hy
-  exact hy'
-
 /-- The comultiplication of a Hopf subalgebra, valued in its own tensor square: the unique
 preimage of the comultiplication of `H` under the injective map `A ⊗[R] A → H ⊗[R] H`. -/
-noncomputable def comulAlgHom : A →ₐ[R] A ⊗[R] A :=
-  (AlgEquiv.ofInjective _ (Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
-    Subtype.val_injective Subtype.val_injective)).symm.toAlgHom.comp
-    (((Bialgebra.comulAlgHom R H).comp A.val).codRestrict _ hA.comulAlgHom_comp_val_mem_range)
+noncomputable def comulAlgHom : A →ₐ[R] A ⊗[R] A := by
+  letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+  let δ : A →ₗ[R] A ⊗[R] A := hA.toSubcoalgebra.comulLinearMap
+  have hδ (x : A) : Algebra.TensorProduct.map A.val A.val (δ x) =
+      Coalgebra.comul (R := R) (x : H) := by
+    rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+      TensorProduct.AlgebraTensorModule.map_eq]
+    exact hA.toSubcoalgebra.map_subtype_comulLinearMap x
+  refine AlgHom.ofLinearMap δ ?_ ?_
+  · apply Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
+      Subtype.val_injective Subtype.val_injective
+    rw [hδ, map_one]
+    exact map_one (Bialgebra.comulAlgHom R H)
+  · intro x y
+    apply Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
+      Subtype.val_injective Subtype.val_injective
+    rw [hδ, map_mul, hδ, hδ]
+    exact map_mul (Bialgebra.comulAlgHom R H) (x : H) (y : H)
 
 /-- The comultiplication of a Hopf subalgebra is the restriction of that of `H`. -/
 @[simp]
 theorem map_val_comulAlgHom (x : A) :
-    Algebra.TensorProduct.map A.val A.val (hA.comulAlgHom x) = Coalgebra.comul (R := R) (x : H) :=
-  (AlgEquiv.ofInjective_apply _ (Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
-    Subtype.val_injective Subtype.val_injective) _).symm.trans
-    (congrArg Subtype.val (AlgEquiv.apply_symm_apply _ _))
-
-private theorem map_val_comulAlgHom' (x : A) :
-    TensorProduct.map A.val.toLinearMap A.val.toLinearMap (hA.comulAlgHom x) =
+    Algebra.TensorProduct.map A.val A.val (hA.comulAlgHom x) =
       Coalgebra.comul (R := R) (x : H) := by
-  have h := hA.map_val_comulAlgHom x
-  rwa [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
-    TensorProduct.AlgebraTensorModule.map_eq] at h
+  have : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
+  rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+    TensorProduct.AlgebraTensorModule.map_eq]
+  exact hA.toSubcoalgebra.map_subtype_comulLinearMap x
 
 /-- The restriction of the antipode of `H` to a Hopf subalgebra. -/
 def antipode : A →ₗ[R] A :=
@@ -143,7 +139,10 @@ private theorem mul_antipode_rTensor_comulAlgHom (x : A) :
     | tmul a b => simp [coe_antipode]
     | add s t hs ht => simp only [map_add, Subalgebra.coe_add, hs, ht]
   apply Subtype.val_injective
-  simp [h, map_val_comulAlgHom']
+  have hcomul := hA.map_val_comulAlgHom x
+  rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+    TensorProduct.AlgebraTensorModule.map_eq] at hcomul
+  simp [h, hcomul]
 
 private theorem mul_antipode_lTensor_comulAlgHom (x : A) :
     LinearMap.mul' R A ((antipode hA).lTensor A (hA.comulAlgHom x)) =
@@ -156,23 +155,17 @@ private theorem mul_antipode_lTensor_comulAlgHom (x : A) :
     | tmul a b => simp [coe_antipode]
     | add s t hs ht => simp only [map_add, Subalgebra.coe_add, hs, ht]
   apply Subtype.val_injective
-  simp [h, map_val_comulAlgHom']
-
-private theorem toSubcoalgebra_comulLinearMap (x : A) :
-    letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
-    hA.toSubcoalgebra.comulLinearMap x = hA.comulAlgHom x := by
-  have : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
-  apply TensorProduct.map_injective_of_flat_flat A.val.toLinearMap A.val.toLinearMap
-    Subtype.val_injective Subtype.val_injective
-  exact (hA.toSubcoalgebra.map_subtype_comulLinearMap x).trans
-    (hA.map_val_comulAlgHom' x).symm
+  have hcomul := hA.map_val_comulAlgHom x
+  rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+    TensorProduct.AlgebraTensorModule.map_eq] at hcomul
+  simp [h, hcomul]
 
 private theorem coalgebra_comul_apply (x : A) :
     letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
     letI : Coalgebra R A := hA.toSubcoalgebra.coalgebra
     Coalgebra.comul (R := R) x = hA.comulAlgHom x := by
   have : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
-  exact (hA.toSubcoalgebra.comul_apply x).trans (hA.toSubcoalgebra_comulLinearMap x)
+  exact hA.toSubcoalgebra.comul_apply x
 
 private theorem coalgebra_counit_apply (x : A) :
     letI : Module.Flat R hA.toSubcoalgebra.toSubmodule := inferInstanceAs (Module.Flat R A)
