@@ -232,6 +232,12 @@ theorem mapPointsFunctor_coordinateMap_app {B : Type w} [CommRing B] [Algebra A 
 abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat.{v, v} A :=
   FiniteTypeCommHopfAlgCat.of A (coordinateHopfAlgebra n hn A)
 
+/-- The underlying Hopf algebra of the finite-type carrier is its coordinate Hopf algebra. -/
+@[simp]
+theorem finiteTypeCoordinateHopfAlgebra_obj :
+    (finiteTypeCoordinateHopfAlgebra n hn A).obj = coordinateHopfAlgebra n hn A :=
+  (rfl)
+
 /-! ## Points of the base-changed carrier -/
 
 /-- The points of the base-changed type-`Dₙ` carrier over a commutative `A`-algebra are its
