@@ -51,6 +51,8 @@ residue extensions are separable.
 
 * `TauCeti.natCard_le_eighty_four_mul_genus_sub_one`: **the Hurwitz bound**, `|G| ≤ 84 (g - 1)` for
   a finite tame group of automorphisms of a function field of genus at least two.
+* `TauCeti.natCard_le_eighty_four_mul_genus_sub_one_of_charZero`: the same with no tameness
+  hypothesis, over a constant field of characteristic zero.
 
 ## References
 
@@ -150,5 +152,15 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     push_cast [Nat.cast_sub (by omega : 1 ≤ genus k F)]
     linarith
   exact_mod_cast hnat
+
+/-- **The Hurwitz bound in characteristic zero** (Stichtenoth, Exercise 3.18): a finite group of
+automorphisms of a function field of genus `g ≥ 2` with exact constant field of characteristic zero
+has order at most `84 (g - 1)`.  No tameness hypothesis is needed: every place is tame
+(`TauCeti.Place.isTame_of_charZero`). -/
+theorem natCard_le_eighty_four_mul_genus_sub_one_of_charZero [CharZero k] (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (G : Subgroup (F ≃ₐ[k] F)) [Finite G]
+    (hgenus : 2 ≤ genus k F) :
+    Nat.card G ≤ 84 * (genus k F - 1) :=
+  natCard_le_eighty_four_mul_genus_sub_one hF hex G hgenus fun _ ↦ Place.isTame_of_charZero _ _ _
 
 end TauCeti
