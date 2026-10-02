@@ -53,6 +53,7 @@ of the tautological character of the base group differs from it by an explicit c
 
 * `TauCeti.WreathC2.mk_mul_mk`: the multiplication on coordinates.
 * `TauCeti.dihedralToWreath_eq_one_iff`: the kernel of `D₁₆ → C₂ ≀ C₂` is `{1, r⁴}`.
+* `TauCeti.wreathSection_apply`: the section on coordinates.
 * `TauCeti.wreathSection_mul_wreathSection`: the section is multiplicative up to the factor set.
 * `TauCeti.wreathD16Cocycle_apply`: the factor set on coordinates.
 * `TauCeti.wreathD16Cocycle_isCocycle`: the factor set is a `2`-cocycle for the trivial action.
@@ -344,8 +345,16 @@ def wreathSection : wreathD16Extension.Section where
   toFun g := wreathSectionFun (coordA g) (coordB g) (coordC g)
   rightInverse_rightHom := dihedralToWreath_wreathSectionFun
 
-private theorem wreathSection_apply (g : WreathC2) :
-    wreathSection g = wreathSectionFun (coordA g) (coordB g) (coordC g) :=
+/-- **The section on coordinates.** With `g = (a, b, c)`, `σ g` is the element `rⁱ fʲ` of `D₁₆`
+lifting `g = (u s)ⁱ sʲ`, written in Mathlib's `r`/`sr` normal form (`f = sr 0`). -/
+theorem wreathSection_apply (g : WreathC2) :
+    wreathSection g =
+      if coordC g = 0 then
+        if coordA g = 0 then (if coordB g = 0 then r 0 else sr 5)
+        else (if coordB g = 0 then sr 7 else r 2)
+      else
+        if coordA g = 0 then (if coordB g = 0 then sr 0 else r 3)
+        else (if coordB g = 0 then r 1 else sr 6) :=
   (rfl)
 
 /-- The section is a right inverse of `D₁₆ → C₂ ≀ C₂`. -/
