@@ -102,7 +102,7 @@ theorem subsingleton_continuousCohomology_succ_of_forall_coeffMap_proj_surjectiv
       DFunLike.congr_fun (coindShortExact_incl G V.toSubgroup M) m
   obtain ⟨w, hw⟩ := (S.longExact_exact₁ n _).1 (hS ▸ hιx)
   -- right exactness lifts that class to `Hⁿ(G, Coind_V^G M)`, where the connecting map kills it
-  obtain ⟨v, hv⟩ := h M (DiscreteCoind G V.toSubgroup M) (DimensionShiftQuotient G V.toSubgroup M)
+  obtain ⟨v, hv⟩ := h M (DiscreteCoind G V.toSubgroup M) (CoindQuotient G V.toSubgroup M)
     S hM hBp (S.nsmul_eq_zero_right hBp) w
   rw [← hw, ← hv, ← ConcreteCategory.comp_apply, S.coeffMap_proj_comp_delta]
   exact rfl

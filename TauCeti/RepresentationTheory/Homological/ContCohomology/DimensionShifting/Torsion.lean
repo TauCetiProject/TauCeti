@@ -35,9 +35,9 @@ variable {p : ℕ} (G : Type*) [Group G] [TopologicalSpace G] [ContinuousMul G] 
 
 /-- The quotient `Coind_U^G M ⧸ M` remains `p`-primary torsion whenever `M` is `p`-primary
 torsion. -/
-theorem isPPrimaryTorsion_dimensionShiftQuotient (hM : IsPPrimaryTorsion p M) :
-    IsPPrimaryTorsion p (DimensionShiftQuotient G U M) :=
+theorem isPPrimaryTorsion_coindQuotient (hM : IsPPrimaryTorsion p M) :
+    IsPPrimaryTorsion p (CoindQuotient G U M) :=
   (isPPrimaryTorsion_discreteCoind G U M hM).of_surjective
-    (DimensionShiftQuotient.mk G U M) DimensionShiftQuotient.mk_surjective
+    (CoindQuotient.mk G U M) CoindQuotient.mk_surjective
 
 end TauCeti.ContCohomology

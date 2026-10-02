@@ -216,7 +216,7 @@ theorem isIso_shapiroMap (n : ℕ) : IsIso (shapiroMap U A n) := by
       -- The Shapiro map in degree `n + 2` is conjugate, through the connecting maps of
       -- `0 → A → Coind_1^U A → Q → 0` and of its coinduction to `G`, to the Shapiro map of
       -- `Q = Coind_1^U A ⧸ A` in degree `n + 1`, which is an isomorphism by induction.
-      have := ih (DimensionShiftQuotient U ⊥ A)
+      have := ih (CoindQuotient U ⊥ A)
       have := isIso_coindShortExact_bot_delta U A (n + 1) n.succ_pos
       have := ((coindShortExact U ⊥ A).coind U hU).isIso_delta (n + 1)
       rw [(IsIso.eq_inv_comp _).2 ((coindShortExact U ⊥ A).delta_shapiroMap hU (n + 1))]

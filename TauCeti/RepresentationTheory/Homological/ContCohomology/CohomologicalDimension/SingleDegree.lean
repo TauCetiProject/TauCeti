@@ -17,7 +17,7 @@ holds as soon as the single degree `n + 1` vanishes for every such `M`. Dimensio
 the induction step: `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for `i ≥ 1`
 (`TauCeti.ContCohomology.dimensionShiftIso`), and the shifted module `Coind_1^G M ⧸ M` is again a
 discrete `p`-primary torsion module
-(`TauCeti.ContCohomology.isPPrimaryTorsion_dimensionShiftQuotient`), so vanishing in degree `i` for
+(`TauCeti.ContCohomology.isPPrimaryTorsion_coindQuotient`), so vanishing in degree `i` for
 every module of the class gives vanishing in degree `i + 1` for every module of the class. The
 shifted module need not be finite even when `M` is, which is why the statement quantifies over all
 discrete `p`-primary torsion modules; the single-degree test on the finite modules then follows
@@ -79,7 +79,7 @@ theorem cohomologicalDimensionLE_iff_forall_subsingleton_succ (n : ℕ) :
   | base => exact h
   | succ i hi ih =>
     intro M _ _ _ _ _ hM
-    have := ih (DimensionShiftQuotient G ⊥ M) (isPPrimaryTorsion_dimensionShiftQuotient G ⊥ M hM)
+    have := ih (CoindQuotient G ⊥ M) (isPPrimaryTorsion_coindQuotient G ⊥ M hM)
     exact (dimensionShiftIso G M i (by omega)).toContinuousLinearEquiv.toEquiv.subsingleton
 
 /-- **The finite single-degree test.** For a compact group `G` and `p ≠ 0`, the predicate

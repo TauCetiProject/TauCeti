@@ -28,7 +28,8 @@ There are two steps.
 * **Coinduction.** The unit `A ↪ Coind_V^G A` of coinduction embeds `A` into a finite module with
   `Hʲ(G, Coind_V^G A) ≅ Hʲ(V, A)` by Shapiro's lemma, and the cokernel `C` of the short exact
   sequence `TauCeti.ContCohomology.coindShortExact` is again a finite module killed by `N` on which
-  `V` acts trivially, because `V` is normal (`TauCeti.DiscreteCoind.smul_eq_self_of_normal`).
+  `V` acts trivially, because `V` is normal
+  (`TauCeti.DiscreteCoind.smul_eq_self_of_forall_smul_eq_self`).
   Exactness of `Hⁱ(G, C) → Hⁱ⁺¹(G, A) → Hⁱ⁺¹(G, Coind_V^G A)` then gives finiteness of
   `Hⁱ⁺¹(G, A)` by induction on the degree, starting from `H⁰(G, A) ⊆ A`
   (`TauCeti.ContCohomology.finite_continuousCohomology_zero`,
@@ -37,11 +38,11 @@ There are two steps.
   of trivial modules of prime order dividing `N`, by Cauchy's theorem and the dévissage induction
   principle `TauCeti.ContCohomology.finite_induction_of_exists_addSubgroup`; exactness of
   `Hʲ(V, P) → Hʲ(V, M) → Hʲ(V, M ⧸ P)` passes finiteness along each extension
-  (`TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_smul_eq_self`).
+  (`TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_natCard_prime`).
 
 ## Main results
 
-* `TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_smul_eq_self`: finiteness of
+* `TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_natCard_prime`: finiteness of
   `Hⁿ` on the trivial modules of prime order dividing `N` gives finiteness on every finite trivial
   module killed by `N`.
 * `TauCeti.ContinuousCohomology.finite_continuousCohomology_of_isOpen_of_normal`: finiteness of
@@ -73,7 +74,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 and `N` a natural number. If `Hⁿ(G, A)` is finite for every discrete `G`-module `A` of prime order
 dividing `N` on which `G` acts trivially, then `Hⁿ(G, M)` is finite for every finite discrete
 `G`-module `M` killed by `N` on which `G` acts trivially. -/
-theorem finite_continuousCohomology_of_forall_smul_eq_self [LocallyCompactSpace G] {N n : ℕ}
+theorem finite_continuousCohomology_of_forall_natCard_prime [LocallyCompactSpace G] {N n : ℕ}
     (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
       [DistribMulAction G A] [ContinuousSMul G A] [Finite A], (Nat.card A).Prime →
       Nat.card A ∣ N → (∀ (g : G) (a : A), g • a = a) →
@@ -135,12 +136,12 @@ theorem finite_continuousCohomology_of_isOpen_of_normal (V : Subgroup G) [V.Norm
   set S := coindShortExact G V A
   -- `C` is killed by `N`, and `V` acts trivially on it, because it acts trivially on
   -- `Coind_V^G A` by normality
-  have : Finite (continuousCohomology i (ofDiscreteModule ℤ G (DimensionShiftQuotient G V A))) := by
-    refine ih (fun j hj₀ hj ↦ h j hj₀ (hj.trans i.le_succ)) (DimensionShiftQuotient G V A)
+  have : Finite (continuousCohomology i (ofDiscreteModule ℤ G (CoindQuotient G V A))) := by
+    refine ih (fun j hj₀ hj ↦ h j hj₀ (hj.trans i.le_succ)) (CoindQuotient G V A)
       (S.nsmul_eq_zero_right (DiscreteCoind.nsmul_eq_zero hN)) (fun v hv c ↦ ?_)
-    induction c using DimensionShiftQuotient.induction_on with
-    | h f => rw [← DimensionShiftQuotient.mk_smul,
-        DiscreteCoind.smul_eq_self_of_normal (fun u a ↦ htriv u u.2 a) hv f]
+    induction c using CoindQuotient.induction_on with
+    | h f => rw [← CoindQuotient.mk_smul,
+        DiscreteCoind.smul_eq_self_of_forall_smul_eq_self (fun u a ↦ htriv u u.2 a) hv f]
   -- Shapiro's lemma: `Hⁱ⁺¹(G, Coind_V^G A) ≅ Hⁱ⁺¹(V, A)`
   have := h (i + 1) i.succ_pos le_rfl A hN fun v a ↦ htriv v v.2 a
   have : Finite (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (DiscreteCoind G V A))) :=
@@ -166,6 +167,6 @@ theorem finite_continuousCohomology_of_isOpen_of_normal_of_prime (V : Subgroup G
   have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
   finite_continuousCohomology_of_isOpen_of_normal V hV i
     (fun j hj₀ hj M _ _ _ _ _ _ hM hMtriv ↦
-      finite_continuousCohomology_of_forall_smul_eq_self (h j hj₀ hj) M hM hMtriv) A hN htriv
+      finite_continuousCohomology_of_forall_natCard_prime (h j hj₀ hj) M hM hMtriv) A hN htriv
 
 end TauCeti.ContinuousCohomology

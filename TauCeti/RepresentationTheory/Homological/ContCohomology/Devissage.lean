@@ -24,7 +24,7 @@ It is the common skeleton of two dévissages. For a pro-`p` group and the `p`-pr
 subgroup `P` of order `p` comes from the trivial-filtration theorem
 (`TauCeti.IsProP.finite_pPrimary_induction`). For the trivial modules killed by `N`, it comes
 from Cauchy's theorem, and has prime order dividing `N`
-(`TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_smul_eq_self`).
+(`TauCeti.ContinuousCohomology.finite_continuousCohomology_of_forall_natCard_prime`).
 
 ## Main results
 
