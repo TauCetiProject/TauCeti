@@ -21,9 +21,9 @@ The proof uses the unramifiedness criterion for fields fixed by absolute inertia
 algebraic closure to apply the absolute inertia criterion; its degree is preserved by
 `IntermediateField.liftAlgEquiv`.
 
-The restriction `σ̄` of an arithmetic Frobenius lift to `L` acts on the residue field of `L` as the
-`q`-th power map, so conjugation by `σ̄` raises the tame character of `G_0(L/K)` to the `q`-th
-power: `θ_0(σ̄ τ σ̄⁻¹) = θ_0(τ) ^ q`. This is the finite-level form of the relation
+The restriction `σ_L` of an arithmetic Frobenius lift to `L` acts on the residue field of `L` as
+the `q`-th power map, so conjugation by `σ_L` raises the tame character of `G_0(L/K)` to the
+`q`-th power: `θ_0(σ_L τ σ_L⁻¹) = θ_0(τ) ^ q`. This is the finite-level form of the relation
 `σ τ σ⁻¹ = τ ^ q` in the tame quotient of the absolute Galois group.
 
 ## Main results
@@ -112,10 +112,10 @@ theorem exists_mem_inertiaSubgroup_restrictNormal_eq {τ : Gal(L/K)}
   rw [← map_inertiaSubgroup_restrictNormalHom L] at hτ
   exact hτ
 
-/-- **The finite-level Frobenius twist.** Let `σ` be an arithmetic Frobenius lift and `σ̄` its
+/-- **The finite-level Frobenius twist.** Let `σ` be an arithmetic Frobenius lift and `σ_L` its
 restriction to a finite Galois subextension `L/K`. For every `τ` in the inertia group `G_0` of
-`L/K`, the tame character satisfies `θ_0(σ̄ τ σ̄⁻¹) = θ_0(τ) ^ q`, where `q` is the cardinality of
-the residue field of `K`. -/
+`L/K`, the tame character satisfies `θ_0(σ_L τ σ_L⁻¹) = θ_0(τ) ^ q`, where `q` is the
+cardinality of the residue field of `K`. -/
 theorem IsArithFrobeniusLift.tameCharacter_conj_restrictNormal {σ : Gal(AlgebraicClosure K/K)}
     (hσ : IsArithFrobeniusLift K σ) {π : 𝒪[L]} (hπ : Irreducible π)
     (τ : IsLocalRing.ramificationGroup Gal(L/K) 𝒪[L] 0) :
