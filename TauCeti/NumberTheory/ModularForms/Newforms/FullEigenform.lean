@@ -136,7 +136,6 @@ theorem toEigenform_χ (f : Newform N k) : f.toEigenform.χ = f.χ :=
   EigenformAwayFromLevel.toEigenform_χ _ _
 
 /-- The full eigenform attached to a newform remains normalised. -/
-@[simp]
 theorem toEigenform_qExpansion_coeff_one (f : Newform N k) :
     (qExpansion 1 f.toEigenform.toCuspForm).coeff 1 = 1 := by
   rw [toEigenform_toCuspForm]
