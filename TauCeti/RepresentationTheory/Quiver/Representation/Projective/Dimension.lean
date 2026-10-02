@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.ProjectiveDimension
 public import TauCeti.RepresentationTheory.Quiver.Representation.VertexSimpleModule
-public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 import Mathlib.RingTheory.Finiteness.Small
 
@@ -79,9 +78,15 @@ theorem projective_projectiveShortComplex_X₁_pathAlgebra (hQ : Quiver.IsAcycli
     (M : ModuleCat.{max v w x} (pathAlgebra k Q))
     (hM : IsFiniteLength (pathAlgebra k Q) M) :
     Projective M.projectiveShortComplex.X₁ := by
-  have h₂ : Projective M.projectiveShortComplex.X₂ := inferInstance
-  have h₃ := hasProjectiveDimensionLT_two_pathAlgebra k Q hQ M hM
-  have h₁ := ((M.shortExact_projectiveShortComplex).hasProjectiveDimensionLT_X₃_iff 0 h₂).mp h₃
-  exact projective_iff_hasProjectiveDimensionLT_one.mpr h₁
+  exact projective_projectiveShortComplex_X₁
+    (hasProjectiveDimensionLT_two_pathAlgebra k Q hQ M hM)
+
+/-- The standard free presentation of a finite-dimensional module over an acyclic path
+algebra has projective kernel, so it is a projective resolution of length one. -/
+theorem projective_projectiveShortComplex_X₁_pathAlgebra_of_finiteDimensional
+    (hQ : Quiver.IsAcyclic Q) (M : ModuleCat.{max v w x} (pathAlgebra k Q))
+    [FiniteDimensional k M] : Projective M.projectiveShortComplex.X₁ := by
+  exact projective_projectiveShortComplex_X₁
+    (hasProjectiveDimensionLT_two_pathAlgebra_of_finiteDimensional k Q hQ M)
 
 end TauCeti

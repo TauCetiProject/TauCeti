@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.RingTheory.FiniteLength
@@ -17,13 +18,8 @@ module of finite length. This lets short resolutions of simple modules control h
 Ext groups of arbitrary finite-length modules, without choosing resolutions of their
 successive extensions.
 
-The argument uses Mathlib's extension-closure theorem
-`ShortComplex.ShortExact.hasProjectiveDimensionLT_X₂` and the simple-quotient induction
-principle of `IsFiniteLength`.
-
-The finite-length induction adapts the formal proof pattern of
-`TauCeti.isEulerAdmissible_of_isFiniteLength` in
-`TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.FiniteLength`.
+For a module of projective dimension at most one, the standard free presentation has
+projective kernel and hence is a projective resolution of length one.
 -/
 
 public section
@@ -43,6 +39,8 @@ theorem _root_.ModuleCat.hasProjectiveDimensionLT_of_isFiniteLength
     (X : ModuleCat.{v} R) (n : ℕ)
     (h : ∀ S : ModuleCat.{v} R, IsSimpleModule R S → HasProjectiveDimensionLT S n)
     (hX : IsFiniteLength R X) : HasProjectiveDimensionLT X n := by
+  -- The induction adapts the proof of `TauCeti.isEulerAdmissible_of_isFiniteLength`
+  -- in `TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.FiniteLength`.
   suffices key : ∀ (M : Type v) [AddCommGroup M] [Module R M], IsFiniteLength R M →
       HasProjectiveDimensionLT (ModuleCat.of R M) n from key X hX
   intro M _ _ hM
@@ -59,5 +57,13 @@ theorem _root_.ModuleCat.hasProjectiveDimensionLT_of_isFiniteLength
       (LinearMap.exact_subtype_mkQ N) N.injective_subtype N.mkQ_surjective
     exact hT.hasProjectiveDimensionLT_X₂ n ih
       (h (ModuleCat.of R (M ⧸ N)) inferInstance)
+
+/-- The standard free presentation of a module of projective dimension at most one
+has projective kernel, so it is a projective resolution of length one. -/
+theorem projective_projectiveShortComplex_X₁ [Small.{v} R] {M : ModuleCat.{v} R}
+    (hM : HasProjectiveDimensionLT M 2) : Projective M.projectiveShortComplex.X₁ := by
+  have h₂ : Projective M.projectiveShortComplex.X₂ := inferInstance
+  have h₁ := (M.shortExact_projectiveShortComplex.hasProjectiveDimensionLT_X₃_iff 0 h₂).mp hM
+  exact projective_iff_hasProjectiveDimensionLT_one.mpr h₁
 
 end TauCeti
