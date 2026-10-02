@@ -32,7 +32,18 @@ public section
 
 namespace TauCeti
 
-attribute [local instance] RingHomInvPair.of_ringEquiv
+/-- The canonical double-opposite ring equivalence and its inverse form an inverse pair. -/
+instance opOpRingHomInvPair (A : Type*) [Semiring A] :
+    RingHomInvPair (RingHomClass.toRingHom (RingEquiv.opOp A))
+      (RingHomClass.toRingHom (RingEquiv.opOp A).symm) :=
+  RingHomInvPair.of_ringEquiv (RingEquiv.opOp A)
+
+/-- The inverse double-opposite ring equivalence and the forward equivalence form
+an inverse pair. -/
+instance opOpRingHomInvPairSymm (A : Type*) [Semiring A] :
+    RingHomInvPair (RingHomClass.toRingHom (RingEquiv.opOp A).symm)
+      (RingHomClass.toRingHom (RingEquiv.opOp A)) :=
+  RingHomInvPair.of_ringEquiv_symm (RingEquiv.opOp A)
 
 section Codomain
 
@@ -70,15 +81,10 @@ with the opposite regular codomain. -/
 theorem map_range_opDualCodomainEquiv (f : N →ₗ[Aᵐᵒᵖ] N') :
     (LinearMap.range (f.lcomp A A)).map (opDualCodomainEquiv A N).toLinearMap =
       LinearMap.range (f.lcomp Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ) := by
-  ext F
-  simp only [Submodule.mem_map, LinearMap.mem_range]
-  constructor
-  · rintro ⟨_, ⟨G, rfl⟩, rfl⟩
-    exact ⟨opDualCodomainEquiv A N' G, (opDualCodomainEquiv_lcomp A f G).symm⟩
-  · rintro ⟨G, rfl⟩
-    refine ⟨f.lcomp A A ((opDualCodomainEquiv A N').symm G), ⟨_, rfl⟩, ?_⟩
-    exact (opDualCodomainEquiv_lcomp A f _).trans
-      (congrArg (f.lcomp Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ) ((opDualCodomainEquiv A N').apply_symm_apply G))
+  have hsquare : (opDualCodomainEquiv A N).toLinearMap ∘ₛₗ f.lcomp A A =
+      f.lcomp Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ ∘ₛₗ (opDualCodomainEquiv A N').toLinearMap :=
+    LinearMap.ext (opDualCodomainEquiv_lcomp A f)
+  rw [← LinearMap.range_comp, hsquare, LinearEquiv.range_comp]
 
 end Codomain
 

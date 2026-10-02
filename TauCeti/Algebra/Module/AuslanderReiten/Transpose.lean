@@ -181,6 +181,33 @@ theorem induction_on {motive : AuslanderReitenTranspose p₁ → Prop}
     motive x :=
   Submodule.Quotient.induction_on _ x h
 
+section QuotientEquiv
+
+variable {S N : Type*} [Ring S] [AddCommGroup N] [Module S N]
+  {σ : Aᵐᵒᵖ →+* S} {σ' : S →+* Aᵐᵒᵖ}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- A semilinear equivalence carrying the range of precomposition onto `Q` identifies the
+transpose with the quotient by `Q`. -/
+def quotientEquiv (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛₗ[σ] N)
+    (he : (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).map e.toLinearMap = Q) :
+    AuslanderReitenTranspose p₁ ≃ₛₗ[σ] N ⧸ Q :=
+  Submodule.Quotient.equiv _ Q e he
+
+/-- Quotient transport applies the semilinear equivalence to a functional representative. -/
+@[simp]
+theorem quotientEquiv_mk (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛₗ[σ] N)
+    (he : (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).map e.toLinearMap = Q)
+    (φ : Module.Dual A P₁) :
+    quotientEquiv p₁ Q e he (mk p₁ φ) = Submodule.Quotient.mk (e φ) := by
+  -- The transpose, `mk`, and `quotientEquiv` have unexposed bodies. Present their quotient
+  -- form locally so that the public quotient application lemmas can apply.
+  with_unfolding_all
+    change Submodule.Quotient.equiv _ Q e he (Submodule.Quotient.mk φ) = _
+    rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
+
+end QuotientEquiv
+
 section Lift
 
 variable {N : Type*} [AddCommGroup N] [Module Aᵐᵒᵖ N]
