@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.Monoidal
+public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
 public import TauCeti.AlgebraicTopology.SimplicialSet.AlexanderWhitney
 
 /-!
@@ -34,6 +35,8 @@ of singular cochains and cap products of singular chains with singular cochains 
 * `TopCat.alexanderWhitneyDiagonal`: the Alexander–Whitney diagonal of a space, with
   `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f` its value on a singular simplex and
   `TopCat.alexanderWhitneyDiagonal_naturality` its naturality.
+* `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f_tensorCochain`: the tensor product of two
+  cochains, precomposed with the Alexander–Whitney diagonal, on a singular simplex.
 
 ## References
 
@@ -145,6 +148,44 @@ lemma ιChainComplex_alexanderWhitneyDiagonal_f (X : TopCat.{w}) (u : T ⟶ R �
   -- the simplex of `Sing X ⊗ Sing X` is the pair `(σ, σ)`
   exact congrArg (u ≫ ·) (SSet.ιChainComplex_alexanderWhitney_f (toSSet.obj X) (toSSet.obj X) R S
     (n := n) (σ, σ))
+
+/-- The tensor product of cochains `φ` of degree `p` and `ψ` of degree `q`
+(`TauCeti.ChainComplex.tensorCochain`), precomposed with the Alexander–Whitney diagonal, sends a
+singular `(p + q)`-simplex `σ` to `φ` of the front `p`-face of `σ` tensored with `ψ` of its back
+`q`-face, followed by `μ`, after the coefficient morphism `u`.  This evaluates both the cup and the
+cap product of singular cochains on a simplex. -/
+lemma ιChainComplex_alexanderWhitneyDiagonal_f_tensorCochain (X : TopCat.{w}) (u : T ⟶ R ⊗ S)
+    {M N P : C} (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n)
+    (φ : ((toSSet.obj X).chainComplex R).X p ⟶ M) (ψ : ((toSSet.obj X).chainComplex S).X q ⟶ N)
+    (σ : (toSSet.obj X) _⦋n⦌) :
+    (toSSet.obj X).ιChainComplex σ ≫ (X.alexanderWhitneyDiagonal u).f n ≫
+        TauCeti.ChainComplex.tensorCochain μ φ ψ n =
+      u ≫ (((toSSet.obj X).ιChainComplex
+            ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫ φ) ⊗ₘ
+          ((toSSet.obj X).ιChainComplex
+            ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ ψ)) ≫ μ := by
+  subst h
+  -- the summand of bidegree `(p, j)` for `j = q`, stated for any such `j`
+  have key : ∀ (j : ℕ) (hj : j = q) (hj' : p + j ≤ p + q) (hj'' : p + j = p + q),
+      ((toSSet.obj X).ιChainComplex
+          ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ⊗ₘ
+        (toSSet.obj X).ιChainComplex (R := S)
+          ((toSSet.obj X).map (SimplexCategory.subinterval p j hj').op σ)) ≫
+        ιTensorObj _ _ p j (p + q) hj'' ≫ TauCeti.ChainComplex.tensorCochain μ φ ψ (p + q) =
+      (((toSSet.obj X).ιChainComplex
+            ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫ φ) ⊗ₘ
+          ((toSSet.obj X).ιChainComplex
+            ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ ψ)) ≫ μ := by
+    rintro _ rfl _ _
+    rw [TauCeti.ChainComplex.ιTensorObj_tensorCochain, tensorHom_comp_tensorHom_assoc]
+  rw [ιChainComplex_alexanderWhitneyDiagonal_f_assoc, Preadditive.sum_comp,
+    Finset.sum_eq_single ⟨p, by omega⟩]
+  · simp only [Category.assoc]
+    exact congrArg (u ≫ ·) (key (p + q - p) (by omega) _ _)
+  · rintro i - hi
+    rw [Category.assoc, TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_left _ _ _ _
+      (fun h ↦ hi (Fin.ext h)), comp_zero]
+  · simp
 
 /-- The Alexander–Whitney diagonal is natural in the space. -/
 @[reassoc]

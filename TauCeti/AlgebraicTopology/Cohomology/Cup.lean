@@ -76,28 +76,8 @@ lemma ιChainComplex_cupCochain_alexanderWhitneyDiagonal (X : TopCat.{w}) (u : T
             ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫ φ) ⊗ₘ
           ((toSSet.obj X).ιChainComplex
             ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ ψ)) ≫ μ := by
-  subst h
-  -- the summand of bidegree `(p, j)` for `j = q`, stated for any such `j`
-  have key : ∀ (j : ℕ) (hj : j = q) (hj' : p + j ≤ p + q) (hj'' : p + j = p + q),
-      ((toSSet.obj X).ιChainComplex
-          ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ⊗ₘ
-        (toSSet.obj X).ιChainComplex (R := S)
-          ((toSSet.obj X).map (SimplexCategory.subinterval p j hj').op σ)) ≫
-        ιTensorObj _ _ p j (p + q) hj'' ≫ TauCeti.ChainComplex.tensorCochain μ φ ψ (p + q) =
-      (((toSSet.obj X).ιChainComplex
-            ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫ φ) ⊗ₘ
-          ((toSSet.obj X).ιChainComplex
-            ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ ψ)) ≫ μ := by
-    rintro _ rfl _ _
-    rw [TauCeti.ChainComplex.ιTensorObj_tensorCochain, tensorHom_comp_tensorHom_assoc]
-  rw [TauCeti.ChainComplex.cupCochain_apply, ιChainComplex_alexanderWhitneyDiagonal_f_assoc,
-    Preadditive.sum_comp, Finset.sum_eq_single ⟨p, by omega⟩]
-  · simp only [Category.assoc]
-    exact congrArg (u ≫ ·) (key (p + q - p) (by omega) _ _)
-  · rintro i - hi
-    rw [Category.assoc, TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_left _ _ _ _
-      (fun h ↦ hi (Fin.ext h)), comp_zero]
-  · simp
+  rw [TauCeti.ChainComplex.cupCochain_apply,
+    ιChainComplex_alexanderWhitneyDiagonal_f_tensorCochain X u μ p q n h]
 
 end Cochain
 

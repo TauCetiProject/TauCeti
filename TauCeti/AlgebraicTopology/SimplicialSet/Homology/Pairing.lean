@@ -28,6 +28,8 @@ with coefficients in `P`.
 
 ## Main definitions and results
 
+* `SSet.ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f`: the inverse of Mathlib's
+  identification `F(C(X; R)) ≅ C(X; F(R))` on the summand of a simplex.
 * `SSet.chainComplexPairing`: the chain map `M ⊗ C(X; S) ⟶ C(X; P)` induced by `μ`.
 * `SSet.whiskerLeft_ιChainComplex_chainComplexPairing_f`: its value on the summand of a simplex.
 * `SSet.chainComplexPairing_naturality`: it is natural in the simplicial set.
@@ -42,9 +44,30 @@ noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Simplicial
 
-universe w v u
+universe w v v' u u'
 
 namespace SSet
+
+section FunctorObjCompMapIso
+
+variable {C : Type u} {D : Type u'} [Category.{v} C] [Category.{v'} D] [Preadditive C]
+  [Preadditive D] [HasCoproducts.{w} C] [HasCoproducts.{w} D]
+
+/-- The inverse of the identification `F(C(X; R)) ≅ C(X; F(R))` of
+`SSet.chainComplexFunctorObjCompMapIso`, for a coproduct-preserving functor `F`, sends the summand
+`F(R)` of a simplex `x` to the image under `F` of the summand `R` of `x`.  Morphisms out of
+`F(Cₙ(X; R))` are therefore determined on these images. -/
+@[reassoc (attr := simp)]
+lemma ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f (X : SSet.{w}) (F : C ⥤ D)
+    [F.Additive] [∀ T : Type w, PreservesColimitsOfShape (Discrete T) F] (R : C) {n : ℕ}
+    (x : X _⦋n⦌) :
+    X.ιChainComplex x ≫ ((chainComplexFunctorObjCompMapIso F R).inv.app X).f n =
+      F.map (X.ιChainComplex x) := by
+  rw [← map_ιChainComplex_chainComplexFunctorObjCompMapIso_hom_app_f X F, Category.assoc,
+    ← HomologicalComplex.comp_f, Iso.hom_inv_id_app, HomologicalComplex.id_f]
+  exact Category.comp_id _
+
+end FunctorObjCompMapIso
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
   [MonoidalCategory C] [MonoidalPreadditive C] {M S P : C}
@@ -103,12 +126,7 @@ lemma whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing (X : SSet
   -- morphisms out of `M ⊗ Cₙ(X; S) ≅ Cₙ(X; M ⊗ S)` are determined on the simplices of `X`
   rw [← cancel_epi (((chainComplexFunctorObjCompMapIso (tensorLeft M) S).inv.app X).f n)]
   ext x
-  have hx : X.ιChainComplex x ≫
-      ((chainComplexFunctorObjCompMapIso (tensorLeft M) S).inv.app X).f n =
-        M ◁ X.ιChainComplex x := by
-    rw [← map_ιChainComplex_chainComplexFunctorObjCompMapIso_hom_app_f X (tensorLeft M),
-      Category.assoc, ← HomologicalComplex.comp_f, Iso.hom_inv_id_app, HomologicalComplex.id_f]
-    exact Category.comp_id _
-  simp [reassoc_of% hx, ← MonoidalCategory.whiskerLeft_comp_assoc]
+  simp [ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f_assoc X (tensorLeft M),
+    ← MonoidalCategory.whiskerLeft_comp_assoc]
 
 end SSet

@@ -138,50 +138,35 @@ variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B B' E : Ch
   (D : E ⟶ HomologicalComplex.tensorObj A B)
   (a : ((tensorLeft M).mapHomologicalComplex _).obj B ⟶ B')
 
-variable (k) in
-/-- The cap product of chains and cochains `TauCeti.ChainComplex.capChain`, as a linear map out of
-the cochain module of the complex `Hom(A, M)`. -/
-private def capChainHom (p q n : ℕ) (h : p + q = n) :
-    (A.linearYonedaObj k M).X p →ₗ[k] (E.X n ⟶ B'.X q) :=
-  capChain k D a p q n h
-
-/-- The boundary formula `TauCeti.ChainComplex.capChain_comp_d` in the cochain modules of the
-complex `Hom(A, M)`. -/
-private lemma capChainHom_comp_d (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M).X p) :
-    capChainHom k D a p (q + 1) (n + 1) (by omega) φ ≫ B'.d (q + 1) q =
-      ((-1 : ℤ) ^ p) • (E.d (n + 1) n ≫ capChainHom k D a p q n h φ -
-        capChainHom k D a (p + 1) q (n + 1) (by omega) ((A.linearYonedaObj k M).d p (p + 1) φ)) :=
-  capChain_comp_d D a p q n h φ
-
 /-- The boundary formula for the cap product with a cocycle: `∂(x ⌢ φ) = (-1)^p ∂x ⌢ φ`. -/
-private lemma capChainHom_comp_d_of_cycles (p q n : ℕ) (h : p + q = n)
+private lemma capChain_comp_d_of_cycles (p q n : ℕ) (h : p + q = n)
     (φ : (A.linearYonedaObj k M).cycles p) :
-    capChainHom k D a p (q + 1) (n + 1) (by omega) ((A.linearYonedaObj k M).iCycles p φ) ≫
+    capChain k D a p (q + 1) (n + 1) (by omega) ((A.linearYonedaObj k M).iCycles p φ) ≫
         B'.d (q + 1) q =
       ((-1 : ℤ) ^ p) • (E.d (n + 1) n ≫
-        capChainHom k D a p q n h ((A.linearYonedaObj k M).iCycles p φ)) := by
+        capChain k D a p q n h ((A.linearYonedaObj k M).iCycles p φ)) := by
   -- a cocycle vanishes on boundaries
-  have hφ : (A.linearYonedaObj k M).d p (p + 1) ((A.linearYonedaObj k M).iCycles p φ) = 0 :=
+  have hφ : A.d (p + 1) p ≫ (A.linearYonedaObj k M).iCycles p φ = 0 :=
     d_comp_linearYonedaObj_iCycles p (p + 1) φ
-  rw [capChainHom_comp_d D a p q n h, hφ, map_zero, sub_zero]
+  rw [capChain_comp_d D a p q n h ((A.linearYonedaObj k M).iCycles p φ), hφ, map_zero, sub_zero]
 
 /-- Capping a cycle with a fixed cocycle `φ`, as a map of cycles. -/
 private def capCyclesOf (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M).cycles p) :
     E.cycles n ⟶ B'.cycles q :=
-  B'.liftCycles (E.iCycles n ≫ capChainHom k D a p q n h ((A.linearYonedaObj k M).iCycles p φ))
+  B'.liftCycles (E.iCycles n ≫ capChain k D a p q n h ((A.linearYonedaObj k M).iCycles p φ))
     ((ComplexShape.down ℕ).next q) rfl (by
       cases q with
       | zero => rw [B'.shape _ _ (by simp), comp_zero]
       | succ q =>
         obtain rfl : n = p + q + 1 := by omega
         rw [ChainComplex.next_nat_succ, Category.assoc,
-          capChainHom_comp_d_of_cycles D a p q _ rfl, Preadditive.comp_zsmul, iCycles_d_assoc,
+          capChain_comp_d_of_cycles D a p q _ rfl, Preadditive.comp_zsmul, iCycles_d_assoc,
           zero_comp, smul_zero])
 
 @[reassoc]
 private lemma capCyclesOf_i (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M).cycles p) :
     capCyclesOf D a p q n h φ ≫ B'.iCycles q =
-      E.iCycles n ≫ capChainHom k D a p q n h ((A.linearYonedaObj k M).iCycles p φ) :=
+      E.iCycles n ≫ capChain k D a p q n h ((A.linearYonedaObj k M).iCycles p φ) :=
   B'.liftCycles_i _ _ _ _
 
 variable (k) in
@@ -193,10 +178,12 @@ def capCycles (p q n : ℕ) (h : p + q = n) :
   toFun φ := capCyclesOf D a p q n h φ
   map_add' φ φ' := by
     rw [← cancel_mono (B'.iCycles q), Preadditive.add_comp, capCyclesOf_i, capCyclesOf_i,
-      capCyclesOf_i, map_add, map_add, Preadditive.comp_add]
+      capCyclesOf_i, map_add, ← Preadditive.comp_add]
+    exact congrArg (E.iCycles n ≫ ·) ((capChain k D a p q n h).map_add _ _)
   map_smul' r φ := by
     rw [← cancel_mono (B'.iCycles q), Linear.smul_comp, capCyclesOf_i, capCyclesOf_i, map_smul,
-      map_smul, RingHom.id_apply, Linear.comp_smul]
+      RingHom.id_apply, ← Linear.comp_smul]
+    exact congrArg (E.iCycles n ≫ ·) ((capChain k D a p q n h).map_smul r _)
 
 /-- On underlying chains, the cap product of a cycle and a cocycle is the cap product of the chain
 and the cochain. -/
@@ -206,37 +193,26 @@ lemma capCycles_i (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M).cy
       E.iCycles n ≫ capChain k D a p q n h ((A.linearYonedaObj k M).iCycles p φ) :=
   capCyclesOf_i D a p q n h φ
 
-/-- `TauCeti.ChainComplex.capCycles_i` in the cochain modules of the complex `Hom(A, M)`. -/
-@[reassoc]
-private lemma capCycles_i_capChainHom (p q n : ℕ) (h : p + q = n)
-    (φ : (A.linearYonedaObj k M).cycles p) :
-    capCycles k D a p q n h φ ≫ B'.iCycles q =
-      E.iCycles n ≫ capChainHom k D a p q n h ((A.linearYonedaObj k M).iCycles p φ) :=
-  capCyclesOf_i D a p q n h φ
-
 /-- The cap product of a boundary and a cocycle is a boundary. -/
 private lemma toCycles_capCycles (p q n : ℕ) (h : p + q = n)
     (φ : (A.linearYonedaObj k M).cycles p) :
     E.toCycles (n + 1) n ≫ capCycles k D a p q n h φ =
-      (((-1 : ℤ) ^ p) • capChainHom k D a p (q + 1) (n + 1) (by omega)
+      (((-1 : ℤ) ^ p) • capChain k D a p (q + 1) (n + 1) (by omega)
         ((A.linearYonedaObj k M).iCycles p φ)) ≫ B'.toCycles (q + 1) q := by
-  rw [← cancel_mono (B'.iCycles q), Category.assoc, capCycles_i_capChainHom, toCycles_i_assoc,
-    Category.assoc, toCycles_i, Preadditive.zsmul_comp, capChainHom_comp_d_of_cycles D a p q n h]
+  rw [← cancel_mono (B'.iCycles q), Category.assoc, capCycles_i, toCycles_i_assoc,
+    Category.assoc, toCycles_i, Preadditive.zsmul_comp, capChain_comp_d_of_cycles D a p q n h]
   simp [smul_smul, ← mul_pow]
 
 /-- The cap product of a cycle and a coboundary is a boundary. -/
 private lemma capCycles_toCycles (i q n : ℕ) (h : i + 1 + q = n)
     (x : (A.linearYonedaObj k M).X i) :
     capCycles k D a (i + 1) q n h ((A.linearYonedaObj k M).toCycles i (i + 1) x) =
-      (-((-1 : ℤ) ^ i) • (E.iCycles n ≫ capChainHom k D a i (q + 1) n (by omega) x)) ≫
+      (-((-1 : ℤ) ^ i) • (E.iCycles n ≫ capChain k D a i (q + 1) n (by omega) x)) ≫
         B'.toCycles (q + 1) q := by
   obtain rfl : n = i + q + 1 := by omega
-  have hd := capChainHom_comp_d D a i q (i + q) rfl x
-  have hx : (A.linearYonedaObj k M).iCycles (i + 1)
-      ((A.linearYonedaObj k M).toCycles i (i + 1) x) = (A.linearYonedaObj k M).d i (i + 1) x :=
-    ConcreteCategory.congr_hom ((A.linearYonedaObj k M).toCycles_i i (i + 1)) x
-  rw [← cancel_mono (B'.iCycles q), Category.assoc, capCycles_i_capChainHom, toCycles_i, hx,
-    Preadditive.zsmul_comp, Category.assoc, hd]
+  have hd := capChain_comp_d (k := k) D a i q (i + q) rfl x
+  rw [← cancel_mono (B'.iCycles q), Category.assoc, capCycles_i, toCycles_i,
+    linearYonedaObj_iCycles_toCycles_apply, Preadditive.zsmul_comp, Category.assoc, hd]
   -- the term `∂x ⌢ φ` vanishes on cycles, leaving the sign algebra
   simp [smul_smul, ← mul_pow]
 
