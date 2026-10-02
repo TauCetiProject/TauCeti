@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Divergence
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
-import TauCeti.Algebra.Order.BigOperators.Sum.Filter
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -57,16 +56,10 @@ theorem schwarzChristoffelBoundary_image_Ici_eq_ray (a e : ι → ℝ) (z₀ : U
       (fun t : ℝ => schwarzChristoffelBoundary a e z₀ p + (t : ℂ)) '' Ici 0 := by
   let B := schwarzChristoffelBoundary a e z₀
   let d : ℝ → ℝ := fun x => ‖B x - B p‖
-  have hsum {x : ℝ} (hx : p ≤ x) : -1 < ∑ i with a i = x, e i :=
-    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ (by norm_num) hp
-      (fun i _ hi => ha i hi) hx
   have hcont : ContinuousOn B (Ici p) :=
-    continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one a e z₀
-      (fun _ hx => hsum hx)
+    continuousOn_schwarzChristoffelBoundary_Ici a e z₀ hp ha
   have hdir {x : ℝ} (hx : p ≤ x) : B x = B p + (d x : ℂ) := by
-    have h := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀
-      (fun i hi hmem => (not_lt_of_ge (ha i hi)) hmem.1) hp (hsum hx)
-      (x := x) (y := p) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
+    have h := schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_le a e z₀ hp ha hx
     have hangle : schwarzChristoffelEdgeAngle a e p = 0 := by
       rw [schwarzChristoffelEdgeAngle_eq_sum_filter]
       have hzero : ∑ i ∈ Finset.univ.filter (fun i => p < a i), e i = 0 :=
@@ -92,6 +85,16 @@ theorem schwarzChristoffelBoundary_image_Ici_eq_ray (a e : ι → ℝ) (z₀ : U
       exact image_congr fun x hx => hdir hx
     _ = _ := by rw [hdimage]
 
+/-- The right outer ray based at a prevertex starts at its corresponding Schwarz--Christoffel
+vertex. -/
+theorem schwarzChristoffelBoundary_image_Ici_eq_ray_prevertex (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (j : ι) (hj : -1 < ∑ i with a i = a j, e i)
+    (ha : ∀ i, e i ≠ 0 → a i ≤ a j) (hS : -1 ≤ ∑ i, e i) :
+    schwarzChristoffelBoundary a e z₀ '' Ici (a j) =
+      (fun t : ℝ => schwarzChristoffelVertex a e z₀ j + (t : ℂ)) '' Ici 0 := by
+  rw [schwarzChristoffelBoundary_image_Ici_eq_ray a e z₀ hj ha hS,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
+
 /-- **The left outer Schwarz--Christoffel edge is an infinite ray.** If the total exponent
 is at least `-1`, all prevertices with nonzero exponent lie at or to the right of `p`, and the
 exponent sum at `p` is greater than `-1`, the boundary map on `Iic p` traces the full ray from
@@ -104,29 +107,12 @@ theorem schwarzChristoffelBoundary_image_Iic_eq_ray (a e : ι → ℝ) (z₀ : U
         (t : ℂ) * Complex.exp ((Real.pi * ∑ i, e i) * Complex.I)) '' Ici 0 := by
   let B := schwarzChristoffelBoundary a e z₀
   let d : ℝ → ℝ := fun x => ‖B p - B x‖
-  let u : ℂ := Complex.exp (((Real.pi * ∑ i, e i : ℝ) : ℂ) * Complex.I)
-  have hsum {x : ℝ} (hx : x ≤ p) : -1 < ∑ i with a i = x, e i :=
-    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
-      Finset.univ (by norm_num) hp (fun i _ hi => ha i hi) hx
+  let u : ℂ := Complex.exp ((Real.pi * ∑ i, e i) * Complex.I)
   have hcont : ContinuousOn B (Iic p) :=
-    continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one a e z₀
-      (fun _ hx => hsum hx)
+    continuousOn_schwarzChristoffelBoundary_Iic a e z₀ hp ha
   have hdir {x : ℝ} (hx : x ≤ p) : B x = B p - (d x : ℂ) * u := by
-    rcases hx.eq_or_lt with rfl | hxp
-    · simp [d]
-    have h := schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀
-      (fun i hi hmem => (not_lt_of_ge (ha i hi)) hmem.2) (hsum hx) hp
-      (x := p) (y := x) ⟨hx, le_rfl⟩ ⟨le_rfl, hx⟩ hx
-    have hangle : schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
-      rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_filter]
-      congr 1
-      apply Finset.sum_congr rfl
-      intro i _
-      by_cases hi : e i = 0
-      · simp [hi]
-      · simp [hxp.trans_le (ha i hi)]
-    rw [hangle] at h
-    have h' : B p - B x = (d x : ℂ) * u := h
+    have h' : B p - B x = (d x : ℂ) * u :=
+      schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_ge a e z₀ hp ha hx
     linear_combination -h'
   have hdt : Tendsto d atBot atTop := by
     rw [tendsto_norm_atTop_iff_cobounded]
@@ -142,7 +128,18 @@ theorem schwarzChristoffelBoundary_image_Iic_eq_ray (a e : ι → ℝ) (z₀ : U
     B '' Iic p = (fun t : ℝ => B p - (t : ℂ) * u) '' (d '' Iic p) := by
       rw [← image_comp]
       exact image_congr fun x hx => hdir hx
-    _ = _ := by simp only [hdimage, B, u, Complex.ofReal_mul]
+    _ = _ := by simp only [hdimage, B, u]
+
+/-- The left outer ray based at a prevertex starts at its corresponding Schwarz--Christoffel
+vertex. -/
+theorem schwarzChristoffelBoundary_image_Iic_eq_ray_prevertex (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (j : ι) (hj : -1 < ∑ i with a i = a j, e i)
+    (ha : ∀ i, e i ≠ 0 → a j ≤ a i) (hS : -1 ≤ ∑ i, e i) :
+    schwarzChristoffelBoundary a e z₀ '' Iic (a j) =
+      (fun t : ℝ => schwarzChristoffelVertex a e z₀ j -
+        (t : ℂ) * Complex.exp ((Real.pi * ∑ i, e i) * Complex.I)) '' Ici 0 := by
+  rw [schwarzChristoffelBoundary_image_Iic_eq_ray a e z₀ hj ha hS,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
 
 /-- **An unbounded Schwarz--Christoffel boundary is a chain of finite sides and two rays.**
 For ordered prevertices with integrable finite exponent sums and total exponent at least `-1`,
@@ -176,13 +173,10 @@ theorem range_schwarzChristoffelBoundary_of_neg_one_le_sum {n : ℕ}
   have hbounded (i : Fin n) := schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
     (ha i.castSucc_le_succ) (fun j _ => not_mem_Ioo_castSucc_succ a ha i j)
     (hfinite i.castSucc) (hfinite i.succ)
-  have hleft := schwarzChristoffelBoundary_image_Iic_eq_ray a e z₀ (hfinite 0)
+  have hleft := schwarzChristoffelBoundary_image_Iic_eq_ray_prevertex a e z₀ 0 (hfinite 0)
     (fun i _ => ha i.zero_le) hS
-  have hright := schwarzChristoffelBoundary_image_Ici_eq_ray a e z₀ (hfinite (Fin.last n))
-    (fun i _ => ha i.le_last) hS
-  rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)] at hleft
-  rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n)
-    (hfinite (Fin.last n))] at hright
+  have hright := schwarzChristoffelBoundary_image_Ici_eq_ray_prevertex a e z₀ (Fin.last n)
+    (hfinite (Fin.last n)) (fun i _ => ha i.le_last) hS
   rw [← image_univ, hcover, image_union, image_union, image_iUnion, hleft, hright]
   simp_rw [hbounded]
 
