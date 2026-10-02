@@ -154,6 +154,22 @@ theorem apply_opDualEvalEquiv_symm [Module.Finite A P] [Module.Projective A P]
     φ ((opDualEvalEquiv A P).symm F) = F φ :=
   LinearMap.congr_fun ((opDualEvalEquiv A P).apply_symm_apply F) φ
 
+/-- Taking opposite duals identifies maps into a finite projective module with maps out of
+its opposite dual. The source module need not be finite or projective. -/
+theorem opDual_lcomp_bijective [Module.Finite A P] [Module.Projective A P] :
+    Function.Bijective (fun f : Q →ₗ[A] P ↦ f.lcomp Aᵐᵒᵖ A) := by
+  constructor
+  · intro f g h
+    ext x
+    apply (opDualEval_bijective A P).injective
+    ext φ
+    exact LinearMap.congr_fun (LinearMap.congr_fun h φ) x
+  · intro h
+    refine ⟨(opDualEvalEquiv A P).symm.toLinearMap ∘ₗ h.lcomp A A ∘ₗ
+      opDualEval A Q, ?_⟩
+    ext φ x
+    simp [LinearMap.lcomp_apply']
+
 variable {P}
 
 /-- Evaluation carries the image of a map onto the image of its opposite double dual when
