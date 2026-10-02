@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Combinatorics.Young.YoungDiagram
+-- The pigeonhole principle for the labels of a column.
+public import Mathlib.Data.Fintype.Pigeonhole
 public import TauCeti.Combinatorics.Young.Diagram
 
 /-!
@@ -18,7 +20,10 @@ A `μ`-tableau is a bijective filling `t : ↥μ.cells ≃ Fin μ.card` of the c
 label, and identifies the labels lying in a given row, respectively column, with the cells of that
 row, respectively column, of `μ`; counting those labels recovers the row lengths of `μ`
 (`YoungTableau.card_filter_rowIndex_eq`) and their partial sums
-(`YoungTableau.card_filter_rowIndex_lt`).  On top of that it proves the counting lemma
+(`YoungTableau.card_filter_rowIndex_lt`), and the column lengths
+(`YoungTableau.card_filter_colIndex_eq`). The latter gives the pigeonhole lemma
+`YoungTableau.exists_ne_and_apply_eq_of_lt_colLen`: a filling by fewer values than there are rows
+repeats a value on the first column. On top of that it proves the counting lemma
 `YoungTableau.colIndex_lt_rowLen_of_injective`: if the row of a label together with the column of
 its image under a permutation `u` of the labels determine the label, then that pair of indices is
 again a cell of `μ`.  A second counting lemma,
@@ -189,6 +194,20 @@ theorem card_filter_colIndex_eq (t : YoungTableau μ) (j : ℕ) :
     (Finset.univ.filter fun y => colIndex t y = j).card = μ.colLen j := by
   rw [← Fintype.card_subtype, Fintype.card_congr (colFiberEquiv t j), Fintype.card_coe]
   exact (YoungDiagram.colLen_eq_card μ).symm
+
+/-- When `μ` has more than `n` rows, any index function `p : Fin μ.card → Fin n` repeats a value on
+the first column of `t`: two distinct labels of that column carry the same basis index. -/
+theorem exists_ne_and_apply_eq_of_lt_colLen (t : YoungTableau μ) {n : ℕ}
+    (hn : n < μ.colLen 0) (p : Fin μ.card → Fin n) :
+    ∃ a b : Fin μ.card, colIndex t a = 0 ∧ colIndex t b = 0 ∧ a ≠ b ∧ p a = p b := by
+  classical
+  have hcard : Fintype.card {ℓ : Fin μ.card // colIndex t ℓ = 0} = μ.colLen 0 := by
+    rw [Fintype.card_subtype]
+    exact card_filter_colIndex_eq t 0
+  obtain ⟨a, b, hab, hpab⟩ :=
+    Fintype.exists_ne_map_eq_of_card_lt (fun ℓ : {ℓ : Fin μ.card // colIndex t ℓ = 0} => p ℓ)
+      (by rw [hcard, Fintype.card_fin]; exact hn)
+  exact ⟨a, b, a.2, b.2, fun h => hab (Subtype.ext h), hpab⟩
 
 /-- The labels of a tableau lying in one of its first `k` rows are as many as the cells of the
 shape in its first `k` rows. -/

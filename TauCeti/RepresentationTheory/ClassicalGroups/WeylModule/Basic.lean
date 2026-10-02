@@ -80,6 +80,9 @@ setting the roadmap works in.
   the symmetrizer kills a monomial basis vector that repeats a basis index on a column, and
   `...tensorPowerBasis_rowFilling_ne_zero`: it does not kill the one indexed by the row filling.
   These are the two halves of the vanishing criterion at the level of a single basis vector.
+* `TauCeti.YoungTableau.permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule`
+  states that the image of any monomial basis vector under the symmetrizer belongs to the Weyl
+  module.
 
 ## References
 
@@ -306,20 +309,6 @@ theorem weylModule_ne_bot [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0
     (k := k) t (rowFilling t hn)
   rw [hbot', Submodule.mem_bot] at hmem
   exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero t hn hmem
-
-/-- When `μ` has more than `n` rows, any index function `p : Fin μ.card → Fin n` repeats a value on
-the first column of `t`: two distinct labels of that column carry the same basis index. -/
-private theorem exists_ne_and_apply_eq_of_lt_colLen (t : YoungTableau μ) (hn : n < μ.colLen 0)
-    (p : Fin μ.card → Fin n) :
-    ∃ a b : Fin μ.card, colIndex t a = 0 ∧ colIndex t b = 0 ∧ a ≠ b ∧ p a = p b := by
-  classical
-  have hcard : Fintype.card {ℓ : Fin μ.card // colIndex t ℓ = 0} = μ.colLen 0 := by
-    rw [Fintype.card_subtype]
-    exact card_filter_colIndex_eq t 0
-  obtain ⟨a, b, hab, hpab⟩ :=
-    Fintype.exists_ne_map_eq_of_card_lt (fun ℓ : {ℓ : Fin μ.card // colIndex t ℓ = 0} => p ℓ)
-      (by rw [hcard, Fintype.card_fin]; exact hn)
-  exact ⟨a, b, a.2, b.2, fun h => hab (Subtype.ext h), hpab⟩
 
 /-- Transposing two labels of the same column that `p` sends to the same basis index fixes the
 monomial basis vector at `p` while negating `c_t`, so the symmetrizer's value there is its own

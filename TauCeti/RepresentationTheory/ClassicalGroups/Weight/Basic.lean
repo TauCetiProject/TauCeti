@@ -37,7 +37,8 @@ where the coefficients enter: over `𝔽₂` the torus is trivial
 (`TauCeti.diagonalTorus_eq_bot`), every `l` gives the same character, and the whole module is a
 weight space for every weight at once, so nothing is independent. Rather than fix the coefficients,
 every statement below that separates weights takes `Function.Injective (weightChar k)` as a
-hypothesis, and `TauCeti.weightChar_injective` discharges it over an infinite field.
+hypothesis. `TauCeti.weightChar_injective` discharges it over an infinite field, and
+`TauCeti.weightChar_injective_of_algebraRat` over a field that is a `ℚ`-algebra.
 
 The definitions themselves need only a commutative ring, and are stated there.
 
@@ -96,13 +97,6 @@ open Matrix
 universe u v
 
 namespace TauCeti
-
-/-- The weight characters of a field that is a `ℚ`-algebra separate weights: such a field has
-characteristic zero, hence infinitely many elements. -/
-theorem weightChar_injective_of_algebraRat (k : Type u) [Field k] [Algebra ℚ k]
-    {κ : Type*} [Fintype κ] : Function.Injective (weightChar k (κ := κ)) := by
-  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
-  exact weightChar_injective
 
 section CommRing
 

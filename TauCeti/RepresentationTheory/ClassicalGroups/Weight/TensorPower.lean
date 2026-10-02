@@ -75,6 +75,8 @@ decomposition.
   are not contents.
 * `TauCeti.weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq`: **the weights of `(kⁿ)^{⊗d}` are
   the nonnegative integer vectors of total degree `d`**, the same weights as `Symᵈ(kⁿ)`.
+* `TauCeti.nonneg_and_sum_eq_of_weightSpace_tensorPowerRep_subrepresentation_ne_bot`: every weight
+  of a subrepresentation is also nonnegative of total degree `d`.
 * `TauCeti.finrank_weightSpace_tensorPowerRep`: **the multiplicity of a weight is the number of
   tuples of that content.**
 * `TauCeti.map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le`: **the group algebra of the
@@ -82,7 +84,8 @@ decomposition.
 
 Of these, `TauCeti.isInternal_weightSpace_tensorPowerRep`,
 `TauCeti.weightSpace_tensorPowerRep_eq_span_image`, `TauCeti.weightSpace_tensorPowerRep_eq_bot`,
-`TauCeti.weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq` and
+`TauCeti.weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq`,
+`TauCeti.nonneg_and_sum_eq_of_weightSpace_tensorPowerRep_subrepresentation_ne_bot` and
 `TauCeti.finrank_weightSpace_tensorPowerRep` carry the weight-separation hypothesis described
 above; the rest hold over any commutative ring.
 
@@ -209,6 +212,16 @@ theorem weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq [Nontrivial k]
   refine ⟨fun ⟨f, hf⟩ => ⟨TauCeti.Sym.ofFn f, hf.symm⟩, fun ⟨s, hs⟩ => ?_⟩
   obtain ⟨f, rfl⟩ := TauCeti.Sym.ofFn_surjective s
   exact ⟨f, hs.symm⟩
+
+/-- **Every weight of a subrepresentation of `(kⁿ)^{⊗d}` is nonnegative of total degree `d`**:
+it is a weight of the ambient tensor power. -/
+theorem nonneg_and_sum_eq_of_weightSpace_tensorPowerRep_subrepresentation_ne_bot [Nontrivial k]
+    (hchar : Function.Injective (weightChar k (κ := Fin n)))
+    (S : Subrepresentation (tensorPowerRep k n d)) {l : Fin n → ℤ}
+    (hl : weightSpace (W := S.toSubmodule) S.toRepresentation l ≠ ⊥) :
+    (∀ i, 0 ≤ l i) ∧ ∑ i, l i = d := by
+  refine (weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq hchar l).mp fun hbot => hl ?_
+  rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, hbot, inf_bot_eq]
 
 end IsCancelMulZero
 

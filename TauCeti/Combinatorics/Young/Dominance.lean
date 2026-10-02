@@ -23,7 +23,8 @@ labels as the column is long.  Summing over the columns of `t`, the cells of `ν
 rows -- of which there are exactly `min k (colLen j)` in column `j` -- already accommodate `X`,
 so `μ₁ + ⋯ + μ_k ≤ ν₁ + ⋯ + ν_k`.
 
-The counting itself is `YoungDiagram.card_filter_le_sum_take_rowLens`, stated for an
+The counting itself is `YoungDiagram.card_filter_le_sum_take_rowLens` from
+`TauCeti/Combinatorics/Young/Diagram.lean`, stated for an
 arbitrary finite index type carrying a row function and an injection into the cells: this is what
 the tableau statement, where the index type is the set of labels, unfolds to, and it keeps the
 counting free of any tableau bookkeeping.  The lemma is the combinatorial engine behind the
