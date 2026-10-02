@@ -261,6 +261,44 @@ noncomputable def affineE6LoopFunctor :
 theorem affineE6LoopFunctor_obj : (affineE6LoopFunctor k).obj M = affineE6LoopRep M :=
   (rfl)
 
+/-- At the centre, `TauCeti.affineE6LoopFunctor` maps a morphism by the triple product of its
+component at the loop vertex, transported to the functor's vertex spaces. -/
+@[simp]
+theorem affineE6LoopFunctor_map_app_center (φ : M ⟶ N) :
+    ((affineE6LoopFunctor k).map φ).app (Quiver.AffineE6.center : Paths Quiver.AffineE6) =
+      eqToHom ((Functor.congr_obj (affineE6LoopFunctor_obj (M := M)) _).trans
+        affineE6LoopRep_obj_center) ≫
+      ModuleCat.ofHom ((φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom.prodMap
+        ((φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom.prodMap
+          (φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom)) ≫
+      eqToHom ((Functor.congr_obj (affineE6LoopFunctor_obj (M := N)) _).trans
+        affineE6LoopRep_obj_center).symm :=
+  (rfl)
+
+/-- At each inner vertex, `TauCeti.affineE6LoopFunctor` maps a morphism by the double product of
+its component at the loop vertex, transported to the functor's vertex spaces. -/
+@[simp]
+theorem affineE6LoopFunctor_map_app_inner (φ : M ⟶ N) (i : Fin 3) :
+    ((affineE6LoopFunctor k).map φ).app (Quiver.AffineE6.inner i : Paths Quiver.AffineE6) =
+      eqToHom ((Functor.congr_obj (affineE6LoopFunctor_obj (M := M)) _).trans
+        (affineE6LoopRep_obj_inner i)) ≫
+      ModuleCat.ofHom ((φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom.prodMap
+        (φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop)).hom) ≫
+      eqToHom ((Functor.congr_obj (affineE6LoopFunctor_obj (M := N)) _).trans
+        (affineE6LoopRep_obj_inner i)).symm :=
+  (rfl)
+
+/-- At each outer vertex, `TauCeti.affineE6LoopFunctor` maps a morphism by its component at the
+loop vertex, transported to the functor's vertex spaces. -/
+@[simp]
+theorem affineE6LoopFunctor_map_app_outer (φ : M ⟶ N) (i : Fin 3) :
+    ((affineE6LoopFunctor k).map φ).app (Quiver.AffineE6.outer i : Paths Quiver.AffineE6) =
+      eqToHom ((Functor.congr_obj (affineE6LoopFunctor_obj (M := M)) _).trans
+        (affineE6LoopRep_obj_outer i)) ≫ φ.app (Quiver.OneLoop.vertex : Paths Quiver.OneLoop) ≫
+      eqToHom ((Functor.congr_obj (affineE6LoopFunctor_obj (M := N)) _).trans
+        (affineE6LoopRep_obj_outer i)).symm :=
+  (rfl)
+
 /-! ### Full faithfulness -/
 
 section Full
