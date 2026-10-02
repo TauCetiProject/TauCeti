@@ -135,6 +135,16 @@ def repsEquiv (hn : n ≠ 0) :
     · rw [Fin.heq_ext_iff (by simp [Int.natAbs_mul, Int.natAbs_sign_of_ne_zero hn])]
       simp
 
+/-- The factor pair recording a representative `(a b; 0 d)` is `(|a|, |d|)`. -/
+@[simp]
+theorem coe_repsEquiv_apply_fst (hn : n ≠ 0) (A : reps n) :
+    ((repsEquiv hn A).1 : ℕ × ℕ) = ((A.1.1 0 0).natAbs, (A.1.1 1 1).natAbs) := (rfl)
+
+/-- The residue recording a representative `(a b; 0 d)` is `|b|`. -/
+@[simp]
+theorem coe_repsEquiv_apply_snd (hn : n ≠ 0) (A : reps n) :
+    ((repsEquiv hn A).2 : ℕ) = (A.1.1 0 1).natAbs := (rfl)
+
 /-- The matrix represented by a factor pair `(a, d)` and a residue `b` is
 `(a b; 0, sign(n)d)`. -/
 @[simp]

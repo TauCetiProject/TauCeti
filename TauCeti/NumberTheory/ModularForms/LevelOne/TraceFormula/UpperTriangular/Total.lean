@@ -19,8 +19,9 @@ This file sums the individual contribution computed in
 `UpperTriangular/Contribution.lean`.  For a fixed factor pair `ad = n`, the coefficients sum
 to `d - a` when `a < d`, to `1/6` when `a = d`, and to zero when `d < a`.  Thus the full
 upper-triangular contribution is a divisor sum weighted by the Eichler--Selberg polynomial
-`P_{w+2}(a+d,n)`.  This is the hyperbolic/parabolic part that enters the level-one trace
-formula; the other conjugacy types are assembled separately.
+`P_{w+2}(a+d,n)`.  This is an intermediate sum over canonical upper-triangular
+representatives, not over conjugacy classes; it is one ingredient of the assembly of the
+level-one trace formula, in which the conjugacy-type contributions are combined separately.
 
 ## Main result
 
@@ -40,59 +41,48 @@ open Matrix MvPolynomial MulOpposite MonoidAlgebra
 
 namespace TauCeti.TraceFormulaMatrixModule
 
-/-- The coefficient of the representative `(a b; 0 d)` in the positive-diagonal case, written
-with natural-number indices. The extra condition `a ≤ d` in the endpoint branch records that
-the corresponding integral interval is empty when `d < a`. -/
-private def upperTriangularCoefficient (a b d : ℕ) : ℚ :=
-  if 0 < b ∧ b < d - a then 1
-  else if a = d ∧ b = 0 then 1 / 6
-  else if a ≤ d ∧ b ≤ d - a then 1 / 2
-  else 0
-
 /-- For a fixed positive factor pair `(a, d)`, summing the Popa--Zagier coefficients over
 `0 ≤ b < d` gives `d - a`, except that the scalar pair `a = d` has weight `1/6`. -/
-private theorem sum_upperTriangularCoefficient (a d : ℕ) (ha : 0 < a) :
-    ∑ b ∈ Finset.range d, upperTriangularCoefficient a b d =
+private theorem sum_upperTriangularCoeff (a d : ℕ) (ha : 0 < a) :
+    ∑ b ∈ Finset.range d, PopaZagier.upperTriangularCoeff a b d =
       if a < d then ((d - a : ℕ) : ℚ) else if a = d then 1 / 6 else 0 := by
   rcases lt_trichotomy a d with had | rfl | hda
   · simp only [had, ↓reduceIte]
-    have hr : 0 < d - a := Nat.sub_pos_of_lt had
-    obtain ⟨r, hr'⟩ := Nat.exists_eq_succ_of_ne_zero hr.ne'
-    have hsub : Finset.range (d - a + 1) ⊆ Finset.range d := by
+    obtain ⟨r, hr⟩ : ∃ r, d = a + r + 1 := ⟨d - a - 1, by omega⟩
+    have hsub : Finset.range (r + 2) ⊆ Finset.range d := by
       intro b hb
       simp only [Finset.mem_range] at hb ⊢
       omega
     rw [← Finset.sum_subset hsub]
-    · rw [hr', Finset.sum_range_succ, Finset.sum_range_succ']
-      simp only [upperTriangularCoefficient]
+    · -- the two endpoints `b = 0` and `b = d - a` have coefficient `1/2`, the interior `1`
       have hmiddle : ∀ b ∈ Finset.range r,
-          (if 0 < b + 1 ∧ b + 1 < r + 1 then (1 : ℚ)
-            else if a = d ∧ b + 1 = 0 then 1 / 6
-            else if a ≤ d ∧ b + 1 ≤ r + 1 then 1 / 2 else 0) = 1 := by
+          PopaZagier.upperTriangularCoeff a ((b + 1 : ℕ) : ℤ) d = 1 := by
         intro b hb
-        simp only [Finset.mem_range] at hb
-        simp [show b + 1 < r + 1 by omega]
-      simp only [hr']
-      rw [Finset.sum_eq_card_nsmul hmiddle, Finset.card_range]
-      simp [had.ne, had.le, Nat.cast_add, Nat.cast_one]
+        rw [Finset.mem_range] at hb
+        grind [PopaZagier.upperTriangularCoeff]
+      have hfirst : PopaZagier.upperTriangularCoeff a ((0 : ℕ) : ℤ) d = 1 / 2 := by
+        grind [PopaZagier.upperTriangularCoeff]
+      have hlast : PopaZagier.upperTriangularCoeff a ((r + 1 : ℕ) : ℤ) d = 1 / 2 := by
+        grind [PopaZagier.upperTriangularCoeff]
+      have hda : d - a = r + 1 := by omega
+      rw [Finset.sum_range_succ, Finset.sum_range_succ', Finset.sum_congr rfl hmiddle,
+        hfirst, hlast, hda]
+      simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, Nat.cast_add,
+        Nat.cast_one]
       ring
     · intro b hbd hbr
       simp only [Finset.mem_range] at hbd hbr
-      simp [upperTriangularCoefficient, had.ne, show ¬b < d - a by omega,
-        show ¬b ≤ d - a by omega]
-  · simp only [lt_self_iff_false, ↓reduceIte]
+      grind [PopaZagier.upperTriangularCoeff]
+  · simp only [lt_irrefl, ↓reduceIte]
     rw [Finset.sum_eq_single 0]
-    · simp [upperTriangularCoefficient]
-    · intro b hb hb0
-      simp [upperTriangularCoefficient, hb0]
-    · simp [ha]
-  · have hnotlt : ¬a < d := by omega
-    have hne : a ≠ d := by omega
-    have hnad : ¬a ≤ d := by omega
-    simp only [hnotlt, hne, ↓reduceIte]
-    apply Finset.sum_eq_zero
-    intro b hb
-    simp [upperTriangularCoefficient, Nat.sub_eq_zero_of_le hda.le, hne, hnad]
+    · grind [PopaZagier.upperTriangularCoeff]
+    · intro b _ hb0
+      grind [PopaZagier.upperTriangularCoeff]
+    · intro h
+      exact absurd (Finset.mem_range.mpr ha) h
+  · simp only [hda.not_gt, hda.ne', ↓reduceIte]
+    refine Finset.sum_eq_zero fun b _ ↦ ?_
+    grind [PopaZagier.upperTriangularCoeff]
 
 /-- **The summed upper-triangular contribution.** Let `n > 0` and let `w` be even. Summing the
 trace contributions of Popa--Zagier's explicit element over the canonical representatives
@@ -125,7 +115,7 @@ theorem sum_trace_popaZagierElement_single_upperTriangularRep (n w : ℕ) (hn : 
         ∑ x : Σ p : ↥n.divisorsAntidiagonal, Fin p.1.2, contribution (e.symm x) :=
       Fintype.sum_equiv e contribution (fun x ↦ contribution (e.symm x)) fun A ↦ by simp [e]
     _ = ∑ x : Σ p : ↥n.divisorsAntidiagonal, Fin p.1.2,
-        upperTriangularCoefficient x.1.1.1 x.2 x.1.1.2 *
+        PopaZagier.upperTriangularCoeff x.1.1.1 (x.2 : ℕ) x.1.1.2 *
           (Polynomial.dickson 2 (n : ℚ) w).eval ((x.1.1.1 + x.1.1.2 : ℕ) : ℚ) := by
       apply Fintype.sum_congr
       intro x
@@ -137,42 +127,28 @@ theorem sum_trace_popaZagierElement_single_upperTriangularRep (n w : ℕ) (hn : 
         simpa only [e] using FixedDetMatrices.coe_repsEquiv_symm_apply hnZ x
       have hsign : (n : ℤ).sign = 1 := Int.sign_eq_one_of_pos (by exact_mod_cast hn)
       rw [hmatrix, hsign]
-      simp only [Fin.isValue, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one,
-        Matrix.cons_val_fin_one, Matrix.cons_val_zero, Int.natCast_pos, Int.natCast_eq_zero,
-        one_div, Nat.cast_nonneg, true_and, Int.cast_add, Int.cast_natCast,
-        ite_mul, one_mul, zero_mul, Nat.cast_add, upperTriangularCoefficient]
-      by_cases had : x.1.1.1 ≤ x.1.1.2
-      · have hsub : (x.1.1.2 : ℤ) - x.1.1.1 = (x.1.1.2 - x.1.1.1 : ℕ) :=
-          (Int.ofNat_sub had).symm
-        rw [hsub]
-        norm_cast
-        simp [had]
-      · have hda : x.1.1.2 < x.1.1.1 := Nat.lt_of_not_ge had
-        have hne : x.1.1.1 ≠ x.1.1.2 := Nat.ne_of_gt hda
-        have hnotlt : ¬(x.2 : ℤ) < (x.1.1.2 : ℤ) - x.1.1.1 := by omega
-        have hnotle : ¬(x.2 : ℤ) ≤ (x.1.1.2 : ℤ) - x.1.1.1 := by omega
-        simp [had, hne, hnotlt, hnotle, Nat.sub_eq_zero_of_le hda.le]
+      simp
     _ = ∑ p : ↥n.divisorsAntidiagonal,
         (if p.1.1 < p.1.2 then ((p.1.2 - p.1.1 : ℕ) : ℚ)
           else if p.1.1 = p.1.2 then 1 / 6 else 0) *
             (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ) := by
       rw [Fintype.sum_sigma' (fun (p : ↥n.divisorsAntidiagonal) (b : Fin p.1.2) ↦
-        upperTriangularCoefficient p.1.1 b p.1.2 *
+        PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
           (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ))]
       apply Fintype.sum_congr
       intro p
       have ha : 0 < p.1.1 :=
         Nat.pos_of_ne_zero (Nat.left_ne_zero_of_mem_divisorsAntidiagonal p.2)
       calc
-        ∑ b : Fin p.1.2, upperTriangularCoefficient p.1.1 b p.1.2 *
+        ∑ b : Fin p.1.2, PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
             (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ) =
-            ∑ b ∈ Finset.range p.1.2, upperTriangularCoefficient p.1.1 b p.1.2 *
+            ∑ b ∈ Finset.range p.1.2, PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
               (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ) :=
           by simpa using Fin.sum_univ_eq_sum_range (fun b : ℕ ↦
-            upperTriangularCoefficient p.1.1 b p.1.2 *
+            PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
               (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ)) p.1.2
         _ = _ := by
-          rw [← Finset.sum_mul, sum_upperTriangularCoefficient p.1.1 p.1.2 ha]
+          rw [← Finset.sum_mul, sum_upperTriangularCoeff p.1.1 p.1.2 ha]
     _ = _ := by
       simpa using n.divisorsAntidiagonal.sum_coe_sort (fun p ↦
         (if p.1 < p.2 then ((p.2 - p.1 : ℕ) : ℚ)
