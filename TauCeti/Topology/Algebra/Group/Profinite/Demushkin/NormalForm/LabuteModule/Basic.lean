@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Orientation
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.CharacterKernel
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationModule
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Module
 
 /-!
 # Labute's module of the procyclic normal forms: the kernel of the orientation and its generators

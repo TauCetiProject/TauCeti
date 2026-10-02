@@ -8,6 +8,7 @@ module
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import TauCeti.Algebra.Homology.Periodic.Duplex
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 /-!
 # Reducing matrix factorizations to two-periodic complexes
@@ -148,16 +149,14 @@ instance baseChangeFunctor_additive (f : S →+* T) :
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       let _ : Algebra S T := f.toAlgebra
       apply ModuleCat.hom_ext
-      -- The even component is the base change of the underlying sum of linear maps.
-      change (g.hom.f₀.hom.hom + h.hom.f₀.hom.hom).baseChange T =
-        g.hom.f₀.hom.hom.baseChange T + h.hom.f₀.hom.hom.baseChange T
+      simp only [baseChangeFunctor_map_f₀, ObjectProperty.add_hom, CurvedDuplex.add_f₀,
+        Functor.map_add]
       exact LinearMap.baseChange_add _ _
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       let _ : Algebra S T := f.toAlgebra
       apply ModuleCat.hom_ext
-      -- The odd component has the same underlying base-change formula.
-      change (g.hom.f₁.hom.hom + h.hom.f₁.hom.hom).baseChange T =
-        g.hom.f₁.hom.hom.baseChange T + h.hom.f₁.hom.hom.baseChange T
+      simp only [baseChangeFunctor_map_f₁, ObjectProperty.add_hom, CurvedDuplex.add_f₁,
+        Functor.map_add]
       exact LinearMap.baseChange_add _ _
 
 /-- Extension of scalars along a map killing the potential sends a finite-projective matrix

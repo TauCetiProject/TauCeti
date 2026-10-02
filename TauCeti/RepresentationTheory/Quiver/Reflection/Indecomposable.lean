@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Representation
 public import TauCeti.RepresentationTheory.Quiver.Representation.Simple
+import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 
 /-!
 # Reflecting an indecomposable representation at a sink
@@ -55,6 +56,9 @@ the first condition vacuous instead.
   `TauCeti.nonempty_iso_simpleRep_of_forall_subsingleton`: an indecomposable representation
   concentrated at a vertex with no nontrivial closed path is a line there, hence isomorphic to the
   vertex simple.
+* `TauCeti.nonempty_iso_of_forall_subsingleton`: two such representations concentrated at the same
+  vertex are isomorphic; unlike the comparison with the vertex simple, this needs no restriction
+  on universes.
 * `TauCeti.incomingSum_surjective_of_indecomposable`: **the sum of the arrows into a sink is onto
   for every indecomposable representation not isomorphic to the vertex simple there.**
 * `TauCeti.dimVector_reflectRep_of_indecomposable`: consequently the reflection at a sink acts on
@@ -371,6 +375,35 @@ theorem dimVector_eq_single_of_forall_subsingleton [DecidableEq Q]
   rcases eq_or_ne j i with rfl | hj
   · rw [Pi.single_eq_same, hone, Nat.cast_one]
   · rw [Pi.single_eq_of_ne hj, hzero j hj, Nat.cast_zero]
+
+/-- **Two indecomposable representations concentrated at the same vertex are isomorphic**, provided
+that vertex carries no closed path but the trivial one. Each is a line at that vertex and zero
+elsewhere, and no arrow joins the vertex to itself, so any linear isomorphism of the two lines is an
+isomorphism of representations. -/
+theorem nonempty_iso_of_forall_subsingleton
+    (hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
+    {N : QuiverRep.{u, v, w, max v w x} k Q} (hM : Indecomposable M) (hN : Indecomposable N)
+    (hMi : ∀ a : Q, a ≠ i → Subsingleton (M.obj a))
+    (hNi : ∀ a : Q, a ≠ i → Subsingleton (N.obj a)) : Nonempty (M ≅ N) := by
+  classical
+  obtain ⟨y, hy, hyspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM hMi
+  obtain ⟨z, hz, hzspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hN hNi
+  have hy1 : Module.finrank k (M.obj i) = 1 := (finrank_eq_one_iff_of_nonzero y hy).mpr hyspan
+  have hz1 : Module.finrank k (N.obj i) = 1 := (finrank_eq_one_iff_of_nonzero z hz).mpr hzspan
+  have := Module.finite_of_finrank_eq_succ hy1
+  have := Module.finite_of_finrank_eq_succ hz1
+  let e : M.obj i ≅ N.obj i := (LinearEquiv.ofFinrankEq _ _ (hy1.trans hz1.symm)).toModuleIso
+  refine ⟨Paths.liftNatIso (fun a ↦ if h : a = i then
+      eqToIso (congrArg M.obj h) ≪≫ e ≪≫ eqToIso (congrArg N.obj h).symm
+    else (@ModuleCat.isZero_of_subsingleton k _ (M.obj a) (hMi a h)).iso
+      (@ModuleCat.isZero_of_subsingleton k _ (N.obj a) (hNi a h))) fun {a b} f ↦ ?_⟩
+  -- an arrow either starts away from `i`, where `M` vanishes, or ends away from `i`, where `N`
+  -- vanishes: it cannot be a loop at `i`
+  rcases eq_or_ne a i with rfl | ha
+  · rcases eq_or_ne b a with rfl | hb
+    · exact absurd (congrArg Quiver.Path.length (hloop f.toPath)) (by simp)
+    · exact (@ModuleCat.isZero_of_subsingleton k _ (N.obj b) (hNi b hb)).eq_of_tgt _ _
+  · exact (@ModuleCat.isZero_of_subsingleton k _ (M.obj a) (hMi a ha)).eq_of_src _ _
 
 end Idempotents
 

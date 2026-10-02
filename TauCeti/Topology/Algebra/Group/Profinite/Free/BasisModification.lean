@@ -44,6 +44,11 @@ up to `λ_{m+2}(F)`, and the commutator `⁅w_i, x_i⁆` lies in `λ_{m+1}(F)` a
 class in `gr_{m+1}(F)`. That term is the trace, in every degree, of the failure of additivity of
 `π` on `gr_0(F)` at `p = 2`.
 
+At level `m = 0`, where `θ_w` is an arbitrary continuous endomorphism of `F`, the class of
+`r⁻¹ * θ_w r` in `gr_1(F)` is still a function of the classes `ω_i ∈ gr_0(F)` alone, but a
+quadratic one; that map and its polarization identity are in
+`TauCeti.Topology.Algebra.Group.Profinite.Free.BasisModification.LevelZero`.
+
 The image of `δ` is the subspace of `gr_{m+1}(F)` that the successive-approximation arguments of
 the classification of Demushkin groups compare with `gr_{m+1}(F)`; there `m + 1` is the modulus of
 the normal-form congruence, and the classes `ω_i` are the level-`m` basis corrections.

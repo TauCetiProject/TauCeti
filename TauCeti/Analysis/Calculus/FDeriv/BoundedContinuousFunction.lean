@@ -59,10 +59,10 @@ open scoped NNReal BoundedContinuousFunction
 
 namespace BoundedContinuousFunction
 
-variable {α 𝕜 X Y : Type*} [TopologicalSpace α] [RCLike 𝕜]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-  {G : X → Y} {C : ℝ≥0} {G' : X → X →L[𝕜] Y} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}
-  {Φ : α →ᵇ (X →L[𝕜] Y)}
+section PseudoMetricSpace
+
+variable {α X : Type*} [TopologicalSpace α] [PseudoMetricSpace X] {s : Set X} {f₀ : α →ᵇ X}
+  {δ : ℝ}
 
 /-- If the values of `f₀` stay `δ > 0` inside `s`, then so do the values of every function
 uniformly within `δ / 2` of `f₀`, with the margin `δ / 2`. -/
@@ -70,6 +70,13 @@ private theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, b
     (hf : f ∈ ball f₀ (δ / 2)) (t : α) : ball (f t) (δ / 2) ⊆ s :=
   (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
     (hf₀ t)
+
+end PseudoMetricSpace
+
+variable {α 𝕜 X Y : Type*} [TopologicalSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  {G : X → Y} {C : ℝ≥0} {G' : X → X →L[𝕜] Y} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}
+  {Φ : α →ᵇ (X →L[𝕜] Y)}
 
 /-- Along a function `f` with values in `s`, the derivatives `t ↦ G' (f t)` form a bounded
 continuous family: they are bounded by the Lipschitz constant of `G`. This supplies the family `Φ`
@@ -81,6 +88,8 @@ theorem exists_eq_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt 
   ⟨ofNormedAddCommGroup (fun t ↦ G' (f t)) (hG'.comp_continuous f.continuous hf) C
     fun t ↦ (hGs _ (hf t)).le_of_lipschitz hG, fun _ ↦ rfl⟩
 
+variable [IsRCLikeNormedField 𝕜]
+
 /-- **The derivative of a superposition operator.** Let `G` be Lipschitz, with derivative `G' x`
 at every point `x` of `s`, where `G'` is uniformly continuous on `s`. If the values of `f₀` stay a
 distance `δ > 0` inside `s`, then `f ↦ G ∘ f` is differentiable at `f₀` for the sup norm, with
@@ -89,6 +98,7 @@ derivative `h ↦ (t ↦ G' (f₀ t) (h t))`, that is `applyCLM Φ` for the boun
 theorem hasFDerivAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
     (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
     (hΦ : ∀ t, Φ t = G' (f₀ t)) : HasFDerivAt (comp G hG) (applyCLM Φ) f₀ := by
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   let _ : NormedSpace ℝ X := .restrictScalars ℝ 𝕜 X
   rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
   intro c hc
@@ -148,6 +158,7 @@ private theorem continuousAt_fderiv_comp (hG : LipschitzWith C G)
 theorem hasStrictFDerivAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
     (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
     (hΦ : ∀ t, Φ t = G' (f₀ t)) : HasStrictFDerivAt (comp G hG) (applyCLM Φ) f₀ := by
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   rw [← (hasFDerivAt_comp hG hGs hG' hδ hf₀ hΦ).fderiv]
   exact hasStrictFDerivAt_of_hasFDerivAt_of_continuousAt
     (mem_of_superset (ball_mem_nhds f₀ (half_pos hδ)) fun _ hf ↦

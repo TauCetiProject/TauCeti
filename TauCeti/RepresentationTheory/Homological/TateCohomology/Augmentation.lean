@@ -49,7 +49,7 @@ open CategoryTheory Limits
 
 namespace TauCeti.TateCohomology
 
-open Rep
+open _root_.Rep
 
 variable {k G : Type u} [CommRing k] [Group G] (S : Subgroup G) [Fintype S]
 
@@ -75,7 +75,7 @@ end TauCeti.TateCohomology
 
 namespace TauCeti.groupCohomology
 
-open _root_.groupCohomology Rep
+open _root_.groupCohomology _root_.Rep
 
 variable {k G : Type u} [CommRing k] [Group G]
 

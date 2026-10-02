@@ -26,10 +26,6 @@ The proofs use the description of the functor of points in
 `TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic` and Mathlib's
 `eq_zero_of_pow_eq_zero` for reduced rings.
 
-This develops the worked example `αₚ` in the Tau Ceti reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap), whose standing hypotheses require the
-theory to retain non-smooth and non-reduced group schemes such as `αₚ`.
-
 ## Main declarations
 
 * `TauCeti.AlphaP.pNilpotent_eq_bot_of_isReduced`: the subgroup of `p`-nilpotent

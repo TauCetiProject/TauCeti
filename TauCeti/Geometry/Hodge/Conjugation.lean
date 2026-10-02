@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Basic.Complex.Basic
+public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
@@ -16,6 +17,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Conjugation and maps on complexifications
@@ -73,6 +75,9 @@ models.
 * `TauCeti.Hodge.homLatticeMap` and `TauCeti.Hodge.isBaseChange_homLatticeMap`: the space of
   complex-linear maps between two complexifications, the source lattice being finite free, is a
   complexification of the space of integral linear maps between the lattices.
+* `TauCeti.Hodge.integralMapToComplex_dualTensorHom` and
+  `TauCeti.Hodge.integralMapToComplex_dualTensorHomEquiv_symm`: contraction and its inverse
+  commute with complexification.
 * `TauCeti.Hodge.latticeConjugation_internalHom`: its lattice conjugation is the internal-hom
   conjugation, and `TauCeti.Hodge.integralMapToComplex_lcomp_comp_llcomp` says that complexifying
   pre- and post-composition by integral maps gives pre- and post-composition by their
@@ -722,6 +727,18 @@ theorem integralMapToComplex_comp (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBase
       integralMapToComplex h₂ ι₃ g ∘ₗ integralMapToComplex h₁ ι₂ f :=
   h₁.algHom_ext _ _ fun x ↦ by simp
 
+/-- Complexification preserves injectivity of integral linear maps, because `ℂ` is flat over
+`ℤ`. -/
+theorem integralMapToComplex_injective (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    {f : V₁ →ₗ[ℤ] V₂} (hf : Function.Injective f) :
+    Function.Injective (integralMapToComplex h₁ ι₂ f) := by
+  have hmodel : integralMapToComplex h₁ ι₂ f =
+      h₂.equiv.toLinearMap ∘ₗ f.baseChange ℂ ∘ₗ h₁.equiv.symm.toLinearMap :=
+    h₁.algHom_ext _ _ fun x ↦ by simp [h₁.equiv_symm_apply, h₂.equiv_tmul]
+  rw [hmodel, LinearMap.coe_comp, LinearMap.coe_comp, LinearMap.baseChange_eq_ltensor]
+  exact h₂.equiv.injective.comp
+    ((Module.Flat.lTensor_preserves_injective_linearMap f hf).comp h₁.equiv.symm.injective)
+
 /-- The complexification of an integral map commutes with lattice-induced conjugation. -/
 @[simp]
 theorem integralMapToComplex_commutes_conj (h₁ : IsBaseChange ℂ ι₁)
@@ -967,6 +984,43 @@ space of integral linear maps between the lattices, when the source lattice is f
 theorem isBaseChange_homLatticeMap (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂) :
     IsBaseChange ℂ (homLatticeMap h₁ ι₂) :=
   h₁.linearMapLeftRight h₂
+
+/-- Complexifying the integral contraction `V* ⊗ W → Hom(V, W)` gives the complex
+contraction between the complexifications. -/
+@[simp]
+theorem integralMapToComplex_dualTensorHom (h₁ : IsBaseChange ℂ ι₁)
+    (h₂ : IsBaseChange ℂ ι₂) :
+    integralMapToComplex
+      (isBaseChange_tensorLatticeMap (isBaseChange_dualLatticeMap h₁) h₂)
+      (homLatticeMap h₁ ι₂)
+      (dualTensorHom ℤ V₁ V₂).toAddMonoidHom.toIntLinearMap = dualTensorHom ℂ W₁ W₂ := by
+  refine (isBaseChange_tensorLatticeMap (isBaseChange_dualLatticeMap h₁) h₂).algHom_ext
+    _ _ fun z ↦ ?_
+  rw [integralMapToComplex_apply_ι]
+  induction z using TensorProduct.inductionOn with
+  | tmul φ y =>
+      refine h₁.algHom_ext _ _ fun x ↦ ?_
+      simp [homLatticeMap_apply, integralMapToComplex_apply_ι, dualTensorHom_apply,
+        dualLatticeMap_apply_ι, Int.cast_smul_eq_zsmul]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Complexifying the inverse integral contraction gives the inverse complex contraction. -/
+@[simp]
+theorem integralMapToComplex_dualTensorHomEquiv_symm [Module.Finite ℂ W₁] (h₁ : IsBaseChange ℂ ι₁)
+    (h₂ : IsBaseChange ℂ ι₂) :
+    integralMapToComplex (isBaseChange_homLatticeMap h₁ h₂)
+      (tensorLatticeMap (dualLatticeMap h₁) ι₂)
+      (dualTensorHomEquiv ℤ V₁ V₂).symm.toLinearMap.toAddMonoidHom.toIntLinearMap =
+        (dualTensorHomEquiv ℂ W₁ W₂).symm.toLinearMap := by
+  refine (isBaseChange_homLatticeMap h₁ h₂).algHom_ext _ _ fun φ ↦ ?_
+  apply (dualTensorHomEquiv ℂ W₁ W₂).injective
+  rw [integralMapToComplex_apply_ι, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  have h := congr($(integralMapToComplex_dualTensorHom h₁ h₂)
+    (tensorLatticeMap (dualLatticeMap h₁) ι₂ ((dualTensorHomEquiv ℤ V₁ V₂).symm φ)))
+  rw [integralMapToComplex_apply_ι] at h
+  rw [← toLinearMap_dualTensorHomEquiv (R := ℂ)] at h
+  simpa only [AddMonoidHom.coe_toIntLinearMap, LinearMap.toAddMonoidHom_coe,
+    dualTensorHom_dualTensorHomEquiv_symm, LinearEquiv.coe_coe] using h.symm
 
 /-- Lattice conjugation on the space of complex-linear maps between two complexifications
 conjugates the input and the output of a map. -/

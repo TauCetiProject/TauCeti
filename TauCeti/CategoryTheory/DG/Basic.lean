@@ -205,7 +205,8 @@ private lemma dgCompMap_assoc (W X Y Z : C) (p q r n : ℤ) (h : p + q + r = n) 
           dgCompMap R W X Z p (q + r) n (by omega) := by
   rw [dgCompMap, dgCompMap, comp_whiskerRight, Category.assoc, ← ι_whiskerRight_assoc,
     ← HomologicalComplex.comp_f, ← e_assoc' (CochainComplex (ModuleCat.{v} R) ℤ) W X Y Z,
-    HomologicalComplex.comp_f, HomologicalComplex.comp_f, ι_ι_associator_hom_assoc,
+    HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    ι_ι_associator_hom_assoc _ _ _ p q r (p + q) (q + r) n rfl rfl h (by omega),
     dgCompMap, dgCompMap]
   simp only [ι_whiskerLeft_assoc]
   rw [← MonoidalCategory.whiskerLeft_comp_assoc]

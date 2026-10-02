@@ -142,7 +142,7 @@ theorem mem_geodesicInterval (h : IsNormalDomain I M p U) (hv : v ∈ U) (ht₀ 
     (ht₁ : t ≤ 1) : t ∈ geodesicInterval I M p v :=
   mem_geodesicInterval_iff_smul_mem_expDomain.2 (h.subset_expDomain (h.smul_mem hv ht₀ ht₁))
 
-variable [T2Space (TangentBundle I M)]
+variable [T2Space M]
 
 /-- The base point belongs to every normal neighbourhood. -/
 theorem self_mem_image (h : IsNormalDomain I M p U) : p ∈ riemannianExp I M p '' U :=
@@ -159,7 +159,7 @@ end IsNormalDomain
 
 /-- **Normal balls exist.**  There is a positive radius such that the ball of that radius around
 the origin of `T_p M` is a normal domain at `p`; its image is a normal neighbourhood of `p`. -/
-theorem exists_isNormalDomain_ball [T2Space (TangentBundle I M)] (p : M) :
+theorem exists_isNormalDomain_ball [T2Space M] (p : M) :
     ∃ r : ℝ, 0 < r ∧ IsNormalDomain I M p (Metric.ball 0 r) := by
   have hd := isLocalDiffeomorphAt_riemannianExp_zero (I := I) p
   -- On the target of the local inverse at the origin, the exponential map is injective.
@@ -181,14 +181,14 @@ theorem exists_isNormalDomain_ball [T2Space (TangentBundle I M)] (p : M) :
 
 /-- The exponential image of a closed tangent ball contained in the exponential domain is
 compact. -/
-theorem isCompact_riemannianExp_image_closedBall [T2Space (TangentBundle I M)]
+theorem isCompact_riemannianExp_image_closedBall [T2Space M]
     (p : M) {r : ℝ} (hr : Metric.closedBall 0 r ⊆ expDomain I M p) :
     IsCompact (riemannianExp I M p '' Metric.closedBall 0 r) := by
   apply (isCompact_closedBall (0 : TangentSpace I p) r).image_of_continuousOn
   exact (continuousOn_riemannianExp (I := I) (M := M) p).mono hr
 
 /-- The exponential image of a tangent sphere contained in the exponential domain is compact. -/
-theorem isCompact_riemannianExp_image_sphere [T2Space (TangentBundle I M)]
+theorem isCompact_riemannianExp_image_sphere [T2Space M]
     (p : M) {r : ℝ} (hr : Metric.sphere 0 r ⊆ expDomain I M p) :
     IsCompact (riemannianExp I M p '' Metric.sphere 0 r) := by
   apply (isCompact_sphere (0 : TangentSpace I p) r).image_of_continuousOn
@@ -202,7 +202,7 @@ compact.
 The nested tangent balls and compact exponential image are inputs to the escape estimate for
 curves leaving a normal neighbourhood. -/
 theorem exists_isNormalDomain_ball_with_isCompact_riemannianExp_image_closedBall
-    [T2Space (TangentBundle I M)] (p : M) :
+    [T2Space M] (p : M) :
     ∃ r R : ℝ, 0 < r ∧ r < R ∧ IsNormalDomain I M p (Metric.ball 0 R) ∧
       Metric.closedBall 0 r ⊆ Metric.ball 0 R ∧
       IsCompact (riemannianExp I M p '' Metric.closedBall 0 r) := by
@@ -255,7 +255,7 @@ omit [I.Boundaryless] in
   obtain ⟨w, hw, rfl⟩ := hq
   rw [h.riemannianLog_riemannianExp hw]
 
-variable [T2Space (TangentBundle I M)]
+variable [T2Space M]
 
 /-- The logarithm vanishes at the base point. -/
 @[simp] theorem riemannianLog_self (h : IsNormalDomain I M p U) :
@@ -263,7 +263,7 @@ variable [T2Space (TangentBundle I M)]
   have h0 := h.riemannianLog_riemannianExp h.zero_mem
   rwa [riemannianExp_zero] at h0
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- **The Riemannian logarithm is smooth** on the normal neighbourhood it inverts. -/
 theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
     ContMDiffOn I 𝓘(ℝ, TangentSpace I p) ∞ (riemannianLog I M p U)
@@ -283,13 +283,13 @@ theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
   have hlog := h.riemannianLog_riemannianExp hzU
   rwa [hzexp] at hlog
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- The Riemannian logarithm is continuous on the normal neighbourhood it inverts. -/
 theorem continuousOn_riemannianLog (h : IsNormalDomain I M p U) :
     ContinuousOn (riemannianLog I M p U) (riemannianExp I M p '' U) :=
   h.contMDiffOn_riemannianLog.continuousOn
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- The exponential map and Riemannian logarithm as a partial diffeomorphism from a normal domain
 to its normal neighbourhood. -/
 def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
@@ -309,22 +309,22 @@ def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
   contMDiffOn_toFun := h.isLocalDiffeomorphOn.contMDiffOn
   contMDiffOn_invFun := h.contMDiffOn_riemannianLog
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- The source of the normal-domain partial diffeomorphism is the normal domain. -/
 @[simp] theorem toPartialDiffeomorph_source (h : IsNormalDomain I M p U) :
     h.toPartialDiffeomorph.source = U := (rfl)
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- The target of the normal-domain partial diffeomorphism is the normal neighbourhood. -/
 @[simp] theorem toPartialDiffeomorph_target (h : IsNormalDomain I M p U) :
     h.toPartialDiffeomorph.target = riemannianExp I M p '' U := (rfl)
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- The forward map of the normal-domain partial diffeomorphism is the exponential map. -/
 @[simp] theorem coe_toPartialDiffeomorph (h : IsNormalDomain I M p U) :
     ⇑h.toPartialDiffeomorph = riemannianExp I M p := (rfl)
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
+omit [I.Boundaryless] [T2Space M] in
 /-- The inverse map of the normal-domain partial diffeomorphism is the Riemannian logarithm. -/
 @[simp] theorem toPartialDiffeomorph_symm_apply (h : IsNormalDomain I M p U) (q : M) :
     h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := (rfl)

@@ -1071,7 +1071,7 @@ theorem orthogonalDet_sq {Q : QuadraticForm R M} (hQ : Q.polarBilin.SeparatingLe
   have hg : BilinForm.IsIsometry Q.polarBilin (g : M ≃ₗ[R] M) :=
     BilinForm.isIsometry_iff.mpr fun x y => polar_apply_of_mem_orthogonalGroup g.2 x y
   have h := hg.det_sq_eq_one (Module.Free.chooseBasis R M)
-    (BilinForm.det_toMatrix_mem_nonZeroDivisors _ hQ)
+    (mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero _).mp hQ))
   ext
   simpa [LinearEquiv.coe_det] using h
 

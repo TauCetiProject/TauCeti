@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.D4.Tripled.PointsFunctor
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
+import TauCeti.Algebra.Lie.D4.Tripled.Generation
 
 /-!
 # Triality on the tripled type-D4 carrier
@@ -28,7 +29,8 @@ carries the represented split torus to itself, relabelling its coordinates by th
 diagram permutation: `weightTorus ≫ γ.hom = relabel σ⁻¹ ≫ weightTorus`, a distinction that
 matters for a permutation of order three. It has order dividing three. On matrix-valued points it
 is conjugation by the permutation matrix of `TauCeti.DynkinType.d4TripledTrialityPerm`, and that
-matrix is compatible with every change of value ring.
+matrix is compatible with every change of value ring. The action on the numbered root subgroups
+already determines it, since those subgroups generate the carrier.
 
 No reductivity, maximality of the represented torus, or identification of the carrier with the
 pinned simply connected group scheme of type `D₄` is asserted here.
@@ -38,6 +40,9 @@ pinned simply connected group scheme of type `D₄` is asserted here.
 * `TauCeti.D4Tripled.trialityAutomorphism`: the triality automorphism of the tripled carrier.
 * `TauCeti.D4Tripled.rootSubgroup_comp_trialityAutomorphism_hom`: its action on the numbered
   simple-root subgroups, `γ ∘ x_k = x_{σ k}`.
+* `TauCeti.D4Tripled.eq_trialityAutomorphism_hom_of_rootSubgroup` and
+  `TauCeti.D4Tripled.eq_trialityAutomorphism_of_rootSubgroup`: that action determines it, among
+  endomorphisms and among automorphisms of the carrier.
 * `TauCeti.D4Tripled.weightTorus_comp_trialityAutomorphism_hom`: its action on the split weight
   torus.
 * `TauCeti.D4Tripled.trialityAutomorphism_pow_three`,
@@ -145,6 +150,24 @@ theorem rootSubgroup_comp_trialityAutomorphism_hom (k : Fin 4 ⊕ Fin 4) :
   rw [rootSubgroup_def, trialityAutomorphism, toralTrialityAutomorphism,
     kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom]
   exact (rootSubgroup_def (trialitySymmetry.rootPerm k)).symm
+
+/-- **Triality has exactly one realization on the carrier.** An endomorphism of the carrier
+carrying each numbered simple-root subgroup to the one at the triality image of its node, with
+the same additive parameter, is the triality automorphism. The numbered root subgroups generate
+the carrier, so these equations leave nothing free; in particular no condition on the represented
+weight torus is needed. -/
+theorem eq_trialityAutomorphism_hom_of_rootSubgroup (φ : groupScheme ⟶ groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ φ = rootSubgroup (trialitySymmetry.rootPerm k)) :
+    φ = trialityAutomorphism.hom :=
+  groupScheme_hom_ext_of_rootSubgroup φ _ fun k => by
+    rw [hroot k, rootSubgroup_comp_trialityAutomorphism_hom]
+
+/-- **The triality automorphism is the unique automorphism of the carrier realizing the
+three-cycle of the outer `D₄` nodes on the numbered simple-root subgroups.** -/
+theorem eq_trialityAutomorphism_of_rootSubgroup (γ : Aut groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ γ.hom = rootSubgroup (trialitySymmetry.rootPerm k)) :
+    γ = trialityAutomorphism :=
+  Iso.ext (eq_trialityAutomorphism_hom_of_rootSubgroup γ.hom hroot)
 
 /-- The triality automorphism relabels the represented split weight torus by the inverse of the
 diagram permutation. -/

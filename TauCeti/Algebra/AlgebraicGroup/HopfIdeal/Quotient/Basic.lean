@@ -140,6 +140,12 @@ lemma mkQuotient_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h 
     (mkQuotient H I).hom h = Ideal.Quotient.mkₐ R I.toIdeal h := by
   rw [hom_mkQuotient, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
 
+/-- The linear map underlying the quotient morphism is the ideal quotient map. -/
+lemma mkQuotient_toLinearMap (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
+    (mkQuotient H I).hom.toLinearMap = (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap := by
+  ext h
+  exact mkQuotient_apply H I h
+
 /-- The kernel of the quotient morphism is the Hopf ideal being quotiented by. -/
 lemma mkQuotient_ker (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     RingHom.ker (mkQuotient H I).hom.toAlgHom.toRingHom = I.toIdeal := by

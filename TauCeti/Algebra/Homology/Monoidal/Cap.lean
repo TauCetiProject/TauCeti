@@ -12,8 +12,9 @@ public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
 /-!
 # Cap products of chains and cochains along a diagonal
 
-Let `C` be a `k`-linear preadditive monoidal category with finite biproducts, let `A`, `B`, `B'`
-and `E` be chain complexes in `C` indexed by `ℕ`, let `D : E ⟶ A ⊗ B` be a chain map (a
+Let `C` be a `k`-linear preadditive monoidal category, let `A`, `B`, `B'` and `E` be chain
+complexes in `C` indexed by `ℕ` such that the tensor product `A ⊗ B` exists, let
+`D : E ⟶ A ⊗ B` be a chain map (a
 *diagonal*), and let `a : M ⊗ B ⟶ B'` be a chain map from the complex `B` tensored on the left by
 an object `M` (an *action* of the coefficient object `M` on `B`).  A cochain `φ : A_p ⟶ M` then
 caps a chain of `E` of degree `n = p + q` to a chain of `B'` of degree `q`: the cap product
@@ -60,9 +61,9 @@ variable {C : Type*} [Category* C]
 
 section Chain
 
-variable [Preadditive C] [HasFiniteBiproducts C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {A B B' E : ChainComplex C ℕ} {M : C} {k : Type*} [Semiring k] [Linear k C]
-  [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
+variable [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C] {A B B' E : ChainComplex C ℕ}
+  [A.HasTensor B] {M : C} {k : Type*} [Semiring k] [Linear k C] [MonoidalLinear k C]
+  (D : E ⟶ HomologicalComplex.tensorObj A B)
   (a : ((tensorLeft M).mapHomologicalComplex _).obj B ⟶ B')
 
 variable (k) in
@@ -108,9 +109,10 @@ if chain maps `e : E' ⟶ E`, `f : A' ⟶ A`, `g : B₁ ⟶ B` and `g' : B₁' �
 `e ≫ D = D' ≫ (f ⊗ g)` and `a' ≫ g' = (M ◁ g) ≫ a`, then pushing forward along `g'` the cap
 product along `D'` and `a'` with the pulled-back cochain is the cap product along `D` and `a` of
 the pushed-forward chain. -/
-lemma capChain_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗ B₁)
+lemma capChain_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} [A'.HasTensor B₁]
+    (D' : E' ⟶ HomologicalComplex.tensorObj A' B₁)
     (a' : ((tensorLeft M).mapHomologicalComplex _).obj B₁ ⟶ B₁') (e : E' ⟶ E) (f : A' ⟶ A)
-    (g : B₁ ⟶ B) (g' : B₁' ⟶ B') (hD : e ≫ D = D' ≫ (f ⊗ₘ g))
+    (g : B₁ ⟶ B) (g' : B₁' ⟶ B') (hD : e ≫ D = D' ≫ HomologicalComplex.tensorHom f g)
     (ha : a' ≫ g' = ((tensorLeft M).mapHomologicalComplex _).map g ≫ a) (p q n : ℕ)
     (h : p + q = n) (φ : A.X p ⟶ M) :
     capChain k D' a' p q n h (f.f p ≫ φ) ≫ g'.f q = e.f n ≫ capChain k D a p q n h φ := by
@@ -122,7 +124,7 @@ lemma capChain_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} (D' : E' ⟶ A
     rw [tensorCochain_comp, ha', tensorCochain_whiskerLeft_comp, Category.id_comp,
       Category.comp_id]
   -- then move `f ⊗ g` through the diagonal
-  have hD' : D'.f n ≫ (f ⊗ₘ g).f n = e.f n ≫ D.f n := by
+  have hD' : D'.f n ≫ (HomologicalComplex.tensorHom f g).f n = e.f n ≫ D.f n := by
     simpa using congrArg (fun F ↦ F.f n) hD.symm
   rw [capChain_apply, capChain_apply, Category.assoc, hg, ← tensorHom_f_comp_tensorCochain,
     reassoc_of% hD']
@@ -131,10 +133,9 @@ end Chain
 
 section Homology
 
-attribute [local instance] Abelian.hasFiniteBiproducts
-
 variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B B' E : ChainComplex C ℕ}
-  {M : C} {k : Type*} [Ring k] [Linear k C] [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
+  [A.HasTensor B] {M : C} {k : Type*} [Ring k] [Linear k C] [MonoidalLinear k C]
+  (D : E ⟶ HomologicalComplex.tensorObj A B)
   (a : ((tensorLeft M).mapHomologicalComplex _).obj B ⟶ B')
 
 variable (k) in
@@ -312,9 +313,10 @@ lemma cap_homologyπ (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M)
 maps `e : E' ⟶ E`, `f : A' ⟶ A`, `g : B₁ ⟶ B` and `g' : B₁' ⟶ B'` satisfy
 `e ≫ D = D' ≫ (f ⊗ g)` and `a' ≫ g' = (M ◁ g) ≫ a`, then capping with the pulled-back class and
 pushing forward along `g'` is pushing forward along `e` and capping with the class. -/
-lemma cap_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗ B₁)
+lemma cap_naturality {A' B₁ B₁' E' : ChainComplex C ℕ} [A'.HasTensor B₁]
+    (D' : E' ⟶ HomologicalComplex.tensorObj A' B₁)
     (a' : ((tensorLeft M).mapHomologicalComplex _).obj B₁ ⟶ B₁') (e : E' ⟶ E) (f : A' ⟶ A)
-    (g : B₁ ⟶ B) (g' : B₁' ⟶ B') (hD : e ≫ D = D' ≫ (f ⊗ₘ g))
+    (g : B₁ ⟶ B) (g' : B₁' ⟶ B') (hD : e ≫ D = D' ≫ HomologicalComplex.tensorHom f g)
     (ha : a' ≫ g' = ((tensorLeft M).mapHomologicalComplex _).map g ≫ a) (p q n : ℕ)
     (h : p + q = n) (α : (A.linearYonedaObj k M).homology p) :
     cap k D' a' p q n h

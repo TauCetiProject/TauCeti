@@ -12,8 +12,9 @@ public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
 /-!
 # Cup products of cochains along a diagonal
 
-Let `C` be a `k`-linear preadditive monoidal category with finite biproducts, let `A`, `B` and `E`
-be chain complexes in `C` indexed by `ℕ`, and let `D : E ⟶ A ⊗ B` be a chain map, a *diagonal*.
+Let `C` be a `k`-linear preadditive monoidal category, let `A`, `B` and `E` be chain complexes in
+`C` indexed by `ℕ` such that the tensor product `A ⊗ B` exists, and let `D : E ⟶ A ⊗ B` be a chain
+map, a *diagonal*.
 Given a pairing `μ : M ⊗ N ⟶ P` of coefficient objects, a cochain `φ : A_p ⟶ M` and a cochain
 `ψ : B_q ⟶ N` have the cup product `φ ⌣ ψ : E_n ⟶ P`, for `p + q = n`: the degree-`n` component
 of `D`, followed by the projection of `(A ⊗ B)_n` onto its summand `A_p ⊗ B_q`, by `φ ⊗ ψ` and by
@@ -33,6 +34,7 @@ diagonal of a space; there `φ ⌣ ψ` evaluates a singular simplex on its front
 * `TauCeti.ChainComplex.cupCochain`: the cup product of cochains.
 * `TauCeti.ChainComplex.d_comp_cupCochain`: the Leibniz rule.
 * `TauCeti.ChainComplex.cupCochain_naturality`: naturality along a map of diagonals.
+* `TauCeti.ChainComplex.cupCycles`: the cup product of cocycles.
 * `TauCeti.ChainComplex.cup`: the cup product on cohomology, with
   `TauCeti.ChainComplex.cup_homologyπ` computing it on classes of cocycles and
   `TauCeti.ChainComplex.cup_naturality` its naturality.
@@ -55,9 +57,9 @@ variable {C : Type*} [Category* C]
 
 section Cochain
 
-variable [Preadditive C] [HasFiniteBiproducts C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {A B E : ChainComplex C ℕ} {M N P : C} {k : Type*} [CommSemiring k] [Linear k C]
-  [MonoidalLinear k C] (D : E ⟶ A ⊗ B) (μ : M ⊗ N ⟶ P)
+variable [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ}
+  [A.HasTensor B] {M N P : C} {k : Type*} [CommSemiring k] [Linear k C] [MonoidalLinear k C]
+  (D : E ⟶ HomologicalComplex.tensorObj A B) (μ : M ⊗ N ⟶ P)
 
 variable (k) in
 /-- **The cup product of cochains** along the diagonal `D : E ⟶ A ⊗ B`: for `p + q = n`, the
@@ -67,14 +69,10 @@ variable (k) in
 def cupCochain (p q n : ℕ) (_ : p + q = n) :
     (A.X p ⟶ M) →ₗ[k] (B.X q ⟶ N) →ₗ[k] (E.X n ⟶ P) :=
   LinearMap.mk₂ k (fun (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) ↦ D.f n ≫ tensorCochain μ φ ψ n)
-    (fun φ φ' ψ ↦ (congrArg (D.f n ≫ ·) (tensorCochain_add_left μ φ φ' ψ n)).trans
-      (Preadditive.comp_add _ _ _ _ _ _))
-    (fun r φ ψ ↦ (congrArg (D.f n ≫ ·) (tensorCochain_smul_left μ r φ ψ n)).trans
-      (Linear.comp_smul _ _ _ _ _ _))
-    (fun φ ψ ψ' ↦ (congrArg (D.f n ≫ ·) (tensorCochain_add_right μ φ ψ ψ' n)).trans
-      (Preadditive.comp_add _ _ _ _ _ _))
-    (fun r φ ψ ↦ (congrArg (D.f n ≫ ·) (tensorCochain_smul_right μ r φ ψ n)).trans
-      (Linear.comp_smul _ _ _ _ _ _))
+    (fun φ φ' ψ ↦ by rw [tensorCochain_add_left, Preadditive.comp_add])
+    (fun r φ ψ ↦ by rw [tensorCochain_smul_left, Linear.comp_smul])
+    (fun φ ψ ψ' ↦ by rw [tensorCochain_add_right, Preadditive.comp_add])
+    (fun r φ ψ ↦ by rw [tensorCochain_smul_right, Linear.comp_smul])
 
 /-- The cup product of cochains is the component of the diagonal followed by the tensor product of
 cochains. -/
@@ -95,8 +93,9 @@ lemma d_comp_cupCochain (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B
 /-- **Naturality of the cup product of cochains** along a map of diagonals: if chain maps
 `e : E' ⟶ E`, `f : A' ⟶ A` and `g : B' ⟶ B` satisfy `e ≫ D = D' ≫ (f ⊗ g)`, then cupping the
 pulled-back cochains along `D'` is pulling back their cup product along `D`. -/
-lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗ B') (e : E' ⟶ E)
-    (f : A' ⟶ A) (g : B' ⟶ B) (hD : e ≫ D = D' ≫ (f ⊗ₘ g)) (p q n : ℕ) (h : p + q = n)
+lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
+    (D' : E' ⟶ HomologicalComplex.tensorObj A' B') (e : E' ⟶ E) (f : A' ⟶ A) (g : B' ⟶ B)
+    (hD : e ≫ D = D' ≫ HomologicalComplex.tensorHom f g) (p q n : ℕ) (h : p + q = n)
     (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) :
     cupCochain k D' μ p q n h (f.f p ≫ φ) (g.f q ≫ ψ) = e.f n ≫ cupCochain k D μ p q n h φ ψ := by
   rw [cupCochain_apply, cupCochain_apply, ← tensorHom_f_comp_tensorCochain, ← Category.assoc,
@@ -106,11 +105,9 @@ end Cochain
 
 section Cohomology
 
-attribute [local instance] Abelian.hasFiniteBiproducts
-
 variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ}
-  {M N P : C} {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
-  (μ : M ⊗ N ⟶ P)
+  [A.HasTensor B] {M N P : C} {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
+  (D : E ⟶ HomologicalComplex.tensorObj A B) (μ : M ⊗ N ⟶ P)
 
 variable (k) in
 /-- The cup product of cochains `TauCeti.ChainComplex.cupCochain`, as a bilinear map of the
@@ -296,14 +293,14 @@ lemma cup_homologyπ (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k M).
     ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl) (cupCyclesHomology k D μ p q n h)
     (toCycles_comp_cupCyclesHomology D μ p q n h)).2 a
   rw [cup, ← cupHomologyLeft_homologyπ]
-  exact congrArg (fun F : (B.linearYonedaObj k N).homology q →ₗ[k]
-    (E.linearYonedaObj k P).homology n ↦ F ((B.linearYonedaObj k N).homologyπ q b)) hfac
+  exact LinearMap.congr_fun hfac _
 
 /-- **Naturality of the cup product on cohomology** along a map of diagonals: if chain maps
 `e : E' ⟶ E`, `f : A' ⟶ A` and `g : B' ⟶ B` satisfy `e ≫ D = D' ≫ (f ⊗ g)`, then the cup product
 along `D'` of the pulled-back classes is the pull-back of the cup product along `D`. -/
-lemma cup_naturality {A' B' E' : ChainComplex C ℕ} (D' : E' ⟶ A' ⊗ B') (e : E' ⟶ E)
-    (f : A' ⟶ A) (g : B' ⟶ B) (hD : e ≫ D = D' ≫ (f ⊗ₘ g)) (p q n : ℕ) (h : p + q = n)
+lemma cup_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
+    (D' : E' ⟶ HomologicalComplex.tensorObj A' B') (e : E' ⟶ E) (f : A' ⟶ A) (g : B' ⟶ B)
+    (hD : e ≫ D = D' ≫ HomologicalComplex.tensorHom f g) (p q n : ℕ) (h : p + q = n)
     (α : (A.linearYonedaObj k M).homology p) (β : (B.linearYonedaObj k N).homology q) :
     cup k D' μ p q n h
         (homologyMap (K := A.linearYonedaObj k M) (L := A'.linearYonedaObj k M)

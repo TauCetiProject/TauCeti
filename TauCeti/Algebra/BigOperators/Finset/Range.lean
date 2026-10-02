@@ -10,6 +10,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Ring
 
 /-!
 # Range reindexing for finite sums
@@ -35,6 +36,8 @@ which reindex a sum over antidiagonals to a rectangle.
 * `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
   `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
+* `two_mul_sum_range_pair`: twice the sum of the products over the pairs `i < j < k` is the
+  square of the sum minus the sum of the squares.
 -/
 
 public section
@@ -250,5 +253,17 @@ theorem sum_range_min_zero {R : Type*} [Semiring R] (a : ℕ → R) (c : R) (r :
   have hidx : 1 + (r + 1) = r + 2 := by omega
   rw [hmin]
   simp [Finset.sum_range_succ, hidx]
+
+
+/-- Twice the sum over pairs `i < j < k` is the square of the sum minus the sum of squares. -/
+theorem two_mul_sum_range_pair {R : Type*} [CommRing R] (k : ℕ) (d : ℕ → R) :
+    2 * ∑ j ∈ range k, ∑ i ∈ range j, d i * d j =
+      (∑ i ∈ range k, d i) ^ 2 - ∑ i ∈ range k, d i ^ 2 := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [sum_range_succ, mul_add, ih, ← sum_mul, sum_range_succ d,
+      sum_range_succ (fun i ↦ d i ^ 2)]
+    ring
 
 end TauCeti

@@ -33,7 +33,8 @@ with `ℓ`-adic component `1` and all other components `0`. It is idempotent, or
 idempotents of the other primes, multiplication by it keeps the `ℓ`-adic component and kills the
 others, and it reduces to `1` modulo every power of `ℓ` and to `0` modulo every `n` prime to `ℓ`.
 In particular `ω_2 * (1 - ω_2) = 0` with both factors nonzero: the profinite integers are not a
-domain (`zHat.not_isDomain`).
+domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `1`
+(`zHat.tendsto_sum_idem`), expressing recovery from the prime factors in the product topology.
 
 ## Main definitions
 
@@ -304,6 +305,24 @@ theorem not_isDomain : ¬ IsDomain (Additive zHat.{u}) := fun _ ↦ by
   · exact idem_ne_one 2 (sub_eq_zero.mp h).symm
 
 end Idempotents
+
+/-- The finite sums of the prime idempotents tend to `1` as the finite set of primes grows. -/
+theorem tendsto_sum_idem :
+    Filter.Tendsto (fun s : Finset Nat.Primes ↦ ∑ p ∈ s, idem.{u} p)
+      Filter.atTop (nhds 1) := by
+  classical
+  have h : Filter.Tendsto
+      (fun s : Finset Nat.Primes ↦ ringEquivPiPadicInt (∑ p ∈ s, idem.{u} p))
+      Filter.atTop (nhds 1) := by
+    refine tendsto_pi_nhds.mpr fun p ↦ ?_
+    apply tendsto_const_nhds.congr'
+    filter_upwards [Filter.eventually_ge_atTop ({p} : Finset Nat.Primes)] with s hs
+    have hp : p ∈ s := hs (Finset.mem_singleton_self p)
+    simp only [ringEquivPiPadicInt_apply, map_sum, component_idem]
+    simp_rw [Nat.Primes.coe_nat_inj]
+    simp [hp]
+  simpa only [Function.comp_def, RingEquiv.symm_apply_apply, map_one] using
+    continuous_ringEquivPiPadicInt_symm.{u}.continuousAt.tendsto.comp h
 
 end zHat
 

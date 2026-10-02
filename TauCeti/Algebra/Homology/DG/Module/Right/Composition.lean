@@ -217,6 +217,47 @@ theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ
   ext x
   simp only [comp_apply]
 
+section gradedCommutator
+
+variable (hMh : LinearMap.IsHomogeneous dM ℳ ℳ 1)
+  (hMl : ∀ {q : ℤ} {x : M}, x ∈ ℳ q → ∀ a : A,
+    dM (op a • x) = op a • dM x + q.negOnePow • (op (d a) • x))
+  (hNh : LinearMap.IsHomogeneous dN ℳN ℳN 1)
+  (hNl : ∀ {q : ℤ} {x : N}, x ∈ ℳN q → ∀ a : A,
+    dN (op a • x) = op a • dN x + q.negOnePow • (op (d a) • x))
+  (hPh : LinearMap.IsHomogeneous dP ℳP ℳP 1)
+  (hPl : ∀ {q : ℤ} {x : P}, x ∈ ℳP q → ∀ a : A,
+    dP (op a • x) = op a • dP x + q.negOnePow • (op (d a) • x))
+
+omit [DirectSum.Decomposition ℳP] in
+/-- The graded commutator satisfies the graded Leibniz rule for composition of cochains, with
+the sign carried by the degree of the outer factor.  Only the degree and the Leibniz rule of the
+module differentials enter, so this is the Leibniz rule of the Hom differentials of both ordinary
+and curved differential graded right modules. -/
+theorem gradedCommutator_comp {p q : ℤ}
+    (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
+    (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q) :
+    gradedCommutator hMh hMl hPh hPl (p + q) (comp g f rfl) =
+      comp (gradedCommutator hNh hNl hPh hPl p g) f (by omega) +
+        p.negOnePow • comp g (gradedCommutator hMh hMl hNh hNl q f) (by omega) := by
+  ext x
+  simp only [gradedCommutator_apply, comp_apply, map_sub, Submodule.coe_add,
+    LinearMap.add_apply, Submodule.coe_smul_of_tower, LinearMap.smul_apply]
+  have hmap (z : N) : g.1 (q.negOnePow • z) = q.negOnePow • g.1 z := by
+    rw [Units.smul_def, map_zsmul, ← Units.smul_def]
+  rw [hmap, Int.negOnePow_add, smul_sub, smul_smul]
+  abel
+
+/-- The identity cochain is closed for the graded commutator. -/
+@[simp]
+theorem gradedCommutator_id :
+    gradedCommutator hMh hMl hMh hMl 0 (id (R := R) (A := A) (ℳ := ℳ)) = 0 := by
+  ext x
+  simp only [gradedCommutator_apply, id_apply, Int.negOnePow_zero, one_smul, sub_self,
+    Submodule.coe_zero, LinearMap.zero_apply]
+
+end gradedCommutator
+
 /-- The differential on homogeneous right-module cochains satisfies the graded Leibniz rule for
 composition. -/
 theorem differential_comp {p q : ℤ}
@@ -226,22 +267,18 @@ theorem differential_comp {p q : ℤ}
       comp (differential (hM := hN) (hN := hP) p g) f (by omega) +
         p.negOnePow • comp g (differential (hM := hM) (hN := hN) q f) (by omega) := by
   ext x
-  simp only [differential_apply, comp_apply, map_sub, Submodule.coe_add,
-    LinearMap.add_apply, Submodule.coe_smul_of_tower, LinearMap.smul_apply]
-  have hmap (z : N) : g.1 (q.negOnePow • z) = q.negOnePow • g.1 z := by
-    rw [Units.smul_def, map_zsmul, ← Units.smul_def]
-  rw [hmap]
-  rw [Int.negOnePow_add]
-  rw [smul_sub, smul_smul]
-  abel
+  simpa only [gradedCommutator_apply, differential_apply, comp_apply, Submodule.coe_add,
+    LinearMap.add_apply, Submodule.coe_smul_of_tower, LinearMap.smul_apply] using
+    LinearMap.congr_fun (congrArg Subtype.val (gradedCommutator_comp hM.isHomogeneous hM.leibniz
+      hN.isHomogeneous hN.leibniz hP.isHomogeneous hP.leibniz g f)) x
 
 /-- The identity cochain is closed. -/
 @[simp]
 theorem differential_id (hM : IsDGRightModule h ℳ dM) :
     differential (hM := hM) (hN := hM) 0 (id (R := R) (A := A) (ℳ := ℳ)) = 0 := by
   ext x
-  simp only [differential_apply, id_apply, Int.negOnePow_zero, one_smul, sub_self,
-    Submodule.coe_zero, LinearMap.zero_apply]
+  simpa only [gradedCommutator_apply, differential_apply] using
+    LinearMap.congr_fun (congrArg Subtype.val (gradedCommutator_id hM.isHomogeneous hM.leibniz)) x
 
 end dgRightModuleCochains
 
