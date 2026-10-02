@@ -68,12 +68,10 @@ theorem reindex_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) (f : μ ≃
   simp [Function.comp_assoc]
 
 /-- Relabelling and then applying the inverse relabelling recovers the code. -/
-@[simp]
 theorem reindex_reindex_symm (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
     reindex (reindex C e) e.symm = C := by simp
 
 /-- Inverse relabelling followed by relabelling recovers the code. -/
-@[simp]
 theorem reindex_symm_reindex (C : AddSubgroup (κ → A)) (e : κ ≃ ι) :
     reindex (reindex C e.symm) e = C := by simp
 
