@@ -27,6 +27,8 @@ a bounded operator with `‖π(f)‖ ≤ C * ‖f‖₁` when `‖π g‖ ≤ C`
 representation of the convolution algebra `L¹(G)`: translating the weight composes with `π`,
 convolution of weights becomes composition of operators, and, for a unitary `π` and an
 inversion-invariant `μ`, adjoints correspond to the involution `f^*(g) = conj (f (-g))`.
+For abelian `G` and an s-finite, left-invariant, inversion-invariant `μ`, the integrated
+operators commute; they are also normal when `π` is unitary.
 
 The integrated form is how a strongly continuous representation is handled by operator algebra:
 the operators `π g` themselves depend on `g` only strongly continuously, but the left translates
@@ -51,9 +53,13 @@ theorem (Folland, Chapter 4).
   operator norm.
 * `ContRepresentation.integratedOperatorL1_convolution`: `π(f₁ ⋆ f₂) = π(f₁) ∘L π(f₂)` on an
   abelian group with a right-invariant measure.
+* `ContRepresentation.commute_integratedOperatorL1`: integrated operators commute on an abelian
+  group with an s-finite, left-invariant, inversion-invariant measure.
 * `ContRepresentation.inner_integratedOperatorL1_apply`: the matrix coefficients
   `⟪w, π(f) v⟫ = ∫ g, f g * ⟪w, π g v⟫ ∂μ`.
 * `ContRepresentation.adjoint_integratedOperatorL1`: `π(f)† = π(f^*)` for a unitary `π`.
+* `ContRepresentation.isStarNormal_integratedOperatorL1`: integrated operators of a unitary
+  abelian-group representation are normal under the same measure hypotheses as commutation.
 * `ContRepresentation.tendsto_integratedOperatorL1_apply`: weights of unit integral and bounded
   `L¹` norm concentrating at `0` form an approximate identity, `π(f i) v → v`.
 * `ContRepresentation.mem_closure_range_integratedOperatorL1_apply`: the integrated form is

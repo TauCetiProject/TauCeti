@@ -39,6 +39,12 @@ vanish on every integrated operator; no such nonvanishing assertion is made here
 
 ## Main statements
 
+* `ContRepresentation.star_integratedOperatorL1ToAlgebra`: the algebra-valued integrated form
+  preserves the involution for unitary representations and inversion-invariant measures.
+* `ContRepresentation.integratedOperatorL1ToAlgebra_convolution`: convolution becomes multiplication
+  in the integrated algebra for abelian groups and right-invariant measures.
+* `ContRepresentation.translatedIntegratedOperatorL1_convolution`: the corresponding product law
+  for translated integrated operators.
 * `ContRepresentation.integratedAlgebra_le_iff`: the universal property among closed star algebras.
 * `ContRepresentation.translatedIntegratedOperatorL1_eq`: translation is integration of a
   translated weight.
@@ -103,6 +109,19 @@ theorem _root_.ContRepresentation.coe_integratedOperatorL1ToAlgebra (f : G →�
     (π.integratedOperatorL1ToAlgebra hcont hbdd μ f : H →L[ℂ] H) =
       π.integratedOperatorL1 hcont hbdd μ f :=
   (rfl)
+
+/-- The algebra-valued integrated form of a unitary representation takes the involuted weight
+to the star of the integrated operator. -/
+@[simp]
+theorem _root_.ContRepresentation.star_integratedOperatorL1ToAlgebra
+    [MeasurableNeg G] [μ.IsNegInvariant] (hπ : ContRepresentation.IsUnitary π)
+    (f : G →₁[μ] ℂ) :
+    star (π.integratedOperatorL1ToAlgebra hcont hbdd μ f) =
+      π.integratedOperatorL1ToAlgebra hcont hbdd μ
+        (star (Lp.compMeasurePreserving Neg.neg (Measure.measurePreserving_neg μ) f)) := by
+  apply Subtype.ext
+  simpa only [StarMemClass.coe_star, ContRepresentation.coe_integratedOperatorL1ToAlgebra,
+    ContinuousLinearMap.star_eq_adjoint] using π.adjoint_integratedOperatorL1 hπ f
 
 /-- The integrated algebra is closed in the operator norm. -/
 @[instance]
@@ -172,12 +191,53 @@ integrated algebra. -/
 theorem _root_.ContRepresentation.continuous_translatedIntegratedOperatorL1
     [IsTopologicalAddGroup G] [BorelSpace G] [μ.InnerRegularCompactLTTop]
     [IsLocallyFiniteMeasure μ] (f : G →₁[μ] ℂ) :
-    Continuous (π.translatedIntegratedOperatorL1 hcont hbdd μ f) :=
-  (π.continuous_comp_integratedOperatorL1 (hcont := hcont) (hbdd := hbdd) f).subtype_mk _
+    Continuous (π.translatedIntegratedOperatorL1 hcont hbdd μ f) := by
+  apply (continuous_congr (π.translatedIntegratedOperatorL1_eq hcont hbdd μ f)).2
+  exact (π.integratedOperatorL1ToAlgebra hcont hbdd μ).continuous.comp
+    (continuous_const.compMeasurePreservingLp
+      (ContinuousMap.curry ⟨fun p : G × G ↦ -p.1 + p.2, by fun_prop⟩).continuous
+      (fun g ↦ measurePreserving_add_left μ (-g)) ENNReal.one_ne_top)
 
 end Translation
 
 end Hilbert
+
+section Convolution
+
+variable {G H : Type*} [AddCommGroup G] [TopologicalSpace G] [MeasurableSpace G]
+  [OpensMeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  [SecondCountableTopologyEither G H]
+  {π : ContRepresentation ℂ (Multiplicative G) H}
+  {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v}
+  {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C} {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+
+/-- The algebra-valued integrated form takes convolution of weights to multiplication. -/
+theorem _root_.ContRepresentation.integratedOperatorL1ToAlgebra_convolution {f₁ f₂ : G → ℂ}
+    (hf₁ : Integrable f₁ μ) (hf₂ : Integrable f₂ μ) :
+    π.integratedOperatorL1ToAlgebra hcont hbdd μ
+        ((hf₁.integrable_convolution (ContinuousLinearMap.mul ℂ ℂ) hf₂).toL1 _) =
+      π.integratedOperatorL1ToAlgebra hcont hbdd μ (hf₁.toL1 f₁) *
+        π.integratedOperatorL1ToAlgebra hcont hbdd μ (hf₂.toL1 f₂) := by
+  apply Subtype.ext
+  simpa only [MulMemClass.coe_mul, ContRepresentation.coe_integratedOperatorL1ToAlgebra,
+    ContinuousLinearMap.mul_def] using π.integratedOperatorL1_convolution hf₁ hf₂
+
+/-- Translating the integrated form of a convolution translates the first factor in its product. -/
+theorem _root_.ContRepresentation.translatedIntegratedOperatorL1_convolution
+    [μ.IsAddLeftInvariant] {f₁ f₂ : G → ℂ} (hf₁ : Integrable f₁ μ) (hf₂ : Integrable f₂ μ)
+    (g : G) :
+    π.translatedIntegratedOperatorL1 hcont hbdd μ
+        ((hf₁.integrable_convolution (ContinuousLinearMap.mul ℂ ℂ) hf₂).toL1 _) g =
+      π.translatedIntegratedOperatorL1 hcont hbdd μ (hf₁.toL1 f₁) g *
+        π.integratedOperatorL1ToAlgebra hcont hbdd μ (hf₂.toL1 f₂) := by
+  apply Subtype.ext
+  simp only [MulMemClass.coe_mul, ContRepresentation.coe_translatedIntegratedOperatorL1,
+    ContRepresentation.coe_integratedOperatorL1ToAlgebra,
+    ContRepresentation.integratedOperatorL1_convolution hf₁ hf₂,
+    ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc]
+
+end Convolution
 
 section Abelian
 
@@ -201,7 +261,7 @@ theorem _root_.ContRepresentation.isMulCommutative_integratedAlgebra
       (by rintro _ ⟨f, rfl⟩; exact π.isStarNormal_integratedOperatorL1 hπ f)
       (by rintro _ ⟨f₁, rfl⟩ _ ⟨f₂, rfl⟩ _; exact π.commute_integratedOperatorL1 f₁ f₂)
   rw [ContRepresentation.integratedAlgebra_def]
-  infer_instance
+  exact StarSubalgebra.isMulCommutative_topologicalClosure _
 
 end Abelian
 
