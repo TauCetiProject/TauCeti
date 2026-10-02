@@ -15,7 +15,8 @@ public import TauCeti.RepresentationTheory.Homological.GroupHomology.LongExactSe
 
 For a subgroup `H` of a finite group `G`, Tate corestriction commutes with the connecting map
 of every short exact sequence of representations, from degree `r` to degree `r + 1` for
-`r < 0`. This includes the norm boundary from degree minus one to degree zero.
+`r < 0`. This includes the norm boundary from degree minus one to degree zero. When both
+degrees are at most `-2`, the compatibility holds along any homomorphism of finite groups.
 
 In negative degrees, the canonical comparison with group homology intertwines corestriction
 with the map induced by subgroup inclusion. At the norm boundary, the compatibility relates
@@ -29,6 +30,8 @@ whose total degree is zero. No nonnegative-degree compatibility is asserted here
 
 * `TauCeti.TateCohomology.cor_comp_toGroupHomology`: negative corestriction is the covariant
   map on group homology through the canonical comparison.
+* `TauCeti.TateCohomology.δ_comp_negSuccCor`: corestriction along any homomorphism of finite
+  groups commutes with connecting maps whose source and target degrees are at most `-2`.
 * `TauCeti.TateCohomology.δ_comp_cor_neg_one`: corestriction commutes with the norm-boundary
   connecting map.
 * `TauCeti.TateCohomology.δ_comp_cor_of_neg`: corestriction commutes with connecting maps
@@ -108,6 +111,41 @@ theorem δ_comp_cor_neg_one {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
         have hx' : S.f.hom x.1 = Representation.norm (S.X₂.ρ.comp H.subtype) y := hx
         rw [hx', ← Representation.relNorm_apply, Representation.relNorm_norm_apply]
 
+/-- Corestriction along a homomorphism of finite groups commutes with the connecting map
+from degree `-(n+2)` to degree `-(n+1)` when `n > 0`, so both degrees are at most `-2`. -/
+@[reassoc (attr := simp)]
+theorem δ_comp_negSuccCor {H : Type u} [Group H] [Fintype H]
+    {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (f : H →* G) (n : ℕ) [NeZero n] :
+    _root_.TateCohomology.δ ((shortExact_res f).2 hS) (Int.negSucc (n + 1)) ≫
+        negSuccCor S.X₁ f n =
+      negSuccCor S.X₃ f (n + 1) ≫
+        _root_.TateCohomology.δ hS (Int.negSucc (n + 1)) := by
+  -- Follow the restriction argument in
+  -- `TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Delta`, replacing
+  -- homological transfer by the covariant group map and its naturality theorem.
+  -- Both degrees have an isomorphism with group homology, so cancel the target comparison.
+  refine (cancel_mono ((negSuccIso S.X₁ n).hom)).1 ?_
+  calc
+    _ = (negSuccIso (Rep.res f S.X₃) (n + 1)).hom ≫
+        groupHomology.δ ((shortExact_res f).2 hS) (n + 1) n rfl ≫
+          groupHomology.map f (𝟙 (Rep.res f S.X₁)) n := by
+      rw [Category.assoc, negSuccCor_comp_negSuccIso_hom]
+      have hδ := δ_comp_negSuccIso_hom ((shortExact_res f).2 hS) n
+      dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
+      exact (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hδ)
+    _ = (negSuccIso (Rep.res f S.X₃) (n + 1)).hom ≫
+        groupHomology.map f (𝟙 (Rep.res f S.X₃)) (n + 1) ≫
+          groupHomology.δ hS (n + 1) n rfl := by
+      have hδ := TauCeti.groupHomology.δ_naturality f
+        ((shortExact_res f).2 hS) hS (𝟙 (S.map (resFunctor f)))
+        (n + 1) n rfl
+      simp only [ShortComplex.id_τ₁, ShortComplex.id_τ₃,
+        ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
+      exact congrArg (_ ≫ ·) hδ
+    _ = _ := by
+      rw [← negSuccCor_comp_negSuccIso_hom_assoc, Category.assoc]
+      exact congrArg (_ ≫ ·) (δ_comp_negSuccIso_hom hS n).symm
+
 /-- Corestriction commutes with the connecting map below the norm boundary. -/
 private theorem δ_comp_cor_negSucc {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
     (H : Subgroup G) (n : ℕ) :
@@ -115,31 +153,32 @@ private theorem δ_comp_cor_negSucc {S : ShortComplex (Rep R G)} (hS : S.ShortEx
         cor S.X₁ H (Int.negSucc n) =
       cor S.X₃ H (Int.negSucc (n + 1)) ≫
         _root_.TateCohomology.δ hS (Int.negSucc (n + 1)) := by
-  -- Follow the restriction argument in
-  -- `TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Delta`, replacing
-  -- homological transfer by the covariant subgroup map and its naturality theorem.
-  -- The comparison is injective even in degree minus one, so cancel it to prove the Tate square.
-  refine (cancel_mono (toGroupHomology S.X₁ n)).1 ?_
-  calc
-    _ = toGroupHomology (Rep.res H.subtype S.X₃) (n + 1) ≫
-        groupHomology.δ ((shortExact_res H.subtype).2 hS) (n + 1) n rfl ≫
-          groupHomology.map H.subtype (𝟙 (Rep.res H.subtype S.X₁)) n := by
-      rw [Category.assoc, cor_comp_toGroupHomology]
-      have hδ := δ_comp_toGroupHomology ((shortExact_res H.subtype).2 hS) n
-      dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
-      exact (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hδ)
-    _ = toGroupHomology (Rep.res H.subtype S.X₃) (n + 1) ≫
-        groupHomology.map H.subtype (𝟙 (Rep.res H.subtype S.X₃)) (n + 1) ≫
-          groupHomology.δ hS (n + 1) n rfl := by
-      have hδ := TauCeti.groupHomology.δ_naturality H.subtype
-        ((shortExact_res H.subtype).2 hS) hS (𝟙 (S.map (resFunctor H.subtype)))
-        (n + 1) n rfl
-      simp only [ShortComplex.id_τ₁, ShortComplex.id_τ₃,
-        ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
-      exact congrArg (_ ≫ ·) hδ
-    _ = _ := by
-      rw [← cor_comp_toGroupHomology_assoc, Category.assoc]
-      exact congrArg (_ ≫ ·) (δ_comp_toGroupHomology hS n).symm
+  cases n with
+  | succ n =>
+    simpa only [cor_negSucc_succ] using δ_comp_negSuccCor hS H.subtype (n + 1)
+  | zero =>
+    -- The comparison is injective even in degree minus one, so cancel it to prove the Tate square.
+    refine (cancel_mono (toGroupHomology S.X₁ 0)).1 ?_
+    calc
+      _ = toGroupHomology (Rep.res H.subtype S.X₃) (0 + 1) ≫
+          groupHomology.δ ((shortExact_res H.subtype).2 hS) (0 + 1) 0 rfl ≫
+            groupHomology.map H.subtype (𝟙 (Rep.res H.subtype S.X₁)) 0 := by
+        rw [Category.assoc, cor_comp_toGroupHomology]
+        have hδ := δ_comp_toGroupHomology ((shortExact_res H.subtype).2 hS) 0
+        dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
+        exact (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hδ)
+      _ = toGroupHomology (Rep.res H.subtype S.X₃) (0 + 1) ≫
+          groupHomology.map H.subtype (𝟙 (Rep.res H.subtype S.X₃)) (0 + 1) ≫
+            groupHomology.δ hS (0 + 1) 0 rfl := by
+        have hδ := TauCeti.groupHomology.δ_naturality H.subtype
+          ((shortExact_res H.subtype).2 hS) hS (𝟙 (S.map (resFunctor H.subtype)))
+          (0 + 1) 0 rfl
+        simp only [ShortComplex.id_τ₁, ShortComplex.id_τ₃,
+          ShortComplex.map_X₁, ShortComplex.map_X₃] at hδ
+        exact congrArg (_ ≫ ·) hδ
+      _ = _ := by
+        rw [← cor_comp_toGroupHomology_assoc, Category.assoc]
+        exact congrArg (_ ≫ ·) (δ_comp_toGroupHomology hS 0).symm
 
 /-- Tate corestriction commutes with the connecting map from degree `r` to `r + 1` for
 every negative degree `r`, including the boundary from minus one to zero. -/
