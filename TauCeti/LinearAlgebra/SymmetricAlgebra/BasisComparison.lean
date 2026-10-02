@@ -39,6 +39,7 @@ variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R 
 variable {R M} in
 /-- The algebra equivalence induced by a basis sends the generator of `x` to the linear form with
 the coordinates of `x`. -/
+@[simp]
 theorem _root_.SymmetricAlgebra.equivMvPolynomial_ι {ι : Type w} (b : Basis ι R M) (x : M) :
     SymmetricAlgebra.equivMvPolynomial b (SymmetricAlgebra.ι R M x) =
       b.constr R MvPolynomial.X x := by

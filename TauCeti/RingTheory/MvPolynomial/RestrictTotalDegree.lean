@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
 
@@ -23,6 +24,8 @@ a linear statement about polynomials of bounded degree reduces to monomials.
   degree at most `m`.
 * `MvPolynomial.restrictTotalDegree_eq_span`: the monomials of degree at most `m` span the
   polynomials of total degree at most `m`.
+* `TauCeti.MvPolynomial.apply_mem_of_basis`: a bilinear map takes values in a submodule on
+  bounded-degree polynomials if it does so on basis vectors and bounded-degree monomials.
 -/
 
 public section
@@ -55,3 +58,27 @@ theorem restrictTotalDegree_eq_span (m : ℕ) :
   rw [restrictTotalDegree, restrictSupport_eq_span, hs]
 
 end MvPolynomial
+
+namespace TauCeti.MvPolynomial
+
+open _root_.MvPolynomial
+
+variable {σ κ R L M : Type*} [CommSemiring R] [AddCommMonoid L] [Module R L]
+  [AddCommMonoid M] [Module R M]
+
+/-- A bilinear map out of a module and a polynomial algebra takes values in a submodule on
+polynomials of total degree at most `d` if it does so on basis vectors and monomials of degree at
+most `d`. -/
+theorem apply_mem_of_basis (b : Module.Basis κ R L)
+    (Φ : L →ₗ[R] MvPolynomial σ R →ₗ[R] M) (N : Submodule R M) (d : ℕ)
+    (h : ∀ (l : κ) (s : σ →₀ ℕ), s.degree ≤ d → Φ (b l) (monomial s 1) ∈ N)
+    (x : L) {p : MvPolynomial σ R} (hp : p ∈ restrictTotalDegree σ R d) : Φ x p ∈ N := by
+  have hle : Submodule.map₂ Φ (Submodule.span R (Set.range b))
+      (Submodule.span R ((monomial · 1) '' {s : σ →₀ ℕ | s.degree ≤ d})) ≤ N := by
+    rw [Submodule.map₂_span_span, Submodule.span_le]
+    rintro _ ⟨_, ⟨l, rfl⟩, _, ⟨s, hs, rfl⟩, rfl⟩
+    exact h l s hs
+  rw [b.span_eq, ← restrictTotalDegree_eq_span] at hle
+  exact Submodule.map₂_le.1 hle x Submodule.mem_top p hp
+
+end TauCeti.MvPolynomial
