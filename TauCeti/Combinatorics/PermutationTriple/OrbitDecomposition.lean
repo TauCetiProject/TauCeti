@@ -113,7 +113,7 @@ theorem isConnected_restrictToOrbit : (t.restrictToOrbit O).IsConnected := by
     rw [Submonoid.mk_smul, Perm.smul_def, orbitActionHom_apply, hg]
 
 /-- Relabeling the sheets does not change the number of monodromy orbits. -/
--- `simp` rewrites `Nat.card` to `Fintype.card` when a `Fintype` instance is available.
+@[simp]
 theorem card_monodromyOrbit_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     Nat.card (τ • t).MonodromyOrbit = Nat.card t.MonodromyOrbit := by
   rw [MonodromyOrbit, MonodromyOrbit, monodromyGroup_smul]
