@@ -76,7 +76,8 @@ discs (topological sliceness) and for stating the annulus conjecture.
   `TauCeti.IsLocallyFlat.comp_isOpenEmbedding`, `TauCeti.IsLocallyFlat.comp_homeomorph`: invariance
   under open embeddings and homeomorphisms of the ambient space and of the domain.
 * `TauCeti.IsSliceEmbedding.transHomeomorph`: invariance under a homeomorphic change of model
-  space.
+  space, and `TauCeti.IsLocallyFlat.transHomeomorph`, its form for the complementary model of a
+  locally flat embedding.
 * `TauCeti.IsLocallyFlat.comp`: a composite of locally flat embeddings is locally flat, under an
   explicit hypothesis that their flattening charts can be chosen compatibly, and
   `TauCeti.IsLocallyFlat.of_compatible_isSliceChart`, the form of it that assumes only the
@@ -610,6 +611,17 @@ theorem codRestrict (h : IsLocallyFlat F F' f) {V : Set M} (hV : IsOpen V) (hf :
 /-- Local flatness is invariant under a homeomorphism of the ambient space. -/
 theorem homeomorph_comp (h : IsLocallyFlat F F' f) (e : M ≃ₜ P) : IsLocallyFlat F F' (e ∘ f) :=
   IsSliceEmbedding.homeomorph_comp h e
+
+/-- Local flatness only depends on the complementary model up to a homeomorphism fixing the
+origin. -/
+theorem transHomeomorph {F'' : Type*} [TopologicalSpace F''] [Zero F''] (h : IsLocallyFlat F F' f)
+    (e : F' ≃ₜ F'') (he : e 0 = 0) : IsLocallyFlat F F'' f := by
+  have hS : (Homeomorph.refl F).prodCongr e '' ((univ : Set F) ×ˢ ({0} : Set F')) =
+      (univ : Set F) ×ˢ ({0} : Set F'') := by
+    ext ⟨a, b⟩
+    simp [he, eq_comm]
+  have h' := IsSliceEmbedding.transHomeomorph h ((Homeomorph.refl F).prodCongr e)
+  rwa [hS] at h'
 
 /-- The general form of `TauCeti.IsLocallyFlat.comp`: what makes a composite locally flat is a
 compatible pair of charts around each point of the domain, and nothing else. It asks for a chart

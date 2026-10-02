@@ -88,7 +88,8 @@ theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas (hk : 
     (he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M) (hx : x ∈ e.source) :
     x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).1 0 = 0 := by
   rw [ModelWithCorners.boundary, mem_ofPred_eq,
-    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range hk he hx,
+    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range hk
+      (IsManifold.subset_maximalAtlas he) hx,
     frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact eq_comm
 
