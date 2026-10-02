@@ -73,6 +73,7 @@ theorem map_map_hom (f : C(X, Y)) (hf : MapsTo f S T) {s t : FundamentalGroupoid
   (rfl)
 
 /-- The functor induced by `f` is compatible with the inclusions. -/
+@[simp]
 theorem map_comp_incl (f : C(X, Y)) (hf : MapsTo f S T) :
     map f hf ⋙ incl T = incl S ⋙ FundamentalGroupoid.map f :=
   (rfl)
