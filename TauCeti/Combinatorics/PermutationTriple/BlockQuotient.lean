@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.Basic
+public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.GroupTheory.Perm.Imprimitivity
+public import TauCeti.GroupTheory.Perm.Semiconj
+import Mathlib.Algebra.Group.Pointwise.Set.Card
+import Mathlib.Tactic.Linarith
 import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
@@ -25,6 +28,14 @@ translate containing it is a surjection `TauCeti.PermutationTriple.blockIndex` f
 described by `t` factors through the cover described by the quotient triple, and the fibres of
 the intermediate map are the blocks. The degree of the quotient times the size of `B` is the
 degree of `t`.
+
+The cycle data of `t` refines that of the quotient. A cycle of an element `g` of the monodromy
+group goes round the cycle of `g` on the blocks below it a whole number of times, namely the
+number of its sheets lying in one block. Counting cycles, `g` has at most `|B|` times as many
+cycles on the sheets as on the blocks; summed over the three components this bounds the Euler
+characteristic of `t` by `|B|` times that of the quotient, which is the combinatorial form of the
+Riemann–Hurwitz inequality for the intermediate cover, and shows that passing to a quotient does
+not increase the genus.
 
 Every block system of a transitive action that is stable under the group consists of the
 translates of any one of its blocks, so describing quotients through a single block `B` loses
@@ -46,6 +57,14 @@ nothing.
   intertwines the components of `t` with those of the quotient.
 * `TauCeti.PermutationTriple.ncard_mul_eq_of_isBlock`: the size of the block times the degree of
   the quotient is the degree of `t`.
+* `TauCeti.PermutationTriple.ncard_sameCycle_and_mem_mul_minimalPeriod_blockActionHom`: the length
+  of the cycle of a sheet is the length of the cycle of its block times the number of sheets of
+  that cycle in the block.
+* `TauCeti.PermutationTriple.eulerChar_le_ncard_mul_eulerChar_blockQuotient`: the Euler
+  characteristic of `t` is at most `|B|` times that of the quotient.
+* `TauCeti.PermutationTriple.genus_blockQuotient_le`: the quotient of a connected triple has genus
+  at most that of the triple.
+
 ## References
 
 * S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
@@ -58,7 +77,7 @@ public section
 
 namespace TauCeti
 
-open Equiv MulAction
+open Equiv Function MulAction
 open scoped Pointwise
 
 namespace PermutationTriple
@@ -210,6 +229,75 @@ degree of the quotient by it. -/
 theorem ncard_mul_eq_of_isBlock (e : orbit t.monodromyGroup B ≃ Fin m) : B.ncard * m = n := by
   have h := @IsBlock.ncard_block_mul_ncard_orbit_eq _ _ _ _ ht _ hB hBne
   rwa [← Nat.card_coe_set_eq (orbit _ B), Nat.card_congr e, Nat.card_fin, Nat.card_fin] at h
+
+/-! ### Cycle data of the quotient -/
+
+/-- The quotient map is a semiconjugacy from each element of the monodromy group to its action on
+the translates. -/
+theorem semiconj_blockIndex (g : t.monodromyGroup) :
+    Function.Semiconj (blockIndex ht hB hBne e) (g : Perm (Fin n)) (t.blockActionHom B e g) :=
+  fun x ↦ by simpa [Subgroup.smul_def, Perm.smul_def] using blockIndex_smul e ht hB hBne g x
+
+/-- Each fibre of the quotient map is a translate of `B`, so it has as many sheets as `B`. -/
+@[simp] theorem ncard_preimage_blockIndex (i : Fin m) :
+    (blockIndex ht hB hBne e ⁻¹' {i}).ncard = B.ncard := by
+  obtain ⟨g, hg⟩ := mem_orbit_iff.1 (e.symm i).2
+  have hfib : blockIndex ht hB hBne e ⁻¹' {i} = g • B := by
+    ext x
+    rw [Set.mem_preimage, Set.mem_singleton_iff, blockIndex_eq_iff, hg]
+  rw [hfib, Set.ncard_smul_set]
+
+/-- **Cycle lengths in a block quotient.** For `g` in the monodromy group and a sheet `x`, the
+length of the cycle of `x` under `g` is the length of the cycle of the block of `x` under the
+quotient action of `g`, times the number of sheets of the cycle of `x` that lie in the block
+of `x`. -/
+theorem ncard_sameCycle_and_mem_mul_minimalPeriod_blockActionHom (g : t.monodromyGroup)
+    (x : Fin n) :
+    {y | (g : Perm (Fin n)).SameCycle x y ∧
+        y ∈ (e.symm (blockIndex ht hB hBne e x) : Set (Fin n))}.ncard *
+      minimalPeriod (t.blockActionHom B e g) (blockIndex ht hB hBne e x) =
+      minimalPeriod (g : Perm (Fin n)) x := by
+  simp_rw [← blockIndex_eq_iff e ht hB hBne]
+  exact (semiconj_blockIndex e ht hB hBne g).ncard_sameCycle_and_eq_mul_minimalPeriod x
+
+include ht hB hBne in
+/-- An element of the monodromy group has at most `|B|` times as many cycles on the sheets as on
+the translates of `B`. -/
+theorem orbitCount_le_ncard_mul_orbitCount_blockActionHom (g : t.monodromyGroup) :
+    orbitCount (g : Perm (Fin n)) ≤ B.ncard * orbitCount (t.blockActionHom B e g) :=
+  orbitCount_le_mul_orbitCount_of_semiconj (semiconj_blockIndex e ht hB hBne g)
+    fun i ↦ (ncard_preimage_blockIndex e ht hB hBne i).le
+
+include ht hB hBne in
+/-- **The Riemann–Hurwitz inequality for a block quotient.** The Euler characteristic of a triple
+with transitive monodromy is at most `|B|` times that of its quotient by a nonempty block `B`. -/
+theorem eulerChar_le_ncard_mul_eulerChar_blockQuotient :
+    t.eulerChar ≤ B.ncard * (t.blockQuotient B e).eulerChar := by
+  have h0 := orbitCount_le_ncard_mul_orbitCount_blockActionHom e ht hB hBne
+    ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
+  have h1 := orbitCount_le_ncard_mul_orbitCount_blockActionHom e ht hB hBne
+    ⟨t.σ1, t.σ1_mem_monodromyGroup⟩
+  have h2 := orbitCount_le_ncard_mul_orbitCount_blockActionHom e ht hB hBne
+    ⟨t.σinf, t.σinf_mem_monodromyGroup⟩
+  have hn : (n : ℤ) = B.ncard * m := by exact_mod_cast (ncard_mul_eq_of_isBlock ht hB hBne e).symm
+  rw [eulerChar_def, eulerChar_def, blockQuotient_σ0, blockQuotient_σ1, blockQuotient_σinf, hn]
+  push_cast at h0 h1 h2 ⊢
+  linarith
+
+include hB hBne in
+/-- **Passing to a block quotient does not increase the genus.** The quotient of a connected
+triple by a nonempty block has genus at most that of the triple. -/
+theorem genus_blockQuotient_le (htc : t.IsConnected) :
+    (t.blockQuotient B e).genus ≤ t.genus := by
+  have hχ := eulerChar_le_ncard_mul_eulerChar_blockQuotient e htc.isPretransitive hB hBne
+  rw [← htc.two_sub_two_mul_genus,
+    ← (t.isConnected_blockQuotient B e).two_sub_two_mul_genus] at hχ
+  have hs : (1 : ℤ) ≤ B.ncard := by exact_mod_cast (Set.ncard_pos B.toFinite).2 hBne
+  rcases Nat.eq_zero_or_pos (t.blockQuotient B e).genus with h | h
+  · simp [h]
+  · have hneg : (2 : ℤ) - 2 * (t.blockQuotient B e).genus ≤ 0 := by omega
+    have := mul_le_mul_of_nonpos_right hs hneg
+    omega
 
 end PermutationTriple
 
