@@ -177,7 +177,11 @@ noncomputable def isColimitAffineToricCocone : IsColimit Φ.affineToricCocone :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
     isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram (Φ := Φ)
-  exact colimit.isColimit Φ.affineToricDiagram)
+  -- Unfold only the cocone and its point/leg wrappers to identify the chosen colimit cocone.
+  have hc : Φ.affineToricCocone = colimit.cocone Φ.affineToricDiagram := by
+    unfold affineToricCocone algebraicRealization affineToricChartι
+    rfl
+  exact hc.symm ▸ colimit.isColimit Φ.affineToricDiagram)
 
 /-- Morphisms from a fan's algebraic realization are determined by their affine chart maps. -/
 @[ext]
