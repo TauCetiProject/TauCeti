@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.NumberField.Ideal.Away
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
+import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+
 /-!
 # Moduli of a number field and multiplicative congruence
 
@@ -48,6 +50,8 @@ away from a finite set of primes.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.Modulus.wellFounded_dvd_and_ne`: strict divisibility of moduli is
+  well founded.
 * `TauCeti.GlobalNumberFields.Modulus.mem_support_iff`: membership in the support is divisibility
   of the finite part.  `Modulus.support_one` and `Modulus.support_mono` are consequences.
 * `TauCeti.GlobalNumberFields.Modulus.pow_exponent_dvd_finitePart` and
@@ -139,6 +143,30 @@ theorem dvd_antisymm {𝔪 𝔫 : Modulus K} (hm : 𝔪 ∣ 𝔫) (hn : 𝔫 ∣
   · exact le_antisymm (Ideal.dvd_iff_le.mp (dvd_iff.mp hn).1)
       (Ideal.dvd_iff_le.mp (dvd_iff.mp hm).1)
   · exact Finset.Subset.antisymm (dvd_iff.mp hm).2 (dvd_iff.mp hn).2
+
+/-- **Strict divisibility of moduli is well founded**: there is no infinite sequence of moduli in
+which each term is a proper divisor of the previous one.  Along a proper divisor, the absolute norm
+of the finite part plus the number of real places strictly decreases.  In particular every nonempty
+set of moduli has a member none of whose proper divisors lies in the set. -/
+theorem wellFounded_dvd_and_ne : WellFounded fun 𝔪 𝔫 : Modulus K ↦ 𝔪 ∣ 𝔫 ∧ 𝔪 ≠ 𝔫 := by
+  refine Subrelation.wf (fun {𝔪 𝔫} h ↦ ?_) (InvImage.wf
+    (fun 𝔪 : Modulus K ↦ Ideal.absNorm 𝔪.finitePart + 𝔪.infinitePart.card) wellFounded_lt)
+  obtain ⟨⟨⟨L, hL⟩, hinf⟩, hne⟩ := h
+  have hnorm : Ideal.absNorm 𝔫.finitePart = Ideal.absNorm 𝔪.finitePart * Ideal.absNorm L := by
+    rw [hL, map_mul]
+  have h𝔫 : Ideal.absNorm 𝔫.finitePart ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔫.finitePart_ne_bot
+  have hL0 : Ideal.absNorm L ≠ 0 := fun h0 ↦ h𝔫 (by rw [hnorm, h0, mul_zero])
+  have h𝔪 : Ideal.absNorm 𝔪.finitePart ≠ 0 := fun h0 ↦ h𝔫 (by rw [hnorm, h0, zero_mul])
+  have hcard := Finset.card_le_card hinf
+  have hle : Ideal.absNorm 𝔪.finitePart ≤ Ideal.absNorm 𝔫.finitePart :=
+    hnorm ▸ Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hL0)
+  simp only [InvImage]
+  by_contra hlt
+  -- Both summands can only grow along divisibility, so if the sum does not grow, neither does.
+  have hnorm_eq : Ideal.absNorm 𝔫.finitePart = Ideal.absNorm 𝔪.finitePart := by omega
+  rw [hnorm] at hnorm_eq
+  refine hne (Modulus.ext ?_ (Finset.eq_of_subset_of_card_le hinf (by omega)))
+  rw [hL, Ideal.absNorm_eq_one_iff.mp ((Nat.mul_eq_left h𝔪).mp hnorm_eq), Ideal.mul_top]
 
 /-- The **support** of a modulus: the finite set of height-one primes dividing its finite part. -/
 noncomputable def support (𝔪 : Modulus K) : Finset (HeightOneSpectrum (𝓞 K)) :=

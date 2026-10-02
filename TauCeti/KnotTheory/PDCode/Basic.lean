@@ -44,6 +44,9 @@ especially Proposition 4.5.8.
 * `TauCeti.FramedOrientedPDCode`: a framing decoration of an oriented PD-code.
 * `TauCeti.PDCode.halfEdgeSuccEquiv`: the half-edge positions of a code with one crossing more.
 * `TauCeti.PDCode.mirror` and `TauCeti.PDCode.relabel`: reflection and relabelling.
+* `TauCeti.PDCode.slotSmoothing`: the two smoothings of the four slots at a crossing.
+* `TauCeti.PDCode.kink`: the one-crossing kink diagram, and `TauCeti.OrientedPDCode.positiveKink`,
+  its orientation with a positive crossing.
 * `TauCeti.OrientedPDCode.reverse`: reversal of every component orientation.
 * `TauCeti.OrientedPDCode.crossingSign`: the sign derived from the local oriented crossing data.
 * `TauCeti.OrientedPDCode.writhe`: the sum of the crossing signs.
@@ -99,6 +102,13 @@ theorem crossingSlotEquiv_succ_last {n : ℕ} (slot : Fin 4) :
     finCongr_apply, Fin.val_cast, finSumFinEquiv_apply_right, Fin.val_natAdd]
   omega
 
+-- Not `@[simp]`: `crossingSlotEquiv_apply_val` already rewrites the left-hand side.
+/-- The slot of a half-edge is recovered from its position modulo four. -/
+theorem crossingSlotEquiv_apply_val_mod_four (n : ℕ) (i : Fin n) (slot : Fin 4) :
+    (crossingSlotEquiv n (i, slot)).val % 4 = slot.val := by
+  rw [crossingSlotEquiv_apply_val]
+  omega
+
 /-- A half-edge position of the first `n` crossings keeps its value when a crossing is added. -/
 @[simp]
 theorem halfEdgeSuccEquiv_apply_inl_val {n : ℕ} (x : Fin (4 * n)) :
@@ -118,17 +128,63 @@ theorem halfEdgeSuccEquiv_apply_inr_val {n : ℕ} (slot : Fin 4) :
 def oppositeCrossingSlot : Equiv.Perm (Fin 4) :=
   finCycle 2
 
+-- Not `@[simp]`: the simp normal form keeps `oppositeCrossingSlot`, which the simp lemmas about
+-- opposite slots match.
 /-- The opposite crossing slot is obtained by adding two cyclically. -/
+theorem oppositeCrossingSlot_apply (slot : Fin 4) : oppositeCrossingSlot slot = slot + 2 :=
+  finCycle_apply 2 slot
+
+/-- The value of the opposite crossing slot. -/
 @[simp]
-theorem oppositeCrossingSlot_apply (slot : Fin 4) :
+theorem oppositeCrossingSlot_apply_val (slot : Fin 4) :
     (oppositeCrossingSlot slot).val = (slot + 2).val := by
-  simp only [oppositeCrossingSlot.eq_1, finCycle_apply]
+  rw [oppositeCrossingSlot_apply]
+
+/-- The opposite-slot permutation swaps slots `0`, `2` and slots `1`, `3`. -/
+theorem oppositeCrossingSlot_eq_swap_mul_swap :
+    oppositeCrossingSlot = Equiv.swap 0 2 * Equiv.swap 1 3 := by
+  decide
+
+-- Not `@[simp]`: `oppositeCrossingSlot_apply_val` already rewrites the left-hand side.
+/-- Exactly one of a slot and its opposite slot is one of the last two slots `2`, `3`. -/
+theorem two_le_oppositeCrossingSlot_val_iff (slot : Fin 4) :
+    2 ≤ (oppositeCrossingSlot slot).val ↔ ¬2 ≤ slot.val := by
+  fin_cases slot <;> decide
 
 /-- Taking the opposite crossing slot twice returns to the original slot. -/
 @[simp]
 theorem oppositeCrossingSlot_apply_oppositeCrossingSlot (slot : Fin 4) :
     oppositeCrossingSlot (oppositeCrossingSlot slot) = slot := by
   fin_cases slot <;> decide
+
+/-- The two smoothings of the four slots at a crossing, indexed by an over-pair indicator.
+`slotSmoothing false` pairs slot `0` with slot `3` and slot `1` with slot `2`, and
+`slotSmoothing true` pairs slot `0` with slot `1` and slot `2` with slot `3`: in both cases each
+slot of the pair indicated is joined to the slot preceding it in the counterclockwise order.
+Applied to `D.overPair i` it is therefore the `A`-smoothing at crossing `i`, the one turning left
+off the over-strand, and applied to `!D.overPair i` the `B`-smoothing. -/
+def slotSmoothing (b : Bool) : Equiv.Perm (Fin 4) :=
+  if b then Equiv.swap 0 1 * Equiv.swap 2 3 else Equiv.swap 0 3 * Equiv.swap 1 2
+
+/-- The `true` smoothing pairs slots `0`-`1` and `2`-`3`. -/
+@[simp] theorem slotSmoothing_true :
+    slotSmoothing true = Equiv.swap 0 1 * Equiv.swap 2 3 := (rfl)
+
+/-- The `false` smoothing pairs slots `0`-`3` and `1`-`2`. -/
+@[simp] theorem slotSmoothing_false :
+    slotSmoothing false = Equiv.swap 0 3 * Equiv.swap 1 2 := (rfl)
+
+/-- A local smoothing is an involution of the four slots. -/
+@[simp]
+theorem slotSmoothing_apply_apply (b : Bool) (slot : Fin 4) :
+    slotSmoothing b (slotSmoothing b slot) = slot := by
+  revert slot
+  cases b <;> decide
+
+/-- A local smoothing moves every slot: it pairs the four slots off into two arcs. -/
+theorem slotSmoothing_ne (b : Bool) (slot : Fin 4) : slotSmoothing b slot ≠ slot := by
+  revert slot
+  cases b <;> decide
 
 end PDCode
 
@@ -414,6 +470,40 @@ theorem mirror_relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) :
     (D.relabel half cross).mirror = D.mirror.relabel half cross := by
   ext <;> simp
+
+/-- The one-crossing knot diagram: a single kink. Its single crossing has the slot pair `1`-`3`
+as its over-strand, and its two arcs join slot `0` to slot `1` and slot `2` to slot `3`, so the
+strand doubles back on itself, as in the first Reidemeister move. -/
+def kink : PDCode 1 where
+  halfEdge := 1
+  edgePair := PerfectMatching.congr (crossingSlotEquiv 1)
+    (PerfectMatching.mk (Equiv.prodCongrRight fun _ ↦ slotSmoothing true)
+      (fun p ↦ Prod.ext rfl (slotSmoothing_apply_apply true p.2))
+      (fun p h ↦ slotSmoothing_ne true p.2 (congrArg Prod.snd h)))
+  crossinglessComponentCount := 0
+  overPair := fun _ ↦ true
+
+/-- The kink numbers its half-edges by their crossing slots. -/
+@[simp] theorem kink_halfEdge : kink.halfEdge = 1 := by simp [kink]
+
+/-- The kink has no crossing-free component. -/
+@[simp] theorem kink_crossinglessComponentCount : kink.crossinglessComponentCount = 0 := by
+  simp [kink]
+
+/-- The over-strand of the kink is the slot pair `1`-`3`. -/
+@[simp] theorem kink_overPair (i : Fin 1) : kink.overPair i = true := by simp [kink]
+
+/-- The half-edge of the kink in a given crossing slot is that slot. -/
+theorem kink_crossing (i : Fin 1) (t : Fin 4) :
+    kink.crossing i t = crossingSlotEquiv 1 (i, t) := by
+  rw [crossing_apply, kink_halfEdge]
+  simp
+
+/-- The two arcs of the kink join each slot of the over-pair to the slot preceding it. -/
+@[simp] theorem kink_edgePair_apply (i : Fin 1) (t : Fin 4) :
+    kink.edgePair.val (crossingSlotEquiv 1 (i, t))
+      = crossingSlotEquiv 1 (i, slotSmoothing true t) := by
+  simp [kink, PerfectMatching.congr_val, PerfectMatching.val_mk]
 
 end PDCode
 
@@ -832,27 +922,41 @@ theorem mirror_eq_self_of_zero_crossings (D : OrientedPDCode 0) :
     D.mirror = D :=
   OrientedPDCode.ext (by simp) (by simp) (by simp)
 
-/-- A one-crossing positive PD-code whose two exterior arcs join adjacent crossing visits.
+/-- The kink `TauCeti.PDCode.kink`, oriented so that its crossing is positive.
 
 This concrete code is a semantic witness that the presentation permits a genuine positive
 crossing, not only crossing-free links. -/
 def positiveKink : OrientedPDCode 1 where
-  halfEdge := Equiv.refl _
-  edgePair := PerfectMatching.mk (Equiv.swap 0 1 * Equiv.swap 2 3)
-    (by intro h; fin_cases h <;> simp [Equiv.swap_apply_def])
-    (by intro h; fin_cases h <;> simp [Equiv.swap_apply_def])
-  crossinglessComponentCount := 0
-  overPair := fun _ => true
+  toPDCode := PDCode.kink
   orientation := fun h => decide (h = 1 ∨ h = 2)
   orientation_edgePair := by
     intro h
-    fin_cases h <;> simp [Equiv.swap_apply_def]
+    obtain ⟨⟨i, t⟩, rfl⟩ := (PDCode.crossingSlotEquiv 1).surjective h
+    rw [PDCode.kink_edgePair_apply]
+    fin_cases i
+    fin_cases t <;> decide
   orientation_oppositeCrossingSlot := by
     intro i slot
     fin_cases i
     fin_cases slot <;> decide
   crossinglessComponents := 0
-  crossinglessComponents_card := rfl
+  crossinglessComponents_card := by simp
+
+/-- The underlying PD-code of `positiveKink` is the kink. -/
+@[simp]
+theorem toPDCode_positiveKink : positiveKink.toPDCode = PDCode.kink :=
+  (rfl)
+
+/-- The arcs of `positiveKink` point away from the crossing exactly at slots `1` and `2`. -/
+@[simp]
+theorem orientation_positiveKink (h : Fin (4 * 1)) :
+    positiveKink.orientation h = decide (h = 1 ∨ h = 2) :=
+  (rfl)
+
+/-- The positive kink has no crossing-free components. -/
+@[simp]
+theorem crossinglessComponents_positiveKink : positiveKink.crossinglessComponents = 0 :=
+  (rfl)
 
 /-- The distinguished crossing of `positiveKink` has positive sign. -/
 @[simp]

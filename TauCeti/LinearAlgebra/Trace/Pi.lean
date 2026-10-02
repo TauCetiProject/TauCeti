@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.LinearAlgebra.Trace
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Traces of coordinate-reindexing maps
@@ -22,8 +23,8 @@ finite direct sums of representations.
 
 * `LinearMap.trace_pi_of_apply_eq`: the trace formula for a coordinate-reindexing map on a
   constant finite product.
-* `LinearMap.trace_pi_of_apply_eq_dependent`: the trace formula for a coordinatewise map on a
-  finite dependent product.
+* `LinearMap.trace_piMap`: the trace of a coordinatewise endomorphism `LinearMap.piMap f` of a
+  finite dependent product is the sum of the traces of its components.
 -/
 
 public section
@@ -61,25 +62,18 @@ theorem _root_.LinearMap.trace_pi_of_apply_eq (T : (ι → M) →ₗ[k] (ι → 
     intro j _
     simp [LinearMap.toMatrix_apply, B, b, hT, hi]
 
-open scoped Classical in
-/-- The trace of a coordinatewise endomorphism of a finite dependent product is the sum of the
-traces on its factors. -/
-theorem _root_.LinearMap.trace_pi_of_apply_eq_dependent {M : ι → Type*}
+/-- The trace of the coordinatewise endomorphism `LinearMap.piMap f` of a finite dependent product
+of finite free modules is the sum of the traces of the `f i`. -/
+@[simp]
+theorem _root_.LinearMap.trace_piMap {M : ι → Type*}
     [∀ i, AddCommGroup (M i)] [∀ i, Module k (M i)] [∀ i, Module.Free k (M i)]
-    [∀ i, Module.Finite k (M i)]
-    (T : ((i : ι) → M i) →ₗ[k] ((i : ι) → M i)) (f : ∀ i, M i →ₗ[k] M i)
-    (hT : ∀ x i, T x i = f i (x i)) :
-    LinearMap.trace k ((i : ι) → M i) T = ∑ i, LinearMap.trace k (M i) (f i) := by
+    [∀ i, Module.Finite k (M i)] (f : ∀ i, M i →ₗ[k] M i) :
+    LinearMap.trace k ((i : ι) → M i) (LinearMap.piMap f) =
+      ∑ i, LinearMap.trace k (M i) (f i) := by
+  classical
   let b (i : ι) := Module.Free.chooseBasis k (M i)
-  let _ (i : ι) : Fintype (Module.Free.ChooseBasisIndex k (M i)) := Fintype.ofFinite _
-  let B : Module.Basis (Σ i, Module.Free.ChooseBasisIndex k (M i)) k ((i : ι) → M i) :=
-    Pi.basis b
-  rw [LinearMap.trace_eq_matrix_trace k B, Matrix.trace, Fintype.sum_sigma]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [LinearMap.trace_eq_matrix_trace k (b i), Matrix.trace]
-  apply Finset.sum_congr rfl
-  intro j _
-  simp [LinearMap.toMatrix_apply, B, b, hT]
+  rw [LinearMap.trace_eq_matrix_trace k (Pi.basis b), LinearMap.toMatrix_piMap,
+    Matrix.trace_blockDiagonal']
+  simp_rw [LinearMap.trace_eq_matrix_trace k (b _)]
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.SpecialFiber
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Basic
 
 /-!
 # Special fibres and local base change

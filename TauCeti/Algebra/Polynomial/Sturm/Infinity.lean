@@ -133,8 +133,7 @@ variable [IsRealClosed R]
 /-- Sturm–Tarski on a right-unbounded interval. -/
 theorem sum_sign_Ioi {p f : Polynomial R} {cs : List (Polynomial R)}
     (h : IsSignedRemainderSeq (p :: cs)) (hseed : IsTarskiSeed p f (cs.head?.getD 0))
-    {a : R} (hsimple : ∀ r, a < r → p.eval r = 0 → p.derivative.eval r ≠ 0)
-    (ha : p.eval a ≠ 0) :
+    {a : R} (ha : p.eval a ≠ 0) :
     (signVariationsAt (p :: cs) a : ℤ) - signVariationsAtTop (p :: cs) =
       ∑ r ∈ p.roots.toFinset.filter (a < ·), (SignType.sign (f.eval r) : ℤ) := by
   classical
@@ -148,15 +147,14 @@ theorem sum_sign_Ioi {p f : Polynomial R} {cs : List (Polynomial R)}
     apply Finset.filter_congr
     intro r hr
     simp [hroots r hr]
-  have ht := sum_sign h hseed (fun r har _ => hsimple r har) hab ha
+  have ht := sum_sign h hseed hab ha
     (fun hz => (hR p (by simp) b hz).not_gt hBb)
   rwa [hB b hBb, hf] at ht
 
 /-- Sturm–Tarski on a left-unbounded interval. -/
 theorem sum_sign_Iio {p f : Polynomial R} {cs : List (Polynomial R)}
     (h : IsSignedRemainderSeq (p :: cs)) (hseed : IsTarskiSeed p f (cs.head?.getD 0))
-    {b : R} (hsimple : ∀ r, r < b → p.eval r = 0 → p.derivative.eval r ≠ 0)
-    (hb : p.eval b ≠ 0) :
+    {b : R} (hb : p.eval b ≠ 0) :
     (signVariationsAtBot (p :: cs) : ℤ) - signVariationsAt (p :: cs) b =
       ∑ r ∈ p.roots.toFinset.filter (· < b), (SignType.sign (f.eval r) : ℤ) := by
   classical
@@ -170,14 +168,13 @@ theorem sum_sign_Iio {p f : Polynomial R} {cs : List (Polynomial R)}
     apply Finset.filter_congr
     intro r hr
     simp [hroots r hr]
-  have ht := sum_sign h hseed (fun r _ hrb => hsimple r hrb) hab
+  have ht := sum_sign h hseed hab
     (fun hz => (hR p (by simp) a hz).not_gt haB) hb
   rwa [hB a haB, hf] at ht
 
 /-- Sturm–Tarski on the whole real closed field. -/
 theorem sum_sign_univ {p f : Polynomial R} {cs : List (Polynomial R)}
-    (h : IsSignedRemainderSeq (p :: cs)) (hseed : IsTarskiSeed p f (cs.head?.getD 0))
-    (hsimple : ∀ r, p.eval r = 0 → p.derivative.eval r ≠ 0) :
+    (h : IsSignedRemainderSeq (p :: cs)) (hseed : IsTarskiSeed p f (cs.head?.getD 0)) :
     (signVariationsAtBot (p :: cs) : ℤ) - signVariationsAtTop (p :: cs) =
       ∑ r ∈ p.roots.toFinset, (SignType.sign (f.eval r) : ℤ) := by
   classical
@@ -187,15 +184,14 @@ theorem sum_sign_univ {p f : Polynomial R} {cs : List (Polynomial R)}
   have hroots : ∀ r ∈ p.roots.toFinset, a < r := fun r hr =>
     haB.trans_le (hR p (by simp) r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr)))
   have hf : p.roots.toFinset.filter (a < ·) = p.roots.toFinset := Finset.filter_true_of_mem hroots
-  have ht := sum_sign_Ioi h hseed (fun r _ => hsimple r)
+  have ht := sum_sign_Ioi h hseed
     (fun hz => (hR p (by simp) a hz).not_gt haB)
   rwa [hB a haB, hf] at ht
 
 
 /-- Sturm–Tarski for Mathlib's signed remainder sequence on a right-unbounded interval. -/
 theorem sum_sign_sturmSeq_Ioi (p f : R[X])
-    {a : R} (hsimple : ∀ r, a < r → p.eval r = 0 → p.derivative.eval r ≠ 0)
-    (ha : p.eval a ≠ 0) :
+    {a : R} (ha : p.eval a ≠ 0) :
     (signVariationsAt (sturmSeq p (f * p.derivative)) a : ℤ) -
         signVariationsAtTop (sturmSeq p (f * p.derivative)) =
       ∑ r ∈ p.roots.toFinset.filter (a < ·), (SignType.sign (f.eval r) : ℤ) := by
@@ -204,12 +200,11 @@ theorem sum_sign_sturmSeq_Ioi (p f : R[X])
   have hsigned := IsSignedRemainderSeq.sturmSeq p (f * p.derivative)
   have hseed := (IsTarskiSeed.mul_derivative p f).sturmSeq
   rw [sturmSeq_cons hp] at hsigned hseed ⊢
-  exact sum_sign_Ioi hsigned hseed hsimple ha
+  exact sum_sign_Ioi hsigned hseed ha
 
 /-- Sturm–Tarski for Mathlib's signed remainder sequence on a left-unbounded interval. -/
 theorem sum_sign_sturmSeq_Iio (p f : R[X])
-    {b : R} (hsimple : ∀ r, r < b → p.eval r = 0 → p.derivative.eval r ≠ 0)
-    (hb : p.eval b ≠ 0) :
+    {b : R} (hb : p.eval b ≠ 0) :
     (signVariationsAtBot (sturmSeq p (f * p.derivative)) : ℤ) -
         signVariationsAt (sturmSeq p (f * p.derivative)) b =
       ∑ r ∈ p.roots.toFinset.filter (· < b), (SignType.sign (f.eval r) : ℤ) := by
@@ -218,47 +213,43 @@ theorem sum_sign_sturmSeq_Iio (p f : R[X])
   have hsigned := IsSignedRemainderSeq.sturmSeq p (f * p.derivative)
   have hseed := (IsTarskiSeed.mul_derivative p f).sturmSeq
   rw [sturmSeq_cons hp] at hsigned hseed ⊢
-  exact sum_sign_Iio hsigned hseed hsimple hb
+  exact sum_sign_Iio hsigned hseed hb
 
 /-- Sturm–Tarski for Mathlib's signed remainder sequence on the whole real closed field. -/
-theorem sum_sign_sturmSeq_univ (p f : R[X])
-    (hsimple : ∀ r, p.eval r = 0 → p.derivative.eval r ≠ 0) :
+theorem sum_sign_sturmSeq_univ (p f : R[X]) :
     (signVariationsAtBot (sturmSeq p (f * p.derivative)) : ℤ) -
         signVariationsAtTop (sturmSeq p (f * p.derivative)) =
       ∑ r ∈ p.roots.toFinset, (SignType.sign (f.eval r) : ℤ) := by
   classical
-  have hp : p ≠ 0 := fun h => hsimple 0 (by simp [h]) (by simp [h])
+  by_cases hp : p = 0
+  · simp [hp]
   have hsigned := IsSignedRemainderSeq.sturmSeq p (f * p.derivative)
   have hseed := (IsTarskiSeed.mul_derivative p f).sturmSeq
   rw [sturmSeq_cons hp] at hsigned hseed ⊢
-  exact sum_sign_univ hsigned hseed hsimple
+  exact sum_sign_univ hsigned hseed
 
 /-- Classical Sturm counting of distinct roots in a right-unbounded interval. -/
-theorem card_roots_Ioi (p : R[X]) {a : R}
-    (hsimple : ∀ r, a < r → p.eval r = 0 → p.derivative.eval r ≠ 0)
-    (ha : p.eval a ≠ 0) :
+theorem card_roots_toFinset_Ioi (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
     (signVariationsAt (sturmSeq p p.derivative) a : ℤ) -
         signVariationsAtTop (sturmSeq p p.derivative) =
       (p.roots.toFinset.filter (a < ·)).card := by
   classical
-  simpa using sum_sign_sturmSeq_Ioi p 1 hsimple ha
+  simpa using sum_sign_sturmSeq_Ioi p 1 ha
 
 /-- Classical Sturm counting of distinct roots in a left-unbounded interval. -/
-theorem card_roots_Iio (p : R[X]) {b : R}
-    (hsimple : ∀ r, r < b → p.eval r = 0 → p.derivative.eval r ≠ 0)
-    (hb : p.eval b ≠ 0) :
+theorem card_roots_toFinset_Iio (p : R[X]) {b : R} (hb : p.eval b ≠ 0) :
     (signVariationsAtBot (sturmSeq p p.derivative) : ℤ) -
         signVariationsAt (sturmSeq p p.derivative) b =
       (p.roots.toFinset.filter (· < b)).card := by
   classical
-  simpa using sum_sign_sturmSeq_Iio p 1 hsimple hb
+  simpa using sum_sign_sturmSeq_Iio p 1 hb
 
-/-- Classical Sturm counting of all distinct roots of a polynomial with simple roots. -/
-theorem card_roots_univ (p : R[X])
-    (hsimple : ∀ r, p.eval r = 0 → p.derivative.eval r ≠ 0) :
+/-- Classical Sturm counting of all distinct roots of a nonzero polynomial. For `p = 0` both
+sides are zero: `sturmSeq 0 _ = []` and `Polynomial.roots 0 = 0` by convention. -/
+theorem card_roots_toFinset_univ (p : R[X]) :
     (signVariationsAtBot (sturmSeq p p.derivative) : ℤ) -
         signVariationsAtTop (sturmSeq p p.derivative) =
       p.roots.toFinset.card := by
-  simpa using sum_sign_sturmSeq_univ p 1 hsimple
+  simpa using sum_sign_sturmSeq_univ p 1
 
 end TauCeti.Sturm

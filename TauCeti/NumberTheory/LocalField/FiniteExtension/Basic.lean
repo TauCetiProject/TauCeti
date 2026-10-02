@@ -489,4 +489,22 @@ theorem _root_.AlgHom.coe_integerRingHom_apply (ι : L →ₐ[K] M) (x : 𝒪[L]
 
 end IntegerRingEquiv
 
+/-- The algebra map of a finite compatible extension is continuous for the given valuative
+topologies. -/
+theorem continuous_algebraMap_of_valuativeExtension [ValuativeRel M] [ValuativeExtension K M]
+    [TopologicalSpace M] [IsValuativeTopology M] : Continuous (algebraMap K M) := by
+  have h : @Continuous K M (normalizedNormedFieldTopology K)
+      (finiteExtensionNormedFieldTopology K M) (algebraMap K M) := by
+    let nM := finiteExtensionNormedField K M
+    let nK := normalizedNontriviallyNormedField K
+    let _ := nM
+    let _ := nK
+    apply Isometry.continuous
+    apply (isometry_iff_dist_eq).mpr
+    intro x y
+    rw [dist_eq_norm, dist_eq_norm, ← map_sub, finiteExtensionNormedField_norm_algebraMap,
+      normalizedNormedField_norm_def]
+  rw [normalizedNormedField_topology_eq K, finiteExtensionNormedFieldTopology_eq K M] at h
+  exact h
+
 end TauCeti

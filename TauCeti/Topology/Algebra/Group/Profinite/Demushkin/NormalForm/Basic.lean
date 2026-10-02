@@ -46,7 +46,8 @@ the presented group has topological generator rank exactly `n`.
   `TauCeti.demushkinWordTwoRankTwo`: the even word of rank two, `x₁^{2+α} (x₁, x₂)`, with no
   level; `TauCeti.demushkinWordTwoOdd_eq_demushkinWordTwoOddTop` reads the odd word as the odd word
   at `f = ∞` when `x₂^{2^f} = 1`, `TauCeti.demushkinWordTwoEven_two` reads the even word at rank
-  two as the rank-two word, and `TauCeti.demushkinWordTwoOdd_one` and
+  two as the rank-two word, `TauCeti.demushkinWordTwoRankTwo_eq_demushkinWordNeTwo` reads the
+  rank-two word as the `q ≠ 2` word at `q = 2 + α`, and `TauCeti.demushkinWordTwoOdd_one` and
   `TauCeti.demushkinWordTwoOddTop_one` read the two odd words at rank one as `x₁²`.
 
 ## Main results
@@ -176,6 +177,24 @@ theorem demushkinWordNeTwo_zero_two (x : ℕ → H) :
     demushkinWordNeTwo 0 2 x = labuteComm (x 0) (x 1) := by
   simp [demushkinWordNeTwo_def]
 
+/-- For `n ≥ 2` the `q ≠ 2` word splits off its first commutator factor: it is
+`x₁^q (x₁, x₂)` times the `q = 0` word `(x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n - 2` letters, read on the
+tuple shifted by two. This is the shape of Labute's intermediate form for the dyadic relators of
+even rank, whose tail relator is a word in `x₃, …, x_n`. -/
+theorem demushkinWordNeTwo_eq_pow_mul_labuteComm_mul (q : ℕ) {n : ℕ} (hn : 2 ≤ n) (x : ℕ → H) :
+    demushkinWordNeTwo q n x =
+      x 0 ^ q * labuteComm (x 0) (x 1) * demushkinWordNeTwo 0 (n - 2) (fun i ↦ x (i + 2)) := by
+  obtain ⟨k, hk⟩ : ∃ k, n / 2 = k + 1 := ⟨n / 2 - 1, by omega⟩
+  have hk' : (n - 2) / 2 = k := by omega
+  have h0 : labuteComm (x (2 * 0)) (x (2 * 0 + 1)) = labuteComm (x 0) (x 1) := by norm_num
+  have hmap : (List.range k).map ((fun i ↦ labuteComm (x (2 * i)) (x (2 * i + 1))) ∘ Nat.succ) =
+      (List.range k).map fun i ↦ labuteComm (x (2 * i + 2)) (x (2 * i + 3)) :=
+    List.map_congr_left fun i _ ↦ by
+      simp only [Function.comp_apply, Nat.succ_eq_add_one]
+      ring_nf
+  rw [demushkinWordNeTwo_def, demushkinWordNeTwo_def, hk, hk', pow_zero, one_mul,
+    List.range_succ_eq_map, List.map_cons, List.prod_cons, List.map_map, h0, hmap, mul_assoc]
+
 /-- The `q = 2`, `n` odd normal-form word `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, on an
 arbitrary tuple `x : ℕ → H`, with `x 0` playing the role of `x₁`. The parameter `f` is finite;
 the word has `n / 2` commutator factors. -/
@@ -224,6 +243,26 @@ theorem demushkinWordTwoOdd_eq_demushkinWordTwoOddTop (f n : ℕ) {x : ℕ → H
 theorem demushkinWordTwoOddTop_one (x : ℕ → H) : demushkinWordTwoOddTop 1 x = x 0 ^ 2 := by
   simp [demushkinWordTwoOddTop_def]
 
+/-- The odd word `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on `2m + 1` letters is `x₁²` times
+the `q ≠ 2` word `x₂^{2^f} (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on the `2m` letters `x₂, …, x_{2m+1}`,
+read on the tuple shifted by one. -/
+theorem demushkinWordTwoOdd_eq_sq_mul_demushkinWordNeTwo (f m : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOdd f (2 * m + 1) x =
+      x 0 ^ 2 * demushkinWordNeTwo (2 ^ f) (2 * m) fun i ↦ x (i + 1) := by
+  have h1 : (2 * m + 1) / 2 = m := by omega
+  have h2 : 2 * m / 2 = m := by omega
+  rw [demushkinWordTwoOdd_def, demushkinWordNeTwo_def, h1, h2, mul_assoc]
+
+/-- The odd word at level `f = ∞`, `x₁² (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on `2m + 1` letters, is
+`x₁²` times the `q ≠ 2` word at `q = 0`, `(x₂, x₃) ⋯ (x_{2m}, x_{2m+1})`, on the `2m` letters
+`x₂, …, x_{2m+1}`, read on the tuple shifted by one. -/
+theorem demushkinWordTwoOddTop_eq_sq_mul_demushkinWordNeTwo (m : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOddTop (2 * m + 1) x =
+      x 0 ^ 2 * demushkinWordNeTwo 0 (2 * m) fun i ↦ x (i + 1) := by
+  have h1 : (2 * m + 1) / 2 = m := by omega
+  have h2 : 2 * m / 2 = m := by omega
+  rw [demushkinWordTwoOddTop_def, demushkinWordNeTwo_def, h1, h2, pow_zero, one_mul]
+
 /-- The `q = 2`, `n` even normal-form word `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`,
 on an arbitrary tuple `x : ℕ → H`, with `x 0` playing the role of `x₁`. The exponent `2 + a` is
 a natural number standing for Labute's `2 + α`, `α ∈ 4ℤ₂`: on an arbitrary group only natural
@@ -263,6 +302,13 @@ generator is out of range, and the commutator product beyond `(x₁, x₂)` is e
 theorem demushkinWordTwoEven_two (a f : ℕ) (x : ℕ → H) (hx : x 2 = 1) :
     demushkinWordTwoEven a f 2 x = demushkinWordTwoRankTwo a x := by
   simp [demushkinWordTwoEven_def, demushkinWordTwoRankTwo_def, hx]
+
+/-- The rank-two word `x₁^{2+a} (x₁, x₂)` is the `q ≠ 2` word at `q = 2 + a` on two generators,
+where that word has the single commutator factor `(x₁, x₂)`: Labute's level `f = ∞` of the even
+family at rank two is the `q ≠ 2` form with `q = 2 + α`. -/
+theorem demushkinWordTwoRankTwo_eq_demushkinWordNeTwo (a : ℕ) (x : ℕ → H) :
+    demushkinWordTwoRankTwo a x = demushkinWordNeTwo (2 + a) 2 x := by
+  simp [demushkinWordTwoRankTwo_def, demushkinWordNeTwo_def]
 
 /-- The `q ≠ 2` word lies in a normal subgroup `N` as soon as its power factor `x₁^q` and the left
 entries `x₁, x₃, …, x_{2m-1}` of its `m = n / 2` commutator factors do: a commutator with left

@@ -54,9 +54,13 @@ is why the discrete synonyms exist.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_apply` and
   `explicitH2AddEquivContinuousCohomology_apply`: the comparisons send the class of an explicit
   cocycle to the homology class of the cocycle it corresponds to.
-* `TauCeti.ContCohomology.explicitIso_map`: the degree-one comparison is natural in compatible
-  pairs, with `explicitIso_res` and `explicitIso_coeffMap` as its restriction and coefficient-map
-  specializations.
+* `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_map` and
+  `explicitH1AddEquivContinuousCohomology_coeffMap`: the degree-one comparison carries the
+  explicit pullback along a compatible pair, and in particular the explicit coefficient map, to the
+  canonical one.
+* `TauCeti.ContCohomology.explicitIso_map`: the same naturality in compatible pairs for the
+  degree-one comparison in `TopModuleCat ℤ`, with `explicitIso_res` and `explicitIso_coeffMap` as
+  its restriction and coefficient-map specializations.
 * `TauCeti.ContCohomology.explicitH2AddEquivContinuousCohomology_map` and
   `explicitH2AddEquivContinuousCohomology_coeffMap`: the degree-two comparison carries the explicit
   pullback along a compatible pair, and in particular the explicit coefficient map, to the
@@ -77,6 +81,21 @@ open CategoryTheory
 namespace TauCeti.ContCohomology
 
 universe u
+
+/-- An additive equivalence followed by transport between equal `TopModuleCat` objects preserves
+nonzero elements. This applies to the explicit-to-canonical cohomology comparison. -/
+theorem addEquiv_eqToHom_ne_zero {A : Type*} [AddCommGroup A]
+    {B C : TopModuleCat ℤ} (e : B = C) (f : A ≃+ B) (x : A) (hx : x ≠ 0) :
+    (eqToHom e).hom (f x) ≠ 0 := by
+  have hinj : Function.Injective (eqToHom e).hom :=
+    Function.LeftInverse.injective ((eqToIso e).hom_inv_id_apply)
+  have hzero : (eqToHom e).hom (0 : B) = 0 := by
+    cases e
+    rfl
+  intro h
+  apply hx
+  apply f.injective
+  exact (hinj (h.trans hzero.symm)).trans f.map_zero.symm
 
 variable (G M : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
@@ -156,6 +175,25 @@ theorem explicitH1AddEquivContinuousCohomology_map
     exact congr($(_root_.ContinuousCohomology.π_map φ
       (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) 1)
       (cocycleEquiv1 G M c))
+
+/-- The degree-one comparison carries the explicit coefficient map to the canonical coefficient
+map `TauCeti.ContinuousCohomology.coeffMap` attached to the same equivariant homomorphism, the
+degree-one counterpart of `TauCeti.ContCohomology.explicitH0Iso_coeffMap`. -/
+theorem explicitH1AddEquivContinuousCohomology_coeffMap
+    (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N] (f : M →+[G] N) (x : H1 G M) :
+    TauCeti.ContinuousCohomology.coeffMap
+        (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m) 1
+        (explicitH1AddEquivContinuousCohomology G M x) =
+      explicitH1AddEquivContinuousCohomology G N
+        (explicitCoeff1 G M f continuous_of_discreteTopology x) := by
+  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+      f.toAddMonoidHom.toIntLinearMap (fun g m ↦ map_smul f g m) =
+      ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff1_eq_explicitMap1, ← hpair]
+  exact explicitH1AddEquivContinuousCohomology_map G M G N (ContinuousMonoidHom.id G)
+    f.toAddMonoidHom (fun g m ↦ map_smul f g m) x
 
 /-! ### Degree two -/
 
@@ -367,13 +405,9 @@ theorem explicitIso_coeffMap
       (explicitH1IsoContinuousCohomology G N).hom
         ((discreteH1Equiv G N).symm
           (explicitCoeff1 G M f continuous_of_discreteTopology (discreteH1Equiv G M x))) := by
-  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
-      f.toAddMonoidHom.toIntLinearMap (fun g m ↦ map_smul f g m) =
-      ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m :=
-    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
-  rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff1_eq_explicitMap1, ← hpair]
-  exact explicitIso_map G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
-    (fun g m ↦ map_smul f g m) x
+  rw [explicitH1IsoContinuousCohomology_hom_apply,
+    explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
+  exact explicitH1AddEquivContinuousCohomology_coeffMap G M N f (discreteH1Equiv G M x)
 
 /-- The degree-two comparison in `TopModuleCat ℤ`. -/
 noncomputable def explicitH2IsoContinuousCohomology :

@@ -233,7 +233,7 @@ private lemma typeDGraphLatticeEquiv_coordinates (hn : 4 ≤ n) (x : TypeDRoot n
     rw [typeDClassicalGraphEquiv_val]
     rw [← hreindex]
     simp_rw [← typeDLastSign_typeDSimpleRoot hn]
-    rw [← hdistrib, sum_smul_typeDSimpleRootCoordinates]
+    rw [← hdistrib, sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x)]
   exact (typeDSimpleRootCoordinates_eq_of_sum_smul_eq hn hsum).symm
 
 private lemma typeDGraphLatticeEquiv_coroot (hn : 4 ≤ n)

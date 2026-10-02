@@ -79,6 +79,22 @@ theorem coordinatePower_pairing (ι : Type v) [Fintype ι] (x y : ι → A) :
     (A.coordinatePower ι).pairing x y = ∑ i, A.pairing (x i) (y i) :=
   (rfl)
 
+/-- Extension by zero along an injective coordinate map is adjoint to restriction for the
+coordinate pairing. -/
+theorem coordinatePower_pairing_extend_zero_left {ι : Type v} {κ : Type w}
+    [Fintype ι] [Fintype κ] {f : ι → κ} (hf : Function.Injective f)
+    (x : ι → A) (y : κ → A) :
+    (A.coordinatePower κ).pairing (f.extend x 0) y =
+      (A.coordinatePower ι).pairing x (y ∘ f) := by
+  rw [A.coordinatePower_pairing, A.coordinatePower_pairing]
+  symm
+  apply Fintype.sum_of_injective f hf
+  · intro j hj
+    rw [Function.extend_apply' (f := f) x 0 j hj, Pi.zero_apply, A.pairing_zero_left]
+  · intro i
+    rw [hf.extend_apply]
+    rfl
+
 /-- Pairing a word with a word supported at one coordinate extracts that coordinate pairing. -/
 theorem coordinatePower_pairing_single_right (ι : Type v) [Fintype ι] [DecidableEq ι]
     (x : ι → A) (i : ι) (a : A) :

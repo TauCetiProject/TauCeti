@@ -34,6 +34,8 @@ relator, is not treated in this file.
 * `TauCeti.IsDemushkin.nondegenerate_cupForm`,
   `TauCeti.IsDemushkin.nondegenerate_cupForm_of_ne_zero`: the cup form of a Demushkin group is
   nondegenerate, for every injective, equivalently nonzero, functional on `H²(G, 𝔽_p)`.
+* `TauCeti.IsDemushkin.cupFp_bijective`: the cup square is a perfect pairing, `a ↦ (a ⌣ ·)` being a
+  bijection from `H¹(G, 𝔽_p)` onto the linear maps `H¹(G, 𝔽_p) →ₗ H²(G, 𝔽_p)`.
 * `TauCeti.IsDemushkin.of_nondegenerate_cupForm`, `TauCeti.isDemushkin_iff_nondegenerate_cupForm`:
   **Labute's definition**: a pro-`p` group with finite-dimensional `H¹(G, 𝔽_p)` is Demushkin exactly
   when its cup form is nondegenerate for an isomorphism `H²(G, 𝔽_p) ≅ 𝔽_p`.
@@ -94,6 +96,24 @@ theorem nondegenerate_cupForm {φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p}
 theorem nondegenerate_cupForm_of_ne_zero {φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p} (hφ : φ ≠ 0) :
     φ.cupForm.Nondegenerate :=
   hG.nondegenerate_cupForm (hG.injective_of_ne_zero hφ)
+
+/-- **The cup square of a Demushkin group is a perfect pairing**: `a ↦ (a ⌣ ·)` is a bijection
+from `H¹(G, 𝔽_p)` onto the linear maps `H¹(G, 𝔽_p) →ₗ H²(G, 𝔽_p)`. Injectivity is the
+left-separating clause of the definition; surjectivity is nondegeneracy of the cup form for an
+isomorphism `H²(G, 𝔽_p) ≅ 𝔽_p`, through the duality `LinearMap.BilinForm.toDual`. -/
+theorem cupFp_bijective : Function.Bijective (cupFp p G) := by
+  have := hG.finite_cohomFp_one
+  obtain ⟨e⟩ := hG.nonempty_linearEquiv_cohomFp_two
+  refine ⟨(injective_iff_map_eq_zero _).2 fun a ha => ?_, fun f => ?_⟩
+  · by_contra h0
+    obtain ⟨b, hb⟩ := hG.cup_separatingLeft a h0
+    exact hb (by rw [ha, LinearMap.zero_apply])
+  · obtain ⟨a, ha⟩ :=
+      (e.toLinearMap.cupForm.toDual (hG.nondegenerate_cupForm e.injective)).surjective
+        (e.toLinearMap.comp f)
+    refine ⟨a, LinearMap.ext fun b => e.injective ?_⟩
+    have := LinearMap.congr_fun ha b
+    rwa [LinearMap.BilinForm.toDual_def, LinearMap.cupForm_apply, LinearMap.comp_apply] at this
 
 /-- **An alternating cup form has a symplectic basis**: when the cup form of a Demushkin group is
 alternating, `H¹(G, 𝔽_p)` has a basis indexed by `Fin m ⊕ Fin m` in which its matrix is the

@@ -63,6 +63,9 @@ weaker and flagged by the linter.
 * `TauCeti.IsRationalRep.iSup_weightSpace_eq_top` and
   `TauCeti.IsRationalRep.isInternal_weightSpace`: **a rational representation of `GL n ℂ` is the
   internal direct sum of its weight spaces.**
+* `TauCeti.finite_setOf_weightSpace_ne_bot`: a finite-dimensional representation has only finitely
+  many weights. This reads off the independence of the weight spaces alone, so it needs neither
+  rationality nor an infinite field.
 
 ## References
 
@@ -232,5 +235,23 @@ theorem IsRationalRep.isInternal_weightSpace (h : IsRationalRep ρ) :
   isInternal_weightSpace_of_iSup_eq_top weightChar_injective h.iSup_weightSpace_eq_top
 
 end Decomposition
+
+section Finiteness
+
+variable {K : Type v} [Field K]
+variable {W : Type u} [AddCommGroup W] [Module K W]
+
+/-- **A finite-dimensional representation has only finitely many weights.** Its weight spaces are
+independent as soon as distinct weights give distinct characters, and an independent family of
+submodules of a finite-dimensional module has only finitely many nonzero members. For a rational
+representation the finiteness hypothesis comes from `TauCeti.IsRationalRep.finite`. -/
+theorem finite_setOf_weightSpace_ne_bot [Module.Finite K W]
+    (hchar : Function.Injective (weightChar K (κ := Fin n)))
+    (ρ : Representation K (GL (Fin n) K) W) :
+    {l : Fin n → ℤ | weightSpace ρ l ≠ ⊥}.Finite :=
+  Set.finite_coe_iff.mp
+    (@Fintype.finite _ (iSupIndep_weightSpace hchar ρ).fintypeNeBotOfFiniteDimensional)
+
+end Finiteness
 
 end TauCeti

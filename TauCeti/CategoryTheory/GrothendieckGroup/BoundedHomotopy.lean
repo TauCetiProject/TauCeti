@@ -66,14 +66,11 @@ private lemma exists_finset_isZero_X (K : HomotopyCategory.Bounded C) :
 
 variable (C) in
 /-- The Euler characteristic of the representing bounded complex, as a triangle-additive invariant
-on the bounded homotopy category. Homotopy invariance makes it constant on isomorphism classes,
-and the mapping-cone formula makes it additive on distinguished triangles. -/
+on the bounded homotopy category: the mapping-cone formula makes it additive on distinguished
+triangles. -/
 private noncomputable def boundedHomotopyEulerChar :
     TriangulatedK0.AdditiveInvariant (HomotopyCategory.Bounded C) (SplitK0 C) where
   obj K := eulerChar K.obj.as (exists_finset_isZero_X K).choose
-  map_iso K L e := eulerChar_eq_of_homotopyEquiv_of_isZero
-    (_root_.HomotopyCategory.homotopyEquivOfIso ((HomotopyCategory.Bounded.ι C).mapIso e))
-    (exists_finset_isZero_X K).choose_spec (exists_finset_isZero_X L).choose_spec
   map_distTriang T hT := by
     obtain ⟨s₁, hs₁⟩ := exists_finset_isZero_X T.obj₁
     obtain ⟨s₂, hs₂⟩ := exists_finset_isZero_X T.obj₂

@@ -7,6 +7,7 @@ module
 
 import Mathlib.RingTheory.Localization.NormTrace
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
@@ -14,6 +15,7 @@ public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
 public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.RingTheory.Trace.Basic
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.RingTheory.Norm.Quotient
 
@@ -53,10 +55,17 @@ Herbrand shift instead.
   `TauCeti.toAdd_normalizedValuation_norm`.
 * `TauCeti.normalizedValuationWithZero_norm`: the same formula for arbitrary field elements,
   including zero.
+* `TauCeti.norm_mem_maximalIdeal_pow_of_mem`: the norm carries `𝓂[L] ^ m` into
+  `𝓂[K] ^ (f(L/K) m)`.
 * `TauCeti.irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
   integer is irreducible exactly when the residue degree is one.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
+* `TauCeti.coe_norm_integerRing` and `TauCeti.coe_trace_integerRing`: the norm and trace of
+  `𝒪[L]` over `𝒪[K]` restrict the norm and trace of `L/K`.
+* `TauCeti.algebraMap_norm_integerRing_eq_prod_automorphisms` and
+  `TauCeti.algebraMap_trace_integerRing_eq_sum_automorphisms`: in a Galois extension, the norm
+  and trace of an integer are the product and the sum of its conjugates.
 
 ## References
 
@@ -179,6 +188,15 @@ theorem coe_norm_integerRing (y : 𝒪[L]) :
   exact (Algebra.norm_localization 𝒪[K] (nonZeroDivisors 𝒪[K]) y).symm
 
 omit [FiniteDimensional K L] in
+/-- The trace of `𝒪[L]` over `𝒪[K]`, a free module of finite rank, is the restriction of the field
+trace of `L/K`. -/
+@[simp]
+theorem coe_trace_integerRing (y : 𝒪[L]) :
+    ((Algebra.trace 𝒪[K] 𝒪[L] y : 𝒪[K]) : K) = Algebra.trace K L (y : L) := by
+  have := isLocalization_integerRing K L
+  exact (Algebra.trace_localization 𝒪[K] (nonZeroDivisors 𝒪[K]) y).symm
+
+omit [FiniteDimensional K L] in
 /-- The norm of an element of `𝒪[L]` lies in `𝒪[K]`. -/
 theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ 𝒪[K] := by
   simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
@@ -262,6 +280,13 @@ theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
     _ = (Ideal.span {↑π} : Ideal 𝒪[K]) ^ inertiaDegree K L :=
         (Ideal.span_singleton_pow (π : 𝒪[K]) (inertiaDegree K L)).symm
     _ = 𝓂[K] ^ inertiaDegree K L := by rw [hπ.maximalIdeal_eq]
+
+variable (K) in
+/-- The norm of an element of `𝓂[L] ^ m` lies in `𝓂[K] ^ (f(L/K) m)`. -/
+theorem norm_mem_maximalIdeal_pow_of_mem {m : ℕ} {x : 𝒪[L]} (hx : x ∈ 𝓂[L] ^ m) :
+    Algebra.norm 𝒪[K] x ∈ 𝓂[K] ^ (inertiaDegree K L * m) := by
+  rw [pow_mul, ← relNorm_maximalIdeal_eq_maximalIdeal_pow, ← map_pow]
+  exact Ideal.norm_mem_relNorm 𝒪[K] _ hx
 
 end IdealNorm
 
@@ -347,5 +372,29 @@ theorem inertiaDegree_dvd_of_mem_normGroup {x : Kˣ}
   have h : Algebra.normUnits K y = x := Units.ext (by simpa using hy)
   subst x
   exact ⟨_, toAdd_normalizedValuation_norm y⟩
+
+section Galois
+
+variable [IsGalois K L]
+
+/-- In a Galois extension, the norm of an integer `z` of `L`, read in `𝒪[L]`, is the product of
+the Galois conjugates of `z`. -/
+theorem algebraMap_norm_integerRing_eq_prod_automorphisms (z : 𝒪[L]) :
+    algebraMap 𝒪[K] 𝒪[L] (Algebra.norm 𝒪[K] z) = ∏ σ : L ≃ₐ[K] L, σ • z := by
+  apply Subtype.ext
+  rw [coe_algebraMap_integerRing, coe_norm_integerRing, Algebra.norm_eq_prod_automorphisms,
+    SubmonoidClass.coe_finsetProd]
+  simp only [AlgEquiv.coe_smul_integerRing]
+
+/-- In a Galois extension, the trace of an integer `z` of `L`, read in `𝒪[L]`, is the sum of the
+Galois conjugates of `z`. -/
+theorem algebraMap_trace_integerRing_eq_sum_automorphisms (z : 𝒪[L]) :
+    algebraMap 𝒪[K] 𝒪[L] (Algebra.trace 𝒪[K] 𝒪[L] z) = ∑ σ : L ≃ₐ[K] L, σ • z := by
+  apply Subtype.ext
+  rw [coe_algebraMap_integerRing, coe_trace_integerRing, _root_.trace_eq_sum_automorphisms,
+    AddSubmonoidClass.coe_finsetSum]
+  simp only [AlgEquiv.coe_smul_integerRing]
+
+end Galois
 
 end TauCeti

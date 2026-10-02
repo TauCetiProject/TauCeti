@@ -138,6 +138,7 @@ theorem mem_adjointWeightSpace_iff_universalPointAction
     toConv (ULift.algEquiv (R := R) : U ≃ₐ[R] H).symm.toAlgHom
   have hmapPoint : HopfAlgebra.mapPoints (H := H) (CommAlgCat.ofHom phi) g =
       toConv (pi : H →ₐ[R] K) := by
+    rw [HopfAlgebra.mapPoints_apply]
     apply WithConv.ofConv_injective
     ext h
     rfl

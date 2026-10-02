@@ -68,6 +68,8 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
   functor laws.
 * `TauCeti.Huber.weightedMapCompletionEquiv_apply` and `…_symm_apply`: each direction of the
   equivalence is the corresponding `TauCeti.Huber.weightedMapCompletion`.
+* `TauCeti.Huber.continuous_weightedMapCompletionEquiv` and its `_symm`: the equivalence is one
+  of topological rings.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionFinZeroEquiv_coe`,
   `…_symm_coe`, `continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv` and its `_symm`: the
   zero-variable identification on canonical images, and its continuity in both directions.
@@ -270,6 +272,21 @@ theorem weightedMapCompletionEquiv_symm_apply (e : A ≃+* B) (he : Continuous e
     (weightedMapCompletionEquiv e he he' hT hS hTS hST).symm y
       = weightedMapCompletion (φ := (e.symm : B →+* A)) he' hS hT hST y := by
   simp only [weightedMapCompletionEquiv, RingEquiv.ofRingHom_symm_apply]
+
+/-- `TauCeti.Huber.weightedMapCompletionEquiv` is continuous. -/
+theorem continuous_weightedMapCompletionEquiv (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i) :
+    Continuous (weightedMapCompletionEquiv e he he' hT hS hTS hST) :=
+  (continuous_weightedMapCompletion ..).congr fun _ ↦ (weightedMapCompletionEquiv_apply ..).symm
+
+/-- The inverse of `TauCeti.Huber.weightedMapCompletionEquiv` is continuous. -/
+theorem continuous_weightedMapCompletionEquiv_symm (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i) :
+    Continuous (weightedMapCompletionEquiv e he he' hT hS hTS hST).symm :=
+  (continuous_weightedMapCompletion ..).congr fun _ ↦
+    (weightedMapCompletionEquiv_symm_apply ..).symm
 
 end Functoriality
 

@@ -7,9 +7,9 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
--- Non-public: `Representation.IsIrreducible.invariants_eq_bot` and its dimension form are what the
--- irreducible corollaries contradict, and `Representation.IsIrreducible.nontrivial` supplies the
--- nontriviality they need.
+-- Non-public: `Representation.IsIrreducible.eq_trivial_of_invariants_ne_bot` and its dimension form
+-- are what the irreducible corollaries apply, and `Representation.IsIrreducible.nontrivial`
+-- supplies the nontriviality they need.
 import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.Irreducible
 -- Non-public: `AddCommGroup.zmodModule` makes a `p`-torsion abelian group a `ZMod p`-module, used
@@ -178,15 +178,14 @@ invariant vector, and a nontrivial irreducible representation has none. -/
 theorem IsIrreducible.eq_trivial_of_forall_pow_eq_one {ρ : Representation k G V}
     (h : ρ.IsIrreducible) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ρ = trivial k G V :=
   have := h.nontrivial
-  not_not.1 fun hne => ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ (h.invariants_eq_bot hne)
+  h.eq_trivial_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ)
 
 /-- **Such an irreducible representation is a line**, an irreducible representation of any other
 dimension having no nonzero invariant vector. -/
 theorem IsIrreducible.finrank_eq_one_of_forall_pow_eq_one {ρ : Representation k G V}
     (h : ρ.IsIrreducible) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : Module.finrank k V = 1 :=
   have := h.nontrivial
-  not_not.1 fun hne =>
-    ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ (h.invariants_eq_bot_of_finrank_ne_one hne)
+  h.finrank_eq_one_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ)
 
 end Field
 

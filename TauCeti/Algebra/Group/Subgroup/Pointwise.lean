@@ -26,6 +26,9 @@ orientation-reversed.
 * `TauCeti.mem_conj_smul`: membership in `sHs⁻¹` is `s⁻¹ * x * s ∈ H`.
 * `TauCeti.conj_one_smul`, `TauCeti.conj_mul_smul`, `TauCeti.conj_inv_smul_smul`: conjugation of
   subgroups is an action of `G`.
+* `TauCeti.map_conj_eq_conj_smul`: the image of `H` under the inner automorphism of `s` is
+  `MulAut.conj s • H`, which converts Mathlib's statements phrased with `Subgroup.map`, such as
+  `MulAction.stabilizer_smul_eq_stabilizer_map_conj` and `Ideal.inertia_smul`, to this convention.
 -/
 
 public section
@@ -56,5 +59,12 @@ theorem conj_mul_smul (s t : G) (H : Subgroup G) :
 theorem conj_inv_smul_smul (s : G) (H : Subgroup G) :
     MulAut.conj s⁻¹ • (MulAut.conj s • H) = H := by
   rw [← mul_smul, ← map_mul, inv_mul_cancel, map_one, one_smul]
+
+/-- The image of a subgroup under the inner automorphism of `s` is its conjugate
+`MulAut.conj s • H`. -/
+theorem map_conj_eq_conj_smul (s : G) (H : Subgroup G) :
+    H.map (MulAut.conj s : G →* G) = MulAut.conj s • H :=
+  -- The pointwise action of `MulAut G` on subgroups is defined as `Subgroup.map`.
+  (rfl)
 
 end TauCeti

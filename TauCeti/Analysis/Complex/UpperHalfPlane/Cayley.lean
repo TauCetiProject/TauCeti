@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
+public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
-public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import TauCeti.Analysis.Complex.UnitDisc.Basic
+import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
 
@@ -36,11 +38,18 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   automorphism does not vanish at a real boundary point in Cayley coordinates.
 * `TauCeti.bijOn_sub_I_div_add_I_upperHalfPlaneSet`: the transform is a bijection from the open
   upper half-plane onto the open unit disc.
+* `TauCeti.bijOn_I_mul_one_add_div_one_sub_ball`: its inverse `w ↦ i (1 + w) / (1 - w)` is a
+  bijection from the open unit disc onto the open upper half-plane.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
   half-plane onto the closed unit disc minus `1`.
 * `TauCeti.differentiableOn_sub_I_div_add_I`: the transform is holomorphic away from its pole.
 * `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
   neighbourhood of the closed upper half-plane.
+* `TauCeti.hasDerivAt_I_mul_one_add_div_one_sub`: the derivative of the inverse transform.
+* `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
+* `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
+* `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
+* `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
 
 ## References
@@ -146,6 +155,12 @@ private theorem sub_I_div_add_I_inverse {w : ℂ} (hw : w ≠ 1) :
   rw [hden, hnum]
   field_simp
 
+/-- The inverse Cayley transform takes the Cayley image of a point back to that point. -/
+theorem I_mul_one_add_sub_I_div_add_I_div_one_sub {z : ℂ} (hz : z + I ≠ 0) :
+    I * (1 + (z - I) / (z + I)) / (1 - (z - I) / (z + I)) = z := by
+  field_simp
+  ring
+
 /-- **The Cayley transform of the open upper half-plane.** The map `z ↦ (z - i) / (z + i)` is a
 bijection from the open upper half-plane onto the open unit disc. -/
 theorem bijOn_sub_I_div_add_I_upperHalfPlaneSet :
@@ -162,6 +177,18 @@ theorem bijOn_sub_I_div_add_I_upperHalfPlaneSet :
     refine ⟨_, ?_, heq⟩
     rw [UpperHalfPlane.upperHalfPlaneSet, mem_ofPred_eq, ← norm_sub_I_div_add_I_lt_one_iff hne, heq]
     exact mem_ball_zero_iff.mp hw
+
+/-- **The inverse Cayley transform.** The map `w ↦ i (1 + w) / (1 - w)` is a bijection from the
+open unit disc onto the open upper half-plane; it inverts `z ↦ (z - i) / (z + i)`. -/
+theorem bijOn_I_mul_one_add_div_one_sub_ball :
+    BijOn (fun w : ℂ => I * (1 + w) / (1 - w)) (ball 0 1)
+      UpperHalfPlane.upperHalfPlaneSet := by
+  refine bijOn_sub_I_div_add_I_upperHalfPlaneSet.symm ⟨fun w hw => ?_, fun z hz => ?_⟩
+  · refine (sub_I_div_add_I_inverse ?_).2
+    rintro rfl
+    simp at hw
+  · have hz' := add_I_ne_zero_of_im_nonneg (le_of_lt hz)
+    exact I_mul_one_add_sub_I_div_add_I_div_one_sub hz'
 
 /-- **The Cayley transform of the closed upper half-plane.** The map `z ↦ (z - i) / (z + i)` is a
 bijection from the closed upper half-plane onto the closed unit disc with the point `1` removed. -/
@@ -192,6 +219,34 @@ theorem differentiableOn_sub_I_div_add_I_im_nonneg :
     DifferentiableOn ℂ (fun z : ℂ => (z - I) / (z + I)) {z | 0 ≤ z.im} :=
   differentiableOn_sub_I_div_add_I.mono fun _ hz => add_I_ne_zero_of_im_nonneg hz
 
+/-- The derivative of the inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` away from its pole
+at `1` is `2 i / (1 - w) ^ 2`. -/
+theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
+    HasDerivAt (fun u : ℂ => I * (1 + u) / (1 - u)) (2 * I / (1 - w) ^ 2) w := by
+  have h1 : 1 - w ≠ 0 := sub_ne_zero.mpr hw.symm
+  refine ((((hasDerivAt_id w).const_add 1).const_mul I).div
+    ((hasDerivAt_id w).const_sub 1) h1).congr_deriv ?_
+  simp only [id]
+  field_simp
+  ring
+
+/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)`. -/
+theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} (hζ : ζ ≠ 1) :
+    logDeriv (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) ζ = 2 / (1 - ζ) := by
+  have heq : (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) =ᶠ[𝓝 ζ]
+      fun ξ => 2 * I / (1 - ξ) ^ 2 :=
+    eventuallyEq_of_mem (isOpen_ne.mem_nhds hζ) fun _ hξ =>
+      (hasDerivAt_I_mul_one_add_div_one_sub hξ).deriv
+  have hfun : (fun ξ : ℂ => 2 * I / (1 - ξ) ^ 2) =
+      (fun ξ : ℂ => 2 * I * (1 - ξ) ^ (-2 : ℤ)) := by
+    funext ξ
+    simp [zpow_neg, zpow_ofNat, div_eq_mul_inv]
+  rw [(logDeriv_congr_nhds heq).eq_of_nhds, hfun,
+    logDeriv_const_mul ζ (2 * I) (mul_ne_zero two_ne_zero I_ne_zero),
+    logDeriv_fun_zpow (by fun_prop : DifferentiableAt ℂ (fun ξ : ℂ => 1 - ξ) ζ) (-2),
+    logDeriv_apply, deriv_const_sub_id 1]
+  ring
+
 /-- The Cayley transform tends to `1` at infinity: the point `1` it omits from the closed disc is
 the image of `∞`. -/
 theorem tendsto_sub_I_div_add_I_cobounded :
@@ -205,5 +260,66 @@ theorem tendsto_sub_I_div_add_I_cobounded :
     (eventually_ne_cobounded (0 : ℂ))] with z (hz : z + I ≠ 0)
   field_simp
   ring
+
+/-- The boundary Cayley map from the real line to the unit circle, sending
+`x` to `(x - i) / (x + i)`. -/
+noncomputable def boundaryCayley (x : ℝ) : Circle :=
+  ⟨((x : ℂ) - I) / ((x : ℂ) + I), by
+    refine mem_sphere_zero_iff_norm.2 ?_
+    rw [norm_div]
+    have hnorm : ‖(x : ℂ) - I‖ = ‖(x : ℂ) + I‖ := by
+      rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← normSq_eq_norm_sq,
+        ← normSq_eq_norm_sq]
+      simp [normSq_apply]
+    rw [hnorm]
+    apply div_self
+    rw [norm_ne_zero_iff]
+    intro h
+    have := congrArg im h
+    norm_num at this⟩
+
+/-- The boundary Cayley map as a complex-valued formula. -/
+@[simp]
+theorem coe_boundaryCayley (x : ℝ) :
+    (boundaryCayley x : ℂ) = ((x : ℂ) - I) / ((x : ℂ) + I) :=
+  by rw [boundaryCayley]
+
+/-- The boundary Cayley map never takes the omitted value `1`. -/
+@[simp]
+theorem boundaryCayley_ne_one (x : ℝ) : boundaryCayley x ≠ 1 := by
+  intro h
+  have h' := congrArg ((↑) : Circle → ℂ) h
+  simp only [coe_boundaryCayley, Circle.coe_one] at h'
+  have hden : (x : ℂ) + I ≠ 0 := by
+    intro hzero
+    have := congrArg im hzero
+    simp at this
+  rw [div_eq_one_iff_eq hden] at h'
+  have := congrArg im h'
+  norm_num at this
+
+
+/-- Under the inverse Cayley transform `c`, the simple fraction `c' / (c - x)` at a real point `x`
+splits into the simple fraction at its Cayley image and one at `1`. -/
+theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ1 : ζ ≠ 1)
+    (hζx : ζ ≠ ((x : ℂ) - I) / ((x : ℂ) + I)) :
+    1 / (I * (1 + ζ) / (1 - ζ) - x) * (2 * I / (1 - ζ) ^ 2) =
+      1 / (ζ - ((x : ℂ) - I) / ((x : ℂ) + I)) + 1 / (1 - ζ) := by
+  have h1 : 1 - ζ ≠ 0 := sub_ne_zero.mpr hζ1.symm
+  have hxI : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
+  have hD : I * (1 + ζ) - x * (1 - ζ) ≠ 0 := by
+    intro h
+    apply hζx
+    rw [eq_div_iff hxI]
+    linear_combination h
+  have hc : I * (1 + ζ) / (1 - ζ) - x = (I * (1 + ζ) - x * (1 - ζ)) / (1 - ζ) := by
+    field_simp
+  have hw : ζ - ((x : ℂ) - I) / ((x : ℂ) + I) = (I * (1 + ζ) - x * (1 - ζ)) / ((x : ℂ) + I) := by
+    field_simp
+    ring
+  rw [hc, hw]
+  field_simp
+  ring
+
 
 end TauCeti

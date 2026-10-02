@@ -43,6 +43,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `ZMod p`-bilinear form `TauCeti.gradedBracketLinear`.
 * `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`, and its iterate
   `TauCeti.gradedPowIter` `π^j : gr_0(G) → gr_j(G)` on degree-zero classes.
+* `TauCeti.gradedPowIterBracket`: the iterated `p`-power `π^m [ξ_g, ξ_h] ∈ gr_{m+1}(G)` of the
+  bracket of two degree-zero classes, the class of `⁅g, h⁆ ^ (p ^ m)`.
 * `TauCeti.gradedMap`: the map on graded pieces induced by a continuous homomorphism.
 
 ## Main results
@@ -63,6 +65,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
+* `TauCeti.gradedMap_symm_gradedMap`: the graded map of the inverse of a topological isomorphism
+  inverts the graded map of the isomorphism.
 * `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
   isomorphic to `ℤ/pⁿ⁺¹`, `π^n` of the class of the generator is nonzero.
 
@@ -416,6 +420,19 @@ theorem gradedMkZero_inv (g : G) : gradedMkZero p G g⁻¹ = -gradedMkZero p G g
 theorem gradedMkZero_pow (g : G) (n : ℕ) : gradedMkZero p G (g ^ n) = n • gradedMkZero p G g := by
   rw [← gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero p g⟩, ← gradedMk_pow]
   exact gradedMk_zero _
+
+/-- The degree-zero class of a product of elements of `G` is the sum of their classes. -/
+@[simp]
+theorem gradedMkZero_list_prod (l : List G) :
+    gradedMkZero p G l.prod = (l.map (gradedMkZero p G)).sum := by
+  induction l with
+  | nil => rw [List.prod_nil, List.map_nil, List.sum_nil, gradedMkZero_one]
+  | cons a l ih => rw [List.prod_cons, List.map_cons, List.sum_cons, gradedMkZero_mul, ih]
+
+-- Not `@[simp]`: `gradedMkZero_mul` and `gradedMkZero_inv` already rewrite the left-hand side.
+/-- The degree-zero class is invariant under conjugation, since `gr_0(G)` is abelian. -/
+theorem gradedMkZero_conj (c g : G) : gradedMkZero p G (c⁻¹ * g * c) = gradedMkZero p G g := by
+  simp only [gradedMkZero_mul, gradedMkZero_inv, neg_add_cancel_comm]
 
 @[simp]
 theorem gradedPieceZeroEquiv_gradedMkZero (g : G) :
@@ -887,6 +904,17 @@ theorem gradedMap_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : C
   rw [AddMonoidHom.comp_apply, gradedMap_gradedMk, gradedMap_gradedMk, gradedMap_gradedMk]
   rfl
 
+/-- The graded map of the inverse of a topological isomorphism inverts the graded map of the
+isomorphism, in every degree. -/
+@[simp]
+theorem gradedMap_symm_gradedMap (e : G ≃ₜ* H) (k : ℕ) (x : gradedPiece p G k) :
+    gradedMap p (e.symm : H →* G) (map_continuous e.symm) k
+      (gradedMap p (e : G →* H) (map_continuous e) k x) = x := by
+  obtain ⟨x, rfl⟩ := gradedMk_surjective k x
+  rw [gradedMap_gradedMk, gradedMap_gradedMk]
+  congr 1
+  exact Subtype.ext (e.symm_apply_apply x)
+
 /-- A continuous closed surjection (for instance a continuous surjection from a compact group onto
 a Hausdorff group, by `Continuous.isClosedMap`) induces a surjection in every degree. -/
 theorem gradedMap_surjective (f : G →* H) (hf : Continuous f) (hfc : IsClosedMap f)
@@ -993,6 +1021,19 @@ theorem gradedMap_gradedPowIter {H : Type v} [Group H] [TopologicalSpace H] [IsT
   | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
   | succ j ih => rw [gradedPowIter_succ, gradedPowIter_succ, gradedMap_gradedPow, ih]
 
+/-- **`π` carries the span of iterated `p`-powers to the next degree**: above degree zero, `π`
+maps the span of the classes `π^j x_a` of a family `x : ι → gr_0(G)` into the span of the classes
+`π^{j+1} x_a`. -/
+theorem gradedPow_mem_span_range_gradedPowIter_succ {ι : Type*} (x : ι → gradedPiece p G 0)
+    {j : ℕ} (hj : 1 ≤ j) {t : gradedPiece p G j}
+    (ht : t ∈ Submodule.span (ZMod p) (Set.range fun a ↦ gradedPowIter p G j (x a))) :
+    gradedPow p G j t ∈
+      Submodule.span (ZMod p) (Set.range fun a ↦ gradedPowIter p G (j + 1) (x a)) := by
+  have h := Submodule.mem_map_of_mem (f := (gradedPowAddMonoidHom p G hj).toZModLinearMap p) ht
+  rw [Submodule.map_span, ← Set.range_comp] at h
+  simpa only [Function.comp_def, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply,
+    gradedPowIter_succ] using h
+
 variable [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H] in
 /-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹`, the iterated `p`-power class `π^n` of the
 generator is nonzero in `gr_n`. -/
@@ -1008,5 +1049,73 @@ theorem _root_.MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_p
   exact Nat.pow_lt_pow_right hp.one_lt n.lt_succ_self
 
 end PowIter
+
+/-! ### Iterated `p`-powers of a bracket of degree-zero classes -/
+
+section PowIterBracket
+
+variable (p) in
+/-- The `p ^ m`-th power of the commutator of two elements lies in `λ_{m+1}(G)`. -/
+theorem commutatorElement_pow_pow_mem_pLowerCentralSeries (g h : G) (m : ℕ) :
+    ⁅g, h⁆ ^ p ^ m ∈ pLowerCentralSeries p G (m + 1) := by
+  rw [add_comm]
+  exact pow_pow_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries
+    (mem_pLowerCentralSeries_zero p g) (mem_pLowerCentralSeries_zero p h)) m
+
+variable (p G) in
+/-- **The iterated `p`-power of the bracket of two degree-zero classes**: `π^m [ξ_g, ξ_h]`, the
+class in `gr_{m+1}(G)` of `⁅g, h⁆ ^ (p ^ m)`. For `m = 0` it is the bracket of the classes of `g`
+and `h` (`TauCeti.gradedPowIterBracket_zero`), and `π` raises `m` by one
+(`TauCeti.gradedPow_gradedPowIterBracket`). At `p = 2` these classes are not brackets of iterated
+`p`-powers: `π [ξ_g, ξ_h]` differs from `[π ξ_g, ξ_h]` by the correction `[[ξ_g, ξ_h], ξ_g]`,
+the bracket in `gr_2(G)` of the degree-one class `[ξ_g, ξ_h]` with `ξ_g`
+(`TauCeti.gradedPow_gradedBracket_zero_zero`), which is why they occur as spanning vectors of
+their own in the span statements of the dyadic classification. -/
+noncomputable def gradedPowIterBracket (m : ℕ) (g h : G) : gradedPiece p G (m + 1) :=
+  gradedMk p G (m + 1) ⟨⁅g, h⁆ ^ p ^ m, commutatorElement_pow_pow_mem_pLowerCentralSeries p g h m⟩
+
+theorem gradedPowIterBracket_def (m : ℕ) (g h : G) :
+    gradedPowIterBracket p G m g h =
+      gradedMk p G (m + 1)
+        ⟨⁅g, h⁆ ^ p ^ m, commutatorElement_pow_pow_mem_pLowerCentralSeries p g h m⟩ :=
+  (rfl)
+
+/-- For `m = 0`, that is without any `p`-power, `π^0 [ξ_g, ξ_h] ∈ gr_1(G)` is the bracket of the
+classes of `g` and `h`. -/
+@[simp]
+theorem gradedPowIterBracket_zero (g h : G) :
+    gradedPowIterBracket p G 0 g h =
+      gradedBracket p G 0 0 (gradedMkZero p G g) (gradedMkZero p G h) := by
+  rw [gradedBracket_gradedMkZero, gradedPowIterBracket_def]
+  congr 1
+  exact Subtype.ext (by simp)
+
+/-- **`π` raises the iterated `p`-power of a bracket by one**:
+`π (π^m [ξ_g, ξ_h]) = π^{m+1} [ξ_g, ξ_h]`. -/
+@[simp]
+theorem gradedPow_gradedPowIterBracket (m : ℕ) (g h : G) :
+    gradedPow p G (m + 1) (gradedPowIterBracket p G m g h) =
+      gradedPowIterBracket p G (m + 1) g h := by
+  rw [gradedPowIterBracket_def, gradedPowIterBracket_def, gradedPow_gradedMk]
+  congr 1
+  exact Subtype.ext (by simp [pow_succ, pow_mul])
+
+/-- The iterated `p`-powers of the bracket of a class with itself vanish. -/
+@[simp]
+theorem gradedPowIterBracket_self (m : ℕ) (g : G) : gradedPowIterBracket p G m g g = 0 := by
+  rw [gradedPowIterBracket_def, gradedMk_eq_zero_iff, Subgroup.coe_mk, commutatorElement_self,
+    one_pow]
+  exact one_mem _
+
+/-- **Skew-symmetry of the iterated `p`-powers of brackets**:
+`π^m [ξ_h, ξ_g] = -π^m [ξ_g, ξ_h]`. -/
+theorem gradedPowIterBracket_swap (m : ℕ) (g h : G) :
+    gradedPowIterBracket p G m h g = -gradedPowIterBracket p G m g h := by
+  rw [gradedPowIterBracket_def, gradedPowIterBracket_def, ← gradedMk_inv]
+  congr 1
+  exact Subtype.ext (by
+    rw [Subgroup.coe_inv, Subgroup.coe_mk, Subgroup.coe_mk, ← inv_pow, commutatorElement_inv])
+
+end PowIterBracket
 
 end TauCeti

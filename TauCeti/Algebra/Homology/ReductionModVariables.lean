@@ -443,41 +443,7 @@ end ReductionRing
 
 section QuasiIso
 
-variable [CommRing R] {S : Type*} [CommRing S]
-
-/-- The mapping cone of `f` on `(ι ⊕ κ) →₀ S`, transported from `(ι →₀ S) × (κ →₀ S)`. -/
-private noncomputable abbrev sumMappingCone (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
-    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) :
-    ((ι ⊕ κ) →₀ S) →ₗ[S] ((ι ⊕ κ) →₀ S) :=
-  (sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
-    (sumFinsuppLEquivProdFinsupp S).toLinearMap
-
-/-- The transported mapping cone is computed by applying the product mapping cone between the
-forward and inverse `Finsupp` sum-product equivalences. -/
-private theorem sumMappingCone_apply (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
-    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S))
-    (x : (ι ⊕ κ) →₀ S) :
-    sumMappingCone d e f x =
-      (sumFinsuppLEquivProdFinsupp S).symm
-        (mappingCone d e f (sumFinsuppLEquivProdFinsupp S x)) :=
-  rfl
-
-private theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
-    {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
-    ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
-      ker (mappingCone d e f) ≤ range (mappingCone d e f) := by
-  rw [sumMappingCone, LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
-    Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
-  exact Submodule.comap_le_comap_iff_of_surjective (LinearEquiv.surjective _)
-
-private theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
-    {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0)
-    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
-    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
-  refine LinearMap.ext fun x ↦ ?_
-  rw [comp_apply, sumMappingCone_apply, sumMappingCone_apply, LinearEquiv.apply_symm_apply,
-    ← comp_apply (mappingCone d e f), mappingCone_comp_self f hd he hf, zero_apply, map_zero,
-    zero_apply]
+variable [CommRing R]
 
 variable {d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R)}
   {e : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
@@ -545,13 +511,11 @@ theorem homologyMap_bijective_of_mapRange_constantCoeff
             (map_zero _)) := by
       ext <;> simp
     ext (j | j)
-    · simp only [sumMappingCone, coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-        sumFinsuppLEquivProdFinsupp_symm_inl, mappingCone_apply, Finsupp.coe_neg,
-        Pi.neg_apply, Finsupp.mapRange_apply, map_neg, hε]
+    · simp only [sumMappingCone_apply, sumFinsuppLEquivProdFinsupp_symm_inl, mappingCone_apply,
+        Finsupp.coe_neg, Pi.neg_apply, Finsupp.mapRange_apply, map_neg, hε]
       exact congr(-$(hdd₀ _) j)
-    · simp only [sumMappingCone, coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-        sumFinsuppLEquivProdFinsupp_symm_inr, mappingCone_apply, Finsupp.coe_add,
-        Pi.add_apply, Finsupp.mapRange_apply, map_add, hε]
+    · simp only [sumMappingCone_apply, sumFinsuppLEquivProdFinsupp_symm_inr, mappingCone_apply,
+        Finsupp.coe_add, Pi.add_apply, Finsupp.mapRange_apply, map_add, hε]
       exact congr($(hff₀ _) j + $(hee₀ _) j)
   · rintro _ ⟨i | i, rfl⟩
     · have := hG ⟨i, rfl⟩

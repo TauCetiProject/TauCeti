@@ -123,12 +123,9 @@ variable [ContinuousMul G]
 /-- A `G`-invariant element of `Coind_U^G A` is a constant function: right translation moves `1`
 to every point of `G`. -/
 theorem apply_eq_apply_one_of_mem_H0 (f : H0 G (DiscreteCoind G U A)) (g : G) :
-    (f : DiscreteCoind G U A) g = (f : DiscreteCoind G U A) 1 := by
-  have h := (FixedPoints.mem_addSubgroup G (DiscreteCoind G U A)
-    (f : DiscreteCoind G U A)).1 f.2 g
-  calc (f : DiscreteCoind G U A) g
-      = (g • (f : DiscreteCoind G U A)) 1 := by rw [DiscreteCoind.coe_smul, one_mul]
-    _ = (f : DiscreteCoind G U A) 1 := by rw [h]
+    (f : DiscreteCoind G U A) g = (f : DiscreteCoind G U A) 1 :=
+  DiscreteCoind.apply_eq_apply_one_of_forall_smul_eq
+    ((FixedPoints.mem_addSubgroup G (DiscreteCoind G U A) _).1 f.2) g
 
 /-- The constant coinduced element is `G`-invariant. -/
 theorem constCoind_mem_H0 (a : H0 U A) : constCoind G a ∈ H0 G (DiscreteCoind G U A) :=
@@ -160,6 +157,16 @@ theorem explicitShapiro0_apply (f : H0 G (DiscreteCoind G U A)) :
 @[simp]
 theorem explicitShapiro0_symm_apply (a : H0 U A) :
     ((explicitShapiro0 G U A).symm a : DiscreteCoind G U A) = constCoind G a := (rfl)
+
+variable (G U A) in
+/-- The degree-zero Shapiro isomorphism is the compatible-pair pullback along the inclusion
+`U ↪ G` and evaluation at `1`, like the forward Shapiro maps in degrees one and two. -/
+theorem explicitShapiro0_eq_explicitMap0 (f : H0 G (DiscreteCoind G U A)) :
+    explicitShapiro0 G U A f =
+      explicitMap0 G (DiscreteCoind G U A) (ContinuousMonoidHom.subgroupSubtype U : U →* G)
+        (DiscreteCoind.eval G U A) (fun u f => DiscreteCoind.eval_smul u f) f :=
+  Subtype.ext ((explicitShapiro0_apply f).trans
+    ((coe_explicitMap0 _ _ _ _ _ f).trans (DiscreteCoind.eval_apply _)).symm)
 
 end DegreeZero
 

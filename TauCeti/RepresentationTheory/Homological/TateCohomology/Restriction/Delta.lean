@@ -6,21 +6,23 @@ Authors: Claude
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Boundary
 
 /-!
-# Restriction commutes with the connecting maps in nonnegative Tate degrees
+# Restriction commutes with the connecting maps from Tate degree minus one onward
 
 Let `H` be a subgroup of a finite group `G` and `S` a short exact sequence of
-`G`-representations. Restricting `S` to `H` keeps it short exact, and in nonnegative degrees Tate
-restriction commutes with the connecting maps of the two long exact sequences:
+`G`-representations. Restricting `S` to `H` keeps it short exact, and from degree minus one onward
+Tate restriction commutes with the connecting maps of the two long exact sequences:
 
 `H_Tateʳ(G, X₃) ⟶ H_Tateʳ⁺¹(G, X₁)`
 `    ↓               ↓`
 `H_Tateʳ(H, X₃) ⟶ H_Tateʳ⁺¹(H, X₁)`
 
-for `r ≥ 0` (`TauCeti.TateCohomology.δ_comp_res`). This is what lets a statement about restriction
+for `r ≥ -1` (`TauCeti.TateCohomology.δ_comp_res`). This is what lets a statement about restriction
 be moved up in degree by dimension shifting, as in the proof that restriction is compatible with
-the Tate cup product.
+the Tate cup product. The boundary case `r = -1` is supplied by
+`TauCeti.TateCohomology.δ_comp_res_neg_one`.
 
 In nonnegative degrees the Tate complex is the complex of inhomogeneous cochains. Restriction of
 cochains, extended by zero to negative degrees, is not a map of Tate complexes: the norm map from
@@ -36,7 +38,7 @@ composite with Tate restriction, which is induced by the inclusion `Mᴳ ⊆ M�
 ## Main results
 
 * `TauCeti.TateCohomology.δ_comp_res`: Tate restriction commutes with the connecting maps in
-  nonnegative degrees.
+  degrees at least minus one.
 
 ## References
 
@@ -250,15 +252,20 @@ variable [Fintype G]
 
 attribute [local instance] Subgroup.fintypeOfFinite
 
-/-- **Tate restriction commutes with the connecting maps in nonnegative degrees.** For a short
+/-- **Tate restriction commutes with the connecting maps from degree minus one onward.** For a short
 exact sequence `S` of `G`-representations and a subgroup `H`, restriction to `H` intertwines the
 connecting map `H_Tateʳ(G, X₃) ⟶ H_Tateʳ⁺¹(G, X₁)` of `S` with the connecting map of its
-restriction to `H`, for every `r ≥ 0`. -/
+restriction to `H`, for every `r ≥ -1`. -/
 @[reassoc (attr := simp)]
 theorem δ_comp_res {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H : Subgroup G) {r : ℤ}
-    (hr : 0 ≤ r) :
+    (hr : -1 ≤ r) :
     _root_.TateCohomology.δ hS r ≫ res S.X₁ H (r + 1) =
       res S.X₃ H r ≫ _root_.TateCohomology.δ ((shortExact_res H.subtype).2 hS) r := by
+  by_cases hboundary : r = -1
+  · subst r
+    simpa only [Int.reduceNeg, Int.reduceAdd, res_zero, res_neg_one] using
+      δ_comp_res_neg_one hS H
+  have hr : 0 ≤ r := by omega
   have hE := map_cochainsExtFunctor_shortExact hS
   -- The connecting maps commute with the identity of cochains and with restriction of cochains.
   have hι := HomologicalComplex.HomologySequence.δ_naturality

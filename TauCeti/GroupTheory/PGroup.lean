@@ -29,12 +29,16 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 ## Main results
 
+* `IsPGroup.exists_pow_pow_eq_one_map`: every element in the image of a `p`-group under a monoid
+  homomorphism has `p`-power order.
 * `IsPGroup.prod`: a product of two `p`-groups is a `p`-group.
 * `IsPGroup.pi`: a finite product of `p`-groups is a `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
+* `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
+  and a `q`-group for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsPGroup.smul_zmod_eq_self`: a `p`-group acts trivially on the additive group `ZMod p`.
 * `TauCeti.exists_isPGroup_quotient_notMem_of_pow_pow_eq_one`: in a finite commutative
   group, an element of `p`-power order survives in some `p`-group quotient.
@@ -52,6 +56,13 @@ public section
 namespace TauCeti
 
 variable {p : ℕ} {G : Type*} [Group G] {H : Type*} [Group H]
+
+/-- **Every element in the image of a `p`-group under a monoid homomorphism has `p`-power order.**
+A homomorphism preserves powers and `1`, so `IsPGroup.exists_pow_pow_eq_one` transports along it;
+this is what supplies the power-order hypothesis of a representation of a `p`-group. -/
+theorem _root_.IsPGroup.exists_pow_pow_eq_one_map {M : Type*} [Monoid M] (hG : IsPGroup p G)
+    (f : G →* M) (g : G) : ∃ n : ℕ, f g ^ p ^ n = 1 :=
+  (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
 
 /-- A product of two `p`-groups is a `p`-group. -/
 theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
@@ -96,6 +107,17 @@ theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G
   refine hC ((?_ : p ∣ orderOf g).trans ?_)
   · simpa [Subgroup.orderOf_mk] using hQ.dvd_orderOf (g := (⟨g, hgQ⟩ : Q)) (by simpa using hg1)
   · simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
+
+/-- A group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/
+theorem _root_.IsPGroup.subsingleton_of_coprime {q : ℕ} (hp : IsPGroup p G) (hq : IsPGroup q G)
+    (hpq : p.Coprime q) : Subsingleton G :=
+  Subgroup.subsingleton_iff.mp <| subsingleton_of_bot_eq_top
+    (disjoint_self.mp ((hp.to_subgroup ⊤).disjoint_of_coprime (hq.to_subgroup ⊤) hpq)).symm
+
+/-- **A group that is a `p`-group and a `q`-group for two distinct primes is trivial.** -/
+theorem _root_.IsPGroup.subsingleton_of_ne {q : ℕ} [Fact p.Prime] [Fact q.Prime]
+    (hp : IsPGroup p G) (hq : IsPGroup q G) (hpq : p ≠ q) : Subsingleton G :=
+  hp.subsingleton_of_coprime hq ((Nat.coprime_primes Fact.out Fact.out).mpr hpq)
 
 /-- A `p`-group acts trivially on the additive group `ZMod p`, for `p` prime: every additive
 action of `g` on `ZMod p` is multiplication by `g • 1`, an element fixed by the `p`-th power map,
