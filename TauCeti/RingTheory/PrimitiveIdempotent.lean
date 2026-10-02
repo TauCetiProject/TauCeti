@@ -260,6 +260,18 @@ theorem isPrimitiveIdempotent_of_isSimpleModule (he : IsIdempotentElem e)
     [IsSimpleModule A (Ideal.span {e} : Ideal A)] : IsPrimitiveIdempotent e :=
   isPrimitiveIdempotent_of_isIndecomposableModule he IsSimpleModule.isIndecomposableModule
 
+/-- An idempotent generating a semisimple left ideal is primitive exactly when that ideal
+is simple. In particular this applies to every idempotent of a semisimple ring. -/
+theorem isPrimitiveIdempotent_iff_isSimpleModule (he : IsIdempotentElem e)
+    [IsSemisimpleModule A (Ideal.span {e} : Ideal A)] :
+    IsPrimitiveIdempotent e ↔ IsSimpleModule A (Ideal.span {e} : Ideal A) := by
+  constructor
+  · intro h
+    exact h.isIndecomposableModule.isSimpleModule
+  · intro h
+    have := h
+    exact isPrimitiveIdempotent_of_isSimpleModule he
+
 /-- **Primitivity as a local endomorphism ring.** For a left ideal of finite length, `e` is
 primitive exactly when `End (Ae)` is local; this is Fitting's lemma read through
 `TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`. -/
