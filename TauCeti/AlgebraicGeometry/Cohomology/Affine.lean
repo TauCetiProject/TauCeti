@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Flasque
-public import TauCeti.AlgebraicGeometry.Modules.Tilde
+public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
 # Serre's vanishing theorem on a Noetherian affine scheme
