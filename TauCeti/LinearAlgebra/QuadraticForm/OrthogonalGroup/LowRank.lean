@@ -69,18 +69,18 @@ theorem mem_orthogonalGroup_iff_of_finrank_eq_one [Module.IsTorsionFree R N]
     · exact .inr (LinearEquiv.ext fun m ↦ by simp [hc])
   · rintro (rfl | rfl)
     · exact one_mem _
-    · exact neg_mem_orthogonalGroup Q
+    · exact Q.neg_mem_orthogonalGroup
 
-/-- In rank one, every isometry of a nonzero quadratic map is `1` or `negOrthogonal Q`. -/
+/-- In rank one, every isometry of a nonzero quadratic map is `1` or `Q.negOrthogonal`. -/
 theorem eq_one_or_eq_negOrthogonal_of_finrank_eq_one [Module.IsTorsionFree R N]
     {Q : QuadraticMap R M N} (hQ : Q ≠ 0) (hM : Module.finrank R M = 1) (g : orthogonalGroup Q) :
-    g = 1 ∨ g = negOrthogonal Q :=
+    g = 1 ∨ g = Q.negOrthogonal :=
   ((mem_orthogonalGroup_iff_of_finrank_eq_one hQ hM).mp g.2).imp
     (fun h ↦ Subtype.ext (by simpa using h)) (fun h ↦ Subtype.ext (by simpa using h))
 
 /-- When `2 ≠ 0`, negation is a nontrivial isometry of a module of rank one. -/
-theorem negOrthogonal_ne_one_of_finrank_eq_one [NeZero (2 : R)] (Q : QuadraticMap R M N)
-    (hM : Module.finrank R M = 1) : negOrthogonal Q ≠ 1 := by
+theorem _root_.QuadraticMap.negOrthogonal_ne_one_of_finrank_eq_one [NeZero (2 : R)]
+    (Q : QuadraticMap R M N) (hM : Module.finrank R M = 1) : Q.negOrthogonal ≠ 1 := by
   have : Nontrivial M := Module.nontrivial_of_finrank_eq_succ hM
   obtain ⟨m, hm⟩ := exists_ne (0 : M)
   intro h
@@ -95,8 +95,8 @@ isometries `1` and `-1`. -/
 theorem card_orthogonalGroup_of_finrank_eq_one [NeZero (2 : R)] [Module.IsTorsionFree R N]
     {Q : QuadraticMap R M N} (hQ : Q ≠ 0) (hM : Module.finrank R M = 1) :
     Nat.card (orthogonalGroup Q) = 2 := by
-  refine Nat.card_eq_two_iff.mpr ⟨1, negOrthogonal Q,
-    (negOrthogonal_ne_one_of_finrank_eq_one Q hM).symm, Set.eq_univ_of_forall fun g ↦ ?_⟩
+  refine Nat.card_eq_two_iff.mpr ⟨1, Q.negOrthogonal,
+    (Q.negOrthogonal_ne_one_of_finrank_eq_one hM).symm, Set.eq_univ_of_forall fun g ↦ ?_⟩
   rcases eq_one_or_eq_negOrthogonal_of_finrank_eq_one hQ hM g with rfl | rfl <;> simp
 
 section Reflection
@@ -118,11 +118,12 @@ theorem reflection_eq_neg_of_finrank_eq_one (hM : Module.finrank R M = 1) :
     exact eq_neg_of_add_eq_zero_left ((smul_eq_zero_iff_left hv).mp h)
   exact LinearEquiv.ext fun m ↦ by simp [hc, hc']
 
-/-- In rank one, the bundled reflection in a vector of invertible norm is `negOrthogonal Q`. -/
+/-- In rank one, the bundled reflection in a vector of invertible norm is `Q.negOrthogonal`. -/
 theorem reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one (hM : Module.finrank R M = 1) :
-    reflectionOrthogonal Q v = negOrthogonal Q :=
+    reflectionOrthogonal Q v = Q.negOrthogonal :=
   Subtype.ext <| by
-    rw [coe_reflectionOrthogonal, coe_negOrthogonal, reflection_eq_neg_of_finrank_eq_one Q v hM]
+    rw [coe_reflectionOrthogonal, QuadraticMap.coe_negOrthogonal,
+      reflection_eq_neg_of_finrank_eq_one Q v hM]
 
 end Reflection
 
