@@ -185,11 +185,6 @@ theorem krausGlobalCondition_iff : KrausGlobalCondition O c₄ c₆ ↔
     ∀ v : HeightOneSpectrum O, KrausLocalCondition (Localization.AtPrime v.asIdeal) c₄ c₆ :=
   Iff.rfl
 
-/-- Kraus's global condition gives the local condition at each height-one prime. -/
-theorem KrausGlobalCondition.krausLocalCondition (h : KrausGlobalCondition O c₄ c₆)
-    (v : HeightOneSpectrum O) : KrausLocalCondition (Localization.AtPrime v.asIdeal) c₄ c₆ :=
-  h v
-
 variable [Invertible (2 : K)] [Invertible (3 : K)]
 
 /-- A pair realised by an integral equation with `a₂ = 0` has a two-witness: the equation is the
