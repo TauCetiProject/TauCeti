@@ -9,6 +9,9 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.ExchangeableS
 public import TauCeti.Probability.DeFinetti.ViaKoopman.Theorem
 public import TauCeti.Probability.DeFinetti.ViaL2.ConditionallyIID
 public import TauCeti.Probability.Exchangeability.PathSpace.Invariant.Tail
+-- Non-public: the generic comparison of conditional expectations on σ-algebras that agree up to
+-- null sets is used only inside proofs.
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
 /-!
 # The exchangeable, tail and shift-invariant σ-algebras agree up to null sets
@@ -29,6 +32,10 @@ process are events of its directing measure up to null sets
 (`ConditionallyIIDWith.exists_measurableSet_ae_eq`), they are invariant, respectively tail, events
 up to null sets.
 
+Consequently conditioning on any of the three σ-algebras gives the same result almost everywhere:
+under a contractable law, conditional expectations given the exchangeable σ-algebra can be computed
+from the tail or from the shift-invariant σ-algebra, and conversely.
+
 ## Main results
 
 * `TauCeti.Probability.Contractable.exists_measurableSet_tailProcess_ae_eq` — for a contractable
@@ -38,6 +45,11 @@ up to null sets.
   path law, every exchangeable event agrees almost everywhere with a shift-invariant event.
 * `TauCeti.Probability.ContractableLaw.exists_measurableSet_pathTail_ae_eq` — the same with a tail
   event.
+* `TauCeti.Probability.ContractableLaw.condExp_exchangeableSigma_ae_eq_invariants`,
+  `TauCeti.Probability.ContractableLaw.condExp_exchangeableSigma_ae_eq_pathTail`,
+  `TauCeti.Probability.ContractableLaw.condExp_pathTail_ae_eq_invariants` — under a contractable
+  path law, conditional expectations given the exchangeable, tail and shift-invariant σ-algebras
+  agree almost everywhere.
 
 Exchangeable processes and laws are covered through `Exchangeable.contractable` and
 `ExchangeableLaw.contractableLaw`.
@@ -101,6 +113,46 @@ theorem ContractableLaw.exists_measurableSet_pathTail_ae_eq {ρ : Measure (ℕ �
     ∃ t : Set (ℕ → α), MeasurableSet[pathTail α] t ∧ s =ᵐ[ρ] t :=
   let ⟨t, ht, hst⟩ := hρ.exists_measurableSet_invariants_ae_eq hs
   ⟨t, invariants_shift_le_pathTail t ht, hst⟩
+
+section CondExp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ]
+
+/-- **Conditioning on exchangeable events is conditioning on shift-invariant events.** Under a
+contractable law `ρ` on paths in a standard Borel space, the conditional expectation of any
+observable given the exchangeable σ-algebra agrees `ρ`-almost everywhere with its conditional
+expectation given the shift-invariant σ-algebra. -/
+theorem ContractableLaw.condExp_exchangeableSigma_ae_eq_invariants (hρ : ContractableLaw ρ)
+    (f : (ℕ → α) → E) :
+    ρ[f | exchangeableSigma α] =ᵐ[ρ] ρ[f | MeasurableSpace.invariants (shift α)] :=
+  TauCeti.MeasureTheory.condExp_ae_eq_of_forall_exists_ae_eq
+    invariants_shift_le_exchangeableSigma exchangeableSigma_le
+    fun _ hs => hρ.exists_measurableSet_invariants_ae_eq hs
+
+/-- **Conditioning on exchangeable events is conditioning on tail events.** Under a contractable
+law `ρ` on paths in a standard Borel space, the conditional expectation of any observable given the
+exchangeable σ-algebra agrees `ρ`-almost everywhere with its conditional expectation given the
+tail σ-algebra. -/
+theorem ContractableLaw.condExp_exchangeableSigma_ae_eq_pathTail (hρ : ContractableLaw ρ)
+    (f : (ℕ → α) → E) :
+    ρ[f | exchangeableSigma α] =ᵐ[ρ] ρ[f | pathTail α] :=
+  TauCeti.MeasureTheory.condExp_ae_eq_of_forall_exists_ae_eq
+    pathTail_le_exchangeableSigma exchangeableSigma_le
+    fun _ hs => hρ.exists_measurableSet_pathTail_ae_eq hs
+
+/-- **Conditioning on tail events is conditioning on shift-invariant events.** Under a contractable
+law `ρ` on paths in a standard Borel space, the conditional expectation of any observable given the
+tail σ-algebra agrees `ρ`-almost everywhere with its conditional expectation given the
+shift-invariant σ-algebra. -/
+theorem ContractableLaw.condExp_pathTail_ae_eq_invariants (hρ : ContractableLaw ρ)
+    (f : (ℕ → α) → E) :
+    ρ[f | pathTail α] =ᵐ[ρ] ρ[f | MeasurableSpace.invariants (shift α)] :=
+  TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le invariants_shift_le_pathTail
+    pathTail_le_exchangeableSigma exchangeableSigma_le
+    (hρ.condExp_exchangeableSigma_ae_eq_invariants f)
+
+end CondExp
 
 end Probability
 
