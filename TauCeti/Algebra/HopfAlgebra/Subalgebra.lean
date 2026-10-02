@@ -26,11 +26,13 @@ an object of `CommHopfAlgCat` together with the inclusion morphism, and proves t
 property: a morphism of commutative Hopf algebras into `H` factors, necessarily uniquely, through
 the inclusion exactly when its image lies in `A`.
 
-State the predicate as `TauCeti.IsHopfSubalgebra A`, or as `IsHopfSubalgebra A` with
-`open TauCeti`. The spelling `A.IsHopfSubalgebra` is unavailable. Given a proof
-`hA : IsHopfSubalgebra A`, use `hA.toSubcoalgebra` for the underlying subcoalgebra and,
-under the flatness hypotheses, `hA.hopfAlgebra` and `hA.valBialgHom` for the restricted
-Hopf structure and its inclusion.
+For `A : Subalgebra R H`, state the predicate as `TauCeti.IsHopfSubalgebra A`, or as
+`IsHopfSubalgebra A` with `open TauCeti`. Given `hA : TauCeti.IsHopfSubalgebra A`, use
+`hA.toSubcoalgebra` for the underlying subcoalgebra. Under the flatness hypotheses,
+`hA.hopfAlgebra` supplies the restricted Hopf structure and `hA.valBialgHom` its inclusion.
+For a bialgebra homomorphism `f : K →ₐc[R] H` with `hf : ∀ x, f x ∈ A`,
+`hA.codRestrict f hf` is the corestriction to `A`; `hA.coe_codRestrict_apply f hf x`
+identifies its value in `H` with `f x`.
 
 ## Main declarations
 
