@@ -80,7 +80,7 @@ theorem relIndex_normUnits_unitFiltration_sup_eq_index_range_normGradedMap (v : 
   rw [range_normGradedMap, Subgroup.index_map_mk'_eq_index_sup,
     ← Subgroup.subgroupOf_sup (map_normUnits_unitFiltration_psiNat_le K L v)
       (unitFiltration_antitone v.le_succ)]
-  rfl
+  rw [Subgroup.relIndex]
 
 /-- In prime degree, before an upper break at `t`, every unit of depth `v < t` is congruent,
 modulo `U(K,v+1)`, to a norm from depth `ψℕ(v)`. Equivalently, the relative norm index is `1`.
@@ -97,7 +97,8 @@ theorem relIndex_normUnits_unitFiltration_sup_before_break (hℓ : (Module.finra
 /-- In a Galois extension of prime degree `ℓ` with an upper break at a natural number `t`,
 the norms from `U(L, ψℕ(t))`, together with `U(K,t+1)`, have index `ℓ` in `U(K,t)`.
 At the tame break `t = 0` this is the residue-unit power map; at a positive break it is the
-additive residue-field norm map. Total ramification follows from the existence of the break. -/
+additive polynomial on the residue field whose kernel and cokernel have order `ℓ`.
+Total ramification follows from the existence of the break. -/
 theorem relIndex_normUnits_unitFiltration_sup_at_break (hℓ : (Module.finrank K L).Prime)
     {t : ℕ} (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     (((unitFiltration L (psiNat K L t)).map (Algebra.normUnits K)) ⊔
