@@ -197,11 +197,12 @@ section Torsion
 
 variable (p : ℕ) [hp : Fact p.Prime] {M : Type*} [AddCommGroup M] [Module ℤ_[p] M]
 
-/-- **The torsion submodule of a `ℤ_[p]`-module is its torsion subgroup.** A nonzero `p`-adic
-integer is a unit times a power of `p`, so an element it kills is killed by a positive integer;
-conversely a positive integer is a nonzero `p`-adic integer. -/
+/-- **The torsion submodule of a `ℤ_[p]`-module is its torsion subgroup.** This is the `ℤ_[p]`
+analogue of `Submodule.torsion_int`. -/
 theorem Submodule.torsion_padicInt :
     (torsion ℤ_[p] M).toAddSubgroup = AddCommGroup.torsion M := by
+  -- A nonzero `p`-adic integer is a unit times a power of `p`, so an element it kills is killed
+  -- by a positive integer; conversely a positive integer is a nonzero `p`-adic integer.
   ext x
   simp only [mem_toAddSubgroup, mem_torsion_iff, AddCommGroup.mem_torsion]
   constructor

@@ -33,9 +33,9 @@ that decomposition and proves uniqueness of the rank and elementary divisors.
   torsion-factor equivalence determines the exponents up to a bijection of the index types.
 * For the canonical `ℤ_[p]`-module `TauCeti.IsProP.module`, the torsion submodule is the torsion
   subgroup, and the decomposition holds as topological `ℤ_[p]`-modules: the module is continuously
-  linearly isomorphic to `ℤ_p ^ r` times its torsion submodule. The splitting comes from a linear
-  section of the projection onto the free quotient `ℤ_p ^ r`, which exists because that quotient
-  is a free module, and is a homeomorphism because the group is compact.
+  linearly isomorphic to `ℤ_p ^ r` times its torsion submodule. This is the form of the structure
+  theorem in which `T` is literally the torsion subgroup and the splitting respects the
+  `ℤ_[p]`-action and the topology.
 
 Finiteness of the torsion subgroup is what makes the torsion subgroup of the abelianisation of a
 topologically finitely generated pro-`p` group a finite invariant; the `q`-invariant of a Demushkin
@@ -211,7 +211,13 @@ theorem exists_continuousLinearEquiv_pi_padicInt_prod_torsion (hA : IsProP p A)
   have hex : Function.Exact T.subtype g := fun x ↦ by simp [hker]
   let e : ((Fin r → ℤ_[p]) × T) ≃ₗ[ℤ_[p]] Additive A := (LinearEquiv.prodComm ℤ_[p] _ _).trans
     (hex.splitSurjectiveEquiv T.injective_subtype ⟨s, hs⟩).1.symm
-  have he : ⇑e = fun y ↦ y.2 + s y.1 := rfl
+  have he : ⇑e = fun y ↦ y.2 + s y.1 := by
+    -- Mathlib has no application lemma for `splitSurjectiveEquiv`, so unfold it to the
+    -- `LinearEquiv.ofBijective` it is built from and use that constructor's `apply` lemma.
+    funext y
+    simp only [e, Function.Exact.splitSurjectiveEquiv, Equiv.coe_fn_mk, LinearEquiv.trans_apply,
+      LinearEquiv.symm_symm, LinearEquiv.prodComm_apply]
+    exact (LinearEquiv.ofBijective_apply _ _).trans (by simp)
   have hcont : Continuous e := he ▸ (continuous_subtype_val.comp continuous_snd).add
     ((LinearMap.continuous_on_pi s).comp continuous_fst)
   have : Finite T := hA.finite_torsion_module hfg
