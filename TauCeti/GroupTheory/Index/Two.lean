@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Defs
+public import TauCeti.Data.ZMod.IntUnitsPower
+public import TauCeti.GroupTheory.Index.Indicator
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.NthRewrite
@@ -198,21 +200,13 @@ namespace Subgroup
 
 variable {G : Type*} [Group G] (N : Subgroup G)
 
-open scoped Classical in
 /-- **The character of a subgroup of index two**: the homomorphism `χ_N : G → 𝔽₂`, written
-multiplicatively, that is `0` on `N` and `1` off it. Index two is what makes this indicator a
-homomorphism (`Subgroup.mul_mem_iff_of_index_two`): for the trivial subgroup of a cyclic group of
-order three the indicator of the complement takes the value `1` at a generator and at its square,
-so it is not additive. Its kernel is `N` (`Subgroup.ker_indexTwoCharacter`). -/
-noncomputable def indexTwoCharacter (hN : N.index = 2) : G →* Multiplicative (ZMod 2) where
-  toFun γ := Multiplicative.ofAdd (if γ ∈ N then 0 else 1)
-  map_one' := by simp [N.one_mem]
-  map_mul' x y := by
-    rw [← ofAdd_add]
-    congr 1
-    have h := mul_mem_iff_of_index_two hN (a := x) (b := y)
-    by_cases hx : x ∈ N <;> by_cases hy : y ∈ N <;>
-      simp only [hx, hy, h, iff_self, iff_true, iff_false, not_true, ite_true, ite_false] <;> decide
+multiplicatively, that is `0` on `N` and `1` off it. It is the sign indicator
+`Subgroup.signIndicatorHom` read through the identification `TauCeti.additiveIntUnitsAddEquiv` of
+`ℤˣ` with `ZMod 2`. Its kernel is `N` (`Subgroup.ker_indexTwoCharacter`). -/
+noncomputable def indexTwoCharacter (hN : N.index = 2) : G →* Multiplicative (ZMod 2) :=
+  (AddEquiv.toMultiplicativeRight TauCeti.additiveIntUnitsAddEquiv).toMonoidHom.comp
+    (N.signIndicatorHom (hN ▸ dvd_rfl))
 
 variable {N}
 
@@ -231,14 +225,8 @@ theorem toAdd_indexTwoCharacter_of_notMem (hN : N.index = 2) {γ : G} (h : γ �
 /-- The character of a subgroup of index two is trivial exactly on the subgroup. -/
 theorem indexTwoCharacter_eq_one_iff (hN : N.index = 2) {γ : G} :
     N.indexTwoCharacter hN γ = 1 ↔ γ ∈ N := by
-  by_cases h : γ ∈ N
-  · simp only [h, iff_true]
-    exact Multiplicative.toAdd.injective (toAdd_indexTwoCharacter_of_mem hN h)
-  · simp only [h, iff_false]
-    intro h1
-    have := toAdd_indexTwoCharacter_of_notMem hN h
-    rw [h1, toAdd_one] at this
-    exact absurd this (by decide)
+  rw [indexTwoCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.map_eq_one_iff,
+    signIndicatorHom_apply, signIndicator_eq_one_iff]
 
 /-- **The kernel of the character of a subgroup of index two is the subgroup.** -/
 @[simp]
