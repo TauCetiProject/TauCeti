@@ -89,8 +89,13 @@ division algebra, so no such equivalence exists over `ℝ`, and the base change
 larger algebra. What is needed here is the `ℝ`-algebra embedding of `ℍ[ℝ]` itself, together with
 the information that it matches quaternion conjugation with the conjugate transpose: it is the
 compatibility of the two involutions, not the algebra structure alone, that sends unit quaternions
-to unitary matrices. That compatibility also fixes the generators: a basis conjugate to the one
-below by a non-unitary matrix would still be an algebra embedding, but would not be a `StarAlgHom`.
+to unitary matrices. That compatibility also pins the generators down to unitary conjugacy:
+conjugating the basis below by any invertible `P` leaves an algebra embedding, but the result is
+a `StarAlgHom` only when `Pᴴ * P` commutes with the whole image, hence — the image spanning
+`M₂(ℂ)` over `ℂ` — only when `Pᴴ * P` is a positive scalar matrix, which is to say when `P` is a
+positive multiple of a unitary matrix. Such a `P` conjugates exactly as its unitary part does, so
+the generators below are canonical only up to unitary conjugation, and a general conjugation need
+not respect `star` at all.
 
 `Quaternion.unitaryEquivSpecialUnitaryGroup` is stated against Mathlib's
 `Matrix.specialUnitaryGroup (Fin 2) ℂ`; `TauCeti.SU2` is a reducible abbreviation for that type, so
