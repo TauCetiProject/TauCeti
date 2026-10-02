@@ -86,14 +86,12 @@ theorem ord_completionEmbedding (x : F) :
   simp [ord_def]
 
 /-- A uniformizer in the original field remains a uniformizer in the completion. -/
-@[simp]
 theorem isUniformizer_completionEmbedding_iff (x : F) :
     P.completionPlace.valuation.IsUniformizer (P.completionEmbedding x) ↔
       P.valuation.IsUniformizer x := by
   simp only [isUniformizer_iff_ord_eq_one, ord_completionEmbedding]
 
 /-- The embedding preserves every step of the order filtration. -/
-@[simp]
 theorem completionEmbedding_mem_filtration_iff {a : ℤ} {x : F} :
     P.completionEmbedding x ∈ P.completionPlace.filtration a ↔ x ∈ P.filtration a := by
   simp only [mem_filtration_iff, completionPlace_valuation, valuation_completionEmbedding]
