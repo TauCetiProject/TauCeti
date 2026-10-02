@@ -10,9 +10,10 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.NumberTheory.DedekindDomain.FiniteApproximation
+import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
-# Existence of globally minimal Weierstrass equations
+# Existence of globally minimal and sharp semi-global Weierstrass equations
 
 Let `O` be a Dedekind domain with fraction field `K`, and `E` an elliptic curve over `K`. The
 global-minimality class `globalMinimalityClass O E ∈ ClassGroup O` is the class of the defect ideal
@@ -21,6 +22,11 @@ obstruction: **`E` has a globally minimal Weierstrass equation over `O` if and o
 global-minimality class is trivial** (Silverman, *AEC*, Proposition VIII.8.2). In particular every
 elliptic curve over the fraction field of a principal ideal domain, such as `ℚ`, has a globally
 minimal equation (Corollary VIII.8.3).
+
+When the class is not trivial, the same patching keeps the defect at a single prime: **`E` has a
+sharp semi-global model at a height-one prime `v₀` — integral at `v₀`, minimal at every other
+prime, with obstruction exponent exactly one at `v₀` — if and only if its global-minimality class
+is the class of `𝔭_{v₀}`.**
 
 ## Main results
 
@@ -31,6 +37,11 @@ minimal equation (Corollary VIII.8.3).
   factor.
 * `WeierstrassCurve.exists_isGlobalMinimal_smul`: over the fraction field of a principal ideal
   domain every elliptic curve has a globally minimal equation.
+* `WeierstrassCurve.exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq`: an
+  integral model whose defect ideal is `(u) · 𝔭_{v₀}` has a sharp semi-global model at `v₀` with
+  scaling factor `u`.
+* `WeierstrassCurve.globalMinimalityClass_eq_classGroupMk_iff`: `globalMinimalityClass O E` is the
+  class of `𝔭_{v₀}` if and only if some change of variables makes `E` sharply semi-global at `v₀`.
 
 ## The obstruction
 
@@ -39,6 +50,13 @@ necessary. Conversely, if an integral model `W` has principal defect ideal `(g)`
 of variables with scaling factor `g` carries `W` to a globally minimal equation
 (`exists_isGlobalMinimal_smul_of_weierstrassDefectIdeal_eq_span`); this is the patching of local
 minimal models in Silverman's proof of VIII.8.2.
+
+The sharp semi-global model is built by the same patching. If `𝔍_W = (u) · 𝔭_{v₀}`, then `u` has
+order `fᵥ(W)` at every `v ≠ v₀` and order `f_{v₀}(W) - 1` at `v₀`. The translation parameters are
+chosen exactly as for a globally minimal model, so the resulting equation is minimal away from
+`v₀`; at `v₀` it is the minimal local model rescaled by a change of variables whose `u⁻¹` is a
+uniformiser up to a unit, which keeps it integral and raises the obstruction exponent from zero to
+one.
 
 The argument uses nothing about `O` beyond finite approximation, so it is stated for an arbitrary
 Dedekind domain; the ring of integers of a number field is the case Silverman treats.
@@ -53,17 +71,39 @@ public section
 namespace WeierstrassCurve
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
+open scoped nonZeroDivisors
 
 variable {O : Type*} [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
-/-! ### Minimality at one prime -/
+/-! ### Comparing with a local change of variables at one prime -/
+
+/-- **The translation parameters of `C * D⁻¹` are integral at `v`** as soon as those of `C` agree
+with those of `D` to the orders `v (D.u) ^ 2`, `v (D.u)` and `v (D.u) ^ 3`, the last corrected by
+`D.s * (C.r - D.r)`. -/
+private theorem valuation_mul_inv_le_one (v : HeightOneSpectrum O) (C D : VariableChange K)
+    (hr : v.valuation K (C.r - D.r) ≤ v.valuation K D.u ^ 2)
+    (hs : v.valuation K (C.s - D.s) ≤ v.valuation K D.u)
+    (ht : v.valuation K (C.t - D.t - D.s * (C.r - D.r)) ≤ v.valuation K D.u ^ 3) :
+    v.valuation K (C * D⁻¹).r ≤ 1 ∧ v.valuation K (C * D⁻¹).s ≤ 1 ∧
+      v.valuation K (C * D⁻¹).t ≤ 1 := by
+  have hD : 0 < v.valuation K D.u :=
+    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+  have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
+    rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
+    rw [VariableChange.mul_inv_s, Units.val_inv_eq_inv_val, div_eq_mul_inv]
+  have hBt : (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : K) ^ 3 := by
+    rw [VariableChange.mul_inv_t, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [hBr, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 2)).2 hr
+  · rw [hBs, map_div₀]; exact (div_le_one₀ hD).2 hs
+  · rw [hBt, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 3)).2 ht
 
 /-- **Minimality at `v` from approximation of a local minimalising change of variables.** If `D`
 carries `W` to a model minimal at `v`, then so does every `C` whose scaling factor has the same
-valuation as `D.u` and whose translation parameters agree with those of `D` to the orders
-`v (D.u) ^ 2`, `v (D.u)` and `v (D.u) ^ 3`, the last corrected by `D.s * (C.r - D.r)`: these
-make `C * D⁻¹` defined over the localisation at `v`. -/
+valuation as `D.u` and whose translation parameters approximate those of `D` as in
+`valuation_mul_inv_le_one`: these make `C * D⁻¹` defined over the localisation at `v`. -/
 private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
     (W : WeierstrassCurve K) (C D : VariableChange K)
     [IsMinimal (Localization.AtPrime v.asIdeal) (D • W)]
@@ -77,21 +117,13 @@ private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
     zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBu : ((C * D⁻¹).u : K) = C.u / D.u := by
     rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
-  have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
-    rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
-  have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
-    rw [VariableChange.mul_inv_s, Units.val_inv_eq_inv_val, div_eq_mul_inv]
-  have hBt : (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : K) ^ 3 := by
-    rw [VariableChange.mul_inv_t, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
   -- The four components of `C * D⁻¹` are integral at `v`, the first a unit.
   obtain ⟨u, hu'⟩ := hv.exists_of_le_one (r := ((C * D⁻¹).u : K)) (by
     rw [hBu, map_div₀, hu, div_self hD.ne'])
-  obtain ⟨r, hr'⟩ := hv.exists_of_le_one (r := (C * D⁻¹).r) (by
-    rw [hBr, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 2)).2 hr)
-  obtain ⟨s, hs'⟩ := hv.exists_of_le_one (r := (C * D⁻¹).s) (by
-    rw [hBs, map_div₀]; exact (div_le_one₀ hD).2 hs)
-  obtain ⟨t, ht'⟩ := hv.exists_of_le_one (r := (C * D⁻¹).t) (by
-    rw [hBt, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 3)).2 ht)
+  obtain ⟨r, hr'⟩ := hv.exists_of_le_one hr'
+  obtain ⟨s, hs'⟩ := hv.exists_of_le_one hs'
+  obtain ⟨t, ht'⟩ := hv.exists_of_le_one ht'
   have hunit : IsUnit u := hv.isUnit_of_one' (by
     rw [hu', hBu, map_div₀, hu, div_self hD.ne'])
   have hB : (⟨hunit.unit, r, s, t⟩ : VariableChange _).baseChange K = C * D⁻¹ :=
@@ -99,6 +131,30 @@ private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
   have hCW : C • W = (C * D⁻¹) • (D • W) := by rw [smul_smul, inv_mul_cancel_right]
   rw [hCW, ← hB]
   exact isMinimal_baseChange_smul _ _ _
+
+/-- **Integrality at `v` from approximation of a local change of variables.** If `D` carries `W`
+to a model integral at `v`, then so does every `C` whose translation parameters approximate those
+of `D` as in `valuation_mul_inv_le_one` and whose scaling factor has valuation at least that of
+`D.u`: then `C • W` is the transform of `D • W` by `C * D⁻¹`, whose `u⁻¹`, `r`, `s` and `t` are
+integral at `v`. -/
+private theorem isIntegral_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
+    (W : WeierstrassCurve K) (C D : VariableChange K)
+    [IsIntegral (Localization.AtPrime v.asIdeal) (D • W)]
+    (hu : v.valuation K D.u ≤ v.valuation K C.u)
+    (hr : v.valuation K (C.r - D.r) ≤ v.valuation K D.u ^ 2)
+    (hs : v.valuation K (C.s - D.s) ≤ v.valuation K D.u)
+    (ht : v.valuation K (C.t - D.t - D.s * (C.r - D.r)) ≤ v.valuation K D.u ^ 3) :
+    IsIntegral (Localization.AtPrime v.asIdeal) (C • W) := by
+  have hv := v.integers_valuation_localizationAtPrime (K := K)
+  have hBu : (↑(C * D⁻¹).u⁻¹ : K) = (C.u : K)⁻¹ * D.u := by
+    rw [VariableChange.mul_inv_u, mul_inv, inv_inv, Units.val_mul, Units.val_inv_eq_inv_val]
+  obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
+  have hCW : C • W = (C * D⁻¹) • (D • W) := by rw [smul_smul, inv_mul_cancel_right]
+  rw [hCW]
+  refine isIntegral_smul_of_exists_lift (hv.exists_of_le_one ?_) (hv.exists_of_le_one hr')
+    (hv.exists_of_le_one hs') (hv.exists_of_le_one ht')
+  rw [hBu, map_mul, map_inv₀]
+  exact inv_mul_le_one_of_le₀ hu zero_le
 
 /-! ### The local data at every prime -/
 
@@ -200,6 +256,36 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
   rw [hv'.resolve_left v.isPrime.ne_top, mul_zero, Nat.cast_zero, neg_zero, WithZero.exp_zero]
   exact Valuation.map_sub_le _ (v.valuation_le_one a) (hx v)
 
+/-- **One global set of translation parameters for all the local changes of variables.** Given,
+at every height-one prime `v`, a change of variables `D v` with integral translation parameters,
+there are `r`, `s`, `t ∈ O` approximating those of `D v` at every `v` to the orders
+`exp (-fᵥ(W)) ^ 2`, `exp (-fᵥ(W))` and `exp (-fᵥ(W)) ^ 3`, the last corrected by
+`(D v).s * (r - (D v).r)` now that `r` is fixed. -/
+private theorem exists_forall_valuation_sub_le (W : WeierstrassCurve K) [W.IsElliptic]
+    [IsIntegral O W] (D : HeightOneSpectrum O → VariableChange K)
+    (hDr : ∀ v : HeightOneSpectrum O, v.valuation K (D v).r ≤ 1)
+    (hDs : ∀ v : HeightOneSpectrum O, v.valuation K (D v).s ≤ 1)
+    (hDt : ∀ v : HeightOneSpectrum O, v.valuation K (D v).t ≤ 1) :
+    ∃ r s t : O, ∀ v : HeightOneSpectrum O,
+      v.valuation K (algebraMap O K r - (D v).r) ≤
+          WithZero.exp (-obstructionExponentAt O v W) ^ 2 ∧
+        v.valuation K (algebraMap O K s - (D v).s) ≤
+          WithZero.exp (-obstructionExponentAt O v W) ∧
+        v.valuation K (algebraMap O K t - (D v).t - (D v).s * (algebraMap O K r - (D v).r)) ≤
+          WithZero.exp (-obstructionExponentAt O v W) ^ 3 := by
+  obtain ⟨r, hr⟩ := exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow W 2
+    (fun v ↦ (D v).r) hDr
+  obtain ⟨s, hs⟩ := exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow W 1
+    (fun v ↦ (D v).s) hDs
+  obtain ⟨t, ht⟩ := exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow W 3
+    (fun v ↦ (D v).t + (D v).s * (algebraMap O K r - (D v).r)) fun v ↦
+      Valuation.map_add_le _ (hDt v) (by
+        rw [map_mul]
+        exact mul_le_one' (hDs v) (Valuation.map_sub_le _ (v.valuation_le_one r) (hDr v)))
+  refine ⟨r, s, t, fun v ↦ ⟨hr v, ?_, ?_⟩⟩
+  · rw [← pow_one (WithZero.exp _)]; exact hs v
+  · rw [sub_sub]; exact ht v
+
 /-- **An integral model with principal defect ideal has a globally minimal model** (the patching
 step of Silverman VIII.8.2): if `g` generates the defect ideal of the integral model `W`, then some
 change of variables with scaling factor `g` carries `W` to an equation minimal at every height-one
@@ -209,27 +295,89 @@ theorem exists_isGlobalMinimal_smul_of_weierstrassDefectIdeal_eq_span
     [IsIntegral O W] {g : O} (hg : weierstrassDefectIdeal O W = Ideal.span {g}) :
     ∃ C : VariableChange K, (C.u : K) = algebraMap O K g ∧ IsGlobalMinimal O (C • W) := by
   choose D hDmin hDu hDr hDs hDt using fun v ↦ exists_isMinimal_smul_valuation O v W
-  obtain ⟨r, hr⟩ := exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow W 2
-    (fun v ↦ (D v).r) hDr
-  obtain ⟨s, hs⟩ := exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow W 1
-    (fun v ↦ (D v).s) hDs
-  -- The target for `t` is corrected by `sᵥ (r - rᵥ)`, now that `r` is fixed.
-  obtain ⟨t, ht⟩ := exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow W 3
-    (fun v ↦ (D v).t + (D v).s * (algebraMap O K r - (D v).r)) fun v ↦
-      Valuation.map_add_le _ (hDt v) (by
-        rw [map_mul]
-        exact mul_le_one' (hDs v) (Valuation.map_sub_le _ (v.valuation_le_one r) (hDr v)))
+  obtain ⟨r, s, t, hrst⟩ := exists_forall_valuation_sub_le W D hDr hDs hDt
   have hg₀ : algebraMap O K g ≠ 0 :=
     (map_ne_zero_iff _ (IsFractionRing.injective O K)).2
       (ne_zero_of_weierstrassDefectIdeal_eq_span W hg)
   refine ⟨⟨Units.mk0 _ hg₀, algebraMap O K r, algebraMap O K s, algebraMap O K t⟩, rfl,
     IsGlobalMinimal.of_forall_isMinimal fun v ↦ ?_⟩
   have := hDmin v
+  obtain ⟨hr, hs, ht⟩ := hrst v
   refine isMinimal_smul_of_valuation_sub_le v W _ (D v) ?_ ?_ ?_ ?_
   · exact (valuation_eq_exp_neg_obstructionExponentAt v W hg).trans (hDu v).symm
-  · rw [hDu]; exact hr v
-  · rw [hDu, ← pow_one (WithZero.exp _)]; exact hs v
-  · rw [hDu, sub_sub]; exact ht v
+  · rw [hDu]; exact hr
+  · rw [hDu]; exact hs
+  · rw [hDu]; exact ht
+
+/-! ### Sharp semi-global models -/
+
+/-- **The orders of a generator of the defect ideal up to one prime.** If `𝔍_W = (u) · 𝔭_{v₀}` as
+fractional ideals, then `u ≠ 0`, `ord_v u` is the obstruction exponent `fᵥ(W)` at every `v ≠ v₀`,
+and `ord_{v₀} u` is one less than `f_{v₀}(W)`. -/
+private theorem ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq
+    (W : WeierstrassCurve K) [W.IsElliptic] [IsIntegral O W] {v₀ : HeightOneSpectrum O} {u : K}
+    (hu : (weierstrassDefectIdeal O W : FractionalIdeal O⁰ K) =
+      FractionalIdeal.spanSingleton O⁰ u * v₀.asIdeal) :
+    u ≠ 0 ∧ (∀ v : HeightOneSpectrum O, v ≠ v₀ →
+      (v.valuation K).ord u = obstructionExponentAt O v W) ∧
+      (v₀.valuation K).ord u = obstructionExponentAt O v₀ W - 1 := by
+  classical
+  have hJ : (weierstrassDefectIdeal O W : FractionalIdeal O⁰ K) ≠ 0 :=
+    FractionalIdeal.coeIdeal_ne_zero.2 (weierstrassDefectIdeal_ne_bot O W)
+  have hu₀ : u ≠ 0 := by
+    rintro rfl
+    exact hJ (by rw [hu, FractionalIdeal.spanSingleton_zero, zero_mul])
+  -- Comparing multiplicities: `fᵥ(W) = ord_v u + [v = v₀]`.
+  have hcount (v : HeightOneSpectrum O) : obstructionExponentAt O v W =
+      (v.valuation K).ord u + if v₀ = v then 1 else 0 := by
+    have h := congrArg (FractionalIdeal.count K v) hu
+    rwa [FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
+      count_weierstrassDefectIdeal_eq_obstructionExponentAt,
+      FractionalIdeal.count_mul K v (FractionalIdeal.spanSingleton_ne_zero_iff.2 hu₀)
+        (FractionalIdeal.coeIdeal_ne_zero.2 v₀.ne_bot), FractionalIdeal.count_maximal,
+      ← Units.val_mk0 hu₀, ← coe_toPrincipalIdeal (R := O) (Units.mk0 u hu₀),
+      FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation, ← Valuation.ord_def] at h
+  refine ⟨hu₀, fun v hv ↦ ?_, ?_⟩
+  · rw [hcount v, ite_eq_right_iff.2 fun h ↦ absurd h.symm hv, add_zero]
+  · rw [hcount v₀, ite_eq_left_iff.2 fun h ↦ absurd rfl h, add_sub_cancel_right]
+
+/-- **An integral model whose defect ideal is `(u) · 𝔭_{v₀}` has a sharp semi-global model at
+`v₀` with scaling factor `u`.** The change of variables is minimal away from `v₀`, where `u` has
+the order of the defect, and leaves an obstruction exponent of exactly one at `v₀`, where the
+order of `u` falls one short of it. This is the patching step of Silverman VIII.8.2 with one
+prime kept back. -/
+theorem exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq
+    (W : WeierstrassCurve K) [W.IsElliptic] [IsIntegral O W] (v₀ : HeightOneSpectrum O) {u : K}
+    (hu : (weierstrassDefectIdeal O W : FractionalIdeal O⁰ K) =
+      FractionalIdeal.spanSingleton O⁰ u * v₀.asIdeal) :
+    ∃ C : VariableChange K, (C.u : K) = u ∧ IsSharpSemiGlobalMinimalAt O v₀ (C • W) := by
+  obtain ⟨hu₀, hord, hord₀⟩ := ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq W hu
+  choose D hDmin hDu hDr hDs hDt using fun v ↦ exists_isMinimal_smul_valuation O v W
+  obtain ⟨r, s, t, hrst⟩ := exists_forall_valuation_sub_le W D hDr hDs hDt
+  let C : VariableChange K :=
+    ⟨Units.mk0 u hu₀, algebraMap O K r, algebraMap O K s, algebraMap O K t⟩
+  refine ⟨C, rfl, .of_isIntegral_of_isMinimal_of_obstructionExponentAt_eq_one ?_ (fun v hv ↦ ?_)
+    ?_⟩
+  · -- At `v₀`, `C • W` is the transform of the minimal `D v₀ • W` by a change of variables
+    -- whose `u⁻¹` has order one.
+    have := hDmin v₀
+    obtain ⟨hr, hs, ht⟩ := hrst v₀
+    refine isIntegral_smul_of_valuation_sub_le v₀ W C (D v₀) ?_ ?_ ?_ ?_
+    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _ hu₀, hord₀,
+        WithZero.exp_le_exp]
+      omega
+    · rw [hDu]; exact hr
+    · rw [hDu]; exact hs
+    · rw [hDu]; exact ht
+  · have := hDmin v
+    obtain ⟨hr, hs, ht⟩ := hrst v
+    refine isMinimal_smul_of_valuation_sub_le v W C (D v) ?_ ?_ ?_ ?_
+    · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _ hu₀, hord v hv]
+    · rw [hDu]; exact hr
+    · rw [hDu]; exact hs
+    · rw [hDu]; exact ht
+  · rw [obstructionExponentAt_smul, Units.val_mk0, hord₀]
+    ring
 
 /-! ### The global-minimality class is the complete obstruction -/
 
@@ -268,6 +416,39 @@ theorem globalMinimalityClass_eq_one_iff (E : WeierstrassCurve K) [E.IsElliptic]
     refine IsGlobalMinimal.weierstrassDefectClass_eq_one O ?_
     rw [isGlobalMinimal_iff] at hC ⊢
     rwa [hW]
+
+/-- **The global-minimality class is the class of a height-one prime `v₀` exactly when the curve
+has a sharp semi-global model at `v₀`**: an equation integral at `v₀`, minimal at every other
+height-one prime, and with obstruction exponent one at `v₀`, so that its defect ideal is `𝔭_{v₀}`
+itself. No condition on `v₀` is needed, in particular none on its residue characteristic. Over the
+ring of integers of a number field every ideal class contains a prime, so every elliptic curve
+there has such a model at a suitable prime; that fact about class groups is not part of this
+statement. -/
+theorem globalMinimalityClass_eq_classGroupMk_iff (E : WeierstrassCurve K) [E.IsElliptic]
+    (v₀ : HeightOneSpectrum O) :
+    globalMinimalityClass O E = v₀.classGroupMk ↔
+      ∃ C : VariableChange K, IsSharpSemiGlobalMinimalAt O v₀ (C • E) := by
+  constructor
+  · intro h
+    obtain ⟨D, hD⟩ := exists_smul_isIntegral O E
+    rw [← globalMinimalityClass_variableChange O E D,
+      globalMinimalityClass_eq_mk0_weierstrassDefectIdeal, classGroupMk_eq_mk0] at h
+    obtain ⟨u, -, hu⟩ := (ClassGroup.mk0_eq_mk0_iff_exists_fraction_ring K).1 h.symm
+    obtain ⟨C, -, hC⟩ :=
+      exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq (D • E) v₀ hu.symm
+    exact ⟨C * D, by simpa only [mul_smul] using hC⟩
+  · rintro ⟨C, hC⟩
+    have := hC.isSemiGlobalMinimal.isIntegral
+    -- The defect ideal of the sharp model is `𝔭_{v₀}`: its only nonzero exponent is one, at `v₀`.
+    have hJ : weierstrassDefectIdeal O (C • E) = v₀.asIdeal := by
+      rw [weierstrassDefectIdeal_def, finprod_eq_single _ v₀ fun v hv ↦ ?_,
+        hC.obstructionExponentAt_eq_one, Int.toNat_one, pow_one]
+      have := hC.isMinimal hv
+      rw [(obstructionExponentAt_eq_zero_iff_isMinimal O v (C • E)).2 this, Int.toNat_zero,
+        pow_zero]
+    rw [← globalMinimalityClass_variableChange O E C,
+      globalMinimalityClass_eq_mk0_weierstrassDefectIdeal, classGroupMk_eq_mk0]
+    exact congrArg ClassGroup.mk0 (Subtype.ext hJ)
 
 /-- **Over the fraction field of a principal ideal domain every elliptic curve has a globally
 minimal Weierstrass equation** (Silverman, *AEC*, Corollary VIII.8.3), the class group being

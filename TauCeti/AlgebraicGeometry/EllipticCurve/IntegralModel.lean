@@ -18,9 +18,10 @@ A change of variables `D : VariableChange K` carrying one integral Weierstrass m
 need not be integral itself: its scaling factor `D.u` is a unit of `K`, and `D.r`, `D.s`, `D.t` are
 elements of `K`. This file shows that when `R` is integrally closed in `K`, as soon as `D.u` lies
 in `R` so do `D.r`, `D.s` and `D.t`, and hence that when `D.u` comes from a unit of `R`, `D` is the
-base change of a `VariableChange R`. Two further facts about integral models sit beside it: over a
+base change of a `VariableChange R`. Three further facts about integral models sit beside it: over a
 domain with fraction field `K` every equation has an integral model, obtained by clearing a common
-denominator of the coefficients, and integrality is inherited by a larger ring of a tower.
+denominator of the coefficients; a change of variables whose `u⁻¹`, `r`, `s` and `t` lie in `R`
+preserves integrality; and integrality is inherited by a larger ring of a tower.
 
 ## Main results
 
@@ -32,6 +33,8 @@ denominator of the coefficients, and integrality is inherited by a larger ring o
   the image of a unit of `R`, then `D = C₀.baseChange K` for some `C₀ : VariableChange R`.
 * `WeierstrassCurve.exists_smul_isIntegral`: every equation over `K` has an integral model over a
   ring `R` with fraction field `K`.
+* `WeierstrassCurve.isIntegral_smul_of_exists_lift`: a change of variables whose `u⁻¹`, `r`, `s`
+  and `t` lie in `R` preserves integrality.
 * `WeierstrassCurve.IsIntegral.of_isScalarTower`: integrality passes to a larger ring of the
   tower.
 
@@ -75,7 +78,8 @@ The descent is ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 @ `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0` (Apache-2.0), file
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Reduction.lean`, declaration
 `WeierstrassCurve.exists_variableChange_baseChange_eq_of_smul_eq`, by Kevin Buzzard;
-`exists_smul_isIntegral` and `IsIntegral.of_isScalarTower` are not from that source. The source
+`exists_smul_isIntegral`, `isIntegral_smul_of_exists_lift` and `IsIntegral.of_isScalarTower` are
+not from that source. The source
 commit is FLT PR #1088, "Quadratic twist to split multiplicative reduction". The mathematics is
 unchanged: the same three polynomials, the same `linear_combination` certificates. The single
 66-line proof is split into the three integrality arguments plus their assembly, so that no
@@ -232,6 +236,27 @@ theorem exists_smul_isIntegral (R : Type*) [CommRing R] {K : Type*} [Field K]
   · simpa [IsLocalization.IsInteger, variableChange_a₃] using key 2 2
   · simpa [IsLocalization.IsInteger, variableChange_a₄] using key 3 3
   · simpa [IsLocalization.IsInteger, variableChange_a₆] using key 4 5
+
+/-- **A change of variables whose `u⁻¹`, `r`, `s` and `t` lie in `R` preserves integrality.**
+The scaling factor `C.u` itself need not lie in `R`, so `C` need not be the base change of a
+`VariableChange R`: scaling by the inverse of a nonunit `π` of `R` multiplies `aᵢ` by `πⁱ` and the
+discriminant by `π ^ 12`, keeping an integral equation integral but not minimal. -/
+theorem isIntegral_smul_of_exists_lift {R : Type*} [CommRing R] {K : Type*} [Field K]
+    [Algebra R K] {W : WeierstrassCurve K} [IsIntegral R W] {C : VariableChange K}
+    (hu : ∃ u : R, algebraMap R K u = ↑C.u⁻¹) (hr : ∃ r : R, algebraMap R K r = C.r)
+    (hs : ∃ s : R, algebraMap R K s = C.s) (ht : ∃ t : R, algebraMap R K t = C.t) :
+    IsIntegral R (C • W) := by
+  obtain ⟨V, rfl⟩ := ‹IsIntegral R W›.integral
+  obtain ⟨u, hu⟩ := hu
+  obtain ⟨r, hr⟩ := hr
+  obtain ⟨s, hs⟩ := hs
+  obtain ⟨t, ht⟩ := ht
+  refine isIntegral_of_exists_lift R ⟨u * (V.a₁ + 2 * s), ?_⟩
+    ⟨u ^ 2 * (V.a₂ - s * V.a₁ + 3 * r - s ^ 2), ?_⟩ ⟨u ^ 3 * (V.a₃ + r * V.a₁ + 2 * t), ?_⟩
+    ⟨u ^ 4 * (V.a₄ - s * V.a₃ + 2 * r * V.a₂ - (t + r * s) * V.a₁ + 3 * r ^ 2 - 2 * s * t), ?_⟩
+    ⟨u ^ 6 * (V.a₆ + r * V.a₄ + r ^ 2 * V.a₂ + r ^ 3 - t * V.a₃ - t ^ 2 - r * t * V.a₁), ?_⟩ <;>
+  simp [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
+    variableChange_a₆, baseChange, map_ofNat, hu, hr, hs, ht]
 
 /-- **An integral model stays integral over a larger ring of the tower.** If `W` has coefficients
 in `R` and `R` maps to `S` compatibly with their maps to `K`, then `W` has coefficients in `S`.
