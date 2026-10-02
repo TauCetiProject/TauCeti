@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.OpenImmersion
 public import TauCeti.Algebra.MonoidAlgebra.Localization
 public import TauCeti.Geometry.Toric.Algebraic.AffineScheme
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.SupportingCharacter
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Separation
 
 /-!
 # Face localizations of affine toric schemes

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.SupportingCharacter
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Separation
 public import TauCeti.Geometry.Toric.Analytic.Cone.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Basic
 public import TauCeti.Topology.ZeroPattern

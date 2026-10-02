@@ -13,10 +13,10 @@ public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
 
 The affine toric schemes of the cones of a fan form a diagram indexed by the cones ordered by
 inclusion: an inclusion `τ ≤ σ` of cones of a fan is a face inclusion, and it acts by the face
-morphism from the affine toric scheme of `τ` to that of `σ`. When the fan is regular every face
-morphism is an open immersion. Moreover, the images of the charts of two faces `τ` and `υ` of a
-cone `σ` meet exactly in the image of the chart of `τ ⊓ υ`, which is again a cone of the fan, so
-the diagram is locally directed in the sense of `CategoryTheory.Functor.IsLocallyDirected`.
+morphism from the affine toric scheme of `τ` to that of `σ`. Every face morphism is an open
+immersion. Moreover, the images of the charts of two faces `τ` and `υ` of a cone `σ` meet exactly
+in the image of the chart of `τ ⊓ υ`, which is again a cone of the fan, so the diagram is locally
+directed in the sense of `CategoryTheory.Functor.IsLocallyDirected`.
 
 Mathlib glues such a diagram of open immersions along the overlaps of its members
 (`AlgebraicGeometry.Scheme.IsLocallyDirected`), and identifies the result with the colimit of the
@@ -87,12 +87,11 @@ theorem affineToricDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ) :
 
 variable {Φ}
 
-/-- A morphism of the diagram of affine toric charts whose target cone is regular is an open
-immersion. -/
-theorem isOpenImmersion_affineToricDiagram_map {τ σ : Φ.cones} (hσ : IsRegularCone i σ.1)
-    (f : τ ⟶ σ) : IsOpenImmersion (Φ.affineToricDiagram.map f) := by
+/-- Every morphism of the diagram of affine toric charts is an open immersion. -/
+theorem isOpenImmersion_affineToricDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ) :
+    IsOpenImmersion (Φ.affineToricDiagram.map f) := by
   rw [affineToricDiagram_map]
-  exact hσ.rational.isOpenImmersion_faceAffineToricSchemeMap _ _
+  exact (Φ.isToricCone σ.2).rational.isOpenImmersion_faceAffineToricSchemeMap _ _
 
 /-- The diagram of affine toric charts of a regular fan is locally directed: if points of the
 charts of two faces `τ` and `υ` of a cone `σ` have the same image in the chart of `σ`, they come
@@ -132,7 +131,7 @@ variable (Φ)
 glues the charts along the open immersions of their faces. -/
 @[expose] noncomputable def algebraicRealization (hΦ : Φ.IsRegular) : Scheme :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit Φ.affineToricDiagram
 
@@ -140,7 +139,7 @@ glues the charts along the open immersions of their faces. -/
 noncomputable def affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
     Φ.affineToricChart σ ⟶ Φ.algebraicRealization hΦ :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit.ι Φ.affineToricDiagram σ
 
@@ -148,7 +147,7 @@ noncomputable def affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
 @[expose] noncomputable def affineToricCocone (hΦ : Φ.IsRegular) :
     Cocone Φ.affineToricDiagram :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit.cocone Φ.affineToricDiagram
 
@@ -170,7 +169,7 @@ theorem affineToricCocone_ι_app (hΦ : Φ.IsRegular) (σ : Φ.cones) :
 noncomputable def isColimitAffineToricCocone (hΦ : Φ.IsRegular) :
     IsColimit (Φ.affineToricCocone hΦ) :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit.isColimit Φ.affineToricDiagram
 
@@ -190,7 +189,7 @@ variable {Φ}
 instance isOpenImmersion_affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
     IsOpenImmersion (Φ.affineToricChartι hΦ σ) :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   inferInstanceAs (IsOpenImmersion (colimit.ι Φ.affineToricDiagram σ))
 
@@ -202,7 +201,7 @@ theorem faceAffineToricSchemeMap_comp_affineToricChartι (hΦ : Φ.IsRegular) {�
     faceAffineToricSchemeMap Φ.lattice h ≫ Φ.affineToricChartι hΦ σ =
       Φ.affineToricChartι hΦ τ :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   colimit.w Φ.affineToricDiagram (homOfLE h.le)
 
@@ -244,7 +243,7 @@ theorem affineToricOverlap_comp_affineToricChartι (hΦ : Φ.IsRegular) (σ τ :
 theorem exists_affineToricChartι_apply_eq (hΦ : Φ.IsRegular) (x : Φ.algebraicRealization hΦ) :
     ∃ (σ : Φ.cones) (y : Φ.affineToricChart σ), Φ.affineToricChartι hΦ σ y = x :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram hΦ
   Scheme.IsLocallyDirected.ι_jointly_surjective Φ.affineToricDiagram x
 
@@ -256,7 +255,7 @@ theorem affineToricChartι_eq_affineToricChartι_iff (hΦ : Φ.IsRegular)
       ∃ z : Φ.affineToricOverlap σ τ,
         Φ.affineToricOverlapLeft σ τ z = x ∧ Φ.affineToricOverlapRight σ τ z = y := by
   have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map (isRegular_iff.1 hΦ _ σ.2) f
+    isOpenImmersion_affineToricDiagram_map f
   have := isLocallyDirected_affineToricDiagram hΦ
   let στ : Φ.cones := σ ⊓ τ
   refine ⟨fun h ↦ ?_, fun ⟨z, hzx, hzy⟩ ↦ ?_⟩
