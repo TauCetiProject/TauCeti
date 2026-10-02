@@ -898,8 +898,11 @@ noncomputable def cyclicPosition (p r : Fin n) : ℕ :=
 /-- The cyclic successor `p + 1` of `p` (that is, `finRotate n p`) comes first, in position
 `0`. -/
 @[simp]
-theorem cyclicPosition_add_one_self [NeZero n] (p : Fin n) : cyclicPosition p (p + 1) = 0 := by
-  simp [cyclicPosition, cIco_self]
+theorem cyclicPosition_add_one_self (p : Fin n) :
+    haveI := p.neZero; cyclicPosition p (p + 1) = 0 := by
+  cases n with
+  | zero => exact p.elim0
+  | succ n => simp [cyclicPosition, cIco_self]
 
 /-- The point `p` itself comes last, in position `n - 1`. -/
 @[simp]

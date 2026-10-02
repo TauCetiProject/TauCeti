@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.Grid.Stabilization.Map
 public import TauCeti.KnotTheory.Grid.Stabilization.Matching
 public import TauCeti.KnotTheory.Grid.Stabilization.Reduction
-public import TauCeti.KnotTheory.Grid.XHomotopy.Basic
 import TauCeti.Algebra.Homology.SquareZero.Contraction
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 
