@@ -197,7 +197,7 @@ theorem inertiaDeg_eq_one_iff_forall_legendreSym_eq_one [Finite ι]
   have := isGalois_rat hr htop
   have := isUnramifiedAt_of_forall_not_dvd hr htop hodd hcop Q
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := p) Q
-  rw [Ideal.inertiaDeg_eq_orderOf (p := p) Q hσ, orderOf_eq_one_iff]
+  rw [Ideal.inertiaDeg_eq_orderOf Q hσ, orderOf_eq_one_iff]
   exact isArithFrobAt_multiquadratic_eq_one_iff d r hr htop hodd hcop Q hσ
 
 /-- **Residue degree two exactly at a non-residue.** Let `K` be generated over `ℚ` by square roots
@@ -222,7 +222,7 @@ theorem inertiaDeg_eq_two_iff_exists_legendreSym_eq_neg_one [Finite ι]
     refine (legendreSym.eq_one_or_neg_one p ?_).resolve_left h
     rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
     exact hcop i
-  rw [Ideal.inertiaDeg_eq_orderOf (p := p) Q hσ, hsym, ← hiff]
+  rw [Ideal.inertiaDeg_eq_orderOf Q hσ, hsym, ← hiff]
   refine ⟨fun h h1 => by simp [h1] at h, fun h => ?_⟩
   exact orderOf_eq_prime
     (aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
@@ -334,7 +334,7 @@ theorem inertiaDeg_eq_one_iff_forall_mod_eight_eq_one [Finite ι]
   have := isGalois_rat hr htop
   have := isUnramifiedAt_of_forall_mod_four_eq_one hr htop hd Q
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_int_of_liesOver (p := 2) Q
-  rw [Ideal.inertiaDeg_eq_orderOf (p := 2) Q hσ, orderOf_eq_one_iff]
+  rw [Ideal.inertiaDeg_eq_orderOf Q hσ, orderOf_eq_one_iff]
   exact isArithFrobAt_eq_one_iff_mod_eight d r hr htop hd Q hσ
 
 /-- **Residue degree two above `2` exactly when some radicand is `5` modulo `8`.** Let `K` be
@@ -353,7 +353,7 @@ theorem inertiaDeg_eq_two_iff_exists_mod_eight_eq_five [Finite ι]
   have hmod : (∃ i, d i % 8 = 5) ↔ ¬ ∀ i, d i % 8 = 1 := by
     simp only [not_forall]
     exact exists_congr fun i => by have := hd i; omega
-  rw [Ideal.inertiaDeg_eq_orderOf (p := 2) Q hσ, hmod,
+  rw [Ideal.inertiaDeg_eq_orderOf Q hσ, hmod,
     ← isArithFrobAt_eq_one_iff_mod_eight d r hr htop hd Q hσ]
   refine ⟨fun h h1 => by simp [h1] at h, fun h => ?_⟩
   exact orderOf_eq_prime
