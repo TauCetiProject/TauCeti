@@ -43,27 +43,23 @@ left descents has length exactly `orderOf (s i * s i')`
 divides the length; periodicity keeps the length below twice the order, and divisibility then
 forces equality.
 
-## The remaining gap to Matsumoto's theorem
+## The order of the rotation against the Coxeter-matrix entry
 
 Tits' lemma is classically stated with the Coxeter-matrix entry `M i i'` in place of the order of
-the rotation. The two do agree — that is Tits' theorem on the geometric representation of a
-Coxeter system — but all that is available from Mathlib is the divisibility
-`orderOf (s i * s i') ∣ M i i'` (`CoxeterSystem.simple_mul_simple_pow`); the geometric
-representation of an abstract Coxeter system is in neither Mathlib nor this repository. So the
-statements below are phrased with `orderOf (s i * s i')`, which is what this combinatorics
-determines on its own, and `CoxeterSystem.length_le_of_isLeftDescent_pair` records the bound by
-`M i i'` that the divisibility yields.
+the rotation. The two do agree — that is Tits' theorem on the geometric representation of a Coxeter
+system — but the defining relations of `M` give only the divisibility
+`orderOf (s i * s i') ∣ M i i'` (`CoxeterSystem.simple_mul_simple_pow`). So the statements below are
+phrased with `orderOf (s i * s i')`, which is what the dihedral combinatorics determines on its own,
+and `CoxeterSystem.length_le_of_isLeftDescent_pair` records the bound by `M i i'` that the
+divisibility yields.
 
-That exactness is the one input still separating this file from Matsumoto's theorem, and it is
-deliberately not assumed here. A braid move of `TauCeti/GroupTheory/Coxeter/BraidEquivalence.lean`
-rewrites an alternating word of length `M i i'`, so promoting Tits' lemma to the induction step of
-Matsumoto — two braid-equivalent reduced words for `w`, one beginning with `i` and one with `i'` —
-needs the parabolic factor to have length `M i i'` on the nose, which is exactly the missing
-statement.
+The exactness `orderOf (s i * s i') = M i i'` is what separates these statements from the induction
+step of Matsumoto's theorem: a braid move rewrites an alternating word of length `M i i'`, so
+turning Tits' lemma into two braid-equivalent reduced words for `w`, one beginning with `i` and one
+with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the nose.
 
 ## Main results
 
-* `CoxeterSystem.IsReduced.isChain_ne`: a reduced word has no two adjacent equal letters.
 * `CoxeterSystem.eq_alternatingWord_of_forall_mem_pair` and
   `CoxeterSystem.eq_alternatingWord_or_of_forall_mem_pair`: a list in two letters with no adjacent
   repetition is an alternating word.
@@ -88,8 +84,6 @@ statement.
 * A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
   Sections 2.2 and 3.3.
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Sections 1.9 and 5.12.
-* [Root-systems roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/RootSystems/README.md),
-  Layer 3, "Matsumoto's theorem".
 -/
 
 public section
@@ -159,34 +153,6 @@ theorem eq_alternatingWord_or_of_forall_mem_pair {i i' : B} {ω : List B}
         hlast)
     · exact Or.inl (eq_alternatingWord_of_forall_mem_pair hmem hchain hlast)
 
-section
-
-variable {cs}
-
-/-- **A reduced word has no two adjacent equal letters.** Deleting such a pair leaves the product
-unchanged and the word shorter, so the original word was not of minimal length. -/
-theorem IsReduced.isChain_ne {ω : List B} (hω : cs.IsReduced ω) : ω.IsChain (· ≠ ·) := by
-  revert hω
-  induction ω with
-  | nil => intro _; simp
-  | cons a ρ ih =>
-      cases ρ with
-      | nil => intro _; simp
-      | cons b τ =>
-          intro hω
-          have hρ : cs.IsReduced (b :: τ) := by simpa using hω.drop 1
-          refine List.isChain_cons_cons.mpr ⟨?_, ih hρ⟩
-          rintro rfl
-          have hprod : π (a :: a :: τ) = π τ := by
-            rw [cs.wordProd_cons, cs.wordProd_cons, cs.simple_mul_simple_cancel_left]
-          have hle := cs.length_wordProd_le τ
-          have heq := hω.eq
-          rw [hprod] at heq
-          simp only [List.length_cons] at heq
-          omega
-
-end
-
 /-! ### Elements of a rank-two standard parabolic subgroup -/
 
 /-- A reduced word all of whose letters are `i` or `i'` is one of the two alternating words of its
@@ -220,14 +186,16 @@ theorem wordProd_alternatingWord_eq_comm_iff (i i' : B) (m : ℕ) :
   · obtain ⟨p, hp⟩ := hm
     have hev : Even m := ⟨p, hp⟩
     have hdiv : m / 2 = p := by omega
+    have hsum : p + p = m := hp.symm
     simp only [ite_eq_left hev, one_mul, hdiv]
-    rw [eq_inv_iff_mul_eq_one, ← pow_add, show p + p = m from hp.symm]
+    rw [eq_inv_iff_mul_eq_one, ← pow_add, hsum]
   · obtain ⟨p, hp⟩ := hm
     have hnot : ¬Even m := by rw [hp]; simp [parity_simps]
     have hdiv : m / 2 = p := by omega
+    have hsum : p + 1 + p = m := by omega
     simp only [ite_eq_right hnot, hdiv]
     rw [← inv_mul_eq_iff_eq_mul, cs.inv_simple, ← mul_assoc, ← pow_succ',
-      eq_inv_iff_mul_eq_one, ← pow_add, show p + 1 + p = m from by omega]
+      eq_inv_iff_mul_eq_one, ← pow_add, hsum]
 
 /-- **The products of the alternating words repeat with period twice the order of the rotation
 `s i * s i'`.** Only `(s i * s i') ^ n = 1` is used, so the period may be read off any exponent
@@ -237,19 +205,12 @@ theorem wordProd_alternatingWord_add_two_mul (i i' : B) {n : ℕ} (hn : (s i * s
   have hpar : Even (m + 2 * n) ↔ Even m := by
     simp only [Nat.even_iff]
     omega
-  rw [cs.prod_alternatingWord_eq_mul_pow, cs.prod_alternatingWord_eq_mul_pow,
-    show (m + 2 * n) / 2 = m / 2 + n from by omega, pow_add, hn, mul_one]
+  have hhalf : (m + 2 * n) / 2 = m / 2 + n := by omega
+  rw [cs.prod_alternatingWord_eq_mul_pow, cs.prod_alternatingWord_eq_mul_pow, hhalf, pow_add, hn,
+    mul_one]
   simp only [hpar]
 
 /-! ### Two left descents -/
-
-/-- A left descent of `w` turns a reduced word for `s i * w` into a reduced word for `w`. -/
-theorem isReduced_cons_of_isLeftDescent {i : B} {w : W} (hd : cs.IsLeftDescent w i) {ω : List B}
-    (hω : cs.IsReduced ω) (hprod : π ω = s i * w) : cs.IsReduced (i :: ω) := by
-  have hw : π (i :: ω) = w := by
-    rw [cs.wordProd_cons, hprod, cs.simple_mul_simple_cancel_left]
-  have hlen : ℓ (s i * w) + 1 = ℓ w := cs.isLeftDescent_iff.mp hd
-  rw [IsReduced, hw, List.length_cons, ← hω.eq, hprod, hlen]
 
 /-- **An element of a rank-two standard parabolic subgroup with two distinct left descents is
 spelled by both alternating words of its length.** The two descents produce two reduced words with
@@ -318,7 +279,8 @@ theorem length_eq_orderOf_of_isLeftDescent_pair {i i' : B} (hne : i ≠ i') {w :
   have hA := (cs.wordProd_alternatingWord_eq_of_isLeftDescent_pair hne hw hd hd').1
   have hper := cs.wordProd_alternatingWord_add_two_mul i i' (pow_orderOf_eq_one (s i * s i'))
     (ℓ w - 2 * orderOf (s i * s i'))
-  rw [show ℓ w - 2 * orderOf (s i * s i') + 2 * orderOf (s i * s i') = ℓ w from by omega] at hper
+  have hsub : ℓ w - 2 * orderOf (s i * s i') + 2 * orderOf (s i * s i') = ℓ w := by omega
+  rw [hsub] at hper
   have hle := cs.length_wordProd_le (alternatingWord i i' (ℓ w - 2 * orderOf (s i * s i')))
   rw [hper.symm.trans hA, length_alternatingWord] at hle
   omega
@@ -359,9 +321,9 @@ parabolic factor times a remainder, the lengths adding, and the parabolic factor
 *both* alternating words of length `orderOf (s i * s i')`.
 
 Classically the exponent is the Coxeter-matrix entry `M i i'`; the order of `s i * s i'` divides it
-(`CoxeterSystem.simple_mul_simple_pow`), and the two are equal by Tits' theorem on the geometric
-representation, which is unavailable here — see the module docstring. The bound this yields is
-`CoxeterSystem.length_le_of_isLeftDescent_pair`. -/
+(`CoxeterSystem.simple_mul_simple_pow`), which gives the bound
+`CoxeterSystem.length_le_of_isLeftDescent_pair`, and the two agree by Tits' theorem on the
+geometric representation — see the module docstring. -/
 theorem exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair {i i' : B} (hne : i ≠ i')
     {w : W} (hd : cs.IsLeftDescent w i) (hd' : cs.IsLeftDescent w i') :
     ∃ v : W, 0 < orderOf (s i * s i') ∧
