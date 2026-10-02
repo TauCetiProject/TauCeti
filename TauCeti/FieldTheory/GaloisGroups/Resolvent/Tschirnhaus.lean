@@ -12,11 +12,12 @@ public import TauCeti.FieldTheory.GaloisGroups.Tschirnhaus
 # Resolvents of a Tschirnhaus transform
 
 A resolvent specialized at a monic separable polynomial `f` detects the Galois image of `f` only
-when it is separable: two values of the orbit of the invariant that collide at the roots of `f`
-give the resolvent a root in the base field that constrains the Galois image no further. The
-classical remedy replaces `f` by an admissible Tschirnhaus transform
-`Polynomial.tschirnhausPolynomial f T`, whose roots are the values `T(α)` at the roots `α` of `f`,
-and computes the resolvent of the transform instead.
+when it is separable: two values of the orbit of the invariant can collide at the roots of `f`,
+which makes the resolvent inseparable, and then a root of the resolvent in the base field need not
+confine the Galois image to a conjugate of the subgroup of the specification. The classical
+remedy replaces `f` by an admissible Tschirnhaus transform `Polynomial.tschirnhausPolynomial f T`,
+whose roots are the values `T(α)` at the roots `α` of `f`, and computes the resolvent of the
+transform instead.
 
 This file shows that the remedy is sound. An admissible transform of a monic separable `f` is
 again monic and separable of the same degree, and, when its roots are numbered through
@@ -126,13 +127,13 @@ theorem exists_isRoot_specialize_tschirnhausPolynomial_iff_exists_le_map_conj [I
 
 open scoped Classical in
 /-- **The factor degrees of the separable resolvent of an admissible transform are orbit sizes.**
-Let `f` be monic and separable of degree `n`, let `E` be a normal splitting extension, number the
-roots of `f` in `E` by `e`, and let `T` be admissible for `f`. If the resolvent of the
-Tschirnhaus transform of `f` by `T` is separable, the multiset of degrees of its monic irreducible
-factors is the multiset of sizes of the orbits of the Galois image of `f`, read through `e`, on
-the cosets of `H`. -/
+Let `f` be monic of degree `n`, let `E` be a normal splitting extension, number the roots of `f`
+in `E` by `e`, and let `T` be admissible for `f`. If the resolvent of the Tschirnhaus transform
+of `f` by `T` is separable, the multiset of degrees of its monic irreducible factors is the
+multiset of sizes of the orbits of the Galois image of `f`, read through `e`, on the cosets of
+`H`. -/
 theorem map_natDegree_normalizedFactors_specialize_tschirnhausPolynomial [Normal F E]
-    (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+    (hf : f.Monic) (hdeg : f.natDegree = n)
     (hT : TschirnhausAdmissible f T) (e : f.rootSet E ≃ Fin n)
     (hres : (spec.specialize F (f.tschirnhausPolynomial T)).Separable) :
     (UniqueFactorizationMonoid.normalizedFactors
@@ -145,8 +146,8 @@ theorem map_natDegree_normalizedFactors_specialize_tschirnhausPolynomial [Normal
     ⟨splits_map_tschirnhausPolynomial_field hfsp.out T⟩
   have h := spec.map_natDegree_normalizedFactors_specialize (monic_tschirnhausPolynomial hf T)
     ((natDegree_tschirnhausPolynomial hf T).trans hdeg)
-    ((hT.rootSetEquiv hsep.ne_zero hfsp.out).symm.trans e) hres
-  rwa [hT.map_range_galActionHom_tschirnhausPolynomial hsep.ne_zero e] at h
+    ((hT.rootSetEquiv hf.ne_zero hfsp.out).symm.trans e) hres
+  rwa [hT.map_range_galActionHom_tschirnhausPolynomial hf.ne_zero e] at h
 
 end ResolventSpec
 
