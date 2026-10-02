@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Conjugation and maps on complexifications
@@ -721,6 +722,18 @@ theorem integralMapToComplex_comp (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBase
     integralMapToComplex h₁ ι₃ (g ∘ₗ f) =
       integralMapToComplex h₂ ι₃ g ∘ₗ integralMapToComplex h₁ ι₂ f :=
   h₁.algHom_ext _ _ fun x ↦ by simp
+
+/-- Complexification preserves injectivity of integral linear maps, because `ℂ` is flat over
+`ℤ`. -/
+theorem integralMapToComplex_injective (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    {f : V₁ →ₗ[ℤ] V₂} (hf : Function.Injective f) :
+    Function.Injective (integralMapToComplex h₁ ι₂ f) := by
+  have hmodel : integralMapToComplex h₁ ι₂ f =
+      h₂.equiv.toLinearMap ∘ₗ f.baseChange ℂ ∘ₗ h₁.equiv.symm.toLinearMap :=
+    h₁.algHom_ext _ _ fun x ↦ by simp [h₁.equiv_symm_apply, h₂.equiv_tmul]
+  rw [hmodel, LinearMap.coe_comp, LinearMap.coe_comp, LinearMap.baseChange_eq_ltensor]
+  exact h₂.equiv.injective.comp
+    ((Module.Flat.lTensor_preserves_injective_linearMap f hf).comp h₁.equiv.symm.injective)
 
 /-- The complexification of an integral map commutes with lattice-induced conjugation. -/
 @[simp]

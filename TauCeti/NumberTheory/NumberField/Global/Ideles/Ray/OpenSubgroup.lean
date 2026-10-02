@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 
 import TauCeti.NumberTheory.NumberField.Global.Places.Connected
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+import TauCeti.Topology.Algebra.Group.Connected
 import TauCeti.Topology.Algebra.Group.Units
 
 /-!
@@ -35,6 +36,9 @@ idele class group or of the idele group is open exactly when it contains one of 
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.ofCompletion_mem_connectedComponentOfOne`: every idele concentrated
+  at a complex place and every positive idele concentrated at a real place lies in the identity
+  component of the idele group.
 * `TauCeti.GlobalNumberFields.ofCompletion_mem_of_isOpen`: an open subgroup of the idele group
   contains every idele concentrated at a complex place and every positive idele concentrated at a
   real place.
@@ -67,6 +71,28 @@ section
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
 
+/-- **The archimedean identity component of the idele group**: every idele concentrated at a
+complex place, and every positive idele concentrated at a real place, lies in the identity
+component of the idele group. -/
+theorem ofCompletion_mem_connectedComponentOfOne (w : InfinitePlace K) (u : w.Completionˣ)
+    (hu : ∀ hw : w.IsReal, 0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal hw u) :
+    IdeleGroup.ofCompletion R K w u ∈ Subgroup.connectedComponentOfOne (IdeleGroup R K) := by
+  -- These ideles form the image of a preconnected set of units through `1`: the whole unit
+  -- group at a complex place and the positive half-line at a real place.
+  have hP : IsPreconnected {u : w.Completionˣ |
+      ∀ hw : w.IsReal, 0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal hw u} := by
+    rcases w.isReal_or_isComplex with hw | hw
+    · convert InfinitePlace.Completion.isPreconnected_setOf_extensionEmbeddingOfIsReal_pos hw
+        using 1
+      ext v
+      exact ⟨fun h ↦ h hw, fun h _ ↦ h⟩
+    · have := InfinitePlace.Completion.connectedSpace_units_of_isComplex hw
+      convert isPreconnected_univ (α := w.Completionˣ) using 1
+      ext v
+      simpa using fun hw' ↦ (InfinitePlace.not_isReal_iff_isComplex.mpr hw hw').elim
+  have himg := hP.image _ (IdeleGroup.continuous_ofCompletion R K w).continuousOn
+  exact himg.subset_connectedComponent ⟨1, fun _ ↦ by simp, map_one _⟩ ⟨u, hu, rfl⟩
+
 /-- **An open subgroup of the idele group contains the archimedean identity component**: it
 contains every idele concentrated at a complex place and every positive idele concentrated at a real
 place.  Membership of an idele in an open subgroup therefore depends on its archimedean components
@@ -74,20 +100,9 @@ only through their signs at the real places. -/
 theorem ofCompletion_mem_of_isOpen {V : Subgroup (IdeleGroup R K)}
     (hV : IsOpen (V : Set (IdeleGroup R K))) (w : InfinitePlace K) (u : w.Completionˣ)
     (hu : ∀ hw : w.IsReal, 0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal hw u) :
-    IdeleGroup.ofCompletion R K w u ∈ V := by
-  have hopen : IsOpen ((V.comap (IdeleGroup.ofCompletion R K w) : Subgroup w.Completionˣ) :
-      Set w.Completionˣ) := by
-    rw [Subgroup.coe_comap]
-    exact hV.preimage (IdeleGroup.continuous_ofCompletion R K w)
-  have hclopen : IsClopen ((V.comap (IdeleGroup.ofCompletion R K w) : Subgroup w.Completionˣ) :
-      Set w.Completionˣ) :=
-    ⟨Subgroup.isClosed_of_isOpen _ hopen, hopen⟩
-  rw [← Subgroup.mem_comap]
-  rcases w.isReal_or_isComplex with hw | hw
-  · exact (InfinitePlace.Completion.isPreconnected_setOf_extensionEmbeddingOfIsReal_pos
-      hw).subset_isClopen hclopen ⟨1, by simp, one_mem _⟩ (hu hw)
-  · have := InfinitePlace.Completion.connectedSpace_units_of_isComplex hw
-    exact Set.eq_univ_iff_forall.mp (hclopen.eq_univ ⟨1, one_mem _⟩) u
+    IdeleGroup.ofCompletion R K w u ∈ V :=
+  Subgroup.connectedComponentOfOne_le_of_isOpen hV
+    (ofCompletion_mem_connectedComponentOfOne w u hu)
 
 end
 

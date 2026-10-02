@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
+import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
@@ -30,7 +31,10 @@ concrete p-adic norm and valuation APIs.
   `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
-* `Padic.not_isSquare_five`: `5` is nonsquare in `ℚ_[2]`.
+* `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
+  power of `p` is not a square in `ℚ_[p]`; `Padic.not_isSquare_five` (`5` in `ℚ_[2]`) and
+  `Padic.not_isSquare_neg_three` (`-3` in `ℚ_[5]`) are its two instances.
+* `Padic.irreducible_X_sq_add_X_add_one`: `X² + X + 1` is irreducible over `ℚ_[5]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
 `NumberTheory/Padics` development.
@@ -156,19 +160,43 @@ theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     simpa only [Nat.card_eq_fintype_card] using natCard_residueField p
   exact ((FiniteField.isSquare_neg_one_iff).mp hs') (by simpa [hcard] using hp)
 
-/-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
-theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by
+variable {p} in
+/-- A square root in `ℚ_[p]` of an integer is a `p`-adic integer, so an integer that is not a
+square modulo some power of `p` is not a square in `ℚ_[p]`. -/
+theorem not_isSquare_intCast_of_not_isSquare_zmod {a : ℤ} {k : ℕ}
+    (h : ¬ IsSquare (a : ZMod (p ^ k))) : ¬ IsSquare (a : ℚ_[p]) := by
   rintro ⟨b, hb⟩
   have hb1 : ‖b‖ ≤ 1 := by
-    have h5 : ‖(5 : ℚ_[2])‖ = 1 := by
-      simpa using (Padic.norm_natCast_eq_one_iff (p := 2) (n := 5)).2 (by norm_num)
-    have : ‖b‖ * ‖b‖ = 1 := by rw [← norm_mul, ← hb, h5]
+    have : ‖b‖ * ‖b‖ ≤ 1 := by rw [← norm_mul, ← hb]; exact norm_int_le_one a
     nlinarith [norm_nonneg b]
-  obtain ⟨c, rfl⟩ : ∃ c : ℤ_[2], (c : ℚ_[2]) = b := ⟨⟨b, hb1⟩, rfl⟩
-  have h : c * c = 5 := PadicInt.ext (by push_cast; exact hb.symm)
-  have h8 := congrArg (PadicInt.toZModPow (p := 2) 3) h
-  rw [map_mul, map_ofNat] at h8
-  have hsq : ∀ x : ZMod (2 ^ 3), x * x ≠ 5 := by decide
-  exact hsq _ h8
+  obtain ⟨c, rfl⟩ : ∃ c : ℤ_[p], (c : ℚ_[p]) = b := ⟨⟨b, hb1⟩, rfl⟩
+  have hc : c * c = a := PadicInt.ext (by push_cast; exact hb.symm)
+  exact h ⟨PadicInt.toZModPow k c, by rw [← map_mul, hc, map_intCast]⟩
+
+/-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
+theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by
+  have h := not_isSquare_intCast_of_not_isSquare_zmod (p := 2) (a := 5) (k := 3)
+    (by rintro ⟨x, hx⟩; revert x hx; decide)
+  simpa using h
+
+/-- The prime `5`, as a `Fact`, so that `ℚ_[5]` can be written. -/
+local instance factPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+
+/-- `-3` is not a square in `ℚ_[5]`, since its residue `2` is not a square modulo `5`. -/
+theorem not_isSquare_neg_three : ¬ IsSquare (-3 : ℚ_[5]) := by
+  have h := not_isSquare_intCast_of_not_isSquare_zmod (p := 5) (a := -3) (k := 1)
+    (by rintro ⟨x, hx⟩; revert x hx; decide)
+  simpa using h
+
+open Polynomial in
+/-- `X² + X + 1` is irreducible over `ℚ_[5]`: a root `r` would make `(2r + 1)² = −3` a square. -/
+theorem irreducible_X_sq_add_X_add_one : Irreducible (X ^ 2 + X + 1 : ℚ_[5][X]) := by
+  have hdeg : (X ^ 2 + X + 1 : ℚ_[5][X]).natDegree = 2 := by compute_degree!
+  have hmonic : (X ^ 2 + X + 1 : ℚ_[5][X]).Monic := by monicity!
+  rw [hmonic.irreducible_iff_roots_eq_zero_of_degree_le_three (by omega) (by omega),
+    Multiset.eq_zero_iff_forall_notMem]
+  intro r hr
+  rw [mem_roots hmonic.ne_zero, IsRoot, eval_add, eval_add, eval_pow, eval_X, eval_one] at hr
+  exact not_isSquare_neg_three ⟨2 * r + 1, by linear_combination (-4 : ℚ_[5]) * hr⟩
 
 end Padic

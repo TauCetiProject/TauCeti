@@ -33,6 +33,9 @@ that the reciprocity isomorphism `Gᵃᵇ ≃ H_Tate⁰(G, C)` inherits.
   is the Verlagerung.
 * `TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor`: corestriction in degree
   `-2` is the map induced on abelianizations.
+* `TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_map`: with integral coefficients, Tate
+  cohomology along an isomorphism of finite groups is, in degree `-2`, the induced isomorphism of
+  abelianizations.
 
 ## References
 
@@ -130,6 +133,40 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoCor {H : Type} [Group H] [Fintype H
   rw [HNegTwoAddEquivAbelianization_apply,
     HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor,
     TauCeti.tensorProduct_rid_rTensor_apply, AddMonoidHom.coe_toIntLinearMap]
+
+/-- **The integral degree-`-2` identification is natural along isomorphisms of groups**: Tate
+cohomology along an isomorphism `e : G ≃* H` of finite groups, with integral coefficients, is the
+isomorphism `Gᵃᵇ ≃ Hᵃᵇ` induced by `e` in degree `-2`. -/
+@[simp]
+theorem HNegTwoAddEquivAbelianization_map {H : Type} [Group H] [Fintype H] (e : G ≃* H)
+    (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
+    HNegTwoAddEquivAbelianization
+        (map (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) x) =
+      e.abelianizationCongr.toAdditive (HNegTwoAddEquivAbelianization x) := by
+  have hφ : Representation.IsIntertwiningMap.toRes
+      (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) =
+        𝟙 (Rep.res (e : G →* H) (Rep.trivial ℤ H ℤ)) := by
+    ext
+    simp only [Representation.IsIntertwiningMap.toRes_hom_toLinearMap]
+    rfl
+  have hm : map (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) (-2) =
+      HNegTwoCor (Rep.trivial ℤ H ℤ) (e : G →* H) := by
+    -- The sources agree definitionally, but rewriting cannot unfold the restricted trivial
+    -- representation inside `tateCohomologyFunctor`; compose the comparison squares as terms.
+    exact (cancel_mono (negSuccIso (Rep.trivial ℤ H ℤ) 1).hom).1 <|
+      (map_comp_negSuccIso_hom (Rep.isIntertwiningMap_trivial ℤ (e : G →* H)) 1).trans
+        (by
+          rw [hφ]
+          simpa only [HNegTwoCor_eq_negSuccCor, Rep.res, Rep.resFunctor, Rep.trivial,
+            Representation.trivial, MonoidHom.one_comp] using
+            (negSuccCor_comp_negSuccIso_hom (Rep.trivial ℤ H ℤ) (e : G →* H) 1).symm)
+  exact (congrArg (fun f : tateCohomology (Rep.trivial ℤ G ℤ) (-2) ⟶
+    tateCohomology (Rep.trivial ℤ H ℤ) (-2) ↦ HNegTwoAddEquivAbelianization (f x)) hm).trans
+      (by
+        convert HNegTwoAddEquivAbelianization_HNegTwoCor (e : G →* H) x using 1
+        rw [HNegTwoAddEquivAbelianization_apply]
+        simp only [Rep.res, Rep.trivial, Representation.trivial, MonoidHom.one_comp]
+        rfl)
 
 end TrivialInt
 

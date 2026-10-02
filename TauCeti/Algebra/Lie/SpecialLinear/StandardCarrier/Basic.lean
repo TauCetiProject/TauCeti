@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
+public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -73,6 +74,8 @@ is any group here claimed to be finite or simple.
 
 * `TauCeti.SlStd.lie_cartanGenerator_rootGenerator`: the numbered Cartan generators act on the
   numbered root generators through the type `A_r` Cartan matrix.
+* `TauCeti.SlStd.isSl2Triple_rootGenerator`: the numbered generators at a Bourbaki node form an
+  `sl₂` triple, from the identification of them with matrix units of `sl_{r+1}`.
 * `TauCeti.SlStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard lattice,
   so the lattice is admissible.
 * `TauCeti.SlStd.span_range_weight_eq_top`: the weights of the standard module generate the full
@@ -173,6 +176,15 @@ theorem val_rootGenerator (k : Fin r ⊕ Fin r) :
 theorem val_cartanGenerator (i : Fin r) :
     (cartanGenerator r i : Matrix (Fin (r + 1)) (Fin (r + 1)) ℚ) =
       Matrix.single i.castSucc i.castSucc 1 - Matrix.single i.succ i.succ 1 := (rfl)
+
+/-- **The numbered Chevalley generators at a Bourbaki node form an `sl₂` triple** in `sl_{r+1}`:
+they are the matrix units `E_{i, i+1}`, `E_{i+1, i}` and the diagonal difference
+`E_{i,i} - E_{i+1,i+1}`. -/
+theorem isSl2Triple_rootGenerator (i : Fin r) :
+    _root_.IsSl2Triple (cartanGenerator r i) (rootGenerator r (.inl i))
+      (rootGenerator r (.inr i)) := by
+  simpa only [rootGenerator, cartanGenerator, rootTarget, rootSource] using
+    isSl2Triple_single (Fin.castSucc_lt_succ (i := i)).ne
 
 /-! ## The standard representation -/
 

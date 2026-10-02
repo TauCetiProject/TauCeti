@@ -96,23 +96,10 @@ theorem tameFrameRelationMap_injective_of_card_ne_zero [Monoid G] {R : Type u} [
     rw [Ideal.span_le]
     rintro z (rfl | rfl)
     all_goals simp
-  let A := MonoidAlgebra R G
-  let _ : Module A R := Module.compHom R (MonoidAlgebra.augmentation R G)
-  let aug : A →ₗ[A] R := {
-    toFun := MonoidAlgebra.augmentation R G
-    map_add' := map_add _
-    map_smul' r x := map_mul _ r x }
-  have hker : LinearMap.ker aug = RingHom.ker (MonoidAlgebra.augmentation R G) := by
-    ext z
-    simp [aug]
-  have hIaug : I ≤ LinearMap.ker aug := hker ▸ hI
-  let q : (A ⧸ I) →ₗ[A] R := Submodule.liftQ I aug hIaug
-  have hq : Function.Surjective q := by
-    intro r
-    refine ⟨Submodule.Quotient.mk (single 1 r), ?_⟩
-    simp [q, aug]
-  let _ : Finite (A ⧸ I) := Nat.finite_of_card_ne_zero hcard
-  have : Finite R := Finite.of_surjective q hq
+  let _ : Finite (MonoidAlgebra R G ⧸ I) := Nat.finite_of_card_ne_zero hcard
+  have : Finite (MonoidAlgebra R G ⧸ RingHom.ker (MonoidAlgebra.augmentation R G)) :=
+    Finite.of_surjective _ (Submodule.factor_surjective hI)
+  have : Finite R := Finite.of_equiv _ (MonoidAlgebra.quotientKerAugmentationEquiv R G).toEquiv
   exact not_finite R
 
 variable {k : Type u} [Field k]
