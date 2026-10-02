@@ -68,7 +68,7 @@ namespace AffineE7
 /-- `TauCeti.Quiver.AffineE7` has eight vertices, as the extended Dynkin diagram `E₇~` should. -/
 @[simp]
 theorem card_eq : Fintype.card AffineE7 = 8 :=
-  rfl
+  (rfl)
 
 /-- The arrows of the extended Dynkin quiver `E₇~`, all pointing towards the centre. -/
 inductive Arrow : AffineE7 → AffineE7 → Type
