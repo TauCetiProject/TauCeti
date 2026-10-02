@@ -23,9 +23,8 @@ closed formula for the Hilbert symbol over `ℚ_2` is
 
 where `ε(u) = (u − 1)/2` and `ω(u) = (u² − 1)/8` modulo `2` are the sign functions
 `TauCeti.serreEps` and `TauCeti.serreOmega`. The exponent lives in `ZMod 2`, and the sign is
-`(-1 : ℤˣ) ^ x` for `x : ZMod 2`. This is the one dyadic field on which the symbol has a closed
-formula, and it pins down the sign convention of the local Hilbert symbol in residue
-characteristic `2`.
+`(-1 : ℤˣ) ^ x` for `x : ZMod 2`. This explicit formula over `ℚ_2` pins down the sign
+convention of the local Hilbert symbol in residue characteristic `2`.
 
 The classes of `-1`, `2` and `5` generate `ℚ_2ˣ/(ℚ_2ˣ)²`, since every unit of `ℤ_2` is
 `(-1) ^ ε(u) 5 ^ ω(u)` times a square (`TauCeti.exists_eq_neg_one_pow_mul_five_pow_mul_sq`). On
