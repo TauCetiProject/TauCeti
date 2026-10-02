@@ -12,10 +12,10 @@ public import Mathlib.Topology.Algebra.Group.Units
 /-!
 # Continuous scalar extension for Clifford point groups
 
-For a continuous homomorphism of commutative rings carrying topologies `K → L`, the canonical
-map from a Clifford algebra over `K` to the Clifford algebra of the scalar-extended quadratic
-space over `L` is continuous in the module topologies. Its restrictions to the Lipschitz and Spin
-groups are therefore continuous as well.
+For a continuous homomorphism of commutative rings carrying topologies `K → L`, with `2`
+invertible in `K`, the canonical map from a Clifford algebra over `K` to the Clifford algebra of
+the scalar-extended quadratic space over `L` is continuous in the module topologies. Its
+restrictions to the Lipschitz and Spin groups are therefore continuous as well.
 
 This supplies the topological compatibility needed to compare Clifford point groups over a global
 field with their localizations.
