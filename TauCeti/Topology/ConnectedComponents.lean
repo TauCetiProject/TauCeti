@@ -69,16 +69,16 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
   exact hy.2 (by rwa [hC.interior_eq])
 
 /-- **An open set with preconnected frontier has preconnected complement**, in a preconnected,
-locally connected space. Each connected component `D` of the exterior `(closure U)ᶜ` that is
-neither empty nor everything reaches `frontier U` through its own frontier: a frontier point of
-`D` lies in `closure U` but, being a limit of exterior points, not in the open set `U`. So
-`frontier U ∪ D` is preconnected, and `Uᶜ` is the union of these sets, all of which contain
-`frontier U`.
+locally connected space.
 
 Openness is needed: in `ℝ` the frontier of `{0}` is `{0}`, while `{0}ᶜ` is disconnected. -/
 theorem isPreconnected_compl_of_isPreconnected_frontier [LocallyConnectedSpace X]
     [PreconnectedSpace X] {U : Set X} (hU : IsOpen U) (hf : IsPreconnected (frontier U)) :
     IsPreconnected Uᶜ := by
+  -- If `frontier U` is nonempty, each nonempty component `D` of the exterior `(closure U)ᶜ`
+  -- reaches `frontier U` through its own frontier: a frontier point of `D` lies in `closure U`
+  -- but, being a limit of exterior points, not in the open set `U`. So `frontier U ∪ D` is
+  -- preconnected, and `Uᶜ` is the union of these sets, all of which contain `frontier U`.
   rcases (frontier U).eq_empty_or_nonempty with h | ⟨p, hp⟩
   · rcases frontier_eq_empty_iff.mp h with rfl | rfl
     · simpa using isPreconnected_univ
