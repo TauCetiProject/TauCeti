@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
+public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 import TauCeti.Algebra.Module.Torsion.FreeQuotient
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
@@ -45,6 +46,8 @@ valuations and logarithms forces the coefficients to be divisible by arbitrarily
   `ℚ_[p]`, `A(L)` modulo its `ℤ_p`-torsion is `ℤ_p`-linearly isomorphic to
   `ℤ_p ^ ([L : ℚ_p] + 1)`.
 * `TauCeti.finrank_padicCompletionUnits`: consequently `A(L)` has `ℤ_p`-rank `[L : ℚ_p] + 1`.
+* `TauCeti.linearIndependent_padicCompletionUnitsOf`: the classes in `A(L)` of `p` and of deep
+  units whose logarithms are linearly independent over `ℚ_p` are linearly independent over `ℤ_p`.
 
 ## References
 
@@ -332,6 +335,95 @@ private theorem exists_smul_mem_range_latticeMap :
   rw [h, Int.cast_smul_eq_zsmul, add_comm, deepExpClass_apply]
 
 end LatticeMap
+
+/-! ### Deep units with independent logarithms -/
+
+/-- `p ^ i` times the class of `exp z` is the image under the lattice map of the coordinates of
+`z` in the integral basis. -/
+private theorem pow_smul_deepExpClass (hi : absoluteRamificationIndex L p < (p - 1) * i)
+    (z : (𝓂[L] ^ i : Ideal 𝒪[L])) :
+    p ^ i • deepExpClass p hi z = latticeMap p L hi
+      (Fin.cons 0 fun l ↦ Padic.integerRingEquiv p ((integerBasis p L).repr z l)) := by
+  have hz : p ^ i • z = ∑ l, (integerBasis p L).repr z l • deepLatticeVector i l := by
+    apply Subtype.ext
+    rw [coe_sum_smul_deepLatticeVector, (integerBasis p L).sum_repr,
+      Submodule.coe_smul_of_tower, nsmul_eq_mul, Nat.cast_pow]
+  rw [latticeMap, Fintype.linearCombination_apply, Fin.sum_univ_succ]
+  simp only [Fin.cons_zero, Fin.cons_succ, zero_smul, zero_add, ← deepExpClass_smul, ← map_sum,
+    ← hz, map_nsmul]
+
+variable (p) in
+/-- **Deep units with independent logarithms are independent in `A(L)`.** Let `u` be a finite
+family of deep units of `L`, in `U(L,i)` with `e(L/ℚ_p) < (p - 1) * i`, whose logarithms are
+linearly independent over `ℚ_p`. Then the classes in `A(L)` of `p` and of the `u j` are linearly
+independent over `ℤ_p`. -/
+public theorem linearIndependent_padicCompletionUnitsOf
+    (hi : absoluteRamificationIndex L p < (p - 1) * i) {ι : Type*} [Finite ι] {u : ι → Lˣ}
+    (hu : ∀ j, u j ∈ unitFiltration L i)
+    (hlog : LinearIndependent ℚ_[p] fun j ↦ NormedSpace.log (u j : L)) {ϖ : Lˣ}
+    (hϖ : (ϖ : L) = p) :
+    LinearIndependent ℤ_[p] fun o : Option ι ↦
+      Additive.ofMul (padicCompletionUnitsOf p L (o.elim ϖ u)) := by
+  have := Fintype.ofFinite ι
+  have hϖ' : ϖ = primeUnit p L := Units.ext hϖ
+  subst hϖ'
+  -- The logarithms of the `u j`, as deep elements, and their coordinates in the integral basis.
+  set x : ι → (𝓂[L] ^ i : Ideal 𝒪[L]) := fun j ↦ (deepUnitExpLogEquiv L hi ⟨u j, hu j⟩).toAdd
+  have hxu (j : ι) : deepExp p hi (x j) = u j := by
+    simp [x, deepExp]
+  have hxlog (j : ι) : (((x j : 𝒪[L]) : L)) = NormedSpace.log (u j : L) :=
+    coe_deepUnitExpLogEquiv_apply hi ⟨u j, hu j⟩
+  set t : ι → Fin (Module.finrank ℚ_[p] L) → ℤ_[p] :=
+    fun j l ↦ Padic.integerRingEquiv p ((integerBasis p L).repr (x j) l)
+  rw [Fintype.linearIndependent_iff]
+  intro g hg
+  rw [Fintype.sum_option] at hg
+  simp only [Option.elim_none, Option.elim_some] at hg
+  -- Multiplying the relation by `p ^ i` turns it into a relation for the lattice map.
+  have hlat : latticeMap p L hi
+      (Fin.cons (p ^ i * g none) fun l ↦ ∑ j, g (some j) * t j l) = 0 := by
+    have hcons : (Fin.cons (p ^ i * g none) fun l ↦ ∑ j, g (some j) * t j l :
+        Fin (Module.finrank ℚ_[p] L + 1) → ℤ_[p]) =
+        (p ^ i * g none) • Fin.cons 1 0 + ∑ j, g (some j) • Fin.cons 0 (t j) := by
+      funext l
+      refine Fin.cases ?_ (fun l ↦ ?_) l <;> simp [Finset.sum_apply]
+    have hp : latticeMap p L hi (Fin.cons 1 0) =
+        Additive.ofMul (padicCompletionUnitsOf p L (primeUnit p L)) := by
+      simp [latticeMap, Fintype.linearCombination_apply, Fin.sum_univ_succ]
+    have hxt (j : ι) : latticeMap p L hi (Fin.cons 0 (t j)) =
+        p ^ i • Additive.ofMul (padicCompletionUnitsOf p L (u j)) := by
+      rw [← hxu j, ← deepExpClass_apply, pow_smul_deepExpClass]
+    rw [hcons, map_add, map_smul, map_sum, hp]
+    simp_rw [LinearMap.map_smul, hxt, smul_comm _ (p ^ i), ← Finset.smul_sum, mul_smul,
+      ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, ← smul_add, hg, smul_zero]
+  have h0 := latticeMap_injective hi (hlat.trans (map_zero _).symm)
+  -- The coefficient of `p` vanishes, and the coordinates of `∑ j, g j • x j` vanish.
+  have hnone : g none = 0 := by
+    have h := congrFun h0 0
+    simp only [Fin.cons_zero, Pi.zero_apply, mul_eq_zero, pow_eq_zero_iff', Nat.cast_eq_zero,
+      (Fact.out : p.Prime).ne_zero, false_and, false_or] at h
+    exact h
+  have hsum : ∑ j, ((Padic.integerRingEquiv p).symm (g (some j)) • (x j : 𝒪[L])) = 0 := by
+    refine (integerBasis p L).repr.injective (Finsupp.ext fun l ↦ ?_)
+    apply (Padic.integerRingEquiv p).injective
+    have h := congrFun h0 l.succ
+    simp only [Fin.cons_succ, Pi.zero_apply] at h
+    simp [map_sum, t, h]
+  have hsome (j : ι) : g (some j) = 0 := by
+    have h : ∑ j, algebraMap ℚ_[p] L (g (some j)) * NormedSpace.log (u j : L) = 0 := by
+      have h := congrArg (fun y : 𝒪[L] ↦ (y : L)) hsum
+      simp only [Algebra.smul_def] at h
+      push_cast at h
+      rw [← h]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      rw [← hxlog, Padic.coe_integerRingEquiv_symm_apply]
+    have := Fintype.linearIndependent_iff.mp hlog (fun j ↦ (g (some j) : ℚ_[p]))
+      (by simpa [Algebra.smul_def] using h) j
+    exact PadicInt.coe_eq_zero.mp this
+  intro o
+  cases o with
+  | none => exact hnone
+  | some j => exact hsome j
 
 variable (p L) in
 private theorem nonempty_quotient_torsion_linearEquiv_of_finitePadicExtension :

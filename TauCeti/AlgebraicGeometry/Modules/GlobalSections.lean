@@ -18,7 +18,8 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 `Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this
 action to the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
-presheaf.
+presheaf. Pullback of local functions by a morphism over the base preserves these images
+(`TauCeti.AlgebraicGeometry.Scheme.Modules.app_baseRingToStructurePresheaf`).
 
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`.
@@ -226,6 +227,25 @@ lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app (U : X.Ope
       CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections R X) ≫
         X.presheaf.map U.unop.leTop.op :=
   (rfl)
+
+variable {X} in
+/-- Pullback of local functions along a morphism over `Spec R` preserves the image of the
+base ring. -/
+lemma app_baseRingToStructurePresheaf {Y : Scheme.{u}} [Y.Over (Spec (.of R))]
+    (f : X ⟶ Y) [f.IsOver (Spec (.of R))] (U : Y.Opens) (r : R) :
+    f.app U ((Y.baseRingToStructurePresheaf R).app (op U) r) =
+      (X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U)) r := by
+  rw [Scheme.baseRingToStructurePresheaf_app, Scheme.baseRingToStructurePresheaf_app]
+  -- The maps obtained from `CommRingCat.ofHom` compute through their bundled ring homs.
+  change f.app U (Y.presheaf.map U.leTop.op (Scheme.Modules.baseRingToGlobalSections R Y r)) =
+    X.presheaf.map (f ⁻¹ᵁ U).leTop.op (Scheme.Modules.baseRingToGlobalSections R X r)
+  rw [← ConcreteCategory.comp_apply, f.naturality U.leTop.op]
+  have h := congrArg Scheme.Hom.appTop
+    (HomIsOver.comp_over (f := f) (S := Spec (.of R)))
+  rw [Scheme.Hom.comp_appTop] at h
+  rw [ConcreteCategory.comp_apply, Scheme.Modules.baseRingToGlobalSections_apply,
+    Scheme.Modules.baseRingToGlobalSections_apply, ← h, ConcreteCategory.comp_apply]
+  rfl
 
 /-- Global sections of a sheaf of modules on a scheme over a commutative ring form a module over
 the base ring. The priority is below the default so that the canonical action of

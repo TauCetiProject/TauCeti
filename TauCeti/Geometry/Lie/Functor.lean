@@ -32,6 +32,7 @@ This advances Layer 3 of the Lie-groups roadmap.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
+* `continuous_lieMap`: the Lie map is continuous.
 -/
 
 public section
@@ -320,3 +321,11 @@ theorem map_lieExp [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply]
   exact (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
     (I := I) (I' := I') φ X).symm
+
+/-- The Lie map of a smooth homomorphism is continuous, being a linear map between
+finite-dimensional real normed spaces. -/
+theorem continuous_lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [T2Space G]
+    [T2Space G'] (φ : ContMDiffMonoidMorphism I I' ∞ G G') : Continuous (lieMap φ) := by
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  exact (lieMap φ).toLinearMap.continuous_of_finiteDimensional

@@ -39,6 +39,8 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
 * `TauCeti.OddComponentGridDiagram`: a grid diagram with an odd number of link components.
 * `TauCeti.GridDiagram.IsKnot.toOddComponentGridDiagram`: a knot grid has one, hence an odd
   number of components.
+* `TauCeti.OddComponentGridDiagram.relabelRows`, `TauCeti.OddComponentGridDiagram.relabelColumns`:
+  relabeling keeps the number of link components odd.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ`: the integer Alexander grading.
 * `TauCeti.OddComponentGridDiagram.bidegree`: the (`O`-Maslov, Alexander) degree of a grid state.
 * `TauCeti.OddComponentGridDiagram.alexanderSupport`: the Alexander degrees occupied by grid
@@ -331,6 +333,25 @@ end GridDiagram.IsKnot
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n)
+
+/-- Relabeling the rows of a grid diagram with an odd number of components. -/
+def relabelRows (ρ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
+  ⟨G.1.relabelRows ρ, by rw [GridDiagram.componentCount_relabelRows]; exact G.2⟩
+
+/-- The underlying grid diagram of `G.relabelRows ρ` is the row-relabeled diagram. -/
+@[simp]
+theorem val_relabelRows (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).1 = G.1.relabelRows ρ :=
+  (rfl)
+
+/-- Relabeling the columns of a grid diagram with an odd number of components. -/
+def relabelColumns (κ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
+  ⟨G.1.relabelColumns κ, by rw [GridDiagram.componentCount_relabelColumns]; exact G.2⟩
+
+/-- The underlying grid diagram of `G.relabelColumns κ` is the column-relabeled diagram. -/
+@[simp]
+theorem val_relabelColumns (κ : Equiv.Perm (Fin n)) :
+    (G.relabelColumns κ).1 = G.1.relabelColumns κ :=
+  (rfl)
 
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=

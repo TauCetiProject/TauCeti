@@ -58,6 +58,7 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
   the norm topology.
 * `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
+* `AlgEquiv.continuous_of_valuativeExtension`: `K`-algebra automorphisms of `M` are continuous.
 * `AlgHom.valuativeExtension`: a `K`-algebra map from `M` to a field whose valuative relation
   extends that of `K` makes that field a valuative extension of `M`.
 * `Valuation.Integers.isIntegral_iff_valuation_le_one`: for any valuative relation on `M`
@@ -506,5 +507,18 @@ theorem continuous_algebraMap_of_valuativeExtension [ValuativeRel M] [ValuativeE
       normalizedNormedField_norm_def]
   rw [normalizedNormedField_topology_eq K, finiteExtensionNormedFieldTopology_eq K M] at h
   exact h
+
+variable {K M} in
+/-- **Galois automorphisms are continuous.** Every `K`-algebra automorphism of a finite extension
+`M` of a nonarchimedean local field `K` is continuous for the valuative topology of `M`, since it
+preserves the valuation. -/
+theorem _root_.AlgEquiv.continuous_of_valuativeExtension [ValuativeRel M]
+    [ValuativeExtension K M] [TopologicalSpace M] [IsValuativeTopology M] (σ : M ≃ₐ[K] M) :
+    Continuous σ := by
+  refine continuous_of_continuousAt_zero σ ?_
+  rw [ContinuousAt, map_zero]
+  exact ((IsValuativeTopology.hasBasis_nhds_zero M).tendsto_iff
+    (IsValuativeTopology.hasBasis_nhds_zero M)).mpr fun γ _ ↦
+      ⟨γ, trivial, fun x hx ↦ by simpa [σ.valuation_eq] using hx⟩
 
 end TauCeti

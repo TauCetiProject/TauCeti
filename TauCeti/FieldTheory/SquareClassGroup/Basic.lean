@@ -91,6 +91,11 @@ theorem ker_squareClassHom : (squareClassHom (K := K)).ker = Subgroup.square Kˣ
   ext u
   simp [squareClassHom_apply]
 
+/-- The unit `1` has trivial square class. -/
+@[simp]
+theorem squareClass_one : squareClass (1 : Kˣ) = 0 := by
+  rw [squareClass_def, ofMul_one, QuotientAddGroup.mk_zero]
+
 /-- The square class of a product of two units is the sum of their square classes. -/
 @[simp]
 theorem squareClass_mul (u v : Kˣ) : squareClass (u * v) = squareClass u + squareClass v := by

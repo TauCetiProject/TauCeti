@@ -297,7 +297,7 @@ theorem isBoundaryPoint_closedBall_iff {x : closedBall (0 : E) 1} :
     (𝓡∂ n).IsBoundaryPoint x ↔ ‖(x : E)‖ = 1 := by
   obtain ⟨φ, hx, h⟩ := exists_chartAt_closedBall_eq (n := n) x
   rw [ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range (k := ω) (by simp)
-    (chart_mem_atlas _ x) (mem_chart_source _ x), h,
+    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source _ x), h,
     frontier_range_modelWithCornersEuclideanHalfSpace]
   simp [closedBallChart_apply_val_zero φ hx, (norm_add_single_sq_pos hx).ne',
     eq_comm (a := (0 : ℝ)), sub_eq_zero, eq_comm (a := (1 : ℝ)),
@@ -309,7 +309,7 @@ theorem isInteriorPoint_closedBall_iff {x : closedBall (0 : E) 1} :
     (𝓡∂ n).IsInteriorPoint x ↔ ‖(x : E)‖ < 1 := by
   obtain ⟨φ, hx, h⟩ := exists_chartAt_closedBall_eq (n := n) x
   rw [ModelWithCorners.isInteriorPoint_iff_mem_interior_range (k := ω) (by simp)
-    (chart_mem_atlas _ x) (mem_chart_source _ x), h,
+    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source _ x), h,
     interior_range_modelWithCornersEuclideanHalfSpace]
   simp [closedBallChart_apply_val φ hx, inversion_apply_zero_pos_iff hx]
 

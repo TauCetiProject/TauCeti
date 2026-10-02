@@ -6,10 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.Group.Submonoid.MulAction
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Algebra.Monoid.Defs
+public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.LocallyFinite
+
+import Mathlib.Topology.Algebra.Group.Basic
 
 /-!
 # Transfer instances for restricted and properly discontinuous actions
@@ -19,6 +25,9 @@ cannot otherwise reach. A submonoid, and hence a subgroup, inherits `ContinuousC
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
 countable, and that the translates of a compact set under it form a locally finite family.
+Conversely, for a jointly continuous action of a `T₁` group with separately continuous
+multiplication, local finiteness of the translates of any nonempty set forces the group topology
+to be discrete.
 
 ## Main results
 
@@ -26,12 +35,16 @@ countable, and that the translates of a compact set under it form a locally fini
   in the point is inherited by a submonoid, hence by a subgroup.
 * `SubMulAction.properlyDiscontinuousSMul`: proper discontinuity is inherited by every invariant
   subspace.
+* `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
+  properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
   nonempty σ-compact space is countable.
 * `TauCeti.locallyFinite_smul_of_isCompact`: under a properly discontinuous action on a weakly
   locally compact space, the translates of a compact set form a locally finite family.
+* `TauCeti.discreteTopology_of_locallyFinite_smul`: if the translates of a nonempty set under a
+  continuous action are locally finite, then the acting group is discrete.
 * `TauCeti.isClosed_iUnion_smul_of_isCompact`: the union of the translates of a closed compact set
   under such an action of a group is closed.
 -/
@@ -39,6 +52,38 @@ countable, and that the translates of a compact set under it form a locally fini
 public section
 
 namespace TauCeti
+
+section DiscreteTopology
+
+open scoped Pointwise
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] [T1Space G]
+  [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X] {S : Set X}
+
+/-- **Local finiteness of the translates of a nonempty set forces the acting group to be
+discrete.**
+
+The set need not be open, closed, or compact, and the action need not be faithful. This is the
+discreteness criterion for a group whose translates of a fundamental polygon form a locally
+finite tessellation. -/
+@[to_additive
+/-- **Local finiteness of the translates of a nonempty set forces the acting additive group to be
+discrete.** -/]
+theorem discreteTopology_of_locallyFinite_smul (hS : S.Nonempty)
+    (hlocal : LocallyFinite fun g : G ↦ g • S) : DiscreteTopology G := by
+  obtain ⟨x, hx⟩ := hS
+  obtain ⟨U, hU, hfinite⟩ := hlocal x
+  let V : Set G := (fun g ↦ g • x) ⁻¹' U
+  have hV : V ∈ nhds (1 : G) := by
+    exact (continuous_smul.comp (continuous_id.prodMk continuous_const)).continuousAt
+      (by simpa only [Function.comp_apply, id_eq, one_smul] using hU)
+  have hVF : V ⊆ {g : G | (g • S ∩ U).Nonempty} := by
+    intro g hg
+    exact ⟨g • x, ⟨x, hx, rfl⟩, hg⟩
+  exact discreteTopology_of_isOpen_singleton_one <|
+    isOpen_singleton_of_finite_mem_nhds 1 (Filter.mem_of_superset hV hVF) hfinite
+
+end DiscreteTopology
 
 /-- A submonoid inherits continuity in the point from an ambient continuous action. -/
 @[to_additive
@@ -57,6 +102,33 @@ instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul 
   Submonoid.continuousConstSMul S.toSubmonoid
 
 end Subgroup
+
+open scoped Pointwise in
+/-- **Conjugation preserves proper discontinuity**: if `H'` is the conjugate `g H g⁻¹` of a
+subgroup `H` acting properly discontinuously, then `H'` acts properly discontinuously, since
+`g k g⁻¹` moves `K` to meet `L` exactly when `k` moves `g⁻¹ • K` to meet `g⁻¹ • L`. -/
+theorem properlyDiscontinuousSMul_of_conjAct_smul_eq {G X : Type*} [Group G] [TopologicalSpace X]
+    [MulAction G X] [ContinuousConstSMul G X] {H H' : _root_.Subgroup G} {g : G}
+    [ProperlyDiscontinuousSMul H X] (h : ConjAct.toConjAct g • H = H') :
+    ProperlyDiscontinuousSMul H' X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    subst h
+    let φ : H → (ConjAct.toConjAct g • H : _root_.Subgroup G) := fun k ↦
+      ⟨g * k * g⁻¹, by
+        simpa [ConjAct.toConjAct_smul] using
+          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.2⟩
+    refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := H)
+      (hK.image (continuous_const_smul g⁻¹)) (hL.image (continuous_const_smul g⁻¹))).image
+        φ).subset ?_
+    intro k hk
+    have hk' : g⁻¹ * k * g ∈ H := by
+      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.2
+      rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this
+    refine ⟨⟨g⁻¹ * k * g, hk'⟩, ?_, Subtype.ext (by simp [φ, mul_assoc])⟩
+    -- a point `x ∈ K` with `k • x ∈ L` gives `g⁻¹ • x ∈ g⁻¹ • K` moved into `g⁻¹ • L`
+    obtain ⟨_, ⟨x, hx, rfl⟩, hxL⟩ := hk
+    refine ⟨g⁻¹ • ((k : G) • x), ⟨g⁻¹ • x, ⟨x, hx, rfl⟩, ?_⟩, ⟨_, hxL, rfl⟩⟩
+    simp [_root_.Subgroup.smul_def, mul_smul]
 
 end TauCeti
 

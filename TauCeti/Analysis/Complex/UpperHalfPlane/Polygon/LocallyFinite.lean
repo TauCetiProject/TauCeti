@@ -17,12 +17,17 @@ Let `Γ ≤ PSL(2, ℝ)` act properly discontinuously on the upper half-plane, a
 does. The carrier of a compact convex hyperbolic polygon `P` is compact, so the family of translates
 `{γ • P.carrier | γ ∈ Γ}` is locally finite in the sense of Katok. The same holds for the translated
 sides and vertices, indexed by pairs `(γ, i)`, since each lies in the corresponding translated
-carrier; and the union of the translates of the carrier is closed.
+carrier; and the union of the translates of the carrier is closed. Conversely, local finiteness of
+the carrier translates already implies that `Γ` is discrete. This is the discreteness step used
+when a polygon construction first produces a locally finite tessellation and only afterwards
+identifies its transformation group as Fuchsian.
 
 ## Main results
 
 * `CompactConvexPolygon.locallyFinite_smul_carrier`: the translates of the carrier are locally
   finite.
+* `CompactConvexPolygon.discreteTopology_of_locallyFinite_smul_carrier`: local finiteness of the
+  carrier translates implies discreteness of the acting subgroup.
 * `CompactConvexPolygon.locallyFinite_smul_side`,
   `CompactConvexPolygon.locallyFinite_singleton_smul_vertex`: the translates of the sides,
   respectively of the vertices, are locally finite.
@@ -48,8 +53,18 @@ namespace TauCeti.UpperHalfPlane
 
 namespace CompactConvexPolygon
 
-variable {n : ℕ} [NeZero n] (Γ : Subgroup PSL(2, ℝ)) [ProperlyDiscontinuousSMul Γ ℍ]
-  (P : CompactConvexPolygon n)
+variable {n : ℕ} [NeZero n] (Γ : Subgroup PSL(2, ℝ)) (P : CompactConvexPolygon n)
+
+/-- **A subgroup whose translates of a compact convex polygon are locally finite is discrete.**
+This is the specialization of `TauCeti.discreteTopology_of_locallyFinite_smul` used for locally
+finite polygon tessellations. -/
+theorem discreteTopology_of_locallyFinite_smul_carrier
+    (hlocal : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) :
+    DiscreteTopology Γ :=
+  TauCeti.discreteTopology_of_locallyFinite_smul
+    ⟨P.vertex 0, P.vertex_mem_carrier 0⟩ hlocal
+
+variable [ProperlyDiscontinuousSMul Γ ℍ]
 
 -- The action of `γ : Γ` on `ℍ` and on its subsets is that of `(γ : PSL(2, ℝ))`
 -- (`Subgroup.smul_def`), definitionally; the statements use the ambient action.

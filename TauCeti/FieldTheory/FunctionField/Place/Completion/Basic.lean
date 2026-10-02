@@ -50,6 +50,11 @@ noncomputable def completionEmbedding : F →ₐ[k] P.Completion :=
   { UniformSpace.Completion.coeRingHom.comp (WithVal.equiv P.valuation).symm.toRingHom with
     commutes' _ := rfl }
 
+/-- The canonical embedding is the uniform-space completion map on the valued field. -/
+theorem completionEmbedding_apply (x : F) :
+    P.completionEmbedding x =
+      ((WithVal.toVal P.valuation x : WithVal P.valuation) : P.Completion) := (rfl)
+
 /-- The embedding into the completion preserves the normalized valuation. -/
 @[simp]
 theorem valuation_completionEmbedding (x : F) :

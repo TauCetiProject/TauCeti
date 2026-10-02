@@ -33,6 +33,10 @@ every diagonal presentation. Composed with `TauCeti.formClass`, they are the Sti
 `w₁(q)` and `w₂(q)` of a regular quadratic form `q`, and isometric regular
 forms have the same classes.
 
+On these classes the two low-degree identities hold: `w₁(q) = (d(q))` for the plain discriminant
+`d`, so `w₁` is additive over orthogonal sums, and `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`,
+the degree-two part of the product formula for Delzant's total class.
+
 The binary cup identity rests on the comparison of the Brauer group with Galois cohomology, which
 is available for fields `K : Type`; the second class is defined in that generality.
 
@@ -40,6 +44,7 @@ is available for fields `K : Type`; the second class is defined in that generali
 
 * `TauCeti.sw1Class`: the first Stiefel–Whitney class of an isometry class of regular forms.
 * `TauCeti.sw2Class`: the second Stiefel–Whitney class of an isometry class of regular forms.
+* `TauCeti.sw1ClassHom`: the first class as an additive homomorphism for the orthogonal sum.
 
 ## Main results
 
@@ -49,6 +54,9 @@ is available for fields `K : Type`; the second class is defined in that generali
   that presentation.
 * `TauCeti.sw1Class_formClass` and `TauCeti.sw2Class_formClass`: the classes of a regular form are
   computed on any of its diagonalizations.
+* `TauCeti.sw1Class_eq_kummerSquareClassEquiv_discr`: `w₁(q) = (d(q))`.
+* `TauCeti.sw1Class_add` and `TauCeti.sw2Class_add`: `w₁(q ⊥ r) = w₁(q) + w₁(r)` and
+  `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`.
 * `TauCeti.sw1Class_formClass_congr` and `TauCeti.sw2Class_formClass_congr`: isometric regular
   forms have the same classes.
 * `TauCeti.sw1Class_zero`, `TauCeti.sw2Class_zero`, `TauCeti.sw1Class_one`,
@@ -119,6 +127,28 @@ theorem sw1Class_formClass_congr {V W : Type*} [AddCommGroup V] [Module K V]
 theorem sw1Class_zero : sw1Class (0 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.zero_def, sw1Class_mk, sw1_fin_zero]
 
+/-- **`w₁` is the Kummer class of the discriminant**: `w₁(q) = (d(q))`, with the plain
+discriminant `d` and not the signed discriminant. -/
+theorem sw1Class_eq_kummerSquareClassEquiv_discr (x : RegularFormClass K) :
+    sw1Class x = kummerSquareClassEquiv K (RegularFormClass.discr x) := by
+  induction x using Quotient.inductionOn with
+  | h p => rw [sw1Class_mk, RegularFormClass.discr_mk, sw1_eq_kummerSquareClassEquiv]
+
+/-- **`w₁` is additive over orthogonal sums**: `w₁(q ⊥ r) = w₁(q) + w₁(r)`. -/
+@[simp]
+theorem sw1Class_add (x y : RegularFormClass K) : sw1Class (x + y) = sw1Class x + sw1Class y := by
+  simp only [sw1Class_eq_kummerSquareClassEquiv_discr, RegularFormClass.discr_add, map_add]
+
+/-- `w₁` as an additive homomorphism for the orthogonal sum. -/
+def sw1ClassHom :
+    RegularFormClass K →+ continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
+  (kummerSquareClassEquiv K).toAddMonoidHom.comp RegularFormClass.discrHom
+
+/-- The additive homomorphism `TauCeti.sw1ClassHom` is `TauCeti.sw1Class`. -/
+@[simp]
+theorem sw1ClassHom_apply (x : RegularFormClass K) : sw1ClassHom x = sw1Class x := by
+  simp [sw1ClassHom, sw1Class_eq_kummerSquareClassEquiv_discr]
+
 /-- `w₁⟨a⟩ = (a)`. -/
 theorem sw1Class_mk_rankOne (a : Kˣ) :
     sw1Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = kummerClass a := by
@@ -188,6 +218,21 @@ theorem sw2Class_formClass_congr {V W : Type*} [AddCommGroup V] [Module K V]
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) {R : QuadraticForm K W} (hR : R.Nondegenerate)
     (h : Q.Equivalent R) : sw2Class (formClass Q hQ) = sw2Class (formClass R hR) := by
   rw [(formClass_eq_iff Q hQ R hR).2 h]
+
+/-- **The orthogonal-sum formula for `w₂`**: `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`. The
+second Stiefel–Whitney class is not additive, and the defect is the cup product of the first
+classes. -/
+@[simp]
+theorem sw2Class_add (x y : RegularFormClass K) :
+    sw2Class (x + y) = sw2Class x + sw2Class y +
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class x) (sw1Class y) := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    induction y using Quotient.inductionOn with
+    | h q =>
+      rw [RegularFormClass.mk_add_mk, RegularFormPresentation.append_def, sw2Class_mk,
+        sw2Class_mk, sw2Class_mk, sw1Class_mk, sw1Class_mk]
+      exact sw2_append p.2 q.2
 
 /-- `w₂` vanishes in ranks `0` and `1`, in particular on `0`, on `1` and on every `⟨a⟩`. -/
 theorem sw2Class_eq_zero_of_rank_le_one {x : RegularFormClass K} (hx : x.rank ≤ 1) :
