@@ -19,8 +19,8 @@ Let `A` be a strongly noetherian Tate ring, `P` a pair of definition whose ring 
 in `A⁺`, and `A⁺` a subring of power-bounded elements. This file proves that the presentation-limit
 presheaf of `X = Spa(A, A⁺)`, as a presheaf of sets, satisfies the sheaf condition for every cover
 of a rational subset `W ⊆ X` by rational subsets `U i ⊆ W`
-(`isSheafFor_ofArrows_of_iSup_eq`): sections over the `U i` that agree on the pairwise overlaps
-glue uniquely to a section over `W`. The cover may be infinite.
+(`isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq`): sections over the `U i` that agree on the
+pairwise overlaps glue uniquely to a section over `W`. The cover may be infinite.
 
 This is Wedhorn's Lemma 8.34 in degree zero for an arbitrary rational cover. Following Wedhorn, the
 statement is reduced to standard rational covers, for which it is
@@ -42,8 +42,8 @@ presheaf of sets; neither the topology on the sections nor higher Čech cohomolo
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.isSheafFor_ofArrows_of_iSup_eq` : a cover of a rational subset by
-  rational subsets satisfies the sheaf condition.
+* `TauCeti.ValuationSpectrum.isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq` : a cover of a
+  rational subset by rational subsets satisfies the sheaf condition.
 
 ## References
 
@@ -68,11 +68,12 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTat
 of integral elements: Wedhorn's Lemma 7.54 refines the cover by a standard rational cover, to which
 `isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top` applies. The open `W` is `⊤`, but is kept as
 a variable so that the lemma applies to opens that are only propositionally `⊤`. -/
-private theorem isSheafFor_ofArrows_of_iSup_eq_top [IsUniformAddGroup A] [CompleteSpace A]
-    [T2Space A] (hP : P.ringOfDefinition ≤ Aplus) (hplus : IsRingOfIntegralElements Aplus)
-    {W : Opens ↥(spa Aplus)} (hW : W = ⊤) {ι : Type*} [Nonempty ι] {U : ι → Opens ↥(spa Aplus)}
-    (hU : ∀ i, U i ∈ spaRationalOpens Aplus) (hUW : ∀ i, U i ≤ W) (hcov : ⨆ i, U i = W) :
-    (Presieve.ofArrows U fun i ↦ homOfLE (hUW i)).IsSheafFor
+private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top [IsUniformAddGroup A]
+    [CompleteSpace A] [T2Space A] (hP : P.ringOfDefinition ≤ Aplus)
+    (hplus : IsRingOfIntegralElements Aplus) {W : Opens ↥(spa Aplus)} (hW : W = ⊤) {ι : Type*}
+    [Nonempty ι] {U : ι → Opens ↥(spa Aplus)} (hU : ∀ i, U i ∈ spaRationalOpens Aplus)
+    (hcov : ⨆ i, U i = W) :
+    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat) := by
   classical
@@ -100,7 +101,7 @@ private theorem isSheafFor_ofArrows_of_iSup_eq_top [IsUniformAddGroup A] [Comple
       (top_mem_spaRationalOpens Aplus)) fun V g hg ↦ ?_
   · obtain ⟨f⟩ := hg
     obtain ⟨i, hi⟩ := hSU f f.2
-    exact ⟨U i, homOfLE fun v hv ↦ hi (mem_spaBasicOpen.mp hv.2), homOfLE (hUW i),
+    exact ⟨U i, homOfLE fun v hv ↦ hi (mem_spaBasicOpen.mp hv.2), homOfLE le_top,
       Presieve.ofArrows.mk i, rfl⟩
   · obtain ⟨i⟩ := hg
     refine ⟨Presieve.ofArrows (fun f : S ↦ U i ⊓ spaBasicOpen Aplus S f)
@@ -121,11 +122,11 @@ agree on the pairwise overlaps glue uniquely to a section over `W`.
 `A` itself need not be complete, and the family may be infinite. It must be nonempty: an empty
 family covers only the empty open, where the sheaf condition asks that there be exactly one
 section. -/
-theorem isSheafFor_ofArrows_of_iSup_eq (hP : P.ringOfDefinition ≤ Aplus)
+theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq (hP : P.ringOfDefinition ≤ Aplus)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
     (hW : W ∈ spaRationalOpens Aplus) {ι : Type*} [Nonempty ι] {U : ι → Opens ↥(spa Aplus)}
-    (hU : ∀ i, U i ∈ spaRationalOpens Aplus) (hUW : ∀ i, U i ≤ W) (hcov : ⨆ i, U i = W) :
-    (Presieve.ofArrows U fun i ↦ homOfLE (hUW i)).IsSheafFor
+    (hU : ∀ i, U i ∈ spaRationalOpens Aplus) (hcov : ⨆ i, U i = W) :
+    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat) := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
@@ -144,12 +145,13 @@ theorem isSheafFor_ofArrows_of_iSup_eq (hP : P.ringOfDefinition ≤ Aplus)
     (eq_top_mono (Ideal.span_mono (Set.subset_insert _ _)) (IsTateRing.eq_top_of_isOpen hT))
   -- transport to the pullbacks along `Spa(B, A_U⁺) → Spa(A, A⁺)` (Wedhorn's Remark 8.4), which
   -- cover `Spa(B, A_U⁺)`
-  rw [isSheafFor_ofArrows_iff_locOpensComap P Aplus T s _ hden hAplus hT hW le_rfl hU hUW]
-  refine isSheafFor_ofArrows_of_iSup_eq_top (completionLocalization P T s _ hden)
+  rw [isSheafFor_ofArrows_iff_locOpensComap P Aplus T s _ hden hAplus hT hW le_rfl hU
+    fun i ↦ (le_iSup U i).trans_eq hcov]
+  refine isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (completionLocalization P T s _ hden)
     (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
     (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden)
     (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
-    (fun i ↦ locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)) _ ?_
+    (fun i ↦ locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)) ?_
   rw [← hcov]
   exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
 
