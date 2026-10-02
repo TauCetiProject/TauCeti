@@ -115,4 +115,38 @@ theorem sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent (m : 
     finsum_eq_sum_of_support_subset _ hsupp]
   exact Finset.sum_le_sum_of_subset (Finset.range_subset_range.2 (le_max_left _ _))
 
+/-- If the lower ramification filtration is the full Galois group through depth `t` and
+trivial at depth `t + 1`, the different exponent is `(t + 1)([L : K] - 1)`. -/
+theorem differentExponent_eq_of_lowerRamificationGroup_eq_top_eq_bot {t : ℕ}
+    (ht : LocalFieldsRamification.lowerRamificationGroup K L t = ⊤)
+    (ht' : LocalFieldsRamification.lowerRamificationGroup K L (t + 1 : ℕ) = ⊥) :
+    differentExponent K L = (t + 1) * (Module.finrank K L - 1) := by
+  classical
+  have htop (i : ℕ) (hi : i ≤ t) :
+      LocalFieldsRamification.lowerRamificationGroup K L i = ⊤ :=
+    top_le_iff.1 (ht ▸ LocalFieldsRamification.lowerRamificationGroup_antitone K L
+      (by exact_mod_cast hi))
+  have hbot (i : ℕ) (hi : t < i) :
+      LocalFieldsRamification.lowerRamificationGroup K L i = ⊥ :=
+    le_bot_iff.1 ((LocalFieldsRamification.lowerRamificationGroup_antitone K L
+      (by exact_mod_cast hi)).trans ht'.le)
+  have hsupp : Function.support
+      (fun i : ℕ ↦ Nat.card (LocalFieldsRamification.lowerRamificationGroup K L i) - 1) ⊆
+        ↑(Finset.range (t + 1)) := by
+    intro i hi
+    simp only [Function.mem_support, ne_eq] at hi
+    simp only [Finset.coe_range, Set.mem_Iio]
+    by_contra h
+    exact hi (by rw [hbot i (by omega), Subgroup.card_bot, Nat.sub_self])
+  rw [differentExponent_eq_finsum_lowerRamificationGroup,
+    finsum_eq_sum_of_support_subset _ hsupp]
+  calc
+    ∑ i ∈ Finset.range (t + 1),
+        (Nat.card (LocalFieldsRamification.lowerRamificationGroup K L i) - 1) =
+        ∑ _i ∈ Finset.range (t + 1), (Module.finrank K L - 1) := by
+      refine Finset.sum_congr rfl fun i hi ↦ ?_
+      rw [htop i (by simp only [Finset.mem_range] at hi; omega), Subgroup.card_top,
+        IsGalois.card_aut_eq_finrank]
+    _ = _ := by simp
+
 end TauCeti
