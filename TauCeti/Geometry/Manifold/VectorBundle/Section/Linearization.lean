@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import TauCeti.Analysis.Fredholm.Index
-import Mathlib.Topology.Algebra.Module.TransferInstance
 
 /-!
 # Linearization of a section at a zero
@@ -178,7 +177,7 @@ theorem index_sectionLinearization
 
 /-- A section's intrinsic linearization at a zero is Fredholm exactly when its derivative
 in any differentiable fiber-coordinate expression is Fredholm. -/
-theorem isFredholm_sectionLinearization_iff [CompleteSpace 𝕜]
+theorem isFredholm_sectionLinearization_iff
     (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
     (hs : DifferentiableAt 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     ContinuousLinearMap.IsFredholm (sectionLinearization (𝕜 := 𝕜) (F := F) b s x) ↔
@@ -186,10 +185,21 @@ theorem isFredholm_sectionLinearization_iff [CompleteSpace 𝕜]
   rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
     ← e.symm_continuousLinearEquivAt_eq' he]
   let A := e.continuousLinearEquivAt 𝕜 (b x) he
-  let := A.toContinuousAddEquiv.isTopologicalAddGroup
-  let := A.continuousSMul
-  let := A.symm.toHomeomorph.t2Space
-  exact ContinuousLinearMap.isFredholm_equiv_comp
+  -- Transport a norm to the fiber while retaining its given topology and module structure.
+  let : NormedAddCommGroup (E (b x)) :=
+    { (NormedAddCommGroup.induced (E (b x)) F A.toLinearEquiv A.injective).replaceTopology
+        A.toHomeomorph.isInducing.eq_induced with
+      toAddCommGroup := inferInstance
+      norm := fun v ↦ ‖A v‖
+      dist_eq := (NormedAddCommGroup.induced (E (b x)) F A.toLinearEquiv A.injective).dist_eq }
+  let : NormedSpace 𝕜 (E (b x)) :=
+    { norm_smul_le c v := by simpa only [← map_smul A c v] using! norm_smul_le c (A v) }
+  constructor
+  · intro h
+    simpa only [A, ← ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
+      ContinuousLinearMap.id_comp] using h.equiv_comp (F := E (b x)) (G := F) A
+  · intro h
+    exact h.equiv_comp (G := E (b x)) A.symm
 
 /-- The Fredholm index of a section's coordinate derivative at a zero is independent of
 the bundle trivialization. No Fredholm hypothesis is needed for this equality of indices. -/
