@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RepresentationTheory.Maschke
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.RingTheory.Jacobson.MulOpposite
 import TauCeti.RingTheory.Huber.Matrix
@@ -50,6 +51,10 @@ of their maps to the simple `\mathbb Z_p[G]`-modules.
   `\mathbb Z_p[G]` is finite.
 * `TauCeti.nonempty_linearEquiv_of_projective_of_reduction`: finitely generated projective
   `\mathbb Z_p[G]`-modules with isomorphic reductions modulo `p` are isomorphic.
+* `TauCeti.exists_projective_reduction_linearEquiv`: conversely, every direct summand of the
+  reduction modulo `p` of a finitely generated projective `\mathbb Z_p[G]`-module, in particular
+  every finitely generated projective `\mathbb F_p[G]`-module, is the reduction of a finitely
+  generated projective `\mathbb Z_p[G]`-module.
 
 ## References
 
@@ -186,6 +191,38 @@ theorem nonempty_linearEquiv_of_projective_of_reduction
   Ideal.nonempty_linearEquiv_of_quotient_smul_top
     (Ideal.span {(p : MonoidAlgebra ℤ_[p] G)}) M N
     (span_p_le_jacobson_padicInt_monoidAlgebra p G) h
+
+/-- **Projectives lift from `𝔽_p[G]` to `ℤ_p[G]`.** Let `N` be a finitely generated projective
+module over the monoid algebra `ℤ_p[G]` of a finite monoid (in particular the group algebra of a
+finite group). Every direct summand `Y` of its reduction `N ⧸ p • N`, given by maps
+`i : Y → N ⧸ p • N` and `q : N ⧸ p • N → Y` with `q ∘ i = id`, is the reduction `X ⧸ p • X` of a
+finitely generated projective submodule `X` of `N`.
+
+For `N` a finitely generated free module, this applies to every finitely generated projective
+`𝔽_p[G]`-module, viewed as a `ℤ_p[G]`-module: it is the reduction of a finitely generated projective
+`ℤ_p[G]`-module, unique up to isomorphism by
+`TauCeti.nonempty_linearEquiv_of_projective_of_reduction`. -/
+theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [Module ℤ_[p] N]
+    [Module (MonoidAlgebra ℤ_[p] G) N] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N]
+    [Module.Finite (MonoidAlgebra ℤ_[p] G) N] [Module.Projective (MonoidAlgebra ℤ_[p] G) N]
+    {Y : Type w} [AddCommGroup Y] [Module (MonoidAlgebra ℤ_[p] G) Y]
+    (i : Y →ₗ[MonoidAlgebra ℤ_[p] G] N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N))
+    (q : (N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N)) →ₗ[MonoidAlgebra ℤ_[p] G] Y)
+    (hqi : q ∘ₗ i = LinearMap.id) :
+    ∃ X : Submodule (MonoidAlgebra ℤ_[p] G) N, Module.Finite (MonoidAlgebra ℤ_[p] G) X ∧
+      Module.Projective (MonoidAlgebra ℤ_[p] G) X ∧
+      Nonempty ((X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+        (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X)) ≃ₗ[MonoidAlgebra ℤ_[p] G] Y) := by
+  have : Module.Finite ℤ_[p] N := .trans (MonoidAlgebra ℤ_[p] G) N
+  have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
+    rw [← PadicInt.maximalIdeal_eq_span_p]
+    infer_instance
+  -- Write `p` in `ℤ_p[G]` as the image of `p` in `ℤ_p`, and apply the general lifting theorem.
+  revert i q hqi
+  rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p]
+  exact exists_projective_quotient_smul_top_linearEquiv (p : ℤ_[p])
 
 end Reduction
 
