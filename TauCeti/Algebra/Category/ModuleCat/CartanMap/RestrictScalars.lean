@@ -79,7 +79,8 @@ theorem isConflationExact_finiteModulesRestrictScalars :
     rw [finiteModulesExactStructure_conflation_iff] at hX ⊢
     have hR := hX.map_of_exact (ModuleCat.restrictScalars.{u} f)
     rw [← ShortComplex.map_comp] at hR ⊢
-    exact hR
+    exact ShortComplex.shortExact_of_iso
+      (X.mapNatIso (f.finiteModulesRestrictScalarsCompιIso hf).symm) hR
 
 /-- **Restriction of scalars on `G₀(mod R)`.** A ring homomorphism `f : R →+* S` making `S` a
 finitely generated `R`-module induces `G₀(mod S) →+ G₀(mod R)`, sending the class of a
@@ -111,7 +112,9 @@ theorem finiteModulesK0Restrict_id' (f : R →+* R) (h : f = RingHom.id R)
     f.finiteModulesK0Restrict hf = AddMonoidHom.id _ :=
   ExactK0.hom_ext fun M ↦ by
     simp only [finiteModulesK0Restrict_of, AddMonoidHom.id_apply]
-    exact ExactK0.of_congr (ObjectProperty.isoMk _ (ModuleCat.restrictScalarsId'App f h M.obj))
+    exact ExactK0.of_congr (ObjectProperty.isoMk _
+      ((f.finiteModulesRestrictScalarsCompιIso hf).app M ≪≫
+        ModuleCat.restrictScalarsId'App f h M.obj))
 
 /-- Restriction along the identity ring homomorphism induces the identity on `G₀(mod R)`. -/
 @[simp]
@@ -130,7 +133,11 @@ theorem finiteModulesK0Restrict_comp' (g : S →+* T) (gf : R →+* T) (h : gf =
   ExactK0.hom_ext fun M ↦ by
     simp only [finiteModulesK0Restrict_of, AddMonoidHom.comp_apply]
     exact ExactK0.of_congr
-      (ObjectProperty.isoMk _ (ModuleCat.restrictScalarsComp'App f g gf h M.obj))
+      (ObjectProperty.isoMk _ ((gf.finiteModulesRestrictScalarsCompιIso hgf).app M ≪≫
+        ModuleCat.restrictScalarsComp'App f g gf h M.obj ≪≫
+        (ModuleCat.restrictScalars f).mapIso
+          ((g.finiteModulesRestrictScalarsCompιIso hg).app M).symm ≪≫
+        ((f.finiteModulesRestrictScalarsCompιIso hf).app _).symm))
 
 /-- Restriction along a composite `g ∘ f` of ring homomorphisms induces the composite of the
 restrictions along `g` and along `f`, in the reverse order. -/

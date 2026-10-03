@@ -145,9 +145,10 @@ theorem finrankK0_finiteModulesK0Restrict {B : Type u} [Ring B] [Algebra k B]
       Nat.cast_inj]
     -- The two `k`-module structures on the underlying group of `M` are
     -- `c • m = f (algebraMap k A c) • m` and `c • m = algebraMap k B c • m`.
-    exact LinearEquiv.finrank_eq (AddEquiv.toLinearEquiv
-      (M := (ModuleCat.restrictScalars f).obj M.obj) (M₂ := M.obj) (by rfl)
-      fun c m ↦ congrArg (· • m) (DFunLike.congr_fun hfk c))
+    exact LinearEquiv.finrank_eq
+      ((((f.finiteModulesRestrictScalarsCompιIso _).app M).toLinearEquiv.restrictScalars k).trans
+        (AddEquiv.toLinearEquiv (M := (ModuleCat.restrictScalars f).obj M.obj) (M₂ := M.obj)
+          (by rfl) fun c m ↦ congrArg (· • m) (DFunLike.congr_fun hfk c)))
 
 end Finrank
 

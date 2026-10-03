@@ -35,6 +35,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   restriction of scalars.
 * `RingHom.finiteModulesRestrictScalars`: restriction of scalars along a finite ring
   homomorphism, as a functor between the categories of finitely generated modules.
+* `RingHom.finiteModulesRestrictScalarsCompιIso`: the underlying module of an image under
+  `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
 
 ## Main results
 
@@ -106,10 +108,6 @@ theorem isFG_restrictScalars_of_finite (f : R →+* S)
 `f : R →+* S` making `S` a finitely generated `R`-module induces a functor from the finitely
 generated `S`-modules to the finitely generated `R`-modules, sending a module to the same module
 with scalars restricted along `f`. -/
--- The body is exposed so that the underlying module of an image is definitionally the restriction
--- of scalars: structures carried by that module, such as the `k`-module structure over a base
--- field used in `TauCeti.finrankK0`, cannot be transported along an equation of objects.
-@[expose]
 noncomputable def finiteModulesRestrictScalars {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
     (hf : letI := f.toModule; Module.Finite R S) : FGModuleCat.{u} S ⥤ FGModuleCat.{u} R :=
   (ModuleCat.isFG R).lift ((ModuleCat.isFG S).ι ⋙ ModuleCat.restrictScalars f)
@@ -121,16 +119,19 @@ instance {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
   unfold finiteModulesRestrictScalars
   infer_instance
 
+/-- The underlying module of the image of a finitely generated module under
+`RingHom.finiteModulesRestrictScalars` is the module with scalars restricted along `f`,
+naturally in the module. -/
+noncomputable def finiteModulesRestrictScalarsCompιIso {R S : Type u} [Ring R] [Ring S]
+    (f : R →+* S) (hf : letI := f.toModule; Module.Finite R S) :
+    f.finiteModulesRestrictScalars hf ⋙ (ModuleCat.isFG R).ι ≅
+      (ModuleCat.isFG S).ι ⋙ ModuleCat.restrictScalars f :=
+  ObjectProperty.liftCompιIso _ _ _
+
 @[simp]
 theorem finiteModulesRestrictScalars_obj_obj {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
     (hf : letI := f.toModule; Module.Finite R S) (M : FGModuleCat.{u} S) :
     ((f.finiteModulesRestrictScalars hf).obj M).obj = (ModuleCat.restrictScalars f).obj M.obj :=
-  (rfl)
-
-@[simp]
-theorem finiteModulesRestrictScalars_map_hom {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
-    (hf : letI := f.toModule; Module.Finite R S) {M N : FGModuleCat.{u} S} (g : M ⟶ N) :
-    ((f.finiteModulesRestrictScalars hf).map g).hom = (ModuleCat.restrictScalars f).map g.hom :=
   (rfl)
 
 end RingHom

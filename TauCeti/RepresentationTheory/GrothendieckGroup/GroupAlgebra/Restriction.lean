@@ -120,11 +120,12 @@ theorem resK0_of_asModule (φ : H →* G) {V : Type u} [AddCommGroup V] [Module 
       (Representation.asAlgebraHom (ρ.comp φ)) :=
     MonoidAlgebra.algHom_ext (fun h ↦ by simp) (Subsingleton.elim _ _)
   rw [resK0_of]
-  refine ExactK0.of_congr (ObjectProperty.isoMk _ (LinearEquiv.toModuleIso
-    (AddEquiv.toLinearEquiv
-      (M := (ModuleCat.restrictScalars (MonoidAlgebra.mapDomainRingHom k φ)).obj
-        (ModuleCat.of k[G] ρ.asModule))
-      (M₂ := (Representation.asModule (ρ.comp φ))) (by rfl) fun a x ↦ ?_)))
+  refine ExactK0.of_congr (ObjectProperty.isoMk _
+    ((RingHom.finiteModulesRestrictScalarsCompιIso _ _).app _ ≪≫ LinearEquiv.toModuleIso
+      (AddEquiv.toLinearEquiv
+        (M := (ModuleCat.restrictScalars (MonoidAlgebra.mapDomainRingHom k φ)).obj
+          (ModuleCat.of k[G] ρ.asModule))
+        (M₂ := (Representation.asModule (ρ.comp φ))) (by rfl) fun a x ↦ ?_)))
   -- Both actions of `a : k[H]` on the underlying space `V` are the endomorphism
   -- `ρ.asAlgebraHom (mapDomain φ a) = (ρ ∘ φ).asAlgebraHom a`.
   exact congrArg (fun T : Module.End k V ↦ T x) (AlgHom.congr_fun hρ a)
