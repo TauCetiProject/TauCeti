@@ -60,11 +60,11 @@ namespace TauCeti
 
 namespace GridRectanglePentagonDecomposition
 
-variable {n : ℕ} {a s : Fin n} {x : GridState n}
+variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-/-- The two side-order alternatives for a diagonal rectangle--pentagon decomposition are
-mutually exclusive. -/
-theorem not_same_and_opposite_side_order (D : GridRectanglePentagonDecomposition a s x x) :
+/-- The two side-order alternatives for a rectangle--pentagon decomposition are mutually
+exclusive. -/
+theorem not_same_and_opposite_side_order (D : GridRectanglePentagonDecomposition a s x z) :
     ¬((D.rectangle.left = D.pentagon.left ∧ D.rectangle.right = D.pentagon.right) ∧
       (D.rectangle.left = D.pentagon.right ∧ D.rectangle.right = D.pentagon.left)) := by
   rintro ⟨hsame, hopposite⟩
@@ -74,11 +74,11 @@ end GridRectanglePentagonDecomposition
 
 namespace GridPentagonRectangleDecomposition
 
-variable {n : ℕ} {a s : Fin n} {x : GridState n}
+variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-/-- The two side-order alternatives for a diagonal pentagon--rectangle decomposition are
-mutually exclusive. -/
-theorem not_same_and_opposite_side_order (D : GridPentagonRectangleDecomposition a s x x) :
+/-- The two side-order alternatives for a pentagon--rectangle decomposition are mutually
+exclusive. -/
+theorem not_same_and_opposite_side_order (D : GridPentagonRectangleDecomposition a s x z) :
     ¬((D.rectangle.left = D.pentagon.left ∧ D.rectangle.right = D.pentagon.right) ∧
       (D.rectangle.left = D.pentagon.right ∧ D.rectangle.right = D.pentagon.left)) := by
   rintro ⟨hsame, hopposite⟩
