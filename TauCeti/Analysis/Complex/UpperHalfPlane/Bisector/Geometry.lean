@@ -19,6 +19,10 @@ geodesically convex, the geometric ingredient in convexity of Dirichlet domains.
 The construction moves the segment onto the imaginary axis, dilates to its midpoint, and
 rotates by `π / 4` in `SL(2, ℝ)`, which rotates the tangent by `π / 2`.
 
+Use `TauCeti.UpperHalfPlane.bisector p q` to construct the bisector and
+`TauCeti.UpperHalfPlane.bisector_def p q` for its defining equation. These share the namespace
+of the geodesic and half-plane API used in the membership characterizations below.
+
 ## References
 
 * Alan Beardon, *The Geometry of Discrete Groups*, §9.4.
