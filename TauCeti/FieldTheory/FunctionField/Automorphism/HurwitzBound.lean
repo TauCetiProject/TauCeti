@@ -46,9 +46,9 @@ the sum over the ramified places `P` of `F^G`.  Dividing by `|G|`, the deficit o
 `(γ; e_P)` is `(2g - 2)/|G| > 0`, so it is at least `1/42`
 (`TauCeti.one_div_forty_two_le_hyperbolic_deficit`), which is the bound.
 
-The tameness hypothesis is necessary: in characteristic `p` the bound fails.  It holds automatically
-in characteristic zero, and more generally whenever `|G|` is prime to the characteristic and the
-residue extensions are separable.
+The tameness hypothesis is load-bearing: without it the bound can fail in positive characteristic.
+It holds automatically in characteristic zero, and over a perfect constant field whenever `|G|` is
+prime to the characteristic.
 
 ## Main results
 
@@ -58,7 +58,7 @@ residue extensions are separable.
   hypothesis, over a perfect constant field, for a group whose order is prime to the characteristic.
 * `TauCeti.natCard_le_eighty_four_mul_genus_sub_one_of_charZero`: the same with no tameness
   hypothesis, over a constant field of characteristic zero, with
-  `TauCeti.natCard_algEquiv_le_eighty_four_mul_genus_sub_one_of_charZero` for the full
+  `TauCeti.card_algEquiv_le_eighty_four_mul_genus_sub_one_of_charZero` for the full
   automorphism group once it is finite.
 
 ## References
@@ -162,14 +162,14 @@ automorphisms of a function field of genus `g ≥ 2` with `p ∤ |G|` has order 
 
 The ramification index of a place of `F` over the fixed field divides `|G|`, by the fundamental
 identity for the Galois extension `F / F^G`, so it too is prime to `p` and every place is tame
-(`TauCeti.Place.isTame_of_not_dvd_ramificationIdx`). -/
+(`TauCeti.Place.isTame_iff_not_dvd_ramificationIdx`). -/
 theorem natCard_le_eighty_four_mul_genus_sub_one_of_not_dvd [PerfectField k] (p : ℕ) [CharP k p]
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (G : Subgroup (F ≃ₐ[k] F))
     [Finite G] (hgenus : 2 ≤ genus k F) (hp : ¬ p ∣ Nat.card G) :
     Nat.card G ≤ 84 * (genus k F - 1) := by
   refine natCard_le_eighty_four_mul_genus_sub_one hF hex G hgenus fun P ↦ ?_
-  refine Place.isTame_of_not_dvd_ramificationIdx k ↥(IntermediateField.fixedField G) P
-    (hF.fixedField G) p fun hdvd ↦ hp (hdvd.trans ?_)
+  refine (Place.isTame_iff_not_dvd_ramificationIdx k ↥(IntermediateField.fixedField G) P
+    (hF.fixedField G) p).mpr fun hdvd ↦ hp (hdvd.trans ?_)
   -- The ramification index divides the degree `|G|` of `F` over the fixed field.
   have hfund := Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank
     (k := k) (F := ↥(IntermediateField.fixedField G)) P

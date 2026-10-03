@@ -159,10 +159,10 @@ theorem isTame_of_residueField_charZero [CharZero (P'.restrict k F).ResidueField
   exact ⟨Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient _ _,
     Nat.cast_ne_zero.mpr (P'.ramificationIdx_pos F).ne'⟩
 
-/-- **A place whose ramification index is prime to the characteristic is tame over a perfect
-constant field.** -/
-theorem isTame_of_not_dvd_ramificationIdx [PerfectField k] (hF : IsFunctionField k F) (p : ℕ)
-    [CharP k p] (hp : ¬ p ∣ ramificationIdx F P') : IsTame k F P' := by
+/-- **Over a perfect constant field a place is tame exactly when the characteristic does not divide
+its ramification index.** -/
+theorem isTame_iff_not_dvd_ramificationIdx [PerfectField k] (hF : IsFunctionField k F) (p : ℕ)
+    [CharP k p] : IsTame k F P' ↔ ¬ p ∣ ramificationIdx F P' := by
   classical
   have _ : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
     (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
@@ -194,9 +194,8 @@ theorem isTame_of_not_dvd_ramificationIdx [PerfectField k] (hF : IsFunctionField
       IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) p :=
     charP_of_injective_algebraMap
       (algebraMap k (P'.restrict k F).ResidueField).injective p
-  refine ⟨Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient _ _, ?_⟩
-  rw [Ne, CharP.cast_eq_zero_iff _ p]
-  exact hp
+  rw [isTame_iff, and_iff_right (Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient _ _),
+    Ne, CharP.cast_eq_zero_iff _ p]
 
 /-- **In characteristic zero every place is tame**: if the constant field `k` has characteristic
 zero, every place of `F'` is tame over `F`. -/
