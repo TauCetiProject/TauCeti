@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Trace.Defs
-import Mathlib.Tactic.NoncommRing
+import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.LinearAlgebra.Trace.RestrictScalars
 
 /-!
@@ -41,30 +41,6 @@ isomorphic to the base change along `algebraMap A R` of its image under `ε`.
 public section
 
 open Finset
-
-/-- Telescoping a two-variable geometric sum in a noncommutative ring:
-`x * S + y ^ m = S * y + x ^ m` for `S = ∑_{i < m} x ^ i * y ^ (m - 1 - i)`. -/
-private theorem mul_geom_sum₂_add_pow {S : Type*} [Ring S] (x y : S) (m : ℕ) :
-    x * (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) + y ^ m =
-      (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    have hsum : ∑ i ∈ range (m + 1), x ^ i * y ^ (m + 1 - 1 - i) =
-        (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m := by
-      rw [sum_range_succ, sum_mul]
-      congr 1
-      · refine sum_congr rfl fun i hi ↦ ?_
-        have hsub : m + 1 - 1 - i = m - 1 - i + 1 := by
-          have := mem_range.mp hi
-          omega
-        rw [mul_assoc, ← pow_succ, hsub]
-      · simp
-    rw [hsum]
-    calc x * ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) + y ^ (m + 1)
-        = (x * (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) + y ^ m) * y + x ^ (m + 1) := by
-          rw [pow_succ y, pow_succ' x]; noncomm_ring
-      _ = ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) * y + x ^ (m + 1) := by rw [ih]
 
 namespace Matrix
 
