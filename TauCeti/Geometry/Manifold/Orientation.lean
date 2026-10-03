@@ -92,19 +92,23 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 /-- A map `f : H → H` preserves orientation on `s`, read in the model through `I`: at the image
 `I x` of each point `x ∈ s`, the coordinate expression `I ∘ f ∘ I.symm` is differentiable within
 `range I`, with derivative of positive determinant. The model vector space `E` is
-finite-dimensional, as determinants are only meaningful there. -/
+finite-dimensional, as determinants are only meaningful there; the determinant is that of the
+matrix of the derivative in the basis `Module.finBasis ℝ E`, which is `LinearMap.det` of the
+derivative (`TauCeti.orientationPreservingOn_iff`). -/
 def OrientationPreservingOn [FiniteDimensional ℝ E] (f : H → H) (s : Set H) : Prop :=
   ∀ x ∈ s, DifferentiableWithinAt ℝ (I ∘ f ∘ I.symm) (range I) (I x) ∧
-    0 < LinearMap.det (fderivWithin ℝ (I ∘ f ∘ I.symm) (range I) (I x) : E →ₗ[ℝ] E)
+    0 < (LinearMap.toMatrix (Module.finBasis ℝ E) (Module.finBasis ℝ E)
+      (fderivWithin ℝ (I ∘ f ∘ I.symm) (range I) (I x) : E →ₗ[ℝ] E)).det
 
 variable [FiniteDimensional ℝ E] {I}
 
-/-- Unfold `TauCeti.OrientationPreservingOn`. -/
+/-- Unfold `TauCeti.OrientationPreservingOn`, with the determinant of the derivative stated
+basis-free as `LinearMap.det`. -/
 theorem orientationPreservingOn_iff {f : H → H} {s : Set H} :
     OrientationPreservingOn I f s ↔
       ∀ x ∈ s, DifferentiableWithinAt ℝ (I ∘ f ∘ I.symm) (range I) (I x) ∧
-        0 < LinearMap.det (fderivWithin ℝ (I ∘ f ∘ I.symm) (range I) (I x) : E →ₗ[ℝ] E) :=
-  Iff.rfl
+        0 < LinearMap.det (fderivWithin ℝ (I ∘ f ∘ I.symm) (range I) (I x) : E →ₗ[ℝ] E) := by
+  simp only [OrientationPreservingOn, LinearMap.det_toMatrix]
 
 /-- Orientation preservation on a set is inherited by its subsets. -/
 theorem OrientationPreservingOn.mono {f : H → H} {s t : Set H}
@@ -113,6 +117,7 @@ theorem OrientationPreservingOn.mono {f : H → H} {s t : Set H}
 
 /-- The identity preserves orientation on every set. -/
 theorem orientationPreservingOn_id (s : Set H) : OrientationPreservingOn I id s := by
+  rw [orientationPreservingOn_iff]
   intro x _
   have heq : EqOn (I ∘ id ∘ I.symm) id (range I) := fun y hy => I.right_inv hy
   have hx : (I ∘ id ∘ I.symm) (I x) = id (I x) := heq (mem_range_self x)
@@ -124,6 +129,7 @@ theorem orientationPreservingOn_id (s : Set H) : OrientationPreservingOn I id s 
 theorem OrientationPreservingOn.comp {f g : H → H} {s t : Set H}
     (hg : OrientationPreservingOn I g t) (hf : OrientationPreservingOn I f s)
     (hst : MapsTo f s t) : OrientationPreservingOn I (g ∘ f) s := by
+  rw [orientationPreservingOn_iff] at hg hf ⊢
   intro x hx
   have hcomp : I ∘ (g ∘ f) ∘ I.symm = (I ∘ g ∘ I.symm) ∘ (I ∘ f ∘ I.symm) := by
     ext y
@@ -204,6 +210,7 @@ derivative of the product is block diagonal, so its determinant is the product o
 theorem OrientationPreservingOn.prodMap {f : H → H} {f' : H' → H'} {s : Set H} {s' : Set H'}
     (hf : OrientationPreservingOn I f s) (hf' : OrientationPreservingOn I' f' s') :
     OrientationPreservingOn (I.prod I') (Prod.map f f') (s ×ˢ s') := by
+  rw [orientationPreservingOn_iff] at hf hf' ⊢
   rintro ⟨x, x'⟩ ⟨hx, hx'⟩
   have hcoord : (I.prod I') ∘ Prod.map f f' ∘ (I.prod I').symm =
       Prod.map (I ∘ f ∘ I.symm) (I' ∘ f' ∘ I'.symm) := by
@@ -360,7 +367,8 @@ theorem IsOrientedAtlas.det_fderivWithin_pos {A : Set (OpenPartialHomeomorph M H
     ext y
     simp
   rw [hcoord, OpenPartialHomeomorph.extend_coe]
-  exact ((mem_orientationPreservingGroupoid_iff.1 (hA.symm_trans_mem he he')).1 (e x) hmem).2
+  exact (orientationPreservingOn_iff.1
+    (mem_orientationPreservingGroupoid_iff.1 (hA.symm_trans_mem he he')).1 (e x) hmem).2
 
 variable (I n M) in
 /-- A `C^n` manifold whose atlas is itself oriented is orientable. -/
