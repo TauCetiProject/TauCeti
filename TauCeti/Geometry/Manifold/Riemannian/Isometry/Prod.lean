@@ -76,10 +76,9 @@ def prodCongr (Φ : RiemannianIsometry I I' M M') (Ψ : RiemannianIsometry J J' 
     rw [_root_.Diffeomorph.coe_prodCongr, coe_toDiffeomorph, coe_toDiffeomorph,
       Manifold.inner_tangentSpace_prod,
       Manifold.inner_tangentSpace_prod p,
-      Manifold.tangentSpaceProdEquiv_mfderiv_prodMap (Φ.mdifferentiableAt p.1)
-        (Ψ.mdifferentiableAt p.2),
-      Manifold.tangentSpaceProdEquiv_mfderiv_prodMap (Φ.mdifferentiableAt p.1)
-        (Ψ.mdifferentiableAt p.2), Φ.inner_mfderiv, Ψ.inner_mfderiv]
+      mfderiv_prodMap (Φ.mdifferentiableAt p.1) (Ψ.mdifferentiableAt p.2)]
+    simp only [Manifold.tangentSpaceProdEquiv_apply]
+    exact congrArg₂ (· + ·) (Φ.inner_mfderiv p.1 v.1 w.1) (Ψ.inner_mfderiv p.2 v.2 w.2)
 
 @[simp]
 theorem coe_prodCongr (Φ : RiemannianIsometry I I' M M') (Ψ : RiemannianIsometry J J' N N') :

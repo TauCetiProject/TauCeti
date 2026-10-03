@@ -29,8 +29,8 @@ and shows that, near each point, the inverse tangent-bundle trivializations agre
 identification.
 
 Finally it identifies the tangent space of a product manifold with the product of the tangent
-spaces of the factors, and shows that under this identification tangent coordinate changes,
-inverse tangent-bundle trivializations, and differentials of product maps act componentwise.
+spaces of the factors, and shows that under this identification tangent coordinate changes and
+inverse tangent-bundle trivializations act componentwise.
 
 ## Main results
 
@@ -71,8 +71,6 @@ inverse tangent-bundle trivializations, and differentials of product maps act co
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
   trivialization of a product is the product of those of the factors.
-* `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap`: the differential of a product map acts
-  componentwise.
 -/
 
 public section
@@ -707,32 +705,6 @@ theorem tangentSpaceProdEquiv_symmL_trivializationAt [IsManifold I 1 M] [IsManif
   have h := tangentCoordChange_prod (I := I) (J := J) (p := p) (q := q) (z := q)
     ⟨by simpa [extChartAt_source] using hq, by simp⟩
   exact congrArg (fun L : E × F →L[𝕜] E × F ↦ L v) h
-
-section Map
-
-variable
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
-  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
-  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
-  {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
-  {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
-
-/-- The differential of a product map `f × g` acts componentwise: read through the identification
-of the tangent spaces of a product with the products of tangent spaces, it is the pair of the
-differentials of `f` and `g`. -/
-theorem tangentSpaceProdEquiv_mfderiv_prodMap {f : M → M'} {g : N → N'} {p : M × N}
-    (hf : MDifferentiableAt I I' f p.1) (hg : MDifferentiableAt J J' g p.2)
-    (v : TangentSpace (I.prod J) p) :
-    tangentSpaceProdEquiv (Prod.map f g p) (mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p v) =
-      (mfderiv I I' f p.1 (tangentSpaceProdEquiv p v).1,
-        mfderiv J J' g p.2 (tangentSpaceProdEquiv p v).2) := by
-  rw [mfderiv_prodMap hf hg]
-  -- Both sides are the pair of differentials applied to the components of `v`; the remaining
-  -- difference is the definitional identification `tangentSpaceProdEquiv`.
-  rfl
-
-end Map
 
 end Prod
 
