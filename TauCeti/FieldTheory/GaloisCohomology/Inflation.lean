@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Normal.Defs
-public import Mathlib.RepresentationTheory.Rep.Res
+public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import TauCeti.FieldTheory.Galois.Restriction
+import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.InflationRestriction
 
 /-!
 # The units along a tower of Galois extensions
@@ -28,12 +31,39 @@ More generally, for `K ⊆ K'` and `L ⊆ M'` with `M'` a `K'`-algebra, every `�
 `M'ˣ`. Together with that homomorphism it induces the base change map
 `Hⁿ(Gal(L/K), Lˣ) → Hⁿ(Gal(M'/K'), M'ˣ)`.
 
+For `K' = L` and `M' = M` the base change map is restriction `Hⁿ(Gal(M/K), Mˣ) → Hⁿ(Gal(M/L), Mˣ)`,
+and inflation from `Gal(E/K)` followed by restriction to `Gal(M/L)` is base change from `E/K` to
+`M/L` (`map_unitsInflationHom_comp_map_unitsBaseChangeHom`). In degree two, for `M/K` finite
+Galois, inflation and restriction form the exact sequence
+
+`0 → H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ) → H²(Gal(M/L), Mˣ)`
+
+(`map_unitsInflationHom_two_injective`, `mem_range_map_unitsInflationHom_two_iff`): this is the
+inflation-restriction sequence of `Gal(M/L) → Gal(M/K) → Gal(L/K)`, whose hypothesis
+`H¹(Gal(M/L), Mˣ) = 0` is Hilbert's Theorem 90, and whose quotient term is identified with
+`H²(Gal(L/K), Lˣ)` because the units of `M` fixed by `Gal(M/L)` are the units of `L`. In the
+language of relative Brauer groups, `Br(M/K) ∩ ker(res_{M/L}) = Br(L/K)`.
+
 ## Main definitions
 
 * `TauCeti.unitsInflationHom`: the inclusion `Lˣ → Mˣ` as a morphism of `Gal(M/K)`-representations
   from the restriction of `Lˣ` along `Gal(M/K) → Gal(L/K)`.
 * `TauCeti.unitsBaseChangeHom`: the inclusion `Lˣ → M'ˣ` as a morphism of
   `Gal(M'/K')`-representations from the restriction of `Lˣ` along `Gal(M'/K') → Gal(L/K)`.
+
+## Main results
+
+* `TauCeti.map_unitsInflationHom_comp_map_unitsBaseChangeHom`: inflation followed by restriction
+  is base change.
+* `TauCeti.map_unitsInflationHom_two_injective`: inflation `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)`
+  is injective.
+* `TauCeti.mem_range_map_unitsInflationHom_two_iff`: a class of `H²(Gal(M/K), Mˣ)` is inflated
+  from `H²(Gal(L/K), Lˣ)` exactly when its restriction to `Gal(M/L)` vanishes.
+
+## References
+
+* J.-P. Serre, *Local Fields*, Chapter X, §4.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter II, Proposition 1.34.
 -/
 
 public section
@@ -95,5 +125,169 @@ theorem unitsBaseChangeHom_apply (a : Lˣ) :
   (rfl)
 
 end BaseChange
+
+open CategoryTheory
+
+section Composition
+
+variable (K E L M : Type) [Field K] [Field E] [Field L] [Field M] [Algebra K E] [Algebra K L]
+  [Algebra K M] [Algebra E M] [Algebra L M] [IsScalarTower K E M] [IsScalarTower K L M]
+  [Normal K E] [Normal K M]
+
+/-- **Inflation followed by restriction is base change.** For `K ⊆ E ⊆ M` and `K ⊆ L ⊆ M`,
+inflating a class of `Hⁿ(Gal(E/K), Eˣ)` to `Hⁿ(Gal(M/K), Mˣ)` and restricting it to
+`Hⁿ(Gal(M/L), Mˣ)` is the base change map from `E/K` to `M/L`. -/
+theorem map_unitsInflationHom_comp_map_unitsBaseChangeHom (n : ℕ) :
+    groupCohomology.map (AlgEquiv.restrictNormalHom E) (unitsInflationHom K E M) n ≫
+        groupCohomology.map ((AlgEquiv.restrictNormalHom M).comp (AlgEquiv.restrictScalarsHom K))
+          (unitsBaseChangeHom K M L M) n =
+      groupCohomology.map ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K))
+        (unitsBaseChangeHom K E L M) n := by
+  rw [← groupCohomology.map_comp]
+  refine groupCohomology.map_congr ?_ ?_ n
+  · rw [AlgEquiv.restrictNormalHom_id, MonoidHom.id_comp]
+  · ext x
+    obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(E/K)) (G := Eˣ)).symm.surjective x
+    rw [Rep.hom_comp_toLinearMap, Rep.resMap_hom_toLinearMap,
+      LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply,
+      Representation.IntertwiningMap.toLinearMap_apply,
+      Representation.IntertwiningMap.toLinearMap_apply, ← ofMul_toMul a, unitsInflationHom_apply,
+      unitsBaseChangeHom_apply, unitsBaseChangeHom_apply]
+    simp
+
+end Composition
+
+section InflationRestriction
+
+variable (K L M : Type) [Field K] [Field L] [Field M] [Algebra K L] [Algebra K M] [Algebra L M]
+  [IsScalarTower K L M]
+
+/-- `unitsBaseChangeHom K M L M` is the identity of `Mˣ`, so it is bijective. -/
+private theorem unitsBaseChangeHom_self_bijective [Normal K M] :
+    Function.Bijective (unitsBaseChangeHom K M L M).hom := by
+  -- The underlying unit is unchanged, `Units.map (algebraMap M M)` being the identity.
+  have h (x : Rep.res ((AlgEquiv.restrictNormalHom M).comp (AlgEquiv.restrictScalarsHom K) :
+      Gal(M/L) →* Gal(M/K)) (Rep.ofMulDistribMulAction Gal(M/K) Mˣ)) :
+      ((Additive.toMul (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ)
+        ((unitsBaseChangeHom K M L M).hom x)) : Mˣ) : M) =
+        (Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ) x) : Mˣ) := by
+    obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).symm.surjective x
+    rw [← ofMul_toMul a, unitsBaseChangeHom_apply]
+    simp
+  refine ⟨fun x y hxy => (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).injective <|
+    Additive.toMul.injective <| Units.ext <| by rw [← h x, ← h y, hxy], fun y => ?_⟩
+  refine ⟨(Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).symm
+    (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ) y), ?_⟩
+  exact (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ)).injective <| Additive.toMul.injective <|
+    Units.ext <| by rw [h, AddEquiv.apply_symm_apply]
+
+variable [Normal K L]
+
+/-- `unitsInflationHom K L M` maps a unit of `L` to its image in `M`. -/
+private theorem coe_toMul_unitsInflationHom_apply
+    (x : Rep.res (AlgEquiv.restrictNormalHom L : Gal(M/K) →* Gal(L/K))
+      (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) :
+    ((Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)
+        ((unitsInflationHom K L M).hom x)) : Mˣ) : M) =
+      algebraMap L M (Additive.toMul (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x) : Lˣ) := by
+  obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm.surjective x
+  rw [← ofMul_toMul a, unitsInflationHom_apply]
+  simp
+
+/-- `unitsInflationHom K L M` is injective. -/
+private theorem unitsInflationHom_injective : Function.Injective (unitsInflationHom K L M).hom :=
+  fun x y h => (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).injective <| Additive.toMul.injective <|
+    Units.ext <| (algebraMap L M).injective <| by
+      rw [← coe_toMul_unitsInflationHom_apply, ← coe_toMul_unitsInflationHom_apply, h]
+
+variable [FiniteDimensional K M] [IsGalois K M]
+
+/-- The units of `M` fixed by `Gal(M/L)`, the kernel of restriction to `L`, are the units of `L`. -/
+private theorem range_unitsInflationHom :
+    LinearMap.range (unitsInflationHom K L M).hom.toLinearMap =
+      Representation.invariants ((Rep.ofMulDistribMulAction Gal(M/K) Mˣ).ρ.comp
+        (AlgEquiv.restrictNormalHom L : Gal(M/K) →* Gal(L/K)).ker.subtype) := by
+  have : FiniteDimensional L M := FiniteDimensional.right K L M
+  have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
+  ext v
+  simp only [LinearMap.mem_range, Representation.mem_invariants,
+    Representation.IntertwiningMap.toLinearMap_apply]
+  constructor
+  · rintro ⟨x, rfl⟩ ⟨s, hs⟩
+    refine (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).injective <| Additive.toMul.injective <|
+      Units.ext ?_
+    -- `s` acts on a unit of `M` by acting on its underlying element.
+    have hρ : ((Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)
+        ((Rep.ofMulDistribMulAction Gal(M/K) Mˣ).ρ s ((unitsInflationHom K L M).hom x))) : Mˣ) :
+          M) = s (Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)
+            ((unitsInflationHom K L M).hom x)) : Mˣ) :=
+      rfl
+    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, hρ, coe_toMul_unitsInflationHom_apply,
+      ← AlgEquiv.restrictNormal_commutes,
+      ← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M, MonoidHom.mem_ker.1 hs,
+      AlgEquiv.one_apply]
+  · intro hv
+    set u : Mˣ := Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ) v)
+    have hfix (τ : Gal(M/L)) : τ (u : M) = u :=
+      congrArg (fun w => ((Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ) w) : Mˣ) : M))
+        (hv ⟨τ.restrictScalars K,
+          AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M ▸ ⟨τ, rfl⟩⟩)
+    obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 ((IsGalois.mem_bot_iff_fixed (u : M)).2 hfix)
+    have ha0 : a ≠ 0 := by
+      rintro rfl
+      exact u.ne_zero (by rw [← ha, map_zero])
+    refine ⟨(Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm (Additive.ofMul (Units.mk0 a ha0)),
+      (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).injective <| Additive.toMul.injective <|
+        Units.ext ?_⟩
+    rw [coe_toMul_unitsInflationHom_apply, AddEquiv.apply_symm_apply, toMul_ofMul, Units.val_mk0]
+    exact ha
+
+/-- **Inflation into `H²(Gal(M/K), Mˣ)` is injective.** For a tower `K ⊆ L ⊆ M` with `M/K` finite
+Galois and `L/K` normal, inflation `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)` is injective: by
+Hilbert 90, `H¹(Gal(M/L), Mˣ) = 0`. -/
+theorem map_unitsInflationHom_two_injective :
+    Function.Injective
+      (groupCohomology.map (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) 2).hom :=
+  groupCohomology.map_succ_injective (AlgEquiv.restrictNormalHom_surjective M)
+    (unitsInflationHom_injective K L M) (range_unitsInflationHom K L M) 1 fun i hi => by
+      obtain rfl : i = 0 := by omega
+      exact isZero_groupCohomology_one_res_units (Subgroup.subtype_injective _)
+
+/-- **The inflation-restriction sequence of relative Brauer groups.** For a tower `K ⊆ L ⊆ M`
+with `M/K` finite Galois and `L/K` normal, a class of `H²(Gal(M/K), Mˣ)` is inflated from
+`H²(Gal(L/K), Lˣ)` exactly when its restriction to `H²(Gal(M/L), Mˣ)` vanishes. Restriction is the
+base change map `unitsBaseChangeHom K M L M` along `Gal(M/L) → Gal(M/K)`. -/
+theorem mem_range_map_unitsInflationHom_two_iff
+    (x : groupCohomology (Rep.ofMulDistribMulAction Gal(M/K) Mˣ) 2) :
+    x ∈ LinearMap.range
+        (groupCohomology.map (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) 2).hom ↔
+      groupCohomology.map ((AlgEquiv.restrictNormalHom M).comp (AlgEquiv.restrictScalarsHom K))
+        (unitsBaseChangeHom K M L M) 2 x = 0 := by
+  have hι : Function.Injective
+      ((AlgEquiv.restrictNormalHom M).comp (AlgEquiv.restrictScalarsHom K) :
+        Gal(M/L) →* Gal(M/K)) := by
+    rw [AlgEquiv.restrictNormalHom_id]
+    exact AlgEquiv.restrictScalarsHom_injective K
+  have hιπ : ((AlgEquiv.restrictNormalHom M).comp (AlgEquiv.restrictScalarsHom K) :
+        Gal(M/L) →* Gal(M/K)).range =
+      (AlgEquiv.restrictNormalHom L : Gal(M/K) →* Gal(L/K)).ker := by
+    rw [AlgEquiv.restrictNormalHom_id, MonoidHom.id_comp]
+    exact AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M
+  have hC : ∀ i < 1, Limits.IsZero
+      (groupCohomology (Rep.ofMulDistribMulAction Gal(M/L) Mˣ) (i + 1)) := by
+    intro i hi
+    obtain rfl : i = 0 := by omega
+    have : FiniteDimensional L M := FiniteDimensional.right K L M
+    have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
+    -- `Rep.ofAlgebraAutOnUnits` unfolds to `Rep.ofMulDistribMulAction`, and `H1` to degree one.
+    have : Subsingleton (groupCohomology (Rep.ofMulDistribMulAction Gal(M/L) Mˣ) 1) :=
+      inferInstanceAs <| Subsingleton <| groupCohomology.H1 (Rep.ofAlgebraAutOnUnits L M)
+    exact ModuleCat.isZero_of_subsingleton _
+  rw [groupCohomology.range_map_succ_eq_ker_map_succ (AlgEquiv.restrictNormalHom_surjective M)
+    (unitsInflationHom_injective K L M) (range_unitsInflationHom K L M) hι hιπ
+    (unitsBaseChangeHom_self_bijective K L M) 1 hC]
+  rfl
+
+end InflationRestriction
 
 end TauCeti
