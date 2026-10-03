@@ -112,6 +112,7 @@ theorem yCoord_tautologicalPoint_iterateRelativeFrobeniusIsogeny [W.IsElliptic] 
 /-- **Relative Frobenius acts on points by raising the coordinates to the `p ^ r`-th power**: the
 `r`-fold relative Frobenius `W → W⁽ᵖʳ⁾` sends `(x, y)` to `(x ^ p ^ r, y ^ p ^ r)`, and the point
 at infinity to the point at infinity (Silverman II.2.11). -/
+@[simp]
 theorem pointMap_iterateRelativeFrobeniusIsogeny [DecidableEq F] [W.IsElliptic] (r : ℕ)
     (P : W.Point) :
     (Hom.ofIsogeny (iterateRelativeFrobeniusIsogeny p W r)).pointMap P =

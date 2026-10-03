@@ -176,6 +176,7 @@ variable {F K : Type*} [Field F] [Field K] [DecidableEq F] [DecidableEq K]
 `mapAlong_eq_map` followed by Mathlib's `Affine.Point.map_add`; for an endomorphism `f : F →+* F`,
 such as a power of Frobenius, `f.toAlgebra` would be a second `Algebra F F` instance beside
 `Algebra.id F`, and the bridge does not apply. -/
+@[simp]
 theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_add (P Q : W.toAffine.Point) :
     WeierstrassCurve.Affine.Point.mapAlong f hf (P + Q) =
       WeierstrassCurve.Affine.Point.mapAlong f hf P +
