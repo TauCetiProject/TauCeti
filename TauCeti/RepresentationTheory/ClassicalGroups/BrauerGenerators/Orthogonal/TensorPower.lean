@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- `TauCeti.tprod_update_pair_expand`, the standard-basis expansion at two slots.
+public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Basic
 
 /-!
@@ -39,7 +41,7 @@ here are
 * `s (Equiv.swap i j) * e i j = e i j` and `e i j * s (Equiv.swap i j) = e i j`, the two
   absorptions of the crossing on the arc;
 * `s σ * e i j = e (σ i) (σ j) * s σ`, the renaming of the arc by a permutation of the strands;
-* `e i j * e a b = e a b * e i j` for two disjoint arcs;
+* `e i j * e a b = e a b * e i j` for two arcs on disjoint pairs of strands;
 * `e i j * e j l * e i j = e i j` for two arcs sharing exactly one strand.
 
 Together with `s` being a monoid homomorphism — which already gives `s σ * s τ = s (σ * τ)`, hence
@@ -65,9 +67,16 @@ two slots `i` and `j` to the `c`-th standard basis vector of `kⁿ`, spelled as 
 `Function.update`s. The four `update_pair_*` lemmas read its three kinds of entry and compose two
 such plugs; they are `private` because they are steps of this file's argument, specific to the
 shape the cup produces, and say nothing about tensor powers. The one genuinely linear-algebraic
-step, `tprod_update_pair_expand`, expands those two slots in the standard basis and is what the
-invariance of the cup runs on; it too is `private`, having that single consumer and no use outside
-this file.
+step is the expansion of those two slots in the standard basis, which the invariance of the cup
+runs on; it is general infrastructure and lives in
+`TauCeti/LinearAlgebra/PiTensorProduct/BasisExpansion.lean` as
+`TauCeti.tprod_update_pair_expand`.
+
+Each summand of the generator is a `PiTensorProduct.map`, so the relations that do not read the arc
+through the dot product are strandwise statements about the family `TauCeti.cupCapStrand`:
+`PiTensorProduct.map_comp` turns a product of two summands into the summand of the pointwise
+composite, and the commutation of two arcs on disjoint pairs of strands is then the observation that
+at every strand one of the two factors is the identity.
 
 ## Main definitions
 
@@ -137,12 +146,12 @@ At `i = j` the two strands coincide, so the cap and the cup land on the same slo
 not an arc of a Brauer diagram: it is not a contraction of the slot `i` against itself, which would
 be quadratic rather than linear, but the rank-one map replacing that slot by the sum of its
 coordinates times the all-ones vector (`TauCeti.orthogonalCupCapAt_self_tprod`). The relations
-that read the arc through the dot product therefore carry the hypothesis `i ≠ j`; the ones that
-only rename the strands (`TauCeti.permTensorAction_mul_orthogonalCupCapAt` and the two absorptions
-of the crossing) hold for coincident strands too. -/
+that read the arc through the dot product therefore carry the hypothesis `i ≠ j`; the ones that are
+strandwise statements — `TauCeti.permTensorAction_mul_orthogonalCupCapAt`, the two absorptions of
+the crossing, and the commutation of two generators on disjoint pairs of strands
+`TauCeti.commute_orthogonalCupCapAt_of_disjoint` — hold for coincident strands too. -/
 noncomputable def orthogonalCupCapAt (i j : Fin d) : Module.End k (⨂[k]^d (Fin n → k)) :=
-  ∑ a : Fin n, ∑ c : Fin n,
-    PiTensorProduct.lift ((PiTensorProduct.tprod k).compLinearMap (cupCapStrand k n d i j a c))
+  ∑ a : Fin n, ∑ c : Fin n, PiTensorProduct.map (cupCapStrand k n d i j a c)
 
 variable {k n d}
 
@@ -186,37 +195,13 @@ private theorem update_pair_update_pair (hij : i ≠ j) :
 
 end Plug
 
-/-- **The bilinear expansion at two slots**: a pure tensor whose slots `i` and `j` carry arbitrary
-vectors is the standard-basis expansion of those two slots. -/
-private theorem tprod_update_pair_expand {i j : Fin d} (hij : i ≠ j) (u : Fin d → (Fin n → k))
-    (x y : Fin n → k) :
-    PiTensorProduct.tprod k (Function.update (Function.update u i x) j y) =
-      ∑ a : Fin n, ∑ b : Fin n, (x a * y b) • PiTensorProduct.tprod k
-        (Function.update (Function.update u i (Pi.single a (1 : k))) j (Pi.single b 1)) := by
-  calc PiTensorProduct.tprod k (Function.update (Function.update u i x) j y)
-      = PiTensorProduct.tprod k (Function.update (Function.update u i
-          (∑ a : Fin n, x a • Pi.single a (1 : k))) j
-            (∑ b : Fin n, y b • Pi.single b (1 : k))) := by
-        rw [← pi_eq_sum_univ' x, ← pi_eq_sum_univ' y]
-    _ = ∑ b : Fin n, ∑ a : Fin n, (x a * y b) • PiTensorProduct.tprod k
-          (Function.update (Function.update u i (Pi.single a (1 : k))) j (Pi.single b 1)) := by
-        rw [(PiTensorProduct.tprod k).map_update_sum]
-        refine Finset.sum_congr rfl fun b _ => ?_
-        rw [(PiTensorProduct.tprod k).map_update_smul, Function.update_comm hij,
-          (PiTensorProduct.tprod k).map_update_sum, Finset.smul_sum]
-        refine Finset.sum_congr rfl fun a _ => ?_
-        rw [(PiTensorProduct.tprod k).map_update_smul, Function.update_comm (Ne.symm hij),
-          smul_smul, mul_comm]
-    _ = _ := Finset.sum_comm
-
 /-- One summand of `TauCeti.orthogonalCupCapAt` on a pure tensor. -/
-private theorem orthogonalCupCapAt_lift_tprod (i j : Fin d) (a c : Fin n)
+private theorem orthogonalCupCapAt_map_tprod (i j : Fin d) (a c : Fin n)
     (v : Fin d → (Fin n → k)) :
-    PiTensorProduct.lift ((PiTensorProduct.tprod k).compLinearMap (cupCapStrand k n d i j a c))
-        (PiTensorProduct.tprod k v) =
+    PiTensorProduct.map (cupCapStrand k n d i j a c) (PiTensorProduct.tprod k v) =
       PiTensorProduct.tprod k (Function.update
         (Function.update v i (v i a • Pi.single c (1 : k))) j (v j a • Pi.single c (1 : k))) := by
-  rw [PiTensorProduct.lift.tprod, MultilinearMap.compLinearMap_apply]
+  rw [PiTensorProduct.map_tprod]
   congr 1
   funext t
   by_cases hj : t = j
@@ -248,7 +233,7 @@ theorem orthogonalCupCapAt_tprod {i j : Fin d} (hij : i ≠ j) (v : Fin d → (F
   rw [orthogonalCupCapAt]
   simp only [LinearMap.sum_apply]
   rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun c _ =>
-    (orthogonalCupCapAt_lift_tprod i j a c v).trans (key a c), Finset.sum_comm]
+    (orthogonalCupCapAt_map_tprod i j a c v).trans (key a c), Finset.sum_comm]
   rw [Finset.smul_sum]
   refine Finset.sum_congr rfl fun c _ => ?_
   rw [← Finset.sum_smul]
@@ -265,11 +250,10 @@ theorem orthogonalCupCapAt_self_tprod (i : Fin d) (v : Fin d → (Fin n → k)) 
       (∑ a : Fin n, v i a) • ∑ c : Fin n, PiTensorProduct.tprod k
         (Function.update v i (Pi.single c (1 : k))) := by
   have key : ∀ a c : Fin n,
-      PiTensorProduct.lift ((PiTensorProduct.tprod k).compLinearMap (cupCapStrand k n d i i a c))
-          (PiTensorProduct.tprod k v) =
+      PiTensorProduct.map (cupCapStrand k n d i i a c) (PiTensorProduct.tprod k v) =
         v i a • PiTensorProduct.tprod k (Function.update v i (Pi.single c (1 : k))) := by
     intro a c
-    rw [orthogonalCupCapAt_lift_tprod, Function.update_idem,
+    rw [orthogonalCupCapAt_map_tprod, Function.update_idem,
       (PiTensorProduct.tprod k).map_update_smul]
   rw [orthogonalCupCapAt]
   simp only [LinearMap.sum_apply]
@@ -394,7 +378,7 @@ theorem permTensorAction_mul_orthogonalCupCapAt (σ : Equiv.Perm (Fin d)) (i j :
   ext v
   simp only [LinearMap.compMultilinearMap_apply, Module.End.mul_apply, orthogonalCupCapAt,
     LinearMap.sum_apply, map_sum, permTensorAction_apply, LinearEquiv.coe_coe,
-    PiTensorProduct.reindex_tprod, PiTensorProduct.lift.tprod, MultilinearMap.compLinearMap_apply]
+    PiTensorProduct.reindex_tprod, PiTensorProduct.map_tprod]
   refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun c _ => congrArg _ (funext ?_)
   exact fun t => LinearMap.congr_fun (cupCapStrand_symm_apply σ i j a c t) _
 
@@ -408,50 +392,46 @@ theorem commute_permTensorAction_orthogonalCupCapAt {σ : Equiv.Perm (Fin d)} {i
 
 /-! ### Two arcs -/
 
-/-- **Disjoint arcs commute**: two generators on four distinct strands act in disjoint groups of
-slots. -/
-theorem commute_orthogonalCupCapAt_of_disjoint {i j a b : Fin d} (hij : i ≠ j) (hab : a ≠ b)
-    (hia : i ≠ a) (hib : i ≠ b) (hja : j ≠ a) (hjb : j ≠ b) :
+/-- Two summands of `TauCeti.orthogonalCupCapAt` on disjoint pairs of strands commute: at every
+strand one of the two families `TauCeti.cupCapStrand` is the identity, so the two pointwise
+composites agree and `PiTensorProduct.map_comp` turns them into the same operator. Nothing here
+reads the arc through the dot product, so the two strands of a pair may coincide. -/
+private theorem commute_map_cupCapStrand {i j a b : Fin d} (hia : i ≠ a) (hib : i ≠ b)
+    (hja : j ≠ a) (hjb : j ≠ b) (p q r s : Fin n) :
+    Commute (PiTensorProduct.map (cupCapStrand k n d i j p q))
+      (PiTensorProduct.map (cupCapStrand k n d a b r s)) := by
+  have hstrand : (fun t => cupCapStrand k n d i j p q t ∘ₗ cupCapStrand k n d a b r s t) =
+      fun t => cupCapStrand k n d a b r s t ∘ₗ cupCapStrand k n d i j p q t := by
+    funext t
+    by_cases hij : t = i ∨ t = j
+    · have hab : ¬(t = a ∨ t = b) := by
+        rcases hij with h | h
+        · subst h
+          exact fun hor => hor.elim hia hib
+        · subst h
+          exact fun hor => hor.elim hja hjb
+      simp [cupCapStrand, hij, hab]
+    · simp [cupCapStrand, hij]
+  have hmul : (PiTensorProduct.map (cupCapStrand k n d i j p q) : Module.End k _) *
+        PiTensorProduct.map (cupCapStrand k n d a b r s) =
+      PiTensorProduct.map (cupCapStrand k n d a b r s) *
+        PiTensorProduct.map (cupCapStrand k n d i j p q) := by
+    rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← PiTensorProduct.map_comp,
+      ← PiTensorProduct.map_comp, hstrand]
+  -- `Commute` is this equation.
+  exact hmul
+
+/-- **Disjoint arcs commute**: two generators whose pairs of strands are disjoint act in disjoint
+groups of slots. The two strands of either pair may coincide, since the proof never reads an arc
+through the dot product: it only needs each strand to be touched by at most one of the two
+generators. -/
+theorem commute_orthogonalCupCapAt_of_disjoint {i j a b : Fin d} (hia : i ≠ a) (hib : i ≠ b)
+    (hja : j ≠ a) (hjb : j ≠ b) :
     Commute (orthogonalCupCapAt k n d i j) (orthogonalCupCapAt k n d a b) := by
-  refine PiTensorProduct.ext ?_
-  ext v
-  -- Each generator plugs into two slots that the other leaves alone, so the two plugs commute and
-  -- each one reads the other's slots off the original tuple.
-  have hswap : ∀ (c e : Fin n) (w : Fin d → (Fin n → k)),
-      Function.update (Function.update
-          (Function.update (Function.update w i (Pi.single c (1 : k))) j (Pi.single c 1))
-          a (Pi.single e (1 : k))) b (Pi.single e 1) =
-        Function.update (Function.update
-          (Function.update (Function.update w a (Pi.single e (1 : k))) b (Pi.single e 1))
-          i (Pi.single c (1 : k))) j (Pi.single c 1) := by
-    intro c e w
-    conv_lhs => rw [Function.update_comm hja, Function.update_comm hia,
-      Function.update_comm hjb, Function.update_comm hib]
-  have hab' : ∀ c : Fin n, orthogonalCupCapAt k n d a b (PiTensorProduct.tprod k
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))) =
-      (v a ⬝ᵥ v b) • ∑ e : Fin n, PiTensorProduct.tprod k (Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        a (Pi.single e (1 : k))) b (Pi.single e 1)) := by
-    intro c
-    rw [orthogonalCupCapAt_tprod hab, update_pair_apply_of_ne v (Ne.symm hia) (Ne.symm hja),
-      update_pair_apply_of_ne v (Ne.symm hib) (Ne.symm hjb)]
-  have hij' : ∀ e : Fin n, orthogonalCupCapAt k n d i j (PiTensorProduct.tprod k
-        (Function.update (Function.update v a (Pi.single e (1 : k))) b (Pi.single e 1))) =
-      (v i ⬝ᵥ v j) • ∑ c : Fin n, PiTensorProduct.tprod k (Function.update (Function.update
-        (Function.update (Function.update v a (Pi.single e (1 : k))) b (Pi.single e 1))
-        i (Pi.single c (1 : k))) j (Pi.single c 1)) := by
-    intro e
-    rw [orthogonalCupCapAt_tprod hij, update_pair_apply_of_ne v hia hib,
-      update_pair_apply_of_ne v hja hjb]
-  rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply]
-  rw [orthogonalCupCapAt_tprod hab, map_smul, map_sum,
-    Finset.sum_congr rfl fun e _ => hij' e, ← Finset.smul_sum]
-  rw [orthogonalCupCapAt_tprod hij, map_smul, map_sum,
-    Finset.sum_congr rfl fun c _ => hab' c, ← Finset.smul_sum]
-  rw [smul_comm (v a ⬝ᵥ v b) (v i ⬝ᵥ v j), Finset.sum_comm]
-  exact congrArg _ (congrArg _ (Finset.sum_congr rfl fun c _ =>
-    Finset.sum_congr rfl fun e _ => congrArg _ (hswap c e v).symm))
+  rw [orthogonalCupCapAt, orthogonalCupCapAt]
+  exact Commute.sum_left _ _ _ fun p _ => Commute.sum_left _ _ _ fun q _ =>
+    Commute.sum_right _ _ _ fun r _ => Commute.sum_right _ _ _ fun s _ =>
+      commute_map_cupCapStrand hia hib hja hjb p q r s
 
 /-- **Two arcs sharing one strand**: `e i j * e j l * e i j = e i j`, the relation that makes two
 generators on overlapping pairs absorb one another. -/
