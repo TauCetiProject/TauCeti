@@ -22,6 +22,12 @@ The wandering Frobenius windows embed openly into this orbit space. The images o
 `V₀` cover it, so it is quasi-compact and `T0`. These topological charts are the inputs for
 constructing the quotient sheaf and identifying its affinoid charts.
 
+The construction works over any perfect commutative coefficient ring of characteristic `p`,
+with the stated adic topology, and does not require `𝒴` to be nonempty. Nonemptiness for
+`R = 𝒪_F` and a pseudouniformiser `ϖ` requires a separate construction of a point of `𝒴`.
+The quotient topology and window charts depend only on Frobenius stability and the
+rational, covering, and wandering properties of the windows.
+
 ## References
 
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, Arizona Winter School 2017 notes,
