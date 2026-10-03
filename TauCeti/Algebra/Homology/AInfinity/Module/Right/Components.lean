@@ -1,0 +1,326 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Basic
+
+/-!
+# Right A-infinity modules: arity components and component equations
+
+This file splits the Taylor map of a right `A∞` module `MM` over `AA` into its arity
+components, and spells out the module Stasheff law component by component.
+
+Arities are indexed by the number `n` of algebra inputs, so the components indexed by `n` are the
+operations `b_{n+1}^M` and `m_{n+1}^M` of arity `n + 1`.
+
+* `MM.b n : M ⊗ A^⊗n → M` is the suspended operation: the restriction of the Taylor map to the
+  summand `sM ⊗ (sA)^⊗n` of the cofree bar comodule.
+* `MM.m n : M → A^n → M` is the unsuspended operation, obtained from `MM.b n` by the Koszul sign of
+  the degree-`-1` suspension of its `n + 1` inputs.  This is the convention used for the
+  unsuspended operations of an `A∞` algebra.
+
+The bar differential is determined by its Taylor map through the cofree coderivation formula
+`barDifferential_eq`.  Composing with the Taylor map turns the square-zero law into the suspended
+module Stasheff equations of every arity (`stasheff_tmul_of_tprod`), with the algebra bar
+differential written out in `stasheff_tmul_of_tprod_of_pos`.
+
+## Main definitions
+
+* `TauCeti.AInfinityRightModule.b`: the suspended arity components of the Taylor map.
+* `TauCeti.AInfinityRightModule.m`: the unsuspended module operations.
+
+## Main results
+
+* `TauCeti.AInfinityRightModule.isHomogeneous_b_tmul_tprod` and
+  `TauCeti.AInfinityRightModule.m_mem_piece`: the suspended components have degree one and the
+  unsuspended operation of arity `n + 1` has degree `1 - n`.
+* `TauCeti.AInfinityRightModule.ext_b` and `TauCeti.AInfinityRightModule.ext_m`: a module is
+  determined by its grading and either family of operations.
+* `TauCeti.AInfinityRightModule.barDifferential_eq`: the bar differential in terms of the Taylor
+  map and the algebra bar differential.
+* `TauCeti.AInfinityRightModule.stasheff_tmul_of_tprod`: the suspended module Stasheff equation
+  of each arity, with `m_zero_m_zero` its unsuspended arity-one case.
+
+## References
+
+* E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Sections 1--2.
+* B. Keller, *Introduction to A-infinity algebras and modules*, Section 4.
+-/
+
+public section
+
+open scoped BigOperators TensorProduct
+
+namespace TauCeti
+
+universe uR uA uM
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup M] [Module R M]
+
+namespace AInfinityRightModule
+
+variable {AA : AInfinityAlgebra R A}
+
+open TensorWords
+
+section Components
+
+/-- The suspended arity-`n + 1` component `b_{n+1}^M` of a right `A∞` module: the Taylor map
+restricted to the summand `sM ⊗ (sA)^⊗n` of the cofree bar comodule. -/
+noncomputable def b (MM : AInfinityRightModule AA M) (n : ℕ) :
+    M ⊗[R] TensorPower R n A →ₗ[R] M :=
+  MM.taylor ∘ₗ (TensorWords.of R A n).lTensor M
+
+/-- The arity component `b n` is the Taylor map composed with the inclusion of words of length
+`n`. -/
+theorem b_def (MM : AInfinityRightModule AA M) (n : ℕ) :
+    MM.b n = MM.taylor ∘ₗ (TensorWords.of R A n).lTensor M :=
+  (rfl)
+
+/-- On a word of length `n`, the Taylor map is the arity component `b n`. -/
+theorem taylor_tmul_of (MM : AInfinityRightModule AA M) (n : ℕ) (x : M)
+    (w : TensorPower R n A) :
+    MM.taylor (x ⊗ₜ[R] TensorWords.of R A n w) = MM.b n (x ⊗ₜ[R] w) :=
+  (rfl)
+
+/-- The arity component `b n` has degree one: it sends a homogeneous suspended module element
+and `n` homogeneous suspended letters to the suspended module degree one higher than the total. -/
+theorem isHomogeneous_b_tmul_tprod (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {p : ℤ}
+    (hx : x ∈ (MM.grading.shift 1).piece p) (a : Fin n → A) (d : Fin n → ℤ)
+    (ha : ∀ i, a i ∈ (AA.grading.shift 1).piece (d i)) :
+    MM.b n (x ⊗ₜ[R] PiTensorProduct.tprod R a) ∈
+      (MM.grading.shift 1).piece (p + ∑ i, d i + 1) := by
+  rw [← taylor_tmul_of]
+  refine MM.isHomogeneous_taylor.map_mem ?_
+  rw [barGrading_piece]
+  exact InternalGrading.tmul_mem_tensorProduct _ _ hx
+    (by simpa only [grading_piece] using mem_gradedPiece_of_tprod _ a d ha)
+
+/-- The Taylor maps of two right `A∞` modules agree exactly when all their arity components
+agree. -/
+theorem taylor_eq_taylor_iff {MM NN : AInfinityRightModule AA M} :
+    MM.taylor = NN.taylor ↔ ∀ n, MM.b n = NN.b n := by
+  refine ⟨fun h n ↦ by rw [b_def, b_def, h], fun h ↦ TensorProduct.ext' fun x w ↦ ?_⟩
+  have hx : MM.taylor ∘ₗ TensorProduct.mk R M (TensorWords R A) x =
+      NN.taylor ∘ₗ TensorProduct.mk R M (TensorWords R A) x :=
+    DirectSum.linearMap_ext R fun n ↦ LinearMap.ext fun z ↦ by
+      simp only [← of_def, LinearMap.comp_apply, TensorProduct.mk_apply, taylor_tmul_of, h n]
+  exact LinearMap.congr_fun hx w
+
+/-- Right `A∞` modules on a fixed carrier are determined by their grading and their suspended
+arity components. -/
+theorem ext_b {MM NN : AInfinityRightModule AA M} (hG : MM.grading = NN.grading)
+    (hb : ∀ n, MM.b n = NN.b n) : MM = NN :=
+  ext hG (taylor_eq_taylor_iff.2 hb)
+
+end Components
+
+section Unsuspended
+
+/-- The unsuspended arity-`n + 1` operation `m_{n+1}^M` of a right `A∞` module, with the module
+input first.  It evaluates `b n` after twisting the input in position `j` (the module input
+being in position `0`) by the Koszul twist of parameter `n - j`; on homogeneous inputs these
+twists multiply to the Koszul sign of the suspension of `n + 1` inputs. -/
+noncomputable def m (MM : AInfinityRightModule AA M) (n : ℕ) :
+    M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) M where
+  toFun x :=
+    ((MM.b n ∘ₗ TensorProduct.mk R M (TensorPower R n A) (MM.grading.koszulTwist n x)
+      ).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
+        fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i)
+  map_add' x y := by
+    ext a
+    simp
+  map_smul' r x := by
+    ext a
+    simp
+
+/-- The unsuspended operation evaluates the suspended component on Koszul-twisted inputs. -/
+theorem m_apply (MM : AInfinityRightModule AA M) (n : ℕ) (x : M) (a : Fin n → A) :
+    MM.m n x a =
+      MM.b n (MM.grading.koszulTwist n x ⊗ₜ[R]
+        PiTensorProduct.tprod R fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i)) :=
+  (rfl)
+
+/-- The suspended component evaluates the unsuspended operation on Koszul-twisted inputs: the
+twists defining `m` are involutions. -/
+theorem b_tmul_tprod (MM : AInfinityRightModule AA M) (n : ℕ) (x : M) (a : Fin n → A) :
+    MM.b n (x ⊗ₜ[R] PiTensorProduct.tprod R a) =
+      MM.m n (MM.grading.koszulTwist n x)
+        fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i) := by
+  simp only [m_apply, InternalGrading.koszulTwist_koszulTwist]
+
+/-- The suspended arity components are determined by the grading and the unsuspended
+operations. -/
+theorem b_eq_b_of_m_eq_m {MM NN : AInfinityRightModule AA M} (hG : MM.grading = NN.grading)
+    (n : ℕ) (hm : MM.m n = NN.m n) : MM.b n = NN.b n := by
+  refine TensorProduct.ext' fun x w ↦ ?_
+  induction w using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    rw [TensorProduct.tmul_smul, map_smul, map_smul, b_tmul_tprod, b_tmul_tprod, hm, hG]
+  | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
+
+/-- Right `A∞` modules on a fixed carrier are determined by their grading and their unsuspended
+operations. -/
+theorem ext_m {MM NN : AInfinityRightModule AA M} (hG : MM.grading = NN.grading)
+    (hm : ∀ n, MM.m n = NN.m n) : MM = NN :=
+  ext_b hG fun n ↦ b_eq_b_of_m_eq_m hG n (hm n)
+
+/-- The unsuspended operation `m_{n+1}^M` has cohomological degree `1 - n`. -/
+theorem m_mem_piece (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {p : ℤ}
+    (hx : x ∈ MM.grading.piece p) (a : Fin n → A) (d : Fin n → ℤ)
+    (ha : ∀ i, a i ∈ AA.grading.piece (d i)) :
+    MM.m n x a ∈ MM.grading.piece (p + ∑ i, d i + (1 - n)) := by
+  have hx' : MM.grading.koszulTwist n x ∈ (MM.grading.shift 1).piece (p - 1) := by
+    rw [InternalGrading.shift_piece, sub_add_cancel]
+    exact MM.grading.koszulTwist_mem_piece hx _
+  have ha' : ∀ i, AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i) ∈
+      (AA.grading.shift 1).piece (d i - 1) := fun i ↦ by
+    rw [InternalGrading.shift_piece, sub_add_cancel]
+    exact AA.grading.koszulTwist_mem_piece (ha i) _
+  have h := MM.isHomogeneous_b_tmul_tprod n hx' _ _ ha'
+  rw [InternalGrading.shift_piece, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul, mul_one] at h
+  rw [m_apply]
+  convert h using 2
+  ring
+
+end Unsuspended
+
+section ComponentEquations
+
+attribute [local instance] Comodule.cofree
+
+/-- The bar differential is the coderivation generated by the Taylor map: on `x ⊗ w` it applies
+the Taylor map to each prefix of the deconcatenation of `w`, and adds the algebra bar differential
+applied to `w`, with the Koszul sign of moving it past the suspended module input. -/
+theorem barDifferential_eq (MM : AInfinityRightModule AA M) :
+    MM.barDifferential =
+      MM.taylor.rTensor (TensorWords R A) ∘ₗ
+          (TensorProduct.assoc R M (TensorWords R A) (TensorWords R A)).symm.toLinearMap ∘ₗ
+            (deconcatenation R A).lTensor M +
+        AA.coaugmentedBarDifferential.lTensor M ∘ₗ
+          ((MM.grading.shift 1).koszulTwist 1).rTensor (TensorWords R A) := by
+  let C := TensorWords R A
+  let π : M ⊗[R] C →ₗ[R] M :=
+    (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).lTensor M
+  let ρ := Comodule.coact (R := R) (C := C) (M := M ⊗[R] C)
+  have hretract : π.rTensor C ∘ₗ ρ = LinearMap.id := by
+    refine TensorProduct.ext' fun x c ↦ ?_
+    rw [LinearMap.comp_apply, Comodule.cofree_coact_tmul, LinearMap.id_apply]
+    have key : ∀ t : C ⊗[R] C, π.rTensor C ((TensorProduct.assoc R M C C).symm (x ⊗ₜ[R] t)) =
+        x ⊗ₜ[R] TensorProduct.lid R C ((Coalgebra.counit (R := R) (A := C)).rTensor C t) := by
+      intro t
+      induction t using TensorProduct.inductionOn with
+      | tmul c₁ c₂ =>
+        simp only [π, TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul, LinearMap.comp_apply,
+          LinearMap.lTensor_tmul, LinearEquiv.coe_coe, TensorProduct.rid_tmul,
+          TensorProduct.lid_tmul, TensorProduct.smul_tmul]
+      | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
+    rw [key, Coalgebra.rTensor_counit_comul, TensorProduct.lid_tmul, one_smul]
+  have htwist : π ∘ₗ (barGrading AA MM.grading).koszulTwist 1 =
+      (MM.grading.shift 1).koszulTwist 1 ∘ₗ π := by
+    rw [(TensorWords.isHomogeneous_rid_comp_lTensor_counit (MM.grading.shift 1)
+      (AA.grading.shift 1)).koszulTwist_comp 1]
+    have hbar : barGrading AA MM.grading =
+        (MM.grading.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1)) := by
+      ext p
+      rw [barGrading_piece]
+    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul, hbar]
+    rfl
+  have hcod : ρ ∘ₗ MM.barDifferential =
+      MM.barDifferential.rTensor C ∘ₗ ρ +
+        (AA.coaugmentedBarDifferential.lTensor (M ⊗[R] C) ∘ₗ
+          ((barGrading AA MM.grading).koszulTwist 1).rTensor C) ∘ₗ ρ :=
+    LinearMap.ext fun z ↦ by
+      simpa only [LinearMap.comp_apply, LinearMap.add_apply] using
+        MM.isGradedCoderivation_barDifferential.coact_apply z
+  calc MM.barDifferential = π.rTensor C ∘ₗ ρ ∘ₗ MM.barDifferential := by
+        rw [← LinearMap.comp_assoc, hretract, LinearMap.id_comp]
+    _ = MM.taylor.rTensor C ∘ₗ ρ +
+          AA.coaugmentedBarDifferential.lTensor M ∘ₗ
+            ((MM.grading.shift 1).koszulTwist 1).rTensor C ∘ₗ (π.rTensor C ∘ₗ ρ) := by
+        have h2 : π.rTensor C ∘ₗ (AA.coaugmentedBarDifferential.lTensor (M ⊗[R] C) ∘ₗ
+              ((barGrading AA MM.grading).koszulTwist 1).rTensor C) =
+            AA.coaugmentedBarDifferential.lTensor M ∘ₗ
+              ((MM.grading.shift 1).koszulTwist 1).rTensor C ∘ₗ π.rTensor C := by
+          rw [← LinearMap.comp_assoc, LinearMap.rTensor_comp_lTensor,
+            ← LinearMap.lTensor_comp_rTensor, LinearMap.comp_assoc, ← LinearMap.rTensor_comp,
+            htwist, LinearMap.rTensor_comp]
+        rw [hcod, LinearMap.comp_add, ← LinearMap.comp_assoc, ← LinearMap.rTensor_comp,
+          ← LinearMap.comp_assoc (f := ρ), h2, taylor_def]
+        rfl
+    _ = _ := by
+        rw [hretract, LinearMap.comp_id]
+        rfl
+
+/-- The module Stasheff law in operator form: the Taylor map applied after the Taylor map on each
+prefix, plus the Taylor map applied after the algebra bar differential, vanishes. -/
+theorem taylor_comp_rTensor_taylor_add_taylor_comp_lTensor_eq_zero
+    (MM : AInfinityRightModule AA M) :
+    MM.taylor ∘ₗ MM.taylor.rTensor (TensorWords R A) ∘ₗ
+          (TensorProduct.assoc R M (TensorWords R A) (TensorWords R A)).symm.toLinearMap ∘ₗ
+            (deconcatenation R A).lTensor M +
+        MM.taylor ∘ₗ AA.coaugmentedBarDifferential.lTensor M ∘ₗ
+          ((MM.grading.shift 1).koszulTwist 1).rTensor (TensorWords R A) = 0 := by
+  rw [← LinearMap.comp_add, ← barDifferential_eq, taylor_comp_barDifferential]
+
+/-- The suspended module Stasheff equation of arity `n + 1`, on the word `x ⊗ a₀ ⊗ ⋯ ⊗ aₙ₋₁`:
+the sum over the cuts of the word of the Taylor map applied after the Taylor map on the prefix,
+plus the Taylor map applied after the algebra bar differential of the word, vanishes. -/
+theorem stasheff_tmul_of_tprod (MM : AInfinityRightModule AA M) (n : ℕ) (x : M)
+    (a : Fin n → A) :
+    ∑ k ∈ Finset.range (n + 1),
+        MM.taylor (MM.taylor (x ⊗ₜ[R] subword R a 0 k) ⊗ₜ[R] subword R a k (n - k)) +
+      MM.taylor ((MM.grading.shift 1).koszulTwist 1 x ⊗ₜ[R]
+        AA.coaugmentedBarDifferential (TensorWords.of R A n (PiTensorProduct.tprod R a))) = 0 := by
+  have h := LinearMap.congr_fun MM.taylor_comp_rTensor_taylor_add_taylor_comp_lTensor_eq_zero
+    (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a))
+  simp only [LinearMap.add_apply, LinearMap.zero_apply, LinearMap.comp_apply,
+    LinearMap.lTensor_tmul, LinearMap.rTensor_tmul] at h
+  rw [of_tprod_eq_subword] at h ⊢
+  rw [deconcatenation_subword] at h
+  simpa only [TensorProduct.tmul_sum, map_sum, LinearEquiv.coe_coe,
+    TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul, Nat.zero_add] using h
+
+/-- The suspended module Stasheff equation of arity `n + 1` for `n > 0`, with the algebra bar
+differential expanded: its terms collapse each nonempty block of letters by the algebra Taylor
+map, twisting the letters before the block. -/
+theorem stasheff_tmul_of_tprod_of_pos (MM : AInfinityRightModule AA M) {n : ℕ} (hn : 0 < n)
+    (x : M) (a : Fin n → A) :
+    ∑ k ∈ Finset.range (n + 1),
+        MM.taylor (MM.taylor (x ⊗ₜ[R] subword R a 0 k) ⊗ₜ[R] subword R a k (n - k)) +
+      ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+        MM.taylor ((MM.grading.shift 1).koszulTwist 1 x ⊗ₜ[R]
+          reducedInclusion R A
+            (ReducedTensorWords.splice R
+              (InternalGrading.twistedTuple (AA.grading.shift 1) 1 a 0 p) 0 n p d
+              (AA.taylor (ReducedTensorWords.subword R a p d)))) = 0 := by
+  have h := MM.stasheff_tmul_of_tprod n x a
+  rw [← reducedInclusion_of (R := R) (M := A) ⟨n, hn⟩, ← LinearMap.comp_apply,
+    AInfinityAlgebra.coaugmentedBarDifferential_comp_reducedInclusion, LinearMap.comp_apply,
+    AInfinityAlgebra.barDifferential_def, ReducedTensorWords.gradedCoderiv_of_tprod] at h
+  simpa only [map_sum, TensorProduct.tmul_sum] using h
+
+/-- The unsuspended module Stasheff equation of arity one: the unary module operation squares to
+zero. -/
+theorem m_zero_m_zero (MM : AInfinityRightModule AA M) (x : M) (a c : Fin 0 → A) :
+    MM.m 0 (MM.m 0 x a) c = 0 := by
+  have hone : ∀ e : Fin 0 → A, TensorWords.of R A 0 (PiTensorProduct.tprod R e) = 1 :=
+    fun e ↦ by
+      rw [one_eq_of_zero]
+      exact of_tprod_congr R A fun j ↦ j.elim0
+  have h := MM.stasheff_tmul_of_tprod 0 x a
+  rw [hone, AA.coaugmentedBarDifferential_one, TensorProduct.tmul_zero, map_zero, add_zero,
+    Finset.sum_range_one, Nat.sub_self, subword_length_zero R a le_rfl] at h
+  rw [m_apply, m_apply, ← taylor_tmul_of, ← taylor_tmul_of, hone, hone, Nat.cast_zero,
+    InternalGrading.koszulTwist_zero, LinearMap.id_apply, LinearMap.id_apply, h]
+
+end ComponentEquations
+
+end AInfinityRightModule
+
+end TauCeti
