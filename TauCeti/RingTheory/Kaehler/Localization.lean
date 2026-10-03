@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.LocalProperties.Submodule
 
 /-!
-# Regular and rational Kähler differentials
+# Localization of Kähler differentials
 
 Let `A` be a domain over a commutative ring `R`, with fraction field `F`. A rational
 differential in `Ω[F⁄R]` comes from `Ω[A⁄R]` if and only if it comes from the differentials
