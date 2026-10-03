@@ -66,7 +66,8 @@ namespace MonoidAlgebra
 
 /-- A monoid algebra over a coefficient semiring without additive torsion has no additive
 torsion. -/
-instance instIsAddTorsionFree {R : Type*} [Semiring R] [IsAddTorsionFree R] {M : Type*} :
+instance _root_.MonoidAlgebra.instIsAddTorsionFree {R : Type*} [Semiring R] [IsAddTorsionFree R]
+    {M : Type*} :
     IsAddTorsionFree (MonoidAlgebra R M) :=
   MonoidAlgebra.coeff_injective.isAddTorsionFree
     MonoidAlgebra.coeffAddEquiv.toAddMonoidHom
@@ -87,10 +88,10 @@ theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
       Submodule.smul_mem_smul (hx m) (Submodule.mem_top (x := MonoidAlgebra.single m (1 : R)))
 
 /-- An element of `R[M]` all of whose coefficients are divisible by `n` is `n` times an element. -/
-theorem exists_eq_nsmul_of_dvd_coeff {n : ℕ} {x : MonoidAlgebra R M}
+theorem _root_.MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff {n : ℕ} {x : MonoidAlgebra R M}
     (h : ∀ m, (n : R) ∣ x.coeff m) : ∃ y, x = n • y := by
   have hx : x ∈ Ideal.span {(n : R)} • (⊤ : Submodule R (MonoidAlgebra R M)) :=
-    mem_ideal_smul_top_iff.2 fun m ↦ Ideal.mem_span_singleton.2 (h m)
+    TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff.2 fun m ↦ Ideal.mem_span_singleton.2 (h m)
   rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hx
   obtain ⟨y, -, hy⟩ := hx
   exact ⟨y, by rw [← hy, Nat.cast_smul_eq_nsmul]⟩
