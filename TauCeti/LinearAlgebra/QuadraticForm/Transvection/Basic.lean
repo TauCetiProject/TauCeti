@@ -43,7 +43,8 @@ and `Q`, never `B / 2`, so it makes sense verbatim for integral quadratic forms.
 * `QuadraticMap.transvection_add_smul`: `E_{u,w + c • u} = E_{u,w}`.
 * `QuadraticMap.transvection_conj`: `g * E_{u,w} * g⁻¹ = E_{g u, g w}` for `g ∈ O(Q)`.
 * `QuadraticMap.IsometryEquiv.transvectionParameterEquiv`: an isometry transports the parameter
-  space `u^⊥ / R ∙ u` to `(e u)^⊥ / R ∙ e u`.
+  space `u^⊥ / ((R ∙ u) ∩ u^⊥)` to the corresponding space for `e u`; when `u` is
+  isotropic, this is `u^⊥ / R ∙ u`.
 * `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_comp_transvectionHom`: Eichler
   root-subgroup homomorphisms are natural under isometric equivalences.
 * `QuadraticMap.transvection_eq_one_iff_of_isUnit`: if `polar Q x u` is a unit for some `x`,
@@ -73,28 +74,16 @@ variable {R : Type*} [CommRing R]
   {M₂ : Type*} [AddCommGroup M₂] [Module R M₂]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
 
-private theorem map_polarKernel (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
-    (LinearMap.ker (Q₁.polarBilin u)).map e.toLinearMap =
-      LinearMap.ker (Q₂.polarBilin (e u)) := by
-  ext y
-  simp only [Submodule.mem_map_equiv, coe_symm_toLinearEquiv, coe_toLinearEquiv,
-    LinearMap.mem_ker, polarBilin_apply_apply]
-  rw [← e.polar_apply u (e.symm y), e.apply_symm_apply]
-
-private def polarKernelEquiv (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
-    LinearMap.ker (Q₁.polarBilin u) ≃ₗ[R] LinearMap.ker (Q₂.polarBilin (e u)) :=
-  (e.toLinearEquiv.submoduleMap _).trans
-    (LinearEquiv.ofEq _ _ (map_polarKernel e u))
-
 private theorem map_transvectionParameterSubmodule (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
     ((R ∙ u).comap (LinearMap.ker (Q₁.polarBilin u)).subtype).map
-        (polarKernelEquiv e u).toLinearMap =
+        (e.polarKernelEquiv u).toLinearMap =
       (R ∙ e u).comap (LinearMap.ker (Q₂.polarBilin (e u))).subtype := by
   ext y
   constructor
   · rintro ⟨x, hx, rfl⟩
     -- Membership in the comapped span is membership of the underlying vector in `R ∙ u`.
-    change e (x : M₁) ∈ R ∙ e u
+    change ((e.polarKernelEquiv u x : LinearMap.ker (Q₂.polarBilin (e u))) : M₂) ∈ R ∙ e u
+    rw [e.coe_polarKernelEquiv_apply]
     change (x : M₁) ∈ R ∙ u at hx
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
     exact Submodule.mem_span_singleton.mpr ⟨c, by
@@ -102,8 +91,8 @@ private theorem map_transvectionParameterSubmodule (e : Q₁.IsometryEquiv Q₂)
         c • e u = e (c • u) := (map_smul e c u).symm
         _ = e x := congrArg e hc⟩
   · intro hy
-    let x : LinearMap.ker (Q₁.polarBilin u) := (polarKernelEquiv e u).symm y
-    refine ⟨x, ?_, (polarKernelEquiv e u).apply_symm_apply y⟩
+    let x : LinearMap.ker (Q₁.polarBilin u) := (e.polarKernelEquiv u).symm y
+    refine ⟨x, ?_, (e.polarKernelEquiv u).apply_symm_apply y⟩
     -- Again expose membership in the comapped spans through the subtype coercions.
     change (x : M₁) ∈ R ∙ u
     change (y : M₂) ∈ R ∙ e u at hy
@@ -111,17 +100,19 @@ private theorem map_transvectionParameterSubmodule (e : Q₁.IsometryEquiv Q₂)
     apply Submodule.mem_span_singleton.mpr
     refine ⟨c, ?_⟩
     apply e.injective
-    rw [map_smul]
-    exact hc.trans (congrArg Subtype.val ((polarKernelEquiv e u).apply_symm_apply y)).symm
+    rw [map_smul, e.coe_polarKernelEquiv_symm_apply]
+    change c • e u = e (e.symm (y : M₂))
+    exact hc.trans (e.apply_symm_apply y).symm
 
-/-- An isometric equivalence transports the parameter space `u^⊥ / R ∙ u` of Eichler
-transvections to the parameter space `(e u)^⊥ / R ∙ e u`. -/
+/-- An isometric equivalence transports the quotient `u^⊥ / ((R ∙ u) ∩ u^⊥)` to the
+corresponding quotient for `e u`. When `u` is isotropic, this is the Eichler-transvection parameter
+space `u^⊥ / R ∙ u`. -/
 noncomputable def transvectionParameterEquiv (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
     (LinearMap.ker (Q₁.polarBilin u) ⧸
         (R ∙ u).comap (LinearMap.ker (Q₁.polarBilin u)).subtype) ≃ₗ[R]
       (LinearMap.ker (Q₂.polarBilin (e u)) ⧸
         (R ∙ e u).comap (LinearMap.ker (Q₂.polarBilin (e u))).subtype) :=
-  Submodule.Quotient.equiv _ _ (polarKernelEquiv e u)
+  Submodule.Quotient.equiv _ _ (e.polarKernelEquiv u)
     (map_transvectionParameterSubmodule e u)
 
 /-- Transport of Eichler-transvection parameters sends the class of `w` to the class of `e w`. -/
@@ -132,7 +123,10 @@ theorem transvectionParameterEquiv_mk (e : Q₁.IsometryEquiv Q₂)
       Submodule.Quotient.mk ⟨e w, by
         rw [LinearMap.mem_ker, polarBilin_apply_apply, e.polar_apply]
         exact LinearMap.mem_ker.mp w.2⟩ := by
-  rfl
+  change Submodule.Quotient.mk (e.polarKernelEquiv u w) = _
+  congr 1
+  apply Subtype.ext
+  exact e.coe_polarKernelEquiv_apply u w
 
 /-- Inverse transport of Eichler-transvection parameters sends the class of `w` to the class of
 `e.symm w`. -/

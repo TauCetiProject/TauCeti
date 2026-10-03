@@ -22,6 +22,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
+* `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
+  equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -65,6 +67,61 @@ theorem _root_.QuadraticMap.IsometryEquiv.polar_apply {R : Type u} {M₁ : Type 
     [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     (e : Q₁.IsometryEquiv Q₂) (x y : M₁) : polar Q₂ (e x) (e y) = polar Q₁ x y := by
   simpa using e.toIsometry.polar_apply x y
+
+/-- An isometric equivalence maps the kernel of polarization against `x` onto the kernel of
+polarization against its image. -/
+theorem _root_.QuadraticMap.IsometryEquiv.map_polarKernel
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) (x : M₁) :
+    (LinearMap.ker (Q₁.polarBilin x)).map e.toLinearMap =
+      LinearMap.ker (Q₂.polarBilin (e x)) := by
+  ext y
+  rw [Submodule.mem_map_equiv]
+  change polar Q₁ x (e.symm y) = 0 ↔ polar Q₂ (e x) y = 0
+  have hpolar : polar Q₂ (e x) y = polar Q₁ x (e.symm y) := by
+    simpa only [e.apply_symm_apply] using e.polar_apply x (e.symm y)
+  rw [hpolar]
+
+/-- The restriction of an isometric equivalence to the kernels of polarization against
+corresponding vectors. -/
+def _root_.QuadraticMap.IsometryEquiv.polarKernelEquiv
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) (x : M₁) :
+    LinearMap.ker (Q₁.polarBilin x) ≃ₗ[R] LinearMap.ker (Q₂.polarBilin (e x)) :=
+  (e.toLinearEquiv.submoduleMap _).trans
+    (LinearEquiv.ofEq _ _ (e.map_polarKernel x))
+
+/-- The equivalence between polar kernels acts through the original isometry. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_apply
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) (x : M₁) (y : LinearMap.ker (Q₁.polarBilin x)) :
+    ((e.polarKernelEquiv x y : LinearMap.ker (Q₂.polarBilin (e x))) : M₂) = e y :=
+  -- Keep the computation proof opaque so the public equivalence need not be exposed.
+  (rfl)
+
+/-- The inverse equivalence between polar kernels acts through the inverse isometry. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) (x : M₁) (y : LinearMap.ker (Q₂.polarBilin (e x))) :
+    (((e.polarKernelEquiv x).symm y : LinearMap.ker (Q₁.polarBilin x)) : M₁) = e.symm y := by
+  apply e.injective
+  calc
+    e ((e.polarKernelEquiv x).symm y : M₁) =
+        ((e.polarKernelEquiv x) ((e.polarKernelEquiv x).symm y) :
+          LinearMap.ker (Q₂.polarBilin (e x))) :=
+      (e.coe_polarKernelEquiv_apply x _).symm
+    _ = y := congrArg Subtype.val ((e.polarKernelEquiv x).apply_symm_apply y)
+    _ = e (e.symm y) := (e.apply_symm_apply y).symm
 
 /-- The composition of two isometric equivalences acts by composing their underlying maps. -/
 @[simp]
