@@ -553,14 +553,12 @@ noncomputable def zigzagGradedBraidBimodule (i : V) :
   gradedSMul := ⟨fun _ _ _ _ hu hv ↦ smul_mem_zigzagBraidBimoduleGrade hu hv⟩
 
 /-- **The evaluation as a degree-`0` morphism** `P_i ⊗_k e_i Z ⟶ Z` of graded bimodules. -/
-@[expose]
 noncomputable def zigzagBraidEvaluationHom (i : V) :
     zigzagGradedBraidBimodule k G i ⟶ zigzagGradedBimodule k G :=
   GradedModuleCat.ofHom (zigzagBraidEvaluation k G i) (isHomogeneous_zigzagBraidEvaluation i)
 
 /-- **The coevaluation as a degree-`0` morphism** `Z ⟶ (P_i ⊗_k e_i Z){-2}` of graded bimodules,
 `M{d}` being the shift `GradedModuleCat.shiftFunctor d` with `M{d}_p = M_{p-d}`. -/
-@[expose]
 noncomputable def zigzagBraidCoevaluationHom (i : V) :
     zigzagGradedBimodule k G ⟶
       (GradedModuleCat.shiftFunctor (-2)).obj (zigzagGradedBraidBimodule k G i) :=
@@ -575,12 +573,12 @@ variable {k G}
 @[simp]
 theorem hom_zigzagBraidEvaluationHom (i : V) :
     (zigzagBraidEvaluationHom k G i).hom = zigzagBraidEvaluation k G i :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem hom_zigzagBraidCoevaluationHom (i : V) :
     (zigzagBraidCoevaluationHom k G i).hom = zigzagBraidCoevaluation k G i :=
-  rfl
+  (rfl)
 
 variable (k G)
 
