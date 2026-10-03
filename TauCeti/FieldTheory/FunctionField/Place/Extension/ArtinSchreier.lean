@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharP.ArtinSchreier
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 public import TauCeti.RingTheory.Valuation.Discrete.PowerSubSelf
+
+import Mathlib.Data.Nat.Prime.Int
 
 /-!
 # Total ramification at a prime-to-characteristic Artin–Schreier pole
@@ -22,6 +25,11 @@ so `n` divides `e`. The polynomial relation bounds the degree by `n`, and the fu
 inequality bounds `e` by that degree. Thus the extension degree is proved, rather than
 assumed. No existence of a reduced representative is claimed: in the Artin–Schreier
 application, the prime-to-`p` pole is an explicit input.
+
+Replacing `y` by `y - w` with `w ∈ F` replaces `u` by the equivalent representative
+`u - (w ^ p - w)` (`TauCeti.sub_algebraMap_pow_sub_self_eq`). Hence the same conclusions hold
+when only some translate `u - (w ^ p - w)` has a prime-to-`p` pole, i.e. for a supplied reduced
+Artin–Schreier representative.
 
 The base-field obstruction is
 `Valuation.ne_pow_sub_self_of_ord_neg_of_not_dvd`: such a pole also ensures
@@ -135,5 +143,62 @@ theorem ord_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one
   have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F hn hy hu
   rw [ramificationIdx_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F hn hgen hy hu hcop] at hkey
   exact mul_left_cancel₀ (by exact_mod_cast (by omega : n ≠ 0)) hkey
+
+/-- Shared setup for reduced Artin–Schreier poles: translating the generator by `-w` turns a
+reduced pole of `u - (w ^ p - w)` into the prime-to-`p` pole case of
+`finrank_eq_and_ramificationIdx_eq_of_pow_sub_self_eq`. -/
+private theorem finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    Module.finrank F F' = p ∧ ramificationIdx F P' = p := by
+  obtain ⟨w, hwneg, hwdvd⟩ := hpole
+  -- Translating the generator by `-w` does not change the field it generates.
+  have hadj : F⟮y - algebraMap F F' w⟯ = ⊤ := by
+    simpa [sub_eq_add_neg] using
+      (IntermediateField.adjoin_simple_add_algebraMap y (-w)).trans hgen
+  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
+  apply finrank_eq_and_ramificationIdx_eq_of_pow_sub_self_eq k F
+    (Fact.out : p.Prime).one_lt hadj
+  · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
+  · exact hwneg
+  · exact Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hwdvd)
+
+/-- A reduced Artin–Schreier pole is totally ramified: if some representative
+`u - (w ^ p - w)` of the class of `u` has a pole of order prime to `p` below `P'`, then `P'` is
+totally ramified over that place. No perfection hypothesis on the residue field is needed. -/
+theorem isTotallyRamified_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    IsTotallyRamified F P' := by
+  have h := finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
+    hgen hy hpole
+  rw [isTotallyRamified_iff, h.1, h.2]
+
+/-- A reduced Artin–Schreier pole forces the extension to have degree `p`: if some
+representative `u - (w ^ p - w)` of the class of `u` has a pole of order prime to `p` below
+`P'`, then `[F' : F] = p`. -/
+theorem finrank_eq_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    Module.finrank F F' = p :=
+  (finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
+    hgen hy hpole).1
+
+/-- At a reduced Artin–Schreier pole the ramification index is `p`. -/
+theorem ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    ramificationIdx F P' = p :=
+  (finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
+    hgen hy hpole).2
 
 end TauCeti.Place
