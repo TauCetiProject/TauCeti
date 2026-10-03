@@ -186,7 +186,6 @@ theorem _root_.Representation.character_baseChange {G : Type*} [Monoid G]
 
 /-- **The character of a scalar extension in `FDRep`** is the character of the original
 representation read in the larger field: `χ_{L ⊗[K] V} = algebraMap K L ∘ χ_V`. -/
-@[simp]
 theorem _root_.FDRep.character_of_baseChange {K L : Type u} [Field K] [Field L] [Algebra K L]
     {G : Type*} [Monoid G] (V : FDRep K G) :
     (FDRep.of (_root_.Representation.baseChange L V.ρ)).character =
