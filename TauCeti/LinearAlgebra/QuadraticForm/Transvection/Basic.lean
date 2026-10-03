@@ -380,7 +380,6 @@ theorem coe_transvectionHom_mk (hu : Q u = 0) (huw : polar Q u w = 0) :
 
 /-- The quotient homomorphism sends the class of `w` to the Eichler transvection `E_{u,w}` as an
 element of the special orthogonal group. -/
-@[simp]
 theorem toMul_transvectionHom_mk (hu : Q u = 0) (huw : polar Q u w = 0) :
     Additive.toMul (transvectionHom Q hu (Submodule.Quotient.mk ⟨w, by simpa using huw⟩)) =
       ⟨transvection Q hu huw, transvection_mem_specialOrthogonalGroup hu huw⟩ :=
