@@ -211,7 +211,7 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
     calc i * (one ⊔ f * j) = i ⊔ (i * b) * f * j := by
           rw [Submodule.mul_sup, hi, mul_assoc i b f, hbf, mul_assoc]
       _ = i ⊔ (M : Submodule (𝓞 K) K).restrictScalars ℤ * j * f := by
-          rw [restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one, mul_right_comm]
+          rw [Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one, mul_right_comm]
       _ = i ⊔ f := by rw [hMj, hbf]
       _ = one := hif
   have hIfr : Ifr ≠ 0 := FractionalIdeal.coeIdeal_ne_zero.mpr <|
