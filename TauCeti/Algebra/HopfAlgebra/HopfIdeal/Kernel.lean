@@ -27,7 +27,7 @@ in particular over fields, where every module is flat.
 
 ## Main declarations
 
-* `TauCeti.HopfIdeal.kerOfComul`: the kernel Hopf ideal from the comultiplication condition,
+* `BialgHom.kerOfComul`: the kernel Hopf ideal from the comultiplication condition,
   over a commutative semiring.
 * `TauCeti.HopfIdeal.kerOfSurjective`: the Hopf ideal given by the kernel of a surjective bialgebra
   morphism.
@@ -94,6 +94,14 @@ private theorem counit_eq_zero_of_mem_ker (f : H →ₐc[R] K) {x : H}
 
 end BialgScaffolding
 
+end HopfIdeal
+
+end TauCeti
+
+namespace BialgHom
+
+open TauCeti HopfIdeal
+
 section SemiringHopf
 
 variable {R : Type u} {H : Type v} {K : Type w}
@@ -136,24 +144,35 @@ theorem mem_kerOfComul (f : H →ₐc[R] K) (hcomul) {x : H} :
 
 end SemiringHopf
 
+section RingHopf
+
+variable {R : Type u} {H : Type v} {K : Type w}
+variable [CommRing R] [Ring H] [Ring K]
+variable [HopfAlgebra R H] [HopfAlgebra R K]
+
+/-- Over rings, the kernel Hopf ideal is bottom exactly when the morphism is injective. -/
+@[simp]
+theorem kerOfComul_eq_bot_iff (f : H →ₐc[R] K) (hcomul) :
+    f.kerOfComul hcomul = ⊥ ↔ Function.Injective f := by
+  rw [← le_bot_iff, ← toIdeal_le_toIdeal, bot_toIdeal, le_bot_iff, kerOfComul_toIdeal,
+    ← RingHom.injective_iff_ker_eq_bot]
+  simp only [BialgHom.coe_toAlgHom]
+
+end RingHopf
+
+end BialgHom
+
+namespace TauCeti.HopfIdeal
+
 section Hopf
 
 variable {R : Type u} {H : Type v} {K : Type w}
 variable [CommRing R] [Ring H] [Ring K]
 variable [HopfAlgebra R H] [HopfAlgebra R K]
 
-/-- A Hopf ideal whose underlying ideal is a morphism kernel is bottom exactly when the
-morphism is injective. -/
-private theorem eq_bot_iff_injective {I : HopfIdeal R H} (f : H →ₐc[R] K)
-    (hI : I.toIdeal = RingHom.ker (f : H →ₐ[R] K)) :
-    I = ⊥ ↔ Function.Injective f := by
-  rw [← le_bot_iff, ← toIdeal_le_toIdeal, bot_toIdeal, le_bot_iff, hI,
-    ← RingHom.injective_iff_ker_eq_bot]
-  simp only [BialgHom.coe_toAlgHom]
-
 /-- The kernel of a surjective bialgebra morphism, as a Hopf ideal. -/
 def kerOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) : HopfIdeal R H :=
-  kerOfComul f (by
+  f.kerOfComul (by
     intro x hx
     rw [← ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal
       f.toAlgHom f.toAlgHom hf hf]
@@ -163,19 +182,19 @@ def kerOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) : HopfIdea
 @[simp]
 theorem kerOfSurjective_toIdeal (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     (kerOfSurjective f hf).toIdeal = RingHom.ker (f : H →ₐ[R] K) :=
-  kerOfComul_toIdeal f _
+  f.kerOfComul_toIdeal _
 
 /-- Membership in the kernel Hopf ideal is vanishing under the bialgebra morphism. -/
 @[simp]
 theorem mem_kerOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) {x : H} :
     x ∈ kerOfSurjective f hf ↔ f x = 0 :=
-  mem_kerOfComul f _
+  f.mem_kerOfComul _
 
 /-- The kernel Hopf ideal is bottom exactly when the morphism is injective. -/
 @[simp]
 theorem kerOfSurjective_eq_bot_iff (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     kerOfSurjective f hf = ⊥ ↔ Function.Injective f :=
-  eq_bot_iff_injective f (kerOfSurjective_toIdeal f hf)
+  f.kerOfComul_eq_bot_iff _
 
 section Flat
 
@@ -218,20 +237,20 @@ private theorem comul_mem_left_sup_right_of_mem_ker (f : H →ₐc[R] K)
 /-- The ordinary kernel of a morphism of Hopf algebras with flat codomain and flat kernel
 quotient, as a Hopf ideal. In particular, these hypotheses hold over a field. -/
 def ker (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] : HopfIdeal R H :=
-  kerOfComul (R := R) f
+  f.kerOfComul
     (fun x hx ↦ comul_mem_left_sup_right_of_mem_ker (R := R) f (x := x) hx)
 
 /-- The underlying ideal of the kernel Hopf ideal is the ordinary ring-hom kernel. -/
 @[simp]
 theorem ker_toIdeal (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] :
     (ker f).toIdeal = RingHom.ker (f : H →ₐ[R] K) :=
-  kerOfComul_toIdeal f _
+  f.kerOfComul_toIdeal _
 
 /-- Membership in the kernel Hopf ideal is vanishing under the morphism. -/
 @[simp]
 theorem mem_ker (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] {x : H} :
     x ∈ ker f ↔ f x = 0 :=
-  mem_kerOfComul f _
+  f.mem_kerOfComul _
 
 /-- The kernel Hopf ideal of a morphism is contained in the kernel after postcomposition. -/
 theorem ker_le_ker_comp {L : Type x} [Ring L] [HopfAlgebra R L]
@@ -254,7 +273,7 @@ theorem kerOfSurjective_eq_ker (f : H →ₐc[R] K)
 @[simp]
 theorem ker_eq_bot_iff (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] :
     ker f = ⊥ ↔ Function.Injective f :=
-  eq_bot_iff_injective f (ker_toIdeal f)
+  f.kerOfComul_eq_bot_iff _
 
 /-- The kernel of the quotient bialgebra morphism by `I` is `I`. -/
 @[simp]
@@ -346,6 +365,4 @@ theorem kerOfSurjective_mkBialgHom (I : HopfIdeal R H) :
 
 end Hopf
 
-end HopfIdeal
-
-end TauCeti
+end TauCeti.HopfIdeal
