@@ -106,7 +106,7 @@ theorem nondegenerate_toQuadraticForm' {A : Matrix ι ι R} (hA : IsUnit (A + A�
   have hvec : x ᵥ* (A + Aᵀ) = 0 := dotProduct_eq_zero_iff.1 fun y => by
     rw [← dotProduct_mulVec, ← polarBilin_toQuadraticForm'_apply, LinearMap.mem_ker.1 hx,
       LinearMap.zero_apply]
-  rw [← vecMul_one x, ← mul_nonsing_inv _ hA, ← vecMul_vecMul, hvec, zero_vecMul]
+  exact eq_zero_of_det_mem_nonZeroDivisors_of_vecMul_eq_zero hA.mem_nonZeroDivisors hvec
 
 /-- Congruence by a matrix with unit determinant is an isometry of the attached quadratic
 forms. -/
