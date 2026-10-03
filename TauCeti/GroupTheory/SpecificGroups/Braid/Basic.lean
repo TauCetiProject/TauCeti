@@ -326,6 +326,16 @@ def strandIncl {n : ℕ} : BraidGroup (n + 1) →* BraidGroup (n + 2) :=
 theorem strandIncl_sigma {n : ℕ} (i : Fin n) : strandIncl (sigma i) = sigma i.castSucc := by
   rw [strandIncl, lift_sigma]
 
+/-- Adding an uncrossed strand does not change the exponent sum of a braid. -/
+@[simp]
+theorem exponentSum_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    ArtinGroup.exponentSum _ (strandIncl b) = ArtinGroup.exponentSum _ b := by
+  have h : (ArtinGroup.exponentSum (CoxeterMatrix.A (n + 2 - 1))).comp strandIncl =
+      ArtinGroup.exponentSum (CoxeterMatrix.A (n + 1 - 1)) :=
+    hom_ext fun i ↦ by
+      rw [MonoidHom.comp_apply, strandIncl_sigma i, exponentSum_sigma, exponentSum_sigma]
+  exact DFunLike.congr_fun h b
+
 /-- The added strand does not interfere: on the old strands, `strandIncl b` permutes exactly as
 `b` does. -/
 @[simp]
