@@ -119,7 +119,11 @@ theorem IsDistinguished.polynomialQuotientEquiv_mk
     (hm : p.IsMonicOfDegree s) (g : Polynomial R) :
     hp.polynomialQuotientEquiv hc hm (Ideal.Quotient.mk _ g) =
       Ideal.Quotient.mk _ (polynomialToRestricted c g) := by
-  rfl
+  -- `AlgEquiv.ofBijective` retains the quotient map as its forward map.
+  unfold polynomialQuotientEquiv
+  exact Ideal.quotient_map_mkₐ (I := Ideal.span {p})
+    (J := Ideal.span {polynomialToRestricted c p}) (polynomialToRestricted c)
+    (by simp [Ideal.span_le])
 
 /-- The inverse comparison sends the class of a polynomial to its polynomial quotient class. -/
 @[simp]
@@ -130,6 +134,28 @@ theorem IsDistinguished.polynomialQuotientEquiv_symm_mk
         (Ideal.Quotient.mk _ (polynomialToRestricted c g)) = Ideal.Quotient.mk _ g := by
   rw [← hp.polynomialQuotientEquiv_mk hc hm]
   exact (hp.polynomialQuotientEquiv hc hm).symm_apply_apply _
+
+/-- Given a Weierstrass decomposition of any restricted series, the inverse comparison sends
+its class to the polynomial quotient class of the truncated remainder. -/
+theorem IsDistinguished.polynomialQuotientEquiv_symm_mk_of_mul_add_eq
+    (hp : IsDistinguished c s (p : PowerSeries R)) (hc : 0 < c)
+    (hm : p.IsMonicOfDegree s) (g q r : PowerSeries.IsRestricted.subring (R := R) c)
+    (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0)
+    (hqr : q * polynomialToRestricted c p + r = g) :
+    (hp.polynomialQuotientEquiv hc hm).symm (Ideal.Quotient.mk _ g) =
+      Ideal.Quotient.mk _ (PowerSeries.trunc s (r : PowerSeries R)) := by
+  have hre : polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R)) = r := by
+    apply Subtype.ext
+    ext n
+    simp only [coe_polynomialToRestricted, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+    split_ifs with hn
+    · rfl
+    · exact (hr n (by omega)).symm
+  have heq : Ideal.Quotient.mk (Ideal.span {polynomialToRestricted c p}) g =
+      Ideal.Quotient.mk _ (polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R))) := by
+    rw [hre, ← hqr, map_add, map_mul]
+    simp
+  rw [heq, hp.polynomialQuotientEquiv_symm_mk hc hm]
 
 /-- A distinguished restricted series with a unit dominant coefficient has the same quotient
 algebra as a monic polynomial of its distinguished degree. -/
