@@ -317,7 +317,7 @@ theorem ker_torsionDualMap :
   have hint (x : P₀) : extendDual hf hfi ψ (pr x) ∈ (1 : Submodule ℤ_[p] ℚ_[p]) := by
     rw [← Submodule.Quotient.mk_eq_zero, ← torsionDualMap_eq hf hfi hπ, LinearMap.mem_ker.mp hψ,
       LinearMap.zero_apply]
-  refine ⟨LinearMap.padicIntCodRestrict (extendDual hf hfi ψ ∘ₗ pr) hint,
+  refine ⟨(extendDual hf hfi ψ ∘ₗ pr).padicIntCodRestrict hint,
     LinearMap.ext fun k ↦ Subtype.ext ?_⟩
   rw [LinearMap.dualMap_apply, LinearMap.restrictScalars_apply,
     LinearMap.coe_padicIntCodRestrict_apply, LinearMap.comp_apply]
