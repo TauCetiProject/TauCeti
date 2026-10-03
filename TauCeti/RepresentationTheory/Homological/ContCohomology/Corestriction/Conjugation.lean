@@ -77,7 +77,8 @@ include hκ hf in
 `(g)_*` is the coefficient map of the conjugation `Coind_U^G M → Coind_V^G M` followed by Shapiro's
 map for `V`. Both are compatible-pair maps from `Hⁿ(G, Coind_U^G M)` to `Hⁿ(V, M)`; they differ by
 the pair of the inner automorphism `x ↦ g⁻¹ x g` of `G` and the action of `g`, which induces the
-identity. -/
+identity. Compactness ensures that the right-translation action on the discrete coinduced module is
+continuous. -/
 theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
     shapiroMap U M n ≫ _root_.ContinuousCohomology.map κ f n =
       coeffMap (ofDiscreteModuleMap
