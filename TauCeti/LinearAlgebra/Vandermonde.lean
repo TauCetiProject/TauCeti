@@ -583,7 +583,7 @@ theorem prod_factorial_dvd_prod_mul_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
     (fun j _ => monic_prod_X_sub_C _ _)
     fun i _ j _ => by simpa [eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (b i)
 
-/-- The divisor `2!/2 · 4!/2 ⋯ (2m - 2)!/2` of the even Vandermonde product is positive, so it may
+/-- The divisor `2!/2 · 4!/2 ⋯ (2m)!/2` of the even Vandermonde product is positive, so it may
 be cancelled. -/
 theorem prod_add_one_mul_factorial_two_mul_add_one_pos (m : ℕ) :
     0 < ∏ k ∈ Finset.range m, ((k + 1) * (2 * k + 1).factorial : ℤ) :=
