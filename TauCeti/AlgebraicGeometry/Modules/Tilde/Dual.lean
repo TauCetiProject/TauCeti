@@ -122,7 +122,7 @@ theorem nonempty_hasLeftDual_iff_isFiniteLocallyFree {X : Scheme.{u}} [IsAffine 
   -- On `Spec Γ(X, ⊤)`, the dualizable sheaf `F` is the sheaf associated with its finite
   -- projective module of global sections.
   obtain ⟨_, _⟩ := (nonempty_hasLeftDual_iff_finite_projective F).mp
-    (nonempty_hasLeftDual_pullback X.isoSpec.inv E h)
+    (E.nonempty_hasLeftDual_pullback X.isoSpec.inv h)
   have hF : Scheme.Modules.isFiniteLocallyFree (Spec Γ(X, ⊤)) F.obj :=
     (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso
       ((ObjectProperty.ι _).mapIso (tildeEquiv.counitIso.app F))

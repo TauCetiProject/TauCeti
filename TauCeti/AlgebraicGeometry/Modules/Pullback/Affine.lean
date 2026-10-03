@@ -158,7 +158,7 @@ namespace QuasicoherentSheaf
 
 /-- Pullback along a morphism to an affine scheme preserves dualizability of quasicoherent
 sheaves: the pullback of a left dual of `E` is a left dual of the pullback of `E`. -/
-theorem nonempty_hasLeftDual_pullback (E : QuasicoherentSheaf Y)
+theorem nonempty_hasLeftDual_pullback (E : QuasicoherentSheaf Y) (f : X ⟶ Y)
     (hE : Nonempty (HasLeftDual E)) : Nonempty (HasLeftDual ((pullback f).obj E)) := by
   obtain ⟨hE⟩ := hE
   -- Strong monoidal pullback carries the exact pairing of `ᘁE` and `E` to one in `X.Modules`
@@ -177,11 +177,11 @@ theorem nonempty_hasLeftDual_pullback (E : QuasicoherentSheaf Y)
 
 /-- Pullback along a morphism to an affine scheme preserves right dualizability of quasicoherent
 sheaves. -/
-theorem nonempty_hasRightDual_pullback (E : QuasicoherentSheaf Y)
+theorem nonempty_hasRightDual_pullback (E : QuasicoherentSheaf Y) (f : X ⟶ Y)
     (hE : Nonempty (HasRightDual E)) : Nonempty (HasRightDual ((pullback f).obj E)) := by
   obtain ⟨hE⟩ := hE
   let _ : HasLeftDual E := BraidedCategory.hasLeftDualOfHasRightDual
-  obtain ⟨hF⟩ := nonempty_hasLeftDual_pullback f E ⟨inferInstance⟩
+  obtain ⟨hF⟩ := E.nonempty_hasLeftDual_pullback f ⟨inferInstance⟩
   let _ : HasLeftDual ((pullback f).obj E) := hF
   exact ⟨BraidedCategory.hasRightDualOfHasLeftDual⟩
 
