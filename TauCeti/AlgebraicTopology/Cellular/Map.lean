@@ -84,6 +84,33 @@ lemma complexBasePairMap_fst : TopPair.Hom.fst (complexBasePairMap C C' hf) = f 
 lemma complexBasePairMap_snd :
     TopPair.Hom.snd (complexBasePairMap C C' hf) = skeletonMap C C' hf 0 := (rfl)
 
+/-- Restriction relative to the base commutes with inclusions between skeleta. -/
+@[reassoc]
+lemma skeletonBasePairMap_comp_inclusion {n m : ℕ} (h : n ≤ m) :
+    skeletonBasePairMap C C' hf n ≫ skeletonBasePairInclusion C' h =
+      skeletonBasePairInclusion C h ≫ skeletonBasePairMap C C' hf m := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · simp only [MorphismProperty.Comma.comp_left, skeletonBasePairMap_snd]
+    ext x
+    -- The pair subspace objects and their skeletal presentations agree at default transparency.
+    erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+      skeletonBasePairInclusion_snd_apply, skeletonBasePairInclusion_snd_apply]
+    rfl
+  · simp only [MorphismProperty.Comma.comp_right, skeletonBasePairMap_fst]
+    have hC : (skeletonBasePairInclusion C h).right =
+        TopCat.ofHom (ContinuousMap.inclusion
+          (skeletonLT_mono (C := C) (mod_cast Nat.add_le_add_right h 1))) := by
+      ext x
+      exact Subtype.ext (coe_skeletonBasePairInclusion_fst_apply C h x)
+    have hC' : (skeletonBasePairInclusion C' h).right =
+        TopCat.ofHom (ContinuousMap.inclusion
+          (skeletonLT_mono (C := C') (mod_cast Nat.add_le_add_right h 1))) := by
+      ext x
+      exact Subtype.ext (coe_skeletonBasePairInclusion_fst_apply C' h x)
+    -- Use the ambient skeletal presentations when rewriting the pair components.
+    erw [hC, hC']
+    exact skeletonMap_comp_inclusion C C' hf (Nat.add_le_add_right h 1)
+
 /-- Restriction relative to the base commutes with the map to a consecutive skeletal pair. -/
 @[reassoc]
 lemma skeletonBasePairMap_comp_toSkeletonPair (n : ℕ) :
