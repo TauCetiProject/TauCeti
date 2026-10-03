@@ -249,6 +249,7 @@ noncomputable def termIsoBiprod (n : ℕ) :
     h.resolution.term n ≅ r₁.term n ⊞ r₃.term n :=
   (h.split n).some.isoBinaryBiproduct
 
+/-- The termwise biproduct isomorphism sends the horseshoe injection to the left inclusion. -/
 @[reassoc (attr := simp)]
 theorem ι_f_termIsoBiprod_hom (n : ℕ) :
     h.ι.f n ≫ (h.termIsoBiprod n).hom = biprod.inl := by
@@ -259,6 +260,7 @@ theorem ι_f_termIsoBiprod_hom (n : ℕ) :
     simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
       congrArg (fun f => f.f n) h.zero
 
+/-- The right projection after the termwise biproduct isomorphism is the horseshoe projection. -/
 @[reassoc (attr := simp)]
 theorem termIsoBiprod_hom_snd (n : ℕ) :
     (h.termIsoBiprod n).hom ≫ biprod.snd = h.π.f n := by
@@ -302,9 +304,12 @@ noncomputable def map : Horseshoe (S.map F) (r₁.map hF hproj) (r₃.map hF hpr
     · simp
   length_le := by simpa using h.length_le
 
+/-- The middle resolution of the transported horseshoe is the transported middle resolution. -/
 @[simp]
 theorem map_resolution : (h.map hF hproj).resolution = h.resolution.map hF hproj := (rfl)
 
+/-- Each component of the transported injection is the functor's image of the original component,
+conjugated by the term isomorphisms and identified with the transported middle term. -/
 @[simp]
 theorem map_ι_f (n : ℕ) : (h.map hF hproj).ι.f n =
     (termMapIso hF hproj r₁ n).hom ≫ F.map (h.ι.f n) ≫
@@ -312,6 +317,8 @@ theorem map_ι_f (n : ℕ) : (h.map hF hproj).ι.f n =
         eqToHom (congrArg (fun r => r.term n) (h.map_resolution hF hproj).symm) := by
   simp [map]
 
+/-- Each component of the transported projection is the functor's image of the original component,
+conjugated by the term isomorphisms after identifying the transported middle term. -/
 @[simp]
 theorem map_π_f (n : ℕ) : (h.map hF hproj).π.f n =
     eqToHom (congrArg (fun r => r.term n) (h.map_resolution hF hproj)) ≫
