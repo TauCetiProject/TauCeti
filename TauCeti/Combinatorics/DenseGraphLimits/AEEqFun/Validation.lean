@@ -21,16 +21,18 @@ On the unit interval, corrupt a graphon's zero row and zero column with the asym
 symmetric nor range-bounded everywhere. Averaging and clamping repairs it: the origin becomes
 `1`, and the rest of the zero row and column become `0`. The repair preserves the class, every
 homomorphism density, and the graphon-space point. In particular, a repaired constant graphon
-need not be the same strict graphon. A finite-graph example checks all four entries of the
-two-point adjacency matrix on an atomic carrier.
+need not be the same strict graphon. The representative bridge recovers the corrupted class and
+its graphon-space point. On the uniform two-point atomic carrier, its returned representative
+recovers the finite adjacency graphon pointwise; all four adjacency entries are also checked.
 
 On a uniform two-point space, an asymmetric function cannot be represented by a graphon;
 neither can the constant function `2` on a point mass. These checks distinguish almost-everywhere
 constraints from constraints that could accidentally ignore positive-mass exceptional sets.
 
-The examples use the strict-representative construction `Graphon.clampSymm` and the bridge
-`exists_graphon_repr_iff`. The auxiliary functions are private; the exported theorem
-`Graphon.toAEEqFun_not_injective_unitInterval` records why strict equality cannot be recovered.
+The examples use the strict-representative construction `Graphon.clampSymm` and the bridges
+`exists_graphon_repr` and `exists_graphon_repr_iff`. The auxiliary functions are private; the
+exported theorem `Graphon.toAEEqFun_not_injective_unitInterval` records why strict equality cannot
+be recovered.
 
 ## References
 
@@ -96,11 +98,19 @@ example (W : Graphon I (volume : Measure I)) :
 -- Checking the class of the original, invalid representative avoids silently replacing
 -- the contract with one that only accepts functions satisfying the constraints everywhere.
 example (W : Graphon I (volume : Measure I)) :
-    Graphon.toAEEqFun W =
-      AEEqFun.mk (Function.uncurry (corrupted W))
-        (measurable_corrupted W).aestronglyMeasurable := by
-  apply Graphon.toAEEqFun_eq_of_ae
-  exact (corrupted_ae W).symm.trans (AEEqFun.coeFn_mk _ _).symm
+    ∃ V : Graphon I (volume : Measure I),
+      Graphon.toAEEqFun V = AEEqFun.mk (Function.uncurry (corrupted W))
+        (measurable_corrupted W).aestronglyMeasurable ∧
+      (⟦V⟧ : GraphonSpaceI) = ⟦W⟧ := by
+  let f : (I × I) →ₘ[volume.prod volume] ℝ := AEEqFun.mk (Function.uncurry (corrupted W))
+    (measurable_corrupted W).aestronglyMeasurable
+  have hclass : Graphon.toAEEqFun W = f := by
+    apply Graphon.toAEEqFun_eq_of_ae
+    exact (corrupted_ae W).symm.trans (AEEqFun.coeFn_mk _ _).symm
+  obtain ⟨V, hV⟩ := exists_graphon_repr f
+    (hclass ▸ Graphon.toAEEqFun_mem_Icc_ae W) (hclass ▸ Graphon.toAEEqFun_symm_ae W)
+  refine ⟨V, hV, (graphonSpace_mk_eq_mk_iff _ _).2 ?_⟩
+  exact cutDist_eq_zero_of_aeEq (Graphon.toAEEqFun_eq_iff.1 (hV.trans hclass.symm))
 
 example (W : Graphon I (volume : Measure I)) :
     Graphon.toAEEqFun (repaired W) = Graphon.toAEEqFun W :=
@@ -136,6 +146,19 @@ example :
     (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) 1 0 = 1 ∧
     (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) 1 1 = 0 := by
   simp [finiteGraphGraphonOnFin_apply]
+
+-- The bridge's returned representative agrees at every positive-mass atom.
+example : ∃ W : Graphon (Fin 2) (uniformOn Set.univ),
+    Graphon.toAEEqFun W = Graphon.toAEEqFun (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) ∧
+    W = finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)) := by
+  let G := finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))
+  obtain ⟨W, hW⟩ := exists_graphon_repr (Graphon.toAEEqFun G)
+    (Graphon.toAEEqFun_mem_Icc_ae G) (Graphon.toAEEqFun_symm_ae G)
+  refine ⟨W, hW, ?_⟩
+  ext i j
+  apply ae_iff_of_countable.1 (Graphon.toAEEqFun_eq_iff.1 hW) (i, j)
+  rw [← Set.singleton_prod_singleton, Measure.prod_prod]
+  simp [uniformOn_univ]
 
 -- Range violations at an atom cannot be removed by changing representatives.
 example : ¬ ∃ W : Graphon I (Measure.dirac 0),
