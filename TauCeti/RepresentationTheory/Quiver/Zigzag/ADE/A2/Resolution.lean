@@ -148,6 +148,7 @@ theorem zigzagPeriodicDifferential_add_four (d : G.Dart) (n : ℕ) :
 
 /-- Consecutive differentials compose to zero: a volume class times an arrow, and an arrow
 times a volume class, have path length three. -/
+@[simp]
 theorem zigzagPeriodicDifferential_comp_succ (d : G.Dart) : ∀ n : ℕ,
     zigzagPeriodicDifferential k d n ∘ₗ zigzagPeriodicDifferential k d (n + 1) = 0
   | 0 => zigzagProjectiveArrowMul_comp_zigzagProjectiveVolumeMul k G d
@@ -287,6 +288,7 @@ theorem zigzagA2Dart_fst (i : Fin 2) : (zigzagA2Dart i).fst = i := (rfl)
 theorem zigzagA2Dart_snd (i : Fin 2) : (zigzagA2Dart i).snd = i + 1 := (rfl)
 
 /-- Both nodes of `A₂` have degree one. -/
+@[simp]
 theorem degree_zigzagA2Graph (i : Fin 2) : zigzagA2Graph.degree i = 1 := by
   fin_cases i <;> decide
 
