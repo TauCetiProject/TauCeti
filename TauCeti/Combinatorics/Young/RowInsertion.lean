@@ -21,9 +21,10 @@ weak row order and the combined content of the row and the travelling letter.
 
 Reverse insertion replaces the rightmost entry strictly smaller than the incoming letter.
 This is the same operation on the reversed row over the order-dual alphabet.
-`TauCeti.rowBump_reverse_of_sortedLE` proves that it recovers a forward bump, including
-when a row has repeated entries. These local inverse steps are the operations iterated along
-the bumping route in the Robinson--Schensted--Knuth correspondence.
+`TauCeti.reverseRowBump` exposes this step in the original row orientation.
+The recovery theorems prove both inverse directions for bumps in weakly increasing rows,
+including when a row has repeated entries. These local inverse steps are iterated along the
+bumping route in the Robinson--Schensted--Knuth correspondence.
 
 ## References
 
@@ -155,7 +156,7 @@ theorem length_rowBump (x : α) (row : List α) :
   simpa using h
 
 /-- Inserting into a weakly increasing row preserves weak increase. -/
-theorem rowBump_sortedLE (x : α) {row : List α} (hrow : row.SortedLE) :
+theorem sortedLE_rowBump (x : α) {row : List α} (hrow : row.SortedLE) :
     (rowBump x row).1.SortedLE := by
   cases hs : (rowBump x row).2 with
   | none =>
@@ -176,15 +177,15 @@ theorem rowBump_sortedLE (x : α) {row : List α} (hrow : row.SortedLE) :
     · exact hrow.2.2 a ha z (by simp [hz])
 
 /-- Inserting a new letter into a row without repetitions introduces no repetition. -/
-theorem rowBump_nodup (x : α) {row : List α} (hrow : row.Nodup) (hx : x ∉ row) :
+theorem nodup_rowBump (x : α) {row : List α} (hrow : row.Nodup) (hx : x ∉ row) :
     (rowBump x row).1.Nodup :=
   (List.nodup_append.mp ((rowBump_perm x row).nodup_iff.mpr
     (List.nodup_cons.mpr ⟨hx, hrow⟩))).1
 
 /-- Inserting a new letter into a strictly increasing row preserves strict increase. -/
-theorem rowBump_sortedLT (x : α) {row : List α} (hrow : row.SortedLT) (hx : x ∉ row) :
+theorem sortedLT_rowBump (x : α) {row : List α} (hrow : row.SortedLT) (hx : x ∉ row) :
     (rowBump x row).1.SortedLT :=
-  (rowBump_sortedLE x hrow.sortedLE).sortedLT_of_nodup (rowBump_nodup x hrow.nodup hx)
+  (sortedLE_rowBump x hrow.sortedLE).sortedLT_of_nodup (nodup_rowBump x hrow.nodup hx)
 
 /-- The letters bumped by two successively inserted weakly increasing letters are weakly
 increasing. This is the one-row comparison used to propagate the order of bumping routes. -/
@@ -206,25 +207,84 @@ theorem rowBump_bumped_le_of_le {x x' y y' : α} {row : List α} (hrow : row.Sor
     exact hsecond
   exact hrow.2.1.1 y' (mem_of_rowBump_snd_eq_some hbump)
 
-/-- Reverse row insertion recovers a forward bump in a weakly increasing row. Reverse insertion
-is row bumping on the reversed row with the order reversed, so it replaces the rightmost letter
-strictly smaller than the returning letter. -/
-theorem rowBump_reverse_of_sortedLE (x y : α) {row : List α} (hrow : row.SortedLE)
-    (hbump : (rowBump x row).2 = some y) :
-    rowBump (OrderDual.toDual y) ((rowBump x row).1.reverse.map OrderDual.toDual) =
-      (row.reverse.map OrderDual.toDual, some (OrderDual.toDual x)) := by
+/-- Reverse insert a letter by replacing and returning the rightmost strictly smaller entry.
+If no entry is smaller, prepend the letter and return `none`. The row is returned in its
+original orientation. -/
+def reverseRowBump (y : α) (row : List α) : List α × Option α :=
+  let result := rowBump (α := OrderDual α) (OrderDual.toDual y) (row.reverse.map OrderDual.toDual)
+  (result.1.map OrderDual.ofDual |>.reverse, result.2.map OrderDual.ofDual)
+
+@[simp]
+theorem reverseRowBump_nil (y : α) : reverseRowBump y [] = ([y], none) := by
+  simp [reverseRowBump]
+
+/-- Reverse insertion prepends precisely when no entry is strictly smaller. -/
+@[simp]
+theorem reverseRowBump_snd_eq_none_iff (y : α) (row : List α) :
+    (reverseRowBump y row).2 = none ↔ ∀ z ∈ row, y ≤ z := by
+  simp [reverseRowBump, rowBump_snd_eq_none_iff]
+
+/-- With no smaller entry to replace, reverse insertion prepends the incoming letter. -/
+theorem reverseRowBump_of_forall_le (y : α) (row : List α) (h : ∀ z ∈ row, y ≤ z) :
+    reverseRowBump y row = (y :: row, none) := by
+  have hd : ∀ z ∈ row.reverse.map OrderDual.toDual, z ≤ OrderDual.toDual y := by
+    simpa using h
+  dsimp only [reverseRowBump]
+  rw [rowBump_of_forall_le _ _ hd]
+  simp [List.map_reverse]
+
+/-- Reverse insertion replaces the rightmost entry `x < y`, passing a suffix of entries at
+least `y`. No ordering hypothesis on the row is needed. -/
+theorem reverseRowBump_eq_some_iff (x y : α) (row result : List α) :
+    reverseRowBump y row = (result, some x) ↔
+      ∃ before after, row = before ++ x :: after ∧ result = before ++ y :: after ∧
+        (∀ z ∈ after, y ≤ z) ∧ x < y := by
+  constructor
+  · intro h
+    have hs : (rowBump (OrderDual.toDual y) (row.reverse.map OrderDual.toDual)).2 =
+        some (OrderDual.toDual x) := by
+      simpa [reverseRowBump] using congrArg Prod.snd h
+    obtain ⟨after, before, hr, hout, hle, hxy⟩ :=
+      (rowBump_eq_some_iff (α := OrderDual α) (OrderDual.toDual y)
+        (OrderDual.toDual x) _ _).mp (Prod.ext rfl hs)
+    refine ⟨before.reverse.map OrderDual.ofDual, after.reverse.map OrderDual.ofDual,
+      ?_, ?_, ?_, hxy⟩
+    · simpa [List.map_reverse, List.reverse_append, List.reverse_cons, List.append_assoc]
+        using congrArg (fun l => (l.map OrderDual.ofDual).reverse) hr
+    · have hf := congrArg Prod.fst h
+      dsimp only [reverseRowBump] at hf
+      have he := congrArg (fun l : List (OrderDual α) => (l.map OrderDual.ofDual).reverse) hout
+      simpa [List.map_reverse, List.reverse_append,
+        List.reverse_cons, List.append_assoc] using hf.symm.trans he
+    · simpa using hle
+  · rintro ⟨before, after, rfl, rfl, hle, hxy⟩
+    have hd : ∀ z ∈ after.reverse.map OrderDual.toDual, z ≤ OrderDual.toDual y := by
+      simpa using hle
+    simp only [reverseRowBump, List.reverse_append, List.reverse_cons, List.map_append,
+      List.map_cons, List.singleton_append, List.append_assoc]
+    rw [rowBump_append _ _ _ hd,
+      rowBump_cons_of_lt (α := OrderDual α) (x := OrderDual.toDual y)
+        (y := OrderDual.toDual x) _ hxy]
+    simp [List.map_reverse, List.reverse_append, List.reverse_cons, List.append_assoc]
+
+/-- Reverse insertion recovers a forward bump in a weakly increasing row. -/
+theorem reverseRowBump_rowBump_of_sortedLE (x y : α) {row : List α}
+    (hrow : row.SortedLE) (hbump : (rowBump x row).2 = some y) :
+    reverseRowBump y (rowBump x row).1 = (row, some x) := by
   obtain ⟨before, after, hr, hout, hle, hxy⟩ :=
     (rowBump_eq_some_iff x y row (rowBump x row).1).mp (Prod.ext rfl hbump)
   rw [hr, List.sortedLE_append, List.sortedLE_cons] at hrow
-  rw [hout, List.reverse_append, List.reverse_cons, List.map_append, List.map_append]
-  have hafter : ∀ z ∈ after.reverse.map OrderDual.toDual, z ≤ OrderDual.toDual y := by
-    intro z hz
-    obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hz
-    exact hrow.2.1.1 a (List.mem_reverse.mp ha)
-  simp only [List.map_cons, List.map_nil, List.singleton_append, List.append_assoc]
-  rw [rowBump_append _ _ _ hafter,
-    rowBump_cons_of_lt (α := OrderDual α) (x := OrderDual.toDual y)
-      (y := OrderDual.toDual x) _ hxy]
-  simp [hr, List.reverse_append, List.reverse_cons, List.append_assoc]
+  exact (reverseRowBump_eq_some_iff x y _ row).mpr
+    ⟨before, after, hout, hr, hrow.2.1.1, hxy⟩
+
+/-- Forward insertion recovers a reverse bump in a weakly increasing row. -/
+theorem rowBump_reverseRowBump_of_sortedLE (x y : α) {row : List α}
+    (hrow : row.SortedLE) (hbump : (reverseRowBump y row).2 = some x) :
+    rowBump x (reverseRowBump y row).1 = (row, some y) := by
+  obtain ⟨before, after, hr, hout, hle, hxy⟩ :=
+    (reverseRowBump_eq_some_iff x y row (reverseRowBump y row).1).mp (Prod.ext rfl hbump)
+  rw [hr, List.sortedLE_append] at hrow
+  exact (rowBump_eq_some_iff x y _ row).mpr
+    ⟨before, after, hout, hr, fun z hz => hrow.2.2 z hz x (by simp), hxy⟩
 
 end TauCeti
