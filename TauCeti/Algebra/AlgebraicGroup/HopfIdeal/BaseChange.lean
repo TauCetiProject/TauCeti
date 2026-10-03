@@ -51,8 +51,8 @@ along `h ↦ 1 ⊗ h`.
   Hopf ideal back along an ambient isomorphism.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le`: the subgroup generated
   by a base-changed family sits inside the base change of the subgroup it generates.
-* `TauCeti.CommHopfAlgCat.mem_baseChangeHopfIdeal_iff_forall_equivFinsuppOfBasisLeft_mem`: over a
-  basis of `K`, an element lies in `J_K` exactly when all its coefficients lie in `J`.
+* `Module.Basis.mem_baseChangeHopfIdeal_iff`: over a basis of `K`, an element lies in `J_K`
+  exactly when all its coefficients lie in `J`.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal`: when `K` is free over `k`,
   for instance a field extension, the two subgroups agree, so generation commutes with base change.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_baseChangeHopfIdeal`: base change of Hopf ideals
@@ -438,10 +438,10 @@ private theorem hom_baseChangeMap_apply (φ : H ⟶ L) (y : K ⊗[k] H) :
 
 /-- Over a basis of `K`, membership in a base-changed Hopf ideal `J_K` is membership of every
 coefficient in `J`. -/
-theorem mem_baseChangeHopfIdeal_iff_forall_equivFinsuppOfBasisLeft_mem (J : HopfIdeal k H)
+theorem _root_.Module.Basis.mem_baseChangeHopfIdeal_iff (J : HopfIdeal k H)
     (y : baseChange (K := K) H) :
     y ∈ baseChangeHopfIdeal (K := K) J ↔ ∀ j, equivFinsuppOfBasisLeft b y j ∈ J := by
-  rw [mem_baseChangeHopfIdeal_iff, hom_baseChangeMap_apply,
+  rw [TauCeti.CommHopfAlgCat.mem_baseChangeHopfIdeal_iff, hom_baseChangeMap_apply,
     b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft]
   simp only [BialgHom.coe_toLinearMap]
   exact forall_congr' fun j ↦ (mkQuotient_eq_zero_iff H J _).trans HopfIdeal.mem_toIdeal
@@ -519,7 +519,7 @@ theorem baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K] (f : ∀ i, 
       RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ i (HopfIdeal.mem_toIdeal.mpr hz))
     rw [hom_baseChangeMap_apply, b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft] at hfz
     exact hfz j
-  rw [mem_baseChangeHopfIdeal_iff_forall_equivFinsuppOfBasisLeft_mem b]
+  rw [b.mem_baseChangeHopfIdeal_iff]
   refine fun j ↦ hI₀ ?_
   rw [← HopfIdeal.mem_toIdeal, HopfIdeal.ofSpan_toIdeal]
   exact Ideal.subset_span ⟨y, hy, j, rfl⟩

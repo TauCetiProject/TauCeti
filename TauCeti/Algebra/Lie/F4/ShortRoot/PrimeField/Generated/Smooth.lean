@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.StandardComodule
+public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Carrier
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Reduced
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
@@ -173,23 +173,45 @@ theorem baseChangeDefiningIdeal_eq_generatedDefiningIdeal :
     rwa [baseChangeGenerator_apply] at hj
   exact hle (HopfIdeal.mem_map_of_mem e.inv.hom hx)
 
+private theorem map_baseChangeHopfIdeal_definingIdeal :
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := k) definingIdeal).map
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26).hom.hom =
+      generatedDefiningIdeal k := by
+  let e := GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26
+  rw [← baseChangeDefiningIdeal_eq_generatedDefiningIdeal, baseChangeDefiningIdeal_def]
+  refine HopfIdeal.ext fun y ↦ ?_
+  rw [HopfIdeal.mem_map_iff_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2,
+    HopfIdeal.mem_comapOfSurjective]
+  refine ⟨?_, fun hy ↦ ⟨e.inv.hom y, hy, _root_.CommHopfAlgCat.hom_inv_apply e y⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  -- `rw` does not match the coercions of `e.inv` here, so transport along `congrArg`.
+  exact (congrArg (· ∈ CommHopfAlgCat.baseChangeHopfIdeal (K := k) definingIdeal)
+    (_root_.CommHopfAlgCat.inv_hom_apply e x)).mpr hx
+
 /-- The coordinate Hopf algebra of the scalar-extended carrier is that of the subgroup generated
 after scalar extension. -/
 noncomputable def coordinateHopfAlgebraGeneratedIso :
     coordinateHopfAlgebra k ≅ generatedCoordinateHopfAlgebra k :=
   CommHopfAlgCat.quotientBaseChangeIsoOfMapEq definingIdeal (generatedDefiningIdeal k)
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26) (by
-        let e := GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26
-        rw [← baseChangeDefiningIdeal_eq_generatedDefiningIdeal, baseChangeDefiningIdeal_def]
-        refine HopfIdeal.ext fun y ↦ ?_
-        rw [HopfIdeal.mem_map_iff_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2,
-          HopfIdeal.mem_comapOfSurjective]
-        refine ⟨?_, fun hy ↦ ⟨e.inv.hom y, hy, _root_.CommHopfAlgCat.hom_inv_apply e y⟩⟩
-        rintro ⟨x, hx, rfl⟩
-        -- `rw` does not match the coercions of `e.inv` here, so transport along `congrArg`.
-        exact (congrArg (· ∈ CommHopfAlgCat.baseChangeHopfIdeal (K := k) definingIdeal)
-          (_root_.CommHopfAlgCat.inv_hom_apply e x)).mpr hx) ≪≫
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26)
+      (map_baseChangeHopfIdeal_definingIdeal k) ≪≫
     eqToIso (generatedCoordinateHopfAlgebra_def k).symm
+
+/-- The generated-carrier isomorphism identifies the carrier coordinate morphism with the
+quotient morphism by the generated defining ideal. -/
+@[simp]
+theorem baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraGeneratedIso_hom :
+    CommHopfAlgCat.baseChangeMap (K := k)
+          (CommHopfAlgCat.mkQuotient
+            (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26) definingIdeal) ≫
+        (coordinateHopfAlgebraGeneratedIso k).hom =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26).hom ≫
+        CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra k 26)
+            (generatedDefiningIdeal k) ≫
+          eqToHom (generatedCoordinateHopfAlgebra_def k).symm := by
+  rw [coordinateHopfAlgebraGeneratedIso, Iso.trans_hom, ← Category.assoc,
+    CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom,
+    Category.assoc, eqToIso.hom]
 
 end Construction
 

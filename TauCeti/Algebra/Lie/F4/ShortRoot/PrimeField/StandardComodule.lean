@@ -54,11 +54,6 @@ noncomputable section
 
 variable (k : Type u) [CommRing k] [Algebra (ZMod 2) k]
 
-/-- The coordinate Hopf algebra of the scalar extension of the short-root prime-field carrier. -/
-abbrev coordinateHopfAlgebra : CommHopfAlgCat k :=
-  CommHopfAlgCat.baseChange (K := k)
-    (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26) definingIdeal)
-
 /-- The coordinate morphism of the carrier's inclusion in `GL₂₆` after scalar extension. -/
 def coordinateMap : GeneralLinear.coordinateHopfAlgebra k 26 ⟶ coordinateHopfAlgebra k :=
   (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26).inv ≫
