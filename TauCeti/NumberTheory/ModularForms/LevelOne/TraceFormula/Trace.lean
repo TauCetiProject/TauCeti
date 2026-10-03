@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PeriodAction
-public import TauCeti.RingTheory.MvPolynomial.Trace
 
 /-!
 # Binary-form traces for arbitrary determinant matrices
@@ -31,18 +30,6 @@ public section
 open Matrix MvPolynomial MulOpposite MonoidAlgebra
 
 namespace TauCeti
-
-/-- The trace of an integral matrix on binary forms is its Dickson weight polynomial. -/
-theorem trace_binaryFormRep_eq_dickson_eval {K : Type*} [CommRing K] (w : ℕ)
-    (M : Matrix (Fin 2) (Fin 2) ℤ) :
-    LinearMap.trace K (homogeneousSubmodule (Fin 2) K w) (binaryFormRep K w (op M)) =
-      (Polynomial.dickson 2 (M.det : K) w).eval (M.trace : K) := by
-  have hd : (M.map (Int.castRingHom K)).det = (M.det : K) := (Int.cast_det M).symm
-  have ht : (M.map (Int.castRingHom K)).trace = (M.trace : K) :=
-    (AddMonoidHom.map_trace (Int.castRingHom K) M).symm
-  rw [binaryFormRep_op]
-  simpa only [hd, ht] using
-    trace_linearSubstRep_eq_dickson_eval w (M.map (Int.castRingHom K))
 
 namespace TraceFormulaMatrixModule
 

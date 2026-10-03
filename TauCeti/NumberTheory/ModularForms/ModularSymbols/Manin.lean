@@ -88,7 +88,8 @@ theorem maninSymbol_neg (g : SL(2, ℤ)) :
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   have hS : S * S = (-1 : SL(2, ℤ)) := by
     apply Subtype.ext
-    simpa only [coe_mul, coe_neg, coe_one] using S_mul_S_eq
+    simpa only [Matrix.SpecialLinearGroup.coe_mul, coe_neg, Matrix.SpecialLinearGroup.coe_one]
+      using S_mul_S_eq
   have hg : -g = g * S * S := by rw [mul_assoc, hS]; simp
   rw [hg, maninSymbol_mul_S, maninSymbol_mul_S, neg_neg]
 
