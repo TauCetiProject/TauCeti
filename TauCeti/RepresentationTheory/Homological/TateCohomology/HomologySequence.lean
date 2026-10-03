@@ -92,7 +92,7 @@ omit hS
 /-- **The connecting maps of a `3 × 3` diagram anticommute in Tate cohomology.** Let `D` be a
 `3 × 3` diagram of representations, presented as a short complex `D.X₁ ⟶ D.X₂ ⟶ D.X₃` of short
 complexes, all of whose rows `D.Xᵢ` and columns `D.map π_j` are short exact. Then the two composites
-of connecting maps `Ĥⁿ(G, X₃₃) ⟶ Ĥⁿ⁺²(G, X₁₁)`, through the third row and the first column, and
+of connecting maps `H^n(G, X₃₃) ⟶ H^{n+2}(G, X₁₁)`, through the third row and the first column, and
 through the third column and the first row, differ by a sign. -/
 theorem δ_comp_δ_eq_neg (D : ShortComplex (ShortComplex (Rep k G)))
     (h₁ : D.X₁.ShortExact) (h₂ : D.X₂.ShortExact) (h₃ : D.X₃.ShortExact)
