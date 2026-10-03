@@ -62,8 +62,11 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
 * `TauCeti.vanKampenLift`, `TauCeti.vanKampenLift_bijective`, `TauCeti.vanKampenEquiv`: the
   canonical homomorphism from the free product, and the theorem that it is bijective when `A ∩ B`
   is simply connected.
-* `TauCeti.vanKampenWideDesc`, `TauCeti.vanKampenWideDesc_map`, `TauCeti.vanKampenWide_hom_ext`:
-  the universal property of `π₁(X, x)` for a family whose pairwise intersections are all `C`.
+* `TauCeti.vanKampenWideDesc`, `TauCeti.vanKampenWideDesc_map`: the universal property of
+  `π₁(X, x)` for a family whose pairwise intersections are all `C`.
+* `TauCeti.vanKampenWide_hom_ext`: homomorphisms out of `π₁(X, x)` are determined by their
+  restrictions to the groups `π₁(U i, x)`, for any family of sets containing `x` whose interiors
+  cover `X` and whose pairwise intersections are path connected.
 * `TauCeti.isColimitFundamentalGroupWideCocone`: **the Seifert--van Kampen theorem for such a
   family**, as a wide pushout in the category of groups.
 * `TauCeti.vanKampenWideLift`, `TauCeti.vanKampenWideEquiv`: the canonical homomorphism from the
@@ -524,22 +527,20 @@ theorem vanKampenWideDesc_comp_map (hU : ∀ y, ∃ i, U i ∈ 𝓝 y)
         (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩) = f i :=
   MonoidHom.ext (vanKampenWideDesc_map hU hUp hC hCU hUC hx f h i)
 
-/-- **Uniqueness in the Seifert--van Kampen theorem for a family with a common pairwise
-intersection.** Two homomorphisms out of `π₁(X, x)` which agree on the image of every `π₁(U i, x)`
-are equal. -/
-theorem vanKampenWide_hom_ext (hU : ∀ y, ∃ i, U i ∈ 𝓝 y)
-    (hUp : ∀ i, IsPathConnected (U i)) (hC : IsPathConnected C) (hCU : ∀ i, C ⊆ U i)
-    (hUC : Pairwise fun i j ↦ U i ∩ U j ⊆ C) (hx : x ∈ C) {f g : FundamentalGroup X x →* K}
-    (hfg : ∀ i, f.comp (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩) =
-      g.comp (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩)) :
+/-- **Uniqueness in the Seifert--van Kampen theorem for a family.** If the interiors of the sets
+`U i ∋ x` cover `X` and their pairwise intersections are path connected, then two homomorphisms out
+of `π₁(X, x)` which agree on the image of every `π₁(U i, x)` are equal. -/
+theorem vanKampenWide_hom_ext (hU : ∀ y, ∃ i, U i ∈ 𝓝 y) (hx : ∀ i, x ∈ U i)
+    (hpc : ∀ i j, IsPathConnected (U i ∩ U j)) {f g : FundamentalGroup X x →* K}
+    (hfg : ∀ i, f.comp (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hx i⟩) =
+      g.comp (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hx i⟩)) :
     f = g := by
-  have hle : (⨆ i, (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩).range :
+  have hle : (⨆ i, (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hx i⟩).range :
       Subgroup (FundamentalGroup X x)) ≤ f.eqLocus g :=
     iSup_le fun i ↦ by
       rintro _ ⟨y, rfl⟩
       exact DFunLike.congr_fun (hfg i) y
-  have htop := FundamentalGroup.iSup_range_map_subtypeVal_eq_top hU (fun i ↦ hCU i hx)
-    (isPathConnected_inter_of_pairwise hUp hC hCU hUC)
+  have htop := FundamentalGroup.iSup_range_map_subtypeVal_eq_top hU hx hpc
   exact MonoidHom.eq_of_eqOn_top fun y _ ↦ (htop.ge.trans hle) (Subgroup.mem_top y)
 
 /-- The wide span of fundamental groups of the inclusions of `C` into the sets `U i`. -/
@@ -619,9 +620,10 @@ noncomputable def isColimitFundamentalGroupWideCocone (hU : ∀ y, ∃ i, U i �
         exact vanKampenWideDesc_map hU hUp hC hCU hUC hx (f s) (hf s) i
           (FundamentalGroup.map (ContinuousMap.inclusion (hCU i)) ⟨x, hx⟩ ⟦γ⟧)
       | some i => exact vanKampenWideDesc_comp_map hU hUp hC hCU hUC hx (f s) (hf s) i
-    uniq s m hm := GrpCat.hom_ext <| vanKampenWide_hom_ext hU hUp hC hCU hUC hx fun i ↦
-      (congrArg GrpCat.Hom.hom (hm (some i))).trans
-        (vanKampenWideDesc_comp_map hU hUp hC hCU hUC hx (f s) (hf s) i).symm }
+    uniq s m hm := GrpCat.hom_ext <| vanKampenWide_hom_ext hU (fun i ↦ hCU i hx)
+      (isPathConnected_inter_of_pairwise hUp hC hCU hUC) fun i ↦
+        (congrArg GrpCat.Hom.hom (hm (some i))).trans
+          (vanKampenWideDesc_comp_map hU hUp hC hCU hUC hx (f s) (hf s) i).symm }
 
 /-- The canonical homomorphism from the free product of the fundamental groups of a family of
 subspaces containing `x` to the fundamental group of the ambient space. -/
@@ -665,9 +667,10 @@ noncomputable def vanKampenWideEquiv (hU : ∀ y, ∃ i, U i ∈ 𝓝 y)
   MonoidHom.toMulEquiv (vanKampenWideLift U x fun i ↦ hCU i hx) D
     (Monoid.CoprodI.ext_hom _ _ fun i ↦ MonoidHom.ext fun g ↦
       (congrArg D (vanKampenWideLift_of U x (fun i ↦ hCU i hx) (i := i) g)).trans (hD i g))
-    (vanKampenWide_hom_ext hU hUp hC.isPathConnected hCU hUC hx fun i ↦ MonoidHom.ext fun g ↦
-      (congrArg (vanKampenWideLift U x _) (hD i g)).trans
-        (vanKampenWideLift_of U x (fun i ↦ hCU i hx) (i := i) g))
+    (vanKampenWide_hom_ext hU (fun i ↦ hCU i hx)
+      (isPathConnected_inter_of_pairwise hUp hC.isPathConnected hCU hUC) fun i ↦
+        MonoidHom.ext fun g ↦ (congrArg (vanKampenWideLift U x _) (hD i g)).trans
+          (vanKampenWideLift_of U x (fun i ↦ hCU i hx) (i := i) g))
 
 /-- `vanKampenWideEquiv` is `vanKampenWideLift`. -/
 @[simp]
