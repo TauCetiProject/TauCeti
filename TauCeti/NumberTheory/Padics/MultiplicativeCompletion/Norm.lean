@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.PowerClassGroup
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.RepresentationTheory.Coinvariants
@@ -39,56 +40,43 @@ namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime] (K L : Type*) [Field K] [Field L] [Algebra K L]
 
-/-- The norm on `p^m`-power classes of a finite field extension. Finiteness excludes the
-constant-one value of Mathlib's total algebra norm on infinite extensions. -/
-def padicCompletionPowerClassNorm [_hfin : FiniteDimensional K L] (m : ℕ) :
-    (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) →*
-      (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range) :=
-  QuotientGroup.map _ _ (Algebra.normUnits K) (by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨Algebra.normUnits K x, (map_pow _ _ _).symm⟩)
-
-variable [FiniteDimensional K L]
-
-omit [Fact p.Prime] in
-/-- On a representative, the map of power classes is the field norm. -/
-@[simp]
-theorem padicCompletionPowerClassNorm_mk (m : ℕ) (x : Lˣ) :
-    padicCompletionPowerClassNorm p K L m
-        (x : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) =
-      (Algebra.normUnits K x : Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range) :=
-  QuotientGroup.map_mk _ _ _ _ x
-
-omit [Fact p.Prime] in
-/-- Norms on power classes commute with the transition maps of the completion. -/
-theorem padicCompletionPowerClassNorm_transition (m : ℕ)
-    (x : Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) :
-    padicCompletionTransition p K m (padicCompletionPowerClassNorm p K L (m + 1) x) =
-      padicCompletionPowerClassNorm p K L m (padicCompletionTransition p L m x) := by
-  induction x using QuotientGroup.induction_on with
-  | H x => simp
-
+-- The completion uses raw power-hom ranges; identify them with the generic power classes
+-- via the public subgroup equality, without requiring `powerSubgroup` to be exposed.
 private def padicCompletionUnitsNormHom :
-    ↑(padicCompletionUnits p L) →* ↑(padicCompletionUnits p K) :=
-  MonoidHom.codRestrict
-    (MonoidHom.pi fun m ↦ (padicCompletionPowerClassNorm p K L m).comp
-      ((Pi.evalMonoidHom _ m).comp (padicCompletionUnits p L).subtype)) _ (by
-    intro x
-    rw [mem_padicCompletionUnits_iff]
-    intro m
-    have hx := (mem_padicCompletionUnits_iff p L x.1).mp x.2 m
-    simpa using (padicCompletionPowerClassNorm_transition p K L m (x.1 (m + 1))).trans
-      (congrArg (padicCompletionPowerClassNorm p K L m) hx))
+    ↑(padicCompletionUnits p L) →* ↑(padicCompletionUnits p K) := by
+  let norm (m : ℕ) :=
+    ((QuotientGroup.quotientMulEquivOfEq
+      (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))).toMonoidHom).comp
+      ((powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)).comp
+        (QuotientGroup.quotientMulEquivOfEq
+          (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm).toMonoidHom)
+  refine MonoidHom.codRestrict
+    (MonoidHom.pi fun m ↦ (norm m).comp
+      ((Pi.evalMonoidHom _ m).comp (padicCompletionUnits p L).subtype)) _ ?_
+  intro x
+  rw [mem_padicCompletionUnits_iff]
+  intro m
+  have hx := (mem_padicCompletionUnits_iff p L x.1).mp x.2 m
+  have hnorm (y : Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) :
+      padicCompletionTransition p K m (norm (m + 1) y) =
+        norm m (padicCompletionTransition p L m y) := by
+    induction y using QuotientGroup.induction_on with
+    | H y => simp [norm]
+  simpa using (hnorm (x.1 (m + 1))).trans (congrArg (norm m) hx)
 
 omit [Fact p.Prime] in
 @[simp]
 private theorem padicCompletionUnitsNormHom_apply (x : ↑(padicCompletionUnits p L))
     (m : ℕ) :
     (padicCompletionUnitsNormHom p K L x).1 m =
-      padicCompletionPowerClassNorm p K L m (x.1 m) := (rfl)
+      QuotientGroup.quotientMulEquivOfEq (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))
+        (powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)
+          (QuotientGroup.quotientMulEquivOfEq
+            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.1 m))) := (rfl)
 
-/-- The `ℤ_p`-linear norm `A(L) → A(K)` induced by the field norm at every finite level. -/
-def padicCompletionUnitsNorm :
+/-- The `ℤ_p`-linear norm `A(L) → A(K)` induced by the field norm at every finite level.
+Finiteness excludes the constant-one value of Mathlib's total norm on infinite extensions. -/
+def padicCompletionUnitsNorm [_hfin : FiniteDimensional K L] :
     Additive ↑(padicCompletionUnits p L) →ₗ[ℤ_[p]]
       Additive ↑(padicCompletionUnits p K) where
   toFun x := Additive.ofMul (padicCompletionUnitsNormHom p K L x.toMul)
@@ -100,13 +88,18 @@ def padicCompletionUnitsNorm :
     ext m
     simp only [toMul_ofMul, RingHom.id_apply, padicCompletionUnitsNormHom_apply,
       padicCompletionUnits_smul_apply]
-    exact map_pow _ _ _
+    simp only [map_pow]
+
+variable [FiniteDimensional K L]
 
 /-- The completed norm is computed by the norm on each power-class coordinate. -/
 @[simp]
 theorem padicCompletionUnitsNorm_apply (x : Additive ↑(padicCompletionUnits p L)) (m : ℕ) :
     (padicCompletionUnitsNorm p K L x).toMul.1 m =
-      padicCompletionPowerClassNorm p K L m (x.toMul.1 m) := (rfl)
+      QuotientGroup.quotientMulEquivOfEq (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))
+        (powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)
+          (QuotientGroup.quotientMulEquivOfEq
+            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.toMul.1 m))) := (rfl)
 
 /-- The norm of the canonical class of a unit is the canonical class of its norm. -/
 @[simp]
@@ -137,7 +130,8 @@ theorem padicCompletionUnitsNorm_aut (σ : L ≃ₐ[K] L)
   simp only [padicCompletionUnitsNorm_apply, toMul_ofMul, padicCompletionUnitsAut_apply]
   induction x.1 m using QuotientGroup.induction_on with
   | H y =>
-    simp only [padicCompletionPowerClassMap_mk, padicCompletionPowerClassNorm_mk]
+    simp only [padicCompletionPowerClassMap_mk, QuotientGroup.quotientMulEquivOfEq_mk,
+      powerClassMap_mk]
     simpa only [padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply,
       RingHom.toMonoidHom_eq_coe,
       RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom] using
