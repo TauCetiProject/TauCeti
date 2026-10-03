@@ -31,7 +31,7 @@ As elsewhere in this development, `ℚ/ℤ` is the rational circle `AddCircle (1
 * `TauCeti.TateCohomology.characterConnectingClass`: the connecting class `δχ ∈ H²(G, ℤ)` of a
   character `χ : Gᵃᵇ → ℚ/ℤ`, in the Tate group of degree `2`, as an additive map in `χ`.
 * `TauCeti.TateCohomology.characterDimensionShift`: the canonical invariant in the first upward
-  dimension shift of `ℚ/ℤ` attached to a character.
+  dimension shift of `ℚ/ℤ` attached to a character, as an additive map in the character.
 
 ## Main results
 
@@ -87,36 +87,55 @@ private abbrev ratCircleRep : Rep ℤ G := Rep.trivial ℤ G (AddCircle (1 : ℚ
 character. Its image under the dimension-shift isomorphism is the Tate degree-one class obtained
 from the ordinary character class in `H¹(G, ℚ/ℤ)`. -/
 def characterDimensionShift
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
-    (dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃).ρ.invariants := by
-  -- The function `g ↦ χ(g)` changes under right translation by the constant function
-  -- `χ(g)`, so its image in the coinduced quotient is invariant.
-  let f : coindBot ℤ G (AddCircle (1 : ℚ)) :=
-    (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun g ↦
-      χ (Additive.ofMul (Abelianization.of g))
-  refine ⟨(dimensionShiftUpπ (ratCircleRep G)).hom f, ?_⟩
-  intro g
-  rw [← Rep.hom_comm_apply (dimensionShiftUpπ (ratCircleRep G)) g f]
-  have hfun : ((coindBot ℤ G (AddCircle (1 : ℚ))).ρ g) f =
-      f + (coindBotUnit (ratCircleRep G)).hom
-        (χ (Additive.ofMul (Abelianization.of g))) := by
-    apply (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).injective
-    rw [map_add]
-    funext h
-    rw [coindBotEquivPi_apply, coindBot_ρ_apply_coe]
-    simp only [Pi.add_apply]
-    rw [coindBotEquivPi_apply, coindBotEquivPi_apply,
-      coindBotEquivPi_symm_apply_coe, coindBotUnit_hom_apply_coe]
-    simp only [Representation.trivial_apply]
-    rw [map_mul, ofMul_mul, map_add]
-  rw [hfun, map_add]
-  have hzero : (dimensionShiftUpπ (ratCircleRep G)).hom
-      ((coindBotUnit (ratCircleRep G)).hom
-        (χ (Additive.ofMul (Abelianization.of g)))) = 0 := by
-    rw [← ConcreteCategory.comp_apply,
-      coindBotUnit_comp_dimensionShiftUpπ (ratCircleRep G)]
-    rfl
-  rw [hzero, add_zero]
+    : (Additive (Abelianization G) →+ AddCircle (1 : ℚ)) →+
+      (dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃).ρ.invariants where
+  toFun χ := by
+    -- The function `g ↦ χ(g)` changes under right translation by the constant function
+    -- `χ(g)`, so its image in the coinduced quotient is invariant.
+    let f : coindBot ℤ G (AddCircle (1 : ℚ)) :=
+      (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun g ↦
+        χ (Additive.ofMul (Abelianization.of g))
+    refine ⟨(dimensionShiftUpπ (ratCircleRep G)).hom f, ?_⟩
+    intro g
+    rw [← Rep.hom_comm_apply (dimensionShiftUpπ (ratCircleRep G)) g f]
+    have hfun : ((coindBot ℤ G (AddCircle (1 : ℚ))).ρ g) f =
+        f + (coindBotUnit (ratCircleRep G)).hom
+          (χ (Additive.ofMul (Abelianization.of g))) := by
+      apply (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).injective
+      rw [map_add]
+      funext h
+      rw [coindBotEquivPi_apply, coindBot_ρ_apply_coe]
+      simp only [Pi.add_apply]
+      rw [coindBotEquivPi_apply, coindBotEquivPi_apply,
+        coindBotEquivPi_symm_apply_coe, coindBotUnit_hom_apply_coe]
+      simp only [Representation.trivial_apply]
+      rw [map_mul, ofMul_mul, map_add]
+    rw [hfun, map_add]
+    have hzero : (dimensionShiftUpπ (ratCircleRep G)).hom
+        ((coindBotUnit (ratCircleRep G)).hom
+          (χ (Additive.ofMul (Abelianization.of g)))) = 0 := by
+      rw [← ConcreteCategory.comp_apply,
+        coindBotUnit_comp_dimensionShiftUpπ (ratCircleRep G)]
+      rfl
+    rw [hzero, add_zero]
+  map_zero' := by
+    apply Subtype.ext
+    change (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
+      ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm (0 : G → AddCircle (1 : ℚ))) = 0
+    rw [map_zero, map_zero]
+  map_add' χ ψ := by
+    apply Subtype.ext
+    change (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
+        ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm
+          ((fun g ↦ χ (Additive.ofMul (Abelianization.of g))) +
+            fun g ↦ ψ (Additive.ofMul (Abelianization.of g)))) =
+      (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
+          ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm
+            (fun g ↦ χ (Additive.ofMul (Abelianization.of g)))) +
+        (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
+          ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm
+            (fun g ↦ ψ (Additive.ofMul (Abelianization.of g))))
+    rw [map_add, map_add]
 
 omit [Fintype G] in
 /-- The underlying value of `characterDimensionShift` is the image in the first upward dimension
