@@ -201,10 +201,22 @@ theorem nonempty_linearEquiv_prod_of_pPowerTorsion_linearEquiv
       (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) M →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) ≃+
         (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) N →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
     (e.restrictScalars ℤ_[p]).arrowCongrAddEquiv (.refl ℤ_[p] _)
+  -- `eT` precomposes a character with `e.symm`.
+  have heT (χ : pPowerTorsion p (MonoidAlgebra ℤ_[p] G) M →ₗ[ℤ_[p]]
+      ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) (t : pPowerTorsion p (MonoidAlgebra ℤ_[p] G) N) :
+      eT χ t = χ (e.symm t) := by
+    rw [LinearEquiv.arrowCongrAddEquiv_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.refl_apply,
+      LinearEquiv.restrictScalars_symm_apply]
   let Φ := eM.trans (eT.trans eN.symm)
   refine nonempty_linearEquiv_prod_of_linearEquiv hf hπ hg hρ
     { Φ with map_smul' := fun a x ↦ eN.injective (LinearMap.ext fun t ↦ ?_) }
-  simp [Φ, eT, eM, eN, torsionDualAddEquiv_op_smul]
+  -- After `eN`, the composite `Φ` is `eT ∘ eM`; both equivariances then reduce the goal.
+  have hΦ (y : AuslanderReitenTranspose f) : eN (Φ.toFun y) = eT (eM y) := by
+    rw [AddEquiv.toFun_eq_coe, AddEquiv.trans_apply, AddEquiv.trans_apply,
+      AddEquiv.apply_symm_apply]
+  rw [RingHom.id_apply, torsionDualAddEquiv_op_smul, hΦ, hΦ, heT, heT,
+    torsionDualAddEquiv_op_smul, map_smul e.symm]
 
 /-- **The stable class of a module of projective dimension one is determined by its torsion**
 (NSW (5.4.11) with (5.6.9)). For a finite group `G`, two `ℤ_p[G]`-modules presented as quotients

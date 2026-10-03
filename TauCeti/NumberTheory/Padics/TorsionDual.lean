@@ -76,6 +76,7 @@ variable {p : ℕ} [Fact p.Prime] {M : Type*} [AddCommGroup M] [Module ℤ_[p] M
 
 /-- Over `ℤ_p`, the `p`-power torsion is the whole torsion submodule: a nonzero `p`-adic integer is
 a unit times a power of `p`. -/
+@[simp]
 theorem restrictScalars_pPowerTorsion {A : Type*} [Semiring A] [Module A M] [SMul ℤ_[p] A]
     [IsScalarTower ℤ_[p] A M] :
     (pPowerTorsion p A M).restrictScalars ℤ_[p] = Submodule.torsion ℤ_[p] M := by
