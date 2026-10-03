@@ -238,6 +238,8 @@ theorem algebraicIndCounit_apply
 
 /-- Evaluation of the induced counit on the generator `⟦1 ⊗ a⟧` returns `a`. This fixes the
 normalization of induced Shapiro even when the coefficient action is nontrivial. -/
+-- Use this generator equation for explicit rewriting: `simp` already rewrites the counit
+-- through `algebraicIndCounit_apply`, so this equation is not in simp normal form.
 theorem algebraicIndCounit_mk_one (a : A.obj.V) :
     (algebraicIndCounit.{u, v, w} R G U A).hom
         (Representation.IndV.mk U.toSubgroup.subtype
@@ -290,12 +292,15 @@ noncomputable def algebraicIndMap (f : A ⟶ B) :
           (coefficientMap.{u, v, w} R G U f)) g x })
 
 /-- The induced coefficient morphism sends `⟦g ⊗ a⟧` to `⟦g ⊗ f(a)⟧`. -/
+@[simp]
 theorem algebraicIndMap_mk (f : A ⟶ B) (g : G) (a : A.obj.V) :
-    (algebraicIndMap.{u, v, w} R G U f).hom.hom
+    (dsimp% only [Representation.IndV.mk, LinearMap.coe_comp,
+      Function.comp_apply, TensorProduct.mk_apply] (algebraicIndMap.{u, v, w} R G U f).hom.hom
       (Representation.IndV.mk U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a) =
-      Representation.IndV.mk U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup B.obj.V) g (f.hom.hom a) := by
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a)) =
+      (dsimp% only [Representation.IndV.mk, LinearMap.coe_comp,
+        Function.comp_apply, TensorProduct.mk_apply] Representation.IndV.mk U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup B.obj.V) g (f.hom.hom a)) := by
   -- The public map is bundled in two categories; unfold its construction only here to
   -- compute on the canonical tensor generators using Mathlib's induction map.
   change (Rep.indMap U.toSubgroup.subtype (coefficientMap.{u, v, w} R G U f)).hom
@@ -321,6 +326,8 @@ theorem algebraicIndMap_id :
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a) =
       Representation.IndV.mk U.toSubgroup.subtype
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a
+  dsimp only [Representation.IndV.mk, LinearMap.coe_comp,
+    Function.comp_apply, TensorProduct.mk_apply]
   rw [algebraicIndMap_mk]
   rfl
 
@@ -346,6 +353,8 @@ theorem algebraicIndMap_comp
       (algebraicIndMap.{u, v, w} R G U g).hom.hom ((algebraicIndMap.{u, v, w} R G U f).hom.hom
         (Representation.IndV.mk U.toSubgroup.subtype
           (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) x a))
+  dsimp only [Representation.IndV.mk, LinearMap.coe_comp,
+    Function.comp_apply, TensorProduct.mk_apply]
   simp only [algebraicIndMap_mk, ObjectProperty.FullSubcategory.comp_hom,
     TopRep.hom_comp]
   rfl
