@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RingHom.StandardSmooth
 public import Mathlib.RingTheory.Unramified.LocalStructure
 public import TauCeti.RingTheory.KrullDimension.Fiber
 public import TauCeti.RingTheory.KrullDimension.FiniteType
