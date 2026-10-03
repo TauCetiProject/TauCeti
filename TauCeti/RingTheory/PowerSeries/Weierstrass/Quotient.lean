@@ -34,6 +34,18 @@ public section
 
 namespace TauCeti.PowerSeries
 
+private theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero
+    {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
+    (r : PowerSeries.IsRestricted.subring (R := R) c)
+    (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) :
+    polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R)) = r := by
+  apply Subtype.ext
+  ext n
+  simp only [coe_polynomialToRestricted, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  split_ifs with hn
+  · rfl
+  · exact (hr n (by omega)).symm
+
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R]
   {c : ℝ} {s : ℕ} {p : Polynomial R}
 
@@ -99,17 +111,9 @@ noncomputable def IsDistinguished.polynomialQuotientEquiv
     have hp' : IsDistinguished c s (polynomialToRestricted c p : PowerSeries R) := by
       simpa only [coe_polynomialToRestricted] using hp
     obtain ⟨q, r, hr, hqr⟩ := hp'.exists_mul_add_eq_subring hc hu g
-    have htrunc : (PowerSeries.trunc s (r : PowerSeries R) : PowerSeries R) = r := by
-      ext n
-      simp only [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-      split_ifs with hn
-      · rfl
-      · exact (hr n (by omega)).symm
     refine ⟨Ideal.Quotient.mk _ (PowerSeries.trunc s (r : PowerSeries R)), ?_⟩
     rw [Ideal.quotient_map_mkₐ]
-    have hre : polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R)) = r :=
-      Subtype.ext (by simpa using htrunc)
-    rw [hre, ← hqr, map_add, map_mul]
+    rw [polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr, ← hqr, map_add, map_mul]
     simp
 
 /-- On a polynomial representative, the comparison is the usual polynomial inclusion. -/
@@ -144,16 +148,9 @@ theorem IsDistinguished.polynomialQuotientEquiv_symm_mk_of_mul_add_eq
     (hqr : q * polynomialToRestricted c p + r = g) :
     (hp.polynomialQuotientEquiv hc hm).symm (Ideal.Quotient.mk _ g) =
       Ideal.Quotient.mk _ (PowerSeries.trunc s (r : PowerSeries R)) := by
-  have hre : polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R)) = r := by
-    apply Subtype.ext
-    ext n
-    simp only [coe_polynomialToRestricted, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-    split_ifs with hn
-    · rfl
-    · exact (hr n (by omega)).symm
   have heq : Ideal.Quotient.mk (Ideal.span {polynomialToRestricted c p}) g =
       Ideal.Quotient.mk _ (polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R))) := by
-    rw [hre, ← hqr, map_add, map_mul]
+    rw [polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr, ← hqr, map_add, map_mul]
     simp
   rw [heq, hp.polynomialQuotientEquiv_symm_mk hc hm]
 
