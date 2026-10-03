@@ -129,7 +129,9 @@ theorem explicitBockstein1_mk (f : Z1 G (ZMod 2)) :
       linear_combination h
     exact hcarry _ _
 
-/-- The degree-one mod-two Bockstein equals the cup square on explicit classes. -/
+/-- The degree-one mod-two Bockstein equals the cup square on explicit classes.
+Use this as an explicit rewrite; a simp rule here would shadow the representative formula
+`explicitBockstein1_mk`. -/
 theorem explicitBockstein1_eq_explicitCup11_self (x : H1 G (ZMod 2)) :
     explicitBockstein1 G x =
       explicitCup11 G (ZMod 2) (ZMod 2) (ZMod 2) AddMonoidHom.mul continuous_mul
@@ -170,7 +172,9 @@ theorem cohomFpAddEquivH2_bockstein1 (x : cohomFp 2 G 1) :
       explicitBockstein1 G (cohomFpAddEquivH1 2 G (fun _ _ ↦ rfl) x) := by
   simp [bockstein1]
 
-/-- The mod-two Bockstein of a degree-one class is its cup square. -/
+/-- The mod-two Bockstein of a degree-one class is its cup square.
+Use this as an explicit rewrite; a simp rule here would shadow the comparison, naturality,
+and cyclic-value simp rules for `bockstein1`. -/
 theorem bockstein1_eq_cupFp_self (x : cohomFp 2 G 1) :
     bockstein1 G x = cupFp 2 G x x := by
   apply (cohomFpAddEquivH2 2 G (fun _ _ ↦ rfl)).injective
