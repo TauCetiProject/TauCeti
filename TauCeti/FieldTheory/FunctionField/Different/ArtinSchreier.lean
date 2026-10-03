@@ -102,6 +102,7 @@ theorem differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers
   obtain ⟨w, hw⟩ := hreg
   have hadj : F⟮y - algebraMap F F' w⟯ = F⟮y⟯ := by
     simpa [sub_eq_add_neg] using IntermediateField.adjoin_simple_add_algebraMap y (-w)
+  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
   apply differentExponent_eq_zero_of_pow_sub_self_eq_of_mem_integers k F p (hadj.trans hgen)
   · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
   · exact hw

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Algebra
-public import Mathlib.Algebra.Field.Basic
+public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.CharP.Defs
 
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Tactic.Ring
@@ -30,14 +30,11 @@ namespace TauCeti
 
 /-- Translating an Artin–Schreier generator `y` by `w ∈ F` translates the right-hand side of
 `y ^ p - y = u` by `w ^ p - w`. -/
-theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [Field F] [CommRing F'] [Algebra F F']
-    (p : ℕ) [Fact p.Prime] [CharP F p] (y : F') (w : F) :
+theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [CommRing F] [CommRing F']
+    [Algebra F F'] (p : ℕ) [ExpChar F' p] (y : F') (w : F) :
     (y - algebraMap F F' w) ^ p - (y - algebraMap F F' w) =
       (y ^ p - y) - algebraMap F F' (w ^ p - w) := by
-  rcases subsingleton_or_nontrivial F' with _ | _
-  · exact Subsingleton.elim _ _
-  let _ : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
-  rw [sub_pow_char, map_sub, map_pow]
+  rw [sub_pow_expChar, map_sub, map_pow]
   ring
 
 end TauCeti

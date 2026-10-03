@@ -158,6 +158,7 @@ private theorem finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreie
   have hadj : F⟮y - algebraMap F F' w⟯ = ⊤ := by
     simpa [sub_eq_add_neg] using
       (IntermediateField.adjoin_simple_add_algebraMap y (-w)).trans hgen
+  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
   apply finrank_eq_and_ramificationIdx_eq_of_pow_sub_self_eq k F
     (Fact.out : p.Prime).one_lt hadj
   · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
