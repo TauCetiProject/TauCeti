@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.EulerCharacteristic
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
+public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Euler--Poincaré for chain complexes of vector spaces indexed by `ℕ`
@@ -52,39 +51,6 @@ public section
 open CategoryTheory Limits Module
 
 universe u v
-
-namespace CategoryTheory.ShortComplex
-
-/-- Over a noetherian ring, the homology of a short complex of modules whose middle term is
-finitely generated is finitely generated. -/
-theorem finite_homology {k : Type u} [Ring k] [IsNoetherianRing k]
-    (S : ShortComplex (ModuleCat.{v} k)) [Module.Finite k S.X₂] :
-    Module.Finite k S.homology :=
-  have : IsNoetherian k S.X₂ := isNoetherian_of_isNoetherianRing_of_finite k S.X₂
-  -- The homology object of `S.moduleCatLeftHomologyData` is this quotient by construction.
-  have : Module.Finite k S.moduleCatLeftHomologyData.H :=
-    inferInstanceAs (Module.Finite k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
-  .equiv S.moduleCatHomologyIso.toLinearEquiv.symm
-
-variable {k : Type u} [DivisionRing k]
-
-/-- The homology of a short complex `X₁ ⟶ X₂ ⟶ X₃` of vector spaces with `X₂` finite-dimensional
-has dimension `dim ker g - dim im f`. -/
-theorem finrank_homology_add_finrank_range_f (S : ShortComplex (ModuleCat.{v} k))
-    [Module.Finite k S.X₂] :
-    finrank k S.homology + finrank k (LinearMap.range S.f.hom) =
-      finrank k (LinearMap.ker S.g.hom) := by
-  rw [S.moduleCatHomologyIso.toLinearEquiv.finrank_eq, moduleCatLeftHomologyData_H,
-    ← Submodule.finrank_quotient_add_finrank (LinearMap.range S.moduleCatToCycles)]
-  congr 1
-  rw [← Submodule.finrank_map_subtype_eq, ← LinearMap.range_comp]
-  -- `S.moduleCatToCycles` is the corestriction of `S.f` to `ker S.g`, so composing it with the
-  -- inclusion of `ker S.g` gives `S.f` back by definition; rewriting with
-  -- `LinearMap.subtype_comp_codRestrict` fails because Mathlib's corestriction proof is only
-  -- well-typed up to unfolding the concrete-category coercions.
-  rfl
-
-end CategoryTheory.ShortComplex
 
 namespace ChainComplex
 
