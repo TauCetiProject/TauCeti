@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.FractionalIdeal.Basic
 
 /-!
 # Orders in number fields
@@ -34,6 +35,8 @@ maximal order itself is packaged as `maximalNumberFieldOrder K`.
   ring of integers.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.toSubalgebra_ne_top`: an order is a proper subring
   of its number field.
+* `NumberFieldOrder.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one`:
+  over `ℤ`, an ideal of an order times `𝓞 K` is its extension to `𝓞 K`.
 
 ## References
 
@@ -45,6 +48,7 @@ public section
 noncomputable section
 
 open NumberField
+open scoped nonZeroDivisors
 
 namespace TauCeti.GlobalNumberFields
 
@@ -160,6 +164,69 @@ instance isFractionRing (O : NumberFieldOrder K) : IsFractionRing O.toSubalgebra
   IsFractionRing.of_field O.toSubalgebra K fun z => by
     obtain ⟨a, b, _, hz⟩ := O.exists_order_div z
     exact ⟨a, b, hz⟩
+
+/-! ### Ideals of an order and of the maximal order -/
+
+section
+
+variable {O : NumberFieldOrder K}
+
+/-- An element of `K` lies in the fractional ideal of `O` attached to an ideal `I` of
+`O.toRingOfIntegers` exactly when it is an element of `I`. -/
+theorem mem_coeIdeal_map_toRingOfIntegersEquiv {I : Ideal O.toRingOfIntegers} {y : K} :
+    y ∈ ((I.map O.toRingOfIntegersEquiv : Ideal O.toSubalgebra) :
+        FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) ↔
+      ∃ x ∈ I, ((x : 𝓞 K) : K) = y := by
+  rw [FractionalIdeal.mem_coeIdeal]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    obtain ⟨x, hx, rfl⟩ := (Ideal.mem_map_of_equiv _ a).mp ha
+    exact ⟨x, hx, by simp⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨_, Ideal.mem_map_of_mem _ hx, by simp⟩
+
+/-- Over `ℤ`, the product of an ideal `I` of the order with `𝓞 K` is the extension of `I` to
+`𝓞 K`. -/
+theorem restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one
+    (I : Ideal O.toRingOfIntegers) :
+    (((I.map O.toRingOfIntegersEquiv : Ideal O.toSubalgebra) :
+        FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
+          Submodule O.toSubalgebra K).restrictScalars ℤ *
+        (1 : Submodule (𝓞 K) K).restrictScalars ℤ =
+      (((I.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) : Ideal (𝓞 K)) :
+        FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K).restrictScalars ℤ := by
+  set i := (((I.map O.toRingOfIntegersEquiv : Ideal O.toSubalgebra) :
+    FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
+      Submodule O.toSubalgebra K).restrictScalars ℤ
+  set b := (1 : Submodule (𝓞 K) K).restrictScalars ℤ
+  have hb : b * b = b := by rw [← Submodule.restrictScalars_mul, one_mul]
+  apply le_antisymm
+  · refine Submodule.mul_le.mpr fun m hm n hn => ?_
+    obtain ⟨x, hx, rfl⟩ := mem_coeIdeal_map_toRingOfIntegersEquiv.mp hm
+    obtain ⟨r, rfl⟩ := Submodule.mem_one.mp hn
+    refine (FractionalIdeal.mem_coeIdeal (𝓞 K)⁰).mpr ⟨(x : 𝓞 K) * r,
+      Ideal.mul_mem_right r _ (Ideal.mem_map_of_mem _ hx), by simp⟩
+  · intro y hy
+    obtain ⟨z, hz, rfl⟩ := (FractionalIdeal.mem_coeIdeal (𝓞 K)⁰).mp hy
+    clear hy
+    rw [Ideal.map, Ideal.span] at hz
+    -- The elements of `𝓞 K` landing in `i * b` form an ideal containing the image of `I`.
+    induction hz using Submodule.span_induction with
+    | mem z hz =>
+        obtain ⟨x, hx, rfl⟩ := hz
+        have hx' : ((x : 𝓞 K) : K) ∈ i := mem_coeIdeal_map_toRingOfIntegersEquiv.mpr ⟨x, hx, rfl⟩
+        have h1 : (1 : K) ∈ b := Submodule.mem_one.mpr ⟨1, map_one _⟩
+        have h := Submodule.mul_mem_mul hx' h1
+        rwa [mul_one] at h
+    | zero => rw [map_zero]; exact zero_mem _
+    | add z w _ _ hz hw => rw [map_add]; exact add_mem hz hw
+    | smul r z _ hz =>
+        have hr : algebraMap (𝓞 K) K r ∈ b := Submodule.mem_one.mpr ⟨r, rfl⟩
+        have h := Submodule.mul_mem_mul hr hz
+        rw [mul_left_comm, hb] at h
+        rwa [smul_eq_mul, map_mul]
+
+end
 
 end NumberFieldOrder
 
