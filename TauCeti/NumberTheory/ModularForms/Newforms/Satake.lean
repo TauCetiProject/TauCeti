@@ -318,14 +318,17 @@ theorem satakeAngle_eq_arccos :
   rw [satakeAngle]
 
 /-- **The Satake parameters at a prime with `χ(p) = 1`**: under the Ramanujan–Deligne bound they
-are the complex conjugates `p^{(k-1)/2} e^{± i θ_p}`. -/
+are the complex conjugates `p^{(k-1)/2} e^{± i θ_p}`. Here `a_p` is real by
+`conj_qExpansion_coeff_eq_self_of_dirichletLift_eq_one`. -/
 theorem satakeParameters_eq_exp_satakeAngle (hχ : f.dirichletLift p = 1) :
     f.satakeParameters p =
-      {((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) * Complex.exp (f.satakeAngle hp hreal hR * Complex.I),
-        ((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) *
-          Complex.exp (-f.satakeAngle hp hreal hR * Complex.I)} := by
+      {((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) * Complex.exp (f.satakeAngle hp
+          (f.conj_qExpansion_coeff_eq_self_of_dirichletLift_eq_one hp hχ) hR * Complex.I),
+        ((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) * Complex.exp (-f.satakeAngle hp
+          (f.conj_qExpansion_coeff_eq_self_of_dirichletLift_eq_one hp hχ) hR * Complex.I)} := by
   rw [satakeParameters_eq_pair_iff, hχ, one_mul, ← sq_ofReal_rpow,
-    f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle hp hreal hR]
+    f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle hp
+      (f.conj_qExpansion_coeff_eq_self_of_dirichletLift_eq_one hp hχ) hR]
   constructor
   · rw [← mul_add, ← Complex.two_cos]
     push_cast
