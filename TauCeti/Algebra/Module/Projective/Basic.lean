@@ -33,4 +33,6 @@ theorem Module.Projective.trans {R : Type*} (A P : Type*) [CommSemiring R] [Semi
   -- `P` is a direct summand of `P →₀ A`, a direct sum of copies of `A`.
   have : Module.Projective R (P →₀ A) := .of_equiv (finsuppLequivDFinsupp R).symm
   exact .of_split (s.restrictScalars R) ((Finsupp.linearCombination A id).restrictScalars R)
-    (LinearMap.ext fun x ↦ congr($hs x))
+    (LinearMap.ext fun x ↦ by
+      rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearMap.restrictScalars_apply,
+        ← LinearMap.comp_apply, hs, LinearMap.id_apply, LinearMap.id_apply])
