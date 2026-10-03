@@ -23,14 +23,20 @@ the sum running over the diagrams `μ` for which `μ / ν` is a rim hook with `r
 `TauCeti.psum_mul_schurPoly` for partitions in an arbitrary finite alphabet.
 
 Iterating the rule from `s_∅ = 1` along a list `l` of positive part sizes expands the whole
-power-sum product `p_l` in the Schur basis, the coefficients being the signed rim-hook-stripping
-counts `TauCeti.murnaghanNakayamaCoeff`.  That is
+power-sum product `p_l` in the Schur polynomials of the partitions of `l.sum`, the coefficients
+being the signed rim-hook-stripping counts `TauCeti.murnaghanNakayamaCoeff`.  That is
 `TauCeti.prod_map_psum_eq_sum_murnaghanNakayamaCoeff_smul_schurPoly`, with
 `TauCeti.psumPart_eq_sum_murnaghanNakayamaCoeff_smul_schurPoly` its form for
 `MvPolynomial.psumPart`, the power-sum product indexed by a partition.  The rim hooks are removed
 one after another, so the recursion runs on a list; the left-hand side of the partition form is a
 product over a multiset and so does not see the order, and any list with the right parts may be
 fed to the recursion.
+
+The family summed over is indexed by all the partitions of `l.sum`, which in a fixed finite
+alphabet is not a basis: the Schur polynomial of a partition with more rows than there are letters
+vanishes.  Dropping those vanishing terms leaves the expansion in the Schur basis
+`TauCeti.schurPolyBasis`, and over infinitely many variables -- not formalised here -- none of them
+vanish and the expansion is the Schur-basis expansion of the symmetric function `p_l`.
 
 That expansion is the combinatorial half of the Murnaghan–Nakayama rule for the characters of the
 symmetric groups; only the coefficients the recursion produces are claimed here.  That they are
@@ -214,10 +220,11 @@ theorem psum_mul_schurPoly {σ : Type*} [Fintype σ] {n : ℕ} (ν : n.Partition
 variable {σ : Type*} [Fintype σ]
 
 open scoped Classical in
-/-- **A product of power sums, expanded in the Schur basis.**  For a list `l` of positive part
-sizes summing to `n`, the product `p_{l₁} ⋯ p_{l_k}` is the combination of the Schur polynomials of
-the partitions of `n` whose coefficients are the signed rim-hook-stripping counts
-`TauCeti.murnaghanNakayamaCoeff`. -/
+/-- **A product of power sums, expanded in the Schur polynomials.**  For a list `l` of positive
+part sizes summing to `n`, the product `p_{l₁} ⋯ p_{l_k}` is the combination of the Schur
+polynomials of the partitions of `n` whose coefficients are the signed rim-hook-stripping counts
+`TauCeti.murnaghanNakayamaCoeff`.  The partitions with more rows than there are letters contribute
+nothing, their Schur polynomials being zero. -/
 theorem prod_map_psum_eq_sum_murnaghanNakayamaCoeff_smul_schurPoly (l : List ℕ)
     (hl : ∀ r ∈ l, 0 < r) {n : ℕ} (hn : l.sum = n) :
     (l.map (psum σ R)).prod
@@ -268,7 +275,7 @@ theorem prod_map_psum_eq_sum_murnaghanNakayamaCoeff_smul_schurPoly (l : List ℕ
     rw [List.map_cons, List.prod_cons, ih hl' rfl, Finset.mul_sum,
       sum_congr rfl fun ν _ => hL ν, sum_congr rfl fun μ _ => hR μ, Finset.sum_comm]
 
-/-- **The power-sum product of a partition, expanded in the Schur basis.**  This is
+/-- **The power-sum product of a partition, expanded in the Schur polynomials.**  This is
 `TauCeti.prod_map_psum_eq_sum_murnaghanNakayamaCoeff_smul_schurPoly` for
 `MvPolynomial.psumPart`: the recursion is fed any list `l` whose multiset of entries is the
 multiset of parts of `ρ`, the left-hand side being a product over that multiset. -/

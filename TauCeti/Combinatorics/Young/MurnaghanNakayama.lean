@@ -113,6 +113,7 @@ noncomputable def murnaghanNakayamaCoeff : List ℕ → YoungDiagram → ℤ
 
 open scoped Classical in
 /-- The empty list strips only the empty diagram. -/
+@[simp]
 theorem murnaghanNakayamaCoeff_nil (μ : YoungDiagram) :
     murnaghanNakayamaCoeff [] μ = if μ = ⊥ then 1 else 0 :=
   (rfl)
@@ -129,7 +130,7 @@ theorem murnaghanNakayamaCoeff_eq_zero_of_card_ne_sum :
     ∀ (l : List ℕ) {μ : YoungDiagram}, μ.card ≠ l.sum → murnaghanNakayamaCoeff l μ = 0
   | [], μ, h => by
     have hne : μ ≠ ⊥ := fun hb => h (by simp [hb])
-    simp [murnaghanNakayamaCoeff_nil, hne]
+    simp [hne]
   | r :: l, μ, h => by
     rw [murnaghanNakayamaCoeff_cons]
     refine Finset.sum_eq_zero fun ν hν => ?_
@@ -149,8 +150,8 @@ theorem murnaghanNakayamaCoeff_singleton (r : ℕ) (μ : YoungDiagram) :
       (-1) ^ μ.rimHookHeight ν * murnaghanNakayamaCoeff [] ν
         = if ν = ⊥ then (-1) ^ μ.rimHookHeight ⊥ else 0 := fun ν _ => by
     by_cases h : ν = ⊥
-    · subst h; simp [murnaghanNakayamaCoeff_nil]
-    · simp [murnaghanNakayamaCoeff_nil, h]
+    · subst h; simp
+    · simp [h]
   rw [murnaghanNakayamaCoeff_cons, Finset.sum_congr rfl key, Finset.sum_ite_eq' _ _ _]
   simp only [YoungDiagram.mem_rimHookSubdiagrams, YoungDiagram.card_bot, zero_add]
 

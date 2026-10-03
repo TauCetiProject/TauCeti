@@ -48,6 +48,7 @@ theorem card_diagramOf {n : ℕ} (μ : n.Partition) : (diagramOf μ).card = n :=
   exact μ.parts_sum
 
 /-- The Young diagram of a partition of `0` is empty: it has no cells. -/
+@[simp]
 theorem diagramOf_eq_bot (μ : Nat.Partition 0) : diagramOf μ = ⊥ :=
   YoungDiagram.card_eq_zero_iff.mp (card_diagramOf μ)
 
