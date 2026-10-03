@@ -78,7 +78,8 @@ induced one (`TauCeti.indK0_of_asModule_of_equiv`). -/
 noncomputable def indK0 :
     ExactK0 (finiteModulesExactStructure k[S]) →+ ExactK0 (finiteModulesExactStructure k[G]) :=
   (MonoidAlgebra.mapDomainAlgHom k k S.subtype).finiteModulesK0Coextend
-    (MonoidAlgebra.projective_mapDomainRingHom k S.subtype S.subtype_injective)
+    (letI := (MonoidAlgebra.mapDomainRingHom k S.subtype).toModule;
+      .of_basis (MonoidAlgebra.basisCosets k S.subtype S.subtype_injective))
     (MonoidAlgebra.mapDomainRingHom_moduleFinite_of_finite S.subtype)
 
 /-- Induction sends the class of a module `M` to the class of its coinduced module
@@ -87,7 +88,8 @@ noncomputable def indK0 :
 theorem indK0_of (M : FGModuleCat.{u} k[S]) :
     indK0 k S (ExactK0.of M) =
       ExactK0.of (((MonoidAlgebra.mapDomainAlgHom k k S.subtype).finiteModulesCoextendScalars
-        (MonoidAlgebra.projective_mapDomainRingHom k S.subtype S.subtype_injective)
+        (letI := (MonoidAlgebra.mapDomainRingHom k S.subtype).toModule;
+          .of_basis (MonoidAlgebra.basisCosets k S.subtype S.subtype_injective))
         (MonoidAlgebra.mapDomainRingHom_moduleFinite_of_finite S.subtype)).obj M) :=
   AlgHom.finiteModulesK0Coextend_of _ _ _ M
 

@@ -14,6 +14,8 @@ If monoids `G` and `H` act on a type `X` and the two actions commute, then the p
 representations `Representation.ofMulAction k G X` and `Representation.ofMulAction k H X` on the
 free `k`-module `k[X]` commute with each other. For the left and right multiplication actions of
 a group `G`, that is, commuting actions of `G` and `Gᵐᵒᵖ`, this makes `k[X]` a `k[G]`-bimodule.
+On `k[G]` itself, the left regular representation `Representation.ofMulAction k G G` is left
+multiplication by the monomials `single g 1`.
 
 When `G` and `H` are groups, `G` permutes the `H`-orbits, and the orbit sums of `k[X]` along the
 `H`-orbits are equivariant: the sum of the coefficients of `g • v` along the `H`-orbit of `g • x`
@@ -26,6 +28,8 @@ sums of `v` are invariant under `g`. The orbit sums of `v` are the finitely supp
 
 * `TauCeti.commute_ofMulAction`: commuting actions on `X` give commuting permutation
   representations on `k[X]`.
+* `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
+  `single g c` is `c` times the left regular action of `g`.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction`: the orbit sums of `k[X]` are invariant
   under the permutation representation.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction_smul`: for commuting actions of `G` and `H`,
@@ -55,6 +59,15 @@ theorem commute_ofMulAction [SMulCommClass G H X] (g : G) (h : H) :
     Commute (ofMulAction k G X g) (ofMulAction k H X h) := by
   ext
   simp [smul_comm g h]
+
+/-- On the monoid algebra `k[G]`, left multiplication by the monomial `single g c` is `c` times
+the left regular representation of `g`. -/
+theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
+    MonoidAlgebra.single g c * a = c • ofMulAction k G G g a := by
+  induction a using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
+  | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
 
 /-! ### Orbit sums -/
 

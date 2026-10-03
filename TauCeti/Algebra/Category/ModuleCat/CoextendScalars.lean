@@ -53,7 +53,7 @@ public section
 
 open CategoryTheory
 
-universe v u u₁ u₂
+universe v u₁ u₂
 
 namespace ModuleCat
 
@@ -141,16 +141,15 @@ theorem isFG_coextendScalars [Module.Finite k R]
 of algebras over a commutative ring `k`, with `R` finitely generated over `k` and `S` finitely
 generated and projective over `R` through `f`, induces a functor from the finitely generated
 `R`-modules to the finitely generated `S`-modules, sending `M` to `Hom_R(S, M)`. -/
-noncomputable def finiteModulesCoextendScalars {k : Type*} [CommRing k] {R S : Type u} [Ring R]
-    [Ring S] [Algebra k R] [Algebra k S] (f : R →ₐ[k] S) [Module.Finite k R]
+noncomputable def finiteModulesCoextendScalars [Module.Finite k R]
     (hproj : letI := f.toRingHom.toModule; Module.Projective R S)
     (hfin : letI := f.toRingHom.toModule; Module.Finite R S) :
-    FGModuleCat.{u} R ⥤ FGModuleCat.{u} S :=
-  (ModuleCat.isFG S).lift ((ModuleCat.isFG R).ι ⋙ ModuleCat.coextendScalars f.toRingHom)
+    FGModuleCat.{max v u₂} R ⥤ FGModuleCat.{max v u₂} S :=
+  (ModuleCat.isFG S).lift
+    ((ModuleCat.isFG R).ι ⋙ ModuleCat.coextendScalars.{u₁, u₂, max v u₂} f.toRingHom)
     fun M ↦ f.isFG_coextendScalars hproj hfin M.property
 
-instance {k : Type*} [CommRing k] {R S : Type u} [Ring R] [Ring S] [Algebra k R] [Algebra k S]
-    (f : R →ₐ[k] S) [Module.Finite k R]
+instance [Module.Finite k R]
     (hproj : letI := f.toRingHom.toModule; Module.Projective R S)
     (hfin : letI := f.toRingHom.toModule; Module.Finite R S) :
     (f.finiteModulesCoextendScalars hproj hfin).Additive := by
@@ -159,19 +158,17 @@ instance {k : Type*} [CommRing k] {R S : Type u} [Ring R] [Ring S] [Algebra k R]
 
 /-- The underlying module of the image of a finitely generated module under
 `AlgHom.finiteModulesCoextendScalars` is its coextension of scalars, naturally in the module. -/
-noncomputable def finiteModulesCoextendScalarsCompιIso {k : Type*} [CommRing k] {R S : Type u}
-    [Ring R] [Ring S] [Algebra k R] [Algebra k S] (f : R →ₐ[k] S) [Module.Finite k R]
+noncomputable def finiteModulesCoextendScalarsCompιIso [Module.Finite k R]
     (hproj : letI := f.toRingHom.toModule; Module.Projective R S)
     (hfin : letI := f.toRingHom.toModule; Module.Finite R S) :
     f.finiteModulesCoextendScalars hproj hfin ⋙ (ModuleCat.isFG S).ι ≅
-      (ModuleCat.isFG R).ι ⋙ ModuleCat.coextendScalars f.toRingHom :=
+      (ModuleCat.isFG R).ι ⋙ ModuleCat.coextendScalars.{u₁, u₂, max v u₂} f.toRingHom :=
   ObjectProperty.liftCompιIso _ _ _
 
 @[simp]
-theorem finiteModulesCoextendScalars_obj_obj {k : Type*} [CommRing k] {R S : Type u} [Ring R]
-    [Ring S] [Algebra k R] [Algebra k S] (f : R →ₐ[k] S) [Module.Finite k R]
+theorem finiteModulesCoextendScalars_obj_obj [Module.Finite k R]
     (hproj : letI := f.toRingHom.toModule; Module.Projective R S)
-    (hfin : letI := f.toRingHom.toModule; Module.Finite R S) (M : FGModuleCat.{u} R) :
+    (hfin : letI := f.toRingHom.toModule; Module.Finite R S) (M : FGModuleCat.{max v u₂} R) :
     ((f.finiteModulesCoextendScalars hproj hfin).obj M).obj =
       (ModuleCat.coextendScalars f.toRingHom).obj M.obj :=
   (rfl)

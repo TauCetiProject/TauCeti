@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.RepresentationTheory.AsModule
+public import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
 # Coinduction: exactness and coextension of scalars
@@ -64,10 +65,12 @@ namespace Representation
 
 open scoped MonoidAlgebra
 
-universe u
+universe u v w
 
-variable {k H G : Type u} [CommRing k] [Monoid H] [Monoid G] (φ : H →* G) {V : Type u}
-  [AddCommGroup V] [Module k V] (ρ : Representation k H V)
+-- The carrier `V` lives in `Type (max u v)`, the universe of `k[G]`, as Mathlib's `Rep.coindIso`
+-- requires.
+variable {k : Type u} {H : Type w} {G : Type v} [CommRing k] [Monoid H] [Monoid G] (φ : H →* G)
+  {V : Type (max u v)} [AddCommGroup V] [Module k V] (ρ : Representation k H V)
 
 -- `k[H]` acts on the source `k[G]` through `mapDomainRingHom k φ`, and `x` is `k[H]`-linear.
 private theorem coextendScalars_apply_mapDomain_mul
@@ -78,14 +81,6 @@ private theorem coextendScalars_apply_mapDomain_mul
   congrArg ρ.asModuleEquiv (map_smul (ModuleCat.CoextendScalars.equiv _ _ x) r
     (show ↑((ModuleCat.restrictScalars (MonoidAlgebra.mapDomainRingHom k φ)).obj
       (ModuleCat.of k[G] k[G])) from a))
-
-private theorem mapDomainRingHom_single_mul (h : H) (c : k) (a : k[G]) :
-    MonoidAlgebra.mapDomainRingHom k φ (.single h c) * a = c • ofMulAction k G G (φ h) a := by
-  induction a using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
-  | single g c' => simp [MonoidAlgebra.mapDomainRingHom_apply, MonoidAlgebra.single_mul_single,
-      MonoidAlgebra.smul_single]
 
 private theorem leftRegularHomEquiv_symm_single_one_apply (g : G) (a : k[G]) :
     ((Rep.leftRegularHomEquiv (Rep.leftRegular k G)).symm (.single g 1)).hom a =
@@ -128,7 +123,8 @@ private noncomputable def coextendScalarsEquivCoind' :
         rfl
       isIntertwining' h := LinearMap.ext fun a ↦ by
         have := coextendScalars_apply_mapDomain_mul φ ρ x (.single h 1) a
-        rw [mapDomainRingHom_single_mul, one_smul, asAlgebraHom_single_one] at this
+        rw [MonoidAlgebra.mapDomainRingHom_apply, MonoidAlgebra.mapDomain_single,
+          TauCeti.single_mul_eq_smul_ofMulAction, one_smul, asAlgebraHom_single_one] at this
         exact this }
   invFun f := (ModuleCat.CoextendScalars.equiv _ _).symm
     { toFun a := ρ.asModuleEquiv.symm (f.hom a)
@@ -142,7 +138,8 @@ private noncomputable def coextendScalarsEquivCoind' :
         | zero => rw [map_zero, zero_mul, map_zero, map_zero, LinearMap.zero_apply]
         | add r r' hr hr' => rw [map_add, add_mul, map_add, hr, hr', map_add, LinearMap.add_apply]
         | single h c =>
-          rw [mapDomainRingHom_single_mul, map_smul, asAlgebraHom_single]
+          rw [MonoidAlgebra.mapDomainRingHom_apply, MonoidAlgebra.mapDomain_single,
+            TauCeti.single_mul_eq_smul_ofMulAction, map_smul, asAlgebraHom_single]
           exact congrArg (c • ·) (Rep.hom_comm_apply f h a) }
   map_add' x y := rfl
   map_smul' r x := Rep.hom_ext <| IntertwiningMap.ext <| LinearMap.ext fun a ↦ by

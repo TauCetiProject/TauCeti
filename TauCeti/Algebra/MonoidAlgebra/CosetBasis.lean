@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
-public import Mathlib.Algebra.Module.Projective
 public import TauCeti.GroupTheory.Coset.Basic
 
 /-!
@@ -19,12 +18,6 @@ left-coset representatives of `p.range`, which represent its right cosets.
 ## Main definitions
 
 * `TauCeti.MonoidAlgebra.basisCosets`: the coset basis of `R[N]` over `R[M]`.
-
-## Main results
-
-* `TauCeti.MonoidAlgebra.free_mapDomainRingHom` and
-  `TauCeti.MonoidAlgebra.projective_mapDomainRingHom`: `R[N]` is a free, hence projective,
-  `R[M]`-module.
 -/
 
 public section
@@ -94,22 +87,5 @@ def basisCosets (p : M →* N) (hp : Function.Injective p) :
 theorem basisCosets_apply (p : M →* N) (hp : Function.Injective p) (q : N ⧸ p.range) :
     basisCosets R p hp q = single q.out⁻¹ (1 : R) := by
   simp [basisCosets, Module.Basis.coe_ofRepr, cosetLinearEquiv, cosetAddEquiv_single]
-
-/-- An injective group homomorphism `p : M →* N` makes `R[N]` a free `R[M]`-module through
-`mapDomainRingHom R p`, with basis `TauCeti.MonoidAlgebra.basisCosets`. -/
-theorem free_mapDomainRingHom (p : M →* N) (hp : Function.Injective p) :
-    letI := (mapDomainRingHom R p).toModule
-    Module.Free R[M] R[N] :=
-  letI := (mapDomainRingHom R p).toModule
-  .of_basis (basisCosets R p hp)
-
-/-- An injective group homomorphism `p : M →* N` makes `R[N]` a projective `R[M]`-module through
-`mapDomainRingHom R p`, since it is free. -/
-theorem projective_mapDomainRingHom (p : M →* N) (hp : Function.Injective p) :
-    letI := (mapDomainRingHom R p).toModule
-    Module.Projective R[M] R[N] :=
-  letI := (mapDomainRingHom R p).toModule
-  have := free_mapDomainRingHom R p hp
-  inferInstance
 
 end TauCeti.MonoidAlgebra
