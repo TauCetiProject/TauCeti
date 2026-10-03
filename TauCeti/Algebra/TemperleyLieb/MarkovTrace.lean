@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb
-public import Mathlib.LinearAlgebra.Matrix.Kronecker
-public import Mathlib.LinearAlgebra.Matrix.Reindex
+public import TauCeti.LinearAlgebra.Matrix.ExtendLast
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.LinearCombination
 
@@ -48,7 +46,7 @@ is the identity, which gives the Markov property.
 * `TauCeti.TemperleyLieb.spinGenerator`: the matrix of a generator in the spin model.
 * `TauCeti.TemperleyLieb.spinRep`: the spin representation of the Temperley-Lieb algebra.
 * `TauCeti.TemperleyLieb.spinWeight`: the weight of a spin configuration.
-* `TauCeti.TemperleyLieb.extendLast`: a matrix on `m` spins acting on `m + 1` spins, as the
+* `TauCeti.Matrix.extendLast`: a matrix on `m` spins acting on `m + 1` spins, as the
   identity on the last one: the Kronecker product `1 ⊗ₖ X`, reindexed along `Fin.snocEquiv`.
 * `TauCeti.TemperleyLieb.markovTrace`: the Markov trace.
 
@@ -72,7 +70,7 @@ is the identity, which gives the Markov property.
 
 public section
 
-open Function Matrix
+open Function Matrix TauCeti.Matrix
 open scoped Kronecker
 
 namespace TauCeti.TemperleyLieb
@@ -431,36 +429,14 @@ private theorem sum_spin_succ {M : Type*} [AddCommMonoid M] (f : (Fin (m + 1) �
   rfl
 
 /-- The weight of a configuration with one more spin. -/
+@[simp]
 theorem spinWeight_snoc (s : Fin m → Bool) (c : Bool) :
     spinWeight q (Fin.snoc s c : Fin (m + 1) → Bool) = spinWeight q s * markovWeight q c := by
   simp [spinWeight, Fin.prod_univ_castSucc]
 
-/-- A matrix on `m` spins as a matrix on `m + 1` spins, acting as the identity on the last one:
-the Kronecker product `1 ⊗ₖ X`, reindexed along `Fin.snocEquiv` so that the factor `1` acts on the
-last spin. Its entry at `s` and `t` is the entry of the original matrix at their first `m` spins
-when the last spins of `s` and `t` agree, and `0` otherwise. It is how the spin representation
-intertwines `TauCeti.TemperleyLieb.strandIncl`. -/
-def extendLast : Matrix (Fin m → Bool) (Fin m → Bool) R →ₐ[R]
-    Matrix (Fin (m + 1) → Bool) (Fin (m + 1) → Bool) R :=
-  (reindexAlgEquiv R R (Fin.snocEquiv fun _ ↦ Bool)).toAlgHom.comp <|
-    AlgHom.ofLinearMap (kroneckerBilinear (R := R) (1 : Matrix Bool Bool R)) one_kronecker_one
-      fun X Y ↦ by
-        change (1 : Matrix Bool Bool R) ⊗ₖ (X * Y) = (1 ⊗ₖ X) * (1 ⊗ₖ Y)
-        rw [← mul_kronecker_mul, mul_one]
-
-/-- `extendLast X` is the Kronecker product of the identity on the last spin with `X`. -/
-theorem extendLast_eq (X : Matrix (Fin m → Bool) (Fin m → Bool) R) :
-    extendLast X = reindex (Fin.snocEquiv fun _ ↦ Bool) (Fin.snocEquiv fun _ ↦ Bool)
-      ((1 : Matrix Bool Bool R) ⊗ₖ X) := (rfl)
-
-theorem extendLast_apply (X : Matrix (Fin m → Bool) (Fin m → Bool) R)
-    (s t : Fin (m + 1) → Bool) :
-    extendLast X s t = if s (Fin.last m) = t (Fin.last m) then X (Fin.init s) (Fin.init t)
-      else 0 := by
-  simp [extendLast_eq, one_apply]
-
 /-- A generator matrix on strands that do not include the last one is extended from fewer
 strands. -/
+@[simp]
 theorem spinGenerator_castSucc (j k : Fin m) :
     spinGenerator q j.castSucc k.castSucc = extendLast (spinGenerator q j k) := by
   ext s t
