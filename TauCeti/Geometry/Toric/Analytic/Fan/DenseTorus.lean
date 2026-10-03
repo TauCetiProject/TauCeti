@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit
+public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Basic
 
 /-!
 # The dense torus of an analytic toric fan realization
@@ -93,23 +93,22 @@ theorem isOpen_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
   rw [analyticDenseTorus_def,
     Phi.preimage_analyticAffineChartι_analyticConeOrbit hPhi hbot]
   let hσ := (isRegular_iff.mp hPhi) sigma.1 sigma.2
-  let botCone : Phi.cones := ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
-  let F : sigma.1.Face :=
-    ⟨botCone.1, Phi.isFaceOf_of_le sigma.2 botCone.2 hbot⟩
+  let F : sigma.1.Face := Phi.orbitFace hbot
   have hF : F = ⊥ := by
+    dsimp only [F]
     apply le_antisymm
-    · rw [← PointedCone.Face.toPointedCone_le_toPointedCone]
+    · rw [← PointedCone.Face.toPointedCone_le_toPointedCone, Phi.coe_orbitFace]
       exact bot_le
     · exact bot_le
   obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
   have hopen : @IsOpen _
-      (affinePointTopology (Phi.analyticChartGenerators sigma hσ).2)
+      (affinePointTopology (Phi.analyticChartGenerators sigma).2)
       (affineConeOrbit Phi.lattice F) := by
     rw [hF, affineConeOrbit_eq_orbit Phi.lattice hσ, distinguishedPoint_bot]
     exact isOpen_orbit_complexTorus_default Phi.lattice hσ.toIsToricCone hb
-      (Phi.analyticChartGenerators sigma hσ).2
-  rw [← Phi.analyticAffineChart_str_eq sigma hσ
-    (Phi.analyticChartGenerators sigma hσ).2] at hopen
+      (Phi.analyticChartGenerators sigma).2
+  rw [← Phi.analyticAffineChart_str_eq sigma
+    (Phi.analyticChartGenerators sigma).2] at hopen
   exact hopen
 
 /-- The canonical inclusion of the coordinate-free complex torus into the realization of a
@@ -133,9 +132,9 @@ theorem analyticTorusι_eq_analyticAffineChartι (hPhi0 : Nonempty Phi.cones)
       (t • (default : AffineSemigroupComplexPoint (dualSemigroup Phi.lattice sigma.1))) := by
   let tau : Phi.cones := ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
   have hle : tau ≤ sigma := Subtype.coe_le_coe.1 bot_le
-  have hface : (⟨tau.1, Phi.isFaceOf_of_le sigma.2 tau.2 hle⟩ : sigma.1.Face) = ⊥ := by
+  have hface : Phi.orbitFace hle = (⊥ : sigma.1.Face) := by
     apply le_antisymm
-    · rw [← PointedCone.Face.toPointedCone_le_toPointedCone]
+    · rw [← PointedCone.Face.toPointedCone_le_toPointedCone, Phi.coe_orbitFace]
       exact bot_le
     · exact bot_le
   rw [analyticTorusι_def, ← Phi.analyticAffineChartι_distinguishedPoint hPhi hle,

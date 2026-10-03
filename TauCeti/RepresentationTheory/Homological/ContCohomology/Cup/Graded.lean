@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearMap.IntLinear
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeCast
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.CompactOpen
 
 /-!
@@ -448,6 +448,14 @@ theorem resolutionCup_smul_right : ∀ (m n k : ℕ) (hk : k = n + m) (r : R)
   | m + 1, n, k + 1, hk, r, a, b => ContinuousMap.ext fun g ↦ by
     rw [ContinuousMap.smul_apply, resolutionCup_succ_apply, resolutionCup_succ_apply]
     exact resolutionCup_smul_right m n k (Nat.succ.inj hk) r (a g) b
+
+/-- The Alexander--Whitney pairing preserves subtraction in its second argument. -/
+theorem resolutionCup_sub_right (m n k : ℕ) (hk : k = n + m)
+    (a : (TopRep.resolutionX X (m + 1)).V) (b b' : (TopRep.resolutionX Y (n + 1)).V) :
+    P.resolutionCup m n k hk (a, b - b') =
+      P.resolutionCup m n k hk (a, b) - P.resolutionCup m n k hk (a, b') := by
+  rw [sub_eq_add_neg, sub_eq_add_neg, P.resolutionCup_add_right, ← neg_one_smul R b',
+    P.resolutionCup_smul_right, neg_one_smul]
 
 /-- **The resolution pairing is equivariant.** -/
 theorem resolutionCup_ρ : ∀ (m n k : ℕ) (hk : k = n + m) (g : G)
