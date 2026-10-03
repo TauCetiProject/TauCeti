@@ -155,12 +155,10 @@ theorem coe_tschirnhausActionHom_apply (f T : F[X]) (g : f.Gal)
 /-- The root map `α ↦ T(α)` is equivariant for restriction to the Galois group of the
 Tschirnhaus transform. -/
 @[simp]
-theorem tschirnhausActionHom_apply_rootMap {f : F[X]} (hf : f ≠ 0) (T : F[X]) (g : f.Gal)
+theorem tschirnhausActionHom_apply_rootMap (f T : F[X]) (g : f.Gal)
     (x : f.rootSet f.SplittingField) :
-    tschirnhausActionHom f T g
-        (tschirnhausRootMap hf (SplittingField.splits f) T x) =
-      tschirnhausRootMap hf (SplittingField.splits f) T
-        ⟨g (x : f.SplittingField), rootSet_mapsTo g.toAlgHom x.2⟩ := by
+    tschirnhausActionHom f T g (tschirnhausRootMap f T x) =
+      tschirnhausRootMap f T ⟨g (x : f.SplittingField), rootSet_mapsTo g.toAlgHom x.2⟩ := by
   apply Subtype.ext
   rw [coe_tschirnhausActionHom_apply, coe_tschirnhausRootMap,
     coe_tschirnhausRootMap, aeval_algHom_apply]
