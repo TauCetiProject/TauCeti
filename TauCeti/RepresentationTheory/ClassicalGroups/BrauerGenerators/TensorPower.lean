@@ -77,6 +77,8 @@ outside this file.
 
 * `TauCeti.orthogonalCupCapAt_tprod`: the value of the generator on a pure tensor, the formula
   every proof below runs on.
+* `TauCeti.orthogonalCupCapAt_self_tprod`: the degenerate value at `i = j`, which is a rank-one
+  map at the single slot and not a self-contraction, so it is not an arc.
 * `TauCeti.orthogonalCupCapAt_comm`: the generator depends only on the unordered pair of strands.
 * `TauCeti.orthogonalCupCapAt_mul_self`, `TauCeti.permTensorAction_swap_mul_orthogonalCupCapAt`,
   `TauCeti.orthogonalCupCapAt_mul_permTensorAction_swap`,
@@ -128,8 +130,11 @@ private def cupCapStrand (i j : Fin d) (a c : Fin n) (t : Fin d) :
 cap contracting the slots `i` and `j` against the coordinate dot product, closed off by a cup
 re-expanding those two slots as `∑_c e_c ⊗ e_c`.
 
-At `i = j` the definition still makes sense but is not an arc of a Brauer diagram — it contracts a
-single slot against itself — so every relation below carries the hypothesis `i ≠ j`. -/
+At `i = j` the two strands coincide, so the cap and the cup land on the same slot and the result is
+not an arc of a Brauer diagram: it is not a contraction of the slot `i` against itself, which would
+be quadratic rather than linear, but the rank-one map replacing that slot by the sum of its
+coordinates times the all-ones vector (`TauCeti.orthogonalCupCapAt_self_tprod`). Every relation
+below therefore carries the hypothesis `i ≠ j`. -/
 noncomputable def orthogonalCupCapAt (i j : Fin d) : Module.End k (⨂[k]^d (Fin n → k)) :=
   ∑ a : Fin n, ∑ c : Fin n,
     PiTensorProduct.lift ((PiTensorProduct.tprod k).compLinearMap (cupCapStrand k n d i j a c))
@@ -241,6 +246,27 @@ theorem orthogonalCupCapAt_tprod {i j : Fin d} (hij : i ≠ j) (v : Fin d → (F
   refine Finset.sum_congr rfl fun c _ => ?_
   rw [← Finset.sum_smul]
   rfl
+
+/-- **The degenerate value at coincident strands**: at `i = j` the cap and the cup land on the
+same slot, and `TauCeti.orthogonalCupCapAt k n d i i` is *not* the contraction of that slot against
+itself — which would be quadratic in `v i`, not linear — but the rank-one map replacing it by
+`(∑ a, v i a) • 1`. This is why the arc relations all assume `i ≠ j`. -/
+theorem orthogonalCupCapAt_self_tprod (i : Fin d) (v : Fin d → (Fin n → k)) :
+    orthogonalCupCapAt k n d i i (PiTensorProduct.tprod k v) =
+      (∑ a : Fin n, v i a) • ∑ c : Fin n, PiTensorProduct.tprod k
+        (Function.update v i (Pi.single c (1 : k))) := by
+  have key : ∀ a c : Fin n,
+      PiTensorProduct.lift ((PiTensorProduct.tprod k).compLinearMap (cupCapStrand k n d i i a c))
+          (PiTensorProduct.tprod k v) =
+        v i a • PiTensorProduct.tprod k (Function.update v i (Pi.single c (1 : k))) := by
+    intro a c
+    rw [orthogonalCupCapAt_lift_tprod, Function.update_idem,
+      (PiTensorProduct.tprod k).map_update_smul]
+  rw [orthogonalCupCapAt]
+  simp only [LinearMap.sum_apply]
+  rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun c _ => key a c, Finset.sum_comm,
+    Finset.smul_sum]
+  exact Finset.sum_congr rfl fun c _ => Finset.sum_smul.symm
 
 /-- The generator depends only on the unordered pair of strands: the arc joining `i` to `j` is the
 arc joining `j` to `i`. -/
