@@ -77,7 +77,7 @@ theorem projection_base_apply (x : PrimeSpectrum A) :
   exact Spec.map_apply (CommRingCat.ofHom (algebraMap (FixedPoints.subring A G) A)) x
 
 /-- The quotient projection lies over every invariant base ring. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 theorem projection_specAlgebraMap (R : Type u) [CommRing R] [Algebra R A]
     [SMulCommClass G R A] :
     projection A G ≫ Spec.algebraMap R (FixedPoints.subalgebra R A G) =
