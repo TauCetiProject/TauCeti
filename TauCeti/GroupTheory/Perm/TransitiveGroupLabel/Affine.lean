@@ -84,8 +84,8 @@ theorem coe_referenceSubgroupFiveTwoMulEquivAffineGroup_symm_apply (g : AffineGr
   simp [referenceSubgroupFiveTwoMulEquivAffineGroup, MonoidHom.ofInjective_apply]
 
 /-- The affine map attached to a permutation in `5T3` acts on `ZMod 5` as the permutation acts on
-`Fin 5`. This is a pre-simp rule so it fires before `ZMod.finEquiv_apply`. -/
-@[simp↓]
+`Fin 5`. -/
+@[simp]
 theorem referenceSubgroupFiveTwoMulEquivAffineGroup_smul (σ : referenceSubgroup 5 ⟨2, by simp⟩)
     (i : Fin 5) :
     referenceSubgroupFiveTwoMulEquivAffineGroup σ • ZMod.finEquiv 5 i =
