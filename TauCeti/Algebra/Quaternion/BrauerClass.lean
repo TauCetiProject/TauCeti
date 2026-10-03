@@ -185,6 +185,22 @@ theorem quaternionClass_mul_sq_left (a b c : Kˣ) :
   rw [mul_comm a (c ^ 2)]
   exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleIEquiv (a : K) (b : K) c)
 
+/-- Inverting the second argument does not change a quaternion symbol. -/
+@[simp]
+theorem quaternionClass_inv_right (a b : Kˣ) :
+    quaternionClass a b⁻¹ = quaternionClass a b := by
+  calc
+    quaternionClass a b⁻¹ = quaternionClass a (b * (b⁻¹) ^ 2) := by
+      congr 2
+      all_goals group
+    _ = quaternionClass a b := quaternionClass_mul_sq_right a b b⁻¹
+
+/-- Inverting the first argument does not change a quaternion symbol. -/
+@[simp]
+theorem quaternionClass_inv_left (a b : Kˣ) :
+    quaternionClass a⁻¹ b = quaternionClass a b := by
+  rw [quaternionClass_comm, quaternionClass_inv_right, quaternionClass_comm]
+
 /-- **The quaternion symbol is its own inverse**: quaternion conjugation is an isomorphism of
 `ℍ[K,a,b]` with its opposite algebra. -/
 @[simp]
