@@ -339,8 +339,10 @@ end InjectivePresentation
 
 namespace ProjectivePresentation
 
-/-- A projective presentation in `C` is an injective presentation in `Cᵒᵖ`. -/
-def op {X : C} (P : E.ProjectivePresentation X) :
+/-- A projective presentation in `C` is an injective presentation in `Cᵒᵖ`.
+The component objects and maps are exposed so this dependent construction can be used
+with the original presentation's kernel and middle term from importing modules. -/
+abbrev op {X : C} (P : E.ProjectivePresentation X) :
     E.op.InjectivePresentation (Opposite.op X) where
   I := Opposite.op P.P
   K := Opposite.op P.K
@@ -349,6 +351,22 @@ def op {X : C} (P : E.ProjectivePresentation X) :
   zero := by simpa using congrArg Quiver.Hom.op P.zero
   conflation := (E.op_conflation_op_iff _).mpr P.conflation
   isInjective := (E.isProjective_iff_isInjective_op P.P).mp P.isProjective
+
+/-- Opposing a projective presentation preserves its middle term up to taking opposites. -/
+@[simp] theorem op_I {X : C} (P : E.ProjectivePresentation X) :
+    P.op.I = Opposite.op P.P := (rfl)
+
+/-- The cokernel term of the opposite presentation is the opposite kernel term. -/
+@[simp] theorem op_K {X : C} (P : E.ProjectivePresentation X) :
+    P.op.K = Opposite.op P.K := (rfl)
+
+/-- The opposite presentation starts with the opposite deflation. -/
+@[simp] theorem op_i {X : C} (P : E.ProjectivePresentation X) :
+    P.op.i = P.p.op := (rfl)
+
+/-- The opposite presentation ends with the opposite inflation. -/
+@[simp] theorem op_p {X : C} (P : E.ProjectivePresentation X) :
+    P.op.p = P.i.op := (rfl)
 
 /-- Unopposing a projective presentation gives an injective presentation. -/
 def unop {X : Cᵒᵖ} (P : E.op.ProjectivePresentation X) :
