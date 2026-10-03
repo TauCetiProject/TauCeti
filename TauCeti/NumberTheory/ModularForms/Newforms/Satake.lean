@@ -37,9 +37,10 @@ bound `|a_p| ≤ 2 p^{(k-1)/2}`, also explicit since it is not proved here, ther
 are `p^{(k-1)/2} e^{± i θ_p}`. The angle equals
 `arccos (Re a_p / (2 p^{(k-1)/2}))`.
 
-The parameters are taken in the arithmetic normalisation of the coefficients `a_p`, with
-absolute value `p^{(k-1)/2}` under the Ramanujan–Deligne bound, rather than in the unitary
-normalisation `a_p / p^{(k-1)/2}`.
+The parameters are taken in the arithmetic normalisation of the coefficients `a_p`, rather than
+in the unitary normalisation `a_p / p^{(k-1)/2}`: at a prime with `χ(p) = 1` (so not dividing the
+level) and under the Ramanujan–Deligne bound, both have absolute value `p^{(k-1)/2}`
+(`HeckeRing.GL2.Newform.satakeParameters_eq_exp_satakeAngle`).
 
 ## Main definitions
 
