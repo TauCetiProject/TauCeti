@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.ReidemeisterThree.Local
+public import TauCeti.KnotTheory.PDCode.ReidemeisterThree.Basic
 public import TauCeti.KnotTheory.PDCode.Planar
+import TauCeti.KnotTheory.PDCode.ReidemeisterThree.Local
 import TauCeti.Data.Fin.Basic
 
 /-!
