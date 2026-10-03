@@ -302,7 +302,15 @@ theorem hom_shift_inverse_map {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
 on underlying modules. -/
 def shiftFunctorCompToModuleCatIso (n : ℤ) :
     shiftFunctor (𝒜 := 𝒜) n ⋙ toModuleCat ≅ toModuleCat :=
-  Iso.refl _
+  -- `shiftObj` changes only the grading, so its carrier and module instances reduce to those
+  -- of `M`; the identity linear equivalence therefore supplies each component.
+  NatIso.ofComponents (fun M ↦ (LinearEquiv.refl A M).toModuleIso) fun f ↦ by
+    simp only [Functor.comp_map, toModuleCat_map, hom_shiftFunctor_map,
+      LinearEquiv.toModuleIso_hom, LinearEquiv.refl_toLinearMap, ModuleCat.ofHom_id]
+    -- The shifted carrier has the same module instances, so both identities are on the
+    -- underlying source and target of `f.hom`.
+    exact (Category.comp_id (ModuleCat.ofHom f.hom)).trans
+      (Category.id_comp (ModuleCat.ofHom f.hom)).symm
 
 @[simp]
 theorem shiftFunctorCompToModuleCatIso_hom_app_hom (n : ℤ) :
