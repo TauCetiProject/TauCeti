@@ -14,9 +14,9 @@ public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 # Finite presentation of modules and their associated sheaves
 
 An `R`-module is finitely presented if and only if its associated sheaf on `Spec R` is finitely
-presented. More generally, the sections of a finitely presented sheaf over an affine scheme are
-a finitely presented module over its ring of functions, and the sheaf admits a global
-presentation with finitely many generators and relations.
+presented. More generally, the sections of a finitely presented sheaf over any affine open are
+a finitely presented module over its ring of functions. On an affine scheme, the sheaf admits
+a global presentation with finitely many generators and relations.
 
 The forward implication uses Mathlib's `presentationTilde`, whose generating and relation
 families are precisely those of the module presentation. For the converse, finite local sheaf
@@ -125,13 +125,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_sections_of_p
   let P₁ := @SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _ e₀.hom (Iso.isIso_hom e₀) P₀
   have : P₁.IsFinite :=
     @SheafOfModules.instIsFiniteOfIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_hom e₀) P₀ inferInstance
-  let G : SheafOfModules U.toScheme.ringCatSheaf ⥤
-      SheafOfModules (Spec Γ(X, U)).ringCatSheaf :=
-    Scheme.Modules.restrictFunctor hU.isoSpec.inv
-  have : PreservesColimitsOfSize.{u, u} G :=
-    (Scheme.Modules.restrictAdjunction hU.isoSpec.inv).leftAdjoint_preservesColimits
-  let P₂ := P₁.map G (Scheme.Modules.restrictUnitIso hU.isoSpec.inv).symm
-  have : P₂.IsFinite := SheafOfModules.Presentation.isFinite_map _ _ _
+  let P₂ := Scheme.Modules.presentationRestrict hU.isoSpec.inv P₁
+  have : P₂.IsFinite := by
+    dsimp [P₂, Scheme.Modules.presentationRestrict]
+    apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
   let e₂ : (M.restrict U.ι).restrict hU.isoSpec.inv ≅ M.restrict hU.fromSpec :=
     ((Scheme.Modules.restrictFunctorComp hU.isoSpec.inv U.ι).app M).symm ≪≫
       (Scheme.Modules.restrictFunctorCongr hU.isoSpec_inv_ι).app M
@@ -144,29 +141,29 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_sections_of_p
   exact @Module.FinitePresentation.of_equiv _ _ _ _ _ _ _ _
     (M.fromSpecSectionsEquiv hU).symm h
 
-/-- The global sections of a finitely presented sheaf on an affine scheme form a finitely
-presented module over its ring of global functions. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_globalSections_of_isAffine
-    {X : Scheme.{u}} [IsAffine X] (M : X.Modules) [M.IsFinitePresentation] :
-    Module.FinitePresentation Γ(X, ⊤) Γ(M, ⊤) := by
+/-- The sections of a finitely presented sheaf over an affine open form a finitely presented
+module over the ring of functions on that open. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_sections_of_isAffineOpen
+    {X : Scheme.{u}} (M : X.Modules) [M.IsFinitePresentation] (U : X.Opens)
+    (hU : IsAffineOpen U) : Module.FinitePresentation Γ(X, U) Γ(M, U) := by
   classical
   obtain ⟨q, hq⟩ := SheafOfModules.IsFinitePresentation.exists_quasicoherentData M
   have : M.IsQuasicoherent := q.isQuasicoherent
-  let s : Set Γ(X, ⊤) := {f | ∃ i, X.basicOpen f ≤ q.X i}
+  let s : Set Γ(X, U) := {f | ∃ i, X.basicOpen f ≤ q.X i}
   have hcov : iSup q.X = ⊤ := by
     simpa only [Opens.coversTop_iff, IsOpenCover] using q.coversTop
   have hs : Ideal.span s = ⊤ := by
-    apply (isAffineOpen_top X).iSup_basicOpen_eq_self_iff.mp
-    apply top_unique
-    intro x _
+    apply hU.iSup_basicOpen_eq_self_iff.mp
+    refine le_antisymm (iSup_le fun f : s => X.basicOpen_le f.1) ?_
+    intro x hxU
     have hx : x ∈ iSup q.X := by simp [hcov]
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
-    obtain ⟨f, hf, hxf⟩ := (isAffineOpen_top X).exists_basicOpen_le ⟨x, hi⟩ (by trivial)
+    obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hi⟩ hxU
     exact Opens.mem_iSup.mpr ⟨⟨f, i, hf⟩, hxf⟩
   have loc (f : s) : IsLocalization.Away f.1 Γ(X, X.basicOpen f.1) :=
-    (isAffineOpen_top X).isLocalization_basicOpen f.1
+    hU.isLocalization_basicOpen f.1
   have modloc (f : s) : IsLocalizedModule.Away f.1 (M.basicOpenRestrict f.1) :=
-    M.isLocalizedModule_basicOpenRestrict (isAffineOpen_top X) f.1
+    M.isLocalizedModule_basicOpenRestrict hU f.1
   apply Module.FinitePresentation.of_localizationSpan' s hs
     (Rₚ := fun f => Γ(X, X.basicOpen f.1))
     (Mₚ := fun f => Γ(M, X.basicOpen f.1)) (fun f => M.basicOpenRestrict f.1)
@@ -183,7 +180,14 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_globalSection
   have : P'.IsFinite :=
     @SheafOfModules.instIsFiniteOfIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_hom e) P inferInstance
   exact Scheme.Modules.finitePresentation_sections_of_presentation M D
-    ((isAffineOpen_top X).basicOpen f.1) P'
+    (hU.basicOpen f.1) P'
+
+/-- The global sections of a finitely presented sheaf on an affine scheme form a finitely
+presented module over its ring of global functions. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_globalSections_of_isAffine
+    {X : Scheme.{u}} [IsAffine X] (M : X.Modules) [M.IsFinitePresentation] :
+    Module.FinitePresentation Γ(X, ⊤) Γ(M, ⊤) :=
+  M.finitePresentation_sections_of_isAffineOpen ⊤ (isAffineOpen_top X)
 
 /-- A finitely presented sheaf on `Spec R` has finitely presented global sections as an
 `R`-module. -/
