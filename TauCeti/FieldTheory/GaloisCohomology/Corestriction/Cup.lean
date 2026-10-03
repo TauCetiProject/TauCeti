@@ -19,9 +19,9 @@ formula
 cor (res x ⌣ y) = x ⌣ cor y.
 ```
 
-The proof transports the subgroup projection formula
-`TauCeti.trivialF2CorMap_cup_one_one` through the topological group isomorphism from `G_L` to the
-open subgroup `TauCeti.galoisSubgroup K L σ` of `G_K`.
+The formula computes the corestriction of a degree-two cup product in which one factor is the
+restriction of a degree-one class on `G_K`: that ambient class can be pulled outside the
+corestriction, so only the degree-one corestriction of the other factor remains to be computed.
 
 ## Main result
 
