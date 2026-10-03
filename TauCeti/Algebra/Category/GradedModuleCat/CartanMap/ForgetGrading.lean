@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import Mathlib.CategoryTheory.Whiskering
+-- Identify the induced structures locally while keeping their bodies hidden from consumers.
+import all TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
+import all TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 
 /-!
 # Forgetting grading in the Cartan map
@@ -104,73 +106,83 @@ instance : (gradedFiniteProjectiveModulesForget 𝒜).Additive := by
   dsimp [gradedFiniteProjectiveModulesForget]
   infer_instance
 
+private theorem isConflationExact_toModuleCat :
+    (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).IsConflationExact
+      (ExactStructure.abelian (ModuleCat.{uA} A)) GradedModuleCat.toModuleCat where
+  map_conflation {S} hS := by
+    rw [ExactStructure.abelian_conflation] at hS ⊢
+    let hf : Mono S.f := hS.mono_f
+    let hg : Epi S.g := hS.epi_g
+    let hmono : (GradedModuleCat.toModuleCat (𝒜 := 𝒜)).PreservesMonomorphisms :=
+      NormalEpiCategory.preservesMonomorphisms_of_preservesKernels _
+    let hepi : (GradedModuleCat.toModuleCat (𝒜 := 𝒜)).PreservesEpimorphisms :=
+      NormalMonoCategory.preservesEpimorphisms_of_preservesCokernels _
+    exact hS.map GradedModuleCat.toModuleCat
+
 /-- Forgetting grading preserves the conflations of finite modules. -/
 theorem isConflationExact_gradedFiniteModulesForget :
     (gradedFiniteModulesExactStructure 𝒜).toExactStructure.IsConflationExact
-      (finiteModulesExactStructure A) (gradedFiniteModulesForget 𝒜) where
-  map_conflation {S} hS := by
-    rw [gradedFiniteModulesExactStructure_conflation_iff] at hS
-    rw [finiteModulesExactStructure_conflation_iff]
-    have := hS.mono_f
-    have := hS.epi_g
-    have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels
-      (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    have := NormalMonoCategory.preservesEpimorphisms_of_preservesCokernels
-      (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    rw [← ShortComplex.map_comp]
-    apply ShortComplex.shortExact_of_iso
-      (S.mapNatIso (gradedFiniteModulesForgetCompιIso 𝒜).symm)
-    rw [ShortComplex.map_comp]
-    exact hS.map (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
+      (finiteModulesExactStructure A) (gradedFiniteModulesForget 𝒜) := by
+  simpa only [gradedFiniteModulesExactStructure, finiteModulesExactStructure,
+    gradedFiniteModulesForget] using GradedExactStructure.isConflationExact_lift
+    (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
+    (gradedModuleExactStructure 𝒜) (gradedFiniteModules 𝒜)
+    (isExtensionClosed_gradedFiniteModules' (𝒜 := 𝒜))
+    (gradedFiniteModules_shift' (𝒜 := 𝒜))
+    (fun M => (ModuleCat.isFG_iff _).2 (inferInstanceAs (Module.Finite A M.obj)))
+    (isExtensionClosed_finiteModules A)
+    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+      using isConflationExact_toModuleCat 𝒜)
 
 /-- Forgetting grading preserves the conflations of finite projectives. -/
 theorem isConflationExact_gradedFiniteProjectiveModulesForget :
     (gradedFiniteProjectiveModulesExactStructure 𝒜).toExactStructure.IsConflationExact
-      (finiteProjectiveModulesExactStructure A) (gradedFiniteProjectiveModulesForget 𝒜) where
-  map_conflation {S} hS := by
-    rw [gradedFiniteProjectiveModulesExactStructure_conflation_iff] at hS
-    rw [finiteProjectiveModulesExactStructure_conflation_iff]
-    have := hS.mono_f
-    have := hS.epi_g
-    have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels
-      (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    have := NormalMonoCategory.preservesEpimorphisms_of_preservesCokernels
-      (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    rw [← ShortComplex.map_comp]
-    apply ShortComplex.shortExact_of_iso
-      (S.mapNatIso (gradedFiniteProjectiveModulesForgetCompιIso 𝒜).symm)
-    rw [ShortComplex.map_comp]
-    exact hS.map (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
+      (finiteProjectiveModulesExactStructure A) (gradedFiniteProjectiveModulesForget 𝒜) := by
+  simpa only [gradedFiniteProjectiveModulesExactStructure, finiteProjectiveModulesExactStructure,
+    gradedFiniteProjectiveModulesForget]
+    using GradedExactStructure.isConflationExact_lift
+    (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
+    (gradedModuleExactStructure 𝒜)
+    (gradedFiniteProjectiveModules 𝒜)
+    (isExtensionClosed_gradedFiniteProjectiveModules' (𝒜 := 𝒜))
+    (gradedFiniteProjectiveModules_shift' (𝒜 := 𝒜))
+    (fun M => finiteProjectiveModules_iff.2
+      ⟨inferInstanceAs (Module.Finite A M.obj), inferInstanceAs (Module.Projective A M.obj)⟩)
+    (ExactStructure.isExtensionClosed_of_le_isProjective
+      (finiteProjectiveModules_le_isProjective A))
+    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+      using isConflationExact_toModuleCat 𝒜)
 
 /-- Forgetting the shift of a finite graded module gives the same underlying module. -/
 def gradedFiniteModulesForgetShiftIso :
     (gradedFiniteModulesExactStructure 𝒜).shift.functor ⋙ gradedFiniteModulesForget 𝒜 ≅
-      gradedFiniteModulesForget 𝒜 :=
-  Functor.fullyFaithfulCancelRight (ModuleCat.isFG A).ι
-    (Functor.associator _ _ _ ≪≫
-      isoWhiskerLeft _ (gradedFiniteModulesForgetCompιIso 𝒜) ≪≫
-      (Functor.associator _ _ _).symm ≪≫
-      isoWhiskerRight (gradedFiniteModulesExactStructureShiftFunctorCompιIso (𝒜 := 𝒜))
-        GradedModuleCat.toModuleCat ≪≫
-      Functor.associator _ _ _ ≪≫
-      isoWhiskerLeft _ (GradedModuleCat.shiftFunctorCompToModuleCatIso 1) ≪≫
-      (gradedFiniteModulesForgetCompιIso 𝒜).symm)
+      gradedFiniteModulesForget 𝒜 := by
+  simpa only [gradedFiniteModulesExactStructure, gradedFiniteModulesForget] using
+    GradedExactStructure.liftCommShift
+    (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
+    (gradedModuleExactStructure 𝒜) (gradedFiniteModules 𝒜)
+    (isExtensionClosed_gradedFiniteModules' (𝒜 := 𝒜))
+    (gradedFiniteModules_shift' (𝒜 := 𝒜))
+    (fun M => (ModuleCat.isFG_iff _).2 (inferInstanceAs (Module.Finite A M.obj)))
+    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_shift,
+      GradedModuleCat.shift] using GradedModuleCat.shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) 1)
 
 /-- Forgetting the shift of a finite graded projective gives the same underlying projective. -/
 def gradedFiniteProjectiveModulesForgetShiftIso :
     (gradedFiniteProjectiveModulesExactStructure 𝒜).shift.functor ⋙
         gradedFiniteProjectiveModulesForget 𝒜 ≅
-      gradedFiniteProjectiveModulesForget 𝒜 :=
-  Functor.fullyFaithfulCancelRight (finiteProjectiveModules A).ι
-    (Functor.associator _ _ _ ≪≫
-      isoWhiskerLeft _ (gradedFiniteProjectiveModulesForgetCompιIso 𝒜) ≪≫
-      (Functor.associator _ _ _).symm ≪≫
-      isoWhiskerRight
-        (gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso (𝒜 := 𝒜))
-        GradedModuleCat.toModuleCat ≪≫
-      Functor.associator _ _ _ ≪≫
-      isoWhiskerLeft _ (GradedModuleCat.shiftFunctorCompToModuleCatIso 1) ≪≫
-      (gradedFiniteProjectiveModulesForgetCompιIso 𝒜).symm)
+      gradedFiniteProjectiveModulesForget 𝒜 := by
+  simpa only [gradedFiniteProjectiveModulesExactStructure,
+    gradedFiniteProjectiveModulesForget] using GradedExactStructure.liftCommShift
+    (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
+    (gradedModuleExactStructure 𝒜)
+    (gradedFiniteProjectiveModules 𝒜)
+    (isExtensionClosed_gradedFiniteProjectiveModules' (𝒜 := 𝒜))
+    (gradedFiniteProjectiveModules_shift' (𝒜 := 𝒜))
+    (fun M => finiteProjectiveModules_iff.2
+      ⟨inferInstanceAs (Module.Finite A M.obj), inferInstanceAs (Module.Projective A M.obj)⟩)
+    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_shift,
+      GradedModuleCat.shift] using GradedModuleCat.shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) 1)
 
 /-- The map from specialized graded `G₀` to ungraded `G₀`, induced by forgetting grading. -/
 def gradedFiniteModulesForgetK0 :
@@ -213,9 +225,7 @@ def gradedCartanMapSpecialized (ε : ℤˣ) :
     LaurentSpecialization ε
         (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) →ₗ[ℤ]
       LaurentSpecialization ε (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :=
-  LaurentSpecialization.lift ε
-    (((LaurentSpecialization.mk ε).comp (gradedCartanMap 𝒜)).restrictScalars ℤ)
-    (fun x => by simp [LaurentSpecialization.mk_smul, laurentEval_T])
+  LaurentSpecialization.map ε (gradedCartanMap 𝒜)
 
 /-- Specializing the Cartan map commutes with the quotient class map. -/
 @[simp]
@@ -223,7 +233,7 @@ theorem gradedCartanMapSpecialized_mk (ε : ℤˣ)
     (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :
     gradedCartanMapSpecialized 𝒜 ε (LaurentSpecialization.mk ε x) =
       LaurentSpecialization.mk ε (gradedCartanMap 𝒜 x) :=
-  LaurentSpecialization.lift_mk _ _ _ _
+  LaurentSpecialization.map_mk _ _ _
 
 /-- **Forgetting grading recovers the ungraded Cartan map.** The square from graded projective
 `K₀` and graded module `G₀`, specialized at `q = 1`, to their ungraded counterparts commutes. -/

@@ -30,6 +30,7 @@ turning multiplication by `q` into multiplication by `ε`.
 * `TauCeti.LaurentSpecialization ε N`: the specialization of an `R[q,q⁻¹]`-module at `q = ε`.
 * `TauCeti.LaurentSpecialization.mk`: the specialization map `N → N_ε`.
 * `TauCeti.LaurentSpecialization.lift`: the universal property for `R`-linear maps.
+* `TauCeti.LaurentSpecialization.map`: specialize a Laurent-linear map.
 
 ## Main results
 
@@ -105,6 +106,21 @@ theorem lift_mk (f : N →ₗ[R] A) (hf : ∀ x, f ((T 1 : R[T;T⁻¹]) • x) =
     lift ε f hf (mk ε x) = f x := by
   rw [lift, LinearMap.comp_apply, LinearEquiv.coe_coe, mk_apply,
     Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.liftQ_apply]
+
+variable {M : Type*} [AddCommGroup M] [Module R[T;T⁻¹] M] [Module R M]
+  [IsScalarTower R R[T;T⁻¹] M]
+
+/-- A Laurent-linear map induces an `R`-linear map between specializations at the same unit. -/
+noncomputable def map (f : N →ₗ[R[T;T⁻¹]] M) :
+    LaurentSpecialization ε N →ₗ[R] LaurentSpecialization ε M :=
+  lift ε (((mk ε).comp f).restrictScalars R)
+    (fun x => by simp [mk_smul, laurentEval_T])
+
+/-- Specializing a Laurent-linear map commutes with taking quotient classes. -/
+@[simp]
+theorem map_mk (f : N →ₗ[R[T;T⁻¹]] M) (x : N) :
+    map ε f (mk ε x) = mk ε (f x) :=
+  lift_mk _ _ _ _
 
 /-- An `R`-linear map out of the specialization is determined by its values on specialized
 elements. -/
