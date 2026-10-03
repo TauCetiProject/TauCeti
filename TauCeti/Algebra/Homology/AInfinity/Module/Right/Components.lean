@@ -86,6 +86,7 @@ noncomputable def b (MM : AInfinityRightModule AA M) :
   | n + 1 => MM.taylor ∘ₗ (TensorWords.of R A n).lTensor M
 
 /-- The arity-zero component is the junk value `0`. -/
+@[simp]
 theorem b_zero (MM : AInfinityRightModule AA M) : MM.b 0 = 0 :=
   (rfl)
 
@@ -161,6 +162,7 @@ noncomputable def m (MM : AInfinityRightModule AA M) :
         simp }
 
 /-- The arity-zero operation is the junk value `0`. -/
+@[simp]
 theorem m_zero (MM : AInfinityRightModule AA M) : MM.m 0 = 0 :=
   (rfl)
 
