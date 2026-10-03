@@ -67,7 +67,8 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass continuo
 
 /-- **The conjugation of the nontrivial coset on `Hⁿ(U, 𝔽₂)`**, for an open subgroup `U` of index
 two, defined choice-free as `res ∘ cor - id`. At index two `res ∘ cor` is `1 + s` for every
-`s ∉ U`, so this is conjugation by any such `s`, while depending on `U` alone. -/
+`s ∉ U`, so this is conjugation by any such `s`, while depending on `U` alone; in degree one this
+identification is `evensConj_explicitH1AddEquivContinuousCohomology`. -/
 def evensConj (n : ℕ) :
     continuousCohomology n (trivialF2 U.toSubgroup) ⟶
       continuousCohomology n (trivialF2 U.toSubgroup) :=
@@ -90,6 +91,7 @@ theorem trivialF2CorMap_comp_trivialF2ResMap (n : ℕ) :
   rw [evensConj_def, add_sub_cancel]
 
 /-- **`res (cor y) = y + evensConj y`** for every class `y ∈ Hⁿ(U, 𝔽₂)`, at index two. -/
+@[simp]
 theorem trivialF2ResMap_trivialF2CorMap (n : ℕ)
     (y : continuousCohomology n (trivialF2 U.toSubgroup)) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
@@ -191,7 +193,7 @@ theorem evensConj_explicitH1AddEquivContinuousCohomology
   have : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   rw [evensConj1_apply, map_sub, map_sub,
     ← trivialF2ResMap_explicitH1AddEquivContinuousCohomology,
-    ← trivialF2CorMap_explicitH1AddEquivContinuousCohomology, evensConj_def]
-  rfl
+    ← trivialF2CorMap_explicitH1AddEquivContinuousCohomology, trivialF2ResMap_trivialF2CorMap,
+    add_sub_cancel_left]
 
 end OpenSubgroup
