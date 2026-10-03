@@ -19,11 +19,10 @@ arrow runs from an earlier entry to a later one.
 * `TauCeti.Quiver.IsAcyclic.exists_pairwise_isEmpty_hom`: every finite set of vertices of an
   acyclic quiver has a topological ordering, along which no arrow runs forwards.
 
-## References
+## Applications
 
 This ordering is the input to the sink-admissible orderings of
-`TauCeti.RepresentationTheory.Quiver.Reflection.Admissible`, part of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
+`TauCeti.RepresentationTheory.Quiver.Reflection.Admissible`.
 -/
 
 public section
