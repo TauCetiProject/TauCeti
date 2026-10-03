@@ -25,9 +25,11 @@ reduction identifies `Cl⁺(2,2)` with `Cl(2,1)` and carries reversal to Cliffor
 ## Main definitions and results
 
 * `TauCeti.realCliffordTwoOneEquivMatrixProd` identifies `Cl(2,1)` with two matrix algebras.
+* `TauCeti.realCliffordTwoOneEquivMatrixProd_ι` gives its value on a Clifford generator.
 * `TauCeti.realCliffordTwoOneEquivMatrixProd_star` identifies Clifford conjugation with
   componentwise adjugation.
 * `TauCeti.realCliffordTwoTwoEvenEquivMatrixProd` identifies `Cl⁺(2,2)` with the same product.
+* `TauCeti.realCliffordTwoTwoEvenEquivMatrixProd_ι` gives its value on a product of generators.
 * `TauCeti.realCliffordTwoTwoEvenEquivMatrixProd_reverseEven` identifies reversal with
   componentwise adjugation.
 * `TauCeti.realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one` characterizes the
@@ -62,15 +64,35 @@ noncomputable def realCliffordTwoOneEquivMatrixProd :
     (Algebra.TensorProduct.congr realCliffordOneZeroEquivProd
       (AlgEquiv.refl : Matrix (Fin 2) (Fin 2) ℝ ≃ₐ[ℝ] _)).trans prodTensorMatrixEquiv
 
+private theorem realBottSplitIsometry_one_zero_apply (v : Fin (2 + 1) → ℝ) :
+    realBottSplitIsometry 1 0 v = (![v 0], ![v 1, v 2]) := by
+  apply Prod.ext
+  · funext i
+    fin_cases i
+    simpa using realBottSplitIsometry_fst_pos 1 0 v (0 : Fin 1)
+  · funext i
+    fin_cases i
+    · simpa using realBottSplitIsometry_snd_zero 1 0 v
+    · simpa using realBottSplitIsometry_snd_one 1 0 v
+
+/-- The matrix coordinates of a generator in the split model of `Cl(2,1)`. -/
+@[simp]
+theorem realCliffordTwoOneEquivMatrixProd_ι (v : Fin (2 + 1) → ℝ) :
+    realCliffordTwoOneEquivMatrixProd (CliffordAlgebra.ι _ v) =
+      (!![v 1, v 0 + v 2; v 0 - v 2, -v 1],
+        !![v 1, -v 0 + v 2; -v 0 - v 2, -v 1]) := by
+  simp only [realCliffordTwoOneEquivMatrixProd, AlgEquiv.trans_apply,
+    realCliffordBottEquiv_ι, map_add, Algebra.TensorProduct.congr_apply,
+    Algebra.TensorProduct.map_tmul, map_one, prodTensorMatrixEquiv]
+  rw [realBottSplitIsometry_one_zero_apply]
+  apply Prod.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [Algebra.TensorProduct.prodRight_tmul] <;> ring
+
 private theorem realCliffordTwoOneEquivMatrixProd_ι_trace
     (v : Fin (2 + 1) → ℝ) :
     (realCliffordTwoOneEquivMatrixProd (CliffordAlgebra.ι _ v)).1.trace = 0 ∧
       (realCliffordTwoOneEquivMatrixProd (CliffordAlgebra.ι _ v)).2.trace = 0 := by
-  simp only [realCliffordTwoOneEquivMatrixProd, AlgEquiv.trans_apply,
-    realCliffordBottEquiv_ι, map_add, Algebra.TensorProduct.congr_apply,
-    Algebra.TensorProduct.map_tmul, map_one, prodTensorMatrixEquiv]
-  constructor <;>
-    simp [Algebra.TensorProduct.prodRight_tmul, Matrix.trace, Fin.sum_univ_two]
+  simp [Matrix.trace, Fin.sum_univ_two]
 
 /-- In the split matrix model of `Cl(2,1)`, Clifford conjugation is matrix adjugation in each
 factor. -/
@@ -91,7 +113,6 @@ theorem realCliffordTwoOneEquivMatrixProd_star
       rw [Matrix.adjugate_fin_two_eq_trace_smul_one_sub,
         Matrix.adjugate_fin_two_eq_trace_smul_one_sub, h₁, h₂]
       simp
-      rfl
   | add x y hx hy =>
       simp only [star_add, map_add, hx, hy, Prod.fst_add, Prod.snd_add]
       apply Prod.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp <;> ring
@@ -114,11 +135,33 @@ private noncomputable def realCliffordTwoTwoAugmentedIsometry :
     ((QuadraticMap.IsometryEquiv.refl (realCliffordForm 2 1)).prod
       realCliffordZeroOneNegativeSqIsometry)
 
+private theorem realCliffordTwoTwoAugmentedIsometry_apply (v : Fin (2 + 2) → ℝ) :
+    realCliffordTwoTwoAugmentedIsometry v = (![v 0, v 1, v 2], v 3) := by
+  apply Prod.ext
+  · funext i
+    fin_cases i
+    · -- Expose the shared signature splitter hidden by the composed isometry.
+      change (realCliffordSplitIsometry 2 0 1 1 v).1 0 = v 0
+      convert realCliffordSplitIsometry_fst_pos 2 0 1 1 v (0 : Fin 2) using 1 <;> simp
+    · -- Expose the shared signature splitter hidden by the composed isometry.
+      change (realCliffordSplitIsometry 2 0 1 1 v).1 1 = v 1
+      convert realCliffordSplitIsometry_fst_pos 2 0 1 1 v (1 : Fin 2) using 1 <;> simp
+    · -- Expose the shared signature splitter hidden by the composed isometry.
+      change (realCliffordSplitIsometry 2 0 1 1 v).1 2 = v 2
+      convert realCliffordSplitIsometry_fst_neg 2 0 1 1 v (0 : Fin 1) using 1 <;> simp
+  · -- Expose the one-dimensional isometry and the last coordinate of the signature splitter.
+    change (realCliffordSplitIsometry 2 0 1 1 v).2 0 = v 3
+    convert realCliffordSplitIsometry_snd_neg 2 0 1 1 v (0 : Fin 1) using 1 <;> simp
+
 private def realCliffordTwoOneScaleIsometry :
     (-(↑(-1 : ℝˣ)⁻¹ : ℝ) • realCliffordForm 2 1).IsometryEquiv
       (realCliffordForm 2 1) where
   toLinearEquiv := LinearEquiv.refl ℝ _
   map_app' v := by norm_num
+
+@[simp]
+private theorem realCliffordTwoOneScaleIsometry_apply (v : Fin (2 + 1) → ℝ) :
+    realCliffordTwoOneScaleIsometry v = v := rfl
 
 private noncomputable def realCliffordTwoTwoEvenEquivTwoOne :
     CliffordAlgebra.even (realCliffordForm 2 2) ≃ₐ[ℝ]
@@ -143,6 +186,23 @@ noncomputable def realCliffordTwoTwoEvenEquivMatrixProd :
     CliffordAlgebra.even (realCliffordForm 2 2) ≃ₐ[ℝ]
       Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ :=
   realCliffordTwoTwoEvenEquivTwoOne.trans realCliffordTwoOneEquivMatrixProd
+
+/-- The matrix coordinates of a product of two generators in the split model of `Cl⁺(2,2)`. -/
+@[simp]
+theorem realCliffordTwoTwoEvenEquivMatrixProd_ι (m n : Fin (2 + 2) → ℝ) :
+    realCliffordTwoTwoEvenEquivMatrixProd
+        ((CliffordAlgebra.even.ι (realCliffordForm 2 2)).bilin m n) =
+      (!![m 1 + m 3, m 0 + m 2; m 0 - m 2, -m 1 + m 3] *
+          !![n 1 - n 3, n 0 + n 2; n 0 - n 2, -n 1 - n 3],
+        !![m 1 + m 3, -m 0 + m 2; -m 0 - m 2, -m 1 + m 3] *
+          !![n 1 - n 3, -n 0 + n 2; -n 0 - n 2, -n 1 - n 3]) := by
+  simp only [realCliffordTwoTwoEvenEquivMatrixProd, AlgEquiv.trans_apply,
+    realCliffordTwoTwoEvenEquivTwoOne, CliffordAlgebra.evenEquivOfIsometry_ι,
+    realCliffordTwoTwoAugmentedIsometry_apply,
+    CliffordAlgebra.evenProdSMulSqEquiv_ι, map_smul,
+    CliffordAlgebra.equivOfIsometry_apply]
+  apply Prod.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [Algebra.algebraMap_eq_smul_one, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- In the split matrix model of `Cl⁺(2,2)`, Clifford reversal is matrix adjugation in each
 factor. -/
