@@ -276,12 +276,13 @@ theorem eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt {B : Type*} [Topologica
   exact ⟨a, b, (C_mul_prod_X_sub_C_eq_of_ofFn_eq hdeg₀ ha).symm,
     (C_mul_prod_X_sub_C_eq_of_ofFn_eq hx hb).symm, hab⟩
 
+open scoped Classical in
 /-- **Distinct roots in a family.** Let `F x` be polynomials of degree `d`, near `x₀`, whose
 coefficients of index at most `d` are continuous at `x₀`, and suppose that near `x₀` the polynomial
 `F x` has at most as many distinct roots as `F x₀`. Then for `x` near `x₀` there is a bijection `e`
 from the distinct roots of `F x₀` onto those of `F x` that moves each root by less than `ε` and
 preserves its multiplicity. -/
-theorem eventually_exists_bijOn_roots_toFinset [DecidableEq K] {B : Type*} [TopologicalSpace B]
+theorem eventually_exists_bijOn_roots_toFinset {B : Type*} [TopologicalSpace B]
     {F : B → K[X]} {x₀ : B} {d : ℕ} (hF : ∀ i ≤ d, ContinuousAt (fun x => (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).degree = d)
     (hcard : ∀ᶠ x in 𝓝 x₀, (F x).roots.toFinset.card ≤ (F x₀).roots.toFinset.card) {ε : ℝ}
