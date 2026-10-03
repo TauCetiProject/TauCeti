@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
-public import TauCeti.Geometry.Manifold.Orientation
 public import TauCeti.KnotTheory.Slice.Basic
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.AlgebraicTopology.Singular.Contractible
@@ -19,8 +18,9 @@ import TauCeti.AlgebraicTopology.Singular.Contractible
 
 The **slice genus** `g_s(K)` (or four-ball genus) of a knot `K ⊆ S³` is the least genus of a
 compact, connected, orientable surface smoothly and properly embedded in the four-ball `D⁴` with
-boundary `K`. It is `0` exactly for the smoothly slice knots, which bound a disc, and it is the
-quantity bounded below by the concordance invariants `|σ(K)| / 2` and `|τ(K)|`.
+boundary `K`. It is `0` for the smoothly slice knots, which bound a disc (classically exactly for
+them, a converse not proved here), and it is the quantity bounded below by the concordance
+invariants `|σ(K)| / 2` and `|τ(K)|`.
 
 As for sliceness (`TauCeti.IsSmoothlySlice`), the knot is a smooth circle embedding
 `K : S¹ → Sⁿ` into the unit sphere of an `(n + 1)`-dimensional real inner product space `E`, so that
@@ -204,16 +204,6 @@ theorem sliceGenus_reverse : sliceGenus K.reverse = sliceGenus K :=
 
 /-! ### Slice discs -/
 
-/-- The boundary circle of the closed unit disc is the image of the unit circle. -/
-private theorem range_inclusion_circle :
-    range (fun z : Circle ↦ Set.inclusion sphere_subset_closedBall z) =
-      (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1) := by
-  ext x
-  simp only [mem_range, boundary_closedBall, mem_preimage, mem_sphere_zero_iff_norm]
-  refine ⟨?_, fun hx ↦ ⟨⟨x, mem_sphere_zero_iff_norm.2 hx⟩, rfl⟩⟩
-  rintro ⟨z, rfl⟩
-  simp
-
 /-- A smooth slice disc for `K`, as a smooth slice surface whose carrier is the closed unit disc:
 the disc is compact, connected and orientable. -/
 def IsSmoothSliceDisc.toSmoothSliceSurface {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
@@ -226,7 +216,10 @@ def IsSmoothSliceDisc.toSmoothSliceSurface {Φ : closedBall (0 : ℂ) 1 → clos
   toFun := Φ
   isSmoothEmbedding := h.isSmoothEmbedding
   preimage_boundary := h.preimage_boundary
-  image_boundary := by rw [← range_inclusion_circle, h.image_range_inclusion]
+  image_boundary := by
+    rw [← h.image_range_inclusion, boundary_closedBall]
+    congr 1
+    exact (Set.range_inclusion _).symm
 
 /-- A smooth slice disc has genus `0`: the disc is contractible, so its first homology
 vanishes. -/
@@ -248,6 +241,7 @@ theorem IsSmoothlySlice.sliceGenus_eq_zero (h : IsSmoothlySlice K) : sliceGenus 
     simpa using sliceGenus_le_genus hΦ.toSmoothSliceSurface
 
 /-- **The unknot has slice genus `0`.** -/
+@[simp]
 theorem sliceGenus_unknot : sliceGenus unknot = 0 :=
   isSmoothlySlice_unknot.sliceGenus_eq_zero
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
-public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
@@ -15,6 +14,7 @@ public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Immersion
 public import TauCeti.Geometry.Manifold.Orientation
+import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # The closed unit ball as an analytic manifold with boundary
@@ -402,32 +402,6 @@ private theorem orientationPreservingOn_closedBallChart_symm_trans
   exact mul_pos_of_neg_of_neg (det_fderiv_inversion_neg hR h₂)
     (mul_neg_of_pos_of_neg h (det_fderiv_inversion_neg hR h₁))
 
-variable (n) in
-/-- In dimension at least two, a linear isometry of `EuclideanSpace ℝ (Fin n)` of determinant `1`
-moving `-e₀`: the product of the reflections in the hyperplanes orthogonal to `e₀` and to `e₁`. -/
-private theorem exists_det_eq_one_apply_ne (hn : 2 ≤ n) :
-    ∃ r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n),
-      (LinearEquiv.det r.toLinearEquiv : ℝ) = 1 ∧ r (-e₀) ≠ -e₀ := by
-  set e₁ := EuclideanSpace.single (⟨1, hn⟩ : Fin n) (1 : ℝ)
-  have hdet (v : EuclideanSpace ℝ (Fin n)) (hv : v ≠ 0) :
-      (LinearEquiv.det (ℝ ∙ v)ᗮ.reflection.toLinearEquiv : ℝ) = -1 := by
-    rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
-      finrank_span_singleton hv]
-    simp
-  refine ⟨(ℝ ∙ e₀)ᗮ.reflection.trans (ℝ ∙ e₁)ᗮ.reflection, ?_, ?_⟩
-  · rw [LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
-      hdet _ (by simp [e₁]), hdet _ (by simp)]
-    norm_num
-  · have he₀ : e₀ ∈ (ℝ ∙ e₁)ᗮ := by
-      rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
-      simp [e₁, EuclideanSpace.inner_single_left, Fin.ext_iff]
-    rw [LinearIsometryEquiv.trans_apply, map_neg,
-      Submodule.reflection_orthogonalComplement_singleton_eq_neg, neg_neg,
-      Submodule.reflection_mem_subspace_eq_self he₀]
-    intro h
-    have := congrArg (· (0 : Fin n)) h
-    norm_num at this
-
 /-- In dimension at least two, the closed unit ball is orientable: the charts
 `closedBallChart φ` with `φ` in a fixed orientation class form an oriented atlas, since the
 coordinate change between two of them is a composite of two inversions, each reversing
@@ -447,11 +421,15 @@ theorem orientable_closedBall (hn : 2 ≤ n) {k : ℕ∞ω} [NeZero k] :
       (IsManifold.subset_maximalAtlas (atlas_closedBall (E := E) (n := n) ▸ mem_range_self φ))
   · intro x
     by_cases hx : φ₀ x = -e₀
-    · obtain ⟨r, hr, hr'⟩ := exists_det_eq_one_apply_ne n hn
+    · obtain ⟨r, hr, hr'⟩ := exists_det_eq_one_apply_eq_neg
+        (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := n) ▸ hn) (v := -e₀) (by simp)
       refine ⟨closedBallChart (φ₀.trans r), ⟨φ₀.trans r, ?_, rfl⟩, ?_⟩
       · have : φ₀.symm.trans (φ₀.trans r) = r := by ext; simp
         simp only [S, mem_ofPred_eq, this, hr, zero_lt_one]
-      · simpa [hx] using hr'
+      · intro h
+        rw [LinearIsometryEquiv.trans_apply, hx, hr', neg_neg] at h
+        have := congrArg (· (0 : Fin n)) h
+        norm_num at this
     · refine ⟨closedBallChart φ₀, ⟨φ₀, ?_, rfl⟩, hx⟩
       simp [S]
   · rintro _ _ ⟨φ, hφ, rfl⟩ ⟨ψ, hψ, rfl⟩
