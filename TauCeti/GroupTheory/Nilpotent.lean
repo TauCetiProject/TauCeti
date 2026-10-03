@@ -15,8 +15,8 @@ For a normal subgroup `N` of `G`, Mathlib's `Subgroup.upperCentralSeriesStep N` 
 the centre of `G ⧸ N`.  This file records three facts about it that are used to find abelian normal
 subgroups of a nilpotent group modulo a normal subgroup, without passing to the quotient.
 
-* It is again normal (`TauCeti.normal_upperCentralSeriesStep`), so the step can be iterated.
-  Mathlib only registers this for characteristic `N`.
+* It is again normal (`TauCeti.Subgroup.normal_upperCentralSeriesStep`), so the step can be
+  iterated. Mathlib only registers this for characteristic `N`.
 * In a nilpotent group it is strictly larger than `N` unless `N = ⊤`
   (`TauCeti.lt_upperCentralSeriesStep`): the centre of a nontrivial nilpotent group is
   nontrivial, read in `G ⧸ N`.
@@ -42,12 +42,16 @@ open scoped commutatorElement
 
 variable {G : Type*} [Group G]
 
+namespace Subgroup
+
 /-- The upper central series step above a normal subgroup is normal: it is the preimage of the
 centre of the quotient. -/
-instance normal_upperCentralSeriesStep (N : Subgroup G) [N.Normal] :
-    (Subgroup.upperCentralSeriesStep N).Normal := by
-  rw [Subgroup.upperCentralSeriesStep_eq_comap_center]
+instance normal_upperCentralSeriesStep (N : _root_.Subgroup G) [N.Normal] :
+    (_root_.Subgroup.upperCentralSeriesStep N).Normal := by
+  rw [_root_.Subgroup.upperCentralSeriesStep_eq_comap_center]
   infer_instance
+
+end Subgroup
 
 /-- **In a nilpotent group, the upper central series step strictly enlarges every proper normal
 subgroup.**  Otherwise the upper central series of `G` would stay inside `N` forever, while it
@@ -55,7 +59,7 @@ reaches `⊤`. -/
 theorem lt_upperCentralSeriesStep [Group.IsNilpotent G] {N : Subgroup G} [hN : N.Normal]
     (hN_ne : N ≠ ⊤) : N < Subgroup.upperCentralSeriesStep N := by
   refine lt_of_le_of_ne (fun x hx y => ?_) fun h => hN_ne ?_
-  · rw [show ⁅x, y⁆ = x * (y * x⁻¹ * y⁻¹) by group]
+  · rw [commutatorElement_def, mul_assoc x y, mul_assoc x]
     exact N.mul_mem hx (hN.conj_mem _ (N.inv_mem hx) y)
   · obtain ⟨n, hn⟩ := Group.IsNilpotent.nilpotent G
     have key (m : ℕ) : Subgroup.upperCentralSeries G m ≤ N := by

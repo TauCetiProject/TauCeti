@@ -224,7 +224,7 @@ theorem normal_of_commute_of_isComplement' {C P : Subgroup G}
 
 /-- If `C` and a `p`-subgroup `P` are complements centralising each other, every element of `G`
 has a `p`-power in `C`: write it as `a * b` with `a ∈ C`, `b ∈ P`, and kill `b`. -/
-private theorem exists_pow_mem_of_isComplement' {C P : Subgroup G} (hP : IsPGroup p P)
+theorem exists_pow_mem_of_isComplement' {C P : Subgroup G} (hP : IsPGroup p P)
     (hcomm : ∀ c ∈ C, ∀ x ∈ P, Commute c x) (hcompl : C.IsComplement' P) (g : G) :
     ∃ k : ℕ, g ^ p ^ k ∈ C := by
   obtain ⟨⟨a, b⟩, rfl⟩ := hcompl.2 g
