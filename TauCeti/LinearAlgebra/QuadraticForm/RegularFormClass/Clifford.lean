@@ -243,8 +243,11 @@ theorem cliffordInvariant_mk_ternary (a b c : Kˣ) :
       BrauerGroup.quaternionClass (-c⁻¹ * a) (-c⁻¹ * b) := by
   rw [BrauerGroup.quaternionClass_def]
   refine cliffordInvariant_mk_of_odd _ (by norm_num [Odd]) _ ?_
-  rw [presentedForm_eq_weightedSumSquares]
-  exact CliffordAlgebra.evenWeightedSumSquaresThreeQuaternionEquiv ![a, b, c]
+  have hw : (fun i ↦ ((![a, b, c] i : Kˣ) : K)) = ![(a : K), (b : K), (c : K)] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [presentedForm_eq_weightedSumSquares_coe, hw]
+  exact CliffordAlgebra.evenWeightedSumSquaresThreeQuaternionEquiv (a : K) b c
 
 /-- **In ranks at most two the Clifford invariant is the Hasse invariant.** This is the low-rank
 case of Lam V.3.20, whose correction terms vanish for `n ≤ 2`. -/

@@ -111,10 +111,9 @@ theorem evenQuaternionEquiv_reverseEven_mul_self (a b : R) (c : Rˣ)
         (evenQuaternionEquiv a b c x) : ℍ[R, -(↑c⁻¹ : R) * a, 0, -(↑c⁻¹ : R) * b]) := by
   rw [map_mul, evenQuaternionEquiv_reverseEven, QuaternionAlgebra.star_mul_self]
 
-private def ternaryDiagonalIsometry (w : Fin 3 → Rˣ) :
-    (QuadraticMap.weightedSumSquares R w).IsometryEquiv
-      ((CliffordAlgebraQuaternion.Q (w 0 : R) (w 1 : R)).prod
-        ((w 2 : R) • QuadraticMap.sq)) where
+private def ternaryDiagonalIsometry (a b : R) (c : Rˣ) :
+    (QuadraticMap.weightedSumSquares R ![a, b, (c : R)]).IsometryEquiv
+      ((CliffordAlgebraQuaternion.Q a b).prod ((c : R) • QuadraticMap.sq)) where
   toFun x := ((x 0, x 1), x 2)
   invFun x := ![x.1.1, x.1.2, x.2]
   left_inv x := by ext i; fin_cases i <;> rfl
@@ -122,28 +121,69 @@ private def ternaryDiagonalIsometry (w : Fin 3 → Rˣ) :
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   map_app' x := by
-    simp [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_three, Units.smul_def,
+    simp [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_three,
       CliffordAlgebraQuaternion.Q_apply, QuadraticMap.prod_apply,
       QuadraticMap.sq_apply, smul_eq_mul]
 
 /-- The even Clifford algebra of the diagonal ternary form `⟨a, b, c⟩` is the quaternion
 algebra `(-a/c, -b/c)`. -/
-noncomputable def evenWeightedSumSquaresThreeQuaternionEquiv (w : Fin 3 → Rˣ) :
-    even (QuadraticMap.weightedSumSquares R w) ≃ₐ[R]
-      ℍ[R, (-((w 2)⁻¹) * w 0 : R), 0, (-((w 2)⁻¹) * w 1 : R)] :=
-  (evenEquivOfIsometry (ternaryDiagonalIsometry w)).trans
-    (evenQuaternionEquiv (w 0 : R) (w 1 : R) (w 2))
+noncomputable def evenWeightedSumSquaresThreeQuaternionEquiv (a b : R) (c : Rˣ) :
+    even (QuadraticMap.weightedSumSquares R ![a, b, (c : R)]) ≃ₐ[R]
+      ℍ[R, -(↑c⁻¹ : R) * a, 0, -(↑c⁻¹ : R) * b] :=
+  (evenEquivOfIsometry (ternaryDiagonalIsometry a b c)).trans (evenQuaternionEquiv a b c)
+
+/-- The quaternion coordinates of a product of two generators of the even Clifford algebra of
+the diagonal ternary form. -/
+theorem evenWeightedSumSquaresThreeQuaternionEquiv_ι (a b : R) (c : Rˣ) (x y : Fin 3 → R) :
+    evenWeightedSumSquaresThreeQuaternionEquiv a b c
+        ((even.ι (QuadraticMap.weightedSumSquares R ![a, b, (c : R)])).bilin x y) =
+      -(c : R) •
+        ((⟨x 2, x 0, x 1, 0⟩ : ℍ[R, -(↑c⁻¹ : R) * a, 0, -(↑c⁻¹ : R) * b]) *
+          ⟨-y 2, y 0, y 1, 0⟩) := by
+  rw [evenWeightedSumSquaresThreeQuaternionEquiv, AlgEquiv.trans_apply, evenEquivOfIsometry_ι]
+  exact evenQuaternionEquiv_ι a b c ((x 0, x 1), x 2) ((y 0, y 1), y 2)
+
+/-- The inverse quaternion model of the diagonal ternary form expresses the coordinates in the
+scalar and three products of basis generators. -/
+theorem evenWeightedSumSquaresThreeQuaternionEquiv_symm_mk (a b : R) (c : Rˣ) (r i j k : R) :
+    (evenWeightedSumSquaresThreeQuaternionEquiv a b c).symm
+        (⟨r, i, j, k⟩ : ℍ[R, -(↑c⁻¹ : R) * a, 0, -(↑c⁻¹ : R) * b]) =
+      algebraMap R _ r +
+        (-(↑c⁻¹ : R) * i) •
+          (even.ι (QuadraticMap.weightedSumSquares R ![a, b, (c : R)])).bilin
+            (Pi.single 2 1) (Pi.single 0 1) +
+        (-(↑c⁻¹ : R) * j) •
+          (even.ι (QuadraticMap.weightedSumSquares R ![a, b, (c : R)])).bilin
+            (Pi.single 2 1) (Pi.single 1 1) +
+        (-(↑c⁻¹ : R) * k) •
+          (even.ι (QuadraticMap.weightedSumSquares R ![a, b, (c : R)])).bilin
+            (Pi.single 0 1) (Pi.single 1 1) := by
+  apply (evenWeightedSumSquaresThreeQuaternionEquiv a b c).injective
+  simp only [AlgEquiv.apply_symm_apply, map_add, map_smul, AlgEquiv.commutes,
+    evenWeightedSumSquaresThreeQuaternionEquiv_ι]
+  ext <;> simp [mul_left_comm, mul_comm]
 
 /-- Quaternion conjugation is the image of reversal in the even Clifford algebra of the diagonal
 ternary form. -/
 @[simp]
-theorem evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven (w : Fin 3 → Rˣ)
-    (x : even (QuadraticMap.weightedSumSquares R w)) :
-    evenWeightedSumSquaresThreeQuaternionEquiv w (reverseEven _ x) =
-      star (evenWeightedSumSquaresThreeQuaternionEquiv w x) := by
+theorem evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven (a b : R) (c : Rˣ)
+    (x : even (QuadraticMap.weightedSumSquares R ![a, b, (c : R)])) :
+    evenWeightedSumSquaresThreeQuaternionEquiv a b c (reverseEven _ x) =
+      star (evenWeightedSumSquaresThreeQuaternionEquiv a b c x) := by
   simp only [evenWeightedSumSquaresThreeQuaternionEquiv, AlgEquiv.trans_apply,
     evenEquivOfIsometry_reverseEven]
   exact evenQuaternionEquiv_reverseEven _ _ _ _
+
+/-- The reverse norm of the diagonal ternary form becomes the norm form of the corresponding
+quaternion algebra. -/
+theorem evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven_mul_self (a b : R) (c : Rˣ)
+    (x : even (QuadraticMap.weightedSumSquares R ![a, b, (c : R)])) :
+    evenWeightedSumSquaresThreeQuaternionEquiv a b c (reverseEven _ x * x) =
+      (QuaternionAlgebra.normForm (-(↑c⁻¹ : R) * a) 0 (-(↑c⁻¹ : R) * b)
+        (evenWeightedSumSquaresThreeQuaternionEquiv a b c x) :
+          ℍ[R, -(↑c⁻¹ : R) * a, 0, -(↑c⁻¹ : R) * b]) := by
+  rw [map_mul, evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven,
+    QuaternionAlgebra.star_mul_self]
 
 section Field
 
@@ -164,11 +204,17 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_three (Q : QuadraticForm K V)
     exact Q.equivalent_weightedSumSquares_units_of_nondegenerate'
       (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
   obtain ⟨w, ⟨f⟩⟩ := hex
+  have hw : QuadraticMap.weightedSumSquares K w =
+      QuadraticMap.weightedSumSquares K ![(w 0 : K), (w 1 : K), (w 2 : K)] := by
+    ext x
+    simp [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_three, Units.smul_def]
+  rw [hw] at f
   refine ⟨-(w 2)⁻¹ * w 0, -(w 2)⁻¹ * w 1,
-    (evenEquivOfIsometry f).trans (evenWeightedSumSquaresThreeQuaternionEquiv w), ?_⟩
+    (evenEquivOfIsometry f).trans
+      (evenWeightedSumSquaresThreeQuaternionEquiv (w 0 : K) (w 1 : K) (w 2)), ?_⟩
   intro x
   simp only [AlgEquiv.trans_apply, evenEquivOfIsometry_reverseEven]
-  exact evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven w _
+  exact evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven _ _ _ _
 
 end Field
 
