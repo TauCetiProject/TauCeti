@@ -285,6 +285,7 @@ theorem zigzagProjectiveHeadEquivSocle_generator (i : V) :
 
 /-- On a representative of the middle layer, the component at `j`, identified with its
 socle, is the coefficient of the outgoing arrow `i → j` times the volume at `j`. -/
+@[simp]
 theorem zigzagProjectiveMiddleEquivNeighborHeads_mk (i : V) (x : R i 1)
     (j : G.neighborSet i) :
     (((zigzagProjectiveHeadEquivSocle k G hns j.1
