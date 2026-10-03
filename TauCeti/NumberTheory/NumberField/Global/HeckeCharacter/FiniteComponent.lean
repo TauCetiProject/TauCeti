@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Conductor
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Congruence
 
-import TauCeti.Analysis.Normed.Field.NoSmallSubgroups
+import TauCeti.Analysis.Normed.Algebra.NoSmallSubgroups
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
