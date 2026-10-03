@@ -67,17 +67,6 @@ theorem stalkLift_germ
     M.stalkLift x f hf hs (TopCat.Presheaf.germ M.presheaf U x hx m) = f U hx m :=
   TopCat.Presheaf.stalkLiftAddHom_germ M.presheaf x f hf U hx m
 
-/-- Linear maps out of a stalk are determined by their values on germs. -/
-@[ext]
-theorem stalk_linearMap_ext
-    {f g : ↑(TopCat.Presheaf.stalk M.presheaf x) →ₗ[R.stalk x] T}
-    (h : ∀ (U : Opens X) (hx : x ∈ U) (m : M.obj (op U)),
-      f (TopCat.Presheaf.germ M.presheaf U x hx m) =
-        g (TopCat.Presheaf.germ M.presheaf U x hx m)) : f = g := by
-  ext m
-  obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq M.presheaf m
-  exact h U hx m
-
 variable {N : PresheafOfModules.{u} (R ⋙ forget₂ _ _)}
 
 variable (U : Opens X)
