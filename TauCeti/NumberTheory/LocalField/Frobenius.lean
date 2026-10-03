@@ -195,6 +195,7 @@ theorem frobeniusAlgEquiv_restrictNormal :
 omit [Normal K L] in
 /-- Enlarging the ground field replaces arithmetic Frobenius by its power by the residue
 degree of the ground-field extension. The two automorphisms are compared in `Gal(M/K)`. -/
+@[simp]
 theorem frobeniusAlgEquiv_restrictScalars :
     letI : ValuativeExtension K M := ValuativeExtension.trans K L M
     ∀ [IsUnramified K M],
