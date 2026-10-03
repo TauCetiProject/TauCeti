@@ -56,6 +56,16 @@ The places above `v` are indexed by the subtype
 * `TauCeti.semilocalContinuousEquiv`: the semi-local decomposition as a continuous algebra
   equivalence when the tensor product carries its module topology over `K_v`.
 
+## Implementation notes
+
+The continuous equivalence `TauCeti.semilocalContinuousEquiv` and its companion formulas
+(`semilocalContinuousEquiv_tmul`, `semilocalEquiv_symm_algebraMap`,
+`semilocalContinuousEquiv_symm_algebraMap`) follow the archimedean construction
+`TauCeti.GlobalNumberFields.infiniteSemilocalContinuousEquiv` and its companion formulas in
+`TauCeti.NumberTheory.NumberField.Global.Places.Semilocal`: continuity in both directions comes
+from `IsModuleTopology.continuous_of_linearMap`, using the module topology of the
+finite-dimensional product of completions.
+
 ## References
 
 * [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, Proposition (8.3).
