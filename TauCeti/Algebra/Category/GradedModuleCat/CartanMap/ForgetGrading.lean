@@ -86,18 +86,6 @@ theorem gradedFiniteProjectiveModulesForget_map_hom
     ((gradedFiniteProjectiveModulesForget 𝒜).map f).hom = ModuleCat.ofHom f.hom.hom :=
   (rfl)
 
-/-- The forgetful functor on finite modules agrees with the ambient forgetful functor. -/
-def gradedFiniteModulesForgetCompιIso :
-    gradedFiniteModulesForget 𝒜 ⋙ (ModuleCat.isFG A).ι ≅
-      (gradedFiniteModules 𝒜).ι ⋙ GradedModuleCat.toModuleCat :=
-  (ModuleCat.isFG A).liftCompιIso _ _
-
-/-- The forgetful functor on finite projectives agrees with the ambient forgetful functor. -/
-def gradedFiniteProjectiveModulesForgetCompιIso :
-    gradedFiniteProjectiveModulesForget 𝒜 ⋙ (finiteProjectiveModules A).ι ≅
-      (gradedFiniteProjectiveModules 𝒜).ι ⋙ GradedModuleCat.toModuleCat :=
-  (finiteProjectiveModules A).liftCompιIso _ _
-
 instance : (gradedFiniteModulesForget 𝒜).Additive := by
   dsimp [gradedFiniteModulesForget]
   infer_instance
