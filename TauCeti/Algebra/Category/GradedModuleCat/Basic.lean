@@ -298,6 +298,22 @@ theorem hom_shift_inverse_map {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
     ((shift 𝒜).inverse.map f).hom = f.hom :=
   rfl
 
+/-- Forgetting the internal grading identifies every grading shift with the identity functor
+on underlying modules. -/
+def shiftFunctorCompToModuleCatIso (n : ℤ) :
+    shiftFunctor (𝒜 := 𝒜) n ⋙ toModuleCat ≅ toModuleCat :=
+  Iso.refl _
+
+@[simp]
+theorem shiftFunctorCompToModuleCatIso_hom_app_hom (n : ℤ) :
+    ((shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) n).hom.app M).hom = LinearMap.id :=
+  (rfl)
+
+@[simp]
+theorem shiftFunctorCompToModuleCatIso_inv_app_hom (n : ℤ) :
+    ((shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) n).inv.app M).hom = LinearMap.id :=
+  (rfl)
+
 instance (n : ℤ) : (shiftFunctor (𝒜 := 𝒜) n).Additive where
   map_add := rfl
 
