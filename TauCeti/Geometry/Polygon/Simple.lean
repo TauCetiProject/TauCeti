@@ -148,8 +148,8 @@ theorem boundaryParam_natCast_add (i : Fin n) {s : ℝ} (hs : s ∈ Icc (0 : ℝ
     poly.boundaryParam ((i : ℕ) + s) = poly.edgePath ℝ i s := by
   have h := poly.boundaryParam_eq_edgePath (i : ℕ) (t := (i : ℕ) + s)
     ⟨by simpa using hs.1, by simpa using hs.2⟩
-  change _ = poly.edgePath ℝ (vertexIndex n (i : ℕ)) _ at h
-  simpa [vertexIndex_natCast] using h
+  rw [← vertexIndex, vertexIndex_natCast] at h
+  simpa using h
 
 /-- The boundary parametrization passes through vertex `i` at time `i`. -/
 @[simp]
@@ -373,12 +373,12 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
   isSimple := t.toPolygon_isSimple
 
 @[simp]
-theorem numVertices_toSimplePolygon (t : Affine.Triangle R P) :
+theorem toSimplePolygon_numVertices (t : Affine.Triangle R P) :
     t.toSimplePolygon.numVertices = 3 :=
   rfl
 
 @[simp]
-theorem toPolygon_toSimplePolygon (t : Affine.Triangle R P) :
+theorem toSimplePolygon_toPolygon (t : Affine.Triangle R P) :
     t.toSimplePolygon.toPolygon = t.toPolygon :=
   rfl
 
