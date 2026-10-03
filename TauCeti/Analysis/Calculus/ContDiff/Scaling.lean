@@ -13,6 +13,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 Subtracting a constant from `χ (R⁻¹ • ·)` leaves every positive-order derivative unchanged.
 For `R ≥ 1`, a bound `B` on the `i`-th derivative of `χ` therefore gives a bound `B / R` on
 the corresponding derivative of the cutoff error. Only `Cⁱ` regularity is needed.
+Including order zero, the same hypotheses give a uniform bound `B + ‖c‖` after subtracting
+an arbitrary constant `c`.
 
 This estimate is shared by the Sobolev and Schwartz-space cutoff approximations. It is
 extracted from the derivative scaling argument in
@@ -46,5 +48,20 @@ theorem norm_iteratedFDeriv_comp_inv_smul_sub_const_le {χ : E → F} {i : ℕ}
   calc (R⁻¹) ^ i * ‖iteratedFDeriv ℝ i χ (R⁻¹ • x)‖ ≤ R⁻¹ * B :=
         mul_le_mul hRi (hB _) (norm_nonneg _) (by positivity)
     _ = B / R := by rw [inv_mul_eq_div]
+
+/-- For any derivative order and `R ≥ 1`, subtracting a constant from an expanding cutoff
+gives a derivative bound `B + ‖c‖`, where `B` bounds that derivative of the cutoff. -/
+theorem norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm {χ : E → F} {i : ℕ}
+    (hχ : ContDiff ℝ i χ) {B : ℝ}
+    (hB : ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B) {R : ℝ} (hR : 1 ≤ R) (c : F) (x : E) :
+    ‖iteratedFDeriv ℝ i (fun y ↦ χ (R⁻¹ • y) - c) x‖ ≤ B + ‖c‖ := by
+  rcases eq_or_ne i 0 with rfl | hi
+  · rw [norm_iteratedFDeriv_zero]
+    have hb := hB (R⁻¹ • x)
+    rw [norm_iteratedFDeriv_zero] at hb
+    exact (norm_sub_le _ _).trans (add_le_add hb le_rfl)
+  · have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
+    exact (norm_iteratedFDeriv_comp_inv_smul_sub_const_le hχ hi hB hR c x).trans
+      ((div_le_self hB0 hR).trans (le_add_of_nonneg_right (norm_nonneg c)))
 
 end TauCeti

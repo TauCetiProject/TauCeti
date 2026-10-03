@@ -52,23 +52,6 @@ open scoped ContDiff Topology
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-private theorem norm_iteratedFDeriv_cutoff_sub_one_le {χ : E → ℝ} {k : ℕ}
-    (hχ : ContDiff ℝ k χ) {B : ℕ → ℝ}
-    (hB : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i)
-    {R : ℝ} (hR : 1 ≤ R) {i : ℕ} (hi : i ≤ k) (x : E) :
-    ‖iteratedFDeriv ℝ i (fun y ↦ χ (R⁻¹ • y) - 1) x‖ ≤ 1 + B i := by
-  have hBi : 0 ≤ B i := (norm_nonneg _).trans (hB i hi 0)
-  have hχi : ContDiff ℝ i χ := hχ.of_le (by exact_mod_cast hi)
-  rcases eq_or_ne i 0 with rfl | hi0
-  · rw [norm_iteratedFDeriv_zero]
-    have hb := hB 0 hi (R⁻¹ • x)
-    rw [norm_iteratedFDeriv_zero] at hb
-    simpa [add_comm] using (norm_sub_le (χ (R⁻¹ • x)) 1).trans
-      (add_le_add hb (by simp : ‖(1 : ℝ)‖ ≤ 1))
-  · exact (norm_iteratedFDeriv_comp_inv_smul_sub_const_le hχi hi0
-      (hB i hi) hR 1 x).trans
-        ((div_le_self hBi hR).trans (by linarith))
-
 /-- Expanding cutoffs approximate the `k`-th classical derivative of a `Cᵏ` function in `Lᵖ`.
 Only the derivatives up to the requested order need to be integrable; the measure need not
 be translation invariant. -/
@@ -106,10 +89,11 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
       ((hχ.comp (contDiff_const_smul _)).sub contDiff_const) hf x le_rfl).trans ?_
     refine (Finset.sum_le_sum fun i hi ↦ ?_).trans (le_abs_self _)
     have hi' : i ≤ k := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
-    have hd := norm_iteratedFDeriv_cutoff_sub_one_le hχ hB
-      (by linarith [Nat.cast_nonneg (α := ℝ) n] : (1 : ℝ) ≤ (n : ℝ) + 1) hi' x
+    have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm
+      (hχ.of_le (by exact_mod_cast hi')) (hB i hi')
+      (by linarith [Nat.cast_nonneg (α := ℝ) n] : (1 : ℝ) ≤ (n : ℝ) + 1) 1 x
     exact mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_left (by simpa only [Function.comp_def] using hd)
+      (mul_le_mul_of_nonneg_left (by simpa [add_comm] using hd)
         (Nat.cast_nonneg _)) (norm_nonneg _)
   -- The expanding region where the cutoff is one gives eventual local agreement.
   have hlim (x : E) : ∀ᶠ n : ℕ in atTop, iteratedFDeriv ℝ k (error n) x = 0 := by
