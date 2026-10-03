@@ -417,6 +417,14 @@ variable (D : PDCode n) (p q : Fin (4 * n))
 /-- Reconnecting arcs of the code reconnects its perfect matching of half-edges. -/
 @[simp] theorem reconnect_edgePair : (D.reconnect p q).edgePair = D.edgePair.reconnect p q := (rfl)
 
+/-- Reconnecting the two ends of one arc leaves the code unchanged. -/
+@[simp] theorem reconnect_edgePair_apply : D.reconnect p (D.edgePair.val p) = D := by
+  apply PDCode.ext <;> simp
+
+/-- Reconnecting a half-edge with itself leaves the code unchanged. -/
+@[simp] theorem reconnect_self : D.reconnect p p = D := by
+  apply PDCode.ext <;> simp
+
 /-- The arcs of the reconnected code are the old arcs conjugated by the transposition of
 `D.edgePair.val p` with `q`. -/
 theorem reconnect_edgePair_val :

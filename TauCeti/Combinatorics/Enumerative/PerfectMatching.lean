@@ -324,6 +324,12 @@ theorem reconnect_val (D : PerfectMatching α) (a b : α) :
     (D.reconnect a b).val = (Equiv.swap (D.val a) b).permCongr D.val :=
   congr_val _ _
 
+/-- Reconnecting the two ends of one arc leaves the matching unchanged. -/
+@[simp]
+theorem reconnect_apply (D : PerfectMatching α) (a : α) :
+    D.reconnect a (D.val a) = D := by
+  rw [reconnect, Equiv.swap_self, congr_refl]
+
 variable (hba : b ≠ a)
 include hba
 
@@ -364,6 +370,19 @@ theorem reconnect_val_of_ne {x : α} (hxa : x ≠ a) (hxb : x ≠ b) (hxa' : x �
   have h₂ : D.val x ≠ b := fun h => hxb' (by rw [← h, D.apply_apply])
   rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne hxa' hxb,
     Equiv.swap_apply_of_ne_of_ne h₁ h₂]
+
+omit hba in
+/-- Reconnecting an endpoint with itself leaves the matching unchanged. -/
+@[simp]
+theorem reconnect_self (D : PerfectMatching α) (a : α) : D.reconnect a a = D := by
+  refine Subtype.ext (Equiv.ext fun x => ?_)
+  by_cases hxa : x = a
+  · subst x
+    simp [reconnect_val]
+  by_cases hxa' : x = D.val a
+  · subst x
+    simp [reconnect_val]
+  exact reconnect_val_of_ne hxa hxa hxa' hxa'
 
 end Reconnect
 
