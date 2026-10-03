@@ -15,6 +15,7 @@ public import Mathlib.GroupTheory.CoprodI
 import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Pushout
 import TauCeti.CategoryTheory.Groupoid.SingleObj
+import TauCeti.Topology.Connected.PathConnected
 
 /-!
 # The based Seifert--van Kampen theorem
@@ -66,7 +67,8 @@ and `fB` to `π₁(A ∩ B, x)`, so they glue. Uniqueness is the generation half
 * `TauCeti.isColimitFundamentalGroupWideCocone`: **the Seifert--van Kampen theorem for such a
   family**, as a wide pushout in the category of groups.
 * `TauCeti.vanKampenWideLift`, `TauCeti.vanKampenWideEquiv`: the canonical homomorphism from the
-  free product of the groups `π₁(U i, x)`, and its inverse when `C` is simply connected.
+  free product of the groups `π₁(U i, x)`, and the resulting isomorphism when `C` is simply
+  connected.
 
 ## References
 
@@ -445,16 +447,6 @@ connected, it is their free product. For two sets, `C` is `A ∩ B`. The homomor
 of `TauCeti.FundamentalGroupoid.glueTwo`. -/
 
 variable {ι : Type*} {U : ι → Set X} {C : Set X} {x : X}
-
-/-- If every member of the family contains `C` and two distinct members meet inside `C`, then
-every pairwise intersection is path connected as soon as `C` and the members are. -/
-private theorem isPathConnected_inter_of_pairwise (hUp : ∀ i, IsPathConnected (U i))
-    (hC : IsPathConnected C) (hCU : ∀ i, C ⊆ U i) (hUC : Pairwise fun i j ↦ U i ∩ U j ⊆ C)
-    (i j : ι) : IsPathConnected (U i ∩ U j) := by
-  rcases eq_or_ne i j with rfl | hij
-  · rw [inter_self]
-    exact hUp i
-  · rwa [(hUC hij).antisymm (subset_inter (hCU i) (hCU j))]
 
 variable {K : Type*} [Monoid K]
 
