@@ -747,6 +747,24 @@ theorem stasheff_arity_one (MM : AInfinityRightModule AA M) (x : M) (a c : Fin 0
   rw [m_apply MM 0, m_apply MM 0, ← taylor_tmul_of, ← taylor_tmul_of, hone, hone, Nat.cast_zero,
     InternalGrading.koszulTwist_zero, LinearMap.id_apply, LinearMap.id_apply, h]
 
+/-- On the empty algebra word, the Taylor map is the unsuspended unary operation. -/
+theorem taylor_tmul_one (MM : AInfinityRightModule AA M) (x : M) (a : Fin 0 → A) :
+    MM.taylor (x ⊗ₜ[R] (1 : TensorWords R A)) = MM.m 1 x a := by
+  have hone (e : Fin 0 → A) : TensorWords.of R A 0 (PiTensorProduct.tprod R e) = 1 := by
+    rw [TensorWords.of_tprod_eq_subword, TensorWords.subword_length_zero R e le_rfl]
+  rw [m_apply MM 0, Nat.cast_zero, InternalGrading.koszulTwist_zero, LinearMap.id_apply,
+    ← taylor_tmul_of, hone]
+
+/-- On the empty algebra word, the bar differential is the unary module operation tensored
+with the empty word. -/
+theorem barDifferential_tmul_one (MM : AInfinityRightModule AA M) (x : M) :
+    MM.barDifferential (x ⊗ₜ[R] (1 : TensorWords R A)) =
+      MM.taylor (x ⊗ₜ[R] (1 : TensorWords R A)) ⊗ₜ[R] (1 : TensorWords R A) := by
+  rw [barDifferential_eq, gradedCoderiv_def]
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.lTensor_tmul,
+    TensorWords.deconcatenation_one, LinearEquiv.coe_coe, TensorProduct.assoc_symm_tmul,
+    LinearMap.rTensor_tmul, AA.coaugmentedBarDifferential_one, TensorProduct.tmul_zero, add_zero]
+
 end ComponentEquations
 
 section OfStasheff
