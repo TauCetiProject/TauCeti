@@ -101,11 +101,41 @@ theorem explicitCor2_unitsCoeff_bijective (U : Subgroup (AbsoluteGaloisGroup K))
     (UnitsCoeff K) ((absoluteGaloisGroupEquivFixingSubgroup K E E.val).symm :
       ↥E.val.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup E)
     (unitsCoeffMapSymm K E E.val) continuous_of_discreteTopology (unitsCoeffMapSymm_smul K E E.val)
+  let e : UnitsCoeff K ≃+ UnitsCoeff E :=
+    (unitsCoeffMap K E E.val).toAddEquiv (unitsCoeffMapSymm K E E.val)
+      (AddMonoidHom.ext (unitsCoeffMapSymm_unitsCoeffMap K E E.val))
+      (AddMonoidHom.ext (unitsCoeffMap_unitsCoeffMapSymm K E E.val))
   have hT : Function.RightInverse (explicitMap2 ↥E.val.fieldRange.fixingSubgroup (UnitsCoeff K)
       (AbsoluteGaloisGroup E) (UnitsCoeff E) (absoluteGaloisGroupEquivFixingSubgroup K E E.val :
         AbsoluteGaloisGroup E →ₜ* ↥E.val.fieldRange.fixingSubgroup)
       (unitsCoeffMap K E E.val) continuous_of_discreteTopology (unitsCoeffMap_smul K E E.val)) T :=
-    explicitMap2_unitsCoeffMapSymm_explicitMap2_unitsCoeffMap K E E.val
+    fun x => by
+      let F := explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K E E.val) e
+        continuous_of_discreteTopology continuous_of_discreteTopology (unitsCoeffMap_smul K E E.val)
+      let forward := explicitMap2 ↥E.val.fieldRange.fixingSubgroup (UnitsCoeff K)
+        (AbsoluteGaloisGroup E) (UnitsCoeff E) (absoluteGaloisGroupEquivFixingSubgroup K E E.val :
+          AbsoluteGaloisGroup E →ₜ* ↥E.val.fieldRange.fixingSubgroup)
+        (unitsCoeffMap K E E.val) continuous_of_discreteTopology (unitsCoeffMap_smul K E E.val)
+      have he : e.toAddMonoidHom = unitsCoeffMap K E E.val := by
+        ext z
+        rfl
+      have he' : e.symm.toAddMonoidHom = unitsCoeffMapSymm K E E.val := by
+        ext z
+        rfl
+      have hforward : F x = forward x := by
+        exact (explicitMap2Equiv_apply _ _ _ _
+          (absoluteGaloisGroupEquivFixingSubgroup K E E.val) e continuous_of_discreteTopology
+          continuous_of_discreteTopology (unitsCoeffMap_smul K E E.val) x).trans
+            (DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ rfl he) x)
+      have hback (y) : F.symm y = T y := by
+        exact (explicitMap2Equiv_symm_apply _ _ _ _
+          (absoluteGaloisGroupEquivFixingSubgroup K E E.val) e continuous_of_discreteTopology
+          continuous_of_discreteTopology (unitsCoeffMap_smul K E E.val) y).trans
+            (DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ rfl he') y)
+      calc
+        T (forward x) = T (F x) := congrArg T hforward.symm
+        _ = F.symm (F x) := (hback (F x)).symm
+        _ = x := F.symm_apply_apply x
   have hcomp : explicitCor2 (AbsoluteGaloisGroup K) (UnitsCoeff K) _ hU ∘ T =
       (unitsRepH2Equiv K).symm ∘ brCor K E E.val ∘ unitsRepH2Equiv E := by
     funext y

@@ -192,28 +192,6 @@ theorem brRes_relBrInfl
 
 end Relative
 
-/-- **The transport of `H²` from `Gal(Kˢ/σ(L))` to `G_L` and back is the identity**: the transport
-used by `brCor` is a left inverse of the transport used by `brRes`. -/
-theorem explicitMap2_unitsCoeffMapSymm_explicitMap2_unitsCoeffMap
-    (x : H2 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K)) :
-    explicitMap2 (AbsoluteGaloisGroup L) (UnitsCoeff L) ↥σ.fieldRange.fixingSubgroup
-        (UnitsCoeff K)
-        ((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm :
-          ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L)
-        (unitsCoeffMapSymm K L σ) continuous_of_discreteTopology (unitsCoeffMapSymm_smul K L σ)
-        (explicitMap2 (↥σ.fieldRange.fixingSubgroup) (UnitsCoeff K) (AbsoluteGaloisGroup L)
-          (UnitsCoeff L)
-          (absoluteGaloisGroupEquivFixingSubgroup K L σ :
-            AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
-          (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) x) =
-      x := by
-  -- Compose the two transports, recognise the composite pair as the identity, then cancel.
-  rw [← AddMonoidHom.comp_apply, ← explicitMap2_comp, explicitMap2_congr_of_eq _ _ _ _ _
-    (ContinuousMonoidHom.id _) _ (AddMonoidHom.id _) (hq := continuous_id)
-    (hψ := fun _ _ => rfl) (ContinuousMonoidHom.ext fun h => by simp)
-    (AddMonoidHom.ext fun x => by simp)]
-  simp
-
 variable [FiniteDimensional K L]
 
 /-- **Corestriction of Brauer classes** `Br L → Br K` along the finite extension `L/K` embedded in
@@ -250,9 +228,56 @@ theorem brCor_apply (y : Br L) :
 `brCor (brRes x) = [L : K] • x` for every Brauer class `x` of `K`. -/
 @[simp]
 theorem brCor_brRes (x : Br K) : brCor K L σ (brRes K L σ x) = Module.finrank K L • x := by
+  let e : UnitsCoeff K ≃+ UnitsCoeff L :=
+    (unitsCoeffMap K L σ).toAddEquiv (unitsCoeffMapSymm K L σ)
+      (AddMonoidHom.ext (unitsCoeffMapSymm_unitsCoeffMap K L σ))
+      (AddMonoidHom.ext (unitsCoeffMap_unitsCoeffMapSymm K L σ))
+  have htransport (z : H2 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K)) :
+      explicitMap2 (AbsoluteGaloisGroup L) (UnitsCoeff L) ↥σ.fieldRange.fixingSubgroup
+          (UnitsCoeff K)
+          ((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm :
+            ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L)
+          (unitsCoeffMapSymm K L σ) continuous_of_discreteTopology
+          (unitsCoeffMapSymm_smul K L σ)
+          (explicitMap2 (↥σ.fieldRange.fixingSubgroup) (UnitsCoeff K) (AbsoluteGaloisGroup L)
+            (UnitsCoeff L)
+            (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+              AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
+            (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) z) =
+        z := by
+    let F := explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K L σ) e
+      continuous_of_discreteTopology continuous_of_discreteTopology (unitsCoeffMap_smul K L σ)
+    let forward := explicitMap2 (↥σ.fieldRange.fixingSubgroup) (UnitsCoeff K)
+      (AbsoluteGaloisGroup L) (UnitsCoeff L) (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+        AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
+      (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ)
+    let back := explicitMap2 (AbsoluteGaloisGroup L) (UnitsCoeff L)
+      ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K)
+      ((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm :
+        ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L)
+      (unitsCoeffMapSymm K L σ) continuous_of_discreteTopology (unitsCoeffMapSymm_smul K L σ)
+    have he : e.toAddMonoidHom = unitsCoeffMap K L σ := by
+      ext w
+      rfl
+    have he' : e.symm.toAddMonoidHom = unitsCoeffMapSymm K L σ := by
+      ext w
+      rfl
+    have hforward : F z = forward z := by
+      exact (explicitMap2Equiv_apply _ _ _ _
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ) e continuous_of_discreteTopology
+        continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) z).trans
+          (DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ rfl he) z)
+    have hback (y) : F.symm y = back y := by
+      exact (explicitMap2Equiv_symm_apply _ _ _ _
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ) e continuous_of_discreteTopology
+        continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) y).trans
+          (DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ rfl he') y)
+    calc
+      back (forward z) = back (F z) := congrArg back hforward.symm
+      _ = F.symm (F z) := (hback (F z)).symm
+      _ = z := F.symm_apply_apply z
   -- Cancel the coefficient transports, leaving corestriction after restriction on `H²`.
-  simp only [brCor_apply, brRes_apply, AddEquiv.symm_apply_apply,
-    explicitMap2_unitsCoeffMapSymm_explicitMap2_unitsCoeffMap]
+  simp only [brCor_apply, brRes_apply, AddEquiv.symm_apply_apply, htransport]
   -- `cor ∘ res` is multiplication by the index `[G_K : Gal(Kˢ/σ(L))] = [L : K]`.
   rw [explicitCor2_comp_res2, ← galoisSubgroup_toSubgroup K L σ, galoisSubgroup_index]
   simp
