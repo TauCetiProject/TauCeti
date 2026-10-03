@@ -18,8 +18,8 @@ domain `TauCeti.dirichletDomain Γ p` consists of the points of `ℍ` hyperbolic
 close to `p` as to every other point of the orbit `Γ • p`. It is a closed measurable fundamental
 domain for `Γ`: its translates cover `ℍ`, and two distinct translates meet only along a
 hyperbolic perpendicular bisector, which has zero area. In particular the covolume of `Γ` is the
-hyperbolic area of any of its Dirichlet domains, and every discrete subgroup has one, since points
-with trivial stabilizer exist.
+hyperbolic area of any Dirichlet domain centred at a point with trivial stabilizer, and every
+discrete subgroup has such a Dirichlet domain, since points with trivial stabilizer exist.
 
 The Dirichlet domain is the starting point of the Dirichlet polygon: for a cofinite group it is a
 finite-sided convex hyperbolic polygon whose sides are paired by elements of `Γ`.
