@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Discrete
 
-import Mathlib.Algebra.Order.Floor.Ring
+import Mathlib.Algebra.Order.ToIntervalMod
 
 /-!
 # A standard fundamental domain for the rational adeles
@@ -66,11 +66,14 @@ private theorem exists_sub_algebraMap_mem_ratFundamentalDomain (a : 𝔸[ℚ]) :
     ∃ q : ℚ, a - algebraMap ℚ 𝔸[ℚ] q ∈ ratFundamentalDomain := by
   obtain ⟨q, hq⟩ :=
     FiniteAdeleRing.exists_forall_sub_algebraMap_mem_adicCompletionIntegers a.2
-  let n : ℤ := ⌊AdeleRing.ratRealComponent a - (q : ℝ)⌋
+  let n : ℤ := toIcoDiv (show 0 < (1 : ℝ) by norm_num) 0
+    (AdeleRing.ratRealComponent a - (q : ℝ))
   refine ⟨q + (n : ℚ), ?_, ?_⟩
   · simp only [map_sub, RingHom.map_rat_algebraMap, eq_ratCast, Rat.cast_add,
-      Rat.cast_intCast, Set.mem_Ico, sub_add_eq_sub_sub]
-    exact ⟨Int.fract_nonneg _, Int.fract_lt_one _⟩
+      Rat.cast_intCast, sub_add_eq_sub_sub]
+    simpa only [zsmul_eq_mul, mul_one, zero_add] using
+      sub_toIcoDiv_zsmul_mem_Ico (show 0 < (1 : ℝ) by norm_num) 0
+        (AdeleRing.ratRealComponent a - (q : ℝ))
   · intro v
     have hn : algebraMap ℚ (v.adicCompletion ℚ) (n : ℚ) ∈
         v.adicCompletionIntegers ℚ := by
