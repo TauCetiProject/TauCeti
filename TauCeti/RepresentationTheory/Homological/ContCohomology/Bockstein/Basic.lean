@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Data.ZMod.Four
 public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Cup
@@ -125,7 +126,12 @@ theorem explicitBockstein1_mk (f : Z1 G (ZMod 2)) :
     rw [hadd]
     have hcarry : ∀ a b : ZMod 2,
         (ZMod.cast (a * b) : ZMod 4) * 2 =
-          (b.cast : ZMod 4) - (b + a).cast + a.cast := by decide
+          (b.cast : ZMod 4) - (b + a).cast + a.cast := by
+      intro a b
+      have h := ZMod.cast_add_two_mul_cast_sub_mul b a 0 0
+      simp only [add_zero, zero_sub, ZMod.neg_eq_self_mod_two, ZMod.cast_zero, mul_zero,
+        mul_comm b a] at h
+      linear_combination h
     exact hcarry _ _
 
 /-- The degree-one mod-two Bockstein equals the cup square on explicit classes. -/
