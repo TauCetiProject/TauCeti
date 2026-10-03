@@ -107,11 +107,11 @@ theorem isProP_iff_isPGroup : IsProP p G ↔ IsPGroup p G := by
     ((QuotientGroup.quotientMulEquivOfEq (openNormalSubgroupBot_toSubgroup G)).trans
       QuotientGroup.quotientBot)
 
-/-- The cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is
-pro-`p`. This holds for every natural number `p`, including composite numbers. -/
-theorem isProP_multiplicative_zmod_pow (p n : ℕ) :
+/-- The finite cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is
+pro-`p`. -/
+theorem isProP_multiplicative_zmod_pow (p n : ℕ) [Fact p.Prime] :
     IsProP p (Multiplicative (ZMod (p ^ n))) :=
-  (ZModModule.isPGroup_multiplicative (n := p ^ n) (G := ZMod (p ^ n))).of_pow.isProP
+  (IsPGroup.of_card (n := n) (by simp [Nat.card_eq_fintype_card])).isProP
 
 end Discrete
 
