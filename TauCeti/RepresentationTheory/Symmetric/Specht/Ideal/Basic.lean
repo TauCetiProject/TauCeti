@@ -23,8 +23,8 @@ Specht module target consumes. Nothing here uses the essential idempotence
 `c_t * c_t = κ • c_t` -- that runs the other way, since identifying the scalar
 needs the dimension of the ideal: it is proved downstream in
 `TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent`, in the form
-`κ = n! / finrank ℚ (ℚ[Sₙ] c_t)`, and the roadmap's reading `κ = n! / f^λ`, which feeds that
-through the standard basis theorem `dim S^λ = f^λ`, is further downstream in
+`κ = n! / finrank ℚ (ℚ[Sₙ] c_t)`, and the reading `κ = n! / f^λ`, which feeds that through the
+standard basis theorem `dim S^λ = f^λ`, in
 `TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Dimension` -- and nothing here identifies
 this representation
 with the span of the polytabloids inside the Young permutation module: that

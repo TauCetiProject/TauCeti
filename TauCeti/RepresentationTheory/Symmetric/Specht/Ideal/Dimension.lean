@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.HookLength.Formula
-public import TauCeti.RepresentationTheory.Symmetric.Specht.Comparison
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent
-public import TauCeti.RepresentationTheory.Symmetric.Specht.StandardBasis
--- Non-public: the count of standard Young tableaux of an extreme shape is used inside a proof,
--- never in the type of an exported declaration.
+-- Non-public: the comparison of the two Specht-module presentations, the standard basis of the
+-- Specht module and the count of standard Young tableaux of an extreme shape are all used inside
+-- proofs, never in the type of an exported declaration.
 import TauCeti.Combinatorics.Young.StandardTableau.Reading
+import TauCeti.RepresentationTheory.Symmetric.Specht.Comparison
+import TauCeti.RepresentationTheory.Symmetric.Specht.StandardBasis
 
 /-!
 # The dimension of a Young-symmetrizer ideal, and the scalar of essential idempotence
@@ -22,15 +23,15 @@ The Young symmetrizer `c_t` of a tableau `t` of shape `μ` is essentially idempo
 c_t * c_t = (n! / dim_ℚ ℚ[Sₙ] c_t) • c_t,
 ```
 with the scalar carrying the dimension of the left ideal `ℚ[Sₙ] c_t` because that is what the
-trace computation produces. This file evaluates that dimension and so puts the scalar in the two
-closed forms the Schur--Weyl roadmap asks for.
+trace computation produces. This file evaluates that dimension and so puts the scalar in two
+closed forms.
 
 The dimension is the number `f^μ` of standard Young tableaux of shape `μ`
 (`TauCeti.YoungTableau.finrank_spechtIdeal`): the ideal is equivalent, as a representation, to
 the polytabloid Specht module `S^μ`
 (`TauCeti.YoungTableau.spechtIdealEquivSpechtSubrepresentation`), and the standard polytabloids
-are a basis of that module (`TauCeti.finrank_spechtSubrepresentation`). Hence the roadmap's
-reading of essential idempotence,
+are a basis of that module (`TauCeti.finrank_spechtSubrepresentation`). Hence essential
+idempotence reads
 ```
 c_t * c_t = (n! / f^μ) • c_t,
 ```
@@ -52,7 +53,7 @@ the shape alone, so the normalisation that makes `c_t` a genuine idempotent is
 * `TauCeti.YoungTableau.finrank_spechtIdeal_eq_one_iff`: the ideal is a line exactly on the
   shapes with at most one row or at most one column.
 * `TauCeti.YoungTableau.youngSymmetrizer_sq_eq_factorial_div_standardCount`: **essential
-  idempotence with the roadmap's scalar `n! / f^μ`**, and
+  idempotence with the scalar `n! / f^μ`**, and
   `TauCeti.YoungTableau.standardCount_smul_youngSymmetrizer_sq` its division-free form.
 * `TauCeti.YoungTableau.youngSymmetrizer_sq_eq_prod_hookLength`: **essential idempotence with the
   scalar read off the hook lengths**, with
@@ -65,17 +66,15 @@ the shape alone, so the normalisation that makes `c_t` a genuine idempotent is
 
 The evaluation of the dimension is kept out of
 `TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent`, where the scalar is produced,
-because it needs the straightening algorithm behind the standard basis of the Specht module;
-folding it in would put that development, and the comparison of the two Specht-module
-presentations, upstream of every consumer of plain essential idempotence.
+because it needs the straightening algorithm behind the standard basis of the Specht module and
+the comparison of the two presentations of `S^μ`, neither of which essential idempotence itself
+uses.
 
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lemma 4.26, where the
   scalar is `n! / dim V_λ`.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10, for the hook-length formula.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 2, the idempotent-theory item `c_t * c_t = (n! / f^λ) • c_t`.
 -/
 
 public section
@@ -135,8 +134,9 @@ theorem standardCount_smul_youngSymmetrizer_sq (t : YoungTableau μ) :
       (μ.card ! : ℚ) • youngSymmetrizer t := by
   rw [← finrank_spechtIdeal t, finrank_spechtIdeal_smul_youngSymmetrizer_sq]
 
-/-- **Essential idempotence of the Young symmetrizer, with the roadmap's scalar.** The square of
-`c_t` is `c_t` scaled by `n !` over the number `f^μ` of standard Young tableaux of its shape. -/
+/-- **Essential idempotence of the Young symmetrizer, in terms of the tableau count.** The square
+of `c_t` is `c_t` scaled by `n !` over the number `f^μ` of standard Young tableaux of its
+shape. -/
 theorem youngSymmetrizer_sq_eq_factorial_div_standardCount (t : YoungTableau μ) :
     youngSymmetrizer t * youngSymmetrizer t =
       ((μ.card ! : ℚ) / (standardCount μ : ℚ)) • youngSymmetrizer t := by
@@ -151,7 +151,7 @@ theorem youngSymmetrizer_sq_eq_prod_hookLength (t : YoungTableau μ) :
   rw [youngSymmetrizer_sq_eq_factorial_div_standardCount,
     cast_factorial_div_standardCount_eq_prod_hookLength]
 
-/-- **The normalised Young symmetrizer is idempotent**, with the roadmap's normalisation
+/-- **The normalised Young symmetrizer is idempotent**, with the normalisation
 `(f^μ / n !) • c_t`. -/
 theorem isIdempotentElem_standardCount_div_factorial_smul_youngSymmetrizer (t : YoungTableau μ) :
     IsIdempotentElem (((standardCount μ : ℚ) / (μ.card ! : ℚ)) • youngSymmetrizer t) := by
@@ -177,8 +177,8 @@ theorem youngSymmetrizerOver_sq_eq_prod_hookLength (k : Type*) [CommSemiring k] 
       = algebraMap ℚ k (∏ c ∈ μ.cells, (μ.hookLength c : ℚ)) := by
     rw [map_prod]
     exact Finset.prod_congr rfl fun c _ => (map_natCast (algebraMap ℚ k) _).symm
-  rw [hprod, algebraMap_smul, youngSymmetrizerOver_def, ← map_mul,
-    youngSymmetrizer_sq_eq_prod_hookLength, map_smul]
+  rw [youngSymmetrizerOver_sq, finrank_spechtIdeal,
+    cast_factorial_div_standardCount_eq_prod_hookLength, ← hprod]
 
 end YoungTableau
 
