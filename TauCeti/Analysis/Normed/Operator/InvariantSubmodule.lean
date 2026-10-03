@@ -17,8 +17,8 @@ This file characterizes the closed submodules preserved by every operator in the
 family `exp (t A)`. Over a characteristic-zero nontrivially normed field, a closed submodule is
 preserved by this entire family exactly when it is preserved by its infinitesimal generator `A`.
 
-The forward implication differentiates the orbit `t ↦ exp (t A) x` at zero. The reverse
-implication applies the exponential power series termwise and uses closedness to pass to its sum.
+This equivalence lets consumers replace preservation by the full exponential family with the single
+infinitesimal condition that `A` preserves the submodule.
 
 ## Main results
 
