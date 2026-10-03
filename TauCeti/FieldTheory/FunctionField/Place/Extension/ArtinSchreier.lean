@@ -8,6 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 public import TauCeti.RingTheory.Valuation.Discrete.PowerSubSelf
 
+import Mathlib.Data.Nat.Prime.Int
+
 /-!
 # Total ramification at a prime-to-characteristic Artin–Schreier pole
 
@@ -23,6 +25,11 @@ inequality bounds `e` by that degree. Thus the extension degree is proved, rathe
 assumed. No existence of a reduced representative is claimed: in the Artin–Schreier
 application, the prime-to-`p` pole is an explicit input.
 
+Replacing `y` by `y - w` with `w ∈ F` replaces `u` by the equivalent representative
+`u - (w ^ p - w)` (`TauCeti.sub_algebraMap_pow_sub_self_eq`). Hence the same conclusions hold
+when only some translate `u - (w ^ p - w)` has a prime-to-`p` pole, i.e. for a supplied reduced
+Artin–Schreier representative.
+
 The base-field obstruction is
 `Valuation.ne_pow_sub_self_of_ord_neg_of_not_dvd`: such a pole also ensures
 `u ≠ w ^ p - w` for every `w ∈ F`.
@@ -37,6 +44,22 @@ public section
 
 open Polynomial
 open scoped IntermediateField
+
+namespace TauCeti
+
+/-- Translating an Artin–Schreier generator `y` by `w ∈ F` translates the right-hand side of
+`y ^ p - y = u` by `w ^ p - w`. -/
+theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [Field F] [CommRing F'] [Algebra F F']
+    (p : ℕ) [Fact p.Prime] [CharP F p] (y : F') (w : F) :
+    (y - algebraMap F F' w) ^ p - (y - algebraMap F F' w) =
+      (y ^ p - y) - algebraMap F F' (w ^ p - w) := by
+  rcases subsingleton_or_nontrivial F' with _ | _
+  · exact Subsingleton.elim _ _
+  let _ : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
+  rw [sub_pow_char, map_sub, map_pow]
+  ring
+
+end TauCeti
 
 namespace TauCeti.Place
 
@@ -135,5 +158,42 @@ theorem ord_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one
   have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F hn hy hu
   rw [ramificationIdx_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F hn hgen hy hu hcop] at hkey
   exact mul_left_cancel₀ (by exact_mod_cast (by omega : n ≠ 0)) hkey
+
+omit [Algebra.IsIntegral F F'] in
+private theorem adjoin_sub_algebraMap (y : F') (w : F) :
+    F⟮y - algebraMap F F' w⟯ = F⟮y⟯ := by
+  simpa [sub_eq_add_neg] using IntermediateField.adjoin_simple_add_algebraMap y (-w)
+
+/-- A reduced Artin–Schreier pole is totally ramified: if some representative
+`u - (w ^ p - w)` of the class of `u` has a pole of order prime to `p` below `P'`, then `P'` is
+totally ramified over that place. No perfection hypothesis on the residue field is needed. -/
+theorem isTotallyRamified_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    IsTotallyRamified F P' := by
+  obtain ⟨w, hwneg, hwdvd⟩ := hpole
+  apply isTotallyRamified_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
+    (Fact.out : p.Prime).one_lt ((adjoin_sub_algebraMap (F := F) y w).trans hgen)
+  · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
+  · exact hwneg
+  · exact Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hwdvd)
+
+/-- At a reduced Artin–Schreier pole the ramification index is `p`. -/
+theorem ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    ramificationIdx F P' = p := by
+  obtain ⟨w, hwneg, hwdvd⟩ := hpole
+  apply ramificationIdx_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
+    (Fact.out : p.Prime).one_lt ((adjoin_sub_algebraMap (F := F) y w).trans hgen)
+  · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
+  · exact hwneg
+  · exact Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hwdvd)
 
 end TauCeti.Place
