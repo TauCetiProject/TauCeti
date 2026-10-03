@@ -116,7 +116,7 @@ theorem DualFeasible.mono_cost (h : DualFeasible c φ ψ) (hcc' : c ≤ c') :
   fun x y ↦ (h x y).trans <| EReal.coe_ennreal_le_coe_ennreal_iff.2 (hcc' (x, y))
 
 /-- The zero potentials are feasible for every nonnegative extended cost. -/
-@[simp]
+@[simp↓]
 theorem dualFeasible_zero (c : X × Y → ℝ≥0∞) :
     DualFeasible c (fun _ ↦ 0) (fun _ ↦ 0) := by
   intro x y
