@@ -26,8 +26,8 @@ and `TauCeti.galoisCor` rather than rebuilding either operation.
 
 ## Main result
 
-* `TauCeti.galoisRes_galoisCor_exact`: restriction followed by corestriction is exact for a
-  quadratic extension, in every degree.
+* `TauCeti.exact_galoisRes_galoisCor_of_finrank_eq_two`: restriction followed by corestriction
+  is exact for a quadratic extension, in every degree.
 
 ## References
 
@@ -52,7 +52,7 @@ variable (K : Type u) [Field K] (L : Type u) [Field L] [Algebra K L]
 /-- **Exactness of restriction followed by corestriction for a quadratic extension.** In every
 degree, a class in `Hⁿ(G_L, 𝔽₂)` has zero corestriction if and only if it is the restriction of
 a class in `Hⁿ(G_K, 𝔽₂)`. -/
-theorem galoisRes_galoisCor_exact (hL : Module.finrank K L = 2) (n : ℕ) :
+theorem exact_galoisRes_galoisCor_of_finrank_eq_two (hL : Module.finrank K L = 2) (n : ℕ) :
     Function.Exact (galoisRes K L σ n) (galoisCor K L σ n) := by
   rw [galoisRes_def, galoisCor_def]
   let hU : (galoisSubgroup K L σ).toSubgroup.index = 2 :=
