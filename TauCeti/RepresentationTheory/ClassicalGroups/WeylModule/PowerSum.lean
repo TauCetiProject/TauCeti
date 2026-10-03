@@ -90,12 +90,12 @@ theorem trace_permTensorAction_mul_tensorPowerRep_diagGL (σ : Equiv.Perm (Fin d
           ((permTensorAction k n d σ * tensorPowerRep k n d (diagGL x))
             (tensorPowerBasis k n d f)) f =
         if f ∘ σ = f then ∏ j, (x (f j) : k) else 0 := fun f => by
+    have hσ : (fun j => f (σ.symm j)) = f ↔ f ∘ σ = f := by
+      rw [funext_iff, funext_iff, ← σ.forall_congr_right]
+      simp [eq_comm]
     rw [Module.End.mul_apply, tensorPowerRep_diagGL_apply_basis, map_smul,
-      permTensorAction_tensorPowerBasis, map_smul, Basis.repr_self, Finsupp.smul_apply,
-      Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero]
-    refine if_congr ⟨fun h => funext fun j => ?_, fun h => funext fun j => ?_⟩ rfl rfl
-    · simpa using (congrFun h (σ j)).symm
-    · simpa using (congrFun h (σ.symm j)).symm
+      permTensorAction_tensorPowerBasis]
+    simp [-tensorPowerBasis_apply, Finsupp.single_apply, ← hσ]
   rw [LinearMap.trace_eq_matrix_trace k (tensorPowerBasis k n d), Matrix.trace,
     psumPart_partition_eq_sum_prod_X, map_sum, Finset.sum_filter]
   simp only [Matrix.diag_apply, LinearMap.toMatrix_apply, hdiag, eval_prod, eval_X]
@@ -130,9 +130,7 @@ theorem char_weylRep_eq_sum (t : YoungTableau μ) (g : GL (Fin n) k) :
   rw [LinearMap.trace_restrict_congr (weylModule_toSubmodule k n t).symm _ _
     ((weylModule k n t).apply_mem_toSubmodule g)] at htrace
   -- the trace of `c_t g^{⊗d}` is linear in `c_t`
-  rw [permTensorActionAlgHom_def, Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply,
-    Finsupp.sum_fintype _ (fun σ b => b • permTensorAction k n μ.card σ)
-      fun _ => zero_smul k _, Finset.sum_mul, map_sum] at htrace
+  rw [permTensorActionAlgHom_eq_sum, Finset.sum_mul, map_sum] at htrace
   simp only [smul_mul_assoc, map_smul, smul_eq_mul] at htrace
   have hfact : (μ.card.factorial : k) ≠ 0 := Nat.cast_ne_zero.mpr μ.card.factorial_ne_zero
   have hdim : (finrank ℚ (spechtIdeal t) : k) ≠ 0 :=
