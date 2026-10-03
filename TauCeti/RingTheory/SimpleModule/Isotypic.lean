@@ -75,11 +75,15 @@ def linearMapIsotypicComponentEquiv :
   left_inv _ := by ext s; rfl
   right_inv _ := by ext s; rfl
 
+/-- The forward equivalence composes a map into the isotypic component with its inclusion
+into the ambient module. -/
 @[simp]
 theorem linearMapIsotypicComponentEquiv_apply
     (f : S →ₗ[R] isotypicComponent R M S) (s : S) :
     linearMapIsotypicComponentEquiv k f s = f s := (rfl)
 
+/-- The inverse equivalence corestricts a map into the ambient module to its isotypic
+component, preserving its values. -/
 @[simp]
 theorem linearMapIsotypicComponentEquiv_symm_apply (f : S →ₗ[R] M) (s : S) :
     (linearMapIsotypicComponentEquiv k).symm f s =
