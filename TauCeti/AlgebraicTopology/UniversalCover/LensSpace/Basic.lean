@@ -35,9 +35,9 @@ is a quotient covering map. This file develops the topology of the quotient; its
 structure is in `TauCeti.Geometry.Manifold.Instances.LensSpace`, and its fundamental group in
 `TauCeti.AlgebraicTopology.UniversalCover.LensSpace.FundamentalGroup`.
 
-Requiring `ℓᵢ` to be a unit of `ZMod m` builds the coprimality condition into the type: a weight
-not coprime to `m` would give an action that is not free, whose orbit space is not a manifold. For
-`m = 1` the acting group is trivial and the lens space is a copy of the sphere.
+Requiring `ℓᵢ` to be a unit of `ZMod m` builds the coprimality condition into the type, and it
+ensures that the prescribed action of `ℤ/m` is faithful and free. For `m = 1` the acting group is
+trivial and the lens space is a copy of the sphere.
 
 ## Main definitions
 
@@ -57,7 +57,8 @@ not coprime to `m` would give an action that is not free, whose orbit space is n
   coordinate (`[NeZero k]`), so `TauCeti.lensGroupEquiv` identifies the lens group with `ℤ/m`.
 * `TauCeti.lensGroup_isCancelSMul`: the lens group acts freely on the unit sphere.
 * `TauCeti.LensSpace.mk_eq_mk_iff`: two unit vectors have the same image exactly when a rotation
-  carries one to the other.
+  carries one to the other; `TauCeti.LensSpace.mk_lensRotation_smul` is the invariance of the
+  projection under a rotation.
 * `TauCeti.LensSpace.isQuotientCoveringMap_mk`: the projection from the sphere is a quotient
   covering map with group the lens group.
 * A lens space is compact, Hausdorff and path-connected.
@@ -221,6 +222,13 @@ theorem mk_eq_mk_iff (x y : sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) :
     exact ⟨a, by simpa [Subgroup.smul_def] using congrArg Subtype.val h⟩
   · rintro ⟨a, h⟩
     exact ⟨⟨_, a, rfl⟩, Subtype.ext (by simpa [Subgroup.smul_def] using h)⟩
+
+/-- Rotating a unit vector does not change its image in the lens space. -/
+@[simp]
+theorem mk_lensRotation_smul (a : Multiplicative (ZMod m))
+    (x : sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) :
+    mk m ℓ (lensRotation m ℓ a • x) = mk m ℓ x :=
+  Quotient.sound ⟨⟨_, a, rfl⟩, rfl⟩
 
 /-- A function on the unit sphere that is invariant under the rotations descends to the lens
 space. -/
