@@ -170,7 +170,7 @@ theorem finrank_eq (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
 
 /-- For a nontrivial Artin–Schreier class, every prime-field translation occurs as a
 unique automorphism. -/
-noncomputable def autEquivZMod (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
+noncomputable def autEquivZmod (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
     (hu : ∀ w : K, w ^ p - w ≠ u) : Gal(L/K) ≃* Multiplicative (ZMod p) := by
   let := isSplittingField hy hgen
   have := IsSplittingField.finiteDimensional L (X ^ p - X - C u)
@@ -182,16 +182,16 @@ noncomputable def autEquivZMod (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y
 
 /-- The Galois-group equivalence is the translation character of the chosen root. -/
 @[simp]
-theorem autEquivZMod_apply (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
+theorem autEquivZmod_apply (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
     (hu : ∀ w : K, w ^ p - w ≠ u) (σ : Gal(L/K)) :
-    autEquivZMod hy hgen hu σ = translationHom hy σ := (rfl)
+    autEquivZmod hy hgen hu σ = translationHom hy σ := (rfl)
 
 /-- The inverse Galois-group equivalence translates the generator by its argument. -/
 @[simp]
-theorem autEquivZMod_symm_apply (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
+theorem autEquivZmod_symm_apply (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
     (hu : ∀ w : K, w ^ p - w ≠ u) (c : Multiplicative (ZMod p)) :
-    (autEquivZMod hy hgen hu).symm c y = y + (ZMod.cast c.toAdd : L) := by
-  rw [aut_apply_eq_add_translationHom hy, ← autEquivZMod_apply hy hgen hu,
+    (autEquivZmod hy hgen hu).symm c y = y + (ZMod.cast c.toAdd : L) := by
+  rw [aut_apply_eq_add_translationHom hy, ← autEquivZmod_apply hy hgen hu,
     MulEquiv.apply_symm_apply]
 
 end TauCeti.ArtinSchreier
