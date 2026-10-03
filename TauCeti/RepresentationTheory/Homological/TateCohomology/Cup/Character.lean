@@ -14,10 +14,10 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 For a finite group `G`, the cup product pairs its additive abelianization, identified with
 `Ĥ⁻²(G, ℤ)`, with the connecting class `δχ ∈ Ĥ²(G, ℤ)` of a character
 `χ : Gᵃᵇ → ℚ/ℤ`. This file reduces that pairing to the concrete degree `(-2, 1)` product
-with the character class. Mathematically, for `x ∈ Ĥ⁻²(G, ℤ)` that degree `(-2, 1)` product
-`x ∪ χ` is a class in `Ĥ⁻¹(G, ℚ/ℤ)`, the `|G|`-torsion of `ℚ/ℤ`, given by the value of the
-character; its image under the connecting map is the corresponding residue class in
-`Ĥ⁰(G, ℤ) = ℤ/|G|ℤ`.
+with the character class: for `x ∈ Ĥ⁻²(G, ℤ)`, the product `x ∪ χ` is a class in
+`Ĥ⁻¹(G, ℚ/ℤ)`, which is left unevaluated here. Identifying it with the value of the character
+(and hence `x ∪ δχ` with the corresponding residue class in `Ĥ⁰(G, ℤ) = ℤ/|G|ℤ`) is a
+subsequent step not established in this file.
 
 This is the low-degree normalization that fixes the sign in the character description of the
 Artin map: for `x ∈ Ĥ⁻²(G, ℤ)`, the class `x ∪ δχ` is the Tate connecting map of the tensored
