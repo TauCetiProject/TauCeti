@@ -25,6 +25,10 @@ differentials.
 A degree carrying no cells has equal consecutive skeleta, hence a zero cellular chain group, so
 the cellular chain complex of a finite-dimensional complex vanishes in high degrees.
 
+Inclusions between arbitrary skeleta and into the whole complex give maps of pairs relative to
+the base. Their induced homology maps connect skeletal relative homology to the homology of the
+whole pair `(X, X⁻¹)` and are used in the cellular-to-singular comparison.
+
 Coefficients are an object `R` of an abelian category with coproducts, as everywhere in relative
 singular homology; no ring or module structure is needed.
 
@@ -36,6 +40,9 @@ singular homology; no ring or module structure is needed.
   relative to the base, and the triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.
 * `TauCeti.skeletonBasePairToSucc`, `TauCeti.skeletonBasePairToSkeletonPair`: the maps of pairs
   `(Xⁿ, X⁻¹) ⟶ (Xⁿ⁺¹, X⁻¹)` and `(Xⁿ, X⁻¹) ⟶ (Xⁿ, Xⁿ⁻¹)`.
+* `TauCeti.skeletonBasePairInclusion`: the inclusion `(Xⁿ, X⁻¹) ⟶ (Xᵐ, X⁻¹)` for `n ≤ m`.
+* `TauCeti.complexBasePair`: the whole relative CW complex as the pair `(X, X⁻¹)`.
+* `TauCeti.skeletonBasePairToComplex`: the inclusion `(Xⁿ, X⁻¹) ⟶ (X, X⁻¹)`.
 * `TauCeti.cellularChainGroup`: the relative homology `Hₙ(Xⁿ, Xⁿ⁻¹)`.
 * `TauCeti.cellularDifferential`: the cellular differential.
 * `TauCeti.cellularChainComplex`: the resulting chain complex.
