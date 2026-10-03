@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.FullSubcategory
 
 /-!
 # The graded Cartan map
 
-Let `A` be a `k`-algebra with a decomposition `𝒜` into homogeneous pieces. The finitely generated
+Let `A` be a `k`-algebra with homogeneous pieces `𝒜 : ℤ → Submodule k A`. The finitely generated
 graded `A`-modules and the finitely generated graded modules whose underlying `A`-modules are
 projective are shift-stable full subcategories of `TauCeti.GradedModuleCat 𝒜`. This file equips
 them with their induced graded exact structures and constructs the Laurent-linear Cartan map
@@ -22,7 +23,9 @@ them with their induced graded exact structures and constructs the Laurent-linea
 c_A^gr : K₀^gr(proj A) ⟶ G₀^gr(mod A).
 ```
 
-The exact structure on the graded projectives is split: a conflation with projective quotient
+Both subcategories are extension closed for any grading data: a short exact sequence with
+projective quotient splits on underlying modules. When `𝒜` is a decomposition of `A`, the exact
+structure on the graded projectives is moreover split: a conflation with projective quotient
 splits in the graded module category. The inclusion into the finite graded modules is compatible
 with the grading shift, so its map on Grothendieck groups is linear over `ℤ[q,q⁻¹]`.
 
@@ -41,8 +44,14 @@ Grothendieck groups live in the same universe as the coefficient data.
 
 ## Main results
 
+* `TauCeti.isExtensionClosed_gradedFiniteModules` and
+  `TauCeti.isExtensionClosed_gradedFiniteProjectiveModules`: both properties are extension closed
+  in the abelian category of graded modules.
+* `TauCeti.gradedFiniteModulesExactStructure_conflation_iff` and
+  `TauCeti.gradedFiniteProjectiveModulesExactStructure_conflation_iff`: the conflations of the two
+  structures are the short exact sequences of graded modules with terms in the subcategory.
 * `TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`: the underlying exact structure
-  on finite graded projectives is split.
+  on finite graded projectives is split when `𝒜` is a decomposition of `A`.
 * `TauCeti.gradedCartanMap_of`: the graded Cartan map sends the class of a projective to the class
   of the same graded module in the finite-module category.
 
@@ -52,6 +61,10 @@ Grothendieck groups live in the same universe as the coefficient data.
   projective modules and grading shifts.
 * Z. Dancso and A. Licata, "Koszul algebras and flow lattices", Section 2.2, for the graded
   Cartan map over the Laurent coefficient ring.
+
+The construction adapts the ungraded Cartan map of
+`TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic` (`TauCeti.cartanMap`) to graded modules and
+the Laurent-linear Grothendieck group.
 -/
 
 public section
@@ -203,9 +216,8 @@ private noncomputable abbrev ofFinite : GradedFGModuleRepr (𝒜 := 𝒜) where
 
 /-- A finite graded module is isomorphic to its chosen small representative. -/
 private noncomputable def ofFiniteIso : toGradedModuleCat (ofFinite M) ≅ M :=
-  GradedModuleCat.isoMk (moduleEquiv M) fun p x => by
-    change x ∈ (smallGrading M).piece p ↔ moduleEquiv M x ∈ M.grading.piece p
-    exact M.grading.mem_map_piece_iff ((moduleEquiv M).symm.restrictScalars k) p x
+  GradedModuleCat.isoMk (moduleEquiv M) fun p x =>
+    M.grading.mem_map_piece_iff ((moduleEquiv M).symm.restrictScalars k) p x
 
 private instance : (embed 𝒜).EssSurj where
   mem_essImage M := ⟨ofFinite M.obj,
@@ -240,8 +252,7 @@ private theorem isZero_finiteZero : IsZero (finiteZero (𝒜 := 𝒜)) :=
     apply GradedModuleCat.hom_ext
     apply LinearMap.ext
     intro x
-    change x = (0 : PUnit)
-    exact Subsingleton.elim _ _)
+    exact Subsingleton.elim (α := PUnit) _ _)
 
 instance : (gradedFiniteModules 𝒜).ContainsZero where
   exists_zero := ⟨finiteZero, isZero_finiteZero,
@@ -267,94 +278,70 @@ theorem isExtensionClosed_gradedFiniteModules :
       ((GradedModuleCat.epi_iff_surjective S.g).1
         hS.epi_g)
 
-variable [DirectSum.Decomposition 𝒜]
-
-/-- A finite graded module with projective underlying module is relatively projective for the
-canonical exact structure on graded modules. -/
-theorem gradedFiniteProjectiveModules_le_isProjective :
-    gradedFiniteProjectiveModules 𝒜 ≤
-      (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).isProjective := by
-  intro M hM
-  let _ : Module.Projective A M := hM.2
-  exact (ExactStructure.abelian_isProjective_iff M).2 inferInstance
+/-- Finite graded modules with projective underlying module are extension closed in the abelian
+category of graded modules: a short exact sequence with projective quotient splits on the
+underlying modules. -/
+theorem isExtensionClosed_gradedFiniteProjectiveModules :
+    (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).IsExtensionClosed
+      (gradedFiniteProjectiveModules 𝒜) where
+  prop_X₂ {S} hS h₁ h₃ := by
+    refine ⟨isExtensionClosed_gradedFiniteModules.prop_X₂ hS h₁.1 h₃.1, ?_⟩
+    rw [ExactStructure.abelian_conflation] at hS
+    have hS' : (S.map (GradedModuleCat.toModuleCat (𝒜 := 𝒜))).Exact :=
+      hS.exact.map_of_mono_of_preservesKernel _ hS.mono_f inferInstance
+    have hex : Function.Exact S.f.hom S.g.hom :=
+      (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS'
+    have hf : Function.Injective S.f.hom := by
+      have := hS.mono_f
+      rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+      intro x hx
+      have h0 : GradedModuleCat.kernelι S.f = 0 := (cancel_mono S.f).1 (by simp)
+      simpa [GradedModuleCat.kernelι] using
+        LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom h0) ⟨x, hx⟩
+    let _ : Module.Projective A S.X₁ := h₁.2
+    let _ : Module.Projective A S.X₃ := h₃.2
+    obtain ⟨l, hl⟩ := Module.projective_lifting_property S.g.hom LinearMap.id
+      ((GradedModuleCat.epi_iff_surjective S.g).1 hS.epi_g)
+    exact Module.Projective.of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).1.symm
 
 instance : (gradedFiniteModules 𝒜).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_gradedFiniteModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts
 
-private noncomputable def biprodLinearEquiv (M N : GradedModuleCat.{uA} 𝒜) :
-    ((M ⊞ N : GradedModuleCat 𝒜) : Type uA) ≃ₗ[A] (M × N) := by
-  let B : GradedModuleCat 𝒜 := M ⊞ N
-  let f : B →ₗ[A] (M × N) := LinearMap.prod
-    ((biprod.fst : B ⟶ M).hom) ((biprod.snd : B ⟶ N).hom)
-  let g : (M × N) →ₗ[A] B := LinearMap.coprod
-    ((biprod.inl : M ⟶ B).hom) ((biprod.inr : N ⟶ B).hom)
-  exact LinearEquiv.ofLinearMap f g
-    (by
-      apply LinearMap.ext
-      rintro ⟨x, y⟩
-      dsimp [f, g]
-      simp only [LinearMap.prod_apply, map_add, Function.prod_apply]
-      ext
-      · change (((biprod.inl : M ⟶ B) ≫ biprod.fst).hom) x +
-            (((biprod.inr : N ⟶ B) ≫ biprod.fst).hom) y = ((𝟙 M : M ⟶ M).hom) x
-        simp
-      · change (((biprod.inl : M ⟶ B) ≫ biprod.snd).hom) x +
-            (((biprod.inr : N ⟶ B) ≫ biprod.snd).hom) y = ((𝟙 N : N ⟶ N).hom) y
-        simp)
-    (by
-      apply LinearMap.ext
-      intro x
-      change (((biprod.fst : B ⟶ M) ≫ biprod.inl +
-        (biprod.snd : B ⟶ N) ≫ biprod.inr).hom) x = ((𝟙 B : B ⟶ B).hom) x
-      rw [biprod.total])
-
 instance : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderBinaryProducts :=
-  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN => by
-    let _ : Module.Finite A M := hM.1
-    let _ : Module.Projective A M := hM.2
-    let _ : Module.Finite A N := hN.1
-    let _ : Module.Projective A N := hN.2
-    exact ⟨(gradedFiniteModules 𝒜).prop_biprod_of_isClosedUnderBinaryProducts hM.1 hN.1,
-      Module.Projective.of_equiv (biprodLinearEquiv M N).symm⟩
+  (isExtensionClosed_gradedFiniteProjectiveModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts
 
-omit [DirectSum.Decomposition 𝒜] in
 private noncomputable abbrev gradedModuleExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (GradedModuleCat.{uA} 𝒜) :=
   GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)
 
-omit [DirectSum.Decomposition 𝒜] in
 private theorem isExtensionClosed_gradedFiniteModules' :
     (gradedModuleExactStructure 𝒜).toExactStructure.IsExtensionClosed
       (gradedFiniteModules 𝒜) := by
   rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
   exact isExtensionClosed_gradedFiniteModules
 
-private theorem gradedFiniteProjectiveModules_le_isProjective' :
-    gradedFiniteProjectiveModules 𝒜 ≤
-      (gradedModuleExactStructure 𝒜).toExactStructure.isProjective := by
+private theorem isExtensionClosed_gradedFiniteProjectiveModules' :
+    (gradedModuleExactStructure 𝒜).toExactStructure.IsExtensionClosed
+      (gradedFiniteProjectiveModules 𝒜) := by
   rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
-  exact gradedFiniteProjectiveModules_le_isProjective
+  exact isExtensionClosed_gradedFiniteProjectiveModules
 
-omit [DirectSum.Decomposition 𝒜] in
 private theorem gradedFiniteModules_shift :
     (gradedFiniteModules 𝒜).inverseImage (GradedModuleCat.shift 𝒜).functor =
       gradedFiniteModules 𝒜 :=
   rfl
 
-omit [DirectSum.Decomposition 𝒜] in
 private theorem gradedFiniteProjectiveModules_shift :
     (gradedFiniteProjectiveModules 𝒜).inverseImage (GradedModuleCat.shift 𝒜).functor =
       gradedFiniteProjectiveModules 𝒜 :=
   rfl
 
-omit [DirectSum.Decomposition 𝒜] in
 private theorem gradedFiniteModules_shift' :
     (gradedFiniteModules 𝒜).inverseImage (gradedModuleExactStructure 𝒜).shift.functor =
       gradedFiniteModules 𝒜 := by
   rw [gradedModuleExactStructure, GradedExactStructure.abelian_shift]
   exact gradedFiniteModules_shift
 
-omit [DirectSum.Decomposition 𝒜] in
 private theorem gradedFiniteProjectiveModules_shift' :
     (gradedFiniteProjectiveModules 𝒜).inverseImage
         (gradedModuleExactStructure 𝒜).shift.functor =
@@ -370,28 +357,38 @@ noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k 
 
 /-- The induced graded exact structure on finite graded modules with projective underlying
 module. -/
-noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A)
-    [DirectSum.Decomposition 𝒜] :
+noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
   (gradedModuleExactStructure 𝒜).fullSubcategory _
-    (ExactStructure.isExtensionClosed_of_le_isProjective
-      gradedFiniteProjectiveModules_le_isProjective')
-    gradedFiniteProjectiveModules_shift'
+    isExtensionClosed_gradedFiniteProjectiveModules' gradedFiniteProjectiveModules_shift'
 
-/-- The underlying exact structure on finite graded projectives is the split exact structure. -/
-theorem gradedFiniteProjectiveModulesExactStructure_eq_split :
-    (gradedFiniteProjectiveModulesExactStructure 𝒜).toExactStructure =
-      ExactStructure.split (gradedFiniteProjectiveModules 𝒜).FullSubcategory := by
+/-- The conflations of finite graded modules are the short exact sequences of graded modules
+whose three terms are finitely generated. -/
+@[simp]
+theorem gradedFiniteModulesExactStructure_conflation_iff
+    (S : ShortComplex (gradedFiniteModules 𝒜).FullSubcategory) :
+    (gradedFiniteModulesExactStructure 𝒜).Conflation S ↔
+      (S.map (gradedFiniteModules 𝒜).ι).ShortExact := by
+  rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_conflation_iff,
+    gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure,
+    ExactStructure.abelian_conflation]
+
+/-- The conflations of finite graded modules with projective underlying module are the short
+exact sequences of graded modules whose three terms are of this kind. -/
+@[simp]
+theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
+    (S : ShortComplex (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
+    (gradedFiniteProjectiveModulesExactStructure 𝒜).Conflation S ↔
+      (S.map (gradedFiniteProjectiveModules 𝒜).ι).ShortExact := by
   rw [gradedFiniteProjectiveModulesExactStructure,
-    GradedExactStructure.fullSubcategory_toExactStructure]
-  exact ExactStructure.fullSubcategory_eq_split
-    (gradedFiniteProjectiveModules_le_isProjective' (𝒜 := 𝒜))
+    GradedExactStructure.fullSubcategory_conflation_iff, gradedModuleExactStructure,
+    GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
 
 /-! ### The graded Cartan map -/
 
 /-- **The graded Cartan map** `c_A^gr : K₀^gr(proj A) ⟶ G₀^gr(mod A)`, induced by inclusion of
 finite graded modules with projective underlying module into all finite graded modules. -/
-noncomputable def gradedCartanMap (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜] :
+noncomputable def gradedCartanMap (𝒜 : ℤ → Submodule k A) :
     LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) :=
   by
@@ -403,8 +400,7 @@ noncomputable def gradedCartanMap (𝒜 : ℤ → Submodule k A) [DirectSum.Deco
         gradedFiniteModulesExactStructure]
       exact GradedConflationExact.ιOfLE (gradedModuleExactStructure 𝒜)
         (gradedFiniteProjectiveModules 𝒜)
-        (ExactStructure.isExtensionClosed_of_le_isProjective
-          gradedFiniteProjectiveModules_le_isProjective')
+        isExtensionClosed_gradedFiniteProjectiveModules'
         isExtensionClosed_gradedFiniteModules'
         gradedFiniteProjectiveModules_shift' gradedFiniteModules_shift'
         gradedFiniteProjectiveModules_le_finiteModules
@@ -421,5 +417,33 @@ theorem gradedCartanMap_of {M : GradedModuleCat.{uA} 𝒜}
         ⟨M, gradedFiniteProjectiveModules_le_finiteModules M hM⟩ := by
   rw [gradedCartanMap, LaurentK0.map_of]
   congr 1
+
+/-! ### Splitting over a decomposition -/
+
+variable [DirectSum.Decomposition 𝒜]
+
+/-- A finite graded module with projective underlying module is relatively projective for the
+canonical exact structure on graded modules. -/
+theorem gradedFiniteProjectiveModules_le_isProjective :
+    gradedFiniteProjectiveModules 𝒜 ≤
+      (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).isProjective := by
+  intro M hM
+  let _ : Module.Projective A M := hM.2
+  exact (ExactStructure.abelian_isProjective_iff M).2 inferInstance
+
+private theorem gradedFiniteProjectiveModules_le_isProjective' :
+    gradedFiniteProjectiveModules 𝒜 ≤
+      (gradedModuleExactStructure 𝒜).toExactStructure.isProjective := by
+  rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+  exact gradedFiniteProjectiveModules_le_isProjective
+
+/-- The underlying exact structure on finite graded projectives is the split exact structure. -/
+theorem gradedFiniteProjectiveModulesExactStructure_eq_split :
+    (gradedFiniteProjectiveModulesExactStructure 𝒜).toExactStructure =
+      ExactStructure.split (gradedFiniteProjectiveModules 𝒜).FullSubcategory := by
+  rw [gradedFiniteProjectiveModulesExactStructure,
+    GradedExactStructure.fullSubcategory_toExactStructure]
+  exact ExactStructure.fullSubcategory_eq_split
+    (gradedFiniteProjectiveModules_le_isProjective' (𝒜 := 𝒜))
 
 end TauCeti
