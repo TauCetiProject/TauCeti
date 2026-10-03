@@ -186,15 +186,13 @@ theorem nonempty_linearEquiv_prod_of_pPowerTorsion_linearEquiv
   have : Module.Finite (MonoidAlgebra ℤ_[p] G) N := .of_surjective ρ hρ
   have : Module.Finite ℤ_[p] N := .trans (MonoidAlgebra ℤ_[p] G) N
   -- Precomposition with `e.symm` is a `ℤ_p[G]ᵐᵒᵖ`-linear isomorphism of the character groups.
-  let eT : _ ≃ₗ[(MonoidAlgebra ℤ_[p] G)ᵐᵒᵖ] _ :=
+  let eT : (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) M →ₗ[ℤ_[p]]
+      ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) ≃ₗ[(MonoidAlgebra ℤ_[p] G)ᵐᵒᵖ]
+      (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) N →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
     { (e.restrictScalars ℤ_[p]).arrowCongrAddEquiv (.refl ℤ_[p] _) with
       map_smul' a χ := LinearMap.ext fun t ↦ by
-        rw [← MulOpposite.op_unop a, RingHom.id_apply, op_smul_padicCharacter_apply,
-          AddEquiv.toFun_eq_coe, LinearEquiv.arrowCongrAddEquiv_apply,
-          LinearEquiv.arrowCongrAddEquiv_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-          LinearMap.comp_apply, LinearMap.comp_apply, op_smul_padicCharacter_apply,
-          LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_symm_apply,
-          LinearEquiv.restrictScalars_symm_apply, map_smul e.symm] }
+        induction a using MulOpposite.rec'
+        simp }
   -- Both transposes are the Pontryagin duals of the `p`-power torsion, compatibly with the
   -- action of `ℤ_p[G]ᵐᵒᵖ`, so `e` induces an isomorphism of transposes.
   exact nonempty_linearEquiv_prod_of_linearEquiv hf hπ hg hρ
