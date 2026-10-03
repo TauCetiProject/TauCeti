@@ -147,7 +147,7 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
   simp only [ModuleCat.comp_apply, ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₃,
     BraidedCategory.tensorLeftIsoTensorRight_inv_app] at hδ
   -- Move the braiding to the right-hand side, and compare both sides after the isomorphism
-  -- `H^r(G, M ⊗ N) ≅ H^{r+1}(G, M ⊗ dimensionShiftDown N)` given by the downward shift.
+  -- `Ĥʳ(G, M ⊗ N) ≅ Ĥʳ⁺¹(G, M ⊗ dimensionShiftDown N)` given by the downward shift.
   rw [← hβ (β_ M N).symm r ((p * q).negOnePow • _), Iso.symm_inv, Iso.symm_hom, map_zsmul_unit]
   congr 1
   refine (tensorDimensionShiftDownIso N M r (r + 1) rfl).toLinearEquiv.injective ?_

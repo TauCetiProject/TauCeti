@@ -335,7 +335,7 @@ private def tensorDiagram (S T : ShortComplex (Rep k G)) :
       ext <;> simp [← comp_whiskerRight])
 
 /-- The connecting maps of the tensor products of two short exact sequences `S` and `T` that split
-`k`-linearly anticommute: the two composites `H^n(G, S₃ ⊗ T₃) ⟶ H^{n+2}(G, S₁ ⊗ T₁)` differ by a
+`k`-linearly anticommute: the two composites `Ĥⁿ(G, S₃ ⊗ T₃) ⟶ Ĥⁿ⁺²(G, S₁ ⊗ T₁)` differ by a
 sign. -/
 private theorem δ_comp_δ_tensor {S T : ShortComplex (Rep k G)} (hS : S.ShortExact)
     {r : S.X₂.V →ₗ[k] S.X₁.V} (hr : Function.LeftInverse r S.f.hom) (hT : T.ShortExact)
