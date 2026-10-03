@@ -75,22 +75,28 @@ variable {F : Type*} [Field F] [Fintype F]
 /-- **The class of a split regular semisimple element of `GL₂(𝔽_q)` has `q (q + 1)` elements**:
 an element whose characteristic polynomial has two distinct roots `a ≠ b` in `F` is conjugate to
 `diagGL ![a, b]`. -/
-theorem ncard_carrier_mk_of_trace_eq_add_of_det_eq_mul {g : GL (Fin 2) F} {a b : Fˣ}
-    (hab : a ≠ b) (htrace : (g : Matrix (Fin 2) (Fin 2) F).trace = (a : F) + b)
-    (hdet : (g : Matrix (Fin 2) (Fin 2) F).det = (a : F) * b) :
+theorem ncard_carrier_mk_of_trace_eq_add_of_det_eq_mul {g : GL (Fin 2) F} {a b : F}
+    (hab : a ≠ b) (htrace : (g : Matrix (Fin 2) (Fin 2) F).trace = a + b)
+    (hdet : (g : Matrix (Fin 2) (Fin 2) F).det = a * b) :
     (ConjClasses.mk g).carrier.ncard = Fintype.card F * (Fintype.card F + 1) := by
-  rw [ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_diagGL_of_trace_of_det hab htrace hdet)]
-  exact ncard_carrier_mk_diagGL (by simpa using hab)
+  -- The roots are nonzero because their product is the determinant of an invertible matrix.
+  obtain ⟨ha, hb⟩ := mul_ne_zero_iff.1 (hdet ▸ g.det_ne_zero)
+  have hab' : Units.mk0 a ha ≠ Units.mk0 b hb := fun h => hab (congrArg Units.val h)
+  rw [ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_diagGL_of_trace_of_det hab' htrace hdet)]
+  exact ncard_carrier_mk_diagGL (by simpa using hab')
 
 /-- **The class of a non-semisimple element of `GL₂(𝔽_q)` has `q² - 1` elements**: a non-scalar
 element whose characteristic polynomial is `(X - a)²` is conjugate to the Jordan block
 `jordanGL a 1`. -/
 theorem ncard_carrier_mk_of_trace_eq_two_mul_of_det_eq_mul_self {g : GL (Fin 2) F}
-    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) {a : Fˣ}
-    (htrace : (g : Matrix (Fin 2) (Fin 2) F).trace = 2 * (a : F))
-    (hdet : (g : Matrix (Fin 2) (Fin 2) F).det = (a : F) * a) :
+    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) {a : F}
+    (htrace : (g : Matrix (Fin 2) (Fin 2) F).trace = 2 * a)
+    (hdet : (g : Matrix (Fin 2) (Fin 2) F).det = a * a) :
     (ConjClasses.mk g).carrier.ncard = Fintype.card F ^ 2 - 1 := by
-  rw [ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_jordanGL_one_of_trace_of_det hg htrace hdet)]
+  -- The root is nonzero because its square is the determinant of an invertible matrix.
+  have ha : a ≠ 0 := (mul_ne_zero_iff.1 (hdet ▸ g.det_ne_zero)).1
+  rw [ConjClasses.mk_eq_mk_iff_isConj.2
+    (isConj_jordanGL_one_of_trace_of_det hg (a := Units.mk0 a ha) htrace hdet)]
   exact ncard_carrier_mk_jordanGL one_ne_zero
 
 /-- **The class of an elliptic element of `GL₂(𝔽_q)` has `q (q - 1)` elements**: an element whose
@@ -149,19 +155,19 @@ theorem map_ncard_carrier_conjClasses_GL2_of_card_eq_three (hF : Fintype.card F 
     rw [coe_companionGL, trace_companionFinTwo, det_companionFinTwo, hu, ← map_mul, ← map_mul,
       ← map_sub]
     exact e.injective.ne (h b)
-  have hjordan (t : ZMod 3) (d a : (ZMod 3)ˣ) (ht : t = 2 * (a : ZMod 3))
+  have hjordan (t : ZMod 3) (d : (ZMod 3)ˣ) (a : ZMod 3) (ht : t = 2 * a)
       (hd : (d : ZMod 3) = a * a) : (φ (.inr (t, d))).carrier.ncard = 8 := by
     rw [hcomp, ncard_carrier_mk_of_trace_eq_two_mul_of_det_eq_mul_self
-      (companionGL_notMem_range_scalar _ _) (a := u a), hF]
+      (companionGL_notMem_range_scalar _ _) (a := e a), hF]
     · rfl
-    · rw [coe_companionGL, trace_companionFinTwo, hu, ht, map_mul, map_ofNat]
-    · rw [coe_companionGL, det_companionFinTwo, hu, hu, hd, map_mul]
-  have hsplit (t : ZMod 3) (d a b : (ZMod 3)ˣ) (hab : a ≠ b) (ht : t = a + b)
+    · rw [coe_companionGL, trace_companionFinTwo, ht, map_mul, map_ofNat]
+    · rw [coe_companionGL, det_companionFinTwo, hu, hd, map_mul]
+  have hsplit (t : ZMod 3) (d : (ZMod 3)ˣ) (a b : ZMod 3) (hab : a ≠ b) (ht : t = a + b)
       (hd : (d : ZMod 3) = a * b) : (φ (.inr (t, d))).carrier.ncard = 12 := by
-    rw [hcomp, ncard_carrier_mk_of_trace_eq_add_of_det_eq_mul (a := u a) (b := u b)
-      (u.injective.ne hab), hF]
-    · rw [coe_companionGL, trace_companionFinTwo, hu, hu, ht, map_add]
-    · rw [coe_companionGL, det_companionFinTwo, hu, hu, hu, hd, map_mul]
+    rw [hcomp, ncard_carrier_mk_of_trace_eq_add_of_det_eq_mul (a := e a) (b := e b)
+      (e.injective.ne hab), hF]
+    · rw [coe_companionGL, trace_companionFinTwo, ht, map_add]
+    · rw [coe_companionGL, det_companionFinTwo, hu, hd, map_mul]
   have huniv : (Finset.univ : Finset ((ZMod 3)ˣ ⊕ ZMod 3 × (ZMod 3)ˣ)).val =
       {.inl 1, .inl (-1), .inr (0, 1), .inr (0, -1), .inr (1, 1), .inr (1, -1), .inr (2, 1),
         .inr (2, -1)} := by
