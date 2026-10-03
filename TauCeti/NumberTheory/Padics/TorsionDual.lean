@@ -8,9 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.NumberTheory.Padics.Module
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.BilinearMap
@@ -47,10 +45,6 @@ Pontryagin dual of its `p`-power torsion.
 
 ## Main results
 
-* `TauCeti.restrictScalars_pPowerTorsion`: over `ℤ_p`, the `p`-power torsion is the whole torsion
-  submodule.
-* `TauCeti.isTorsionFree_quotient_pPowerTorsion`: modulo its `p`-power torsion, a `ℤ_p`-module is
-  torsion-free.
 * `TauCeti.torsionDualMap_apply`: the connecting map on representatives.
 * `TauCeti.torsionDualMap_apply_of_extension`: the connecting map at a functional extending along
   `f` to a `ℚ_p`-valued functional `Φ` sends `π x` to the class of `Φ x`.
@@ -72,44 +66,6 @@ noncomputable section
 open Module
 
 namespace TauCeti
-
-section PPowerTorsion
-
-variable {p : ℕ} [Fact p.Prime] {M : Type*} [AddCommGroup M] [Module ℤ_[p] M]
-
-/-- Over `ℤ_p`, the `p`-power torsion is the whole torsion submodule: a nonzero `p`-adic integer is
-a unit times a power of `p`. -/
-@[simp]
-theorem restrictScalars_pPowerTorsion {A : Type*} [Semiring A] [Module A M] [SMul ℤ_[p] A]
-    [IsScalarTower ℤ_[p] A M] :
-    (pPowerTorsion p A M).restrictScalars ℤ_[p] = Submodule.torsion ℤ_[p] M := by
-  ext x
-  rw [Submodule.restrictScalars_mem, mem_pPowerTorsion_iff, Submodule.mem_torsion_iff]
-  constructor
-  · rintro ⟨k, hk⟩
-    have hp : (p : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-    refine ⟨⟨(p : ℤ_[p]) ^ k, pow_mem (mem_nonZeroDivisors_of_ne_zero hp) k⟩, ?_⟩
-    rw [Submonoid.mk_smul, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, hk]
-  · rintro ⟨⟨r, hr⟩, hrx⟩
-    have hr0 : r ≠ 0 := nonZeroDivisors.ne_zero hr
-    refine ⟨r.valuation, ?_⟩
-    -- `p ^ v(r)` is `r` divided by its unit part.
-    have hpow : (p : ℤ_[p]) ^ r.valuation = ↑(PadicInt.unitCoeff hr0)⁻¹ * r := by
-      rw [eq_comm, Units.inv_mul_eq_iff_eq_mul]
-      exact PadicInt.unitCoeff_spec hr0
-    rw [← Nat.cast_smul_eq_nsmul ℤ_[p], Nat.cast_pow, hpow, mul_smul, ← Submonoid.mk_smul _ hr, hrx,
-      smul_zero]
-
-/-- Modulo its `p`-power torsion, a module over `ℤ_p` is torsion-free: the quotient is the quotient
-by the whole torsion submodule. -/
-instance isTorsionFree_quotient_pPowerTorsion {A : Type*} [Ring A] [Module A M] [SMul ℤ_[p] A]
-    [IsScalarTower ℤ_[p] A M] :
-    IsTorsionFree ℤ_[p] (M ⧸ pPowerTorsion p A M) :=
-  let e := (Submodule.Quotient.restrictScalarsEquiv ℤ_[p] (pPowerTorsion p A M)).symm ≪≫ₗ
-    Submodule.quotEquivOfEq _ _ restrictScalars_pPowerTorsion
-  e.injective.moduleIsTorsionFree _ (map_smul e)
-
-end PPowerTorsion
 
 variable {p : ℕ} [Fact p.Prime] {A : Type*} [Ring A] [Algebra ℤ_[p] A]
   {P₁ P₀ M : Type*} [AddCommGroup P₁] [Module A P₁] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁]
