@@ -326,8 +326,10 @@ def strandIncl {n : ℕ} : BraidGroup (n + 1) →* BraidGroup (n + 2) :=
 theorem strandIncl_sigma {n : ℕ} (i : Fin n) : strandIncl (sigma i) = sigma i.castSucc := by
   rw [strandIncl, lift_sigma]
 
-/-- Adding an uncrossed strand does not change the exponent sum of a braid. -/
-@[simp]
+/-- Adding an uncrossed strand does not change the exponent sum of a braid.
+
+Not `@[simp]`: the `BraidGroup` abbreviation puts its Coxeter index in the form `n + 2 - 1`,
+which `simp` normalizes to `n + 1`, so the left-hand side is not in simp normal form. -/
 theorem exponentSum_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
     ArtinGroup.exponentSum _ (strandIncl b) = ArtinGroup.exponentSum _ b := by
   have h : (ArtinGroup.exponentSum (CoxeterMatrix.A (n + 2 - 1))).comp strandIncl =
