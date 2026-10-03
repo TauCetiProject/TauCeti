@@ -54,6 +54,8 @@ residue extensions are separable.
 
 * `TauCeti.natCard_le_eighty_four_mul_genus_sub_one`: **the Hurwitz bound**, `|G| ≤ 84 (g - 1)` for
   a finite tame group of automorphisms of a function field of genus at least two.
+* `TauCeti.natCard_le_eighty_four_mul_genus_sub_one_of_not_dvd`: the same with no tameness
+  hypothesis, over a perfect constant field, for a group whose order is prime to the characteristic.
 * `TauCeti.natCard_le_eighty_four_mul_genus_sub_one_of_charZero`: the same with no tameness
   hypothesis, over a constant field of characteristic zero, with
   `TauCeti.natCard_algEquiv_le_eighty_four_mul_genus_sub_one_of_charZero` for the full
@@ -153,6 +155,29 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     push_cast [Nat.cast_sub (by omega : 1 ≤ genus k F)]
     linarith
   exact_mod_cast hnat
+
+/-- **The Hurwitz bound for a group of order prime to the characteristic** (Stichtenoth,
+Exercise 3.18): over a perfect constant field of characteristic `p`, a finite group `G` of
+automorphisms of a function field of genus `g ≥ 2` with `p ∤ |G|` has order at most `84 (g - 1)`.
+
+The ramification index of a place of `F` over the fixed field divides `|G|`, by the fundamental
+identity for the Galois extension `F / F^G`, so it too is prime to `p` and every place is tame
+(`TauCeti.Place.isTame_of_not_dvd_ramificationIdx`). -/
+theorem natCard_le_eighty_four_mul_genus_sub_one_of_not_dvd [PerfectField k] (p : ℕ) [CharP k p]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (G : Subgroup (F ≃ₐ[k] F))
+    [Finite G] (hgenus : 2 ≤ genus k F) (hp : ¬ p ∣ Nat.card G) :
+    Nat.card G ≤ 84 * (genus k F - 1) := by
+  refine natCard_le_eighty_four_mul_genus_sub_one hF hex G hgenus fun P ↦ ?_
+  refine Place.isTame_of_not_dvd_ramificationIdx k ↥(IntermediateField.fixedField G) P
+    (hF.fixedField G) p fun hdvd ↦ hp (hdvd.trans ?_)
+  -- The ramification index divides the degree `|G|` of `F` over the fixed field.
+  have hfund := Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank
+    (k := k) (F := ↥(IntermediateField.fixedField G)) P
+  refine ⟨{Q : Place k F | Q.restrict k ↥(IntermediateField.fixedField G) =
+      P.restrict k ↥(IntermediateField.fixedField G)}.ncard *
+      Place.relativeDegree k ↥(IntermediateField.fixedField G) P, ?_⟩
+  rw [← IntermediateField.finrank_fixedField_eq_natCard G, ← hfund]
+  ring
 
 /-- **The Hurwitz bound in characteristic zero** (Stichtenoth, Exercise 3.18): a finite group of
 automorphisms of a function field of genus `g ≥ 2` with exact constant field of characteristic zero
