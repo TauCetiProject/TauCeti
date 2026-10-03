@@ -31,6 +31,9 @@ maps from a projective `ℤ_p[G]`-lattice into the reduction of another lattice 
 
 * `TauCeti.finrank_linearMap_quotient_add_finrank_linearMap`: additivity of `dim_k Hom_A(P, -)`
   for a projective `P`.
+* `TauCeti.compRight_mkQ_surjective`: every map from a projective `P` into `V ⧸ N` lifts to `V`.
+* `TauCeti.ker_compRight_mkQ_eq_smul_top`: a map `P → V` vanishes modulo a non-zero-divisor `x`
+  exactly when it is `x` times a map.
 * `TauCeti.quotientSMulTopLinearMapEquiv`: `Hom_A(P, V) ⧸ x • Hom_A(P, V) ≃ Hom_A(P, V ⧸ x • V)`
   for a projective `P` and a non-zero-divisor `x` on `V`.
 -/
@@ -82,7 +85,10 @@ open Pointwise
 variable {R A P V : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup P] [Module A P]
   [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V] {x : R}
 
-private theorem ker_compRight_mkQ (hx : IsSMulRegular V x) :
+variable (P) in
+/-- **Maps into `x • V` are multiples of `x`.** For `x : R` a non-zero-divisor on the `A`-module
+`V`, a map `P → V` reduces to zero in `V ⧸ x • V` exactly when it is `x` times a map `P → V`. -/
+theorem ker_compRight_mkQ_eq_smul_top (hx : IsSMulRegular V x) :
     LinearMap.ker (LinearMap.compRight (M := P) R
       (Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)).mkQ) = x • ⊤ := by
   ext h
@@ -108,7 +114,10 @@ private theorem ker_compRight_mkQ (hx : IsSMulRegular V x) :
 
 variable [Module.Projective A P]
 
-private theorem compRight_mkQ_surjective (N : Submodule A V) :
+variable (R P) in
+/-- **Maps from a projective module into a quotient lift.** For `P` projective, every map
+`P → V ⧸ N` is the reduction of a map `P → V`. -/
+theorem compRight_mkQ_surjective (N : Submodule A V) :
     Function.Surjective (LinearMap.compRight (M := P) R N.mkQ) := fun g ↦
   Module.projective_lifting_property N.mkQ g N.mkQ_surjective
 
@@ -121,8 +130,8 @@ with values in `x • V` is `x` times a map. -/
 noncomputable def quotientSMulTopLinearMapEquiv (hx : IsSMulRegular V x) :
     ((P →ₗ[A] V) ⧸ x • (⊤ : Submodule R (P →ₗ[A] V))) ≃ₗ[R]
       (P →ₗ[A] V ⧸ Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)) :=
-  (Submodule.quotEquivOfEq _ _ (ker_compRight_mkQ hx).symm).trans <|
-    LinearMap.quotKerEquivOfSurjective _ (compRight_mkQ_surjective _)
+  (Submodule.quotEquivOfEq _ _ (ker_compRight_mkQ_eq_smul_top P hx).symm).trans <|
+    LinearMap.quotKerEquivOfSurjective _ (compRight_mkQ_surjective R P _)
 
 @[simp]
 theorem quotientSMulTopLinearMapEquiv_mk (hx : IsSMulRegular V x) (f : P →ₗ[A] V) :
