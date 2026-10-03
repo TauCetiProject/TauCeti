@@ -307,12 +307,7 @@ theorem isExtensionClosed_gradedFiniteProjectiveModules :
       hS.exact.map_of_mono_of_preservesKernel _ hS.mono_f inferInstance
     have hex : Function.Exact S.f.hom S.g.hom :=
       (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS'
-    have hf : Function.Injective S.f.hom := by
-      have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels
-        (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-      have := hS.mono_f
-      exact (ModuleCat.mono_iff_injective ((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).map S.f)).1
-        inferInstance
+    have hf : Function.Injective S.f.hom := (GradedModuleCat.mono_iff_injective S.f).1 hS.mono_f
     let _ : Module.Projective A S.X₁ := h₁.2
     let _ : Module.Projective A S.X₃ := h₃.2
     obtain ⟨l, hl⟩ := Module.projective_lifting_property S.g.hom LinearMap.id
