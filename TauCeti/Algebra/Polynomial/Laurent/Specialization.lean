@@ -113,14 +113,15 @@ variable {M : Type*} [AddCommGroup M] [Module R[T;T⁻¹] M] [Module R M]
 /-- A Laurent-linear map induces an `R`-linear map between specializations at the same unit. -/
 noncomputable def map (f : N →ₗ[R[T;T⁻¹]] M) :
     LaurentSpecialization ε N →ₗ[R] LaurentSpecialization ε M :=
-  lift ε (((mk ε).comp f).restrictScalars R)
-    (fun x => by simp [mk_smul, laurentEval_T])
+  ((RingHom.ker (laurentEval (R := R) ε) • ⊤ : Submodule R[T;T⁻¹] N).mapQ
+    (RingHom.ker (laurentEval (R := R) ε) • ⊤) f
+    (Submodule.smul_top_le_comap_smul_top _ f)).restrictScalars R
 
 /-- Specializing a Laurent-linear map commutes with taking quotient classes. -/
 @[simp]
 theorem map_mk (f : N →ₗ[R[T;T⁻¹]] M) (x : N) :
     map ε f (mk ε x) = mk ε (f x) :=
-  lift_mk _ _ _ _
+  (Submodule.mapQ_apply _ _ f (h := Submodule.smul_top_le_comap_smul_top _ f) x)
 
 /-- An `R`-linear map out of the specialization is determined by its values on specialized
 elements. -/
@@ -130,6 +131,24 @@ theorem hom_ext {f g : LaurentSpecialization ε N →ₗ[R] A} (h : ∀ x, f (mk
   LinearMap.ext fun y => by
     obtain ⟨x, rfl⟩ := mk_surjective ε y
     exact h x
+
+/-- Specializing the identity map gives the identity on the specialization. -/
+@[simp]
+theorem map_id : map ε (LinearMap.id : N →ₗ[R[T;T⁻¹]] N) = LinearMap.id := by
+  apply hom_ext
+  intro x
+  simp
+
+variable {P : Type*} [AddCommGroup P] [Module R[T;T⁻¹] P] [Module R P]
+  [IsScalarTower R R[T;T⁻¹] P]
+
+/-- Specialization preserves composition of Laurent-linear maps. -/
+@[simp]
+theorem map_comp (g : M →ₗ[R[T;T⁻¹]] P) (f : N →ₗ[R[T;T⁻¹]] M) :
+    map ε (g.comp f) = (map ε g).comp (map ε f) := by
+  apply hom_ext
+  intro x
+  simp
 
 end LaurentSpecialization
 
