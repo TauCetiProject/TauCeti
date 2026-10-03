@@ -1,0 +1,165 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.CupNorm
+public import TauCeti.NumberTheory.ClassFieldTheory.LocalSymbol
+
+/-!
+# Comparing the two mod-two Kummer cups
+
+The Kummer cup with roots-of-unity coefficients and the cup with trivial `𝔽₂` coefficients
+have the same vanishing criterion. The coefficient dictionary sends the pairing selected by a
+primitive second root of unity to multiplication in `𝔽₂`. Naturality of the explicit cup and
+the supplied comparisons with canonical continuous cohomology then identify the two cups.
+
+Consequently the cohomological local symbol, formed from the roots-of-unity cup and any
+additive identification of its degree-two cohomology with `ZMod 2`, vanishes exactly when the
+norm equation `b = x² - a y²` is solvable. The cup comparison itself requires no local-field
+hypothesis and no choice of a degree-two invariant.
+
+## References
+
+* J.-P. Serre, *Local Fields*, GTM 67 (1979), XIV §2, Propositions 4–5.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition,
+  (6.2.1)–(6.2.2).
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti
+
+open CategoryTheory ContCohomology _root_.ContinuousCohomology
+
+universe u
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+attribute [local instance] TopRep.distribMulAction
+
+local instance : ContinuousSMul (AbsoluteGaloisGroup K)
+    (trivialF2 (AbsoluteGaloisGroup K)).V :=
+  (isSmoothDiscrete_trivialF2 (AbsoluteGaloisGroup K)).continuousSMul
+
+/-- The `μ₂ ≃ 𝔽₂` dictionary carries the pairing of a primitive second root of unity to
+multiplication in `𝔽₂`. -/
+theorem kummerCoeffEquiv_kummerCoeffPairing {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
+    (x y : KummerCoeff K 2) :
+    kummerCoeffEquiv K (ClassFieldTheory.kummerCoeffPairing
+        (ClassFieldTheory.kummerCupPairing ζ hζ) x y) =
+      trivialF2Pairing (AbsoluteGaloisGroup K) (kummerCoeffEquiv K x) (kummerCoeffEquiv K y) := by
+  rcases eq_zero_or_eq_mu2NegOne x with rfl | rfl
+  · simp
+  · have hp : ClassFieldTheory.kummerCoeffPairing
+        (ClassFieldTheory.kummerCupPairing ζ hζ) mu2NegOne y = y := by
+      apply (ClassFieldTheory.kummerCoeffEquivMuNRep 2 K).injective
+      rw [ClassFieldTheory.kummerCoeffEquivMuNRep_kummerCoeffPairing]
+      simpa using ClassFieldTheory.kummerCupPairing_bil_apply ζ hζ
+        (x := ClassFieldTheory.kummerCoeffEquivMuNRep 2 K mu2NegOne) (i := 1)
+        (by simp [hζ.eq_neg_one_of_two_right])
+        (ClassFieldTheory.kummerCoeffEquivMuNRep 2 K y)
+    simp [hp, trivialF2Pairing_apply]
+
+private theorem explicitCup11_kummerCoeffPairing_eq_zero_iff {ζ : K}
+    (hζ : IsPrimitiveRoot ζ 2) (x y : H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
+    explicitCup11 (AbsoluteGaloisGroup K) _ _ _
+        (ClassFieldTheory.kummerCoeffPairing (ClassFieldTheory.kummerCupPairing ζ hζ))
+        continuous_of_discreteTopology
+        (ClassFieldTheory.kummerCoeffPairing_smul _) x y = 0 ↔
+      explicitCup11 (AbsoluteGaloisGroup K) _ _ _ (trivialF2Pairing (AbsoluteGaloisGroup K))
+        continuous_of_discreteTopology (trivialF2Pairing_smul_smul _)
+        (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
+          continuous_of_discreteTopology continuous_of_discreteTopology
+          (fun g x => by simp [kummerCoeffEquiv_apply]) x)
+        (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
+          continuous_of_discreteTopology continuous_of_discreteTopology
+          (fun g x => by simp [kummerCoeffEquiv_apply]) y) = 0 := by
+  let G := AbsoluteGaloisGroup K
+  let P := ClassFieldTheory.kummerCupPairing ζ hζ
+  let e := kummerCoeffEquiv K
+  have he (g : G) (x : KummerCoeff K 2) : e (g • x) = g • e x := by
+    rw [mu2_smul_eq_self (K := K) g x,
+      TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply (G := G)]
+  let f : KummerCoeff K 2 →+[G] (trivialF2 G).V :=
+    { e.toAddMonoidHom with map_smul' := he }
+  have hn := explicitCoeff2_explicitCup11 G (KummerCoeff K 2) (KummerCoeff K 2)
+    (KummerCoeff K 2) (trivialF2 G).V (trivialF2 G).V (trivialF2 G).V
+    (ClassFieldTheory.kummerCoeffPairing P) continuous_of_discreteTopology
+    (ClassFieldTheory.kummerCoeffPairing_smul P)
+    (trivialF2Pairing G) continuous_of_discreteTopology (trivialF2Pairing_smul_smul G)
+    f f f continuous_of_discreteTopology continuous_of_discreteTopology
+    continuous_of_discreteTopology (kummerCoeffEquiv_kummerCoeffPairing hζ) x y
+  simp only [explicitCoeff1Equiv_apply]
+  rw [← hn]
+  simpa only [explicitCoeff2Equiv_apply] using
+    (AddEquiv.map_eq_zero_iff (explicitCoeff2Equiv G (KummerCoeff K 2) e
+      continuous_of_discreteTopology continuous_of_discreteTopology he)
+      (x := explicitCup11 G _ _ _ (ClassFieldTheory.kummerCoeffPairing P)
+        continuous_of_discreteTopology (ClassFieldTheory.kummerCoeffPairing_smul P) x y)).symm
+
+/-- The roots-of-unity cup and the trivial-`𝔽₂` cup have the same vanishing criterion on
+Kummer classes, over every field in which `2` is invertible. -/
+@[simp]
+theorem cup_muNRep_kummerClass_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2) (a b : Kˣ) :
+    (ClassFieldTheory.kummerCupPairing ζ hζ).cup 1 1
+        (ClassFieldTheory.kummerClass K (isUnit_of_invertible (2 : K)) a)
+        (ClassFieldTheory.kummerClass K (isUnit_of_invertible (2 : K)) b) = 0 ↔
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+        (kummerClass a) (kummerClass b) = 0 := by
+  let G := AbsoluteGaloisGroup K
+  -- Give instance search the Hausdorff separation data of the Krull topology explicitly.
+  let : T2Space G := krullTopology_t2 (K := K) (L := SeparableClosure K)
+  let : R1Space G := T2Space.r1Space
+  let : LocallyCompactSpace G := WeaklyLocallyCompactSpace.locallyCompactSpace
+  rw [ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerMap,
+    ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerMap,
+    ClassFieldTheory.cup_muNRepH1Equiv,
+    AddEquiv.map_eq_zero_iff (ClassFieldTheory.muNRepH2Equiv 2 K),
+    kummerClass_eq_explicitCoeff1Equiv_kummerMap K a,
+    kummerClass_eq_explicitCoeff1Equiv_kummerMap K b,
+    trivialF2TopPairing_cup_one_one_explicitH1]
+  rw [map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+    (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G)))).1,
+    AddEquiv.map_eq_zero_iff (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V)]
+  exact explicitCup11_kummerCoeffPairing_eq_zero_iff hζ _ _
+
+/-- The mod-two local symbol vanishes exactly when the canonical trivial-`𝔽₂` Kummer cup
+vanishes. The statement is independent of the additive degree-two identification. -/
+theorem localSymbol_eq_zero_iff_cup {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
+    (tr : continuousCohomology 2 (ClassFieldTheory.muNRep 2 K) ≃+ ZMod 2) (a b : Kˣ) :
+    ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
+        (ClassFieldTheory.kummerClass K (isUnit_of_invertible (2 : K)) a)
+        (ClassFieldTheory.kummerClass K (isUnit_of_invertible (2 : K)) b) = 0 ↔
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+        (kummerClass a) (kummerClass b) = 0 := by
+  rw [ClassFieldTheory.localSymbol_apply, tr.map_eq_zero_iff]
+  exact cup_muNRep_kummerClass_eq_zero_iff hζ a b
+
+/-- The roots-of-unity local symbol vanishes exactly when the norm-equation Hilbert symbol
+is `1`. This criterion applies to any additive identification of degree-two cohomology. -/
+theorem localSymbol_eq_zero_iff_hilbertSymbol_eq_one
+    {F : Type} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
+    (tr : continuousCohomology 2 (ClassFieldTheory.muNRep 2 F) ≃+ ZMod 2) (a b : Fˣ) :
+    ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
+        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
+        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b) = 0 ↔
+      hilbertSymbol a b = 1 :=
+  (localSymbol_eq_zero_iff_cup hζ tr a b).trans
+    (cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one a b)
+
+/-- The cohomological mod-two local symbol detects solvability of the quadratic norm equation. -/
+theorem localSymbol_eq_zero_iff
+    {F : Type} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
+    (tr : continuousCohomology 2 (ClassFieldTheory.muNRep 2 F) ≃+ ZMod 2) (a b : Fˣ) :
+    ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
+        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
+        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b) = 0 ↔
+      ∃ x y : F, (b : F) = x ^ 2 - (a : F) * y ^ 2 :=
+  (localSymbol_eq_zero_iff_hilbertSymbol_eq_one hζ tr a b).trans (hilbertSymbol_eq_one_iff a b)
+
+end TauCeti

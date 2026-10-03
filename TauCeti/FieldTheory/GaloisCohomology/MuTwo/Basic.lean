@@ -607,6 +607,20 @@ private theorem kummerCohomMap_explicitH1 (x : H1 (AbsoluteGaloisGroup K) (Kumme
         (KummerCoeff K 2) { (kummerCoeffEquiv K).toAddMonoidHom with
           map_smul' := kummerCoeffEquiv_equivariant K } continuous_of_discreteTopology) x)).symm
 
+/-- The mod-two Kummer class is the explicit Kummer map transported through the coefficient
+dictionary and the comparison with canonical continuous cohomology. -/
+theorem kummerClass_eq_explicitCoeff1Equiv_kummerMap (a : Kˣ) :
+    kummerClass a =
+      (eqToHom (congrArg (continuousCohomology 1)
+        (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)))).hom
+        (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+          (trivialF2 (AbsoluteGaloisGroup K)).V
+          (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
+            continuous_of_discreteTopology continuous_of_discreteTopology
+            (fun g x => by simp [kummerCoeffEquiv_apply])
+            (Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a)))) := by
+  rw [kummerClass, explicitIso_kummerMap, kummerCohomMap_explicitH1]
+
 /-- **The mod-two Kummer class is the explicit mod-two cocycle class of any square root.**
 If `α² = a`, the class `TauCeti.kummerCocycleModTwoClass` of the `𝔽₂`-valued cocycle
 `g ↦ g • α / α` becomes the Kummer class `(a)` under the degree-one comparison with canonical
