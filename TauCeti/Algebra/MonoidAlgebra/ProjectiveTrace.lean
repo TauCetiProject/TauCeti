@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
-import Mathlib.GroupTheory.PGroup
 import Mathlib.RingTheory.LocalRing.Module
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
