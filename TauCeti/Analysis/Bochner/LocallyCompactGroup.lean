@@ -19,10 +19,11 @@ A positive-definite function `φ` on a locally compact abelian group `G` that is
 is the Fourier–Stieltjes transform `φ(g) = ∫ χ(g) dμ(χ)` of a finite inner regular positive
 measure `μ` on the Pontryagin dual of `G`.
 
-When the dual is Polish, that measure is unique, and conversely every finite Borel measure on
-the dual has a continuous positive-definite transform. Thus continuous positive-definite
-functions on a locally compact abelian group with Polish dual are exactly the transforms of
-unique finite positive measures. The dual is Polish when `G` is second countable.
+The representing measure is unique among finite inner regular measures, and conversely the
+transform of every such measure is continuous and positive definite. Thus this is a full Bochner
+characterization without any countability assumption. When the dual is Polish, every finite Borel
+measure is regular, giving the corresponding characterization by arbitrary finite measures. The
+dual is Polish when `G` is second countable.
 
 The measure comes from the GNS construction. The function `φ` is a matrix coefficient
 `φ(g) = ⟪v, U(-g) v⟫` of the unitary translation representation `U` on its GNS Hilbert space,
@@ -40,6 +41,8 @@ regularity of the Haar measure.
 * `TauCeti.IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuousAt`: a
   positive-definite function, continuous at `0`, on a locally compact abelian group is the
   Fourier–Stieltjes transform of a finite inner regular measure on the dual group.
+* The countability-free Bochner characterization: continuous positive-definite functions are
+  precisely the transforms of unique finite inner regular measures.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_iff_existsUnique_pontryaginMeasureTransform_eq`:
   the full Bochner characterization by unique finite measures on a locally compact abelian
   group with Polish dual.
@@ -85,6 +88,38 @@ theorem IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuous
   refine ⟨μ, hμreg, funext fun g ↦ ?_⟩
   rw [hμ, hπ_apply, ← hφ.gnsRepresentation_ofAdd, hφ.gnsRepresentation_gnsVector, add_zero,
     hφ.inner_gnsVector, zero_sub, neg_neg]
+
+/-- **Unique inner regular form of Bochner's theorem.** A positive-definite function continuous at
+`0` has a unique finite inner regular representing measure on the Pontryagin dual. No countability
+or metrizability assumption is needed. -/
+theorem
+    IsPositiveDefiniteSub.existsUnique_innerRegular_pontryaginMeasureTransform_eq_of_continuousAt
+    {φ : G → ℂ} (hφ : IsPositiveDefiniteSub φ) (hφ₀ : ContinuousAt φ 0) :
+    ∃! μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
+      μ.toMeasure.InnerRegular ∧ μ.pontryaginMeasureTransform = φ := by
+  obtain ⟨μ, hμreg, hμ⟩ := hφ.exists_pontryaginMeasureTransform_eq_of_continuousAt hφ₀
+  refine ⟨μ, ⟨hμreg, hμ⟩, fun ν hν ↦ ?_⟩
+  exact FiniteMeasure.pontryaginMeasureTransform_injOn_innerRegular hν.1 hμreg
+    (hν.2.trans hμ.symm)
+
+/-- **Bochner's characterization without countability assumptions.** A function on a locally
+compact abelian group is continuous and positive definite if and only if it is the
+Fourier–Stieltjes transform of a unique finite inner regular measure on the Pontryagin dual. -/
+theorem
+    continuous_and_isPositiveDefiniteSub_iff_existsUnique_innerRegular_pontryaginMeasureTransform_eq
+    (φ : G → ℂ) :
+    (Continuous φ ∧ IsPositiveDefiniteSub φ) ↔
+      ∃! μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
+        μ.toMeasure.InnerRegular ∧ μ.pontryaginMeasureTransform = φ := by
+  constructor
+  · rintro ⟨hcont, hφ⟩
+    exact hφ.existsUnique_innerRegular_pontryaginMeasureTransform_eq_of_continuousAt
+      hcont.continuousAt
+  · rintro ⟨μ, ⟨hμreg, rfl⟩, -⟩
+    let _ : μ.toMeasure.InnerRegular := hμreg
+    exact ⟨μ.continuous_pontryaginMeasureTransform
+        isTightMeasureSet_singleton_of_innerRegular,
+      μ.isPositiveDefiniteSub_pontryaginMeasureTransform⟩
 
 /-- **Bochner's characterization on a locally compact abelian group with Polish dual.** A
 function is continuous and positive definite if and only if it is the Fourier–Stieltjes
