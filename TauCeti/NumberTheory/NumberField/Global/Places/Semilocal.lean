@@ -41,10 +41,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
-/-- A place indexed by the places above `v` carries its proof of lying over `v` as an instance. -/
-instance (v : InfinitePlace K) (w : {w : InfinitePlace L // w.LiesOver v}) :
-    w.1.LiesOver v := w.2
-
 variable (L) (v : InfinitePlace K)
 
 /-- The semilocal algebra map at an infinite place, with one component for each place above it. -/
@@ -69,7 +65,7 @@ variable [NumberField K] [NumberField L] (L v)
 
 omit [NumberField K] in
 /-- The field is dense in the product of its archimedean completions above a fixed place. -/
-theorem denseRange_algebraMap_pi_infiniteLiesOver :
+theorem denseRange_algebraMap_pi_infinitePlaceLiesOver :
     DenseRange fun (x : L) (w : {w : InfinitePlace L // w.LiesOver v}) ↦
       algebraMap L w.1.Completion x := by
   classical
@@ -96,6 +92,7 @@ theorem sum_finrank_infiniteCompletion_eq_finrank :
       (Finset.sum_subtype _ (fun _ ↦ Set.mem_toFinset) _).symm
     _ = finrank K L := sum_inertiaDeg_eq_finrank K L v
 
+omit [NumberField K] in
 /-- Every tuple of archimedean local elements above `v` comes from the scalar extension. -/
 theorem infiniteSemilocalHom_surjective : Function.Surjective (infiniteSemilocalHom L v) := by
   let s := LinearMap.range (infiniteSemilocalHom L v).toLinearMap
@@ -105,7 +102,7 @@ theorem infiniteSemilocalHom_surjective : Function.Surjective (infiniteSemilocal
     exact ⟨1 ⊗ₜ x, funext fun w ↦ by simp⟩
   intro y
   exact s.closed_of_finiteDimensional.closure_subset_iff.mpr hs
-    (denseRange_algebraMap_pi_infiniteLiesOver L v y)
+    (denseRange_algebraMap_pi_infinitePlaceLiesOver L v y)
 
 /-- The semilocal map is injective: the local degrees account for the whole scalar extension. -/
 theorem infiniteSemilocalHom_injective : Function.Injective (infiniteSemilocalHom L v) := by
@@ -137,6 +134,17 @@ theorem infiniteSemilocalEquiv_tmul (a : v.Completion) (x : L)
   exact infiniteSemilocalHom_tmul a x w
 
 variable (L v)
+
+/-- The inverse algebraic comparison sends a diagonal field element to `1 ⊗ x`. -/
+theorem infiniteSemilocalEquiv_symm_algebraMap (x : L) :
+    (infiniteSemilocalEquiv L v).symm
+      (fun w : {w : InfinitePlace L // w.LiesOver v} ↦ algebraMap L w.1.Completion x) =
+        1 ⊗ₜ[K] x := by
+  apply (infiniteSemilocalEquiv L v).symm_apply_eq.mpr
+  funext w
+  rw [infiniteSemilocalEquiv_tmul]
+  simp
+
 variable [TopologicalSpace (v.Completion ⊗[K] L)]
   [IsModuleTopology v.Completion (v.Completion ⊗[K] L)]
 
@@ -174,10 +182,7 @@ theorem infiniteSemilocalContinuousEquiv_tmul (a : v.Completion) (x : L)
 theorem infiniteSemilocalContinuousEquiv_symm_algebraMap (x : L) :
     (infiniteSemilocalContinuousEquiv L v).symm
       (fun w : {w : InfinitePlace L // w.LiesOver v} ↦ algebraMap L w.1.Completion x) =
-        1 ⊗ₜ[K] x := by
-  apply (infiniteSemilocalContinuousEquiv L v).symm_apply_eq.mpr
-  funext w
-  rw [infiniteSemilocalContinuousEquiv_tmul]
-  simp
+        1 ⊗ₜ[K] x :=
+  infiniteSemilocalEquiv_symm_algebraMap L v x
 
 end TauCeti.GlobalNumberFields

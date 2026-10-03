@@ -54,6 +54,10 @@ instance instNontriviallyNormedFieldInfiniteCompletion (v : InfinitePlace K) :
 
 variable {L : Type*} [Field L] [Algebra K L]
 
+/-- A place indexed by the places above `v` carries its proof of lying over `v` as an instance. -/
+instance instLiesOverSubtypeInfinitePlace (v : InfinitePlace K)
+    (w : {w : InfinitePlace L // w.LiesOver v}) : w.1.LiesOver v := w.2
+
 /-- A completed extension at an infinite place is finite dimensional: its degree is one or two. -/
 instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
     FiniteDimensional v.Completion w.Completion := by
@@ -67,10 +71,7 @@ instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
 
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
 instance (w : InfinitePlace L) : IsScalarTower K L w.Completion :=
-  IsScalarTower.of_algebraMap_eq fun x ↦ by
-    apply Completion.ext
-    simp [Completion.algebraMap_toCompletion, UniformSpace.Completion.algebraMap_def,
-      WithAbs.algebraMap_right_apply]
+  (Completion.equiv w).isScalarTower K L
 
 /-- The normalized absolute value on the completion at an infinite place. -/
 def infiniteCompletionNormalizedAbsValue (w : InfinitePlace K) : w.Completion →*₀ ℝ :=
