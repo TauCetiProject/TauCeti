@@ -34,15 +34,12 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
 * `WeierstrassCurve.Affine.Point.mapAlong_add`: over fields the transport is additive.
 
-`Affine.Point.map` is already an `AddMonoidHom`, so rewriting with `mapAlong_eq_map` gives
-`map_add`, `map_zero` and `map_zsmul` from Mathlib directly when the two fields are different
-types. That bridge is unavailable for an endomorphism `f : F →+* F`, such as a power of Frobenius:
-`f.toAlgebra` would be an `Algebra F F` instance competing with `Algebra.id F`. Additivity is
-therefore proved directly as `mapAlong_add`, from Mathlib's coordinate formulas `Affine.map_slope`,
-`Affine.map_addX` and `Affine.map_addY`.
+`Affine.Point.map` is already an `AddMonoidHom`, so installing `f.toAlgebra` locally and rewriting
+with `mapAlong_eq_map` gives `map_add`, `map_zero` and `map_zsmul` from Mathlib directly, including
+when `f` is a field endomorphism.
 
 What Mathlib lacks, and what this file adds, is the transport over arbitrary commutative rings,
-where `W.Point` has no group law to speak of, and along field endomorphisms.
+where `W.Point` has no group law to speak of.
 
 The definition needs only injectivity, since that is what `Affine.map_nonsingular` needs to carry
 nonsingularity across. Negation and the functorial laws hold over any commutative ring and are
@@ -61,10 +58,9 @@ Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apa
 that roadmap at `dev/hasse-weil @ 513e83879e2f`), `HasseWeil/EC/AffinePointMap.lean`,
 declarations `map`, `map_zero`, `map_some` and `map_neg`.
 
-The source's `mapAddMonoidHom` and `map_zsmul` are **not** ported; between two different fields
-they are Mathlib's `Affine.Point.map` under `f.toAlgebra`. The source's `map_add` corresponds to
-`mapAlong_add`, which is needed for field endomorphisms and follows the proof of Mathlib's
-`Affine.Point.map` rather than the source's.
+The source's `mapAddMonoidHom` and `map_zsmul` are **not** ported; over fields they are Mathlib's
+`Affine.Point.map` under `f.toAlgebra`. The source's `map_add` corresponds to `mapAlong_add`, proved
+through the same bridge.
 
 Changes from the source. The names take an `Along` suffix (`mapAlong`), Mathlib having taken
 `Point.map` for the `AlgHom` version. The computation rules are stated in simp-normal form, and
@@ -172,30 +168,22 @@ section FieldHom
 variable {F K : Type*} [Field F] [Field K] [DecidableEq F] [DecidableEq K]
   {W : _root_.WeierstrassCurve F} (f : F →+* K) (hf : Function.Injective f)
 
-/-- **Over fields the point map is additive.** When `f` is not an endomorphism this is also
-`mapAlong_eq_map` followed by Mathlib's `Affine.Point.map_add`; for an endomorphism `f : F →+* F`,
-such as a power of Frobenius, `f.toAlgebra` would be a second `Algebra F F` instance beside
-`Algebra.id F`, and the bridge does not apply. -/
+/-- **Over fields the point map is additive**, by identifying it with Mathlib's additive
+`Affine.Point.map` after installing the algebra structure induced by `f`. -/
 @[simp]
 theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_add (P Q : W.toAffine.Point) :
     WeierstrassCurve.Affine.Point.mapAlong f hf (P + Q) =
       WeierstrassCurve.Affine.Point.mapAlong f hf P +
         WeierstrassCurve.Affine.Point.mapAlong f hf Q := by
-  rcases P with _ | ⟨x₁, y₁, h₁⟩
-  · exact (zero_add _).symm
-  rcases Q with _ | ⟨x₂, y₂, h₂⟩
-  · exact (add_zero _).symm
-  by_cases hxy : x₁ = x₂ ∧ y₁ = W.toAffine.negY x₂ y₂
-  · rw [Affine.Point.add_of_Y_eq hxy.1 hxy.2, WeierstrassCurve.Affine.Point.mapAlong_some,
-      WeierstrassCurve.Affine.Point.mapAlong_some,
-      Affine.Point.add_of_Y_eq (congrArg f hxy.1) (by rw [hxy.2, Affine.map_negY])]
-    rfl
-  · have hxy' : ¬(f x₁ = f x₂ ∧ f y₁ = (W.map f).toAffine.negY (f x₂) (f y₂)) := fun h ↦
-      hxy ⟨hf h.1, hf (by rw [h.2, Affine.map_negY])⟩
-    rw [Affine.Point.add_some hxy, WeierstrassCurve.Affine.Point.mapAlong_some,
-      WeierstrassCurve.Affine.Point.mapAlong_some, WeierstrassCurve.Affine.Point.mapAlong_some,
-      Affine.Point.add_some hxy']
-    simp only [Affine.map_slope, Affine.map_addX, Affine.map_addY]
+  let _ : Algebra F K := f.toAlgebra
+  have hmap (R : W.toAffine.Point) :
+      WeierstrassCurve.Affine.Point.mapAlong f hf R =
+        Affine.Point.map (W' := W) (Algebra.ofId F K) R := by
+    simpa only [f.algebraMap_toAlgebra] using
+      WeierstrassCurve.Affine.Point.mapAlong_eq_map (F := F) (K := K) R
+  rw [hmap, hmap, hmap]
+  simpa only using!
+    (Affine.Point.map (W' := W) (Algebra.ofId F K)).map_add P Q
 
 end FieldHom
 
