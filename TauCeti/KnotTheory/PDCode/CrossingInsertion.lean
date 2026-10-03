@@ -43,7 +43,6 @@ insertion keeps the number of components.
 
 ## Main definitions
 
-* `TauCeti.PDCode.reconnect`: reconnect the arcs ending at `p` and `q`, joining `p` to `q`.
 * `TauCeti.PDCode.insertCrossing`: route two arcs across each other through a new crossing.
 
 ## Main results
@@ -200,39 +199,7 @@ end Splice
 
 section Reconnect
 
-/-- **Reconnecting two arcs.** Cut the arc of `D` ending at the half-edge `p` and the arc ending
-at `q`, and join `p` to `q` and the other end `D.edgePair.val p` of the first arc to the other end
-`D.edgePair.val q` of the second (`TauCeti.PerfectMatching.reconnect`). The crossings, their
-over-strands and the crossing-free circles are unchanged. This is how a smoothing of a crossing
-added by `TauCeti.PDCode.insertCrossing` reconnects the cut arcs. The two arcs are distinct when
-`q ≠ p` and `q ≠ D.edgePair.val p`; when `q = D.edgePair.val p` both choices name the same arc and
-the code is left unchanged. -/
-def reconnect (D : PDCode n) (p q : Fin (4 * n)) : PDCode n where
-  halfEdge := D.halfEdge
-  edgePair := D.edgePair.reconnect p q
-  crossinglessComponentCount := D.crossinglessComponentCount
-  overPair := D.overPair
-
 variable (D : PDCode n) (p q : Fin (4 * n))
-
-/-- Reconnecting arcs keeps the half-edges at the crossings. -/
-@[simp] theorem reconnect_halfEdge : (D.reconnect p q).halfEdge = D.halfEdge := (rfl)
-
-/-- Reconnecting arcs keeps the over-strands. -/
-@[simp] theorem reconnect_overPair : (D.reconnect p q).overPair = D.overPair := (rfl)
-
-/-- Reconnecting arcs keeps the crossing-free circles. -/
-@[simp] theorem reconnect_crossinglessComponentCount :
-    (D.reconnect p q).crossinglessComponentCount = D.crossinglessComponentCount := (rfl)
-
-/-- Reconnecting arcs of the code reconnects its perfect matching of half-edges. -/
-@[simp] theorem reconnect_edgePair : (D.reconnect p q).edgePair = D.edgePair.reconnect p q := (rfl)
-
-/-- The arcs of the reconnected code are the old arcs conjugated by the transposition of
-`D.edgePair.val p` with `q`. -/
-theorem reconnect_edgePair_val :
-    (D.reconnect p q).edgePair.val = (swap (D.edgePair.val p) q).permCongr D.edgePair.val :=
-  PerfectMatching.reconnect_val _ _ _
 
 /-- Reconnecting arcs does not change how the crossings are smoothed. -/
 @[simp] theorem smoothingTurn_reconnect (c : Fin n → Bool) :
@@ -244,15 +211,6 @@ theorem reconnect_edgePair_val :
     (D.reconnect p q).smoothingChoice s = D.smoothingChoice s := by
   funext i
   cases hs : s i <;> simp [hs]
-
-/-- Mirroring commutes with reconnecting arcs. -/
-@[simp] theorem mirror_reconnect : (D.reconnect p q).mirror = D.mirror.reconnect p q := by
-  apply PDCode.ext
-  · simp [reconnect]
-  · simp [reconnect]
-  · simp [reconnect]
-  · funext i
-    simp [reconnect]
 
 end Reconnect
 
