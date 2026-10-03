@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.MayerVietoris
 public import Mathlib.Topology.Sheaves.MayerVietoris
 
@@ -32,14 +33,15 @@ together with the vanishing it gives when `U` and `V` cover `X`.
   then `Hⁿ⁺¹(U ⊔ V, M)` vanishes; `Scheme.Modules.subsingleton_cohomology_succ` specializes
   this to `Hⁿ⁺¹(X, M)` when `U ⊔ V = ⊤`, and
   `Scheme.Modules.subsingleton_cohomology_of_two_le` applies this at degree `n - 1` under
-  uniform positive-degree acyclicity hypotheses.
+  uniform positive-degree acyclicity hypotheses;
+* `Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen` applies affine-open
+  acyclicity when `U`, `V`, and `U ⊓ V` are affine, while the `_of_isAffineHom` variant obtains
+  the intersection hypothesis from an affine diagonal.
 
-The last two statements are the shape in which Mayer-Vietoris is used on a curve: a separated
-scheme covered by two affine opens has no cohomology above degree one in coefficients for which
-the affine opens are acyclic. The coefficients `M : X.Modules` here are arbitrary, and the
-acyclicity is taken as a hypothesis rather than proved; for quasi-coherent `M` on a locally
-Noetherian scheme, `TauCeti/AlgebraicGeometry/Cohomology/OpenImmersion.lean` supplies it from
-Serre's vanishing theorem on affine opens.
+These statements are the shape in which Mayer-Vietoris is used on a curve. The general theorem
+accepts arbitrary coefficients and explicit acyclicity hypotheses. For quasi-coherent
+coefficients on a locally Noetherian scheme, the affine-open variants use Serre vanishing; users
+may either supply an affine intersection directly or obtain it from an affine diagonal.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
 cohomology `Hⁱ(X, ℱ)`: … vanishing above dimension (`H² = 0` on a curve)". No formalization is
@@ -168,3 +170,38 @@ end
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
+
+noncomputable section
+
+variable {X : Scheme.{u}} (M : X.Modules)
+
+/-- A quasi-coherent sheaf of modules on a locally Noetherian scheme covered by two affine opens
+with affine intersection has no cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isAffineOpen [IsLocallyNoetherian X]
+    [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
+    (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n) :
+    Subsingleton (Cohomology M n) := by
+  have hacyclic {W : X.Opens} (hW : IsAffineOpen W) (i : ℕ) (hi : 0 < i) :
+      Subsingleton (cohomologyOn M i W) := by
+    have : IsNoetherianRing Γ(X, W) := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
+    obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
+    exact subsingleton_cohomologyOn_succ_of_isAffineOpen M hW j
+  exact subsingleton_cohomology_of_two_le M hUV n hn (hacyclic hU) (hacyclic hV)
+    (hacyclic hInter)
+
+/-- A quasi-coherent sheaf of modules on a locally Noetherian scheme with affine diagonal (for
+instance a separated one) that is covered by two affine opens has no cohomology in degrees at
+least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom
+    [IsLocallyNoetherian X] [IsAffineHom (pullback.diagonal (terminal.from X))]
+    [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
+    (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
+  subsingleton_cohomology_of_two_le_of_isAffineOpen M hU hV (hU.inf hV) hUV n hn
+
+end
+
+end AlgebraicGeometry.Scheme.Modules

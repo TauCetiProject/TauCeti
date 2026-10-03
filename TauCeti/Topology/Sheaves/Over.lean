@@ -23,6 +23,9 @@ Working with `f` rather than with the subspace `U` keeps that sheaf literally eq
 pushforward along `f(-)`, which is how Mathlib defines the restriction of a sheaf of modules along
 an open immersion of schemes.
 
+The construction of the dense-subsite instances is adapted from
+`Mathlib.Topology.Sheaves.Over`, by Joël Riou.
+
 ## Main declarations
 
 * `Topology.IsOpenEmbedding.overEquivalence`: the equivalence `Over (range f) ≌ Opens X`.
@@ -42,7 +45,6 @@ variable {X Y : TopCat.{u}} {f : X ⟶ Y} (hf : IsOpenEmbedding f)
 
 /-- An open embedding `f : X ⟶ Y` identifies the open subsets of `Y` contained in the range of
 `f` with the open subsets of `X`, by taking preimages and images under `f`. -/
-@[expose, simps]
 def _root_.Topology.IsOpenEmbedding.overEquivalence :
     Over (⟨Set.range f, hf.isOpen_range⟩ : Opens Y) ≌ Opens X where
   functor.obj W := (Opens.map f).obj W.left
@@ -61,8 +63,28 @@ def _root_.Topology.IsOpenEmbedding.overEquivalence :
     ext x
     exact hf.injective.mem_set_image))
 
-instance isDenseSubsite_overEquivalence_functor : hf.overEquivalence.functor.IsDenseSubsite
-    ((Opens.grothendieckTopology Y).over _) (Opens.grothendieckTopology X) where
+@[simp]
+lemma _root_.Topology.IsOpenEmbedding.overEquivalence_functor_obj
+    (W : Over (⟨Set.range f, hf.isOpen_range⟩ : Opens Y)) :
+    hf.overEquivalence.functor.obj W = (Opens.map f).obj W.left := by
+  rw [Topology.IsOpenEmbedding.overEquivalence]
+
+end TauCeti
+
+namespace Topology.IsOpenEmbedding
+
+variable {X Y : TopCat.{u}} {f : X ⟶ Y} (hf : IsOpenEmbedding f)
+
+/-- The inverse of `overEquivalence`, followed by the forgetful functor from the over category,
+is the image functor on open subsets. -/
+def overEquivalenceInverseCompForgetIso :
+    hf.overEquivalence.inverse ⋙ Over.forget _ ≅ hf.functor := by
+  rw [Topology.IsOpenEmbedding.overEquivalence]
+  exact NatIso.ofComponents (fun _ ↦ Iso.refl _)
+
+instance isDenseSubsite_overEquivalence_functor :
+    CategoryTheory.Functor.IsDenseSubsite ((Opens.grothendieckTopology Y).over _)
+      (Opens.grothendieckTopology X) hf.overEquivalence.functor where
   functorPushforward_mem_iff {V S} := by
     simp only [Opens.mem_grothendieckTopology, Sieve.mem_functorPushforward_functor]
     constructor
@@ -77,12 +99,36 @@ instance isDenseSubsite_overEquivalence_functor : hf.overEquivalence.functor.IsD
         S.downward_closed hSW'V (hf.overEquivalence.unitInv.app W'), hWW'.le hxW⟩
 
 instance isDenseSubsite_overEquivalence_symm_inverse :
-    hf.overEquivalence.symm.inverse.IsDenseSubsite
-    ((Opens.grothendieckTopology Y).over _) (Opens.grothendieckTopology X) :=
-  inferInstanceAs (hf.overEquivalence.functor.IsDenseSubsite ..)
+    CategoryTheory.Functor.IsDenseSubsite ((Opens.grothendieckTopology Y).over _)
+      (Opens.grothendieckTopology X) hf.overEquivalence.symm.inverse :=
+  inferInstanceAs (CategoryTheory.Functor.IsDenseSubsite
+    ((Opens.grothendieckTopology Y).over _) (Opens.grothendieckTopology X)
+      hf.overEquivalence.functor)
 
-instance isDenseSubsite_overEquivalence_inverse : hf.overEquivalence.inverse.IsDenseSubsite
-    (Opens.grothendieckTopology X) ((Opens.grothendieckTopology Y).over _) :=
-  inferInstanceAs (hf.overEquivalence.symm.functor.IsDenseSubsite ..)
+instance isDenseSubsite_overEquivalence_inverse :
+    CategoryTheory.Functor.IsDenseSubsite (Opens.grothendieckTopology X)
+      ((Opens.grothendieckTopology Y).over _) hf.overEquivalence.inverse :=
+  inferInstanceAs (CategoryTheory.Functor.IsDenseSubsite (Opens.grothendieckTopology X)
+    ((Opens.grothendieckTopology Y).over _) hf.overEquivalence.symm.functor)
 
-end TauCeti
+instance isContinuous_functor : hf.functor.IsContinuous
+    (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y) :=
+  CategoryTheory.Functor.isContinuous_comp'
+    hf.overEquivalenceInverseCompForgetIso (Opens.grothendieckTopology X)
+      ((Opens.grothendieckTopology Y).over _) (Opens.grothendieckTopology Y)
+
+/-- Restriction to the range of an open embedding, followed by transport along
+`overEquivalence`, is naturally isomorphic to pushforward along the image functor on opens. -/
+def overPullbackSheafCongrIso (A : Type*) [Category A] :
+    (Opens.grothendieckTopology Y).overPullback A
+        (⟨Set.range f, hf.isOpen_range⟩ : Opens Y) ⋙
+      (hf.overEquivalence.sheafCongr
+        ((Opens.grothendieckTopology Y).over _)
+        (Opens.grothendieckTopology X) A).functor ≅
+    hf.functor.sheafPushforwardContinuous A
+      (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y) :=
+  CategoryTheory.Functor.sheafPushforwardContinuousComp'
+    hf.overEquivalenceInverseCompForgetIso A (Opens.grothendieckTopology X)
+      ((Opens.grothendieckTopology Y).over _) (Opens.grothendieckTopology Y)
+
+end Topology.IsOpenEmbedding

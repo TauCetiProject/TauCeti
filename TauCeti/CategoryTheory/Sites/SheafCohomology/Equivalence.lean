@@ -18,9 +18,9 @@ sending a sheaf `F` on `C` to the sheaf `V ↦ F(e.inverse V)` on `D`. This file
 cohomology is invariant under this transport: the cohomology of the transported sheaf at `V` is
 the cohomology of `F` at `e.inverse V`.
 
-The proof identifies the transport back of the free abelian sheaf on `V` with the free abelian
-sheaf on `e.inverse V`, because both corepresent sections over `e.inverse V`, and then applies
-Mathlib's comparison of `Ext` groups along an adjunction of exact functors.
+The comparison applies whenever `e.inverse` is a dense subsite. Its direction transports a sheaf
+from `C` to `D` and identifies its cohomology over `V : D` with the original sheaf's cohomology
+over `e.inverse.obj V`.
 
 ## Main declarations
 
