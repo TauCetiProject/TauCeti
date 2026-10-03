@@ -19,10 +19,6 @@ The descended map is characterized by its commuting square with the two function
 base-change maps. This is the field-map descent step in constructing a dual isogeny over its
 field of definition. Pointedness and degree are separate properties of that construction.
 
-The construction uses `WeierstrassCurve.mem_range_functionFieldMap_iff_fixed`, the fixed-field
-description of the coefficient action, and Mathlib's `AlgEquiv.ofInjectiveField` to identify the
-ground function field with its image.
-
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2 and III.6.
@@ -92,6 +88,8 @@ theorem existsUnique_functionFieldMap_iff_galoisEquivariant
           (IsScalarTower.algebraMap_apply F K (W₂⁄K).toAffine.FunctionField a).symm }
     let r : W₂.toAffine.FunctionField →ₐ[F] (W₁⁄K).toAffine.FunctionField :=
       (g.restrictScalars F).comp b₂
+    -- `WeierstrassCurve.mem_range_functionFieldMap_iff_fixed` identifies the fixed field
+    -- of the coefficient action with the ground-field image.
     have hr (z : W₂.toAffine.FunctionField) : r z ∈ b₁.fieldRange.toSubalgebra := by
       apply (W₁.mem_range_functionFieldMap_iff_fixed _).mpr
       intro σ
@@ -101,6 +99,7 @@ theorem existsUnique_functionFieldMap_iff_galoisEquivariant
         g (Affine.FunctionField.map W₂.toAffine (algebraMap F K) z)
       exact (hg σ _).trans
         (congrArg g (functionFieldGaloisAction_map_algebraMap W₂ σ z))
+    -- Mathlib's `AlgEquiv.ofInjectiveField` identifies the ground function field with its image.
     let f : W₂.toAffine.FunctionField →ₐ[F] W₁.toAffine.FunctionField :=
       (AlgEquiv.ofInjectiveField b₁).symm.toAlgHom.comp (r.codRestrict _ hr)
     have hf (z : W₂.toAffine.FunctionField) :
