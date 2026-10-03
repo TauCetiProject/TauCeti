@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Equiv
-import Mathlib.LinearAlgebra.Dual.Basis
-import Mathlib.LinearAlgebra.Finsupp.Pi
+public import TauCeti.Algebra.MonoidAlgebra.Basis
+public import TauCeti.Algebra.MonoidAlgebra.TensorProduct
 
 /-!
 # Untwisting a regular tensor representation
@@ -68,37 +68,21 @@ private theorem finsuppTwistEquiv_single (σ : Representation k G W) (g : G) (w 
     finsuppTwistEquiv σ (Finsupp.single g w) = Finsupp.single g (σ g⁻¹ w) := by
   simp [finsuppTwistEquiv]
 
-/-- The standard identification `k[G] ⊗ W ≃ G →₀ W`. -/
-private def monoidAlgebraTensorEquivFinsupp :
-    MonoidAlgebra k G ⊗[k] W ≃ₗ[k] G →₀ W :=
-  by
-  classical
-  exact (TensorProduct.congr (MonoidAlgebra.coeffLinearEquiv k)
-    (LinearEquiv.refl k W)).trans (TensorProduct.finsuppScalarLeft k W G)
-
-omit [Group G] in
-@[simp]
-private theorem monoidAlgebraTensorEquivFinsupp_single_tmul
-    (g : G) (r : k) (w : W) :
-    monoidAlgebraTensorEquivFinsupp (G := G) (MonoidAlgebra.single g r ⊗ₜ[k] w) =
-      Finsupp.single g (r • w) := by
-  simp [monoidAlgebraTensorEquivFinsupp,
-    TensorProduct.finsuppScalarLeft_apply_tmul]
-
 /-- The linear equivalence underlying regular-tensor untwisting. -/
 private def leftRegularTensorLinearEquiv (σ : Representation k G W) :
     MonoidAlgebra k G ⊗[k] W ≃ₗ[k] MonoidAlgebra k G ⊗[k] W :=
-  monoidAlgebraTensorEquivFinsupp (k := k) (G := G) (W := W) |>.trans <|
+  TauCeti.MonoidAlgebra.tensorEquivFinsupp (k := k) (G := G) (W := W) |>.trans <|
     (finsuppTwistEquiv σ).trans
-      (monoidAlgebraTensorEquivFinsupp (k := k) (G := G) (W := W)).symm
+      (TauCeti.MonoidAlgebra.tensorEquivFinsupp (k := k) (G := G) (W := W)).symm
 
 @[simp]
 private theorem leftRegularTensorLinearEquiv_single_tmul (σ : Representation k G W)
     (g : G) (r : k) (w : W) :
     leftRegularTensorLinearEquiv σ (MonoidAlgebra.single g r ⊗ₜ[k] w) =
       MonoidAlgebra.single g r ⊗ₜ[k] σ g⁻¹ w := by
-  apply (monoidAlgebraTensorEquivFinsupp (k := k) (G := G) (W := W)).injective
-  simp [leftRegularTensorLinearEquiv, monoidAlgebraTensorEquivFinsupp_single_tmul,
+  apply (TauCeti.MonoidAlgebra.tensorEquivFinsupp
+    (k := k) (G := G) (W := W)).injective
+  simp [leftRegularTensorLinearEquiv, TauCeti.MonoidAlgebra.tensorEquivFinsupp_single_tmul,
     finsuppTwistEquiv_single]
 
 /-- **Untwisting the regular tensor factor.**  The diagonal action on `k[G] ⊗ S` is equivalent
@@ -137,17 +121,6 @@ section Finite
 
 variable [Finite G]
 
-omit [Group G] in
-open scoped Classical in
-/-- The coefficients of the vector corresponding to a functional under the standard-basis
-identification `k[G] ≃ Hom_k(k[G], k)` are the values of the functional on the basis. -/
-private theorem coeff_basis_toDualEquiv_symm_apply (f : Module.Dual k (MonoidAlgebra k G))
-    (g : G) :
-    ((MonoidAlgebra.basis G k).toDualEquiv.symm f).coeff g = f (MonoidAlgebra.single g 1) :=
-  -- The standard basis has `repr = coeffLinearEquiv`, so its coordinates are the coefficients.
-  (by simpa using (MonoidAlgebra.basis G k).coord_toDualEquiv_symm_apply g f :
-    (MonoidAlgebra.basis G k).repr _ g = _)
-
 open scoped Classical in
 /-- **The regular representation is self-dual.** The coefficient pairing identifies the dual of
 the left regular representation with the left regular representation. -/
@@ -155,13 +128,14 @@ def dualLeftRegularEquiv :
     (leftRegular k G).dual.Equiv (leftRegular k G) :=
   .mk (MonoidAlgebra.basis G k).toDualEquiv.symm fun g ↦ by
     ext f h
-    simp [coeff_basis_toDualEquiv_symm_apply, Module.Dual.transpose_apply, smul_eq_mul]
+    simp [TauCeti.MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply,
+      Module.Dual.transpose_apply, smul_eq_mul]
 
 /-- Under regular self-duality, the coefficient at `g` is evaluation on the basis vector `g`. -/
 @[simp]
 theorem dualLeftRegularEquiv_apply_coeff (f : Module.Dual k (MonoidAlgebra k G)) (g : G) :
     (dualLeftRegularEquiv (k := k) (G := G) f).coeff g = f (MonoidAlgebra.single g 1) :=
-  coeff_basis_toDualEquiv_symm_apply f g
+  TauCeti.MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply f g
 
 /-- The inverse of regular self-duality evaluates on the basis vector `g` as the coefficient
 at `g`. -/
