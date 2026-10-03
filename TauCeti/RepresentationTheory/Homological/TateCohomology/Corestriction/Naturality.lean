@@ -102,12 +102,16 @@ theorem cor_natural {M N : Rep k G} (f : M ⟶ N) (H : Subgroup G) (r : ℤ) :
         (cor_pos_comp_isoGroupCohomology_hom N H n)
         (groupCohomology.map_comp_corestriction H f (n + 1))
   | negSucc n =>
-    rw [← cancel_mono (toGroupHomology N n), Category.assoc, cor_comp_toGroupHomology,
-      tateCohomologyFunctor_map_comp_toGroupHomology_assoc, Category.assoc,
-      tateCohomologyFunctor_map_comp_toGroupHomology,
-      cor_comp_toGroupHomology_assoc, ← groupHomology.map_comp,
-      ← groupHomology.map_comp]
-    simp only [Category.id_comp]
-    rfl
+    cases n with
+    | zero =>
+      rw [← cancel_mono (toGroupHomology N 0), Category.assoc, cor_comp_toGroupHomology,
+        tateCohomologyFunctor_map_comp_toGroupHomology_assoc, Category.assoc,
+        tateCohomologyFunctor_map_comp_toGroupHomology,
+        cor_comp_toGroupHomology_assoc, ← groupHomology.map_comp,
+        ← groupHomology.map_comp]
+      simp only [Category.id_comp]
+      rfl
+    | succ n =>
+      simpa only [cor_negSucc_succ] using map_comp_negSuccCor H.subtype (n + 1) f
 
 end TauCeti.TateCohomology

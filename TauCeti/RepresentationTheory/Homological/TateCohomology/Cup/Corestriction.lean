@@ -27,7 +27,8 @@ norm maps.
 
 ## Main results
 
-* `TauCeti.TateCohomology.cup_cor`: the projection formula with corestriction in the first factor.
+* `TauCeti.TateCohomology.cup_projection`: the projection formula with corestriction in the first
+  factor.
 
 ## References
 
@@ -174,7 +175,7 @@ Corestricting `x ∪ res y` is `cor x ∪ y`, for arbitrary representations of a
 and any subgroup. As in `res` and `cor`, subgroup cohomology uses
 `Subgroup.fintypeOfFinite`; callers with another `Fintype H` should select this instance. -/
 @[simp]
-theorem cup_cor (M N : Rep k G) (H : Subgroup G) {p q r : ℤ}
+theorem cup_projection (M N : Rep k G) (H : Subgroup G) {p q r : ℤ}
     (h : p + q = r) (x : tateCohomology (Rep.res H.subtype M) p) (y : tateCohomology N q) :
     cor (M ⊗ N) H r
         (cup (Rep.res H.subtype M) (Rep.res H.subtype N) p q r h x (res N H q y)) =
