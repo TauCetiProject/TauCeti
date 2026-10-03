@@ -96,43 +96,6 @@ section Inflation
 
 variable (L : NormalLayer (AbsoluteGaloisGroup K))
 
-/-- The coefficient module of a layer is the fixed points of its top subgroup in `(Kˢ)ˣ`. -/
-private def layerCoeffEquiv :
-    (L.rep (unitsFormation K)).V ≃+
-      FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
-        (UnitsCoeff K) where
-  toFun x := ⟨(unitsCoeffEquivUnitsFormation K).symm (x : (unitsFormation K).level L.top),
-    (FixedPoints.mem_addSubgroup _ _ _).2 fun v => (unitsCoeffEquivUnitsFormation K).injective <|
-      (unitsCoeffEquivUnitsFormation_smul K ((v : L.ground.toSubgroup) : AbsoluteGaloisGroup K)
-        _).trans <| by
-          rw [AddEquiv.apply_symm_apply]
-          exact (Formation.mem_level _).1 x.2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
-  invFun m := ⟨unitsCoeffEquivUnitsFormation K m, (Formation.mem_level _).2 fun v hv =>
-    (unitsCoeffEquivUnitsFormation_smul K v m).symm.trans <| congrArg _ <|
-      (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
-  left_inv x := Subtype.ext ((unitsCoeffEquivUnitsFormation K).apply_symm_apply _)
-  right_inv m := Subtype.ext ((unitsCoeffEquivUnitsFormation K).symm_apply_apply _)
-  map_add' x y := Subtype.ext (map_add (unitsCoeffEquivUnitsFormation K).symm _ _)
-
-/-- `layerCoeffEquiv` moves no element of `(Kˢ)ˣ`. -/
-private theorem layerCoeffEquiv_apply_coe (x : (L.rep (unitsFormation K)).V) :
-    (layerCoeffEquiv L x : UnitsCoeff K) =
-      (unitsCoeffEquivUnitsFormation K).symm (x : (unitsFormation K).level L.top) :=
-  (rfl)
-
-/-- `layerCoeffEquiv` is equivariant for the Galois group of the layer. -/
-private theorem layerCoeffEquiv_ρ
-    (g : L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
-    (x : (L.rep (unitsFormation K)).V) :
-    layerCoeffEquiv L ((L.rep (unitsFormation K)).ρ g x) = g • layerCoeffEquiv L x := by
-  induction g using QuotientGroup.induction_on with
-  | H u =>
-    refine Subtype.ext ?_
-    rw [layerCoeffEquiv_apply_coe, coe_quotient_smul_fixedPoints_addSubgroup,
-      coe_smul_fixedPoints_addSubgroup, layerCoeffEquiv_apply_coe, AddEquiv.symm_apply_eq,
-      Subgroup.smul_def, unitsCoeffEquivUnitsFormation_smul, AddEquiv.apply_symm_apply]
-    exact L.rep_ρ_mk_apply_coe _ u x
-
 /-- The second cohomology of a layer as the explicit `H²` of its finite Galois group, with
 coefficients the fixed points of its top subgroup in `(Kˢ)ˣ`. -/
 private def layerH2Equiv :
@@ -198,7 +161,7 @@ theorem layerCocycle_apply (c : cocycles₂ (L.rep (unitsFormation K)))
       (unitsCoeffEquivUnitsFormation K).symm
         (c ((u : L.Gal), (v : L.Gal)) : (unitsFormation K).level L.top) := by
   rw [layerCocycle, cocyclesMap2_apply]
-  rfl
+  exact layerCoeffEquiv_apply_coe L _
 
 /-- **Inflation on cocycle classes**: `layerInfl L` sends the class of a layer cocycle `c` to the
 class of the inflated cocycle `layerCocycle L c`. -/
