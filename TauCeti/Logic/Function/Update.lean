@@ -48,14 +48,14 @@ namespace Function
 variable {β : α → Type*} {S : Finset α} {a : α} {f g : ∀ x, β x} {b : β a}
 
 /-- Updating `f` at a point of `S` does not change where it agrees with `g` away from `S`. -/
-theorem forall_notMem_update_eq_iff_of_mem (h : a ∈ S) :
+@[simp] theorem forall_notMem_update_eq_iff_of_mem (h : a ∈ S) :
     (∀ x ∉ S, update f a b x = g x) ↔ ∀ x ∉ S, f x = g x := by
   refine forall₂_congr fun x hx ↦ ?_
   rw [update_of_ne (by rintro rfl; exact hx h)]
 
 /-- Updating `f` at a point `a ∉ S` to `b` agrees with `g` away from `S` iff `f` agrees with `g`
 away from `insert a S` and `b = g a`. -/
-theorem forall_notMem_update_eq_iff_of_notMem (h : a ∉ S) :
+@[simp] theorem forall_notMem_update_eq_iff_of_notMem (h : a ∉ S) :
     (∀ x ∉ S, update f a b x = g x) ↔ (∀ x ∉ insert a S, f x = g x) ∧ b = g a := by
   rw [Finset.forall_notMem_iff_forall_notMem_insert h,
     forall_notMem_update_eq_iff_of_mem (Finset.mem_insert_self a S), update_self]
