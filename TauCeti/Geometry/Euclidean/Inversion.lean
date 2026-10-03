@@ -18,11 +18,13 @@ isometry carries the inversion in a sphere to the inversion in the image sphere,
 isometry fixing the centre commutes with the inversion. This is the compatibility used to compare
 inversion charts of the closed unit balls of two inner product spaces along a linear isometry.
 
-The derivative of the inversion at a point `x ≠ c` is a positive multiple of the reflection in
-the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`), so in finite dimension its
-determinant is negative: inversion reverses orientation. Composites of two inversion charts
-therefore preserve orientation, which is how the inversion charts of the closed unit ball give an
-oriented atlas.
+For a nonzero radius `R`, the derivative of the inversion at a point `x ≠ c` is a positive
+multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`), so
+in finite dimension its determinant is negative: inversion reverses orientation. A transition
+between two inversion charts whose linear isometries lie in the same orientation class is a
+composite of two inversions and a linear isometry of positive determinant, so it preserves
+orientation. This is how the inversion charts of the closed unit ball attached to the isometries
+of one orientation class give an oriented atlas.
 
 ## Main results
 
