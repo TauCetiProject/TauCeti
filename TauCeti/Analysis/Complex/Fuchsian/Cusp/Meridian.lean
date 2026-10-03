@@ -79,6 +79,7 @@ theorem meridian_apply (n : ℤ) (z : ℍ) (t : unitInterval) :
 
 /-- The meridian makes exactly `n` signed turns about zero. Positive turns are
 counterclockwise in the complex q-plane. -/
+@[simp↓]
 theorem coe_meridian (n : ℤ) (z : ℍ) (t : unitInterval) :
     ((meridian D n z t : 𝔻) : ℂ) =
       coordinate D z * Complex.exp ((n : ℂ) * (2 * Real.pi * Complex.I) * (t : ℝ)) := by
