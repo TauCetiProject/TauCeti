@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.LeviDecomposition.Solvable
 public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.RepresentationTheory.Lie.Abelian
 public import TauCeti.RepresentationTheory.Lie.EnvelopingExtension.Nilrepresentation
+import TauCeti.LinearAlgebra.End.Prod
 
 /-!
 # Ado's theorem in characteristic zero
@@ -175,48 +176,32 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
         rfl
       exact hall (fun s ↦ hσN _ (hN _ (hTT' _ (ι s).2))) _ fun s ↦ hloc _ s
 
-/-- The Lie subalgebra `K ∙ x ⊔ T` spanned by a Lie subalgebra `T` and an element `x` of its
-normalizer. -/
-private def supSpan (T : LieSubalgebra K L) {x : L} (hx : x ∈ T.normalizer) :
-    LieSubalgebra K L :=
-  { K ∙ x ⊔ T.toSubmodule with
-    lie_mem' := fun {_ _} ↦ LieSubalgebra.lie_mem_sup_of_mem_normalizer hx }
-
-omit [FiniteDimensional K L] in
-/-- Membership in `K ∙ x ⊔ T` as a Lie subalgebra is membership in the submodule sum. -/
-private theorem mem_supSpan_iff (T : LieSubalgebra K L) {x : L} (hx : x ∈ T.normalizer) {y : L} :
-    y ∈ supSpan T hx ↔ y ∈ K ∙ x ⊔ T.toSubmodule :=
-  Iff.rfl
-
-/-- The line `K ∙ x`, as a Lie subalgebra. -/
-private def spanSingleton (x : L) : LieSubalgebra K L :=
-  { K ∙ x with
-    lie_mem' := fun {y z} hy hz ↦ by
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
-      obtain ⟨b, rfl⟩ := Submodule.mem_span_singleton.mp hz
-      simp }
-
-/-- **A codimension-one step of the Ado flag.** An Ado stage at `T` extends to `K ∙ x ⊔ T` for an
-element `x ∉ T` whose brackets with `T` lie in `T ⊓ N`, provided `T` contains the centre and either
-`T` contains `N` or both `x` and `T` lie in `N`. -/
-private theorem isAdoStage_supSpan (T : LieSubalgebra K L) {x : L} (hx : x ∈ T.normalizer)
+/-- **A codimension-one step of the Ado flag.** An Ado stage at `T` extends to the Lie span
+`K ∙ x ⊔ T` of `x` and `T`, for an element `x ∉ T` whose brackets with `T` lie in `T ⊓ N`, provided
+`T` contains the centre and either `T` contains `N` or both `x` and `T` lie in `N`. -/
+private theorem isAdoStage_lieSpan_insert (T : LieSubalgebra K L) {x : L} (hx : x ∈ T.normalizer)
     (hxN : ∀ t ∈ T, ⁅x, t⁆ ∈ LieAlgebra.nilradical K L)
     (hxT : x ∉ T) (hZ : ∀ z ∈ LieAlgebra.center K L, z ∈ T)
     (hN : (∀ z ∈ LieAlgebra.nilradical K L, z ∈ T) ∨
       (x ∈ LieAlgebra.nilradical K L ∧ ∀ z ∈ T, z ∈ LieAlgebra.nilradical K L))
-    (hT : IsAdoStage K L T) : IsAdoStage K L (supSpan T hx) := by
-  refine isAdoStage_of_sup (H := spanSingleton x) (sup_comm _ _)
+    (hT : IsAdoStage K L T) :
+    IsAdoStage K L (LieSubalgebra.lieSpan K L (insert x (T : Set L))) := by
+  have hH : (LieSubalgebra.lieSpan K L {x}).toSubmodule = K ∙ x :=
+    LieSubalgebra.coe_lieSpan_eq_span_of_forall_lie_eq_zero (by simp)
+  refine isAdoStage_of_sup (H := LieSubalgebra.lieSpan K L {x})
+    (by rw [LieSubalgebra.lieSpan_insert_toSubmodule T hx, hH, sup_comm])
     (Submodule.disjoint_def.mpr fun y hyT hyx ↦ ?_) (fun h hh t ht ↦ ?_) hZ ?_ hT
-  · obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hyx
+  · rw [hH] at hyx
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hyx
     by_contra ha
     exact hxT (by simpa [smul_ne_zero_iff.mp ha |>.1] using T.smul_mem (a⁻¹) hyT)
-  · obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hh
+  · rw [← LieSubalgebra.mem_toSubmodule, hH] at hh
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hh
     rw [smul_lie]
     exact ⟨T.smul_mem a (LieSubalgebra.ideal_in_normalizer hx ht),
       (LieAlgebra.nilradical K L).smul_mem a (hxN t ht)⟩
   · refine hN.imp_right fun ⟨hxN', hTN⟩ z hz ↦ ?_
-    obtain ⟨y, hy, t, ht, rfl⟩ := Submodule.mem_sup.mp hz
-    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
+    obtain ⟨a, t, ht, rfl⟩ := (T.mem_lieSpan_insert_iff hx).mp hz
     exact add_mem ((LieAlgebra.nilradical K L).smul_mem a hxN') (hTN t ht)
 
 /-- **Climbing a flag.** If every Ado stage `T` satisfying `P` and strictly below `U` is followed
@@ -241,11 +226,12 @@ private theorem isAdoStage_of_forall_ne (U : LieSubalgebra K L) (P : LieSubalgeb
     exact ih _ (by omega) T' hPT' hT'U hT' rfl
 
 omit [FiniteDimensional K L] in
-/-- `T < K ∙ x ⊔ T` when `x ∉ T`. -/
-private theorem lt_supSpan (T : LieSubalgebra K L) {x : L} (hx : x ∈ T.normalizer) (hxT : x ∉ T) :
-    T < supSpan T hx :=
-  IsConcreteLE.lt_iff_le_and_exists.mpr ⟨fun _ ht ↦ Submodule.mem_sup_right ht,
-    x, Submodule.mem_sup_left (Submodule.mem_span_singleton_self x), hxT⟩
+/-- `T` lies strictly below the Lie span of `x` and `T` when `x ∉ T`. -/
+private theorem lt_lieSpan_insert (T : LieSubalgebra K L) {x : L} (hxT : x ∉ T) :
+    T < LieSubalgebra.lieSpan K L (insert x (T : Set L)) :=
+  IsConcreteLE.lt_iff_le_and_exists.mpr
+    ⟨fun _ ht ↦ LieSubalgebra.subset_lieSpan (Set.mem_insert_of_mem _ ht),
+      x, LieSubalgebra.subset_lieSpan (Set.mem_insert _ _), hxT⟩
 
 /-- The nilradical is an Ado stage, by a flag of codimension-one steps from the centre inside the
 nilradical. -/
@@ -262,11 +248,10 @@ private theorem isAdoStage_nilradical :
       (h.trans (LieIdeal.toLieSubalgebra_toSubmodule K L _).symm))
   obtain ⟨x, hxN, hxT, hx⟩ := (LieAlgebra.nilradical K L).exists_mem_notMem_lie_mem_of_lt hlt
   have hxnorm : x ∈ T.normalizer := (T.mem_normalizer_iff x).mpr fun t ht ↦ hx t (hTN' t ht)
-  refine ⟨supSpan T hxnorm, fun z hz ↦ Submodule.mem_sup_right (hZ z hz), lt_supSpan T _ hxT,
-    fun w hw ↦ ?_, isAdoStage_supSpan T hxnorm
+  refine ⟨_, fun z hz ↦ LieSubalgebra.subset_lieSpan (Set.mem_insert_of_mem _ (hZ z hz)),
+    lt_lieSpan_insert T hxT, fun w hw ↦ ?_, isAdoStage_lieSpan_insert T hxnorm
       (fun t ht ↦ (LieAlgebra.nilradical K L).lie_mem (hTN' t ht)) hxT hZ (Or.inr ⟨hxN, hTN'⟩) hT⟩
-  obtain ⟨y, hy, t, ht, rfl⟩ := Submodule.mem_sup.mp ((mem_supSpan_iff T _).mp hw)
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
+  obtain ⟨a, t, ht, rfl⟩ := (T.mem_lieSpan_insert_iff hxnorm).mp hw
   exact (LieIdeal.mem_toLieSubalgebra K L _ _).mpr
     (add_mem ((LieAlgebra.nilradical K L).smul_mem a hxN) (hTN' t ht))
 
@@ -291,12 +276,11 @@ private theorem isAdoStage_radical : IsAdoStage K L (LieAlgebra.radical K L).toL
   have hxR' : x ∈ LieAlgebra.radical K L := (LieIdeal.mem_toLieSubalgebra K L _ _).mp hxR
   have hxnorm : x ∈ T.normalizer := (T.mem_normalizer_iff x).mpr fun t ht ↦
     hNT _ (lie_mem_nilradical_of_mem_radical x (hTR' t ht))
-  refine ⟨supSpan T hxnorm, fun z hz ↦ Submodule.mem_sup_right (hNT z hz), lt_supSpan T _ hxT,
-    fun w hw ↦ ?_, isAdoStage_supSpan T hxnorm
+  refine ⟨_, fun z hz ↦ LieSubalgebra.subset_lieSpan (Set.mem_insert_of_mem _ (hNT z hz)),
+    lt_lieSpan_insert T hxT, fun w hw ↦ ?_, isAdoStage_lieSpan_insert T hxnorm
       (fun t ht ↦ lie_mem_nilradical_of_mem_radical x (hTR' t ht)) hxT
       (fun z hz ↦ hNT z (LieAlgebra.center_le_nilradical K L hz)) (Or.inl hNT) hT⟩
-  obtain ⟨y, hy, t, ht, rfl⟩ := Submodule.mem_sup.mp ((mem_supSpan_iff T _).mp hw)
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
+  obtain ⟨a, t, ht, rfl⟩ := (T.mem_lieSpan_insert_iff hxnorm).mp hw
   exact (LieIdeal.mem_toLieSubalgebra K L _ _).mpr
     (add_mem ((LieAlgebra.radical K L).smul_mem a hxR') (hTR' t ht))
 
@@ -332,27 +316,17 @@ theorem exists_faithful_nilrepresentation_charZero :
     ρ₀.prodRepresentation (LieAlgebra.ad K L), ?_, fun x hx ↦ ?_⟩
   · rw [LieHom.prodRepresentation_injective_iff, disjoint_iff, eq_bot_iff]
     intro x hx
-    rw [LieSubmodule.mem_inf] at hx
-    obtain ⟨hx, hxad⟩ := hx
+    rw [LieSubmodule.mem_inf, LieAlgebra.ad_ker_eq_self_module_ker,
+      LieAlgebra.self_module_ker_eq_center] at hx
+    obtain ⟨hx, hxZ⟩ := hx
     rw [LieSubmodule.mem_bot]
-    have hxZ : x ∈ LieAlgebra.center K L := by
-      rw [LieHom.mem_ker] at hxad
-      exact fun y ↦ by
-        rw [← lie_skew, ← LieAlgebra.ad_apply K, hxad, LinearMap.zero_apply, neg_zero]
     rw [LieHom.mem_ker, hρ₀] at hx
     exact congrArg Subtype.val (hσZ _ hxZ hx)
-  · obtain ⟨m, hm⟩ := hσN ⟨x, LieSubalgebra.mem_top x⟩ hx
-    obtain ⟨n, hn⟩ := LieAlgebra.isNilpotent_ad_of_mem_nilradical hx
-    refine ⟨max m n, LinearMap.ext fun p ↦ ?_⟩
-    have hpow (k : ℕ) : ((ρ₀.prodRepresentation (LieAlgebra.ad K L) x) ^ k) p =
-        ((ρ₀ x ^ k) p.1, (LieAlgebra.ad K L x ^ k) p.2) := by
-      induction k generalizing p with
-      | zero => rfl
-      | succ k ih => rw [pow_succ, Module.End.mul_apply, LieHom.prodRepresentation_apply, ih,
-          pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply]
-    rw [hpow, hρ₀, pow_eq_zero_of_le (le_max_left m n) hm,
-      pow_eq_zero_of_le (le_max_right m n) hn]
-    rfl
+  · have hprod : ρ₀.prodRepresentation (LieAlgebra.ad K L) x =
+        (ρ₀ x).prodMap (LieAlgebra.ad K L x) :=
+      LinearMap.ext fun p ↦ LieHom.prodRepresentation_apply _ _ x p
+    rw [hprod, hρ₀]
+    exact (hσN _ hx).prodMap (LieAlgebra.isNilpotent_ad_of_mem_nilradical hx)
 
 /-- **Ado's theorem in characteristic zero.** Every finite-dimensional Lie algebra over a field of
 characteristic zero admits a faithful finite-dimensional representation. -/
