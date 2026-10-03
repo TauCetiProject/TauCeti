@@ -102,6 +102,8 @@ variable (k : Type u) [CommRing k] {G H : Type u} [Monoid G] [Monoid H] [Finite 
 /-- **Restriction of the class of a representation.** Restricting the class of the
 `k[G]`-module of a representation `ρ` along `φ` gives the class of the `k[H]`-module of the
 composite representation `ρ ∘ φ`. -/
+-- Priority above `resK0_of`, whose left-hand side this one specializes.
+@[simp high]
 theorem resK0_of_asModule (φ : H →* G) {V : Type u} [AddCommGroup V] [Module k V]
     [Module.Finite k V] (ρ : Representation k G V) :
     letI : Module.Finite k[G] ρ.asModule :=
@@ -128,6 +130,8 @@ theorem resK0_of_asModule (φ : H →* G) {V : Type u} [AddCommGroup V] [Module 
   exact congrArg (fun T : Module.End k V ↦ T x) (AlgHom.congr_fun hρ a)
 
 /-- Restriction sends the class of the trivial line to the class of the trivial line. -/
+-- Priority above `resK0_of_asModule`, whose left-hand side this one specializes.
+@[simp high + 1]
 theorem resK0_of_trivial (φ : H →* G) :
     letI : Module.Finite k[G] (Representation.trivial k G k).asModule :=
       Module.Finite.of_restrictScalars_finite k k[G] _
