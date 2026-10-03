@@ -17,13 +17,8 @@ its image in the larger one. This holds both for formation coefficients and for 
 integral coefficients.
 
 These comparisons let the generic Tate cup-product projection formula apply to the existing
-finite-layer maps. Their consumer is the corestriction square `ClassFormation.tateIso_cor`,
-and hence the Artin norm square `ClassFormation.artinMap_groundNorm`.
-
-Positive degrees use naturality of Mathlib's Tate-to-ordinary comparison with respect to the
-range identification. The low-degree and negative branches already use the same norm and
-homology maps. The argument follows the corresponding restriction comparisons in
-`TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Restriction`.
+finite-layer maps, for use in establishing compatibility of finite-layer Tate isomorphisms
+with corestriction and norm compatibility of Artin maps.
 
 ## References
 
@@ -41,6 +36,9 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Compa
   [TotallyDisconnectedSpace G] {small big : NormalLayer G}
 
 attribute [local instance] Subgroup.fintypeOfFinite Subgroup.fintypeQuotientOfFiniteIndex
+
+-- The proofs follow the corresponding restriction comparisons in
+-- TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Restriction.
 
 /-- Layer Tate corestriction is the range comparison followed by generic subgroup corestriction,
 in every integer degree. The subgroup carrier uses `Subgroup.fintypeOfFinite`, as fixed by the
