@@ -102,7 +102,7 @@ instance pushforwardModuleMonoidal :
 
 /-- The sheafification comparison respects tensor and unit maps. This identifies restriction's
 monoidal structure with precomposition and sheafification of presheaves. -/
-instance pushforwardSheafificationNatIso_isMonoidal :
+instance isMonoidal_pushforwardSheafificationNatIso_hom :
     @NatTrans.IsMonoidal _ _ _ _ _ _ _ _
       (pushforwardSheafificationNatIso (J := J) (K := K) F (ringCatSheaf R)).hom
       (inferInstanceAs (sourceSheafification ⋙
