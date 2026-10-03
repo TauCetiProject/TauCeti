@@ -30,15 +30,10 @@ coefficient of `c_t` at the identity, which is `1`, so the trace is `n!`
 (`TauCeti.MonoidAlgebra.trace_mulRight`). Comparing gives `κ · dim = n!`, and the dimension is
 positive.
 
-The roadmap states the scalar as `n! / f^μ` with `f^μ` the number of standard Young tableaux of
-shape `μ`. The two readings agree once the standard basis theorem identifies `dim S^μ = f^μ`; that
-identification needs the straightening algorithm and is not proved here, so the dimension of the
-ideal is what appears below. Nothing in this file assumes the comparison of `ℚ[Sₙ] c_t` with the
-polytabloid presentation of `S^μ`.
-
-The two extreme shapes are the cases in which the dimension, and hence the scalar, can be read off
-directly; those evaluations live with the rest of the extreme-shape theory, in
-`TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Extremes`, which is downstream of this file.
+The scalar can equally be written `n! / f^μ`, with `f^μ` the number of standard Young tableaux of
+shape `μ`: the two readings agree because the standard basis theorem identifies `dim S^μ = f^μ`.
+It is the dimension of the ideal that appears below; nothing here assumes the comparison of
+`ℚ[Sₙ] c_t` with the polytabloid presentation of `S^μ`.
 
 ## Main statements
 
@@ -63,8 +58,6 @@ companions) by an opaque scalar.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lemma 4.26.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 2, the “idempotent theory” item `c_t * c_t = (n! / f^λ) • c_t`.
 -/
 
 public section
@@ -121,9 +114,10 @@ theorem finrank_spechtIdeal_smul_youngSymmetrizer_sq (t : YoungTableau μ) :
 /-- **Essential idempotence of the Young symmetrizer.** The square of `c_t` is `c_t` scaled by
 `n!` over the dimension of the left ideal `ℚ[Sₙ] c_t`.
 
-The roadmap writes the scalar as `n! / f^μ`, with `f^μ` the number of standard Young tableaux of
-shape `μ`; the two agree once the standard basis theorem gives `dim S^μ = f^μ`, which is not
-available yet. -/
+The scalar can equally be written `n! / f^μ`, with `f^μ` the number of standard Young tableaux of
+shape `μ`; that is
+`TauCeti.YoungTableau.youngSymmetrizer_sq_eq_factorial_div_standardCount`, which combines this
+with the standard basis theorem `dim S^μ = f^μ`. -/
 theorem youngSymmetrizer_sq (t : YoungTableau μ) :
     youngSymmetrizer t * youngSymmetrizer t =
       ((μ.card.factorial : ℚ) / (finrank ℚ (spechtIdeal t) : ℚ)) • youngSymmetrizer t := by
