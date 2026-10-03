@@ -11,9 +11,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 /-!
 # Restriction–corestriction exactness for quadratic extensions
 
-For a quadratic extension `L/K`, the absolute Galois group `G_L` is an open subgroup of index two
-in `G_K`. The subgroup index-two exact sequence therefore says, in every degree, that a class over
-`L` has zero corestriction precisely when it is the restriction of a class over `K`:
+For a quadratic extension `L/K`, an embedding of `L` into the separable closure of `K` determines
+an open subgroup of index two in `G_K`, whose cohomology is identified with that of `G_L` by
+`TauCeti.galoisF2Iso`. The subgroup index-two exact sequence therefore says, in every degree, that
+a class over `L` has zero corestriction precisely when it is the restriction of a class over `K`:
 
 ```text
 Hⁿ(G_K, 𝔽₂) --res--> Hⁿ(G_L, 𝔽₂) --cor--> Hⁿ(G_K, 𝔽₂).
