@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Covolume
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector
-public import TauCeti.MeasureTheory.Group.DirichletDomain
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain
 public import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
@@ -22,7 +22,10 @@ hyperbolic area of any Dirichlet domain centred at a point with trivial stabiliz
 discrete subgroup has such a Dirichlet domain, since points with trivial stabilizer exist.
 
 The Dirichlet domain is the starting point of the Dirichlet polygon: for a cofinite group it is a
-finite-sided convex hyperbolic polygon whose sides are paired by elements of `Γ`.
+finite-sided convex hyperbolic polygon whose sides are paired by elements of `Γ`. Its geodesic
+convexity and closed-half-plane description are supplied by
+`TauCeti.UpperHalfPlane.geodesicSegment_subset_dirichletDomain` and
+`TauCeti.UpperHalfPlane.dirichletDomain_eq_iInter_closure_leftHalfPlane`.
 
 ## Main results
 
