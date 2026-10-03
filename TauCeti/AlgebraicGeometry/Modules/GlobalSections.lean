@@ -228,6 +228,18 @@ lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app (U : X.Ope
         X.presheaf.map U.unop.leTop.op :=
   (rfl)
 
+/-- On an open `U`, the base-ring map `R → Γ(X, U)` is the composite of `R ≅ Γ(Spec R, ⊤)` with
+the map on functions induced by the structure morphism. -/
+lemma _root_.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_eq_appLE (U : X.Opens) :
+    (X.baseRingToStructurePresheaf R).app (op U) =
+      (Scheme.ΓSpecIso (.of R)).inv ≫ (X ↘ Spec (.of R)).appLE ⊤ U le_top := by
+  ext r
+  rw [Scheme.baseRingToStructurePresheaf_app, CommRingCat.comp_apply, CommRingCat.comp_apply,
+    CommRingCat.ofHom_apply, Scheme.Modules.baseRingToGlobalSections_apply]
+  -- Both sides restrict the pullback of `r` from `⊤` to `U`; `appLE ⊤ U` is by definition
+  -- `app ⊤` followed by that restriction.
+  rfl
+
 variable {X} in
 /-- Pullback of local functions along a morphism over `Spec R` preserves the image of the
 base ring. -/
