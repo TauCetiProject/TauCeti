@@ -70,10 +70,11 @@ theorem descPochhammer_degree {R : Type*} [Ring R] [Nontrivial R] (n : ℕ) :
 
 /-- Shifting the argument of a falling factorial by one strips off its leading linear factor:
 the degree `m + 1` falling factorial at `x + 1` is `(x + 1)` times the degree `m` one at `x`. -/
-theorem descPochhammer_succ_eval_add_one {R : Type*} [CommRing R] (m : ℕ) (x : R) :
+theorem descPochhammer_succ_eval_add_one {R : Type*} [Ring R] (m : ℕ) (x : R) :
     (descPochhammer R (m + 1)).eval (x + 1) = (x + 1) * (descPochhammer R m).eval x := by
-  rw [descPochhammer_succ_left, eval_mul, eval_X, eval_comp, eval_sub, eval_X, eval_one,
-    add_sub_cancel_right]
+  rw [← descPochhammer_map (Int.castRingHom R), ← descPochhammer_map (Int.castRingHom R) m,
+    eval_map, eval_map, ← algebraMap_int_eq, ← aeval_def, ← aeval_def, descPochhammer_succ_left,
+    map_mul, aeval_X, aeval_comp, map_sub, aeval_X, map_one, add_sub_cancel_right]
 
 /-! ### An odd polynomial as a falling factorial -/
 
