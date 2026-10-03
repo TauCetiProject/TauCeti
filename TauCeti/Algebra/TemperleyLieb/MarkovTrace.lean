@@ -33,9 +33,11 @@ supported on the two antiparallel pairs of spins:
 * `cup (true, false) = -q`, `cup (false, true) = 1`;
 * `cap (true, false) = 1`, `cap (false, true) = -q⁻¹`.
 
-Closing a loop gives `cap · cup = -(q + q⁻¹) = δ`, and the two zigzag contractions of a cup with a
-cap are the identity, which are the three Temperley-Lieb relations
-(`TauCeti.TemperleyLieb.spinRep`). The trace is the weighted matrix trace
+These matrices satisfy the three families of Temperley-Lieb relations, which is what makes
+`TauCeti.TemperleyLieb.spinRep` an algebra map: the quadratic relation, since closing a loop
+gives `cap · cup = -(q + q⁻¹) = δ`; the adjacent zigzag relations, since the two zigzag
+contractions of a cup with a cap are the identity; and the distant commutation relation, since
+generator matrices on disjoint pairs of strands commute. The trace is the weighted matrix trace
 `tr x = trace (diagonal (spinWeight q) * spinRep x)` with spin weights `-q` for `true` and `-q⁻¹`
 for `false`. Every generator preserves the multiset of spins it touches, so the weight matrix
 commutes with the representation and the weighted trace is a trace. The weights sum to `δ`, which

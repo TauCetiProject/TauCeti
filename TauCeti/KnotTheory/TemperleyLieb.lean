@@ -48,7 +48,7 @@ the braid route and the diagram route agree on it.
 ## Main results
 
 * `TauCeti.TemperleyLieb.jonesDelta_inv`: the loop value is unchanged by inverting the unit.
-* `TauCeti.TemperleyLieb.jonesDelta_mul_add` and `TauCeti.TemperleyLieb.jonesDelta_mul_add_inv`:
+* `TauCeti.TemperleyLieb.mul_jonesDelta_add_inv` and `TauCeti.TemperleyLieb.inv_mul_jonesDelta_add`:
   closing up the two smoothings of a positive or negative crossing on a new strand multiplies by
   `-a ^ 3` or by its inverse, the identities behind invariance under stabilization.
 * `TauCeti.TemperleyLieb.jones_sigma`: the representation sends `sigma i` to `jonesUnit a i`.
@@ -176,22 +176,22 @@ theorem jones_sigma_ne_one_two [Nontrivial R] (a : Rˣ) (i : Fin (2 - 1)) :
 
 /-- The Jones loop value is `-(q + q⁻¹)` for the unit `q = a ^ 2`, the form in which the Markov
 trace `TauCeti.TemperleyLieb.markovTrace` is built. -/
-theorem jonesDelta_eq_neg_add (a : Rˣ) :
+theorem jonesDelta_eq_neg_sq_add_inv_sq (a : Rˣ) :
     jonesDelta a = -((↑(a ^ 2) : R) + ((a ^ 2)⁻¹ : Rˣ)) := by
   simp
 
 /-- The two smoothings of a positive crossing on a new strand, closed up by the Markov trace,
 contribute `a * δ + a⁻¹ = -a ^ 3`. -/
-theorem jonesDelta_mul_add (a : Rˣ) :
+theorem mul_jonesDelta_add_inv (a : Rˣ) :
     (a : R) * jonesDelta a + ((a⁻¹ : Rˣ) : R) = ((-a ^ 3 : Rˣ) : R) := by
   simp only [jonesDelta_def, Units.val_neg, Units.val_pow_eq_pow_val]
   linear_combination (-((a⁻¹ : Rˣ) : R)) * a.mul_inv
 
 /-- The two smoothings of a negative crossing on a new strand, closed up by the Markov trace,
 contribute `a⁻¹ * δ + a = -a⁻¹ ^ 3`. -/
-theorem jonesDelta_mul_add_inv (a : Rˣ) :
+theorem inv_mul_jonesDelta_add (a : Rˣ) :
     ((a⁻¹ : Rˣ) : R) * jonesDelta a + (a : R) = ((-a ^ 3 : Rˣ)⁻¹ : Rˣ) := by
-  have h := jonesDelta_mul_add a⁻¹
+  have h := mul_jonesDelta_add_inv a⁻¹
   rw [jonesDelta_inv, inv_inv] at h
   rw [h, inv_neg, inv_pow]
 
@@ -223,7 +223,7 @@ It is a Markov invariant (`TauCeti.MarkovEquiv.jonesTrace_eq`), and the unknot b
 (`TauCeti.MarkovBraid.jonesTrace_one_strand`). -/
 def jonesTrace (β : MarkovBraid) (a : Rˣ) : R :=
   (((-a ^ 3) ^ (-Multiplicative.toAdd (ArtinGroup.exponentSum _ β.braid)) : Rˣ) : R) *
-    markovTrace (a ^ 2) (jonesDelta_eq_neg_add a)
+    markovTrace (a ^ 2) (jonesDelta_eq_neg_sq_add_inv_sq a)
       (jones (β.predStrands + 1) a β.braid : TemperleyLieb R (jonesDelta a) (β.predStrands + 1))
 
 /-- The writhe-normalized trace is the Markov trace of the Jones representative times the writhe
@@ -231,7 +231,7 @@ correction. -/
 theorem jonesTrace_def (β : MarkovBraid) (a : Rˣ) :
     jonesTrace β a =
       (((-a ^ 3) ^ (-Multiplicative.toAdd (ArtinGroup.exponentSum _ β.braid)) : Rˣ) : R) *
-        markovTrace (a ^ 2) (jonesDelta_eq_neg_add a)
+        markovTrace (a ^ 2) (jonesDelta_eq_neg_sq_add_inv_sq a)
           (jones (β.predStrands + 1) a β.braid :
             TemperleyLieb R (jonesDelta a) (β.predStrands + 1)) := (rfl)
 
@@ -248,10 +248,10 @@ private theorem markovTrace_jones_strandIncl_mul (a : Rˣ) (b : BraidGroup (n + 
     (c : BraidGroup (n + 2)) (x y : R)
     (hc : (jones (n + 2) a c : TemperleyLieb R (jonesDelta a) (n + 2)) =
       crossing (jonesDelta a) x y (Fin.last n)) :
-    markovTrace (a ^ 2) (jonesDelta_eq_neg_add a)
+    markovTrace (a ^ 2) (jonesDelta_eq_neg_sq_add_inv_sq a)
         (jones (n + 2) a (BraidGroup.strandIncl b * c) :
           TemperleyLieb R (jonesDelta a) (n + 2)) =
-      (x * jonesDelta a + y) * markovTrace (a ^ 2) (jonesDelta_eq_neg_add a)
+      (x * jonesDelta a + y) * markovTrace (a ^ 2) (jonesDelta_eq_neg_sq_add_inv_sq a)
         (jones (n + 1) a b : TemperleyLieb R (jonesDelta a) (n + 1)) := by
   rw [map_mul, Units.val_mul, jones_strandIncl, hc, crossing_def, mul_add, mul_smul_comm,
     mul_smul_comm, mul_one, map_add, map_smul, map_smul, markovTrace_strandIncl,
@@ -267,7 +267,7 @@ theorem jonesTrace_stabilize (a : Rˣ) (b : BraidGroup (n + 1)) :
     (by rw [jones_sigma, jonesUnit_val])]
   simp only [map_mul, BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
     toAdd_mul, toAdd_ofAdd, neg_add, zpow_add, zpow_neg_one, Units.val_mul]
-  rw [jonesDelta_mul_add, mul_assoc _ _ (_ * _), ← mul_assoc _ (((-a ^ 3 : Rˣ) : R)),
+  rw [mul_jonesDelta_add_inv, mul_assoc _ _ (_ * _), ← mul_assoc _ (((-a ^ 3 : Rˣ) : R)),
     Units.inv_mul, one_mul]
 
 /-- **Negative stabilization leaves the writhe-normalized trace unchanged.** The new crossing
@@ -279,7 +279,7 @@ theorem jonesTrace_stabilizeInv (a : Rˣ) (b : BraidGroup (n + 1)) :
     (by rw [map_inv, jones_sigma, jonesUnit_inv_val])]
   simp only [map_mul, map_inv, BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
     toAdd_mul, toAdd_inv, toAdd_ofAdd, neg_add, neg_neg, zpow_add, zpow_one, Units.val_mul]
-  rw [jonesDelta_mul_add_inv, mul_assoc _ _ (_ * _), ← mul_assoc (((-a ^ 3 : Rˣ) : R)),
+  rw [inv_mul_jonesDelta_add, mul_assoc _ _ (_ * _), ← mul_assoc (((-a ^ 3 : Rˣ) : R)),
     Units.mul_inv, one_mul]
 
 /-- On one strand the only braid is trivial, and its closure, the unknot, has writhe-normalized
@@ -301,10 +301,10 @@ bracket of the trefoil computed from a PD-code in
 theorem jonesTrace_sigma_pow_three (a : Rˣ) :
     jonesTrace (R := R) ⟨1, BraidGroup.sigma 0 ^ 3⟩ a =
       jonesDelta a * (((a⁻¹ : Rˣ) : R) ^ 4 + ((a⁻¹ : Rˣ) : R) ^ 12 - ((a⁻¹ : Rˣ) : R) ^ 16) := by
-  have he : markovTrace (a ^ 2) (jonesDelta_eq_neg_add a)
+  have he : markovTrace (a ^ 2) (jonesDelta_eq_neg_sq_add_inv_sq a)
       (e (jonesDelta a) 0 : TemperleyLieb R (jonesDelta a) 2) = jonesDelta a := by
     simpa [markovTrace_one] using
-      markovTrace_strandIncl_mul_e_last (a ^ 2) (jonesDelta_eq_neg_add a) (n := 0) 1
+      markovTrace_strandIncl_mul_e_last (a ^ 2) (jonesDelta_eq_neg_sq_add_inv_sq a) (n := 0) 1
   have hx : (jones (1 + 1) a (BraidGroup.sigma 0 ^ 3) : TemperleyLieb R (jonesDelta a) 2) =
       ((a : R) ^ 3) • 1 + (3 * (a : R) ^ 2 * ((a⁻¹ : Rˣ) : R) +
         3 * (a : R) * ((a⁻¹ : Rˣ) : R) ^ 2 * jonesDelta a +
