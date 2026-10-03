@@ -317,6 +317,19 @@ instance instFiniteGal : Finite L.Gal :=
 /-- The Galois group of a layer is finite, so it carries a `Fintype` structure. -/
 instance instFintypeGal : Fintype L.Gal := Fintype.ofFinite _
 
+/-- The top subgroup of a layer is normal in the ground subgroup, stated for the underlying
+subgroups of `G`: this is the form in which the continuous cohomology of the ground subgroup
+`L.ground.toSubgroup` takes it. -/
+instance instNormalSubgroupOf : (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).Normal :=
+  L.normal
+
+/-- The top subgroup is open in the ground subgroup, so the Galois group, presented as the
+quotient of the underlying subgroup `L.ground.toSubgroup` of `G`, is discrete. -/
+instance instDiscreteTopologyQuotient :
+    DiscreteTopology (L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup) :=
+  QuotientGroup.discreteTopology
+    (L.ground.toSubgroup.subgroupOf_isOpen L.top.toSubgroup L.top.isOpen)
+
 /-- The degree of a layer is positive. -/
 theorem degree_pos : 0 < L.degree :=
   L.degree_eq_natCard_gal ▸ Nat.card_pos
