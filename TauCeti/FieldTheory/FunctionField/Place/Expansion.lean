@@ -15,7 +15,8 @@ integral at `P` has a unique expansion modulo the `n`-th order filtration as a p
 `t` with `n` coefficients in `k`. This file constructs these finite coefficient vectors and
 characterizes them by the order of the remainder. The coefficients depend only on the
 function modulo the same filtration, and successive truncations agree. Constants have only
-a constant coefficient, and multiplication of integral functions gives coefficient convolution.
+a constant coefficient, the chosen uniformizer has only a degree-one coefficient, and
+multiplication of integral functions gives coefficient convolution.
 
 These are finite truncations: no completeness assumption or infinite series is used. They
 provide the finite approximation and uniqueness statements for the power-series construction
@@ -245,9 +246,27 @@ theorem truncatedExpansion_algebraMap (hP : P.degree = 1) (ht : P.ord t = 1)
   ext i
   by_cases hi : (i : ℕ) = 0 <;> simp [hi]
 
+/-- The chosen uniformizer has coefficient one in degree one and zero in every other degree,
+including at truncation lengths zero and one. -/
+@[simp]
+theorem truncatedExpansion_uniformizer (hP : P.degree = 1) (ht : P.ord t = 1) (n : ℕ) :
+    P.truncatedExpansion hP ht n
+      ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩ =
+      fun i : Fin n ↦ if (i : ℕ) = 1 then 1 else 0 := by
+  apply (P.truncatedExpansion_eq_iff hP ht n _ _).mpr
+  cases n with
+  | zero =>
+    simpa using P.mem_filtration_zero_iff.mpr
+      (P.mem_integers_iff_ord_nonneg.mpr (by omega : 0 ≤ P.ord t))
+  | succ n =>
+    cases n with
+    | zero => simpa [Fin.sum_univ_succ, ht] using P.mem_filtration_ord t
+    | succ n => simp [Fin.sum_univ_succ]
+
 /-- The coefficient of a product is the convolution of the coefficients of its factors.
 The sum ranges over bounded pairs of indices whose degrees add to the requested degree;
 terms of degree at least `n` vanish modulo the `n`-th order filtration. -/
+@[simp]
 theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
     (n : ℕ) (x y : P.integers) (i : Fin n) :
     P.truncatedExpansion hP ht n (x * y) i =
