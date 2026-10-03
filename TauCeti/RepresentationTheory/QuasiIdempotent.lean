@@ -8,9 +8,13 @@ module
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.OfModule
 public import TauCeti.RingTheory.PrimitiveIdempotent
+public import Mathlib.RepresentationTheory.Character
+
+import Mathlib.LinearAlgebra.PID
+import TauCeti.Algebra.MonoidAlgebra.Trace
 
 /-!
-# Intertwining maps out of the left ideal of a quasi-idempotent
+# Intertwining maps out of, and the character of, the left ideal of a quasi-idempotent
 
 Let `σ` be a representation of a monoid `G` on `V` over a commutative semiring `k`, and let `a` be
 an element of the monoid algebra `k[G]` that is **quasi-idempotent**: `a * a = κ • a` for a unit
@@ -37,6 +41,15 @@ its value at `a`, which therefore determines it; and that value lies in `a V` be
 `a = κ⁻¹ a a`. Conversely a vector `a v` of `a V` defines the intertwining map
 `x ↦ κ⁻¹ x (a v)`, which sends `a` to `κ⁻¹ a a v = a v`.
 
+For a finite group over a field the character of `k[G] a` is read off from the coefficients of
+`a` (`Representation.mul_char_ofModule'_span_singleton`):
+
+`κ * χ(g) = ∑ σ, a_{σ⁻¹ g⁻¹ σ}`.
+
+Right multiplication by `a` maps `k[G]` into the ideal and acts on it as `κ`, so composing it with
+left multiplication by `g` gives an endomorphism of `k[G]` whose trace is `κ * χ(g)`; the
+right-hand side is the same trace computed in the basis of group elements.
+
 ## Main definitions
 
 * `Representation.spanSingletonHomEquivRange`: **the dictionary**
@@ -49,6 +62,8 @@ its value at `a`, which therefore determines it; and that value lies in `a V` be
 * `Representation.spanSingletonHomEquivRange_symm_apply_smul_generator`: its inverse
   sends a vector of `a V` to the intertwining map taking `r a` to `r` applied to that vector.
 * `Representation.spanSingletonHomEquivRange_comp`: naturality in the target.
+* `Representation.mul_char_ofModule'_span_singleton`: the character of `k[G] a`, multiplied by
+  `κ`, is a sum of coefficients of `a` over the conjugates of `g⁻¹`.
 
 ## References
 
@@ -174,5 +189,40 @@ theorem spanSingletonHomEquivRange_comp {W : Type*} [AddCommMonoid W] [Module k 
     (spanSingletonHomEquivRange τ hκ ha (T.comp f) : W) =
       T (spanSingletonHomEquivRange σ hκ ha f) :=
   (rfl)
+
+/-! ### The character of the left ideal -/
+
+section Character
+
+variable {k G : Type*} [Field k] [Group G] [Fintype G] {a : k[G]} {κ : k}
+
+/-- **The character of the left ideal of a quasi-idempotent.** If `a * a = κ • a`, then `κ` times
+the character of `k[G] a` at `g` is `∑ σ, a_{σ⁻¹ g⁻¹ σ}`, the sum of the coefficients of `a` over
+the conjugates of `g⁻¹`, each counted once for every element of `G` conjugating `g⁻¹` to it. -/
+theorem mul_char_ofModule'_span_singleton (ha : a * a = κ • a) (g : G) :
+    κ * (ofModule' (k := k) (G := G) (Ideal.span {a} : Ideal k[G])).character g =
+      ∑ σ : G, a.coeff (σ⁻¹ * g⁻¹ * σ) := by
+  set I : Ideal k[G] := Ideal.span {a}
+  have hf : ∀ x, (LinearMap.mulLeft k (MonoidAlgebra.single g (1 : k)) *
+      LinearMap.mulRight k a) x ∈ I.restrictScalars k := fun x =>
+    I.mul_mem_left _ (I.mul_mem_left x (Ideal.subset_span (Set.mem_singleton a)))
+  -- the identity of carriers between `I` and its restriction of scalars to `k`
+  let e := (I.restrictScalarsEquiv k).restrictScalars k
+  have he : ∀ y, (e y : k[G]) = y := fun _ => rfl
+  have he' : ∀ y, (e.symm y : k[G]) = y := fun _ => rfl
+  rw [← TauCeti.MonoidAlgebra.trace_mulLeft_single_mul_mulRight,
+    ← LinearMap.trace_restrict_eq_of_forall_mem _ _ hf, character, ← smul_eq_mul, ← map_smul,
+    ← LinearMap.trace_conj' _ e]
+  congr 1
+  -- on the ideal, right multiplication by `a` is multiplication by `κ`
+  refine LinearMap.ext fun ⟨x, hx⟩ => Subtype.ext ?_
+  obtain ⟨r, rfl⟩ := Ideal.mem_span_singleton'.mp hx
+  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, he, he',
+    LinearMap.coe_restrict_apply, LinearMap.smul_apply, Submodule.coe_smul_of_tower,
+    TauCeti.Representation.ofModule'_apply, smul_eq_mul, Module.End.mul_apply,
+    LinearMap.mulRight_apply, LinearMap.mulLeft_apply]
+  rw [mul_assoc, ha, mul_smul_comm, mul_smul_comm]
+
+end Character
 
 end Representation
