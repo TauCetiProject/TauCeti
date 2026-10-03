@@ -244,8 +244,8 @@ theorem ContractionSemigroup.ofLpMultiplication_not_continuousAt_zero (hp : p �
   rw [dist_eq_norm] at hs
   exact (not_lt_of_ge hbound) hs
 
-/-- On ℓᵖ indexed by the natural numbers, the multiplier `m n = n + 1` gives a genuinely
-unbounded multiplication semigroup: it is not continuous in operator norm at zero. -/
+/-- On ℓᵖ indexed by the natural numbers, the unbounded multiplier `m n = n + 1` gives a
+multiplication contraction semigroup that is not continuous in operator norm at zero. -/
 theorem ContractionSemigroup.ofLpMultiplication_nat_not_continuousAt_zero (hp : p ≠ ∞) :
     ¬ ContinuousAt
       (fun t : ℝ≥0 => ofLpMultiplication hp (fun n : ℕ => (n : ℝ≥0) + 1) t) 0 := by
