@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Hecke characters

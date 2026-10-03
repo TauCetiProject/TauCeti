@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Continuous.Invariants
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Restriction, inflation and coefficient maps in continuous cohomology

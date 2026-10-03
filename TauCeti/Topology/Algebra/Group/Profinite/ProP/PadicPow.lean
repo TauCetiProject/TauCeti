@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.RingHoms
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic

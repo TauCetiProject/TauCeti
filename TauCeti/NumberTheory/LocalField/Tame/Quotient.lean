@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Tame.Character
 public import TauCeti.NumberTheory.LocalField.Unramified.ZHat
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The tame quotient of the absolute Galois group

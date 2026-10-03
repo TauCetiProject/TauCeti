@@ -21,7 +21,7 @@ that the three observables — homomorphism densities, the cut norm, and the cut
 see the difference between two representatives of one class, and exhibits the reverse passage: an
 a.e. `[0, 1]`-valued, a.e. symmetric class is the class of a strict graphon.
 
-**Why the bridge is a deliverable and not a definition change.** Carrying the strict function is
+**The strict and almost-everywhere views.** Carrying the strict function is
 what makes `U - W` a literal kernel and `∀ x y, W x y ∈ Set.Icc 0 1` a stateable hypothesis, so the
 cut norm and the counting lemma never carry a null-set side condition.  The price is that
 representatives are not unique, and analytic arguments that produce a function only up to a null
@@ -84,11 +84,6 @@ needed, since a class has no reason to have a representative with either propert
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 3 — the AE / `AEEqFun` view, with
-  `toAEEqFun`, the measurable-representative section, and the invariance theorems
-  `homDensity_congr_ae`, `cutNorm_congr_ae`, `cutDist_eq_zero_of_aeEq`.  The signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.  The conditional-expectation and martingale
-  arguments that consume this view are Layer 4 and are not built here.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §6 — graphons up to a.e. equality.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.
