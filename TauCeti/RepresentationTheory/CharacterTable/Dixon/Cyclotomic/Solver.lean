@@ -31,7 +31,7 @@ computes the candidate ordinary table by coefficientwise exact division.  The ex
 cyclotomic checker is the final gate: a candidate is returned only when the division-free
 central-to-ordinary identity and all other character-table identities hold.
 
-The complete algorithm, `TauCeti.ClassData.characterTableDixon?`, chooses the prime itself: it
+The assembled algorithm, `TauCeti.ClassData.characterTableDixon?`, chooses the prime itself: it
 runs this solver at the Dixon prime data found by `TauCeti.DixonPrimeData.candidates`, in
 increasing order of the prime, and returns the first table accepted.
 
@@ -45,8 +45,8 @@ needs the coefficient bound discussed in the cyclotomic-lift module.
 
 * `TauCeti.ClassData.CyclotomicCharacterTableData`: numbered exact cyclotomic output data.
 * `TauCeti.ClassData.dixonCyclotomicCharacterTable?`: the executable exact-cyclotomic solver.
-* `TauCeti.ClassData.characterTableDixon?`: the solver run at searched Dixon primes, the complete
-  Burnside--Dixon--Schneider algorithm.
+* `TauCeti.ClassData.characterTableDixon?`: the solver run at searched Dixon primes, the assembled
+  Burnside--Dixon--Schneider algorithm with a bounded prime search.
 
 ## Main results
 
@@ -60,7 +60,7 @@ needs the coefficient bound discussed in the cyclotomic-lift module.
 * `TauCeti.ClassData.isCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some`: after
   embedding, every returned table satisfies the complex character-table specification.
 * `TauCeti.ClassData.isCharacterTableSpec_of_characterTableDixon?_eq_some`: **soundness of the
-  complete algorithm**, every table it returns is the character table up to the order of its rows.
+  assembled algorithm**, every table it returns is the character table up to the order of its rows.
 * `TauCeti.ClassData.isSome_characterTableDixon?_of_isSome` and
   `TauCeti.ClassData.characterTableDixon?_eq_some_of_le`: the algorithm succeeds as soon as the
   solver does at a prime it reaches, and a larger budget does not change its answer.
@@ -419,7 +419,7 @@ theorem isCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some
 
 /-! ### Searching for the prime
 
-The solver above runs at one given Dixon prime. The complete algorithm chooses the prime itself:
+The solver above runs at one given Dixon prime. The assembled algorithm chooses the prime itself:
 it walks through the Dixon prime data found by `TauCeti.DixonPrimeData.candidates` and returns the
 first table the solver accepts there. -/
 

@@ -51,7 +51,7 @@ with the complex character table up to row order.
   recovers every exact entry from its two conjugate residues.
 * `TauCeti.isSome_dixonCyclotomicCharacterTable_cyclicGroupThree`: the assembled exact solver
   succeeds on the certified data.
-* `TauCeti.isSome_characterTableDixon_cyclicGroupThree`: the complete algorithm, searching for
+* `TauCeti.isSome_characterTableDixon_cyclicGroupThree`: the assembled algorithm, searching for
   its own prime, reaches `7` and succeeds there.
 * `TauCeti.isCharacterTableSpec_cyclicGroupThree`: the embedded exact table satisfies the complex
   character-table specification.
@@ -328,7 +328,8 @@ and the solver succeeds there. -/
 theorem isSome_characterTableDixon_cyclicGroupThree :
     ((cyclicClassData 3).characterTableDixon? 3 (by simp) 2).isSome = true :=
   (cyclicClassData 3).isSome_characterTableDixon?_of_isSome 3 (by simp)
-    cyclicGroupThreeDixonPrimeData (DixonPrimeData.ofPrime?_eq_some (by decide)) (by decide)
+    cyclicGroupThreeDixonPrimeData (DixonPrimeData.ofPrime?_eq_some
+      (ZMod.map_val_primitiveRoot?_eq_some_iff.mpr (by decide))) (by decide)
     isSome_dixonCyclotomicCharacterTable_cyclicGroupThree
 
 end TauCeti

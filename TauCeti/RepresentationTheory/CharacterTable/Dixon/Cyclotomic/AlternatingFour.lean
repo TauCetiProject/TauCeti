@@ -55,7 +55,7 @@ simultaneously sees a nonlinear row and genuinely cyclotomic values.
   recovers every exact ordinary-table entry from its conjugate residues.
 * `TauCeti.isSome_dixonCyclotomicCharacterTable_alternatingGroupFour`: the assembled exact solver
   succeeds on the certified data.
-* `TauCeti.isSome_characterTableDixon_alternatingGroupFour`: the complete algorithm, searching for
+* `TauCeti.isSome_characterTableDixon_alternatingGroupFour`: the assembled algorithm, searching for
   its own prime, reaches `13` and succeeds there.
 * `TauCeti.isCyclotomicCharacterTableSpec_alternatingGroupFour`: the exact tables pass the
   executable cyclotomic certificate.
@@ -470,7 +470,8 @@ theorem isSome_characterTableDixon_alternatingGroupFour :
       exponent_alternatingGroup_four.symm 2).isSome = true :=
   alternatingGroupFourClassData.isSome_characterTableDixon?_of_isSome 6
     exponent_alternatingGroup_four.symm alternatingGroupFourSolverDixonPrimeData
-    (DixonPrimeData.ofPrime?_eq_some (by decide)) (by decide)
+    (DixonPrimeData.ofPrime?_eq_some
+      (ZMod.map_val_primitiveRoot?_eq_some_iff.mpr (by decide))) (by decide)
     isSome_dixonCyclotomicCharacterTable_alternatingGroupFour
 
 end TauCeti
