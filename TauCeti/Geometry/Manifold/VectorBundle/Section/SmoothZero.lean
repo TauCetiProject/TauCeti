@@ -64,11 +64,11 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     (∀ x, s x = 0 → ContMDiffAt 𝓘(𝕜, X) (I.prod 𝓘(𝕜, F)) m
       (fun y ↦ (⟨b y, s y⟩ : TotalSpace F E)) x) →
     (∀ x, s x = 0 →
-      ContinuousLinearMap.IsFredholm (sectionLinearization (𝕜 := 𝕜) (F := F) b s x)) →
+      ContinuousLinearMap.IsFredholm (sectionLinearization (F := F) 𝓘(𝕜, X) b s x)) →
     (∀ x, s x = 0 →
-      Function.Surjective (sectionLinearization (𝕜 := 𝕜) (F := F) b s x)) →
+      Function.Surjective (sectionLinearization (F := F) 𝓘(𝕜, X) b s x)) →
     (∀ x, s x = 0 →
-      LinearMap.index (sectionLinearization (𝕜 := 𝕜) (F := F) b s x).toLinearMap = n) →
+      LinearMap.index (sectionLinearization (F := F) 𝓘(𝕜, X) b s x).toLinearMap = n) →
     ∃ cs : ChartedSpace (Fin n → 𝕜) ↥{y | s y = 0},
       letI := cs
       IsManifold 𝓘(𝕜, Fin n → 𝕜) m ↥{y | s y = 0} ∧
@@ -76,7 +76,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
           (Subtype.val : ↥{y | s y = 0} → X) ∧
         ∀ z : ↥{y | s y = 0},
           (mvfderiv 𝓘(𝕜, Fin n → 𝕜) Subtype.val z).range =
-            (sectionLinearization (𝕜 := 𝕜) (F := F) b s z.1).ker := by
+            (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.1).ker := by
   let := ContMDiffVectorBundle.of_le (F := F) (E := E) (IB := I)
     (ENat.one_le_iff_ne_zero_withTop.mpr hm)
   intro hs hFred hsurj hindex
@@ -96,16 +96,22 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
   have hf (z : ↥{y | s y = 0}) :
       HasStrictFDerivAt (fun y ↦ (e z ⟨b y, s y⟩).2) (D z) z.1 :=
     (hcoord z z (he z)).hasStrictFDerivAt hm
-  have hF (z : ↥{y | s y = 0}) : ContinuousLinearMap.IsFredholm (D z) :=
-    (isFredholm_sectionLinearization_iff (hb z) (he z)
-      ((hcoord z z (he z)).differentiableAt hm) z.2).1 (hFred z.1 z.2)
-  have hS (z : ↥{y | s y = 0}) : Function.Surjective (D z) :=
-    (surjective_sectionLinearization_iff (hb z) (he z)
-      ((hcoord z z (he z)).differentiableAt hm) z.2).1 (hsurj z.1 z.2)
+  have hmd (z : ↥{y | s y = 0}) :
+      MDifferentiableAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 :=
+    ((hcoord z z (he z)).differentiableAt hm).mdifferentiableAt
+  have hD (z : ↥{y | s y = 0}) :
+      mvfderiv 𝓘(𝕜, X) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 = D z :=
+    mvfderiv_eq_fderiv
+  have hF (z : ↥{y | s y = 0}) : ContinuousLinearMap.IsFredholm (D z) := by
+    rw [← hD]
+    exact (isFredholm_sectionLinearization_iff (hb z) (he z) (hmd z) z.2).1 (hFred z.1 z.2)
+  have hS (z : ↥{y | s y = 0}) : Function.Surjective (D z) := by
+    rw [← hD]
+    exact (surjective_sectionLinearization_iff (hb z) (he z) (hmd z) z.2).1 (hsurj z.1 z.2)
   have hN (z : ↥{y | s y = 0}) : ContinuousLinearMap.index (D z) = n := by
-    rw [← index_sectionLinearization (hb z) (he z)
-      ((hcoord z z (he z)).differentiableAt hm) z.2]
-    exact hindex z.1 z.2
+    rw [ContinuousLinearMap.index_def, ← hindex z.1 z.2,
+      index_sectionLinearization (hb z) (he z) (hmd z) z.2]
+    exact congrArg (fun T : X →L[𝕜] F ↦ LinearMap.index T.toLinearMap) (hD z).symm
   have hsmooth : m ≠ 0 → ∀ z w : ↥{y | s y = 0}, b w.1 ∈ (e z).baseSet →
       w.1 ∈ (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hS z))
         (hF z).closedComplemented_ker →
@@ -123,8 +129,9 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hS z)).2 (hN z))
   let T : (Fin n → 𝕜) →L[𝕜] X :=
     (D z).ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] (D z).ker)
-  have hrange : T.range = (sectionLinearization (𝕜 := 𝕜) (F := F) b s z.1).ker :=
-    range_subtypeL_comp_eq_ker_sectionLinearization (hb z) (he z) (hf z).hasFDerivAt z.2 K
+  have hrange : T.range = (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.1).ker :=
+    range_subtypeL_comp_eq_ker_sectionLinearization (hb z) (he z)
+      (hf z).hasFDerivAt.hasMFDerivAt z.2 K
   have hd := (hasMFDerivAt_coe_sectionZero hf hF hS hN
     (fun z ↦ (hb z).continuousAt) he z).mfderiv
   have hv : mvfderiv 𝓘(𝕜, Fin n → 𝕜) (Subtype.val : ↥{y | s y = 0} → X) z = T := by

@@ -60,14 +60,14 @@ variable {X Λ B F EB HB : Type*} {E : B → Type*}
 separate condition. -/
 def IsRegularSectionParameter (b : X × Λ → B) (s : ∀ z, E (b z)) (l : Λ) : Prop :=
   ∀ x, s (x, l) = 0 → Surjective
-    ((sectionLinearization (𝕜 := ℝ) (F := F) b s (x, l)).comp
+    ((sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s (x, l)).comp
       (ContinuousLinearMap.inl ℝ X Λ))
 
 /-- Characterization of a regular parameter by the partial linearizations at its zeros. -/
 theorem isRegularSectionParameter_iff {l : Λ} :
     IsRegularSectionParameter (F := F) b s l ↔
       ∀ x, s (x, l) = 0 → Surjective
-        ((sectionLinearization (𝕜 := ℝ) (F := F) b s (x, l)).comp
+        ((sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s (x, l)).comp
           (ContinuousLinearMap.inl ℝ X Λ)) :=
   (Iff.rfl)
 
@@ -79,6 +79,9 @@ theorem isRegularSectionParameter_trivial (b : X × Λ → B) (f : X × Λ → F
       IsRegularParameter f 0 l := by
   simp only [isRegularSectionParameter_iff, isRegularParameter_iff,
     sectionLinearization_trivial]
+  refine forall₂_congr fun x _ ↦ ?_
+  rw [show mvfderiv 𝓘(ℝ, X × Λ) f (x, l) = fderiv ℝ f (x, l) from mvfderiv_eq_fderiv]
+  exact Iff.rfl
 
 variable [CompleteSpace X] [CompleteSpace Λ] [CompleteSpace F]
 
@@ -88,7 +91,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
     (hFred : ContinuousLinearMap.IsFredholm
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)))
-    (htotal : Surjective (sectionLinearization (𝕜 := ℝ) (F := F) b s z))
+    (htotal : Surjective (sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s z))
     (hn : ((finrank ℝ
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n)
@@ -96,7 +99,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
     (hb : ∀ w, s w = 0 → MDifferentiableAt 𝓘(ℝ, X × Λ) I b w) :
     ∃ Q ∈ 𝓝 (⟨z, hz⟩ : ↥{w | s w = 0}), ∃ A : Set Λ, IsNowhereDense A ∧
       ∀ w : ↥{w | s w = 0}, w ∈ Q →
-        ¬ Surjective ((sectionLinearization (𝕜 := ℝ) (F := F) b s w).comp
+        ¬ Surjective ((sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s w).comp
           (ContinuousLinearMap.inl ℝ X Λ)) → (w : X × Λ).2 ∈ A := by
   let e := trivializationAt F E (b z)
   let f : X × Λ → F := fun w ↦ (e ⟨b w, s w⟩).2
@@ -114,8 +117,10 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
   have he : b z ∈ e.baseSet := mem_baseSet_trivializationAt F E (b z)
   have hsurj : Surjective (D₁.coprod D₂) := by
     rw [ContinuousLinearMap.coprod_comp_inl_inr]
+    have hD : mvfderiv 𝓘(ℝ, X × Λ) f z = fderiv ℝ f z := mvfderiv_eq_fderiv
+    rw [← hD]
     exact (surjective_sectionLinearization_iff (hb z hz) he
-      (hfn.differentiableAt hn0) hz).mp htotal
+      (hfn.differentiableAt hn0).mdifferentiableAt hz).mp htotal
   have hfzero : f z = 0 := by
     dsimp only [f]
     rw [hz]
@@ -168,8 +173,9 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
       (ContinuousLinearMap.inl ℝ X Λ)) := by
     intro hcoord
     apply hbad
-    rw [sectionLinearization_eq_symmL_comp (hb w w.2) hwe hw.2 w.2,
-      ContinuousLinearMap.comp_assoc, ← e.symm_continuousLinearEquivAt_eq' hwe]
+    have hD : mvfderiv 𝓘(ℝ, X × Λ) f w = fderiv ℝ f w := mvfderiv_eq_fderiv
+    rw [sectionLinearization_eq_symmL_comp (hb w w.2) hwe hw.2.mdifferentiableAt w.2, hD,
+      ← e.symm_continuousLinearEquivAt_eq' hwe]
     exact (e.continuousLinearEquivAt ℝ (b w) hwe).symm.surjective.comp hcoord
   refine ⟨Φ v, ⟨hvQ.2, ?_⟩, ?_⟩
   · simp only [Set.mem_ofPred_eq]
@@ -184,7 +190,8 @@ variable [SecondCountableTopology ↥{z | s z = 0}] {n : ℕ∞ω}
     (hFred : ∀ z, s z = 0 → ContinuousLinearMap.IsFredholm
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)))
-    (htotal : ∀ z, s z = 0 → Surjective (sectionLinearization (𝕜 := ℝ) (F := F) b s z))
+    (htotal : ∀ z, s z = 0 →
+      Surjective (sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s z))
     (hn : ∀ z, s z = 0 → ((finrank ℝ
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n)

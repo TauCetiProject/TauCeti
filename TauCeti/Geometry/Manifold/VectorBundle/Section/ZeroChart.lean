@@ -288,7 +288,7 @@ theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
     (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
     (hf : HasStrictFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) T x)
     (hFred : ContinuousLinearMap.IsFredholm T)
-    (hsurj : Function.Surjective (sectionLinearization (𝕜 := 𝕜) (F := F) b s x))
+    (hsurj : Function.Surjective (sectionLinearization (F := F) 𝓘(𝕜, X) b s x))
     (hindex : ContinuousLinearMap.index T = n) (hz : s x = 0)
     (hs : ContDiffAt 𝕜 m (fun y ↦ (e ⟨b y, s y⟩).2) x) :
     ∃ χ : OpenPartialHomeomorph ↥{y | s y = 0} (Fin n → 𝕜),
@@ -296,10 +296,13 @@ theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
       ContDiffAt 𝕜 m (fun k ↦ (χ.symm k : X)) 0 ∧
       Function.Injective (fderiv 𝕜 (fun k ↦ (χ.symm k : X)) 0) ∧
       (fderiv 𝕜 (fun k ↦ (χ.symm k : X)) 0).range =
-        (sectionLinearization (𝕜 := 𝕜) (F := F) b s x).ker := by
+        (sectionLinearization (F := F) 𝓘(𝕜, X) b s x).ker := by
+  have hD : mvfderiv 𝓘(𝕜, X) (fun y ↦ (e ⟨b y, s y⟩).2) x = T := by
+    rw [← hf.hasFDerivAt.fderiv]
+    exact mvfderiv_eq_fderiv
   have hsurjT := (surjective_sectionLinearization_iff hb he
-    hf.hasFDerivAt.differentiableAt hz).1 hsurj
-  rw [hf.hasFDerivAt.fderiv] at hsurjT
+    hf.hasFDerivAt.differentiableAt.mdifferentiableAt hz).1 hsurj
+  rw [hD] at hsurjT
   have hT : T.range = ⊤ := LinearMap.range_eq_top.2 hsurjT
   have hn : Module.finrank 𝕜 T.ker = n :=
     (ContinuousLinearMap.finrank_ker_eq_iff_index_eq T hsurjT).2 hindex
@@ -333,7 +336,7 @@ theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
     simpa only [map_zero, Function.comp_def, ← hχ] using hc
   · rwa [hderiv.fderiv]
   · rw [hderiv.fderiv]
-    exact range_subtypeL_comp_eq_ker_sectionLinearization hb he hf.hasFDerivAt hz K
+    exact range_subtypeL_comp_eq_ker_sectionLinearization hb he hf.hasFDerivAt.hasMFDerivAt hz K
 
 end Fredholm
 
