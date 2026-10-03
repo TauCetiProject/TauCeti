@@ -62,6 +62,17 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 
 /-! ### Strata do not depend on the chart -/
 
+/-- A cone `τ` of a fan, viewed as a face of a cone `σ` containing it. This is the affine stratum
+in the chart of `σ` that represents the global orbit of `τ`. -/
+def orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) : σ.1.Face :=
+  ⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 h⟩
+
+/-- The cone underlying `orbitFace` is the smaller cone. -/
+@[simp]
+theorem coe_orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) :
+    (Φ.orbitFace h : PointedCone ℝ V) = τ.1 :=
+  (rfl)
+
 /-- A map of the chart diagram sends the stratum of a face of the smaller cone into the stratum of
 the same cone, viewed as a face of the larger cone. -/
 private theorem analyticAffineChartDiagram_map_mem_affineConeOrbit {τ σ : Φ.cones} (f : τ ⟶ σ)
@@ -119,11 +130,11 @@ theorem analyticDistinguishedPoint_def (σ : Φ.cones) :
 point of `τ` as a face of `σ`. -/
 theorem analyticAffineChartι_distinguishedPoint {τ σ : Φ.cones} (h : τ ≤ σ) :
     Φ.analyticAffineChartι hΦ σ
-        (distinguishedPoint Φ.lattice (⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 h⟩ : σ.1.Face)) =
+        (distinguishedPoint Φ.lattice (Φ.orbitFace h)) =
       Φ.analyticDistinguishedPoint hΦ τ := by
   have hd : (Φ.analyticAffineChartDiagram hΦ).map (homOfLE h)
       (distinguishedPoint Φ.lattice (⊤ : τ.1.Face)) =
-        distinguishedPoint Φ.lattice (⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 h⟩ : σ.1.Face) := by
+        distinguishedPoint Φ.lattice (Φ.orbitFace h) := by
     rw [analyticAffineChartDiagram_map_apply Φ hΦ (homOfLE h)
         (distinguishedPoint Φ.lattice (⊤ : τ.1.Face)),
       ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h)]
@@ -175,13 +186,13 @@ theorem analyticAffineChartι_mem_analyticConeOrbit_iff {σ τ : Φ.cones}
   have hτσ : τ ≤ σ := Subtype.coe_le_coe.1 (hF ▸ F.toPointedCone_le)
   have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
   -- `x` is a torus translate of the distinguished point of `F`, which is that of `τ`.
-  have hFτ : F = ⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 hτσ⟩ := PointedCone.Face.ext fun y ↦
+  have hFτ : F = Φ.orbitFace hτσ := PointedCone.Face.ext fun y ↦
     SetLike.ext_iff.mp hF y
   rw [affineConeOrbit_eq_orbit Φ.lattice hσ, hFτ] at hx
   obtain ⟨t, ht⟩ := hx
   have hxt : Φ.analyticAffineChartι hΦ σ x = t • Φ.analyticDistinguishedPoint hΦ τ := by
     rw [← Φ.analyticAffineChartι_distinguishedPoint hΦ hτσ, Φ.smul_analyticAffineChartι hΦ t σ
-      (distinguishedPoint Φ.lattice (⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 hτσ⟩ : σ.1.Face))]
+      (distinguishedPoint Φ.lattice (Φ.orbitFace hτσ))]
     exact congrArg _ ht.symm
   rw [hxt, analyticConeOrbit_eq_orbit]
   exact MulAction.mem_orbit _ t
@@ -189,16 +200,16 @@ theorem analyticAffineChartι_mem_analyticConeOrbit_iff {σ τ : Φ.cones}
 /-- The orbit of a face `τ` of `σ` meets the chart of `σ` in the stratum of `τ`. -/
 theorem preimage_analyticAffineChartι_analyticConeOrbit {τ σ : Φ.cones} (h : τ ≤ σ) :
     Φ.analyticAffineChartι hΦ σ ⁻¹' Φ.analyticConeOrbit hΦ τ =
-      affineConeOrbit Φ.lattice (⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 h⟩ : σ.1.Face) := by
+      affineConeOrbit Φ.lattice (Φ.orbitFace h) := by
   have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
   ext x
   obtain ⟨F, hx, hF⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice hσ x
   rw [mem_preimage, Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hx]
   refine ⟨fun hFτ ↦ ?_, fun hτ ↦ ?_⟩
-  · have : F = ⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 h⟩ := PointedCone.Face.ext fun y ↦
+  · have : F = Φ.orbitFace h := PointedCone.Face.ext fun y ↦
       SetLike.ext_iff.mp hFτ y
     rwa [this] at hx
-  · rw [← hF _ hτ]
+  · rw [← hF _ hτ, Φ.coe_orbitFace]
 
 /-- The orbit of a cone `τ` does not meet the chart of a cone `σ` that does not contain `τ`. -/
 theorem preimage_analyticAffineChartι_analyticConeOrbit_of_not_le {τ σ : Φ.cones}
@@ -223,8 +234,7 @@ theorem mem_range_analyticAffineChartι_iff {σ τ : Φ.cones} {x : Φ.analyticR
   · intro h
     rw [Φ.analyticConeOrbit_eq_orbit hΦ] at hx
     obtain ⟨t, rfl⟩ := hx
-    refine ⟨t • distinguishedPoint Φ.lattice
-      (⟨σ.1, Φ.isFaceOf_of_le τ.2 σ.2 h⟩ : τ.1.Face), ?_⟩
+    refine ⟨t • distinguishedPoint Φ.lattice (Φ.orbitFace h), ?_⟩
     exact (Φ.smul_analyticAffineChartι hΦ t τ _).symm.trans
       (congrArg (t • ·) (Φ.analyticAffineChartι_distinguishedPoint hΦ h))
 

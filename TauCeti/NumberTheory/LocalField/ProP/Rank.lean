@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Inflation
 public import TauCeti.NumberTheory.LocalField.Cohomology
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
 
 /-!
@@ -20,6 +21,7 @@ then gives finite generation by the pro-`p` Burnside basis theorem.
 For a compatible extension of `ℚ_[p]` containing a primitive `p`th root of unity, the
 generator rank is `[K : ℚ_[p]] + 2`. This is the rank used in Demushkin presentations; its
 computation needs only degree-one cohomology, independently of degree-two local duality.
+In particular `ℚ_p(μ_p)` has generator rank `p + 1`.
 
 ## References
 
@@ -71,5 +73,20 @@ theorem topologicalGeneratorRankNat_absoluteGaloisGroupProP_of_mu
       Module.finrank ℚ_[p] K + 2 :=
   ((isProP_absoluteGaloisGroupProP p K).finrank_cohomFp_one hfg).symm.trans
     (finrank_cohomFp_one_absoluteGaloisGroupProP_of_exists_isPrimitiveRoot p K hmu)
+
+/-- The maximal pro-`p` Galois group of `ℚ_p(μ_p)` has generator rank `p + 1`.
+The statement applies to any compatible local-field model of the cyclotomic extension. -/
+theorem topologicalGeneratorRankNat_cyclotomic_prime_ratPadic
+    [IsCyclotomicExtension {p} ℚ_[p] K]
+    (hfg : IsTopologicallyFinitelyGenerated (absoluteGaloisGroupProP p K)) :
+    topologicalGeneratorRankNat (absoluteGaloisGroupProP p K) hfg = p + 1 := by
+  have : IsCyclotomicExtension {p ^ (0 + 1)} ℚ_[p] K := by
+    simpa using (inferInstance : IsCyclotomicExtension {p} ℚ_[p] K)
+  have hdegree : Module.finrank ℚ_[p] K = p - 1 := by
+    simpa using finrank_cyclotomic_prime_pow_ratPadic p K 0
+  rw [topologicalGeneratorRankNat_absoluteGaloisGroupProP_of_mu p K hfg
+    ⟨IsCyclotomicExtension.zeta p ℚ_[p] K, IsCyclotomicExtension.zeta_spec p ℚ_[p] K⟩, hdegree]
+  have hp := (Fact.out : p.Prime).two_le
+  omega
 
 end TauCeti
