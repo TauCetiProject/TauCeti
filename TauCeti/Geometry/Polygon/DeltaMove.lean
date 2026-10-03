@@ -31,10 +31,14 @@ polygon after the move it is exactly the condition `D ∩ k' = v ∪ w` of the i
 (`Polygon.isDeltaMove_iff_of_isSimple_insertVertex`). A Δ-move keeps a polygon simple, and so does
 its inverse (`Polygon.IsDeltaMove.isSimple_insertVertex_iff`).
 
+Δ-moves across a degenerate triangle `D` are also admitted. For a Δ-move between simple polygons
+such a triangle is the edge `u` itself, and the move subdivides `u` at a point `c` of it; this is
+the elementary move `TauCeti.SimplePolygon.IsElementaryMove.subdivide`.
+
 The vertex labels of `Polygon P n` carry a base point that the polygonal knot does not have.
 Relabelling the vertices cyclically, `Polygon.rotate`, gives the same oriented polygon, and it is
-the second kind of elementary move on `TauCeti.SimplePolygon`. The equivalence relation generated
-by both, `TauCeti.SimplePolygon.CombinatoriallyEquivalent`, is combinatorial equivalence of
+the last kind of elementary move on `TauCeti.SimplePolygon`. The equivalence relation generated
+by the three, `TauCeti.SimplePolygon.CombinatoriallyEquivalent`, is combinatorial equivalence of
 oriented polygonal knots when the ambient space is `ℝ³`. For example, a triangle becomes the
 parallelogram it spans by a Δ-move (`Affine.Triangle.isDeltaMove_parallelogram`).
 
@@ -43,7 +47,8 @@ parallelogram it spans by a Δ-move (`Affine.Triangle.isDeltaMove_parallelogram`
 * `Polygon.rotate`: the cyclic relabelling of the vertices of a polygon.
 * `Polygon.insertVertex`: the polygon with a new vertex inserted after vertex `i`.
 * `Polygon.IsDeltaMove`: the condition for inserting a vertex to be a Δ-move.
-* `TauCeti.SimplePolygon.IsElementaryMove`: a cyclic relabelling or a Δ-move of a simple polygon.
+* `TauCeti.SimplePolygon.IsElementaryMove`: a cyclic relabelling, a Δ-move, or a subdivision of an
+  edge of a simple polygon.
 * `TauCeti.SimplePolygon.CombinatoriallyEquivalent`: the equivalence relation they generate.
 
 ## Main results
@@ -683,6 +688,15 @@ omit [Nontrivial R] in
 theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
   rfl
 
+omit [Nontrivial R] in
+/-- The simple polygon obtained from `p` by inserting `c` after vertex `i`, when the result is
+simple. For `c` a point of edge `i`, this subdivides that edge. -/
+@[expose] def subdivide (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) : SimplePolygon R P where
+  numVertices := p.numVertices + 1
+  toPolygon := p.toPolygon.insertVertex i c
+  isSimple := hq
+
 @[simp]
 theorem deltaMove_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (h : p.toPolygon.IsDeltaMove R i c) : (p.deltaMove i c h).numVertices = p.numVertices + 1 :=
@@ -694,18 +708,43 @@ theorem deltaMove_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c :
     (p.deltaMove i c h).toPolygon = p.toPolygon.insertVertex i c :=
   rfl
 
+omit [Nontrivial R] in
+@[simp]
+theorem subdivide_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.subdivide i c hq).numVertices = p.numVertices + 1 :=
+  rfl
+
+omit [Nontrivial R] in
+@[simp]
+theorem subdivide_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.subdivide i c hq).toPolygon = p.toPolygon.insertVertex i c :=
+  rfl
+
 /-- The **elementary moves** on simple polygons: a cyclic relabelling of the vertices, which keeps
-the oriented polygon, and a Δ-move. The inverse Δ-moves are not listed separately; the equivalence
-relation `TauCeti.SimplePolygon.CombinatoriallyEquivalent` they generate is symmetric. -/
+the oriented polygon, a Δ-move, and a degenerate Δ-move, which subdivides an edge. The inverse
+moves are not listed separately; the equivalence relation
+`TauCeti.SimplePolygon.CombinatoriallyEquivalent` they generate is symmetric.
+
+A degenerate Δ-move is one whose triangle `D` collapses to a segment. If the result is to be a
+simple polygon again, the new vertex `c` lies on the edge `u` it replaces, so `D = u` and
+`D ∩ k = u` holds automatically; the move subdivides `u` at `c`, and its inverse removes a vertex
+at which the polygon does not turn. -/
 inductive IsElementaryMove : SimplePolygon R P → SimplePolygon R P → Prop
   /-- Relabel the vertices cyclically. -/
   | rotate (p : SimplePolygon R P) : IsElementaryMove p p.rotate
   /-- Replace an edge by the other two sides of a triangle meeting the polygon only in that edge. -/
   | deltaMove (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
       (h : p.toPolygon.IsDeltaMove R i c) : IsElementaryMove p (p.deltaMove i c h)
+  /-- Subdivide an edge at one of its points, a degenerate Δ-move. -/
+  | subdivide (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+      (hc : c ∈ p.toPolygon.edgeSet R i) (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+      IsElementaryMove p (p.subdivide i c hq)
 
 /-- **Combinatorial equivalence** of simple polygons (Burde–Zieschang, Definition 1.7): the
-equivalence relation generated by Δ-moves and cyclic relabellings. For simple polygons in `ℝ³`,
+equivalence relation generated by Δ-moves, including the degenerate ones that subdivide an edge,
+and cyclic relabellings. For simple polygons in `ℝ³`,
 the polygonal presentations of oriented knots, it coincides with ambient isotopy of oriented knots
 (Burde–Zieschang, Proposition 1.10, not formalized here). -/
 def CombinatoriallyEquivalent : SimplePolygon R P → SimplePolygon R P → Prop :=
@@ -764,6 +803,13 @@ theorem combinatoriallyEquivalent_deltaMove (p : SimplePolygon R P) (i : Fin p.n
     (c : P) (h : p.toPolygon.IsDeltaMove R i c) :
     CombinatoriallyEquivalent p (p.deltaMove i c h) :=
   (IsElementaryMove.deltaMove p i c h).combinatoriallyEquivalent
+
+
+/-- A simple polygon is combinatorially equivalent to the result of subdividing one of its edges. -/
+theorem combinatoriallyEquivalent_subdivide (p : SimplePolygon R P) (i : Fin p.numVertices)
+    (c : P) (hc : c ∈ p.toPolygon.edgeSet R i) (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    CombinatoriallyEquivalent p (p.subdivide i c hq) :=
+  (IsElementaryMove.subdivide p i c hc hq).combinatoriallyEquivalent
 
 end SimplePolygon
 
