@@ -12,8 +12,9 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restrictio
 /-!
 # Low-degree functoriality for finite normal layers
 
-The Artin map is obtained by reading Tate's isomorphism between degrees `-2` and `0` through two
-canonical identifications. This file records how the degree `-2` identification behaves under a
+The Artin map is obtained by reading Tate's isomorphism between degrees `-2` and `0` through the
+layer's low-degree identifications; the degree `-2` one carries the sign normalization required by
+the character formula. This file records how the degree `-2` identification behaves under a
 restriction of finite normal layers. Restriction in degree `-2` is group-theoretic transfer, while
 corestriction is induced by inclusion of Galois groups.
 
