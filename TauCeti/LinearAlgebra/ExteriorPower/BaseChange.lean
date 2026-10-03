@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
+import Mathlib.LinearAlgebra.TensorProduct.Decomposition
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
@@ -33,6 +34,7 @@ variable [CommRing R] [CommRing A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- The exterior-algebra comparison preserves each homogeneous degree. -/
+@[simp]
 theorem ExteriorAlgebra.equivBaseChange_map_exteriorPower (n : ℕ) :
     (⋀[A]^n (A ⊗[R] M)).map (_root_.ExteriorAlgebra.equivBaseChange A).toLinearMap =
       (⋀[R]^n M).baseChange A := by
@@ -56,17 +58,9 @@ namespace TauCeti.exteriorPower
 
 private theorem baseChange_subtype_injective (n : ℕ) :
     Function.Injective ((⋀[R]^n M).subtype.baseChange A) := by
-  let π : ExteriorAlgebra R M →ₗ[R] ⋀[R]^n M :=
-    (DirectSum.component R ℕ (fun i ↦ ⋀[R]^i M) n).comp
-      (DirectSum.decomposeLinearEquiv (fun i ↦ ⋀[R]^i M)).toLinearMap
-  have hπ : π.comp (⋀[R]^n M).subtype = LinearMap.id := by
-    apply LinearMap.ext
-    intro x
-    simp only [π, LinearMap.comp_apply, Submodule.coe_subtype, LinearEquiv.coe_coe,
-      DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.component.lof_self, LinearMap.id_apply]
-  have h : (π.baseChange A).comp ((⋀[R]^n M).subtype.baseChange A) = LinearMap.id := by
-    rw [← LinearMap.baseChange_comp, hπ, LinearMap.baseChange_id]
-  exact Function.LeftInverse.injective (fun x ↦ LinearMap.congr_fun h x)
+  intro x y h
+  exact DirectSum.toBaseChange_injective (S := A) (fun i ↦ ⋀[R]^i M) n
+    (Subtype.ext h)
 
 /-- Exterior powers commute with extension of scalars over arbitrary commutative rings. -/
 noncomputable def equivBaseChange (n : ℕ) :
