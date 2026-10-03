@@ -35,7 +35,7 @@ an `Lᵖ` function, then `f n → g` in the `Lᵖ` seminorm. Both the measurabil
 the domination are only needed eventually along `l`. The limit needs only to be a.e. strongly
 measurable; the dominating function supplies the integrability of the errors. -/
 theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace α]
-    {m : Measure α} [SeminormedAddCommGroup F] [SeminormedAddGroup G]
+    {m : Measure α} [SeminormedAddGroup F] [IsTopologicalAddGroup F] [SeminormedAddGroup G]
     {l : Filter ι} [l.IsCountablyGenerated] {q : ℝ≥0∞}
     (hq0 : q ≠ 0) (hq : q ≠ ∞) {f : ι → α → F} {g : α → F}
     (hf : ∀ᶠ n in l, AEStronglyMeasurable (f n) m) (hg : AEStronglyMeasurable g m)
