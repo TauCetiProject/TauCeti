@@ -70,6 +70,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.polar_apply {R : Type u} {M₁ : Type 
 
 /-- An isometric equivalence maps the kernel of polarization against `x` onto the kernel of
 polarization against its image. -/
+@[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.map_polarKernel
     {R : Type u} {M₁ : Type v} {M₂ : Type*} {N : Type w} [CommRing R]
     [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
