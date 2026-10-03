@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Data.Fintype.Sum
+public import TauCeti.Combinatorics.Quiver.UnderlyingGraph
 
 /-!
 # The extended Dynkin quiver of type `E₆~`
@@ -18,7 +19,9 @@ three arms of length two, on seven vertices, here with every arrow pointing towa
 On the root-system side this is the star `TauCeti.starCartanMatrix ![2, 2, 2]`, whose Cartan
 matrix is not of finite type (`TauCeti.not_isFiniteType_affineE₆`).
 
-This file carries the vertex and arrow data alone; the representation theory, that the quiver has
+This file carries the vertex and arrow data, and the shape of the underlying graph: it is a tree,
+with at most one arrow between any two vertices, because every vertex is the source of at most one
+arrow and every arrow points towards the centre. The representation theory, that the quiver has
 infinite representation type, is in `TauCeti.RepresentationTheory.Quiver.AffineE6.FiniteRepType`.
 
 ## Main definitions
@@ -147,6 +150,44 @@ instance instSubsingletonHom : ∀ a b : AffineE6, Subsingleton (a ⟶ b)
   | .inner _, .outer _ => inferInstance
   | .outer _, .center => inferInstance
   | .outer _, .outer _ => inferInstance
+
+
+/-! ### The underlying graph -/
+
+/-- The distance to the centre, which every arrow lowers. -/
+private def height : AffineE6 → ℕ
+  | .center => 0
+  | .inner _ => 1
+  | .outer _ => 2
+
+private theorem height_lt : ∀ ⦃a b : AffineE6⦄, (a ⟶ b) → height b < height a
+  | .outer _, .inner _, _ => by simp [height]
+  | .inner _, .center, _ => by simp [height]
+  | .center, _, e => isEmptyElim e
+  | .inner _, .inner _, e => isEmptyElim e
+  | .inner _, .outer _, e => isEmptyElim e
+  | .outer _, .center, e => isEmptyElim e
+  | .outer _, .outer _, e => isEmptyElim e
+
+/-- Every vertex of `TauCeti.Quiver.AffineE6` is the source of at most one arrow. -/
+private theorem subsingleton_sigma_hom (a : AffineE6) : Subsingleton (Σ b, a ⟶ b) := by
+  refine ⟨fun ⟨b, e⟩ ⟨b', e'⟩ ↦ ?_⟩
+  obtain rfl : b = b' := by
+    cases a <;> cases b <;> cases b' <;> first
+      | rfl
+      | exact isEmptyElim e
+      | exact isEmptyElim e'
+      | exact congrArg inner (e.down.symm.trans e'.down)
+  rw [Subsingleton.elim e e']
+
+/-- **The underlying graph of `TauCeti.Quiver.AffineE6` is acyclic**, so it is the tree `E₆~`. -/
+theorem isAcyclic_underlyingGraph : (underlyingGraph AffineE6).IsAcyclic :=
+  isAcyclic_underlyingGraph_of_lt height height_lt subsingleton_sigma_hom
+
+/-- Two vertices of `TauCeti.Quiver.AffineE6` are joined by at most one arrow, counted in both
+directions. -/
+theorem subsingleton_hom_sum (a b : AffineE6) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
+  subsingleton_hom_sum_of_lt height height_lt subsingleton_sigma_hom a b
 
 end AffineE6
 
