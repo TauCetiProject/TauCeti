@@ -109,20 +109,22 @@ theorem id_map (W : WeierstrassCurve.Affine F) (f : F →+* K) :
 /-- Transport along the identity homomorphism fixes every morphism. -/
 @[simp]
 theorem map_id (h : Hom W₁ W₂) : h.map (RingHom.id F) = h := by
+  -- The curve types agree definitionally, as in `WeierstrassCurve.map_id`.
   rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩
   · exact zero_map _
-  · rw [ofIsogeny_map, Isogeny.map_id]
-    rfl
+  · rw [ofIsogeny_map]
+    exact congrArg ofIsogeny (Isogeny.map_id φ)
 
 /-- Transport is functorial in the ground-field homomorphism. -/
 @[simp]
 theorem map_map (h : Hom W₁ W₂) (f : F →+* K) (g : K →+* L) :
     (h.map f).map g = h.map (g.comp f) := by
+  -- The curve types agree definitionally, as in `WeierstrassCurve.map_map`.
   rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩
-  · rw [zero_map, zero_map, zero_map]
-    rfl
-  · rw [ofIsogeny_map, ofIsogeny_map, ofIsogeny_map, Isogeny.map_map]
-    rfl
+  · rw [zero_map]
+    exact (zero_map g).trans (zero_map (g.comp f)).symm
+  · simp only [ofIsogeny_map]
+    exact congrArg ofIsogeny (Isogeny.map_map φ f g)
 
 section Additive
 
