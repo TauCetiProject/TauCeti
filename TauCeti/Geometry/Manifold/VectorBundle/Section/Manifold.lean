@@ -165,8 +165,8 @@ theorem contMDiff_coe_sectionZero :
     chartAt_self_eq, sectionZeroChartedSpace_chartAt, Function.comp_def,
     Set.range_id, id_eq] using hcont.contDiffWithinAt
 
-/-- The derivative of the zero-manifold inclusion at a zero is the inclusion of the
-linearization's kernel, read through that kernel's identification with the index model. -/
+/-- The derivative of the zero-manifold inclusion at a zero is the inclusion of the kernel
+of the fiber-coordinate derivative `D z`, read through its identification with the index model. -/
 theorem hasMFDerivAt_coe_sectionZero (z : ↥{y | s y = 0}) :
     letI := sectionZeroChartedSpace hf hFred hsurj hindex hb he
     HasMFDerivAt (modelWithCornersSelf 𝕜 (Fin n → 𝕜)) (modelWithCornersSelf 𝕜 X)
