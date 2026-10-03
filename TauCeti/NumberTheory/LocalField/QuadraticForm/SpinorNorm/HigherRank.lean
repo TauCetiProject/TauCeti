@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import TauCeti.NumberTheory.LocalField.SquareClass
-public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Isotropy
 
 /-!
@@ -72,9 +71,7 @@ theorem exists_reflectionPairSpecialOrthogonal_spinorNorm_eq (Q : QuadraticForm 
   refine ⟨v, w, inferInstance, inferInstance, ?_⟩
   have hb' : b = a * unitOfInvertible (Q w) :=
     Units.ext (by simpa using hw.symm)
-  rw [spinorNorm_apply, reflectionPairSpecialOrthogonal_toOrthogonal, map_mul,
-    orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal,
-    ← map_mul]
+  rw [spinorNorm_reflectionPairSpecialOrthogonal]
   have hv' : unitOfInvertible (Q v) = b := Units.ext hv
   rw [hv', hb']
   simp only [squareClassHom_apply]
@@ -100,9 +97,8 @@ dimension at least three is surjective. -/
 theorem orthogonalSpinorNorm_surjective_of_three_le_finrank (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hV : 3 ≤ Module.finrank K V) :
     Function.Surjective (orthogonalSpinorNorm Q hQ) := by
-  intro c
-  obtain ⟨g, hg⟩ := spinorNorm_surjective_of_three_le_finrank Q hQ hV c
-  exact ⟨specialOrthogonalToOrthogonal Q g, by simpa using hg⟩
+  exact orthogonalSpinorNorm_surjective_of_spinorNorm_surjective Q hQ
+    (spinorNorm_surjective_of_three_le_finrank Q hQ hV)
 
 /-- In dimension at least three, the index of the Spin image in the local special orthogonal
 group is the number of square classes, `4 · #𝓀[K] ^ v_K(2)`. -/

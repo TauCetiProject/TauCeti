@@ -10,11 +10,11 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.LinearAlgebra.CliffordAlgebra.CartanDieudonne
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
-import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # The spinor norm
@@ -256,3 +256,32 @@ theorem spinToSpecialOrthogonal_surjective_of_isSquare_apply
   rfl
 
 end CliffordAlgebra
+
+namespace TauCeti
+
+open _root_.CliffordAlgebra _root_.QuadraticMap
+
+universe u v
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] [Invertible (2 : K)]
+
+/-- The spinor norm of a pair of reflections is the square class of the product of the
+quadratic values of its defining vectors. -/
+theorem spinorNorm_reflectionPairSpecialOrthogonal (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (v w : V) [Invertible (Q v)] [Invertible (Q w)] :
+    spinorNorm Q hQ (reflectionPairSpecialOrthogonal Q v w) =
+      squareClassHom (unitOfInvertible (Q v) * unitOfInvertible (Q w)) := by
+  simp only [spinorNorm_apply, reflectionPairSpecialOrthogonal_toOrthogonal, map_mul,
+    orthogonalSpinorNorm_reflectionOrthogonal]
+
+/-- Surjectivity of the spinor norm on the special orthogonal group implies its
+surjectivity on the full orthogonal group. -/
+theorem orthogonalSpinorNorm_surjective_of_spinorNorm_surjective
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinorNorm Q hQ)) :
+    Function.Surjective (orthogonalSpinorNorm Q hQ) := by
+  apply Function.Surjective.of_comp (g := specialOrthogonalToOrthogonal Q)
+  simpa only [Function.comp_def, ← spinorNorm_apply] using hsurj
+
+end TauCeti
