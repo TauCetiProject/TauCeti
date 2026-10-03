@@ -53,6 +53,8 @@ recomputed at the transform, whose roots are in bijection with those of `f`.
 * `Polynomial.aroots_tschirnhausPolynomial`, `Polynomial.rootSet_tschirnhausPolynomial`: the roots
   of the transform are the values of `T` at the roots of `f`.
   The `_field` variants cover nonmonic polynomials over fields.
+* `Polynomial.tschirnhausRootMap`: the resulting surjection from the roots of `f` onto the roots
+  of its transform.
 * `Polynomial.separable_tschirnhausPolynomial_iff`: the transform is separable if and only if `f`
   is separable and `T` is admissible.
 * `Polynomial.TschirnhausAdmissible.bijOn_rootSet`: an admissible `T` maps the roots of `f`
@@ -286,6 +288,32 @@ theorem rootSet_tschirnhausPolynomial_field {f : K[X]} (hf : f ≠ 0)
   classical
   ext b
   simp [rootSet_def, aroots_tschirnhausPolynomial_field hf hs]
+
+/-- The map from the roots of a nonzero polynomial to the roots of its Tschirnhaus transform,
+sending `α` to `T(α)`. -/
+noncomputable def tschirnhausRootMap {f : K[X]} (hf : f ≠ 0)
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
+    f.rootSet L → (tschirnhausPolynomial f T).rootSet L := fun x ↦
+  ⟨aeval (x : L) T, by
+    rw [rootSet_tschirnhausPolynomial_field hf hs]
+    exact ⟨x, x.2, rfl⟩⟩
+
+@[simp]
+theorem coe_tschirnhausRootMap {f : K[X]} (hf : f ≠ 0)
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) (x : f.rootSet L) :
+    (tschirnhausRootMap hf hs T x : L) = aeval (x : L) T :=
+  (rfl)
+
+/-- Every root of a Tschirnhaus transform is the image of a root of the original polynomial. -/
+theorem tschirnhausRootMap_surjective {f : K[X]} (hf : f ≠ 0)
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
+    Function.Surjective (tschirnhausRootMap hf hs T) := by
+  intro y
+  have hy : (y : L) ∈ (fun a ↦ aeval a T) '' f.rootSet L := by
+    rw [← rootSet_tschirnhausPolynomial_field hf hs]
+    exact y.2
+  obtain ⟨x, hx, hxy⟩ := hy
+  exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
 
 /-- Over fields, if a polynomial splits after a base change, then its Tschirnhaus transform
 splits after the same base change. -/
