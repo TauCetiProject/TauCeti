@@ -11,16 +11,16 @@ import Mathlib.Analysis.Calculus.LocalExtr.Rolle
 /-!
 # Transversals and taut foliations
 
-A closed transversal to a foliation is a smooth periodic curve whose velocity is everywhere
+A closed transversal to a foliation is a C¹ periodic curve whose velocity is everywhere
 transverse to the tangent distribution.  The definition uses complementary submodules, so it
 does not silently assume a codimension: a one-dimensional transversal can exist only when the
 distribution has the corresponding codimension.  A foliation is taut when every leaf meets one
 of these curves.
 
 The obstruction theorem gives a concrete example.  The foliation of a finite-dimensional normed
-space by the affine hyperplanes of a nonzero continuous linear functional has a global first
-integral.  Rolle's theorem forces every closed smooth curve to have velocity in one of those
-hyperplanes somewhere, so this foliation is not taut.
+space by the affine cosets of the kernel of a continuous linear functional has a global first
+integral.  Rolle's theorem forces every closed C¹ curve to have velocity in that kernel
+somewhere, so this foliation is not taut.
 
 The terminology follows Calegari, *Foliations and the Geometry of 3-Manifolds*, Chapter 4.
 -/
@@ -43,22 +43,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {k : ℕ} [IsManifold I (n + 1) M]
   (F : Foliation I n M k)
 
-/-- A smooth closed curve is transverse to `F` when its velocity and the leaf tangent space are
+/-- A C¹ closed curve is transverse to `F` when its velocity and the leaf tangent space are
 complementary at every parameter value. -/
 def IsClosedTransversal (γ : ℝ → M) : Prop :=
   ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ Function.Periodic γ 1 ∧
     ∀ t, curveVelocity I γ t ≠ 0 ∧
       IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t))
 
-/-- A foliation is taut when every leaf meets a smooth closed transversal. -/
+/-- A foliation is taut when every leaf meets a C¹ closed transversal. -/
 def Taut : Prop :=
   ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
 
 @[simp]
-theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
-    ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ Function.Periodic γ 1 ∧
-      ∀ t, curveVelocity I γ t ≠ 0 ∧
-        IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t)) :=
+theorem taut_iff : F.Taut ↔
+    ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x :=
   Iff.rfl
 
 theorem isClosedTransversal_periodic (hγ : F.IsClosedTransversal γ) :
@@ -66,17 +64,8 @@ theorem isClosedTransversal_periodic (hγ : F.IsClosedTransversal γ) :
 
 theorem isClosedTransversal_velocity_not_mem (hγ : F.IsClosedTransversal γ) (t : ℝ) :
     curveVelocity I γ t ∉ F.distribution (γ t) := by
-  intro ht
-  have hzero := (hγ.2.2 t).2.disjoint.le_bot
-    ⟨Submodule.mem_span_singleton_self _, ht⟩
-  exact (hγ.2.2 t).1 ((Submodule.mem_bot ℝ).mp hzero)
-
-theorem isClosedTransversal_of_complement
-    (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (hperiod : Function.Periodic γ 1)
-    (htrans : ∀ t, curveVelocity I γ t ≠ 0 ∧
-      IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t))) :
-    F.IsClosedTransversal γ :=
-  ⟨hγ, hperiod, htrans⟩
+  exact (Submodule.disjoint_span_singleton' (hγ.2.2 t).1).mp
+    (hγ.2.2 t).2.disjoint.symm
 
 section FirstIntegral
 
@@ -109,7 +98,7 @@ theorem not_isClosedTransversal_ofSubmodule_ker
   rw [Foliation.ofSubmodule_distribution]
   exact hvzero
 
-/-- The affine-hyperplane foliation defined by a continuous linear functional is not taut. -/
+/-- The foliation by affine cosets of the kernel of a continuous linear functional is not taut. -/
 theorem not_taut_ofSubmodule_ker :
     ¬ (Foliation.ofSubmodule (LinearMap.ker ℓ.toLinearMap) hn).Taut := by
   intro htaut
