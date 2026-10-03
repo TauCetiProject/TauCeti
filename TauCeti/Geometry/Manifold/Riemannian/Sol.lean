@@ -181,27 +181,25 @@ private theorem contDiff_form : ContDiff ℝ ω fun r : ℝ × ℝ × ℝ ↦ fo
   exact ((((contDiff_const.mul hz).exp.smul_const _).smulRight contDiff_const).add
     (((contDiff_const.mul hz).exp.smul_const _).smulRight contDiff_const)).add contDiff_const
 
-/-- The square of the sup norm of `ℝ³` is at most the sum of the squares of the coordinates. -/
-private theorem norm_mul_self_le (v : ℝ × ℝ × ℝ) :
-    ‖v‖ * ‖v‖ ≤ v.1 * v.1 + v.2.1 * v.2.1 + v.2.2 * v.2.2 := by
-  rw [Prod.norm_def, Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, Real.norm_eq_abs]
-  have h1 := abs_mul_abs_self v.1
-  have h2 := abs_mul_abs_self v.2.1
-  have h3 := abs_mul_abs_self v.2.2
-  rcases max_choice |v.1| (max |v.2.1| |v.2.2|) with h | h <;> rw [h]
-  · nlinarith [mul_self_nonneg v.2.1, mul_self_nonneg v.2.2]
-  · rcases max_choice |v.2.1| |v.2.2| with h' | h' <;> rw [h'] <;>
-      nlinarith [mul_self_nonneg v.1, mul_self_nonneg v.2.1, mul_self_nonneg v.2.2]
-
 private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   refine ⟨exp (-2 * |t|), exp_pos _, fun v ↦ ?_⟩
   have h₁ : exp (-2 * |t|) ≤ exp (2 * t) := exp_le_exp.2 (by linarith [neg_abs_le t])
   have h₂ : exp (-2 * |t|) ≤ exp (-2 * t) := exp_le_exp.2 (by linarith [le_abs_self t])
   have h₃ : exp (-2 * |t|) ≤ 1 := exp_le_one_iff.2 (by linarith [abs_nonneg t])
+  -- The square of the sup norm of `ℝ³` is at most the sum of the squares of the coordinates.
+  have hv : ‖v‖ * ‖v‖ ≤ v.1 * v.1 + v.2.1 * v.2.1 + v.2.2 * v.2.2 := by
+    rw [Prod.norm_def, Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, Real.norm_eq_abs]
+    have h1 := abs_mul_abs_self v.1
+    have h2 := abs_mul_abs_self v.2.1
+    have h3 := abs_mul_abs_self v.2.2
+    rcases max_choice |v.1| (max |v.2.1| |v.2.2|) with h | h <;> rw [h]
+    · nlinarith [mul_self_nonneg v.2.1, mul_self_nonneg v.2.2]
+    · rcases max_choice |v.2.1| |v.2.2| with h' | h' <;> rw [h'] <;>
+        nlinarith [mul_self_nonneg v.1, mul_self_nonneg v.2.1, mul_self_nonneg v.2.2]
   rw [form_apply, mul_assoc]
   calc exp (-2 * |t|) * (‖v‖ * ‖v‖)
       ≤ exp (-2 * |t|) * (v.1 * v.1 + v.2.1 * v.2.1 + v.2.2 * v.2.2) :=
-        mul_le_mul_of_nonneg_left (norm_mul_self_le v) (exp_pos _).le
+        mul_le_mul_of_nonneg_left hv (exp_pos _).le
     _ ≤ exp (2 * t) * v.1 * v.1 + exp (-2 * t) * v.2.1 * v.2.1 + v.2.2 * v.2.2 := by
         nlinarith [mul_le_mul_of_nonneg_right h₁ (mul_self_nonneg v.1),
           mul_le_mul_of_nonneg_right h₂ (mul_self_nonneg v.2.1),
@@ -245,6 +243,7 @@ instance : IsContinuousRiemannianBundle (ℝ × ℝ × ℝ)
 
 /-- The inner product of two tangent vectors `v`, `w` at a point `p` of `Sol` is
 `e^{2z} v₁ w₁ + e^{-2z} v₂ w₂ + v₃ w₃`, where `z` is the height of `p`. -/
+@[simp]
 theorem inner_def (p : Sol) (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     inner ℝ v w =
       exp (2 * p.z) * (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v).1 *
@@ -350,10 +349,10 @@ theorem toIsom_injective : Function.Injective toIsom := fun p p' h ↦ by
   simpa using DFunLike.congr_fun h 1
 
 /-- The isometry group of `Sol` acts transitively: `Sol` is a homogeneous Riemannian manifold.
-Left multiplication by `q * p⁻¹` carries `p` to `q`. -/
+This is transferred along `toIsom` from the transitive action of `Sol` on itself by left
+multiplication. -/
 instance isPretransitive_isom : MulAction.IsPretransitive (Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol) Sol :=
-  ⟨fun p q ↦ ⟨toIsom (q * p⁻¹), by
-    rw [RiemannianIsometry.smul_def, toIsom_apply, inv_mul_cancel_right]⟩⟩
+  .of_smul_eq toIsom fun {_ _} ↦ by rw [RiemannianIsometry.smul_def, toIsom_apply, smul_eq_mul]
 
 end Sol
 
