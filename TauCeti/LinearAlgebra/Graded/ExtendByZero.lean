@@ -90,7 +90,7 @@ theorem isInternal_extendByZero {R M : Type*} [Semiring R] [AddCommMonoid M] [Mo
 
 /-- **Multiplication adds signed degrees in the extension by zero** of an `ℕ`-indexed family in
 which it adds degrees. -/
-theorem mul_mem_extendByZero {R A : Type*} [Semiring R] [Semiring A] [Module R A]
+theorem mul_mem_extendByZero {R A : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
     {𝒜 : ℕ → Submodule R A}
     (h𝒜 : ∀ {m n : ℕ} {x y : A}, x ∈ 𝒜 m → y ∈ 𝒜 n → x * y ∈ 𝒜 (m + n)) {m n : ℤ} {x y : A}
     (hx : x ∈ extendByZero 𝒜 m) (hy : y ∈ extendByZero 𝒜 n) :
