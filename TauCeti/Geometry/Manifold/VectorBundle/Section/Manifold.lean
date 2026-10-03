@@ -202,7 +202,12 @@ theorem isImmersionOfComplement_coe_sectionZero :
     ((K.symm.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans
       (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans L.symm
   -- Inverting the product equivalences puts the kernel coordinate first.
-  have hA_symm (x : X) : A.symm x = (K (L x).2, (L x).1) := (rfl)
+  have hA_symm (x : X) : A.symm x = (K (L x).2, (L x).1) := by
+    simp only [A, ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
+      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodComm_symm,
+      ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.prodComm_apply,
+      ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.refl_apply,
+      Prod.fst_swap, Prod.snd_swap]
   let g (u : Fin n → 𝕜) := D z ((χ.symm u : X) - z.1)
   have hg : ContDiffOn 𝕜 m g χ.target :=
     (D z).contDiff.comp_contDiffOn
