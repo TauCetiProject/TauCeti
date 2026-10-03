@@ -200,7 +200,9 @@ theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas
       open_target := e.open_target
       contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
       contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
-  exact isLocalDiffeomorphAt_of_eqOn (Φ := φ) hx fun _ _ ↦ rfl
+  apply isLocalDiffeomorphAt_of_eqOn (Φ := φ) hx
+  intro y _
+  simpa only [φ] using (congrFun e.coe_toPartialEquiv y).symm
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/
