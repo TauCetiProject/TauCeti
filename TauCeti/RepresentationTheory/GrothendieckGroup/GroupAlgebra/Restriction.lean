@@ -147,6 +147,6 @@ theorem finrankK0_resK0 (k : Type u) [Field k] {G H : Type u} [Monoid G] [Monoid
     [Finite H] (φ : H →* G) (x : ExactK0 (finiteModulesExactStructure k[G])) :
     finrankK0 k k[H] (resK0 k φ x) = finrankK0 k k[G] x :=
   finrankK0_finiteModulesK0Restrict k k[H] _
-    (MonoidAlgebra.mapDomainRingHom_comp_algebraMap (R := k) φ) _ x
+    (MonoidAlgebra.mapDomainRingHom_comp_algebraMap (R := k) φ) x
 
 end TauCeti

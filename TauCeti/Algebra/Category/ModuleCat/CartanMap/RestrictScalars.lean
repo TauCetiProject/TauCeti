@@ -32,16 +32,15 @@ finitely generated `R`-module only when it holds.
 The API is dot notation on the ring homomorphism: use `f.finiteModulesRestrictScalars hf` and
 `f.finiteModulesK0Restrict hf`.
 
+The functor on finitely generated modules, `RingHom.finiteModulesRestrictScalars`, is in
+`TauCeti.Algebra.Category.ModuleCat.RestrictScalars`.
+
 ## Main definitions
 
-* `RingHom.finiteModulesRestrictScalars`: restriction of scalars along a finite ring
-  homomorphism, as a functor between the categories of finitely generated modules.
 * `RingHom.finiteModulesK0Restrict`: the induced homomorphism `G₀(mod S) →+ G₀(mod R)`.
 
 ## Main results
 
-* `RingHom.isFG_restrictScalars_of_finite`: restriction of scalars along a finite ring
-  homomorphism preserves finite generation.
 * `RingHom.isConflationExact_finiteModulesRestrictScalars`: the restricted functor is
   conflation-exact.
 * `RingHom.finiteModulesK0Restrict_of`: the induced homomorphism sends the class of a module to
@@ -68,49 +67,8 @@ namespace RingHom
 
 variable {R S T : Type u} [Ring R] [Ring S] [Ring T]
 
-/-- **Finite generation along a finite ring homomorphism.** If `S` is finitely generated as an
-`R`-module through `f : R →+* S`, then restriction of scalars along `f` sends every finitely
-generated `S`-module to a finitely generated `R`-module. -/
-theorem isFG_restrictScalars_of_finite (f : R →+* S)
-    (hf : letI := f.toModule; Module.Finite R S)
-    {M : ModuleCat.{u} S} (hM : ModuleCat.isFG S M) :
-    ModuleCat.isFG R ((ModuleCat.restrictScalars f).obj M) := by
-  let : Module R S := f.toModule
-  let : Module R M := Module.compHom M f
-  have : Module.Finite R S := hf
-  have : Module.Finite S M := (ModuleCat.isFG_iff M).mp hM
-  have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
-  have hRM : Module.Finite R M := Module.Finite.trans S M
-  exact (ModuleCat.isFG_iff _).mpr hRM
-
 variable (f : R →+* S)
   (hf : letI := f.toModule; Module.Finite R S)
-
-/-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
-`f : R →+* S` making `S` a finitely generated `R`-module induces a functor from the finitely
-generated `S`-modules to the finitely generated `R`-modules, sending a module to the same module
-with scalars restricted along `f`. -/
--- The body is exposed so that the underlying module of an image is definitionally the restriction
--- of scalars: structures carried by that module, such as the `k`-module structure over a base
--- field used in `TauCeti.finrankK0`, cannot be transported along an equation of objects.
-@[expose]
-noncomputable def finiteModulesRestrictScalars : FGModuleCat.{u} S ⥤ FGModuleCat.{u} R :=
-  (ModuleCat.isFG R).lift ((ModuleCat.isFG S).ι ⋙ ModuleCat.restrictScalars f)
-    fun M ↦ f.isFG_restrictScalars_of_finite hf M.property
-
-instance : (f.finiteModulesRestrictScalars hf).Additive := by
-  unfold finiteModulesRestrictScalars
-  infer_instance
-
-@[simp]
-theorem finiteModulesRestrictScalars_obj_obj (M : FGModuleCat.{u} S) :
-    ((f.finiteModulesRestrictScalars hf).obj M).obj = (ModuleCat.restrictScalars f).obj M.obj :=
-  (rfl)
-
-@[simp]
-theorem finiteModulesRestrictScalars_map_hom {M N : FGModuleCat.{u} S} (g : M ⟶ N) :
-    ((f.finiteModulesRestrictScalars hf).map g).hom = (ModuleCat.restrictScalars f).map g.hom :=
-  (rfl)
 
 /-- Restriction of scalars on finitely generated modules is conflation-exact: it sends a short
 exact sequence of finitely generated `S`-modules to a short exact sequence of `R`-modules. -/

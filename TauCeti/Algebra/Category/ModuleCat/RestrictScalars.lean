@@ -20,6 +20,9 @@ finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it.
 * Along a **surjective** ring homomorphism, finite generation is preserved and reflected: every
   scalar of `S` is the image of a scalar of `R`, so the `S`-span and the `R`-span of a set
   coincide.
+* Along a ring homomorphism making `S` a **finitely generated** `R`-module, finite generation is
+  preserved, so restriction of scalars is a functor between the categories of finitely generated
+  modules.
 * Along a ring **isomorphism**, projectivity is preserved and reflected: the identity of the
   module is then a semilinear equivalence between the two module structures.
 
@@ -30,11 +33,15 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
 
 * `RingHom.restrictScalarsSemilinearMap`: the identity of a module, as a semilinear map from its
   restriction of scalars.
+* `RingHom.finiteModulesRestrictScalars`: restriction of scalars along a finite ring
+  homomorphism, as a functor between the categories of finitely generated modules.
 
 ## Main results
 
 * `RingHom.finite_restrictScalars_iff` and `RingHom.isFG_restrictScalars_iff`: finite generation
   is invariant under restriction of scalars along a surjective ring homomorphism.
+* `RingHom.isFG_restrictScalars_of_finite`: finite generation is preserved by restriction of
+  scalars along a ring homomorphism `f : R →+* S` making `S` a finitely generated `R`-module.
 * `RingEquiv.projective_restrictScalars_iff`: projectivity is invariant under restriction of
   scalars along a ring isomorphism.
 -/
@@ -43,7 +50,7 @@ public section
 
 open CategoryTheory
 
-universe v u₁ u₂
+universe v u u₁ u₂
 
 variable {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
 
@@ -79,6 +86,52 @@ theorem isFG_restrictScalars_iff (f : R →+* S) (hf : Function.Surjective f)
     (M : ModuleCat.{v} S) :
     ModuleCat.isFG R ((ModuleCat.restrictScalars f).obj M) ↔ ModuleCat.isFG S M := by
   rw [ModuleCat.isFG_iff, ModuleCat.isFG_iff, f.finite_restrictScalars_iff hf]
+
+/-- **Finite generation along a finite ring homomorphism.** If `S` is finitely generated as an
+`R`-module through `f : R →+* S`, then restriction of scalars along `f` sends every finitely
+generated `S`-module to a finitely generated `R`-module. -/
+theorem isFG_restrictScalars_of_finite (f : R →+* S)
+    (hf : letI := f.toModule; Module.Finite R S)
+    {M : ModuleCat.{v} S} (hM : ModuleCat.isFG S M) :
+    ModuleCat.isFG R ((ModuleCat.restrictScalars f).obj M) := by
+  let : Module R S := f.toModule
+  let : Module R M := Module.compHom M f
+  have : Module.Finite R S := hf
+  have : Module.Finite S M := (ModuleCat.isFG_iff M).mp hM
+  have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
+  have hRM : Module.Finite R M := Module.Finite.trans S M
+  exact (ModuleCat.isFG_iff _).mpr hRM
+
+/-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
+`f : R →+* S` making `S` a finitely generated `R`-module induces a functor from the finitely
+generated `S`-modules to the finitely generated `R`-modules, sending a module to the same module
+with scalars restricted along `f`. -/
+-- The body is exposed so that the underlying module of an image is definitionally the restriction
+-- of scalars: structures carried by that module, such as the `k`-module structure over a base
+-- field used in `TauCeti.finrankK0`, cannot be transported along an equation of objects.
+@[expose]
+noncomputable def finiteModulesRestrictScalars {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
+    (hf : letI := f.toModule; Module.Finite R S) : FGModuleCat.{u} S ⥤ FGModuleCat.{u} R :=
+  (ModuleCat.isFG R).lift ((ModuleCat.isFG S).ι ⋙ ModuleCat.restrictScalars f)
+    fun M ↦ f.isFG_restrictScalars_of_finite hf M.property
+
+instance {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
+    (hf : letI := f.toModule; Module.Finite R S) :
+    (f.finiteModulesRestrictScalars hf).Additive := by
+  unfold finiteModulesRestrictScalars
+  infer_instance
+
+@[simp]
+theorem finiteModulesRestrictScalars_obj_obj {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
+    (hf : letI := f.toModule; Module.Finite R S) (M : FGModuleCat.{u} S) :
+    ((f.finiteModulesRestrictScalars hf).obj M).obj = (ModuleCat.restrictScalars f).obj M.obj :=
+  (rfl)
+
+@[simp]
+theorem finiteModulesRestrictScalars_map_hom {R S : Type u} [Ring R] [Ring S] (f : R →+* S)
+    (hf : letI := f.toModule; Module.Finite R S) {M N : FGModuleCat.{u} S} (g : M ⟶ N) :
+    ((f.finiteModulesRestrictScalars hf).map g).hom = (ModuleCat.restrictScalars f).map g.hom :=
+  (rfl)
 
 end RingHom
 

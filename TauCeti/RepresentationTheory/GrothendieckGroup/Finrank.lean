@@ -131,19 +131,23 @@ does not change the `k`-dimension of a class. -/
 @[simp]
 theorem finrankK0_finiteModulesK0Restrict {B : Type u} [Ring B] [Algebra k B]
     [FiniteDimensional k B] (f : A →+* B) (hfk : f.comp (algebraMap k A) = algebraMap k B)
-    (hf : letI := f.toModule; Module.Finite A B)
     (x : ExactK0 (finiteModulesExactStructure B)) :
-    finrankK0 k A (f.finiteModulesK0Restrict hf x) = finrankK0 k B x := by
-  have h : (finrankK0 k A).comp (f.finiteModulesK0Restrict hf) = finrankK0 k B :=
-    ExactK0.hom_ext fun M ↦ by
-      simp only [AddMonoidHom.comp_apply, RingHom.finiteModulesK0Restrict_of, finrankK0_of,
-        Nat.cast_inj]
-      -- The two `k`-module structures on the underlying group of `M` are
-      -- `c • m = f (algebraMap k A c) • m` and `c • m = algebraMap k B c • m`.
-      exact LinearEquiv.finrank_eq (AddEquiv.toLinearEquiv
-        (M := (ModuleCat.restrictScalars f).obj M.obj) (M₂ := M.obj) (by rfl)
-        fun c m ↦ congrArg (· • m) (DFunLike.congr_fun hfk c))
-  exact DFunLike.congr_fun h x
+    -- `B` is finitely generated over `A` through `f`, since it already is over `k`.
+    finrankK0 k A (f.finiteModulesK0Restrict (by
+      let := f.toModule
+      have : IsScalarTower k A B := ⟨fun c a b ↦ by
+        simp [RingHom.toModule_smul, Algebra.smul_def, ← DFunLike.congr_fun hfk c, mul_assoc]⟩
+      exact Module.Finite.of_restrictScalars_finite k A B) x) = finrankK0 k B x := by
+  refine DFunLike.congr_fun
+    (?_ : (finrankK0 k A).comp (f.finiteModulesK0Restrict _) = finrankK0 k B) x
+  exact ExactK0.hom_ext fun M ↦ by
+    simp only [AddMonoidHom.comp_apply, RingHom.finiteModulesK0Restrict_of, finrankK0_of,
+      Nat.cast_inj]
+    -- The two `k`-module structures on the underlying group of `M` are
+    -- `c • m = f (algebraMap k A c) • m` and `c • m = algebraMap k B c • m`.
+    exact LinearEquiv.finrank_eq (AddEquiv.toLinearEquiv
+      (M := (ModuleCat.restrictScalars f).obj M.obj) (M₂ := M.obj) (by rfl)
+      fun c m ↦ congrArg (· • m) (DFunLike.congr_fun hfk c))
 
 end Finrank
 
