@@ -72,11 +72,6 @@ the braid route and the diagram route agree on it.
 * L. H. Kauffman, *State models and the Jones polynomial*, Topology 26 (1987), 395-407.
 * V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*, Ann. of
   Math. 126 (1987), 335-388 (the link invariant from the Markov trace).
-
-This is Layer 4 ("knot theory, done properly") of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), whose knot-polynomial bullet asks for the Jones
-polynomial "from the Kauffman bracket on a diagram and from the Temperley-Lieb / Jones
-representation of a braid".
 -/
 
 public section
