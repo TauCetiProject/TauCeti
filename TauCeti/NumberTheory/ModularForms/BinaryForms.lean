@@ -50,6 +50,12 @@ noncomputable def binaryFormRep :
 
 variable {R w}
 
+/-- Integral substitution is homogeneous substitution after mapping the matrix entries into
+its coefficient ring. -/
+theorem binaryFormRep_op (M : Matrix (Fin 2) (Fin 2) ℤ) :
+    binaryFormRep R w (op M) =
+      linearSubstRep (Fin 2) R w (op (M.map (Int.castRingHom R))) := (rfl)
+
 @[simp]
 theorem coe_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
     (P : homogeneousSubmodule (Fin 2) R w) :
