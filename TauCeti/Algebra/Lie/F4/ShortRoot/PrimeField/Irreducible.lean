@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.StandardComodule
-import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.DividedAction
+import TauCeti.Data.List.Involutive
 
 /-!
 # Irreducibility of the short-root F₄ standard representation
@@ -143,59 +143,49 @@ private theorem single_basisReflection_mem
   single_mem_of_unitRootMatrix k N (reflectionGenerator i a)
     (basisReflection_weight_ne_zero i a ha) (unitRootMatrix_reflectionGenerator i a ha) hmem
 
-/-- Iterating simple reflections preserves nonzero weight. -/
-private theorem foldl_basisReflection_weight_ne_zero (l : List (Fin 4)) (a : Fin 26)
-    (ha : f4ShortRootWeight a ≠ 0) :
-    f4ShortRootWeight (l.foldl (fun b i ↦ basisReflection i b) a) ≠ 0 := by
-  induction l generalizing a with
-  | nil => exact ha
-  | cons i l ih =>
-      exact ih _ (basisReflection_weight_ne_zero i a ha)
-
-/-- Iterating simple reflections preserves membership of a nonzero-weight coordinate vector. -/
-private theorem single_foldl_basisReflection_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 26 → k))
-    (l : List (Fin 4)) (a : Fin 26) (ha : f4ShortRootWeight a ≠ 0)
-    (hmem : Pi.single a (1 : k) ∈ N) :
-    Pi.single (l.foldl (fun b i ↦ basisReflection i b) a) (1 : k) ∈ N := by
-  induction l generalizing a with
-  | nil => exact hmem
-  | cons i l ih =>
-      exact ih _ (basisReflection_weight_ne_zero i a ha)
-        (single_basisReflection_mem k N a ha i hmem)
-
-/-- Reversing a reflection word undoes it on a nonzero-weight coordinate. -/
-private theorem foldl_reverse_foldl_basisReflection (l : List (Fin 4)) (a : Fin 26)
-    (ha : f4ShortRootWeight a ≠ 0) :
-    l.reverse.foldl (fun b i ↦ basisReflection i b)
-        (l.foldl (fun b i ↦ basisReflection i b) a) = a := by
-  induction l generalizing a with
-  | nil => rfl
-  | cons i l ih =>
-      simp only [List.foldl_cons, List.reverse_cons, List.foldl_append]
-      rw [ih _ (basisReflection_weight_ne_zero i a ha)]
-      simpa using basisReflection_involutive_of_weight_ne_zero i a ha
-
 /-- A subcomodule containing one nonzero-weight coordinate vector contains all twenty-four of
 them. -/
 private theorem all_nonzeroWeight_single_mem
     (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 26 → k))
     {a : Fin 26} (ha : f4ShortRootWeight a ≠ 0) (hmem : Pi.single a (1 : k) ∈ N) :
     ∀ b, f4ShortRootWeight b ≠ 0 → Pi.single b (1 : k) ∈ N := by
-  have hpathA := foldl_reflectionPath a ha
-  have hback := single_foldl_basisReflection_mem k N (reflectionPath a).reverse a ha hmem
+  let reflect : Fin 4 → {b : Fin 26 // f4ShortRootWeight b ≠ 0} →
+      {b : Fin 26 // f4ShortRootWeight b ≠ 0} :=
+    fun i b ↦ ⟨basisReflection i b, basisReflection_weight_ne_zero i b b.property⟩
+  have hinvolutive (i : Fin 4) : Function.Involutive (reflect i) := by
+    intro b
+    apply Subtype.ext
+    exact basisReflection_involutive_of_weight_ne_zero i b b.property
+  have hreflect (b : {b : Fin 26 // f4ShortRootWeight b ≠ 0}) (i : Fin 4)
+      (hb : Pi.single b.1 (1 : k) ∈ N) : Pi.single (reflect i b).1 (1 : k) ∈ N :=
+    single_basisReflection_mem k N b b.property i hb
+  have coe_foldl_reflect (l : List (Fin 4))
+      (b : {b : Fin 26 // f4ShortRootWeight b ≠ 0}) :
+      (l.foldl (fun c i ↦ reflect i c) b).1 =
+        l.foldl (fun c i ↦ basisReflection i c) b.1 := by
+    symm
+    exact List.foldl_hom₂ l (fun c (_ : Unit) ↦ c.1) (fun c i ↦ reflect i c)
+      (fun u _ ↦ u) (fun c i ↦ basisReflection i c) b () (by intros; rfl)
   have hseed : Pi.single 0 (1 : k) ∈ N := by
-    have hundo : (reflectionPath a).reverse.foldl (fun b i ↦ basisReflection i b) a = 0 := by
-      calc
-        _ = (reflectionPath a).reverse.foldl (fun b i ↦ basisReflection i b)
-            ((reflectionPath a).foldl (fun b i ↦ basisReflection i b) 0) :=
-          congrArg (fun x ↦ (reflectionPath a).reverse.foldl
-            (fun b i ↦ basisReflection i b) x) hpathA.symm
-        _ = 0 := foldl_reverse_foldl_basisReflection (reflectionPath a) 0 (by decide)
-    rwa [hundo] at hback
+    have hpath : (reflectionPath a).foldl (fun b i ↦ reflect i b) ⟨0, by decide⟩ =
+        ⟨a, ha⟩ := by
+      apply Subtype.ext
+      rw [coe_foldl_reflect]
+      exact foldl_reflectionPath a ha
+    apply (predicate_foldl_iff_of_involutive
+      (fun b : {b : Fin 26 // f4ShortRootWeight b ≠ 0} ↦ Pi.single b.1 (1 : k) ∈ N)
+      reflect hinvolutive hreflect (reflectionPath a) ⟨0, by decide⟩).mp
+    rwa [hpath]
   intro b hb
-  have hforward := single_foldl_basisReflection_mem k N (reflectionPath b) 0 (by decide) hseed
-  rwa [foldl_reflectionPath b hb] at hforward
+  have hforward := (predicate_foldl_iff_of_involutive
+    (fun c : {c : Fin 26 // f4ShortRootWeight c ≠ 0} ↦ Pi.single c.1 (1 : k) ∈ N)
+    reflect hinvolutive hreflect (reflectionPath b) ⟨0, by decide⟩).mpr hseed
+  have hpath : (reflectionPath b).foldl (fun c i ↦ reflect i c) ⟨0, by decide⟩ =
+      ⟨b, hb⟩ := by
+    apply Subtype.ext
+    rw [coe_foldl_reflect]
+    exact foldl_reflectionPath b hb
+  rwa [hpath] at hforward
 
 /-! ## The zero-weight plane -/
 
@@ -223,6 +213,28 @@ private theorem rootSubgroupPoints_inl_two_mulVec_single_thirteen_apply_eleven (
   rw [Matrix.mulVec_smul, Matrix.mulVec_single_one, coe_rootSubgroupPoints_one]
   simp [unitRootMatrix, rootMatrix_inl, rootDividedSquareMatrix_inl, raisingTarget,
     raisingCoeff, raisingDividedSquareTarget]
+
+/-- The second positive simple-root point sends coordinate fourteen to the first zero-weight
+coordinate, with no component in the second. -/
+private theorem zeroWeightCoordinates_rootSubgroupPoints_inl_two_single_fourteen :
+    let v :=
+      ((rootSubgroupPoints (.inl 2) k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 26) k) : Matrix (Fin 26) (Fin 26) k) *ᵥ
+          Pi.single 14 1
+    v 12 = 1 ∧ v 13 = 0 := by
+  simp [rootMatrix_inl, rootDividedSquareMatrix_inl, raisingTarget, raisingCoeff,
+    raisingDividedSquareTarget]
+
+/-- The third positive simple-root point sends coordinate fifteen to the second zero-weight
+coordinate, with no component in the first. -/
+private theorem zeroWeightCoordinates_rootSubgroupPoints_inl_three_single_fifteen :
+    let v :=
+      ((rootSubgroupPoints (.inl 3) k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 26) k) : Matrix (Fin 26) (Fin 26) k) *ᵥ
+          Pi.single 15 1
+    v 12 = 0 ∧ v 13 = 1 := by
+  simp [rootMatrix_inl, rootDividedSquareMatrix_inl, raisingTarget, raisingCoeff,
+    raisingDividedSquareTarget]
 
 /-- Every nonzero subcomodule contains a coordinate vector of nonzero weight. If a nonzero vector
 starts entirely in the two-dimensional zero-weight space, a simple-root point moves one of its
@@ -282,19 +294,17 @@ private theorem zeroWeight_singles_mem_of_nonzeroWeight_singles_mem
   · have hact := points_mulVec_mem k N
       (rootSubgroupPoints (.inl 2) k (Multiplicative.ofAdd 1)) (h 14 (by decide))
     have hzero := zeroWeightComponent_mem k N hact
-    simpa [Matrix.mulVec_single_one, coe_rootSubgroupPoints_one, unitRootMatrix,
-      rootMatrix_inl, rootDividedSquareMatrix_inl, raisingTarget, raisingCoeff,
-      raisingDividedSquareTarget] using hzero
+    have hcoordinates := zeroWeightCoordinates_rootSubgroupPoints_inl_two_single_fourteen k
+    simpa only [hcoordinates.1, hcoordinates.2, one_smul, zero_smul, add_zero] using hzero
   · have hact := points_mulVec_mem k N
       (rootSubgroupPoints (.inl 3) k (Multiplicative.ofAdd 1)) (h 15 (by decide))
     have hzero := zeroWeightComponent_mem k N hact
-    simpa [Matrix.mulVec_single_one, coe_rootSubgroupPoints_one, unitRootMatrix,
-      rootMatrix_inl, rootDividedSquareMatrix_inl, raisingTarget, raisingCoeff,
-      raisingDividedSquareTarget] using hzero
+    have hcoordinates := zeroWeightCoordinates_rootSubgroupPoints_inl_three_single_fifteen k
+    simpa only [hcoordinates.1, hcoordinates.2, zero_smul, one_smul, zero_add] using hzero
 
 /-- **The standard comodule of the short-root type-`F₄` carrier is simple over every field of
 characteristic two.** -/
-instance instIsSimpleOrderStandardSubcomodule :
+instance instIsSimpleOrderSubcomodule :
     IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 26 → k)) := by
   have hbot_ne_top :
       (⊥ : Subcomodule k (coordinateHopfAlgebra k) (Fin 26 → k)) ≠ ⊤ := by
