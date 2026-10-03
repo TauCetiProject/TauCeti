@@ -99,7 +99,9 @@ theorem padicCompletionUnitsNorm_apply (x : Additive ↑(padicCompletionUnits p 
       QuotientGroup.quotientMulEquivOfEq (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))
         (powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)
           (QuotientGroup.quotientMulEquivOfEq
-            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.toMul.1 m))) := (rfl)
+            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.toMul.1 m))) := by
+  simpa only [padicCompletionUnitsNorm, LinearMap.coe_mk, AddHom.coe_mk, toMul_ofMul] using
+    padicCompletionUnitsNormHom_apply p K L x.toMul m
 
 /-- The norm of the canonical class of a unit is the canonical class of its norm. -/
 @[simp]
