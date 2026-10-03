@@ -22,6 +22,15 @@ ring map up to all of `Y`.
 * `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top`, in Mathlib's
   `AlgebraicGeometry` namespace: standard smooth charts whose ring map starts at the global
   sections of the affine target.
+
+## References
+
+The proof is adapted from Mathlib's proof of
+`AlgebraicGeometry.SmoothOfRelativeDimension.smoothOfRelativeDimension_comp` in
+`Mathlib.AlgebraicGeometry.Morphisms.Smooth` (Apache-2.0): the same shrinking of the charts to
+basic opens via `exists_basicOpen_le_appLE_of_appLE_of_isAffine`, followed by composing with the
+localization away from `r`, here taken from the global sections of the affine target rather
+than from a chart of a second smooth morphism.
 -/
 
 public section
