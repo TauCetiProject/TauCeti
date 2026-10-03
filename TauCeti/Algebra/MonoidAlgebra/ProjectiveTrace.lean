@@ -148,7 +148,7 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have hm : IsUnit (m : A) := IsLocalRing.isUnit_natCast_of_not_dvd Fact.out hp hpm
   have hq' : q' ≠ 1 := fun h ↦ hq1 (congrArg Subtype.val h)
   have : Fintype Q := Fintype.ofFinite Q
-  rw [hg', LinearMap.trace_restrictScalars_smul_of_pow_eq_one (MonoidAlgebra.lift A A Q 1) S hm hS,
+  rw [hg', LinearMap.trace_restrictScalars_smul_of_pow_eq_one S (MonoidAlgebra.lift A A Q 1) hm hS,
     Algebra.trace_eq_matrix_trace (MonoidAlgebra.basis Q A), trace_leftMulMatrix_monoidAlgebra]
   simp [hq'.symm]
 

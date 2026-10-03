@@ -45,13 +45,12 @@ open Finset
 namespace Matrix
 
 variable {A R n : Type*} [CommRing A] [CommRing R] [Algebra A R] [Fintype n] [DecidableEq n]
-  (ε : R →ₐ[A] A) [IsLocalHom ε]
 
 /-- **A matrix of invertible finite order is conjugate to its constant part.** If `ε : R → A` is
 a local `A`-algebra retraction and `M ^ m = 1` with `m` invertible in `A`, then `M` is conjugate,
 by an invertible matrix over `R`, to the matrix of constants `algebraMap A R (ε (M i j))`. -/
-theorem exists_isUnit_mul_eq_mul_map_of_pow_eq_one (M : Matrix n n R) {m : ℕ}
-    (hm : IsUnit (m : A)) (hM : M ^ m = 1) :
+theorem exists_isUnit_mul_eq_mul_map_of_pow_eq_one (M : Matrix n n R) (ε : R →ₐ[A] A)
+    [IsLocalHom ε] {m : ℕ} (hm : IsUnit (m : A)) (hM : M ^ m = 1) :
     ∃ T : Matrix n n R, IsUnit T ∧ M * T = T * M.map (algebraMap A R ∘ ε) := by
   rcases eq_or_ne m 0 with rfl | hm0
   · -- `m = 0` forces `A`, hence `R`, to be the zero ring.
@@ -87,9 +86,9 @@ theorem exists_isUnit_mul_eq_mul_map_of_pow_eq_one (M : Matrix n n R) {m : ℕ}
 /-- **The trace of a matrix of invertible finite order is constant.** If `ε : R → A` is a local
 `A`-algebra retraction and `M ^ m = 1` with `m` invertible in `A`, then the trace of `M` is the
 image of `ε (trace M)` in `R`. -/
-theorem trace_eq_algebraMap_of_pow_eq_one (M : Matrix n n R) {m : ℕ} (hm : IsUnit (m : A))
-    (hM : M ^ m = 1) : M.trace = algebraMap A R (ε M.trace) := by
-  obtain ⟨T, hT, hMT⟩ := exists_isUnit_mul_eq_mul_map_of_pow_eq_one ε M hm hM
+theorem trace_eq_algebraMap_of_pow_eq_one (M : Matrix n n R) (ε : R →ₐ[A] A) [IsLocalHom ε]
+    {m : ℕ} (hm : IsUnit (m : A)) (hM : M ^ m = 1) : M.trace = algebraMap A R (ε M.trace) := by
+  obtain ⟨T, hT, hMT⟩ := exists_isUnit_mul_eq_mul_map_of_pow_eq_one M ε hm hM
   have hconj : M = hT.unit * M.map (algebraMap A R ∘ ε) * hT.unit⁻¹ := by
     calc M = M * hT.unit * ↑hT.unit⁻¹ := by rw [Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one]
       _ = _ := by rw [IsUnit.unit_spec, hMT]
@@ -100,14 +99,15 @@ end Matrix
 
 namespace LinearMap
 
-variable {A R M : Type*} [CommRing A] [CommRing R] [Algebra A R] (ε : R →ₐ[A] A) [IsLocalHom ε]
-  [AddCommMonoid M] [Module R M] [Module.Free R M]
+variable {A R M : Type*} [CommRing A] [CommRing R] [Algebra A R] [AddCommMonoid M]
+  [Module R M] [Module.Free R M]
 
 /-- **The trace of an endomorphism of invertible finite order is constant.** If `ε : R → A` is a
 local `A`-algebra retraction and `f ^ m = 1` with `m` invertible in `A`, then the trace of the
 endomorphism `f` of a free `R`-module is the image of `ε (trace f)` in `R`. -/
-theorem trace_eq_algebraMap_of_pow_eq_one (f : M →ₗ[R] M) {m : ℕ} (hm : IsUnit (m : A))
-    (hf : f ^ m = 1) : trace R M f = algebraMap A R (ε (trace R M f)) := by
+theorem trace_eq_algebraMap_of_pow_eq_one (f : M →ₗ[R] M) (ε : R →ₐ[A] A) [IsLocalHom ε]
+    {m : ℕ} (hm : IsUnit (m : A)) (hf : f ^ m = 1) :
+    trace R M f = algebraMap A R (ε (trace R M f)) := by
   classical
   nontriviality R
   let ⟨ι, b⟩ := Module.Free.exists_basis (R := R) (M := M)
@@ -117,7 +117,7 @@ theorem trace_eq_algebraMap_of_pow_eq_one (f : M →ₗ[R] M) {m : ℕ} (hm : Is
       fun ⟨_, ⟨b⟩⟩ ↦ hM (Module.Finite.of_basis b)
     simp [LinearMap.trace, hM']
   rw [trace_eq_matrix_trace R b]
-  refine Matrix.trace_eq_algebraMap_of_pow_eq_one ε _ hm ?_
+  refine Matrix.trace_eq_algebraMap_of_pow_eq_one _ ε hm ?_
   have h := congrArg (toMatrixAlgEquiv b) hf
   rwa [map_pow, map_one] at h
 
@@ -126,10 +126,10 @@ free over `A`, `ε : R → A` is a local `A`-algebra retraction and `f ^ m = 1` 
 in `A`, then for every `c ∈ R` the `A`-trace of `c • f` is `ε (trace f)` times the algebra trace
 of `c`. -/
 theorem trace_restrictScalars_smul_of_pow_eq_one [Module.Free A R]
-    [Module A M] [IsScalarTower A R M] (f : M →ₗ[R] M) {m : ℕ} (hm : IsUnit (m : A))
-    (hf : f ^ m = 1) (c : R) :
+    [Module A M] [IsScalarTower A R M] (f : M →ₗ[R] M) (ε : R →ₐ[A] A) [IsLocalHom ε] {m : ℕ}
+    (hm : IsUnit (m : A)) (hf : f ^ m = 1) (c : R) :
     trace A M ((c • f).restrictScalars A) = ε (trace R M f) * Algebra.trace A R c := by
-  rw [trace_restrictScalars, map_smul, smul_eq_mul, trace_eq_algebraMap_of_pow_eq_one ε f hm hf,
+  rw [trace_restrictScalars, map_smul, smul_eq_mul, trace_eq_algebraMap_of_pow_eq_one f ε hm hf,
     mul_comm, ← Algebra.smul_def, map_smul, smul_eq_mul, AlgHom.commutes, Algebra.algebraMap_self,
     RingHom.id_apply]
 
