@@ -94,7 +94,7 @@ def prodTangentSpace (g₁ : RiemannianMetric (fun x : M ↦ TangentSpace I x))
     · have h₂ : (e v).2 ≠ 0 := fun h₂ ↦ hev (Prod.ext h₁ h₂)
       rw [h₁, map_zero, zero_add]
       exact g₂.pos p.2 _ h₂
-    · exact add_pos_of_pos_of_nonneg (g₁.pos p.1 _ h₁) (g₂.inner_self_nonneg p.2 _)
+    · exact add_pos_of_pos_of_nonneg (g₁.pos p.1 _ h₁) ((g₂.toCore p.2).re_inner_nonneg _)
   continuousAt p := by
     set e := TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := J) p
     have h₁ : ContinuousAt (fun v ↦ g₁.inner p.1 (e v).1 (e v).1) 0 :=
@@ -112,8 +112,8 @@ def prodTangentSpace (g₁ : RiemannianMetric (fun x : M ↦ TangentSpace I x))
     intro v hv
     rw [mem_ofPred_eq, prodTangentInner_apply] at hv
     refine ⟨e v, ⟨?_, ?_⟩, e.symm_apply_apply v⟩
-    · exact lt_of_le_of_lt (le_add_of_nonneg_right (g₂.inner_self_nonneg p.2 _)) hv
-    · exact lt_of_le_of_lt (le_add_of_nonneg_left (g₁.inner_self_nonneg p.1 _)) hv
+    · exact lt_of_le_of_lt (le_add_of_nonneg_right ((g₂.toCore p.2).re_inner_nonneg _)) hv
+    · exact lt_of_le_of_lt (le_add_of_nonneg_left ((g₁.toCore p.1).re_inner_nonneg _)) hv
 
 /-- The product metric pairs tangent vectors factor by factor. -/
 @[simp]

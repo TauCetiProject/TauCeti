@@ -30,10 +30,6 @@ trivialization, the fiber norm and the model norm are comparable by
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
   subset of the total space.
-
-The file also records that the inner product of a `Bundle.RiemannianMetric` is positive
-semidefinite on each fiber (`Bundle.RiemannianMetric.inner_self_nonneg`), the form in which its
-positivity axiom is used when comparing sums of such inner products.
 -/
 
 public section
@@ -144,16 +140,3 @@ theorem IsCompact.norm_le_bundle [T2Space B] {K : Set B} (hK : IsCompact K) (r :
       (fun y hy w ↦ hC i y (hK'sub i hy) w) r
 
 end Compact
-
-namespace Bundle.RiemannianMetric
-
-variable {B : Type*} {V : B → Type*} [∀ b, TopologicalSpace (V b)] [∀ b, AddCommGroup (V b)]
-  [∀ b, Module ℝ (V b)]
-
-/-- The inner product of a Riemannian metric is positive semidefinite on each fiber. -/
-theorem inner_self_nonneg (g : RiemannianMetric V) (b : B) (v : V b) : 0 ≤ g.inner b v v := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  · exact (g.pos b v hv).le
-
-end Bundle.RiemannianMetric
