@@ -31,7 +31,7 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
 * `TauCeti.dirichletDomain G p`: the Dirichlet domain of the centre `p`.
 * `TauCeti.isClosed_dirichletDomain`: it is closed.
 * `TauCeti.smul_dirichletDomain`: translating the Dirichlet domain translates its centre.
-* `TauCeti.finite_dirichletCompetitors`: on a bounded set, only finitely many group elements can
+* `TauCeti.finite_dirichletCompetitors`: on a bounded set, only finitely many acting elements can
   move the centre to a point at least as close as the centre.
 * `TauCeti.exists_finset_dirichletDomain_inter_eq`: on a bounded set, the Dirichlet domain is
   cut out by finitely many of its defining inequalities.
@@ -109,7 +109,7 @@ theorem mem_dirichletCompetitors {p : X} {K : Set X} {g : G} :
     g ∈ dirichletCompetitors G p K ↔ ∃ x ∈ K, dist x (g • p) ≤ dist x p :=
   Iff.rfl
 
-/-- **Only finitely many group elements compete with a Dirichlet centre on a bounded set.**
+/-- **Only finitely many acting elements compete with a Dirichlet centre on a bounded set.**
 For a properly discontinuous action on a proper metric space, a bounded set `K`
 meets the region where `g • p` is at least as close as `p` for only finitely many `g`. -/
 theorem finite_dirichletCompetitors [ProperSpace X] [ProperlyDiscontinuousSMul G X] (p : X)
@@ -129,7 +129,7 @@ theorem finite_dirichletCompetitors [ProperSpace X] [ProperlyDiscontinuousSMul G
     _ = 2 * r := by ring
 
 /-- **A Dirichlet domain has finitely many defining inequalities on every bounded set.**
-For a bounded `K`, there is a finite set `s` of group elements such that intersecting `K` with
+For a bounded `K`, there is a finite set `s` of acting elements such that intersecting `K` with
 the full Dirichlet domain is the same as imposing only the inequalities indexed by `s` on `K`.
 This is the local-finiteness input for viewing Dirichlet domains as locally finite intersections
 of the distance-dominance regions `{x | dist x p ≤ dist x (g • p)}`. -/
