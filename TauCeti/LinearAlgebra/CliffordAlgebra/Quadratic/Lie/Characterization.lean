@@ -12,14 +12,12 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 /-!
 # Characterizing quadratic Clifford elements
 
-For a nondegenerate quadratic form over a field, a Clifford element is quadratic precisely when
-it is even, reversal negates it, and its commutator with every generating vector is again a
-generating vector.
+For a nondegenerate quadratic form on a finite-dimensional vector space over a field in which
+`2` is invertible, a Clifford element is quadratic precisely when it is even, reversal negates
+it, and its commutator with every generating vector is again a generating vector.
 
-For the nontrivial direction, the commutator action produces an endomorphism of the underlying
-vector space. The polarized Clifford relation makes this endomorphism skew-adjoint. Its quadratic
-realization has the same commutator action, so the difference commutes with every vector and is
-therefore scalar. Reversal both fixes this scalar difference and negates it, forcing it to vanish.
+The criterion is phrased entirely in the ambient Clifford algebra, so it can identify candidate
+infinitesimal elements as quadratic without first choosing exterior-square coordinates.
 
 ## Main results
 
@@ -45,6 +43,7 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
   [Invertible (2 : R)]
 
 /-- Reversal negates every quadratic Clifford element. -/
+@[simp]
 theorem reverse_eq_neg_of_mem_quadraticLieSubalgebra
     (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
     (hx : x ∈ quadraticLieSubalgebra Q) :
@@ -61,17 +60,14 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [Invertible (2 : K)]
 
 /-- An even Clifford element which is negated by reversal and whose commutator preserves the
-generating vectors is quadratic.
-
-The preservation condition first gives an endomorphism of `V`. Applying the commutator derivation
-to the polarized Clifford relation proves that this endomorphism is skew-adjoint. Comparing with
-its image under `soEquivQuadratic` leaves an even element commuting with every generator, hence a
-scalar; the reversal condition makes that scalar equal to its own negative. -/
+generating vectors is quadratic. This recognizes intrinsic infinitesimal conditions inside the
+ambient Clifford algebra as membership in the canonical quadratic Lie subalgebra. -/
 theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {x : CliffordAlgebra Q}
     (hx_even : x ∈ even Q) (hx_reverse : reverse x = -x)
     (hx_lie : ∀ v : V, ⁅x, ι Q v⁆ ∈ LinearMap.range (ι Q)) :
     x ∈ quadraticLieSubalgebra Q := by
+  -- Reconstruct the endomorphism represented by the commutator action on generators.
   let g : V →ₗ[K] LinearMap.range (ι Q) :=
     { toFun := fun v => ⟨⁅x, ι Q v⁆, hx_lie v⟩
       map_add' := by
@@ -84,6 +80,7 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
         simp }
   let f : Module.End K V := (ιRangeEquiv Q).symm.toLinearMap.comp g
   have hf_lie (v : V) : ⁅x, ι Q v⁆ = ι Q (f v) := by
+    -- Expose the composition defining `f` so the range equivalence can cancel.
     change ⁅x, ι Q v⁆ = ι Q ((ιRangeEquiv Q).symm (g v))
     rw [ι_ιRangeEquiv_symm_apply]
     rfl
@@ -91,6 +88,7 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
       ⁅x, y * z⁆ = ⁅x, y⁆ * z + y * ⁅x, z⁆ := by
     simp only [Ring.lie_def]
     noncomm_ring
+  -- Differentiating the polarized Clifford relation makes `f` skew-adjoint.
   have hf_skew : f ∈ (QuadraticMap.polarBilin Q).skewAdjointSubmodule := by
     rw [LinearMap.mem_skewAdjointSubmodule]
     intro u v
@@ -112,10 +110,12 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
     have hpolar :
         QuadraticMap.polar Q (f u) v + QuadraticMap.polar Q u (f v) = 0 :=
       (algebraMap K (CliffordAlgebra Q)).injective (by simpa using hsum)
+    -- Unfold skew-adjointness to its bilinear-form equation.
     change QuadraticMap.polarBilin Q (f u) v =
       QuadraticMap.polarBilin Q u ((-f) v)
     simp only [QuadraticMap.polarBilin_apply_apply, LinearMap.neg_apply, map_neg]
     exact eq_neg_of_add_eq_zero_left hpolar
+  -- Compare with the canonical quadratic element realizing the same endomorphism.
   let fs : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) := ⟨f, hf_skew⟩
   let q : CliffordAlgebra Q := soEquivQuadratic Q hQ fs
   have hq_lie (v : V) : ⁅q, ι Q v⁆ = ι Q (f v) :=
@@ -126,6 +126,7 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
     (quadraticLieSubalgebra_le_even Q hq_mem)
   have hd_comm (v : V) : Commute d (ι Q v) := by
     rw [Commute, SemiconjBy]
+    -- Expose the difference defining `d` in the ambient multiplication equation.
     change (x - q) * ι Q v = ι Q v * (x - q)
     have hxq : ⁅x, ι Q v⁆ = ⁅q, ι Q v⁆ := (hf_lie v).trans (hq_lie v).symm
     simp only [Ring.lie_def] at hxq
@@ -135,6 +136,7 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
           (x * ι Q v - ι Q v * x) + (ι Q v * x - q * ι Q v) := by abel
       _ = (q * ι Q v - ι Q v * q) + (ι Q v * x - q * ι Q v) := by rw [hxq]
       _ = ι Q v * x - ι Q v * q := by abel
+  -- The commuting even difference is scalar; reversal then forces that scalar to vanish.
   obtain ⟨r, hr⟩ :=
     exists_eq_algebraMap_of_mem_even_of_commute Q hQ d hd_even hd_comm
   have hq_reverse : reverse q = -q :=
