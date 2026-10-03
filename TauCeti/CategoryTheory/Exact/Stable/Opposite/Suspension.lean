@@ -67,10 +67,8 @@ private noncomputable def opSuspensionObjIso (X : Cᵒᵖ) :
   eqToIso (congrArg (E.projectiveStableOpFunctor hE.projective_iff_injective).obj
     (hE.op.stableSuspension_obj_projectiveStableFunctor_obj X)) ≪≫
   (E.projectiveStableOpFunctor hE.projective_iff_injective).mapIso
-    ((hE.op.suspensionPresentation X).projectiveStableIso
-      (hE.enoughProjectives.projectivePresentation X.unop).op
-      (hE.op.isProjective_I (hE.op.suspensionPresentation X))
-      (hE.op.isProjective_I (hE.enoughProjectives.projectivePresentation X.unop).op)) ≪≫
+    (hE.op.projectiveStableIsoSuspensionObj
+      (hE.enoughProjectives.projectivePresentation X.unop).op).symm ≪≫
   eqToIso (E.projectiveStableOpFunctor_obj hE.projective_iff_injective
     (hE.enoughProjectives.projectivePresentation X.unop).op.K) ≪≫
   eqToIso (congrArg Opposite.op
@@ -84,17 +82,14 @@ private theorem opSuspensionObjIso_hom_naturality {X Y : Cᵒᵖ} (f : X ⟶ Y) 
       (opSuspensionObjIso hE X).hom ≫
         (E.projectiveStableOpFunctor hE.projective_iff_injective ⋙
           hE.enoughProjectives.stableLoop.op).map (E.op.projectiveStableFunctor.map f) := by
-  have h := ExactStructure.projectiveStableIso_hom_naturality
-    (hE.op.suspensionPresentation X) (hE.enoughProjectives.projectivePresentation X.unop).op
-    (hE.op.suspensionPresentation Y) (hE.enoughProjectives.projectivePresentation Y.unop).op
-    (hE.op.isProjective_I (hE.op.suspensionPresentation X))
-    (hE.op.isProjective_I (hE.enoughProjectives.projectivePresentation X.unop).op)
-    (hE.op.isProjective_I (hE.op.suspensionPresentation Y))
-    (hE.op.isProjective_I (hE.enoughProjectives.projectivePresentation Y.unop).op) f
+  have h := (hE.op.projectiveStableIsoSuspensionObj_hom_naturality
+    (hE.enoughProjectives.projectivePresentation X.unop).op
+    (hE.enoughProjectives.projectivePresentation Y.unop).op f).symm
+  rw [← Iso.eq_inv_comp, ← Category.assoc, ← Iso.comp_inv_eq] at h
   rw [map_opLoopPresentation_cokernelMap hE f] at h
   simp only [Functor.comp_map, stableSuspension_map_projectiveStableFunctor_map,
     Functor.map_comp, opSuspensionObjIso, Iso.trans_hom, eqToIso.hom,
-    Functor.mapIso_hom, eqToHom_map, Category.assoc, eqToHom_trans_assoc,
+    Functor.mapIso_hom, Iso.symm_hom, eqToHom_map, Category.assoc, eqToHom_trans_assoc,
     eqToHom_refl, Category.id_comp]
   rw [← Functor.map_comp_assoc, h, Functor.map_comp_assoc]
   simp [E.projectiveStableOpFunctor_map, Functor.op_map,
