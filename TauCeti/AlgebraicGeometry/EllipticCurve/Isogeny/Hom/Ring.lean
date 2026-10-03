@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
+-- Proof-only: base change to a separable closure, on points and on morphisms.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: an elliptic curve has infinitely many points over a separably closed field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 -- Proof-only: every isogeny is a separable isogeny after a Frobenius power.
