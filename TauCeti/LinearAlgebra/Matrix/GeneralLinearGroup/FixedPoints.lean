@@ -47,9 +47,8 @@ of at least three points.
 * `Matrix.ProjGenLinGroup.eq_one_of_forall_smul_eq` and
   `Matrix.ProjGenLinGroup.eq_of_forall_smul_eq`: **three-point rigidity in `PGL₂(K)`**, and the
   uniqueness form — two elements acting the same way on a set of at least three points of the
-  projective line are equal.  The matrix-representative forms
-  `Matrix.ProjGenLinGroup.mk_eq_one_of_forall_smul_eq` and
-  `Matrix.ProjGenLinGroup.mk_eq_mk_of_forall_smul_eq_smul` remain as supporting API.
+  projective line are equal.  For a matrix `g`, `OnePoint.pglMk_smul` turns a hypothesis about the
+  Möbius action of `g` into one about the action of its class.
 
 ## References
 
@@ -152,7 +151,7 @@ end Matrix.GeneralLinearGroup
 
 namespace Matrix.ProjGenLinGroup
 
-variable {K : Type*} [Field K] [DecidableEq K] {g h : GL (Fin 2) K}
+variable {K : Type*} [Field K] [DecidableEq K]
 
 /-- **Three-point rigidity in `PGL₂(K)`**: an element of `PGL₂(K)` fixing a set of at least three
 points of the projective line is the identity. -/
@@ -171,15 +170,5 @@ theorem eq_of_forall_smul_eq {x y : PGL(2, K)} {S : Set (OnePoint K)} (hS : ∀ 
   have hone := eq_one_of_forall_smul_eq key hcard
   rw [inv_mul_eq_one] at hone
   exact hone.symm
-
-/-- Three-point rigidity in `PGL₂(K)` for a matrix representative. -/
-theorem mk_eq_one_of_forall_smul_eq {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = c)
-    (hcard : 3 ≤ S.encard) : mk g = 1 :=
-  eq_one_of_forall_smul_eq (fun c hc ↦ by simpa using hS c hc) hcard
-
-/-- Determination by three points for matrix representatives. -/
-theorem mk_eq_mk_of_forall_smul_eq_smul {S : Set (OnePoint K)} (hS : ∀ c ∈ S, g • c = h • c)
-    (hcard : 3 ≤ S.encard) : mk g = mk h :=
-  eq_of_forall_smul_eq (fun c hc ↦ by simpa using hS c hc) hcard
 
 end Matrix.ProjGenLinGroup
