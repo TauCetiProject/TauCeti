@@ -118,6 +118,7 @@ theorem taylor_def (MM : AInfinityRightModule AA M) :
 
 /-- Evaluating the Taylor map means applying the bar differential, then the coalgebra counit, and
 finally the right unitor. -/
+@[simp]
 theorem taylor_apply (MM : AInfinityRightModule AA M)
     (x : M ⊗[R] TensorWords R A) :
     MM.taylor x = (TensorProduct.rid R M)
@@ -125,46 +126,14 @@ theorem taylor_apply (MM : AInfinityRightModule AA M)
         (MM.barDifferential x)) :=
   (rfl)
 
-/-- Applying the tensor-coalgebra counit to the tensor-word factor preserves total degree for
-the tensor-product grading of `M ⊗ Tᶜ(A)`: only the degree-zero part of the tensor word
-survives. -/
-theorem isHomogeneous_counitComponent (G : InternalGrading R M) (H : InternalGrading R A) :
-    LinearMap.IsHomogeneous
-      ((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M)
-      (G.tensorProduct (TensorWords.grading H)).piece G.piece 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p z hz
-  rw [InternalGrading.tensorProduct_piece_eq_iSup] at hz
-  let K := (TensorProduct.rid R M).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M
-  have hle :
-      (⨆ r, Submodule.map₂ (TensorProduct.mk R M (TensorWords R A))
-        (G.piece r) ((TensorWords.grading H).piece (p - r))) ≤
-        (G.piece p).comap K := by
-    refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun x hx y hy ↦ ?_
-    rw [Submodule.mem_comap]
-    dsimp only [K]
-    rw [TensorProduct.mk_apply, LinearMap.comp_apply,
-      LinearMap.lTensor_tmul, LinearEquiv.coe_coe, TensorProduct.rid_tmul]
-    by_cases hzero : p - r = 0
-    · have hpr : p = r := sub_eq_zero.mp hzero
-      rw [hpr]
-      exact Submodule.smul_mem _ _ hx
-    · have hy' : y ∈ TensorWords.gradedPiece H (p - r) := by
-        simpa only [TensorWords.grading_piece] using hy
-      rw [TensorWords.counit_eq_counit,
-        TensorWords.counit_eq_zero_of_mem_gradedPiece H hy' hzero, zero_smul]
-      exact zero_mem _
-  simpa only [add_zero, Submodule.mem_comap] using hle hz
-
 /-- The Taylor map has degree one from the total suspended bar-comodule grading to the suspended
 module grading. -/
 theorem isHomogeneous_taylor (MM : AInfinityRightModule AA M) :
     LinearMap.IsHomogeneous MM.taylor (barGrading AA MM.grading).piece
       (MM.grading.shift 1).piece 1 := by
   rw [taylor_def]
-  exact (isHomogeneous_counitComponent (MM.grading.shift 1) (AA.grading.shift 1)).comp
+  exact (TensorWords.isHomogeneous_rid_comp_lTensor_counit (MM.grading.shift 1)
+    (AA.grading.shift 1)).comp
     MM.isHomogeneous_barDifferential
 
 /-- The stored module bar differential squares to zero. -/
