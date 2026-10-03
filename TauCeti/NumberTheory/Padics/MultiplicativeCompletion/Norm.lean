@@ -40,8 +40,9 @@ namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime] (K L : Type*) [Field K] [Field L] [Algebra K L]
 
--- The completion uses raw power-hom ranges; identify them with the generic power classes
--- via the public subgroup equality, without requiring `powerSubgroup` to be exposed.
+-- `powerSubgroup` has an unexposed body in the imported module, so its equality with the
+-- raw power-hom range cannot be used definitionally here. Transport `powerClassMap` along
+-- the public subgroup equality to obtain the completion's coordinate types.
 /-- The field norm on `p^m`-power classes for a finite extension `L/K`.
 Finiteness excludes the constant-one norm on infinite extensions. -/
 def padicCompletionPowerClassNorm [_hfin : FiniteDimensional K L] (m : ℕ) :
