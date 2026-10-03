@@ -41,6 +41,8 @@ irreducible characters of `GL₂(𝔽₃)` have degrees `1, 1, 2, 2, 2, 3, 3, 4`
 * `TauCeti.irreducibleCharacters_GL2_degree_one_eq_range` and its three companions identify the
   irreducible characters of each degree with the corresponding constructed family.
 * `TauCeti.ncard_irreducibleCharacters_GL2_degree_one` and its three companions count those sets.
+* `TauCeti.image_degree_irreducibleCharacters_GL2`: for `q ≥ 3` the irreducible characters have
+  exactly the four degrees `1`, `q - 1`, `q` and `q + 1`.
 * `TauCeti.GL2_sum_degreeCount_mul_degree_sq_eq_natCard` adds the four degree counts, each
   weighted by the square of the degree it counts.
 * `TauCeti.image_character_GL2PrincipalSeries_eq_empty_of_card_eq_two`: the principal series of
@@ -275,6 +277,38 @@ theorem GL2_sum_degreeCount_mul_degree_sq_eq_natCard :
     Nat.cast_div_charZero hprincipal, Nat.cast_div_charZero hcuspidal]
   ring
 
+/-- **The degrees of the irreducible characters of `GL₂(F)` are `1`, `q - 1`, `q` and `q + 1`**
+for `q ≥ 3`: the linear characters have degree `1`, the cuspidal ones `q - 1`, the Steinberg twists
+`q` and the principal series `q + 1`, and each family is nonempty. -/
+theorem image_degree_irreducibleCharacters_GL2 (hq : 3 ≤ Fintype.card F) :
+    (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) =
+      {1, ((Fintype.card F - 1 : ℕ) : ℂ), (Fintype.card F : ℂ), (Fintype.card F : ℂ) + 1} := by
+  refine Set.Subset.antisymm ?_ ?_
+  · rintro - ⟨chi, hchi, rfl⟩
+    rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
+      (primitiveChar_to_Complex_ne_one F)] at hchi
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+    rcases hchi with (((hlin | hstein) | hprincipal) | hcuspidal)
+    · exact .inl (character_degree_eq_of_mem_linear F hlin)
+    · exact .inr (.inr (.inl (character_degree_eq_of_mem_steinberg F hstein)))
+    · exact .inr (.inr (.inr (character_degree_eq_of_mem_principalSeries F hprincipal)))
+    · exact .inr (.inl
+        (character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F) hcuspidal))
+  · -- each degree is attained, its set of characters having positive cardinality
+    have hne {d : ℂ} (h : {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = d}.ncard ≠ 0) :
+        d ∈ (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) := by
+      obtain ⟨chi, hchi, hd⟩ := Set.nonempty_of_ncard_ne_zero h
+      exact ⟨chi, hchi, hd⟩
+    rintro x (rfl | rfl | rfl | rfl) <;> refine hne ?_
+    · rw [ncard_irreducibleCharacters_GL2_degree_one F hq]
+      omega
+    · rw [ncard_irreducibleCharacters_GL2_degree_card_sub_one F hq]
+      exact (Nat.div_pos (Nat.mul_le_mul (by omega : 2 ≤ _) (by omega : 1 ≤ _)) two_pos).ne'
+    · rw [ncard_irreducibleCharacters_GL2_degree_card F]
+      omega
+    · rw [ncard_irreducibleCharacters_GL2_degree_card_add_one F]
+      exact (Nat.div_pos (Nat.mul_le_mul (by omega : 2 ≤ _) (by omega : 1 ≤ _)) two_pos).ne'
+
 /-! ### The degenerate case `q = 2`
 
 Over the field with two elements the four families of the classification degenerate: there is one
@@ -427,33 +461,8 @@ linear characters have degree `1`, the cuspidal ones `q - 1 = 2`, the Steinberg 
 the principal series `q + 1 = 4`, and each family is nonempty. -/
 theorem image_degree_irreducibleCharacters_GL2_of_card_eq_three (hq : Fintype.card F = 3) :
     (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) = {1, 2, 3, 4} := by
-  refine Set.Subset.antisymm ?_ ?_
-  · rintro - ⟨chi, hchi, rfl⟩
-    rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
-      (primitiveChar_to_Complex_ne_one F)] at hchi
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    rcases hchi with (((hlin | hstein) | hprincipal) | hcuspidal)
-    · exact .inl (character_degree_eq_of_mem_linear F hlin)
-    · rw [character_degree_eq_of_mem_steinberg F hstein, hq]
-      norm_num
-    · rw [character_degree_eq_of_mem_principalSeries F hprincipal, hq]
-      norm_num
-    · rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F) hcuspidal, hq]
-      norm_num
-  · -- each degree is attained, its set of characters having positive cardinality
-    have hne {d : ℂ} (h : {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = d}.ncard ≠ 0) :
-        d ∈ (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) := by
-      obtain ⟨chi, hchi, hd⟩ := Set.nonempty_of_ncard_ne_zero h
-      exact ⟨chi, hchi, hd⟩
-    rintro x (rfl | rfl | rfl | rfl) <;> refine hne ?_
-    · rw [ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_three F hq]
-      norm_num
-    · rw [ncard_irreducibleCharacters_GL2_degree_two_of_card_eq_three F hq]
-      norm_num
-    · rw [ncard_irreducibleCharacters_GL2_degree_three_of_card_eq_three F hq]
-      norm_num
-    · rw [ncard_irreducibleCharacters_GL2_degree_four_of_card_eq_three F hq]
-      norm_num
+  rw [image_degree_irreducibleCharacters_GL2 F hq.ge, hq]
+  norm_num
 
 end CardThree
 
