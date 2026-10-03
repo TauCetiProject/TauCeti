@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.MazurUlam
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
 /-!
 # The isometry group of Euclidean space
@@ -22,11 +22,11 @@ identifies its Riemannian isometries with its affine isometries:
   distance, so it is affine by the Mazur–Ulam theorem
   (`IsometryEquiv.toRealAffineIsometryEquiv`).
 
-For self-maps this is an isomorphism between the Riemannian isometry group `Isom(F)` and the
-affine isometry group `F ≃ᵃⁱ[ℝ] F` of rigid motions. Translations act transitively, so Euclidean
-space is a homogeneous Riemannian manifold, and the isotropy group of the origin is the orthogonal
-group `F ≃ₗᵢ[ℝ] F`. With `F = EuclideanSpace ℝ (Fin 3)` this is the
-Euclidean model geometry `(𝔼³, Isom(𝔼³))`, one of Thurston's eight three-dimensional geometries.
+For self-maps this is an isomorphism between the Riemannian isometry group `Isom 𝓘(ℝ, F) F` and
+the affine isometry group `F ≃ᵃⁱ[ℝ] F` of rigid motions. Translations act transitively, so
+Euclidean space is a homogeneous Riemannian manifold, and the isotropy group of the origin is the
+orthogonal group `F ≃ₗᵢ[ℝ] F`. With `F = EuclideanSpace ℝ (Fin 3)` this is the Euclidean model
+geometry `(𝔼³, Isom(𝔼³))`, one of Thurston's eight three-dimensional geometries.
 
 ## Main definitions
 
@@ -76,9 +76,8 @@ def toRiemannianIsometry (f : F ≃ᵃⁱ[ℝ] G) :
       · ext u
         simp
       · ext u
-        -- The linear part of the continuous affine map underlying `f` is `f.linear` by
-        -- construction.
-        rfl
+        simpa using (f.map_vsub u 0).trans
+          (f.toAffineIsometry.toContinuousAffineMap.contLinear_map_vsub u 0).symm
     have h : mfderiv 𝓘(ℝ, F) 𝓘(ℝ, G) f x =
         (f.linearIsometryEquiv.toContinuousLinearEquiv : F →L[ℝ] G) :=
       hf.hasMFDerivAt.mfderiv
@@ -121,7 +120,7 @@ theorem toRiemannianIsometry_toAffineIsometryEquiv
 
 /-- The Riemannian isometry group of a real inner product space is its affine isometry group, the
 group of rigid motions. -/
-def affineIsometryMulEquiv : RiemannianIsometry 𝓘(ℝ, F) 𝓘(ℝ, F) F F ≃* (F ≃ᵃⁱ[ℝ] F) where
+def affineIsometryMulEquiv : Isom 𝓘(ℝ, F) F ≃* (F ≃ᵃⁱ[ℝ] F) where
   toFun := toAffineIsometryEquiv
   invFun := AffineIsometryEquiv.toRiemannianIsometry
   left_inv := toRiemannianIsometry_toAffineIsometryEquiv
@@ -132,7 +131,7 @@ def affineIsometryMulEquiv : RiemannianIsometry 𝓘(ℝ, F) 𝓘(ℝ, F) F F �
 
 /-- The isomorphism of isometry groups sends a Riemannian isometry to its affine isometry. -/
 @[simp]
-theorem affineIsometryMulEquiv_apply (Φ : RiemannianIsometry 𝓘(ℝ, F) 𝓘(ℝ, F) F F) :
+theorem affineIsometryMulEquiv_apply (Φ : Isom 𝓘(ℝ, F) F) :
     affineIsometryMulEquiv Φ = Φ.toAffineIsometryEquiv := (rfl)
 
 /-- The inverse isomorphism of isometry groups views an affine isometry as a Riemannian one. -/
@@ -144,7 +143,7 @@ theorem affineIsometryMulEquiv_symm_apply (f : F ≃ᵃⁱ[ℝ] F) :
 linear isometry group, the orthogonal group `O(F)`: an isometry fixing the origin is linear by the
 Mazur–Ulam theorem. -/
 def stabilizerZeroMulEquiv :
-    MulAction.stabilizer (RiemannianIsometry 𝓘(ℝ, F) 𝓘(ℝ, F) F F) (0 : F) ≃* (F ≃ₗᵢ[ℝ] F) where
+    MulAction.stabilizer (Isom 𝓘(ℝ, F) F) (0 : F) ≃* (F ≃ₗᵢ[ℝ] F) where
   toFun Φ := (Φ.1 : F ≃ᵢ F).toRealLinearIsometryEquivOfMapZero
     (by simpa using MulAction.mem_stabilizer_iff.mp Φ.2)
   invFun L := ⟨L.toAffineIsometryEquiv.toRiemannianIsometry, by simp⟩
@@ -161,7 +160,7 @@ def stabilizerZeroMulEquiv :
 /-- The linear isometry of an isometry fixing the origin has the same underlying function. -/
 @[simp]
 theorem coe_stabilizerZeroMulEquiv
-    (Φ : MulAction.stabilizer (RiemannianIsometry 𝓘(ℝ, F) 𝓘(ℝ, F) F F) (0 : F)) :
+    (Φ : MulAction.stabilizer (Isom 𝓘(ℝ, F) F) (0 : F)) :
     ⇑(stabilizerZeroMulEquiv Φ) = Φ.1 := by
   simp [stabilizerZeroMulEquiv]
 
@@ -175,7 +174,7 @@ theorem coe_stabilizerZeroMulEquiv_symm (L : F ≃ₗᵢ[ℝ] F) :
 /-- Euclidean space is a homogeneous Riemannian manifold: translations are isometries, so the
 isometry group of a real inner product space acts transitively on it. -/
 instance isPretransitive_innerProductSpace :
-    MulAction.IsPretransitive (RiemannianIsometry 𝓘(ℝ, F) 𝓘(ℝ, F) F F) F where
+    MulAction.IsPretransitive (Isom 𝓘(ℝ, F) F) F where
   exists_smul_eq x y :=
     ⟨(AffineIsometryEquiv.constVAdd ℝ F (y - x)).toRiemannianIsometry, by simp⟩
 
