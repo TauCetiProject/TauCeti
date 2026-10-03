@@ -42,6 +42,10 @@ and `Q`, never `B / 2`, so it makes sense verbatim for integral quadratic forms.
 * `QuadraticMap.transvection_add`: `E_{u,w + w'} = E_{u,w} * E_{u,w'}`.
 * `QuadraticMap.transvection_add_smul`: `E_{u,w + c • u} = E_{u,w}`.
 * `QuadraticMap.transvection_conj`: `g * E_{u,w} * g⁻¹ = E_{g u, g w}` for `g ∈ O(Q)`.
+* `QuadraticMap.IsometryEquiv.transvectionParameterEquiv`: an isometry transports the parameter
+  space `u^⊥ / R ∙ u` to `(e u)^⊥ / R ∙ e u`.
+* `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_comp_transvectionHom`: Eichler
+  root-subgroup homomorphisms are natural under isometric equivalences.
 * `QuadraticMap.transvection_eq_one_iff_of_isUnit`: if `polar Q x u` is a unit for some `x`,
   then `E_{u,w} = 1` exactly when `w ∈ R ∙ u`. Hence `transvectionHom_injective_of_isUnit`.
 * `QuadraticMap.transvection_eq_one_iff`: over a field, if `polarBilin Q u ≠ 0`, then
@@ -59,6 +63,78 @@ open TauCeti.QuadraticMap
 universe u v
 
 namespace QuadraticMap
+
+namespace IsometryEquiv
+
+section Parameter
+
+variable {R : Type*} [CommRing R]
+  {M₁ : Type*} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+private theorem map_polarKernel (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
+    (LinearMap.ker (Q₁.polarBilin u)).map e.toLinearMap =
+      LinearMap.ker (Q₂.polarBilin (e u)) := by
+  ext y
+  simp only [Submodule.mem_map_equiv, coe_symm_toLinearEquiv, coe_toLinearEquiv,
+    LinearMap.mem_ker, polarBilin_apply_apply]
+  rw [← e.polar_apply u (e.symm y), e.apply_symm_apply]
+
+private def polarKernelEquiv (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
+    LinearMap.ker (Q₁.polarBilin u) ≃ₗ[R] LinearMap.ker (Q₂.polarBilin (e u)) :=
+  (e.toLinearEquiv.submoduleMap _).trans
+    (LinearEquiv.ofEq _ _ (map_polarKernel e u))
+
+private theorem map_transvectionParameterSubmodule (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
+    ((R ∙ u).comap (LinearMap.ker (Q₁.polarBilin u)).subtype).map
+        (polarKernelEquiv e u).toLinearMap =
+      (R ∙ e u).comap (LinearMap.ker (Q₂.polarBilin (e u))).subtype := by
+  ext y
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    change e (x : M₁) ∈ R ∙ e u
+    change (x : M₁) ∈ R ∙ u at hx
+    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
+    exact Submodule.mem_span_singleton.mpr ⟨c, by
+      calc
+        c • e u = e (c • u) := (map_smul e c u).symm
+        _ = e x := congrArg e hc⟩
+  · intro hy
+    let x : LinearMap.ker (Q₁.polarBilin u) := (polarKernelEquiv e u).symm y
+    refine ⟨x, ?_, (polarKernelEquiv e u).apply_symm_apply y⟩
+    change (x : M₁) ∈ R ∙ u
+    change (y : M₂) ∈ R ∙ e u at hy
+    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hy
+    apply Submodule.mem_span_singleton.mpr
+    refine ⟨c, ?_⟩
+    apply e.injective
+    rw [map_smul]
+    exact hc.trans (congrArg Subtype.val ((polarKernelEquiv e u).apply_symm_apply y)).symm
+
+/-- An isometric equivalence transports the parameter space `u^⊥ / R ∙ u` of Eichler
+transvections to the parameter space `(e u)^⊥ / R ∙ e u`. -/
+noncomputable def transvectionParameterEquiv (e : Q₁.IsometryEquiv Q₂) (u : M₁) :
+    (LinearMap.ker (Q₁.polarBilin u) ⧸
+        (R ∙ u).comap (LinearMap.ker (Q₁.polarBilin u)).subtype) ≃ₗ[R]
+      (LinearMap.ker (Q₂.polarBilin (e u)) ⧸
+        (R ∙ e u).comap (LinearMap.ker (Q₂.polarBilin (e u))).subtype) :=
+  Submodule.Quotient.equiv _ _ (polarKernelEquiv e u)
+    (map_transvectionParameterSubmodule e u)
+
+/-- Transport of Eichler-transvection parameters sends the class of `w` to the class of `e w`. -/
+@[simp]
+theorem transvectionParameterEquiv_mk (e : Q₁.IsometryEquiv Q₂)
+    (u : M₁) (w : LinearMap.ker (Q₁.polarBilin u)) :
+    e.transvectionParameterEquiv u (Submodule.Quotient.mk w) =
+      Submodule.Quotient.mk ⟨e w, by
+        rw [LinearMap.mem_ker, polarBilin_apply_apply, e.polar_apply]
+        exact LinearMap.mem_ker.mp w.2⟩ := by
+  rfl
+
+end Parameter
+
+end IsometryEquiv
 
 section CommRing
 
@@ -177,6 +253,27 @@ theorem transvection_conj (hu : Q u = 0) (huw : polar Q u w = 0) {g : M ≃ₗ[R
   simp [transvection_apply, polar_apply_of_mem_orthogonalGroup hg,
     map_app_of_mem_orthogonalGroup hg]
 
+/-- Transporting an Eichler transvection along an isometric equivalence transports both of its
+defining vectors. -/
+@[simp]
+theorem IsometryEquiv.specialOrthogonalGroupCongr_transvection
+    {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {Q₂ : QuadraticForm R M₂}
+    (e : Q.IsometryEquiv Q₂) (hu : Q u = 0) (huw : polar Q u w = 0) :
+    e.specialOrthogonalGroupCongr
+        ⟨transvection Q hu huw, transvection_mem_specialOrthogonalGroup hu huw⟩ =
+      ⟨transvection Q₂ ((e.map_app u).trans hu) ((e.polar_apply u w).trans huw),
+        transvection_mem_specialOrthogonalGroup _ _⟩ := by
+  apply Subtype.ext
+  ext x
+  rw [e.coe_specialOrthogonalGroupCongr_apply]
+  change e (transvection Q hu huw (e.symm x)) =
+    transvection Q₂ (u := e u) (w := e w)
+      ((e.map_app u).trans hu) ((e.polar_apply u w).trans huw) x
+  rw [transvection_apply, transvection_apply]
+  simp only [map_sub, map_add, map_smul, e.apply_symm_apply, e.map_app]
+  rw [← e.polar_apply (e.symm x) u, ← e.polar_apply (e.symm x) w,
+    e.apply_symm_apply]
+
 /-- The Eichler transvections with isotropic vector `u`, as a homomorphism out of the vectors
 orthogonal to `u`. It descends to `u^⊥ / R ∙ u` as `transvectionHom`. -/
 private noncomputable def transvectionAddHom (hu : Q u = 0) :
@@ -220,6 +317,28 @@ theorem coe_transvectionHom_mk (hu : Q u = 0) (huw : polar Q u w = 0) :
         specialOrthogonalGroup Q) : M ≃ₗ[R] M) = transvection Q hu huw := by
   erw [transvectionHom, QuotientAddGroup.lift_mk']
   exact coe_toMul_transvectionAddHom hu _
+
+/-- Eichler root-subgroup homomorphisms are natural under isometric equivalences of quadratic
+forms. -/
+theorem IsometryEquiv.specialOrthogonalGroupCongr_comp_transvectionHom
+    {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {Q₂ : QuadraticForm R M₂}
+    (e : Q.IsometryEquiv Q₂) (hu : Q u = 0) :
+    e.specialOrthogonalGroupCongr.toMonoidHom.toAdditive.comp (transvectionHom Q hu) =
+      (transvectionHom Q₂ ((e.map_app u).trans hu)).comp
+        (e.transvectionParameterEquiv u).toLinearMap.toAddMonoidHom := by
+  apply AddMonoidHom.ext
+  intro q
+  induction q using Submodule.Quotient.induction_on with | H w =>
+    obtain ⟨w, hw⟩ := w
+    have huw : polar Q u w = 0 := by simpa using hw
+    apply Additive.toMul.injective
+    apply Subtype.ext
+    simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply]
+    change ((e.specialOrthogonalGroupCongr
+      ⟨transvection Q hu huw, transvection_mem_specialOrthogonalGroup hu huw⟩ :
+        specialOrthogonalGroup Q₂) : M₂ ≃ₗ[R] M₂) = _
+    rw [e.specialOrthogonalGroupCongr_transvection]
+    exact coe_transvectionHom_mk ((e.map_app u).trans hu) ((e.polar_apply u w).trans huw)
 
 /-- An Eichler transvection `E_{u,w}` is trivial exactly when `w` is a multiple of `u`, provided
 the polar form pairs `u` with some vector to a unit. -/
