@@ -32,13 +32,14 @@ separably closed field acts through the class-group point map, which is additive
 after a Frobenius power `F^r : W → W⁽ᵖʳ⁾` (Silverman II.2.12), and `F^r` sends `(x, y)` to
 `(x ^ p ^ r, y ^ p ^ r)` (`TauCeti.Isogeny.pointMap_iterateRelativeFrobeniusIsogeny`), which is
 additive because the Frobenius of the field is a ring homomorphism. Over an arbitrary field, both
-sides of the identity are compared after the faithful, additive base change to a separable closure
-(`TauCeti.Isogeny.Hom.map_injective`).
+additivity statements are compared after base change to a separable closure: on points, which embed
+additively and compatibly with the action of morphisms (`TauCeti.Isogeny.Hom.pointMap_map`), and on
+morphisms, along the faithful, additive base change (`TauCeti.Isogeny.Hom.map_injective`).
 
 ## Main results
 
-* `TauCeti.Isogeny.Hom.pointMap_add`: over a separably closed field every morphism acts additively
-  on points (Silverman III.4.8), with `pointMap_neg`, `pointMap_sub` and `pointMap_zsmul`.
+* `TauCeti.Isogeny.Hom.pointMap_add`: every morphism acts additively on points, over any field
+  (Silverman III.4.8), with `pointMap_neg`, `pointMap_sub` and `pointMap_zsmul`.
 * `TauCeti.Isogeny.Hom.comp_add`: composition is additive in the inner morphism, over any field.
 * `TauCeti.Isogeny.Hom.compLeftHom`: postcomposition by a morphism, as an additive homomorphism.
 * The `Ring (Hom W W)` and `IsDomain (Hom W W)` instances.
@@ -59,20 +60,19 @@ variable {F : Type*} [Field F] {W₁ W₂ W₃ : WeierstrassCurve.Affine F}
 
 section PointMap
 
-variable [DecidableEq F] [IsSepClosed F]
+variable [DecidableEq F]
 
 -- The separable case of `pointMap_add`: the action is the additive class-group point map.
-private theorem pointMap_ofIsogeny_add_of_isSeparable (φ : Isogeny W₁ W₂)
+private theorem pointMap_ofIsogeny_add_of_isSeparable [IsSepClosed F] (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (P Q : W₁.Point) :
     (ofIsogeny φ).pointMap (P + Q) = (ofIsogeny φ).pointMap P + (ofIsogeny φ).pointMap Q := by
   have := W₂.isIntegrallyClosed_coordinateRing
   rw [pointMap_ofIsogeny_eq_toPointHom, _root_.map_add, ← pointMap_ofIsogeny_eq_toPointHom,
     ← pointMap_ofIsogeny_eq_toPointHom]
 
-/-- **Every morphism of elliptic curves over a separably closed field acts additively on points**
-(Silverman III.4.8). -/
-@[simp]
-theorem pointMap_add (f : Hom W₁ W₂) (P Q : W₁.Point) :
+-- `pointMap_add` over a separably closed field, where `φ` factors as a separable isogeny after a
+-- Frobenius power.
+private theorem pointMap_add_of_isSepClosed [IsSepClosed F] (f : Hom W₁ W₂) (P Q : W₁.Point) :
     f.pointMap (P + Q) = f.pointMap P + f.pointMap Q := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · simp only [zero_pointMap, add_zero]
@@ -82,8 +82,18 @@ theorem pointMap_add (f : Hom W₁ W₂) (P Q : W₁.Point) :
   simp only [← ofIsogeny_comp_ofIsogeny, comp_pointMap, pointMap_iterateRelativeFrobeniusIsogeny,
     Point.mapAlong_add, pointMap_ofIsogeny_add_of_isSeparable]
 
-/-- **The action of a morphism on points, as a homomorphism of point groups**, over a separably
-closed field. -/
+/-- **Every morphism of elliptic curves acts additively on points** (Silverman III.4.8). -/
+@[simp]
+theorem pointMap_add (f : Hom W₁ W₂) (P Q : W₁.Point) :
+    f.pointMap (P + Q) = f.pointMap P + f.pointMap Q := by
+  classical
+  -- compare both sides over a separable closure, into which points embed additively
+  let ι := algebraMap F (SeparableClosure F)
+  apply Point.mapAlong_injective ι ι.injective
+  rw [Point.mapAlong_add, ← pointMap_map, ← pointMap_map, ← pointMap_map, Point.mapAlong_add,
+    pointMap_add_of_isSepClosed]
+
+/-- **The action of a morphism on points, as a homomorphism of point groups.** -/
 noncomputable def pointMapHom (f : Hom W₁ W₂) : W₁.Point →+ W₂.Point :=
   AddMonoidHom.mk' f.pointMap (pointMap_add f)
 
@@ -100,8 +110,7 @@ theorem pointMap_sub (f : Hom W₁ W₂) (P Q : W₁.Point) :
     f.pointMap (P - Q) = f.pointMap P - f.pointMap Q :=
   f.pointMapHom.map_sub P Q
 
-/-- **Every morphism over a separably closed field commutes with integer multiples of
-points.** -/
+/-- **Every morphism commutes with integer multiples of points.** -/
 @[simp]
 theorem pointMap_zsmul (f : Hom W₁ W₂) (n : ℤ) (P : W₁.Point) :
     f.pointMap (n • P) = n • f.pointMap P :=

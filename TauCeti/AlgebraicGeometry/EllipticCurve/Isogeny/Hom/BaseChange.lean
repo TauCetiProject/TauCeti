@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
@@ -18,7 +19,9 @@ It preserves identity and composition and is injective along every homomorphism 
 For an elliptic target it also preserves addition: the tautological point of a transported
 morphism is the transported tautological point, and field embeddings preserve the point-group
 law. Thus identities between sums and composites can be checked after extending the ground
-field, for example to a separable closure.
+field, for example to a separable closure. Base change also commutes with the action on points,
+the place of a transported point restricting to the place of the point; so statements about the
+action on points, too, can be checked after extending the ground field.
 
 The construction reuses `Isogeny.map`, Mathlib's additive map on points `Affine.Point.map`,
 and the identification of morphisms with their tautological points in `Isogeny.Hom.Add`.
@@ -31,6 +34,7 @@ and the identification of morphisms with their tautological points in `Isogeny.H
 * `TauCeti.Isogeny.Hom.mapAddHom`: additive base change.
 * `TauCeti.Isogeny.Hom.comp_map` and `TauCeti.Isogeny.Hom.map_add`: preservation of
   composition and addition.
+* `TauCeti.Isogeny.Hom.pointMap_map`: compatibility with the action on points.
 
 ## References
 
@@ -205,6 +209,51 @@ theorem map_nsmul (n : ℕ) (h : Hom W₁ W₂) (f : F →+* K) :
   (mapAddHom f).map_nsmul n h
 
 end Additive
+
+section PointMap
+
+variable [DecidableEq F] [DecidableEq K] [W₁.IsElliptic] [W₂.IsElliptic]
+
+/-- **Base change commutes with the action on points**: the transported morphism sends the
+transported point `P` to the transport of the image of `P`. -/
+@[simp]
+theorem pointMap_map (h : Hom W₁ W₂) (f : F →+* K) (P : W₁.Point) :
+    (h.map f).pointMap (P.mapAlong f f.injective) = (h.pointMap P).mapAlong f f.injective := by
+  rcases P with _ | ⟨a, b, hP⟩
+  · rw [← Point.zero_def, Point.mapAlong_zero, pointMap_zero, pointMap_zero, Point.mapAlong_zero]
+  rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩
+  · rw [zero_map, zero_pointMap, zero_pointMap, Point.mapAlong_zero]
+  -- the place of the transported point restricts to the place of `P`, so the congruence between
+  -- the tautological point and the image of `P` there persists after transport
+  have he := W₁.isEquiv_comap_pointPlace_map f hP.1
+  have hQ := (pointMap_eq_iff (f := ofIsogeny φ) (P := .some a b hP)).mp rfl
+  generalize (ofIsogeny φ).pointMap (.some a b hP) = Q at hQ ⊢
+  rw [ofIsogeny_map, pointMap_eq_iff, Point.mapAlong_some, tautologicalPoint_ofIsogeny,
+    ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero _),
+    coe_pointEquivDegreeOnePlace_some]
+  rw [tautologicalPoint_ofIsogeny,
+    ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero _),
+    coe_pointEquivDegreeOnePlace_some] at hQ
+  rcases Q with _ | ⟨c, d, hc⟩
+  · rw [← Point.zero_def, Point.mapAlong_zero, map_zero, map_zero, sub_zero, mem_polePoints_iff,
+      Point.xCoord_some]
+    rw [← Point.zero_def, map_zero, map_zero, sub_zero, mem_polePoints_iff,
+      Point.xCoord_some] at hQ
+    simp only [CoordinatePullback.xCoord_tautologicalPoint, Isogeny.map_pullback,
+      CoordinatePullback.map_of_X] at hQ ⊢
+    exact Or.inr (he.one_lt_iff_one_lt.mpr (hQ.resolve_left (Point.some_ne_zero _)))
+  · rw [Point.mapAlong_some, Point.equivBaseChangeSelf_some,
+      some_sub_baseChange_mem_polePoints_iff]
+    rw [Point.equivBaseChangeSelf_some, some_sub_baseChange_mem_polePoints_iff] at hQ
+    simp only [CoordinatePullback.xCoord_tautologicalPoint,
+      CoordinatePullback.yCoord_tautologicalPoint, Isogeny.map_pullback,
+      CoordinatePullback.map_of_X, CoordinatePullback.map_root] at hQ ⊢
+    have h₁ := he.lt_one_iff_lt_one.mpr hQ.1
+    have h₂ := he.lt_one_iff_lt_one.mpr hQ.2
+    rw [Valuation.comap_apply, _root_.map_sub, FunctionField.map_algebraMap] at h₁ h₂
+    exact ⟨h₁, h₂⟩
+
+end PointMap
 
 end TauCeti.Isogeny.Hom
 
