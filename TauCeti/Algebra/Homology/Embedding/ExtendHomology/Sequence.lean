@@ -93,7 +93,7 @@ private noncomputable def extendSnakeInputHom :
 `HomologicalComplex.extendHomologyIso` of the homology of the extended complexes with the homology
 of the original ones, the connecting map of the extension of `S` along `e` in degrees
 `e.f i ⟶ e.f j` is the connecting map of `S` in degrees `i ⟶ j`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma extend_δ_comp_extendHomologyIso_hom (hij' : c'.Rel i' j') :
     (hS.extend e).δ i' j' hij' ≫ (S.X₁.extendHomologyIso e hj').hom =
       (S.X₃.extendHomologyIso e hi').hom ≫ hS.δ i j hij :=
