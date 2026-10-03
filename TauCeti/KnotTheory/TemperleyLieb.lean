@@ -200,6 +200,7 @@ private theorem jonesDelta_mul_add_inv (a : Rˣ) :
 /-- Adding a straight last strand commutes with the Jones representation: the braid with an added
 uncrossed strand goes to the image of its Jones representative under
 `TauCeti.TemperleyLieb.strandIncl`. -/
+@[simp]
 theorem jones_strandIncl (a : Rˣ) (b : BraidGroup (n + 1)) :
     (jones (n + 2) a (BraidGroup.strandIncl b) : TemperleyLieb R (jonesDelta a) (n + 2)) =
       strandIncl (jones (n + 1) a b : TemperleyLieb R (jonesDelta a) (n + 1)) := by

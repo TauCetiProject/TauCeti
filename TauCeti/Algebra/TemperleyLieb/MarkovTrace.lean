@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb
+public import Mathlib.LinearAlgebra.Matrix.Kronecker
+public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -47,7 +49,7 @@ is the identity, which gives the Markov property.
 * `TauCeti.TemperleyLieb.spinRep`: the spin representation of the Temperley-Lieb algebra.
 * `TauCeti.TemperleyLieb.spinWeight`: the weight of a spin configuration.
 * `TauCeti.TemperleyLieb.extendLast`: a matrix on `m` spins acting on `m + 1` spins, as the
-  identity on the last one.
+  identity on the last one: the Kronecker product `1 ⊗ₖ X`, reindexed along `Fin.snocEquiv`.
 * `TauCeti.TemperleyLieb.markovTrace`: the Markov trace.
 
 ## Main results
@@ -71,6 +73,7 @@ is the identity, which gives the Markov property.
 public section
 
 open Function Matrix
+open scoped Kronecker
 
 namespace TauCeti.TemperleyLieb
 
@@ -236,7 +239,7 @@ theorem spinGenerator_mul_self {j k : Fin n} (hjk : j ≠ k) :
     spinGenerator q j k * spinGenerator q j k =
       (-((q : R) + ((q⁻¹ : Rˣ) : R))) • spinGenerator q j k := by
   ext s u
-  rw [spinGenerator_mul_apply q hjk, smul_apply, spinGenerator_apply]
+  rw [spinGenerator_mul_apply q hjk, Matrix.smul_apply, spinGenerator_apply]
   simp_rw [spinGenerator_update_update_apply q hjk]
   split_ifs
   · simp
@@ -433,38 +436,28 @@ theorem spinWeight_snoc (s : Fin m → Bool) (c : Bool) :
   simp [spinWeight, Fin.prod_univ_castSucc]
 
 /-- A matrix on `m` spins as a matrix on `m + 1` spins, acting as the identity on the last one:
-the entry at `s` and `t` is the entry of the original matrix at their first `m` spins when the
-last spins of `s` and `t` agree, and `0` otherwise. It is an algebra map, and it is how the spin
-representation intertwines `TauCeti.TemperleyLieb.strandIncl`. -/
+the Kronecker product `1 ⊗ₖ X`, reindexed along `Fin.snocEquiv` so that the factor `1` acts on the
+last spin. Its entry at `s` and `t` is the entry of the original matrix at their first `m` spins
+when the last spins of `s` and `t` agree, and `0` otherwise. It is how the spin representation
+intertwines `TauCeti.TemperleyLieb.strandIncl`. -/
 def extendLast : Matrix (Fin m → Bool) (Fin m → Bool) R →ₐ[R]
     Matrix (Fin (m + 1) → Bool) (Fin (m + 1) → Bool) R :=
-  AlgHom.ofLinearMap
-    { toFun X := Matrix.of fun s t ↦ if s (Fin.last m) = t (Fin.last m) then
-        X (Fin.init s) (Fin.init t) else 0
-      map_add' X Y := by ext s t; simp only [of_apply, add_apply]; split_ifs <;> simp
-      map_smul' r X := by ext s t; simp only [of_apply, smul_apply]; split_ifs <;> simp }
-    (by
-      ext s t
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, of_apply, one_apply]
-      by_cases h : s = t
-      · simp [h]
-      · rw [ite_eq_right_iff.2 (fun h' ↦ absurd h' h)]
-        split_ifs with hl hi
-        · exact absurd (by rw [← Fin.snoc_init_self s, ← Fin.snoc_init_self t, hl, hi]) h
-        · rfl
-        · rfl)
-    (by
-      intro X Y
-      ext s t
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, of_apply, mul_apply]
-      rw [sum_spin_succ]
-      simp only [Fin.snoc_last, Fin.init_snoc, ite_mul, mul_ite, zero_mul, mul_zero]
-      cases s (Fin.last m) <;> cases t (Fin.last m) <;> simp)
+  (reindexAlgEquiv R R (Fin.snocEquiv fun _ ↦ Bool)).toAlgHom.comp <|
+    AlgHom.ofLinearMap (kroneckerBilinear (R := R) (1 : Matrix Bool Bool R)) one_kronecker_one
+      fun X Y ↦ by
+        change (1 : Matrix Bool Bool R) ⊗ₖ (X * Y) = (1 ⊗ₖ X) * (1 ⊗ₖ Y)
+        rw [← mul_kronecker_mul, mul_one]
+
+/-- `extendLast X` is the Kronecker product of the identity on the last spin with `X`. -/
+theorem extendLast_eq (X : Matrix (Fin m → Bool) (Fin m → Bool) R) :
+    extendLast X = reindex (Fin.snocEquiv fun _ ↦ Bool) (Fin.snocEquiv fun _ ↦ Bool)
+      ((1 : Matrix Bool Bool R) ⊗ₖ X) := (rfl)
 
 theorem extendLast_apply (X : Matrix (Fin m → Bool) (Fin m → Bool) R)
     (s t : Fin (m + 1) → Bool) :
     extendLast X s t = if s (Fin.last m) = t (Fin.last m) then X (Fin.init s) (Fin.init t)
-      else 0 := (rfl)
+      else 0 := by
+  simp [extendLast_eq, one_apply]
 
 /-- A generator matrix on strands that do not include the last one is extended from fewer
 strands. -/
@@ -480,18 +473,27 @@ theorem spinGenerator_castSucc (j k : Fin m) :
   simp only [hiff, ite_and]
   congr
 
+/-- The weight matrix on `m + 1` spins is the Kronecker product of the weight matrices of the last
+spin and of the first `m` spins. -/
+private theorem diagonal_spinWeight_succ :
+    diagonal (spinWeight q) = reindex (Fin.snocEquiv fun _ ↦ Bool) (Fin.snocEquiv fun _ ↦ Bool)
+      (diagonal (markovWeight q) ⊗ₖ diagonal (spinWeight (n := m) q)) := by
+  rw [diagonal_kronecker_diagonal, reindex_apply, submatrix_diagonal_equiv]
+  congr 1
+  funext s
+  conv_lhs => rw [← Fin.snoc_init_self s]
+  rw [spinWeight_snoc, mul_comm]
+  rfl
+
 /-- Weighted trace of an extended matrix: the added strand contributes the sum of the spin
 weights. -/
 theorem trace_diagonal_spinWeight_mul_extendLast (X : Matrix (Fin m → Bool) (Fin m → Bool) R) :
     trace (diagonal (spinWeight q) * extendLast X) =
       (∑ c, markovWeight q c) * trace (diagonal (spinWeight q) * X) := by
-  simp only [trace, Matrix.diag_apply, diagonal_mul, extendLast_apply]
-  rw [sum_spin_succ, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun c _ ↦ ?_
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  simp only [Fin.init_snoc, ite_true, spinWeight_snoc]
-  ring
+  rw [diagonal_spinWeight_succ, extendLast_eq, reindex_apply, reindex_apply,
+    submatrix_mul_equiv, ← mul_kronecker_mul, mul_one, ← trace_diagonal, ← trace_kronecker]
+  simp only [trace, Matrix.diag_apply, submatrix_apply]
+  exact Equiv.sum_comp _ fun i ↦ (diagonal (markovWeight q) ⊗ₖ (diagonal (spinWeight q) * X)) i i
 
 private theorem markov_partial_sum (y : Bool) (G H : Bool → R) :
     ∑ x, spinCup q y x * ∑ b, ∑ c, spinCap q b c *
@@ -557,6 +559,7 @@ theorem markovTrace_mul_comm (x y : TemperleyLieb R δ n) :
     (commute_diagonal_spinWeight_spinRep q hδ x).eq, mul_assoc, trace_mul_comm, mul_assoc]
 
 /-- The spin representation intertwines adding a straight strand with `extendLast`. -/
+@[simp]
 theorem spinRep_strandIncl (x : TemperleyLieb R δ (n + 1)) :
     spinRep q hδ (strandIncl x) = extendLast (spinRep q hδ x) := by
   have h : (spinRep q hδ).comp strandIncl = extendLast.comp (spinRep (n := n + 1) q hδ) :=
@@ -567,6 +570,7 @@ theorem spinRep_strandIncl (x : TemperleyLieb R δ (n + 1)) :
 
 /-- Adding a straight strand multiplies the Markov trace by the loop value: the new strand closes
 up to one more loop. -/
+@[simp]
 theorem markovTrace_strandIncl (x : TemperleyLieb R δ (n + 1)) :
     markovTrace q hδ (strandIncl x) = δ * markovTrace q hδ x := by
   rw [markovTrace_apply, markovTrace_apply, spinRep_strandIncl,
@@ -574,6 +578,7 @@ theorem markovTrace_strandIncl (x : TemperleyLieb R δ (n + 1)) :
 
 /-- **The Markov property**: capping the added last strand with the previous one does not change
 the Markov trace, the closure of the cap being isotopic to a straight strand. -/
+@[simp]
 theorem markovTrace_strandIncl_mul_e_last (x : TemperleyLieb R δ (n + 1)) :
     markovTrace q hδ (strandIncl x * e δ (Fin.last n)) = markovTrace q hδ x := by
   rw [markovTrace_apply, markovTrace_apply, map_mul, spinRep_strandIncl, spinRep_e]
