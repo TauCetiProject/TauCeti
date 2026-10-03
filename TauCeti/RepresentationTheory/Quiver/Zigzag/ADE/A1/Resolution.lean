@@ -106,7 +106,7 @@ theorem zigzagA1FreeIso_naturality :
       ((zigzagAlgebraEquivA1 k).toRingEquiv.symm y)
   rw [dualNumberEpsSmul_hom, LinearMap.mulLeft_apply, zigzagA1VolumeMul_apply]
   apply (zigzagAlgebraEquivA1 k).injective
-  simp [-zigzagAlgebraEquivA1_apply, zigzagAlgebraEquivA1_zigzagA1Volume, mul_comm]
+  simp [-zigzagAlgebraEquivA1_apply, mul_comm]
 
 /-- The quotient map from the regular one-vertex zigzag module onto its residue module,
 transported from `TauCeti.dualNumberProj`. -/
@@ -117,8 +117,9 @@ noncomputable def zigzagA1Proj : zigzagA1Free k ⟶ zigzagA1Residue k :=
 @[simp]
 theorem zigzagA1Proj_apply (x : zigzagA1Free k) :
     (zigzagA1Proj k).hom x = TrivSqZeroExt.fst (zigzagAlgebraEquivA1 k x) := by
-  rw [zigzagA1Proj, ModuleCat.hom_comp, LinearMap.comp_apply]
-  exact dualNumberProj_apply k _
+  rw [zigzagA1Proj, ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.restrictScalars.map_apply,
+    zigzagA1FreeIso, ← dualNumberProj_apply k (zigzagAlgebraEquivA1 k x)]
+  exact congrArg (dualNumberProj k) (ModuleCat.restrictScalarsIsoOfEquiv_inv_apply _ x)
 
 /-! ### The periodic resolution -/
 

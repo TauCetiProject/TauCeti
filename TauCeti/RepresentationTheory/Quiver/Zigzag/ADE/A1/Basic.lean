@@ -55,7 +55,9 @@ theorem zigzagAlgebraBasis_A1_vertex_eq_one :
 noncomputable def zigzagA1Volume : zigzagAlgebra k (⊥ : SimpleGraph (Fin 1)) :=
   (zigzagAlgebraEquivA1 k).symm DualNumber.eps
 
-/-- Under the comparison with the dual numbers, the `A₁` volume is `ε`. -/
+/-- Under the comparison with the dual numbers, the `A₁` volume is `ε`. Its `simp` priority is
+high so that it fires before the general unfolding lemma `TauCeti.zigzagAlgebraEquivA1_apply`. -/
+@[simp high]
 theorem zigzagAlgebraEquivA1_zigzagA1Volume :
     zigzagAlgebraEquivA1 k (zigzagA1Volume k) = DualNumber.eps :=
   (zigzagAlgebraEquivA1 k).apply_symm_apply DualNumber.eps
