@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
+import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.Algebra.Squarefree
 import TauCeti.FieldTheory.Galois.FixedField
@@ -226,8 +227,9 @@ omit [Q.IsPrime] in
 another is even: an inertia element is determined by its signs on their roots. -/
 private theorem card_inertia_le_four_of_mod_four_eq_three {b c : ι} (hb : d b % 4 = 3)
     (hc : 2 ∣ d c) : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 4 := by
-  refine (card_le_two_pow_of_forall_apply_eq_self (y := ![r b, r c]) (c := ![d b, d c])
-    (fun k => by fin_cases k <;> simp [hr]) _ fun τ hτ hfix => ?_).trans (by norm_num)
+  refine (Subgroup.card_le_two_pow_of_forall_apply_eq_self _
+    (y := ![r b, r c]) (c := ![d b, d c])
+    (fun k => by fin_cases k <;> simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
   have hτb : τ (r b) = r b := hfix 0
   have hτc : τ (r c) = r c := hfix 1
   refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => ?_) fun i hi => ?_
@@ -245,8 +247,9 @@ omit [Q.IsPrime] in
 modulo `8`: an inertia element is determined by its signs on their roots. -/
 private theorem card_inertia_le_four_of_mod_eight {c₂ c₆ : ι} (h₂ : d c₂ % 8 = 2)
     (h₆ : d c₆ % 8 = 6) : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 4 := by
-  refine (card_le_two_pow_of_forall_apply_eq_self (y := ![r c₂, r c₆]) (c := ![d c₂, d c₆])
-    (fun k => by fin_cases k <;> simp [hr]) _ fun τ hτ hfix => ?_).trans (by norm_num)
+  refine (Subgroup.card_le_two_pow_of_forall_apply_eq_self _
+    (y := ![r c₂, r c₆]) (c := ![d c₂, d c₆])
+    (fun k => by fin_cases k <;> simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
   have hτ₂ : τ (r c₂) = r c₂ := hfix 0
   have hτ₆ : τ (r c₆) = r c₆ := hfix 1
   have hd₂ : 2 ∣ d c₂ := by omega
@@ -272,8 +275,8 @@ private theorem card_inertia_le_two
     Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 2 := by
   by_cases hB : ∃ b, d b % 4 = 3
   · obtain ⟨b, hb⟩ := hB
-    refine (card_le_two_pow_of_forall_apply_eq_self (y := ![r b]) (c := ![d b])
-      (fun k => by fin_cases k; simp [hr]) _ fun τ hτ hfix => ?_).trans (by norm_num)
+    refine (Subgroup.card_le_two_pow_of_forall_apply_eq_self _ (y := ![r b]) (c := ![d b])
+      (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτb : τ (r b) = r b := hfix 0
     exact eq_one_of_mem_inertia hr htop hd Q hτ
       (fun i hi => AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
@@ -282,8 +285,8 @@ private theorem card_inertia_le_two
       fun i hi => absurd (Or.inl ⟨b, i, hb, hi⟩) hcond
   by_cases hC : ∃ c, 2 ∣ d c
   · obtain ⟨c, hc⟩ := hC
-    refine (card_le_two_pow_of_forall_apply_eq_self (y := ![r c]) (c := ![d c])
-      (fun k => by fin_cases k; simp [hr]) _ fun τ hτ hfix => ?_).trans (by norm_num)
+    refine (Subgroup.card_le_two_pow_of_forall_apply_eq_self _ (y := ![r c]) (c := ![d c])
+      (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτc : τ (r c) = r c := hfix 0
     refine eq_one_of_mem_inertia hr htop hd Q hτ (fun i hi => absurd ⟨i, hi⟩ hB) fun i hi => ?_
     refine AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ (root_ne_zero hr hd c) hτc
@@ -308,12 +311,9 @@ private theorem card_inertia_eq_four [Finite ι]
     (hcond : (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6) :
     Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) = 4 := by
   have := isGalois_rat hr htop
-  have hexp (σ : K ≃ₐ[ℚ] K) : σ ^ 2 = 1 :=
-    aut_pow_two_eq_one_of_adjoin_eq_top (d := fun i => (d i : ℚ))
-      (fun i => by rw [hr i]; simp) htop σ
   rcases hcond with ⟨b, c, hb, hc⟩ | ⟨c₂, c₆, h₂, h₆⟩
   · have hc4 := hd c
-    refine card_eq_four_of_exists_apply_eq_neg _ (fun σ _ => hexp σ)
+    refine Subgroup.card_eq_four_of_exists_apply_eq_neg _
       (card_inertia_le_four_of_mod_four_eq_three hr htop hd Q hb hc) (root_ne_zero hr hd b)
       (root_ne_zero hr hd c)
       (exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three (hr b) (Or.inr hb) Q)
@@ -330,7 +330,7 @@ private theorem card_inertia_eq_four [Finite ι]
     omega
   · have hd₂ : 2 ∣ d c₂ := by omega
     have hd₆ : 2 ∣ d c₆ := by omega
-    refine card_eq_four_of_exists_apply_eq_neg _ (fun σ _ => hexp σ)
+    refine Subgroup.card_eq_four_of_exists_apply_eq_neg _
       (card_inertia_le_four_of_mod_eight hr htop hd Q h₂ h₆) (root_ne_zero hr hd c₂)
       (root_ne_zero hr hd c₆)
       (exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three (hr c₂) (Or.inl (by omega)) Q)

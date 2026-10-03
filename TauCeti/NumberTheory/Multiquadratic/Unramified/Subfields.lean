@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 public import TauCeti.NumberTheory.NumberField.Inertia
+import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Galois.SquareRoot
 
