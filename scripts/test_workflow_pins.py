@@ -28,6 +28,12 @@ POLICY_READERS = {
     ("pr-labels.yml", "sweep"): 1,
     ("pr-status.yml", "reconcile"): 1,
 }
+# Triggers under which a plain `actions/checkout` gets trusted code: the default branch, or the
+# base of a pull request. `pull_request` and `merge_group` check out code a PR controls, so a
+# workflow on either must not load the local action from its checkout.
+TRUSTED_TRIGGERS = {
+    "push", "schedule", "workflow_dispatch", "workflow_run", "pull_request_target", "issue_comment",
+}
 CALL_PIN = re.compile(
     r"uses:\s+TauCetiProject/TauCetiReview/\.github/workflows/[^@\s]+@([0-9a-f]{40})"
 )
@@ -39,11 +45,30 @@ def action_pin():
     assert len(checkouts) == 1, "expected one checkout in the merge-policy action"
     w = checkouts[0]["with"]
     assert w["repository"] == "TauCetiProject/TauCetiReview"
+    assert w["path"] == ".tauceti-review"
+    assert str(w["sparse-checkout"]).split() == ["runner"]
+    assert w["persist-credentials"] is False
     return str(w["ref"])
 
 
 def workflow_jobs(name):
     return yaml.safe_load((WORKFLOW_DIR / name).read_text())["jobs"]
+
+
+def workflow_triggers(name):
+    data = yaml.safe_load((WORKFLOW_DIR / name).read_text())
+    on = data.get("on", data.get(True))  # YAML 1.1 reads a bare `on` key as True
+    if isinstance(on, str):
+        return {on: None}
+    if isinstance(on, list):
+        return {t: None for t in on}
+    return on
+
+
+def covers(sparse_entry, path):
+    """Whether a sparse-checkout entry includes `path`, compared by whole path components."""
+    entry = pathlib.PurePosixPath(sparse_entry.strip("/")).parts
+    return pathlib.PurePosixPath(path).parts[: len(entry)] == entry
 
 
 class WorkflowPins(unittest.TestCase):
@@ -80,19 +105,25 @@ class WorkflowPins(unittest.TestCase):
                     continue
                 found[(path.name, job_name)] = len(uses)
                 with self.subTest(workflow=path.name, job=job_name):
-                    # The local action must come from an earlier checkout of this repository's
-                    # own trusted ref at the workspace root: no repository, ref or path override.
-                    earlier = [s for s in steps[: uses[0]]
-                               if str(s.get("uses", "")).startswith("actions/checkout@")]
-                    self.assertTrue(earlier, "no checkout before the local action")
-                    w = earlier[0].get("with") or {}
-                    for key in ("repository", "ref", "path"):
+                    # A plain checkout is trusted code only under these triggers.
+                    triggers = workflow_triggers(path.name)
+                    self.assertLessEqual(set(triggers), TRUSTED_TRIGGERS,
+                                         "a trigger checks out PR-controlled code")
+                    if "push" in triggers:
+                        self.assertEqual((triggers["push"] or {}).get("branches"), ["main"])
+                    # The local action must come from the last checkout at the workspace root
+                    # before it, of this repository's own ref: no repository or ref override.
+                    root = [s for s in steps[: uses[0]]
+                            if str(s.get("uses", "")).startswith("actions/checkout@")
+                            and "path" not in (s.get("with") or {})]
+                    self.assertTrue(root, "no checkout at the workspace root before the action")
+                    w = root[-1].get("with") or {}
+                    for key in ("repository", "ref"):
                         self.assertNotIn(key, w)
                     sparse = str(w.get("sparse-checkout", "")).split()
                     if sparse:
                         self.assertTrue(
-                            any(LOCAL_ACTION.removeprefix("./").startswith(p.rstrip("/"))
-                                for p in sparse),
+                            any(covers(p, LOCAL_ACTION.removeprefix("./")) for p in sparse),
                             f"sparse checkout {sparse} omits {LOCAL_ACTION}")
         self.assertEqual(found, POLICY_READERS)
 
