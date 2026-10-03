@@ -127,10 +127,12 @@ private theorem explicitMap2_symm_explicitMap2
             AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
           (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) x) =
       x := by
+  -- Compose the two transports, recognise the composite pair as the identity, then cancel.
   rw [← AddMonoidHom.comp_apply, ← explicitMap2_comp, explicitMap2_congr_of_eq _ _ _ _ _
     (ContinuousMonoidHom.id _) _ (AddMonoidHom.id _) (hq := continuous_id)
     (hψ := fun _ _ => rfl) (ContinuousMonoidHom.ext fun h => by simp)
-    (AddMonoidHom.ext fun x => by simp), explicitMap2_id, AddMonoidHom.id_apply]
+    (AddMonoidHom.ext fun x => by simp)]
+  simp
 
 variable [FiniteDimensional K L]
 
@@ -166,9 +168,12 @@ theorem brCor_apply (y : Br L) :
 
 /-- **Corestriction after restriction is multiplication by the degree**:
 `brCor (brRes x) = [L : K] • x` for every Brauer class `x` of `K`. -/
+@[simp]
 theorem brCor_brRes (x : Br K) : brCor K L σ (brRes K L σ x) = Module.finrank K L • x := by
-  rw [brCor_apply, brRes_apply, AddEquiv.symm_apply_apply, explicitMap2_symm_explicitMap2,
-    explicitCor2_comp_res2, ← galoisSubgroup_toSubgroup K L σ, galoisSubgroup_index, map_nsmul,
-    AddEquiv.apply_symm_apply]
+  -- Cancel the coefficient transports, leaving corestriction after restriction on `H²`.
+  simp only [brCor_apply, brRes_apply, AddEquiv.symm_apply_apply, explicitMap2_symm_explicitMap2]
+  -- `cor ∘ res` is multiplication by the index `[G_K : Gal(Kˢ/σ(L))] = [L : K]`.
+  rw [explicitCor2_comp_res2, ← galoisSubgroup_toSubgroup K L σ, galoisSubgroup_index]
+  simp
 
 end TauCeti.ClassFieldTheory
