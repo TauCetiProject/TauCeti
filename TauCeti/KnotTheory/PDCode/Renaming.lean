@@ -177,6 +177,13 @@ theorem rename_rename {n m r : ℕ} (D : PDCode n)
   · funext i
     simp [rename]
 
+/-- Reflection commutes with renaming. -/
+@[simp]
+theorem mirror_rename {n m : ℕ} (D : PDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).mirror = D.mirror.rename half cross := by
+  ext <;> simp
+
 /-- For permutations of fixed finite types, renaming is the existing relabelling operation. -/
 theorem rename_eq_relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) :
@@ -267,6 +274,20 @@ theorem rename_rename {n m r : ℕ} (D : OrientedPDCode n)
     simp [rename]
   · rfl
 
+/-- Reflection commutes with oriented renaming. -/
+@[simp]
+theorem mirror_rename {n m : ℕ} (D : OrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).mirror = D.mirror.rename half cross := by
+  ext <;> simp
+
+/-- Orientation reversal commutes with oriented renaming. -/
+@[simp]
+theorem reverse_rename {n m : ℕ} (D : OrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).reverse = D.reverse.rename half cross := by
+  ext <;> simp
+
 /-- For permutations of fixed finite types, oriented renaming is oriented relabelling. -/
 theorem rename_eq_relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) :
@@ -340,6 +361,20 @@ theorem rename_rename {n m r : ℕ} (D : FramedOrientedPDCode n)
   · funext h
     simp [rename]
   · rfl
+
+/-- Reflection commutes with framed oriented renaming. -/
+@[simp]
+theorem mirror_rename {n m : ℕ} (D : FramedOrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).mirror = D.mirror.rename half cross := by
+  ext <;> simp
+
+/-- Orientation reversal commutes with framed oriented renaming. -/
+@[simp]
+theorem reverse_rename {n m : ℕ} (D : FramedOrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).reverse = D.reverse.rename half cross := by
+  ext <;> simp
 
 /-- For permutations of fixed finite types, framed renaming is framed relabelling. -/
 theorem rename_eq_relabel (D : FramedOrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
