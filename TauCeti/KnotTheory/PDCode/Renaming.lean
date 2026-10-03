@@ -26,13 +26,16 @@ two equivalences. When both equivalences are permutations, `rename` is definitio
   crossing names.
 * `TauCeti.PDCode.rename`: rename an unoriented PD-code across equivalent finite types.
 * `TauCeti.OrientedPDCode.rename`: rename an oriented PD-code across equivalent finite types.
+* `TauCeti.FramedOrientedPDCode.rename`: rename a framed oriented PD-code across equivalent finite
+  types.
 
 ## Main results
 
-* `TauCeti.PDCode.rename_rename` and `TauCeti.OrientedPDCode.rename_rename`: consecutive renamings
-  compose.
-* `TauCeti.PDCode.rename_eq_relabel` and `TauCeti.OrientedPDCode.rename_eq_relabel`: on a fixed
-  crossing count, renaming agrees with relabelling.
+* `TauCeti.PDCode.rename_rename`, `TauCeti.OrientedPDCode.rename_rename`, and
+  `TauCeti.FramedOrientedPDCode.rename_rename`: consecutive renamings compose.
+* `TauCeti.PDCode.rename_eq_relabel`, `TauCeti.OrientedPDCode.rename_eq_relabel`, and
+  `TauCeti.FramedOrientedPDCode.rename_eq_relabel`: on a fixed crossing count, renaming agrees
+  with relabelling.
 * `TauCeti.OrientedPDCode.writhe_rename`: renaming preserves the writhe.
 -/
 
@@ -57,13 +60,13 @@ theorem crossingBlockEquiv_apply_crossingSlotEquiv {n m : ℕ}
       crossingSlotEquiv m (cross i, slot) := by
   simp [crossingBlockEquiv]
 
-/-- The inverse crossing-block equivalence changes the crossing coordinate by the inverse
-equivalence and preserves its slot. -/
+/-- The inverse of a crossing-block equivalence is induced by the inverse crossing
+equivalence. -/
 @[simp]
-theorem crossingBlockEquiv_symm_apply_crossingSlotEquiv {n m : ℕ}
-    (cross : Fin n ≃ Fin m) (i : Fin m) (slot : Fin 4) :
-    (crossingBlockEquiv cross).symm (crossingSlotEquiv m (i, slot)) =
-      crossingSlotEquiv n (cross.symm i, slot) := by
+theorem crossingBlockEquiv_symm {n m : ℕ} (cross : Fin n ≃ Fin m) :
+    (crossingBlockEquiv cross).symm = crossingBlockEquiv cross.symm := by
+  refine Equiv.ext fun h ↦ ?_
+  obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv m).surjective h
   apply (crossingBlockEquiv cross).injective
   simp
 
@@ -125,7 +128,7 @@ theorem rename_crossinglessComponentCount {n m : ℕ} (D : PDCode n)
 
 /-- The over-strand choice after renaming is read at the inverse old crossing name. -/
 @[simp]
-theorem rename_overPair_apply {n m : ℕ} (D : PDCode n)
+theorem rename_overPair {n m : ℕ} (D : PDCode n)
     (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) (i : Fin m) :
     (D.rename half cross).overPair i = D.overPair (cross.symm i) := by
   simp [rename]
@@ -136,7 +139,7 @@ theorem crossing_rename {n m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (
     (cross : Fin n ≃ Fin m) (i : Fin n) (slot : Fin 4) :
     (D.rename half cross).crossing (cross i) slot = half (D.crossing i slot) := by
   rw [crossing_apply, rename_halfEdge, Equiv.equivCongr_apply_apply,
-    crossingBlockEquiv_symm_apply_crossingSlotEquiv, crossing_apply]
+    crossingBlockEquiv_symm, crossingBlockEquiv_apply_crossingSlotEquiv, crossing_apply]
   rw [Equiv.symm_apply_apply]
 
 /-- The over/under status after renaming is read at the inverse old crossing name. -/
@@ -212,7 +215,7 @@ theorem rename_toPDCode {n m : ℕ} (D : OrientedPDCode n)
 
 /-- The orientation after renaming is read at the inverse old half-edge name. -/
 @[simp]
-theorem rename_orientation_apply {n m : ℕ} (D : OrientedPDCode n)
+theorem rename_orientation {n m : ℕ} (D : OrientedPDCode n)
     (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) (h : Fin (4 * m)) :
     (D.rename half cross).orientation h = D.orientation (half.symm h) := by
   simp [rename]
@@ -231,7 +234,7 @@ theorem crossingSign_rename {n m : ℕ} (D : OrientedPDCode n)
     (D.rename half cross).crossingSign i = D.crossingSign (cross.symm i) := by
   obtain ⟨i, rfl⟩ := cross.surjective i
   simp only [crossingSign_def, rename_toPDCode, PDCode.crossing_rename,
-    rename_orientation_apply, PDCode.rename_overPair_apply, Equiv.symm_apply_apply]
+    rename_orientation, PDCode.rename_overPair, Equiv.symm_apply_apply]
 
 /-- Renaming matches the crossings bijectively, so it preserves the writhe. -/
 @[simp]
@@ -276,5 +279,79 @@ theorem rename_eq_relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)
   · simp
 
 end OrientedPDCode
+
+namespace FramedOrientedPDCode
+
+/-- Rename a framed oriented PD-code along equivalences of its half-edge and crossing index
+types, transporting the framing function along the half-edge equivalence. -/
+def rename {n m : ℕ} (D : FramedOrientedPDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) : FramedOrientedPDCode m where
+  toOrientedPDCode := D.toOrientedPDCode.rename half cross
+  framing := Equiv.arrowCongr half (Equiv.refl ℤ) D.framing
+  framing_edgePair := by
+    intro h
+    simp [OrientedPDCode.rename, PDCode.rename, Function.comp_apply]
+  framing_oppositeCrossingSlot := by
+    intro i slot
+    simp [OrientedPDCode.rename, PDCode.rename, Function.comp_apply, PDCode.crossingBlockEquiv]
+  crossinglessFramings := D.crossinglessFramings
+  crossinglessFramings_map_fst := by simp [OrientedPDCode.rename]
+
+/-- Forgetting framing after renaming gives renaming of the underlying oriented code. -/
+@[simp]
+theorem rename_toOrientedPDCode {n m : ℕ} (D : FramedOrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).toOrientedPDCode = D.toOrientedPDCode.rename half cross := by
+  simp [rename]
+
+/-- The framing after renaming is read at the inverse old half-edge name. -/
+@[simp]
+theorem rename_framing {n m : ℕ} (D : FramedOrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) (h : Fin (4 * m)) :
+    (D.rename half cross).framing h = D.framing (half.symm h) := by
+  simp [rename]
+
+/-- Renaming preserves all crossing-free orientation-framing pairs. -/
+@[simp]
+theorem rename_crossinglessFramings {n m : ℕ} (D : FramedOrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).crossinglessFramings = D.crossinglessFramings := by
+  simp [rename]
+
+/-- Renaming by identity equivalences leaves a framed oriented PD-code unchanged. -/
+@[simp]
+theorem rename_refl (D : FramedOrientedPDCode n) :
+    D.rename (Equiv.refl _) (Equiv.refl _) = D := by
+  apply FramedOrientedPDCode.ext
+  · exact OrientedPDCode.rename_refl D.toOrientedPDCode
+  · funext h
+    simp
+  · rfl
+
+/-- Consecutive renamings of a framed oriented code compose. -/
+@[simp]
+theorem rename_rename {n m r : ℕ} (D : FramedOrientedPDCode n)
+    (half₁ : Fin (4 * n) ≃ Fin (4 * m)) (cross₁ : Fin n ≃ Fin m)
+    (half₂ : Fin (4 * m) ≃ Fin (4 * r)) (cross₂ : Fin m ≃ Fin r) :
+    (D.rename half₁ cross₁).rename half₂ cross₂ =
+      D.rename (half₁.trans half₂) (cross₁.trans cross₂) := by
+  apply FramedOrientedPDCode.ext
+  · exact OrientedPDCode.rename_rename D.toOrientedPDCode half₁ cross₁ half₂ cross₂
+  · funext h
+    simp [rename]
+  · rfl
+
+/-- For permutations of fixed finite types, framed renaming is framed relabelling. -/
+theorem rename_eq_relabel (D : FramedOrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
+    (cross : Equiv.Perm (Fin n)) :
+    D.rename half cross = D.relabel half cross := by
+  apply FramedOrientedPDCode.ext
+  · rw [rename_toOrientedPDCode, relabel_toOrientedPDCode]
+    exact OrientedPDCode.rename_eq_relabel D.toOrientedPDCode half cross
+  · funext h
+    simp
+  · simp
+
+end FramedOrientedPDCode
 
 end TauCeti

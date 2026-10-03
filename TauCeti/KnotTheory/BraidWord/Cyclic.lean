@@ -8,6 +8,8 @@ module
 public import TauCeti.KnotTheory.BraidWord.PDCode
 public import TauCeti.KnotTheory.PDCode.Renaming
 import TauCeti.Data.Fin.Basic
+-- Transporting crossings and slots along the rotation unfolds their unexposed bodies.
+import all TauCeti.KnotTheory.BraidWord.PDCode
 
 /-!
 # Cyclic rotation of braid-word closures
@@ -116,7 +118,7 @@ private theorem crossingsAt_rotate_isRotated (w : BraidWord n) (k : ℕ) (p : Fi
     (fun j : Fin w.length => p = BraidGroup.strand w[j.1].1 ∨
       p = BraidGroup.strandSucc w[j.1].1)
   rw [List.filter_map] at hfilter
-  rw [crossingsAt_def, crossingsAt_def]
+  rw [crossingsAt, crossingsAt]
   simpa only [Function.comp_def, getElem_rotateIndexEquiv] using hfilter
 
 private theorem nextCrossing_rotate (w : BraidWord n) (k : ℕ) (p : Fin n) :
@@ -167,14 +169,14 @@ private theorem nextCrossing_rotate_symm_eq_symm_apply (w : BraidWord n) (k : �
 theorem incomingSlot_rotateIndexEquiv (w : BraidWord n) (k : ℕ)
     (j : Fin (w.rotate k).length) (p : Fin n) :
     incomingSlot (w.rotate k) j p = w.incomingSlot (w.rotateIndexEquiv k j) p := by
-  rw [incomingSlot_def, incomingSlot_def, getElem_rotateIndexEquiv]
+  rw [incomingSlot, incomingSlot, getElem_rotateIndexEquiv]
 
 /-- The outgoing slot at a rotated crossing is the outgoing slot at its original name. -/
 @[simp]
 theorem outgoingSlot_rotateIndexEquiv (w : BraidWord n) (k : ℕ)
     (j : Fin (w.rotate k).length) (p : Fin n) :
     outgoingSlot (w.rotate k) j p = w.outgoingSlot (w.rotateIndexEquiv k j) p := by
-  rw [outgoingSlot_def, outgoingSlot_def, getElem_rotateIndexEquiv]
+  rw [outgoingSlot, outgoingSlot, getElem_rotateIndexEquiv]
 
 private theorem crossingsAt_rotate_eq_nil_iff (w : BraidWord n) (k : ℕ) (p : Fin n) :
     crossingsAt (w.rotate k) p = [] ↔ w.crossingsAt p = [] := by
@@ -219,15 +221,15 @@ theorem closure_rotate (w : BraidWord n) (k : ℕ) :
     · rw [halfEdge_closure, OrientedPDCode.rename_toPDCode, PDCode.rename_halfEdge,
         halfEdge_closure]
       ext h
-      simp [Equiv.Perm.one_def]
+      simp [Equiv.Perm.one_def, ← crossingBlockEquiv_symm]
     · apply Subtype.ext
       refine Equiv.ext fun h ↦ ?_
       obtain ⟨⟨j, slot⟩, rfl⟩ :=
         (crossingSlotEquiv (w.rotate k).length).surjective h
       rw [edgePair_closure_rotate_crossingSlotEquiv]
       simp only [OrientedPDCode.rename_toPDCode, PDCode.rename_edgePair,
-        PerfectMatching.congr_val_apply, crossingBlockEquiv_symm_apply_crossingSlotEquiv,
-        Equiv.symm_symm]
+        PerfectMatching.congr_val_apply, crossingBlockEquiv_symm,
+        crossingBlockEquiv_apply_crossingSlotEquiv, Equiv.symm_symm]
     · simp only [crossinglessComponentCount_closure, OrientedPDCode.rename_toPDCode,
         PDCode.rename_crossinglessComponentCount]
       congr 1
@@ -236,15 +238,15 @@ theorem closure_rotate (w : BraidWord n) (k : ℕ) :
       exact crossingsAt_rotate_eq_nil_iff w k p
     · funext j
       rw [overPair_closure, getElem_rotateIndexEquiv]
-      simp only [OrientedPDCode.rename_toPDCode, PDCode.rename_overPair_apply,
+      simp only [OrientedPDCode.rename_toPDCode, PDCode.rename_overPair,
         Equiv.symm_symm]
       exact (overPair_closure w (w.rotateIndexEquiv k j)).symm
   · funext h
     obtain ⟨⟨j, slot⟩, rfl⟩ :=
       (crossingSlotEquiv (w.rotate k).length).surjective h
     rw [orientation_closure]
-    simp only [OrientedPDCode.rename_orientation_apply,
-      crossingBlockEquiv_symm_apply_crossingSlotEquiv, Equiv.symm_symm,
+    simp only [OrientedPDCode.rename_orientation,
+      crossingBlockEquiv_symm, crossingBlockEquiv_apply_crossingSlotEquiv, Equiv.symm_symm,
       orientation_closure]
   · rw [crossinglessComponents_closure, OrientedPDCode.rename_crossinglessComponents,
       crossinglessComponents_closure]
