@@ -51,15 +51,6 @@ private theorem integral_root (hy : y ^ p - y = algebraMap K L u) : IsIntegral K
   refine ⟨X ^ p - X - C u, monic_polynomial u, ?_⟩
   simp [hy]
 
-omit [Fact p.Prime] in
-/-- The Artin–Schreier polynomial is separable in characteristic `p`. -/
-theorem separable (u : K) : (X ^ p - X - C u : K[X]).Separable := by
-  rw [separable_def]
-  have hd : derivative (X ^ p - X - C u : K[X]) = -1 := by
-    simp [derivative_X_pow]
-  rw [hd]
-  exact isCoprime_one_right.neg_right
-
 /-- An Artin–Schreier polynomial splits in any field containing one of its roots. -/
 theorem splits (hy : y ^ p - y = algebraMap K L u) :
     ((X ^ p - X - C u).map (algebraMap K L)).Splits := by
@@ -92,7 +83,9 @@ theorem isSplittingField (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = 
 theorem isGalois (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤) :
     IsGalois K L := by
   let := isSplittingField hy hgen
-  exact IsGalois.of_separable_splitting_field (separable u)
+  apply IsGalois.of_separable_splitting_field (p := X ^ p - X - C u)
+  simpa [sub_eq_add_neg] using
+    separable_C_mul_X_pow_add_C_mul_X_add_C' p p (1 : K) (-1) (-u) dvd_rfl (by simp)
 
 private theorem exists_translation (hy : y ^ p - y = algebraMap K L u) (σ : Gal(L/K)) :
     ∃ c : ZMod p, (ZMod.cast c : L) = σ y - y := by
