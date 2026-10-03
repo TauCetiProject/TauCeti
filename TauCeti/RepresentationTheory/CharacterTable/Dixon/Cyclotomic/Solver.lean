@@ -480,11 +480,15 @@ theorem isCyclotomicCharacterTableSpec_of_characterTableDixon?_eq_some (e : ℕ)
 
 /-- **Soundness of the Burnside--Dixon--Schneider algorithm.** Every table the algorithm returns,
 embedded in `ℂ` and reindexed by the conjugacy classes, satisfies the complex character-table
-specification, so it is the character table of `G` up to the order of its rows. -/
-theorem isCharacterTableSpec_of_characterTableDixon?_eq_some (e : ℕ) [NeZero e]
+specification, so it is the character table of `G` up to the order of its rows. The exponent
+of a finite group is nonzero, so the statement supplies the `NeZero e` instance the embedding needs
+from `he`. -/
+theorem isCharacterTableSpec_of_characterTableDixon?_eq_some (e : ℕ)
     (he : e = Monoid.exponent G) {fuel : ℕ} {output : d.CyclotomicCharacterTableData e}
     (h : d.characterTableDixon? e he fuel = some output) :
+    haveI : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
     IsCharacterTableSpec G (d.complexTableOfCyclotomic e output.table) :=
+  haveI : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   (d.isCyclotomicCharacterTableSpec_of_characterTableDixon?_eq_some e he h).isCharacterTableSpec
 
 end ClassData
