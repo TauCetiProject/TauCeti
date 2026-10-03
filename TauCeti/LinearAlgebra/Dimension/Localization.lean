@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.Algebra.Module.LocalizedModule.Lift
 
 /-!
 # The rank of a module tensored with a localization
@@ -133,39 +134,19 @@ the rationalization of an `A`-linear map `f : M → N`, in the sense that
 theorem exists_linearMap_tmul_one_eq_smul [Module.Finite A M] [Module.IsTorsionFree R N]
     (φ : M ⊗[R] Q →ₗ[A] N ⊗[R] Q) :
     ∃ s ∈ R⁰, ∃ f : M →ₗ[A] N, ∀ m, f m ⊗ₜ[R] (1 : Q) = s • φ (m ⊗ₜ 1) := by
-  classical
-  -- `n ↦ n ⊗ 1` is the localization of `N` at the non-zero-divisors; it is injective because `N`
-  -- is torsion-free, and every element of `N ⊗ Q` has a multiple in its range.
+  -- `n ↦ n ⊗ 1` is the localization of `N` at the non-zero-divisors, and it is injective because
+  -- `N` is torsion-free, so the values of `φ` on `M` lift to `N` after clearing denominators.
   let ι : N →ₗ[A] N ⊗[R] Q := (TensorProduct.AlgebraTensorModule.mk R A N Q).flip 1
-  let ι' : N →ₗ[R] N ⊗[R] Q := (TensorProduct.comm R Q N).toLinearMap ∘ₗ TensorProduct.mk R Q N 1
-  have hιι' : ⇑ι = ⇑ι' := funext fun n ↦ (TensorProduct.comm_tmul R Q N 1 n).symm
-  have hι : Function.Injective ι := tmul_one_injective Q
-  have hsurj (y : N ⊗[R] Q) : ∃ s ∈ R⁰, ∃ n, s • y = ι n := by
-    obtain ⟨⟨n, s⟩, h⟩ := IsLocalizedModule.surj R⁰ ι' y
-    exact ⟨s, s.2, n, by rw [hιι']; exact h⟩
-  -- Clear the denominators of the images of finitely many generators of `M` at once.
-  obtain ⟨t, ht⟩ := Module.Finite.fg_top (R := A) (M := M)
-  choose s hs n hn using fun m : M ↦ hsurj (φ (m ⊗ₜ 1))
-  let S : R := ∏ m ∈ t, s m
-  let ψ : M →ₗ[A] N ⊗[R] Q := S • (φ ∘ₗ (TensorProduct.AlgebraTensorModule.mk R A M Q).flip 1)
-  have hψ (m : M) : ψ m ∈ LinearMap.range ι := by
-    have hgen : (t : Set M) ⊆ (LinearMap.range ι).comap ψ := fun m hm ↦ by
-      refine ⟨(∏ m' ∈ t.erase m, s m') • n m, ?_⟩
-      rw [ι.map_smul_of_tower, ← hn, smul_smul, mul_comm, Finset.mul_prod_erase t s hm]
-      simp [ψ, S]
-    have := Submodule.span_le.mpr hgen
-    rw [ht] at this
-    exact this Submodule.mem_top
-  -- Pull `ψ` back along the embedding `ι`.
-  refine ⟨S, prod_mem fun m _ ↦ hs m, (LinearEquiv.ofInjective ι hι).symm ∘ₗ ψ.codRestrict _ hψ,
-    fun m ↦ ?_⟩
-  calc _ = ι ((LinearEquiv.ofInjective ι hι).symm (ψ.codRestrict _ hψ m)) := by
-        simp only [ι, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.flip_apply,
-          TensorProduct.AlgebraTensorModule.mk_apply, LinearMap.coe_mk, AddHom.coe_mk]
-    _ = ψ m := by
-      rw [← LinearEquiv.ofInjective_apply (h := hι), LinearEquiv.apply_symm_apply,
-        LinearMap.codRestrict_apply]
-    _ = S • φ (m ⊗ₜ 1) := by simp [ψ]
+  have : IsLocalizedModule R⁰ (ι.restrictScalars R) := by
+    have : ι.restrictScalars R =
+        (TensorProduct.comm R Q N).toLinearMap ∘ₗ TensorProduct.mk R Q N 1 := by
+      ext n
+      simp [ι]
+    rw [this]
+    infer_instance
+  obtain ⟨f, s, hf⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective R⁰
+    (g := ι) (tmul_one_injective Q) (φ ∘ₗ (TensorProduct.AlgebraTensorModule.mk R A M Q).flip 1)
+  exact ⟨s, s.2, f, fun m ↦ by simpa [ι, Submonoid.smul_def] using congr($hf m)⟩
 
 /-- **Rational embeddings of lattices come from integral ones.** If `M` is finitely generated over
 the `R`-algebra `A`, both `M` and `N` are torsion-free over `R`, and some `A`-linear map of

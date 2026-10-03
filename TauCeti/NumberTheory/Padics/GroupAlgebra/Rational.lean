@@ -17,7 +17,6 @@ import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective
-import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.Semiprimary
 import TauCeti.RingTheory.Semisimple.Multiplicity
 
@@ -145,7 +144,7 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd (hG : ¬p ∣
   have : Module.Projective ℤ_[p] M := .trans (S := A)
   have : Module.Projective ℤ_[p] N := .trans (S := A)
   -- Work with the radical quotients, which are finite and semisimple; the radical is `(p)`.
-  have hJ := jacobson_padicInt_monoidAlgebra_eq_span p hG
+  have hJ := jacobson_padicInt_monoidAlgebra_eq_span_p p hG
   have : IsArtinianRing (A ⧸ Ring.jacobson A) := isArtinian_of_finite
   have : IsSemisimpleRing (A ⧸ Ring.jacobson A) :=
     IsArtinianRing.isSemisimpleRing_iff_jacobson.mpr (Ring.jacobson_quotient_jacobson A)

@@ -127,8 +127,9 @@ noncomputable def quotientSMulTopLinearMapEquiv (hx : IsSMulRegular V x) :
 @[simp]
 theorem quotientSMulTopLinearMapEquiv_mk (hx : IsSMulRegular V x) (f : P →ₗ[A] V) :
     quotientSMulTopLinearMapEquiv P hx (Submodule.Quotient.mk f) =
-      (Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)).mkQ ∘ₗ f :=
-  (rfl)
+      (Ideal.span {algebraMap R A x} • (⊤ : Submodule A V)).mkQ ∘ₗ f := by
+  rw [quotientSMulTopLinearMapEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.compRight_apply]
 
 end Reduction
 
