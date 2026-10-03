@@ -75,18 +75,15 @@ private theorem explicitCup11_kummerCoeffPairing_eq_zero_iff {ζ : K}
         continuous_of_discreteTopology (trivialF2Pairing_smul_smul _)
         (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
           continuous_of_discreteTopology continuous_of_discreteTopology
-          (fun g x => by simp [kummerCoeffEquiv_apply]) x)
+          (kummerCoeffEquiv_equivariant K) x)
         (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
           continuous_of_discreteTopology continuous_of_discreteTopology
-          (fun g x => by simp [kummerCoeffEquiv_apply]) y) = 0 := by
+          (kummerCoeffEquiv_equivariant K) y) = 0 := by
   let G := AbsoluteGaloisGroup K
   let P := ClassFieldTheory.kummerCupPairing ζ hζ
   let e := kummerCoeffEquiv K
-  have he (g : G) (x : KummerCoeff K 2) : e (g • x) = g • e x := by
-    rw [mu2_smul_eq_self (K := K) g x,
-      TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply (G := G)]
   let f : KummerCoeff K 2 →+[G] (trivialF2 G).V :=
-    { e.toAddMonoidHom with map_smul' := he }
+    { e.toAddMonoidHom with map_smul' := kummerCoeffEquiv_equivariant K }
   have hn := explicitCoeff2_explicitCup11 G (KummerCoeff K 2) (KummerCoeff K 2)
     (KummerCoeff K 2) (trivialF2 G).V (trivialF2 G).V (trivialF2 G).V
     (ClassFieldTheory.kummerCoeffPairing P) continuous_of_discreteTopology
@@ -98,7 +95,8 @@ private theorem explicitCup11_kummerCoeffPairing_eq_zero_iff {ζ : K}
   rw [← hn]
   simpa only [explicitCoeff2Equiv_apply] using
     (AddEquiv.map_eq_zero_iff (explicitCoeff2Equiv G (KummerCoeff K 2) e
-      continuous_of_discreteTopology continuous_of_discreteTopology he)
+      continuous_of_discreteTopology continuous_of_discreteTopology
+      (kummerCoeffEquiv_equivariant K))
       (x := explicitCup11 G _ _ _ (ClassFieldTheory.kummerCoeffPairing P)
         continuous_of_discreteTopology (ClassFieldTheory.kummerCoeffPairing_smul P) x y)).symm
 

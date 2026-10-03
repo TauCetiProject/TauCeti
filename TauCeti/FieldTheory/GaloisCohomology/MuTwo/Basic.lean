@@ -239,7 +239,7 @@ theorem kummerCoeffEquiv_symm_apply (b : (trivialF2 (AbsoluteGaloisGroup K)).V) 
   rw [hsymm]
 
 /-- The dictionary is `G_K`-equivariant, the two sides being the trivial action. -/
-private theorem kummerCoeffEquiv_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
+theorem kummerCoeffEquiv_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
     kummerCoeffEquiv K (g • x) = g • kummerCoeffEquiv K x := by
   simp only [kummerCoeffEquiv_apply, mu2_smul_eq_self,
     TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
@@ -590,7 +590,7 @@ theorem kummerCohomMap_explicitH1 (x : H1 (AbsoluteGaloisGroup K) (KummerCoeff K
           (trivialF2 (AbsoluteGaloisGroup K)).V
           (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
             continuous_of_discreteTopology continuous_of_discreteTopology
-            (fun g x => by simp [kummerCoeffEquiv_apply]) x)) := by
+            (kummerCoeffEquiv_equivariant K) x)) := by
   rw [kummerCohomMap_eq_coeffMap_comp, ConcreteCategory.comp_apply]
   refine congrArg _ ?_
   have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id (AbsoluteGaloisGroup K) :
