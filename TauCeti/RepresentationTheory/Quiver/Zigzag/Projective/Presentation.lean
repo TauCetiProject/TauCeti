@@ -39,7 +39,7 @@ by multiplying elements of the zigzag relation ideal on the right by the vertex 
 noncomputable def zigzagProjectivePathRelations (i : V) :
     Submodule (pathAlgebra k (DoubledQuiver G))
       (Ideal.span {vertexIdempotent k (vertex G i)} : Ideal (pathAlgebra k (DoubledQuiver G))) :=
-  LinearMap.range (spanSingletonRelationMap (zigzagIdeal k G).asIdeal
+  LinearMap.range (Ideal.spanSingletonRelationMap (zigzagIdeal k G).asIdeal
     (vertexIdempotent k (vertex G i)))
 
 /-- Membership in the path-projective relations is precisely membership in the zigzag ideal.
@@ -50,7 +50,7 @@ theorem mem_zigzagProjectivePathRelations_iff (i : V)
       Ideal (pathAlgebra k (DoubledQuiver G)))) :
     x ∈ zigzagProjectivePathRelations k G i ↔
       (x : pathAlgebra k (DoubledQuiver G)) ∈ zigzagIdeal k G := by
-  rw [zigzagProjectivePathRelations, range_spanSingletonRelationMap _ _
+  rw [zigzagProjectivePathRelations, Ideal.range_spanSingletonRelationMap _ _
     (vertexIdempotent_mul_self (k := k) (vertex G i)), Submodule.mem_comap, Submodule.subtype_apply,
     TwoSidedIdeal.mem_asIdeal]
 
@@ -68,7 +68,7 @@ noncomputable def zigzagProjectivePresentation (i : V) :
       →ₗ[pathAlgebra k (DoubledQuiver G)] zigzagProjective k G i :=
   ((LinearEquiv.ofEq _ _ (quotient_span_eq_projective k G i)).restrictScalars
     (pathAlgebra k (DoubledQuiver G))).toLinearMap.comp
-      (spanSingletonQuotientMap (zigzagIdeal k G).asIdeal (vertexIdempotent k (vertex G i)))
+      (Ideal.spanSingletonQuotientMap (zigzagIdeal k G).asIdeal (vertexIdempotent k (vertex G i)))
 
 /-- The presentation sends a path-algebra element to its zigzag class. -/
 @[simp]
@@ -79,7 +79,7 @@ theorem coe_zigzagProjectivePresentation (i : V)
       zigzagMk k G x := by
   simp only [zigzagProjectivePresentation, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.restrictScalars_apply, LinearEquiv.coe_ofEq_apply, zigzagMk_apply]
-  exact coe_spanSingletonQuotientMap _ _ _
+  exact Ideal.coe_spanSingletonQuotientMap _ _ _
 
 /-- The vertex generator of the path projective maps to the vertex generator of `Z eᵢ`. -/
 @[simp]
@@ -94,7 +94,7 @@ theorem zigzagProjectivePresentation_generator (i : V) :
 theorem zigzagProjectivePresentation_surjective (i : V) :
     Function.Surjective (zigzagProjectivePresentation k G i) :=
   (LinearEquiv.ofEq _ _ (quotient_span_eq_projective k G i)).surjective.comp
-    (spanSingletonQuotientMap_surjective _ _)
+    (Ideal.spanSingletonQuotientMap_surjective _ _)
 
 /-- The kernel of the path-algebra presentation is exactly `I eᵢ`. -/
 theorem ker_zigzagProjectivePresentation (i : V) :

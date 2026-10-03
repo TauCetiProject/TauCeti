@@ -17,8 +17,8 @@ so the vertex projectives of a bound quiver are obtained from the path-algebra p
 imposing the relations on them. The comparison is `A`-linear, with the target acted on through
 the quotient map.
 
-Use `TauCeti.spanSingletonQuotientMap I e` for the restriction and
-`TauCeti.spanSingletonRelationMap I e` for right multiplication of the relations by `e`.
+Use `TauCeti.Ideal.spanSingletonQuotientMap I e` for the restriction and
+`TauCeti.Ideal.spanSingletonRelationMap I e` for right multiplication of the relations by `e`.
 
 See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
 Chapter III, Section 2, for vertex projectives of bound quivers.
@@ -27,6 +27,7 @@ Chapter III, Section 2, for vertex projectives of bound quivers.
 public section
 
 namespace TauCeti
+namespace Ideal
 
 variable {A : Type*} [Ring A] (I : Ideal A) [I.IsTwoSided] (e : A)
 
@@ -83,4 +84,5 @@ theorem range_spanSingletonRelationMap (he : IsIdempotentElem e) :
   · intro hx
     exact ⟨⟨x, hx⟩, Subtype.ext ((mem_span_singleton_iff_mul_eq_self he).mp x.2)⟩
 
+end Ideal
 end TauCeti
