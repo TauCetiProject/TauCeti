@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Finite-dimensional representations
@@ -31,7 +32,8 @@ being a commutative ring throughout otherwise.
 
 Finally it records the structural properties of the character that Mathlib's
 `RepresentationTheory/Character.lean` leaves out beside `FDRep.char_iso` and `FDRep.char_tensor`:
-the character is **additive on biproducts** (and, unbundled, on products of representations), the
+the character is **additive on biproducts** (and, unbundled, on products of representations and on
+complementary subrepresentations), the
 character of the **tensor unit** is the constant function `1`, and the character is **constant on
 the cosets of its kernel**. The first two are what
 is still missing before the character can be read as a ring homomorphism out of the representation
@@ -51,6 +53,8 @@ subgroup.
   carrier, whence `FDRep.character_of_trivial` for the trivial representation on `k` itself.
 * `Representation.char_prod`: the character is additive on products of representations, the
   unbundled counterpart of `FDRep.char_biprod`.
+* `Subrepresentation.char_add_eq_of_isCompl`: the character is additive on complementary
+  subrepresentations.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
@@ -100,6 +104,21 @@ theorem char_prod {k : Type u} {G : Type v} {V W : Type*} [Field k] [Monoid G]
   exact LinearMap.trace_prodMap' (ρ g) (σ g)
 
 end Representation
+
+namespace Subrepresentation
+
+/-- **The character is additive on complementary subrepresentations**: if `ρ₁` and `ρ₂` are
+complementary subrepresentations of `ρ`, the characters of the representations they carry add up
+to the character of `ρ`. This is `Representation.char_prod` read through the splitting
+`Subrepresentation.equivProdOfIsCompl`. -/
+theorem char_add_eq_of_isCompl {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V] {ρ : Representation k G V}
+    {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
+    ρ₁.toRepresentation.character + ρ₂.toRepresentation.character = ρ.character := by
+  funext g
+  rw [Pi.add_apply, ← Representation.char_prod, Representation.char_iso (equivProdOfIsCompl h)]
+
+end Subrepresentation
 
 namespace FDRep
 
